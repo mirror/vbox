@@ -91,11 +91,11 @@ signals:
         /** Notifies listeners about medium with certain @a uMediumID deleted. */
         void sigMediumDeleted(const QUuid &uMediumID);
 
-        /** Notifies listeners about medium enumeration started. */
+        /** Notifies listeners about media-enumeration started. */
         void sigMediumEnumerationStarted();
         /** Notifies listeners about medium with certain @a uMediumID enumerated. */
         void sigMediumEnumerated(const QUuid &uMediumID);
-        /** Notifies listeners about medium enumeration finished. */
+        /** Notifies listeners about media-enumeration finished. */
         void sigMediumEnumerationFinished();
     /** @} */
 
@@ -209,7 +209,7 @@ public:
         /** Returns the --no-startvm-errormsgbox option value (whether startup VM errors are disabled). */
         bool showStartVMErrors() const { return m_fShowStartVMErrors; }
 
-        /** Returns the --aggressive-caching / --no-aggressive-caching option value (whether medium-enumeration is required). */
+        /** Returns the --aggressive-caching / --no-aggressive-caching option value (whether media-enumeration is required). */
         bool agressiveCaching() const { return m_fAgressiveCaching; }
 
         /** Returns the --restore-current option value (whether we should restore current snapshot before VM started). */
@@ -475,11 +475,11 @@ public:
 
     /** @name COM: Virtual Media stuff.
      * @{ */
-        /** Starts medium enumeration. */
-        void startMediumEnumeration(const CMediumVector &mediaList = CMediumVector());
+        /** Starts media-enumeration. */
+        void startMediaEnumeration(const CMediumVector &mediaList = CMediumVector());
         /** Calls refresh for each medium which has been already enumerated. */
         void refreshMedia();
-        /** Returns whether medium enumeration is in progress. */
+        /** Returns whether media-enumeration is in progress. */
         bool isMediumEnumerationInProgress() const;
         /** Returns enumerated medium with certain @a uMediumID. */
         UIMedium medium(const QUuid &uMediumID) const;
@@ -805,7 +805,7 @@ private:
         /** Holds the --no-startvm-errormsgbox option value (whether startup VM errors are disabled). */
         bool     m_fShowStartVMErrors;
 
-        /** Holds the --aggressive-caching / --no-aggressive-caching option value (whether medium-enumeration is required). */
+        /** Holds the --aggressive-caching / --no-aggressive-caching option value (whether media-enumeration is required). */
         bool  m_fAgressiveCaching;
 
         /** Holds the --restore-current option value. */

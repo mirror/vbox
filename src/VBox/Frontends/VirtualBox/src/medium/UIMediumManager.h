@@ -57,7 +57,7 @@ public:
 
 
 /** Medium manager progress-bar.
-  * Reflects medium-enumeration progress, stays hidden otherwise. */
+  * Reflects media-enumeration progress, stays hidden otherwise. */
 class UIEnumerationProgressBar : public QWidget
 {
     Q_OBJECT;

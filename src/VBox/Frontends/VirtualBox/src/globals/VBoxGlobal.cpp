@@ -2492,33 +2492,29 @@ CSession VBoxGlobal::openSession(const QUuid &uId, KLockType lockType /* = KLock
     return comSession;
 }
 
-void VBoxGlobal::startMediumEnumeration(const CMediumVector &mediaList /* = CMediumVector() */)
+void VBoxGlobal::startMediaEnumeration(const CMediumVector &comMedia /* = CMediumVector() */)
 {
     /* Make sure VBoxGlobal is already valid: */
     AssertReturnVoid(m_fValid);
+    /* Ignore the request during VBoxGlobal cleanup: */
+    if (s_fCleaningUp)
+        return;
+    /* Ignore the request during startup snapshot restoring: */
+    if (shouldRestoreCurrentSnapshot())
+        return;
 
     /* Make sure medium-enumerator is already created: */
     if (!m_pMediumEnumerator)
         return;
-
     /* Make sure enumeration is not already started: */
     if (isMediumEnumerationInProgress())
         return;
 
-    /* Ignore the request during VBoxGlobal cleanup: */
-    if (s_fCleaningUp)
-        return;
-
-    /* If asked to restore snapshot, don't do this till *after* we're done
-     * restoring or the code with have a heart attack. */
-    if (shouldRestoreCurrentSnapshot())
-        return;
-
+    /* Redirect request to medium-enumerator under proper lock: */
     if (m_meCleanupProtectionToken.tryLockForRead())
     {
-        /* Redirect request to medium-enumerator: */
         if (m_pMediumEnumerator)
-            m_pMediumEnumerator->enumerateMedia(mediaList);
+            m_pMediumEnumerator->startMediaEnumeration(comMedia);
         m_meCleanupProtectionToken.unlock();
     }
 }
@@ -3310,7 +3306,7 @@ QString VBoxGlobal::details(const CMedium &comMedium, bool fPredictDiff, bool fU
     if (!comMedium.isNull() && guiMedium.isNull())
     {
         /* UI medium may be new and not among our media, request enumeration: */
-        startMediumEnumeration();
+        startMediaEnumeration();
 
         /* Search for corresponding UI medium again: */
         guiMedium = medium(uMediumID);
@@ -3938,7 +3934,7 @@ bool VBoxGlobal::openURL(const QString &strUrl) const
 
 void VBoxGlobal::sltGUILanguageChange(QString strLanguage)
 {
-    /* Make sure medium-enumeration is not in progress! */
+    /* Make sure media-enumeration is not in progress! */
     AssertReturnVoid(!isMediumEnumerationInProgress());
     /* Load passed language: */
     loadLanguage(strLanguage);

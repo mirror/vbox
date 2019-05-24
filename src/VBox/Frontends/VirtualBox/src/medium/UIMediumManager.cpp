@@ -374,7 +374,7 @@ void UIMediumManagerWidget::sltHandleMediumCreated(const QUuid &uMediumID)
         return;
 
     /* If medium-item change allowed and
-     * 1. medium-enumeration is not currently in progress or
+     * 1. media-enumeration is not currently in progress or
      * 2. if there is no currently medium-item selected
      * we have to choose newly added medium-item as current one: */
     if (   !m_fPreventChangeCurrentItem
@@ -578,8 +578,8 @@ void UIMediumManagerWidget::sltToggleMediumSearchVisibility(bool fVisible)
 
 void UIMediumManagerWidget::sltRefreshAll()
 {
-    /* Start medium-enumeration: */
-    vboxGlobal().startMediumEnumeration();
+    /* Start media-enumeration: */
+    vboxGlobal().startMediaEnumeration();
 }
 
 void UIMediumManagerWidget::sltHandleCurrentTabChanged()
@@ -693,16 +693,16 @@ void UIMediumManagerWidget::prepare()
     /* Apply language settings: */
     retranslateUi();
 
-    /* Start medium-enumeration (if necessary): */
+    /* Start media-enumeration (if necessary): */
     if (!vboxGlobal().isMediumEnumerationInProgress())
-        vboxGlobal().startMediumEnumeration();
-    /* Emulate medium-enumeration otherwise: */
+        vboxGlobal().startMediaEnumeration();
+    /* Emulate media-enumeration otherwise: */
     else
     {
-        /* Start medium-enumeration: */
+        /* Start media-enumeration: */
         sltHandleMediumEnumerationStart();
 
-        /* Finish medium-enumeration (if necessary): */
+        /* Finish media-enumeration (if necessary): */
         if (!vboxGlobal().isMediumEnumerationInProgress())
             sltHandleMediumEnumerationFinish();
     }
@@ -720,7 +720,7 @@ void UIMediumManagerWidget::prepareConnections()
     connect(&vboxGlobal(), &VBoxGlobal::sigMediumDeleted,
             this, &UIMediumManagerWidget::sltHandleMediumDeleted);
 
-    /* Configure medium-enumeration connections: */
+    /* Configure media-enumeration connections: */
     connect(&vboxGlobal(), &VBoxGlobal::sigMediumEnumerationStarted,
             this, &UIMediumManagerWidget::sltHandleMediumEnumerationStart);
     connect(&vboxGlobal(), &VBoxGlobal::sigMediumEnumerated,

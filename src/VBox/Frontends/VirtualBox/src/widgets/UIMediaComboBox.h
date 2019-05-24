@@ -72,7 +72,7 @@ protected slots:
     /** Habdles medium-deleted signal for medium with @a uMediumId. */
     void sltHandleMediumDeleted(const QUuid &uMediumId);
 
-    /** Handles medium enumeration start. */
+    /** Handles media-enumeration start. */
     void sltHandleMediumEnumerationStart();
 
     /** Handles combo activation for item with certain @a iIndex. */

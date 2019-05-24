@@ -3710,7 +3710,7 @@ void UIMachineSettingsStorage::prepare()
     /* Enumerate Media. We need at least the MediaList filled, so this is the
      * lasted point, where we can start. The rest of the media checking is done
      * in a background thread. */
-    vboxGlobal().startMediumEnumeration();
+    vboxGlobal().startMediaEnumeration();
 
     /* Layout created in the .ui file. */
     AssertPtrReturnVoid(mLtStorage);

@@ -80,7 +80,7 @@ UIMediumSelector::UIMediumSelector(UIMediumDeviceType enmMediumType, const QStri
     , m_strMachineGuestOSTypeId(strMachineGuestOSTypeId)
 {
     if (vboxGlobal().uiType() == VBoxGlobal::UIType_RuntimeUI)
-        vboxGlobal().startMediumEnumeration();
+        vboxGlobal().startMediaEnumeration();
     configure();
     finalize();
 }
@@ -232,7 +232,7 @@ void UIMediumSelector::prepareMenuAndToolBar()
 
 void UIMediumSelector::prepareConnections()
 {
-    /* Configure medium-enumeration connections: */
+    /* Configure media-enumeration connections: */
     connect(&vboxGlobal(), &VBoxGlobal::sigMediumEnumerationStarted,
             this, &UIMediumSelector::sltHandleMediumEnumerationStart);
     connect(&vboxGlobal(), &VBoxGlobal::sigMediumEnumerated,
@@ -495,7 +495,7 @@ void UIMediumSelector::sltHandleMediumEnumerationFinish()
 void UIMediumSelector::sltHandleRefresh()
 {
     /* Initialize media enumation: */
-    vboxGlobal().startMediumEnumeration();
+    vboxGlobal().startMediaEnumeration();
     /* Update the search: */
     m_pSearchWidget->search(m_pTreeWidget);
 }

@@ -45,7 +45,7 @@ class UIThreadPool;
 /** A map of CMedium objects ordered by their IDs. */
 typedef QMap<QUuid, CMedium> CMediumMap;
 
-/** QObject extension operating as medium-enumeration object.
+/** QObject extension operating as media-enumeration object.
   * Manages access to cached UIMedium information via public API.
   * Updates cache on corresponding Main events using thread-pool interface. */
 class SHARED_LIBRARY_STUFF UIMediumEnumerator : public QIWithRetranslateUI3<QObject>
@@ -59,11 +59,11 @@ signals:
     /** Notifies listeners about UIMedium with @a uMediumID deleted. */
     void sigMediumDeleted(const QUuid &uMediumID);
 
-    /** Notifies listeners about consolidated medium-enumeration process has started. */
+    /** Notifies listeners about consolidated media-enumeration process has started. */
     void sigMediumEnumerationStarted();
     /** Notifies listeners about UIMedium with @a uMediumID updated. */
     void sigMediumEnumerated(const QUuid &uMediumID);
-    /** Notifies listeners about consolidated medium-enumeration process has finished. */
+    /** Notifies listeners about consolidated media-enumeration process has finished. */
     void sigMediumEnumerationFinished();
 
 public:
@@ -81,11 +81,13 @@ public:
     /** Deletes UIMedium with specified @a uMediumID thus removing it from internal cache. */
     void deleteMedium(const QUuid &uMediumID);
 
-    /** Returns whether consolidated medium-enumeration process is in progress. */
+    /** Returns whether consolidated media-enumeration process is in progress. */
     bool isMediumEnumerationInProgress() const { return m_fMediumEnumerationInProgress; }
-    /** Makes a request to enumerate specified @a inputMedia.
-      * @note  Empty list means that full/overall medium-enumeration is requested. */
-    void enumerateMedia(const CMediumVector &inputMedia = CMediumVector());
+    /** Makes a request to enumerate specified @a comMedia.
+      * @note  Previous map will be replaced with the new one, values present in both
+      *        maps will be merged from the previous to new one, keep that all in mind.
+      * @note  Empty passed map means that full/overall media-enumeration is requested. */
+    void startMediaEnumeration(const CMediumVector &comMedia = CMediumVector());
     /** Refresh all the lightweight UIMedium information for all the cached UIMedium(s).
       * @note  Please note that this is a lightweight version, which doesn't perform
       *        heavy state/accessibility checks thus doesn't require to be performed
@@ -128,12 +130,12 @@ private slots:
     void sltHandleMediumRegistered(const QUuid &uMediumId, KDeviceType enmMediumType, bool fRegistered);
 #endif /* VBOX_GUI_WITH_NEW_MEDIA_EVENTS */
 
-    /** Handles medium-enumeration @a pTask complete signal. */
+    /** Handles media-enumeration @a pTask complete signal. */
     void sltHandleMediumEnumerationTaskComplete(UITask *pTask);
 
 private:
 
-    /** Creates medium-enumeration task for certain @a guiMedium. */
+    /** Creates media-enumeration task for certain @a guiMedium. */
     void createMediumEnumerationTask(const UIMedium &guiMedium);
     /** Adds NULL UIMedium to specified @a outputMedia map. */
     void addNullMediumToMap(UIMediumMap &outputMedia);
@@ -183,10 +185,10 @@ private:
     void parseMedium(CMedium &comMedium);
 #endif /* VBOX_GUI_WITH_NEW_MEDIA_EVENTS */
 
-    /** Holds whether consolidated medium-enumeration process is in progress. */
+    /** Holds whether consolidated media-enumeration process is in progress. */
     bool  m_fMediumEnumerationInProgress;
 
-    /** Holds a set of current medium-enumeration tasks. */
+    /** Holds a set of current media-enumeration tasks. */
     QSet<UITask*>  m_tasks;
 
     /** Holds a map of current cached (enumerated) media. */

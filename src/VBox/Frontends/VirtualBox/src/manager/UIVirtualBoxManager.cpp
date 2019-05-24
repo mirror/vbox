@@ -1248,7 +1248,7 @@ void UIVirtualBoxManager::prepare()
 
     /* Cache medium data early if necessary: */
     if (vboxGlobal().agressiveCaching())
-        vboxGlobal().startMediumEnumeration();
+        vboxGlobal().startMediaEnumeration();
 
     /* Prepare: */
     prepareIcon();
