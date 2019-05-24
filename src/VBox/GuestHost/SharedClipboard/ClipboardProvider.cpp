@@ -25,7 +25,7 @@
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/dir.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/file.h>
 #include <iprt/path.h>
 #include <iprt/string.h>
