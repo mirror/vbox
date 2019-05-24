@@ -14247,9 +14247,15 @@ HMVMX_EXIT_DECL hmR0VmxExitWrmsr(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 HMVMX_EXIT_DECL hmR0VmxExitPause(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
+
     /** @todo The guest has likely hit a contended spinlock. We might want to
      *        poke a schedule different guest VCPU. */
-    return VINF_EM_RAW_INTERRUPT;
+    int rc = hmR0VmxAdvanceGuestRip(pVCpu, pVmxTransient);
+    if (RT_SUCCESS(rc))
+        return VINF_EM_RAW_INTERRUPT;
+
+    AssertMsgFailed(("hmR0VmxExitPause: Failed to increment RIP. rc=%Rrc\n", rc));
+    return rc;
 }
 
 
