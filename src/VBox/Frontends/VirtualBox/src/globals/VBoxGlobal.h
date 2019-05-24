@@ -477,6 +477,8 @@ public:
      * @{ */
         /** Starts medium-enumeration. */
         void startMediumEnumeration(const CMediumVector &mediaList = CMediumVector());
+        /** Enumerates additional medium. */
+        void enumerateAdditionalMedium(const CMedium &comMedium);
         /** Calls refresh for each medium which has been already enumerated. */
         void refreshMedia();
         /** Returns whether medium-enumeration is in progress. */

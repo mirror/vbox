@@ -88,6 +88,11 @@ public:
       *        maps will be merged from the previous to new one, keep that all in mind.
       * @note  Empty passed map means that full/overall medium-enumeration is requested. */
     void startMediumEnumeration(const CMediumVector &comMedia = CMediumVector());
+    /** Makes a request to enumerate additionally specified @a comMedium.
+      * @note  Previous map will be extended with the new one, composed of passed
+      *        medium and it's children, values present in both maps will be merged
+      *        from the previous to new one, keep that all in mind. */
+    void enumerateAdditionalMedium(const CMedium &comMedium);
     /** Refresh all the lightweight UIMedium information for all the cached UIMedium(s).
       * @note  Please note that this is a lightweight version, which doesn't perform
       *        heavy state/accessibility checks thus doesn't require to be performed

@@ -230,6 +230,31 @@ void UIMediumEnumerator::startMediumEnumeration(const CMediumVector &comMedia /*
             createMediumEnumerationTask(m_media[uMediumID]);
 }
 
+void UIMediumEnumerator::enumerateAdditionalMedium(const CMedium &comMedium)
+{
+    /* Put the medium to vector for convenience: */
+    CMediumVector inputMedia;
+    inputMedia << comMedium;
+
+    /* Compose new map of passed medium & it's children.
+     * While composing we are using data from already cached media. */
+    UIMediumMap media;
+    addMediaToMap(inputMedia, media);
+
+    /* VBoxGlobal is cleaning up, abort immediately: */
+    if (VBoxGlobal::isCleaningUp())
+        return;
+
+    /* Throw the media to existing map: */
+    foreach (const QUuid &uMediumId, media.keys())
+        m_media[uMediumId] = media.value(uMediumId);
+
+    /* Start enumeration for media with non-NULL ID: */
+    foreach (const QUuid &uMediumID, media.keys())
+        if (!uMediumID.isNull())
+            createMediumEnumerationTask(media[uMediumID]);
+}
+
 void UIMediumEnumerator::refreshMedia()
 {
     /* Make sure we are not already in progress: */

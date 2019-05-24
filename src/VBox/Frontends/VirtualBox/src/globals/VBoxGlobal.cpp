@@ -2519,6 +2519,30 @@ void VBoxGlobal::startMediumEnumeration(const CMediumVector &comMedia /* = CMedi
     }
 }
 
+void VBoxGlobal::enumerateAdditionalMedium(const CMedium &comMedium)
+{
+    /* Make sure VBoxGlobal is already valid: */
+    AssertReturnVoid(m_fValid);
+    /* Ignore the request during VBoxGlobal cleanup: */
+    if (s_fCleaningUp)
+        return;
+    /* Ignore the request during startup snapshot restoring: */
+    if (shouldRestoreCurrentSnapshot())
+        return;
+
+    /* Make sure medium-enumerator is already created: */
+    if (!m_pMediumEnumerator)
+        return;
+
+    /* Redirect request to medium-enumerator under proper lock: */
+    if (m_meCleanupProtectionToken.tryLockForRead())
+    {
+        if (m_pMediumEnumerator)
+            m_pMediumEnumerator->enumerateAdditionalMedium(comMedium);
+        m_meCleanupProtectionToken.unlock();
+    }
+}
+
 void VBoxGlobal::refreshMedia()
 {
     /* Make sure VBoxGlobal is already valid: */
@@ -3306,7 +3330,7 @@ QString VBoxGlobal::details(const CMedium &comMedium, bool fPredictDiff, bool fU
     if (!comMedium.isNull() && guiMedium.isNull())
     {
         /* UI medium may be new and not among our media, request enumeration: */
-        startMediumEnumeration();
+        enumerateAdditionalMedium(comMedium);
 
         /* Search for corresponding UI medium again: */
         guiMedium = medium(uMediumID);
