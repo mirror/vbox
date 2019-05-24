@@ -431,6 +431,7 @@ static RTEXITCODE handleCloudLists(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
 
 static RTEXITCODE createCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pCommonOpts)
 {
+    RT_NOREF(a);
     RT_NOREF(iFirst);
     RT_NOREF(pCommonOpts);
     return RTEXITCODE_SUCCESS;
@@ -438,6 +439,7 @@ static RTEXITCODE createCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT
 
 static RTEXITCODE updateCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pCommonOpts)
 {
+    RT_NOREF(a);
     RT_NOREF(iFirst);
     RT_NOREF(pCommonOpts);
     return RTEXITCODE_SUCCESS;
@@ -512,7 +514,7 @@ static RTEXITCODE showCloudInstanceInfo(HandlerArg *a, int iFirst, PCLOUDCOMMONO
     };
 
     size_t vsdHReadableArraySize = 9;//the number of items in the vsdHReadableArray
-    vsdHReadable vsdHReadableArray[vsdHReadableArraySize] = {
+    vsdHReadable vsdHReadableArray[9] = {
         {VirtualSystemDescriptionType_CloudDomain, "Availability domain = '%ls'\n", "Availability domain wasn't found\n"},
         {VirtualSystemDescriptionType_Name, "Instance displayed name = '%ls'\n", "Instance displayed name wasn't found\n"},
         {VirtualSystemDescriptionType_CloudInstanceState, "Instance state = '%ls'\n", "Instance state wasn't found\n"},

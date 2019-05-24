@@ -151,7 +151,7 @@ static const RTGETOPTDEF g_aImportApplianceOptions[] =
     { "--cloudinstanceid",      'l', RTGETOPT_REQ_STRING }
 };
 
-enum
+enum actionType
 {
     NOT_SET, LOCAL, CLOUD
 } actionType;
@@ -988,6 +988,8 @@ RTEXITCODE handleImportAppliance(HandlerArg *arg)
                         case VirtualSystemDescriptionType_CloudLaunchInstance:
                         case VirtualSystemDescriptionType_CloudInstanceId:
                         case VirtualSystemDescriptionType_CloudImageId:
+                        case VirtualSystemDescriptionType_CloudInstanceState:
+                        case VirtualSystemDescriptionType_CloudImageState:
                         case VirtualSystemDescriptionType_Miscellaneous:
                             /** @todo  VirtualSystemDescriptionType_Miscellaneous? */
                             break;
