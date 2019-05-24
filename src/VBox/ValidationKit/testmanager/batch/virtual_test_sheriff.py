@@ -584,12 +584,12 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
     ktReason_Host_Modprobe_Failed                      = ( 'Host',              'Modprobe failed' );
     ktReason_Host_Install_Hang                         = ( 'Host',              'Install hang' );
     ktReason_Host_NetworkMisconfiguration              = ( 'Host',              'Network misconfiguration' );
+    ktReason_Host_TSTInfo_Accuracy_OOR                 = ( 'Host',              'TSTInfo accuracy out of range' );
     ktReason_Networking_Nonexistent_host_nic           = ( 'Networking',        'Nonexistent host networking interface' );
     ktReason_OSInstall_GRUB_hang                       = ( 'O/S Install',       'GRUB hang' );
     ktReason_OSInstall_Udev_hang                       = ( 'O/S Install',       'udev hang' );
     ktReason_OSInstall_Sata_no_BM                      = ( 'O/S Install',       'SATA busmaster bit not set' );
     ktReason_Panic_BootManagerC000000F                 = ( 'Panic',             'Hardware Changed' );
-    ktReason_BootManager_Image_corrupt                 = ( 'Unknown',           'BOOTMGR Image corrupt' );
     ktReason_Panic_MP_BIOS_IO_APIC                     = ( 'Panic',             'MP-BIOS/IO-APIC' );
     ktReason_Panic_HugeMemory                          = ( 'Panic',             'Huge memory assertion' );
     ktReason_Panic_IOAPICDoesntWork                    = ( 'Panic',             'IO-APIC and timer does not work' );
@@ -598,17 +598,18 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
     ktReason_XPCOM_VBoxSVC_Hang                        = ( 'API / (XP)COM',     'VBoxSVC hang' );
     ktReason_XPCOM_VBoxSVC_Hang_Plus_Heap_Corruption   = ( 'API / (XP)COM',     'VBoxSVC hang + heap corruption' );
     ktReason_XPCOM_NS_ERROR_CALL_FAILED                = ( 'API / (XP)COM',     'NS_ERROR_CALL_FAILED' );
+    ktReason_BootManager_Image_corrupt                 = ( 'Unknown',           'BOOTMGR Image corrupt' );
     ktReason_Unknown_Heap_Corruption                   = ( 'Unknown',           'Heap corruption' );
     ktReason_Unknown_Reboot_Loop                       = ( 'Unknown',           'Reboot loop' );
     ktReason_Unknown_File_Not_Found                    = ( 'Unknown',           'File not found' );
-    ktReason_Unknown_VM_Crash                          = ( 'Unknown',           'VM crash' );
     ktReason_Unknown_HalReturnToFirmware               = ( 'Unknown',           'HalReturnToFirmware' );
+    ktReason_Unknown_VM_Crash                          = ( 'Unknown',           'VM crash' );
+    ktReason_Unknown_VM_Start_Error                    = ( 'Unknown',           'VM Start Error' );
+    ktReason_Unknown_VM_Runtime_Error                  = ( 'Unknown',           'VM Runtime Error' );
     ktReason_VMM_kvm_lock_spinning                     = ( 'VMM',               'kvm_lock_spinning' );
     ktReason_Ignore_Buggy_Test_Driver                  = ( 'Ignore',            'Buggy test driver' );
     ktReason_Ignore_Stale_Files                        = ( 'Ignore',            'Stale files' );
     ktReason_Buggy_Build_Broken_Build                  = ( 'Broken Build',      'Buggy build' );
-    ktReason_Unknown_VM_Start_Error                    = ( 'Unknown',           'VM Start Error' );
-    ktReason_Unknown_VM_Runtime_Error                  = ( 'Unknown',           'VM Runtime Error' );
     ktReason_GuestBug_CompizVBoxQt                     = ( 'Guest Bug',         'Compiz + VirtualBox Qt GUI crash' );
     ## @}
 
@@ -1004,6 +1005,7 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
         # ( Whether to stop on hit, reason tuple, needle text. )
         ( True,  ktReason_Host_DriverNotLoaded,                     'Error opening VBoxDrvStub:  STATUS_OBJECT_NAME_NOT_FOUND' ),
         ( True,  ktReason_Host_NotSignedWithBuildCert,              'Not signed with the build certificate' ),
+        ( True,  ktReason_Host_TSTInfo_Accuracy_OOR,                'RTCRTSPTSTINFO::Accuracy::Millis: Out of range' ),
     ];
 
     ## Things we search a kernel.log file for to figure out why something went bust.
