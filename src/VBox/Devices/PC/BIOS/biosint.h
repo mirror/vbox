@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * PC BIOS - ???
+ * PC BIOS - BIOS internal definitions.
  */
 
 /*
