@@ -528,6 +528,7 @@ RuntimeR3_SOURCES       = \
 	common/path/RTPathJoin.cpp \
 	common/path/RTPathJoinA.cpp \
 	common/path/RTPathJoinEx.cpp \
+	common/path/RTPathParentLength.cpp \
 	common/path/RTPathParse.cpp \
 	common/path/RTPathParsedReassemble.cpp \
 	common/path/RTPathParseSimple.cpp \

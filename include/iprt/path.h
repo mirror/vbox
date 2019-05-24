@@ -539,7 +539,31 @@ RTDECL(bool) RTPathHasPath(const char *pszPath);
  */
 RTDECL(bool) RTPathStartsWithRoot(const char *pszPath);
 
+/**
+ * Determins the length of the parent part of the given path.
+ *
+ * @returns The length of the parent section of the path, including the final
+ *          path separator.  Returns 0 if only filename or empty path.
+ * @param   pszPath     The path to evaluate.
+ *
+ * @note    Will stop at the server for UNC paths, so given "//server/share/"
+ *          the parent length will be 9.
+ */
+RTDECL(size_t) RTPathParentLength(const char *pszPath);
 
+/**
+ * Determins the length of the parent part of the given path, extended variant.
+ *
+ * @returns The length of the parent section of the path, including the final
+ *          path separator.  Returns 0 if only filename or empty path.
+ * @param   pszPath     The path to evaluate.
+ * @param   fFlags      RTPATH_STR_F_STYLE_XXX and RTPATH_STR_F_NO_START.
+ *                      Asserts and ignores RTPATH_STR_F_NO_END.
+ *
+ * @note    Will stop at the server for UNC paths, so given "//server/share/"
+ *          the parent length will be 9.
+ */
+RTDECL(size_t) RTPathParentLengthEx(const char *pszPath, uint32_t fFlags);
 
 /**
  * Counts the components in the specified path.
