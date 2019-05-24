@@ -570,6 +570,7 @@ RuntimeR3_SOURCES       = \
 	common/string/RTStrStr.cpp \
 	common/string/RTUtf16Copy.cpp \
 	common/string/RTUtf16CopyAscii.cpp \
+	common/string/RTUtf16CopyEx.cpp \
 	common/string/RTUtf16Cat.cpp \
 	common/string/RTUtf16CatAscii.cpp \
 	common/string/RTUtf16Chr.cpp \
@@ -2913,6 +2914,7 @@ RuntimeR0Drv_SOURCES.win = \
 	common/string/RTStrPrintHexBytes.cpp \
 	common/string/RTUtf16Copy.cpp \
 	common/string/RTUtf16CopyAscii.cpp \
+	common/string/RTUtf16CopyEx.cpp \
 	common/string/RTUtf16Cat.cpp \
 	common/string/RTUtf16CatAscii.cpp \
 	common/string/RTUtf16End.cpp \
