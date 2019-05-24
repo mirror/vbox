@@ -13729,7 +13729,7 @@ HMVMX_EXIT_DECL hmR0VmxExitInvlpg(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
         rcStrict = VINF_SUCCESS;
     }
     else
-        AssertMsgFailed(("Unexpected IEMExecDecodedInvlpg(%#RX64) sttus: %Rrc\n", pVmxTransient->uExitQual,
+        AssertMsgFailed(("Unexpected IEMExecDecodedInvlpg(%#RX64) status: %Rrc\n", pVmxTransient->uExitQual,
                          VBOXSTRICTRC_VAL(rcStrict)));
     return rcStrict;
 }
@@ -13743,19 +13743,20 @@ HMVMX_EXIT_DECL hmR0VmxExitMonitor(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
 
     PCVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
-    int rc = hmR0VmxImportGuestState(pVCpu, pVmcsInfo, CPUMCTX_EXTRN_CR0 | CPUMCTX_EXTRN_RFLAGS | CPUMCTX_EXTRN_SS);
+    int rc = hmR0VmxImportGuestState(pVCpu, pVmcsInfo, IEM_CPUMCTX_EXTRN_EXEC_DECODED_MEM_MASK | CPUMCTX_EXTRN_DS);
+    rc    |= hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
     AssertRCReturn(rc, rc);
 
-    PCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
-    rc = EMInterpretMonitor(pVCpu->CTX_SUFF(pVM), pVCpu, CPUMCTX2CORE(pCtx));
-    if (RT_LIKELY(rc == VINF_SUCCESS))
-        rc = hmR0VmxAdvanceGuestRip(pVCpu, pVmxTransient);
-    else
+    VBOXSTRICTRC rcStrict = IEMExecDecodedMonitor(pVCpu, pVmxTransient->cbInstr);
+    if (rcStrict == VINF_SUCCESS)
+        ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS);
+    else if (rcStrict == VINF_IEM_RAISED_XCPT)
     {
-        AssertMsg(rc == VERR_EM_INTERPRETER, ("hmR0VmxExitMonitor: EMInterpretMonitor failed with %Rrc\n", rc));
-        rc = VERR_EM_INTERPRETER;
+        ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_RAISED_XCPT_MASK);
+        rcStrict = VINF_SUCCESS;
     }
-    return rc;
+
+    return rcStrict;
 }
 
 
@@ -13767,30 +13768,18 @@ HMVMX_EXIT_DECL hmR0VmxExitMwait(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
 
     PCVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
-    int rc = hmR0VmxImportGuestState(pVCpu, pVmcsInfo, CPUMCTX_EXTRN_CR0 | CPUMCTX_EXTRN_RFLAGS | CPUMCTX_EXTRN_SS);
+    int rc = hmR0VmxImportGuestState(pVCpu, pVmcsInfo, IEM_CPUMCTX_EXTRN_EXEC_DECODED_NO_MEM_MASK);
     AssertRCReturn(rc, rc);
 
-    PCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
-    VBOXSTRICTRC rc2 = EMInterpretMWait(pVCpu->CTX_SUFF(pVM), pVCpu, CPUMCTX2CORE(pCtx));
-    rc = VBOXSTRICTRC_VAL(rc2);
-    if (RT_LIKELY(   rc == VINF_SUCCESS
-                  || rc == VINF_EM_HALT))
+    VBOXSTRICTRC rcStrict = IEMExecDecodedMwait(pVCpu, pVmxTransient->cbInstr);
+    if (RT_SUCCESS(rcStrict))
     {
-        int rc3 = hmR0VmxAdvanceGuestRip(pVCpu, pVmxTransient);
-        AssertRCReturn(rc3, rc3);
+        ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS);
+        if (EMMonitorWaitShouldContinue(pVCpu, &pVCpu->cpum.GstCtx))
+            rcStrict = VINF_SUCCESS;
+    }
 
-        if (   rc == VINF_EM_HALT
-            && EMMonitorWaitShouldContinue(pVCpu, pCtx))
-            rc = VINF_SUCCESS;
-    }
-    else
-    {
-        AssertMsg(rc == VERR_EM_INTERPRETER, ("hmR0VmxExitMwait: EMInterpretMWait failed with %Rrc\n", rc));
-        rc = VERR_EM_INTERPRETER;
-    }
-    AssertMsg(rc == VINF_SUCCESS || rc == VINF_EM_HALT || rc == VERR_EM_INTERPRETER,
-              ("hmR0VmxExitMwait: failed, invalid error code %Rrc\n", rc));
-    return rc;
+    return rcStrict;
 }
 
 
