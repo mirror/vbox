@@ -3049,42 +3049,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrInvlpg(PVMCPU pVCpu, RTGCPTR GCPtrPage,
 IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrLmsw(PVMCPU pVCpu, uint32_t uGuestCr0, uint16_t *pu16NewMsw, RTGCPTR GCPtrEffDst,
                                               uint8_t cbInstr)
 {
-    /*
-     * LMSW VM-exits are subject to the CR0 guest/host mask and the CR0 read shadow.
-     *
-     * See Intel spec. 24.6.6 "Guest/Host Masks and Read Shadows for CR0 and CR4".
-     * See Intel spec. 25.1.3 "Instructions That Cause VM Exits Conditionally".
-     */
-    PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
-    Assert(pVmcs);
-    Assert(pu16NewMsw);
-
-    bool fIntercept = false;
-    uint32_t const fGstHostMask = pVmcs->u64Cr0Mask.u;
-    uint32_t const fReadShadow  = pVmcs->u64Cr0ReadShadow.u;
-
-    /*
-     * LMSW can never clear CR0.PE but it may set it. Hence, we handle the
-     * CR0.PE case first, before the rest of the bits in the MSW.
-     *
-     * If CR0.PE is owned by the host and CR0.PE differs between the
-     * MSW (source operand) and the read-shadow, we must cause a VM-exit.
-     */
-    if (    (fGstHostMask & X86_CR0_PE)
-        &&  (*pu16NewMsw  & X86_CR0_PE)
-        && !(fReadShadow  & X86_CR0_PE))
-        fIntercept = true;
-
-    /*
-     * If CR0.MP, CR0.EM or CR0.TS is owned by the host, and the corresponding
-     * bits differ between the MSW (source operand) and the read-shadow, we must
-     * cause a VM-exit.
-     */
-    uint32_t fGstHostLmswMask = fGstHostMask & (X86_CR0_MP | X86_CR0_EM | X86_CR0_TS);
-    if ((fReadShadow & fGstHostLmswMask) != (*pu16NewMsw & fGstHostLmswMask))
-        fIntercept = true;
-
-    if (fIntercept)
+    if (CPUMIsGuestVmxLmswInterceptSet(pVCpu, &pVCpu->cpum.GstCtx, *pu16NewMsw))
     {
         Log2(("lmsw: Guest intercept -> VM-exit\n"));
 
@@ -3114,8 +3079,12 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrLmsw(PVMCPU pVCpu, uint32_t uGuestCr0, 
      *
      * See Intel Spec. 25.3 "Changes To Instruction Behavior In VMX Non-root Operation".
      */
-    fGstHostLmswMask = fGstHostMask & (X86_CR0_PE | X86_CR0_MP | X86_CR0_EM | X86_CR0_TS);
-    *pu16NewMsw = (uGuestCr0 & fGstHostLmswMask) | (*pu16NewMsw & ~fGstHostLmswMask);
+    PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    Assert(pVmcs);
+    uint32_t const fGstHostMask     = pVmcs->u64Cr0Mask.u;
+    uint32_t const fGstHostLmswMask = fGstHostMask & (X86_CR0_PE | X86_CR0_MP | X86_CR0_EM | X86_CR0_TS);
+
+    *pu16NewMsw      = (uGuestCr0 & fGstHostLmswMask) | (*pu16NewMsw & ~fGstHostLmswMask);
 
     return VINF_VMX_INTERCEPT_NOT_ACTIVE;
 }
