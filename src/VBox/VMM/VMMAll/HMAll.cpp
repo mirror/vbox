@@ -788,9 +788,9 @@ VMM_INT_DECL(void) HMHCChangedPagingMode(PVM pVM, PVMCPU pVCpu, PGMMODE enmShado
         CPUM_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_CR0 | CPUMCTX_EXTRN_CR3 | CPUMCTX_EXTRN_CR4 | CPUMCTX_EXTRN_EFER); /* No recursion! */
         uint64_t fChanged = HM_CHANGED_GUEST_CR0 | HM_CHANGED_GUEST_CR3 | HM_CHANGED_GUEST_CR4 | HM_CHANGED_GUEST_EFER_MSR;
         if (pVM->hm.s.svm.fSupported)
-            fChanged |= HM_CHANGED_SVM_GUEST_XCPT_INTERCEPTS;
+            fChanged |= HM_CHANGED_SVM_XCPT_INTERCEPTS;
         else
-            fChanged |= HM_CHANGED_VMX_GUEST_XCPT_INTERCEPTS | HM_CHANGED_VMX_ENTRY_EXIT_CTLS;
+            fChanged |= HM_CHANGED_VMX_XCPT_INTERCEPTS | HM_CHANGED_VMX_ENTRY_EXIT_CTLS;
         ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, fChanged);
     }
 # endif

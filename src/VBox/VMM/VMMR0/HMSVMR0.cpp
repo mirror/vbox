@@ -2175,7 +2175,7 @@ static void hmR0SvmExportGuestXcptIntercepts(PVMCPU pVCpu, PSVMVMCB pVmcb)
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 
     /* If we modify intercepts from here, please check & adjust hmR0SvmMergeVmcbCtrlsNested() if required. */
-    if (pVCpu->hm.s.fCtxChanged & HM_CHANGED_SVM_GUEST_XCPT_INTERCEPTS)
+    if (pVCpu->hm.s.fCtxChanged & HM_CHANGED_SVM_XCPT_INTERCEPTS)
     {
         /* Trap #UD for GIM provider (e.g. for hypercalls). */
         if (pVCpu->hm.s.fGIMTrapXcptUD)
@@ -2190,7 +2190,7 @@ static void hmR0SvmExportGuestXcptIntercepts(PVMCPU pVCpu, PSVMVMCB pVmcb)
             hmR0SvmClearXcptIntercept(pVCpu, pVmcb, X86_XCPT_BP);
 
         /* The remaining intercepts are handled elsewhere, e.g. in hmR0SvmExportGuestCR0(). */
-        pVCpu->hm.s.fCtxChanged &= ~HM_CHANGED_SVM_GUEST_XCPT_INTERCEPTS;
+        pVCpu->hm.s.fCtxChanged &= ~HM_CHANGED_SVM_XCPT_INTERCEPTS;
     }
 }
 
@@ -2486,7 +2486,7 @@ static int hmR0SvmExportGuestState(PVMCPU pVCpu)
                                                   |  HM_CHANGED_GUEST_TSC_AUX
                                                   |  HM_CHANGED_GUEST_OTHER_MSRS
                                                   |  HM_CHANGED_GUEST_HWVIRT
-                                                  | (HM_CHANGED_KEEPER_STATE_MASK & ~HM_CHANGED_SVM_GUEST_XCPT_INTERCEPTS)));
+                                                  | (HM_CHANGED_KEEPER_STATE_MASK & ~HM_CHANGED_SVM_XCPT_INTERCEPTS)));
 
 #ifdef VBOX_STRICT
     /*
@@ -2714,7 +2714,7 @@ static int hmR0SvmExportGuestStateNested(PVMCPU pVCpu)
                                                   |  HM_CHANGED_GUEST_XCRx
                                                   |  HM_CHANGED_GUEST_TSC_AUX
                                                   |  HM_CHANGED_GUEST_OTHER_MSRS
-                                                  |  HM_CHANGED_SVM_GUEST_XCPT_INTERCEPTS
+                                                  |  HM_CHANGED_SVM_XCPT_INTERCEPTS
                                                   | (HM_CHANGED_KEEPER_STATE_MASK & ~HM_CHANGED_SVM_MASK)));
 
 #ifdef VBOX_STRICT
