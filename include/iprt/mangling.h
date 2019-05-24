@@ -3800,6 +3800,7 @@
 # define RTUInt128MulByU64_EndProc                      RT_MANGLER(RTUInt128MulByU64_EndProc)
 # define RTUtf16Copy                                    RT_MANGLER(RTUtf16Copy)
 # define RTUtf16CopyAscii                               RT_MANGLER(RTUtf16CopyAscii)
+# define RTUtf16CopyEx                                  RT_MANGLER(RTUtf16CopyEx)
 # define RTUtf16Cat                                     RT_MANGLER(RTUtf16Cat)
 # define RTUtf16CatAscii                                RT_MANGLER(RTUtf16CatAscii)
 # define RTUtf16Chr                                     RT_MANGLER(RTUtf16Chr)
