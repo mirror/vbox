@@ -3083,8 +3083,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrLmsw(PVMCPU pVCpu, uint32_t uGuestCr0, 
     Assert(pVmcs);
     uint32_t const fGstHostMask     = pVmcs->u64Cr0Mask.u;
     uint32_t const fGstHostLmswMask = fGstHostMask & (X86_CR0_PE | X86_CR0_MP | X86_CR0_EM | X86_CR0_TS);
-
-    *pu16NewMsw      = (uGuestCr0 & fGstHostLmswMask) | (*pu16NewMsw & ~fGstHostLmswMask);
+    *pu16NewMsw = (uGuestCr0 & fGstHostLmswMask) | (*pu16NewMsw & ~fGstHostLmswMask);
 
     return VINF_VMX_INTERCEPT_NOT_ACTIVE;
 }
