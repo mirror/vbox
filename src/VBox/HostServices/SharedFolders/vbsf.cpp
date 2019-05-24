@@ -56,8 +56,14 @@
 *********************************************************************************************************************************/
 #define SHFL_RT_LINK(pClient) ((pClient)->fu32Flags & SHFL_CF_SYMLINKS ? RTPATH_F_ON_LINK : RTPATH_F_FOLLOW_LINK)
 
+/**
+ * @todo find a better solution for supporting the execute bit for non-windows
+ * guests on windows host. Search for "0111" to find all the relevant places.
+ */
+
 
 #ifndef RT_OS_WINDOWS
+
 /**
  * Helps to check if pszPath deserves a VERR_PATH_NOT_FOUND status when catering
  * to windows guests.
@@ -83,13 +89,95 @@ static bool vbsfErrorStyleIsWindowsPathNotFound(char *pszPath)
         return true;
     return false;
 }
-#endif /* RT_OS_WINDOWS */
-
 
 /**
- * @todo find a better solution for supporting the execute bit for non-windows
- * guests on windows host. Search for "0111" to find all the relevant places.
+ * Helps to check if pszPath deserves a VERR_PATH_NOT_FOUND status when catering
+ * to windows guests.
  */
+static bool vbsfErrorStyleIsWindowsPathNotFound2(char *pszSrcPath, char *pszDstPath)
+{
+    /*
+     * Do the source parent first.
+     */
+    size_t cchParent = RTPathParentLength(pszSrcPath);
+    char chSaved = pszSrcPath[cchParent];
+    pszSrcPath[cchParent] = '\0';
+    RTFSOBJINFO ObjInfo;
+    int vrc = RTPathQueryInfoEx(pszSrcPath, &ObjInfo, RTFSOBJATTRADD_NOTHING, RTPATH_F_FOLLOW_LINK);
+    pszSrcPath[cchParent] = chSaved;
+    if (   (RT_SUCCESS(vrc) && !RTFS_IS_DIRECTORY(ObjInfo.Attr.fMode))
+        || vrc == VERR_FILE_NOT_FOUND
+        || vrc == VERR_PATH_NOT_FOUND)
+        return true;
+    if (RT_FAILURE(vrc))
+        return false;
+
+    /*
+     * The source itself.
+     */
+    vrc = RTPathQueryInfoEx(pszSrcPath, &ObjInfo, RTFSOBJATTRADD_NOTHING, RTPATH_F_FOLLOW_LINK);
+    if (RT_SUCCESS(vrc))
+    {
+        /*
+         * The source is fine, continue with the destination.
+         */
+        cchParent = RTPathParentLength(pszDstPath);
+        chSaved = pszDstPath[cchParent];
+        pszDstPath[cchParent] = '\0';
+        vrc = RTPathQueryInfoEx(pszDstPath, &ObjInfo, RTFSOBJATTRADD_NOTHING, RTPATH_F_FOLLOW_LINK);
+        pszDstPath[cchParent] = chSaved;
+        if (   (RT_SUCCESS(vrc) && !RTFS_IS_DIRECTORY(ObjInfo.Attr.fMode))
+            || vrc == VERR_FILE_NOT_FOUND
+            || vrc == VERR_PATH_NOT_FOUND)
+            return true;
+    }
+    return false;
+}
+
+/**
+ * Helps checking if the specified path happens to exist but not be a directory.
+ */
+static bool vbsfErrorStyleIsWindowsNotADirectory(const char *pszPath)
+{
+    RTFSOBJINFO ObjInfo;
+    int vrc = RTPathQueryInfoEx(pszPath, &ObjInfo, RTFSOBJATTRADD_NOTHING, RTPATH_F_FOLLOW_LINK);
+    if (RT_SUCCESS(vrc))
+    {
+        if (RTFS_IS_DIRECTORY(ObjInfo.Attr.fMode))
+            return false;
+        return true;
+    }
+    return false;
+}
+
+/**
+ * Helps to check if pszPath deserves a VERR_INVALID_NAME status when catering
+ * to windows guests.
+ */
+static bool vbsfErrorStyleIsWindowsInvalidNameForNonDir(char *pszPath)
+{
+    /*
+     * This only applies to paths with trailing slashes.
+     */
+    size_t const cchPath = strlen(pszPath);
+    if (cchPath > 0 && RTPATH_IS_SLASH(pszPath[cchPath - 1]))
+    {
+        /*
+         * However it doesn't if an earlier path component is missing or not a file.
+         */
+        size_t cchParent = RTPathParentLength(pszPath);
+        char chSaved = pszPath[cchParent];
+        pszPath[cchParent] = '\0';
+        RTFSOBJINFO ObjInfo;
+        int vrc = RTPathQueryInfoEx(pszPath, &ObjInfo, RTFSOBJATTRADD_NOTHING, RTPATH_F_FOLLOW_LINK);
+        pszPath[cchParent] = chSaved;
+        if (RT_SUCCESS(vrc) && RTFS_IS_DIRECTORY(ObjInfo.Attr.fMode))
+            return true;
+    }
+    return false;
+}
+
+#endif /* RT_OS_WINDOWS */
 
 void vbsfStripLastComponent(char *pszFullPath, uint32_t cbFullPathRoot)
 {
@@ -529,6 +617,15 @@ static int vbsfOpenFile(SHFLCLIENTDATA *pClient, SHFLROOT root, char *pszPath, S
                 break;
 
             case VERR_PATH_NOT_FOUND:
+#ifndef RT_OS_WINDOWS
+                if (   SHFL_CLIENT_NEED_WINDOWS_ERROR_STYLE_ADJUST_ON_POSIX(pClient)
+                    && vbsfErrorStyleIsWindowsInvalidNameForNonDir(pszPath))
+                {
+                    rc = VERR_INVALID_NAME;
+                    pParms->Result = SHFL_NO_RESULT;
+                    break;
+                }
+#endif
                 pParms->Result = SHFL_PATH_NOT_FOUND;
                 fNoError = true; /* Not an error either (see above). */
                 break;
@@ -689,7 +786,6 @@ static int vbsfOpenDir(SHFLCLIENTDATA *pClient, SHFLROOT root, char *pszPath,
     if (0 != pHandle)
     {
         pHandle->root = root;
-        rc = VINF_SUCCESS;
         pParms->Result = SHFL_FILE_EXISTS;  /* May be overwritten with SHFL_FILE_CREATED. */
         /** @todo Can anyone think of a sensible, race-less way to do this?  Although
                   I suspect that the race is inherent, due to the API available... */
@@ -707,19 +803,33 @@ static int vbsfOpenDir(SHFLCLIENTDATA *pClient, SHFLROOT root, char *pszPath,
             rc = RTDirCreate(pszPath, fMode, 0);
             if (RT_FAILURE(rc))
             {
+                /** @todo we still return 'rc' as failure here, so this is mostly pointless.  */
                 switch (rc)
                 {
-                case VERR_ALREADY_EXISTS:
-                    pParms->Result = SHFL_FILE_EXISTS;
-                    break;
-                case VERR_PATH_NOT_FOUND:
-                    pParms->Result = SHFL_PATH_NOT_FOUND;
-                    break;
-                default:
-                    pParms->Result = SHFL_NO_RESULT;
+                    case VERR_ALREADY_EXISTS:
+                        pParms->Result = SHFL_FILE_EXISTS;
+                        break;
+                    case VERR_PATH_NOT_FOUND:
+                        pParms->Result = SHFL_PATH_NOT_FOUND;
+                        break;
+                    case VERR_FILE_NOT_FOUND: /* may happen on posix */
+                        pParms->Result = SHFL_FILE_NOT_FOUND;
+#ifndef RT_OS_WINDOWS
+                        if (   SHFL_CLIENT_NEED_WINDOWS_ERROR_STYLE_ADJUST_ON_POSIX(pClient)
+                            && vbsfErrorStyleIsWindowsPathNotFound(pszPath))
+                        {
+                            pParms->Result = SHFL_PATH_NOT_FOUND;
+                            rc = VERR_PATH_NOT_FOUND;
+                        }
+#endif
+                        break;
+                    default:
+                        pParms->Result = SHFL_NO_RESULT;
                 }
             }
         }
+        else
+            rc = VINF_SUCCESS;
         if (   RT_SUCCESS(rc)
             || (SHFL_CF_ACT_OPEN_IF_EXISTS == BIT_FLAG(pParms->CreateFlags, SHFL_CF_ACT_MASK_IF_EXISTS)))
         {
@@ -740,25 +850,34 @@ static int vbsfOpenDir(SHFLCLIENTDATA *pClient, SHFLROOT root, char *pszPath,
                 /** @todo we still return 'rc' as failure here, so this is mostly pointless.  */
                 switch (rc)
                 {
-                case VERR_FILE_NOT_FOUND:  /* Does this make sense? */
-                    pParms->Result = SHFL_FILE_NOT_FOUND;
+                    case VERR_FILE_NOT_FOUND:
+                        pParms->Result = SHFL_FILE_NOT_FOUND;
 #ifndef RT_OS_WINDOWS
-                    if (   SHFL_CLIENT_NEED_WINDOWS_ERROR_STYLE_ADJUST_ON_POSIX(pClient)
-                        && vbsfErrorStyleIsWindowsPathNotFound(pszPath))
-                    {
-                        pParms->Result = SHFL_PATH_NOT_FOUND;
-                        rc = VERR_PATH_NOT_FOUND;
-                    }
+                        if (   SHFL_CLIENT_NEED_WINDOWS_ERROR_STYLE_ADJUST_ON_POSIX(pClient)
+                            && vbsfErrorStyleIsWindowsPathNotFound(pszPath))
+                        {
+                            pParms->Result = SHFL_PATH_NOT_FOUND;
+                            rc = VERR_PATH_NOT_FOUND;
+                        }
 #endif
-                    break;
-                case VERR_PATH_NOT_FOUND:
-                    pParms->Result = SHFL_PATH_NOT_FOUND;
-                    break;
-                case VERR_ACCESS_DENIED:
-                    pParms->Result = SHFL_FILE_EXISTS;
-                    break;
-                default:
-                    pParms->Result = SHFL_NO_RESULT;
+                        break;
+                    case VERR_PATH_NOT_FOUND:
+                        pParms->Result = SHFL_PATH_NOT_FOUND;
+#ifndef RT_OS_WINDOWS
+                        if (   SHFL_CLIENT_NEED_WINDOWS_ERROR_STYLE_ADJUST_ON_POSIX(pClient)
+                            && vbsfErrorStyleIsWindowsNotADirectory(pszPath))
+                        {
+                            pParms->Result = SHFL_FILE_EXISTS;
+                            rc = VERR_NOT_A_DIRECTORY;
+                            break;
+                        }
+#endif
+                        break;
+                    case VERR_ACCESS_DENIED:
+                        pParms->Result = SHFL_FILE_EXISTS;
+                        break;
+                    default:
+                        pParms->Result = SHFL_NO_RESULT;
                 }
             }
         }
@@ -2260,6 +2379,26 @@ int vbsfRemove(SHFLCLIENTDATA *pClient, SHFLROOT root, PCSHFLSTRING pPath, uint3
                     rc = RTFileDelete(pszFullPath);
                 else
                     rc = RTDirRemove(pszFullPath);
+
+#if 0 //ndef RT_OS_WINDOWS
+                /* There are a few adjustments to be made here: */
+                if (   rc == VERR_FILE_NOT_FOUND
+                    && SHFL_CLIENT_NEED_WINDOWS_ERROR_STYLE_ADJUST_ON_POSIX(pClient)
+                    && vbsfErrorStyleIsWindowsPathNotFound(pszFullPath))
+                    rc = VERR_PATH_NOT_FOUND;
+                else if (   rc == VERR_PATH_NOT_FOUND
+                         && SHFL_CLIENT_NEED_WINDOWS_ERROR_STYLE_ADJUST_ON_POSIX(pClient))
+                {
+                    if (flags & (SHFL_REMOVE_FILE | SHFL_REMOVE_SYMLINK))
+                    {
+                        size_t cchFullPath = strlen(pszFullPath);
+                        if (cchFullPath > 0 && RTPATH_IS_SLASH(pszFullPath[cchFullPath - 1]))
+                            rc = VERR_INVALID_NAME;
+                    }
+                    else if (vbsfErrorStyleIsWindowsNotADirectory(pszFullPath))
+                        rc = VERR_NOT_A_DIRECTORY;
+                }
+#endif
             }
             else
                 rc = VERR_WRITE_PROTECT;
@@ -2326,14 +2465,20 @@ int vbsfRename(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pSrc, SHFLSTR
             else if (flags & SHFL_RENAME_FILE)
             {
                 rc = RTFileMove(pszFullPathSrc, pszFullPathDest,
-                                  ((flags & SHFL_RENAME_REPLACE_IF_EXISTS) ? RTFILEMOVE_FLAGS_REPLACE : 0));
+                                ((flags & SHFL_RENAME_REPLACE_IF_EXISTS) ? RTFILEMOVE_FLAGS_REPLACE : 0));
             }
             else
             {
                 /* NT ignores the REPLACE flag and simply return and already exists error. */
                 rc = RTDirRename(pszFullPathSrc, pszFullPathDest,
-                                   ((flags & SHFL_RENAME_REPLACE_IF_EXISTS) ? RTPATHRENAME_FLAGS_REPLACE : 0));
+                                 ((flags & SHFL_RENAME_REPLACE_IF_EXISTS) ? RTPATHRENAME_FLAGS_REPLACE : 0));
             }
+#ifndef RT_OS_WINDOWS
+            if (   rc == VERR_FILE_NOT_FOUND
+                && SHFL_CLIENT_NEED_WINDOWS_ERROR_STYLE_ADJUST_ON_POSIX(pClient)
+                && vbsfErrorStyleIsWindowsPathNotFound2(pszFullPathSrc, pszFullPathDest))
+                rc = VERR_PATH_NOT_FOUND;
+#endif
         }
 
         /* free the path string */
@@ -2490,3 +2635,4 @@ int vbsfDisconnect(SHFLCLIENTDATA *pClient)
 
     return VINF_SUCCESS;
 }
+
