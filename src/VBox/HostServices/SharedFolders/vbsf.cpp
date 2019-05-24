@@ -57,6 +57,35 @@
 #define SHFL_RT_LINK(pClient) ((pClient)->fu32Flags & SHFL_CF_SYMLINKS ? RTPATH_F_ON_LINK : RTPATH_F_FOLLOW_LINK)
 
 
+#ifndef RT_OS_WINDOWS
+/**
+ * Helps to check if pszPath deserves a VERR_PATH_NOT_FOUND status when catering
+ * to windows guests.
+ */
+static bool vbsfErrorStyleIsWindowsPathNotFound(char *pszPath)
+{
+    /*
+     * Check if the parent directory actually exists.  We temporarily modify the path here.
+     */
+    size_t cchParent = RTPathParentLength(pszPath);
+    char chSaved = pszPath[cchParent];
+    pszPath[cchParent] = '\0';
+    RTFSOBJINFO ObjInfo;
+    int vrc = RTPathQueryInfoEx(pszPath, &ObjInfo, RTFSOBJATTRADD_NOTHING, RTPATH_F_FOLLOW_LINK);
+    pszPath[cchParent] = chSaved;
+    if (RT_SUCCESS(vrc))
+    {
+        if (RTFS_IS_DIRECTORY(ObjInfo.Attr.fMode))
+            return false;
+        return true;
+    }
+    if (vrc == VERR_FILE_NOT_FOUND || vrc == VERR_PATH_NOT_FOUND)
+        return true;
+    return false;
+}
+#endif /* RT_OS_WINDOWS */
+
+
 /**
  * @todo find a better solution for supporting the execute bit for non-windows
  * guests on windows host. Search for "0111" to find all the relevant places.
@@ -450,7 +479,7 @@ static int vbsfConvertFileOpenFlags(bool fWritable, unsigned fShflFlags, RTFMODE
  *                               created
  * @retval pParms @a Info        On success the parameters of the file opened or created
  */
-static int vbsfOpenFile(SHFLCLIENTDATA *pClient, SHFLROOT root, const char *pszPath, SHFLCREATEPARMS *pParms)
+static int vbsfOpenFile(SHFLCLIENTDATA *pClient, SHFLROOT root, char *pszPath, SHFLCREATEPARMS *pParms)
 {
     LogFlow(("vbsfOpenFile: pszPath = %s, pParms = %p\n", pszPath, pParms));
     Log(("SHFL create flags %08x\n", pParms->CreateFlags));
@@ -489,7 +518,11 @@ static int vbsfOpenFile(SHFLCLIENTDATA *pClient, SHFLROOT root, const char *pszP
         {
             case VERR_FILE_NOT_FOUND:
                 pParms->Result = SHFL_FILE_NOT_FOUND;
-
+#ifndef RT_OS_WINDOWS
+                if (   SHFL_CLIENT_NEED_WINDOWS_ERROR_STYLE_ADJUST_ON_POSIX(pClient)
+                    && vbsfErrorStyleIsWindowsPathNotFound(pszPath))
+                    pParms->Result = SHFL_PATH_NOT_FOUND;
+#endif
                 /* This actually isn't an error, so correct the rc before return later,
                    because the driver (VBoxSF.sys) expects rc = VINF_SUCCESS and checks the result code. */
                 fNoError = true;
@@ -644,7 +677,7 @@ static int vbsfOpenFile(SHFLCLIENTDATA *pClient, SHFLROOT root, const char *pszP
  *
  * @note folders are created with fMode = 0777
  */
-static int vbsfOpenDir(SHFLCLIENTDATA *pClient, SHFLROOT root, const char *pszPath,
+static int vbsfOpenDir(SHFLCLIENTDATA *pClient, SHFLROOT root, char *pszPath,
                        SHFLCREATEPARMS *pParms)
 {
     LogFlow(("vbsfOpenDir: pszPath = %s, pParms = %p\n", pszPath, pParms));
@@ -704,10 +737,19 @@ static int vbsfOpenDir(SHFLCLIENTDATA *pClient, SHFLROOT root, const char *pszPa
             }
             else
             {
+                /** @todo we still return 'rc' as failure here, so this is mostly pointless.  */
                 switch (rc)
                 {
                 case VERR_FILE_NOT_FOUND:  /* Does this make sense? */
                     pParms->Result = SHFL_FILE_NOT_FOUND;
+#ifndef RT_OS_WINDOWS
+                    if (   SHFL_CLIENT_NEED_WINDOWS_ERROR_STYLE_ADJUST_ON_POSIX(pClient)
+                        && vbsfErrorStyleIsWindowsPathNotFound(pszPath))
+                    {
+                        pParms->Result = SHFL_PATH_NOT_FOUND;
+                        rc = VERR_PATH_NOT_FOUND;
+                    }
+#endif
                     break;
                 case VERR_PATH_NOT_FOUND:
                     pParms->Result = SHFL_PATH_NOT_FOUND;

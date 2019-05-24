@@ -65,5 +65,15 @@ typedef struct SHFLCLIENTDATA
 /** Pointer to a SHFLCLIENTDATA structure. */
 typedef SHFLCLIENTDATA *PSHFLCLIENTDATA;
 
+
+/** @def SHFL_CLIENT_NEED_WINDOWS_ERROR_STYLE_ADJUST
+ * Whether to make windows error style adjustments on a posix host.
+ * This always returns false on windows hosts. */
+#ifdef RT_OS_WINDOWS
+# define SHFL_CLIENT_NEED_WINDOWS_ERROR_STYLE_ADJUST_ON_POSIX(a_pClient) (false)
+#else
+# define SHFL_CLIENT_NEED_WINDOWS_ERROR_STYLE_ADJUST_ON_POSIX(a_pClient) ((a_pClient)->enmErrorStyle == kShflErrorStyle_Windows)
+#endif
+
 #endif /* !VBOX_INCLUDED_SRC_SharedFolders_shfl_h */
 
