@@ -38,6 +38,8 @@
 #  include <iprt/cpp/ministring.h> /* For RTCString. */
 #  include <iprt/win/shlobj.h> /* For DROPFILES and friends. */
 #  include <oleidl.h>
+
+# include <VBox/GuestHost/SharedClipboard-uri.h>
 # endif
 
 #ifndef WM_CLIPBOARDUPDATE
@@ -94,6 +96,8 @@ class VBoxClipboardWinDataObject;
  */
 typedef struct _VBOXCLIPBOARDWINURITRANSFER
 {
+    /** The Shared Clipboard provider in charge for this transfer. */
+    SharedClipboardProvider     Provider;
     /** Pointer to data object to use for this transfer. */
     VBoxClipboardWinDataObject *pDataObj;
 } VBOXCLIPBOARDWINURITRANSFER, *PVBOXCLIPBOARDWINURITRANSFER;
@@ -180,7 +184,8 @@ public:
 
 public:
 
-    VBoxClipboardWinDataObject(LPFORMATETC pFormatEtc = NULL, LPSTGMEDIUM pStgMed = NULL, ULONG cFormats = 0);
+    VBoxClipboardWinDataObject(SharedClipboardProvider *pProvider,
+                               LPFORMATETC pFormatEtc = NULL, LPSTGMEDIUM pStgMed = NULL, ULONG cFormats = 0);
     virtual ~VBoxClipboardWinDataObject(void);
 
 public: /* IUnknown methods. */
@@ -213,7 +218,7 @@ public: /* IDataObjectAsyncCapability methods. */
 
 public:
 
-    int Init(uint32_t idClient);
+    int Init(void);
     static const char* ClipboardFormatToString(CLIPFORMAT fmt);
 
 protected:
@@ -221,20 +226,21 @@ protected:
     static int Thread(RTTHREAD hThread, void *pvUser);
 
     int copyToHGlobal(const void *pvData, size_t cbData, UINT fFlags, HGLOBAL *phGlobal);
-    int createFileGroupDescriptor(const SharedClipboardURIList &URIList, HGLOBAL *phGlobal);
+    int createFileGroupDescriptor(const SharedClipboardURIList &URIList, bool fUnicode, HGLOBAL *phGlobal);
 
     bool lookupFormatEtc(LPFORMATETC pFormatEtc, ULONG *puIndex);
     void registerFormat(LPFORMATETC pFormatEtc, CLIPFORMAT clipFormat, TYMED tyMed = TYMED_HGLOBAL,
                         LONG lindex = -1, DWORD dwAspect = DVASPECT_CONTENT, DVTARGETDEVICE *pTargetDevice = NULL);
 
-    Status      mStatus;
-    LONG        mRefCount;
-    ULONG       mcFormats;
-    LPFORMATETC mpFormatEtc;
-    LPSTGMEDIUM mpStgMedium;
-    /** The HGCM client ID for the URI data transfers. */
-    uint32_t    muClientID;
-    IStream    *mpStream;
+protected:
+
+    Status                   m_enmStatus;
+    LONG                     m_lRefCount;
+    ULONG                    m_cFormats;
+    LPFORMATETC              m_pFormatEtc;
+    LPSTGMEDIUM              m_pStgMedium;
+    SharedClipboardProvider *m_pProvider;
+    IStream                 *m_pStream;
 };
 
 class VBoxClipboardWinEnumFormatEtc : public IEnumFORMATETC
@@ -278,7 +284,7 @@ class VBoxClipboardWinStreamImpl : public IStream
 {
 public:
 
-    VBoxClipboardWinStreamImpl(void);
+    VBoxClipboardWinStreamImpl(SharedClipboardProvider *pProvider);
     virtual ~VBoxClipboardWinStreamImpl(void);
 
 public: /* IUnknown methods. */
@@ -303,11 +309,14 @@ public: /* IStream methods. */
 
 public: /* Own methods. */
 
-    static HRESULT Create(IStream **ppStream);
+    static HRESULT Create(SharedClipboardProvider *pProvider, IStream **ppStream);
 
 private:
 
-    LONG        m_lRefCount;
+    /** The stream object's current reference count. */
+    LONG                     m_lRefCount;
+    /** Pointer to the associated Shared Clipboard provider. */
+    SharedClipboardProvider *m_pProvider;
 };
 
 # endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */

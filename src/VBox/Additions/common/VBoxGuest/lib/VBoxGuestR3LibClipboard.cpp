@@ -35,8 +35,14 @@
 #include <VBox/HostServices/VBoxClipboardSvc.h>
 #include <VBox/err.h>
 #include <iprt/assert.h>
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+# include <iprt/dir.h>
+# include <iprt/file.h>
+# include <iprt/path.h>
+#endif
 #include <iprt/string.h>
 #include <iprt/cpp/ministring.h>
+
 #include "VBoxGuestR3LibInternal.h"
 
 
@@ -44,8 +50,9 @@
 *   Prototypes                                                                                                                   *
 *********************************************************************************************************************************/
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
-static int vbglR3ClipboardSendErrorInternal(HGCMCLIENTID idClient, int rcErr);
-static int vbglR3ClipboardSendURIData(HGCMCLIENTID idClient, const void *pvData, size_t cbData);
+static int vbglR3ClipboardWriteErrorInternal(HGCMCLIENTID idClient, int rcErr);
+static int vbglR3ClipboardReadURIData(HGCMCLIENTID idClient, PVBOXCLIPBOARDDATAHDR pDataHdr);
+static int vbglR3ClipboardWriteURIData(HGCMCLIENTID idClient, const void *pvData, size_t cbData);
 #endif
 
 
@@ -153,19 +160,20 @@ VBGLR3DECL(int) VbglR3ClipboardReadData(HGCMCLIENTID idClient, uint32_t fFormat,
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
 /**
- * Reads the meta data header from the host.
+ * Reads a (meta) data header from the host.
  *
  * @returns IPRT status code.
  * @param   idClient            The client id returned by VbglR3ClipboardConnect().
  * @param   pDataHdr            Where to store the read meta data header.
  */
-static int vbglR3ClipboardReadMetaDataHdr(HGCMCLIENTID idClient, PVBOXDNDSNDDATAHDR pDataHdr)
+static int vbglR3ClipboardReadDataHdr(HGCMCLIENTID idClient, PVBOXCLIPBOARDDATAHDR pDataHdr)
 {
     AssertPtrReturn(pDataHdr, VERR_INVALID_POINTER);
 
-    VBOXDNDHGSENDDATAHDRMSG Msg;
+    VBoxClipboardReadDataHdrMsg Msg;
     RT_ZERO(Msg);
-    VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient, HOST_DND_HG_SND_DATA_HDR, 12);
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient,
+                       VBOX_SHARED_CLIPBOARD_FN_READ_DATA_HDR, VBOX_SHARED_CLIPBOARD_CPARMS_READ_DATA_HDR);
     Msg.uContext.SetUInt32(0);
     Msg.uFlags.SetUInt32(0);
     Msg.uScreenId.SetUInt32(0);
@@ -199,7 +207,58 @@ static int vbglR3ClipboardReadMetaDataHdr(HGCMCLIENTID idClient, PVBOXDNDSNDDATA
 }
 
 /**
- * Helper function for reading the actual clipboard meta data from the host. Do not call directly.
+ * Reads a (meta) data chunk from the host.
+ *
+ * @returns IPRT status code.
+ * @param   idClient            The client id returned by VbglR3ClipboardConnect().
+ * @param   pDataHdr            Data header to use. Need for accounting and stuff.
+ * @param   pvData              Where to store the received data from the host.
+ * @param   cbData              Size (in bytes) of where to store the received data.
+ * @param   pcbDataRecv         Where to store the received amount of data (in bytes).
+ */
+static int vbglR3ClipboardReadDataChunk(HGCMCLIENTID idClient, PVBOXCLIPBOARDDATAHDR pDataHdr,
+                                        void *pvData, uint32_t cbData, uint32_t *pcbDataRecv)
+{
+    AssertPtrReturn(pDataHdr,        VERR_INVALID_POINTER);
+    AssertPtrReturn(pvData,          VERR_INVALID_POINTER);
+    AssertReturn(cbData,             VERR_INVALID_PARAMETER);
+    AssertPtrNullReturn(pcbDataRecv, VERR_INVALID_POINTER);
+
+    LogFlowFunc(("pvDate=%p, cbData=%RU32\n", pvData, cbData));
+
+    VBoxClipboardReadDataChunkMsg Msg;
+    RT_ZERO(Msg);
+
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient,
+                       VBOX_SHARED_CLIPBOARD_FN_READ_DATA_CHUNK, VBOX_SHARED_CLIPBOARD_CPARMS_READ_DATA_CHUNK);
+    Msg.pvData.SetPtr(pvData, cbData);
+    Msg.cbData.SetUInt32(0);
+    Msg.pvChecksum.SetPtr(NULL, 0);
+    Msg.cbChecksum.SetUInt32(0);
+
+    int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
+    if (RT_SUCCESS(rc))
+    {
+        uint32_t cbDataRecv;
+        rc = Msg.cbData.GetUInt32(&cbDataRecv);
+        AssertRC(rc);
+        if (RT_SUCCESS(rc))
+        {
+            /** @todo Use checksum for validating the received data. */
+            if (pcbDataRecv)
+                *pcbDataRecv = cbDataRecv;
+            LogFlowFuncLeaveRC(rc);
+            return rc;
+        }
+    }
+
+    /* failure */
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+/**
+ * Helper function for reading the actual clipboard (meta) data from the host. Do not call directly.
  *
  * @returns IPRT status code.
  * @param   idClient            The client id returned by VbglR3ClipboardConnect().
@@ -207,7 +266,7 @@ static int vbglR3ClipboardReadMetaDataHdr(HGCMCLIENTID idClient, PVBOXDNDSNDDATA
  * @param   ppvData             Returns the received meta data. Needs to be free'd by the caller.
  * @param   pcbData             Where to store the size (in bytes) of the received meta data.
  */
-static int vbglR3ClipboardReadMetaDataLoop(HGCMCLIENTID idClient, PVBOXDNDSNDDATAHDR pDataHdr,
+static int vbglR3ClipboardReadMetaDataLoop(HGCMCLIENTID idClient, PVBOXCLIPBOARDDATAHDR pDataHdr,
                                            void **ppvData, uint64_t *pcbData)
 {
     AssertPtrReturn(pDataHdr, VERR_INVALID_POINTER);
@@ -219,7 +278,7 @@ static int vbglR3ClipboardReadMetaDataLoop(HGCMCLIENTID idClient, PVBOXDNDSNDDAT
 
     LogFlowFuncEnter();
 
-    rc = vbglR3DnDHGRecvDataHdr(pCtx, pDataHdr);
+    rc = vbglR3ClipboardReadDataHdr(idClient, pDataHdr);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -233,12 +292,14 @@ static int vbglR3ClipboardReadMetaDataLoop(HGCMCLIENTID idClient, PVBOXDNDSNDDAT
 
         if (RT_SUCCESS(rc))
         {
+            const uint32_t cbMaxChunkSize = VBOX_SHARED_CLIPBOARD_MAX_CHUNK_SIZE;
+
             uint8_t *pvDataOff = (uint8_t *)pvDataTmp;
             while (cbDataTmp < pDataHdr->cbMeta)
             {
-                rc = vbglR3DnDHGRecvDataRaw(pCtx, pDataHdr,
-                                            pvDataOff, RT_MIN(pDataHdr->cbMeta - cbDataTmp, pCtx->cbMaxChunkSize),
-                                            &cbDataRecv);
+                rc = vbglR3ClipboardReadDataChunk(idClient, pDataHdr,
+                                                  pvDataOff, RT_MIN(pDataHdr->cbMeta - cbDataTmp, cbMaxChunkSize),
+                                                  &cbDataRecv);
                 if (RT_SUCCESS(rc))
                 {
                     LogFlowFunc(("cbDataRecv=%RU32, cbDataTmp=%RU64\n", cbDataRecv, cbDataTmp));
@@ -289,23 +350,20 @@ static int vbglR3ClipboardReadMetaDataMainEx(HGCMCLIENTID                 idClie
 {
     /* The rest is optional. */
 
-    VBOXDNDDATAHDR dataHdr;
+    VBOXCLIPBOARDDATAHDR dataHdr;
     RT_ZERO(dataHdr);
 
-    AssertMsg(pCtx->cbMaxChunkSize, ("Maximum chunk size must not be 0\n"));
-
-    dataHdr.cbMetaFmt = pCtx->cbMaxChunkSize;
+    dataHdr.cbMetaFmt = VBOX_SHARED_CLIPBOARD_MAX_CHUNK_SIZE;
     dataHdr.pvMetaFmt = RTMemAlloc(dataHdr.cbMetaFmt);
     if (!dataHdr.pvMetaFmt)
         return VERR_NO_MEMORY;
 
-    DnDURIList lstURI;
-    DnDDroppedFiles droppedFiles;
+    SharedClipboardURIList lstURI;
 
     void    *pvData = NULL;
     uint64_t cbData = 0;
 
-    int rc = vbglR3DnDHGRecvDataLoop(pCtx, &dataHdr, &pvData, &cbData);
+    int rc = vbglR3ClipboardReadMetaDataLoop(idClient, &dataHdr, &pvData, &cbData);
     if (RT_SUCCESS(rc))
     {
         /**
@@ -318,14 +376,14 @@ static int vbglR3ClipboardReadMetaDataMainEx(HGCMCLIENTID                 idClie
          */
         Assert(dataHdr.cbMetaFmt);
         AssertPtr(dataHdr.pvMetaFmt);
-        if (DnDMIMEHasFileURLs((char *)dataHdr.pvMetaFmt, dataHdr.cbMetaFmt)) /* URI data. */
+        if (SharedClipboardMIMEHasFileURLs((char *)dataHdr.pvMetaFmt, dataHdr.cbMetaFmt)) /* URI data. */
         {
             AssertPtr(pvData);
             Assert(cbData);
 
             rc = lstURI.SetFromURIData(pvData, cbData, 0 /* fFlags */);
             if (RT_SUCCESS(rc))
-                rc = vbglR3DnDHGRecvURIData(pCtx, &dataHdr, &droppedFiles);
+                rc = vbglR3ClipboardReadURIData(idClient, &dataHdr);
 
             if (RT_SUCCESS(rc)) /** @todo Remove this block as soon as we hand in DnDURIList. */
             {
@@ -336,7 +394,8 @@ static int vbglR3ClipboardReadMetaDataMainEx(HGCMCLIENTID                 idClie
                     pvData = NULL;
                 }
 
-                RTCString strData = lstURI.GetRootEntries(droppedFiles.GetDirAbs());
+            #if 0
+                RTCString strData = lstURI.GetRootEntries(clipboardCache.GetDirAbs());
                 Assert(!strData.isEmpty());
 
                 cbData = strData.length() + 1;
@@ -352,6 +411,7 @@ static int vbglR3ClipboardReadMetaDataMainEx(HGCMCLIENTID                 idClie
                 }
                 else
                     rc =  VERR_NO_MEMORY;
+            #endif
             }
         }
         else /* Raw data. */
@@ -382,10 +442,6 @@ static int vbglR3ClipboardReadMetaDataMainEx(HGCMCLIENTID                 idClie
     {
         if (pvData)
             RTMemFree(pvData);
-
-        int rc2 = VbglR3DnDHGSendProgress(pCtx, DND_PROGRESS_ERROR, 100 /* Percent */, rc);
-        if (RT_FAILURE(rc2))
-            LogFlowFunc(("Unable to send progress error %Rrc to host: %Rrc\n", rc, rc2));
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -408,6 +464,398 @@ static int vbglR3ClipboardReadMetaDataMain(HGCMCLIENTID idClient, PVBGLR3GUESTDN
                                                &pMeta->pvMeta,
                                                &pMeta->cbMeta);
     return rc;
+}
+
+/**
+ * Utility function to read a directory entry from the host.
+ *
+ * @returns IPRT status code.
+ * @param   idClient            The client id returned by VbglR3ClipboardConnect().
+ * @param   pszDirname          Where to store the directory name of the directory being created.
+ * @param   cbDirname           Size (in bytes) of where to store the directory name of the directory being created.
+ * @param   pcbDirnameRecv      Size (in bytes) of the actual directory name received.
+ * @param   pfMode              Where to store the directory creation mode.
+ */
+static int vbglR3ClipboardReadDir(HGCMCLIENTID idClient,
+                                  char     *pszDirname,
+                                  uint32_t  cbDirname,
+                                  uint32_t *pcbDirnameRecv,
+                                  uint32_t *pfMode)
+{
+    AssertPtrReturn(pszDirname,     VERR_INVALID_POINTER);
+    AssertReturn(cbDirname,         VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pcbDirnameRecv, VERR_INVALID_POINTER);
+    AssertPtrReturn(pfMode,         VERR_INVALID_POINTER);
+
+    VBoxClipboardReadDirMsg Msg;
+    RT_ZERO(Msg);
+
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient, VBOX_SHARED_CLIPBOARD_FN_READ_DIR, VBOX_SHARED_CLIPBOARD_CPARMS_READ_DIR);
+    /** @todo Context ID not used yet. */
+    Msg.uContext.SetUInt32(0);
+    Msg.pvName.SetPtr(pszDirname, cbDirname);
+    Msg.cbName.SetUInt32(cbDirname);
+    Msg.fMode.SetUInt32(0);
+
+    int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
+    if (RT_SUCCESS(rc))
+    {
+        /** @todo Context ID not used yet. */
+        rc = Msg.cbName.GetUInt32(pcbDirnameRecv); AssertRC(rc);
+        rc = Msg.fMode.GetUInt32(pfMode);          AssertRC(rc);
+
+        AssertReturn(cbDirname >= *pcbDirnameRecv, VERR_TOO_MUCH_DATA);
+    }
+
+    return rc;
+}
+
+/**
+ * Utility function to receive a file header from the host.
+ *
+ * @returns IPRT status code.
+ * @param   idClient            The client id returned by VbglR3ClipboardConnect().
+ * @param   pszFilename         Where to store the file name of the file being transferred.
+ * @param   cbFilename          Size (in bytes) of where to store the file name of the file being transferred.
+ * @param   puFlags             File transfer flags. Currently not being used.
+ * @param   pfMode              Where to store the file creation mode.
+ * @param   pcbTotal            Where to store the file size (in bytes).
+ */
+static int vbglR3ClipboardReadFileHdr(HGCMCLIENTID  idClient,
+                                      char         *pszFilename,
+                                      uint32_t      cbFilename,
+                                      uint32_t     *puFlags,
+                                      uint32_t     *pfMode,
+                                      uint64_t     *pcbTotal)
+{
+    AssertPtrReturn(pszFilename, VERR_INVALID_POINTER);
+    AssertReturn(cbFilename,     VERR_INVALID_PARAMETER);
+    AssertPtrReturn(puFlags,     VERR_INVALID_POINTER);
+    AssertPtrReturn(pfMode,      VERR_INVALID_POINTER);
+    AssertReturn(pcbTotal,       VERR_INVALID_POINTER);
+
+    VBoxClipboardReadFileHdrMsg Msg;
+    RT_ZERO(Msg);
+
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient,
+                       VBOX_SHARED_CLIPBOARD_FN_READ_FILE_HDR, VBOX_SHARED_CLIPBOARD_CPARMS_READ_FILE_HDR);
+    Msg.uContext.SetUInt32(0); /** @todo Not used yet. */
+    Msg.pvName.SetPtr(pszFilename, cbFilename);
+    Msg.cbName.SetUInt32(cbFilename);
+    Msg.uFlags.SetUInt32(0);
+    Msg.fMode.SetUInt32(0);
+    Msg.cbTotal.SetUInt64(0);
+
+    int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
+    if (RT_SUCCESS(rc))
+    {
+        /** @todo Get context ID. */
+        rc = Msg.uFlags.GetUInt32(puFlags);   AssertRC(rc);
+        rc = Msg.fMode.GetUInt32(pfMode);     AssertRC(rc);
+        rc = Msg.cbTotal.GetUInt64(pcbTotal); AssertRC(rc);
+    }
+
+    return rc;
+}
+
+/**
+ * Utility function to receive a file data chunk from the host.
+ *
+ * @returns IPRT status code.
+ * @param   idClient            The client id returned by VbglR3ClipboardConnect().
+ * @param   pvData              Where to store the file data chunk.
+ * @param   cbData              Size (in bytes) of where to store the data chunk.
+ * @param   pcbDataRecv         Size (in bytes) of the actual data chunk size received.
+ */
+static int vbglR3ClipboardReadFileData(HGCMCLIENTID          idClient,
+                                       void                 *pvData,
+                                       uint32_t              cbData,
+                                       uint32_t             *pcbDataRecv)
+{
+    AssertPtrReturn(pvData,          VERR_INVALID_POINTER);
+    AssertReturn(cbData,             VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pcbDataRecv,     VERR_INVALID_POINTER);
+
+    VBoxClipboardReadFileDataMsg Msg;
+    RT_ZERO(Msg);
+
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient,
+                       VBOX_SHARED_CLIPBOARD_FN_READ_FILE_DATA, VBOX_SHARED_CLIPBOARD_CPARMS_READ_FILE_DATA);
+    Msg.uContext.SetUInt32(0);
+    Msg.pvData.SetPtr(pvData, cbData);
+    Msg.cbData.SetUInt32(0);
+    Msg.pvChecksum.SetPtr(NULL, 0);
+    Msg.cbChecksum.SetUInt32(0);
+
+    int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
+    if (RT_SUCCESS(rc))
+    {
+        /** @todo Context ID not used yet. */
+        rc = Msg.cbData.GetUInt32(pcbDataRecv); AssertRC(rc);
+        AssertReturn(cbData >= *pcbDataRecv, VERR_TOO_MUCH_DATA);
+        /** @todo Add checksum support. */
+    }
+
+    return rc;
+}
+
+/**
+ * Helper function for receiving URI data from the host. Do not call directly.
+ * This function also will take care of the file creation / locking on the guest.
+ *
+ * @returns IPRT status code.
+ * @param   idClient            The client id returned by VbglR3ClipboardConnect().
+ * @param   pDataHdr            Data header to use. Needed for accounting.
+ */
+static int vbglR3ClipboardReadURIData(HGCMCLIENTID idClient, PVBOXCLIPBOARDDATAHDR pDataHdr)
+{
+    AssertPtrReturn(pDataHdr,      VERR_INVALID_POINTER);
+
+    RT_NOREF(idClient, pDataHdr);
+
+#if 0
+
+    /* Only count the raw data minus the already received meta data. */
+    Assert(pDataHdr->cbTotal >= pDataHdr->cbMeta);
+    uint64_t cbToRecvBytes = pDataHdr->cbTotal - pDataHdr->cbMeta;
+    uint64_t cToRecvObjs   = pDataHdr->cObjects;
+
+    LogFlowFunc(("cbToRecvBytes=%RU64, cToRecvObjs=%RU64, (cbTotal=%RU64, cbMeta=%RU32)\n",
+                 cbToRecvBytes, cToRecvObjs, pDataHdr->cbTotal, pDataHdr->cbMeta));
+
+    /* Anything to do at all? */
+    /* Note: Do not check for cbToRecvBytes == 0 here, as this might be just
+     *       a bunch of 0-byte files to be transferred. */
+    if (!cToRecvObjs)
+        return VINF_SUCCESS;
+
+    /*
+     * Allocate temporary chunk buffer.
+     */
+    uint32_t cbChunkMax = VBOX_SHARED_CLIPBOARD_MAX_CHUNK_SIZE;
+    void *pvChunk = RTMemAlloc(cbChunkMax);
+    if (!pvChunk)
+        return VERR_NO_MEMORY;
+    uint32_t cbChunkRead   = 0;
+
+    uint64_t cbFileSize    = 0; /* Total file size (in bytes). */
+    uint64_t cbFileWritten = 0; /* Written bytes. */
+
+    char *pszDropDir = NULL;
+
+    int rc;
+
+    /*
+     * Enter the main loop of retieving files + directories.
+     */
+    SharedClipboardURIObject objFile(SharedClipboardURIObject::Type_File);
+
+    char szPathName[RTPATH_MAX] = { 0 };
+    uint32_t cbPathName = 0;
+    uint32_t fFlags     = 0;
+    uint32_t fMode      = 0;
+
+    do
+    {
+        LogFlowFunc(("Wating for new message ...\n"));
+
+        uint32_t uNextMsg;
+        uint32_t cNextParms;
+        rc = vbglR3DnDGetNextMsgType(idClient, &uNextMsg, &cNextParms, true /* fWait */);
+        if (RT_SUCCESS(rc))
+        {
+            LogFlowFunc(("uNextMsg=%RU32, cNextParms=%RU32\n", uNextMsg, cNextParms));
+
+            switch (uNextMsg)
+            {
+                case HOST_DND_HG_SND_DIR:
+                {
+                    rc = vbglR3ClipboardReadDir(idClient,
+                                                szPathName,
+                                                sizeof(szPathName),
+                                                &cbPathName,
+                                                &fMode);
+                    LogFlowFunc(("HOST_DND_HG_SND_DIR pszPathName=%s, cbPathName=%RU32, fMode=0x%x, rc=%Rrc\n",
+                                 szPathName, cbPathName, fMode, rc));
+
+                    char *pszPathAbs = RTPathJoinA(pszDropDir, szPathName);
+                    if (pszPathAbs)
+                    {
+#ifdef RT_OS_WINDOWS
+                        uint32_t fCreationMode = (fMode & RTFS_DOS_MASK) | RTFS_DOS_NT_NORMAL;
+#else
+                        uint32_t fCreationMode = (fMode & RTFS_UNIX_MASK) | RTFS_UNIX_IRWXU;
+#endif
+                        rc = RTDirCreate(pszPathAbs, fCreationMode, 0);
+                        /*if (RT_SUCCESS(rc))
+                            rc = pDroppedFiles->AddDir(pszPathAbs);*/
+
+                        if (RT_SUCCESS(rc))
+                        {
+                            Assert(cToRecvObjs);
+                            cToRecvObjs--;
+                        }
+
+                        RTStrFree(pszPathAbs);
+                    }
+                    else
+                        rc = VERR_NO_MEMORY;
+                    break;
+                }
+                case HOST_DND_HG_SND_FILE_HDR:
+                case HOST_DND_HG_SND_FILE_DATA:
+                {
+                    if (uNextMsg == HOST_DND_HG_SND_FILE_HDR)
+                    {
+                        rc = vbglR3ClipboardReadFileHdr(idClient,
+                                                        szPathName,
+                                                        sizeof(szPathName),
+                                                        &fFlags,
+                                                        &fMode,
+                                                        &cbFileSize);
+                        LogFlowFunc(("HOST_DND_HG_SND_FILE_HDR: "
+                                     "szPathName=%s, fFlags=0x%x, fMode=0x%x, cbFileSize=%RU64, rc=%Rrc\n",
+                                     szPathName, fFlags, fMode, cbFileSize, rc));
+                    }
+                    else
+                    {
+                        rc = vbglR3ClipboardReadFileData(idClient,
+                                                         pvChunk,
+                                                         cbChunkMax,
+                                                         &cbChunkRead);
+                        LogFlowFunc(("HOST_DND_HG_SND_FILE_DATA: "
+                                     "cbChunkRead=%RU32, rc=%Rrc\n", cbChunkRead, rc));
+                    }
+
+                    if (   RT_SUCCESS(rc)
+                        && uNextMsg == HOST_DND_HG_SND_FILE_HDR)
+                    {
+                        char *pszPathAbs = RTPathJoinA(pszDropDir, szPathName);
+                        if (pszPathAbs)
+                        {
+                            LogFlowFunc(("Opening pszPathName=%s, cbPathName=%RU32, fMode=0x%x, cbFileSize=%zu\n",
+                                         szPathName, cbPathName, fMode, cbFileSize));
+
+                            uint64_t fOpen  =   RTFILE_O_WRITE | RTFILE_O_DENY_WRITE
+                                              | RTFILE_O_CREATE_REPLACE;
+
+                            /* Is there already a file open, e.g. in transfer? */
+                            if (!objFile.IsOpen())
+                            {
+                                RTCString strPathAbs(pszPathAbs);
+#ifdef RT_OS_WINDOWS
+                                uint32_t fCreationMode = (fMode & RTFS_DOS_MASK) | RTFS_DOS_NT_NORMAL;
+#else
+                                uint32_t fCreationMode = (fMode & RTFS_UNIX_MASK) | RTFS_UNIX_IRUSR | RTFS_UNIX_IWUSR;
+#endif
+                                rc = objFile.OpenEx(strPathAbs, SharedClipboardURIObject::View_Target, fOpen, fCreationMode);
+                                if (RT_SUCCESS(rc))
+                                {
+                                    //rc = pDroppedFiles->AddFile(strPathAbs.c_str());
+                                    if (RT_SUCCESS(rc))
+                                    {
+                                        cbFileWritten = 0;
+                                        objFile.SetSize(cbFileSize);
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                AssertMsgFailed(("ObjType=%RU32\n", objFile.GetType()));
+                                rc = VERR_WRONG_ORDER;
+                            }
+
+                            RTStrFree(pszPathAbs);
+                        }
+                        else
+                            rc = VERR_NO_MEMORY;
+                    }
+
+                    if (   RT_SUCCESS(rc)
+                        && uNextMsg == HOST_DND_HG_SND_FILE_DATA
+                        && cbChunkRead)
+                    {
+                        uint32_t cbChunkWritten;
+                        rc = objFile.Write(pvChunk, cbChunkRead, &cbChunkWritten);
+                        if (RT_SUCCESS(rc))
+                        {
+                            LogFlowFunc(("HOST_DND_HG_SND_FILE_DATA "
+                                         "cbChunkRead=%RU32, cbChunkWritten=%RU32, cbFileWritten=%RU64 cbFileSize=%RU64\n",
+                                         cbChunkRead, cbChunkWritten, cbFileWritten + cbChunkWritten, cbFileSize));
+
+                            cbFileWritten += cbChunkWritten;
+
+                            Assert(cbChunkRead <= cbToRecvBytes);
+                            cbToRecvBytes -= cbChunkRead;
+                        }
+                    }
+
+                    /* Data transfer complete? Close the file. */
+                    bool fClose = objFile.IsComplete();
+                    if (fClose)
+                    {
+                        Assert(cToRecvObjs);
+                        cToRecvObjs--;
+                    }
+
+                    /* Only since protocol v2 we know the file size upfront. */
+                    Assert(cbFileWritten <= cbFileSize);
+
+                    if (fClose)
+                    {
+                        LogFlowFunc(("Closing file\n"));
+                        objFile.Close();
+                    }
+
+                    break;
+                }
+                default:
+                {
+                    LogFlowFunc(("Message %RU32 not supported\n", uNextMsg));
+                    rc = VERR_NOT_SUPPORTED;
+                    break;
+                }
+            }
+        }
+
+        if (RT_FAILURE(rc))
+            break;
+
+        LogFlowFunc(("cbToRecvBytes=%RU64, cToRecvObjs=%RU64\n", cbToRecvBytes, cToRecvObjs));
+        if (   !cbToRecvBytes
+            && !cToRecvObjs)
+        {
+            break;
+        }
+
+    } while (RT_SUCCESS(rc));
+
+    LogFlowFunc(("Loop ended with %Rrc\n", rc));
+
+    /* All URI data processed? */
+    if (rc == VERR_NO_DATA)
+        rc = VINF_SUCCESS;
+
+    /* Delete temp buffer again. */
+    if (pvChunk)
+        RTMemFree(pvChunk);
+
+    /* Cleanup on failure or if the user has canceled the operation or
+     * something else went wrong. */
+    if (RT_FAILURE(rc))
+    {
+        objFile.Close();
+    }
+    else
+    {
+        /** @todo Compare the URI list with the dirs/files we really transferred. */
+        /** @todo Implement checksum verification, if any. */
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+#endif
+    return 0;
 }
 #endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
 
@@ -468,7 +916,7 @@ VBGLR3DECL(int) VbglR3ClipboardWriteData(HGCMCLIENTID idClient, uint32_t fFormat
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
     if (fFormat == VBOX_SHARED_CLIPBOARD_FMT_URI_LIST)
     {
-        rc = vbglR3ClipboardSendURIData(idClient, pv, cb);
+        rc = vbglR3ClipboardWriteURIData(idClient, pv, cb);
     }
     else
 #else
@@ -479,7 +927,7 @@ VBGLR3DECL(int) VbglR3ClipboardWriteData(HGCMCLIENTID idClient, uint32_t fFormat
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
     if (RT_FAILURE(rc))
     {
-        int rc2 = vbglR3ClipboardSendErrorInternal(idClient, rc);
+        int rc2 = vbglR3ClipboardWriteErrorInternal(idClient, rc);
         if (RT_FAILURE(rc2))
             LogFlowFunc(("Unable to send error (%Rrc) to host, rc=%Rrc\n", rc, rc2));
     }
@@ -490,8 +938,7 @@ VBGLR3DECL(int) VbglR3ClipboardWriteData(HGCMCLIENTID idClient, uint32_t fFormat
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
 /**
- * Guest -> Host
- * Utility function to send clipboard data from guest to the host.
+ * Utility function to write clipboard data from guest to the host.
  *
  * @returns IPRT status code.
  * @param   idClient            The client id returned by VbglR3ClipboardConnect().
@@ -499,8 +946,8 @@ VBGLR3DECL(int) VbglR3ClipboardWriteData(HGCMCLIENTID idClient, uint32_t fFormat
  * @param   cbData              Size (in bytes) of data block to send.
  * @param   pDataHdr            Data header to use -- needed for accounting.
  */
-static int vbglR3ClipboardSendDataInternal(HGCMCLIENTID idClient,
-                                           void *pvData, uint64_t cbData, PVBOXCLIPBOARDDATAHDR pDataHdr)
+static int vbglR3ClipboardWriteDataInternal(HGCMCLIENTID idClient,
+                                            void *pvData, uint64_t cbData, PVBOXCLIPBOARDDATAHDR pDataHdr)
 {
     AssertPtrReturn(pvData,   VERR_INVALID_POINTER);
     AssertReturn(cbData,      VERR_INVALID_PARAMETER);
@@ -570,14 +1017,13 @@ static int vbglR3ClipboardSendDataInternal(HGCMCLIENTID idClient,
 }
 
 /**
- * Guest -> Host
- * Utility function to send a guest directory to the host.
+ * Utility function to write a guest directory to the host.
  *
  * @returns IPRT status code.
  * @param   idClient        The client id returned by VbglR3ClipboardConnect().
  * @param   pObj            URI object containing the directory to send.
  */
-static int vbglR3ClipboardSendDir(HGCMCLIENTID idClient, SharedClipboardURIObject *pObj)
+static int vbglR3ClipboardWriteDir(HGCMCLIENTID idClient, SharedClipboardURIObject *pObj)
 {
     AssertPtrReturn(pObj,                                         VERR_INVALID_POINTER);
     AssertReturn(pObj->GetType() == SharedClipboardURIObject::Type_Directory, VERR_INVALID_PARAMETER);
@@ -604,14 +1050,13 @@ static int vbglR3ClipboardSendDir(HGCMCLIENTID idClient, SharedClipboardURIObjec
 }
 
 /**
- * Guest -> Host
- * Utility function to send a file from the guest to the host.
+ * Utility function to write a file from the guest to the host.
  *
  * @returns IPRT status code.
  * @param   idClient            The client id returned by VbglR3ClipboardConnect().
  * @param   pObj                URI object containing the file to send.
  */
-static int vbglR3ClipboardSendFile(HGCMCLIENTID idClient, SharedClipboardURIObject *pObj)
+static int vbglR3ClipboardWriteFile(HGCMCLIENTID idClient, SharedClipboardURIObject *pObj)
 {
     AssertPtrReturn(pObj,                                    VERR_INVALID_POINTER);
     AssertReturn(pObj->GetType() == SharedClipboardURIObject::Type_File, VERR_INVALID_PARAMETER);
@@ -698,14 +1143,13 @@ static int vbglR3ClipboardSendFile(HGCMCLIENTID idClient, SharedClipboardURIObje
 }
 
 /**
- * Guest -> Host
- * Utility function to send an URI object from guest to the host.
+ * Utility function to write an URI object from guest to the host.
  *
  * @returns IPRT status code.
  * @param   idClient            The client id returned by VbglR3ClipboardConnect().
  * @param   pObj                URI object to send from guest to the host.
  */
-static int vbglR3ClipboardSendURIObject(HGCMCLIENTID idClient, SharedClipboardURIObject *pObj)
+static int vbglR3ClipboardWriteURIObject(HGCMCLIENTID idClient, SharedClipboardURIObject *pObj)
 {
     AssertPtrReturn(pObj, VERR_INVALID_POINTER);
 
@@ -714,11 +1158,11 @@ static int vbglR3ClipboardSendURIObject(HGCMCLIENTID idClient, SharedClipboardUR
     switch (pObj->GetType())
     {
         case SharedClipboardURIObject::Type_Directory:
-            rc = vbglR3ClipboardSendDir(idClient, pObj);
+            rc = vbglR3ClipboardWriteDir(idClient, pObj);
             break;
 
         case SharedClipboardURIObject::Type_File:
-            rc = vbglR3ClipboardSendFile(idClient, pObj);
+            rc = vbglR3ClipboardWriteFile(idClient, pObj);
             break;
 
         default:
@@ -731,15 +1175,14 @@ static int vbglR3ClipboardSendURIObject(HGCMCLIENTID idClient, SharedClipboardUR
 }
 
 /**
- * Guest -> Host
- * Utility function to send URI data from guest to the host.
+ * Utility function to write URI data from guest to the host.
  *
  * @returns IPRT status code.
  * @param   idClient            The client id returned by VbglR3ClipboardConnect().
  * @param   pvData              Block to URI data to send.
  * @param   cbData              Size (in bytes) of URI data to send.
  */
-static int vbglR3ClipboardSendURIData(HGCMCLIENTID idClient, const void *pvData, size_t cbData)
+static int vbglR3ClipboardWriteURIData(HGCMCLIENTID idClient, const void *pvData, size_t cbData)
 {
     AssertPtrReturn(pvData, VERR_INVALID_POINTER);
     AssertReturn(cbData,    VERR_INVALID_PARAMETER);
@@ -781,8 +1224,8 @@ static int vbglR3ClipboardSendURIData(HGCMCLIENTID idClient, const void *pvData,
             dataHdr.cbMetaFmt = cbMetaFmt;
             dataHdr.cObjects  = lstURI.GetTotalCount();
 
-            rc = vbglR3ClipboardSendDataInternal(idClient,
-                                                 pvURIList, cbURLIist, &dataHdr);
+            rc = vbglR3ClipboardWriteDataInternal(idClient,
+                                                  pvURIList, cbURLIist, &dataHdr);
         }
         else
             rc = VERR_INVALID_PARAMETER;
@@ -794,7 +1237,7 @@ static int vbglR3ClipboardSendURIData(HGCMCLIENTID idClient, const void *pvData,
         {
             SharedClipboardURIObject *pNextObj = lstURI.First();
 
-            rc = vbglR3ClipboardSendURIObject(idClient, pNextObj);
+            rc = vbglR3ClipboardWriteURIObject(idClient, pNextObj);
             if (RT_FAILURE(rc))
                 break;
 
@@ -806,14 +1249,13 @@ static int vbglR3ClipboardSendURIData(HGCMCLIENTID idClient, const void *pvData,
 }
 
 /**
- * Guest -> Host
- * Sends an error back to the host.
+ * Writes an error to the host.
  *
  * @returns IPRT status code.
  * @param   idClient            The client id returned by VbglR3ClipboardConnect().
  * @param   rcErr               Error (IPRT-style) to send.
  */
-static int vbglR3ClipboardSendErrorInternal(HGCMCLIENTID idClient, int rcErr)
+static int vbglR3ClipboardWriteErrorInternal(HGCMCLIENTID idClient, int rcErr)
 {
     VBoxClipboardWriteErrorMsg Msg;
     RT_ZERO(Msg);
@@ -843,16 +1285,15 @@ static int vbglR3ClipboardSendErrorInternal(HGCMCLIENTID idClient, int rcErr)
 }
 
 /**
- * Guest -> Host
- * Send an error back to the host.
+ * Writes an error back to the host.
  *
  * @returns IPRT status code.
  * @param   idClient            The client id returned by VbglR3ClipboardConnect().
  * @param   rcErr               Error (IPRT-style) to send.
  */
-VBGLR3DECL(int) VbglR3ClipboardSendError(HGCMCLIENTID idClient, int rcErr)
+VBGLR3DECL(int) vbglR3ClipboardWriteError(HGCMCLIENTID idClient, int rcErr)
 {
-    return vbglR3ClipboardSendErrorInternal(idClient, rcErr);
+    return vbglR3ClipboardWriteErrorInternal(idClient, rcErr);
 }
 #endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
 

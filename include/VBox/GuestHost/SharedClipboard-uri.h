@@ -61,7 +61,6 @@ typedef uint32_t SHAREDCLIPBOARDCACHEFLAGS;
  */
 class SharedClipboardCache
 {
-
 public:
 
     SharedClipboardCache(void);
@@ -71,8 +70,8 @@ public:
 
 public:
 
-    uint16_t AddRef(void);
-    uint16_t Release(void);
+    uint32_t AddRef(void);
+    uint32_t Release(void);
 
     int Lock(void);
     int Unlock(void);
@@ -116,6 +115,51 @@ protected:
     RTCList<RTCString>           m_lstFiles;
     /** Associated clipboard area ID. */
     SHAREDCLIPBOARDAREAID        m_uID;
+};
+
+class SharedClipboardURIList;
+
+/**
+ * Class acting as a proxy to abstract reading / writing clipboard data.
+ *
+ * This is needed because various implementations can run on the host *or* on the guest side,
+ * requiring different methods for handling the actual data.
+ */
+class SharedClipboardProvider
+{
+public:
+
+    SharedClipboardProvider(void);
+    virtual ~SharedClipboardProvider(void);
+
+public:
+
+    enum SourceType
+    {
+        /** Invalid source type. */
+        SourceType_Invalid = 0,
+        /** Source is VbglR3. */
+        SourceType_VbglR3,
+        /** Source is the host service. */
+        SourceType_HostService
+    };
+
+public:
+
+    uint32_t AddRef(void);
+    uint32_t Release(void);
+
+public:
+
+    int SetSource(SourceType enmSource);
+    int ReadMetaData(SharedClipboardURIList &URIList, uint32_t fFlags = 0);
+
+protected:
+
+    /** Number of references to this instance. */
+    volatile uint32_t            m_cRefs;
+    /** Source type to handle. */
+    SourceType                   m_enmSource;
 };
 
 int SharedClipboardPathSanitizeFilename(char *pszPath, size_t cbPath);
@@ -366,6 +410,9 @@ size_t SharedClipboardMetaDataGetUsed(PSHAREDCLIPBOARDMETADATA pMeta);
 size_t SharedClipboardMetaDataGetSize(PSHAREDCLIPBOARDMETADATA pMeta);
 void *SharedClipboardMetaDataMutableRaw(PSHAREDCLIPBOARDMETADATA pMeta);
 const void *SharedClipboardMetaDataRaw(PSHAREDCLIPBOARDMETADATA pMeta);
+
+bool SharedClipboardMIMEHasFileURLs(const char *pcszFormat, size_t cchFormatMax);
+bool SharedClipboardMIMENeedsCache(const char *pcszFormat, size_t cchFormatMax);
 
 #endif /* !VBOX_INCLUDED_GuestHost_SharedClipboard_uri_h */
 

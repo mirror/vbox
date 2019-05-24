@@ -145,7 +145,7 @@ int SharedClipboardMetaDataResize(PSHAREDCLIPBOARDMETADATA pMeta, size_t cbNewSi
  */
 size_t SharedClipboardMetaDataGetUsed(PSHAREDCLIPBOARDMETADATA pMeta)
 {
-    AssertPtrReturn(pMeta, VERR_INVALID_POINTER);
+    AssertPtrReturn(pMeta, 0);
     return pMeta->cbUsed;
 }
 
@@ -157,7 +157,7 @@ size_t SharedClipboardMetaDataGetUsed(PSHAREDCLIPBOARDMETADATA pMeta)
  */
 size_t SharedClipboardMetaDataGetSize(PSHAREDCLIPBOARDMETADATA pMeta)
 {
-    AssertPtrReturn(pMeta, VERR_INVALID_POINTER);
+    AssertPtrReturn(pMeta, 0);
     return pMeta->cbMeta;
 }
 

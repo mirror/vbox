@@ -175,7 +175,7 @@ typedef struct _VBoxClipboardWriteDataMsg
  * VBOX_SHARED_CLIPBOARD_FN_READ_DATA_HDR
  * VBOX_SHARED_CLIPBOARD_FN_WRITE_DATA_HDR
  */
-typedef struct _VBoxClipboardReadDataHdrMsg
+typedef struct _VBoxClipboardDataHdrMsg
 {
     VBGLIOCHGCMCALL hdr;
 
@@ -286,7 +286,7 @@ typedef struct _VBoxClipboardFileHdrMsg
     HGCMFunctionParameter fMode;        /* OUT uint32_t */
     /** Total size (in bytes). */
     HGCMFunctionParameter cbTotal;      /* OUT uint64_t */
-} VBoxClipboardWriteReadHdrMsg, VBoxClipboardWriteFileHdrMsg;
+} VBoxClipboardReadFileHdrMsg, VBoxClipboardWriteFileHdrMsg;
 
 #define VBOX_SHARED_CLIPBOARD_CPARMS_READ_FILE_HDR  6
 #define VBOX_SHARED_CLIPBOARD_CPARMS_WRITE_FILE_HDR 6
@@ -313,7 +313,7 @@ typedef struct _VBoxClipboardFileDataMsg
     HGCMFunctionParameter pvChecksum;   /* OUT ptr */
     /** Size (in bytes) of curren data chunk checksum. */
     HGCMFunctionParameter cbChecksum;   /* OUT uint32_t */
-} VBoxClipboardWriteFileDataMsg;
+} VBoxClipboardReadFileDataMsg, VBoxClipboardWriteFileDataMsg;
 
 #define VBOX_SHARED_CLIPBOARD_CPARMS_READ_FILE_DATA  5
 #define VBOX_SHARED_CLIPBOARD_CPARMS_WRITE_FILE_DATA 5
@@ -448,11 +448,11 @@ bool VBoxSvcClipboardLock(void);
 void VBoxSvcClipboardUnlock(void);
 
 # ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
-bool VBoxSvcClipboardDataHdrIsValid(PVBOXCLIPBOARDDATAHDR pData);
-bool VBoxSvcClipboardDataChunkIsValid(PVBOXCLIPBOARDDATACHUNK pData);
-bool VBoxSvcClipboardDirDataIsValid(PVBOXCLIPBOARDDIRDATA pData);
+bool VBoxSvcClipboardDataHdrIsValid(PVBOXCLIPBOARDDATAHDR pDataHdr);
+bool VBoxSvcClipboardDataChunkIsValid(PVBOXCLIPBOARDDATACHUNK pDataChunk);
+bool VBoxSvcClipboardDirDataIsValid(PVBOXCLIPBOARDDIRDATA pDirData);
 bool VBoxSvcClipboardFileHdrIsValid(PVBOXCLIPBOARDFILEHDR pFileHdr, PVBOXCLIPBOARDDATAHDR pDataHdr);
-bool VBoxSvcClipboardFileDataIsValid(PVBOXCLIPBOARDFILEDATA pData, PVBOXCLIPBOARDDATAHDR pDataHdr);
+bool VBoxSvcClipboardFileDataIsValid(PVBOXCLIPBOARDFILEDATA pFileData, PVBOXCLIPBOARDDATAHDR pDataHdr);
 # endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
 
 #endif /* !VBOX_INCLUDED_HostServices_VBoxClipboardSvc_h */

@@ -782,7 +782,7 @@ int VBoxClipboardSvcImplReadData(PVBOXCLIPBOARDCLIENTDATA pClientData, uint32_t 
                 {
                     void *pvTemp;
                     size_t cbTemp;
-                    rc = VBoxClipboardWinDropFilesToStringList((DROPFILES *)lp, &pvTemp, &cbTemp);
+                    rc = VBoxClipboardWinDropFilesToStringList((DROPFILES *)lp, (char **)&pvTemp, &cbTemp);
                     if (RT_SUCCESS(rc))
                     {
                         if (cbTemp > cb) /** @todo Add overflow handling! */

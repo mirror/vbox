@@ -26,30 +26,55 @@
 #include <iprt/path.h>
 
 
-bool VBoxSvcClipboardDataHdrIsValid(PVBOXCLIPBOARDDATAHDR pData)
+/**
+ * Returns whether a given clipboard data header is valid or not.
+ *
+ * @returns \c true if valid, \c false if not.
+ * @param   pDataHdr            Clipboard data header to validate.
+ */
+bool VBoxSvcClipboardDataHdrIsValid(PVBOXCLIPBOARDDATAHDR pDataHdr)
 {
-    RT_NOREF(pData);
+    RT_NOREF(pDataHdr);
     return true; /** @todo Implement this. */
 }
 
-bool VBoxSvcClipboardDataChunkIsValid(VBOXCLIPBOARDDATACHUNK pData)
+/**
+ * Returns whether a given clipboard data chunk is valid or not.
+ *
+ * @returns \c true if valid, \c false if not.
+ * @param   pDataChunk          Clipboard data chunk to validate.
+ */
+bool VBoxSvcClipboardDataChunkIsValid(PVBOXCLIPBOARDDATACHUNK pDataChunk)
 {
-    RT_NOREF(pData);
+    RT_NOREF(pDataChunk);
     return true; /** @todo Implement this. */
 }
 
-bool VBoxSvcClipboardDirDataIsValid(PVBOXCLIPBOARDDIRDATA pData)
+/**
+ * Returns whether given clipboard directory data is valid or not.
+ *
+ * @returns \c true if valid, \c false if not.
+ * @param   pDirData            Clipboard directory data to validate.
+ */
+bool VBoxSvcClipboardDirDataIsValid(PVBOXCLIPBOARDDIRDATA pDirData)
 {
-    if (   !pData->cbPath
-        || pData->cbPath > RTPATH_MAX)
+    if (   !pDirData->cbPath
+        || pDirData->cbPath > RTPATH_MAX)
         return false;
 
-    if (!RTStrIsValidEncoding(pData->pszPath))
+    if (!RTStrIsValidEncoding(pDirData->pszPath))
         return false;
 
     return true;
 }
 
+/**
+ * Returns whether a given clipboard file header is valid or not.
+ *
+ * @returns \c true if valid, \c false if not.
+ * @param   pFileHdr            Clipboard file header to validate.
+ * @param   pDataHdr            Data header to use for validation.
+ */
 bool VBoxSvcClipboardFileHdrIsValid(PVBOXCLIPBOARDFILEHDR pFileHdr, PVBOXCLIPBOARDDATAHDR pDataHdr)
 {
     if (   !pFileHdr->cbFilePath
@@ -65,8 +90,16 @@ bool VBoxSvcClipboardFileHdrIsValid(PVBOXCLIPBOARDFILEHDR pFileHdr, PVBOXCLIPBOA
     return true;
 }
 
-bool VBoxSvcClipboardFileDataIsValid(PVBOXCLIPBOARDFILEDATA pData, PVBOXCLIPBOARDDATAHDR pDataHdr)
+/**
+ * Returns whether given clipboard file data is valid or not.
+ *
+ * @returns \c true if valid, \c false if not.
+ * @param   pFileData           Clipboard file data to validate.
+ * @param   pDataHdr            Data header to use for validation.
+ */
+bool VBoxSvcClipboardFileDataIsValid(PVBOXCLIPBOARDFILEDATA pFileData, PVBOXCLIPBOARDDATAHDR pDataHdr)
 {
-    RT_NOREF(pData, pDataHdr);
+    RT_NOREF(pFileData, pDataHdr);
     return true;
 }
+

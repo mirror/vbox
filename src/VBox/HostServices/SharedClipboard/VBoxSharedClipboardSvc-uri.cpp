@@ -106,19 +106,25 @@ bool vboxClipboardSvcURIObjCtxIsValid(PVBOXCLIPBOARDCLIENTURIOBJCTX pObjCtx)
  *
  * @returns VBox status code.
  * @param   pTransfer           Transfer object to destroy.
- * @param   uClientID           Client ID to assign to the transfer object.
+ * @param   pState              Client state to assign to the transfer object.
  */
-int vboxClipboardSvcURITransferCreate(PVBOXCLIPBOARDCLIENTURITRANSFER pTransfer, uint32_t uClientID)
+int vboxClipboardSvcURITransferCreate(PVBOXCLIPBOARDCLIENTURITRANSFER pTransfer, PVBOXCLIPBOARDCLIENTSTATE pState)
 {
     AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
-    RT_NOREF(uClientID);
+    AssertPtrReturn(pState,    VERR_INVALID_POINTER);
 
     int rc = pTransfer->Cache.OpenTemp(SHAREDCLIPBOARDCACHE_FLAGS_NONE);
     if (RT_SUCCESS(rc))
     {
         rc = SharedClipboardMetaDataInit(&pTransfer->Meta);
         if (RT_SUCCESS(rc))
+        {
             vboxClipboardSvcURIObjCtxInit(&pTransfer->ObjCtx);
+            if (RT_SUCCESS(rc))
+            {
+                pTransfer->pState = pState;
+            }
+        }
     }
 
     return rc;
@@ -163,6 +169,11 @@ void vboxClipboardSvcURITransferReset(PVBOXCLIPBOARDCLIENTURITRANSFER pTransfer)
 
         rc2 = g_pfnExtension(g_pvExtension, VBOX_CLIPBOARD_EXT_FN_AREA_DETACH, &parms, sizeof(parms));
         AssertRC(rc2);
+#ifdef LOG_ENABLED
+        AssertPtr(pTransfer->pState);
+        LogFlowFunc(("Detached client %RU32 from clipboard area %RU32 with rc=%Rrc\n",
+                     pTransfer->pState->u32ClientID, uAreaID, rc2));
+#endif
     }
 
     rc2 = pTransfer->Cache.Rollback();
@@ -272,6 +283,11 @@ int vboxClipboardSvcURIHandler(uint32_t u32ClientID,
                     /* The client now needs to attach to the most recent clipboard area
                      * to keep a reference to it. The host does the actual book keeping / cleanup then. */
                     rc = g_pfnExtension(g_pvExtension, VBOX_CLIPBOARD_EXT_FN_AREA_ATTACH, &parms, sizeof(parms));
+#ifdef LOG_ENABLED
+                    AssertPtr(pTransfer->pState);
+                    LogFlowFunc(("Attached client %RU32 from clipboard area %RU32 with rc=%Rrc\n",
+                                 pTransfer->pState->u32ClientID, parms.uID, rc));
+#endif
                     if (RT_SUCCESS(rc))
                     {
 
@@ -284,6 +300,11 @@ int vboxClipboardSvcURIHandler(uint32_t u32ClientID,
                         parms.uID = pTransfer->Cache.GetAreaID();
 
                         rc = g_pfnExtension(g_pvExtension, VBOX_CLIPBOARD_EXT_FN_AREA_DETACH, &parms, sizeof(parms));
+#ifdef LOG_ENABLED
+                        AssertPtr(pTransfer->pState);
+                        LogFlowFunc(("Detached client %RU32 from clipboard area %RU32 with rc=%Rrc\n",
+                                     pTransfer->pState->u32ClientID, parms.uID, rc));
+#endif
                     }
                 }
             }
@@ -382,10 +403,15 @@ int vboxClipboardSvcURIHandler(uint32_t u32ClientID,
                             RT_ZERO(parms);
 
                             parms.u.fn_register.pvData = pvMeta;
-                            parms.u.fn_register.cbData = cbMeta;
+                            parms.u.fn_register.cbData = (uint32_t)cbMeta;
 
                             /* As the meta data is now complete, register a new clipboard on the host side. */
                             rc = g_pfnExtension(g_pvExtension, VBOX_CLIPBOARD_EXT_FN_AREA_REGISTER, &parms, sizeof(parms));
+#ifdef LOG_ENABLED
+                            AssertPtr(pTransfer->pState);
+                            LogFlowFunc(("Registered new clipboard area by client %RU32 with rc=%Rrc\n",
+                                         pTransfer->pState->u32ClientID, rc));
+#endif
                         }
 
                         /* We're done processing the meta data, so just destroy it. */

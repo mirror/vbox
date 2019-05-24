@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Shared Clipboard - Path list class.
+ * Shared Clipboard - Provider implementation.
  */
 
 /*
@@ -22,22 +22,59 @@
 #define LOG_GROUP LOG_GROUP_SHARED_CLIPBOARD
 #include <VBox/GuestHost/SharedClipboard-uri.h>
 
+#include <iprt/asm.h>
+#include <iprt/assert.h>
+#include <iprt/dir.h>
+#include <iprt/err.h>
+#include <iprt/file.h>
+#include <iprt/path.h>
 #include <iprt/string.h>
 
 
-bool SharedClipboardMIMEHasFileURLs(const char *pcszFormat, size_t cchFormatMax)
+#include <VBox/log.h>
+
+SharedClipboardProvider::SharedClipboardProvider(void)
+    : m_cRefs(0)
 {
-    /** @todo "text/uri" also an official variant? */
-    return (   RTStrNICmp(pcszFormat, "text/uri-list", cchFormatMax)             == 0
-            || RTStrNICmp(pcszFormat, "x-special/gnome-icon-list", cchFormatMax) == 0);
 }
 
-bool SharedClipboardMIMENeedsCache(const char *pcszFormat, size_t cchFormatMax)
+SharedClipboardProvider::~SharedClipboardProvider(void)
 {
-    bool fNeedsDropDir = false;
-    if (!RTStrNICmp(pcszFormat, "text/uri-list", cchFormatMax)) /** @todo Add "x-special/gnome-icon-list"? */
-        fNeedsDropDir = true;
+    Assert(m_cRefs == 0);
+}
 
-    return fNeedsDropDir;
+/**
+ * Adds a reference to a Shared Clipboard provider.
+ *
+ * @returns New reference count.
+ */
+uint32_t SharedClipboardProvider::AddRef(void)
+{
+    return ASMAtomicIncU32(&m_cRefs);
+}
+
+/**
+ * Removes a reference from a Shared Clipboard cache.
+ *
+ * @returns New reference count.
+ */
+uint32_t SharedClipboardProvider::Release(void)
+{
+    Assert(m_cRefs);
+    return ASMAtomicDecU32(&m_cRefs);
+}
+
+int SharedClipboardProvider::SetSource(SourceType enmSource)
+{
+    return m_enmSource = enmSource;
+}
+
+int SharedClipboardProvider::ReadMetaData(SharedClipboardURIList &URIList, uint32_t fFlags /* = 0 */)
+{
+    int rc = VINF_SUCCESS;
+
+    RT_NOREF(URIList, fFlags);
+
+    return rc;
 }
 

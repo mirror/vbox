@@ -41,12 +41,15 @@
 #include <iprt/errcore.h>
 #include <VBox/log.h>
 
-VBoxClipboardWinDataObject::VBoxClipboardWinDataObject(LPFORMATETC pFormatEtc, LPSTGMEDIUM pStgMed, ULONG cFormats)
-    : mStatus(Uninitialized)
-    , mRefCount(0)
-    , mcFormats(0)
-    , muClientID(0)
+VBoxClipboardWinDataObject::VBoxClipboardWinDataObject(SharedClipboardProvider *pProvider,
+                                                       LPFORMATETC pFormatEtc, LPSTGMEDIUM pStgMed, ULONG cFormats)
+    : m_enmStatus(Uninitialized)
+    , m_lRefCount(0)
+    , m_cFormats(0)
+    , m_pProvider(pProvider)
 {
+    AssertPtr(pProvider);
+
     HRESULT hr;
 
     const ULONG cFixedFormats = 3; /* CFSTR_FILEDESCRIPTORA + CFSTR_FILEDESCRIPTORW + CFSTR_FILECONTENTS */
@@ -54,10 +57,10 @@ VBoxClipboardWinDataObject::VBoxClipboardWinDataObject(LPFORMATETC pFormatEtc, L
 
     try
     {
-        mpFormatEtc = new FORMATETC[cAllFormats];
-        RT_BZERO(mpFormatEtc, sizeof(FORMATETC) * cAllFormats);
-        mpStgMedium = new STGMEDIUM[cAllFormats];
-        RT_BZERO(mpStgMedium, sizeof(STGMEDIUM) * cAllFormats);
+        m_pFormatEtc = new FORMATETC[cAllFormats];
+        RT_BZERO(m_pFormatEtc, sizeof(FORMATETC) * cAllFormats);
+        m_pStgMedium = new STGMEDIUM[cAllFormats];
+        RT_BZERO(m_pStgMedium, sizeof(STGMEDIUM) * cAllFormats);
 
         /** @todo Do we need CFSTR_FILENAME / CFSTR_SHELLIDLIST here? */
 
@@ -66,11 +69,11 @@ VBoxClipboardWinDataObject::VBoxClipboardWinDataObject(LPFORMATETC pFormatEtc, L
          */
 
         /* IStream interface, implemented in ClipboardStreamImpl-win.cpp. */
-        registerFormat(&mpFormatEtc[FormatIndex_FileDescriptorA],
+        registerFormat(&m_pFormatEtc[FormatIndex_FileDescriptorA],
                        RegisterClipboardFormat(CFSTR_FILEDESCRIPTORA));
-        registerFormat(&mpFormatEtc[FormatIndex_FileDescriptorW],
+        registerFormat(&m_pFormatEtc[FormatIndex_FileDescriptorW],
                        RegisterClipboardFormat(CFSTR_FILEDESCRIPTORW));
-        registerFormat(&mpFormatEtc[FormatIndex_FileContents],
+        registerFormat(&m_pFormatEtc[FormatIndex_FileContents],
                        RegisterClipboardFormat(CFSTR_FILECONTENTS),
                        TYMED_ISTREAM, 0 /* lIndex */);
 
@@ -87,8 +90,8 @@ VBoxClipboardWinDataObject::VBoxClipboardWinDataObject(LPFORMATETC pFormatEtc, L
             {
                 LogFlowFunc(("Format %RU32: cfFormat=%RI16, tyMed=%RU32, dwAspect=%RU32\n",
                              i, pFormatEtc[i].cfFormat, pFormatEtc[i].tymed, pFormatEtc[i].dwAspect));
-                mpFormatEtc[cFixedFormats + i] = pFormatEtc[i];
-                mpStgMedium[cFixedFormats + i] = pStgMed[i];
+                m_pFormatEtc[cFixedFormats + i] = pFormatEtc[i];
+                m_pStgMedium[cFixedFormats + i] = pStgMed[i];
             }
         }
 
@@ -101,8 +104,10 @@ VBoxClipboardWinDataObject::VBoxClipboardWinDataObject(LPFORMATETC pFormatEtc, L
 
     if (SUCCEEDED(hr))
     {
-        mcFormats = cAllFormats;
-        mStatus   = Initialized;
+        m_cFormats  = cAllFormats;
+        m_enmStatus = Initialized;
+
+        m_pProvider->AddRef();
     }
 
     LogFlowFunc(("cAllFormats=%RU32, hr=%Rhrc\n", cAllFormats, hr));
@@ -110,16 +115,19 @@ VBoxClipboardWinDataObject::VBoxClipboardWinDataObject(LPFORMATETC pFormatEtc, L
 
 VBoxClipboardWinDataObject::~VBoxClipboardWinDataObject(void)
 {
-    if (mpStream)
-        mpStream->Release();
+    if (m_pProvider)
+        m_pProvider->Release();
 
-    if (mpFormatEtc)
-        delete[] mpFormatEtc;
+    if (m_pStream)
+        m_pStream->Release();
 
-    if (mpStgMedium)
-        delete[] mpStgMedium;
+    if (m_pFormatEtc)
+        delete[] m_pFormatEtc;
 
-    LogFlowFunc(("mRefCount=%RI32\n", mRefCount));
+    if (m_pStgMedium)
+        delete[] m_pStgMedium;
+
+    LogFlowFunc(("mRefCount=%RI32\n", m_lRefCount));
 }
 
 /*
@@ -128,15 +136,15 @@ VBoxClipboardWinDataObject::~VBoxClipboardWinDataObject(void)
 
 STDMETHODIMP_(ULONG) VBoxClipboardWinDataObject::AddRef(void)
 {
-    LONG lCount = InterlockedIncrement(&mRefCount);
+    LONG lCount = InterlockedIncrement(&m_lRefCount);
     LogFlowFunc(("lCount=%RI32\n", lCount));
     return lCount;
 }
 
 STDMETHODIMP_(ULONG) VBoxClipboardWinDataObject::Release(void)
 {
-    LONG lCount = InterlockedDecrement(&mRefCount);
-    LogFlowFunc(("lCount=%RI32\n", mRefCount));
+    LONG lCount = InterlockedDecrement(&m_lRefCount);
+    LogFlowFunc(("lCount=%RI32\n", m_lRefCount));
     if (lCount == 0)
     {
         delete this;
@@ -185,10 +193,13 @@ int VBoxClipboardWinDataObject::copyToHGlobal(const void *pvData, size_t cbData,
     return VERR_ACCESS_DENIED;
 }
 
-int VBoxClipboardWinDataObject::createFileGroupDescriptor(const SharedClipboardURIList &URIList, HGLOBAL *phGlobal)
+int VBoxClipboardWinDataObject::createFileGroupDescriptor(const SharedClipboardURIList &URIList,
+                                                          bool fUnicode, HGLOBAL *phGlobal)
 {
 //    AssertReturn(URIList.GetRootCount(), VERR_INVALID_PARAMETER);
     AssertPtrReturn(phGlobal, VERR_INVALID_POINTER);
+
+    RT_NOREF(fUnicode);
 
     int rc;
 
@@ -274,20 +285,20 @@ STDMETHODIMP VBoxClipboardWinDataObject::GetData(LPFORMATETC pFormatEtc, LPSTGME
     ULONG lIndex;
     if (!lookupFormatEtc(pFormatEtc, &lIndex)) /* Format supported? */
         return DV_E_FORMATETC;
-    if (lIndex >= mcFormats) /* Paranoia. */
+    if (lIndex >= m_cFormats) /* Paranoia. */
         return DV_E_LINDEX;
 
-    LPFORMATETC pThisFormat = &mpFormatEtc[lIndex];
+    LPFORMATETC pThisFormat = &m_pFormatEtc[lIndex];
     AssertPtr(pThisFormat);
 
-    LPSTGMEDIUM pThisMedium = &mpStgMedium[lIndex];
+    LPSTGMEDIUM pThisMedium = &m_pStgMedium[lIndex];
     AssertPtr(pThisMedium);
 
     LogFlowFunc(("Using pThisFormat=%p, pThisMedium=%p\n", pThisFormat, pThisMedium));
 
     HRESULT hr = DV_E_FORMATETC; /* Play safe. */
 
-    LogRel3(("Clipboard: cfFormat=%RI16, sFormat=%s, tyMed=%RU32, dwAspect=%RU32 -> lIndex=%u\n",
+    LogRel2(("Clipboard: cfFormat=%RI16, sFormat=%s, tyMed=%RU32, dwAspect=%RU32 -> lIndex=%u\n",
              pThisFormat->cfFormat, VBoxClipboardWinDataObject::ClipboardFormatToString(pFormatEtc->cfFormat),
              pThisFormat->tymed, pThisFormat->dwAspect, lIndex));
 
@@ -299,39 +310,41 @@ STDMETHODIMP VBoxClipboardWinDataObject::GetData(LPFORMATETC pFormatEtc, LPSTGME
 
     switch (lIndex)
     {
-        case FormatIndex_FileDescriptorA:
+        case FormatIndex_FileDescriptorA: /* ANSI */
+        case FormatIndex_FileDescriptorW: /* Unicode */
         {
-            LogFlowFunc(("FormatIndex_FileDescriptorA\n"));
+            const bool fUnicode = lIndex == FormatIndex_FileDescriptorW;
 
-            SharedClipboardURIList mURIList;
-           // mURIList.AppendURIPath()
+            LogFlowFunc(("FormatIndex_FileDescriptor%s\n", fUnicode ? "W" : "A"));
 
-            HGLOBAL hGlobal;
-            int rc = createFileGroupDescriptor(mURIList, &hGlobal);
+            SharedClipboardURIList uriList;
+            int rc = m_pProvider->ReadMetaData(uriList, 0 /* fFlags */);
             if (RT_SUCCESS(rc))
             {
-                pMedium->tymed   = TYMED_HGLOBAL;
-                pMedium->hGlobal = hGlobal;
+                HGLOBAL hGlobal;
+                rc = createFileGroupDescriptor(uriList, fUnicode, &hGlobal);
+                if (RT_SUCCESS(rc))
+                {
+                    pMedium->tymed   = TYMED_HGLOBAL;
+                    pMedium->hGlobal = hGlobal;
+                    /* Note: hGlobal now is being owned by pMedium / the caller. */
 
-                hr = S_OK;
+                    hr = S_OK;
+                }
             }
             break;
         }
-
-        case FormatIndex_FileDescriptorW:
-            LogFlowFunc(("FormatIndex_FileDescriptorW\n"));
-            break;
 
         case FormatIndex_FileContents:
         {
             LogFlowFunc(("FormatIndex_FileContents\n"));
 
-            hr = VBoxClipboardWinStreamImpl::Create(&mpStream);
+            hr = VBoxClipboardWinStreamImpl::Create(m_pProvider, &m_pStream);
             if (SUCCEEDED(hr))
             {
                 /* Hand over the stream to the caller. */
                 pMedium->tymed          = TYMED_ISTREAM;
-                pMedium->pstm           = mpStream;
+                pMedium->pstm           = m_pStream;
             }
 
             break;
@@ -405,11 +418,11 @@ STDMETHODIMP VBoxClipboardWinDataObject::SetData(LPFORMATETC pFormatEtc, LPSTGME
 
 STDMETHODIMP VBoxClipboardWinDataObject::EnumFormatEtc(DWORD dwDirection, IEnumFORMATETC **ppEnumFormatEtc)
 {
-    LogFlowFunc(("dwDirection=%RI32, mcFormats=%RI32, mpFormatEtc=%p\n", dwDirection, mcFormats, mpFormatEtc));
+    LogFlowFunc(("dwDirection=%RI32, mcFormats=%RI32, mpFormatEtc=%p\n", dwDirection, m_cFormats, m_pFormatEtc));
 
     HRESULT hr;
     if (dwDirection == DATADIR_GET)
-        hr = VBoxClipboardWinEnumFormatEtc::CreateEnumFormatEtc(mcFormats, mpFormatEtc, ppEnumFormatEtc);
+        hr = VBoxClipboardWinEnumFormatEtc::CreateEnumFormatEtc(m_cFormats, m_pFormatEtc, ppEnumFormatEtc);
     else
         hr = E_NOTIMPL;
 
@@ -475,10 +488,8 @@ STDMETHODIMP VBoxClipboardWinDataObject::StartOperation(IBindCtx* pbcReserved)
  * Own stuff.
  */
 
-int VBoxClipboardWinDataObject::Init(uint32_t idClient)
+int VBoxClipboardWinDataObject::Init(void)
 {
-    muClientID = idClient;
-
     LogFlowFuncLeaveRC(VINF_SUCCESS);
     return VINF_SUCCESS;
 }
@@ -571,14 +582,14 @@ bool VBoxClipboardWinDataObject::lookupFormatEtc(LPFORMATETC pFormatEtc, ULONG *
     AssertReturn(pFormatEtc, false);
     /* puIndex is optional. */
 
-    for (ULONG i = 0; i < mcFormats; i++)
+    for (ULONG i = 0; i < m_cFormats; i++)
     {
-        if(    (pFormatEtc->tymed & mpFormatEtc[i].tymed)
-            && pFormatEtc->cfFormat == mpFormatEtc[i].cfFormat
-            && pFormatEtc->dwAspect == mpFormatEtc[i].dwAspect)
+        if(    (pFormatEtc->tymed & m_pFormatEtc[i].tymed)
+            && pFormatEtc->cfFormat == m_pFormatEtc[i].cfFormat
+            && pFormatEtc->dwAspect == m_pFormatEtc[i].dwAspect)
         {
             LogRel3(("Clipboard: Format found: tyMed=%RI32, cfFormat=%RI16, sFormats=%s, dwAspect=%RI32, ulIndex=%RU32\n",
-                      pFormatEtc->tymed, pFormatEtc->cfFormat, VBoxClipboardWinDataObject::ClipboardFormatToString(mpFormatEtc[i].cfFormat),
+                      pFormatEtc->tymed, pFormatEtc->cfFormat, VBoxClipboardWinDataObject::ClipboardFormatToString(m_pFormatEtc[i].cfFormat),
                       pFormatEtc->dwAspect, i));
             if (puIndex)
                 *puIndex = i;

@@ -392,10 +392,10 @@ static LRESULT vboxClipboardWinProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd,
                             pWinCtx->URI.cTransfers));
                    if (pWinCtx->URI.cTransfers == 0) /* Only allow one transfer at a time for now. */
                    {
-                       pWinCtx->URI.Transfer.pDataObj = new VBoxClipboardWinDataObject(/* No additional formats needed right now */);
+                       pWinCtx->URI.Transfer.pDataObj = new VBoxClipboardWinDataObject(&pWinCtx->URI.Transfer.Provider);
                        if (pWinCtx->URI.Transfer.pDataObj)
                        {
-                           rc = pWinCtx->URI.Transfer.pDataObj->Init(pCtx->u32ClientID);
+                           rc = pWinCtx->URI.Transfer.pDataObj->Init();
                            if (RT_SUCCESS(rc))
                            {
                                VBoxClipboardWinClose();
@@ -661,12 +661,16 @@ DECLCALLBACK(int) VBoxClipboardInit(const PVBOXSERVICEENV pEnv, void **ppInstanc
         return VERR_NOT_SUPPORTED;
     }
 
+    pCtx->pEnv = pEnv;
+
     if (VbglR3AutoLogonIsRemoteSession())
     {
         /* Do not use clipboard for remote sessions. */
         LogRel(("Clipboard: Clipboard has been disabled for a remote session\n"));
         return VERR_NOT_SUPPORTED;
     }
+
+    int rc;
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
     HRESULT hr = OleInitialize(NULL);
@@ -677,16 +681,15 @@ DECLCALLBACK(int) VBoxClipboardInit(const PVBOXSERVICEENV pEnv, void **ppInstanc
     }
     else
         LogRel(("Clipboard: Initialized OLE\n"));
+
+    rc = pCtx->Win.URI.Transfer.Provider.SetSource(SharedClipboardProvider::SourceType_VbglR3);
+    AssertRC(rc);
 #endif
-
-    RT_BZERO(pCtx, sizeof(VBOXCLIPBOARDCONTEXT));
-
-    pCtx->pEnv = pEnv;
 
     /* Check that new Clipboard API is available */
     VBoxClipboardWinCheckAndInitNewAPI(&pCtx->Win.newAPI);
 
-    int rc = VbglR3ClipboardConnect(&pCtx->u32ClientID);
+    rc = VbglR3ClipboardConnect(&pCtx->u32ClientID);
     if (RT_SUCCESS(rc))
     {
         rc = vboxClipboardCreateWindow(pCtx);

@@ -105,7 +105,8 @@ ifdef VBOX_WITH_SHARED_CLIPBOARD
  VBoxClient_SOURCES += \
 	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardURIList.cpp \
 	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardURIObject.cpp \
-	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardPath.cpp
+	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardPath.cpp \
+	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardProvider.cpp
   ifdef VBOX_WITH_LIBFUSE_DISABLED
    VBoxClient_SOURCES += \
 	clipboard-fuse.cpp

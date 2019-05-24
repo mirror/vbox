@@ -75,7 +75,7 @@ SharedClipboardCache::~SharedClipboardCache(void)
  *
  * @returns New reference count.
  */
-uint16_t SharedClipboardCache::AddRef(void)
+uint32_t SharedClipboardCache::AddRef(void)
 {
     return ASMAtomicIncU32(&m_cRefs);
 }
@@ -85,7 +85,7 @@ uint16_t SharedClipboardCache::AddRef(void)
  *
  * @returns New reference count.
  */
-uint16_t SharedClipboardCache::Release(void)
+uint32_t SharedClipboardCache::Release(void)
 {
     Assert(m_cRefs);
     return ASMAtomicDecU32(&m_cRefs);

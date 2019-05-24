@@ -3089,18 +3089,18 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                 SharedClipboard *pSharedClipboard = SharedClipboard::createInstance(this /* pConsole */);
                 if (pSharedClipboard)
                 {
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+# ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
                     HGCMSVCEXTHANDLE hDummy;
                     rc = HGCMHostRegisterServiceExtension(&hDummy, "VBoxSharedClipboard",
                                                           &SharedClipboard::hostServiceCallback,
                                                           pSharedClipboard);
                     if (RT_FAILURE(rc))
-                        LogRel(("Cannot register VBoxSharedClipboard extension, rc=%Rrc\n", rc));
+                        LogRel(("Shared Clipboard: Cannot register service extension, rc=%Rrc\n", rc));
 # endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
 
                     if (RT_SUCCESS(rc))
                     {
-                        LogRel(("Shared clipboard service loaded\n"));
+                        LogRel(("Shared Clipboard: Service loaded\n"));
 
                         /* Set initial clipboard mode. */
                         ClipboardMode_T mode = ClipboardMode_Disabled;
@@ -3111,7 +3111,9 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                             /* Setup the service. */
                             VBOXHGCMSVCPARM parm;
                             HGCMSvcSetU32(&parm, !i_useHostClipboard());
-                            pSharedClipboard->hostCall(VBOX_SHARED_CLIPBOARD_HOST_FN_SET_HEADLESS, 1, &parm);
+                            rc = pSharedClipboard->hostCall(VBOX_SHARED_CLIPBOARD_HOST_FN_SET_HEADLESS, 1, &parm);
+                            if (RT_FAILURE(rc))
+                                LogRel(("Shared Clipboard: Unable to set initial headless mode, rc=%Rrc\n", rc));
                         }
                     }
                 }
@@ -3121,7 +3123,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
 
             if (RT_FAILURE(rc))
             {
-                LogRel(("Shared clipboard is not available, rc=%Rrc\n", rc));
+                LogRel(("Shared Clipboard: Not available, rc=%Rrc\n", rc));
                 /* That is not a fatal failure. */
                 rc = VINF_SUCCESS;
             }

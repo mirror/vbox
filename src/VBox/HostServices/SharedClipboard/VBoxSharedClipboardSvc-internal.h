@@ -41,6 +41,8 @@ typedef struct _VBOXCLIPBOARDCLIENTURIOBJCTX
     SharedClipboardURIObject      *pObj;
 } VBOXCLIPBOARDCLIENTURIOBJCTX, *PVBOXCLIPBOARDCLIENTURIOBJCTX;
 
+struct VBOXCLIPBOARDCLIENTSTATE;
+
 /**
  * Structure for maintaining a single URI transfer.
  * A transfer can contain one or multiple files / directories.
@@ -49,6 +51,8 @@ typedef struct _VBOXCLIPBOARDCLIENTURITRANSFER
 {
     /** Node for keeping this transfer in a RTList. */
     RTLISTNODE                     Node;
+    /** Pointer to the client state (parent). */
+    VBOXCLIPBOARDCLIENTSTATE      *pState;
     /** The transfer's own (local) cache.
      *  The cache itself has a clipboard area ID assigned. */
     SharedClipboardCache           Cache;
@@ -67,10 +71,10 @@ typedef struct _VBOXCLIPBOARDCLIENTURITRANSFER
  * Structure for keeping generic client state data within the Shared Clipboard host service.
  * This structure needs to be serializable by SSM.
  */
-typedef struct _VBOXCLIPBOARDCLIENTSTATE
+struct VBOXCLIPBOARDCLIENTSTATE
 {
-    struct _VBOXCLIPBOARDCLIENTSTATE *pNext;
-    struct _VBOXCLIPBOARDCLIENTSTATE *pPrev;
+    struct VBOXCLIPBOARDCLIENTSTATE *pNext;
+    struct VBOXCLIPBOARDCLIENTSTATE *pPrev;
 
     VBOXCLIPBOARDCONTEXT *pCtx;
 
@@ -105,7 +109,8 @@ typedef struct _VBOXCLIPBOARDCLIENTSTATE
 
     uint32_t u32AvailableFormats;
     uint32_t u32RequestedFormat;
-} VBOXCLIPBOARDCLIENTSTATE, *PVBOXCLIPBOARDCLIENTSTATE;
+};
+typedef struct VBOXCLIPBOARDCLIENTSTATE *PVBOXCLIPBOARDCLIENTSTATE;
 
 /**
  * Structure for keeping a HGCM client state within the Shared Clipboard host service.
