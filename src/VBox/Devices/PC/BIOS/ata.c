@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * PC BIOS - ???
+ * PC BIOS - ATA disk support.
  */
 
 /*
@@ -176,6 +176,18 @@ void   ata_reset(uint16_t device)
     // 8.2.1 (f) -- clear SRST
     outb(iobase2+ATA_CB_DC, ATA_CB_DC_HD15 | ATA_CB_DC_NIEN);
 
+    // 8.2.1 (h) -- wait for not BSY
+    max=0xffff; /* The ATA specification says that the drive may be busy for up to 30 seconds. */
+    while(--max>0) {
+        uint8_t status = inb(iobase1+ATA_CB_STAT);
+        if ((status & ATA_CB_STAT_BSY) == 0)
+            break;
+        pdelay=0xffff;
+        while (--pdelay>0) {
+            /* nothing */
+        }
+    }
+
     if (bios_dsk->devices[device].type != DSK_TYPE_NONE) {
         // 8.2.1 (g) -- check for sc==sn==0x01
         // select device
@@ -184,26 +196,14 @@ void   ata_reset(uint16_t device)
         sn = inb(iobase1+ATA_CB_SN);
 
         if ( (sc==0x01) && (sn==0x01) ) {
-            // 8.2.1 (h) -- wait for not BSY
-            max=0xffff; /* The ATA specification says that the drive may be busy for up to 30 seconds. */
+            // 8.2.1 (i) -- wait for DRDY
+            max = 0x10; /* Speed up for virtual drives. Disks are immediately ready, CDs never */
             while(--max>0) {
                 uint8_t status = inb(iobase1+ATA_CB_STAT);
-                if ((status & ATA_CB_STAT_BSY) == 0)
+                if ((status & ATA_CB_STAT_RDY) != 0)
                     break;
-                pdelay=0xffff;
-                while (--pdelay>0) {
-                    /* nothing */
-                }
             }
         }
-    }
-
-    // 8.2.1 (i) -- wait for DRDY
-    max = 0x10; /* Speed up for virtual drives. Disks are immediately ready, CDs never */
-    while(--max>0) {
-        uint8_t status = inb(iobase1+ATA_CB_STAT);
-        if ((status & ATA_CB_STAT_RDY) != 0)
-            break;
     }
 
     // Enable interrupts
