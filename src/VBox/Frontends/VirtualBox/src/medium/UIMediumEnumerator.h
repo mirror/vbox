@@ -21,8 +21,6 @@
 # pragma once
 #endif
 
-//#define VBOX_GUI_WITH_NEW_MEDIA_EVENTS
-
 /* Qt includes: */
 #include <QObject>
 #include <QSet>
