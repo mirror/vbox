@@ -58,7 +58,7 @@ void UIMediaComboBox::refresh()
 void UIMediaComboBox::repopulate()
 {
     if (!vboxGlobal().isMediumEnumerationInProgress())
-        vboxGlobal().startMediaEnumeration();
+        vboxGlobal().startMediumEnumeration();
     else
         refresh();
 }
@@ -205,7 +205,7 @@ void UIMediaComboBox::prepare()
     connect(&vboxGlobal(), &VBoxGlobal::sigMediumDeleted,
             this, &UIMediaComboBox::sltHandleMediumDeleted);
 
-    /* Setup media-enumeration handlers: */
+    /* Setup medium-enumeration handlers: */
     connect(&vboxGlobal(), &VBoxGlobal::sigMediumEnumerationStarted,
             this, &UIMediaComboBox::sltHandleMediumEnumerationStart);
     connect(&vboxGlobal(), &VBoxGlobal::sigMediumEnumerated,

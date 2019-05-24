@@ -44,7 +44,7 @@ template<class T> static QStringList toStringList(const QList<T> &list)
 }
 
 
-/** UITask extension used for media-enumeration purposes.
+/** UITask extension used for medium-enumeration purposes.
   * @note Indeed property/setProperty API isn't thread-safe stuff.
   *       This isn't dangerous for us since setter/getter API calls
   *       are splitted in time by enumerator's logic, but latest Qt
@@ -57,7 +57,7 @@ class UITaskMediumEnumeration : public UITask
 
 public:
 
-    /** Constructs @a media-enumeration task. */
+    /** Constructs @a medium-enumeration task. */
     UITaskMediumEnumeration(const UIMedium &medium)
         : UITask(UITask::Type_MediumEnumeration)
     {
@@ -68,7 +68,7 @@ public:
 
 private:
 
-    /** Contains media-enumeration task body. */
+    /** Contains medium-enumeration task body. */
     virtual void run() /* override */
     {
         /* Get medium: */
@@ -173,7 +173,7 @@ void UIMediumEnumerator::deleteMedium(const QUuid &uMediumID)
     emit sigMediumDeleted(uMediumID);
 }
 
-void UIMediumEnumerator::startMediaEnumeration(const CMediumVector &comMedia /* = CMediumVector() */)
+void UIMediumEnumerator::startMediumEnumeration(const CMediumVector &comMedia /* = CMediumVector() */)
 {
     /* Make sure we are not already in progress: */
     AssertReturnVoid(!m_fMediumEnumerationInProgress);
@@ -182,7 +182,7 @@ void UIMediumEnumerator::startMediaEnumeration(const CMediumVector &comMedia /* 
      * While composing we are using data from already cached media. */
     UIMediumMap media;
     addNullMediumToMap(media);
-    /* If @p comMedia is empty we start the media-enumeration with all
+    /* If @p comMedia is empty we start the medium-enumeration with all
      * known hard disk media. Otherwise only passed comMedia will be
      * enumerated. But be aware we will enumerate all the optical media
      * in any case to make them listed within the first run wizard for
@@ -541,7 +541,7 @@ void UIMediumEnumerator::sltHandleMediumEnumerationTaskComplete(UITask *pTask)
 
 void UIMediumEnumerator::createMediumEnumerationTask(const UIMedium &guiMedium)
 {
-    /* Prepare media-enumeration task: */
+    /* Prepare medium-enumeration task: */
     UITask *pTask = new UITaskMediumEnumeration(guiMedium);
     /* Append to internal set: */
     m_tasks << pTask;

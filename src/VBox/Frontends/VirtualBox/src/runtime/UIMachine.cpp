@@ -209,7 +209,7 @@ bool UIMachine::prepare()
     if (vboxGlobal().agressiveCaching())
     {
         AssertReturn(m_pSession, false);
-        vboxGlobal().startMediaEnumeration(m_pSession->getMachineMedia());
+        vboxGlobal().startMediumEnumeration(m_pSession->getMachineMedia());
     }
     /* Prepare machine-logic: */
     prepareMachineLogic();

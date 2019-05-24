@@ -168,7 +168,7 @@ void UIVMInformationDialog::prepare()
 
     /* This is needed at least for some vm to show correct storage info. For the manager UI enumeration has been done already: */
     if (vboxGlobal().uiType() == VBoxGlobal::UIType_RuntimeUI)
-        vboxGlobal().startMediaEnumeration();
+        vboxGlobal().startMediumEnumeration();
 }
 
 void UIVMInformationDialog::prepareThis()

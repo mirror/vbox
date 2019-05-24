@@ -2492,7 +2492,7 @@ CSession VBoxGlobal::openSession(const QUuid &uId, KLockType lockType /* = KLock
     return comSession;
 }
 
-void VBoxGlobal::startMediaEnumeration(const CMediumVector &comMedia /* = CMediumVector() */)
+void VBoxGlobal::startMediumEnumeration(const CMediumVector &comMedia /* = CMediumVector() */)
 {
     /* Make sure VBoxGlobal is already valid: */
     AssertReturnVoid(m_fValid);
@@ -2514,7 +2514,7 @@ void VBoxGlobal::startMediaEnumeration(const CMediumVector &comMedia /* = CMediu
     if (m_meCleanupProtectionToken.tryLockForRead())
     {
         if (m_pMediumEnumerator)
-            m_pMediumEnumerator->startMediaEnumeration(comMedia);
+            m_pMediumEnumerator->startMediumEnumeration(comMedia);
         m_meCleanupProtectionToken.unlock();
     }
 }
@@ -3306,7 +3306,7 @@ QString VBoxGlobal::details(const CMedium &comMedium, bool fPredictDiff, bool fU
     if (!comMedium.isNull() && guiMedium.isNull())
     {
         /* UI medium may be new and not among our media, request enumeration: */
-        startMediaEnumeration();
+        startMediumEnumeration();
 
         /* Search for corresponding UI medium again: */
         guiMedium = medium(uMediumID);
@@ -3934,7 +3934,7 @@ bool VBoxGlobal::openURL(const QString &strUrl) const
 
 void VBoxGlobal::sltGUILanguageChange(QString strLanguage)
 {
-    /* Make sure media-enumeration is not in progress! */
+    /* Make sure medium-enumeration is not in progress! */
     AssertReturnVoid(!isMediumEnumerationInProgress());
     /* Load passed language: */
     loadLanguage(strLanguage);

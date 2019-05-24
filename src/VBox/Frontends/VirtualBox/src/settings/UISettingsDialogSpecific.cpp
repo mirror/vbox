@@ -669,7 +669,7 @@ void UISettingsDialogMachine::prepare()
     setWindowIcon(QIcon(":/vm_settings_16px.png"));
 #endif
 
-    /* Allow to reset first-run flag just when media-enumeration was finished: */
+    /* Allow to reset first-run flag just when medium-enumeration was finished: */
     connect(&vboxGlobal(), &VBoxGlobal::sigMediumEnumerationFinished,
             this, &UISettingsDialogMachine::sltAllowResetFirstRunFlag);
 
