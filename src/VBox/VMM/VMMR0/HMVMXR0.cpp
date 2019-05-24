@@ -12854,17 +12854,18 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExitNested(PVMCPU pVCpu, PVMXTRANSIENT pVm
                     if (CPUMIsGuestVmxLmswInterceptSet(pVCpu, &pVCpu->cpum.GstCtx, uNewMsw))
                     {
                         rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
+                        AssertRCReturn(rc, rc);
 
                         RTGCPTR    GCPtrEffDst;
                         bool const fMemOperand = VMX_EXIT_QUAL_CRX_LMSW_OP(pVmxTransient->uExitQual);
                         if (fMemOperand)
                         {
-                            rc |= hmR0VmxReadGuestLinearAddrVmcs(pVCpu, pVmxTransient);
+                            rc = hmR0VmxReadGuestLinearAddrVmcs(pVCpu, pVmxTransient);
+                            AssertRCReturn(rc, rc);
                             GCPtrEffDst = pVmxTransient->uGuestLinearAddr;
                         }
                         else
                             GCPtrEffDst = NIL_RTGCPTR;
-                        AssertRCReturn(rc, rc);
 
                         VMXVEXITINFO ExitInfo;
                         RT_ZERO(ExitInfo);
