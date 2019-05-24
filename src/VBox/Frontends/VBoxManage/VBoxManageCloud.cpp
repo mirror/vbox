@@ -493,8 +493,8 @@ static RTEXITCODE showCloudInstanceInfo(HandlerArg *a, int iFirst, PCLOUDCOMMONO
     CHECK_ERROR2_RET(hrc, a->virtualBox, CreateAppliance(pAppliance.asOutParam()), RTEXITCODE_FAILURE);
 
     com::SafeIfaceArray<IVirtualSystemDescription> vsdArray;
-    uint32_t requestedVSDnums = 1;
-    uint32_t newVSDnums = 0;
+    ULONG requestedVSDnums = 1;
+    ULONG newVSDnums = 0;
     CHECK_ERROR2_RET(hrc, pAppliance, CreateVirtualSystemDescriptions(requestedVSDnums, &newVSDnums), RTEXITCODE_FAILURE);
     if (requestedVSDnums != newVSDnums)
         return RTEXITCODE_FAILURE;
