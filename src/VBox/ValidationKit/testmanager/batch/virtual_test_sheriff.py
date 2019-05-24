@@ -1386,7 +1386,7 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
         # Get a list of failed test sets without any assigned failure reason.
         #
         cGot = 0;
-        if self.oConfig.aidTestSets is None or len(self.oConfig.aidTestSets) == 0:
+        if not self.oConfig.aidTestSets:
             aoTestSets = self.oTestSetLogic.fetchFailedSetsWithoutReason(cHoursBack = self.oConfig.cHoursBack,
                                                                          tsNow = self.tsNow);
         else:
