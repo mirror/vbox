@@ -2162,7 +2162,7 @@ DECLINLINE(uint64_t) CPUMGetGuestVmxMaskedCr0(PVMCPU pVCpu, PCCPUMCTX pCtx)
     RT_NOREF(pVCpu);
     PCVMXVVMCS pVmcs = pCtx->hwvirt.vmx.CTX_SUFF(pVmcs);
     Assert(pVmcs);
-    Assert(CPUMIsGuestInVmxRootMode(pCtx));
+    Assert(CPUMIsGuestInVmxNonRootMode(pCtx));
     uint64_t const uGstCr0      = pCtx->cr0;
     uint64_t const fGstHostMask = pVmcs->u64Cr0Mask.u;
     uint64_t const fReadShadow  = pVmcs->u64Cr0ReadShadow.u;
@@ -2188,11 +2188,60 @@ DECLINLINE(uint64_t) CPUMGetGuestVmxMaskedCr4(PVMCPU pVCpu, PCCPUMCTX pCtx)
     RT_NOREF(pVCpu);
     PCVMXVVMCS pVmcs = pCtx->hwvirt.vmx.CTX_SUFF(pVmcs);
     Assert(pVmcs);
-    Assert(CPUMIsGuestInVmxRootMode(pCtx));
+    Assert(CPUMIsGuestInVmxNonRootMode(pCtx));
     uint64_t const uGstCr4      = pCtx->cr4;
     uint64_t const fGstHostMask = pVmcs->u64Cr4Mask.u;
     uint64_t const fReadShadow  = pVmcs->u64Cr4ReadShadow.u;
     return (fReadShadow & fGstHostMask) | (uGstCr4 & ~fGstHostMask);
+}
+
+
+/**
+ * Checks whether the LMSW access causes a VM-exit or not.
+ *
+ * @returns @c true if the LMSW access causes a VM-exit, @c false otherwise.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
+ * @param   pCtx        Pointer to the context.
+ * @param   uNewMsw     The LMSW source operand (the Machine Status Word).
+ */
+DECLINLINE(bool) CPUMIsGuestVmxLmswInterceptSet(PVMCPU pVCpu, PCCPUMCTX pCtx, uint16_t uNewMsw)
+{
+    /*
+     * LMSW VM-exits are subject to the CR0 guest/host mask and the CR0 read shadow.
+     *
+     * See Intel spec. 24.6.6 "Guest/Host Masks and Read Shadows for CR0 and CR4".
+     * See Intel spec. 25.1.3 "Instructions That Cause VM Exits Conditionally".
+     */
+    RT_NOREF(pVCpu);
+    PCVMXVVMCS pVmcs = pCtx->hwvirt.vmx.CTX_SUFF(pVmcs);
+    Assert(pVmcs);
+    Assert(CPUMIsGuestInVmxNonRootMode(pCtx));
+
+    uint32_t const fGstHostMask = pVmcs->u64Cr0Mask.u;
+    uint32_t const fReadShadow  = pVmcs->u64Cr0ReadShadow.u;
+
+    /*
+     * LMSW can never clear CR0.PE but it may set it. Hence, we handle the
+     * CR0.PE case first, before the rest of the bits in the MSW.
+     *
+     * If CR0.PE is owned by the host and CR0.PE differs between the
+     * MSW (source operand) and the read-shadow, we must cause a VM-exit.
+     */
+    if (    (fGstHostMask & X86_CR0_PE)
+        &&  (uNewMsw      & X86_CR0_PE)
+        && !(fReadShadow  & X86_CR0_PE))
+        return true;
+
+    /*
+     * If CR0.MP, CR0.EM or CR0.TS is owned by the host, and the corresponding
+     * bits differ between the MSW (source operand) and the read-shadow, we must
+     * cause a VM-exit.
+     */
+    uint32_t const fGstHostLmswMask = fGstHostMask & (X86_CR0_MP | X86_CR0_EM | X86_CR0_TS);
+    if ((fReadShadow & fGstHostLmswMask) != (uNewMsw & fGstHostLmswMask))
+        return true;
+
+    return false;
 }
 
 # endif /* !IN_RC */
