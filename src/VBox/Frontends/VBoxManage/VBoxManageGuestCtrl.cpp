@@ -1822,7 +1822,7 @@ static RTEXITCODE gctlHandleCopy(PGCTLCMDCTX pCtx, int argc, char **argv, bool f
         else if (fHostToGuest)
         {
             /*
-             * Source is host, destiation guest.
+             * Source is host, destination guest.
              */
             char szAbsSrc[RTPATH_MAX];
             vrc = RTPathAbs(pszSource, szAbsSrc, sizeof(szAbsSrc));
