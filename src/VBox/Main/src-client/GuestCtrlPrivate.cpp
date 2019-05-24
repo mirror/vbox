@@ -901,8 +901,7 @@ int GuestBase::generateContextID(uint32_t uSessionID, uint32_t uObjectID, uint32
         return VERR_INVALID_PARAMETER;
 
     uint32_t uCount = ASMAtomicIncU32(&mNextContextID);
-    if (uCount >= VBOX_GUESTCTRL_MAX_CONTEXTS)
-        uCount = 0;
+    uCount %= VBOX_GUESTCTRL_MAX_CONTEXTS;
 
     uint32_t uNewContextID = VBOX_GUESTCTRL_CONTEXTID_MAKE(uSessionID, uObjectID, uCount);
 
