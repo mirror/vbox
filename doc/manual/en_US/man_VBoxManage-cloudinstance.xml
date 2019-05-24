@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    manpage, user manual, usage: VBoxManage cloud instance
+
+    Copyright (C) 2018 Oracle Corporation
+
+    This file is part of VirtualBox Open Source Edition (OSE), as
+    available from http://www.virtualbox.org. This file is free software;
+    you can redistribute it and/or modify it under the terms of the GNU
+    General Public License (GPL) as published by the Free Software
+    Foundation, in version 2 as it comes in the "COPYING" file of the
+    VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+    hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+ -->
+<refentry id="vboxmanage-cloudinstance" lang="en">
+
+  <refentryinfo>
+    <pubdate>$Date$</pubdate>
+    <title>VBoxManage cloud instance</title>
+  </refentryinfo>
+
+  <refmeta>
+    <refentrytitle>VBoxManage-cloudinstance</refentrytitle>
+    <manvolnum>1</manvolnum>
+  </refmeta>
+
+  <refnamediv>
+    <refname>VBoxManage-cloudinstance</refname>
+    <refpurpose>manage the cloud instance</refpurpose>
+    <refclass>Oracle VM VirtualBox</refclass>
+  </refnamediv>
+
+  <refsynopsisdiv>
+    <cmdsynopsis id="synopsis-vboxmanage-cloudinstance-info" sepchar=" ">
+      <command moreinfo="none">VBoxManage cloud</command>
+      <arg choice="req" rep="norepeat">--provider=<replaceable>name</replaceable></arg>
+      <arg choice="req" rep="norepeat">--profile=<replaceable>name</replaceable></arg>
+      <arg choice="plain" rep="norepeat">instance</arg>
+      <arg choice="plain" rep="norepeat">info</arg>
+      <arg choice="req" rep="norepeat">--id=<replaceable>uuid</replaceable></arg>
+    </cmdsynopsis>
+    <cmdsynopsis id="synopsis-vboxmanage-cloudinstance-terminate" sepchar=" ">
+      <command moreinfo="none">VBoxManage cloud</command>
+      <arg choice="req" rep="norepeat">--provider=<replaceable>name</replaceable></arg>
+      <arg choice="req" rep="norepeat">--profile=<replaceable>name</replaceable></arg>
+      <arg choice="plain" rep="norepeat">instance</arg>
+      <arg choice="plain" rep="norepeat">terminate</arg>
+      <arg choice="req" rep="norepeat">--id=<replaceable>uuid</replaceable></arg>
+    </cmdsynopsis>
+    <cmdsynopsis id="synopsis-vboxmanage-cloudinstance-start" sepchar=" ">
+      <command moreinfo="none">VBoxManage cloud</command>
+      <arg choice="req" rep="norepeat">--provider=<replaceable>name</replaceable></arg>
+      <arg choice="req" rep="norepeat">--profile=<replaceable>name</replaceable></arg>
+      <arg choice="plain" rep="norepeat">instance</arg>
+      <arg choice="plain" rep="norepeat">start</arg>
+      <arg choice="req" rep="norepeat">--id=<replaceable>uuid</replaceable></arg>
+    </cmdsynopsis>
+    <cmdsynopsis id="synopsis-vboxmanage-cloudinstance-pause" sepchar=" ">
+      <command moreinfo="none">VBoxManage cloud</command>
+      <arg choice="req" rep="norepeat">--provider=<replaceable>name</replaceable></arg>
+      <arg choice="req" rep="norepeat">--profile=<replaceable>name</replaceable></arg>
+      <arg choice="plain" rep="norepeat">instance</arg>
+      <arg choice="plain" rep="norepeat">pause</arg>
+      <arg choice="req" rep="norepeat">--id=<replaceable>uuid</replaceable></arg>
+    </cmdsynopsis>
+  </refsynopsisdiv>
+
+  <refsect1>
+    <title>Description</title>
+    <refsect2 id="vboxmanage-cloudinstance-info">
+      <title>cloud instance info</title>
+      <cmdsynopsis>
+      <command moreinfo="none">VBoxManage cloud</command>
+      <arg choice="req" rep="norepeat">--provider=<replaceable>name</replaceable></arg>
+      <arg choice="req" rep="norepeat">--profile=<replaceable>name</replaceable></arg>
+      <arg choice="plain" rep="norepeat">instance</arg>
+      <arg choice="plain" rep="norepeat">info</arg>
+      <arg choice="req" rep="norepeat">--id=<replaceable>uuid</replaceable></arg>
+    </cmdsynopsis>
+      <para>
+        Display information about a cloud instance with a specified id
+      </para>
+      <variablelist>
+        <varlistentry>
+          <term><option>--id</option></term><listitem><para>The unique identifier which fully identify the instance</para></listitem>
+        </varlistentry>
+      </variablelist>
+    </refsect2>
+
+    <refsect2 id="vboxmanage-cloudinstance-terminate">
+      <title>cloud instance termination</title>
+      <cmdsynopsis>
+      <command moreinfo="none">VBoxManage cloud</command>
+      <arg choice="req" rep="norepeat">--provider=<replaceable>name</replaceable></arg>
+      <arg choice="req" rep="norepeat">--profile=<replaceable>name</replaceable></arg>
+      <arg choice="plain" rep="norepeat">instance</arg>
+      <arg choice="plain" rep="norepeat">terminate</arg>
+      <arg choice="req" rep="norepeat">--id=<replaceable>uuid</replaceable></arg>
+    </cmdsynopsis>
+      <para>
+        Delete a cloud instance with a specified id
+      </para>
+      <variablelist>
+        <varlistentry>
+          <term><option>--id</option></term><listitem><para>The unique identifier which fully identify the instance</para></listitem>
+        </varlistentry>
+      </variablelist>
+    </refsect2>
+
+    <refsect2 id="vboxmanage-cloudinstance-start">
+      <title>cloud instance start</title>
+      <cmdsynopsis>
+      <command moreinfo="none">VBoxManage cloud</command>
+      <arg choice="req" rep="norepeat">--provider=<replaceable>name</replaceable></arg>
+      <arg choice="req" rep="norepeat">--profile=<replaceable>name</replaceable></arg>
+      <arg choice="plain" rep="norepeat">instance</arg>
+      <arg choice="plain" rep="norepeat">start</arg>
+      <arg choice="req" rep="norepeat">--id=<replaceable>uuid</replaceable></arg>
+    </cmdsynopsis>
+      <para>
+        Start a cloud instance with a specified id
+      </para>
+      <variablelist>
+        <varlistentry>
+          <term><option>--id</option></term><listitem><para>The unique identifier which fully identify the instance</para></listitem>
+        </varlistentry>
+      </variablelist>
+    </refsect2>
+
+    <refsect2 id="vboxmanage-cloudinstance-pause">
+      <title>cloud instance pause</title>
+      <cmdsynopsis>
+      <command moreinfo="none">VBoxManage cloud</command>
+      <arg choice="req" rep="norepeat">--provider=<replaceable>name</replaceable></arg>
+      <arg choice="req" rep="norepeat">--profile=<replaceable>name</replaceable></arg>
+      <arg choice="plain" rep="norepeat">instance</arg>
+      <arg choice="plain" rep="norepeat">pause</arg>
+      <arg choice="req" rep="norepeat">--id=<replaceable>uuid</replaceable></arg>
+    </cmdsynopsis>
+      <para>
+        Pause a cloud instance with a specified id
+      </para>
+      <variablelist>
+        <varlistentry>
+          <term><option>--id</option></term><listitem><para>The unique identifier which fully identify the instance</para></listitem>
+        </varlistentry>
+      </variablelist>
+    </refsect2>
+  </refsect1>
+</refentry>

@@ -3649,7 +3649,7 @@
 
   <enum
     name="VirtualSystemDescriptionType"
-    uuid="48875667-19f6-4329-a208-735adf9a47ee"
+    uuid="9eed2b05-fe6c-46a7-ad75-b039ac2919f9"
     >
     <desc>Used with <link to="IVirtualSystemDescription" /> to describe the type of
     a configuration value.</desc>
@@ -3706,6 +3706,8 @@
     <const name="CloudLaunchInstance" value="36" />
     <const name="CloudInstanceId" value="37" />
     <const name="CloudImageId" value="38" />
+    <const name="CloudInstanceState" value="39" />
+    <const name="CloudImageState" value="40" />
   </enum>
 
   <enum
@@ -25784,7 +25786,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   <interface
     name="ICloudClient" extends="$unknown"
     uuid="6d4dfab6-7718-11e9-9775-1f99c815d0b3"
-    wsmap="managed" reservedMethods="16" reservedAttributes="8"
+    wsmap="managed" reservedMethods="13" reservedAttributes="8"
     >
 
     <method name="getExportLaunchParameters" const="yes">
@@ -25933,6 +25935,42 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         <desc>Reference to the server-side API root object.</desc>
       </param>
       <param name="progress" type="IProgress" dir="in">
+        <desc>Progress object to track the operation completion.</desc>
+      </param>
+    </method>
+
+    <method name="startInstance">
+      <desc>
+        Start an existing instance with passed id.
+      </desc>
+      <param name="uid" type="wstring" dir="in">
+        <desc>the UUID of instance in the Cloud.</desc>
+      </param>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>Progress object to track the operation completion.</desc>
+      </param>
+    </method>
+
+    <method name="pauseInstance">
+      <desc>
+        Pause an existing instance with passed id.
+      </desc>
+      <param name="uid" type="wstring" dir="in">
+        <desc>the UUID of instance in the Cloud.</desc>
+      </param>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>Progress object to track the operation completion.</desc>
+      </param>
+    </method>
+
+    <method name="terminateInstance">
+      <desc>
+        Terminate an existing instance with passed id.
+      </desc>
+      <param name="uid" type="wstring" dir="in">
+        <desc>the UUID of instance in the Cloud.</desc>
+      </param>
+      <param name="progress" type="IProgress" dir="return">
         <desc>Progress object to track the operation completion.</desc>
       </param>
     </method>
