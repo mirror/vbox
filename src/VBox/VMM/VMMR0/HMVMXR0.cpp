@@ -6912,7 +6912,7 @@ static VBOXSTRICTRC hmR0VmxDecodeMemOperand(PVMCPU pVCpu, uint32_t uExitInstrInf
                 if (   GCPtrFirst32 > pSel->u32Limit
                     || GCPtrLast32  > pSel->u32Limit)
                 {
-                    Log4Func(("Data segment limit exceeded."
+                    Log4Func(("Data segment limit exceeded. "
                               "iSegReg=%#x GCPtrFirst32=%#RX32 GCPtrLast32=%#RX32 u32Limit=%#RX32\n", iSegReg, GCPtrFirst32,
                               GCPtrLast32, pSel->u32Limit));
                     if (iSegReg == X86_SREG_SS)
@@ -6929,7 +6929,7 @@ static VBOXSTRICTRC hmR0VmxDecodeMemOperand(PVMCPU pVCpu, uint32_t uExitInstrInf
                if (   GCPtrFirst32 < pSel->u32Limit + UINT32_C(1)
                    || GCPtrLast32  > (pSel->Attr.n.u1DefBig ? UINT32_MAX : UINT32_C(0xffff)))
                {
-                   Log4Func(("Expand-down data segment limit exceeded."
+                   Log4Func(("Expand-down data segment limit exceeded. "
                              "iSegReg=%#x GCPtrFirst32=%#RX32 GCPtrLast32=%#RX32 u32Limit=%#RX32\n", iSegReg, GCPtrFirst32,
                              GCPtrLast32, pSel->u32Limit));
                    if (iSegReg == X86_SREG_SS)
@@ -12827,6 +12827,11 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExitNested(PVMCPU pVCpu, PVMXTRANSIENT pVm
         case VMX_EXIT_APIC_ACCESS:
         case VMX_EXIT_XCPT_OR_NMI:
         case VMX_EXIT_MOV_CRX:
+        {
+            /** @todo NSTVMX: APIC-access, Xcpt or NMI, Mov CRx. */
+            rcStrict = hmR0VmxExitErrUnexpected(pVCpu, pVmxTransient);
+            break;
+        }
 
         case VMX_EXIT_EXT_INT:
         {
@@ -12837,8 +12842,37 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExitNested(PVMCPU pVCpu, PVMXTRANSIENT pVm
 
         case VMX_EXIT_INT_WINDOW:
         case VMX_EXIT_TPR_BELOW_THRESHOLD:
+        {
+            /** @todo NSTVMX: Interrupt window, TPR below threshold. */
+            rcStrict = hmR0VmxExitErrUnexpected(pVCpu, pVmxTransient);
+            break;
+        }
+
         case VMX_EXIT_MWAIT:
+        {
+            if (CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS_MWAIT_EXIT))
+            {
+                int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
+                AssertRCReturn(rc, rc);
+                rcStrict = IEMExecVmxVmexitInstr(pVCpu, uExitReason, pVmxTransient->cbInstr);
+            }
+            else
+                rcStrict = hmR0VmxExitMwait(pVCpu, pVmxTransient);
+            break;
+        }
+
         case VMX_EXIT_MONITOR:
+        {
+            if (CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS_MONITOR_EXIT))
+            {
+                int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
+                AssertRCReturn(rc, rc);
+                rcStrict = IEMExecVmxVmexitInstr(pVCpu, uExitReason, pVmxTransient->cbInstr);
+            }
+            else
+                rcStrict = hmR0VmxExitMonitor(pVCpu, pVmxTransient);
+            break;
+        }
 
         case VMX_EXIT_PAUSE:
         {
@@ -12859,9 +12893,53 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExitNested(PVMCPU pVCpu, PVMXTRANSIENT pVm
         }
 
         case VMX_EXIT_PREEMPT_TIMER:
+        {
+            /** @todo NSTVMX: Preempt timer. */
+            rcStrict = hmR0VmxExitErrUnexpected(pVCpu, pVmxTransient);
+            break;
+        }
+
         case VMX_EXIT_MOV_DRX:
+        {
+            if (CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS_MOV_DR_EXIT))
+            {
+                int rc = hmR0VmxReadExitQualVmcs(pVCpu, pVmxTransient);
+                rc    |= hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
+                AssertRCReturn(rc, rc);
+
+                VMXVEXITINFO ExitInfo;
+                RT_ZERO(ExitInfo);
+                ExitInfo.cbInstr = pVmxTransient->cbInstr;
+                ExitInfo.u64Qual = pVmxTransient->uExitQual;
+                rcStrict = IEMExecVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
+            }
+            else
+                rcStrict = hmR0VmxExitMovDRx(pVCpu, pVmxTransient);
+            break;
+        }
+
         case VMX_EXIT_GDTR_IDTR_ACCESS:
         case VMX_EXIT_LDTR_TR_ACCESS:
+        {
+            if (CPUMIsGuestVmxProcCtls2Set(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS2_DESC_TABLE_EXIT))
+            {
+                int rc = hmR0VmxReadExitQualVmcs(pVCpu, pVmxTransient);
+                rc    |= hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
+                rc    |= hmR0VmxReadExitInstrInfoVmcs(pVmxTransient);
+                AssertRCReturn(rc, rc);
+
+                VMXVEXITINFO ExitInfo;
+                RT_ZERO(ExitInfo);
+                ExitInfo.cbInstr   = pVmxTransient->cbInstr;
+                ExitInfo.u64Qual   = pVmxTransient->uExitQual;
+                ExitInfo.InstrInfo = pVmxTransient->ExitInstrInfo;
+                rcStrict = IEMExecVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
+            }
+            else
+                rcStrict = hmR0VmxExitXdtrAccess(pVCpu, pVmxTransient);
+            break;
+        }
+
         case VMX_EXIT_RDRAND:
         case VMX_EXIT_RDPMC:
         case VMX_EXIT_VMREAD:
