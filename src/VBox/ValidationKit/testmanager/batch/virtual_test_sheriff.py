@@ -1089,18 +1089,20 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
             """
             Investigates the current set of VM related logs.
             """
-            self.dprint('investigateLogSet: lengths: result log %u, VM log %u, kernel log %u, vga text %u, info text %u'
+            self.dprint('investigateLogSet: log lengths: result %u, VM %u, kernel %u, vga text %u, info text %u, hard %u'
                         % ( len(sResultLog if sResultLog else ''),
                             len(sVMLog     if sVMLog else ''),
                             len(sKrnlLog   if sKrnlLog else ''),
                             len(sVgaText   if sVgaText else ''),
-                            len(sInfoText  if sInfoText else ''), ));
+                            len(sInfoText  if sInfoText else ''),
+                            len(sNtHardLog if sNtHardLog else ''), ));
 
             #self.dprint(u'main.log<<<\n%s\n<<<\n' % (sResultLog,));
             #self.dprint(u'vbox.log<<<\n%s\n<<<\n' % (sVMLog,));
             #self.dprint(u'krnl.log<<<\n%s\n<<<\n' % (sKrnlLog,));
             #self.dprint(u'vgatext.txt<<<\n%s\n<<<\n' % (sVgaText,));
             #self.dprint(u'info.txt<<<\n%s\n<<<\n' % (sInfoText,));
+            #self.dprint(u'hard.txt<<<\n%s\n<<<\n' % (sNtHardLog,));
 
             # TODO: more
 
