@@ -158,7 +158,9 @@ RTDECL(int) RTDirRemove(const char *pszPath)
         if (rmdir(pszNativePath))
         {
             rc = errno;
-            if (rc != ENOTDIR)
+            if (rc == EEXIST) /* Solaris returns this, the rest have ENOTDIR. */
+                rc = VERR_DIR_NOT_EMPTY;
+            else if (rc != ENOTDIR)
                 rc = RTErrConvertFromErrno(rc);
             else
             {
