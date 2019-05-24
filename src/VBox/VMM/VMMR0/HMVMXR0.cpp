@@ -12826,10 +12826,66 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExitNested(PVMCPU pVCpu, PVMXTRANSIENT pVm
 
         case VMX_EXIT_APIC_ACCESS:
         case VMX_EXIT_XCPT_OR_NMI:
-        case VMX_EXIT_MOV_CRX:
         {
             /** @todo NSTVMX: APIC-access, Xcpt or NMI, Mov CRx. */
             rcStrict = hmR0VmxExitErrUnexpected(pVCpu, pVmxTransient);
+            break;
+        }
+
+        case VMX_EXIT_MOV_CRX:
+        {
+            int rc = hmR0VmxReadExitQualVmcs(pVCpu, pVmxTransient);
+            AssertRCReturn(rc, rc);
+
+            uint32_t const uAccessType = VMX_EXIT_QUAL_CRX_ACCESS(pVmxTransient->uExitQual);
+            switch (uAccessType)
+            {
+                case VMX_EXIT_QUAL_CRX_ACCESS_WRITE:
+                case VMX_EXIT_QUAL_CRX_ACCESS_READ:
+                case VMX_EXIT_QUAL_CRX_ACCESS_CLTS:
+                {
+                    /** @todo NSTVMX: Implement me. */
+                    break;
+                }
+
+                case VMX_EXIT_QUAL_CRX_ACCESS_LMSW:        /* LMSW (Load Machine-Status Word into CR0) */
+                {
+                    uint16_t const uNewMsw = VMX_EXIT_QUAL_CRX_LMSW_DATA(pVmxTransient->uExitQual);
+                    if (CPUMIsGuestVmxLmswInterceptSet(pVCpu, &pVCpu->cpum.GstCtx, uNewMsw))
+                    {
+                        rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
+
+                        RTGCPTR    GCPtrEffDst;
+                        bool const fMemOperand = VMX_EXIT_QUAL_CRX_LMSW_OP(pVmxTransient->uExitQual);
+                        if (fMemOperand)
+                        {
+                            rc |= hmR0VmxReadGuestLinearAddrVmcs(pVCpu, pVmxTransient);
+                            GCPtrEffDst = pVmxTransient->uGuestLinearAddr;
+                        }
+                        else
+                            GCPtrEffDst = NIL_RTGCPTR;
+                        AssertRCReturn(rc, rc);
+
+                        VMXVEXITINFO ExitInfo;
+                        RT_ZERO(ExitInfo);
+                        ExitInfo.uReason            = VMX_EXIT_MOV_CRX;
+                        ExitInfo.cbInstr            = pVmxTransient->cbInstr;
+                        ExitInfo.u64GuestLinearAddr = GCPtrEffDst;
+                        ExitInfo.u64Qual            = pVmxTransient->uExitQual;
+                        rcStrict = IEMExecVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
+                    }
+                    else
+                        rcStrict = hmR0VmxExitMovCRx(pVCpu, pVmxTransient);
+                    break;
+                }
+
+                default:
+                {
+                    pVCpu->hm.s.u32HMError = uAccessType;
+                    AssertMsgFailedReturn(("Invalid access-type in Mov CRx VM-exit qualification %#x\n", uAccessType),
+                                          VERR_VMX_UNEXPECTED_EXCEPTION);
+                }
+            }
             break;
         }
 
@@ -14452,8 +14508,11 @@ HMVMX_EXIT_DECL hmR0VmxExitMovCRx(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
         }
 
         default:
+        {
+            pVCpu->hm.s.u32HMError = uAccessType;
             AssertMsgFailedReturn(("Invalid access-type in Mov CRx VM-exit qualification %#x\n", uAccessType),
                                   VERR_VMX_UNEXPECTED_EXCEPTION);
+        }
     }
 
     Assert(   (pVCpu->hm.s.fCtxChanged & (HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS))
