@@ -69,7 +69,7 @@ RTDECL(size_t) RTPathParentLengthEx(const char *pszPath, uint32_t fFlags)
             return rtPathParentLengthStyleUnix(pszPath, fFlags);
 
         default:
-            AssertFailedReturn(VERR_INVALID_FLAGS); /* impossible */
+            AssertFailedReturn(0); /* impossible */
     }
 }
 

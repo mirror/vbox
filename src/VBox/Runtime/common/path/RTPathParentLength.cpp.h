@@ -31,7 +31,7 @@
 /**
  * @copydoc RTPathParentLengthEx
  */
-static int RTPATH_STYLE_FN(rtPathParentLength)(const char *pszPath, uint32_t fFlags)
+static size_t RTPATH_STYLE_FN(rtPathParentLength)(const char *pszPath, uint32_t fFlags)
 {
     /*
      * Determin the length of the root component so we can make sure
