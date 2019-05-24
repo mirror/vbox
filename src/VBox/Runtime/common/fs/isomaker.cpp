@@ -1772,7 +1772,6 @@ static int rtFsIsoMakerWalkPathBySpec(PRTFSISOMAKERNAMESPACE pNamespace, const c
      */
     while (RTPATH_IS_SLASH(*pszPath))
         pszPath++;
-    AssertReturn(*pszPath, VERR_ISOMK_IPE_EMPTY_PATH);
 
     PRTFSISOMAKERNAME pCur = pNamespace->pRoot;
     if (!pCur)
