@@ -66,7 +66,7 @@ typedef struct SHFLCLIENTDATA
 typedef SHFLCLIENTDATA *PSHFLCLIENTDATA;
 
 
-/** @def SHFL_CLIENT_NEED_WINDOWS_ERROR_STYLE_ADJUST
+/** @def SHFL_CLIENT_NEED_WINDOWS_ERROR_STYLE_ADJUST_ON_POSIX
  * Whether to make windows error style adjustments on a posix host.
  * This always returns false on windows hosts. */
 #ifdef RT_OS_WINDOWS
