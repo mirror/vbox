@@ -1018,18 +1018,25 @@ HRESULT Appliance::i_setUpProgress(ComObjPtr<Progress> &pProgress,
     HRESULT rc;
 
     /* Create the progress object */
-    pProgress.createObject();
+    try
+    {
+        rc = pProgress.createObject();
+        if (FAILED(rc))
+            return rc;
+    }
+    catch (std::bad_alloc &)
+    {
+        return E_OUTOFMEMORY;
+    }
 
     // compute the disks weight (this sets ulTotalDisksMB and cDisks in the instance data)
     i_disksWeight();
 
     m->ulWeightForManifestOperation = 0;
 
-    ULONG cOperations;
+    ULONG cOperations = 1               // one for XML setup
+                      + m->cDisks;      // plus one per disk
     ULONG ulTotalOperationsWeight;
-
-    cOperations =   1               // one for XML setup
-                  + m->cDisks;      // plus one per disk
     if (m->ulTotalDisksMB)
     {
         m->ulWeightForXmlOperation = (ULONG)((double)m->ulTotalDisksMB * 1 / 100);    // use 1% of the progress for the XML
@@ -1063,7 +1070,7 @@ HRESULT Appliance::i_setUpProgress(ComObjPtr<Progress> &pProgress,
         }
         case ImportS3:
         {
-            cOperations += 1 + 1;     // another one for the manifest file & another one for the import
+            cOperations += 1 + 1;       // another one for the manifest file & another one for the import
             ulTotalOperationsWeight = m->ulTotalDisksMB;
             if (!m->ulTotalDisksMB)
                 // no disks to export:
@@ -1080,7 +1087,7 @@ HRESULT Appliance::i_setUpProgress(ComObjPtr<Progress> &pProgress,
         }
         case WriteS3:
         {
-            cOperations += 1 + 1;     // another one for the mf & another one for temporary creation
+            cOperations += 1 + 1;       // another one for the mf & another one for temporary creation
 
             if (m->ulTotalDisksMB)
             {
@@ -1109,14 +1116,13 @@ HRESULT Appliance::i_setUpProgress(ComObjPtr<Progress> &pProgress,
     Log(("Setting up progress object: ulTotalMB = %d, cDisks = %d, => cOperations = %d, ulTotalOperationsWeight = %d, m->ulWeightForXmlOperation = %d\n",
          m->ulTotalDisksMB, m->cDisks, cOperations, ulTotalOperationsWeight, m->ulWeightForXmlOperation));
 
-    rc = pProgress->init(mVirtualBox, static_cast<IAppliance*>(this),
-                         Bstr(strDescription).raw(),
-                         TRUE /* aCancelable */,
-                         cOperations, // ULONG cOperations,
-                         ulTotalOperationsWeight, // ULONG ulTotalOperationsWeight,
-                         Bstr(strDescription).raw(), // CBSTR bstrFirstOperationDescription,
-                         m->ulWeightForXmlOperation); // ULONG ulFirstOperationWeight,
-    return rc;
+    return pProgress->init(mVirtualBox, static_cast<IAppliance*>(this),
+                           strDescription,
+                           TRUE /* aCancelable */,
+                           cOperations, // ULONG cOperations,
+                           ulTotalOperationsWeight, // ULONG ulTotalOperationsWeight,
+                           strDescription, // CBSTR bstrFirstOperationDescription,
+                           m->ulWeightForXmlOperation); // ULONG ulFirstOperationWeight,
 }
 
 void Appliance::i_addWarning(const char* aWarning, ...)

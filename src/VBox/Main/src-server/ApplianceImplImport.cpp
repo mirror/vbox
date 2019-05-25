@@ -781,10 +781,15 @@ HRESULT Appliance::importMachines(const std::vector<ImportOptions_T> &aOptions,
 
     if (aOptions.size())
     {
-        m->optListImport.setCapacity(aOptions.size());
-        for (size_t i = 0; i < aOptions.size(); ++i)
+        try
         {
-            m->optListImport.insert(i, aOptions[i]);
+            m->optListImport.setCapacity(aOptions.size());
+            for (size_t i = 0; i < aOptions.size(); ++i)
+                m->optListImport.insert(i, aOptions[i]);
+        }
+        catch (std::bad_alloc &)
+        {
+            return E_OUTOFMEMORY;
         }
     }
 
@@ -802,21 +807,11 @@ HRESULT Appliance::importMachines(const std::vector<ImportOptions_T> &aOptions,
                         tr("Cannot import machines without reading it first (call read() before i_importMachines())"));
 
     ComObjPtr<Progress> progress;
-    HRESULT rc = S_OK;
-    try
-    {
-        rc = i_importImpl(m->locInfo, progress);
-    }
-    catch (HRESULT aRC)
-    {
-        rc = aRC;
-    }
-
-    if (SUCCEEDED(rc))
-        /* Return progress to the caller */
+    HRESULT hrc = i_importImpl(m->locInfo, progress);
+    if (SUCCEEDED(hrc))
         progress.queryInterfaceTo(aProgress.asOutParam());
 
-    return rc;
+    return hrc;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -2817,96 +2812,86 @@ HRESULT Appliance::i_readTailProcessing(TaskOVF *pTask)
 HRESULT Appliance::i_importImpl(const LocationInfo &locInfo,
                                 ComObjPtr<Progress> &progress)
 {
-    HRESULT rc = S_OK;
-
-    SetUpProgressMode mode;
-    if (locInfo.storageType == VFSType_File)
-        mode = ImportFile;
-    else if (locInfo.storageType == VFSType_Cloud)
-        mode = ImportCloud;
-    else
-        mode = ImportS3;
+    HRESULT rc;
 
     /* Initialize our worker task */
-    TaskOVF* ovfTask = NULL;
-    TaskCloud* cloudTask = NULL;
-    try
+    ThreadTask *pTask;
+    if (locInfo.storageType != VFSType_Cloud)
     {
-        if (mode == ImportFile)
+        rc = i_setUpProgress(progress, Utf8StrFmt(tr("Importing appliance '%s'"), locInfo.strPath.c_str()),
+                             locInfo.storageType == VFSType_File ? ImportFile : ImportS3);
+        if (FAILED(rc))
+            return setError(rc, tr("Failed to create task for importing appliance into VirtualBox"));
+        try
         {
-            rc = i_setUpProgress(progress,
-                                 BstrFmt(tr("Importing appliance '%s'"), locInfo.strPath.c_str()),
-                                 mode);
-            if (FAILED(rc)) throw rc;
-
-            ovfTask = new TaskOVF(this, TaskOVF::Import, locInfo, progress);
-            rc = ovfTask->createThread();
+            pTask = new TaskOVF(this, TaskOVF::Import, locInfo, progress);
         }
-        else if (mode == ImportCloud)
+        catch (std::bad_alloc &)
         {
-            progress.createObject();
-            if (locInfo.strProvider.equals("OCI"))
+            return E_OUTOFMEMORY;
+        }
+    }
+    else
+    {
+        if (locInfo.strProvider.equals("OCI"))
+        {
+            /*
+             * 1. Create a custom image from the instance:
+             *    - 2 operations (starting and waiting)
+             * 2. Import the custom image into the Object Storage (OCI format - TAR file with QCOW2 image and JSON file):
+             *    - 2 operations (starting and waiting)
+             * 3. Download the object from the Object Storage:
+             *    - 2 operations (starting and waiting)
+             * 4. Open the object, extract QCOW2 image and convert one QCOW2->VDI:
+             *    - 1 operation (extracting and conversion are piped)
+             * 5. Create VM with user settings and attach the converted image to VM:
+             *    - 1 operation.
+             *
+             * Total: 2+2+2+1+1 = 8 operations
+             *
+             * See src/VBox/ExtPacks/Puel/OCI/OCICloudClient.h.
+             * Weight of cloud import operations (1-3 items from above):
+             * Total = 750 = 10+40+50+50+200x2+200.
+             *
+             * Weight of local import operations (4-5 items from above):
+             * Total = 250 = 200 (extract and convert) + 50 (create VM, attach disks)
+             */
+            try
             {
-                /*
-                 * 1. Create a custom image from the instance
-                 *  - 2 operations (starting and waiting)
-                 * 2. Import the custom image into the Object Storage (OCI format - TAR file with QCOW2 image and JSON file)
-                 *  - 2 operations (starting and waiting)
-                 * 3. Download the object from the Object Storage
-                 *  - 2 operations (starting and waiting)
-                 * 4. Open the object, extract QCOW2 image and convert one QCOW2->VDI
-                 *  - 1 operation (extracting and conversion are piped)
-                 * 5. Create VM with user settings and attach the converted image to VM
-                 *  - 1 operation.
-                 *  sum up = 2+2+2+1+1 = 8 op
-                */
-
-                /*
-                 * See src/VBox/ExtPacks/Puel/OCI/OCICloudClient.h.
-                 * Weight of cloud import operations (1-3 items from above):
-                 * Total = 750 = 10+40+50+50+200x2+200.
-                 *
-                 * Weight of local import operations (4-5 items from above):
-                 * Total = 250 = 200 (extract and convert) + 50 (create VM, attach disks)
-                 */
-                progress->init(mVirtualBox, static_cast<IAppliance*>(this),
-                             Bstr("Importing VM from Cloud...").raw(),
-                             TRUE /* aCancelable */,
-                             8, // ULONG cOperations,
-                             1000, // ULONG ulTotalOperationsWeight,
-                             Bstr("Importing VM from Cloud...").raw(), // aFirstOperationDescription
-                             10); // ULONG ulFirstOperationWeight
+                rc = progress.createObject();
+                if (SUCCEEDED(rc))
+                    rc = progress->init(mVirtualBox, static_cast<IAppliance *>(this),
+                                        Utf8Str(tr("Importing VM from Cloud...")),
+                                        TRUE /* aCancelable */,
+                                        8, // ULONG cOperations,
+                                        1000, // ULONG ulTotalOperationsWeight,
+                                        Utf8Str(tr("Importing VM from Cloud...")), // aFirstOperationDescription
+                                        10); // ULONG ulFirstOperationWeight
+                if (SUCCEEDED(rc))
+                    pTask = new TaskCloud(this, TaskCloud::Import, locInfo, progress);
+                else
+                    pTask = NULL; /* shut up vcc */
             }
-            else
-                return setErrorVrc(VBOX_E_NOT_SUPPORTED,
-                                   tr("Only \"OCI\" cloud provider is supported for now. \"%s\" isn't supported."),
-                                   locInfo.strProvider.c_str());
-
-            cloudTask = new TaskCloud(this, TaskCloud::Import, locInfo, progress);
-            rc = cloudTask->createThread();
-            if (FAILED(rc)) throw rc;
+            catch (std::bad_alloc &)
+            {
+                return E_OUTOFMEMORY;
+            }
+            if (FAILED(rc))
+                return setError(rc, tr("Failed to create task for importing appliance into VirtualBox"));
         }
-    }
-    catch (HRESULT aRc)
-    {
-        rc = aRc;
-    }
-    catch (...)
-    {
-        rc = setError(VBOX_E_OBJECT_NOT_FOUND,
-                            tr("Could not create a task object for importing appliance into VirtualBox"));
+        else
+            return setError(E_NOTIMPL, tr("Only \"OCI\" cloud provider is supported for now. \"%s\" isn't supported."),
+                            locInfo.strProvider.c_str());
     }
 
-    if (FAILED(rc))
-    {
-        if (ovfTask)
-            delete ovfTask;
-        if (cloudTask)
-            delete cloudTask;
-        throw rc;
-    }
-
-    return rc;
+    /*
+     * Start the task thread.
+     */
+    rc = pTask->createThread();
+    pTask = NULL;
+    if (SUCCEEDED(rc))
+        return rc;
+    return setError(rc, tr("Failed to start thread for importing appliance into VirtualBox"));
 }
 
 /**
