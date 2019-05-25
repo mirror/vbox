@@ -167,6 +167,9 @@
  *
  *   <li> Go through all of this: https://www.slideshare.net/olvemaudal/deep-c/
  *
+ *   <li> Avoid throwing exceptions, always prefer returning statuses.
+ *        Crappy exception handling is rewared by a glass of water in the face.
+ *
  * </ul>
  *
  * (1) It is common practice on Unix to have a single symbol namespace for an
