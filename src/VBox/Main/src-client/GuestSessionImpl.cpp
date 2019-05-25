@@ -726,47 +726,41 @@ HRESULT GuestSession::i_copyFromGuest(const GuestSessionFsSourceSet &SourceSet,
     if (RT_UNLIKELY((strDestination.c_str()) == NULL || *(strDestination.c_str()) == '\0'))
         return setError(E_INVALIDARG, tr("No destination specified"));
 
+    /* Create a task and return the progress obejct for it. */
+    GuestSessionTaskCopyFrom *pTask = NULL;
     try
     {
-        GuestSessionTaskCopyFrom *pTask = NULL;
-        ComObjPtr<Progress> pProgressObj;
-        try
-        {
-            pTask = new GuestSessionTaskCopyFrom(this /* GuestSession */, SourceSet, strDestination);
-        }
-        catch(...)
-        {
-            hrc = setError(VBOX_E_IPRT_ERROR, tr("Failed to create SessionTaskCopyFrom object"));
-            throw;
-        }
+        pTask = new GuestSessionTaskCopyFrom(this /* GuestSession */, SourceSet, strDestination);
+    }
+    catch (std::bad_alloc &)
+    {
+        return setError(E_OUTOFMEMORY, tr("Failed to create GuestSessionTaskCopyFrom object"));
+    }
 
+    try
+    {
         hrc = pTask->Init(Utf8StrFmt(tr("Copying to \"%s\" on the host"), strDestination.c_str()));
-        if (FAILED(hrc))
-        {
-            delete pTask;
-            hrc = setError(VBOX_E_IPRT_ERROR,
-                           tr("Creating progress object for SessionTaskCopyFrom object failed"));
-            throw hrc;
-        }
-
-        hrc = pTask->createThreadWithType(RTTHREADTYPE_MAIN_HEAVY_WORKER);
-        if (SUCCEEDED(hrc))
-        {
-            /* Return progress to the caller. */
-            pProgressObj = pTask->GetProgressObject();
-            hrc = pProgressObj.queryInterfaceTo(pProgress.asOutParam());
-        }
-        else
-            hrc = setError(hrc, tr("Starting thread for copying from guest to \"%s\" on the host failed"), strDestination.c_str());
-
     }
     catch (std::bad_alloc &)
     {
         hrc = E_OUTOFMEMORY;
     }
-    catch (HRESULT eHR)
+    if (SUCCEEDED(hrc))
     {
-        hrc = eHR;
+        ComObjPtr<Progress> ptrProgressObj = pTask->GetProgressObject();
+
+        /* Kick off the worker thread. Note! Consumes pTask. */
+        hrc = pTask->createThreadWithType(RTTHREADTYPE_MAIN_HEAVY_WORKER);
+        pTask = NULL;
+        if (SUCCEEDED(hrc))
+            hrc = ptrProgressObj.queryInterfaceTo(pProgress.asOutParam());
+        else
+            hrc = setError(hrc, tr("Starting thread for copying from guest to the host failed"));
+    }
+    else
+    {
+        hrc = setError(hrc, tr("Initializing GuestSessionTaskCopyFrom object failed"));
+        delete pTask;
     }
 
     LogFlowFunc(("Returning %Rhrc\n", hrc));
@@ -802,47 +796,41 @@ HRESULT GuestSession::i_copyToGuest(const GuestSessionFsSourceSet &SourceSet,
     if (RT_UNLIKELY(strDestination.isEmpty()))
         return setError(E_INVALIDARG, tr("No destination specified"));
 
+    /* Create a task and return the progress obejct for it. */
+    GuestSessionTaskCopyTo *pTask = NULL;
     try
     {
-        GuestSessionTaskCopyTo *pTask = NULL;
-        ComObjPtr<Progress> pProgressObj;
-        try
-        {
-            pTask = new GuestSessionTaskCopyTo(this /* GuestSession */, SourceSet, strDestination);
-        }
-        catch(...)
-        {
-            hrc = setError(VBOX_E_IPRT_ERROR, tr("Failed to create SessionTaskCopyTo object"));
-            throw;
-        }
+        pTask = new GuestSessionTaskCopyTo(this /* GuestSession */, SourceSet, strDestination);
+    }
+    catch (std::bad_alloc &)
+    {
+        return setError(E_OUTOFMEMORY, tr("Failed to create GuestSessionTaskCopyTo object"));
+    }
 
+    try
+    {
         hrc = pTask->Init(Utf8StrFmt(tr("Copying to \"%s\" on the guest"), strDestination.c_str()));
-        if (FAILED(hrc))
-        {
-            delete pTask;
-            hrc = setError(VBOX_E_IPRT_ERROR,
-                           tr("Creating progress object for SessionTaskCopyTo object failed"));
-            throw hrc;
-        }
-
-        hrc = pTask->createThreadWithType(RTTHREADTYPE_MAIN_HEAVY_WORKER);
-        if (SUCCEEDED(hrc))
-        {
-            /* Return progress to the caller. */
-            pProgressObj = pTask->GetProgressObject();
-            hrc = pProgressObj.queryInterfaceTo(pProgress.asOutParam());
-        }
-        else
-            hrc = setError(hrc, tr("Starting thread for copying from host to \"%s\" on the guest failed"), strDestination.c_str());
-
     }
     catch (std::bad_alloc &)
     {
         hrc = E_OUTOFMEMORY;
     }
-    catch (HRESULT eHR)
+    if (SUCCEEDED(hrc))
     {
-        hrc = eHR;
+        ComObjPtr<Progress> ptrProgressObj = pTask->GetProgressObject();
+
+        /* Kick off the worker thread. Note! Consumes pTask. */
+        hrc = pTask->createThreadWithType(RTTHREADTYPE_MAIN_HEAVY_WORKER);
+        pTask = NULL;
+        if (SUCCEEDED(hrc))
+            hrc = ptrProgressObj.queryInterfaceTo(pProgress.asOutParam());
+        else
+            hrc = setError(hrc, tr("Starting thread for copying from host to the guest failed"));
+    }
+    else
+    {
+        hrc = setError(hrc, tr("Initializing GuestSessionTaskCopyTo object failed"));
+        delete pTask;
     }
 
     LogFlowFunc(("Returning %Rhrc\n", hrc));
