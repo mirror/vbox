@@ -8845,39 +8845,44 @@ DECLCALLBACK(void) Console::i_vmstateChangeCallback(PUVM pUVM, VMSTATE enmState,
                 /* sync the state with the server */
                 that->i_setMachineStateLocally(MachineState_Stopping);
 
-                /* Setup task object and thread to carry out the operation
+                /*
+                 * Setup task object and thread to carry out the operation
                  * asynchronously (if we call powerDown() right here but there
                  * is one or more mpUVM callers (added with addVMCaller()) we'll
-                 * deadlock). */
+                 * deadlock).
+                 */
                 VMPowerDownTask *task = NULL;
                 try
                 {
                     task = new VMPowerDownTask(that, pProgress);
-                     /* If creating a task failed, this can currently mean one of
-                      * two: either Console::uninit() has been called just a ms
-                      * before (so a powerDown() call is already on the way), or
-                      * powerDown() itself is being already executed. Just do
-                      * nothing.
-                      */
-                    if (!task->isOk())
-                    {
-                        LogFlowFunc(("Console is already being uninitialized. \n"));
-                        throw E_FAIL;
-                    }
                 }
-                catch(...)
+                catch (std::bad_alloc &)
                 {
+                    LogRelFunc(("E_OUTOFMEMORY creating VMPowerDownTask"));
+                    rc = E_OUTOFMEMORY;
+                    break;
+                }
+
+                /*
+                 * If creating a task failed, this can currently mean one of
+                 * two: either Console::uninit() has been called just a ms
+                 * before (so a powerDown() call is already on the way), or
+                 * powerDown() itself is being already executed. Just do
+                 * nothing.
+                 */
+                if (!task->isOk())
+                {
+                    rc = task->createThread();
+                    task = NULL;
+                    if (FAILED(rc))
+                        LogRelFunc(("Problem with creating thread for VMPowerDownTask.\n"));
+                }
+                else
+                {
+                    LogFlowFunc(("Console is already being uninitialized. (%Rhrc)\n", task->rc()));
                     delete task;
-                    LogFlowFunc(("Problem with creating VMPowerDownTask object. \n"));
+                    rc = E_FAIL;
                 }
-
-                rc = task->createThread();
-
-                if (FAILED(rc))
-                {
-                    LogFlowFunc(("Problem with creating thread for VMPowerDownTask. \n"));
-                }
-
             }
             break;
         }
