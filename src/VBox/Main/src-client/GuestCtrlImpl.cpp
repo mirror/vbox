@@ -491,25 +491,20 @@ HRESULT Guest::updateGuestAdditions(const com::Utf8Str &aSource, const std::vect
     if (fFlags && !(fFlags & AdditionsUpdateFlag_WaitForUpdateStartOnly))
         return setError(E_INVALIDARG, tr("Unknown flags (%#x)"), fFlags);
 
-    int vrc = VINF_SUCCESS;
 
+    /* Copy arguments into aArgs: */
     ProcessArguments aArgs;
-    aArgs.resize(0);
-
-    if (aArguments.size())
+    try
     {
-        try
-        {
-            for (size_t i = 0; i < aArguments.size(); ++i)
-                aArgs.push_back(aArguments[i]);
-        }
-        catch(std::bad_alloc &)
-        {
-            vrc = VERR_NO_MEMORY;
-        }
+        aArgs.resize(0);
+        for (size_t i = 0; i < aArguments.size(); ++i)
+            aArgs.push_back(aArguments[i]);
+    }
+    catch (std::bad_alloc &)
+    {
+        return E_OUTOFMEMORY;
     }
 
-    HRESULT hr = S_OK;
 
     /*
      * Create an anonymous session. This is required to run the Guest Additions
@@ -521,86 +516,87 @@ HRESULT Guest::updateGuestAdditions(const com::Utf8Str &aSource, const std::vect
     GuestCredentials guestCreds;
     RT_ZERO(guestCreds);
 
+    HRESULT hrc;
     ComObjPtr<GuestSession> pSession;
+    int vrc = i_sessionCreate(startupInfo, guestCreds, pSession);
     if (RT_SUCCESS(vrc))
-        vrc = i_sessionCreate(startupInfo, guestCreds, pSession);
-    if (RT_FAILURE(vrc))
+    {
+        Assert(!pSession.isNull());
+
+        int rcGuest = VERR_GSTCTL_GUEST_ERROR;
+        vrc = pSession->i_startSession(&rcGuest);
+        if (RT_SUCCESS(vrc))
+        {
+            /*
+             * Create the update task.
+             */
+            GuestSessionTaskUpdateAdditions *pTask = NULL;
+            try
+            {
+                pTask = new GuestSessionTaskUpdateAdditions(pSession /* GuestSession */, aSource, aArgs, fFlags);
+                hrc = S_OK;
+            }
+            catch (std::bad_alloc &)
+            {
+                hrc = setError(E_OUTOFMEMORY, tr("Failed to create SessionTaskUpdateAdditions object"));
+            }
+            if (SUCCEEDED(hrc))
+            {
+                try
+                {
+                    hrc = pTask->Init(Utf8StrFmt(tr("Updating Guest Additions")));
+                }
+                catch (std::bad_alloc &)
+                {
+                    hrc = E_OUTOFMEMORY;
+                }
+                if (SUCCEEDED(hrc))
+                {
+                    ComPtr<Progress> ptrProgress = pTask->GetProgressObject();
+
+                    /*
+                     * Kick off the thread.  Note! consumes pTask!
+                     */
+                    hrc = pTask->createThreadWithType(RTTHREADTYPE_MAIN_HEAVY_WORKER);
+                    pTask = NULL;
+                    if (SUCCEEDED(hrc))
+                        hrc = ptrProgress.queryInterfaceTo(aProgress.asOutParam());
+                    else
+                        hrc = setError(hrc, tr("Starting thread for updating Guest Additions on the guest failed"));
+                }
+                else
+                {
+                    hrc = setError(hrc, tr("Failed to initialize SessionTaskUpdateAdditions object"));
+                    delete pTask;
+                }
+            }
+        }
+        else
+        {
+            if (vrc == VERR_GSTCTL_GUEST_ERROR)
+                vrc = rcGuest;
+            hrc = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Could not open guest session: %Rrc"), vrc);
+        }
+    }
+    else
     {
         switch (vrc)
         {
             case VERR_MAX_PROCS_REACHED:
-                hr = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Maximum number of concurrent guest sessions (%d) reached"),
+                hrc = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Maximum number of concurrent guest sessions (%d) reached"),
                                   VBOX_GUESTCTRL_MAX_SESSIONS);
                 break;
 
             /** @todo Add more errors here. */
 
            default:
-                hr = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Could not create guest session: %Rrc"), vrc);
+                hrc = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Could not create guest session: %Rrc"), vrc);
                 break;
         }
     }
-    else
-    {
-        Assert(!pSession.isNull());
-        int rcGuest;
-        vrc = pSession->i_startSession(&rcGuest);
-        if (RT_FAILURE(vrc))
-        {
-            /** @todo Handle rcGuest! */
 
-            hr = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Could not open guest session: %Rrc"), vrc);
-        }
-        else
-        {
-
-            ComObjPtr<Progress> pProgress;
-            GuestSessionTaskUpdateAdditions *pTask = NULL;
-            try
-            {
-                try
-                {
-                    pTask = new GuestSessionTaskUpdateAdditions(pSession /* GuestSession */, aSource, aArgs, fFlags);
-                }
-                catch(...)
-                {
-                    hr = setError(E_OUTOFMEMORY, tr("Failed to create SessionTaskUpdateAdditions object "));
-                    throw;
-                }
-
-
-                hr = pTask->Init(Utf8StrFmt(tr("Updating Guest Additions")));
-                if (FAILED(hr))
-                {
-                    delete pTask;
-                    hr = setError(hr, tr("Creating progress object for SessionTaskUpdateAdditions object failed"));
-                    throw hr;
-                }
-
-                hr = pTask->createThreadWithType(RTTHREADTYPE_MAIN_HEAVY_WORKER);
-
-                if (SUCCEEDED(hr))
-                {
-                    /* Return progress to the caller. */
-                    pProgress = pTask->GetProgressObject();
-                    hr = pProgress.queryInterfaceTo(aProgress.asOutParam());
-                }
-                else
-                    hr = setError(hr, tr("Starting thread for updating Guest Additions on the guest failed "));
-            }
-            catch(std::bad_alloc &)
-            {
-                hr = E_OUTOFMEMORY;
-            }
-            catch(...)
-            {
-                LogFlowThisFunc(("Exception was caught in the function\n"));
-            }
-        }
-    }
-
-    LogFlowFunc(("Returning hr=%Rhrc\n", hr));
-    return hr;
+    LogFlowFunc(("Returning hrc=%Rhrc\n", hrc));
+    return hrc;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
