@@ -1163,35 +1163,27 @@ int GuestProcess::i_startProcessAsync(void)
 {
     LogFlowThisFuncEnter();
 
-    int vrc = VINF_SUCCESS;
-    HRESULT hr = S_OK;
-
-    GuestProcessStartTask* pTask = NULL;
+    /* Create the task: */
+    GuestProcessStartTask *pTask = NULL;
     try
     {
         pTask = new GuestProcessStartTask(this);
-        if (!pTask->i_isOk())
-        {
-            delete pTask;
-            LogFlowThisFunc(("Could not create GuestProcessStartTask object\n"));
-            throw VERR_MEMOBJ_INIT_FAILED;
-        }
-        LogFlowThisFunc(("Successfully created GuestProcessStartTask object\n"));
-        //this function delete pTask in case of exceptions, so there is no need in the call of delete operator
-        hr = pTask->createThread();
     }
-    catch(std::bad_alloc &)
+    catch (std::bad_alloc &)
     {
-        vrc = VERR_NO_MEMORY;
+        LogFlowThisFunc(("out of memory\n"));
+        return VERR_NO_MEMORY;
     }
-    catch(int eVRC)
-    {
-        vrc = eVRC;
-        LogFlowThisFunc(("Could not create thread for GuestProcessStartTask task %Rrc\n", vrc));
-    }
+    AssertReturnStmt(pTask->i_isOk(), delete pTask, E_FAIL); /* cannot fail for GuestProcessStartTask. */
+    LogFlowThisFunc(("Successfully created GuestProcessStartTask object\n"));
 
-    LogFlowFuncLeaveRC(vrc);
-    return vrc;
+    /* Start the thread (always consumes the task): */
+    HRESULT hrc = pTask->createThread();
+    pTask = NULL;
+    if (SUCCEEDED(hrc))
+        return VINF_SUCCESS;
+    LogFlowThisFunc(("Failed to create thread for GuestProcessStartTask\n"));
+    return VERR_GENERAL_FAILURE;
 }
 
 /* static */
