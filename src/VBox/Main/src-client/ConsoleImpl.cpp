@@ -2191,84 +2191,69 @@ HRESULT Console::powerDown(ComPtr<IProgress> &aProgress)
     /* memorize the current machine state */
     MachineState_T lastMachineState = mMachineState;
 
-    HRESULT rc = S_OK;
-    bool fBeganPowerDown = false;
-    VMPowerDownTask* task = NULL;
-
-    do
-    {
-        ComPtr<IProgress> pProgress;
-
 #ifdef VBOX_WITH_GUEST_PROPS
-        alock.release();
+    alock.release(); /** @todo r=bird: This code introduces a race condition wrt to the state.  This must be done elsewhere! */
 
-        if (i_isResetTurnedIntoPowerOff())
-        {
-            mMachine->DeleteGuestProperty(Bstr("/VirtualBox/HostInfo/VMPowerOffReason").raw());
-            mMachine->SetGuestProperty(Bstr("/VirtualBox/HostInfo/VMPowerOffReason").raw(),
-                                       Bstr("PowerOff").raw(), Bstr("RDONLYGUEST").raw());
-            mMachine->SaveSettings();
-        }
+    if (i_isResetTurnedIntoPowerOff())
+    {
+        mMachine->DeleteGuestProperty(Bstr("/VirtualBox/HostInfo/VMPowerOffReason").raw());
+        mMachine->SetGuestProperty(Bstr("/VirtualBox/HostInfo/VMPowerOffReason").raw(),
+                                   Bstr("PowerOff").raw(), Bstr("RDONLYGUEST").raw());
+        mMachine->SaveSettings();
+    }
 
-        alock.acquire();
+    alock.acquire();
 #endif
 
-        /*
-         * request a progress object from the server
-         * (this will set the machine state to Stopping on the server to block
-         * others from accessing this machine)
-         */
-        rc = mControl->BeginPoweringDown(pProgress.asOutParam());
-        if (FAILED(rc))
-            break;
-
-        fBeganPowerDown = true;
-
-        /* sync the state with the server */
+    /*
+     * Request a progress object from the server (this will set the machine state
+     * to Stopping on the server to block others from accessing this machine).
+     */
+    ComPtr<IProgress> ptrProgress;
+    HRESULT hrc = mControl->BeginPoweringDown(ptrProgress.asOutParam());
+    if (SUCCEEDED(hrc))
+    {
+        /* Sync the state with the server: */
         i_setMachineStateLocally(MachineState_Stopping);
+
+        /* Create the power down task: */
+        VMPowerDownTask *pTask = NULL;
         try
         {
-            task = new VMPowerDownTask(this, pProgress);
-            if (!task->isOk())
+            pTask = new VMPowerDownTask(this, ptrProgress);
+            if (!pTask->isOk())
             {
-                throw E_FAIL;
+                hrc = setError(FAILED(hrc) ? hrc : E_FAIL, "Could not create VMPowerDownTask object\n");
+                delete(pTask);
+                pTask = NULL;
             }
         }
-        catch(...)
+        catch (std::bad_alloc &)
         {
-            delete task;
-            rc = setError(E_FAIL, "Could not create VMPowerDownTask object\n");
-            break;
+            hrc = E_OUTOFMEMORY;
+        }
+        if (SUCCEEDED(hrc))
+        {
+            hrc = pTask->createThread();
+            if (SUCCEEDED(hrc))
+            {
+                ptrProgress.queryInterfaceTo(aProgress.asOutParam());
+                LogFlowThisFunc(("LEAVE: hrc=%Rhrc\n", hrc));
+                return hrc;
+            }
         }
 
-        rc = task->createThread();
-
-        /* pass the progress to the caller */
-        pProgress.queryInterfaceTo(aProgress.asOutParam());
-    }
-    while (0);
-
-    if (FAILED(rc))
-    {
-        /* preserve existing error info */
+        /*
+         * Cancel the requested power down procedure.
+         * This will reset the machine state to the state it had right
+         * before calling mControl->BeginPoweringDown().
+         */
         ErrorInfoKeeper eik;
-
-        if (fBeganPowerDown)
-        {
-            /*
-             * cancel the requested power down procedure.
-             * This will reset the machine state to the state it had right
-             * before calling mControl->BeginPoweringDown().
-             */
-            mControl->EndPoweringDown(eik.getResultCode(), eik.getText().raw());        }
-
+        mControl->EndPoweringDown(eik.getResultCode(), eik.getText().raw());
         i_setMachineStateLocally(lastMachineState);
     }
-
-    LogFlowThisFunc(("rc=%Rhrc\n", rc));
-    LogFlowThisFuncLeave();
-
-    return rc;
+    LogFlowThisFunc(("LEAVE: hrc=%Rhrc\n", hrc));
+    return hrc;
 }
 
 HRESULT Console::reset()
