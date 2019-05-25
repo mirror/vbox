@@ -59,6 +59,11 @@ static int vbglR0IdcNtCallInternal(PDEVICE_OBJECT pDeviceObject, PFILE_OBJECT pF
      * We want to avoid double buffering of the request, therefore we don't
      * specify any request pointers or sizes when asking the kernel to build
      * the IRP for us, but instead do that part our selves.
+     *
+     * See https://www.osr.com/blog/2018/02/14/beware-iobuilddeviceiocontrolrequest/
+     * for how fun this is when we're not at IRQL PASSIVE (HACK ALERT futher down).
+     * Ran into this little issue when LoadLibraryEx on a .NET DLL using the
+     * LOAD_LIBRARY_AS_DATAFILE and LOAD_LIBRARY_AS_IMAGE_RESOURCE flags.
      */
     KEVENT Event;
     KeInitializeEvent(&Event, NotificationEvent, FALSE);
@@ -90,7 +95,18 @@ static int vbglR0IdcNtCallInternal(PDEVICE_OBJECT pDeviceObject, PFILE_OBJECT pF
 #if 0
         IoGetNextIrpStackLocation(pIrp)->FileObject = pFileObject;
 #else
-        pIrp->Flags                                          |= IRP_SYNCHRONOUS_API;
+        if (!KeAreAllApcsDisabled())
+            pIrp->Flags                                      |= IRP_SYNCHRONOUS_API;
+        else
+        {
+            /* HACK ALERT! Causes IoCompleteRequest to update UserIosb and free the IRP w/o any APC happening. */
+            pIrp->Flags                                      |= IRP_SYNCHRONOUS_API | IRP_PAGING_IO | IRP_SYNCHRONOUS_PAGING_IO;
+            KIRQL bIrqlSaved;
+            KeRaiseIrql(APC_LEVEL, &bIrqlSaved);
+            RemoveEntryList(&pIrp->ThreadListEntry);
+            InitializeListHead(&pIrp->ThreadListEntry);
+            KeLowerIrql(bIrqlSaved);
+        }
         pIrp->UserBuffer                                      = pReq;
         pIrp->AssociatedIrp.SystemBuffer                      = pReq;
         PIO_STACK_LOCATION pStack = IoGetNextIrpStackLocation(pIrp);
