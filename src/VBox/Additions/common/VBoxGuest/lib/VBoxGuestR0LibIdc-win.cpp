@@ -95,9 +95,9 @@ static int vbglR0IdcNtCallInternal(PDEVICE_OBJECT pDeviceObject, PFILE_OBJECT pF
 #if 0
         IoGetNextIrpStackLocation(pIrp)->FileObject = pFileObject;
 #else
-        if (!KeAreAllApcsDisabled())
-            pIrp->Flags                                      |= IRP_SYNCHRONOUS_API;
-        else
+        //w2k3sp1+: if (!KeAreAllApcsDisabled())
+        //w2k3sp1+:     pIrp->Flags                                      |= IRP_SYNCHRONOUS_API;
+        //w2k3sp1+: else
         {
             /* HACK ALERT! Causes IoCompleteRequest to update UserIosb and free the IRP w/o any APC happening. */
             pIrp->Flags                                      |= IRP_SYNCHRONOUS_API | IRP_PAGING_IO | IRP_SYNCHRONOUS_PAGING_IO;
