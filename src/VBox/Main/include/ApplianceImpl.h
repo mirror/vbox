@@ -160,7 +160,7 @@ private:
     /** @name Read stuff
      * @{
      */
-    void    i_readImpl(const LocationInfo &aLocInfo, ComObjPtr<Progress> &aProgress);
+    HRESULT i_readImpl(const LocationInfo &aLocInfo, ComObjPtr<Progress> &aProgress);
 
     HRESULT i_readFS(TaskOVF *pTask);
     HRESULT i_readFSOVF(TaskOVF *pTask);

@@ -88,28 +88,32 @@ HRESULT Appliance::read(const com::Utf8Str &aFile,
         m->pReader = NULL;
     }
 
-    ComObjPtr<Progress> progress;
+    /* Parse all necessary info out of the URI (please not how stupid utterly wasteful
+       this status & allocation error throwing is): */
     try
     {
-        /* Parse all necessary info out of the URI */
-        i_parseURI(aFile, m->locInfo);
-
-        // see if we can handle this file; for now we insist it has an ovf/ova extension
-        if (   m->locInfo.storageType == VFSType_File
-            && !aFile.endsWith(".ovf", Utf8Str::CaseInsensitive)
-            && !aFile.endsWith(".ova", Utf8Str::CaseInsensitive))
-            return setError(VBOX_E_FILE_ERROR, tr("Appliance file must have .ovf or .ova extension"));
-
-        i_readImpl(m->locInfo, progress);
+        i_parseURI(aFile, m->locInfo); /* may trhow rc. */
     }
     catch (HRESULT aRC)
     {
         return aRC;
     }
+    catch (std::bad_alloc &)
+    {
+        return E_OUTOFMEMORY;
+    }
 
-    /* Return progress to the caller */
-    progress.queryInterfaceTo(aProgress.asOutParam());
-    return S_OK;
+    // see if we can handle this file; for now we insist it has an ovf/ova extension
+    if (   m->locInfo.storageType == VFSType_File
+        && !aFile.endsWith(".ovf", Utf8Str::CaseInsensitive)
+        && !aFile.endsWith(".ova", Utf8Str::CaseInsensitive))
+        return setError(VBOX_E_FILE_ERROR, tr("Appliance file must have .ovf or .ova extension"));
+
+    ComObjPtr<Progress> progress;
+    HRESULT hrc = i_readImpl(m->locInfo, progress);
+    if (SUCCEEDED(hrc))
+        progress.queryInterfaceTo(aProgress.asOutParam());
+    return hrc;
 }
 
 /**
@@ -1108,76 +1112,70 @@ void Appliance::i_importDecompressFile(ImportStack &stack, Utf8Str const &rstrSr
  * 2) in a second worker thread; in that case, Appliance::ImportMachines() called Appliance::i_importImpl(), which
  *    called Appliance::readFSOVA(), which called Appliance::i_importImpl(), which then called this again.
  *
+ * @returns COM status with error info set.
  * @param   aLocInfo    The OVF location.
  * @param   aProgress   Where to return the progress object.
- * @throws  COM error codes will be thrown.
  */
-void Appliance::i_readImpl(const LocationInfo &aLocInfo, ComObjPtr<Progress> &aProgress)
+HRESULT Appliance::i_readImpl(const LocationInfo &aLocInfo, ComObjPtr<Progress> &aProgress)
 {
-    BstrFmt bstrDesc = BstrFmt(tr("Reading appliance '%s'"),
-                               aLocInfo.strPath.c_str());
-    HRESULT rc;
-    /* Create the progress object */
+    /*
+     * Create the progress object.
+     */
+    HRESULT hrc;
     aProgress.createObject();
-    if (aLocInfo.storageType == VFSType_File)
-        /* 1 operation only */
-        rc = aProgress->init(mVirtualBox, static_cast<IAppliance*>(this),
-                             bstrDesc.raw(),
-                             TRUE /* aCancelable */);
-
-    else if (aLocInfo.storageType == VFSType_Cloud)
-        /* 1 operation only for now */
-        rc = aProgress->init(mVirtualBox, static_cast<IAppliance*>(this),
-                             "Getting cloud instance information...",
-                             TRUE /* aCancelable */);
-    else
-        /* 4/5 is downloading, 1/5 is reading */
-        rc = aProgress->init(mVirtualBox, static_cast<IAppliance*>(this),
-                             bstrDesc.raw(),
-                             TRUE /* aCancelable */,
-                             2, // ULONG cOperations,
-                             5, // ULONG ulTotalOperationsWeight,
-                             BstrFmt(tr("Download appliance '%s'"),
-                                     aLocInfo.strPath.c_str()).raw(), // CBSTR bstrFirstOperationDescription,
-                             4); // ULONG ulFirstOperationWeight,
-    if (FAILED(rc)) throw rc;
-
-    /* Initialize our worker task */
-    TaskOVF *ovfTask = NULL;
-    TaskCloud *cloudTask = NULL;
     try
     {
-        if (aLocInfo.storageType == VFSType_File)
+        if (aLocInfo.storageType == VFSType_Cloud)
+            /* 1 operation only */
+            hrc = aProgress->init(mVirtualBox, static_cast<IAppliance*>(this),
+                                  Utf8Str(tr("Getting cloud instance information...")), TRUE /* aCancelable */);
+        else
         {
-            ovfTask = new TaskOVF(this, TaskOVF::Read, aLocInfo, aProgress);
-            rc = ovfTask->createThread();
-            if (FAILED(rc)) throw rc;
-        }
-        else if (aLocInfo.storageType == VFSType_Cloud)
-        {
-            cloudTask = new TaskCloud(this, TaskCloud::ReadData, aLocInfo, aProgress);
-            rc = cloudTask->createThread();
-            if (FAILED(rc)) throw rc;
+            Utf8StrFmt strDesc(tr("Reading appliance '%s'"), aLocInfo.strPath.c_str());
+            if (aLocInfo.storageType == VFSType_File)
+                /* 1 operation only */
+                hrc = aProgress->init(mVirtualBox, static_cast<IAppliance*>(this), strDesc, TRUE /* aCancelable */);
+            else
+                /* 4/5 is downloading, 1/5 is reading */
+                hrc = aProgress->init(mVirtualBox, static_cast<IAppliance*>(this), strDesc, TRUE /* aCancelable */,
+                                      2, // ULONG cOperations,
+                                      5, // ULONG ulTotalOperationsWeight,
+                                      Utf8StrFmt(tr("Download appliance '%s'"),
+                                                 aLocInfo.strPath.c_str()).raw(), // CBSTR bstrFirstOperationDescription,
+                                      4); // ULONG ulFirstOperationWeight,
         }
     }
-    catch (HRESULT aRc)
+    catch (std::bad_alloc &) /* Utf8Str/Utf8StrFmt */
     {
-        rc = aRc;
+        return E_OUTOFMEMORY;
     }
-    catch (...)
+    if (FAILED(hrc))
+        return hrc;
+
+    /*
+     * Initialize the worker task.
+     */
+    ThreadTask *pTask;
+    try
     {
-        rc = setError(VBOX_E_OBJECT_NOT_FOUND,
-                      tr("Could not create a task object for reading the Appliance data"));
+        if (aLocInfo.storageType == VFSType_Cloud)
+            pTask = new TaskCloud(this, TaskCloud::ReadData, aLocInfo, aProgress);
+        else
+            pTask = new TaskOVF(this, TaskOVF::Read, aLocInfo, aProgress);
+    }
+    catch (std::bad_alloc &)
+    {
+        return E_OUTOFMEMORY;
     }
 
-    if (FAILED(rc))
-    {
-        if (ovfTask)
-            delete ovfTask;
-        if (cloudTask)
-            delete cloudTask;
-        throw rc;
-    }
+    /*
+     * Kick off the worker thread.
+     */
+    hrc = pTask->createThread();
+    pTask = NULL; /* Note! createThread has consumed the task.*/
+    if (SUCCEEDED(hrc))
+        return hrc;
+    return setError(hrc, tr("Failed to create thread for reading appliance data"));
 }
 
 HRESULT Appliance::i_gettingCloudData(TaskCloud *pTask)
