@@ -2223,7 +2223,7 @@ HRESULT Console::powerDown(ComPtr<IProgress> &aProgress)
             pTask = new VMPowerDownTask(this, ptrProgress);
             if (!pTask->isOk())
             {
-                hrc = setError(FAILED(hrc) ? hrc : E_FAIL, "Could not create VMPowerDownTask object\n");
+                hrc = setError(FAILED(pTask->rc()) ? pTask->rc() : E_FAIL, "Could not create VMPowerDownTask object\n");
                 delete(pTask);
                 pTask = NULL;
             }
@@ -7620,7 +7620,7 @@ HRESULT Console::i_powerUp(IProgress **aProgress, bool aPaused)
 
     LONG cOperations = 1;
     LONG ulTotalOperationsWeight = 1;
-    VMPowerUpTask* task = NULL;
+    VMPowerUpTask *task = NULL;
 
     try
     {
@@ -7739,26 +7739,17 @@ HRESULT Console::i_powerUp(IProgress **aProgress, bool aPaused)
 
         /* Setup task object and thread to carry out the operation
          * asynchronously */
-        try
-        {
-            task = new VMPowerUpTask(this, pPowerupProgress);
-            if (!task->isOk())
-            {
-                throw E_FAIL;
-            }
-        }
-        catch(...)
-        {
-            delete task;
-            rc = setError(E_FAIL, "Could not create VMPowerUpTask object \n");
-            throw rc;
-        }
+        try { task = new VMPowerUpTask(this, pPowerupProgress); }
+        catch (std::bad_alloc &) { throw rc = E_OUTOFMEMORY; }
+        if (!task->isOk())
+            throw task->rc();
 
         task->mConfigConstructor = i_configConstructor;
         task->mSharedFolders = sharedFolders;
         task->mStartPaused = aPaused;
         if (mMachineState == MachineState_Saved)
-            task->mSavedStateFile = savedStateFile;
+            try { task->mSavedStateFile = savedStateFile; }
+            catch (std::bad_alloc &) { throw rc = E_OUTOFMEMORY; }
         task->mTeleporterEnabled = fTeleporterEnabled;
         task->mEnmFaultToleranceState = enmFaultToleranceState;
 
@@ -7900,8 +7891,8 @@ HRESULT Console::i_powerUp(IProgress **aProgress, bool aPaused)
                                         1);
             AssertComRCReturnRC(rc);
         }
-        else if (    mMachineState == MachineState_Saved
-            ||  (!fTeleporterEnabled && !fFaultToleranceSyncEnabled))
+        else if (   mMachineState == MachineState_Saved
+                 || (!fTeleporterEnabled && !fFaultToleranceSyncEnabled))
         {
             rc = pPowerupProgress->init(static_cast<IConsole *>(this),
                                         progressDesc.raw(),
@@ -8011,13 +8002,14 @@ HRESULT Console::i_powerUp(IProgress **aProgress, bool aPaused)
 
         /* setup task object and thread to carry out the operation
          * asynchronously */
-        if (aProgress){
-                rc = pPowerupProgress.queryInterfaceTo(aProgress);
-                AssertComRCReturnRC(rc);
+        if (aProgress)
+        {
+            rc = pPowerupProgress.queryInterfaceTo(aProgress);
+            AssertComRCReturnRC(rc);
         }
 
         rc = task->createThread();
-
+        task = NULL;
         if (FAILED(rc))
             throw rc;
 
@@ -8033,7 +8025,10 @@ HRESULT Console::i_powerUp(IProgress **aProgress, bool aPaused)
         else
             i_setMachineState(MachineState_Starting);
     }
-    catch (HRESULT aRC) { rc = aRC; }
+    catch (HRESULT aRC)
+    {
+        rc = aRC;
+    }
 
     if (FAILED(rc) && fBeganPoweringUp)
     {
@@ -8050,6 +8045,12 @@ HRESULT Console::i_powerUp(IProgress **aProgress, bool aPaused)
 
         /* signal end of operation */
         mControl->EndPowerUp(rc);
+    }
+
+    if (task)
+    {
+        ErrorInfoKeeper eik;
+        delete task;
     }
 
     LogFlowThisFunc(("mMachineState=%d, rc=%Rhrc\n", mMachineState, rc));
@@ -8847,9 +8848,8 @@ DECLCALLBACK(void) Console::i_vmstateChangeCallback(PUVM pUVM, VMSTATE enmState,
                 /* Setup task object and thread to carry out the operation
                  * asynchronously (if we call powerDown() right here but there
                  * is one or more mpUVM callers (added with addVMCaller()) we'll
-                 * deadlock).
-                 */
-                VMPowerDownTask* task = NULL;
+                 * deadlock). */
+                VMPowerDownTask *task = NULL;
                 try
                 {
                     task = new VMPowerDownTask(that, pProgress);
