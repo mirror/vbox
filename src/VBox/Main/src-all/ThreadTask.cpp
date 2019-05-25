@@ -51,6 +51,8 @@
    @endcode
  *
  * @sa createThreadWithType
+ *
+ * @note Always consumes @a this!
  */
 HRESULT ThreadTask::createThread(void)
 {
@@ -62,6 +64,8 @@ HRESULT ThreadTask::createThread(void)
  * Same ThreadTask::createThread(), except it takes a thread type parameter.
  *
  * @param   enmType     The thread type.
+ *
+ * @note Always consumes @a this!
  */
 HRESULT ThreadTask::createThreadWithType(RTTHREADTYPE enmType)
 {
