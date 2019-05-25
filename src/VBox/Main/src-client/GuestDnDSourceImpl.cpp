@@ -377,7 +377,7 @@ HRESULT GuestDnDSource::drop(const com::Utf8Str &aFormat, DnDAction_T aAction, C
         /* This function delete pTask in case of exceptions,
          * so there is no need in the call of delete operator. */
         hr = pTask->createThreadWithType(RTTHREADTYPE_MAIN_WORKER);
-
+        pTask = NULL;  /* Note: pTask is now owned by the worker thread. */
     }
     catch (std::bad_alloc &)
     {
@@ -396,7 +396,6 @@ HRESULT GuestDnDSource::drop(const com::Utf8Str &aFormat, DnDAction_T aAction, C
         hr = pResp->queryProgressTo(aProgress.asOutParam());
         ComAssertComRC(hr);
 
-        /* Note: pTask is now owned by the worker thread. */
     }
     else
         hr = setError(hr, tr("Starting thread for GuestDnDSource::i_receiveDataThread failed (%Rhrc)"), hr);
