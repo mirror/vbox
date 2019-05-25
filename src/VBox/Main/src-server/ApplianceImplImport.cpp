@@ -1141,7 +1141,7 @@ HRESULT Appliance::i_readImpl(const LocationInfo &aLocInfo, ComObjPtr<Progress> 
                                       2, // ULONG cOperations,
                                       5, // ULONG ulTotalOperationsWeight,
                                       Utf8StrFmt(tr("Download appliance '%s'"),
-                                                 aLocInfo.strPath.c_str()).raw(), // CBSTR bstrFirstOperationDescription,
+                                                 aLocInfo.strPath.c_str()), // CBSTR bstrFirstOperationDescription,
                                       4); // ULONG ulFirstOperationWeight,
         }
     }
