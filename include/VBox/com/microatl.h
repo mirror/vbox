@@ -1049,13 +1049,28 @@ public:
         *pp = NULL;
 
         HRESULT hrc = E_OUTOFMEMORY;
-        CComObject<Base> *p = new(std::nothrow) CComObject<Base>();
+        CComObject<Base> *p = NULL;
+        try
+        {
+            p = new CComObject<Base>();
+        }
+        catch (std::bad_alloc &)
+        {
+            p = NULL;
+        }
         if (p)
         {
             p->InternalFinalConstructAddRef();
-            hrc = p->_AtlInitialConstruct();
-            if (SUCCEEDED(hrc))
-                hrc = p->FinalConstruct();
+            try
+            {
+                hrc = p->_AtlInitialConstruct();
+                if (SUCCEEDED(hrc))
+                    hrc = p->FinalConstruct();
+            }
+            catch (std::bad_alloc &)
+            {
+                hrc = E_OUTOFMEMORY;
+            }
             p->InternalFinalConstructRelease();
             if (FAILED(hrc))
             {

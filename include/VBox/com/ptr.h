@@ -468,34 +468,76 @@ public:
      *  @note Win32: when VBOX_COM_OUTOFPROC_MODULE is defined, the created
      *  object doesn't increase the lock count of the server module, as it
      *  does otherwise.
+     *
+     *  @note In order to make it easier to use, this method does _not_ throw
+     *        bad_alloc, but instead returns E_OUTOFMEMORY.
      */
     HRESULT createObject()
     {
-        HRESULT rc;
+        HRESULT hrc;
 #ifndef VBOX_WITH_XPCOM
 # ifdef VBOX_COM_OUTOFPROC_MODULE
-        ATL::CComObjectNoLock<T> *obj = new ATL::CComObjectNoLock<T>();
+        ATL::CComObjectNoLock<T> *obj = NULL;
+        try
+        {
+            obj = new ATL::CComObjectNoLock<T>();
+        }
+        catch (std::bad_alloc &)
+        {
+            obj = NULL;
+        }
         if (obj)
         {
             obj->InternalFinalConstructAddRef();
-            rc = obj->FinalConstruct();
+            try
+            {
+                hrc = obj->FinalConstruct();
+            }
+            catch (std::bad_alloc &)
+            {
+                hrc = E_OUTOFMEMORY;
+            }
             obj->InternalFinalConstructRelease();
+            if (FAILED(hrc))
+            {
+                delete obj;
+                obj = NULL;
+            }
         }
         else
-            rc = E_OUTOFMEMORY;
+            hrc = E_OUTOFMEMORY;
 # else
         ATL::CComObject<T> *obj = NULL;
-        rc = ATL::CComObject<T>::CreateInstance(&obj);
+        hrc = ATL::CComObject<T>::CreateInstance(&obj);
 # endif
 #else /* VBOX_WITH_XPCOM */
-        ATL::CComObject<T> *obj = new ATL::CComObject<T>();
+        ATL::CComObject<T> *obj;
+        try
+        {
+            obj = new ATL::CComObject<T>();
+        }
+        catch (std::bad_alloc &)
+        {
+            obj = NULL;
+        }
         if (obj)
-            rc = obj->FinalConstruct();
+        {
+            try
+            {
+                hrc = obj->FinalConstruct();
+            }
+            catch (std::bad_alloc &)
+            {
+                delete obj;
+                obj = NULL;
+                hrc = E_OUTOFMEMORY;
+            }
+        }
         else
-            rc = E_OUTOFMEMORY;
+            hrc = E_OUTOFMEMORY;
 #endif /* VBOX_WITH_XPCOM */
         *this = obj;
-        return rc;
+        return hrc;
     }
 };
 
