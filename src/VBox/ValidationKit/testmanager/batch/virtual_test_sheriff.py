@@ -602,6 +602,10 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
     ktReason_Panic_HugeMemory                          = ( 'Panic',             'Huge memory assertion' );
     ktReason_Panic_IOAPICDoesntWork                    = ( 'Panic',             'IO-APIC and timer does not work' );
     ktReason_Panic_TxUnitHang                          = ( 'Panic',             'Tx Unit Hang' );
+    ktReason_API_std_bad_alloc                         = ( 'API / (XP)COM',     'std::bad_alloc' );
+    ktReason_API_Digest_Mismatch                       = ( 'API / (XP)COM',     'Digest mismatch' );
+    ktReason_API_MoveVM_SharingViolation               = ( 'API / (XP)COM',     'MoveVM sharing violation' );
+    ktReason_API_MoveVM_InvalidParameter               = ( 'API / (XP)COM',     'MoveVM invalid parameter' );
     ktReason_XPCOM_Exit_Minus_11                       = ( 'API / (XP)COM',     'exit -11' );
     ktReason_XPCOM_VBoxSVC_Hang                        = ( 'API / (XP)COM',     'VBoxSVC hang' );
     ktReason_XPCOM_VBoxSVC_Hang_Plus_Heap_Corruption   = ( 'API / (XP)COM',     'VBoxSVC hang + heap corruption' );
@@ -993,6 +997,11 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
         ( True,  ktReason_Host_Reboot_OSX_Watchdog_Timeout,         ': "OSX Watchdog Timeout: ' ),
         ( False, ktReason_XPCOM_NS_ERROR_CALL_FAILED,
           'Exception: 0x800706be (Call to remote object failed (NS_ERROR_CALL_FAILED))' ),
+        ( True,  ktReason_API_std_bad_alloc,                        'Unexpected exception: std::bad_alloc' ),
+        ( True,  ktReason_API_Digest_Mismatch,                      'Digest mismatch (VERR_NOT_EQUAL)' ),
+        ( True,  ktReason_API_MoveVM_SharingViolation,              'rc=VBOX_E_IPRT_ERROR text="Could not copy the log file ' ),
+        ( True,  ktReason_API_MoveVM_InvalidParameter,
+          'rc=VBOX_E_IPRT_ERROR text="Could not copy the setting file ' ),
         ( True,  ktReason_Host_HostMemoryLow,                       'HostMemoryLow' ),
         ( True,  ktReason_Host_HostMemoryLow,                       'Failed to procure handy pages; rc=VERR_NO_MEMORY' ),
         ( True,  ktReason_Unknown_File_Not_Found,
