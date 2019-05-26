@@ -167,7 +167,7 @@ public:
          */
     }
 
-    int RunAsync(const Utf8Str &strDesc, ComObjPtr<Progress> &pProgress);
+    // unused: int RunAsync(const Utf8Str &strDesc, ComObjPtr<Progress> &pProgress);
 
     virtual HRESULT Init(const Utf8Str &strTaskDesc)
     {
