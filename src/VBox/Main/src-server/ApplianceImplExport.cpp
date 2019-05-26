@@ -791,32 +791,39 @@ HRESULT Appliance::write(const com::Utf8Str &aFormat,
  */
 HRESULT Appliance::i_writeImpl(ovf::OVFVersion_T aFormat, const LocationInfo &aLocInfo, ComObjPtr<Progress> &aProgress)
 {
-    HRESULT rc;
-
-    rc = i_setUpProgress(aProgress,
-                         BstrFmt(tr("Export appliance '%s'"), aLocInfo.strPath.c_str()),
-                         (aLocInfo.storageType == VFSType_File) ? WriteFile : WriteS3);
-    if (FAILED(rc))
-        return rc;
-
-    /* Initialize our worker task */
-    TaskOVF* task = NULL;
+    /* Prepare progress object: */
+    HRESULT hrc;
     try
     {
-        task = new TaskOVF(this, TaskOVF::Write, aLocInfo, aProgress);
+        hrc = i_setUpProgress(aProgress,
+                              Utf8StrFmt(tr("Export appliance '%s'"), aLocInfo.strPath.c_str()),
+                              aLocInfo.storageType == VFSType_File ? WriteFile : WriteS3);
     }
-    catch(...)
+    catch (std::bad_alloc &) /* only Utf8StrFmt */
     {
-        return setError(VBOX_E_OBJECT_NOT_FOUND,
-                        tr("Could not create TaskOVF object for for writing out the OVF to disk"));
+        hrc = E_OUTOFMEMORY;
     }
+    if (SUCCEEDED(hrc))
+    {
+        /* Create our worker task: */
+        TaskOVF *pTask = NULL;
+        try
+        {
+            pTask = new TaskOVF(this, TaskOVF::Write, aLocInfo, aProgress);
+        }
+        catch (std::bad_alloc &)
+        {
+            return E_OUTOFMEMORY;
+        }
 
-    /* The OVF version to write */
-    task->enFormat = aFormat;
+        /* The OVF version to produce: */
+        pTask->enFormat = aFormat;
 
-    rc = task->createThread();
-
-    return rc;
+        /* Start the thread: */
+        hrc = pTask->createThread();
+        pTask = NULL;
+    }
+    return hrc;
 }
 
 
@@ -915,30 +922,38 @@ HRESULT Appliance::i_writeCloudImpl(const LocationInfo &aLocInfo, ComObjPtr<Prog
 
 HRESULT Appliance::i_writeOPCImpl(ovf::OVFVersion_T aFormat, const LocationInfo &aLocInfo, ComObjPtr<Progress> &aProgress)
 {
-    HRESULT rc;
     RT_NOREF(aFormat);
 
-    rc = i_setUpProgress(aProgress,
-                         BstrFmt(tr("Export appliance '%s'"), aLocInfo.strPath.c_str()),
-                         (aLocInfo.storageType == VFSType_File) ? WriteFile : WriteS3);
-    if (FAILED(rc))
-        return rc;
-
-    /* Initialize our worker task */
-    TaskOPC* task = NULL;
+    /* Prepare progress object: */
+    HRESULT hrc;
     try
     {
-        task = new Appliance::TaskOPC(this, TaskOPC::Export, aLocInfo, aProgress);
+        hrc = i_setUpProgress(aProgress,
+                              Utf8StrFmt(tr("Export appliance '%s'"), aLocInfo.strPath.c_str()),
+                              aLocInfo.storageType == VFSType_File ? WriteFile : WriteS3);
     }
-    catch(...)
+    catch (std::bad_alloc &) /* only Utf8StrFmt */
     {
-        return setError(VBOX_E_OBJECT_NOT_FOUND,
-                        tr("Could not create TaskOPC object for for writing out the OPC to disk"));
+        hrc = E_OUTOFMEMORY;
     }
+    if (SUCCEEDED(hrc))
+    {
+        /* Create our worker task: */
+        TaskOPC *pTask = NULL;
+        try
+        {
+            pTask = new Appliance::TaskOPC(this, TaskOPC::Export, aLocInfo, aProgress);
+        }
+        catch (std::bad_alloc &)
+        {
+            return E_OUTOFMEMORY;
+        }
 
-    rc = task->createThread();
-
-    return rc;
+        /* Kick it off: */
+        hrc = pTask->createThread();
+        pTask = NULL;
+    }
+    return hrc;
 }
 
 
