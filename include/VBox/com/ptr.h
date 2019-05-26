@@ -42,6 +42,7 @@
 #endif /* VBOX_WITH_XPCOM */
 
 #include <VBox/com/defs.h>
+#include <new> /* For bad_alloc. */
 
 
 /** @defgroup grp_com_ptr   Smart COM Pointer Classes
