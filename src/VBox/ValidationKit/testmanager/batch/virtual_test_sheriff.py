@@ -606,6 +606,7 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
     ktReason_API_Digest_Mismatch                       = ( 'API / (XP)COM',     'Digest mismatch' );
     ktReason_API_MoveVM_SharingViolation               = ( 'API / (XP)COM',     'MoveVM sharing violation' );
     ktReason_API_MoveVM_InvalidParameter               = ( 'API / (XP)COM',     'MoveVM invalid parameter' );
+    ktReason_API_Open_Session_Failed                   = ( 'API / (XP)COM',     'Open session failed' );
     ktReason_XPCOM_Exit_Minus_11                       = ( 'API / (XP)COM',     'exit -11' );
     ktReason_XPCOM_VBoxSVC_Hang                        = ( 'API / (XP)COM',     'VBoxSVC hang' );
     ktReason_XPCOM_VBoxSVC_Hang_Plus_Heap_Corruption   = ( 'API / (XP)COM',     'VBoxSVC hang + heap corruption' );
@@ -1395,6 +1396,7 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
         ( True,  ktReason_API_MoveVM_SharingViolation,              'rc=VBOX_E_IPRT_ERROR text="Could not copy the log file ' ),
         ( True,  ktReason_API_MoveVM_InvalidParameter,
           'rc=VBOX_E_IPRT_ERROR text="Could not copy the setting file ' ),
+        ( True,  ktReason_API_Open_Session_Failed,                  'error: failed to open session for' ),
     ];
 
     def investigateVBoxApiTest(self, oCaseFile):
