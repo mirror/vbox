@@ -152,13 +152,26 @@ HRESULT MachineMoveVM::init()
     /* adding a trailing slash if it's needed */
     {
         size_t len = m_targetPath.length() + 2;
-        if (len >=RTPATH_MAX)
+        if (len >= RTPATH_MAX)
         {
+            /** @todo r=bird: Why the leading space in errorDesc? */
+            /** @todo "The destination path exceeds the maximum length" should
+             *        suffice here, I think. */
+            /** @todo r=bird: missing tr(). */
+            /** @todo r=bird: Actually, why bother with these error strings here? Nobody
+             *        will ever see them, given that the caller deletes the task when
+             *        init() fails. */
             Utf8Str errorDesc(" The destination path isn't correct. The length of path exceeded the maximum value.");
             errorsList.push_back(ErrorInfoItem(VBOX_E_IPRT_ERROR, errorDesc.c_str()));
+            /** @todo r=bird: What on earth is this?  It will cause the caller to leak the
+             *        task structure, unless it's catching exception (which it wasn't, but
+             *        I made it is now).  I sure hope this wasn't intentional... */
             throw m_pMachine->setError(VBOX_E_IPRT_ERROR, m_pMachine->tr(errorDesc.c_str()));
         }
 
+        /** @todo r=bird: I need to add a Utf8Str method or iprt/cxx/path.h thingy
+         *        for doing this.  We need this often and code like this doesn't
+         *        need to be repeated and re-optimized in each instance... */
         char* path = new char [len];
         RTStrCopy(path, len, m_targetPath.c_str());
         RTPathEnsureTrailingSeparator(path, len);
@@ -177,17 +190,15 @@ HRESULT MachineMoveVM::init()
 
     try
     {
-        Utf8Str info;
-        int vrc = 0;
-
         RTFOFF cbTotal = 0;
         RTFOFF cbFree = 0;
         uint32_t cbBlock = 0;
         uint32_t cbSector = 0;
 
-        vrc = RTFsQuerySizes(strTargetFolder.c_str(), &cbTotal, &cbFree, &cbBlock, &cbSector);
+        int vrc = RTFsQuerySizes(strTargetFolder.c_str(), &cbTotal, &cbFree, &cbBlock, &cbSector);
         if (FAILED(vrc))
         {
+            /** @todo r=bird: What's this RTPrint doing here?!? */
             RTPrintf("strTargetFolder is %s\n", strTargetFolder.c_str());
             Utf8StrFmt errorDesc("Unable to move machine. Can't get the destination storage size (%s)",
                                  strTargetFolder.c_str());
@@ -200,7 +211,7 @@ HRESULT MachineMoveVM::init()
         Utf8Str strTempFile = strTargetFolder + "test.txt";
         vrc = RTDirOpen(&hDir, strTargetFolder.c_str());
         if (FAILED(vrc))
-            throw rc = vrc;
+            throw rc = vrc; /** @todo r=bird: RTDirOpen returns a VBox status code. That is _not_ the same as a COM HRESULT! */
         else
         {
             RTFILE hFile;
@@ -212,21 +223,22 @@ HRESULT MachineMoveVM::init()
                                      "the destination folder.", strTargetFolder.c_str());
                 errorsList.push_back(ErrorInfoItem(HRESULT(vrc), errorDesc.c_str()));
                 rc = m_pMachine->setErrorBoth(VBOX_E_FILE_ERROR, vrc, m_pMachine->tr(errorDesc.c_str()));
+                /** @todo r=bird: What happens to this error and 'rc'?  Should it be ignored? */
             }
 
-            RTFileClose(hFile);
+            RTFileClose(hFile); /** @todo r=bird: Whey close if opening fail? */
             RTFileDelete(strTempFile.c_str());
             RTDirClose(hDir);
         }
 
-        long long totalFreeSpace = cbFree;
-        long long totalSpace = cbTotal;
-        info = Utf8StrFmt("blocks: total %lld, free %u ", cbTotal, cbFree);
+        /** @todo r=bird: Why the need for 'info' here?  LogRelFunc can do the exact
+         *        same thing without touching the heap.  I don't get what this is
+         *        about...  There is also excessive log duplication here as well as
+         *        seemingly unnecessary trailing whitespace. */
+        Utf8Str info = Utf8StrFmt("blocks: total %RTfoff, free %RTfoff ", cbTotal, cbFree);
         LogRelFunc(("%s \n", info.c_str()));
-        LogRelFunc(("total space (Kb) %lld (Mb) %lld (Gb) %lld\n",
-               totalSpace/1024, totalSpace/(1024*1024), totalSpace/(1024*1024*1024)));
-        LogRelFunc(("total free space (Kb) %lld (Mb) %lld (Gb) %lld\n",
-               totalFreeSpace/1024, totalFreeSpace/(1024*1024), totalFreeSpace/(1024*1024*1024)));
+        LogRelFunc(("total space (Kb) %RTfoff (Mb) %RTfoff (Gb) %RTfoff\n", cbTotal/_1K, cbTotal/_1M, cbTotal/_1G));
+        LogRelFunc(("total free space (Kb) %RTfoff (Mb) %RTfoff (Gb) %RTfoff\n", cbFree/_1K, cbFree/_1M, cbFree/_1G));
 
         RTFSPROPERTIES properties;
         vrc = RTFsQueryProperties(strTargetFolder.c_str(), &properties);
@@ -244,7 +256,7 @@ HRESULT MachineMoveVM::init()
         /* Get the original VM path */
         Utf8Str strSettingsFilePath;
         Bstr bstr_settingsFilePath;
-        m_pMachine->COMGETTER(SettingsFilePath)(bstr_settingsFilePath.asOutParam());
+        m_pMachine->COMGETTER(SettingsFilePath)(bstr_settingsFilePath.asOutParam()); /** @todo r=bird: check the status code. */
         strSettingsFilePath = bstr_settingsFilePath;
         strSettingsFilePath.stripFilename();
 
@@ -276,7 +288,7 @@ HRESULT MachineMoveVM::init()
         MachineState_T machineState;
         rc = m_pMachine->COMGETTER(State)(&machineState);
         if (FAILED(rc)) throw rc;
-        else if (machineState == MachineState_Saved)
+        if (machineState == MachineState_Saved)
         {
             m_pMachine->COMGETTER(StateFilePath)(bstr_stateFilePath.asOutParam());
             strStateFilePath = bstr_stateFilePath;
@@ -339,7 +351,7 @@ HRESULT MachineMoveVM::init()
         ULONG uTotalWeight = 1;
 
         /* The lists llMedias and llSaveStateFiles are filled in the queryMediasForAllStates() */
-        queryMediasForAllStates(machineList);
+        queryMediasForAllStates(machineList); /** @todo r=bird: As a rule status codes needs checking every time. */
 
         {
             uint64_t totalMediumsSize = 0;
@@ -428,15 +440,15 @@ HRESULT MachineMoveVM::init()
                 if (SUCCEEDED(rc))
                 {
                     neededFreeSpace += totalLogSize;
-                    if (totalFreeSpace - neededFreeSpace <= 1024*1024)
+                    if (cbFree - neededFreeSpace <= _1M)
                     {
                         throw VERR_OUT_OF_RESOURCES;//less than 1Mb free space on the target location
                     }
 
                     fileList_t filesList;
-                    getFilesList(strFolder, filesList);
+                    getFilesList(strFolder, filesList); /** @todo r=bird: return code check */
                     cit_t it = filesList.m_list.begin();
-                    while(it != filesList.m_list.end())
+                    while (it != filesList.m_list.end())
                     {
                         Utf8Str strFile = it->first.c_str();
                         strFile.append(RTPATH_DELIMITER).append(it->second.c_str());
@@ -466,14 +478,17 @@ HRESULT MachineMoveVM::init()
 
         LogRelFunc(("Total space needed is %lld bytes\n", neededFreeSpace));
         /* Check a target location on enough room */
-        if (totalFreeSpace - neededFreeSpace <= 1024*1024)
+        if (cbFree - neededFreeSpace <= _1M)
         {
-            LogRelFunc(("but free space on destination is %lld\n", totalFreeSpace));
+            LogRelFunc(("but free space on destination is %RTfoff\n", cbFree));
+            /** @todo r=bird: You're throwing a VBox status code here, but only catching
+             *        HRESULT.  So, this will go to the caller or someone else up the
+             *        stack, which is unacceptable throw behaviour. */
             throw VERR_OUT_OF_RESOURCES;//less than 1Mb free space on the target location
         }
 
         /* Add step for .vbox machine setting file */
-        {
+        { /** @todo what's the scoping for? */
             ++uCount;
             uTotalWeight += 1;
         }
@@ -487,13 +502,13 @@ HRESULT MachineMoveVM::init()
         /* Init Progress instance */
         {
             rc = m_pProgress->init(m_pMachine->i_getVirtualBox(),
-                                 static_cast<IMachine*>(m_pMachine) /* aInitiator */,
-                                 Bstr(m_pMachine->tr("Moving Machine")).raw(),
-                                 true /* fCancellable */,
-                                 uCount,
-                                 uTotalWeight,
-                                 Bstr(m_pMachine->tr("Initialize Moving")).raw(),
-                                 1);
+                                   static_cast<IMachine*>(m_pMachine) /* aInitiator */,
+                                   Utf8Str(m_pMachine->tr("Moving Machine")),
+                                   true /* fCancellable */,
+                                   uCount,
+                                   uTotalWeight,
+                                   Utf8Str(m_pMachine->tr("Initialize Moving")),
+                                   1);
             if (FAILED(rc))
             {
                 Utf8StrFmt errorDesc("Couldn't correctly setup the progress object for moving VM operation (%Rrc)", rc);
@@ -509,6 +524,10 @@ HRESULT MachineMoveVM::init()
     }
     catch(HRESULT hrc)
     {
+/** @todo r=bird: Seriously, why throw any error when you can just return
+ *        them.  This is just copying the thrown message and passing it onto
+ *        the return statemnt a few lines later.  (The log statemnt doesn't
+ *        really count as it doesn't log the status.) */
         rc = hrc;
     }
 

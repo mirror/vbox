@@ -67,9 +67,9 @@ class MachineMoveVM : public ThreadTask
 {
     struct ErrorInfoItem
     {
-        ErrorInfoItem(HRESULT aCode, const char* aDescription):
-            m_code(aCode),
-            m_description(aDescription == NULL ? "There is no description" : aDescription)
+        ErrorInfoItem(HRESULT aCode, const char* aDescription)
+            : m_code(aCode)
+            , m_description(aDescription == NULL ? "There is no description" : aDescription)
         {
         }
 
@@ -79,12 +79,13 @@ class MachineMoveVM : public ThreadTask
         Utf8Str m_description;
     };
 
-    RTCList<MEDIUMTASKCHAINMOVE>    llMedias;
-    RTCList<SAVESTATETASKMOVE>      llSaveStateFiles;
-    std::map<Utf8Str, MEDIUMTASKMOVE>     finalMediumsMap;
-    std::map<Utf8Str, SAVESTATETASKMOVE>  finalSaveStateFilesMap;
-    std::map<VBoxFolder_t, Utf8Str> vmFolders;
-    std::list<ErrorInfoItem> errorsList;
+    /** @todo r=bird: Why no m_ prefixes here? */
+    RTCList<MEDIUMTASKCHAINMOVE>            llMedias;
+    RTCList<SAVESTATETASKMOVE>              llSaveStateFiles;
+    std::map<Utf8Str, MEDIUMTASKMOVE>       finalMediumsMap;
+    std::map<Utf8Str, SAVESTATETASKMOVE>    finalSaveStateFilesMap;
+    std::map<VBoxFolder_t, Utf8Str>         vmFolders;
+    std::list<ErrorInfoItem>                errorsList;
 
     ComObjPtr<Machine>  m_pMachine;
     ComObjPtr<Progress> m_pProgress;
@@ -93,19 +94,19 @@ class MachineMoveVM : public ThreadTask
     ComPtr<IMachine>    m_pSessionMachine;
     Utf8Str             m_targetPath;
     Utf8Str             m_type;
-    HRESULT             result;
+    HRESULT             result; /**< @todo r=bird: Why no m_ prefix here?    */
 
 public:
     MachineMoveVM(ComObjPtr<Machine> aMachine,
                   const com::Utf8Str &aTargetPath,
                   const com::Utf8Str &aType,
                   ComObjPtr<Progress> &aProgress)
-      : ThreadTask("TaskMoveVM"),
-        m_pMachine(aMachine),
-        m_pProgress(aProgress),
-        m_targetPath(aTargetPath),
-        m_type (aType.isEmpty() == true ? "basic" : aType),
-        result(S_OK)
+        : ThreadTask("TaskMoveVM")
+        , m_pMachine(aMachine)
+        , m_pProgress(aProgress)
+        , m_targetPath(aTargetPath)
+        , m_type(aType.isEmpty() ? "basic" : aType)
+        , result(S_OK)
     {
     }
 

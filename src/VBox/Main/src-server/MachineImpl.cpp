@@ -5457,6 +5457,7 @@ HRESULT Machine::deleteConfig(const std::vector<ComPtr<IMedium> > &aMedia, ComPt
      * start working until we release alock) */
     DeleteConfigTask *pTask = new DeleteConfigTask(this, pProgress, "DeleteVM", llMediums, llFilesToDelete);
     rc = pTask->createThread();
+    pTask = NULL;
     if (FAILED(rc))
         return rc;
 
@@ -7153,45 +7154,47 @@ HRESULT Machine::moveTo(const com::Utf8Str &aTargetPath,
 {
     LogFlowThisFuncEnter();
 
-    ComObjPtr<Progress> progress;
-
-    progress.createObject();
-
-    HRESULT rc = S_OK;
-    Utf8Str targetPath = aTargetPath;
-    Utf8Str type = aType;
-
-    /* Initialize our worker task */
-    MachineMoveVM* task = NULL;
-    try
+    ComObjPtr<Progress> ptrProgress;
+    HRESULT hrc = ptrProgress.createObject();
+    if (SUCCEEDED(hrc))
     {
-        task = new MachineMoveVM(this, targetPath, type, progress);
-    }
-    catch(...)
-    {
-        delete task;
-        return rc;
-    }
-
-    /*
-     * task pointer will be owned by the ThreadTask class.
-     * There is no need to call operator "delete" in the end.
-     */
-    rc = task->init();
-    if (SUCCEEDED(rc))
-    {
-        rc = task->createThread();
-        if (FAILED(rc))
+        /* Initialize our worker task */
+        MachineMoveVM *pTask = NULL;
+        try
         {
-            setError(rc, tr("Could not run the thread for the task MachineMoveVM"));
+            pTask = new MachineMoveVM(this, aTargetPath, aType, ptrProgress);
         }
-
-        /* Return progress to the caller */
-        progress.queryInterfaceTo(aProgress.asOutParam());
+        catch (std::bad_alloc &)
+        {
+            return E_OUTOFMEMORY;
+        }
+        /** @todo r=bird: Turned out the init() function throws stuff of type int
+         *        without telling anyone.  Probably unintentionally.  The catching
+         *        here is only temporary until someone can be bothered to fix it
+         *        properly. */
+        try
+        {
+            hrc = pTask->init();
+        }
+        catch (...)
+        {
+            hrc = setError(E_FAIL, tr("Unknown exception thrown by MachineMoveVM::init"));
+        }
+        if (SUCCEEDED(hrc))
+        {
+            hrc = pTask->createThread();
+            pTask = NULL; /* Consumed by createThread(). */
+            if (SUCCEEDED(hrc))
+                ptrProgress.queryInterfaceTo(aProgress.asOutParam());
+            else
+                setError(hrc, tr("Failed to create a worker thread for the MachineMoveVM task"));
+        }
+        else
+            delete pTask;
     }
 
     LogFlowThisFuncLeave();
-    return rc;
+    return hrc;
 
 }
 
