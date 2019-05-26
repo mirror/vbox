@@ -1032,7 +1032,9 @@ void MachineMoveVM::i_MoveVMThreadTask(MachineMoveVM* task)
         for (ULONG i = operation; i < operation + taskMoveVM->finalMediumsMap.size() - 1; ++i)
         {
             rc = taskMoveVM->m_pProgress->SetNextOperation(BstrFmt("Skip the empty operation %d...", i).raw(), 1);
-            if (FAILED(rc)) throw rc;
+            if (FAILED(rc)) throw rc; /** @todo r=bird: Who exactly should be catching this? Our caller is
+                                       * ThreadTask::taskHandlerThreadProc and it doesn't catch anything, nor does the
+                                       * IPRT. */
         }
 
         rc = taskMoveVM->deleteFiles(originalFiles);
