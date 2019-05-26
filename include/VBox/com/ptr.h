@@ -528,6 +528,8 @@ public:
         if (obj)
         {
 # ifndef RT_EXCEPTIONS_ENABLED
+            hrc = obj->FinalConstruct();
+# else
             try
             {
                 hrc = obj->FinalConstruct();
@@ -536,8 +538,6 @@ public:
             {
                 hrc = E_OUTOFMEMORY;
             }
-# else
-            hrc = obj->FinalConstruct();
 # endif
             if (FAILED(hrc))
             {
