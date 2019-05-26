@@ -2007,35 +2007,32 @@ int GuestSession::i_startSessionAsync(void)
 {
     LogFlowThisFuncEnter();
 
-    int vrc;
-    GuestSessionTaskInternalStart* pTask = NULL;
+    /* Create task: */
+    GuestSessionTaskInternalStart *pTask = NULL;
     try
     {
         pTask = new GuestSessionTaskInternalStart(this);
-        if (!pTask->isOk())
-        {
-            delete pTask;
-            LogFlow(("GuestSession: Could not create GuestSessionTaskInternalStart object\n"));
-            throw VERR_MEMOBJ_INIT_FAILED;
-        }
-
-        /* Asynchronously open the session on the guest by kicking off a worker thread. */
-        /* Note: This function deletes pTask in case of exceptions, so there is no need in the call of delete operator. */
+    }
+    catch (std::bad_alloc &)
+    {
+        return VERR_NO_MEMORY;
+    }
+    if (pTask->isOk())
+    {
+        /* Kick off the thread: */
         HRESULT hrc = pTask->createThread();
-        vrc = Global::vboxStatusCodeFromCOM(hrc);
+        pTask = NULL; /* Not valid anymore, not even on failure! */
+        if (SUCCEEDED(hrc))
+        {
+            LogFlowFuncLeaveRC(VINF_SUCCESS);
+            return VINF_SUCCESS;
+        }
+        LogFlow(("GuestSession: Failed to create thread for GuestSessionTaskInternalOpen task.\n"));
     }
-    catch(std::bad_alloc &)
-    {
-        vrc = VERR_NO_MEMORY;
-    }
-    catch(int eVRC)
-    {
-        vrc = eVRC;
-        LogFlow(("GuestSession: Could not create thread for GuestSessionTaskInternalOpen task %Rrc\n", vrc));
-    }
-
-    LogFlowFuncLeaveRC(vrc);
-    return vrc;
+    else
+        LogFlow(("GuestSession: GuestSessionTaskInternalStart creation failed: %Rhrc.\n", pTask->rc()));
+    LogFlowFuncLeaveRC(VERR_GENERAL_FAILURE);
+    return VERR_GENERAL_FAILURE;
 }
 
 /**
