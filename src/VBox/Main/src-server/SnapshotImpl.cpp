@@ -1595,7 +1595,7 @@ HRESULT SessionMachine::takeSnapshot(const com::Utf8Str &aName,
         i_setMachineState(MachineState_Snapshotting);
 
     aId = snapshotId;
-    pTask->m_pProgress.queryInterfaceTo(aProgress.asOutParam());
+    pProgress.queryInterfaceTo(aProgress.asOutParam());
 
     return rc;
 }
