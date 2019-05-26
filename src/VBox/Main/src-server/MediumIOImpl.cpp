@@ -835,7 +835,7 @@ HRESULT MediumIO::convertToStream(const com::Utf8Str &aFormat,
     if (SUCCEEDED(rc))
     {
         rc = pTask->createThread();
-
+        pTask = NULL;
         if (SUCCEEDED(rc))
         {
             pDataStream.queryInterfaceTo(aStream.asOutParam());

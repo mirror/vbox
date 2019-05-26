@@ -1576,14 +1576,16 @@ HRESULT SessionMachine::takeSnapshot(const com::Utf8Str &aName,
                                                    !!fPause,
                                                    mHWData->mMemorySize,
                                                    fTakingSnapshotOnline);
+    MachineState_T const machineStateBackup = pTask->m_machineStateBackup;
     rc = pTask->createThread();
+    pTask = NULL;
     if (FAILED(rc))
         return rc;
 
     /* set the proper machine state (note: after creating a Task instance) */
     if (fTakingSnapshotOnline)
     {
-        if (pTask->m_machineStateBackup != MachineState_Paused && !fPause)
+        if (machineStateBackup != MachineState_Paused && !fPause)
             i_setMachineState(MachineState_LiveSnapshotting);
         else
             i_setMachineState(MachineState_OnlineSnapshotting);
@@ -2131,6 +2133,7 @@ HRESULT SessionMachine::restoreSnapshot(const ComPtr<ISnapshot> &aSnapshot,
                                                          "RestoreSnap",
                                                          pSnapshot);
     rc = pTask->createThread();
+    pTask = NULL;
     if (FAILED(rc))
         return rc;
 
@@ -2670,6 +2673,7 @@ HRESULT SessionMachine::i_deleteSnapshot(const com::Guid &aStartId,
                                                        fDeleteOnline,
                                                        pSnapshot);
     rc = pTask->createThread();
+    pTask = NULL;
     if (FAILED(rc))
         return rc;
 

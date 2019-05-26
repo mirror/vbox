@@ -2562,6 +2562,7 @@ HRESULT Medium::createBaseStorage(LONG64 aLogicalSize,
     if (SUCCEEDED(rc))
     {
         rc = pTask->createThread();
+        pTask = NULL;
 
         if (SUCCEEDED(rc))
             pProgress.queryInterfaceTo(aProgress.asOutParam());
@@ -2890,7 +2891,7 @@ HRESULT Medium::cloneTo(const ComPtr<IMedium> &aTarget,
     if (SUCCEEDED(rc))
     {
         rc = pTask->createThread();
-
+        pTask = NULL;
         if (SUCCEEDED(rc))
             pProgress.queryInterfaceTo(aProgress.asOutParam());
     }
@@ -3168,7 +3169,7 @@ HRESULT Medium::moveTo(AutoCaller &autoCaller, const com::Utf8Str &aLocation, Co
     if (SUCCEEDED(rc))
     {
         rc = pTask->createThread();
-
+        pTask = NULL;
         if (SUCCEEDED(rc))
             pProgress.queryInterfaceTo(aProgress.asOutParam());
     }
@@ -3346,7 +3347,7 @@ HRESULT Medium::compact(ComPtr<IProgress> &aProgress)
     if (SUCCEEDED(rc))
     {
         rc = pTask->createThread();
-
+        pTask = NULL;
         if (SUCCEEDED(rc))
             pProgress.queryInterfaceTo(aProgress.asOutParam());
     }
@@ -3497,7 +3498,7 @@ HRESULT Medium::reset(AutoCaller &autoCaller, ComPtr<IProgress> &aProgress)
     if (SUCCEEDED(rc))
     {
         rc = pTask->createThread();
-
+        pTask = NULL;
         if (SUCCEEDED(rc))
             pProgress.queryInterfaceTo(aProgress.asOutParam());
     }
@@ -3633,7 +3634,7 @@ HRESULT Medium::changeEncryption(const com::Utf8Str &aCurrentPassword, const com
     if (SUCCEEDED(rc))
     {
         rc = pTask->createThread();
-
+        pTask = NULL;
         if (SUCCEEDED(rc))
             pProgress.queryInterfaceTo(aProgress.asOutParam());
     }
@@ -4960,12 +4961,11 @@ HRESULT Medium::i_createDiffStorage(ComObjPtr<Medium> &aTarget,
         if (aWait)
         {
             rc = pTask->runNow();
-
             delete pTask;
         }
         else
             rc = pTask->createThread();
-
+        pTask = NULL;
         if (SUCCEEDED(rc) && aProgress != NULL)
             *aProgress = pProgress;
     }
@@ -5312,15 +5312,13 @@ HRESULT Medium::i_deleteStorage(ComObjPtr<Progress> *aProgress,
         if (aWait)
         {
             rc = pTask->runNow();
-
             delete pTask;
         }
         else
             rc = pTask->createThread();
-
+        pTask = NULL;
         if (SUCCEEDED(rc) && aProgress != NULL)
             *aProgress = pProgress;
-
     }
     else
     {
@@ -6025,12 +6023,11 @@ HRESULT Medium::i_mergeTo(const ComObjPtr<Medium> &pTarget,
         if (aWait)
         {
             rc = pTask->runNow();
-
             delete pTask;
         }
         else
             rc = pTask->createThread();
-
+        pTask = NULL;
         if (SUCCEEDED(rc) && aProgress != NULL)
             *aProgress = pProgress;
     }
@@ -6194,7 +6191,7 @@ HRESULT Medium::i_resize(LONG64 aLogicalSize,
         }
         else
             rc = pTask->createThread();
-
+        pTask = NULL;
         if (SUCCEEDED(rc) && aProgress != NULL)
             *aProgress = pProgress;
     }
@@ -6569,7 +6566,10 @@ HRESULT Medium::i_importFile(const char *aFilename,
     catch (HRESULT aRC) { rc = aRC; }
 
     if (SUCCEEDED(rc))
+    {
         rc = pTask->createThread();
+        pTask = NULL;
+    }
     else if (pTask != NULL)
         delete pTask;
 
@@ -6716,7 +6716,7 @@ HRESULT Medium::i_cloneToEx(const ComObjPtr<Medium> &aTarget, MediumVariant_T aV
     if (SUCCEEDED(rc))
     {
         rc = pTask->createThread();
-
+        pTask = NULL;
         if (SUCCEEDED(rc))
             pProgress.queryInterfaceTo(aProgress);
     }
