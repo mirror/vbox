@@ -998,10 +998,6 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
         ( False, ktReason_XPCOM_NS_ERROR_CALL_FAILED,
           'Exception: 0x800706be (Call to remote object failed (NS_ERROR_CALL_FAILED))' ),
         ( True,  ktReason_API_std_bad_alloc,                        'Unexpected exception: std::bad_alloc' ),
-        ( True,  ktReason_API_Digest_Mismatch,                      'Digest mismatch (VERR_NOT_EQUAL)' ),
-        ( True,  ktReason_API_MoveVM_SharingViolation,              'rc=VBOX_E_IPRT_ERROR text="Could not copy the log file ' ),
-        ( True,  ktReason_API_MoveVM_InvalidParameter,
-          'rc=VBOX_E_IPRT_ERROR text="Could not copy the setting file ' ),
         ( True,  ktReason_Host_HostMemoryLow,                       'HostMemoryLow' ),
         ( True,  ktReason_Host_HostMemoryLow,                       'Failed to procure handy pages; rc=VERR_NO_MEMORY' ),
         ( True,  ktReason_Unknown_File_Not_Found,
@@ -1337,7 +1333,7 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
         #
         # XPCOM screwup
         #
-        if   sMainLog.find('AttributeError: \'NoneType\' object has no attribute \'addObserver\'') > 0:
+        if sMainLog.find('AttributeError: \'NoneType\' object has no attribute \'addObserver\'') > 0:
             oCaseFile.noteReason(self.ktReason_Buggy_Build_Broken_Build);
             return self.caseClosed(oCaseFile);
 
@@ -1372,6 +1368,72 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
             else:
                 self.vprint(u'TODO: Cannot place idTestResult=%u - %s' % (oFailedResult.idTestResult, oFailedResult.sName,));
                 self.dprint(u'%s + %s <<\n%s\n<<' % (oFailedResult.tsCreated, oFailedResult.tsElapsed, sResultLog,));
+
+        #
+        # Report home and close the case if we got them all, otherwise log it.
+        #
+        if len(oCaseFile.dReasonForResultId) >= len(aoFailedResults):
+            return self.caseClosed(oCaseFile);
+
+        if oCaseFile.dReasonForResultId:
+            self.vprint(u'TODO: Got %u out of %u - close, but no cigar. :-/'
+                        % (len(oCaseFile.dReasonForResultId), len(aoFailedResults)));
+        else:
+            self.vprint(u'XXX: Could not figure out anything at all! :-(');
+        return False;
+
+
+    ## Things we search a main log for to figure out why something in the API test went bust.
+    katSimpleApiMainLogReasons = [
+        # ( Whether to stop on hit, reason tuple, needle text. )
+        ( True,  ktReason_Networking_Nonexistent_host_nic,
+          'rc=E_FAIL text="Nonexistent host networking interface, name \'eth0\' (VERR_INTERNAL_ERROR)"' ),
+        ( False, ktReason_XPCOM_NS_ERROR_CALL_FAILED,
+          'Exception: 0x800706be (Call to remote object failed (NS_ERROR_CALL_FAILED))' ),
+        ( True,  ktReason_API_std_bad_alloc,                        'Unexpected exception: std::bad_alloc' ),
+        ( True,  ktReason_API_Digest_Mismatch,                      'Digest mismatch (VERR_NOT_EQUAL)' ),
+        ( True,  ktReason_API_MoveVM_SharingViolation,              'rc=VBOX_E_IPRT_ERROR text="Could not copy the log file ' ),
+        ( True,  ktReason_API_MoveVM_InvalidParameter,
+          'rc=VBOX_E_IPRT_ERROR text="Could not copy the setting file ' ),
+    ];
+
+    def investigateVBoxApiTest(self, oCaseFile):
+        """
+        Checks out a VBox API test.
+        """
+
+        #
+        # Get a list of test result failures we should be looking into and the main log.
+        #
+        aoFailedResults = oCaseFile.oTree.getListOfFailures();
+        sMainLog        = oCaseFile.getMainLog();
+
+        #
+        # Go thru each failed result.
+        #
+        for oFailedResult in aoFailedResults:
+            self.dprint(u'Looking at test result #%u - %s' % (oFailedResult.idTestResult, oFailedResult.getFullName(),));
+            sResultLog = TestSetData.extractLogSectionElapsed(sMainLog, oFailedResult.tsCreated, oFailedResult.tsElapsed);
+            if oFailedResult.sName == 'Installing VirtualBox':
+                self.investigateInstallUninstallFailure(oCaseFile, oFailedResult, sResultLog, fInstall = True)
+
+            elif oFailedResult.sName == 'Uninstalling VirtualBox':
+                self.investigateInstallUninstallFailure(oCaseFile, oFailedResult, sResultLog, fInstall = False)
+
+            elif sResultLog.find('Exception: 0x800706be (Call to remote object failed (NS_ERROR_CALL_FAILED))') > 0:
+                oCaseFile.noteReasonForId(self.ktReason_XPCOM_NS_ERROR_CALL_FAILED, oFailedResult.idTestResult);
+
+            else:
+                fFoundSomething = False;
+                for fStopOnHit, tReason, sNeedle in self.katSimpleApiMainLogReasons:
+                    if sResultLog.find(sNeedle) > 0:
+                        oCaseFile.noteReasonForId(tReason, oFailedResult.idTestResult);
+                        fFoundSomething = True;
+                        if fStopOnHit:
+                            break;
+                if fFoundSomething:
+                    self.vprint(u'TODO: Cannot place idTestResult=%u - %s' % (oFailedResult.idTestResult, oFailedResult.sName,));
+                    self.dprint(u'%s + %s <<\n%s\n<<' % (oFailedResult.tsCreated, oFailedResult.tsElapsed, sResultLog,));
 
         #
         # Report home and close the case if we got them all, otherwise log it.
@@ -1440,8 +1502,8 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
                 fRc = self.investigateVBoxVMTest(oCaseFile, fSingleVM = True);
 
             elif oCaseFile.isVBoxAPITest():
-                self.dprint(u'investigateVBoxVMTest is taking over %s.' % (oCaseFile.sLongName,));
-                fRc = self.investigateVBoxVMTest(oCaseFile, fSingleVM = True);
+                self.dprint(u'investigateVBoxApiTest is taking over %s.' % (oCaseFile.sLongName,));
+                fRc = self.investigateVBoxApiTest(oCaseFile);
 
             elif oCaseFile.isVBoxBenchmarkTest():
                 self.dprint(u'investigateVBoxVMTest is taking over %s.' % (oCaseFile.sLongName,));
