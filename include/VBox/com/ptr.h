@@ -513,6 +513,9 @@ public:
 # endif
 #else /* VBOX_WITH_XPCOM */
         ATL::CComObject<T> *obj;
+# ifndef RT_EXCEPTIONS_ENABLED
+        obj = new ATL::CComObject<T>();
+# else
         try
         {
             obj = new ATL::CComObject<T>();
@@ -521,17 +524,25 @@ public:
         {
             obj = NULL;
         }
+# endif
         if (obj)
         {
+# ifndef RT_EXCEPTIONS_ENABLED
             try
             {
                 hrc = obj->FinalConstruct();
             }
             catch (std::bad_alloc &)
             {
+                hrc = E_OUTOFMEMORY;
+            }
+# else
+            hrc = obj->FinalConstruct();
+# endif
+            if (FAILED(hrc))
+            {
                 delete obj;
                 obj = NULL;
-                hrc = E_OUTOFMEMORY;
             }
         }
         else
