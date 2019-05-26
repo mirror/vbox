@@ -829,8 +829,6 @@ HRESULT Appliance::i_writeImpl(ovf::OVFVersion_T aFormat, const LocationInfo &aL
 
 HRESULT Appliance::i_writeCloudImpl(const LocationInfo &aLocInfo, ComObjPtr<Progress> &aProgress)
 {
-    HRESULT rc;
-
     for (list<ComObjPtr<VirtualSystemDescription> >::const_iterator
          it = m->virtualSystemDescriptions.begin();
          it != m->virtualSystemDescriptions.end();
@@ -861,63 +859,65 @@ HRESULT Appliance::i_writeCloudImpl(const LocationInfo &aLocInfo, ComObjPtr<Prog
 
         //just in case
         if (vsdescThis->i_findByType(VirtualSystemDescriptionType_HardDiskImage).empty())
-        {
-            return setError(VBOX_E_OBJECT_NOT_FOUND,
-                                tr("There are no images to export to Cloud after preparation steps"));
-        }
+            return setError(VBOX_E_OBJECT_NOT_FOUND, tr("There are no images to export to Cloud after preparation steps"));
 
         /*
          * Fills out the OCI settings
-        */
-        std::list<VirtualSystemDescriptionEntry*> profileName =
-            vsdescThis->i_findByType(VirtualSystemDescriptionType_CloudProfileName);
+         */
+        std::list<VirtualSystemDescriptionEntry*> profileName
+            = vsdescThis->i_findByType(VirtualSystemDescriptionType_CloudProfileName);
         if (profileName.size() > 1)
-            return setError(VBOX_E_OBJECT_NOT_FOUND,
-                                tr("Cloud: More than one profile name was found."));
-        else if (profileName.empty())
-            return setError(VBOX_E_OBJECT_NOT_FOUND,
-                                tr("Cloud: Profile name wasn't specified."));
+            return setError(VBOX_E_OBJECT_NOT_FOUND, tr("Cloud: More than one profile name was found."));
+        if (profileName.empty())
+            return setError(VBOX_E_OBJECT_NOT_FOUND, tr("Cloud: Profile name wasn't specified."));
 
         if (profileName.front()->strVBoxCurrent.isEmpty())
-            return setError(VBOX_E_OBJECT_NOT_FOUND,
-                                tr("Cloud: Cloud user profile name is empty"));
+            return setError(VBOX_E_OBJECT_NOT_FOUND, tr("Cloud: Cloud user profile name is empty"));
 
         LogRel(("profile name: %s\n", profileName.front()->strVBoxCurrent.c_str()));
-
     }
 
     // we need to do that as otherwise Task won't be created successfully
-    aProgress.createObject();
-    if (aLocInfo.strProvider.equals("OCI"))
+    /// @todo r=bird: What's 'that' here exactly?
+    HRESULT hrc = aProgress.createObject();
+    if (SUCCEEDED(hrc))
     {
-        aProgress->init(mVirtualBox, static_cast<IAppliance*>(this),
-                     Bstr("Exporting VM to Cloud...").raw(),
-                     TRUE /* aCancelable */,
-                     5, // ULONG cOperations,
-                     1000, // ULONG ulTotalOperationsWeight,
-                     Bstr("Exporting VM to Cloud...").raw(), // aFirstOperationDescription
-                     10); // ULONG ulFirstOperationWeight
+        if (aLocInfo.strProvider.equals("OCI"))
+        {
+            hrc = aProgress->init(mVirtualBox, static_cast<IAppliance *>(this),
+                                  Utf8Str(tr("Exporting VM to Cloud...")),
+                                  TRUE /* aCancelable */,
+                                  5, // ULONG cOperations,
+                                  1000, // ULONG ulTotalOperationsWeight,
+                                  Utf8Str(tr("Exporting VM to Cloud...")), // aFirstOperationDescription
+                                  10); // ULONG ulFirstOperationWeight
+        }
+        else
+            hrc = setErrorVrc(VBOX_E_NOT_SUPPORTED,
+                              tr("Only \"OCI\" cloud provider is supported for now. \"%s\" isn't supported."),
+                              aLocInfo.strProvider.c_str());
+        if (SUCCEEDED(hrc))
+        {
+            /* Initialize the worker task: */
+            TaskCloud *pTask = NULL;
+            try
+            {
+                pTask = new Appliance::TaskCloud(this, TaskCloud::Export, aLocInfo, aProgress);
+            }
+            catch (std::bad_alloc &)
+            {
+                pTask = NULL;
+                hrc = E_OUTOFMEMORY;
+            }
+            if (SUCCEEDED(hrc))
+            {
+                /* Kick off the worker task: */
+                hrc = pTask->createThread();
+                pTask = NULL;
+            }
+        }
     }
-    else
-        return setErrorVrc(VBOX_E_NOT_SUPPORTED,
-                           tr("Only \"OCI\" cloud provider is supported for now. \"%s\" isn't supported."),
-                           aLocInfo.strProvider.c_str());
-    // Initialize our worker task
-    TaskCloud* task = NULL;
-    try
-    {
-        task = new Appliance::TaskCloud(this, TaskCloud::Export, aLocInfo, aProgress);
-
-    }
-    catch(...)
-    {
-        return setError(VBOX_E_OBJECT_NOT_FOUND,
-                        tr("Could not create TaskCloud object for exporting to Cloud"));
-    }
-
-    rc = task->createThread();
-
-    return rc;
+    return hrc;
 }
 
 HRESULT Appliance::i_writeOPCImpl(ovf::OVFVersion_T aFormat, const LocationInfo &aLocInfo, ComObjPtr<Progress> &aProgress)
