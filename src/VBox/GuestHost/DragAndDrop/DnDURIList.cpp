@@ -440,7 +440,7 @@ void DnDURIList::Clear(void)
     {
         DnDURIObject *pCurObj = m_lstTree.at(i);
         AssertPtr(pCurObj);
-        RTMemFree(pCurObj);
+        delete pCurObj;
     }
     m_lstTree.clear();
 
@@ -461,7 +461,7 @@ void DnDURIList::RemoveFirst(void)
     m_cbTotal -= cbSize; /* Adjust total size. */
 
     pCurObj->Close();
-    RTMemFree(pCurObj);
+    delete pCurObj;
 
     m_lstTree.removeFirst();
 }
