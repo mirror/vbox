@@ -690,7 +690,7 @@ crServerDispatchMessage(CRConnection *conn, CRMessage *msg, int cbMsg)
         UnpackerState.pbOpcodes        = data_ptr - 1;
         UnpackerState.cOpcodes         = msg_opcodes->numOpcodes;
         UnpackerState.pbUnpackData     = data_ptr;
-        UnpackerState.cbUnpackDataLeft = data_ptr - data_ptr_end;
+        UnpackerState.cbUnpackDataLeft = data_ptr_end - data_ptr;
         UnpackerState.pReturnPtr       = &cr_server.return_ptr;
         UnpackerState.pWritebackPtr    = &cr_server.writeback_ptr;
         UnpackerState.pDispatchTbl     = &(cr_server.dispatch);
