@@ -427,12 +427,11 @@ void UIMediumEnumerator::sltHandleMediumRegistered(const QUuid &uMediumId, KDevi
         /* Make sure this medium isn't already cached: */
         if (!medium(uMediumId).isNull())
         {
-            LogRel2(("GUI: UIMediumEnumerator:  Medium {%s} is cached already and will be enumerated!\n",
+            /* This medium can be known because of async event nature. Currently medium registration event
+             * comes very late and other even unrealted events can come before it and request for this
+             * particular medium enumeration, so we just ignore that and enumerate this UIMedium again. */
+            LogRel2(("GUI: UIMediumEnumerator:  Medium {%s} is cached already and will be enumerated..\n",
                      uMediumId.toString().toUtf8().constData()));
-            /// @todo is this valid case?
-            AssertFailed();
-
-            /* Enumerate corresponding UIMedium: */
             createMediumEnumerationTask(m_media.value(uMediumId));
         }
         else
@@ -788,9 +787,9 @@ void UIMediumEnumerator::parseMedium(CMedium &comMedium)
     /* Make sure medium is valid: */
     if (comMedium.isNull())
     {
+        /* This medium is NULL by some reason, the obvious case when this
+         * can happen is when optical/floppy device is created empty. */
         LogRel2(("GUI: UIMediumEnumerator:  Medium is NULL!\n"));
-        /// @todo is this possible case?
-        AssertFailed();
     }
     else
     {
@@ -808,10 +807,11 @@ void UIMediumEnumerator::parseMedium(CMedium &comMedium)
             /* Make sure this medium is already cached: */
             if (medium(uMediumId).isNull())
             {
+                /* This medium isn't cached by some reason, which can be different.
+                 * One of such reasons is when config-changed event comes earlier than
+                 * corresponding registration event. For now we are ignoring that at all. */
                 LogRel2(("GUI: UIMediumEnumerator:  Medium {%s} isn't cached yet!\n",
                          uMediumId.toString().toUtf8().constData()));
-                /// @todo is this valid case?
-                AssertFailed();
             }
             else
             {
