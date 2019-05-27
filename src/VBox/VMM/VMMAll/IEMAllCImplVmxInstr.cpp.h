@@ -3167,37 +3167,9 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrMovToCr0Cr4(PVMCPU pVCpu, uint8_t iCrRe
     Assert(iCrReg == 0 || iCrReg == 4);
     Assert(iGReg < X86_GREG_COUNT);
 
-    PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
-    Assert(pVmcs);
-
-    uint64_t uGuestCrX;
-    uint64_t fGstHostMask;
-    uint64_t fReadShadow;
-    if (iCrReg == 0)
+    uint64_t const uNewCrX = *puNewCrX;
+    if (CPUMIsGuestVmxMovToCr0Cr4InterceptSet(pVCpu, &pVCpu->cpum.GstCtx, iCrReg, uNewCrX))
     {
-        IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_CR0);
-        uGuestCrX    = pVCpu->cpum.GstCtx.cr0;
-        fGstHostMask = pVmcs->u64Cr0Mask.u;
-        fReadShadow  = pVmcs->u64Cr0ReadShadow.u;
-    }
-    else
-    {
-        IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_CR4);
-        uGuestCrX    = pVCpu->cpum.GstCtx.cr4;
-        fGstHostMask = pVmcs->u64Cr4Mask.u;
-        fReadShadow  = pVmcs->u64Cr4ReadShadow.u;
-    }
-
-    /*
-     * For any CR0/CR4 bit owned by the host (in the CR0/CR4 guest/host mask), if the
-     * corresponding bits differ between the source operand and the read-shadow,
-     * we must cause a VM-exit.
-     *
-     * See Intel spec. 25.1.3 "Instructions That Cause VM Exits Conditionally".
-     */
-    if ((fReadShadow & fGstHostMask) != (*puNewCrX & fGstHostMask))
-    {
-        Assert(fGstHostMask != 0);
         Log2(("mov_Cr_Rd: (CR%u) Guest intercept -> VM-exit\n", iCrReg));
 
         VMXVEXITINFO ExitInfo;
@@ -3216,8 +3188,24 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrMovToCr0Cr4(PVMCPU pVCpu, uint8_t iCrRe
      *
      * See Intel Spec. 25.3 "Changes To Instruction Behavior In VMX Non-root Operation".
      */
-    *puNewCrX = (uGuestCrX & fGstHostMask) | (*puNewCrX & ~fGstHostMask);
+    PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    Assert(pVmcs);
+    uint64_t uGuestCrX;
+    uint64_t fGstHostMask;
+    if (iCrReg == 0)
+    {
+        IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_CR0);
+        uGuestCrX    = pVCpu->cpum.GstCtx.cr0;
+        fGstHostMask = pVmcs->u64Cr0Mask.u;
+    }
+    else
+    {
+        IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_CR4);
+        uGuestCrX    = pVCpu->cpum.GstCtx.cr4;
+        fGstHostMask = pVmcs->u64Cr4Mask.u;
+    }
 
+    *puNewCrX = (uGuestCrX & fGstHostMask) | (*puNewCrX & ~fGstHostMask);
     return VINF_VMX_INTERCEPT_NOT_ACTIVE;
 }
 
