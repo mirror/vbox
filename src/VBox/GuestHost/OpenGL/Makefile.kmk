@@ -565,8 +565,6 @@ VBoxOGLerrorspu_SOURCES = \
 	error/errorspu_init.c
 VBoxOGLerrorspu_CLEAN = \
 	$(VBOX_PATH_CROGL_GENFILES)/errorspu.c
-VBoxOGLerrorspu_LIBS = \
-	$(VBOX_LIB_OGL_CRUTIL)
 ifdef VBOX_WITH_CRHGSMI
 VBoxOGLerrorspu_DEFS.win    += VBOX_WITH_CRHGSMI
 endif
@@ -583,8 +581,6 @@ LIBRARIES.win.amd64 += VBoxOGLerrorspu-x86
 VBoxOGLerrorspu-x86_TEMPLATE = VBOXCROGLR3GUESTLIB
 VBoxOGLerrorspu-x86_EXTENDS = VBoxOGLerrorspu
 VBoxOGLerrorspu-x86_BLD_TRG_ARCH = x86
-VBoxOGLerrorspu-x86_LIBS = \
-	$(VBOX_LIB_OGL_CRUTIL_X86)
 VBoxOGLerrorspu-x86_DEFS = $(VBoxOGLerrorspu_DEFS) VBOX_WDDM_WOW64
 endif
 
