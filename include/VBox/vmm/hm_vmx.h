@@ -2837,8 +2837,8 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EXIT_QUAL_DRX_, UINT64_C(0), UINT64_MAX,
 #define VMX_EXIT_QUAL_CRX_REGISTER(a)                           ((a) & 0xf)
 /** 4-5:   Access type. */
 #define VMX_EXIT_QUAL_CRX_ACCESS(a)                             (((a) >> 4) & 3)
-/** 6:     LMSW operand type */
-#define VMX_EXIT_QUAL_CRX_LMSW_OP(a)                            (((a) >> 6) & 1)
+/** 6:     LMSW operand type memory (1 for memory, 0 for register). */
+#define VMX_EXIT_QUAL_CRX_LMSW_OP_MEM(a)                        (((a) >> 6) & 1)
 /** 7:     Reserved; cleared to 0. */
 #define VMX_EXIT_QUAL_CRX_RES1(a)                               (((a) >> 7) & 1)
 /** 8-11:  General purpose register number (0 for CLTS & LMSW). */

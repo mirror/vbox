@@ -412,13 +412,14 @@ static FNVMXEXITHANDLERNSRC        hmR0VmxExitErrUnexpected;
 /** @name Helpers for hardware exceptions VM-exit handlers.
  * @{
  */
-static int hmR0VmxExitXcptPF(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient);
-static int hmR0VmxExitXcptMF(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient);
-static int hmR0VmxExitXcptDB(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient);
-static int hmR0VmxExitXcptBP(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient);
-static int hmR0VmxExitXcptGP(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient);
-static int hmR0VmxExitXcptAC(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient);
-static int hmR0VmxExitXcptGeneric(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient);
+static VBOXSTRICTRC hmR0VmxExitXcptPF(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient);
+static VBOXSTRICTRC hmR0VmxExitXcptMF(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient);
+static VBOXSTRICTRC hmR0VmxExitXcptDB(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient);
+static VBOXSTRICTRC hmR0VmxExitXcptBP(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient);
+static VBOXSTRICTRC hmR0VmxExitXcptGP(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient);
+static VBOXSTRICTRC hmR0VmxExitXcptAC(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient);
+static VBOXSTRICTRC hmR0VmxExitXcptGeneric(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient);
+static VBOXSTRICTRC hmR0VmxExitLmsw(PVMCPU pVCpu, uint8_t cbInstr, uint16_t uMsw, RTGCPTR GCPtrEffDst);
 /** @} */
 
 
@@ -12842,31 +12843,44 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExitNested(PVMCPU pVCpu, PVMXTRANSIENT pVm
             {
                 case VMX_EXIT_QUAL_CRX_ACCESS_WRITE:
                 case VMX_EXIT_QUAL_CRX_ACCESS_READ:
-                case VMX_EXIT_QUAL_CRX_ACCESS_CLTS:
                 {
                     /** @todo NSTVMX: Implement me. */
                     break;
                 }
 
+                case VMX_EXIT_QUAL_CRX_ACCESS_CLTS:
+                {
+                    PCVMXVVMCS pVmcsNstGst = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+                    Assert(pVmcsNstGst);
+
+                    uint64_t const uGstHostMask = pVmcsNstGst->u64Cr0Mask.u;
+                    uint64_t const uReadShadow  = pVmcsNstGst->u64Cr0ReadShadow.u;
+                    if (   (uGstHostMask & X86_CR0_TS)
+                        && (uReadShadow  & X86_CR0_TS))
+                    {
+                        /** @todo NSTVMX: continue with VM-exit.   */
+                    }
+                    break;
+                }
+
                 case VMX_EXIT_QUAL_CRX_ACCESS_LMSW:        /* LMSW (Load Machine-Status Word into CR0) */
                 {
-                    uint16_t const uNewMsw = VMX_EXIT_QUAL_CRX_LMSW_DATA(pVmxTransient->uExitQual);
+                    RTGCPTR        GCPtrEffDst;
+                    uint16_t const uNewMsw     = VMX_EXIT_QUAL_CRX_LMSW_DATA(pVmxTransient->uExitQual);
+                    bool const     fMemOperand = VMX_EXIT_QUAL_CRX_LMSW_OP_MEM(pVmxTransient->uExitQual);
+
+                    rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
+                    if (fMemOperand)
+                    {
+                        rc |= hmR0VmxReadGuestLinearAddrVmcs(pVCpu, pVmxTransient);
+                        GCPtrEffDst = pVmxTransient->uGuestLinearAddr;
+                    }
+                    else
+                        GCPtrEffDst = NIL_RTGCPTR;
+                    AssertRCReturn(rc, rc);
+
                     if (CPUMIsGuestVmxLmswInterceptSet(pVCpu, &pVCpu->cpum.GstCtx, uNewMsw))
                     {
-                        rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
-                        AssertRCReturn(rc, rc);
-
-                        RTGCPTR    GCPtrEffDst;
-                        bool const fMemOperand = VMX_EXIT_QUAL_CRX_LMSW_OP(pVmxTransient->uExitQual);
-                        if (fMemOperand)
-                        {
-                            rc = hmR0VmxReadGuestLinearAddrVmcs(pVCpu, pVmxTransient);
-                            AssertRCReturn(rc, rc);
-                            GCPtrEffDst = pVmxTransient->uGuestLinearAddr;
-                        }
-                        else
-                            GCPtrEffDst = NIL_RTGCPTR;
-
                         VMXVEXITINFO ExitInfo;
                         RT_ZERO(ExitInfo);
                         ExitInfo.uReason            = VMX_EXIT_MOV_CRX;
@@ -12876,7 +12890,7 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExitNested(PVMCPU pVCpu, PVMXTRANSIENT pVm
                         rcStrict = IEMExecVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
                     }
                     else
-                        rcStrict = hmR0VmxExitMovCRx(pVCpu, pVmxTransient);
+                        rcStrict = hmR0VmxExitLmsw(pVCpu, pVmxTransient->cbInstr, uNewMsw, GCPtrEffDst);
                     break;
                 }
 
@@ -13373,15 +13387,15 @@ HMVMX_EXIT_DECL hmR0VmxExitXcptOrNmi(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
     }
 
     /* If this VM-exit occurred while delivering an event through the guest IDT, handle it accordingly. */
-    VBOXSTRICTRC rcStrictRc1 = hmR0VmxCheckExitDueToEventDelivery(pVCpu, pVmxTransient);
-    if (RT_UNLIKELY(rcStrictRc1 == VINF_SUCCESS))
+    VBOXSTRICTRC rcStrict = hmR0VmxCheckExitDueToEventDelivery(pVCpu, pVmxTransient);
+    if (RT_UNLIKELY(rcStrict == VINF_SUCCESS))
     { /* likely */ }
     else
     {
-        if (rcStrictRc1 == VINF_HM_DOUBLE_FAULT)
-            rcStrictRc1 = VINF_SUCCESS;
+        if (rcStrict == VINF_HM_DOUBLE_FAULT)
+            rcStrict = VINF_SUCCESS;
         STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExitXcptNmi, y3);
-        return rcStrictRc1;
+        return rcStrict;
     }
 
     uint32_t const uExitIntInfo = pVmxTransient->uExitIntInfo;
@@ -13406,33 +13420,33 @@ HMVMX_EXIT_DECL hmR0VmxExitXcptOrNmi(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
             { /* likely */ }
             else if (uVector != X86_XCPT_PF)
             {
-                rc = VINF_SUCCESS;
+                rcStrict = VINF_SUCCESS;
                 break;
             }
 
             switch (uVector)
             {
-                case X86_XCPT_PF: rc = hmR0VmxExitXcptPF(pVCpu, pVmxTransient);      break;
-                case X86_XCPT_GP: rc = hmR0VmxExitXcptGP(pVCpu, pVmxTransient);      break;
-                case X86_XCPT_MF: rc = hmR0VmxExitXcptMF(pVCpu, pVmxTransient);      break;
-                case X86_XCPT_DB: rc = hmR0VmxExitXcptDB(pVCpu, pVmxTransient);      break;
-                case X86_XCPT_BP: rc = hmR0VmxExitXcptBP(pVCpu, pVmxTransient);      break;
-                case X86_XCPT_AC: rc = hmR0VmxExitXcptAC(pVCpu, pVmxTransient);      break;
+                case X86_XCPT_PF: rcStrict = hmR0VmxExitXcptPF(pVCpu, pVmxTransient);      break;
+                case X86_XCPT_GP: rcStrict = hmR0VmxExitXcptGP(pVCpu, pVmxTransient);      break;
+                case X86_XCPT_MF: rcStrict = hmR0VmxExitXcptMF(pVCpu, pVmxTransient);      break;
+                case X86_XCPT_DB: rcStrict = hmR0VmxExitXcptDB(pVCpu, pVmxTransient);      break;
+                case X86_XCPT_BP: rcStrict = hmR0VmxExitXcptBP(pVCpu, pVmxTransient);      break;
+                case X86_XCPT_AC: rcStrict = hmR0VmxExitXcptAC(pVCpu, pVmxTransient);      break;
 
                 case X86_XCPT_NM: STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestNM);
-                                  rc = hmR0VmxExitXcptGeneric(pVCpu, pVmxTransient); break;
+                                  rcStrict = hmR0VmxExitXcptGeneric(pVCpu, pVmxTransient); break;
                 case X86_XCPT_XF: STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestXF);
-                                  rc = hmR0VmxExitXcptGeneric(pVCpu, pVmxTransient); break;
+                                  rcStrict = hmR0VmxExitXcptGeneric(pVCpu, pVmxTransient); break;
                 case X86_XCPT_DE: STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestDE);
-                                  rc = hmR0VmxExitXcptGeneric(pVCpu, pVmxTransient); break;
+                                  rcStrict = hmR0VmxExitXcptGeneric(pVCpu, pVmxTransient); break;
                 case X86_XCPT_UD: STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestUD);
-                                  rc = hmR0VmxExitXcptGeneric(pVCpu, pVmxTransient); break;
+                                  rcStrict = hmR0VmxExitXcptGeneric(pVCpu, pVmxTransient); break;
                 case X86_XCPT_SS: STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestSS);
-                                  rc = hmR0VmxExitXcptGeneric(pVCpu, pVmxTransient); break;
+                                  rcStrict = hmR0VmxExitXcptGeneric(pVCpu, pVmxTransient); break;
                 case X86_XCPT_NP: STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestNP);
-                                  rc = hmR0VmxExitXcptGeneric(pVCpu, pVmxTransient); break;
+                                  rcStrict = hmR0VmxExitXcptGeneric(pVCpu, pVmxTransient); break;
                 case X86_XCPT_TS: STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestTS);
-                                  rc = hmR0VmxExitXcptGeneric(pVCpu, pVmxTransient); break;
+                                  rcStrict = hmR0VmxExitXcptGeneric(pVCpu, pVmxTransient); break;
                 default:
                 {
                     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestXcpUnk);
@@ -13449,12 +13463,13 @@ HMVMX_EXIT_DECL hmR0VmxExitXcptOrNmi(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
                         hmR0VmxSetPendingEvent(pVCpu, VMX_ENTRY_INT_INFO_FROM_EXIT_INT_INFO(uExitIntInfo),
                                                pVmxTransient->cbInstr, pVmxTransient->uExitIntErrorCode,
                                                0 /* GCPtrFaultAddress */);
+                        rcStrict = VINF_SUCCESS;
                     }
                     else
                     {
                         AssertMsgFailed(("Unexpected VM-exit caused by exception %#x\n", uVector));
                         pVCpu->hm.s.u32HMError = uVector;
-                        rc = VERR_VMX_UNEXPECTED_EXCEPTION;
+                        rcStrict = VERR_VMX_UNEXPECTED_EXCEPTION;
                     }
                     break;
                 }
@@ -13465,13 +13480,13 @@ HMVMX_EXIT_DECL hmR0VmxExitXcptOrNmi(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
         default:
         {
             pVCpu->hm.s.u32HMError = uExitIntInfo;
-            rc = VERR_VMX_UNEXPECTED_INTERRUPTION_EXIT_TYPE;
+            rcStrict = VERR_VMX_UNEXPECTED_INTERRUPTION_EXIT_TYPE;
             AssertMsgFailed(("Unexpected interruption info %#x\n", VMX_EXIT_INT_INFO_TYPE(uExitIntInfo)));
             break;
         }
     }
     STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExitXcptNmi, y3);
-    return rc;
+    return rcStrict;
 }
 
 
@@ -14493,18 +14508,23 @@ HMVMX_EXIT_DECL hmR0VmxExitMovCRx(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 
         case VMX_EXIT_QUAL_CRX_ACCESS_LMSW:        /* LMSW (Load Machine-Status Word into CR0) */
         {
-            /* Note! LMSW cannot clear CR0.PE, so no fRealOnV86Active kludge needed here. */
-            rc = hmR0VmxReadGuestLinearAddrVmcs(pVCpu, pVmxTransient);
-            AssertRCReturn(rc, rc);
-            rcStrict = IEMExecDecodedLmsw(pVCpu, pVmxTransient->cbInstr, VMX_EXIT_QUAL_CRX_LMSW_DATA(uExitQual),
-                                          pVmxTransient->uGuestLinearAddr);
-            AssertMsg(   rcStrict == VINF_SUCCESS
-                      || rcStrict == VINF_IEM_RAISED_XCPT
-                      , ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
+            /*
+             * LMSW cannot clear CR0.PE, so no fRealOnV86Active kludge needed here.
+             */
+            RTGCPTR        GCPtrEffDst;
+            uint8_t const  cbInstr     = pVmxTransient->cbInstr;
+            uint16_t const uMsw        = VMX_EXIT_QUAL_CRX_LMSW_DATA(uExitQual);
+            bool const     fMemOperand = VMX_EXIT_QUAL_CRX_LMSW_OP_MEM(uExitQual);
+            if (fMemOperand)
+            {
+                rc = hmR0VmxReadGuestLinearAddrVmcs(pVCpu, pVmxTransient);
+                AssertRCReturn(rc, rc);
+                GCPtrEffDst = pVmxTransient->uGuestLinearAddr;
+            }
+            else
+                GCPtrEffDst = NIL_RTGCPTR;
 
-            ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS | HM_CHANGED_GUEST_CR0);
-            STAM_COUNTER_INC(&pVCpu->hm.s.StatExitLmsw);
-            Log4Func(("LMSW rcStrict=%d\n", VBOXSTRICTRC_VAL(rcStrict)));
+            rcStrict = hmR0VmxExitLmsw(pVCpu, cbInstr, uMsw, GCPtrEffDst);
             break;
         }
 
@@ -15171,7 +15191,7 @@ HMVMX_EXIT_DECL hmR0VmxExitEptViolation(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransien
 /**
  * VM-exit exception handler for \#MF (Math Fault: floating point exception).
  */
-static int hmR0VmxExitXcptMF(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
+static VBOXSTRICTRC hmR0VmxExitXcptMF(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_XCPT_HANDLER_PARAMS(pVCpu, pVmxTransient);
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestMF);
@@ -15201,7 +15221,7 @@ static int hmR0VmxExitXcptMF(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 /**
  * VM-exit exception handler for \#BP (Breakpoint exception).
  */
-static int hmR0VmxExitXcptBP(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
+static VBOXSTRICTRC hmR0VmxExitXcptBP(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_XCPT_HANDLER_PARAMS(pVCpu, pVmxTransient);
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestBP);
@@ -15230,7 +15250,7 @@ static int hmR0VmxExitXcptBP(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 /**
  * VM-exit exception handler for \#AC (alignment check exception).
  */
-static int hmR0VmxExitXcptAC(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
+static VBOXSTRICTRC hmR0VmxExitXcptAC(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_XCPT_HANDLER_PARAMS(pVCpu, pVmxTransient);
 
@@ -15251,7 +15271,7 @@ static int hmR0VmxExitXcptAC(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 /**
  * VM-exit exception handler for \#DB (Debug exception).
  */
-static int hmR0VmxExitXcptDB(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
+static VBOXSTRICTRC hmR0VmxExitXcptDB(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_XCPT_HANDLER_PARAMS(pVCpu, pVmxTransient);
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestDB);
@@ -15405,7 +15425,7 @@ DECLINLINE(bool) hmR0VmxIsMesaDrvGp(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient, P
  *
  * @remarks Requires pVmxTransient->uExitIntInfo to be up-to-date.
  */
-static int hmR0VmxExitXcptGP(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
+static VBOXSTRICTRC hmR0VmxExitXcptGP(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_XCPT_HANDLER_PARAMS(pVCpu, pVmxTransient);
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestGP);
@@ -15483,7 +15503,7 @@ static int hmR0VmxExitXcptGP(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
  * @remarks Requires uExitIntInfo in the VMX transient structure to be
  *          up-to-date.
  */
-static int hmR0VmxExitXcptGeneric(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
+static VBOXSTRICTRC hmR0VmxExitXcptGeneric(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_XCPT_HANDLER_PARAMS(pVCpu, pVmxTransient);
 #ifndef HMVMX_ALWAYS_TRAP_ALL_XCPTS
@@ -15516,7 +15536,7 @@ static int hmR0VmxExitXcptGeneric(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 /**
  * VM-exit exception handler for \#PF (Page-fault exception).
  */
-static int hmR0VmxExitXcptPF(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
+static VBOXSTRICTRC hmR0VmxExitXcptPF(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_XCPT_HANDLER_PARAMS(pVCpu, pVmxTransient);
     PVM pVM = pVCpu->CTX_SUFF(pVM);
@@ -15607,6 +15627,29 @@ static int hmR0VmxExitXcptPF(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitShadowPFEM);
     return rc;
 }
+
+
+/**
+ * VM-exit exception handler for LMSW.
+ */
+static VBOXSTRICTRC hmR0VmxExitLmsw(PVMCPU pVCpu, uint8_t cbInstr, uint16_t uMsw, RTGCPTR GCPtrEffDst)
+{
+    VBOXSTRICTRC rcStrict = IEMExecDecodedLmsw(pVCpu, cbInstr, uMsw, GCPtrEffDst);
+    AssertMsg(   rcStrict == VINF_SUCCESS
+              || rcStrict == VINF_IEM_RAISED_XCPT
+              , ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
+    Log4Func(("rcStrict=%d\n", VBOXSTRICTRC_VAL(rcStrict)));
+
+    ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS | HM_CHANGED_GUEST_CR0);
+    if (rcStrict == VINF_IEM_RAISED_XCPT)
+    {
+        ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_RAISED_XCPT_MASK);
+        rcStrict = VINF_SUCCESS;
+    }
+    STAM_COUNTER_INC(&pVCpu->hm.s.StatExitLmsw);
+    return rcStrict;
+}
+
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
 /** @name VMX instruction handlers.
