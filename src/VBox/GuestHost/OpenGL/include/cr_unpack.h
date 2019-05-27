@@ -94,6 +94,7 @@ DECLINLINE(const void *) crUnpackAccessChk(PCCrUnpackerState pState, size_t cbAc
     if (RT_UNLIKELY((a_pState)->cbUnpackDataLeft < (a_cbAccess))) \
     { \
         (a_pState)->rcUnpack = VERR_BUFFER_OVERFLOW; \
+        AssertFailed(); \
         return; \
     } \
     size_t int_cbAccessVerified = (a_cbAccess); RT_NOREF(int_cbAccessVerified)
@@ -106,6 +107,7 @@ DECLINLINE(const void *) crUnpackAccessChk(PCCrUnpackerState pState, size_t cbAc
         if (RT_UNLIKELY((a_pState)->cbUnpackDataLeft < (size_t)(a_cbAccess))) \
         { \
             (a_pState)->rcUnpack = VERR_BUFFER_OVERFLOW; \
+            AssertFailed(); \
             return; \
         } \
         int_cbAccessVerified = (a_cbAccess); \
@@ -128,6 +130,7 @@ DECLINLINE(size_t) crUnpackAcccessChkStrUpdate(PCrUnpackerState pState, const ch
     if (!pv)
     {
         pState->rcUnpack = VERR_BUFFER_OVERFLOW;
+        AssertFailed();
         return ~(size_t)0;
     }
 
@@ -167,13 +170,15 @@ DECLINLINE(size_t) crUnpackAcccessChkStrUpdate(PCrUnpackerState pState, const ch
 #define INCR_DATA_PTR(a_pState, delta ) \
     do \
     { \
-        if (RT_UNLIKELY((a_pState)->cbUnpackDataLeft < (size_t)(delta))) \
+        size_t a_cbAdv = (delta); \
+        if (RT_UNLIKELY((a_pState)->cbUnpackDataLeft < a_cbAdv)) \
         { \
           (a_pState)->rcUnpack = VERR_BUFFER_OVERFLOW; \
+          AssertFailed(); \
           return; \
         } \
-        (a_pState)->pbUnpackData     += (delta); \
-        (a_pState)->cbUnpackDataLeft -= (delta); \
+        (a_pState)->pbUnpackData     += a_cbAdv; \
+        (a_pState)->cbUnpackDataLeft -= a_cbAdv; \
     } while(0)
 
 #define INCR_DATA_PTR_NO_ARGS(a_pState) INCR_DATA_PTR(a_pState, 4 )
@@ -184,7 +189,7 @@ DECLINLINE(size_t) crUnpackAcccessChkStrUpdate(PCrUnpackerState pState, const ch
     do \
     { \
         CRDBGPTR_CHECKZ((a_pState)->pReturnPtr); \
-        if (!DATA_POINTER_CHECK(a_pState, offset + sizeof(*(a_pState)->pReturnPtr))) \
+        if (offset + sizeof(*(a_pState)->pReturnPtr) > (a_pState)->cbUnpackDataLeft) \
         { \
              crError("%s: SET_RETURN_PTR(%u) offset out of bounds\n", __FUNCTION__, offset); \
              return; \
@@ -196,9 +201,9 @@ DECLINLINE(size_t) crUnpackAcccessChkStrUpdate(PCrUnpackerState pState, const ch
     do \
     { \
         CRDBGPTR_CHECKZ((a_pState)->pWritebackPtr); \
-        if (!DATA_POINTER_CHECK(a_pState, offset + sizeof(*(a_pState)->pWritebackPtr))) \
+        if (offset + sizeof(*(a_pState)->pWritebackPtr) > (a_pState)->cbUnpackDataLeft) \
         { \
-             crError("%s: SET_RETURN_PTR(%u) offset out of bounds\n", __FUNCTION__, offset); \
+             crError("%s: SET_WRITEBACK_PTR(%u) offset out of bounds\n", __FUNCTION__, offset); \
              return; \
         } \
         crMemcpy((a_pState)->pWritebackPtr, crUnpackAccessChk((a_pState), int_cbAccessVerified, (offset), sizeof( *(a_pState)->pWritebackPtr )), sizeof( *(a_pState)->pWritebackPtr) ); \
