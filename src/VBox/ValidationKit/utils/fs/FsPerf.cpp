@@ -375,6 +375,7 @@ static const RTGETOPTDEF g_aCmdOptions[] =
     { "--tree-depth",               kCmdOpt_ManyTreeDepth,          RTGETOPT_REQ_UINT32 },
     { "--max-buffer-size",          kCmdOpt_MaxBufferSize,          RTGETOPT_REQ_UINT32 },
     { "--mmap-placement",           kCmdOpt_MMapPlacement,          RTGETOPT_REQ_STRING },
+    /// @todo { "--timestamp-style",           kCmdOpt_TimestampStyle,          RTGETOPT_REQ_STRING },
 
     { "--open",                     kCmdOpt_Open,                   RTGETOPT_REQ_NOTHING },
     { "--no-open",                  kCmdOpt_NoOpen,                 RTGETOPT_REQ_NOTHING },
