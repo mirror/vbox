@@ -2244,6 +2244,53 @@ DECLINLINE(bool) CPUMIsGuestVmxLmswInterceptSet(PVMCPU pVCpu, PCCPUMCTX pCtx, ui
     return false;
 }
 
+
+/**
+ * Checks whether the Mov-to-CR0/CR4 access causes a VM-exit or not.
+ *
+ * @returns @c true if the Mov CRX access causes a VM-exit, @c false otherwise.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
+ * @param   pCtx        Pointer to the context.
+ * @param   iCrReg      The control register number (must be 0 or 4).
+ * @param   uNewCrX     The CR0/CR4 value being written.
+ */
+DECLINLINE(bool) CPUMIsGuestVmxMovToCr0Cr4InterceptSet(PVMCPU pVCpu, PCCPUMCTX pCtx, uint8_t iCrReg, uint64_t uNewCrX)
+{
+    /*
+     * For any CR0/CR4 bit owned by the host (in the CR0/CR4 guest/host mask), if the
+     * corresponding bits differ between the source operand and the read-shadow,
+     * we must cause a VM-exit.
+     *
+     * See Intel spec. 25.1.3 "Instructions That Cause VM Exits Conditionally".
+     */
+    RT_NOREF(pVCpu);
+    PCVMXVVMCS pVmcs = pCtx->hwvirt.vmx.CTX_SUFF(pVmcs);
+    Assert(pVmcs);
+    Assert(CPUMIsGuestInVmxNonRootMode(pCtx));
+    Assert(iCrReg == 0 || iCrReg == 4);
+
+    uint64_t fGstHostMask;
+    uint64_t fReadShadow;
+    if (iCrReg == 0)
+    {
+        fGstHostMask = pVmcs->u64Cr0Mask.u;
+        fReadShadow  = pVmcs->u64Cr0ReadShadow.u;
+    }
+    else
+    {
+        fGstHostMask = pVmcs->u64Cr4Mask.u;
+        fReadShadow  = pVmcs->u64Cr4ReadShadow.u;
+    }
+
+    if ((fReadShadow & fGstHostMask) != (uNewCrX & fGstHostMask))
+    {
+        Assert(fGstHostMask != 0);
+        return true;
+    }
+
+    return false;
+}
+
 # endif /* !IN_RC */
 
 #endif /* IPRT_WITHOUT_NAMED_UNIONS_AND_STRUCTS */
