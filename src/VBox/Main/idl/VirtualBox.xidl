@@ -15372,7 +15372,7 @@ and "VAR" for unsetting. -->
 
   <interface
     name="IMediumAttachment" extends="$unknown"
-    uuid="cbc97ce0-dfae-4c70-a6aa-769e5186363b"
+    uuid="8d095cb0-0126-43e0-b05d-326e74abb356"
     wsmap="struct"
     reservedAttributes="8"
     >
@@ -15554,6 +15554,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       attached to the machine in place of it.
 
     </desc>
+
+    <attribute name="machine" type="IMachine" readonly="yes">
+      <desc>Machine object for this medium attachment.</desc>
+    </attribute>
 
     <attribute name="medium" type="IMedium" readonly="yes">
       <desc>Medium object associated with this attachment; it

@@ -217,6 +217,20 @@ void MediumAttachment::uninit()
 /////////////////////////////////////////////////////////////////////////////
 
 
+HRESULT MediumAttachment::getMachine(ComPtr<IMachine> &aMachine)
+{
+    LogFlowThisFuncEnter();
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    ComObjPtr<Machine> pMachine(m->pMachine);
+    pMachine.queryInterfaceTo(aMachine.asOutParam());
+
+    LogFlowThisFuncLeave();
+    return S_OK;
+}
+
+
 HRESULT MediumAttachment::getMedium(ComPtr<IMedium> &aHardDisk)
 {
     LogFlowThisFuncEnter();

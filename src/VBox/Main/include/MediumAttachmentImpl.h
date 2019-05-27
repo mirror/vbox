@@ -112,6 +112,7 @@ public:
 private:
 
     // Wrapped IMediumAttachment properties
+    HRESULT getMachine(ComPtr<IMachine> &aMachine);
     HRESULT getMedium(ComPtr<IMedium> &aHardDisk);
     HRESULT getController(com::Utf8Str &aController);
     HRESULT getPort(LONG *aPort);
