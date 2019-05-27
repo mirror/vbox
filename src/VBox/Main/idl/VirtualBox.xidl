@@ -17930,7 +17930,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IDisplaySourceBitmap" extends="$unknown" wsmap="suppress"
-    uuid="0b78daeb-f52f-43b9-99e8-4a3c226cbe2d"
+    uuid="5094f67a-8084-11e9-b185-dbe296e54799"
     >
     <attribute name="screenId" type="unsigned long" readonly="yes"/>
     <method name="queryBitmapInfo">
@@ -18420,42 +18420,44 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <method name="setVideoModeHint">
       <desc>
-        Asks VirtualBox to request the given video mode from
-        the guest. This is just a hint and it cannot be guaranteed
-        that the requested resolution will be used. Guest Additions
-        are required for the request to be seen by guests. The caller
-        should issue the request and wait for a resolution change and
-        after a timeout retry.
+        Changes the monitor information reported by a given output of the guest
+        graphics device.  This information can be read by the guest if suitable
+        drivers and driver tools are available, including but not limited to
+        those in the Guest Additions.  The guest will receive monitor hotplug
+        notification when the monitor information is changed, and the
+        information itself will be available to the guest until the next change.
+        The information should not be resent if the guest does not resize in
+        response.  The guest might have chosen to ignore the change, or the
+        resize might happen later when a suitable driver is started.
 
         Specifying @c 0 for either @a width, @a height or @a bitsPerPixel
         parameters means that the corresponding values should be taken from the
         current video mode (i.e. left unchanged).
 
-        If the guest OS supports multi-monitor configuration then the @a display
-        parameter specifies the number of the guest display to send the hint to:
-        @c 0 is the primary display, @c 1 is the first secondary and
-        so on. If the multi-monitor configuration is not supported, @a display
-        must be @c 0.
+        @todo Rename this to @a setMonitorInfo for 7.0.
 
         <result name="E_INVALIDARG">
-          The @a display is not associated with any monitor.
+          The @a display value is higher then the number of outputs.
         </result>
 
       </desc>
       <param name="display" type="unsigned long" dir="in">
         <desc>
-          The number of the guest display to send the hint to.
+          The number of the guest output to change.
         </desc>
       </param>
       <param name="enabled" type="boolean" dir="in">
         <desc>
-          @c True, if this guest screen is enabled,
+          @c True if a monitor is connected,
           @c False otherwise.
+          <note internal="yes">For historical reasons the Windows drivers can
+          and do override this setting.  Call this a virtual hardware quirk.
+          </note>
         </desc>
       </param>
       <param name="changeOrigin" type="boolean" dir="in">
         <desc>
-          @c True, if the origin of the guest screen should be changed,
+          @c True, if the position of the guest screen is specified,
           @c False otherwise.
         </desc>
       </param>
@@ -18482,6 +18484,65 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <param name="bitsPerPixel" type="unsigned long" dir="in">
         <desc>
           The number of bits per pixel of the guest screen.
+        </desc>
+      </param>
+    </method>
+
+    <method name="getVideoModeHint">
+      <desc>
+        Queries the monitor information for a given guest output.  See
+        @a setVideoModeHint.  If no monitor information has been set yet by a
+        front-end the preferred mode values returned will be zero.
+
+        @todo Rename this to @a getMonitorInfo for 7.0.
+
+        <result name="E_INVALIDARG">
+          The @a display value is higher than the number of outputs.
+        </result>
+
+      </desc>
+      <param name="display" type="unsigned long" dir="in">
+        <desc>
+          The number of the guest output to query.
+        </desc>
+      </param>
+      <param name="enabled" type="boolean" dir="out">
+        <desc>
+          @c True if a monitor is connected,
+          @c False otherwise.
+          <note internal="yes">For historical reasons the Windows drivers can
+          and do override the setting requested by the host.</note>
+        </desc>
+      </param>
+      <param name="changeOrigin" type="boolean" dir="out">
+        <desc>
+          @c True, if the position of the guest screen was specified,
+          @c False otherwise.
+        </desc>
+      </param>
+      <param name="originX" type="long" dir="out">
+        <desc>
+          The X origin of the guest screen.
+        </desc>
+      </param>
+      <param name="originY" type="long" dir="out">
+        <desc>
+          The Y origin of the guest screen.
+        </desc>
+      </param>
+      <param name="width" type="unsigned long" dir="out">
+        <desc>
+          The width of the monitor preferred mode.
+        </desc>
+      </param>
+      <param name="height" type="unsigned long" dir="out">
+        <desc>
+          The height of the monitor preferred mode.
+        </desc>
+      </param>
+      <param name="bitsPerPixel" type="unsigned long" dir="out">
+        <desc>
+          The number of bits per pixel of the monitor preferred mode.
         </desc>
       </param>
     </method>

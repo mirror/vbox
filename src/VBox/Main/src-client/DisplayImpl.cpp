@@ -41,7 +41,6 @@
 #if defined(DEBUG) || defined(VBOX_STRICT) /* for VM_ASSERT_EMT(). */
 # include <VBox/vmm/vm.h>
 #endif
-#include <VBox/VMMDev.h>
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
 # include <VBoxVideo.h>
@@ -1970,7 +1969,7 @@ HRESULT Display::setVideoModeHint(ULONG aDisplay, BOOL aEnabled,
              aBitsPerPixel = ulBitsPerPixel;
     }
 
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (aDisplay >= mcMonitors)
         return E_INVALIDARG;
@@ -2001,6 +2000,20 @@ HRESULT Display::setVideoModeHint(ULONG aDisplay, BOOL aEnabled,
         mParent->i_sendACPIMonitorHotPlugEvent();
     }
 
+    VMMDevDisplayDef d;
+    d.idDisplay     = aDisplay;
+    d.xOrigin       = aOriginX;
+    d.yOrigin       = aOriginY;
+    d.cx            = aWidth;
+    d.cy            = aHeight;
+    d.cBitsPerPixel = aBitsPerPixel;
+    d.fDisplayFlags = VMMDEV_DISPLAY_CX | VMMDEV_DISPLAY_CY | VMMDEV_DISPLAY_BPP;
+    if (!aEnabled)
+        d.fDisplayFlags |= VMMDEV_DISPLAY_DISABLED;
+    if (aChangeOrigin)
+        d.fDisplayFlags |= VMMDEV_DISPLAY_ORIGIN;
+    if (aDisplay == 0)
+        d.fDisplayFlags |= VMMDEV_DISPLAY_PRIMARY;
     /* We currently never suppress the VMMDev hint if the guest has requested
      * it.  Specifically the video graphics driver may not be responsible for
      * screen positioning in the guest virtual desktop, and the component
@@ -2010,25 +2023,37 @@ HRESULT Display::setVideoModeHint(ULONG aDisplay, BOOL aEnabled,
     {
         PPDMIVMMDEVPORT pVMMDevPort = pVMMDev->getVMMDevPort();
         if (pVMMDevPort)
-        {
-            VMMDevDisplayDef d;
-            d.idDisplay     = aDisplay;
-            d.xOrigin       = aOriginX;
-            d.yOrigin       = aOriginY;
-            d.cx            = aWidth;
-            d.cy            = aHeight;
-            d.cBitsPerPixel = aBitsPerPixel;
-            d.fDisplayFlags = VMMDEV_DISPLAY_CX | VMMDEV_DISPLAY_CY | VMMDEV_DISPLAY_BPP;
-            if (!aEnabled)
-                d.fDisplayFlags |= VMMDEV_DISPLAY_DISABLED;
-            if (aChangeOrigin)
-                d.fDisplayFlags |= VMMDEV_DISPLAY_ORIGIN;
-            if (aDisplay == 0)
-                d.fDisplayFlags |= VMMDEV_DISPLAY_PRIMARY;
-
             pVMMDevPort->pfnRequestDisplayChange(pVMMDevPort, 1, &d, false);
-        }
     }
+    /* Remember the monitor information. */
+    maFramebuffers[aDisplay].monitorDesc = d;
+    return S_OK;
+}
+
+HRESULT Display::getVideoModeHint(ULONG cDisplay, BOOL *pfEnabled,
+                                  BOOL *pfChangeOrigin, LONG *pxOrigin, LONG *pyOrigin,
+                                  ULONG *pcx, ULONG *pcy, ULONG *pcBitsPerPixel)
+{
+    if (cDisplay >= mcMonitors)
+        return E_INVALIDARG;
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    if (pfEnabled)
+        *pfEnabled      = !(  maFramebuffers[cDisplay].monitorDesc.fDisplayFlags
+                            & VMMDEV_DISPLAY_DISABLED);
+    if (pfChangeOrigin)
+        *pfChangeOrigin = RT_BOOL(  maFramebuffers[cDisplay].monitorDesc.fDisplayFlags
+                                  & VMMDEV_DISPLAY_ORIGIN);
+    if (pxOrigin)
+        *pxOrigin       = maFramebuffers[cDisplay].monitorDesc.xOrigin;
+    if (pyOrigin)
+        *pyOrigin       = maFramebuffers[cDisplay].monitorDesc.yOrigin;
+    if (pcx)
+        *pcx            = maFramebuffers[cDisplay].monitorDesc.cx;
+    if (pcy)
+        *pcy            = maFramebuffers[cDisplay].monitorDesc.cy;
+    if (pcBitsPerPixel)
+        *pcBitsPerPixel = maFramebuffers[cDisplay].monitorDesc.cBitsPerPixel;
     return S_OK;
 }
 
