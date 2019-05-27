@@ -14,7 +14,7 @@
 
 static GLint __sizeQuery( GLenum map )
 {
-    GLint get_values;
+    GLint get_values = 0;
     /* Windows compiler gets mad if variables might be uninitialized */
     GLenum newmap = GL_PIXEL_MAP_I_TO_I_SIZE;
 
@@ -79,11 +79,19 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchGetPixelMapfv( GLenum map, GLfloat
         GLfloat *local_values;
 
         size *= tabsize;
-        local_values = (GLfloat*)crCalloc( size );
+        if (size)
+        {
+            local_values = (GLfloat*)crCalloc( size );
 
-        cr_server.head_spu->dispatch_table.GetPixelMapfv( map, local_values );
-        crServerReturnValue( local_values, size );
-        crFree( local_values );
+            cr_server.head_spu->dispatch_table.GetPixelMapfv( map, local_values );
+            crServerReturnValue( local_values, size );
+            crFree( local_values );
+        }
+        else
+        {
+            crError("crServerDispatchGetPixelMapfv: __sizeQuery() returned 0");
+            crServerReturnValue(NULL, 0);
+        }
     }
 }
 
@@ -106,11 +114,19 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchGetPixelMapuiv( GLenum map, GLuint
         GLuint *local_values;
 
         size *= tabsize;
-        local_values = (GLuint*)crCalloc( size );
+        if (size)
+        {
+            local_values = (GLuint*)crCalloc( size );
 
-        cr_server.head_spu->dispatch_table.GetPixelMapuiv( map, local_values );
-        crServerReturnValue( local_values, size );
-        crFree( local_values );
+            cr_server.head_spu->dispatch_table.GetPixelMapuiv( map, local_values );
+            crServerReturnValue( local_values, size );
+            crFree( local_values );
+        }
+        else
+        {
+            crError( "crServerDispatchGetPixelMapuiv: __sizeQuery() returned 0");
+            crServerReturnValue(NULL, 0);
+        }
     }
 }
 
@@ -133,10 +149,18 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchGetPixelMapusv( GLenum map, GLusho
         GLushort *local_values;
 
         size *= tabsize;
-        local_values = (GLushort*)crCalloc( size );
+        if (size)
+        {
+            local_values = (GLushort*)crCalloc( size );
 
-        cr_server.head_spu->dispatch_table.GetPixelMapusv( map, local_values );
-        crServerReturnValue( local_values, size );
-        crFree( local_values );
+            cr_server.head_spu->dispatch_table.GetPixelMapusv( map, local_values );
+            crServerReturnValue( local_values, size );
+            crFree( local_values );
+        }
+        else
+        {
+            crError( "crServerDispatchGetPixelMapuiv: __sizeQuery() returned 0");
+            crServerReturnValue(NULL, 0);
+        }
     }
 }
