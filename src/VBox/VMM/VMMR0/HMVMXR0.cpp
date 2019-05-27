@@ -420,6 +420,7 @@ static VBOXSTRICTRC hmR0VmxExitXcptGP(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 static VBOXSTRICTRC hmR0VmxExitXcptAC(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient);
 static VBOXSTRICTRC hmR0VmxExitXcptGeneric(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient);
 static VBOXSTRICTRC hmR0VmxExitLmsw(PVMCPU pVCpu, uint8_t cbInstr, uint16_t uMsw, RTGCPTR GCPtrEffDst);
+static VBOXSTRICTRC hmR0VmxExitClts(PVMCPU pVCpu, uint8_t cbInstr);
 /** @} */
 
 
@@ -12850,16 +12851,25 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExitNested(PVMCPU pVCpu, PVMXTRANSIENT pVm
 
                 case VMX_EXIT_QUAL_CRX_ACCESS_CLTS:
                 {
+                    rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
+                    AssertRCReturn(rc, rc);
+
                     PCVMXVVMCS pVmcsNstGst = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
                     Assert(pVmcsNstGst);
-
                     uint64_t const uGstHostMask = pVmcsNstGst->u64Cr0Mask.u;
                     uint64_t const uReadShadow  = pVmcsNstGst->u64Cr0ReadShadow.u;
                     if (   (uGstHostMask & X86_CR0_TS)
                         && (uReadShadow  & X86_CR0_TS))
                     {
-                        /** @todo NSTVMX: continue with VM-exit.   */
+                        VMXVEXITINFO ExitInfo;
+                        RT_ZERO(ExitInfo);
+                        ExitInfo.uReason = VMX_EXIT_MOV_CRX;
+                        ExitInfo.cbInstr = pVmxTransient->cbInstr;
+                        ExitInfo.u64Qual = pVmxTransient->uExitQual;
+                        rcStrict = IEMExecVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
                     }
+                    else
+                        rcStrict = hmR0VmxExitClts(pVCpu, pVmxTransient->cbInstr);
                     break;
                 }
 
@@ -14494,21 +14504,19 @@ HMVMX_EXIT_DECL hmR0VmxExitMovCRx(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
             break;
         }
 
-        case VMX_EXIT_QUAL_CRX_ACCESS_CLTS:        /* CLTS (Clear Task-Switch Flag in CR0) */
+        case VMX_EXIT_QUAL_CRX_ACCESS_CLTS:
         {
-            rcStrict = IEMExecDecodedClts(pVCpu, pVmxTransient->cbInstr);
-            AssertMsg(   rcStrict == VINF_SUCCESS
-                      || rcStrict == VINF_IEM_RAISED_XCPT, ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
-
-            ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS | HM_CHANGED_GUEST_CR0);
-            STAM_COUNTER_INC(&pVCpu->hm.s.StatExitClts);
-            Log4Func(("CLTS rcStrict=%d\n", VBOXSTRICTRC_VAL(rcStrict)));
+            /*
+             * CLTS (Clear Task-Switch Flag in CR0).
+             */
+            rcStrict = hmR0VmxExitClts(pVCpu, pVmxTransient->cbInstr);
             break;
         }
 
-        case VMX_EXIT_QUAL_CRX_ACCESS_LMSW:        /* LMSW (Load Machine-Status Word into CR0) */
+        case VMX_EXIT_QUAL_CRX_ACCESS_LMSW:
         {
             /*
+             * LMSW (Load Machine-Status Word into CR0).
              * LMSW cannot clear CR0.PE, so no fRealOnV86Active kludge needed here.
              */
             RTGCPTR        GCPtrEffDst;
@@ -15636,9 +15644,9 @@ static VBOXSTRICTRC hmR0VmxExitLmsw(PVMCPU pVCpu, uint8_t cbInstr, uint16_t uMsw
 {
     VBOXSTRICTRC rcStrict = IEMExecDecodedLmsw(pVCpu, cbInstr, uMsw, GCPtrEffDst);
     AssertMsg(   rcStrict == VINF_SUCCESS
-              || rcStrict == VINF_IEM_RAISED_XCPT
-              , ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
-    Log4Func(("rcStrict=%d\n", VBOXSTRICTRC_VAL(rcStrict)));
+              || rcStrict == VINF_IEM_RAISED_XCPT, ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
+    STAM_COUNTER_INC(&pVCpu->hm.s.StatExitLmsw);
+    Log4Func(("rcStrict=%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
 
     ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS | HM_CHANGED_GUEST_CR0);
     if (rcStrict == VINF_IEM_RAISED_XCPT)
@@ -15646,10 +15654,29 @@ static VBOXSTRICTRC hmR0VmxExitLmsw(PVMCPU pVCpu, uint8_t cbInstr, uint16_t uMsw
         ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_RAISED_XCPT_MASK);
         rcStrict = VINF_SUCCESS;
     }
-    STAM_COUNTER_INC(&pVCpu->hm.s.StatExitLmsw);
     return rcStrict;
 }
 
+
+/**
+ * VM-exit exception handler for CLTS.
+ */
+static VBOXSTRICTRC hmR0VmxExitClts(PVMCPU pVCpu, uint8_t cbInstr)
+{
+    VBOXSTRICTRC rcStrict = IEMExecDecodedClts(pVCpu, cbInstr);
+    AssertMsg(   rcStrict == VINF_SUCCESS
+              || rcStrict == VINF_IEM_RAISED_XCPT, ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
+    STAM_COUNTER_INC(&pVCpu->hm.s.StatExitClts);
+    Log4Func(("rcStrict=%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
+
+    ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS | HM_CHANGED_GUEST_CR0);
+    if (rcStrict == VINF_IEM_RAISED_XCPT)
+    {
+        ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_RAISED_XCPT_MASK);
+        rcStrict = VINF_SUCCESS;
+    }
+    return rcStrict;
+}
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
 /** @name VMX instruction handlers.
