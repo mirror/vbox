@@ -12843,6 +12843,27 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExitNested(PVMCPU pVCpu, PVMXTRANSIENT pVm
             switch (uAccessType)
             {
                 case VMX_EXIT_QUAL_CRX_ACCESS_WRITE:
+                {
+                    PCVMXVVMCS pVmcsNstGst = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+                    Assert(pVmcsNstGst);
+                    uint8_t const iCrReg   = VMX_EXIT_QUAL_CRX_REGISTER(pVmxTransient->uExitQual);
+                    uint8_t const iGReg    = VMX_EXIT_QUAL_CRX_GENREG(pVmxTransient->uExitQual);
+                    Assert(iGReg < RT_ELEMENTS(pVCpu->cpum.GstCtx.aGRegs));
+                    uint64_t const uNewCrx = pVCpu->cpum.GstCtx.aGRegs[iGReg].u64;
+                    if (CPUMIsGuestVmxMovToCr0Cr4InterceptSet(pVCpu, &pVCpu->cpum.GstCtx, iCrReg, uNewCrx))
+                    {
+                        VMXVEXITINFO ExitInfo;
+                        RT_ZERO(ExitInfo);
+                        ExitInfo.uReason = VMX_EXIT_MOV_CRX;
+                        ExitInfo.cbInstr = pVmxTransient->cbInstr;
+                        ExitInfo.u64Qual = pVmxTransient->uExitQual;
+                        rcStrict = IEMExecVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
+                    }
+                    else
+                        rcStrict = hmR0VmxExitMovCRx(pVCpu, pVmxTransient);
+                    break;
+                }
+
                 case VMX_EXIT_QUAL_CRX_ACCESS_READ:
                 {
                     /** @todo NSTVMX: Implement me. */
