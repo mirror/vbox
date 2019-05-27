@@ -771,7 +771,7 @@ static DECLCALLBACK(void) drvscsiNotifySuspend(PPDMIMEDIAEX pInterface)
      *        was mounted and asked the GUI to use it.  Got forced umount question.
      *        Said yes.  Ended up here with a NULL pointer. */
     PPDMIMEDIAEX pDrvMediaEx = pThis->pDrvMediaEx;
-    if (pThis)
+    if (pDrvMediaEx)
         pDrvMediaEx->pfnNotifySuspend(pDrvMediaEx);
 }
 
