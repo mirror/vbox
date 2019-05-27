@@ -1203,7 +1203,9 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
         InsertConfigInteger(pHM, "MDSClearOnVMEntry", fMDSClearOnVMEntry);
 
         /* Reset overwrite. */
-        if (i_isResetTurnedIntoPowerOff())
+        mfTurnResetIntoPowerOff = GetExtraDataBoth(virtualBox, pMachine,
+                                                   "VBoxInternal2/TurnResetIntoPowerOff", &strTmp)->equals("1");
+        if (mfTurnResetIntoPowerOff)
             InsertConfigInteger(pRoot, "PowerOffInsteadOfReset", 1);
 
         /* Use NEM rather than HM. */

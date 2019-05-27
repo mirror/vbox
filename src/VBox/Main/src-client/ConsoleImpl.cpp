@@ -274,7 +274,8 @@ public:
 ////////////////////////////////////////////////////////////////////////////////
 inline static const char *networkAdapterTypeToName(NetworkAdapterType_T adapterType);
 
-class VmEventListener {
+class VmEventListener
+{
 public:
     VmEventListener()
     {}
@@ -327,8 +328,8 @@ public:
                 if (FAILED(rc))
                     break;
                 mConsole->i_onNATRedirectRuleChange(ulSlot, fRemove, proto, hostIp.raw(), hostPort, guestIp.raw(), guestPort);
+                break;
             }
-            break;
 
             case VBoxEventType_OnHostNameResolutionConfigurationChange:
             {
@@ -397,6 +398,7 @@ Console::Console()
     , mfSnapshotFolderExt4WarningShown(false)
     , mfSnapshotFolderDiskTypeShown(false)
     , mfVMHasUsbController(false)
+    , mfTurnResetIntoPowerOff(false)
     , mfPowerOffCausedByReset(false)
     , mpVmm2UserMethods(NULL)
     , m_pVMMDev(NULL)
@@ -1079,17 +1081,6 @@ void Console::i_guestPropertiesVRDPUpdateDisconnect(uint32_t u32ClientId)
 }
 
 #endif /* VBOX_WITH_GUEST_PROPS */
-
-bool Console::i_isResetTurnedIntoPowerOff(void)
-{
-    Bstr value;
-    HRESULT hrc = mMachine->GetExtraData(Bstr("VBoxInternal2/TurnResetIntoPowerOff").raw(),
-                                         value.asOutParam());
-    if (   hrc   == S_OK
-        && value == "1")
-        return true;
-    return false;
-}
 
 #ifdef VBOX_WITH_EXTPACK
 /**
@@ -2192,17 +2183,15 @@ HRESULT Console::powerDown(ComPtr<IProgress> &aProgress)
     MachineState_T lastMachineState = mMachineState;
 
 #ifdef VBOX_WITH_GUEST_PROPS
-    alock.release(); /** @todo r=bird: This code introduces a race condition wrt to the state.  This must be done elsewhere! */
-
-    if (i_isResetTurnedIntoPowerOff())
+    if (mfTurnResetIntoPowerOff)
     {
+        alock.release(); /** @todo r=bird: This code introduces a race condition wrt to the state.  This must be done elsewhere! */
         mMachine->DeleteGuestProperty(Bstr("/VirtualBox/HostInfo/VMPowerOffReason").raw());
         mMachine->SetGuestProperty(Bstr("/VirtualBox/HostInfo/VMPowerOffReason").raw(),
                                    Bstr("PowerOff").raw(), Bstr("RDONLYGUEST").raw());
         mMachine->SaveSettings();
+        alock.acquire();
     }
-
-    alock.acquire();
 #endif
 
     /*
@@ -6051,12 +6040,10 @@ HRESULT Console::i_onExtraDataChange(IN_BSTR aMachineId, IN_BSTR aKey, IN_BSTR a
     SafeVMPtrQuiet ptrVM(this);
     if (ptrVM.isOk())
     {
-        Bstr strKey(aKey);
-        Bstr strVal(aVal);
-
-        if (strKey == "VBoxInternal2/TurnResetIntoPowerOff")
+        if (RTUtf16CmpAscii(aKey, "VBoxInternal2/TurnResetIntoPowerOff") == 0)
         {
-            int vrc = VMR3SetPowerOffInsteadOfReset(ptrVM.rawUVM(), strVal == "1");
+            mfTurnResetIntoPowerOff = RTUtf16CmpAscii(aVal, "1") == 0;
+            int vrc = VMR3SetPowerOffInsteadOfReset(ptrVM.rawUVM(), mfTurnResetIntoPowerOff);
             AssertRC(vrc);
         }
 
@@ -8790,7 +8777,7 @@ DECLCALLBACK(void) Console::i_vmstateChangeCallback(PUVM pUVM, VMSTATE enmState,
         case VMSTATE_OFF:
         {
 #ifdef VBOX_WITH_GUEST_PROPS
-            if (that->i_isResetTurnedIntoPowerOff())
+            if (that->mfTurnResetIntoPowerOff)
             {
                 Bstr strPowerOffReason;
 
