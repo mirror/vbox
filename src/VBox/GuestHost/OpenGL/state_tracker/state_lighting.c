@@ -736,13 +736,25 @@ void STATE_APIENTRY crStateMaterialiv (PCRStateTracker pState, GLenum face, GLen
 
 void STATE_APIENTRY crStateMaterialf (PCRStateTracker pState, GLenum face, GLenum pname, GLfloat param)
 {
-	crStateMaterialfv(pState, face, pname, &param);
+    if (pname != GL_SHININESS)
+    {
+        crStateError(pState, __LINE__, __FILE__, GL_INVALID_ENUM, "crStateMaterialf: bad pname: 0x%x", pname);
+        return;
+    }
+    crStateMaterialfv(pState, face, pname, &param);
 }
 
 void STATE_APIENTRY crStateMateriali (PCRStateTracker pState, GLenum face, GLenum pname, GLint param)
 {
-	GLfloat f_param = (GLfloat) param;
-	crStateMaterialfv(pState, face, pname, &f_param);
+    GLfloat f_param = (GLfloat) param;
+
+    if (pname != GL_SHININESS)
+    {
+        crStateError(pState, __LINE__, __FILE__, GL_INVALID_ENUM, "crStateMateriali: bad pname: 0x%x", pname);
+        return;
+    }
+
+    crStateMaterialfv(pState, face, pname, &f_param);
 }
 
 void STATE_APIENTRY crStateGetLightfv (PCRStateTracker pState, GLenum light, GLenum pname, GLfloat *param)
