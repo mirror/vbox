@@ -247,7 +247,7 @@ for func_name in keys:
         if not apiutil.OpcodeName(func_name) in nodebug_opcodes:
             print("""
 #ifdef CR_UNPACK_DEBUG_LAST_OPCODES
-                if (i==(num_opcodes-1))
+                if (i==(pState->cOpcodes-1))
 #endif
 #if defined(CR_UNPACK_DEBUG_OPCODES) || defined(CR_UNPACK_DEBUG_LAST_OPCODES)
                 crDebug("Unpack: %s");
@@ -260,7 +260,7 @@ print("""
                     crUnpackExtendDbg(pState);
                 #else
                 # ifdef CR_UNPACK_DEBUG_LAST_OPCODES
-                    if (i==(num_opcodes-1)) crUnpackExtendDbg(pState);
+                    if (i==(pState->cOpcodes-1)) crUnpackExtendDbg(pState);
                     else
                 # endif
                     crUnpackExtend(pState);
