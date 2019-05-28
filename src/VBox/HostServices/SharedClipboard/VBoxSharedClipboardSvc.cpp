@@ -464,6 +464,8 @@ static DECLCALLBACK(void) svcCall(void *,
     }
 #endif
 
+    bool fAsynchronousProcessing = false;
+
     switch (u32Function)
     {
         case VBOX_SHARED_CLIPBOARD_FN_GET_HOST_MSG:
@@ -495,6 +497,8 @@ static DECLCALLBACK(void) svcCall(void *,
                     else
                     {
                         /* No event available at the time. Process asynchronously. */
+                        fAsynchronousProcessing = true;
+
                         pClientData->State.fAsync           = true;
                         pClientData->State.async.callHandle = callHandle;
                         pClientData->State.async.paParms    = paParms;
@@ -607,7 +611,7 @@ static DECLCALLBACK(void) svcCall(void *,
                             LogFlowFunc(("DATA: g_fDelayedAnnouncement = %d, g_u32DelayedFormats = 0x%x\n", g_fDelayedAnnouncement, g_u32DelayedFormats));
                             if (g_fDelayedAnnouncement)
                             {
-                                vboxSvcClipboardReportMsg (g_pClientData, VBOX_SHARED_CLIPBOARD_HOST_MSG_REPORT_FORMATS, g_u32DelayedFormats);
+                                vboxSvcClipboardReportMsg(g_pClientData, VBOX_SHARED_CLIPBOARD_HOST_MSG_REPORT_FORMATS, g_u32DelayedFormats);
                                 g_fDelayedAnnouncement = false;
                                 g_u32DelayedFormats = 0;
                             }
@@ -636,6 +640,7 @@ static DECLCALLBACK(void) svcCall(void *,
                                 pClientData->State.asyncRead.callHandle = callHandle;
                                 pClientData->State.asyncRead.paParms    = paParms;
                                 pClientData->State.fReadPending         = true;
+                                fAsynchronousProcessing = true;
                                 VBoxSvcClipboardUnlock();
                             }
                             else
@@ -717,13 +722,10 @@ static DECLCALLBACK(void) svcCall(void *,
         } break;
     }
 
-    LogFlowFunc(("fAsync=%RTbool, %Rrc\n", pClientData->State.fAsync, rc));
+    LogFlowFunc(("fAsynchronousProcessing=%RTbool, %Rrc\n", fAsynchronousProcessing, rc));
 
-    if (!pClientData->State.fAsync
-        !pClientData->State.fReadPending)
-    {
+    if (!fAsynchronousProcessing)
         g_pHelpers->pfnCallComplete(callHandle, rc);
-    }
 }
 
 /** If the client in the guest is waiting for a read operation to complete
