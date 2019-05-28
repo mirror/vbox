@@ -848,7 +848,7 @@ HRESULT VirtualBox::initMedia(const Guid &uuidRegistry,
              itItem != uIdsForNotify.end();
              ++itItem)
         {
-            i_onMediumRegistered(it->first, it->second, TRUE);
+            i_onMediumRegistered(itItem->first, itItem->second, TRUE);
         }
     }
 
