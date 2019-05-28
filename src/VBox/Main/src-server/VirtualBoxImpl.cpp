@@ -757,6 +757,8 @@ HRESULT VirtualBox::initMedia(const Guid &uuidRegistry,
 
     AutoWriteLock treeLock(i_getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
 
+    std::map<Guid, DeviceType_T> uIdsForNotify;
+
     HRESULT rc = S_OK;
     settings::MediaList::const_iterator it;
     for (it = mediaRegistry.llHardDisks.begin();
@@ -777,6 +779,8 @@ HRESULT VirtualBox::initMedia(const Guid &uuidRegistry,
         if (FAILED(rc)) return rc;
 
         rc = i_registerMedium(pHardDisk, &pHardDisk, treeLock);
+        if (SUCCEEDED(rc))
+            uIdsForNotify[pHardDisk->i_getId()] = DeviceType_HardDisk;
         // Avoid trouble with lock/refcount, before returning or not.
         treeLock.release();
         pHardDisk.setNull();
@@ -802,6 +806,8 @@ HRESULT VirtualBox::initMedia(const Guid &uuidRegistry,
         if (FAILED(rc)) return rc;
 
         rc = i_registerMedium(pImage, &pImage, treeLock);
+        if (SUCCEEDED(rc))
+            uIdsForNotify[pImage->i_getId()] = DeviceType_DVD;
         // Avoid trouble with lock/refcount, before returning or not.
         treeLock.release();
         pImage.setNull();
@@ -827,11 +833,23 @@ HRESULT VirtualBox::initMedia(const Guid &uuidRegistry,
         if (FAILED(rc)) return rc;
 
         rc = i_registerMedium(pImage, &pImage, treeLock);
+        if (SUCCEEDED(rc))
+            uIdsForNotify[pImage->i_getId()] = DeviceType_Floppy;
         // Avoid trouble with lock/refcount, before returning or not.
         treeLock.release();
         pImage.setNull();
         treeLock.acquire();
         if (FAILED(rc)) return rc;
+    }
+
+    if (SUCCEEDED(rc))
+    {
+        for (std::map<com::Guid, DeviceType_T>::const_iterator it = uIdsForNotify.begin();
+             it != uIdsForNotify.end();
+             ++it)
+        {
+            i_onMediumRegistered(it->first, it->second, TRUE);
+        }
     }
 
     LogFlow(("VirtualBox::initMedia LEAVING\n"));

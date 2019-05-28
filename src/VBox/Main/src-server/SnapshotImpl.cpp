@@ -2183,7 +2183,7 @@ void SessionMachine::i_restoreSnapshotHandler(RestoreSnapshotTask &task)
     HRESULT rc = S_OK;
     Guid snapshotId;
     std::set<ComObjPtr<Medium> > pMediumsForNotify;
-    std::map<Guid, DeviceType_T> uIdsForNotify;
+    std::map<Guid, std::pair<DeviceType_T, BOOL>> uIdsForNotify;
 
     try
     {
@@ -2310,7 +2310,7 @@ void SessionMachine::i_restoreSnapshotHandler(RestoreSnapshotTask &task)
                 if (!fFound)
                 {
                     pMediumsForNotify.insert(pMedium->i_getParent());
-                    uIdsForNotify[pMedium->i_getId()] = pMedium->i_getDeviceType();
+                    uIdsForNotify[pMedium->i_getId()] = std::pair<DeviceType_T, BOOL>(pMedium->i_getDeviceType(), TRUE);
                 }
             }
         }
@@ -2421,6 +2421,7 @@ void SessionMachine::i_restoreSnapshotHandler(RestoreSnapshotTask &task)
             if (SUCCEEDED(rc2))
             {
                 pMediumsForNotify.insert(pParent);
+                uIdsForNotify[pMedium->i_getId()] = std::pair<DeviceType_T, BOOL>(pMedium->i_getDeviceType(), FALSE);
                 pMedium->uninit();
             }
         }
@@ -2451,11 +2452,11 @@ void SessionMachine::i_restoreSnapshotHandler(RestoreSnapshotTask &task)
     if (SUCCEEDED(rc))
     {
         mParent->i_onSnapshotRestored(mData->mUuid, snapshotId);
-        for (std::map<Guid, DeviceType_T>::const_iterator it = uIdsForNotify.begin();
+        for (std::map<Guid, std::pair<DeviceType_T, BOOL>>::const_iterator it = uIdsForNotify.begin();
              it != uIdsForNotify.end();
              ++it)
         {
-            mParent->i_onMediumRegistered(it->first, it->second, TRUE);
+            mParent->i_onMediumRegistered(it->first, it->second.first, it->second.second);
         }
         for (std::set<ComObjPtr<Medium> >::const_iterator it = pMediumsForNotify.begin();
              it != pMediumsForNotify.end();
