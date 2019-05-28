@@ -58,9 +58,10 @@
 #include "CCloudProfile.h"
 #include "CCloudProvider.h"
 #include "CCloudProviderManager.h"
-#include "CNATNetwork.h"
 #include "CDHCPServer.h"
 #include "CNATEngine.h"
+#include "CNATNetwork.h"
+#include "CRangedIntegerFormValue.h"
 #include "CSerialPort.h"
 #include "CSharedFolder.h"
 #include "CSnapshot.h"
@@ -1743,6 +1744,13 @@ void UIMessageCenter::cannotAssignFormValue(const CStringFormValue &comValue, QW
 }
 
 void UIMessageCenter::cannotAssignFormValue(const CChoiceFormValue &comValue, QWidget *pParent /* = 0 */) const
+{
+    error(pParent, MessageType_Error,
+          tr("Failed to assign form value."),
+          UIErrorString::formatErrorInfo(comValue));
+}
+
+void UIMessageCenter::cannotAssignFormValue(const CRangedIntegerFormValue &comValue, QWidget *pParent /* = 0 */) const
 {
     error(pParent, MessageType_Error,
           tr("Failed to assign form value."),

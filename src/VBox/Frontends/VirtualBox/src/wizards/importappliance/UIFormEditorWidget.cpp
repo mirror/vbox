@@ -21,6 +21,7 @@
 #include <QHeaderView>
 #include <QItemEditorFactory>
 #include <QSortFilterProxyModel>
+#include <QSpinBox>
 #include <QStyledItemDelegate>
 #include <QVBoxLayout>
 
@@ -33,6 +34,7 @@
 #include "CBooleanFormValue.h"
 #include "CChoiceFormValue.h"
 #include "CFormValue.h"
+#include "CRangedIntegerFormValue.h"
 #include "CStringFormValue.h"
 #include "CVirtualSystemDescriptionForm.h"
 
@@ -92,6 +94,48 @@ private:
 Q_DECLARE_METATYPE(ChoiceData);
 
 
+/** Class used to hold ranged-integer data. */
+class RangedIntegerData
+{
+public:
+
+    /** Constructs null ranged-integer data. */
+    RangedIntegerData() {}
+    /** Constructs ranged-integer data on the basis of passed @a iMinimum, @a iMaximum and @a iInteger. */
+    RangedIntegerData(int iMinimum, int iMaximum, int iInteger)
+        : m_iMinimum(iMinimum), m_iMaximum(iMaximum), m_iInteger(iInteger) {}
+    /** Constructs ranged-integer data on the basis of @a another ranged-integer data. */
+    RangedIntegerData(const RangedIntegerData &another)
+        : m_iMinimum(another.minimum()), m_iMaximum(another.maximum()), m_iInteger(another.integer()) {}
+
+    /** Assigns values of @a another ranged-integer to this one. */
+    RangedIntegerData &operator=(const RangedIntegerData &another)
+    {
+        m_iMinimum = another.minimum();
+        m_iMaximum = another.maximum();
+        m_iInteger = another.integer();
+        return *this;
+    }
+
+    /** Returns minimum value. */
+    int minimum() const { return m_iMinimum; }
+    /** Returns maximum value. */
+    int maximum() const { return m_iMaximum; }
+    /** Returns current value. */
+    int integer() const { return m_iInteger; }
+
+private:
+
+    /** Holds minimum value. */
+    int  m_iMinimum;
+    /** Holds maximum value. */
+    int  m_iMaximum;
+    /** Holds current value. */
+    int  m_iInteger;
+};
+Q_DECLARE_METATYPE(RangedIntegerData);
+
+
 /** QComboBox extension used as ChoiceData editor. */
 class ChoiceEditor : public QComboBox
 {
@@ -120,6 +164,36 @@ private:
         for (int i = 0; i < count(); ++i)
             choices[i] = itemText(i);
         return ChoiceData(choices, currentIndex());
+    }
+};
+
+
+/** QSpinBox extension used as RangedIntegerData editor. */
+class RangedIntegerEditor : public QSpinBox
+{
+    Q_OBJECT;
+    Q_PROPERTY(RangedIntegerData rangedInteger READ rangedInteger WRITE setRangedInteger USER true);
+
+public:
+
+    /** Constructs RangedIntegerData editor passing @a pParent to the base-class. */
+    RangedIntegerEditor(QWidget *pParent = 0)
+        : QSpinBox(pParent) {}
+
+private:
+
+    /** Defines @a rangedInteger. */
+    void setRangedInteger(const RangedIntegerData &rangedInteger)
+    {
+        setMinimum(rangedInteger.minimum());
+        setMaximum(rangedInteger.maximum());
+        setValue(rangedInteger.integer());
+    }
+
+    /** Returns ranged-integer. */
+    RangedIntegerData rangedInteger() const
+    {
+        return RangedIntegerData(minimum(), maximum(), value());
     }
 };
 
@@ -185,6 +259,11 @@ public:
     /** Defines @a choice value. */
     void setChoice(const ChoiceData &choice);
 
+    /** Returns value cast to ranged-integer. */
+    RangedIntegerData toRangedInteger() const;
+    /** Defines @a rangedInteger value. */
+    void setRangedInteger(const RangedIntegerData &rangedInteger);
+
     /** Updates value cells. */
     void updateValueCells();
 
@@ -215,11 +294,13 @@ private:
     int  m_iGeneration;
 
     /** Holds cached bool value. */
-    bool        m_fBool;
+    bool               m_fBool;
     /** Holds cached string value. */
-    QString     m_strString;
+    QString            m_strString;
     /** Holds cached choice value. */
-    ChoiceData  m_choice;
+    ChoiceData         m_choice;
+    /** Holds cached ranged-integer value. */
+    RangedIntegerData  m_rangedInteger;
 
     /** Holds the cell instances. */
     QVector<UIFormEditorCell*>  m_cells;
@@ -337,6 +418,7 @@ UIFormEditorRow::UIFormEditorRow(QITableView *pParent, const CFormValue &comValu
     , m_fBool(false)
     , m_strString(QString())
     , m_choice(ChoiceData())
+    , m_rangedInteger(RangedIntegerData())
 {
     prepare();
 }
@@ -452,6 +534,35 @@ void UIFormEditorRow::setChoice(const ChoiceData &choice)
     }
 }
 
+RangedIntegerData UIFormEditorRow::toRangedInteger() const
+{
+    AssertReturn(valueType() == KFormValueType_RangedInteger, RangedIntegerData());
+    return m_rangedInteger;
+}
+
+void UIFormEditorRow::setRangedInteger(const RangedIntegerData &rangedInteger)
+{
+    AssertReturnVoid(valueType() == KFormValueType_RangedInteger);
+    CRangedIntegerFormValue comValue(m_comValue);
+    CProgress comProgress = comValue.SetInteger(rangedInteger.integer());
+
+    /* Show error message if necessary: */
+    if (!comValue.isOk())
+        msgCenter().cannotAssignFormValue(comValue);
+    else
+    {
+        /* Show "Acquire export form" progress: */
+        msgCenter().showModalProgressDialog(comProgress, UIFormEditorWidget::tr("Assign value..."),
+                                            ":/progress_reading_appliance_90px.png");
+
+        /* Show error message if necessary: */
+        if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
+            msgCenter().cannotAssignFormValue(comProgress);
+        else
+            updateValueCells();
+    }
+}
+
 void UIFormEditorRow::updateValueCells()
 {
     m_iGeneration = m_comValue.GetGeneration();
@@ -482,6 +593,17 @@ void UIFormEditorRow::updateValueCells()
             const int iSelectedIndex = comValue.GetSelectedIndex();
             m_choice = ChoiceData(values, iSelectedIndex);
             m_cells[UIFormEditorDataType_Value]->setText(m_choice.selectedValue());
+            /// @todo check for errors
+            break;
+        }
+        case KFormValueType_RangedInteger:
+        {
+            CRangedIntegerFormValue comValue(m_comValue);
+            const int iMinimum = comValue.GetMinimum();
+            const int iMaximum = comValue.GetMaximum();
+            const int iInteger = comValue.GetInteger();
+            m_rangedInteger = RangedIntegerData(iMinimum, iMaximum, iInteger);
+            m_cells[UIFormEditorDataType_Value]->setText(QString::number(m_rangedInteger.integer()));
             /// @todo check for errors
             break;
         }
@@ -686,6 +808,11 @@ bool UIFormEditorModel::setData(const QModelIndex &index, const QVariant &value,
                             emit dataChanged(index, index);
                             updateGeneration();
                             return true;
+                        case KFormValueType_RangedInteger:
+                            m_dataList[index.row()]->setRangedInteger(value.value<RangedIntegerData>());
+                            emit dataChanged(index, index);
+                            updateGeneration();
+                            return true;
                         default:
                             return false;
                     }
@@ -753,6 +880,8 @@ QVariant UIFormEditorModel::data(const QModelIndex &index, int iRole) const
                             return QVariant::fromValue(m_dataList[index.row()]->toString());
                         case KFormValueType_Choice:
                             return QVariant::fromValue(m_dataList[index.row()]->toChoice());
+                        case KFormValueType_RangedInteger:
+                            return QVariant::fromValue(m_dataList[index.row()]->toRangedInteger());
                         default:
                             return QVariant();
                     }
@@ -941,6 +1070,11 @@ void UIFormEditorWidget::prepare()
                         int iChoiceId = qRegisterMetaType<ChoiceData>();
                         QStandardItemEditorCreator<ChoiceEditor> *pChoiceEditorItemCreator = new QStandardItemEditorCreator<ChoiceEditor>();
                         pNewItemEditorFactory->registerEditor((QVariant::Type)iChoiceId, pChoiceEditorItemCreator);
+
+                        /* Register RangedIntegerEditor as the RangedIntegerData editor: */
+                        int iRangedIntegerId = qRegisterMetaType<RangedIntegerData>();
+                        QStandardItemEditorCreator<RangedIntegerEditor> *pRangedIntegerEditorItemCreator = new QStandardItemEditorCreator<RangedIntegerEditor>();
+                        pNewItemEditorFactory->registerEditor((QVariant::Type)iRangedIntegerId, pRangedIntegerEditorItemCreator);
 
                         /* Set newly created item editor factory for table delegate: */
                         pStyledItemDelegate->setItemEditorFactory(pNewItemEditorFactory);
