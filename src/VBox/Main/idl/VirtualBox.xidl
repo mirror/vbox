@@ -25866,7 +25866,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   -->
   <interface
     name="ICloudClient" extends="$unknown"
-    uuid="6d4dfab6-7718-11e9-9775-1f99c815d0b3"
+    uuid="e492be54-8140-11e9-a068-73eb82a28a3d"
     wsmap="managed" reservedMethods="13" reservedAttributes="8"
     >
 
@@ -25947,9 +25947,14 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
           Virtual system description to be edited.
         </desc>
       </param>
-      <param name="form" type="IVirtualSystemDescriptionForm" dir="return">
+      <param name="form" type="IVirtualSystemDescriptionForm" dir="out">
         <desc>
           An IForm instance for editing the virtual system description.
+        </desc>
+      </param>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>
+          Progress object to track the operation completion.
         </desc>
       </param>
     </method>
