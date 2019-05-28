@@ -152,9 +152,9 @@
                                                               (a_pVCpu)->cpum.GstCtx.fExtrn, (a_fExtrnMbz)))
 
 /** Helper macro for VM-exit handlers called unexpectedly. */
-#define HMVMX_UNEXPECTED_EXIT_RET(a_pVCpu, a_pVmxTransient) \
+#define HMVMX_UNEXPECTED_EXIT_RET(a_pVCpu, a_HmError) \
     do { \
-        (a_pVCpu)->hm.s.u32HMError = (a_pVmxTransient)->uExitReason; \
+        (a_pVCpu)->hm.s.u32HMError = (a_HmError); \
         return VERR_VMX_UNEXPECTED_EXIT; \
     } while (0)
 
@@ -13213,7 +13213,7 @@ HMVMX_EXIT_NSRC_DECL hmR0VmxExitNmiWindow(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransi
     if (RT_UNLIKELY(!(pVmcsInfo->u32ProcCtls & VMX_PROC_CTLS_NMI_WINDOW_EXIT))) /** @todo NSTVMX: Turn this into an assertion. */
     {
         AssertMsgFailed(("Unexpected NMI-window exit.\n"));
-        HMVMX_UNEXPECTED_EXIT_RET(pVCpu, pVmxTransient);
+        HMVMX_UNEXPECTED_EXIT_RET(pVCpu, pVmxTransient->uExitReason);
     }
 
     Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_BLOCK_NMIS));
@@ -13334,8 +13334,8 @@ HMVMX_EXIT_DECL hmR0VmxExitGetsec(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
     if (pVCpu->cpum.GstCtx.cr4 & X86_CR4_SMXE)
         return VINF_EM_RAW_EMULATE_INSTR;
 
-    AssertMsgFailed(("hmR0VmxExitGetsec: unexpected VM-exit when CR4.SMXE is 0.\n"));
-    HMVMX_UNEXPECTED_EXIT_RET(pVCpu, pVmxTransient);
+    AssertMsgFailed(("hmR0VmxExitGetsec: Unexpected VM-exit when CR4.SMXE is 0.\n"));
+    HMVMX_UNEXPECTED_EXIT_RET(pVCpu, pVmxTransient->uExitReason);
 }
 
 
@@ -13760,7 +13760,7 @@ HMVMX_EXIT_NSRC_DECL hmR0VmxExitErrUnexpected(PVMCPU pVCpu, PVMXTRANSIENT pVmxTr
      */
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
     AssertMsgFailed(("Unexpected VM-exit %u\n", pVmxTransient->uExitReason));
-    HMVMX_UNEXPECTED_EXIT_RET(pVCpu, pVmxTransient);
+    HMVMX_UNEXPECTED_EXIT_RET(pVCpu, pVmxTransient->uExitReason);
 }
 
 
@@ -13779,7 +13779,7 @@ HMVMX_EXIT_DECL hmR0VmxExitXdtrAccess(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
     if (pVmcsInfo->u32ProcCtls2 & VMX_PROC_CTLS2_DESC_TABLE_EXIT)
         return VERR_EM_INTERPRETER;
     AssertMsgFailed(("Unexpected XDTR access\n"));
-    HMVMX_UNEXPECTED_EXIT_RET(pVCpu, pVmxTransient);
+    HMVMX_UNEXPECTED_EXIT_RET(pVCpu, pVmxTransient->uExitReason);
 }
 
 
@@ -13795,7 +13795,7 @@ HMVMX_EXIT_DECL hmR0VmxExitRdrand(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
     if (pVmcsInfo->u32ProcCtls2 & VMX_PROC_CTLS2_RDRAND_EXIT)
         return VERR_EM_INTERPRETER;
     AssertMsgFailed(("Unexpected RDRAND exit\n"));
-    HMVMX_UNEXPECTED_EXIT_RET(pVCpu, pVmxTransient);
+    HMVMX_UNEXPECTED_EXIT_RET(pVCpu, pVmxTransient->uExitReason);
 }
 
 
@@ -13832,7 +13832,7 @@ HMVMX_EXIT_DECL hmR0VmxExitRdmsr(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
             && idMsr != MSR_K6_EFER)
         {
             AssertMsgFailed(("Unexpected RDMSR for an MSR in the auto-load/store area in the VMCS. ecx=%#RX32\n", idMsr));
-            HMVMX_UNEXPECTED_EXIT_RET(pVCpu, pVmxTransient);
+            HMVMX_UNEXPECTED_EXIT_RET(pVCpu, idMsr);
         }
         if (hmR0VmxIsLazyGuestMsr(pVCpu, idMsr))
         {
@@ -13841,7 +13841,7 @@ HMVMX_EXIT_DECL hmR0VmxExitRdmsr(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
             if (fMsrpm & VMXMSRPM_ALLOW_RD)
             {
                 AssertMsgFailed(("Unexpected RDMSR for a passthru lazy-restore MSR. ecx=%#RX32\n", idMsr));
-                HMVMX_UNEXPECTED_EXIT_RET(pVCpu, pVmxTransient);
+                HMVMX_UNEXPECTED_EXIT_RET(pVCpu, idMsr);
             }
         }
     }
@@ -13962,7 +13962,7 @@ HMVMX_EXIT_DECL hmR0VmxExitWrmsr(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
                 case MSR_K8_GS_BASE:
                 {
                     AssertMsgFailed(("Unexpected WRMSR for an MSR in the VMCS. ecx=%#RX32\n", idMsr));
-                    HMVMX_UNEXPECTED_EXIT_RET(pVCpu, pVmxTransient);
+                    HMVMX_UNEXPECTED_EXIT_RET(pVCpu, idMsr);
                 }
 
                 /* Writes to MSRs in auto-load/store area/swapped MSRs, shouldn't cause VM-exits with MSR-bitmaps. */
@@ -13975,7 +13975,7 @@ HMVMX_EXIT_DECL hmR0VmxExitWrmsr(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
                         {
                             AssertMsgFailed(("Unexpected WRMSR for an MSR in the auto-load/store area in the VMCS. ecx=%#RX32\n",
                                              idMsr));
-                            HMVMX_UNEXPECTED_EXIT_RET(pVCpu, pVmxTransient);
+                            HMVMX_UNEXPECTED_EXIT_RET(pVCpu, idMsr);
                         }
                     }
 
@@ -13986,7 +13986,7 @@ HMVMX_EXIT_DECL hmR0VmxExitWrmsr(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
                         if (fMsrpm & VMXMSRPM_ALLOW_WR)
                         {
                             AssertMsgFailed(("Unexpected WRMSR for passthru, lazy-restore MSR. ecx=%#RX32\n", idMsr));
-                            HMVMX_UNEXPECTED_EXIT_RET(pVCpu, pVmxTransient);
+                            HMVMX_UNEXPECTED_EXIT_RET(pVCpu, idMsr);
                         }
                     }
                     break;
@@ -14180,9 +14180,8 @@ HMVMX_EXIT_DECL hmR0VmxExitMovCRx(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 
         default:
         {
-            pVCpu->hm.s.u32HMError = uAccessType;
-            AssertMsgFailedReturn(("Invalid access-type in Mov CRx VM-exit qualification %#x\n", uAccessType),
-                                  VERR_VMX_UNEXPECTED_EXIT);
+            AssertMsgFailed(("Unrecognized Mov CRX access type %#x\n", uAccessType));
+            HMVMX_UNEXPECTED_EXIT_RET(pVCpu, uAccessType);
         }
     }
 
@@ -14594,7 +14593,7 @@ HMVMX_EXIT_DECL hmR0VmxExitMovDRx(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
     if (pVmxTransient->fWasGuestDebugStateActive)
     {
         AssertMsgFailed(("Unexpected MOV DRx exit\n"));
-        HMVMX_UNEXPECTED_EXIT_RET(pVCpu, pVmxTransient);
+        HMVMX_UNEXPECTED_EXIT_RET(pVCpu, pVmxTransient->uExitReason);
     }
 
     PVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
@@ -15944,8 +15943,8 @@ HMVMX_EXIT_DECL hmR0VmxExitMovCRxNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransien
             }
             else
             {
-                pVCpu->hm.s.u32HMError = iCrReg;
-                AssertMsgFailedReturn(("MOV from CR%d VM-exit must not happen\n", iCrReg), VERR_VMX_UNEXPECTED_EXIT);
+                AssertMsgFailed(("MOV from CR%d VM-exit must not happen\n", iCrReg));
+                HMVMX_UNEXPECTED_EXIT_RET(pVCpu, iCrReg);
             }
             break;
         }
@@ -16002,9 +16001,8 @@ HMVMX_EXIT_DECL hmR0VmxExitMovCRxNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransien
 
         default:
         {
-            pVCpu->hm.s.u32HMError = uAccessType;
-            AssertMsgFailedReturn(("Invalid access-type in Mov CRx VM-exit qualification %#x\n", uAccessType),
-                                  VERR_VMX_UNEXPECTED_EXIT);
+            AssertMsgFailed(("Unrecognized Mov CRX access type %#x\n", uAccessType));
+            HMVMX_UNEXPECTED_EXIT_RET(pVCpu, uAccessType);
         }
     }
 
