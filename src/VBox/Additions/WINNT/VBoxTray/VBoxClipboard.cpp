@@ -392,7 +392,7 @@ static LRESULT vboxClipboardWinProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd,
                             pWinCtx->URI.cTransfers));
                    if (pWinCtx->URI.cTransfers == 0) /* Only allow one transfer at a time for now. */
                    {
-                       pWinCtx->URI.Transfer.pDataObj = new VBoxClipboardWinDataObject(&pWinCtx->URI.Transfer.Provider);
+                       pWinCtx->URI.Transfer.pDataObj = new VBoxClipboardWinDataObject(pWinCtx->URI.Transfer.pProvider);
                        if (pWinCtx->URI.Transfer.pDataObj)
                        {
                            rc = pWinCtx->URI.Transfer.pDataObj->Init();
@@ -415,6 +415,9 @@ static LRESULT vboxClipboardWinProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd,
                            }
                        }
                    }
+                   else
+                       LogRel(("Clipboard: Only one transfer at a time supported (current %RU32 transfer(s) active), skipping\n",
+                               pWinCtx->URI.cTransfers));
                }
 #endif
                else
@@ -423,7 +426,6 @@ static LRESULT vboxClipboardWinProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd,
                /** @todo Implement more flexible clipboard precedence for supported formats. */
 
                VBoxClipboardWinClose();
-               /* Note: Clipboard must be closed first before calling OleSetClipboard(). */
 
                LogFunc(("VBOX_WM_SHCLPB_SET_FORMATS: cfFormat=%u, lastErr=%ld\n", cfFormat, GetLastError()));
            }
@@ -661,8 +663,6 @@ DECLCALLBACK(int) VBoxClipboardInit(const PVBOXSERVICEENV pEnv, void **ppInstanc
         return VERR_NOT_SUPPORTED;
     }
 
-    pCtx->pEnv = pEnv;
-
     if (VbglR3AutoLogonIsRemoteSession())
     {
         /* Do not use clipboard for remote sessions. */
@@ -670,7 +670,9 @@ DECLCALLBACK(int) VBoxClipboardInit(const PVBOXSERVICEENV pEnv, void **ppInstanc
         return VERR_NOT_SUPPORTED;
     }
 
-    int rc;
+    pCtx->pEnv = pEnv;
+
+    int rc = VINF_SUCCESS;
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
     HRESULT hr = OleInitialize(NULL);
@@ -680,26 +682,29 @@ DECLCALLBACK(int) VBoxClipboardInit(const PVBOXSERVICEENV pEnv, void **ppInstanc
         /* Not critical, the rest of the clipboard might work. */
     }
     else
+    {
         LogRel(("Clipboard: Initialized OLE\n"));
-
-    rc = pCtx->Win.URI.Transfer.Provider.SetSource(SharedClipboardProvider::SourceType_VbglR3);
-    AssertRC(rc);
+        rc = VBoxClipboardWinURIInit(&pCtx->Win.URI, SharedClipboardProvider::SourceType_VbglR3);
+    }
 #endif
 
-    /* Check that new Clipboard API is available */
-    VBoxClipboardWinCheckAndInitNewAPI(&pCtx->Win.newAPI);
-
-    rc = VbglR3ClipboardConnect(&pCtx->u32ClientID);
     if (RT_SUCCESS(rc))
     {
-        rc = vboxClipboardCreateWindow(pCtx);
+        /* Check if new Clipboard API is available. */
+        /* ignore rc */ VBoxClipboardWinCheckAndInitNewAPI(&pCtx->Win.newAPI);
+
+        rc = VbglR3ClipboardConnect(&pCtx->u32ClientID);
         if (RT_SUCCESS(rc))
         {
-            *ppInstance = pCtx;
-        }
-        else
-        {
-            VbglR3ClipboardDisconnect(pCtx->u32ClientID);
+            rc = vboxClipboardCreateWindow(pCtx);
+            if (RT_SUCCESS(rc))
+            {
+                *ppInstance = pCtx;
+            }
+            else
+            {
+                VbglR3ClipboardDisconnect(pCtx->u32ClientID);
+            }
         }
     }
 
@@ -820,11 +825,12 @@ DECLCALLBACK(void) VBoxClipboardDestroy(void *pInstance)
     Assert(pCtx->u32ClientID == 0);
 
     vboxClipboardDestroy(pCtx);
-    RT_BZERO(pCtx, sizeof(VBOXCLIPBOARDCONTEXT));
 
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST_ASF
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
     OleSetClipboard(NULL); /* Make sure to flush the clipboard on destruction. */
     OleUninitialize();
+
+    VBoxClipboardWinURIDestroy(&pCtx->Win.URI);
 #endif
 
     return;

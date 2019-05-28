@@ -33,14 +33,50 @@
 
 #include <VBox/log.h>
 
+
+
 SharedClipboardProvider::SharedClipboardProvider(void)
     : m_cRefs(0)
 {
+    LogFlowFuncEnter();
 }
 
 SharedClipboardProvider::~SharedClipboardProvider(void)
 {
+    LogFlowFuncEnter();
     Assert(m_cRefs == 0);
+}
+
+/**
+ * Creates a Shared Clipboard provider.
+ *
+ * @returns New Shared Clipboard provider instance.
+ * @param   enmSource           Source type to create provider for.
+ */
+/* static */
+SharedClipboardProvider *SharedClipboardProvider::Create(SourceType enmSource)
+{
+    SharedClipboardProvider *pProvider = NULL;
+
+    switch (enmSource)
+    {
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_GUEST
+        case SourceType_VbglR3:
+            pProvider = new SharedClipboardProviderVbglR3();
+            break;
+#endif
+
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_HOST
+        case SourceType_HostService:
+            pProvider = new SharedClipboardProviderHostService();
+            break;
+#endif
+        default:
+            AssertFailed();
+            break;
+    }
+
+    return pProvider;
 }
 
 /**
@@ -50,6 +86,7 @@ SharedClipboardProvider::~SharedClipboardProvider(void)
  */
 uint32_t SharedClipboardProvider::AddRef(void)
 {
+    LogFlowFuncEnter();
     return ASMAtomicIncU32(&m_cRefs);
 }
 
@@ -60,21 +97,8 @@ uint32_t SharedClipboardProvider::AddRef(void)
  */
 uint32_t SharedClipboardProvider::Release(void)
 {
+    LogFlowFuncEnter();
     Assert(m_cRefs);
     return ASMAtomicDecU32(&m_cRefs);
-}
-
-int SharedClipboardProvider::SetSource(SourceType enmSource)
-{
-    return m_enmSource = enmSource;
-}
-
-int SharedClipboardProvider::ReadMetaData(SharedClipboardURIList &URIList, uint32_t fFlags /* = 0 */)
-{
-    int rc = VINF_SUCCESS;
-
-    RT_NOREF(URIList, fFlags);
-
-    return rc;
 }
 

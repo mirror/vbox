@@ -49,11 +49,17 @@ VBoxClipboardWinStreamImpl::VBoxClipboardWinStreamImpl(SharedClipboardProvider *
     : m_lRefCount(1)
     , m_pProvider(pProvider)
 {
+    LogFlowThisFuncEnter();
+
     m_pProvider->AddRef();
+
+    cbFileSize = _64M;
+    cbSizeRead = 0;
 }
 
 VBoxClipboardWinStreamImpl::~VBoxClipboardWinStreamImpl(void)
 {
+    LogFlowThisFuncEnter();
     m_pProvider->Release();
 }
 
@@ -113,7 +119,7 @@ STDMETHODIMP VBoxClipboardWinStreamImpl::Commit(DWORD dwFrags)
 {
     RT_NOREF(dwFrags);
 
-    LogFlowFuncEnter();
+    LogFlowThisFuncEnter();
     return E_NOTIMPL;
 }
 
@@ -122,7 +128,7 @@ STDMETHODIMP VBoxClipboardWinStreamImpl::CopyTo(IStream* pDestStream, ULARGE_INT
 {
     RT_NOREF(pDestStream, nBytesToCopy, nBytesRead, nBytesWritten);
 
-    LogFlowFuncEnter();
+    LogFlowThisFuncEnter();
     return E_NOTIMPL;
 }
 
@@ -130,42 +136,29 @@ STDMETHODIMP VBoxClipboardWinStreamImpl::LockRegion(ULARGE_INTEGER nStart, ULARG
 {
     RT_NOREF(nStart, nBytes, dwFlags);
 
-    LogFlowFuncEnter();
+    LogFlowThisFuncEnter();
     return E_NOTIMPL;
 }
-
-static ULONG cbFileSize = _1M;
-static ULONG cbSizeRead = 0;
 
 STDMETHODIMP VBoxClipboardWinStreamImpl::Read(void* pvBuffer, ULONG nBytesToRead, ULONG* nBytesRead)
 {
     /* If the file size is 0, already return at least 1 byte, else the whole operation will fail. */
 
-    ULONG cbToRead = RT_MIN(cbFileSize - cbSizeRead,  _4K /* nBytesToRead */);
-
-    if (cbToRead > nBytesToRead)
-        cbToRead = nBytesToRead;
-
-    LogFlowFunc(("pvBuffer=%p, nBytesToRead=%u -> cbSizeRead=%u, cbToRead=%u\n", pvBuffer, nBytesToRead, cbSizeRead, cbToRead));
-
-    if (cbToRead)
+    size_t cbRead = 0;
+    int rc = m_pProvider->ReadData(pvBuffer, (size_t)nBytesToRead, &cbRead);
+    if (RT_SUCCESS(rc))
     {
-        memset(pvBuffer, cbToRead, 0x65);
-        cbSizeRead += cbToRead;
+        if (*nBytesRead)
+            *nBytesRead = (ULONG)cbRead;
     }
 
-    if (nBytesRead)
-        *nBytesRead = cbToRead;
-
-    if (cbSizeRead == cbFileSize)
-        cbSizeRead = 0;
-
+    LogFlowThisFunc(("nBytesToRead=%u, nBytesRead=%zu\n", nBytesToRead, cbRead));
     return S_OK;
 }
 
 STDMETHODIMP VBoxClipboardWinStreamImpl::Revert(void)
 {
-    LogFlowFuncEnter();
+    LogFlowThisFuncEnter();
     return E_NOTIMPL;
 }
 
@@ -173,7 +166,7 @@ STDMETHODIMP VBoxClipboardWinStreamImpl::Seek(LARGE_INTEGER nMove, DWORD dwOrigi
 {
     RT_NOREF(nMove, dwOrigin, nNewPos);
 
-    LogFlowFuncEnter();
+    LogFlowThisFuncEnter();
     return E_NOTIMPL;
 }
 
@@ -181,7 +174,7 @@ STDMETHODIMP VBoxClipboardWinStreamImpl::SetSize(ULARGE_INTEGER nNewSize)
 {
     RT_NOREF(nNewSize);
 
-    LogFlowFuncEnter();
+    LogFlowThisFuncEnter();
     return E_NOTIMPL;
 }
 
@@ -189,7 +182,7 @@ STDMETHODIMP VBoxClipboardWinStreamImpl::Stat(STATSTG* statstg, DWORD dwFlags)
 {
     RT_NOREF(statstg, dwFlags);
 
-    LogFlowFuncEnter();
+    LogFlowThisFuncEnter();
     return E_NOTIMPL;
 }
 
@@ -197,7 +190,7 @@ STDMETHODIMP VBoxClipboardWinStreamImpl::UnlockRegion(ULARGE_INTEGER nStart, ULA
 {
     RT_NOREF(nStart, nBytes, dwFlags);
 
-    LogFlowFuncEnter();
+    LogFlowThisFuncEnter();
     return E_NOTIMPL;
 }
 
@@ -205,7 +198,7 @@ STDMETHODIMP VBoxClipboardWinStreamImpl::Write(const void* pvBuffer, ULONG nByte
 {
     RT_NOREF(pvBuffer, nBytesToRead, nBytesRead);
 
-    LogFlowFuncEnter();
+    LogFlowThisFuncEnter();
     return E_NOTIMPL;
 }
 
@@ -223,6 +216,8 @@ STDMETHODIMP VBoxClipboardWinStreamImpl::Write(const void* pvBuffer, ULONG nByte
 /* static */
 HRESULT VBoxClipboardWinStreamImpl::Create(SharedClipboardProvider *pProvider, IStream **ppStream)
 {
+    AssertPtrReturn(pProvider, E_POINTER);
+
     VBoxClipboardWinStreamImpl *pStream = new VBoxClipboardWinStreamImpl(pProvider);
     if (pStream)
     {

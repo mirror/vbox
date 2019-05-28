@@ -120,17 +120,13 @@ protected:
 class SharedClipboardURIList;
 
 /**
- * Class acting as a proxy to abstract reading / writing clipboard data.
+ * Interface class acting as a proxy to abstract reading / writing clipboard data.
  *
  * This is needed because various implementations can run on the host *or* on the guest side,
  * requiring different methods for handling the actual data.
  */
 class SharedClipboardProvider
 {
-public:
-
-    SharedClipboardProvider(void);
-    virtual ~SharedClipboardProvider(void);
 
 public:
 
@@ -144,15 +140,28 @@ public:
         SourceType_HostService
     };
 
+    static SharedClipboardProvider *Create(SourceType enmSource);
+
+    virtual ~SharedClipboardProvider(void);
+
 public:
 
     uint32_t AddRef(void);
     uint32_t Release(void);
 
-public:
+public: /* Interface to be implemented. */
 
-    int SetSource(SourceType enmSource);
-    int ReadMetaData(SharedClipboardURIList &URIList, uint32_t fFlags = 0);
+    virtual int ReadMetaData(void *pvData, size_t cbData, uint32_t fFlags = 0, size_t *pcbRead = NULL) = 0;
+    virtual int ReadMetaData(SharedClipboardURIList &URIList, uint32_t fFlags = 0) = 0;
+
+    virtual int ReadData(void *pvBuf, size_t cbBuf, size_t *pcbRead  /* = NULL */) = 0;
+    virtual int WriteData(const void *pvBuf, size_t cbBuf, size_t *pcbWritten /* = NULL */) = 0;
+
+    virtual void Reset(void) = 0;
+
+protected:
+
+    SharedClipboardProvider(void);
 
 protected:
 
@@ -160,6 +169,60 @@ protected:
     volatile uint32_t            m_cRefs;
     /** Source type to handle. */
     SourceType                   m_enmSource;
+};
+
+/**
+ * Shared Clipboard provider implementation for VbglR3 (guest side).
+ */
+class SharedClipboardProviderVbglR3 : protected SharedClipboardProvider
+{
+    friend SharedClipboardProvider;
+
+public:
+
+    virtual ~SharedClipboardProviderVbglR3(void);
+
+public:
+
+    int ReadMetaData(void *pvData, size_t cbData, uint32_t fFlags = 0, size_t *pcbRead = NULL);
+    int ReadMetaData(SharedClipboardURIList &URIList, uint32_t fFlags = 0);
+
+    int ReadData(void *pvBuf, size_t cbBuf, size_t *pcbRead  /* = NULL */);
+    int WriteData(const void *pvBuf, size_t cbBuf, size_t *pcbWritten /* = NULL */);
+
+    void Reset(void);
+
+protected:
+
+    SharedClipboardProviderVbglR3(void);
+
+    uint64_t m_cToRead;
+};
+
+/**
+ * Shared Clipboard provider implementation for host service (host side).
+ */
+class SharedClipboardProviderHostService : protected SharedClipboardProvider
+{
+    friend SharedClipboardProvider;
+
+public:
+
+    virtual ~SharedClipboardProviderHostService(void);
+
+public:
+
+    int ReadMetaData(void *pvData, size_t cbData, uint32_t fFlags = 0, size_t *pcbRead = NULL);
+    int ReadMetaData(SharedClipboardURIList &URIList, uint32_t fFlags = 0);
+
+    int ReadData(void *pvBuf, size_t cbBuf, size_t *pcbRead  /* = NULL */);
+    int WriteData(const void *pvBuf, size_t cbBuf, size_t *pcbWritten /* = NULL */);
+
+    void Reset(void);
+
+protected:
+
+    SharedClipboardProviderHostService(void);
 };
 
 int SharedClipboardPathSanitizeFilename(char *pszPath, size_t cbPath);
@@ -214,9 +277,7 @@ public:
     };
 
     SharedClipboardURIObject(void);
-    SharedClipboardURIObject(Type type,
-                 const RTCString &strSrcPathAbs = "",
-                 const RTCString &strDstPathAbs = "");
+    SharedClipboardURIObject(Type type, const RTCString &strSrcPathAbs = "", const RTCString &strDstPathAbs = "");
     virtual ~SharedClipboardURIObject(void);
 
 public:
@@ -348,12 +409,14 @@ public:
     int AppendNativePath(const char *pszPath, SHAREDCLIPBOARDURILISTFLAGS fFlags);
     int AppendNativePathsFromList(const char *pszNativePaths, size_t cbNativePaths, SHAREDCLIPBOARDURILISTFLAGS fFlags);
     int AppendNativePathsFromList(const RTCList<RTCString> &lstNativePaths, SHAREDCLIPBOARDURILISTFLAGS fFlags);
+    int AppendURIObject(SharedClipboardURIObject *pObject);
     int AppendURIPath(const char *pszURI, SHAREDCLIPBOARDURILISTFLAGS fFlags);
     int AppendURIPathsFromList(const char *pszURIPaths, size_t cbURIPaths, SHAREDCLIPBOARDURILISTFLAGS fFlags);
     int AppendURIPathsFromList(const RTCList<RTCString> &lstURI, SHAREDCLIPBOARDURILISTFLAGS fFlags);
 
     void Clear(void);
-    SharedClipboardURIObject *First(void) { return m_lstTree.first(); }
+    SharedClipboardURIObject *At(size_t i) const { return m_lstTree.at(i); }
+    SharedClipboardURIObject *First(void) const { return m_lstTree.first(); }
     bool IsEmpty(void) const { return m_lstTree.isEmpty(); }
     void RemoveFirst(void);
     int SetFromURIData(const void *pvData, size_t cbData, SHAREDCLIPBOARDURILISTFLAGS fFlags);
@@ -365,7 +428,8 @@ public:
 
 protected:
 
-    int addEntry(const char *pcszSource, const char *pcszTarget, SHAREDCLIPBOARDURILISTFLAGS fFlags);
+    int appendEntry(const char *pcszSource, const char *pcszTarget, SHAREDCLIPBOARDURILISTFLAGS fFlags);
+    int appendObject(SharedClipboardURIObject *pObject);
     int appendPathRecursive(const char *pcszSrcPath, const char *pcszDstPath, const char *pcszDstBase, size_t cchDstBase, SHAREDCLIPBOARDURILISTFLAGS fFlags);
 
 protected:

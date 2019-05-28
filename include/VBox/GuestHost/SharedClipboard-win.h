@@ -92,18 +92,18 @@ typedef struct _VBOXCLIPBOARDWINAPIOLD
 class VBoxClipboardWinDataObject;
 
 /**
- * Structure for maintaining a single URI list transfer.
+ * Structure for maintaining a single Windows URI transfer.
  */
 typedef struct _VBOXCLIPBOARDWINURITRANSFER
 {
     /** The Shared Clipboard provider in charge for this transfer. */
-    SharedClipboardProvider     Provider;
+    SharedClipboardProvider    *pProvider;
     /** Pointer to data object to use for this transfer. */
     VBoxClipboardWinDataObject *pDataObj;
 } VBOXCLIPBOARDWINURITRANSFER, *PVBOXCLIPBOARDWINURITRANSFER;
 
 /**
- * Structure for keeping URI clipboard information around.
+ * Structure for keeping Windows URI clipboard information around.
  */
 typedef struct _VBOXCLIPBOARDWINURI
 {
@@ -156,6 +156,10 @@ bool VBoxClipboardWinIsCFHTML(const char *pszSource);
 int VBoxClipboardWinConvertCFHTMLToMIME(const char *pszSource, const uint32_t cch, char **ppszOutput, uint32_t *pcbOutput);
 int VBoxClipboardWinConvertMIMEToCFHTML(const char *pszSource, size_t cb, char **ppszOutput, uint32_t *pcbOutput);
 
+int VBoxClipboardWinURIInit(PVBOXCLIPBOARDWINURI pURI, SharedClipboardProvider::SourceType enmType);
+void VBoxClipboardWinURIDestroy(PVBOXCLIPBOARDWINURI pURI);
+void VBoxClipboardWinURIReset(PVBOXCLIPBOARDWINURI pURI);
+
 # ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
 class SharedClipboardURIList;
 #  ifndef FILEGROUPDESCRIPTOR
@@ -179,7 +183,7 @@ public:
         /** File descriptor, Unicode version. */
         FormatIndex_FileDescriptorW,
         /** File contents. */
-        FormatIndex_FileContents
+        FormatIndex_FileContents,
     };
 
 public:
@@ -226,7 +230,7 @@ protected:
     static int Thread(RTTHREAD hThread, void *pvUser);
 
     int copyToHGlobal(const void *pvData, size_t cbData, UINT fFlags, HGLOBAL *phGlobal);
-    int createFileGroupDescriptor(const SharedClipboardURIList &URIList, bool fUnicode, HGLOBAL *phGlobal);
+    int createFileGroupDescriptorFromURIList(const SharedClipboardURIList &URIList, bool fUnicode, HGLOBAL *phGlobal);
 
     bool lookupFormatEtc(LPFORMATETC pFormatEtc, ULONG *puIndex);
     void registerFormat(LPFORMATETC pFormatEtc, CLIPFORMAT clipFormat, TYMED tyMed = TYMED_HGLOBAL,
@@ -317,6 +321,9 @@ private:
     LONG                     m_lRefCount;
     /** Pointer to the associated Shared Clipboard provider. */
     SharedClipboardProvider *m_pProvider;
+
+ ULONG cbFileSize;
+ ULONG cbSizeRead;
 };
 
 # endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */

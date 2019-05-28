@@ -161,7 +161,8 @@ void vboxClipboardSvcURITransferReset(PVBOXCLIPBOARDCLIENTURITRANSFER pTransfer)
 
     /* Do we need to detach from a previously attached clipboard area? */
     const SHAREDCLIPBOARDAREAID uAreaID = pTransfer->Cache.GetAreaID();
-    if (uAreaID != NIL_SHAREDCLIPBOARDAREAID)
+    if (   g_pfnExtension
+        && uAreaID != NIL_SHAREDCLIPBOARDAREAID)
     {
         VBOXCLIPBOARDEXTAREAPARMS parms;
         RT_ZERO(parms);
@@ -643,6 +644,8 @@ int vboxClipboardSvcURIHandler(uint32_t u32ClientID,
 #ifdef DEBUG_andy
     AssertRC(rc);
 #endif
+
+    LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
@@ -676,6 +679,7 @@ int vboxClipboardSvcURIHostHandler(uint32_t u32Function,
 
     }
 
+    LogFlowFuncLeaveRC(rc);
     return rc;
 }
 

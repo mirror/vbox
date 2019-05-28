@@ -54,12 +54,14 @@ ifdef VBOX_WITH_SHARED_CLIPBOARD
 	VBoxClipboard.cpp \
 	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-win.cpp
  ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
- VBoxTray_SOURCES  += \
+  VBoxTray_DEFS     += VBOX_WITH_SHARED_CLIPBOARD_GUEST
+  VBoxTray_SOURCES  += \
  	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardCache.cpp \
 	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardDataObjectImpl-win.cpp \
 	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardEnumFormatEtcImpl-win.cpp \
 	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardPath.cpp \
 	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardProvider.cpp \
+	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardProvider-VbglR3.cpp \
 	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardStreamImpl-win.cpp \
 	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardURIList.cpp \
 	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardURIObject.cpp

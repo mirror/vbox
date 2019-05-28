@@ -85,16 +85,22 @@ void SharedClipboardURIObject::closeInternal(void)
     {
         case Type_File:
         {
-            RTFileClose(u.File.hFile);
-            u.File.hFile = NIL_RTFILE;
+            if (RTFileIsValid(u.File.hFile))
+            {
+                RTFileClose(u.File.hFile);
+                u.File.hFile = NIL_RTFILE;
+            }
             RT_ZERO(u.File.objInfo);
             break;
         }
 
         case Type_Directory:
         {
-            RTDirClose(u.Dir.hDir);
-            u.Dir.hDir = NIL_RTDIR;
+            if (RTDirIsValid(u.Dir.hDir))
+            {
+                RTDirClose(u.Dir.hDir);
+                u.Dir.hDir = NIL_RTDIR;
+            }
             RT_ZERO(u.Dir.objInfo);
             break;
         }

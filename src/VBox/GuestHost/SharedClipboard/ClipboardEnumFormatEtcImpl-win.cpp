@@ -91,6 +91,7 @@ STDMETHODIMP_(ULONG) VBoxClipboardWinEnumFormatEtc::Release(void)
     LONG lCount = InterlockedDecrement(&m_lRefCount);
     if (lCount == 0)
     {
+        LogFlowFunc(("Delete\n"));
         delete this;
         return 0;
     }
@@ -122,8 +123,7 @@ STDMETHODIMP VBoxClipboardWinEnumFormatEtc::Next(ULONG cFormats, LPFORMATETC pFo
     while (   m_nIndex < m_nNumFormats
            && ulCopied < cFormats)
     {
-        VBoxClipboardWinEnumFormatEtc::CopyFormat(&pFormatEtc[ulCopied],
-                                         &m_pFormatEtc[m_nIndex]);
+        VBoxClipboardWinEnumFormatEtc::CopyFormat(&pFormatEtc[ulCopied], &m_pFormatEtc[m_nIndex]);
         ulCopied++;
         m_nIndex++;
     }
@@ -148,9 +148,7 @@ STDMETHODIMP VBoxClipboardWinEnumFormatEtc::Reset(void)
 
 STDMETHODIMP VBoxClipboardWinEnumFormatEtc::Clone(IEnumFORMATETC **ppEnumFormatEtc)
 {
-    HRESULT hResult =
-        CreateEnumFormatEtc(m_nNumFormats, m_pFormatEtc, ppEnumFormatEtc);
-
+    HRESULT hResult = CreateEnumFormatEtc(m_nNumFormats, m_pFormatEtc, ppEnumFormatEtc);
     if (hResult == S_OK)
         ((VBoxClipboardWinEnumFormatEtc *) *ppEnumFormatEtc)->m_nIndex = m_nIndex;
 

@@ -156,7 +156,9 @@ static uint64_t       g_uHistoryFileSize = 100 * _1M;    /* Max 100MB per file. 
 static VBOXSERVICEINFO g_aServices[] =
 {
     { &g_SvcDescDisplay,        NIL_RTTHREAD, NULL, false, false, false, false, true },
+#ifdef VBOX_WITH_SHARED_CLIPBOARD
     { &g_SvcDescClipboard,      NIL_RTTHREAD, NULL, false, false, false, false, true },
+#endif
     { &g_SvcDescSeamless,       NIL_RTTHREAD, NULL, false, false, false, false, true },
     { &g_SvcDescVRDP,           NIL_RTTHREAD, NULL, false, false, false, false, true },
     { &g_SvcDescIPC,            NIL_RTTHREAD, NULL, false, false, false, false, true },

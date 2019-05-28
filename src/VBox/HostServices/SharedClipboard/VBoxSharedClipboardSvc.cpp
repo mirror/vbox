@@ -257,6 +257,8 @@ void vboxSvcClipboardReportMsg(PVBOXCLIPBOARDCLIENTDATA pClientData, uint32_t u3
 {
     AssertPtrReturnVoid(pClientData);
 
+    LogFlowFunc(("u32Msg=%RU32\n", u32Msg));
+
     if (VBoxSvcClipboardLock())
     {
         switch (u32Msg)
@@ -367,9 +369,9 @@ static DECLCALLBACK(int) svcDisconnect(void *, uint32_t u32ClientID, void *pvCli
 
     PVBOXCLIPBOARDCLIENTDATA pClientData = (PVBOXCLIPBOARDCLIENTDATA)pvClient;
 
-    LogFunc(("u32ClientID = %d\n", u32ClientID));
+    LogFunc(("u32ClientID=%RU32\n", u32ClientID));
 
-    vboxSvcClipboardReportMsg(pClientData, VBOX_SHARED_CLIPBOARD_HOST_MSG_QUIT, 0);
+    vboxSvcClipboardReportMsg(pClientData, VBOX_SHARED_CLIPBOARD_HOST_MSG_QUIT, 0); /** @todo r=andy Why is this necessary? The client already disconnected ... */
 
     vboxSvcClipboardCompleteReadData(pClientData, VERR_NO_DATA, 0);
 
@@ -379,6 +381,8 @@ static DECLCALLBACK(int) svcDisconnect(void *, uint32_t u32ClientID, void *pvCli
 
     VBoxClipboardSvcImplDisconnect(pClientData);
 
+    vboxSvcClipboardClientStateReset(&pClientData->State);
+
     g_pClientData = NULL;
 
     return VINF_SUCCESS;
@@ -387,22 +391,29 @@ static DECLCALLBACK(int) svcDisconnect(void *, uint32_t u32ClientID, void *pvCli
 static DECLCALLBACK(int) svcConnect(void *, uint32_t u32ClientID, void *pvClient, uint32_t fRequestor, bool fRestoring)
 {
     RT_NOREF(fRequestor, fRestoring);
+
     PVBOXCLIPBOARDCLIENTDATA pClientData = (PVBOXCLIPBOARDCLIENTDATA)pvClient;
+
+    LogFlowFunc(("u32ClientID=%RU32\n", u32ClientID));
 
     /* If there is already a client connected then we want to release it first. */
     if (g_pClientData != NULL)
     {
-        uint32_t u32OldClientID = g_pClientData->State.u32ClientID;
+        uint32_t uOldClientID = g_pClientData->State.u32ClientID;
+        if (uOldClientID)
+        {
+            svcDisconnect(NULL, uOldClientID, g_pClientData);
 
-        svcDisconnect(NULL, u32OldClientID, g_pClientData);
-
-        /* And free the resources in the hgcm subsystem. */
-        g_pHelpers->pfnDisconnectClient(g_pHelpers->pvInstance, u32OldClientID);
+            /* And free the resources in the HGCM subsystem. */
+            g_pHelpers->pfnDisconnectClient(g_pHelpers->pvInstance, uOldClientID);
+        }
     }
 
-    /* Register the client.
-     * Note: Do *not* memset the struct, as it contains classes (for caching). */
-    pClientData->State.u32ClientID = u32ClientID;
+    /* Reset the client state. */
+    vboxSvcClipboardClientStateReset(&pClientData->State);
+
+    /* (Re-)initialize the client state. */
+    vboxSvcClipboardClientStateInit(&pClientData->State, u32ClientID);
 
     int rc = VBoxClipboardSvcImplConnect(pClientData, VBoxSvcClipboardGetHeadless());
 #ifdef VBOX_VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
@@ -435,14 +446,13 @@ static DECLCALLBACK(void) svcCall(void *,
                                   uint64_t tsArrival)
 {
     RT_NOREF(u32ClientID, tsArrival);
+
     int rc = VINF_SUCCESS;
 
     LogFunc(("u32ClientID = %d, fn = %d, cParms = %d, pparms = %d\n",
              u32ClientID, u32Function, cParms, paParms));
 
     PVBOXCLIPBOARDCLIENTDATA pClientData = (PVBOXCLIPBOARDCLIENTDATA)pvClient;
-
-    bool fAsynchronousProcessing = false;
 
 #ifdef DEBUG
     uint32_t i;
@@ -476,8 +486,7 @@ static DECLCALLBACK(void) svcCall(void *,
                 /* Atomically verify the client's state. */
                 if (VBoxSvcClipboardLock())
                 {
-                    bool fMessageReturned = vboxSvcClipboardReturnMsg (pClientData, paParms);
-
+                    bool fMessageReturned = vboxSvcClipboardReturnMsg(pClientData, paParms);
                     if (fMessageReturned)
                     {
                         /* Just return to the caller. */
@@ -486,13 +495,9 @@ static DECLCALLBACK(void) svcCall(void *,
                     else
                     {
                         /* No event available at the time. Process asynchronously. */
-                        fAsynchronousProcessing = true;
-
                         pClientData->State.fAsync           = true;
                         pClientData->State.async.callHandle = callHandle;
                         pClientData->State.async.paParms    = paParms;
-
-                        LogFunc(("async.\n"));
                     }
 
                     VBoxSvcClipboardUnlock();
@@ -631,7 +636,6 @@ static DECLCALLBACK(void) svcCall(void *,
                                 pClientData->State.asyncRead.callHandle = callHandle;
                                 pClientData->State.asyncRead.paParms    = paParms;
                                 pClientData->State.fReadPending         = true;
-                                fAsynchronousProcessing = true;
                                 VBoxSvcClipboardUnlock();
                             }
                             else
@@ -710,12 +714,13 @@ static DECLCALLBACK(void) svcCall(void *,
 #else
             rc = VERR_NOT_IMPLEMENTED;
 #endif
-        }
+        } break;
     }
 
-    LogFlowFunc(("rc = %Rrc\n", rc));
+    LogFlowFunc(("fAsync=%RTbool, %Rrc\n", pClientData->State.fAsync, rc));
 
-    if (!fAsynchronousProcessing)
+    if (!pClientData->State.fAsync
+        !pClientData->State.fReadPending)
     {
         g_pHelpers->pfnCallComplete(callHandle, rc);
     }
@@ -742,6 +747,44 @@ void vboxSvcClipboardCompleteReadData(PVBOXCLIPBOARDCLIENTDATA pClientData, int 
         VBoxHGCMParmUInt32Set(&paParms[2], cbActual);
         g_pHelpers->pfnCallComplete(callHandle, rc);
     }
+}
+
+/**
+ * Initializes a Shared Clipboard service's client state.
+ *
+ * @returns VBox status code.
+ * @param   pState              Client state to initialize.
+ */
+int vboxSvcClipboardClientStateInit(PVBOXCLIPBOARDCLIENTSTATE pState, uint32_t uClientID)
+{
+    LogFlowFuncEnter();
+
+    /* Register the client.
+     * Note: Do *not* memset the struct, as it contains classes (for caching). */
+    pState->u32ClientID = uClientID;
+
+    return VINF_SUCCESS;
+}
+
+/**
+ * Resets a Shared Clipboard service's client state.
+ *
+ * @param   pState              Client state to reset.
+ */
+void vboxSvcClipboardClientStateReset(PVBOXCLIPBOARDCLIENTSTATE pState)
+{
+    LogFlowFuncEnter();
+
+    /** @todo Clear async / asynRead / ... data? */
+
+    pState->u32ClientID = 0;
+    pState->fAsync = false;
+    pState->fHostMsgFormats = false;
+    pState->fHostMsgQuit = false;
+    pState->fHostMsgReadData = false;
+    pState->fReadPending = false;
+    pState->u32AvailableFormats = 0;
+    pState->u32RequestedFormat = 0;
 }
 
 /*
@@ -906,6 +949,11 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
 static DECLCALLBACK(int) extCallback(uint32_t u32Function, uint32_t u32Format, void *pvData, uint32_t cbData)
 {
     RT_NOREF2(pvData, cbData);
+
+    LogFlowFunc(("u32Function=%RU32\n", u32Function));
+
+    int rc = VINF_SUCCESS;
+
     if (g_pClientData != NULL)
     {
         switch (u32Function)
@@ -931,10 +979,12 @@ static DECLCALLBACK(int) extCallback(uint32_t u32Function, uint32_t u32Format, v
 
             default:
                 return VERR_NOT_SUPPORTED;
+                break;
         }
     }
 
-    return VINF_SUCCESS;
+    LogFlowFuncLeaveRC(rc);
+    return rc;
 }
 
 static DECLCALLBACK(int) svcRegisterExtension(void *, PFNHGCMSVCEXT pfnExtension, void *pvExtension)

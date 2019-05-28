@@ -45,7 +45,7 @@ SharedClipboardURIList::~SharedClipboardURIList(void)
     Clear();
 }
 
-int SharedClipboardURIList::addEntry(const char *pcszSource, const char *pcszTarget, SHAREDCLIPBOARDURILISTFLAGS fFlags)
+int SharedClipboardURIList::appendEntry(const char *pcszSource, const char *pcszTarget, SHAREDCLIPBOARDURILISTFLAGS fFlags)
 {
     AssertPtrReturn(pcszSource, VERR_INVALID_POINTER);
     AssertPtrReturn(pcszTarget, VERR_INVALID_POINTER);
@@ -56,52 +56,55 @@ int SharedClipboardURIList::addEntry(const char *pcszSource, const char *pcszTar
     int rc = RTPathQueryInfo(pcszSource, &objInfo, RTFSOBJATTRADD_NOTHING);
     if (RT_SUCCESS(rc))
     {
-        if (RTFS_IS_FILE(objInfo.Attr.fMode))
+        try
         {
-            LogFlowFunc(("File '%s' -> '%s' (%RU64 bytes, file mode 0x%x)\n",
-                         pcszSource, pcszTarget, (uint64_t)objInfo.cbObject, objInfo.Attr.fMode));
-
-            SharedClipboardURIObject *pObjFile = new SharedClipboardURIObject(SharedClipboardURIObject::Type_File,
-                                                                              pcszSource, pcszTarget);
-            if (pObjFile)
+            if (RTFS_IS_FILE(objInfo.Attr.fMode))
             {
-                /** @todo Add a standard fOpen mode for this list. */
-                rc = pObjFile->Open(SharedClipboardURIObject::View_Source, RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE);
-                if (RT_SUCCESS(rc))
+                LogFlowFunc(("File '%s' -> '%s' (%RU64 bytes, file mode 0x%x)\n",
+                             pcszSource, pcszTarget, (uint64_t)objInfo.cbObject, objInfo.Attr.fMode));
+
+                SharedClipboardURIObject *pObjFile = new SharedClipboardURIObject(SharedClipboardURIObject::Type_File,
+                                                                                  pcszSource, pcszTarget);
+                if (pObjFile)
                 {
-                    m_lstTree.append(pObjFile);
-
-                    m_cTotal++;
-                    m_cbTotal += pObjFile->GetSize();
-
-                    if (!(fFlags & SHAREDCLIPBOARDURILIST_FLAGS_KEEP_OPEN)) /* Shall we keep the file open while being added to this list? */
-                        pObjFile->Close();
+                    /** @todo Add a standard fOpen mode for this list. */
+                    rc = pObjFile->Open(SharedClipboardURIObject::View_Source, RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE);
+                    if (RT_SUCCESS(rc))
+                    {
+                        rc = appendObject(pObjFile);
+                        if (!(fFlags & SHAREDCLIPBOARDURILIST_FLAGS_KEEP_OPEN)) /* Shall we keep the file open while being added to this list? */
+                            pObjFile->Close();
+                    }
+                    else
+                        delete pObjFile;
                 }
                 else
-                    delete pObjFile;
+                    rc = VERR_NO_MEMORY;
             }
-            else
-                rc = VERR_NO_MEMORY;
-        }
-        else if (RTFS_IS_DIRECTORY(objInfo.Attr.fMode))
-        {
-            LogFlowFunc(("Directory '%s' -> '%s' (file mode 0x%x)\n", pcszSource, pcszTarget, objInfo.Attr.fMode));
-
-            SharedClipboardURIObject *pObjDir = new SharedClipboardURIObject(SharedClipboardURIObject::Type_Directory,
-                                                                             pcszSource, pcszTarget);
-            if (pObjDir)
+            else if (RTFS_IS_DIRECTORY(objInfo.Attr.fMode))
             {
-                m_lstTree.append(pObjDir);
+                LogFlowFunc(("Directory '%s' -> '%s' (file mode 0x%x)\n", pcszSource, pcszTarget, objInfo.Attr.fMode));
 
-                /** @todo Add SHAREDCLIPBOARDURILIST_FLAGS_KEEP_OPEN handling? */
-                m_cTotal++;
+                SharedClipboardURIObject *pObjDir = new SharedClipboardURIObject(SharedClipboardURIObject::Type_Directory,
+                                                                                 pcszSource, pcszTarget);
+                if (pObjDir)
+                {
+                    m_lstTree.append(pObjDir);
+
+                    /** @todo Add SHAREDCLIPBOARDURILIST_FLAGS_KEEP_OPEN handling? */
+                    m_cTotal++;
+                }
+                else
+                    rc = VERR_NO_MEMORY;
             }
+            /* Note: Symlinks already should have been resolved at this point. */
             else
-                rc = VERR_NO_MEMORY;
+                rc = VERR_NOT_SUPPORTED;
         }
-        /* Note: Symlinks already should have been resolved at this point. */
-        else
-            rc = VERR_NOT_SUPPORTED;
+        catch (std::bad_alloc &)
+        {
+            rc = VERR_NO_MEMORY;
+        }
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -125,7 +128,7 @@ int SharedClipboardURIList::appendPathRecursive(const char *pcszSrcPath,
     {
         if (RTFS_IS_DIRECTORY(objInfo.Attr.fMode))
         {
-            rc = addEntry(pcszSrcPath, &pcszDstPath[cchDstBase], fFlags);
+            rc = appendEntry(pcszSrcPath, &pcszDstPath[cchDstBase], fFlags);
             if (RT_SUCCESS(rc))
             {
                 RTDIR hDir;
@@ -180,7 +183,7 @@ int SharedClipboardURIList::appendPathRecursive(const char *pcszSrcPath,
                                     char *pszDst = RTPathJoinA(pcszDstPath, pDirEntry->szName);
                                     if (pszDst)
                                     {
-                                        rc = addEntry(pszSrc, &pszDst[cchDstBase], fFlags);
+                                        rc = appendEntry(pszSrc, &pszDst[cchDstBase], fFlags);
                                         RTStrFree(pszDst);
                                     }
                                     else
@@ -209,7 +212,7 @@ int SharedClipboardURIList::appendPathRecursive(const char *pcszSrcPath,
                                             else if (RTFS_IS_FILE(objInfo.Attr.fMode))
                                             {
                                                 LogFlowFunc(("Directory entry is symlink to file\n"));
-                                                rc = addEntry(pszSrc, &pcszDstPath[cchDstBase], fFlags);
+                                                rc = appendEntry(pszSrc, &pcszDstPath[cchDstBase], fFlags);
                                             }
                                             else
                                                 rc = VERR_NOT_SUPPORTED;
@@ -236,7 +239,7 @@ int SharedClipboardURIList::appendPathRecursive(const char *pcszSrcPath,
         }
         else if (RTFS_IS_FILE(objInfo.Attr.fMode))
         {
-            rc = addEntry(pcszSrcPath, &pcszDstPath[cchDstBase], fFlags);
+            rc = appendEntry(pcszSrcPath, &pcszDstPath[cchDstBase], fFlags);
         }
         else if (RTFS_IS_SYMLINK(objInfo.Attr.fMode))
         {
@@ -256,7 +259,7 @@ int SharedClipboardURIList::appendPathRecursive(const char *pcszSrcPath,
                         else if (RTFS_IS_FILE(objInfo.Attr.fMode))
                         {
                             LogFlowFunc(("Symlink to file\n"));
-                            rc = addEntry(pszSrc, &pcszDstPath[cchDstBase], fFlags);
+                            rc = appendEntry(pszSrc, &pcszDstPath[cchDstBase], fFlags);
                         }
                         else
                             rc = VERR_NOT_SUPPORTED;
@@ -270,6 +273,29 @@ int SharedClipboardURIList::appendPathRecursive(const char *pcszSrcPath,
         }
         else
             rc = VERR_NOT_SUPPORTED;
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+int SharedClipboardURIList::appendObject(SharedClipboardURIObject *pObject)
+{
+    int rc;
+
+    try
+    {
+        m_lstTree.append(pObject);
+        m_lstRoot.append(pObject->GetSourcePathAbs());;
+
+        m_cTotal++;
+        m_cbTotal += pObject->GetSize();
+
+        rc = VINF_SUCCESS;
+    }
+    catch (std::bad_alloc &)
+    {
+        rc = VERR_NO_MEMORY;
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -332,6 +358,13 @@ int SharedClipboardURIList::AppendNativePathsFromList(const RTCList<RTCString> &
     return rc;
 }
 
+int SharedClipboardURIList::AppendURIObject(SharedClipboardURIObject *pObject)
+{
+    AssertPtrReturn(pObject, VERR_INVALID_POINTER);
+
+    return appendObject(pObject);
+}
+
 int SharedClipboardURIList::AppendURIPath(const char *pszURI, SHAREDCLIPBOARDURILISTFLAGS fFlags)
 {
     AssertPtrReturn(pszURI, VERR_INVALID_POINTER);
@@ -385,12 +418,18 @@ int SharedClipboardURIList::AppendURIPath(const char *pszURI, SHAREDCLIPBOARDURI
                                   ? 0 /* Use start of path as root. */
                                   : pszFileName - pszSrcPath;
                 char *pszDstPath = &pszSrcPath[cchDstBase];
-                m_lstRoot.append(pszDstPath);
 
-                LogFlowFunc(("pszSrcPath=%s, pszFileName=%s, pszRoot=%s\n",
-                             pszSrcPath, pszFileName, pszDstPath));
+                try
+                {
+                    m_lstRoot.append(pszDstPath);
 
-                rc = appendPathRecursive(pszSrcPath, pszSrcPath, pszSrcPath, cchDstBase, fFlags);
+                    LogFlowFunc(("pszSrcPath=%s, pszFileName=%s, pszRoot=%s\n", pszSrcPath, pszFileName, pszDstPath));
+                    rc = appendPathRecursive(pszSrcPath, pszSrcPath, pszSrcPath, cchDstBase, fFlags);
+                }
+                catch (std::bad_alloc &)
+                {
+                    rc = VERR_NO_MEMORY;
+                }
             }
             else
                 rc = VERR_PATH_NOT_FOUND;
@@ -436,18 +475,23 @@ int SharedClipboardURIList::AppendURIPathsFromList(const RTCList<RTCString> &lst
 
 void SharedClipboardURIList::Clear(void)
 {
+    LogFlowThisFuncEnter();
+
     m_lstRoot.clear();
 
     for (size_t i = 0; i < m_lstTree.size(); i++)
     {
         SharedClipboardURIObject *pCurObj = m_lstTree.at(i);
         AssertPtr(pCurObj);
-        RTMemFree(pCurObj);
+        delete pCurObj;
     }
+
     m_lstTree.clear();
 
     m_cTotal  = 0;
     m_cbTotal = 0;
+
+    LogFlowThisFuncLeave();
 }
 
 void SharedClipboardURIList::RemoveFirst(void)
@@ -463,7 +507,7 @@ void SharedClipboardURIList::RemoveFirst(void)
     m_cbTotal -= cbSize; /* Adjust total size. */
 
     pCurObj->Close();
-    RTMemFree(pCurObj);
+    delete pCurObj;
 
     m_lstTree.removeFirst();
 }
@@ -498,8 +542,15 @@ int SharedClipboardURIList::SetFromURIData(const void *pvData, size_t cbData, SH
             rc = SharedClipboardPathSanitize(pszFilePath, strlen(pszFilePath));
             if (RT_SUCCESS(rc))
             {
-                m_lstRoot.append(pszFilePath);
-                m_cTotal++;
+                try
+                {
+                    m_lstRoot.append(pszFilePath);
+                    m_cTotal++;
+                }
+                catch (std::bad_alloc &)
+                {
+                    rc = VERR_NO_MEMORY;
+                }
             }
 
             RTStrFree(pszFilePath);

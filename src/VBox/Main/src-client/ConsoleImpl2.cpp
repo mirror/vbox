@@ -3091,7 +3091,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                 SharedClipboard *pSharedClipboard = SharedClipboard::createInstance(this /* pConsole */);
                 if (pSharedClipboard)
                 {
-# ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+# ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST_DISABLED
                     HGCMSVCEXTHANDLE hDummy;
                     rc = HGCMHostRegisterServiceExtension(&hDummy, "VBoxSharedClipboard",
                                                           &SharedClipboard::hostServiceCallback,

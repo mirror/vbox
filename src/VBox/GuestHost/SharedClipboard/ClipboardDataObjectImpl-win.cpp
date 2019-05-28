@@ -41,18 +41,26 @@
 #include <iprt/errcore.h>
 #include <VBox/log.h>
 
+#if 1 /** Not enabled yet, needs more testing first. */
+# define VBOX_CLIPBOARD_WITH_UNICODE_SUPPORT 1
+#endif
+
 VBoxClipboardWinDataObject::VBoxClipboardWinDataObject(SharedClipboardProvider *pProvider,
                                                        LPFORMATETC pFormatEtc, LPSTGMEDIUM pStgMed, ULONG cFormats)
     : m_enmStatus(Uninitialized)
     , m_lRefCount(0)
     , m_cFormats(0)
     , m_pProvider(pProvider)
+    , m_pStream(NULL)
 {
     AssertPtr(pProvider);
 
     HRESULT hr;
 
-    const ULONG cFixedFormats = 3; /* CFSTR_FILEDESCRIPTORA + CFSTR_FILEDESCRIPTORW + CFSTR_FILECONTENTS */
+    ULONG cFixedFormats = 2; /* CFSTR_FILEDESCRIPTORA + CFSTR_FILECONTENTS */
+#ifdef VBOX_CLIPBOARD_WITH_UNICODE_SUPPORT
+    cFixedFormats++; /* CFSTR_FILEDESCRIPTORW */
+#endif
     const ULONG cAllFormats   = cFormats + cFixedFormats;
 
     try
@@ -68,11 +76,16 @@ VBoxClipboardWinDataObject::VBoxClipboardWinDataObject(SharedClipboardProvider *
          * Register fixed formats.
          */
 
-        /* IStream interface, implemented in ClipboardStreamImpl-win.cpp. */
+        LogFlowFunc(("Registering CFSTR_FILEDESCRIPTORA ...\n"));
         registerFormat(&m_pFormatEtc[FormatIndex_FileDescriptorA],
                        RegisterClipboardFormat(CFSTR_FILEDESCRIPTORA));
+#ifdef VBOX_CLIPBOARD_WITH_UNICODE_SUPPORT
+        LogFlowFunc(("Registering CFSTR_FILEDESCRIPTORW ...\n"));
         registerFormat(&m_pFormatEtc[FormatIndex_FileDescriptorW],
                        RegisterClipboardFormat(CFSTR_FILEDESCRIPTORW));
+#endif
+        /* IStream interface, implemented in ClipboardStreamImpl-win.cpp. */
+        LogFlowFunc(("Registering CFSTR_FILECONTENTS ...\n"));
         registerFormat(&m_pFormatEtc[FormatIndex_FileContents],
                        RegisterClipboardFormat(CFSTR_FILECONTENTS),
                        TYMED_ISTREAM, 0 /* lIndex */);
@@ -170,6 +183,15 @@ STDMETHODIMP VBoxClipboardWinDataObject::QueryInterface(REFIID iid, void **ppvOb
     return E_NOINTERFACE;
 }
 
+/**
+ * Copies a chunk of data into a HGLOBAL object.
+ *
+ * @returns VBox status code.
+ * @param   pvData              Data to copy.
+ * @param   cbData              Size (in bytes) to copy.
+ * @param   fFlags              GlobalAlloc flags, used for allocating the HGLOBAL block.
+ * @param   phGlobal            Where to store the allocated HGLOBAL object.
+ */
 int VBoxClipboardWinDataObject::copyToHGlobal(const void *pvData, size_t cbData, UINT fFlags, HGLOBAL *phGlobal)
 {
     AssertPtrReturn(phGlobal, VERR_INVALID_POINTER);
@@ -193,76 +215,127 @@ int VBoxClipboardWinDataObject::copyToHGlobal(const void *pvData, size_t cbData,
     return VERR_ACCESS_DENIED;
 }
 
-int VBoxClipboardWinDataObject::createFileGroupDescriptor(const SharedClipboardURIList &URIList,
-                                                          bool fUnicode, HGLOBAL *phGlobal)
+/**
+ * Creates a FILEGROUPDESCRIPTOR object from a given Shared Clipboard URI list and stores
+ * the result into an HGLOBAL object.
+ *
+ * @returns VBox status code.
+ * @param   URIList             URI list to create object for.
+ * @param   fUnicode            Whether the FILEGROUPDESCRIPTOR object shall contain Unicode data or not.
+ * @param   phGlobal            Where to store the allocated HGLOBAL object on success.
+ */
+int VBoxClipboardWinDataObject::createFileGroupDescriptorFromURIList(const SharedClipboardURIList &URIList,
+                                                                     bool fUnicode, HGLOBAL *phGlobal)
 {
-//    AssertReturn(URIList.GetRootCount(), VERR_INVALID_PARAMETER);
-    AssertPtrReturn(phGlobal, VERR_INVALID_POINTER);
+    AssertReturn(URIList.GetRootCount(), VERR_INVALID_PARAMETER);
+    AssertPtrReturn(phGlobal,            VERR_INVALID_POINTER);
 
-    RT_NOREF(fUnicode);
+    LogFlowFuncEnter();
 
-    int rc;
+    const size_t cbFileGroupDescriptor = fUnicode ? sizeof(FILEGROUPDESCRIPTORW) : sizeof(FILEGROUPDESCRIPTORA);
+    const size_t cbFileDescriptor = fUnicode ? sizeof(FILEDESCRIPTORW) : sizeof(FILEDESCRIPTORA);
 
-    const size_t cItems = 2;  URIList.GetRootCount();
-    const size_t cbFGD  = sizeof(FILEGROUPDESCRIPTOR) + sizeof(FILEDESCRIPTOR) * (cItems - 1);
+    const UINT   cItems = (UINT)URIList.GetRootCount(); /** @todo UINT vs. uint64_t */
+    const size_t cbFGD  = cbFileGroupDescriptor + (cbFileDescriptor * (cItems - 1));
 
-    LogFunc(("cItmes=%zu\n", cItems));
+    LogFunc(("fUnicode=%RTbool, cItems=%u, cbFileDescriptor=%zu\n", fUnicode, cItems, cbFileDescriptor));
 
+    /* FILEGROUPDESCRIPTORA / FILEGROUPDESCRIPTOR matches except the cFileName member (TCHAR vs. WCHAR). */
     FILEGROUPDESCRIPTOR *pFGD = (FILEGROUPDESCRIPTOR *)RTMemAlloc(cbFGD);
-    if (pFGD)
+    if (!pFGD)
+        return VERR_NO_MEMORY;
+
+    int rc = VINF_SUCCESS;
+
+    pFGD->cItems = cItems;
+
+    char *pszFileSpec = NULL;
+
+    for (UINT i = 0; i < cItems; i++)
     {
-        pFGD->cItems = (UINT)cItems;
+        FILEDESCRIPTOR *pFD = &pFGD->fgd[i];
+        RT_BZERO(pFD, cbFileDescriptor);
 
+        const SharedClipboardURIObject *pObj = URIList.At(i);
+        AssertPtr(pObj);
+        const char *pszFile = pObj->GetSourcePathAbs().c_str();
+        AssertPtr(pszFile);
 
-        FILEDESCRIPTOR *pFD = &pFGD->fgd[0];
-        RT_BZERO(pFD, sizeof(FILEDESCRIPTOR));
+        pszFileSpec = RTStrDup(pszFile);
+        AssertBreakStmt(pszFileSpec != NULL, rc = VERR_NO_MEMORY);
 
-        RTStrPrintf(pFD->cFileName, sizeof(pFD->cFileName), "barbaz.txt\n");
+        if (fUnicode)
+        {
+            PRTUTF16 pwszFileSpec;
+            rc = RTStrToUtf16(pszFileSpec, &pwszFileSpec);
+            if (RT_SUCCESS(rc))
+            {
+                rc = RTUtf16CopyEx((PRTUTF16 )pFD->cFileName, sizeof(pFD->cFileName) / sizeof(WCHAR),
+                                   pwszFileSpec, RTUtf16Len(pwszFileSpec));
+                RTUtf16Free(pwszFileSpec);
+            }
+        }
+        else
+            rc = RTStrCopy(pFD->cFileName, sizeof(pFD->cFileName), pszFileSpec);
 
-    #if 1
-        pFD->dwFlags          = FD_ATTRIBUTES | FD_FILESIZE | FD_PROGRESSUI;
-        pFD->dwFileAttributes = FILE_ATTRIBUTE_NORMAL; // FILE_ATTRIBUTE_DIRECTORY;
+        RTStrFree(pszFileSpec);
+        pszFileSpec = NULL;
 
-        uint64_t cbSize = _1M;
+        if (RT_FAILURE(rc))
+            break;
 
-        pFD->nFileSizeHigh    = RT_HI_U32(cbSize);
-        pFD->nFileSizeLow     = RT_LO_U32(cbSize);
-    #else
-        pFD->dwFlags = FD_ATTRIBUTES | FD_CREATETIME | FD_ACCESSTIME | FD_WRITESTIME | FD_FILESIZE;
+        pFD->dwFlags          = FD_PROGRESSUI | FD_ATTRIBUTES;
+        if (fUnicode) /** @todo Only >= Vista. */
+            pFD->dwFlags     |= FD_UNICODE;
+        pFD->dwFileAttributes = FILE_ATTRIBUTE_NORMAL;
+
+        switch (pObj->GetType())
+        {
+            case SharedClipboardURIObject::Type_Directory:
+                pFD->dwFileAttributes |= FILE_ATTRIBUTE_DIRECTORY;
+
+                LogFunc(("pszDir=%s\n", pszFile));
+                break;
+
+            case SharedClipboardURIObject::Type_File:
+            {
+                pFD->dwFlags |= FD_FILESIZE;
+
+                const uint64_t cbObjSize = pObj->GetSize();
+
+                pFD->nFileSizeHigh = RT_HI_U32(cbObjSize);
+                pFD->nFileSizeLow  = RT_LO_U32(cbObjSize);
+
+                LogFunc(("pszFile=%s, cbObjSize=%RU64\n", pszFile, cbObjSize));
+                break;
+            }
+
+            default:
+                AssertFailed();
+                break;
+        }
+#if 0
+        pFD->dwFlags = FD_ATTRIBUTES | FD_CREATETIME | FD_ACCESSTIME | FD_WRITESTIME | FD_FILESIZE; /** @todo Implement this. */
         pFD->dwFileAttributes =
         pFD->ftCreationTime   =
         pFD->ftLastAccessTime =
         pFD->ftLastWriteTime  =
-        pFD->nFileSizeHigh    =
-        pFD->nFileSizeLow     =
-    #endif
+#endif
+    }
 
+    if (pszFileSpec)
+        RTStrFree(pszFileSpec);
 
-
-        pFD = &pFGD->fgd[1];
-        RT_BZERO(pFD, sizeof(FILEDESCRIPTOR));
-
-        RTStrPrintf(pFD->cFileName, sizeof(pFD->cFileName), "barbaz_dir\n");
-
-    #if 1
-        pFD->dwFlags          = FD_ATTRIBUTES | FD_PROGRESSUI;
-        pFD->dwFileAttributes = FILE_ATTRIBUTE_NORMAL | FILE_ATTRIBUTE_DIRECTORY;
-    #else
-        pFD->dwFlags = FD_ATTRIBUTES | FD_CREATETIME | FD_ACCESSTIME | FD_WRITESTIME | FD_FILESIZE;
-        pFD->dwFileAttributes =
-        pFD->ftCreationTime   =
-        pFD->ftLastAccessTime =
-        pFD->ftLastWriteTime  =
-        pFD->nFileSizeHigh    =
-        pFD->nFileSizeLow     =
-    #endif
-
-
+    if (RT_SUCCESS(rc))
+    {
         rc = copyToHGlobal(pFGD, cbFGD, GMEM_MOVEABLE, phGlobal);
     }
     else
-        rc = VERR_NO_MEMORY;
+    {
+        RTMemFree(pFGD);
+    }
 
+    LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
@@ -311,27 +384,42 @@ STDMETHODIMP VBoxClipboardWinDataObject::GetData(LPFORMATETC pFormatEtc, LPSTGME
     switch (lIndex)
     {
         case FormatIndex_FileDescriptorA: /* ANSI */
+#ifdef VBOX_CLIPBOARD_WITH_UNICODE_SUPPORT
+            RT_FALL_THROUGH();
         case FormatIndex_FileDescriptorW: /* Unicode */
+#endif
         {
             const bool fUnicode = lIndex == FormatIndex_FileDescriptorW;
 
             LogFlowFunc(("FormatIndex_FileDescriptor%s\n", fUnicode ? "W" : "A"));
 
             SharedClipboardURIList uriList;
-            int rc = m_pProvider->ReadMetaData(uriList, 0 /* fFlags */);
-            if (RT_SUCCESS(rc))
+            int rc = m_pProvider->ReadMetaData(uriList); /** @todo Do this asynchronously some time earlier? */
+
+#if 0
+    SharedClipboardURIObject *pObj1 = new SharedClipboardURIObject(SharedClipboardURIObject::Type_File, "foobar.baz1");
+    pObj1->SetSize(_64M);
+    uriList.AppendURIObject(pObj1);
+#endif
+
+            if (   RT_SUCCESS(rc)
+                && !uriList.IsEmpty())
             {
                 HGLOBAL hGlobal;
-                rc = createFileGroupDescriptor(uriList, fUnicode, &hGlobal);
+                rc = createFileGroupDescriptorFromURIList(uriList, fUnicode, &hGlobal);
                 if (RT_SUCCESS(rc))
                 {
+                    LogFlowFunc(("FOO1\n"));
+
                     pMedium->tymed   = TYMED_HGLOBAL;
                     pMedium->hGlobal = hGlobal;
                     /* Note: hGlobal now is being owned by pMedium / the caller. */
 
+                    LogFlowFunc(("FOO2\n"));
                     hr = S_OK;
                 }
             }
+            LogFlowFunc(("FOO2.1\n"));
             break;
         }
 
@@ -339,12 +427,13 @@ STDMETHODIMP VBoxClipboardWinDataObject::GetData(LPFORMATETC pFormatEtc, LPSTGME
         {
             LogFlowFunc(("FormatIndex_FileContents\n"));
 
+            /* Hand-in the provider so that our IStream implementation can continue working with it. */
             hr = VBoxClipboardWinStreamImpl::Create(m_pProvider, &m_pStream);
             if (SUCCEEDED(hr))
             {
                 /* Hand over the stream to the caller. */
-                pMedium->tymed          = TYMED_ISTREAM;
-                pMedium->pstm           = m_pStream;
+                pMedium->tymed = TYMED_ISTREAM;
+                pMedium->pstm  = m_pStream;
             }
 
             break;
@@ -353,6 +442,8 @@ STDMETHODIMP VBoxClipboardWinDataObject::GetData(LPFORMATETC pFormatEtc, LPSTGME
         default:
             break;
     }
+
+    LogFlowFunc(("FOO3\n"));
 
     /* Error handling; at least return some basic data. */
     if (FAILED(hr))
@@ -363,8 +454,12 @@ STDMETHODIMP VBoxClipboardWinDataObject::GetData(LPFORMATETC pFormatEtc, LPSTGME
         pMedium->pUnkForRelease = NULL;
     }
 
+LogFlowFunc(("FOO4\n"));
+
     if (hr == DV_E_FORMATETC)
         LogRel(("Clipboard: Error handling format\n"));
+
+LogFlowFunc(("FOO5\n"));
 
     LogFlowFunc(("hr=%Rhrc\n", hr));
     return hr;
@@ -585,8 +680,9 @@ bool VBoxClipboardWinDataObject::lookupFormatEtc(LPFORMATETC pFormatEtc, ULONG *
     for (ULONG i = 0; i < m_cFormats; i++)
     {
         if(    (pFormatEtc->tymed & m_pFormatEtc[i].tymed)
-            && pFormatEtc->cfFormat == m_pFormatEtc[i].cfFormat
-            && pFormatEtc->dwAspect == m_pFormatEtc[i].dwAspect)
+            && pFormatEtc->cfFormat == m_pFormatEtc[i].cfFormat)
+            /* Note: Do *not* compare dwAspect here, as this can be dynamic, depending on how the object should be represented. */
+            //&& pFormatEtc->dwAspect == m_pFormatEtc[i].dwAspect)
         {
             LogRel3(("Clipboard: Format found: tyMed=%RI32, cfFormat=%RI16, sFormats=%s, dwAspect=%RI32, ulIndex=%RU32\n",
                       pFormatEtc->tymed, pFormatEtc->cfFormat, VBoxClipboardWinDataObject::ClipboardFormatToString(m_pFormatEtc[i].cfFormat),

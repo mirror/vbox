@@ -138,6 +138,9 @@ uint32_t vboxSvcClipboardGetMode(void);
 void vboxSvcClipboardReportMsg(PVBOXCLIPBOARDCLIENTDATA pClientData, uint32_t u32Msg, uint32_t u32Formats);
 void vboxSvcClipboardCompleteReadData(PVBOXCLIPBOARDCLIENTDATA pClientData, int rc, uint32_t cbActual);
 
+int vboxSvcClipboardClientStateInit(PVBOXCLIPBOARDCLIENTSTATE pState, uint32_t uClientID);
+void vboxSvcClipboardClientStateReset(PVBOXCLIPBOARDCLIENTSTATE pState);
+
 /*
  * Platform-dependent implementations.
  */
