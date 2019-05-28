@@ -86,6 +86,7 @@ g_iRegEx       = 5;
 
 # Table translating from VM name core to a more detailed guest info.
 # pylint: disable=C0301
+## @todo what's the difference between the first two columns again?
 g_aaNameToDetails = \
 [
     [ 'WindowsNT3x',    'WindowsNT3x',           g_k32,    1,  32, ['nt3',    'nt3[0-9]*']],                              # max cpus??
@@ -190,6 +191,392 @@ def _intersects(asSet1, asSet2):
     return False;
 
 
+
+class BaseTestVm(object):
+    """
+    Base class ofr Test VMs.
+    """
+
+    def __init__(self, # pylint: disable=R0913
+                 sVmName,                                   # type: str
+                 fGrouping = 0,                             # type: int
+                 oSet = None,                               # type: TestVmSet
+                 sKind = None,                              # type: str
+                 acCpusSup = None,                          # type: List[int]
+                 asVirtModesSup = None,                     # type: List[str]
+                 asParavirtModesSup = None,                 # type: List[str]
+                 fRandomPvPModeCrap = False,                # type: bool
+                 fVmmDevTestingPart = None,                 # type: bool
+                 fVmmDevTestingMmio = False,                # type: bool
+                 ):
+        self.oSet                    = oSet;
+        self.sVmName                 = sVmName;
+        self.fGrouping               = fGrouping;
+        self.sKind                   = sKind;               # Guest OS type.
+        self.acCpusSup               = acCpusSup;
+        self.asVirtModesSup          = asVirtModesSup;
+        self.asParavirtModesSup      = asParavirtModesSup;
+        self.asParavirtModesSupOrg   = asParavirtModesSup;  # HACK ALERT! Trick to make the 'effing random mess not get in the
+                                                            # way of actively selecting virtualization modes.
+
+        self.fSkip                   = False;               # All VMs are included in the configured set by default.
+        self.fSnapshotRestoreCurrent = False;               # Whether to restore execution on the current snapshot.
+
+        self.fVmmDevTestingPart      = fVmmDevTestingPart;
+        self.fVmmDevTestingMmio      = fVmmDevTestingMmio;
+        self.fCom1RawFile            = False;
+        self.sCom1RawFile            = None;                # Set by createVmInner and getReconfiguredVm if fCom1RawFile is set.
+
+        # Derived stuff:
+        self.aInfo                   = None;
+        self.sGuestOsType            = None;                # ksGuestOsTypeXxxx value, API GuestOS Type is in the sKind member.
+        self._guessStuff(fRandomPvPModeCrap);
+
+    def _mkCanonicalGuestOSType(self, sType):
+        """
+        Convert guest OS type into constant representation.
+        Raise exception if specified @param sType is unknown.
+        """
+        if sType.lower().startswith('darwin'):
+            return g_ksGuestOsTypeDarwin
+        if sType.lower().startswith('bsd'):
+            return g_ksGuestOsTypeFreeBSD
+        if sType.lower().startswith('dos'):
+            return g_ksGuestOsTypeDOS
+        if sType.lower().startswith('linux'):
+            return g_ksGuestOsTypeLinux
+        if sType.lower().startswith('os2'):
+            return g_ksGuestOsTypeOS2
+        if sType.lower().startswith('solaris'):
+            return g_ksGuestOsTypeSolaris
+        if sType.lower().startswith('windows'):
+            return g_ksGuestOsTypeWindows
+        raise base.GenError(sWhat="unknown guest OS kind: %s" % str(sType))
+
+    def _guessStuff(self, fRandomPvPModeCrap):
+        """
+        Used by the constructor to guess stuff.
+        """
+
+        sNm     = self.sVmName.lower().strip();
+        asSplit = sNm.replace('-', ' ').split(' ');
+
+        if self.sKind is None:
+            # From name.
+            for aInfo in g_aaNameToDetails:
+                if _intersects(asSplit, aInfo[g_iRegEx]):
+                    self.aInfo        = aInfo;
+                    self.sGuestOsType = self._mkCanonicalGuestOSType(aInfo[g_iGuestOsType])
+                    self.sKind        = aInfo[g_iKind];
+                    break;
+            if self.sKind is None:
+                reporter.fatal('The OS of test VM "%s" cannot be guessed' % (self.sVmName,));
+
+            # Check for 64-bit, if required and supported.
+            if (self.aInfo[g_iFlags] & g_kiArchMask) == g_k32_64  and  _intersects(asSplit, ['64', 'amd64']):
+                self.sKind = self.sKind + '_64';
+        else:
+            # Lookup the kind.
+            for aInfo in g_aaNameToDetails:
+                if self.sKind == aInfo[g_iKind]:
+                    self.aInfo = aInfo;
+                    break;
+            if self.aInfo is None:
+                reporter.fatal('The OS of test VM "%s" with sKind="%s" cannot be guessed' % (self.sVmName, self.sKind));
+
+        # Translate sKind into sGuest OS Type.
+        if self.sGuestOsType is None:
+            if self.aInfo is not None:
+                self.sGuestOsType = self._mkCanonicalGuestOSType(self.aInfo[g_iGuestOsType])
+            elif self.sKind.find("Windows") >= 0:
+                self.sGuestOsType = g_ksGuestOsTypeWindows
+            elif self.sKind.find("Linux") >= 0:
+                self.sGuestOsType = g_ksGuestOsTypeLinux;
+            elif self.sKind.find("Solaris") >= 0:
+                self.sGuestOsType = g_ksGuestOsTypeSolaris;
+            elif self.sKind.find("DOS") >= 0:
+                self.sGuestOsType = g_ksGuestOsTypeDOS;
+            else:
+                reporter.fatal('The OS of test VM "%s", sKind="%s" cannot be guessed' % (self.sVmName, self.sKind));
+
+        # Restrict modes and such depending on the OS.
+        if self.asVirtModesSup is None:
+            self.asVirtModesSup = list(g_asVirtModes);
+            if   self.sGuestOsType in (g_ksGuestOsTypeOS2, g_ksGuestOsTypeDarwin) \
+              or self.sKind.find('_64') > 0 \
+              or (self.aInfo is not None and (self.aInfo[g_iFlags] & g_kiNoRaw)):
+                self.asVirtModesSup = [sVirtMode for sVirtMode in self.asVirtModesSup if sVirtMode != 'raw'];
+            # TEMPORARY HACK - START
+            sHostName = os.environ.get("COMPUTERNAME", None);
+            if sHostName:   sHostName = sHostName.lower();
+            else:           sHostName = socket.getfqdn(); # Horribly slow on windows without IPv6 DNS/whatever.
+            if sHostName.startswith('testboxpile1'):
+                self.asVirtModesSup = [sVirtMode for sVirtMode in self.asVirtModesSup if sVirtMode != 'raw'];
+            # TEMPORARY HACK - END
+
+        # Restrict the CPU count depending on the OS and/or percieved SMP readiness.
+        if self.acCpusSup is None:
+            if _intersects(asSplit, ['uni']):
+                self.acCpusSup = [1];
+            elif self.aInfo is not None:
+                self.acCpusSup = [i for i in range(self.aInfo[g_iMinCpu], self.aInfo[g_iMaxCpu]) ];
+            else:
+                self.acCpusSup = [1];
+
+        # Figure relevant PV modes based on the OS.
+        if self.asParavirtModesSup is None:
+            self.asParavirtModesSup = g_kdaParavirtProvidersSupported[self.sGuestOsType];
+            ## @todo Remove this hack as soon as we've got around to explictly configure test variations
+            ## on the server side. Client side random is interesting but not the best option.
+            self.asParavirtModesSupOrg = self.asParavirtModesSup;
+            if fRandomPvPModeCrap:
+                random.seed();
+                self.asParavirtModesSup = (random.choice(self.asParavirtModesSup),);
+
+        return True;
+
+    def _generateRawPortFilename(self, oTestDrv, sInfix, sSuffix):
+        """ Generates a raw port filename. """
+        random.seed();
+        sRandom = ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(10));
+        return os.path.join(oTestDrv.sScratchPath, self.sVmName + sInfix + sRandom + sSuffix);
+
+    def _createVmTail(self, oTestDrv, eNic0AttachType, sDvdImage):
+        """
+        Returns same as vbox.TestDriver.createTestVM.
+        """
+        _ = oTestDrv; _ = eNic0AttachType; _ = sDvdImage;
+        return reporter.error('Base class _createVmTail must not be called!');
+
+    def _childVmReconfig(self, oTestDrv, oVM, oSession):
+        """
+        Hook into getReconfiguredVm() for children.
+        """
+        _ = oTestDrv; _ = oVM; _ = oSession;
+        return True;
+
+
+    #
+    # Public interface.
+    #
+
+    def getMissingResources(self, sTestRsrc):
+        """
+        Returns a list of missing resources (paths, stuff) that the VM needs.
+        """
+        _ = sTestRsrc;
+        return [];
+
+    def createVm(self, oTestDrv, eNic0AttachType = None, sDvdImage = None):
+        """
+        Creates the VM with defaults and the few tweaks as per the arguments.
+
+        Returns same as vbox.TestDriver.createTestVM.
+        """
+        reporter.log2('');
+        reporter.log2('Creating %s...' % (self.sVmName,))
+
+        if self.fCom1RawFile:
+            self.sCom1RawFile = self._generateRawPortFilename(oTestDrv, '-com1-', '.out');
+
+        return self._createVmTail(oTestDrv, eNic0AttachType, sDvdImage);
+
+    def getReconfiguredVm(self, oTestDrv, cCpus, sVirtMode, sParavirtMode = None):
+        """
+        actionExecute worker that finds and reconfigure a test VM.
+
+        Returns (fRc, oVM) where fRc is True, None or False and oVM is a
+        VBox VM object that is only present when rc is True.
+        """
+
+        fRc = False;
+        oVM = oTestDrv.getVmByName(self.sVmName);
+        if oVM is not None:
+            if self.fSnapshotRestoreCurrent is True:
+                fRc = True;
+            else:
+                fHostSupports64bit = oTestDrv.hasHostLongMode();
+                if self.is64bitRequired() and not fHostSupports64bit:
+                    fRc = None; # Skip the test.
+                elif self.isViaIncompatible() and oTestDrv.isHostCpuVia():
+                    fRc = None; # Skip the test.
+                elif self.isShanghaiIncompatible() and oTestDrv.isHostCpuShanghai():
+                    fRc = None; # Skip the test.
+                elif self.isP4Incompatible() and oTestDrv.isHostCpuP4():
+                    fRc = None; # Skip the test.
+                else:
+                    oSession = oTestDrv.openSession(oVM);
+                    if oSession is not None:
+                        fRc =         oSession.enableVirtEx(sVirtMode != 'raw');
+                        fRc = fRc and oSession.enableNestedPaging(sVirtMode == 'hwvirt-np');
+                        fRc = fRc and oSession.setCpuCount(cCpus);
+                        if cCpus > 1:
+                            fRc = fRc and oSession.enableIoApic(True);
+
+                        if sParavirtMode is not None and oSession.fpApiVer >= 5.0:
+                            adParavirtProviders = {
+                                g_ksParavirtProviderNone   : vboxcon.ParavirtProvider_None,
+                                g_ksParavirtProviderDefault: vboxcon.ParavirtProvider_Default,
+                                g_ksParavirtProviderLegacy : vboxcon.ParavirtProvider_Legacy,
+                                g_ksParavirtProviderMinimal: vboxcon.ParavirtProvider_Minimal,
+                                g_ksParavirtProviderHyperV : vboxcon.ParavirtProvider_HyperV,
+                                g_ksParavirtProviderKVM    : vboxcon.ParavirtProvider_KVM,
+                            };
+                            fRc = fRc and oSession.setParavirtProvider(adParavirtProviders[sParavirtMode]);
+
+                        fCfg64Bit = self.is64bitRequired() or (self.is64bit() and fHostSupports64bit and sVirtMode != 'raw');
+                        fRc = fRc and oSession.enableLongMode(fCfg64Bit);
+                        if fCfg64Bit: # This is to avoid GUI pedantic warnings in the GUI. Sigh.
+                            oOsType = oSession.getOsType();
+                            if oOsType is not None:
+                                if oOsType.is64Bit and sVirtMode == 'raw':
+                                    assert(oOsType.id[-3:] == '_64');
+                                    fRc = fRc and oSession.setOsType(oOsType.id[:-3]);
+                                elif not oOsType.is64Bit and sVirtMode != 'raw':
+                                    fRc = fRc and oSession.setOsType(oOsType.id + '_64');
+
+                        # New serial raw file.
+                        if fRc and self.fCom1RawFile:
+                            self.sCom1RawFile = self._generateRawPortFilename(oTestDrv, '-com1-', '.out');
+                            utils.noxcptDeleteFile(self.sCom1RawFile);
+                            fRc = oSession.setupSerialToRawFile(0, self.sCom1RawFile);
+
+                        # Make life simpler for child classes.
+                        if fRc:
+                            fRc = self._childVmReconfig(oTestDrv, oVM, oSession);
+
+                        fRc = fRc and oSession.saveSettings();
+                        if not oSession.close():
+                            fRc = False;
+            if fRc is True:
+                return (True, oVM);
+        return (fRc, None);
+
+    def getNonCanonicalGuestOsType(self):
+        """
+        Gets the non-canonical OS type (self.sGuestOsType is canonical).
+        """
+        return self.sKind; #self.aInfo[g_iGuestOsType];
+
+    def isWindows(self):
+        """ Checks if it's a Windows VM. """
+        return self.sGuestOsType == g_ksGuestOsTypeWindows;
+
+    def isOS2(self):
+        """ Checks if it's an OS/2 VM. """
+        return self.sGuestOsType == g_ksGuestOsTypeOS2;
+
+    def isLinux(self):
+        """ Checks if it's an Linux VM. """
+        return self.sGuestOsType == g_ksGuestOsTypeLinux;
+
+    def is64bit(self):
+        """ Checks if it's a 64-bit VM. """
+        return self.sKind.find('_64') >= 0;
+
+    def is64bitRequired(self):
+        """ Check if 64-bit is required or not. """
+        return (self.aInfo[g_iFlags] & g_k64) != 0;
+
+    def isLoggedOntoDesktop(self):
+        """ Checks if the test VM is logging onto a graphical desktop by default. """
+        if self.isWindows():
+            return True;
+        if self.isOS2():
+            return True;
+        if self.sVmName.find('-desktop'):
+            return True;
+        return False;
+
+    def isViaIncompatible(self):
+        """
+        Identifies VMs that doesn't work on VIA.
+
+        Returns True if NOT supported on VIA, False if it IS supported.
+        """
+        # Oracle linux doesn't like VIA in our experience
+        if self.aInfo[g_iKind] in ['Oracle', 'Oracle_64']:
+            return True;
+        # OS/2: "The system detected an internal processing error at location
+        # 0168:fff1da1f - 000e:ca1f. 0a8606fd
+        if self.isOS2():
+            return True;
+        # Windows NT4 before SP4 won't work because of cmpxchg8b not being
+        # detected, leading to a STOP 3e(80,0,0,0).
+        if self.aInfo[g_iKind] == 'WindowsNT4':
+            if self.sVmName.find('sp') < 0:
+                return True; # no service pack.
+            if   self.sVmName.find('sp0') >= 0 \
+              or self.sVmName.find('sp1') >= 0 \
+              or self.sVmName.find('sp2') >= 0 \
+              or self.sVmName.find('sp3') >= 0:
+                return True;
+        # XP x64 on a physical VIA box hangs exactly like a VM.
+        if self.aInfo[g_iKind] in ['WindowsXP_64', 'Windows2003_64']:
+            return True;
+        # Vista 64 throws BSOD 0x5D (UNSUPPORTED_PROCESSOR)
+        if self.aInfo[g_iKind] in ['WindowsVista_64']:
+            return True;
+        # Solaris 11 hangs on VIA, tested on a physical box (testboxvqc)
+        if self.aInfo[g_iKind] in ['Solaris11_64']:
+            return True;
+        return False;
+
+    def isShanghaiIncompatible(self):
+        """
+        Identifies VMs that doesn't work on Shanghai.
+
+        Returns True if NOT supported on Shanghai, False if it IS supported.
+        """
+        # For now treat it just like VIA, to be adjusted later
+        return self.isViaIncompatible()
+
+    def isP4Incompatible(self):
+        """
+        Identifies VMs that doesn't work on Pentium 4 / Pentium D.
+
+        Returns True if NOT supported on P4, False if it IS supported.
+        """
+        # Stupid 1 kHz timer. Too much for antique CPUs.
+        if self.sVmName.find('rhel5') >= 0:
+            return True;
+        # Due to the boot animation the VM takes forever to boot.
+        if self.aInfo[g_iKind] == 'Windows2000':
+            return True;
+        return False;
+
+    def isHostCpuAffectedByUbuntuNewAmdBug(self, oTestDrv):
+        """
+        Checks if the host OS is affected by older ubuntu installers being very
+        picky about which families of AMD CPUs it would run on.
+
+        The installer checks for family 15, later 16, later 20, and in 11.10
+        they remove the family check for AMD CPUs.
+        """
+        if not oTestDrv.isHostCpuAmd():
+            return False;
+        try:
+            (uMaxExt, _, _, _) = oTestDrv.oVBox.host.getProcessorCPUIDLeaf(0, 0x80000000, 0);
+            (uFamilyModel, _, _, _) = oTestDrv.oVBox.host.getProcessorCPUIDLeaf(0, 0x80000001, 0);
+        except:
+            reporter.logXcpt();
+            return False;
+        if uMaxExt < 0x80000001 or uMaxExt > 0x8000ffff:
+            return False;
+
+        uFamily = (uFamilyModel >> 8) & 0xf
+        if uFamily == 0xf:
+            uFamily = ((uFamilyModel >> 20) & 0x7f) + 0xf;
+        ## @todo Break this down into which old ubuntu release supports exactly
+        ##       which AMD family, if we care.
+        if uFamily <= 15:
+            return False;
+        reporter.log('Skipping "%s" because host CPU is a family %u AMD, which may cause trouble for the guest OS installer.'
+                     % (self.sVmName, uFamily,));
+        return True;
+
+
+## @todo Inherit from BaseTestVm
 class TestVm(object):
     """
     A Test VM - name + VDI/whatever.
