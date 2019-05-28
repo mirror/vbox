@@ -451,7 +451,7 @@ VBOX_WITH_E1000 = 1
 # Enable the Virtio feature.
 VBOX_WITH_VIRTIO = 1
 # Enable the Virtio SCSI device.
-VBOX_WITH_VIRTIO_SCSI = 0
+#VBOX_WITH_VIRTIO_SCSI = 1
 # HDA emulation is Intel HDA by default.
 VBOX_WITH_INTEL_HDA = 1
 ifn1of ($(KBUILD_TARGET), win darwin)
