@@ -756,6 +756,7 @@ void vboxSvcClipboardCompleteReadData(PVBOXCLIPBOARDCLIENTDATA pClientData, int 
  *
  * @returns VBox status code.
  * @param   pState              Client state to initialize.
+ * @param   uClientID           Client ID (HGCM) to use for this client state.
  */
 int vboxSvcClipboardClientStateInit(PVBOXCLIPBOARDCLIENTSTATE pState, uint32_t uClientID)
 {
@@ -883,7 +884,7 @@ static DECLCALLBACK(int) svcSaveState(void *, uint32_t u32ClientID, void *pvClie
      * pending request.
      * Pending requests, if any, will be completed in svcDisconnect.
      */
-    LogFunc(("u32ClientID = %d\n", u32ClientID));
+    LogFunc(("u32ClientID=%RU32\n", u32ClientID));
 
     PVBOXCLIPBOARDCLIENTDATA pClientData = (PVBOXCLIPBOARDCLIENTDATA)pvClient;
 
@@ -904,7 +905,7 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
 #ifndef UNIT_TEST
     RT_NOREF(u32ClientID, uVersion);
 
-    LogFunc(("u32ClientID = %d\n", u32ClientID));
+    LogFunc(("u32ClientID=%RU32\n", u32ClientID));
 
     PVBOXCLIPBOARDCLIENTDATA pClientData   = (PVBOXCLIPBOARDCLIENTDATA)pvClient;
     AssertPtr(pClientData);
