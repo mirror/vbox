@@ -594,6 +594,36 @@ class TestVm(object):
             return True;
         return False;
 
+    def isHostCpuAffectedByUbuntuNewAmdBug(self, oTestDrv):
+        """
+        Checks if the host OS is affected by older ubuntu installers being very
+        picky about which families of AMD CPUs it would run on.
+
+        The installer checks for family 15, later 16, later 20, and in 11.10
+        they remove the family check for AMD CPUs.
+        """
+        if not oTestDrv.isHostCpuAmd():
+            return False;
+        try:
+            (uMaxExt, _, _, _) = oTestDrv.oVBox.host.getProcessorCPUIDLeaf(0, 0x80000000, 0);
+            (uFamilyModel, _, _, _) = oTestDrv.oVBox.host.getProcessorCPUIDLeaf(0, 0x80000001, 0);
+        except:
+            reporter.logXcpt();
+            return False;
+        if uMaxExt < 0x80000001 or uMaxExt > 0x8000ffff:
+            return False;
+
+        uFamily = (uFamilyModel >> 8) & 0xf
+        if uFamily == 0xf:
+            uFamily = ((uFamilyModel >> 20) & 0x7f) + 0xf;
+        ## @todo Break this down into which old ubuntu release supports exactly
+        ##       which AMD family, if we care.
+        if uFamily <= 15:
+            return False;
+        reporter.log('Skipping "%s" because host CPU is a family %u AMD, which may cause trouble for the guest OS installer.'
+                     % (self.sVmName, uFamily,));
+        return True;
+
 
 class BootSectorTestVm(TestVm):
     """
