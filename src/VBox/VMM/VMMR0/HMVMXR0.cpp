@@ -409,6 +409,62 @@ static FNVMXEXITHANDLERNSRC        hmR0VmxExitErrInvalidGuestState;
 static FNVMXEXITHANDLERNSRC        hmR0VmxExitErrUnexpected;
 /** @} */
 
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+/** @name Nested-guest VM-exit handlers.
+ * @{
+ */
+//static FNVMXEXITHANDLER            hmR0VmxExitXcptOrNmi;
+//static FNVMXEXITHANDLER            hmR0VmxExitExtIntNested;
+//static FNVMXEXITHANDLER            hmR0VmxExitTripleFault;
+static FNVMXEXITHANDLERNSRC        hmR0VmxExitIntWindowNested;
+//static FNVMXEXITHANDLERNSRC        hmR0VmxExitNmiWindow;
+static FNVMXEXITHANDLER            hmR0VmxExitTaskSwitchNested;
+//static FNVMXEXITHANDLER            hmR0VmxExitCpuid;
+//static FNVMXEXITHANDLER            hmR0VmxExitGetsec;
+static FNVMXEXITHANDLER            hmR0VmxExitHltNested;
+//static FNVMXEXITHANDLERNSRC        hmR0VmxExitInvd;
+static FNVMXEXITHANDLER            hmR0VmxExitInvlpgNested;
+//static FNVMXEXITHANDLER            hmR0VmxExitRdpmc;
+//static FNVMXEXITHANDLER            hmR0VmxExitVmcall;
+//static FNVMXEXITHANDLER            hmR0VmxExitVmclear;
+//static FNVMXEXITHANDLER            hmR0VmxExitVmlaunch;
+//static FNVMXEXITHANDLER            hmR0VmxExitVmptrld;
+//static FNVMXEXITHANDLER            hmR0VmxExitVmptrst;
+//static FNVMXEXITHANDLER            hmR0VmxExitVmread;
+//static FNVMXEXITHANDLER            hmR0VmxExitVmresume;
+//static FNVMXEXITHANDLER            hmR0VmxExitVmwrite;
+//static FNVMXEXITHANDLER            hmR0VmxExitVmxoff;
+//static FNVMXEXITHANDLER            hmR0VmxExitVmxon;
+//static FNVMXEXITHANDLER            hmR0VmxExitInvvpid;
+static FNVMXEXITHANDLER            hmR0VmxExitRdtscNested;
+static FNVMXEXITHANDLER            hmR0VmxExitMovCRxNested;
+static FNVMXEXITHANDLER            hmR0VmxExitMovDRxNested;
+static FNVMXEXITHANDLER            hmR0VmxExitIoInstrNested;
+static FNVMXEXITHANDLER            hmR0VmxExitRdmsrNested;
+static FNVMXEXITHANDLER            hmR0VmxExitWrmsrNested;
+static FNVMXEXITHANDLER            hmR0VmxExitMwaitNested;
+static FNVMXEXITHANDLER            hmR0VmxExitMtfNested;
+static FNVMXEXITHANDLER            hmR0VmxExitMonitorNested;
+static FNVMXEXITHANDLER            hmR0VmxExitPauseNested;
+//static FNVMXEXITHANDLERNSRC        hmR0VmxExitTprBelowThreshold;
+//static FNVMXEXITHANDLER            hmR0VmxExitApicAccess;
+static FNVMXEXITHANDLER            hmR0VmxExitXdtrAccessNested;
+//static FNVMXEXITHANDLER            hmR0VmxExitEptViolation;
+//static FNVMXEXITHANDLER            hmR0VmxExitEptMisconfig;
+static FNVMXEXITHANDLER            hmR0VmxExitRdtscpNested;
+//static FNVMXEXITHANDLER            hmR0VmxExitPreemptTimer;
+static FNVMXEXITHANDLERNSRC        hmR0VmxExitWbinvdNested;
+//static FNVMXEXITHANDLER            hmR0VmxExitXsetbv;
+//static FNVMXEXITHANDLER            hmR0VmxExitRdrand;
+static FNVMXEXITHANDLER            hmR0VmxExitInvpcidNested;
+//static FNVMXEXITHANDLERNSRC        hmR0VmxExitSetPendingXcptUD;
+//static FNVMXEXITHANDLERNSRC        hmR0VmxExitErrInvalidGuestState;
+//static FNVMXEXITHANDLERNSRC        hmR0VmxExitErrUnexpected;
+static FNVMXEXITHANDLER            hmR0VmxExitInstrNested;
+static FNVMXEXITHANDLER            hmR0VmxExitInstrWithInfoNested;
+/** @} */
+#endif /* VBOX_WITH_NESTED_HWVIRT_VMX */
+
 /** @name Helpers for hardware exceptions VM-exit handlers.
  * @{
  */
@@ -419,10 +475,10 @@ static VBOXSTRICTRC hmR0VmxExitXcptBP(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 static VBOXSTRICTRC hmR0VmxExitXcptGP(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient);
 static VBOXSTRICTRC hmR0VmxExitXcptAC(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient);
 static VBOXSTRICTRC hmR0VmxExitXcptGeneric(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient);
-static VBOXSTRICTRC hmR0VmxExitLmsw(PVMCPU pVCpu, uint8_t cbInstr, uint16_t uMsw, RTGCPTR GCPtrEffDst);
-static VBOXSTRICTRC hmR0VmxExitClts(PVMCPU pVCpu, uint8_t cbInstr);
-static VBOXSTRICTRC hmR0VmxExitMovFromCrX(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iGReg, uint8_t iCrReg);
-static VBOXSTRICTRC hmR0VmxExitMovToCrX(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iGReg, uint8_t iCrReg);
+static VBOXSTRICTRC hmR0VmxExitLmsw(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo, uint8_t cbInstr, uint16_t uMsw, RTGCPTR GCPtrEffDst);
+static VBOXSTRICTRC hmR0VmxExitClts(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo, uint8_t cbInstr);
+static VBOXSTRICTRC hmR0VmxExitMovFromCrX(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo, uint8_t cbInstr, uint8_t iGReg, uint8_t iCrReg);
+static VBOXSTRICTRC hmR0VmxExitMovToCrX(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo, uint8_t cbInstr, uint8_t iGReg, uint8_t iCrReg);
 /** @} */
 
 
@@ -2948,7 +3004,7 @@ static int hmR0VmxSetupVmcsPinCtls(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo)
     {
         Assert(pVM->hm.s.vmx.Msrs.PinCtls.n.allowed1  & VMX_PIN_CTLS_POSTED_INT);
         Assert(pVM->hm.s.vmx.Msrs.ExitCtls.n.allowed1 & VMX_EXIT_CTLS_ACK_EXT_INT);
-        fVal |= VMX_PIN_CTL_POSTED_INT;
+        fVal |= VMX_PIN_CTLS_POSTED_INT;
     }
 #endif
 
@@ -12450,8 +12506,8 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExit(PVMCPU pVCpu, PVMXTRANSIENT pVmxTrans
 #else
 # define VMEXIT_CALL_RET(a_fSave, a_CallExpr) return a_CallExpr
 #endif
-    uint32_t const rcReason = pVmxTransient->uExitReason;
-    switch (rcReason)
+    uint32_t const uExitReason = pVmxTransient->uExitReason;
+    switch (uExitReason)
     {
         case VMX_EXIT_EPT_MISCONFIG:           VMEXIT_CALL_RET(0, hmR0VmxExitEptMisconfig(pVCpu, pVmxTransient));
         case VMX_EXIT_EPT_VIOLATION:           VMEXIT_CALL_RET(0, hmR0VmxExitEptViolation(pVCpu, pVmxTransient));
@@ -12551,107 +12607,15 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExit(PVMCPU pVCpu, PVMXTRANSIENT pVmxTrans
  */
 DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExitNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
-    VBOXSTRICTRC   rcStrict;
     uint32_t const uExitReason = pVmxTransient->uExitReason;
     switch (uExitReason)
     {
-        case VMX_EXIT_EPT_MISCONFIG:
-            rcStrict = hmR0VmxExitEptMisconfig(pVCpu, pVmxTransient);
-            break;
-
-        case VMX_EXIT_EPT_VIOLATION:
-            rcStrict = hmR0VmxExitEptViolation(pVCpu, pVmxTransient);
-            break;
-
-        case VMX_EXIT_IO_INSTR:
-        {
-            int rc = hmR0VmxReadExitQualVmcs(pVCpu, pVmxTransient);
-            AssertRCReturn(rc, rc);
-
-            uint32_t const uIOPort = VMX_EXIT_QUAL_IO_PORT(pVmxTransient->uExitQual);
-            uint8_t  const uIOSize = VMX_EXIT_QUAL_IO_SIZE(pVmxTransient->uExitQual);
-            AssertReturn(uIOSize <= 3 && uIOSize != 2, VERR_VMX_IPE_1);
-
-            static uint32_t const s_aIOSizes[4] = { 1, 2, 0, 4 };   /* Size of the I/O accesses in bytes. */
-            uint8_t const cbAccess = s_aIOSizes[uIOSize];
-            if (CPUMIsGuestVmxIoInterceptSet(pVCpu, uIOPort, cbAccess))
-            {
-                /*
-                 * IN/OUT instruction:
-                 *   - Provides VM-exit instruction length.
-                 *
-                 * INS/OUTS instruction:
-                 *   - Provides VM-exit instruction length.
-                 *   - Provides Guest-linear address.
-                 *   - Optionally provides VM-exit instruction info (depends on CPU feature).
-                 */
-                PVM pVM = pVCpu->CTX_SUFF(pVM);
-                rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
-                AssertRCReturn(rc, rc);
-
-                /* Make sure we don't use stale VMX-transient info. */
-                pVmxTransient->ExitInstrInfo.u  = 0;
-                pVmxTransient->uGuestLinearAddr = 0;
-
-                bool const fVmxInsOutsInfo = pVM->cpum.ro.GuestFeatures.fVmxInsOutInfo;
-                bool const fIOString       = VMX_EXIT_QUAL_IO_IS_STRING(pVmxTransient->uExitQual);
-                if (fIOString)
-                {
-                    rc |= hmR0VmxReadGuestLinearAddrVmcs(pVCpu, pVmxTransient);
-                    if (fVmxInsOutsInfo)
-                    {
-                        Assert(RT_BF_GET(pVM->hm.s.vmx.Msrs.u64Basic, VMX_BF_BASIC_VMCS_INS_OUTS)); /* Paranoia. */
-                        rc |= hmR0VmxReadExitInstrInfoVmcs(pVmxTransient);
-                    }
-                }
-                AssertRCReturn(rc, rc);
-
-                VMXVEXITINFO ExitInfo;
-                RT_ZERO(ExitInfo);
-                ExitInfo.uReason            = uExitReason;
-                ExitInfo.cbInstr            = pVmxTransient->cbInstr;
-                ExitInfo.u64Qual            = pVmxTransient->uExitQual;
-                ExitInfo.InstrInfo          = pVmxTransient->ExitInstrInfo;
-                ExitInfo.u64GuestLinearAddr = pVmxTransient->uGuestLinearAddr;
-                rcStrict = IEMExecVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
-            }
-            else
-                rcStrict = hmR0VmxExitIoInstr(pVCpu, pVmxTransient);
-            break;
-        }
-
-        case VMX_EXIT_HLT:
-        {
-            int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
-            AssertRCReturn(rc, rc);
-            if (CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS_HLT_EXIT))
-                rcStrict = IEMExecVmxVmexitInstr(pVCpu, uExitReason, pVmxTransient->cbInstr);
-            else
-                rcStrict = hmR0VmxExitHlt(pVCpu, pVmxTransient);
-            break;
-        }
-
-        case VMX_EXIT_RDTSC:
-        {
-            int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
-            AssertRCReturn(rc, rc);
-            if (CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS_RDTSC_EXIT))
-                rcStrict = IEMExecVmxVmexitInstr(pVCpu, uExitReason, pVmxTransient->cbInstr);
-            else
-                rcStrict = hmR0VmxExitRdtsc(pVCpu, pVmxTransient);
-            break;
-        }
-
-        case VMX_EXIT_RDTSCP:
-        {
-            int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
-            AssertRCReturn(rc, rc);
-            if (CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS_RDTSC_EXIT))
-                rcStrict = IEMExecVmxVmexitInstr(pVCpu, uExitReason, pVmxTransient->cbInstr);
-            else
-                rcStrict = hmR0VmxExitRdtsc(pVCpu, pVmxTransient);
-            break;
-        }
+        case VMX_EXIT_EPT_MISCONFIG:    return hmR0VmxExitEptMisconfig(pVCpu, pVmxTransient);
+        case VMX_EXIT_EPT_VIOLATION:    return hmR0VmxExitEptViolation(pVCpu, pVmxTransient);
+        case VMX_EXIT_IO_INSTR:         return hmR0VmxExitIoInstrNested(pVCpu, pVmxTransient);
+        case VMX_EXIT_HLT:              return hmR0VmxExitHltNested(pVCpu, pVmxTransient);
+        case VMX_EXIT_RDTSC:            return hmR0VmxExitRdtscNested(pVCpu, pVmxTransient);
+        case VMX_EXIT_RDTSCP:           return hmR0VmxExitRdtscpNested(pVCpu, pVmxTransient);
 
         /*
          * Instructions that cause VM-exits unconditionally.
@@ -12665,12 +12629,7 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExitNested(PVMCPU pVCpu, PVMXTRANSIENT pVm
         case VMX_EXIT_VMLAUNCH:
         case VMX_EXIT_VMRESUME:
         case VMX_EXIT_VMXOFF:
-        {
-            int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
-            AssertRCReturn(rc, rc);
-            rcStrict = IEMExecVmxVmexitInstr(pVCpu, uExitReason, pVmxTransient->cbInstr);
-            break;
-        }
+            return hmR0VmxExitInstrNested(pVCpu, pVmxTransient);
 
         /*
          * Instructions that cause VM-exits unconditionally.
@@ -12690,387 +12649,51 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExitNested(PVMCPU pVCpu, PVMXTRANSIENT pVm
         case VMX_EXIT_VMPTRLD:
         case VMX_EXIT_VMPTRST:
         case VMX_EXIT_VMXON:
-        {
-            int rc  = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
-            rc     |= hmR0VmxReadExitQualVmcs(pVCpu, pVmxTransient);
-            rc     |= hmR0VmxReadExitInstrInfoVmcs(pVmxTransient);
-            AssertRCReturn(rc, rc);
+            return hmR0VmxExitInstrWithInfoNested(pVCpu, pVmxTransient);
 
-            VMXVEXITINFO ExitInfo;
-            RT_ZERO(ExitInfo);
-            ExitInfo.uReason   = uExitReason;
-            ExitInfo.cbInstr   = pVmxTransient->cbInstr;
-            ExitInfo.u64Qual   = pVmxTransient->uExitQual;
-            ExitInfo.InstrInfo = pVmxTransient->ExitInstrInfo;
-            rcStrict = IEMExecVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
-            break;
-        }
+        /*
+         * We shouldn't direct host physical interrupts to the nested-guest.
+         */
+        case VMX_EXIT_EXT_INT:
+            return hmR0VmxExitExtInt(pVCpu, pVmxTransient);
 
-        case VMX_EXIT_INVLPG:
-        {
-            if (CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS_INVLPG_EXIT))
-            {
-                int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
-                rc    |= hmR0VmxReadExitQualVmcs(pVCpu, pVmxTransient);
-                AssertRCReturn(rc, rc);
-
-                VMXVEXITINFO ExitInfo;
-                RT_ZERO(ExitInfo);
-                ExitInfo.uReason   = uExitReason;
-                ExitInfo.cbInstr   = pVmxTransient->cbInstr;
-                ExitInfo.u64Qual   = pVmxTransient->uExitQual;
-                rcStrict = IEMExecVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
-            }
-            else
-                rcStrict = hmR0VmxExitInvlpg(pVCpu, pVmxTransient);
-            break;
-        }
-
-        case VMX_EXIT_INVPCID:
-        {
-            if (CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS_INVLPG_EXIT))
-            {
-                int rc  = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
-                rc     |= hmR0VmxReadExitQualVmcs(pVCpu, pVmxTransient);
-                rc     |= hmR0VmxReadExitInstrInfoVmcs(pVmxTransient);
-                AssertRCReturn(rc, rc);
-
-                VMXVEXITINFO ExitInfo;
-                RT_ZERO(ExitInfo);
-                ExitInfo.uReason   = uExitReason;
-                ExitInfo.cbInstr   = pVmxTransient->cbInstr;
-                ExitInfo.u64Qual   = pVmxTransient->uExitQual;
-                ExitInfo.InstrInfo = pVmxTransient->ExitInstrInfo;
-                rcStrict = IEMExecVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
-            }
-            else
-                rcStrict = hmR0VmxExitInvpcid(pVCpu, pVmxTransient);
-            break;
-        }
-
-        case VMX_EXIT_RDMSR:
-        {
-            uint32_t fMsrpm;
-            if (CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS_USE_MSR_BITMAPS))
-                fMsrpm = CPUMGetVmxMsrPermission(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvMsrBitmap), pVCpu->cpum.GstCtx.ecx);
-            else
-                fMsrpm = VMXMSRPM_EXIT_RD;
-
-            if (fMsrpm & VMXMSRPM_EXIT_RD)
-            {
-                int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
-                AssertRCReturn(rc, rc);
-                rcStrict = IEMExecVmxVmexitInstr(pVCpu, uExitReason, pVmxTransient->cbInstr);
-            }
-            else
-                rcStrict = hmR0VmxExitRdmsr(pVCpu, pVmxTransient);
-            break;
-        }
-
-        case VMX_EXIT_WRMSR:
-        {
-            uint32_t fMsrpm;
-            if (CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS_USE_MSR_BITMAPS))
-                fMsrpm = CPUMGetVmxMsrPermission(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvMsrBitmap), pVCpu->cpum.GstCtx.ecx);
-            else
-                fMsrpm = VMXMSRPM_EXIT_WR;
-
-            if (fMsrpm & VMXMSRPM_EXIT_WR)
-            {
-                int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
-                AssertRCReturn(rc, rc);
-                rcStrict = IEMExecVmxVmexitInstr(pVCpu, uExitReason, pVmxTransient->cbInstr);
-            }
-            else
-                rcStrict = hmR0VmxExitWrmsr(pVCpu, pVmxTransient);
-            break;
-        }
-
-        case VMX_EXIT_TASK_SWITCH:
-        {
-            int rc = hmR0VmxReadExitQualVmcs(pVCpu, pVmxTransient);
-            rc    |= hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
-            rc    |= hmR0VmxReadIdtVectoringInfoVmcs(pVmxTransient);
-            rc    |= hmR0VmxReadIdtVectoringErrorCodeVmcs(pVmxTransient);
-            AssertRCReturn(rc, rc);
-
-            VMXVEXITINFO ExitInfo;
-            RT_ZERO(ExitInfo);
-            ExitInfo.cbInstr = pVmxTransient->cbInstr;
-            ExitInfo.u64Qual = pVmxTransient->uExitQual;
-
-            VMXVEXITEVENTINFO ExitEventInfo;
-            RT_ZERO(ExitInfo);
-            ExitEventInfo.uIdtVectoringInfo    = pVmxTransient->uIdtVectoringInfo;
-            ExitEventInfo.uIdtVectoringErrCode = pVmxTransient->uIdtVectoringErrorCode;
-
-            rcStrict = IEMExecVmxVmexitTaskSwitch(pVCpu, &ExitInfo, &ExitEventInfo);
-            break;
-        }
-
-        case VMX_EXIT_WBINVD:
-        {
-            if (CPUMIsGuestVmxProcCtls2Set(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS2_WBINVD_EXIT))
-            {
-                int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
-                AssertRCReturn(rc, rc);
-                rcStrict = IEMExecVmxVmexitInstr(pVCpu, uExitReason, pVmxTransient->cbInstr);
-            }
-            else
-                rcStrict = hmR0VmxExitInvpcid(pVCpu, pVmxTransient);
-            break;
-        }
-
-        case VMX_EXIT_MTF:
-        {
-            /** @todo NSTVMX: Should consider debugging nested-guests using VM debugger. */
-            rcStrict = IEMExecVmxVmexit(pVCpu, uExitReason);
-            break;
-        }
+        case VMX_EXIT_RDMSR:            return hmR0VmxExitRdmsrNested(pVCpu, pVmxTransient);
+        case VMX_EXIT_WRMSR:            return hmR0VmxExitWrmsrNested(pVCpu, pVmxTransient);
+        case VMX_EXIT_INVLPG:           return hmR0VmxExitInvlpgNested(pVCpu, pVmxTransient);
+        case VMX_EXIT_INVPCID:          return hmR0VmxExitInvpcidNested(pVCpu, pVmxTransient);
+        case VMX_EXIT_TASK_SWITCH:      return hmR0VmxExitTaskSwitchNested(pVCpu, pVmxTransient);
+        case VMX_EXIT_WBINVD:           return hmR0VmxExitWbinvdNested(pVCpu, pVmxTransient);
+        case VMX_EXIT_MTF:              return hmR0VmxExitMtfNested(pVCpu, pVmxTransient);
 
         case VMX_EXIT_APIC_ACCESS:
         case VMX_EXIT_XCPT_OR_NMI:
         {
             /** @todo NSTVMX: APIC-access, Xcpt or NMI, Mov CRx. */
-            rcStrict = hmR0VmxExitErrUnexpected(pVCpu, pVmxTransient);
-            break;
+            return hmR0VmxExitErrUnexpected(pVCpu, pVmxTransient);
         }
 
-        case VMX_EXIT_MOV_CRX:
-        {
-            int rc  = hmR0VmxReadExitQualVmcs(pVCpu, pVmxTransient);
-            rc     |= hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
-            AssertRCReturn(rc, rc);
+        case VMX_EXIT_MOV_CRX:          return hmR0VmxExitMovCRxNested(pVCpu, pVmxTransient);
+        case VMX_EXIT_INT_WINDOW:       return hmR0VmxExitIntWindowNested(pVCpu, pVmxTransient);
 
-            uint32_t const uAccessType = VMX_EXIT_QUAL_CRX_ACCESS(pVmxTransient->uExitQual);
-            switch (uAccessType)
-            {
-                case VMX_EXIT_QUAL_CRX_ACCESS_WRITE:
-                {
-                    PCVMXVVMCS pVmcsNstGst = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
-                    Assert(pVmcsNstGst);
-                    uint8_t const iCrReg   = VMX_EXIT_QUAL_CRX_REGISTER(pVmxTransient->uExitQual);
-                    uint8_t const iGReg    = VMX_EXIT_QUAL_CRX_GENREG(pVmxTransient->uExitQual);
-                    Assert(iGReg < RT_ELEMENTS(pVCpu->cpum.GstCtx.aGRegs));
-                    uint64_t const uNewCrx = pVCpu->cpum.GstCtx.aGRegs[iGReg].u64;
-                    if (CPUMIsGuestVmxMovToCr0Cr4InterceptSet(pVCpu, &pVCpu->cpum.GstCtx, iCrReg, uNewCrx))
-                    {
-                        VMXVEXITINFO ExitInfo;
-                        RT_ZERO(ExitInfo);
-                        ExitInfo.uReason = uExitReason;
-                        ExitInfo.cbInstr = pVmxTransient->cbInstr;
-                        ExitInfo.u64Qual = pVmxTransient->uExitQual;
-                        rcStrict = IEMExecVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
-                    }
-                    else
-                        rcStrict = hmR0VmxExitMovToCrX(pVCpu, pVmxTransient->cbInstr, iGReg, iCrReg);
-                    break;
-                }
-
-                case VMX_EXIT_QUAL_CRX_ACCESS_READ:
-                {
-                    /*
-                     * CR0/CR4 reads do not cause VM-exits, the read-shadow is used (subject to masking).
-                     * CR2 reads do not cause a VM-exit.
-                     * CR3 reads cause a VM-exit depending on the "CR3 store exiting" control.
-                     * CR8 reads cause a VM-exit depending on the "CR8 store exiting" control.
-                     */
-                    uint8_t const iCrReg = VMX_EXIT_QUAL_CRX_REGISTER(pVmxTransient->uExitQual);
-                    if (   iCrReg == 3
-                        || iCrReg == 8)
-                    {
-                        static const uint32_t s_aCrXReadIntercepts[] = { 0, 0, 0, VMX_PROC_CTLS_CR3_STORE_EXIT, 0,
-                                                                         0, 0, 0, VMX_PROC_CTLS_CR8_STORE_EXIT };
-                        uint32_t const uIntercept = s_aCrXReadIntercepts[iCrReg];
-                        if (CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, uIntercept))
-                        {
-                            VMXVEXITINFO ExitInfo;
-                            RT_ZERO(ExitInfo);
-                            ExitInfo.uReason = uExitReason;
-                            ExitInfo.cbInstr = pVmxTransient->cbInstr;
-                            ExitInfo.u64Qual = pVmxTransient->uExitQual;
-                            rcStrict = IEMExecVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
-                        }
-                        else
-                        {
-                            uint8_t const iGReg = VMX_EXIT_QUAL_CRX_GENREG(pVmxTransient->uExitQual);
-                            rcStrict = hmR0VmxExitMovFromCrX(pVCpu, pVmxTransient->cbInstr, iGReg, iCrReg);
-                        }
-                    }
-                    else
-                    {
-                        pVCpu->hm.s.u32HMError = iCrReg;
-                        AssertMsgFailedReturn(("MOV from CR%d VM-exit must not happen\n", iCrReg), VERR_VMX_UNEXPECTED_EXIT);
-                    }
-                    break;
-                }
-
-                case VMX_EXIT_QUAL_CRX_ACCESS_CLTS:
-                {
-                    PCVMXVVMCS pVmcsNstGst = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
-                    Assert(pVmcsNstGst);
-                    uint64_t const uGstHostMask = pVmcsNstGst->u64Cr0Mask.u;
-                    uint64_t const uReadShadow  = pVmcsNstGst->u64Cr0ReadShadow.u;
-                    if (   (uGstHostMask & X86_CR0_TS)
-                        && (uReadShadow  & X86_CR0_TS))
-                    {
-                        VMXVEXITINFO ExitInfo;
-                        RT_ZERO(ExitInfo);
-                        ExitInfo.uReason = uExitReason;
-                        ExitInfo.cbInstr = pVmxTransient->cbInstr;
-                        ExitInfo.u64Qual = pVmxTransient->uExitQual;
-                        rcStrict = IEMExecVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
-                    }
-                    else
-                        rcStrict = hmR0VmxExitClts(pVCpu, pVmxTransient->cbInstr);
-                    break;
-                }
-
-                case VMX_EXIT_QUAL_CRX_ACCESS_LMSW:        /* LMSW (Load Machine-Status Word into CR0) */
-                {
-                    RTGCPTR        GCPtrEffDst;
-                    uint16_t const uNewMsw     = VMX_EXIT_QUAL_CRX_LMSW_DATA(pVmxTransient->uExitQual);
-                    bool const     fMemOperand = VMX_EXIT_QUAL_CRX_LMSW_OP_MEM(pVmxTransient->uExitQual);
-                    if (fMemOperand)
-                    {
-                        rc = hmR0VmxReadGuestLinearAddrVmcs(pVCpu, pVmxTransient);
-                        AssertRCReturn(rc, rc);
-                        GCPtrEffDst = pVmxTransient->uGuestLinearAddr;
-                    }
-                    else
-                        GCPtrEffDst = NIL_RTGCPTR;
-
-                    if (CPUMIsGuestVmxLmswInterceptSet(pVCpu, &pVCpu->cpum.GstCtx, uNewMsw))
-                    {
-                        VMXVEXITINFO ExitInfo;
-                        RT_ZERO(ExitInfo);
-                        ExitInfo.uReason            = uExitReason;
-                        ExitInfo.cbInstr            = pVmxTransient->cbInstr;
-                        ExitInfo.u64GuestLinearAddr = GCPtrEffDst;
-                        ExitInfo.u64Qual            = pVmxTransient->uExitQual;
-                        rcStrict = IEMExecVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
-                    }
-                    else
-                        rcStrict = hmR0VmxExitLmsw(pVCpu, pVmxTransient->cbInstr, uNewMsw, GCPtrEffDst);
-                    break;
-                }
-
-                default:
-                {
-                    pVCpu->hm.s.u32HMError = uAccessType;
-                    AssertMsgFailedReturn(("Invalid access-type in Mov CRx VM-exit qualification %#x\n", uAccessType),
-                                          VERR_VMX_UNEXPECTED_EXIT);
-                }
-            }
-            break;
-        }
-
-        case VMX_EXIT_EXT_INT:
-        {
-            /* We shouldn't direct physical interrupts to the nested-guest. */
-            rcStrict = hmR0VmxExitExtInt(pVCpu, pVmxTransient);
-            break;
-        }
-
-        case VMX_EXIT_INT_WINDOW:
         case VMX_EXIT_TPR_BELOW_THRESHOLD:
         {
-            /** @todo NSTVMX: Interrupt window, TPR below threshold. */
-            rcStrict = hmR0VmxExitErrUnexpected(pVCpu, pVmxTransient);
-            break;
+            /** @todo NSTVMX: TPR below threshold. */
+            return hmR0VmxExitErrUnexpected(pVCpu, pVmxTransient);
         }
 
-        case VMX_EXIT_MWAIT:
-        {
-            if (CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS_MWAIT_EXIT))
-            {
-                int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
-                AssertRCReturn(rc, rc);
-                rcStrict = IEMExecVmxVmexitInstr(pVCpu, uExitReason, pVmxTransient->cbInstr);
-            }
-            else
-                rcStrict = hmR0VmxExitMwait(pVCpu, pVmxTransient);
-            break;
-        }
-
-        case VMX_EXIT_MONITOR:
-        {
-            if (CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS_MONITOR_EXIT))
-            {
-                int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
-                AssertRCReturn(rc, rc);
-                rcStrict = IEMExecVmxVmexitInstr(pVCpu, uExitReason, pVmxTransient->cbInstr);
-            }
-            else
-                rcStrict = hmR0VmxExitMonitor(pVCpu, pVmxTransient);
-            break;
-        }
-
-        case VMX_EXIT_PAUSE:
-        {
-            /* The CPU would have already performed the necessary CPL checks for PAUSE-loop exiting. */
-            /** @todo NSTVMX: Think about this more. Does the outer guest need to intercept
-             *        PAUSE when executing a nested-guest? If it does not, we would not need
-             *        to check for the intercepts here. Just call VM-exit... */
-            if (   CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS_PAUSE_EXIT)
-                || CPUMIsGuestVmxProcCtls2Set(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS2_PAUSE_LOOP_EXIT))
-            {
-                int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
-                AssertRCReturn(rc, rc);
-                rcStrict = IEMExecVmxVmexitInstr(pVCpu, uExitReason, pVmxTransient->cbInstr);
-            }
-            else
-                rcStrict = hmR0VmxExitPause(pVCpu, pVmxTransient);
-            break;
-        }
+        case VMX_EXIT_MWAIT:            return hmR0VmxExitMwaitNested(pVCpu, pVmxTransient);
+        case VMX_EXIT_MONITOR:          return hmR0VmxExitMonitorNested(pVCpu, pVmxTransient);
+        case VMX_EXIT_PAUSE:            return hmR0VmxExitPauseNested(pVCpu, pVmxTransient);
 
         case VMX_EXIT_PREEMPT_TIMER:
         {
             /** @todo NSTVMX: Preempt timer. */
-            rcStrict = hmR0VmxExitErrUnexpected(pVCpu, pVmxTransient);
-            break;
+            return hmR0VmxExitErrUnexpected(pVCpu, pVmxTransient);
         }
 
-        case VMX_EXIT_MOV_DRX:
-        {
-            if (CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS_MOV_DR_EXIT))
-            {
-                int rc = hmR0VmxReadExitQualVmcs(pVCpu, pVmxTransient);
-                rc    |= hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
-                AssertRCReturn(rc, rc);
-
-                VMXVEXITINFO ExitInfo;
-                RT_ZERO(ExitInfo);
-                ExitInfo.cbInstr = pVmxTransient->cbInstr;
-                ExitInfo.u64Qual = pVmxTransient->uExitQual;
-                rcStrict = IEMExecVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
-            }
-            else
-                rcStrict = hmR0VmxExitMovDRx(pVCpu, pVmxTransient);
-            break;
-        }
-
+        case VMX_EXIT_MOV_DRX:          return hmR0VmxExitMovDRxNested(pVCpu, pVmxTransient);
         case VMX_EXIT_GDTR_IDTR_ACCESS:
-        case VMX_EXIT_LDTR_TR_ACCESS:
-        {
-            if (CPUMIsGuestVmxProcCtls2Set(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS2_DESC_TABLE_EXIT))
-            {
-                int rc = hmR0VmxReadExitQualVmcs(pVCpu, pVmxTransient);
-                rc    |= hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
-                rc    |= hmR0VmxReadExitInstrInfoVmcs(pVmxTransient);
-                AssertRCReturn(rc, rc);
-
-                VMXVEXITINFO ExitInfo;
-                RT_ZERO(ExitInfo);
-                ExitInfo.cbInstr   = pVmxTransient->cbInstr;
-                ExitInfo.u64Qual   = pVmxTransient->uExitQual;
-                ExitInfo.InstrInfo = pVmxTransient->ExitInstrInfo;
-                rcStrict = IEMExecVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
-            }
-            else
-                rcStrict = hmR0VmxExitXdtrAccess(pVCpu, pVmxTransient);
-            break;
-        }
+        case VMX_EXIT_LDTR_TR_ACCESS:   return hmR0VmxExitXdtrAccessNested(pVCpu, pVmxTransient);
 
         case VMX_EXIT_RDRAND:
         case VMX_EXIT_RDPMC:
@@ -13097,17 +12720,11 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExitNested(PVMCPU pVCpu, PVMXTRANSIENT pVm
         case VMX_EXIT_VIRTUALIZED_EOI:
         case VMX_EXIT_APIC_WRITE:
         default:
-            rcStrict = hmR0VmxExitErrUnexpected(pVCpu, pVmxTransient);
-            break;
+        {
+            /** @todo NSTVMX: implement me! */
+            return hmR0VmxExitErrUnexpected(pVCpu, pVmxTransient);
+        }
     }
-
-    if (rcStrict == VINF_IEM_RAISED_XCPT)
-    {
-        ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_RAISED_XCPT_MASK);
-        rcStrict = VINF_SUCCESS;
-    }
-
-    return rcStrict;
 }
 #endif /* VBOX_WITH_NESTED_HWVIRT_VMX */
 
@@ -14423,8 +14040,8 @@ HMVMX_EXIT_NSRC_DECL hmR0VmxExitTprBelowThreshold(PVMCPU pVCpu, PVMXTRANSIENT pV
  *
  * @retval VINF_SUCCESS when guest execution can continue.
  * @retval VINF_PGM_SYNC_CR3 CR3 sync is required, back to ring-3.
- * @retval VERR_EM_INTERPRETER when something unexpected happened, fallback to
- *         interpreter.
+ * @retval VERR_EM_RESCHEDULE_REM when we need to return to ring-3 due to
+ *         incompatible guest state for VMX execution (real-on-v86 case).
  */
 HMVMX_EXIT_DECL hmR0VmxExitMovCRx(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
@@ -14434,7 +14051,6 @@ HMVMX_EXIT_DECL hmR0VmxExitMovCRx(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
     PCVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
     int rc = hmR0VmxReadExitQualVmcs(pVCpu, pVmxTransient);
     rc    |= hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
-    rc    |= hmR0VmxImportGuestState(pVCpu, pVmcsInfo, IEM_CPUMCTX_EXTRN_MUST_MASK);
     AssertRCReturn(rc, rc);
 
     VBOXSTRICTRC rcStrict;
@@ -14445,6 +14061,10 @@ HMVMX_EXIT_DECL hmR0VmxExitMovCRx(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
     {
         case VMX_EXIT_QUAL_CRX_ACCESS_WRITE:       /* MOV to CRx */
         {
+            rc = hmR0VmxImportGuestState(pVCpu, pVmcsInfo, IEM_CPUMCTX_EXTRN_MUST_MASK);
+            AssertRCReturn(rc, rc);
+
+            HMVMX_CPUMCTX_ASSERT(pVCpu, CPUMCTX_EXTRN_CR0);
             uint32_t const uOldCr0 = pVCpu->cpum.GstCtx.cr0;
             uint8_t const  iGReg   = VMX_EXIT_QUAL_CRX_GENREG(uExitQual);
             uint8_t const  iCrReg  = VMX_EXIT_QUAL_CRX_REGISTER(uExitQual);
@@ -14464,9 +14084,8 @@ HMVMX_EXIT_DECL hmR0VmxExitMovCRx(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
             Assert(   iCrReg != 8
                    || !(pVmcsInfo->u32ProcCtls & VMX_PROC_CTLS_USE_TPR_SHADOW));
 
-            rcStrict = hmR0VmxExitMovToCrX(pVCpu, pVmxTransient->cbInstr, iGReg, iCrReg);
+            rcStrict = hmR0VmxExitMovToCrX(pVCpu, pVmcsInfo, pVmxTransient->cbInstr, iGReg, iCrReg);
             AssertMsg(   rcStrict == VINF_SUCCESS
-                      || rcStrict == VINF_IEM_RAISED_XCPT
                       || rcStrict == VINF_PGM_SYNC_CR3, ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
 
             /*
@@ -14476,8 +14095,8 @@ HMVMX_EXIT_DECL hmR0VmxExitMovCRx(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
              * there till the selector values are V86 mode compatible.
              *
              * Note! Using VINF_EM_RESCHEDULE_REM here rather than VINF_EM_RESCHEDULE since the
-             *       latter is an alias for VINF_IEM_RAISED_XCPT which is converted to VINF_SUCCESs
-             *       at the end of this function.
+             *       latter is an alias for VINF_IEM_RAISED_XCPT which is asserted at the end of
+             *       this function.
              */
             if (   iCrReg == 0
                 && rcStrict == VINF_SUCCESS
@@ -14514,7 +14133,7 @@ HMVMX_EXIT_DECL hmR0VmxExitMovCRx(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
             Assert(   iCrReg != 8
                    || !(pVmcsInfo->u32ProcCtls & VMX_PROC_CTLS_USE_TPR_SHADOW));
 
-            rcStrict = hmR0VmxExitMovFromCrX(pVCpu, pVmxTransient->cbInstr, iGReg, iCrReg);
+            rcStrict = hmR0VmxExitMovFromCrX(pVCpu, pVmcsInfo, pVmxTransient->cbInstr, iGReg, iCrReg);
             break;
         }
 
@@ -14523,7 +14142,7 @@ HMVMX_EXIT_DECL hmR0VmxExitMovCRx(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
             /*
              * CLTS (Clear Task-Switch Flag in CR0).
              */
-            rcStrict = hmR0VmxExitClts(pVCpu, pVmxTransient->cbInstr);
+            rcStrict = hmR0VmxExitClts(pVCpu, pVmcsInfo, pVmxTransient->cbInstr);
             break;
         }
 
@@ -14545,7 +14164,7 @@ HMVMX_EXIT_DECL hmR0VmxExitMovCRx(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
             }
             else
                 GCPtrEffDst = NIL_RTGCPTR;
-            rcStrict = hmR0VmxExitLmsw(pVCpu, cbInstr, uMsw, GCPtrEffDst);
+            rcStrict = hmR0VmxExitLmsw(pVCpu, pVmcsInfo, cbInstr, uMsw, GCPtrEffDst);
             break;
         }
 
@@ -14553,17 +14172,13 @@ HMVMX_EXIT_DECL hmR0VmxExitMovCRx(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
         {
             pVCpu->hm.s.u32HMError = uAccessType;
             AssertMsgFailedReturn(("Invalid access-type in Mov CRx VM-exit qualification %#x\n", uAccessType),
-                                  VERR_VMX_UNEXPECTED_EXCEPTION);
+                                  VERR_VMX_UNEXPECTED_EXIT);
         }
     }
 
-    Assert(   (pVCpu->hm.s.fCtxChanged & (HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS))
-           == (HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS));
-    if (rcStrict == VINF_IEM_RAISED_XCPT)
-    {
-        ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_RAISED_XCPT_MASK);
-        rcStrict = VINF_SUCCESS;
-    }
+    Assert((pVCpu->hm.s.fCtxChanged & (HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS))
+                                   == (HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS));
+    Assert(rcStrict != VINF_IEM_RAISED_XCPT);
 
     STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExitMovCRx, y2);
     NOREF(pVM);
@@ -15653,15 +15268,25 @@ static VBOXSTRICTRC hmR0VmxExitXcptPF(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 /**
  * VM-exit helper for LMSW.
  */
-static VBOXSTRICTRC hmR0VmxExitLmsw(PVMCPU pVCpu, uint8_t cbInstr, uint16_t uMsw, RTGCPTR GCPtrEffDst)
+static VBOXSTRICTRC hmR0VmxExitLmsw(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo, uint8_t cbInstr, uint16_t uMsw,
+                                    RTGCPTR GCPtrEffDst)
 {
+    int rc = hmR0VmxImportGuestState(pVCpu, pVmcsInfo, IEM_CPUMCTX_EXTRN_MUST_MASK);
+    AssertRCReturn(rc, rc);
+
     VBOXSTRICTRC rcStrict = IEMExecDecodedLmsw(pVCpu, cbInstr, uMsw, GCPtrEffDst);
     AssertMsg(   rcStrict == VINF_SUCCESS
               || rcStrict == VINF_IEM_RAISED_XCPT, ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
-    STAM_COUNTER_INC(&pVCpu->hm.s.StatExitLmsw);
-    Log4Func(("rcStrict=%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
 
     ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS | HM_CHANGED_GUEST_CR0);
+    if (rcStrict == VINF_IEM_RAISED_XCPT)
+    {
+        ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_RAISED_XCPT_MASK);
+        rcStrict = VINF_SUCCESS;
+    }
+
+    STAM_COUNTER_INC(&pVCpu->hm.s.StatExitLmsw);
+    Log4Func(("rcStrict=%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
     return rcStrict;
 }
 
@@ -15669,14 +15294,23 @@ static VBOXSTRICTRC hmR0VmxExitLmsw(PVMCPU pVCpu, uint8_t cbInstr, uint16_t uMsw
 /**
  * VM-exit helper for CLTS.
  */
-static VBOXSTRICTRC hmR0VmxExitClts(PVMCPU pVCpu, uint8_t cbInstr)
+static VBOXSTRICTRC hmR0VmxExitClts(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo, uint8_t cbInstr)
 {
+    int rc = hmR0VmxImportGuestState(pVCpu, pVmcsInfo, IEM_CPUMCTX_EXTRN_MUST_MASK);
+    AssertRCReturn(rc, rc);
+
     VBOXSTRICTRC rcStrict = IEMExecDecodedClts(pVCpu, cbInstr);
     AssertMsg(   rcStrict == VINF_SUCCESS
               || rcStrict == VINF_IEM_RAISED_XCPT, ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
 
-    STAM_COUNTER_INC(&pVCpu->hm.s.StatExitClts);
     ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS | HM_CHANGED_GUEST_CR0);
+    if (rcStrict == VINF_IEM_RAISED_XCPT)
+    {
+        ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_RAISED_XCPT_MASK);
+        rcStrict = VINF_SUCCESS;
+    }
+
+    STAM_COUNTER_INC(&pVCpu->hm.s.StatExitClts);
     Log4Func(("rcStrict=%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
     return rcStrict;
 }
@@ -15685,10 +15319,13 @@ static VBOXSTRICTRC hmR0VmxExitClts(PVMCPU pVCpu, uint8_t cbInstr)
 /**
  * VM-exit helper for MOV from CRx (CRx read).
  */
-static VBOXSTRICTRC hmR0VmxExitMovFromCrX(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iGReg, uint8_t iCrReg)
+static VBOXSTRICTRC hmR0VmxExitMovFromCrX(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo, uint8_t cbInstr, uint8_t iGReg, uint8_t iCrReg)
 {
     Assert(iCrReg < 16);
     Assert(iGReg < RT_ELEMENTS(pVCpu->cpum.GstCtx.aGRegs));
+
+    int rc = hmR0VmxImportGuestState(pVCpu, pVmcsInfo, IEM_CPUMCTX_EXTRN_MUST_MASK);
+    AssertRCReturn(rc, rc);
 
     VBOXSTRICTRC rcStrict = IEMExecDecodedMovCRxRead(pVCpu, cbInstr, iGReg, iCrReg);
     AssertMsg(   rcStrict == VINF_SUCCESS
@@ -15698,7 +15335,6 @@ static VBOXSTRICTRC hmR0VmxExitMovFromCrX(PVMCPU pVCpu, uint8_t cbInstr, uint8_t
         ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS | HM_CHANGED_GUEST_RSP);
     else
         ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS);
-
 #ifdef VBOX_WITH_STATISTICS
     switch (iCrReg)
     {
@@ -15717,8 +15353,11 @@ static VBOXSTRICTRC hmR0VmxExitMovFromCrX(PVMCPU pVCpu, uint8_t cbInstr, uint8_t
 /**
  * VM-exit helper for MOV to CRx (CRx write).
  */
-static VBOXSTRICTRC hmR0VmxExitMovToCrX(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iGReg, uint8_t iCrReg)
+static VBOXSTRICTRC hmR0VmxExitMovToCrX(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo, uint8_t cbInstr, uint8_t iGReg, uint8_t iCrReg)
 {
+    int rc = hmR0VmxImportGuestState(pVCpu, pVmcsInfo, IEM_CPUMCTX_EXTRN_MUST_MASK);
+    AssertRCReturn(rc, rc);
+
     VBOXSTRICTRC rcStrict = IEMExecDecodedMovCRxWrite(pVCpu, cbInstr, iCrReg, iGReg);
     AssertMsg(   rcStrict == VINF_SUCCESS
               || rcStrict == VINF_IEM_RAISED_XCPT
@@ -15771,6 +15410,11 @@ static VBOXSTRICTRC hmR0VmxExitMovToCrX(PVMCPU pVCpu, uint8_t cbInstr, uint8_t i
             break;
     }
 
+    if (rcStrict == VINF_IEM_RAISED_XCPT)
+    {
+        ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_RAISED_XCPT_MASK);
+        rcStrict = VINF_SUCCESS;
+    }
     return rcStrict;
 }
 
@@ -16115,5 +15759,546 @@ HMVMX_EXIT_DECL hmR0VmxExitInvvpid(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 }
 
 /** @} */
+
+/** @name Nested-guest VM-exit handlers.
+ * @{
+ */
+/* -=-=-=-=-=-=-=-=--=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
+/* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- Nested-guest VM-exit handlers -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
+/* -=-=-=-=-=-=-=-=--=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
+
+/**
+ * Nested-guest VM-exit handler for interrupt-window exiting (VMX_EXIT_INT_WINDOW).
+ */
+HMVMX_EXIT_NSRC_DECL hmR0VmxExitIntWindowNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
+{
+    if (CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS_INT_WINDOW_EXIT))
+        return IEMExecVmxVmexit(pVCpu, pVmxTransient->uExitReason);
+    return hmR0VmxExitIntWindow(pVCpu, pVmxTransient);
+}
+
+
+/**
+ * Nested-guest VM-exit handler for task switches (VMX_EXIT_TASK_SWITCH).
+ * Unconditional VM-exit.
+ */
+HMVMX_EXIT_DECL hmR0VmxExitTaskSwitchNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
+{
+    int rc = hmR0VmxReadExitQualVmcs(pVCpu, pVmxTransient);
+    rc    |= hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
+    rc    |= hmR0VmxReadIdtVectoringInfoVmcs(pVmxTransient);
+    rc    |= hmR0VmxReadIdtVectoringErrorCodeVmcs(pVmxTransient);
+    AssertRCReturn(rc, rc);
+
+    VMXVEXITINFO ExitInfo;
+    RT_ZERO(ExitInfo);
+    ExitInfo.cbInstr = pVmxTransient->cbInstr;
+    ExitInfo.u64Qual = pVmxTransient->uExitQual;
+
+    VMXVEXITEVENTINFO ExitEventInfo;
+    RT_ZERO(ExitInfo);
+    ExitEventInfo.uIdtVectoringInfo    = pVmxTransient->uIdtVectoringInfo;
+    ExitEventInfo.uIdtVectoringErrCode = pVmxTransient->uIdtVectoringErrorCode;
+    return IEMExecVmxVmexitTaskSwitch(pVCpu, &ExitInfo, &ExitEventInfo);
+}
+
+
+/**
+ * Nested-guest VM-exit handler for HLT (VMX_EXIT_HLT). Conditional VM-exit.
+ */
+HMVMX_EXIT_DECL hmR0VmxExitHltNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
+{
+    if (CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS_HLT_EXIT))
+    {
+        int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
+        AssertRCReturn(rc, rc);
+        return IEMExecVmxVmexitInstr(pVCpu, pVmxTransient->uExitReason, pVmxTransient->cbInstr);
+    }
+    return hmR0VmxExitHlt(pVCpu, pVmxTransient);
+}
+
+
+/**
+ * Nested-guest VM-exit handler for INVLPG (VMX_EXIT_INVLPG). Conditional VM-exit.
+ */
+HMVMX_EXIT_DECL hmR0VmxExitInvlpgNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
+{
+    if (CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS_INVLPG_EXIT))
+    {
+        int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
+        rc    |= hmR0VmxReadExitQualVmcs(pVCpu, pVmxTransient);
+        AssertRCReturn(rc, rc);
+
+        VMXVEXITINFO ExitInfo;
+        RT_ZERO(ExitInfo);
+        ExitInfo.uReason   = pVmxTransient->uExitReason;
+        ExitInfo.cbInstr   = pVmxTransient->cbInstr;
+        ExitInfo.u64Qual   = pVmxTransient->uExitQual;
+        return IEMExecVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
+    }
+    return hmR0VmxExitInvlpg(pVCpu, pVmxTransient);
+}
+
+
+/**
+ * Nested-guest VM-exit handler for RDTSC (VMX_EXIT_RDTSC). Conditional VM-exit.
+ */
+HMVMX_EXIT_DECL hmR0VmxExitRdtscNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
+{
+    if (CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS_RDTSC_EXIT))
+    {
+        int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
+        AssertRCReturn(rc, rc);
+        return IEMExecVmxVmexitInstr(pVCpu, pVmxTransient->uExitReason, pVmxTransient->cbInstr);
+    }
+
+    return hmR0VmxExitRdtsc(pVCpu, pVmxTransient);
+}
+
+
+/**
+ * Nested-guest VM-exit handler for control-register accesses (VMX_EXIT_MOV_CRX).
+ * Conditional VM-exit.
+ */
+HMVMX_EXIT_DECL hmR0VmxExitMovCRxNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
+{
+    int rc  = hmR0VmxReadExitQualVmcs(pVCpu, pVmxTransient);
+    rc     |= hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
+    AssertRCReturn(rc, rc);
+
+    VBOXSTRICTRC rcStrict;
+    uint32_t const uAccessType = VMX_EXIT_QUAL_CRX_ACCESS(pVmxTransient->uExitQual);
+    switch (uAccessType)
+    {
+        case VMX_EXIT_QUAL_CRX_ACCESS_WRITE:
+        {
+            PCVMXVVMCS pVmcsNstGst = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+            Assert(pVmcsNstGst);
+            uint8_t const iCrReg   = VMX_EXIT_QUAL_CRX_REGISTER(pVmxTransient->uExitQual);
+            uint8_t const iGReg    = VMX_EXIT_QUAL_CRX_GENREG(pVmxTransient->uExitQual);
+            Assert(iGReg < RT_ELEMENTS(pVCpu->cpum.GstCtx.aGRegs));
+            uint64_t const uNewCrX = pVCpu->cpum.GstCtx.aGRegs[iGReg].u64;
+            if (CPUMIsGuestVmxMovToCr0Cr4InterceptSet(pVCpu, &pVCpu->cpum.GstCtx, iCrReg, uNewCrX))
+            {
+                VMXVEXITINFO ExitInfo;
+                RT_ZERO(ExitInfo);
+                ExitInfo.uReason = pVmxTransient->uExitReason;
+                ExitInfo.cbInstr = pVmxTransient->cbInstr;
+                ExitInfo.u64Qual = pVmxTransient->uExitQual;
+                rcStrict = IEMExecVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
+            }
+            else
+                rcStrict = hmR0VmxExitMovToCrX(pVCpu, pVmxTransient->pVmcsInfo, pVmxTransient->cbInstr, iGReg, iCrReg);
+            break;
+        }
+
+        case VMX_EXIT_QUAL_CRX_ACCESS_READ:
+        {
+            /*
+             * CR0/CR4 reads do not cause VM-exits, the read-shadow is used (subject to masking).
+             * CR2 reads do not cause a VM-exit.
+             * CR3 reads cause a VM-exit depending on the "CR3 store exiting" control.
+             * CR8 reads cause a VM-exit depending on the "CR8 store exiting" control.
+             */
+            uint8_t const iCrReg = VMX_EXIT_QUAL_CRX_REGISTER(pVmxTransient->uExitQual);
+            if (   iCrReg == 3
+                || iCrReg == 8)
+            {
+                static const uint32_t s_aCrXReadIntercepts[] = { 0, 0, 0, VMX_PROC_CTLS_CR3_STORE_EXIT, 0,
+                                                                 0, 0, 0, VMX_PROC_CTLS_CR8_STORE_EXIT };
+                uint32_t const uIntercept = s_aCrXReadIntercepts[iCrReg];
+                if (CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, uIntercept))
+                {
+                    VMXVEXITINFO ExitInfo;
+                    RT_ZERO(ExitInfo);
+                    ExitInfo.uReason = pVmxTransient->uExitReason;
+                    ExitInfo.cbInstr = pVmxTransient->cbInstr;
+                    ExitInfo.u64Qual = pVmxTransient->uExitQual;
+                    rcStrict = IEMExecVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
+                }
+                else
+                {
+                    uint8_t const iGReg = VMX_EXIT_QUAL_CRX_GENREG(pVmxTransient->uExitQual);
+                    rcStrict = hmR0VmxExitMovFromCrX(pVCpu, pVmxTransient->pVmcsInfo, pVmxTransient->cbInstr, iGReg, iCrReg);
+                }
+            }
+            else
+            {
+                pVCpu->hm.s.u32HMError = iCrReg;
+                AssertMsgFailedReturn(("MOV from CR%d VM-exit must not happen\n", iCrReg), VERR_VMX_UNEXPECTED_EXIT);
+            }
+            break;
+        }
+
+        case VMX_EXIT_QUAL_CRX_ACCESS_CLTS:
+        {
+            PCVMXVVMCS pVmcsNstGst = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+            Assert(pVmcsNstGst);
+            uint64_t const uGstHostMask = pVmcsNstGst->u64Cr0Mask.u;
+            uint64_t const uReadShadow  = pVmcsNstGst->u64Cr0ReadShadow.u;
+            if (   (uGstHostMask & X86_CR0_TS)
+                && (uReadShadow  & X86_CR0_TS))
+            {
+                VMXVEXITINFO ExitInfo;
+                RT_ZERO(ExitInfo);
+                ExitInfo.uReason = pVmxTransient->uExitReason;
+                ExitInfo.cbInstr = pVmxTransient->cbInstr;
+                ExitInfo.u64Qual = pVmxTransient->uExitQual;
+                rcStrict = IEMExecVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
+            }
+            else
+                rcStrict = hmR0VmxExitClts(pVCpu, pVmxTransient->pVmcsInfo, pVmxTransient->cbInstr);
+            break;
+        }
+
+        case VMX_EXIT_QUAL_CRX_ACCESS_LMSW:        /* LMSW (Load Machine-Status Word into CR0) */
+        {
+            RTGCPTR        GCPtrEffDst;
+            uint16_t const uNewMsw     = VMX_EXIT_QUAL_CRX_LMSW_DATA(pVmxTransient->uExitQual);
+            bool const     fMemOperand = VMX_EXIT_QUAL_CRX_LMSW_OP_MEM(pVmxTransient->uExitQual);
+            if (fMemOperand)
+            {
+                rc = hmR0VmxReadGuestLinearAddrVmcs(pVCpu, pVmxTransient);
+                AssertRCReturn(rc, rc);
+                GCPtrEffDst = pVmxTransient->uGuestLinearAddr;
+            }
+            else
+                GCPtrEffDst = NIL_RTGCPTR;
+
+            if (CPUMIsGuestVmxLmswInterceptSet(pVCpu, &pVCpu->cpum.GstCtx, uNewMsw))
+            {
+                VMXVEXITINFO ExitInfo;
+                RT_ZERO(ExitInfo);
+                ExitInfo.uReason            = pVmxTransient->uExitReason;
+                ExitInfo.cbInstr            = pVmxTransient->cbInstr;
+                ExitInfo.u64GuestLinearAddr = GCPtrEffDst;
+                ExitInfo.u64Qual            = pVmxTransient->uExitQual;
+                rcStrict = IEMExecVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
+            }
+            else
+                rcStrict = hmR0VmxExitLmsw(pVCpu, pVmxTransient->pVmcsInfo, pVmxTransient->cbInstr, uNewMsw, GCPtrEffDst);
+            break;
+        }
+
+        default:
+        {
+            pVCpu->hm.s.u32HMError = uAccessType;
+            AssertMsgFailedReturn(("Invalid access-type in Mov CRx VM-exit qualification %#x\n", uAccessType),
+                                  VERR_VMX_UNEXPECTED_EXIT);
+        }
+    }
+
+    if (rcStrict == VINF_IEM_RAISED_XCPT)
+    {
+        ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_RAISED_XCPT_MASK);
+        rcStrict = VINF_SUCCESS;
+    }
+    return rcStrict;
+}
+
+
+/**
+ * Nested-guest VM-exit handler for debug-register accesses (VMX_EXIT_MOV_DRX).
+ * Conditional VM-exit.
+ */
+HMVMX_EXIT_DECL hmR0VmxExitMovDRxNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
+{
+    if (CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS_MOV_DR_EXIT))
+    {
+        int rc = hmR0VmxReadExitQualVmcs(pVCpu, pVmxTransient);
+        rc    |= hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
+        AssertRCReturn(rc, rc);
+
+        VMXVEXITINFO ExitInfo;
+        RT_ZERO(ExitInfo);
+        ExitInfo.cbInstr = pVmxTransient->cbInstr;
+        ExitInfo.u64Qual = pVmxTransient->uExitQual;
+        return IEMExecVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
+    }
+    return hmR0VmxExitMovDRx(pVCpu, pVmxTransient);
+}
+
+
+/**
+ * Nested-guest VM-exit handler for I/O instructions (VMX_EXIT_IO_INSTR).
+ * Conditional VM-exit.
+ */
+HMVMX_EXIT_DECL hmR0VmxExitIoInstrNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
+{
+    int rc = hmR0VmxReadExitQualVmcs(pVCpu, pVmxTransient);
+    AssertRCReturn(rc, rc);
+
+    uint32_t const uIOPort = VMX_EXIT_QUAL_IO_PORT(pVmxTransient->uExitQual);
+    uint8_t  const uIOSize = VMX_EXIT_QUAL_IO_SIZE(pVmxTransient->uExitQual);
+    AssertReturn(uIOSize <= 3 && uIOSize != 2, VERR_VMX_IPE_1);
+
+    static uint32_t const s_aIOSizes[4] = { 1, 2, 0, 4 };   /* Size of the I/O accesses in bytes. */
+    uint8_t const cbAccess = s_aIOSizes[uIOSize];
+    if (CPUMIsGuestVmxIoInterceptSet(pVCpu, uIOPort, cbAccess))
+    {
+        /*
+         * IN/OUT instruction:
+         *   - Provides VM-exit instruction length.
+         *
+         * INS/OUTS instruction:
+         *   - Provides VM-exit instruction length.
+         *   - Provides Guest-linear address.
+         *   - Optionally provides VM-exit instruction info (depends on CPU feature).
+         */
+        PVM pVM = pVCpu->CTX_SUFF(pVM);
+        rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
+        AssertRCReturn(rc, rc);
+
+        /* Make sure we don't use stale VMX-transient info. */
+        pVmxTransient->ExitInstrInfo.u  = 0;
+        pVmxTransient->uGuestLinearAddr = 0;
+
+        bool const fVmxInsOutsInfo = pVM->cpum.ro.GuestFeatures.fVmxInsOutInfo;
+        bool const fIOString       = VMX_EXIT_QUAL_IO_IS_STRING(pVmxTransient->uExitQual);
+        if (fIOString)
+        {
+            rc |= hmR0VmxReadGuestLinearAddrVmcs(pVCpu, pVmxTransient);
+            if (fVmxInsOutsInfo)
+            {
+                Assert(RT_BF_GET(pVM->hm.s.vmx.Msrs.u64Basic, VMX_BF_BASIC_VMCS_INS_OUTS)); /* Paranoia. */
+                rc |= hmR0VmxReadExitInstrInfoVmcs(pVmxTransient);
+            }
+        }
+        AssertRCReturn(rc, rc);
+
+        VMXVEXITINFO ExitInfo;
+        RT_ZERO(ExitInfo);
+        ExitInfo.uReason            = pVmxTransient->uExitReason;
+        ExitInfo.cbInstr            = pVmxTransient->cbInstr;
+        ExitInfo.u64Qual            = pVmxTransient->uExitQual;
+        ExitInfo.InstrInfo          = pVmxTransient->ExitInstrInfo;
+        ExitInfo.u64GuestLinearAddr = pVmxTransient->uGuestLinearAddr;
+        return IEMExecVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
+    }
+    return hmR0VmxExitIoInstr(pVCpu, pVmxTransient);
+}
+
+
+/**
+ * Nested-guest VM-exit handler for RDMSR (VMX_EXIT_RDMSR).
+ */
+HMVMX_EXIT_DECL hmR0VmxExitRdmsrNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
+{
+    uint32_t fMsrpm;
+    if (CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS_USE_MSR_BITMAPS))
+        fMsrpm = CPUMGetVmxMsrPermission(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvMsrBitmap), pVCpu->cpum.GstCtx.ecx);
+    else
+        fMsrpm = VMXMSRPM_EXIT_RD;
+
+    if (fMsrpm & VMXMSRPM_EXIT_RD)
+    {
+        int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
+        AssertRCReturn(rc, rc);
+        return IEMExecVmxVmexitInstr(pVCpu, pVmxTransient->uExitReason, pVmxTransient->cbInstr);
+    }
+    return hmR0VmxExitRdmsr(pVCpu, pVmxTransient);
+}
+
+
+/**
+ * Nested-guest VM-exit handler for WRMSR (VMX_EXIT_WRMSR).
+ */
+HMVMX_EXIT_DECL hmR0VmxExitWrmsrNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
+{
+    uint32_t fMsrpm;
+    if (CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS_USE_MSR_BITMAPS))
+        fMsrpm = CPUMGetVmxMsrPermission(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvMsrBitmap), pVCpu->cpum.GstCtx.ecx);
+    else
+        fMsrpm = VMXMSRPM_EXIT_WR;
+
+    if (fMsrpm & VMXMSRPM_EXIT_WR)
+    {
+        int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
+        AssertRCReturn(rc, rc);
+        return IEMExecVmxVmexitInstr(pVCpu, pVmxTransient->uExitReason, pVmxTransient->cbInstr);
+    }
+    return hmR0VmxExitWrmsr(pVCpu, pVmxTransient);
+}
+
+
+/**
+ * Nested-guest VM-exit handler for MWAIT (VMX_EXIT_MWAIT). Conditional VM-exit.
+ */
+HMVMX_EXIT_DECL hmR0VmxExitMwaitNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
+{
+    if (CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS_MWAIT_EXIT))
+    {
+        int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
+        AssertRCReturn(rc, rc);
+        return IEMExecVmxVmexitInstr(pVCpu, pVmxTransient->uExitReason, pVmxTransient->cbInstr);
+    }
+    return hmR0VmxExitMwait(pVCpu, pVmxTransient);
+}
+
+
+/**
+ * Nested-guest VM-exit handler for monitor-trap-flag (VMX_EXIT_MTF). Conditional
+ * VM-exit.
+ */
+HMVMX_EXIT_DECL hmR0VmxExitMtfNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
+{
+    /** @todo NSTVMX: Should consider debugging nested-guests using VM debugger. */
+    return IEMExecVmxVmexit(pVCpu, pVmxTransient->uExitReason);
+}
+
+
+/**
+ * Nested-guest VM-exit handler for MONITOR (VMX_EXIT_MONITOR). Conditional VM-exit.
+ */
+HMVMX_EXIT_DECL hmR0VmxExitMonitorNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
+{
+    if (CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS_MONITOR_EXIT))
+    {
+        int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
+        AssertRCReturn(rc, rc);
+        return IEMExecVmxVmexitInstr(pVCpu, pVmxTransient->uExitReason, pVmxTransient->cbInstr);
+    }
+    return hmR0VmxExitMonitor(pVCpu, pVmxTransient);
+}
+
+
+/**
+ * Nested-guest VM-exit handler for PAUSE (VMX_EXIT_PAUSE). Conditional VM-exit.
+ */
+HMVMX_EXIT_DECL hmR0VmxExitPauseNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
+{
+    /** @todo NSTVMX: Think about this more. Does the outer guest need to intercept
+     *        PAUSE when executing a nested-guest? If it does not, we would not need
+     *        to check for the intercepts here. Just call VM-exit... */
+
+    /* The CPU would have already performed the necessary CPL checks for PAUSE-loop exiting. */
+    if (   CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS_PAUSE_EXIT)
+        || CPUMIsGuestVmxProcCtls2Set(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS2_PAUSE_LOOP_EXIT))
+    {
+        int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
+        AssertRCReturn(rc, rc);
+        return IEMExecVmxVmexitInstr(pVCpu, pVmxTransient->uExitReason, pVmxTransient->cbInstr);
+    }
+    return hmR0VmxExitPause(pVCpu, pVmxTransient);
+}
+
+
+/**
+ * Nested-guest VM-exit handler for XDTR (LGDT, SGDT, LIDT, SIDT) accesses
+ * (VMX_EXIT_GDTR_IDTR_ACCESS) and LDT and TR access (LLDT, LTR, SLDT, STR).
+ * Conditional VM-exit.
+ */
+HMVMX_EXIT_DECL hmR0VmxExitXdtrAccessNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
+{
+    if (CPUMIsGuestVmxProcCtls2Set(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS2_DESC_TABLE_EXIT))
+    {
+        int rc = hmR0VmxReadExitQualVmcs(pVCpu, pVmxTransient);
+        rc    |= hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
+        rc    |= hmR0VmxReadExitInstrInfoVmcs(pVmxTransient);
+        AssertRCReturn(rc, rc);
+
+        VMXVEXITINFO ExitInfo;
+        RT_ZERO(ExitInfo);
+        ExitInfo.cbInstr   = pVmxTransient->cbInstr;
+        ExitInfo.u64Qual   = pVmxTransient->uExitQual;
+        ExitInfo.InstrInfo = pVmxTransient->ExitInstrInfo;
+        return IEMExecVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
+    }
+    return hmR0VmxExitXdtrAccess(pVCpu, pVmxTransient);
+}
+
+
+/**
+ * Nested-guest VM-exit handler for RDTSCP (VMX_EXIT_RDTSCP). Conditional VM-exit.
+ */
+HMVMX_EXIT_DECL hmR0VmxExitRdtscpNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
+{
+    if (CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS_RDTSC_EXIT))
+    {
+        int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
+        AssertRCReturn(rc, rc);
+        return IEMExecVmxVmexitInstr(pVCpu, pVmxTransient->uExitReason, pVmxTransient->cbInstr);
+    }
+    return hmR0VmxExitRdtscp(pVCpu, pVmxTransient);
+}
+
+
+/**
+ * Nested-guest VM-exit handler for WBINVD (VMX_EXIT_WBINVD). Conditional VM-exit.
+ */
+HMVMX_EXIT_NSRC_DECL hmR0VmxExitWbinvdNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
+{
+    if (CPUMIsGuestVmxProcCtls2Set(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS2_WBINVD_EXIT))
+    {
+        int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
+        AssertRCReturn(rc, rc);
+        return IEMExecVmxVmexitInstr(pVCpu, pVmxTransient->uExitReason, pVmxTransient->cbInstr);
+    }
+    return hmR0VmxExitInvpcid(pVCpu, pVmxTransient);
+}
+
+
+/**
+ * Nested-guest VM-exit handler for INVPCID (VMX_EXIT_INVPCID). Conditional VM-exit.
+ */
+HMVMX_EXIT_DECL hmR0VmxExitInvpcidNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
+{
+    if (CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS_INVLPG_EXIT))
+    {
+        int rc  = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
+        rc     |= hmR0VmxReadExitQualVmcs(pVCpu, pVmxTransient);
+        rc     |= hmR0VmxReadExitInstrInfoVmcs(pVmxTransient);
+        AssertRCReturn(rc, rc);
+
+        VMXVEXITINFO ExitInfo;
+        RT_ZERO(ExitInfo);
+        ExitInfo.uReason   = pVmxTransient->uExitReason;
+        ExitInfo.cbInstr   = pVmxTransient->cbInstr;
+        ExitInfo.u64Qual   = pVmxTransient->uExitQual;
+        ExitInfo.InstrInfo = pVmxTransient->ExitInstrInfo;
+        return IEMExecVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
+    }
+    return hmR0VmxExitInvpcid(pVCpu, pVmxTransient);
+}
+
+
+/**
+ * Nested-guest VM-exit handler for instructions that cause VM-exits uncondtionally
+ * and only provide the instruction length.
+ *
+ * Unconditional VM-exit.
+ */
+HMVMX_EXIT_DECL hmR0VmxExitInstrNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
+{
+    int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
+    AssertRCReturn(rc, rc);
+    return IEMExecVmxVmexitInstr(pVCpu, pVmxTransient->uExitReason, pVmxTransient->cbInstr);
+}
+
+
+/**
+ * Nested-guest VM-exit handler for instructions that cause VM-exits uncondtionally
+ * but provide instruction length as well as more information.
+ *
+ * Unconditional VM-exit.
+ */
+HMVMX_EXIT_DECL hmR0VmxExitInstrWithInfoNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
+{
+    int rc  = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
+    rc     |= hmR0VmxReadExitQualVmcs(pVCpu, pVmxTransient);
+    rc     |= hmR0VmxReadExitInstrInfoVmcs(pVmxTransient);
+    AssertRCReturn(rc, rc);
+
+    VMXVEXITINFO ExitInfo;
+    RT_ZERO(ExitInfo);
+    ExitInfo.uReason   = pVmxTransient->uExitReason;
+    ExitInfo.cbInstr   = pVmxTransient->cbInstr;
+    ExitInfo.u64Qual   = pVmxTransient->uExitQual;
+    ExitInfo.InstrInfo = pVmxTransient->ExitInstrInfo;
+    return IEMExecVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
+}
+
+/** @} */
+
 #endif /* VBOX_WITH_NESTED_HWVIRT_VMX */
 
