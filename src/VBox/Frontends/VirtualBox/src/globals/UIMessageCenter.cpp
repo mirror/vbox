@@ -1898,6 +1898,30 @@ void UIMessageCenter::cannotCreateMachineFolder(const QString &strFolderName, QW
              .arg(fi.fileName()).arg(fi.absolutePath()));
 }
 
+void UIMessageCenter::cannotCreateAppliance(const CVirtualBox &comVBox, QWidget *pParent /* = 0 */) const
+{
+    error(pParent, MessageType_Critical, tr("<p>Cannot create a virtual appliance.</p>"),
+          UIErrorString::formatErrorInfo(comVBox));
+}
+
+void UIMessageCenter::cannotCreateVirtualSystemDescription(const CAppliance &comAppliance, QWidget *pParent /* = 0 */) const
+{
+    error(pParent, MessageType_Critical, tr("<p>Cannot create a virtual system description.</p>"),
+          UIErrorString::formatErrorInfo(comAppliance));
+}
+
+void UIMessageCenter::cannotAcquireVirtualSystemDescription(const CAppliance &comAppliance, QWidget *pParent /* = 0 */) const
+{
+    error(pParent, MessageType_Critical, tr("<p>Cannot create a virtual system description.</p>"),
+          UIErrorString::formatErrorInfo(comAppliance));
+}
+
+void UIMessageCenter::cannotAcquireCloudInstanceInfo(const CCloudClient &comClient, QWidget *pParent /* = 0 */) const
+{
+    error(pParent, MessageType_Critical, tr("<p>Cannot acquire a cloud instance information.</p>"),
+          UIErrorString::formatErrorInfo(comClient));
+}
+
 void UIMessageCenter::cannotImportAppliance(CAppliance &appliance, QWidget *pParent /* = 0*/) const
 {
     /* Preserve error-info: */

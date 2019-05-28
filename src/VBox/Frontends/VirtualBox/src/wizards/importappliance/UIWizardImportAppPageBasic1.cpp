@@ -38,6 +38,7 @@
 #include "UIWizardImportAppPageBasic2.h"
 
 /* COM includes: */
+#include "CAppliance.h"
 #include "CStringArray.h"
 
 
@@ -333,26 +334,68 @@ void UIWizardImportAppPage1::populateFormProperties()
     /* If client created: */
     if (!m_comCloudClient.isNull())
     {
-        /* Read Cloud Client description form: */
-        CVirtualSystemDescriptionForm comForm;
-        CProgress comProgress = m_comCloudClient.GetExportLaunchDescriptionForm(comForm);
+        /* Create appliance: */
+        CVirtualBox comVBox = vboxGlobal().virtualBox();
+        CAppliance comAppliance = comVBox.CreateAppliance();
 
         /* Show error message if necessary: */
-        if (!m_comCloudClient.isOk())
-            msgCenter().cannotAcquireCloudClientParameter(m_comCloudClient);
+        if (!comVBox.isOk())
+            msgCenter().cannotCreateAppliance(comVBox);
         else
         {
-            /* Show "Acquire export form" progress: */
-            msgCenter().showModalProgressDialog(comProgress,
-                                                UIWizardImportApp::tr("Acquire export form..."),
-                                                ":/progress_reading_appliance_90px.png",
-                                                0, 0);
+            /* Create virtual system description: */
+            comAppliance.CreateVirtualSystemDescriptions(1);
 
             /* Show error message if necessary: */
-            if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-                msgCenter().cannotAcquireCloudClientParameter(comProgress);
+            if (!comAppliance.isOk())
+                msgCenter().cannotCreateVirtualSystemDescription(comAppliance);
             else
-                m_comVSDForm = comForm;
+            {
+                /* Acquire virtual system description: */
+                QVector<CVirtualSystemDescription> descriptions = comAppliance.GetVirtualSystemDescriptions();
+
+                /* Show error message if necessary: */
+                if (!comAppliance.isOk())
+                    msgCenter().cannotAcquireVirtualSystemDescription(comAppliance);
+                else
+                {
+                    /* Make sure there is at least one virtual system description created: */
+                    AssertReturnVoid(!descriptions.isEmpty());
+                    CVirtualSystemDescription comDescription = descriptions.at(0);
+
+                    /* Load default virtual system description values: */
+                    /// @todo make sure this is a progress returning call
+                    m_comCloudClient.GetInstanceInfo(machineId(), comDescription);
+
+                    /* Show error message if necessary: */
+                    if (!m_comCloudClient.isOk())
+                        msgCenter().cannotAcquireCloudInstanceInfo(m_comCloudClient);
+                    else
+                    {
+                        /* Read Cloud Client description form: */
+                        CVirtualSystemDescriptionForm comForm;
+                        CProgress comProgress = m_comCloudClient.GetImportDescriptionForm(comDescription, comForm);
+
+                        /* Show error message if necessary: */
+                        if (!m_comCloudClient.isOk())
+                            msgCenter().cannotAcquireCloudClientParameter(m_comCloudClient);
+                        else
+                        {
+                            /* Show "Acquire export form" progress: */
+                            msgCenter().showModalProgressDialog(comProgress,
+                                                                UIWizardImportApp::tr("Acquire export form..."),
+                                                                ":/progress_reading_appliance_90px.png",
+                                                                0, 0);
+
+                            /* Show error message if necessary: */
+                            if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
+                                msgCenter().cannotAcquireCloudClientParameter(comProgress);
+                            else
+                                m_comVSDForm = comForm;
+                        }
+                    }
+                }
+            }
         }
     }
 }
