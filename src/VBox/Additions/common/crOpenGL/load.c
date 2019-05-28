@@ -468,10 +468,17 @@ static void stubSPUSafeTearDown(void)
     {
         ASMAtomicWriteBool(&stub.bShutdownSyncThread, true);
         {
-            int rc = RTThreadWait(stub.hSyncThread, RT_INDEFINITE_WAIT, NULL);
-            if (RT_FAILURE(rc))
+            /* stubSPUSafeTearDown() can be called from the sync thread in case
+             * of an X11 error:
+             *     XGetGeometry() -> [...] -> _XError() -> exit() -> [...] -> stubExitHandler() -> stubSPUSafetearDown())
+             * Don't hang in that case.
+             */
+            RTTHREAD hSelf = RTThreadSelf();
+            if (hSelf != stub.hSyncThread)
             {
-                WARN(("RTThreadWait_join failed %i", rc));
+                int rc = RTThreadWait(stub.hSyncThread, RT_INDEFINITE_WAIT, NULL);
+                if (RT_FAILURE(rc))
+                    WARN(("RTThreadWait_join failed %i", rc));
             }
         }
     }
