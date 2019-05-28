@@ -421,6 +421,8 @@ static VBOXSTRICTRC hmR0VmxExitXcptAC(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 static VBOXSTRICTRC hmR0VmxExitXcptGeneric(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient);
 static VBOXSTRICTRC hmR0VmxExitLmsw(PVMCPU pVCpu, uint8_t cbInstr, uint16_t uMsw, RTGCPTR GCPtrEffDst);
 static VBOXSTRICTRC hmR0VmxExitClts(PVMCPU pVCpu, uint8_t cbInstr);
+static VBOXSTRICTRC hmR0VmxExitMovFromCrX(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iGReg, uint8_t iCrReg);
+static VBOXSTRICTRC hmR0VmxExitMovToCrX(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iGReg, uint8_t iCrReg);
 /** @} */
 
 
@@ -4950,7 +4952,7 @@ static VBOXSTRICTRC hmR0VmxExportGuestCR3AndCR4(PVMCPU pVCpu, PVMXTRANSIENT pVmx
                 /*
                  * The guest is not using paging, but the CPU (VT-x) has to. While the guest
                  * thinks it accesses physical memory directly, we use our identity-mapped
-                 * page  table to map guest-linear to guest-physical addresses. EPT takes care
+                 * page table to map guest-linear to guest-physical addresses. EPT takes care
                  * of translating it to host-physical addresses.
                  */
                 RTGCPHYS GCPhys;
@@ -12836,7 +12838,8 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExitNested(PVMCPU pVCpu, PVMXTRANSIENT pVm
 
         case VMX_EXIT_MOV_CRX:
         {
-            int rc = hmR0VmxReadExitQualVmcs(pVCpu, pVmxTransient);
+            int rc  = hmR0VmxReadExitQualVmcs(pVCpu, pVmxTransient);
+            rc     |= hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
             AssertRCReturn(rc, rc);
 
             uint32_t const uAccessType = VMX_EXIT_QUAL_CRX_ACCESS(pVmxTransient->uExitQual);
@@ -12854,27 +12857,56 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExitNested(PVMCPU pVCpu, PVMXTRANSIENT pVm
                     {
                         VMXVEXITINFO ExitInfo;
                         RT_ZERO(ExitInfo);
-                        ExitInfo.uReason = VMX_EXIT_MOV_CRX;
+                        ExitInfo.uReason = uExitReason;
                         ExitInfo.cbInstr = pVmxTransient->cbInstr;
                         ExitInfo.u64Qual = pVmxTransient->uExitQual;
                         rcStrict = IEMExecVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
                     }
                     else
-                        rcStrict = hmR0VmxExitMovCRx(pVCpu, pVmxTransient);
+                        rcStrict = hmR0VmxExitMovToCrX(pVCpu, pVmxTransient->cbInstr, iGReg, iCrReg);
                     break;
                 }
 
                 case VMX_EXIT_QUAL_CRX_ACCESS_READ:
                 {
-                    /** @todo NSTVMX: Implement me. */
+                    /*
+                     * CR0/CR4 reads do not cause VM-exits, the read-shadow is used (subject to masking).
+                     * CR2 reads do not cause a VM-exit.
+                     * CR3 reads cause a VM-exit depending on the "CR3 store exiting" control.
+                     * CR8 reads cause a VM-exit depending on the "CR8 store exiting" control.
+                     */
+                    uint8_t const iCrReg = VMX_EXIT_QUAL_CRX_REGISTER(pVmxTransient->uExitQual);
+                    if (   iCrReg == 3
+                        || iCrReg == 8)
+                    {
+                        static const uint32_t s_aCrXReadIntercepts[] = { 0, 0, 0, VMX_PROC_CTLS_CR3_STORE_EXIT, 0,
+                                                                         0, 0, 0, VMX_PROC_CTLS_CR8_STORE_EXIT };
+                        uint32_t const uIntercept = s_aCrXReadIntercepts[iCrReg];
+                        if (CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, uIntercept))
+                        {
+                            VMXVEXITINFO ExitInfo;
+                            RT_ZERO(ExitInfo);
+                            ExitInfo.uReason = uExitReason;
+                            ExitInfo.cbInstr = pVmxTransient->cbInstr;
+                            ExitInfo.u64Qual = pVmxTransient->uExitQual;
+                            rcStrict = IEMExecVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
+                        }
+                        else
+                        {
+                            uint8_t const iGReg = VMX_EXIT_QUAL_CRX_GENREG(pVmxTransient->uExitQual);
+                            rcStrict = hmR0VmxExitMovFromCrX(pVCpu, pVmxTransient->cbInstr, iGReg, iCrReg);
+                        }
+                    }
+                    else
+                    {
+                        pVCpu->hm.s.u32HMError = iCrReg;
+                        AssertMsgFailedReturn(("MOV from CR%d VM-exit must not happen\n", iCrReg), VERR_VMX_UNEXPECTED_EXIT);
+                    }
                     break;
                 }
 
                 case VMX_EXIT_QUAL_CRX_ACCESS_CLTS:
                 {
-                    rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
-                    AssertRCReturn(rc, rc);
-
                     PCVMXVVMCS pVmcsNstGst = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
                     Assert(pVmcsNstGst);
                     uint64_t const uGstHostMask = pVmcsNstGst->u64Cr0Mask.u;
@@ -12884,7 +12916,7 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExitNested(PVMCPU pVCpu, PVMXTRANSIENT pVm
                     {
                         VMXVEXITINFO ExitInfo;
                         RT_ZERO(ExitInfo);
-                        ExitInfo.uReason = VMX_EXIT_MOV_CRX;
+                        ExitInfo.uReason = uExitReason;
                         ExitInfo.cbInstr = pVmxTransient->cbInstr;
                         ExitInfo.u64Qual = pVmxTransient->uExitQual;
                         rcStrict = IEMExecVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
@@ -12899,22 +12931,20 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExitNested(PVMCPU pVCpu, PVMXTRANSIENT pVm
                     RTGCPTR        GCPtrEffDst;
                     uint16_t const uNewMsw     = VMX_EXIT_QUAL_CRX_LMSW_DATA(pVmxTransient->uExitQual);
                     bool const     fMemOperand = VMX_EXIT_QUAL_CRX_LMSW_OP_MEM(pVmxTransient->uExitQual);
-
-                    rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
                     if (fMemOperand)
                     {
-                        rc |= hmR0VmxReadGuestLinearAddrVmcs(pVCpu, pVmxTransient);
+                        rc = hmR0VmxReadGuestLinearAddrVmcs(pVCpu, pVmxTransient);
+                        AssertRCReturn(rc, rc);
                         GCPtrEffDst = pVmxTransient->uGuestLinearAddr;
                     }
                     else
                         GCPtrEffDst = NIL_RTGCPTR;
-                    AssertRCReturn(rc, rc);
 
                     if (CPUMIsGuestVmxLmswInterceptSet(pVCpu, &pVCpu->cpum.GstCtx, uNewMsw))
                     {
                         VMXVEXITINFO ExitInfo;
                         RT_ZERO(ExitInfo);
-                        ExitInfo.uReason            = VMX_EXIT_MOV_CRX;
+                        ExitInfo.uReason            = uExitReason;
                         ExitInfo.cbInstr            = pVmxTransient->cbInstr;
                         ExitInfo.u64GuestLinearAddr = GCPtrEffDst;
                         ExitInfo.u64Qual            = pVmxTransient->uExitQual;
@@ -12929,7 +12959,7 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExitNested(PVMCPU pVCpu, PVMXTRANSIENT pVm
                 {
                     pVCpu->hm.s.u32HMError = uAccessType;
                     AssertMsgFailedReturn(("Invalid access-type in Mov CRx VM-exit qualification %#x\n", uAccessType),
-                                          VERR_VMX_UNEXPECTED_EXCEPTION);
+                                          VERR_VMX_UNEXPECTED_EXIT);
                 }
             }
             break;
@@ -13069,6 +13099,12 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExitNested(PVMCPU pVCpu, PVMXTRANSIENT pVm
         default:
             rcStrict = hmR0VmxExitErrUnexpected(pVCpu, pVmxTransient);
             break;
+    }
+
+    if (rcStrict == VINF_IEM_RAISED_XCPT)
+    {
+        ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_RAISED_XCPT_MASK);
+        rcStrict = VINF_SUCCESS;
     }
 
     return rcStrict;
@@ -14403,125 +14439,82 @@ HMVMX_EXIT_DECL hmR0VmxExitMovCRx(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 
     VBOXSTRICTRC rcStrict;
     PVM pVM = pVCpu->CTX_SUFF(pVM);
-    RTGCUINTPTR const uExitQual = pVmxTransient->uExitQual;
-    uint32_t const uAccessType  = VMX_EXIT_QUAL_CRX_ACCESS(uExitQual);
+    uint64_t const uExitQual   = pVmxTransient->uExitQual;
+    uint32_t const uAccessType = VMX_EXIT_QUAL_CRX_ACCESS(uExitQual);
     switch (uAccessType)
     {
         case VMX_EXIT_QUAL_CRX_ACCESS_WRITE:       /* MOV to CRx */
         {
             uint32_t const uOldCr0 = pVCpu->cpum.GstCtx.cr0;
-            rcStrict = IEMExecDecodedMovCRxWrite(pVCpu, pVmxTransient->cbInstr, VMX_EXIT_QUAL_CRX_REGISTER(uExitQual),
-                                                 VMX_EXIT_QUAL_CRX_GENREG(uExitQual));
+            uint8_t const  iGReg   = VMX_EXIT_QUAL_CRX_GENREG(uExitQual);
+            uint8_t const  iCrReg  = VMX_EXIT_QUAL_CRX_REGISTER(uExitQual);
+
+            /*
+             * MOV to CR3 only cause a VM-exit when one or more of the following are true:
+             *   - When nested paging isn't used.
+             *   - If the guest doesn't have paging enabled (intercept CR3 to update shadow page tables).
+             *   - We are executing in the VM debug loop.
+             */
+            Assert(   iCrReg != 3
+                   || !pVM->hm.s.fNestedPaging
+                   || !CPUMIsGuestPagingEnabledEx(&pVCpu->cpum.GstCtx)
+                   || pVCpu->hm.s.fUsingDebugLoop);
+
+            /* MOV to CR8 writes only cause VM-exits when TPR shadow is not used. */
+            Assert(   iCrReg != 8
+                   || !(pVmcsInfo->u32ProcCtls & VMX_PROC_CTLS_USE_TPR_SHADOW));
+
+            rcStrict = hmR0VmxExitMovToCrX(pVCpu, pVmxTransient->cbInstr, iGReg, iCrReg);
             AssertMsg(   rcStrict == VINF_SUCCESS
                       || rcStrict == VINF_IEM_RAISED_XCPT
                       || rcStrict == VINF_PGM_SYNC_CR3, ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
 
-            switch (VMX_EXIT_QUAL_CRX_REGISTER(uExitQual))
+            /*
+             * This is a kludge for handling switches back to real mode when we try to use
+             * V86 mode to run real mode code directly.  Problem is that V86 mode cannot
+             * deal with special selector values, so we have to return to ring-3 and run
+             * there till the selector values are V86 mode compatible.
+             *
+             * Note! Using VINF_EM_RESCHEDULE_REM here rather than VINF_EM_RESCHEDULE since the
+             *       latter is an alias for VINF_IEM_RAISED_XCPT which is converted to VINF_SUCCESs
+             *       at the end of this function.
+             */
+            if (   iCrReg == 0
+                && rcStrict == VINF_SUCCESS
+                && !pVM->hm.s.vmx.fUnrestrictedGuest
+                && CPUMIsGuestInRealModeEx(&pVCpu->cpum.GstCtx)
+                && (uOldCr0 & X86_CR0_PE)
+                && !(pVCpu->cpum.GstCtx.cr0 & X86_CR0_PE))
             {
-                case 0:
-                {
-                    ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged,
-                                     HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS | HM_CHANGED_GUEST_CR0);
-                    STAM_COUNTER_INC(&pVCpu->hm.s.StatExitCR0Write);
-                    Log4Func(("CR0 write rcStrict=%Rrc CR0=%#RX64\n", VBOXSTRICTRC_VAL(rcStrict), pVCpu->cpum.GstCtx.cr0));
-
-                    /*
-                     * This is a kludge for handling switches back to real mode when we try to use
-                     * V86 mode to run real mode code directly.  Problem is that V86 mode cannot
-                     * deal with special selector values, so we have to return to ring-3 and run
-                     * there till the selector values are V86 mode compatible.
-                     *
-                     * Note! Using VINF_EM_RESCHEDULE_REM here rather than VINF_EM_RESCHEDULE since the
-                     *       latter is an alias for VINF_IEM_RAISED_XCPT which is converted to VINF_SUCCESs
-                     *       at the end of this function.
-                     */
-                    if (   rc == VINF_SUCCESS
-                        && !pVCpu->CTX_SUFF(pVM)->hm.s.vmx.fUnrestrictedGuest
-                        && CPUMIsGuestInRealModeEx(&pVCpu->cpum.GstCtx)
-                        && (uOldCr0 & X86_CR0_PE)
-                        && !(pVCpu->cpum.GstCtx.cr0 & X86_CR0_PE) )
-                    {
-                        /** @todo check selectors rather than returning all the time.  */
-                        Log4Func(("CR0 write, back to real mode -> VINF_EM_RESCHEDULE_REM\n"));
-                        rcStrict = VINF_EM_RESCHEDULE_REM;
-                    }
-                    break;
-                }
-
-                case 2:
-                {
-                    STAM_COUNTER_INC(&pVCpu->hm.s.StatExitCR2Write);
-                    /* Nothing to do here, CR2 it's not part of the VMCS. */
-                    break;
-                }
-
-                case 3:
-                {
-                    Assert(   !pVM->hm.s.fNestedPaging
-                           || !CPUMIsGuestPagingEnabledEx(&pVCpu->cpum.GstCtx)
-                           || pVCpu->hm.s.fUsingDebugLoop);
-                    STAM_COUNTER_INC(&pVCpu->hm.s.StatExitCR3Write);
-                    ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged,
-                                     HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS | HM_CHANGED_GUEST_CR3);
-                    Log4Func(("CR3 write rcStrict=%Rrc CR3=%#RX64\n", VBOXSTRICTRC_VAL(rcStrict), pVCpu->cpum.GstCtx.cr3));
-                    break;
-                }
-
-                case 4:
-                {
-                    STAM_COUNTER_INC(&pVCpu->hm.s.StatExitCR4Write);
-                    ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged,
-                                     HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS | HM_CHANGED_GUEST_CR4);
-                    Log4Func(("CR4 write rc=%Rrc CR4=%#RX64 fLoadSaveGuestXcr0=%u\n", VBOXSTRICTRC_VAL(rcStrict),
-                              pVCpu->cpum.GstCtx.cr4, pVCpu->hm.s.fLoadSaveGuestXcr0));
-                    break;
-                }
-
-                case 8:
-                {
-                    STAM_COUNTER_INC(&pVCpu->hm.s.StatExitCR8Write);
-                    Assert(!(pVmcsInfo->u32ProcCtls & VMX_PROC_CTLS_USE_TPR_SHADOW));
-                    ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged,
-                                     HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS | HM_CHANGED_GUEST_APIC_TPR);
-                    break;
-                }
-                default:
-                    AssertMsgFailed(("Invalid CRx register %#x\n", VMX_EXIT_QUAL_CRX_REGISTER(uExitQual)));
-                    break;
+                /** @todo Check selectors rather than returning all the time.  */
+                Assert(!pVmxTransient->fIsNestedGuest);
+                Log4Func(("CR0 write, back to real mode -> VINF_EM_RESCHEDULE_REM\n"));
+                rcStrict = VINF_EM_RESCHEDULE_REM;
             }
             break;
         }
 
         case VMX_EXIT_QUAL_CRX_ACCESS_READ:        /* MOV from CRx */
         {
-            Assert(   !pVM->hm.s.fNestedPaging
+            uint8_t const iGReg  = VMX_EXIT_QUAL_CRX_GENREG(uExitQual);
+            uint8_t const iCrReg = VMX_EXIT_QUAL_CRX_REGISTER(uExitQual);
+
+            /*
+             * MOV from CR3 only cause a VM-exit when one or more of the following are true:
+             *   - When nested paging isn't used.
+             *   - If the guest doesn't have paging enabled (pass guest's CR3 rather than our identity mapped CR3).
+             *   - We are executing in the VM debug loop.
+             */
+            Assert(   iCrReg != 3
+                   || !pVM->hm.s.fNestedPaging
                    || !CPUMIsGuestPagingEnabledEx(&pVCpu->cpum.GstCtx)
-                   || pVCpu->hm.s.fUsingDebugLoop
-                   || VMX_EXIT_QUAL_CRX_REGISTER(uExitQual) != 3);
-            /* CR8 reads only cause a VM-exit when the TPR shadow feature isn't enabled. */
-            Assert(   VMX_EXIT_QUAL_CRX_REGISTER(uExitQual) != 8
+                   || pVCpu->hm.s.fUsingDebugLoop);
+
+            /* MOV from CR8 reads only cause a VM-exit when the TPR shadow feature isn't enabled. */
+            Assert(   iCrReg != 8
                    || !(pVmcsInfo->u32ProcCtls & VMX_PROC_CTLS_USE_TPR_SHADOW));
 
-            rcStrict = IEMExecDecodedMovCRxRead(pVCpu, pVmxTransient->cbInstr, VMX_EXIT_QUAL_CRX_GENREG(uExitQual),
-                                                VMX_EXIT_QUAL_CRX_REGISTER(uExitQual));
-            AssertMsg(   rcStrict == VINF_SUCCESS
-                      || rcStrict == VINF_IEM_RAISED_XCPT, ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
-#ifdef VBOX_WITH_STATISTICS
-            switch (VMX_EXIT_QUAL_CRX_REGISTER(uExitQual))
-            {
-                case 0: STAM_COUNTER_INC(&pVCpu->hm.s.StatExitCR0Read); break;
-                case 2: STAM_COUNTER_INC(&pVCpu->hm.s.StatExitCR2Read); break;
-                case 3: STAM_COUNTER_INC(&pVCpu->hm.s.StatExitCR3Read); break;
-                case 4: STAM_COUNTER_INC(&pVCpu->hm.s.StatExitCR4Read); break;
-                case 8: STAM_COUNTER_INC(&pVCpu->hm.s.StatExitCR8Read); break;
-            }
-#endif
-            Log4Func(("CR%d Read access rcStrict=%Rrc\n", VMX_EXIT_QUAL_CRX_REGISTER(uExitQual),
-                  VBOXSTRICTRC_VAL(rcStrict)));
-            if (VMX_EXIT_QUAL_CRX_GENREG(uExitQual) == X86_GREG_xSP)
-                ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS | HM_CHANGED_GUEST_RSP);
-            else
-                ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS);
+            rcStrict = hmR0VmxExitMovFromCrX(pVCpu, pVmxTransient->cbInstr, iGReg, iCrReg);
             break;
         }
 
@@ -14552,7 +14545,6 @@ HMVMX_EXIT_DECL hmR0VmxExitMovCRx(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
             }
             else
                 GCPtrEffDst = NIL_RTGCPTR;
-
             rcStrict = hmR0VmxExitLmsw(pVCpu, cbInstr, uMsw, GCPtrEffDst);
             break;
         }
@@ -15659,7 +15651,7 @@ static VBOXSTRICTRC hmR0VmxExitXcptPF(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 
 
 /**
- * VM-exit exception handler for LMSW.
+ * VM-exit helper for LMSW.
  */
 static VBOXSTRICTRC hmR0VmxExitLmsw(PVMCPU pVCpu, uint8_t cbInstr, uint16_t uMsw, RTGCPTR GCPtrEffDst)
 {
@@ -15670,34 +15662,118 @@ static VBOXSTRICTRC hmR0VmxExitLmsw(PVMCPU pVCpu, uint8_t cbInstr, uint16_t uMsw
     Log4Func(("rcStrict=%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
 
     ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS | HM_CHANGED_GUEST_CR0);
-    if (rcStrict == VINF_IEM_RAISED_XCPT)
-    {
-        ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_RAISED_XCPT_MASK);
-        rcStrict = VINF_SUCCESS;
-    }
     return rcStrict;
 }
 
 
 /**
- * VM-exit exception handler for CLTS.
+ * VM-exit helper for CLTS.
  */
 static VBOXSTRICTRC hmR0VmxExitClts(PVMCPU pVCpu, uint8_t cbInstr)
 {
     VBOXSTRICTRC rcStrict = IEMExecDecodedClts(pVCpu, cbInstr);
     AssertMsg(   rcStrict == VINF_SUCCESS
               || rcStrict == VINF_IEM_RAISED_XCPT, ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
-    STAM_COUNTER_INC(&pVCpu->hm.s.StatExitClts);
-    Log4Func(("rcStrict=%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
 
+    STAM_COUNTER_INC(&pVCpu->hm.s.StatExitClts);
     ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS | HM_CHANGED_GUEST_CR0);
-    if (rcStrict == VINF_IEM_RAISED_XCPT)
-    {
-        ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_RAISED_XCPT_MASK);
-        rcStrict = VINF_SUCCESS;
-    }
+    Log4Func(("rcStrict=%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
     return rcStrict;
 }
+
+
+/**
+ * VM-exit helper for MOV from CRx (CRx read).
+ */
+static VBOXSTRICTRC hmR0VmxExitMovFromCrX(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iGReg, uint8_t iCrReg)
+{
+    Assert(iCrReg < 16);
+    Assert(iGReg < RT_ELEMENTS(pVCpu->cpum.GstCtx.aGRegs));
+
+    VBOXSTRICTRC rcStrict = IEMExecDecodedMovCRxRead(pVCpu, cbInstr, iGReg, iCrReg);
+    AssertMsg(   rcStrict == VINF_SUCCESS
+              || rcStrict == VINF_IEM_RAISED_XCPT, ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
+
+    if (iGReg == X86_GREG_xSP)
+        ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS | HM_CHANGED_GUEST_RSP);
+    else
+        ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS);
+
+#ifdef VBOX_WITH_STATISTICS
+    switch (iCrReg)
+    {
+        case 0: STAM_COUNTER_INC(&pVCpu->hm.s.StatExitCR0Read); break;
+        case 2: STAM_COUNTER_INC(&pVCpu->hm.s.StatExitCR2Read); break;
+        case 3: STAM_COUNTER_INC(&pVCpu->hm.s.StatExitCR3Read); break;
+        case 4: STAM_COUNTER_INC(&pVCpu->hm.s.StatExitCR4Read); break;
+        case 8: STAM_COUNTER_INC(&pVCpu->hm.s.StatExitCR8Read); break;
+    }
+#endif
+    Log4Func(("CR%d Read access rcStrict=%Rrc\n", iCrReg, VBOXSTRICTRC_VAL(rcStrict)));
+    return rcStrict;
+}
+
+
+/**
+ * VM-exit helper for MOV to CRx (CRx write).
+ */
+static VBOXSTRICTRC hmR0VmxExitMovToCrX(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iGReg, uint8_t iCrReg)
+{
+    VBOXSTRICTRC rcStrict = IEMExecDecodedMovCRxWrite(pVCpu, cbInstr, iCrReg, iGReg);
+    AssertMsg(   rcStrict == VINF_SUCCESS
+              || rcStrict == VINF_IEM_RAISED_XCPT
+              || rcStrict == VINF_PGM_SYNC_CR3, ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
+
+    switch (iCrReg)
+    {
+        case 0:
+        {
+            ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS | HM_CHANGED_GUEST_CR0);
+            STAM_COUNTER_INC(&pVCpu->hm.s.StatExitCR0Write);
+            Log4Func(("CR0 write. rcStrict=%Rrc CR0=%#RX64\n", VBOXSTRICTRC_VAL(rcStrict), pVCpu->cpum.GstCtx.cr0));
+            break;
+        }
+
+        case 2:
+        {
+            STAM_COUNTER_INC(&pVCpu->hm.s.StatExitCR2Write);
+            /* Nothing to do here, CR2 it's not part of the VMCS. */
+            break;
+        }
+
+        case 3:
+        {
+            ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS | HM_CHANGED_GUEST_CR3);
+            STAM_COUNTER_INC(&pVCpu->hm.s.StatExitCR3Write);
+            Log4Func(("CR3 write. rcStrict=%Rrc CR3=%#RX64\n", VBOXSTRICTRC_VAL(rcStrict), pVCpu->cpum.GstCtx.cr3));
+            break;
+        }
+
+        case 4:
+        {
+            ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS | HM_CHANGED_GUEST_CR4);
+            STAM_COUNTER_INC(&pVCpu->hm.s.StatExitCR4Write);
+            Log4Func(("CR4 write. rc=%Rrc CR4=%#RX64 fLoadSaveGuestXcr0=%u\n", VBOXSTRICTRC_VAL(rcStrict),
+                      pVCpu->cpum.GstCtx.cr4, pVCpu->hm.s.fLoadSaveGuestXcr0));
+            break;
+        }
+
+        case 8:
+        {
+            ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged,
+                             HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS | HM_CHANGED_GUEST_APIC_TPR);
+            STAM_COUNTER_INC(&pVCpu->hm.s.StatExitCR8Write);
+            break;
+        }
+
+        default:
+            AssertMsgFailed(("Invalid CRx register %#x\n", iCrReg));
+            break;
+    }
+
+    return rcStrict;
+}
+
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
 /** @name VMX instruction handlers.
