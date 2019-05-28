@@ -2183,7 +2183,7 @@ void SessionMachine::i_restoreSnapshotHandler(RestoreSnapshotTask &task)
     HRESULT rc = S_OK;
     Guid snapshotId;
     std::set<ComObjPtr<Medium> > pMediumsForNotify;
-    std::map<Guid, std::pair<DeviceType_T, BOOL>> uIdsForNotify;
+    std::map<Guid, std::pair<DeviceType_T, BOOL> > uIdsForNotify;
 
     try
     {
@@ -2452,7 +2452,7 @@ void SessionMachine::i_restoreSnapshotHandler(RestoreSnapshotTask &task)
     if (SUCCEEDED(rc))
     {
         mParent->i_onSnapshotRestored(mData->mUuid, snapshotId);
-        for (std::map<Guid, std::pair<DeviceType_T, BOOL>>::const_iterator it = uIdsForNotify.begin();
+        for (std::map<Guid, std::pair<DeviceType_T, BOOL> >::const_iterator it = uIdsForNotify.begin();
              it != uIdsForNotify.end();
              ++it)
         {
