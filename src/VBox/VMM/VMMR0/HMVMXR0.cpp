@@ -12756,6 +12756,12 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExitNested(PVMCPU pVCpu, PVMXTRANSIENT pVm
         HMVMX_STOP_EXIT_DISPATCH_PROF(); \
     } while (0)
 
+# define HMVMX_VALIDATE_NESTED_EXIT_HANDLER_PARAMS(a_pVCpu, a_pVmxTransient) \
+    do { \
+        HMVMX_VALIDATE_EXIT_HANDLER_PARAMS(a_pVCpu, a_pVmxTransient); \
+        Assert((a_pVmxTransient)->fIsNestedGuest); \
+    } while (0)
+
 # define HMVMX_VALIDATE_EXIT_XCPT_HANDLER_PARAMS(a_pVCpu, a_pVmxTransient) \
     do { \
         Log4Func(("\n")); \
@@ -12766,7 +12772,11 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExitNested(PVMCPU pVCpu, PVMXTRANSIENT pVm
         HMVMX_STOP_EXIT_DISPATCH_PROF(); \
         NOREF((a_pVCpu)); NOREF((a_pVmxTransient)); \
     } while (0)
-# define HMVMX_VALIDATE_EXIT_XCPT_HANDLER_PARAMS(a_pVCpu, a_pVmxTransient) do { } while (0)
+
+# define HMVMX_VALIDATE_NESTED_EXIT_HANDLER_PARAMS(a_pVCpu, a_pVmxTransient) \
+    do { HMVMX_VALIDATE_EXIT_HANDLER_PARAMS(a_pVCpu, a_pVmxTransient); } while (0)
+
+# define HMVMX_VALIDATE_EXIT_XCPT_HANDLER_PARAMS(a_pVCpu, a_pVmxTransient)      do { } while (0)
 #endif
 
 
@@ -15772,6 +15782,8 @@ HMVMX_EXIT_DECL hmR0VmxExitInvvpid(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
  */
 HMVMX_EXIT_NSRC_DECL hmR0VmxExitIntWindowNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
+    HMVMX_VALIDATE_NESTED_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
+
     if (CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS_INT_WINDOW_EXIT))
         return IEMExecVmxVmexit(pVCpu, pVmxTransient->uExitReason);
     return hmR0VmxExitIntWindow(pVCpu, pVmxTransient);
@@ -15784,6 +15796,8 @@ HMVMX_EXIT_NSRC_DECL hmR0VmxExitIntWindowNested(PVMCPU pVCpu, PVMXTRANSIENT pVmx
  */
 HMVMX_EXIT_DECL hmR0VmxExitTaskSwitchNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
+    HMVMX_VALIDATE_NESTED_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
+
     int rc = hmR0VmxReadExitQualVmcs(pVCpu, pVmxTransient);
     rc    |= hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
     rc    |= hmR0VmxReadIdtVectoringInfoVmcs(pVmxTransient);
@@ -15808,6 +15822,8 @@ HMVMX_EXIT_DECL hmR0VmxExitTaskSwitchNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTran
  */
 HMVMX_EXIT_DECL hmR0VmxExitHltNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
+    HMVMX_VALIDATE_NESTED_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
+
     if (CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS_HLT_EXIT))
     {
         int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
@@ -15823,6 +15839,8 @@ HMVMX_EXIT_DECL hmR0VmxExitHltNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
  */
 HMVMX_EXIT_DECL hmR0VmxExitInvlpgNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
+    HMVMX_VALIDATE_NESTED_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
+
     if (CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS_INVLPG_EXIT))
     {
         int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
@@ -15845,6 +15863,8 @@ HMVMX_EXIT_DECL hmR0VmxExitInvlpgNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransien
  */
 HMVMX_EXIT_DECL hmR0VmxExitRdtscNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
+    HMVMX_VALIDATE_NESTED_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
+
     if (CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS_RDTSC_EXIT))
     {
         int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
@@ -15862,6 +15882,8 @@ HMVMX_EXIT_DECL hmR0VmxExitRdtscNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient
  */
 HMVMX_EXIT_DECL hmR0VmxExitMovCRxNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
+    HMVMX_VALIDATE_NESTED_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
+
     int rc  = hmR0VmxReadExitQualVmcs(pVCpu, pVmxTransient);
     rc     |= hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
     AssertRCReturn(rc, rc);
@@ -15872,8 +15894,6 @@ HMVMX_EXIT_DECL hmR0VmxExitMovCRxNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransien
     {
         case VMX_EXIT_QUAL_CRX_ACCESS_WRITE:
         {
-            PCVMXVVMCS pVmcsNstGst = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
-            Assert(pVmcsNstGst);
             uint8_t const iCrReg   = VMX_EXIT_QUAL_CRX_REGISTER(pVmxTransient->uExitQual);
             uint8_t const iGReg    = VMX_EXIT_QUAL_CRX_GENREG(pVmxTransient->uExitQual);
             Assert(iGReg < RT_ELEMENTS(pVCpu->cpum.GstCtx.aGRegs));
@@ -16003,6 +16023,8 @@ HMVMX_EXIT_DECL hmR0VmxExitMovCRxNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransien
  */
 HMVMX_EXIT_DECL hmR0VmxExitMovDRxNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
+    HMVMX_VALIDATE_NESTED_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
+
     if (CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS_MOV_DR_EXIT))
     {
         int rc = hmR0VmxReadExitQualVmcs(pVCpu, pVmxTransient);
@@ -16025,6 +16047,8 @@ HMVMX_EXIT_DECL hmR0VmxExitMovDRxNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransien
  */
 HMVMX_EXIT_DECL hmR0VmxExitIoInstrNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
+    HMVMX_VALIDATE_NESTED_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
+
     int rc = hmR0VmxReadExitQualVmcs(pVCpu, pVmxTransient);
     AssertRCReturn(rc, rc);
 
@@ -16084,6 +16108,8 @@ HMVMX_EXIT_DECL hmR0VmxExitIoInstrNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransie
  */
 HMVMX_EXIT_DECL hmR0VmxExitRdmsrNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
+    HMVMX_VALIDATE_NESTED_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
+
     uint32_t fMsrpm;
     if (CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS_USE_MSR_BITMAPS))
         fMsrpm = CPUMGetVmxMsrPermission(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvMsrBitmap), pVCpu->cpum.GstCtx.ecx);
@@ -16105,6 +16131,8 @@ HMVMX_EXIT_DECL hmR0VmxExitRdmsrNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient
  */
 HMVMX_EXIT_DECL hmR0VmxExitWrmsrNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
+    HMVMX_VALIDATE_NESTED_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
+
     uint32_t fMsrpm;
     if (CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS_USE_MSR_BITMAPS))
         fMsrpm = CPUMGetVmxMsrPermission(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvMsrBitmap), pVCpu->cpum.GstCtx.ecx);
@@ -16126,6 +16154,8 @@ HMVMX_EXIT_DECL hmR0VmxExitWrmsrNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient
  */
 HMVMX_EXIT_DECL hmR0VmxExitMwaitNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
+    HMVMX_VALIDATE_NESTED_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
+
     if (CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS_MWAIT_EXIT))
     {
         int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
@@ -16142,6 +16172,8 @@ HMVMX_EXIT_DECL hmR0VmxExitMwaitNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient
  */
 HMVMX_EXIT_DECL hmR0VmxExitMtfNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
+    HMVMX_VALIDATE_NESTED_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
+
     /** @todo NSTVMX: Should consider debugging nested-guests using VM debugger. */
     return IEMExecVmxVmexit(pVCpu, pVmxTransient->uExitReason);
 }
@@ -16152,6 +16184,8 @@ HMVMX_EXIT_DECL hmR0VmxExitMtfNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
  */
 HMVMX_EXIT_DECL hmR0VmxExitMonitorNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
+    HMVMX_VALIDATE_NESTED_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
+
     if (CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS_MONITOR_EXIT))
     {
         int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
@@ -16167,6 +16201,8 @@ HMVMX_EXIT_DECL hmR0VmxExitMonitorNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransie
  */
 HMVMX_EXIT_DECL hmR0VmxExitPauseNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
+    HMVMX_VALIDATE_NESTED_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
+
     /** @todo NSTVMX: Think about this more. Does the outer guest need to intercept
      *        PAUSE when executing a nested-guest? If it does not, we would not need
      *        to check for the intercepts here. Just call VM-exit... */
@@ -16190,6 +16226,8 @@ HMVMX_EXIT_DECL hmR0VmxExitPauseNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient
  */
 HMVMX_EXIT_DECL hmR0VmxExitXdtrAccessNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
+    HMVMX_VALIDATE_NESTED_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
+
     if (CPUMIsGuestVmxProcCtls2Set(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS2_DESC_TABLE_EXIT))
     {
         int rc = hmR0VmxReadExitQualVmcs(pVCpu, pVmxTransient);
@@ -16213,6 +16251,8 @@ HMVMX_EXIT_DECL hmR0VmxExitXdtrAccessNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTran
  */
 HMVMX_EXIT_DECL hmR0VmxExitRdtscpNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
+    HMVMX_VALIDATE_NESTED_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
+
     if (CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS_RDTSC_EXIT))
     {
         int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
@@ -16228,6 +16268,8 @@ HMVMX_EXIT_DECL hmR0VmxExitRdtscpNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransien
  */
 HMVMX_EXIT_NSRC_DECL hmR0VmxExitWbinvdNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
+    HMVMX_VALIDATE_NESTED_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
+
     if (CPUMIsGuestVmxProcCtls2Set(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS2_WBINVD_EXIT))
     {
         int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
@@ -16243,6 +16285,8 @@ HMVMX_EXIT_NSRC_DECL hmR0VmxExitWbinvdNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTra
  */
 HMVMX_EXIT_DECL hmR0VmxExitInvpcidNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
+    HMVMX_VALIDATE_NESTED_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
+
     if (CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS_INVLPG_EXIT))
     {
         int rc  = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
@@ -16270,6 +16314,8 @@ HMVMX_EXIT_DECL hmR0VmxExitInvpcidNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransie
  */
 HMVMX_EXIT_DECL hmR0VmxExitInstrNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
+    HMVMX_VALIDATE_NESTED_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
+
     int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
     AssertRCReturn(rc, rc);
     return IEMExecVmxVmexitInstr(pVCpu, pVmxTransient->uExitReason, pVmxTransient->cbInstr);
@@ -16284,6 +16330,8 @@ HMVMX_EXIT_DECL hmR0VmxExitInstrNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient
  */
 HMVMX_EXIT_DECL hmR0VmxExitInstrWithInfoNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
+    HMVMX_VALIDATE_NESTED_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
+
     int rc  = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
     rc     |= hmR0VmxReadExitQualVmcs(pVCpu, pVmxTransient);
     rc     |= hmR0VmxReadExitInstrInfoVmcs(pVmxTransient);
