@@ -2025,8 +2025,9 @@ HRESULT Display::setVideoModeHint(ULONG aDisplay, BOOL aEnabled,
         if (pVMMDevPort)
             pVMMDevPort->pfnRequestDisplayChange(pVMMDevPort, 1, &d, false);
     }
-    /* Remember the monitor information. */
+    /* Remember the monitor information and notify listeners. */
     maFramebuffers[aDisplay].monitorDesc = d;
+    fireGuestMonitorInfoChangedEvent(mParent->i_getEventSource(), aDisplay);
     return S_OK;
 }
 

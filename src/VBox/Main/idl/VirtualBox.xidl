@@ -23160,7 +23160,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   -->
   <enum
     name="VBoxEventType"
-    uuid="822087CA-4703-49E4-B20D-C6D794E67969"
+    uuid="d5d15e38-808d-11e9-aaac-4bc5d973ca37"
     >
 
     <desc>
@@ -23569,8 +23569,13 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         See <link to="ICursorPositionChangedEvent">ICursorPositionChangedEvent</link>.
       </desc>
     </const>
+    <const name="OnGuestMonitorInfoChanged" value="101">
+      <desc>
+        See <link to="IGuestMonitorInfoChangedEvent">IGuestMonitorInfoChangedEvent</link>.
+      </desc>
+    </const>
     <!-- Last event marker -->
-    <const name="Last" value="101">
+    <const name="Last" value="102">
       <desc>
         Must be last event, used for iterations and structures relying on numerical event values.
       </desc>
@@ -25663,6 +25668,17 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </attribute>
     <attribute name="y" readonly="yes" type="unsigned long">
       <desc>Reported Y position</desc>
+    </attribute>
+  </interface>
+
+  <interface
+    name="IGuestMonitorInfoChangedEvent" extends="IEvent"
+    uuid="0b3cdeb2-808e-11e9-b773-133d9330f849"
+    wsmap="managed" autogen="VBoxEvent" id="OnGuestMonitorInfoChanged">
+    <desc>The guest reports cursor position data.</desc>
+
+    <attribute name="output" readonly="yes" type="unsigned long">
+      <desc>The virtual display output on which the monitor has changed.</desc>
     </attribute>
   </interface>
 
