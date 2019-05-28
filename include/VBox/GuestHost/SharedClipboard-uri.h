@@ -176,7 +176,7 @@ protected:
  */
 class SharedClipboardProviderVbglR3 : protected SharedClipboardProvider
 {
-    friend SharedClipboardProvider;
+    friend class SharedClipboardProvider;
 
 public:
 
@@ -204,7 +204,7 @@ protected:
  */
 class SharedClipboardProviderHostService : protected SharedClipboardProvider
 {
-    friend SharedClipboardProvider;
+    friend class SharedClipboardProvider;
 
 public:
 

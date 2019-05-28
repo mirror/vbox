@@ -156,9 +156,11 @@ bool VBoxClipboardWinIsCFHTML(const char *pszSource);
 int VBoxClipboardWinConvertCFHTMLToMIME(const char *pszSource, const uint32_t cch, char **ppszOutput, uint32_t *pcbOutput);
 int VBoxClipboardWinConvertMIMEToCFHTML(const char *pszSource, size_t cb, char **ppszOutput, uint32_t *pcbOutput);
 
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
 int VBoxClipboardWinURIInit(PVBOXCLIPBOARDWINURI pURI, SharedClipboardProvider::SourceType enmType);
 void VBoxClipboardWinURIDestroy(PVBOXCLIPBOARDWINURI pURI);
 void VBoxClipboardWinURIReset(PVBOXCLIPBOARDWINURI pURI);
+#endif
 
 # ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
 class SharedClipboardURIList;
@@ -183,7 +185,7 @@ public:
         /** File descriptor, Unicode version. */
         FormatIndex_FileDescriptorW,
         /** File contents. */
-        FormatIndex_FileContents,
+        FormatIndex_FileContents
     };
 
 public:
