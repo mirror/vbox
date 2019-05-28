@@ -844,9 +844,9 @@ HRESULT VirtualBox::initMedia(const Guid &uuidRegistry,
 
     if (SUCCEEDED(rc))
     {
-        for (std::map<com::Guid, DeviceType_T>::const_iterator it = uIdsForNotify.begin();
-             it != uIdsForNotify.end();
-             ++it)
+        for (std::map<com::Guid, DeviceType_T>::const_iterator itItem = uIdsForNotify.begin();
+             itItem != uIdsForNotify.end();
+             ++itItem)
         {
             i_onMediumRegistered(it->first, it->second, TRUE);
         }
