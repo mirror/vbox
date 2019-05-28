@@ -194,6 +194,11 @@ extern "C" DECLEXPORT(int) VBoxDevicesRegister(PPDMDEVREGCB pCallbacks, uint32_t
     if (RT_FAILURE(rc))
         return rc;
 #endif
+#ifdef VBOX_WITH_VIRTIO_SCSI
+    rc = pCallbacks->pfnRegister(pCallbacks, &g_DeviceVirtioSCSI);
+    if (RT_FAILURE(rc))
+        return rc;
+#endif
 #ifdef VBOX_WITH_PCI_PASSTHROUGH_IMPL
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DevicePciRaw);
     if (RT_FAILURE(rc))

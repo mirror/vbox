@@ -86,6 +86,9 @@ extern const PDMDEVREG g_DeviceLsiLogicSAS;
 #ifdef VBOX_WITH_NVME_IMPL
 extern const PDMDEVREG g_DeviceNVMe;
 #endif
+#ifdef VBOX_WITH_VIRTIO_SCSI
+extern const PDMDEVREG g_DeviceVirtioSCSI;
+#endif
 #ifdef VBOX_WITH_EFI
 extern const PDMDEVREG g_DeviceEFI;
 #endif

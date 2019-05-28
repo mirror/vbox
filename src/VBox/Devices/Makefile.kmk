@@ -519,6 +519,12 @@ VBOX_WITH_VMSVGA3D_DYNAMIC_LOAD = 1
  	Storage/DevNVMe.cpp
   endif
 
+ ifdef VBOX_WITH_VIRTIO_SCSI
+    VBoxDD_DEFS           += VBOX_WITH_VIRTIO_SCSI
+    VBoxDD_SOURCES        += \
+    Storage/DevVirtioSCSI.cpp
+ endif
+
  ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
   VBoxDD_DEFS           += VBOX_WITH_PDM_ASYNC_COMPLETION
  endif
