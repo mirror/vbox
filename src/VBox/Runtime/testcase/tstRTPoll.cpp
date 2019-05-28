@@ -139,6 +139,8 @@ static void tstRTPoll3(void)
      * Kick off a thread that writes to the socket after 1 second.
      * This will check that we can wait and wake up.
      */
+    char    achBuf[128];
+    size_t  cbRead;
     for (uint32_t i = 0; i < 2; i++)
     {
         RTTHREAD hThread;
@@ -157,8 +159,7 @@ static void tstRTPoll3(void)
         RTThreadWait(hThread, 5 * RT_MS_1SEC, NULL);
 
         /* Drain the socket. */
-        char    achBuf[128];
-        size_t  cbRead = 0;
+        cbRead = 0;
         RTTESTI_CHECK_RC(RTTcpReadNB(hSocketR, achBuf, sizeof(achBuf), &cbRead), VINF_SUCCESS);
         RTTESTI_CHECK(cbRead == sizeof(g_szHello) - 1 && memcmp(achBuf, g_szHello, sizeof(g_szHello) - 1) == 0);
 
@@ -188,8 +189,7 @@ static void tstRTPoll3(void)
         RTThreadWait(hThread, 5 * RT_MS_1SEC, NULL);
 
         /* Drain the socket. */
-        char    achBuf[128];
-        size_t  cbRead = 0;
+        cbRead = 0;
         RTTESTI_CHECK_RC(RTPipeRead(hPipeR, achBuf, sizeof(achBuf), &cbRead), VINF_SUCCESS);
         RTTESTI_CHECK(cbRead == sizeof(g_szHello) - 1 && memcmp(achBuf, g_szHello, sizeof(g_szHello) - 1) == 0);
 
@@ -213,6 +213,12 @@ static void tstRTPoll3(void)
     RTTESTI_CHECK_RC(RTPollSetRemove(hSet, 2), VINF_SUCCESS);
     RTTESTI_CHECK_RC(RTPollSetRemove(hSet, 12), VINF_SUCCESS);
 
+    RTTESTI_CHECK_RC(RTTcpReadNB(hSocketR, achBuf, sizeof(achBuf), &cbRead), VINF_SUCCESS);
+    RTTESTI_CHECK(cbRead == 0);
+
+    RTTESTI_CHECK_RC(RTTcpRead(hSocketR, achBuf, 1, &cbRead), VINF_SUCCESS);
+    RTTESTI_CHECK(cbRead == 0);
+
     RTSocketClose(hSocketR);
 
     /*
@@ -224,6 +230,10 @@ static void tstRTPoll3(void)
     RTTESTI_CHECK_RC(RTPoll(hSet, 0, &fEvents, &idReady), VINF_SUCCESS);
     RTTESTI_CHECK_MSG(idReady == 1 || idReady == 11, ("idReady=%u\n", idReady));
     RTTESTI_CHECK_MSG(fEvents & RTPOLL_EVT_ERROR, ("fEvents=%#x\n", fEvents));
+
+    cbRead = 0;
+    RTTESTI_CHECK_RC(RTPipeRead(hPipeR, achBuf, sizeof(achBuf), &cbRead), VERR_BROKEN_PIPE);
+    RTTESTI_CHECK(cbRead == 0);
 
     RTPipeClose(hPipeR);
 
