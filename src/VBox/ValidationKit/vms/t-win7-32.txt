@@ -1,0 +1,16 @@
+Work in progress:
+
+Setup:
+ - Configure a VM t-win7-32 with default windows 7 32-bit settings and disk size.
+ - VBoxManage unattended install t-win7-32 --iso i:\Windows\7\rtm\en_windows_7_enterprise_x86_dvd_x15-70745.iso \
+        --hostname=t-win7-32.smoketest --user=Administrator --password=password
+ - Start VM and perform unattended installation.
+ - Eject DVD and floppy.
+ - Create a user 'test' without a password.
+ - Create a user 'test2' with 'test2' as password.
+ - Enable the guest user.
+ - Insert the validation kit ISO and install the test execution service in
+   'both' mode (see vboxtxs-readme.txt) and using the task scheduler. Make
+   sure to okay the firewall modification and test it.
+ -
+
