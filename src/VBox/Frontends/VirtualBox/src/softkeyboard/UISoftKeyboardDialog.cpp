@@ -34,34 +34,14 @@
 
 
 /*********************************************************************************************************************************
-*   Class UISoftKeyboardDialogFactory implementation.                                                                     *
-*********************************************************************************************************************************/
-
-UISoftKeyboardDialogFactory::UISoftKeyboardDialogFactory(UISession *pSession /* = 0 */, UIActionPool *pActionPool /* = 0 */,
-                                                         const QString &strMachineName /* = QString() */)
-    : m_pSession(pSession)
-    , m_pActionPool(pActionPool)
-    , m_strMachineName(strMachineName)
-{
-}
-
-void UISoftKeyboardDialogFactory::create(QIManagerDialog *&pDialog, QWidget *pCenterWidget)
-{
-    pDialog = new UISoftKeyboardDialog(pCenterWidget, m_pSession, m_pActionPool, m_strMachineName);
-}
-
-
-/*********************************************************************************************************************************
 *   Class UISoftKeyboardDialog implementation.                                                                            *
 *********************************************************************************************************************************/
 
-UISoftKeyboardDialog::UISoftKeyboardDialog(QWidget *pCenterWidget,
+UISoftKeyboardDialog::UISoftKeyboardDialog(QWidget *pParent,
                                            UISession *pSession,
-                                           UIActionPool *pActionPool,
                                            const QString &strMachineName /* = QString() */)
-    : QIWithRetranslateUI<QIManagerDialog>(pCenterWidget)
+    : QMainWindow(pParent)
     , m_pSession(pSession)
-    , m_pActionPool(pActionPool)
     , m_strMachineName(strMachineName)
 {
 }
@@ -71,7 +51,7 @@ void UISoftKeyboardDialog::retranslateUi()
     /* Translate window title: */
     setWindowTitle(tr("%1 - Guest Control").arg(m_strMachineName));
     /* Translate buttons: */
-    button(ButtonType_Close)->setText(tr("Close"));
+    //button(ButtonType_Close)->setText(tr("Close"));
 }
 
 void UISoftKeyboardDialog::configure()
@@ -83,18 +63,18 @@ void UISoftKeyboardDialog::configure()
 void UISoftKeyboardDialog::configureCentralWidget()
 {
     /* Create widget: */
-    UISoftKeyboard  *pSoftKeyboard = new UISoftKeyboard(EmbedTo_Dialog, 0, m_pSession, "");
+    //UISoftKeyboard  *pSoftKeyboard = new UISoftKeyboard(EmbedTo_Dialog, 0, m_pSession, "");
 
-    if (pSoftKeyboard)
+    //if (pSoftKeyboard)
     {
         /* Configure widget: */
-        setWidget(pSoftKeyboard);
+        //setWidget(pSoftKeyboard);
         //setWidgetMenu(pWidget->menu());
 #ifdef VBOX_WS_MAC
         //setWidgetToolbar(pWidget->toolbar());
 #endif
         /* Add into layout: */
-        centralWidget()->layout()->addWidget(pSoftKeyboard);
+        //centralWidget()->layout()->addWidget(pSoftKeyboard);
     }
 }
 
@@ -106,36 +86,36 @@ void UISoftKeyboardDialog::finalize()
 
 void UISoftKeyboardDialog::loadSettings()
 {
-    const QRect desktopRect = gpDesktop->availableGeometry(this);
-    int iDefaultWidth = desktopRect.width() / 2;
-    int iDefaultHeight = 0.5 * iDefaultWidth;
+    // const QRect desktopRect = gpDesktop->availableGeometry(this);
+    // int iDefaultWidth = desktopRect.width() / 2;
+    // int iDefaultHeight = 0.5 * iDefaultWidth;
 
-    QRect defaultGeometry(0, 0, iDefaultWidth, iDefaultHeight);
-    if (centerWidget())
-        defaultGeometry.moveCenter(centerWidget()->geometry().center());
+    // QRect defaultGeometry(0, 0, iDefaultWidth, iDefaultHeight);
+    // if (centerWidget())
+    //     defaultGeometry.moveCenter(centerWidget()->geometry().center());
 
-    /* Load geometry from extradata: */
-    QRect geometry = gEDataManager->softKeyboardDialogGeometry(this, defaultGeometry);
+    // /* Load geometry from extradata: */
+    // QRect geometry = gEDataManager->softKeyboardDialogGeometry(this, defaultGeometry);
 
-    /* Restore geometry: */
-    LogRel2(("GUI: UISoftKeyboardDialog: Restoring geometry to: Origin=%dx%d, Size=%dx%d\n",
-             geometry.x(), geometry.y(), geometry.width(), geometry.height()));
-    setDialogGeometry(geometry);
+    // /* Restore geometry: */
+    // LogRel2(("GUI: UISoftKeyboardDialog: Restoring geometry to: Origin=%dx%d, Size=%dx%d\n",
+    //          geometry.x(), geometry.y(), geometry.width(), geometry.height()));
+    // setDialogGeometry(geometry);
 }
 
 void UISoftKeyboardDialog::saveSettings() const
 {
-    /* Save window geometry to extradata: */
-    const QRect saveGeometry = geometry();
-#ifdef VBOX_WS_MAC
-    /* darwinIsWindowMaximized expects a non-const QWidget*. thus const_cast: */
-    QWidget *pw = const_cast<QWidget*>(qobject_cast<const QWidget*>(this));
-    gEDataManager->setSoftKeyboardDialogGeometry(saveGeometry, ::darwinIsWindowMaximized(pw));
-#else /* !VBOX_WS_MAC */
-    gEDataManager->setSoftKeyboardDialogGeometry(saveGeometry, isMaximized());
-#endif /* !VBOX_WS_MAC */
-    LogRel2(("GUI: Soft Keyboard Dialog: Geometry saved as: Origin=%dx%d, Size=%dx%d\n",
-             saveGeometry.x(), saveGeometry.y(), saveGeometry.width(), saveGeometry.height()));
+//     /* Save window geometry to extradata: */
+//     const QRect saveGeometry = geometry();
+// #ifdef VBOX_WS_MAC
+//     /* darwinIsWindowMaximized expects a non-const QWidget*. thus const_cast: */
+//     QWidget *pw = const_cast<QWidget*>(qobject_cast<const QWidget*>(this));
+//     gEDataManager->setSoftKeyboardDialogGeometry(saveGeometry, ::darwinIsWindowMaximized(pw));
+// #else /* !VBOX_WS_MAC */
+//     gEDataManager->setSoftKeyboardDialogGeometry(saveGeometry, isMaximized());
+// #endif /* !VBOX_WS_MAC */
+//     LogRel2(("GUI: Soft Keyboard Dialog: Geometry saved as: Origin=%dx%d, Size=%dx%d\n",
+//              saveGeometry.x(), saveGeometry.y(), saveGeometry.width(), saveGeometry.height()));
 }
 
 bool UISoftKeyboardDialog::shouldBeMaximized() const
@@ -143,8 +123,8 @@ bool UISoftKeyboardDialog::shouldBeMaximized() const
     return gEDataManager->softKeyboardDialogShouldBeMaximized();
 }
 
-void UISoftKeyboardDialog::sltSetCloseButtonShortCut(QKeySequence shortcut)
+void UISoftKeyboardDialog::sltSetCloseButtonShortCut(QKeySequence )
 {
-    if (button(ButtonType_Close))
-        button(ButtonType_Close)->setShortcut(shortcut);
+    // if (button(ButtonType_Close))
+    //     button(ButtonType_Close)->setShortcut(shortcut);
 }

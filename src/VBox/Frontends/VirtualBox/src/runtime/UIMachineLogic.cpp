@@ -63,7 +63,7 @@
 #include "UIVMInformationDialog.h"
 #include "UIFileManagerDialog.h"
 #include "UIGuestProcessControlDialog.h"
-#include "UISoftKeyboardDialog.h"
+#include "UISoftKeyboard.h"
 #ifdef VBOX_WS_MAC
 # include "DockIconPreview.h"
 # include "UIExtraDataManager.h"
@@ -1606,32 +1606,32 @@ void UIMachineLogic::sltShowSoftKeyboard()
     if (m_pSoftKeyboardDialog)
         return;
 
-    QIManagerDialog *pSoftKeyboardDialog;
-    UISoftKeyboardDialogFactory dialogFactory(uisession(), actionPool(), machine().GetName());
-    dialogFactory.prepare(pSoftKeyboardDialog, activeMachineWindow());
-    if (pSoftKeyboardDialog)
+    UISoftKeyboard *pSoftKeyboard = new UISoftKeyboard(0, uisession(), machine().GetName());
+    // UISoftKeyboardDialogFactory dialogFactory(uisession(), actionPool(), machine().GetName());
+    // dialogFactory.prepare(pSoftKeyboardDialog, activeMachineWindow());
+    if (pSoftKeyboard)
     {
-        m_pSoftKeyboardDialog = pSoftKeyboardDialog;
+        //m_pSoftKeyboardDialog = pSoftKeyboardDialog;
 
         /* Show instance: */
-        pSoftKeyboardDialog->show();
-        pSoftKeyboardDialog->setWindowState(pSoftKeyboardDialog->windowState() & ~Qt::WindowMinimized);
-        pSoftKeyboardDialog->activateWindow();
-        connect(pSoftKeyboardDialog, &QIManagerDialog::sigClose,
-                this, &UIMachineLogic::sltCloseSoftKeyboard);
+        pSoftKeyboard->show();
+        // pSoftKeyboardDialog->setWindowState(pSoftKeyboardDialog->windowState() & ~Qt::WindowMinimized);
+        // pSoftKeyboardDialog->activateWindow();
+        // connect(pSoftKeyboardDialog, &QIManagerDialog::sigClose,
+        //         this, &UIMachineLogic::sltCloseSoftKeyboard);
     }
 }
 
 void UIMachineLogic::sltCloseSoftKeyboard()
 {
-    QIManagerDialog* pDialog = qobject_cast<QIManagerDialog*>(sender());
-    if (m_pSoftKeyboardDialog != pDialog || !pDialog)
-        return;
+    // QIManagerDialog* pDialog = qobject_cast<QIManagerDialog*>(sender());
+    // if (m_pSoftKeyboardDialog != pDialog || !pDialog)
+    //     return;
 
-    /* Set the m_pSoftKeyboardDialog to NULL before closing the dialog. or we will have redundant deletes*/
-    m_pSoftKeyboardDialog = 0;
-    pDialog->close();
-    UISoftKeyboardDialogFactory().cleanup(pDialog);
+    // /* Set the m_pSoftKeyboardDialog to NULL before closing the dialog. or we will have redundant deletes*/
+    // m_pSoftKeyboardDialog = 0;
+    // pDialog->close();
+    // UISoftKeyboardDialogFactory().cleanup(pDialog);
 }
 
 void UIMachineLogic::sltToggleMouseIntegration(bool fEnabled)

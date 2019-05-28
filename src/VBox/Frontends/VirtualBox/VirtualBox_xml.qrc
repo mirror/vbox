@@ -1,5 +1,6 @@
 <RCC>
     <qresource suffix="/">
         <file alias="us_layout.xml">xml/us_layout.xml</file>
+        <file alias="102_iso.xml">xml/102_iso.xml</file>
     </qresource>
 </RCC>

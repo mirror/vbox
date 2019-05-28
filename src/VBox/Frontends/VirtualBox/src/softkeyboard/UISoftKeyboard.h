@@ -36,20 +36,20 @@
 /* Forward declarations: */
 class UISession;
 class UISoftKeyboardKey;
-class UISoftKeyboardRow;
 class QHBoxLayout;
 class QVBoxLayout;
+class UISoftKeyboardWidget;
 class UIToolBar;
 
 
-class UISoftKeyboard : public QIWithRetranslateUI<QWidget>
+class UISoftKeyboard : public QIWithRetranslateUI<QMainWindow>
 {
     Q_OBJECT;
 
 public:
 
-    UISoftKeyboard(EmbedTo enmEmbedding, QWidget *pParent, UISession *pSession,
-                                QString strMachineName = QString(), bool fShowToolbar = false);
+    UISoftKeyboard(QWidget *pParent, UISession *pSession,
+                   QString strMachineName = QString());
     ~UISoftKeyboard();
 
 protected:
@@ -76,15 +76,20 @@ private:
 
     UISession     *m_pSession;
     QHBoxLayout   *m_pMainLayout;
-    QWidget       *m_pContainerWidget;
-    UIToolBar     *m_pToolBar;
-    const bool    m_fShowToolbar;
+    UISoftKeyboardWidget       *m_pContainerWidget;
     QString       m_strMachineName;
-    QVector<UISoftKeyboardRow*> m_rows;
     int           m_iTotalRowHeight;
     int           m_iMaxRowWidth;
     QVector<UISoftKeyboardKey*> m_pressedModifiers;
+    QVector<QVector<UISoftKeyboardKey*> > m_keys;
     bool          m_fKeepAspectRatio;
+
+    int m_iXSpacing;
+    int m_iYSpacing;
+    int m_iLeftMargin;
+    int m_iTopMargin;
+    int m_iRightMargin;
+    int m_iBottomMargin;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_softkeyboard_UISoftKeyboard_h */

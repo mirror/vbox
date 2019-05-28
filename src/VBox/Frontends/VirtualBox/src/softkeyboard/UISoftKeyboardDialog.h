@@ -22,11 +22,8 @@
 #endif
 
 /* Qt includes: */
+#include <QMainWindow>
 #include <QString>
-
-/* GUI includes: */
-#include "QIManagerDialog.h"
-#include "QIWithRetranslateUI.h"
 
 /* COM includes: */
 #include "COMEnums.h"
@@ -38,27 +35,8 @@ class UISession;
 class UISoftKeyboardDialog;
 class CGuest;
 
-/** QIManagerDialogFactory extension used as a factory for the Guest Control dialog. */
-class UISoftKeyboardDialogFactory : public QIManagerDialogFactory
-{
-public:
 
-    UISoftKeyboardDialogFactory(UISession *pSession = 0,UIActionPool *pActionPool = 0, const QString &strMachineName = QString());
-
-protected:
-
-    /** Creates derived @a pDialog instance.
-      * @param  pCenterWidget  Passes the widget to center wrt. pCenterWidget. */
-    virtual void create(QIManagerDialog *&pDialog, QWidget *pCenterWidget) /* override */;
-
-    UISession    *m_pSession;
-    UIActionPool *m_pActionPool;
-    QString       m_strMachineName;
-};
-
-
-/** QIManagerDialog extension providing GUI with the dialog displaying guest control releated logs. */
-class UISoftKeyboardDialog : public QIWithRetranslateUI<QIManagerDialog>
+class UISoftKeyboardDialog : public QMainWindow
 {
     Q_OBJECT;
 
@@ -67,7 +45,7 @@ public:
     /** Constructs Guest Control dialog.
       * @param  pCenterWidget  Passes the widget reference to center according to.
       * @param  pActionPool    Passes the action-pool reference. */
-    UISoftKeyboardDialog(QWidget *pCenterWidget, UISession *pSession, UIActionPool *pActionPool, const QString &strMachineName = QString());
+    UISoftKeyboardDialog(QWidget *pParent, UISession *pSession, const QString &strMachineName = QString());
 
 protected:
 
