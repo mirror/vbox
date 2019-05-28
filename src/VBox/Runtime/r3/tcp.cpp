@@ -1077,6 +1077,17 @@ RTR3DECL(int)  RTTcpSetSendCoalescing(RTSOCKET Sock, bool fEnable)
 }
 
 
+RTR3DECL(int)  RTTcpSetBufferSize(RTSOCKET hSocket, uint32_t cbSize)
+{
+    int cbIntSize = (int)cbSize;
+    AssertReturn(cbIntSize >= 0, VERR_OUT_OF_RANGE);
+    int rc = rtSocketSetOpt(hSocket, SOL_SOCKET, SO_SNDBUF, &cbIntSize, sizeof(cbIntSize));
+    if (RT_SUCCESS(rc))
+        rc = rtSocketSetOpt(hSocket, SOL_SOCKET, SO_RCVBUF, &cbIntSize, sizeof(cbIntSize));
+    return rc;
+}
+
+
 RTR3DECL(int)  RTTcpSelectOne(RTSOCKET Sock, RTMSINTERVAL cMillies)
 {
     return RTSocketSelectOne(Sock, cMillies);

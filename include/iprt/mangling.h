@@ -2235,6 +2235,7 @@
 # define RTTcpServerListen2                             RT_MANGLER(RTTcpServerListen2)
 # define RTTcpServerShutdown                            RT_MANGLER(RTTcpServerShutdown)
 # define RTTcpSetSendCoalescing                         RT_MANGLER(RTTcpSetSendCoalescing)
+# define RTTcpSetBufferSize                             RT_MANGLER(RTTcpSetBufferSize)
 # define RTTcpSgWrite                                   RT_MANGLER(RTTcpSgWrite)
 # define RTTcpSgWriteL                                  RT_MANGLER(RTTcpSgWriteL)
 # define RTTcpSgWriteLNB                                RT_MANGLER(RTTcpSgWriteLNB)

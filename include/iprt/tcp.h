@@ -290,6 +290,15 @@ RTR3DECL(int)  RTTcpFlush(RTSOCKET hSocket);
 RTR3DECL(int)  RTTcpSetSendCoalescing(RTSOCKET hSocket, bool fEnable);
 
 /**
+ * Sets send and receive buffer sizes.
+ *
+ * @returns iprt status code.
+ * @param   hSocket     Socket descriptor.
+ * @param   cbSize      Buffer size in bytes.
+ */
+RTR3DECL(int)  RTTcpSetBufferSize(RTSOCKET hSocket, uint32_t cbSize);
+
+/**
  * Socket I/O multiplexing.
  * Checks if the socket is ready for reading.
  *
