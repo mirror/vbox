@@ -301,24 +301,24 @@ void crUnpackTexParameteri(PCrUnpackerState pState)
 #if defined(CR_OPENGL_VERSION_1_2)
 void crUnpackTexSubImage3D(PCrUnpackerState pState)
 {
-    CHECK_BUFFER_SIZE_STATIC_LAST(pState, 40, int);
+    CHECK_BUFFER_SIZE_STATIC_LAST(pState, sizeof(int) + 40, int);
 
-    GLenum target   = READ_DATA(pState,  0, GLenum);
-    GLint level     = READ_DATA(pState,  4, GLint);
-    GLint xoffset   = READ_DATA(pState,  8, GLint);
-    GLint yoffset   = READ_DATA(pState, 12, GLint);
-    GLint zoffset   = READ_DATA(pState, 16, GLint);
-    GLsizei width   = READ_DATA(pState, 20, GLsizei);
-    GLsizei height  = READ_DATA(pState, 24, GLsizei);
-    GLsizei depth   = READ_DATA(pState, 28, GLsizei);
-    GLenum format   = READ_DATA(pState, 32, GLenum);
-    GLenum type     = READ_DATA(pState, 36, GLenum);
-    int noimagedata = READ_DATA(pState, 40, int);
+    GLenum target = READ_DATA(pState, sizeof( int ) + 0, GLenum );
+    GLint level = READ_DATA(pState, sizeof( int ) + 4, GLint );
+    GLint xoffset = READ_DATA(pState, sizeof( int ) + 8, GLint );
+    GLint yoffset = READ_DATA(pState, sizeof( int ) + 12, GLint );
+    GLint zoffset = READ_DATA(pState, sizeof( int ) + 16, GLint );
+    GLsizei width = READ_DATA(pState, sizeof( int ) + 20, GLsizei );
+    GLsizei height = READ_DATA(pState, sizeof( int ) + 24, GLsizei );
+    GLsizei depth = READ_DATA(pState, sizeof( int ) + 28, GLsizei );
+    GLenum format = READ_DATA(pState, sizeof( int ) + 32, GLenum );
+    GLenum type = READ_DATA(pState, sizeof( int ) + 36, GLenum );
+    int noimagedata = READ_DATA(pState, sizeof( int ) + 40, int );
     GLvoid *pixels;
 
-    CHECK_BUFFER_SIZE_STATIC_UPDATE_LAST(pState, 44, GLint);
+    CHECK_BUFFER_SIZE_STATIC_UPDATE_LAST(pState, sizeof(int)+44, GLint);
     if ( noimagedata )
-        pixels = (void*) (uintptr_t) READ_DATA(pState, 44, GLint);
+        pixels = (void*) (uintptr_t) READ_DATA(pState, sizeof(int)+44, GLint);
     else
     {
         size_t cbImg = crImageSize(format, type, width, height);
@@ -327,7 +327,7 @@ void crUnpackTexSubImage3D(PCrUnpackerState pState)
             pState->rcUnpack = VERR_INVALID_PARAMETER;
             return;
         }
-        pixels = DATA_POINTER(pState, 48, GLvoid );
+        pixels = DATA_POINTER(pState, sizeof( int ) + 48, GLvoid );
         CHECK_ARRAY_SIZE_FROM_PTR_UPDATE_LAST(pState, pixels, cbImg, GLubyte);
     }
 
@@ -344,24 +344,24 @@ void crUnpackTexSubImage3D(PCrUnpackerState pState)
 
 void crUnpackTexSubImage2D(PCrUnpackerState pState)
 {
-    CHECK_BUFFER_SIZE_STATIC_LAST(pState, 32, int);
+    CHECK_BUFFER_SIZE_STATIC_LAST(pState, sizeof(int) + 32, int);
 
-    GLenum target   = READ_DATA(pState,  0, GLenum);
-    GLint level     = READ_DATA(pState,  4, GLint);
-    GLint xoffset   = READ_DATA(pState,  8, GLint);
-    GLint yoffset   = READ_DATA(pState, 12, GLint);
-    GLsizei width   = READ_DATA(pState, 16, GLsizei);
-    GLsizei height  = READ_DATA(pState, 20, GLsizei);
-    GLenum format   = READ_DATA(pState, 24, GLenum);
-    GLenum type     = READ_DATA(pState, 28, GLenum);
-    int noimagedata = READ_DATA(pState, 32, int);
+    GLenum target = READ_DATA(pState, sizeof( int ) + 0, GLenum );
+    GLint level = READ_DATA(pState, sizeof( int ) + 4, GLint );
+    GLint xoffset = READ_DATA(pState, sizeof( int ) + 8, GLint );
+    GLint yoffset = READ_DATA(pState, sizeof( int ) + 12, GLint );
+    GLsizei width = READ_DATA(pState, sizeof( int ) + 16, GLsizei );
+    GLsizei height = READ_DATA(pState, sizeof( int ) + 20, GLsizei );
+    GLenum format = READ_DATA(pState, sizeof( int ) + 24, GLenum );
+    GLenum type = READ_DATA(pState, sizeof( int ) + 28, GLenum );
+    int noimagedata = READ_DATA(pState, sizeof( int ) + 32, int );
     GLvoid *pixels;
 
-    CHECK_BUFFER_SIZE_STATIC_UPDATE_LAST(pState, 36, GLint);
+    CHECK_BUFFER_SIZE_STATIC_UPDATE_LAST(pState, sizeof(int)+36, GLint);
     if ( noimagedata )
     {
-        CHECK_BUFFER_SIZE_STATIC_UPDATE_LAST(pState, 36, GLint);
-        pixels = (void*) (uintptr_t) READ_DATA(pState, 36, GLint);
+        CHECK_BUFFER_SIZE_STATIC_UPDATE_LAST(pState, sizeof(int)+36, GLint);
+        pixels = (void*) (uintptr_t) READ_DATA(pState, sizeof(int)+36, GLint);
     }
     else
     {
@@ -371,7 +371,7 @@ void crUnpackTexSubImage2D(PCrUnpackerState pState)
             pState->rcUnpack = VERR_INVALID_PARAMETER;
             return;
         }
-        pixels = DATA_POINTER(pState, 40, GLvoid );
+        pixels = DATA_POINTER(pState, sizeof( int ) + 40, GLvoid );
         CHECK_ARRAY_SIZE_FROM_PTR_UPDATE_LAST(pState, pixels, cbImg, GLubyte);
     }
 
@@ -387,20 +387,20 @@ void crUnpackTexSubImage2D(PCrUnpackerState pState)
 
 void crUnpackTexSubImage1D(PCrUnpackerState pState)
 {
-    CHECK_BUFFER_SIZE_STATIC_LAST(pState, 24, int);
+    CHECK_BUFFER_SIZE_STATIC_LAST(pState, sizeof(int) + 24, int);
 
-    GLenum target   = READ_DATA(pState,  0, GLenum);
-    GLint level     = READ_DATA(pState,  4, GLint);
-    GLint xoffset   = READ_DATA(pState,  8, GLint);
-    GLsizei width   = READ_DATA(pState, 12, GLsizei);
-    GLenum format   = READ_DATA(pState, 16, GLenum);
-    GLenum type     = READ_DATA(pState, 20, GLenum);
-    int noimagedata = READ_DATA(pState, 24, int);
+    GLenum target = READ_DATA(pState, sizeof( int ) + 0, GLenum );
+    GLint level = READ_DATA(pState, sizeof( int ) + 4, GLint );
+    GLint xoffset = READ_DATA(pState, sizeof( int ) + 8, GLint );
+    GLsizei width = READ_DATA(pState, sizeof( int ) + 12, GLsizei );
+    GLenum format = READ_DATA(pState, sizeof( int ) + 16, GLenum );
+    GLenum type = READ_DATA(pState, sizeof( int ) + 20, GLenum );
+    int noimagedata = READ_DATA(pState, sizeof( int ) + 24, int );
     GLvoid *pixels;
 
-    CHECK_BUFFER_SIZE_STATIC_UPDATE_LAST(pState, 28, GLint);
+    CHECK_BUFFER_SIZE_STATIC_UPDATE_LAST(pState, sizeof(int)+28, GLint);
     if ( noimagedata )
-        pixels = (void*) (uintptr_t) READ_DATA(pState, 28, GLint);
+        pixels = (void*) (uintptr_t) READ_DATA(pState, sizeof(int)+28, GLint);
     else
     {
         size_t cbImg = crImageSize(format, type, width, 1);
@@ -409,7 +409,7 @@ void crUnpackTexSubImage1D(PCrUnpackerState pState)
             pState->rcUnpack = VERR_INVALID_PARAMETER;
             return;
         }
-        pixels = DATA_POINTER(pState, 32, GLvoid );
+        pixels = DATA_POINTER(pState, sizeof( int ) + 32, GLvoid );
         CHECK_ARRAY_SIZE_FROM_PTR_UPDATE_LAST(pState, pixels, cbImg, GLubyte);
     }
 
@@ -526,25 +526,25 @@ void crUnpackExtendAreTexturesResident(PCrUnpackerState pState)
 
 void crUnpackExtendCompressedTexImage3DARB(PCrUnpackerState pState)
 {
-    CHECK_BUFFER_SIZE_STATIC_LAST(pState, 4 + 32, int);
+    CHECK_BUFFER_SIZE_STATIC_LAST(pState, 4 + sizeof(int) + 32, int);
 
-    GLenum  target         = READ_DATA(pState, 4 +  0, GLenum);
-    GLint   level          = READ_DATA(pState, 4 +  4, GLint);
-    GLenum  internalformat = READ_DATA(pState, 4 +  8, GLenum);
-    GLsizei width          = READ_DATA(pState, 4 + 12, GLsizei);
-    GLsizei height         = READ_DATA(pState, 4 + 16, GLsizei);
-    GLsizei depth          = READ_DATA(pState, 4 + 20, GLsizei);
-    GLint   border         = READ_DATA(pState, 4 + 24, GLint);
-    GLsizei imagesize      = READ_DATA(pState, 4 + 28, GLsizei);
-    int     noimagedata    = READ_DATA(pState, 4 + 32, int);
+    GLenum  target         = READ_DATA(pState, 4 + sizeof(int) +  0, GLenum );
+    GLint   level          = READ_DATA(pState, 4 + sizeof(int) +  4, GLint );
+    GLenum  internalformat = READ_DATA(pState, 4 + sizeof(int) +  8, GLenum );
+    GLsizei width          = READ_DATA(pState, 4 + sizeof(int) + 12, GLsizei );
+    GLsizei height         = READ_DATA(pState, 4 + sizeof(int) + 16, GLsizei );
+    GLsizei depth          = READ_DATA(pState, 4 + sizeof(int) + 20, GLsizei );
+    GLint   border         = READ_DATA(pState, 4 + sizeof(int) + 24, GLint );
+    GLsizei imagesize      = READ_DATA(pState, 4 + sizeof(int) + 28, GLsizei );
+    int     noimagedata        = READ_DATA(pState, 4 + sizeof(int) + 32, int );
     GLvoid  *pixels;
 
-    CHECK_BUFFER_SIZE_STATIC_UPDATE_LAST(pState, 4 + 36, GLint);
+    CHECK_BUFFER_SIZE_STATIC_UPDATE_LAST(pState, 4 + sizeof(int)+36, GLint);
     if( noimagedata )
-        pixels = (void*) (uintptr_t) READ_DATA(pState, 4 + 36, GLint);
+        pixels = (void*) (uintptr_t) READ_DATA(pState, 4+sizeof(int)+36, GLint);
     else
     {
-        pixels = DATA_POINTER(pState, 4 + 40, GLvoid );
+        pixels = DATA_POINTER(pState, 4 + sizeof( int ) + 40, GLvoid );
         CHECK_ARRAY_SIZE_FROM_PTR_UPDATE_LAST(pState, pixels, imagesize, GLubyte);
     }
 
@@ -556,24 +556,24 @@ void crUnpackExtendCompressedTexImage3DARB(PCrUnpackerState pState)
 
 void crUnpackExtendCompressedTexImage2DARB(PCrUnpackerState pState)
 {
-    CHECK_BUFFER_SIZE_STATIC_LAST(pState, 4 + 28, int);
+    CHECK_BUFFER_SIZE_STATIC_LAST(pState, 4 + sizeof(int) + 28, int);
 
-    GLenum target =         READ_DATA(pState, 4 +  0, GLenum);
-    GLint level =           READ_DATA(pState, 4 +  4, GLint);
-    GLenum internalformat = READ_DATA(pState, 4 +  8, GLenum);
-    GLsizei width =         READ_DATA(pState, 4 + 12, GLsizei);
-    GLsizei height =        READ_DATA(pState, 4 + 16, GLsizei);
-    GLint border =          READ_DATA(pState, 4 + 20, GLint);
-    GLsizei imagesize =     READ_DATA(pState, 4 + 24, GLsizei);
-    int noimagedata =       READ_DATA(pState, 4 + 28, int);
+    GLenum target =         READ_DATA(pState, 4 + sizeof( int ) + 0, GLenum );
+    GLint level =           READ_DATA(pState, 4 + sizeof( int ) + 4, GLint );
+    GLenum internalformat = READ_DATA(pState, 4 + sizeof( int ) + 8, GLenum );
+    GLsizei width =         READ_DATA(pState, 4 + sizeof( int ) + 12, GLsizei );
+    GLsizei height =        READ_DATA(pState, 4 + sizeof( int ) + 16, GLsizei );
+    GLint border =          READ_DATA(pState, 4 + sizeof( int ) + 20, GLint );
+    GLsizei imagesize =     READ_DATA(pState, 4 + sizeof( int ) + 24, GLsizei );
+    int noimagedata =           READ_DATA(pState, 4 + sizeof( int ) + 28, int );
     GLvoid *pixels;
 
-    CHECK_BUFFER_SIZE_STATIC_UPDATE_LAST(pState, 4 + 32, GLint);
+    CHECK_BUFFER_SIZE_STATIC_UPDATE_LAST(pState, 4 + sizeof(int)+32, GLint);
     if ( noimagedata )
-        pixels = (void*) (uintptr_t) READ_DATA(pState, 4 + 32, GLint);
+        pixels = (void*) (uintptr_t) READ_DATA(pState, 4+sizeof(int)+32, GLint);
     else
     {
-        pixels = DATA_POINTER(pState, 4 + 36, GLvoid );
+        pixels = DATA_POINTER(pState, 4 + sizeof( int ) + 36, GLvoid );
         CHECK_ARRAY_SIZE_FROM_PTR_UPDATE_LAST(pState, pixels, imagesize, GLubyte);
     }
 
@@ -585,23 +585,23 @@ void crUnpackExtendCompressedTexImage2DARB(PCrUnpackerState pState)
 
 void crUnpackExtendCompressedTexImage1DARB(PCrUnpackerState pState)
 {
-    CHECK_BUFFER_SIZE_STATIC_LAST(pState, 4 + 24, int);
+    CHECK_BUFFER_SIZE_STATIC_LAST(pState, 4 + sizeof(int) + 24, int);
 
-    GLenum  target         = READ_DATA(pState, 4 +  0, GLenum);
-    GLint   level          = READ_DATA(pState, 4 +  4, GLint);
-    GLenum  internalformat = READ_DATA(pState, 4 +  8, GLenum);
-    GLsizei width          = READ_DATA(pState, 4 + 12, GLsizei);
-    GLint   border         = READ_DATA(pState, 4 + 16, GLint);
-    GLsizei imagesize      = READ_DATA(pState, 4 + 20, GLsizei);
-    int     noimagedata    = READ_DATA(pState, 4 + 24, int);
+    GLenum  target         = READ_DATA(pState, 4 + sizeof(int) +  0, GLenum );
+    GLint   level          = READ_DATA(pState, 4 + sizeof(int) +  4, GLint );
+    GLenum  internalformat = READ_DATA(pState, 4 + sizeof(int) +  8, GLenum );
+    GLsizei width          = READ_DATA(pState, 4 + sizeof(int) + 12, GLsizei );
+    GLint   border         = READ_DATA(pState, 4 + sizeof(int) + 16, GLint );
+    GLsizei imagesize      = READ_DATA(pState, 4 + sizeof(int) + 20, GLsizei );
+    int     noimagedata        = READ_DATA(pState, 4 + sizeof(int) + 24, int );
     GLvoid  *pixels;
 
-    CHECK_BUFFER_SIZE_STATIC_UPDATE_LAST(pState, 4 + 28, GLint);
+    CHECK_BUFFER_SIZE_STATIC_UPDATE_LAST(pState, 4 + sizeof(int)+28, GLint);
     if( noimagedata )
-        pixels = (void*) (uintptr_t) READ_DATA(pState, 4 + 28, GLint);
+        pixels = (void*) (uintptr_t) READ_DATA(pState, 4+sizeof(int)+28, GLint);
     else
     {
-        pixels = DATA_POINTER(pState, 4 + 32, GLvoid );
+        pixels = DATA_POINTER(pState, 4 + sizeof( int ) + 32, GLvoid );
         CHECK_ARRAY_SIZE_FROM_PTR_UPDATE_LAST(pState, pixels, imagesize, GLubyte);
     }
 
@@ -612,27 +612,27 @@ void crUnpackExtendCompressedTexImage1DARB(PCrUnpackerState pState)
 
 void crUnpackExtendCompressedTexSubImage3DARB(PCrUnpackerState pState)
 {
-    CHECK_BUFFER_SIZE_STATIC_LAST(pState, 4 + 40, int);
+    CHECK_BUFFER_SIZE_STATIC_LAST(pState, 4 + sizeof(int) + 40, int);
 
-    GLenum  target    = READ_DATA(pState, 4 +  0, GLenum );
-    GLint   level     = READ_DATA(pState, 4 +  4, GLint );
-    GLint   xoffset   = READ_DATA(pState, 4 +  8, GLint );
-    GLint   yoffset   = READ_DATA(pState, 4 + 12, GLint );
-    GLint   zoffset   = READ_DATA(pState, 4 + 16, GLint );
-    GLsizei width     = READ_DATA(pState, 4 + 20, GLsizei );
-    GLsizei height    = READ_DATA(pState, 4 + 24, GLsizei );
-    GLsizei depth     = READ_DATA(pState, 4 + 28, GLsizei );
-    GLenum  format    = READ_DATA(pState, 4 + 32, GLenum );
-    GLsizei imagesize = READ_DATA(pState, 4 + 36, GLsizei );
-    int     noimagedata   = READ_DATA(pState, 4 + 40, int );
+    GLenum  target    = READ_DATA(pState, 4 + sizeof(int) +  0, GLenum );
+    GLint   level     = READ_DATA(pState, 4 + sizeof(int) +  4, GLint );
+    GLint   xoffset   = READ_DATA(pState, 4 + sizeof(int) +  8, GLint );
+    GLint   yoffset   = READ_DATA(pState, 4 + sizeof(int) + 12, GLint );
+    GLint   zoffset   = READ_DATA(pState, 4 + sizeof(int) + 16, GLint );
+    GLsizei width     = READ_DATA(pState, 4 + sizeof(int) + 20, GLsizei );
+    GLsizei height    = READ_DATA(pState, 4 + sizeof(int) + 24, GLsizei );
+    GLsizei depth     = READ_DATA(pState, 4 + sizeof(int) + 28, GLsizei );
+    GLenum  format    = READ_DATA(pState, 4 + sizeof(int) + 32, GLenum );
+    GLsizei imagesize = READ_DATA(pState, 4 + sizeof(int) + 36, GLsizei );
+    int     noimagedata   = READ_DATA(pState, 4 + sizeof(int) + 40, int );
     GLvoid  *pixels;
 
-    CHECK_BUFFER_SIZE_STATIC_UPDATE_LAST(pState, 4 + 44, GLint);
+    CHECK_BUFFER_SIZE_STATIC_UPDATE_LAST(pState, 4 + sizeof(int)+44, GLint);
     if( noimagedata )
-        pixels = (void*) (uintptr_t) READ_DATA(pState, 4 + 44, GLint);
+        pixels = (void*) (uintptr_t) READ_DATA(pState, 4+sizeof(int)+44, GLint);
     else
     {
-        pixels = DATA_POINTER(pState, 4 + 48, GLvoid );
+        pixels = DATA_POINTER(pState, 4 + sizeof( int ) + 48, GLvoid );
         CHECK_ARRAY_SIZE_FROM_PTR_UPDATE_LAST(pState, pixels, imagesize, GLubyte);
     }
 
@@ -645,25 +645,25 @@ void crUnpackExtendCompressedTexSubImage3DARB(PCrUnpackerState pState)
 
 void crUnpackExtendCompressedTexSubImage2DARB(PCrUnpackerState pState)
 {
-    CHECK_BUFFER_SIZE_STATIC_LAST(pState, 4 + 32, int);
+    CHECK_BUFFER_SIZE_STATIC_LAST(pState, 4 + sizeof(int) + 32, int);
 
-    GLenum  target      = READ_DATA(pState, 4 +  0, GLenum);
-    GLint   level       = READ_DATA(pState, 4 +  4, GLint);
-    GLint   xoffset     = READ_DATA(pState, 4 +  8, GLint);
-    GLint   yoffset     = READ_DATA(pState, 4 + 12, GLint);
-    GLsizei width       = READ_DATA(pState, 4 + 16, GLsizei);
-    GLsizei height      = READ_DATA(pState, 4 + 20, GLsizei);
-    GLenum  format      = READ_DATA(pState, 4 + 24, GLenum);
-    GLsizei imagesize   = READ_DATA(pState, 4 + 28, GLsizei);
-    int     noimagedata = READ_DATA(pState, 4 + 32, int);
+    GLenum  target    = READ_DATA(pState, 4 + sizeof(int) +  0, GLenum );
+    GLint   level     = READ_DATA(pState, 4 + sizeof(int) +  4, GLint );
+    GLint   xoffset   = READ_DATA(pState, 4 + sizeof(int) +  8, GLint );
+    GLint   yoffset   = READ_DATA(pState, 4 + sizeof(int) + 12, GLint );
+    GLsizei width     = READ_DATA(pState, 4 + sizeof(int) + 16, GLsizei );
+    GLsizei height    = READ_DATA(pState, 4 + sizeof(int) + 20, GLsizei );
+    GLenum  format    = READ_DATA(pState, 4 + sizeof(int) + 24, GLenum );
+    GLsizei imagesize = READ_DATA(pState, 4 + sizeof(int) + 28, GLsizei );
+    int     noimagedata   = READ_DATA(pState, 4 + sizeof(int) + 32, int );
     GLvoid  *pixels;
 
-    CHECK_BUFFER_SIZE_STATIC_UPDATE_LAST(pState, 4 + 36, GLint);
+    CHECK_BUFFER_SIZE_STATIC_UPDATE_LAST(pState, 4 + sizeof(int)+36, GLint);
     if( noimagedata )
-        pixels = (void*) (uintptr_t) READ_DATA(pState, 4 + 36, GLint);
+        pixels = (void*) (uintptr_t) READ_DATA(pState, 4+sizeof(int)+36, GLint);
     else
     {
-        pixels = DATA_POINTER(pState, 4 + 40, GLvoid );
+        pixels = DATA_POINTER(pState, 4 + sizeof( int ) + 40, GLvoid );
         CHECK_ARRAY_SIZE_FROM_PTR_UPDATE_LAST(pState, pixels, imagesize, GLubyte);
     }
 
@@ -675,23 +675,23 @@ void crUnpackExtendCompressedTexSubImage2DARB(PCrUnpackerState pState)
 
 void crUnpackExtendCompressedTexSubImage1DARB(PCrUnpackerState pState)
 {
-    CHECK_BUFFER_SIZE_STATIC_LAST(pState, 4 + 24, int);
+    CHECK_BUFFER_SIZE_STATIC_LAST(pState, 4 + sizeof(int) + 24, int);
 
-    GLenum  target      = READ_DATA(pState, 4 +  0, GLenum);
-    GLint   level       = READ_DATA(pState, 4 +  4, GLint);
-    GLint   xoffset     = READ_DATA(pState, 4 +  8, GLint);
-    GLsizei width       = READ_DATA(pState, 4 + 12, GLsizei);
-    GLenum  format      = READ_DATA(pState, 4 + 16, GLenum);
-    GLsizei imagesize   = READ_DATA(pState, 4 + 20, GLsizei);
-    int     noimagedata = READ_DATA(pState, 4 + 24, int);
+    GLenum  target    = READ_DATA(pState, 4 + sizeof(int) +  0, GLenum );
+    GLint   level     = READ_DATA(pState, 4 + sizeof(int) +  4, GLint );
+    GLint   xoffset   = READ_DATA(pState, 4 + sizeof(int) +  8, GLint );
+    GLsizei width     = READ_DATA(pState, 4 + sizeof(int) + 12, GLsizei );
+    GLenum  format    = READ_DATA(pState, 4 + sizeof(int) + 16, GLenum );
+    GLsizei imagesize = READ_DATA(pState, 4 + sizeof(int) + 20, GLsizei );
+    int     noimagedata   = READ_DATA(pState, 4 + sizeof(int) + 24, int );
     GLvoid  *pixels;
 
-    CHECK_BUFFER_SIZE_STATIC_UPDATE_LAST(pState, 4 + 28, GLint);
+    CHECK_BUFFER_SIZE_STATIC_UPDATE_LAST(pState, 4 + sizeof(int)+28, GLint);
     if( noimagedata )
-        pixels = (void*) (uintptr_t) READ_DATA(pState, 4 + 28, GLint);
+        pixels = (void*) (uintptr_t) READ_DATA(pState, 4+sizeof(int)+28, GLint);
     else
     {
-        pixels = DATA_POINTER(pState, 4 + 32, GLvoid );
+        pixels = DATA_POINTER(pState, 4 + sizeof( int ) + 32, GLvoid );
         CHECK_ARRAY_SIZE_FROM_PTR_UPDATE_LAST(pState, pixels, imagesize, GLubyte);
     }
 
