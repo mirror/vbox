@@ -85,6 +85,11 @@
 /** The minimum cool down time (ms). */
 #define NETPERF_MIN_COOL_DOWN                   1000  /*  1s */
 
+/** Maximum socket buffer size possible (bytes). */
+#define NETPERF_MAX_BUF_SIZE                    _128M
+/** Minimum socket buffer size possible (bytes). */
+#define NETPERF_MIN_BUF_SIZE                    256
+
 /** The length of the length prefix used when submitting parameters and
  * results. */
 #define NETPERF_LEN_PREFIX                      4
@@ -141,6 +146,8 @@ typedef struct NETPERFPARAMS
     bool            fServerStats;
     /** Server: Quit after the first client. */
     bool            fSingleClient;
+    /** Send and receive buffer sizes for TCP sockets, zero if to use defaults. */
+    uint32_t        cbBufferSize;
     /** @} */
 
     /** @name Dynamic settings
@@ -234,6 +241,7 @@ static const RTGETOPTDEF g_aCmdOptions[] =
     { "--daemonized",       'D', RTGETOPT_REQ_NOTHING },
     { "--check-data",       'C', RTGETOPT_REQ_NOTHING },
     { "--verbose",          'v', RTGETOPT_REQ_NOTHING },
+    { "--buffer-size",      'b', RTGETOPT_REQ_UINT32  },
     { "--help",             'h', RTGETOPT_REQ_NOTHING } /* for Usage() */
 };
 
@@ -302,6 +310,9 @@ static void Usage(PRTSTREAM pStrm)
                 break;
             case 'C':
                 pszHelp = "Check payload data at the receiving end";
+                break;
+            case 'b':
+                pszHelp = "Send and receive buffer sizes for TCP";
                 break;
             case 'v':
                 pszHelp = "Verbose execution.";
@@ -1138,6 +1149,16 @@ static DECLCALLBACK(int) netperfTCPServerWorker(RTSOCKET hSocket, void *pvUser)
     }
 
     /*
+     * Adjust send and receive buffer sizes if necessary.
+     */
+    if (pParams->cbBufferSize)
+    {
+        rc = RTTcpSetBufferSize(hSocket, pParams->cbBufferSize);
+        if (RT_FAILURE(rc))
+            return RTTestIFailedRc(rc, "Failed to set socket buffer sizes to %#x: %Rrc\n", pParams->cbBufferSize, rc);
+    }
+
+    /*
      * Greet the other dude.
      */
     rc = RTTcpWrite(hSocket, g_ConnectStart, sizeof(g_ConnectStart) - 1);
@@ -1638,6 +1659,16 @@ static int netperfTCPClient(const char *pszServer, NETPERFPARAMS *pParams)
     }
 
     /*
+     * Adjust send and receive buffer sizes if necessary.
+     */
+    if (pParams->cbBufferSize)
+    {
+        rc = RTTcpSetBufferSize(hSocket, pParams->cbBufferSize);
+        if (RT_FAILURE(rc))
+            return RTTestIFailedRc(rc, "Failed to set socket buffer sizes to %#x: %Rrc\n", pParams->cbBufferSize, rc);
+    }
+
+    /*
      * Verify the super secret Start Connect Id to start the connection.
      */
     char szBuf[256 + NETPERF_LEN_PREFIX];
@@ -1793,6 +1824,7 @@ int main(int argc, char *argv[])
     Params.cMsWarmup        = NETPERF_DEFAULT_WARMUP;
     Params.cMsCoolDown      = NETPERF_DEFAULT_COOL_DOWN;
     Params.cbPacket         = NETPERF_DEFAULT_PKT_SIZE_LATENCY;
+    Params.cbBufferSize     = 0;
 
     Params.hSocket          = NIL_RTSOCKET;
 
@@ -1919,6 +1951,18 @@ int main(int argc, char *argv[])
 
             case 'C':
                 Params.fCheckData = true;
+                break;
+
+            case 'b':
+                Params.cbBufferSize = ValueUnion.u32;
+                if (   (    Params.cbBufferSize < NETPERF_MIN_BUF_SIZE
+                         || Params.cbBufferSize > NETPERF_MAX_BUF_SIZE)
+                    && Params.cbBufferSize  != 0)
+                {
+                    RTTestFailed(g_hTest, "Invalid packet size %u bytes, valid range: %u-%u or 0\n",
+                                 Params.cbBufferSize, NETPERF_MIN_BUF_SIZE, NETPERF_MAX_BUF_SIZE);
+                    return RTTestSummaryAndDestroy(g_hTest);
+                }
                 break;
 
             default:
