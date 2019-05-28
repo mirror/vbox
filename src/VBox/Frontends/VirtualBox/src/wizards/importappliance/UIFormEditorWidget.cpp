@@ -59,15 +59,15 @@ public:
     /** Constructs choice data on the basis of passed @a values and @a iSelectedIndex. */
     ChoiceData(const QVector<QString> &values, int iSelectedIndex)
         : m_values(values), m_iSelectedIndex(iSelectedIndex) {}
-    /** Constructs choice data on the basis of another @a choice data. */
-    ChoiceData(const ChoiceData &choice)
-        : m_values(choice.values()), m_iSelectedIndex(choice.selectedIndex()) {}
+    /** Constructs choice data on the basis of @a another choice data. */
+    ChoiceData(const ChoiceData &another)
+        : m_values(another.values()), m_iSelectedIndex(another.selectedIndex()) {}
 
-    /** Assigns values of @a other choice to this one. */
-    ChoiceData &operator=(const ChoiceData &other)
+    /** Assigns values of @a another choice to this one. */
+    ChoiceData &operator=(const ChoiceData &another)
     {
-        m_values = other.values();
-        m_iSelectedIndex = other.selectedIndex();
+        m_values = another.values();
+        m_iSelectedIndex = another.selectedIndex();
         return *this;
     }
 
@@ -92,7 +92,7 @@ private:
 Q_DECLARE_METATYPE(ChoiceData);
 
 
-/** QComboBox extension used as Port editor. */
+/** QComboBox extension used as ChoiceData editor. */
 class ChoiceEditor : public QComboBox
 {
     Q_OBJECT;
@@ -100,7 +100,7 @@ class ChoiceEditor : public QComboBox
 
 public:
 
-    /** Constructs Port-editor passing @a pParent to the base-class. */
+    /** Constructs ChoiceData editor passing @a pParent to the base-class. */
     ChoiceEditor(QWidget *pParent = 0)
         : QComboBox(pParent) {}
 
