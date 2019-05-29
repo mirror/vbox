@@ -137,7 +137,7 @@ HRESULT Appliance::interpret()
     /* Clear any previous virtual system descriptions */
     m->virtualSystemDescriptions.clear();
 
-    if (!m->pReader)
+    if (m->locInfo.storageType == VFSType_File && !m->pReader)
         return setError(E_FAIL,
                         tr("Cannot interpret appliance without reading it first (call read() before interpret())"));
 
