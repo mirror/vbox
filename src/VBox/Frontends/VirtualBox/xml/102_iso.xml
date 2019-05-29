@@ -81,18 +81,20 @@
         </space>
         <key>
             <keycap>PrtScn</keycap>
-            <position>121</position>
-            <scancode></scancode>
+            <position>124</position>
+            <scancodeprefix>0xe0</scancodeprefix>
+            <scancode>37</scancode>
         </key>
         <key>
             <keycap>ScrollLock</keycap>
-            <position>122</position>
+            <position>125</position>
             <scancode>0x46</scancode>
         </key>
         <key>
             <keycap>Pause</keycap>
-            <position>123</position>
-            <scancode></scancode>
+            <position>126</position>
+            <scancodeprefix>0xe0-0x1d</scancodeprefix>
+            <scancode>0x45</scancode>
         </key>
     </row>
     <space>
@@ -180,28 +182,32 @@
         <key>
             <width>110</width>
             <keycap>Backspace</keycap>
-            <position>14</position>
+            <position>15</position>
             <scancode>0x0e</scancode>
         </key>
         <space>
             <width>25</width>
         </space>
         <key>
-            <keycap>PrtScn</keycap>
-            <position>121</position>
-            <scancode></scancode>
+            <keycap>Insert</keycap>
+            <position>75</position>
+            <scancodeprefix>0xe0</scancodeprefix>
+            <scancode>52</scancode>
         </key>
         <key>
-            <keycap>ScrollLock</keycap>
-            <position>122</position>
-            <scancode>0x46</scancode>
+            <keycap>Home</keycap>
+            <position>80</position>
+            <scancodeprefix>0xe0</scancodeprefix>
+            <scancode>0x47</scancode>
         </key>
         <key>
-            <keycap>ScrollLock</keycap>
-            <position>122</position>
-            <scancode>0x46</scancode>
+            <keycap>Page Up</keycap>
+            <position>85</position>
+            <scancodeprefix>0xe0</scancodeprefix>
+            <scancode>0x49</scancode>
         </key>
     </row>
+    <!-- ======================================= -->
     <row>
         <key>
             <width>75</width>
@@ -275,7 +281,7 @@
             <width>85</width>
             <height>105</height>
             <keycap>Enter</keycap>
-            <position>29</position>
+            <position>43</position>
             <scancode>0x2b</scancode>
             <cutout>
                 <width>25</width>
@@ -288,17 +294,17 @@
         </space>
         <key>
             <keycap>PrtScn</keycap>
-            <position>121</position>
+            <position>76</position>
             <scancode></scancode>
         </key>
         <key>
             <keycap>ScrollLock</keycap>
-            <position>122</position>
+            <position>81</position>
             <scancode>0x46</scancode>
         </key>
         <key>
             <keycap>ScrollLock</keycap>
-            <position>122</position>
+            <position>86</position>
             <scancode>0x46</scancode>
         </key>
     </row>
@@ -383,6 +389,12 @@
             <scancode>0x2a</scancode>
         </key>
         <key>
+            <keycap>?</keycap>
+            <keycap>/</keycap>
+            <position>45</position>
+            <scancode>0x35</scancode>
+        </key>
+        <key>
             <keycap>Z</keycap>
             <position>46</position>
             <scancode>0x2c</scancode>
@@ -436,12 +448,6 @@
             <scancode>0x35</scancode>
         </key>
         <key>
-            <keycap>?</keycap>
-            <keycap>/</keycap>
-            <position>55</position>
-            <scancode>0x35</scancode>
-        </key>
-        <key>
             <width>140</width>
             <keycap>Shift</keycap>
             <type>modifier</type>
@@ -485,6 +491,7 @@
         <key>
             <keycap>AltGr</keycap>
             <type>modifier</type>
+            <position>62</position>
             <scancodeprefix>0xe0</scancodeprefix>
             <scancode>0x38</scancode>
         </key>
@@ -502,6 +509,7 @@
         <key>
             <keycap>Ctrl</keycap>
             <width>105</width>
+            <position>64</position>
             <type>modifier</type>
             <scancodeprefix>0xe0</scancodeprefix>
             <scancode>0x1d</scancode>

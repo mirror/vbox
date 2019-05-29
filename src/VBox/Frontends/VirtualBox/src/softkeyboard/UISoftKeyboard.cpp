@@ -118,6 +118,9 @@ public:
     void setSpaceWidthAfter(int iSpace);
     int spaceWidthAfter() const;
 
+    void setPosition(int iPosition);
+    int position() const;
+
     void setType(UIKeyType enmType);
     UIKeyType type() const;
 
@@ -158,6 +161,8 @@ private:
     int        m_iCutoutHeight;
     /** -1 is no cutout. 0 is the topleft corner. we go clockwise. */
     int        m_iCutoutCorner;
+    /** Key's position in the layout. */
+    int        m_iPosition;
 };
 
 /*********************************************************************************************************************************
@@ -250,6 +255,7 @@ UISoftKeyboardKey::UISoftKeyboardKey()
     , m_iCutoutWidth(0)
     , m_iCutoutHeight(0)
     , m_iCutoutCorner(-1)
+    , m_iPosition(0)
 {
 }
 
@@ -324,6 +330,16 @@ void UISoftKeyboardKey::setSpaceWidthAfter(int iSpace)
 int UISoftKeyboardKey::spaceWidthAfter() const
 {
     return m_iSpaceWidthAfter;
+}
+
+void UISoftKeyboardKey::setPosition(int iPosition)
+{
+    m_iPosition = iPosition;
+}
+
+int UISoftKeyboardKey::position() const
+{
+    return m_iPosition;
 }
 
 void UISoftKeyboardKey::setType(UIKeyType enmType)
@@ -522,6 +538,8 @@ void UIKeyboardLayoutReader::parseKey(UISoftKeyboardRow &row)
             key.setKeyCap(m_xmlReader.readElementText());
         else if (m_xmlReader.name() == "cutout")
             parseCutout(key);
+       else if (m_xmlReader.name() == "position")
+            key.setPosition(m_xmlReader.readElementText().toInt());
         // else if (m_xmlReader.name() == "type")
         // {
         //     QString strType = m_xmlReader.readElementText();
@@ -552,9 +570,9 @@ void UIKeyboardLayoutReader::parseKeySpace(UISoftKeyboardRow &row)
 
 void UIKeyboardLayoutReader::parseCutout(UISoftKeyboardKey &key)
 {
-    int iWidth;
-    int iHeight;
-    int iCorner;
+    int iWidth = 0;
+    int iHeight = 0;
+    int iCorner = 0;
     while (m_xmlReader.readNextStartElement())
     {
         if (m_xmlReader.name() == "width")
@@ -686,7 +704,8 @@ protected:
                 painter.translate(key.keyGeometry().x(), key.keyGeometry().y());
                 painter.drawPolygon(key.polygon());
                 QRect textRect(0, 0, key.keyGeometry().width(), key.keyGeometry().height());
-                painter.drawText(textRect, Qt::TextWordWrap, key.keyCap());
+                //painter.drawText(textRect, Qt::TextWordWrap, key.keyCap());
+                painter.drawText(textRect, Qt::TextWordWrap, QString::number(key.position()));
                 painter.translate(-key.keyGeometry().x(), -key.keyGeometry().y());
             }
         }
