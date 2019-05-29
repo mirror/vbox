@@ -79,13 +79,12 @@ class MachineMoveVM : public ThreadTask
         Utf8Str m_description;
     };
 
-    /** @todo r=bird: Why no m_ prefixes here? */
-    RTCList<MEDIUMTASKCHAINMOVE>            llMedias;
-    RTCList<SAVESTATETASKMOVE>              llSaveStateFiles;
-    std::map<Utf8Str, MEDIUMTASKMOVE>       finalMediumsMap;
-    std::map<Utf8Str, SAVESTATETASKMOVE>    finalSaveStateFilesMap;
-    std::map<VBoxFolder_t, Utf8Str>         vmFolders;
-    std::list<ErrorInfoItem>                errorsList;
+    RTCList<MEDIUMTASKCHAINMOVE>            m_llMedias;
+    RTCList<SAVESTATETASKMOVE>              m_llSaveStateFiles;
+    std::map<Utf8Str, MEDIUMTASKMOVE>       m_finalMediumsMap;
+    std::map<Utf8Str, SAVESTATETASKMOVE>    m_finalSaveStateFilesMap;
+    std::map<VBoxFolder_t, Utf8Str>         m_vmFolders;
+    std::list<ErrorInfoItem>                m_errorsList;
 
     ComObjPtr<Machine>  m_pMachine;
     ComObjPtr<Progress> m_pProgress;
@@ -94,7 +93,7 @@ class MachineMoveVM : public ThreadTask
     ComPtr<IMachine>    m_pSessionMachine;
     Utf8Str             m_targetPath;
     Utf8Str             m_type;
-    HRESULT             result; /**< @todo r=bird: Why no m_ prefix here?    */
+    HRESULT             m_result;
 
 public:
     MachineMoveVM(ComObjPtr<Machine> aMachine,
@@ -106,7 +105,7 @@ public:
         , m_pProgress(aProgress)
         , m_targetPath(aTargetPath)
         , m_type(aType.isEmpty() ? "basic" : aType)
-        , result(S_OK)
+        , m_result(S_OK)
     {
     }
 
