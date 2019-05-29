@@ -368,22 +368,6 @@ void UIWizardImportAppPage1::populateFormProperties()
                 break;
             }
 
-            /* Interpret cloud instance info: */
-            m_comAppliance.Interpret();
-            if (!m_comAppliance.isOk())
-            {
-                msgCenter().cannotImportAppliance(m_comAppliance);
-                break;
-            }
-
-            /* Create virtual system description: */
-            m_comAppliance.CreateVirtualSystemDescriptions(1);
-            if (!m_comAppliance.isOk())
-            {
-                msgCenter().cannotCreateVirtualSystemDescription(m_comAppliance);
-                break;
-            }
-
             /* Acquire virtual system description: */
             QVector<CVirtualSystemDescription> descriptions = m_comAppliance.GetVirtualSystemDescriptions();
             if (!m_comAppliance.isOk())
@@ -395,23 +379,6 @@ void UIWizardImportAppPage1::populateFormProperties()
             /* Make sure there is at least one virtual system description created: */
             AssertReturnVoid(!descriptions.isEmpty());
             CVirtualSystemDescription comDescription = descriptions.at(0);
-
-            /* Populate virtual system description with default values: */
-            CProgress comInstanceInfoProgress = m_comCloudClient.GetInstanceInfo(machineId(), comDescription);
-            if (!m_comCloudClient.isOk())
-            {
-                msgCenter().cannotAcquireCloudClientParameter(m_comCloudClient);
-                break;
-            }
-
-            /* Show "Acquire intance info" progress: */
-            msgCenter().showModalProgressDialog(comInstanceInfoProgress, UIWizardImportApp::tr("Acquire intance info..."),
-                                                ":/progress_reading_appliance_90px.png", 0, 0);
-            if (!comInstanceInfoProgress.isOk() || comInstanceInfoProgress.GetResultCode() != 0)
-            {
-                msgCenter().cannotAcquireCloudClientParameter(comInstanceInfoProgress);
-                break;
-            }
 
             /* Read Cloud Client description form: */
             CVirtualSystemDescriptionForm comForm;
