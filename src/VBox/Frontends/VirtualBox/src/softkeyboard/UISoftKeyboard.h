@@ -55,7 +55,6 @@ public:
 protected:
 
     virtual void retranslateUi();
-    virtual void resizeEvent(QResizeEvent *pEvent);
 
 private slots:
 
@@ -71,17 +70,13 @@ private:
     void saveSettings();
     void loadSettings();
     void parseLayout();
-    void updateLayout();
     CKeyboard& keyboard() const;
 
     UISession     *m_pSession;
     QHBoxLayout   *m_pMainLayout;
     UISoftKeyboardWidget       *m_pContainerWidget;
     QString       m_strMachineName;
-    int           m_iTotalRowHeight;
-    int           m_iMaxRowWidth;
     QVector<UISoftKeyboardKey*> m_pressedModifiers;
-    QVector<QVector<UISoftKeyboardKey*> > m_keys;
     bool          m_fKeepAspectRatio;
 
     int m_iXSpacing;

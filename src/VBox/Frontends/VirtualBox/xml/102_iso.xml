@@ -7,7 +7,9 @@
             <position>110</position>
             <scancode>0x01</scancode>
         </key>
-        <space></space>
+        <space>
+            <width>50</width>
+        </space>
         <key>
             <keycap>F1</keycap>
             <position>112</position>
@@ -93,6 +95,9 @@
             <scancode></scancode>
         </key>
     </row>
+    <space>
+        <height>20</height>
+    </space>
     <row>
         <key>
             <keycap>~</keycap>
@@ -178,8 +183,25 @@
             <position>14</position>
             <scancode>0x0e</scancode>
         </key>
+        <space>
+            <width>25</width>
+        </space>
+        <key>
+            <keycap>PrtScn</keycap>
+            <position>121</position>
+            <scancode></scancode>
+        </key>
+        <key>
+            <keycap>ScrollLock</keycap>
+            <position>122</position>
+            <scancode>0x46</scancode>
+        </key>
+        <key>
+            <keycap>ScrollLock</keycap>
+            <position>122</position>
+            <scancode>0x46</scancode>
+        </key>
     </row>
-
     <row>
         <key>
             <width>75</width>
@@ -251,15 +273,259 @@
         </key>
         <key>
             <width>85</width>
-            <height>100</height>
+            <height>105</height>
             <keycap>Enter</keycap>
             <position>29</position>
             <scancode>0x2b</scancode>
             <cutout>
                 <width>25</width>
-                <height>50</height>
+                <height>55</height>
                 <corner>bottomLeft</corner>
             </cutout>
         </key>
+        <space>
+            <width>25</width>
+        </space>
+        <key>
+            <keycap>PrtScn</keycap>
+            <position>121</position>
+            <scancode></scancode>
+        </key>
+        <key>
+            <keycap>ScrollLock</keycap>
+            <position>122</position>
+            <scancode>0x46</scancode>
+        </key>
+        <key>
+            <keycap>ScrollLock</keycap>
+            <position>122</position>
+            <scancode>0x46</scancode>
+        </key>
     </row>
+    <row>
+        <key>
+            <width>100</width>
+            <keycap>CapsLock</keycap>
+            <type>toggleable</type>
+            <position>30</position>
+            <scancode>0x3a</scancode>
+        </key>
+        <key>
+            <keycap>A</keycap>
+            <position>31</position>
+            <scancode>0x1e</scancode>
+        </key>
+        <key>
+            <keycap>S</keycap>
+            <position>32</position>
+            <scancode>0x1f</scancode>
+        </key>
+        <key>
+            <keycap>D</keycap>
+            <position>33</position>
+            <scancode>0x20</scancode>
+        </key>
+        <key>
+            <keycap>F</keycap>
+            <position>34</position>
+            <scancode>0x21</scancode>
+        </key>
+        <key>
+            <keycap>G</keycap>
+            <position>35</position>
+            <scancode>0x22</scancode>
+        </key>
+        <key>
+            <keycap>H</keycap>
+            <position>36</position>
+            <scancode>0x23</scancode>
+        </key>
+        <key>
+            <keycap>J</keycap>
+            <position>37</position>
+            <scancode>0x24</scancode>
+        </key>
+        <key>
+            <keycap>K</keycap>
+            <position>38</position>
+            <scancode>0x25</scancode>
+        </key>
+        <key>
+            <keycap>L</keycap>
+            <position>39</position>
+            <scancode>0x26</scancode>
+        </key>
+        <key>
+            <keycap>:</keycap>
+            <keycap>;</keycap>
+            <position>40</position>
+            <scancode>0x27</scancode>
+        </key>
+        <key>
+            <keycap>&quot;</keycap>
+            <keycap>'</keycap>
+            <position>41</position>
+            <scancode>0x28</scancode>
+        </key>
+        <key>
+            <keycap>&quot;</keycap>
+            <keycap>'</keycap>
+            <position>42</position>
+            <scancode>0x28</scancode>
+        </key>
+    </row>
+    <row>
+        <key>
+            <width>75</width>
+            <keycap>Shift</keycap>
+            <type>modifier</type>
+            <position>44</position>
+            <scancode>0x2a</scancode>
+        </key>
+        <key>
+            <keycap>Z</keycap>
+            <position>46</position>
+            <scancode>0x2c</scancode>
+        </key>
+        <key>
+            <keycap>X</keycap>
+            <position>47</position>
+            <scancode>0x2d</scancode>
+        </key>
+        <key>
+            <keycap>C</keycap>
+            <position>48</position>
+            <scancode>0x2e</scancode>
+        </key>
+        <key>
+            <keycap>V</keycap>
+            <position>49</position>
+            <scancode>0x2f</scancode>
+        </key>
+        <key>
+            <keycap>B</keycap>
+            <position>50</position>
+            <scancode>0x30</scancode>
+        </key>
+        <key>
+            <keycap>N</keycap>
+            <position>51</position>
+            <scancode>0x31</scancode>
+        </key>
+        <key>
+            <keycap>M</keycap>
+            <position>52</position>
+            <scancode>0x32</scancode>
+        </key>
+        <key>
+            <keycap>&lt;</keycap>
+            <keycap>,</keycap>
+            <position>53</position>
+            <scancode>0x33</scancode>
+        </key>
+        <key>
+            <keycap>&gt;</keycap>
+            <keycap>.</keycap>
+            <position>54</position>
+            <scancode>0x34</scancode>
+        </key>
+        <key>
+            <keycap>?</keycap>
+            <keycap>/</keycap>
+            <position>55</position>
+            <scancode>0x35</scancode>
+        </key>
+        <key>
+            <keycap>?</keycap>
+            <keycap>/</keycap>
+            <position>55</position>
+            <scancode>0x35</scancode>
+        </key>
+        <key>
+            <width>140</width>
+            <keycap>Shift</keycap>
+            <type>modifier</type>
+            <position>57</position>
+            <scancode>0x36</scancode>
+        </key>
+        <space>
+            <width>80</width>
+        </space>
+        <key>
+            <keycap>Up</keycap>
+            <position>83</position>
+            <scancode>0x35</scancode>
+        </key>
+    </row>
+    <row>
+        <key>
+            <width>105</width>
+            <keycap>Ctrl</keycap>
+            <type>modifier</type>
+            <position>58</position>
+            <scancode>0x1d</scancode>
+        </key>
+        <key>
+            <keycap>Win</keycap>
+            <type>modifier</type>
+            <scancodeprefix>0xe0</scancodeprefix>
+            <scancode>0x5b</scancode>
+        </key>
+        <key>
+            <position>60</position>
+            <keycap>Alt</keycap>
+            <type>modifier</type>
+            <scancode>0x38</scancode>
+        </key>
+        <key>
+            <width>330</width>
+            <position>61</position>
+            <scancode>0x39</scancode>
+        </key>
+        <key>
+            <keycap>AltGr</keycap>
+            <type>modifier</type>
+            <scancodeprefix>0xe0</scancodeprefix>
+            <scancode>0x38</scancode>
+        </key>
+        <key>
+            <keycap>Win</keycap>
+            <type>modifier</type>
+            <scancodeprefix>0xe0</scancodeprefix>
+            <scancode>0x5c</scancode>
+        </key>
+        <key>
+            <keycap>Menu</keycap>
+            <scancodeprefix>0xe0</scancodeprefix>
+            <scancode>0x5d</scancode>
+        </key>
+        <key>
+            <keycap>Ctrl</keycap>
+            <width>105</width>
+            <type>modifier</type>
+            <scancodeprefix>0xe0</scancodeprefix>
+            <scancode>0x1d</scancode>
+        </key>
+        <space>
+            <width>25</width>
+        </space>
+        <key>
+            <keycap>Left</keycap>
+            <position>79</position>
+            <scancode>0x35</scancode>
+        </key>
+        <key>
+            <keycap>Down</keycap>
+            <position>84</position>
+            <scancode>0x35</scancode>
+        </key>
+        <key>
+            <keycap>Right</keycap>
+            <position>89</position>
+            <scancode>0x35</scancode>
+        </key>
+
+
+    </row>
+
 </layout>
