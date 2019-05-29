@@ -986,7 +986,7 @@ RTEXITCODE handleImportAppliance(HandlerArg *arg)
 
                         case VirtualSystemDescriptionType_CloudInstanceShape:
                             RTPrintf("%2u: Suggested cloud shape \"%ls\"\n",
-                                    a, bstrFinalValue.raw(), i);
+                                    a, bstrFinalValue.raw());
                             break;
 
                         case VirtualSystemDescriptionType_CloudBucket:
@@ -1030,7 +1030,7 @@ RTEXITCODE handleImportAppliance(HandlerArg *arg)
 
                         case VirtualSystemDescriptionType_CloudImageId:
                             RTPrintf("%2u: Suggested cloud base image id \"%ls\"\n",
-                                    a, bstrFinalValue.raw(), i);
+                                    a, bstrFinalValue.raw());
                             break;
                         case VirtualSystemDescriptionType_CloudDomain:
                         case VirtualSystemDescriptionType_CloudBootDiskSize:
