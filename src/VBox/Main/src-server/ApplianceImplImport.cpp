@@ -1121,9 +1121,17 @@ HRESULT Appliance::i_readImpl(const LocationInfo &aLocInfo, ComObjPtr<Progress> 
     try
     {
         if (aLocInfo.storageType == VFSType_Cloud)
+        {
             /* 1 operation only */
             hrc = aProgress->init(mVirtualBox, static_cast<IAppliance*>(this),
                                   Utf8Str(tr("Getting cloud instance information...")), TRUE /* aCancelable */);
+
+            /* Create an empty ovf::OVFReader for manual filling it.
+             * It's not a normal usage case, but we try to re-use some OVF stuff to friend
+             * the cloud import with OVF import.
+             * In the standard case the ovf::OVFReader is created earlier.*/
+            m->pReader = new ovf::OVFReader();
+        }
         else
         {
             Utf8StrFmt strDesc(tr("Reading appliance '%s'"), aLocInfo.strPath.c_str());
@@ -1593,12 +1601,6 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
                 strLastActualErrorDesc = Utf8StrFmt("Error reading the downloaded file '%s' (%Rrc)", strAbsSrcPath.c_str(), vrc);
                 throw setErrorVrc(vrc, strLastActualErrorDesc.c_str());
             }
-
-            /* Create an empty ovf::OVFReader for manual filling it.
-             * It's not a normal usage case, but we try to re-use some OVF stuff to friend
-             * the cloud import with OVF import.
-             * In the standard case the ovf::OVFReader is created earlier.*/
-            m->pReader = new ovf::OVFReader();
 
             /* Create a new virtual system and work directly on the list copy. */
             m->pReader->m_llVirtualSystems.push_back(ovf::VirtualSystem());
