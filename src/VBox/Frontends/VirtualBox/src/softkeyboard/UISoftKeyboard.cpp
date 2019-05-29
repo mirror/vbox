@@ -55,18 +55,36 @@ enum UIKeyType
     UIKeyType_Max
 };
 
+/*********************************************************************************************************************************
+*   UISoftKeyboardRow definition.                                                                                  *
+*********************************************************************************************************************************/
 
 class UISoftKeyboardRow
 {
 public:
+
+    UISoftKeyboardRow();
+
+    void setDefaultWidth(int iWidth);
+    int defaultWidth() const;
+
+    void setDefaultHeight(int iHeight);
+    int defaultHeight() const;
+
+    QVector<UISoftKeyboardKey> &keys();
+    const QVector<UISoftKeyboardKey> &keys() const;
+
+    void setSpaceHeightAfter(int iSpace);
+    int spaceHeightAfter() const;
+
+private:
+
     /** Default width and height might be inherited from the layout and overwritten in row settings. */
     int m_iDefaultWidth;
     int m_iDefaultHeight;
-    int m_iStartingSpace;
     QVector<UISoftKeyboardKey> m_keys;
     int m_iSpaceHeightAfter;
 };
-
 
 /*********************************************************************************************************************************
 *   UISoftKeyboardKey definition.                                                                                  *
@@ -103,6 +121,8 @@ public:
     void setType(UIKeyType enmType);
     UIKeyType type() const;
 
+    void setCutout(int iCorner, int iWidth, int iHeight);
+
     UIKeyState state() const;
     QVector<LONG> scanCodeWithPrefix() const;
 
@@ -113,39 +133,31 @@ public:
 
     QPolygon polygonInGlobal() const;
 
-    int   m_iDefaultPixelSize;
-    int   m_iDefaultPointSize;
-    LONG  m_scanCode;
-    LONG  m_scanCodePrefix;
-
-    int       m_iCutoutWidth;
-    int       m_iCutoutHeight;
-    /** -1 is no cutout. 0 is the topleft corner. we go clockwise. */
-    int       m_iCutoutCorner;
-
-
-protected:
-
-    //virtual void mousePressEvent(QMouseEvent *pEvent) /* override */;
-    virtual void paintEvent(QPaintEvent *pPaintEvent) /* override */;
+    int cutoutCorner() const;
+    int cutoutWidth() const;
+    int cutoutHeight() const;
 
 private:
 
     void updateState(bool fPressed);
 
-    QRect     m_keyGeometry;
-    QString   m_strKeyCap;
+    QRect      m_keyGeometry;
+    QString    m_strKeyCap;
     /** Stores the key polygon in local coordinates. */
-    QPolygon  m_polygon;
-
+    QPolygon   m_polygon;
     UIKeyType  m_enmType;
     UIKeyState m_enmState;
-
     /** Key width as it is read from the xml file. */
-    int       m_iWidth;
+    int        m_iWidth;
     /** Key height as it is read from the xml file. */
-    int       m_iHeight;
-    int       m_iSpaceWidthAfter;
+    int        m_iHeight;
+    int        m_iSpaceWidthAfter;
+    LONG       m_scanCode;
+    LONG       m_scanCodePrefix;
+    int        m_iCutoutWidth;
+    int        m_iCutoutHeight;
+    /** -1 is no cutout. 0 is the topleft corner. we go clockwise. */
+    int        m_iCutoutCorner;
 };
 
 /*********************************************************************************************************************************
@@ -173,317 +185,71 @@ private:
 };
 
 /*********************************************************************************************************************************
-*   UIKeyboardLayoutReader implementation.                                                                                  *
+*   UISoftKeyboardRow implementation.                                                                                  *
 *********************************************************************************************************************************/
 
-bool UIKeyboardLayoutReader::parseXMLFile(const QString &strFileName, QVector<UISoftKeyboardRow> &rows)
+UISoftKeyboardRow::UISoftKeyboardRow()
+    : m_iDefaultWidth(0)
+    , m_iDefaultHeight(0)
+    , m_iSpaceHeightAfter(0)
 {
-    QFile xmlFile(strFileName);
-    if (!xmlFile.exists())
-        return false;
-
-    if (!xmlFile.open(QIODevice::ReadOnly))
-        return false;
-
-    m_xmlReader.setDevice(&xmlFile);
-
-    if (!m_xmlReader.readNextStartElement() || m_xmlReader.name() != "layout")
-        return false;
-
-    QXmlStreamAttributes attributes = m_xmlReader.attributes();
-    int iDefaultWidth = attributes.value("defaultWidth").toInt();
-    int iDefaultHeight = attributes.value("defaultHeight").toInt();
-
-    while (m_xmlReader.readNextStartElement())
-    {
-        if (m_xmlReader.name() == "row")
-            parseRow(iDefaultWidth, iDefaultHeight, rows);
-        else if (m_xmlReader.name() == "space")
-            parseRowSpace(rows);
-        else
-            m_xmlReader.skipCurrentElement();
-    }
-
-    return true;
 }
 
-void UIKeyboardLayoutReader::parseRow(int iDefaultWidth, int iDefaultHeight, QVector<UISoftKeyboardRow> &rows)
+void UISoftKeyboardRow::setDefaultWidth(int iWidth)
 {
-    rows.append(UISoftKeyboardRow());
-    UISoftKeyboardRow &row = rows.back();
-
-    row.m_iDefaultWidth = iDefaultWidth;
-    row.m_iDefaultHeight = iDefaultHeight;
-    row.m_iSpaceHeightAfter = 0;
-
-    /* Override the layout attributes if the row also has them: */
-    QXmlStreamAttributes attributes = m_xmlReader.attributes();
-    if (attributes.hasAttribute("defaultWidth"))
-        row.m_iDefaultWidth = attributes.value("defaultWidth").toInt();
-    if (attributes.hasAttribute("defaultHeight"))
-        row.m_iDefaultHeight = attributes.value("defaultHeight").toInt();
-    while (m_xmlReader.readNextStartElement())
-    {
-        if (m_xmlReader.name() == "key")
-            parseKey(row);
-        else if (m_xmlReader.name() == "space")
-            parseKeySpace(row);
-        else
-            m_xmlReader.skipCurrentElement();
-    }
+    m_iDefaultWidth = iWidth;
 }
 
-void UIKeyboardLayoutReader::parseRowSpace(QVector<UISoftKeyboardRow> &rows)
+int UISoftKeyboardRow::defaultWidth() const
 {
-    int iSpace = 0;
-    while (m_xmlReader.readNextStartElement())
-    {
-        if (m_xmlReader.name() == "height")
-            iSpace = m_xmlReader.readElementText().toInt();
-        else
-            m_xmlReader.skipCurrentElement();
-    }
-    if (!rows.empty())
-        rows.back().m_iSpaceHeightAfter = iSpace;
+    return m_iDefaultWidth;
 }
 
-void UIKeyboardLayoutReader::parseKey(UISoftKeyboardRow &row)
+void UISoftKeyboardRow::setDefaultHeight(int iHeight)
 {
-    row.m_keys.append(UISoftKeyboardKey());
-    UISoftKeyboardKey &key = row.m_keys.back();
-    key.setWidth(row.m_iDefaultWidth);
-    key.setHeight(row.m_iDefaultHeight);
-    key.m_iCutoutCorner = -1;
-    while (m_xmlReader.readNextStartElement())
-    {
-        if (m_xmlReader.name() == "width")
-            key.setWidth(m_xmlReader.readElementText().toInt());
-        else if (m_xmlReader.name() == "height")
-            key.setHeight(m_xmlReader.readElementText().toInt());
-        else if (m_xmlReader.name() == "scancode")
-        {
-            QString strCode = m_xmlReader.readElementText();
-            bool fOk = false;
-            key.m_scanCode = strCode.toInt(&fOk, 16);
-        }
-        else if (m_xmlReader.name() == "scancodeprefix")
-        {
-            QString strCode = m_xmlReader.readElementText();
-            bool fOk = false;
-            key.m_scanCodePrefix = strCode.toInt(&fOk, 16);
-        }
-        else if (m_xmlReader.name() == "keycap")
-            key.setKeyCap(m_xmlReader.readElementText());
-        else if (m_xmlReader.name() == "cutout")
-            parseCutout(key);
-        // else if (m_xmlReader.name() == "type")
-        // {
-        //     QString strType = m_xmlReader.readElementText();
-        //     if (strType == "modifier")
-        //         pKey->setType(UIKeyType_Modifier);
-        //     else if (strType == "toggleable")
-        //         pKey->setType(UIKeyType_Toggleable);
-        // }
-        else
-            m_xmlReader.skipCurrentElement();
-    }
+    m_iDefaultHeight = iHeight;
 }
 
-void UIKeyboardLayoutReader::parseKeySpace(UISoftKeyboardRow &row)
+int UISoftKeyboardRow::defaultHeight() const
 {
-    int iWidth = row.m_iDefaultWidth;
-    while (m_xmlReader.readNextStartElement())
-    {
-        if (m_xmlReader.name() == "width")
-            iWidth = m_xmlReader.readElementText().toInt();
-        else
-            m_xmlReader.skipCurrentElement();
-    }
-    if (row.m_keys.size() <= 0)
-        return;
-    row.m_keys.back().setSpaceWidthAfter(iWidth);
+    return m_iDefaultHeight;
 }
 
-void UIKeyboardLayoutReader::parseCutout(UISoftKeyboardKey &key)
+QVector<UISoftKeyboardKey> &UISoftKeyboardRow::keys()
 {
-    while (m_xmlReader.readNextStartElement())
-    {
-        if (m_xmlReader.name() == "width")
-            key.m_iCutoutWidth = m_xmlReader.readElementText().toInt();
-        else if (m_xmlReader.name() == "height")
-            key.m_iCutoutHeight = m_xmlReader.readElementText().toInt();
-        else if (m_xmlReader.name() == "corner")
-        {
-            QString strCorner = m_xmlReader.readElementText();
-            if (strCorner == "topLeft")
-                    key.m_iCutoutCorner = 0;
-            else if(strCorner == "topRight")
-                    key.m_iCutoutCorner = 1;
-            else if(strCorner == "bottomRight")
-                    key.m_iCutoutCorner = 2;
-            else if(strCorner == "bottomLeft")
-                    key.m_iCutoutCorner = 3;
-        }
-        else
-            m_xmlReader.skipCurrentElement();
-    }
+    return m_keys;
 }
 
-QVector<QPoint> UIKeyboardLayoutReader::computeKeyVertices(const UISoftKeyboardKey &key)
+const QVector<UISoftKeyboardKey> &UISoftKeyboardRow::keys() const
 {
-    QVector<QPoint> vertices;
-
-    if (key.m_iCutoutCorner == -1 || key.width() <= key.m_iCutoutWidth || key.height() <= key.m_iCutoutHeight)
-    {
-        vertices.append(QPoint(0, 0));
-        vertices.append(QPoint(key.width(), 0));
-        vertices.append(QPoint(key.width(), key.height()));
-        vertices.append(QPoint(0, key.height()));
-        return vertices;
-    }
-    if (key.m_iCutoutCorner == 0)
-    {
-        vertices.append(QPoint(key.m_iCutoutWidth, 0));
-        vertices.append(QPoint(key.width(), 0));
-        vertices.append(QPoint(key.width(), key.height()));
-        vertices.append(QPoint(0, key.height()));
-        vertices.append(QPoint(0, key.m_iCutoutHeight));
-        vertices.append(QPoint(key.m_iCutoutWidth, key.m_iCutoutHeight));
-    }
-    else if (key.m_iCutoutCorner == 1)
-    {
-        vertices.append(QPoint(0, 0));
-        vertices.append(QPoint(key.width() - key.m_iCutoutWidth, 0));
-        vertices.append(QPoint(key.width() - key.m_iCutoutWidth, key.m_iCutoutHeight));
-        vertices.append(QPoint(key.width(), key.m_iCutoutHeight));
-        vertices.append(QPoint(key.width(), key.height()));
-        vertices.append(QPoint(0, key.height()));
-    }
-    else if (key.m_iCutoutCorner == 2)
-    {
-        vertices.append(QPoint(0, 0));
-        vertices.append(QPoint(key.width(), 0));
-        vertices.append(QPoint(key.width(), key.m_iCutoutHeight));
-        vertices.append(QPoint(key.width() - key.m_iCutoutWidth, key.m_iCutoutHeight));
-        vertices.append(QPoint(key.width() - key.m_iCutoutWidth, key.height()));
-        vertices.append(QPoint(0, key.height()));
-    }
-    else if (key.m_iCutoutCorner == 3)
-    {
-        vertices.append(QPoint(0, 0));
-        vertices.append(QPoint(key.width(), 0));
-        vertices.append(QPoint(key.width(), key.height()));
-        vertices.append(QPoint(key.m_iCutoutWidth, key.height()));
-        vertices.append(QPoint(key.m_iCutoutWidth, key.height() - key.m_iCutoutHeight));
-        vertices.append(QPoint(0, key.height() - key.m_iCutoutHeight));
-    }
-    return vertices;
+    return m_keys;
 }
 
-class UISoftKeyboardWidget : public QWidget
+void UISoftKeyboardRow::setSpaceHeightAfter(int iSpace)
 {
-    Q_OBJECT;
- public:
+    m_iSpaceHeightAfter = iSpace;
+}
 
-    virtual QSize minimumSizeHint() const
-    {
-        return m_minimumSize;
-    }
-
-    virtual QSize sizeHint() const
-    {
-        return m_minimumSize;
-    }
-
-    void setNewMinimumSize(const QSize &size)
-    {
-        m_minimumSize = size;
-        updateGeometry();
-    }
-    QVector<UISoftKeyboardRow> m_rows;
-
-    void setInitialSize(int iWidth, int iHeight)
-    {
-        m_iInitialWidth = iWidth;
-        m_iInitialHeight = iHeight;
-    }
-
-protected:
-
-    void paintEvent(QPaintEvent *pEvent) /* override */
-    {
-        Q_UNUSED(pEvent);
-        if (m_iInitialWidth == 0 || m_iInitialHeight == 0)
-            return;
-
-        m_fMultiplierX = width() / (float) m_iInitialWidth;
-        m_fMultiplierY = height() / (float) m_iInitialHeight;
-
-        QPainter painter(this);
-        QFont painterFont(font());
-        painterFont.setPixelSize(16);
-        painter.setFont(painterFont);
-        painter.setRenderHint(QPainter::Antialiasing);
-        painter.setPen(QPen(QColor(0, 0,0), 2));
-        painter.setBrush(QBrush(QColor(255, 0,0)));
-        painter.scale(m_fMultiplierX, m_fMultiplierY);
-        for (int i = 0; i < m_rows.size(); ++i)
-        {
-            QVector<UISoftKeyboardKey> &keys = m_rows[i].m_keys;
-            for (int j = 0; j < keys.size(); ++j)
-            {
-                UISoftKeyboardKey &key = keys[j];
-                painter.translate(key.keyGeometry().x(), key.keyGeometry().y());
-                painter.drawPolygon(key.polygon());
-                QRect textRect(0, 0, key.keyGeometry().width(), key.keyGeometry().height());
-                painter.drawText(textRect, Qt::TextWordWrap, key.keyCap());
-                painter.translate(-key.keyGeometry().x(), -key.keyGeometry().y());
-            }
-        }
-    }
-
-    void mousePressEvent(QMouseEvent *pEvent)
-    {
-        QPoint eventPosition(pEvent->pos().x() / m_fMultiplierX, pEvent->pos().y() / m_fMultiplierY);
-        QWidget::mousePressEvent(pEvent);
-        for (int i = 0; i < m_rows.size(); ++i)
-        {
-            QVector<UISoftKeyboardKey> &keys = m_rows[i].m_keys;
-            for (int j = 0; j < keys.size(); ++j)
-            {
-                UISoftKeyboardKey &key = keys[j];
-                if (key.polygonInGlobal().containsPoint(eventPosition, Qt::OddEvenFill))
-                {
-                    //printf ("%s\n", qPrintable(key.keyCap()));
-                    break;
-                }
-            }
-        }
-    }
-
-private:
-
-    QSize m_minimumSize;
-    int m_iInitialHeight;
-    int m_iInitialWidth;
-    float m_fMultiplierX;
-    float m_fMultiplierY;
-
-};
-
+int UISoftKeyboardRow::spaceHeightAfter() const
+{
+    return m_iSpaceHeightAfter;
+}
 
 /*********************************************************************************************************************************
 *   UISoftKeyboardKey implementation.                                                                                  *
 *********************************************************************************************************************************/
 
 UISoftKeyboardKey::UISoftKeyboardKey()
-    : m_scanCode(0)
-    , m_scanCodePrefix(0)
-    , m_enmType(UIKeyType_Ordinary)
+    : m_enmType(UIKeyType_Ordinary)
     , m_enmState(UIKeyState_NotPressed)
     , m_iWidth(0)
     , m_iHeight(0)
     , m_iSpaceWidthAfter(0)
+    , m_scanCode(0)
+    , m_scanCodePrefix(0)
+    , m_iCutoutWidth(0)
+    , m_iCutoutHeight(0)
+    , m_iCutoutCorner(-1)
 {
 }
 
@@ -570,6 +336,13 @@ UIKeyType UISoftKeyboardKey::type() const
     return m_enmType;
 }
 
+void UISoftKeyboardKey::setCutout(int iCorner, int iWidth, int iHeight)
+{
+    m_iCutoutCorner = iCorner;
+    m_iCutoutWidth = iWidth;
+    m_iCutoutHeight = iHeight;
+}
+
 UIKeyState UISoftKeyboardKey::state() const
 {
     return m_enmState;
@@ -597,11 +370,19 @@ QPolygon UISoftKeyboardKey::polygonInGlobal() const
     return globalPolygon;
 }
 
-void UISoftKeyboardKey::paintEvent(QPaintEvent *pEvent)
+int UISoftKeyboardKey::cutoutCorner() const
 {
-    Q_UNUSED(pEvent);
-    // QToolButton::paintEvent(pEvent);
-    // return;
+    return m_iCutoutCorner;
+}
+
+int UISoftKeyboardKey::cutoutWidth() const
+{
+    return m_iCutoutWidth;
+}
+
+int UISoftKeyboardKey::cutoutHeight() const
+{
+    return m_iCutoutHeight;
 }
 
 void UISoftKeyboardKey::updateState(bool fPressed)
@@ -636,6 +417,310 @@ void UISoftKeyboardKey::updateState(bool fPressed)
         }
     }
 }
+
+/*********************************************************************************************************************************
+*   UIKeyboardLayoutReader implementation.                                                                                  *
+*********************************************************************************************************************************/
+
+bool UIKeyboardLayoutReader::parseXMLFile(const QString &strFileName, QVector<UISoftKeyboardRow> &rows)
+{
+    QFile xmlFile(strFileName);
+    if (!xmlFile.exists())
+        return false;
+
+    if (!xmlFile.open(QIODevice::ReadOnly))
+        return false;
+
+    m_xmlReader.setDevice(&xmlFile);
+
+    if (!m_xmlReader.readNextStartElement() || m_xmlReader.name() != "layout")
+        return false;
+
+    QXmlStreamAttributes attributes = m_xmlReader.attributes();
+    int iDefaultWidth = attributes.value("defaultWidth").toInt();
+    int iDefaultHeight = attributes.value("defaultHeight").toInt();
+
+    while (m_xmlReader.readNextStartElement())
+    {
+        if (m_xmlReader.name() == "row")
+            parseRow(iDefaultWidth, iDefaultHeight, rows);
+        else if (m_xmlReader.name() == "space")
+            parseRowSpace(rows);
+        else
+            m_xmlReader.skipCurrentElement();
+    }
+
+    return true;
+}
+
+void UIKeyboardLayoutReader::parseRow(int iDefaultWidth, int iDefaultHeight, QVector<UISoftKeyboardRow> &rows)
+{
+    rows.append(UISoftKeyboardRow());
+    UISoftKeyboardRow &row = rows.back();
+
+    row.setDefaultWidth(iDefaultWidth);
+    row.setDefaultHeight(iDefaultHeight);
+    row.setSpaceHeightAfter(0);
+
+    /* Override the layout attributes if the row also has them: */
+    QXmlStreamAttributes attributes = m_xmlReader.attributes();
+    if (attributes.hasAttribute("defaultWidth"))
+        row.setDefaultWidth(attributes.value("defaultWidth").toInt());
+    if (attributes.hasAttribute("defaultHeight"))
+        row.setDefaultHeight(attributes.value("defaultHeight").toInt());
+    while (m_xmlReader.readNextStartElement())
+    {
+        if (m_xmlReader.name() == "key")
+            parseKey(row);
+        else if (m_xmlReader.name() == "space")
+            parseKeySpace(row);
+        else
+            m_xmlReader.skipCurrentElement();
+    }
+}
+
+void UIKeyboardLayoutReader::parseRowSpace(QVector<UISoftKeyboardRow> &rows)
+{
+    int iSpace = 0;
+    while (m_xmlReader.readNextStartElement())
+    {
+        if (m_xmlReader.name() == "height")
+            iSpace = m_xmlReader.readElementText().toInt();
+        else
+            m_xmlReader.skipCurrentElement();
+    }
+    if (!rows.empty())
+        rows.back().setSpaceHeightAfter(iSpace);
+}
+
+void UIKeyboardLayoutReader::parseKey(UISoftKeyboardRow &row)
+{
+    row.keys().append(UISoftKeyboardKey());
+    UISoftKeyboardKey &key = row.keys().back();
+    key.setWidth(row.defaultWidth());
+    key.setHeight(row.defaultHeight());
+
+    while (m_xmlReader.readNextStartElement())
+    {
+        if (m_xmlReader.name() == "width")
+            key.setWidth(m_xmlReader.readElementText().toInt());
+        else if (m_xmlReader.name() == "height")
+            key.setHeight(m_xmlReader.readElementText().toInt());
+        else if (m_xmlReader.name() == "scancode")
+        {
+            QString strCode = m_xmlReader.readElementText();
+            bool fOk = false;
+            key.setScanCode(strCode.toInt(&fOk, 16));
+        }
+        else if (m_xmlReader.name() == "scancodeprefix")
+        {
+            QString strCode = m_xmlReader.readElementText();
+            bool fOk = false;
+            key.setScanCodePrefix(strCode.toInt(&fOk, 16));
+        }
+        else if (m_xmlReader.name() == "keycap")
+            key.setKeyCap(m_xmlReader.readElementText());
+        else if (m_xmlReader.name() == "cutout")
+            parseCutout(key);
+        // else if (m_xmlReader.name() == "type")
+        // {
+        //     QString strType = m_xmlReader.readElementText();
+        //     if (strType == "modifier")
+        //         pKey->setType(UIKeyType_Modifier);
+        //     else if (strType == "toggleable")
+        //         pKey->setType(UIKeyType_Toggleable);
+        // }
+        else
+            m_xmlReader.skipCurrentElement();
+    }
+}
+
+void UIKeyboardLayoutReader::parseKeySpace(UISoftKeyboardRow &row)
+{
+    int iWidth = row.defaultWidth();
+    while (m_xmlReader.readNextStartElement())
+    {
+        if (m_xmlReader.name() == "width")
+            iWidth = m_xmlReader.readElementText().toInt();
+        else
+            m_xmlReader.skipCurrentElement();
+    }
+    if (row.keys().size() <= 0)
+        return;
+    row.keys().back().setSpaceWidthAfter(iWidth);
+}
+
+void UIKeyboardLayoutReader::parseCutout(UISoftKeyboardKey &key)
+{
+    int iWidth;
+    int iHeight;
+    int iCorner;
+    while (m_xmlReader.readNextStartElement())
+    {
+        if (m_xmlReader.name() == "width")
+            iWidth = m_xmlReader.readElementText().toInt();
+        else if (m_xmlReader.name() == "height")
+            iHeight = m_xmlReader.readElementText().toInt();
+        else if (m_xmlReader.name() == "corner")
+        {
+            QString strCorner = m_xmlReader.readElementText();
+            if (strCorner == "topLeft")
+                    iCorner = 0;
+            else if(strCorner == "topRight")
+                    iCorner = 1;
+            else if(strCorner == "bottomRight")
+                    iCorner = 2;
+            else if(strCorner == "bottomLeft")
+                    iCorner = 3;
+        }
+        else
+            m_xmlReader.skipCurrentElement();
+    }
+    key.setCutout(iCorner, iWidth, iHeight);
+}
+
+QVector<QPoint> UIKeyboardLayoutReader::computeKeyVertices(const UISoftKeyboardKey &key)
+{
+    QVector<QPoint> vertices;
+
+    if (key.cutoutCorner() == -1 || key.width() <= key.cutoutWidth() || key.height() <= key.cutoutHeight())
+    {
+        vertices.append(QPoint(0, 0));
+        vertices.append(QPoint(key.width(), 0));
+        vertices.append(QPoint(key.width(), key.height()));
+        vertices.append(QPoint(0, key.height()));
+        return vertices;
+    }
+    if (key.cutoutCorner() == 0)
+    {
+        vertices.append(QPoint(key.cutoutWidth(), 0));
+        vertices.append(QPoint(key.width(), 0));
+        vertices.append(QPoint(key.width(), key.height()));
+        vertices.append(QPoint(0, key.height()));
+        vertices.append(QPoint(0, key.cutoutHeight()));
+        vertices.append(QPoint(key.cutoutWidth(), key.cutoutHeight()));
+    }
+    else if (key.cutoutCorner() == 1)
+    {
+        vertices.append(QPoint(0, 0));
+        vertices.append(QPoint(key.width() - key.cutoutWidth(), 0));
+        vertices.append(QPoint(key.width() - key.cutoutWidth(), key.cutoutHeight()));
+        vertices.append(QPoint(key.width(), key.cutoutHeight()));
+        vertices.append(QPoint(key.width(), key.height()));
+        vertices.append(QPoint(0, key.height()));
+    }
+    else if (key.cutoutCorner() == 2)
+    {
+        vertices.append(QPoint(0, 0));
+        vertices.append(QPoint(key.width(), 0));
+        vertices.append(QPoint(key.width(), key.cutoutHeight()));
+        vertices.append(QPoint(key.width() - key.cutoutWidth(), key.cutoutHeight()));
+        vertices.append(QPoint(key.width() - key.cutoutWidth(), key.height()));
+        vertices.append(QPoint(0, key.height()));
+    }
+    else if (key.cutoutCorner() == 3)
+    {
+        vertices.append(QPoint(0, 0));
+        vertices.append(QPoint(key.width(), 0));
+        vertices.append(QPoint(key.width(), key.height()));
+        vertices.append(QPoint(key.cutoutWidth(), key.height()));
+        vertices.append(QPoint(key.cutoutWidth(), key.height() - key.cutoutHeight()));
+        vertices.append(QPoint(0, key.height() - key.cutoutHeight()));
+    }
+    return vertices;
+}
+
+class UISoftKeyboardWidget : public QWidget
+{
+    Q_OBJECT;
+ public:
+
+    virtual QSize minimumSizeHint() const
+    {
+        return m_minimumSize;
+    }
+
+    virtual QSize sizeHint() const
+    {
+        return m_minimumSize;
+    }
+
+    void setNewMinimumSize(const QSize &size)
+    {
+        m_minimumSize = size;
+        updateGeometry();
+    }
+    QVector<UISoftKeyboardRow> m_rows;
+
+    void setInitialSize(int iWidth, int iHeight)
+    {
+        m_iInitialWidth = iWidth;
+        m_iInitialHeight = iHeight;
+    }
+
+protected:
+
+    void paintEvent(QPaintEvent *pEvent) /* override */
+    {
+        Q_UNUSED(pEvent);
+        if (m_iInitialWidth == 0 || m_iInitialHeight == 0)
+            return;
+
+        m_fMultiplierX = width() / (float) m_iInitialWidth;
+        m_fMultiplierY = height() / (float) m_iInitialHeight;
+
+        QPainter painter(this);
+        QFont painterFont(font());
+        painterFont.setPixelSize(16);
+        painter.setFont(painterFont);
+        painter.setRenderHint(QPainter::Antialiasing);
+        painter.setPen(QPen(QColor(0, 0,0), 2));
+        painter.setBrush(QBrush(QColor(255, 0,0)));
+        painter.scale(m_fMultiplierX, m_fMultiplierY);
+        for (int i = 0; i < m_rows.size(); ++i)
+        {
+            QVector<UISoftKeyboardKey> &keys = m_rows[i].keys();
+            for (int j = 0; j < keys.size(); ++j)
+            {
+                UISoftKeyboardKey &key = keys[j];
+                painter.translate(key.keyGeometry().x(), key.keyGeometry().y());
+                painter.drawPolygon(key.polygon());
+                QRect textRect(0, 0, key.keyGeometry().width(), key.keyGeometry().height());
+                painter.drawText(textRect, Qt::TextWordWrap, key.keyCap());
+                painter.translate(-key.keyGeometry().x(), -key.keyGeometry().y());
+            }
+        }
+    }
+
+    void mousePressEvent(QMouseEvent *pEvent)
+    {
+        QPoint eventPosition(pEvent->pos().x() / m_fMultiplierX, pEvent->pos().y() / m_fMultiplierY);
+        QWidget::mousePressEvent(pEvent);
+        for (int i = 0; i < m_rows.size(); ++i)
+        {
+            QVector<UISoftKeyboardKey> &keys = m_rows[i].keys();
+            for (int j = 0; j < keys.size(); ++j)
+            {
+                UISoftKeyboardKey &key = keys[j];
+                if (key.polygonInGlobal().containsPoint(eventPosition, Qt::OddEvenFill))
+                {
+                    //printf ("%s\n", qPrintable(key.keyCap()));
+                    break;
+                }
+            }
+        }
+    }
+
+private:
+
+    QSize m_minimumSize;
+    int m_iInitialHeight;
+    int m_iInitialWidth;
+    float m_fMultiplierX;
+    float m_fMultiplierY;
+
+};
+
 
 /*********************************************************************************************************************************
 *   UISoftKeyboard implementation.                                                                                  *
@@ -785,20 +870,20 @@ void UISoftKeyboard::parseLayout()
     {
         UISoftKeyboardRow &row = rows[i];
         int iX = m_iLeftMargin;
-        int iRowHeight = row.m_iDefaultHeight;
-        for (int j = 0; j < row.m_keys.size(); ++j)
+        int iRowHeight = row.defaultHeight();
+        for (int j = 0; j < row.keys().size(); ++j)
         {
-            UISoftKeyboardKey &key = row.m_keys[j];
+            UISoftKeyboardKey &key = (row.keys())[j];
             key.setKeyGeometry(QRect(iX, iY, key.width(), key.height()));
             key.setPolygon(QPolygon(UIKeyboardLayoutReader::computeKeyVertices(key)));
             iX += key.width();
-            if (j < row.m_keys.size() - 1)
+            if (j < row.keys().size() - 1)
                 iX += m_iXSpacing;
             if (key.spaceWidthAfter() != 0)
                 iX += (m_iXSpacing + key.spaceWidthAfter());
         }
-        if (row.m_iSpaceHeightAfter != 0)
-            iY += row.m_iSpaceHeightAfter + m_iYSpacing;
+        if (row.spaceHeightAfter() != 0)
+            iY += row.spaceHeightAfter() + m_iYSpacing;
         iMaxWidth = qMax(iMaxWidth, iX);
         iY += iRowHeight;
         if (i < rows.size() - 1)
