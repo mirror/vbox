@@ -422,7 +422,7 @@ static FNVMXEXITHANDLER            hmR0VmxExitTaskSwitchNested;
 static FNVMXEXITHANDLER            hmR0VmxExitHltNested;
 //static FNVMXEXITHANDLERNSRC        hmR0VmxExitInvd;
 static FNVMXEXITHANDLER            hmR0VmxExitInvlpgNested;
-//static FNVMXEXITHANDLER            hmR0VmxExitRdpmc;
+static FNVMXEXITHANDLER            hmR0VmxExitRdpmcNested;
 //static FNVMXEXITHANDLER            hmR0VmxExitVmcall;
 //static FNVMXEXITHANDLER            hmR0VmxExitVmclear;
 //static FNVMXEXITHANDLER            hmR0VmxExitVmlaunch;
@@ -12694,7 +12694,7 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExitNested(PVMCPU pVCpu, PVMXTRANSIENT pVm
         case VMX_EXIT_GDTR_IDTR_ACCESS:
         case VMX_EXIT_LDTR_TR_ACCESS:   return hmR0VmxExitXdtrAccessNested(pVCpu, pVmxTransient);
 
-        case VMX_EXIT_RDPMC:
+        case VMX_EXIT_RDPMC:            return hmR0VmxExitRdpmcNested(pVCpu, pVmxTransient);
         case VMX_EXIT_VMREAD:
         case VMX_EXIT_VMWRITE:
 
@@ -15843,6 +15843,23 @@ HMVMX_EXIT_DECL hmR0VmxExitInvlpgNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransien
         return IEMExecVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
     }
     return hmR0VmxExitInvlpg(pVCpu, pVmxTransient);
+}
+
+
+/**
+ * Nested-guest VM-exit handler for RDPMC (VMX_EXIT_RDPMC). Conditional VM-exit.
+ */
+HMVMX_EXIT_DECL hmR0VmxExitRdpmcNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
+{
+    HMVMX_VALIDATE_NESTED_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
+
+    if (CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS_RDPMC_EXIT))
+    {
+        int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
+        AssertRCReturn(rc, rc);
+        return IEMExecVmxVmexitInstr(pVCpu, pVmxTransient->uExitReason, pVmxTransient->cbInstr);
+    }
+    return hmR0VmxExitRdpmc(pVCpu, pVmxTransient);
 }
 
 
