@@ -1974,6 +1974,24 @@ HRESULT Display::setVideoModeHint(ULONG aDisplay, BOOL aEnabled,
     if (aDisplay >= mcMonitors)
         return E_INVALIDARG;
 
+    VMMDevDisplayDef d;
+    d.idDisplay     = aDisplay;
+    d.xOrigin       = aOriginX;
+    d.yOrigin       = aOriginY;
+    d.cx            = aWidth;
+    d.cy            = aHeight;
+    d.cBitsPerPixel = aBitsPerPixel;
+    d.fDisplayFlags = VMMDEV_DISPLAY_CX | VMMDEV_DISPLAY_CY | VMMDEV_DISPLAY_BPP;
+    if (!aEnabled)
+        d.fDisplayFlags |= VMMDEV_DISPLAY_DISABLED;
+    if (aChangeOrigin)
+        d.fDisplayFlags |= VMMDEV_DISPLAY_ORIGIN;
+    if (aDisplay == 0)
+        d.fDisplayFlags |= VMMDEV_DISPLAY_PRIMARY;
+
+    /* Remember the monitor information. */
+    maFramebuffers[aDisplay].monitorDesc = d;
+
     CHECK_CONSOLE_DRV(mpDrv);
 
     /*
@@ -2000,20 +2018,6 @@ HRESULT Display::setVideoModeHint(ULONG aDisplay, BOOL aEnabled,
         mParent->i_sendACPIMonitorHotPlugEvent();
     }
 
-    VMMDevDisplayDef d;
-    d.idDisplay     = aDisplay;
-    d.xOrigin       = aOriginX;
-    d.yOrigin       = aOriginY;
-    d.cx            = aWidth;
-    d.cy            = aHeight;
-    d.cBitsPerPixel = aBitsPerPixel;
-    d.fDisplayFlags = VMMDEV_DISPLAY_CX | VMMDEV_DISPLAY_CY | VMMDEV_DISPLAY_BPP;
-    if (!aEnabled)
-        d.fDisplayFlags |= VMMDEV_DISPLAY_DISABLED;
-    if (aChangeOrigin)
-        d.fDisplayFlags |= VMMDEV_DISPLAY_ORIGIN;
-    if (aDisplay == 0)
-        d.fDisplayFlags |= VMMDEV_DISPLAY_PRIMARY;
     /* We currently never suppress the VMMDev hint if the guest has requested
      * it.  Specifically the video graphics driver may not be responsible for
      * screen positioning in the guest virtual desktop, and the component
@@ -2025,8 +2029,7 @@ HRESULT Display::setVideoModeHint(ULONG aDisplay, BOOL aEnabled,
         if (pVMMDevPort)
             pVMMDevPort->pfnRequestDisplayChange(pVMMDevPort, 1, &d, false);
     }
-    /* Remember the monitor information and notify listeners. */
-    maFramebuffers[aDisplay].monitorDesc = d;
+    /* Notify listeners. */
     fireGuestMonitorInfoChangedEvent(mParent->i_getEventSource(), aDisplay);
     return S_OK;
 }
