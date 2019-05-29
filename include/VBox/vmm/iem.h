@@ -335,6 +335,7 @@ VMM_INT_DECL(VBOXSTRICTRC)  IEMExecVmxVmexitApicWrite(PVMCPU pVCpu);
 VMM_INT_DECL(VBOXSTRICTRC)  IEMExecVmxVmexitPreemptTimer(PVMCPU pVCpu);
 VMM_INT_DECL(VBOXSTRICTRC)  IEMExecVmxVmexitExtInt(PVMCPU pVCpu, uint8_t uVector, bool fIntPending);
 VMM_INT_DECL(VBOXSTRICTRC)  IEMExecVmxVmexitNmi(PVMCPU pVCpu);
+VMM_INT_DECL(VBOXSTRICTRC)  IEMExecVmxVmexitTripleFault(PVMCPU pVCpu);
 VMM_INT_DECL(VBOXSTRICTRC)  IEMExecVmxVmexitStartupIpi(PVMCPU pVCpu, uint8_t uVector);
 VMM_INT_DECL(VBOXSTRICTRC)  IEMExecVmxVmexitInstrWithInfo(PVMCPU pVCpu, PCVMXVEXITINFO pExitInfo);
 VMM_INT_DECL(VBOXSTRICTRC)  IEMExecVmxVmexitInstr(PVMCPU pVCpu, uint32_t uExitReason, uint8_t cbInstr);

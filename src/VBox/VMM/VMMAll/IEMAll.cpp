@@ -15888,6 +15888,22 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVmexitNmi(PVMCPU pVCpu)
 
 
 /**
+ * Interface for HM and EM to emulate VM-exit due to a triple-fault.
+ *
+ * @returns Strict VBox status code.
+ * @param   pVCpu           The cross context virtual CPU structure of the calling EMT.
+ * @thread  EMT(pVCpu)
+ */
+VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVmexitTripleFault(PVMCPU pVCpu)
+{
+    VBOXSTRICTRC rcStrict = iemVmxVmexitTripleFault(pVCpu);
+    if (pVCpu->iem.s.cActiveMappings)
+        iemMemRollback(pVCpu);
+    return iemExecStatusCodeFiddling(pVCpu, rcStrict);
+}
+
+
+/**
  * Interface for HM and EM to emulate VM-exit due to startup-IPI (SIPI).
  *
  * @returns Strict VBox status code.
