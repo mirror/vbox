@@ -395,7 +395,6 @@ static FNVMXEXITHANDLER            hmR0VmxExitMonitor;
 static FNVMXEXITHANDLER            hmR0VmxExitPause;
 static FNVMXEXITHANDLERNSRC        hmR0VmxExitTprBelowThreshold;
 static FNVMXEXITHANDLER            hmR0VmxExitApicAccess;
-static FNVMXEXITHANDLER            hmR0VmxExitXdtrAccess;
 static FNVMXEXITHANDLER            hmR0VmxExitEptViolation;
 static FNVMXEXITHANDLER            hmR0VmxExitEptMisconfig;
 static FNVMXEXITHANDLER            hmR0VmxExitRdtscp;
@@ -601,8 +600,8 @@ static const PFNVMXEXITHANDLER g_apfnVMExitHandlers[VMX_EXIT_MAX + 1] =
     /* 43  VMX_EXIT_TPR_BELOW_THRESHOLD     */  hmR0VmxExitTprBelowThreshold,
     /* 44  VMX_EXIT_APIC_ACCESS             */  hmR0VmxExitApicAccess,
     /* 45  VMX_EXIT_VIRTUALIZED_EOI         */  hmR0VmxExitErrUnexpected,
-    /* 46  VMX_EXIT_GDTR_IDTR_ACCESS        */  hmR0VmxExitXdtrAccess,
-    /* 47  VMX_EXIT_LDTR_TR_ACCESS          */  hmR0VmxExitXdtrAccess,
+    /* 46  VMX_EXIT_GDTR_IDTR_ACCESS        */  hmR0VmxExitErrUnexpected,
+    /* 47  VMX_EXIT_LDTR_TR_ACCESS          */  hmR0VmxExitErrUnexpected,
     /* 48  VMX_EXIT_EPT_VIOLATION           */  hmR0VmxExitEptViolation,
     /* 49  VMX_EXIT_EPT_MISCONFIG           */  hmR0VmxExitEptMisconfig,
     /* 50  VMX_EXIT_INVEPT                  */  hmR0VmxExitSetPendingXcptUD,
@@ -12533,8 +12532,6 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExit(PVMCPU pVCpu, PVMXTRANSIENT pVmxTrans
         case VMX_EXIT_INVLPG:                  VMEXIT_CALL_RET(0, hmR0VmxExitInvlpg(pVCpu, pVmxTransient));
         case VMX_EXIT_MTF:                     VMEXIT_CALL_RET(0, hmR0VmxExitMtf(pVCpu, pVmxTransient));
         case VMX_EXIT_PAUSE:                   VMEXIT_CALL_RET(0, hmR0VmxExitPause(pVCpu, pVmxTransient));
-        case VMX_EXIT_GDTR_IDTR_ACCESS:        VMEXIT_CALL_RET(0, hmR0VmxExitXdtrAccess(pVCpu, pVmxTransient));
-        case VMX_EXIT_LDTR_TR_ACCESS:          VMEXIT_CALL_RET(0, hmR0VmxExitXdtrAccess(pVCpu, pVmxTransient));
         case VMX_EXIT_WBINVD:                  VMEXIT_CALL_RET(0, hmR0VmxExitWbinvd(pVCpu, pVmxTransient));
         case VMX_EXIT_XSETBV:                  VMEXIT_CALL_RET(0, hmR0VmxExitXsetbv(pVCpu, pVmxTransient));
         case VMX_EXIT_INVPCID:                 VMEXIT_CALL_RET(0, hmR0VmxExitInvpcid(pVCpu, pVmxTransient));
@@ -12579,6 +12576,8 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExit(PVMCPU pVCpu, PVMXTRANSIENT pVmxTrans
         case VMX_EXIT_ERR_MACHINE_CHECK:
         case VMX_EXIT_PML_FULL:
         case VMX_EXIT_VIRTUALIZED_EOI:
+        case VMX_EXIT_GDTR_IDTR_ACCESS:
+        case VMX_EXIT_LDTR_TR_ACCESS:
         case VMX_EXIT_APIC_WRITE:
         case VMX_EXIT_RDRAND:
         case VMX_EXIT_RSM:
@@ -13766,6 +13765,8 @@ HMVMX_EXIT_NSRC_DECL hmR0VmxExitErrUnexpected(PVMCPU pVCpu, PVMXTRANSIENT pVmxTr
      *    We do not currently support any of these features and thus they are all unexpected
      *    VM-exits.
      *
+     * VMX_EXIT_GDTR_IDTR_ACCESS:
+     * VMX_EXIT_LDTR_TR_ACCESS:
      * VMX_EXIT_RDRAND:
      * VMX_EXIT_RSM:
      * VMX_EXIT_VMFUNC:
@@ -13783,25 +13784,6 @@ HMVMX_EXIT_NSRC_DECL hmR0VmxExitErrUnexpected(PVMCPU pVCpu, PVMXTRANSIENT pVmxTr
      */
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
     AssertMsgFailed(("Unexpected VM-exit %u\n", pVmxTransient->uExitReason));
-    HMVMX_UNEXPECTED_EXIT_RET(pVCpu, pVmxTransient->uExitReason);
-}
-
-
-/**
- * VM-exit handler for XDTR (LGDT, SGDT, LIDT, SIDT) accesses
- * (VMX_EXIT_GDTR_IDTR_ACCESS) and LDT and TR access (LLDT, LTR, SLDT, STR).
- * Conditional VM-exit.
- */
-HMVMX_EXIT_DECL hmR0VmxExitXdtrAccess(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
-{
-    HMVMX_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
-
-    /* By default, we don't enable VMX_PROC_CTLS2_DESCRIPTOR_TABLE_EXIT. */
-    STAM_COUNTER_INC(&pVCpu->hm.s.StatExitXdtrAccess);
-    PCVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
-    if (pVmcsInfo->u32ProcCtls2 & VMX_PROC_CTLS2_DESC_TABLE_EXIT)
-        return VERR_EM_INTERPRETER;
-    AssertMsgFailed(("Unexpected XDTR access\n"));
     HMVMX_UNEXPECTED_EXIT_RET(pVCpu, pVmxTransient->uExitReason);
 }
 
@@ -16247,7 +16229,7 @@ HMVMX_EXIT_DECL hmR0VmxExitXdtrAccessNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTran
         ExitInfo.InstrInfo = pVmxTransient->ExitInstrInfo;
         return IEMExecVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
     }
-    return hmR0VmxExitXdtrAccess(pVCpu, pVmxTransient);
+    return hmR0VmxExitErrUnexpected(pVCpu, pVmxTransient);
 }
 
 
