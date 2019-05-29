@@ -18,22 +18,25 @@
 /* Qt includes: */
 #include <QDialogButtonBox>
 #include <QLabel>
+#include <QPrintDialog>
+#include <QPrinter>
 #include <QPushButton>
 #include <QTextEdit>
 #include <QTextStream>
 #include <QVBoxLayout>
 
 /* GUI includes: */
+#include "QIDialog.h"
+#include "QIFileDialog.h"
+#include "VBoxGlobal.h"
+#include "UIMessageCenter.h"
 #include "UIWizardImportApp.h"
 #include "UIWizardImportAppPageBasic1.h"
 #include "UIWizardImportAppPageBasic2.h"
 #include "UIWizardImportAppPageExpert.h"
-#include "VBoxGlobal.h"
-#include "QIDialog.h"
-#include "QIFileDialog.h"
 
-#include <QPrintDialog>
-#include <QPrinter>
+/* COM includes: */
+#include "CProgress.h"
 
 
 /* Import license viewer: */
@@ -193,25 +196,62 @@ bool UIWizardImportApp::isValid() const
 
 bool UIWizardImportApp::importAppliance()
 {
-    /* Get import appliance widget: */
-    UIApplianceImportEditorWidget *pImportApplianceWidget = field("applianceWidget").value<ImportAppliancePointer>();
-    /* Make sure the final values are puted back: */
-    pImportApplianceWidget->prepareImport();
-    /* Check if there are license agreements the user must confirm: */
-    QList < QPair <QString, QString> > licAgreements = pImportApplianceWidget->licenseAgreements();
-    if (!licAgreements.isEmpty())
+    /* Check whether there was cloud source selected: */
+    const bool fIsSourceCloudOne = field("isSourceCloudOne").toBool();
+    if (fIsSourceCloudOne)
     {
-        UIImportLicenseViewer ilv(this);
-        for (int i = 0; i < licAgreements.size(); ++ i)
+        /* Acquire prepared appliance: */
+        CAppliance comAppliance = field("appliance").value<CAppliance>();
+        AssertReturn(!comAppliance.isNull(), false);
+
+        /* No options for cloud VMs for now: */
+        QVector<KImportOptions> options;
+
+        /* Initiate import porocedure: */
+        CProgress comProgress = comAppliance.ImportMachines(options);
+
+        /* Show error message if necessary: */
+        if (!comAppliance.isOk())
+            msgCenter().cannotImportAppliance(comAppliance, this);
+        else
         {
-            const QPair <QString, QString> &lic = licAgreements.at(i);
-            ilv.setContents(lic.first, lic.second);
-            if (ilv.exec() == QDialog::Rejected)
-                return false;
+            /* Show "Import appliance" progress: */
+            msgCenter().showModalProgressDialog(comProgress, tr("Importing Appliance ..."), ":/progress_import_90px.png", this, 0);
+            if (!comProgress.GetCanceled())
+            {
+                /* Show error message if necessary: */
+                if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
+                    msgCenter().cannotImportAppliance(comProgress, comAppliance.GetPath(), this);
+                else
+                    return true;
+            }
         }
+
+        /* Failure by default: */
+        return false;
     }
-    /* Now import all virtual systems: */
-    return pImportApplianceWidget->import();
+    else
+    {
+        /* Get import appliance widget: */
+        UIApplianceImportEditorWidget *pImportApplianceWidget = field("applianceWidget").value<ImportAppliancePointer>();
+        /* Make sure the final values are puted back: */
+        pImportApplianceWidget->prepareImport();
+        /* Check if there are license agreements the user must confirm: */
+        QList < QPair <QString, QString> > licAgreements = pImportApplianceWidget->licenseAgreements();
+        if (!licAgreements.isEmpty())
+        {
+            UIImportLicenseViewer ilv(this);
+            for (int i = 0; i < licAgreements.size(); ++ i)
+            {
+                const QPair <QString, QString> &lic = licAgreements.at(i);
+                ilv.setContents(lic.first, lic.second);
+                if (ilv.exec() == QDialog::Rejected)
+                    return false;
+            }
+        }
+        /* Now import all virtual systems: */
+        return pImportApplianceWidget->import();
+    }
 }
 
 void UIWizardImportApp::retranslateUi()
