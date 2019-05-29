@@ -800,8 +800,12 @@ int vbsf_inode_setattr(struct dentry *dentry, struct iattr *iattr)
     AssertReturn(sf_i, -EINVAL);
 
     /*
-     * Need to check whether the caller is allowed to modify the attributes or not.
+     * Do minimal attribute permission checks.  We set ATTR_FORCE since we cannot
+     * preserve ownership and such and would end up with EPERM here more often than
+     * we would like.  For instance it would cause 'cp' to complain about EPERM
+     * from futimes() when asked to preserve times, see ticketref:18569.
      */
+    iattr->ia_valid |= ATTR_FORCE;
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0)
     rc = setattr_prepare(dentry, iattr);
 #else
