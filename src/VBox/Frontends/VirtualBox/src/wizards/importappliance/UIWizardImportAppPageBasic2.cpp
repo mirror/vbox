@@ -273,12 +273,6 @@ void UIWizardImportAppPageBasic2::cleanupPage()
     UIWizardPage::cleanupPage();
 }
 
-bool UIWizardImportAppPageBasic2::isComplete() const
-{
-    /* No importing for cloud source for now: */
-    return !field("isSourceCloudOne").toBool();
-}
-
 bool UIWizardImportAppPageBasic2::validatePage()
 {
     /* Initial result: */

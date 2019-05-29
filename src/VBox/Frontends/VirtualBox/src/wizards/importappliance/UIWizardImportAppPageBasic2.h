@@ -82,9 +82,6 @@ protected:
     /** Performs page cleanup. */
     virtual void cleanupPage() /* override */;
 
-    /** Returns whether page is complete. */
-    virtual bool isComplete() const /* override */;
-
     /** Performs page validation. */
     virtual bool validatePage() /* override */;
 
