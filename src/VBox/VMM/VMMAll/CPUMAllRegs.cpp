@@ -2814,57 +2814,6 @@ VMM_INT_DECL(bool) CPUMIsGuestNmiBlocking(PVMCPU pVCpu)
 
 
 /**
- * Checks whether the VMX nested-guest is in a state to receive physical (APIC)
- * interrupts.
- *
- * @returns VBox status code.
- * @retval  true if it's ready, false otherwise.
- *
- * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
- * @param   pCtx    The guest-CPU context.
- */
-VMM_INT_DECL(bool) CPUMIsGuestVmxPhysIntrEnabled(PVMCPU pVCpu, PCCPUMCTX pCtx)
-{
-#ifdef IN_RC
-    RT_NOREF2(pVCpu, pCtx);
-    AssertReleaseFailedReturn(false);
-#else
-    RT_NOREF(pVCpu);
-    Assert(CPUMIsGuestInVmxNonRootMode(pCtx));
-
-    return RT_BOOL(pCtx->eflags.u & X86_EFL_IF);
-#endif
-}
-
-
-/**
- * Checks whether the VMX nested-guest is in a state to receive virtual interrupts
- * (those injected with the "virtual-interrupt delivery" feature).
- *
- * @returns VBox status code.
- * @retval  true if it's ready, false otherwise.
- *
- * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
- * @param   pCtx    The guest-CPU context.
- */
-VMM_INT_DECL(bool) CPUMIsGuestVmxVirtIntrEnabled(PVMCPU pVCpu, PCCPUMCTX pCtx)
-{
-#ifdef IN_RC
-    RT_NOREF2(pVCpu, pCtx);
-    AssertReleaseFailedReturn(false);
-#else
-    RT_NOREF2(pVCpu, pCtx);
-    Assert(CPUMIsGuestInVmxNonRootMode(pCtx));
-
-    if (   (pCtx->eflags.u & X86_EFL_IF)
-        && !CPUMIsGuestVmxProcCtlsSet(pVCpu, pCtx, VMX_PROC_CTLS_INT_WINDOW_EXIT))
-        return true;
-    return false;
-#endif
-}
-
-
-/**
  * Checks whether the SVM nested-guest has physical interrupts enabled.
  *
  * @returns true if interrupts are enabled, false otherwise.

@@ -1475,8 +1475,6 @@ VMM_INT_DECL(void)      CPUMSvmVmExitRestoreHostState(PVMCPU pVCpu, PCPUMCTX pCt
 VMM_INT_DECL(void)      CPUMSvmVmRunSaveHostState(PCPUMCTX pCtx, uint8_t cbInstr);
 VMM_INT_DECL(uint64_t)  CPUMApplyNestedGuestTscOffset(PVMCPU pVCpu, uint64_t uTicks);
 VMM_INT_DECL(uint64_t)  CPUMRemoveNestedGuestTscOffset(PVMCPU pVCpu, uint64_t uTicks);
-VMM_INT_DECL(bool)      CPUMIsGuestVmxPhysIntrEnabled(PVMCPU pVCpu, PCCPUMCTX pCtx);
-VMM_INT_DECL(bool)      CPUMIsGuestVmxVirtIntrEnabled(PVMCPU pVCpu, PCCPUMCTX pCtx);
 VMM_INT_DECL(uint32_t)  CPUMGetVmxMsrPermission(void const *pvMsrBitmap, uint32_t idMsr);
 VMM_INT_DECL(bool)      CPUMIsGuestVmxIoInterceptSet(PVMCPU pVCpu, uint16_t u16Port, uint8_t cbAccess);
 VMM_INT_DECL(bool)      CPUMGetVmxIoBitmapPermission(void const *pvIoBitmapA, void const *pvIoBitmapB, uint16_t uPort,
@@ -2195,7 +2193,6 @@ DECLINLINE(uint64_t) CPUMGetGuestVmxMaskedCr4(PVMCPU pVCpu, PCCPUMCTX pCtx)
     return (fReadShadow & fGstHostMask) | (uGstCr4 & ~fGstHostMask);
 }
 
-
 /**
  * Checks whether the LMSW access causes a VM-exit or not.
  *
@@ -2244,7 +2241,6 @@ DECLINLINE(bool) CPUMIsGuestVmxLmswInterceptSet(PVMCPU pVCpu, PCCPUMCTX pCtx, ui
     return false;
 }
 
-
 /**
  * Checks whether the Mov-to-CR0/CR4 access causes a VM-exit or not.
  *
@@ -2292,6 +2288,54 @@ DECLINLINE(bool) CPUMIsGuestVmxMovToCr0Cr4InterceptSet(PVMCPU pVCpu, PCCPUMCTX p
 }
 
 # endif /* !IN_RC */
+
+/**
+ * Checks whether the VMX nested-guest is in a state to receive physical (APIC)
+ * interrupts.
+ *
+ * @returns VBox status code.
+ * @retval  true if it's ready, false otherwise.
+ *
+ * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
+ * @param   pCtx    The guest-CPU context.
+ */
+DECLINLINE(bool) CPUMIsGuestVmxPhysIntrEnabled(PVMCPU pVCpu, PCCPUMCTX pCtx)
+{
+#ifdef IN_RC
+    RT_NOREF2(pVCpu, pCtx);
+    AssertReleaseFailedReturn(false);
+#else
+    RT_NOREF(pVCpu);
+    Assert(CPUMIsGuestInVmxNonRootMode(pCtx));
+    return RT_BOOL(pCtx->eflags.u & X86_EFL_IF);
+#endif
+}
+
+/**
+ * Checks whether the VMX nested-guest is in a state to receive virtual interrupts
+ * (those injected with the "virtual-interrupt delivery" feature).
+ *
+ * @returns VBox status code.
+ * @retval  true if it's ready, false otherwise.
+ *
+ * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
+ * @param   pCtx    The guest-CPU context.
+ */
+DECLINLINE(bool) CPUMIsGuestVmxVirtIntrEnabled(PVMCPU pVCpu, PCCPUMCTX pCtx)
+{
+#ifdef IN_RC
+    RT_NOREF2(pVCpu, pCtx);
+    AssertReleaseFailedReturn(false);
+#else
+    RT_NOREF(pVCpu);
+    Assert(CPUMIsGuestInVmxNonRootMode(pCtx));
+
+    if (   (pCtx->eflags.u & X86_EFL_IF)
+        && !CPUMIsGuestVmxProcCtlsSet(pVCpu, pCtx, VMX_PROC_CTLS_INT_WINDOW_EXIT))
+        return true;
+    return false;
+#endif
+}
 
 #endif /* IPRT_WITHOUT_NAMED_UNIONS_AND_STRUCTS */
 
