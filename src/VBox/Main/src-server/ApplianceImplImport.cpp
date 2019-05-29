@@ -1129,8 +1129,8 @@ HRESULT Appliance::i_readImpl(const LocationInfo &aLocInfo, ComObjPtr<Progress> 
             /* Create an empty ovf::OVFReader for manual filling it.
              * It's not a normal usage case, but we try to re-use some OVF stuff to friend
              * the cloud import with OVF import.
-             * In the standard case the ovf::OVFReader is created in the Appliance::i_readOVFFile(). 
-             * We need the existing m->pReader for Appliance::i_importCloudImpl() where we re-use OVF logic. */ 
+             * In the standard case the ovf::OVFReader is created in the Appliance::i_readOVFFile().
+             * We need the existing m->pReader for Appliance::i_importCloudImpl() where we re-use OVF logic. */
             m->pReader = new ovf::OVFReader();
         }
         else
@@ -1516,7 +1516,7 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
             {
                 vsdData = aVBoxValues[0];
 
-                /** TODO:
+                /** @todo
                  *  future function which will eliminate the temporary objects created during the first phase.
                  *  hrc = cloud.EliminateImportLeavings(aVBoxValues[0], pProgress); */
                 if (FAILED(hrc))
