@@ -347,6 +347,31 @@ void UIWizardImportAppPage1::populateFormProperties()
                 break;
             }
 
+            /* Read cloud instance info: */
+            CProgress comReadProgress = comAppliance.Read(QString("OCI://%1/%2").arg(profileName(), machineId()));
+            if (!comAppliance.isOk())
+            {
+                msgCenter().cannotImportAppliance(comAppliance);
+                break;
+            }
+
+            /* Show "Read appliance" progress: */
+            msgCenter().showModalProgressDialog(comReadProgress, UIWizardImportApp::tr("Read appliance..."),
+                                                ":/progress_reading_appliance_90px.png", 0, 0);
+            if (!comReadProgress.isOk() || comReadProgress.GetResultCode() != 0)
+            {
+                msgCenter().cannotImportAppliance(comReadProgress, comAppliance.GetPath());
+                break;
+            }
+
+            /* Interpret cloud instance info: */
+            comAppliance.Interpret();
+            if (!comAppliance.isOk())
+            {
+                msgCenter().cannotImportAppliance(comAppliance);
+                break;
+            }
+
             /* Create virtual system description: */
             comAppliance.CreateVirtualSystemDescriptions(1);
             if (!comAppliance.isOk())
