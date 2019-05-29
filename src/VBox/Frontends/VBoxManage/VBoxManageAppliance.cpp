@@ -370,16 +370,24 @@ RTEXITCODE handleImportAppliance(HandlerArg *arg)
         CHECK_ERROR_BREAK(arg->virtualBox, CreateAppliance(pAppliance.asOutParam()));
 
         //in the case of Cloud, append the instance id here because later it's harder to do
-        if (actionType == CLOUD &&
-            mapArgsMapsPerVsys[ulCurVsys]["cloudprofile"].isNotEmpty() &&
-            mapArgsMapsPerVsys[ulCurVsys]["cloudinstanceid"].isNotEmpty())
+        if (actionType == CLOUD)
         {
+            try
+            {
+                /* Check presence of cloudprofile and cloudinstanceid in the map.
+                 * If there isn't the exception is triggered. It's standard std:map logic.*/
+                ArgsMap a = mapArgsMapsPerVsys[ulCurVsys];
+                a.at("cloudprofile");
+                a.at("cloudinstanceid");
+            } catch (...)
+            {
+                return errorSyntax(USAGE_IMPORTAPPLIANCE, "Not enough arguments for import from the Cloud.");
+            }
+
             strOvfFilename.append(mapArgsMapsPerVsys[ulCurVsys]["cloudprofile"]);
             strOvfFilename.append("/");
             strOvfFilename.append(mapArgsMapsPerVsys[ulCurVsys]["cloudinstanceid"]);
         }
-        else
-            return errorSyntax(USAGE_IMPORTAPPLIANCE, "Not enough arguments for import from the Cloud.");
 
         char *pszAbsFilePath;
         if (strOvfFilename.startsWith("S3://", RTCString::CaseInsensitive) ||
@@ -401,12 +409,8 @@ RTEXITCODE handleImportAppliance(HandlerArg *arg)
         Bstr path; /* fetch the path, there is stuff like username/password removed if any */
         CHECK_ERROR_BREAK(pAppliance, COMGETTER(Path)(path.asOutParam()));
 
-        // fetch virtual system descriptions
+        size_t cVirtualSystemDescriptions = 0;
         com::SafeIfaceArray<IVirtualSystemDescription> aVirtualSystemDescriptions;
-        CHECK_ERROR_BREAK(pAppliance,
-                          COMGETTER(VirtualSystemDescriptions)(ComSafeArrayAsOutParam(aVirtualSystemDescriptions)));
-
-        size_t cVirtualSystemDescriptions = aVirtualSystemDescriptions.size();
 
         if (actionType == LOCAL)
         {
@@ -448,6 +452,12 @@ RTEXITCODE handleImportAppliance(HandlerArg *arg)
                 RTPrintf("\n");
             }
 
+            // fetch virtual system descriptions
+            CHECK_ERROR_BREAK(pAppliance,
+                              COMGETTER(VirtualSystemDescriptions)(ComSafeArrayAsOutParam(aVirtualSystemDescriptions)));
+
+            cVirtualSystemDescriptions = aVirtualSystemDescriptions.size();
+
             // match command line arguments with virtual system descriptions;
             // this is only to sort out invalid indices at this time
             ArgsMapsMap::const_iterator it;
@@ -461,6 +471,16 @@ RTEXITCODE handleImportAppliance(HandlerArg *arg)
                                        "Invalid index %RI32 with -vsys option; the OVF contains only %zu virtual system(s).",
                                        ulVsys, cVirtualSystemDescriptions);
             }
+        }
+        else if (actionType == CLOUD)
+        {
+            /* In the Cloud case the call of interpret() isn't needed because there isn't any OVF XML file.
+             * All info is got from the Cloud and VSD is filled inside IAppliance::read(). */
+            // fetch virtual system descriptions
+            CHECK_ERROR_BREAK(pAppliance,
+                              COMGETTER(VirtualSystemDescriptions)(ComSafeArrayAsOutParam(aVirtualSystemDescriptions)));
+
+            cVirtualSystemDescriptions = aVirtualSystemDescriptions.size();
         }
 
         uint32_t cLicensesInTheWay = 0;
