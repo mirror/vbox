@@ -332,71 +332,72 @@ void UIWizardImportAppPage1::populateFormProperties()
     m_comVSDForm = CVirtualSystemDescriptionForm();
 
     /* If client created: */
-    if (!m_comCloudClient.isNull())
+    if (m_comCloudClient.isNotNull())
     {
-        /* Create appliance: */
-        CVirtualBox comVBox = vboxGlobal().virtualBox();
-        CAppliance comAppliance = comVBox.CreateAppliance();
-
-        /* Show error message if necessary: */
-        if (!comVBox.isOk())
-            msgCenter().cannotCreateAppliance(comVBox);
-        else
+        /* The underlying sequence is quite a large one, and each subsequent step depends on previous one.  I do not want to
+         * make embedded ifs or multiple exit points, that's more or less Ok with few of them but certainly not with many. */
+        do
         {
+            /* Create appliance: */
+            CVirtualBox comVBox = vboxGlobal().virtualBox();
+            CAppliance comAppliance = comVBox.CreateAppliance();
+            if (!comVBox.isOk())
+            {
+                msgCenter().cannotCreateAppliance(comVBox);
+                break;
+            }
+
             /* Create virtual system description: */
             comAppliance.CreateVirtualSystemDescriptions(1);
-
-            /* Show error message if necessary: */
             if (!comAppliance.isOk())
-                msgCenter().cannotCreateVirtualSystemDescription(comAppliance);
-            else
             {
-                /* Acquire virtual system description: */
-                QVector<CVirtualSystemDescription> descriptions = comAppliance.GetVirtualSystemDescriptions();
-
-                /* Show error message if necessary: */
-                if (!comAppliance.isOk())
-                    msgCenter().cannotAcquireVirtualSystemDescription(comAppliance);
-                else
-                {
-                    /* Make sure there is at least one virtual system description created: */
-                    AssertReturnVoid(!descriptions.isEmpty());
-                    CVirtualSystemDescription comDescription = descriptions.at(0);
-
-                    /* Load default virtual system description values: */
-                    /// @todo make sure this is a progress returning call
-                    m_comCloudClient.GetInstanceInfo(machineId(), comDescription);
-
-                    /* Show error message if necessary: */
-                    if (!m_comCloudClient.isOk())
-                        msgCenter().cannotAcquireCloudInstanceInfo(m_comCloudClient);
-                    else
-                    {
-                        /* Read Cloud Client description form: */
-                        CVirtualSystemDescriptionForm comForm;
-                        CProgress comProgress = m_comCloudClient.GetImportDescriptionForm(comDescription, comForm);
-
-                        /* Show error message if necessary: */
-                        if (!m_comCloudClient.isOk())
-                            msgCenter().cannotAcquireCloudClientParameter(m_comCloudClient);
-                        else
-                        {
-                            /* Show "Acquire export form" progress: */
-                            msgCenter().showModalProgressDialog(comProgress,
-                                                                UIWizardImportApp::tr("Acquire export form..."),
-                                                                ":/progress_reading_appliance_90px.png",
-                                                                0, 0);
-
-                            /* Show error message if necessary: */
-                            if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-                                msgCenter().cannotAcquireCloudClientParameter(comProgress);
-                            else
-                                m_comVSDForm = comForm;
-                        }
-                    }
-                }
+                msgCenter().cannotCreateVirtualSystemDescription(comAppliance);
+                break;
             }
+
+            /* Acquire virtual system description: */
+            QVector<CVirtualSystemDescription> descriptions = comAppliance.GetVirtualSystemDescriptions();
+            if (!comAppliance.isOk())
+            {
+                msgCenter().cannotAcquireVirtualSystemDescription(comAppliance);
+                break;
+            }
+
+            /* Make sure there is at least one virtual system description created: */
+            AssertReturnVoid(!descriptions.isEmpty());
+            CVirtualSystemDescription comDescription = descriptions.at(0);
+
+            /* Populate virtual system description with default values: */
+            /// @todo make sure this is a progress returning call
+            m_comCloudClient.GetInstanceInfo(machineId(), comDescription);
+            if (!m_comCloudClient.isOk())
+            {
+                msgCenter().cannotAcquireCloudInstanceInfo(m_comCloudClient);
+                break;
+            }
+
+            /* Read Cloud Client description form: */
+            CVirtualSystemDescriptionForm comForm;
+            CProgress comImportDescriptionFormProgress = m_comCloudClient.GetImportDescriptionForm(comDescription, comForm);
+            if (!m_comCloudClient.isOk())
+            {
+                msgCenter().cannotAcquireCloudClientParameter(m_comCloudClient);
+                break;
+            }
+
+            /* Show "Acquire import form" progress: */
+            msgCenter().showModalProgressDialog(comImportDescriptionFormProgress, UIWizardImportApp::tr("Acquire import form..."),
+                                                ":/progress_reading_appliance_90px.png", 0, 0);
+            if (!comImportDescriptionFormProgress.isOk() || comImportDescriptionFormProgress.GetResultCode() != 0)
+            {
+                msgCenter().cannotAcquireCloudClientParameter(comImportDescriptionFormProgress);
+                break;
+            }
+
+            /* Remember form: */
+            m_comVSDForm = comForm;
         }
+        while (0);
     }
 }
 
