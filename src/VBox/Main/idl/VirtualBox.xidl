@@ -26005,6 +26005,11 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <param name="description" type="IVirtualSystemDescription" dir="in">
         <desc>VirtualSystemDescription object which is describing a machine</desc>
       </param>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>
+          Progress object to track the operation completion.
+        </desc>
+      </param>
     </method>
 
     <method name="importInstance">

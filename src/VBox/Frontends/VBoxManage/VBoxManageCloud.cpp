@@ -501,9 +501,15 @@ static RTEXITCODE showCloudInstanceInfo(HandlerArg *a, int iFirst, PCLOUDCOMMONO
 
     CHECK_ERROR2_RET(hrc, pAppliance, COMGETTER(VirtualSystemDescriptions)(ComSafeArrayAsOutParam(vsdArray)), RTEXITCODE_FAILURE);
     ComPtr<IVirtualSystemDescription> instanceDescription = vsdArray[0];
+
+    ComPtr<IProgress> progress;
     CHECK_ERROR2_RET(hrc, oCloudClient,
-                     GetInstanceInfo(Bstr(strInstanceId.c_str()).raw(), instanceDescription),
+                     GetInstanceInfo(Bstr(strInstanceId.c_str()).raw(), instanceDescription, progress.asOutParam()),
                      RTEXITCODE_FAILURE);
+
+    hrc = showProgress(progress);
+    CHECK_PROGRESS_ERROR_RET(progress, ("Getting information about cloud instance failed"), RTEXITCODE_FAILURE);
+
     RTPrintf("Cloud instance info (provider '%s'):\n",
              pCommonOpts->provider.pszProviderName);
 

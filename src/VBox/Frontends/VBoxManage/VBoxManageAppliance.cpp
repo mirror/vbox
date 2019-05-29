@@ -148,7 +148,8 @@ static const RTGETOPTDEF g_aImportApplianceOptions[] =
 
     { "--cloud",                'j', RTGETOPT_REQ_NOTHING},
     { "--cloudprofile",         'k', RTGETOPT_REQ_STRING },
-    { "--cloudinstanceid",      'l', RTGETOPT_REQ_STRING }
+    { "--cloudinstanceid",      'l', RTGETOPT_REQ_STRING },
+    { "--cloudbucket",          'B', RTGETOPT_REQ_STRING }
 };
 
 enum actionType
@@ -327,6 +328,13 @@ RTEXITCODE handleImportAppliance(HandlerArg *arg)
                     return errorSyntax(USAGE_IMPORTAPPLIANCE, "Option \"%s\" requires preceding --cloud argument.",
                                        GetState.pDef->pszLong);
                 mapArgsMapsPerVsys[ulCurVsys]["cloudinstanceid"] = ValueUnion.psz;
+                break;
+
+            case 'B':   // --cloudbucket
+                if (actionType != CLOUD)
+                    return errorSyntax(USAGE_EXPORTAPPLIANCE, "Option \"%s\" requires preceding --cloud argument.",
+                                       GetState.pDef->pszLong);
+                mapArgsMapsPerVsys[ulCurVsys]["cloudbucket"] = ValueUnion.psz;
                 break;
 
             case VINF_GETOPT_NOT_OPTION:
@@ -977,17 +985,60 @@ RTEXITCODE handleImportAppliance(HandlerArg *arg)
                             break;
 
                         case VirtualSystemDescriptionType_CloudInstanceShape:
+                            RTPrintf("%2u: Suggested cloud shape \"%ls\"\n",
+                                    a, bstrFinalValue.raw(), i);
+                            break;
+
+                        case VirtualSystemDescriptionType_CloudBucket:
+                            if (findArgValue(strOverride, pmapArgs, "cloudbucket"))
+                            {
+                                bstrFinalValue = strOverride;
+                                RTPrintf("%2u: Cloud bucket id specified with --cloudbucket: \"%ls\"\n",
+                                        a, bstrFinalValue.raw());
+                            }
+                            else
+                                RTPrintf("%2u: Suggested cloud bucket id \"%ls\""
+                                        "\n    (change with \"--cloud %u --cloudbucket <id>\")\n",
+                                        a, bstrFinalValue.raw(), i);
+                            break;
+
+                        case VirtualSystemDescriptionType_CloudProfileName:
+                            if (findArgValue(strOverride, pmapArgs, "cloudprofile"))
+                            {
+                                bstrFinalValue = strOverride;
+                                RTPrintf("%2u: Cloud profile name specified with --cloudprofile: \"%ls\"\n",
+                                        a, bstrFinalValue.raw());
+                            }
+                            else
+                                RTPrintf("%2u: Suggested cloud profile name \"%ls\""
+                                        "\n    (change with \"--cloud %u --cloudprofile <id>\")\n",
+                                        a, bstrFinalValue.raw(), i);
+                            break;
+
+                        case VirtualSystemDescriptionType_CloudInstanceId:
+                            if (findArgValue(strOverride, pmapArgs, "cloudinstanceid"))
+                            {
+                                bstrFinalValue = strOverride;
+                                RTPrintf("%2u: Cloud instance id specified with --cloudinstanceid: \"%ls\"\n",
+                                        a, bstrFinalValue.raw());
+                            }
+                            else
+                                RTPrintf("%2u: Suggested cloud instance id \"%ls\""
+                                        "\n    (change with \"--cloud %u --cloudinstanceid <id>\")\n",
+                                        a, bstrFinalValue.raw(), i);
+                            break;
+
+                        case VirtualSystemDescriptionType_CloudImageId:
+                            RTPrintf("%2u: Suggested cloud base image id \"%ls\"\n",
+                                    a, bstrFinalValue.raw(), i);
+                            break;
                         case VirtualSystemDescriptionType_CloudDomain:
                         case VirtualSystemDescriptionType_CloudBootDiskSize:
-                        case VirtualSystemDescriptionType_CloudBucket:
                         case VirtualSystemDescriptionType_CloudOCIVCN:
                         case VirtualSystemDescriptionType_CloudPublicIP:
-                        case VirtualSystemDescriptionType_CloudProfileName:
                         case VirtualSystemDescriptionType_CloudOCISubnet:
                         case VirtualSystemDescriptionType_CloudKeepObject:
                         case VirtualSystemDescriptionType_CloudLaunchInstance:
-                        case VirtualSystemDescriptionType_CloudInstanceId:
-                        case VirtualSystemDescriptionType_CloudImageId:
                         case VirtualSystemDescriptionType_CloudInstanceState:
                         case VirtualSystemDescriptionType_CloudImageState:
                         case VirtualSystemDescriptionType_Miscellaneous:
