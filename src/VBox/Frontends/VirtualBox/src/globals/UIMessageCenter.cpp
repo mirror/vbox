@@ -1916,12 +1916,6 @@ void UIMessageCenter::cannotAcquireVirtualSystemDescription(const CAppliance &co
           UIErrorString::formatErrorInfo(comAppliance));
 }
 
-void UIMessageCenter::cannotAcquireCloudInstanceInfo(const CCloudClient &comClient, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Critical, tr("<p>Cannot acquire a cloud instance information.</p>"),
-          UIErrorString::formatErrorInfo(comClient));
-}
-
 void UIMessageCenter::cannotImportAppliance(CAppliance &appliance, QWidget *pParent /* = 0*/) const
 {
     /* Preserve error-info: */

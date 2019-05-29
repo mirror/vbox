@@ -368,11 +368,19 @@ void UIWizardImportAppPage1::populateFormProperties()
             CVirtualSystemDescription comDescription = descriptions.at(0);
 
             /* Populate virtual system description with default values: */
-            /// @todo make sure this is a progress returning call
-            m_comCloudClient.GetInstanceInfo(machineId(), comDescription);
+            CProgress comInstanceInfoProgress = m_comCloudClient.GetInstanceInfo(machineId(), comDescription);
             if (!m_comCloudClient.isOk())
             {
-                msgCenter().cannotAcquireCloudInstanceInfo(m_comCloudClient);
+                msgCenter().cannotAcquireCloudClientParameter(m_comCloudClient);
+                break;
+            }
+
+            /* Show "Acquire intance info" progress: */
+            msgCenter().showModalProgressDialog(comInstanceInfoProgress, UIWizardImportApp::tr("Acquire intance info..."),
+                                                ":/progress_reading_appliance_90px.png", 0, 0);
+            if (!comInstanceInfoProgress.isOk() || comInstanceInfoProgress.GetResultCode() != 0)
+            {
+                msgCenter().cannotAcquireCloudClientParameter(comInstanceInfoProgress);
                 break;
             }
 

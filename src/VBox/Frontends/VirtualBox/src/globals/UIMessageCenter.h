@@ -406,7 +406,6 @@ public:
     void cannotCreateAppliance(const CVirtualBox &comVBox, QWidget *pParent = 0) const;
     void cannotCreateVirtualSystemDescription(const CAppliance &comAppliance, QWidget *pParent = 0) const;
     void cannotAcquireVirtualSystemDescription(const CAppliance &comAppliance, QWidget *pParent = 0) const;
-    void cannotAcquireCloudInstanceInfo(const CCloudClient &comClient, QWidget *pParent = 0) const;
     void cannotImportAppliance(CAppliance &appliance, QWidget *pParent = 0) const;
     void cannotImportAppliance(const CProgress &progress, const QString &strPath, QWidget *pParent = 0) const;
     bool cannotCheckFiles(const CAppliance &comAppliance, QWidget *pParent = 0) const;
