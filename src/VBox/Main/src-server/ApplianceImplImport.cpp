@@ -1129,7 +1129,8 @@ HRESULT Appliance::i_readImpl(const LocationInfo &aLocInfo, ComObjPtr<Progress> 
             /* Create an empty ovf::OVFReader for manual filling it.
              * It's not a normal usage case, but we try to re-use some OVF stuff to friend
              * the cloud import with OVF import.
-             * In the standard case the ovf::OVFReader is created earlier.*/
+             * In the standard case the ovf::OVFReader is created in the Appliance::i_readOVFFile(). 
+             * We need the existing m->pReader for Appliance::i_importCloudImpl() where we re-use OVF logic. */ 
             m->pReader = new ovf::OVFReader();
         }
         else
@@ -1411,7 +1412,7 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
             hrc = mVirtualBox->FindMachine(Bstr(strVMName.c_str()).raw(), machine.asOutParam());
             if (SUCCEEDED(hrc))
             {
-                //what to do? create a new name from the old one with some suffix?
+                /* what to do? create a new name from the old one with some suffix? */
                 com::Guid newId;
                 newId.create();
                 strVMName.append("__").append(newId.toString());
@@ -1419,7 +1420,7 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
                 vsd->AddDescription(VirtualSystemDescriptionType_Name,
                                     Bstr(strVMName).raw(),
                                     Bstr(strVMName).raw());
-                //No check again because it would be weird if a VM with such unique name exists
+                /* No check again because it would be weird if a VM with such unique name exists */
             }
 
             Utf8Str strInsId;
@@ -1434,10 +1435,10 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
             LogRel(("%s: calling CloudClient::ImportInstance\n", __FUNCTION__));
 
             /* Here it's strongly supposed that cloud import produces ONE object on the disk.
-               Because it much easier to manage one object in any case.
-               In the case when cloud import creates several object on the disk all of them
-               must be combined together into one object by cloud client.
-               The most simple way is to create a TAR archive. */
+             * Because it much easier to manage one object in any case.
+             * In the case when cloud import creates several object on the disk all of them
+             * must be combined together into one object by cloud client.
+             * The most simple way is to create a TAR archive. */
             hrc = cloudClient->ImportInstance(m->virtualSystemDescriptions.front(),
                                               aVBoxValues[0],
                                               VBox,
@@ -1472,7 +1473,7 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
         /*
          * Roll-back actions.
          * we finish here if:
-         * 1. The getting the object form the Cloud has been failed.
+         * 1. Getting the object from the Cloud has been failed.
          * 2. Something is wrong with getting data from ComPtr<IVirtualSystemDescription> vsd.
          * 3. More than 1 VirtualSystemDescription is presented in the list m->virtualSystemDescriptions.
          * Maximum what we have there are:
@@ -1514,7 +1515,10 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
             else
             {
                 vsdData = aVBoxValues[0];
-                //hrc = cloud.EliminateImportLeavings(aVBoxValues[0], pProgress);//future function
+
+                /** TODO:
+                 *  future function which will eliminate the temporary objects created during the first phase.
+                 *  hrc = cloud.EliminateImportLeavings(aVBoxValues[0], pProgress); */
                 if (FAILED(hrc))
                 {
                     hrc = setErrorVrc(VERR_INVALID_STATE, generalRollBackErrorMessage.c_str());
@@ -1537,7 +1541,6 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
     }
     else
     {
-
         /* Small explanation here, the image here points out to the whole downloaded object (not to the image only)
          * filled during the first cloud import stage (in the ICloudClient::importInstance()) */
         GET_VSD_DESCRIPTION_BY_TYPE(VirtualSystemDescriptionType_HardDiskImage)//aVBoxValues is set in this #define
@@ -1889,7 +1892,7 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
                             d.strHref = pTargetMedium->i_getLocationFull();
                             d.strFormat = pTargetMedium->i_getFormat();
                             d.iSize = pTargetMedium->i_getSize();
-                            d.ulSuggestedSizeMB = (uint32_t)(pTargetMedium->i_getSize()/_1M);
+                            d.ulSuggestedSizeMB = (uint32_t)(d.iSize/_1M);
 
                             m->pReader->m_mapDisks[d.strDiskId] = d;
 
