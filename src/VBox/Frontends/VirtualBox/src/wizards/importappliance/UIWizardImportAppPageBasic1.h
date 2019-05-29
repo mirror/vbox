@@ -27,6 +27,7 @@
 
 /* COM includes: */
 #include "COMEnums.h"
+#include "CAppliance.h"
 #include "CCloudClient.h"
 #include "CCloudProfile.h"
 #include "CCloudProvider.h"
@@ -102,6 +103,8 @@ protected:
     QString machineId() const;
     /** Returns Cloud Profile object. */
     CCloudProfile profile() const;
+    /** Returns Appliance object. */
+    CAppliance appliance() const;
     /** Returns Virtual System Description Form object. */
     CVirtualSystemDescriptionForm vsdForm() const;
 
@@ -116,6 +119,8 @@ protected:
     CCloudProfile                  m_comCloudProfile;
     /** Holds the Cloud Client object reference. */
     CCloudClient                   m_comCloudClient;
+    /** Holds the Appliance object reference. */
+    CAppliance                     m_comAppliance;
     /** Holds the Virtual System Description Form object reference. */
     CVirtualSystemDescriptionForm  m_comVSDForm;
 
@@ -159,6 +164,7 @@ class UIWizardImportAppPageBasic1 : public UIWizardPage, public UIWizardImportAp
     Q_PROPERTY(QString source READ source WRITE setSource);
     Q_PROPERTY(bool isSourceCloudOne READ isSourceCloudOne);
     Q_PROPERTY(CCloudProfile profile READ profile);
+    Q_PROPERTY(CAppliance appliance READ appliance);
     Q_PROPERTY(CVirtualSystemDescriptionForm vsdForm READ vsdForm);
     Q_PROPERTY(QString machineId READ machineId);
 

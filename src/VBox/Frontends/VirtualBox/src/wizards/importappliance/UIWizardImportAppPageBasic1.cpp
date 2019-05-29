@@ -38,7 +38,6 @@
 #include "UIWizardImportAppPageBasic2.h"
 
 /* COM includes: */
-#include "CAppliance.h"
 #include "CStringArray.h"
 
 
@@ -328,6 +327,8 @@ void UIWizardImportAppPage1::populateAccountInstances()
 
 void UIWizardImportAppPage1::populateFormProperties()
 {
+    /* Clear appliance: */
+    m_comAppliance = CAppliance();
     /* Clear form properties: */
     m_comVSDForm = CVirtualSystemDescriptionForm();
 
@@ -347,11 +348,14 @@ void UIWizardImportAppPage1::populateFormProperties()
                 break;
             }
 
+            /* Remember appliance: */
+            m_comAppliance = comAppliance;
+
             /* Read cloud instance info: */
-            CProgress comReadProgress = comAppliance.Read(QString("OCI://%1/%2").arg(profileName(), machineId()));
-            if (!comAppliance.isOk())
+            CProgress comReadProgress = m_comAppliance.Read(QString("OCI://%1/%2").arg(profileName(), machineId()));
+            if (!m_comAppliance.isOk())
             {
-                msgCenter().cannotImportAppliance(comAppliance);
+                msgCenter().cannotImportAppliance(m_comAppliance);
                 break;
             }
 
@@ -360,31 +364,31 @@ void UIWizardImportAppPage1::populateFormProperties()
                                                 ":/progress_reading_appliance_90px.png", 0, 0);
             if (!comReadProgress.isOk() || comReadProgress.GetResultCode() != 0)
             {
-                msgCenter().cannotImportAppliance(comReadProgress, comAppliance.GetPath());
+                msgCenter().cannotImportAppliance(comReadProgress, m_comAppliance.GetPath());
                 break;
             }
 
             /* Interpret cloud instance info: */
-            comAppliance.Interpret();
-            if (!comAppliance.isOk())
+            m_comAppliance.Interpret();
+            if (!m_comAppliance.isOk())
             {
-                msgCenter().cannotImportAppliance(comAppliance);
+                msgCenter().cannotImportAppliance(m_comAppliance);
                 break;
             }
 
             /* Create virtual system description: */
-            comAppliance.CreateVirtualSystemDescriptions(1);
-            if (!comAppliance.isOk())
+            m_comAppliance.CreateVirtualSystemDescriptions(1);
+            if (!m_comAppliance.isOk())
             {
-                msgCenter().cannotCreateVirtualSystemDescription(comAppliance);
+                msgCenter().cannotCreateVirtualSystemDescription(m_comAppliance);
                 break;
             }
 
             /* Acquire virtual system description: */
-            QVector<CVirtualSystemDescription> descriptions = comAppliance.GetVirtualSystemDescriptions();
-            if (!comAppliance.isOk())
+            QVector<CVirtualSystemDescription> descriptions = m_comAppliance.GetVirtualSystemDescriptions();
+            if (!m_comAppliance.isOk())
             {
-                msgCenter().cannotAcquireVirtualSystemDescription(comAppliance);
+                msgCenter().cannotAcquireVirtualSystemDescription(m_comAppliance);
                 break;
             }
 
@@ -521,6 +525,11 @@ QString UIWizardImportAppPage1::machineId() const
 CCloudProfile UIWizardImportAppPage1::profile() const
 {
     return m_comCloudProfile;
+}
+
+CAppliance UIWizardImportAppPage1::appliance() const
+{
+    return m_comAppliance;
 }
 
 CVirtualSystemDescriptionForm UIWizardImportAppPage1::vsdForm() const
@@ -771,6 +780,7 @@ UIWizardImportAppPageBasic1::UIWizardImportAppPageBasic1(bool fImportFromOCIByDe
     registerField("source", this, "source");
     registerField("isSourceCloudOne", this, "isSourceCloudOne");
     registerField("profile", this, "profile");
+    registerField("appliance", this, "appliance");
     registerField("vsdForm", this, "vsdForm");
     registerField("machineId", this, "machineId");
 }
