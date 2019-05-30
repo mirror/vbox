@@ -86,7 +86,8 @@
             <scancode>37</scancode>
         </key>
         <key>
-            <keycap>ScrollLock</keycap>
+            <keycap>Scroll</keycap>
+            <keycap>Lock</keycap>
             <position>125</position>
             <scancode>0x46</scancode>
         </key>
@@ -201,13 +202,12 @@
             <scancode>0x47</scancode>
         </key>
         <key>
-            <keycap>Page Up</keycap>
+            <keycap>PgUp</keycap>
             <position>85</position>
             <scancodeprefix>0xe0</scancodeprefix>
             <scancode>0x49</scancode>
         </key>
     </row>
-    <!-- ======================================= -->
     <row>
         <key>
             <width>75</width>
@@ -282,7 +282,7 @@
             <height>105</height>
             <keycap>Enter</keycap>
             <position>43</position>
-            <scancode>0x2b</scancode>
+            <scancode>0x1c</scancode>
             <cutout>
                 <width>25</width>
                 <height>55</height>
@@ -293,19 +293,22 @@
             <width>25</width>
         </space>
         <key>
-            <keycap>PrtScn</keycap>
+            <keycap>Delete</keycap>
             <position>76</position>
-            <scancode></scancode>
+            <scancode>0x53</scancode>
+            <scancodeprefix>0xe0</scancodeprefix>
         </key>
         <key>
-            <keycap>ScrollLock</keycap>
+            <keycap>End</keycap>
             <position>81</position>
-            <scancode>0x46</scancode>
+            <scancodeprefix>0xe0</scancodeprefix>
+            <scancode>0x4f</scancode>
         </key>
         <key>
-            <keycap>ScrollLock</keycap>
+            <keycap>PgDn</keycap>
             <position>86</position>
-            <scancode>0x46</scancode>
+            <scancode>0x51</scancode>
+            <scancodeprefix>0xe0</scancodeprefix>
         </key>
     </row>
     <row>
@@ -377,7 +380,7 @@
             <keycap>&quot;</keycap>
             <keycap>'</keycap>
             <position>42</position>
-            <scancode>0x28</scancode>
+            <scancode>0xff</scancode>
         </key>
     </row>
     <row>
@@ -459,8 +462,9 @@
         </space>
         <key>
             <keycap>Up</keycap>
+            <scancodeprefix>0xe0</scancodeprefix>
             <position>83</position>
-            <scancode>0x35</scancode>
+            <scancode>0x48</scancode>
         </key>
     </row>
     <row>
@@ -520,17 +524,20 @@
         <key>
             <keycap>Left</keycap>
             <position>79</position>
-            <scancode>0x35</scancode>
+            <scancodeprefix>0xe0</scancodeprefix>
+            <scancode>0x4b</scancode>
         </key>
         <key>
             <keycap>Down</keycap>
             <position>84</position>
-            <scancode>0x35</scancode>
+            <scancodeprefix>0xe0</scancodeprefix>
+            <scancode>0x50</scancode>
         </key>
         <key>
             <keycap>Right</keycap>
             <position>89</position>
-            <scancode>0x35</scancode>
+            <scancodeprefix>0xe0</scancodeprefix>
+            <scancode>0x4d</scancode>
         </key>
 
 

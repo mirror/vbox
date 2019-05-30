@@ -689,7 +689,7 @@ protected:
 
         QPainter painter(this);
         QFont painterFont(font());
-        painterFont.setPixelSize(16);
+        painterFont.setPixelSize(15);
         painter.setFont(painterFont);
         painter.setRenderHint(QPainter::Antialiasing);
         painter.setPen(QPen(QColor(0, 0,0), 2));
@@ -703,9 +703,8 @@ protected:
                 UISoftKeyboardKey &key = keys[j];
                 painter.translate(key.keyGeometry().x(), key.keyGeometry().y());
                 painter.drawPolygon(key.polygon());
-                QRect textRect(0, 0, key.keyGeometry().width(), key.keyGeometry().height());
-                //painter.drawText(textRect, Qt::TextWordWrap, key.keyCap());
-                painter.drawText(textRect, Qt::TextWordWrap, QString::number(key.position()));
+                QRect textRect(5, 5, key.keyGeometry().width(), key.keyGeometry().height());
+                painter.drawText(textRect, Qt::TextWordWrap, key.keyCap());
                 painter.translate(-key.keyGeometry().x(), -key.keyGeometry().y());
             }
         }
@@ -723,7 +722,6 @@ protected:
                 UISoftKeyboardKey &key = keys[j];
                 if (key.polygonInGlobal().containsPoint(eventPosition, Qt::OddEvenFill))
                 {
-                    //printf ("%s\n", qPrintable(key.keyCap()));
                     break;
                 }
             }
