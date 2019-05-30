@@ -3252,6 +3252,61 @@ VMM_INT_DECL(bool) CPUMIsGuestVmxIoInterceptSet(PVMCPU pVCpu, uint16_t u16Port, 
 
 
 /**
+ * Checks whether a VMREAD or VMWRITE instruction for the given VMCS field causes a
+ * VM-exit or not.
+ *
+ * @returns @c true if the VMREAD/VMWRITE is intercepted, @c false otherwise.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   uExitReason     The VM-exit reason (VMX_EXIT_VMREAD or
+ *                          VMX_EXIT_VMREAD).
+ * @param   u64FieldEnc     The VMCS field encoding.
+ */
+VMM_INT_DECL(bool) CPUMIsGuestVmxVmreadVmwriteInterceptSet(PCVMCPU pVCpu, uint32_t uExitReason, uint64_t u64FieldEnc)
+{
+#ifndef IN_RC
+    Assert(CPUMIsGuestInVmxNonRootMode(&pVCpu->cpum.s.Guest));
+    Assert(   uExitReason == VMX_EXIT_VMREAD
+           || uExitReason == VMX_EXIT_VMWRITE);
+
+    /*
+     * Without VMCS shadowing, all VMREAD and VMWRITE instructions are intercepted.
+     */
+    if (!pVCpu->CTX_SUFF(pVM)->cpum.s.GuestFeatures.fVmxVmcsShadowing)
+        return true;
+
+    /*
+     * If any reserved bit in the 64-bit VMCS field encoding is set, the VMREAD/VMWRITE
+     * is intercepted. This excludes any reserved bits in the valid parts of the field
+     * encoding (i.e. bit 12).
+     */
+    if (u64FieldEnc & VMX_VMCS_ENC_RSVD_MASK)
+        return true;
+
+    /*
+     * Finally, consult the VMREAD/VMWRITE bitmap whether to intercept the instruction or not.
+     */
+    uint32_t const u32FieldEnc = RT_LO_U32(u64FieldEnc);
+    Assert(u32FieldEnc >> 3 < VMX_V_VMREAD_VMWRITE_BITMAP_SIZE);
+    Assert(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvVmreadBitmap));
+    uint8_t const *pbBitmap = uExitReason == VMX_EXIT_VMREAD
+                            ? (uint8_t const *)pVCpu->cpum.s.Guest.hwvirt.vmx.CTX_SUFF(pvVmreadBitmap)
+                            : (uint8_t const *)pVCpu->cpum.s.Guest.hwvirt.vmx.CTX_SUFF(pvVmwriteBitmap);
+    Assert(pbBitmap);
+    pbBitmap += (u32FieldEnc >> 3);
+    if (*pbBitmap & RT_BIT(u32FieldEnc & 7))
+        return true;
+
+    return false;
+
+#else
+    RT_NOREF3(pVCpu, uExitReason, u64FieldEnc);
+    return false;
+#endif
+}
+
+
+
+/**
  * Determines whether the given I/O access should cause a nested-guest \#VMEXIT.
  *
  * @param   pvIoBitmap      Pointer to the nested-guest IO bitmap.

@@ -1477,6 +1477,7 @@ VMM_INT_DECL(uint64_t)  CPUMApplyNestedGuestTscOffset(PVMCPU pVCpu, uint64_t uTi
 VMM_INT_DECL(uint64_t)  CPUMRemoveNestedGuestTscOffset(PVMCPU pVCpu, uint64_t uTicks);
 VMM_INT_DECL(uint32_t)  CPUMGetVmxMsrPermission(void const *pvMsrBitmap, uint32_t idMsr);
 VMM_INT_DECL(bool)      CPUMIsGuestVmxIoInterceptSet(PVMCPU pVCpu, uint16_t u16Port, uint8_t cbAccess);
+VMM_INT_DECL(bool)      CPUMIsGuestVmxVmreadVmwriteInterceptSet(PVMCPU pVCpu, uint32_t uExitReason, uint64_t u64FieldEnc);
 VMM_INT_DECL(bool)      CPUMGetVmxIoBitmapPermission(void const *pvIoBitmapA, void const *pvIoBitmapB, uint16_t uPort,
                                                      uint8_t cbAccess);
 VMM_INT_DECL(bool)      CPUMIsSvmIoInterceptSet(void *pvIoBitmap, uint16_t u16Port, SVMIOIOTYPE enmIoType, uint8_t cbReg,
