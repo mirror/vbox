@@ -2974,7 +2974,7 @@ VMM_INT_DECL(uint64_t) CPUMApplyNestedGuestTscOffset(PCVMCPU pVCpu, uint64_t uTi
     if (CPUMIsGuestInVmxNonRootMode(pCtx))
     {
         PCVMXVVMCS pVmcs = pCtx->hwvirt.vmx.CTX_SUFF(pVmcs);
-        if (pVmcs->u32ProcCtls & VMX_PROC_CTLS_USE_TSC_OFFSETTING)
+        if (CPUMIsGuestVmxProcCtlsSet(pVCpu, pCtx, VMX_PROC_CTLS_USE_TSC_OFFSETTING))
             return uTicks + pVmcs->u64TscOffset.u;
         return uTicks;
     }
@@ -3013,7 +3013,7 @@ VMM_INT_DECL(uint64_t) CPUMRemoveNestedGuestTscOffset(PCVMCPU pVCpu, uint64_t uT
     if (CPUMIsGuestInVmxNonRootMode(pCtx))
     {
         PCVMXVVMCS pVmcs = pCtx->hwvirt.vmx.CTX_SUFF(pVmcs);
-        if (pVmcs->u32ProcCtls & VMX_PROC_CTLS_USE_TSC_OFFSETTING)
+        if (CPUMIsGuestVmxProcCtlsSet(pVCpu, pCtx, VMX_PROC_CTLS_USE_TSC_OFFSETTING))
             return uTicks - pVmcs->u64TscOffset.u;
         return uTicks;
     }
