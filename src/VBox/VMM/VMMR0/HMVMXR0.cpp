@@ -12664,11 +12664,11 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExitNested(PVMCPU pVCpu, PVMXTRANSIENT pVm
         case VMX_EXIT_TASK_SWITCH:              return hmR0VmxExitTaskSwitchNested(pVCpu, pVmxTransient);
         case VMX_EXIT_WBINVD:                   return hmR0VmxExitWbinvdNested(pVCpu, pVmxTransient);
         case VMX_EXIT_MTF:                      return hmR0VmxExitMtfNested(pVCpu, pVmxTransient);
+        case VMX_EXIT_APIC_ACCESS:              return hmR0VmxExitApicAccessNested(pVCpu, pVmxTransient);
 
-        case VMX_EXIT_APIC_ACCESS:
+        /** @todo NSTVMX: APIC-access, Xcpt or NMI, Mov CRx. */
         case VMX_EXIT_XCPT_OR_NMI:
         {
-            /** @todo NSTVMX: APIC-access, Xcpt or NMI, Mov CRx. */
             return hmR0VmxExitErrUnexpected(pVCpu, pVmxTransient);
         }
 
@@ -16311,16 +16311,10 @@ HMVMX_EXIT_DECL hmR0VmxExitApicAccessNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTran
 {
     HMVMX_VALIDATE_NESTED_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
 
-    /*
-     * All VMCS controls that cause APIC-access VM-exits (Virtualize APIC access,
-     * virtual-interrupt delivery, APIC-register virtualization) are all taken
-     * directly from the guest-hypervisor. So there should be no need to re-verify
-     * them here.
-     *
-     * Only the VM-exit qualification is relevant here.
-     */
+    Assert(CPUMIsGuestVmxProcCtls2Set(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS2_VIRT_APIC_ACCESS));
     int rc = hmR0VmxReadExitQualVmcs(pVCpu, pVmxTransient);
     AssertRCReturn(rc, rc);
+
     return IEMExecVmxVmexit(pVCpu, pVmxTransient->uExitReason, pVmxTransient->uExitQual);
 }
 
@@ -16334,21 +16328,18 @@ HMVMX_EXIT_DECL hmR0VmxExitXdtrAccessNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTran
 {
     HMVMX_VALIDATE_NESTED_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
 
-    if (CPUMIsGuestVmxProcCtls2Set(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS2_DESC_TABLE_EXIT))
-    {
-        int rc = hmR0VmxReadExitQualVmcs(pVCpu, pVmxTransient);
-        rc    |= hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
-        rc    |= hmR0VmxReadExitInstrInfoVmcs(pVmxTransient);
-        AssertRCReturn(rc, rc);
+    Assert(CPUMIsGuestVmxProcCtls2Set(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS2_DESC_TABLE_EXIT));
+    int rc = hmR0VmxReadExitQualVmcs(pVCpu, pVmxTransient);
+    rc    |= hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
+    rc    |= hmR0VmxReadExitInstrInfoVmcs(pVmxTransient);
+    AssertRCReturn(rc, rc);
 
-        VMXVEXITINFO ExitInfo;
-        RT_ZERO(ExitInfo);
-        ExitInfo.cbInstr   = pVmxTransient->cbInstr;
-        ExitInfo.u64Qual   = pVmxTransient->uExitQual;
-        ExitInfo.InstrInfo = pVmxTransient->ExitInstrInfo;
-        return IEMExecVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
-    }
-    return hmR0VmxExitErrUnexpected(pVCpu, pVmxTransient);
+    VMXVEXITINFO ExitInfo;
+    RT_ZERO(ExitInfo);
+    ExitInfo.cbInstr   = pVmxTransient->cbInstr;
+    ExitInfo.u64Qual   = pVmxTransient->uExitQual;
+    ExitInfo.InstrInfo = pVmxTransient->ExitInstrInfo;
+    return IEMExecVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
 }
 
 
