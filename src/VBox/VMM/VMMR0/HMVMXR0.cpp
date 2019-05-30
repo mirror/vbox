@@ -445,7 +445,7 @@ static FNVMXEXITHANDLER            hmR0VmxExitMtfNested;
 static FNVMXEXITHANDLER            hmR0VmxExitMonitorNested;
 static FNVMXEXITHANDLER            hmR0VmxExitPauseNested;
 //static FNVMXEXITHANDLERNSRC        hmR0VmxExitTprBelowThreshold;
-//static FNVMXEXITHANDLER            hmR0VmxExitApicAccess;
+static FNVMXEXITHANDLER            hmR0VmxExitApicAccessNested;
 static FNVMXEXITHANDLER            hmR0VmxExitXdtrAccessNested;
 //static FNVMXEXITHANDLER            hmR0VmxExitEptViolation;
 //static FNVMXEXITHANDLER            hmR0VmxExitEptMisconfig;
@@ -15797,7 +15797,7 @@ HMVMX_EXIT_NSRC_DECL hmR0VmxExitIntWindowNested(PVMCPU pVCpu, PVMXTRANSIENT pVmx
     HMVMX_VALIDATE_NESTED_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
 
     if (CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS_INT_WINDOW_EXIT))
-        return IEMExecVmxVmexit(pVCpu, pVmxTransient->uExitReason);
+        return IEMExecVmxVmexit(pVCpu, pVmxTransient->uExitReason, 0 /* uExitQual */);
     return hmR0VmxExitIntWindow(pVCpu, pVmxTransient);
 }
 
@@ -15810,7 +15810,7 @@ HMVMX_EXIT_NSRC_DECL hmR0VmxExitNmiWindowNested(PVMCPU pVCpu, PVMXTRANSIENT pVmx
     HMVMX_VALIDATE_NESTED_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
 
     if (CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS_NMI_WINDOW_EXIT))
-        return IEMExecVmxVmexit(pVCpu, pVmxTransient->uExitReason);
+        return IEMExecVmxVmexit(pVCpu, pVmxTransient->uExitReason, 0 /* uExitQual */);
     return hmR0VmxExitIntWindow(pVCpu, pVmxTransient);
 }
 
@@ -16259,7 +16259,7 @@ HMVMX_EXIT_DECL hmR0VmxExitMtfNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
     HMVMX_VALIDATE_NESTED_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
 
     /** @todo NSTVMX: Should consider debugging nested-guests using VM debugger. */
-    return IEMExecVmxVmexit(pVCpu, pVmxTransient->uExitReason);
+    return IEMExecVmxVmexit(pVCpu, pVmxTransient->uExitReason, 0 /* uExitQual */);
 }
 
 
@@ -16300,6 +16300,28 @@ HMVMX_EXIT_DECL hmR0VmxExitPauseNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient
         return IEMExecVmxVmexitInstr(pVCpu, pVmxTransient->uExitReason, pVmxTransient->cbInstr);
     }
     return hmR0VmxExitPause(pVCpu, pVmxTransient);
+}
+
+
+/**
+ * Nested-guest VM-exit handler for APIC access (VMX_EXIT_APIC_ACCESS). Conditional
+ * VM-exit.
+ */
+HMVMX_EXIT_DECL hmR0VmxExitApicAccessNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
+{
+    HMVMX_VALIDATE_NESTED_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
+
+    /*
+     * All VMCS controls that cause APIC-access VM-exits (Virtualize APIC access,
+     * virtual-interrupt delivery, APIC-register virtualization) are all taken
+     * directly from the guest-hypervisor. So there should be no need to re-verify
+     * them here.
+     *
+     * Only the VM-exit qualification is relevant here.
+     */
+    int rc = hmR0VmxReadExitQualVmcs(pVCpu, pVmxTransient);
+    AssertRCReturn(rc, rc);
+    return IEMExecVmxVmexit(pVCpu, pVmxTransient->uExitReason, pVmxTransient->uExitQual);
 }
 
 

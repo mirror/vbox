@@ -1728,7 +1728,7 @@ static int emR3VmxNstGstIntrIntercept(PVMCPU pVCpu)
     if (   CPUMIsGuestPhysIntrEnabled(pVCpu)
         && CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS_INT_WINDOW_EXIT))
     {
-        VBOXSTRICTRC rcStrict = IEMExecVmxVmexit(pVCpu, VMX_EXIT_INT_WINDOW);
+        VBOXSTRICTRC rcStrict = IEMExecVmxVmexit(pVCpu, VMX_EXIT_INT_WINDOW, 0 /* uExitQual */);
         if (RT_SUCCESS(rcStrict))
         {
             AssertMsg(   rcStrict != VINF_PGM_CHANGE_MODE
@@ -2156,7 +2156,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
          */
         if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_MTF))
         {
-            rc2 = VBOXSTRICTRC_VAL(IEMExecVmxVmexit(pVCpu, VMX_EXIT_MTF));
+            rc2 = VBOXSTRICTRC_VAL(IEMExecVmxVmexit(pVCpu, VMX_EXIT_MTF, 0 /* uExitQual */));
             Assert(rc2 != VINF_VMX_INTERCEPT_NOT_ACTIVE);
             UPDATE_RC();
         }
@@ -2178,7 +2178,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
          */
         if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_NMI_WINDOW))
         {
-            rc2 = VBOXSTRICTRC_VAL(IEMExecVmxVmexit(pVCpu, VMX_EXIT_NMI_WINDOW));
+            rc2 = VBOXSTRICTRC_VAL(IEMExecVmxVmexit(pVCpu, VMX_EXIT_NMI_WINDOW, 0 /* uExitQual */));
             Assert(rc2 != VINF_VMX_INTERCEPT_NOT_ACTIVE);
             UPDATE_RC();
         }
