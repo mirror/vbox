@@ -271,7 +271,7 @@ UIWizardImportAppPageExpert::UIWizardImportAppPageExpert(bool fImportFromOCIByDe
     connect(m_pAccountToolButton, &QIToolButton::clicked,
             this, &UIWizardImportAppPageExpert::sltHandleAccountButtonClick);
     connect(m_pAccountInstanceList, &QListWidget::currentRowChanged,
-            this, &UIWizardImportAppPageExpert::completeChanged);
+            this, &UIWizardImportAppPageExpert::sltHandleInstanceListChange);
 
     /* Register classes: */
     qRegisterMetaType<ImportAppliancePointer>();
@@ -279,6 +279,7 @@ UIWizardImportAppPageExpert::UIWizardImportAppPageExpert(bool fImportFromOCIByDe
     registerField("source", this, "source");
     registerField("isSourceCloudOne", this, "isSourceCloudOne");
     registerField("profile", this, "profile");
+    registerField("appliance", this, "appliance");
     registerField("vsdForm", this, "vsdForm");
     registerField("machineId", this, "machineId");
     registerField("applianceWidget", this, "applianceWidget");
@@ -351,17 +352,18 @@ bool UIWizardImportAppPageExpert::isComplete() const
     if (fResult)
     {
         const bool fOVF = !isSourceCloudOne();
-//        const bool fCSP = !fOVF;
+        const bool fCSP = !fOVF;
 
         fResult =    (   fOVF
                       && VBoxGlobal::hasAllowedExtension(m_pFileSelector->path().toLower(), OVFFileExts)
                       && QFile::exists(m_pFileSelector->path())
                       && m_pApplianceWidget->isValid())
-//                  || (   fCSP
-//                      && !m_comCloudProfile.isNull()
-//                      && !m_comCloudClient.isNull()
-//                      && !machineId().isNull())
-                  ;
+                  || (   fCSP
+                      && !m_comCloudProfile.isNull()
+                      && !m_comCloudClient.isNull()
+                      && !machineId().isNull()
+                      && !m_comAppliance.isNull()
+                      && !m_comVSDForm.isNull());
     }
 
     return fResult;
@@ -401,6 +403,10 @@ void UIWizardImportAppPageExpert::updatePageAppearance()
 
 void UIWizardImportAppPageExpert::sltHandleSourceChange()
 {
+    /* Block account combo and instance list: */
+    m_pAccountComboBox->blockSignals(true);
+    m_pAccountInstanceList->blockSignals(true);
+
     /* Update tool-tip: */
     updateSourceComboToolTip();
 
@@ -412,6 +418,10 @@ void UIWizardImportAppPageExpert::sltHandleSourceChange()
     populateFormProperties();
     populateFormPropertiesTable();
     emit completeChanged();
+
+    /* Unblock account combo and instance list: */
+    m_pAccountInstanceList->blockSignals(false);
+    m_pAccountComboBox->blockSignals(false);
 }
 
 void UIWizardImportAppPageExpert::sltFilePathChangeHandler()
@@ -429,12 +439,18 @@ void UIWizardImportAppPageExpert::sltFilePathChangeHandler()
 
 void UIWizardImportAppPageExpert::sltHandleAccountComboChange()
 {
+    /* Block instance list: */
+    m_pAccountInstanceList->blockSignals(true);
+
     /* Refresh required settings: */
     populateAccountProperties();
     populateAccountInstances();
     populateFormProperties();
     populateFormPropertiesTable();
     emit completeChanged();
+
+    /* Unblock instance list: */
+    m_pAccountInstanceList->blockSignals(false);
 }
 
 void UIWizardImportAppPageExpert::sltHandleAccountButtonClick()
@@ -442,4 +458,11 @@ void UIWizardImportAppPageExpert::sltHandleAccountButtonClick()
     /* Open Cloud Profile Manager: */
     if (gpManager)
         gpManager->openCloudProfileManager();
+}
+
+void UIWizardImportAppPageExpert::sltHandleInstanceListChange()
+{
+    populateFormProperties();
+    populateFormPropertiesTable();
+    emit completeChanged();
 }

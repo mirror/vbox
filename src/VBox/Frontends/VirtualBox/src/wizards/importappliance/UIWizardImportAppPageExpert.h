@@ -37,6 +37,7 @@ class UIWizardImportAppPageExpert : public UIWizardPage,
     Q_PROPERTY(QString source READ source WRITE setSource);
     Q_PROPERTY(bool isSourceCloudOne READ isSourceCloudOne);
     Q_PROPERTY(CCloudProfile profile READ profile);
+    Q_PROPERTY(CAppliance appliance READ appliance);
     Q_PROPERTY(CVirtualSystemDescriptionForm vsdForm READ vsdForm);
     Q_PROPERTY(QString machineId READ machineId);
     Q_PROPERTY(ImportAppliancePointer applianceWidget READ applianceWidget);
@@ -82,6 +83,9 @@ private slots:
     void sltHandleAccountComboChange();
     /** Handles account tool-button click. */
     void sltHandleAccountButtonClick();
+
+    /** Handles change in instance list. */
+    void sltHandleInstanceListChange();
 
 private:
 
