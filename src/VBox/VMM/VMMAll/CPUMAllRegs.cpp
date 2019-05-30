@@ -2974,6 +2974,7 @@ VMM_INT_DECL(uint64_t) CPUMApplyNestedGuestTscOffset(PCVMCPU pVCpu, uint64_t uTi
     if (CPUMIsGuestInVmxNonRootMode(pCtx))
     {
         PCVMXVVMCS pVmcs = pCtx->hwvirt.vmx.CTX_SUFF(pVmcs);
+        Assert(pVmcs);
         if (CPUMIsGuestVmxProcCtlsSet(pVCpu, pCtx, VMX_PROC_CTLS_USE_TSC_OFFSETTING))
             return uTicks + pVmcs->u64TscOffset.u;
         return uTicks;
@@ -2981,13 +2982,14 @@ VMM_INT_DECL(uint64_t) CPUMApplyNestedGuestTscOffset(PCVMCPU pVCpu, uint64_t uTi
 
     if (CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
     {
-        /** @todo r=bird: Bake HMApplySvmNstGstTscOffset into HMHasGuestSvmVmcbCached to save a call. */
-        if (!HMHasGuestSvmVmcbCached(pVCpu))
+        uint64_t u64TscOffset;
+        if (!HMGetGuestSvmTscOffset(pVCpu, &u64TscOffset))
         {
             PCSVMVMCB pVmcb = pCtx->hwvirt.svm.CTX_SUFF(pVmcb);
-            return uTicks + pVmcb->ctrl.u64TSCOffset;
+            Assert(pVmcb);
+            u64TscOffset = pVmcb->ctrl.u64TSCOffset;
         }
-        return HMApplySvmNstGstTscOffset(pVCpu, uTicks);
+        return uTicks + u64TscOffset;
     }
 #else
     RT_NOREF(pVCpu);
@@ -3015,6 +3017,7 @@ VMM_INT_DECL(uint64_t) CPUMRemoveNestedGuestTscOffset(PCVMCPU pVCpu, uint64_t uT
         if (CPUMIsGuestVmxProcCtlsSet(pVCpu, pCtx, VMX_PROC_CTLS_USE_TSC_OFFSETTING))
         {
             PCVMXVVMCS pVmcs = pCtx->hwvirt.vmx.CTX_SUFF(pVmcs);
+            Assert(pVmcs);
             return uTicks - pVmcs->u64TscOffset.u;
         }
         return uTicks;
@@ -3022,13 +3025,14 @@ VMM_INT_DECL(uint64_t) CPUMRemoveNestedGuestTscOffset(PCVMCPU pVCpu, uint64_t uT
 
     if (CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
     {
-        /** @todo r=bird: Bake HMApplySvmNstGstTscOffset into HMRemoveSvmNstGstTscOffset to save a call. */
-        if (!HMHasGuestSvmVmcbCached(pVCpu))
+        uint64_t u64TscOffset;
+        if (!HMGetGuestSvmTscOffset(pVCpu, &u64TscOffset))
         {
             PCSVMVMCB pVmcb = pCtx->hwvirt.svm.CTX_SUFF(pVmcb);
-            return uTicks - pVmcb->ctrl.u64TSCOffset;
+            Assert(pVmcb);
+            u64TscOffset = pVmcb->ctrl.u64TSCOffset;
         }
-        return HMRemoveSvmNstGstTscOffset(pVCpu, uTicks);
+        return uTicks - u64TscOffset;
     }
 #else
     RT_NOREF(pVCpu);

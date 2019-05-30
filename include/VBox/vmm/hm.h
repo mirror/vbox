@@ -189,8 +189,6 @@ VMM_INT_DECL(void)              HMNotifyVmxNstGstVmexit(PVMCPU pVCpu, PCPUMCTX p
 /** @name R0, R3 SVM handlers.
  * @{ */
 VMM_INT_DECL(bool)              HMIsSvmVGifActive(PVM pVM);
-VMM_INT_DECL(uint64_t)          HMApplySvmNstGstTscOffset(PCVMCPU pVCpu, uint64_t uTicks);
-VMM_INT_DECL(uint64_t)          HMRemoveSvmNstGstTscOffset(PCVMCPU pVCpu, uint64_t uTicks);
 # ifdef VBOX_WITH_NESTED_HWVIRT_SVM
 VMM_INT_DECL(void)              HMNotifySvmNstGstVmexit(PVMCPU pVCpu, PCPUMCTX pCtx);
 # endif
@@ -215,8 +213,6 @@ VMM_INT_DECL(int)               HMHCMaybeMovTprSvmHypercall(PVMCPU pVCpu);
 /** @name RC SVM handlers.
  * @{ */
 # define HMIsSvmVGifActive(pVM)                                       false
-# define HMApplySvmNstGstTscOffset(pVCpu, uTicks)                     (uTicks)
-# define HMRemoveSvmNstGstTscOffset(pVCpu, uTicks)                    (uTicks)
 # define HMNotifySvmNstGstVmexit(pVCpu, pCtx)                         do { } while (0)
 # define HMIsSubjectToSvmErratum170(puFamily, puModel, puStepping)    false
 # define HMHCMaybeMovTprSvmHypercall(pVCpu)                           do { } while (0)
