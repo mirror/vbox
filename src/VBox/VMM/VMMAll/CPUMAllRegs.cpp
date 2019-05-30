@@ -2822,7 +2822,7 @@ VMM_INT_DECL(bool) CPUMIsGuestNmiBlocking(PVMCPU pVCpu)
  *
  * @remarks This does -not- take into account the global-interrupt flag.
  */
-VMM_INT_DECL(bool) CPUMIsGuestSvmPhysIntrEnabled(PVMCPU pVCpu, PCCPUMCTX pCtx)
+VMM_INT_DECL(bool) CPUMIsGuestSvmPhysIntrEnabled(PCVMCPU pVCpu, PCCPUMCTX pCtx)
 {
     /** @todo Optimization: Avoid this function call and use a pointer to the
      *        relevant eflags instead (setup during VMRUN instruction emulation). */
@@ -2853,7 +2853,7 @@ VMM_INT_DECL(bool) CPUMIsGuestSvmPhysIntrEnabled(PVMCPU pVCpu, PCCPUMCTX pCtx)
  * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
  * @param   pCtx    The guest-CPU context.
  */
-VMM_INT_DECL(bool) CPUMIsGuestSvmVirtIntrEnabled(PVMCPU pVCpu, PCCPUMCTX pCtx)
+VMM_INT_DECL(bool) CPUMIsGuestSvmVirtIntrEnabled(PCVMCPU pVCpu, PCCPUMCTX pCtx)
 {
 #ifdef IN_RC
     RT_NOREF2(pVCpu, pCtx);
@@ -2967,7 +2967,7 @@ VMM_INT_DECL(void) CPUMSvmVmRunSaveHostState(PCPUMCTX pCtx, uint8_t cbInstr)
  *
  * @sa      CPUMRemoveNestedGuestTscOffset.
  */
-VMM_INT_DECL(uint64_t) CPUMApplyNestedGuestTscOffset(PVMCPU pVCpu, uint64_t uTicks)
+VMM_INT_DECL(uint64_t) CPUMApplyNestedGuestTscOffset(PCVMCPU pVCpu, uint64_t uTicks)
 {
 #ifndef IN_RC
     PCCPUMCTX pCtx = &pVCpu->cpum.s.Guest;
@@ -3006,7 +3006,7 @@ VMM_INT_DECL(uint64_t) CPUMApplyNestedGuestTscOffset(PVMCPU pVCpu, uint64_t uTic
  *
  * @sa      CPUMApplyNestedGuestTscOffset.
  */
-VMM_INT_DECL(uint64_t) CPUMRemoveNestedGuestTscOffset(PVMCPU pVCpu, uint64_t uTicks)
+VMM_INT_DECL(uint64_t) CPUMRemoveNestedGuestTscOffset(PCVMCPU pVCpu, uint64_t uTicks)
 {
 #ifndef IN_RC
     PCCPUMCTX pCtx = &pVCpu->cpum.s.Guest;

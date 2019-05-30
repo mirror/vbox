@@ -205,7 +205,7 @@ VMM_INT_DECL(bool) HMIsSvmVGifActive(PVM pVM)
  *
  * @sa      CPUMRemoveNestedGuestTscOffset, HMRemoveSvmNstGstTscOffset.
  */
-VMM_INT_DECL(uint64_t) HMApplySvmNstGstTscOffset(PVMCPU pVCpu, uint64_t uTicks)
+VMM_INT_DECL(uint64_t) HMApplySvmNstGstTscOffset(PCVMCPU pVCpu, uint64_t uTicks)
 {
     PCCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
     Assert(CPUMIsGuestInSvmNestedHwVirtMode(pCtx)); RT_NOREF(pCtx);
@@ -229,7 +229,7 @@ VMM_INT_DECL(uint64_t) HMApplySvmNstGstTscOffset(PVMCPU pVCpu, uint64_t uTicks)
  *
  * @sa      CPUMApplyNestedGuestTscOffset, HMApplySvmNstGstTscOffset.
  */
-VMM_INT_DECL(uint64_t) HMRemoveSvmNstGstTscOffset(PVMCPU pVCpu, uint64_t uTicks)
+VMM_INT_DECL(uint64_t) HMRemoveSvmNstGstTscOffset(PCVMCPU pVCpu, uint64_t uTicks)
 {
     PCCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
     Assert(CPUMIsGuestInSvmNestedHwVirtMode(pCtx)); RT_NOREF(pCtx);

@@ -189,8 +189,8 @@ VMM_INT_DECL(void)              HMNotifyVmxNstGstVmexit(PVMCPU pVCpu, PCPUMCTX p
 /** @name R0, R3 SVM handlers.
  * @{ */
 VMM_INT_DECL(bool)              HMIsSvmVGifActive(PVM pVM);
-VMM_INT_DECL(uint64_t)          HMApplySvmNstGstTscOffset(PVMCPU pVCpu, uint64_t uTicks);
-VMM_INT_DECL(uint64_t)          HMRemoveSvmNstGstTscOffset(PVMCPU pVCpu, uint64_t uTicks);
+VMM_INT_DECL(uint64_t)          HMApplySvmNstGstTscOffset(PCVMCPU pVCpu, uint64_t uTicks);
+VMM_INT_DECL(uint64_t)          HMRemoveSvmNstGstTscOffset(PCVMCPU pVCpu, uint64_t uTicks);
 # ifdef VBOX_WITH_NESTED_HWVIRT_SVM
 VMM_INT_DECL(void)              HMNotifySvmNstGstVmexit(PVMCPU pVCpu, PCPUMCTX pCtx);
 # endif

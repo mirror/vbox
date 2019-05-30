@@ -1468,22 +1468,26 @@ VMM_INT_DECL(bool)  CPUMIsGuestInRawMode(PVMCPU pVCpu);
  * @{  */
 VMM_INT_DECL(bool)      CPUMIsGuestPhysIntrEnabled(PVMCPU pVCpu);
 VMM_INT_DECL(bool)      CPUMIsGuestVirtIntrEnabled(PVMCPU pVCpu);
-VMM_INT_DECL(bool)      CPUMIsGuestSvmPhysIntrEnabled(PVMCPU pVCpu, PCCPUMCTX pCtx);
-VMM_INT_DECL(bool)      CPUMIsGuestSvmVirtIntrEnabled(PVMCPU pVCpu, PCCPUMCTX pCtx);
+VMM_INT_DECL(uint64_t)  CPUMApplyNestedGuestTscOffset(PCVMCPU pVCpu, uint64_t uTicks);
+VMM_INT_DECL(uint64_t)  CPUMRemoveNestedGuestTscOffset(PCVMCPU pVCpu, uint64_t uTicks);
+
+/* SVM helpers. */
+VMM_INT_DECL(bool)      CPUMIsGuestSvmPhysIntrEnabled(PCVMCPU pVCpu, PCCPUMCTX pCtx);
+VMM_INT_DECL(bool)      CPUMIsGuestSvmVirtIntrEnabled(PCVMCPU pVCpu, PCCPUMCTX pCtx);
 VMM_INT_DECL(uint8_t)   CPUMGetGuestSvmVirtIntrVector(PCCPUMCTX pCtx);
 VMM_INT_DECL(void)      CPUMSvmVmExitRestoreHostState(PVMCPU pVCpu, PCPUMCTX pCtx);
 VMM_INT_DECL(void)      CPUMSvmVmRunSaveHostState(PCPUMCTX pCtx, uint8_t cbInstr);
-VMM_INT_DECL(uint64_t)  CPUMApplyNestedGuestTscOffset(PVMCPU pVCpu, uint64_t uTicks);
-VMM_INT_DECL(uint64_t)  CPUMRemoveNestedGuestTscOffset(PVMCPU pVCpu, uint64_t uTicks);
-VMM_INT_DECL(uint32_t)  CPUMGetVmxMsrPermission(void const *pvMsrBitmap, uint32_t idMsr);
-VMM_INT_DECL(bool)      CPUMIsGuestVmxIoInterceptSet(PCVMCPU pVCpu, uint16_t u16Port, uint8_t cbAccess);
-VMM_INT_DECL(bool)      CPUMIsGuestVmxVmreadVmwriteInterceptSet(PCVMCPU pVCpu, uint32_t uExitReason, uint64_t u64FieldEnc);
-VMM_INT_DECL(bool)      CPUMGetVmxIoBitmapPermission(void const *pvIoBitmapA, void const *pvIoBitmapB, uint16_t uPort,
-                                                     uint8_t cbAccess);
 VMM_INT_DECL(bool)      CPUMIsSvmIoInterceptSet(void *pvIoBitmap, uint16_t u16Port, SVMIOIOTYPE enmIoType, uint8_t cbReg,
                                                 uint8_t cAddrSizeBits, uint8_t iEffSeg, bool fRep, bool fStrIo,
                                                 PSVMIOIOEXITINFO pIoExitInfo);
 VMM_INT_DECL(int)       CPUMGetSvmMsrpmOffsetAndBit(uint32_t idMsr, uint16_t *pbOffMsrpm, uint8_t *puMsrpmBit);
+
+/* VMX helpers. */
+VMM_INT_DECL(bool)      CPUMIsGuestVmxIoInterceptSet(PCVMCPU pVCpu, uint16_t u16Port, uint8_t cbAccess);
+VMM_INT_DECL(bool)      CPUMIsGuestVmxVmreadVmwriteInterceptSet(PCVMCPU pVCpu, uint32_t uExitReason, uint64_t u64FieldEnc);
+VMM_INT_DECL(uint32_t)  CPUMGetVmxMsrPermission(void const *pvMsrBitmap, uint32_t idMsr);
+VMM_INT_DECL(bool)      CPUMGetVmxIoBitmapPermission(void const *pvIoBitmapA, void const *pvIoBitmapB, uint16_t uPort,
+                                                     uint8_t cbAccess);
 /** @} */
 
 /** @name Externalized State Helpers.
