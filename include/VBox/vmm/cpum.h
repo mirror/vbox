@@ -1791,7 +1791,7 @@ DECLINLINE(bool) CPUMIsGuestInVmxRootMode(PCCPUMCTX pCtx)
  * @param   fIntercept  The SVM control/instruction intercept, see
  *                      SVM_CTRL_INTERCEPT_*.
  */
-DECLINLINE(bool) CPUMIsGuestSvmCtrlInterceptSet(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t fIntercept)
+DECLINLINE(bool) CPUMIsGuestSvmCtrlInterceptSet(PCVMCPU pVCpu, PCPUMCTX pCtx, uint64_t fIntercept)
 {
     if (pCtx->hwvirt.enmHwvirt != CPUMHWVIRT_SVM)
         return false;
@@ -1809,7 +1809,7 @@ DECLINLINE(bool) CPUMIsGuestSvmCtrlInterceptSet(PVMCPU pVCpu, PCPUMCTX pCtx, uin
  * @param   pCtx    Pointer to the context.
  * @param   uCr     The CR register number (0 to 15).
  */
-DECLINLINE(bool) CPUMIsGuestSvmReadCRxInterceptSet(PVMCPU pVCpu, PCCPUMCTX pCtx, uint8_t uCr)
+DECLINLINE(bool) CPUMIsGuestSvmReadCRxInterceptSet(PCVMCPU pVCpu, PCCPUMCTX pCtx, uint8_t uCr)
 {
     Assert(uCr < 16);
     if (pCtx->hwvirt.enmHwvirt != CPUMHWVIRT_SVM)
@@ -1828,7 +1828,7 @@ DECLINLINE(bool) CPUMIsGuestSvmReadCRxInterceptSet(PVMCPU pVCpu, PCCPUMCTX pCtx,
  * @param   pCtx    Pointer to the context.
  * @param   uCr     The CR register number (0 to 15).
  */
-DECLINLINE(bool) CPUMIsGuestSvmWriteCRxInterceptSet(PVMCPU pVCpu, PCCPUMCTX pCtx, uint8_t uCr)
+DECLINLINE(bool) CPUMIsGuestSvmWriteCRxInterceptSet(PCVMCPU pVCpu, PCCPUMCTX pCtx, uint8_t uCr)
 {
     Assert(uCr < 16);
     if (pCtx->hwvirt.enmHwvirt != CPUMHWVIRT_SVM)
@@ -1847,7 +1847,7 @@ DECLINLINE(bool) CPUMIsGuestSvmWriteCRxInterceptSet(PVMCPU pVCpu, PCCPUMCTX pCtx
  * @param   pCtx    Pointer to the context.
  * @param   uDr     The DR register number (0 to 15).
  */
-DECLINLINE(bool) CPUMIsGuestSvmReadDRxInterceptSet(PVMCPU pVCpu, PCCPUMCTX pCtx, uint8_t uDr)
+DECLINLINE(bool) CPUMIsGuestSvmReadDRxInterceptSet(PCVMCPU pVCpu, PCCPUMCTX pCtx, uint8_t uDr)
 {
     Assert(uDr < 16);
     if (pCtx->hwvirt.enmHwvirt != CPUMHWVIRT_SVM)
@@ -1866,7 +1866,7 @@ DECLINLINE(bool) CPUMIsGuestSvmReadDRxInterceptSet(PVMCPU pVCpu, PCCPUMCTX pCtx,
  * @param   pCtx    Pointer to the context.
  * @param   uDr     The DR register number (0 to 15).
  */
-DECLINLINE(bool) CPUMIsGuestSvmWriteDRxInterceptSet(PVMCPU pVCpu, PCCPUMCTX pCtx, uint8_t uDr)
+DECLINLINE(bool) CPUMIsGuestSvmWriteDRxInterceptSet(PCVMCPU pVCpu, PCCPUMCTX pCtx, uint8_t uDr)
 {
     Assert(uDr < 16);
     if (pCtx->hwvirt.enmHwvirt != CPUMHWVIRT_SVM)
@@ -1885,7 +1885,7 @@ DECLINLINE(bool) CPUMIsGuestSvmWriteDRxInterceptSet(PVMCPU pVCpu, PCCPUMCTX pCtx
  * @param   pCtx        Pointer to the context.
  * @param   uVector     The exception / interrupt vector.
  */
-DECLINLINE(bool) CPUMIsGuestSvmXcptInterceptSet(PVMCPU pVCpu, PCCPUMCTX pCtx, uint8_t uVector)
+DECLINLINE(bool) CPUMIsGuestSvmXcptInterceptSet(PCVMCPU pVCpu, PCCPUMCTX pCtx, uint8_t uVector)
 {
     Assert(uVector < 32);
     if (pCtx->hwvirt.enmHwvirt != CPUMHWVIRT_SVM)
@@ -1905,7 +1905,7 @@ DECLINLINE(bool) CPUMIsGuestSvmXcptInterceptSet(PVMCPU pVCpu, PCCPUMCTX pCtx, ui
  *
  * @remarks Should only be called when SVM feature is exposed to the guest.
  */
-DECLINLINE(bool) CPUMIsGuestSvmVirtIntrMasking(PVMCPU pVCpu, PCCPUMCTX pCtx)
+DECLINLINE(bool) CPUMIsGuestSvmVirtIntrMasking(PCVMCPU pVCpu, PCCPUMCTX pCtx)
 {
     if (pCtx->hwvirt.enmHwvirt != CPUMHWVIRT_SVM)
         return false;
@@ -1924,7 +1924,7 @@ DECLINLINE(bool) CPUMIsGuestSvmVirtIntrMasking(PVMCPU pVCpu, PCCPUMCTX pCtx)
  *
  * @remarks Should only be called when SVM feature is exposed to the guest.
  */
-DECLINLINE(bool) CPUMIsGuestSvmNestedPagingEnabled(PVMCPU pVCpu, PCCPUMCTX pCtx)
+DECLINLINE(bool) CPUMIsGuestSvmNestedPagingEnabled(PCVMCPU pVCpu, PCCPUMCTX pCtx)
 {
     if (pCtx->hwvirt.enmHwvirt != CPUMHWVIRT_SVM)
         return false;
@@ -1943,7 +1943,7 @@ DECLINLINE(bool) CPUMIsGuestSvmNestedPagingEnabled(PVMCPU pVCpu, PCCPUMCTX pCtx)
  *
  * @remarks Should only be called when SVM feature is exposed to the guest.
  */
-DECLINLINE(uint16_t) CPUMGetGuestSvmPauseFilterCount(PVMCPU pVCpu, PCCPUMCTX pCtx)
+DECLINLINE(uint16_t) CPUMGetGuestSvmPauseFilterCount(PCVMCPU pVCpu, PCCPUMCTX pCtx)
 {
     if (pCtx->hwvirt.enmHwvirt != CPUMHWVIRT_SVM)
         return false;

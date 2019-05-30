@@ -1159,16 +1159,16 @@ AssertCompileSizeAlignment(SVMNESTEDVMCBCACHE, 8);
  * Don't add any more functions here unless there is no other option.
  * @{
  */
-VMM_INT_DECL(bool)     HMHasGuestSvmVmcbCached(PVMCPU pVCpu);
-VMM_INT_DECL(bool)     HMIsGuestSvmCtrlInterceptSet(PVMCPU pVCpu, uint64_t fIntercept);
-VMM_INT_DECL(bool)     HMIsGuestSvmReadCRxInterceptSet(PVMCPU pVCpu, uint8_t uCr);
-VMM_INT_DECL(bool)     HMIsGuestSvmWriteCRxInterceptSet(PVMCPU pVCpu, uint8_t uCr);
-VMM_INT_DECL(bool)     HMIsGuestSvmReadDRxInterceptSet(PVMCPU pVCpu, uint8_t uDr);
-VMM_INT_DECL(bool)     HMIsGuestSvmWriteDRxInterceptSet(PVMCPU pVCpu, uint8_t uDr);
-VMM_INT_DECL(bool)     HMIsGuestSvmXcptInterceptSet(PVMCPU pVCpu, uint8_t uVector);
-VMM_INT_DECL(bool)     HMIsGuestSvmVirtIntrMasking(PVMCPU pVCpu);
-VMM_INT_DECL(bool)     HMIsGuestSvmNestedPagingEnabled(PVMCPU pVCpu);
-VMM_INT_DECL(uint16_t) HMGetGuestSvmPauseFilterCount(PVMCPU pVCpu);
+VMM_INT_DECL(bool)     HMHasGuestSvmVmcbCached(PCVMCPU pVCpu);
+VMM_INT_DECL(bool)     HMIsGuestSvmCtrlInterceptSet(PCVMCPU pVCpu, uint64_t fIntercept);
+VMM_INT_DECL(bool)     HMIsGuestSvmReadCRxInterceptSet(PCVMCPU pVCpu, uint8_t uCr);
+VMM_INT_DECL(bool)     HMIsGuestSvmWriteCRxInterceptSet(PCVMCPU pVCpu, uint8_t uCr);
+VMM_INT_DECL(bool)     HMIsGuestSvmReadDRxInterceptSet(PCVMCPU pVCpu, uint8_t uDr);
+VMM_INT_DECL(bool)     HMIsGuestSvmWriteDRxInterceptSet(PCVMCPU pVCpu, uint8_t uDr);
+VMM_INT_DECL(bool)     HMIsGuestSvmXcptInterceptSet(PCVMCPU pVCpu, uint8_t uVector);
+VMM_INT_DECL(bool)     HMIsGuestSvmVirtIntrMasking(PCVMCPU pVCpu);
+VMM_INT_DECL(bool)     HMIsGuestSvmNestedPagingEnabled(PCVMCPU pVCpu);
+VMM_INT_DECL(uint16_t) HMGetGuestSvmPauseFilterCount(PCVMCPU pVCpu);
 /** @} */
 
 

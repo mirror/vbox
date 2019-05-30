@@ -361,7 +361,7 @@ VMM_INT_DECL(TRPMEVENT) HMSvmEventToTrpmEventType(PCSVMEVENT pEvent, uint8_t uVe
  * @returns true if HM has cached the nested-guest VMCB, false otherwise.
  * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
  */
-VMM_INT_DECL(bool) HMHasGuestSvmVmcbCached(PVMCPU pVCpu)
+VMM_INT_DECL(bool) HMHasGuestSvmVmcbCached(PCVMCPU pVCpu)
 {
     PCSVMNESTEDVMCBCACHE pVmcbNstGstCache = &pVCpu->hm.s.svm.NstGstVmcbCache;
     return pVmcbNstGstCache->fCacheValid;
@@ -377,7 +377,7 @@ VMM_INT_DECL(bool) HMHasGuestSvmVmcbCached(PVMCPU pVCpu)
  * @param   fIntercept  The SVM control/instruction intercept, see
  *                      SVM_CTRL_INTERCEPT_*.
  */
-VMM_INT_DECL(bool) HMIsGuestSvmCtrlInterceptSet(PVMCPU pVCpu, uint64_t fIntercept)
+VMM_INT_DECL(bool) HMIsGuestSvmCtrlInterceptSet(PCVMCPU pVCpu, uint64_t fIntercept)
 {
     Assert(HMHasGuestSvmVmcbCached(pVCpu));
     PCSVMNESTEDVMCBCACHE pVmcbNstGstCache = &pVCpu->hm.s.svm.NstGstVmcbCache;
@@ -392,7 +392,7 @@ VMM_INT_DECL(bool) HMIsGuestSvmCtrlInterceptSet(PVMCPU pVCpu, uint64_t fIntercep
  * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
  * @param   uCr     The CR register number (0 to 15).
  */
-VMM_INT_DECL(bool) HMIsGuestSvmReadCRxInterceptSet(PVMCPU pVCpu, uint8_t uCr)
+VMM_INT_DECL(bool) HMIsGuestSvmReadCRxInterceptSet(PCVMCPU pVCpu, uint8_t uCr)
 {
     Assert(uCr < 16);
     Assert(HMHasGuestSvmVmcbCached(pVCpu));
@@ -408,7 +408,7 @@ VMM_INT_DECL(bool) HMIsGuestSvmReadCRxInterceptSet(PVMCPU pVCpu, uint8_t uCr)
  * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
  * @param   uCr     The CR register number (0 to 15).
  */
-VMM_INT_DECL(bool) HMIsGuestSvmWriteCRxInterceptSet(PVMCPU pVCpu, uint8_t uCr)
+VMM_INT_DECL(bool) HMIsGuestSvmWriteCRxInterceptSet(PCVMCPU pVCpu, uint8_t uCr)
 {
     Assert(uCr < 16);
     Assert(HMHasGuestSvmVmcbCached(pVCpu));
@@ -424,7 +424,7 @@ VMM_INT_DECL(bool) HMIsGuestSvmWriteCRxInterceptSet(PVMCPU pVCpu, uint8_t uCr)
  * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
  * @param   uDr     The DR register number (0 to 15).
  */
-VMM_INT_DECL(bool) HMIsGuestSvmReadDRxInterceptSet(PVMCPU pVCpu, uint8_t uDr)
+VMM_INT_DECL(bool) HMIsGuestSvmReadDRxInterceptSet(PCVMCPU pVCpu, uint8_t uDr)
 {
     Assert(uDr < 16);
     Assert(HMHasGuestSvmVmcbCached(pVCpu));
@@ -440,7 +440,7 @@ VMM_INT_DECL(bool) HMIsGuestSvmReadDRxInterceptSet(PVMCPU pVCpu, uint8_t uDr)
  * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
  * @param   uDr     The DR register number (0 to 15).
  */
-VMM_INT_DECL(bool) HMIsGuestSvmWriteDRxInterceptSet(PVMCPU pVCpu, uint8_t uDr)
+VMM_INT_DECL(bool) HMIsGuestSvmWriteDRxInterceptSet(PCVMCPU pVCpu, uint8_t uDr)
 {
     Assert(uDr < 16);
     Assert(HMHasGuestSvmVmcbCached(pVCpu));
@@ -456,7 +456,7 @@ VMM_INT_DECL(bool) HMIsGuestSvmWriteDRxInterceptSet(PVMCPU pVCpu, uint8_t uDr)
  * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @param   uVector     The exception / interrupt vector.
  */
-VMM_INT_DECL(bool) HMIsGuestSvmXcptInterceptSet(PVMCPU pVCpu, uint8_t uVector)
+VMM_INT_DECL(bool) HMIsGuestSvmXcptInterceptSet(PCVMCPU pVCpu, uint8_t uVector)
 {
     Assert(uVector < 32);
     Assert(HMHasGuestSvmVmcbCached(pVCpu));
@@ -471,7 +471,7 @@ VMM_INT_DECL(bool) HMIsGuestSvmXcptInterceptSet(PVMCPU pVCpu, uint8_t uVector)
  * @returns true if virtual-interrupts are masked, @c false otherwise.
  * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
  */
-VMM_INT_DECL(bool) HMIsGuestSvmVirtIntrMasking(PVMCPU pVCpu)
+VMM_INT_DECL(bool) HMIsGuestSvmVirtIntrMasking(PCVMCPU pVCpu)
 {
     Assert(HMHasGuestSvmVmcbCached(pVCpu));
     PCSVMNESTEDVMCBCACHE pVmcbNstGstCache = &pVCpu->hm.s.svm.NstGstVmcbCache;
@@ -485,7 +485,7 @@ VMM_INT_DECL(bool) HMIsGuestSvmVirtIntrMasking(PVMCPU pVCpu)
  * @returns true if nested-paging is enabled, @c false otherwise.
  * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
  */
-VMM_INT_DECL(bool) HMIsGuestSvmNestedPagingEnabled(PVMCPU pVCpu)
+VMM_INT_DECL(bool) HMIsGuestSvmNestedPagingEnabled(PCVMCPU pVCpu)
 {
     Assert(HMHasGuestSvmVmcbCached(pVCpu));
     PCSVMNESTEDVMCBCACHE pVmcbNstGstCache = &pVCpu->hm.s.svm.NstGstVmcbCache;
@@ -499,7 +499,7 @@ VMM_INT_DECL(bool) HMIsGuestSvmNestedPagingEnabled(PVMCPU pVCpu)
  * @returns The pause-filter count.
  * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
  */
-VMM_INT_DECL(uint16_t) HMGetGuestSvmPauseFilterCount(PVMCPU pVCpu)
+VMM_INT_DECL(uint16_t) HMGetGuestSvmPauseFilterCount(PCVMCPU pVCpu)
 {
     Assert(HMHasGuestSvmVmcbCached(pVCpu));
     PCSVMNESTEDVMCBCACHE pVmcbNstGstCache = &pVCpu->hm.s.svm.NstGstVmcbCache;
