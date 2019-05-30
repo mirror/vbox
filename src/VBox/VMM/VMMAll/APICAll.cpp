@@ -408,7 +408,7 @@ APICMODE apicGetMode(uint64_t uApicBaseMsr)
  * @returns true if enabled, false otherwise.
  * @param   pVCpu           The cross context virtual CPU structure.
  */
-VMM_INT_DECL(bool) APICIsEnabled(PVMCPU pVCpu)
+VMM_INT_DECL(bool) APICIsEnabled(PCVMCPU pVCpu)
 {
     PCAPICCPU pApicCpu = VMCPU_TO_APICCPU(pVCpu);
     return RT_BOOL(pApicCpu->uApicBaseMsr & MSR_IA32_APICBASE_EN);
@@ -2484,7 +2484,7 @@ VMM_INT_DECL(int) APICSetBaseMsr(PVMCPU pVCpu, uint64_t u64BaseMsr)
  * @returns The base MSR value.
  * @param   pVCpu       The cross context virtual CPU structure.
  */
-VMM_INT_DECL(uint64_t) APICGetBaseMsrNoCheck(PVMCPU pVCpu)
+VMM_INT_DECL(uint64_t) APICGetBaseMsrNoCheck(PCVMCPU pVCpu)
 {
     VMCPU_ASSERT_EMT_OR_NOT_RUNNING(pVCpu);
     PCAPICCPU pApicCpu = VMCPU_TO_APICCPU(pVCpu);
@@ -2542,7 +2542,7 @@ VMMDECL(int) APICSetTpr(PVMCPU pVCpu, uint8_t u8Tpr)
  * @param   pu8PendingIntr      Where to store the interrupt vector if the
  *                              interrupt is pending (optional, can be NULL).
  */
-static bool apicGetHighestPendingInterrupt(PVMCPU pVCpu, uint8_t *pu8PendingIntr)
+static bool apicGetHighestPendingInterrupt(PCVMCPU pVCpu, uint8_t *pu8PendingIntr)
 {
     PCXAPICPAGE pXApicPage = VMCPU_TO_CXAPICPAGE(pVCpu);
     int const irrv = apicGetHighestSetBitInReg(&pXApicPage->irr, -1);
@@ -2568,7 +2568,7 @@ static bool apicGetHighestPendingInterrupt(PVMCPU pVCpu, uint8_t *pu8PendingIntr
  * @param   pu8PendingIntr  Where to store the highest-priority pending
  *                          interrupt (optional, can be NULL).
  */
-VMMDECL(int) APICGetTpr(PVMCPU pVCpu, uint8_t *pu8Tpr, bool *pfPending, uint8_t *pu8PendingIntr)
+VMMDECL(int) APICGetTpr(PCVMCPU pVCpu, uint8_t *pu8Tpr, bool *pfPending, uint8_t *pu8PendingIntr)
 {
     VMCPU_ASSERT_EMT(pVCpu);
     if (APICIsEnabled(pVCpu))
@@ -3492,7 +3492,7 @@ VMM_INT_DECL(VBOXSTRICTRC) APICHvSetEoi(PVMCPU pVCpu, uint32_t uEoi)
  * @param   pRCPtr          Where to store the raw-mode context address
  *                          (optional).
  */
-VMM_INT_DECL(int) APICGetApicPageForCpu(PVMCPU pVCpu, PRTHCPHYS pHCPhys, PRTR0PTR pR0Ptr, PRTR3PTR pR3Ptr, PRTRCPTR pRCPtr)
+VMM_INT_DECL(int) APICGetApicPageForCpu(PCVMCPU pVCpu, PRTHCPHYS pHCPhys, PRTR0PTR pR0Ptr, PRTR3PTR pR3Ptr, PRTRCPTR pRCPtr)
 {
     AssertReturn(pVCpu,   VERR_INVALID_PARAMETER);
     AssertReturn(pHCPhys, VERR_INVALID_PARAMETER);
