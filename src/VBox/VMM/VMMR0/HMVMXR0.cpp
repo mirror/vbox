@@ -477,6 +477,7 @@ static VBOXSTRICTRC hmR0VmxExitLmsw(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo, uint8
 static VBOXSTRICTRC hmR0VmxExitClts(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo, uint8_t cbInstr);
 static VBOXSTRICTRC hmR0VmxExitMovFromCrX(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo, uint8_t cbInstr, uint8_t iGReg, uint8_t iCrReg);
 static VBOXSTRICTRC hmR0VmxExitMovToCrX(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo, uint8_t cbInstr, uint8_t iGReg, uint8_t iCrReg);
+static VBOXSTRICTRC hmR0VmxExitHostNmi(PVMCPU pVCpu);
 /** @} */
 
 
@@ -12008,9 +12009,9 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxRunDebugHandleExit(PVMCPU pVCpu, PVMXTRANSIENT p
     {
         int rc2 = hmR0VmxReadExitIntInfoVmcs(pVmxTransient);
         AssertRCReturn(rc2, rc2);
-        uint32_t uIntType = VMX_EXIT_INT_INFO_TYPE(pVmxTransient->uExitIntInfo);
+        uint32_t const uIntType = VMX_EXIT_INT_INFO_TYPE(pVmxTransient->uExitIntInfo);
         if (uIntType == VMX_EXIT_INT_INFO_TYPE_NMI)
-            return hmR0VmxExitXcptOrNmi(pVCpu, pVmxTransient);
+            return hmR0VmxExitHostNmi(pVCpu);
     }
 
     /*
@@ -13076,10 +13077,7 @@ HMVMX_EXIT_DECL hmR0VmxExitXcptOrNmi(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
          * [1] -- See Intel spec. 27.2.3 "Information for VM Exits During Event Delivery".
          * [2] -- See Intel spec. 27.5.5 "Updating Non-Register State".
          */
-        VMXDispatchHostNmi();
-        STAM_REL_COUNTER_INC(&pVCpu->hm.s.StatExitHostNmiInGC);
-        STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExitXcptNmi, y3);
-        return VINF_SUCCESS;
+        return hmR0VmxExitHostNmi(pVCpu);
     }
 
     /* If this VM-exit occurred while delivering an event through the guest IDT, handle it accordingly. */
@@ -15415,6 +15413,19 @@ static VBOXSTRICTRC hmR0VmxExitMovToCrX(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo, u
         rcStrict = VINF_SUCCESS;
     }
     return rcStrict;
+}
+
+
+/**
+ * VM-exit helper for handling host NMIs.
+ */
+static VBOXSTRICTRC hmR0VmxExitHostNmi(PVMCPU pVCpu)
+{
+    VMXDispatchHostNmi();
+
+    STAM_REL_COUNTER_INC(&pVCpu->hm.s.StatExitHostNmiInGC);
+    STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExitXcptNmi, y3);
+    return VINF_SUCCESS;
 }
 
 
