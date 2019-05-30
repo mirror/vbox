@@ -1124,7 +1124,7 @@ HRESULT Appliance::i_readImpl(const LocationInfo &aLocInfo, ComObjPtr<Progress> 
         {
             /* 1 operation only */
             hrc = aProgress->init(mVirtualBox, static_cast<IAppliance*>(this),
-                                  Utf8Str(tr("Getting cloud instance information...")), TRUE /* aCancelable */);
+                                  Utf8Str(tr("Getting cloud instance information")), TRUE /* aCancelable */);
 
             /* Create an empty ovf::OVFReader for manual filling it.
              * It's not a normal usage case, but we try to re-use some OVF stuff to friend
