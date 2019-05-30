@@ -37,7 +37,7 @@ void crUnpackTexImage3DEXT(PCrUnpackerState pState)
         pixels = (void*) (uintptr_t) READ_DATA(pState, sizeof(int)+40, GLint);
     else
     {
-        size_t cbImg = crImageSize(format, type, width, height);
+        size_t cbImg = crTextureSize(format, type, width, height, depth);
         if (RT_UNLIKELY(cbImg == 0))
         {
             pState->rcUnpack = VERR_INVALID_PARAMETER;
@@ -76,7 +76,7 @@ void crUnpackTexImage3D(PCrUnpackerState pState)
         pixels = (void*) (uintptr_t) READ_DATA(pState, sizeof(int)+40, GLint);
     else
     {
-        size_t cbImg = crImageSize(format, type, width, height);
+        size_t cbImg = crTextureSize(format, type, width, height, depth);
         if (RT_UNLIKELY(cbImg == 0))
         {
             pState->rcUnpack = VERR_INVALID_PARAMETER;
@@ -321,8 +321,16 @@ void crUnpackTexSubImage3D(PCrUnpackerState pState)
         pixels = (void*) (uintptr_t) READ_DATA(pState, sizeof(int)+44, GLint);
     else
     {
-        size_t cbImg = crImageSize(format, type, width, height);
-        if (RT_UNLIKELY(cbImg == 0))
+        /*
+         * Specifying a sub texture with zero width, height or depth is not an
+         * error but has no effect.
+         * See: https://www.khronos.org/registry/OpenGL-Refpages/gl2.1/xhtml/glTexSubImage3D.xml
+         */
+        size_t cbImg = crTextureSize(format, type, width, height, depth);
+        if (RT_UNLIKELY(   cbImg == 0
+                        && width != 0
+                        && height != 0
+                        && depth != 0))
         {
             pState->rcUnpack = VERR_INVALID_PARAMETER;
             return;
@@ -365,8 +373,15 @@ void crUnpackTexSubImage2D(PCrUnpackerState pState)
     }
     else
     {
+        /*
+         * Specifying a sub texture with zero width, height or depth is not an
+         * error but has no effect.
+         * See: https://www.khronos.org/registry/OpenGL-Refpages/gl2.1/xhtml/glTexSubImage2D.xml
+         */
         size_t cbImg = crImageSize(format, type, width, height);
-        if (RT_UNLIKELY(cbImg == 0))
+        if (RT_UNLIKELY(   cbImg == 0
+                        && width != 0
+                        && height != 0))
         {
             pState->rcUnpack = VERR_INVALID_PARAMETER;
             return;
@@ -403,8 +418,14 @@ void crUnpackTexSubImage1D(PCrUnpackerState pState)
         pixels = (void*) (uintptr_t) READ_DATA(pState, sizeof(int)+28, GLint);
     else
     {
+        /*
+         * Specifying a sub texture with zero width, height or depth is not an
+         * error but has no effect.
+         * See: https://www.khronos.org/registry/OpenGL-Refpages/gl2.1/xhtml/glTexSubImage1D.xml
+         */
         size_t cbImg = crImageSize(format, type, width, 1);
-        if (RT_UNLIKELY(cbImg == 0))
+        if (RT_UNLIKELY(   cbImg == 0
+                        && width != 0))
         {
             pState->rcUnpack = VERR_INVALID_PARAMETER;
             return;
