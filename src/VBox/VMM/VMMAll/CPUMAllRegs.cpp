@@ -3227,7 +3227,7 @@ VMM_INT_DECL(bool) CPUMGetVmxIoBitmapPermission(void const *pvIoBitmapA, void co
  * @param   u16Port     The I/O port being accessed.
  * @param   cbAccess    The size of the I/O access in bytes (1, 2 or 4 bytes).
  */
-VMM_INT_DECL(bool) CPUMIsGuestVmxIoInterceptSet(PVMCPU pVCpu, uint16_t u16Port, uint8_t cbAccess)
+VMM_INT_DECL(bool) CPUMIsGuestVmxIoInterceptSet(PCVMCPU pVCpu, uint16_t u16Port, uint8_t cbAccess)
 {
 #ifndef IN_RC
     PCCPUMCTX pCtx = &pVCpu->cpum.s.Guest;

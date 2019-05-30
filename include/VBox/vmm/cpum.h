@@ -1476,7 +1476,7 @@ VMM_INT_DECL(void)      CPUMSvmVmRunSaveHostState(PCPUMCTX pCtx, uint8_t cbInstr
 VMM_INT_DECL(uint64_t)  CPUMApplyNestedGuestTscOffset(PVMCPU pVCpu, uint64_t uTicks);
 VMM_INT_DECL(uint64_t)  CPUMRemoveNestedGuestTscOffset(PVMCPU pVCpu, uint64_t uTicks);
 VMM_INT_DECL(uint32_t)  CPUMGetVmxMsrPermission(void const *pvMsrBitmap, uint32_t idMsr);
-VMM_INT_DECL(bool)      CPUMIsGuestVmxIoInterceptSet(PVMCPU pVCpu, uint16_t u16Port, uint8_t cbAccess);
+VMM_INT_DECL(bool)      CPUMIsGuestVmxIoInterceptSet(PCVMCPU pVCpu, uint16_t u16Port, uint8_t cbAccess);
 VMM_INT_DECL(bool)      CPUMIsGuestVmxVmreadVmwriteInterceptSet(PCVMCPU pVCpu, uint32_t uExitReason, uint64_t u64FieldEnc);
 VMM_INT_DECL(bool)      CPUMGetVmxIoBitmapPermission(void const *pvIoBitmapA, void const *pvIoBitmapB, uint16_t uPort,
                                                      uint8_t cbAccess);
@@ -1983,7 +1983,7 @@ DECLINLINE(void) CPUMGuestSvmUpdateNRip(PVMCPU pVCpu, PCCPUMCTX pCtx, uint8_t cb
  * @remarks This does not check if all given controls are set if more than one
  *          control is passed in @a uPinCtl.
  */
-DECLINLINE(bool) CPUMIsGuestVmxPinCtlsSet(PVMCPU pVCpu, PCCPUMCTX pCtx, uint32_t uPinCtls)
+DECLINLINE(bool) CPUMIsGuestVmxPinCtlsSet(PCVMCPU pVCpu, PCCPUMCTX pCtx, uint32_t uPinCtls)
 {
     RT_NOREF(pVCpu);
     Assert(pCtx->hwvirt.enmHwvirt == CPUMHWVIRT_VMX);
@@ -2004,7 +2004,7 @@ DECLINLINE(bool) CPUMIsGuestVmxPinCtlsSet(PVMCPU pVCpu, PCCPUMCTX pCtx, uint32_t
  * @remarks This does not check if all given controls are set if more than one
  *          control is passed in @a uProcCtls.
  */
-DECLINLINE(bool) CPUMIsGuestVmxProcCtlsSet(PVMCPU pVCpu, PCCPUMCTX pCtx, uint32_t uProcCtls)
+DECLINLINE(bool) CPUMIsGuestVmxProcCtlsSet(PCVMCPU pVCpu, PCCPUMCTX pCtx, uint32_t uProcCtls)
 {
     RT_NOREF(pVCpu);
     Assert(pCtx->hwvirt.enmHwvirt == CPUMHWVIRT_VMX);
@@ -2026,7 +2026,7 @@ DECLINLINE(bool) CPUMIsGuestVmxProcCtlsSet(PVMCPU pVCpu, PCCPUMCTX pCtx, uint32_
  * @remarks This does not check if all given controls are set if more than one
  *          control is passed in @a uProcCtls2.
  */
-DECLINLINE(bool) CPUMIsGuestVmxProcCtls2Set(PVMCPU pVCpu, PCCPUMCTX pCtx, uint32_t uProcCtls2)
+DECLINLINE(bool) CPUMIsGuestVmxProcCtls2Set(PCVMCPU pVCpu, PCCPUMCTX pCtx, uint32_t uProcCtls2)
 {
     RT_NOREF(pVCpu);
     Assert(pCtx->hwvirt.enmHwvirt == CPUMHWVIRT_VMX);
@@ -2047,7 +2047,7 @@ DECLINLINE(bool) CPUMIsGuestVmxProcCtls2Set(PVMCPU pVCpu, PCCPUMCTX pCtx, uint32
  * @remarks This does not check if all given controls are set if more than one
  *          control is passed in @a uExitCtls.
  */
-DECLINLINE(bool) CPUMIsGuestVmxExitCtlsSet(PVMCPU pVCpu, PCCPUMCTX pCtx, uint32_t uExitCtls)
+DECLINLINE(bool) CPUMIsGuestVmxExitCtlsSet(PCVMCPU pVCpu, PCCPUMCTX pCtx, uint32_t uExitCtls)
 {
     RT_NOREF(pVCpu);
     Assert(pCtx->hwvirt.enmHwvirt == CPUMHWVIRT_VMX);
@@ -2068,7 +2068,7 @@ DECLINLINE(bool) CPUMIsGuestVmxExitCtlsSet(PVMCPU pVCpu, PCCPUMCTX pCtx, uint32_
  * @remarks This does not check if all given controls are set if more than one
  *          control is passed in @a uEntryCtls.
  */
-DECLINLINE(bool) CPUMIsGuestVmxEntryCtlsSet(PVMCPU pVCpu, PCCPUMCTX pCtx, uint32_t uEntryCtls)
+DECLINLINE(bool) CPUMIsGuestVmxEntryCtlsSet(PCVMCPU pVCpu, PCCPUMCTX pCtx, uint32_t uEntryCtls)
 {
     RT_NOREF(pVCpu);
     Assert(pCtx->hwvirt.enmHwvirt == CPUMHWVIRT_VMX);
@@ -2133,7 +2133,7 @@ DECLINLINE(void) CPUMSetGuestVmxVmFail(PCPUMCTX pCtx, VMXINSTRERR enmInsErr)
  * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @param   pCtx        Pointer to the context.
  */
-DECLINLINE(uint64_t) CPUMGetGuestVmxApicAccessPageAddr(PVMCPU pVCpu, PCCPUMCTX pCtx)
+DECLINLINE(uint64_t) CPUMGetGuestVmxApicAccessPageAddr(PCVMCPU pVCpu, PCCPUMCTX pCtx)
 {
     RT_NOREF(pVCpu);
     Assert(pCtx->hwvirt.enmHwvirt == CPUMHWVIRT_VMX);
@@ -2149,7 +2149,7 @@ DECLINLINE(uint64_t) CPUMGetGuestVmxApicAccessPageAddr(PVMCPU pVCpu, PCCPUMCTX p
  * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @param   pCtx        Pointer to the context.
  */
-DECLINLINE(uint64_t) CPUMGetGuestVmxMaskedCr0(PVMCPU pVCpu, PCCPUMCTX pCtx)
+DECLINLINE(uint64_t) CPUMGetGuestVmxMaskedCr0(PCVMCPU pVCpu, PCCPUMCTX pCtx)
 {
     /*
      * For each CR0 bit owned by the host, the corresponding bit from the
@@ -2175,7 +2175,7 @@ DECLINLINE(uint64_t) CPUMGetGuestVmxMaskedCr0(PVMCPU pVCpu, PCCPUMCTX pCtx)
  * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @param   pCtx        Pointer to the context.
  */
-DECLINLINE(uint64_t) CPUMGetGuestVmxMaskedCr4(PVMCPU pVCpu, PCCPUMCTX pCtx)
+DECLINLINE(uint64_t) CPUMGetGuestVmxMaskedCr4(PCVMCPU pVCpu, PCCPUMCTX pCtx)
 {
     /*
      * For each CR4 bit owned by the host, the corresponding bit from the
@@ -2202,7 +2202,7 @@ DECLINLINE(uint64_t) CPUMGetGuestVmxMaskedCr4(PVMCPU pVCpu, PCCPUMCTX pCtx)
  * @param   pCtx        Pointer to the context.
  * @param   uNewMsw     The LMSW source operand (the Machine Status Word).
  */
-DECLINLINE(bool) CPUMIsGuestVmxLmswInterceptSet(PVMCPU pVCpu, PCCPUMCTX pCtx, uint16_t uNewMsw)
+DECLINLINE(bool) CPUMIsGuestVmxLmswInterceptSet(PCVMCPU pVCpu, PCCPUMCTX pCtx, uint16_t uNewMsw)
 {
     /*
      * LMSW VM-exits are subject to the CR0 guest/host mask and the CR0 read shadow.
@@ -2251,7 +2251,7 @@ DECLINLINE(bool) CPUMIsGuestVmxLmswInterceptSet(PVMCPU pVCpu, PCCPUMCTX pCtx, ui
  * @param   iCrReg      The control register number (must be 0 or 4).
  * @param   uNewCrX     The CR0/CR4 value being written.
  */
-DECLINLINE(bool) CPUMIsGuestVmxMovToCr0Cr4InterceptSet(PVMCPU pVCpu, PCCPUMCTX pCtx, uint8_t iCrReg, uint64_t uNewCrX)
+DECLINLINE(bool) CPUMIsGuestVmxMovToCr0Cr4InterceptSet(PCVMCPU pVCpu, PCCPUMCTX pCtx, uint8_t iCrReg, uint64_t uNewCrX)
 {
     /*
      * For any CR0/CR4 bit owned by the host (in the CR0/CR4 guest/host mask), if the
@@ -2300,7 +2300,7 @@ DECLINLINE(bool) CPUMIsGuestVmxMovToCr0Cr4InterceptSet(PVMCPU pVCpu, PCCPUMCTX p
  * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
  * @param   pCtx    The guest-CPU context.
  */
-DECLINLINE(bool) CPUMIsGuestVmxPhysIntrEnabled(PVMCPU pVCpu, PCCPUMCTX pCtx)
+DECLINLINE(bool) CPUMIsGuestVmxPhysIntrEnabled(PCVMCPU pVCpu, PCCPUMCTX pCtx)
 {
 #ifdef IN_RC
     RT_NOREF2(pVCpu, pCtx);
@@ -2322,7 +2322,7 @@ DECLINLINE(bool) CPUMIsGuestVmxPhysIntrEnabled(PVMCPU pVCpu, PCCPUMCTX pCtx)
  * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
  * @param   pCtx    The guest-CPU context.
  */
-DECLINLINE(bool) CPUMIsGuestVmxVirtIntrEnabled(PVMCPU pVCpu, PCCPUMCTX pCtx)
+DECLINLINE(bool) CPUMIsGuestVmxVirtIntrEnabled(PCVMCPU pVCpu, PCCPUMCTX pCtx)
 {
 #ifdef IN_RC
     RT_NOREF2(pVCpu, pCtx);
