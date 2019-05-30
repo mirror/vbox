@@ -464,7 +464,7 @@ VMM_INT_DECL(bool) HMGetGuestSvmVirtIntrMasking(PCVMCPU pVCpu, bool *pfVIntrMask
  * @returns @c true on success, @c false otherwise.
  * @param   pVCpu               The cross context virtual CPU structure of the
  *                              calling EMT.
- * @param   pfNestedPagingCtrl  Where to store the nested-paging bit. Updated only
+ * @param   pfNestedPaging      Where to store the nested-paging bit. Updated only
  *                              when @c true is returned.
  */
 VMM_INT_DECL(bool) HMGetGuestSvmNestedPaging(PCVMCPU pVCpu, bool *pfNestedPaging)
