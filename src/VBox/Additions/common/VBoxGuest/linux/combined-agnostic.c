@@ -152,7 +152,7 @@
 # include "common/alloc/heapsimple.c"
 #endif
 
-#ifdef RT_ARCH_X86
+#if 0 //def RT_ARCH_X86 - iprt/nocrt/limit.h clashes.
 # include "common/math/gcc/divdi3.c"
 # include "common/math/gcc/moddi3.c"
 # include "common/math/gcc/udivdi3.c"

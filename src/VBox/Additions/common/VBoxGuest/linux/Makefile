@@ -122,7 +122,11 @@ VBOXMOD_OBJS += \
 	generic/mppresent-generic.o \
 	VBox/log-vbox.o \
 	VBox/logbackdoor.o
- ifeq ($(BUILD_TARGET_ARCH),x86)
+ ifeq ($(BUILD_TARGET_ARCH),amd64)
+VBOXMOD_OBJS += common/alloc/heapsimple.o
+ endif
+endif # VBOX_WITHOUT_COMBINED_SOURCES
+ifeq ($(BUILD_TARGET_ARCH),x86)
 VBOXMOD_OBJS += \
 	common/math/gcc/divdi3.o \
 	common/math/gcc/moddi3.o \
@@ -130,11 +134,7 @@ VBOXMOD_OBJS += \
 	common/math/gcc/udivmoddi4.o \
 	common/math/gcc/umoddi3.o \
 	common/math/gcc/qdivrem.o
- endif
- ifeq ($(BUILD_TARGET_ARCH),amd64)
-VBOXMOD_OBJS += common/alloc/heapsimple.o
- endif
-endif # VBOX_WITHOUT_COMBINED_SOURCES
+endif
 
 VBOXMOD_DEFS = \
 	VBOX \
