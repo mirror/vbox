@@ -16373,7 +16373,7 @@ HMVMX_EXIT_NSRC_DECL hmR0VmxExitWbinvdNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTra
         AssertRCReturn(rc, rc);
         return IEMExecVmxVmexitInstr(pVCpu, pVmxTransient->uExitReason, pVmxTransient->cbInstr);
     }
-    return hmR0VmxExitInvpcid(pVCpu, pVmxTransient);
+    return hmR0VmxExitWbinvd(pVCpu, pVmxTransient);
 }
 
 
@@ -16386,6 +16386,7 @@ HMVMX_EXIT_DECL hmR0VmxExitInvpcidNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransie
 
     if (CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS_INVLPG_EXIT))
     {
+        Assert(CPUMIsGuestVmxProcCtls2Set(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS2_INVPCID));
         int rc  = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
         rc     |= hmR0VmxReadExitQualVmcs(pVCpu, pVmxTransient);
         rc     |= hmR0VmxReadExitInstrInfoVmcs(pVmxTransient);
