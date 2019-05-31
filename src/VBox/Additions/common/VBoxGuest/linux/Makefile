@@ -29,10 +29,19 @@ obj ?= $(CURDIR)
 include $(obj)/Makefile-header.gmk
 VBOXGUEST_DIR = $(VBOX_MODULE_SRC_DIR)
 
+#VBOX_WITHOUT_COMBINED_SOURCES=1
+
 VBOXMOD_NAME = vboxguest
 VBOXMOD_OBJS = \
 	VBoxGuest-linux.o \
-	VBoxGuest.o \
+	VBoxGuest.o
+ifndef VBOX_WITHOUT_COMBINED_SOURCES
+VBOXMOD_OBJS += \
+	common/string/strformatrt.o \
+	combined-agnostic.o \
+	combined-os-specific.o
+else  # VBOX_WITHOUT_COMBINED_SOURCES
+VBOXMOD_OBJS += \
 	VBoxGuestR0LibGenericRequest.o \
 	VBoxGuestR0LibHGCMInternal.o \
 	VBoxGuestR0LibInit.o \
@@ -113,7 +122,7 @@ VBOXMOD_OBJS = \
 	generic/mppresent-generic.o \
 	VBox/log-vbox.o \
 	VBox/logbackdoor.o
-ifeq ($(BUILD_TARGET_ARCH),x86)
+ ifeq ($(BUILD_TARGET_ARCH),x86)
 VBOXMOD_OBJS += \
 	common/math/gcc/divdi3.o \
 	common/math/gcc/moddi3.o \
@@ -121,10 +130,11 @@ VBOXMOD_OBJS += \
 	common/math/gcc/udivmoddi4.o \
 	common/math/gcc/umoddi3.o \
 	common/math/gcc/qdivrem.o
-endif
-ifeq ($(BUILD_TARGET_ARCH),amd64)
+ endif
+ ifeq ($(BUILD_TARGET_ARCH),amd64)
 VBOXMOD_OBJS += common/alloc/heapsimple.o
-endif
+ endif
+endif # VBOX_WITHOUT_COMBINED_SOURCES
 
 VBOXMOD_DEFS = \
 	VBOX \
