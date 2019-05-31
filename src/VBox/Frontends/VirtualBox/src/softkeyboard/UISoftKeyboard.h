@@ -61,6 +61,7 @@ private slots:
     void sltHandleKeyPress();
     void sltHandleKeyRelease();
     void sltHandleModifierStateChange();
+    void sltHandleKeyboardLedsChange();
 
 private:
 
