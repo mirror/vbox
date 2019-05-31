@@ -25756,9 +25756,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
   <interface name="IStringFormValue" extends="IFormValue"
-             uuid="4378aa22-3e8a-11e9-8ce9-03940555aae1"
+             uuid="cb6f0f2c-8384-11e9-921d-8b984e28a686"
              wsmap="managed"
              reservedMethods="4" reservedAttributes="4">
+    <attribute name="multiline" type="boolean" readonly="yes"/>
     <method name="getString">
       <param name="text" type="wstring" dir="return"/>
     </method>
