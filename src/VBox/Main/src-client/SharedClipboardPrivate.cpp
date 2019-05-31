@@ -58,7 +58,7 @@ DECLCALLBACK(int) SharedClipboard::hostServiceCallback(void *pvExtension, uint32
     LogFlowFunc(("pvExtension=%p, u32Function=%RU32, pvParms=%p, cbParms=%RU32\n",
                  pvExtension, u32Function, pvParms, cbParms));
 
-    RT_NOREF(pvParms, cbParms);
+    RT_NOREF(u32Function, pvParms, cbParms);
 
     SharedClipboard *pThis = reinterpret_cast<SharedClipboard *>(pvExtension);
     AssertPtrReturn(pThis, VERR_INVALID_POINTER);
