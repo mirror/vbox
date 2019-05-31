@@ -9294,6 +9294,7 @@ int Console::i_changeClipboardMode(ClipboardMode_T aClipboardMode)
 
     return vrc;
 #else
+    RT_NOREF(aClipboardMode);
     return VERR_NOT_IMPLEMENTED;
 #endif
 }
