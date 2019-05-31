@@ -5372,7 +5372,11 @@ HRESULT Console::i_onClipboardModeChange(ClipboardMode_T aClipboardMode)
         if (   mMachineState == MachineState_Running
             || mMachineState == MachineState_Teleporting
             || mMachineState == MachineState_LiveSnapshotting)
-            i_changeClipboardMode(aClipboardMode);
+        {
+            int vrc = i_changeClipboardMode(aClipboardMode);
+            if (RT_FAILURE(vrc))
+                rc = E_FAIL; /** @todo r=andy Set error info here? */
+        }
         else
             rc = i_setInvalidMachineStateError();
         ptrVM.release();
@@ -9256,6 +9260,7 @@ DECLCALLBACK(void) Console::i_vmstateChangeCallback(PUVM pUVM, VMSTATE enmState,
  */
 int Console::i_changeClipboardMode(ClipboardMode_T aClipboardMode)
 {
+#ifdef VBOX_WITH_SHARED_CLIPBOARD
     VMMDev *pVMMDev = m_pVMMDev;
     AssertPtrReturn(pVMMDev, VERR_INVALID_POINTER);
 
@@ -9283,11 +9288,14 @@ int Console::i_changeClipboardMode(ClipboardMode_T aClipboardMode)
             break;
     }
 
-    int rc = pVMMDev->hgcmHostCall("VBoxSharedClipboard", VBOX_SHARED_CLIPBOARD_HOST_FN_SET_MODE, 1, &parm);
-    if (RT_FAILURE(rc))
-        LogRel(("Shared Clipboard: Error changing mode: %Rrc\n", rc));
+    int vrc = pVMMDev->hgcmHostCall("VBoxSharedClipboard", VBOX_SHARED_CLIPBOARD_HOST_FN_SET_MODE, 1, &parm);
+    if (RT_FAILURE(vrc))
+        LogRel(("Shared Clipboard: Error changing mode: %Rrc\n", vrc));
 
-    return rc;
+    return vrc;
+#else
+    return VERR_NOT_IMPLEMENTED;
+#endif
 }
 
 /**
