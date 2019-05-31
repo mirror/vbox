@@ -32,6 +32,7 @@
 #include "UIApplianceImportEditorWidget.h"
 #include "UIEmptyFilePathSelector.h"
 #include "UIIconPool.h"
+#include "UIMessageCenter.h"
 #include "UIVirtualBoxManager.h"
 #include "UIWizardImportApp.h"
 #include "UIWizardImportAppPageExpert.h"
@@ -381,10 +382,19 @@ bool UIWizardImportAppPageExpert::validatePage()
     const bool fIsSourceCloudOne = fieldImp("isSourceCloudOne").toBool();
     if (fIsSourceCloudOne)
     {
-        /* Give changed VSD back to appliance: */
-        /// @todo check for possible errors
+        /* Check whether we have proper VSD form: */
         CVirtualSystemDescriptionForm comForm = fieldImp("vsdForm").value<CVirtualSystemDescriptionForm>();
-        comForm.GetVirtualSystemDescription();
+        fResult = comForm.isNotNull();
+        Assert(fResult);
+
+        /* Give changed VSD back to appliance: */
+        if (fResult)
+        {
+            comForm.GetVirtualSystemDescription();
+            fResult = comForm.isOk();
+            if (!fResult)
+                msgCenter().cannotAcquireVirtualSystemDescriptionFormProperty(comForm);
+        }
     }
 
     /* Try to import appliance: */
@@ -413,10 +423,6 @@ void UIWizardImportAppPageExpert::updatePageAppearance()
 
 void UIWizardImportAppPageExpert::sltHandleSourceChange()
 {
-    /* Block account combo and instance list: */
-    m_pAccountComboBox->blockSignals(true);
-    m_pAccountInstanceList->blockSignals(true);
-
     /* Update tool-tip: */
     updateSourceComboToolTip();
 
@@ -428,10 +434,6 @@ void UIWizardImportAppPageExpert::sltHandleSourceChange()
     populateFormProperties();
     populateFormPropertiesTable();
     emit completeChanged();
-
-    /* Unblock account combo and instance list: */
-    m_pAccountInstanceList->blockSignals(false);
-    m_pAccountComboBox->blockSignals(false);
 }
 
 void UIWizardImportAppPageExpert::sltFilePathChangeHandler()
@@ -449,18 +451,12 @@ void UIWizardImportAppPageExpert::sltFilePathChangeHandler()
 
 void UIWizardImportAppPageExpert::sltHandleAccountComboChange()
 {
-    /* Block instance list: */
-    m_pAccountInstanceList->blockSignals(true);
-
     /* Refresh required settings: */
     populateAccountProperties();
     populateAccountInstances();
     populateFormProperties();
     populateFormPropertiesTable();
     emit completeChanged();
-
-    /* Unblock instance list: */
-    m_pAccountInstanceList->blockSignals(false);
 }
 
 void UIWizardImportAppPageExpert::sltHandleAccountButtonClick()
