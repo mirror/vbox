@@ -41,9 +41,8 @@
 #include <iprt/errcore.h>
 #include <VBox/log.h>
 
-#if 1 /** Not enabled yet, needs more testing first. */
-# define VBOX_CLIPBOARD_WITH_UNICODE_SUPPORT 1
-#endif
+/** Also handle Unicode entries. */
+#define VBOX_CLIPBOARD_WITH_UNICODE_SUPPORT 1
 
 VBoxClipboardWinDataObject::VBoxClipboardWinDataObject(SharedClipboardProvider *pProvider,
                                                        LPFORMATETC pFormatEtc, LPSTGMEDIUM pStgMed, ULONG cFormats)
@@ -52,6 +51,7 @@ VBoxClipboardWinDataObject::VBoxClipboardWinDataObject(SharedClipboardProvider *
     , m_cFormats(0)
     , m_pProvider(pProvider)
     , m_pStream(NULL)
+    , m_uObjIdx(0)
 {
     AssertPtr(pProvider);
 
@@ -393,57 +393,51 @@ STDMETHODIMP VBoxClipboardWinDataObject::GetData(LPFORMATETC pFormatEtc, LPSTGME
 
             LogFlowFunc(("FormatIndex_FileDescriptor%s\n", fUnicode ? "W" : "A"));
 
-            SharedClipboardURIList uriList;
-            int rc = m_pProvider->ReadMetaData(uriList); /** @todo Do this asynchronously some time earlier? */
-
-#if 0
-    SharedClipboardURIObject *pObj1 = new SharedClipboardURIObject(SharedClipboardURIObject::Type_File, "foobar.baz1");
-    pObj1->SetSize(_64M);
-    uriList.AppendURIObject(pObj1);
-#endif
-
+            int rc = m_pProvider->ReadMetaData(); /** @todo Do this asynchronously some time earlier? */
             if (   RT_SUCCESS(rc)
-                && !uriList.IsEmpty())
+                && !m_pProvider->GetURIList().IsEmpty())
             {
                 HGLOBAL hGlobal;
-                rc = createFileGroupDescriptorFromURIList(uriList, fUnicode, &hGlobal);
+                rc = createFileGroupDescriptorFromURIList(m_pProvider->GetURIList(), fUnicode, &hGlobal);
                 if (RT_SUCCESS(rc))
                 {
-                    LogFlowFunc(("FOO1\n"));
-
                     pMedium->tymed   = TYMED_HGLOBAL;
                     pMedium->hGlobal = hGlobal;
                     /* Note: hGlobal now is being owned by pMedium / the caller. */
 
-                    LogFlowFunc(("FOO2\n"));
                     hr = S_OK;
                 }
             }
-            LogFlowFunc(("FOO2.1\n"));
             break;
         }
 
         case FormatIndex_FileContents:
         {
-            LogFlowFunc(("FormatIndex_FileContents\n"));
+            LogFlowFunc(("FormatIndex_FileContents: m_uObjIdx=%u\n", m_uObjIdx));
 
-            /* Hand-in the provider so that our IStream implementation can continue working with it. */
-            hr = VBoxClipboardWinStreamImpl::Create(m_pProvider, &m_pStream);
-            if (SUCCEEDED(hr))
+            SharedClipboardURIObject *pURIObj = m_pProvider->GetURIList().At(m_uObjIdx);
+            if (pURIObj)
             {
-                /* Hand over the stream to the caller. */
-                pMedium->tymed = TYMED_ISTREAM;
-                pMedium->pstm  = m_pStream;
-            }
+                /* Hand-in the provider so that our IStream implementation can continue working with it. */
+                hr = VBoxClipboardWinStreamImpl::Create(m_pProvider, pURIObj, &m_pStream);
+                if (SUCCEEDED(hr))
+                {
+                    /* Hand over the stream to the caller. */
+                    pMedium->tymed = TYMED_ISTREAM;
+                    pMedium->pstm  = m_pStream;
 
+                    /* Handle next object. */
+                    m_uObjIdx++;
+                }
+            }
+            else
+                LogFunc(("No object with index %u found, skipping\n", m_uObjIdx));
             break;
         }
 
         default:
             break;
     }
-
-    LogFlowFunc(("FOO3\n"));
 
     /* Error handling; at least return some basic data. */
     if (FAILED(hr))
@@ -454,12 +448,8 @@ STDMETHODIMP VBoxClipboardWinDataObject::GetData(LPFORMATETC pFormatEtc, LPSTGME
         pMedium->pUnkForRelease = NULL;
     }
 
-LogFlowFunc(("FOO4\n"));
-
     if (hr == DV_E_FORMATETC)
         LogRel(("Clipboard: Error handling format\n"));
-
-LogFlowFunc(("FOO5\n"));
 
     LogFlowFunc(("hr=%Rhrc\n", hr));
     return hr;

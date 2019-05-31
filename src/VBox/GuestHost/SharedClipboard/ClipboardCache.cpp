@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Shared Clipboard - Cache handling.
+ * Shared Clipboard - Area handling.
  */
 
 /*
@@ -33,7 +33,7 @@
 
 #include <VBox/log.h>
 
-SharedClipboardCache::SharedClipboardCache(void)
+SharedClipboardArea::SharedClipboardArea(void)
     : m_cRefs(0)
     , m_fOpen(0)
     , m_hDir(NIL_RTDIR)
@@ -44,10 +44,11 @@ SharedClipboardCache::SharedClipboardCache(void)
         throw rc;
 }
 
-SharedClipboardCache::SharedClipboardCache(const char *pszPath,
-                                           SHAREDCLIPBOARDAREAID uID /* = NIL_SHAREDCLIPBOARDAREAID */,
-                                           SHAREDCLIPBOARDCACHEFLAGS fFlags /* = SHAREDCLIPBOARDCACHE_FLAGS_NONE */)
-    : m_cRefs(0)
+SharedClipboardArea::SharedClipboardArea(const char *pszPath,
+                                         SHAREDCLIPBOARDAREAID uID /* = NIL_SHAREDCLIPBOARDAREAID */,
+                                         SHAREDCLIPBOARDAREAFLAGS fFlags /* = SHAREDCLIPBOARDAREA_FLAGS_NONE */)
+    : m_tsCreatedMs(0)
+    , m_cRefs(0)
     , m_fOpen(0)
     , m_hDir(NIL_RTDIR)
     , m_uID(uID)
@@ -60,7 +61,7 @@ SharedClipboardCache::SharedClipboardCache(const char *pszPath,
         throw rc;
 }
 
-SharedClipboardCache::~SharedClipboardCache(void)
+SharedClipboardArea::~SharedClipboardArea(void)
 {
     /* Only make sure to not leak any handles and stuff, don't delete any
      * directories / files here. */
@@ -71,47 +72,47 @@ SharedClipboardCache::~SharedClipboardCache(void)
 }
 
 /**
- * Adds a reference to a Shared Clipboard cache.
+ * Adds a reference to a Shared Clipboard area.
  *
  * @returns New reference count.
  */
-uint32_t SharedClipboardCache::AddRef(void)
+uint32_t SharedClipboardArea::AddRef(void)
 {
     return ASMAtomicIncU32(&m_cRefs);
 }
 
 /**
- * Removes a reference from a Shared Clipboard cache.
+ * Removes a reference from a Shared Clipboard area.
  *
  * @returns New reference count.
  */
-uint32_t SharedClipboardCache::Release(void)
+uint32_t SharedClipboardArea::Release(void)
 {
     Assert(m_cRefs);
     return ASMAtomicDecU32(&m_cRefs);
 }
 
 /**
- * Locks a Shared Clipboard cache.
+ * Locks a Shared Clipboard area.
  *
  * @returns VBox status code.
  */
-int SharedClipboardCache::Lock(void)
+int SharedClipboardArea::Lock(void)
 {
     return RTCritSectEnter(&m_CritSect);
 }
 
 /**
- * Unlocks a Shared Clipboard cache.
+ * Unlocks a Shared Clipboard area.
  *
  * @returns VBox status code.
  */
-int SharedClipboardCache::Unlock(void)
+int SharedClipboardArea::Unlock(void)
 {
     return RTCritSectLeave(&m_CritSect);
 }
 
-int SharedClipboardCache::AddFile(const char *pszFile)
+int SharedClipboardArea::AddFile(const char *pszFile)
 {
     AssertPtrReturn(pszFile, VERR_INVALID_POINTER);
 
@@ -120,7 +121,7 @@ int SharedClipboardCache::AddFile(const char *pszFile)
     return VINF_SUCCESS;
 }
 
-int SharedClipboardCache::AddDir(const char *pszDir)
+int SharedClipboardArea::AddDir(const char *pszDir)
 {
     AssertPtrReturn(pszDir, VERR_INVALID_POINTER);
 
@@ -129,17 +130,17 @@ int SharedClipboardCache::AddDir(const char *pszDir)
     return VINF_SUCCESS;
 }
 
-int SharedClipboardCache::initInternal(void)
+int SharedClipboardArea::initInternal(void)
 {
     return RTCritSectInit(&m_CritSect);
 }
 
-int SharedClipboardCache::destroyInternal(void)
+int SharedClipboardArea::destroyInternal(void)
 {
     return RTCritSectDelete(&m_CritSect);
 }
 
-int SharedClipboardCache::closeInternal(void)
+int SharedClipboardArea::closeInternal(void)
 {
     int rc;
     if (this->m_hDir != NIL_RTDIR)
@@ -151,89 +152,112 @@ int SharedClipboardCache::closeInternal(void)
     else
         rc = VINF_SUCCESS;
 
-    this->m_fOpen = SHAREDCLIPBOARDCACHE_FLAGS_NONE;
-    this->m_uID   = NIL_SHAREDCLIPBOARDAREAID;
+    if (RT_SUCCESS(rc))
+        rc = RTDirRemoveRecursive(m_strPathAbs.c_str(), RTDIRRMREC_F_CONTENT_AND_DIR);
+
+    if (RT_SUCCESS(rc))
+    {
+        this->m_fOpen = SHAREDCLIPBOARDAREA_FLAGS_NONE;
+        this->m_uID   = NIL_SHAREDCLIPBOARDAREAID;
+    }
 
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
 /**
- * Construcuts the cache's base path.
+ * Construcuts an area's base path.
+ * Note: This does *not* create any directories or whatsoever!
  *
  * @returns VBox status code.
- * @param   pszBase             Base path to use for the cache.
- * @param   pszPath             Where to store the constructured cache base path.
- * @param   cbPath              Size (in bytes) of the constructured cache base path.
+ * @param   pszBase             Base path to use for the area.
+ * @param   uID                 Area ID to use for the path.
+ * @param   pszPath             Where to store the constructured area base path.
+ * @param   cbPath              Size (in bytes) of the constructured area base path.
  */
-int SharedClipboardCache::pathConstruct(const char *pszBase, char *pszPath, size_t cbPath)
+/* static */
+int SharedClipboardArea::PathConstruct(const char *pszBase, SHAREDCLIPBOARDAREAID uID, char *pszPath, size_t cbPath)
 {
-    RTStrPrintf(pszPath, cbPath, "%s", pszBase);
+    LogFlowFunc(("pszBase=%s, uAreaID=%RU32\n", pszBase, uID));
 
-    /** @todo On Windows we also could use the registry to override
-     *        this path, on Posix a dotfile and/or a guest property
-     *        can be used. */
-
-    /* Append our base cache directory. */
-    int rc = RTPathAppend(pszPath, sizeof(pszPath), "VirtualBox Shared Clipboards"); /** @todo Make this tag configurable? */
-    if (RT_FAILURE(rc))
-        return rc;
-
-    /* Create it when necessary. */
-    if (!RTDirExists(pszPath))
+    int rc = RTStrCopy(pszPath, cbPath, pszBase);
+    if (RT_SUCCESS(rc))
     {
-        rc = RTDirCreateFullPath(pszPath, RTFS_UNIX_IRWXU);
-        if (RT_FAILURE(rc))
-            return rc;
+        /** @todo On Windows we also could use the registry to override
+         *        this path, on Posix a dotfile and/or a guest property
+         *        can be used. */
+
+        /* Append our base area directory. */
+        rc = RTPathAppend(pszPath, cbPath, "VirtualBox Shared Clipboards"); /** @todo Make this tag configurable? */
+        if (RT_SUCCESS(rc))
+        {
+            rc = RTPathAppend(pszPath, cbPath, "Clipboard-");
+            if (RT_SUCCESS(rc))
+            {
+                char szID[8];
+                rc = RTStrFormatU32(szID, sizeof(szID), uID, 10, 0, 0, 0);
+                if (RT_SUCCESS(rc))
+                {
+                    rc = RTStrCat(pszPath, cbPath, szID);
+                }
+            }
+        }
     }
 
-    rc = RTPathAppend(pszPath, sizeof(pszPath), "Clipboard");
+    LogFlowFunc(("rc=%Rrc, szPath=%s\n", rc, pszPath));
     return rc;
 }
 
-int SharedClipboardCache::Close(void)
+int SharedClipboardArea::Close(void)
 {
     return closeInternal();
 }
 
-SHAREDCLIPBOARDAREAID SharedClipboardCache::GetAreaID(void) const
+SHAREDCLIPBOARDAREAID SharedClipboardArea::GetAreaID(void) const
 {
     return this->m_uID;
 }
 
-const char *SharedClipboardCache::GetDirAbs(void) const
+const char *SharedClipboardArea::GetDirAbs(void) const
 {
     return this->m_strPathAbs.c_str();
 }
 
-bool SharedClipboardCache::IsOpen(void) const
+uint32_t SharedClipboardArea::GetRefCount(void)
+{
+    return ASMAtomicReadU32(&m_cRefs);
+}
+
+bool SharedClipboardArea::IsOpen(void) const
 {
     return (this->m_hDir != NULL);
 }
 
-int SharedClipboardCache::OpenEx(const char *pszPath,
-                                 SHAREDCLIPBOARDAREAID uID /* = NIL_SHAREDCLIPBOARDAREAID */,
-                                 SHAREDCLIPBOARDCACHEFLAGS fFlags /* = SHAREDCLIPBOARDCACHE_FLAGS_NONE */)
+int SharedClipboardArea::OpenEx(const char *pszPath,
+                                SHAREDCLIPBOARDAREAID uID /* = NIL_SHAREDCLIPBOARDAREAID */,
+                                SHAREDCLIPBOARDAREAFLAGS fFlags /* = SHAREDCLIPBOARDAREA_FLAGS_NONE */)
 {
     AssertPtrReturn(pszPath, VERR_INVALID_POINTER);
     AssertReturn(fFlags == 0, VERR_INVALID_PARAMETER); /* Flags not supported yet. */
 
-    char szCacheDir[RTPATH_MAX];
-    int rc = pathConstruct(pszPath, szCacheDir, sizeof(szCacheDir));
+    char szAreaDir[RTPATH_MAX];
+    int rc = SharedClipboardArea::PathConstruct(pszPath, uID, szAreaDir, sizeof(szAreaDir));
     if (RT_SUCCESS(rc))
     {
-        /* Create it (only accessible by the current user) */
-        rc = RTDirCreateUniqueNumbered(szCacheDir, sizeof(szCacheDir), RTFS_UNIX_IRWXU, 3, '-');
+        if (!RTDirExists(szAreaDir))
+            rc = RTDirCreateFullPath(szAreaDir, RTFS_UNIX_IRWXU);
+
         if (RT_SUCCESS(rc))
         {
             RTDIR hDir;
-            rc = RTDirOpen(&hDir, szCacheDir);
+            rc = RTDirOpen(&hDir, szAreaDir);
             if (RT_SUCCESS(rc))
             {
-                this->m_hDir       = hDir;
-                this->m_strPathAbs = szCacheDir;
-                this->m_fOpen      = fFlags;
-                this->m_uID        = uID;
+                this->m_hDir        = hDir;
+                this->m_strPathAbs  = szAreaDir;
+                this->m_fOpen       = fFlags;
+                this->m_uID         = uID;
+                this->m_tsCreatedMs = RTTimeMilliTS();
             }
         }
     }
@@ -242,8 +266,8 @@ int SharedClipboardCache::OpenEx(const char *pszPath,
     return rc;
 }
 
-int SharedClipboardCache::OpenTemp(SHAREDCLIPBOARDAREAID uID,
-                                   SHAREDCLIPBOARDCACHEFLAGS fFlags /* = SHAREDCLIPBOARDCACHE_FLAGS_NONE */)
+int SharedClipboardArea::OpenTemp(SHAREDCLIPBOARDAREAID uID,
+                                  SHAREDCLIPBOARDAREAFLAGS fFlags /* = SHAREDCLIPBOARDAREA_FLAGS_NONE */)
 {
     AssertReturn(fFlags == 0, VERR_INVALID_PARAMETER); /* Flags not supported yet. */
 
@@ -260,7 +284,7 @@ int SharedClipboardCache::OpenTemp(SHAREDCLIPBOARDAREAID uID,
     return rc;
 }
 
-int SharedClipboardCache::Reset(bool fDeleteContent)
+int SharedClipboardArea::Reset(bool fDeleteContent)
 {
     int rc = closeInternal();
     if (RT_SUCCESS(rc))
@@ -280,7 +304,7 @@ int SharedClipboardCache::Reset(bool fDeleteContent)
     return rc;
 }
 
-int SharedClipboardCache::Reopen(void)
+int SharedClipboardArea::Reopen(void)
 {
     if (this->m_strPathAbs.isEmpty())
         return VERR_NOT_FOUND;
@@ -288,7 +312,7 @@ int SharedClipboardCache::Reopen(void)
     return OpenEx(this->m_strPathAbs.c_str(), this->m_fOpen);
 }
 
-int SharedClipboardCache::Rollback(void)
+int SharedClipboardArea::Rollback(void)
 {
     if (this->m_strPathAbs.isEmpty())
         return VINF_SUCCESS;

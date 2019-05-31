@@ -113,7 +113,7 @@ int vboxClipboardSvcURITransferCreate(PVBOXCLIPBOARDCLIENTURITRANSFER pTransfer,
     AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
     AssertPtrReturn(pState,    VERR_INVALID_POINTER);
 
-    int rc = pTransfer->Cache.OpenTemp(SHAREDCLIPBOARDCACHE_FLAGS_NONE);
+    int rc = pTransfer->Cache.OpenTemp(SHAREDCLIPBOARDAREA_FLAGS_NONE);
     if (RT_SUCCESS(rc))
     {
         rc = SharedClipboardMetaDataInit(&pTransfer->Meta);
@@ -127,6 +127,7 @@ int vboxClipboardSvcURITransferCreate(PVBOXCLIPBOARDCLIENTURITRANSFER pTransfer,
         }
     }
 
+    LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
@@ -208,7 +209,11 @@ int vboxClipboardSvcURIHandler(uint32_t u32ClientID,
 {
     RT_NOREF(u32ClientID, paParms, tsArrival, pfAsync);
 
+    LogFlowFunc(("u32ClientID=%RU32, u32Function=%RU32, cParms=%RU32, g_pfnExtension=%p\n",
+                 u32ClientID, u32Function, cParms, g_pfnExtension));
+
     const PVBOXCLIPBOARDCLIENTDATA pClientData = (PVBOXCLIPBOARDCLIENTDATA)pvClient;
+    AssertPtrReturn(pClientData, VERR_INVALID_POINTER);
 
     /* Check if we've the right mode set. */
     int rc = VERR_ACCESS_DENIED; /* Play safe. */
@@ -273,8 +278,7 @@ int vboxClipboardSvcURIHandler(uint32_t u32ClientID,
             LogFlowFunc(("VBOX_SHARED_CLIPBOARD_FN_READ_DATA_HDR\n"));
             if (cParms == VBOX_SHARED_CLIPBOARD_CPARMS_READ_DATA_HDR)
             {
-                if (   RT_SUCCESS(rc)
-                    && g_pfnExtension)
+                if (g_pfnExtension)
                 {
                     VBOXCLIPBOARDEXTAREAPARMS parms;
                     RT_ZERO(parms);
@@ -640,10 +644,6 @@ int vboxClipboardSvcURIHandler(uint32_t u32ClientID,
             AssertMsgFailed(("Not implemented\n"));
             break;
     }
-
-#ifdef DEBUG_andy
-    AssertRC(rc);
-#endif
 
     LogFlowFuncLeaveRC(rc);
     return rc;

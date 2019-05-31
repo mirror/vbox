@@ -146,8 +146,14 @@ ifdef VBOX_WITH_GUEST_PROPS
  	VBoxGuestR3LibHostVersion.cpp
 endif
 ifdef VBOX_WITH_SHARED_CLIPBOARD
+ VBoxGuestR3Lib_DEFS      += VBOX_WITH_SHARED_CLIPBOARD_GUEST
  VBoxGuestR3Lib_SOURCES   += \
 	VBoxGuestR3LibClipboard.cpp
+ ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+ VBoxGuestR3Lib_SOURCES   += \
+	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardMetaData.cpp \
+	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardMIME.cpp
+ endif
 endif
 ifdef VBOX_WITH_SHARED_FOLDERS
  VBoxGuestR3Lib_SOURCES   += \

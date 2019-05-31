@@ -13555,6 +13555,79 @@ HRESULT SessionMachine::onSessionEnd(const ComPtr<ISession> &aSession,
     return S_OK;
 }
 
+HRESULT SessionMachine::clipboardAreaRegister(const std::vector<com::Utf8Str> &aParms, ULONG *aID)
+{
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+    ULONG uID;
+    int rc = mParent->i_onClipboardAreaRegister(aParms, &uID);
+    if (RT_SUCCESS(rc))
+    {
+        if (aID)
+            *aID = uID;
+        return S_OK;
+    }
+    return E_FAIL;
+#else
+    RT_NOREF(aParms, aID);
+    ReturnComNotImplemented();
+#endif
+}
+
+HRESULT SessionMachine::clipboardAreaUnregister(ULONG aID)
+{
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+    return mParent->i_onClipboardAreaUnregister(aID);
+#else
+    RT_NOREF(aID);
+    ReturnComNotImplemented();
+#endif
+}
+
+HRESULT SessionMachine::clipboardAreaAttach(ULONG aID)
+{
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+    return mParent->i_onClipboardAreaAttach(aID);
+#else
+    RT_NOREF(aID);
+    ReturnComNotImplemented();
+#endif
+}
+HRESULT SessionMachine::clipboardAreaDetach(ULONG aID)
+{
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+    return mParent->i_onClipboardAreaDetach(aID);
+#else
+    RT_NOREF(aID);
+    ReturnComNotImplemented();
+#endif
+}
+
+HRESULT SessionMachine::clipboardAreaGetMostRecent(ULONG *aID)
+{
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+    ULONG uID = mParent->i_onClipboardAreaGetMostRecent();
+    if (aID)
+        *aID = uID;
+    return S_OK;
+#else
+    RT_NOREF(aID);
+    ReturnComNotImplemented();
+#endif
+}
+
+HRESULT SessionMachine::clipboardAreaGetRefCount(ULONG aID, ULONG *aRefCount)
+{
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+    ULONG uRefCount = mParent->i_onClipboardAreaGetRefCount(aID);
+    if (aRefCount)
+        *aRefCount = uRefCount;
+    return S_OK;
+#else
+    RT_NOREF(aID, aRefCount);
+    ReturnComNotImplemented();
+#endif
+}
+
 HRESULT SessionMachine::pullGuestProperties(std::vector<com::Utf8Str> &aNames,
                                             std::vector<com::Utf8Str> &aValues,
                                             std::vector<LONG64>       &aTimestamps,
@@ -15038,6 +15111,41 @@ HRESULT Machine::onSessionEnd(const ComPtr<ISession> &aSession,
 
 HRESULT Machine::finishOnlineMergeMedium()
 {
+    ReturnComNotImplemented();
+}
+
+HRESULT Machine::clipboardAreaRegister(const std::vector<com::Utf8Str> &aParms, ULONG *aID)
+{
+    RT_NOREF(aParms, aID);
+    ReturnComNotImplemented();
+}
+
+HRESULT Machine::clipboardAreaUnregister(ULONG aID)
+{
+    RT_NOREF(aID);
+    ReturnComNotImplemented();
+}
+
+HRESULT Machine::clipboardAreaAttach(ULONG aID)
+{
+    RT_NOREF(aID);
+    ReturnComNotImplemented();
+}
+HRESULT Machine::clipboardAreaDetach(ULONG aID)
+{
+    RT_NOREF(aID);
+    ReturnComNotImplemented();
+}
+
+HRESULT Machine::clipboardAreaGetMostRecent(ULONG *aID)
+{
+    RT_NOREF(aID);
+    ReturnComNotImplemented();
+}
+
+HRESULT Machine::clipboardAreaGetRefCount(ULONG aID, ULONG *aRefCount)
+{
+    RT_NOREF(aID, aRefCount);
     ReturnComNotImplemented();
 }
 

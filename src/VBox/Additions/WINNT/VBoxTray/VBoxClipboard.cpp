@@ -682,10 +682,7 @@ DECLCALLBACK(int) VBoxClipboardInit(const PVBOXSERVICEENV pEnv, void **ppInstanc
         /* Not critical, the rest of the clipboard might work. */
     }
     else
-    {
         LogRel(("Clipboard: Initialized OLE\n"));
-        rc = VBoxClipboardWinURIInit(&pCtx->Win.URI, SharedClipboardProvider::SourceType_VbglR3);
-    }
 #endif
 
     if (RT_SUCCESS(rc))
@@ -699,7 +696,16 @@ DECLCALLBACK(int) VBoxClipboardInit(const PVBOXSERVICEENV pEnv, void **ppInstanc
             rc = vboxClipboardCreateWindow(pCtx);
             if (RT_SUCCESS(rc))
             {
-                *ppInstance = pCtx;
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+                SHAREDCLIPBOARDPROVIDERCREATIONCTX creationCtx;
+                RT_ZERO(creationCtx);
+                creationCtx.enmSource = SHAREDCLIPBOARDPROVIDERSOURCE_VBGLR3;
+                creationCtx.u.VBGLR3.uClientID = pCtx->u32ClientID;
+
+                rc = VBoxClipboardWinURIInit(&pCtx->Win.URI, &creationCtx);
+                if (RT_SUCCESS(rc))
+#endif
+                    *ppInstance = pCtx;
             }
             else
             {

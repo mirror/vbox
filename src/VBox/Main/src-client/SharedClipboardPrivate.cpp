@@ -60,17 +60,10 @@ DECLCALLBACK(int) SharedClipboard::hostServiceCallback(void *pvExtension, uint32
 
     RT_NOREF(pvParms, cbParms);
 
-    SharedClipboard *pSharedClipboard = reinterpret_cast<SharedClipboard *>(pvExtension);
-    AssertPtrReturn(pSharedClipboard, VERR_INVALID_POINTER);
+    SharedClipboard *pThis = reinterpret_cast<SharedClipboard *>(pvExtension);
+    AssertPtrReturn(pThis, VERR_INVALID_POINTER);
 
-    int rc;
-
-    switch (u32Function)
-    {
-        default:
-            rc = VERR_NOT_SUPPORTED;
-            break;
-    }
+    int rc = VINF_SUCCESS;
 
     LogFlowFuncLeaveRC(rc);
     return rc;

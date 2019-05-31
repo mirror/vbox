@@ -43,6 +43,7 @@ VBoxSharedClipboard_SOURCES.darwin = \
 	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-common.cpp \
 	darwin-pasteboard.cpp
 ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+ VBoxSharedClipboard_DEFS    += VBOX_WITH_SHARED_CLIPBOARD_HOST
  VBoxSharedClipboard_SOURCES += \
 	VBoxSharedClipboardSvc-uri.cpp \
 	VBoxSharedClipboardSvc-utils.cpp \
@@ -50,6 +51,7 @@ ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
 	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardMetaData.cpp \
 	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardPath.cpp \
 	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardProvider.cpp \
+	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardProvider-HostService.cpp \
 	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardURIList.cpp \
 	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardURIObject.cpp
 endif

@@ -138,6 +138,8 @@ public:
     void SendAudioSamples (void *pvSamples, uint32_t cSamples, VRDEAUDIOFORMAT format) const;
     void SendAudioVolume (uint16_t left, uint16_t right) const;
     void SendUSBRequest (uint32_t u32ClientId, void *pvParms, uint32_t cbParms) const;
+    void SendClipboard (uint32_t u32Function, uint32_t u32Format,
+                        void *pvData, uint32_t cbData, uint32_t *pcbActualRead) const;
 
     void QueryInfo (uint32_t index, void *pvBuffer, uint32_t cbBuffer, uint32_t *pcbOut) const;
 
@@ -219,11 +221,9 @@ private:
     void unlockConsoleVRDPServer (void);
 
     int mcClipboardRefs;
-    HGCMSVCEXTHANDLE mhClipboard;
     PFNVRDPCLIPBOARDEXTCALLBACK mpfnClipboardCallback;
 
     static DECLCALLBACK(int) ClipboardCallback (void *pvCallback, uint32_t u32ClientId, uint32_t u32Function, uint32_t u32Format, const void *pvData, uint32_t cbData);
-    static DECLCALLBACK(int) ClipboardServiceExtension (void *pvExtension, uint32_t u32Function, void *pvParm, uint32_t cbParms);
 
 #ifdef VBOX_WITH_USB
     RemoteUSBBackend *usbBackendFindByUUID (const Guid *pGuid);

@@ -39,6 +39,12 @@
 # ifdef VBOX_WITH_DRAG_AND_DROP
 #  include <VBox/GuestHost/DragAndDropDefs.h>
 # endif
+# ifdef VBOX_WITH_SHARED_CLIPBOARD
+#  include <VBox/GuestHost/SharedClipboard.h>
+#  ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+#   include <VBox/GuestHost/SharedClipboard-uri.h>
+#  endif
+# endif /* VBOX_WITH_SHARED_CLIPBOARD */
 
 /** @defgroup grp_vboxguest_lib     VirtualBox Guest Additions Library
  * @ingroup grp_vboxguest
@@ -595,6 +601,10 @@ typedef struct _VBGLR3GUESTCLIPBOARDCMDCTX
 VBGLR3DECL(int)     VbglR3ClipboardConnect(HGCMCLIENTID *pidClient);
 VBGLR3DECL(int)     VbglR3ClipboardDisconnect(HGCMCLIENTID idClient);
 VBGLR3DECL(int)     VbglR3ClipboardGetHostMsg(HGCMCLIENTID idClient, uint32_t *pMsg, uint32_t *pfFormats);
+#  ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+VBGLR3DECL(int)     VbglR3ClipboardReadMetaData(HGCMCLIENTID idClient, SharedClipboardURIList &URIList);
+VBGLR3DECL(int)     VbglR3ClipboardWriteMetaData(HGCMCLIENTID idClient, const SharedClipboardURIList &URIList);
+#  endif
 VBGLR3DECL(int)     VbglR3ClipboardReadData(HGCMCLIENTID idClient, uint32_t fFormat, void *pv, uint32_t cb, uint32_t *pcb);
 VBGLR3DECL(int)     VbglR3ClipboardReportFormats(HGCMCLIENTID idClient, uint32_t fFormats);
 VBGLR3DECL(int)     VbglR3ClipboardWriteData(HGCMCLIENTID idClient, uint32_t fFormat, void *pv, uint32_t cb);

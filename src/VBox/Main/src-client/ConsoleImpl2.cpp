@@ -3084,43 +3084,43 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
          * Shared Clipboard.
          */
         {
-            /* Load the service */
-            rc = pVMMDev->hgcmLoadService("VBoxSharedClipboard", "VBoxSharedClipboard");
-            if (RT_SUCCESS(rc))
+            if (SharedClipboard::createInstance(this /* pConsole */) == NULL)
             {
-                SharedClipboard *pSharedClipboard = SharedClipboard::createInstance(this /* pConsole */);
-                if (pSharedClipboard)
+                rc = VERR_NO_MEMORY;
+            }
+            else
+            {
+                /* Load the service */
+                rc = pVMMDev->hgcmLoadService("VBoxSharedClipboard", "VBoxSharedClipboard");
+                if (RT_SUCCESS(rc))
                 {
-# ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST_DISABLED
+                    LogRel(("Shared Clipboard: Service loaded\n"));
                     HGCMSVCEXTHANDLE hDummy;
                     rc = HGCMHostRegisterServiceExtension(&hDummy, "VBoxSharedClipboard",
-                                                          &SharedClipboard::hostServiceCallback,
-                                                          pSharedClipboard);
+                                                          &Console::i_sharedClipboardServiceCallback,
+                                                          this /* pvExtension */);
                     if (RT_FAILURE(rc))
-                        LogRel(("Shared Clipboard: Cannot register service extension, rc=%Rrc\n", rc));
-# endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
-
-                    if (RT_SUCCESS(rc))
                     {
-                        LogRel(("Shared Clipboard: Service loaded\n"));
-
+                        LogRel(("Shared Clipboard: Cannot register service extension, rc=%Rrc\n", rc));
+                    }
+                    else
+                    {
                         /* Set initial clipboard mode. */
                         ClipboardMode_T mode = ClipboardMode_Disabled;
                         hrc = pMachine->COMGETTER(ClipboardMode)(&mode); H();
+
                         rc = i_changeClipboardMode(mode);
                         if (RT_SUCCESS(rc))
                         {
                             /* Setup the service. */
                             VBOXHGCMSVCPARM parm;
                             HGCMSvcSetU32(&parm, !i_useHostClipboard());
-                            rc = pSharedClipboard->hostCall(VBOX_SHARED_CLIPBOARD_HOST_FN_SET_HEADLESS, 1, &parm);
+                            rc = SHAREDCLIPBOARDINST()->hostCall(VBOX_SHARED_CLIPBOARD_HOST_FN_SET_HEADLESS, 1, &parm);
                             if (RT_FAILURE(rc))
                                 LogRel(("Shared Clipboard: Unable to set initial headless mode, rc=%Rrc\n", rc));
                         }
                     }
                 }
-                else
-                    rc = VERR_NO_MEMORY;
             }
 
             if (RT_FAILURE(rc))

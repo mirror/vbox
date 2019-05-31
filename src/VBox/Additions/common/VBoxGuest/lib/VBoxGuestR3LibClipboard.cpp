@@ -263,15 +263,13 @@ static int vbglR3ClipboardReadDataChunk(HGCMCLIENTID idClient, PVBOXCLIPBOARDDAT
  * @returns IPRT status code.
  * @param   idClient            The client id returned by VbglR3ClipboardConnect().
  * @param   pDataHdr            Where to store the data header data.
- * @param   ppvData             Returns the received meta data. Needs to be free'd by the caller.
- * @param   pcbData             Where to store the size (in bytes) of the received meta data.
+ * @param   pMetaData           Returns the received meta data. Needs to be free'd by the caller.
  */
 static int vbglR3ClipboardReadMetaDataLoop(HGCMCLIENTID idClient, PVBOXCLIPBOARDDATAHDR pDataHdr,
-                                           void **ppvData, uint64_t *pcbData)
+                                           PSHAREDCLIPBOARDMETADATA pMetaData)
 {
-    AssertPtrReturn(pDataHdr, VERR_INVALID_POINTER);
-    AssertPtrReturn(ppvData,  VERR_INVALID_POINTER);
-    AssertPtrReturn(pcbData,  VERR_INVALID_POINTER);
+    AssertPtrReturn(pDataHdr,  VERR_INVALID_POINTER);
+    AssertPtrReturn(pMetaData, VERR_INVALID_POINTER);
 
     int rc;
     uint32_t cbDataRecv;
@@ -317,36 +315,29 @@ static int vbglR3ClipboardReadMetaDataLoop(HGCMCLIENTID idClient, PVBOXCLIPBOARD
 
                 LogFlowFunc(("Received %RU64 bytes of data\n", cbDataTmp));
 
-                *ppvData = pvDataTmp;
-                *pcbData = cbDataTmp;
+                pMetaData->pvMeta = pvDataTmp;
+                pMetaData->cbMeta = cbDataTmp;
+                pMetaData->cbUsed = cbDataTmp;
             }
             else
                 RTMemFree(pvDataTmp);
         }
     }
     else
-    {
-        *ppvData = NULL;
-        *pcbData = 0;
-    }
+        SharedClipboardMetaDataDestroy(pMetaData);
 
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
 /**
- * Main function for reading the actual meta data from the host, extended version.
+ * Reads the actual meta data from the host, extended version.
  *
  * @returns IPRT status code.
  * @param   idClient            The client id returned by VbglR3ClipboardConnect().
- * @param   pEnmType            Where to store the meta data type. Optional.
- * @param   ppvData             Returns the received meta data. Needs to be free'd by the caller.  Optional.
- * @param   pcbData             Where to store the size (in bytes) of the received meta data. Optional.
+ * @param   URIList             Where to store received meta data.
  */
-static int vbglR3ClipboardReadMetaDataMainEx(HGCMCLIENTID                 idClient,
-                                             VBGLR3GUESTDNDMETADATATYPE  *pEnmType,
-                                             void                       **ppvData,
-                                             uint32_t                    *pcbData)
+static int vbglR3ClipboardReadMetaDataEx(HGCMCLIENTID idClient, SharedClipboardURIList &URIList)
 {
     /* The rest is optional. */
 
@@ -358,12 +349,10 @@ static int vbglR3ClipboardReadMetaDataMainEx(HGCMCLIENTID                 idClie
     if (!dataHdr.pvMetaFmt)
         return VERR_NO_MEMORY;
 
-    SharedClipboardURIList lstURI;
+    SHAREDCLIPBOARDMETADATA dataMeta;
+    SharedClipboardMetaDataInit(&dataMeta);
 
-    void    *pvData = NULL;
-    uint64_t cbData = 0;
-
-    int rc = vbglR3ClipboardReadMetaDataLoop(idClient, &dataHdr, &pvData, &cbData);
+    int rc = vbglR3ClipboardReadMetaDataLoop(idClient, &dataHdr, &dataMeta);
     if (RT_SUCCESS(rc))
     {
         /**
@@ -378,14 +367,13 @@ static int vbglR3ClipboardReadMetaDataMainEx(HGCMCLIENTID                 idClie
         AssertPtr(dataHdr.pvMetaFmt);
         if (SharedClipboardMIMEHasFileURLs((char *)dataHdr.pvMetaFmt, dataHdr.cbMetaFmt)) /* URI data. */
         {
-            AssertPtr(pvData);
-            Assert(cbData);
+            rc = URIList.SetFromURIData(dataMeta.pvMeta, dataMeta.cbMeta, 0 /* fFlags */);
 
-            rc = lstURI.SetFromURIData(pvData, cbData, 0 /* fFlags */);
+        #if 0
             if (RT_SUCCESS(rc))
                 rc = vbglR3ClipboardReadURIData(idClient, &dataHdr);
 
-            if (RT_SUCCESS(rc)) /** @todo Remove this block as soon as we hand in DnDURIList. */
+            if (RT_SUCCESS(rc))
             {
                 if (pvData)
                 {
@@ -405,43 +393,25 @@ static int vbglR3ClipboardReadMetaDataMainEx(HGCMCLIENTID                 idClie
                 if (pvData)
                 {
                     memcpy(pvData, strData.c_str(), cbData);
-
-                    if (pEnmType)
-                        *pEnmType = VBGLR3GUESTDNDMETADATATYPE_URI_LIST;
                 }
                 else
                     rc =  VERR_NO_MEMORY;
             #endif
             }
+        #endif
         }
         else /* Raw data. */
         {
-            if (pEnmType)
-                *pEnmType = VBGLR3GUESTDNDMETADATATYPE_RAW;
+            /** @todo Implement this. */
         }
+
+        SharedClipboardMetaDataDestroy(&dataMeta);
     }
 
     if (dataHdr.pvMetaFmt)
+    {
         RTMemFree(dataHdr.pvMetaFmt);
-
-    if (RT_SUCCESS(rc))
-    {
-        if (   pvData
-            && cbData)
-        {
-            if (pcbData)
-                *pcbData = cbData;
-            if (ppvData)
-                *ppvData = pvData;
-            else
-                RTMemFree(pvData);
-        }
-    }
-    else if (   RT_FAILURE(rc)
-             && rc != VERR_CANCELLED)
-    {
-        if (pvData)
-            RTMemFree(pvData);
+        dataHdr.pvMetaFmt = NULL;
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -449,21 +419,21 @@ static int vbglR3ClipboardReadMetaDataMainEx(HGCMCLIENTID                 idClie
 }
 
 /**
- * Main function for reading the actual meta data from the host.
+ * Reads the actual meta data from the host.
  *
  * @returns IPRT status code.
  * @param   idClient            The client id returned by VbglR3ClipboardConnect().
- * @param   pMeta               Where to store the actual meta data received from the host.
+ * @param   URIList             Where to store received meta data.
  */
-static int vbglR3ClipboardReadMetaDataMain(HGCMCLIENTID idClient, PVBGLR3GUESTDNDMETADATA pMeta)
+VBGLR3DECL(int) VbglR3ClipboardReadMetaData(HGCMCLIENTID idClient, SharedClipboardURIList &URIList)
 {
-    AssertPtrReturn(pMeta, VERR_INVALID_POINTER);
+    return vbglR3ClipboardReadMetaDataEx(idClient, URIList);
+}
 
-    int rc = vbglR3ClipboardReadMetaDataMainEx(idClient,
-                                               &pMeta->enmType,
-                                               &pMeta->pvMeta,
-                                               &pMeta->cbMeta);
-    return rc;
+VBGLR3DECL(int) VbglR3ClipboardWriteMetaData(HGCMCLIENTID idClient, const SharedClipboardURIList &URIList)
+{
+    RT_NOREF(idClient, URIList);
+    return 0;
 }
 
 /**

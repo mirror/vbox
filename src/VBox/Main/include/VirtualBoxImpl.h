@@ -71,6 +71,9 @@ namespace settings
 class VirtualBoxClassFactory; /* See ../src-server/win/svcmain.cpp  */
 #endif
 
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+struct SharedClipboardAreaData;
+#endif
 
 class ATL_NO_VTABLE VirtualBox :
     public VirtualBoxWrap
@@ -169,6 +172,18 @@ public:
     void i_onSnapshotDeleted(const Guid &aMachineId, const Guid &aSnapshotId);
     void i_onSnapshotRestored(const Guid &aMachineId, const Guid &aSnapshotId);
     void i_onSnapshotChange(const Guid &aMachineId, const Guid &aSnapshotId);
+
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+    int i_onClipboardAreaCreate(SharedClipboardAreaData &AreaData, uint32_t fFlags);
+    int i_onClipboardAreaDestroy(SharedClipboardAreaData &AreaData);
+    int i_onClipboardAreaRegister(const std::vector<com::Utf8Str> &aParms, ULONG *aID);
+    int i_onClipboardAreaUnregister(ULONG aID);
+    int i_onClipboardAreaAttach(ULONG aID);
+    int i_onClipboardAreaDetach(ULONG aID);
+    ULONG i_onClipboardAreaGetMostRecent(void);
+    ULONG i_onClipboardAreaGetRefCount(ULONG aID);
+#endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
+
     void i_onGuestPropertyChange(const Guid &aMachineId, IN_BSTR aName, IN_BSTR aValue,
                                  IN_BSTR aFlags);
     void i_onNatRedirectChange(const Guid &aMachineId, ULONG ulSlot, bool fRemove, IN_BSTR aName,

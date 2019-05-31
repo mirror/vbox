@@ -125,7 +125,12 @@
 
 #include <VBox/VMMDev.h>
 
+#ifdef VBOX_WITH_SHARED_CLIPBOARD
 #include <VBox/HostServices/VBoxClipboardSvc.h>
+# ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+#  include "SharedClipboardPrivate.h"
+# endif
+#endif
 #include <VBox/HostServices/DragAndDropSvc.h>
 #ifdef VBOX_WITH_GUEST_PROPS
 # include <VBox/HostServices/GuestPropertySvc.h>
@@ -2084,7 +2089,11 @@ HRESULT Console::getUseHostClipboard(BOOL *aUseHostClipboard)
 
 HRESULT Console::setUseHostClipboard(BOOL aUseHostClipboard)
 {
-    mfUseHostClipboard = !!aUseHostClipboard;
+    if (mfUseHostClipboard != RT_BOOL(aUseHostClipboard))
+    {
+        mfUseHostClipboard = RT_BOOL(aUseHostClipboard);
+        LogRel(("Shared Clipboard: %s using host clipboard\n", mfUseHostClipboard ? "Enabled" : "Disabled"));
+    }
 
     return S_OK;
 }
@@ -8398,6 +8407,129 @@ HRESULT Console::i_setMachineState(MachineState_T aMachineState,
     return rc;
 }
 
+#ifdef VBOX_WITH_SHARED_CLIPBOARD
+/* static */
+DECLCALLBACK(int) Console::i_sharedClipboardServiceCallback(void *pvExtension, uint32_t u32Function,
+                                                            void *pvParms, uint32_t cbParms)
+{
+    LogFlowFunc(("pvExtension=%p, u32Function=%RU32, pvParms=%p, cbParms=%RU32\n",
+                 pvExtension, u32Function, pvParms, cbParms));
+
+    RT_NOREF(pvParms, cbParms);
+
+    Console *pThis = reinterpret_cast<Console *>(pvExtension);
+    AssertPtrReturn(pThis, VERR_INVALID_POINTER);
+
+    ComPtr<IInternalMachineControl> pControl = pThis->mControl;
+
+    int rc = VINF_SUCCESS;
+    HRESULT hrc;
+
+#define H()         AssertMsgBreakStmt(!FAILED(hrc), ("hrc=%Rhrc\n", hrc), rc = VERR_GENERAL_FAILURE)
+
+    switch (u32Function)
+    {
+        case VBOX_CLIPBOARD_EXT_FN_SET_CALLBACK:
+        {
+            LogFlowFunc(("VBOX_CLIPBOARD_EXT_FN_SET_CALLBACK\n"));
+        } break;
+
+        case VBOX_CLIPBOARD_EXT_FN_FORMAT_ANNOUNCE:
+        {
+            LogFlowFunc(("VBOX_CLIPBOARD_EXT_FN_FORMAT_ANNOUNCE\n"));
+
+            VBOXCLIPBOARDEXTPARMS *pParms = (VBOXCLIPBOARDEXTPARMS *)pvParms;
+
+            /* The guest announces clipboard formats. This must be delivered to all clients. */
+            if (pThis->mConsoleVRDPServer)
+                pThis->mConsoleVRDPServer->SendClipboard(VRDE_CLIPBOARD_FUNCTION_FORMAT_ANNOUNCE,
+                                                         pParms->u32Format,
+                                                         NULL,
+                                                         0,
+                                                         NULL);
+        } break;
+
+        case VBOX_CLIPBOARD_EXT_FN_DATA_READ:
+        {
+            LogFlowFunc(("VBOX_CLIPBOARD_EXT_FN_DATA_READ\n"));
+
+            VBOXCLIPBOARDEXTPARMS *pParms = (VBOXCLIPBOARDEXTPARMS *)pvParms;
+
+            /* The clipboard service expects that the pvData buffer will be filled
+             * with clipboard data. The server returns the data from the client that
+             * announced the requested format most recently.
+             */
+            if (pThis->mConsoleVRDPServer)
+                pThis->mConsoleVRDPServer->SendClipboard(VRDE_CLIPBOARD_FUNCTION_DATA_READ,
+                                                         pParms->u32Format,
+                                                         pParms->u.pvData,
+                                                         pParms->cbData,
+                                                         &pParms->cbData);
+        } break;
+
+        case VBOX_CLIPBOARD_EXT_FN_DATA_WRITE:
+        {
+            LogFlowFunc(("VBOX_CLIPBOARD_EXT_FN_DATA_WRITE\n"));
+
+            VBOXCLIPBOARDEXTPARMS *pParms = (VBOXCLIPBOARDEXTPARMS *)pvParms;
+
+            if (pThis->mConsoleVRDPServer)
+                pThis->mConsoleVRDPServer->SendClipboard(VRDE_CLIPBOARD_FUNCTION_DATA_WRITE,
+                                                         pParms->u32Format,
+                                                         pParms->u.pvData,
+                                                         pParms->cbData,
+                                                         NULL);
+        } break;
+
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+        case VBOX_CLIPBOARD_EXT_FN_AREA_REGISTER:
+        {
+            com::SafeArray<BSTR> abstrParms; /* Empty for now. */
+            ULONG uID;
+            hrc = pControl->ClipboardAreaRegister(ComSafeArrayAsInParam(abstrParms), &uID);      H();
+        } break;
+
+        case VBOX_CLIPBOARD_EXT_FN_AREA_UNREGISTER:
+        {
+            PVBOXCLIPBOARDEXTAREAPARMS pParms = (PVBOXCLIPBOARDEXTAREAPARMS)pvParms;
+            AssertPtrBreakStmt(pParms, rc = VERR_INVALID_POINTER);
+            hrc = pControl->ClipboardAreaUnregister(pParms->uID);                                H();
+        } break;
+
+        case VBOX_CLIPBOARD_EXT_FN_AREA_ATTACH:
+        {
+            PVBOXCLIPBOARDEXTAREAPARMS pParms = (PVBOXCLIPBOARDEXTAREAPARMS)pvParms;
+            AssertPtrBreakStmt(pParms, rc = VERR_INVALID_POINTER);
+            hrc = pControl->ClipboardAreaAttach(pParms->uID);                                    H();
+        } break;
+
+        case VBOX_CLIPBOARD_EXT_FN_AREA_DETACH:
+        {
+            PVBOXCLIPBOARDEXTAREAPARMS pParms = (PVBOXCLIPBOARDEXTAREAPARMS)pvParms;
+            AssertPtrBreakStmt(pParms, rc = VERR_INVALID_POINTER);
+            hrc = pControl->ClipboardAreaDetach(pParms->uID);                                    H();
+        } break;
+#endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
+
+        default:
+        {
+            rc = VERR_NOT_SUPPORTED;
+        } break;
+    }
+
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST_DISABLED
+    int rc2 = SharedClipboard::hostServiceCallback(SHAREDCLIPBOARDINST(), u32Function, pvParms, cbParms);
+    if (RT_SUCCESS(rc))
+        rc = rc2;
+#endif
+
+#undef H
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+#endif /* VBOX_WITH_SHARED_CLIPBOARD */
+
 /**
  * Searches for a shared folder with the given logical name
  * in the collection of shared folders.
@@ -9123,7 +9255,7 @@ DECLCALLBACK(void) Console::i_vmstateChangeCallback(PUVM pUVM, VMSTATE enmState,
 int Console::i_changeClipboardMode(ClipboardMode_T aClipboardMode)
 {
     VMMDev *pVMMDev = m_pVMMDev;
-    AssertPtr(pVMMDev);
+    AssertPtrReturn(pVMMDev, VERR_INVALID_POINTER);
 
     VBOXHGCMSVCPARM parm;
     parm.type = VBOX_HGCM_SVC_PARM_32BIT;
@@ -9132,26 +9264,26 @@ int Console::i_changeClipboardMode(ClipboardMode_T aClipboardMode)
     {
         default:
         case ClipboardMode_Disabled:
-            LogRel(("Shared clipboard mode: Off\n"));
+            LogRel(("Shared Clipboard: Mode: Off\n"));
             parm.u.uint32 = VBOX_SHARED_CLIPBOARD_MODE_OFF;
             break;
         case ClipboardMode_GuestToHost:
-            LogRel(("Shared clipboard mode: Guest to Host\n"));
+            LogRel(("Shared Clipboard: Mode: Guest to Host\n"));
             parm.u.uint32 = VBOX_SHARED_CLIPBOARD_MODE_GUEST_TO_HOST;
             break;
         case ClipboardMode_HostToGuest:
-            LogRel(("Shared clipboard mode: Host to Guest\n"));
+            LogRel(("Shared Clipboard: Mode: Host to Guest\n"));
             parm.u.uint32 = VBOX_SHARED_CLIPBOARD_MODE_HOST_TO_GUEST;
             break;
         case ClipboardMode_Bidirectional:
-            LogRel(("Shared clipboard mode: Bidirectional\n"));
+            LogRel(("Shared Clipboard: Mode: Bidirectional\n"));
             parm.u.uint32 = VBOX_SHARED_CLIPBOARD_MODE_BIDIRECTIONAL;
             break;
     }
 
-    int rc =  pVMMDev->hgcmHostCall("VBoxSharedClipboard", VBOX_SHARED_CLIPBOARD_HOST_FN_SET_MODE, 1, &parm);
+    int rc = pVMMDev->hgcmHostCall("VBoxSharedClipboard", VBOX_SHARED_CLIPBOARD_HOST_FN_SET_MODE, 1, &parm);
     if (RT_FAILURE(rc))
-        LogRel(("Error changing shared clipboard mode: %Rrc\n", rc));
+        LogRel(("Shared Clipboard: Error changing mode: %Rrc\n", rc));
 
     return rc;
 }

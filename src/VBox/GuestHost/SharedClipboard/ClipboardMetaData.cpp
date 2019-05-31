@@ -32,11 +32,9 @@ int SharedClipboardMetaDataInit(PSHAREDCLIPBOARDMETADATA pMeta)
 {
     AssertPtrReturn(pMeta, VERR_INVALID_POINTER);
 
-    Assert(pMeta->cbMeta == 0);
-    Assert(pMeta->pvMeta == NULL);
-
     pMeta->pvMeta = NULL;
     pMeta->cbMeta = 0;
+    pMeta->cbUsed = 0;
 
     return VINF_SUCCESS;
 }
@@ -62,6 +60,8 @@ void SharedClipboardMetaDataDestroy(PSHAREDCLIPBOARDMETADATA pMeta)
         pMeta->pvMeta = NULL;
         pMeta->cbMeta = 0;
     }
+
+    pMeta->cbUsed = 0;
 }
 
 /**

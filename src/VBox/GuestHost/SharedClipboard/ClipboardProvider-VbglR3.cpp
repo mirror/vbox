@@ -21,6 +21,7 @@
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_SHARED_CLIPBOARD
 #include <VBox/GuestHost/SharedClipboard-uri.h>
+#include <VBox/VBoxGuestLib.h>
 
 #include <iprt/asm.h>
 #include <iprt/assert.h>
@@ -30,58 +31,79 @@
 #include <iprt/path.h>
 #include <iprt/string.h>
 
-
 #include <VBox/log.h>
 
-SharedClipboardProviderVbglR3::SharedClipboardProviderVbglR3(void)
-{
-    LogFlowFuncEnter();
 
-    m_cToRead = _64M;
+SharedClipboardProviderVbglR3::SharedClipboardProviderVbglR3(uint32_t uClientID)
+    : m_uClientID(uClientID)
+{
+    LogFlowFunc(("m_uClientID=%RU32\n", m_uClientID));
 }
 
 SharedClipboardProviderVbglR3::~SharedClipboardProviderVbglR3(void)
 {
+    m_URIList.Clear();
 }
 
-int SharedClipboardProviderVbglR3::ReadMetaData(void *pvData, size_t cbData, uint32_t fFlags /* = 0 */, size_t *pcbRead /* = NULL */)
+int SharedClipboardProviderVbglR3::ReadMetaData(uint32_t fFlags /* = 0 */)
 {
-    RT_NOREF(pvData, cbData, pcbRead, fFlags);
-    return VERR_NOT_IMPLEMENTED;
-}
-
-int SharedClipboardProviderVbglR3::ReadMetaData(SharedClipboardURIList &URIList, uint32_t fFlags /* = 0 */)
-{
-    RT_NOREF(URIList, fFlags);
+    RT_NOREF(fFlags);
 
     LogFlowFuncEnter();
 
-#ifdef DEBUG_andy
+    int rc = VbglR3ClipboardReadMetaData(m_uClientID, m_URIList);
+
+#ifdef DEBUG_andy_disabled
     SharedClipboardURIObject *pObj1 = new SharedClipboardURIObject(SharedClipboardURIObject::Type_File, "foobar1.baz");
     pObj1->SetSize(_64M);
-    URIList.AppendURIObject(pObj1);
+    m_URIList.AppendURIObject(pObj1);
 
     SharedClipboardURIObject *pObj2 = new SharedClipboardURIObject(SharedClipboardURIObject::Type_File, "foobar2.baz");
     pObj2->SetSize(_32M);
-    URIList.AppendURIObject(pObj2);
+    m_URIList.AppendURIObject(pObj2);
 #endif
 
-    return VINF_SUCCESS;
+    LogFlowFuncLeaveRC(rc);
+    return rc;
 }
 
-int SharedClipboardProviderVbglR3::ReadData(void *pvBuf, size_t cbBuf, size_t *pcbRead  /* = NULL */)
+int SharedClipboardProviderVbglR3::WriteMetaData(const void *pvBuf, size_t cbBuf, size_t *pcbWritten, uint32_t fFlags /* = 0 */)
 {
-    RT_NOREF(pvBuf, cbBuf, pcbRead);
+    RT_NOREF(pcbWritten, fFlags);
 
+    SHAREDCLIPBOARDURILISTFLAGS fURIListFlags = SHAREDCLIPBOARDURILIST_FLAGS_NONE;
+
+    int rc = m_URIList.SetFromURIData(pvBuf, cbBuf, fURIListFlags);
+    if (RT_SUCCESS(rc))
+        rc = VbglR3ClipboardWriteMetaData(m_uClientID, m_URIList);
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+int SharedClipboardProviderVbglR3::ReadData(void *pvBuf, size_t cbBuf, size_t *pcbRead /* = NULL */)
+{
     LogFlowFuncEnter();
 
-    size_t cbToRead = RT_MIN(cbBuf, RT_MIN(m_cToRead, _4K));
+    SharedClipboardURIObject *pObj = m_URIList.First();
+    if (!pObj)
+    {
+        if (pcbRead)
+            *pcbRead = 0;
+        return VINF_SUCCESS;
+    }
+
+    size_t cbToRead = RT_MIN(cbBuf, RT_MIN(123, _4K));
 
     memset(pvBuf, 0x64, cbToRead);
 
-    m_cToRead -= cbToRead;
-
     *pcbRead = cbToRead;
+
+    if (pObj->IsComplete())
+    {
+        m_URIList.RemoveFirst();
+        pObj = NULL;
+    }
 
     return VINF_SUCCESS;
 }

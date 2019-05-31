@@ -3299,7 +3299,7 @@ DECLCALLBACK(int) ConsoleVRDPServer::ClipboardCallback(void *pvCallback,
 
     ConsoleVRDPServer *pServer = static_cast <ConsoleVRDPServer *>(pvCallback);
 
-    NOREF(u32ClientId);
+    RT_NOREF(u32ClientId);
 
     switch (u32Function)
     {
@@ -3326,80 +3326,9 @@ DECLCALLBACK(int) ConsoleVRDPServer::ClipboardCallback(void *pvCallback,
         } break;
 
         default:
+        {
             rc = VERR_NOT_SUPPORTED;
-    }
-
-    return rc;
-}
-
-DECLCALLBACK(int) ConsoleVRDPServer::ClipboardServiceExtension(void *pvExtension,
-                                                               uint32_t u32Function,
-                                                               void *pvParms,
-                                                               uint32_t cbParms)
-{
-    RT_NOREF(cbParms);
-    LogFlowFunc(("pvExtension = %p, u32Function = %d, pvParms = %p, cbParms = %d\n",
-                 pvExtension, u32Function, pvParms, cbParms));
-
-    int rc = VINF_SUCCESS;
-
-    ConsoleVRDPServer *pServer = static_cast <ConsoleVRDPServer *>(pvExtension);
-
-    VBOXCLIPBOARDEXTPARMS *pParms = (VBOXCLIPBOARDEXTPARMS *)pvParms;
-
-    switch (u32Function)
-    {
-        case VBOX_CLIPBOARD_EXT_FN_SET_CALLBACK:
-        {
-            pServer->mpfnClipboardCallback = pParms->u.pfnCallback;
         } break;
-
-        case VBOX_CLIPBOARD_EXT_FN_FORMAT_ANNOUNCE:
-        {
-            /* The guest announces clipboard formats. This must be delivered to all clients. */
-            if (mpEntryPoints && pServer->mhServer)
-            {
-                mpEntryPoints->VRDEClipboard(pServer->mhServer,
-                                             VRDE_CLIPBOARD_FUNCTION_FORMAT_ANNOUNCE,
-                                             pParms->u32Format,
-                                             NULL,
-                                             0,
-                                             NULL);
-            }
-        } break;
-
-        case VBOX_CLIPBOARD_EXT_FN_DATA_READ:
-        {
-            /* The clipboard service expects that the pvData buffer will be filled
-             * with clipboard data. The server returns the data from the client that
-             * announced the requested format most recently.
-             */
-            if (mpEntryPoints && pServer->mhServer)
-            {
-                mpEntryPoints->VRDEClipboard(pServer->mhServer,
-                                             VRDE_CLIPBOARD_FUNCTION_DATA_READ,
-                                             pParms->u32Format,
-                                             pParms->u.pvData,
-                                             pParms->cbData,
-                                             &pParms->cbData);
-            }
-        } break;
-
-        case VBOX_CLIPBOARD_EXT_FN_DATA_WRITE:
-        {
-            if (mpEntryPoints && pServer->mhServer)
-            {
-                mpEntryPoints->VRDEClipboard(pServer->mhServer,
-                                             VRDE_CLIPBOARD_FUNCTION_DATA_WRITE,
-                                             pParms->u32Format,
-                                             pParms->u.pvData,
-                                             pParms->cbData,
-                                             NULL);
-            }
-        } break;
-
-        default:
-            rc = VERR_NOT_SUPPORTED;
     }
 
     return rc;
@@ -3408,19 +3337,12 @@ DECLCALLBACK(int) ConsoleVRDPServer::ClipboardServiceExtension(void *pvExtension
 void ConsoleVRDPServer::ClipboardCreate(uint32_t u32ClientId)
 {
     RT_NOREF(u32ClientId);
-    int rc = lockConsoleVRDPServer();
 
+    int rc = lockConsoleVRDPServer();
     if (RT_SUCCESS(rc))
     {
         if (mcClipboardRefs == 0)
-        {
-            rc = HGCMHostRegisterServiceExtension(&mhClipboard, "VBoxSharedClipboard", ClipboardServiceExtension, this);
-
-            if (RT_SUCCESS(rc))
-            {
-                mcClipboardRefs++;
-            }
-        }
+            mcClipboardRefs++;
 
         unlockConsoleVRDPServer();
     }
@@ -3429,16 +3351,12 @@ void ConsoleVRDPServer::ClipboardCreate(uint32_t u32ClientId)
 void ConsoleVRDPServer::ClipboardDelete(uint32_t u32ClientId)
 {
     RT_NOREF(u32ClientId);
-    int rc = lockConsoleVRDPServer();
 
+    int rc = lockConsoleVRDPServer();
     if (RT_SUCCESS(rc))
     {
+        Assert(mcClipboardRefs);
         mcClipboardRefs--;
-
-        if (mcClipboardRefs == 0)
-        {
-            HGCMHostUnregisterServiceExtension(mhClipboard);
-        }
 
         unlockConsoleVRDPServer();
     }
@@ -3752,6 +3670,15 @@ void ConsoleVRDPServer::SendUSBRequest(uint32_t u32ClientId, void *pvParms, uint
     if (mpEntryPoints && mhServer)
     {
         mpEntryPoints->VRDEUSBRequest(mhServer, u32ClientId, pvParms, cbParms);
+    }
+}
+
+void ConsoleVRDPServer::SendClipboard(uint32_t u32Function, uint32_t u32Format,
+                                      void *pvData, uint32_t cbData, uint32_t *pcbActualRead) const
+{
+    if (mpEntryPoints && mhServer)
+    {
+        mpEntryPoints->VRDEClipboard(mhServer, u32Function, u32Format, pvData, cbData, pcbActualRead);
     }
 }
 

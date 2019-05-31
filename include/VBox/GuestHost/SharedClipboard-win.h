@@ -157,7 +157,7 @@ int VBoxClipboardWinConvertCFHTMLToMIME(const char *pszSource, const uint32_t cc
 int VBoxClipboardWinConvertMIMEToCFHTML(const char *pszSource, size_t cb, char **ppszOutput, uint32_t *pcbOutput);
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
-int VBoxClipboardWinURIInit(PVBOXCLIPBOARDWINURI pURI, SharedClipboardProvider::SourceType enmType);
+int VBoxClipboardWinURIInit(PVBOXCLIPBOARDWINURI pURI, PSHAREDCLIPBOARDPROVIDERCREATIONCTX pCtx);
 void VBoxClipboardWinURIDestroy(PVBOXCLIPBOARDWINURI pURI);
 void VBoxClipboardWinURIReset(PVBOXCLIPBOARDWINURI pURI);
 #endif
@@ -247,6 +247,7 @@ protected:
     LPSTGMEDIUM              m_pStgMedium;
     SharedClipboardProvider *m_pProvider;
     IStream                 *m_pStream;
+    ULONG                    m_uObjIdx;
 };
 
 class VBoxClipboardWinEnumFormatEtc : public IEnumFORMATETC
@@ -290,7 +291,7 @@ class VBoxClipboardWinStreamImpl : public IStream
 {
 public:
 
-    VBoxClipboardWinStreamImpl(SharedClipboardProvider *pProvider);
+    VBoxClipboardWinStreamImpl(SharedClipboardProvider *pProvider, SharedClipboardURIObject *pURIObj);
     virtual ~VBoxClipboardWinStreamImpl(void);
 
 public: /* IUnknown methods. */
@@ -315,17 +316,16 @@ public: /* IStream methods. */
 
 public: /* Own methods. */
 
-    static HRESULT Create(SharedClipboardProvider *pProvider, IStream **ppStream);
+    static HRESULT Create(SharedClipboardProvider *pProvider, SharedClipboardURIObject *pURIObj, IStream **ppStream);
 
 private:
 
     /** The stream object's current reference count. */
-    LONG                     m_lRefCount;
+    LONG                      m_lRefCount;
     /** Pointer to the associated Shared Clipboard provider. */
-    SharedClipboardProvider *m_pProvider;
-
- ULONG cbFileSize;
- ULONG cbSizeRead;
+    SharedClipboardProvider  *m_pProvider;
+    /** Pointer to the associated URI object. */
+    SharedClipboardURIObject *m_pURIObj;
 };
 
 # endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */

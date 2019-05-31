@@ -74,6 +74,8 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_SHARED_CLIPBOARD
+#include <VBox/log.h>
+
 #include <VBox/HostServices/VBoxClipboardSvc.h>
 #include <VBox/HostServices/VBoxClipboardExt.h>
 
@@ -81,6 +83,7 @@
 #include <iprt/string.h>
 #include <iprt/assert.h>
 #include <iprt/critsect.h>
+
 #include <VBox/err.h>
 #include <VBox/vmm/ssm.h>
 
@@ -375,7 +378,7 @@ static DECLCALLBACK(int) svcDisconnect(void *, uint32_t u32ClientID, void *pvCli
 
     vboxSvcClipboardCompleteReadData(pClientData, VERR_NO_DATA, 0);
 
-#ifdef VBOX_VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
     vboxClipboardSvcURITransferDestroy(&pClientData->Transfer);
 #endif
 
@@ -416,10 +419,10 @@ static DECLCALLBACK(int) svcConnect(void *, uint32_t u32ClientID, void *pvClient
     vboxSvcClipboardClientStateInit(&pClientData->State, u32ClientID);
 
     int rc = VBoxClipboardSvcImplConnect(pClientData, VBoxSvcClipboardGetHeadless());
-#ifdef VBOX_VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
     if (RT_SUCCESS(rc))
     {
-        rc = vboxClipboardSvcURITransferCreate(&pClientData->Transfer);
+        rc = vboxClipboardSvcURITransferCreate(&pClientData->Transfer, &pClientData->State);
         if (RT_SUCCESS(rc))
         {
             pClientData->cTransfers = 0;
@@ -607,7 +610,7 @@ static DECLCALLBACK(void) svcCall(void *,
                             parms.cbData    = cb;
 
                             g_fReadingData = true;
-                            rc = g_pfnExtension (g_pvExtension, VBOX_CLIPBOARD_EXT_FN_DATA_READ, &parms, sizeof (parms));
+                            rc = g_pfnExtension(g_pvExtension, VBOX_CLIPBOARD_EXT_FN_DATA_READ, &parms, sizeof (parms));
                             LogFlowFunc(("DATA: g_fDelayedAnnouncement = %d, g_u32DelayedFormats = 0x%x\n", g_fDelayedAnnouncement, g_u32DelayedFormats));
                             if (g_fDelayedAnnouncement)
                             {

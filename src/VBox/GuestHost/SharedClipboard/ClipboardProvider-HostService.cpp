@@ -30,8 +30,8 @@
 #include <iprt/path.h>
 #include <iprt/string.h>
 
-
 #include <VBox/log.h>
+
 
 SharedClipboardProviderHostService::SharedClipboardProviderHostService(void)
 {
@@ -42,31 +42,31 @@ SharedClipboardProviderHostService::~SharedClipboardProviderHostService(void)
 {
 }
 
-int SharedClipboardProviderHostService::ReadMetaData(void *pvData, size_t cbData, uint32_t fFlags /* = 0 */, size_t *pcbRead /* = NULL */)
+int SharedClipboardProviderHostService::ReadMetaData(uint32_t fFlags /* = 0 */)
 {
-    RT_NOREF(pvData, cbData, pcbRead, fFlags);
+    RT_NOREF(fFlags);
     return VERR_NOT_IMPLEMENTED;
 }
 
-int SharedClipboardProviderHostService::ReadMetaData(SharedClipboardURIList &URIList, uint32_t fFlags /* = 0 */)
+int SharedClipboardProviderHostService::WriteMetaData(const void *pvBuf, size_t cbBuf, size_t *pcbWritten, uint32_t fFlags /* = 0 */)
 {
-    RT_NOREF(URIList, fFlags);
+    RT_NOREF(pvBuf, cbBuf, pcbWritten, fFlags);
     return VERR_NOT_IMPLEMENTED;
 }
 
 int SharedClipboardProviderHostService::ReadData(void *pvBuf, size_t cbBuf, size_t *pcbRead  /* = NULL */)
 {
-    RT_NOREF(URIList, fFlags);
+    RT_NOREF(pvBuf, cbBuf, pcbRead);
     return VERR_NOT_IMPLEMENTED;
 }
 
-int SharedClipboardProvider::WriteData(const void *pvBuf, size_t cbBuf, size_t *pcbWritten /* = NULL */)
+int SharedClipboardProviderHostService::WriteData(const void *pvBuf, size_t cbBuf, size_t *pcbWritten /* = NULL */)
 {
-    RT_NOREF(URIList, fFlags);
+    RT_NOREF(pvBuf, cbBuf, pcbWritten);
     return VERR_NOT_IMPLEMENTED;
 }
 
-void SharedClipboardProvider::Reset(void)
+void SharedClipboardProviderHostService::Reset(void)
 {
 }
 

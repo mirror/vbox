@@ -45,28 +45,28 @@ typedef uint32_t SHAREDCLIPBOARDAREAID;
 /** Defines a non-initialized (nil) clipboard area. */
 #define NIL_SHAREDCLIPBOARDAREAID       UINT32_MAX
 
-/** SharedClipboardCache flags. */
-typedef uint32_t SHAREDCLIPBOARDCACHEFLAGS;
+/** SharedClipboardArea flags. */
+typedef uint32_t SHAREDCLIPBOARDAREAFLAGS;
 
 /** No flags specified. */
-#define SHAREDCLIPBOARDCACHE_FLAGS_NONE     0
+#define SHAREDCLIPBOARDAREA_FLAGS_NONE     0
 
 /**
- * Class for maintaining a Shared Clipboard cache
+ * Class for maintaining a Shared Clipboard area
  * on the host or guest. This will contain all received files & directories
  * for a single Shared Clipboard operation.
  *
  * In case of a failed Shared Clipboard operation this class can also
  * perform a gentle rollback if required.
  */
-class SharedClipboardCache
+class SharedClipboardArea
 {
 public:
 
-    SharedClipboardCache(void);
-    SharedClipboardCache(const char *pszPath, SHAREDCLIPBOARDAREAID uID = NIL_SHAREDCLIPBOARDAREAID,
-                         SHAREDCLIPBOARDCACHEFLAGS fFlags = SHAREDCLIPBOARDCACHE_FLAGS_NONE);
-    virtual ~SharedClipboardCache(void);
+    SharedClipboardArea(void);
+    SharedClipboardArea(const char *pszPath, SHAREDCLIPBOARDAREAID uID = NIL_SHAREDCLIPBOARDAREAID,
+                        SHAREDCLIPBOARDAREAFLAGS fFlags = SHAREDCLIPBOARDAREA_FLAGS_NONE);
+    virtual ~SharedClipboardArea(void);
 
 public:
 
@@ -81,24 +81,30 @@ public:
     int Close(void);
     bool IsOpen(void) const;
     int OpenEx(const char *pszPath, SHAREDCLIPBOARDAREAID uID = NIL_SHAREDCLIPBOARDAREAID,
-               SHAREDCLIPBOARDCACHEFLAGS fFlags = SHAREDCLIPBOARDCACHE_FLAGS_NONE);
+               SHAREDCLIPBOARDAREAFLAGS fFlags = SHAREDCLIPBOARDAREA_FLAGS_NONE);
     int OpenTemp(SHAREDCLIPBOARDAREAID uID = NIL_SHAREDCLIPBOARDAREAID,
-                 SHAREDCLIPBOARDCACHEFLAGS fFlags = SHAREDCLIPBOARDCACHE_FLAGS_NONE);
+                 SHAREDCLIPBOARDAREAFLAGS fFlags = SHAREDCLIPBOARDAREA_FLAGS_NONE);
     SHAREDCLIPBOARDAREAID GetAreaID(void) const;
     const char *GetDirAbs(void) const;
+    uint32_t GetRefCount(void);
     int Reopen(void);
     int Reset(bool fDeleteContent);
     int Rollback(void);
+
+public:
+
+    static int PathConstruct(const char *pszBase, SHAREDCLIPBOARDAREAID uID, char *pszPath, size_t cbPath);
 
 protected:
 
     int initInternal(void);
     int destroyInternal(void);
     int closeInternal(void);
-    int pathConstruct(const char *pszBase, char *pszPath, size_t cbPath);
 
 protected:
 
+    /** Creation timestamp (in ms). */
+    uint64_t                     m_tsCreatedMs;
     /** Number of references to this instance. */
     volatile uint32_t            m_cRefs;
     /** Critical section for serializing access. */
@@ -115,114 +121,6 @@ protected:
     RTCList<RTCString>           m_lstFiles;
     /** Associated clipboard area ID. */
     SHAREDCLIPBOARDAREAID        m_uID;
-};
-
-class SharedClipboardURIList;
-
-/**
- * Interface class acting as a proxy to abstract reading / writing clipboard data.
- *
- * This is needed because various implementations can run on the host *or* on the guest side,
- * requiring different methods for handling the actual data.
- */
-class SharedClipboardProvider
-{
-
-public:
-
-    enum SourceType
-    {
-        /** Invalid source type. */
-        SourceType_Invalid = 0,
-        /** Source is VbglR3. */
-        SourceType_VbglR3,
-        /** Source is the host service. */
-        SourceType_HostService
-    };
-
-    static SharedClipboardProvider *Create(SourceType enmSource);
-
-    virtual ~SharedClipboardProvider(void);
-
-public:
-
-    uint32_t AddRef(void);
-    uint32_t Release(void);
-
-public: /* Interface to be implemented. */
-
-    virtual int ReadMetaData(void *pvData, size_t cbData, uint32_t fFlags = 0, size_t *pcbRead = NULL) = 0;
-    virtual int ReadMetaData(SharedClipboardURIList &URIList, uint32_t fFlags = 0) = 0;
-
-    virtual int ReadData(void *pvBuf, size_t cbBuf, size_t *pcbRead  /* = NULL */) = 0;
-    virtual int WriteData(const void *pvBuf, size_t cbBuf, size_t *pcbWritten /* = NULL */) = 0;
-
-    virtual void Reset(void) = 0;
-
-protected:
-
-    SharedClipboardProvider(void);
-
-protected:
-
-    /** Number of references to this instance. */
-    volatile uint32_t            m_cRefs;
-    /** Source type to handle. */
-    SourceType                   m_enmSource;
-};
-
-/**
- * Shared Clipboard provider implementation for VbglR3 (guest side).
- */
-class SharedClipboardProviderVbglR3 : protected SharedClipboardProvider
-{
-    friend class SharedClipboardProvider;
-
-public:
-
-    virtual ~SharedClipboardProviderVbglR3(void);
-
-public:
-
-    int ReadMetaData(void *pvData, size_t cbData, uint32_t fFlags = 0, size_t *pcbRead = NULL);
-    int ReadMetaData(SharedClipboardURIList &URIList, uint32_t fFlags = 0);
-
-    int ReadData(void *pvBuf, size_t cbBuf, size_t *pcbRead  /* = NULL */);
-    int WriteData(const void *pvBuf, size_t cbBuf, size_t *pcbWritten /* = NULL */);
-
-    void Reset(void);
-
-protected:
-
-    SharedClipboardProviderVbglR3(void);
-
-    uint64_t m_cToRead;
-};
-
-/**
- * Shared Clipboard provider implementation for host service (host side).
- */
-class SharedClipboardProviderHostService : protected SharedClipboardProvider
-{
-    friend class SharedClipboardProvider;
-
-public:
-
-    virtual ~SharedClipboardProviderHostService(void);
-
-public:
-
-    int ReadMetaData(void *pvData, size_t cbData, uint32_t fFlags = 0, size_t *pcbRead = NULL);
-    int ReadMetaData(SharedClipboardURIList &URIList, uint32_t fFlags = 0);
-
-    int ReadData(void *pvBuf, size_t cbBuf, size_t *pcbRead  /* = NULL */);
-    int WriteData(const void *pvBuf, size_t cbBuf, size_t *pcbWritten /* = NULL */);
-
-    void Reset(void);
-
-protected:
-
-    SharedClipboardProviderHostService(void);
 };
 
 int SharedClipboardPathSanitizeFilename(char *pszPath, size_t cbPath);
@@ -474,6 +372,137 @@ size_t SharedClipboardMetaDataGetUsed(PSHAREDCLIPBOARDMETADATA pMeta);
 size_t SharedClipboardMetaDataGetSize(PSHAREDCLIPBOARDMETADATA pMeta);
 void *SharedClipboardMetaDataMutableRaw(PSHAREDCLIPBOARDMETADATA pMeta);
 const void *SharedClipboardMetaDataRaw(PSHAREDCLIPBOARDMETADATA pMeta);
+
+/**
+ * Enumeration to specify the Shared Clipboard provider source type.
+ */
+typedef enum SHAREDCLIPBOARDPROVIDERSOURCE
+{
+    /** Invalid source type. */
+    SHAREDCLIPBOARDPROVIDERSOURCE_INVALID = 0,
+    /** Source is VbglR3. */
+    SHAREDCLIPBOARDPROVIDERSOURCE_VBGLR3,
+    /** Source is the host service. */
+    SHAREDCLIPBOARDPROVIDERSOURCE_HOSTSERVICE
+} SHAREDCLIPBOARDPROVIDERSOURCE;
+
+/**
+ * Structure for the Shared Clipboard provider creation context.
+ */
+typedef struct _SHAREDCLIPBOARDPROVIDERCREATIONCTX
+{
+    SHAREDCLIPBOARDPROVIDERSOURCE enmSource;
+    union
+    {
+        struct
+        {
+            /** HGCM client ID to use. */
+            uint32_t uClientID;
+        } VBGLR3;
+    } u;
+} SHAREDCLIPBOARDPROVIDERCREATIONCTX, *PSHAREDCLIPBOARDPROVIDERCREATIONCTX;
+
+/**
+ * Interface class acting as a lightweight proxy for abstracting reading / writing clipboard data.
+ *
+ * This is needed because various implementations can run on the host *or* on the guest side,
+ * requiring different methods for handling the actual data.
+ */
+class SharedClipboardProvider
+{
+
+public:
+
+    static SharedClipboardProvider *Create(PSHAREDCLIPBOARDPROVIDERCREATIONCTX pCtx);
+
+    virtual ~SharedClipboardProvider(void);
+
+public:
+
+    uint32_t AddRef(void);
+    uint32_t Release(void);
+
+public: /* Interface to be implemented. */
+
+    virtual int ReadMetaData(uint32_t fFlags = 0) = 0;
+    virtual int WriteMetaData(const void *pvBuf, size_t cbBuf, size_t *pcbWritten, uint32_t fFlags = 0) = 0;
+
+    virtual int ReadData(void *pvBuf, size_t cbBuf, size_t *pcbRead  /* = NULL */) = 0;
+    virtual int WriteData(const void *pvBuf, size_t cbBuf, size_t *pcbWritten /* = NULL */) = 0;
+
+    virtual void Reset(void) = 0;
+
+public:
+
+    const SharedClipboardURIList &GetURIList(void) { return m_URIList; }
+    const SharedClipboardURIObject *GetURIObjectCurrent(void) { return m_URIList.First(); }
+
+protected:
+
+    SharedClipboardProvider(void);
+
+protected:
+
+    /** Number of references to this instance. */
+    volatile uint32_t      m_cRefs;
+    /** Current URI list. */
+    SharedClipboardURIList m_URIList;
+};
+
+/**
+ * Shared Clipboard provider implementation for VbglR3 (guest side).
+ */
+class SharedClipboardProviderVbglR3 : protected SharedClipboardProvider
+{
+    friend class SharedClipboardProvider;
+
+public:
+
+    virtual ~SharedClipboardProviderVbglR3(void);
+
+public:
+
+    int ReadMetaData(uint32_t fFlags = 0);
+    int WriteMetaData(const void *pvBuf, size_t cbBuf, size_t *pcbWritten, uint32_t fFlags = 0);
+
+    int ReadData(void *pvBuf, size_t cbBuf, size_t *pcbRead  /* = NULL */);
+    int WriteData(const void *pvBuf, size_t cbBuf, size_t *pcbWritten /* = NULL */);
+
+    void Reset(void);
+
+protected:
+
+    SharedClipboardProviderVbglR3(uint32_t uClientID);
+
+    /** HGCM client ID to use. */
+    uint32_t m_uClientID;
+};
+
+/**
+ * Shared Clipboard provider implementation for host service (host side).
+ */
+class SharedClipboardProviderHostService : protected SharedClipboardProvider
+{
+    friend class SharedClipboardProvider;
+
+public:
+
+    virtual ~SharedClipboardProviderHostService(void);
+
+public:
+
+   int ReadMetaData(uint32_t fFlags = 0);
+   int WriteMetaData(const void *pvBuf, size_t cbBuf, size_t *pcbWritten, uint32_t fFlags = 0);
+
+    int ReadData(void *pvBuf, size_t cbBuf, size_t *pcbRead  /* = NULL */);
+    int WriteData(const void *pvBuf, size_t cbBuf, size_t *pcbWritten /* = NULL */);
+
+    void Reset(void);
+
+protected:
+
+    SharedClipboardProviderHostService(void);
+};
 
 bool SharedClipboardMIMEHasFileURLs(const char *pcszFormat, size_t cchFormatMax);
 bool SharedClipboardMIMENeedsCache(const char *pcszFormat, size_t cchFormatMax);

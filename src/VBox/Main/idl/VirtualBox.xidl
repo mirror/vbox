@@ -4388,7 +4388,7 @@
 
   <interface
     name="IInternalMachineControl" extends="$unknown"
-    uuid="cdbc59df-4f4d-4cf2-809c-917601355afc"
+    uuid="0075FD6C-00C2-4484-0077-C057003D9C90"
     internal="yes"
     wsmap="suppress"
     >
@@ -4590,7 +4590,76 @@
         </desc>
       </param>
     </method>
-
+    <method name="clipboardAreaRegister">
+      <desc>
+        Registers a new clipboard area.
+      </desc>
+      <param name="parms" type="wstring" dir="in" safearray="yes">
+        <desc>
+          Registration parameters. Currently not used and therefore ignored.
+        </desc>
+      </param>
+      <param name="id" type="unsigned long" dir="out">
+        <desc>
+          Returns the new clipboard area which got registered.
+        </desc>
+      </param>
+    </method>
+    <method name="clipboardAreaUnregister">
+      <desc>
+        Unregisters a formerly registered clipboard area.
+      </desc>
+      <param name="id" type="unsigned long" dir="in">
+        <desc>
+          Clipboard area to unregister.
+        </desc>
+      </param>
+    </method>
+    <method name="clipboardAreaAttach">
+      <desc>
+        Attaches to a registered clipboard area.
+      </desc>
+      <param name="id" type="unsigned long" dir="in">
+        <desc>
+          Clipboard area to attach to.
+        </desc>
+      </param>
+    </method>
+    <method name="clipboardAreaDetach">
+      <desc>
+        Detaches from a registered clipboard area.
+      </desc>
+      <param name="id" type="unsigned long" dir="in">
+        <desc>
+          Clipboard area to detach from.
+        </desc>
+      </param>
+    </method>
+    <method name="clipboardAreaGetMostRecent">
+      <desc>
+        Returns the most recent (last registered) clipboard area.
+      </desc>
+      <param name="id" type="unsigned long" dir="out">
+        <desc>
+          Returns the most recent clipboard area.
+        </desc>
+      </param>
+    </method>
+    <method name="clipboardAreaGetRefCount">
+      <desc>
+        Returns the current reference count of a clipboard area.
+      </desc>
+      <param name="id" type="unsigned long" dir="in">
+        <desc>
+          Clipboard area to return reference count for.
+        </desc>
+      </param>
+      <param name="refcount" type="unsigned long" dir="out">
+        <desc>
+          Returns the current reference count.
+        </desc>
+      </param>
+    </method>
     <method name="pushGuestProperty">
       <desc>
         Update a single guest property in IMachine.

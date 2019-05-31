@@ -45,16 +45,17 @@
 
 
 
-VBoxClipboardWinStreamImpl::VBoxClipboardWinStreamImpl(SharedClipboardProvider *pProvider)
+VBoxClipboardWinStreamImpl::VBoxClipboardWinStreamImpl(SharedClipboardProvider *pProvider, SharedClipboardURIObject *pURIObj)
     : m_lRefCount(1)
     , m_pProvider(pProvider)
+    , m_pURIObj(pURIObj)
 {
-    LogFlowThisFuncEnter();
+    AssertPtr(m_pProvider);
+    AssertPtr(m_pURIObj);
+
+    LogFunc(("szSrcPath=%s, cbSize=%RU64\n", m_pURIObj->GetSourcePathAbs().c_str(), m_pURIObj->GetSize()));
 
     m_pProvider->AddRef();
-
-    cbFileSize = _64M;
-    cbSizeRead = 0;
 }
 
 VBoxClipboardWinStreamImpl::~VBoxClipboardWinStreamImpl(void)
@@ -123,8 +124,8 @@ STDMETHODIMP VBoxClipboardWinStreamImpl::Commit(DWORD dwFrags)
     return E_NOTIMPL;
 }
 
-STDMETHODIMP VBoxClipboardWinStreamImpl::CopyTo(IStream* pDestStream, ULARGE_INTEGER nBytesToCopy, ULARGE_INTEGER* nBytesRead,
-                                                ULARGE_INTEGER* nBytesWritten)
+STDMETHODIMP VBoxClipboardWinStreamImpl::CopyTo(IStream *pDestStream, ULARGE_INTEGER nBytesToCopy, ULARGE_INTEGER *nBytesRead,
+                                                ULARGE_INTEGER *nBytesWritten)
 {
     RT_NOREF(pDestStream, nBytesToCopy, nBytesRead, nBytesWritten);
 
@@ -140,20 +141,37 @@ STDMETHODIMP VBoxClipboardWinStreamImpl::LockRegion(ULARGE_INTEGER nStart, ULARG
     return E_NOTIMPL;
 }
 
-STDMETHODIMP VBoxClipboardWinStreamImpl::Read(void* pvBuffer, ULONG nBytesToRead, ULONG* nBytesRead)
+STDMETHODIMP VBoxClipboardWinStreamImpl::Read(void *pvBuffer, ULONG nBytesToRead, ULONG *nBytesRead)
 {
-    /* If the file size is 0, already return at least 1 byte, else the whole operation will fail. */
+   LogFlowThisFuncEnter();
 
-    size_t cbRead = 0;
-    int rc = m_pProvider->ReadData(pvBuffer, (size_t)nBytesToRead, &cbRead);
-    if (RT_SUCCESS(rc))
+    AssertPtr(m_pURIObj);
+    if (m_pURIObj->IsComplete())
     {
-        if (*nBytesRead)
-            *nBytesRead = (ULONG)cbRead;
+        /* There can be 0-byte files. */
+        AssertMsg(m_pURIObj->GetSize() == 0, ("Object is complete -- can't read from it anymore\n"));
+        if (nBytesRead)
+            *nBytesRead = 0; /** @todo If the file size is 0, already return at least 1 byte, else the whole operation will fail. */
+        return S_OK; /* Don't report any failures back to Windows. */
     }
 
-    LogFlowThisFunc(("nBytesToRead=%u, nBytesRead=%zu\n", nBytesToRead, cbRead));
-    return S_OK;
+    const uint64_t cbSize      = m_pURIObj->GetSize();
+    const uint64_t cbProcessed = m_pURIObj->GetProcessed();
+
+    const size_t cbToRead = RT_MIN(cbSize - cbProcessed, nBytesToRead);
+          size_t cbRead   = 0;
+
+    int rc = VINF_SUCCESS;
+
+    if (cbToRead)
+        rc = m_pProvider->ReadData(pvBuffer, cbToRead, &cbRead);
+
+    if (nBytesRead)
+        *nBytesRead = (ULONG)cbRead;
+
+    LogFlowThisFunc(("rc=%Rrc, cbSize=%RU64, cbProcessed=%RU64 -> cbToRead=%zu, cbRead=%zu\n",
+                     rc, cbSize, cbProcessed, cbToRead, cbRead));
+    return RT_SUCCESS(rc) ? S_OK : E_FAIL;
 }
 
 STDMETHODIMP VBoxClipboardWinStreamImpl::Revert(void)
@@ -178,7 +196,7 @@ STDMETHODIMP VBoxClipboardWinStreamImpl::SetSize(ULARGE_INTEGER nNewSize)
     return E_NOTIMPL;
 }
 
-STDMETHODIMP VBoxClipboardWinStreamImpl::Stat(STATSTG* statstg, DWORD dwFlags)
+STDMETHODIMP VBoxClipboardWinStreamImpl::Stat(STATSTG *statstg, DWORD dwFlags)
 {
     RT_NOREF(statstg, dwFlags);
 
@@ -194,7 +212,7 @@ STDMETHODIMP VBoxClipboardWinStreamImpl::UnlockRegion(ULARGE_INTEGER nStart, ULA
     return E_NOTIMPL;
 }
 
-STDMETHODIMP VBoxClipboardWinStreamImpl::Write(const void* pvBuffer, ULONG nBytesToRead, ULONG* nBytesRead)
+STDMETHODIMP VBoxClipboardWinStreamImpl::Write(const void *pvBuffer, ULONG nBytesToRead, ULONG *nBytesRead)
 {
     RT_NOREF(pvBuffer, nBytesToRead, nBytesRead);
 
@@ -211,14 +229,16 @@ STDMETHODIMP VBoxClipboardWinStreamImpl::Write(const void* pvBuffer, ULONG nByte
  *
  * @returns HRESULT
  * @param   pProvider           Pointer to Shared Clipboard provider to use.
+ * @param   pURIObj             Pointer to URI object to handle.
  * @param   ppStream            Where to return the created stream object on success.
  */
 /* static */
-HRESULT VBoxClipboardWinStreamImpl::Create(SharedClipboardProvider *pProvider, IStream **ppStream)
+HRESULT VBoxClipboardWinStreamImpl::Create(SharedClipboardProvider *pProvider, SharedClipboardURIObject *pURIObj,
+                                           IStream **ppStream)
 {
     AssertPtrReturn(pProvider, E_POINTER);
 
-    VBoxClipboardWinStreamImpl *pStream = new VBoxClipboardWinStreamImpl(pProvider);
+    VBoxClipboardWinStreamImpl *pStream = new VBoxClipboardWinStreamImpl(pProvider, pURIObj);
     if (pStream)
     {
         pStream->AddRef();
