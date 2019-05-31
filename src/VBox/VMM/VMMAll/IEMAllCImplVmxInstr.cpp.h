@@ -1773,6 +1773,8 @@ IEM_STATIC void iemVmxVmexitSaveGuestNonRegState(PVMCPU pVCpu, uint32_t uExitRea
          *
          * See Intel spec. 24.4.2 "Guest Non-Register State".
          */
+        /** @todo r=ramshankar: NSTVMX: I'm not quite sure if we can simply derive this from
+         *        DR6. */
         IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_DR6);
         uint64_t       fPendingDbgMask = pVCpu->cpum.GstCtx.dr[6];
         uint64_t const fBpHitMask = VMX_VMCS_GUEST_PENDING_DEBUG_XCPT_BP0 | VMX_VMCS_GUEST_PENDING_DEBUG_XCPT_BP1
