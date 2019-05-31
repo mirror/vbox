@@ -66,53 +66,61 @@ UIWizardImportAppPage1::UIWizardImportAppPage1(bool fImportFromOCIByDefault)
 
 void UIWizardImportAppPage1::populateSources()
 {
+    /* To be executed just once, so combo should be empty: */
     AssertReturnVoid(m_pSourceComboBox->count() == 0);
 
-    /* Compose hardcoded sources list: */
+    /* Compose hardcoded sources list, there might be few of list items: */
     QStringList sources;
     sources << "local";
     /* Add that list to combo: */
     foreach (const QString &strShortName, sources)
     {
-        /* Compose empty item, fill it's data: */
+        /* Compose empty combo item, fill it's data: */
         m_pSourceComboBox->addItem(QString());
         m_pSourceComboBox->setItemData(m_pSourceComboBox->count() - 1, strShortName, SourceData_ShortName);
     }
 
-    /* Initialize Cloud Provider Manager: */
+    /* Do we have OCI source? */
     bool fOCIPresent = false;
-    CVirtualBox comVBox = vboxGlobal().virtualBox();
-    m_comCloudProviderManager = comVBox.GetCloudProviderManager();
-    /* Show error message if necessary: */
-    if (!comVBox.isOk())
-        msgCenter().cannotAcquireCloudProviderManager(comVBox);
-    else
+
+    /* Main API request sequence, can be interrupted after any step: */
+    do
     {
+        /* Initialize Cloud Provider Manager: */
+        CVirtualBox comVBox = vboxGlobal().virtualBox();
+        m_comCloudProviderManager = comVBox.GetCloudProviderManager();
+        if (!comVBox.isOk())
+        {
+            msgCenter().cannotAcquireCloudProviderManager(comVBox);
+            break;
+        }
+
         /* Acquire existing providers: */
         const QVector<CCloudProvider> providers = m_comCloudProviderManager.GetProviders();
-        /* Show error message if necessary: */
         if (!m_comCloudProviderManager.isOk())
-            msgCenter().cannotAcquireCloudProviderManagerParameter(m_comCloudProviderManager);
-        else
         {
-            /* Iterate through existing providers: */
-            foreach (const CCloudProvider &comProvider, providers)
-            {
-                /* Skip if we have nothing to populate (file missing?): */
-                if (comProvider.isNull())
-                    continue;
+            msgCenter().cannotAcquireCloudProviderManagerParameter(m_comCloudProviderManager);
+            break;
+        }
 
-                /* Compose empty item, fill it's data: */
-                m_pSourceComboBox->addItem(QString());
-                m_pSourceComboBox->setItemData(m_pSourceComboBox->count() - 1, comProvider.GetId(),        SourceData_ID);
-                m_pSourceComboBox->setItemData(m_pSourceComboBox->count() - 1, comProvider.GetName(),      SourceData_Name);
-                m_pSourceComboBox->setItemData(m_pSourceComboBox->count() - 1, comProvider.GetShortName(), SourceData_ShortName);
-                m_pSourceComboBox->setItemData(m_pSourceComboBox->count() - 1, true,                       SourceData_IsItCloudFormat);
-                if (m_pSourceComboBox->itemData(m_pSourceComboBox->count() - 1, SourceData_ShortName).toString() == "OCI")
-                    fOCIPresent = true;
-            }
+        /* Iterate through existing providers: */
+        foreach (const CCloudProvider &comProvider, providers)
+        {
+            /* Skip if we have nothing to populate (file missing?): */
+            if (comProvider.isNull())
+                continue;
+
+            /* Compose empty item, fill it's data: */
+            m_pSourceComboBox->addItem(QString());
+            m_pSourceComboBox->setItemData(m_pSourceComboBox->count() - 1, comProvider.GetId(),        SourceData_ID);
+            m_pSourceComboBox->setItemData(m_pSourceComboBox->count() - 1, comProvider.GetName(),      SourceData_Name);
+            m_pSourceComboBox->setItemData(m_pSourceComboBox->count() - 1, comProvider.GetShortName(), SourceData_ShortName);
+            m_pSourceComboBox->setItemData(m_pSourceComboBox->count() - 1, true,                       SourceData_IsItCloudFormat);
+            if (m_pSourceComboBox->itemData(m_pSourceComboBox->count() - 1, SourceData_ShortName).toString() == "OCI")
+                fOCIPresent = true;
         }
     }
+    while (0);
 
     /* Set default: */
     if (m_fImportFromOCIByDefault && fOCIPresent)
@@ -139,44 +147,49 @@ void UIWizardImportAppPage1::populateAccounts()
     /* If provider chosen: */
     if (!sourceId().isNull())
     {
-        /* (Re)initialize Cloud Provider: */
-        m_comCloudProvider = m_comCloudProviderManager.GetProviderById(sourceId());
-        /* Show error message if necessary: */
-        if (!m_comCloudProviderManager.isOk())
-            msgCenter().cannotFindCloudProvider(m_comCloudProviderManager, sourceId());
-        else
+        /* Main API request sequence, can be interrupted after any step: */
+        do
         {
+            /* (Re)initialize Cloud Provider: */
+            m_comCloudProvider = m_comCloudProviderManager.GetProviderById(sourceId());
+            if (!m_comCloudProviderManager.isOk())
+            {
+                msgCenter().cannotFindCloudProvider(m_comCloudProviderManager, sourceId());
+                break;
+            }
+
             /* Acquire existing profile names: */
             const QVector<QString> profileNames = m_comCloudProvider.GetProfileNames();
-            /* Show error message if necessary: */
             if (!m_comCloudProvider.isOk())
-                msgCenter().cannotAcquireCloudProviderParameter(m_comCloudProvider);
-            else
             {
-                /* Iterate through existing profile names: */
-                foreach (const QString &strProfileName, profileNames)
-                {
-                    /* Skip if we have nothing to show (wtf happened?): */
-                    if (strProfileName.isEmpty())
-                        continue;
-
-                    /* Compose item, fill it's data: */
-                    m_pAccountComboBox->addItem(strProfileName);
-                    m_pAccountComboBox->setItemData(m_pAccountComboBox->count() - 1, strProfileName, AccountData_ProfileName);
-                }
+                msgCenter().cannotAcquireCloudProviderParameter(m_comCloudProvider);
+                break;
             }
-        }
 
-        /* Set previous/default item if possible: */
-        int iNewIndex = -1;
-        if (   iNewIndex == -1
-            && !strOldData.isNull())
-            iNewIndex = m_pAccountComboBox->findData(strOldData, AccountData_ProfileName);
-        if (   iNewIndex == -1
-            && m_pAccountComboBox->count() > 0)
-            iNewIndex = 0;
-        if (iNewIndex != -1)
-            m_pAccountComboBox->setCurrentIndex(iNewIndex);
+            /* Iterate through existing profile names: */
+            foreach (const QString &strProfileName, profileNames)
+            {
+                /* Skip if we have nothing to show (wtf happened?): */
+                if (strProfileName.isEmpty())
+                    continue;
+
+                /* Compose item, fill it's data: */
+                m_pAccountComboBox->addItem(strProfileName);
+                m_pAccountComboBox->setItemData(m_pAccountComboBox->count() - 1, strProfileName, AccountData_ProfileName);
+            }
+
+            /* Set previous/default item if possible: */
+            int iNewIndex = -1;
+            if (   iNewIndex == -1
+                && !strOldData.isNull())
+                iNewIndex = m_pAccountComboBox->findData(strOldData, AccountData_ProfileName);
+            if (   iNewIndex == -1
+                && m_pAccountComboBox->count() > 0)
+                iNewIndex = 0;
+            if (iNewIndex != -1)
+                m_pAccountComboBox->setCurrentIndex(iNewIndex);
+        }
+        while (0);
     }
 
     /* Unblock signals after update: */
@@ -185,6 +198,9 @@ void UIWizardImportAppPage1::populateAccounts()
 
 void UIWizardImportAppPage1::populateAccountProperties()
 {
+    /* Block signals while updating: */
+    m_pAccountPropertyTable->blockSignals(true);
+
     /* Clear table initially: */
     m_pAccountPropertyTable->clear();
     m_pAccountPropertyTable->setRowCount(0);
@@ -193,165 +209,181 @@ void UIWizardImportAppPage1::populateAccountProperties()
     m_comCloudProfile = CCloudProfile();
 
     /* If both provider and profile chosen: */
-    if (!m_comCloudProvider.isNull() && !profileName().isNull())
+    if (m_comCloudProvider.isNotNull() && !profileName().isNull())
     {
-        /* Acquire Cloud Profile: */
-        m_comCloudProfile = m_comCloudProvider.GetProfileByName(profileName());
-        /* Show error message if necessary: */
-        if (!m_comCloudProvider.isOk())
-            msgCenter().cannotFindCloudProfile(m_comCloudProvider, profileName());
-        else
+        /* Main API request sequence, can be interrupted after any step: */
+        do
         {
-            /* Acquire properties: */
+            /* Acquire Cloud Profile: */
+            m_comCloudProfile = m_comCloudProvider.GetProfileByName(profileName());
+            if (!m_comCloudProvider.isOk())
+            {
+                msgCenter().cannotFindCloudProfile(m_comCloudProvider, profileName());
+                break;
+            }
+
+            /* Acquire profile properties: */
             QVector<QString> keys;
             QVector<QString> values;
             values = m_comCloudProfile.GetProperties(QString(), keys);
-            /* Show error message if necessary: */
             if (!m_comCloudProfile.isOk())
-                msgCenter().cannotAcquireCloudProfileParameter(m_comCloudProfile);
-            else
             {
-                /* Configure table: */
-                m_pAccountPropertyTable->setRowCount(keys.size());
-                m_pAccountPropertyTable->setColumnCount(2);
+                msgCenter().cannotAcquireCloudProfileParameter(m_comCloudProfile);
+                break;
+            }
 
-                /* Push acquired keys/values to data fields: */
-                for (int i = 0; i < m_pAccountPropertyTable->rowCount(); ++i)
+            /* Configure table: */
+            m_pAccountPropertyTable->setRowCount(keys.size());
+            m_pAccountPropertyTable->setColumnCount(2);
+
+            /* Push acquired keys/values to data fields: */
+            for (int i = 0; i < m_pAccountPropertyTable->rowCount(); ++i)
+            {
+                /* Create key item: */
+                QTableWidgetItem *pItemK = new QTableWidgetItem(keys.at(i));
+                if (pItemK)
                 {
-                    /* Create key item: */
-                    QTableWidgetItem *pItemK = new QTableWidgetItem(keys.at(i));
-                    if (pItemK)
-                    {
-                        /* Non-editable for sure, but non-selectable? */
-                        pItemK->setFlags(pItemK->flags() & ~Qt::ItemIsEditable);
-                        pItemK->setFlags(pItemK->flags() & ~Qt::ItemIsSelectable);
+                    /* Non-editable for sure, but non-selectable? */
+                    pItemK->setFlags(pItemK->flags() & ~Qt::ItemIsEditable);
+                    pItemK->setFlags(pItemK->flags() & ~Qt::ItemIsSelectable);
 
-                        /* Use non-translated description as tool-tip: */
-                        const QString strToolTip = m_comCloudProvider.GetPropertyDescription(keys.at(i));
-                        /* Show error message if necessary: */
-                        if (!m_comCloudProfile.isOk())
-                            msgCenter().cannotAcquireCloudProfileParameter(m_comCloudProfile);
-                        else
-                            pItemK->setData(Qt::UserRole, strToolTip);
+                    /* Use non-translated description as tool-tip: */
+                    const QString strToolTip = m_comCloudProvider.GetPropertyDescription(keys.at(i));
+                    /* Show error message if necessary: */
+                    if (!m_comCloudProfile.isOk())
+                        msgCenter().cannotAcquireCloudProfileParameter(m_comCloudProfile);
+                    else
+                        pItemK->setData(Qt::UserRole, strToolTip);
 
-                        /* Insert into table: */
-                        m_pAccountPropertyTable->setItem(i, 0, pItemK);
-                    }
-
-                    /* Create value item: */
-                    QTableWidgetItem *pItemV = new QTableWidgetItem(values.at(i));
-                    if (pItemV)
-                    {
-                        /* Non-editable for sure, but non-selectable? */
-                        pItemV->setFlags(pItemV->flags() & ~Qt::ItemIsEditable);
-                        pItemV->setFlags(pItemV->flags() & ~Qt::ItemIsSelectable);
-
-                        /* Use the value as tool-tip, there can be quite long values: */
-                        const QString strToolTip = values.at(i);
-                        pItemV->setToolTip(strToolTip);
-
-                        /* Insert into table: */
-                        m_pAccountPropertyTable->setItem(i, 1, pItemV);
-                    }
+                    /* Insert into table: */
+                    m_pAccountPropertyTable->setItem(i, 0, pItemK);
                 }
 
-                /* Update table tool-tips: */
-                updateAccountPropertyTableToolTips();
+                /* Create value item: */
+                QTableWidgetItem *pItemV = new QTableWidgetItem(values.at(i));
+                if (pItemV)
+                {
+                    /* Non-editable for sure, but non-selectable? */
+                    pItemV->setFlags(pItemV->flags() & ~Qt::ItemIsEditable);
+                    pItemV->setFlags(pItemV->flags() & ~Qt::ItemIsSelectable);
 
-                /* Adjust the table: */
-                adjustAccountPropertyTable();
+                    /* Use the value as tool-tip, there can be quite long values: */
+                    const QString strToolTip = values.at(i);
+                    pItemV->setToolTip(strToolTip);
+
+                    /* Insert into table: */
+                    m_pAccountPropertyTable->setItem(i, 1, pItemV);
+                }
             }
+
+            /* Update table tool-tips: */
+            updateAccountPropertyTableToolTips();
+
+            /* Adjust the table: */
+            adjustAccountPropertyTable();
         }
+        while (0);
     }
+
+    /* Unblock signals after update: */
+    m_pAccountPropertyTable->blockSignals(false);
 }
 
 void UIWizardImportAppPage1::populateAccountInstances()
 {
+    /* Block signals while updating: */
+    m_pAccountInstanceList->blockSignals(true);
+
     /* Clear list initially: */
     m_pAccountInstanceList->clear();
     /* Clear Cloud Client: */
     m_comCloudClient = CCloudClient();
 
     /* If profile chosen: */
-    if (!m_comCloudProfile.isNull())
+    if (m_comCloudProfile.isNotNull())
     {
-        /* Acquire Cloud Client: */
-        m_comCloudClient = m_comCloudProfile.CreateCloudClient();
-        /* Show error message if necessary: */
-        if (!m_comCloudProfile.isOk())
-            msgCenter().cannotCreateCloudClient(m_comCloudProfile);
-        else
+        /* Main API request sequence, can be interrupted after any step: */
+        do
         {
-            /* Read Cloud Client VM instances.
-             * Please take into account that for now CCloudClient::ListInstances
-             * doesn't support OR-ed enum combinations, so we have to aquire
-             * Stopped and Running cloud VM instances separately.  That also means
-             * that there will be two subsequent progress dialogs shown. */
-            /// @todo rework when it's possible to do the right way
-            do
+            /* Acquire Cloud Client: */
+            m_comCloudClient = m_comCloudProfile.CreateCloudClient();
+            if (!m_comCloudProfile.isOk())
             {
-                /* Stopped VM names and ids: */
-                CStringArray comNamesStopped;
-                CStringArray comIDsStopped;
-
-                /* Ask for Stopped cloud VMs: */
-                CProgress comProgressStopped = m_comCloudClient.ListInstances(KCloudMachineState_Stopped, comNamesStopped, comIDsStopped);
-                if (!m_comCloudClient.isOk())
-                {
-                    msgCenter().cannotAcquireCloudClientParameter(m_comCloudClient);
-                    break;
-                }
-
-                /* Show "Acquire cloud instances" progress: */
-                msgCenter().showModalProgressDialog(comProgressStopped, UIWizardImportApp::tr("Acquire stopped cloud instances..."),
-                                                    ":/progress_reading_appliance_90px.png", 0, 0);
-                if (!comProgressStopped.isOk() || comProgressStopped.GetResultCode() != 0)
-                {
-                    msgCenter().cannotAcquireCloudClientParameter(comProgressStopped);
-                    break;
-                }
-
-                /* Running VM names and ids: */
-                CStringArray comNamesRunning;
-                CStringArray comIDsRunning;
-
-                /* Ask for Running cloud VMs: */
-                CProgress comProgressRunning = m_comCloudClient.ListInstances(KCloudMachineState_Running, comNamesRunning, comIDsRunning);
-                if (!m_comCloudClient.isOk())
-                {
-                    msgCenter().cannotAcquireCloudClientParameter(m_comCloudClient);
-                    break;
-                }
-
-                /* Show "Acquire cloud instances" progress: */
-                msgCenter().showModalProgressDialog(comProgressRunning, UIWizardImportApp::tr("Acquire running cloud instances..."),
-                                                    ":/progress_reading_appliance_90px.png", 0, 0);
-                if (!comProgressRunning.isOk() || comProgressRunning.GetResultCode() != 0)
-                {
-                    msgCenter().cannotAcquireCloudClientParameter(comProgressRunning);
-                    break;
-                }
-
-                /* Push acquired names to list rows: */
-                const QVector<QString> names = comNamesStopped.GetValues() + comNamesRunning.GetValues();
-                const QVector<QString> ids = comIDsStopped.GetValues() + comIDsRunning.GetValues();
-                for (int i = 0; i < names.size(); ++i)
-                {
-                    /* Create list item: */
-                    QListWidgetItem *pItem = new QListWidgetItem(names.at(i), m_pAccountInstanceList);
-                    if (pItem)
-                    {
-                        pItem->setFlags(pItem->flags() & ~Qt::ItemIsEditable);
-                        pItem->setData(Qt::UserRole, ids.at(i));
-                    }
-                }
-                /* Choose the 1st one by default if possible: */
-                if (m_pAccountInstanceList->count())
-                    m_pAccountInstanceList->setCurrentRow(0);
+                msgCenter().cannotCreateCloudClient(m_comCloudProfile);
+                break;
             }
-            while (0);
+
+            // WORKAROUND:
+            // Please take into account that for now CCloudClient::ListInstances doesn't support OR-ed enum combinations,
+            // so we have to aquire Stopped and Running cloud VM instances separately.  That also means that there will be
+            // two subsequent progress dialogs shown.
+            /// @todo rework when it's possible to do the right way
+
+            /* Stopped VM names and ids: */
+            CStringArray comNamesStopped;
+            CStringArray comIDsStopped;
+
+            /* Ask for Stopped cloud VMs: */
+            CProgress comProgressStopped = m_comCloudClient.ListInstances(KCloudMachineState_Stopped, comNamesStopped, comIDsStopped);
+            if (!m_comCloudClient.isOk())
+            {
+                msgCenter().cannotAcquireCloudClientParameter(m_comCloudClient);
+                break;
+            }
+
+            /* Show "Acquire cloud instances" progress: */
+            msgCenter().showModalProgressDialog(comProgressStopped, UIWizardImportApp::tr("Acquire stopped cloud instances..."),
+                                                ":/progress_reading_appliance_90px.png", 0, 0);
+            if (!comProgressStopped.isOk() || comProgressStopped.GetResultCode() != 0)
+            {
+                msgCenter().cannotAcquireCloudClientParameter(comProgressStopped);
+                break;
+            }
+
+            /* Running VM names and ids: */
+            CStringArray comNamesRunning;
+            CStringArray comIDsRunning;
+
+            /* Ask for Running cloud VMs: */
+            CProgress comProgressRunning = m_comCloudClient.ListInstances(KCloudMachineState_Running, comNamesRunning, comIDsRunning);
+            if (!m_comCloudClient.isOk())
+            {
+                msgCenter().cannotAcquireCloudClientParameter(m_comCloudClient);
+                break;
+            }
+
+            /* Show "Acquire cloud instances" progress: */
+            msgCenter().showModalProgressDialog(comProgressRunning, UIWizardImportApp::tr("Acquire running cloud instances..."),
+                                                ":/progress_reading_appliance_90px.png", 0, 0);
+            if (!comProgressRunning.isOk() || comProgressRunning.GetResultCode() != 0)
+            {
+                msgCenter().cannotAcquireCloudClientParameter(comProgressRunning);
+                break;
+            }
+
+            /* Push acquired names to list rows: */
+            const QVector<QString> names = comNamesStopped.GetValues() + comNamesRunning.GetValues();
+            const QVector<QString> ids = comIDsStopped.GetValues() + comIDsRunning.GetValues();
+            for (int i = 0; i < names.size(); ++i)
+            {
+                /* Create list item: */
+                QListWidgetItem *pItem = new QListWidgetItem(names.at(i), m_pAccountInstanceList);
+                if (pItem)
+                {
+                    pItem->setFlags(pItem->flags() & ~Qt::ItemIsEditable);
+                    pItem->setData(Qt::UserRole, ids.at(i));
+                }
+            }
+
+            /* Choose the 1st one by default if possible: */
+            if (m_pAccountInstanceList->count())
+                m_pAccountInstanceList->setCurrentRow(0);
         }
+        while (0);
     }
+
+    /* Unblock signals after update: */
+    m_pAccountInstanceList->blockSignals(false);
 }
 
 void UIWizardImportAppPage1::populateFormProperties()
@@ -364,8 +396,7 @@ void UIWizardImportAppPage1::populateFormProperties()
     /* If client created: */
     if (m_comCloudClient.isNotNull())
     {
-        /* The underlying sequence is quite a large one, and each subsequent step depends on previous one.  I do not want to
-         * make embedded ifs or multiple exit points, that's more or less Ok with few of them but certainly not with many. */
+        /* Main API request sequence, can be interrupted after any step: */
         do
         {
             /* Create appliance: */
@@ -888,10 +919,10 @@ bool UIWizardImportAppPageBasic1::validatePage()
 {
     if (isSourceCloudOne())
     {
-        /* Populate form properties: */
+        /* Create appliance & populate form properties: */
         populateFormProperties();
         /* And make sure they are not null: */
-        return m_comVSDForm.isNotNull();
+        return m_comAppliance.isNotNull() && m_comVSDForm.isNotNull();
     }
     else
     {
