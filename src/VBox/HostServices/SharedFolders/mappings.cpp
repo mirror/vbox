@@ -158,7 +158,7 @@ int vbsfMappingLoaded(const MAPPING *pLoadedMapping, SHFLROOT root)
             AssertLogRelMsg(g_aIndexFromRoot[root] == SHFL_ROOT_NIL,
                             ("idRoot=%u: current %u ([%s]), new %u (%ls [%s])\n",
                              root, g_aIndexFromRoot[root], g_FolderMapping[g_aIndexFromRoot[root]].pszFolderName,
-                             pLoadedMapping->pMapName->String.utf16, pLoadedMapping->pszFolderName));
+                             i, pLoadedMapping->pMapName->String.utf16, pLoadedMapping->pszFolderName));
             g_aIndexFromRoot[root] = i;
 
             /* The mapping is known to the host and is used by the guest.
