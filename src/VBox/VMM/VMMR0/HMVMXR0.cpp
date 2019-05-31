@@ -444,7 +444,7 @@ static FNVMXEXITHANDLER            hmR0VmxExitMwaitNested;
 static FNVMXEXITHANDLER            hmR0VmxExitMtfNested;
 static FNVMXEXITHANDLER            hmR0VmxExitMonitorNested;
 static FNVMXEXITHANDLER            hmR0VmxExitPauseNested;
-//static FNVMXEXITHANDLERNSRC        hmR0VmxExitTprBelowThreshold;
+static FNVMXEXITHANDLERNSRC        hmR0VmxExitTprBelowThresholdNested;
 static FNVMXEXITHANDLER            hmR0VmxExitApicAccessNested;
 static FNVMXEXITHANDLER            hmR0VmxExitXdtrAccessNested;
 //static FNVMXEXITHANDLER            hmR0VmxExitEptViolation;
@@ -7697,8 +7697,9 @@ static int hmR0VmxImportGuestState(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo, uint64
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
 # if 0
-                /** @todo NSTVMX: We handle each of these fields individually by passing it to IEM
-                 *        VM-exit handlers. We might handle it differently when using the fast path. */
+                /** @todo NSTVMX: We handle most of these fields individually by passing it to IEM
+                 *        VM-exit handlers as parameters. We would handle it differently when using
+                 *        the fast path. */
                 /*
                  * The hardware virtualization state currently consists of VMCS fields that may be
                  * modified by execution of the nested-guest (that are not part of the general
@@ -12674,13 +12675,7 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExitNested(PVMCPU pVCpu, PVMXTRANSIENT pVm
 
         case VMX_EXIT_MOV_CRX:                  return hmR0VmxExitMovCRxNested(pVCpu, pVmxTransient);
         case VMX_EXIT_INT_WINDOW:               return hmR0VmxExitIntWindowNested(pVCpu, pVmxTransient);
-
-        case VMX_EXIT_TPR_BELOW_THRESHOLD:
-        {
-            /** @todo NSTVMX: TPR below threshold. */
-            return hmR0VmxExitErrUnexpected(pVCpu, pVmxTransient);
-        }
-
+        case VMX_EXIT_TPR_BELOW_THRESHOLD:      return hmR0VmxExitTprBelowThresholdNested(pVCpu, pVmxTransient);
         case VMX_EXIT_MWAIT:                    return hmR0VmxExitMwaitNested(pVCpu, pVmxTransient);
         case VMX_EXIT_MONITOR:                  return hmR0VmxExitMonitorNested(pVCpu, pVmxTransient);
         case VMX_EXIT_PAUSE:                    return hmR0VmxExitPauseNested(pVCpu, pVmxTransient);
@@ -12692,17 +12687,22 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExitNested(PVMCPU pVCpu, PVMXTRANSIENT pVm
         }
 
         case VMX_EXIT_MOV_DRX:                  return hmR0VmxExitMovDRxNested(pVCpu, pVmxTransient);
+        case VMX_EXIT_RDPMC:                    return hmR0VmxExitRdpmcNested(pVCpu, pVmxTransient);
+
         case VMX_EXIT_GDTR_IDTR_ACCESS:
         case VMX_EXIT_LDTR_TR_ACCESS:           return hmR0VmxExitXdtrAccessNested(pVCpu, pVmxTransient);
-
-        case VMX_EXIT_RDPMC:                    return hmR0VmxExitRdpmcNested(pVCpu, pVmxTransient);
 
         case VMX_EXIT_VMREAD:
         case VMX_EXIT_VMWRITE:                  return hmR0VmxExitVmreadVmwriteNested(pVCpu, pVmxTransient);
 
         case VMX_EXIT_TRIPLE_FAULT:             return hmR0VmxExitTripleFaultNested(pVCpu, pVmxTransient);
         case VMX_EXIT_NMI_WINDOW:               return hmR0VmxExitNmiWindowNested(pVCpu, pVmxTransient);
+
         case VMX_EXIT_ERR_INVALID_GUEST_STATE:
+        {
+            /** @todo NSTVMX: Invalid guest state. */
+            return hmR0VmxExitErrUnexpected(pVCpu, pVmxTransient);
+        }
 
         case VMX_EXIT_INIT_SIGNAL:
         case VMX_EXIT_SIPI:
@@ -16304,6 +16304,20 @@ HMVMX_EXIT_DECL hmR0VmxExitPauseNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient
 
 
 /**
+ * Nested-guest VM-exit handler for when the TPR value is lowered below the
+ * specified threshold (VMX_EXIT_TPR_BELOW_THRESHOLD). Conditional VM-exit.
+ */
+HMVMX_EXIT_NSRC_DECL hmR0VmxExitTprBelowThresholdNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
+{
+    HMVMX_VALIDATE_NESTED_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
+
+    if (CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS_USE_TPR_SHADOW))
+        return IEMExecVmxVmexit(pVCpu, pVmxTransient->uExitReason, 0 /* uExitQual */);
+    return hmR0VmxExitTprBelowThreshold(pVCpu, pVmxTransient);
+}
+
+
+/**
  * Nested-guest VM-exit handler for APIC access (VMX_EXIT_APIC_ACCESS). Conditional
  * VM-exit.
  */
@@ -16352,6 +16366,7 @@ HMVMX_EXIT_DECL hmR0VmxExitRdtscpNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransien
 
     if (CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS_RDTSC_EXIT))
     {
+        Assert(CPUMIsGuestVmxProcCtls2Set(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS2_RDTSCP));
         int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
         AssertRCReturn(rc, rc);
         return IEMExecVmxVmexitInstr(pVCpu, pVmxTransient->uExitReason, pVmxTransient->cbInstr);
