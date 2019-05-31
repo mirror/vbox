@@ -2736,13 +2736,15 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexit(PVMCPU pVCpu, uint32_t uExitReason)
     /* Ensure VM-entry interruption information valid bit isn't set. */
     Assert(!VMX_ENTRY_INT_INFO_IS_VALID(pVmcs->u32EntryIntInfo));
 
-    /* Update the VM-exit reason, the other relevant data fields are expected to be updated by the caller already. */
+    /*
+     * Update the VM-exit reason. Other VMCS data fields are expected to be updated by the caller already.
+     */
     pVmcs->u32RoExitReason = uExitReason;
     Log3(("vmexit: uExitReason=%#RX32 uExitQual=%#RX64 cs:rip=%04x:%#RX64\n", uExitReason, pVmcs->u64RoExitQual,
           pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip));
 
     /*
-     * Clear IDT-vectoring information fields if the VM-exit was not triggered during delivery of an event.
+     * Update the IDT-vectoring information fields if the VM-exit is triggered during delivery of an event.
      * See Intel spec. 27.2.3 "Information for VM Exits During Event Delivery".
      */
     {
@@ -2750,12 +2752,17 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexit(PVMCPU pVCpu, uint32_t uExitReason)
         uint32_t   fFlags;
         uint32_t   uErrCode;
         bool const fInEventDelivery = IEMGetCurrentXcpt(pVCpu, &uVector, &fFlags,  &uErrCode, NULL /* uCr2 */);
-        if (!fInEventDelivery)
+        if (fInEventDelivery)
         {
-            iemVmxVmcsSetIdtVectoringInfo(pVCpu, 0);
-            iemVmxVmcsSetIdtVectoringErrCode(pVCpu, 0);  /* Not strictly needed but do it for consistency. */
+            uint8_t  const uIdtVectoringType = iemVmxGetEventType(uVector, fFlags);
+            uint8_t  const fErrCodeValid     = RT_BOOL(fFlags & IEM_XCPT_FLAGS_ERR);
+            uint32_t const uIdtVectoringInfo = RT_BF_MAKE(VMX_BF_IDT_VECTORING_INFO_VECTOR,         uVector)
+                                             | RT_BF_MAKE(VMX_BF_IDT_VECTORING_INFO_TYPE,           uIdtVectoringType)
+                                             | RT_BF_MAKE(VMX_BF_IDT_VECTORING_INFO_ERR_CODE_VALID, fErrCodeValid)
+                                             | RT_BF_MAKE(VMX_BF_IDT_VECTORING_INFO_VALID,          1);
+            iemVmxVmcsSetIdtVectoringInfo(pVCpu, uIdtVectoringInfo);
+            iemVmxVmcsSetIdtVectoringErrCode(pVCpu, uErrCode);
         }
-        /* else: Caller would have updated IDT-vectoring information already, see iemVmxVmexitEvent(). */
     }
 
     /* The following VMCS fields should always be zero since we don't support injecting SMIs into a guest. */
@@ -3940,16 +3947,6 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitEvent(PVMCPU pVCpu, uint8_t uVector, uint32_
      */
     if (!pVCpu->cpum.GstCtx.hwvirt.vmx.fInterceptEvents)
     {
-        /* Update the IDT-vectoring event in the VMCS as the source of the upcoming event. */
-        uint8_t  const uIdtVectoringType = iemVmxGetEventType(uVector, fFlags);
-        bool     const fErrCodeValid     = RT_BOOL(fFlags & IEM_XCPT_FLAGS_ERR);
-        uint32_t const uIdtVectoringInfo = RT_BF_MAKE(VMX_BF_IDT_VECTORING_INFO_VECTOR,         uVector)
-                                         | RT_BF_MAKE(VMX_BF_IDT_VECTORING_INFO_TYPE,           uIdtVectoringType)
-                                         | RT_BF_MAKE(VMX_BF_IDT_VECTORING_INFO_ERR_CODE_VALID, fErrCodeValid)
-                                         | RT_BF_MAKE(VMX_BF_IDT_VECTORING_INFO_VALID,          1);
-        iemVmxVmcsSetIdtVectoringInfo(pVCpu, uIdtVectoringInfo);
-        iemVmxVmcsSetIdtVectoringErrCode(pVCpu, uErrCode);
-
         /*
          * If the event is a virtual-NMI (which is an NMI being inject during VM-entry)
          * virtual-NMI blocking must be set in effect rather than physical NMI blocking.
