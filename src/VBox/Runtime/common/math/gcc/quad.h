@@ -35,6 +35,12 @@
  *	@(#)quad.h	8.1 (Berkeley) 6/4/93
  */
 
+#ifndef IPRT_INCLUDED_COMMON_MATH_quad_h
+#define IPRT_INCLUDED_COMMON_MATH_quad_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
+
 /*
  * Quad arithmetic.
  *
@@ -163,3 +169,6 @@ u_quad_t __udivdi3 __P((u_quad_t, u_quad_t ));
 u_quad_t __umoddi3 __P((u_quad_t, u_quad_t ));
 quad_t __xordi3 __P((quad_t, quad_t));
 RT_C_DECLS_END
+
+#endif
+
