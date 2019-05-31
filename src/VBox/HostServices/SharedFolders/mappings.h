@@ -73,7 +73,9 @@ int vbsfMappingsQueryHostRootEx(SHFLROOT hRoot, const char **ppszRoot, uint32_t 
 bool vbsfIsGuestMappingCaseSensitive(SHFLROOT root);
 bool vbsfIsHostMappingCaseSensitive(SHFLROOT root);
 
-int vbsfMappingLoaded(MAPPING const *pLoadedMapping, SHFLROOT root);
+void vbsfMappingLoadingStart(void);
+int  vbsfMappingLoaded(MAPPING const *pLoadedMapping, SHFLROOT root);
+void vbsfMappingLoadingDone(void);
 PMAPPING vbsfMappingGetByRoot(SHFLROOT root);
 
 #endif /* !VBOX_INCLUDED_SRC_SharedFolders_mappings_h */

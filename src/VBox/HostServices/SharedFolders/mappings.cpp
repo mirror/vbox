@@ -95,6 +95,24 @@ void vbsfMappingInit(void)
     RTListInit(&g_MappingsChangeWaiters);
 }
 
+/**
+ * Called before loading mappings from saved state to drop the root IDs.
+ */
+void vbsfMappingLoadingStart(void)
+{
+    for (SHFLROOT idRoot = 0; idRoot < RT_ELEMENTS(g_aIndexFromRoot); idRoot++)
+        g_aIndexFromRoot[idRoot] = SHFL_ROOT_NIL;
+
+    for (SHFLROOT i = 0; i < RT_ELEMENTS(g_FolderMapping); i++)
+        g_FolderMapping[i].fLoadedRootId = false;
+}
+
+/**
+ * Called when a mapping is loaded to restore the root ID and make sure it
+ * exists.
+ *
+ * @returns VBox status code.
+ */
 int vbsfMappingLoaded(const MAPPING *pLoadedMapping, SHFLROOT root)
 {
     /* Mapping loaded from the saved state with the 'root' index. Which means
@@ -137,8 +155,10 @@ int vbsfMappingLoaded(const MAPPING *pLoadedMapping, SHFLROOT root)
             }
 
             /* Actual index is i. Remember that when the guest uses 'root' it is actually 'i'. */
-            /** @todo This will not work with global shared folders, as these can change
-             *        while state is saved and these blind assignments may hid new ones.  */
+            AssertLogRelMsg(g_aIndexFromRoot[root] == SHFL_ROOT_NIL,
+                            ("idRoot=%u: current %u ([%s]), new %u (%ls [%s])\n",
+                             root, g_aIndexFromRoot[root], g_FolderMapping[g_aIndexFromRoot[root]].pszFolderName,
+                             pLoadedMapping->pMapName->String.utf16, pLoadedMapping->pszFolderName));
             g_aIndexFromRoot[root] = i;
 
             /* The mapping is known to the host and is used by the guest.
@@ -157,6 +177,47 @@ int vbsfMappingLoaded(const MAPPING *pLoadedMapping, SHFLROOT root)
                            pLoadedMapping->fWritable, pLoadedMapping->fAutoMount, pLoadedMapping->pAutoMountPoint,
                            pLoadedMapping->fSymlinksCreate, /* fMissing = */ true, /* fPlaceholder = */ true);
 }
+
+/**
+ * Called after loading mappings from saved state to make sure every mapping has
+ * a root ID.
+ */
+void vbsfMappingLoadingDone(void)
+{
+    for (SHFLROOT iMapping = 0; iMapping < RT_ELEMENTS(g_FolderMapping); iMapping++)
+        if (g_FolderMapping[iMapping].fValid)
+        {
+            AssertLogRel(g_FolderMapping[iMapping].pMapName);
+            AssertLogRel(g_FolderMapping[iMapping].pszFolderName);
+
+            SHFLROOT idRoot;
+            for (idRoot = 0; idRoot < RT_ELEMENTS(g_aIndexFromRoot); idRoot++)
+                if (g_aIndexFromRoot[idRoot] == iMapping)
+                    break;
+            if (idRoot >= RT_ELEMENTS(g_aIndexFromRoot))
+            {
+                for (idRoot = 0; idRoot < RT_ELEMENTS(g_aIndexFromRoot); idRoot++)
+                    if (g_aIndexFromRoot[idRoot] == SHFL_ROOT_NIL)
+                        break;
+                if (idRoot < RT_ELEMENTS(g_aIndexFromRoot))
+                    g_aIndexFromRoot[idRoot] = iMapping;
+                else
+                    LogRel(("SharedFolders: Warning! No free root ID entry for mapping #%u: %ls [%s]\n", iMapping,
+                            g_FolderMapping[iMapping].pMapName->String.ucs2, g_FolderMapping[iMapping].pszFolderName));
+            }
+        }
+
+    /* Log the root ID mappings: */
+    if (LogRelIs2Enabled())
+        for (SHFLROOT idRoot = 0; idRoot < RT_ELEMENTS(g_aIndexFromRoot); idRoot++)
+        {
+            SHFLROOT const iMapping = g_aIndexFromRoot[idRoot];
+            if (iMapping != SHFL_ROOT_NIL)
+                LogRel2(("SharedFolders: idRoot %u: iMapping #%u: %ls [%s]\n", idRoot, iMapping,
+                         g_FolderMapping[iMapping].pMapName->String.ucs2, g_FolderMapping[iMapping].pszFolderName));
+        }
+}
+
 
 MAPPING *vbsfMappingGetByRoot(SHFLROOT root)
 {

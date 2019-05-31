@@ -299,6 +299,9 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
         return SSMR3SetLoadError(pSSM, VERR_SSM_DATA_UNIT_FORMAT_CHANGED, RT_SRC_POS,
                                  "Saved SHFLCLIENTDATA enmErrorStyle value %d is not known/valid!", pClient->enmErrorStyle);
 
+    /* Drop the root IDs of all configured mappings before restoring: */
+    vbsfMappingLoadingStart();
+
     /* We don't actually (fully) restore the state; we simply check if the current state is as we it expect it to be. */
     for (SHFLROOT i = 0; i < SHFL_MAX_MAPPINGS; i++)
     {
@@ -417,6 +420,11 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
             AssertRCReturn(rc, rc);
         }
     }
+
+    /* Make sure all mappings have root IDs (global folders changes, VM
+       config changes (paranoia)): */
+    vbsfMappingLoadingDone();
+
     Log(("SharedFolders host service: successfully loaded state\n"));
 #else
     RT_NOREF(u32ClientID, pvClient, pSSM, uVersion);
