@@ -54,7 +54,6 @@ void UIWizardImportAppPage2::updatePageAppearance()
 {
     /* Check whether there was cloud source selected: */
     const bool fIsSourceCloudOne = fieldImp("isSourceCloudOne").toBool();
-
     /* Update page appearance according to chosen source: */
     m_pSettingsCntLayout->setCurrentIndex((int)fIsSourceCloudOne);
 }
@@ -199,7 +198,6 @@ void UIWizardImportAppPageBasic2::initializePage()
 
     /* Check whether there was cloud source selected: */
     const bool fIsSourceCloudOne = field("isSourceCloudOne").toBool();
-
     if (fIsSourceCloudOne)
         populateFormPropertiesTable();
     else
@@ -285,10 +283,19 @@ bool UIWizardImportAppPageBasic2::validatePage()
     const bool fIsSourceCloudOne = fieldImp("isSourceCloudOne").toBool();
     if (fIsSourceCloudOne)
     {
-        /* Give changed VSD back to appliance: */
-        /// @todo check for possible errors
+        /* Check whether we have proper VSD form: */
         CVirtualSystemDescriptionForm comForm = fieldImp("vsdForm").value<CVirtualSystemDescriptionForm>();
-        comForm.GetVirtualSystemDescription();
+        fResult = comForm.isNotNull();
+        Assert(fResult);
+
+        /* Give changed VSD back to appliance: */
+        if (fResult)
+        {
+            comForm.GetVirtualSystemDescription();
+            fResult = comForm.isOk();
+            if (!fResult)
+                msgCenter().cannotAcquireVirtualSystemDescriptionFormProperty(comForm);
+        }
     }
 
     /* Try to import appliance: */

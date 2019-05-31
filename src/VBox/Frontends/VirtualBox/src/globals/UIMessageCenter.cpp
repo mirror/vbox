@@ -78,6 +78,7 @@
 #include "CExtPackFile.h"
 #include "CHostNetworkInterface.h"
 #include "CVFSExplorer.h"
+#include "CVirtualSystemDescriptionForm.h"
 #ifdef VBOX_WITH_DRAG_AND_DROP
 # include "CGuest.h"
 # include "CDnDSource.h"
@@ -1914,6 +1915,13 @@ void UIMessageCenter::cannotAcquireVirtualSystemDescription(const CAppliance &co
 {
     error(pParent, MessageType_Critical, tr("<p>Cannot create a virtual system description.</p>"),
           UIErrorString::formatErrorInfo(comAppliance));
+}
+
+void UIMessageCenter::cannotAcquireVirtualSystemDescriptionFormProperty(const CVirtualSystemDescriptionForm &comForm,
+                                                                        QWidget *pParent /* = 0 */) const
+{
+    error(pParent, MessageType_Critical, tr("<p>Cannot acquire a virtual system description property.</p>"),
+          UIErrorString::formatErrorInfo(comForm));
 }
 
 void UIMessageCenter::cannotImportAppliance(CAppliance &appliance, QWidget *pParent /* = 0*/) const
