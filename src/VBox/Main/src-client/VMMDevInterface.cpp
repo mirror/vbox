@@ -72,6 +72,13 @@ typedef struct DRVMAINVMMDEV
     /** Our HGCM connector interface. */
     PDMIHGCMCONNECTOR           HGCMConnector;
 #endif
+
+#ifdef VBOX_WITH_GUEST_PROPS
+    HGCMSVCEXTHANDLE            hHgcmSvcExtGstProps;
+#endif
+#ifdef VBOX_WITH_GUEST_CONTROL
+    HGCMSVCEXTHANDLE            hHgcmSvcExtGstCtrl;
+#endif
 } DRVMAINVMMDEV, *PDRVMAINVMMDEV;
 
 //
@@ -727,6 +734,22 @@ int VMMDev::hgcmHostCall(const char *pszServiceName, uint32_t u32Function,
  */
 void VMMDev::hgcmShutdown(bool fUvmIsInvalid /*= false*/)
 {
+#ifdef VBOX_WITH_GUEST_PROPS
+    if (mpDrv->hHgcmSvcExtGstProps)
+    {
+        HGCMHostUnregisterServiceExtension(mpDrv->hHgcmSvcExtGstProps);
+        mpDrv->hHgcmSvcExtGstProps = NULL;
+    }
+#endif
+
+#ifdef VBOX_WITH_GUEST_CONTROL
+    if (mpDrv->hHgcmSvcExtGstCtrl)
+    {
+        HGCMHostUnregisterServiceExtension(mpDrv->hHgcmSvcExtGstCtrl);
+        mpDrv->hHgcmSvcExtGstCtrl = NULL;
+    }
+#endif
+
     if (ASMAtomicCmpXchgBool(&m_fHGCMActive, false, true))
         HGCMHostShutdown(fUvmIsInvalid);
 }
@@ -838,6 +861,22 @@ DECLCALLBACK(void) VMMDev::drvDestruct(PPDMDRVINS pDrvIns)
     PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
     PDRVMAINVMMDEV pThis = PDMINS_2_DATA(pDrvIns, PDRVMAINVMMDEV);
     LogFlow(("VMMDev::drvDestruct: iInstance=%d\n", pDrvIns->iInstance));
+
+#ifdef VBOX_WITH_GUEST_PROPS
+    if (pThis->hHgcmSvcExtGstProps)
+    {
+        HGCMHostUnregisterServiceExtension(pThis->hHgcmSvcExtGstProps);
+        pThis->hHgcmSvcExtGstProps = NULL;
+    }
+#endif
+
+#ifdef VBOX_WITH_GUEST_CONTROL
+    if (pThis->hHgcmSvcExtGstCtrl)
+    {
+        HGCMHostUnregisterServiceExtension(pThis->hHgcmSvcExtGstCtrl);
+        pThis->hHgcmSvcExtGstCtrl = NULL;
+    }
+#endif
 
     if (pThis->pVMMDev)
     {
@@ -1007,8 +1046,7 @@ int VMMDev::i_guestPropLoadAndConfigure()
     /*
      * Register the host notification callback
      */
-    HGCMSVCEXTHANDLE hDummy;
-    HGCMHostRegisterServiceExtension(&hDummy, "VBoxGuestPropSvc", Console::i_doGuestPropNotification, ptrConsole.m_p);
+    HGCMHostRegisterServiceExtension(&mpDrv->hHgcmSvcExtGstProps, "VBoxGuestPropSvc", Console::i_doGuestPropNotification, ptrConsole.m_p);
 
 # ifdef VBOX_WITH_GUEST_PROPS_RDONLY_GUEST
     rc = i_guestPropSetGlobalPropertyFlags(GUEST_PROP_F_RDONLYGUEST);
@@ -1135,8 +1173,7 @@ DECLCALLBACK(int) VMMDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle,
     rc = pThis->pVMMDev->hgcmLoadService("VBoxGuestControlSvc", "VBoxGuestControlSvc");
     if (RT_SUCCESS(rc))
     {
-        HGCMSVCEXTHANDLE hDummy;
-        rc = HGCMHostRegisterServiceExtension(&hDummy, "VBoxGuestControlSvc",
+        rc = HGCMHostRegisterServiceExtension(&pThis->hHgcmSvcExtGstCtrl, "VBoxGuestControlSvc",
                                               &Guest::i_notifyCtrlDispatcher,
                                               pThis->pVMMDev->mParent->i_getGuest());
         if (RT_SUCCESS(rc))

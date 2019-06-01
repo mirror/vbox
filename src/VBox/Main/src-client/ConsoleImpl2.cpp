@@ -85,8 +85,6 @@
 # include <VBox/HostServices/GuestPropertySvc.h>
 # include <VBox/com/defs.h>
 # include <VBox/com/array.h>
-# include "HGCM.h" /** @todo It should be possible to register a service
-                    *        extension using a VMMDev callback. */
 # include <vector>
 #endif /* VBOX_WITH_GUEST_PROPS */
 #include <VBox/intnet.h>
@@ -3095,8 +3093,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                 if (RT_SUCCESS(rc))
                 {
                     LogRel(("Shared Clipboard: Service loaded\n"));
-                    HGCMSVCEXTHANDLE hDummy;
-                    rc = HGCMHostRegisterServiceExtension(&hDummy, "VBoxSharedClipboard",
+                    rc = HGCMHostRegisterServiceExtension(&m_hHgcmSvcExtShrdClipboard, "VBoxSharedClipboard",
                                                           &Console::i_sharedClipboardServiceCallback,
                                                           this /* pvExtension */);
                     if (RT_FAILURE(rc))
@@ -3171,8 +3168,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             }
             else
             {
-                HGCMSVCEXTHANDLE hDummy;
-                rc = HGCMHostRegisterServiceExtension(&hDummy, "VBoxDragAndDropSvc",
+                rc = HGCMHostRegisterServiceExtension(&m_hHgcmSvcExtDragAndDrop, "VBoxDragAndDropSvc",
                                                       &GuestDnD::notifyDnDDispatcher,
                                                       GUESTDNDINST());
                 if (RT_FAILURE(rc))

@@ -70,6 +70,12 @@ class VMPowerDownTask;
 # include <VBox/HostServices/GuestPropertySvc.h>  /* For the property notification callback */
 #endif
 
+#if    defined(VBOX_WITH_GUEST_PROPS) || defined(VBOX_WITH_SHARED_CLIPBOARD) \
+    || defined(VBOX_WITH_SHARED_CLIPBOARD_URI_LIST_DISABLED) || defined(VBOX_WITH_DRAG_AND_DROP)
+# include "HGCM.h" /** @todo It should be possible to register a service
+                    *        extension using a VMMDev callback. */
+#endif
+
 struct VUSBIRHCONFIG;
 typedef struct VUSBIRHCONFIG *PVUSBIRHCONFIG;
 
@@ -1045,6 +1051,13 @@ private:
 
     /** Machine uuid string. */
     Bstr mstrUuid;
+
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST_DISABLED
+    HGCMSVCEXTHANDLE m_hHgcmSvcExtShrdClipboard;
+#endif
+#ifdef VBOX_WITH_DRAG_AND_DROP
+    HGCMSVCEXTHANDLE m_hHgcmSvcExtDragAndDrop;
+#endif
 
     /** Pointer to the progress object of a live cancelable task.
      *
