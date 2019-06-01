@@ -456,6 +456,8 @@ typedef struct AC97DRIVER
     /** Whether this driver is in an attached state or not. */
     bool                               fAttached;
     uint8_t                            Padding[4];
+    /** Pointer to the description string passed to PDMDevHlpDriverAttach(). */
+    R3PTRTYPE(char *)                  pszDesc;
     /** Pointer to attached driver base interface. */
     R3PTRTYPE(PPDMIBASE)               pDrvBase;
     /** Audio connector interface to the underlying host backend. */
@@ -3911,6 +3913,7 @@ static int ichac97R3AttachInternal(PAC97STATE pThis, unsigned uLUN, uint32_t fFl
             AssertMsg(pDrv->pConnector != NULL, ("Configuration error: LUN #%u has no host audio interface, rc=%Rrc\n", uLUN, rc));
             pDrv->pAC97State = pThis;
             pDrv->uLUN       = uLUN;
+            pDrv->pszDesc    = pszDesc;
 
             /*
              * For now we always set the driver at LUN 0 as our primary
@@ -4049,6 +4052,7 @@ static DECLCALLBACK(void) ichac97R3Detach(PPDMDEVINS pDevIns, unsigned uLUN, uin
             int rc2 = ichac97R3DetachInternal(pThis, pDrv, fFlags);
             if (RT_SUCCESS(rc2))
             {
+                RTStrFree(pDrv->pszDesc);
                 RTMemFree(pDrv);
                 pDrv = NULL;
             }
@@ -4087,6 +4091,8 @@ static int ichac97R3ReattachInternal(PAC97STATE pThis, PAC97DRIVER pDrv, uint8_t
         if (RT_FAILURE(rc))
             return rc;
 
+        RTStrFree(pDrv->pszDesc);
+        RTMemFree(pDrv);
         pDrv = NULL;
     }
 
@@ -4152,6 +4158,7 @@ static DECLCALLBACK(int) ichac97R3Destruct(PPDMDEVINS pDevIns)
     RTListForEachSafe(&pThis->lstDrv, pDrv, pDrvNext, AC97DRIVER, Node)
     {
         RTListNodeRemove(&pDrv->Node);
+        RTMemFree(pDrv->pszDesc);
         RTMemFree(pDrv);
     }
 
