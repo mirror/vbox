@@ -71,7 +71,7 @@ class VMPowerDownTask;
 #endif
 
 #if    defined(VBOX_WITH_GUEST_PROPS) || defined(VBOX_WITH_SHARED_CLIPBOARD) \
-    || defined(VBOX_WITH_SHARED_CLIPBOARD_URI_LIST_DISABLED) || defined(VBOX_WITH_DRAG_AND_DROP)
+    || defined(VBOX_WITH_DRAG_AND_DROP)
 # include "HGCM.h" /** @todo It should be possible to register a service
                     *        extension using a VMMDev callback. */
 #endif
@@ -1052,7 +1052,7 @@ private:
     /** Machine uuid string. */
     Bstr mstrUuid;
 
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST_DISABLED
+#ifdef VBOX_WITH_SHARED_CLIPBOARD
     HGCMSVCEXTHANDLE m_hHgcmSvcExtShrdClipboard;
 #endif
 #ifdef VBOX_WITH_DRAG_AND_DROP
