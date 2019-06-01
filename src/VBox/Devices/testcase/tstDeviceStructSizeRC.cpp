@@ -1392,6 +1392,7 @@ int main()
     GEN_CHECK_OFF(AHCIPort, pDrvBase);
     GEN_CHECK_OFF(AHCIPort, pDrvMedia);
     GEN_CHECK_OFF(AHCIPort, pDrvMediaEx);
+    GEN_CHECK_OFF(AHCIPort, pszDesc);
     GEN_CHECK_OFF(AHCIPort, IBase);
     GEN_CHECK_OFF(AHCIPort, IPort);
     GEN_CHECK_OFF(AHCIPort, IMediaExPort);
