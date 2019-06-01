@@ -1154,6 +1154,12 @@ void HGCMService::instanceDestroy(void)
 
     RTStrFree(m_pszSvcName);
     m_pszSvcName = NULL;
+
+    if (m_paClientIds)
+    {
+        RTMemFree(m_paClientIds);
+        m_paClientIds = NULL;
+    }
 }
 
 int HGCMService::saveClientState(uint32_t u32ClientId, PSSMHANDLE pSSM)
