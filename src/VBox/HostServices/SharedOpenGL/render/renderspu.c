@@ -382,6 +382,7 @@ void renderspuWinTerm( WindowInfo *window )
 void renderspuWinCleanup(WindowInfo *window)
 {
     renderspuWinTerm( window );
+    crFree(window->title);
     RTCritSectDelete(&window->CompositorLock);
 }
 
