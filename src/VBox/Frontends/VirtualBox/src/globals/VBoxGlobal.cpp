@@ -4496,6 +4496,16 @@ void VBoxGlobal::cleanup()
      * stuff which could be called from the other threads: */
     s_fCleaningUp = true;
 
+#ifdef VBOX_WITH_DEBUGGER_GUI
+    /* For Runtime UI: */
+    if (   uiType() == UIType_RuntimeUI
+        && m_hVBoxDbg != NIL_RTLDRMOD)
+    {
+        RTLdrClose(m_hVBoxDbg);
+        m_hVBoxDbg = NIL_RTLDRMOD;
+    }
+#endif
+
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
     /* Shutdown update manager: */
     UIUpdateManager::shutdown();
