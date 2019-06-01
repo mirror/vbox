@@ -1344,10 +1344,7 @@ renderspu_RecreateContext( ContextInfo *context, int newVisualID )
 void
 renderspu_SystemDestroyContext( ContextInfo *context )
 {
-#if 0
-    /* XXX disable for now - causes segfaults w/ NVIDIA's driver */
     render_spu.ws.glXDestroyContext( context->visual->dpy, context->context );
-#endif
     context->visual = NULL;
     context->context = 0;
 }
