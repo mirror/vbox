@@ -273,6 +273,12 @@ RTDECL(uint32_t) RTSystemGetNtBuildNo(void);
 /** Makes an NT version for comparison with RTSystemGetNtVersion(). */
 # define RTSYSTEM_MAKE_NT_VERSION(a_uMajor, a_uMinor, a_uBuild) \
     ( ((uint64_t)(a_uMajor) << 52) | ((uint64_t)((a_uMinor) & 0xfffU) << 40) | ((uint32_t)(a_uBuild)) )
+/** Extracts the major version number from a RTSYSTEM_MAKE_NT_VERSION value. */
+# define RTSYSTEM_NT_VERSION_GET_MAJOR(a_uNtVersion) ((uint32_t)((a_uNtVersion) >> 52))
+/** Extracts the minor version number from a RTSYSTEM_MAKE_NT_VERSION value. */
+# define RTSYSTEM_NT_VERSION_GET_MINOR(a_uNtVersion) ((uint32_t)((a_uNtVersion) >> 40) & UINT32_C(0xfff))
+/** Extracts the build number from a RTSYSTEM_MAKE_NT_VERSION value. */
+# define RTSYSTEM_NT_VERSION_GET_BUILD(a_uNtVersion) ((uint32_t)(a_uNtVersion))
 
 /**
  * Get the Windows NT version number.
