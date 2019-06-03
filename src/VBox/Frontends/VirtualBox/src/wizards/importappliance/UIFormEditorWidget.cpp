@@ -57,7 +57,8 @@ class ChoiceData
 public:
 
     /** Constructs null choice data. */
-    ChoiceData() {}
+    ChoiceData()
+        : m_iSelectedIndex(-1) {}
     /** Constructs choice data on the basis of passed @a values and @a iSelectedIndex. */
     ChoiceData(const QVector<QString> &values, int iSelectedIndex)
         : m_values(values), m_iSelectedIndex(iSelectedIndex) {}
@@ -100,7 +101,8 @@ class RangedIntegerData
 public:
 
     /** Constructs null ranged-integer data. */
-    RangedIntegerData() {}
+    RangedIntegerData()
+        : m_iMinimum(-1), m_iMaximum(-1), m_iInteger(-1) {}
     /** Constructs ranged-integer data on the basis of passed @a iMinimum, @a iMaximum and @a iInteger. */
     RangedIntegerData(int iMinimum, int iMaximum, int iInteger)
         : m_iMinimum(iMinimum), m_iMaximum(iMaximum), m_iInteger(iInteger) {}
@@ -803,20 +805,26 @@ bool UIFormEditorModel::setData(const QModelIndex &index, const QVariant &value,
                     switch (m_dataList[index.row()]->valueType())
                     {
                         case KFormValueType_String:
+                        {
                             m_dataList[index.row()]->setString(value.toString());
                             emit dataChanged(index, index);
                             updateGeneration();
                             return true;
+                        }
                         case KFormValueType_Choice:
+                        {
                             m_dataList[index.row()]->setChoice(value.value<ChoiceData>());
                             emit dataChanged(index, index);
                             updateGeneration();
                             return true;
+                        }
                         case KFormValueType_RangedInteger:
+                        {
                             m_dataList[index.row()]->setRangedInteger(value.value<RangedIntegerData>());
                             emit dataChanged(index, index);
                             updateGeneration();
                             return true;
+                        }
                         default:
                             return false;
                     }
