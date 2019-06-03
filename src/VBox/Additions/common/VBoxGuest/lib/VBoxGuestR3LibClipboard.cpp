@@ -416,7 +416,6 @@ static int vbglR3ClipboardReadMetaDataEx(HGCMCLIENTID idClient, SharedClipboardU
     return rc;
 }
 
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
 /**
  * Reads the actual meta data from the host.
  *
@@ -743,6 +742,7 @@ VBGLR3DECL(int) VbglR3ClipboardWriteData(HGCMCLIENTID idClient, uint32_t fFormat
     return rc;
 }
 
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
 /**
  * Writes an error to the host.
  *
