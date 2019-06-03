@@ -35,7 +35,8 @@
 #include "CGuest.h"
 #include "CEventSource.h"
 
-
+/* Forward declarations: */
+class UISoftKeyboardWidget;
 
 enum UIKeyState
 {
@@ -47,8 +48,9 @@ enum UIKeyState
 
 enum UIKeyType
 {
+    /** Can be in UIKeyState_NotPressed and UIKeyState_Pressed states. */
     UIKeyType_Ordinary,
-    /** e.g. CapsLock. Can be only in UIKeyState_NotPressed, UIKeyState_Locked, */
+    /** e.g. CapsLock. Can be only in UIKeyState_NotPressed, UIKeyState_Locked */
     UIKeyType_Toggleable,
     /** e.g. Shift Can be in all 3 states*/
     UIKeyType_Modifier,
@@ -125,10 +127,12 @@ public:
 
     void setCutout(int iCorner, int iWidth, int iHeight);
 
+    void setParentWidget(UISoftKeyboardWidget* pParent);
     UIKeyState state() const;
     QVector<LONG> scanCodeWithPrefix() const;
 
     void release();
+    void press();
 
     void setPolygon(const QPolygon &polygon);
     const QPolygon &polygon() const;
@@ -162,6 +166,7 @@ private:
     int        m_iCutoutCorner;
     /** Key's position in the layout. */
     int        m_iPosition;
+    UISoftKeyboardWidget  *m_pParentWidget;
 };
 
 /*********************************************************************************************************************************
@@ -171,35 +176,49 @@ class UISoftKeyboardWidget : public QWidget
 {
     Q_OBJECT;
 
+signals:
+
+    void sigPutKeyboardSequence(QVector<LONG> sequence);
+
 public:
 
     UISoftKeyboardWidget(QWidget *pParent = 0);
+
     virtual QSize minimumSizeHint() const;
     virtual QSize sizeHint() const;
     void setNewMinimumSize(const QSize &size);
-    QVector<UISoftKeyboardRow> m_rows;
+
+    QVector<UISoftKeyboardRow> &rows();
+    const QVector<UISoftKeyboardRow> &rows() const;
+
     void setInitialSize(int iWidth, int iHeight);
+    void keyStateChange(UISoftKeyboardKey* pKey);
 
 protected:
 
     void paintEvent(QPaintEvent *pEvent) /* override */;
-    void mousePressEvent(QMouseEvent *pEvent);
+    void mousePressEvent(QMouseEvent *pEvent) /* override */;
+    void mouseReleaseEvent(QMouseEvent *pEvent) /* override */;
     void mouseMoveEvent(QMouseEvent *pEvent);
 
 private:
 
     UISoftKeyboardKey *keyUnderMouse(QMouseEvent *pEvent);
-
+    void               handleKeyPress(UISoftKeyboardKey *pKey);
+    void               handleKeyRelease(UISoftKeyboardKey *pKey);
     QSize m_minimumSize;
     int m_iInitialHeight;
     int m_iInitialWidth;
     float m_fMultiplierX;
     float m_fMultiplierY;
     UISoftKeyboardKey *m_pKeyUnderMouse;
+    UISoftKeyboardKey *m_pKeyPressed;
     QColor m_keyDefaultColor;
     QColor m_keyHoverColor;
-    QColor m_keyPressColor;
     QColor m_textDefaultColor;
+    QColor m_textPressedColor;
+    QVector<UISoftKeyboardKey*> m_pressedModifiers;
+    QVector<UISoftKeyboardRow> m_rows;
 };
 
 /*********************************************************************************************************************************
@@ -293,6 +312,7 @@ UISoftKeyboardKey::UISoftKeyboardKey()
     , m_iCutoutHeight(0)
     , m_iCutoutCorner(-1)
     , m_iPosition(0)
+    , m_pParentWidget(0)
 {
 }
 
@@ -401,9 +421,19 @@ UIKeyState UISoftKeyboardKey::state() const
     return m_enmState;
 }
 
+void UISoftKeyboardKey::setParentWidget(UISoftKeyboardWidget* pParent)
+{
+    m_pParentWidget = pParent;
+}
+
 void UISoftKeyboardKey::release()
 {
     updateState(false);
+}
+
+void UISoftKeyboardKey::press()
+{
+    updateState(true);
 }
 
 void UISoftKeyboardKey::setPolygon(const QPolygon &polygon)
@@ -440,8 +470,7 @@ int UISoftKeyboardKey::cutoutHeight() const
 
 void UISoftKeyboardKey::updateState(bool fPressed)
 {
-    if (m_enmType == UIKeyType_Ordinary)
-        return;
+    UIKeyState enmPreviousState = state();
     if (m_enmType == UIKeyType_Modifier)
     {
         if (fPressed)
@@ -469,6 +498,15 @@ void UISoftKeyboardKey::updateState(bool fPressed)
                 m_enmState = UIKeyState_NotPressed;
         }
     }
+    else if (m_enmType == UIKeyType_Ordinary)
+    {
+        if (m_enmState == UIKeyState_NotPressed)
+            m_enmState = UIKeyState_Pressed;
+        else
+            m_enmState = UIKeyState_NotPressed;
+    }
+    if (enmPreviousState != state() && m_pParentWidget)
+        m_pParentWidget->keyStateChange(this);
 }
 
 /*********************************************************************************************************************************
@@ -478,10 +516,11 @@ void UISoftKeyboardKey::updateState(bool fPressed)
 UISoftKeyboardWidget::UISoftKeyboardWidget(QWidget *pParent /* = 0 */)
     :QWidget(pParent)
     , m_pKeyUnderMouse(0)
-    , m_keyDefaultColor(QColor(255, 228, 192))
-    , m_keyHoverColor(QColor(238, 208, 169))
-    , m_keyPressColor(QColor(248, 218, 179))
-    , m_textDefaultColor(QColor(0, 0, 0))
+    , m_pKeyPressed(0)
+    , m_keyDefaultColor(QColor(103, 128, 159))
+    , m_keyHoverColor(QColor(108, 122, 137))
+    , m_textDefaultColor(QColor(46, 49, 49))
+    , m_textPressedColor(QColor(149, 165, 166))
 {
     setMouseTracking(true);
 }
@@ -508,6 +547,16 @@ void UISoftKeyboardWidget::setInitialSize(int iWidth, int iHeight)
     m_iInitialHeight = iHeight;
 }
 
+QVector<UISoftKeyboardRow> &UISoftKeyboardWidget::rows()
+{
+    return m_rows;
+}
+
+const QVector<UISoftKeyboardRow> &UISoftKeyboardWidget::rows() const
+{
+    return m_rows;
+}
+
 void UISoftKeyboardWidget::paintEvent(QPaintEvent *pEvent) /* override */
 {
     Q_UNUSED(pEvent);
@@ -523,9 +572,11 @@ void UISoftKeyboardWidget::paintEvent(QPaintEvent *pEvent) /* override */
     painterFont.setBold(false);
     painter.setFont(painterFont);
     painter.setRenderHint(QPainter::Antialiasing);
-    painter.setPen(QPen(QColor(m_textDefaultColor), 2));
-    painter.setBrush(QBrush(m_keyDefaultColor));
     painter.scale(m_fMultiplierX, m_fMultiplierY);
+    int unitSize = qApp->style()->pixelMetric(QStyle::PM_LayoutHorizontalSpacing);
+    float fLedRadius =  1.5 * unitSize;
+    float fLedMargin =  unitSize;
+
     for (int i = 0; i < m_rows.size(); ++i)
     {
         QVector<UISoftKeyboardKey> &keys = m_rows[i].keys();
@@ -533,27 +584,56 @@ void UISoftKeyboardWidget::paintEvent(QPaintEvent *pEvent) /* override */
         {
             UISoftKeyboardKey &key = keys[j];
             painter.translate(key.keyGeometry().x(), key.keyGeometry().y());
-            painter.drawPolygon(key.polygon());
-            QRect textRect(5, 5, key.keyGeometry().width(), key.keyGeometry().height());
-            painter.drawText(textRect, Qt::TextWordWrap, key.keyCap());
-            painter.translate(-key.keyGeometry().x(), -key.keyGeometry().y());
-        }
-    }
+            if (&key  == m_pKeyUnderMouse)
+                painter.setBrush(QBrush(m_keyHoverColor));
+            else
+                painter.setBrush(QBrush(m_keyDefaultColor));
 
-    if (m_pKeyUnderMouse)
-    {
-        painter.setBrush(QBrush(m_keyHoverColor));
-        painter.translate(m_pKeyUnderMouse->keyGeometry().x(), m_pKeyUnderMouse->keyGeometry().y());
-        painter.drawPolygon(m_pKeyUnderMouse->polygon());
-        QRect textRect(5, 5, m_pKeyUnderMouse->keyGeometry().width(), m_pKeyUnderMouse->keyGeometry().height());
-        painter.drawText(textRect, Qt::TextWordWrap, m_pKeyUnderMouse->keyCap());
-        painter.translate(-m_pKeyUnderMouse->keyGeometry().x(), -m_pKeyUnderMouse->keyGeometry().y());
+            if (&key  == m_pKeyPressed)
+                painter.setPen(QPen(QColor(m_textPressedColor), 2));
+            else
+                painter.setPen(QPen(QColor(m_textDefaultColor), 2));
+
+            painter.drawPolygon(key.polygon());
+
+            QRect textRect(0.8 * unitSize, 2 * unitSize
+                           , key.keyGeometry().width(), key.keyGeometry().height());
+            painter.drawText(textRect, Qt::TextWordWrap, key.keyCap());
+
+            if (key.type() != UIKeyType_Ordinary)
+            {
+                QColor ledColor;
+                if (key.state() == UIKeyState_NotPressed)
+                    ledColor = m_textDefaultColor;
+                else if (key.state() == UIKeyState_Pressed)
+                    ledColor = QColor(0, 255, 0);
+                else
+                    ledColor = QColor(255, 0, 0);
+                painter.setBrush(ledColor);
+                painter.setPen(ledColor);
+                QRectF rectangle(key.keyGeometry().width() - 2 * fLedMargin, fLedMargin, fLedRadius, fLedRadius);
+                painter.drawEllipse(rectangle);
+            }
+            painter.translate(-key.keyGeometry().x(), -key.keyGeometry().y());
+
+        }
     }
 }
 
 void UISoftKeyboardWidget::mousePressEvent(QMouseEvent *pEvent)
 {
-    keyUnderMouse(pEvent);
+    m_pKeyPressed = keyUnderMouse(pEvent);
+    handleKeyPress(m_pKeyPressed);
+    update();
+}
+
+void UISoftKeyboardWidget::mouseReleaseEvent(QMouseEvent *)
+{
+    if (!m_pKeyPressed)
+        return;
+    handleKeyRelease(m_pKeyPressed);
+    m_pKeyPressed = 0;
+    update();
 }
 
 void UISoftKeyboardWidget::mouseMoveEvent(QMouseEvent *pEvent)
@@ -584,6 +664,74 @@ UISoftKeyboardKey *UISoftKeyboardWidget::keyUnderMouse(QMouseEvent *pEvent)
         }
     }
     return 0;
+}
+
+void UISoftKeyboardWidget::handleKeyPress(UISoftKeyboardKey *pKey)
+{
+    if (!pKey)
+        return;
+    pKey->press();
+
+    if (pKey->type() == UIKeyType_Modifier)
+        return;
+
+    QVector<LONG> sequence;
+
+     /* Add the pressed modifiers first: */
+    for (int i = 0; i < m_pressedModifiers.size(); ++i)
+    {
+        UISoftKeyboardKey *pModifier = m_pressedModifiers[i];
+        if (pModifier->scanCodePrefix() != 0)
+            sequence << pModifier->scanCodePrefix();
+        sequence << pModifier->scanCode();
+    }
+
+    if (pKey->scanCodePrefix() != 0)
+        sequence << pKey->scanCodePrefix();
+    sequence << pKey->scanCode();
+    emit sigPutKeyboardSequence(sequence);
+}
+
+void UISoftKeyboardWidget::keyStateChange(UISoftKeyboardKey* pKey)
+{
+    if (!pKey)
+        return;
+    if (pKey->type() == UIKeyType_Modifier)
+    {
+        if (pKey->state() == UIKeyState_NotPressed)
+            m_pressedModifiers.removeOne(pKey);
+        else
+            if (!m_pressedModifiers.contains(pKey))
+                m_pressedModifiers.append(pKey);
+    }
+}
+
+void UISoftKeyboardWidget::handleKeyRelease(UISoftKeyboardKey *pKey)
+{
+    if (!pKey)
+        return;
+    if (pKey->type() == UIKeyType_Ordinary)
+        pKey->release();
+    /* We only send the scan codes of Ordinary keys: */
+    if (pKey->type() == UIKeyType_Modifier)
+        return;
+
+    QVector<LONG> sequence;
+    if (pKey->scanCodePrefix() != 0)
+        sequence <<  pKey->scanCodePrefix();
+    sequence << (pKey->scanCode() | 0x80);
+
+    /* Add the pressed modifiers in the reverse order: */
+    for (int i = m_pressedModifiers.size() - 1; i >= 0; --i)
+    {
+        UISoftKeyboardKey *pModifier = m_pressedModifiers[i];
+        if (pModifier->scanCodePrefix() != 0)
+            sequence << pModifier->scanCodePrefix();
+        sequence << (pModifier->scanCode() | 0x80);
+        /* Release the pressed modifiers (if there are not locked): */
+        pModifier->release();
+    }
+    emit sigPutKeyboardSequence(sequence);
 }
 
 /*********************************************************************************************************************************
@@ -692,14 +840,14 @@ void UIKeyboardLayoutReader::parseKey(UISoftKeyboardRow &row)
             parseCutout(key);
        else if (m_xmlReader.name() == "position")
             key.setPosition(m_xmlReader.readElementText().toInt());
-        // else if (m_xmlReader.name() == "type")
-        // {
-        //     QString strType = m_xmlReader.readElementText();
-        //     if (strType == "modifier")
-        //         pKey->setType(UIKeyType_Modifier);
-        //     else if (strType == "toggleable")
-        //         pKey->setType(UIKeyType_Toggleable);
-        // }
+        else if (m_xmlReader.name() == "type")
+        {
+            QString strType = m_xmlReader.readElementText();
+            if (strType == "modifier")
+                key.setType(UIKeyType_Modifier);
+            else if (strType == "toggleable")
+                key.setType(UIKeyType_Toggleable);
+        }
         else
             m_xmlReader.skipCurrentElement();
     }
@@ -811,8 +959,6 @@ UISoftKeyboard::UISoftKeyboard(QWidget *pParent,
     , m_pMainLayout(0)
     , m_pContainerWidget(0)
     , m_strMachineName(strMachineName)
-
-    , m_fKeepAspectRatio(false)
     , m_iXSpacing(5)
     , m_iYSpacing(5)
     , m_iLeftMargin(10)
@@ -822,7 +968,7 @@ UISoftKeyboard::UISoftKeyboard(QWidget *pParent,
 {
     setAttribute(Qt::WA_DeleteOnClose);
     prepareObjects();
-    parseLayout();
+    createKeyboard();
     prepareConnections();
     prepareToolBar();
     loadSettings();
@@ -838,81 +984,16 @@ void UISoftKeyboard::retranslateUi()
 {
 }
 
-void UISoftKeyboard::sltHandleKeyPress()
-{
-//     UISoftKeyboardKey *pKey = qobject_cast<UISoftKeyboardKey*>(sender());
-//     if (!pKey)
-//         return;
-//     if (pKey->type() == UIKeyType_Modifier)
-//         return;
-
-//     QVector<LONG> sequence;
-
-//     /* Add the pressed modifiers first: */
-//     for (int i = 0; i < m_pressedModifiers.size(); ++i)
-//     {
-//         UISoftKeyboardKey *pModifier = m_pressedModifiers[i];
-//         if (pModifier->scanCodePrefix() != 0)
-//             sequence << pModifier->scanCodePrefix();
-//         sequence << pModifier->scanCode();
-//     }
-
-//     if (pKey->scanCodePrefix() != 0)
-//         sequence << pKey->scanCodePrefix();
-//     sequence << pKey->scanCode();
-//     keyboard().PutScancodes(sequence);
-}
-
-void UISoftKeyboard::sltHandleKeyRelease()
-{
-    //UISoftKeyboardKey *pKey = qobject_cast<UISoftKeyboardKey*>(sender());
-//     if (!pKey)
-//         return;
-//     /* We only send the scan codes of Ordinary keys: */
-//     if (pKey->type() == UIKeyType_Modifier)
-//         return;
-
-//     QVector<LONG> sequence;
-//     if (pKey->scanCodePrefix() != 0)
-//         sequence <<  pKey->scanCodePrefix();
-//     sequence << (pKey->scanCode() | 0x80);
-
-//     /* Add the pressed modifiers in the reverse order: */
-//     for (int i = m_pressedModifiers.size() - 1; i >= 0; --i)
-//     {
-//         UISoftKeyboardKey *pModifier = m_pressedModifiers[i];
-//         if (pModifier->scanCodePrefix() != 0)
-//             sequence << pModifier->scanCodePrefix();
-//         sequence << (pModifier->scanCode() | 0x80);
-//         /* Release the pressed modifiers (if there are not locked): */
-//         pModifier->release();
-//     }
-//     keyboard().PutScancodes(sequence);
-}
-
-void UISoftKeyboard::sltHandleModifierStateChange()
-{
-    // UISoftKeyboardKey *pKey = qobject_cast<UISoftKeyboardKey*>(sender());
-    // if (!pKey)
-    //     return;
-    // if (pKey->type() != UIKeyType_Modifier)
-    //     return;
-    // if (pKey->state() == UIKeyState_NotPressed)
-    // {
-    //     m_pressedModifiers.removeOne(pKey);
-    // }
-    // else
-    // {
-    //     if (!m_pressedModifiers.contains(pKey))
-    //         m_pressedModifiers.append(pKey);
-    // }
-}
-
 void UISoftKeyboard::sltHandleKeyboardLedsChange()
 {
     // bool fNumLockLed = m_pSession->isNumLock();
     // bool fCapsLockLed = m_pSession->isCapsLock();
-    // bool fScrollLock = m_pSession->isScrollLock();
+    // bool fScrollLockLed = m_pSession->isScrollLock();
+}
+
+void UISoftKeyboard::sltHandlePutKeyboardSequence(QVector<LONG> sequence)
+{
+    keyboard().PutScancodes(sequence);
 }
 
 void UISoftKeyboard::prepareObjects()
@@ -928,6 +1009,7 @@ void UISoftKeyboard::prepareObjects()
 void UISoftKeyboard::prepareConnections()
 {
     connect(m_pSession, &UISession::sigKeyboardLedsChange, this, &UISoftKeyboard::sltHandleKeyboardLedsChange);
+    connect(m_pContainerWidget, &UISoftKeyboardWidget::sigPutKeyboardSequence, this, &UISoftKeyboard::sltHandlePutKeyboardSequence);
 }
 
 void UISoftKeyboard::prepareToolBar()
@@ -942,16 +1024,17 @@ void UISoftKeyboard::loadSettings()
 {
 }
 
-void UISoftKeyboard::parseLayout()
+void UISoftKeyboard::createKeyboard()
 {
     if (!m_pContainerWidget)
         return;
     UIKeyboardLayoutReader reader;
-    QVector<UISoftKeyboardRow> &rows = m_pContainerWidget->m_rows;
+    QVector<UISoftKeyboardRow> &rows = m_pContainerWidget->rows();
     if (!reader.parseXMLFile(":/102_iso.xml", rows))
         return;
     int iY = m_iTopMargin;
     int iMaxWidth = 0;
+
     for (int i = 0; i < rows.size(); ++i)
     {
         UISoftKeyboardRow &row = rows[i];
@@ -962,6 +1045,7 @@ void UISoftKeyboard::parseLayout()
             UISoftKeyboardKey &key = (row.keys())[j];
             key.setKeyGeometry(QRect(iX, iY, key.width(), key.height()));
             key.setPolygon(QPolygon(UIKeyboardLayoutReader::computeKeyVertices(key)));
+            key.setParentWidget(m_pContainerWidget);
             iX += key.width();
             if (j < row.keys().size() - 1)
                 iX += m_iXSpacing;

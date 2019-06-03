@@ -58,10 +58,8 @@ protected:
 
 private slots:
 
-    void sltHandleKeyPress();
-    void sltHandleKeyRelease();
-    void sltHandleModifierStateChange();
     void sltHandleKeyboardLedsChange();
+    void sltHandlePutKeyboardSequence(QVector<LONG> sequence);
 
 private:
 
@@ -70,15 +68,13 @@ private:
     void prepareToolBar();
     void saveSettings();
     void loadSettings();
-    void parseLayout();
+    void createKeyboard();
     CKeyboard& keyboard() const;
 
     UISession     *m_pSession;
     QHBoxLayout   *m_pMainLayout;
     UISoftKeyboardWidget       *m_pContainerWidget;
     QString       m_strMachineName;
-    QVector<UISoftKeyboardKey*> m_pressedModifiers;
-    bool          m_fKeepAspectRatio;
 
     int m_iXSpacing;
     int m_iYSpacing;

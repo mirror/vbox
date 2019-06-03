@@ -80,7 +80,8 @@
             <width>25</width>
         </space>
         <key>
-            <keycap>PrtScn</keycap>
+            <keycap>Prt</keycap>
+            <keycap>Scn</keycap>
             <position>124</position>
             <scancodeprefix>0xe0</scancodeprefix>
             <scancode>37</scancode>
@@ -293,7 +294,7 @@
             <width>25</width>
         </space>
         <key>
-            <keycap>Delete</keycap>
+            <keycap>Del</keycap>
             <position>76</position>
             <scancode>0x53</scancode>
             <scancodeprefix>0xe0</scancodeprefix>
