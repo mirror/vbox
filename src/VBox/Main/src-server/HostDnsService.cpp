@@ -311,7 +311,13 @@ void HostDnsMonitorProxy::uninit(void)
 {
     if (m)
     {
-        m->pMonitorImpl->uninit();
+        if (m->pMonitorImpl)
+        {
+            m->pMonitorImpl->uninit();
+
+            delete m->pMonitorImpl;
+            m->pMonitorImpl = NULL;
+        }
 
         delete m;
         m = NULL;

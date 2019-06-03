@@ -67,10 +67,11 @@ public:
     virtual HRESULT init(HostDnsMonitorProxy *pProxy);
     virtual void uninit(void);
 
+    virtual ~HostDnsServiceBase();
+
 protected:
 
     explicit HostDnsServiceBase(bool fThreaded = false);
-    virtual ~HostDnsServiceBase();
 
     void setInfo(const HostDnsInformation &);
 
