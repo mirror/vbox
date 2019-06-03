@@ -15,11 +15,16 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
 #include "VBoxTray.h"
 #define _WIN32_WINNT 0x0601
 #include <iprt/log.h>
 #include <iprt/errcore.h>
 #include <iprt/assert.h>
+#include <iprt/system.h>
 
 #include <malloc.h>
 
@@ -643,12 +648,11 @@ static DWORD vboxDispIfEscapeXPDM(PCVBOXDISPIF pIf, PVBOXDISPIFESCAPE pEscape, i
 static DWORD vboxDispIfSwitchToWDDM(PVBOXDISPIF pIf)
 {
     DWORD err = NO_ERROR;
-    OSVERSIONINFO OSinfo;
-    OSinfo.dwOSVersionInfoSize = sizeof (OSinfo);
-    GetVersionEx (&OSinfo);
-    bool bSupported = true;
 
-    if (OSinfo.dwMajorVersion >= 6)
+    bool fSupported = true;
+
+    uint64_t const uNtVersion = RTSystemGetNtVersion();
+    if (uNtVersion >= RTSYSTEM_MAKE_NT_VERSION(6, 0, 0))
     {
         LogFunc(("this is vista and up\n"));
         HMODULE hUser = GetModuleHandle("user32.dll");
@@ -656,25 +660,26 @@ static DWORD vboxDispIfSwitchToWDDM(PVBOXDISPIF pIf)
         {
             *(uintptr_t *)&pIf->modeData.wddm.pfnChangeDisplaySettingsEx = (uintptr_t)GetProcAddress(hUser, "ChangeDisplaySettingsExA");
             LogFunc(("VBoxDisplayInit: pfnChangeDisplaySettingsEx = %p\n", pIf->modeData.wddm.pfnChangeDisplaySettingsEx));
-            bSupported &= !!(pIf->modeData.wddm.pfnChangeDisplaySettingsEx);
+            fSupported &= !!(pIf->modeData.wddm.pfnChangeDisplaySettingsEx);
 
             *(uintptr_t *)&pIf->modeData.wddm.pfnEnumDisplayDevices = (uintptr_t)GetProcAddress(hUser, "EnumDisplayDevicesA");
             LogFunc(("VBoxDisplayInit: pfnEnumDisplayDevices = %p\n", pIf->modeData.wddm.pfnEnumDisplayDevices));
-            bSupported &= !!(pIf->modeData.wddm.pfnEnumDisplayDevices);
+            fSupported &= !!(pIf->modeData.wddm.pfnEnumDisplayDevices);
+
             /* for win 7 and above */
-             if (OSinfo.dwMinorVersion >= 1)
+            if (uNtVersion >= RTSYSTEM_MAKE_NT_VERSION(6, 1, 0))
             {
                 *(uintptr_t *)&gCtx.pfnSetDisplayConfig = (uintptr_t)GetProcAddress(hUser, "SetDisplayConfig");
                 LogFunc(("VBoxDisplayInit: pfnSetDisplayConfig = %p\n", gCtx.pfnSetDisplayConfig));
-                bSupported &= !!(gCtx.pfnSetDisplayConfig);
+                fSupported &= !!(gCtx.pfnSetDisplayConfig);
 
                 *(uintptr_t *)&gCtx.pfnQueryDisplayConfig = (uintptr_t)GetProcAddress(hUser, "QueryDisplayConfig");
                 LogFunc(("VBoxDisplayInit: pfnQueryDisplayConfig = %p\n", gCtx.pfnQueryDisplayConfig));
-                bSupported &= !!(gCtx.pfnQueryDisplayConfig);
+                fSupported &= !!(gCtx.pfnQueryDisplayConfig);
 
                 *(uintptr_t *)&gCtx.pfnGetDisplayConfigBufferSizes = (uintptr_t)GetProcAddress(hUser, "GetDisplayConfigBufferSizes");
                 LogFunc(("VBoxDisplayInit: pfnGetDisplayConfigBufferSizes = %p\n", gCtx.pfnGetDisplayConfigBufferSizes));
-                bSupported &= !!(gCtx.pfnGetDisplayConfigBufferSizes);
+                fSupported &= !!(gCtx.pfnGetDisplayConfigBufferSizes);
             }
 
             /* this is vista and up */
@@ -2528,20 +2533,16 @@ static DWORD vboxDispIfSwitchToXPDM(PVBOXDISPIF pIf)
 {
     DWORD err = NO_ERROR;
 
-    OSVERSIONINFO OSinfo;
-    OSinfo.dwOSVersionInfoSize = sizeof(OSinfo);
-    GetVersionEx (&OSinfo);
-    if (OSinfo.dwMajorVersion >= 5)
+    uint64_t const uNtVersion = RTSystemGetNtVersion();
+    if (uNtVersion >= RTSYSTEM_MAKE_NT_VERSION(5, 0, 0))
     {
         HMODULE hUser = GetModuleHandle("user32.dll");
         if (NULL != hUser)
         {
-            bool bSupported = true;
             *(uintptr_t *)&pIf->modeData.xpdm.pfnChangeDisplaySettingsEx = (uintptr_t)GetProcAddress(hUser, "ChangeDisplaySettingsExA");
             LogFunc(("pfnChangeDisplaySettingsEx = %p\n", pIf->modeData.xpdm.pfnChangeDisplaySettingsEx));
-            bSupported &= !!(pIf->modeData.xpdm.pfnChangeDisplaySettingsEx);
-
-            if (!bSupported)
+            bool const fSupported = RT_BOOL(pIf->modeData.xpdm.pfnChangeDisplaySettingsEx);
+            if (!fSupported)
             {
                 WARN_FUNC(("pfnChangeDisplaySettingsEx function pointer failed to initialize\n"));
                 err = ERROR_NOT_SUPPORTED;

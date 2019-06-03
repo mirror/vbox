@@ -28,6 +28,7 @@
 #ifdef VBOX_WITH_WDDM
 # include <iprt/asm.h>
 #endif
+#include <iprt/system.h>
 
 #ifdef DEBUG /** @todo r=bird: these are all default values. sigh. */
 # define LOG_ENABLED
@@ -81,21 +82,19 @@ static DECLCALLBACK(int) VBoxDisplayInit(const PVBOXSERVICEENV pEnv, void **ppIn
     PVBOXDISPLAYCONTEXT pCtx = &g_Ctx; /** @todo r=andy Use instance data via service lookup (add void *pInstance). */
     AssertPtr(pCtx);
 
-    OSVERSIONINFO OSinfo; /** @todo r=andy Use VBoxTray's g_dwMajorVersion? */
-    OSinfo.dwOSVersionInfoSize = sizeof(OSinfo);
-    GetVersionEx (&OSinfo);
-
     int rc;
     HMODULE hUser = GetModuleHandle("user32.dll"); /** @todo r=andy Use RTLdrXXX and friends. */
 
     pCtx->pEnv = pEnv;
+
+    uint64_t const uNtVersion = RTSystemGetNtVersion();
 
     if (NULL == hUser)
     {
         LogFlowFunc(("Could not get module handle of USER32.DLL!\n"));
         rc = VERR_NOT_IMPLEMENTED;
     }
-    else if (OSinfo.dwMajorVersion >= 5)        /* APIs available only on W2K and up. */
+    else if (uNtVersion >= RTSYSTEM_MAKE_NT_VERSION(5, 0, 0)) /* APIs available only on W2K and up. */
     {
         /** @todo r=andy Use RTLdrXXX and friends. */
         /** @todo r=andy No unicode version available? */
@@ -106,7 +105,7 @@ static DECLCALLBACK(int) VBoxDisplayInit(const PVBOXSERVICEENV pEnv, void **ppIn
         LogFlowFunc(("pfnEnumDisplayDevices = %p\n", pCtx->pfnEnumDisplayDevices));
 
 #ifdef VBOX_WITH_WDDM
-        if (OSinfo.dwMajorVersion >= 6)
+        if (uNtVersion >= RTSYSTEM_MAKE_NT_VERSION(6, 0, 0))
         {
             /* This is Vista and up, check if we need to switch the display driver if to WDDM mode. */
             LogFlowFunc(("this is Windows Vista and up\n"));
@@ -115,7 +114,8 @@ static DECLCALLBACK(int) VBoxDisplayInit(const PVBOXSERVICEENV pEnv, void **ppIn
             {
                 LogFlowFunc(("WDDM driver is installed, switching display driver if to WDDM mode\n"));
                 /* This is hacky, but the most easiest way. */
-                VBOXDISPIF_MODE enmMode = (OSinfo.dwMajorVersion == 6 && OSinfo.dwMinorVersion == 0) ? VBOXDISPIF_MODE_WDDM : VBOXDISPIF_MODE_WDDM_W7;
+                VBOXDISPIF_MODE enmMode = uNtVersion < RTSYSTEM_MAKE_NT_VERSION(6, 1, 0)
+                                        ? VBOXDISPIF_MODE_WDDM : VBOXDISPIF_MODE_WDDM_W7;
                 DWORD dwErr = VBoxDispIfSwitchMode(const_cast<PVBOXDISPIF>(&pEnv->dispIf), enmMode, NULL /* old mode, we don't care about it */);
                 if (dwErr == NO_ERROR)
                 {
@@ -135,7 +135,7 @@ static DECLCALLBACK(int) VBoxDisplayInit(const PVBOXSERVICEENV pEnv, void **ppIn
             rc = VINF_SUCCESS;
 #endif
     }
-    else if (OSinfo.dwMajorVersion <= 4) /* Windows NT 4.0. */
+    else if (uNtVersion < RTSYSTEM_MAKE_NT_VERSION(5, 0, 0)) /* Windows NT 4.0. */
     {
         /* Nothing to do here yet. */
         /** @todo r=andy Has this been tested? */
@@ -279,16 +279,14 @@ DWORD EnableAndResizeDispDev(DEVMODE *paDeviceModes, DISPLAY_DEVICE *paDisplayDe
                 deviceMode.dmPosition.x = paDeviceModes[0].dmPelsWidth;
                 deviceMode.dmPosition.y = 0;
                 deviceMode.dmBitsPerPel = 32;
-                OSVERSIONINFO OSinfo;
-                OSinfo.dwOSVersionInfoSize = sizeof (OSinfo);
-                GetVersionEx (&OSinfo);
 
-                if (OSinfo.dwMajorVersion < 6)
+                uint64_t const uNtVersion = RTSystemGetNtVersion();
+                if (uNtVersion < RTSYSTEM_MAKE_NT_VERSION(6, 0, 0))
                     /* dont any more flags here as, only DM_POISITON is used to enable the secondary display */
                     deviceMode.dmFields = DM_POSITION;
                 else /* for win 7 and above */
                     /* for vista and above DM_BITSPERPEL is necessary */
-                    deviceMode.dmFields =   DM_BITSPERPEL | DM_DISPLAYFLAGS | DM_DISPLAYFREQUENCY  | DM_POSITION;
+                    deviceMode.dmFields = DM_BITSPERPEL | DM_DISPLAYFLAGS | DM_DISPLAYFREQUENCY  | DM_POSITION;
 
                 dwStatus = pCtx->pfnChangeDisplaySettingsEx((LPSTR)displayDevice.DeviceName,&deviceMode, NULL, (CDS_UPDATEREGISTRY | CDS_NORESET), NULL);
                 /* A second call to ChangeDisplaySettings updates the monitor.*/

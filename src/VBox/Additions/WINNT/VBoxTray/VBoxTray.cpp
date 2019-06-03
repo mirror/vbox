@@ -141,7 +141,6 @@ HANDLE                g_hSeamlessKmNotifyEvent = 0;
 HINSTANCE             g_hInstance;
 HWND                  g_hwndToolWindow;
 NOTIFYICONDATA        g_NotifyIconData;
-DWORD                 g_dwMajorVersion;
 
 uint32_t              g_fGuestDisplaysChanged = 0;
 
@@ -684,15 +683,6 @@ static int vboxTrayCreateToolWindow(void)
 
 static int vboxTraySetupSeamless(void)
 {
-    OSVERSIONINFO info;
-    g_dwMajorVersion = 5; /* Default to Windows XP. */
-    info.dwOSVersionInfoSize = sizeof(info);
-    if (GetVersionEx(&info))
-    {
-        Log(("Windows version %ld.%ld\n", info.dwMajorVersion, info.dwMinorVersion));
-        g_dwMajorVersion = info.dwMajorVersion;
-    }
-
     /* We need to setup a security descriptor to allow other processes modify access to the seamless notification event semaphore. */
     SECURITY_ATTRIBUTES     SecAttr;
     DWORD                   dwErr = ERROR_SUCCESS;
@@ -712,7 +702,8 @@ static int vboxTraySetupSeamless(void)
     else
     {
         /* For Vista and up we need to change the integrity of the security descriptor, too. */
-        if (g_dwMajorVersion >= 6)
+        uint64_t const uNtVersion = RTSystemGetNtVersion();
+        if (uNtVersion >= RTSYSTEM_MAKE_NT_VERSION(6, 0, 0))
         {
             BOOL (WINAPI * pfnConvertStringSecurityDescriptorToSecurityDescriptorA)(LPCSTR StringSecurityDescriptor, DWORD StringSDRevision, PSECURITY_DESCRIPTOR  *SecurityDescriptor, PULONG  SecurityDescriptorSize);
             *(void **)&pfnConvertStringSecurityDescriptorToSecurityDescriptorA =
@@ -754,7 +745,7 @@ static int vboxTraySetupSeamless(void)
         }
 
         if (   dwErr == ERROR_SUCCESS
-            && g_dwMajorVersion >= 5) /* Only for W2K and up ... */
+            && uNtVersion >= RTSYSTEM_MAKE_NT_VERSION(5, 0, 0)) /* Only for W2K and up ... */
         {
             g_hSeamlessWtNotifyEvent = CreateEvent(&SecAttr, FALSE, FALSE, VBOXHOOK_GLOBAL_WT_EVENT_NAME);
             if (g_hSeamlessWtNotifyEvent == NULL)
@@ -836,9 +827,10 @@ static int vboxTrayServiceMain(void)
         }
         else
         {
+            uint64_t const uNtVersion = RTSystemGetNtVersion();
             rc = vboxTrayCreateTrayIcon();
             if (   RT_SUCCESS(rc)
-                && g_dwMajorVersion >= 5) /* Only for W2K and up ... */
+                && uNtVersion >= RTSYSTEM_MAKE_NT_VERSION(5, 0, 0)) /* Only for W2K and up ... */
             {
                 /* We're ready to create the tooltip balloon.
                    Check in 10 seconds (@todo make seconds configurable) ... */
@@ -997,6 +989,11 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
         rc = VbglR3Init();
         if (RT_SUCCESS(rc))
         {
+            /* Log the major windows NT version: */
+            uint64_t const uNtVersion = RTSystemGetNtVersion();
+            LogRel(("Windows version %u.%u build %u (uNtVersion=%#RX64)\n", RTSYSTEM_NT_VERSION_GET_MAJOR(uNtVersion),
+                    RTSYSTEM_NT_VERSION_GET_MINOR(uNtVersion), RTSYSTEM_NT_VERSION_GET_BUILD(uNtVersion), uNtVersion ));
+
             /* Save instance handle. */
             g_hInstance = hInstance;
 
@@ -1464,18 +1461,9 @@ static BOOL vboxDtCheckTimer(WPARAM wParam)
 
 static int vboxDtInit()
 {
-    int rc = VINF_SUCCESS;
-    OSVERSIONINFO info;
-    g_dwMajorVersion = 5; /* Default to Windows XP. */
-    info.dwOSVersionInfoSize = sizeof(info);
-    if (GetVersionEx(&info))
-    {
-        LogRel(("Windows version %ld.%ld\n", info.dwMajorVersion, info.dwMinorVersion));
-        g_dwMajorVersion = info.dwMajorVersion;
-    }
-
     RT_ZERO(gVBoxDt);
 
+    int rc;
     gVBoxDt.hNotifyEvent = CreateEvent(NULL, FALSE, FALSE, VBOXHOOK_GLOBAL_DT_EVENT_NAME);
     if (gVBoxDt.hNotifyEvent != NULL)
     {
@@ -1522,7 +1510,8 @@ static int vboxDtInit()
                 {
                     BOOL fRc = FALSE;
                     /* For Vista and up we need to change the integrity of the security descriptor, too. */
-                    if (g_dwMajorVersion >= 6)
+                    uint64_t const uNtVersion = RTSystemGetNtVersion();
+                    if (uNtVersion >= RTSYSTEM_MAKE_NT_VERSION(6, 0, 0))
                     {
                         HMODULE hModHook = (HMODULE)RTLdrGetNativeHandle(gVBoxDt.hLdrModHook);
                         Assert((uintptr_t)hModHook != ~(uintptr_t)0);
