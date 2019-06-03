@@ -195,11 +195,13 @@ int SharedClipboardArea::PathConstruct(const char *pszBase, SHAREDCLIPBOARDAREAI
             if (RT_SUCCESS(rc))
             {
                 char szID[8];
-                rc = RTStrFormatU32(szID, sizeof(szID), uID, 10, 0, 0, 0);
-                if (RT_SUCCESS(rc))
+                ssize_t cchID = RTStrFormatU32(szID, sizeof(szID), uID, 10, 0, 0, 0);
+                if (cchID)
                 {
                     rc = RTStrCat(pszPath, cbPath, szID);
                 }
+                else
+                    rc = VERR_INVALID_PARAMETER;
             }
         }
     }
@@ -213,7 +215,7 @@ int SharedClipboardArea::Close(void)
     return closeInternal();
 }
 
-SHAREDCLIPBOARDAREAID SharedClipboardArea::GetAreaID(void) const
+SHAREDCLIPBOARDAREAID SharedClipboardArea::GetID(void) const
 {
     return this->m_uID;
 }

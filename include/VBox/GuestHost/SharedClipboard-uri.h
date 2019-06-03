@@ -37,6 +37,8 @@
 #include <iprt/cpp/list.h>
 #include <iprt/cpp/ministring.h>
 
+#include <VBox/HostServices/VBoxClipboardSvc.h>
+
 /** Clipboard area ID. A valid area is >= 1.
  *  If 0 is specified, the last (most recent) area is meant.
  *  Set to UINT32_MAX if not initialized. */
@@ -84,7 +86,7 @@ public:
                SHAREDCLIPBOARDAREAFLAGS fFlags = SHAREDCLIPBOARDAREA_FLAGS_NONE);
     int OpenTemp(SHAREDCLIPBOARDAREAID uID = NIL_SHAREDCLIPBOARDAREAID,
                  SHAREDCLIPBOARDAREAFLAGS fFlags = SHAREDCLIPBOARDAREA_FLAGS_NONE);
-    SHAREDCLIPBOARDAREAID GetAreaID(void) const;
+    SHAREDCLIPBOARDAREAID GetID(void) const;
     const char *GetDirAbs(void) const;
     uint32_t GetRefCount(void);
     int Reopen(void);
@@ -223,11 +225,21 @@ public:
     void Close(void);
     bool IsComplete(void) const;
     bool IsOpen(void) const;
-    int Open(View enmView, uint64_t fOpen, RTFMODE fMode = 0);
-    int OpenEx(const RTCString &strPath, View enmView, uint64_t fOpen = 0, RTFMODE fMode = 0, SHAREDCLIPBOARDURIOBJECTFLAGS = SHAREDCLIPBOARDURIOBJECT_FLAGS_NONE);
+    int OpenDirectory(View enmView, uint32_t fCreate = 0, RTFMODE fMode = 0);
+    int OpenDirectoryEx(const RTCString &strPathAbs, View enmView,
+                        uint32_t fCreate = 0, RTFMODE fMode = 0,
+                        SHAREDCLIPBOARDURIOBJECTFLAGS fFlags = SHAREDCLIPBOARDURIOBJECT_FLAGS_NONE);
+    int OpenFile(View enmView, uint64_t fOpen = 0, RTFMODE fMode = 0);
+    int OpenFileEx(const RTCString &strPathAbs, View enmView,
+                   uint64_t fOpen = 0, RTFMODE fMode = 0,
+                   SHAREDCLIPBOARDURIOBJECTFLAGS fFlags  = SHAREDCLIPBOARDURIOBJECT_FLAGS_NONE);
     int QueryInfo(View enmView);
     int Read(void *pvBuf, size_t cbBuf, uint32_t *pcbRead);
     void Reset(void);
+    int SetDirectoryData(const RTCString &strPathAbs, View enmView, uint32_t fOpen = 0, RTFMODE fMode = 0,
+                         SHAREDCLIPBOARDURIOBJECTFLAGS fFlags = SHAREDCLIPBOARDURIOBJECT_FLAGS_NONE);
+    int SetFileData(const RTCString &strPathAbs, View enmView, uint64_t fOpen = 0, RTFMODE fMode = 0,
+                    SHAREDCLIPBOARDURIOBJECTFLAGS fFlags = SHAREDCLIPBOARDURIOBJECT_FLAGS_NONE);
     int Write(const void *pvBuf, size_t cbBuf, uint32_t *pcbWritten);
 
 public:
@@ -237,6 +249,10 @@ public:
 protected:
 
     void closeInternal(void);
+    int setDirectoryDataInternal(const RTCString &strPathAbs, View enmView, uint32_t fCreate = 0, RTFMODE fMode = 0,
+                                 SHAREDCLIPBOARDURIOBJECTFLAGS fFlags = SHAREDCLIPBOARDURIOBJECT_FLAGS_NONE);
+    int setFileDataInternal(const RTCString &strPathAbs, View enmView, uint64_t fOpen = 0, RTFMODE fMode = 0,
+                            SHAREDCLIPBOARDURIOBJECTFLAGS fFlags = SHAREDCLIPBOARDURIOBJECT_FLAGS_NONE);
     int queryInfoInternal(View enmView);
 
 protected:
@@ -249,6 +265,11 @@ protected:
     RTCString m_strSrcPathAbs;
     /** Absolute path (base) for the target. */
     RTCString m_strTgtPathAbs;
+    /** Saved SHAREDCLIPBOARDURIOBJECT_FLAGS. */
+    uint32_t  m_fFlags;
+    /** Requested file mode.
+     *  Note: The actual file mode of an opened file will be in objInfo. */
+    RTFMODE   m_fModeRequested;
 
     /** Union containing data depending on the object's type. */
     union
@@ -261,6 +282,8 @@ protected:
             RTFILE      hFile;
             /** File system object information of this file. */
             RTFSOBJINFO objInfo;
+            /** Requested file open flags. */
+            uint32_t    fOpenRequested;
             /** Bytes to proces for reading/writing. */
             uint64_t    cbToProcess;
             /** Bytes processed reading/writing. */
@@ -272,6 +295,8 @@ protected:
             RTDIR       hDir;
             /** File system object information of this directory. */
             RTFSOBJINFO objInfo;
+            /** Requested directory creation flags. */
+            uint32_t    fCreateRequested;
         } Dir;
     } u;
 };
@@ -427,8 +452,13 @@ public: /* Interface to be implemented. */
     virtual int ReadMetaData(uint32_t fFlags = 0) = 0;
     virtual int WriteMetaData(const void *pvBuf, size_t cbBuf, size_t *pcbWritten, uint32_t fFlags = 0) = 0;
 
-    virtual int ReadData(void *pvBuf, size_t cbBuf, size_t *pcbRead  /* = NULL */) = 0;
-    virtual int WriteData(const void *pvBuf, size_t cbBuf, size_t *pcbWritten /* = NULL */) = 0;
+    int ReadDirectory(PVBOXCLIPBOARDDIRDATA pDirData);
+    int WriteDirectory(const PVBOXCLIPBOARDDIRDATA pDirData);
+
+    int ReadFileHdr(PVBOXCLIPBOARDFILEHDR pFileHdr);
+    int WriteFileHdr(const PVBOXCLIPBOARDFILEHDR pFileHdr);
+    int ReadFileData(PVBOXCLIPBOARDFILEDATA pFileData);
+    int WriteFileData(const PVBOXCLIPBOARDFILEDATA pFileData);
 
     virtual void Reset(void) = 0;
 
@@ -465,8 +495,13 @@ public:
     int ReadMetaData(uint32_t fFlags = 0);
     int WriteMetaData(const void *pvBuf, size_t cbBuf, size_t *pcbWritten, uint32_t fFlags = 0);
 
-    int ReadData(void *pvBuf, size_t cbBuf, size_t *pcbRead  /* = NULL */);
-    int WriteData(const void *pvBuf, size_t cbBuf, size_t *pcbWritten /* = NULL */);
+    int ReadDirectory(PVBOXCLIPBOARDDIRDATA pDirData);
+    int WriteDirectory(const PVBOXCLIPBOARDDIRDATA pDirData);
+
+    int ReadFileHdr(PVBOXCLIPBOARDFILEHDR pFileHdr);
+    int WriteFileHdr(const PVBOXCLIPBOARDFILEHDR pFileHdr);
+    int ReadFileData(PVBOXCLIPBOARDFILEDATA pFileData);
+    int WriteFileData(const PVBOXCLIPBOARDFILEDATA pFileData);
 
     void Reset(void);
 
@@ -491,11 +526,16 @@ public:
 
 public:
 
-   int ReadMetaData(uint32_t fFlags = 0);
-   int WriteMetaData(const void *pvBuf, size_t cbBuf, size_t *pcbWritten, uint32_t fFlags = 0);
+    int ReadMetaData(uint32_t fFlags = 0);
+    int WriteMetaData(const void *pvBuf, size_t cbBuf, size_t *pcbWritten, uint32_t fFlags = 0);
 
-    int ReadData(void *pvBuf, size_t cbBuf, size_t *pcbRead  /* = NULL */);
-    int WriteData(const void *pvBuf, size_t cbBuf, size_t *pcbWritten /* = NULL */);
+    int ReadDirectory(PVBOXCLIPBOARDDIRDATA pDirData);
+    int WriteDirectory(const PVBOXCLIPBOARDDIRDATA pDirData);
+
+    int ReadFileHdr(PVBOXCLIPBOARDFILEHDR pFileHdr);
+    int WriteFileHdr(const PVBOXCLIPBOARDFILEHDR pFileHdr);
+    int ReadFileData(PVBOXCLIPBOARDFILEDATA pFileData);
+    int WriteFileData(const PVBOXCLIPBOARDFILEDATA pFileData);
 
     void Reset(void);
 

@@ -56,55 +56,49 @@ int SharedClipboardURIList::appendEntry(const char *pcszSource, const char *pcsz
     int rc = RTPathQueryInfo(pcszSource, &objInfo, RTFSOBJATTRADD_NOTHING);
     if (RT_SUCCESS(rc))
     {
-        try
+        if (RTFS_IS_FILE(objInfo.Attr.fMode))
         {
-            if (RTFS_IS_FILE(objInfo.Attr.fMode))
-            {
-                LogFlowFunc(("File '%s' -> '%s' (%RU64 bytes, file mode 0x%x)\n",
-                             pcszSource, pcszTarget, (uint64_t)objInfo.cbObject, objInfo.Attr.fMode));
+            LogFlowFunc(("File '%s' -> '%s' (%RU64 bytes, file mode 0x%x)\n",
+                         pcszSource, pcszTarget, (uint64_t)objInfo.cbObject, objInfo.Attr.fMode));
 
-                SharedClipboardURIObject *pObjFile = new SharedClipboardURIObject(SharedClipboardURIObject::Type_File,
-                                                                                  pcszSource, pcszTarget);
-                if (pObjFile)
+            SharedClipboardURIObject *pObjFile = new SharedClipboardURIObject(SharedClipboardURIObject::Type_File,
+                                                                              pcszSource, pcszTarget);
+            if (pObjFile)
+            {
+                /** @todo Add a standard fOpen mode for this list. */
+                rc = pObjFile->OpenFile(SharedClipboardURIObject::View_Source,
+                                        RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE);
+                if (RT_SUCCESS(rc))
                 {
-                    /** @todo Add a standard fOpen mode for this list. */
-                    rc = pObjFile->Open(SharedClipboardURIObject::View_Source, RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE);
-                    if (RT_SUCCESS(rc))
-                    {
-                        rc = appendObject(pObjFile);
-                        if (!(fFlags & SHAREDCLIPBOARDURILIST_FLAGS_KEEP_OPEN)) /* Shall we keep the file open while being added to this list? */
-                            pObjFile->Close();
-                    }
-                    else
-                        delete pObjFile;
+                    rc = appendObject(pObjFile);
+                    if (!(fFlags & SHAREDCLIPBOARDURILIST_FLAGS_KEEP_OPEN)) /* Shall we keep the file open while being added to this list? */
+                        pObjFile->Close();
                 }
                 else
-                    rc = VERR_NO_MEMORY;
+                    delete pObjFile;
             }
-            else if (RTFS_IS_DIRECTORY(objInfo.Attr.fMode))
-            {
-                LogFlowFunc(("Directory '%s' -> '%s' (file mode 0x%x)\n", pcszSource, pcszTarget, objInfo.Attr.fMode));
-
-                SharedClipboardURIObject *pObjDir = new SharedClipboardURIObject(SharedClipboardURIObject::Type_Directory,
-                                                                                 pcszSource, pcszTarget);
-                if (pObjDir)
-                {
-                    m_lstTree.append(pObjDir);
-
-                    /** @todo Add SHAREDCLIPBOARDURILIST_FLAGS_KEEP_OPEN handling? */
-                    m_cTotal++;
-                }
-                else
-                    rc = VERR_NO_MEMORY;
-            }
-            /* Note: Symlinks already should have been resolved at this point. */
             else
-                rc = VERR_NOT_SUPPORTED;
+                rc = VERR_NO_MEMORY;
         }
-        catch (std::bad_alloc &)
+        else if (RTFS_IS_DIRECTORY(objInfo.Attr.fMode))
         {
-            rc = VERR_NO_MEMORY;
+            LogFlowFunc(("Directory '%s' -> '%s' (file mode 0x%x)\n", pcszSource, pcszTarget, objInfo.Attr.fMode));
+
+            SharedClipboardURIObject *pObjDir = new SharedClipboardURIObject(SharedClipboardURIObject::Type_Directory,
+                                                                             pcszSource, pcszTarget);
+            if (pObjDir)
+            {
+                m_lstTree.append(pObjDir);
+
+                /** @todo Add SHAREDCLIPBOARDURILIST_FLAGS_KEEP_OPEN handling? */
+                m_cTotal++;
+            }
+            else
+                rc = VERR_NO_MEMORY;
         }
+        /* Note: Symlinks already should have been resolved at this point. */
+        else
+            rc = VERR_NOT_SUPPORTED;
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -281,22 +275,13 @@ int SharedClipboardURIList::appendPathRecursive(const char *pcszSrcPath,
 
 int SharedClipboardURIList::appendObject(SharedClipboardURIObject *pObject)
 {
-    int rc;
+    int rc = VINF_SUCCESS;
 
-    try
-    {
-        m_lstTree.append(pObject);
-        m_lstRoot.append(pObject->GetSourcePathAbs());;
+    m_lstTree.append(pObject);
+    m_lstRoot.append(pObject->GetSourcePathAbs());;
 
-        m_cTotal++;
-        m_cbTotal += pObject->GetSize();
-
-        rc = VINF_SUCCESS;
-    }
-    catch (std::bad_alloc &)
-    {
-        rc = VERR_NO_MEMORY;
-    }
+    m_cTotal++;
+    m_cbTotal += pObject->GetSize();
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -419,17 +404,10 @@ int SharedClipboardURIList::AppendURIPath(const char *pszURI, SHAREDCLIPBOARDURI
                                   : pszFileName - pszSrcPath;
                 char *pszDstPath = &pszSrcPath[cchDstBase];
 
-                try
-                {
-                    m_lstRoot.append(pszDstPath);
+                m_lstRoot.append(pszDstPath);
 
-                    LogFlowFunc(("pszSrcPath=%s, pszFileName=%s, pszRoot=%s\n", pszSrcPath, pszFileName, pszDstPath));
-                    rc = appendPathRecursive(pszSrcPath, pszSrcPath, pszSrcPath, cchDstBase, fFlags);
-                }
-                catch (std::bad_alloc &)
-                {
-                    rc = VERR_NO_MEMORY;
-                }
+                LogFlowFunc(("pszSrcPath=%s, pszFileName=%s, pszRoot=%s\n", pszSrcPath, pszFileName, pszDstPath));
+                rc = appendPathRecursive(pszSrcPath, pszSrcPath, pszSrcPath, cchDstBase, fFlags);
             }
             else
                 rc = VERR_PATH_NOT_FOUND;
@@ -542,15 +520,8 @@ int SharedClipboardURIList::SetFromURIData(const void *pvData, size_t cbData, SH
             rc = SharedClipboardPathSanitize(pszFilePath, strlen(pszFilePath));
             if (RT_SUCCESS(rc))
             {
-                try
-                {
-                    m_lstRoot.append(pszFilePath);
-                    m_cTotal++;
-                }
-                catch (std::bad_alloc &)
-                {
-                    rc = VERR_NO_MEMORY;
-                }
+                m_lstRoot.append(pszFilePath);
+                m_cTotal++;
             }
 
             RTStrFree(pszFilePath);

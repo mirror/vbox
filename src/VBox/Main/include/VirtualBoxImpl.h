@@ -174,12 +174,13 @@ public:
     void i_onSnapshotChange(const Guid &aMachineId, const Guid &aSnapshotId);
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
-    int i_onClipboardAreaCreate(SharedClipboardAreaData &AreaData, uint32_t fFlags);
-    int i_onClipboardAreaDestroy(SharedClipboardAreaData &AreaData);
-    int i_onClipboardAreaRegister(const std::vector<com::Utf8Str> &aParms, ULONG *aID);
-    int i_onClipboardAreaUnregister(ULONG aID);
-    int i_onClipboardAreaAttach(ULONG aID);
-    int i_onClipboardAreaDetach(ULONG aID);
+    int i_clipboardAreaCreate(SharedClipboardAreaData &AreaData, uint32_t fFlags);
+    int i_clipboardAreaDestroy(SharedClipboardAreaData &AreaData);
+
+    HRESULT i_onClipboardAreaRegister(const std::vector<com::Utf8Str> &aParms, ULONG *aID);
+    HRESULT i_onClipboardAreaUnregister(ULONG aID);
+    HRESULT i_onClipboardAreaAttach(ULONG aID);
+    HRESULT i_onClipboardAreaDetach(ULONG aID);
     ULONG i_onClipboardAreaGetMostRecent(void);
     ULONG i_onClipboardAreaGetRefCount(ULONG aID);
 #endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */

@@ -35,6 +35,8 @@
 SharedClipboardURIObject::SharedClipboardURIObject(void)
     : m_enmType(Type_Unknown)
     , m_enmView(View_Unknown)
+    , m_fFlags(SHAREDCLIPBOARDURIOBJECT_FLAGS_NONE)
+    , m_fModeRequested(0)
 {
     RT_ZERO(u);
 }
@@ -46,6 +48,8 @@ SharedClipboardURIObject::SharedClipboardURIObject(Type enmType,
     , m_enmView(View_Unknown)
     , m_strSrcPathAbs(strSrcPathAbs)
     , m_strTgtPathAbs(strDstPathAbs)
+    , m_fFlags(SHAREDCLIPBOARDURIOBJECT_FLAGS_NONE)
+    , m_fModeRequested(0)
 {
     RT_ZERO(u);
 
@@ -217,110 +221,122 @@ bool SharedClipboardURIObject::IsOpen(void) const
 }
 
 /**
- * (Re-)Opens the object with a specific view, open and file mode.
+ * (Re-)Opens the object as a directory with a specific view, open and file mode.
+ *
+ * @return  IPRT status code.
+ * @param   enmView             View to use for opening the object.
+ * @param   fCreate             Directory creation flags to use.
+ * @param   fMode               File mode to use.
+ */
+int SharedClipboardURIObject::OpenDirectory(View enmView, uint32_t fCreate /* = 0 */, RTFMODE fMode /* = 0 */)
+{
+    return OpenDirectoryEx(  enmView == View_Source
+                           ? m_strSrcPathAbs : m_strTgtPathAbs
+                           , enmView, fCreate, fMode, SHAREDCLIPBOARDURIOBJECT_FLAGS_NONE);
+}
+
+/**
+ * Open the object as a file with a specific file type, and, depending on the type, specifying additional parameters.
+ *
+ * @return  IPRT status code.
+ * @param   strPathAbs          Absolute path of the directory.
+ * @param   enmView             View of the object.
+ * @param   fCreate             Directory creation flags to use.
+ * @param   fMode               File mode to use; only valid for file objects.
+ * @param   fFlags              Additional Shared Clipboard URI object flags.
+ */
+int SharedClipboardURIObject::OpenDirectoryEx(const RTCString &strPathAbs, View enmView,
+                                              uint32_t fCreate /* = 0 */, RTFMODE fMode /* = 0 */,
+                                              SHAREDCLIPBOARDURIOBJECTFLAGS fFlags /* = SHAREDCLIPBOARDURIOBJECT_FLAGS_NONE */)
+{
+    AssertReturn(!(fFlags & ~SHAREDCLIPBOARDURIOBJECT_FLAGS_VALID_MASK), VERR_INVALID_FLAGS);
+
+    AssertMsgReturn(m_enmType == Type_Directory, ("Object is not a directory\n"), VERR_INVALID_STATE);
+
+    LogFlowThisFunc(("strPath=%s, enmView=%RU32, fCreate=0x%x, fMode=0x%x, fFlags=0x%x\n",
+                     strPathAbs.c_str(), enmView, fCreate, fMode, fFlags));
+
+    int rc = setDirectoryDataInternal(strPathAbs, enmView, fCreate, fMode, fFlags);
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTDirOpen(&u.Dir.hDir, strPathAbs.c_str());
+        if (RT_SUCCESS(rc))
+            rc = queryInfoInternal(enmView);
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+/**
+ * (Re-)Opens the object as a file with a specific view, open and file mode.
  *
  * @return  IPRT status code.
  * @param   enmView             View to use for opening the object.
  * @param   fOpen               File open flags to use.
  * @param   fMode               File mode to use.
  */
-int SharedClipboardURIObject::Open(View enmView, uint64_t fOpen /* = 0 */, RTFMODE fMode /* = 0 */)
+int SharedClipboardURIObject::OpenFile(View enmView, uint64_t fOpen /* = 0 */, RTFMODE fMode /* = 0 */)
 {
-    return OpenEx(  enmView == View_Source
-                  ? m_strSrcPathAbs : m_strTgtPathAbs
-                  , enmView, fOpen, fMode, SHAREDCLIPBOARDURIOBJECT_FLAGS_NONE);
+    return OpenFileEx(  enmView == View_Source
+                      ? m_strSrcPathAbs : m_strTgtPathAbs
+                      , enmView, fOpen, fMode, SHAREDCLIPBOARDURIOBJECT_FLAGS_NONE);
 }
 
 /**
- * Open the object with a specific file type, and, depending on the type, specifying additional parameters.
+ * Opens the object as a file with a specific file type, and, depending on the type, specifying additional parameters.
  *
  * @return  IPRT status code.
- * @param   strPathAbs          Absolute path of the object (file / directory / ...).
+ * @param   strPathAbs          Absolute path of the file.
  * @param   enmView             View of the object.
  * @param   fOpen               Open mode to use; only valid for file objects.
  * @param   fMode               File mode to use; only valid for file objects.
  * @param   fFlags              Additional Shared Clipboard URI object flags.
  */
-int SharedClipboardURIObject::OpenEx(const RTCString &strPathAbs, View enmView,
-                                     uint64_t fOpen /* = 0 */, RTFMODE fMode /* = 0 */, SHAREDCLIPBOARDURIOBJECTFLAGS fFlags /* = SHAREDCLIPBOARDURIOBJECT_FLAGS_NONE */)
+int SharedClipboardURIObject::OpenFileEx(const RTCString &strPathAbs, View enmView,
+                                         uint64_t fOpen /* = 0 */, RTFMODE fMode /* = 0 */,
+                                         SHAREDCLIPBOARDURIOBJECTFLAGS fFlags /* = SHAREDCLIPBOARDURIOBJECT_FLAGS_NONE */)
 {
     AssertReturn(!(fFlags & ~SHAREDCLIPBOARDURIOBJECT_FLAGS_VALID_MASK), VERR_INVALID_FLAGS);
-    RT_NOREF1(fFlags);
 
-    int rc = VINF_SUCCESS;
+    AssertMsgReturn(m_enmType == Type_File, ("Object is not a file\n"), VERR_INVALID_STATE);
 
-    switch (enmView)
-    {
-        case View_Source:
-            m_strSrcPathAbs = strPathAbs;
-            break;
+    LogFlowThisFunc(("strPath=%s, enmView=%RU32, fOpen=0x%x, fMode=0x%x, fFlags=0x%x\n",
+                     strPathAbs.c_str(), enmView, fOpen, fMode, fFlags));
 
-        case View_Target:
-            m_strTgtPathAbs = strPathAbs;
-            break;
-
-        default:
-            rc = VERR_NOT_IMPLEMENTED;
-            break;
-    }
-
-    if (   RT_SUCCESS(rc)
-        && fOpen) /* Opening mode specified? */
-    {
-        LogFlowThisFunc(("strPath=%s, enmView=%RU32, fOpen=0x%x, fMode=0x%x, fFlags=0x%x\n",
-                         strPathAbs.c_str(), enmView, fOpen, fMode, fFlags));
-        switch (m_enmType)
-        {
-            case Type_File:
-            {
-                /*
-                 * Open files on the source with RTFILE_O_DENY_WRITE to prevent races
-                 * where the OS writes to the file while the destination side transfers
-                 * it over.
-                 */
-                LogFlowThisFunc(("Opening ...\n"));
-                rc = RTFileOpen(&u.File.hFile, strPathAbs.c_str(), fOpen);
-                if (RT_SUCCESS(rc))
-                {
-                    if (   (fOpen & RTFILE_O_WRITE) /* Only set the file mode on write. */
-                        &&  fMode                   /* Some file mode to set specified? */)
-                    {
-                        rc = RTFileSetMode(u.File.hFile, fMode);
-                    }
-                    else if (fOpen & RTFILE_O_READ)
-                    {
-                        rc = queryInfoInternal(enmView);
-                    }
-                }
-
-                if (RT_SUCCESS(rc))
-                {
-                    LogFlowThisFunc(("File cbObject=%RU64, fMode=0x%x\n",
-                                     u.File.objInfo.cbObject, u.File.objInfo.Attr.fMode));
-                    u.File.cbToProcess = u.File.objInfo.cbObject;
-                    u.File.cbProcessed = 0;
-                }
-
-                break;
-            }
-
-            case Type_Directory:
-            {
-                rc = RTDirOpen(&u.Dir.hDir, strPathAbs.c_str());
-                if (RT_SUCCESS(rc))
-                    rc = queryInfoInternal(enmView);
-                break;
-            }
-
-            default:
-                rc = VERR_NOT_IMPLEMENTED;
-                break;
-        }
-    }
-
+    int rc = setFileDataInternal(strPathAbs, enmView, fOpen, fMode, fFlags);
     if (RT_SUCCESS(rc))
     {
-        m_enmView = enmView;
+        if (fOpen) /* Opening mode specified? */
+        {
+            /*
+             * Open files on the source with RTFILE_O_DENY_WRITE to prevent races
+             * where the OS writes to the file while the destination side transfers
+             * it over.
+             */
+            LogFlowThisFunc(("Opening ...\n"));
+            rc = RTFileOpen(&u.File.hFile, strPathAbs.c_str(), fOpen);
+            if (RT_SUCCESS(rc))
+            {
+                if (   (fOpen & RTFILE_O_WRITE) /* Only set the file mode on write. */
+                    &&  fMode                   /* Some file mode to set specified? */)
+                {
+                    rc = RTFileSetMode(u.File.hFile, fMode);
+                }
+                else if (fOpen & RTFILE_O_READ)
+                {
+                    rc = queryInfoInternal(enmView);
+                }
+            }
+        }
+
+        if (RT_SUCCESS(rc))
+        {
+            LogFlowThisFunc(("File cbObject=%RU64, fMode=0x%x\n",
+                             u.File.objInfo.cbObject, u.File.objInfo.Attr.fMode));
+            u.File.cbToProcess = u.File.objInfo.cbObject;
+            u.File.cbProcessed = 0;
+        }
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -383,8 +399,8 @@ int SharedClipboardURIObject::QueryInfo(View enmView)
  */
 /* static */
 int SharedClipboardURIObject::RebaseURIPath(RTCString &strPathAbs,
-                                const RTCString &strBaseOld /* = "" */,
-                                const RTCString &strBaseNew /* = "" */)
+                                            const RTCString &strBaseOld /* = "" */,
+                                            const RTCString &strBaseNew /* = "" */)
 {
     char *pszPath = RTUriFilePath(strPathAbs.c_str());
     if (!pszPath) /* No URI? */
@@ -450,7 +466,7 @@ int SharedClipboardURIObject::Read(void *pvBuf, size_t cbBuf, uint32_t *pcbRead)
     AssertReturn(cbBuf, VERR_INVALID_PARAMETER);
     /* pcbRead is optional. */
 
-    AssertMsgReturn(m_enmView == View_Source, ("Cannot write to an object which is not in target view\n"),
+    AssertMsgReturn(m_enmView == View_Source, ("Cannot read from an object which is not in source view\n"),
                     VERR_INVALID_STATE);
 
     size_t cbRead = 0;
@@ -506,12 +522,88 @@ void SharedClipboardURIObject::Reset(void)
 
     Close();
 
-    m_enmType       = Type_Unknown;
-    m_enmView       = View_Unknown;
-    m_strSrcPathAbs = "";
-    m_strTgtPathAbs = "";
+    m_enmType        = Type_Unknown;
+    m_enmView        = View_Unknown;
+    m_fModeRequested = 0;
+    m_fFlags         = SHAREDCLIPBOARDURIOBJECT_FLAGS_NONE;
+    m_strSrcPathAbs  = "";
+    m_strTgtPathAbs  = "";
 
     RT_ZERO(u);
+}
+
+int SharedClipboardURIObject::setDirectoryDataInternal(const RTCString &strPathAbs, View enmView, uint32_t fCreate /* = 0 */, RTFMODE fMode /* = 0 */,
+                                                       SHAREDCLIPBOARDURIOBJECTFLAGS fFlags /* = SHAREDCLIPBOARDURIOBJECT_FLAGS_NONE */)
+{
+    int rc = VINF_SUCCESS;
+
+    switch (enmView)
+    {
+        case View_Source:
+            m_strSrcPathAbs = strPathAbs;
+            break;
+
+        case View_Target:
+            m_strTgtPathAbs = strPathAbs;
+            break;
+
+        default:
+            rc = VERR_NOT_IMPLEMENTED;
+            break;
+    }
+
+    if (RT_FAILURE(rc))
+        return rc;
+
+    m_fFlags         = fFlags;
+    m_fModeRequested = fMode;
+
+    u.Dir.fCreateRequested = fCreate;
+
+    return rc;
+}
+
+int SharedClipboardURIObject::SetDirectoryData(const RTCString &strPathAbs, View enmView, uint32_t fOpen /* = 0 */, RTFMODE fMode /* = 0 */,
+                                               SHAREDCLIPBOARDURIOBJECTFLAGS fFlags /* = SHAREDCLIPBOARDURIOBJECT_FLAGS_NONE */)
+{
+    return setDirectoryDataInternal(strPathAbs, enmView, fOpen, fMode, fFlags);
+}
+
+int SharedClipboardURIObject::setFileDataInternal(const RTCString &strPathAbs, View enmView, uint64_t fOpen /* = 0 */, RTFMODE fMode /* = 0 */,
+                                                  SHAREDCLIPBOARDURIOBJECTFLAGS fFlags /* = SHAREDCLIPBOARDURIOBJECT_FLAGS_NONE */)
+{
+    int rc = VINF_SUCCESS;
+
+    switch (enmView)
+    {
+        case View_Source:
+            m_strSrcPathAbs = strPathAbs;
+            break;
+
+        case View_Target:
+            m_strTgtPathAbs = strPathAbs;
+            break;
+
+        default:
+            rc = VERR_NOT_IMPLEMENTED;
+            break;
+    }
+
+    if (RT_FAILURE(rc))
+        return rc;
+
+    m_fFlags         = fFlags;
+    m_fModeRequested = fMode;
+
+    u.File.fOpenRequested = fOpen;
+
+    return rc;
+}
+
+int SharedClipboardURIObject::SetFileData(const RTCString &strPathAbs, View enmView, uint64_t fOpen /* = 0 */, RTFMODE fMode /* = 0 */,
+                                          SHAREDCLIPBOARDURIOBJECTFLAGS fFlags /* = SHAREDCLIPBOARDURIOBJECT_FLAGS_NONE */)
+{
+    return setFileDataInternal(strPathAbs, enmView, fOpen, fMode, fFlags);
 }
 
 /**

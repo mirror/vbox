@@ -54,16 +54,76 @@ int SharedClipboardProviderHostService::WriteMetaData(const void *pvBuf, size_t 
     return VERR_NOT_IMPLEMENTED;
 }
 
-int SharedClipboardProviderHostService::ReadData(void *pvBuf, size_t cbBuf, size_t *pcbRead  /* = NULL */)
+int SharedClipboardProviderVbglR3::ReadDirectory(PVBOXCLIPBOARDDIRDATA pDirData)
 {
-    RT_NOREF(pvBuf, cbBuf, pcbRead);
-    return VERR_NOT_IMPLEMENTED;
+    RT_NOREF(pDirData);
+
+    LogFlowFuncEnter();
+
+    int rc = VERR_NOT_IMPLEMENTED;
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
 }
 
-int SharedClipboardProviderHostService::WriteData(const void *pvBuf, size_t cbBuf, size_t *pcbWritten /* = NULL */)
+int SharedClipboardProviderVbglR3::WriteDirectory(const PVBOXCLIPBOARDDIRDATA pDirData)
 {
-    RT_NOREF(pvBuf, cbBuf, pcbWritten);
-    return VERR_NOT_IMPLEMENTED;
+    RT_NOREF(pDirData);
+
+    LogFlowFuncEnter();
+
+    int rc = VERR_NOT_IMPLEMENTED;
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+int SharedClipboardProviderVbglR3::ReadFileHdr(PVBOXCLIPBOARDFILEHDR pFileHdr)
+{
+    RT_NOREF(pFileHdr);
+
+    LogFlowFuncEnter();
+
+    int rc = VERR_NOT_IMPLEMENTED;
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+int SharedClipboardProviderVbglR3::WriteFileHdr(const PVBOXCLIPBOARDFILEHDR pFileHdr)
+{
+    RT_NOREF(pFileHdr);
+
+    LogFlowFuncEnter();
+
+    int rc = VERR_NOT_IMPLEMENTED;
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+int SharedClipboardProviderVbglR3::ReadFileData(PVBOXCLIPBOARDFILEDATA pFileData)
+{
+    RT_NOREF(pFileData);
+
+    LogFlowFuncEnter();
+
+    int rc = VERR_NOT_IMPLEMENTED;
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+int SharedClipboardProviderVbglR3::WriteFileData(const PVBOXCLIPBOARDFILEDATA pFileData)
+{
+    RT_NOREF(pFileData);
+
+    LogFlowFuncEnter();
+
+    int rc = VERR_NOT_IMPLEMENTED;
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
 }
 
 void SharedClipboardProviderHostService::Reset(void)

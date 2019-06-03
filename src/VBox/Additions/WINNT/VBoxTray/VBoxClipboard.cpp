@@ -71,6 +71,29 @@ static VBOXCLIPBOARDCONTEXT g_Ctx = { NULL };
 static char s_szClipWndClassName[] = VBOX_CLIPBOARD_WNDCLASS_NAME;
 
 
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+/**
+ * Thread for transferring URI objects from guest to the host.
+ * For host to guest transfers we utilize our own IDataObject / IStream implementations.
+ *
+ * @returns VBox status code.
+ * @param   hThread             Thread handle.
+ * @param   pvUser              User arguments; is PVBOXCLIPBOARDWINCTX.
+ */
+static int vboxClipboardURIThread(RTTHREAD hThread, void *pvUser)
+{
+    AssertPtrReturn(pvUser, VERR_INVALID_POINTER);
+
+    LogFlowFuncEnter();
+
+    PVBOXCLIPBOARDWINCTX pWinCtx = (PVBOXCLIPBOARDWINCTX)pvUser;
+    AssertPtr(pWinCtx);
+
+    int rc = 0;
+
+    return rc;
+}
+#endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
 
 static LRESULT vboxClipboardWinProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
@@ -518,8 +541,18 @@ static LRESULT vboxClipboardWinProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd,
                            rc = VBoxClipboardWinDropFilesToStringList((DROPFILES *)hDrop, &pszList, &cbList);
                            if (RT_SUCCESS(rc))
                            {
-                               rc = VbglR3ClipboardWriteData(pCtx->u32ClientID, uFormat, pszList, (uint32_t)cbList);
-                               RTMemFree(pszList);
+                               /* Spawn a worker thread, so that we don't block the window thread for too long. */
+                               rc = RTThreadCreate(&hThread, vboxClipboardURIThread, pWinCtx /* pvUser */,
+                                                   0, RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE,
+                                                   "vboxshclp");
+                               if (RT_SUCCESS(rc))
+                               {
+                                   int rc2 = RTThreadUserWait(hThread, 30 * 1000 /* Timeout in ms */);
+                                   AssertRC(rc2);
+
+                                   if (!pCtx->fStarted) /* Did the thread fail to start? */
+                                       rc = VERR_GENERAL_FAILURE; /** @todo Find a better rc. */
+                               }
                            }
 
                            GlobalUnlock(hClip);

@@ -56,7 +56,7 @@ ifdef VBOX_WITH_SHARED_CLIPBOARD
  ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
   VBoxTray_DEFS     += VBOX_WITH_SHARED_CLIPBOARD_GUEST
   VBoxTray_SOURCES  += \
- 	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardCache.cpp \
+ 	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardArea.cpp \
 	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardDataObjectImpl-win.cpp \
 	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardEnumFormatEtcImpl-win.cpp \
 	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardPath.cpp \

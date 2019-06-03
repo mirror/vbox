@@ -270,3 +270,42 @@ void VBoxClipboardSvcImplWriteData(PVBOXCLIPBOARDCLIENTDATA pClientData, void *p
 
     VBoxSvcClipboardUnlock();
 }
+
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+int VBoxClipboardSvcImplURIReadDir(PVBOXCLIPBOARDCLIENTDATA pClientData, PVBOXCLIPBOARDDIRDATA pDirData)
+{
+    RT_NOREF(pClientData, pDirData);
+    return VERR_NOT_IMPLEMENTED;
+}
+
+int VBoxClipboardSvcImplURIWriteDir(PVBOXCLIPBOARDCLIENTDATA pClientData, PVBOXCLIPBOARDDIRDATA pDirData)
+{
+    RT_NOREF(pClientData, pDirData);
+    return VERR_NOT_IMPLEMENTED;
+}
+
+int VBoxClipboardSvcImplURIReadFileHdr(PVBOXCLIPBOARDCLIENTDATA pClientData, PVBOXCLIPBOARDFILEHDR pFileHdr)
+{
+    RT_NOREF(pClientData, pFileHdr);
+    return VERR_NOT_IMPLEMENTED;
+}
+
+int VBoxClipboardSvcImplURIWriteFileHdr(PVBOXCLIPBOARDCLIENTDATA pClientData, PVBOXCLIPBOARDFILEHDR pFileHdr)
+{
+    RT_NOREF(pClientData, pFileHdr);
+    return VERR_NOT_IMPLEMENTED;
+}
+
+int VBoxClipboardSvcImplURIReadFileData(PVBOXCLIPBOARDCLIENTDATA pClientData, PVBOXCLIPBOARDFILEDATA pFileData)
+{
+    RT_NOREF(pClientData, pFileData);
+    return VERR_NOT_IMPLEMENTED;
+}
+
+int VBoxClipboardSvcImplURIWriteFileData(PVBOXCLIPBOARDCLIENTDATA pClientData, PVBOXCLIPBOARDFILEDATA pFileData)
+{
+    RT_NOREF(pClientData, pFileData);
+    return VERR_NOT_IMPLEMENTED;
+}
+#endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
+

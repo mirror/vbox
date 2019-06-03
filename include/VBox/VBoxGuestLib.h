@@ -609,6 +609,15 @@ VBGLR3DECL(int)     VbglR3ClipboardReadData(HGCMCLIENTID idClient, uint32_t fFor
 VBGLR3DECL(int)     VbglR3ClipboardReportFormats(HGCMCLIENTID idClient, uint32_t fFormats);
 VBGLR3DECL(int)     VbglR3ClipboardWriteData(HGCMCLIENTID idClient, uint32_t fFormat, void *pv, uint32_t cb);
 #  ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+VBGLR3DECL(int)     VbglR3ClipboardReadDir(HGCMCLIENTID idClient, char *pszDirname, uint32_t cbDirname, uint32_t *pcbDirnameRecv,
+                                           uint32_t *pfMode);
+VBGLR3DECL(int)     VbglR3ClipboardWriteDir(HGCMCLIENTID idClient, const char  *pszPath, uint32_t cbPath, uint32_t fMode);
+VBGLR3DECL(int)     VbglR3ClipboardReadFileHdr(HGCMCLIENTID  idClient, char *pszFilename, uint32_t cbFilename, uint32_t *puFlags,
+                                               uint32_t *pfMode, uint64_t *pcbTotal);
+VBGLR3DECL(int)     VbglR3ClipboardWriteFileHdr(HGCMCLIENTID idClient, const char *pszFilename, uint32_t cbFilename,
+                                                uint32_t fFlags, uint32_t fMode, uint64_t cbTotal);
+VBGLR3DECL(int)     VbglR3ClipboardReadFileData(HGCMCLIENTID idClient, void *pvData, uint32_t cbData, uint32_t *pcbRead);
+VBGLR3DECL(int)     VbglR3ClipboardWriteFileData(HGCMCLIENTID idClient, void *pvData, uint32_t cbData, uint32_t *pcbWritten);
 VBGLR3DECL(int)     VbglR3ClipboardSendError(HGCMCLIENTID idClient, int rcErr);
 #  endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
 /** @} */

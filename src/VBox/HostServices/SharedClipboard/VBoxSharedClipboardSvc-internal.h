@@ -54,8 +54,9 @@ typedef struct _VBOXCLIPBOARDCLIENTURITRANSFER
     /** Pointer to the client state (parent). */
     VBOXCLIPBOARDCLIENTSTATE      *pState;
     /** The transfer's own (local) area.
-     *  The cache itself has a clipboard area ID assigned. */
-    SharedClipboardArea            Cache;
+     *  The area itself has a clipboard ID assigned, which gets shared (maintained) across all
+     *  VMs via VBoxSVC. */
+    SharedClipboardArea            Area;
     /** The transfer's URI list, containing the fs object root entries. */
     SharedClipboardURIList         List;
     /** Current object being handled. */
@@ -132,7 +133,7 @@ typedef struct _VBOXCLIPBOARDCLIENTDATA
 } VBOXCLIPBOARDCLIENTDATA, *PVBOXCLIPBOARDCLIENTDATA;
 
 /*
- * The service functions. Locking is between the service thread and the platform dependent windows thread.
+ * The service functions. Locking is between the service thread and the platform-dependent (window) thread.
  */
 uint32_t vboxSvcClipboardGetMode(void);
 void vboxSvcClipboardReportMsg(PVBOXCLIPBOARDCLIENTDATA pClientData, uint32_t u32Msg, uint32_t u32Formats);
@@ -140,6 +141,12 @@ void vboxSvcClipboardCompleteReadData(PVBOXCLIPBOARDCLIENTDATA pClientData, int 
 
 int vboxSvcClipboardClientStateInit(PVBOXCLIPBOARDCLIENTSTATE pState, uint32_t uClientID);
 void vboxSvcClipboardClientStateReset(PVBOXCLIPBOARDCLIENTSTATE pState);
+
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+void vboxClipboardSvcURIDirDataDestroy(PVBOXCLIPBOARDDIRDATA pDirData);
+void vboxClipboardSvcURIFileHdrDestroy(PVBOXCLIPBOARDFILEHDR pFileHdr);
+void vboxClipboardSvcURIFileDataDestroy(PVBOXCLIPBOARDFILEDATA pFileData);
+#endif
 
 /*
  * Platform-dependent implementations.
@@ -153,6 +160,15 @@ void VBoxClipboardSvcImplFormatAnnounce(PVBOXCLIPBOARDCLIENTDATA pClientData, ui
 int VBoxClipboardSvcImplReadData(PVBOXCLIPBOARDCLIENTDATA pClientData, uint32_t u32Format, void *pv, uint32_t cb, uint32_t *pcbActual);
 void VBoxClipboardSvcImplWriteData(PVBOXCLIPBOARDCLIENTDATA pClientData, void *pv, uint32_t cb, uint32_t u32Format);
 int VBoxClipboardSvcImplSync(PVBOXCLIPBOARDCLIENTDATA pClientData);
+
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+int VBoxClipboardSvcImplURIReadDir(PVBOXCLIPBOARDCLIENTDATA pClientData, PVBOXCLIPBOARDDIRDATA pDirData);
+int VBoxClipboardSvcImplURIWriteDir(PVBOXCLIPBOARDCLIENTDATA pClientData, PVBOXCLIPBOARDDIRDATA pDirData);
+int VBoxClipboardSvcImplURIReadFileHdr(PVBOXCLIPBOARDCLIENTDATA pClientData, PVBOXCLIPBOARDFILEHDR pFileHdr);
+int VBoxClipboardSvcImplURIWriteFileHdr(PVBOXCLIPBOARDCLIENTDATA pClientData, PVBOXCLIPBOARDFILEHDR pFileHdr);
+int VBoxClipboardSvcImplURIReadFileData(PVBOXCLIPBOARDCLIENTDATA pClientData, PVBOXCLIPBOARDFILEDATA pFileData);
+int VBoxClipboardSvcImplURIWriteFileData(PVBOXCLIPBOARDCLIENTDATA pClientData, PVBOXCLIPBOARDFILEDATA pFileData);
+#endif
 
 /* Host unit testing interface */
 #ifdef UNIT_TEST

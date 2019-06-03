@@ -247,7 +247,16 @@ struct SharedClipboardData
 {
     SharedClipboardData()
         : uNextClipboardAreaID(0)
-        , uMaxClipboardAreas(32) { }
+        , uMaxClipboardAreas(32)
+    {
+        int rc2 = RTCritSectInit(&CritSect);
+        AssertRC(rc2);
+    }
+
+    virtual ~SharedClipboardData()
+    {
+        RTCritSectDelete(&CritSect);
+    }
 
     /** Critical section to serialize access. */
     RTCRITSECT                          CritSect;
@@ -983,6 +992,17 @@ void VirtualBox::uninit()
         m->ptrExtPackManager->uninit();
         unconst(m->ptrExtPackManager).setNull();
     }
+#endif
+
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+    LogFlowThisFunc(("Destroying Shared Clipboard areas...\n"));
+    SharedClipboardAreaMap::iterator itArea = m->SharedClipboard.mapClipboardAreas.begin();
+    while (itArea != m->SharedClipboard.mapClipboardAreas.end())
+    {
+        i_clipboardAreaDestroy(itArea->second);
+        ++itArea;
+    }
+    m->SharedClipboard.mapClipboardAreas.clear();
 #endif
 
     LogFlowThisFunc(("Terminating the async event handler...\n"));
@@ -3332,28 +3352,34 @@ struct GuestPropertyEvent : public VirtualBox::CallbackEvent
 };
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
-int VirtualBox::i_onClipboardAreaCreate(SharedClipboardAreaData &AreaData, uint32_t fFlags)
+int VirtualBox::i_clipboardAreaCreate(SharedClipboardAreaData &AreaData, uint32_t fFlags)
 {
     RT_NOREF(fFlags);
-    int rc = AreaData.Area.OpenTemp(AreaData.uID);
-    LogFlowFunc(("uID=%RU32, rc=%Rrc\n", AreaData.uID, rc));
-    return rc;
+    int vrc = AreaData.Area.OpenTemp(AreaData.uID);
+    if (RT_SUCCESS(vrc))
+    {
+    }
+    LogFlowFunc(("uID=%RU32, rc=%Rrc\n", AreaData.uID, vrc));
+    return vrc;
 }
 
-int VirtualBox::i_onClipboardAreaDestroy(SharedClipboardAreaData &AreaData)
+int VirtualBox::i_clipboardAreaDestroy(SharedClipboardAreaData &AreaData)
 {
     /** @todo Do we need a worker for this to not block here for too long?
      *        This could take a while to clean up huge areas ... */
-    int rc = AreaData.Area.Close();
-    LogFlowFunc(("uID=%RU32, rc=%Rrc\n", AreaData.uID, rc));
-    return rc;
+    int vrc = AreaData.Area.Close();
+    LogFlowFunc(("uID=%RU32, rc=%Rrc\n", AreaData.uID, vrc));
+    return vrc;
 }
 
-int VirtualBox::i_onClipboardAreaRegister(const std::vector<com::Utf8Str> &aParms, ULONG *aID)
+HRESULT VirtualBox::i_onClipboardAreaRegister(const std::vector<com::Utf8Str> &aParms, ULONG *aID)
 {
     RT_NOREF(aParms);
-    int rc = RTCritSectEnter(&m->SharedClipboard.CritSect);
-    if (RT_SUCCESS(rc))
+
+    HRESULT rc = S_OK;
+
+    int vrc = RTCritSectEnter(&m->SharedClipboard.CritSect);
+    if (RT_SUCCESS(vrc))
     {
         try
         {
@@ -3364,8 +3390,8 @@ int VirtualBox::i_onClipboardAreaRegister(const std::vector<com::Utf8Str> &aParm
                 SharedClipboardAreaData AreaData;
                 AreaData.uID = uAreaID;
 
-                rc = i_onClipboardAreaCreate(AreaData, 0 /* fFlags */);
-                if (RT_SUCCESS(rc))
+                vrc = i_clipboardAreaCreate(AreaData, 0 /* fFlags */);
+                if (RT_SUCCESS(vrc))
                 {
                     m->SharedClipboard.mapClipboardAreas[uAreaID] = AreaData;
                     m->SharedClipboard.uNextClipboardAreaID++;
@@ -3379,113 +3405,122 @@ int VirtualBox::i_onClipboardAreaRegister(const std::vector<com::Utf8Str> &aParm
                                  uAreaID, AreaData.Area.GetDirAbs()));
                 }
                 else
-                    LogRel(("Clipboard: Failed to create new clipboard area %RU32, rc=%Rrc\n", uAreaID, rc));
+                    rc = setError(E_FAIL, /** @todo Find a better rc. */
+                                  tr("Failed to create new clipboard area %RU32 (%Rrc)"), aID, vrc);
             }
             else
             {
-                LogThisFunc(("Maximum number of conucurrent clipboard areas reached (%RU32)\n",
-                             m->SharedClipboard.uMaxClipboardAreas));
-                rc = VERR_TOO_MUCH_DATA; /** @todo Find a better rc. */
+                rc = setError(E_FAIL, /** @todo Find a better rc. */
+                              tr("Maximum number of conucurrent clipboard areas reached (%RU32)"),
+                              m->SharedClipboard.uMaxClipboardAreas);
             }
         }
         catch (std::bad_alloc &ba)
         {
-            rc = VERR_NO_MEMORY;
+            vrc = VERR_NO_MEMORY;
             RT_NOREF(ba);
         }
 
         RTCritSectLeave(&m->SharedClipboard.CritSect);
     }
-    LogFlowThisFunc(("rc=%Rrc\n", rc));
+    LogFlowThisFunc(("rc=%Rhrc\n", rc));
     return rc;
 }
 
-int VirtualBox::i_onClipboardAreaUnregister(ULONG aID)
+HRESULT VirtualBox::i_onClipboardAreaUnregister(ULONG aID)
 {
-    RT_NOREF(aID);
+    HRESULT rc = S_OK;
 
-    int rc = RTCritSectEnter(&m->SharedClipboard.CritSect);
-    if (RT_SUCCESS(rc))
+    int vrc = RTCritSectEnter(&m->SharedClipboard.CritSect);
+    if (RT_SUCCESS(vrc))
     {
         SharedClipboardAreaMap::iterator itArea = m->SharedClipboard.mapClipboardAreas.find(aID);
         if (itArea != m->SharedClipboard.mapClipboardAreas.end())
         {
             if (itArea->second.Area.GetRefCount() == 0)
             {
-                rc = i_onClipboardAreaDestroy(itArea->second);
-                if (RT_SUCCESS(rc))
+                vrc = i_clipboardAreaDestroy(itArea->second);
+                if (RT_SUCCESS(vrc))
                 {
                     m->SharedClipboard.mapClipboardAreas.erase(itArea);
                 }
             }
             else
-                rc = VERR_WRONG_ORDER;
+                rc = setError(E_ACCESSDENIED, /** @todo Find a better rc. */
+                              tr("Area with ID %RU32 still in used, cannot unregister"), aID);
         }
         else
-            rc = VERR_NOT_FOUND;
+            rc = setError(VBOX_E_OBJECT_NOT_FOUND, /** @todo Find a better rc. */
+                          tr("Could not find a registered clipboard area with ID %RU32"), aID);
 
-        int rc2 = RTCritSectLeave(&m->SharedClipboard.CritSect);
-        AssertRC(rc2);
+        int vrc2 = RTCritSectLeave(&m->SharedClipboard.CritSect);
+        AssertRC(vrc2);
     }
-    LogFlowThisFunc(("aID=%RU32, rc=%Rrc\n", aID, rc));
+    LogFlowThisFunc(("aID=%RU32, rc=%Rhrc\n", aID, rc));
     return rc;
 }
 
-int VirtualBox::i_onClipboardAreaAttach(ULONG aID)
+HRESULT VirtualBox::i_onClipboardAreaAttach(ULONG aID)
 {
-    int rc = RTCritSectEnter(&m->SharedClipboard.CritSect);
-    if (RT_SUCCESS(rc))
+    HRESULT rc = S_OK;
+
+    int vrc = RTCritSectEnter(&m->SharedClipboard.CritSect);
+    if (RT_SUCCESS(vrc))
     {
         SharedClipboardAreaMap::iterator itArea = m->SharedClipboard.mapClipboardAreas.find(aID);
         if (itArea != m->SharedClipboard.mapClipboardAreas.end())
         {
             uint32_t cRefs = itArea->second.Area.AddRef();
             LogFlowThisFunc(("aID=%RU32 -> cRefs=%RU32\n", aID, cRefs));
-            rc = VINF_SUCCESS;
+            vrc = VINF_SUCCESS;
         }
         else
-            rc = VERR_NOT_FOUND;
+            rc = setError(VBOX_E_OBJECT_NOT_FOUND, /** @todo Find a better rc. */
+                          tr("Could not find a registered clipboard area with ID %RU32"), aID);
 
-        int rc2 = RTCritSectLeave(&m->SharedClipboard.CritSect);
-        AssertRC(rc2);
+        int vrc2 = RTCritSectLeave(&m->SharedClipboard.CritSect);
+        AssertRC(vrc2);
     }
-    LogFlowThisFunc(("aID=%RU32, rc=%Rrc\n", aID, rc));
+    LogFlowThisFunc(("aID=%RU32, rc=%Rhrc\n", aID, rc));
     return rc;
 }
 
-int VirtualBox::i_onClipboardAreaDetach(ULONG aID)
+HRESULT VirtualBox::i_onClipboardAreaDetach(ULONG aID)
 {
-    int rc = RTCritSectEnter(&m->SharedClipboard.CritSect);
-    if (RT_SUCCESS(rc))
+    HRESULT rc = S_OK;
+
+    int vrc = RTCritSectEnter(&m->SharedClipboard.CritSect);
+    if (RT_SUCCESS(vrc))
     {
         SharedClipboardAreaMap::iterator itArea = m->SharedClipboard.mapClipboardAreas.find(aID);
         if (itArea != m->SharedClipboard.mapClipboardAreas.end())
         {
             uint32_t cRefs = itArea->second.Area.Release();
             LogFlowThisFunc(("aID=%RU32 -> cRefs=%RU32\n", aID, cRefs));
-            rc = VINF_SUCCESS;
+            vrc = VINF_SUCCESS;
         }
         else
-            rc = VERR_NOT_FOUND;
+            rc = setError(VBOX_E_OBJECT_NOT_FOUND, /** @todo Find a better rc. */
+                          tr("Could not find a registered clipboard area with ID %RU32"), aID);
 
         int rc2 = RTCritSectLeave(&m->SharedClipboard.CritSect);
         AssertRC(rc2);
     }
-    LogFlowThisFunc(("aID=%RU32, rc=%Rrc\n", aID, rc));
+    LogFlowThisFunc(("aID=%RU32, rc=%Rhrc\n", aID, rc));
     return rc;
 }
 
 ULONG VirtualBox::i_onClipboardAreaGetMostRecent(void)
 {
     ULONG aID = 0;
-    int rc2 = RTCritSectEnter(&m->SharedClipboard.CritSect);
-    if (RT_SUCCESS(rc2))
+    int vrc2 = RTCritSectEnter(&m->SharedClipboard.CritSect);
+    if (RT_SUCCESS(vrc2))
     {
         aID = m->SharedClipboard.uNextClipboardAreaID
             ? m->SharedClipboard.uNextClipboardAreaID - 1 : 0;
 
-        rc2 = RTCritSectLeave(&m->SharedClipboard.CritSect);
-        AssertRC(rc2);
+        vrc2 = RTCritSectLeave(&m->SharedClipboard.CritSect);
+        AssertRC(vrc2);
     }
     LogFlowThisFunc(("aID=%RU32\n", aID));
     return aID;

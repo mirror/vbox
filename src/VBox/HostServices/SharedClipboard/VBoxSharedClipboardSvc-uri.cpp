@@ -113,7 +113,7 @@ int vboxClipboardSvcURITransferCreate(PVBOXCLIPBOARDCLIENTURITRANSFER pTransfer,
     AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
     AssertPtrReturn(pState,    VERR_INVALID_POINTER);
 
-    int rc = pTransfer->Cache.OpenTemp(SHAREDCLIPBOARDAREA_FLAGS_NONE);
+    int rc = pTransfer->Area.OpenTemp(SHAREDCLIPBOARDAREA_FLAGS_NONE);
     if (RT_SUCCESS(rc))
     {
         rc = SharedClipboardMetaDataInit(&pTransfer->Meta);
@@ -161,7 +161,7 @@ void vboxClipboardSvcURITransferReset(PVBOXCLIPBOARDCLIENTURITRANSFER pTransfer)
     int rc2;
 
     /* Do we need to detach from a previously attached clipboard area? */
-    const SHAREDCLIPBOARDAREAID uAreaID = pTransfer->Cache.GetAreaID();
+    const SHAREDCLIPBOARDAREAID uAreaID = pTransfer->Area.GetID();
     if (   g_pfnExtension
         && uAreaID != NIL_SHAREDCLIPBOARDAREAID)
     {
@@ -178,13 +178,64 @@ void vboxClipboardSvcURITransferReset(PVBOXCLIPBOARDCLIENTURITRANSFER pTransfer)
 #endif
     }
 
-    rc2 = pTransfer->Cache.Rollback();
-    AssertRC(rc2);
-
-    rc2 = pTransfer->Cache.Close();
-    AssertRC(rc2);
+    /* ignore rc */ pTransfer->Area.Rollback();
+    /* ignore rc */ pTransfer->Area.Close();
 
     SharedClipboardMetaDataDestroy(&pTransfer->Meta);
+}
+
+/**
+ * Destroys a VBOXCLIPBOARDDIRDATA structure.
+ *
+ * @param   pDirData            VBOXCLIPBOARDDIRDATA structure to destroy.
+ */
+void vboxClipboardSvcURIDirDataDestroy(PVBOXCLIPBOARDDIRDATA pDirData)
+{
+    if (!pDirData)
+        return;
+
+    if (pDirData->pszPath)
+    {
+        Assert(pDirData->cbPath);
+        RTStrFree(pDirData->pszPath);
+        pDirData->pszPath = NULL;
+    }
+}
+
+/**
+ * Destroys a VBOXCLIPBOARDFILEHDR structure.
+ *
+ * @param   pFileHdr            VBOXCLIPBOARDFILEHDR structure to destroy.
+ */
+void vboxClipboardSvcURIFileHdrDestroy(PVBOXCLIPBOARDFILEHDR pFileHdr)
+{
+    if (!pFileHdr)
+        return;
+
+    if (pFileHdr->pszFilePath)
+    {
+        Assert(pFileHdr->pszFilePath);
+        RTStrFree(pFileHdr->pszFilePath);
+        pFileHdr->pszFilePath = NULL;
+    }
+}
+
+/**
+ * Destroys a VBOXCLIPBOARDFILEDATA structure.
+ *
+ * @param   pFileData           VBOXCLIPBOARDFILEDATA structure to destroy.
+ */
+void vboxClipboardSvcURIFileDataDestroy(PVBOXCLIPBOARDFILEDATA pFileData)
+{
+    if (!pFileData)
+        return;
+
+    if (pFileData->pvData)
+    {
+        Assert(pFileData->cbData);
+        RTMemFree(pFileData->pvData);
+        pFileData->pvData = NULL;
+    }
 }
 
 /**
@@ -264,6 +315,15 @@ int vboxClipboardSvcURIHandler(uint32_t u32ClientID,
             break;
     }
 
+    if (!g_pfnExtension)
+    {
+#ifdef DEBUG_andy
+        AssertPtr(g_pfnExtension);
+#endif
+        LogFunc(("Invalid / no service extension set, skipping URI handling\n"));
+        rc = VERR_ACCESS_DENIED;
+    }
+
     if (RT_FAILURE(rc))
         return rc;
 
@@ -278,39 +338,42 @@ int vboxClipboardSvcURIHandler(uint32_t u32ClientID,
             LogFlowFunc(("VBOX_SHARED_CLIPBOARD_FN_READ_DATA_HDR\n"));
             if (cParms == VBOX_SHARED_CLIPBOARD_CPARMS_READ_DATA_HDR)
             {
-                if (g_pfnExtension)
+                VBOXCLIPBOARDEXTAREAPARMS parms;
+                RT_ZERO(parms);
+
+                parms.uID = 0; /* 0 means most recent clipboard area. */
+
+                /* The client now needs to attach to the most recent clipboard area
+                 * to keep a reference to it. The host does the actual book keeping / cleanup then.
+                 *
+                 * This might fail if the host does not have a most recent clipboard area (yet). */
+                rc = g_pfnExtension(g_pvExtension, VBOX_CLIPBOARD_EXT_FN_AREA_ATTACH, &parms, sizeof(parms));
+#ifdef LOG_ENABLED
+                AssertPtr(pTransfer->pState);
+                LogFlowFunc(("Attached client %RU32 to clipboard area %RU32 with rc=%Rrc\n",
+                             pTransfer->pState->u32ClientID, parms.uID, rc));
+#endif
+                bool fDetach = false;
+
+                if (RT_SUCCESS(rc))
                 {
-                    VBOXCLIPBOARDEXTAREAPARMS parms;
+                    // pTransfer->Area. parms.uID
+
+                    /** @todo Detach if header / meta size is 0. */
+                }
+
+                /* Do we need to detach again because we're done? */
+                if (fDetach)
+                {
                     RT_ZERO(parms);
+                    parms.uID = pTransfer->Area.GetID();
 
-                    parms.uID = 0; /* 0 means most recent clipboard area. */
-
-                    /* The client now needs to attach to the most recent clipboard area
-                     * to keep a reference to it. The host does the actual book keeping / cleanup then. */
-                    rc = g_pfnExtension(g_pvExtension, VBOX_CLIPBOARD_EXT_FN_AREA_ATTACH, &parms, sizeof(parms));
+                    rc = g_pfnExtension(g_pvExtension, VBOX_CLIPBOARD_EXT_FN_AREA_DETACH, &parms, sizeof(parms));
 #ifdef LOG_ENABLED
                     AssertPtr(pTransfer->pState);
-                    LogFlowFunc(("Attached client %RU32 from clipboard area %RU32 with rc=%Rrc\n",
+                    LogFlowFunc(("Detached client %RU32 from clipboard area %RU32 with rc=%Rrc\n",
                                  pTransfer->pState->u32ClientID, parms.uID, rc));
 #endif
-                    if (RT_SUCCESS(rc))
-                    {
-
-                    }
-
-                    /* Do we need to detach again because we're done? */
-                    if (   RT_SUCCESS(rc))
-                    {
-                        RT_ZERO(parms);
-                        parms.uID = pTransfer->Cache.GetAreaID();
-
-                        rc = g_pfnExtension(g_pvExtension, VBOX_CLIPBOARD_EXT_FN_AREA_DETACH, &parms, sizeof(parms));
-#ifdef LOG_ENABLED
-                        AssertPtr(pTransfer->pState);
-                        LogFlowFunc(("Detached client %RU32 from clipboard area %RU32 with rc=%Rrc\n",
-                                     pTransfer->pState->u32ClientID, parms.uID, rc));
-#endif
-                    }
                 }
             }
             break;
@@ -356,7 +419,9 @@ int vboxClipboardSvcURIHandler(uint32_t u32ClientID,
                         /** @todo Validate checksum. */
                         rc = SharedClipboardMetaDataResize(&pTransfer->Meta, pTransfer->Hdr.cbMeta);
                         if (RT_SUCCESS(rc))
+                        {
                             pClientData->cTransfers++;
+                        }
                     }
                 }
                 else
@@ -401,8 +466,7 @@ int vboxClipboardSvcURIHandler(uint32_t u32ClientID,
 
                         rc = pTransfer->List.SetFromURIData(pvMeta, cbMeta, SHAREDCLIPBOARDURILIST_FLAGS_NONE);
 
-                        if (   RT_SUCCESS(rc)
-                            && g_pfnExtension)
+                        if (RT_SUCCESS(rc))
                         {
                             VBOXCLIPBOARDEXTAREAPARMS parms;
                             RT_ZERO(parms);
@@ -430,7 +494,21 @@ int vboxClipboardSvcURIHandler(uint32_t u32ClientID,
         case VBOX_SHARED_CLIPBOARD_FN_READ_DIR:
         {
             LogFlowFunc(("VBOX_SHARED_CLIPBOARD_FN_READ_DIR\n"));
-            AssertFailedStmt(rc = VERR_NOT_IMPLEMENTED);
+            if (   cParms == VBOX_SHARED_CLIPBOARD_CPARMS_READ_DIR
+                && pClientData->cTransfers) /* Some transfer in-flight? */
+            {
+                VBOXCLIPBOARDDIRDATA data;
+                rc = VBoxClipboardSvcImplURIReadDir(pClientData, &data);
+                if (RT_SUCCESS(rc))
+                {
+                    /* Note: Context ID (paParms[0]) not used yet. */
+                    HGCMSvcSetPv (&paParms[1], data.pszPath, data.cbPath);
+                    HGCMSvcSetU32(&paParms[2], data.cbPath);
+                    HGCMSvcSetU32(&paParms[3], data.fMode);
+
+                    vboxClipboardSvcURIDirDataDestroy(&data);
+                }
+            }
             break;
         }
 
@@ -459,7 +537,7 @@ int vboxClipboardSvcURIHandler(uint32_t u32ClientID,
 
                 if (RT_SUCCESS(rc))
                 {
-                    const char *pszCacheDir = pTransfer->Cache.GetDirAbs();
+                    const char *pszCacheDir = pTransfer->Area.GetDirAbs();
                     char *pszDir = RTPathJoinA(pszCacheDir, data.pszPath);
                     if (pszDir)
                     {
@@ -467,7 +545,7 @@ int vboxClipboardSvcURIHandler(uint32_t u32ClientID,
                         if (RT_SUCCESS(rc))
                         {
                             /* Add for having a proper rollback. */
-                            int rc2 = pTransfer->Cache.AddDir(pszDir);
+                            int rc2 = pTransfer->Area.AddDir(pszDir);
                             AssertRC(rc2);
                         }
                     }
@@ -481,7 +559,23 @@ int vboxClipboardSvcURIHandler(uint32_t u32ClientID,
         case VBOX_SHARED_CLIPBOARD_FN_READ_FILE_HDR:
         {
             LogFlowFunc(("VBOX_SHARED_CLIPBOARD_FN_READ_FILE_HDR\n"));
-            AssertFailedStmt(rc = VERR_NOT_IMPLEMENTED);
+            if (   cParms == VBOX_SHARED_CLIPBOARD_CPARMS_READ_FILE_HDR
+                && pClientData->cTransfers) /* Some transfer in-flight? */
+            {
+                VBOXCLIPBOARDFILEHDR hdr;
+                rc = VBoxClipboardSvcImplURIReadFileHdr(pClientData, &hdr);
+                if (RT_SUCCESS(rc))
+                {
+                    /* Note: Context ID (paParms[0]) not used yet. */
+                    HGCMSvcSetPv (&paParms[1], hdr.pszFilePath, hdr.cbFilePath);
+                    HGCMSvcSetU32(&paParms[2], hdr.cbFilePath);
+                    HGCMSvcSetU32(&paParms[3], hdr.fFlags);
+                    HGCMSvcSetU32(&paParms[4], hdr.fMode);
+                    HGCMSvcSetU64(&paParms[5], hdr.cbSize);
+
+                    vboxClipboardSvcURIFileHdrDestroy(&hdr);
+                }
+            }
             break;
         }
 
@@ -510,21 +604,25 @@ int vboxClipboardSvcURIHandler(uint32_t u32ClientID,
                 if (RT_SUCCESS(rc))
                 {
                     if (!VBoxSvcClipboardFileHdrIsValid(&data, &pTransfer->Hdr))
-                        rc = VERR_INVALID_PARAMETER;
-
-                    if (pTransfer->ObjCtx.pObj == NULL)
                     {
-                        pTransfer->ObjCtx.pObj = new SharedClipboardURIObject(SharedClipboardURIObject::Type_File);
-                        if (!pTransfer->ObjCtx.pObj) /** @todo Can this throw? */
-                            rc = VERR_NO_MEMORY;
+                        rc = VERR_INVALID_PARAMETER;
                     }
-                    else /* There still is another object being processed? */
-                       rc = VERR_WRONG_ORDER;
+                    else
+                    {
+                        if (pTransfer->ObjCtx.pObj == NULL)
+                        {
+                            pTransfer->ObjCtx.pObj = new SharedClipboardURIObject(SharedClipboardURIObject::Type_File);
+                            if (!pTransfer->ObjCtx.pObj) /** @todo Can this throw? */
+                                rc = VERR_NO_MEMORY;
+                        }
+                        else /* There still is another object being processed? */
+                           rc = VERR_WRONG_ORDER;
+                    }
                 }
 
                 if (RT_SUCCESS(rc))
                 {
-                    const char *pszCacheDir = pTransfer->Cache.GetDirAbs();
+                    const char *pszCacheDir = pTransfer->Area.GetDirAbs();
 
                     char pszPathAbs[RTPATH_MAX];
                     rc = RTPathJoin(pszPathAbs, sizeof(pszPathAbs), pszCacheDir, data.pszFilePath);
@@ -536,9 +634,9 @@ int vboxClipboardSvcURIHandler(uint32_t u32ClientID,
                             SharedClipboardURIObject *pObj = vboxClipboardSvcURIObjCtxGetObj(&pTransfer->ObjCtx);
 
                             /** @todo Add sparse file support based on fFlags? (Use Open(..., fFlags | SPARSE). */
-                            rc = pObj->OpenEx(pszPathAbs, SharedClipboardURIObject::View_Target,
-                                              RTFILE_O_CREATE_REPLACE | RTFILE_O_WRITE | RTFILE_O_DENY_WRITE,
-                                              (data.fMode & RTFS_UNIX_MASK) | RTFS_UNIX_IRUSR | RTFS_UNIX_IWUSR);
+                            rc = pObj->OpenFileEx(pszPathAbs, SharedClipboardURIObject::View_Target,
+                                                  RTFILE_O_CREATE_REPLACE | RTFILE_O_WRITE | RTFILE_O_DENY_WRITE,
+                                                  (data.fMode & RTFS_UNIX_MASK) | RTFS_UNIX_IRUSR | RTFS_UNIX_IWUSR);
                             if (RT_SUCCESS(rc))
                             {
                                 rc = pObj->SetSize(data.cbSize);
@@ -557,7 +655,7 @@ int vboxClipboardSvcURIHandler(uint32_t u32ClientID,
                                 }
 
                                 /* Add for having a proper rollback. */
-                                int rc2 = pTransfer->Cache.AddFile(pszPathAbs);
+                                int rc2 = pTransfer->Area.AddFile(pszPathAbs);
                                 AssertRC(rc2);
                             }
                             else
@@ -572,7 +670,22 @@ int vboxClipboardSvcURIHandler(uint32_t u32ClientID,
         case VBOX_SHARED_CLIPBOARD_FN_READ_FILE_DATA:
         {
             LogFlowFunc(("VBOX_SHARED_CLIPBOARD_FN_READ_FILE_DATA\n"));
-            AssertFailedStmt(rc = VERR_NOT_IMPLEMENTED);
+            if (   cParms == VBOX_SHARED_CLIPBOARD_CPARMS_READ_FILE_DATA
+                && pClientData->cTransfers) /* Some transfer in-flight? */
+            {
+                VBOXCLIPBOARDFILEDATA data;
+                rc = VBoxClipboardSvcImplURIReadFileData(pClientData, &data);
+                if (RT_SUCCESS(rc))
+                {
+                    /* Note: Context ID (paParms[0]) not used yet. */
+                    HGCMSvcSetPv (&paParms[1], data.pvData, data.cbData);
+                    HGCMSvcSetU32(&paParms[2], data.cbData);
+                    HGCMSvcSetPv (&paParms[3], data.pvChecksum, data.cbChecksum);
+                    HGCMSvcSetU32(&paParms[4], data.cbChecksum);
+
+                    vboxClipboardSvcURIFileDataDestroy(&data);
+                }
+            }
             break;
         }
 

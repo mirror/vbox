@@ -687,7 +687,7 @@ ifdef VBOX_WITH_HOSTNETIF_API
 endif
 
 ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
- VBoxSVC_SOURCES += $(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardCache.cpp
+ VBoxSVC_SOURCES += $(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardArea.cpp
 endif
 
 $(call KB_FN_DO_PASS0_ON_TARGET,VBoxSVC) # Sets VBoxSVC_0_OUTDIR
