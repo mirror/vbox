@@ -20,13 +20,19 @@
 #include <QEvent>
 #include <QHeaderView>
 #include <QItemEditorFactory>
+#include <QPointer>
+#include <QPushButton>
 #include <QSortFilterProxyModel>
 #include <QSpinBox>
 #include <QStyledItemDelegate>
+#include <QTextEdit>
 #include <QVBoxLayout>
 
 /* GUI includes: */
+#include "QIDialog.h"
+#include "QIDialogButtonBox.h"
 #include "QITableView.h"
+#include "QIWithRetranslateUI.h"
 #include "UIFormEditorWidget.h"
 #include "UIMessageCenter.h"
 
@@ -49,6 +55,46 @@ enum UIFormEditorDataType
     UIFormEditorDataType_Value,
     UIFormEditorDataType_Max
 };
+
+
+/** Class used to hold text data. */
+class TextData
+{
+public:
+
+    /** Constructs null text data. */
+    TextData() {}
+    /** Constructs text data on the basis of passed @a strText and @a index. */
+    TextData(const QString &strText, const QModelIndex index = QModelIndex())
+        : m_strText(strText), m_index(index) {}
+    /** Constructs text data on the basis of @a another text data. */
+    TextData(const TextData &another)
+        : m_strText(another.text()), m_index(another.index()) {}
+
+    /** Assigns values of @a another text to this one. */
+    TextData &operator=(const TextData &another)
+    {
+        m_strText = another.text();
+        m_index = another.index();
+        return *this;
+    }
+
+    /** Returns text value. */
+    QString text() const { return m_strText; }
+
+    /** Defines model @a index. */
+    void setIndex(const QModelIndex &index) { m_index = index; }
+    /** Returns model index. */
+    QModelIndex index() const { return m_index; }
+
+private:
+
+    /** Holds text value. */
+    QString      m_strText;
+    /** Holds model index. */
+    QModelIndex  m_index;
+};
+Q_DECLARE_METATYPE(TextData);
 
 
 /** Class used to hold choice data. */
@@ -136,6 +182,48 @@ private:
     int  m_iInteger;
 };
 Q_DECLARE_METATYPE(RangedIntegerData);
+
+
+/** QWidget extension used as dummy TextData editor.
+  * It's not actually an editor, but Edit... button instead which opens
+  * real editor passing stored model index received from TextData value. */
+class TextEditor : public QIWithRetranslateUI<QWidget>
+{
+    Q_OBJECT;
+    Q_PROPERTY(TextData text READ text WRITE setText USER true);
+
+public:
+
+    /** Constructs TextData editor passing @a pParent to the base-class. */
+    TextEditor(QWidget *pParent = 0);
+
+protected:
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */;
+
+private slots:
+
+    /** Handles button click. */
+    void sltHandleButtonClick();
+
+private:
+
+    /** Prepares all. */
+    void prepare();
+
+    /** Defines @a text. */
+    void setText(const TextData &text);
+    /** Returns text. */
+    TextData text() const;
+
+    /** Holds the button instance. */
+    QPushButton *m_pButton;
+    /** Holds the multiline text. */
+    QString      m_strMultilineText;
+    /** Holds the model index. */
+    QModelIndex  m_index;
+};
 
 
 /** QComboBox extension used as ChoiceData editor. */
@@ -229,6 +317,12 @@ public:
     /** Defines @a fBool value. */
     void setBool(bool fBool);
 
+    /** Returns whether cached string value is multiline. */
+    bool isMultilineString() const;
+    /** Returns value cast to text. */
+    TextData toText() const;
+    /** Defines @a text value. */
+    void setText(const TextData &text);
     /** Returns value cast to string. */
     QString toString() const;
     /** Defines @a strString value. */
@@ -275,6 +369,10 @@ private:
 
     /** Holds cached bool value. */
     bool               m_fBool;
+    /** Holds whether cached string value is multiline. */
+    bool               m_fMultilineString;
+    /** Holds cached text value. */
+    TextData           m_text;
     /** Holds cached string value. */
     QString            m_strString;
     /** Holds cached choice value. */
@@ -326,6 +424,9 @@ public:
     /** Returns the @a iRole data for item with @a index. */
     virtual QVariant data(const QModelIndex &index, int iRole) const /* override */;
 
+    /** Creates actual TextData editor for specified @a index. */
+    void createTextDataEditor(const QModelIndex &index);
+
 private:
 
     /** Return the parent table-view reference. */
@@ -373,6 +474,85 @@ protected:
     /** Returns the child item with @a iIndex. */
     virtual QITableViewRow *childItem(int iIndex) const /* override */;
 };
+
+
+/*********************************************************************************************************************************
+*   Class TextEditor implementation.                                                                                             *
+*********************************************************************************************************************************/
+
+TextEditor::TextEditor(QWidget *pParent /* = 0 */)
+    : QIWithRetranslateUI<QWidget>(pParent)
+    , m_pButton(0)
+{
+    prepare();
+}
+
+void TextEditor::retranslateUi()
+{
+    m_pButton->setText(UIFormEditorWidget::tr("Edit..."));
+}
+
+void TextEditor::sltHandleButtonClick()
+{
+    /* Redirect the edit call if possible: */
+    do
+    {
+        /* Get the view: */
+        if (   !parent()
+            || !parent()->parent())
+            break;
+        UIFormEditorView *pView = qobject_cast<UIFormEditorView*>(parent()->parent());
+
+        /* Get the proxy model: */
+        if (   !pView
+            || !pView->model())
+            break;
+        UIFormEditorProxyModel *pProxyModel = qobject_cast<UIFormEditorProxyModel*>(pView->model());
+
+        /* Get the source model: */
+        if (   !pProxyModel
+            || !pProxyModel->sourceModel())
+            break;
+        UIFormEditorModel *pSourceModel = qobject_cast<UIFormEditorModel*>(pProxyModel->sourceModel());
+
+        /* Execute the call: */
+        if (!pSourceModel)
+            break;
+        pSourceModel->createTextDataEditor(m_index);
+    }
+    while (0);
+}
+
+void TextEditor::prepare()
+{
+    /* Create layout: */
+    QVBoxLayout *pLayout = new QVBoxLayout(this);
+    if (pLayout)
+    {
+        pLayout->setContentsMargins(0, 0, 0 ,0);
+        /* Create button: */
+        m_pButton = new QPushButton(this);
+        if (m_pButton)
+        {
+            connect(m_pButton, &QPushButton::clicked, this, &TextEditor::sltHandleButtonClick);
+            pLayout->addWidget(m_pButton);
+        }
+    }
+
+    /* Apply language settings: */
+    retranslateUi();
+}
+
+void TextEditor::setText(const TextData &text)
+{
+    m_strMultilineText = text.text();
+    m_index = text.index();
+}
+
+TextData TextEditor::text() const
+{
+    return TextData(m_strMultilineText, m_index);
+}
 
 
 /*********************************************************************************************************************************
@@ -442,6 +622,8 @@ UIFormEditorRow::UIFormEditorRow(QITableView *pParent, const CFormValue &comValu
     , m_enmValueType(KFormValueType_Max)
     , m_iGeneration(0)
     , m_fBool(false)
+    , m_fMultilineString(false)
+    , m_text(TextData())
     , m_strString(QString())
     , m_choice(ChoiceData())
     , m_rangedInteger(RangedIntegerData())
@@ -480,6 +662,42 @@ void UIFormEditorRow::setBool(bool fBool)
     AssertReturnVoid(valueType() == KFormValueType_Boolean);
     CBooleanFormValue comValue(m_comValue);
     CProgress comProgress = comValue.SetSelected(fBool);
+
+    /* Show error message if necessary: */
+    if (!comValue.isOk())
+        msgCenter().cannotAssignFormValue(comValue);
+    else
+    {
+        /* Show "Acquire export form" progress: */
+        msgCenter().showModalProgressDialog(comProgress, UIFormEditorWidget::tr("Assign value..."),
+                                            ":/progress_reading_appliance_90px.png",
+                                            0 /* parent */, 0 /* duration */);
+
+        /* Show error message if necessary: */
+        if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
+            msgCenter().cannotAssignFormValue(comProgress);
+        else
+            updateValueCells();
+    }
+}
+
+bool UIFormEditorRow::isMultilineString() const
+{
+    AssertReturn(valueType() == KFormValueType_String, false);
+    return m_fMultilineString;
+}
+
+TextData UIFormEditorRow::toText() const
+{
+    AssertReturn(valueType() == KFormValueType_String, TextData());
+    return m_text;
+}
+
+void UIFormEditorRow::setText(const TextData &text)
+{
+    AssertReturnVoid(valueType() == KFormValueType_String);
+    CStringFormValue comValue(m_comValue);
+    CProgress comProgress = comValue.SetString(text.text());
 
     /* Show error message if necessary: */
     if (!comValue.isOk())
@@ -611,8 +829,13 @@ void UIFormEditorRow::updateValueCells()
         case KFormValueType_String:
         {
             CStringFormValue comValue(m_comValue);
-            m_strString = comValue.GetString();
-            m_cells[UIFormEditorDataType_Value]->setText(m_strString);
+            m_fMultilineString = comValue.GetMultiline();
+            const QString strString = comValue.GetString();
+            if (m_fMultilineString)
+                m_text = TextData(strString);
+            else
+                m_strString = strString;
+            m_cells[UIFormEditorDataType_Value]->setText(strString);
             /// @todo check for errors
             break;
         }
@@ -830,7 +1053,10 @@ bool UIFormEditorModel::setData(const QModelIndex &index, const QVariant &value,
                     {
                         case KFormValueType_String:
                         {
-                            m_dataList[index.row()]->setString(value.toString());
+                            if (value.canConvert<TextData>())
+                                m_dataList[index.row()]->setText(value.value<TextData>());
+                            else
+                                m_dataList[index.row()]->setString(value.toString());
                             emit dataChanged(index, index);
                             updateGeneration();
                             return true;
@@ -913,7 +1139,16 @@ QVariant UIFormEditorModel::data(const QModelIndex &index, int iRole) const
                     switch (m_dataList[index.row()]->valueType())
                     {
                         case KFormValueType_String:
-                            return QVariant::fromValue(m_dataList[index.row()]->toString());
+                        {
+                            if (m_dataList[index.row()]->isMultilineString())
+                            {
+                                TextData td = m_dataList[index.row()]->toText();
+                                td.setIndex(index);
+                                return QVariant::fromValue(td);
+                            }
+                            else
+                                return QVariant::fromValue(m_dataList[index.row()]->toString());
+                        }
                         case KFormValueType_Choice:
                             return QVariant::fromValue(m_dataList[index.row()]->toChoice());
                         case KFormValueType_RangedInteger:
@@ -944,6 +1179,47 @@ QVariant UIFormEditorModel::data(const QModelIndex &index, int iRole) const
         }
         default:
             return QVariant();
+    }
+}
+
+void UIFormEditorModel::createTextDataEditor(const QModelIndex &index)
+{
+    /* Create dialog on-the-fly: */
+    QPointer<QIDialog> pDialog = new QIDialog(parentTable());
+    if (pDialog)
+    {
+        /* We will need that pointer: */
+        QTextEdit *pEditor = 0;
+        /* Create layout: */
+        QVBoxLayout *pLayout = new QVBoxLayout(pDialog);
+        if (pLayout)
+        {
+            /* Create text-editor: */
+            pEditor = new QTextEdit;
+            if (pEditor)
+            {
+                const TextData td = data(index, Qt::EditRole).value<TextData>();
+                pEditor->setPlainText(td.text());
+                pLayout->addWidget(pEditor);
+            }
+            /* Create button-box: */
+            QIDialogButtonBox *pBox = new QIDialogButtonBox;
+            if (pBox)
+            {
+                pBox->setStandardButtons(QDialogButtonBox::Cancel | QDialogButtonBox::Ok);
+                connect(pBox, &QIDialogButtonBox::accepted, pDialog, &QIDialog::accept);
+                connect(pBox, &QIDialogButtonBox::rejected, pDialog, &QIDialog::reject);
+                pLayout->addWidget(pBox);
+            }
+        }
+        /* Execute the dialog: */
+        if (pDialog->execute() == QDialog::Accepted)
+        {
+            const TextData td = TextData(pEditor->toPlainText(), index);
+            setData(index, QVariant::fromValue(td));
+        }
+        /* Cleanup: */
+        delete pDialog;
     }
 }
 
@@ -1102,6 +1378,11 @@ void UIFormEditorWidget::prepare()
                     QItemEditorFactory *pNewItemEditorFactory = new QItemEditorFactory;
                     if (pNewItemEditorFactory)
                     {
+                        /* Register TextEditor as the TextData editor: */
+                        int iTextId = qRegisterMetaType<TextData>();
+                        QStandardItemEditorCreator<TextEditor> *pTextEditorItemCreator = new QStandardItemEditorCreator<TextEditor>();
+                        pNewItemEditorFactory->registerEditor((QVariant::Type)iTextId, pTextEditorItemCreator);
+
                         /* Register ChoiceEditor as the ChoiceData editor: */
                         int iChoiceId = qRegisterMetaType<ChoiceData>();
                         QStandardItemEditorCreator<ChoiceEditor> *pChoiceEditorItemCreator = new QStandardItemEditorCreator<ChoiceEditor>();
