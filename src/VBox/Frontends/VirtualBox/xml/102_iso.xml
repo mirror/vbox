@@ -104,80 +104,54 @@
     </space>
     <row>
         <key>
-            <keycap>~</keycap>
-            <keycap>`</keycap>
             <position>1</position>
             <scancode>0x29</scancode>
         </key>
         <key>
-            <keycap>!</keycap>
-            <keycap>1</keycap>
             <position>2</position>
             <scancode>0x02</scancode>
         </key>
         <key>
-            <keycap>@</keycap>
-            <keycap>2</keycap>
             <position>3</position>
             <scancode>0x03</scancode>
         </key>
         <key>
-            <keycap>#</keycap>
-            <keycap>3</keycap>
             <position>4</position>
             <scancode>0x04</scancode>
         </key>
         <key>
-            <keycap>$</keycap>
-            <keycap>4</keycap>
             <position>5</position>
             <scancode>0x05</scancode>
         </key>
         <key>
-            <keycap>%</keycap>
-            <keycap>5</keycap>
             <position>6</position>
             <scancode>0x06</scancode>
         </key>
         <key>
-            <keycap>^</keycap>
-            <keycap>6</keycap>
             <position>7</position>
             <scancode>0x07</scancode>
         </key>
         <key>
-            <keycap>&amp;</keycap>
-            <keycap>7</keycap>
             <position>8</position>
             <scancode>0x08</scancode>
         </key>
         <key>
-            <keycap>*</keycap>
-            <keycap>8</keycap>
             <position>9</position>
             <scancode>0x09</scancode>
         </key>
         <key>
-            <keycap>(</keycap>
-            <keycap>9</keycap>
             <position>10</position>
             <scancode>0x0a</scancode>
         </key>
         <key>
-            <keycap>)</keycap>
-            <keycap>0</keycap>
             <position>11</position>
             <scancode>0x0b</scancode>
         </key>
         <key>
-            <keycap>_</keycap>
-            <keycap>-</keycap>
             <position>12</position>
             <scancode>0x0c</scancode>
         </key>
         <key>
-            <keycap>+</keycap>
-            <keycap>=</keycap>
             <position>13</position>
             <scancode>0x0d</scancode>
         </key>
@@ -217,64 +191,50 @@
             <scancode>0x0f</scancode>
         </key>
         <key>
-            <keycap>Q</keycap>
             <position>17</position>
             <scancode>0x10</scancode>
         </key>
         <key>
-            <keycap>W</keycap>
             <position>18</position>
             <scancode>0x11</scancode>
         </key>
         <key>
-            <keycap>E</keycap>
             <position>19</position>
             <scancode>0x12</scancode>
         </key>
         <key>
-            <keycap>R</keycap>
             <position>20</position>
             <scancode>0x13</scancode>
         </key>
         <key>
-            <keycap>T</keycap>
             <position>21</position>
             <scancode>0x14</scancode>
         </key>
         <key>
-            <keycap>Y</keycap>
             <position>22</position>
             <scancode>0x15</scancode>
         </key>
         <key>
-            <keycap>U</keycap>
             <position>23</position>
             <scancode>0x16</scancode>
         </key>
         <key>
-            <keycap>I</keycap>
             <position>24</position>
             <scancode>0x17</scancode>
         </key>
         <key>
-            <keycap>O</keycap>
             <position>25</position>
             <scancode>0x18</scancode>
         </key>
         <key>
-            <keycap>P</keycap>
             <position>26</position>
             <scancode>0x19</scancode>
         </key>
         <key>
-            <keycap>{</keycap>
-            <keycap>[</keycap>
             <position>27</position>
             <scancode>0x1a</scancode>
         </key>
         <key>
-            <keycap>}</keycap>
-            <keycap>]</keycap>
             <position>28</position>
             <scancode>0x1b</scancode>
         </key>
@@ -321,65 +281,50 @@
             <scancode>0x3a</scancode>
         </key>
         <key>
-            <keycap>A</keycap>
             <position>31</position>
             <scancode>0x1e</scancode>
         </key>
         <key>
-            <keycap>S</keycap>
             <position>32</position>
             <scancode>0x1f</scancode>
         </key>
         <key>
-            <keycap>D</keycap>
             <position>33</position>
             <scancode>0x20</scancode>
         </key>
         <key>
-            <keycap>F</keycap>
             <position>34</position>
             <scancode>0x21</scancode>
         </key>
         <key>
-            <keycap>G</keycap>
             <position>35</position>
             <scancode>0x22</scancode>
         </key>
         <key>
-            <keycap>H</keycap>
             <position>36</position>
             <scancode>0x23</scancode>
         </key>
         <key>
-            <keycap>J</keycap>
             <position>37</position>
             <scancode>0x24</scancode>
         </key>
         <key>
-            <keycap>K</keycap>
             <position>38</position>
             <scancode>0x25</scancode>
         </key>
         <key>
-            <keycap>L</keycap>
             <position>39</position>
             <scancode>0x26</scancode>
         </key>
         <key>
-            <keycap>:</keycap>
-            <keycap>;</keycap>
             <position>40</position>
             <scancode>0x27</scancode>
         </key>
         <key>
-            <keycap>&quot;</keycap>
-            <keycap>'</keycap>
             <position>41</position>
             <scancode>0x28</scancode>
         </key>
         <key>
-            <keycap>&quot;</keycap>
-            <keycap>'</keycap>
             <position>42</position>
             <scancode>0xff</scancode>
         </key>
@@ -393,61 +338,46 @@
             <scancode>0x2a</scancode>
         </key>
         <key>
-            <keycap>?</keycap>
-            <keycap>/</keycap>
             <position>45</position>
             <scancode>0x35</scancode>
         </key>
         <key>
-            <keycap>Z</keycap>
             <position>46</position>
             <scancode>0x2c</scancode>
         </key>
         <key>
-            <keycap>X</keycap>
             <position>47</position>
             <scancode>0x2d</scancode>
         </key>
         <key>
-            <keycap>C</keycap>
             <position>48</position>
             <scancode>0x2e</scancode>
         </key>
         <key>
-            <keycap>V</keycap>
             <position>49</position>
             <scancode>0x2f</scancode>
         </key>
         <key>
-            <keycap>B</keycap>
             <position>50</position>
             <scancode>0x30</scancode>
         </key>
         <key>
-            <keycap>N</keycap>
             <position>51</position>
             <scancode>0x31</scancode>
         </key>
         <key>
-            <keycap>M</keycap>
             <position>52</position>
             <scancode>0x32</scancode>
         </key>
         <key>
-            <keycap>&lt;</keycap>
-            <keycap>,</keycap>
             <position>53</position>
             <scancode>0x33</scancode>
         </key>
         <key>
-            <keycap>&gt;</keycap>
-            <keycap>.</keycap>
             <position>54</position>
             <scancode>0x34</scancode>
         </key>
         <key>
-            <keycap>?</keycap>
-            <keycap>/</keycap>
             <position>55</position>
             <scancode>0x35</scancode>
         </key>
