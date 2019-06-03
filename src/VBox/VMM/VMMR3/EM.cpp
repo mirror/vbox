@@ -2201,40 +2201,60 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
             && !VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)  /* Interrupt shadows block both NMIs and interrupts. */
             && !TRPMHasTrap(pVCpu))                                  /* An event could already be scheduled for dispatching. */
         {
-            /*
-             * NMIs (take priority over external interrupts).
-             */
-            if (    VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_NMI)
-                && !VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_BLOCK_NMIS))
-            {
-                rc2 = TRPMAssertTrap(pVCpu, X86_XCPT_NMI, TRPM_TRAP);
-                if (rc2 == VINF_SUCCESS)
-                {
-                    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_NMI);
-                    fWakeupPending = true;
-                    if (pVM->em.s.fIemExecutesAll)
-                        rc2 = VINF_EM_RESCHEDULE;
-                    else
-                    {
-                        rc2 = HMR3IsActive(pVCpu)    ? VINF_EM_RESCHEDULE_HM
-                            : VM_IS_NEM_ENABLED(pVM) ? VINF_EM_RESCHEDULE
-                            :                          VINF_EM_RESCHEDULE_REM;
-                    }
-                }
-                UPDATE_RC();
-            }
-            else
+            bool fGif = CPUMGetGuestGif(&pVCpu->cpum.GstCtx);
+#ifdef VBOX_WITH_RAW_MODE
+            fGif &= !PATMIsPatchGCAddr(pVM, pVCpu->cpum.GstCtx.eip);
+#endif
+            if (fGif)
             {
                 /*
-                 * External Interrupts.
+                 * NMIs (take priority over external interrupts).
                  */
-                bool fGif = CPUMGetGuestGif(&pVCpu->cpum.GstCtx);
-#ifdef VBOX_WITH_RAW_MODE
-                fGif &= !PATMIsPatchGCAddr(pVM, pVCpu->cpum.GstCtx.eip);
+                if (    VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_NMI)
+                    && !VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_BLOCK_NMIS))
+                {
+                    if (!CPUMIsGuestInNestedHwvirtMode(&pVCpu->cpum.GstCtx))
+                    {
+                        rc2 = TRPMAssertTrap(pVCpu, X86_XCPT_NMI, TRPM_TRAP);
+                        if (rc2 == VINF_SUCCESS)
+                        {
+                            VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_NMI);
+                            fWakeupPending = true;
+                            if (pVM->em.s.fIemExecutesAll)
+                                rc2 = VINF_EM_RESCHEDULE;
+                            else
+                            {
+                                rc2 = HMR3IsActive(pVCpu)    ? VINF_EM_RESCHEDULE_HM
+                                    : VM_IS_NEM_ENABLED(pVM) ? VINF_EM_RESCHEDULE
+                                    :                          VINF_EM_RESCHEDULE_REM;
+                            }
+                        }
+                    }
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+                    else if (   CPUMIsGuestInVmxNonRootMode(&pVCpu->cpum.GstCtx)
+                             && CPUMIsGuestVmxPinCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PIN_CTLS_NMI_EXIT))
+                    {
+                        rc2 = VBOXSTRICTRC_VAL(IEMExecVmxVmexitNmi(pVCpu));
+                        Assert(rc2 != VINF_VMX_INTERCEPT_NOT_ACTIVE);
+                    }
 #endif
-                if (fGif)
+#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
+                    else if (   CPUMIsGuestInSvmNestedHwVirtMode(&pVCpu->cpum.GstCtx)
+                             && CPUMIsGuestSvmCtrlInterceptSet(pVCpu, &pVCpu->cpum.GstCtx, SVM_CTRL_INTERCEPT_NMI))
+                    {
+                        rc2 = VBOXSTRICTRC_VAL(IEMExecSvmVmexit(pVCpu, SVM_EXIT_NMI, 0 /* uExitInfo1 */,  0 /* uExitInfo2 */));
+                        AssertMsg(   rc2 != VINF_PGM_CHANGE_MODE
+                                  && rc2 != VINF_SVM_VMEXIT
+                                  && rc2 != VINF_NO_CHANGE, ("%Rrc\n", rc2));
+                    }
+#endif
+                    UPDATE_RC();
+                }
+                else
                 {
                     /*
+                     * External Interrupts.
+                     *
                      * With VMX, virtual interrupts takes priority over physical interrupts.
                      * With SVM, physical interrupts takes priority over virtual interrupts.
                      */
