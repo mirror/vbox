@@ -2771,6 +2771,13 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexit(PVMCPU pVCpu, uint32_t uExitReason)
     Assert(pVmcs->u64RoIoRdi.u == 0);
     Assert(pVmcs->u64RoIoRip.u == 0);
 
+    /* We should not cause an NMI-window/interrupt-window VM-exit when injecting events as part of VM-entry. */
+    if (!pVCpu->cpum.GstCtx.hwvirt.vmx.fInterceptEvents)
+    {
+        Assert(uExitReason != VMX_EXIT_NMI_WINDOW);
+        Assert(uExitReason != VMX_EXIT_INT_WINDOW);
+    }
+
     /*
      * Save the guest state back into the VMCS.
      * We only need to save the state when the VM-entry was successful.
@@ -3939,7 +3946,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitEvent(PVMCPU pVCpu, uint8_t uVector, uint32_
     Assert(pVmcs);
 
     /*
-     * If the event is being injected as part of VM-entry, it isn't subject to event
+     * If the event is being injected as part of VM-entry, it is -not- subject to event
      * intercepts in the nested-guest. However, secondary exceptions that occur during
      * injection of any event -are- subject to event interception.
      *
@@ -7245,6 +7252,28 @@ IEM_STATIC void iemVmxVmentrySetupMtf(PVMCPU pVCpu, const char *pszInstr)
 
 
 /**
+ * Sets up NMI-window exiting.
+ *
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pszInstr    The VMX instruction name (for logging purposes).
+ */
+IEM_STATIC void iemVmxVmentrySetupNmiWindow(PVMCPU pVCpu, const char *pszInstr)
+{
+    PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    Assert(pVmcs);
+    if (pVmcs->u32ProcCtls & VMX_PROC_CTLS_NMI_WINDOW_EXIT)
+    {
+        Assert(pVmcs->u32PinCtls & VMX_PIN_CTLS_VIRT_NMI);
+        VMCPU_FF_SET(pVCpu, VMCPU_FF_VMX_NMI_WINDOW);
+        Log(("%s: NMI-window set on VM-entry\n", pszInstr));
+    }
+    else
+        Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_NMI_WINDOW));
+    NOREF(pszInstr);
+}
+
+
+/**
  * Set up the VMX-preemption timer.
  *
  * @param   pVCpu       The cross context virtual CPU structure.
@@ -7662,6 +7691,9 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPU pVCpu, uint8_t cbInstr, VM
 
                                 /* Setup monitor-trap flag. */
                                 iemVmxVmentrySetupMtf(pVCpu, pszInstr);
+
+                                /* Setup NMI-window exiting. */
+                                iemVmxVmentrySetupNmiWindow(pVCpu, pszInstr);
 
                                 /* Now that we've switched page tables, we can go ahead and inject any event. */
                                 rcStrict = iemVmxVmentryInjectEvent(pVCpu, pszInstr);

@@ -3866,14 +3866,6 @@ IEM_CIMPL_DEF_1(iemCImpl_iret, IEMMODE, enmEffOpSize)
         if (IEM_VMX_IS_PINCTLS_SET(pVCpu, VMX_PIN_CTLS_NMI_EXIT))
             fBlockingNmi = false;
 
-        /* Signal a pending NMI-window VM-exit before executing the next instruction. */
-        if (   IEM_VMX_IS_PROCCTLS_SET(pVCpu, VMX_PROC_CTLS_NMI_WINDOW_EXIT)
-            && !VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_NMI_WINDOW))
-        {
-            Assert(IEM_VMX_IS_PINCTLS_SET(pVCpu, VMX_PIN_CTLS_VIRT_NMI));
-            VMCPU_FF_SET(pVCpu, VMCPU_FF_VMX_NMI_WINDOW);
-        }
-
         /* Clear virtual-NMI blocking, if any, before causing any further exceptions. */
         pVCpu->cpum.GstCtx.hwvirt.vmx.fVirtNmiBlocking = false;
     }
