@@ -411,7 +411,7 @@ static FNVMXEXITHANDLERNSRC        hmR0VmxExitErrUnexpected;
 /** @name Nested-guest VM-exit handlers.
  * @{
  */
-//static FNVMXEXITHANDLER            hmR0VmxExitXcptOrNmi;
+static FNVMXEXITHANDLER            hmR0VmxExitXcptOrNmiNested;
 //static FNVMXEXITHANDLER            hmR0VmxExitExtIntNested;
 static FNVMXEXITHANDLER            hmR0VmxExitTripleFaultNested;
 static FNVMXEXITHANDLERNSRC        hmR0VmxExitIntWindowNested;
@@ -8809,7 +8809,11 @@ static VBOXSTRICTRC hmR0VmxEvaluatePendingEvent(PVMCPU pVCpu, PVMXTRANSIENT pVmx
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
             if (   pVmxTransient->fIsNestedGuest
                 && CPUMIsGuestVmxPinCtlsSet(pVCpu, pCtx, VMX_PIN_CTLS_NMI_EXIT))
-                return IEMExecVmxVmexitNmi(pVCpu);
+            {
+                VBOXSTRICTRC rcStrict = IEMExecVmxVmexitNmi(pVCpu);
+                if (rcStrict != VINF_VMX_INTERCEPT_NOT_ACTIVE)
+                    return rcStrict;
+            }
 #endif
             hmR0VmxSetPendingXcptNmi(pVCpu);
             VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_NMI);
@@ -8822,8 +8826,8 @@ static VBOXSTRICTRC hmR0VmxEvaluatePendingEvent(PVMCPU pVCpu, PVMXTRANSIENT pVmx
      * Check if the guest can receive external interrupts (PIC/APIC). Once PDMGetInterrupt() returns
      * a valid interrupt we -must- deliver the interrupt. We can no longer re-request it from the APIC.
      */
-    else if (  VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC)
-        && !pVCpu->hm.s.fSingleInstruction)
+    else if (    VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC)
+             && !pVCpu->hm.s.fSingleInstruction)
     {
         Assert(!DBGFIsStepping(pVCpu));
         int rc = hmR0VmxImportGuestState(pVCpu, pVmcsInfo, CPUMCTX_EXTRN_RFLAGS);
@@ -8948,6 +8952,13 @@ static VBOXSTRICTRC hmR0VmxInjectPendingEvent(PVMCPU pVCpu, PVMXTRANSIENT pVmxTr
          */
         rcStrict = hmR0VmxInjectEventVmcs(pVCpu, pVmxTransient, &pVCpu->hm.s.Event, fStepping, &fIntrState);
         AssertRCReturn(VBOXSTRICTRC_VAL(rcStrict), rcStrict);
+
+        /*
+         * If we are executing a nested-guest make sure that we should intercept subsequent
+         * events. The one we are injecting might be part of VM-entry.
+         */
+        if (pVmxTransient->fIsNestedGuest)
+            pVCpu->cpum.GstCtx.hwvirt.vmx.fInterceptEvents = true;
 
         if (uIntType == VMX_ENTRY_INT_INFO_TYPE_EXT_INT)
             STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectInterrupt);
@@ -10268,7 +10279,7 @@ static int hmR0VmxMergeVmcsNested(PVMCPU pVCpu)
         &&  (u32ProcCtls2 & VMX_PROC_CTLS2_PAUSE_LOOP_EXIT))
     {
         Assert(pVM->hm.s.vmx.Msrs.ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_PAUSE_LOOP_EXIT);
-        rc |= VMXWriteVmcs32(VMX_VMCS32_CTRL_PLE_GAP,    cPleGapTicks);
+        rc |= VMXWriteVmcs32(VMX_VMCS32_CTRL_PLE_GAP, cPleGapTicks);
         rc |= VMXWriteVmcs32(VMX_VMCS32_CTRL_PLE_WINDOW, cPleWindowTicks);
     }
     if (u32ProcCtls & VMX_PROC_CTLS_USE_TPR_SHADOW)
@@ -12615,8 +12626,13 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExitNested(PVMCPU pVCpu, PVMXTRANSIENT pVm
         case VMX_EXIT_EPT_VIOLATION:            return hmR0VmxExitEptViolation(pVCpu, pVmxTransient);
         case VMX_EXIT_IO_INSTR:                 return hmR0VmxExitIoInstrNested(pVCpu, pVmxTransient);
         case VMX_EXIT_HLT:                      return hmR0VmxExitHltNested(pVCpu, pVmxTransient);
-        case VMX_EXIT_RDTSC:                    return hmR0VmxExitRdtscNested(pVCpu, pVmxTransient);
-        case VMX_EXIT_RDTSCP:                   return hmR0VmxExitRdtscpNested(pVCpu, pVmxTransient);
+        case VMX_EXIT_XCPT_OR_NMI:              return hmR0VmxExitXcptOrNmiNested(pVCpu, pVmxTransient);
+
+        /*
+         * We shouldn't direct host physical interrupts to the nested-guest.
+         */
+        case VMX_EXIT_EXT_INT:
+            return hmR0VmxExitExtInt(pVCpu, pVmxTransient);
 
         /*
          * Instructions that cause VM-exits unconditionally.
@@ -12652,12 +12668,8 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExitNested(PVMCPU pVCpu, PVMXTRANSIENT pVm
         case VMX_EXIT_VMXON:
             return hmR0VmxExitInstrWithInfoNested(pVCpu, pVmxTransient);
 
-        /*
-         * We shouldn't direct host physical interrupts to the nested-guest.
-         */
-        case VMX_EXIT_EXT_INT:
-            return hmR0VmxExitExtInt(pVCpu, pVmxTransient);
-
+        case VMX_EXIT_RDTSC:                    return hmR0VmxExitRdtscNested(pVCpu, pVmxTransient);
+        case VMX_EXIT_RDTSCP:                   return hmR0VmxExitRdtscpNested(pVCpu, pVmxTransient);
         case VMX_EXIT_RDMSR:                    return hmR0VmxExitRdmsrNested(pVCpu, pVmxTransient);
         case VMX_EXIT_WRMSR:                    return hmR0VmxExitWrmsrNested(pVCpu, pVmxTransient);
         case VMX_EXIT_INVLPG:                   return hmR0VmxExitInvlpgNested(pVCpu, pVmxTransient);
@@ -12666,13 +12678,6 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExitNested(PVMCPU pVCpu, PVMXTRANSIENT pVm
         case VMX_EXIT_WBINVD:                   return hmR0VmxExitWbinvdNested(pVCpu, pVmxTransient);
         case VMX_EXIT_MTF:                      return hmR0VmxExitMtfNested(pVCpu, pVmxTransient);
         case VMX_EXIT_APIC_ACCESS:              return hmR0VmxExitApicAccessNested(pVCpu, pVmxTransient);
-
-        /** @todo NSTVMX: APIC-access, Xcpt or NMI, Mov CRx. */
-        case VMX_EXIT_XCPT_OR_NMI:
-        {
-            return hmR0VmxExitErrUnexpected(pVCpu, pVmxTransient);
-        }
-
         case VMX_EXIT_MOV_CRX:                  return hmR0VmxExitMovCRxNested(pVCpu, pVmxTransient);
         case VMX_EXIT_INT_WINDOW:               return hmR0VmxExitIntWindowNested(pVCpu, pVmxTransient);
         case VMX_EXIT_TPR_BELOW_THRESHOLD:      return hmR0VmxExitTprBelowThresholdNested(pVCpu, pVmxTransient);
@@ -13051,7 +13056,8 @@ HMVMX_EXIT_DECL hmR0VmxExitExtInt(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 
 
 /**
- * VM-exit handler for exceptions or NMIs (VMX_EXIT_XCPT_OR_NMI).
+ * VM-exit handler for exceptions or NMIs (VMX_EXIT_XCPT_OR_NMI). Conditional
+ * VM-exit.
  */
 HMVMX_EXIT_DECL hmR0VmxExitXcptOrNmi(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
@@ -15776,6 +15782,65 @@ HMVMX_EXIT_DECL hmR0VmxExitInvvpid(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 /* -=-=-=-=-=-=-=-=--=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
 /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- Nested-guest VM-exit handlers -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
 /* -=-=-=-=-=-=-=-=--=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
+
+/**
+ * Nested-guest VM-exit handler for exceptions or NMIs (VMX_EXIT_XCPT_OR_NMI).
+ * Conditional VM-exit.
+ */
+HMVMX_EXIT_DECL hmR0VmxExitXcptOrNmiNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
+{
+    HMVMX_VALIDATE_NESTED_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
+
+    int rc = hmR0VmxReadExitIntInfoVmcs(pVmxTransient);
+    AssertRCReturn(rc, rc);
+
+    Assert(VMX_EXIT_INT_INFO_IS_VALID(pVmxTransient->uExitIntInfo));
+    uint32_t const uExtIntType = VMX_EXIT_INT_INFO_TYPE(pVmxTransient->uExitIntInfo);
+
+    switch (uExtIntType)
+    {
+        /*
+         * We shouldn't direct host physical NMIs to the nested-guest.
+         */
+        case VMX_EXIT_INT_INFO_TYPE_NMI:
+            return hmR0VmxExitHostNmi(pVCpu);
+
+        case VMX_EXIT_INT_INFO_TYPE_HW_XCPT:
+        {
+#if 0
+            /* Page-faults are subject to masking using its error code. */
+            uint32_t fXcptBitmap = pVmcs->u32XcptBitmap;
+            if (uVector == X86_XCPT_PF)
+            {
+                uint32_t const fXcptPFMask  = pVmcs->u32XcptPFMask;
+                uint32_t const fXcptPFMatch = pVmcs->u32XcptPFMatch;
+                if ((uErrCode & fXcptPFMask) != fXcptPFMatch)
+                    fXcptBitmap ^= RT_BIT(X86_XCPT_PF);
+            }
+
+            /* Consult the exception bitmap for all other hardware exceptions. */
+            Assert(uVector <= X86_XCPT_LAST);
+            if (fXcptBitmap & RT_BIT(uVector))
+                fIntercept = true;
+#endif
+            break;
+        }
+
+        /*
+         * This should only happen when "acknowledge external interrupts on VM-exit" is set.
+         * We don't set it when executing guests or nested-guests.
+         */
+        case VMX_EXIT_INT_INFO_TYPE_EXT_INT:
+            RT_FALL_THRU();
+        default:
+        {
+            pVCpu->hm.s.u32HMError = pVmxTransient->uExitIntInfo;
+            return VERR_VMX_UNEXPECTED_INTERRUPTION_EXIT_TYPE;
+        }
+    }
+
+    return VERR_NOT_IMPLEMENTED;
+}
 
 
 /**
