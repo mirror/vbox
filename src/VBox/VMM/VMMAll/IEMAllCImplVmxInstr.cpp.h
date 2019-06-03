@@ -2937,7 +2937,10 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstr(PVMCPU pVCpu, uint32_t uExitReason, ui
     ExitInfo.cbInstr = cbInstr;
 
 #ifdef VBOX_STRICT
-    /* To prevent us from shooting ourselves in the foot. Maybe remove later. */
+    /*
+     * To prevent us from shooting ourselves in the foot.
+     * The follow instructions should convey more than just the instruction length.
+     */
     switch (uExitReason)
     {
         case VMX_EXIT_INVEPT:
