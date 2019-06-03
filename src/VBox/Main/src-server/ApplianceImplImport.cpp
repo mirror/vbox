@@ -1379,7 +1379,7 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
 
             /* Case when some invalid OS type or garbage was passed. Set to VBOXOSTYPE_Unknown. */
             if (idxOSType > Global::cOSTypes)
-            {            
+            {
                 strOsType = Global::OSTypeId(guestOsType);
                 vsd->RemoveDescriptionByType(VirtualSystemDescriptionType_OS);
                 vsd->AddDescription(VirtualSystemDescriptionType_OS,
