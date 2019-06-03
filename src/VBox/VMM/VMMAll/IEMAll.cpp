@@ -14047,10 +14047,12 @@ DECLINLINE(VBOXSTRICTRC) iemExecOneInner(PVMCPU pVCpu, bool fExecuteInhibit, con
     if (   rcStrict == VINF_SUCCESS
         && CPUMIsGuestInVmxNonRootMode(IEM_GET_CTX(pVCpu)))
     {
+        bool fCheckRemainingIntercepts = true;
         /* TPR-below threshold/APIC write has the highest priority. */
         if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_APIC_WRITE))
         {
             rcStrict = iemVmxApicWriteEmulation(pVCpu);
+            fCheckRemainingIntercepts = false;
             Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS));
             Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_APIC_WRITE));
         }
@@ -14058,6 +14060,7 @@ DECLINLINE(VBOXSTRICTRC) iemExecOneInner(PVMCPU pVCpu, bool fExecuteInhibit, con
         else if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_MTF))
         {
             rcStrict = iemVmxVmexit(pVCpu, VMX_EXIT_MTF);
+            fCheckRemainingIntercepts = false;
             Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS));
             Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_MTF));
         }
@@ -14069,12 +14072,18 @@ DECLINLINE(VBOXSTRICTRC) iemExecOneInner(PVMCPU pVCpu, bool fExecuteInhibit, con
                 rcStrict = VINF_SUCCESS;
             else
             {
+                fCheckRemainingIntercepts = false;
                 Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS));
                 Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_PREEMPT_TIMER));
             }
         }
+
         /* NMI-window VM-exit. */
-        else if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_NMI_WINDOW))
+        if (    fCheckRemainingIntercepts
+             && pVCpu->cpum.GstCtx.hwvirt.vmx.fInterceptEvents     /* Event injection during VM-entry takes priority. */
+             && VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_NMI_WINDOW)
+             && !VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
+             && !CPUMIsGuestNmiBlocking(pVCpu))
         {
             rcStrict = iemVmxVmexit(pVCpu, VMX_EXIT_NMI_WINDOW);
             Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_NMI_WINDOW));
@@ -14392,6 +14401,9 @@ VMMDECL(VBOXSTRICTRC) IEMExecLots(PVMCPU pVCpu, uint32_t cMaxInstructions, uint3
 #else
     bool fIntrEnabled = pVCpu->cpum.GstCtx.eflags.Bits.u1IF;
 #endif
+
+    /** @todo What if we are injecting an exception and not an interrupt? Is that
+     *        possible here? */
     if (   fIntrEnabled
         && TRPMHasTrap(pVCpu)
         && EMGetInhibitInterruptsPC(pVCpu) != pVCpu->cpum.GstCtx.rip)
