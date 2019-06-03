@@ -1847,7 +1847,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
 #ifdef VBOX_STRICT
     int rcIrq = VINF_SUCCESS;
 #endif
-    int rc2;
+    int rc2 = VINF_SUCCESS;
 #define UPDATE_RC() \
         do { \
             AssertMsg(rc2 <= 0 || (rc2 >= VINF_EM_FIRST && rc2 <= VINF_EM_LAST), ("Invalid FF return code: %Rra\n", rc2)); \
