@@ -446,7 +446,6 @@ static FNVMXEXITHANDLER            hmR0VmxExitMonitorNested;
 static FNVMXEXITHANDLER            hmR0VmxExitPauseNested;
 static FNVMXEXITHANDLERNSRC        hmR0VmxExitTprBelowThresholdNested;
 static FNVMXEXITHANDLER            hmR0VmxExitApicAccessNested;
-static FNVMXEXITHANDLER            hmR0VmxExitXdtrAccessNested;
 //static FNVMXEXITHANDLER            hmR0VmxExitEptViolation;
 //static FNVMXEXITHANDLER            hmR0VmxExitEptMisconfig;
 static FNVMXEXITHANDLER            hmR0VmxExitRdtscpNested;
@@ -12635,10 +12634,13 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExitNested(PVMCPU pVCpu, PVMXTRANSIENT pVm
             return hmR0VmxExitExtInt(pVCpu, pVmxTransient);
 
         /*
-         * Instructions that cause VM-exits unconditionally.
+         * Instructions that cause VM-exits unconditionally or the condition is
+         * always is taken solely from the guest hypervisor (meaning if the VM-exit
+         * happens, it's guaranteed to be a nested-guest VM-exit).
+         *
          *   - Provides VM-exit instruction length ONLY.
          */
-        case VMX_EXIT_CPUID:
+        case VMX_EXIT_CPUID:              /* Unconditional. */
         case VMX_EXIT_VMCALL:
         case VMX_EXIT_GETSEC:
         case VMX_EXIT_INVD:
@@ -12646,10 +12648,15 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExitNested(PVMCPU pVCpu, PVMXTRANSIENT pVm
         case VMX_EXIT_VMLAUNCH:
         case VMX_EXIT_VMRESUME:
         case VMX_EXIT_VMXOFF:
+        case VMX_EXIT_ENCLS:              /* Condition specified solely by guest hypervisor. */
+        case VMX_EXIT_VMFUNC:
             return hmR0VmxExitInstrNested(pVCpu, pVmxTransient);
 
         /*
-         * Instructions that cause VM-exits unconditionally.
+         * Instructions that cause VM-exits unconditionally or the condition is
+         * always is taken solely from the guest hypervisor (meaning if the VM-exit
+         * happens, it's guaranteed to be a nested-guest VM-exit).
+         *
          *   - Provides VM-exit instruction length.
          *   - Provides VM-exit information.
          *   - Optionally provides VM-exit qualification.
@@ -12660,12 +12667,20 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExitNested(PVMCPU pVCpu, PVMXTRANSIENT pVm
          *
          * See Intel spec. 27.2.1 "Basic VM-Exit Information".
          */
-        case VMX_EXIT_INVEPT:
+        case VMX_EXIT_INVEPT:             /* Unconditional. */
         case VMX_EXIT_INVVPID:
         case VMX_EXIT_VMCLEAR:
         case VMX_EXIT_VMPTRLD:
         case VMX_EXIT_VMPTRST:
         case VMX_EXIT_VMXON:
+        case VMX_EXIT_GDTR_IDTR_ACCESS:   /* Condition specified solely by guest hypervisor. */
+        case VMX_EXIT_LDTR_TR_ACCESS:
+        case VMX_EXIT_RDRAND:
+        case VMX_EXIT_RDSEED:
+        case VMX_EXIT_XSAVES:
+        case VMX_EXIT_XRSTORS:
+        case VMX_EXIT_UMWAIT:
+        case VMX_EXIT_TPAUSE:
             return hmR0VmxExitInstrWithInfoNested(pVCpu, pVmxTransient);
 
         case VMX_EXIT_RDTSC:                    return hmR0VmxExitRdtscNested(pVCpu, pVmxTransient);
@@ -12694,8 +12709,6 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExitNested(PVMCPU pVCpu, PVMXTRANSIENT pVm
         case VMX_EXIT_MOV_DRX:                  return hmR0VmxExitMovDRxNested(pVCpu, pVmxTransient);
         case VMX_EXIT_RDPMC:                    return hmR0VmxExitRdpmcNested(pVCpu, pVmxTransient);
 
-        case VMX_EXIT_GDTR_IDTR_ACCESS:
-        case VMX_EXIT_LDTR_TR_ACCESS:           return hmR0VmxExitXdtrAccessNested(pVCpu, pVmxTransient);
 
         case VMX_EXIT_VMREAD:
         case VMX_EXIT_VMWRITE:                  return hmR0VmxExitVmreadVmwriteNested(pVCpu, pVmxTransient);
@@ -12718,15 +12731,7 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExitNested(PVMCPU pVCpu, PVMXTRANSIENT pVm
         case VMX_EXIT_PML_FULL:
         case VMX_EXIT_VIRTUALIZED_EOI:
         case VMX_EXIT_APIC_WRITE:
-        case VMX_EXIT_RDRAND:
         case VMX_EXIT_RSM:
-        case VMX_EXIT_VMFUNC:
-        case VMX_EXIT_ENCLS:
-        case VMX_EXIT_RDSEED:
-        case VMX_EXIT_XSAVES:
-        case VMX_EXIT_XRSTORS:
-        case VMX_EXIT_UMWAIT:
-        case VMX_EXIT_TPAUSE:
         default:
         {
             /** @todo NSTVMX: implement me! */
@@ -16399,30 +16404,6 @@ HMVMX_EXIT_DECL hmR0VmxExitApicAccessNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTran
 
 
 /**
- * Nested-guest VM-exit handler for XDTR (LGDT, SGDT, LIDT, SIDT) accesses
- * (VMX_EXIT_GDTR_IDTR_ACCESS) and LDT and TR access (LLDT, LTR, SLDT, STR).
- * Conditional VM-exit.
- */
-HMVMX_EXIT_DECL hmR0VmxExitXdtrAccessNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
-{
-    HMVMX_VALIDATE_NESTED_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
-
-    Assert(CPUMIsGuestVmxProcCtls2Set(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS2_DESC_TABLE_EXIT));
-    int rc = hmR0VmxReadExitQualVmcs(pVCpu, pVmxTransient);
-    rc    |= hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
-    rc    |= hmR0VmxReadExitInstrInfoVmcs(pVmxTransient);
-    AssertRCReturn(rc, rc);
-
-    VMXVEXITINFO ExitInfo;
-    RT_ZERO(ExitInfo);
-    ExitInfo.cbInstr   = pVmxTransient->cbInstr;
-    ExitInfo.u64Qual   = pVmxTransient->uExitQual;
-    ExitInfo.InstrInfo = pVmxTransient->ExitInstrInfo;
-    return IEMExecVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
-}
-
-
-/**
  * Nested-guest VM-exit handler for RDTSCP (VMX_EXIT_RDTSCP). Conditional VM-exit.
  */
 HMVMX_EXIT_DECL hmR0VmxExitRdtscpNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
@@ -16494,6 +16475,20 @@ HMVMX_EXIT_DECL hmR0VmxExitInstrNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient
 {
     HMVMX_VALIDATE_NESTED_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
 
+#ifdef VBOX_STRICT
+    PCCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
+    switch (pVmxTransient->uExitReason)
+    {
+        case VMX_EXIT_ENCLS:
+            Assert(CPUMIsGuestVmxProcCtls2Set(pVCpu, pCtx, VMX_PROC_CTLS2_ENCLS_EXIT));
+            break;
+
+        case VMX_EXIT_VMFUNC:
+            Assert(CPUMIsGuestVmxProcCtls2Set(pVCpu, pCtx, VMX_PROC_CTLS2_VMFUNC));
+            break;
+    }
+#endif
+
     int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
     AssertRCReturn(rc, rc);
     return IEMExecVmxVmexitInstr(pVCpu, pVmxTransient->uExitReason, pVmxTransient->cbInstr);
@@ -16501,14 +16496,45 @@ HMVMX_EXIT_DECL hmR0VmxExitInstrNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient
 
 
 /**
- * Nested-guest VM-exit handler for instructions that cause VM-exits uncondtionally
- * but provide instruction length as well as more information.
+ * Nested-guest VM-exit handler for instructions that provide instruction length as
+ * well as more information.
  *
  * Unconditional VM-exit.
  */
 HMVMX_EXIT_DECL hmR0VmxExitInstrWithInfoNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_NESTED_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
+
+#ifdef VBOX_STRICT
+    PCCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
+    switch (pVmxTransient->uExitReason)
+    {
+        case VMX_EXIT_GDTR_IDTR_ACCESS:
+        case VMX_EXIT_LDTR_TR_ACCESS:
+            Assert(CPUMIsGuestVmxProcCtls2Set(pVCpu, pCtx, VMX_PROC_CTLS2_DESC_TABLE_EXIT));
+            break;
+
+        case VMX_EXIT_RDRAND:
+            Assert(CPUMIsGuestVmxProcCtls2Set(pVCpu, pCtx, VMX_PROC_CTLS2_RDRAND_EXIT));
+            break;
+
+        case VMX_EXIT_RDSEED:
+            Assert(CPUMIsGuestVmxProcCtls2Set(pVCpu, pCtx, VMX_PROC_CTLS2_RDSEED_EXIT));
+            break;
+
+        case VMX_EXIT_XSAVES:
+        case VMX_EXIT_XRSTORS:
+            /** @todo NSTVMX: Verify XSS-bitmap. */
+            Assert(CPUMIsGuestVmxProcCtls2Set(pVCpu, pCtx, VMX_PROC_CTLS2_XSAVES_XRSTORS));
+            break;
+
+        case VMX_EXIT_UMWAIT:
+        case VMX_EXIT_TPAUSE:
+            Assert(CPUMIsGuestVmxProcCtlsSet(pVCpu, pCtx, VMX_PROC_CTLS_RDTSC_EXIT));
+            Assert(CPUMIsGuestVmxProcCtls2Set(pVCpu, pCtx, VMX_PROC_CTLS2_USER_WAIT_PAUSE));
+            break;
+    }
+#endif
 
     int rc  = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
     rc     |= hmR0VmxReadExitQualVmcs(pVCpu, pVmxTransient);
