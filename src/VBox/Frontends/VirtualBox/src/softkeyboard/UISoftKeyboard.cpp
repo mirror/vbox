@@ -573,9 +573,9 @@ void UISoftKeyboardWidget::paintEvent(QPaintEvent *pEvent) /* override */
     painter.setFont(painterFont);
     painter.setRenderHint(QPainter::Antialiasing);
     painter.scale(m_fMultiplierX, m_fMultiplierY);
-    int unitSize = qApp->style()->pixelMetric(QStyle::PM_LayoutHorizontalSpacing);
-    float fLedRadius =  1.5 * unitSize;
-    float fLedMargin =  unitSize;
+    int unitSize = qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin);
+    float fLedRadius =  0.8 * unitSize;
+    float fLedMargin =  0.6 * unitSize;
 
     for (int i = 0; i < m_rows.size(); ++i)
     {
@@ -596,7 +596,7 @@ void UISoftKeyboardWidget::paintEvent(QPaintEvent *pEvent) /* override */
 
             painter.drawPolygon(key.polygon());
 
-            QRect textRect(0.8 * unitSize, 2 * unitSize
+            QRect textRect(0.8 * unitSize, 1 * unitSize
                            , key.keyGeometry().width(), key.keyGeometry().height());
             painter.drawText(textRect, Qt::TextWordWrap, key.keyCap());
 
