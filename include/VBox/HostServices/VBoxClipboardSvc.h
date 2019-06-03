@@ -336,8 +336,6 @@ typedef struct _VBoxClipboardErrorMsg
 
 #pragma pack()
 
-# ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
-
 /** Builds a callback magic out of the function ID and the version
  *  of the callback data. */
 #define VBOX_CLIPBOARD_CB_MAGIC_MAKE(uFn, uVer) \
@@ -441,7 +439,6 @@ typedef struct _VBOXCLIPBOARDERRORDATA
 {
     int32_t                     rc;
 } VBOXCLIPBOARDERRORDATA, *PVBOXCLIPBOARDERRORDATA;
-# endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
 
 bool VBoxSvcClipboardGetHeadless(void);
 bool VBoxSvcClipboardLock(void);
