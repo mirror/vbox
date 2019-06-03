@@ -1847,7 +1847,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
 #ifdef VBOX_STRICT
     int rcIrq = VINF_SUCCESS;
 #endif
-    int rc2 = VINF_SUCCESS;
+    int rc2;
 #define UPDATE_RC() \
         do { \
             AssertMsg(rc2 <= 0 || (rc2 >= VINF_EM_FIRST && rc2 <= VINF_EM_LAST), ("Invalid FF return code: %Rra\n", rc2)); \
@@ -2229,6 +2229,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
                                     :                          VINF_EM_RESCHEDULE_REM;
                             }
                         }
+                        UPDATE_RC();
                     }
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
                     else if (   CPUMIsGuestInVmxNonRootMode(&pVCpu->cpum.GstCtx)
@@ -2236,6 +2237,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
                     {
                         rc2 = VBOXSTRICTRC_VAL(IEMExecVmxVmexitNmi(pVCpu));
                         Assert(rc2 != VINF_VMX_INTERCEPT_NOT_ACTIVE);
+                        UPDATE_RC();
                     }
 #endif
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
@@ -2246,9 +2248,9 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
                         AssertMsg(   rc2 != VINF_PGM_CHANGE_MODE
                                   && rc2 != VINF_SVM_VMEXIT
                                   && rc2 != VINF_NO_CHANGE, ("%Rrc\n", rc2));
+                        UPDATE_RC();
                     }
 #endif
-                    UPDATE_RC();
                 }
                 else
                 {
