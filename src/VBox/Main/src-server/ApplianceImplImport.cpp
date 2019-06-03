@@ -1961,7 +1961,7 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
             LogRel(("%s: Cloud import (local phase) - exception occured (%Rrc).\n", __FUNCTION__, aRc));
             hrc = aRc;
         }
-        catct (int aRc)
+        catch (int aRc)
         {
             LogRel(("%s: Cloud import (local phase) - exception occured (%Rrc).\n", __FUNCTION__, aRc));
             hrc = setErrorVrc(aRc);
