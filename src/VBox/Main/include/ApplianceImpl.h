@@ -124,6 +124,8 @@ private:
 
     enum SetUpProgressMode { ImportFile, ImportS3, WriteFile, WriteS3, ExportCloud, ImportCloud };
 
+    enum ApplianceState { ApplianceIdle, ApplianceImporting, ApplianceExporting };
+    void i_setApplianceState(const ApplianceState &state);
     /** @name General stuff
      * @{
      */

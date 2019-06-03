@@ -144,7 +144,7 @@ HRESULT Appliance::interpret()
     // Change the appliance state so we can safely leave the lock while doing time-consuming
     // medium imports; also the below method calls do all kinds of locking which conflicts with
     // the appliance object lock
-    m->state = Data::ApplianceImporting;
+    m->state = ApplianceImporting;
     alock.release();
 
     /* Try/catch so we can clean up on error */
@@ -761,7 +761,7 @@ HRESULT Appliance::interpret()
 
     // reset the appliance state
     alock.acquire();
-    m->state = Data::ApplianceIdle;
+    m->state = ApplianceIdle;
 
     return rc;
 }
@@ -1276,6 +1276,13 @@ HRESULT Appliance::i_gettingCloudData(TaskCloud *pTask)
     return hrc;
 }
 
+void Appliance::i_setApplianceState(const ApplianceState &state)
+{
+    AutoWriteLock writeLock(this COMMA_LOCKVAL_SRC_POS);
+    m->state = state;
+    writeLock.release();
+}
+
 /**
  * Actual worker code for import from the Cloud
  *
@@ -1290,18 +1297,6 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
     int vrc = VINF_SUCCESS;
     HRESULT hrc = S_OK;
     Utf8Str strLastActualErrorDesc("No errors");
-
-    /* Change the appliance state so we can safely leave the lock while doing
-     * time-consuming operations; also the below method calls do all kinds of
-     * locking which conflicts with the appliance object lock. */
-    AutoWriteLock writeLock(this COMMA_LOCKVAL_SRC_POS);
-
-    /* Check if the appliance is currently busy. */
-    if (!i_isApplianceIdle())
-        return E_ACCESSDENIED;
-    /* Set the internal state to importing. */
-    m->state = Data::ApplianceImporting;
-    writeLock.release();
 
     /* Clear the list of imported machines, if any */
     m->llGuidsMachinesCreated.clear();
@@ -1373,21 +1368,40 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
     Utf8Str strOsType;
     ComPtr<IGuestOSType> pGuestOSType;
     {
+        VBOXOSTYPE guestOsType = VBOXOSTYPE_Unknown;
         GET_VSD_DESCRIPTION_BY_TYPE(VirtualSystemDescriptionType_OS)//aVBoxValues is set in this #define
         if (aVBoxValues.size() != 0)
+        {
             strOsType = aVBoxValues[0];
+            /* Check the OS type */
+            uint32_t const idxOSType = Global::getOSTypeIndexFromId(strOsType.c_str());
+            guestOsType = idxOSType < Global::cOSTypes ? Global::sOSTypes[idxOSType].osType : VBOXOSTYPE_Unknown;
+
+            /* Case when some invalid OS type or garbage was passed. Set to VBOXOSTYPE_Unknown. */
+            if (idxOSType > Global::cOSTypes)
+            {            
+                strOsType = Global::OSTypeId(guestOsType);
+                vsd->RemoveDescriptionByType(VirtualSystemDescriptionType_OS);
+                vsd->AddDescription(VirtualSystemDescriptionType_Name,
+                                    Bstr(strOsType).raw(),
+                                    Bstr(strOsType).raw());
+            }
+        }
+        /* Case when no OS type was passed. Set to VBOXOSTYPE_Unknown. */
         else
-            return setErrorVrc(VERR_NOT_FOUND, "%s: OS type wasn't found", __FUNCTION__);
+        {
+            strOsType = Global::OSTypeId(guestOsType);
+            vsd->AddDescription(VirtualSystemDescriptionType_Name,
+                                Bstr(strOsType).raw(),
+                                Bstr(strOsType).raw());
+        }
+
         LogRel(("%s: OS type is %s\n", __FUNCTION__, strOsType.c_str()));
 
-        /* Check the OS type and get the structure with the some default settings for this OS type */
-        uint32_t const idxOSType = Global::getOSTypeIndexFromId(strOsType.c_str());
-        VBOXOSTYPE guestOsType = idxOSType < Global::cOSTypes ? Global::sOSTypes[idxOSType].osType : VBOXOSTYPE_Unknown;
-        if (guestOsType == VBOXOSTYPE_Unknown)
-            return setErrorVrc(VERR_NOT_SUPPORTED, "%s: OS type is unknown", __FUNCTION__);
-
         /* We can get some default settings from GuestOSType when it's needed */
-        mVirtualBox->GetGuestOSType(Bstr(strOsType).raw(), pGuestOSType.asOutParam());
+        hrc = mVirtualBox->GetGuestOSType(Bstr(strOsType).raw(), pGuestOSType.asOutParam());
+        if (FAILED(hrc))
+            return hrc;
     }
 
     /* Should be defined here because it's used later, at least when ComposeMachineFilename() is called */
@@ -1461,7 +1475,7 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
         hrc = setErrorVrc(VERR_NOT_SUPPORTED, tr("Import from Cloud isn't supported for more than one VM instance."));
 
         /* Reset the state so others can call methods again */
-        m->state = Data::ApplianceIdle;
+//      m->state = ApplianceIdle;
         return hrc;
     }
 
@@ -1631,7 +1645,8 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
                     if (aVBoxValues.size() != 0)
                     {
                         vsdData = aVBoxValues[0];
-                        memory = vsdData.toUInt32();
+                        if (memory > vsdData.toUInt32())
+                            memory = vsdData.toUInt32();
                     }
                     vsys.ullMemorySize = memory;
                     LogRel(("%s: Size of RAM is %sMB\n", __FUNCTION__, vsdData.c_str()));
@@ -1987,7 +2002,7 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
     }
 
     /* Reset the state so others can call methods again */
-    m->state = Data::ApplianceIdle;
+//  m->state = ApplianceIdle;
 
     LogFlowFunc(("rc=%Rhrc\n", hrc));
     LogFlowFuncLeave();
@@ -2936,7 +2951,7 @@ HRESULT Appliance::i_importFS(TaskOVF *pTask)
     if (!i_isApplianceIdle())
         return E_ACCESSDENIED;
     /* Set the internal state to importing. */
-    m->state = Data::ApplianceImporting;
+    m->state = ApplianceImporting;
 
     HRESULT rc = S_OK;
 
@@ -2974,7 +2989,7 @@ HRESULT Appliance::i_importFS(TaskOVF *pTask)
     }
 
     /* Reset the state so others can call methods again */
-    m->state = Data::ApplianceIdle;
+    m->state = ApplianceIdle;
 
     LogFlowFunc(("rc=%Rhrc\n", rc));
     LogFlowFuncLeave();

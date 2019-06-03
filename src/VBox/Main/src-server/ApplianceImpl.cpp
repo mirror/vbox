@@ -471,9 +471,6 @@ HRESULT Appliance::getPath(com::Utf8Str &aPath)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    if (!i_isApplianceIdle())
-        return E_ACCESSDENIED;
-
     aPath = m->locInfo.strPath;
 
     return S_OK;
@@ -487,8 +484,6 @@ HRESULT Appliance::getDisks(std::vector<com::Utf8Str> &aDisks)
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     aDisks.resize(0);
-    if (!i_isApplianceIdle())
-        return E_ACCESSDENIED;
 
     if (m->pReader) // OVFReader instantiated?
     {
@@ -536,9 +531,6 @@ HRESULT Appliance::getCertificate(ComPtr<ICertificate> &aCertificateInfo)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    if (!i_isApplianceIdle())
-        return E_ACCESSDENIED;
-
     /* Can be NULL at this point, queryInterfaceto handles that. */
     m->ptrCertificateInfo.queryInterfaceTo(aCertificateInfo.asOutParam());
     return S_OK;
@@ -550,9 +542,6 @@ HRESULT Appliance::getCertificate(ComPtr<ICertificate> &aCertificateInfo)
 HRESULT Appliance::getVirtualSystemDescriptions(std::vector<ComPtr<IVirtualSystemDescription> > &aVirtualSystemDescriptions)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    if (!i_isApplianceIdle())
-        return E_ACCESSDENIED;
 
     aVirtualSystemDescriptions.resize(m->virtualSystemDescriptions.size());
     std::list< ComObjPtr<VirtualSystemDescription> > vsds(m->virtualSystemDescriptions);
@@ -570,9 +559,6 @@ HRESULT Appliance::getVirtualSystemDescriptions(std::vector<ComPtr<IVirtualSyste
 HRESULT Appliance::getMachines(std::vector<com::Utf8Str> &aMachines)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    if (!i_isApplianceIdle())
-        return E_ACCESSDENIED;
 
     aMachines.resize(m->llGuidsMachinesCreated.size());
     size_t i = 0;
@@ -943,9 +929,9 @@ RTVFSIOSTREAM Appliance::i_manifestSetupDigestCalculationForGivenIoStream(RTVFSI
  */
 bool Appliance::i_isApplianceIdle()
 {
-    if (m->state == Data::ApplianceImporting)
+    if (m->state == ApplianceImporting)
         setError(VBOX_E_INVALID_OBJECT_STATE, tr("The appliance is busy importing files"));
-    else if (m->state == Data::ApplianceExporting)
+    else if (m->state == ApplianceExporting)
         setError(VBOX_E_INVALID_OBJECT_STATE, tr("The appliance is busy exporting files"));
     else
         return true;
@@ -1354,12 +1340,15 @@ void Appliance::i_importOrExportCloudThreadTask(TaskCloud *pTask)
     switch (pTask->taskType)
     {
         case TaskCloud::Export:
+            pAppliance->i_setApplianceState(ApplianceExporting);
             pTask->rc = pAppliance->i_exportCloudImpl(pTask);
             break;
         case TaskCloud::Import:
+            pAppliance->i_setApplianceState(ApplianceImporting);
             pTask->rc = pAppliance->i_importCloudImpl(pTask);
             break;
         case TaskCloud::ReadData:
+            pAppliance->i_setApplianceState(ApplianceImporting);
             pTask->rc = pAppliance->i_gettingCloudData(pTask);
             break;
         default:
@@ -1367,6 +1356,8 @@ void Appliance::i_importOrExportCloudThreadTask(TaskCloud *pTask)
             pTask->rc = E_FAIL;
             break;
     }
+
+    pAppliance->i_setApplianceState(ApplianceIdle);
 
     if (!pTask->pProgress.isNull())
         pTask->pProgress->i_notifyComplete(pTask->rc);

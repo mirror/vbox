@@ -2146,7 +2146,7 @@ HRESULT Appliance::i_writeFS(TaskOVF *pTask)
     // Additional protect the IAppliance object, cause we leave the lock
     // when starting the disk export and we don't won't block other
     // callers on this lengthy operations.
-    m->state = Data::ApplianceExporting;
+    m->state = ApplianceExporting;
 
     if (pTask->locInfo.strPath.endsWith(".ovf", Utf8Str::CaseInsensitive))
         rc = i_writeFSOVF(pTask, multiLock);
@@ -2154,7 +2154,7 @@ HRESULT Appliance::i_writeFS(TaskOVF *pTask)
         rc = i_writeFSOVA(pTask, multiLock);
 
     // reset the state so others can call methods again
-    m->state = Data::ApplianceIdle;
+    m->state = ApplianceIdle;
 
     LogFlowFunc(("rc=%Rhrc\n", rc));
     LogFlowFuncLeave();
@@ -2334,7 +2334,7 @@ HRESULT Appliance::i_writeFSOPC(TaskOPC *pTask)
     // Additional protect the IAppliance object, cause we leave the lock
     // when starting the disk export and we don't won't block other
     // callers on this lengthy operations.
-    m->state = Data::ApplianceExporting;
+    m->state = ApplianceExporting;
 
     /*
      * We're duplicating parts of i_writeFSImpl here because that's simpler
@@ -2506,7 +2506,7 @@ HRESULT Appliance::i_writeFSOPC(TaskOPC *pTask)
             RTFileDelete(it->c_str());
 
     // reset the state so others can call methods again
-    m->state = Data::ApplianceIdle;
+    m->state = ApplianceIdle;
 
     LogFlowFuncLeave();
     return hrc;

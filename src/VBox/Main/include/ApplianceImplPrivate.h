@@ -66,11 +66,10 @@ struct LocationInfo
 // opaque private instance data of Appliance class
 struct Appliance::Data
 {
-    enum ApplianceState { ApplianceIdle, ApplianceImporting, ApplianceExporting };
     enum digest_T {SHA1, SHA256};
 
     Data()
-      : state(ApplianceIdle)
+      : state(Appliance::ApplianceIdle)
       , fDigestTypes(0)
       , hOurManifest(NIL_RTMANIFEST)
       , fManifest(true)
@@ -150,7 +149,7 @@ struct Appliance::Data
         strCertError.setNull();
     }
 
-    ApplianceState      state;
+    Appliance::ApplianceState      state;
 
     LocationInfo        locInfo;        // location info for the currently processed OVF
     /** The digests types to calculate (RTMANIFEST_ATTR_XXX) for the manifest.
