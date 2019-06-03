@@ -147,26 +147,14 @@ class ChoiceEditor : public QComboBox
 public:
 
     /** Constructs ChoiceData editor passing @a pParent to the base-class. */
-    ChoiceEditor(QWidget *pParent = 0)
-        : QComboBox(pParent) {}
+    ChoiceEditor(QWidget *pParent = 0);
 
 private:
 
     /** Defines the @a choice. */
-    void setChoice(const ChoiceData &choice)
-    {
-        addItems(choice.values().toList());
-        setCurrentIndex(choice.selectedIndex());
-    }
-
+    void setChoice(const ChoiceData &choice);
     /** Returns the choice. */
-    ChoiceData choice() const
-    {
-        QVector<QString> choices(count());
-        for (int i = 0; i < count(); ++i)
-            choices[i] = itemText(i);
-        return ChoiceData(choices, currentIndex());
-    }
+    ChoiceData choice() const;
 };
 
 
@@ -179,24 +167,14 @@ class RangedIntegerEditor : public QSpinBox
 public:
 
     /** Constructs RangedIntegerData editor passing @a pParent to the base-class. */
-    RangedIntegerEditor(QWidget *pParent = 0)
-        : QSpinBox(pParent) {}
+    RangedIntegerEditor(QWidget *pParent = 0);
 
 private:
 
     /** Defines @a rangedInteger. */
-    void setRangedInteger(const RangedIntegerData &rangedInteger)
-    {
-        setMinimum(rangedInteger.minimum());
-        setMaximum(rangedInteger.maximum());
-        setValue(rangedInteger.integer());
-    }
-
+    void setRangedInteger(const RangedIntegerData &rangedInteger);
     /** Returns ranged-integer. */
-    RangedIntegerData rangedInteger() const
-    {
-        return RangedIntegerData(minimum(), maximum(), value());
-    }
+    RangedIntegerData rangedInteger() const;
 };
 
 
@@ -395,6 +373,52 @@ protected:
     /** Returns the child item with @a iIndex. */
     virtual QITableViewRow *childItem(int iIndex) const /* override */;
 };
+
+
+/*********************************************************************************************************************************
+*   Class ChoiceEditor implementation.                                                                                           *
+*********************************************************************************************************************************/
+
+ChoiceEditor::ChoiceEditor(QWidget *pParent /* = 0 */)
+    : QComboBox(pParent)
+{
+}
+
+void ChoiceEditor::setChoice(const ChoiceData &choice)
+{
+    addItems(choice.values().toList());
+    setCurrentIndex(choice.selectedIndex());
+}
+
+ChoiceData ChoiceEditor::choice() const
+{
+    QVector<QString> choices(count());
+    for (int i = 0; i < count(); ++i)
+        choices[i] = itemText(i);
+    return ChoiceData(choices, currentIndex());
+}
+
+
+/*********************************************************************************************************************************
+*   Class RangedIntegerEditor implementation.                                                                                    *
+*********************************************************************************************************************************/
+
+RangedIntegerEditor::RangedIntegerEditor(QWidget *pParent /* = 0 */)
+    : QSpinBox(pParent)
+{
+}
+
+void RangedIntegerEditor::setRangedInteger(const RangedIntegerData &rangedInteger)
+{
+    setMinimum(rangedInteger.minimum());
+    setMaximum(rangedInteger.maximum());
+    setValue(rangedInteger.integer());
+}
+
+RangedIntegerData RangedIntegerEditor::rangedInteger() const
+{
+    return RangedIntegerData(minimum(), maximum(), value());
+}
 
 
 /*********************************************************************************************************************************
