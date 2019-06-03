@@ -2175,8 +2175,16 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
         /*
          * VMX NMI-window VM-exit.
          * Takes priority over non-maskable interrupts (NMIs).
+         * Interrupt shadows block NMI-window VM-exits.
+         * Any event that is already in TRPM (e.g. injected during VM-entry) takes priority.
+         *
+         * See Intel spec. 25.2 "Other Causes Of VM Exits".
+         * See Intel spec. 26.7.6 "NMI-Window Exiting".
          */
-        if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_NMI_WINDOW))
+        if (    VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_NMI_WINDOW)
+            && !VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
+            && !CPUMIsGuestNmiBlocking(pVCpu)
+            && !TRPMHasTrap(pVCpu))
         {
             rc2 = VBOXSTRICTRC_VAL(IEMExecVmxVmexit(pVCpu, VMX_EXIT_NMI_WINDOW, 0 /* uExitQual */));
             Assert(rc2 != VINF_VMX_INTERCEPT_NOT_ACTIVE);
