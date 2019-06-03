@@ -1207,8 +1207,8 @@ void UIFormEditorModel::createTextDataEditor(const QModelIndex &index)
             if (pBox)
             {
                 pBox->setStandardButtons(QDialogButtonBox::Cancel | QDialogButtonBox::Ok);
-                connect(pBox, &QIDialogButtonBox::accepted, pDialog, &QIDialog::accept);
-                connect(pBox, &QIDialogButtonBox::rejected, pDialog, &QIDialog::reject);
+                connect(pBox, &QIDialogButtonBox::accepted, pDialog.data(), &QIDialog::accept);
+                connect(pBox, &QIDialogButtonBox::rejected, pDialog.data(), &QIDialog::reject);
                 pLayout->addWidget(pBox);
             }
         }
