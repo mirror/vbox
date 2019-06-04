@@ -88,51 +88,19 @@ typedef struct _VBOXCLIPBOARDWINAPIOLD
     bool                   fCBChainPingInProcess;
 } VBOXCLIPBOARDWINAPIOLD, *PVBOXCLIPBOARDWINAPIOLD;
 
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
-class VBoxClipboardWinDataObject;
-
-/**
- * Structure for maintaining a single Windows URI transfer.
- */
-typedef struct _VBOXCLIPBOARDWINURITRANSFER
-{
-    /** The Shared Clipboard provider in charge for this transfer. */
-    SharedClipboardProvider    *pProvider;
-    /** Pointer to data object to use for this transfer. */
-    VBoxClipboardWinDataObject *pDataObj;
-} VBOXCLIPBOARDWINURITRANSFER, *PVBOXCLIPBOARDWINURITRANSFER;
-
-/**
- * Structure for keeping Windows URI clipboard information around.
- */
-typedef struct _VBOXCLIPBOARDWINURI
-{
-    /** Transfer data; at the moment we only support one transfer at a time.
-     *  Use a list or something lateron. */
-    VBOXCLIPBOARDWINURITRANSFER Transfer;
-    /** Number of concurrent transfers.
-     *  At the moment we only support only one transfer at a time. */
-    uint32_t                    cTransfers;
-} VBOXCLIPBOARDWINURI, *PVBOXCLIPBOARDWINURI;
-#endif
-
 /**
  * Structure for maintaining a Shared Clipboard context on Windows platforms.
  */
 typedef struct _VBOXCLIPBOARDWINCTX
 {
     /** Window handle of our (invisible) clipbaord window. */
-    HWND                   hWnd;
+    HWND                        hWnd;
     /** Window handle which is next to us in the clipboard chain. */
-    HWND                   hWndNextInChain;
+    HWND                        hWndNextInChain;
     /** Structure for maintaining the new clipboard API. */
-    VBOXCLIPBOARDWINAPINEW newAPI;
+    VBOXCLIPBOARDWINAPINEW      newAPI;
     /** Structure for maintaining the old clipboard API. */
-    VBOXCLIPBOARDWINAPIOLD oldAPI;
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
-    /** Structure for keeping URI clipboard information around. */
-    VBOXCLIPBOARDWINURI    URI;
-#endif
+    VBOXCLIPBOARDWINAPIOLD      oldAPI;
 } VBOXCLIPBOARDWINCTX, *PVBOXCLIPBOARDWINCTX;
 
 int VBoxClipboardWinOpen(HWND hWnd);
@@ -155,12 +123,6 @@ int VBoxClipboardWinGetCFHTMLHeaderValue(const char *pszSrc, const char *pszOpti
 bool VBoxClipboardWinIsCFHTML(const char *pszSource);
 int VBoxClipboardWinConvertCFHTMLToMIME(const char *pszSource, const uint32_t cch, char **ppszOutput, uint32_t *pcbOutput);
 int VBoxClipboardWinConvertMIMEToCFHTML(const char *pszSource, size_t cb, char **ppszOutput, uint32_t *pcbOutput);
-
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
-int VBoxClipboardWinURIInit(PVBOXCLIPBOARDWINURI pURI, PSHAREDCLIPBOARDPROVIDERCREATIONCTX pCtx);
-void VBoxClipboardWinURIDestroy(PVBOXCLIPBOARDWINURI pURI);
-void VBoxClipboardWinURIReset(PVBOXCLIPBOARDWINURI pURI);
-#endif
 
 # ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
 class SharedClipboardURIList;
@@ -190,7 +152,7 @@ public:
 
 public:
 
-    VBoxClipboardWinDataObject(SharedClipboardProvider *pProvider,
+    VBoxClipboardWinDataObject(PSHAREDCLIPBOARDURITRANSFER pTransfer,
                                LPFORMATETC pFormatEtc = NULL, LPSTGMEDIUM pStgMed = NULL, ULONG cFormats = 0);
     virtual ~VBoxClipboardWinDataObject(void);
 
@@ -225,6 +187,11 @@ public: /* IDataObjectAsyncCapability methods. */
 public:
 
     int Init(void);
+    void OnTransferComplete(int rc = VINF_SUCCESS);
+    void OnTransferCanceled();
+
+public:
+
     static const char* ClipboardFormatToString(CLIPFORMAT fmt);
 
 protected:
@@ -240,14 +207,14 @@ protected:
 
 protected:
 
-    Status                   m_enmStatus;
-    LONG                     m_lRefCount;
-    ULONG                    m_cFormats;
-    LPFORMATETC              m_pFormatEtc;
-    LPSTGMEDIUM              m_pStgMedium;
-    SharedClipboardProvider *m_pProvider;
-    IStream                 *m_pStream;
-    ULONG                    m_uObjIdx;
+    Status                      m_enmStatus;
+    LONG                        m_lRefCount;
+    ULONG                       m_cFormats;
+    LPFORMATETC                 m_pFormatEtc;
+    LPSTGMEDIUM                 m_pStgMedium;
+    PSHAREDCLIPBOARDURITRANSFER m_pTransfer;
+    IStream                    *m_pStream;
+    ULONG                       m_uObjIdx;
 };
 
 class VBoxClipboardWinEnumFormatEtc : public IEnumFORMATETC
@@ -291,7 +258,8 @@ class VBoxClipboardWinStreamImpl : public IStream
 {
 public:
 
-    VBoxClipboardWinStreamImpl(SharedClipboardProvider *pProvider, SharedClipboardURIObject *pURIObj);
+    VBoxClipboardWinStreamImpl(VBoxClipboardWinDataObject *pParent,
+                               PSHAREDCLIPBOARDURITRANSFER pTransfer, SharedClipboardURIObject *pURIObj);
     virtual ~VBoxClipboardWinStreamImpl(void);
 
 public: /* IUnknown methods. */
@@ -316,18 +284,41 @@ public: /* IStream methods. */
 
 public: /* Own methods. */
 
-    static HRESULT Create(SharedClipboardProvider *pProvider, SharedClipboardURIObject *pURIObj, IStream **ppStream);
+    static HRESULT Create(VBoxClipboardWinDataObject *pParent,
+                          PSHAREDCLIPBOARDURITRANSFER pTransfer, SharedClipboardURIObject *pURIObj, IStream **ppStream);
 
 private:
 
+    /** Pointer to the parent data object. */
+    VBoxClipboardWinDataObject *m_pParent;
     /** The stream object's current reference count. */
-    LONG                      m_lRefCount;
-    /** Pointer to the associated Shared Clipboard provider. */
-    SharedClipboardProvider  *m_pProvider;
+    LONG                        m_lRefCount;
+    /** Pointer to the associated URI transfer object. */
+    PSHAREDCLIPBOARDURITRANSFER m_pTransfer;
     /** Pointer to the associated URI object. */
-    SharedClipboardURIObject *m_pURIObj;
+    SharedClipboardURIObject   *m_pURIObj;
 };
 
+/**
+ * Class for Windows-specifics for maintaining a single URI transfer.
+ * Set as pvUser / cbUser in SHAREDCLIPBOARDURICTX.
+ */
+class SharedClipboardWinURITransferCtx
+{
+public:
+    SharedClipboardWinURITransferCtx()
+        : pDataObj(NULL) { }
+
+    virtual ~SharedClipboardWinURITransferCtx()
+    {
+        if (pDataObj)
+            delete pDataObj;
+    }
+
+    /** Pointer to data object to use for this transfer.
+     *  Can be NULL if not being used. */
+    VBoxClipboardWinDataObject *pDataObj;
+};
 # endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
 #endif /* !VBOX_INCLUDED_GuestHost_SharedClipboard_win_h */
 

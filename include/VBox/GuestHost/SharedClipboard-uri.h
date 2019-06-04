@@ -33,6 +33,7 @@
 #include <iprt/assert.h>
 #include <iprt/critsect.h>
 #include <iprt/fs.h>
+#include <iprt/list.h>
 
 #include <iprt/cpp/list.h>
 #include <iprt/cpp/ministring.h>
@@ -451,22 +452,32 @@ public:
 
 public: /* Interface to be implemented. */
 
-    virtual int ReadMetaData(uint32_t fFlags = 0) = 0;
-    virtual int WriteMetaData(const void *pvBuf, size_t cbBuf, size_t *pcbWritten, uint32_t fFlags = 0) = 0;
+    virtual int ReadMetaData(uint32_t fFlags = 0);
+    virtual int WriteMetaData(const void *pvBuf, size_t cbBuf, size_t *pcbWritten, uint32_t fFlags = 0);
 
-    int ReadDirectory(PVBOXCLIPBOARDDIRDATA pDirData);
-    int WriteDirectory(const PVBOXCLIPBOARDDIRDATA pDirData);
+    virtual int ReadDirectory(PVBOXCLIPBOARDDIRDATA pDirData);
+    virtual int ReadDirectoryObj(SharedClipboardURIObject &Obj);
 
-    int ReadFileHdr(PVBOXCLIPBOARDFILEHDR pFileHdr);
-    int WriteFileHdr(const PVBOXCLIPBOARDFILEHDR pFileHdr);
-    int ReadFileData(PVBOXCLIPBOARDFILEDATA pFileData);
-    int WriteFileData(const PVBOXCLIPBOARDFILEDATA pFileData);
+    virtual int WriteDirectory(const PVBOXCLIPBOARDDIRDATA pDirData);
+    virtual int WriteDirectoryObj(const SharedClipboardURIObject &Obj);
 
-    virtual void Reset(void) = 0;
+    virtual int ReadFileHdr(PVBOXCLIPBOARDFILEHDR pFileHdr);
+    virtual int ReadFileHdrObj(SharedClipboardURIObject &Obj);
+
+    virtual int WriteFileHdr(const PVBOXCLIPBOARDFILEHDR pFileHdr);
+    virtual int WriteFileHdrObj(const SharedClipboardURIObject &Obj);
+
+    virtual int ReadFileData(PVBOXCLIPBOARDFILEDATA pFileData, uint32_t *pcbRead);
+    virtual int ReadFileDataObj(SharedClipboardURIObject &Obj, uint32_t *pcbRead);
+
+    virtual int WriteFileData(const PVBOXCLIPBOARDFILEDATA pFileData, uint32_t *pcbWritten);
+    virtual int WriteFileDataObj(const SharedClipboardURIObject &Obj, uint32_t *pcbWritten);
+
+    virtual void Reset(void);
 
 public:
 
-    const SharedClipboardURIList &GetURIList(void) { return m_URIList; }
+          SharedClipboardURIList   &GetURIList(void) { return m_URIList; }
     const SharedClipboardURIObject *GetURIObjectCurrent(void) { return m_URIList.First(); }
 
 protected:
@@ -502,8 +513,8 @@ public:
 
     int ReadFileHdr(PVBOXCLIPBOARDFILEHDR pFileHdr);
     int WriteFileHdr(const PVBOXCLIPBOARDFILEHDR pFileHdr);
-    int ReadFileData(PVBOXCLIPBOARDFILEDATA pFileData);
-    int WriteFileData(const PVBOXCLIPBOARDFILEDATA pFileData);
+    int ReadFileData(PVBOXCLIPBOARDFILEDATA pFileData, uint32_t *pcbRead);
+    int WriteFileData(const PVBOXCLIPBOARDFILEDATA pFileData, uint32_t *pcbWritten);
 
     void Reset(void);
 
@@ -526,25 +537,102 @@ public:
 
     virtual ~SharedClipboardProviderHostService(void);
 
-public:
-
-    int ReadMetaData(uint32_t fFlags = 0);
-    int WriteMetaData(const void *pvBuf, size_t cbBuf, size_t *pcbWritten, uint32_t fFlags = 0);
-
-    int ReadDirectory(PVBOXCLIPBOARDDIRDATA pDirData);
-    int WriteDirectory(const PVBOXCLIPBOARDDIRDATA pDirData);
-
-    int ReadFileHdr(PVBOXCLIPBOARDFILEHDR pFileHdr);
-    int WriteFileHdr(const PVBOXCLIPBOARDFILEHDR pFileHdr);
-    int ReadFileData(PVBOXCLIPBOARDFILEDATA pFileData);
-    int WriteFileData(const PVBOXCLIPBOARDFILEDATA pFileData);
-
-    void Reset(void);
-
 protected:
 
     SharedClipboardProviderHostService(void);
 };
+
+typedef DECLCALLBACK(int) FNSHAREDCLIPBOARDURITRANSFERSTARTED(void *pvUser);
+/** Pointer to a FNSHAREDCLIPBOARDURITRANSFERSTARTED function. */
+typedef FNSHAREDCLIPBOARDURITRANSFERSTARTED *PFNSHAREDCLIPBOARDURITRANSFERSTARTED;
+
+typedef DECLCALLBACK(int) FNSHAREDCLIPBOARDURITRANSFERCANCELED(void *pvUser);
+/** Pointer to a FNSHAREDCLIPBOARDURITRANSFERCANCELED function. */
+typedef FNSHAREDCLIPBOARDURITRANSFERCANCELED *PFNSHAREDCLIPBOARDURITRANSFERCANCELED;
+
+typedef DECLCALLBACK(int) FNSHAREDCLIPBOARDURITRANSFERCOMPLETE(void *pvUser, int rc);
+/** Pointer to a FNSHAREDCLIPBOARDURITRANSFERCOMPLETE function. */
+typedef FNSHAREDCLIPBOARDURITRANSFERCOMPLETE *PFNSHAREDCLIPBOARDURITRANSFERCOMPLETE;
+
+typedef DECLCALLBACK(int) FNSHAREDCLIPBOARDURITRANSFERERROR(void *pvUser, int rc);
+/** Pointer to a FNSHAREDCLIPBOARDURITRANSFERERROR function. */
+typedef FNSHAREDCLIPBOARDURITRANSFERERROR *PFNSHAREDCLIPBOARDURITRANSFERERROR;
+
+/**
+ * Structure acting as a function callback table for URI transfers.
+ * All callbacks are optional and therefore can be NULL.
+ */
+typedef struct _SHAREDCLIPBOARDURITRANSFERCALLBACKS
+{
+    /** Function pointer, called when the transfer has been started. */
+    PFNSHAREDCLIPBOARDURITRANSFERSTARTED  pfnTransferStarted;
+    /** Function pointer, called when the transfer is complete. */
+    PFNSHAREDCLIPBOARDURITRANSFERCOMPLETE pfnTransferComplete;
+    /** Function pointer, called when the transfer has been canceled. */
+    PFNSHAREDCLIPBOARDURITRANSFERCANCELED pfnTransferCanceled;
+    /** Function pointer, called when transfer resulted in an unrecoverable error. */
+    PFNSHAREDCLIPBOARDURITRANSFERERROR    pfnTransferError;
+} SHAREDCLIPBOARDURITRANSFERCALLBACKS, *PSHAREDCLIPBOARDURITRANSFERCALLBACKS;
+
+/**
+ * Structure for thread-related members for a single URI transfer.
+ */
+typedef struct _SHAREDCLIPBOARDURITRANSFERTHREAD
+{
+    /** Thread handle for the reading / writing thread.
+     *  Can be NIL_RTTHREAD if not being used. */
+    RTTHREAD                    hThread;
+    /** Thread started indicator. */
+    volatile bool               fStarted;
+    /** Thread cancelled flag / indicator. */
+    volatile bool               fCancelled;
+} SHAREDCLIPBOARDURITRANSFERTHREAD, *PSHAREDCLIPBOARDURITRANSFERTHREAD;
+
+/**
+ * Structure for maintaining a single URI transfer.
+ */
+typedef struct _SHAREDCLIPBOARDURITRANSFER
+{
+    /** The node member for using this struct in a RTList. */
+    RTLISTNODE                          Node;
+    /** The Shared Clipboard provider in charge for this transfer. */
+    SharedClipboardProvider            *pProvider;
+    /** Opaque pointer to implementation-specific parameters. */
+    void                               *pvUser;
+    /** Size (in bytes) of implementation-specific parameters. */
+    size_t                              cbUser;
+    /** Contains thread-related attributes. */
+    SHAREDCLIPBOARDURITRANSFERTHREAD    Thread;
+} SHAREDCLIPBOARDURITRANSFER, *PSHAREDCLIPBOARDURITRANSFER;
+
+/**
+ * Structure for keeping URI clipboard information around.
+ */
+typedef struct _SHAREDCLIPBOARDURICTX
+{
+    /** Critical section for serializing access. */
+    RTCRITSECT                  CritSect;
+    /** List of active transfers.
+     *  Use a list or something lateron. */
+    RTLISTANCHOR                List;
+    /** Number of concurrent transfers.
+     *  At the moment we only support only one transfer at a time. */
+    uint32_t                    cTransfers;
+} SHAREDCLIPBOARDURICTX, *PSHAREDCLIPBOARDURICTX;
+
+int SharedClipboardURITransferCreate(PSHAREDCLIPBOARDPROVIDERCREATIONCTX pCtx,
+                                     PSHAREDCLIPBOARDURITRANSFER *ppTransfer);
+void SharedClipboardURITransferDestroy(PSHAREDCLIPBOARDURITRANSFER pTransfer);
+void SharedClipboardURITransferReset(PSHAREDCLIPBOARDURITRANSFER pTransfer);
+int SharedClipboardURITransferWrite(PSHAREDCLIPBOARDURITRANSFER pTransfer);
+int SharedClipboardURITransferWriteThread(RTTHREAD hThread, void *pvUser);
+
+int SharedClipboardURICtxInit(PSHAREDCLIPBOARDURICTX pURI, PSHAREDCLIPBOARDURITRANSFER pTransfer);
+void SharedClipboardURICtxDestroy(PSHAREDCLIPBOARDURICTX pURI);
+void SharedClipboardURICtxReset(PSHAREDCLIPBOARDURICTX pURI);
+PSHAREDCLIPBOARDURITRANSFER SharedClipboardURICtxGetTransfer(PSHAREDCLIPBOARDURICTX pURI, uint32_t uIdx);
+uint32_t SharedClipboardURICtxGetActiveTransfers(PSHAREDCLIPBOARDURICTX pURI);
+int SharedClipboardURICtxTransferAdd(PSHAREDCLIPBOARDURICTX pURI, PSHAREDCLIPBOARDURITRANSFER pTransfer);
 
 bool SharedClipboardMIMEHasFileURLs(const char *pcszFormat, size_t cchFormatMax);
 bool SharedClipboardMIMENeedsCache(const char *pcszFormat, size_t cchFormatMax);

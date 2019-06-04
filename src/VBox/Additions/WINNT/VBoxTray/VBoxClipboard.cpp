@@ -59,6 +59,9 @@ struct _VBOXCLIPBOARDCONTEXT
     uint32_t                 u32ClientID;
     /** Windows-specific context data. */
     VBOXCLIPBOARDWINCTX      Win;
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+    SHAREDCLIPBOARDURICTX    URI;
+#endif
 };
 
 
@@ -70,30 +73,6 @@ static VBOXCLIPBOARDCONTEXT g_Ctx = { NULL };
 /** Static window class name. */
 static char s_szClipWndClassName[] = VBOX_CLIPBOARD_WNDCLASS_NAME;
 
-
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
-/**
- * Thread for transferring URI objects from guest to the host.
- * For host to guest transfers we utilize our own IDataObject / IStream implementations.
- *
- * @returns VBox status code.
- * @param   hThread             Thread handle.
- * @param   pvUser              User arguments; is PVBOXCLIPBOARDWINCTX.
- */
-static int vboxClipboardURIThread(RTTHREAD hThread, void *pvUser)
-{
-    AssertPtrReturn(pvUser, VERR_INVALID_POINTER);
-
-    LogFlowFuncEnter();
-
-    PVBOXCLIPBOARDWINCTX pWinCtx = (PVBOXCLIPBOARDWINCTX)pvUser;
-    AssertPtr(pWinCtx);
-
-    int rc = 0;
-
-    return rc;
-}
-#endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
 
 static LRESULT vboxClipboardWinProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
@@ -411,14 +390,22 @@ static LRESULT vboxClipboardWinProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd,
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
                else if (fFormats & VBOX_SHARED_CLIPBOARD_FMT_URI_LIST)
                {
-                   LogFunc(("VBOX_WM_SHCLPB_SET_FORMATS: VBOX_CLIPBOARD_WIN_REGFMT_URI_LIST cTransfers=%RU32\n",
-                            pWinCtx->URI.cTransfers));
-                   if (pWinCtx->URI.cTransfers == 0) /* Only allow one transfer at a time for now. */
+                   LogFunc(("VBOX_WM_SHCLPB_SET_FORMATS: VBOX_CLIPBOARD_WIN_REGFMT_URI_LIST\n"));
+
+                   const uint32_t cTransfers = SharedClipboardURICtxGetActiveTransfers(&pCtx->URI);
+                   if (cTransfers == 0) /* Only allow one transfer at a time for now. */
                    {
-                       pWinCtx->URI.Transfer.pDataObj = new VBoxClipboardWinDataObject(pWinCtx->URI.Transfer.pProvider);
-                       if (pWinCtx->URI.Transfer.pDataObj)
+                       PSHAREDCLIPBOARDURITRANSFER pTransfer = SharedClipboardURICtxGetTransfer(&pCtx->URI, 0 /* Index */);
+
+                       SharedClipboardWinURITransferCtx *pWinURITransferCtx = new SharedClipboardWinURITransferCtx();
+
+                       pTransfer->pvUser = pWinURITransferCtx;
+                       pTransfer->cbUser = sizeof(SharedClipboardWinURITransferCtx);
+
+                       pWinURITransferCtx->pDataObj = new VBoxClipboardWinDataObject(pTransfer);
+                       if (pWinURITransferCtx->pDataObj)
                        {
-                           rc = pWinCtx->URI.Transfer.pDataObj->Init();
+                           rc = pWinURITransferCtx->pDataObj->Init();
                            if (RT_SUCCESS(rc))
                            {
                                VBoxClipboardWinClose();
@@ -426,21 +413,27 @@ static LRESULT vboxClipboardWinProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd,
 
                                /** @todo There is a potential race between VBoxClipboardWinClose() and OleSetClipboard(),
                                 *        where another application could own the clipboard (open), and thus the call to
-                                *        OleSetClipboard() will fail. Needs fixing. */
-
-                               HRESULT hr = OleSetClipboard(pWinCtx->URI.Transfer.pDataObj);
-                               if (SUCCEEDED(hr))
+                                *        OleSetClipboard() will fail. Needs (better) fixing. */
+                               for (unsigned uTries = 0; uTries < 3; uTries++)
                                {
-                                   pWinCtx->URI.cTransfers++;
+                                   HRESULT hr = OleSetClipboard(pWinURITransferCtx->pDataObj);
+                                   if (SUCCEEDED(hr))
+                                   {
+                                       pCtx->URI.cTransfers++;
+                                       break;
+                                   }
+                                   else
+                                   {
+                                       LogRel(("Clipboard: Failed with %Rhrc when setting data object to clipboard\n", hr));
+                                       RTThreadSleep(100);
+                                   }
                                }
-                               else
-                                   LogRel(("Clipboard: Failed with %Rhrc when setting data object to clipboard\n", hr));
                            }
                        }
                    }
                    else
                        LogRel(("Clipboard: Only one transfer at a time supported (current %RU32 transfer(s) active), skipping\n",
-                               pWinCtx->URI.cTransfers));
+                               pCtx->URI.cTransfers));
                }
 #endif
                else
@@ -528,40 +521,60 @@ static LRESULT vboxClipboardWinProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd,
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
                else if (uFormat == VBOX_SHARED_CLIPBOARD_FMT_URI_LIST)
                {
-                   /* The data data in CF_HDROP format, as the files are locally present and don't need to be
-                    * presented as a IDataObject or IStream. */
-                   hClip = GetClipboardData(CF_HDROP);
-                   if (hClip)
+                   const uint32_t cTransfers = SharedClipboardURICtxGetActiveTransfers(&pCtx->URI);
+                   if (cTransfers == 0) /* Only allow one transfer at a time for now. */
                    {
-                       HDROP hDrop = (HDROP)GlobalLock(hClip);
-                       if (hDrop)
+                       PSHAREDCLIPBOARDURITRANSFER pTransfer = SharedClipboardURICtxGetTransfer(&pCtx->URI, 0 /* Index */);
+
+                       /* The data data in CF_HDROP format, as the files are locally present and don't need to be
+                        * presented as a IDataObject or IStream. */
+                       hClip = GetClipboardData(CF_HDROP);
+                       if (hClip)
                        {
-                           char *pszList;
-                           size_t cbList;
-                           rc = VBoxClipboardWinDropFilesToStringList((DROPFILES *)hDrop, &pszList, &cbList);
-                           if (RT_SUCCESS(rc))
+                           HDROP hDrop = (HDROP)GlobalLock(hClip);
+                           if (hDrop)
                            {
-                               /* Spawn a worker thread, so that we don't block the window thread for too long. */
-                               rc = RTThreadCreate(&hThread, vboxClipboardURIThread, pWinCtx /* pvUser */,
-                                                   0, RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE,
-                                                   "vboxshclp");
+                               char *pszList;
+                               size_t cbList;
+                               rc = VBoxClipboardWinDropFilesToStringList((DROPFILES *)hDrop, &pszList, &cbList);
                                if (RT_SUCCESS(rc))
                                {
-                                   int rc2 = RTThreadUserWait(hThread, 30 * 1000 /* Timeout in ms */);
-                                   AssertRC(rc2);
 
-                                   if (!pCtx->fStarted) /* Did the thread fail to start? */
-                                       rc = VERR_GENERAL_FAILURE; /** @todo Find a better rc. */
+
+                                   size_t cbWrittenIgnored;
+                                   rc = pTransfer->pProvider->WriteMetaData(pszList, cbList,
+                                                                            &cbWrittenIgnored, 0 /* fFlags */);
+                                   if (RT_SUCCESS(rc))
+                                   {
+                                       /* Spawn a worker thread, so that we don't block the window thread for too long. */
+                                       rc = RTThreadCreate(&pTransfer->Thread.hThread, SharedClipboardURITransferWriteThread,
+                                                           &pCtx->URI /* pvUser */, 0, RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE,
+                                                           "vbxshclp");
+                                       if (RT_SUCCESS(rc))
+                                       {
+                                           int rc2 = RTThreadUserWait(pTransfer->Thread.hThread, 30 * 1000 /* Timeout in ms */);
+                                           AssertRC(rc2);
+
+                                           if (!pTransfer->Thread.fStarted) /* Did the thread fail to start? */
+                                               rc = VERR_GENERAL_FAILURE; /** @todo Find a better rc. */
+                                       }
+                                   }
                                }
-                           }
 
-                           GlobalUnlock(hClip);
-                       }
-                       else
-                       {
-                           hClip = NULL;
+                               if (RT_FAILURE(rc))
+                                   LogFunc(("VBOX_SHARED_CLIPBOARD_FMT_URI_LIST failed with rc=%Rrc\n", rc));
+
+                               GlobalUnlock(hClip);
+                           }
+                           else
+                           {
+                               hClip = NULL;
+                           }
                        }
                    }
+                  else
+                       LogRel(("Clipboard: Only one transfer at a time supported (current %RU32 transfer(s) active), skipping\n",
+                               cTransfers));
                }
 #endif
                if (hClip == NULL)
@@ -735,7 +748,10 @@ DECLCALLBACK(int) VBoxClipboardInit(const PVBOXSERVICEENV pEnv, void **ppInstanc
                 creationCtx.enmSource = SHAREDCLIPBOARDPROVIDERSOURCE_VBGLR3;
                 creationCtx.u.VBGLR3.uClientID = pCtx->u32ClientID;
 
-                rc = VBoxClipboardWinURIInit(&pCtx->Win.URI, &creationCtx);
+                PSHAREDCLIPBOARDURITRANSFER pTransfer;
+                rc = SharedClipboardURITransferCreate(&creationCtx, &pTransfer);
+                if (RT_SUCCESS(rc))
+                    rc = SharedClipboardURICtxInit(&pCtx->URI, pTransfer);
                 if (RT_SUCCESS(rc))
 #endif
                     *ppInstance = pCtx;
@@ -869,7 +885,7 @@ DECLCALLBACK(void) VBoxClipboardDestroy(void *pInstance)
     OleSetClipboard(NULL); /* Make sure to flush the clipboard on destruction. */
     OleUninitialize();
 
-    VBoxClipboardWinURIDestroy(&pCtx->Win.URI);
+    SharedClipboardURICtxDestroy(&pCtx->URI);
 #endif
 
     return;

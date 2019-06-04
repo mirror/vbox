@@ -162,8 +162,10 @@ int SharedClipboardProviderVbglR3::WriteFileHdr(const PVBOXCLIPBOARDFILEHDR pFil
     return rc;
 }
 
-int SharedClipboardProviderVbglR3::ReadFileData(PVBOXCLIPBOARDFILEDATA pFileData)
+int SharedClipboardProviderVbglR3::ReadFileData(PVBOXCLIPBOARDFILEDATA pFileData, uint32_t *pcbRead)
 {
+    AssertPtrReturn(pcbRead, VERR_INVALID_POINTER);
+
     LogFlowFuncEnter();
 
     int rc;
@@ -171,7 +173,7 @@ int SharedClipboardProviderVbglR3::ReadFileData(PVBOXCLIPBOARDFILEDATA pFileData
     SharedClipboardURIObject *pObj = m_URIList.First();
     if (pObj)
     {
-        rc = VbglR3ClipboardReadFileData(m_uClientID, pFileData->pvData, pFileData->cbData, &pFileData->cbData);
+        rc = VbglR3ClipboardReadFileData(m_uClientID, pFileData->pvData, pFileData->cbData, pcbRead);
     }
     else
         rc = VERR_WRONG_ORDER;
@@ -180,8 +182,10 @@ int SharedClipboardProviderVbglR3::ReadFileData(PVBOXCLIPBOARDFILEDATA pFileData
     return rc;
 }
 
-int SharedClipboardProviderVbglR3::WriteFileData(const PVBOXCLIPBOARDFILEDATA pFileData)
+int SharedClipboardProviderVbglR3::WriteFileData(const PVBOXCLIPBOARDFILEDATA pFileData, uint32_t *pcbWritten)
 {
+    AssertPtrReturn(pcbWritten, VERR_INVALID_POINTER);
+
     LogFlowFuncEnter();
 
     int rc;
@@ -189,8 +193,7 @@ int SharedClipboardProviderVbglR3::WriteFileData(const PVBOXCLIPBOARDFILEDATA pF
     SharedClipboardURIObject *pObj = m_URIList.First();
     if (pObj)
     {
-        uint32_t cbWrittenIgnored;
-        rc = VbglR3ClipboardWriteFileData(m_uClientID, pFileData->pvData, pFileData->cbData, &cbWrittenIgnored);
+        rc = VbglR3ClipboardWriteFileData(m_uClientID, pFileData->pvData, pFileData->cbData, pcbWritten);
     }
     else
         rc = VERR_WRONG_ORDER;

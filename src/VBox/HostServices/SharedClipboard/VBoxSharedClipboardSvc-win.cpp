@@ -63,6 +63,10 @@ struct _VBOXCLIPBOARDCONTEXT
     PVBOXCLIPBOARDCLIENTDATA pClientData;
     /** Windows-specific context data. */
     VBOXCLIPBOARDWINCTX      Win;
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+    /** Structure for keeping URI clipboard information around. */
+    SHAREDCLIPBOARDURICTX    URI;
+#endif
 };
 
 /* Only one client is supported. There seems to be no need for more clients. */

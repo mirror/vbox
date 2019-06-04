@@ -45,23 +45,29 @@
 
 
 
-VBoxClipboardWinStreamImpl::VBoxClipboardWinStreamImpl(SharedClipboardProvider *pProvider, SharedClipboardURIObject *pURIObj)
-    : m_lRefCount(1)
-    , m_pProvider(pProvider)
+VBoxClipboardWinStreamImpl::VBoxClipboardWinStreamImpl(VBoxClipboardWinDataObject *pParent,
+                                                       PSHAREDCLIPBOARDURITRANSFER pTransfer, SharedClipboardURIObject *pURIObj)
+    : m_pParent(pParent)
+    , m_lRefCount(1)
+    , m_pTransfer(pTransfer)
     , m_pURIObj(pURIObj)
 {
-    AssertPtr(m_pProvider);
+    AssertPtr(m_pTransfer);
+    AssertPtr(m_pTransfer->pProvider);
     AssertPtr(m_pURIObj);
 
     LogFunc(("szSrcPath=%s, cbSize=%RU64\n", m_pURIObj->GetSourcePathAbs().c_str(), m_pURIObj->GetSize()));
 
-    m_pProvider->AddRef();
+    m_pTransfer->pProvider->AddRef();
 }
 
 VBoxClipboardWinStreamImpl::~VBoxClipboardWinStreamImpl(void)
 {
     LogFlowThisFuncEnter();
-    m_pProvider->Release();
+
+    if (   m_pTransfer
+        && m_pTransfer->pProvider)
+        m_pTransfer->pProvider->Release();
 }
 
 /*
@@ -158,13 +164,26 @@ STDMETHODIMP VBoxClipboardWinStreamImpl::Read(void *pvBuffer, ULONG nBytesToRead
     const uint64_t cbSize      = m_pURIObj->GetSize();
     const uint64_t cbProcessed = m_pURIObj->GetProcessed();
 
-    const size_t cbToRead = RT_MIN(cbSize - cbProcessed, nBytesToRead);
-          size_t cbRead   = 0;
+    const uint32_t cbToRead = RT_MIN(cbSize - cbProcessed, nBytesToRead);
+          uint32_t cbRead   = 0;
 
     int rc = VINF_SUCCESS;
 
     if (cbToRead)
-        rc = m_pProvider->ReadData(pvBuffer, cbToRead, &cbRead);
+    {
+        VBOXCLIPBOARDFILEDATA FileData;
+        RT_ZERO(FileData);
+
+        FileData.pvData = pvBuffer;
+        FileData.cbData = cbToRead;
+
+        rc = m_pTransfer->pProvider->ReadFileData(&FileData, &cbRead);
+        if (RT_SUCCESS(rc))
+        {
+            if (m_pURIObj->IsComplete())
+                m_pParent->OnTransferComplete();
+        }
+    }
 
     if (nBytesRead)
         *nBytesRead = (ULONG)cbRead;
@@ -228,17 +247,19 @@ STDMETHODIMP VBoxClipboardWinStreamImpl::Write(const void *pvBuffer, ULONG nByte
  * Factory to create our own IStream implementation.
  *
  * @returns HRESULT
- * @param   pProvider           Pointer to Shared Clipboard provider to use.
+ * @param   pParent             Pointer to the parent data object.
+ * @param   pTransfer           Pointer to URI transfer object to use.
  * @param   pURIObj             Pointer to URI object to handle.
  * @param   ppStream            Where to return the created stream object on success.
  */
 /* static */
-HRESULT VBoxClipboardWinStreamImpl::Create(SharedClipboardProvider *pProvider, SharedClipboardURIObject *pURIObj,
+HRESULT VBoxClipboardWinStreamImpl::Create(VBoxClipboardWinDataObject *pParent,
+                                           PSHAREDCLIPBOARDURITRANSFER pTransfer, SharedClipboardURIObject *pURIObj,
                                            IStream **ppStream)
 {
-    AssertPtrReturn(pProvider, E_POINTER);
+    AssertPtrReturn(pTransfer, E_POINTER);
 
-    VBoxClipboardWinStreamImpl *pStream = new VBoxClipboardWinStreamImpl(pProvider, pURIObj);
+    VBoxClipboardWinStreamImpl *pStream = new VBoxClipboardWinStreamImpl(pParent, pTransfer, pURIObj);
     if (pStream)
     {
         pStream->AddRef();

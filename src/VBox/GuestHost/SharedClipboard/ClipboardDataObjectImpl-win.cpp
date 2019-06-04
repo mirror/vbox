@@ -44,16 +44,16 @@
 /** Also handle Unicode entries. */
 #define VBOX_CLIPBOARD_WITH_UNICODE_SUPPORT 1
 
-VBoxClipboardWinDataObject::VBoxClipboardWinDataObject(SharedClipboardProvider *pProvider,
+VBoxClipboardWinDataObject::VBoxClipboardWinDataObject(PSHAREDCLIPBOARDURITRANSFER pTransfer,
                                                        LPFORMATETC pFormatEtc, LPSTGMEDIUM pStgMed, ULONG cFormats)
     : m_enmStatus(Uninitialized)
     , m_lRefCount(0)
     , m_cFormats(0)
-    , m_pProvider(pProvider)
+    , m_pTransfer(pTransfer)
     , m_pStream(NULL)
     , m_uObjIdx(0)
 {
-    AssertPtr(pProvider);
+    AssertPtr(m_pTransfer);
 
     HRESULT hr;
 
@@ -120,7 +120,8 @@ VBoxClipboardWinDataObject::VBoxClipboardWinDataObject(SharedClipboardProvider *
         m_cFormats  = cAllFormats;
         m_enmStatus = Initialized;
 
-        m_pProvider->AddRef();
+        AssertPtr(m_pTransfer->pProvider);
+        m_pTransfer->pProvider->AddRef();
     }
 
     LogFlowFunc(("cAllFormats=%RU32, hr=%Rhrc\n", cAllFormats, hr));
@@ -128,8 +129,8 @@ VBoxClipboardWinDataObject::VBoxClipboardWinDataObject(SharedClipboardProvider *
 
 VBoxClipboardWinDataObject::~VBoxClipboardWinDataObject(void)
 {
-    if (m_pProvider)
-        m_pProvider->Release();
+    if (m_pTransfer->pProvider)
+        m_pTransfer->pProvider->Release();
 
     if (m_pStream)
         m_pStream->Release();
@@ -393,12 +394,12 @@ STDMETHODIMP VBoxClipboardWinDataObject::GetData(LPFORMATETC pFormatEtc, LPSTGME
 
             LogFlowFunc(("FormatIndex_FileDescriptor%s\n", fUnicode ? "W" : "A"));
 
-            int rc = m_pProvider->ReadMetaData(); /** @todo Do this asynchronously some time earlier? */
+            int rc = m_pTransfer->pProvider->ReadMetaData(); /** @todo Do this asynchronously some time earlier? */
             if (   RT_SUCCESS(rc)
-                && !m_pProvider->GetURIList().IsEmpty())
+                && !m_pTransfer->pProvider->GetURIList().IsEmpty())
             {
                 HGLOBAL hGlobal;
-                rc = createFileGroupDescriptorFromURIList(m_pProvider->GetURIList(), fUnicode, &hGlobal);
+                rc = createFileGroupDescriptorFromURIList(m_pTransfer->pProvider->GetURIList(), fUnicode, &hGlobal);
                 if (RT_SUCCESS(rc))
                 {
                     pMedium->tymed   = TYMED_HGLOBAL;
@@ -415,11 +416,11 @@ STDMETHODIMP VBoxClipboardWinDataObject::GetData(LPFORMATETC pFormatEtc, LPSTGME
         {
             LogFlowFunc(("FormatIndex_FileContents: m_uObjIdx=%u\n", m_uObjIdx));
 
-            SharedClipboardURIObject *pURIObj = m_pProvider->GetURIList().At(m_uObjIdx);
+            SharedClipboardURIObject *pURIObj = m_pTransfer->pProvider->GetURIList().At(m_uObjIdx);
             if (pURIObj)
             {
                 /* Hand-in the provider so that our IStream implementation can continue working with it. */
-                hr = VBoxClipboardWinStreamImpl::Create(m_pProvider, pURIObj, &m_pStream);
+                hr = VBoxClipboardWinStreamImpl::Create(this /* pParent */, m_pTransfer, pURIObj, &m_pStream);
                 if (SUCCEEDED(hr))
                 {
                     /* Hand over the stream to the caller. */
@@ -577,6 +578,18 @@ int VBoxClipboardWinDataObject::Init(void)
 {
     LogFlowFuncLeaveRC(VINF_SUCCESS);
     return VINF_SUCCESS;
+}
+
+void VBoxClipboardWinDataObject::OnTransferComplete(int rc /* = VINF_SUCESS */)
+{
+    RT_NOREF(rc);
+
+    LogFlowFuncLeaveRC(rc);
+}
+
+void VBoxClipboardWinDataObject::OnTransferCanceled(void)
+{
+    LogFlowFuncLeave();
 }
 
 /* static */
