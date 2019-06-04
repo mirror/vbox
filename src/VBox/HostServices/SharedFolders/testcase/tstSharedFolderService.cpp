@@ -301,6 +301,16 @@ extern int testRTDirReadEx(RTDIR hDir, PRTDIRENTRYEX pDirEntry, size_t *pcbDirEn
     return VERR_NO_MORE_FILES;
 }
 
+static uint64_t testRTDirSetFMode;
+
+extern int testRTDirSetMode(RTDIR hDir, RTFMODE fMode)
+{
+    RT_NOREF1(hDir);
+ /* RTPrintf("%s: fMode=%llu\n", __PRETTY_FUNCTION__, LLUIFY(fMode)); */
+    testRTDirSetFMode = fMode;
+    return VINF_SUCCESS;
+}
+
 static RTTIMESPEC testRTDirSetTimesATime;
 
 extern int testRTDirSetTimes(RTDIR hDir, PCRTTIMESPEC pAccessTime, PCRTTIMESPEC pModificationTime,

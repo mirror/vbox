@@ -819,6 +819,7 @@ RuntimeR3_SOURCES.win = \
 	common/dbg/dbgmoddbghelp.cpp \
 	generic/cdrom-generic.cpp \
 	generic/RTDirExists-generic.cpp \
+	generic/RTDirSetMode-generic.cpp \
 	generic/RTDirSetTimes-generic.cpp \
 	generic/fileio-sg-generic.cpp \
 	generic/fileio-sg-at-generic.cpp \
@@ -913,6 +914,7 @@ RuntimeR3_SOURCES.linux = \
 	generic/cdrom-generic.cpp \
 	generic/RTCrStoreCreateSnapshotById-generic.cpp \
 	generic/RTDirQueryInfo-generic.cpp \
+	generic/RTDirSetMode-generic.cpp \
 	generic/RTDirSetTimes-generic.cpp \
 	generic/RTFileMove-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
@@ -1014,6 +1016,7 @@ RuntimeR3_SOURCES.os2   = \
 	generic/cdrom-generic.cpp \
 	generic/RTCrStoreCreateSnapshotById-generic.cpp \
 	generic/RTDirQueryInfo-generic.cpp \
+	generic/RTDirSetMode-generic.cpp \
 	generic/RTDirSetTimes-generic.cpp \
 	generic/fileio-at-generic.cpp \
 	generic/fileio-sg-generic.cpp \
@@ -1099,6 +1102,7 @@ RuntimeR3_SOURCES.darwin = \
 	darwin/RTErrConvertFromDarwinKern.cpp \
 	generic/cdrom-generic.cpp \
 	generic/RTDirQueryInfo-generic.cpp \
+	generic/RTDirSetMode-generic.cpp \
 	generic/RTDirSetTimes-generic.cpp \
 	generic/RTFileCopyPartEx-generic.cpp \
 	generic/RTFileMove-generic.cpp \
@@ -1184,6 +1188,7 @@ RuntimeR3_SOURCES.freebsd = \
 	generic/cdrom-generic.cpp \
 	generic/RTCrStoreCreateSnapshotById-generic.cpp \
 	generic/RTDirQueryInfo-generic.cpp \
+	generic/RTDirSetMode-generic.cpp \
 	generic/RTDirSetTimes-generic.cpp \
 	generic/RTFileCopyPartEx-generic.cpp \
 	generic/RTFileMove-generic.cpp \
@@ -1267,6 +1272,7 @@ RuntimeR3_SOURCES.freebsd = \
 RuntimeR3_SOURCES.netbsd = \
 	generic/cdrom-generic.cpp \
 	generic/RTDirQueryInfo-generic.cpp \
+	generic/RTDirSetMode-generic.cpp \
 	generic/RTDirSetTimes-generic.cpp \
 	generic/RTFileCopyPartEx-generic.cpp \
 	generic/RTFileMove-generic.cpp \
@@ -1348,6 +1354,7 @@ RuntimeR3_SOURCES.solaris = \
 	generic/cdrom-generic.cpp \
 	generic/RTCrStoreCreateSnapshotById-generic.cpp \
 	generic/RTDirQueryInfo-generic.cpp \
+	generic/RTDirSetMode-generic.cpp \
 	generic/RTDirSetTimes-generic.cpp \
 	generic/RTFileCopyPartEx-generic.cpp \
 	generic/RTFileMove-generic.cpp \
@@ -1440,6 +1447,7 @@ RuntimeR3_SOURCES.solaris.sparc64 = \
 RuntimeR3_SOURCES.haiku = \
 	generic/RTCrStoreCreateSnapshotById-generic.cpp \
 	generic/RTDirQueryInfo-generic.cpp \
+	generic/RTDirSetMode-generic.cpp \
 	generic/RTDirSetTimes-generic.cpp \
 	generic/fileio-at-generic.cpp \
 	generic/fileio-sg-generic.cpp \

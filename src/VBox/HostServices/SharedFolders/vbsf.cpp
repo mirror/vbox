@@ -1954,56 +1954,69 @@ static int vbsfSetFileInfo(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Ha
 
     Assert(flags == (SHFL_INFO_SET | SHFL_INFO_FILE));
 
-    /* Change only the time values that are not zero */
-    if (type == SHFL_HF_TYPE_DIR)
+    /*
+     * Get the handle.
+     */
+    SHFLFILEHANDLE *pHandle;
+    if (type == SHFL_HF_TYPE_FILE)
     {
-        SHFLFILEHANDLE *pHandle = vbsfQueryDirHandle(pClient, Handle);
+        pHandle = vbsfQueryFileHandle(pClient, Handle);
         rc = vbsfCheckHandleAccess(pClient, root, pHandle, VBSF_CHECK_ACCESS_WRITE);
-        if (RT_SUCCESS(rc))
-            rc = RTDirSetTimes(pHandle->dir.Handle,
-                                (RTTimeSpecGetNano(&pSFDEntry->AccessTime)) ?       &pSFDEntry->AccessTime : NULL,
-                                (RTTimeSpecGetNano(&pSFDEntry->ModificationTime)) ? &pSFDEntry->ModificationTime: NULL,
-                                (RTTimeSpecGetNano(&pSFDEntry->ChangeTime)) ?       &pSFDEntry->ChangeTime: NULL,
-                                (RTTimeSpecGetNano(&pSFDEntry->BirthTime)) ?        &pSFDEntry->BirthTime: NULL
-                                );
     }
     else
     {
-        SHFLFILEHANDLE *pHandle = vbsfQueryFileHandle(pClient, Handle);
+        Assert(type == SHFL_HF_TYPE_DIR);
+        pHandle = vbsfQueryDirHandle(pClient, Handle);
         rc = vbsfCheckHandleAccess(pClient, root, pHandle, VBSF_CHECK_ACCESS_WRITE);
-        if (RT_SUCCESS(rc))
-            rc = RTFileSetTimes(pHandle->file.Handle,
-                                 (RTTimeSpecGetNano(&pSFDEntry->AccessTime)) ?       &pSFDEntry->AccessTime : NULL,
-                                 (RTTimeSpecGetNano(&pSFDEntry->ModificationTime)) ? &pSFDEntry->ModificationTime: NULL,
-                                 (RTTimeSpecGetNano(&pSFDEntry->ChangeTime)) ?       &pSFDEntry->ChangeTime: NULL,
-                                 (RTTimeSpecGetNano(&pSFDEntry->BirthTime)) ?        &pSFDEntry->BirthTime: NULL
-                                 );
     }
-    if (rc != VINF_SUCCESS)
+    if (RT_SUCCESS(rc))
     {
-        Log(("RTFileSetTimes failed with %Rrc\n", rc));
-        Log(("AccessTime       %RX64\n", RTTimeSpecGetNano(&pSFDEntry->AccessTime)));
-        Log(("ModificationTime %RX64\n", RTTimeSpecGetNano(&pSFDEntry->ModificationTime)));
-        Log(("ChangeTime       %RX64\n", RTTimeSpecGetNano(&pSFDEntry->ChangeTime)));
-        Log(("BirthTime        %RX64\n", RTTimeSpecGetNano(&pSFDEntry->BirthTime)));
-        /* temporary hack */
-        rc = VINF_SUCCESS;
-    }
-
-    if (type == SHFL_HF_TYPE_FILE)
-    {
-        SHFLFILEHANDLE *pHandle = vbsfQueryFileHandle(pClient, Handle);
-        rc = vbsfCheckHandleAccess(pClient, root, pHandle, VBSF_CHECK_ACCESS_WRITE);
-        if (RT_SUCCESS(rc))
+        /*
+         * Any times to set?
+         */
+        if (   RTTimeSpecGetNano(&pSFDEntry->AccessTime)
+            || RTTimeSpecGetNano(&pSFDEntry->ModificationTime)
+            || RTTimeSpecGetNano(&pSFDEntry->ChangeTime)
+            || RTTimeSpecGetNano(&pSFDEntry->BirthTime))
         {
-            /* Change file attributes if necessary */
-            if (pSFDEntry->Attr.fMode)
-            {
-                RTFMODE fMode = pSFDEntry->Attr.fMode;
 
+            /* Change only the time values that are not zero */
+            if (type == SHFL_HF_TYPE_FILE)
+                rc = RTFileSetTimes(pHandle->file.Handle,
+                                    RTTimeSpecGetNano(&pSFDEntry->AccessTime)       ? &pSFDEntry->AccessTime         : NULL,
+                                    RTTimeSpecGetNano(&pSFDEntry->ModificationTime) ? &pSFDEntry->ModificationTime   : NULL,
+                                    RTTimeSpecGetNano(&pSFDEntry->ChangeTime)       ? &pSFDEntry->ChangeTime         : NULL,
+                                    RTTimeSpecGetNano(&pSFDEntry->BirthTime)        ? &pSFDEntry->BirthTime          : NULL);
+            else
+                rc = RTDirSetTimes( pHandle->dir.Handle,
+                                    RTTimeSpecGetNano(&pSFDEntry->AccessTime)       ? &pSFDEntry->AccessTime         : NULL,
+                                    RTTimeSpecGetNano(&pSFDEntry->ModificationTime) ? &pSFDEntry->ModificationTime   : NULL,
+                                    RTTimeSpecGetNano(&pSFDEntry->ChangeTime)       ? &pSFDEntry->ChangeTime         : NULL,
+                                    RTTimeSpecGetNano(&pSFDEntry->BirthTime)        ? &pSFDEntry->BirthTime          : NULL);
+            if (RT_FAILURE(rc))
+            {
+                Log(("RT%sSetTimes failed with %Rrc\n", type == SHFL_HF_TYPE_FILE ? "File" : "Dir", rc));
+                Log(("AccessTime       %#RX64\n", RTTimeSpecGetNano(&pSFDEntry->AccessTime)));
+                Log(("ModificationTime %#RX64\n", RTTimeSpecGetNano(&pSFDEntry->ModificationTime)));
+                Log(("ChangeTime       %#RX64\n", RTTimeSpecGetNano(&pSFDEntry->ChangeTime)));
+                Log(("BirthTime        %#RX64\n", RTTimeSpecGetNano(&pSFDEntry->BirthTime)));
+                /* "temporary" hack */
+                rc = VINF_SUCCESS;
+            }
+        }
+
+        /*
+         * Any mode changes?
+         */
+        if (pSFDEntry->Attr.fMode)
+        {
+            RTFMODE fMode = pSFDEntry->Attr.fMode;
+
+            if (type == SHFL_HF_TYPE_FILE)
+            {
 #ifndef RT_OS_WINDOWS
-                /* Don't allow the guest to clear the own bit, otherwise the guest wouldn't be
-                 * able to access this file anymore. Only for guests, which set the UNIX mode.
+                /* Don't allow the guest to clear the read own bit, otherwise the guest wouldn't
+                 * be able to access this file anymore. Only for guests, which set the UNIX mode.
                  * Also, clear bits which we don't pass through for security reasons. */
                 if (fMode & RTFS_UNIX_MASK)
                 {
@@ -2011,32 +2024,44 @@ static int vbsfSetFileInfo(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Ha
                     fMode &= ~(RTFS_UNIX_ISUID | RTFS_UNIX_ISGID | RTFS_UNIX_ISTXT);
                 }
 #endif
-
                 rc = RTFileSetMode(pHandle->file.Handle, fMode);
-                if (rc != VINF_SUCCESS)
+            }
+            else
+            {
+#ifndef RT_OS_WINDOWS
+                /* Don't allow the guest to clear the read+execute own bits, otherwise the guest
+                 * wouldn't be able to access this directory anymore.  Only for guests, which set
+                 * the UNIX mode.  Also, clear bits which we don't pass through for security reasons. */
+                if (fMode & RTFS_UNIX_MASK)
                 {
-                    Log(("RTFileSetMode %x failed with %Rrc\n", fMode, rc));
-                    /* silent failure, because this tends to fail with e.g. windows guest & linux host */
-                    rc = VINF_SUCCESS;
+                    fMode |= RTFS_UNIX_IRUSR | RTFS_UNIX_IXUSR;
+                    fMode &= ~(RTFS_UNIX_ISUID | RTFS_UNIX_ISGID | RTFS_UNIX_ISTXT /*?*/);
                 }
+#endif
+                rc = RTDirSetMode(pHandle->dir.Handle, fMode);
+            }
+            if (RT_FAILURE(rc))
+            {
+                Log(("RT%sSetMode %#x (%#x) failed with %Rrc\n", type == SHFL_HF_TYPE_FILE ? "File" : "Dir",
+                     fMode, pSFDEntry->Attr.fMode, rc));
+                /* silent failure, because this tends to fail with e.g. windows guest & linux host */
+                rc = VINF_SUCCESS;
             }
         }
-    }
-    /** @todo mode for directories */
 
-    if (rc == VINF_SUCCESS)
-    {
-        uint32_t bufsize = sizeof(*pSFDEntry);
-
-        rc = vbsfQueryFileInfo(pClient, root, Handle, SHFL_INFO_GET|SHFL_INFO_FILE, &bufsize, (uint8_t *)pSFDEntry);
-        if (rc == VINF_SUCCESS)
+        /*
+         * Return the current file info on success.
+         */
+        if (RT_SUCCESS(rc))
         {
-            *pcbBuffer = sizeof(SHFLFSOBJINFO);
+            uint32_t bufsize = sizeof(*pSFDEntry);
+            rc = vbsfQueryFileInfo(pClient, root, Handle, SHFL_INFO_GET | SHFL_INFO_FILE, &bufsize, (uint8_t *)pSFDEntry);
+            if (RT_SUCCESS(rc))
+                *pcbBuffer = sizeof(SHFLFSOBJINFO);
+            else
+                AssertFailed();
         }
-        else
-            AssertFailed();
     }
-
     return rc;
 }
 

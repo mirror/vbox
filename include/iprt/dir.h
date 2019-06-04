@@ -598,6 +598,19 @@ RTR3DECL(int) RTDirSetTimes(RTDIR hDir, PCRTTIMESPEC pAccessTime, PCRTTIMESPEC p
                             PCRTTIMESPEC pChangeTime, PCRTTIMESPEC pBirthTime);
 
 
+/**
+ * Changes the mode flags of an open directory.
+ *
+ * The API requires at least one of the mode flag sets (Unix/Dos) to
+ * be set. The type is ignored.
+ *
+ * @returns iprt status code.
+ * @param   hDir                Handle to the open directory.
+ * @param   fMode               The new file mode, see @ref grp_rt_fs for details.
+ */
+RTDECL(int) RTDirSetMode(RTDIR hDir, RTFMODE fMode);
+
+
 /** @defgroup grp_rt_dir_rel    Directory relative APIs
  *
  * This group of APIs allows working with paths that are relative to an open
