@@ -39,11 +39,11 @@ protected:
     /** Constructs 2nd page base. */
     UIWizardImportAppPage2();
 
-    /** Populates form properties table. */
-    void populateFormPropertiesTable();
-
     /** Updates page appearance. */
     virtual void updatePageAppearance();
+
+    /** Refreshes form properties table. */
+    void refreshFormPropertiesTable();
 
     /** Returns appliance widget instance. */
     ImportAppliancePointer applianceWidget() const { return m_pApplianceWidget; }

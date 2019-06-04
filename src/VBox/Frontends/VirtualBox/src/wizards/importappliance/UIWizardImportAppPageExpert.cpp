@@ -257,7 +257,7 @@ UIWizardImportAppPageExpert::UIWizardImportAppPageExpert(bool fImportFromOCIByDe
     populateAccountInstances();
     /* Populate form properties: */
     populateFormProperties();
-    populateFormPropertiesTable();
+    refreshFormPropertiesTable();
 
     /* Setup connections: */
     if (gpManager)
@@ -432,7 +432,7 @@ void UIWizardImportAppPageExpert::sltHandleSourceChange()
     populateAccountProperties();
     populateAccountInstances();
     populateFormProperties();
-    populateFormPropertiesTable();
+    refreshFormPropertiesTable();
     emit completeChanged();
 }
 
@@ -455,7 +455,7 @@ void UIWizardImportAppPageExpert::sltHandleAccountComboChange()
     populateAccountProperties();
     populateAccountInstances();
     populateFormProperties();
-    populateFormPropertiesTable();
+    refreshFormPropertiesTable();
     emit completeChanged();
 }
 
@@ -469,6 +469,6 @@ void UIWizardImportAppPageExpert::sltHandleAccountButtonClick()
 void UIWizardImportAppPageExpert::sltHandleInstanceListChange()
 {
     populateFormProperties();
-    populateFormPropertiesTable();
+    refreshFormPropertiesTable();
     emit completeChanged();
 }
