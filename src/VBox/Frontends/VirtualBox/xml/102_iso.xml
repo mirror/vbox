@@ -400,7 +400,7 @@
     </row>
     <row>
         <key>
-            <width>105</width>
+            <width>90</width>
             <keycap>Ctrl</keycap>
             <type>modifier</type>
             <position>58</position>
@@ -408,6 +408,7 @@
         </key>
         <key>
             <keycap>Win</keycap>
+            <width>75</width>
             <type>modifier</type>
             <scancodeprefix>0xe0</scancodeprefix>
             <scancode>0x5b</scancode>
@@ -415,16 +416,18 @@
         <key>
             <position>60</position>
             <keycap>Alt</keycap>
+            <width>75</width>
             <type>modifier</type>
             <scancode>0x38</scancode>
         </key>
         <key>
-            <width>330</width>
+            <width>235</width>
             <position>61</position>
             <scancode>0x39</scancode>
         </key>
         <key>
             <keycap>AltGr</keycap>
+            <width>75</width>
             <type>modifier</type>
             <position>62</position>
             <scancodeprefix>0xe0</scancodeprefix>
@@ -432,18 +435,20 @@
         </key>
         <key>
             <keycap>Win</keycap>
+            <width>75</width>
             <type>modifier</type>
             <scancodeprefix>0xe0</scancodeprefix>
             <scancode>0x5c</scancode>
         </key>
         <key>
             <keycap>Menu</keycap>
+            <width>75</width>
             <scancodeprefix>0xe0</scancodeprefix>
             <scancode>0x5d</scancode>
         </key>
         <key>
             <keycap>Ctrl</keycap>
-            <width>105</width>
+            <width>90</width>
             <position>64</position>
             <type>modifier</type>
             <scancodeprefix>0xe0</scancodeprefix>

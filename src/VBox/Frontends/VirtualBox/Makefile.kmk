@@ -758,7 +758,6 @@ VirtualBoxVM_QT_MOCHDRS = \
 	src/runtime/seamless/UIMachineViewSeamless.h \
 	src/runtime/seamless/UIMachineWindowSeamless.h \
 	src/softkeyboard/UISoftKeyboard.h \
-	src/softkeyboard/UISoftKeyboardDialog.h \
 	src/widgets/UIMiniToolBar.h \
 	src/wizards/firstrun/UIWizardFirstRun.h \
 	src/wizards/firstrun/UIWizardFirstRunPageBasic.h
@@ -1212,7 +1211,6 @@ VirtualBoxVM_SOURCES = \
 	src/runtime/seamless/UIMachineViewSeamless.cpp \
 	src/runtime/seamless/UIMachineWindowSeamless.cpp \
 	src/softkeyboard/UISoftKeyboard.cpp \
-	src/softkeyboard/UISoftKeyboardDialog.cpp \
 	src/widgets/UIMiniToolBar.cpp \
 	src/wizards/firstrun/UIWizardFirstRun.cpp \
 	src/wizards/firstrun/UIWizardFirstRunPageBasic.cpp

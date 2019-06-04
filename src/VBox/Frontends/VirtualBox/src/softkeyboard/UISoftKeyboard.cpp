@@ -18,6 +18,7 @@
 /* Qt includes: */
 #include <QApplication>
 #include <QFile>
+#include <QMenu>
 #include <QPainter>
 #include <QStyle>
 #include <QToolButton>
@@ -26,6 +27,7 @@
 
 /* GUI includes: */
 #include "QIDialogButtonBox.h"
+#include "QIFileDialog.h"
 #include "UIExtraDataManager.h"
 #include "UISession.h"
 #include "UISoftKeyboard.h"
@@ -60,7 +62,7 @@ enum UIKeyType
 /*********************************************************************************************************************************
 *   UISoftKeyboardRow definition.                                                                                  *
 *********************************************************************************************************************************/
-
+/** UISoftKeyboardRow represents a row in the physical keyboard. */
 class UISoftKeyboardRow
 {
 public:
@@ -91,7 +93,7 @@ private:
 /*********************************************************************************************************************************
 *   UISoftKeyboardKey definition.                                                                                  *
 *********************************************************************************************************************************/
-
+/** UISoftKeyboardKey is a place holder for a keyboard key. Graphical key represantations are drawn according to this class. */
 class UISoftKeyboardKey
 {
 public:
@@ -172,7 +174,9 @@ private:
 /*********************************************************************************************************************************
 *   UISoftKeyboardWidget definition.                                                                                  *
 *********************************************************************************************************************************/
-class UISoftKeyboardWidget : public QWidget
+
+/** The container widget for keyboard keys. It also handles all the keyboard related events. */
+class UISoftKeyboardWidget : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
 
@@ -186,12 +190,6 @@ public:
 
     virtual QSize minimumSizeHint() const;
     virtual QSize sizeHint() const;
-    void setNewMinimumSize(const QSize &size);
-
-    QVector<UISoftKeyboardRow> &rows();
-    const QVector<UISoftKeyboardRow> &rows() const;
-
-    void setInitialSize(int iWidth, int iHeight);
     void keyStateChange(UISoftKeyboardKey* pKey);
 
 protected:
@@ -199,18 +197,26 @@ protected:
     void paintEvent(QPaintEvent *pEvent) /* override */;
     void mousePressEvent(QMouseEvent *pEvent) /* override */;
     void mouseReleaseEvent(QMouseEvent *pEvent) /* override */;
-    void mouseMoveEvent(QMouseEvent *pEvent);
+    void mouseMoveEvent(QMouseEvent *pEvent) /* override */;
+    virtual void retranslateUi() /* override */;
+
+private slots:
+
+    void sltHandleMenuBarContextMenuRequest(const QPoint &point);
+    void sltHandleLoadLayoutFile();
+    void sltHandleLoadDefaultLayout();
 
 private:
 
+    void               setNewMinimumSize(const QSize &size);
+    void               setInitialSize(int iWidth, int iHeight);
+    /** Searches for the key which contains the position of the @p pEvent and returns it if found. */
     UISoftKeyboardKey *keyUnderMouse(QMouseEvent *pEvent);
     void               handleKeyPress(UISoftKeyboardKey *pKey);
     void               handleKeyRelease(UISoftKeyboardKey *pKey);
-    QSize m_minimumSize;
-    int m_iInitialHeight;
-    int m_iInitialWidth;
-    float m_fMultiplierX;
-    float m_fMultiplierY;
+    void               createKeyboard(const QString &strLayoutFileName = QString());
+    void               reset();
+
     UISoftKeyboardKey *m_pKeyUnderMouse;
     UISoftKeyboardKey *m_pKeyPressed;
     QColor m_keyDefaultColor;
@@ -218,7 +224,20 @@ private:
     QColor m_textDefaultColor;
     QColor m_textPressedColor;
     QVector<UISoftKeyboardKey*> m_pressedModifiers;
-    QVector<UISoftKeyboardRow> m_rows;
+    QVector<UISoftKeyboardRow>  m_rows;
+    QStringList defaultLayouts;
+
+    QSize m_minimumSize;
+    float m_fScaleFactorX;
+    float m_fScaleFactorY;
+    int   m_iInitialHeight;
+    int   m_iInitialWidth;
+    int   m_iXSpacing;
+    int   m_iYSpacing;
+    int   m_iLeftMargin;
+    int   m_iTopMargin;
+    int   m_iRightMargin;
+    int   m_iBottomMargin;
 };
 
 /*********************************************************************************************************************************
@@ -514,15 +533,28 @@ void UISoftKeyboardKey::updateState(bool fPressed)
 *********************************************************************************************************************************/
 
 UISoftKeyboardWidget::UISoftKeyboardWidget(QWidget *pParent /* = 0 */)
-    :QWidget(pParent)
+    :QIWithRetranslateUI<QWidget>(pParent)
     , m_pKeyUnderMouse(0)
     , m_pKeyPressed(0)
     , m_keyDefaultColor(QColor(103, 128, 159))
     , m_keyHoverColor(QColor(108, 122, 137))
     , m_textDefaultColor(QColor(46, 49, 49))
     , m_textPressedColor(QColor(149, 165, 166))
+    , m_iInitialHeight(0)
+    , m_iInitialWidth(0)
+    , m_iXSpacing(5)
+    , m_iYSpacing(5)
+    , m_iLeftMargin(10)
+    , m_iTopMargin(10)
+    , m_iRightMargin(10)
+    , m_iBottomMargin(10)
 {
+    defaultLayouts << ":/101_ansi.xml" << ":/102_iso.xml";
     setMouseTracking(true);
+    setContextMenuPolicy(Qt::CustomContextMenu);
+    createKeyboard();
+    connect(this, &UISoftKeyboardWidget::customContextMenuRequested,
+            this, &UISoftKeyboardWidget::sltHandleMenuBarContextMenuRequest);
 }
 
 QSize UISoftKeyboardWidget::minimumSizeHint() const
@@ -535,36 +567,14 @@ QSize UISoftKeyboardWidget::sizeHint() const
     return m_minimumSize;
 }
 
-void UISoftKeyboardWidget::setNewMinimumSize(const QSize &size)
-{
-    m_minimumSize = size;
-    updateGeometry();
-}
-
-void UISoftKeyboardWidget::setInitialSize(int iWidth, int iHeight)
-{
-    m_iInitialWidth = iWidth;
-    m_iInitialHeight = iHeight;
-}
-
-QVector<UISoftKeyboardRow> &UISoftKeyboardWidget::rows()
-{
-    return m_rows;
-}
-
-const QVector<UISoftKeyboardRow> &UISoftKeyboardWidget::rows() const
-{
-    return m_rows;
-}
-
 void UISoftKeyboardWidget::paintEvent(QPaintEvent *pEvent) /* override */
 {
     Q_UNUSED(pEvent);
     if (m_iInitialWidth == 0 || m_iInitialHeight == 0)
         return;
 
-    m_fMultiplierX = width() / (float) m_iInitialWidth;
-    m_fMultiplierY = height() / (float) m_iInitialHeight;
+    m_fScaleFactorX = width() / (float) m_iInitialWidth;
+    m_fScaleFactorY = height() / (float) m_iInitialHeight;
 
     QPainter painter(this);
     QFont painterFont(font());
@@ -572,7 +582,7 @@ void UISoftKeyboardWidget::paintEvent(QPaintEvent *pEvent) /* override */
     painterFont.setBold(false);
     painter.setFont(painterFont);
     painter.setRenderHint(QPainter::Antialiasing);
-    painter.scale(m_fMultiplierX, m_fMultiplierY);
+    painter.scale(m_fScaleFactorX, m_fScaleFactorY);
     int unitSize = qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin);
     float fLedRadius =  0.8 * unitSize;
     float fLedMargin =  0.6 * unitSize;
@@ -596,9 +606,10 @@ void UISoftKeyboardWidget::paintEvent(QPaintEvent *pEvent) /* override */
 
             painter.drawPolygon(key.polygon());
 
-            QRect textRect(0.8 * unitSize, 1 * unitSize
+            QRect textRect(0.55 * unitSize, 1 * unitSize
                            , key.keyGeometry().width(), key.keyGeometry().height());
-            painter.drawText(textRect, Qt::TextWordWrap, key.keyCap());
+            //painter.drawText(textRect, Qt::TextWordWrap, key.keyCap());
+            painter.drawText(textRect, Qt::TextWordWrap, QString::number(key.position()));
 
             if (key.type() != UIKeyType_Ordinary)
             {
@@ -622,13 +633,17 @@ void UISoftKeyboardWidget::paintEvent(QPaintEvent *pEvent) /* override */
 
 void UISoftKeyboardWidget::mousePressEvent(QMouseEvent *pEvent)
 {
+    if (pEvent->button() != Qt::LeftButton)
+        return;
     m_pKeyPressed = keyUnderMouse(pEvent);
     handleKeyPress(m_pKeyPressed);
     update();
 }
 
-void UISoftKeyboardWidget::mouseReleaseEvent(QMouseEvent *)
+void UISoftKeyboardWidget::mouseReleaseEvent(QMouseEvent *pEvent)
 {
+    if (pEvent->button() != Qt::LeftButton)
+        return;
     if (!m_pKeyPressed)
         return;
     handleKeyRelease(m_pKeyPressed);
@@ -641,9 +656,61 @@ void UISoftKeyboardWidget::mouseMoveEvent(QMouseEvent *pEvent)
     keyUnderMouse(pEvent);
 }
 
+void UISoftKeyboardWidget::retranslateUi()
+{
+}
+
+void UISoftKeyboardWidget::sltHandleMenuBarContextMenuRequest(const QPoint &point)
+{
+    QMenu menu;
+    foreach (const QString &strLayout, defaultLayouts)
+    {
+        QString strName = strLayout.left(strLayout.indexOf('.'));
+        QAction *pAction = menu.addAction(QString("%1 %2").arg(UISoftKeyboard::tr("Load Layout ")).arg(strName.remove(":/")));
+        pAction->setData(strLayout);
+        connect(pAction, &QAction::triggered, this, &UISoftKeyboardWidget::sltHandleLoadDefaultLayout);
+    }
+    QAction *pAction = menu.addAction(UISoftKeyboard::tr("Load Layout File"));
+    connect(pAction, &QAction::triggered, this, &UISoftKeyboardWidget::sltHandleLoadLayoutFile);
+    menu.exec(mapToGlobal(point));
+}
+
+void UISoftKeyboardWidget::sltHandleLoadLayoutFile()
+{
+    const QString strFileName = QIFileDialog::getOpenFileName(QString(), "XML files (*.xml)", this,
+                                                              UISoftKeyboard::tr("Choose file to load physical keyboard layout.."));
+    if (strFileName.isEmpty())
+        return;
+    createKeyboard(strFileName);
+}
+
+void UISoftKeyboardWidget::sltHandleLoadDefaultLayout()
+{
+    QAction *pSender = qobject_cast<QAction*>(sender());
+    if (!pSender)
+        return;
+    QString strLayout = pSender->data().toString();
+    if (strLayout.isEmpty())
+        return;
+    createKeyboard(strLayout);
+}
+
+
+void UISoftKeyboardWidget::setNewMinimumSize(const QSize &size)
+{
+    m_minimumSize = size;
+    updateGeometry();
+}
+
+void UISoftKeyboardWidget::setInitialSize(int iWidth, int iHeight)
+{
+    m_iInitialWidth = iWidth;
+    m_iInitialHeight = iHeight;
+}
+
 UISoftKeyboardKey *UISoftKeyboardWidget::keyUnderMouse(QMouseEvent *pEvent)
 {
-    QPoint eventPosition(pEvent->pos().x() / m_fMultiplierX, pEvent->pos().y() / m_fMultiplierY);
+    QPoint eventPosition(pEvent->pos().x() / m_fScaleFactorX, pEvent->pos().y() / m_fScaleFactorY);
     QWidget::mousePressEvent(pEvent);
     for (int i = 0; i < m_rows.size(); ++i)
     {
@@ -732,6 +799,61 @@ void UISoftKeyboardWidget::handleKeyRelease(UISoftKeyboardKey *pKey)
         pModifier->release();
     }
     emit sigPutKeyboardSequence(sequence);
+}
+
+void UISoftKeyboardWidget::createKeyboard(const QString &strLayoutFileName /* = QString() */)
+{
+    UIKeyboardLayoutReader reader;
+    QVector<UISoftKeyboardRow> &rows = m_rows;
+    reset();
+    bool fParseSuccess = false;
+    if (strLayoutFileName.isEmpty())
+        fParseSuccess = reader.parseXMLFile(":/101_ansi.xml", rows);
+    else
+        fParseSuccess = reader.parseXMLFile(strLayoutFileName, rows);
+
+    if (!fParseSuccess)
+        return;
+
+    int iY = m_iTopMargin;
+    int iMaxWidth = 0;
+
+    for (int i = 0; i < rows.size(); ++i)
+    {
+        UISoftKeyboardRow &row = rows[i];
+        int iX = m_iLeftMargin;
+        int iRowHeight = row.defaultHeight();
+        for (int j = 0; j < row.keys().size(); ++j)
+        {
+            UISoftKeyboardKey &key = (row.keys())[j];
+            key.setKeyGeometry(QRect(iX, iY, key.width(), key.height()));
+            key.setPolygon(QPolygon(UIKeyboardLayoutReader::computeKeyVertices(key)));
+            key.setParentWidget(this);
+            iX += key.width();
+            if (j < row.keys().size() - 1)
+                iX += m_iXSpacing;
+            if (key.spaceWidthAfter() != 0)
+                iX += (m_iXSpacing + key.spaceWidthAfter());
+        }
+        if (row.spaceHeightAfter() != 0)
+            iY += row.spaceHeightAfter() + m_iYSpacing;
+        iMaxWidth = qMax(iMaxWidth, iX);
+        iY += iRowHeight;
+        if (i < rows.size() - 1)
+            iY += m_iYSpacing;
+    }
+    int iInitialWidth = iMaxWidth + m_iRightMargin;
+    int iInitialHeight = iY + m_iBottomMargin;
+    float fScale = 1.0f;
+    setNewMinimumSize(QSize(fScale * iInitialWidth, fScale * iInitialHeight));
+    setInitialSize(fScale * iInitialWidth, fScale * iInitialHeight);
+    update();
+}
+
+void UISoftKeyboardWidget::reset()
+{
+    m_pressedModifiers.clear();
+    m_rows.clear();
 }
 
 /*********************************************************************************************************************************
@@ -959,16 +1081,10 @@ UISoftKeyboard::UISoftKeyboard(QWidget *pParent,
     , m_pMainLayout(0)
     , m_pContainerWidget(0)
     , m_strMachineName(strMachineName)
-    , m_iXSpacing(5)
-    , m_iYSpacing(5)
-    , m_iLeftMargin(10)
-    , m_iTopMargin(10)
-    , m_iRightMargin(10)
-    , m_iBottomMargin(10)
 {
+    setWindowTitle(QString("%1 - %2").arg(m_strMachineName).arg(tr("Soft Keyboard")));
     setAttribute(Qt::WA_DeleteOnClose);
     prepareObjects();
-    createKeyboard();
     prepareConnections();
     prepareToolBar();
     loadSettings();
@@ -1022,47 +1138,6 @@ void UISoftKeyboard::saveSettings()
 
 void UISoftKeyboard::loadSettings()
 {
-}
-
-void UISoftKeyboard::createKeyboard()
-{
-    if (!m_pContainerWidget)
-        return;
-    UIKeyboardLayoutReader reader;
-    QVector<UISoftKeyboardRow> &rows = m_pContainerWidget->rows();
-    if (!reader.parseXMLFile(":/102_iso.xml", rows))
-        return;
-    int iY = m_iTopMargin;
-    int iMaxWidth = 0;
-
-    for (int i = 0; i < rows.size(); ++i)
-    {
-        UISoftKeyboardRow &row = rows[i];
-        int iX = m_iLeftMargin;
-        int iRowHeight = row.defaultHeight();
-        for (int j = 0; j < row.keys().size(); ++j)
-        {
-            UISoftKeyboardKey &key = (row.keys())[j];
-            key.setKeyGeometry(QRect(iX, iY, key.width(), key.height()));
-            key.setPolygon(QPolygon(UIKeyboardLayoutReader::computeKeyVertices(key)));
-            key.setParentWidget(m_pContainerWidget);
-            iX += key.width();
-            if (j < row.keys().size() - 1)
-                iX += m_iXSpacing;
-            if (key.spaceWidthAfter() != 0)
-                iX += (m_iXSpacing + key.spaceWidthAfter());
-        }
-        if (row.spaceHeightAfter() != 0)
-            iY += row.spaceHeightAfter() + m_iYSpacing;
-        iMaxWidth = qMax(iMaxWidth, iX);
-        iY += iRowHeight;
-        if (i < rows.size() - 1)
-            iY += m_iYSpacing;
-    }
-    int iInitialWidth = iMaxWidth + m_iRightMargin;
-    int iInitialHeight = iY + m_iBottomMargin;
-    m_pContainerWidget->setNewMinimumSize(QSize(iInitialWidth, iInitialHeight));
-    m_pContainerWidget->setInitialSize(iInitialWidth, iInitialHeight);
 }
 
 CKeyboard& UISoftKeyboard::keyboard() const
