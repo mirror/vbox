@@ -158,7 +158,7 @@ class tdStorageSnapshot(vbox.TestDriver):                                      #
             oProgressCom = oMedium.resize(cbNewSize);
             oProgress = vboxwrappers.ProgressWrapper(oProgressCom, self.oVBoxMgr, self.oVBox.oTstDrv,
                                                      'Resize medium %s' % (oMedium.name));
-            oProgress.wait(cMsTimeout = 60 * 1000);
+            oProgress.wait(cMsTimeout = 1000000);
             oProgress.logResult();
         except:
             reporter.logXcpt('IMedium::resize failed on %s' % (oMedium.name));
@@ -239,7 +239,7 @@ class tdStorageSnapshot(vbox.TestDriver):                                      #
             oProgressCom = oSrcHd.cloneTo(oTgtHd, (vboxcon.MediumVariant_Standard, ), None);
             oProgress = vboxwrappers.ProgressWrapper(oProgressCom, self.oVBoxMgr, self.oVBox.oTstDrv,
                                                      'clone base disk %s to %s' % (oSrcHd.name, oTgtHd.name));
-            oProgress.wait(cMsTimeout = 60 * 1000);
+            oProgress.wait(cMsTimeout = 1000000);
             oProgress.logResult();
         except:
             reporter.errorXcpt('failed to clone medium %s to %s' % (oSrcHd.name, oTgtHd.name));
@@ -259,7 +259,7 @@ class tdStorageSnapshot(vbox.TestDriver):                                      #
                     oProgress = oVM.deleteConfig([]);
                 else:
                     oProgress = oVM.delete(None);
-                self.waitOnProgress(oProgress);
+                oProgress.wait(cMsTimeout = 1000000);
 
             except:
                 reporter.logXcpt();
