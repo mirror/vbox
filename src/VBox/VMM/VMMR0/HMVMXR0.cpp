@@ -15807,11 +15807,19 @@ HMVMX_EXIT_DECL hmR0VmxExitXcptOrNmiNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTrans
     switch (uExtIntType)
     {
         /*
-         * We shouldn't direct host physical NMIs to the nested-guest.
+         * Physical NMIs:
+         *    We shouldn't direct host physical NMIs to the nested-guest. Dispatch it to the
+         *    host.
          */
         case VMX_EXIT_INT_INFO_TYPE_NMI:
             return hmR0VmxExitHostNmi(pVCpu);
 
+        /*
+         * Hardware exceptions,
+         * Software exceptions:
+         * Privileged software exceptions:
+         *    Figure out if the exception must be delivered to the guest or the nested-guest.
+         */
         case VMX_EXIT_INT_INFO_TYPE_HW_XCPT:
         {
 #if 0
@@ -15835,9 +15843,10 @@ HMVMX_EXIT_DECL hmR0VmxExitXcptOrNmiNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTrans
 
         /*
          * External interrupts:
-         *    This should only happen when "acknowledge external interrupts on VM-exit" control is set.
-         *    However, we don't set it when executing guests or nested-guests. For nested-guests it is
-         *    emulated while injecting interrupts into the guest.
+         *    This should only happen when "acknowledge external interrupts on VM-exit"
+         *    control is set. However, we don't set it when executing guests or
+         *    nested-guests. For nested-guests it is emulated while injecting interrupts into
+         *    the guest.
          *
          * Software interrupts:
          *    VM-exits cannot be caused by software interrupts.
