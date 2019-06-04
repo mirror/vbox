@@ -742,7 +742,7 @@ class SubTestDriverBase(object):
 
     def __init__(self, sName, oTstDrv):
         self.sName              = sName;
-        self.oTstDrv            = oTstDrv; # type: TestDriverBase
+        self.oTstDrv            = oTstDrv   # type: TestDriverBase
         self.asRsrcs            = [];
 
     def showUsage(self):
@@ -855,7 +855,7 @@ class TestDriverBase(object): # pylint: disable=R0902
         self.secTimeoutFudge = 30;
 
         # List of sub-test drivers (SubTestDriverBase derivatives).
-        self.aoSubTstDrvs    = [];          # type: list(SubTestDriverBase)
+        self.aoSubTstDrvs    = [] # type: list(SubTestDriverBase)
 
         # Use the scratch path for temporary files.
         if self.sHost in ['win', 'os2']:
