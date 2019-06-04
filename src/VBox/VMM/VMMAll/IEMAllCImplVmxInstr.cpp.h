@@ -3690,7 +3690,8 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitTaskSwitch(PVMCPU pVCpu, IEMTASKSWITCH enmTa
  * @param   pExitInfo           Pointer to the VM-exit information.
  * @param   pExitEventInfo      Pointer to the VM-exit event information.
  */
-IEM_STATIC VBOXSTRICTRC iemVmxVmexitTaskSwitchWithInfo(PVMCPU pVCpu, PVMXVEXITINFO pExitInfo, PVMXVEXITEVENTINFO pExitEventInfo)
+IEM_STATIC VBOXSTRICTRC iemVmxVmexitTaskSwitchWithInfo(PVMCPU pVCpu, PCVMXVEXITINFO pExitInfo,
+                                                       PCVMXVEXITEVENTINFO pExitEventInfo)
 {
     Assert(pExitInfo);
     Assert(pExitEventInfo);
@@ -4104,7 +4105,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitTripleFault(PVMCPU pVCpu)
 
 
 /**
- * VMX VM-exit handler for APIC-accesses.
+ * VMX VM-exit handler for APIC accesses.
  *
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   offAccess   The offset of the register being accessed.
@@ -4129,6 +4130,34 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitApicAccess(PVMCPU pVCpu, uint16_t offAccess,
     uint64_t const uExitQual = RT_BF_MAKE(VMX_BF_EXIT_QUAL_APIC_ACCESS_OFFSET, offAccess)
                              | RT_BF_MAKE(VMX_BF_EXIT_QUAL_APIC_ACCESS_TYPE,   enmAccess);
     iemVmxVmcsSetExitQual(pVCpu, uExitQual);
+    return iemVmxVmexit(pVCpu, VMX_EXIT_APIC_ACCESS);
+}
+
+
+/**
+ * VMX VM-exit handler for APIC accesses.
+ *
+ * This is intended for APIC accesses where the caller provides all the
+ * relevant VM-exit information.
+ *
+ * @returns VBox strict status code.
+ * @param   pVCpu               The cross context virtual CPU structure.
+ * @param   pExitInfo           Pointer to the VM-exit information.
+ * @param   pExitEventInfo      Pointer to the VM-exit event information.
+ */
+IEM_STATIC VBOXSTRICTRC iemVmxVmexitApicAccessWithInfo(PVMCPU pVCpu, PCVMXVEXITINFO pExitInfo,
+                                                       PCVMXVEXITEVENTINFO pExitEventInfo)
+{
+    Assert(pExitInfo);
+    Assert(pExitEventInfo);
+
+    /* VM-exit interruption information should not be valid for APIC-access VM-exits. */
+    Assert(!VMX_EXIT_INT_INFO_IS_VALID(pExitEventInfo->uExitIntInfo));
+    iemVmxVmcsSetExitIntInfo(pVCpu, 0);
+    iemVmxVmcsSetExitIntErrCode(pVCpu, 0);
+    iemVmxVmcsSetExitQual(pVCpu, pExitInfo->u64Qual);
+    iemVmxVmcsSetIdtVectoringInfo(pVCpu, pExitEventInfo->uIdtVectoringInfo);
+    iemVmxVmcsSetIdtVectoringErrCode(pVCpu, pExitEventInfo->uIdtVectoringErrCode);
     return iemVmxVmexit(pVCpu, VMX_EXIT_APIC_ACCESS);
 }
 
@@ -4539,13 +4568,13 @@ IEM_STATIC bool iemVmxVirtApicIsMemAccessIntercepted(PVMCPU pVCpu, uint16_t offA
         }
     }
 
-    /* The APIC-access is virtualized, does not cause a VM-exit. */
+    /* The APIC access is virtualized, does not cause a VM-exit. */
     return false;
 }
 
 
 /**
- * Virtualizes a memory-based APIC-access where the address is not used to access
+ * Virtualizes a memory-based APIC access where the address is not used to access
  * memory.
  *
  * This is for instructions like MONITOR, CLFLUSH, CLFLUSHOPT, ENTER which may cause
@@ -4583,7 +4612,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVirtApicAccessUnused(PVMCPU pVCpu, PRTGCPHYS pGCPh
 
 
 /**
- * Virtualizes a memory-based APIC-access.
+ * Virtualizes a memory-based APIC access.
  *
  * @returns VBox strict status code.
  * @retval VINF_VMX_MODIFIES_BEHAVIOR if the access was virtualized.

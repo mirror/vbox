@@ -15787,12 +15787,11 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVirtApicAccessMsr(PVMCPU pVCpu, uint32_t id
     Assert(pu64Value);
 
     VBOXSTRICTRC rcStrict;
-    if (!fWrite)
-        rcStrict = iemVmxVirtApicAccessMsrRead(pVCpu, idMsr, pu64Value);
-    else
+    if (fWrite)
         rcStrict = iemVmxVirtApicAccessMsrWrite(pVCpu, idMsr, *pu64Value);
-    if (pVCpu->iem.s.cActiveMappings)
-        iemMemRollback(pVCpu);
+    else
+        rcStrict = iemVmxVirtApicAccessMsrRead(pVCpu, idMsr, pu64Value);
+    Assert(!pVCpu->iem.s.cActiveMappings);
     return iemExecStatusCodeFiddling(pVCpu, rcStrict);
 
 }
@@ -15806,27 +15805,18 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVirtApicAccessMsr(PVMCPU pVCpu, uint32_t id
  * @retval  VINF_VMX_VMEXIT if the access causes a VM-exit.
  *
  * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
- * @param   offAccess   The offset of the register being accessed (within the
- *                      APIC-access page).
- * @param   cbAccess    The size of the access in bytes.
- * @param   pvData      Pointer to the data being written or where to store the data
- *                      being read.
- * @param   fWrite      Whether this is a write or read access.
+ * @param   pExitInfo       Pointer to the VM-exit information.
+ * @param   pExitEventInfo  Pointer to the VM-exit event information.
  * @thread  EMT(pVCpu)
  */
-VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVirtApicAccessMem(PVMCPU pVCpu, uint16_t offAccess, size_t cbAccess, void *pvData,
-                                                       bool fWrite)
+VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVmexitApicAccess(PVMCPU pVCpu, PCVMXVEXITINFO pExitInfo, PCVMXVEXITEVENTINFO pExitEventInfo)
 {
-    Assert(pvData);
-
-    /** @todo NSTVMX: Unfortunately, the caller has no idea about instruction fetch
-     *        accesses, so we only use read/write here. Maybe in the future the PGM
-     *        physical handler will be extended to include this information? */
-    uint32_t const fAccess = fWrite ? IEM_ACCESS_TYPE_WRITE : IEM_ACCESS_TYPE_READ;
-    VBOXSTRICTRC rcStrict = iemVmxVirtApicAccessMem(pVCpu, offAccess, cbAccess, pvData, fAccess);
-    if (pVCpu->iem.s.cActiveMappings)
-        iemMemRollback(pVCpu);
+    Assert(pExitInfo);
+    Assert(pExitEventInfo);
+    VBOXSTRICTRC rcStrict = iemVmxVmexitApicAccessWithInfo(pVCpu, pExitInfo, pExitEventInfo);
+    Assert(!pVCpu->iem.s.cActiveMappings);
     return iemExecStatusCodeFiddling(pVCpu, rcStrict);
+
 }
 
 
@@ -15841,8 +15831,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVirtApicAccessMem(PVMCPU pVCpu, uint16_t of
 VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVmexitApicWrite(PVMCPU pVCpu)
 {
     VBOXSTRICTRC rcStrict = iemVmxApicWriteEmulation(pVCpu);
-    if (pVCpu->iem.s.cActiveMappings)
-        iemMemRollback(pVCpu);
+    Assert(!pVCpu->iem.s.cActiveMappings);
     return iemExecStatusCodeFiddling(pVCpu, rcStrict);
 }
 
@@ -15857,8 +15846,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVmexitApicWrite(PVMCPU pVCpu)
 VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVmexitPreemptTimer(PVMCPU pVCpu)
 {
     VBOXSTRICTRC rcStrict = iemVmxVmexitPreemptTimer(pVCpu);
-    if (pVCpu->iem.s.cActiveMappings)
-        iemMemRollback(pVCpu);
+    Assert(!pVCpu->iem.s.cActiveMappings);
     return iemExecStatusCodeFiddling(pVCpu, rcStrict);
 }
 
@@ -15877,8 +15865,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVmexitPreemptTimer(PVMCPU pVCpu)
 VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVmexitExtInt(PVMCPU pVCpu, uint8_t uVector, bool fIntPending)
 {
     VBOXSTRICTRC rcStrict = iemVmxVmexitExtInt(pVCpu, uVector, fIntPending);
-    if (pVCpu->iem.s.cActiveMappings)
-        iemMemRollback(pVCpu);
+    Assert(!pVCpu->iem.s.cActiveMappings);
     return iemExecStatusCodeFiddling(pVCpu, rcStrict);
 }
 
@@ -15893,8 +15880,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVmexitExtInt(PVMCPU pVCpu, uint8_t uVector,
 VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVmexitNmi(PVMCPU pVCpu)
 {
     VBOXSTRICTRC rcStrict = iemVmxVmexitNmi(pVCpu);
-    if (pVCpu->iem.s.cActiveMappings)
-        iemMemRollback(pVCpu);
+    Assert(!pVCpu->iem.s.cActiveMappings);
     return iemExecStatusCodeFiddling(pVCpu, rcStrict);
 }
 
@@ -15909,8 +15895,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVmexitNmi(PVMCPU pVCpu)
 VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVmexitTripleFault(PVMCPU pVCpu)
 {
     VBOXSTRICTRC rcStrict = iemVmxVmexitTripleFault(pVCpu);
-    if (pVCpu->iem.s.cActiveMappings)
-        iemMemRollback(pVCpu);
+    Assert(!pVCpu->iem.s.cActiveMappings);
     return iemExecStatusCodeFiddling(pVCpu, rcStrict);
 }
 
@@ -15926,8 +15911,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVmexitTripleFault(PVMCPU pVCpu)
 VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVmexitStartupIpi(PVMCPU pVCpu, uint8_t uVector)
 {
     VBOXSTRICTRC rcStrict = iemVmxVmexitStartupIpi(pVCpu, uVector);
-    if (pVCpu->iem.s.cActiveMappings)
-        iemMemRollback(pVCpu);
+    Assert(!pVCpu->iem.s.cActiveMappings);
     return iemExecStatusCodeFiddling(pVCpu, rcStrict);
 }
 
@@ -15947,8 +15931,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVmexit(PVMCPU pVCpu, uint32_t uExitReason, 
 {
     iemVmxVmcsSetExitQual(pVCpu, uExitQual);
     VBOXSTRICTRC rcStrict = iemVmxVmexit(pVCpu, uExitReason);
-    if (pVCpu->iem.s.cActiveMappings)
-        iemMemRollback(pVCpu);
+    Assert(!pVCpu->iem.s.cActiveMappings);
     return iemExecStatusCodeFiddling(pVCpu, rcStrict);
 }
 
@@ -15967,8 +15950,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVmexit(PVMCPU pVCpu, uint32_t uExitReason, 
 VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVmexitInstrWithInfo(PVMCPU pVCpu, PCVMXVEXITINFO pExitInfo)
 {
     VBOXSTRICTRC rcStrict = iemVmxVmexitInstrWithInfo(pVCpu, pExitInfo);
-    if (pVCpu->iem.s.cActiveMappings)
-        iemMemRollback(pVCpu);
+    Assert(!pVCpu->iem.s.cActiveMappings);
     return iemExecStatusCodeFiddling(pVCpu, rcStrict);
 }
 
@@ -15988,8 +15970,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVmexitInstrWithInfo(PVMCPU pVCpu, PCVMXVEXI
 VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVmexitInstr(PVMCPU pVCpu, uint32_t uExitReason, uint8_t cbInstr)
 {
     VBOXSTRICTRC rcStrict = iemVmxVmexitInstr(pVCpu, uExitReason, cbInstr);
-    if (pVCpu->iem.s.cActiveMappings)
-        iemMemRollback(pVCpu);
+    Assert(!pVCpu->iem.s.cActiveMappings);
     return iemExecStatusCodeFiddling(pVCpu, rcStrict);
 }
 
@@ -16003,11 +15984,10 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVmexitInstr(PVMCPU pVCpu, uint32_t uExitRea
  * @param   pExitEventInfo  Pointer to the VM-exit event information.
  * @thread  EMT(pVCpu)
  */
-VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVmexitTaskSwitch(PVMCPU pVCpu, PVMXVEXITINFO pExitInfo, PVMXVEXITEVENTINFO pExitEventInfo)
+VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVmexitTaskSwitch(PVMCPU pVCpu, PCVMXVEXITINFO pExitInfo, PCVMXVEXITEVENTINFO pExitEventInfo)
 {
     VBOXSTRICTRC rcStrict = iemVmxVmexitTaskSwitchWithInfo(pVCpu, pExitInfo, pExitEventInfo);
-    if (pVCpu->iem.s.cActiveMappings)
-        iemMemRollback(pVCpu);
+    Assert(!pVCpu->iem.s.cActiveMappings);
     return iemExecStatusCodeFiddling(pVCpu, rcStrict);
 }
 
