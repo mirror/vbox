@@ -1109,7 +1109,7 @@ class TestVmSet(object):
             asVirtModes = list(g_asVirtModes);
         self.asVirtModesDef = asVirtModes;
         self.asVirtModes    = asVirtModes;
-        self.aoTestVms      = [];
+        self.aoTestVms      = []                # type: list(BaseTestVm)
         self.fIgnoreSkippedVm = fIgnoreSkippedVm;
         self.asParavirtModes = None; ##< If None, use the first PV mode of the test VM, otherwise all modes in this list.
 
