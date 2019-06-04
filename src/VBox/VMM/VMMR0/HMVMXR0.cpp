@@ -14063,7 +14063,10 @@ HMVMX_EXIT_DECL hmR0VmxExitMovCRx(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
     uint32_t const uAccessType = VMX_EXIT_QUAL_CRX_ACCESS(uExitQual);
     switch (uAccessType)
     {
-        case VMX_EXIT_QUAL_CRX_ACCESS_WRITE:       /* MOV to CRx */
+        /*
+         * MOV to CRx.
+         */
+        case VMX_EXIT_QUAL_CRX_ACCESS_WRITE:
         {
             rc = hmR0VmxImportGuestState(pVCpu, pVmcsInfo, IEM_CPUMCTX_EXTRN_MUST_MASK);
             AssertRCReturn(rc, rc);
@@ -14117,7 +14120,10 @@ HMVMX_EXIT_DECL hmR0VmxExitMovCRx(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
             break;
         }
 
-        case VMX_EXIT_QUAL_CRX_ACCESS_READ:        /* MOV from CRx */
+        /*
+         * MOV from CRx.
+         */
+        case VMX_EXIT_QUAL_CRX_ACCESS_READ:
         {
             uint8_t const iGReg  = VMX_EXIT_QUAL_CRX_GENREG(uExitQual);
             uint8_t const iCrReg = VMX_EXIT_QUAL_CRX_REGISTER(uExitQual);
@@ -14141,21 +14147,21 @@ HMVMX_EXIT_DECL hmR0VmxExitMovCRx(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
             break;
         }
 
+        /*
+         * CLTS (Clear Task-Switch Flag in CR0).
+         */
         case VMX_EXIT_QUAL_CRX_ACCESS_CLTS:
         {
-            /*
-             * CLTS (Clear Task-Switch Flag in CR0).
-             */
             rcStrict = hmR0VmxExitClts(pVCpu, pVmcsInfo, pVmxTransient->cbInstr);
             break;
         }
 
+        /*
+         * LMSW (Load Machine-Status Word into CR0).
+         * LMSW cannot clear CR0.PE, so no fRealOnV86Active kludge needed here.
+         */
         case VMX_EXIT_QUAL_CRX_ACCESS_LMSW:
         {
-            /*
-             * LMSW (Load Machine-Status Word into CR0).
-             * LMSW cannot clear CR0.PE, so no fRealOnV86Active kludge needed here.
-             */
             RTGCPTR        GCPtrEffDst;
             uint8_t const  cbInstr     = pVmxTransient->cbInstr;
             uint16_t const uMsw        = VMX_EXIT_QUAL_CRX_LMSW_DATA(uExitQual);
@@ -15794,8 +15800,9 @@ HMVMX_EXIT_DECL hmR0VmxExitXcptOrNmiNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTrans
     int rc = hmR0VmxReadExitIntInfoVmcs(pVmxTransient);
     AssertRCReturn(rc, rc);
 
-    Assert(VMX_EXIT_INT_INFO_IS_VALID(pVmxTransient->uExitIntInfo));
-    uint32_t const uExtIntType = VMX_EXIT_INT_INFO_TYPE(pVmxTransient->uExitIntInfo);
+    uint64_t const uExitIntInfo = pVmxTransient->uExitIntInfo;
+    Assert(VMX_EXIT_INT_INFO_IS_VALID(uExitIntInfo));
+    uint32_t const uExtIntType = VMX_EXIT_INT_INFO_TYPE(uExitIntInfo);
 
     switch (uExtIntType)
     {
@@ -15827,11 +15834,16 @@ HMVMX_EXIT_DECL hmR0VmxExitXcptOrNmiNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTrans
         }
 
         /*
-         * This should only happen when "acknowledge external interrupts on VM-exit" is set.
-         * We don't set it when executing guests or nested-guests.
+         * External interrupts:
+         *    This should only happen when "acknowledge external interrupts on VM-exit" control is set.
+         *    However, we don't set it when executing guests or nested-guests. For nested-guests it is
+         *    emulated while injecting interrupts into the guest.
+         *
+         * Software interrupts:
+         *    VM-exits cannot be caused by software interrupts.
          */
         case VMX_EXIT_INT_INFO_TYPE_EXT_INT:
-            RT_FALL_THRU();
+        case VMX_EXIT_INT_INFO_TYPE_SW_INT:
         default:
         {
             pVCpu->hm.s.u32HMError = pVmxTransient->uExitIntInfo;
