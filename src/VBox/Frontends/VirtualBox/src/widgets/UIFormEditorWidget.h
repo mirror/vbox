@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef FEQT_INCLUDED_SRC_wizards_importappliance_UIFormEditorWidget_h
-#define FEQT_INCLUDED_SRC_wizards_importappliance_UIFormEditorWidget_h
+#ifndef FEQT_INCLUDED_SRC_widgets_UIFormEditorWidget_h
+#define FEQT_INCLUDED_SRC_widgets_UIFormEditorWidget_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -64,4 +64,4 @@ private:
 /** Safe pointer to Form Editor widget. */
 typedef QPointer<UIFormEditorWidget> UIFormEditorWidgetPointer;
 
-#endif /* !FEQT_INCLUDED_SRC_wizards_importappliance_UIFormEditorWidget_h */
+#endif /* !FEQT_INCLUDED_SRC_widgets_UIFormEditorWidget_h */
