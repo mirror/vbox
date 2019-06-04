@@ -1318,30 +1318,12 @@ static int vmmdevReqHandler_GetDisplayChangeRequest(PVMMDEV pThis, VMMDevRequest
     VMMDevDisplayChangeRequest *pReq = (VMMDevDisplayChangeRequest *)pReqHdr;
     AssertMsgReturn(pReq->header.size == sizeof(*pReq), ("%u\n", pReq->header.size), VERR_INVALID_PARAMETER);
 
-/**
- * @todo It looks like a multi-monitor guest which only uses
- *        @c VMMDevReq_GetDisplayChangeRequest (not the *2 version) will get
- *        into a @c VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST event loop if it tries
- *        to acknowlege host requests for additional monitors.  Should the loop
- *        which checks for those requests be removed?
- */
-
     DISPLAYCHANGEREQUEST *pDispRequest = &pThis->displayChangeData.aRequests[0];
 
     if (pReq->eventAck == VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST)
     {
         /* Current request has been read at least once. */
         pDispRequest->fPending = false;
-
-        /* Check if there are more pending requests. */
-        for (unsigned i = 1; i < RT_ELEMENTS(pThis->displayChangeData.aRequests); i++)
-        {
-            if (pThis->displayChangeData.aRequests[i].fPending)
-            {
-                VMMDevNotifyGuest(pThis, VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST);
-                break;
-            }
-        }
 
         /* Remember which resolution the client has queried, subsequent reads
          * will return the same values. */
