@@ -661,6 +661,7 @@ VirtualBox_QT_MOCHDRS = \
 	src/widgets/UIApplianceExportEditorWidget.h \
 	src/widgets/UIApplianceImportEditorWidget.h \
 	src/widgets/UIEmptyFilePathSelector.h \
+	src/widgets/UIFormEditorWidget.h \
 	src/widgets/UIGuestOSTypeSelectionButton.h \
 	src/widgets/UILineTextEdit.h \
 	src/widgets/UISlidingAnimation.h \
@@ -695,7 +696,6 @@ VirtualBox_QT_MOCHDRS = \
 	src/wizards/exportappliance/UIWizardExportAppPageBasic3.h \
 	src/wizards/exportappliance/UIWizardExportAppPageExpert.h \
 	src/wizards/importappliance/UIApplianceUnverifiedCertificateViewer.h \
-	src/wizards/importappliance/UIFormEditorWidget.h \
 	src/wizards/importappliance/UIWizardImportApp.h \
 	src/wizards/importappliance/UIWizardImportAppPageBasic1.h \
 	src/wizards/importappliance/UIWizardImportAppPageBasic2.h \
@@ -949,10 +949,10 @@ VirtualBox_QT_MOCSRCS = \
 	src/snapshots/UISnapshotDetailsWidget.cpp \
 	src/snapshots/UISnapshotPane.cpp \
 	src/widgets/UIApplianceEditorWidget.cpp \
+	src/widgets/UIFormEditorWidget.cpp \
 	src/widgets/UIMenuToolBar.cpp \
 	src/widgets/UITabBar.cpp \
 	src/widgets/graphics/UIGraphicsScrollBar.cpp \
-	src/wizards/importappliance/UIFormEditorWidget.cpp \
 	src/wizards/importappliance/UIWizardImportApp.cpp
 
 
@@ -1093,6 +1093,7 @@ VirtualBox_SOURCES = \
 	src/widgets/UIApplianceExportEditorWidget.cpp \
 	src/widgets/UIApplianceImportEditorWidget.cpp \
 	src/widgets/UIEmptyFilePathSelector.cpp \
+	src/widgets/UIFormEditorWidget.cpp \
 	src/widgets/UIGuestOSTypeSelectionButton.cpp \
 	src/widgets/UILineTextEdit.cpp \
 	src/widgets/UISlidingAnimation.cpp \
@@ -1127,7 +1128,6 @@ VirtualBox_SOURCES = \
 	src/wizards/exportappliance/UIWizardExportAppPageBasic3.cpp \
 	src/wizards/exportappliance/UIWizardExportAppPageExpert.cpp \
 	src/wizards/importappliance/UIApplianceUnverifiedCertificateViewer.cpp \
-	src/wizards/importappliance/UIFormEditorWidget.cpp \
 	src/wizards/importappliance/UIWizardImportApp.cpp \
 	src/wizards/importappliance/UIWizardImportAppPageBasic1.cpp \
 	src/wizards/importappliance/UIWizardImportAppPageBasic2.cpp \
