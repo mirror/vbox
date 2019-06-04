@@ -12625,9 +12625,9 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExitNested(PVMCPU pVCpu, PVMXTRANSIENT pVm
     {
         case VMX_EXIT_EPT_MISCONFIG:            return hmR0VmxExitEptMisconfig(pVCpu, pVmxTransient);
         case VMX_EXIT_EPT_VIOLATION:            return hmR0VmxExitEptViolation(pVCpu, pVmxTransient);
+        case VMX_EXIT_XCPT_OR_NMI:              return hmR0VmxExitXcptOrNmiNested(pVCpu, pVmxTransient);
         case VMX_EXIT_IO_INSTR:                 return hmR0VmxExitIoInstrNested(pVCpu, pVmxTransient);
         case VMX_EXIT_HLT:                      return hmR0VmxExitHltNested(pVCpu, pVmxTransient);
-        case VMX_EXIT_XCPT_OR_NMI:              return hmR0VmxExitXcptOrNmiNested(pVCpu, pVmxTransient);
 
         /*
          * We shouldn't direct host physical interrupts to the nested-guest.
@@ -16392,9 +16392,21 @@ HMVMX_EXIT_DECL hmR0VmxExitApicAccessNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTran
 
     Assert(CPUMIsGuestVmxProcCtls2Set(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS2_VIRT_APIC_ACCESS));
     int rc = hmR0VmxReadExitQualVmcs(pVCpu, pVmxTransient);
+    rc    |= hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
+    rc    |= hmR0VmxReadIdtVectoringInfoVmcs(pVmxTransient);
+    rc    |= hmR0VmxReadIdtVectoringErrorCodeVmcs(pVmxTransient);
     AssertRCReturn(rc, rc);
 
-    return IEMExecVmxVmexit(pVCpu, pVmxTransient->uExitReason, pVmxTransient->uExitQual);
+    VMXVEXITINFO ExitInfo;
+    RT_ZERO(ExitInfo);
+    ExitInfo.cbInstr = pVmxTransient->cbInstr;
+    ExitInfo.u64Qual = pVmxTransient->uExitQual;
+
+    VMXVEXITEVENTINFO ExitEventInfo;
+    RT_ZERO(ExitInfo);
+    ExitEventInfo.uIdtVectoringInfo    = pVmxTransient->uIdtVectoringInfo;
+    ExitEventInfo.uIdtVectoringErrCode = pVmxTransient->uIdtVectoringErrorCode;
+    return IEMExecVmxVmexitApicAccess(pVCpu, &ExitInfo, &ExitEventInfo);
 }
 
 
