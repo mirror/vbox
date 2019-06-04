@@ -229,9 +229,10 @@ typedef std::map<Guid, ComObjPtr<Medium> > HardDiskMap;
 struct SharedClipboardAreaData
 {
     SharedClipboardAreaData()
-        : uID(0) { }
+        : uID(NIL_SHAREDCLIPBOARDAREAID) { }
 
-    /** The area's (unique) ID. */
+    /** The area's (unique) ID.
+     *  Set to NIL_SHAREDCLIPBOARDAREAID if not initialized yet. */
     ULONG               uID;
     /** The actual Shared Clipboard area assigned to this ID. */
     SharedClipboardArea Area;
@@ -246,8 +247,8 @@ typedef std::map<ULONG, SharedClipboardAreaData> SharedClipboardAreaMap;
 struct SharedClipboardData
 {
     SharedClipboardData()
-        : uNextClipboardAreaID(0)
-        , uMaxClipboardAreas(32)
+        : uMostRecentClipboardAreaID(NIL_SHAREDCLIPBOARDAREAID)
+        , uMaxClipboardAreas(32) /** @todo Make this configurable. */
     {
         int rc2 = RTCritSectInit(&CritSect);
         AssertRC(rc2);
@@ -258,10 +259,34 @@ struct SharedClipboardData
         RTCritSectDelete(&CritSect);
     }
 
+    /**
+     * Generates a new clipboard area ID.
+     * Currently does *not* check for collisions and stuff.
+     *
+     * @returns New clipboard area ID.
+     */
+    ULONG GenerateAreaID(void)
+    {
+        ULONG uID = NIL_SHAREDCLIPBOARDAREAID;
+
+        int rc = RTCritSectEnter(&CritSect);
+        if (RT_SUCCESS(rc))
+        {
+            uID = RTRandU32Ex(1, UINT32_MAX - 1); /** @todo Make this a bit more sophisticated. Later. */
+
+            int rc2 = RTCritSectLeave(&CritSect);
+            AssertRC(rc2);
+        }
+
+        LogFlowFunc(("uID=%RU32\n", uID));
+        return uID;
+    }
+
     /** Critical section to serialize access. */
     RTCRITSECT                          CritSect;
-    /** The next (free) clipboard area ID. */
-    ULONG                               uNextClipboardAreaID;
+    /** The most recent (last created) clipboard area ID.
+     *  NIL_SHAREDCLIPBOARDAREAID if not initialized yet. */
+    ULONG                               uMostRecentClipboardAreaID;
     /** Maximum of concurrent clipboard areas.
      *  @todo Make this configurable. */
     ULONG                               uMaxClipboardAreas;
@@ -3352,17 +3377,27 @@ struct GuestPropertyEvent : public VirtualBox::CallbackEvent
 };
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+/**
+ * Generates a new clipboard area on the host by opening (and locking) a new, temporary directory.
+ *
+ * @returns HRESULT
+ * @param   AreaData            Area data to use for clipboard area creation.
+ * @param   fFlags              Additional creation flags; currently unused and ignored.
+ */
 int VirtualBox::i_clipboardAreaCreate(SharedClipboardAreaData &AreaData, uint32_t fFlags)
 {
     RT_NOREF(fFlags);
-    int vrc = AreaData.Area.OpenTemp(AreaData.uID);
-    if (RT_SUCCESS(vrc))
-    {
-    }
+    int vrc = AreaData.Area.OpenTemp(AreaData.uID, SHAREDCLIPBOARDAREA_OPEN_FLAGS_MUST_NOT_EXIST);
     LogFlowFunc(("uID=%RU32, rc=%Rrc\n", AreaData.uID, vrc));
     return vrc;
 }
 
+/**
+ * Destroys a formerly created clipboard area.
+ *
+ * @returns HRESULT
+ * @param   AreaData            Area data to use for clipboard area destruction.
+ */
 int VirtualBox::i_clipboardAreaDestroy(SharedClipboardAreaData &AreaData)
 {
     /** @todo Do we need a worker for this to not block here for too long?
@@ -3372,6 +3407,13 @@ int VirtualBox::i_clipboardAreaDestroy(SharedClipboardAreaData &AreaData)
     return vrc;
 }
 
+/**
+ * Registers and creates a new clipboard area on the host (for all VMs), returned the clipboard area ID for it.
+ *
+ * @returns HRESULT
+ * @param   aParms              Creation parameters. Currently unused.
+ * @param   aID                 Where to return the clipboard area ID on success.
+ */
 HRESULT VirtualBox::i_onClipboardAreaRegister(const std::vector<com::Utf8Str> &aParms, ULONG *aID)
 {
     RT_NOREF(aParms);
@@ -3385,33 +3427,42 @@ HRESULT VirtualBox::i_onClipboardAreaRegister(const std::vector<com::Utf8Str> &a
         {
             if (m->SharedClipboard.mapClipboardAreas.size() >= m->SharedClipboard.uMaxClipboardAreas)
             {
-                const ULONG uAreaID = m->SharedClipboard.uNextClipboardAreaID;
-
-                SharedClipboardAreaData AreaData;
-                AreaData.uID = uAreaID;
-
-                vrc = i_clipboardAreaCreate(AreaData, 0 /* fFlags */);
-                if (RT_SUCCESS(vrc))
+                for (unsigned uTries = 0; uTries < 32; uTries++) /* Don't try too hard. */
                 {
-                    m->SharedClipboard.mapClipboardAreas[uAreaID] = AreaData;
-                    m->SharedClipboard.uNextClipboardAreaID++;
+                    const ULONG uAreaID = m->SharedClipboard.GenerateAreaID();
 
-                    /** @todo Implement collision detection / wrap-around. */
+                    /* Area ID already taken? */
+                    if (m->SharedClipboard.mapClipboardAreas.find(uAreaID) != m->SharedClipboard.mapClipboardAreas.end())
+                        continue;
 
-                    if (aID)
-                        *aID = uAreaID;
+                    SharedClipboardAreaData AreaData;
+                    AreaData.uID = uAreaID;
 
-                    LogThisFunc(("Registered new clipboard area %RU32: '%s'\n",
-                                 uAreaID, AreaData.Area.GetDirAbs()));
+                    vrc = i_clipboardAreaCreate(AreaData, 0 /* fFlags */);
+                    if (RT_SUCCESS(vrc))
+                    {
+                        m->SharedClipboard.mapClipboardAreas[uAreaID] = AreaData;
+                        m->SharedClipboard.uMostRecentClipboardAreaID = uAreaID;
+
+                        /** @todo Implement collision detection / wrap-around. */
+
+                        if (aID)
+                            *aID = uAreaID;
+
+                        LogThisFunc(("Registered new clipboard area %RU32: '%s'\n",
+                                     uAreaID, AreaData.Area.GetDirAbs()));
+                        break;
+                    }
                 }
-                else
+
+                if (RT_FAILURE(vrc))
                     rc = setError(E_FAIL, /** @todo Find a better rc. */
-                                  tr("Failed to create new clipboard area %RU32 (%Rrc)"), aID, vrc);
+                                  tr("Failed to create new clipboard area (%Rrc)"), vrc);
             }
             else
             {
                 rc = setError(E_FAIL, /** @todo Find a better rc. */
-                              tr("Maximum number of conucurrent clipboard areas reached (%RU32)"),
+                              tr("Maximum number of concurrent clipboard areas reached (%RU32)"),
                               m->SharedClipboard.uMaxClipboardAreas);
             }
         }
@@ -3427,6 +3478,12 @@ HRESULT VirtualBox::i_onClipboardAreaRegister(const std::vector<com::Utf8Str> &a
     return rc;
 }
 
+/**
+ * Unregisters (destroys) a formerly created clipboard area.
+ *
+ * @returns HRESULT
+ * @param   aID                 ID of clipboard area to destroy.
+ */
 HRESULT VirtualBox::i_onClipboardAreaUnregister(ULONG aID)
 {
     HRESULT rc = S_OK;
@@ -3460,6 +3517,12 @@ HRESULT VirtualBox::i_onClipboardAreaUnregister(ULONG aID)
     return rc;
 }
 
+/**
+ * Attaches to an existing clipboard area.
+ *
+ * @returns HRESULT
+ * @param   aID                 ID of clipboard area to attach.
+ */
 HRESULT VirtualBox::i_onClipboardAreaAttach(ULONG aID)
 {
     HRESULT rc = S_OK;
@@ -3485,6 +3548,12 @@ HRESULT VirtualBox::i_onClipboardAreaAttach(ULONG aID)
     return rc;
 }
 
+/**
+ * Detaches from an existing clipboard area.
+ *
+ * @returns HRESULT
+ * @param   aID                 ID of clipboard area to detach from.
+ */
 HRESULT VirtualBox::i_onClipboardAreaDetach(ULONG aID)
 {
     HRESULT rc = S_OK;
@@ -3510,14 +3579,19 @@ HRESULT VirtualBox::i_onClipboardAreaDetach(ULONG aID)
     return rc;
 }
 
+/**
+ * Returns the ID of the most recent (last created) clipboard area,
+ * or NIL_SHAREDCLIPBOARDAREAID if no clipboard area has been created yet.
+ *
+ * @returns Most recent clipboard area ID.
+ */
 ULONG VirtualBox::i_onClipboardAreaGetMostRecent(void)
 {
     ULONG aID = 0;
     int vrc2 = RTCritSectEnter(&m->SharedClipboard.CritSect);
     if (RT_SUCCESS(vrc2))
     {
-        aID = m->SharedClipboard.uNextClipboardAreaID
-            ? m->SharedClipboard.uNextClipboardAreaID - 1 : 0;
+        aID = m->SharedClipboard.uMostRecentClipboardAreaID;
 
         vrc2 = RTCritSectLeave(&m->SharedClipboard.CritSect);
         AssertRC(vrc2);
@@ -3526,6 +3600,11 @@ ULONG VirtualBox::i_onClipboardAreaGetMostRecent(void)
     return aID;
 }
 
+/**
+ * Returns the current reference count of a clipboard area.
+ *
+ * @returns Reference count of given clipboard area ID.
+ */
 ULONG VirtualBox::i_onClipboardAreaGetRefCount(ULONG aID)
 {
     ULONG cRefCount = 0;

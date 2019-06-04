@@ -46,7 +46,7 @@ SharedClipboardArea::SharedClipboardArea(void)
 
 SharedClipboardArea::SharedClipboardArea(const char *pszPath,
                                          SHAREDCLIPBOARDAREAID uID /* = NIL_SHAREDCLIPBOARDAREAID */,
-                                         SHAREDCLIPBOARDAREAFLAGS fFlags /* = SHAREDCLIPBOARDAREA_FLAGS_NONE */)
+                                         SHAREDCLIPBOARDAREAOPENFLAGS fFlags /* = SHAREDCLIPBOARDAREA_OPEN_FLAGS_NONE */)
     : m_tsCreatedMs(0)
     , m_cRefs(0)
     , m_fOpen(0)
@@ -157,7 +157,7 @@ int SharedClipboardArea::closeInternal(void)
 
     if (RT_SUCCESS(rc))
     {
-        this->m_fOpen = SHAREDCLIPBOARDAREA_FLAGS_NONE;
+        this->m_fOpen = SHAREDCLIPBOARDAREA_OPEN_FLAGS_NONE;
         this->m_uID   = NIL_SHAREDCLIPBOARDAREAID;
     }
 
@@ -237,7 +237,7 @@ bool SharedClipboardArea::IsOpen(void) const
 
 int SharedClipboardArea::OpenEx(const char *pszPath,
                                 SHAREDCLIPBOARDAREAID uID /* = NIL_SHAREDCLIPBOARDAREAID */,
-                                SHAREDCLIPBOARDAREAFLAGS fFlags /* = SHAREDCLIPBOARDAREA_FLAGS_NONE */)
+                                SHAREDCLIPBOARDAREAOPENFLAGS fFlags /* = SHAREDCLIPBOARDAREA_OPEN_FLAGS_NONE */)
 {
     AssertPtrReturn(pszPath, VERR_INVALID_POINTER);
     AssertReturn(fFlags == 0, VERR_INVALID_PARAMETER); /* Flags not supported yet. */
@@ -246,8 +246,13 @@ int SharedClipboardArea::OpenEx(const char *pszPath,
     int rc = SharedClipboardArea::PathConstruct(pszPath, uID, szAreaDir, sizeof(szAreaDir));
     if (RT_SUCCESS(rc))
     {
-        if (!RTDirExists(szAreaDir))
-            rc = RTDirCreateFullPath(szAreaDir, RTFS_UNIX_IRWXU);
+        if (   RTDirExists(szAreaDir)
+            && (fFlags & SHAREDCLIPBOARDAREA_OPEN_FLAGS_MUST_NOT_EXIST))
+        {
+            rc = VERR_ALREADY_EXISTS;
+        }
+        else
+            rc = RTDirCreateFullPath(szAreaDir, RTFS_UNIX_IRWXU); /** @todo Tweak path mode? */
 
         if (RT_SUCCESS(rc))
         {
@@ -269,7 +274,7 @@ int SharedClipboardArea::OpenEx(const char *pszPath,
 }
 
 int SharedClipboardArea::OpenTemp(SHAREDCLIPBOARDAREAID uID,
-                                  SHAREDCLIPBOARDAREAFLAGS fFlags /* = SHAREDCLIPBOARDAREA_FLAGS_NONE */)
+                                  SHAREDCLIPBOARDAREAOPENFLAGS fFlags /* = SHAREDCLIPBOARDAREA_OPEN_FLAGS_NONE */)
 {
     AssertReturn(fFlags == 0, VERR_INVALID_PARAMETER); /* Flags not supported yet. */
 

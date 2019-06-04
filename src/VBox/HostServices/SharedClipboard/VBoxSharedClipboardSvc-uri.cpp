@@ -113,17 +113,13 @@ int vboxClipboardSvcURITransferCreate(PVBOXCLIPBOARDCLIENTURITRANSFER pTransfer,
     AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
     AssertPtrReturn(pState,    VERR_INVALID_POINTER);
 
-    int rc = pTransfer->Area.OpenTemp(SHAREDCLIPBOARDAREA_FLAGS_NONE);
+    int rc = SharedClipboardMetaDataInit(&pTransfer->Meta);
     if (RT_SUCCESS(rc))
     {
-        rc = SharedClipboardMetaDataInit(&pTransfer->Meta);
+        vboxClipboardSvcURIObjCtxInit(&pTransfer->ObjCtx);
         if (RT_SUCCESS(rc))
         {
-            vboxClipboardSvcURIObjCtxInit(&pTransfer->ObjCtx);
-            if (RT_SUCCESS(rc))
-            {
-                pTransfer->pState = pState;
-            }
+            pTransfer->pState = pState;
         }
     }
 
@@ -471,15 +467,18 @@ int vboxClipboardSvcURIHandler(uint32_t u32ClientID,
                             VBOXCLIPBOARDEXTAREAPARMS parms;
                             RT_ZERO(parms);
 
+                            parms.uID                  = NIL_SHAREDCLIPBOARDAREAID;
                             parms.u.fn_register.pvData = pvMeta;
                             parms.u.fn_register.cbData = (uint32_t)cbMeta;
 
                             /* As the meta data is now complete, register a new clipboard on the host side. */
                             rc = g_pfnExtension(g_pvExtension, VBOX_CLIPBOARD_EXT_FN_AREA_REGISTER, &parms, sizeof(parms));
+                            if (RT_SUCCESS(rc))
+                                rc = pTransfer->Area.OpenTemp(parms.uID /* Area ID */);
 #ifdef LOG_ENABLED
                             AssertPtr(pTransfer->pState);
-                            LogFlowFunc(("Registered new clipboard area by client %RU32 with rc=%Rrc\n",
-                                         pTransfer->pState->u32ClientID, rc));
+                            LogFlowFunc(("Registered new clipboard area (%RU32) by client %RU32 with rc=%Rrc\n",
+                                         parms.uID, pTransfer->pState->u32ClientID, rc));
 #endif
                         }
 

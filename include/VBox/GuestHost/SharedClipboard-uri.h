@@ -47,11 +47,13 @@ typedef uint32_t SHAREDCLIPBOARDAREAID;
 /** Defines a non-initialized (nil) clipboard area. */
 #define NIL_SHAREDCLIPBOARDAREAID       UINT32_MAX
 
-/** SharedClipboardArea flags. */
-typedef uint32_t SHAREDCLIPBOARDAREAFLAGS;
+/** SharedClipboardArea open flags. */
+typedef uint32_t SHAREDCLIPBOARDAREAOPENFLAGS;
 
-/** No flags specified. */
-#define SHAREDCLIPBOARDAREA_FLAGS_NONE     0
+/** No open flags specified. */
+#define SHAREDCLIPBOARDAREA_OPEN_FLAGS_NONE               0
+/** The clipboard area must not exist yet. */
+#define SHAREDCLIPBOARDAREA_OPEN_FLAGS_MUST_NOT_EXIST     RT_BIT(0)
 
 /**
  * Class for maintaining a Shared Clipboard area
@@ -67,7 +69,7 @@ public:
 
     SharedClipboardArea(void);
     SharedClipboardArea(const char *pszPath, SHAREDCLIPBOARDAREAID uID = NIL_SHAREDCLIPBOARDAREAID,
-                        SHAREDCLIPBOARDAREAFLAGS fFlags = SHAREDCLIPBOARDAREA_FLAGS_NONE);
+                        SHAREDCLIPBOARDAREAOPENFLAGS fFlags = SHAREDCLIPBOARDAREA_OPEN_FLAGS_NONE);
     virtual ~SharedClipboardArea(void);
 
 public:
@@ -83,9 +85,9 @@ public:
     int Close(void);
     bool IsOpen(void) const;
     int OpenEx(const char *pszPath, SHAREDCLIPBOARDAREAID uID = NIL_SHAREDCLIPBOARDAREAID,
-               SHAREDCLIPBOARDAREAFLAGS fFlags = SHAREDCLIPBOARDAREA_FLAGS_NONE);
+               SHAREDCLIPBOARDAREAOPENFLAGS fFlags = SHAREDCLIPBOARDAREA_OPEN_FLAGS_NONE);
     int OpenTemp(SHAREDCLIPBOARDAREAID uID = NIL_SHAREDCLIPBOARDAREAID,
-                 SHAREDCLIPBOARDAREAFLAGS fFlags = SHAREDCLIPBOARDAREA_FLAGS_NONE);
+                 SHAREDCLIPBOARDAREAOPENFLAGS fFlags = SHAREDCLIPBOARDAREA_OPEN_FLAGS_NONE);
     SHAREDCLIPBOARDAREAID GetID(void) const;
     const char *GetDirAbs(void) const;
     uint32_t GetRefCount(void);
