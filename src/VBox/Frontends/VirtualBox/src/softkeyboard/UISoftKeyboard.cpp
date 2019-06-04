@@ -18,6 +18,7 @@
 /* Qt includes: */
 #include <QApplication>
 #include <QFile>
+#include <QLineEdit>
 #include <QMenu>
 #include <QPainter>
 #include <QStyle>
@@ -62,6 +63,7 @@ enum UIKeyType
 /*********************************************************************************************************************************
 *   UISoftKeyboardRow definition.                                                                                  *
 *********************************************************************************************************************************/
+
 /** UISoftKeyboardRow represents a row in the physical keyboard. */
 class UISoftKeyboardRow
 {
@@ -93,6 +95,7 @@ private:
 /*********************************************************************************************************************************
 *   UISoftKeyboardKey definition.                                                                                  *
 *********************************************************************************************************************************/
+
 /** UISoftKeyboardKey is a place holder for a keyboard key. Graphical key represantations are drawn according to this class. */
 class UISoftKeyboardKey
 {
@@ -198,6 +201,7 @@ protected:
     void mousePressEvent(QMouseEvent *pEvent) /* override */;
     void mouseReleaseEvent(QMouseEvent *pEvent) /* override */;
     void mouseMoveEvent(QMouseEvent *pEvent) /* override */;
+    bool eventFilter(QObject *pWatched, QEvent *pEvent)/* override */;
 
     virtual void retranslateUi() /* override */;
 
@@ -205,7 +209,7 @@ private slots:
 
     void sltHandleMenuBarContextMenuRequest(const QPoint &point);
     void sltHandleLoadLayout(QAction *pSenderAction);
-    void sltHandleShowKeyPositions();
+    void sltHandleKeyCapEdit();
 
 private:
 
@@ -213,6 +217,7 @@ private:
     void               setInitialSize(int iWidth, int iHeight);
     /** Searches for the key which contains the position of the @p pEvent and returns it if found. */
     UISoftKeyboardKey *keyUnderMouse(QMouseEvent *pEvent);
+    UISoftKeyboardKey *keyUnderMouse(const QPoint &point);
     void               handleKeyPress(UISoftKeyboardKey *pKey);
     void               handleKeyRelease(UISoftKeyboardKey *pKey);
     bool               createKeyboard(const QString &strLayoutFileName);
@@ -221,6 +226,8 @@ private:
     void               prepareObjects();
 
     UISoftKeyboardKey *m_pKeyUnderMouse;
+    UISoftKeyboardKey *m_pKeyBeingEdited;
+
     UISoftKeyboardKey *m_pKeyPressed;
     QColor m_keyDefaultColor;
     QColor m_keyHoverColor;
@@ -247,6 +254,8 @@ private:
     QAction *m_pShowPositionsAction;
     QAction *m_pLoadLayoutFileAction;
     QAction *m_pLastSelectedLayout;
+    QAction *m_pChangeKeyCapAction;
+    QLineEdit *m_pKeyCapEditor;
 };
 
 /*********************************************************************************************************************************
@@ -361,10 +370,7 @@ const QString &UISoftKeyboardKey::keyCap() const
 
 void UISoftKeyboardKey::setKeyCap(const QString &strKeyCap)
 {
-    if (m_strKeyCap.isEmpty())
-        m_strKeyCap = strKeyCap;
-    else
-        m_strKeyCap += "\n" + strKeyCap;
+    m_strKeyCap = strKeyCap;
 }
 
 void UISoftKeyboardKey::setWidth(int iWidth)
@@ -544,6 +550,7 @@ void UISoftKeyboardKey::updateState(bool fPressed)
 UISoftKeyboardWidget::UISoftKeyboardWidget(QWidget *pParent /* = 0 */)
     :QIWithRetranslateUI<QWidget>(pParent)
     , m_pKeyUnderMouse(0)
+    , m_pKeyBeingEdited(0)
     , m_pKeyPressed(0)
     , m_keyDefaultColor(QColor(103, 128, 159))
     , m_keyHoverColor(QColor(108, 122, 137))
@@ -561,6 +568,7 @@ UISoftKeyboardWidget::UISoftKeyboardWidget(QWidget *pParent /* = 0 */)
     , m_pShowPositionsAction(0)
     , m_pLoadLayoutFileAction(0)
     , m_pLastSelectedLayout(0)
+    , m_pChangeKeyCapAction(0)
 {
 
     configure();
@@ -596,7 +604,8 @@ void UISoftKeyboardWidget::paintEvent(QPaintEvent *pEvent) /* override */
     int unitSize = qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin);
     float fLedRadius =  0.8 * unitSize;
     float fLedMargin =  0.6 * unitSize;
-
+    if (!m_pKeyBeingEdited && m_pKeyCapEditor)
+        m_pKeyCapEditor->hide();
     for (int i = 0; i < m_rows.size(); ++i)
     {
         QVector<UISoftKeyboardKey> &keys = m_rows[i].keys();
@@ -608,6 +617,16 @@ void UISoftKeyboardWidget::paintEvent(QPaintEvent *pEvent) /* override */
                 painter.setBrush(QBrush(m_keyHoverColor));
             else
                 painter.setBrush(QBrush(m_keyDefaultColor));
+
+            if (&key == m_pKeyBeingEdited)
+            {
+                //m_pKeyCapEditor->setText(key.keyCap());
+                m_pKeyCapEditor->setFont(painterFont);
+                m_pKeyCapEditor->setGeometry(m_fScaleFactorX * key.keyGeometry().x(), m_fScaleFactorY * key.keyGeometry().y(),
+                                             m_fScaleFactorX * key.keyGeometry().width(), m_fScaleFactorY * key.keyGeometry().height());
+                m_pKeyCapEditor->show();
+
+            }
 
             if (&key  == m_pKeyPressed)
                 painter.setPen(QPen(QColor(m_textPressedColor), 2));
@@ -646,6 +665,7 @@ void UISoftKeyboardWidget::paintEvent(QPaintEvent *pEvent) /* override */
 
 void UISoftKeyboardWidget::mousePressEvent(QMouseEvent *pEvent)
 {
+    QWidget::mousePressEvent(pEvent);
     if (pEvent->button() != Qt::LeftButton)
         return;
     m_pKeyPressed = keyUnderMouse(pEvent);
@@ -655,6 +675,7 @@ void UISoftKeyboardWidget::mousePressEvent(QMouseEvent *pEvent)
 
 void UISoftKeyboardWidget::mouseReleaseEvent(QMouseEvent *pEvent)
 {
+    QWidget::mouseReleaseEvent(pEvent);
     if (pEvent->button() != Qt::LeftButton)
         return;
     if (!m_pKeyPressed)
@@ -666,14 +687,47 @@ void UISoftKeyboardWidget::mouseReleaseEvent(QMouseEvent *pEvent)
 
 void UISoftKeyboardWidget::mouseMoveEvent(QMouseEvent *pEvent)
 {
+    QWidget::mouseMoveEvent(pEvent);
     keyUnderMouse(pEvent);
 }
 
-void UISoftKeyboard::focusOutEvent(QFocusEvent *pEvent)
+bool UISoftKeyboardWidget::eventFilter(QObject *pWatched, QEvent *pEvent)
 {
-    QIWithRetranslateUI<QMainWindow>::focusOutEvent(pEvent);
-    printf("booo\n");
+    if (pWatched != m_pKeyCapEditor)
+        return QIWithRetranslateUI<QWidget>::eventFilter(pWatched, pEvent);
+
+    switch (pEvent->type())
+    {
+        /* Process key press only: */
+        case QEvent::KeyPress:
+        {
+            /* Cast to corresponding key press event: */
+            QKeyEvent *pKeyEvent = static_cast<QKeyEvent*>(pEvent);
+
+            /* Handle Ctrl+T key combination as a shortcut to focus search field: */
+            if (pKeyEvent->key() == Qt::Key_Escape)
+            {
+                m_pKeyBeingEdited = 0;
+                update();
+                return true;
+            }
+            else if (pKeyEvent->key() == Qt::Key_Enter || pKeyEvent->key() == Qt::Key_Return)
+            {
+                if (m_pKeyBeingEdited)
+                    m_pKeyBeingEdited->setKeyCap(m_pKeyCapEditor->text());
+                m_pKeyBeingEdited = 0;
+                update();
+                return true;
+            }
+            break;
+        }
+        default:
+            break;
+    }
+
+    return QIWithRetranslateUI<QWidget>::eventFilter(pWatched, pEvent);
 }
+
 
 void UISoftKeyboardWidget::retranslateUi()
 {
@@ -681,6 +735,7 @@ void UISoftKeyboardWidget::retranslateUi()
 
 void UISoftKeyboardWidget::sltHandleMenuBarContextMenuRequest(const QPoint &point)
 {
+    m_pChangeKeyCapAction->setEnabled(m_pKeyUnderMouse);
     m_pContextMenu->exec(mapToGlobal(point));
     update();
 }
@@ -718,9 +773,11 @@ void UISoftKeyboardWidget::sltHandleLoadLayout(QAction *pSenderAction)
     }
 }
 
-void UISoftKeyboardWidget::sltHandleShowKeyPositions()
+void UISoftKeyboardWidget::sltHandleKeyCapEdit()
 {
-
+    m_pKeyBeingEdited = m_pKeyUnderMouse;
+    if (m_pKeyBeingEdited && m_pKeyCapEditor)
+        m_pKeyCapEditor->setText(m_pKeyBeingEdited->keyCap());
 }
 
 void UISoftKeyboardWidget::setNewMinimumSize(const QSize &size)
@@ -738,7 +795,12 @@ void UISoftKeyboardWidget::setInitialSize(int iWidth, int iHeight)
 UISoftKeyboardKey *UISoftKeyboardWidget::keyUnderMouse(QMouseEvent *pEvent)
 {
     QPoint eventPosition(pEvent->pos().x() / m_fScaleFactorX, pEvent->pos().y() / m_fScaleFactorY);
-    QWidget::mousePressEvent(pEvent);
+    return keyUnderMouse(eventPosition);
+}
+
+UISoftKeyboardKey *UISoftKeyboardWidget::keyUnderMouse(const QPoint &eventPosition)
+{
+    UISoftKeyboardKey *pKey = 0;
     for (int i = 0; i < m_rows.size(); ++i)
     {
         QVector<UISoftKeyboardKey> &keys = m_rows[i].keys();
@@ -747,17 +809,17 @@ UISoftKeyboardKey *UISoftKeyboardWidget::keyUnderMouse(QMouseEvent *pEvent)
             UISoftKeyboardKey &key = keys[j];
             if (key.polygonInGlobal().containsPoint(eventPosition, Qt::OddEvenFill))
             {
-                if (&key != m_pKeyUnderMouse)
-                {
-                    m_pKeyUnderMouse = &key;
-                    update();
-                }
-                return &key;
+                pKey = &key;
                 break;
             }
         }
     }
-    return 0;
+    if (m_pKeyUnderMouse != pKey)
+    {
+        m_pKeyUnderMouse = pKey;
+        update();
+    }
+    return pKey;
 }
 
 void UISoftKeyboardWidget::handleKeyPress(UISoftKeyboardKey *pKey)
@@ -893,8 +955,13 @@ void UISoftKeyboardWidget::configure()
 
 void UISoftKeyboardWidget::prepareObjects()
 {
+    m_pKeyCapEditor = new QLineEdit(this);
+    if (m_pKeyCapEditor)
+    {
+        m_pKeyCapEditor->hide();
+        m_pKeyCapEditor->installEventFilter(this);
+    }
     m_pContextMenu = new QMenu(this);
-    //m_pShowPositionsAction = m_pContextMenu->addAction("
     m_pLayoutActionGroup = new QActionGroup(this);
     m_pLayoutActionGroup->setExclusive(true);
     connect(m_pLayoutActionGroup, &QActionGroup::triggered, this, &UISoftKeyboardWidget::sltHandleLoadLayout);
@@ -913,9 +980,14 @@ void UISoftKeyboardWidget::prepareObjects()
     m_pContextMenu->addSeparator();
 
     m_pShowPositionsAction = m_pContextMenu->addAction(UISoftKeyboard::tr("Show key positions instead of key caps"));
-    connect(m_pLayoutActionGroup, &QActionGroup::triggered, this, &UISoftKeyboardWidget::sltHandleShowKeyPositions);
+
     m_pShowPositionsAction->setCheckable(true);
     m_pShowPositionsAction->setChecked(false);
+
+    m_pChangeKeyCapAction = m_pContextMenu->addAction(UISoftKeyboard::tr("Add/change key cap"));
+    connect(m_pChangeKeyCapAction, &QAction::triggered, this, &UISoftKeyboardWidget::sltHandleKeyCapEdit);
+    QAction *pSaveKepCapFile = m_pContextMenu->addAction(UISoftKeyboard::tr("Save key caps to file"));
+    Q_UNUSED(pSaveKepCapFile);
 
     /* Choose the first layput action's data as the defaults one: */
     if (!m_pLayoutActionGroup->actions().empty())
@@ -1017,7 +1089,7 @@ void UIKeyboardLayoutReader::parseKey(UISoftKeyboardRow &row)
     UISoftKeyboardKey &key = row.keys().back();
     key.setWidth(row.defaultWidth());
     key.setHeight(row.defaultHeight());
-
+    QString strKeyCap;
     while (m_xmlReader.readNextStartElement())
     {
         if (m_xmlReader.name() == "width")
@@ -1037,10 +1109,16 @@ void UIKeyboardLayoutReader::parseKey(UISoftKeyboardRow &row)
             key.setScanCodePrefix(strCode.toInt(&fOk, 16));
         }
         else if (m_xmlReader.name() == "keycap")
-            key.setKeyCap(m_xmlReader.readElementText());
+        {
+            QString strCap = m_xmlReader.readElementText();
+            if (strKeyCap.isEmpty())
+                strKeyCap = strCap;
+            else
+                strKeyCap += "\n" + strCap;
+        }
         else if (m_xmlReader.name() == "cutout")
             parseCutout(key);
-       else if (m_xmlReader.name() == "position")
+        else if (m_xmlReader.name() == "position")
             key.setPosition(m_xmlReader.readElementText().toInt());
         else if (m_xmlReader.name() == "type")
         {
@@ -1053,6 +1131,7 @@ void UIKeyboardLayoutReader::parseKey(UISoftKeyboardRow &row)
         else
             m_xmlReader.skipCurrentElement();
     }
+    key.setKeyCap(strKeyCap);
 }
 
 void UIKeyboardLayoutReader::parseKeySpace(UISoftKeyboardRow &row)

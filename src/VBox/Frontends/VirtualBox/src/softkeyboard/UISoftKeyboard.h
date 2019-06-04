@@ -55,7 +55,6 @@ public:
 protected:
 
     virtual void retranslateUi() /* override */;
-    void focusOutEvent(QFocusEvent *pEvent) /* override */;
 
 private slots:
 
