@@ -15816,7 +15816,7 @@ HMVMX_EXIT_DECL hmR0VmxExitXcptOrNmiNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTrans
 
         /*
          * Hardware exceptions,
-         * Software exceptions:
+         * Software exceptions,
          * Privileged software exceptions:
          *    Figure out if the exception must be delivered to the guest or the nested-guest.
          */
@@ -15842,17 +15842,17 @@ HMVMX_EXIT_DECL hmR0VmxExitXcptOrNmiNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTrans
         }
 
         /*
+         * Software interrupts:
+         *    VM-exits cannot be caused by software interrupts.
+         *
          * External interrupts:
          *    This should only happen when "acknowledge external interrupts on VM-exit"
          *    control is set. However, we don't set it when executing guests or
          *    nested-guests. For nested-guests it is emulated while injecting interrupts into
          *    the guest.
-         *
-         * Software interrupts:
-         *    VM-exits cannot be caused by software interrupts.
          */
-        case VMX_EXIT_INT_INFO_TYPE_EXT_INT:
         case VMX_EXIT_INT_INFO_TYPE_SW_INT:
+        case VMX_EXIT_INT_INFO_TYPE_EXT_INT:
         default:
         {
             pVCpu->hm.s.u32HMError = pVmxTransient->uExitIntInfo;
