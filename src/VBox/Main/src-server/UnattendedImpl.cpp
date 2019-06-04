@@ -40,11 +40,6 @@
 
 using namespace std;
 
-/* XPCOM doesn't define S_FALSE. */
-#ifndef S_FALSE
-# define S_FALSE ((HRESULT)1)
-#endif
-
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *

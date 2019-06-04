@@ -57,10 +57,6 @@
 # include <iprt/stream.h>
 #endif /* VBOXVHWA_PROFILE_FPS */
 
-#ifndef S_FALSE
-# define S_FALSE ((HRESULT)1L)
-#endif
-
 #ifdef DEBUG_misha
 # define VBOXVHWA_PROFILE_FPS
 #endif /* DEBUG_misha */

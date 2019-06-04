@@ -3643,10 +3643,6 @@ DECLCALLBACK(void) Display::i_displayProcessDisplayDataCallback(PPDMIDISPLAYCONN
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
 
-#ifndef S_FALSE
-# define S_FALSE ((HRESULT)1L)
-#endif
-
 int Display::i_handleVHWACommandProcess(int enmCmd, bool fGuestCmd, VBOXVHWACMD RT_UNTRUSTED_VOLATILE_GUEST *pCommand)
 {
     unsigned id = (unsigned)pCommand->iDisplay;
@@ -3681,9 +3677,10 @@ DECLCALLBACK(int) Display::i_displayVHWACommandProcess(PPDMIDISPLAYCONNECTOR pIn
 
     return pDrv->pDisplay->i_handleVHWACommandProcess(enmCmd, fGuestCmd, pCommand);
 }
-#endif
 
+#endif /* VBOX_WITH_VIDEOHWACCEL */
 #ifdef VBOX_WITH_CRHGSMI
+
 void Display::i_handleCrHgsmiCommandCompletion(int32_t result, uint32_t u32Function, PVBOXHGCMSVCPARM pParam)
 {
     RT_NOREF(u32Function);
