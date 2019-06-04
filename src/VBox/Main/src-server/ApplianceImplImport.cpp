@@ -1812,27 +1812,35 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
                                 throw  setErrorVrc(vrc, tr("Could not create the file '%s' (%Rrc)"), strAbsDstPath.c_str(), vrc);
 
                             size_t cbWritten;
-                            RTVfsFileWrite(hVfsDstFile, pvBuffered, cbBuffered, &cbWritten);
+                            vrc = RTVfsFileWrite(hVfsDstFile, pvBuffered, cbBuffered, &cbWritten);
                             if (RT_FAILURE(vrc))
                                 throw  setErrorVrc(vrc, tr("Could not write into the file '%s' (%Rrc)"), strAbsDstPath.c_str(), vrc);
                         }
                         catch (HRESULT aRc)
                         {
                             hrc = aRc;
+                            strLastActualErrorDesc = Utf8StrFmt("%s: Processing the downloaded object was failed. "
+                                    "The exception (%Rrc)\n", __FUNCTION__, hrc);
+                            LogRel((strLastActualErrorDesc.c_str()));
+                        }
+                        catch (int aRc)
+                        {
+                            hrc = setErrorVrc(aRc);
+                            strLastActualErrorDesc = Utf8StrFmt("%s: Processing the downloaded object was failed. "
+                                    "The exception (%Rrc)\n", __FUNCTION__, aRc);
+                            LogRel((strLastActualErrorDesc.c_str()));
                         }
                         catch (...)
                         {
                             hrc = VERR_UNEXPECTED_EXCEPTION;
+                            strLastActualErrorDesc = Utf8StrFmt("%s: Processing the downloaded object was failed. "
+                                    "The exception (%Rrc)\n", __FUNCTION__, hrc);
+                            LogRel((strLastActualErrorDesc.c_str()));
                         }
 
-                        /* Don't forget to release all resources */
-                        RTVfsFileRelease(hVfsDstFile);
-                        RTVfsIoStrmReadAllFree(pvBuffered, cbBuffered);
-
-                        /*re-throw the error */
-                        if (FAILED(hrc))
-                            throw hrc;
-
+//                      /* Don't forget to release all resources */
+//                      RTVfsFileRelease(hVfsDstFile);
+//                      RTVfsIoStrmReadAllFree(pvBuffered, cbBuffered);
                     }
                     else
                     {
@@ -1949,28 +1957,39 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
             RTVfsFsStrmRelease(hVfsFssObject);
             hVfsFssObject = NIL_RTVFSFSSTREAM;
 
-            pTask->pProgress->SetNextOperation(BstrFmt(tr("Creating new VM '%s'", strVMName.c_str())).raw(), 50);
-            /* Create the import stack to comply OVF logic.
-             * Before we filled some other data structures which are needed by OVF logic too.*/
-            ImportStack stack(pTask->locInfo, m->pReader->m_mapDisks, pTask->pProgress, NIL_RTVFSFSSTREAM);
-            i_importMachines(stack);
+            if (SUCCEEDED(hrc))
+            {
+                pTask->pProgress->SetNextOperation(BstrFmt(tr("Creating new VM '%s'", strVMName.c_str())).raw(), 50);
+                /* Create the import stack to comply OVF logic.
+                 * Before we filled some other data structures which are needed by OVF logic too.*/
+                ImportStack stack(pTask->locInfo, m->pReader->m_mapDisks, pTask->pProgress, NIL_RTVFSFSSTREAM);
+                i_importMachines(stack);
+            }
 
         }
         catch (HRESULT aRc)
         {
-            LogRel(("%s: Cloud import (local phase) - exception occured (%Rrc).\n", __FUNCTION__, aRc));
             hrc = aRc;
+            strLastActualErrorDesc = Utf8StrFmt("%s: Cloud import (local phase) failed. "
+                    "The exception (%Rrc)\n", __FUNCTION__, hrc);
+            LogRel((strLastActualErrorDesc.c_str()));
         }
         catch (int aRc)
         {
-            LogRel(("%s: Cloud import (local phase) - exception occured (%Rrc).\n", __FUNCTION__, aRc));
             hrc = setErrorVrc(aRc);
+            strLastActualErrorDesc = Utf8StrFmt("%s: Cloud import (local phase) failed. "
+                    "The exception (%Rrc)\n", __FUNCTION__, aRc);
+            LogRel((strLastActualErrorDesc.c_str()));
         }
         catch (...)
         {
             hrc = VERR_UNRESOLVED_ERROR;
-            LogRel(("%s: Cloud import (local phase) - Unknown exception occured.\n", __FUNCTION__));
+            strLastActualErrorDesc = Utf8StrFmt("%s: Cloud import (local phase) failed. "
+                    "The exception (%Rrc)\n", __FUNCTION__, hrc);
+            LogRel((strLastActualErrorDesc.c_str()));
         }
+
+        LogRel(("%s: Cloud import (local phase) final result (%Rrc).\n", __FUNCTION__, hrc));
 
         if (FAILED(hrc))
         {
@@ -1981,8 +2000,6 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
                 RTVfsObjRelease(hVfsObj);
             if (hVfsFssObject != NIL_RTVFSFSSTREAM)
                 RTVfsFsStrmRelease(hVfsFssObject);
-
-            LogRel(("%s: Cloud import (local phase): original error was \'%s\'.\n", __FUNCTION__, strLastActualErrorDesc.c_str()));
 
             /* What to do here?
              * Delete or not the downloaded object?
