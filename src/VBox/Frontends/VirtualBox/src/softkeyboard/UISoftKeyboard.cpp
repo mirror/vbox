@@ -198,13 +198,14 @@ protected:
     void mousePressEvent(QMouseEvent *pEvent) /* override */;
     void mouseReleaseEvent(QMouseEvent *pEvent) /* override */;
     void mouseMoveEvent(QMouseEvent *pEvent) /* override */;
+
     virtual void retranslateUi() /* override */;
 
 private slots:
 
     void sltHandleMenuBarContextMenuRequest(const QPoint &point);
-    void sltHandleLoadLayoutFile();
-    void sltHandleLoadDefaultLayout();
+    void sltHandleLoadLayout(QAction *pSenderAction);
+    void sltHandleShowKeyPositions();
 
 private:
 
@@ -214,8 +215,10 @@ private:
     UISoftKeyboardKey *keyUnderMouse(QMouseEvent *pEvent);
     void               handleKeyPress(UISoftKeyboardKey *pKey);
     void               handleKeyRelease(UISoftKeyboardKey *pKey);
-    void               createKeyboard(const QString &strLayoutFileName = QString());
+    bool               createKeyboard(const QString &strLayoutFileName);
     void               reset();
+    void               configure();
+    void               prepareObjects();
 
     UISoftKeyboardKey *m_pKeyUnderMouse;
     UISoftKeyboardKey *m_pKeyPressed;
@@ -238,6 +241,12 @@ private:
     int   m_iTopMargin;
     int   m_iRightMargin;
     int   m_iBottomMargin;
+
+    QMenu   *m_pContextMenu;
+    QActionGroup *m_pLayoutActionGroup;
+    QAction *m_pShowPositionsAction;
+    QAction *m_pLoadLayoutFileAction;
+    QAction *m_pLastSelectedLayout;
 };
 
 /*********************************************************************************************************************************
@@ -548,13 +557,14 @@ UISoftKeyboardWidget::UISoftKeyboardWidget(QWidget *pParent /* = 0 */)
     , m_iTopMargin(10)
     , m_iRightMargin(10)
     , m_iBottomMargin(10)
+    , m_pContextMenu(0)
+    , m_pShowPositionsAction(0)
+    , m_pLoadLayoutFileAction(0)
+    , m_pLastSelectedLayout(0)
 {
-    defaultLayouts << ":/101_ansi.xml" << ":/102_iso.xml";
-    setMouseTracking(true);
-    setContextMenuPolicy(Qt::CustomContextMenu);
-    createKeyboard();
-    connect(this, &UISoftKeyboardWidget::customContextMenuRequested,
-            this, &UISoftKeyboardWidget::sltHandleMenuBarContextMenuRequest);
+
+    configure();
+    prepareObjects();
 }
 
 QSize UISoftKeyboardWidget::minimumSizeHint() const
@@ -606,10 +616,13 @@ void UISoftKeyboardWidget::paintEvent(QPaintEvent *pEvent) /* override */
 
             painter.drawPolygon(key.polygon());
 
+
             QRect textRect(0.55 * unitSize, 1 * unitSize
                            , key.keyGeometry().width(), key.keyGeometry().height());
-            //painter.drawText(textRect, Qt::TextWordWrap, key.keyCap());
-            painter.drawText(textRect, Qt::TextWordWrap, QString::number(key.position()));
+            if (m_pShowPositionsAction && m_pShowPositionsAction->isChecked())
+                painter.drawText(textRect, Qt::TextWordWrap, QString::number(key.position()));
+            else
+                painter.drawText(textRect, Qt::TextWordWrap, key.keyCap());
 
             if (key.type() != UIKeyType_Ordinary)
             {
@@ -656,45 +669,59 @@ void UISoftKeyboardWidget::mouseMoveEvent(QMouseEvent *pEvent)
     keyUnderMouse(pEvent);
 }
 
+void UISoftKeyboard::focusOutEvent(QFocusEvent *pEvent)
+{
+    QIWithRetranslateUI<QMainWindow>::focusOutEvent(pEvent);
+    printf("booo\n");
+}
+
 void UISoftKeyboardWidget::retranslateUi()
 {
 }
 
 void UISoftKeyboardWidget::sltHandleMenuBarContextMenuRequest(const QPoint &point)
 {
-    QMenu menu;
-    foreach (const QString &strLayout, defaultLayouts)
+    m_pContextMenu->exec(mapToGlobal(point));
+    update();
+}
+
+void UISoftKeyboardWidget::sltHandleLoadLayout(QAction *pSenderAction)
+{
+    if (!pSenderAction)
+        return;
+    if (pSenderAction == m_pLoadLayoutFileAction)
     {
-        QString strName = strLayout.left(strLayout.indexOf('.'));
-        QAction *pAction = menu.addAction(QString("%1 %2").arg(UISoftKeyboard::tr("Load Layout ")).arg(strName.remove(":/")));
-        pAction->setData(strLayout);
-        connect(pAction, &QAction::triggered, this, &UISoftKeyboardWidget::sltHandleLoadDefaultLayout);
+        const QString strFileName = QIFileDialog::getOpenFileName(QString(), "XML files (*.xml)", this,
+                                                                  UISoftKeyboard::tr("Choose file to load physical keyboard layout.."));
+        if (!strFileName.isEmpty() && createKeyboard(strFileName))
+        {
+            m_pLastSelectedLayout = pSenderAction;
+            m_pLoadLayoutFileAction->setData(strFileName);
+            return;
+        }
     }
-    QAction *pAction = menu.addAction(UISoftKeyboard::tr("Load Layout File"));
-    connect(pAction, &QAction::triggered, this, &UISoftKeyboardWidget::sltHandleLoadLayoutFile);
-    menu.exec(mapToGlobal(point));
+    else
+    {
+        QString strLayout = pSenderAction->data().toString();
+        if (!strLayout.isEmpty() && createKeyboard(strLayout))
+        {
+            m_pLastSelectedLayout = pSenderAction;
+            return;
+        }
+    }
+    /** In case something went wrong try to restore the previous layout: */
+    if (m_pLastSelectedLayout)
+    {
+        QString strLayout = m_pLastSelectedLayout->data().toString();
+        createKeyboard(strLayout);
+        m_pLastSelectedLayout->setChecked(true);
+    }
 }
 
-void UISoftKeyboardWidget::sltHandleLoadLayoutFile()
+void UISoftKeyboardWidget::sltHandleShowKeyPositions()
 {
-    const QString strFileName = QIFileDialog::getOpenFileName(QString(), "XML files (*.xml)", this,
-                                                              UISoftKeyboard::tr("Choose file to load physical keyboard layout.."));
-    if (strFileName.isEmpty())
-        return;
-    createKeyboard(strFileName);
-}
 
-void UISoftKeyboardWidget::sltHandleLoadDefaultLayout()
-{
-    QAction *pSender = qobject_cast<QAction*>(sender());
-    if (!pSender)
-        return;
-    QString strLayout = pSender->data().toString();
-    if (strLayout.isEmpty())
-        return;
-    createKeyboard(strLayout);
 }
-
 
 void UISoftKeyboardWidget::setNewMinimumSize(const QSize &size)
 {
@@ -801,19 +828,17 @@ void UISoftKeyboardWidget::handleKeyRelease(UISoftKeyboardKey *pKey)
     emit sigPutKeyboardSequence(sequence);
 }
 
-void UISoftKeyboardWidget::createKeyboard(const QString &strLayoutFileName /* = QString() */)
+bool UISoftKeyboardWidget::createKeyboard(const QString &strLayoutFileName)
 {
     UIKeyboardLayoutReader reader;
     QVector<UISoftKeyboardRow> &rows = m_rows;
     reset();
     bool fParseSuccess = false;
-    if (strLayoutFileName.isEmpty())
-        fParseSuccess = reader.parseXMLFile(":/101_ansi.xml", rows);
-    else
+    if (!strLayoutFileName.isEmpty())
         fParseSuccess = reader.parseXMLFile(strLayoutFileName, rows);
 
     if (!fParseSuccess)
-        return;
+        return false;
 
     int iY = m_iTopMargin;
     int iMaxWidth = 0;
@@ -848,12 +873,67 @@ void UISoftKeyboardWidget::createKeyboard(const QString &strLayoutFileName /* = 
     setNewMinimumSize(QSize(fScale * iInitialWidth, fScale * iInitialHeight));
     setInitialSize(fScale * iInitialWidth, fScale * iInitialHeight);
     update();
+    return true;
 }
 
 void UISoftKeyboardWidget::reset()
 {
     m_pressedModifiers.clear();
     m_rows.clear();
+}
+
+void UISoftKeyboardWidget::configure()
+{
+    defaultLayouts << ":/101_ansi.xml" << ":/102_iso.xml";
+    setMouseTracking(true);
+    setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(this, &UISoftKeyboardWidget::customContextMenuRequested,
+            this, &UISoftKeyboardWidget::sltHandleMenuBarContextMenuRequest);
+}
+
+void UISoftKeyboardWidget::prepareObjects()
+{
+    m_pContextMenu = new QMenu(this);
+    //m_pShowPositionsAction = m_pContextMenu->addAction("
+    m_pLayoutActionGroup = new QActionGroup(this);
+    m_pLayoutActionGroup->setExclusive(true);
+    connect(m_pLayoutActionGroup, &QActionGroup::triggered, this, &UISoftKeyboardWidget::sltHandleLoadLayout);
+
+    foreach (const QString &strLayout, defaultLayouts)
+    {
+        QString strName = strLayout.left(strLayout.indexOf('.'));
+        QAction *pAction = m_pLayoutActionGroup->addAction(QString("%1 %2").arg(UISoftKeyboard::tr("Load Layout ")).arg(strName.remove(":/")));
+        pAction->setData(strLayout);
+        pAction->setCheckable(true);
+    }
+    m_pLoadLayoutFileAction = m_pLayoutActionGroup->addAction(UISoftKeyboard::tr("Load Layout File"));
+    m_pLoadLayoutFileAction->setCheckable(true);
+
+    m_pContextMenu->addActions(m_pLayoutActionGroup->actions());
+    m_pContextMenu->addSeparator();
+
+    m_pShowPositionsAction = m_pContextMenu->addAction(UISoftKeyboard::tr("Show key positions instead of key caps"));
+    connect(m_pLayoutActionGroup, &QActionGroup::triggered, this, &UISoftKeyboardWidget::sltHandleShowKeyPositions);
+    m_pShowPositionsAction->setCheckable(true);
+    m_pShowPositionsAction->setChecked(false);
+
+    /* Choose the first layput action's data as the defaults one: */
+    if (!m_pLayoutActionGroup->actions().empty())
+    {
+        QAction *pAction = m_pLayoutActionGroup->actions().at(0);
+        if (pAction)
+        {
+            QString strLayout = pAction->data().toString();
+            if (!strLayout.isEmpty())
+            {
+                if (createKeyboard(strLayout))
+                {
+                    m_pLastSelectedLayout = pAction;
+                    pAction->setChecked(true);
+                }
+            }
+        }
+    }
 }
 
 /*********************************************************************************************************************************
