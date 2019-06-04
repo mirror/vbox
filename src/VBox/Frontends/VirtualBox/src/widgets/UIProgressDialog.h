@@ -154,6 +154,8 @@ private:
     const ulong  m_cOperations;
     /** Holds the number of current operation. */
     ulong        m_uCurrentOperation;
+    /** Holds the weight of current operation. */
+    ulong        m_uCurrentOperationWeight;
     /** Holds whether progress cancel is enabled. */
     bool         m_fCancelEnabled;
     /** Holds whether the progress has ended. */
