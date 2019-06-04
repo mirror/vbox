@@ -446,6 +446,8 @@ static FNVMXEXITHANDLER            hmR0VmxExitMonitorNested;
 static FNVMXEXITHANDLER            hmR0VmxExitPauseNested;
 static FNVMXEXITHANDLERNSRC        hmR0VmxExitTprBelowThresholdNested;
 static FNVMXEXITHANDLER            hmR0VmxExitApicAccessNested;
+static FNVMXEXITHANDLER            hmR0VmxExitApicWriteNested;
+static FNVMXEXITHANDLER            hmR0VmxExitVirtEoiNested;
 //static FNVMXEXITHANDLER            hmR0VmxExitEptViolation;
 //static FNVMXEXITHANDLER            hmR0VmxExitEptMisconfig;
 static FNVMXEXITHANDLER            hmR0VmxExitRdtscpNested;
@@ -12693,8 +12695,11 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExitNested(PVMCPU pVCpu, PVMXTRANSIENT pVm
         case VMX_EXIT_WBINVD:                   return hmR0VmxExitWbinvdNested(pVCpu, pVmxTransient);
         case VMX_EXIT_MTF:                      return hmR0VmxExitMtfNested(pVCpu, pVmxTransient);
         case VMX_EXIT_APIC_ACCESS:              return hmR0VmxExitApicAccessNested(pVCpu, pVmxTransient);
+        case VMX_EXIT_APIC_WRITE:               return hmR0VmxExitApicWriteNested(pVCpu, pVmxTransient);
+        case VMX_EXIT_VIRTUALIZED_EOI:          return hmR0VmxExitVirtEoiNested(pVCpu, pVmxTransient);
         case VMX_EXIT_MOV_CRX:                  return hmR0VmxExitMovCRxNested(pVCpu, pVmxTransient);
         case VMX_EXIT_INT_WINDOW:               return hmR0VmxExitIntWindowNested(pVCpu, pVmxTransient);
+        case VMX_EXIT_NMI_WINDOW:               return hmR0VmxExitNmiWindowNested(pVCpu, pVmxTransient);
         case VMX_EXIT_TPR_BELOW_THRESHOLD:      return hmR0VmxExitTprBelowThresholdNested(pVCpu, pVmxTransient);
         case VMX_EXIT_MWAIT:                    return hmR0VmxExitMwaitNested(pVCpu, pVmxTransient);
         case VMX_EXIT_MONITOR:                  return hmR0VmxExitMonitorNested(pVCpu, pVmxTransient);
@@ -12709,18 +12714,11 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExitNested(PVMCPU pVCpu, PVMXTRANSIENT pVm
         case VMX_EXIT_MOV_DRX:                  return hmR0VmxExitMovDRxNested(pVCpu, pVmxTransient);
         case VMX_EXIT_RDPMC:                    return hmR0VmxExitRdpmcNested(pVCpu, pVmxTransient);
 
-
         case VMX_EXIT_VMREAD:
         case VMX_EXIT_VMWRITE:                  return hmR0VmxExitVmreadVmwriteNested(pVCpu, pVmxTransient);
 
         case VMX_EXIT_TRIPLE_FAULT:             return hmR0VmxExitTripleFaultNested(pVCpu, pVmxTransient);
-        case VMX_EXIT_NMI_WINDOW:               return hmR0VmxExitNmiWindowNested(pVCpu, pVmxTransient);
-
-        case VMX_EXIT_ERR_INVALID_GUEST_STATE:
-        {
-            /** @todo NSTVMX: Invalid guest state. */
-            return hmR0VmxExitErrUnexpected(pVCpu, pVmxTransient);
-        }
+        case VMX_EXIT_ERR_INVALID_GUEST_STATE:  return hmR0VmxExitErrInvalidGuestState(pVCpu, pVmxTransient);
 
         case VMX_EXIT_INIT_SIGNAL:
         case VMX_EXIT_SIPI:
@@ -12729,12 +12727,9 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExitNested(PVMCPU pVCpu, PVMXTRANSIENT pVm
         case VMX_EXIT_ERR_MSR_LOAD:
         case VMX_EXIT_ERR_MACHINE_CHECK:
         case VMX_EXIT_PML_FULL:
-        case VMX_EXIT_VIRTUALIZED_EOI:
-        case VMX_EXIT_APIC_WRITE:
         case VMX_EXIT_RSM:
         default:
         {
-            /** @todo NSTVMX: implement me! */
             return hmR0VmxExitErrUnexpected(pVCpu, pVmxTransient);
         }
     }
@@ -16396,6 +16391,38 @@ HMVMX_EXIT_DECL hmR0VmxExitApicAccessNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTran
     HMVMX_VALIDATE_NESTED_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
 
     Assert(CPUMIsGuestVmxProcCtls2Set(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS2_VIRT_APIC_ACCESS));
+    int rc = hmR0VmxReadExitQualVmcs(pVCpu, pVmxTransient);
+    AssertRCReturn(rc, rc);
+
+    return IEMExecVmxVmexit(pVCpu, pVmxTransient->uExitReason, pVmxTransient->uExitQual);
+}
+
+
+/**
+ * Nested-guest VM-exit handler for APIC write emulation (VMX_EXIT_APIC_WRITE).
+ * Conditional VM-exit.
+ */
+HMVMX_EXIT_DECL hmR0VmxExitApicWriteNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
+{
+    HMVMX_VALIDATE_NESTED_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
+
+    Assert(CPUMIsGuestVmxProcCtls2Set(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS2_APIC_REG_VIRT));
+    int rc = hmR0VmxReadExitQualVmcs(pVCpu, pVmxTransient);
+    AssertRCReturn(rc, rc);
+
+    return IEMExecVmxVmexit(pVCpu, pVmxTransient->uExitReason, pVmxTransient->uExitQual);
+}
+
+
+/**
+ * Nested-guest VM-exit handler for virtualized EOI (VMX_EXIT_VIRTUALIZED_EOI).
+ * Conditional VM-exit.
+ */
+HMVMX_EXIT_DECL hmR0VmxExitVirtEoiNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
+{
+    HMVMX_VALIDATE_NESTED_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
+
+    Assert(CPUMIsGuestVmxProcCtls2Set(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS2_VIRT_INT_DELIVERY));
     int rc = hmR0VmxReadExitQualVmcs(pVCpu, pVmxTransient);
     AssertRCReturn(rc, rc);
 
