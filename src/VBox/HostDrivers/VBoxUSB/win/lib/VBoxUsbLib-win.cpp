@@ -306,11 +306,7 @@ static int usbLibDevPopulate(PUSBDEVICE pDev, PUSB_NODE_CONNECTION_INFORMATION_E
     pDev->idProduct = pConInfo->DeviceDescriptor.idProduct;
     pDev->bcdDevice = pConInfo->DeviceDescriptor.bcdDevice;
     pDev->bBus = 0; /** @todo figure out bBus on windows... */
-#if 1 /** @todo check up the bPort value before enabling this. */
     pDev->bPort = iPort;
-#else
-    pDev->bPort = 0;
-#endif
     /** @todo check which devices are used for primary input (keyboard & mouse) */
     if (!lpszDrvKeyName || *lpszDrvKeyName == 0)
         pDev->enmState = USBDEVICESTATE_UNUSED;
