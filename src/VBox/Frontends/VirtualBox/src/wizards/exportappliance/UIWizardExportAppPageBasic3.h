@@ -85,6 +85,9 @@ protected:
     /** Performs page validation. */
     virtual bool validatePage() /* override */;
 
+    /** Updates page appearance. */
+    void updatePageAppearance();
+
 private:
 
     /** Holds the label instance. */

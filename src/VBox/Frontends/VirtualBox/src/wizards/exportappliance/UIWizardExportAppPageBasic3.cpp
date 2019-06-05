@@ -156,10 +156,8 @@ void UIWizardExportAppPageBasic3::retranslateUi()
     /* Translate page: */
     setTitle(UIWizardExportApp::tr("Virtual system settings"));
 
-    /* Translate widgets: */
-    m_pLabel->setText(UIWizardExportApp::tr("This is the descriptive information which will be added "
-                                            "to the virtual appliance.  You can change it by double "
-                                            "clicking on individual lines."));
+    /* Update page appearance: */
+    updatePageAppearance();
 }
 
 void UIWizardExportAppPageBasic3::initializePage()
@@ -188,4 +186,17 @@ bool UIWizardExportAppPageBasic3::validatePage()
 
     /* Return result: */
     return fResult;
+}
+
+void UIWizardExportAppPageBasic3::updatePageAppearance()
+{
+    /* Check whether there was cloud target selected: */
+    const bool fIsFormatCloudOne = field("isFormatCloudOne").toBool();
+    if (fIsFormatCloudOne)
+        m_pLabel->setText(UIWizardExportApp::tr("This is the descriptive information which will be used to determine settings "
+                                                "for a cloud storage your VM being exported to.  You can change it by double "
+                                                "clicking on individual lines."));
+    else
+        m_pLabel->setText(UIWizardExportApp::tr("This is the descriptive information which will be added to the virtual "
+                                                "appliance.  You can change it by double clicking on individual lines."));
 }
