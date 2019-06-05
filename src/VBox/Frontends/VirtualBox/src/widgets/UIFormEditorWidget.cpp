@@ -271,6 +271,9 @@ private:
     void setRangedInteger(const RangedIntegerData &rangedInteger);
     /** Returns ranged-integer. */
     RangedIntegerData rangedInteger() const;
+
+    /** Holds the unchanged suffix. */
+    QString  m_strSuffix;
 };
 
 
@@ -601,12 +604,14 @@ void RangedIntegerEditor::setRangedInteger(const RangedIntegerData &rangedIntege
     setMinimum(rangedInteger.minimum());
     setMaximum(rangedInteger.maximum());
     setValue(rangedInteger.integer());
-    setSuffix(QString(" %1").arg(QApplication::translate("VBoxGlobal", rangedInteger.suffix().toUtf8().constData())));
+    m_strSuffix = rangedInteger.suffix();
+    setSuffix(m_strSuffix.isEmpty() ? QString() :
+              QString(" %1").arg(QApplication::translate("VBoxGlobal", m_strSuffix.toUtf8().constData())));
 }
 
 RangedIntegerData RangedIntegerEditor::rangedInteger() const
 {
-    return RangedIntegerData(minimum(), maximum(), value(), suffix());
+    return RangedIntegerData(minimum(), maximum(), value(), m_strSuffix);
 }
 
 
