@@ -45,7 +45,8 @@ class UIWizardExportAppPageExpert : public UIWizardPage,
     Q_PROPERTY(bool manifestSelected READ isManifestSelected WRITE setManifestSelected);
     Q_PROPERTY(bool includeISOsSelected READ isIncludeISOsSelected WRITE setIncludeISOsSelected);
     Q_PROPERTY(QString providerShortName READ providerShortName);
-    Q_PROPERTY(AbstractVSDParameterList cloudClientParameters READ cloudClientParameters);
+    Q_PROPERTY(CAppliance appliance READ appliance);
+    Q_PROPERTY(CVirtualSystemDescriptionForm vsdForm READ vsdForm);
     Q_PROPERTY(ExportAppliancePointer applianceWidget READ applianceWidget);
 
 public:

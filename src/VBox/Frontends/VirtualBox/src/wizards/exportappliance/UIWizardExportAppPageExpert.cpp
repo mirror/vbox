@@ -346,8 +346,8 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
     populateAccounts();
     /* Populate account properties: */
     populateAccountProperties();
-    /* Populate cloud client parameters: */
-    populateCloudClientParameters();
+    /* Populate form properties: */
+    populateFormProperties();
 
     /* Setup connections: */
     if (gpManager)
@@ -368,8 +368,6 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
     /* Register classes: */
     qRegisterMetaType<ExportAppliancePointer>();
 
-    /* Register classes: */
-    qRegisterMetaType<AbstractVSDParameterList>();
     /* Register fields: */
     registerField("machineNames", this, "machineNames");
     registerField("machineIDs", this, "machineIDs");
@@ -380,7 +378,8 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
     registerField("manifestSelected", this, "manifestSelected");
     registerField("includeISOsSelected", this, "includeISOsSelected");
     registerField("providerShortName", this, "providerShortName");
-    registerField("cloudClientParameters", this, "cloudClientParameters");
+    registerField("appliance", this, "appliance");
+    registerField("vsdForm", this, "vsdForm");
     registerField("applianceWidget", this, "applianceWidget");
 }
 
@@ -527,7 +526,8 @@ bool UIWizardExportAppPageExpert::isComplete() const
                       && VBoxGlobal::hasAllowedExtension(path().toLower(), OVFFileExts))
                   || (   fCSP
                       && m_comCloudProfile.isNotNull()
-                      && !m_cloudClientParameters.isEmpty());
+                      && m_comAppliance.isNotNull()
+                      && m_comVSDForm.isNotNull());
     }
 
     return fResult;
@@ -573,7 +573,7 @@ void UIWizardExportAppPageExpert::sltHandleFormatComboChange()
     refreshIncludeISOsCheckBoxAccess();
     populateAccounts();
     populateAccountProperties();
-    populateCloudClientParameters();
+    populateFormProperties();
     refreshApplianceSettingsWidget();
     emit completeChanged();
 }
@@ -598,7 +598,7 @@ void UIWizardExportAppPageExpert::sltHandleAccountComboChange()
 {
     /* Refresh required settings: */
     populateAccountProperties();
-    populateCloudClientParameters();
+    populateFormProperties();
     refreshApplianceSettingsWidget();
     emit completeChanged();
 }

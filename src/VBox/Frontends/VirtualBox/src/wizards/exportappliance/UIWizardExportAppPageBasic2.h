@@ -30,9 +30,11 @@
 
 /* COM includes: */
 #include "COMEnums.h"
+#include "CAppliance.h"
 #include "CCloudProfile.h"
 #include "CCloudProvider.h"
 #include "CCloudProviderManager.h"
+#include "CVirtualSystemDescriptionForm.h"
 
 /* Forward declarations: */
 class QCheckBox;
@@ -89,19 +91,8 @@ protected:
     void populateAccounts();
     /** Populates account properties. */
     void populateAccountProperties();
-    /** Populates cloud client parameters. */
-    void populateCloudClientParameters();
-
-    /** Parses JSON @a document. */
-    static AbstractVSDParameterList parseJsonDocument(const QJsonDocument &document);
-    /** Parses JSON bool @a field. */
-    static bool parseJsonFieldBool(const QString &strFieldName, const QJsonValue &field);
-    /** Parses JSON double @a field. */
-    static double parseJsonFieldDouble(const QString &strFieldName, const QJsonValue &field);
-    /** Parses JSON string @a field. */
-    static QString parseJsonFieldString(const QString &strFieldName, const QJsonValue &field);
-    /** Parses JSON array @a field. */
-    static QIStringPairList parseJsonFieldArray(const QString &strFieldName, const QJsonValue &field);
+    /** Populates form properties. */
+    void populateFormProperties();
 
     /** Updates page appearance. */
     virtual void updatePageAppearance();
@@ -161,20 +152,24 @@ protected:
     QString providerShortName() const;
     /** Returns profile name. */
     QString profileName() const;
-    /** Returns Cloud Client parameters. */
-    AbstractVSDParameterList cloudClientParameters() const;
+    /** Returns Appliance object. */
+    CAppliance appliance() const;
+    /** Returns Virtual System Description Form object. */
+    CVirtualSystemDescriptionForm vsdForm() const;
 
     /** Holds whether default format should be Export to OCI. */
     bool  m_fExportToOCIByDefault;
 
     /** Holds the Cloud Provider Manager reference. */
-    CCloudProviderManager     m_comCloudProviderManager;
+    CCloudProviderManager          m_comCloudProviderManager;
     /** Holds the Cloud Provider object reference. */
-    CCloudProvider            m_comCloudProvider;
+    CCloudProvider                 m_comCloudProvider;
     /** Holds the Cloud Profile object reference. */
-    CCloudProfile             m_comCloudProfile;
-    /** Holds the cloud client parameters. */
-    AbstractVSDParameterList  m_cloudClientParameters;
+    CCloudProfile                  m_comCloudProfile;
+    /** Holds the Appliance object reference. */
+    CAppliance                     m_comAppliance;
+    /** Holds the Virtual System Description Form object reference. */
+    CVirtualSystemDescriptionForm  m_comVSDForm;
 
     /** Holds the default appliance name. */
     QString  m_strDefaultApplianceName;
@@ -238,7 +233,8 @@ class UIWizardExportAppPageBasic2 : public UIWizardPage, public UIWizardExportAp
     Q_PROPERTY(bool manifestSelected READ isManifestSelected WRITE setManifestSelected);
     Q_PROPERTY(bool includeISOsSelected READ isIncludeISOsSelected WRITE setIncludeISOsSelected);
     Q_PROPERTY(QString providerShortName READ providerShortName);
-    Q_PROPERTY(AbstractVSDParameterList cloudClientParameters READ cloudClientParameters);
+    Q_PROPERTY(CAppliance appliance READ appliance);
+    Q_PROPERTY(CVirtualSystemDescriptionForm vsdForm READ vsdForm);
 
 public:
 
@@ -250,6 +246,8 @@ protected:
     /** Handle any Qt @a pEvent. */
     virtual bool event(QEvent *pEvent) /* override */;
 
+    /** Allows access wizard from base part. */
+    UIWizard *wizardImp() { return UIWizardPage::wizard(); }
     /** Allows access wizard-field from base part. */
     QVariant fieldImp(const QString &strFieldName) const { return UIWizardPage::field(strFieldName); }
 
