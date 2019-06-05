@@ -55,18 +55,27 @@ UIWizardExportApp::UIWizardExportApp(QWidget *pParent,
 
 bool UIWizardExportApp::exportAppliance()
 {
-    /* Get export appliance widget & fetch all settings from the appliance editor: */
-    UIApplianceExportEditorWidget *pExportApplianceWidget = field("applianceWidget").value<ExportAppliancePointer>();
-    AssertPtrReturn(pExportApplianceWidget, false);
-    pExportApplianceWidget->prepareExport();
-
-    /* Acquire the appliance: */
-    CAppliance *pComAppliance = pExportApplianceWidget->appliance();
-    AssertPtrReturn(pComAppliance, false);
-
-    /* For Filesystem formats only: */
-    if (!field("isFormatCloudOne").toBool())
+    /* Check whether there was cloud target selected: */
+    const bool fIsFormatCloudOne = field("isFormatCloudOne").toBool();
+    if (fIsFormatCloudOne)
     {
+        /* Get appliance: */
+        CAppliance comAppliance = field("appliance").value<CAppliance>();
+
+        /* Export the VMs, on success we are finished: */
+        return exportVMs(comAppliance);
+    }
+    else
+    {
+        /* Get export appliance widget & fetch all settings from the appliance editor: */
+        UIApplianceExportEditorWidget *pExportApplianceWidget = field("applianceWidget").value<ExportAppliancePointer>();
+        AssertPtrReturn(pExportApplianceWidget, false);
+        pExportApplianceWidget->prepareExport();
+
+        /* Acquire the appliance: */
+        CAppliance *pComAppliance = pExportApplianceWidget->appliance();
+        AssertPtrReturn(pComAppliance, false);
+
         /* We need to know every filename which will be created, so that we can ask the user for confirmation of overwriting.
          * For that we iterating over all virtual systems & fetch all descriptions of the type HardDiskImage. Also add the
          * manifest file to the check. In the .ova case only the target file itself get checked. */
@@ -139,10 +148,10 @@ bool UIWizardExportApp::exportAppliance()
             else
                 return msgCenter().cannotCheckFiles(comExplorer, this);
         }
-    }
 
-    /* Export the VMs, on success we are finished: */
-    return exportVMs(*pComAppliance);
+        /* Export the VMs, on success we are finished: */
+        return exportVMs(*pComAppliance);
+    }
 }
 
 QString UIWizardExportApp::uri(bool fWithFile) const
