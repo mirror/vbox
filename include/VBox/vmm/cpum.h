@@ -2381,6 +2381,7 @@ DECLINLINE(bool) CPUMIsGuestVmxPhysIntrEnabled(PCVMCPU pVCpu, PCCPUMCTX pCtx)
  * Checks whether the VMX nested-guest is blocking virtual-NMIs.
  *
  * @returns @c true if it's blocked, @c false otherwise.
+ * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
  * @param   pCtx    The guest-CPU context.
  */
 DECLINLINE(bool) CPUMIsGuestVmxVirtNmiBlocking(PCVMCPU pVCpu, PCCPUMCTX pCtx)
