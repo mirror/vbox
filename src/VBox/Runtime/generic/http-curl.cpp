@@ -1031,7 +1031,7 @@ static int rtHttpConfigureProxyForUrlFromEnv(PRTHTTPINTERNAL pThis, const char *
 static DECLCALLBACK(int) rtHttpLibProxyResolveImports(void *pvUser)
 {
     RTLDRMOD hMod;
-    int rc = RTLdrLoad("/usr/lib/libproxy.so.1", &hMod);
+    int rc = RTLdrLoadSystem("libproxy.so.1", false /*fNoUnload*/,  &hMod);
     if (RT_SUCCESS(rc))
     {
         rc = RTLdrGetSymbol(hMod, "px_proxy_factory_new", (void **)&g_pfnLibProxyFactoryCtor);
