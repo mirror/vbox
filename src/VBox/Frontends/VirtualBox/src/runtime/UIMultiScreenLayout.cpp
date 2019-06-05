@@ -128,7 +128,7 @@ void UIMultiScreenLayout::update()
             /* Then we have to disable excessive guest-screen: */
             LogRel(("GUI: UIMultiScreenLayout::update: Disabling excessive guest-screen %d\n", iGuestScreen));
             m_pMachineLogic->uisession()->setScreenVisibleHostDesires(iGuestScreen, false);
-            m_pMachineLogic->display().SetVideoModeHint(iGuestScreen, false, false, 0, 0, 0, 0, 0);
+            m_pMachineLogic->display().SetVideoModeHint(iGuestScreen, false, false, 0, 0, 0, 0, 0, true);
         }
     }
 
@@ -162,7 +162,7 @@ void UIMultiScreenLayout::update()
             LogRel(("GUI: UIMultiScreenLayout::update: Enabling guest-screen %d with following resolution: %dx%d\n",
                     iGuestScreen, uWidth, uHeight));
             m_pMachineLogic->uisession()->setScreenVisibleHostDesires(iGuestScreen, true);
-            m_pMachineLogic->display().SetVideoModeHint(iGuestScreen, true, false, 0, 0, uWidth, uHeight, 32);
+            m_pMachineLogic->display().SetVideoModeHint(iGuestScreen, true, false, 0, 0, uWidth, uHeight, 32, true);
         }
     }
 

@@ -3569,7 +3569,7 @@ static bool vmmdevIsMonitorDefEqual(VMMDevDisplayDef const *pNew, VMMDevDisplayD
  * @interface_method_impl{PDMIVMMDEVPORT,pfnRequestDisplayChange}
  */
 static DECLCALLBACK(int)
-vmmdevIPort_RequestDisplayChange(PPDMIVMMDEVPORT pInterface, uint32_t cDisplays, VMMDevDisplayDef const *paDisplays, bool fForce)
+vmmdevIPort_RequestDisplayChange(PPDMIVMMDEVPORT pInterface, uint32_t cDisplays, VMMDevDisplayDef const *paDisplays, bool fForce, bool fMayNotify)
 {
     int rc = VINF_SUCCESS;
 
@@ -3603,12 +3603,12 @@ vmmdevIPort_RequestDisplayChange(PPDMIVMMDEVPORT pInterface, uint32_t cDisplays,
 
         /* We could validate the information here but hey, the guest can do that as well! */
         pRequest->displayChangeRequest = *p;
-        pRequest->fPending = fDifferentResolution;
+        pRequest->fPending = fDifferentResolution && fMayNotify;
 
         fNotifyGuest = fNotifyGuest || fDifferentResolution;
     }
 
-    if (RT_SUCCESS(rc))
+    if (RT_SUCCESS(rc) && fMayNotify)
     {
         if (fNotifyGuest)
         {

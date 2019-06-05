@@ -259,7 +259,8 @@ private:
                                      LONG aOriginY,
                                      ULONG aWidth,
                                      ULONG aHeight,
-                                     ULONG aBitsPerPixel);
+                                     ULONG aBitsPerPixel,
+                                     BOOL aNotify);
     virtual HRESULT getVideoModeHint(ULONG aDisplay,
                                      BOOL *aEnabled,
                                      BOOL *aChangeOrigin,

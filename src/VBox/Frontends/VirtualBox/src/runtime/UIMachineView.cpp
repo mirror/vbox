@@ -315,13 +315,13 @@ void UIMachineView::sltPerformGuestResize(const QSize &toSize)
             if (uisession()->isScreenVisible(screenId()) == uisession()->isScreenVisibleHostDesires(screenId()))
                 display().SetVideoModeHint(screenId(),
                                            uisession()->isScreenVisible(screenId()),
-                                           false, 0, 0, size.width(), size.height(), 0);
+                                           false, 0, 0, size.width(), size.height(), 0, true);
             /* If host desires to have guest-screen disabled and guest-screen is enabled, retrying: */
             else if (!uisession()->isScreenVisibleHostDesires(screenId()))
-                display().SetVideoModeHint(screenId(), false, false, 0, 0, 0, 0, 0);
+                display().SetVideoModeHint(screenId(), false, false, 0, 0, 0, 0, 0, true);
             /* If host desires to have guest-screen enabled and guest-screen is disabled, retrying: */
             else if (uisession()->isScreenVisibleHostDesires(screenId()))
-                display().SetVideoModeHint(screenId(), true, false, 0, 0, size.width(), size.height(), 0);
+                display().SetVideoModeHint(screenId(), true, false, 0, 0, size.width(), size.height(), 0, true);
         }
     }
     /* If auto-mount of guest-screens (auto-pilot) disabled: */
@@ -331,7 +331,7 @@ void UIMachineView::sltPerformGuestResize(const QSize &toSize)
         if ((int)m_pFrameBuffer->width() != size.width() || (int)m_pFrameBuffer->height() != size.height())
             display().SetVideoModeHint(screenId(),
                                        uisession()->isScreenVisible(screenId()),
-                                       false, 0, 0, size.width(), size.height(), 0);
+                                       false, 0, 0, size.width(), size.height(), 0, true);
     }
 }
 

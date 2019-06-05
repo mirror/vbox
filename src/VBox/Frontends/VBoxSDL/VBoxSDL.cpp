@@ -2823,7 +2823,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                 /* communicate the resize event to the guest */
                 gpDisplay->SetVideoModeHint(0 /*=display*/, true /*=enabled*/, false /*=changeOrigin*/,
                                             0 /*=originX*/, 0 /*=originY*/,
-                                            uResizeWidth, uResizeHeight, 0 /*=don't change bpp*/);
+                                            uResizeWidth, uResizeHeight, 0 /*=don't change bpp*/, true /*=notify*/);
                 break;
 
             }
@@ -5224,7 +5224,7 @@ static void SetFullscreen(bool enable)
             gfIgnoreNextResize = TRUE;
             gpDisplay->SetVideoModeHint(0 /*=display*/, true /*=enabled*/,
                                         false /*=changeOrigin*/, 0 /*=originX*/, 0 /*=originY*/,
-                                        NewWidth, NewHeight, 0 /*don't change bpp*/);
+                                        NewWidth, NewHeight, 0 /*don't change bpp*/, true /*=notify*/);
         }
     }
 }

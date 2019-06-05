@@ -1527,9 +1527,10 @@ typedef struct PDMIVMMDEVPORT
      * @param   paDisplays      Definitions of guest screens to be applied. See VMMDev.h
      * @param   fForce          Whether to deliver the request to the guest even if the guest has
      *                          the requested resolution already.
+     * @param   fMayNotify      Whether to send a hotplug notification to the guest if appropriate.
      */
     DECLR3CALLBACKMEMBER(int, pfnRequestDisplayChange,(PPDMIVMMDEVPORT pInterface, uint32_t cDisplays,
-                                                       struct VMMDevDisplayDef const *paDisplays, bool fForce));
+                                                       struct VMMDevDisplayDef const *paDisplays, bool fForce, bool fMayNotify));
 
     /**
      * Pass credentials to guest.
@@ -1627,7 +1628,7 @@ typedef struct PDMIVMMDEVPORT
 
 } PDMIVMMDEVPORT;
 /** PDMIVMMDEVPORT interface ID. */
-#define PDMIVMMDEVPORT_IID                      "2ccc19a5-742a-4af0-a7d3-31ea67ff50e9"
+#define PDMIVMMDEVPORT_IID                      "9e004f1a-875d-11e9-a673-c77c30f53623"
 
 
 /** Pointer to a HPET legacy notification interface. */

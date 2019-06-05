@@ -1438,7 +1438,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             }
             CHECK_ERROR_BREAK(pDisplay, SetVideoModeHint(uDisplayIdx, fEnabled,
                                                          fChangeOrigin, iOriginX, iOriginY,
-                                                         uXRes, uYRes, uBpp));
+                                                         uXRes, uYRes, uBpp, true));
         }
         else if (!strcmp(a->argv[1], "setscreenlayout"))
         {

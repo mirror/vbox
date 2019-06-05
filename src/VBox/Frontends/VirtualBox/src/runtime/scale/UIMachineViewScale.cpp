@@ -176,7 +176,7 @@ void UIMachineViewScale::resendSizeHint()
     uisession()->setScreenVisibleHostDesires(screenId(), guestScreenVisibilityStatus());
     display().SetVideoModeHint(screenId(),
                                guestScreenVisibilityStatus(),
-                               false, 0, 0, sizeHint.width(), sizeHint.height(), 0);
+                               false, 0, 0, sizeHint.width(), sizeHint.height(), 0, true);
 }
 
 QSize UIMachineViewScale::sizeHint() const

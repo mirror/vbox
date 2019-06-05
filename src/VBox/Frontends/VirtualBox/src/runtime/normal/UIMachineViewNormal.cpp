@@ -165,13 +165,15 @@ void UIMachineViewNormal::resendSizeHint()
      * until the first machine view resize. */
     m_sizeHintOverride = QSize(800, 600).expandedTo(sizeHint);
 
-    /* Send saved size-hint to the guest: */
-    /// @todo What if not m_bIsGuestAutoresizeEnabled?
-    ///       Just let the guest start at the default 800x600?
+    /* Restore saved monitor information to the guest.  The guest may not respond
+     * until a suitable driver or helper is enabled (or at all).  We do not notify
+     * the guest (aNotify == false), because there is technically no change (same
+     * hardware as before shutdown), and notifying would interfere with the Windows
+     * guest driver which saves the video mode to the registry on shutdown. */
     uisession()->setScreenVisibleHostDesires(screenId(), guestScreenVisibilityStatus());
     display().SetVideoModeHint(screenId(),
                                guestScreenVisibilityStatus(),
-                               false, 0, 0, sizeHint.width(), sizeHint.height(), 0);
+                               false, 0, 0, sizeHint.width(), sizeHint.height(), 0, false);
 }
 
 void UIMachineViewNormal::adjustGuestScreenSize()

@@ -1948,7 +1948,8 @@ HRESULT Display::queryFramebuffer(ULONG aScreenId, ComPtr<IFramebuffer> &aFrameb
 
 HRESULT Display::setVideoModeHint(ULONG aDisplay, BOOL aEnabled,
                                   BOOL aChangeOrigin, LONG aOriginX, LONG aOriginY,
-                                  ULONG aWidth, ULONG aHeight, ULONG aBitsPerPixel)
+                                  ULONG aWidth, ULONG aHeight, ULONG aBitsPerPixel,
+                                  BOOL aNotify)
 {
     if (aWidth == 0 || aHeight == 0 || aBitsPerPixel == 0)
     {
@@ -2010,10 +2011,12 @@ HRESULT Display::setVideoModeHint(ULONG aDisplay, BOOL aEnabled,
                                     aChangeOrigin ? aOriginX : ~0,
                                     aChangeOrigin ? aOriginY : ~0,
                                     RT_BOOL(aEnabled),
-                                      mfGuestVBVACapabilities
-                                    & VBVACAPS_VIDEO_MODE_HINTS);
+                                       (  mfGuestVBVACapabilities
+                                        & VBVACAPS_VIDEO_MODE_HINTS)
+                                    && aNotify);
     if (   mfGuestVBVACapabilities & VBVACAPS_VIDEO_MODE_HINTS
-        && !(mfGuestVBVACapabilities & VBVACAPS_IRQ))
+        && !(mfGuestVBVACapabilities & VBVACAPS_IRQ)
+        && aNotify)
     {
         mParent->i_sendACPIMonitorHotPlugEvent();
     }
@@ -2027,7 +2030,7 @@ HRESULT Display::setVideoModeHint(ULONG aDisplay, BOOL aEnabled,
     {
         PPDMIVMMDEVPORT pVMMDevPort = pVMMDev->getVMMDevPort();
         if (pVMMDevPort)
-            pVMMDevPort->pfnRequestDisplayChange(pVMMDevPort, 1, &d, false);
+            pVMMDevPort->pfnRequestDisplayChange(pVMMDevPort, 1, &d, false, aNotify);
     }
     /* Notify listeners. */
     fireGuestMonitorInfoChangedEvent(mParent->i_getEventSource(), aDisplay);
@@ -3081,7 +3084,8 @@ HRESULT Display::setScreenLayout(ScreenLayoutMode_T aScreenLayoutMode,
 
                 bool const fForce =    aScreenLayoutMode == ScreenLayoutMode_Reset
                                     || aScreenLayoutMode == ScreenLayoutMode_Apply;
-                pVMMDevPort->pfnRequestDisplayChange(pVMMDevPort, cDisplays, paDisplayDefs, fForce);
+                bool const fNotify = aScreenLayoutMode != ScreenLayoutMode_Silent;
+                pVMMDevPort->pfnRequestDisplayChange(pVMMDevPort, cDisplays, paDisplayDefs, fForce, fNotify);
 
                 RTMemFree(paDisplayDefs);
             }

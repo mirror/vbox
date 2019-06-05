@@ -18380,7 +18380,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <enum
     name="ScreenLayoutMode"
-    uuid="c7a9ee66-cfed-438b-9f8c-d3adf7588a4d"
+    uuid="8fa1964c-8774-11e9-ae5d-1f419105e68d"
     wsmap="managed"
     >
     <desc>
@@ -18404,6 +18404,14 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         Attach new screens and always set the new mode for existing screens.
       </desc>
     </const>
+
+    <const name="Silent" value="3">
+      <desc>
+        Do not notify the guest of the change.  Normally this is wished, but it
+        might not be when re-setting monitor information from the last session
+        (no hotplug happened, as it is still the same virtual monitor).
+      </desc>
+    </const>
   </enum>
 
   <interface
@@ -18425,7 +18433,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IDisplay" extends="$unknown"
-    uuid="ab4164db-c13e-4dab-842d-61ee3f0c1e87"
+    uuid="4680b2de-8690-11e9-b83d-5719e53cf1de"
     wsmap="managed"
     wrap-hint-server-addinterfaces="IEventListener"
     reservedMethods="8" reservedAttributes="16"
@@ -18557,6 +18565,16 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <param name="bitsPerPixel" type="unsigned long" dir="in">
         <desc>
           The number of bits per pixel of the guest screen.
+        </desc>
+      </param>
+      <param name="notify" type="boolean" dir="in">
+        <desc>
+          Whether the guest should be notified of the change.  Normally this
+          is wished, but it might not be when re-setting monitor information
+          from the last session (no hotplug happened, as it is still the same
+          virtual monitor).  Might also be useful if several monitors are to be
+          changed at once, but this would not reflect physical hardware well,
+          and we also have @a setScreenLayout for that.
         </desc>
       </param>
     </method>
