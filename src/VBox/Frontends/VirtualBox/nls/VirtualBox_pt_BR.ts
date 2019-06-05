@@ -2545,6 +2545,14 @@
         <source>Display the virtual machine guest process control window</source>
         <translation type="vanished">Exibe a janela de controle do processo de convidado da máquina virtual</translation>
     </message>
+    <message>
+        <source>&amp;Soft Keyboard...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Display soft keyboard</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIActionPoolRuntime</name>
@@ -5509,6 +5517,10 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Value</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Edit...</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -15594,6 +15606,18 @@ p, li { white-space: pre-wrap; }
         <source>Failed to assign form value.</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>&lt;p&gt;Cannot create a virtual appliance.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Cannot create a virtual system description.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Cannot acquire a virtual system description property.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIMiniProcessWidgetAdditions</name>
@@ -17526,6 +17550,56 @@ utilizando o diálogo de Configurações da MV.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
+    <name>UISoftKeyboard</name>
+    <message>
+        <source>XML files (*.xml)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose file to load physical keyboard layout..</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Load Layout</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Load Layout </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Load Layout File...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Keycaps</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show key positions instead of key caps</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add/change key cap</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save key caps to file...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Soft Keyboard</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UISoftKeyboardWidget</name>
+    <message>
+        <source>Save keycaps to a file...</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>UIStatusBarEditorButton</name>
     <message>
         <source>&lt;nobr&gt;&lt;b&gt;Click&lt;/b&gt; to toggle indicator presence.&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Drag&amp;Drop&lt;/b&gt; to change indicator position.&lt;/nobr&gt;</source>
@@ -19407,6 +19481,14 @@ utilizando o diálogo de Configurações da MV.&lt;/p&gt;</translation>
         <source>&lt;p&gt;Please choose one of cloud service accounts you have registered to export virtual machines to. Make sure profile settings reflected in the underlying table are valid. They will be used to establish network connection required to upload your virtual machine files to a remote cloud facility.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Escolha qual das contas de serviço de nuvem você registrou para onde serão exportadas as máquinas virtuais. Certifique-se de que as configurações do perfil refletidas na tabela abaixo são válidas. Estas configurações serão utilizadas para estabelecer a conexão necessária para enviar os arquivos de suas máquinas virtuais para um provedor de nuvem remoto.&lt;/p&gt;</translation>
     </message>
+    <message>
+        <source>Acquire export form...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This is the descriptive information which will be used to determine settings for a cloud storage your VM being exported to.  You can change it by double clicking on individual lines.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIWizardExportAppPageBasic3</name>
@@ -19548,14 +19630,6 @@ utilizando o diálogo de Configurações da MV.&lt;/p&gt;</translation>
         <translation>Você pode alterar a localização da pasta que irá conter todas as máquinas virtuais. As pastas de cada máquina virtual também podem ser modificadas individualmente.</translation>
     </message>
     <message>
-        <source>Acquire cloud instances...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Acquire export form...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Please choose the source to import appliance from.  This can be a local file system to import OVF archive or one of known  cloud service providers to import cloud VM from.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -19602,6 +19676,26 @@ utilizando o diálogo de Configurações da MV.&lt;/p&gt;</translation>
     <message>
         <source>Settings</source>
         <translation type="unfinished">Configurações</translation>
+    </message>
+    <message>
+        <source>Importing Appliance ...</source>
+        <translation type="unfinished">Importando Appliance ...</translation>
+    </message>
+    <message>
+        <source>Acquire stopped cloud instances...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Acquire running cloud instances...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Read appliance...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Acquire import form...</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

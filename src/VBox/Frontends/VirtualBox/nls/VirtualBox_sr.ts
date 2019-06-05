@@ -2107,6 +2107,14 @@
         <comment>debug action</comment>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>&amp;Soft Keyboard...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Display soft keyboard</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIAddDiskEncryptionPasswordDialog</name>
@@ -4829,6 +4837,10 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Value</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Edit...</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -12843,6 +12855,18 @@ p, li { white-space: pre-wrap; }
         <source>Failed to assign form value.</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>&lt;p&gt;Cannot create a virtual appliance.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Cannot create a virtual system description.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Cannot acquire a virtual system description property.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIMiniProcessWidgetAdditions</name>
@@ -14390,6 +14414,56 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
+    <name>UISoftKeyboard</name>
+    <message>
+        <source>XML files (*.xml)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose file to load physical keyboard layout..</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Load Layout</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Load Layout </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Load Layout File...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Keycaps</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show key positions instead of key caps</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add/change key cap</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save key caps to file...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Soft Keyboard</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UISoftKeyboardWidget</name>
+    <message>
+        <source>Save keycaps to a file...</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>UIStatusBarEditorWidget</name>
     <message>
         <source>Close</source>
@@ -15726,6 +15800,14 @@ p, li { white-space: pre-wrap; }
         <source>&lt;p&gt;Please choose one of cloud service accounts you have registered to export virtual machines to. Make sure profile settings reflected in the underlying table are valid. They will be used to establish network connection required to upload your virtual machine files to a remote cloud facility.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Acquire export form...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This is the descriptive information which will be used to determine settings for a cloud storage your VM being exported to.  You can change it by double clicking on individual lines.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIWizardFirstRun</name>
@@ -15825,14 +15907,6 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Acquire cloud instances...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Acquire export form...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Please choose the source to import appliance from.  This can be a local file system to import OVF archive or one of known  cloud service providers to import cloud VM from.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -15879,6 +15953,26 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Settings</source>
         <translation type="unfinished">Параметри</translation>
+    </message>
+    <message>
+        <source>Importing Appliance ...</source>
+        <translation type="unfinished">Увоз средства...</translation>
+    </message>
+    <message>
+        <source>Acquire stopped cloud instances...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Acquire running cloud instances...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Read appliance...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Acquire import form...</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

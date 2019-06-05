@@ -2329,6 +2329,14 @@
         <comment>debug action</comment>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>&amp;Soft Keyboard...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Display soft keyboard</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIActonPool</name>
@@ -4902,6 +4910,10 @@ a guest session</source>
     </message>
     <message>
         <source>Value</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Edit...</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -13641,6 +13653,18 @@ a guest session</source>
         <source>Failed to assign form value.</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>&lt;p&gt;Cannot create a virtual appliance.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Cannot create a virtual system description.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Cannot acquire a virtual system description property.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIMiniProcessWidgetAdditions</name>
@@ -15014,6 +15038,56 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
     <message>
         <source>Snapshot %1</source>
         <translation>Instantané %1</translation>
+    </message>
+</context>
+<context>
+    <name>UISoftKeyboard</name>
+    <message>
+        <source>XML files (*.xml)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose file to load physical keyboard layout..</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Load Layout</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Load Layout </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Load Layout File...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Keycaps</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show key positions instead of key caps</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add/change key cap</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save key caps to file...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Soft Keyboard</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UISoftKeyboardWidget</name>
+    <message>
+        <source>Save keycaps to a file...</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -16687,6 +16761,14 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
         <source>Include ISO image files into exported VM archive.</source>
         <translation>Inclure les fichiers d&apos;image ISO dans l&apos;archive de MV exportée.</translation>
     </message>
+    <message>
+        <source>Acquire export form...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This is the descriptive information which will be used to determine settings for a cloud storage your VM being exported to.  You can change it by double clicking on individual lines.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIWizardExportAppPageBasic3</name>
@@ -16829,14 +16911,6 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
         <translation>Vous pouvez modifier le dossier de base qui hébergera toutes les machines virtuelles. Les dossiers d&apos;accueil peuvent aussi être modifiés individuellement (par marchine virtuelle).</translation>
     </message>
     <message>
-        <source>Acquire cloud instances...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Acquire export form...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Please choose the source to import appliance from.  This can be a local file system to import OVF archive or one of known  cloud service providers to import cloud VM from.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -16883,6 +16957,26 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
     <message>
         <source>Settings</source>
         <translation type="unfinished">Paramètres</translation>
+    </message>
+    <message>
+        <source>Importing Appliance ...</source>
+        <translation type="unfinished">Importation de l&apos;apareil virtuel...</translation>
+    </message>
+    <message>
+        <source>Acquire stopped cloud instances...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Acquire running cloud instances...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Read appliance...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Acquire import form...</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
