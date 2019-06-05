@@ -627,6 +627,7 @@ void UIWizardExportAppPageExpert::sltVMSelectionChangeHandler()
 {
     /* Refresh required settings: */
     refreshFileSelectorName();
+    populateFormProperties();
 
     /* Check whether there was cloud target selected: */
     const bool fIsFormatCloudOne = field("isFormatCloudOne").toBool();
