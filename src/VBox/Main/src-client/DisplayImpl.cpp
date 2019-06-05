@@ -2030,7 +2030,7 @@ HRESULT Display::setVideoModeHint(ULONG aDisplay, BOOL aEnabled,
     {
         PPDMIVMMDEVPORT pVMMDevPort = pVMMDev->getVMMDevPort();
         if (pVMMDevPort)
-            pVMMDevPort->pfnRequestDisplayChange(pVMMDevPort, 1, &d, false, aNotify);
+            pVMMDevPort->pfnRequestDisplayChange(pVMMDevPort, 1, &d, false, RT_BOOL(aNotify));
     }
     /* Notify listeners. */
     fireGuestMonitorInfoChangedEvent(mParent->i_getEventSource(), aDisplay);
