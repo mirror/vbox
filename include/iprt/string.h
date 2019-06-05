@@ -91,9 +91,12 @@ char *strpbrk(const char *pszStr, const char *pszChars);
 RT_C_DECLS_END
 #endif
 
-#if (!defined(RT_OS_LINUX) || !defined(_GNU_SOURCE)) && !defined(RT_OS_FREEBSD) && !defined(RT_OS_NETBSD)
+#if (!defined(RT_OS_LINUX) || !defined(_GNU_SOURCE)) \
+ && (!defined(RT_OS_OS2) || !defined(_GNU_SOURCE)) \
+ && !defined(RT_OS_FREEBSD) \
+ && !defined(RT_OS_NETBSD)
 RT_C_DECLS_BEGIN
-void *memrchr(const char *pv, int ch, size_t cb);
+void *memrchr(const void *pv, int ch, size_t cb);
 RT_C_DECLS_END
 #endif
 
