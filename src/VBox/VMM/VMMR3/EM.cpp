@@ -2170,6 +2170,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
 #endif
             if (fGif)
             {
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
                 /*
                  * VMX NMI-window VM-exit.
                  * Takes priority over non-maskable interrupts (NMIs).
@@ -2190,11 +2191,13 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
                               && rc2 != VINF_NO_CHANGE, ("%Rrc\n", rc2));
                     UPDATE_RC();
                 }
+                else
+#endif
                 /*
                  * NMIs (take priority over external interrupts).
                  */
-                else if (    VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_NMI)
-                         && !VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_BLOCK_NMIS))
+                if (    VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_NMI)
+                    && !VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_BLOCK_NMIS))
                 {
                     if (!CPUMIsGuestInNestedHwvirtMode(&pVCpu->cpum.GstCtx))
                     {
