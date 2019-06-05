@@ -210,6 +210,7 @@ private slots:
     void sltHandleMenuBarContextMenuRequest(const QPoint &point);
     void sltHandleLoadLayout(QAction *pSenderAction);
     void sltHandleKeyCapEdit();
+    void sltHandleSaveKeyCapFile();
 
 private:
 
@@ -698,13 +699,10 @@ bool UISoftKeyboardWidget::eventFilter(QObject *pWatched, QEvent *pEvent)
 
     switch (pEvent->type())
     {
-        /* Process key press only: */
         case QEvent::KeyPress:
         {
-            /* Cast to corresponding key press event: */
             QKeyEvent *pKeyEvent = static_cast<QKeyEvent*>(pEvent);
 
-            /* Handle Ctrl+T key combination as a shortcut to focus search field: */
             if (pKeyEvent->key() == Qt::Key_Escape)
             {
                 m_pKeyBeingEdited = 0;
@@ -735,7 +733,7 @@ void UISoftKeyboardWidget::retranslateUi()
 
 void UISoftKeyboardWidget::sltHandleMenuBarContextMenuRequest(const QPoint &point)
 {
-    m_pChangeKeyCapAction->setEnabled(m_pKeyUnderMouse);
+    m_pChangeKeyCapAction->setEnabled(m_pKeyUnderMouse && !m_pShowPositionsAction->isChecked());
     m_pContextMenu->exec(mapToGlobal(point));
     update();
 }
@@ -746,7 +744,7 @@ void UISoftKeyboardWidget::sltHandleLoadLayout(QAction *pSenderAction)
         return;
     if (pSenderAction == m_pLoadLayoutFileAction)
     {
-        const QString strFileName = QIFileDialog::getOpenFileName(QString(), "XML files (*.xml)", this,
+        const QString strFileName = QIFileDialog::getOpenFileName(QString(), UISoftKeyboard::tr("XML files (*.xml)"), this,
                                                                   UISoftKeyboard::tr("Choose file to load physical keyboard layout.."));
         if (!strFileName.isEmpty() && createKeyboard(strFileName))
         {
@@ -764,7 +762,7 @@ void UISoftKeyboardWidget::sltHandleLoadLayout(QAction *pSenderAction)
             return;
         }
     }
-    /** In case something went wrong try to restore the previous layout: */
+    /* In case something went wrong try to restore the previous layout: */
     if (m_pLastSelectedLayout)
     {
         QString strLayout = m_pLastSelectedLayout->data().toString();
@@ -778,6 +776,49 @@ void UISoftKeyboardWidget::sltHandleKeyCapEdit()
     m_pKeyBeingEdited = m_pKeyUnderMouse;
     if (m_pKeyBeingEdited && m_pKeyCapEditor)
         m_pKeyCapEditor->setText(m_pKeyBeingEdited->keyCap());
+}
+
+void UISoftKeyboardWidget::sltHandleSaveKeyCapFile()
+{
+    QString strFileName = QIFileDialog::getSaveFileName(vboxGlobal().documentsPath(), UISoftKeyboard::tr("XML files (*.xml)"),
+                                                        this, tr("Save keycaps to a file..."));
+    if (strFileName.isEmpty())
+        return;
+
+    QFileInfo fileInfo(strFileName);
+    if (fileInfo.suffix().compare("xml", Qt::CaseInsensitive) != 0)
+    {
+        strFileName += ".xml";
+    }
+
+    QFile xmlFile(strFileName);
+    if (!xmlFile.open(QIODevice::WriteOnly))
+        return;
+    QXmlStreamWriter xmlWriter;
+    xmlWriter.setDevice(&xmlFile);
+
+    xmlWriter.setAutoFormatting(true);
+    xmlWriter.writeStartDocument("1.0");
+    xmlWriter.writeStartElement("keycaps");
+
+   for (int i = 0; i < m_rows.size(); ++i)
+   {
+       QVector<UISoftKeyboardKey> &keys = m_rows[i].keys();
+       for (int j = 0; j < keys.size(); ++j)
+       {
+           xmlWriter.writeStartElement("key");
+
+           UISoftKeyboardKey &key = keys[j];
+           xmlWriter.writeTextElement("position", QString::number(key.position()));
+           xmlWriter.writeTextElement("keycap", key.keyCap());
+           xmlWriter.writeEndElement();
+
+       }
+   }
+   xmlWriter.writeEndElement();
+   xmlWriter.writeEndDocument();
+
+   xmlFile.close();
 }
 
 void UISoftKeyboardWidget::setNewMinimumSize(const QSize &size)
@@ -962,6 +1003,8 @@ void UISoftKeyboardWidget::prepareObjects()
         m_pKeyCapEditor->installEventFilter(this);
     }
     m_pContextMenu = new QMenu(this);
+    /* Layout menu: */
+    QMenu *pLayoutMenu = m_pContextMenu->addMenu(UISoftKeyboard::tr("Load Layout"));
     m_pLayoutActionGroup = new QActionGroup(this);
     m_pLayoutActionGroup->setExclusive(true);
     connect(m_pLayoutActionGroup, &QActionGroup::triggered, this, &UISoftKeyboardWidget::sltHandleLoadLayout);
@@ -973,21 +1016,20 @@ void UISoftKeyboardWidget::prepareObjects()
         pAction->setData(strLayout);
         pAction->setCheckable(true);
     }
-    m_pLoadLayoutFileAction = m_pLayoutActionGroup->addAction(UISoftKeyboard::tr("Load Layout File"));
+    m_pLoadLayoutFileAction = m_pLayoutActionGroup->addAction(UISoftKeyboard::tr("Load Layout File..."));
     m_pLoadLayoutFileAction->setCheckable(true);
+    pLayoutMenu->addActions(m_pLayoutActionGroup->actions());
 
-    m_pContextMenu->addActions(m_pLayoutActionGroup->actions());
-    m_pContextMenu->addSeparator();
-
-    m_pShowPositionsAction = m_pContextMenu->addAction(UISoftKeyboard::tr("Show key positions instead of key caps"));
-
+    /* Keycaps menu: */
+    QMenu *pKeycapsMenu = m_pContextMenu->addMenu(UISoftKeyboard::tr("Keycaps"));
+    m_pShowPositionsAction = pKeycapsMenu->addAction(UISoftKeyboard::tr("Show key positions instead of key caps"));
     m_pShowPositionsAction->setCheckable(true);
     m_pShowPositionsAction->setChecked(false);
 
-    m_pChangeKeyCapAction = m_pContextMenu->addAction(UISoftKeyboard::tr("Add/change key cap"));
+    m_pChangeKeyCapAction = pKeycapsMenu->addAction(UISoftKeyboard::tr("Add/change key cap"));
     connect(m_pChangeKeyCapAction, &QAction::triggered, this, &UISoftKeyboardWidget::sltHandleKeyCapEdit);
-    QAction *pSaveKepCapFile = m_pContextMenu->addAction(UISoftKeyboard::tr("Save key caps to file"));
-    Q_UNUSED(pSaveKepCapFile);
+    QAction *pSaveKeyCapFile = pKeycapsMenu->addAction(UISoftKeyboard::tr("Save key caps to file..."));
+    connect(pSaveKeyCapFile, &QAction::triggered, this, &UISoftKeyboardWidget::sltHandleSaveKeyCapFile);
 
     /* Choose the first layput action's data as the defaults one: */
     if (!m_pLayoutActionGroup->actions().empty())
