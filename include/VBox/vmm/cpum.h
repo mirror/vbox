@@ -2393,6 +2393,7 @@ DECLINLINE(bool) CPUMIsGuestVmxVirtNmiBlocking(PCVMCPU pVCpu, PCCPUMCTX pCtx)
      * Return the state of virtual-NMI blocking, if we are executing a
      * VMX nested-guest with virtual-NMIs enabled.
      */
+    RT_NOREF(pVCpu);
     Assert(CPUMIsGuestVmxPinCtlsSet(pVCpu, pCtx, VMX_PIN_CTLS_VIRT_NMI));
     return pCtx->hwvirt.vmx.fVirtNmiBlocking;
 #endif
