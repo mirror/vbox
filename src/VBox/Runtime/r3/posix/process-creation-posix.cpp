@@ -30,6 +30,12 @@
 *********************************************************************************************************************************/
 #define LOG_GROUP RTLOGGROUP_PROCESS
 #include <iprt/cdefs.h>
+#ifdef RT_OS_LINUX
+# define IPRT_WITH_DYNAMIC_CRYPT_R
+#endif
+#if (defined(RT_OS_LINUX) || defined(RT_OS_OS2)) && !defined(_GNU_SOURCE)
+# define _GNU_SOURCE
+#endif
 
 #include <unistd.h>
 #include <stdlib.h>
@@ -94,6 +100,9 @@
 #include <iprt/env.h>
 #include <iprt/err.h>
 #include <iprt/file.h>
+#ifdef IPRT_WITH_DYNAMIC_CRYPT_R
+# include <iprt/ldr.h>
+#endif
 #include <iprt/log.h>
 #include <iprt/path.h>
 #include <iprt/pipe.h>
@@ -164,6 +173,39 @@ static int rtPamConv(int cMessages, const struct pam_message **papMessages, stru
     return PAM_SUCCESS;
 }
 #endif /* RT_OS_DARWIN */
+
+
+#ifdef IPRT_WITH_DYNAMIC_CRYPT_R
+/** Pointer to crypt_r(). */
+typedef char *(*PFNCRYPTR)(const char *, const char *, struct crypt_data *);
+
+/**
+ * Wrapper for resolving and calling crypt_r dynamcially.
+ *
+ * The reason for this is that fedora 30+ wants to use libxcrypt rather than the
+ * glibc libcrypt.  The two libraries has different crypt_data sizes and layout,
+ * so we allocate a 256KB data block to be on the safe size (caller does this).
+ */
+static char *rtProcDynamicCryptR(const char *pszKey, const char *pszSalt, struct crypt_data *pData)
+{
+    static PFNCRYPTR volatile s_pfnCryptR = NULL;
+    PFNCRYPTR pfnCryptR = s_pfnCryptR;
+    if (pfnCryptR)
+        return pfnCryptR(pszKey, pszSalt, pData);
+
+    pfnCryptR = (PFNCRYPTR)RTLdrGetSystemSymbol("libcrypt.so", "crypt_r");
+    if (!pfnCryptR)
+        pfnCryptR = (PFNCRYPTR)RTLdrGetSystemSymbol("libxcrypt.so", "crypt_r");
+    if (pfnCryptR)
+    {
+        s_pfnCryptR = pfnCryptR;
+        return pfnCryptR(pszKey, pszSalt, pData);
+    }
+
+    LogRel(("IPRT/RTProc: Unable to locate crypt_r!\n"));
+    return NULL;
+}
+#endif /* IPRT_WITH_DYNAMIC_CRYPT_R */
 
 
 /**
@@ -312,11 +354,25 @@ static int rtCheckCredentials(const char *pszUser, const char *pszPasswd, gid_t 
 # endif
     {
 # if defined(RT_OS_LINUX) || defined(RT_OS_OS2)
-        struct crypt_data CryptData;
-        RT_ZERO(CryptData);
-        char *pszEncPasswd = crypt_r(pszPasswd, pPwd->pw_passwd, &CryptData);
-        rc = pszEncPasswd && !strcmp(pszEncPasswd, pPwd->pw_passwd) ? VINF_SUCCESS : VERR_AUTHENTICATION_FAILURE;
-        RTMemWipeThoroughly(&CryptData, sizeof(CryptData), 3);
+#  ifdef IPRT_WITH_DYNAMIC_CRYPT_R
+        size_t const       cbCryptData = RT_MAX(sizeof(struct crypt_data) * 2, _256K);
+#  else
+        size_t const       cbCryptData = sizeof(struct crypt_data);
+#  endif
+        struct crypt_data *pCryptData  = (struct crypt_data *)RTMemTmpAllocZ(cbCryptData);
+        if (pCryptData)
+        {
+#  ifdef IPRT_WITH_DYNAMIC_CRYPT_R
+            char *pszEncPasswd = rtProcDynamicCryptR(pszPasswd, pPwd->pw_passwd, pCryptData);
+#  else
+            char *pszEncPasswd = crypt_r(pszPasswd, pPwd->pw_passwd, pCryptData);
+#  endif
+            rc = pszEncPasswd && !strcmp(pszEncPasswd, pPwd->pw_passwd) ? VINF_SUCCESS : VERR_AUTHENTICATION_FAILURE;
+            RTMemWipeThoroughly(pCryptData, cbCryptData, 3);
+            RTMemTmpFree(pCryptData);
+        }
+        else
+            rc = VERR_NO_TMP_MEMORY;
 # else
         char *pszEncPasswd = crypt(pszPasswd, pPwd->pw_passwd);
         rc = strcmp(pszEncPasswd, pPwd->pw_passwd) == 0 ? VINF_SUCCESS : VERR_AUTHENTICATION_FAILURE;
