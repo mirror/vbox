@@ -871,7 +871,10 @@ void UIFormEditorRow::updateValueCells()
             const int iInteger = comValue.GetInteger();
             const QString strSuffix = comValue.GetSuffix();
             m_rangedInteger = RangedIntegerData(iMinimum, iMaximum, iInteger, strSuffix);
-            m_cells[UIFormEditorDataType_Value]->setText(QString::number(m_rangedInteger.integer()));
+            m_cells[UIFormEditorDataType_Value]->setText(  m_rangedInteger.suffix().isEmpty()
+                                                         ? QString::number(m_rangedInteger.integer())
+                                                         : QString("%1 %2").arg(m_rangedInteger.integer())
+                                                                           .arg(m_rangedInteger.suffix()));
             /// @todo check for errors
             break;
         }
