@@ -37,7 +37,17 @@
 # define _GNU_SOURCE
 #endif
 
-#include <unistd.h>
+#ifdef RT_OS_OS2
+# define crypt   unistd_crypt
+# define setkey  unistd_setkey
+# define encrypt unistd_encrypt
+# include <unistd.h>
+# undef  crypt
+# undef  setkey
+# undef  encrypt
+#else
+# include <unistd.h>
+#endif
 #include <stdlib.h>
 #include <errno.h>
 #include <sys/types.h>
