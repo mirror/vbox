@@ -41,17 +41,17 @@ UIWizardExportAppPage3::UIWizardExportAppPage3()
 
 void UIWizardExportAppPage3::refreshApplianceSettingsWidget()
 {
-    /* Refresh settings widget: */
-    CVirtualBox comVBox = vboxGlobal().virtualBox();
+    /* Acquire appliance: */
     CAppliance *pAppliance = m_pApplianceWidget->init();
     if (pAppliance->isOk())
     {
-        /* Iterate over all the selected machine ids: */
-        QList<QUuid> uuids = fieldImp("machineIDs").value<QList<QUuid> >();
-        foreach (const QUuid &uuid, uuids)
+        /* Iterate over all the selected machine uuids: */
+        const QList<QUuid> uuids = fieldImp("machineIDs").value<QList<QUuid> >();
+        foreach (const QUuid &uMachineId, uuids)
         {
-            /* Get the machine with the uuid: */
-            CMachine comMachine = comVBox.FindMachine(uuid.toString());
+            /* Get the machine with the uMachineId: */
+            CVirtualBox comVBox = vboxGlobal().virtualBox();
+            CMachine comMachine = comVBox.FindMachine(uMachineId.toString());
             if (comVBox.isOk() && comMachine.isNotNull())
             {
                 /* Add the export description to our appliance object: */
@@ -108,7 +108,7 @@ void UIWizardExportAppPage3::refreshApplianceSettingsWidget()
                     return msgCenter().cannotExportAppliance(comMachine, pAppliance->GetPath(), thisImp());
             }
             else
-                return msgCenter().cannotFindMachineById(comVBox, uuid);
+                return msgCenter().cannotFindMachineById(comVBox, uMachineId);
         }
         /* Make sure the settings widget get the new descriptions: */
         m_pApplianceWidget->populate();
@@ -147,7 +147,6 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
 
     /* Register classes: */
     qRegisterMetaType<ExportAppliancePointer>();
-
     /* Register fields: */
     registerField("applianceWidget", this, "applianceWidget");
 }

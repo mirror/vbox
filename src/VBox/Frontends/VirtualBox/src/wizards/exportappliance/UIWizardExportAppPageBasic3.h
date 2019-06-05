@@ -52,7 +52,7 @@ protected:
     ExportAppliancePointer applianceWidget() const { return m_pApplianceWidget; }
 
     /** Holds the appliance widget reference. */
-    UIApplianceExportEditorWidget *m_pApplianceWidget;
+    ExportAppliancePointer  m_pApplianceWidget;
 };
 
 
