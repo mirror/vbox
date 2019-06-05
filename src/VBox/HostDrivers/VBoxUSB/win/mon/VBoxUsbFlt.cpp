@@ -174,6 +174,9 @@ typedef struct VBOXUSBFLTGLOBALS
     /* devices known to misbehave */
     LIST_ENTRY BlackDeviceList;
     VBOXUSBFLT_LOCK Lock;
+    /** Flag whether to force replugging a device we can't query descirptors from.
+     * Short term workaround for @bugref{9479}. */
+    ULONG           dwForceReplugWhenDevPopulateFails;
 } VBOXUSBFLTGLOBALS, *PVBOXUSBFLTGLOBALS;
 static VBOXUSBFLTGLOBALS g_VBoxUsbFltGlobals;
 
@@ -829,6 +832,16 @@ static DECLCALLBACK(BOOLEAN) vboxUsbFltFilterCheckWalker(PFILE_OBJECT pFile, PDE
             else
             {
                 WARN(("vboxUsbFltDevPopulate for PDO 0x%p failed with Status 0x%x", pDevObj, Status));
+                if (   Status == STATUS_CANCELLED
+                    && g_VBoxUsbFltGlobals.dwForceReplugWhenDevPopulateFails)
+                {
+                    /*
+                     * This can happen if the device got suspended and is in D3 state where we can't query any strings.
+                     * There is no known way to set the power state of the device, especially if there is no driver attached yet.
+                     * The sledgehammer approach is to just replug the device to force it out of suspend, see bugref @{9479}.
+                     */
+                    continue;
+                }
             }
 
             LOG(("Matching: This device should NOT be filtered"));
@@ -1380,6 +1393,22 @@ void VBoxUsbFltProxyStopped(HVBOXUSBFLTDEV hDev)
     vboxUsbFltDevRelease(pDevice);
 }
 
+
+static NTSTATUS vboxUsbFltRegKeyQuery(PWSTR ValueName, ULONG ValueType, PVOID ValueData, ULONG ValueLength, PVOID Context, PVOID EntryContext)
+{
+    NTSTATUS Status = STATUS_SUCCESS;
+
+    RT_NOREF(ValueName, Context);
+    if (   ValueType == REG_DWORD
+        && ValueLength == sizeof(ULONG))
+        *(ULONG *)EntryContext = *(ULONG *)ValueData;
+    else
+        Status = STATUS_OBJECT_TYPE_MISMATCH;
+
+    return Status;
+}
+
+
 NTSTATUS VBoxUsbFltInit()
 {
     int rc = VBoxUSBFilterInit();
@@ -1395,6 +1424,28 @@ NTSTATUS VBoxUsbFltInit()
     InitializeListHead(&g_VBoxUsbFltGlobals.BlackDeviceList);
     vboxUsbFltBlDevPopulateWithKnownLocked();
     VBOXUSBFLT_LOCK_INIT();
+
+    /*
+     * Check whether the setting to force replugging USB devices when
+     * querying string descriptors fail is set in the registry,
+     * see @bugref{9479}.
+     */
+    RTL_QUERY_REGISTRY_TABLE aParams[] = 
+    {
+        {vboxUsbFltRegKeyQuery, 0, L"ForceReplugWhenDevPopulateFails", &g_VBoxUsbFltGlobals.dwForceReplugWhenDevPopulateFails, REG_DWORD, &g_VBoxUsbFltGlobals.dwForceReplugWhenDevPopulateFails, sizeof(ULONG) },
+        {                 NULL, 0,                               NULL,                                                   NULL,         0,                                                     0,             0 }
+    };
+    UNICODE_STRING UnicodePath = RTL_CONSTANT_STRING(L"\\VBoxUSB");
+
+    NTSTATUS Status = RtlQueryRegistryValues(RTL_REGISTRY_CONTROL, UnicodePath.Buffer, &aParams[0], NULL, NULL);
+    if (Status == STATUS_SUCCESS)
+    {
+        if (g_VBoxUsbFltGlobals.dwForceReplugWhenDevPopulateFails)
+            LOG(("Forcing replug of USB devices where querying the descriptors fail\n"));
+    }
+    else
+        LOG(("RtlQueryRegistryValues() -> %#x, assuming defaults\n", Status));
+
     return STATUS_SUCCESS;
 }
 
