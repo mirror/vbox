@@ -264,68 +264,76 @@ static int rtCheckCredentials(const char *pszUser, const char *pszPasswd, gid_t 
         Log(("rtCheckCredentials: Loading libpam.dylib failed\n"));
     return VERR_AUTHENTICATION_FAILURE;
 
-#elif defined(RT_OS_LINUX)
-    struct passwd *pw;
-
-    pw = getpwnam(pszUser);
-    if (!pw)
-        return VERR_AUTHENTICATION_FAILURE;
-
-    if (!pszPasswd)
-        pszPasswd = "";
-
-    struct spwd *spwd;
-    /* works only if /etc/shadow is accessible */
-    spwd = getspnam(pszUser);
-    if (spwd)
-        pw->pw_passwd = spwd->sp_pwdp;
-
-    /* Default fCorrect=true if no password specified. In that case, pw->pw_passwd
-     * must be NULL (no password set for this user). Fail if a password is specified
-     * but the user does not have one assigned. */
-    int fCorrect = !pszPasswd || !*pszPasswd;
-    if (pw->pw_passwd && *pw->pw_passwd)
-    {
-        struct crypt_data *data = (struct crypt_data*)RTMemTmpAllocZ(sizeof(*data));
-        /* be reentrant */
-        char *pszEncPasswd = crypt_r(pszPasswd, pw->pw_passwd, data);
-        fCorrect = pszEncPasswd && !strcmp(pszEncPasswd, pw->pw_passwd);
-        RTMemTmpFree(data);
-    }
-    if (!fCorrect)
-        return VERR_AUTHENTICATION_FAILURE;
-
-    *pGid = pw->pw_gid;
-    *pUid = pw->pw_uid;
-    return VINF_SUCCESS;
-
-#elif defined(RT_OS_SOLARIS)
-    struct passwd *ppw, pw;
-    char szBuf[1024];
-
-    if (getpwnam_r(pszUser, &pw, szBuf, sizeof(szBuf), &ppw) != 0 || ppw == NULL)
-        return VERR_AUTHENTICATION_FAILURE;
-
-    if (!pszPasswd)
-        pszPasswd = "";
-
-    struct spwd spwd;
-    char szPwdBuf[1024];
-    /* works only if /etc/shadow is accessible */
-    if (getspnam_r(pszUser, &spwd, szPwdBuf, sizeof(szPwdBuf)) != NULL)
-        ppw->pw_passwd = spwd.sp_pwdp;
-
-    char *pszEncPasswd = crypt(pszPasswd, ppw->pw_passwd);
-    if (strcmp(pszEncPasswd, ppw->pw_passwd))
-        return VERR_AUTHENTICATION_FAILURE;
-
-    *pGid = ppw->pw_gid;
-    *pUid = ppw->pw_uid;
-    return VINF_SUCCESS;
-
 #else
-    NOREF(pszUser); NOREF(pszPasswd); NOREF(pGid); NOREF(pUid);
-    return VERR_AUTHENTICATION_FAILURE;
+    /*
+     * Lookup the user in /etc/passwd first.
+     *
+     * Note! On FreeBSD and OS/2 the root user will open /etc/shadow here, so
+     *       the getspnam_r step is not necessary.
+     */
+    struct passwd  Pwd;
+    char           szBuf[_4K];
+    struct passwd *pPwd = NULL;
+    if (getpwnam_r(pszUser, &Pwd, szBuf, sizeof(szBuf), &pPwd) != 0)
+        return VERR_AUTHENTICATION_FAILURE;
+    if (pPwd == NULL)
+        return VERR_AUTHENTICATION_FAILURE;
+
+# if defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS)
+    /*
+     * Ditto for /etc/shadow and replace pw_passwd from above if we can access it:
+     */
+    struct spwd  ShwPwd;
+    char         szBuf2[_4K];
+#  if defined(RT_OS_LINUX)
+    struct spwd *pShwPwd = NULL;
+    if (getspnam_r(pszUser, &ShwPwd, szBuf2, sizeof(szBuf2), &pShwPwd) != 0)
+        pShwPwd = NULL;
+#  else
+    struct spwd *pShwPwd = getspnam_r(pszUser, &ShwPwd, szBuf2, sizeof(szBuf2));
+#  endif
+    if (pShwPwd != NULL)
+        pPwd->pw_passwd = pShwPwd->sp_pwdp;
+# endif
+
+    /*
+     * Encrypt the passed in password and see if it matches.
+     */
+# if !defined(RT_OS_LINUX)
+    int rc;
+# else
+    /* Default fCorrect=true if no password specified. In that case, pPwd->pw_passwd
+       must be NULL (no password set for this user). Fail if a password is specified
+       but the user does not have one assigned. */
+    int rc = !pszPasswd || !*pszPasswd ? VINF_SUCCESS : VERR_AUTHENTICATION_FAILURE;
+    if (pPwd->pw_passwd && *pPwd->pw_passwd)
+# endif
+    {
+# if defined(RT_OS_LINUX) || defined(RT_OS_OS2)
+        struct crypt_data CryptData;
+        RT_ZERO(CryptData);
+        char *pszEncPasswd = crypt_r(pszPasswd, pPwd->pw_passwd, &CryptData);
+        rc = pszEncPasswd && !strcmp(pszEncPasswd, pPwd->pw_passwd) ? VINF_SUCCESS : VERR_AUTHENTICATION_FAILURE;
+        RTMemWipeThoroughly(&CryptData, sizeof(CryptData), 3);
+# else
+        char *pszEncPasswd = crypt(pszPasswd, ppw->pw_passwd);
+        rc = strcmp(pszEncPasswd, ppw->pw_passwd) == 0 ? VINF_SUCCESS : VERR_AUTHENTICATION_FAILURE;
+# endif
+    }
+
+    /*
+     * Return GID and UID on success.  Always wipe stack buffers.
+     */
+    if (RT_SUCCESS(rc))
+    {
+        *pGid = pPwd->pw_gid;
+        *pUid = pPwd->pw_uid;
+    }
+    RTMemWipeThoroughly(szBuf, sizeof(szBuf), 3);
+# if defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS)
+    RTMemWipeThoroughly(szBuf2, sizeof(szBuf2), 3);
+# endif
+    return rc;
 #endif
 }
 
