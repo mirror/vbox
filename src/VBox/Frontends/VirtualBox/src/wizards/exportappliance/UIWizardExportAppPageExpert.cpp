@@ -24,6 +24,7 @@
 #include <QLineEdit>
 #include <QListWidget>
 #include <QRadioButton>
+#include <QStackedLayout>
 #include <QStackedWidget>
 #include <QTableWidget>
 #include <QVBoxLayout>
@@ -35,6 +36,7 @@
 #include "UIConverter.h"
 #include "UIEmptyFilePathSelector.h"
 #include "UIIconPool.h"
+#include "UIMessageCenter.h"
 #include "UIVirtualBoxManager.h"
 #include "UIWizardExportApp.h"
 #include "UIWizardExportAppDefs.h"
@@ -89,15 +91,61 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
             QVBoxLayout *pApplianceCntLayout = new QVBoxLayout(m_pApplianceCnt);
             if (pApplianceCntLayout)
             {
-                /* Create appliance widget: */
-                m_pApplianceWidget = new UIApplianceExportEditorWidget;
-                if (m_pApplianceWidget)
+                /* Create settings container layout: */
+                m_pSettingsCntLayout = new QStackedLayout;
+                if (m_pSettingsCntLayout)
                 {
-                    m_pApplianceWidget->setMinimumHeight(250);
-                    m_pApplianceWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::MinimumExpanding);
+                    /* Create appliance widget container: */
+                    QWidget *pApplianceWidgetCnt = new QWidget(this);
+                    if (pApplianceWidgetCnt)
+                    {
+                        /* Create appliance widget layout: */
+                        QVBoxLayout *pApplianceWidgetLayout = new QVBoxLayout(pApplianceWidgetCnt);
+                        if (pApplianceWidgetLayout)
+                        {
+                            pApplianceWidgetLayout->setContentsMargins(0, 0, 0, 0);
+
+                            /* Create appliance widget: */
+                            m_pApplianceWidget = new UIApplianceExportEditorWidget;
+                            if (m_pApplianceWidget)
+                            {
+                                m_pApplianceWidget->setMinimumHeight(250);
+                                m_pApplianceWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::MinimumExpanding);
+
+                                /* Add into layout: */
+                                pApplianceWidgetLayout->addWidget(m_pApplianceWidget);
+                            }
+                        }
+
+                        /* Add into layout: */
+                        m_pSettingsCntLayout->addWidget(pApplianceWidgetCnt);
+                    }
+
+                    /* Create form editor container: */
+                    QWidget *pFormEditorCnt = new QWidget(this);
+                    if (pFormEditorCnt)
+                    {
+                        /* Create form editor layout: */
+                        QVBoxLayout *pFormEditorLayout = new QVBoxLayout(pFormEditorCnt);
+                        if (pFormEditorLayout)
+                        {
+                            pFormEditorLayout->setContentsMargins(0, 0, 0, 0);
+
+                            /* Create form editor widget: */
+                            m_pFormEditor = new UIFormEditorWidget(pFormEditorCnt);
+                            if (m_pFormEditor)
+                            {
+                                /* Add into layout: */
+                                pFormEditorLayout->addWidget(m_pFormEditor);
+                            }
+                        }
+
+                        /* Add into layout: */
+                        m_pSettingsCntLayout->addWidget(pFormEditorCnt);
+                    }
 
                     /* Add into layout: */
-                    pApplianceCntLayout->addWidget(m_pApplianceWidget);
+                    pApplianceCntLayout->addLayout(m_pSettingsCntLayout);
                 }
             }
 
@@ -497,8 +545,12 @@ void UIWizardExportAppPageExpert::initializePage()
     /* Refresh include ISOs check-box access: */
     refreshIncludeISOsCheckBoxAccess();
 
-    /* Refresh appliance settings: */
-    refreshApplianceSettingsWidget();
+    /* Check whether there was cloud target selected: */
+    const bool fIsFormatCloudOne = field("isFormatCloudOne").toBool();
+    if (fIsFormatCloudOne)
+        refreshFormPropertiesTable();
+    else
+        refreshApplianceSettingsWidget();
 }
 
 void UIWizardExportAppPageExpert::cleanupPage()
@@ -541,8 +593,28 @@ bool UIWizardExportAppPageExpert::validatePage()
     /* Lock finish button: */
     startProcessing();
 
+    /* Check whether there was cloud target selected: */
+    const bool fIsFormatCloudOne = fieldImp("isFormatCloudOne").toBool();
+    if (fIsFormatCloudOne)
+    {
+        /* Check whether we have proper VSD form: */
+        CVirtualSystemDescriptionForm comForm = fieldImp("vsdForm").value<CVirtualSystemDescriptionForm>();
+        fResult = comForm.isNotNull();
+        Assert(fResult);
+
+        /* Give changed VSD back to appliance: */
+        if (fResult)
+        {
+            comForm.GetVirtualSystemDescription();
+            fResult = comForm.isOk();
+            if (!fResult)
+                msgCenter().cannotAcquireVirtualSystemDescriptionFormProperty(comForm);
+        }
+    }
+
     /* Try to export appliance: */
-    fResult = qobject_cast<UIWizardExportApp*>(wizard())->exportAppliance();
+    if (fResult)
+        fResult = qobject_cast<UIWizardExportApp*>(wizard())->exportAppliance();
 
     /* Unlock finish button: */
     endProcessing();
@@ -555,7 +627,13 @@ void UIWizardExportAppPageExpert::sltVMSelectionChangeHandler()
 {
     /* Refresh required settings: */
     refreshFileSelectorName();
-    refreshApplianceSettingsWidget();
+
+    /* Check whether there was cloud target selected: */
+    const bool fIsFormatCloudOne = field("isFormatCloudOne").toBool();
+    if (fIsFormatCloudOne)
+        refreshFormPropertiesTable();
+    else
+        refreshApplianceSettingsWidget();
 
     /* Broadcast complete-change: */
     emit completeChanged();
@@ -568,13 +646,22 @@ void UIWizardExportAppPageExpert::sltHandleFormatComboChange()
 
     /* Refresh required settings: */
     UIWizardExportAppPage2::updatePageAppearance();
+    UIWizardExportAppPage3::updatePageAppearance();
     refreshFileSelectorExtension();
     refreshManifestCheckBoxAccess();
     refreshIncludeISOsCheckBoxAccess();
     populateAccounts();
     populateAccountProperties();
     populateFormProperties();
-    refreshApplianceSettingsWidget();
+
+    /* Check whether there was cloud target selected: */
+    const bool fIsFormatCloudOne = field("isFormatCloudOne").toBool();
+    if (fIsFormatCloudOne)
+        refreshFormPropertiesTable();
+    else
+        refreshApplianceSettingsWidget();
+
+    /* Broadcast complete-change: */
     emit completeChanged();
 }
 
@@ -584,7 +671,7 @@ void UIWizardExportAppPageExpert::sltHandleFileSelectorChange()
     if (!m_pFileSelector->path().isEmpty())
         m_strFileSelectorName = QFileInfo(m_pFileSelector->path()).completeBaseName();
 
-    /* Refresh required settings: */
+    /* Broadcast complete-change: */
     emit completeChanged();
 }
 
@@ -599,7 +686,15 @@ void UIWizardExportAppPageExpert::sltHandleAccountComboChange()
     /* Refresh required settings: */
     populateAccountProperties();
     populateFormProperties();
-    refreshApplianceSettingsWidget();
+
+    /* Check whether there was cloud target selected: */
+    const bool fIsFormatCloudOne = field("isFormatCloudOne").toBool();
+    if (fIsFormatCloudOne)
+        refreshFormPropertiesTable();
+    else
+        refreshApplianceSettingsWidget();
+
+    /* Broadcast complete-change: */
     emit completeChanged();
 }
 

@@ -27,12 +27,12 @@
 
 /* GUI includes: */
 #include "UIExtraDataDefs.h"
+#include "UIFormEditorWidget.h"
 #include "UIWizardExportAppDefs.h"
 #include "UIWizardPage.h"
 
 /* Forward declarations: */
-class QJsonDocument;
-class QJsonValue;
+class QStackedLayout;
 class QIRichTextLabel;
 class UIWizardExportApp;
 
@@ -45,14 +45,24 @@ protected:
     /** Constructs 3rd page base. */
     UIWizardExportAppPage3();
 
+    /** Updates page appearance. */
+    virtual void updatePageAppearance();
+
     /** Refreshes appliance settings widget. */
     void refreshApplianceSettingsWidget();
+    /** Refreshes form properties table. */
+    void refreshFormPropertiesTable();
 
     /** Returns the appliance widget reference. */
     ExportAppliancePointer applianceWidget() const { return m_pApplianceWidget; }
 
+    /** Holds the settings container layout instance. */
+    QStackedLayout *m_pSettingsCntLayout;
+
     /** Holds the appliance widget reference. */
-    ExportAppliancePointer  m_pApplianceWidget;
+    ExportAppliancePointer     m_pApplianceWidget;
+    /** Holds the Form Editor widget instance. */
+    UIFormEditorWidgetPointer  m_pFormEditor;
 };
 
 
@@ -86,7 +96,7 @@ protected:
     virtual bool validatePage() /* override */;
 
     /** Updates page appearance. */
-    void updatePageAppearance();
+    virtual void updatePageAppearance() /* override */;
 
 private:
 

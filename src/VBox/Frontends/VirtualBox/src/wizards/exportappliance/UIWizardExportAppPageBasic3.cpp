@@ -16,6 +16,7 @@
  */
 
 /* Qt includes: */
+#include <QStackedLayout>
 #include <QVBoxLayout>
 
 /* GUI includes: */
@@ -29,6 +30,7 @@
 /* COM includes: */
 #include "CAppliance.h"
 #include "CMachine.h"
+#include "CVirtualSystemDescriptionForm.h"
 
 
 /*********************************************************************************************************************************
@@ -36,7 +38,16 @@
 *********************************************************************************************************************************/
 
 UIWizardExportAppPage3::UIWizardExportAppPage3()
+    : m_pSettingsCntLayout(0)
 {
+}
+
+void UIWizardExportAppPage3::updatePageAppearance()
+{
+    /* Check whether there was cloud target selected: */
+    const bool fIsFormatCloudOne = fieldImp("isFormatCloudOne").toBool();
+    /* Update page appearance according to chosen source: */
+    m_pSettingsCntLayout->setCurrentIndex((int)fIsFormatCloudOne);
 }
 
 void UIWizardExportAppPage3::refreshApplianceSettingsWidget()
@@ -58,51 +69,13 @@ void UIWizardExportAppPage3::refreshApplianceSettingsWidget()
                 CVirtualSystemDescription comVsd = comMachine.ExportTo(*pAppliance, qobject_cast<UIWizardExportApp*>(wizardImp())->uri());
                 if (comMachine.isOk() && comVsd.isNotNull())
                 {
-                    if (fieldImp("isFormatCloudOne").toBool())
-                    {
-                        /* Acquire Cloud Client parameters: */
-                        const AbstractVSDParameterList cloudClientParameters =
-                            fieldImp("cloudClientParameters").value<AbstractVSDParameterList>();
-                        /* Pass them as a list of hints to help editor with names/values: */
-                        m_pApplianceWidget->setVsdHints(cloudClientParameters);
-                        /* Add corresponding Cloud Client fields with default values: */
-                        foreach (const AbstractVSDParameter &parameter, cloudClientParameters)
-                        {
-                            QString strValue;
-                            switch (parameter.kind)
-                            {
-                                case ParameterKind_Bool:
-                                    strValue = QString("true");
-                                    break;
-                                case ParameterKind_Double:
-                                    strValue = QString::number(parameter.get.value<AbstractVSDParameterDouble>().minimum);
-                                    break;
-                                case ParameterKind_String:
-                                    strValue = parameter.get.value<AbstractVSDParameterString>().value;
-                                    break;
-                                case ParameterKind_Array:
-                                {
-                                    const QString strFirst = parameter.get.value<AbstractVSDParameterArray>().values.value(0).first;
-                                    const QString strSecond = parameter.get.value<AbstractVSDParameterArray>().values.value(0).second;
-                                    strValue = strSecond.isNull() ? strFirst : strSecond;
-                                    break;
-                                }
-                                default:
-                                    break;
-                            }
-                            comVsd.AddDescription(parameter.type, strValue, "");
-                        }
-                    }
-                    else
-                    {
-                        /* Add some additional fields the user may change: */
-                        comVsd.AddDescription(KVirtualSystemDescriptionType_Product, "", "");
-                        comVsd.AddDescription(KVirtualSystemDescriptionType_ProductUrl, "", "");
-                        comVsd.AddDescription(KVirtualSystemDescriptionType_Vendor, "", "");
-                        comVsd.AddDescription(KVirtualSystemDescriptionType_VendorUrl, "", "");
-                        comVsd.AddDescription(KVirtualSystemDescriptionType_Version, "", "");
-                        comVsd.AddDescription(KVirtualSystemDescriptionType_License, "", "");
-                    }
+                    /* Add some additional fields the user may change: */
+                    comVsd.AddDescription(KVirtualSystemDescriptionType_Product, "", "");
+                    comVsd.AddDescription(KVirtualSystemDescriptionType_ProductUrl, "", "");
+                    comVsd.AddDescription(KVirtualSystemDescriptionType_Vendor, "", "");
+                    comVsd.AddDescription(KVirtualSystemDescriptionType_VendorUrl, "", "");
+                    comVsd.AddDescription(KVirtualSystemDescriptionType_Version, "", "");
+                    comVsd.AddDescription(KVirtualSystemDescriptionType_License, "", "");
                 }
                 else
                     return msgCenter().cannotExportAppliance(comMachine, pAppliance->GetPath(), thisImp());
@@ -113,6 +86,15 @@ void UIWizardExportAppPage3::refreshApplianceSettingsWidget()
         /* Make sure the settings widget get the new descriptions: */
         m_pApplianceWidget->populate();
     }
+}
+
+void UIWizardExportAppPage3::refreshFormPropertiesTable()
+{
+    /* Acquire VSD form: */
+    CVirtualSystemDescriptionForm comForm = fieldImp("vsdForm").value<CVirtualSystemDescriptionForm>();
+    /* Make sure the properties table get the new description form: */
+    if (comForm.isNotNull())
+        m_pFormEditor->setVirtualSystemDescriptionForm(comForm);
 }
 
 
@@ -134,19 +116,66 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
             pMainLayout->addWidget(m_pLabel);
         }
 
-        /* Create appliance widget: */
-        m_pApplianceWidget = new UIApplianceExportEditorWidget;
-        if (m_pApplianceWidget)
+        /* Create settings container layout: */
+        m_pSettingsCntLayout = new QStackedLayout;
+        if (m_pSettingsCntLayout)
         {
-            m_pApplianceWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::MinimumExpanding);
+            /* Create appliance widget container: */
+            QWidget *pApplianceWidgetCnt = new QWidget(this);
+            if (pApplianceWidgetCnt)
+            {
+                /* Create appliance widget layout: */
+                QVBoxLayout *pApplianceWidgetLayout = new QVBoxLayout(pApplianceWidgetCnt);
+                if (pApplianceWidgetLayout)
+                {
+                    pApplianceWidgetLayout->setContentsMargins(0, 0, 0, 0);
+
+                    /* Create appliance widget: */
+                    m_pApplianceWidget = new UIApplianceExportEditorWidget;
+                    if (m_pApplianceWidget)
+                    {
+                        m_pApplianceWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::MinimumExpanding);
+
+                        /* Add into layout: */
+                        pApplianceWidgetLayout->addWidget(m_pApplianceWidget);
+                    }
+                }
+
+                /* Add into layout: */
+                m_pSettingsCntLayout->addWidget(pApplianceWidgetCnt);
+            }
+
+            /* Create form editor container: */
+            QWidget *pFormEditorCnt = new QWidget(this);
+            if (pFormEditorCnt)
+            {
+                /* Create form editor layout: */
+                QVBoxLayout *pFormEditorLayout = new QVBoxLayout(pFormEditorCnt);
+                if (pFormEditorLayout)
+                {
+                    pFormEditorLayout->setContentsMargins(0, 0, 0, 0);
+
+                    /* Create form editor widget: */
+                    m_pFormEditor = new UIFormEditorWidget(pFormEditorCnt);
+                    if (m_pFormEditor)
+                    {
+                        /* Add into layout: */
+                        pFormEditorLayout->addWidget(m_pFormEditor);
+                    }
+                }
+
+                /* Add into layout: */
+                m_pSettingsCntLayout->addWidget(pFormEditorCnt);
+            }
 
             /* Add into layout: */
-            pMainLayout->addWidget(m_pApplianceWidget);
+            pMainLayout->addLayout(m_pSettingsCntLayout);
         }
     }
 
     /* Register classes: */
     qRegisterMetaType<ExportAppliancePointer>();
+
     /* Register fields: */
     registerField("applianceWidget", this, "applianceWidget");
 }
@@ -165,8 +194,12 @@ void UIWizardExportAppPageBasic3::initializePage()
     /* Translate page: */
     retranslateUi();
 
-    /* Refresh appliance settings widget: */
-    refreshApplianceSettingsWidget();
+    /* Check whether there was cloud target selected: */
+    const bool fIsFormatCloudOne = field("isFormatCloudOne").toBool();
+    if (fIsFormatCloudOne)
+        refreshFormPropertiesTable();
+    else
+        refreshApplianceSettingsWidget();
 }
 
 bool UIWizardExportAppPageBasic3::validatePage()
@@ -176,6 +209,25 @@ bool UIWizardExportAppPageBasic3::validatePage()
 
     /* Lock finish button: */
     startProcessing();
+
+    /* Check whether there was cloud target selected: */
+    const bool fIsFormatCloudOne = fieldImp("isFormatCloudOne").toBool();
+    if (fIsFormatCloudOne)
+    {
+        /* Check whether we have proper VSD form: */
+        CVirtualSystemDescriptionForm comForm = fieldImp("vsdForm").value<CVirtualSystemDescriptionForm>();
+        fResult = comForm.isNotNull();
+        Assert(fResult);
+
+        /* Give changed VSD back to appliance: */
+        if (fResult)
+        {
+            comForm.GetVirtualSystemDescription();
+            fResult = comForm.isOk();
+            if (!fResult)
+                msgCenter().cannotAcquireVirtualSystemDescriptionFormProperty(comForm);
+        }
+    }
 
     /* Try to export appliance: */
     if (fResult)
@@ -190,13 +242,22 @@ bool UIWizardExportAppPageBasic3::validatePage()
 
 void UIWizardExportAppPageBasic3::updatePageAppearance()
 {
+    /* Call to base-class: */
+    UIWizardExportAppPage3::updatePageAppearance();
+
     /* Check whether there was cloud target selected: */
     const bool fIsFormatCloudOne = field("isFormatCloudOne").toBool();
     if (fIsFormatCloudOne)
+    {
         m_pLabel->setText(UIWizardExportApp::tr("This is the descriptive information which will be used to determine settings "
                                                 "for a cloud storage your VM being exported to.  You can change it by double "
                                                 "clicking on individual lines."));
+        m_pFormEditor->setFocus();
+    }
     else
+    {
         m_pLabel->setText(UIWizardExportApp::tr("This is the descriptive information which will be added to the virtual "
                                                 "appliance.  You can change it by double clicking on individual lines."));
+        m_pApplianceWidget->setFocus();
+    }
 }
