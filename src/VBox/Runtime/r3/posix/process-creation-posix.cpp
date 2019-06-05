@@ -41,8 +41,10 @@
 #include <signal.h>
 #include <grp.h>
 #include <pwd.h>
-#if defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS)
+#if defined(RT_OS_LINUX) || defined(RT_OS_OS2) || defined(RT_OS_SOLARIS)
 # include <crypt.h>
+#endif
+#if defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS)
 # include <shadow.h>
 #endif
 
