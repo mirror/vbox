@@ -148,13 +148,16 @@ public:
 
     /** Constructs null ranged-integer data. */
     RangedIntegerData()
-        : m_iMinimum(-1), m_iMaximum(-1), m_iInteger(-1) {}
-    /** Constructs ranged-integer data on the basis of passed @a iMinimum, @a iMaximum and @a iInteger. */
-    RangedIntegerData(int iMinimum, int iMaximum, int iInteger)
-        : m_iMinimum(iMinimum), m_iMaximum(iMaximum), m_iInteger(iInteger) {}
+        : m_iMinimum(-1), m_iMaximum(-1)
+        , m_iInteger(-1), m_strSuffix(QString()) {}
+    /** Constructs ranged-integer data on the basis of passed @a iMinimum, @a iMaximum, @a iInteger and @a strSuffix. */
+    RangedIntegerData(int iMinimum, int iMaximum, int iInteger, const QString strSuffix)
+        : m_iMinimum(iMinimum), m_iMaximum(iMaximum)
+        , m_iInteger(iInteger), m_strSuffix(strSuffix) {}
     /** Constructs ranged-integer data on the basis of @a another ranged-integer data. */
     RangedIntegerData(const RangedIntegerData &another)
-        : m_iMinimum(another.minimum()), m_iMaximum(another.maximum()), m_iInteger(another.integer()) {}
+        : m_iMinimum(another.minimum()), m_iMaximum(another.maximum())
+        , m_iInteger(another.integer()), m_strSuffix(another.suffix()) {}
 
     /** Assigns values of @a another ranged-integer to this one. */
     RangedIntegerData &operator=(const RangedIntegerData &another)
@@ -162,6 +165,7 @@ public:
         m_iMinimum = another.minimum();
         m_iMaximum = another.maximum();
         m_iInteger = another.integer();
+        m_strSuffix = another.suffix();
         return *this;
     }
 
@@ -171,15 +175,19 @@ public:
     int maximum() const { return m_iMaximum; }
     /** Returns current value. */
     int integer() const { return m_iInteger; }
+    /** Returns suffix value. */
+    QString suffix() const { return m_strSuffix; }
 
 private:
 
     /** Holds minimum value. */
-    int  m_iMinimum;
+    int      m_iMinimum;
     /** Holds maximum value. */
-    int  m_iMaximum;
+    int      m_iMaximum;
     /** Holds current value. */
-    int  m_iInteger;
+    int      m_iInteger;
+    /** Holds suffix value. */
+    QString  m_strSuffix;
 };
 Q_DECLARE_METATYPE(RangedIntegerData);
 
@@ -593,11 +601,12 @@ void RangedIntegerEditor::setRangedInteger(const RangedIntegerData &rangedIntege
     setMinimum(rangedInteger.minimum());
     setMaximum(rangedInteger.maximum());
     setValue(rangedInteger.integer());
+    setSuffix(QString(" %1").arg(QApplication::translate("VBoxGlobal", rangedInteger.suffix().toUtf8().constData())));
 }
 
 RangedIntegerData RangedIntegerEditor::rangedInteger() const
 {
-    return RangedIntegerData(minimum(), maximum(), value());
+    return RangedIntegerData(minimum(), maximum(), value(), suffix());
 }
 
 
@@ -855,7 +864,8 @@ void UIFormEditorRow::updateValueCells()
             const int iMinimum = comValue.GetMinimum();
             const int iMaximum = comValue.GetMaximum();
             const int iInteger = comValue.GetInteger();
-            m_rangedInteger = RangedIntegerData(iMinimum, iMaximum, iInteger);
+            const QString strSuffix = comValue.GetSuffix();
+            m_rangedInteger = RangedIntegerData(iMinimum, iMaximum, iInteger, strSuffix);
             m_cells[UIFormEditorDataType_Value]->setText(QString::number(m_rangedInteger.integer()));
             /// @todo check for errors
             break;
