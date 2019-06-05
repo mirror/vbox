@@ -15804,7 +15804,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVirtApicAccessMsr(PVMCPU pVCpu, uint32_t id
  * @retval  VINF_VMX_MODIFIES_BEHAVIOR if the memory access was virtualized.
  * @retval  VINF_VMX_VMEXIT if the access causes a VM-exit.
  *
- * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
+ * @param   pVCpu           The cross context virtual CPU structure of the calling EMT.
  * @param   pExitInfo       Pointer to the VM-exit information.
  * @param   pExitEventInfo  Pointer to the VM-exit event information.
  * @thread  EMT(pVCpu)
@@ -15871,15 +15871,42 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVmexitExtInt(PVMCPU pVCpu, uint8_t uVector,
 
 
 /**
+ * Interface for HM and EM to emulate VM-exit due to exceptions (incl. NMIs).
+ *
+ * @returns Strict VBox status code.
+ * @param   pVCpu           The cross context virtual CPU structure of the calling EMT.
+ * @param   pExitInfo       Pointer to the VM-exit information.
+ * @param   pExitEventInfo  Pointer to the VM-exit event information.
+ * @thread  EMT(pVCpu)
+ */
+VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVmexitXcpt(PVMCPU pVCpu, PCVMXVEXITINFO pExitInfo, PCVMXVEXITEVENTINFO pExitEventInfo)
+{
+    Assert(pExitInfo);
+    Assert(pExitEventInfo);
+    VBOXSTRICTRC rcStrict = iemVmxVmexitEventWithInfo(pVCpu, pExitInfo, pExitEventInfo);
+    Assert(!pVCpu->iem.s.cActiveMappings);
+    return iemExecStatusCodeFiddling(pVCpu, rcStrict);
+}
+
+
+/**
  * Interface for HM and EM to emulate VM-exit due to NMIs.
  *
  * @returns Strict VBox status code.
  * @param   pVCpu           The cross context virtual CPU structure of the calling EMT.
  * @thread  EMT(pVCpu)
  */
-VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVmexitNmi(PVMCPU pVCpu)
+VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVmexitXcptNmi(PVMCPU pVCpu)
 {
-    VBOXSTRICTRC rcStrict = iemVmxVmexitNmi(pVCpu);
+    VMXVEXITINFO ExitInfo;
+    RT_ZERO(ExitInfo);
+    VMXVEXITEVENTINFO ExitEventInfo;
+    RT_ZERO(ExitInfo);
+    ExitEventInfo.uExitIntInfo = RT_BF_MAKE(VMX_BF_EXIT_INT_INFO_VALID,  1)
+                               | RT_BF_MAKE(VMX_BF_EXIT_INT_INFO_TYPE,   VMX_EXIT_INT_INFO_TYPE_NMI)
+                               | RT_BF_MAKE(VMX_BF_EXIT_INT_INFO_VECTOR, X86_XCPT_NMI);
+
+    VBOXSTRICTRC rcStrict = iemVmxVmexitEventWithInfo(pVCpu, &ExitInfo, &ExitEventInfo);
     Assert(!pVCpu->iem.s.cActiveMappings);
     return iemExecStatusCodeFiddling(pVCpu, rcStrict);
 }
