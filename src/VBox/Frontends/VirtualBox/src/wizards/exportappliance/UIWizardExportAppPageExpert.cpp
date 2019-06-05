@@ -526,7 +526,7 @@ bool UIWizardExportAppPageExpert::isComplete() const
         fResult =    (   fOVF
                       && VBoxGlobal::hasAllowedExtension(path().toLower(), OVFFileExts))
                   || (   fCSP
-                      && !m_comCloudProfile.isNull()
+                      && m_comCloudProfile.isNotNull()
                       && !m_cloudClientParameters.isEmpty());
     }
 
@@ -567,7 +567,7 @@ void UIWizardExportAppPageExpert::sltHandleFormatComboChange()
     updateFormatComboToolTip();
 
     /* Refresh required settings: */
-    updatePageAppearance();
+    UIWizardExportAppPage2::updatePageAppearance();
     refreshFileSelectorExtension();
     refreshManifestCheckBoxAccess();
     refreshIncludeISOsCheckBoxAccess();
