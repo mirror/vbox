@@ -1430,7 +1430,7 @@ NTSTATUS VBoxUsbFltInit()
      * querying string descriptors fail is set in the registry,
      * see @bugref{9479}.
      */
-    RTL_QUERY_REGISTRY_TABLE aParams[] = 
+    RTL_QUERY_REGISTRY_TABLE aParams[] =
     {
         {vboxUsbFltRegKeyQuery, 0, L"ForceReplugWhenDevPopulateFails", &g_VBoxUsbFltGlobals.dwForceReplugWhenDevPopulateFails, REG_DWORD, &g_VBoxUsbFltGlobals.dwForceReplugWhenDevPopulateFails, sizeof(ULONG) },
         {                 NULL, 0,                               NULL,                                                   NULL,         0,                                                     0,             0 }
