@@ -316,8 +316,8 @@ static int rtCheckCredentials(const char *pszUser, const char *pszPasswd, gid_t 
         rc = pszEncPasswd && !strcmp(pszEncPasswd, pPwd->pw_passwd) ? VINF_SUCCESS : VERR_AUTHENTICATION_FAILURE;
         RTMemWipeThoroughly(&CryptData, sizeof(CryptData), 3);
 # else
-        char *pszEncPasswd = crypt(pszPasswd, ppw->pw_passwd);
-        rc = strcmp(pszEncPasswd, ppw->pw_passwd) == 0 ? VINF_SUCCESS : VERR_AUTHENTICATION_FAILURE;
+        char *pszEncPasswd = crypt(pszPasswd, pPwd->pw_passwd);
+        rc = strcmp(pszEncPasswd, pPwd->pw_passwd) == 0 ? VINF_SUCCESS : VERR_AUTHENTICATION_FAILURE;
 # endif
     }
 
