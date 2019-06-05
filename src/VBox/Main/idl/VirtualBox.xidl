@@ -25831,6 +25831,12 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
              uuid="b31c4052-7bdc-11e9-8bc2-8ffdb8b19219"
              wsmap="managed"
              reservedMethods="4" reservedAttributes="4">
+    <attribute name="suffix" type="wstring" readonly="yes">
+      <desc>
+        Counterpart of the <link to="IFormValue::label"/> attribute.
+        May be null or empty.  Usually used for units.
+      </desc>
+    </attribute>
     <attribute name="minimum" type="long" readonly="yes"/>
     <attribute name="maximum" type="long" readonly="yes"/>
     <method name="getInteger">
