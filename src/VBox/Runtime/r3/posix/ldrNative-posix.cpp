@@ -41,6 +41,20 @@
 #include "internal/ldr.h"
 
 
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
+#if defined(RT_OS_OS2) || defined(RT_OS_WINDOWS)
+static const char g_szSuff[] = ".DLL";
+#elif defined(RT_OS_L4)
+static const char g_szSuff[] = ".s.so";
+#elif defined(RT_OS_DARWIN)
+static const char g_szSuff[] = ".dylib";
+#else
+static const char g_szSuff[] = ".so";
+#endif
+
+
 DECLHIDDEN(int) rtldrNativeLoad(const char *pszFilename, uintptr_t *phHandle, uint32_t fFlags, PRTERRINFO pErrInfo)
 {
     /*
@@ -48,21 +62,12 @@ DECLHIDDEN(int) rtldrNativeLoad(const char *pszFilename, uintptr_t *phHandle, ui
      */
     if (!RTPathHasSuffix(pszFilename) && !(fFlags & RTLDRLOAD_FLAGS_NO_SUFFIX))
     {
-#if defined(RT_OS_OS2) || defined(RT_OS_WINDOWS)
-        static const char s_szSuff[] = ".DLL";
-#elif defined(RT_OS_L4)
-        static const char s_szSuff[] = ".s.so";
-#elif defined(RT_OS_DARWIN)
-        static const char s_szSuff[] = ".dylib";
-#else
-        static const char s_szSuff[] = ".so";
-#endif
         size_t cch = strlen(pszFilename);
-        char *psz = (char *)alloca(cch + sizeof(s_szSuff));
+        char *psz = (char *)alloca(cch + sizeof(g_szSuff));
         if (!psz)
             return RTErrInfoSet(pErrInfo, VERR_NO_MEMORY, "alloca failed");
         memcpy(psz, pszFilename, cch);
-        memcpy(psz + cch, s_szSuff, sizeof(s_szSuff));
+        memcpy(psz + cch, g_szSuff, sizeof(g_szSuff));
         pszFilename = psz;
     }
 
@@ -127,8 +132,26 @@ DECLCALLBACK(int) rtldrNativeClose(PRTLDRMODINTERNAL pMod)
 
 DECLHIDDEN(int) rtldrNativeLoadSystem(const char *pszFilename, const char *pszExt, uint32_t fFlags, PRTLDRMOD phLdrMod)
 {
-    RT_NOREF_PV(pszFilename); RT_NOREF_PV(pszExt); RT_NOREF_PV(fFlags); RT_NOREF_PV(phLdrMod);
-    /** @todo implement this in some sensible fashion. */
-    return VERR_NOT_SUPPORTED;
+    /*
+     * For the present we ASSUME that we can trust dlopen to load what we want
+     * when not specifying a path.  There seems to be very little we can do to
+     * restrict the places dlopen will search for library without doing
+     * auditing (linux) or something like that.
+     */
+    Assert(strchr(pszFilename, '/') == NULL);
+
+    /* Easy if suffix was included. */
+    if (!pszExt)
+        return RTLdrLoadEx(pszFilename, phLdrMod, fFlags, NULL);
+
+    /* Combine filename and suffix and then do the loading. */
+    size_t const cchFilename = strlen(pszFilename);
+    size_t const cchSuffix   = strlen(pszExt);
+    char *pszTmp = (char *)alloca(cchFilename + cchSuffix + 1);
+    memcpy(pszTmp, pszFilename, cchFilename);
+    memcpy(&pszTmp[cchFilename], pszExt, cchSuffix);
+    pszTmp[cchFilename + cchSuffix] = '\0';
+
+    return RTLdrLoadEx(pszTmp, phLdrMod, fFlags, NULL);
 }
 

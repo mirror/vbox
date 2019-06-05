@@ -195,7 +195,7 @@ RTDECL(int) RTLdrLoadSystem(const char *pszFilename, bool fNoUnload, PRTLDRMOD p
     size_t cchFilename = strlen(pszFilename);
     AssertMsgReturn(cchFilename < (RTPATH_MAX / 4) * 3, ("%zu\n", cchFilename), VERR_INVALID_PARAMETER);
 
-    const char *pszSuffix = "";
+    const char *pszSuffix = NULL;
     if (!RTPathHasSuffix(pszFilename))
         pszSuffix = RTLdrGetSuff();
 
