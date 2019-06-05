@@ -7289,6 +7289,27 @@ IEM_STATIC void iemVmxVmentrySetupNmiWindow(PVMCPU pVCpu, const char *pszInstr)
 
 
 /**
+ * Sets up interrupt-window exiting.
+ *
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pszInstr    The VMX instruction name (for logging purposes).
+ */
+IEM_STATIC void iemVmxVmentrySetupIntWindow(PVMCPU pVCpu, const char *pszInstr)
+{
+    PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    Assert(pVmcs);
+    if (pVmcs->u32ProcCtls & VMX_PROC_CTLS_INT_WINDOW_EXIT)
+    {
+        VMCPU_FF_SET(pVCpu, VMCPU_FF_VMX_INT_WINDOW);
+        Log(("%s: Interrupt-window set on VM-entry\n", pszInstr));
+    }
+    else
+        Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_INT_WINDOW));
+    NOREF(pszInstr);
+}
+
+
+/**
  * Set up the VMX-preemption timer.
  *
  * @param   pVCpu       The cross context virtual CPU structure.
@@ -7709,6 +7730,9 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPU pVCpu, uint8_t cbInstr, VM
 
                                 /* Setup NMI-window exiting. */
                                 iemVmxVmentrySetupNmiWindow(pVCpu, pszInstr);
+
+                                /* Setup interrupt-window exiting. */
+                                iemVmxVmentrySetupIntWindow(pVCpu, pszInstr);
 
                                 /* Now that we've switched page tables, we can go ahead and inject any event. */
                                 rcStrict = iemVmxVmentryInjectEvent(pVCpu, pszInstr);

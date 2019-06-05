@@ -14078,15 +14078,32 @@ DECLINLINE(VBOXSTRICTRC) iemExecOneInner(PVMCPU pVCpu, bool fExecuteInhibit, con
             }
         }
 
-        /* NMI-window VM-exit. */
+        /*
+         * Check remaining intercepts.
+         *
+         * NMI-window and Interrupt-window VM-exits.
+         * Interrupt shadow (block-by-STI and Mov SS) inhibits interrupts and may also block NMIs.
+         * Event injection during VM-entry takes priority over NMI-window and interrupt-window VM-exits.
+         *
+         * See Intel spec. 26.7.6 "NMI-Window Exiting".
+         * See Intel spec. 26.7.5 "Interrupt-Window Exiting and Virtual-Interrupt Delivery".
+         */
         if (    fCheckRemainingIntercepts
-             && pVCpu->cpum.GstCtx.hwvirt.vmx.fInterceptEvents     /* Event injection during VM-entry takes priority. */
-             && VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_NMI_WINDOW)
-             && !VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
-             && !CPUMIsGuestNmiBlocking(pVCpu))
+            &&  pVCpu->cpum.GstCtx.hwvirt.vmx.fInterceptEvents
+            && !VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
         {
-            rcStrict = iemVmxVmexit(pVCpu, VMX_EXIT_NMI_WINDOW);
-            Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_NMI_WINDOW));
+            if (   VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_NMI_WINDOW)
+                && CPUMIsGuestVmxVirtNmiBlocking(pVCpu, &pVCpu->cpum.GstCtx))
+            {
+                rcStrict = iemVmxVmexit(pVCpu, VMX_EXIT_NMI_WINDOW);
+                Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_NMI_WINDOW));
+            }
+            else if (   VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_INT_WINDOW)
+                     && CPUMIsGuestVmxVirtIntrEnabled(pVCpu, &pVCpu->cpum.GstCtx))
+            {
+                rcStrict = iemVmxVmexit(pVCpu, VMX_EXIT_INT_WINDOW);
+                Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_INT_WINDOW));
+            }
         }
     }
 #endif
