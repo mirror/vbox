@@ -2008,10 +2008,10 @@ DECLINLINE(void) CPUMGuestSvmUpdateNRip(PVMCPU pVCpu, PCCPUMCTX pCtx, uint8_t cb
 DECLINLINE(bool) CPUMIsGuestVmxPinCtlsSet(PCVMCPU pVCpu, PCCPUMCTX pCtx, uint32_t uPinCtls)
 {
     RT_NOREF(pVCpu);
-    Assert(pCtx->hwvirt.enmHwvirt == CPUMHWVIRT_VMX);
-    Assert(pCtx->hwvirt.vmx.fInVmxNonRootMode);
-    Assert(pCtx->hwvirt.vmx.CTX_SUFF(pVmcs));
-    return RT_BOOL(pCtx->hwvirt.vmx.CTX_SUFF(pVmcs)->u32PinCtls & uPinCtls);
+    Assert(CPUMIsGuestInVmxNonRootMode(pCtx));
+    PCVMXVVMCS pVmcs = pCtx->hwvirt.vmx.CTX_SUFF(pVmcs);
+    Assert(pVmcs);
+    return RT_BOOL(pVmcs->u32PinCtls & uPinCtls);
 }
 
 /**
@@ -2029,10 +2029,10 @@ DECLINLINE(bool) CPUMIsGuestVmxPinCtlsSet(PCVMCPU pVCpu, PCCPUMCTX pCtx, uint32_
 DECLINLINE(bool) CPUMIsGuestVmxProcCtlsSet(PCVMCPU pVCpu, PCCPUMCTX pCtx, uint32_t uProcCtls)
 {
     RT_NOREF(pVCpu);
-    Assert(pCtx->hwvirt.enmHwvirt == CPUMHWVIRT_VMX);
-    Assert(pCtx->hwvirt.vmx.fInVmxNonRootMode);
-    Assert(pCtx->hwvirt.vmx.CTX_SUFF(pVmcs));
-    return RT_BOOL(pCtx->hwvirt.vmx.CTX_SUFF(pVmcs)->u32ProcCtls & uProcCtls);
+    Assert(CPUMIsGuestInVmxNonRootMode(pCtx));
+    PCVMXVVMCS pVmcs = pCtx->hwvirt.vmx.CTX_SUFF(pVmcs);
+    Assert(pVmcs);
+    return RT_BOOL(pVmcs->u32ProcCtls & uProcCtls);
 }
 
 /**
@@ -2051,10 +2051,10 @@ DECLINLINE(bool) CPUMIsGuestVmxProcCtlsSet(PCVMCPU pVCpu, PCCPUMCTX pCtx, uint32
 DECLINLINE(bool) CPUMIsGuestVmxProcCtls2Set(PCVMCPU pVCpu, PCCPUMCTX pCtx, uint32_t uProcCtls2)
 {
     RT_NOREF(pVCpu);
-    Assert(pCtx->hwvirt.enmHwvirt == CPUMHWVIRT_VMX);
-    Assert(pCtx->hwvirt.vmx.fInVmxNonRootMode);
-    Assert(pCtx->hwvirt.vmx.CTX_SUFF(pVmcs));
-    return RT_BOOL(pCtx->hwvirt.vmx.CTX_SUFF(pVmcs)->u32ProcCtls2 & uProcCtls2);
+    Assert(CPUMIsGuestInVmxNonRootMode(pCtx));
+    PCVMXVVMCS pVmcs = pCtx->hwvirt.vmx.CTX_SUFF(pVmcs);
+    Assert(pVmcs);
+    return RT_BOOL(pVmcs->u32ProcCtls2 & uProcCtls2);
 }
 
 /**
@@ -2072,10 +2072,10 @@ DECLINLINE(bool) CPUMIsGuestVmxProcCtls2Set(PCVMCPU pVCpu, PCCPUMCTX pCtx, uint3
 DECLINLINE(bool) CPUMIsGuestVmxExitCtlsSet(PCVMCPU pVCpu, PCCPUMCTX pCtx, uint32_t uExitCtls)
 {
     RT_NOREF(pVCpu);
-    Assert(pCtx->hwvirt.enmHwvirt == CPUMHWVIRT_VMX);
-    Assert(pCtx->hwvirt.vmx.fInVmxNonRootMode);
-    Assert(pCtx->hwvirt.vmx.CTX_SUFF(pVmcs));
-    return RT_BOOL(pCtx->hwvirt.vmx.CTX_SUFF(pVmcs)->u32ExitCtls & uExitCtls);
+    Assert(CPUMIsGuestInVmxNonRootMode(pCtx));
+    PCVMXVVMCS pVmcs = pCtx->hwvirt.vmx.CTX_SUFF(pVmcs);
+    Assert(pVmcs);
+    return RT_BOOL(pVmcs->u32ExitCtls & uExitCtls);
 }
 
 /**
@@ -2093,10 +2093,10 @@ DECLINLINE(bool) CPUMIsGuestVmxExitCtlsSet(PCVMCPU pVCpu, PCCPUMCTX pCtx, uint32
 DECLINLINE(bool) CPUMIsGuestVmxEntryCtlsSet(PCVMCPU pVCpu, PCCPUMCTX pCtx, uint32_t uEntryCtls)
 {
     RT_NOREF(pVCpu);
-    Assert(pCtx->hwvirt.enmHwvirt == CPUMHWVIRT_VMX);
-    Assert(pCtx->hwvirt.vmx.fInVmxNonRootMode);
-    Assert(pCtx->hwvirt.vmx.CTX_SUFF(pVmcs));
-    return RT_BOOL(pCtx->hwvirt.vmx.CTX_SUFF(pVmcs)->u32EntryCtls & uEntryCtls);
+    Assert(CPUMIsGuestInVmxNonRootMode(pCtx));
+    PCVMXVVMCS pVmcs = pCtx->hwvirt.vmx.CTX_SUFF(pVmcs);
+    Assert(pVmcs);
+    return RT_BOOL(pVmcs->u32EntryCtls & uEntryCtls);
 }
 
 /**
@@ -2120,9 +2120,9 @@ DECLINLINE(bool) CPUMIsGuestVmxXcptInterceptSet(PCVMCPU pVCpu, PCCPUMCTX pCtx, u
     Assert(uVector <= X86_XCPT_LAST);
 
     RT_NOREF(pVCpu);
+    Assert(CPUMIsGuestInVmxNonRootMode(pCtx));
     PCVMXVVMCS pVmcs = pCtx->hwvirt.vmx.CTX_SUFF(pVmcs);
     Assert(pVmcs);
-    Assert(CPUMIsGuestInVmxNonRootMode(pCtx));
 
     /* NMIs have a dedicated VM-execution control for causing VM-exits. */
     if (uVector == X86_XCPT_NMI)
@@ -2203,10 +2203,10 @@ DECLINLINE(void) CPUMSetGuestVmxVmFail(PCPUMCTX pCtx, VMXINSTRERR enmInsErr)
 DECLINLINE(uint64_t) CPUMGetGuestVmxApicAccessPageAddr(PCVMCPU pVCpu, PCCPUMCTX pCtx)
 {
     RT_NOREF(pVCpu);
-    Assert(pCtx->hwvirt.enmHwvirt == CPUMHWVIRT_VMX);
-    Assert(pCtx->hwvirt.vmx.fInVmxNonRootMode);
-    Assert(pCtx->hwvirt.vmx.CTX_SUFF(pVmcs));
-    return pCtx->hwvirt.vmx.CTX_SUFF(pVmcs)->u64AddrApicAccess.u;
+    Assert(CPUMIsGuestInVmxNonRootMode(pCtx));
+    PCVMXVVMCS pVmcs = pCtx->hwvirt.vmx.CTX_SUFF(pVmcs);
+    Assert(pVmcs);
+    return pVmcs->u64AddrApicAccess.u;
 }
 
 /**
@@ -2226,9 +2226,9 @@ DECLINLINE(uint64_t) CPUMGetGuestVmxMaskedCr0(PCVMCPU pVCpu, PCCPUMCTX pCtx)
      * See Intel Spec. 25.3 "Changes To Instruction Behavior In VMX Non-root Operation".
      */
     RT_NOREF(pVCpu);
+    Assert(CPUMIsGuestInVmxNonRootMode(pCtx));
     PCVMXVVMCS pVmcs = pCtx->hwvirt.vmx.CTX_SUFF(pVmcs);
     Assert(pVmcs);
-    Assert(CPUMIsGuestInVmxNonRootMode(pCtx));
     uint64_t const uGstCr0      = pCtx->cr0;
     uint64_t const fGstHostMask = pVmcs->u64Cr0Mask.u;
     uint64_t const fReadShadow  = pVmcs->u64Cr0ReadShadow.u;
@@ -2252,9 +2252,9 @@ DECLINLINE(uint64_t) CPUMGetGuestVmxMaskedCr4(PCVMCPU pVCpu, PCCPUMCTX pCtx)
      * See Intel Spec. 25.3 "Changes To Instruction Behavior In VMX Non-root Operation".
      */
     RT_NOREF(pVCpu);
+    Assert(CPUMIsGuestInVmxNonRootMode(pCtx));
     PCVMXVVMCS pVmcs = pCtx->hwvirt.vmx.CTX_SUFF(pVmcs);
     Assert(pVmcs);
-    Assert(CPUMIsGuestInVmxNonRootMode(pCtx));
     uint64_t const uGstCr4      = pCtx->cr4;
     uint64_t const fGstHostMask = pVmcs->u64Cr4Mask.u;
     uint64_t const fReadShadow  = pVmcs->u64Cr4ReadShadow.u;
@@ -2278,9 +2278,9 @@ DECLINLINE(bool) CPUMIsGuestVmxLmswInterceptSet(PCVMCPU pVCpu, PCCPUMCTX pCtx, u
      * See Intel spec. 25.1.3 "Instructions That Cause VM Exits Conditionally".
      */
     RT_NOREF(pVCpu);
+    Assert(CPUMIsGuestInVmxNonRootMode(pCtx));
     PCVMXVVMCS pVmcs = pCtx->hwvirt.vmx.CTX_SUFF(pVmcs);
     Assert(pVmcs);
-    Assert(CPUMIsGuestInVmxNonRootMode(pCtx));
 
     uint32_t const fGstHostMask = pVmcs->u64Cr0Mask.u;
     uint32_t const fReadShadow  = pVmcs->u64Cr0ReadShadow.u;
@@ -2328,9 +2328,9 @@ DECLINLINE(bool) CPUMIsGuestVmxMovToCr0Cr4InterceptSet(PCVMCPU pVCpu, PCCPUMCTX 
      * See Intel spec. 25.1.3 "Instructions That Cause VM Exits Conditionally".
      */
     RT_NOREF(pVCpu);
+    Assert(CPUMIsGuestInVmxNonRootMode(pCtx));
     PCVMXVVMCS pVmcs = pCtx->hwvirt.vmx.CTX_SUFF(pVmcs);
     Assert(pVmcs);
-    Assert(CPUMIsGuestInVmxNonRootMode(pCtx));
     Assert(iCrReg == 0 || iCrReg == 4);
 
     uint64_t fGstHostMask;
@@ -2361,9 +2361,7 @@ DECLINLINE(bool) CPUMIsGuestVmxMovToCr0Cr4InterceptSet(PCVMCPU pVCpu, PCCPUMCTX 
  * Checks whether the VMX nested-guest is in a state to receive physical (APIC)
  * interrupts.
  *
- * @returns VBox status code.
- * @retval  true if it's ready, false otherwise.
- *
+ * @returns @c true if it's ready, @c false otherwise.
  * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
  * @param   pCtx    The guest-CPU context.
  */
@@ -2380,12 +2378,31 @@ DECLINLINE(bool) CPUMIsGuestVmxPhysIntrEnabled(PCVMCPU pVCpu, PCCPUMCTX pCtx)
 }
 
 /**
+ * Checks whether the VMX nested-guest is blocking virtual-NMIs.
+ *
+ * @returns @c true if it's blocked, @c false otherwise.
+ * @param   pCtx    The guest-CPU context.
+ */
+DECLINLINE(bool) CPUMIsGuestVmxVirtNmiBlocking(PCVMCPU pVCpu, PCCPUMCTX pCtx)
+{
+#ifdef IN_RC
+    RT_NOREF2(pVCpu, pCtx);
+    AssertReleaseFailedReturn(false);
+#else
+    /*
+     * Return the state of virtual-NMI blocking, if we are executing a
+     * VMX nested-guest with virtual-NMIs enabled.
+     */
+    Assert(CPUMIsGuestVmxPinCtlsSet(pVCpu, pCtx, VMX_PIN_CTLS_VIRT_NMI));
+    return pCtx->hwvirt.vmx.fVirtNmiBlocking;
+#endif
+}
+
+/**
  * Checks whether the VMX nested-guest is in a state to receive virtual interrupts
  * (those injected with the "virtual-interrupt delivery" feature).
  *
- * @returns VBox status code.
- * @retval  true if it's ready, false otherwise.
- *
+ * @returns @c true if it's ready, @c false otherwise.
  * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
  * @param   pCtx    The guest-CPU context.
  */
@@ -2397,11 +2414,7 @@ DECLINLINE(bool) CPUMIsGuestVmxVirtIntrEnabled(PCVMCPU pVCpu, PCCPUMCTX pCtx)
 #else
     RT_NOREF(pVCpu);
     Assert(CPUMIsGuestInVmxNonRootMode(pCtx));
-
-    if (   (pCtx->eflags.u & X86_EFL_IF)
-        && !CPUMIsGuestVmxProcCtlsSet(pVCpu, pCtx, VMX_PROC_CTLS_INT_WINDOW_EXIT))
-        return true;
-    return false;
+    return RT_BOOL(pCtx->eflags.u & X86_EFL_IF);
 #endif
 }
 
