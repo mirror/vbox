@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-
+<!-- https://www.ibm.com/support/knowledgecenter/en/ssw_aix_71/com.ibm.aix.keyboardtechref/doc/kybdtech/Key.htm -->
 <layout defaultHeight="50" defaultWidth="50">
     <row>
         <key>
@@ -407,9 +407,10 @@
             <scancode>0x1d</scancode>
         </key>
         <key>
-            <keycap>Win</keycap>
+            <keycap>OS</keycap>
             <width>75</width>
             <type>modifier</type>
+            <position>227</position>
             <scancodeprefix>0xe0</scancodeprefix>
             <scancode>0x5b</scancode>
         </key>
@@ -434,9 +435,10 @@
             <scancode>0x38</scancode>
         </key>
         <key>
-            <keycap>Win</keycap>
+            <keycap>OS</keycap>
             <width>75</width>
             <type>modifier</type>
+            <position>231</position>
             <scancodeprefix>0xe0</scancodeprefix>
             <scancode>0x5c</scancode>
         </key>

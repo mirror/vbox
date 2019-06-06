@@ -106,6 +106,9 @@ public:
     const QRect keyGeometry() const;
     void setKeyGeometry(const QRect &rect);
 
+    const QString &staticKeyCap() const;
+    void setStaticKeyCap(const QString &strKeyCap);
+
     const QString &keyCap() const;
     void setKeyCap(const QString &strKeyCap);
 
@@ -153,7 +156,12 @@ private:
     void updateState(bool fPressed);
 
     QRect      m_keyGeometry;
+    /** Static keycaps are what is obtained from the layout file, as opposed to the keycaps file.
+      * normally they are the captions of modifier keys (Shift, etc) whose meaning stays the same across the layouts. */
+    QString    m_strStaticKeyCap;
+    /** Key caps are loaded from a keycap file and preferred over the static keycaps if they are not empty. */
     QString    m_strKeyCap;
+
     /** Stores the key polygon in local coordinates. */
     QPolygon   m_polygon;
     UIKeyType  m_enmType;
@@ -167,7 +175,7 @@ private:
     LONG       m_scanCodePrefix;
     int        m_iCutoutWidth;
     int        m_iCutoutHeight;
-    /** -1 is no cutout. 0 is the topleft corner. we go clockwise. */
+    /** -1 is for no cutout. 0 is the topleft, 2 is the top right and so on. */
     int        m_iCutoutCorner;
     /** Key's position in the layout. */
     int        m_iPosition;
@@ -211,6 +219,8 @@ private slots:
     void sltHandleLoadLayout(QAction *pSenderAction);
     void sltHandleKeyCapEdit();
     void sltHandleSaveKeyCapFile();
+    void sltHandleLoadKeyCapFile();
+    void sltHandleUnloadKeyCaps();
 
 private:
 
@@ -281,6 +291,27 @@ private:
     void  parseCutout(UISoftKeyboardKey &key);
 
     QXmlStreamReader m_xmlReader;
+};
+
+/*********************************************************************************************************************************
+*   UIKeyboardKeyCapReader definition.                                                                                  *
+*********************************************************************************************************************************/
+
+class UIKeyboardKeyCapReader
+{
+
+public:
+
+    UIKeyboardKeyCapReader(const QString &strFileName);
+    const QMap<int, QString> &keyCapMap() const;
+
+private:
+
+    bool  parseKeyCapFile(const QString &strFileName);
+    void  parseKey();
+    QXmlStreamReader m_xmlReader;
+    /** Keys are positions and values are keycaps. */
+    QMap<int, QString> m_keyCapMap;
 };
 
 /*********************************************************************************************************************************
@@ -362,6 +393,16 @@ const QRect UISoftKeyboardKey::keyGeometry() const
 void UISoftKeyboardKey::setKeyGeometry(const QRect &rect)
 {
     m_keyGeometry = rect;
+}
+
+const QString &UISoftKeyboardKey::staticKeyCap() const
+{
+    return m_strStaticKeyCap;
+}
+
+void UISoftKeyboardKey::setStaticKeyCap(const QString &strStaticKeyCap)
+{
+    m_strStaticKeyCap = strStaticKeyCap;
 }
 
 const QString &UISoftKeyboardKey::keyCap() const
@@ -621,7 +662,6 @@ void UISoftKeyboardWidget::paintEvent(QPaintEvent *pEvent) /* override */
 
             if (&key == m_pKeyBeingEdited)
             {
-                //m_pKeyCapEditor->setText(key.keyCap());
                 m_pKeyCapEditor->setFont(painterFont);
                 m_pKeyCapEditor->setGeometry(m_fScaleFactorX * key.keyGeometry().x(), m_fScaleFactorY * key.keyGeometry().y(),
                                              m_fScaleFactorX * key.keyGeometry().width(), m_fScaleFactorY * key.keyGeometry().height());
@@ -642,7 +682,8 @@ void UISoftKeyboardWidget::paintEvent(QPaintEvent *pEvent) /* override */
             if (m_pShowPositionsAction && m_pShowPositionsAction->isChecked())
                 painter.drawText(textRect, Qt::TextWordWrap, QString::number(key.position()));
             else
-                painter.drawText(textRect, Qt::TextWordWrap, key.keyCap());
+                painter.drawText(textRect, Qt::TextWordWrap,
+                                 !key.keyCap().isEmpty() ? key.keyCap() : key.staticKeyCap());
 
             if (key.type() != UIKeyType_Ordinary)
             {
@@ -712,7 +753,7 @@ bool UISoftKeyboardWidget::eventFilter(QObject *pWatched, QEvent *pEvent)
             else if (pKeyEvent->key() == Qt::Key_Enter || pKeyEvent->key() == Qt::Key_Return)
             {
                 if (m_pKeyBeingEdited)
-                    m_pKeyBeingEdited->setKeyCap(m_pKeyCapEditor->text());
+                    m_pKeyBeingEdited->setStaticKeyCap(m_pKeyCapEditor->text());
                 m_pKeyBeingEdited = 0;
                 update();
                 return true;
@@ -787,9 +828,7 @@ void UISoftKeyboardWidget::sltHandleSaveKeyCapFile()
 
     QFileInfo fileInfo(strFileName);
     if (fileInfo.suffix().compare("xml", Qt::CaseInsensitive) != 0)
-    {
         strFileName += ".xml";
-    }
 
     QFile xmlFile(strFileName);
     if (!xmlFile.open(QIODevice::WriteOnly))
@@ -810,15 +849,48 @@ void UISoftKeyboardWidget::sltHandleSaveKeyCapFile()
 
            UISoftKeyboardKey &key = keys[j];
            xmlWriter.writeTextElement("position", QString::number(key.position()));
-           xmlWriter.writeTextElement("keycap", key.keyCap());
+           if (!key.keyCap().isEmpty())
+               xmlWriter.writeTextElement("keycap", key.keyCap());
+           else
+               xmlWriter.writeTextElement("keycap", key.staticKeyCap());
            xmlWriter.writeEndElement();
-
        }
    }
    xmlWriter.writeEndElement();
    xmlWriter.writeEndDocument();
 
    xmlFile.close();
+}
+
+void UISoftKeyboardWidget::sltHandleLoadKeyCapFile()
+{
+    const QString strFileName = QIFileDialog::getOpenFileName(QString(), UISoftKeyboard::tr("XML files (*.xml)"), this,
+                                                              UISoftKeyboard::tr("Choose file to load key captions.."));
+    if (strFileName.isEmpty())
+        return;
+    UIKeyboardKeyCapReader keyCapReader(strFileName);
+    const QMap<int, QString> &keyCapMap = keyCapReader.keyCapMap();
+
+    for (int i = 0; i < m_rows.size(); ++i)
+    {
+        QVector<UISoftKeyboardKey> &keys = m_rows[i].keys();
+        for (int j = 0; j < keys.size(); ++j)
+        {
+            UISoftKeyboardKey &key = keys[j];
+            if (keyCapMap.contains(key.position()))
+                key.setKeyCap(keyCapMap[key.position()]);
+        }
+    }
+}
+
+void UISoftKeyboardWidget::sltHandleUnloadKeyCaps()
+{
+    for (int i = 0; i < m_rows.size(); ++i)
+    {
+        QVector<UISoftKeyboardKey> &keys = m_rows[i].keys();
+        for (int j = 0; j < keys.size(); ++j)
+            keys[j].setKeyCap(QString());
+    }
 }
 
 void UISoftKeyboardWidget::setNewMinimumSize(const QSize &size)
@@ -1030,8 +1102,12 @@ void UISoftKeyboardWidget::prepareObjects()
     connect(m_pChangeKeyCapAction, &QAction::triggered, this, &UISoftKeyboardWidget::sltHandleKeyCapEdit);
     QAction *pSaveKeyCapFile = pKeycapsMenu->addAction(UISoftKeyboard::tr("Save key caps to file..."));
     connect(pSaveKeyCapFile, &QAction::triggered, this, &UISoftKeyboardWidget::sltHandleSaveKeyCapFile);
+    QAction *pLoadKeyCapFile = pKeycapsMenu->addAction(UISoftKeyboard::tr("Load key caps from file..."));
+    connect(pLoadKeyCapFile, &QAction::triggered, this, &UISoftKeyboardWidget::sltHandleLoadKeyCapFile);
+    QAction *pUnloadKeyCaps = pKeycapsMenu->addAction(UISoftKeyboard::tr("Unload key caps"));
+    connect(pUnloadKeyCaps, &QAction::triggered, this, &UISoftKeyboardWidget::sltHandleUnloadKeyCaps);
 
-    /* Choose the first layput action's data as the defaults one: */
+    /* Choose the first layout action's data as the default layout: */
     if (!m_pLayoutActionGroup->actions().empty())
     {
         QAction *pAction = m_pLayoutActionGroup->actions().at(0);
@@ -1173,7 +1249,7 @@ void UIKeyboardLayoutReader::parseKey(UISoftKeyboardRow &row)
         else
             m_xmlReader.skipCurrentElement();
     }
-    key.setKeyCap(strKeyCap);
+    key.setStaticKeyCap(strKeyCap);
 }
 
 void UIKeyboardLayoutReader::parseKeySpace(UISoftKeyboardRow &row)
@@ -1269,6 +1345,61 @@ QVector<QPoint> UIKeyboardLayoutReader::computeKeyVertices(const UISoftKeyboardK
         vertices.append(QPoint(0, key.height() - key.cutoutHeight()));
     }
     return vertices;
+}
+
+/*********************************************************************************************************************************
+*   UIKeyboardKeyCapReader implementation.                                                                                  *
+*********************************************************************************************************************************/
+
+UIKeyboardKeyCapReader::UIKeyboardKeyCapReader(const QString &strFileName)
+{
+    parseKeyCapFile(strFileName);
+}
+
+const QMap<int, QString> &UIKeyboardKeyCapReader::keyCapMap() const
+{
+    return m_keyCapMap;
+}
+
+bool UIKeyboardKeyCapReader::parseKeyCapFile(const QString &strFileName)
+{
+    QFile xmlFile(strFileName);
+    if (!xmlFile.exists())
+        return false;
+
+    if (!xmlFile.open(QIODevice::ReadOnly))
+        return false;
+
+    m_xmlReader.setDevice(&xmlFile);
+
+    if (!m_xmlReader.readNextStartElement() || m_xmlReader.name() != "keycaps")
+        return false;
+
+    while (m_xmlReader.readNextStartElement())
+    {
+        if (m_xmlReader.name() == "key")
+            parseKey();
+        else
+            m_xmlReader.skipCurrentElement();
+    }
+
+    return true;
+}
+
+void  UIKeyboardKeyCapReader::parseKey()
+{
+    QString strKeyCap;
+    int iKeyPosition = 0;
+    while (m_xmlReader.readNextStartElement())
+    {
+        if (m_xmlReader.name() == "keycap")
+            strKeyCap = m_xmlReader.readElementText();
+        else if (m_xmlReader.name() == "position")
+            iKeyPosition = m_xmlReader.readElementText().toInt();
+        else
+            m_xmlReader.skipCurrentElement();
+    }
+    m_keyCapMap.insert(iKeyPosition, strKeyCap);
 }
 
 /*********************************************************************************************************************************
