@@ -15867,21 +15867,10 @@ HMVMX_EXIT_DECL hmR0VmxExitXcptOrNmiNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTrans
                 return IEMExecVmxVmexitXcpt(pVCpu, &ExitInfo, &ExitEventInfo);
             }
 
-            /* If it was a #PF and the nested-guest is not intercepting it, forward it to the guest. */
-            if (uVector == X86_XCPT_PF)
-            {
-                if (pVCpu->CTX_SUFF(pVM)->hm.s.fNestedPaging)
-                {
-                    rc  = hmR0VmxReadExitIntErrorCodeVmcs(pVmxTransient);
-                    rc |= hmR0VmxReadExitQualVmcs(pVCpu, pVmxTransient);
-                    AssertRCReturn(rc, rc);
-
-                    hmR0VmxSetPendingEvent(pVCpu, VMX_ENTRY_INT_INFO_FROM_EXIT_INT_INFO(uExitIntInfo), 0 /* cbInstr */,
-                                           pVmxTransient->uExitIntErrorCode, pVmxTransient->uExitQual);
-                }
-                return hmR0VmxExitXcptPF(pVCpu, pVmxTransient);
-            }
-            break;
+            /* If the guest hypervisor is not intercepting the exception, forward it to the guest. */
+            hmR0VmxSetPendingEvent(pVCpu, VMX_ENTRY_INT_INFO_FROM_EXIT_INT_INFO(uExitIntInfo), pVmxTransient->cbInstr,
+                                   pVmxTransient->uExitIntErrorCode, pVmxTransient->uExitQual);
+            return VINF_SUCCESS;
         }
 
         /*
@@ -15902,8 +15891,6 @@ HMVMX_EXIT_DECL hmR0VmxExitXcptOrNmiNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTrans
             return VERR_VMX_UNEXPECTED_INTERRUPTION_EXIT_TYPE;
         }
     }
-
-    return VERR_NOT_IMPLEMENTED;
 }
 
 
