@@ -12843,14 +12843,17 @@ static int hmR0VmxAdvanceGuestRip(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
  */
 static VBOXSTRICTRC hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
-    uint32_t const uExitVector = VMX_EXIT_INT_INFO_VECTOR(pVmxTransient->uExitIntInfo);
-
-    int rc2 = hmR0VmxReadIdtVectoringInfoVmcs(pVmxTransient);
-    rc2    |= hmR0VmxReadExitIntInfoVmcs(pVmxTransient);
-    AssertRCReturn(rc2, rc2);
-
     VBOXSTRICTRC  rcStrict  = VINF_SUCCESS;
     PCVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
+
+    /* Read the IDT vectoring info. and VM-exit interruption info. */
+    {
+        int rc = hmR0VmxReadIdtVectoringInfoVmcs(pVmxTransient);
+        rc    |= hmR0VmxReadExitIntInfoVmcs(pVmxTransient);
+        AssertRCReturn(rc, rc);
+    }
+
+    uint32_t const uExitVector = VMX_EXIT_INT_INFO_VECTOR(pVmxTransient->uExitIntInfo);
     if (VMX_IDT_VECTORING_INFO_IS_VALID(pVmxTransient->uIdtVectoringInfo))
     {
         uint32_t const uIdtVectorType = VMX_IDT_VECTORING_INFO_TYPE(pVmxTransient->uIdtVectoringInfo);
@@ -12879,6 +12882,7 @@ static VBOXSTRICTRC hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PVMXTRANSIE
             uint32_t const uExitVectorType  = VMX_EXIT_INT_INFO_TYPE(pVmxTransient->uExitIntInfo);
             uint32_t const fIdtVectorFlags  = hmR0VmxGetIemXcptFlags(uIdtVector, uIdtVectorType);
             uint32_t const fExitVectorFlags = hmR0VmxGetIemXcptFlags(uExitVector, uExitVectorType);
+
             /** @todo Make AssertMsgReturn as just AssertMsg later. */
             AssertMsgReturn(uExitVectorType == VMX_EXIT_INT_INFO_TYPE_HW_XCPT,
                             ("Unexpected VM-exit interruption vector type %#x!\n", uExitVectorType), VERR_VMX_IPE_5);
@@ -12938,8 +12942,8 @@ static VBOXSTRICTRC hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PVMXTRANSIE
                 uint32_t u32ErrCode;
                 if (VMX_IDT_VECTORING_INFO_IS_ERROR_CODE_VALID(pVmxTransient->uIdtVectoringInfo))
                 {
-                    rc2 = hmR0VmxReadIdtVectoringErrorCodeVmcs(pVmxTransient);
-                    AssertRCReturn(rc2, rc2);
+                    int rc = hmR0VmxReadIdtVectoringErrorCodeVmcs(pVmxTransient);
+                    AssertRCReturn(rc, rc);
                     u32ErrCode = pVmxTransient->uIdtVectoringErrorCode;
                 }
                 else
