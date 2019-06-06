@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * ClipboardStreamImpl-win.cpp - Shared Clipboard IStream object implementation (for CF_HDROP).
+ * ClipboardStreamImpl-win.cpp - Shared Clipboard IStream object implementation (guest and host side).
  */
 
 /*
@@ -46,48 +46,60 @@
 
 
 VBoxClipboardWinStreamImpl::VBoxClipboardWinStreamImpl(VBoxClipboardWinDataObject *pParent,
-                                                       PSHAREDCLIPBOARDURITRANSFER pTransfer, SharedClipboardURIObject *pURIObj)
+                                                       PSHAREDCLIPBOARDURITRANSFER pTransfer, uint64_t uObjIdx)
     : m_pParent(pParent)
     , m_lRefCount(1)
-    , m_pTransfer(pTransfer)
-    , m_pURIObj(pURIObj)
+    , m_pURITransfer(pTransfer)
+    , m_uObjIdx(uObjIdx)
 {
-    AssertPtr(m_pTransfer);
-    AssertPtr(m_pTransfer->pProvider);
-    AssertPtr(m_pURIObj);
+    AssertPtr(m_pURITransfer);
+    AssertPtr(m_pURITransfer->pProvider);
 
-    LogFunc(("szSrcPath=%s, cbSize=%RU64\n", m_pURIObj->GetSourcePathAbs().c_str(), m_pURIObj->GetSize()));
+    LogFunc(("m_uObjIdx=%RU64\n", uObjIdx));
 
-    m_pTransfer->pProvider->AddRef();
+    m_pURITransfer->pProvider->AddRef();
 }
 
 VBoxClipboardWinStreamImpl::~VBoxClipboardWinStreamImpl(void)
 {
     LogFlowThisFuncEnter();
 
-    if (   m_pTransfer
-        && m_pTransfer->pProvider)
-        m_pTransfer->pProvider->Release();
+    if (   m_pURITransfer
+        && m_pURITransfer->pProvider)
+        m_pURITransfer->pProvider->Release();
 }
 
 /*
  * IUnknown methods.
  */
 
-STDMETHODIMP VBoxClipboardWinStreamImpl::QueryInterface(REFIID iid, void ** ppvObject)
+STDMETHODIMP VBoxClipboardWinStreamImpl::QueryInterface(REFIID iid, void **ppvObject)
 {
     AssertPtrReturn(ppvObject, E_INVALIDARG);
 
-    if (   iid == IID_IStream
-        || iid == IID_IUnknown)
+    if (iid == IID_IUnknown)
     {
-        AddRef();
-        *ppvObject = this;
-        return S_OK;
+        LogFlowFunc(("IID_IUnknown\n"));
+        *ppvObject = (IUnknown *)(ISequentialStream *)this;
+    }
+    else if (iid == IID_ISequentialStream)
+    {
+        LogFlowFunc(("IID_ISequentialStream\n"));
+        *ppvObject = (ISequentialStream *)this;
+    }
+    else if (iid == IID_IStream)
+    {
+        LogFlowFunc(("IID_IStream\n"));
+        *ppvObject = (IStream *)this;
+    }
+    else
+    {
+        *ppvObject = NULL;
+        return E_NOINTERFACE;
     }
 
-    *ppvObject = 0;
-    return E_NOINTERFACE;
+    AddRef();
+    return S_OK;
 }
 
 STDMETHODIMP_(ULONG) VBoxClipboardWinStreamImpl::AddRef(void)
@@ -103,6 +115,9 @@ STDMETHODIMP_(ULONG) VBoxClipboardWinStreamImpl::Release(void)
     LogFlowFunc(("lCount=%RI32\n", m_lRefCount));
     if (lCount == 0)
     {
+        if (m_pParent)
+            m_pParent->OnTransferComplete();
+
         delete this;
         return 0;
     }
@@ -144,25 +159,26 @@ STDMETHODIMP VBoxClipboardWinStreamImpl::LockRegion(ULARGE_INTEGER nStart, ULARG
     RT_NOREF(nStart, nBytes, dwFlags);
 
     LogFlowThisFuncEnter();
-    return E_NOTIMPL;
+    return STG_E_INVALIDFUNCTION;
 }
 
 STDMETHODIMP VBoxClipboardWinStreamImpl::Read(void *pvBuffer, ULONG nBytesToRead, ULONG *nBytesRead)
 {
-   LogFlowThisFuncEnter();
+    LogFlowThisFuncEnter();
 
-    AssertPtr(m_pURIObj);
-    if (m_pURIObj->IsComplete())
+    const SharedClipboardURIObject *pObj = SharedClipboardURITransferGetObject(m_pURITransfer, m_uObjIdx);
+
+    if (pObj->IsComplete())
     {
         /* There can be 0-byte files. */
-        AssertMsg(m_pURIObj->GetSize() == 0, ("Object is complete -- can't read from it anymore\n"));
+        AssertMsg(pObj->GetSize() == 0, ("Object is complete -- can't read from it anymore\n"));
         if (nBytesRead)
             *nBytesRead = 0; /** @todo If the file size is 0, already return at least 1 byte, else the whole operation will fail. */
         return S_OK; /* Don't report any failures back to Windows. */
     }
 
-    const uint64_t cbSize      = m_pURIObj->GetSize();
-    const uint64_t cbProcessed = m_pURIObj->GetProcessed();
+    const uint64_t cbSize      = pObj->GetSize();
+    const uint64_t cbProcessed = pObj->GetProcessed();
 
     const uint32_t cbToRead = RT_MIN(cbSize - cbProcessed, nBytesToRead);
           uint32_t cbRead   = 0;
@@ -177,10 +193,10 @@ STDMETHODIMP VBoxClipboardWinStreamImpl::Read(void *pvBuffer, ULONG nBytesToRead
         FileData.pvData = pvBuffer;
         FileData.cbData = cbToRead;
 
-        rc = m_pTransfer->pProvider->ReadFileData(&FileData, &cbRead);
+        rc = m_pURITransfer->pProvider->ReadFileData(&FileData, &cbRead);
         if (RT_SUCCESS(rc))
         {
-            if (m_pURIObj->IsComplete())
+            if (pObj->IsComplete())
                 m_pParent->OnTransferComplete();
         }
     }
@@ -196,7 +212,7 @@ STDMETHODIMP VBoxClipboardWinStreamImpl::Read(void *pvBuffer, ULONG nBytesToRead
 STDMETHODIMP VBoxClipboardWinStreamImpl::Revert(void)
 {
     LogFlowThisFuncEnter();
-    return E_NOTIMPL;
+    return STG_E_INVALIDFUNCTION;
 }
 
 STDMETHODIMP VBoxClipboardWinStreamImpl::Seek(LARGE_INTEGER nMove, DWORD dwOrigin, ULARGE_INTEGER* nNewPos)
@@ -204,7 +220,7 @@ STDMETHODIMP VBoxClipboardWinStreamImpl::Seek(LARGE_INTEGER nMove, DWORD dwOrigi
     RT_NOREF(nMove, dwOrigin, nNewPos);
 
     LogFlowThisFuncEnter();
-    return E_NOTIMPL;
+    return STG_E_INVALIDFUNCTION;
 }
 
 STDMETHODIMP VBoxClipboardWinStreamImpl::SetSize(ULARGE_INTEGER nNewSize)
@@ -212,15 +228,51 @@ STDMETHODIMP VBoxClipboardWinStreamImpl::SetSize(ULARGE_INTEGER nNewSize)
     RT_NOREF(nNewSize);
 
     LogFlowThisFuncEnter();
-    return E_NOTIMPL;
+    return STG_E_INVALIDFUNCTION;
 }
 
-STDMETHODIMP VBoxClipboardWinStreamImpl::Stat(STATSTG *statstg, DWORD dwFlags)
+STDMETHODIMP VBoxClipboardWinStreamImpl::Stat(STATSTG *pStatStg, DWORD dwFlags)
 {
-    RT_NOREF(statstg, dwFlags);
+    HRESULT hr = S_OK;
 
-    LogFlowThisFuncEnter();
-    return E_NOTIMPL;
+    if (pStatStg)
+    {
+        const SharedClipboardURIObject *pObj = SharedClipboardURITransferGetObject(m_pURITransfer, m_uObjIdx);
+
+        RT_BZERO(pStatStg, sizeof(STATSTG));
+
+        switch (dwFlags)
+        {
+            case STATFLAG_NONAME:
+                pStatStg->pwcsName = NULL;
+                break;
+
+            case STATFLAG_DEFAULT:
+            {
+                int rc2 = RTStrToUtf16(pObj->GetDestPathAbs().c_str(), &pStatStg->pwcsName);
+                if (RT_FAILURE(rc2))
+                    hr = E_FAIL;
+                break;
+            }
+
+            default:
+                hr = STG_E_INVALIDFLAG;
+                break;
+        }
+
+        if (SUCCEEDED(hr))
+        {
+            pStatStg->type              = STGTY_STREAM;
+            pStatStg->grfMode           = STGM_READ;
+            pStatStg->grfLocksSupported = 0;
+            pStatStg->cbSize.QuadPart   = pObj->GetSize();
+        }
+    }
+    else
+       hr = STG_E_INVALIDPOINTER;
+
+    LogFlowThisFunc(("hr=%Rhrc\n", hr));
+    return hr;
 }
 
 STDMETHODIMP VBoxClipboardWinStreamImpl::UnlockRegion(ULARGE_INTEGER nStart, ULARGE_INTEGER nBytes, DWORD dwFlags)
@@ -228,7 +280,7 @@ STDMETHODIMP VBoxClipboardWinStreamImpl::UnlockRegion(ULARGE_INTEGER nStart, ULA
     RT_NOREF(nStart, nBytes, dwFlags);
 
     LogFlowThisFuncEnter();
-    return E_NOTIMPL;
+    return STG_E_INVALIDFUNCTION;
 }
 
 STDMETHODIMP VBoxClipboardWinStreamImpl::Write(const void *pvBuffer, ULONG nBytesToRead, ULONG *nBytesRead)
@@ -249,17 +301,16 @@ STDMETHODIMP VBoxClipboardWinStreamImpl::Write(const void *pvBuffer, ULONG nByte
  * @returns HRESULT
  * @param   pParent             Pointer to the parent data object.
  * @param   pTransfer           Pointer to URI transfer object to use.
- * @param   pURIObj             Pointer to URI object to handle.
+ * @param   uObjIdx             Index of object to handle within the given URI transfer object.
  * @param   ppStream            Where to return the created stream object on success.
  */
 /* static */
 HRESULT VBoxClipboardWinStreamImpl::Create(VBoxClipboardWinDataObject *pParent,
-                                           PSHAREDCLIPBOARDURITRANSFER pTransfer, SharedClipboardURIObject *pURIObj,
-                                           IStream **ppStream)
+                                           PSHAREDCLIPBOARDURITRANSFER pTransfer, uint64_t uObjIdx, IStream **ppStream)
 {
     AssertPtrReturn(pTransfer, E_POINTER);
 
-    VBoxClipboardWinStreamImpl *pStream = new VBoxClipboardWinStreamImpl(pParent, pTransfer, pURIObj);
+    VBoxClipboardWinStreamImpl *pStream = new VBoxClipboardWinStreamImpl(pParent, pTransfer, uObjIdx);
     if (pStream)
     {
         pStream->AddRef();

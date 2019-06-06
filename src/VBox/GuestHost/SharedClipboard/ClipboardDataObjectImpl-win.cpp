@@ -394,19 +394,23 @@ STDMETHODIMP VBoxClipboardWinDataObject::GetData(LPFORMATETC pFormatEtc, LPSTGME
 
             LogFlowFunc(("FormatIndex_FileDescriptor%s\n", fUnicode ? "W" : "A"));
 
-            int rc = m_pTransfer->pProvider->ReadMetaData(); /** @todo Do this asynchronously some time earlier? */
-            if (   RT_SUCCESS(rc)
-                && !m_pTransfer->pProvider->GetURIList().IsEmpty())
+            int rc = SharedClipboardURITransferMetaDataRead(m_pTransfer, NULL /* cbRead */);
+            if (RT_SUCCESS(rc))
             {
-                HGLOBAL hGlobal;
-                rc = createFileGroupDescriptorFromURIList(m_pTransfer->pProvider->GetURIList(), fUnicode, &hGlobal);
-                if (RT_SUCCESS(rc))
+                const SharedClipboardURIList *pURIList = SharedClipboardURITransferGetList(m_pTransfer);
+                if (    pURIList
+                    && !pURIList->IsEmpty())
                 {
-                    pMedium->tymed   = TYMED_HGLOBAL;
-                    pMedium->hGlobal = hGlobal;
-                    /* Note: hGlobal now is being owned by pMedium / the caller. */
+                    HGLOBAL hGlobal;
+                    rc = createFileGroupDescriptorFromURIList(*pURIList, fUnicode, &hGlobal);
+                    if (RT_SUCCESS(rc))
+                    {
+                        pMedium->tymed   = TYMED_HGLOBAL;
+                        pMedium->hGlobal = hGlobal;
+                        /* Note: hGlobal now is being owned by pMedium / the caller. */
 
-                    hr = S_OK;
+                        hr = S_OK;
+                    }
                 }
             }
             break;
@@ -416,23 +420,17 @@ STDMETHODIMP VBoxClipboardWinDataObject::GetData(LPFORMATETC pFormatEtc, LPSTGME
         {
             LogFlowFunc(("FormatIndex_FileContents: m_uObjIdx=%u\n", m_uObjIdx));
 
-            SharedClipboardURIObject *pURIObj = m_pTransfer->pProvider->GetURIList().At(m_uObjIdx);
-            if (pURIObj)
+            /* Hand-in the provider so that our IStream implementation can continue working with it. */
+            hr = VBoxClipboardWinStreamImpl::Create(this /* pParent */, m_pTransfer, m_uObjIdx, &m_pStream);
+            if (SUCCEEDED(hr))
             {
-                /* Hand-in the provider so that our IStream implementation can continue working with it. */
-                hr = VBoxClipboardWinStreamImpl::Create(this /* pParent */, m_pTransfer, pURIObj, &m_pStream);
-                if (SUCCEEDED(hr))
-                {
-                    /* Hand over the stream to the caller. */
-                    pMedium->tymed = TYMED_ISTREAM;
-                    pMedium->pstm  = m_pStream;
+                /* Hand over the stream to the caller. */
+                pMedium->tymed = TYMED_ISTREAM;
+                pMedium->pstm  = m_pStream;
 
-                    /* Handle next object. */
-                    m_uObjIdx++;
-                }
+                /* Handle next object. */
+                m_uObjIdx++;
             }
-            else
-                LogFunc(("No object with index %u found, skipping\n", m_uObjIdx));
             break;
         }
 
@@ -539,19 +537,19 @@ STDMETHODIMP VBoxClipboardWinDataObject::EnumDAdvise(IEnumSTATDATA **ppEnumAdvis
  * IDataObjectAsyncCapability methods.
  */
 
-STDMETHODIMP VBoxClipboardWinDataObject::EndOperation(HRESULT hResult, IBindCtx* pbcReserved, DWORD dwEffects)
+STDMETHODIMP VBoxClipboardWinDataObject::EndOperation(HRESULT hResult, IBindCtx *pbcReserved, DWORD dwEffects)
 {
      RT_NOREF(hResult, pbcReserved, dwEffects);
      return E_NOTIMPL;
 }
 
-STDMETHODIMP VBoxClipboardWinDataObject::GetAsyncMode(BOOL* pfIsOpAsync)
+STDMETHODIMP VBoxClipboardWinDataObject::GetAsyncMode(BOOL *pfIsOpAsync)
 {
      RT_NOREF(pfIsOpAsync);
      return E_NOTIMPL;
 }
 
-STDMETHODIMP VBoxClipboardWinDataObject::InOperation(BOOL* pfInAsyncOp)
+STDMETHODIMP VBoxClipboardWinDataObject::InOperation(BOOL *pfInAsyncOp)
 {
      RT_NOREF(pfInAsyncOp);
      return E_NOTIMPL;
@@ -563,7 +561,7 @@ STDMETHODIMP VBoxClipboardWinDataObject::SetAsyncMode(BOOL fDoOpAsync)
      return E_NOTIMPL;
 }
 
-STDMETHODIMP VBoxClipboardWinDataObject::StartOperation(IBindCtx* pbcReserved)
+STDMETHODIMP VBoxClipboardWinDataObject::StartOperation(IBindCtx *pbcReserved)
 {
      RT_NOREF(pbcReserved);
      return E_NOTIMPL;

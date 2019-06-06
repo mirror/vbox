@@ -98,7 +98,7 @@ int SharedClipboardMetaDataAdd(PSHAREDCLIPBOARDMETADATA pMeta, const void *pvDat
  * @param   pMeta               Meta data struct to resize.
  * @param   cbNewSize           New size (in bytes) to use for resizing.
  */
-int SharedClipboardMetaDataResize(PSHAREDCLIPBOARDMETADATA pMeta, size_t cbNewSize)
+int SharedClipboardMetaDataResize(PSHAREDCLIPBOARDMETADATA pMeta, uint32_t cbNewSize)
 {
     AssertPtrReturn(pMeta, VERR_INVALID_POINTER);
 
@@ -135,6 +135,18 @@ int SharedClipboardMetaDataResize(PSHAREDCLIPBOARDMETADATA pMeta, size_t cbNewSi
     }
 
     return VERR_NO_MEMORY;
+}
+
+/**
+ * Returns the actual free bytes of a meta data struct.
+ *
+ * @returns Actual free bytes of a meta data struct.
+ * @param   pMeta               Meta data struct to return free bytes for.
+ */
+size_t SharedClipboardMetaDataGetFree(PSHAREDCLIPBOARDMETADATA pMeta)
+{
+    AssertPtrReturn(pMeta, 0);
+    return pMeta->cbMeta - pMeta->cbUsed;
 }
 
 /**

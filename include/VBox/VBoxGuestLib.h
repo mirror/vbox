@@ -601,14 +601,19 @@ typedef struct _VBGLR3GUESTCLIPBOARDCMDCTX
 VBGLR3DECL(int)     VbglR3ClipboardConnect(HGCMCLIENTID *pidClient);
 VBGLR3DECL(int)     VbglR3ClipboardDisconnect(HGCMCLIENTID idClient);
 VBGLR3DECL(int)     VbglR3ClipboardGetHostMsg(HGCMCLIENTID idClient, uint32_t *pMsg, uint32_t *pfFormats);
-#  ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
-VBGLR3DECL(int)     VbglR3ClipboardReadMetaData(HGCMCLIENTID idClient, SharedClipboardURIList &URIList);
-VBGLR3DECL(int)     VbglR3ClipboardWriteMetaData(HGCMCLIENTID idClient, const SharedClipboardURIList &URIList);
-#  endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
 VBGLR3DECL(int)     VbglR3ClipboardReadData(HGCMCLIENTID idClient, uint32_t fFormat, void *pv, uint32_t cb, uint32_t *pcb);
 VBGLR3DECL(int)     VbglR3ClipboardReportFormats(HGCMCLIENTID idClient, uint32_t fFormats);
 VBGLR3DECL(int)     VbglR3ClipboardWriteData(HGCMCLIENTID idClient, uint32_t fFormat, void *pv, uint32_t cb);
+
 #  ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+VBGLR3DECL(int)     VbglR3ClipboardReadDataHdr(HGCMCLIENTID idClient, PVBOXCLIPBOARDDATAHDR pDataHdr);
+VBGLR3DECL(int)     VbglR3ClipboardWriteDataHdr(HGCMCLIENTID idClient, const PVBOXCLIPBOARDDATAHDR pDataHdr);
+VBGLR3DECL(int)     VbglR3ClipboardReadMetaData(HGCMCLIENTID idClient, PVBOXCLIPBOARDDATAHDR pDataHdr,
+                                                void *pvMeta, uint32_t cbMeta, uint32_t *pcbRead);
+VBGLR3DECL(int)     VbglR3ClipboardReadMetaDataEx(HGCMCLIENTID idClient, PVBOXCLIPBOARDDATAHDR pDataHdr,
+                                                  void *pvMeta, uint32_t cbMeta, uint32_t *pcbRead);
+VBGLR3DECL(int)     VbglR3ClipboardWriteMetaData(HGCMCLIENTID idClient, const void *pvMeta, uint32_t cbMeta, uint32_t *pcbWritten);
+VBGLR3DECL(int)     VbglR3ClipboardWriteMetaDataEx(HGCMCLIENTID idClient, const void *pvMeta, uint32_t cbMeta, uint32_t *pcbWritten);
 VBGLR3DECL(int)     VbglR3ClipboardReadDir(HGCMCLIENTID idClient, char *pszDirname, uint32_t cbDirname, uint32_t *pcbDirnameRecv,
                                            uint32_t *pfMode);
 VBGLR3DECL(int)     VbglR3ClipboardWriteDir(HGCMCLIENTID idClient, const char  *pszPath, uint32_t cbPath, uint32_t fMode);

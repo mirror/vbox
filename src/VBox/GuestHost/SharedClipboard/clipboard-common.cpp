@@ -28,6 +28,13 @@
 #endif
 
 
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+static int sharedClipboardURITransferReadThread(RTTHREAD hThread, void *pvUser);
+static int sharedClipboardURITransferWriteThread(RTTHREAD hThread, void *pvUser);
+static PSHAREDCLIPBOARDURITRANSFER sharedClipboardURICtxGetTransferInternal(PSHAREDCLIPBOARDURICTX pURI, uint32_t uIdx);
+#endif
+
+
 /** @todo use const where appropriate; delinuxify the code (*Lin* -> *Host*); use AssertLogRel*. */
 
 int vboxClipboardUtf16GetWinSize(PRTUTF16 pwszSrc, size_t cwSrc, size_t *pcwDest)
@@ -345,11 +352,12 @@ int vboxClipboardBmpGetDib(const void *pvSrc, size_t cbSrc, const void **ppvDest
  * Initializes an URI clipboard transfer struct.
  *
  * @returns VBox status code.
+ * @param   enmDir              Transfer direction.
  * @param   pCtx                Shared Clipboard provider creation context to use.
  * @param   ppTransfer          Where to return the created URI transfer struct.
- *                              Must be free'd by SharedClipboardURITransferDestroy().
+ *                              Must be destroyed by SharedClipboardURITransferDestroy().
  */
-int SharedClipboardURITransferCreate(PSHAREDCLIPBOARDPROVIDERCREATIONCTX pCtx,
+int SharedClipboardURITransferCreate(SHAREDCLIPBOARDURITRANSFERDIR enmDir, PSHAREDCLIPBOARDPROVIDERCREATIONCTX pCtx,
                                      PSHAREDCLIPBOARDURITRANSFER *ppTransfer)
 {
     AssertPtrReturn(pCtx,       VERR_INVALID_POINTER);
@@ -361,10 +369,15 @@ int SharedClipboardURITransferCreate(PSHAREDCLIPBOARDPROVIDERCREATIONCTX pCtx,
 
     LogFlowFuncEnter();
 
+    pTransfer->enmDir = enmDir;
+
+    SharedClipboardMetaDataInit(&pTransfer->Meta);
+
     pTransfer->pProvider = SharedClipboardProvider::Create(pCtx);
     if (!pTransfer->pProvider)
         return VERR_NO_MEMORY;
 
+    pTransfer->Thread.hThread    = NIL_RTTHREAD;
     pTransfer->Thread.fCancelled = false;
     pTransfer->Thread.fStarted   = false;
 
@@ -379,14 +392,21 @@ int SharedClipboardURITransferCreate(PSHAREDCLIPBOARDPROVIDERCREATIONCTX pCtx,
 /**
  * Destroys an URI clipboard transfer context struct.
  *
+ * @returns VBox status code.
  * @param   pURI                URI clipboard transfer struct to destroy.
  */
-void SharedClipboardURITransferDestroy(PSHAREDCLIPBOARDURITRANSFER pTransfer)
+int SharedClipboardURITransferDestroy(PSHAREDCLIPBOARDURITRANSFER pTransfer)
 {
     if (!pTransfer)
-        return;
+        return VINF_SUCCESS;
 
     LogFlowFuncEnter();
+
+    int rc = SharedClipboardURITransferThreadDestroy(pTransfer, 30 * 1000 /* Timeout in ms */);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    SharedClipboardMetaDataDestroy(&pTransfer->Meta);
 
     if (pTransfer->pProvider)
     {
@@ -396,10 +416,14 @@ void SharedClipboardURITransferDestroy(PSHAREDCLIPBOARDURITRANSFER pTransfer)
 
     RTMemFree(pTransfer);
     pTransfer = NULL;
+
+    LogFlowFuncLeave();
+
+    return VINF_SUCCESS;
 }
 
 /**
- * Resets an URI clipboard context struct.
+ * Resets an clipboard URI transfer.
  *
  * @param   pTransfer           URI clipboard transfer struct to reset.
  */
@@ -409,8 +433,315 @@ void SharedClipboardURITransferReset(PSHAREDCLIPBOARDURITRANSFER pTransfer)
 
     LogFlowFuncEnter();
 
+    /** @todo Anything else to do here? */
+
     if (pTransfer->pProvider)
         pTransfer->pProvider->Reset();
+
+    pTransfer->URIList.Clear();
+}
+
+/**
+ * Returns the current URI object for a clipboard URI transfer.
+ *
+ * @returns VBox status code.
+ * @param   pTransfer           URI clipboard transfer struct to return current URI object for.
+ */
+const SharedClipboardURIObject *SharedClipboardURITransferGetCurrentObject(PSHAREDCLIPBOARDURITRANSFER pTransfer)
+{
+    AssertPtrReturn(pTransfer, NULL);
+
+    return pTransfer->URIList.First();
+}
+
+/**
+ * Returns the provider for a clipboard URI transfer.
+ *
+ * @returns VBox status code.
+ * @param   pTransfer           URI clipboard transfer struct to return provider for.
+ */
+SharedClipboardProvider *SharedClipboardURITransferGetProvider(PSHAREDCLIPBOARDURITRANSFER pTransfer)
+{
+    AssertPtrReturn(pTransfer, NULL);
+
+    return pTransfer->pProvider;
+}
+
+const SharedClipboardURIList *SharedClipboardURITransferGetList(PSHAREDCLIPBOARDURITRANSFER pTransfer)
+{
+    return &pTransfer->URIList;
+}
+
+const SharedClipboardURIObject *SharedClipboardURITransferGetObject(PSHAREDCLIPBOARDURITRANSFER pTransfer, uint64_t uIdx)
+{
+    return pTransfer->URIList.At(uIdx);
+}
+
+/**
+ * Sets or unsets the callback table to be used for a clipboard URI transfer.
+ *
+ * @returns VBox status code.
+ * @param   pTransfer           URI clipboard transfer struct to set callbacks for.
+ * @param   pCallbacks          Pointer to callback table to set. Specify NULL to unset existing callbacks.
+ */
+void SharedClipboardURITransferSetCallbacks(PSHAREDCLIPBOARDURITRANSFER pTransfer, PSHAREDCLIPBOARDURITRANSFERCALLBACKS pCallbacks)
+{
+    AssertPtrReturnVoid(pTransfer);
+    /* pCallbacks might be NULL to unset callbacks. */
+
+    LogFlowFunc(("pCallbacks=%p\n", pCallbacks));
+
+    if (pCallbacks)
+    {
+        pTransfer->Callbacks = *pCallbacks;
+    }
+    else
+        RT_ZERO(pTransfer->Callbacks);
+}
+
+/**
+ * Creates a thread for a clipboard URI transfer.
+ *
+ * @returns VBox status code.
+ * @param   pTransfer           URI clipboard transfer struct to create thread for.
+ */
+int SharedClipboardURITransferThreadCreate(PSHAREDCLIPBOARDURITRANSFER pTransfer)
+{
+    AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
+
+    PFNRTTHREAD pfnRTThread = NULL;
+
+    if (pTransfer->enmDir == SHAREDCLIPBOARDURITRANSFERDIR_READ)
+        pfnRTThread = sharedClipboardURITransferReadThread;
+    else if (pTransfer->enmDir == SHAREDCLIPBOARDURITRANSFERDIR_WRITE)
+        pfnRTThread = sharedClipboardURITransferWriteThread;
+
+    AssertPtrReturn(pfnRTThread, VERR_NOT_SUPPORTED);
+
+    /* Spawn a worker thread, so that we don't block the window thread for too long. */
+    int rc = RTThreadCreate(&pTransfer->Thread.hThread, pfnRTThread,
+                            pTransfer /* pvUser */, 0, RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE,
+                            "vbxshclp");
+    if (RT_SUCCESS(rc))
+    {
+        int rc2 = RTThreadUserWait(pTransfer->Thread.hThread, 30 * 1000 /* Timeout in ms */);
+        AssertRC(rc2);
+
+        if (!pTransfer->Thread.fStarted) /* Did the thread fail to start? */
+            rc = VERR_GENERAL_FAILURE; /** @todo Find a better rc. */
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+/**
+ * Destroys a thread of a clipboard URI transfer.
+ *
+ * @returns VBox status code.
+ * @param   pTransfer           URI clipboard transfer struct to destroy thread for.
+ * @param   uTimeoutMs          Timeout (in ms) to wait for thread creation.
+ */
+int SharedClipboardURITransferThreadDestroy(PSHAREDCLIPBOARDURITRANSFER pTransfer, RTMSINTERVAL uTimeoutMs)
+{
+    AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
+
+    if (pTransfer->Thread.hThread == NIL_RTTHREAD)
+        return VINF_SUCCESS;
+
+    int rcThread = VERR_WRONG_ORDER;
+    int rc = RTThreadWait(pTransfer->Thread.hThread, uTimeoutMs, &rcThread);
+
+    LogFlowFunc(("Waiting for thread resulted in %Rrc (thread exited with %Rrc)\n", rc, rcThread));
+
+    return rc;
+}
+
+/**
+ * Reads all URI objects using the connected provider.
+ *
+ * @returns VBox status code.
+ * @param   pTransfer           Transfer to read objects for.
+ */
+int SharedClipboardURITransferRead(PSHAREDCLIPBOARDURITRANSFER pTransfer)
+{
+    AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
+
+    LogFlowFuncEnter();
+
+    int rc = SharedClipboardURITransferMetaDataRead(pTransfer, NULL /* pcbRead */);
+    if (RT_SUCCESS(rc))
+        rc = SharedClipboardURITransferWriteObjects(pTransfer);
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+/**
+ * Thread for transferring (reading) URI objects from source to the target.
+ * For target to source transfers we utilize our own IDataObject / IStream implementations.
+ *
+ * @returns VBox status code.
+ * @param   hThread             Thread handle.
+ * @param   pvUser              User arguments; is PSHAREDCLIPBOARDURITRANSFER.
+ */
+static int sharedClipboardURITransferReadThread(RTTHREAD hThread, void *pvUser)
+{
+    AssertPtrReturn(pvUser, VERR_INVALID_POINTER);
+
+    LogFlowFuncEnter();
+
+    /* At the moment we only support one transfer at a time. */
+    PSHAREDCLIPBOARDURITRANSFER pTransfer = (PSHAREDCLIPBOARDURITRANSFER)pvUser;
+    AssertPtr(pTransfer->pProvider);
+
+    int rc = VINF_SUCCESS;
+
+    if (RT_SUCCESS(rc))
+        pTransfer->Thread.fStarted = true;
+
+    int rc2 = RTThreadUserSignal(hThread);
+    const bool fSignalled = RT_SUCCESS(rc2);
+
+    if (RT_SUCCESS(rc))
+        rc = SharedClipboardURITransferRead(pTransfer);
+
+    if (!fSignalled)
+    {
+        rc2 = RTThreadUserSignal(hThread);
+        AssertRC(rc2);
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+int sharedClipboardURITransferMetaDataAddInternal(PSHAREDCLIPBOARDURITRANSFER pTransfer, const void *pvMeta, uint32_t cbMeta)
+{
+    LogFlowFuncEnter();
+
+    int rc = SharedClipboardMetaDataAdd(&pTransfer->Meta, pvMeta, cbMeta);
+    if (RT_SUCCESS(rc))
+    {
+        /** @todo Accounting? */
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+
+/**
+ * Adds meta data for a clipboard URI transfer.
+ *
+ * @returns VBox status code.
+ * @param   pTransfer           URI clipboard transfer struct to set meta data for.
+ * @param   pvMeta              Pointer to meta data buffer.
+ * @param   cbMeta              Size (in bytes) of meta data buffer.
+ */
+int SharedClipboardURITransferMetaDataAdd(PSHAREDCLIPBOARDURITRANSFER pTransfer, const void *pvMeta, uint32_t cbMeta)
+{
+    AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
+
+    int rc = sharedClipboardURITransferMetaDataAddInternal(pTransfer, pvMeta, cbMeta);
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+int SharedClipboardURITransferMetaDataRead(PSHAREDCLIPBOARDURITRANSFER pTransfer, uint32_t *pcbRead)
+{
+    AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
+
+    /* Destroy any former meta data. */
+    SharedClipboardMetaDataDestroy(&pTransfer->Meta);
+
+    uint32_t cbReadTotal = 0;
+
+    int rc = pTransfer->pProvider->ReadDataHdr(&pTransfer->Header);
+    if (RT_SUCCESS(rc))
+    {
+        uint32_t cbMeta = _4K; /** @todo Improve. */
+        void    *pvMeta = RTMemAlloc(cbMeta);
+
+        if (pvMeta)
+        {
+            uint32_t cbMetaToRead = pTransfer->Header.cbMeta;
+            while (cbMetaToRead)
+            {
+                uint32_t cbMetaRead;
+                rc = pTransfer->pProvider->ReadMetaData(&pTransfer->Header, pvMeta, cbMeta, &cbMetaRead);
+                if (RT_SUCCESS(rc))
+                    rc = sharedClipboardURITransferMetaDataAddInternal(pTransfer, pvMeta, cbMeta);
+
+                if (RT_FAILURE(rc))
+                    break;
+
+                Assert(cbMetaToRead >= cbMetaRead);
+                cbMetaToRead -= cbMetaRead;
+
+                cbReadTotal += cbReadTotal;
+            }
+
+            RTMemFree(pvMeta);
+
+            if (RT_SUCCESS(rc))
+            {
+                if (pcbRead)
+                    *pcbRead = cbReadTotal;
+            }
+        }
+        else
+            rc = VERR_NO_MEMORY;
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+/**
+ * Writes the actual meta data.
+ *
+ * @returns IPRT status code.
+ * @param   pTransfer           Transfer to write meta data for.
+ * @param   pcbWritten          How much bytes were written on success. Optional.
+ */
+int SharedClipboardURITransferMetaDataWrite(PSHAREDCLIPBOARDURITRANSFER pTransfer, uint32_t *pcbWritten)
+{
+    AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
+
+    AssertPtr(pTransfer->pProvider);
+
+    uint32_t cbWrittenTotal = 0;
+
+    int rc = pTransfer->pProvider->WriteDataHdr(&pTransfer->Header);
+    if (RT_SUCCESS(rc))
+    {
+        /* Sanity. */
+        Assert(pTransfer->Header.cbMeta == pTransfer->Meta.cbUsed);
+
+        uint32_t cbMetaToWrite = pTransfer->Header.cbMeta;
+        while (cbMetaToWrite)
+        {
+            uint32_t cbMetaWritten;
+            rc = pTransfer->pProvider->WriteMetaData(&pTransfer->Header, (uint8_t *)pTransfer->Meta.pvMeta + cbWrittenTotal,
+                                                     cbMetaToWrite, &cbMetaWritten, 0 /* fFlags */);
+            if (RT_SUCCESS(rc))
+            {
+                cbWrittenTotal += cbMetaWritten;
+                Assert(cbWrittenTotal <= pTransfer->Header.cbMeta);
+            }
+        }
+
+        if (RT_SUCCESS(rc))
+        {
+            if (pcbWritten)
+                *pcbWritten = cbWrittenTotal;
+        }
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
 }
 
 /**
@@ -419,7 +750,7 @@ void SharedClipboardURITransferReset(PSHAREDCLIPBOARDURITRANSFER pTransfer)
  * @returns VBox status code.
  * @param   pTransfer           Transfer to write objects for.
  */
-int SharedClipboardURITransferWrite(PSHAREDCLIPBOARDURITRANSFER pTransfer)
+int SharedClipboardURITransferWriteObjects(PSHAREDCLIPBOARDURITRANSFER pTransfer)
 {
     AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
 
@@ -427,31 +758,61 @@ int SharedClipboardURITransferWrite(PSHAREDCLIPBOARDURITRANSFER pTransfer)
 
     int rc = VINF_SUCCESS;
 
-    SharedClipboardURIList &lstURI = pTransfer->pProvider->GetURIList();
+    AssertPtr(pTransfer->pProvider);
 
-    while (!lstURI.IsEmpty())
+    while (!pTransfer->URIList.IsEmpty())
     {
-        SharedClipboardURIObject *pObj = lstURI.First();
+        SharedClipboardURIObject *pObj = pTransfer->URIList.First();
         AssertPtrBreakStmt(pObj, rc = VERR_INVALID_POINTER);
 
         switch (pObj->GetType())
         {
             case SharedClipboardURIObject::Type_Directory:
             {
-                rc = pTransfer->pProvider->WriteDirectoryObj(*pObj);
+                VBOXCLIPBOARDDIRDATA dirData;
+                RT_ZERO(dirData);
+
+                dirData.pszPath = RTStrDup(pObj->GetDestPathAbs().c_str());
+                dirData.cbPath  = (uint32_t)strlen(dirData.pszPath);
+
+                rc = pTransfer->pProvider->WriteDirectory(&dirData);
                 break;
             }
 
             case SharedClipboardURIObject::Type_File:
             {
-                rc = pTransfer->pProvider->WriteFileHdrObj(*pObj);
+                VBOXCLIPBOARDFILEHDR fileHdr;
+                RT_ZERO(fileHdr);
+
+                fileHdr.pszFilePath = RTStrDup(pObj->GetDestPathAbs().c_str());
+                fileHdr.cbFilePath  = (uint32_t)strlen(fileHdr.pszFilePath);
+                fileHdr.cbSize      = pObj->GetSize();
+                fileHdr.fFlags      = 0;
+                fileHdr.fMode       = pObj->GetMode();
+
+                rc = pTransfer->pProvider->WriteFileHdr(&fileHdr);
                 if (RT_FAILURE(rc))
                     break;
 
+                uint32_t cbData = _4K; /** @todo Improve. */
+                void    *pvData = RTMemAlloc(cbData);
+
                 while (!pObj->IsComplete())
                 {
-                    uint32_t cbWritten;
-                    rc = pTransfer->pProvider->WriteFileDataObj(*pObj, &cbWritten);
+                    VBOXCLIPBOARDFILEDATA fileData;
+                    RT_ZERO(fileData);
+
+                    uint32_t cbRead;
+                    rc = pObj->Read(pvData, cbData, &cbRead);
+                    if (RT_SUCCESS(rc))
+                    {
+                        fileData.pvData = pvData;
+                        fileData.cbData = cbRead;
+
+                        uint32_t cbWritten;
+                        rc = pTransfer->pProvider->WriteFileData(&fileData, &cbWritten);
+                    }
+
                     if (RT_FAILURE(rc))
                         break;
                 }
@@ -467,7 +828,7 @@ int SharedClipboardURITransferWrite(PSHAREDCLIPBOARDURITRANSFER pTransfer)
             break;
 
         /* Only remove current object on success. */
-        lstURI.RemoveFirst();
+        pTransfer->URIList.RemoveFirst();
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -482,17 +843,14 @@ int SharedClipboardURITransferWrite(PSHAREDCLIPBOARDURITRANSFER pTransfer)
  * @param   hThread             Thread handle.
  * @param   pvUser              User arguments; is PSHAREDCLIPBOARDURICTX.
  */
-int SharedClipboardURITransferWriteThread(RTTHREAD hThread, void *pvUser)
+static int sharedClipboardURITransferWriteThread(RTTHREAD hThread, void *pvUser)
 {
     AssertPtrReturn(pvUser, VERR_INVALID_POINTER);
 
     LogFlowFuncEnter();
 
-    PSHAREDCLIPBOARDURICTX pURICtx = (PSHAREDCLIPBOARDURICTX)pvUser;
-    AssertPtr(pURICtx);
-
     /* At the moment we only support one transfer at a time. */
-    PSHAREDCLIPBOARDURITRANSFER pTransfer = SharedClipboardURICtxGetTransfer(pURICtx, 0 /* Index*/);
+    PSHAREDCLIPBOARDURITRANSFER pTransfer = (PSHAREDCLIPBOARDURITRANSFER)pvUser;
     AssertPtr(pTransfer->pProvider);
 
     int rc = VINF_SUCCESS;
@@ -516,17 +874,27 @@ int SharedClipboardURITransferWriteThread(RTTHREAD hThread, void *pvUser)
     return rc;
 }
 
+int SharedClipboardURITransferWrite(PSHAREDCLIPBOARDURITRANSFER pTransfer)
+{
+    AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
+
+    int rc = SharedClipboardURITransferMetaDataWrite(pTransfer, NULL /* pcbWritten */);
+    if (RT_SUCCESS(rc))
+        rc = SharedClipboardURITransferWriteObjects(pTransfer);
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
 /**
- * Initializes an URI clipboard context struct.
+ * Initializes a clipboard URI transfer.
  *
  * @returns VBox status code.
  * @param   pURI                URI clipboard context to initialize.
- * @param   pTransfer           Pointer to URI clipboard transfer struct to use.
  */
-int SharedClipboardURICtxInit(PSHAREDCLIPBOARDURICTX pURI, PSHAREDCLIPBOARDURITRANSFER pTransfer)
+int SharedClipboardURICtxInit(PSHAREDCLIPBOARDURICTX pURI)
 {
-    AssertPtrReturn(pURI,      VERR_INVALID_POINTER);
-    AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
+    AssertPtrReturn(pURI, VERR_INVALID_POINTER);
 
     LogFlowFuncEnter();
 
@@ -563,7 +931,7 @@ void SharedClipboardURICtxDestroy(PSHAREDCLIPBOARDURICTX pURI)
 }
 
 /**
- * Resets an URI clipboard context struct.
+ * Resets an clipboard URI transfer.
  *
  * @param   pURI                URI clipboard context to reset.
  */
@@ -573,15 +941,13 @@ void SharedClipboardURICtxReset(PSHAREDCLIPBOARDURICTX pURI)
 
     LogFlowFuncEnter();
 
-    pURI->cTransfers = 0;
-
     PSHAREDCLIPBOARDURITRANSFER pTransfer;
     RTListForEach(&pURI->List, pTransfer, SHAREDCLIPBOARDURITRANSFER, Node)
         SharedClipboardURITransferReset(pTransfer);
 }
 
 /**
- * Adds a new transfer to an URI clipboard context struct.
+ * Adds a new URI transfer to an clipboard URI transfer.
  *
  * @returns VBox status code.
  * @param   pURI                URI clipboard context to add transfer to.
@@ -594,9 +960,55 @@ int SharedClipboardURICtxTransferAdd(PSHAREDCLIPBOARDURICTX pURI, PSHAREDCLIPBOA
 
     LogFlowFuncEnter();
 
+    if (pURI->cTransfers) /* Only one transfer per URI context allowed at the moment. */
+        return VERR_ALREADY_EXISTS;
+
     RTListAppend(&pURI->List, &pTransfer->Node);
+    pURI->cTransfers++;
 
     return VINF_SUCCESS;
+}
+
+/**
+ * Removes an URI transfer from a clipboard URI transfer.
+ *
+ * @returns VBox status code.
+ * @param   pURI                URI clipboard context to remove transfer from.
+ * @param   pTransfer           Pointer to URI clipboard transfer struct to remove.
+ */
+int SharedClipboardURICtxTransferRemove(PSHAREDCLIPBOARDURICTX pURI, PSHAREDCLIPBOARDURITRANSFER pTransfer)
+{
+    AssertPtrReturn(pURI,      VERR_INVALID_POINTER);
+    AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
+
+    LogFlowFuncEnter();
+
+    /* Sanity. */
+    AssertReturn(pURI->cTransfers, VERR_WRONG_ORDER);
+
+    int rc = SharedClipboardURITransferDestroy(pTransfer);
+    if (RT_SUCCESS(rc))
+    {
+
+        RTListNodeRemove(&pTransfer->Node);
+        pURI->cTransfers--;
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+/**
+ * Returns a specific URI transfer, internal version.
+ *
+ * @returns URI transfer, or NULL if not found.
+ * @param   pURI                URI clipboard context to return transfer for.
+ * @param   uIdx                Index of the transfer to return.
+ */
+static PSHAREDCLIPBOARDURITRANSFER sharedClipboardURICtxGetTransferInternal(PSHAREDCLIPBOARDURICTX pURI, uint32_t uIdx)
+{
+    AssertReturn(uIdx == 0, NULL); /* Only one transfer allowed at the moment. */
+    return RTListGetFirst(&pURI->List, SHAREDCLIPBOARDURITRANSFER, Node);
 }
 
 /**
@@ -608,8 +1020,7 @@ int SharedClipboardURICtxTransferAdd(PSHAREDCLIPBOARDURICTX pURI, PSHAREDCLIPBOA
  */
 PSHAREDCLIPBOARDURITRANSFER SharedClipboardURICtxGetTransfer(PSHAREDCLIPBOARDURICTX pURI, uint32_t uIdx)
 {
-    AssertReturn(uIdx == 0, NULL); /* Only one transfer allowed at the moment. */
-    return RTListGetFirst(&pURI->List, SHAREDCLIPBOARDURITRANSFER, Node);
+    return sharedClipboardURICtxGetTransferInternal(pURI, uIdx);
 }
 
 /**
