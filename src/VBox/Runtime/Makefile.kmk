@@ -2195,8 +2195,6 @@ ifdef RTALLOC_REPLACE_MALLOC
 VBoxRT_LIBS                   += \
 	$(PATH_STAGE_LIB)/DisasmR3$(VBOX_SUFF_LIB)
 endif
-VBoxRT_LIBS.linux              = \
-	crypt
 VBoxRT_LIBS.darwin             = \
 	iconv
 VBoxRT_LIBS.freebsd            = \
@@ -2340,8 +2338,6 @@ endif
 ifdef IPRT_WITH_LZO
  VBoxRT-x86_LIBS                  += lzo2
 endif
-VBoxRT-x86_LIBS.linux              = \
-	crypt
 VBoxRT-x86_LIBS.darwin             = \
 	iconv
 VBoxRT-x86_LIBS.freebsd            = \

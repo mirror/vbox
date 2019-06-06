@@ -142,7 +142,6 @@ if defined(VBOX_WITH_TESTCASES) || defined(VBOX_WITH_VBOX_IMG)
 	$(SDK_VBOX_ZLIB_LIBS)
  endif
  ifeq ($(KBUILD_TARGET),linux)
-  vbox-img_LIBS += crypt
   ifdef SDK_VBOX_LIBXML2_LIBS
    vbox-img_LIBS += xml2
   endif
@@ -189,7 +188,6 @@ if    defined(VBOX_WITH_TESTCASES) && defined(VBOX_WITH_PLUGIN_CRYPT) \
 	$(SDK_VBOX_ZLIB_LIBS)
  endif
  ifeq ($(KBUILD_TARGET),linux)
-   vdkeystoremgr_LIBS += crypt
   ifdef SDK_VBOX_LIBXML2_LIBS
    vdkeystoremgr_LIBS += xml2
   endif

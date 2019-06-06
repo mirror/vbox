@@ -91,9 +91,6 @@ ifdef VBOX_WITH_FLTK
 else
  vbox-greeter_LIBS += gtk-3
 endif
-ifeq ($(KBUILD_TARGET),linux)
-vbox-greeter_LIBS += crypt
-endif
 
 vbox-greeter_LDFLAGS = $(if $(VBOX_OSE),$(shell pkg-config --libs liblightdm-gobject-1),)
 ifdef VBOX_WITH_FLTK

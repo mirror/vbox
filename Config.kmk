@@ -5377,9 +5377,7 @@ else
  TEMPLATE_VBoxR3Static_LIBS        += \
  	$(PATH_STAGE_LIB)/VBox-liblzf$(VBOX_SUFF_LIB) \
  	$(SDK_VBOX_ZLIB_LIBS)
- ifeq ($(KBUILD_TARGET),linux)
-  TEMPLATE_VBoxR3Static_LIBS       += crypt
- else if1of ($(KBUILD_TARGET),darwin freebsd)
+ if1of ($(KBUILD_TARGET),darwin freebsd)
   TEMPLATE_VBoxR3Static_LIBS       += iconv
  else ifeq ($(KBUILD_TARGET),solaris)
   TEMPLATE_VBoxR3Static_LIBS       += kstat
@@ -6945,7 +6943,6 @@ TEMPLATE_VBoxAdvBldProg_LIBS.freebsd = \
 	$(TEMPLATE_VBoxBldProg_LIBS.freebsd)
 TEMPLATE_VBoxAdvBldProg_LIBS.linux = \
 	$(TEMPLATE_VBoxAdvBldProg_LIBS) \
-	crypt \
 	$(TEMPLATE_VBoxBldProg_LIBS.linux)
 TEMPLATE_VBoxAdvBldProg_LIBS.solaris = \
 	$(TEMPLATE_VBoxAdvBldProg_LIBS) \
@@ -7051,9 +7048,6 @@ TEMPLATE_NewVBoxGuestR3Exe_LIBS     = \
 	$(VBOX_LIB_VBGL_R3) \
 	$(VBOX_LIB_IPRT_GUEST_R3) \
 	$(TEMPLATE_VBOXGUESTR3EXE_LIBS)
-ifeq ($(KBUILD_TARGET),linux)
-TEMPLATE_NewVBoxGuestR3Exe_LIBS += crypt
-endif
 ifeq ($(KBUILD_TARGET),solaris)
 TEMPLATE_NewVBoxGuestR3Exe_LIBS += contract
 endif

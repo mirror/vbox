@@ -51,7 +51,7 @@ ifn1of ($(KBUILD_TARGET), darwin solaris win)
 endif
 TEMPLATE_VBoxValidationKitR3Base_LIBS = $(TEMPLATE_VBoxR3Static_LIBS)
 if1of ($(KBUILD_TARGET), linux)
- TEMPLATE_VBoxValidationKitR3Base_LIBS += supc++ crypt
+ TEMPLATE_VBoxValidationKitR3Base_LIBS += supc++
  TEMPLATE_VBoxValidationKitR3Base_LDTOOL = $(subst GXX,GCC,$(TEMPLATE_VBoxR3Static_TOOL))
 endif
 TEMPLATE_VBoxValidationKitR3Base_LDFLAGS.darwin = $(TEMPLATE_VBoxR3Static_LDFLAGS.darwin) -framework IOKit
