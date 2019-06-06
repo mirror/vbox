@@ -34,6 +34,7 @@
 #include "QITableView.h"
 #include "QIWithRetranslateUI.h"
 #include "UIFormEditorWidget.h"
+#include "UIIconPool.h"
 #include "UIMessageCenter.h"
 
 /* COM includes: */
@@ -440,14 +441,23 @@ public:
 
 private:
 
+    /** Prepares all. */
+    void prepare();
+
     /** Return the parent table-view reference. */
     QITableView *parentTable() const;
 
     /** Updates row generation values. */
     void updateGeneration();
 
+    /** Returns icon hint for specified @a strItemName. */
+    QIcon iconHint(const QString &strItemName) const;
+
     /** Holds the Form Editor row list. */
     QList<UIFormEditorRow*>  m_dataList;
+
+    /** Holds the hardcoded icon name map. */
+    QMap<QString, QIcon>  m_icons;
 };
 
 
@@ -934,6 +944,7 @@ void UIFormEditorRow::cleanup()
 UIFormEditorModel::UIFormEditorModel(QITableView *pParent)
     : QAbstractTableModel(pParent)
 {
+    prepare();
 }
 
 UIFormEditorModel::~UIFormEditorModel()
@@ -1114,6 +1125,16 @@ QVariant UIFormEditorModel::data(const QModelIndex &index, int iRole) const
     /* Switch for different roles: */
     switch (iRole)
     {
+        /* Decoration role: */
+        case Qt::DecorationRole:
+        {
+            /* Switch for different columns: */
+            switch (index.column())
+            {
+                case UIFormEditorDataType_Name: return iconHint(m_dataList[index.row()]->nameToString());
+                default: return QVariant();
+            }
+        }
         /* Checkstate role: */
         case Qt::CheckStateRole:
         {
@@ -1241,6 +1262,16 @@ void UIFormEditorModel::createTextDataEditor(const QModelIndex &index)
     }
 }
 
+void UIFormEditorModel::prepare()
+{
+    /* Prepare hardcoded icons map: */
+    m_icons["Name"]        = UIIconPool::iconSet(":/name_16px.png");
+    m_icons["OS"]          = UIIconPool::iconSet(":/os_type_16px.png");
+    m_icons["CPU"]         = UIIconPool::iconSet(":/cpu_16px.png");
+    m_icons["Memory"]      = UIIconPool::iconSet(":/ram_16px.png");
+    m_icons["Description"] = UIIconPool::iconSet(":/description_16px.png");
+}
+
 QITableView *UIFormEditorModel::parentTable() const
 {
     return qobject_cast<QITableView*>(parent());
@@ -1258,6 +1289,11 @@ void UIFormEditorModel::updateGeneration()
             emit dataChanged(changedIndex, changedIndex);
         }
     }
+}
+
+QIcon UIFormEditorModel::iconHint(const QString &strItemName) const
+{
+    return m_icons.value(strItemName, UIIconPool::iconSet(":/session_info_16px.png"));
 }
 
 
