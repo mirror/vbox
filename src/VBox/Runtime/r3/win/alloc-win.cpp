@@ -110,8 +110,9 @@ RTDECL(void *) RTMemPageAllocExTag(size_t cb, uint32_t fFlags, const char *pszTa
 
     if (fFlags & RTMEMPAGEALLOC_F_ADVISE_LOCKED)
     {
+        /** @todo check why we get ERROR_WORKING_SET_QUOTA here. */
         BOOL const fOkay = VirtualLock(pv, cbAligned);
-        AssertMsg(fOkay, ("pv=%p cb=%d lasterr=%d\n", pv, cb, GetLastError()));
+        AssertMsg(fOkay || GetLastError() == ERROR_WORKING_SET_QUOTA, ("pv=%p cb=%d lasterr=%d\n", pv, cb, GetLastError()));
         NOREF(fOkay);
     }
 
