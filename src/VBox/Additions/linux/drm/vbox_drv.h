@@ -73,6 +73,12 @@
 # endif
 #endif
 
+#if defined(CONFIG_SUSE_VERSION)
+# if CONFIG_SUSE_VERSION == 15 && CONFIG_SUSE_PATCHLEVEL == 1
+#  define OPENSUSE_151
+# endif
+#endif
+
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 14, 0) || defined(RHEL_71)
 #define U8_MAX          ((u8)~0U)
 #define S8_MAX          ((s8)(U8_MAX>>1))
