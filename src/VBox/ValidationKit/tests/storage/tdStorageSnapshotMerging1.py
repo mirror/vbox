@@ -156,14 +156,13 @@ class tdStorageSnapshot(vbox.TestDriver):                                      #
 
         try:
             oProgressCom = oMedium.resize(cbNewSize);
-            oProgress = vboxwrappers.ProgressWrapper(oProgressCom, self.oVBoxMgr, self.oVBox.oTstDrv,
-                                                     'Resize medium %s' % (oMedium.name));
-            oProgress.wait(cMsTimeout = 15*60*1000); # 15 min
-            oProgress.logResult();
         except:
             reporter.logXcpt('IMedium::resize failed on %s' % (oMedium.name));
             return False;
-
+        oProgress = vboxwrappers.ProgressWrapper(oProgressCom, self.oVBoxMgr, self.oVBox.oTstDrv,
+                                                 'Resize medium %s' % (oMedium.name));
+        oProgress.wait(cMsTimeout = 15*60*1000); # 15 min
+        oProgress.logResult();
         return True;
 
     def getMedium(self, oVM, sController):
@@ -237,14 +236,13 @@ class tdStorageSnapshot(vbox.TestDriver):                                      #
         """
         try:
             oProgressCom = oSrcHd.cloneTo(oTgtHd, (vboxcon.MediumVariant_Standard, ), None);
-            oProgress = vboxwrappers.ProgressWrapper(oProgressCom, self.oVBoxMgr, self.oVBox.oTstDrv,
-                                                     'clone base disk %s to %s' % (oSrcHd.name, oTgtHd.name));
-            oProgress.wait(cMsTimeout = 1000000);
-            oProgress.logResult();
         except:
             reporter.errorXcpt('failed to clone medium %s to %s' % (oSrcHd.name, oTgtHd.name));
             return False;
-
+        oProgress = vboxwrappers.ProgressWrapper(oProgressCom, self.oVBoxMgr, self.oVBox.oTstDrv,
+                                                 'clone base disk %s to %s' % (oSrcHd.name, oTgtHd.name));
+        oProgress.wait(cMsTimeout = 15*60*1000); # 15 min
+        oProgress.logResult();
         return True;
 
     def deleteVM(self, oVM):
@@ -259,11 +257,10 @@ class tdStorageSnapshot(vbox.TestDriver):                                      #
                     oProgress = oVM.deleteConfig([]);
                 else:
                     oProgress = oVM.delete(None);
-                oProgress.wait(cMsTimeout = 1000000);
-
             except:
                 reporter.logXcpt();
-
+            else:
+                oProgress.wait(cMsTimeout = 15*60*1000); # 15 min
         else:
             try:    oVM.deleteSettings();
             except: reporter.logXcpt();
