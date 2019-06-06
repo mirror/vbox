@@ -158,7 +158,7 @@ class tdStorageSnapshot(vbox.TestDriver):                                      #
             oProgressCom = oMedium.resize(cbNewSize);
             oProgress = vboxwrappers.ProgressWrapper(oProgressCom, self.oVBoxMgr, self.oVBox.oTstDrv,
                                                      'Resize medium %s' % (oMedium.name));
-            oProgress.wait(cMsTimeout = 1000000);
+            oProgress.wait(cMsTimeout = 15*60*1000); # 15 min
             oProgress.logResult();
         except:
             reporter.logXcpt('IMedium::resize failed on %s' % (oMedium.name));
