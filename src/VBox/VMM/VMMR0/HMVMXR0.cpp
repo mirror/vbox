@@ -457,7 +457,7 @@ static FNVMXEXITHANDLERNSRC        hmR0VmxExitWbinvdNested;
 //static FNVMXEXITHANDLER            hmR0VmxExitErrUnexpected;
 static FNVMXEXITHANDLER            hmR0VmxExitInvpcidNested;
 //static FNVMXEXITHANDLERNSRC        hmR0VmxExitSetPendingXcptUD;
-//static FNVMXEXITHANDLERNSRC        hmR0VmxExitErrInvalidGuestState;
+static FNVMXEXITHANDLERNSRC        hmR0VmxExitErrInvalidGuestStateNested;
 //static FNVMXEXITHANDLERNSRC        hmR0VmxExitErrUnexpected;
 static FNVMXEXITHANDLER            hmR0VmxExitInstrNested;
 static FNVMXEXITHANDLER            hmR0VmxExitInstrWithInfoNested;
@@ -12714,7 +12714,7 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExitNested(PVMCPU pVCpu, PVMXTRANSIENT pVm
         case VMX_EXIT_VMWRITE:                  return hmR0VmxExitVmreadVmwriteNested(pVCpu, pVmxTransient);
 
         case VMX_EXIT_TRIPLE_FAULT:             return hmR0VmxExitTripleFaultNested(pVCpu, pVmxTransient);
-        case VMX_EXIT_ERR_INVALID_GUEST_STATE:  return hmR0VmxExitErrInvalidGuestState(pVCpu, pVmxTransient);
+        case VMX_EXIT_ERR_INVALID_GUEST_STATE:  return hmR0VmxExitErrInvalidGuestStateNested(pVCpu, pVmxTransient);
 
         case VMX_EXIT_INIT_SIGNAL:
         case VMX_EXIT_SIPI:
@@ -12725,9 +12725,7 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExitNested(PVMCPU pVCpu, PVMXTRANSIENT pVm
         case VMX_EXIT_PML_FULL:
         case VMX_EXIT_RSM:
         default:
-        {
             return hmR0VmxExitErrUnexpected(pVCpu, pVmxTransient);
-        }
     }
 }
 #endif /* VBOX_WITH_NESTED_HWVIRT_VMX */
@@ -13654,8 +13652,8 @@ HMVMX_EXIT_DECL hmR0VmxExitInvpcid(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 
 
 /**
- * VM-exit handler for invalid-guest-state (VMX_EXIT_ERR_INVALID_GUEST_STATE).
- * Error VM-exit.
+ * VM-exit handler for invalid-guest-state (VMX_EXIT_ERR_INVALID_GUEST_STATE). Error
+ * VM-exit.
  */
 HMVMX_EXIT_NSRC_DECL hmR0VmxExitErrInvalidGuestState(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
@@ -16552,6 +16550,26 @@ HMVMX_EXIT_DECL hmR0VmxExitInvpcidNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransie
         return IEMExecVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
     }
     return hmR0VmxExitInvpcid(pVCpu, pVmxTransient);
+}
+
+
+/**
+ * Nested-guest VM-exit handler for invalid-guest state
+ * (VMX_EXIT_ERR_INVALID_GUEST_STATE). Error VM-exit.
+ */
+HMVMX_EXIT_DECL hmR0VmxExitErrInvalidGuestStateNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
+{
+    HMVMX_VALIDATE_NESTED_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
+
+    /*
+     * Currently this should never happen because we fully emulate VMLAUNCH/VMRESUME in IEM.
+     * So if it does happen, it indicates a bug possibly in the hardware-assisted VMX code.
+     * Handle it like it's in an invalid guest state of the outer guest.
+     *
+     * When the fast path is implemented, this should be changed to cause the corresponding
+     * nested-guest VM-exit.
+     */
+    return hmR0VmxExitErrInvalidGuestState(pVCpu, pVmxTransient);
 }
 
 
