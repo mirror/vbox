@@ -1649,7 +1649,7 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
                             memory = vsdData.toUInt32();
                     }
                     vsys.ullMemorySize = memory;
-                    LogRel(("%s: Size of RAM is %sMB\n", __FUNCTION__, vsdData.c_str()));
+                    LogRel(("%s: Size of RAM is %dMB\n", __FUNCTION__, vsys.ullMemorySize));
                 }
 
                 {
@@ -1867,7 +1867,7 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
                         if (FAILED(hrc))
                             throw hrc;
 
-                        pTask->pProgress->SetNextOperation(BstrFmt(tr("Importing virtual disk image '%s'",pszName)).raw(),
+                        pTask->pProgress->SetNextOperation(BstrFmt(tr("Importing virtual disk image '%s'"), pszName).raw(),
                                                            200);
                         ComObjPtr<Medium> nullParent;
                         ComPtr<IProgress> pProgressImport;
