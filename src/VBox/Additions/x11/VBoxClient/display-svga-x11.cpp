@@ -236,11 +236,6 @@ static int run(struct VBCLSERVICE **ppInterface, bool fDaemonised)
     struct X11CONTEXT x11Context = { NULL };
     unsigned i;
     int rc;
-    uint32_t acx[VMW_MAX_HEADS] = { 0 };
-    uint32_t acy[VMW_MAX_HEADS] = { 0 };
-    uint32_t adx[VMW_MAX_HEADS] = { 0 };
-    uint32_t ady[VMW_MAX_HEADS] = { 0 };
-    uint32_t afEnabled[VMW_MAX_HEADS] = { false };
     struct X11VMWRECT aRects[VMW_MAX_HEADS];
     unsigned cHeads;
 
@@ -264,45 +259,40 @@ static int run(struct VBCLSERVICE **ppInterface, bool fDaemonised)
     for (;;)
     {
         uint32_t events;
+        struct VMMDevDisplayDef aDisplays[VMW_MAX_HEADS];
+        uint32_t cDisplaysOut;
 
-        rc = VbglR3WaitEvent(VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST, RT_INDEFINITE_WAIT, &events);
+        /* Query the first size without waiting.  This lets us e.g. pick up
+         * the last event before a guest reboot when we start again after. */
+        rc = VbglR3GetDisplayChangeRequestMulti(VMW_MAX_HEADS, &cDisplaysOut, aDisplays, true);
         if (RT_FAILURE(rc))
-            VBClFatalError(("Failure waiting for event, rc=%Rrc\n", rc));
-        while (rc != VERR_TIMEOUT)
+            VBClFatalError(("Failed to get display change request, rc=%Rrc\n", rc));
+        if (cDisplaysOut > VMW_MAX_HEADS)
+            VBClFatalError(("Display change request contained, rc=%Rrc\n", rc));
+        for (i = 0, cHeads = 0; i < cDisplaysOut && i < VMW_MAX_HEADS; ++i)
         {
-            uint32_t cx, cy, cBits, dx, dy, idx;
-            bool fEnabled, fChangeOrigin;
-
-            rc = VbglR3GetDisplayChangeRequest(&cx, &cy, &cBits, &idx, &dx, &dy, &fEnabled, &fChangeOrigin, true);
-            if (RT_FAILURE(rc))
-                VBClFatalError(("Failed to get display change request, rc=%Rrc\n", rc));
-            if (idx < VMW_MAX_HEADS)
+            if (!(aDisplays[i].fDisplayFlags & VMMDEV_DISPLAY_DISABLED))
             {
-                acx[idx] = cx;
-                acy[idx] = cy;
-                if (fChangeOrigin)
-                    adx[idx] = dx < INT32_MAX ? dx : 0;
-                if (fChangeOrigin)
-                    ady[idx] = dy < INT32_MAX ? dy : 0;
-                afEnabled[idx] = fEnabled;
-            }
-            rc = VbglR3WaitEvent(VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST, 0, &events);
-            if (RT_FAILURE(rc) && rc != VERR_TIMEOUT && rc != VERR_INTERRUPTED)
-                VBClFatalError(("Failure waiting for event, rc=%Rrc\n", rc));
-        }
-        for (i = 0, cHeads = 0; i < VMW_MAX_HEADS; ++i)
-        {
-            if (afEnabled[i])
-            {
-                aRects[cHeads].x = (int16_t)adx[i];
-                aRects[cHeads].y = (int16_t)ady[i];
-                aRects[cHeads].w = (uint16_t)acx[i];
-                aRects[cHeads].h = (uint16_t)acy[i];
+                if ((i == 0) || (aDisplays[i].fDisplayFlags & VMMDEV_DISPLAY_ORIGIN))
+                {
+                    aRects[cHeads].x =   aDisplays[i].xOrigin < INT16_MAX
+                                       ? (int16_t)aDisplays[i].xOrigin : 0;
+                    aRects[cHeads].y =   aDisplays[i].yOrigin < INT16_MAX
+                                       ? (int16_t)aDisplays[i].yOrigin : 0;
+                } else {
+                    aRects[cHeads].x = aRects[cHeads - 1].x + aRects[cHeads - 1].w;
+                    aRects[cHeads].y = aRects[cHeads - 1].y;
+                }
+                aRects[cHeads].w = (int16_t)RT_MIN(aDisplays[i].cx, INT16_MAX);
+                aRects[cHeads].h = (int16_t)RT_MIN(aDisplays[i].cy, INT16_MAX);
                 ++cHeads;
             }
         }
         x11SendHints(&x11Context, aRects, cHeads);
         x11GetScreenInfo(&x11Context);
+        rc = VbglR3WaitEvent(VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST, RT_INDEFINITE_WAIT, &events);
+        if (RT_FAILURE(rc))
+            VBClFatalError(("Failure waiting for event, rc=%Rrc\n", rc));
     }
 }
 
