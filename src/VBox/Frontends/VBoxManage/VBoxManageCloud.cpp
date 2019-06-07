@@ -108,7 +108,8 @@ static RTEXITCODE listCloudInstances(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT 
 {
     static const RTGETOPTDEF s_aOptions[] =
     {
-        { "--compartment-id", 'c', RTGETOPT_REQ_STRING }
+        { "--compartment-id", 'c', RTGETOPT_REQ_STRING },
+        { "--state",          's', RTGETOPT_REQ_STRING }
     };
     RTGETOPTSTATE GetState;
     RTGETOPTUNION ValueUnion;
@@ -116,19 +117,35 @@ static RTEXITCODE listCloudInstances(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT 
     AssertRCReturn(vrc, RTEXITCODE_FAILURE);
 
     Utf8Str strCompartmentId;
+    Utf8Str strState;
+
     int c;
     while ((c = RTGetOpt(&GetState, &ValueUnion)) != 0)
     {
         switch (c)
         {
             case 'c':
-                    strCompartmentId = ValueUnion.psz;
+                strCompartmentId = ValueUnion.psz;
+                break;
+            case 's':
+                strState = ValueUnion.psz;
                 break;
             case VINF_GETOPT_NOT_OPTION:
                 return errorUnknownSubcommand(ValueUnion.psz);
             default:
                 return errorGetOpt(c, &ValueUnion);
         }
+    }
+
+    com::SafeArray<CloudMachineState_T> machimeStates;
+    if (strState.isNotEmpty())
+    {
+        if (strState.equals("Run"))
+            machimeStates.push_back(CloudMachineState_Running);
+        else if (strState.equals("Stop"))
+            machimeStates.push_back(CloudMachineState_Stopped);
+        else if (strState.equals("Terminate"))
+            machimeStates.push_back(CloudMachineState_Terminated);
     }
 
     HRESULT hrc = S_OK;
@@ -182,7 +199,6 @@ static RTEXITCODE listCloudInstances(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT 
     com::SafeArray<BSTR> arrayVMNames;
     com::SafeArray<BSTR> arrayVMIds;
     ComPtr<IProgress> pProgress;
-    com::SafeArray<CloudMachineState_T> machimeStates;
 
     RTPrintf("Reply is in the form \'instance name\' = \'instance id\'\n");
 
