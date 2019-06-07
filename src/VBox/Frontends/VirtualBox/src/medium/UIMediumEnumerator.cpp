@@ -756,8 +756,11 @@ void UIMediumEnumerator::recacheFromActualUsage(const CMediumMap &currentCMedium
 
 #else /* VBOX_GUI_WITH_NEW_MEDIA_EVENTS */
 
-void UIMediumEnumerator::parseAttachment(CMediumAttachment &comAttachment)
+QList<QUuid> UIMediumEnumerator::parseAttachment(CMediumAttachment &comAttachment)
 {
+    /* Prepare result: */
+    QList<QUuid> result;
+
     /* Make sure attachment is valid: */
     if (comAttachment.isNull())
     {
@@ -777,13 +780,19 @@ void UIMediumEnumerator::parseAttachment(CMediumAttachment &comAttachment)
         else
         {
             /* Parse medium: */
-            parseMedium(comMedium);
+            result << parseMedium(comMedium);
         }
     }
+
+    /* Return result: */
+    return result;
 }
 
-void UIMediumEnumerator::parseMedium(CMedium &comMedium)
+QList<QUuid> UIMediumEnumerator::parseMedium(CMedium &comMedium)
 {
+    /* Prepare result: */
+    QList<QUuid> result;
+
     /* Make sure medium is valid: */
     if (comMedium.isNull())
     {
@@ -819,9 +828,13 @@ void UIMediumEnumerator::parseMedium(CMedium &comMedium)
                 LogRel2(("GUI: UIMediumEnumerator:  Medium {%s} will be enumerated..\n",
                          uMediumId.toString().toUtf8().constData()));
                 createMediumEnumerationTask(m_media.value(uMediumId));
+                result << uMediumId;
             }
         }
     }
+
+    /* Return result: */
+    return result;
 }
 
 #endif /* VBOX_GUI_WITH_NEW_MEDIA_EVENTS */
