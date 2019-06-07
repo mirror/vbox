@@ -1106,7 +1106,7 @@ DECLINLINE(int) hmR0VmxReadExitInstrInfoVmcs(PVMXTRANSIENT pVmxTransient)
 
 
 /**
- * Reads the VM-exit Qualification from the VMCS into the VMX transient structure.
+ * Reads the Exit Qualification from the VMCS into the VMX transient structure.
  *
  * @returns VBox status code.
  * @param   pVCpu           The cross context virtual CPU structure of the
@@ -6849,7 +6849,7 @@ DECLINLINE(void) hmR0VmxSetPendingXcptSS(PVMCPU pVCpu, uint32_t u32ErrCode)
 /**
  * Decodes the memory operand of an instruction that caused a VM-exit.
  *
- * The VM-exit qualification field provides the displacement field for memory
+ * The Exit qualification field provides the displacement field for memory
  * operand instructions, if any.
  *
  * @returns Strict VBox status code (i.e. informational status codes too).
@@ -7717,7 +7717,7 @@ static int hmR0VmxImportGuestState(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo, uint64
 
                     /*
                      * VM-entry can fail due to invalid-guest state, machine-check events and
-                     * MSR loading failures. Other than VM-exit reason and VM-exit qualification
+                     * MSR loading failures. Other than VM-exit reason and Exit qualification
                      * all other VMCS fields are left unmodified on VM-entry failure.
                      *
                      * See Intel spec. 26.7 "VM-entry Failures During Or After Loading Guest State".
@@ -12657,9 +12657,9 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExitNested(PVMCPU pVCpu, PVMXTRANSIENT pVm
          *
          *   - Provides VM-exit instruction length.
          *   - Provides VM-exit information.
-         *   - Optionally provides VM-exit qualification.
+         *   - Optionally provides Exit qualification.
          *
-         * Since VM-exit qualification is 0 for all VM-exits where it is not
+         * Since Exit qualification is 0 for all VM-exits where it is not
          * applicable, reading and passing it to the guest should produce
          * defined behavior.
          *
@@ -14920,8 +14920,7 @@ static VBOXSTRICTRC hmR0VmxExitXcptDB(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestDB);
 
     /*
-     * Get the DR6-like values from the VM-exit qualification and pass it to DBGF
-     * for processing.
+     * Get the DR6-like values from the Exit qualification and pass it to DBGF for processing.
      */
     int rc = hmR0VmxReadExitQualVmcs(pVCpu, pVmxTransient);
 
@@ -15864,6 +15863,9 @@ HMVMX_EXIT_DECL hmR0VmxExitXcptOrNmiNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTrans
 
                 return IEMExecVmxVmexitXcpt(pVCpu, &ExitInfo, &ExitEventInfo);
             }
+
+            /* Nested paging is currently a requirement, otherwise we would need to handle shadow #PFs. */
+            Assert(pVCpu->CTX_SUFF(pVM)->hm.s.fNestedPaging);
 
             /* If the guest hypervisor is not intercepting the exception, forward it to the guest. */
             hmR0VmxSetPendingEvent(pVCpu, VMX_ENTRY_INT_INFO_FROM_EXIT_INT_INFO(uExitIntInfo), pVmxTransient->cbInstr,
