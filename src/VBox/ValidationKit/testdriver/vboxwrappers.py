@@ -1510,8 +1510,8 @@ class SessionWrapper(TdTaskBase):
                         else:
                             oNic.hostInterface = sName;
                     except:
-                        reporter.errorXcpt('failed to set the hostInterface property on slot %s to "%s" for VM "%s"' \
-                            % (iNic, sName, self.sName));
+                        reporter.errorXcpt('failed to set the hostInterface property on slot %s to "%s" for VM "%s"'
+                                           % (iNic, sName, self.sName,));
                         return False;
                 elif eAttachmentType == vboxcon.NetworkAttachmentType_HostOnly:
                     try:
@@ -1520,22 +1520,22 @@ class SessionWrapper(TdTaskBase):
                         else:
                             oNic.hostInterface = sName;
                     except:
-                        reporter.errorXcpt('failed to set the internalNetwork property on slot %s to "%s" for VM "%s"' \
-                            % (iNic, sName, self.sName));
+                        reporter.errorXcpt('failed to set the internalNetwork property on slot %s to "%s" for VM "%s"'
+                                           % (iNic, sName, self.sName,));
                         return False;
                 elif eAttachmentType == vboxcon.NetworkAttachmentType_Internal:
                     try:
                         oNic.internalNetwork = sName;
                     except:
-                        reporter.errorXcpt('failed to set the internalNetwork property on slot %s to "%s" for VM "%s"' \
-                            % (iNic, sName, self.sName));
+                        reporter.errorXcpt('failed to set the internalNetwork property on slot %s to "%s" for VM "%s"'
+                                           % (iNic, sName, self.sName,));
                         return False;
                 elif eAttachmentType == vboxcon.NetworkAttachmentType_NAT:
                     try:
                         oNic.NATNetwork = sName;
                     except:
-                        reporter.errorXcpt('failed to set the NATNetwork property on slot %s to "%s" for VM "%s"' \
-                            % (iNic, sName, self.sName));
+                        reporter.errorXcpt('failed to set the NATNetwork property on slot %s to "%s" for VM "%s"'
+                                           % (iNic, sName, self.sName,));
                         return False;
             finally:
                 self.oTstDrv.processPendingEvents();
@@ -1548,6 +1548,11 @@ class SessionWrapper(TdTaskBase):
     def setNicMacAddress(self, sMacAddr, iNic = 0):
         """
         Sets the MAC address of the specified NIC.
+
+        The sMacAddr parameter is a string supplying the tail end of the MAC
+        address, missing quads are supplied from a constant byte (2), the IPv4
+        address of the host, and the NIC number.
+
         Returns True on success and False on failure.  Error information is logged.
         """
 
