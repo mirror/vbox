@@ -2919,7 +2919,7 @@
  * @{
  */
 #define VERR_SHCLPB_MAX_TRANSFERS_REACHED           (-7000)
- /** @} */
+/** @} */
 /* SED-END */
 
 /** @} */
