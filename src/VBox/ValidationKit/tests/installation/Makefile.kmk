@@ -33,7 +33,8 @@ ValidationKitInstallationTests_TEMPLATE = VBoxValidationKitR3
 ValidationKitInstallationTests_INST = $(INST_VALIDATIONKIT)tests/installation/
 ValidationKitInstallationTests_EXEC_SOURCES := \
 	$(PATH_SUB_CURRENT)/tdGuestOsInstTest1.py \
-	$(PATH_SUB_CURRENT)/tdGuestOsInstOs2.py
+	$(PATH_SUB_CURRENT)/tdGuestOsInstOs2.py \
+	$(PATH_SUB_CURRENT)/tdGuestOsUnattendedInst1.py
 
 VBOX_VALIDATIONKIT_PYTHON_SOURCES += $(ValidationKitInstallationTests_EXEC_SOURCES)
 

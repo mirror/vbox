@@ -102,6 +102,7 @@ class tdExoticOrAncient1(vbox.TestDriver):
         self.logVmInfo(oVM);
         if oTestVm.fGrouping & self.oTestVmManager.kfGrpNoTxs:
             sResult = self.runVmAndMonitorComRawFile(oTestVm.sVmName, oTestVm.sCom1RawFile);
+            ## @todo sResult = self.runVmAndMonitorComRawFile(oTestVm.sVmName, oTestVm.getCom1RawFile());
             return sResult == 'PASSED';
         oSession, _ = self.startVmAndConnectToTxsViaTcp(oTestVm.sVmName, fCdWait = True);
         if oSession is not None:

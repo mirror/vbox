@@ -31,8 +31,9 @@ __version__ = "$Revision$"
 
 
 # Standard Python imports.
-import os
-import sys
+import copy;
+import os;
+import sys;
 
 
 # Only the main script needs to modify the path.
@@ -49,7 +50,7 @@ from testdriver import vboxcon;
 from testdriver import vboxtestvms;
 
 
-class UnattendedVm(vboxtestvms.TestVm):
+class UnattendedVm(vboxtestvms.BaseTestVm):
     """ Unattended Installation test VM. """
 
     ## @name VM option flags (OR together).
@@ -66,9 +67,8 @@ class UnattendedVm(vboxtestvms.TestVm):
     kasIosPathBases  = [ os.path.join('6.0', 'isos'), os.path.join('6.1', 'isos'), ];
 
     def __init__(self, oSet, sVmName, sKind, sInstallIso, fFlags = 0):
-        vboxtestvms.TestVm.__init__(self, sVmName, oSet = oSet, sKind = sKind,
-                                    fRandomPvPMode = False, sFirmwareType = None, sChipsetType = None,
-                                    sHddControllerType = None, sDvdControllerType = None);
+        vboxtestvms.BaseTestVm.__init__(self, sVmName, oSet = oSet, sKind = sKind,
+                                        fRandomPvPModeCrap = False if (fFlags & self.kfNoWin81Paravirt) else True);
         self.sInstallIso    = sInstallIso;
         self.fInstVmFlags   = fFlags;
 
@@ -76,112 +76,232 @@ class UnattendedVm(vboxtestvms.TestVm):
         self.iOptRamAdjust  = 0;
         self.fOptIoApic     = None;
         self.fOptPae        = None;
-        self.asExtraData    = [];
+        self.asOptExtraData = [];
         if fFlags & self.kfIdeIrqDelay:
             self.asOptExtraData = self.kasIdeIrqDelay;
 
-    ## @todo split TestVm.
-    def createVmInner(self, oTestDrv, eNic0AttachType, sDvdImage):
-        """ Overloaded from TestVm to create using defaults rather than a set complicated config properties. """
 
+    #
+    # Overriden methods.
+    #
 
-    def detatchAndDeleteHd(self, oTestDrv):
-        """
-        Detaches and deletes the HD.
-        Returns success indicator, error info logged.
-        """
-        fRc = False;
-        oVM = oTestDrv.getVmByName(self.sVmName);
-        if oVM is not None:
-            oSession = oTestDrv.openSession(oVM);
-            if oSession is not None:
-                (fRc, oHd) = oSession.detachHd(self.sHddControllerType, iPort = 0, iDevice = 0);
-                if fRc is True and oHd is not None:
-                    fRc = oSession.saveSettings();
-                    fRc = fRc and oTestDrv.oVBox.deleteHdByMedium(oHd);
-                    fRc = fRc and oSession.saveSettings(); # Necessary for media reg?
-                fRc = oSession.close() and fRc;
-        return fRc;
+    def _createVmPost(self, oTestDrv, oVM, eNic0AttachType, sDvdImage):
+        #
+        # Adjust the ram, I/O APIC and stuff.
+        #
+
+        oSession = oTestDrv.openSession(oVM);
+        if oSession is None:
+            return None;
+
+        fRc = True;
+
+        # Set proper boot order (needed?)
+        fRc = fRc and oSession.setBootOrder(1, vboxcon.DeviceType_HardDisk)
+        fRc = fRc and oSession.setBootOrder(2, vboxcon.DeviceType_DVD)
+
+        # Adjust memory if requested.
+        if self.iOptRamAdjust != 0:
+            try:    cMbRam = oSession.o.machine.memorySize;
+            except: fRc   = reporter.errorXcpt();
+            else:
+                fRc = fRc and oSession.setRamSize(cMbRam + self.iOptRamAdjust);
+
+        # I/O APIC:
+        if self.fOptIoApic is not None:
+            fRc = fRc and oSession.enableIoApic(self.fOptIoApic);
+
+        # I/O APIC:
+        if self.fOptPae is not None:
+            fRc = fRc and oSession.enablePae(self.fOptPae);
+
+        # Set extra data
+        for sExtraData in self.asOptExtraData:
+            try:
+                sKey, sValue = sExtraData.split(':')
+            except ValueError:
+                raise base.InvalidOption('Invalid extradata specified: %s' % sExtraData)
+            reporter.log('Set extradata: %s => %s' % (sKey, sValue))
+            fRc = fRc and oSession.setExtraData(sKey, sValue)
+
+        # Save the settings.
+        fRc = fRc and oSession.saveSettings()
+        fRc = oSession.close() and fRc;
+
+        return oVM if fRc else None;
+
+    def _skipVmTest(self, oTestDrv, oVM):
+        _ = oVM;
+        #
+        # Check for ubuntu installer vs. AMD host CPU.
+        #
+        if self.fInstVmFlags & self.kfUbuntuNewAmdBug:
+            if self.isHostCpuAffectedByUbuntuNewAmdBug(oTestDrv):
+                return True;
+
+        return vboxtestvms.BaseTestVm._skipVmTest(self, oTestDrv, oVM);
 
     def getReconfiguredVm(self, oTestDrv, cCpus, sVirtMode, sParavirtMode = None):
         #
         # Do the standard reconfig in the base class first, it'll figure out
         # if we can run the VM as requested.
         #
-        (fRc, oVM) = vboxtestvms.TestVm.getReconfiguredVm(self, oTestDrv, cCpus, sVirtMode, sParavirtMode);
-
-        #
-        # Make sure there is no HD from the previous run attached nor taking
-        # up storage on the host.
-        #
+        (fRc, oVM) = vboxtestvms.BaseTestVm.getReconfiguredVm(self, oTestDrv, cCpus, sVirtMode, sParavirtMode);
         if fRc is True:
-            fRc = self.detatchAndDeleteHd(oTestDrv);
-
-        #
-        # Check for ubuntu installer vs. AMD host CPU.
-        #
-        if fRc is True and (self.fInstVmFlags & self.kfUbuntuNewAmdBug):
-            if self.isHostCpuAffectedByUbuntuNewAmdBug(oTestDrv):
-                return (None, None); # (skip)
-
-        #
-        # Make adjustments to the default config, and adding a fresh HD.
-        #
-        if fRc is True:
-            oSession = oTestDrv.openSession(oVM);
-            if oSession is not None:
-                if self.sHddControllerType == self.ksSataController:
-                    fRc = fRc and oSession.setStorageControllerType(vboxcon.StorageControllerType_IntelAhci,
-                                                                    self.sHddControllerType);
-                    fRc = fRc and oSession.setStorageControllerPortCount(self.sHddControllerType, 1);
-                elif self.sHddControllerType == self.ksScsiController:
-                    fRc = fRc and oSession.setStorageControllerType(vboxcon.StorageControllerType_LsiLogic,
-                                                                    self.sHddControllerType);
+            #
+            # Make sure there is no HD from the previous run attached nor taking
+            # up storage on the host.
+            #
+            fRc = self.recreateRecommendedHdd(oVM, oTestDrv);
+            if fRc is True:
+                #
+                # Set up unattended installation.
+                #
                 try:
-                    sHddPath = os.path.join(os.path.dirname(oVM.settingsFilePath),
-                                            '%s-%s-%s.vdi' % (self.sVmName, sVirtMode, cCpus,));
+                    oIUnattended = oTestDrv.oVBox.createUnattendedInstaller();
                 except:
-                    reporter.errorXcpt();
-                    sHddPath = None;
-                    fRc = False;
-
-                fRc = fRc and oSession.createAndAttachHd(sHddPath,
-                                                         cb = self.cGbHdd * 1024*1024*1024,
-                                                         sController = self.sHddControllerType,
-                                                         iPort = 0,
-                                                         fImmutable = False);
-
-                # Set proper boot order
-                fRc = fRc and oSession.setBootOrder(1, vboxcon.DeviceType_HardDisk)
-                fRc = fRc and oSession.setBootOrder(2, vboxcon.DeviceType_DVD)
-
-                # Adjust memory if requested.
-                if self.iOptRamAdjust != 0:
-                    fRc = fRc and oSession.setRamSize(oSession.o.machine.memorySize + self.iOptRamAdjust);
-
-                # Set extra data
-                for sExtraData in self.asOptExtraData:
-                    try:
-                        sKey, sValue = sExtraData.split(':')
-                    except ValueError:
-                        raise base.InvalidOption('Invalid extradata specified: %s' % sExtraData)
-                    reporter.log('Set extradata: %s => %s' % (sKey, sValue))
-                    fRc = fRc and oSession.setExtraData(sKey, sValue)
-
-                # Other variations?
-
-                # Save the settings.
-                fRc = fRc and oSession.saveSettings()
-                fRc = oSession.close() and fRc;
-            else:
-                fRc = False;
-            if fRc is not True:
-                oVM = None;
+                    fRc = reporter.errorXcpt();
+                if fRc is True:
+                    fRc = self.unattendedDetectOs(oIUnattended, oTestDrv);
+                    if fRc is True:
+                        fRc = self._unattendedConfigure(oIUnattended, oTestDrv);
+                        if fRc is True:
+                            fRc = self._unattendedDoIt(oIUnattended, oVM, oTestDrv);
 
         # Done.
         return (fRc, oVM)
 
+    #
+    # Our methods.
+    #
 
+    def unattendedDetectOs(self, oIUnattended, oTestDrv): # type: (Any, vbox.TestDriver) -> bool
+        """
+        Does the detectIsoOS operation and checks that the detect OSTypeId matches.
+
+        Returns True on success, False w/ errors logged on failure.
+        """
+
+        #
+        # Point the installer at the ISO and do the detection.
+        #
+        try:
+            oIUnattended.isoPath = self.sInstallIso;
+        except:
+            return reporter.errorXcpt('sInstallIso=%s' % (self.sInstallIso,));
+
+        try:
+            oIUnattended.detectIsoOS();
+        except:
+            if oTestDrv.oVBoxMgr.xcptIsNotEqual(None, oTestDrv.oVBoxMgr.statuses.E_NOTIMPL):
+                return reporter.errorXcpt('sInstallIso=%s' % (self.sInstallIso,));
+
+        #
+        # Get and log the result.
+        #
+        # Note! Current (6.0.97) fails with E_NOTIMPL even if it does some work.
+        #
+        try:
+            sDetectedOSTypeId    = oIUnattended.detectedOSTypeId;
+            sDetectedOSVersion   = oIUnattended.detectedOSVersion;
+            sDetectedOSFlavor    = oIUnattended.detectedOSFlavor;
+            sDetectedOSLanguages = oIUnattended.detectedOSLanguages;
+            sDetectedOSHints     = oIUnattended.detectedOSHints;
+        except:
+            return reporter.errorXcpt('sInstallIso=%s' % (self.sInstallIso,));
+
+        reporter.log('detectIsoOS result for "%s" (vm %s):' % (self.sInstallIso, self.sVmName));
+        reporter.log('       DetectedOSTypeId: %s' % (sDetectedOSTypeId,));
+        reporter.log('      DetectedOSVersion: %s' % (sDetectedOSVersion,));
+        reporter.log('       DetectedOSFlavor: %s' % (sDetectedOSFlavor,));
+        reporter.log('    DetectedOSLanguages: %s' % (sDetectedOSLanguages,));
+        reporter.log('        DetectedOSHints: %s' % (sDetectedOSHints,));
+
+        #
+        # Check if the OS type matches.
+        #
+        if self.sKind != sDetectedOSTypeId:
+            return reporter.error('sInstallIso=%s: DetectedOSTypeId is %s, expected %s'
+                                  % (self.sInstallIso, sDetectedOSTypeId, self.sKind));
+
+        return True;
+
+    def _unattendedConfigure(self, oIUnattended, oTestDrv): # type: (Any, vbox.TestDriver) -> bool
+        """
+        Configures the unattended install object.
+
+        The ISO attribute has been set and detectIsoOS has been done, the rest of the
+        setup is done here.
+
+        Returns True on success, False w/ errors logged on failure.
+        """
+
+        #
+        # Make it install the TXS.
+        #
+        try:    oIUnattended.installTestExecService = True;
+        except: return reporter.errorXcpt();
+        try:    oIUnattended.validationKitIsoPath = oTestDrv.sVBoxValidationKitIso;
+        except: return reporter.errorXcpt();
+
+        return True;
+
+    def _unattendedDoIt(self, oIUnattended, oVM, oTestDrv): # type: (Any, Any, vbox.TestDriver) -> bool
+        """
+        Does the unattended installation preparing, media construction and VM reconfiguration.
+
+        Returns True on success, False w/ errors logged on failure.
+        """
+
+        # Associate oVM with the installer:
+        try:
+            oIUnattended.machine = oVM;
+        except:
+            return reporter.errorXcpt();
+        oTestDrv.processPendingEvents();
+
+        # Prepare:
+        try:
+            oIUnattended.prepare();
+        except:
+            return reporter.errorXcpt("IUnattended.prepare failed");
+        oTestDrv.processPendingEvents();
+
+        # Create media:
+        try:
+            oIUnattended.constructMedia();
+        except:
+            return reporter.errorXcpt("IUnattended.constructMedia failed");
+        oTestDrv.processPendingEvents();
+
+        # Reconfigure the VM:
+        try:
+            oIUnattended.reconfigureVM();
+        except:
+            return reporter.errorXcpt("IUnattended.reconfigureVM failed");
+        oTestDrv.processPendingEvents();
+
+        return True;
+
+    def _unattendedLogIt(self, oIUnattended):
+        """
+        Logs the attributes of the unattended installation object.
+        """
+        fRc = True;
+        asAttribs = ( 'isoPath', 'user', 'password ', 'fullUserName', 'productKey', 'additionsIsoPath', 'installGuestAdditions',
+                      'validationKitIsoPath', 'installTestExecService', 'timeZone', 'locale', 'language', 'country', 'proxy',
+                      'packageSelectionAdjustments', 'hostname', 'auxiliaryBasePath', 'imageIndex', 'machine',
+                      'scriptTemplatePath', 'postInstallScriptTemplatePath', 'postInstallCommand',
+                      'extraInstallKernelParameters', 'detectedOSTypeId', 'detectedOSVersion', 'detectedOSLanguages',
+                      'detectedOSFlavor', 'detectedOSHints', );
+        for sAttrib in asAttribs:
+            try:
+                oValue = getattr(oIUnattended, sAttrib);
+            except:
+                fRc = reporter.errorXcpt('sAttrib=%s' % sAttrib);
+            else:
+                reporter.log('%s: %s' % (sAttrib.rjust(32), oValue,));
+        return fRc;
 
 
 class tdGuestOsInstTest1(vbox.TestDriver):
@@ -210,9 +330,7 @@ class tdGuestOsInstTest1(vbox.TestDriver):
         #
         oSet = vboxtestvms.TestVmSet(self.oTestVmManager, fIgnoreSkippedVm = True);
         oSet.aoTestVms.extend([
-            # pylint: disable=C0301
             UnattendedVm(oSet, 'tst-w7-32', 'Windows7', 'en_windows_7_enterprise_x86_dvd_x15-70745.iso'),
-            # pylint: enable=C0301
         ]);
         self.oTestVmSet = oSet;
 
@@ -281,7 +399,7 @@ class tdGuestOsInstTest1(vbox.TestDriver):
         elif asArgs[iArg] == '--copy':
             iArg = self.requireMoreArgs(1, asArgs, iArg);
             asNames = asArgs[iArg].split('=');
-            if len(asNames) != 2 or len(asNames[0]) == 0 or len(asNames[1]) == 0:
+            if len(asNames) != 2 or not asNames[0] or not asNames[1]:
                 raise base.InvalidOption('The --copy option expects value on the form "old=new": %s'  % (asArgs[iArg],));
             oOldTestVm = self.oTestVmSet.findTestVmByName(asNames[0]);
             if not oOldTestVm:

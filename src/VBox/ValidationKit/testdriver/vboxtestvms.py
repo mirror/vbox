@@ -35,6 +35,7 @@ import re;
 import random;
 import socket;
 import string;
+import uuid;
 
 # Validation Kit imports.
 from testdriver import base;
@@ -194,7 +195,7 @@ def _intersects(asSet1, asSet2):
 
 class BaseTestVm(object):
     """
-    Base class ofr Test VMs.
+    Base class for Test VMs.
     """
 
     def __init__(self, # pylint: disable=R0913
@@ -208,11 +209,13 @@ class BaseTestVm(object):
                  fRandomPvPModeCrap = False,                # type: bool
                  fVmmDevTestingPart = None,                 # type: bool
                  fVmmDevTestingMmio = False,                # type: bool
+                 iGroup = 1,                                # type: int
                  ):
-        self.oSet                    = oSet;
+        self.oSet                    = oSet                 # type: TestVmSet
         self.sVmName                 = sVmName;
+        self.iGroup                  = iGroup;              # Startup group (for MAC address uniqueness and non-NAT networking).
         self.fGrouping               = fGrouping;
-        self.sKind                   = sKind;               # Guest OS type.
+        self.sKind                   = sKind;               # API Guest OS type.
         self.acCpusSup               = acCpusSup;
         self.asVirtModesSup          = asVirtModesSup;
         self.asParavirtModesSup      = asParavirtModesSup;
@@ -222,14 +225,21 @@ class BaseTestVm(object):
         self.fSkip                   = False;               # All VMs are included in the configured set by default.
         self.fSnapshotRestoreCurrent = False;               # Whether to restore execution on the current snapshot.
 
+        # VMMDev and serial (TXS++) settings:
         self.fVmmDevTestingPart      = fVmmDevTestingPart;
         self.fVmmDevTestingMmio      = fVmmDevTestingMmio;
         self.fCom1RawFile            = False;
-        self.sCom1RawFile            = None;                # Set by createVmInner and getReconfiguredVm if fCom1RawFile is set.
+
+        # Cached stuff (use getters):
+        self.__sCom1RawFile          = None;                # Set by createVmInner and getReconfiguredVm if fCom1RawFile is set.
+        self.__tHddCtrlPortDev       = (None, None, None);  # The HDD controller, port and device.
+        self.__tDvdCtrlPortDev       = (None, None, None);  # The DVD controller, port and device.
+        self.__cbHdd                 = -1;                  # The recommended HDD size.
 
         # Derived stuff:
         self.aInfo                   = None;
         self.sGuestOsType            = None;                # ksGuestOsTypeXxxx value, API GuestOS Type is in the sKind member.
+                                                            ## @todo rename sGuestOsType
         self._guessStuff(fRandomPvPModeCrap);
 
     def _mkCanonicalGuestOSType(self, sType):
@@ -341,12 +351,62 @@ class BaseTestVm(object):
         sRandom = ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(10));
         return os.path.join(oTestDrv.sScratchPath, self.sVmName + sInfix + sRandom + sSuffix);
 
-    def _createVmTail(self, oTestDrv, eNic0AttachType, sDvdImage):
+    def _createVmPre(self, oTestDrv, eNic0AttachType, sDvdImage):
         """
-        Returns same as vbox.TestDriver.createTestVM.
+        Prepares for creating the VM.
+
+        Returns True / False.
+        """
+        _ = eNic0AttachType; _ = sDvdImage;
+        if self.fCom1RawFile:
+            self.__sCom1RawFile = self._generateRawPortFilename(oTestDrv, '-com1-', '.out');
+        return True;
+
+    def _createVmDoIt(self, oTestDrv, eNic0AttachType, sDvdImage):
+        """
+        Creates the VM.
+
+        The default implementation creates a VM with defaults, no disks created or attached.
+
+        Returns Wrapped VM object on success, None on failure.
+        """
+        return oTestDrv.createTestVmWithDefaults(self.sVmName,
+                                                 iGroup             = self.iGroup,
+                                                 sKind              = self.sKind,
+                                                 eNic0AttachType    = eNic0AttachType,
+                                                 sDvdImage          = sDvdImage,
+                                                 fVmmDevTestingPart = self.fVmmDevTestingPart,
+                                                 fVmmDevTestingMmio = self.fVmmDevTestingMmio,
+                                                 sCom1RawFile       = self.__sCom1RawFile if self.fCom1RawFile else None
+                                                 );
+
+    def _createVmPost(self, oTestDrv, oVM, eNic0AttachType, sDvdImage): # type: (base.testdriver, Any, int, str) -> Any
+        """
+        Returns same oVM on success, None on failure (createVm cleans up).
         """
         _ = oTestDrv; _ = eNic0AttachType; _ = sDvdImage;
-        return reporter.error('Base class _createVmTail must not be called!');
+        return oVM;
+
+    def _skipVmTest(self, oTestDrv, oVM):
+        """
+        Called by getReconfiguredVm to figure out whether to skip the VM or not.
+
+        Returns True if the VM should be skipped, False otherwise.
+        """
+        _ = oVM;
+        fHostSupports64bit = oTestDrv.hasHostLongMode();
+        if self.is64bitRequired() and not fHostSupports64bit:
+            reporter.log('Skipping 64-bit VM on non-64 capable host.');
+        elif self.isViaIncompatible() and oTestDrv.isHostCpuVia():
+            reporter.log('Skipping VIA incompatible VM.');
+        elif self.isShanghaiIncompatible() and oTestDrv.isHostCpuShanghai():
+            reporter.log('Skipping Shanghai (Zhaoxin) incompatible VM.');
+        elif self.isP4Incompatible() and oTestDrv.isHostCpuP4():
+            reporter.log('Skipping P4 incompatible VM.');
+        else:
+            return False;
+        return True;
+
 
     def _childVmReconfig(self, oTestDrv, oVM, oSession):
         """
@@ -355,17 +415,68 @@ class BaseTestVm(object):
         _ = oTestDrv; _ = oVM; _ = oSession;
         return True;
 
+    def _storageCtrlAndBusToName(self, oVM, eCtrl, eBus):
+        """
+        Resolves the storage controller name given type and bus.
+
+        Returns String on success, None on failure w/ errors logged.
+        """
+        try:
+            aoControllers = oVM.storageControllers;
+        except:
+            reporter.errorXcpt();
+            return None;
+        asSummary = [];
+        for oController in aoControllers:
+            try:
+                eCurCtrl = oController.controllerType;
+                eCurBus  = oController.bus;
+                sName    = oController.name;
+            except:
+                reporter.errorXcpt();
+                return None;
+            if eCurCtrl == eCtrl and eCurBus == eBus:
+                return sName;
+            asSummary.append('%s-%s-%s' % (eCurCtrl, eCurBus, sName,));
+        reporter.error('Unable to find controller of type %s and bus %s (searched: %s)' % (eCtrl, eBus, ', '.join(asSummary),));
+        return None;
+
 
     #
     # Public interface.
     #
 
-    def getMissingResources(self, sTestRsrc):
+    def getResourceSet(self):
+        """
+        Resturns a list of reosurces that the VM needs.
+        """
+        return [];
+
+    def getMissingResources(self, sResourcePath):
         """
         Returns a list of missing resources (paths, stuff) that the VM needs.
         """
-        _ = sTestRsrc;
-        return [];
+        asRet       = [];
+        asResources = self.getResourceSet();
+        for sPath in asResources:
+            if not os.path.isabs(sPath):
+                sPath = os.path.join(sResourcePath, sPath);
+            if not os.path.exists(sPath):
+                asRet.append(sPath);
+        return asRet;
+
+    def skipCreatingVm(self, oTestDrv):
+        """
+        Called before VM creation to determine whether the VM should be skipped
+        due to host incompatibility or something along those lines.
+
+        returns True if it should be skipped, False if not.  Caller updates fSkip.
+
+        See also _skipVmTest().
+        """
+        _ = oTestDrv;
+        return False;
+
 
     def createVm(self, oTestDrv, eNic0AttachType = None, sDvdImage = None):
         """
@@ -375,11 +486,13 @@ class BaseTestVm(object):
         """
         reporter.log2('');
         reporter.log2('Creating %s...' % (self.sVmName,))
-
-        if self.fCom1RawFile:
-            self.sCom1RawFile = self._generateRawPortFilename(oTestDrv, '-com1-', '.out');
-
-        return self._createVmTail(oTestDrv, eNic0AttachType, sDvdImage);
+        oVM = None;
+        fRc = self._createVmPre(oTestDrv, eNic0AttachType, sDvdImage);
+        if fRc is True:
+            oVM = self._createVmDoIt(oTestDrv, eNic0AttachType, sDvdImage);
+            if oVM:
+                oVM = self._createVmPost(oTestDrv, oVM, eNic0AttachType, sDvdImage);
+        return oVM;
 
     def getReconfiguredVm(self, oTestDrv, cCpus, sVirtMode, sParavirtMode = None):
         """
@@ -396,13 +509,7 @@ class BaseTestVm(object):
                 fRc = True;
             else:
                 fHostSupports64bit = oTestDrv.hasHostLongMode();
-                if self.is64bitRequired() and not fHostSupports64bit:
-                    fRc = None; # Skip the test.
-                elif self.isViaIncompatible() and oTestDrv.isHostCpuVia():
-                    fRc = None; # Skip the test.
-                elif self.isShanghaiIncompatible() and oTestDrv.isHostCpuShanghai():
-                    fRc = None; # Skip the test.
-                elif self.isP4Incompatible() and oTestDrv.isHostCpuP4():
+                if self._skipVmTest(oTestDrv, oVM):
                     fRc = None; # Skip the test.
                 else:
                     oSession = oTestDrv.openSession(oVM);
@@ -437,9 +544,9 @@ class BaseTestVm(object):
 
                         # New serial raw file.
                         if fRc and self.fCom1RawFile:
-                            self.sCom1RawFile = self._generateRawPortFilename(oTestDrv, '-com1-', '.out');
-                            utils.noxcptDeleteFile(self.sCom1RawFile);
-                            fRc = oSession.setupSerialToRawFile(0, self.sCom1RawFile);
+                            self.__sCom1RawFile = self._generateRawPortFilename(oTestDrv, '-com1-', '.out');
+                            utils.noxcptDeleteFile(self.__sCom1RawFile);
+                            fRc = oSession.setupSerialToRawFile(0, self.__sCom1RawFile);
 
                         # Make life simpler for child classes.
                         if fRc:
@@ -574,6 +681,200 @@ class BaseTestVm(object):
         reporter.log('Skipping "%s" because host CPU is a family %u AMD, which may cause trouble for the guest OS installer.'
                      % (self.sVmName, uFamily,));
         return True;
+
+    def getCom1RawFile(self, oVM):
+        """
+        Gets the name of the COM1 raw file.
+
+        Returns string, None on failure or if not active.
+
+        Note! Do not access __sCom1RawFile directly as it will not be set unless the
+              'config' action was executed in the same run.
+        """
+        if self.fCom1RawFile:
+            # Retrieve it from the IMachine object and cache the result if needed:
+            if self.__sCom1RawFile is None:
+                try:
+                    oPort = oVM.machine.getSerialPort(0);
+                except:
+                    reporter.errorXcpt('failed to get serial port #0');
+                else:
+                    try:
+                        self.__sCom1RawFile = oPort.path;
+                    except:
+                        reporter.errorXcpt('failed to get the "path" property on serial port #0');
+            return self.__sCom1RawFile;
+
+        reporter.error('getCom1RawFile called when fCom1RawFile is False');
+        return None;
+
+    def getIGuestOSType(self, oVBoxWrapped):
+        """
+        Gets the IGuestOSType object corresponding to self.sKind.
+
+        Returns object on success, None on failure (logged as error).
+        """
+        try:
+            return oVBoxWrapped.o.getGuestOSType(self.sKind);
+        except:
+            reporter.errorXcpt('sVmName=%s sKind=%s' % (self.sVmName, self.sKind,));
+        return None;
+
+    def getRecommendedHddSize(self, oVBoxWrapped):
+        """
+        Gets the recommended HDD size from the IGuestOSType matching self.sKind.
+
+        Returns size in bytes on success, -1 on failure.
+        """
+        if self.__cbHdd < 0:
+            oGuestOSType = self.getIGuestOSType(oVBoxWrapped);
+            if oGuestOSType:
+                try:
+                    self.__cbHdd = oGuestOSType.recommendedHDD;
+                except:
+                    reporter.errorXcpt();
+                    return -1;
+        return self.__cbHdd;
+
+    def getHddAddress(self, oVM, oVBoxWrapped):
+        """
+        Gets the HDD attachment address.
+
+        Returns (sController, iPort, iDevice) on success; (None, None, None) on failure.
+
+        Note! Do not access the cached value directly!
+        """
+        # Cached already?
+        if self.__tHddCtrlPortDev[0] is not None:
+            return self.__tHddCtrlPortDev;
+
+        # First look for HDs attached to the VM:
+        try:
+            aoAttachments = oVBoxWrapped.oVBoxMgr.getArray(oVM, 'mediumAttachments')
+        except:
+            reporter.errorXcpt();
+        else:
+            for oAtt in aoAttachments:
+                try:
+                    sCtrl = oAtt.controller
+                    iPort = oAtt.port;
+                    iDev  = oAtt.device;
+                    eType = oAtt.type;
+                except:
+                    reporter.errorXcpt();
+                    return self.__tHddCtrlPortDev;
+                if eType == vboxcon.DeviceType_HardDisk:
+                    self.__tHddCtrlPortDev = (sCtrl, iPort, iDev);
+                    reporter.log2('getHddAddress: %s, %s, %s' % self.__tHddCtrlPortDev);
+                    return self.__tHddCtrlPortDev;
+
+            # Then consult IGuestOSType:
+            oGuestOSType = self.getIGuestOSType(oVBoxWrapped);
+            if oGuestOSType:
+                try:
+                    eCtrl = oGuestOSType.recommendedHDStorageController;
+                    eBus  = oGuestOSType.RecommendedHDStorageBus;
+                except:
+                    reporter.errorXcpt();
+                else:
+                    self.__tHddCtrlPortDev = (self._storageCtrlAndBusToName(oVM, eCtrl, eBus), 0, 0); # ASSUMES port 0, device 0.
+                    reporter.log2('getHddAddress: %s, %s, %s [IGuestOSType]' % self.__tHddCtrlPortDev);
+        return self.__tHddCtrlPortDev;
+
+    def getDvdAddress(self, oVM, oVBoxWrapped):
+        """
+        Gets the DVD attachment address.
+
+        Returns (sController, iPort, iDevice) on success; (None, None, None) on failure.
+
+        Note! Do not access the cached value directly!
+        """
+        # Cached already?
+        if self.__tDvdCtrlPortDev[0] is not None:
+            return self.__tDvdCtrlPortDev;
+
+        # First look for DVD attached to the VM:
+        try:
+            aoAttachments = oVBoxWrapped.oVBoxMgr.getArray(oVM, 'mediumAttachments')
+        except:
+            reporter.errorXcpt();
+        else:
+            for oAtt in aoAttachments:
+                try:
+                    sCtrl = oAtt.controller
+                    iPort = oAtt.port;
+                    iDev  = oAtt.device;
+                    eType = oAtt.type;
+                except:
+                    reporter.errorXcpt();
+                    return self.__tDvdCtrlPortDev;
+                if eType == vboxcon.DeviceType_DVD:
+                    self.__tDvdCtrlPortDev = (sCtrl, iPort, iDev);
+                    reporter.log2('getDvdAddress: %s, %s, %s' % self.__tDvdCtrlPortDev);
+                    return self.__tDvdCtrlPortDev;
+
+                # Then consult IGuestOSType:
+            oGuestOSType = self.getIGuestOSType(oVBoxWrapped);
+            if oGuestOSType:
+                try:
+                    eCtrl = oGuestOSType.recommendedDVDStorageController;
+                    eBus  = oGuestOSType.RecommendedDVDStorageBus;
+                except:
+                    reporter.errorXcpt();
+                else:
+                    self.__tDvdCtrlPortDev = (self._storageCtrlAndBusToName(oVM, eCtrl, eBus), 1, 0); # ASSUMES port 1, device 0.
+                    reporter.log2('getDvdAddress: %s, %s, %s [IGuestOSType]' % self.__tDvdCtrlPortDev);
+        return self.__tDvdCtrlPortDev;
+
+    def recreateRecommendedHdd(self, oVM, oTestDrv, sHddPath = None):
+        """
+        Detaches and delete any current hard disk and then ensures that a new
+        one with the recommended size is created and attached to the recommended
+        controller/port/device.
+
+        Returns True/False (errors logged).
+        """
+        # Generate a name if none was given:
+        if not sHddPath:
+            try:
+                sHddPath = oVM.settingsFilePath;
+            except:
+                return reporter.errorXcpt();
+            sHddPath = os.path.join(os.path.dirname(sHddPath), '%s-%s.vdi' % (self.sVmName, uuid.uuid4(),));
+
+        fRc = False;
+
+        # Get the hard disk specs first:
+        cbHdd       = self.getRecommendedHddSize(oTestDrv.oVBox);
+        tHddAddress = self.getHddAddress(oVM, oTestDrv.oVBox);
+        assert len(tHddAddress) == 3;
+        if tHddAddress[0] and cbHdd > 0:
+            # Open an session so we can make changes:
+            oSession = oTestDrv.openSession(oVM);
+            if oSession is not None:
+                # Detach the old disk (this will succeed with oOldHd set to None the first time around).
+                (fRc, oOldHd) = oSession.detachHd(tHddAddress[0], tHddAddress[1], tHddAddress[2]);
+                if fRc:
+                    # Create a new disk and attach it.
+                    fRc = oSession.createAndAttachHd(sHddPath,
+                                                     cb          = cbHdd,
+                                                     sController = tHddAddress[0],
+                                                     iPort       = tHddAddress[1],
+                                                     iDevice     = tHddAddress[2],
+                                                     fImmutable  = False);
+                if fRc:
+                    # Save the changes.
+                    fRc = oSession.saveSettings();
+
+                    # Delete the old HD:
+                    if fRc and oOldHd is not None:
+                        fRc = fRc and oTestDrv.oVBox.deleteHdByMedium(oOldHd);
+                        fRc = fRc and oSession.saveSettings(); # Necessary for media reg??
+                else:
+                    oSession.discardSettings();
+                fRc = oSession.close() and fRc;
+        return fRc;
+
 
 
 ## @todo Inherit from BaseTestVm
@@ -759,6 +1060,18 @@ class TestVm(object):
                     asRet.append(sPath);
         return asRet;
 
+    def skipCreatingVm(self, oTestDrv):
+        """
+        Called before VM creation to determine whether the VM should be skipped
+        due to host incompatibility or something along those lines.
+
+        returns True if it should be skipped, False if not.
+        """
+        if self.fNstHwVirt and not oTestDrv.isHostCpuAmd():
+            reporter.log('Ignoring VM %s (Nested hardware-virtualization only supported on AMD CPUs).' % (self.sVmName,));
+            return True;
+        return False;
+
     def createVm(self, oTestDrv, eNic0AttachType = None, sDvdImage = None):
         """
         Creates the VM with defaults and the few tweaks as per the arguments.
@@ -812,7 +1125,7 @@ class TestVm(object):
                                      sHddControllerType = self.sHddControllerType,
                                      sFloppy            = self.sFloppy,
                                      fVmmDevTestingPart = self.fVmmDevTestingPart,
-                                     fVmmDevTestingMmio = self.fVmmDevTestingPart,
+                                     fVmmDevTestingMmio = self.fVmmDevTestingMmio,
                                      sFirmwareType      = self.sFirmwareType,
                                      sChipsetType       = self.sChipsetType,
                                      sCom1RawFile       = self.sCom1RawFile if self.fCom1RawFile else None
@@ -1293,15 +1606,18 @@ class TestVmSet(object):
 
     def getResourceSet(self):
         """
-        Implements base.TestDriver.getResourceSet
+        Called vbox.TestDriver.getResourceSet and returns a list of paths of resources.
         """
         asResources = [];
         for oTestVm in self.aoTestVms:
             if not oTestVm.fSkip:
-                if oTestVm.sHd is not None:
-                    asResources.append(oTestVm.sHd);
-                if oTestVm.sDvdImage is not None:
-                    asResources.append(oTestVm.sDvdImage);
+                if isinstance(oTestVm, BaseTestVm): # Temporarily...
+                    asResources.extend(oTestVm.getResourceSet());
+                else:
+                    if oTestVm.sHd is not None:
+                        asResources.append(oTestVm.sHd);
+                    if oTestVm.sDvdImage is not None:
+                        asResources.append(oTestVm.sDvdImage);
         return asResources;
 
     def actionConfig(self, oTestDrv, eNic0AttachType = None, sDvdImage = None):
@@ -1315,6 +1631,9 @@ class TestVmSet(object):
 
         for oTestVm in self.aoTestVms:
             if oTestVm.fSkip:
+                continue;
+            if oTestVm.skipCreatingVm(oTestDrv):
+                oTestVm.fSkip = True;
                 continue;
 
             if oTestVm.fSnapshotRestoreCurrent:
@@ -1366,9 +1685,6 @@ class TestVmSet(object):
         #
         fRc = True;
         for oTestVm in self.aoTestVms:
-            if oTestVm.fNstHwVirt and not oTestDrv.isHostCpuAmd():
-                reporter.log('Ignoring VM %s (Nested hardware-virtualization only supported on AMD CPUs).' % (oTestVm.sVmName,));
-                continue;
             if oTestVm.fSkip and self.fIgnoreSkippedVm:
                 reporter.log2('Ignoring VM %s (fSkip = True).' % (oTestVm.sVmName,));
                 continue;

@@ -2206,6 +2206,51 @@ class TestDriver(base.TestDriver):                                              
     # VM Api wrappers that logs errors, hides exceptions and other details.
     #
 
+    def createTestVMOnly(self, sName, sKind):
+        """
+        Creates and register a test VM without doing any kind of configuration.
+
+        Returns VM object (IMachine) on success, None on failure.
+        """
+        if not self.importVBoxApi():
+            return None;
+
+        # create + register the VM
+        try:
+            if self.fpApiVer >= 4.2: # Introduces grouping (third parameter, empty for now).
+                oVM = self.oVBox.createMachine("", sName, [], self.tryFindGuestOsId(sKind), "");
+            elif self.fpApiVer >= 4.0:
+                oVM = self.oVBox.createMachine("", sName, self.tryFindGuestOsId(sKind), "", False);
+            elif self.fpApiVer >= 3.2:
+                oVM = self.oVBox.createMachine(sName, self.tryFindGuestOsId(sKind), "", "", False);
+            else:
+                oVM = self.oVBox.createMachine(sName, self.tryFindGuestOsId(sKind), "", "");
+            try:
+                oVM.saveSettings();
+                try:
+                    self.oVBox.registerMachine(oVM);
+                    return oVM;
+                except:
+                    raise;
+            except:
+                reporter.logXcpt();
+                if self.fpApiVer >= 4.0:
+                    try:
+                        if self.fpApiVer >= 4.3:
+                            oProgress = oVM.deleteConfig([]);
+                        else:
+                            oProgress = oVM.delete(None);
+                        self.waitOnProgress(oProgress);
+                    except:
+                        reporter.logXcpt();
+                else:
+                    try:    oVM.deleteSettings();
+                    except: reporter.logXcpt();
+                raise;
+        except:
+            reporter.errorXcpt('failed to create vm "%s"' % (sName));
+        return None;
+
     # pylint: disable=R0913,R0914,R0915
     def createTestVM(self,
                      sName,
@@ -2237,42 +2282,9 @@ class TestDriver(base.TestDriver):                                              
         """
         Creates a test VM with a immutable HD from the test resources.
         """
-        if not self.importVBoxApi():
-            return None;
-
         # create + register the VM
-        try:
-            if self.fpApiVer >= 4.2: # Introduces grouping (third parameter, empty for now).
-                oVM = self.oVBox.createMachine("", sName, [], self.tryFindGuestOsId(sKind), "");
-            elif self.fpApiVer >= 4.0:
-                oVM = self.oVBox.createMachine("", sName, self.tryFindGuestOsId(sKind), "", False);
-            elif self.fpApiVer >= 3.2:
-                oVM = self.oVBox.createMachine(sName, self.tryFindGuestOsId(sKind), "", "", False);
-            else:
-                oVM = self.oVBox.createMachine(sName, self.tryFindGuestOsId(sKind), "", "");
-            try:
-                oVM.saveSettings();
-                try:
-                    self.oVBox.registerMachine(oVM);
-                except:
-                    raise;
-            except:
-                reporter.logXcpt();
-                if self.fpApiVer >= 4.0:
-                    try:
-                        if self.fpApiVer >= 4.3:
-                            oProgress = oVM.deleteConfig([]);
-                        else:
-                            oProgress = oVM.delete(None);
-                        self.waitOnProgress(oProgress);
-                    except:
-                        reporter.logXcpt();
-                else:
-                    try:    oVM.deleteSettings();
-                    except: reporter.logXcpt();
-                raise;
-        except:
-            reporter.errorXcpt('failed to create vm "%s"' % (sName));
+        oVM = self.createTestVMOnly(sName, sKind);
+        if not oVM:
             return None;
 
         # Configure the VM.
@@ -2307,7 +2319,7 @@ class TestDriver(base.TestDriver):                                              
                 fRc = oSession.setNicAttachment(eNic0AttachType, sNic0NetName, 0);
             if fRc and sNic0MacAddr is not None:
                 if sNic0MacAddr == 'grouped':
-                    sNic0MacAddr = '%02u' % (iGroup);
+                    sNic0MacAddr = '%02X' % (iGroup);
                 fRc = oSession.setNicMacAddress(sNic0MacAddr, 0);
             if fRc and fNatForwardingForTxs is True:
                 fRc = oSession.setupNatForwardingForTxs();
@@ -2356,6 +2368,94 @@ class TestDriver(base.TestDriver):                                              
         self.logVmInfo(oVM); # testing...
         return oVM;
     # pylint: enable=R0913,R0914,R0915
+
+    def createTestVmWithDefaults(self,                                      # pylint: disable=too-many-arguments
+                                 sName,
+                                 iGroup,
+                                 sKind,
+                                 sDvdImage = None,
+                                 fFastBootLogo = True,
+                                 eNic0AttachType = None,
+                                 sNic0NetName = 'default',
+                                 sNic0MacAddr = 'grouped',
+                                 fVmmDevTestingPart = None,
+                                 fVmmDevTestingMmio = False,
+                                 sCom1RawFile = None):
+        """
+        Creates a test VM with all defaults and no HDs.
+        """
+        # create + register the VM
+        oVM = self.createTestVMOnly(sName, sKind);
+        if oVM is not None:
+            # Configure the VM with defaults according to sKind.
+            fRc = True;
+            oSession = self.openSession(oVM);
+            if oSession is not None:
+                if self.fpApiVer >= 6.0:
+                    try:
+                        oSession.o.machine.applyDefaults('');
+                    except:
+                        reporter.errorXcpt('failed to apply defaults to vm "%s"' % (sName,));
+                        fRc = False;
+                else:
+                    reporter.error("Implement applyDefaults for vbox version %s" % (self.fpApiVer,));
+                    #fRc = oSession.setupPreferredConfig();
+                    fRc = False;
+
+                # Apply the specified configuration:
+                if fRc and sDvdImage is not None:
+                    #fRc = oSession.insertDvd(sDvdImage); # attachDvd
+                    reporter.error('Implement: oSession.insertDvd(%s)' % (sDvdImage,));
+                    fRc = False;
+
+                if fRc and fFastBootLogo is not None:
+                    fRc = oSession.setupBootLogo(fFastBootLogo);
+
+                if fRc and (eNic0AttachType is not None  or  (sNic0NetName is not None and sNic0NetName != 'default')):
+                    fRc = oSession.setNicAttachment(eNic0AttachType, sNic0NetName, 0);
+                if fRc and sNic0MacAddr is not None:
+                    if sNic0MacAddr == 'grouped':
+                        sNic0MacAddr = '%02X' % (iGroup,);
+                    fRc = oSession.setNicMacAddress(sNic0MacAddr, 0);
+
+                if fRc and fVmmDevTestingPart is not None:
+                    fRc = oSession.enableVmmDevTestingPart(fVmmDevTestingPart, fVmmDevTestingMmio);
+
+                if fRc and sCom1RawFile:
+                    fRc = oSession.setupSerialToRawFile(0, sCom1RawFile);
+
+                # Save the settings if we were successfull, otherwise discard them.
+                if fRc:
+                    fRc = oSession.saveSettings();
+                if not fRc:
+                    oSession.discardSettings(True);
+                oSession.close();
+
+            if fRc is True:
+                # If we've been successful, add the VM to the list and return it.
+                # success.
+                reporter.log('created "%s" with name "%s"' % (oVM.id, sName, ));
+                self.aoVMs.append(oVM);
+                self.logVmInfo(oVM); # testing...
+                return oVM;
+
+            # Failed. Unregister the machine and delete it.
+            try:    self.oVBox.unregisterMachine(oVM.id);
+            except: pass;
+
+            if self.fpApiVer >= 4.0:
+                try:
+                    if self.fpApiVer >= 4.3:
+                        oProgress = oVM.deleteConfig([]);
+                    else:
+                        oProgress = oVM.delete(None);
+                    self.waitOnProgress(oProgress);
+                except:
+                    reporter.logXcpt();
+            else:
+                try:    oVM.deleteSettings();
+                except: reporter.logXcpt();
+        return None;
 
     def addTestMachine(self, sNameOrId, fQuiet = False):
         """
