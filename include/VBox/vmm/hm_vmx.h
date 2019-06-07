@@ -1040,7 +1040,7 @@ typedef VMXEXITINSTRINFO *PVMXEXITINSTRINFO;
 typedef const VMXEXITINSTRINFO *PCVMXEXITINSTRINFO;
 
 
-/** @name VM-entry failure reported in VM-exit qualification.
+/** @name VM-entry failure reported in Exit qualification.
  * See Intel spec. 26.7 "VM-entry failures during or after loading guest-state".
  * @{
  */
@@ -3394,11 +3394,11 @@ typedef struct
     /** The VM-exit instruction ID. */
     VMXINSTRID              uInstrId;
 
-    /** The VM-exit qualification field. */
+    /** The Exit qualification field. */
     uint64_t                u64Qual;
-    /** The guest-linear address field. */
+    /** The Guest-linear address field. */
     uint64_t                u64GuestLinearAddr;
-    /** The guest-physical address field. */
+    /** The Guest-physical address field. */
     uint64_t                u64GuestPhysAddr;
     /** The effective guest-linear address if @a InstrInfo indicates a memory-based
      *  instruction VM-exit. */
