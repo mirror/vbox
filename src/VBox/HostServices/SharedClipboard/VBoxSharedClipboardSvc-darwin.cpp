@@ -209,6 +209,8 @@ int VBoxClipboardSvcImplFormatAnnounce(PVBOXCLIPBOARDCLIENTDATA pClientData, uin
     }
 
     vboxSvcClipboardReportMsg(pClientData, VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA, u32Formats);
+
+    return VINF_SUCCESS;
 }
 
 /**

@@ -8506,7 +8506,7 @@ DECLCALLBACK(int) Console::i_sharedClipboardServiceCallback(void *pvExtension, u
                                                          NULL);
         } break;
 
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+# ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
         case VBOX_CLIPBOARD_EXT_FN_AREA_REGISTER:
         {
             com::SafeArray<BSTR> abstrParms; /* Empty for now. */
@@ -8550,7 +8550,7 @@ DECLCALLBACK(int) Console::i_sharedClipboardServiceCallback(void *pvExtension, u
             if (FAILED(hrc))
                 LogFunc(("Detaching from clipboard area %RU32 failed with %Rhrc\n", pParms->uID, hrc));
         } break;
-#endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
+# endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
 
         default:
         {
@@ -8558,14 +8558,16 @@ DECLCALLBACK(int) Console::i_sharedClipboardServiceCallback(void *pvExtension, u
         } break;
     }
 
+# ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
     if (FAILED(hrc))
         rc = VERR_GENERAL_FAILURE; /** @todo Fudge; fix this. */
+# endif
 
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST_DISABLED
+# ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST_DISABLED
     int rc2 = SharedClipboard::hostServiceCallback(SHAREDCLIPBOARDINST(), u32Function, pvParms, cbParms);
     if (RT_SUCCESS(rc))
         rc = rc2;
-#endif
+# endif
 
     LogFlowFuncLeaveRC(rc);
     return rc;
