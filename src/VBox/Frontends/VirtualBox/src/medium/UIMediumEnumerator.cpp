@@ -775,12 +775,53 @@ QList<QUuid> UIMediumEnumerator::parseAttachment(CMediumAttachment &comAttachmen
         if (!comAttachment.isOk())
         {
             LogRel2(("GUI: UIMediumEnumerator:  Unable to acquire attachment medium!\n"));
-            msgCenter().cannotAcquireAttachmentMedium(comAttachment);
+            msgCenter().cannotAcquireAttachmentParameter(comAttachment);
         }
         else
         {
             /* Parse medium: */
             result << parseMedium(comMedium);
+
+            // WORKAROUND:
+            // In current architecture there is no way to determine medium previously mounted
+            // to this attachment, so we will have to enumerate all other cached media which
+            // belongs to the same VM, since they may no longer belong to it.
+
+            /* Acquire parent VM: */
+            CMachine comMachine = comAttachment.GetMachine();
+            if (!comAttachment.isOk())
+            {
+                LogRel2(("GUI: UIMediumEnumerator:  Unable to acquire attachment parent machine!\n"));
+                msgCenter().cannotAcquireAttachmentParameter(comAttachment);
+            }
+            else
+            {
+                /* Acquire machine ID: */
+                const QUuid uMachineId = comMachine.GetId();
+                if (!comMachine.isOk())
+                {
+                    LogRel2(("GUI: UIMediumEnumerator:  Unable to acquire machine ID!\n"));
+                    msgCenter().cannotAcquireMachineParameter(comMachine);
+                }
+                else
+                {
+                    /* For each the cached UIMedium we have: */
+                    foreach (const QUuid &uMediumId, mediumIDs())
+                    {
+                        const UIMedium guiMedium = medium(uMediumId);
+                        if (   !guiMedium.isNull()
+                            && guiMedium.machineIds().contains(uMachineId)
+                            && !result.contains(uMediumId))
+                        {
+                            /* Enumerate corresponding UIMedium: */
+                            LogRel2(("GUI: UIMediumEnumerator:  Medium {%s} will be enumerated..\n",
+                                     uMediumId.toString().toUtf8().constData()));
+                            createMediumEnumerationTask(guiMedium);
+                            result << uMediumId;
+                        }
+                    }
+                }
+            }
         }
     }
 

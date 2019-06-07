@@ -262,6 +262,7 @@ public:
     void cannotSetExtraData(const CVirtualBox &vbox, const QString &strKey, const QString &strValue);
     void cannotSetExtraData(const CMachine &machine, const QString &strKey, const QString &strValue);
     void warnAboutInvalidEncryptionPassword(const QString &strPasswordId, QWidget *pParent = 0);
+    void cannotAcquireMachineParameter(const CMachine &comMachine, QWidget *pParent = 0) const;
 
     /* API: Selector warnings: */
     void cannotOpenMachine(const CVirtualBox &vbox, const QString &strMachinePath) const;
@@ -345,7 +346,7 @@ public:
     bool cannotRemountMedium(const CMachine &machine, const UIMedium &medium, bool fMount, bool fRetry, QWidget *pParent = 0) const;
     void cannotOpenMedium(const CVirtualBox &comVBox, const QString &strLocation, QWidget *pParent = 0) const;
     void cannotOpenKnownMedium(const CVirtualBox &comVBox, const QUuid &uMediumId, QWidget *pParent = 0) const;
-    void cannotAcquireAttachmentMedium(const CMediumAttachment &comAttachment, QWidget *pParent = 0) const;
+    void cannotAcquireAttachmentParameter(const CMediumAttachment &comAttachment, QWidget *pParent = 0) const;
     void cannotAcquireMediumAttribute(const CMedium &comMedium, QWidget *pParent = 0) const;
     void cannotCloseMedium(const UIMedium &medium, const COMResult &rc, QWidget *pParent = 0) const;
 

@@ -591,6 +591,13 @@ void UIMessageCenter::warnAboutInvalidEncryptionPassword(const QString &strPassw
              .arg(strPasswordId));
 }
 
+void UIMessageCenter::cannotAcquireMachineParameter(const CMachine &comMachine, QWidget *pParent /* = 0 */) const
+{
+    /* Show the error: */
+    error(pParent, MessageType_Error,
+          tr("Failed to acquire machine parameter."), UIErrorString::formatErrorInfo(comMachine));
+}
+
 void UIMessageCenter::cannotOpenMachine(const CVirtualBox &vbox, const QString &strMachinePath) const
 {
     error(0, MessageType_Error,
@@ -1489,11 +1496,11 @@ void UIMessageCenter::cannotOpenKnownMedium(const CVirtualBox &comVBox, const QU
           tr("Failed to open the medium with following ID: <nobr><b>%1</b></nobr>.").arg(uMediumId.toString()), UIErrorString::formatErrorInfo(comVBox));
 }
 
-void UIMessageCenter::cannotAcquireAttachmentMedium(const CMediumAttachment &comAttachment, QWidget *pParent /* = 0 */) const
+void UIMessageCenter::cannotAcquireAttachmentParameter(const CMediumAttachment &comAttachment, QWidget *pParent /* = 0 */) const
 {
     /* Show the error: */
     error(pParent, MessageType_Error,
-          tr("Failed to acquire attachment medium."), UIErrorString::formatErrorInfo(comAttachment));
+          tr("Failed to acquire attachment parameter."), UIErrorString::formatErrorInfo(comAttachment));
 }
 
 void UIMessageCenter::cannotAcquireMediumAttribute(const CMedium &comMedium, QWidget *pParent /* = 0 */) const
