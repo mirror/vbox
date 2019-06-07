@@ -950,23 +950,23 @@ DECLINLINE(uint8_t) iemVmxGetEventType(uint32_t uVector, uint32_t fFlags)
 
 
 /**
- * Sets the VM-exit qualification VMCS field.
+ * Sets the Exit qualification VMCS field.
  *
- * @param   pVCpu       The cross context virtual CPU structure.
- * @param   uExitQual   The VM-exit qualification.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   u64ExitQual     The Exit qualification.
  */
-DECL_FORCE_INLINE(void) iemVmxVmcsSetExitQual(PVMCPU pVCpu, uint64_t uExitQual)
+DECL_FORCE_INLINE(void) iemVmxVmcsSetExitQual(PVMCPU pVCpu, uint64_t u64ExitQual)
 {
     PVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
-    pVmcs->u64RoExitQual.u = uExitQual;
+    pVmcs->u64RoExitQual.u = u64ExitQual;
 }
 
 
 /**
  * Sets the VM-exit interruption information field.
  *
- * @param   pVCpu       The cross context virtual CPU structure.
- * @param   uExitQual   The VM-exit interruption information.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   uExitIntInfo    The VM-exit interruption information.
  */
 DECL_FORCE_INLINE(void) iemVmxVmcsSetExitIntInfo(PVMCPU pVCpu, uint32_t uExitIntInfo)
 {
@@ -2709,14 +2709,12 @@ IEM_STATIC uint32_t iemVmxGetExitInstrInfo(PVMCPU pVCpu, uint32_t uExitReason, V
  *
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   uExitReason     The VM-exit reason.
- *
- * @remarks Make sure VM-exit qualification is updated before calling this
- *          function!
+ * @param   u64ExitQual     The Exit qualification.
  */
-IEM_STATIC VBOXSTRICTRC iemVmxVmexit(PVMCPU pVCpu, uint32_t uExitReason)
+IEM_STATIC VBOXSTRICTRC iemVmxVmexit(PVMCPU pVCpu, uint32_t uExitReason, uint64_t u64ExitQual)
 {
 # if defined(VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM) && !defined(IN_RING3)
-    RT_NOREF2(pVCpu, uExitReason);
+    RT_NOREF3(pVCpu, uExitReason, u64ExitQual);
     return VINF_EM_RAW_EMULATE_INSTR;
 # else
     IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_CR0 | CPUMCTX_EXTRN_CR3 | CPUMCTX_EXTRN_CR4       /* Control registers */
@@ -2737,10 +2735,12 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexit(PVMCPU pVCpu, uint32_t uExitReason)
     Assert(!VMX_ENTRY_INT_INFO_IS_VALID(pVmcs->u32EntryIntInfo));
 
     /*
-     * Update the VM-exit reason. Other VMCS data fields are expected to be updated by the caller already.
+     * Update the VM-exit reason and Exit qualification.
+     * Other VMCS read-only data fields are expected to be updated by the caller already.
      */
     pVmcs->u32RoExitReason = uExitReason;
-    Log3(("vmexit: uExitReason=%#RX32 uExitQual=%#RX64 cs:rip=%04x:%#RX64\n", uExitReason, pVmcs->u64RoExitQual,
+    pVmcs->u64RoExitQual.u = u64ExitQual;
+    Log3(("vmexit: uExitReason=%#RX32 u64ExitQual=%#RX64 cs:rip=%04x:%#RX64\n", uExitReason, pVmcs->u64RoExitQual.u,
           pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip));
 
     /*
@@ -2886,10 +2886,10 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrWithInfo(PVMCPU pVCpu, PCVMXVEXITINFO p
 {
     /*
      * For instructions where any of the following fields are not applicable:
+     *   - Exit qualification must be cleared.
      *   - VM-exit instruction info. is undefined.
-     *   - VM-exit qualification must be cleared.
-     *   - VM-exit guest-linear address is undefined.
-     *   - VM-exit guest-physical address is undefined.
+     *   - Guest-linear address is undefined.
+     *   - Guest-physical address is undefined.
      *
      * The VM-exit instruction length is mandatory for all VM-exits that are caused by
      * instruction execution. For VM-exits that are not due to instruction execution this
@@ -2909,13 +2909,12 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrWithInfo(PVMCPU pVCpu, PCVMXVEXITINFO p
 
     /* Update all the relevant fields from the VM-exit instruction information struct. */
     iemVmxVmcsSetExitInstrInfo(pVCpu, pExitInfo->InstrInfo.u);
-    iemVmxVmcsSetExitQual(pVCpu, pExitInfo->u64Qual);
     iemVmxVmcsSetExitGuestLinearAddr(pVCpu, pExitInfo->u64GuestLinearAddr);
     iemVmxVmcsSetExitGuestPhysAddr(pVCpu, pExitInfo->u64GuestPhysAddr);
     iemVmxVmcsSetExitInstrLen(pVCpu, pExitInfo->cbInstr);
 
     /* Perform the VM-exit. */
-    return iemVmxVmexit(pVCpu, pExitInfo->uReason);
+    return iemVmxVmexit(pVCpu, pExitInfo->uReason, pExitInfo->u64Qual);
 }
 
 
@@ -2971,7 +2970,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstr(PVMCPU pVCpu, uint32_t uExitReason, ui
  * VMX VM-exit handler for VM-exits due to instruction execution.
  *
  * This is intended for instructions that have a ModR/M byte and update the VM-exit
- * instruction information and VM-exit qualification fields.
+ * instruction information and Exit qualification fields.
  *
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   uExitReason     The VM-exit reason.
@@ -2988,7 +2987,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrNeedsInfo(PVMCPU pVCpu, uint32_t uExitR
     ExitInfo.cbInstr = cbInstr;
 
     /*
-     * Update the VM-exit qualification field with displacement bytes.
+     * Update the Exit qualification field with displacement bytes.
      * See Intel spec. 27.2.1 "Basic VM-Exit Information".
      */
     switch (uExitReason)
@@ -3016,7 +3015,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrNeedsInfo(PVMCPU pVCpu, uint32_t uExitR
             /* Update the VM-exit instruction information. */
             ExitInfo.InstrInfo.u = uInstrInfo;
 
-            /* Update the VM-exit qualification. */
+            /* Update the Exit qualification. */
             ExitInfo.u64Qual = GCPtrDisp;
             break;
         }
@@ -3648,7 +3647,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrPause(PVMCPU pVCpu, uint8_t cbInstr)
 IEM_STATIC VBOXSTRICTRC iemVmxVmexitTaskSwitch(PVMCPU pVCpu, IEMTASKSWITCH enmTaskSwitch, RTSEL SelNewTss, uint8_t cbInstr)
 {
     /*
-     * Task-switch VM-exits are unconditional and provide the VM-exit qualification.
+     * Task-switch VM-exits are unconditional and provide the Exit qualification.
      *
      * If the cause of the task switch is due to execution of CALL, IRET or the JMP
      * instruction or delivery of the exception generated by one of these instructions
@@ -3671,11 +3670,10 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitTaskSwitch(PVMCPU pVCpu, IEMTASKSWITCH enmTa
         IEM_NOT_REACHED_DEFAULT_CASE_RET();
     }
 
-    uint64_t const uExitQual = RT_BF_MAKE(VMX_BF_EXIT_QUAL_TASK_SWITCH_NEW_TSS, SelNewTss)
-                             | RT_BF_MAKE(VMX_BF_EXIT_QUAL_TASK_SWITCH_SOURCE,  uType);
-    iemVmxVmcsSetExitQual(pVCpu, uExitQual);
+    uint64_t const u64ExitQual = RT_BF_MAKE(VMX_BF_EXIT_QUAL_TASK_SWITCH_NEW_TSS, SelNewTss)
+                               | RT_BF_MAKE(VMX_BF_EXIT_QUAL_TASK_SWITCH_SOURCE,  uType);
     iemVmxVmcsSetExitInstrLen(pVCpu, cbInstr);
-    return iemVmxVmexit(pVCpu, VMX_EXIT_TASK_SWITCH);
+    return iemVmxVmexit(pVCpu, VMX_EXIT_TASK_SWITCH, u64ExitQual);
 }
 
 
@@ -3696,7 +3694,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitTaskSwitchWithInfo(PVMCPU pVCpu, PCVMXVEXITI
     Assert(pExitInfo);
     Assert(pExitEventInfo);
 
-    /* The VM-exit qualification is mandatory for all task-switch VM-exits. */
+    /* The Exit qualification is mandatory for all task-switch VM-exits. */
     uint64_t const u64ExitQual = pExitInfo->u64Qual;
     iemVmxVmcsSetExitQual(pVCpu, u64ExitQual);
 
@@ -3742,7 +3740,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitTaskSwitchWithInfo(PVMCPU pVCpu, PCVMXVEXITI
         Assert(pExitInfo->cbInstr > 0);
         iemVmxVmcsSetExitInstrLen(pVCpu, pExitInfo->cbInstr);
     }
-    return iemVmxVmexit(pVCpu, VMX_EXIT_TASK_SWITCH);
+    return iemVmxVmexit(pVCpu, VMX_EXIT_TASK_SWITCH, u64ExitQual);
 }
 
 
@@ -3774,8 +3772,8 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitPreemptTimer(PVMCPU pVCpu)
             if (pVmcs->u32ExitCtls & VMX_EXIT_CTLS_SAVE_PREEMPT_TIMER)
                 pVmcs->u32PreemptTimer = 0;
 
-            /* Cause the VMX-preemption timer VM-exit. The VM-exit qualification MBZ. */
-            return iemVmxVmexit(pVCpu, VMX_EXIT_PREEMPT_TIMER);
+            /* Cause the VMX-preemption timer VM-exit. The Exit qualification MBZ. */
+            return iemVmxVmexit(pVCpu, VMX_EXIT_PREEMPT_TIMER, 0 /* u64ExitQual */);
         }
     }
 
@@ -3819,7 +3817,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitExtInt(PVMCPU pVCpu, uint8_t uVector, bool f
              * See Intel spec 25.2 "Other Causes Of VM Exits".
              */
             if (!(pVmcs->u32ExitCtls & VMX_EXIT_CTLS_ACK_EXT_INT))
-                return iemVmxVmexit(pVCpu, VMX_EXIT_EXT_INT);
+                return iemVmxVmexit(pVCpu, VMX_EXIT_EXT_INT, 0 /* u64ExitQual */);
 
             /*
              * If the interrupt is pending and we -do- need to acknowledge the interrupt
@@ -3845,25 +3843,11 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitExtInt(PVMCPU pVCpu, uint8_t uVector, bool f
                                           | RT_BF_MAKE(VMX_BF_EXIT_INT_INFO_NMI_UNBLOCK_IRET, fNmiUnblocking)
                                           | RT_BF_MAKE(VMX_BF_EXIT_INT_INFO_VALID,            1);
             iemVmxVmcsSetExitIntInfo(pVCpu, uExitIntInfo);
-            return iemVmxVmexit(pVCpu, VMX_EXIT_EXT_INT);
+            return iemVmxVmexit(pVCpu, VMX_EXIT_EXT_INT, 0 /* u64ExitQual */);
         }
     }
 
     return VINF_VMX_INTERCEPT_NOT_ACTIVE;
-}
-
-
-/**
- * VMX VM-exit handler for VM-exits due to startup-IPIs (SIPI).
- *
- * @returns VBox strict status code.
- * @param   pVCpu       The cross context virtual CPU structure.
- * @param   uVector     The SIPI vector.
- */
-IEM_STATIC VBOXSTRICTRC iemVmxVmexitStartupIpi(PVMCPU pVCpu, uint8_t uVector)
-{
-    iemVmxVmcsSetExitQual(pVCpu, uVector);
-    return iemVmxVmexit(pVCpu, VMX_EXIT_SIPI);
 }
 
 
@@ -3890,7 +3874,6 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitEventDoubleFault(PVMCPU pVCpu)
                                       | RT_BF_MAKE(VMX_BF_EXIT_INT_INFO_VALID,            1);
         iemVmxVmcsSetExitIntInfo(pVCpu, uExitIntInfo);
         iemVmxVmcsSetExitIntErrCode(pVCpu, 0);
-        iemVmxVmcsSetExitQual(pVCpu, 0);
         iemVmxVmcsSetExitInstrLen(pVCpu, 0);
 
         /*
@@ -3905,8 +3888,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitEventDoubleFault(PVMCPU pVCpu)
          */
         iemVmxVmcsSetIdtVectoringInfo(pVCpu, 0);
         iemVmxVmcsSetIdtVectoringErrCode(pVCpu, 0);
-
-        return iemVmxVmexit(pVCpu, VMX_EXIT_XCPT_OR_NMI);
+        return iemVmxVmexit(pVCpu, VMX_EXIT_XCPT_OR_NMI, 0 /* u64ExitQual */);
     }
 
     return VINF_VMX_INTERCEPT_NOT_ACTIVE;
@@ -3930,13 +3912,12 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitEventWithInfo(PVMCPU pVCpu, PCVMXVEXITINFO p
     Assert(pExitEventInfo);
     Assert(VMX_EXIT_INT_INFO_IS_VALID(pExitEventInfo->uExitIntInfo));
 
-    iemVmxVmcsSetExitQual(pVCpu, pExitInfo->u64Qual);
     iemVmxVmcsSetExitInstrLen(pVCpu, pExitInfo->cbInstr);
     iemVmxVmcsSetExitIntInfo(pVCpu, pExitEventInfo->uExitIntInfo);
     iemVmxVmcsSetExitIntErrCode(pVCpu, pExitEventInfo->uExitIntErrCode);
     iemVmxVmcsSetIdtVectoringInfo(pVCpu, pExitEventInfo->uIdtVectoringInfo);
     iemVmxVmcsSetIdtVectoringErrCode(pVCpu, pExitEventInfo->uIdtVectoringErrCode);
-    return iemVmxVmexit(pVCpu, VMX_EXIT_XCPT_OR_NMI);
+    return iemVmxVmexit(pVCpu, VMX_EXIT_XCPT_OR_NMI, pExitInfo->u64Qual);
 }
 
 
@@ -4022,19 +4003,19 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitEvent(PVMCPU pVCpu, uint8_t uVector, uint32_
         Assert(!(fFlags & IEM_XCPT_FLAGS_T_EXT_INT));
 
         /* Construct the rest of the event related information fields and cause the VM-exit. */
-        uint64_t uExitQual;
+        uint64_t u64ExitQual;
         if (uVector == X86_XCPT_PF)
         {
             Assert(fFlags & IEM_XCPT_FLAGS_CR2);
-            uExitQual = uCr2;
+            u64ExitQual = uCr2;
         }
         else if (uVector == X86_XCPT_DB)
         {
             IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_DR6);
-            uExitQual = pVCpu->cpum.GstCtx.dr[6] & VMX_VMCS_EXIT_QUAL_VALID_MASK;
+            u64ExitQual = pVCpu->cpum.GstCtx.dr[6] & VMX_VMCS_EXIT_QUAL_VALID_MASK;
         }
         else
-            uExitQual = 0;
+            u64ExitQual = 0;
 
         uint8_t  const fNmiUnblocking = pVCpu->cpum.GstCtx.hwvirt.vmx.fNmiUnblockingIret;
         bool     const fErrCodeValid  = RT_BOOL(fFlags & IEM_XCPT_FLAGS_ERR);
@@ -4046,7 +4027,6 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitEvent(PVMCPU pVCpu, uint8_t uVector, uint32_
                                       | RT_BF_MAKE(VMX_BF_EXIT_INT_INFO_VALID,            1);
         iemVmxVmcsSetExitIntInfo(pVCpu, uExitIntInfo);
         iemVmxVmcsSetExitIntErrCode(pVCpu, uErrCode);
-        iemVmxVmcsSetExitQual(pVCpu, uExitQual);
 
         /*
          * For VM-exits due to software exceptions (those generated by INT3 or INTO) or privileged
@@ -4059,7 +4039,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitEvent(PVMCPU pVCpu, uint8_t uVector, uint32_
         else
             iemVmxVmcsSetExitInstrLen(pVCpu, 0);
 
-        return iemVmxVmexit(pVCpu, VMX_EXIT_XCPT_OR_NMI);
+        return iemVmxVmexit(pVCpu, VMX_EXIT_XCPT_OR_NMI, u64ExitQual);
     }
 
     return VINF_VMX_INTERCEPT_NOT_ACTIVE;
@@ -4086,7 +4066,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitTripleFault(PVMCPU pVCpu)
     iemVmxVmcsSetIdtVectoringInfo(pVCpu, 0);
     iemVmxVmcsSetIdtVectoringErrCode(pVCpu, 0);
 
-    return iemVmxVmexit(pVCpu, VMX_EXIT_TRIPLE_FAULT);
+    return iemVmxVmexit(pVCpu, VMX_EXIT_TRIPLE_FAULT, 0 /* u64ExitQual */);
 }
 
 
@@ -4113,10 +4093,9 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitApicAccess(PVMCPU pVCpu, uint16_t offAccess,
     else
         enmAccess = VMXAPICACCESS_LINEAR_WRITE;
 
-    uint64_t const uExitQual = RT_BF_MAKE(VMX_BF_EXIT_QUAL_APIC_ACCESS_OFFSET, offAccess)
-                             | RT_BF_MAKE(VMX_BF_EXIT_QUAL_APIC_ACCESS_TYPE,   enmAccess);
-    iemVmxVmcsSetExitQual(pVCpu, uExitQual);
-    return iemVmxVmexit(pVCpu, VMX_EXIT_APIC_ACCESS);
+    uint64_t const u64ExitQual = RT_BF_MAKE(VMX_BF_EXIT_QUAL_APIC_ACCESS_OFFSET, offAccess)
+                               | RT_BF_MAKE(VMX_BF_EXIT_QUAL_APIC_ACCESS_TYPE,   enmAccess);
+    return iemVmxVmexit(pVCpu, VMX_EXIT_APIC_ACCESS, u64ExitQual);
 }
 
 
@@ -4138,10 +4117,9 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitApicAccessWithInfo(PVMCPU pVCpu, PCVMXVEXITI
     Assert(!VMX_EXIT_INT_INFO_IS_VALID(pExitEventInfo->uExitIntInfo));
     iemVmxVmcsSetExitIntInfo(pVCpu, 0);
     iemVmxVmcsSetExitIntErrCode(pVCpu, 0);
-    iemVmxVmcsSetExitQual(pVCpu, pExitInfo->u64Qual);
     iemVmxVmcsSetIdtVectoringInfo(pVCpu, pExitEventInfo->uIdtVectoringInfo);
     iemVmxVmcsSetIdtVectoringErrCode(pVCpu, pExitEventInfo->uIdtVectoringErrCode);
-    return iemVmxVmexit(pVCpu, VMX_EXIT_APIC_ACCESS);
+    return iemVmxVmexit(pVCpu, VMX_EXIT_APIC_ACCESS, pExitInfo->u64Qual);
 }
 
 
@@ -4155,23 +4133,9 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitApicAccessWithInfo(PVMCPU pVCpu, PCVMXVEXITI
 IEM_STATIC VBOXSTRICTRC iemVmxVmexitApicWrite(PVMCPU pVCpu, uint16_t offApic)
 {
     Assert(offApic < XAPIC_OFF_END + 4);
-
-    /* Write only bits 11:0 of the APIC offset into the VM-exit qualification field. */
+    /* Write only bits 11:0 of the APIC offset into the Exit qualification field. */
     offApic &= UINT16_C(0xfff);
-    iemVmxVmcsSetExitQual(pVCpu, offApic);
-    return iemVmxVmexit(pVCpu, VMX_EXIT_APIC_WRITE);
-}
-
-
-/**
- * VMX VM-exit handler for virtualized-EOIs.
- *
- * @param   pVCpu       The cross context virtual CPU structure.
- */
-IEM_STATIC VBOXSTRICTRC iemVmxVmexitVirtEoi(PVMCPU pVCpu, uint8_t uVector)
-{
-    iemVmxVmcsSetExitQual(pVCpu, uVector);
-    return iemVmxVmexit(pVCpu, VMX_EXIT_VIRTUALIZED_EOI);
+    return iemVmxVmexit(pVCpu, VMX_EXIT_APIC_WRITE, offApic);
 }
 
 
@@ -4925,7 +4889,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxTprVirtualization(PVMCPU pVCpu)
         if (((uTpr >> 4) & 0xf) < uTprThreshold)
         {
             Log2(("tpr_virt: uTpr=%u uTprThreshold=%u -> VM-exit\n", uTpr, uTprThreshold));
-            return iemVmxVmexit(pVCpu, VMX_EXIT_TPR_BELOW_THRESHOLD);
+            return iemVmxVmexit(pVCpu, VMX_EXIT_TPR_BELOW_THRESHOLD, 0 /* u64ExitQual */);
         }
     }
     else
@@ -5000,7 +4964,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxEoiVirtualization(PVMCPU pVCpu)
 
     iemVmxPprVirtualization(pVCpu);
     if (iemVmxIsEoiInterceptSet(pVCpu, uVector))
-        return iemVmxVmexitVirtEoi(pVCpu, uVector);
+        return iemVmxVmexit(pVCpu, VMX_EXIT_VIRTUALIZED_EOI, uVector);
     iemVmxEvalPendingVirtIntrs(pVCpu);
     return VINF_SUCCESS;
 }
@@ -5900,7 +5864,7 @@ IEM_STATIC int iemVmxVmentryCheckGuestNonRegState(PVMCPU pVCpu,  const char *psz
             {
                 /*
                  * We don't support injecting NMIs when blocking-by-STI would be in effect.
-                 * We update the VM-exit qualification only when blocking-by-STI is set
+                 * We update the Exit qualification only when blocking-by-STI is set
                  * without blocking-by-MovSS being set. Although in practise it  does not
                  * make much difference since the order of checks are implementation defined.
                  */
@@ -7050,7 +7014,7 @@ IEM_STATIC int iemVmxVmentryLoadGuestAutoMsrs(PVMCPU pVCpu, const char *pszInstr
                 /*
                  * If we're in ring-0, we cannot handle returns to ring-3 at this point and continue VM-entry.
                  * If any guest hypervisor loads MSRs that require ring-3 handling, we cause a VM-entry failure
-                 * recording the MSR index in the VM-exit qualification (as per the Intel spec.) and indicated
+                 * recording the MSR index in the Exit qualification (as per the Intel spec.) and indicated
                  * further by our own, specific diagnostic code. Later, we can try implement handling of the
                  * MSR in ring-0 if possible, or come up with a better, generic solution.
                  */
@@ -7488,7 +7452,7 @@ IEM_STATIC void iemVmxVmentryInitReadOnlyFields(PVMCPU pVCpu)
      * be used on the VM-exit path of a nested hypervisor -and- is not explicitly
      * specified to be undefined needs to be initialized here.
      *
-     * Thus, it is especially important to clear the VM-exit qualification field
+     * Thus, it is especially important to clear the Exit qualification field
      * since it must be zero for VM-exits where it is not used. Similarly, the
      * VM-exit interruption information field's valid bit needs to be cleared for
      * the same reasons.
@@ -7643,8 +7607,10 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPU pVCpu, uint8_t cbInstr, VM
      *
      * See Intel spec. 24.11.4 "Software Access to Related Structures".
      */
-    Assert(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs));
+    PVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    Assert(pVmcs);
     Assert(IEM_VMX_HAS_CURRENT_VMCS(pVCpu));
+
     int rc = iemVmxVmentryCheckExecCtls(pVCpu, pszInstr);
     if (RT_SUCCESS(rc))
     {
@@ -7681,7 +7647,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPU pVCpu, uint8_t cbInstr, VM
 
                                 /* VMLAUNCH instruction must update the VMCS launch state. */
                                 if (uInstrId == VMXINSTRID_VMLAUNCH)
-                                    pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs)->fVmcsState = VMX_V_VMCS_LAUNCH_STATE_LAUNCHED;
+                                    pVmcs->fVmcsState = VMX_V_VMCS_LAUNCH_STATE_LAUNCHED;
 
                                 /* Perform the VMX transition (PGM updates). */
                                 VBOXSTRICTRC rcStrict = iemVmxWorldSwitch(pVCpu);
@@ -7751,10 +7717,12 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPU pVCpu, uint8_t cbInstr, VM
                                 Log(("%s: VM-entry event injection failed. rc=%Rrc\n", pszInstr, VBOXSTRICTRC_VAL(rcStrict)));
                                 return rcStrict;
                             }
-                            return iemVmxVmexit(pVCpu, VMX_EXIT_ERR_MSR_LOAD | VMX_EXIT_REASON_ENTRY_FAILED);
+                            return iemVmxVmexit(pVCpu, VMX_EXIT_ERR_MSR_LOAD | VMX_EXIT_REASON_ENTRY_FAILED,
+                                                pVmcs->u64RoExitQual.u);
                         }
                     }
-                    return iemVmxVmexit(pVCpu, VMX_EXIT_ERR_INVALID_GUEST_STATE | VMX_EXIT_REASON_ENTRY_FAILED);
+                    return iemVmxVmexit(pVCpu, VMX_EXIT_ERR_INVALID_GUEST_STATE | VMX_EXIT_REASON_ENTRY_FAILED,
+                                        pVmcs->u64RoExitQual.u);
                 }
 
                 iemVmxVmFail(pVCpu, VMXINSTRERR_VMENTRY_INVALID_HOST_STATE);

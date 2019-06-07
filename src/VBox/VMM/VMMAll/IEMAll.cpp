@@ -14059,7 +14059,7 @@ DECLINLINE(VBOXSTRICTRC) iemExecOneInner(PVMCPU pVCpu, bool fExecuteInhibit, con
         /* MTF takes priority over VMX-preemption timer. */
         else if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_MTF))
         {
-            rcStrict = iemVmxVmexit(pVCpu, VMX_EXIT_MTF);
+            rcStrict = iemVmxVmexit(pVCpu, VMX_EXIT_MTF, 0 /* u64ExitQual */);
             fCheckRemainingIntercepts = false;
             Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS));
             Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_MTF));
@@ -14095,13 +14095,13 @@ DECLINLINE(VBOXSTRICTRC) iemExecOneInner(PVMCPU pVCpu, bool fExecuteInhibit, con
             if (   VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_NMI_WINDOW)
                 && CPUMIsGuestVmxVirtNmiBlocking(pVCpu, &pVCpu->cpum.GstCtx))
             {
-                rcStrict = iemVmxVmexit(pVCpu, VMX_EXIT_NMI_WINDOW);
+                rcStrict = iemVmxVmexit(pVCpu, VMX_EXIT_NMI_WINDOW, 0 /* u64ExitQual */);
                 Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_NMI_WINDOW));
             }
             else if (   VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_INT_WINDOW)
                      && CPUMIsGuestVmxVirtIntrEnabled(pVCpu, &pVCpu->cpum.GstCtx))
             {
-                rcStrict = iemVmxVmexit(pVCpu, VMX_EXIT_INT_WINDOW);
+                rcStrict = iemVmxVmexit(pVCpu, VMX_EXIT_INT_WINDOW, 0 /* u64ExitQual */);
                 Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_INT_WINDOW));
             }
         }
@@ -15954,7 +15954,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVmexitTripleFault(PVMCPU pVCpu)
  */
 VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVmexitStartupIpi(PVMCPU pVCpu, uint8_t uVector)
 {
-    VBOXSTRICTRC rcStrict = iemVmxVmexitStartupIpi(pVCpu, uVector);
+    VBOXSTRICTRC rcStrict = iemVmxVmexit(pVCpu, VMX_EXIT_SIPI, uVector);
     Assert(!pVCpu->iem.s.cActiveMappings);
     return iemExecStatusCodeFiddling(pVCpu, rcStrict);
 }
@@ -15968,13 +15968,12 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVmexitStartupIpi(PVMCPU pVCpu, uint8_t uVec
  * @returns Strict VBox status code.
  * @param   pVCpu           The cross context virtual CPU structure of the calling EMT.
  * @param   uExitReason     The VM-exit reason.
- * @param   uExitQual       The VM-exit qualification.
+ * @param   u64ExitQual     The Exit qualification.
  * @thread  EMT(pVCpu)
  */
-VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVmexit(PVMCPU pVCpu, uint32_t uExitReason, uint64_t uExitQual)
+VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVmexit(PVMCPU pVCpu, uint32_t uExitReason, uint64_t u64ExitQual)
 {
-    iemVmxVmcsSetExitQual(pVCpu, uExitQual);
-    VBOXSTRICTRC rcStrict = iemVmxVmexit(pVCpu, uExitReason);
+    VBOXSTRICTRC rcStrict = iemVmxVmexit(pVCpu, uExitReason, u64ExitQual);
     Assert(!pVCpu->iem.s.cActiveMappings);
     return iemExecStatusCodeFiddling(pVCpu, rcStrict);
 }
