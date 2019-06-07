@@ -313,18 +313,16 @@ void UIWizardImportAppPage1::populateAccountInstances()
                 break;
             }
 
-            // WORKAROUND:
-            // Please take into account that for now CCloudClient::ListInstances doesn't support OR-ed enum combinations,
-            // so we have to aquire Stopped and Running cloud VM instances separately.  That also means that there will be
-            // two subsequent progress dialogs shown.
-            /// @todo rework when it's possible to do the right way
-
-            /* Stopped VM names and ids: */
+            /* Gather VM names, ids and states.
+             * Currently we are interested in Running and Stopped VMs only. */
             CStringArray comNames;
             CStringArray comIDs;
-            QVector<KCloudMachineState> comCloudMachineState;
+            const QVector<KCloudMachineState> cloudMachineStates  = QVector<KCloudMachineState>()
+                                                                 << KCloudMachineState_Running
+                                                                 << KCloudMachineState_Stopped;
 
-            CProgress comProgress= m_comCloudClient.ListInstances(comCloudMachineState, comNames, comIDs);
+            /* Ask for cloud VMs: */
+            CProgress comProgress = m_comCloudClient.ListInstances(cloudMachineStates, comNames, comIDs);
             if (!m_comCloudClient.isOk())
             {
                 msgCenter().cannotAcquireCloudClientParameter(m_comCloudClient);
