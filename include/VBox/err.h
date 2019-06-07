@@ -2918,6 +2918,7 @@
 /** @name Shared Clipboard Status Codes
  * @{
  */
+/** Maximum of concurrent clipboard transfers has been reached. */
 #define VERR_SHCLPB_MAX_TRANSFERS_REACHED           (-7000)
 /** @} */
 /* SED-END */
