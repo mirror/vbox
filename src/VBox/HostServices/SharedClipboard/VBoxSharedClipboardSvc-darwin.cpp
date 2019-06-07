@@ -201,16 +201,15 @@ int VBoxClipboardSvcImplDisconnect(PVBOXCLIPBOARDCLIENTDATA pClientData)
 
 int VBoxClipboardSvcImplFormatAnnounce(PVBOXCLIPBOARDCLIENTDATA pClientData, uint32_t u32Formats)
 {
-    Log(("vboxClipboardFormatAnnounce u32Formats %02X\n", u32Formats));
+    LogFlowFunc(("u32Formats=%02X\n", u32Formats));
+
     if (u32Formats == 0)
     {
         /* This is just an automatism, not a genuine announcement */
-        return;
+        return VINF_SUCCESS;
     }
 
-    vboxSvcClipboardReportMsg(pClientData, VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA, u32Formats);
-
-    return VINF_SUCCESS;
+    return vboxSvcClipboardReportMsg(pClientData, VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA, u32Formats);
 }
 
 /**
