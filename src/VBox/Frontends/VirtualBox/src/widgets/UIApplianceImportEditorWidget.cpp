@@ -23,7 +23,6 @@
 #include <QVBoxLayout>
 
 /* GUI includes: */
-#include "QIRichTextLabel.h"
 #include "QITreeView.h"
 #include "UIApplianceImportEditorWidget.h"
 #include "UIFilePathSelector.h"
@@ -67,33 +66,35 @@ UIApplianceImportEditorWidget::UIApplianceImportEditorWidget(QWidget *pParent)
 
 void UIApplianceImportEditorWidget::prepareWidgets()
 {
-    /* Create path selector label: */
-    m_pPathSelectorLabel = new QIRichTextLabel(this);
-    if (m_pPathSelectorLabel)
-    {
-        /* Add into layout: */
-        m_pLayout->addWidget(m_pPathSelectorLabel);
-    }
-
-    /* Create path selector editor: */
-    m_pPathSelector = new UIFilePathSelector(this);
-    if (m_pPathSelector)
-    {
-        m_pPathSelector->setResetEnabled(true);
-        m_pPathSelector->setDefaultPath(vboxGlobal().virtualBox().GetSystemProperties().GetDefaultMachineFolder());
-        m_pPathSelector->setPath(vboxGlobal().virtualBox().GetSystemProperties().GetDefaultMachineFolder());
-        connect(m_pPathSelector, &UIFilePathSelector::pathChanged, this, &UIApplianceImportEditorWidget::sltHandlePathChanged);
-
-        /* Add into layout: */
-        m_pLayout->addWidget(m_pPathSelector);
-    }
-
     /* Create options layout: */
     m_pOptionsLayout = new QGridLayout;
     if (m_pOptionsLayout)
     {
         m_pOptionsLayout->setColumnStretch(0, 0);
         m_pOptionsLayout->setColumnStretch(1, 1);
+
+        /* Create path selector label: */
+        m_pPathSelectorLabel = new QLabel;
+        if (m_pPathSelectorLabel)
+        {
+            m_pPathSelectorLabel->setAlignment(Qt::AlignRight | Qt::AlignTrailing | Qt::AlignVCenter);
+
+            /* Add into layout: */
+            m_pOptionsLayout->addWidget(m_pPathSelectorLabel, 0, 0);
+        }
+
+        /* Create path selector editor: */
+        m_pPathSelector = new UIFilePathSelector;
+        if (m_pPathSelector)
+        {
+            m_pPathSelector->setResetEnabled(true);
+            m_pPathSelector->setDefaultPath(vboxGlobal().virtualBox().GetSystemProperties().GetDefaultMachineFolder());
+            m_pPathSelector->setPath(vboxGlobal().virtualBox().GetSystemProperties().GetDefaultMachineFolder());
+            m_pPathSelectorLabel->setBuddy(m_pPathSelector);
+
+            /* Add into layout: */
+            m_pOptionsLayout->addWidget(m_pPathSelector, 0, 1, 1, 2);
+        }
 
         /* Create MAC address policy label: */
         m_pMACComboBoxLabel = new QLabel;
@@ -102,7 +103,7 @@ void UIApplianceImportEditorWidget::prepareWidgets()
             m_pMACComboBoxLabel->setAlignment(Qt::AlignRight | Qt::AlignTrailing | Qt::AlignVCenter);
 
             /* Add into layout: */
-            m_pOptionsLayout->addWidget(m_pMACComboBoxLabel, 0, 0);
+            m_pOptionsLayout->addWidget(m_pMACComboBoxLabel, 1, 0);
         }
 
         /* Create MAC address policy combo: */
@@ -113,7 +114,7 @@ void UIApplianceImportEditorWidget::prepareWidgets()
             m_pMACComboBoxLabel->setBuddy(m_pMACComboBox);
 
             /* Add into layout: */
-            m_pOptionsLayout->addWidget(m_pMACComboBox, 0, 1, 1, 2);
+            m_pOptionsLayout->addWidget(m_pMACComboBox, 1, 1, 1, 2);
         }
 
         /* Create additional options label: */
@@ -123,7 +124,7 @@ void UIApplianceImportEditorWidget::prepareWidgets()
             m_pAdditionalOptionsLabel->setAlignment(Qt::AlignRight | Qt::AlignTrailing | Qt::AlignVCenter);
 
             /* Add into layout: */
-            m_pOptionsLayout->addWidget(m_pAdditionalOptionsLabel, 1, 0);
+            m_pOptionsLayout->addWidget(m_pAdditionalOptionsLabel, 2, 0);
         }
 
         /* Create import HDs as VDIs checkbox: */
@@ -132,7 +133,7 @@ void UIApplianceImportEditorWidget::prepareWidgets()
             m_pImportHDsAsVDI->setCheckState(Qt::Checked);
 
             /* Add into layout: */
-            m_pOptionsLayout->addWidget(m_pImportHDsAsVDI, 1, 1);
+            m_pOptionsLayout->addWidget(m_pImportHDsAsVDI, 2, 1);
         }
 
         /* Add into layout: */
@@ -141,7 +142,9 @@ void UIApplianceImportEditorWidget::prepareWidgets()
 
     /* Populate MAC address import combo: */
     populateMACAddressImportPolicies();
-    /* And connect this combo' signals afterwards: */
+    /* And connect signals afterwards: */
+    connect(m_pPathSelector, &UIFilePathSelector::pathChanged,
+            this, &UIApplianceImportEditorWidget::sltHandlePathChanged);
     connect(m_pMACComboBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
             this, &UIApplianceImportEditorWidget::sltHandleMACAddressImportPolicyComboChange);
 
@@ -313,8 +316,7 @@ void UIApplianceImportEditorWidget::retranslateUi()
 {
     UIApplianceEditorWidget::retranslateUi();
     if (m_pPathSelectorLabel)
-        m_pPathSelectorLabel->setText(UIWizardImportApp::tr("You can modify the base folder which will host all the virtual machines. "
-                                                            "Home folders can also be individually (per virtual machine) modified."));
+        m_pPathSelectorLabel->setText(tr("&Machine Base Folder:"));
     if (m_pImportHDsAsVDI)
     {
         m_pImportHDsAsVDI->setText(tr("&Import hard drives as VDI"));

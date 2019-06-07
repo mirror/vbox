@@ -26,7 +26,6 @@
 
 /* Forward declarations: */
 class UIFilePathSelector;
-class QIRichTextLabel;
 class QComboBox;
 class QGridLayout;
 
@@ -69,7 +68,7 @@ private:
     void    sltHandleMACAddressImportPolicyComboChange();
     void    updateMACAddressImportPolicyComboToolTip();
 
-    QIRichTextLabel    *m_pPathSelectorLabel;
+    QLabel             *m_pPathSelectorLabel;
     UIFilePathSelector *m_pPathSelector;
     /** Holds the checkbox that controls 'import HDs as VDI' behaviour. */
     QCheckBox          *m_pImportHDsAsVDI;
