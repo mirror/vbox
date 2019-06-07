@@ -143,7 +143,7 @@ int VBoxClipboardSvcImplConnect(PVBOXCLIPBOARDCLIENTDATA pClientData, bool fHead
     if (RT_FAILURE(rc))
         LogRel(("Failed to initialize the Shared Clipboard host service, rc=%Rrc\n", rc));
 
-    LogFlowFunc(("returning %Rrc\n", rc));
+    LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
@@ -154,19 +154,19 @@ int VBoxClipboardSvcImplConnect(PVBOXCLIPBOARDCLIENTDATA pClientData, bool fHead
  */
 int VBoxClipboardSvcImplSync(PVBOXCLIPBOARDCLIENTDATA pClientData)
 {
+    LogFlowFuncEnter();
+
     /* Tell the guest we have no data in case X11 is not available.  If
      * there is data in the host clipboard it will automatically be sent to
      * the guest when the clipboard starts up. */
-    vboxSvcClipboardReportMsg(pClientData, VBOX_SHARED_CLIPBOARD_HOST_MSG_REPORT_FORMATS, 0);
-
-    return VINF_SUCCESS; /** @todo r=andy Check rc code. */
+    return vboxSvcClipboardReportMsg(pClientData, VBOX_SHARED_CLIPBOARD_HOST_MSG_REPORT_FORMATS, 0);
 }
 
 /**
  * Shut down the shared clipboard service and "disconnect" the guest.
  * @note  Host glue code
  */
-void VBoxClipboardSvcImplDisconnect(PVBOXCLIPBOARDCLIENTDATA pClientData)
+int VBoxClipboardSvcImplDisconnect(PVBOXCLIPBOARDCLIENTDATA pClientData)
 {
     LogFlowFuncEnter();
 
@@ -193,6 +193,9 @@ void VBoxClipboardSvcImplDisconnect(PVBOXCLIPBOARDCLIENTDATA pClientData)
         RTCritSectDelete(&pCtx->clipboardMutex);
         RTMemFree(pCtx);
     }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
 }
 
 /**
