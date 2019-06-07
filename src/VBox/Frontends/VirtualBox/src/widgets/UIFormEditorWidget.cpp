@@ -1265,11 +1265,20 @@ void UIFormEditorModel::createTextDataEditor(const QModelIndex &index)
 void UIFormEditorModel::prepare()
 {
     /* Prepare hardcoded icons map: */
-    m_icons["Name"]        = UIIconPool::iconSet(":/name_16px.png");
-    m_icons["OS"]          = UIIconPool::iconSet(":/os_type_16px.png");
-    m_icons["CPU"]         = UIIconPool::iconSet(":/cpu_16px.png");
-    m_icons["Memory"]      = UIIconPool::iconSet(":/ram_16px.png");
-    m_icons["Description"] = UIIconPool::iconSet(":/description_16px.png");
+    m_icons["Name"]                = UIIconPool::iconSet(":/name_16px.png");
+    m_icons["OS"]                  = UIIconPool::iconSet(":/os_type_16px.png");
+    m_icons["CPU"]                 = UIIconPool::iconSet(":/cpu_16px.png");
+    m_icons["Memory"]              = UIIconPool::iconSet(":/ram_16px.png");
+    m_icons["Description"]         = UIIconPool::iconSet(":/description_16px.png");
+    m_icons["Bucket"]              = UIIconPool::iconSet(":/bucket_16px.png");
+    m_icons["Keep Object"]         = UIIconPool::iconSet(":/keep_object_16px.png");
+    m_icons["Launch VM"]           = UIIconPool::iconSet(":/launch_vm_16px.png");
+    m_icons["Availability Domain"] = UIIconPool::iconSet(":/availability_domain_16px.png");
+    m_icons["Shape"]               = UIIconPool::iconSet(":/shape_16px.png");
+    m_icons["Disk Size"]           = UIIconPool::iconSet(":/disk_size_16px.png");
+    m_icons["VCN"]                 = UIIconPool::iconSet(":/vcn_16px.png");
+    m_icons["Subnet"]              = UIIconPool::iconSet(":/subnet_16px.png");
+    m_icons["Assign Public IP"]    = UIIconPool::iconSet(":/assign_public_ip_16px.png");
 }
 
 QITableView *UIFormEditorModel::parentTable() const

@@ -1,5 +1,10 @@
 <RCC>
     <qresource suffix="/">
+        <file alias="log_viewer_options_16px_x2.png">images/x2/log_viewer_options_16px_x2.png</file>
+        <file alias="log_viewer_options_32px_x2.png">images/x2/log_viewer_options_32px_x2.png</file>
+        <file alias="log_viewer_options_disabled_16px_x2.png">images/x2/log_viewer_options_disabled_16px_x2.png</file>
+        <file alias="log_viewer_options_disabled_32px_x2.png">images/x2/log_viewer_options_disabled_32px_x2.png</file>
+        <file alias="log_viewer_refresh_16px_x2.png">images/x2/log_viewer_refresh_16px_x2.png</file>
         <file alias="log_viewer_refresh_32px_x2.png">images/x2/log_viewer_refresh_32px_x2.png</file>
         <file alias="log_viewer_refresh_disabled_16px_x2.png">images/x2/log_viewer_refresh_disabled_16px_x2.png</file>
         <file alias="log_viewer_refresh_disabled_32px_x2.png">images/x2/log_viewer_refresh_disabled_32px_x2.png</file>
@@ -226,6 +231,7 @@
         <file alias="sf_settings_disabled_16px_x2.png">images/x2/sf_settings_disabled_16px_x2.png</file>
         <file alias="sf_warning_16px_x2.png">images/x2/sf_warning_16px_x2.png</file>
         <file alias="sf_write_16px_x2.png">images/x2/sf_write_16px_x2.png</file>
+        <file alias="shape_16px_x2.png">images/x2/shape_16px_x2.png</file>
         <file alias="shared_clipboard_16px_x2.png">images/x2/shared_clipboard_16px_x2.png</file>
         <file alias="shared_clipboard_disabled_16px_x2.png">images/x2/shared_clipboard_disabled_16px_x2.png</file>
         <file alias="site_16px_x2.png">images/x2/site_16px_x2.png</file>
@@ -280,6 +286,7 @@
         <file alias="statusbar_settings_disabled_16px_x2.png">images/x2/statusbar_settings_disabled_16px_x2.png</file>
         <file alias="status_check_16px_x2.png">images/x2/status_check_16px_x2.png</file>
         <file alias="status_error_16px_x2.png">images/x2/status_error_16px_x2.png</file>
+        <file alias="subnet_16px_x2.png">images/x2/subnet_16px_x2.png</file>
         <file alias="tools_banner_global_200px_x2.png">images/x2/tools_banner_global_200px_x2.png</file>
         <file alias="tools_banner_machine_200px_x2.png">images/x2/tools_banner_machine_200px_x2.png</file>
         <file alias="tools_global_32px_x2.png">images/x2/tools_global_32px_x2.png</file>
@@ -378,6 +385,7 @@
         <file alias="vm_start_disabled_32px_x2.png">images/x2/vm_start_disabled_32px_x2.png</file>
         <file alias="vm_start_headless_16px_x2.png">images/x2/vm_start_headless_16px_x2.png</file>
         <file alias="vm_start_separate_16px_x2.png">images/x2/vm_start_separate_16px_x2.png</file>
+        <file alias="vcn_16px_x2.png">images/x2/vcn_16px_x2.png</file>
         <file alias="vrdp_16px_x2.png">images/x2/vrdp_16px_x2.png</file>
         <file alias="vrdp_24px_x2.png">images/x2/vrdp_24px_x2.png</file>
         <file alias="vrdp_32px_x2.png">images/x2/vrdp_32px_x2.png</file>

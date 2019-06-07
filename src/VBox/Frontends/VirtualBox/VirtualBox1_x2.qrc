@@ -6,6 +6,7 @@
         <file alias="arrow_left_10px_x2.png">images/x2/arrow_left_10px_x2.png</file>
         <file alias="arrow_right_10px_x2.png">images/x2/arrow_right_10px_x2.png</file>
         <file alias="arrow_up_10px_x2.png">images/x2/arrow_up_10px_x2.png</file>
+        <file alias="assign_public_ip_16px_x2.png">images/x2/assign_public_ip_16px_x2.png</file>
         <file alias="attachment_add_16px_x2.png">images/x2/attachment_add_16px_x2.png</file>
         <file alias="attachment_add_disabled_16px_x2.png">images/x2/attachment_add_disabled_16px_x2.png</file>
         <file alias="attachment_remove_16px_x2.png">images/x2/attachment_remove_16px_x2.png</file>
@@ -22,6 +23,8 @@
         <file alias="auto_resize_on_disabled_16px_x2.png">images/x2/auto_resize_on_disabled_16px_x2.png</file>
         <file alias="auto_resize_on_on_16px_x2.png">images/x2/auto_resize_on_on_16px_x2.png</file>
         <file alias="auto_resize_on_on_disabled_16px_x2.png">images/x2/auto_resize_on_on_disabled_16px_x2.png</file>
+        <file alias="availability_domain_16px_x2.png">images/x2/availability_domain_16px_x2.png</file>
+        <file alias="bucket_16px_x2.png">images/x2/bucket_16px_x2.png</file>
         <file alias="cancel_16px_x2.png">images/x2/cancel_16px_x2.png</file>
         <file alias="cd_16px_x2.png">images/x2/cd_16px_x2.png</file>
         <file alias="cd_add_16px_x2.png">images/x2/cd_add_16px_x2.png</file>
@@ -105,6 +108,7 @@
         <file alias="controller_remove_disabled_16px_x2.png">images/x2/controller_remove_disabled_16px_x2.png</file>
         <file alias="cpu_16px_x2.png">images/x2/cpu_16px_x2.png</file>
         <file alias="description_16px_x2.png">images/x2/description_16px_x2.png</file>
+        <file alias="disk_size_16px_x2.png">images/x2/disk_size_16px_x2.png</file>
         <file alias="display_hardware_16px_x2.png">images/x2/display_hardware_16px_x2.png</file>
         <file alias="display_hardware_write_16px_x2.png">images/x2/display_hardware_write_16px_x2.png</file>
         <file alias="display_software_16px_x2.png">images/x2/display_software_16px_x2.png</file>
@@ -368,11 +372,13 @@
         <file alias="interface_24px_x2.png">images/x2/interface_24px_x2.png</file>
         <file alias="interface_32px_x2.png">images/x2/interface_32px_x2.png</file>
         <file alias="interface_warning_16px_x2.png">images/x2/interface_warning_16px_x2.png</file>
+        <file alias="keep_object_16px_x2.png">images/x2/keep_object_16px_x2.png</file>
         <file alias="keyboard_16px_x2.png">images/x2/keyboard_16px_x2.png</file>
         <file alias="keyboard_24px_x2.png">images/x2/keyboard_24px_x2.png</file>
         <file alias="keyboard_32px_x2.png">images/x2/keyboard_32px_x2.png</file>
         <file alias="keyboard_settings_16px_x2.png">images/x2/keyboard_settings_16px_x2.png</file>
         <file alias="keyboard_settings_disabled_16px_x2.png">images/x2/keyboard_settings_disabled_16px_x2.png</file>
+        <file alias="launch_vm_16px_x2.png">images/x2/launch_vm_16px_x2.png</file>
         <file alias="list_movedown_16px_x2.png">images/x2/list_movedown_16px_x2.png</file>
         <file alias="list_movedown_disabled_16px_x2.png">images/x2/list_movedown_disabled_16px_x2.png</file>
         <file alias="list_moveup_16px_x2.png">images/x2/list_moveup_16px_x2.png</file>
@@ -400,10 +406,5 @@
         <file alias="log_viewer_goto_next_bookmark_16px_x2.png">images/x2/log_viewer_goto_next_bookmark_16px_x2.png</file>
         <file alias="log_viewer_goto_previous_bookmark_16px_x2.png">images/x2/log_viewer_goto_previous_bookmark_16px_x2.png</file>
         <file alias="log_viewer_goto_selected_bookmark_16px_x2.png">images/x2/log_viewer_goto_selected_bookmark_16px_x2.png</file>
-        <file alias="log_viewer_options_16px_x2.png">images/x2/log_viewer_options_16px_x2.png</file>
-        <file alias="log_viewer_options_32px_x2.png">images/x2/log_viewer_options_32px_x2.png</file>
-        <file alias="log_viewer_options_disabled_16px_x2.png">images/x2/log_viewer_options_disabled_16px_x2.png</file>
-        <file alias="log_viewer_options_disabled_32px_x2.png">images/x2/log_viewer_options_disabled_32px_x2.png</file>
-        <file alias="log_viewer_refresh_16px_x2.png">images/x2/log_viewer_refresh_16px_x2.png</file>
     </qresource>
 </RCC>

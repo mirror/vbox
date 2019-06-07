@@ -1,5 +1,10 @@
 <RCC>
     <qresource suffix="/">
+        <file alias="log_viewer_options_disabled_16px.png">images/log_viewer_options_disabled_16px.png</file>
+        <file alias="log_viewer_options_disabled_32px.png">images/log_viewer_options_disabled_32px.png</file>
+        <file alias="log_viewer_refresh_16px.png">images/log_viewer_refresh_16px.png</file>
+        <file alias="log_viewer_refresh_32px.png">images/log_viewer_refresh_32px.png</file>
+        <file alias="log_viewer_refresh_disabled_16px.png">images/log_viewer_refresh_disabled_16px.png</file>
         <file alias="log_viewer_refresh_disabled_32px.png">images/log_viewer_refresh_disabled_32px.png</file>
         <file alias="log_viewer_reset_font_16px.png">images/log_viewer_reset_font_16px.png</file>
         <file alias="log_viewer_save_16px.png">images/log_viewer_save_16px.png</file>
@@ -226,6 +231,7 @@
         <file alias="sf_settings_disabled_16px.png">images/sf_settings_disabled_16px.png</file>
         <file alias="sf_warning_16px.png">images/sf_warning_16px.png</file>
         <file alias="sf_write_16px.png">images/sf_write_16px.png</file>
+        <file alias="shape_16px.png">images/shape_16px.png</file>
         <file alias="shared_clipboard_16px.png">images/shared_clipboard_16px.png</file>
         <file alias="shared_clipboard_disabled_16px.png">images/shared_clipboard_disabled_16px.png</file>
         <file alias="site_16px.png">images/site_16px.png</file>
@@ -280,6 +286,7 @@
         <file alias="statusbar_settings_disabled_16px.png">images/statusbar_settings_disabled_16px.png</file>
         <file alias="status_check_16px.png">images/status_check_16px.png</file>
         <file alias="status_error_16px.png">images/status_error_16px.png</file>
+        <file alias="subnet_16px.png">images/subnet_16px.png</file>
         <file alias="tools_banner_global_200px.png">images/tools_banner_global_200px.png</file>
         <file alias="tools_banner_machine_200px.png">images/tools_banner_machine_200px.png</file>
         <file alias="tools_global_32px.png">images/tools_global_32px.png</file>
@@ -378,6 +385,7 @@
         <file alias="vm_start_disabled_32px.png">images/vm_start_disabled_32px.png</file>
         <file alias="vm_start_headless_16px.png">images/vm_start_headless_16px.png</file>
         <file alias="vm_start_separate_16px.png">images/vm_start_separate_16px.png</file>
+        <file alias="vcn_16px.png">images/vcn_16px.png</file>
         <file alias="vrdp_16px.png">images/vrdp_16px.png</file>
         <file alias="vrdp_24px.png">images/vrdp_24px.png</file>
         <file alias="vrdp_32px.png">images/vrdp_32px.png</file>
