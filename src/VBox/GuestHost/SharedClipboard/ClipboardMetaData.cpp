@@ -87,7 +87,7 @@ int SharedClipboardMetaDataAdd(PSHAREDCLIPBOARDMETADATA pMeta, const void *pvDat
 
     pMeta->cbUsed += cbDataAdd;
 
-    return cbDataAdd;
+    return rc;
 }
 
 /**

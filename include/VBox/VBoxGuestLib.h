@@ -612,7 +612,8 @@ VBGLR3DECL(int)     VbglR3ClipboardReadMetaData(HGCMCLIENTID idClient, PVBOXCLIP
                                                 void *pvMeta, uint32_t cbMeta, uint32_t *pcbRead);
 VBGLR3DECL(int)     VbglR3ClipboardReadMetaDataEx(HGCMCLIENTID idClient, PVBOXCLIPBOARDDATAHDR pDataHdr,
                                                   void *pvMeta, uint32_t cbMeta, uint32_t *pcbRead);
-VBGLR3DECL(int)     VbglR3ClipboardWriteMetaData(HGCMCLIENTID idClient, const void *pvMeta, uint32_t cbMeta, uint32_t *pcbWritten);
+VBGLR3DECL(int)     VbglR3ClipboardWriteMetaData(HGCMCLIENTID idClient, PVBOXCLIPBOARDDATAHDR pDataHdr,
+                                                 const void *pvMeta, uint32_t cbMeta, uint32_t *pcbWritten);
 VBGLR3DECL(int)     VbglR3ClipboardWriteMetaDataEx(HGCMCLIENTID idClient, const void *pvMeta, uint32_t cbMeta, uint32_t *pcbWritten);
 VBGLR3DECL(int)     VbglR3ClipboardReadDir(HGCMCLIENTID idClient, char *pszDirname, uint32_t cbDirname, uint32_t *pcbDirnameRecv,
                                            uint32_t *pfMode);

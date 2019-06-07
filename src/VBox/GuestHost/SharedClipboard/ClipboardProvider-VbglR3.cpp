@@ -113,7 +113,7 @@ int SharedClipboardProviderVbglR3::WriteMetaData(const PVBOXCLIPBOARDDATAHDR pDa
     while (cbToWrite)
     {
         uint32_t cbWritten;
-        rc = VbglR3ClipboardWriteMetaData(m_uClientID, (uint8_t *)pvMeta + cbWrittenTotal, cbToWrite, &cbWritten);
+        rc = VbglR3ClipboardWriteMetaData(m_uClientID, pDataHdr, (uint8_t *)pvMeta + cbWrittenTotal, cbToWrite, &cbWritten);
         if (RT_FAILURE(rc))
             break;
 

@@ -20,21 +20,23 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_SHARED_CLIPBOARD
+#include <VBox/log.h>
+
 #include "VBoxTray.h"
 #include "VBoxHelpers.h"
 
 #include <iprt/asm.h>
 #include <iprt/ldr.h>
 
+#include <VBox/err.h>
+
 #include <VBox/GuestHost/SharedClipboard.h>
 #include <VBox/GuestHost/SharedClipboard-win.h>
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
 # include <VBox/GuestHost/SharedClipboard-uri.h>
 #endif
+
 #include <strsafe.h>
-
-#include <VBox/log.h>
-
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
 /** !!! HACK ALERT !!! Dynamically resolve functions! */
@@ -363,98 +365,38 @@ static LRESULT vboxClipboardWinProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd,
 
        case VBOX_CLIPBOARD_WM_SET_FORMATS:
        {
-           /* Announce available formats. Do not insert data, they will be inserted in WM_RENDER*. */
-           VBOXCLIPBOARDFORMATS fFormats = (uint32_t)lParam;
+            /* Announce available formats. Do not insert data, they will be inserted in WM_RENDER*. */
+            VBOXCLIPBOARDFORMATS fFormats = (uint32_t)lParam;
 
-           LogFunc(("VBOX_WM_SHCLPB_SET_FORMATS: fFormats=0x%x\n", fFormats));
+            int rc = VBoxClipboardWinOpen(hwnd);
+            if (RT_SUCCESS(rc))
+            {
+                VBoxClipboardWinClear();
 
-           int rc = VBoxClipboardWinOpen(hwnd);
-           if (RT_SUCCESS(rc))
-           {
-               VBoxClipboardWinClear();
-
-               HANDLE hClip    = NULL;
-               UINT   cfFormat = 0;
-
-               /** @todo r=andy Only one clipboard format can be set at once, at least on Windows. */
-
-               if (fFormats & VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT)
-               {
-                   LogFunc(("VBOX_WM_SHCLPB_SET_FORMATS: CF_UNICODETEXT\n"));
-                   hClip = SetClipboardData(CF_UNICODETEXT, NULL);
-               }
-               else if (fFormats & VBOX_SHARED_CLIPBOARD_FMT_BITMAP)
-               {
-                   LogFunc(("VBOX_WM_SHCLPB_SET_FORMATS: CF_DIB\n"));
-                   hClip = SetClipboardData(CF_DIB, NULL);
-               }
-               else if (fFormats & VBOX_SHARED_CLIPBOARD_FMT_HTML)
-               {
-                   LogFunc(("VBOX_WM_SHCLPB_SET_FORMATS: VBOX_CLIPBOARD_WIN_REGFMT_HTML\n"));
-                   cfFormat = RegisterClipboardFormat(VBOX_CLIPBOARD_WIN_REGFMT_HTML);
-                   if (cfFormat != 0)
-                       hClip = SetClipboardData(cfFormat, NULL);
-               }
+                rc = VBoxClipboardWinHandleWMSetFormats(pWinCtx, fFormats);
+                if (rc == VERR_NOT_SUPPORTED)
+                {
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
-               else if (fFormats & VBOX_SHARED_CLIPBOARD_FMT_URI_LIST)
-               {
-                   LogFunc(("VBOX_WM_SHCLPB_SET_FORMATS: VBOX_CLIPBOARD_WIN_REGFMT_URI_LIST\n"));
+                    SHAREDCLIPBOARDPROVIDERCREATIONCTX providerCtx;
+                    RT_ZERO(providerCtx);
+                    providerCtx.enmSource = SHAREDCLIPBOARDPROVIDERSOURCE_VBGLR3;
+                    providerCtx.u.VBGLR3.uClientID = pCtx->u32ClientID;
 
-                   const uint32_t cTransfers = SharedClipboardURICtxGetActiveTransfers(&pCtx->URI);
-                   if (cTransfers == 0) /* Only allow one transfer at a time for now. */
-                   {
-                       PSHAREDCLIPBOARDURITRANSFER pTransfer = SharedClipboardURICtxGetTransfer(&pCtx->URI, 0 /* Index */);
-
-                       SharedClipboardWinURITransferCtx *pWinURITransferCtx = new SharedClipboardWinURITransferCtx();
-
-                       pTransfer->pvUser = pWinURITransferCtx;
-                       pTransfer->cbUser = sizeof(SharedClipboardWinURITransferCtx);
-
-                       pWinURITransferCtx->pDataObj = new VBoxClipboardWinDataObject(pTransfer);
-                       if (pWinURITransferCtx->pDataObj)
-                       {
-                           rc = pWinURITransferCtx->pDataObj->Init();
-                           if (RT_SUCCESS(rc))
-                           {
-                               VBoxClipboardWinClose();
-                               /* Note: Clipboard must be closed first before calling OleSetClipboard(). */
-
-                               /** @todo There is a potential race between VBoxClipboardWinClose() and OleSetClipboard(),
-                                *        where another application could own the clipboard (open), and thus the call to
-                                *        OleSetClipboard() will fail. Needs (better) fixing. */
-                               for (unsigned uTries = 0; uTries < 3; uTries++)
-                               {
-                                   HRESULT hr = OleSetClipboard(pWinURITransferCtx->pDataObj);
-                                   if (SUCCEEDED(hr))
-                                   {
-                                       pCtx->URI.cTransfers++;
-                                       break;
-                                   }
-                                   else
-                                   {
-                                       LogRel(("Clipboard: Failed with %Rhrc when setting data object to clipboard\n", hr));
-                                       RTThreadSleep(100);
-                                   }
-                               }
-                           }
-                       }
-                   }
-                   else
-                       LogRel(("Clipboard: Only one transfer at a time supported (current %RU32 transfer(s) active), skipping\n",
-                               pCtx->URI.cTransfers));
-               }
+                    rc = VBoxClipboardWinURIHandleWMSetFormats(pWinCtx, &pCtx->URI, &providerCtx, fFormats);
 #endif
-               else
-                   LogRel(("Clipboard: Unsupported format(s) (0x%x), skipping\n", fFormats));
+                    if (rc == VERR_NOT_SUPPORTED)
+                        LogRel(("Clipboard: Unsupported format(s) (0x%x), skipping\n", fFormats));
+                }
 
-               /** @todo Implement more flexible clipboard precedence for supported formats. */
+                if (RT_FAILURE(rc))
+                    LogFunc(("Failed with %Rrc\n", rc));
 
-               VBoxClipboardWinClose();
+                VBoxClipboardWinClose();
 
-               LogFunc(("VBOX_WM_SHCLPB_SET_FORMATS: cfFormat=%u, lastErr=%ld\n", cfFormat, GetLastError()));
-           }
-       }
-       break;
+                LogFunc(("VBOX_CLIPBOARD_WM_SET_FORMATS: fFormats=0x%x, lastErr=%ld\n", fFormats, GetLastError()));
+            }
+        }
+        break;
 
        case VBOX_CLIPBOARD_WM_READ_DATA:
        {
@@ -570,6 +512,9 @@ static LRESULT vboxClipboardWinProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd,
                                            rc = SharedClipboardURITransferMetaDataAdd(pTransfer, pszList, (uint32_t)cbList);
 
                                        GlobalUnlock(hClip);
+
+                                       if (RT_SUCCESS(rc))
+                                           rc = SharedClipboardURITransferRun(pTransfer, true /* fAsync */);
                                    }
                                    else
                                    {
@@ -578,13 +523,16 @@ static LRESULT vboxClipboardWinProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd,
                                }
                            }
                        }
-
-                       if (RT_FAILURE(rc))
-                           LogFunc(("VBOX_SHARED_CLIPBOARD_FMT_URI_LIST failed with rc=%Rrc\n", rc));
                    }
                    else
+                   {
+                       rc = VERR_SHCLPB_MAX_TRANSFERS_REACHED;
                        LogRel(("Clipboard: Only one transfer at a time supported (current %RU32 transfer(s) active), skipping\n",
                                cTransfers));
+                   }
+
+                   if (RT_FAILURE(rc))
+                       LogFunc(("VBOX_SHARED_CLIPBOARD_FMT_URI_LIST failed with rc=%Rrc\n", rc));
                }
 #endif
                if (hClip == NULL)

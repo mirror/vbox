@@ -54,11 +54,15 @@ ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
 	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardProvider-HostService.cpp \
 	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardURIList.cpp \
 	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardURIObject.cpp
+ VBoxSharedClipboard_SOURCES.win += \
+	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-common.cpp \
+	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardDataObjectImpl-win.cpp \
+	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardEnumFormatEtcImpl-win.cpp \
+	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardStreamImpl-win.cpp
 endif
 if1of ($(KBUILD_TARGET), linux solaris freebsd) ## @todo X11
  ifndef VBOX_HEADLESS
   VBoxSharedClipboard_SOURCES += \
-	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-common.cpp \
 	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-x11.cpp \
 	VBoxSharedClipboardSvc-x11.cpp
  else

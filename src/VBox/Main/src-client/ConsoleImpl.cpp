@@ -8444,9 +8444,10 @@ DECLCALLBACK(int) Console::i_sharedClipboardServiceCallback(void *pvExtension, u
     int rc = VINF_SUCCESS;
 
 # ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
-    HRESULT hrc;
-#  define H()         AssertMsgBreakStmt(!FAILED(hrc), ("hrc=%Rhrc\n", hrc), rc = VERR_GENERAL_FAILURE)
+    HRESULT hrc = S_OK;
 # endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
+
+    LogFunc(("mConsoleVRDPServer=%p\n", pThis->mConsoleVRDPServer));
 
     switch (u32Function)
     {
@@ -8510,7 +8511,7 @@ DECLCALLBACK(int) Console::i_sharedClipboardServiceCallback(void *pvExtension, u
         {
             com::SafeArray<BSTR> abstrParms; /* Empty for now. */
             ULONG uID;
-            hrc = pControl->ClipboardAreaRegister(ComSafeArrayAsInParam(abstrParms), &uID);      H();
+            hrc = pControl->ClipboardAreaRegister(ComSafeArrayAsInParam(abstrParms), &uID);
             if (SUCCEEDED(hrc))
             {
                  PVBOXCLIPBOARDEXTAREAPARMS pParms = (PVBOXCLIPBOARDEXTAREAPARMS)pvParms;
@@ -8519,27 +8520,35 @@ DECLCALLBACK(int) Console::i_sharedClipboardServiceCallback(void *pvExtension, u
                  /* Return the registered area ID back to the caller. */
                  pParms->uID = uID;
             }
+            else
+                LogFunc(("Registering clipboard area failed with %Rhrc\n", hrc));
         } break;
 
         case VBOX_CLIPBOARD_EXT_FN_AREA_UNREGISTER:
         {
             PVBOXCLIPBOARDEXTAREAPARMS pParms = (PVBOXCLIPBOARDEXTAREAPARMS)pvParms;
             AssertPtrBreakStmt(pParms, rc = VERR_INVALID_POINTER);
-            hrc = pControl->ClipboardAreaUnregister(pParms->uID);                                H();
+            hrc = pControl->ClipboardAreaUnregister(pParms->uID);
+            if (FAILED(hrc))
+                LogFunc(("Unregistering clipboard area %RU32 failed with %Rhrc\n", pParms->uID, hrc));
         } break;
 
         case VBOX_CLIPBOARD_EXT_FN_AREA_ATTACH:
         {
             PVBOXCLIPBOARDEXTAREAPARMS pParms = (PVBOXCLIPBOARDEXTAREAPARMS)pvParms;
             AssertPtrBreakStmt(pParms, rc = VERR_INVALID_POINTER);
-            hrc = pControl->ClipboardAreaAttach(pParms->uID);                                    H();
+            hrc = pControl->ClipboardAreaAttach(pParms->uID);
+            if (FAILED(hrc))
+                LogFunc(("Attaching to clipboard area %RU32 failed with %Rhrc\n", pParms->uID, hrc));
         } break;
 
         case VBOX_CLIPBOARD_EXT_FN_AREA_DETACH:
         {
             PVBOXCLIPBOARDEXTAREAPARMS pParms = (PVBOXCLIPBOARDEXTAREAPARMS)pvParms;
             AssertPtrBreakStmt(pParms, rc = VERR_INVALID_POINTER);
-            hrc = pControl->ClipboardAreaDetach(pParms->uID);                                    H();
+            hrc = pControl->ClipboardAreaDetach(pParms->uID);
+            if (FAILED(hrc))
+                LogFunc(("Detaching from clipboard area %RU32 failed with %Rhrc\n", pParms->uID, hrc));
         } break;
 #endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
 
@@ -8549,13 +8558,14 @@ DECLCALLBACK(int) Console::i_sharedClipboardServiceCallback(void *pvExtension, u
         } break;
     }
 
+    if (FAILED(hrc))
+        rc = VERR_GENERAL_FAILURE; /** @todo Fudge; fix this. */
+
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST_DISABLED
     int rc2 = SharedClipboard::hostServiceCallback(SHAREDCLIPBOARDINST(), u32Function, pvParms, cbParms);
     if (RT_SUCCESS(rc))
         rc = rc2;
 #endif
-
-#undef H
 
     LogFlowFuncLeaveRC(rc);
     return rc;

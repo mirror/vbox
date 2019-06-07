@@ -219,17 +219,18 @@ VBGLR3DECL(int) VbglR3ClipboardWriteDataHdr(HGCMCLIENTID idClient, const PVBOXCL
     VBoxClipboardWriteDataHdrMsg Msg;
     VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient, VBOX_SHARED_CLIPBOARD_FN_WRITE_DATA_HDR, VBOX_SHARED_CLIPBOARD_CPARMS_WRITE_DATA_HDR);
 
-    VbglHGCMParmUInt32Set(&Msg.uFlags, pDataHdr->uFlags);                             /** @todo Not used yet. */
-    VbglHGCMParmUInt32Set(&Msg.uScreenId, pDataHdr->uScreenId);                       /** @todo Not used for guest->host (yet). */
-    VbglHGCMParmUInt64Set(&Msg.cbTotal, pDataHdr->cbTotal);
-    VbglHGCMParmUInt32Set(&Msg.cbMeta, pDataHdr->cbMeta);
-    VbglHGCMParmPtrSet(&Msg.cbMetaFmt, pDataHdr->pvMetaFmt, pDataHdr->cbMetaFmt);
-    VbglHGCMParmUInt32Set(&Msg.cbMetaFmt, pDataHdr->cbMetaFmt);
-    VbglHGCMParmUInt64Set(&Msg.cObjects, pDataHdr->cObjects);
-    VbglHGCMParmUInt32Set(&Msg.enmCompression, pDataHdr->enmCompression);             /** @todo Not used yet. */
-    VbglHGCMParmUInt32Set(&Msg.enmChecksumType, pDataHdr->enmChecksumType);           /** @todo Not used yet. */
-    VbglHGCMParmPtrSet(&Msg.cbChecksum, pDataHdr->pvChecksum, pDataHdr->cbChecksum);  /** @todo Not used yet. */
-    VbglHGCMParmUInt32Set(&Msg.cbChecksum, pDataHdr->cbChecksum);                     /** @todo Not used yet. */
+    Msg.uContext.SetUInt32(0);                                          /** @todo Not used yet. */
+    Msg.uFlags.SetUInt32(pDataHdr->uFlags);                             /** @todo Not used yet. */
+    Msg.uScreenId.SetUInt32(pDataHdr->uScreenId);                       /** @todo Not used for guest->host (yet). */
+    Msg.cbTotal.SetUInt64(pDataHdr->cbTotal);
+    Msg.cbMeta.SetUInt32(pDataHdr->cbMeta);
+    Msg.cbMetaFmt.SetPtr(pDataHdr->pvMetaFmt, pDataHdr->cbMetaFmt);
+    Msg.cbMetaFmt.SetUInt32(pDataHdr->cbMetaFmt);
+    Msg.cObjects.SetUInt64(pDataHdr->cObjects);
+    Msg.enmCompression.SetUInt32(pDataHdr->enmCompression);             /** @todo Not used yet. */
+    Msg.enmChecksumType.SetUInt32(pDataHdr->enmChecksumType);           /** @todo Not used yet. */
+    Msg.cbChecksum.SetPtr(pDataHdr->pvChecksum, pDataHdr->cbChecksum);  /** @todo Not used yet. */
+    Msg.cbChecksum.SetUInt32(pDataHdr->cbChecksum);                     /** @todo Not used yet. */
 
     return VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
 }
@@ -337,7 +338,7 @@ static int vbglR3ClipboardReadMetaDataLoop(HGCMCLIENTID idClient, PVBOXCLIPBOARD
 }
 
 /**
- * Reads the actual meta data from the host, extended version.
+ * Reads the actual meta data from the host, internal version.
  *
  * @returns IPRT status code.
  * @param   idClient            The client id returned by VbglR3ClipboardConnect().
@@ -388,18 +389,136 @@ VBGLR3DECL(int) VbglR3ClipboardReadMetaData(HGCMCLIENTID idClient, PVBOXCLIPBOAR
 }
 
 /**
+ * Writes a (meta) data chunk to the host.
+ *
+ * @returns IPRT status code.
+ * @param   idClient            The client id returned by VbglR3ClipboardConnect().
+ * @param   pDataHdr            Data header to use. Need for accounting and stuff.
+ * @param   pvData              Where to store the received data from the host.
+ * @param   cbData              Size (in bytes) of where to store the received data.
+ * @param   pcbDataWritten      Where to store the written amount of data (in bytes).
+ */
+static int vbglR3ClipboardWriteDataChunk(HGCMCLIENTID idClient, PVBOXCLIPBOARDDATAHDR pDataHdr,
+                                         void *pvData, uint32_t cbData, uint32_t *pcbDataWritten)
+{
+    AssertPtrReturn(pDataHdr,        VERR_INVALID_POINTER);
+    AssertPtrReturn(pvData,          VERR_INVALID_POINTER);
+    AssertReturn(cbData,             VERR_INVALID_PARAMETER);
+    AssertPtrNullReturn(pcbDataWritten, VERR_INVALID_POINTER);
+
+    LogFlowFunc(("pvDate=%p, cbData=%RU32\n", pvData, cbData));
+
+    VBoxClipboardReadDataChunkMsg Msg;
+    RT_ZERO(Msg);
+
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient,
+                       VBOX_SHARED_CLIPBOARD_FN_WRITE_DATA_CHUNK, VBOX_SHARED_CLIPBOARD_CPARMS_WRITE_DATA_CHUNK);
+    Msg.pvData.SetPtr(pvData, cbData);
+    Msg.cbData.SetUInt32(0);
+    Msg.pvChecksum.SetPtr(NULL, 0);
+    Msg.cbChecksum.SetUInt32(0);
+
+    int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
+    if (RT_SUCCESS(rc))
+    {
+        if (pcbDataWritten)
+            *pcbDataWritten = cbData;
+    }
+
+    /* failure */
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+/**
+ * Helper function for writing the actual clipboard (meta) data to the host. Do not call directly.
+ *
+ * @returns IPRT status code.
+ * @param   idClient            The client id returned by VbglR3ClipboardConnect().
+ * @param   pDataHdr            Pointer to data header to use.
+ * @param   pvMeta              Meta data buffer to write.
+ * @param   cbMeta              Size (in bytes) of meta data buffer.
+ * @param   pcbWritten          How much bytes were written on success. Optional.
+ */
+static int vbglR3ClipboardWriteMetaDataLoop(HGCMCLIENTID idClient, PVBOXCLIPBOARDDATAHDR pDataHdr,
+                                            const void *pvMeta, uint32_t cbMeta, uint32_t *pcbWritten)
+{
+    AssertPtrReturn(pDataHdr, VERR_INVALID_POINTER);
+    AssertPtrReturn(pvMeta,   VERR_INVALID_POINTER);
+
+    LogFlowFuncEnter();
+
+    int rc = VINF_SUCCESS;
+
+    uint32_t cbWrittenTotal = 0;
+
+    LogFlowFunc(("cbTotal=%RU64, cbMeta=%RU32, cObjects=%RU32\n", pDataHdr->cbTotal, pDataHdr->cbMeta, pDataHdr->cObjects));
+    if (pDataHdr->cbMeta)
+    {
+        uint32_t cbToWrite = RT_MIN(cbMeta, pDataHdr->cbMeta);
+        while (cbToWrite)
+        {
+            uint32_t cbWritten;
+            rc = vbglR3ClipboardWriteDataChunk(idClient, pDataHdr,
+                                               (uint8_t *)pvMeta + cbWrittenTotal, cbToWrite, &cbWritten);
+            if (RT_FAILURE(rc))
+                break;
+
+            Assert(cbToWrite >= cbWritten);
+            cbToWrite -= cbWritten;
+
+            cbWrittenTotal += cbWritten;
+        }
+    }
+
+    if (RT_SUCCESS(rc))
+    {
+        if (pcbWritten)
+            *pcbWritten = cbWrittenTotal;
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+/**
+ * Writes the actual meta data to the host, internal version.
+ *
+ * @returns IPRT status code.
+ * @param   idClient            The client id returned by VbglR3ClipboardConnect().
+ * @param   pDataHdr            Pointer to data header to use.
+ * @param   pvMeta              Meta data buffer to write.
+ * @param   cbMeta              Size (in bytes) of meta data buffer.
+ * @param   pcbWritten          How much bytes were written on success. Optional.
+ */
+static int vbglR3ClipboardWriteMetaDataInternal(HGCMCLIENTID idClient, PVBOXCLIPBOARDDATAHDR pDataHdr,
+                                                const void *pvMeta, uint32_t cbMeta, uint32_t *pcbWritten)
+{
+    LogFlowFuncEnter();
+
+    int rc = vbglR3ClipboardWriteMetaDataLoop(idClient, pDataHdr, pvMeta, cbMeta, pcbWritten);
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+/**
  * Writes the actual meta data to the host, extended version.
  *
  * @returns IPRT status code.
  * @param   idClient            The client id returned by VbglR3ClipboardConnect().
+ * @param   pDataHdr            Pointer to data header to use.
  * @param   pvMeta              Pointer to meta data buffer.
  * @param   cbMeta              Size (in bytes) of meta data buffer.
  * @param   pcbWritten          How much bytes were written on success. Optional.
  */
-VBGLR3DECL(int) VbglR3ClipboardWriteMetaDataEx(HGCMCLIENTID idClient, const void *pvMeta, uint32_t cbMeta, uint32_t *pcbWritten)
+VBGLR3DECL(int) VbglR3ClipboardWriteMetaDataEx(HGCMCLIENTID idClient, PVBOXCLIPBOARDDATAHDR pDataHdr,
+                                               const void *pvMeta, uint32_t cbMeta, uint32_t *pcbWritten)
 {
-    RT_NOREF(idClient, pvMeta, cbMeta, pcbWritten);
-    return 0;
+    int rc = vbglR3ClipboardWriteMetaDataInternal(idClient, pDataHdr, pvMeta, cbMeta, pcbWritten);
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
 }
 
 /**
@@ -407,13 +526,15 @@ VBGLR3DECL(int) VbglR3ClipboardWriteMetaDataEx(HGCMCLIENTID idClient, const void
  *
  * @returns IPRT status code.
  * @param   idClient            The client id returned by VbglR3ClipboardConnect().
+ * @param   pDataHdr            Pointer to data header to use.
  * @param   pvMeta              Pointer to meta data buffer.
  * @param   cbMeta              Size (in bytes) of meta data buffer.
  * @param   pcbWritten          How much bytes were written on success. Optional.
  */
-VBGLR3DECL(int) VbglR3ClipboardWriteMetaData(HGCMCLIENTID idClient, const void *pvMeta, uint32_t cbMeta, uint32_t *pcbWritten)
+VBGLR3DECL(int) VbglR3ClipboardWriteMetaData(HGCMCLIENTID idClient, PVBOXCLIPBOARDDATAHDR pDataHdr,
+                                             const void *pvMeta, uint32_t cbMeta, uint32_t *pcbWritten)
 {
-    return VbglR3ClipboardWriteMetaDataEx(idClient, pvMeta, cbMeta, pcbWritten);
+    return VbglR3ClipboardWriteMetaDataEx(idClient, pDataHdr, pvMeta, cbMeta, pcbWritten);
 }
 
 /**
@@ -571,7 +692,7 @@ VBGLR3DECL(int) VbglR3ClipboardWriteFileHdr(HGCMCLIENTID idClient, const char *p
     VBoxClipboardWriteFileHdrMsg MsgHdr;
     RT_ZERO(MsgHdr);
 
-    VBGL_HGCM_HDR_INIT(&MsgHdr.hdr, idClient, VBOX_SHARED_CLIPBOARD_FN_WRITE_FILE_HDR, VBOX_SHARED_CLIPBOARD_CPARMS_READ_FILE_HDR);
+    VBGL_HGCM_HDR_INIT(&MsgHdr.hdr, idClient, VBOX_SHARED_CLIPBOARD_FN_WRITE_FILE_HDR, VBOX_SHARED_CLIPBOARD_CPARMS_WRITE_FILE_HDR);
     MsgHdr.uContext.SetUInt32(0);                                                    /* Context ID; unused at the moment. */
     MsgHdr.pvName.SetPtr((void *)pszFilename, (uint32_t)(cbFileSz));
     MsgHdr.cbName.SetUInt32(cbFileSz);

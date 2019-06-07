@@ -256,9 +256,11 @@ static bool vboxSvcClipboardReturnMsg(PVBOXCLIPBOARDCLIENTDATA pClientData, VBOX
     return true;
 }
 
-void vboxSvcClipboardReportMsg(PVBOXCLIPBOARDCLIENTDATA pClientData, uint32_t u32Msg, uint32_t u32Formats)
+int vboxSvcClipboardReportMsg(PVBOXCLIPBOARDCLIENTDATA pClientData, uint32_t u32Msg, uint32_t u32Formats)
 {
-    AssertPtrReturnVoid(pClientData);
+    AssertPtrReturn(pClientData, VERR_INVALID_POINTER);
+
+    int rc = VINF_SUCCESS;
 
     LogFlowFunc(("u32Msg=%RU32\n", u32Msg));
 
@@ -331,6 +333,9 @@ void vboxSvcClipboardReportMsg(PVBOXCLIPBOARDCLIENTDATA pClientData, uint32_t u3
             VBoxSvcClipboardUnlock();
         }
     }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
 }
 
 static int svcInit(void)
@@ -519,7 +524,7 @@ static DECLCALLBACK(void) svcCall(void *,
         case VBOX_SHARED_CLIPBOARD_FN_REPORT_FORMATS:
         {
             /* The guest reports that some formats are available. */
-            LogFunc(("VBOX_SHARED_CLIPBOARD_FN_FORMATS\n"));
+            LogFunc(("VBOX_SHARED_CLIPBOARD_FN_REPORT_FORMATS\n"));
 
             if (cParms != VBOX_SHARED_CLIPBOARD_CPARMS_FORMATS)
             {
@@ -533,29 +538,26 @@ static DECLCALLBACK(void) svcCall(void *,
             else
             {
                 uint32_t u32Formats;
-
                 rc = VBoxHGCMParmUInt32Get(&paParms[0], &u32Formats);
-
                 if (RT_SUCCESS (rc))
                 {
                     if (   vboxSvcClipboardGetMode () != VBOX_SHARED_CLIPBOARD_MODE_GUEST_TO_HOST
                         && vboxSvcClipboardGetMode () != VBOX_SHARED_CLIPBOARD_MODE_BIDIRECTIONAL)
                     {
-                        rc = VERR_NOT_SUPPORTED;
-                        break;
-                    }
-
-                    if (g_pfnExtension)
-                    {
-                        VBOXCLIPBOARDEXTPARMS parms;
-                        RT_ZERO(parms);
-                        parms.u32Format = u32Formats;
-
-                        g_pfnExtension(g_pvExtension, VBOX_CLIPBOARD_EXT_FN_FORMAT_ANNOUNCE, &parms, sizeof (parms));
+                        rc = VERR_ACCESS_DENIED;
                     }
                     else
                     {
-                        VBoxClipboardSvcImplFormatAnnounce (pClientData, u32Formats);
+                        if (g_pfnExtension)
+                        {
+                            VBOXCLIPBOARDEXTPARMS parms;
+                            RT_ZERO(parms);
+                            parms.u32Format = u32Formats;
+
+                            g_pfnExtension(g_pvExtension, VBOX_CLIPBOARD_EXT_FN_FORMAT_ANNOUNCE, &parms, sizeof (parms));
+                        }
+
+                        rc = VBoxClipboardSvcImplFormatAnnounce(pClientData, u32Formats);
                     }
                 }
             }
@@ -610,14 +612,17 @@ static DECLCALLBACK(void) svcCall(void *,
                             parms.cbData    = cb;
 
                             g_fReadingData = true;
+
                             rc = g_pfnExtension(g_pvExtension, VBOX_CLIPBOARD_EXT_FN_DATA_READ, &parms, sizeof (parms));
                             LogFlowFunc(("DATA: g_fDelayedAnnouncement = %d, g_u32DelayedFormats = 0x%x\n", g_fDelayedAnnouncement, g_u32DelayedFormats));
+
                             if (g_fDelayedAnnouncement)
                             {
                                 vboxSvcClipboardReportMsg(g_pClientData, VBOX_SHARED_CLIPBOARD_HOST_MSG_REPORT_FORMATS, g_u32DelayedFormats);
                                 g_fDelayedAnnouncement = false;
                                 g_u32DelayedFormats = 0;
                             }
+
                             g_fReadingData = false;
 
                             if (RT_SUCCESS (rc))
@@ -625,13 +630,12 @@ static DECLCALLBACK(void) svcCall(void *,
                                 cbActual = parms.cbData;
                             }
                         }
-                        else
-                        {
-                            /* Release any other pending read, as we only
-                             * support one pending read at one time. */
-                            vboxSvcClipboardCompleteReadData(pClientData, VERR_NO_DATA, 0);
-                            rc = VBoxClipboardSvcImplReadData (pClientData, u32Format, pv, cb, &cbActual);
-                        }
+
+                        /* Release any other pending read, as we only
+                         * support one pending read at one time. */
+                        rc = vboxSvcClipboardCompleteReadData(pClientData, VERR_NO_DATA, 0);
+                        if (RT_SUCCESS(rc))
+                            rc = VBoxClipboardSvcImplReadData(pClientData, u32Format, pv, cb, &cbActual);
 
                         /* Remember our read request until it is completed.
                          * See the protocol description above for more
@@ -705,10 +709,8 @@ static DECLCALLBACK(void) svcCall(void *,
 
                             g_pfnExtension(g_pvExtension, VBOX_CLIPBOARD_EXT_FN_DATA_WRITE, &parms, sizeof (parms));
                         }
-                        else
-                        {
-                            VBoxClipboardSvcImplWriteData (pClientData, pv, cb, u32Format);
-                        }
+
+                        rc = VBoxClipboardSvcImplWriteData(pClientData, pv, cb, u32Format);
                     }
                 }
             }
@@ -734,7 +736,7 @@ static DECLCALLBACK(void) svcCall(void *,
 /** If the client in the guest is waiting for a read operation to complete
  * then complete it, otherwise return.  See the protocol description in the
  * shared clipboard module description. */
-void vboxSvcClipboardCompleteReadData(PVBOXCLIPBOARDCLIENTDATA pClientData, int rc, uint32_t cbActual)
+int vboxSvcClipboardCompleteReadData(PVBOXCLIPBOARDCLIENTDATA pClientData, int rc, uint32_t cbActual)
 {
     VBOXHGCMCALLHANDLE callHandle = NULL;
     VBOXHGCMSVCPARM *paParms = NULL;
@@ -752,6 +754,8 @@ void vboxSvcClipboardCompleteReadData(PVBOXCLIPBOARDCLIENTDATA pClientData, int 
         VBoxHGCMParmUInt32Set(&paParms[2], cbActual);
         g_pHelpers->pfnCallComplete(callHandle, rc);
     }
+
+    return VINF_SUCCESS;
 }
 
 /**
@@ -954,7 +958,7 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
 
 static DECLCALLBACK(int) extCallback(uint32_t u32Function, uint32_t u32Format, void *pvData, uint32_t cbData)
 {
-    RT_NOREF2(pvData, cbData);
+    RT_NOREF(pvData, cbData);
 
     LogFlowFunc(("u32Function=%RU32\n", u32Function));
 
@@ -998,6 +1002,7 @@ static DECLCALLBACK(int) svcRegisterExtension(void *, PFNHGCMSVCEXT pfnExtension
     LogFlowFunc(("pfnExtension=%p\n", pfnExtension));
 
     VBOXCLIPBOARDEXTPARMS parms;
+    RT_ZERO(parms);
 
     if (pfnExtension)
     {
@@ -1011,10 +1016,7 @@ static DECLCALLBACK(int) svcRegisterExtension(void *, PFNHGCMSVCEXT pfnExtension
     else
     {
         if (g_pfnExtension)
-        {
-            parms.u.pfnCallback = NULL;
             g_pfnExtension(g_pvExtension, VBOX_CLIPBOARD_EXT_FN_SET_CALLBACK, &parms, sizeof(parms));
-        }
 
         /* Uninstall extension. */
         g_pfnExtension = NULL;

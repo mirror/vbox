@@ -20,6 +20,10 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_SHARED_CLIPBOARD
+#include <VBox/log.h>
+
+#include <VBox/err.h>
+
 #include <VBox/HostServices/VBoxClipboardSvc.h>
 #include <VBox/HostServices/VBoxClipboardExt.h>
 
@@ -154,8 +158,6 @@ void vboxClipboardSvcURITransferReset(PVBOXCLIPBOARDCLIENTURITRANSFER pTransfer)
 
     vboxClipboardSvcURIObjCtxUninit(&pTransfer->ObjCtx);
 
-    int rc2;
-
     /* Do we need to detach from a previously attached clipboard area? */
     const SHAREDCLIPBOARDAREAID uAreaID = pTransfer->Area.GetID();
     if (   g_pfnExtension
@@ -165,8 +167,7 @@ void vboxClipboardSvcURITransferReset(PVBOXCLIPBOARDCLIENTURITRANSFER pTransfer)
         RT_ZERO(parms);
         parms.uID = uAreaID;
 
-        rc2 = g_pfnExtension(g_pvExtension, VBOX_CLIPBOARD_EXT_FN_AREA_DETACH, &parms, sizeof(parms));
-        AssertRC(rc2);
+        int rc2 = g_pfnExtension(g_pvExtension, VBOX_CLIPBOARD_EXT_FN_AREA_DETACH, &parms, sizeof(parms));
 #ifdef LOG_ENABLED
         AssertPtr(pTransfer->pState);
         LogFlowFunc(("Detached client %RU32 from clipboard area %RU32 with rc=%Rrc\n",
@@ -406,8 +407,8 @@ int vboxClipboardSvcURIHandler(uint32_t u32ClientID,
                     if (RT_SUCCESS(rc))
                         rc = HGCMSvcGetU32(&paParms[11], &pTransfer->Hdr.cbChecksum);
 
-                    LogFlowFunc(("fFlags=0x%x, cbTotalSize=%RU64, cObj=%RU64\n",
-                                 pTransfer->Hdr.uFlags, pTransfer->Hdr.cbTotal, pTransfer->Hdr.cObjects));
+                    LogFlowFunc(("fFlags=0x%x, cbMeta=%RU32, cbTotalSize=%RU64, cObj=%RU64\n",
+                                 pTransfer->Hdr.uFlags, pTransfer->Hdr.cbMeta, pTransfer->Hdr.cbTotal, pTransfer->Hdr.cObjects));
 
                     if (RT_SUCCESS(rc))
                     {
@@ -421,7 +422,10 @@ int vboxClipboardSvcURIHandler(uint32_t u32ClientID,
                     }
                 }
                 else
+                {
                     LogFunc(("Another transfer in progress, cTransfers=%RU32\n", pClientData->cTransfers));
+                    rc = VERR_SHCLPB_MAX_TRANSFERS_REACHED;
+                }
             }
 
             break;
@@ -540,6 +544,8 @@ int vboxClipboardSvcURIHandler(uint32_t u32ClientID,
                     char *pszDir = RTPathJoinA(pszCacheDir, data.pszPath);
                     if (pszDir)
                     {
+                        LogFlowFunc(("pszDir=%s\n", pszDir));
+
                         rc = RTDirCreateFullPath(pszDir, data.fMode);
                         if (RT_SUCCESS(rc))
                         {
@@ -547,6 +553,8 @@ int vboxClipboardSvcURIHandler(uint32_t u32ClientID,
                             int rc2 = pTransfer->Area.AddDir(pszDir);
                             AssertRC(rc2);
                         }
+
+                        RTStrFree(pszDir);
                     }
                     else
                         rc = VERR_NO_MEMORY;

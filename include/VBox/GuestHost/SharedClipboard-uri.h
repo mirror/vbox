@@ -531,6 +531,26 @@ public:
 
     virtual ~SharedClipboardProviderHostService(void);
 
+public:
+
+    int ReadDataHdr(PVBOXCLIPBOARDDATAHDR pDataHdr);
+    int WriteDataHdr(const PVBOXCLIPBOARDDATAHDR pDataHdr);
+
+    int ReadMetaData(const PVBOXCLIPBOARDDATAHDR pDataHdr, void *pvMeta, uint32_t cbMeta, uint32_t *pcbRead, uint32_t fFlags = 0);
+    int WriteMetaData(const PVBOXCLIPBOARDDATAHDR pDataHdr, const void *pvMeta, uint32_t cbMeta, uint32_t *pcbWritten,
+                      uint32_t fFlags = 0);
+
+    int ReadDirectory(PVBOXCLIPBOARDDIRDATA pDirData);
+    int WriteDirectory(const PVBOXCLIPBOARDDIRDATA pDirData);
+
+    int ReadFileHdr(PVBOXCLIPBOARDFILEHDR pFileHdr);
+    int WriteFileHdr(const PVBOXCLIPBOARDFILEHDR pFileHdr);
+
+    int ReadFileData(PVBOXCLIPBOARDFILEDATA pFileData, uint32_t *pcbRead);
+    int WriteFileData(const PVBOXCLIPBOARDFILEDATA pFileData, uint32_t *pcbWritten);
+
+    void Reset(void);
+
 protected:
 
     SharedClipboardProviderHostService(void);
@@ -667,14 +687,15 @@ const SharedClipboardURIObject *SharedClipboardURITransferGetCurrentObject(PSHAR
 SharedClipboardProvider *SharedClipboardURITransferGetProvider(PSHAREDCLIPBOARDURITRANSFER pTransfer);
 const SharedClipboardURIList *SharedClipboardURITransferGetList(PSHAREDCLIPBOARDURITRANSFER pTransfer);
 const SharedClipboardURIObject *SharedClipboardURITransferGetObject(PSHAREDCLIPBOARDURITRANSFER pTransfer, uint64_t uIdx);
+int SharedClipboardURITransferRun(PSHAREDCLIPBOARDURITRANSFER pTransfer, bool fAsync);
 void SharedClipboardURITransferSetCallbacks(PSHAREDCLIPBOARDURITRANSFER pTransfer, PSHAREDCLIPBOARDURITRANSFERCALLBACKS pCallbacks);
-int SharedClipboardURITransferThreadCreate(PSHAREDCLIPBOARDURITRANSFER pTransfer);
-int SharedClipboardURITransferThreadDestroy(PSHAREDCLIPBOARDURITRANSFER pTransfer, RTMSINTERVAL uTimeoutMs);
 
 int SharedClipboardURITransferMetaDataAdd(PSHAREDCLIPBOARDURITRANSFER pTransfer, const void *pvMeta, uint32_t cbMeta);
 int SharedClipboardURITransferMetaGet(PSHAREDCLIPBOARDURITRANSFER pTransfer, const void *pvMeta, uint32_t cbMeta);
 int SharedClipboardURITransferMetaDataRead(PSHAREDCLIPBOARDURITRANSFER pTransfer, uint32_t *pcbRead);
 int SharedClipboardURITransferMetaDataWrite(PSHAREDCLIPBOARDURITRANSFER pTransfer, uint32_t *pcbWritten);
+
+int SharedClipboardURITransferRead(PSHAREDCLIPBOARDURITRANSFER pTransfer);
 
 int SharedClipboardURITransferWrite(PSHAREDCLIPBOARDURITRANSFER pTransfer);
 int SharedClipboardURITransferWriteObjects(PSHAREDCLIPBOARDURITRANSFER pTransfer);

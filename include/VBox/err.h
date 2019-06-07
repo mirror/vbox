@@ -2914,6 +2914,12 @@
  *  the current FPS setting allows. */
 #define VERR_RECORDING_THROTTLED                    (-6907)
 /** @} */
+
+/** @name Shared Clipboard Status Codes
+ * @{
+ */
+#define VERR_SHCLPB_MAX_TRANSFERS_REACHED           (-7000)
+ /** @} */
 /* SED-END */
 
 /** @} */

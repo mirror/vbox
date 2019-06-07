@@ -124,6 +124,12 @@ bool VBoxClipboardWinIsCFHTML(const char *pszSource);
 int VBoxClipboardWinConvertCFHTMLToMIME(const char *pszSource, const uint32_t cch, char **ppszOutput, uint32_t *pcbOutput);
 int VBoxClipboardWinConvertMIMEToCFHTML(const char *pszSource, size_t cb, char **ppszOutput, uint32_t *pcbOutput);
 
+int VBoxClipboardWinHandleWMSetFormats(const PVBOXCLIPBOARDWINCTX pCtx, VBOXCLIPBOARDFORMATS fFormats);
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+int VBoxClipboardWinURIHandleWMSetFormats(const PVBOXCLIPBOARDWINCTX pCtx, PSHAREDCLIPBOARDURICTX pURICtx,
+                                          PSHAREDCLIPBOARDPROVIDERCREATIONCTX pProviderCtx, VBOXCLIPBOARDFORMATS fFormats);
+#endif
+
 # ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
 class SharedClipboardURIList;
 #  ifndef FILEGROUPDESCRIPTOR

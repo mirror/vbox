@@ -152,7 +152,8 @@ int SharedClipboardArea::closeInternal(void)
     else
         rc = VINF_SUCCESS;
 
-    if (RT_SUCCESS(rc))
+    if (   RT_SUCCESS(rc)
+        && m_strPathAbs.isNotEmpty())
         rc = RTDirRemoveRecursive(m_strPathAbs.c_str(), RTDIRRMREC_F_CONTENT_AND_DIR);
 
     if (RT_SUCCESS(rc))
@@ -356,7 +357,8 @@ int SharedClipboardArea::Rollback(void)
         Assert(this->m_lstDirs.isEmpty());
 
         rc2 = closeInternal();
-        if (RT_SUCCESS(rc2))
+        if (   RT_SUCCESS(rc2)
+            && m_strPathAbs.isNotEmpty())
         {
             /* Try to remove the empty root dropped files directory as well.
              * Might return VERR_DIR_NOT_EMPTY or similar. */

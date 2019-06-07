@@ -590,7 +590,121 @@ int VBoxClipboardWinConvertMIMEToCFHTML(const char *pszSource, size_t cb, char *
     return VINF_SUCCESS;
 }
 
+int VBoxClipboardWinHandleWMSetFormats(const PVBOXCLIPBOARDWINCTX pCtx, VBOXCLIPBOARDFORMATS fFormats)
+{
+    RT_NOREF(pCtx);
+
+    LogFunc(("fFormats=0x%x\n", fFormats));
+
+    HANDLE hClip    = NULL;
+    UINT   cfFormat = 0;
+
+    int rc = VINF_SUCCESS;
+
+    /** @todo r=andy Only one clipboard format can be set at once, at least on Windows. */
+    /** @todo Implement more flexible clipboard precedence for supported formats. */
+
+    if (fFormats & VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT)
+    {
+       LogFunc(("CF_UNICODETEXT\n"));
+       hClip = SetClipboardData(CF_UNICODETEXT, NULL);
+    }
+    else if (fFormats & VBOX_SHARED_CLIPBOARD_FMT_BITMAP)
+    {
+       LogFunc(("CF_DIB\n"));
+       hClip = SetClipboardData(CF_DIB, NULL);
+    }
+    else if (fFormats & VBOX_SHARED_CLIPBOARD_FMT_HTML)
+    {
+       LogFunc(("VBOX_CLIPBOARD_WIN_REGFMT_HTML\n"));
+       cfFormat = RegisterClipboardFormat(VBOX_CLIPBOARD_WIN_REGFMT_HTML);
+       if (cfFormat != 0)
+           hClip = SetClipboardData(cfFormat, NULL);
+    }
+    else
+    {
+       rc = VERR_NOT_SUPPORTED;
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+int VBoxClipboardWinURIHandleWMSetFormats(const PVBOXCLIPBOARDWINCTX pWinCtx, PSHAREDCLIPBOARDURICTX pURICtx,
+                                          PSHAREDCLIPBOARDPROVIDERCREATIONCTX pProviderCtx,
+                                          VBOXCLIPBOARDFORMATS fFormats)
+{
+    AssertPtrReturn(pWinCtx, VERR_INVALID_POINTER);
+    AssertPtrReturn(pURICtx, VERR_INVALID_POINTER);
+    AssertPtrReturn(pProviderCtx, VERR_INVALID_POINTER);
+
+    RT_NOREF(pWinCtx);
+
+    if (!(fFormats & VBOX_SHARED_CLIPBOARD_FMT_URI_LIST))
+        return VERR_NOT_SUPPORTED;
+
+    int rc;
+
+    const uint32_t cTransfers = SharedClipboardURICtxGetActiveTransfers(pURICtx);
+
+    LogFunc(("cTransfers=%RU32\n", cTransfers));
+
+    if (cTransfers == 0) /* Only allow one transfer at a time for now. */
+    {
+        PSHAREDCLIPBOARDURITRANSFER pTransfer;
+        rc = SharedClipboardURITransferCreate(SHAREDCLIPBOARDURITRANSFERDIR_WRITE, pProviderCtx, &pTransfer);
+        if (RT_SUCCESS(rc))
+            rc = SharedClipboardURICtxTransferAdd(pURICtx, pTransfer);
+
+        SharedClipboardWinURITransferCtx *pWinURITransferCtx = new SharedClipboardWinURITransferCtx();
+
+        pTransfer->pvUser = pWinURITransferCtx;
+        pTransfer->cbUser = sizeof(SharedClipboardWinURITransferCtx);
+
+        pWinURITransferCtx->pDataObj = new VBoxClipboardWinDataObject(pTransfer);
+        if (pWinURITransferCtx->pDataObj)
+        {
+            rc = pWinURITransferCtx->pDataObj->Init();
+            if (RT_SUCCESS(rc))
+            {
+                VBoxClipboardWinClose();
+                /* Note: Clipboard must be closed first before calling OleSetClipboard(). */
+
+                /** @todo There is a potential race between VBoxClipboardWinClose() and OleSetClipboard(),
+                 *        where another application could own the clipboard (open), and thus the call to
+                 *        OleSetClipboard() will fail. Needs (better) fixing. */
+                for (unsigned uTries = 0; uTries < 3; uTries++)
+                {
+                    HRESULT hr = OleSetClipboard(pWinURITransferCtx->pDataObj);
+                    if (SUCCEEDED(hr))
+                    {
+                        pURICtx->cTransfers++;
+                        break;
+                    }
+                    else
+                    {
+                        rc = VERR_ACCESS_DENIED; /** @todo Fudge; fix this. */
+                        LogRel(("Clipboard: Failed with %Rhrc when setting data object to clipboard\n", hr));
+                        RTThreadSleep(100); /* Wait a bit. */
+                    }
+                }
+            }
+        }
+        else
+            rc = VERR_NO_MEMORY;
+    }
+    else
+    {
+        rc = VERR_ALREADY_EXISTS; /** @todo Fudge; fix this. */
+        LogRel(("Clipboard: Only one transfer at a time supported (current %RU32 transfer(s) active), skipping\n",
+                pURICtx->cTransfers));
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
 /**
  * Converts a DROPFILES (HDROP) structure to a string list, separated by \r\n.
  * Does not do any locking on the input data.
@@ -682,7 +796,7 @@ int VBoxClipboardWinDropFilesToStringList(DROPFILES *pDropFiles, char **ppszbDat
         {
             LogFlowFunc(("\tFile: %s (cchFile=%RU16)\n", pszFileUtf8, cchFileUtf8));
 
-            LogRel(("DnD: Adding guest file '%s'\n", pszFileUtf8));
+            LogRel(("Shared Clipboard: Adding guest file '%s'\n", pszFileUtf8));
 
             rc = RTStrAAppendExN(&pszFiles, 1 /* cPairs */, pszFileUtf8, cchFileUtf8);
             if (RT_SUCCESS(rc))

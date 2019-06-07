@@ -136,8 +136,8 @@ typedef struct _VBOXCLIPBOARDCLIENTDATA
  * The service functions. Locking is between the service thread and the platform-dependent (window) thread.
  */
 uint32_t vboxSvcClipboardGetMode(void);
-void vboxSvcClipboardReportMsg(PVBOXCLIPBOARDCLIENTDATA pClientData, uint32_t u32Msg, uint32_t u32Formats);
-void vboxSvcClipboardCompleteReadData(PVBOXCLIPBOARDCLIENTDATA pClientData, int rc, uint32_t cbActual);
+int vboxSvcClipboardReportMsg(PVBOXCLIPBOARDCLIENTDATA pClientData, uint32_t u32Msg, uint32_t u32Formats);
+int vboxSvcClipboardCompleteReadData(PVBOXCLIPBOARDCLIENTDATA pClientData, int rc, uint32_t cbActual);
 
 int vboxSvcClipboardClientStateInit(PVBOXCLIPBOARDCLIENTSTATE pState, uint32_t uClientID);
 void vboxSvcClipboardClientStateReset(PVBOXCLIPBOARDCLIENTSTATE pState);
@@ -155,10 +155,14 @@ int VBoxClipboardSvcImplInit(void);
 void VBoxClipboardSvcImplDestroy(void);
 
 int VBoxClipboardSvcImplConnect(PVBOXCLIPBOARDCLIENTDATA pClientData, bool fHeadless);
-void VBoxClipboardSvcImplDisconnect(PVBOXCLIPBOARDCLIENTDATA pClientData);
-void VBoxClipboardSvcImplFormatAnnounce(PVBOXCLIPBOARDCLIENTDATA pClientData, uint32_t u32Formats);
+int VBoxClipboardSvcImplDisconnect(PVBOXCLIPBOARDCLIENTDATA pClientData);
+int VBoxClipboardSvcImplFormatAnnounce(PVBOXCLIPBOARDCLIENTDATA pClientData, uint32_t u32Formats);
 int VBoxClipboardSvcImplReadData(PVBOXCLIPBOARDCLIENTDATA pClientData, uint32_t u32Format, void *pv, uint32_t cb, uint32_t *pcbActual);
-void VBoxClipboardSvcImplWriteData(PVBOXCLIPBOARDCLIENTDATA pClientData, void *pv, uint32_t cb, uint32_t u32Format);
+int VBoxClipboardSvcImplWriteData(PVBOXCLIPBOARDCLIENTDATA pClientData, void *pv, uint32_t cb, uint32_t u32Format);
+/**
+ * Synchronise the contents of the host clipboard with the guest, called by the HGCM layer
+ * after a save and restore of the guest.
+ */
 int VBoxClipboardSvcImplSync(PVBOXCLIPBOARDCLIENTDATA pClientData);
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
