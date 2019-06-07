@@ -320,11 +320,11 @@ void UIWizardImportAppPage1::populateAccountInstances()
             /// @todo rework when it's possible to do the right way
 
             /* Stopped VM names and ids: */
-            CStringArray comNamesStopped;
-            CStringArray comIDsStopped;
+            CStringArray comNames;
+            CStringArray comIDs;
+            QVector<KCloudMachineState> comCloudMachineState;
 
-            /* Ask for Stopped cloud VMs: */
-            CProgress comProgressStopped = m_comCloudClient.ListInstances(KCloudMachineState_Stopped, comNamesStopped, comIDsStopped);
+            CProgress comProgress= m_comCloudClient.ListInstances(comCloudMachineState, comNames, comIDs);
             if (!m_comCloudClient.isOk())
             {
                 msgCenter().cannotAcquireCloudClientParameter(m_comCloudClient);
@@ -332,38 +332,17 @@ void UIWizardImportAppPage1::populateAccountInstances()
             }
 
             /* Show "Acquire cloud instances" progress: */
-            msgCenter().showModalProgressDialog(comProgressStopped, UIWizardImportApp::tr("Acquire stopped cloud instances..."),
+            msgCenter().showModalProgressDialog(comProgress, UIWizardImportApp::tr("Acquire cloud instances..."),
                                                 ":/progress_reading_appliance_90px.png", 0, 0);
-            if (!comProgressStopped.isOk() || comProgressStopped.GetResultCode() != 0)
+            if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
             {
-                msgCenter().cannotAcquireCloudClientParameter(comProgressStopped);
-                break;
-            }
-
-            /* Running VM names and ids: */
-            CStringArray comNamesRunning;
-            CStringArray comIDsRunning;
-
-            /* Ask for Running cloud VMs: */
-            CProgress comProgressRunning = m_comCloudClient.ListInstances(KCloudMachineState_Running, comNamesRunning, comIDsRunning);
-            if (!m_comCloudClient.isOk())
-            {
-                msgCenter().cannotAcquireCloudClientParameter(m_comCloudClient);
-                break;
-            }
-
-            /* Show "Acquire cloud instances" progress: */
-            msgCenter().showModalProgressDialog(comProgressRunning, UIWizardImportApp::tr("Acquire running cloud instances..."),
-                                                ":/progress_reading_appliance_90px.png", 0, 0);
-            if (!comProgressRunning.isOk() || comProgressRunning.GetResultCode() != 0)
-            {
-                msgCenter().cannotAcquireCloudClientParameter(comProgressRunning);
+                msgCenter().cannotAcquireCloudClientParameter(comProgress);
                 break;
             }
 
             /* Push acquired names to list rows: */
-            const QVector<QString> names = comNamesStopped.GetValues() + comNamesRunning.GetValues();
-            const QVector<QString> ids = comIDsStopped.GetValues() + comIDsRunning.GetValues();
+            const QVector<QString> names = comNames.GetValues();
+            const QVector<QString> ids = comIDs.GetValues();
             for (int i = 0; i < names.size(); ++i)
             {
                 /* Create list item: */

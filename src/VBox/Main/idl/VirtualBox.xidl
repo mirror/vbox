@@ -25960,7 +25960,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   -->
   <interface
     name="ICloudClient" extends="$unknown"
-    uuid="d1ac0b72-861a-11e9-a0cf-b38ea8ea9e63"
+    uuid="17a5ade9-d9ad-4723-8004-8f47d5d7a2cc"
     wsmap="managed" reservedMethods="13" reservedAttributes="8"
     >
 
@@ -26038,7 +26038,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <desc>
         Returns the list of the instances in the Cloud.
       </desc>
-      <param name="machineState" type="CloudMachineState" dir="in"/>
+      <param name="machineState" type="CloudMachineState" dir="in" safearray="yes"/>
       <param name="returnNames" type="IStringArray" dir="out">
         <desc>VM names.</desc>
       </param>

@@ -182,11 +182,12 @@ static RTEXITCODE listCloudInstances(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT 
     com::SafeArray<BSTR> arrayVMNames;
     com::SafeArray<BSTR> arrayVMIds;
     ComPtr<IProgress> pProgress;
+    com::SafeArray<CloudMachineState_T> machimeStates;
 
-    RTPrintf("Getting a list of available cloud instances...\n");
     RTPrintf("Reply is in the form \'instance name\' = \'instance id\'\n");
+
     CHECK_ERROR2_RET(hrc, oCloudClient,
-                     ListInstances(CloudMachineState_Running,
+                     ListInstances(ComSafeArrayAsInParam(machimeStates),
                                    pVMNamesHolder.asOutParam(),
                                    pVMIdsHolder.asOutParam(),
                                    pProgress.asOutParam()),
@@ -201,7 +202,7 @@ static RTEXITCODE listCloudInstances(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT 
         pVMIdsHolder, COMGETTER(Values)(ComSafeArrayAsOutParam(arrayVMIds)),
             RTEXITCODE_FAILURE);
 
-    RTPrintf("List of running instances for the cloud profile \'%ls\' \nand compartment \'%s\':\n",
+    RTPrintf("List of instances for the cloud profile \'%ls\' \nand compartment \'%s\':\n",
              bstrProfileName.raw(), strCompartmentId.c_str());
     size_t cIds = arrayVMIds.size();
     size_t cNames = arrayVMNames.size();
@@ -211,39 +212,6 @@ static RTEXITCODE listCloudInstances(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT 
         if (k < cIds)
             value = arrayVMIds[k];
         RTPrintf("\t%ls = %ls\n", arrayVMNames[k], value.raw());
-    }
-
-    pVMNamesHolder.setNull();
-    pVMIdsHolder.setNull();
-    arrayVMNames.setNull();
-    arrayVMIds.setNull();
-    pProgress.setNull();
-    CHECK_ERROR2_RET(hrc, oCloudClient,
-                     ListInstances(CloudMachineState_Stopped,
-                                   pVMNamesHolder.asOutParam(),
-                                   pVMIdsHolder.asOutParam(),
-                                   pProgress.asOutParam()),
-                     RTEXITCODE_FAILURE);
-    showProgress(pProgress);
-    CHECK_PROGRESS_ERROR_RET(pProgress, ("Failed to list instances"), RTEXITCODE_FAILURE);
-
-    CHECK_ERROR2_RET(hrc,
-        pVMNamesHolder, COMGETTER(Values)(ComSafeArrayAsOutParam(arrayVMNames)),
-            RTEXITCODE_FAILURE);
-    CHECK_ERROR2_RET(hrc,
-        pVMIdsHolder, COMGETTER(Values)(ComSafeArrayAsOutParam(arrayVMIds)),
-            RTEXITCODE_FAILURE);
-
-    RTPrintf("List of paused instances for the cloud profile \'%ls\' \nand compartment \'%s\':\n",
-             bstrProfileName.raw(), strCompartmentId.c_str());
-    cNames = arrayVMNames.size();
-    cIds = arrayVMIds.size();
-    for (size_t k = 0; k < cNames; k++)
-    {
-        Bstr value;
-        if (k < cIds)
-            value = arrayVMIds[k];
-        RTPrintf("\t%ls=%ls\n", arrayVMNames[k], value.raw());
     }
 
     return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
