@@ -25960,18 +25960,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   -->
   <interface
     name="ICloudClient" extends="$unknown"
-    uuid="17a5ade9-d9ad-4723-8004-8f47d5d7a2cc"
+    uuid="8c23252a-8987-11e9-ab57-0b93dbf90b1b"
     wsmap="managed" reservedMethods="13" reservedAttributes="8"
     >
-
-    <method name="getExportLaunchParameters" const="yes">
-      <desc>
-        Returns parameters to be shown to the user for the cloud export and launch operation.
-      </desc>
-      <param name="jsonString" type="wstring" dir="return">
-        <desc>the parameters with values in json format.</desc>
-      </param>
-    </method>
 
     <method name="exportLaunchVM">
       <desc>
