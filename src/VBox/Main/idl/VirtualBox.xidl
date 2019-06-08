@@ -23656,13 +23656,19 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         See <link to="ICursorPositionChangedEvent">ICursorPositionChangedEvent</link>.
       </desc>
     </const>
-    <const name="OnGuestMonitorInfoChanged" value="101">
+    <const name="OnGuestAdditionsStatusChanged" value="101">
+      <desc>
+        See <link to="IGuestAdditionsStatusChangedEvent">IGuestAdditionsStatusChangedEvent</link>.
+      </desc>
+    </const>
+    <const name="OnGuestMonitorInfoChanged" value="102">
       <desc>
         See <link to="IGuestMonitorInfoChangedEvent">IGuestMonitorInfoChangedEvent</link>.
       </desc>
     </const>
-    <!-- Last event marker -->
-    <const name="Last" value="102">
+    <!-- End event marker -->
+    <!-- @todo rename to 'End' as it is exclusive (we use 'last' to be inclusive). -->
+    <const name="Last" value="103">
       <desc>
         Must be last event, used for iterations and structures relying on numerical event values.
       </desc>
@@ -25759,6 +25765,26 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
   <interface
+    name="IGuestAdditionsStatusChangedEvent" extends="IEvent"
+    uuid="fd1a34ad-0b74-4e2b-ed0f-46222de8a883"
+    wsmap="managed" autogen="VBoxEvent" id="OnGuestAdditionsStatusChanged">
+    <desc>The guest addition status changed.</desc>
+
+    <attribute name="facility" type="AdditionsFacilityType" dir="in">
+      <desc>Facility this event relates to.</desc>
+    </attribute>
+    <attribute name="status" type="AdditionsFacilityStatus" readonly="yes">
+      <desc>The new facility status.</desc>
+    </attribute>
+    <attribute name="runLevel" type="AdditionsRunLevelType" readonly="yes">
+      <desc>The new run level.</desc>
+    </attribute>
+    <attribute name="timestamp" type="long long" readonly="yes">
+      <desc>The millisecond timestamp associated with the event.</desc>
+    </attribute>
+  </interface>
+
+  <interface
     name="IGuestMonitorInfoChangedEvent" extends="IEvent"
     uuid="0b3cdeb2-808e-11e9-b773-133d9330f849"
     wsmap="managed" autogen="VBoxEvent" id="OnGuestMonitorInfoChanged">
@@ -25768,7 +25794,6 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <desc>The virtual display output on which the monitor has changed.</desc>
     </attribute>
   </interface>
-
 
   <!--
   // Auxiliary containers
