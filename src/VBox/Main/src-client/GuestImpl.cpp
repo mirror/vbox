@@ -1018,14 +1018,22 @@ bool Guest::i_facilityUpdate(VBoxGuestFacilityType a_enmFacility, VBoxGuestFacil
         }
 
         ComObjPtr<AdditionsFacility> ptrFac;
-        ptrFac.createObject();
-        AssertReturn(!ptrFac.isNull(), false);
-
-        HRESULT hrc = ptrFac->init(this, (AdditionsFacilityType_T)a_enmFacility, (AdditionsFacilityStatus_T)a_enmStatus,
-                                   a_fFlags, a_pTimeSpecTS);
+        HRESULT hrc = ptrFac.createObject();
         AssertComRCReturn(hrc, false);
-        mData.mFacilityMap.insert(std::make_pair((AdditionsFacilityType_T)a_enmFacility, ptrFac));
-        fChanged = true;
+        Assert(ptrFac);
+
+        hrc = ptrFac->init(this, (AdditionsFacilityType_T)a_enmFacility, (AdditionsFacilityStatus_T)a_enmStatus,
+                           a_fFlags, a_pTimeSpecTS);
+        AssertComRCReturn(hrc, false);
+        try
+        {
+            mData.mFacilityMap.insert(std::make_pair((AdditionsFacilityType_T)a_enmFacility, ptrFac));
+            fChanged = true;
+        }
+        catch (std::bad_alloc &)
+        {
+            fChanged = false;
+        }
     }
     return fChanged;
 }
