@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VirtualBox COM class implementation
+ * VirtualBox Main - Additions facility class.
  */
 
 /*
@@ -21,13 +21,14 @@
 # pragma once
 #endif
 
-#include <vector>
 #include <iprt/time.h>
-
 #include "AdditionsFacilityWrap.h"
 
 class Guest;
 
+/**
+ * A guest additions facility.
+ */
 class ATL_NO_VTABLE AdditionsFacility :
     public AdditionsFacilityWrap
 {
@@ -35,33 +36,20 @@ public:
 
     DECLARE_EMPTY_CTOR_DTOR(AdditionsFacility)
 
-    // public initializer/uninitializer for internal purposes only
+    /** @name Initializer & uninitializer methods
+     * @{ */
     HRESULT init(Guest *a_pParent, AdditionsFacilityType_T a_enmFacility, AdditionsFacilityStatus_T a_enmStatus,
                  uint32_t a_fFlags, PCRTTIMESPEC a_pTimeSpecTS);
-    void uninit();
-
+    void    uninit();
     HRESULT FinalConstruct();
-    void FinalRelease();
-
+    void    FinalRelease();
+    /** @} */
 
 public:
-    /** Facility <-> string mappings. */
-    struct FacilityInfo
-    {
-        /** The facilitie's name. */
-        const char              *mName; /* utf-8 */
-        /** The facilitie's type. */
-        AdditionsFacilityType_T  mType;
-        /** The facilitie's class. */
-        AdditionsFacilityClass_T mClass;
-    };
-    static const FacilityInfo s_aFacilityInfo[8];
-
     /** @name public internal methods
      * @{ */
-    static const AdditionsFacility::FacilityInfo &i_typeToInfo(AdditionsFacilityType_T aType);
     LONG64 i_getLastUpdated() const;
-#if 0 /* unused */
+#if 1 /* unused */
     AdditionsFacilityType_T i_getType() const;
     AdditionsFacilityClass_T i_getClass() const;
     const char *i_getName() const;
@@ -81,25 +69,31 @@ private:
     HRESULT getType(AdditionsFacilityType_T *aType);
     /** @} */
 
-    /** A structure for keeping a facility status
-     *  set at a certain time. Good for book-keeping. */
-    struct FacilityState
-    {
-        RTTIMESPEC                mTimestamp;
-        /** The facilitie's current status. */
-        AdditionsFacilityStatus_T mStatus;
-    };
-
     struct Data
     {
-        /** Record of current and previous facility
-         *  states, limited to the 10 last states set.
-         *  Note: This intentionally only is kept in
-         *        Main so far! */
-        std::vector<FacilityState> mStates;
-        /** The facilitie's ID/type. */
-        AdditionsFacilityType_T    mType;
+        /** Last update timestamp. */
+        RTTIMESPEC                  mTimestamp;
+        /** The facilitie's current status. */
+        AdditionsFacilityStatus_T   mStatus;
+        /** Flags. */
+        uint32_t                    mfFlags;
+        /** The facilitie's ID/type (static). */
+        AdditionsFacilityType_T     mType;
+        /** Index into s_aFacilityInfo. */
+        size_t                      midxInfo;
     } mData;
+
+    /** Facility <-> string mappings. */
+    struct FacilityInfo
+    {
+        /** The facilitie's name. */
+        const char              *mName; /* utf-8 */
+        /** The facilitie's type. */
+        AdditionsFacilityType_T  mType;
+        /** The facilitie's class. */
+        AdditionsFacilityClass_T mClass;
+    };
+    static const FacilityInfo s_aFacilityInfo[8];
 };
 
 #endif /* !MAIN_INCLUDED_AdditionsFacilityImpl_h */

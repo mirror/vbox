@@ -1,7 +1,6 @@
 /* $Id$ */
 /** @file
- *
- * VirtualBox COM class implementation
+ * VirtualBox Main - Additions facility class.
  */
 
 /*
@@ -26,7 +25,7 @@
 
 
 /**
- * @note We assume that unknown is always the first entry!
+ * @note We ASSUME that unknown is the first entry!
  */
 /* static */
 const AdditionsFacility::FacilityInfo AdditionsFacility::s_aFacilityInfo[8] =
@@ -66,23 +65,25 @@ void AdditionsFacility::FinalRelease()
 HRESULT AdditionsFacility::init(Guest *a_pParent, AdditionsFacilityType_T a_enmFacility, AdditionsFacilityStatus_T a_enmStatus,
                                 uint32_t a_fFlags, PCRTTIMESPEC a_pTimeSpecTS)
 {
-    RT_NOREF(a_pParent);
+    RT_NOREF(a_pParent); /** @todo r=bird: For locking perhaps? */
     LogFlowThisFunc(("a_pParent=%p\n", a_pParent));
 
     /* Enclose the state transition NotReady->InInit->Ready. */
     AutoInitSpan autoInitSpan(this);
     AssertReturn(autoInitSpan.isOk(), E_FAIL);
 
-    FacilityState state;
-    state.mStatus    = a_enmStatus;
-    state.mTimestamp = *a_pTimeSpecTS;
-    NOREF(a_fFlags);
-
-    Assert(mData.mStates.size() == 0);
-    mData.mStates.push_back(state);
-    mData.mType      = a_enmFacility;
-    /** @todo mClass is not initialized here. */
-    NOREF(a_fFlags);
+    /* Initialize the data: */
+    mData.mType         = a_enmFacility;
+    mData.mStatus       = a_enmStatus;
+    mData.mTimestamp    = *a_pTimeSpecTS;
+    mData.mfFlags       = a_fFlags;
+    mData.midxInfo      = 0;
+    for (size_t i = 0; i < RT_ELEMENTS(s_aFacilityInfo); ++i)
+        if (s_aFacilityInfo[i].mType == a_enmFacility)
+        {
+            mData.midxInfo = i;
+            break;
+        }
 
     /* Confirm a successful initialization when it's the case. */
     autoInitSpan.setSucceeded();
@@ -92,6 +93,7 @@ HRESULT AdditionsFacility::init(Guest *a_pParent, AdditionsFacilityType_T a_enmF
 
 /**
  * Uninitializes the instance.
+ *
  * Called from FinalRelease().
  */
 void AdditionsFacility::uninit()
@@ -102,16 +104,16 @@ void AdditionsFacility::uninit()
     AutoUninitSpan autoUninitSpan(this);
     if (autoUninitSpan.uninitDone())
         return;
-
-    mData.mStates.clear();
 }
 
 HRESULT AdditionsFacility::getClassType(AdditionsFacilityClass_T *aClassType)
 {
     LogFlowThisFuncEnter();
 
-    /* mType is static, so no need to lock anything. */
-    *aClassType = AdditionsFacility::i_typeToInfo(mData.mType).mClass;
+    /* midxInfo is static, so no need to lock anything. */
+    size_t idxInfo = mData.midxInfo;
+    AssertStmt(idxInfo < RT_ELEMENTS(s_aFacilityInfo), idxInfo = 0);
+    *aClassType = s_aFacilityInfo[idxInfo].mClass;
     return S_OK;
 }
 
@@ -119,8 +121,10 @@ HRESULT AdditionsFacility::getName(com::Utf8Str &aName)
 {
     LogFlowThisFuncEnter();
 
-    /* mType is static, so no need to lock anything. */
-    int vrc = aName.assignNoThrow(AdditionsFacility::i_typeToInfo(mData.mType).mName);
+    /* midxInfo is static, so no need to lock anything. */
+    size_t idxInfo = mData.midxInfo;
+    AssertStmt(idxInfo < RT_ELEMENTS(s_aFacilityInfo), idxInfo = 0);
+    int vrc = aName.assignNoThrow(s_aFacilityInfo[idxInfo].mName);
     return RT_SUCCESS(vrc) ? S_OK : E_OUTOFMEMORY;
 }
 
@@ -128,10 +132,9 @@ HRESULT AdditionsFacility::getLastUpdated(LONG64 *aLastUpdated)
 {
     LogFlowThisFuncEnter();
 
+    /** @todo r=bird: Should take parent (Guest) lock here, see i_update(). */
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    *aLastUpdated = i_getLastUpdated();
-
+    *aLastUpdated = RTTimeSpecGetMilli(&mData.mTimestamp);
     return S_OK;
 }
 
@@ -139,10 +142,9 @@ HRESULT AdditionsFacility::getStatus(AdditionsFacilityStatus_T *aStatus)
 {
     LogFlowThisFuncEnter();
 
+    /** @todo r=bird: Should take parent (Guest) lock here, see i_update(). */
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    *aStatus = i_getStatus();
-
+    *aStatus = mData.mStatus;
     return S_OK;
 }
 
@@ -155,16 +157,6 @@ HRESULT AdditionsFacility::getType(AdditionsFacilityType_T *aType)
     return S_OK;
 }
 
-/*static*/ const AdditionsFacility::FacilityInfo &AdditionsFacility::i_typeToInfo(AdditionsFacilityType_T aType)
-{
-    for (size_t i = 0; i < RT_ELEMENTS(s_aFacilityInfo); ++i)
-    {
-        if (s_aFacilityInfo[i].mType == aType)
-            return s_aFacilityInfo[i];
-    }
-    return s_aFacilityInfo[0]; /* Return unknown type. */
-}
-
 #if 0 /* unused */
 
 AdditionsFacilityType_T AdditionsFacility::i_getType() const
@@ -174,52 +166,55 @@ AdditionsFacilityType_T AdditionsFacility::i_getType() const
 
 AdditionsFacilityClass_T AdditionsFacility::i_getClass() const
 {
-    return AdditionsFacility::i_typeToInfo(mData.mType).mClass;
+    size_t idxInfo = mData.midxInfo;
+    AssertStmt(idxInfo < RT_ELEMENTS(s_aFacilityInfo), idxInfo = 0);
+    return s_aFacilityInfo[idxInfo].mClass;
 }
 
 const char *AdditionsFacility::i_getName() const
 {
-    return AdditionsFacility::i_typeToInfo(mData.mType).mName;
+    size_t idxInfo = mData.midxInfo;
+    AssertStmt(idxInfo < RT_ELEMENTS(s_aFacilityInfo), idxInfo = 0);
+    return s_aFacilityInfo[idxInfo].mName;
 }
 
-#endif
+#endif /* unused */
 
+/**
+ * @note Caller should read lock the Guest object.
+ */
 LONG64 AdditionsFacility::i_getLastUpdated() const
 {
-    if (mData.mStates.size())
-        return RTTimeSpecGetMilli(&mData.mStates.front().mTimestamp);
-
-    AssertMsgFailed(("Unknown timestamp of facility!\n"));
-    return 0; /* Should never happen! */
+    return RTTimeSpecGetMilli(&mData.mTimestamp);
 }
 
+/**
+ * @note Caller should read lock the Guest object.
+ */
 AdditionsFacilityStatus_T AdditionsFacility::i_getStatus() const
 {
-    if (mData.mStates.size())
-        return mData.mStates.back().mStatus;
-
-    AssertMsgFailed(("Unknown status of facility!\n"));
-    return AdditionsFacilityStatus_Unknown; /* Should never happen! */
+    return mData.mStatus;
 }
 
 /**
  * Method used by IGuest::facilityUpdate to make updates.
  *
  * @returns change indicator.
+ *
+ * @todo    r=bird: Locking here isn't quite sane.  While updating is serialized
+ *          by the caller holding down the Guest object lock, this code doesn't
+ *          serialize with this object.  So, the read locking done in the getter
+ *          methods is utterly pointless.  OTOH, the getter methods only get
+ *          single values, so there isn't really much to be worried about here,
+ *          especially with 32-bit hosts no longer being supported.
  */
 bool AdditionsFacility::i_update(AdditionsFacilityStatus_T a_enmStatus, uint32_t a_fFlags, PCRTTIMESPEC a_pTimeSpecTS)
 {
-    bool const fChanged = mData.mStates.size() == 0
-                       || mData.mStates.back().mStatus != a_enmStatus;
+    bool const fChanged = mData.mStatus != a_enmStatus;
 
-    FacilityState state;
-    state.mStatus    = a_enmStatus;
-    state.mTimestamp = *a_pTimeSpecTS;
-    NOREF(a_fFlags);
-
-    mData.mStates.push_back(state);
-    if (mData.mStates.size() > 10) /* Only keep the last 10 states. */
-        mData.mStates.erase(mData.mStates.begin());
+    mData.mTimestamp = *a_pTimeSpecTS;
+    mData.mStatus    = a_enmStatus;
+    mData.mfFlags    = a_fFlags;
 
     return fChanged;
 }
