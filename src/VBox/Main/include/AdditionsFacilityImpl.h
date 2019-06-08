@@ -49,7 +49,7 @@ public:
     /** @name public internal methods
      * @{ */
     LONG64 i_getLastUpdated() const;
-#if 1 /* unused */
+#if 0 /* unused */
     AdditionsFacilityType_T i_getType() const;
     AdditionsFacilityClass_T i_getClass() const;
     const char *i_getName() const;
