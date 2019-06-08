@@ -25,18 +25,20 @@
 #include "AutoCaller.h"
 
 
+/**
+ * @note We assume that unknown is always the first entry!
+ */
 /* static */
 const AdditionsFacility::FacilityInfo AdditionsFacility::s_aFacilityInfo[8] =
 {
-    /* NOTE: We assume that unknown is always the first entry! */
-    { "Unknown", AdditionsFacilityType_None, AdditionsFacilityClass_None },
-    { "VirtualBox Base Driver", AdditionsFacilityType_VBoxGuestDriver, AdditionsFacilityClass_Driver },
-    { "Auto Logon", AdditionsFacilityType_AutoLogon, AdditionsFacilityClass_Feature },
-    { "VirtualBox System Service", AdditionsFacilityType_VBoxService, AdditionsFacilityClass_Service },
-    { "VirtualBox Desktop Integration", AdditionsFacilityType_VBoxTrayClient, AdditionsFacilityClass_Program },
-    { "Seamless Mode", AdditionsFacilityType_Seamless, AdditionsFacilityClass_Feature },
-    { "Graphics Mode", AdditionsFacilityType_Graphics, AdditionsFacilityClass_Feature },
-    { "Guest Monitor Attach", AdditionsFacilityType_MonitorAttach, AdditionsFacilityClass_Feature },
+    { "Unknown",                        AdditionsFacilityType_None,             AdditionsFacilityClass_None },
+    { "VirtualBox Base Driver",         AdditionsFacilityType_VBoxGuestDriver,  AdditionsFacilityClass_Driver },
+    { "Auto Logon",                     AdditionsFacilityType_AutoLogon,        AdditionsFacilityClass_Feature },
+    { "VirtualBox System Service",      AdditionsFacilityType_VBoxService,      AdditionsFacilityClass_Service },
+    { "VirtualBox Desktop Integration", AdditionsFacilityType_VBoxTrayClient,   AdditionsFacilityClass_Program },
+    { "Seamless Mode",                  AdditionsFacilityType_Seamless,         AdditionsFacilityClass_Feature },
+    { "Graphics Mode",                  AdditionsFacilityType_Graphics,         AdditionsFacilityClass_Feature },
+    { "Guest Monitor Attach",           AdditionsFacilityType_MonitorAttach,    AdditionsFacilityClass_Feature },
 };
 
 // constructor / destructor
@@ -108,10 +110,8 @@ HRESULT AdditionsFacility::getClassType(AdditionsFacilityClass_T *aClassType)
 {
     LogFlowThisFuncEnter();
 
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    *aClassType = i_getClass();
-
+    /* mType is static, so no need to lock anything. */
+    *aClassType = AdditionsFacility::i_typeToInfo(mData.mType).mClass;
     return S_OK;
 }
 
@@ -119,11 +119,9 @@ HRESULT AdditionsFacility::getName(com::Utf8Str &aName)
 {
     LogFlowThisFuncEnter();
 
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    aName = i_getName();
-
-    return S_OK;
+    /* mType is static, so no need to lock anything. */
+    int vrc = aName.assignNoThrow(AdditionsFacility::i_typeToInfo(mData.mType).mName);
+    return RT_SUCCESS(vrc) ? S_OK : E_OUTOFMEMORY;
 }
 
 HRESULT AdditionsFacility::getLastUpdated(LONG64 *aLastUpdated)
@@ -152,14 +150,12 @@ HRESULT AdditionsFacility::getType(AdditionsFacilityType_T *aType)
 {
     LogFlowThisFuncEnter();
 
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    *aType = i_getType();
-
+    /* mType is static, so no need to lock anything. */
+    *aType = mData.mType;
     return S_OK;
 }
 
-const AdditionsFacility::FacilityInfo &AdditionsFacility::i_typeToInfo(AdditionsFacilityType_T aType)
+/*static*/ const AdditionsFacility::FacilityInfo &AdditionsFacility::i_typeToInfo(AdditionsFacilityType_T aType)
 {
     for (size_t i = 0; i < RT_ELEMENTS(s_aFacilityInfo); ++i)
     {
@@ -169,15 +165,24 @@ const AdditionsFacility::FacilityInfo &AdditionsFacility::i_typeToInfo(Additions
     return s_aFacilityInfo[0]; /* Return unknown type. */
 }
 
+#if 0 /* unused */
+
+AdditionsFacilityType_T AdditionsFacility::i_getType() const
+{
+    return mData.mType;
+}
+
 AdditionsFacilityClass_T AdditionsFacility::i_getClass() const
 {
     return AdditionsFacility::i_typeToInfo(mData.mType).mClass;
 }
 
-com::Utf8Str AdditionsFacility::i_getName() const
+const char *AdditionsFacility::i_getName() const
 {
     return AdditionsFacility::i_typeToInfo(mData.mType).mName;
 }
+
+#endif
 
 LONG64 AdditionsFacility::i_getLastUpdated() const
 {
@@ -195,11 +200,6 @@ AdditionsFacilityStatus_T AdditionsFacility::i_getStatus() const
 
     AssertMsgFailed(("Unknown status of facility!\n"));
     return AdditionsFacilityStatus_Unknown; /* Should never happen! */
-}
-
-AdditionsFacilityType_T AdditionsFacility::i_getType() const
-{
-    return mData.mType;
 }
 
 /**

@@ -57,23 +57,29 @@ public:
     };
     static const FacilityInfo s_aFacilityInfo[8];
 
-    // public internal methods
+    /** @name public internal methods
+     * @{ */
     static const AdditionsFacility::FacilityInfo &i_typeToInfo(AdditionsFacilityType_T aType);
-    AdditionsFacilityClass_T i_getClass() const;
     LONG64 i_getLastUpdated() const;
-    com::Utf8Str i_getName() const;
-    AdditionsFacilityStatus_T i_getStatus() const;
+#if 0 /* unused */
     AdditionsFacilityType_T i_getType() const;
+    AdditionsFacilityClass_T i_getClass() const;
+    const char *i_getName() const;
+#endif
+    AdditionsFacilityStatus_T i_getStatus() const;
     bool i_update(AdditionsFacilityStatus_T a_enmStatus, uint32_t a_fFlags, PCRTTIMESPEC a_pTimeSpecTS);
+    /** @} */
 
 private:
 
-    // Wrapped IAdditionsFacility properties
+    /** @name Wrapped IAdditionsFacility properties
+     * @{ */
     HRESULT getClassType(AdditionsFacilityClass_T *aClassType);
     HRESULT getLastUpdated(LONG64 *aLastUpdated);
     HRESULT getName(com::Utf8Str &aName);
     HRESULT getStatus(AdditionsFacilityStatus_T *aStatus);
     HRESULT getType(AdditionsFacilityType_T *aType);
+    /** @} */
 
     /** A structure for keeping a facility status
      *  set at a certain time. Good for book-keeping. */
