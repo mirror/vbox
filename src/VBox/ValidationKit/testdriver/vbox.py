@@ -536,9 +536,9 @@ class EventHandlerBase(object):
         return None;
 
     @staticmethod
-    def registerDerivedEventHandler(oVBoxMgr, fpApiVer, oSubClass, dArgsCopy,
+    def registerDerivedEventHandler(oVBoxMgr, fpApiVer, oSubClass, dArgsCopy, # pylint: disable=too-many-arguments
                                     oSrcParent, sSrcParentNm, sICallbackNm,
-                                    fMustSucceed = True, sLogSuffix = ''):
+                                    fMustSucceed = True, sLogSuffix = '', aenmEvents = None):
         """
         Registers the callback / event listener.
         """
@@ -558,7 +558,14 @@ class EventHandlerBase(object):
                     if fMustSucceed or ComError.notEqual(oXcpt, ComError.E_UNEXPECTED):
                         reporter.errorXcpt('%s::registerCallback(%s)%s' % (sSrcParentNm, oRet, sLogSuffix));
         else:
+            #
+            # Scalable event handling introduced in VBox 4.0.
+            #
             fPassive = sys.platform == 'win32'; # or webservices.
+
+            if not aenmEvents:
+                aenmEvents = (vboxcon.VBoxEventType_Any,);
+
             try:
                 oEventSrc = oSrcParent.eventSource;
                 dArgsCopy['oEventSrc'] = oEventSrc;
@@ -572,10 +579,10 @@ class EventHandlerBase(object):
                 reporter.errorXcpt('%s::eventSource.createListener(%s) failed%s' % (sSrcParentNm, oListener, sLogSuffix));
             else:
                 try:
-                    oEventSrc.registerListener(oListener, [vboxcon.VBoxEventType_Any], not fPassive);
+                    oEventSrc.registerListener(oListener, aenmEvents, not fPassive);
                 except Exception as oXcpt:
                     if fMustSucceed or ComError.notEqual(oXcpt, ComError.E_UNEXPECTED):
-                        reporter.errorXcpt('%s::eventSource.registerListener(%s) failed%s' \
+                        reporter.errorXcpt('%s::eventSource.registerListener(%s) failed%s'
                                            % (sSrcParentNm, oListener, sLogSuffix));
                 else:
                     if not fPassive:
@@ -3921,3 +3928,77 @@ class TestDriver(base.TestDriver):                                              
         else:
             sRet = None;
         return sRet;
+
+    #
+    # Other stuff
+    #
+
+    def waitForGAs(self,
+                   oSession, # type: vboxwrappers.SessionWrapper
+                   cMsTimeout = 120000, aenmWaitForRunLevels = None, aenmWaitForActive = None, aenmWaitForInactive = None):
+        """
+        Waits for the guest additions to enter a certain state.
+
+        aenmWaitForRunLevels - List of run level values to wait for (success if one matches).
+        aenmWaitForActive    - List facilities (type values) that must be active.
+        aenmWaitForInactive  - List facilities (type values) that must be inactive.
+
+        Defaults to wait for AdditionsRunLevelType_Userland if nothing else is given.
+
+        Returns True on success, False w/ error logging on timeout or failure.
+        """
+        reporter.log2('waitForGAs: oSession=%s, cMsTimeout=%s' % (oSession, cMsTimeout,));
+
+        #
+        # Get IGuest:
+        #
+        try:
+            oIGuest = oSession.o.console.guest;
+        except:
+            return reporter.errorXcpt();
+
+        #
+        # Create a wait task:
+        #
+        from testdriver.vboxwrappers import AdditionsStatusTask;
+        try:
+            oGaStatusTask = AdditionsStatusTask(oSession             = oSession,
+                                                oIGuest              = oIGuest,
+                                                cMsTimeout           = cMsTimeout,
+                                                aenmWaitForRunLevels = aenmWaitForRunLevels,
+                                                aenmWaitForActive    = aenmWaitForActive,
+                                                aenmWaitForInactive  = aenmWaitForInactive);
+        except:
+            return reporter.errorXcpt();
+
+        #
+        # Add the task and make sure the VM session is also present.
+        #
+        self.addTask(oGaStatusTask);
+        fRemoveSession = self.addTask(oSession);
+        oTask          = self.waitForTasks(cMsTimeout + 1);
+        reporter.log2('waitForGAs: returned %s (oGaStatusTask=%s, oSession=%s)' % (oTask, oGaStatusTask, oSession,));
+        self.removeTask(oGaStatusTask);
+        if fRemoveSession:
+            self.removeTask(oSession);
+
+        #
+        # Digest the result.
+        #
+        if oTask is oGaStatusTask:
+            fSucceeded = oGaStatusTask.getResult();
+            if fSucceeded is True:
+                reporter.log('waitForGAs: Succeeded.');
+            else:
+                reporter.error('waitForGAs: Failed.');
+        else:
+            oGaStatusTask.cancelTask();
+            if oTask is None:
+                reporter.error('waitForGAs: Timed out.');
+            elif oTask is oSession:
+                oSession.reportPrematureTermination('waitForGAs: ');
+            else:
+                reporter.error('waitForGAs: unknown/wrong task %s' % (oTask,));
+            fSucceeded = False;
+        return fSucceeded;
+

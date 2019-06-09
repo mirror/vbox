@@ -3227,3 +3227,190 @@ class TxsConnectTask(TdTaskBase):
         self.oCv.release();
         return True;
 
+
+
+class AdditionsStatusTask(TdTaskBase):
+    """
+    Class that takes care of waiting till the guest additions are in a given state.
+    """
+
+    class AdditionsStatusTaskCallback(vbox.EventHandlerBase):
+        """ Class for looking for IPv4 address changes on interface 0."""
+        def __init__(self, dArgs):
+            self.oParentTask = dArgs['oParentTask'];
+            vbox.EventHandlerBase.__init__(self, dArgs, self.oParentTask.oSession.fpApiVer,
+                                           'AdditionsStatusTaskCallback/%s' % (self.oParentTask.oSession.sName,));
+
+        def handleEvent(self, oEvt):
+            try:
+                enmType = oEvt.type;
+            except:
+                reporter.errorXcpt();
+            else:
+                reporter.log2('AdditionsStatusTaskCallback:handleEvent: enmType=%s' % (enmType,));
+                if enmType == vboxcon.VBoxEventType_OnGuestAdditionsStatusChanged:
+                    oParentTask = self.oParentTask;
+                    if oParentTask:
+                        oParentTask.pollTask();
+
+            # end
+
+
+    def __init__(self, oSession, oIGuest, cMsTimeout = 120000, aenmWaitForRunLevels = None, aenmWaitForActive = None,
+                 aenmWaitForInactive = None):
+        """
+        aenmWaitForRunLevels - List of run level values to wait for (success if one matches).
+        aenmWaitForActive    - List facilities (type values) that must be active.
+        aenmWaitForInactive  - List facilities (type values) that must be inactive.
+
+        The default is to wait for AdditionsRunLevelType_Userland if all three lists
+        are unspecified or empty.
+        """
+        TdTaskBase.__init__(self, utils.getCallerName());
+        self.oSession               = oSession      # type: vboxwrappers.SessionWrapper
+        self.oIGuest                = oIGuest;
+        self.cMsTimeout             = cMsTimeout;
+        self.fSucceeded             = False;
+        self.oVBoxEventHandler      = None;
+        self.aenmWaitForRunLevels   = aenmWaitForRunLevels if aenmWaitForRunLevels else [];
+        self.aenmWaitForActive      = aenmWaitForActive    if aenmWaitForActive    else [];
+        self.aenmWaitForInactive    = aenmWaitForInactive  if aenmWaitForInactive  else [];
+
+        # Provide a sensible default if nothing is given.
+        if not self.aenmWaitForRunLevels and not self.aenmWaitForActive and not self.aenmWaitForInactive:
+            self.aenmWaitForRunLevels = [vboxcon.AdditionsRunLevelType_Userland,];
+
+        # Register the event handler on hosts which has it:
+        if oSession.fpApiVer >= 6.1 or hasattr(vboxcon, 'VBoxEventType_OnGuestAdditionsStatusChanged'):
+            aenmEvents = (vboxcon.VBoxEventType_OnGuestAdditionsStatusChanged,);
+            dArgs = {
+                'oParentTask': self,
+            };
+            self.oVBoxEventHandler = vbox.EventHandlerBase.registerDerivedEventHandler(oSession.oVBoxMgr,
+                                                                                       oSession.fpApiVer,
+                                                                                       self.AdditionsStatusTaskCallback,
+                                                                                       dArgs,
+                                                                                       oIGuest,
+                                                                                       'IGuest',
+                                                                                       'AdditionsStatusTaskCallback',
+                                                                                       aenmEvents = aenmEvents);
+        reporter.log2('AdditionsStatusTask: %s' % (self.toString(), ));
+
+    def __del__(self):
+        """ Make sure we deregister the callback. """
+        self._deregisterEventHandler();
+        self.oIGuest = None;
+        return TdTaskBase.__del__(self);
+
+    def toString(self):
+        return '<%s cMsTimeout=%s, fSucceeded=%s, aenmWaitForRunLevels=%s, aenmWaitForActive=%s, aenmWaitForInactive=%s, ' \
+               'oVBoxEventHandler=%s>' \
+             % (TdTaskBase.toString(self), self.cMsTimeout, self.fSucceeded, self.aenmWaitForRunLevels, self.aenmWaitForActive,
+                self.aenmWaitForInactive, self.oVBoxEventHandler,);
+
+    def _deregisterEventHandler(self):
+        """Deregisters the event handler."""
+        fRc = True;
+        oVBoxEventHandler = self.oVBoxEventHandler;
+        if oVBoxEventHandler is not None:
+            self.oVBoxEventHandler = None;
+            fRc = oVBoxEventHandler.unregister();
+            oVBoxEventHandler.oParentTask = None; # Try avoid cylic deps.
+        return fRc;
+
+    def _poll(self):
+        """
+        Internal worker for pollTask() that returns the new signalled state.
+        """
+
+        #
+        # Check if any of the runlevels we wait for have been reached:
+        #
+        if self.aenmWaitForRunLevels:
+            try:
+                enmRunLevel = self.oIGuest.additionsRunLevel;
+            except:
+                reporter.errorXcpt();
+                return True;
+            if enmRunLevel not in self.aenmWaitForRunLevels:
+                reporter.log2('AdditionsStatusTask/poll: enmRunLevel=%s not in %s' % (enmRunLevel, self.aenmWaitForRunLevels,));
+                return False;
+            reporter.log2('AdditionsStatusTask/poll: enmRunLevel=%s matched %s!' % (enmRunLevel, self.aenmWaitForRunLevels,));
+
+
+        #
+        # Check for the facilities that must all be active.
+        #
+        for enmFacility in self.aenmWaitForActive:
+            try:
+                (enmStatus, _) = self.oIGuest.getFacilityStatus(enmFacility);
+            except:
+                reporter.errorXcpt('enmFacility=%s' % (enmFacility,));
+                return True;
+            if enmStatus != vboxcon.AdditionsFacilityStatus_Active:
+                reporter.log2('AdditionsStatusTask/poll: enmFacility=%s not active: %s' % (enmFacility, enmStatus,));
+                return False;
+
+        #
+        # Check for the facilities that must all be inactive or terminated.
+        #
+        for enmFacility in self.aenmWaitForInactive:
+            try:
+                (enmStatus, _) = self.oIGuest.getFacilityStatus(enmFacility);
+            except:
+                reporter.errorXcpt('enmFacility=%s' % (enmFacility,));
+                return True;
+            if enmStatus not in (vboxcon.AdditionsFacilityStatus_Inactive,
+                                 vboxcon.AdditionsFacilityStatus_Terminated):
+                reporter.log2('AdditionsStatusTask/poll: enmFacility=%s not inactive: %s' % (enmFacility, enmStatus,));
+                return False;
+
+
+        reporter.log('AdditionsStatusTask: Poll succeeded, signalling...');
+        self.fSucceeded = True;
+        return True;
+
+
+    #
+    # Task methods
+    #
+
+    def pollTask(self, fLocked = False):
+        """
+        Overridden pollTask method.
+        """
+        if not fLocked:
+            self.lockTask();
+
+        fDeregister = False;
+        fRc = self.fSignalled;
+        if not fRc:
+            fRc = self._poll();
+            if fRc or self.getAgeAsMs() >= self.cMsTimeout:
+                self.signalTaskLocked();
+                fDeregister = True;
+
+        if not fLocked:
+            self.unlockTask();
+
+        # If we're done, deregister the event callback (w/o owning lock).
+        if fDeregister:
+            self._deregisterEventHandler();
+        return fRc;
+
+    def getResult(self):
+        """
+        Returns true if the we succeeded.
+        Returns false if not.  If the task is signalled already, then we
+        encountered a problem while polling.
+        """
+        return self.fSucceeded;
+
+    def cancelTask(self):
+        """
+        Cancels the task.
+        Just to actively disengage the event handler.
+        """
+        self._deregisterEventHandler();
+        return True;
+

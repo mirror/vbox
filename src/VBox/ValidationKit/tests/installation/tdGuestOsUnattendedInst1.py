@@ -76,9 +76,102 @@ class UnattendedVm(vboxtestvms.BaseTestVm):
         self.iOptRamAdjust  = 0;
         self.fOptIoApic     = None;
         self.fOptPae        = None;
+        self.fOptInstallGAs = False;
         self.asOptExtraData = [];
         if fFlags & self.kfIdeIrqDelay:
             self.asOptExtraData = self.kasIdeIrqDelay;
+
+    def _unattendedConfigure(self, oIUnattended, oTestDrv): # type: (Any, vbox.TestDriver) -> bool
+        """
+        Configures the unattended install object.
+
+        The ISO attribute has been set and detectIsoOS has been done, the rest of the
+        setup is done here.
+
+        Returns True on success, False w/ errors logged on failure.
+        """
+
+        #
+        # Make it install the TXS.
+        #
+        try:    oIUnattended.installTestExecService = True;
+        except: return reporter.errorXcpt();
+        try:    oIUnattended.validationKitIsoPath   = oTestDrv.sVBoxValidationKitIso;
+        except: return reporter.errorXcpt();
+        oTestDrv.processPendingEvents();
+
+        #
+        # Install GAs?
+        #
+        if self.fOptInstallGAs:
+            try:    oIUnattended.installGuestAdditions = True;
+            except: return reporter.errorXcpt();
+            try:    oIUnattended.additionsIsoPath      = oTestDrv.getGuestAdditionsIso();
+            except: return reporter.errorXcpt();
+            oTestDrv.processPendingEvents();
+
+        return True;
+
+    def _unattendedDoIt(self, oIUnattended, oVM, oTestDrv): # type: (Any, Any, vbox.TestDriver) -> bool
+        """
+        Does the unattended installation preparing, media construction and VM reconfiguration.
+
+        Returns True on success, False w/ errors logged on failure.
+        """
+
+        # Associate oVM with the installer:
+        try:
+            oIUnattended.machine = oVM;
+        except:
+            return reporter.errorXcpt();
+        oTestDrv.processPendingEvents();
+
+        # Prepare and log it:
+        try:
+            oIUnattended.prepare();
+        except:
+            return reporter.errorXcpt("IUnattended.prepare failed");
+        oTestDrv.processPendingEvents();
+
+        reporter.log('IUnattended attributes after prepare():');
+        self._unattendedLogIt(oIUnattended, oTestDrv);
+
+        # Create media:
+        try:
+            oIUnattended.constructMedia();
+        except:
+            return reporter.errorXcpt("IUnattended.constructMedia failed");
+        oTestDrv.processPendingEvents();
+
+        # Reconfigure the VM:
+        try:
+            oIUnattended.reconfigureVM();
+        except:
+            return reporter.errorXcpt("IUnattended.reconfigureVM failed");
+        oTestDrv.processPendingEvents();
+
+        return True;
+
+    def _unattendedLogIt(self, oIUnattended, oTestDrv):
+        """
+        Logs the attributes of the unattended installation object.
+        """
+        fRc = True;
+        asAttribs = ( 'isoPath', 'user', 'password', 'fullUserName', 'productKey', 'additionsIsoPath', 'installGuestAdditions',
+                      'validationKitIsoPath', 'installTestExecService', 'timeZone', 'locale', 'language', 'country', 'proxy',
+                      'packageSelectionAdjustments', 'hostname', 'auxiliaryBasePath', 'imageIndex', 'machine',
+                      'scriptTemplatePath', 'postInstallScriptTemplatePath', 'postInstallCommand',
+                      'extraInstallKernelParameters', 'detectedOSTypeId', 'detectedOSVersion', 'detectedOSLanguages',
+                      'detectedOSFlavor', 'detectedOSHints', );
+        for sAttrib in asAttribs:
+            try:
+                oValue = getattr(oIUnattended, sAttrib);
+            except:
+                fRc = reporter.errorXcpt('sAttrib=%s' % sAttrib);
+            else:
+                reporter.log('%s: %s' % (sAttrib.rjust(32), oValue,));
+                oTestDrv.processPendingEvents();
+        return fRc;
 
 
     #
@@ -171,6 +264,13 @@ class UnattendedVm(vboxtestvms.BaseTestVm):
         # Done.
         return (fRc, oVM)
 
+    def isLoggedOntoDesktop(self):
+        #
+        # Normally all unattended installations should end up on the desktop.
+        # An exception is a minimal install, but we currently don't support that.
+        #
+        return True;
+
     #
     # Our methods.
     #
@@ -225,83 +325,6 @@ class UnattendedVm(vboxtestvms.BaseTestVm):
                                   % (self.sInstallIso, sDetectedOSTypeId, self.sKind));
 
         return True;
-
-    def _unattendedConfigure(self, oIUnattended, oTestDrv): # type: (Any, vbox.TestDriver) -> bool
-        """
-        Configures the unattended install object.
-
-        The ISO attribute has been set and detectIsoOS has been done, the rest of the
-        setup is done here.
-
-        Returns True on success, False w/ errors logged on failure.
-        """
-
-        #
-        # Make it install the TXS.
-        #
-        try:    oIUnattended.installTestExecService = True;
-        except: return reporter.errorXcpt();
-        try:    oIUnattended.validationKitIsoPath = oTestDrv.sVBoxValidationKitIso;
-        except: return reporter.errorXcpt();
-
-        return True;
-
-    def _unattendedDoIt(self, oIUnattended, oVM, oTestDrv): # type: (Any, Any, vbox.TestDriver) -> bool
-        """
-        Does the unattended installation preparing, media construction and VM reconfiguration.
-
-        Returns True on success, False w/ errors logged on failure.
-        """
-
-        # Associate oVM with the installer:
-        try:
-            oIUnattended.machine = oVM;
-        except:
-            return reporter.errorXcpt();
-        oTestDrv.processPendingEvents();
-
-        # Prepare:
-        try:
-            oIUnattended.prepare();
-        except:
-            return reporter.errorXcpt("IUnattended.prepare failed");
-        oTestDrv.processPendingEvents();
-
-        # Create media:
-        try:
-            oIUnattended.constructMedia();
-        except:
-            return reporter.errorXcpt("IUnattended.constructMedia failed");
-        oTestDrv.processPendingEvents();
-
-        # Reconfigure the VM:
-        try:
-            oIUnattended.reconfigureVM();
-        except:
-            return reporter.errorXcpt("IUnattended.reconfigureVM failed");
-        oTestDrv.processPendingEvents();
-
-        return True;
-
-    def _unattendedLogIt(self, oIUnattended):
-        """
-        Logs the attributes of the unattended installation object.
-        """
-        fRc = True;
-        asAttribs = ( 'isoPath', 'user', 'password ', 'fullUserName', 'productKey', 'additionsIsoPath', 'installGuestAdditions',
-                      'validationKitIsoPath', 'installTestExecService', 'timeZone', 'locale', 'language', 'country', 'proxy',
-                      'packageSelectionAdjustments', 'hostname', 'auxiliaryBasePath', 'imageIndex', 'machine',
-                      'scriptTemplatePath', 'postInstallScriptTemplatePath', 'postInstallCommand',
-                      'extraInstallKernelParameters', 'detectedOSTypeId', 'detectedOSVersion', 'detectedOSLanguages',
-                      'detectedOSFlavor', 'detectedOSHints', );
-        for sAttrib in asAttribs:
-            try:
-                oValue = getattr(oIUnattended, sAttrib);
-            except:
-                fRc = reporter.errorXcpt('sAttrib=%s' % sAttrib);
-            else:
-                reporter.log('%s: %s' % (sAttrib.rjust(32), oValue,));
-        return fRc;
 
 
 class tdGuestOsInstTest1(vbox.TestDriver):
@@ -440,6 +463,12 @@ class tdGuestOsInstTest1(vbox.TestDriver):
         elif asArgs[iArg] == '--no-pae':
             for oTestVm in self.aoSelectedVms:
                 oTestVm.fOptPae = False;
+        elif asArgs[iArg] == '--install-additions':
+            for oTestVm in self.aoSelectedVms:
+                oTestVm.fOptInstallGAs = True;
+        elif asArgs[iArg] == '--no-install-additions':
+            for oTestVm in self.aoSelectedVms:
+                oTestVm.fOptInstallGAs = False;
         else:
             return vbox.TestDriver.parseOption(self, asArgs, iArg);
         return iArg + 1;
@@ -455,30 +484,47 @@ class tdGuestOsInstTest1(vbox.TestDriver):
         """
         return self.oTestVmSet.actionExecute(self, self.testOneVmConfig)
 
-    def testOneVmConfig(self, oVM, oTestVm):
+    def testOneVmConfig(self, oVM, oTestVm): # type: (Any, UnattendedVm) -> bool
         """
         Install guest OS and wait for result
         """
 
         self.logVmInfo(oVM)
-        reporter.testStart('Installing %s' % (oTestVm.sVmName,))
+        reporter.testStart('Installing %s%s' % (oTestVm.sVmName, ' with GAs' if oTestVm.fOptInstallGAs else ''))
 
         cMsTimeout = 40*60000;
         if not reporter.isLocal(): ## @todo need to figure a better way of handling timeouts on the testboxes ...
             cMsTimeout = 180 * 60000; # will be adjusted down.
 
         oSession, _ = self.startVmAndConnectToTxsViaTcp(oTestVm.sVmName, fCdWait = False, cMsTimeout = cMsTimeout);
+        #oSession = self.startVmByName(oTestVm.sVmName); # (for quickly testing waitForGAs)
         if oSession is not None:
-            # The guest has connected to TXS, so we're done (for now anyways).
-            reporter.log('Guest reported success')
-            ## @todo Do save + restore.
+            # The guest has connected to TXS.
+            reporter.log('Guest reported success via TXS.');
+            #reporter.log('VM started...');              # (for quickly testing waitForGAs)
+
+            # If we're installing GAs, wait for them to come online:
+            fRc = True;
+            if oTestVm.fOptInstallGAs:
+                aenmRunLevels = [vboxcon.AdditionsRunLevelType_Userland,];
+                if oTestVm.isLoggedOntoDesktop():
+                    aenmRunLevels.append(vboxcon.AdditionsRunLevelType_Desktop);
+                fRc = self.waitForGAs(oSession, cMsTimeout = cMsTimeout / 2, aenmWaitForRunLevels = aenmRunLevels);
+
+            # Now do a save & restore test:
+            if fRc is True:
+                pass; ## @todo Do save + restore.
+
+            # Test GAs if requested:
+            if oTestVm.fOptInstallGAs and fRc is True:
+                pass;
 
             reporter.testDone()
-            fRc = self.terminateVmBySession(oSession)
+            fRc = self.terminateVmBySession(oSession) and fRc;
             return fRc is True
 
         reporter.error('Installation of %s has failed' % (oTestVm.sVmName,))
-        oTestVm.detatchAndDeleteHd(self); # Save space.
+        #oTestVm.detatchAndDeleteHd(self); # Save space.
         reporter.testDone()
         return False
 
