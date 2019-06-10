@@ -69,14 +69,6 @@
     <title>Description</title>
     <refsect2 id="vboxmanage-cloudinstance-info">
       <title>cloud instance info</title>
-      <cmdsynopsis>
-      <command moreinfo="none">VBoxManage cloud</command>
-      <arg choice="req" rep="norepeat">--provider=<replaceable>name</replaceable></arg>
-      <arg choice="req" rep="norepeat">--profile=<replaceable>name</replaceable></arg>
-      <arg choice="plain" rep="norepeat">instance</arg>
-      <arg choice="plain" rep="norepeat">info</arg>
-      <arg choice="req" rep="norepeat">--id=<replaceable>uuid</replaceable></arg>
-    </cmdsynopsis>
       <para>
         Display information about a cloud instance with a specified id
       </para>
@@ -89,14 +81,6 @@
 
     <refsect2 id="vboxmanage-cloudinstance-terminate">
       <title>cloud instance termination</title>
-      <cmdsynopsis>
-      <command moreinfo="none">VBoxManage cloud</command>
-      <arg choice="req" rep="norepeat">--provider=<replaceable>name</replaceable></arg>
-      <arg choice="req" rep="norepeat">--profile=<replaceable>name</replaceable></arg>
-      <arg choice="plain" rep="norepeat">instance</arg>
-      <arg choice="plain" rep="norepeat">terminate</arg>
-      <arg choice="req" rep="norepeat">--id=<replaceable>uuid</replaceable></arg>
-    </cmdsynopsis>
       <para>
         Delete a cloud instance with a specified id
       </para>
@@ -109,14 +93,6 @@
 
     <refsect2 id="vboxmanage-cloudinstance-start">
       <title>cloud instance start</title>
-      <cmdsynopsis>
-      <command moreinfo="none">VBoxManage cloud</command>
-      <arg choice="req" rep="norepeat">--provider=<replaceable>name</replaceable></arg>
-      <arg choice="req" rep="norepeat">--profile=<replaceable>name</replaceable></arg>
-      <arg choice="plain" rep="norepeat">instance</arg>
-      <arg choice="plain" rep="norepeat">start</arg>
-      <arg choice="req" rep="norepeat">--id=<replaceable>uuid</replaceable></arg>
-    </cmdsynopsis>
       <para>
         Start a cloud instance with a specified id
       </para>
@@ -129,14 +105,6 @@
 
     <refsect2 id="vboxmanage-cloudinstance-pause">
       <title>cloud instance pause</title>
-      <cmdsynopsis>
-      <command moreinfo="none">VBoxManage cloud</command>
-      <arg choice="req" rep="norepeat">--provider=<replaceable>name</replaceable></arg>
-      <arg choice="req" rep="norepeat">--profile=<replaceable>name</replaceable></arg>
-      <arg choice="plain" rep="norepeat">instance</arg>
-      <arg choice="plain" rep="norepeat">pause</arg>
-      <arg choice="req" rep="norepeat">--id=<replaceable>uuid</replaceable></arg>
-    </cmdsynopsis>
       <para>
         Pause a cloud instance with a specified id
       </para>
