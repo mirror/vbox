@@ -377,12 +377,15 @@ class ProgressWrapper(TdTaskBase):
         return sRet;
 
     def logResult(self, fIgnoreErrors = False):
-        """ Logs the result. """
+        """
+        Logs the result, failure logged as error unless fIgnoreErrors is True.
+        Return True on success, False on failure (and fIgnoreErrors is false).
+        """
         sText = self.stringifyResult();
-        if      self.isCompleted() and self.getResult() < 0 \
-            and fIgnoreErrors is False:
+        if self.isCompleted() and self.getResult() < 0 and fIgnoreErrors is False:
             return reporter.error(sText);
-        return reporter.log(sText);
+        reporter.log(sText);
+        return True;
 
     def waitOnProgress(self, cMsInterval = 1000):
         """
