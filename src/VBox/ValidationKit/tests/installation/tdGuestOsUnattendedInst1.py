@@ -49,6 +49,11 @@ from testdriver import reporter;
 from testdriver import vboxcon;
 from testdriver import vboxtestvms;
 
+# Sub-test driver imports.
+sys.path.append(os.path.join(g_ksValidationKitDir, 'tests', 'additions'));
+from tdAddGuestCtrl      import SubTstDrvAddGuestCtrl;
+from tdAddSharedFolders1 import SubTstDrvAddSharedFolders1;
+
 
 class UnattendedVm(vboxtestvms.BaseTestVm):
     """ Unattended Installation test VM. """
@@ -63,23 +68,20 @@ class UnattendedVm(vboxtestvms.BaseTestVm):
     ## IRQ delay extra data config for win2k VMs.
     kasIdeIrqDelay   = [ 'VBoxInternal/Devices/piix3ide/0/Config/IRQDelay:1', ];
 
-    ## Install ISO paths relative to the testrsrc root.
-    kasIosPathBases  = [ os.path.join('6.0', 'isos'), os.path.join('6.1', 'isos'), ];
-
     def __init__(self, oSet, sVmName, sKind, sInstallIso, fFlags = 0):
         vboxtestvms.BaseTestVm.__init__(self, sVmName, oSet = oSet, sKind = sKind,
                                         fRandomPvPModeCrap = False if (fFlags & self.kfNoWin81Paravirt) else True);
-        self.sInstallIso    = sInstallIso;
-        self.fInstVmFlags   = fFlags;
+        self.sInstallIso            = sInstallIso;
+        self.fInstVmFlags           = fFlags;
 
         # Adjustments over the defaults.
-        self.iOptRamAdjust  = 0;
-        self.fOptIoApic     = None;
-        self.fOptPae        = None;
-        self.fOptInstallGAs = False;
-        self.asOptExtraData = [];
+        self.iOptRamAdjust          = 0;
+        self.fOptIoApic             = None;
+        self.fOptPae                = None;
+        self.fOptInstallAdditions   = False;
+        self.asOptExtraData         = [];
         if fFlags & self.kfIdeIrqDelay:
-            self.asOptExtraData = self.kasIdeIrqDelay;
+            self.asOptExtraData     = self.kasIdeIrqDelay;
 
     def _unattendedConfigure(self, oIUnattended, oTestDrv): # type: (Any, vbox.TestDriver) -> bool
         """
@@ -103,7 +105,7 @@ class UnattendedVm(vboxtestvms.BaseTestVm):
         #
         # Install GAs?
         #
-        if self.fOptInstallGAs:
+        if self.fOptInstallAdditions:
             try:    oIUnattended.installGuestAdditions = True;
             except: return reporter.errorXcpt();
             try:    oIUnattended.additionsIsoPath      = oTestDrv.getGuestAdditionsIso();
@@ -178,6 +180,11 @@ class UnattendedVm(vboxtestvms.BaseTestVm):
     # Overriden methods.
     #
 
+    def getResourceSet(self):
+        if not os.path.isabs(self.sInstallIso):
+            return [self.sInstallIso,];
+        return [];
+
     def _createVmPost(self, oTestDrv, oVM, eNic0AttachType, sDvdImage):
         #
         # Adjust the ram, I/O APIC and stuff.
@@ -189,33 +196,30 @@ class UnattendedVm(vboxtestvms.BaseTestVm):
 
         fRc = True;
 
-        # Set proper boot order (needed?)
-        fRc = fRc and oSession.setBootOrder(1, vboxcon.DeviceType_HardDisk)
-        fRc = fRc and oSession.setBootOrder(2, vboxcon.DeviceType_DVD)
+        ## Set proper boot order - IUnattended::reconfigureVM does this, doesn't it?
+        #fRc = fRc and oSession.setBootOrder(1, vboxcon.DeviceType_HardDisk)
+        #fRc = fRc and oSession.setBootOrder(2, vboxcon.DeviceType_DVD)
 
         # Adjust memory if requested.
         if self.iOptRamAdjust != 0:
             try:    cMbRam = oSession.o.machine.memorySize;
-            except: fRc   = reporter.errorXcpt();
+            except: fRc    = reporter.errorXcpt();
             else:
-                fRc = fRc and oSession.setRamSize(cMbRam + self.iOptRamAdjust);
+                fRc = oSession.setRamSize(cMbRam + self.iOptRamAdjust) and fRc;
 
         # I/O APIC:
         if self.fOptIoApic is not None:
-            fRc = fRc and oSession.enableIoApic(self.fOptIoApic);
+            fRc = oSession.enableIoApic(self.fOptIoApic) and fRc;
 
         # I/O APIC:
         if self.fOptPae is not None:
-            fRc = fRc and oSession.enablePae(self.fOptPae);
+            fRc = oSession.enablePae(self.fOptPae) and fRc;
 
         # Set extra data
         for sExtraData in self.asOptExtraData:
-            try:
-                sKey, sValue = sExtraData.split(':')
-            except ValueError:
-                raise base.InvalidOption('Invalid extradata specified: %s' % sExtraData)
+            sKey, sValue = sExtraData.split(':');
             reporter.log('Set extradata: %s => %s' % (sKey, sValue))
-            fRc = fRc and oSession.setExtraData(sKey, sValue)
+            fRc = oSession.setExtraData(sKey, sValue) and fRc;
 
         # Save the settings.
         fRc = fRc and oSession.saveSettings()
@@ -270,6 +274,7 @@ class UnattendedVm(vboxtestvms.BaseTestVm):
         # An exception is a minimal install, but we currently don't support that.
         #
         return True;
+
 
     #
     # Our methods.
@@ -329,14 +334,20 @@ class UnattendedVm(vboxtestvms.BaseTestVm):
 
 class tdGuestOsInstTest1(vbox.TestDriver):
     """
-    Guest OS installation tests.
+    Unattended Guest OS installation tests using IUnattended.
 
     Scenario:
-        - Create new VM that corresponds specified installation ISO image.
-        - Create HDD that corresponds to OS type that will be installed.
-        - Boot VM from ISO image (i.e. install guest OS).
-        - Wait for incomming TCP connection (guest should initiate such a
-          connection in case installation has been completed successfully).
+        - Create a new VM with default settings using IMachine::applyDefaults.
+        - Setup unattended installation using IUnattended.
+        - Start the VM and do the installation.
+        - Wait for TXS to report for service.
+        - If installing GAs:
+            - Wait for GAs to report operational runlevel.
+        - Save & restore state.
+        - If installing GAs:
+            - Test guest properties (todo).
+            - Test guest controls.
+            - Test shared folders.
     """
 
 
@@ -348,12 +359,13 @@ class tdGuestOsInstTest1(vbox.TestDriver):
         self.fLegacyOptions = False;
         assert self.fEnableVrdp; # in parent driver.
 
+
         #
         # Our install test VM set.
         #
         oSet = vboxtestvms.TestVmSet(self.oTestVmManager, fIgnoreSkippedVm = True);
         oSet.aoTestVms.extend([
-            UnattendedVm(oSet, 'tst-w7-32', 'Windows7', 'en_windows_7_enterprise_x86_dvd_x15-70745.iso'),
+            UnattendedVm(oSet, 'tst-w7-32', 'Windows7', '6.0/uaisos/en_windows_7_enterprise_x86_dvd_x15-70745.iso'),
         ]);
         self.oTestVmSet = oSet;
 
@@ -362,6 +374,16 @@ class tdGuestOsInstTest1(vbox.TestDriver):
 
         # Number of VMs to test in parallel:
         self.cInParallel = 1;
+
+        # Whether to do the save-and-restore test.
+        self.fTestSaveAndRestore = True;
+
+        #
+        # Sub-test drivers.
+        #
+        self.addSubTestDriver(SubTstDrvAddSharedFolders1(self));
+        self.addSubTestDriver(SubTstDrvAddGuestCtrl(self));
+
 
     #
     # Overridden methods.
@@ -449,8 +471,11 @@ class tdGuestOsInstTest1(vbox.TestDriver):
                 oTestVm.iOptMaxCpus = int(asArgs[iArg]);
         elif asArgs[iArg] == '--set-extradata':
             iArg = self.requireMoreArgs(1, asArgs, iArg)
+            sExtraData = asArgs[iArg];
+            try:     _, _ = sExtraData.split(':');
+            except: raise base.InvalidOption('Invalid extradata specified: %s' % (sExtraData, ));
             for oTestVm in self.aoSelectedVms:
-                oTestVm.asOptExtraData.append(asArgs[iArg]);
+                oTestVm.asOptExtraData.append(sExtraData);
         elif asArgs[iArg] == '--ioapic':
             for oTestVm in self.aoSelectedVms:
                 oTestVm.fOptIoApic = True;
@@ -465,10 +490,10 @@ class tdGuestOsInstTest1(vbox.TestDriver):
                 oTestVm.fOptPae = False;
         elif asArgs[iArg] == '--install-additions':
             for oTestVm in self.aoSelectedVms:
-                oTestVm.fOptInstallGAs = True;
+                oTestVm.fOptInstallAdditions = True;
         elif asArgs[iArg] == '--no-install-additions':
             for oTestVm in self.aoSelectedVms:
-                oTestVm.fOptInstallGAs = False;
+                oTestVm.fOptInstallAdditions = False;
         else:
             return vbox.TestDriver.parseOption(self, asArgs, iArg);
         return iArg + 1;
@@ -490,43 +515,64 @@ class tdGuestOsInstTest1(vbox.TestDriver):
         """
 
         self.logVmInfo(oVM)
-        reporter.testStart('Installing %s%s' % (oTestVm.sVmName, ' with GAs' if oTestVm.fOptInstallGAs else ''))
+        reporter.testStart('Installing %s%s' % (oTestVm.sVmName, ' with GAs' if oTestVm.fOptInstallAdditions else ''))
 
         cMsTimeout = 40*60000;
         if not reporter.isLocal(): ## @todo need to figure a better way of handling timeouts on the testboxes ...
             cMsTimeout = 180 * 60000; # will be adjusted down.
 
-        oSession, _ = self.startVmAndConnectToTxsViaTcp(oTestVm.sVmName, fCdWait = False, cMsTimeout = cMsTimeout);
+        oSession, oTxsSession = self.startVmAndConnectToTxsViaTcp(oTestVm.sVmName, fCdWait = False, cMsTimeout = cMsTimeout);
         #oSession = self.startVmByName(oTestVm.sVmName); # (for quickly testing waitForGAs)
         if oSession is not None:
             # The guest has connected to TXS.
             reporter.log('Guest reported success via TXS.');
-            #reporter.log('VM started...');              # (for quickly testing waitForGAs)
+            reporter.testDone();
 
             # If we're installing GAs, wait for them to come online:
             fRc = True;
-            if oTestVm.fOptInstallGAs:
+            if oTestVm.fOptInstallAdditions:
+                reporter.testStart('Guest additions');
                 aenmRunLevels = [vboxcon.AdditionsRunLevelType_Userland,];
                 if oTestVm.isLoggedOntoDesktop():
                     aenmRunLevels.append(vboxcon.AdditionsRunLevelType_Desktop);
                 fRc = self.waitForGAs(oSession, cMsTimeout = cMsTimeout / 2, aenmWaitForRunLevels = aenmRunLevels);
+                reporter.testDone();
 
             # Now do a save & restore test:
-            if fRc is True:
-                pass; ## @todo Do save + restore.
+            if fRc is True and self.fTestSaveAndRestore:
+                fRc, oSession, oTxsSession = self.testSaveAndRestore(oSession, oTxsSession, oTestVm);
 
             # Test GAs if requested:
-            if oTestVm.fOptInstallGAs and fRc is True:
-                pass;
+            if oTestVm.fOptInstallAdditions and fRc is True:
+                for oSubTstDrv in self.aoSubTstDrvs:
+                    if oSubTstDrv.fEnabled:
+                        reporter.testStart(oSubTstDrv.sTestName);
+                        fRc2, oTxsSession = oSubTstDrv.testIt(oTestVm, oSession, oTxsSession);
+                        reporter.testDone(fRc2 is None);
+                        if fRc2 is False:
+                            fRc = False;
 
-            reporter.testDone()
-            fRc = self.terminateVmBySession(oSession) and fRc;
+            if oSession is not None:
+                fRc = self.terminateVmBySession(oSession) and fRc;
             return fRc is True
 
         reporter.error('Installation of %s has failed' % (oTestVm.sVmName,))
         #oTestVm.detatchAndDeleteHd(self); # Save space.
         reporter.testDone()
         return False
+
+    def testSaveAndRestore(self, oSession, oTxsSession, oTestVm):
+        """
+        Tests saving and restoring the VM.
+        """
+        _ = oTestVm;
+        reporter.testStart('Save');
+        ## @todo
+        reporter.testDone();
+        reporter.testStart('Restore');
+        ## @todo
+        reporter.testDone();
+        return (True, oSession, oTxsSession);
 
 if __name__ == '__main__':
     sys.exit(tdGuestOsInstTest1().main(sys.argv))

@@ -56,7 +56,7 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
     """
 
     def __init__(self, oTstDrv):
-        base.SubTestDriverBase.__init__(self, 'move-vm', oTstDrv)
+        base.SubTestDriverBase.__init__(self, oTstDrv, 'move-vm', 'Move VM');
 
         # Note! Hardcoded indexing in test code further down.
         self.asRsrcs = [
@@ -79,8 +79,10 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
         """
         Execute the sub-testcase.
         """
+        reporter.testStart(self.sTestName);
         reporter.log('ValidationKit folder is "%s"' % (g_ksValidationKitDir,))
-        return self.testVMMove()
+        fRc = self.testVMMove();
+        return reporter.testDone(fRc is None)[1] == 0;
 
     #
     # Test execution helpers.
@@ -561,8 +563,6 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
         """
         Test machine moving.
         """
-        reporter.testStart('machine moving')
-
         if not self.oTstDrv.importVBoxApi():
             return False
 
@@ -571,9 +571,8 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
 
         if fSupported is False:
             reporter.log('API version %s is too old. Just skip this test.' % (self.oTstDrv.fpApiVer))
-            return reporter.testDone()[1] == 0
-        else:
-            reporter.log('API version is "%s".' % (self.oTstDrv.fpApiVer))
+            return None;
+        reporter.log('API version is "%s".' % (self.oTstDrv.fpApiVer))
 
         # Scenarios
         # 1. All disks attached to VM are located outside the VM's folder.
@@ -637,10 +636,10 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
                 fRc = self.checkLocation(oSession.o.machine, dsReferenceFiles)
                 if fRc is False:
                     reporter.testFailure('!!!!!!!!!!!!!!!!!! 1st scenario: Check locations failed... !!!!!!!!!!!!!!!!!!')
-                    return reporter.testDone()[1] == 0
+                    return False;
             else:
                 reporter.testFailure('!!!!!!!!!!!!!!!!!! 1st scenario: Move VM failed... !!!!!!!!!!!!!!!!!!')
-                return reporter.testDone()[1] == 0
+                return False;
 
             fRc = oSession.saveSettings()
             if fRc is False:
@@ -659,7 +658,7 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
 
             fRc = self.__testScenario_2(oSession, oMachine, sNewLoc, sOldLoc)
             if fRc is False:
-                return reporter.testDone()[1] == 0
+                return False;
 
             #
             # 3. case:
@@ -673,7 +672,7 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
 
             fRc = self.__testScenario_3(oSession, oMachine, sNewLoc)
             if fRc is False:
-                return reporter.testDone()[1] == 0
+                return False;
 
             #
             # 4. case:
@@ -697,7 +696,7 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
 
             fRc = self.__testScenario_4(oMachine, sNewLoc)
             if fRc is False:
-                return reporter.testDone()[1] == 0
+                return False;
 
             #
             # 5. case:
@@ -711,7 +710,7 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
             os.mkdir(sNewLoc, 0o775)
             fRc = self.__testScenario_5(oMachine, sNewLoc, sOldLoc)
             if fRc is False:
-                return reporter.testDone()[1] == 0
+                return False;
 
             #
             # 6. case:
@@ -725,7 +724,7 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
             os.mkdir(sNewLoc, 0o775)
             fRc = self.__testScenario_6(oMachine, sNewLoc, sOldLoc)
             if fRc is False:
-                return reporter.testDone()[1] == 0
+                return False;
 
 #            #
 #            # 7. case:
@@ -742,7 +741,7 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
         except:
             reporter.errorXcpt()
 
-        return reporter.testDone()[1] == 0
+        return fRc;
 
 
 if __name__ == '__main__':

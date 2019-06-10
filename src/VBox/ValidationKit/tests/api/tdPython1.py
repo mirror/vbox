@@ -53,7 +53,7 @@ class SubTstDrvPython1(base.SubTestDriverBase):
     """
 
     def __init__(self, oTstDrv):
-        base.SubTestDriverBase.__init__(self, 'python-binding', oTstDrv)
+        base.SubTestDriverBase.__init__(self, oTstDrv, 'python-binding', 'Python bindings');
 
     def testIt(self):
         """

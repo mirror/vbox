@@ -53,7 +53,7 @@ class SubTstDrvMoveMedium1(base.SubTestDriverBase):
     """
 
     def __init__(self, oTstDrv):
-        base.SubTestDriverBase.__init__(self, 'move-medium', oTstDrv)
+        base.SubTestDriverBase.__init__(self, oTstDrv, 'move-medium', 'Move Medium');
 
     def testIt(self):
         """

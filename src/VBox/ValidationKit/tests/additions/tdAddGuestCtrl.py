@@ -943,7 +943,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
     """
 
     def __init__(self, oTstDrv):
-        base.SubTestDriverBase.__init__(self, 'add-guest-ctrl', oTstDrv);
+        base.SubTestDriverBase.__init__(self, oTstDrv, 'add-guest-ctrl', 'Guest Control');
 
         ## @todo base.TestBase.
         self.asTestsDef = \

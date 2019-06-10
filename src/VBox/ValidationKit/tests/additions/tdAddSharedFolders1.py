@@ -51,7 +51,7 @@ class SubTstDrvAddSharedFolders1(base.SubTestDriverBase):
     """
 
     def __init__(self, oTstDrv):
-        base.SubTestDriverBase.__init__(self, 'add-shared-folders', oTstDrv);
+        base.SubTestDriverBase.__init__(self, oTstDrv, 'add-shared-folders', 'Shared Folders');
 
         self.asTestsDef  = [ 'fsperf', ];
         self.asTests     = self.asTestsDef;

@@ -46,7 +46,7 @@ from testdriver import base;
 from testdriver import vbox;
 from testdriver import vboxcon;
 
-# Sub test driver imports.
+# Sub-test driver imports.
 sys.path.append(os.path.dirname(os.path.abspath(__file__))); # For sub-test drivers.
 from tdAddGuestCtrl import SubTstDrvAddGuestCtrl;
 from tdAddSharedFolders1 import SubTstDrvAddSharedFolders1;

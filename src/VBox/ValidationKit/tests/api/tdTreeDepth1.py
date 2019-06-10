@@ -52,7 +52,7 @@ class SubTstDrvTreeDepth1(base.SubTestDriverBase):
     """
 
     def __init__(self, oTstDrv):
-        base.SubTestDriverBase.__init__(self, 'tree-depth', oTstDrv)
+        base.SubTestDriverBase.__init__(self, oTstDrv, 'tree-depth', 'Media and Snapshot tree depths');
 
     def testIt(self):
         """

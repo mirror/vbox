@@ -52,15 +52,14 @@ class SubTstDrvCreateVMWithDefaults1(base.SubTestDriverBase):
     """
 
     def __init__(self, oTstDrv):
-        base.SubTestDriverBase.__init__(self, 'create-vm-with-defaults', oTstDrv)
-        self.asRsrcs = []
+        base.SubTestDriverBase.__init__(self, oTstDrv, 'create-vm-with-defaults', 'Create VMs with defaults');
 
     def testIt(self):
         """
         Execute the sub-testcase.
         """
         reporter.log('ValidationKit folder is "%s"' % (g_ksValidationKitDir,))
-        reporter.testStart('Create VMs with defaults');
+        reporter.testStart(self.sTestName);
         fRc = self.testCreateVMWithDefaults();
         reporter.testDone();
         return fRc;

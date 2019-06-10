@@ -53,7 +53,7 @@ class SubTstDrvAppliance1(base.SubTestDriverBase):
     """
 
     def __init__(self, oTstDrv):
-        base.SubTestDriverBase.__init__(self, 'appliance', oTstDrv);
+        base.SubTestDriverBase.__init__(self, oTstDrv, 'appliance', 'Applicance');
 
     def testIt(self):
         """

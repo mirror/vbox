@@ -740,10 +740,12 @@ class SubTestDriverBase(object):
     base class: options, help, resources, various other actions.
     """
 
-    def __init__(self, sName, oTstDrv):
-        self.sName              = sName;
-        self.oTstDrv            = oTstDrv   # type: TestDriverBase
-        self.asRsrcs            = [];
+    def __init__(self, oTstDrv, sName, sTestName):
+        self.oTstDrv            = oTstDrv       # type: TestDriverBase
+        self.sName              = sName;        # For use with options (--enable-sub-driver sName:sName2)
+        self.sTestName          = sTestName;    # More descriptive for passing to reporter.testStart().
+        self.asRsrcs            = []            # type: List(str)
+        self.fEnabled           = True;         # TestDriverBase --enable-sub-driver and --disable-sub-driver.
 
     def showUsage(self):
         """
@@ -752,7 +754,7 @@ class SubTestDriverBase(object):
         The default implementation only prints the name.
         """
         reporter.log('');
-        reporter.log('Options for sub-test driver %s:' % (self.sName,));
+        reporter.log('Options for sub-test driver %s (%s):' % (self.sTestName, self.sName,));
         return True;
 
     def parseOption(self, asArgs, iArg):
@@ -980,6 +982,16 @@ class TestDriverBase(object): # pylint: disable=R0902
                 assert iNext <= len(asArgs);
                 return iNext;
         return iArgs;
+
+    def findSubTstDrvByShortName(self, sShortName):
+        """
+        Locates a sub-test driver by it's short name.
+        Returns sub-test driver object reference if found, None if not.
+        """
+        for oSubTstDrv in self.aoSubTstDrvs:
+            if oSubTstDrv.sName == sShortName:
+                return oSubTstDrv;
+        return None;
 
 
     #
@@ -1319,6 +1331,11 @@ class TestDriverBase(object): # pylint: disable=R0902
         reporter.log('  --no-wipe-clean');
         reporter.log('      Do not wipe clean the scratch area during the two clean up');
         reporter.log('      actions.  This is for facilitating nested test driver execution.');
+        if self.aoSubTstDrvs:
+            reporter.log('  --enable-sub-driver <sub1>[:..]');
+            reporter.log('  --disable-sub-driver <sub1>[:..]');
+            reporter.log('     Enables or disables one or more of the sub drivers: %s'
+                         % (', '.join([oSubTstDrv.sName for oSubTstDrv in self.aoSubTstDrvs]),));
         return True;
 
     def parseOption(self, asArgs, iArg):
@@ -1347,6 +1364,14 @@ class TestDriverBase(object): # pylint: disable=R0902
             reporter.incDebug()
         elif asArgs[iArg] == '--no-wipe-clean':
             self.fNoWipeClean = True;
+        elif asArgs[iArg] in ('--enable-sub-driver', '--disable-sub-driver') and self.aoSubTstDrvs:
+            sOption = asArgs[iArg];
+            iArg = self.requireMoreArgs(1, asArgs, iArg);
+            for sSubTstDrvName in asArgs[iArg].split(':'):
+                oSubTstDrv = self.findSubTstDrvByShortName(sSubTstDrvName);
+                if oSubTstDrv is None:
+                    raise InvalidOption('Unknown sub-test driver given to %s: %s' % (sOption, sSubTstDrvName,));
+                oSubTstDrv.fEnabled = sOption == '--enable-sub-driver';
         elif (asArgs[iArg] == 'all' or asArgs[iArg] in self.asNormalActions) \
           and self.asActions in self.asSpecialActions:
             raise InvalidOption('selected special action "%s" already' % (self.asActions[0], ));
