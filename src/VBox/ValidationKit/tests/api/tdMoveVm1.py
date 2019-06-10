@@ -50,7 +50,7 @@ from testdriver import vboxwrappers
 from tdMoveMedium1 import SubTstDrvMoveMedium1; # pylint: disable=relative-import
 
 
-class SubTstDrvMoveVM1(base.SubTestDriverBase):
+class SubTstDrvMoveVm1(base.SubTestDriverBase):
     """
     Sub-test driver for VM Move Test #1.
     """
@@ -747,5 +747,5 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
 if __name__ == '__main__':
     sys.path.append(os.path.dirname(os.path.abspath(__file__)))
     from tdApi1 import tdApi1; # pylint: disable=relative-import
-    sys.exit(tdApi1([SubTstDrvMoveVM1]).main(sys.argv))
+    sys.exit(tdApi1([SubTstDrvMoveVm1]).main(sys.argv))
 
