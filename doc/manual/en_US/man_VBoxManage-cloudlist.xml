@@ -50,6 +50,7 @@
       <arg choice="req">--profile=<replaceable>name</replaceable></arg>
       <arg choice="plain">list</arg>
       <arg choice="plain">images</arg>
+      <arg>--state=<replaceable>string</replaceable></arg>
       <arg>--compartment-id=<replaceable>string</replaceable></arg>
     </cmdsynopsis>
   </refsynopsisdiv>
@@ -81,9 +82,9 @@
       </para>
       <variablelist>
         <varlistentry>
-          <term>--state=<replaceable>"run/pause/terminate"</replaceable></term>
+          <term>--state=<replaceable>"running/paused/terminated"</replaceable></term>
           <listitem>
-            <para>The state of cloud instance. The possible states are "run/pause/terminate" at moment.
+            <para>The state of cloud instance. The possible states are "running/paused/terminated" at moment.
             </para>
           </listitem>
         </varlistentry>
@@ -105,6 +106,13 @@
         Displays the list of the images for a specified compartment.
       </para>
       <variablelist>
+        <varlistentry>
+          <term>--state=<replaceable>"available/disabled/deleted"</replaceable></term>
+          <listitem>
+            <para>The state of cloud image. The possible states are "available/disabled/deleted" at moment.
+            </para>
+          </listitem>
+        </varlistentry>
         <varlistentry>
           <term><option>--compartment-id</option></term>
             <listitem>
