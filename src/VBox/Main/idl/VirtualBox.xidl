@@ -26033,6 +26033,11 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         Returns a form for editing the virtual system description for
         import from OCI.
       </desc>
+      <param name="virtualBox" type="IVirtualBox" dir="in">
+        <desc>
+          Reference to the server-side API root object.
+        </desc>
+      </param>
       <param name="description" type="IVirtualSystemDescription" dir="in">
         <desc>
           Virtual system description to be edited.

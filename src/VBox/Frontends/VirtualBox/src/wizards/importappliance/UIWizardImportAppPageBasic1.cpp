@@ -419,7 +419,7 @@ void UIWizardImportAppPage1::populateFormProperties()
 
             /* Read Cloud Client description form: */
             CVirtualSystemDescriptionForm comForm;
-            CProgress comImportDescriptionFormProgress = m_comCloudClient.GetImportDescriptionForm(comDescription, comForm);
+            CProgress comImportDescriptionFormProgress = m_comCloudClient.GetImportDescriptionForm(comVBox, comDescription, comForm);
             if (!m_comCloudClient.isOk())
             {
                 msgCenter().cannotAcquireCloudClientParameter(m_comCloudClient);
