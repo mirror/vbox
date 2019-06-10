@@ -6573,6 +6573,8 @@ IEM_STATIC int iemVmxVmentryCheckExecCtls(PVMCPU pVCpu, const char *pszInstr)
             IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_AddrMsrBitmap);
 
         /* Read the MSR bitmap. */
+        /** @todo NSTVMX: Move this to be done later (while loading guest state) when
+         *        implementing fast path. */
         Assert(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvMsrBitmap));
         int rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvMsrBitmap),
                                          GCPhysMsrBitmap, VMX_V_MSR_BITMAP_SIZE);
