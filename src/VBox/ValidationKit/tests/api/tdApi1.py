@@ -72,7 +72,8 @@ class tdApi1(vbox.TestDriver):
         """
         fRc = True;
         for oSubTstDrv in self.aoSubTstDrvs:
-            fRc &= oSubTstDrv.testIt();
+            if oSubTstDrv.fEnabled:
+                fRc = oSubTstDrv.testIt() and fRc;
         return fRc;
 
 
