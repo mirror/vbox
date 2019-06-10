@@ -140,11 +140,11 @@ static RTEXITCODE listCloudInstances(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT 
     com::SafeArray<CloudMachineState_T> machimeStates;
     if (strState.isNotEmpty())
     {
-        if (strState.equals("run"))
+        if (strState.equals("running"))
             machimeStates.push_back(CloudMachineState_Running);
-        else if (strState.equals("stop"))
+        else if (strState.equals("paused"))
             machimeStates.push_back(CloudMachineState_Stopped);
-        else if (strState.equals("terminate"))
+        else if (strState.equals("terminated"))
             machimeStates.push_back(CloudMachineState_Terminated);
     }
 
@@ -246,7 +246,8 @@ static RTEXITCODE listCloudImages(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pCo
 {
     static const RTGETOPTDEF s_aOptions[] =
     {
-        { "--compartment-id", 'c', RTGETOPT_REQ_STRING }
+        { "--compartment-id", 'c', RTGETOPT_REQ_STRING },
+        { "--state",          's', RTGETOPT_REQ_STRING }
     };
     RTGETOPTSTATE GetState;
     RTGETOPTUNION ValueUnion;
@@ -254,19 +255,34 @@ static RTEXITCODE listCloudImages(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pCo
     AssertRCReturn(vrc, RTEXITCODE_FAILURE);
 
     Utf8Str strCompartmentId;
+    Utf8Str strState;
     int c;
     while ((c = RTGetOpt(&GetState, &ValueUnion)) != 0)
     {
         switch (c)
         {
             case 'c':
-                    strCompartmentId = ValueUnion.psz;
+                strCompartmentId = ValueUnion.psz;
+                break;
+            case 's':
+                strState = ValueUnion.psz;
                 break;
             case VINF_GETOPT_NOT_OPTION:
                 return errorUnknownSubcommand(ValueUnion.psz);
             default:
                 return errorGetOpt(c, &ValueUnion);
         }
+    }
+
+    com::SafeArray<CloudImageState_T> imageStates;
+    if (strState.isNotEmpty())
+    {
+        if (strState.equals("available"))
+            imageStates.push_back(CloudImageState_Available);
+        else if (strState.equals("disabled"))
+            imageStates.push_back(CloudImageState_Disabled);
+        else if (strState.equals("deleted"))
+            imageStates.push_back(CloudImageState_Deleted);
     }
 
     HRESULT hrc = S_OK;
@@ -323,7 +339,7 @@ static RTEXITCODE listCloudImages(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pCo
     RTPrintf("Getting a list of available cloud images...\n");
     RTPrintf("Reply is in the form \'image name\' = \'image id\'\n");
     CHECK_ERROR2_RET(hrc, oCloudClient,
-                     ListImages(CloudImageState_Available,
+                     ListImages(ComSafeArrayAsInParam(imageStates),
                                 pVMNamesHolder.asOutParam(),
                                 pVMIdsHolder.asOutParam(),
                                 pProgress.asOutParam()),
@@ -338,7 +354,7 @@ static RTEXITCODE listCloudImages(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pCo
         pVMIdsHolder, COMGETTER(Values)(ComSafeArrayAsOutParam(arrayVMIds)),
             RTEXITCODE_FAILURE);
 
-    RTPrintf("List of available images for the cloud profile \'%ls\' \nand compartment \'%s\':\n",
+    RTPrintf("List of images for the cloud profile \'%ls\' \nand compartment \'%s\':\n",
              bstrProfileName.raw(), strCompartmentId.c_str());
     size_t cNames = arrayVMNames.size();
     size_t cIds = arrayVMIds.size();
