@@ -45,13 +45,14 @@ from testdriver import base
 from testdriver import reporter;
 from testdriver import vboxcon;
 
+
 class SubTstDrvCreateVMWithDefaults1(base.SubTestDriverBase):
     """
     Sub-test driver for VM Move Test #1.
     """
 
     def __init__(self, oTstDrv):
-        base.SubTestDriverBase.__init__(self, 'move-vm', oTstDrv)
+        base.SubTestDriverBase.__init__(self, 'create-vm-with-defaults', oTstDrv)
         self.asRsrcs = []
 
     def testIt(self):
@@ -59,7 +60,11 @@ class SubTstDrvCreateVMWithDefaults1(base.SubTestDriverBase):
         Execute the sub-testcase.
         """
         reporter.log('ValidationKit folder is "%s"' % (g_ksValidationKitDir,))
-        return self.testCreateVMWithDefaults()
+        reporter.testStart('Create VMs with defaults');
+        fRc = self.testCreateVMWithDefaults();
+        reporter.testDone();
+        return fRc;
+
 
     def createVMWithDefaults(self, sGuestType):
         sName = 'testvm_%s' % (sGuestType)
@@ -170,7 +175,6 @@ class SubTstDrvCreateVMWithDefaults1(base.SubTestDriverBase):
             return reporter.errorXcpt();
 
         # Create VMs with defaults for each of the guest types.
-        reporter.testStart('Create VMs with defaults');
         fRc = True
         for oGuestType in aoGuestTypes:
             try:
@@ -179,13 +183,12 @@ class SubTstDrvCreateVMWithDefaults1(base.SubTestDriverBase):
                 fRc = reporter.errorXcpt();
             else:
                 reporter.testStart(sGuestType);
-                fRc = self.createVMWithDefaults(sGuestType) & fRc;
+                fRc = self.createVMWithDefaults(sGuestType) and fRc;
                 reporter.testDone();
-        reporter.testDone();
-
         return fRc
 
 if __name__ == '__main__':
     sys.path.append(os.path.dirname(os.path.abspath(__file__)))
     from tdApi1 import tdApi1; # pylint: disable=relative-import
     sys.exit(tdApi1([SubTstDrvCreateVMWithDefaults1]).main(sys.argv))
+
