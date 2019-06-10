@@ -25985,7 +25985,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   -->
   <interface
     name="ICloudClient" extends="$unknown"
-    uuid="8c23252a-8987-11e9-ab57-0b93dbf90b1b"
+    uuid="3e5b1c4d-dcf8-401b-954f-39d5fdcf8d75"
     wsmap="managed" reservedMethods="13" reservedAttributes="8"
     >
 
@@ -26072,7 +26072,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <desc>
         Returns the list of the images in the Cloud.
       </desc>
-      <param name="imageState" type="CloudImageState" dir="in"/>
+      <param name="imageState" type="CloudImageState" dir="in" safearray="yes"/>
       <param name="returnNames" type="IStringArray" dir="out">
         <desc>Images names.</desc>
       </param>
