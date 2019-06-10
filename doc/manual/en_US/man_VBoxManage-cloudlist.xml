@@ -41,6 +41,7 @@
         <arg choice="req">--profile=<replaceable>name</replaceable></arg>
         <arg choice="plain">list</arg>
         <arg choice="plain">instances</arg>
+        <arg>--state=<replaceable>string</replaceable></arg>
         <arg>--compartment-id=<replaceable>string</replaceable></arg>
     </cmdsynopsis>
     <cmdsynopsis id="synopsis-vboxmanage-cloudlist-images">
@@ -80,12 +81,19 @@
       </para>
       <variablelist>
         <varlistentry>
+          <term>--state=<replaceable>"run/pause/terminate"</replaceable></term>
+          <listitem>
+            <para>The state of cloud instance. The possible states are "run/pause/terminate" at moment.
+            </para>
+          </listitem>
+        </varlistentry>
+        <varlistentry>
           <term><option>--compartment-id</option></term>
-            <listitem>
-              <para>A compartment is the logical container used to organize and isolate cloud resources.
-              The different cloud providers can have the different names for this entity.
-              </para>
-            </listitem>
+          <listitem>
+            <para>A compartment is the logical container used to organize and isolate cloud resources.
+            The different cloud providers can have the different names for this entity.
+            </para>
+          </listitem>
         </varlistentry>
       </variablelist>
     </refsect2>
