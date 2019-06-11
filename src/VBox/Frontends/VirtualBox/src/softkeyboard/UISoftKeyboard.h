@@ -34,13 +34,12 @@
 #include "QIWithRetranslateUI.h"
 
 /* Forward declarations: */
-class UISession;
-class UISoftKeyboardKey;
 class QHBoxLayout;
 class QVBoxLayout;
 class UISoftKeyboardWidget;
-class UIToolBar;
-
+class QToolButton;
+class UISession;
+class UISoftKeyboardKey;
 
 class UISoftKeyboard : public QIWithRetranslateUI<QMainWindow>
 {
@@ -55,26 +54,31 @@ public:
 protected:
 
     virtual void retranslateUi() /* override */;
+    bool eventFilter(QObject *pWatched, QEvent *pEvent)/* override */;
 
 private slots:
 
     void sltHandleKeyboardLedsChange();
     void sltHandlePutKeyboardSequence(QVector<LONG> sequence);
-
+    void sltHandleLayoutChange(const QString &strLayoutName);
+    void sltHandleKeyCapFileChange(const QString &strKeyCapFileName);
+    void sltHandleStatusBarContextMenuRequest(const QPoint &point);
 private:
 
     void prepareObjects();
     void prepareConnections();
-    void prepareToolBar();
     void saveSettings();
     void loadSettings();
-    void createKeyboard();
+    void updateStatusBarMessage();
     CKeyboard& keyboard() const;
 
     UISession     *m_pSession;
     QHBoxLayout   *m_pMainLayout;
     UISoftKeyboardWidget       *m_pContainerWidget;
     QString       m_strMachineName;
+    QString       m_strLayoutName;
+    QString       m_strKeyCapFileName;
+    QToolButton   *m_pSettingsButton;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_softkeyboard_UISoftKeyboard_h */
