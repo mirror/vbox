@@ -1964,6 +1964,7 @@ VBOX_PYLINT_FLAGS = $(if-expr $(VBOX_PYLINT_VERSION) >= 10500,--reports=n,--repo
        $(if-expr $(VBOX_PYLINT_VERSION) >= 10201 && $(VBOX_PYLIN_VERSION) < 10500,--disable=bad-option-value,) \
        $(if-expr $(VBOX_PYLINT_VERSION) >= 10500,--disable=wrong-import-position --disable=E0012 --disable=locally-enabled,) \
        $(if-expr $(VBOX_PYLINT_VERSION) >= 10600,--disable=missing-docstring --disable=trailing-newlines --disable=ungrouped-imports,) \
+       $(if-expr $(VBOX_PYLINT_VERSION) >= 10800,--disable=redundant-keyword-arg,) \
        $(if-expr $(VBOX_PYLINT_VERSION) >= 20000,--disable=useless-object-inheritance --disable=useless-return,) \
 	--disable=unnecessary-semicolon,invalid-encoded-data,global-statement,bare-except,broad-except,multiple-statements,no-self-use,fixme \
 	--disable=I0011 \
