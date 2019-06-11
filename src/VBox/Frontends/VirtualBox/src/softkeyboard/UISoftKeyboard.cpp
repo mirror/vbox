@@ -66,6 +66,41 @@ enum UIKeyType
 };
 
 /*********************************************************************************************************************************
+*   UISoftKeyEditor definition.                                                                                  *
+*********************************************************************************************************************************/
+
+class UISoftKeyEditor : public QIWithRetranslateUI<QMainWindow>
+{
+    Q_OBJECT;
+
+public:
+
+    UISoftKeyEditor(QWidget *pParent = 0);
+
+protected:
+
+    virtual void retranslateUi() /* override */;
+
+private:
+
+    void prepareObjects();
+    void prepareConnections();
+
+    QGridLayout *m_pEditorLayout;
+
+    QLabel *m_pBaseCaptionLabel;
+    QLabel *m_pShiftCaptionLabel;
+    QLabel *m_pAltGrCaptionLabel;
+
+    QLineEdit *m_pBaseCaptionEdit;
+    QLineEdit *m_pShiftCaptionEdit;
+    QLineEdit *m_pAltGrCaptionEdit;
+
+    QPushButton *m_pOkButton;
+    QPushButton *m_pCancelButton;
+};
+
+/*********************************************************************************************************************************
 *   UISoftKeyboardRow definition.                                                                                  *
 *********************************************************************************************************************************/
 
@@ -195,6 +230,12 @@ private:
 class UISoftKeyboardWidget : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
+    enum Mode
+    {
+        Mode_KeyCapEdit,
+        Mode_Keyboard,
+        Mode_Max
+    };
 
 signals:
 
@@ -226,11 +267,10 @@ private slots:
 
     void sltHandleContextMenuRequest(const QPoint &point);
     void sltHandleLoadLayout(QAction *pSenderAction);
-    void sltHandleKeyCapEdit();
     void sltHandleSaveKeyCapFile();
     void sltHandleLoadKeyCapFile();
     void sltHandleUnloadKeyCaps();
-    void sltHandleKepCApEditModeToggle(bool fToggle);
+    void sltHandleKepCapEditModeToggle(bool fToggle);
 
 private:
 
@@ -277,8 +317,9 @@ private:
     QAction *m_pShowPositionsAction;
     QAction *m_pLoadLayoutFileAction;
     QAction *m_pLastSelectedLayout;
-    QAction *m_pChangeKeyCapAction;
+    QAction *m_pKeyCapEditModeToggleAction;
     QLineEdit *m_pKeyCapEditor;
+    Mode       m_enmMode;
 };
 
 /*********************************************************************************************************************************
@@ -325,6 +366,62 @@ private:
     /** Keys are positions and values are keycaps. */
     QMap<int, QString> m_keyCapMap;
 };
+
+/*********************************************************************************************************************************
+*   UISoftKeyEditor implementation.                                                                                  *
+*********************************************************************************************************************************/
+
+UISoftKeyEditor::UISoftKeyEditor(QWidget *pParent /* = 0 */)
+    :QIWithRetranslateUI<QMainWindow>(pParent)
+    , m_pEditorLayout(0)
+    , m_pBaseCaptionLabel(0)
+    , m_pShiftCaptionLabel(0)
+    , m_pAltGrCaptionLabel(0)
+    , m_pBaseCaptionEdit(0)
+    , m_pShiftCaptionEdit(0)
+    , m_pAltGrCaptionEdit(0)
+    , m_pOkButton(0)
+    , m_pCancelButton(0)
+{
+    prepareObjects();
+}
+
+void UISoftKeyEditor::retranslateUi()
+{
+    if (m_pBaseCaptionLabel)
+        m_pBaseCaptionLabel->setText(UISoftKeyboard::tr("Base Caption"));
+
+
+    if (m_pShiftCaptionLabel)
+        m_pShiftCaptionLabel->setText(UISoftKeyboard::tr("Shift Caption"));
+
+    if (m_pAltGrCaptionLabel)
+        m_pAltGrCaptionLabel->setText(UISoftKeyboard::tr("AltGr Caption"));
+}
+
+void UISoftKeyEditor::prepareObjects()
+{
+    m_pEditorLayout = new QGridLayout;
+
+    if (!m_pEditorLayout)
+        return;
+
+    m_pBaseCaptionLabel = new QLabel;
+    m_pBaseCaptionEdit = new QLineEdit;
+    m_pBaseCaptionLabel->setBuddy(m_pBaseCaptionEdit);
+
+    m_pShiftCaptionLabel = new QLabel;
+    m_pShiftCaptionEdit = new QLineEdit;
+    m_pShiftCaptionLabel->setBuddy(m_pShiftCaptionEdit);
+
+    m_pAltGrCaptionLabel = new QLabel;
+    m_pAltGrCaptionEdit = new QLineEdit;
+    m_pAltGrCaptionLabel->setBuddy(m_pAltGrCaptionEdit);
+
+    setLayout(m_pEditorLayout);
+
+    retranslateUi();
+}
 
 /*********************************************************************************************************************************
 *   UISoftKeyboardRow implementation.                                                                                  *
@@ -623,7 +720,8 @@ UISoftKeyboardWidget::UISoftKeyboardWidget(QWidget *pParent /* = 0 */)
     , m_pShowPositionsAction(0)
     , m_pLoadLayoutFileAction(0)
     , m_pLastSelectedLayout(0)
-    , m_pChangeKeyCapAction(0)
+    , m_pKeyCapEditModeToggleAction(0)
+    , m_enmMode(Mode_Keyboard)
 {
 
     configure();
@@ -673,13 +771,13 @@ void UISoftKeyboardWidget::paintEvent(QPaintEvent *pEvent) /* override */
             else
                 painter.setBrush(QBrush(m_keyDefaultColor));
 
-            if (&key == m_pKeyBeingEdited)
+            if (m_enmMode == Mode_KeyCapEdit && &key == m_pKeyBeingEdited)
             {
                 m_pKeyCapEditor->setFont(painterFont);
                 m_pKeyCapEditor->setGeometry(m_fScaleFactorX * key.keyGeometry().x(), m_fScaleFactorY * key.keyGeometry().y(),
                                              m_fScaleFactorX * key.keyGeometry().width(), m_fScaleFactorY * key.keyGeometry().height());
                 m_pKeyCapEditor->show();
-
+                m_pKeyCapEditor->setFocus();
             }
 
             if (&key  == m_pKeyPressed)
@@ -724,7 +822,20 @@ void UISoftKeyboardWidget::mousePressEvent(QMouseEvent *pEvent)
     if (pEvent->button() != Qt::LeftButton)
         return;
     m_pKeyPressed = keyUnderMouse(pEvent);
-    handleKeyPress(m_pKeyPressed);
+
+    if (m_enmMode == Mode_Keyboard)
+        handleKeyPress(m_pKeyPressed);
+    else if (m_enmMode == Mode_KeyCapEdit)
+    {
+        /* If the editor is shown already for another key clicking away accepts the entered text: */
+        if (m_pKeyBeingEdited && m_pKeyBeingEdited != m_pKeyUnderMouse)
+        {
+            printf("farkli %p\n", m_pKeyBeingEdited);
+        }
+        m_pKeyBeingEdited = m_pKeyUnderMouse;
+        if (m_pKeyBeingEdited && m_pKeyCapEditor)
+            m_pKeyCapEditor->setText(m_pKeyBeingEdited->keyCap());
+    }
     update();
 }
 
@@ -735,9 +846,12 @@ void UISoftKeyboardWidget::mouseReleaseEvent(QMouseEvent *pEvent)
         return;
     if (!m_pKeyPressed)
         return;
-    handleKeyRelease(m_pKeyPressed);
-    m_pKeyPressed = 0;
+
+    if (m_enmMode == Mode_Keyboard)
+        handleKeyRelease(m_pKeyPressed);
+
     update();
+    m_pKeyPressed = 0;
 }
 
 void UISoftKeyboardWidget::mouseMoveEvent(QMouseEvent *pEvent)
@@ -825,13 +939,6 @@ void UISoftKeyboardWidget::sltHandleLoadLayout(QAction *pSenderAction)
     }
 }
 
-void UISoftKeyboardWidget::sltHandleKeyCapEdit()
-{
-    m_pKeyBeingEdited = m_pKeyUnderMouse;
-    if (m_pKeyBeingEdited && m_pKeyCapEditor)
-        m_pKeyCapEditor->setText(m_pKeyBeingEdited->keyCap());
-}
-
 void UISoftKeyboardWidget::sltHandleSaveKeyCapFile()
 {
     QString strFileName = QIFileDialog::getSaveFileName(vboxGlobal().documentsPath(), UISoftKeyboard::tr("XML files (*.xml)"),
@@ -908,9 +1015,12 @@ void UISoftKeyboardWidget::sltHandleUnloadKeyCaps()
     emit sigKeyCapChange(QString());
 }
 
-void UISoftKeyboardWidget::sltHandleKepCApEditModeToggle(bool fToggle)
+void UISoftKeyboardWidget::sltHandleKepCapEditModeToggle(bool fToggle)
 {
-    Q_UNUSED(fToggle);
+    if (fToggle)
+        m_enmMode = Mode_KeyCapEdit;
+    else
+        m_enmMode = Mode_Keyboard;
 }
 
 void UISoftKeyboardWidget::setNewMinimumSize(const QSize &size)
@@ -1018,7 +1128,6 @@ void UISoftKeyboardWidget::loadDefaultLayout()
 
 void UISoftKeyboardWidget::showContextMenu(const QPoint &globalPoint)
 {
-    m_pChangeKeyCapAction->setEnabled(m_pKeyUnderMouse && !m_pShowPositionsAction->isChecked());
     m_pContextMenu->exec(globalPoint);
     update();
 }
@@ -1124,7 +1233,6 @@ void UISoftKeyboardWidget::prepareObjects()
     }
     m_pContextMenu = new QMenu(this);
     /* Layout menu: */
-    QMenu *pLayoutMenu = m_pContextMenu->addMenu(UISoftKeyboard::tr("Load Layout"));
     m_pLayoutActionGroup = new QActionGroup(this);
     m_pLayoutActionGroup->setExclusive(true);
     connect(m_pLayoutActionGroup, &QActionGroup::triggered, this, &UISoftKeyboardWidget::sltHandleLoadLayout);
@@ -1138,26 +1246,25 @@ void UISoftKeyboardWidget::prepareObjects()
     }
     m_pLoadLayoutFileAction = m_pLayoutActionGroup->addAction(UISoftKeyboard::tr("Load Layout File..."));
     m_pLoadLayoutFileAction->setCheckable(true);
-    pLayoutMenu->addActions(m_pLayoutActionGroup->actions());
+    m_pContextMenu->addActions(m_pLayoutActionGroup->actions());
 
     /* Keycaps menu: */
-    QMenu *pKeycapsMenu = m_pContextMenu->addMenu(UISoftKeyboard::tr("Keycaps"));
-    QAction *pKeyCapEditModeToggleAction = pKeycapsMenu->addAction(UISoftKeyboard::tr("Key captions editing mode"));
-    connect(pKeyCapEditModeToggleAction, &QAction::toggled, this, &UISoftKeyboardWidget::sltHandleKepCApEditModeToggle);
-    pKeyCapEditModeToggleAction->setCheckable(true);
-    pKeyCapEditModeToggleAction->setChecked(false);
+    m_pKeyCapEditModeToggleAction = m_pContextMenu->addAction(UISoftKeyboard::tr("Key captions editing mode"));
+    connect(m_pKeyCapEditModeToggleAction, &QAction::toggled, this, &UISoftKeyboardWidget::sltHandleKepCapEditModeToggle);
+    m_pKeyCapEditModeToggleAction->setCheckable(true);
+    m_pKeyCapEditModeToggleAction->setChecked(false);
 
-    m_pShowPositionsAction = pKeycapsMenu->addAction(UISoftKeyboard::tr("Show key positions instead of key caps"));
+#ifdef DEBUG
+    m_pShowPositionsAction = m_pContextMenu->addAction(UISoftKeyboard::tr("Show key positions instead of key caps"));
     m_pShowPositionsAction->setCheckable(true);
     m_pShowPositionsAction->setChecked(false);
+#endif
 
-    m_pChangeKeyCapAction = pKeycapsMenu->addAction(UISoftKeyboard::tr("Add/change key cap"));
-    connect(m_pChangeKeyCapAction, &QAction::triggered, this, &UISoftKeyboardWidget::sltHandleKeyCapEdit);
-    QAction *pSaveKeyCapFile = pKeycapsMenu->addAction(UISoftKeyboard::tr("Save key caps to file..."));
+    QAction *pSaveKeyCapFile = m_pContextMenu->addAction(UISoftKeyboard::tr("Save key caps to file..."));
     connect(pSaveKeyCapFile, &QAction::triggered, this, &UISoftKeyboardWidget::sltHandleSaveKeyCapFile);
-    QAction *pLoadKeyCapFile = pKeycapsMenu->addAction(UISoftKeyboard::tr("Load key caps from file..."));
+    QAction *pLoadKeyCapFile = m_pContextMenu->addAction(UISoftKeyboard::tr("Load key caps from file..."));
     connect(pLoadKeyCapFile, &QAction::triggered, this, &UISoftKeyboardWidget::sltHandleLoadKeyCapFile);
-    QAction *pUnloadKeyCaps = pKeycapsMenu->addAction(UISoftKeyboard::tr("Unload key caps"));
+    QAction *pUnloadKeyCaps = m_pContextMenu->addAction(UISoftKeyboard::tr("Unload key caps"));
     connect(pUnloadKeyCaps, &QAction::triggered, this, &UISoftKeyboardWidget::sltHandleUnloadKeyCaps);
 }
 
@@ -1165,7 +1272,7 @@ void UISoftKeyboardWidget::enableDisableKeyCapEditMode(bool fEnable)
 {
     if (m_fInKeyCapEditMode == fEnable)
         return;
-
+    m_enmMode = Mode_KeyCapEdit;
 }
 
 /*********************************************************************************************************************************
@@ -1477,6 +1584,8 @@ UISoftKeyboard::~UISoftKeyboard()
 
 void UISoftKeyboard::retranslateUi()
 {
+    if (m_pSettingsButton)
+        m_pSettingsButton->setToolTip(tr("Settings Menu"));
 }
 
 bool UISoftKeyboard::eventFilter(QObject *pWatched, QEvent *pEvent)
@@ -1546,14 +1655,28 @@ void UISoftKeyboard::prepareObjects()
     connect(statusBar(), &QStatusBar::customContextMenuRequested,
             this, &UISoftKeyboard::sltHandleStatusBarContextMenuRequest);
 
+    statusBar()->setStyleSheet( "QStatusBar::item { border: 0px}" );
+    // QWidget *pStatusBarWidget = new QWidget;
+    // QHBoxLayout *pStatusBarLayout = new QHBoxLayout(pStatusBarWidget);
+    // pStatusBarLayout->setSpacing(0);
+    // pStatusBarLayout->setContentsMargins(0, 0, 0, 0);
+
     m_pSettingsButton = new QToolButton;
-    m_pSettingsButton->setIcon(UIIconPool::iconSet(":/vm_settings_16px.png"));
+    m_pSettingsButton->setIcon(UIIconPool::iconSet(":/keyboard_settings_16px.png"));
     m_pSettingsButton->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
     const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
     m_pSettingsButton->resize(QSize(iIconMetric, iIconMetric));
     m_pSettingsButton->setStyleSheet("QToolButton { border: 0px none black; margin: 0px 0px 0px 0px; } QToolButton::menu-indicator {image: none;}");
     statusBar()->addPermanentWidget(m_pSettingsButton);
 
+    QToolButton *pButton = new QToolButton;
+    pButton->setIcon(UIIconPool::iconSet(":/hd_modify_16px.png"));
+    pButton->setStyleSheet("QToolButton { border: 0px none black; margin: 0px 0px 0px 0px; } QToolButton::menu-indicator {image: none;}");
+    statusBar()->addPermanentWidget(pButton);
+
+
+
+    retranslateUi();
 }
 
 void UISoftKeyboard::prepareConnections()

@@ -63,6 +63,7 @@ private slots:
     void sltHandleLayoutChange(const QString &strLayoutName);
     void sltHandleKeyCapFileChange(const QString &strKeyCapFileName);
     void sltHandleStatusBarContextMenuRequest(const QPoint &point);
+
 private:
 
     void prepareObjects();
