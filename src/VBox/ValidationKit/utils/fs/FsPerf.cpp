@@ -2385,7 +2385,9 @@ void fsPerfNtQueryInfoFileWorker(HANDLE hNtFile1, uint32_t fType)
         {
             if (!g_aNtQueryInfoFileClasses[i].fQuery)
             {
-                if (rcNt != STATUS_INVALID_INFO_CLASS)
+                if (   rcNt != STATUS_INVALID_INFO_CLASS
+                    && (   rcNt != STATUS_INVALID_PARAMETER /* w7rtm-32 result */
+                        || enmClass != FileUnusedInformation))
                     RTTestIFailed("%s/%#x/%c: %#x, expected STATUS_INVALID_INFO_CLASS", pszClass, cbBuf, chType, rcNt);
             }
             else if (   rcNt != STATUS_INVALID_INFO_CLASS
