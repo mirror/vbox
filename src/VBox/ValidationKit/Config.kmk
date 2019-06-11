@@ -174,7 +174,7 @@ BLDDIRS += $(PATH_TARGET)/pylint $(PATH_TARGET)/pyunittest
 define def_vbox_validationkit_py_check
 $(eval name:=$(basename $(notdir $(py))))
 
-pylint::   $(name)-py-phony.o
+pylint:   $(name)-py-phony.o
 $(name).o: $(name)-py-phony.o
 $(PATH_TARGET)/pylint/$(name).o $(name)-py-phony.o:: $(py) | $(PATH_TARGET)/pylint/
 ifdef VBOX_WITH_PYLINT
@@ -185,7 +185,7 @@ endif
 	$(QUIET)$(APPEND) -t "$(PATH_TARGET)/pylint/$(name).o"
 
 ifn1of ($(py),$(VBOX_VALIDATIONKIT_PYUNITTEST_EXCLUDE))
-pyunittest:: $(name)-pyunittest.o
+pyunittest: $(name)-pyunittest.o
 $(PATH_TARGET)/pyunittest/$(name).o $(name)-pyunittest.o:: $(py) | $(PATH_TARGET)/pyunittest/
 	$(QUIET2)$(call MSG_L1,Unittesting Python source $(py)...)
 	$(QUIET)$(REDIRECT) -E LC_ALL=C -E PYTHONPATH="$(VBOX_PYTHONPATH_VALIDATIONKIT)" -C $(dir $(py)) \

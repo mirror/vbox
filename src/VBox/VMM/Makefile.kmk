@@ -935,7 +935,7 @@ BLDDIRS += $(PATH_TARGET)/pylint
 define def_vbox_vmm_py_check
 $(eval name:=$(basename $(notdir $(py))))
 
-pylint::   $(name)-py-phony.o
+pylint:    $(name)-py-phony.o
 $(name).o: $(name)-py-phony.o
 $(PATH_TARGET)/pylint/$(name).o $(name)-py-phony.o:: $(py) | $(PATH_TARGET)/pylint/
 ifdef VBOX_WITH_PYLINT
