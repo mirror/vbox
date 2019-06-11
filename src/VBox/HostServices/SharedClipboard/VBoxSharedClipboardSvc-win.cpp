@@ -583,6 +583,8 @@ static int vboxClipboardWinSyncInternal(PVBOXCLIPBOARDCONTEXT pCtx)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
 
+    LogFlowFuncEnter();
+
     int rc;
 
     if (pCtx->pClientData)

@@ -377,6 +377,9 @@ protected:
     uint64_t                            m_cbTotal;
 };
 
+int SharedClipboardDataHeaderInit(PVBOXCLIPBOARDDATAHDR pDataHdr);
+void SharedClipboardDataHeaderDestroy(PVBOXCLIPBOARDDATAHDR pDataHdr);
+
 /**
  * Structure for keeping Shared Clipboard meta data.
  *

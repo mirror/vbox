@@ -22,6 +22,8 @@
 #include <iprt/thread.h>
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+# include <iprt/win/windows.h>
+# include <iprt/win/shlobj.h> /* For CFSTR_FILEDESCRIPTORXXX + CFSTR_FILECONTENTS. */
 # include <iprt/utf16.h>
 #endif
 
@@ -305,8 +307,10 @@ VBOXCLIPBOARDFORMAT VBoxClipboardWinClipboardFormatToVBox(UINT uFormat)
             break;
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
-        /* Handles file system entries which are locally present
-         * on source for transferring to the target. */
+        /* CF_HDROP handles file system entries which are locally present
+         * on source for transferring to the target.
+         *
+         * This does *not* invoke any IDataObject / IStream implementations! */
         case CF_HDROP:
             vboxFormat = VBOX_SHARED_CLIPBOARD_FMT_URI_LIST;
             break;
@@ -323,6 +327,13 @@ VBOXCLIPBOARDFORMAT VBoxClipboardWinClipboardFormatToVBox(UINT uFormat)
 
                     if (RTStrCmp(szFormatName, VBOX_CLIPBOARD_WIN_REGFMT_HTML) == 0)
                         vboxFormat = VBOX_SHARED_CLIPBOARD_FMT_HTML;
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+                    /* These types invoke our IDataObject / IStream implementations. */
+                    else if (   (RTStrCmp(szFormatName, CFSTR_FILEDESCRIPTORA) == 0)
+                             || (RTStrCmp(szFormatName, CFSTR_FILECONTENTS)    == 0))
+                        vboxFormat = VBOX_SHARED_CLIPBOARD_FMT_URI_LIST;
+                    /** @todo Do we need to handle CFSTR_FILEDESCRIPTORW here as well? */
+#endif
                 }
             }
             break;

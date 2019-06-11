@@ -8253,20 +8253,20 @@ HRESULT Console::i_powerDown(IProgress *aProgress /*= NULL*/)
         /* Leave the lock since EMT might wait for it and will call us back as addVMCaller() */
         alock.release();
 
-#ifdef VBOX_WITH_SHARED_CLIPBOARD
+# ifdef VBOX_WITH_SHARED_CLIPBOARD
         if (m_hHgcmSvcExtShrdClipboard)
         {
             HGCMHostUnregisterServiceExtension(m_hHgcmSvcExtShrdClipboard);
             m_hHgcmSvcExtShrdClipboard = NULL;
         }
-#endif
-#ifdef VBOX_WITH_DRAG_AND_DROP
+# endif
+# ifdef VBOX_WITH_DRAG_AND_DROP
         if (m_hHgcmSvcExtDragAndDrop)
         {
             HGCMHostUnregisterServiceExtension(m_hHgcmSvcExtDragAndDrop);
             m_hHgcmSvcExtDragAndDrop = NULL;
         }
-#endif
+# endif
 
         m_pVMMDev->hgcmShutdown();
 

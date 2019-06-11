@@ -207,7 +207,7 @@ static bool vboxSvcClipboardReturnMsg(PVBOXCLIPBOARDCLIENTDATA pClientData, VBOX
     /* Message priority is taken into account. */
     if (pClientData->State.fHostMsgQuit)
     {
-        LogFlowFunc(("vboxSvcClipboardReturnMsg: Quit\n"));
+        LogFlowFunc(("VBOX_SHARED_CLIPBOARD_HOST_MSG_QUIT\n"));
         VBoxHGCMParmUInt32Set(&paParms[0], VBOX_SHARED_CLIPBOARD_HOST_MSG_QUIT);
         VBoxHGCMParmUInt32Set(&paParms[1], 0);
         pClientData->State.fHostMsgQuit = false;
@@ -216,7 +216,9 @@ static bool vboxSvcClipboardReturnMsg(PVBOXCLIPBOARDCLIENTDATA pClientData, VBOX
     {
         uint32_t fFormat = 0;
 
-        LogFlowFunc(("vboxSvcClipboardReturnMsg: ReadData %02X\n", pClientData->State.u32RequestedFormat));
+        LogFlowFunc(("VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA: u32RequestedFormat=%02X\n",
+                     pClientData->State.u32RequestedFormat));
+
         if (pClientData->State.u32RequestedFormat & VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT)
             fFormat = VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT;
         else if (pClientData->State.u32RequestedFormat & VBOX_SHARED_CLIPBOARD_FMT_BITMAP)
@@ -240,7 +242,9 @@ static bool vboxSvcClipboardReturnMsg(PVBOXCLIPBOARDCLIENTDATA pClientData, VBOX
     }
     else if (pClientData->State.fHostMsgFormats)
     {
-        LogFlowFunc(("vboxSvcClipboardReturnMsg: Formats %02X\n", pClientData->State.u32AvailableFormats));
+        LogFlowFunc(("VBOX_SHARED_CLIPBOARD_HOST_MSG_REPORT_FORMATS: u32AvailableFormats=%02X\n",
+                     pClientData->State.u32AvailableFormats));
+
         VBoxHGCMParmUInt32Set(&paParms[0], VBOX_SHARED_CLIPBOARD_HOST_MSG_REPORT_FORMATS);
         VBoxHGCMParmUInt32Set(&paParms[1], pClientData->State.u32AvailableFormats);
         pClientData->State.fHostMsgFormats = false;
@@ -248,7 +252,7 @@ static bool vboxSvcClipboardReturnMsg(PVBOXCLIPBOARDCLIENTDATA pClientData, VBOX
     else
     {
         /* No pending messages. */
-        LogFlowFunc(("vboxSvcClipboardReturnMsg: no message\n"));
+        LogFlowFunc(("No pending message\n"));
         return false;
     }
 
@@ -262,7 +266,7 @@ int vboxSvcClipboardReportMsg(PVBOXCLIPBOARDCLIENTDATA pClientData, uint32_t u32
 
     int rc = VINF_SUCCESS;
 
-    LogFlowFunc(("u32Msg=%RU32\n", u32Msg));
+    LogFlowFuncEnter();
 
     if (VBoxSvcClipboardLock())
     {
@@ -270,9 +274,10 @@ int vboxSvcClipboardReportMsg(PVBOXCLIPBOARDCLIENTDATA pClientData, uint32_t u32
         {
             case VBOX_SHARED_CLIPBOARD_HOST_MSG_QUIT:
             {
-                LogFlowFunc(("Quit\n"));
+                LogFlowFunc(("VBOX_SHARED_CLIPBOARD_HOST_MSG_QUIT\n"));
                 pClientData->State.fHostMsgQuit = true;
             } break;
+
             case VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA:
             {
                 if (   vboxSvcClipboardGetMode () != VBOX_SHARED_CLIPBOARD_MODE_GUEST_TO_HOST
@@ -282,10 +287,11 @@ int vboxSvcClipboardReportMsg(PVBOXCLIPBOARDCLIENTDATA pClientData, uint32_t u32
                     break;
                 }
 
-                LogFlowFunc(("ReadData %02X\n", u32Formats));
+                LogFlowFunc(("VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA: u32Formats=%02X\n", u32Formats));
                 pClientData->State.u32RequestedFormat = u32Formats;
                 pClientData->State.fHostMsgReadData = true;
             } break;
+
             case VBOX_SHARED_CLIPBOARD_HOST_MSG_REPORT_FORMATS:
             {
                 if (   vboxSvcClipboardGetMode () != VBOX_SHARED_CLIPBOARD_MODE_HOST_TO_GUEST
@@ -295,43 +301,47 @@ int vboxSvcClipboardReportMsg(PVBOXCLIPBOARDCLIENTDATA pClientData, uint32_t u32
                     break;
                 }
 
-                LogFlowFunc(("Formats %02X\n", u32Formats));
+                LogFlowFunc(("VBOX_SHARED_CLIPBOARD_HOST_MSG_REPORT_FORMATS: u32Formats=%02X\n", u32Formats));
                 pClientData->State.u32AvailableFormats = u32Formats;
                 pClientData->State.fHostMsgFormats = true;
             } break;
+
             default:
             {
-                /* Invalid message. */
-                LogFlowFunc(("invalid message %d\n", u32Msg));
+                AssertMsgFailed(("Invalid message %RU32\n", u32Msg));
+                rc = VERR_INVALID_PARAMETER;
             } break;
         }
 
-        if (pClientData->State.fAsync)
+        if (RT_SUCCESS(rc))
         {
-            /* The client waits for a response. */
-            bool fMessageReturned = vboxSvcClipboardReturnMsg(pClientData, pClientData->State.async.paParms);
-
-            /* Make a copy of the handle. */
-            VBOXHGCMCALLHANDLE callHandle = pClientData->State.async.callHandle;
-
-            if (fMessageReturned)
+            if (pClientData->State.fAsync)
             {
-                /* There is a response. */
-                pClientData->State.fAsync = false;
-            }
+                /* The client waits for a response. */
+                bool fMessageReturned = vboxSvcClipboardReturnMsg(pClientData, pClientData->State.async.paParms);
 
-            VBoxSvcClipboardUnlock();
+                /* Make a copy of the handle. */
+                VBOXHGCMCALLHANDLE callHandle = pClientData->State.async.callHandle;
 
-            if (fMessageReturned)
-            {
-                LogFlowFunc(("CallComplete\n"));
-                g_pHelpers->pfnCallComplete(callHandle, VINF_SUCCESS);
+                if (fMessageReturned)
+                {
+                    /* There is a response. */
+                    pClientData->State.fAsync = false;
+                }
+
+                VBoxSvcClipboardUnlock();
+
+                if (fMessageReturned)
+                {
+                    LogFlowFunc(("CallComplete\n"));
+                    g_pHelpers->pfnCallComplete(callHandle, VINF_SUCCESS);
+                }
             }
+            else
+                VBoxSvcClipboardUnlock();
         }
         else
-        {
             VBoxSvcClipboardUnlock();
-        }
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -457,7 +467,7 @@ static DECLCALLBACK(void) svcCall(void *,
 
     int rc = VINF_SUCCESS;
 
-    LogFunc(("u32ClientID = %d, fn = %d, cParms = %d, pparms = %d\n",
+    LogFunc(("u32ClientID=%RU32, fn=%RU32, cParms=%RU32, paParms=%p\n",
              u32ClientID, u32Function, cParms, paParms));
 
     PVBOXCLIPBOARDCLIENTDATA pClientData = (PVBOXCLIPBOARDCLIENTDATA)pvClient;
@@ -468,7 +478,7 @@ static DECLCALLBACK(void) svcCall(void *,
     for (i = 0; i < cParms; i++)
     {
         /** @todo parameters other than 32 bit */
-        LogFunc(("    pparms[%d]: type %d value %d\n", i, paParms[i].type, paParms[i].u.uint32));
+        LogFunc(("    paParms[%d]: type %RU32 - value %RU32\n", i, paParms[i].type, paParms[i].u.uint32));
     }
 #endif
 

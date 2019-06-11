@@ -79,7 +79,7 @@ typedef uint32_t VBOXCLIPBOARDEXTAREAATTACHFLAGS;
  */
 typedef struct _VBOXCLIPBOARDEXTAREAPARMS
 {
-    /** The clipboard area's ID. */
+    /** The clipboard area's ID the callback is for. */
     SHAREDCLIPBOARDAREAID uID;
     union
     {
@@ -87,14 +87,16 @@ typedef struct _VBOXCLIPBOARDEXTAREAPARMS
         {
             void                              *pvData;
             uint32_t                           cbData;
+            /** Area register flags; not used yet and must be set to 0. */
             VBOXCLIPBOARDEXTAREAREGISTETRFLAGS fFlags;
         } fn_register;
         struct
         {
+            /** Area attach flags; not used yet and must be set to 0. */
             VBOXCLIPBOARDEXTAREAATTACHFLAGS    fFlags;
         } fn_attach;
     } u;
 } VBOXCLIPBOARDEXTAREAPARMS, *PVBOXCLIPBOARDEXTAREAPARMS;
-#endif
+#endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
 
 #endif /* !VBOX_INCLUDED_HostServices_VBoxClipboardExt_h */
