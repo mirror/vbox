@@ -50,12 +50,15 @@ class SubTstDrvAddSharedFolders1(base.SubTestDriverBase):
     Sub-test driver for executing shared folders tests.
     """
 
-    def __init__(self, oTstDrv):
+    def __init__(self, oTstDrv, fUseAltFsPerfPathForWindows = False):
         base.SubTestDriverBase.__init__(self, oTstDrv, 'add-shared-folders', 'Shared Folders');
 
-        self.asTestsDef  = [ 'fsperf', ];
-        self.asTests     = self.asTestsDef;
-        self.asExtraArgs = [];
+        self.asTestsDef                     = [ 'fsperf', ];
+        self.asTests                        = self.asTestsDef;
+        self.asExtraArgs                    = [];
+        self.sGstFsPerfPath                 = '${CDROM}/vboxvalidationkit/${OS/ARCH}/FsPerf${EXESUFF}';
+        self.sGstFsPerfPathAlt              = 'C:/Apps/FsPerf${EXESUFF}';
+        self.fUseAltFsPerfPathForWindows    = fUseAltFsPerfPathForWindows;
 
     def parseOption(self, asArgs, iArg):
         if asArgs[iArg] == '--add-shared-folders-tests': # 'add' as in 'additions', not the verb.
@@ -203,8 +206,10 @@ class SubTstDrvAddSharedFolders1(base.SubTestDriverBase):
             # Add the extra arguments from the command line and kick it off:
             asArgs.extend(self.asExtraArgs);
             reporter.log2('Starting guest FsPerf (%s)...' % (asArgs,));
-            fRc = self.oTstDrv.txsRunTest(oTxsSession, 'FsPerf', 30 * 60 * 1000,
-                                          '${CDROM}/vboxvalidationkit/${OS/ARCH}/FsPerf${EXESUFF}', asArgs);
+            sFsPerfPath = self.sGstFsPerfPath;
+            if oTestVm.isWindows() and self.fUseAltFsPerfPathForWindows: # bird: Temp hack till we get UDF cloning implemented.
+                sFsPerfPath = self.sGstFsPerfPathAlt;                    #       Helps making unattended install tests work.
+            fRc = self.oTstDrv.txsRunTest(oTxsSession, 'FsPerf', 30 * 60 * 1000, sFsPerfPath, asArgs);
             reporter.log2('FsPerf -> %s' % (fRc,));
 
             sTestDir = os.path.join(sSharedFolder1, 'fstestdir-1');

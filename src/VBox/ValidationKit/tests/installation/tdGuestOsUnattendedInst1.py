@@ -275,6 +275,10 @@ class UnattendedVm(vboxtestvms.BaseTestVm):
         #
         return True;
 
+    def getTestUser(self):
+        # Default unattended installation user (parent knowns its password).
+        return 'vboxuser';
+
 
     #
     # Our methods.
@@ -381,7 +385,7 @@ class tdGuestOsInstTest1(vbox.TestDriver):
         #
         # Sub-test drivers.
         #
-        self.addSubTestDriver(SubTstDrvAddSharedFolders1(self));
+        self.addSubTestDriver(SubTstDrvAddSharedFolders1(self, fUseAltFsPerfPathForWindows = True)); # !HACK ALERT! UDF cloning.
         self.addSubTestDriver(SubTstDrvAddGuestCtrl(self));
 
 
@@ -528,14 +532,23 @@ class tdGuestOsInstTest1(vbox.TestDriver):
             reporter.log('Guest reported success via TXS.');
             reporter.testDone();
 
-            # If we're installing GAs, wait for them to come online:
             fRc = True;
+            # Kudge: GAs doesn't come up correctly, so we have to reboot the guest first:
+            #        Looks like VBoxService isn't there.
             if oTestVm.fOptInstallAdditions:
+                reporter.testStart('Rebooting');
+                fRc, oTxsSession = self.txsRebootAndReconnectViaTcp(oSession, oTxsSession);
+                reporter.testDone();
+
+            # If we're installing GAs, wait for them to come online:
+            if oTestVm.fOptInstallAdditions and fRc is True:
                 reporter.testStart('Guest additions');
                 aenmRunLevels = [vboxcon.AdditionsRunLevelType_Userland,];
                 if oTestVm.isLoggedOntoDesktop():
                     aenmRunLevels.append(vboxcon.AdditionsRunLevelType_Desktop);
-                fRc = self.waitForGAs(oSession, cMsTimeout = cMsTimeout / 2, aenmWaitForRunLevels = aenmRunLevels);
+                fRc = self.waitForGAs(oSession, cMsTimeout = cMsTimeout / 2, aenmWaitForRunLevels = aenmRunLevels,
+                                      aenmWaitForActive = (vboxcon.AdditionsFacilityType_VBoxGuestDriver,
+                                                           vboxcon.AdditionsFacilityType_VBoxService,));
                 reporter.testDone();
 
             # Now do a save & restore test:

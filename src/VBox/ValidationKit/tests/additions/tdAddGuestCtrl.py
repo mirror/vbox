@@ -116,13 +116,10 @@ class tdCtxCreds(object):
         assert self.oTestVm is not None;
 
         if self.sUser is None:
-            if self.oTestVm.isWindows():
-                self.sUser = 'Administrator';
-            else:
-                self.sUser = 'vbox';
+            self.sUser = self.oTestVm.getTestUser();
 
         if self.sPassword is None:
-            self.sPassword = 'password';
+            self.sPassword = self.oTestVm.getTestUserPassword(self.sUser);
 
         if self.sDomain is None:
             self.sDomain   = '';
@@ -414,8 +411,7 @@ class tdTestSession(tdTestGuestCtrlBase):
     """
     Test the guest session handling.
     """
-    def __init__(self, sUser = None, sPassword = None, sDomain = None, \
-                 sSessionName = ""):
+    def __init__(self, sUser = None, sPassword = None, sDomain = None, sSessionName = ""):
         tdTestGuestCtrlBase.__init__(self);
         self.sSessionName = sSessionName;
         self.oCreds = tdCtxCreds(sUser, sPassword, sDomain);
@@ -2721,6 +2717,8 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         Tests removing guest files.
         """
 
+        ## @todo r=bird: This fails on windows 7 RTM.  Just create a stupid file and delete it again,
+        #                this chord.wav stuff is utter nonsense.
         if oTestVm.isWindows():
             sFileToDelete = "c:\\Windows\\Media\\chord.wav";
         else:
@@ -2739,7 +2737,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 [ tdTestFileRemove(sFile = 'c:\\Apps\\nonexisting'), tdTestResult() ],
                 # Try to delete system files.
                 [ tdTestFileRemove(sFile = 'c:\\pagefile.sys'), tdTestResult() ],
-                [ tdTestFileRemove(sFile = 'c:\\Windows\\kernel32.sys'), tdTestResult() ]
+                [ tdTestFileRemove(sFile = 'c:\\Windows\\kernel32.sys'), tdTestResult() ] ## r=bird: it's in \system32\ ...
             ]);
 
             if oTestVm.sKind == "WindowsXP":
