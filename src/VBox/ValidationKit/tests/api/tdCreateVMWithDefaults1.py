@@ -168,7 +168,7 @@ class SubTstDrvCreateVMWithDefaults1(base.SubTestDriverBase):
         # Get the guest OS types.
         try:
             aoGuestTypes = self.oTstDrv.oVBoxMgr.getArray(self.oTstDrv.oVBox, 'guestOSTypes')
-            if aoGuestTypes is None or len(aoGuestTypes) < 1:
+            if aoGuestTypes is None or not aoGuestTypes:
                 return reporter.error('No guest OS types');
         except:
             return reporter.errorXcpt();

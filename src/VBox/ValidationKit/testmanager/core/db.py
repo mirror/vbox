@@ -65,7 +65,7 @@ def isDbTimestamp(oValue):
     if utils.isString(oValue):
         ## @todo detect strings as well.
         return False;
-    return getattr(oValue, 'pydatetime', None) != None;
+    return getattr(oValue, 'pydatetime', None) is not None;
 
 def dbTimestampToDatetime(oValue):
     """
@@ -126,7 +126,7 @@ class TMDatabaseIntegrityException(Exception):
     Do NOT use directly, only thru TMDatabaseConnection.integrityException.
     Otherwise, we won't be able to log the issue.
     """
-    pass;
+    pass;                               # pylint: disable=unnecessary-pass
 
 
 class TMDatabaseCursor(object):

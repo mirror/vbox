@@ -197,7 +197,7 @@ class tdSerial1(vbox.TestDriver):
 
         if fRc:
             fRc = oSession.changeSerialPortAttachment(0, ePortMode, sLocation, fServer);
-            if fRc and (sMode == 'TcpServ' or sMode == 'NamedPipeServ'):
+            if fRc and (sMode in 'TcpServ', 'NamedPipeServ',):
                 self.sleep(2); # Fudge to allow the TCP server to get started.
                 fRc = self.oLoopback.connect();
                 if not fRc:
@@ -278,9 +278,8 @@ class tdSerial1(vbox.TestDriver):
         """
         if sMode == 'RawFile' and sTest == 'ReadWrite':
             return False;
-        elif sMode != 'RawFile' and sTest == 'Write':
+        if sMode != 'RawFile' and sTest == 'Write':
             return False;
-
         return True;
 
     def testOneVmConfig(self, oVM, oTestVm):

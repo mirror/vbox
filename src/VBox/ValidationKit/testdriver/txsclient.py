@@ -290,7 +290,7 @@ class TransportBase(object):
             abHdr = self.abReadAheadHdr;
             self.abReadAheadHdr = array.array('B');
         else:
-            abHdr = self.recvBytes(16, cMsTimeout, fNoDataOk);
+            abHdr = self.recvBytes(16, cMsTimeout, fNoDataOk); # (virtual method) # pylint: disable=assignment-from-none
             if abHdr is None:
                 return (None, None, None);
         if len(abHdr) != 16:
@@ -319,7 +319,7 @@ class TransportBase(object):
                 cbPadding = 16 - (cbMsg % 16);
             else:
                 cbPadding = 0;
-            abPayload = self.recvBytes(cbMsg - 16 + cbPadding, cMsTimeout, False);
+            abPayload = self.recvBytes(cbMsg - 16 + cbPadding, cMsTimeout, False); # pylint: disable=assignment-from-none
             if abPayload is None:
                 self.abReadAheadHdr = abHdr;
                 if not fNoDataOk    :
@@ -548,7 +548,7 @@ class Session(TdTaskBase):
         cMsLeft = self.cMsTimeout - cMsElapsed;
         if cMsLeft <= cMsMin:
             return cMsMin;
-        if cMsLeft > cMsMax and cMsMax > 0:
+        if cMsLeft > cMsMax > 0:
             return cMsMax
         return cMsLeft;
 
@@ -843,7 +843,7 @@ class Session(TdTaskBase):
                     reporter.log('taskExecEx: Standard input is ignored... why?');
                     del oStdIn.uTxsClientCrc32;
                     oStdIn = '/dev/null';
-                elif  (sOpcode == 'STDINMEM' or sOpcode == 'STDINBAD' or sOpcode == 'STDINCRC')\
+                elif  sOpcode in ('STDINMEM', 'STDINBAD', 'STDINCRC',)\
                   and msPendingInputReply is not None:
                     # TXS STDIN error, abort.
                     # TODO: STDINMEM - consider undoing the previous stdin read and try resubmitt it.
@@ -1183,7 +1183,7 @@ class Session(TdTaskBase):
 
                 # Validate.
                 sOpcode = sOpcode.rstrip();
-                if sOpcode != 'DATA' and sOpcode != 'DATA EOF':
+                if sOpcode not in ('DATA', 'DATA EOF',):
                     reporter.maybeErr(self.fErr, 'taskDownload got a error reply: opcode="%s" details="%s"'
                                       % (sOpcode, getSZ(abPayload, 0, "None")));
                     rc = False;
@@ -1859,12 +1859,7 @@ class TransportTcp(TransportBase):
 
             if rc is True:
                 pass;
-            elif  iRc == errno.ECONNREFUSED \
-               or iRc == errno.EHOSTUNREACH \
-               or iRc == errno.EINTR \
-               or iRc == errno.ENETDOWN \
-               or iRc == errno.ENETUNREACH \
-               or iRc == errno.ETIMEDOUT:
+            elif iRc in (errno.ECONNREFUSED, errno.EHOSTUNREACH, errno.EINTR, errno.ENETDOWN, errno.ENETUNREACH, errno.ETIMEDOUT):
                 rc = False; # try again.
             else:
                 if iRc != errno.EBADF  or  not self.fConnectCanceled:

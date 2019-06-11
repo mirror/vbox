@@ -35,9 +35,9 @@ import os;
 import shutil;
 import sys;
 if sys.version_info[0] >= 3:
-    from io import StringIO as StringIO;            # pylint: disable=import-error,no-name-in-module
+    from io import StringIO as StringIO;            # pylint: disable=import-error,no-name-in-module,useless-import-alias
 else:
-    from StringIO import StringIO as StringIO;      # pylint: disable=import-error,no-name-in-module
+    from StringIO import StringIO as StringIO;      # pylint: disable=import-error,no-name-in-module,useless-import-alias
 import subprocess;
 
 # Validation Kit imports.
@@ -137,7 +137,7 @@ class RemoteExecutor(object):
             sOutput, sError = oProcess.communicate(sInput);
             iExitCode  = oProcess.poll();
 
-            if iExitCode is not 0:
+            if iExitCode != 0:
                 fRc = False;
         except:
             reporter.errorXcpt();

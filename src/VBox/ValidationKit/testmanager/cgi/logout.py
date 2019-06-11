@@ -49,7 +49,7 @@ def main():
 
     oSrvGlue = WebServerGlueCgi(g_ksValidationKitDir, fHtmlOutput = True)
     sUser = oSrvGlue.getLoginName()
-    if sUser != oSrvGlue.ksUnknownUser and sUser != 'logout':
+    if sUser not in (oSrvGlue.ksUnknownUser, 'logout'):
         oSrvGlue.write('<p>Broken apache config!\n'
                        'The logout.py script should be configured with .htaccess-logout and require user logout!</p>')
     else:

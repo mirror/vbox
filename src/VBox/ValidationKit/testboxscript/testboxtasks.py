@@ -429,7 +429,7 @@ class TestBoxTestDriverTask(TestBoxBaseTask):
                                             stderr     = subprocess.STDOUT,
                                             cwd        = self._oTestBoxScript.getPathSpill(),
                                             universal_newlines = True,
-                                            close_fds  = (False if utils.getHostOs() == 'win' else True),
+                                            close_fds  = utils.getHostOs() != 'win',
                                             preexec_fn = (None if utils.getHostOs() in ['win', 'os2']
                                                           else os.setsid)); # pylint: disable=no-member
         except Exception as oXcpt:
@@ -841,7 +841,7 @@ class TestBoxExecTask(TestBoxTestDriverTask):
 
             # Figure the destination name (in scripts).
             sDstFile = webutils.getFilename(sArchive);
-            if   len(sDstFile) < 1 \
+            if   not sDstFile \
               or re.search('[^a-zA-Z0-9 !#$%&\'()@^_`{}~.-]', sDstFile) is not None: # FAT charset sans 128-255 + '.'.
                 self._log('Malformed script zip filename: %s' % (sArchive,));
                 return False;

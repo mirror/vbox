@@ -52,12 +52,12 @@ class BuildBlacklistData(ModelDataBase):
     ksParam_iFirstRevision  = 'BuildBlacklist_iFirstRevision'
     ksParam_iLastRevision   = 'BuildBlacklist_iLastRevision'
 
-    kasAllowNullAttributes    = [ 'idBlacklisting',
-                                  'tsEffective',
-                                  'tsExpire',
-                                  'uidAuthor',
-                                  'asTypes',
-                                  'asOsArches' ];
+    kasAllowNullAttributes  = [ 'idBlacklisting',
+                                'tsEffective',
+                                'tsExpire',
+                                'uidAuthor',
+                                'asTypes',
+                                'asOsArches' ];
 
     def __init__(self):
         ModelDataBase.__init__(self);

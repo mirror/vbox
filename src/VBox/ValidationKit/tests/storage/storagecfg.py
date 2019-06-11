@@ -256,13 +256,12 @@ class StorageConfigOsLinux(StorageConfigOs):
         """
         Converts our raid level indicators to something mdadm can understand.
         """
+        if sRaidLvl is None or sRaidLvl == 'raid0':
+            return 'stripe';
         if sRaidLvl == 'raid5':
             return '5';
-        elif sRaidLvl == 'raid1':
+        if sRaidLvl == 'raid1':
             return 'mirror';
-        elif sRaidLvl == 'raid0' or sRaidLvl is None:
-            return 'stripe';
-
         return 'stripe';
 
     def getDisksMatchingRegExp(self, sRegExp):

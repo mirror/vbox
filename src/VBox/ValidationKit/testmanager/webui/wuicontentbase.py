@@ -53,7 +53,7 @@ class WuiHtmlBase(object): # pylint: disable=too-few-public-methods
 
     def __init__(self):
         """Dummy init to shut up pylint."""
-        pass;
+        pass;                               # pylint: disable=unnecessary-pass
 
     def toHtml(self):
 
@@ -731,7 +731,7 @@ class WuiFormContentBase(WuiSingleContentBase): # pylint: disable=too-few-public
         """
         aoRet = []
         for sListItem in asListItems:
-            fEnabled = True if sListItem in asSelectedItems else False
+            fEnabled = sListItem in asSelectedItems;
             aoRet.append((sListItem, fEnabled, sListItem))
         return aoRet
 

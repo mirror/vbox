@@ -147,5 +147,5 @@ class WuiHlpLineGraphErrorbarY(WuiHlpLineGraph):
     Line graph with an errorbar for the Y axis.
     """
 
-    pass;
+    pass;                               # pylint: disable=unnecessary-pass
 

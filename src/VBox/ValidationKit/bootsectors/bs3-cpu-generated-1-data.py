@@ -228,8 +228,8 @@ class Bs3Cg1EncodedTests(object):
     def __init__(self, oInstr):
         self.offTests       = -1;
         self.cbTests        = 0;
-        self.asLines        = [];       # type: list(str)
-        self.aoInstructions = [];       # type: list(iai.Instruction)
+        self.asLines        = []        # type: list(str)
+        self.aoInstructions = []        # type: list(iai.Instruction)
 
         # Encode the tests.
         for iTest, oTest in enumerate(oInstr.aoTests):
@@ -295,9 +295,9 @@ class Bs3Cg1Instruction(object):
     """
 
     def __init__(self, oMap, oInstr, oTests):
-        self.oMap   = oMap;             # type: iai.InstructionMap
-        self.oInstr = oInstr;           # type: iai.Instruction
-        self.oTests = oTests;           # type: Bs3Cg1EncodedTests
+        self.oMap   = oMap              # type: iai.InstructionMap
+        self.oInstr = oInstr            # type: iai.Instruction
+        self.oTests = oTests            # type: Bs3Cg1EncodedTests
 
         self.asOpcodes          = oMap.asLeadOpcodes + [ '0x%02x' % (oInstr.getOpcodeByte(),) ];
         self.sEncoding          = iai.g_kdEncodings[oInstr.sEncoding][0];
@@ -409,8 +409,8 @@ class Bs3CpuGenerated1Generator(object):
     """
 
     def __init__(self):
-        self.aoInstructions = [];       # type: Bs3Cg1Instruction
-        self.aoTests        = [];       # type: Bs3Cg1EncodedTests
+        self.aoInstructions = []        # type: Bs3Cg1Instruction
+        self.aoTests        = []        # type: Bs3Cg1EncodedTests
         self.cbTests        = 0;
 
     def addTests(self, oTests, oInstr): # type: (Bs3Cg1EncodedTests, iai.Instruction) -> Bs3Cg1EncodedTests

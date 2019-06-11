@@ -383,7 +383,7 @@ class TransportBase(object):
             abHdr = self.abReadAheadHdr;
             self.abReadAheadHdr = array.array('B');
         else:
-            abHdr = self.recvBytes(16, cMsTimeout, fNoDataOk);
+            abHdr = self.recvBytes(16, cMsTimeout, fNoDataOk); # (virtual method) # pylint: disable=assignment-from-none
             if abHdr is None:
                 return (None, None, None);
         if len(abHdr) != 16:
@@ -412,7 +412,7 @@ class TransportBase(object):
                 cbPadding = 16 - (cbMsg % 16);
             else:
                 cbPadding = 0;
-            abPayload = self.recvBytes(cbMsg - 16 + cbPadding, cMsTimeout, False);
+            abPayload = self.recvBytes(cbMsg - 16 + cbPadding, cMsTimeout, False); # pylint: disable=assignment-from-none
             if abPayload is None:
                 self.abReadAheadHdr = abHdr;
                 if not fNoDataOk    :
@@ -643,7 +643,7 @@ class Session(TdTaskBase):
         cMsLeft = self.cMsTimeout - cMsElapsed;
         if cMsLeft <= cMsMin:
             return cMsMin;
-        if cMsLeft > cMsMax and cMsMax > 0:
+        if cMsLeft > cMsMax > 0:
             return cMsMax
         return cMsLeft;
 
@@ -984,7 +984,7 @@ class TransportTcp(TransportBase):
                 try:
                     if oXcpt[0] == errno.EWOULDBLOCK:
                         return True;
-                    if utils.getHostOs == 'win' and oXcpt[0] == errno.WSAEWOULDBLOCK: # pylint: disable=no-member
+                    if utils.getHostOs() == 'win' and oXcpt[0] == errno.WSAEWOULDBLOCK: # pylint: disable=no-member
                         return True;
                 except: pass;
         except:
@@ -1087,12 +1087,7 @@ class TransportTcp(TransportBase):
 
             if rc is True:
                 pass;
-            elif  iRc == errno.ECONNREFUSED \
-               or iRc == errno.EHOSTUNREACH \
-               or iRc == errno.EINTR \
-               or iRc == errno.ENETDOWN \
-               or iRc == errno.ENETUNREACH \
-               or iRc == errno.ETIMEDOUT:
+            elif iRc in (errno.ECONNREFUSED, errno.EHOSTUNREACH, errno.EINTR, errno.ENETDOWN, errno.ENETUNREACH, errno.ETIMEDOUT):
                 rc = False; # try again.
             else:
                 if iRc != errno.EBADF  or  not self.fConnectCanceled:

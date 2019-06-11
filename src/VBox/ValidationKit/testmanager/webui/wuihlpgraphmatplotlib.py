@@ -32,9 +32,9 @@ __version__ = "$Revision$"
 import re;
 import sys;
 if sys.version_info[0] >= 3:
-    from io       import StringIO as StringIO;  # pylint: disable=import-error,no-name-in-module
+    from io       import StringIO as StringIO;  # pylint: disable=import-error,no-name-in-module,useless-import-alias
 else:
-    from StringIO import StringIO as StringIO;  # pylint: disable=import-error,no-name-in-module
+    from StringIO import StringIO as StringIO;  # pylint: disable=import-error,no-name-in-module,useless-import-alias
 
 import matplotlib;                              # pylint: disable=import-error
 matplotlib.use('Agg'); # Force backend.

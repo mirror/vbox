@@ -670,7 +670,7 @@ class TestResultListingData(ModelDataBase): # pylint: disable=too-many-instance-
 
 class TestResultHangingOffence(TMExceptionBase):
     """Hanging offence committed by test case."""
-    pass;
+    pass;                               # pylint: disable=unnecessary-pass
 
 
 class TestResultFilter(ModelFilterBase):
@@ -2727,7 +2727,7 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=too-few-public-methods
             aaiHints.insert(0, [len(aoStack), int(dAttribs['testdepth'])]);
 
         elif sName == 'PopHint':
-            if len(aaiHints) < 1:
+            if not aaiHints:
                 return 'No hint to pop.'
 
             iDesiredTestDepth = int(dAttribs['testdepth']);

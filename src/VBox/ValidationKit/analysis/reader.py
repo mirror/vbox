@@ -30,7 +30,7 @@ You may elect to license modified versions of this file under the
 terms and conditions of either the GPL or the CDDL or both.
 """
 __version__ = "$Revision$"
-__all__     = ['ParseTestResult', ]
+__all__     = [ 'parseTestResult', ]
 
 # Standard python imports.
 import os
@@ -58,8 +58,8 @@ class Value(object):
     # debug
 
     def printValue(self, cIndent):
-        print '%sValue: name=%s timestamp=%s unit=%s value="%s"' \
-                % (''.ljust(cIndent*2), self.sName, self.sTimestamp, self.sUnit, self.sValue);
+        print('%sValue: name=%s timestamp=%s unit=%s value="%s"'
+              % (''.ljust(cIndent*2), self.sName, self.sTimestamp, self.sUnit, self.sValue));
 
 
 class Test(object):
@@ -129,7 +129,7 @@ class Test(object):
     # debug
 
     def printTree(self, iLevel = 0):
-        print '%sTest: name=%s start=%s end=%s' % (''.ljust(iLevel*2), self.sName, self.sStartTS, self.sEndTS);
+        print('%sTest: name=%s start=%s end=%s' % (''.ljust(iLevel*2), self.sName, self.sStartTS, self.sEndTS));
         for oChild in self.aoChildren:
             oChild.printTree(iLevel + 1);
         for oValue in self.aoValues:
@@ -174,12 +174,12 @@ class Test(object):
                 del self.aoChildren[i];
 
         # If we have children, they must've matched up.
-        if len(self.aoChildren) != 0:
+        if self.aoChildren:
             return True;
         return self.matchFilters(asFilters);
 
     def filterTests(self, asFilters):
-        if len(asFilters) > 0:
+        if asFilters:
             self.filterTestsWorker(asFilters)
         return self;
 
@@ -219,7 +219,7 @@ class XmlLogReader(object):
 
     def handleElementStart(self, sName, hsAttrs):
         #print '%s%s: %s' % (''.ljust(self.iLevel * 2), sName, str(hsAttrs));
-        if sName == 'Test' or sName == 'SubTest':
+        if sName in ('Test', 'SubTest',):
             self.iLevel += 1;
             self.oTest = self.oTest.addChild(Test(self.oTest, hsAttrs));
         elif sName == 'Value':
@@ -235,17 +235,17 @@ class XmlLogReader(object):
         elif sName == 'Include':
             self.handleInclude(hsAttrs);
         else:
-            print 'Unknonwn element "%s"' % (sName);
+            print('Unknonwn element "%s"' % (sName,));
 
     def handleElementData(self, sData):
         if self.oValue is not None:
             self.oValue.addData(sData);
         elif sData.strip() != '':
-            print 'Unexpected data "%s"' % (sData);
+            print('Unexpected data "%s"' % (sData,));
         return True;
 
     def handleElementEnd(self, sName):
-        if sName == 'Test' or sName == 'Subtest':
+        if sName in ('Test', 'Subtest',):
             self.iLevel -= 1;
             self.oTest = self.oTest.oParent;
         elif sName == 'Value':
@@ -261,7 +261,7 @@ class XmlLogReader(object):
         # Try parse it.
         oSub = parseTestResult(sXmlFile);
         if oSub is None:
-            print 'error: failed to parse include "%s"' % (sXmlFile);
+            print('error: failed to parse include "%s"' % (sXmlFile,));
         else:
             # Skip the root and the next level before merging it the subtest and
             # values in to the current test.  The reason for this is that the
@@ -271,9 +271,9 @@ class XmlLogReader(object):
             # More benchmark heuristics: Walk down until we find more than one
             # test or values.
             oSub2 = oSub;
-            while len(oSub2.aoChildren) == 1 and len(oSub2.aoValues) == 0:
+            while len(oSub2.aoChildren) == 1 and not oSub2.aoValues:
                 oSub2 = oSub2.aoChildren[0];
-            if len(oSub2.aoValues) == 0:
+            if not oSub2.aoValues:
                 oSub2 = oSub;
             self.oTest.mergeInIncludedTest(oSub2);
         return True;

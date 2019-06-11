@@ -45,19 +45,6 @@ from testdriver import base;
 from testdriver import vbox;
 from testdriver import vboxcon;
 
-def _ControllerTypeToName(eControllerType):
-    """ Translate a controller type to a name. """
-    if eControllerType == vboxcon.StorageControllerType_PIIX3 or eControllerType == vboxcon.StorageControllerType_PIIX4:
-        sType = "IDE Controller";
-    elif eControllerType == vboxcon.StorageControllerType_IntelAhci:
-        sType = "SATA Controller";
-    elif eControllerType == vboxcon.StorageControllerType_LsiLogicSas:
-        sType = "SAS Controller";
-    elif eControllerType == vboxcon.StorageControllerType_LsiLogic or eControllerType == vboxcon.StorageControllerType_BusLogic:
-        sType = "SCSI Controller";
-    else:
-        sType = "Storage Controller";
-    return sType;
 
 class tdStorageStress(vbox.TestDriver):                                      # pylint: disable=too-many-instance-attributes
     """
@@ -342,8 +329,8 @@ class tdStorageStress(vbox.TestDriver):                                      # p
         oSession = self.openSession(oVM);
         if oSession is not None:
             # Attach HD
-            fRc = oSession.ensureControllerAttached(_ControllerTypeToName(eStorageController));
-            fRc = fRc and oSession.setStorageControllerType(eStorageController, _ControllerTypeToName(eStorageController));
+            fRc = oSession.ensureControllerAttached(self.controllerTypeToName(eStorageController));
+            fRc = fRc and oSession.setStorageControllerType(eStorageController, self.controllerTypeToName(eStorageController));
 
             if sDiskFormat == "iSCSI":
                 listNames = [];
@@ -365,21 +352,21 @@ class tdStorageStress(vbox.TestDriver):                                      # p
                 if fRc is True:
                     try:
                         if oSession.fpApiVer >= 4.0:
-                            oSession.o.machine.attachDevice(_ControllerTypeToName(eStorageController), \
+                            oSession.o.machine.attachDevice(self.controllerTypeToName(eStorageController),
                                                             1, 0, vboxcon.DeviceType_HardDisk, oHd);
                         else:
-                            oSession.o.machine.attachDevice(_ControllerTypeToName(eStorageController), \
+                            oSession.o.machine.attachDevice(self.controllerTypeToName(eStorageController),
                                                             1, 0, vboxcon.DeviceType_HardDisk, oHd.id);
                     except:
                         reporter.errorXcpt('attachDevice("%s",%s,%s,HardDisk,"%s") failed on "%s"' \
-                                           % (_ControllerTypeToName(eStorageController), 1, 0, oHd.id, oSession.sName) );
+                                           % (self.controllerTypeToName(eStorageController), 1, 0, oHd.id, oSession.sName) );
                         fRc = False;
                     else:
                         reporter.log('attached "%s" to %s' % (sDiskPath1, oSession.sName));
             else:
-                fRc = fRc and oSession.createAndAttachHd(sDiskPath1, sDiskFormat, _ControllerTypeToName(eStorageController), \
+                fRc = fRc and oSession.createAndAttachHd(sDiskPath1, sDiskFormat, self.controllerTypeToName(eStorageController),
                                                          cb = 10*1024*1024*1024, iPort = 1, fImmutable = False);
-                fRc = fRc and oSession.createAndAttachHd(sDiskPath2, sDiskFormat, _ControllerTypeToName(eStorageController), \
+                fRc = fRc and oSession.createAndAttachHd(sDiskPath2, sDiskFormat, self.controllerTypeToName(eStorageController),
                                                          cb = 10*1024*1024*1024, iPort = 2, fImmutable = False);
             fRc = fRc and oSession.enableVirtEx(fHwVirt);
             fRc = fRc and oSession.enableNestedPaging(fNestedPaging);
@@ -410,13 +397,12 @@ class tdStorageStress(vbox.TestDriver):                                      # p
                 oSession = self.openSession(oVM);
                 if oSession is not None:
                     try:
-                        oSession.o.machine.detachDevice(_ControllerTypeToName(eStorageController), 1, 0);
-                        oSession.o.machine.detachDevice(_ControllerTypeToName(eStorageController), 2, 0);
+                        oSession.o.machine.detachDevice(self.controllerTypeToName(eStorageController), 1, 0);
+                        oSession.o.machine.detachDevice(self.controllerTypeToName(eStorageController), 2, 0);
 
                         # Remove storage controller if it is not an IDE controller.
-                        if     eStorageController is not vboxcon.StorageControllerType_PIIX3 \
-                           and eStorageController is not vboxcon.StorageControllerType_PIIX4:
-                            oSession.o.machine.removeStorageController(_ControllerTypeToName(eStorageController));
+                        if eStorageController not in (vboxcon.StorageControllerType_PIIX3, vboxcon.StorageControllerType_PIIX4,):
+                            oSession.o.machine.removeStorageController(self.controllerTypeToName(eStorageController));
 
                         oSession.saveSettings();
                         oSession.oVBox.deleteHdByLocation(sDiskPath1);

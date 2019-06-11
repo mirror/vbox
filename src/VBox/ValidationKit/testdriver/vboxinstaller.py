@@ -350,7 +350,7 @@ class VBoxInstallerTestDriver(TestDriverBase):
         reporter.log('Exit code: %s (%s)' % (iRc, asArgs));
         if fMaySkip and iRc == rtexitcode.RTEXITCODE_SKIPPED:
             return None;
-        return iRc is 0;
+        return iRc == 0;
 
     def _sudoExecuteSync(self, asArgs):
         """
@@ -367,7 +367,7 @@ class VBoxInstallerTestDriver(TestDriverBase):
             reporter.errorXcpt();
             return (False, 0);
         reporter.log('Exit code [sudo]: %s (%s)' % (iRc, asArgs));
-        return (iRc is 0, iRc);
+        return (iRc == 0, iRc);
 
     def _executeSubDriver(self, asActions, fMaySkip = True):
         """
@@ -943,7 +943,7 @@ class VBoxInstallerTestDriver(TestDriverBase):
                 os.path.join(sProgFiles, 'OracleVM', 'VirtualBox'),
                 os.path.join(sProgFiles, 'Sun', 'VirtualBox'),
             ];
-        elif sHost == 'linux' or sHost == 'solaris':
+        elif sHost in ('linux', 'solaris',):
             asLocs = [ '/opt/VirtualBox', '/opt/VirtualBox-3.2', '/opt/VirtualBox-3.1', '/opt/VirtualBox-3.0'];
         elif sHost == 'darwin':
             asLocs = [ '/Applications/VirtualBox.app/Contents/MacOS' ];

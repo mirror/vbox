@@ -70,7 +70,7 @@ class UnattendedVm(vboxtestvms.BaseTestVm):
 
     def __init__(self, oSet, sVmName, sKind, sInstallIso, fFlags = 0):
         vboxtestvms.BaseTestVm.__init__(self, sVmName, oSet = oSet, sKind = sKind,
-                                        fRandomPvPModeCrap = False if (fFlags & self.kfNoWin81Paravirt) else True);
+                                        fRandomPvPModeCrap = (fFlags & self.kfNoWin81Paravirt) == 0);
         self.sInstallIso            = sInstallIso;
         self.fInstVmFlags           = fFlags;
 

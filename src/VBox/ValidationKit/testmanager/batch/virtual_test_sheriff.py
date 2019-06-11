@@ -49,9 +49,9 @@ from email.mime.text import MIMEText
 from email.utils import COMMASPACE
 
 if sys.version_info[0] >= 3:
-    from io       import StringIO as StringIO;      # pylint: disable=import-error,no-name-in-module
+    from io       import StringIO as StringIO;      # pylint: disable=import-error,no-name-in-module,useless-import-alias
 else:
-    from StringIO import StringIO as StringIO;      # pylint: disable=import-error,no-name-in-module
+    from StringIO import StringIO as StringIO;      # pylint: disable=import-error,no-name-in-module,useless-import-alias
 from optparse import OptionParser;                  # pylint: disable=deprecated-module
 from PIL import Image;                              # pylint: disable=import-error
 
@@ -1026,7 +1026,7 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
     katSimpleKernelLogReasons = [
         # (  Whether to stop on hit, reason tuple, needle text. )
         ( True,  ktReason_Panic_HugeMemory,                         'mm/huge_memory.c:1988' ),
-        ( True,  ktReason_Panic_IOAPICDoesntWork,                   'IO-APIC + timer doesn''t work' ),
+        ( True,  ktReason_Panic_IOAPICDoesntWork,                   'IO-APIC + timer doesn\'t work' ),
         ( True,  ktReason_Panic_TxUnitHang,                         'Detected Tx Unit Hang' ),
         ( True,  ktReason_GuestBug_CompizVBoxQt,                    'error 4 in libQt5CoreVBox' ),
         ( True,  ktReason_GuestBug_CompizVBoxQt,                    'error 4 in libgtk-3' ),

@@ -73,7 +73,7 @@ class SubTstDrvAddSharedFolders1(base.SubTestDriverBase):
                         raise base.InvalidOption('The "--add-shared-folders-tests" value "%s" is not valid; valid values are: %s'
                                                  % (s, ' '.join(self.asTestsDef)));
             return iNext;
-        elif asArgs[iArg] == '--add-shared-folders-extra-arg':
+        if asArgs[iArg] == '--add-shared-folders-extra-arg':
             iArg += 1;
             iNext = self.oTstDrv.requireMoreArgs(1, asArgs, iArg);
             self.asExtraArgs.append(asArgs[iArg]);

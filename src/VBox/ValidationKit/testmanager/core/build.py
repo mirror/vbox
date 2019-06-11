@@ -724,7 +724,7 @@ class BuildLogic(ModelLogicBase): # pylint: disable=too-few-public-methods
         aaoRows = self._oDb.fetchAll();
 
         for aoRow in aaoRows:
-            oBuildExRet = BuildDataEx().initFromDbRow(self, aoRow);
+            oBuildExRet = BuildDataEx().initFromDbRow(aoRow);
             if not self.isBuildBlacklisted(oBuildExRet):
                 return oBuildExRet;
 

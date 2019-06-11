@@ -90,7 +90,7 @@ class WuiReportBase(WuiContentBase):
         Generates the navigator (manipulate _dParams).
         Returns HTML.
         """
-        assert sWhere == 'top' or sWhere == 'bottom';
+        assert sWhere in ('top', 'bottom',);
 
         return '';
 

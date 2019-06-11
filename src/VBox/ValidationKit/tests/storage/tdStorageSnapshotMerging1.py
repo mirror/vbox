@@ -49,21 +49,6 @@ from testdriver import vboxcon;
 from testdriver import vboxwrappers;
 
 
-def _ControllerTypeToName(eControllerType):
-    """ Translate a controller type to a name. """
-    if eControllerType == vboxcon.StorageControllerType_PIIX3 or eControllerType == vboxcon.StorageControllerType_PIIX4:
-        sType = "IDE Controller";
-    elif eControllerType == vboxcon.StorageControllerType_IntelAhci:
-        sType = "SATA Controller";
-    elif eControllerType == vboxcon.StorageControllerType_LsiLogicSas:
-        sType = "SAS Controller";
-    elif eControllerType == vboxcon.StorageControllerType_LsiLogic or eControllerType == vboxcon.StorageControllerType_BusLogic:
-        sType = "SCSI Controller";
-    else:
-        sType = "Storage Controller";
-    return sType;
-
-
 def crc32_of_file(filepath):
     fileobj = open(filepath,'rb');
     current = 0;
@@ -183,7 +168,7 @@ class tdStorageSnapshot(vbox.TestDriver):                                      #
         oMedium = self.getMedium(oVM, sController);
 
         aoMediumChildren = self.oVBoxMgr.getArray(oMedium, 'children')
-        if aoMediumChildren is None or len(aoMediumChildren) < 1:
+        if aoMediumChildren is None or not aoMediumChildren:
             return None;
 
         for oChildMedium in aoMediumChildren:
@@ -309,7 +294,7 @@ class tdStorageSnapshot(vbox.TestDriver):                                      #
         if oVM is None:
             return False;
 
-        sController = _ControllerTypeToName(eStorageController);
+        sController = self.controllerTypeToName(eStorageController);
 
         # Reconfigure the VM
         oSession = self.openSession(oVM);
@@ -386,7 +371,7 @@ class tdStorageSnapshot(vbox.TestDriver):                                      #
         reporter.testStart(sVmName);
 
         aoDskFmts = self.oVBoxMgr.getArray(self.oVBox.systemProperties, 'mediumFormats')
-        if aoDskFmts is None or len(aoDskFmts) < 1:
+        if aoDskFmts is None or not aoDskFmts:
             return False;
 
         fRc = True;

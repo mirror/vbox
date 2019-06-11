@@ -4001,3 +4001,22 @@ class TestDriver(base.TestDriver):                                              
             fSucceeded = False;
         return fSucceeded;
 
+    @staticmethod
+    def controllerTypeToName(eControllerType):
+        """
+        Translate a controller type to a standard controller name.
+        """
+        if eControllerType in (vboxcon.StorageControllerType_PIIX3, vboxcon.StorageControllerType_PIIX4,):
+            sName = "IDE Controller";
+        elif eControllerType == vboxcon.StorageControllerType_IntelAhci:
+            sName = "SATA Controller";
+        elif eControllerType == vboxcon.StorageControllerType_LsiLogicSas:
+            sName = "SAS Controller";
+        elif eControllerType in (vboxcon.StorageControllerType_LsiLogic, vboxcon.StorageControllerType_BusLogic,):
+            sName = "SCSI Controller";
+        elif eControllerType == vboxcon.StorageControllerType_NVMe:
+            sName = "NVMe Controller";
+        else:
+            sName = "Storage Controller";
+        return sName;
+

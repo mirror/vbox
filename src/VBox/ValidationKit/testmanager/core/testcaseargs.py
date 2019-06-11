@@ -350,7 +350,7 @@ class TestCaseArgsLogic(ModelLogicBase):
 
     def addTestCaseArgs(self, oTestCaseArgsData):
         """Add Test Case Args record into DB"""
-        pass
+        pass;                               # pylint: disable=unnecessary-pass
 
     def cachedLookup(self, idTestCaseArgs):
         """

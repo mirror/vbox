@@ -786,7 +786,9 @@ class SchedulerBase(object):
         #
         oTestSet      = TestSetData().initFromDbWithId(oDb, idTestSet);
         oTestBox      = TestBoxData().initFromDbWithGenId(oDb, oTestSet.idGenTestBox);
-        oTestEx       = TestCaseArgsDataEx().initFromDbWithGenId(oDb, oTestSet.idGenTestCaseArgs);
+        oTestEx       = TestCaseArgsDataEx().initFromDbWithGenIdEx(oDb, oTestSet.idGenTestCaseArgs,
+                                                                   tsConfigEff = oTestSet.tsConfig,
+                                                                   tsRsrcEff = oTestSet.tsConfig);
         oBuild        = BuildDataEx().initFromDbWithId(oDb, oTestSet.idBuild);
         oValidationKitBuild = None;
         if oTestSet.idBuildTestSuite is not None:
@@ -1477,8 +1479,9 @@ class SchedulerBase(object):
                             'WHERE  idTestSetGangLeader = %s\n'
                             , (oTestSetData.idTestSetGangLeader,) );
                 oTask = SchedQueueData().initFromDbRow(oDb.fetchOne());
-                oTestEx = TestCaseArgsDataEx().initFromDbWithGenId(oDb, oTask.idGenTestCaseArgs);
-
+                oTestEx = TestCaseArgsDataEx().initFromDbWithGenIdEx(oDb, oTask.idGenTestCaseArgs,
+                                                                     tsConfigEff = oTask.tsConfig,
+                                                                     tsRsrcEff = oTask.tsConfig);
                 oDb.execute('UPDATE SchedQueues\n'
                             '   SET idItem = NEXTVAL(\'SchedQueueItemIdSeq\'),\n'
                             '       idTestSetGangLeader = NULL,\n'
@@ -1489,7 +1492,7 @@ class SchedulerBase(object):
                 oDb.commit();
                 return True;
 
-            elif oStatusData.enmState == TestBoxStatusData.ksTestBoxState_GangGatheringTimedOut:
+            if oStatusData.enmState == TestBoxStatusData.ksTestBoxState_GangGatheringTimedOut:
                 oDb.rollback();
                 return True;
         except:

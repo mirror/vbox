@@ -41,7 +41,7 @@ g_cGraphs = 0;
 
 class WuiHlpGraphGoogleChartsBase(WuiHlpGraphBase):
     """ Base class for the Google Charts graphs. """
-    pass;
+    pass;                               # pylint: disable=unnecessary-pass
 
 
 ## @todo bar graphs later.

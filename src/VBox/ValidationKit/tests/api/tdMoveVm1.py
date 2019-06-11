@@ -192,7 +192,7 @@ class SubTstDrvMoveVm1(base.SubTestDriverBase):
             aReferences = set()
 
             # Check standard images locations, ISO files locations, floppy images locations, snapshots files locations
-            if sKey == 'StandardImage' or sKey == 'ISOImage' or sKey == 'FloppyImage':
+            if sKey in ('StandardImage', 'ISOImage', 'FloppyImage',):
                 aReferences = dsReferenceFiles[sKey]
                 if aReferences:
                     aoMediumAttachments = oMachine.getMediumAttachmentsOfController(sValue) ##@todo r=bird: API call, try-except!

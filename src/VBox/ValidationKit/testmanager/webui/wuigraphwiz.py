@@ -204,7 +204,7 @@ class WuiGraphWiz(WuiReportBase):
         """
         # Must be at least two series for something to be splittable.
         if len(aoSeries) <= 1:
-            if len(aoSeries) < 1:
+            if not aoSeries:
                 return [];
             return [aoSeries,];
 

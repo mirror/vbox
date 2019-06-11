@@ -52,7 +52,7 @@ class WuiException(TMExceptionBase):
     """
     For exceptions raised by Web UI code.
     """
-    pass;
+    pass;                               # pylint: disable=unnecessary-pass
 
 
 class WuiDispatcherBase(object):
@@ -409,7 +409,7 @@ class WuiDispatcherBase(object):
                                      '0' if fDefault is None else str(fDefault));
         # HACK: Checkboxes doesn't return a value when unchecked, so we always
         #       provide a default when dealing with boolean parameters.
-        return sValue == 'True' or sValue == 'true' or sValue == '1';
+        return sValue in ('True', 'true', '1',);
 
     def getIntParam(self, sName, iMin = None, iMax = None, iDefault = None):
         """
@@ -546,7 +546,7 @@ class WuiDispatcherBase(object):
 
             oListEntryTestCaseArgs = []
             for idTestCaseArgs in aiAllTestCaseArgs:
-                fArgsChecked   = True if idTestCaseArgs in aiCheckedTestCaseArgs else False
+                fArgsChecked   = idTestCaseArgs in aiCheckedTestCaseArgs;
 
                 # Dry run
                 sPrefix = '%s[%d][%d]' % (sName, idTestCase, idTestCaseArgs,);
@@ -561,11 +561,12 @@ class WuiDispatcherBase(object):
 
             sTestCaseName = self.getStringParam('%s[%d][sName]' % (sName, idTestCase), sDefault='')
 
-            oListEntryTestCase = \
-                (idTestCase,
-                 True if idTestCase in aiSelectedTestCaseIds else False,
-                 sTestCaseName,
-                 oListEntryTestCaseArgs)
+            oListEntryTestCase = (
+                idTestCase,
+                idTestCase in aiSelectedTestCaseIds,
+                sTestCaseName,
+                oListEntryTestCaseArgs
+            );
 
             aoListOfTestCases.append(oListEntryTestCase)
 

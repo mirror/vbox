@@ -47,7 +47,7 @@ class TestBoxException(Exception):
     """
     Custom exception class
     """
-    pass
+    pass;                               # pylint: disable=unnecessary-pass
 
 #
 # Logging.
@@ -66,7 +66,7 @@ def log2(sMessage, sCaller = None, sTsPrf = None):
     """
     Debug logging, will later be disabled by default.
     """
-    if True is True:
+    if True is True:                    # pylint: disable=comparison-with-itself
         if sTsPrf is None: sTsPrf = utils.getTimePrefix();
         print('[%s] %s' % (sTsPrf, sMessage,));
         sys.stdout.flush()

@@ -664,7 +664,7 @@ def processOutputChecked(*aPositionalArgs, **dKeywordArgs):
     sOutput, _ = oProcess.communicate();
     iExitCode  = oProcess.poll();
 
-    if iExitCode is not 0:
+    if iExitCode != 0:
         asArgs = dKeywordArgs.get('args');
         if asArgs is None:
             asArgs = aPositionalArgs[0];
@@ -937,7 +937,7 @@ def processCheckPidAndName(uPid, sName):
                 return False;
 
             # ps fails with non-zero exit code if the pid wasn't found.
-            if iExitCode is not 0:
+            if iExitCode != 0:
                 return False;
             if sCurName is None:
                 return False;
@@ -1953,7 +1953,7 @@ def unpackTarFile(sArchive, sDstDir, fnLog, fnError = None, fnFilter = None):
     # 60%+ speedup for python 2.7 and 50%+ speedup for python 3.5, both on windows with PDBs.
     # 20%+ speedup for python 2.7 and 15%+ speedup for python 3.5, both on windows skipping PDBs.
     #
-    if True is True:
+    if True is True: # pylint: disable=comparison-with-itself
         __installShUtilHacks(shutil);
         global g_fTarCopyFileObjOverriddend;
         if g_fTarCopyFileObjOverriddend is False:

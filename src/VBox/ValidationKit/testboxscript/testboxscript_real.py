@@ -66,7 +66,7 @@ if sys.version_info[0] >= 3:
 
 class TestBoxScriptException(Exception):
     """ For raising exceptions during TestBoxScript.__init__. """
-    pass;
+    pass;                               # pylint: disable=unnecessary-pass
 
 
 class TestBoxScript(object):
@@ -400,7 +400,7 @@ class TestBoxScript(object):
             return True;
         if sValue == 'false':
             return False;
-        if sValue != 'dunno' and sValue != 'none':
+        if sValue not in  ('dunno', 'none',):
             raise TestBoxException('Unexpected response "%s" to helper command "%s"' % (sValue, sCmd));
         return fDunnoValue;
 
@@ -452,7 +452,7 @@ class TestBoxScript(object):
                 oWmi  = win32com.client.Dispatch('WbemScripting.SWbemLocator');
                 oWebm = oWmi.ConnectServer('.', 'root\\cimv2');
                 for oItem in oWebm.ExecQuery('SELECT * FROM Win32_ComputerSystemProduct'):
-                    if oItem.UUID != None:
+                    if oItem.UUID is not None:
                         sUuid = str(uuid.UUID(oItem.UUID));
             except:
                 pass;
@@ -847,7 +847,7 @@ class TestBoxScript(object):
             return None;
 
         # Refresh sign-on parameters, changes triggers sign-on.
-        fNeedSignOn = (True if not self._fSignedOn or self._fNeedReSignOn else False)
+        fNeedSignOn = not self._fSignedOn or self._fNeedReSignOn;
         for item in self._ddSignOnParams:
             if self._ddSignOnParams[item][self.FN] is None:
                 continue

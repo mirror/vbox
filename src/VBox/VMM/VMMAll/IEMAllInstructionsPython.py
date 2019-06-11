@@ -620,7 +620,7 @@ class InstructionMap(object):
         self.asLeadOpcodes  = asLeadOpcodes;    ##< Lead opcode bytes formatted as hex strings like '0x0f'.
         self.sSelector      = sSelector;        ##< The member selector, see kdSelectors.
         self.sEncoding      = sEncoding;        ##< The encoding, see kdSelectors.
-        self.aoInstructions = [];               # type: Instruction
+        self.aoInstructions = []                # type: Instruction
         self.sDisParse      = sDisParse;        ##< IDX_ParseXXX.
 
     def getTableSize(self):
@@ -1277,10 +1277,10 @@ class InstructionTest(object):
     """
 
     def __init__(self, oInstr): # type: (InstructionTest, Instruction)
-        self.oInstr         = oInstr;   # type: InstructionTest
-        self.aoInputs       = [];       # type: list(TestInOut)
-        self.aoOutputs      = [];       # type: list(TestInOut)
-        self.aoSelectors    = [];       # type: list(TestSelector)
+        self.oInstr         = oInstr    # type: InstructionTest
+        self.aoInputs       = []        # type: list(TestInOut)
+        self.aoOutputs      = []        # type: list(TestInOut)
+        self.aoSelectors    = []        # type: list(TestSelector)
 
     def toString(self, fRepr = False):
         """
@@ -1339,12 +1339,12 @@ class Instruction(object): # pylint: disable=too-many-instance-attributes
         ## @{
         self.sMnemonic      = None;
         self.sBrief         = None;
-        self.asDescSections = [];       # type: list(str)
-        self.aoMaps         = [];       # type: list(InstructionMap)
-        self.aoOperands     = [];       # type: list(Operand)
+        self.asDescSections = []        # type: list(str)
+        self.aoMaps         = []        # type: list(InstructionMap)
+        self.aoOperands     = []        # type: list(Operand)
         self.sPrefix        = None;     ##< Single prefix: None, 'none', 0x66, 0xf3, 0xf2
-        self.sOpcode        = None;     # type: str
-        self.sSubOpcode     = None;     # type: str
+        self.sOpcode        = None      # type: str
+        self.sSubOpcode     = None      # type: str
         self.sEncoding      = None;
         self.asFlTest       = None;
         self.asFlModify     = None;
@@ -1355,7 +1355,7 @@ class Instruction(object): # pylint: disable=too-many-instance-attributes
         self.sDisEnum       = None;     ##< OP_XXXX value.  Default is based on the uppercased mnemonic.
         self.asCpuIds       = [];       ##< The CPUID feature bit names for this instruction. If multiple, assume AND.
         self.asReqFeatures  = [];       ##< Which features are required to be enabled to run this instruction.
-        self.aoTests        = [];       # type: list(InstructionTest)
+        self.aoTests        = []        # type: list(InstructionTest)
         self.sMinCpu        = None;     ##< Indicates the minimum CPU required for the instruction. Not set when oCpuExpr is.
         self.oCpuExpr       = None;     ##< Some CPU restriction expression...
         self.sGroup         = None;
@@ -1425,7 +1425,7 @@ class Instruction(object): # pylint: disable=too-many-instance-attributes
 
         sRet = '<' if fRepr else '';
         for sField, sValue in aasFields:
-            if sValue != None:
+            if sValue is not None:
                 if len(sRet) > 1:
                     sRet += '; ';
                 sRet += '%s=%s' % (sField, sValue,);
@@ -1515,16 +1515,16 @@ class Instruction(object): # pylint: disable=too-many-instance-attributes
 
 
 ## All the instructions.
-g_aoAllInstructions = []; # type: list(Instruction)
+g_aoAllInstructions = []            # type: list(Instruction)
 
 ## All the instructions indexed by statistics name (opstat).
-g_dAllInstructionsByStat = {}; # type: dict(Instruction)
+g_dAllInstructionsByStat = {}       # type: dict(Instruction)
 
 ## All the instructions indexed by function name (opfunction).
-g_dAllInstructionsByFunction = {}; # type: dict(list(Instruction))
+g_dAllInstructionsByFunction = {}   # type: dict(list(Instruction))
 
 ## Instructions tagged by oponlytest
-g_aoOnlyTestInstructions = []; # type: list(Instruction)
+g_aoOnlyTestInstructions = []       # type: list(Instruction)
 
 ## Instruction maps.
 g_dInstructionMaps = {
@@ -1975,7 +1975,7 @@ class SimpleParser(object):
         if len(sBrief) > 180:
             return self.errorComment(iTagLine, '%s: value too long (max 180 chars): %s' % (sTag, sBrief));
         offDot = sBrief.find('.');
-        while offDot >= 0 and offDot < len(sBrief) - 1 and sBrief[offDot + 1] != ' ':
+        while 0 <= offDot < len(sBrief) - 1 and sBrief[offDot + 1] != ' ':
             offDot = sBrief.find('.', offDot + 1);
         if offDot >= 0 and offDot != len(sBrief) - 1:
             return self.errorComment(iTagLine, '%s: only one sentence: %s' % (sTag, sBrief));
@@ -2041,7 +2041,7 @@ class SimpleParser(object):
         """
         oInstr = self.ensureInstructionForOpTag(iTagLine);
         idxOp = int(sTag[-1]) - 1;
-        assert idxOp >= 0 and idxOp < 4;
+        assert 0 <= idxOp < 4;
 
         # flatten, split up, and validate the "where:type" value.
         sFlattened = self.flattenAllSections(aasSections);
@@ -2583,7 +2583,7 @@ class SimpleParser(object):
                         else:
                             self.errorComment(iTagLine, '%s: invalid %s field "%s" in "%s"\nvalid fields: %s'
                                                          % ( sTag, sDesc, sField, sItem,
-                                                             ', '.join([sKey for sKey in TestInOut.kdFields.keys()
+                                                             ', '.join([sKey for sKey in TestInOut.kdFields
                                                                         if TestInOut.kdFields[sKey][1] in asValidFieldKinds]),));
                         break;
                     if oItem is not None:
@@ -2926,9 +2926,9 @@ class SimpleParser(object):
                     off += 1;
                 elif ch == chQuote:
                     chQuote = None;
-            elif ch == '"' or ch == '\'':
+            elif ch in ('"', '\'',):
                 chQuote = ch;
-            elif ch == ',' or ch == ')':
+            elif ch in (',', ')',):
                 if cDepth == 1:
                     asRet.append(sInvocation[offStart:off].strip());
                     offStart = off + 1;
@@ -3318,8 +3318,6 @@ def __parseFileByName(sSrcFile, sDefaultMap):
         cErrors = SimpleParser(sSrcFile, asLines, sDefaultMap).parse();
     except ParserException as oXcpt:
         print(str(oXcpt));
-        raise;
-    except Exception as oXcpt:
         raise;
 
     return cErrors;

@@ -127,7 +127,7 @@ class BuildSourceData(ModelDataBase):
             (oNewValue, sError) = ModelDataBase._validateAndConvertAttribute(self, sAttr, sParam, oValue,
                                                                              aoNilValues, fAllowNull, oDb);
             if sError is None:
-                if len(self.asTypes) <= 0:
+                if not self.asTypes:
                     oNewValue = None;
                 else:
                     for sType in oNewValue:
