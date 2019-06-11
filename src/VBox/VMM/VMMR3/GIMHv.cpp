@@ -319,7 +319,7 @@ VMMR3_INT_DECL(int) gimR3HvInit(PVM pVM, PCFGMNODE pGimCfg)
     RTStrCopy(pRegion->szDescription, sizeof(pRegion->szDescription), "Hyper-V TSC page");
 
     /*
-     * Make sure the CPU ID bit are in accordance to the Hyper-V
+     * Make sure the CPU ID bit are in accordance with the Hyper-V
      * requirement and other paranoia checks.
      * See "Requirements for implementing the Microsoft hypervisor interface" spec.
      */
