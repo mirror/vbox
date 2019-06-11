@@ -2213,10 +2213,11 @@ DECLINLINE(uint64_t) CPUMGetGuestVmxApicAccessPageAddr(PCVMCPU pVCpu, PCCPUMCTX 
  * Gets the nested-guest CR0 subject to the guest/host mask and the read-shadow.
  *
  * @returns The nested-guest CR0.
- * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
- * @param   pCtx        Pointer to the context.
+ * @param   pVCpu           The cross context virtual CPU structure of the calling EMT.
+ * @param   pCtx            Pointer to the context.
+ * @param   fGstHostMask    The CR0 guest/host mask to use.
  */
-DECLINLINE(uint64_t) CPUMGetGuestVmxMaskedCr0(PCVMCPU pVCpu, PCCPUMCTX pCtx)
+DECLINLINE(uint64_t) CPUMGetGuestVmxMaskedCr0(PCVMCPU pVCpu, PCCPUMCTX pCtx, uint64_t fGstHostMask)
 {
     /*
      * For each CR0 bit owned by the host, the corresponding bit from the
@@ -2230,7 +2231,6 @@ DECLINLINE(uint64_t) CPUMGetGuestVmxMaskedCr0(PCVMCPU pVCpu, PCCPUMCTX pCtx)
     PCVMXVVMCS pVmcs = pCtx->hwvirt.vmx.CTX_SUFF(pVmcs);
     Assert(pVmcs);
     uint64_t const uGstCr0      = pCtx->cr0;
-    uint64_t const fGstHostMask = pVmcs->u64Cr0Mask.u;
     uint64_t const fReadShadow  = pVmcs->u64Cr0ReadShadow.u;
     return (fReadShadow & fGstHostMask) | (uGstCr0 & ~fGstHostMask);
 }
@@ -2239,10 +2239,11 @@ DECLINLINE(uint64_t) CPUMGetGuestVmxMaskedCr0(PCVMCPU pVCpu, PCCPUMCTX pCtx)
  * Gets the nested-guest CR4 subject to the guest/host mask and the read-shadow.
  *
  * @returns The nested-guest CR4.
- * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
- * @param   pCtx        Pointer to the context.
+ * @param   pVCpu           The cross context virtual CPU structure of the calling EMT.
+ * @param   pCtx            Pointer to the context.
+ * @param   fGstHostMask    The CR4 guest/host mask to use.
  */
-DECLINLINE(uint64_t) CPUMGetGuestVmxMaskedCr4(PCVMCPU pVCpu, PCCPUMCTX pCtx)
+DECLINLINE(uint64_t) CPUMGetGuestVmxMaskedCr4(PCVMCPU pVCpu, PCCPUMCTX pCtx, uint64_t fGstHostMask)
 {
     /*
      * For each CR4 bit owned by the host, the corresponding bit from the
@@ -2256,7 +2257,6 @@ DECLINLINE(uint64_t) CPUMGetGuestVmxMaskedCr4(PCVMCPU pVCpu, PCCPUMCTX pCtx)
     PCVMXVVMCS pVmcs = pCtx->hwvirt.vmx.CTX_SUFF(pVmcs);
     Assert(pVmcs);
     uint64_t const uGstCr4      = pCtx->cr4;
-    uint64_t const fGstHostMask = pVmcs->u64Cr4Mask.u;
     uint64_t const fReadShadow  = pVmcs->u64Cr4ReadShadow.u;
     return (fReadShadow & fGstHostMask) | (uGstCr4 & ~fGstHostMask);
 }

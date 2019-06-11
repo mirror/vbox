@@ -4890,15 +4890,15 @@ static int hmR0VmxExportGuestCR0(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
         else
         {
             /*
-             * With nested-guests, we may have extended the guest/host mask here (since we
-             * merged in the outer guest's mask, see hmR0VmxMergeVmcsNested). This means, the
-             * mask can include more bits (to read from the nested-guest CR0 read-shadow) than
-             * the guest hypervisor originally supplied. Thus, we should, in essence, copy
-             * those bits from the nested-guest CR0 into the nested-guest CR0 read shadow.
+             * With nested-guests, we may have extended the guest/host mask here since we
+             * merged in the outer guest's mask. Thus, the merged mask can include more bits
+             * (to read from the nested-guest CR0 read-shadow) than the guest hypervisor
+             * originally supplied. We must copy those bits from the nested-guest CR0 into
+             * the nested-guest CR0 read-shadow.
              */
             HMVMX_CPUMCTX_ASSERT(pVCpu, CPUMCTX_EXTRN_CR0);
             uint64_t       u64GuestCr0  = pVCpu->cpum.GstCtx.cr0;
-            uint64_t const u64ShadowCr0 = CPUMGetGuestVmxMaskedCr0(pVCpu, &pVCpu->cpum.GstCtx);
+            uint64_t const u64ShadowCr0 = CPUMGetGuestVmxMaskedCr0(pVCpu, &pVCpu->cpum.GstCtx, pVmcsInfo->u64Cr0Mask);
             Assert(!RT_HI_U32(u64GuestCr0));
             Assert(u64GuestCr0 & X86_CR0_NE);
 
@@ -4907,7 +4907,7 @@ static int hmR0VmxExportGuestCR0(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
             u64GuestCr0 &= fZapCr0;
             u64GuestCr0 &= ~(uint64_t)(X86_CR0_CD | X86_CR0_NW);
 
-            /* Commit the CR0 and CR0 read shadow to the nested-guest VMCS. */
+            /* Commit the CR0 and CR0 read-shadow to the nested-guest VMCS. */
             /** @todo NSTVMX: Fix to 64-bit when we drop 32-bit. */
             int rc = VMXWriteVmcs32(VMX_VMCS_GUEST_CR0,              u64GuestCr0);
             rc    |= VMXWriteVmcsHstN(VMX_VMCS_CTRL_CR0_READ_SHADOW, u64ShadowCr0);
@@ -5066,13 +5066,13 @@ static VBOXSTRICTRC hmR0VmxExportGuestCR3AndCR4(PVMCPU pVCpu, PVMXTRANSIENT pVmx
          * merged in the outer guest's mask, see hmR0VmxMergeVmcsNested). This means, the
          * mask can include more bits (to read from the nested-guest CR4 read-shadow) than
          * the guest hypervisor originally supplied. Thus, we should, in essence, copy
-         * those bits from the nested-guest CR4 into the nested-guest CR4 read shadow.
+         * those bits from the nested-guest CR4 into the nested-guest CR4 read-shadow.
          */
         HMVMX_CPUMCTX_ASSERT(pVCpu, CPUMCTX_EXTRN_CR4);
         uint64_t       u64GuestCr4  = pCtx->cr4;
         uint64_t const u64ShadowCr4 = !pVmxTransient->fIsNestedGuest
                                     ? pCtx->cr4
-                                    : CPUMGetGuestVmxMaskedCr4(pVCpu, pCtx);
+                                    : CPUMGetGuestVmxMaskedCr4(pVCpu, pCtx, pVmcsInfo->u64Cr4Mask);
         Assert(!RT_HI_U32(u64GuestCr4));
 
         /*
@@ -5143,7 +5143,7 @@ static VBOXSTRICTRC hmR0VmxExportGuestCR3AndCR4(PVMCPU pVCpu, PVMXTRANSIENT pVmx
         u64GuestCr4 |= fSetCr4;
         u64GuestCr4 &= fZapCr4;
 
-        /* Commit the CR4 and CR4 read shadow to the guest VMCS. */
+        /* Commit the CR4 and CR4 read-shadow to the guest VMCS. */
         /** @todo Fix to 64-bit when we drop 32-bit. */
         rc  = VMXWriteVmcs32(VMX_VMCS_GUEST_CR4,              u64GuestCr4);
         rc |= VMXWriteVmcsHstN(VMX_VMCS_CTRL_CR4_READ_SHADOW, u64ShadowCr4);
@@ -7073,7 +7073,7 @@ static VBOXSTRICTRC hmR0VmxCheckExitDueToVmxInstr(PVMCPU pVCpu, uint32_t uExitRe
 
         /*
          * We check CR4.VMXE because it is required to be always set while in VMX operation
-         * by physical CPUs and our CR4 read shadow is only consulted when executing specific
+         * by physical CPUs and our CR4 read-shadow is only consulted when executing specific
          * instructions (CLTS, LMSW, MOV CR, and SMSW) and thus doesn't affect CPU operation
          * otherwise (i.e. physical CPU won't automatically #UD if Cr4Shadow.VMXE is 0).
          */
@@ -7622,26 +7622,9 @@ static int hmR0VmxImportGuestState(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo, uint64
 #endif
                     VMXLOCAL_BREAK_RC(rc);
                     u64Val = u32Val;
-#if 1
                     u64Val = (u64Val    & ~pVmcsInfo->u64Cr0Mask)
                            | (u64Shadow &  pVmcsInfo->u64Cr0Mask);
-#else
-                    if (!CPUMIsGuestInVmxNonRootMode(pCtx))
-                    {
-                        u64Val = (u64Val    & ~pVmcsInfo->u64Cr0Mask)
-                               | (u64Shadow &  pVmcsInfo->u64Cr0Mask);
-                    }
-                    else
-                    {
-                        /** @todo NSTVMX: We need to do some unfudging here because we altered the
-                         *        guest/host mask before running the nested-guest. */
-                        PCVMXVVMCS pVmcsNstGst = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
-                        Assert(pVmcsNstGst);
 
-                        uint64_t const uGstCr0Mask = pVmcsNstGst->u64Cr0Mask.u;
-                        uint64_t const uHstCr0Mask = hmR0VmxGetFixedCr0Mask(pVCpu);
-                    }
-#endif
                     VMMRZCallRing3Disable(pVCpu);   /* May call into PGM which has Log statements. */
                     CPUMSetGuestCR0(pVCpu, u64Val);
                     VMMRZCallRing3Enable(pVCpu);
