@@ -189,7 +189,7 @@
  * Map of VMCS field encodings to their virtual-VMCS structure offsets.
  *
  * The first array dimension is VMCS field encoding of Width OR'ed with Type and the
- * second dimension is the Index, see VMXVMCSFIELDENC.
+ * second dimension is the Index, see VMXVMCSFIELD.
  */
 uint16_t const g_aoffVmcsMap[16][VMX_V_VMCS_MAX_INDEX + 1] =
 {
@@ -444,14 +444,14 @@ uint16_t const g_aoffVmcsMap[16][VMX_V_VMCS_MAX_INDEX + 1] =
  * Returns whether the given VMCS field is valid and supported by our emulation.
  *
  * @param   pVCpu           The cross context virtual CPU structure.
- * @param   u64FieldEnc     The VMCS field encoding.
+ * @param   u64VmcsField    The VMCS field.
  *
  * @remarks This takes into account the CPU features exposed to the guest.
  */
-IEM_STATIC bool iemVmxIsVmcsFieldValid(PCVMCPU pVCpu, uint64_t u64FieldEnc)
+IEM_STATIC bool iemVmxIsVmcsFieldValid(PCVMCPU pVCpu, uint64_t u64VmcsField)
 {
-    uint32_t const uFieldEncHi = RT_HI_U32(u64FieldEnc);
-    uint32_t const uFieldEncLo = RT_LO_U32(u64FieldEnc);
+    uint32_t const uFieldEncHi = RT_HI_U32(u64VmcsField);
+    uint32_t const uFieldEncLo = RT_LO_U32(u64VmcsField);
     if (!uFieldEncHi)
     { /* likely */ }
     else
@@ -7782,16 +7782,16 @@ IEM_STATIC bool iemVmxIsRdmsrWrmsrInterceptSet(PCVMCPU pVCpu, uint32_t uExitReas
  * @param   cbInstr         The instruction length in bytes.
  * @param   pu64Dst         Where to write the VMCS value (only updated when
  *                          VINF_SUCCESS is returned).
- * @param   u64FieldEnc     The VMCS field encoding.
+ * @param   u64VmcsField    The VMCS field.
  * @param   pExitInfo       Pointer to the VM-exit information. Optional, can be
  *                          NULL.
  */
-IEM_STATIC VBOXSTRICTRC iemVmxVmreadCommon(PVMCPU pVCpu, uint8_t cbInstr, uint64_t *pu64Dst, uint64_t u64FieldEnc,
+IEM_STATIC VBOXSTRICTRC iemVmxVmreadCommon(PVMCPU pVCpu, uint8_t cbInstr, uint64_t *pu64Dst, uint64_t u64VmcsField,
                                            PCVMXVEXITINFO pExitInfo)
 {
     /* Nested-guest intercept. */
     if (   IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
-        && CPUMIsGuestVmxVmreadVmwriteInterceptSet(pVCpu, VMX_EXIT_VMREAD, u64FieldEnc))
+        && CPUMIsGuestVmxVmreadVmwriteInterceptSet(pVCpu, VMX_EXIT_VMREAD, u64VmcsField))
     {
         if (pExitInfo)
             return iemVmxVmexitInstrWithInfo(pVCpu, pExitInfo);
@@ -7835,11 +7835,11 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmreadCommon(PVMCPU pVCpu, uint8_t cbInstr, uint64
     }
 
     /* Supported VMCS field. */
-    if (iemVmxIsVmcsFieldValid(pVCpu, u64FieldEnc))
+    if (iemVmxIsVmcsFieldValid(pVCpu, u64VmcsField))
     { /* likely */ }
     else
     {
-        Log(("vmread: VMCS field %#RX64 invalid -> VMFail\n", u64FieldEnc));
+        Log(("vmread: VMCS field %#RX64 invalid -> VMFail\n", u64VmcsField));
         pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmread_FieldInvalid;
         iemVmxVmFail(pVCpu, VMXINSTRERR_VMREAD_INVALID_COMPONENT);
         iemRegAddToRipAndClearRF(pVCpu, cbInstr);
@@ -7856,12 +7856,12 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmreadCommon(PVMCPU pVCpu, uint8_t cbInstr, uint64
         pbVmcs = (uint8_t *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pShadowVmcs);
     Assert(pbVmcs);
 
-    VMXVMCSFIELDENC FieldEnc;
-    FieldEnc.u = u64FieldEnc;
-    uint8_t  const uWidth     = RT_BF_GET(FieldEnc.u, VMX_BF_VMCS_ENC_WIDTH);
-    uint8_t  const uType      = RT_BF_GET(FieldEnc.u, VMX_BF_VMCS_ENC_TYPE);
+    VMXVMCSFIELD VmcsField;
+    VmcsField.u = u64VmcsField;
+    uint8_t  const uWidth     = RT_BF_GET(VmcsField.u, VMX_BF_VMCS_ENC_WIDTH);
+    uint8_t  const uType      = RT_BF_GET(VmcsField.u, VMX_BF_VMCS_ENC_TYPE);
     uint8_t  const uWidthType = (uWidth << 2) | uType;
-    uint8_t  const uIndex     = RT_BF_GET(FieldEnc.u, VMX_BF_VMCS_ENC_INDEX);
+    uint8_t  const uIndex     = RT_BF_GET(VmcsField.u, VMX_BF_VMCS_ENC_INDEX);
     AssertReturn(uIndex <= VMX_V_VMCS_MAX_INDEX, VERR_IEM_IPE_2);
     uint16_t const offField   = g_aoffVmcsMap[uWidthType][uIndex];
     Assert(offField < VMX_V_VMCS_SIZE);
@@ -7877,7 +7877,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmreadCommon(PVMCPU pVCpu, uint8_t cbInstr, uint64
      * type (i.e. 64-bits).
      */
     uint8_t      *pbField   = pbVmcs + offField;
-    uint8_t const uEffWidth = HMVmxGetVmcsFieldWidthEff(FieldEnc.u);
+    uint8_t const uEffWidth = HMVmxGetVmcsFieldWidthEff(VmcsField.u);
     switch (uEffWidth)
     {
         case VMX_VMCS_ENC_WIDTH_64BIT:
@@ -7896,14 +7896,14 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmreadCommon(PVMCPU pVCpu, uint8_t cbInstr, uint64
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   cbInstr         The instruction length in bytes.
  * @param   pu64Dst         Where to store the VMCS field's value.
- * @param   u64FieldEnc     The VMCS field encoding.
+ * @param   u64VmcsField    The VMCS field.
  * @param   pExitInfo       Pointer to the VM-exit information. Optional, can be
  *                          NULL.
  */
-IEM_STATIC VBOXSTRICTRC iemVmxVmreadReg64(PVMCPU pVCpu, uint8_t cbInstr, uint64_t *pu64Dst, uint64_t u64FieldEnc,
+IEM_STATIC VBOXSTRICTRC iemVmxVmreadReg64(PVMCPU pVCpu, uint8_t cbInstr, uint64_t *pu64Dst, uint64_t u64VmcsField,
                                           PCVMXVEXITINFO pExitInfo)
 {
-    VBOXSTRICTRC rcStrict = iemVmxVmreadCommon(pVCpu, cbInstr, pu64Dst, u64FieldEnc, pExitInfo);
+    VBOXSTRICTRC rcStrict = iemVmxVmreadCommon(pVCpu, cbInstr, pu64Dst, u64VmcsField, pExitInfo);
     if (rcStrict == VINF_SUCCESS)
     {
         iemVmxVmreadSuccess(pVCpu, cbInstr);
@@ -7922,15 +7922,15 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmreadReg64(PVMCPU pVCpu, uint8_t cbInstr, uint64_
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   cbInstr         The instruction length in bytes.
  * @param   pu32Dst         Where to store the VMCS field's value.
- * @param   u32FieldEnc     The VMCS field encoding.
+ * @param   u32VmcsField    The VMCS field.
  * @param   pExitInfo       Pointer to the VM-exit information. Optional, can be
  *                          NULL.
  */
-IEM_STATIC VBOXSTRICTRC iemVmxVmreadReg32(PVMCPU pVCpu, uint8_t cbInstr, uint32_t *pu32Dst, uint64_t u32FieldEnc,
+IEM_STATIC VBOXSTRICTRC iemVmxVmreadReg32(PVMCPU pVCpu, uint8_t cbInstr, uint32_t *pu32Dst, uint64_t u32VmcsField,
                                           PCVMXVEXITINFO pExitInfo)
 {
     uint64_t u64Dst;
-    VBOXSTRICTRC rcStrict = iemVmxVmreadCommon(pVCpu, cbInstr, &u64Dst, u32FieldEnc, pExitInfo);
+    VBOXSTRICTRC rcStrict = iemVmxVmreadCommon(pVCpu, cbInstr, &u64Dst, u32VmcsField, pExitInfo);
     if (rcStrict == VINF_SUCCESS)
     {
         *pu32Dst = u64Dst;
@@ -7953,15 +7953,15 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmreadReg32(PVMCPU pVCpu, uint8_t cbInstr, uint32_
  *                          Pass UINT8_MAX if it is a register access.
  * @param   GCPtrDst        The guest linear address to store the VMCS field's
  *                          value.
- * @param   u64FieldEnc     The VMCS field encoding.
+ * @param   u64VmcsField    The VMCS field.
  * @param   pExitInfo       Pointer to the VM-exit information. Optional, can be
  *                          NULL.
  */
-IEM_STATIC VBOXSTRICTRC iemVmxVmreadMem(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEffSeg, RTGCPTR GCPtrDst, uint64_t u64FieldEnc,
+IEM_STATIC VBOXSTRICTRC iemVmxVmreadMem(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEffSeg, RTGCPTR GCPtrDst, uint64_t u64VmcsField,
                                         PCVMXVEXITINFO pExitInfo)
 {
     uint64_t u64Dst;
-    VBOXSTRICTRC rcStrict = iemVmxVmreadCommon(pVCpu, cbInstr, &u64Dst, u64FieldEnc, pExitInfo);
+    VBOXSTRICTRC rcStrict = iemVmxVmreadCommon(pVCpu, cbInstr, &u64Dst, u64VmcsField, pExitInfo);
     if (rcStrict == VINF_SUCCESS)
     {
         /*
@@ -7998,16 +7998,16 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmreadMem(PVMCPU pVCpu, uint8_t cbInstr, uint8_t i
  * @param   u64Val          The value to write (or guest linear address to the
  *                          value), @a iEffSeg will indicate if it's a memory
  *                          operand.
- * @param   u64FieldEnc     The VMCS field encoding.
+ * @param   u64VmcsField    The VMCS field.
  * @param   pExitInfo       Pointer to the VM-exit information. Optional, can be
  *                          NULL.
  */
-IEM_STATIC VBOXSTRICTRC iemVmxVmwrite(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEffSeg, uint64_t u64Val, uint64_t u64FieldEnc,
+IEM_STATIC VBOXSTRICTRC iemVmxVmwrite(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEffSeg, uint64_t u64Val, uint64_t u64VmcsField,
                                       PCVMXVEXITINFO pExitInfo)
 {
     /* Nested-guest intercept. */
     if (   IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
-        && CPUMIsGuestVmxVmreadVmwriteInterceptSet(pVCpu, VMX_EXIT_VMWRITE, u64FieldEnc))
+        && CPUMIsGuestVmxVmreadVmwriteInterceptSet(pVCpu, VMX_EXIT_VMWRITE, u64VmcsField))
     {
         if (pExitInfo)
             return iemVmxVmexitInstrWithInfo(pVCpu, pExitInfo);
@@ -8076,11 +8076,11 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmwrite(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
         Assert(!pExitInfo || pExitInfo->InstrInfo.VmreadVmwrite.fIsRegOperand);
 
     /* Supported VMCS field. */
-    if (iemVmxIsVmcsFieldValid(pVCpu, u64FieldEnc))
+    if (iemVmxIsVmcsFieldValid(pVCpu, u64VmcsField))
     { /* likely */ }
     else
     {
-        Log(("vmwrite: VMCS field %#RX64 invalid -> VMFail\n", u64FieldEnc));
+        Log(("vmwrite: VMCS field %#RX64 invalid -> VMFail\n", u64VmcsField));
         pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmwrite_FieldInvalid;
         iemVmxVmFail(pVCpu, VMXINSTRERR_VMWRITE_INVALID_COMPONENT);
         iemRegAddToRipAndClearRF(pVCpu, cbInstr);
@@ -8088,13 +8088,13 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmwrite(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
     }
 
     /* Read-only VMCS field. */
-    bool const fIsFieldReadOnly = HMVmxIsVmcsFieldReadOnly(u64FieldEnc);
+    bool const fIsFieldReadOnly = HMVmxIsVmcsFieldReadOnly(u64VmcsField);
     if (   !fIsFieldReadOnly
         ||  IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fVmxVmwriteAll)
     { /* likely */ }
     else
     {
-        Log(("vmwrite: Write to read-only VMCS component %#RX64 -> VMFail\n", u64FieldEnc));
+        Log(("vmwrite: Write to read-only VMCS component %#RX64 -> VMFail\n", u64VmcsField));
         pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmwrite_FieldRo;
         iemVmxVmFail(pVCpu, VMXINSTRERR_VMWRITE_RO_COMPONENT);
         iemRegAddToRipAndClearRF(pVCpu, cbInstr);
@@ -8111,12 +8111,12 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmwrite(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
         pbVmcs = (uint8_t *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pShadowVmcs);
     Assert(pbVmcs);
 
-    VMXVMCSFIELDENC FieldEnc;
-    FieldEnc.u = u64FieldEnc;
-    uint8_t  const uWidth     = RT_BF_GET(FieldEnc.u, VMX_BF_VMCS_ENC_WIDTH);
-    uint8_t  const uType      = RT_BF_GET(FieldEnc.u, VMX_BF_VMCS_ENC_TYPE);
+    VMXVMCSFIELD VmcsField;
+    VmcsField.u = u64VmcsField;
+    uint8_t  const uWidth     = RT_BF_GET(VmcsField.u, VMX_BF_VMCS_ENC_WIDTH);
+    uint8_t  const uType      = RT_BF_GET(VmcsField.u, VMX_BF_VMCS_ENC_TYPE);
     uint8_t  const uWidthType = (uWidth << 2) | uType;
-    uint8_t  const uIndex     = RT_BF_GET(FieldEnc.u, VMX_BF_VMCS_ENC_INDEX);
+    uint8_t  const uIndex     = RT_BF_GET(VmcsField.u, VMX_BF_VMCS_ENC_INDEX);
     AssertReturn(uIndex <= VMX_V_VMCS_MAX_INDEX, VERR_IEM_IPE_2);
     uint16_t const offField   = g_aoffVmcsMap[uWidthType][uIndex];
     Assert(offField < VMX_V_VMCS_SIZE);
@@ -8128,7 +8128,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmwrite(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
      * indicates high bits (little endian).
      */
     uint8_t      *pbField   = pbVmcs + offField;
-    uint8_t const uEffWidth = HMVmxGetVmcsFieldWidthEff(FieldEnc.u);
+    uint8_t const uEffWidth = HMVmxGetVmcsFieldWidthEff(VmcsField.u);
     switch (uEffWidth)
     {
         case VMX_VMCS_ENC_WIDTH_64BIT:
@@ -9010,54 +9010,54 @@ IEM_CIMPL_DEF_2(iemCImpl_vmclear, uint8_t, iEffSeg, RTGCPTR, GCPtrVmcs)
 /**
  * Implements 'VMWRITE' register.
  */
-IEM_CIMPL_DEF_2(iemCImpl_vmwrite_reg, uint64_t, u64Val, uint64_t, u64FieldEnc)
+IEM_CIMPL_DEF_2(iemCImpl_vmwrite_reg, uint64_t, u64Val, uint64_t, u64VmcsField)
 {
-    return iemVmxVmwrite(pVCpu, cbInstr, UINT8_MAX /* iEffSeg */, u64Val, u64FieldEnc, NULL /* pExitInfo */);
+    return iemVmxVmwrite(pVCpu, cbInstr, UINT8_MAX /* iEffSeg */, u64Val, u64VmcsField, NULL /* pExitInfo */);
 }
 
 
 /**
  * Implements 'VMWRITE' memory.
  */
-IEM_CIMPL_DEF_3(iemCImpl_vmwrite_mem, uint8_t, iEffSeg, RTGCPTR, GCPtrVal, uint32_t, u64FieldEnc)
+IEM_CIMPL_DEF_3(iemCImpl_vmwrite_mem, uint8_t, iEffSeg, RTGCPTR, GCPtrVal, uint32_t, u64VmcsField)
 {
-    return iemVmxVmwrite(pVCpu, cbInstr, iEffSeg, GCPtrVal, u64FieldEnc,  NULL /* pExitInfo */);
+    return iemVmxVmwrite(pVCpu, cbInstr, iEffSeg, GCPtrVal, u64VmcsField,  NULL /* pExitInfo */);
 }
 
 
 /**
  * Implements 'VMREAD' register (64-bit).
  */
-IEM_CIMPL_DEF_2(iemCImpl_vmread_reg64, uint64_t *, pu64Dst, uint64_t, u64FieldEnc)
+IEM_CIMPL_DEF_2(iemCImpl_vmread_reg64, uint64_t *, pu64Dst, uint64_t, u64VmcsField)
 {
-    return iemVmxVmreadReg64(pVCpu, cbInstr, pu64Dst, u64FieldEnc, NULL /* pExitInfo */);
+    return iemVmxVmreadReg64(pVCpu, cbInstr, pu64Dst, u64VmcsField, NULL /* pExitInfo */);
 }
 
 
 /**
  * Implements 'VMREAD' register (32-bit).
  */
-IEM_CIMPL_DEF_2(iemCImpl_vmread_reg32, uint32_t *, pu32Dst, uint32_t, u32FieldEnc)
+IEM_CIMPL_DEF_2(iemCImpl_vmread_reg32, uint32_t *, pu32Dst, uint32_t, u32VmcsField)
 {
-    return iemVmxVmreadReg32(pVCpu, cbInstr, pu32Dst, u32FieldEnc, NULL /* pExitInfo */);
+    return iemVmxVmreadReg32(pVCpu, cbInstr, pu32Dst, u32VmcsField, NULL /* pExitInfo */);
 }
 
 
 /**
  * Implements 'VMREAD' memory, 64-bit register.
  */
-IEM_CIMPL_DEF_3(iemCImpl_vmread_mem_reg64, uint8_t, iEffSeg, RTGCPTR, GCPtrDst, uint32_t, u64FieldEnc)
+IEM_CIMPL_DEF_3(iemCImpl_vmread_mem_reg64, uint8_t, iEffSeg, RTGCPTR, GCPtrDst, uint32_t, u64VmcsField)
 {
-    return iemVmxVmreadMem(pVCpu, cbInstr, iEffSeg, GCPtrDst, u64FieldEnc, NULL /* pExitInfo */);
+    return iemVmxVmreadMem(pVCpu, cbInstr, iEffSeg, GCPtrDst, u64VmcsField, NULL /* pExitInfo */);
 }
 
 
 /**
  * Implements 'VMREAD' memory, 32-bit register.
  */
-IEM_CIMPL_DEF_3(iemCImpl_vmread_mem_reg32, uint8_t, iEffSeg, RTGCPTR, GCPtrDst, uint32_t, u32FieldEnc)
+IEM_CIMPL_DEF_3(iemCImpl_vmread_mem_reg32, uint8_t, iEffSeg, RTGCPTR, GCPtrDst, uint32_t, u32VmcsField)
 {
-    return iemVmxVmreadMem(pVCpu, cbInstr, iEffSeg, GCPtrDst, u32FieldEnc, NULL /* pExitInfo */);
+    return iemVmxVmreadMem(pVCpu, cbInstr, iEffSeg, GCPtrDst, u32VmcsField, NULL /* pExitInfo */);
 }
 
 
