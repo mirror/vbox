@@ -2944,6 +2944,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstr(PVMCPU pVCpu, uint32_t uExitReason, ui
     {
         case VMX_EXIT_INVEPT:
         case VMX_EXIT_INVPCID:
+        case VMX_EXIT_INVVPID:
         case VMX_EXIT_LDTR_TR_ACCESS:
         case VMX_EXIT_GDTR_IDTR_ACCESS:
         case VMX_EXIT_VMCLEAR:
