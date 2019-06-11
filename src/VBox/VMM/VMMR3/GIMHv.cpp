@@ -255,29 +255,29 @@ VMMR3_INT_DECL(int) gimR3HvInit(PVM pVM, PCFGMNODE pGimCfg)
     {
         /* Basic features. */
         pHv->uBaseFeat = 0
-                       //| GIM_HV_BASE_FEAT_VP_RUNTIME_MSR
+                     //| GIM_HV_BASE_FEAT_VP_RUNTIME_MSR
                        | GIM_HV_BASE_FEAT_PART_TIME_REF_COUNT_MSR
-                       //| GIM_HV_BASE_FEAT_BASIC_SYNIC_MSRS          // Both required for synethetic timers
-                       //| GIM_HV_BASE_FEAT_STIMER_MSRS               // Both required for synethetic timers
+                     //| GIM_HV_BASE_FEAT_BASIC_SYNIC_MSRS          // Both required for synethetic timers
+                     //| GIM_HV_BASE_FEAT_STIMER_MSRS               // Both required for synethetic timers
                        | GIM_HV_BASE_FEAT_APIC_ACCESS_MSRS
                        | GIM_HV_BASE_FEAT_HYPERCALL_MSRS
                        | GIM_HV_BASE_FEAT_VP_ID_MSR
                        | GIM_HV_BASE_FEAT_VIRT_SYS_RESET_MSR
-                       //| GIM_HV_BASE_FEAT_STAT_PAGES_MSR
+                     //| GIM_HV_BASE_FEAT_STAT_PAGES_MSR
                        | GIM_HV_BASE_FEAT_PART_REF_TSC_MSR
-                       //| GIM_HV_BASE_FEAT_GUEST_IDLE_STATE_MSR
+                     //| GIM_HV_BASE_FEAT_GUEST_IDLE_STATE_MSR
                        | GIM_HV_BASE_FEAT_TIMER_FREQ_MSRS
-                       //| GIM_HV_BASE_FEAT_DEBUG_MSRS
+                     //| GIM_HV_BASE_FEAT_DEBUG_MSRS
                        ;
 
         /* Miscellaneous features. */
         pHv->uMiscFeat = 0
                        //| GIM_HV_MISC_FEAT_GUEST_DEBUGGING
                        //| GIM_HV_MISC_FEAT_XMM_HYPERCALL_INPUT
-                       | GIM_HV_MISC_FEAT_TIMER_FREQ
-                       | GIM_HV_MISC_FEAT_GUEST_CRASH_MSRS
+                         | GIM_HV_MISC_FEAT_TIMER_FREQ
+                         | GIM_HV_MISC_FEAT_GUEST_CRASH_MSRS
                        //| GIM_HV_MISC_FEAT_DEBUG_MSRS
-                       ;
+                         ;
 
         /* Hypervisor recommendations to the guest. */
         pHv->uHyperHints = GIM_HV_HINT_MSR_FOR_SYS_RESET
