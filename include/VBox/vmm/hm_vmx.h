@@ -3488,7 +3488,7 @@ typedef struct
     /** @} */
 
     /** @name 16-bit Guest-state fields.
-     * Order of [ES..GS] is important, must match X86_SREG_XXX.
+     * Order of [ES..GS] must match [X86_SREG_ES..X86_SREG_GS]!
      * @{ */
     /** 0x3e - Guest ES selector. */
     RTSEL           GuestEs;
@@ -3515,6 +3515,7 @@ typedef struct
     /** @} */
 
     /** @name 16-bit Host-state fields.
+     * Order of [ES..GS] must match [X86_SREG_ES..X86_SREG_GS]!
      * @{ */
     /** 0x62 - Host ES selector. */
     RTSEL           HostEs;
@@ -3599,7 +3600,7 @@ typedef struct
     /** @} */
 
     /** @name 32-bit Guest-state fields.
-     * Order of [ES..GS] limit and attributes are important, must match X86_SREG_XXX.
+     * Order of [ES..GS] limit & attributes must match [X86_SREG_ES..X86_SREG_GS]!
      * @{ */
     /** 0x12c - Guest ES limit. */
     uint32_t        u32GuestEsLimit;
