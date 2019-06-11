@@ -415,7 +415,7 @@ class WuiReportFailuresWithTotalBase(WuiReportFailuresBase):
 
                     oTable.addRow(oPeriod.sDesc, aiValues, asValues);
 
-                if True: # pylint: disable=W0125
+                if True: # pylint: disable=using-constant-test
                     aiValues = [];
                     asValues = [];
                     for idKey in aidSorted:

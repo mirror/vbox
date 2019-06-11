@@ -522,7 +522,7 @@ class WuiDispatcherBase(object):
 
         return asValues;
 
-    def getListOfTestCasesParam(self, sName, asDefaults = None):  # too many local vars - pylint: disable=R0914
+    def getListOfTestCasesParam(self, sName, asDefaults = None):  # too many local vars - pylint: disable=too-many-locals
         """Get list of test cases and their parameters"""
         if sName in self._dParams:
             if sName not in self._asCheckedParams:
@@ -854,7 +854,7 @@ class WuiDispatcherBase(object):
         (self._sPageTitle, self._sPageBody) = oForm.showForm();
         return True
 
-    def _actionGenericFormDetails(self, oDataType, oLogicType, oFormType, sIdAttr = None, sGenIdAttr = None): # pylint: disable=R0914
+    def _actionGenericFormDetails(self, oDataType, oLogicType, oFormType, sIdAttr = None, sGenIdAttr = None): # pylint: disable=too-many-locals
         """
         Generic handler for showing a details form/page.
 

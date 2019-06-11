@@ -55,7 +55,7 @@ if sys.version_info[0] >= 3:
     xrange = range; # pylint: disable=redefined-builtin,invalid-name
 
 
-class tdUsbBenchmark(vbox.TestDriver):                                      # pylint: disable=R0902
+class tdUsbBenchmark(vbox.TestDriver):                                      # pylint: disable=too-many-instance-attributes
     """
     USB benchmark.
     """
@@ -153,7 +153,7 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
         reporter.log('      Whether to capture the USB traffic for each test');
         return rc;
 
-    def parseOption(self, asArgs, iArg):                                        # pylint: disable=R0912,R0915
+    def parseOption(self, asArgs, iArg):                                        # pylint: disable=too-many-branches,too-many-statements
         if asArgs[iArg] == '--virt-modes':
             iArg += 1;
             if iArg >= len(asArgs): raise base.InvalidOption('The "--virt-modes" takes a colon separated list of modes');
@@ -422,7 +422,7 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
         _ = sUsbCtrl;
         return fRc;
 
-    def testUsbReattach(self, oSession, oTxsSession, sUsbCtrl, sSpeed, sCaptureFile = None): # pylint: disable=W0613
+    def testUsbReattach(self, oSession, oTxsSession, sUsbCtrl, sSpeed, sCaptureFile = None): # pylint: disable=unused-argument
         """
         Tests that rapid connect/disconnect cycles work.
         """

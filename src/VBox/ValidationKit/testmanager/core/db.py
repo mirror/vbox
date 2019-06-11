@@ -213,13 +213,13 @@ class TMDatabaseConnection(object):
             dArgs['host'] = config.g_ksDatabaseAddress;
         if config.g_ksDatabasePort is not None:
             dArgs['port'] = config.g_ksDatabasePort;
-        self._oConn             = psycopg2.connect(**dArgs); # pylint: disable=W0142
+        self._oConn             = psycopg2.connect(**dArgs); # pylint: disable=star-args
         self._oConn.set_client_encoding('UTF-8');
         self._oCursor           = self._oConn.cursor();
         self._oExplainConn      = None;
         self._oExplainCursor    = None;
         if config.g_kfWebUiSqlTraceExplain and config.g_kfWebUiSqlTrace:
-            self._oExplainConn  = psycopg2.connect(**dArgs); # pylint: disable=W0142
+            self._oExplainConn  = psycopg2.connect(**dArgs); # pylint: disable=star-args
             self._oExplainConn.set_client_encoding('UTF-8');
             self._oExplainCursor = self._oExplainConn.cursor();
         self._fTransaction      = False;
@@ -700,7 +700,7 @@ class TMDatabaseConnection(object):
                 dArgs['host'] = config.g_ksDatabaseAddress;
             if config.g_ksDatabasePort is not None:
                 dArgs['port'] = config.g_ksDatabasePort;
-            self._oExplainConn  = psycopg2.connect(**dArgs); # pylint: disable=W0142
+            self._oExplainConn  = psycopg2.connect(**dArgs); # pylint: disable=star-args
             self._oExplainCursor = self._oExplainConn.cursor();
         return True;
 

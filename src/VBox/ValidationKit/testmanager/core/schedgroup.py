@@ -258,13 +258,13 @@ class SchedGroupDataEx(SchedGroupData):
 
     def __init__(self):
         SchedGroupData.__init__(self);
-        self.aoMembers          = [];       # type: SchedGroupMemberDataEx
+        self.aoMembers          = []        # type: SchedGroupMemberDataEx
 
         # Two build sources for convenience sake.
-        self.oBuildSrc          = None;     # type: TestBoxData
-        self.oBuildSrcValidationKit = None; # type: TestBoxData
+        self.oBuildSrc          = None      # type: TestBoxData
+        self.oBuildSrcValidationKit = None  # type: TestBoxData
         # List of test boxes that uses this group for convenience.
-        self.aoTestBoxes        = None;     # type: list[TestBoxData]
+        self.aoTestBoxes        = None      # type: list[TestBoxData]
 
     def _initExtraMembersFromDb(self, oDb, tsNow = None, sPeriodBack = None):
         """
@@ -420,7 +420,7 @@ class SchedGroupDataEx(SchedGroupData):
 
 
 
-class SchedGroupLogic(ModelLogicBase): # pylint: disable=R0903
+class SchedGroupLogic(ModelLogicBase): # pylint: disable=too-few-public-methods
     """
     SchedGroup logic.
     """
@@ -577,17 +577,16 @@ class SchedGroupLogic(ModelLogicBase): # pylint: disable=R0903
                 asTestBoxes = ['%s (#%d)' % (oTestBox.sName, oTestBox.idTestBox) for oTestBox in oData.aoTestBoxes];
                 raise TMRowInUse('Scheduling group #%d is associated with one or more test boxes: %s'
                                  % (idSchedGroup, ', '.join(asTestBoxes),));
-            else:
-                # Reassign testboxes to scheduling group #1 (the default group).
-                oTbLogic = TestBoxLogic(self._oDb);
-                for oTestBox in oData.aoTestBoxes:
-                    oTbCopy = TestBoxData().initFromOther(oTestBox);
-                    oTbCopy.idSchedGroup = 1;
-                    oTbLogic.editEntry(oTbCopy, uidAuthor, fCommit = False);
+            # Reassign testboxes to scheduling group #1 (the default group).
+            oTbLogic = TestBoxLogic(self._oDb);
+            for oTestBox in oData.aoTestBoxes:
+                oTbCopy = TestBoxData().initFromOther(oTestBox);
+                oTbCopy.idSchedGroup = 1;
+                oTbLogic.editEntry(oTbCopy, uidAuthor, fCommit = False);
 
-                oData = SchedGroupDataEx().initFromDbWithId(self._oDb, idSchedGroup);
-                if oData.aoTestBoxes:
-                    raise TMRowInUse('More testboxes was added to the scheduling group as we were trying to delete it.');
+            oData = SchedGroupDataEx().initFromDbWithId(self._oDb, idSchedGroup);
+            if oData.aoTestBoxes:
+                raise TMRowInUse('More testboxes was added to the scheduling group as we were trying to delete it.');
 
         #
         # Remove the group and all member records.
@@ -981,7 +980,7 @@ class SchedGroupLogic(ModelLogicBase): # pylint: disable=R0903
 # Unit testing.
 #
 
-# pylint: disable=C0111
+# pylint: disable=missing-docstring
 class SchedGroupMemberDataTestCase(ModelDataBaseTestCase):
     def setUp(self):
         self.aoSamples = [SchedGroupMemberData(),];

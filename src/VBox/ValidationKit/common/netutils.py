@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # $Id$
-# pylint: disable=C0302
+# pylint: disable=too-many-lines
 
 """
 Common Network Utility Functions.

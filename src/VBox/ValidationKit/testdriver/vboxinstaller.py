@@ -836,7 +836,7 @@ class VBoxInstallerTestDriver(TestDriverBase):
         Uninstalls VBox on Windows, all installations we find to be on the safe side...
         """
 
-        import win32com.client; # pylint: disable=F0401
+        import win32com.client; # pylint: disable=import-error
         win32com.client.gencache.EnsureModule('{000C1092-0000-0000-C000-000000000046}', 1033, 1, 0);
         oInstaller = win32com.client.Dispatch('WindowsInstaller.Installer',
                                               resultCLSID = '{000C1090-0000-0000-C000-000000000046}')

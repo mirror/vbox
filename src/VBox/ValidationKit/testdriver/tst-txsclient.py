@@ -68,7 +68,7 @@ def stringRes(rc, sExpect):
     g_cFailures = g_cFailures + 1;
     return 'FAILED';
 
-def main(asArgs): # pylint: disable=C0111,R0914,R0915
+def main(asArgs): # pylint: disable=missing-docstring,too-many-locals,too-many-statements
     cMsTimeout      = long(30*1000);
     sAddress        = 'localhost';
     uPort           = None;

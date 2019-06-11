@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # $Id$
-# pylint: disable=C0301
+# pylint: disable=line-too-long
 
 """
 Cron job for importing revision history for a repository.
@@ -47,7 +47,7 @@ from testmanager.core.db            import TMDatabaseConnection;
 from testmanager.core.vcsrevisions  import VcsRevisionData, VcsRevisionLogic;
 from common                         import utils;
 
-class VcsImport(object): # pylint: disable=R0903
+class VcsImport(object): # pylint: disable=too-few-public-methods
     """
     Imports revision history from a VSC into the Test Manager database.
     """

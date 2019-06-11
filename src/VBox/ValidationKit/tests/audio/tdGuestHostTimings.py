@@ -49,7 +49,7 @@ from testdriver import vbox
 from testdriver import vboxcon
 from testdriver import vboxtestvms
 
-class tdGuestHostTimings(vbox.TestDriver):                                         # pylint: disable=R0902
+class tdGuestHostTimings(vbox.TestDriver):                                         # pylint: disable=too-many-instance-attributes
 
     def __init__(self):
         vbox.TestDriver.__init__(self);
@@ -74,7 +74,7 @@ class tdGuestHostTimings(vbox.TestDriver):                                      
         reporter.log(' --runningvmname <vmname>');
         return rc;
 
-    def parseOption(self, asArgs, iArg):                                        # pylint: disable=R0912,R0915
+    def parseOption(self, asArgs, iArg):                                        # pylint: disable=too-many-branches,too-many-statements
         if asArgs[iArg] == '--runningvmname':
             iArg += 1
             if iArg >= len(asArgs):

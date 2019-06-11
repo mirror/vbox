@@ -50,7 +50,7 @@ TBS_EXITCODE_NEED_UPGRADE   = 9;
 ## @}
 
 
-class TestBoxScriptWrapper(object): # pylint: disable=R0903
+class TestBoxScriptWrapper(object): # pylint: disable=too-few-public-methods
     """
     Wrapper class
     """

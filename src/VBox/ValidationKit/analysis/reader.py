@@ -36,7 +36,7 @@ __all__     = ['ParseTestResult', ]
 import os
 import traceback
 
-# pylint: disable=C0111
+# pylint: disable=missing-docstring
 
 class Value(object):
     """

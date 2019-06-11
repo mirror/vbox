@@ -95,7 +95,7 @@ class TestBoxScript(object):
 
     # Keys for config params
     VALUE = 'value'
-    FN = 'fn'                           # pylint: disable=C0103
+    FN = 'fn'                           # pylint: disable=invalid-name
 
     ## @}
 
@@ -135,7 +135,7 @@ class TestBoxScript(object):
                 self._oOptions.sScratchRoot = '/var/tmp';
             sSubDir = 'testbox';
             try:
-                sSubDir = '%s-%u' % (sSubDir, os.getuid()); # pylint: disable=E1101
+                sSubDir = '%s-%u' % (sSubDir, os.getuid()); # pylint: disable=no-member
             except:
                 pass;
             self._oOptions.sScratchRoot = os.path.join(self._oOptions.sScratchRoot, sSubDir);
@@ -278,7 +278,7 @@ class TestBoxScript(object):
                 sMountOpt = ',' + sMountOpt
             utils.sudoProcessCall(['/sbin/umount', sMountPoint]);
             utils.sudoProcessCall(['/bin/mkdir', '-p', sMountPoint]);
-            utils.sudoProcessCall(['/usr/sbin/chown', str(os.getuid()), sMountPoint]); # pylint: disable=E1101
+            utils.sudoProcessCall(['/usr/sbin/chown', str(os.getuid()), sMountPoint]); # pylint: disable=no-member
             if sType == 'cifs':
                 # Note! no smb://server/share stuff here, 10.6.8 didn't like it.
                 utils.processOutputChecked(['/sbin/mount_smbfs',
@@ -301,8 +301,8 @@ class TestBoxScript(object):
                                                 'user=' + sUser
                                                 + ',password=' + sPassword
                                                 + ',sec=ntlmv2'
-                                                + ',uid=' + str(os.getuid()) # pylint: disable=E1101
-                                                + ',gid=' + str(os.getgid()) # pylint: disable=E1101
+                                                + ',uid=' + str(os.getuid()) # pylint: disable=no-member
+                                                + ',gid=' + str(os.getgid()) # pylint: disable=no-member
                                                 + ',nounix,file_mode=0555,dir_mode=0555,soft,ro'
                                                 + sMountOpt,
                                                 '//%s/%s' % (sServer, sShare),
@@ -329,8 +329,8 @@ class TestBoxScript(object):
                 utils.sudoProcessOutputChecked(['/sbin/mount', '-F', 'smbfs',
                                                 '-o',
                                                 'user=' + sUser
-                                                + ',uid=' + str(os.getuid()) # pylint: disable=E1101
-                                                + ',gid=' + str(os.getgid()) # pylint: disable=E1101
+                                                + ',uid=' + str(os.getuid()) # pylint: disable=no-member
+                                                + ',gid=' + str(os.getgid()) # pylint: disable=no-member
                                                 + ',fileperms=0555,dirperms=0555,noxattr,ro'
                                                 + sMountOpt,
                                                 '//%s/%s' % (sServer, sShare),
@@ -448,7 +448,7 @@ class TestBoxScript(object):
         elif utils.getHostOs() == 'win':
             # Windows: WMI
             try:
-                import win32com.client;  # pylint: disable=F0401
+                import win32com.client;  # pylint: disable=import-error
                 oWmi  = win32com.client.Dispatch('WbemScripting.SWbemLocator');
                 oWebm = oWmi.ConnectServer('.', 'root\\cimv2');
                 for oItem in oWebm.ExecQuery('SELECT * FROM Win32_ComputerSystemProduct'):
@@ -591,7 +591,7 @@ class TestBoxScript(object):
                                                        ctypes.pointer(cTypeMbFreeSpace))
             cMbFreeSpace = cTypeMbFreeSpace.value
         else:
-            stats = os.statvfs(self._oOptions.sScratchRoot); # pylint: disable=E1101
+            stats = os.statvfs(self._oOptions.sScratchRoot); # pylint: disable=no-member
             cMbFreeSpace = stats.f_frsize * stats.f_bfree
 
         # Convert to MB
@@ -686,7 +686,7 @@ class TestBoxScript(object):
         if fUseTheForce is None:
             fUseTheForce = self._fFirstSignOn;
 
-        class ErrorCallback(object): # pylint: disable=R0903
+        class ErrorCallback(object): # pylint: disable=too-few-public-methods
             """
             Callbacks + state for the cleanup.
             """

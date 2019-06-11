@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # $Id$
-# pylint: disable=C0302
+# pylint: disable=too-many-lines
 
 """
 Test eXecution Service Client.
@@ -718,10 +718,10 @@ class Session(TdTaskBase):
 
     #
     # Process task
-    # pylint: disable=C0111
+    # pylint: disable=missing-docstring
     #
 
-    def taskExecEx(self, sExecName, fFlags, asArgs, asAddEnv, oStdIn, oStdOut, oStdErr, oTestPipe, sAsUser): # pylint: disable=R0913,R0914,R0915,C0301
+    def taskExecEx(self, sExecName, fFlags, asArgs, asAddEnv, oStdIn, oStdOut, oStdErr, oTestPipe, sAsUser): # pylint: disable=too-many-arguments,too-many-locals,too-many-statements,line-too-long
         # Construct the payload.
         aoPayload = [long(fFlags), '%s' % (sExecName), long(len(asArgs))];
         for sArg in asArgs:
@@ -917,9 +917,9 @@ class Session(TdTaskBase):
         # Cleanup.
         for o in (oStdIn, oStdOut, oStdErr, oTestPipe):
             if o is not None and not utils.isString(o):
-                del o.uTxsClientCrc32;      # pylint: disable=E1103
+                del o.uTxsClientCrc32;      # pylint: disable=maybe-no-member
                 # Make sure all files are closed
-                o.close();                  # pylint: disable=E1103
+                o.close();                  # pylint: disable=maybe-no-member
         reporter.log('taskExecEx: returns %s' % (rc));
         return rc;
 
@@ -1050,7 +1050,7 @@ class Session(TdTaskBase):
 
     def taskUploadString(self, sContent, sRemoteFile):
         # Wrap sContent in a file like class.
-        class InStringFile(object): # pylint: disable=R0903
+        class InStringFile(object): # pylint: disable=too-few-public-methods
             def __init__(self, sContent):
                 self.sContent = sContent;
                 self.off      = 0;
@@ -1147,7 +1147,7 @@ class Session(TdTaskBase):
 
     def taskDownloadString(self, sRemoteFile, sEncoding = 'utf-8', fIgnoreEncodingErrors = True):
         # Wrap sContent in a file like class.
-        class OutStringFile(object): # pylint: disable=R0903
+        class OutStringFile(object): # pylint: disable=too-few-public-methods
             def __init__(self):
                 self.asContent = [];
 
@@ -1231,7 +1231,7 @@ class Session(TdTaskBase):
             rc = self.recvAckLogged('UNPKFILE');
         return rc;
 
-    # pylint: enable=C0111
+    # pylint: enable=missing-docstring
 
 
     #
@@ -1309,7 +1309,7 @@ class Session(TdTaskBase):
     # Public methods - execution.
     #
 
-    def asyncExecEx(self, sExecName, asArgs = (), asAddEnv = (), # pylint: disable=R0913
+    def asyncExecEx(self, sExecName, asArgs = (), asAddEnv = (), # pylint: disable=too-many-arguments
                     oStdIn = None, oStdOut = None, oStdErr = None, oTestPipe = None,
                     sAsUser = "", cMsTimeout = 3600000, fIgnoreErrors = False):
         """
@@ -1338,7 +1338,7 @@ class Session(TdTaskBase):
                               (sExecName, long(0), asArgs, asAddEnv, oStdIn,
                                oStdOut, oStdErr, oTestPipe, sAsUser));
 
-    def syncExecEx(self, sExecName, asArgs = (), asAddEnv = (), # pylint: disable=R0913
+    def syncExecEx(self, sExecName, asArgs = (), asAddEnv = (), # pylint: disable=too-many-arguments
                    oStdIn = '/dev/null', oStdOut = '/dev/null',
                    oStdErr = '/dev/null', oTestPipe = '/dev/null',
                    sAsUser = '', cMsTimeout = 3600000, fIgnoreErrors = False):
@@ -1894,7 +1894,7 @@ class TransportTcp(TransportBase):
         oWakeupR = None;
         oWakeupW = None;
         if hasattr(socket, 'socketpair'):
-            try:    (oWakeupR, oWakeupW) = socket.socketpair();         # pylint: disable=E1101
+            try:    (oWakeupR, oWakeupW) = socket.socketpair();         # pylint: disable=no-member
             except: reporter.logXcpt('socket.socketpair() failed');
 
         # Update the state.

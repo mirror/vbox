@@ -36,10 +36,10 @@ if sys.version_info[0] >= 3:
 else:
     from StringIO import StringIO as StringIO;  # pylint: disable=import-error,no-name-in-module
 
-import matplotlib;                              # pylint: disable=F0401
+import matplotlib;                              # pylint: disable=import-error
 matplotlib.use('Agg'); # Force backend.
-import matplotlib.pyplot;                       # pylint: disable=F0401
-from numpy import arange as numpy_arange;       # pylint: disable=E0611,E0401,wrong-import-order
+import matplotlib.pyplot;                       # pylint: disable=import-error
+from numpy import arange as numpy_arange;       # pylint: disable=no-name-in-module,import-error,wrong-import-order
 
 # Validation Kit imports.
 from testmanager.webui.wuihlpgraphbase  import WuiHlpGraphBase;
@@ -63,7 +63,7 @@ class WuiHlpGraphMatplotlibBase(WuiHlpGraphBase):
         basic graph configuration.
         """
         if self._fXkcdStyle and matplotlib.__version__ > '1.2.9':
-            matplotlib.pyplot.xkcd();           # pylint: disable=E1101
+            matplotlib.pyplot.xkcd();           # pylint: disable=no-member
         matplotlib.rcParams.update({'font.size': self._cPtFont});
 
         oFigure = matplotlib.pyplot.figure(figsize = (float(self._cxGraph) / self._cDpiGraph,
@@ -105,7 +105,7 @@ class WuiHlpBarGraph(WuiHlpGraphMatplotlibBase):
         self.fpMax = float(fpMax);
         return None;
 
-    def renderGraph(self): # pylint: disable=R0914
+    def renderGraph(self): # pylint: disable=too-many-locals
         aoTable  = self._oData.aoTable;
 
         #
@@ -197,7 +197,7 @@ class WuiHlpLineGraph(WuiHlpGraphMatplotlibBase):
         self._fErrorBarY = fEnable;
         return True;
 
-    def renderGraph(self): # pylint: disable=R0914
+    def renderGraph(self): # pylint: disable=too-many-locals
         aoSeries = self._oData.aoSeries;
 
         oFigure = self._createFigure();
@@ -245,7 +245,7 @@ class WuiHlpLineGraph(WuiHlpGraphMatplotlibBase):
             oSubPlot.grid(True, 'major', axis = 'both');
             oSubPlot.grid(True, 'both', axis = 'x');
 
-        if True: # pylint: disable=W0125
+        if True: # pylint: disable=using-constant-test
             #    oSubPlot.axis('off');
             #oSubPlot.grid(True, 'major', axis = 'none');
             #oSubPlot.grid(True, 'both', axis = 'none');
@@ -277,7 +277,7 @@ class WuiHlpMiniSuccessRateGraph(WuiHlpGraphMatplotlibBase):
         WuiHlpGraphMatplotlibBase.__init__(self, sId, oData, oDisp);
         self.setFontSize(6);
 
-    def renderGraph(self): # pylint: disable=R0914
+    def renderGraph(self): # pylint: disable=too-many-locals
         assert len(self._oData.aoSeries) == 1;
         oSeries = self._oData.aoSeries[0];
 
@@ -287,7 +287,7 @@ class WuiHlpMiniSuccessRateGraph(WuiHlpGraphMatplotlibBase):
         # end
 
         oFigure = self._createFigure();
-        from mpl_toolkits.axes_grid.axislines import SubplotZero; # pylint: disable=E0401
+        from mpl_toolkits.axes_grid.axislines import SubplotZero; # pylint: disable=import-error
         oAxis = SubplotZero(oFigure, 111);
         oFigure.add_subplot(oAxis);
 

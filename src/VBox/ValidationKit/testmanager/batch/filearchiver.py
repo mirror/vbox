@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # $Id$
-# pylint: disable=C0301
+# pylint: disable=line-too-long
 
 """
 A cronjob that compresses logs and other files, moving them to the
@@ -52,7 +52,7 @@ from testmanager.core.testset   import TestSetData, TestSetLogic;
 
 
 
-class FileArchiverBatchJob(object): # pylint: disable=R0903
+class FileArchiverBatchJob(object): # pylint: disable=too-few-public-methods
     """
     Log+files comp
     """

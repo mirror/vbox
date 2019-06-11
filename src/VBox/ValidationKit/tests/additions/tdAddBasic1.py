@@ -52,7 +52,7 @@ from tdAddGuestCtrl import SubTstDrvAddGuestCtrl;
 from tdAddSharedFolders1 import SubTstDrvAddSharedFolders1;
 
 
-class tdAddBasic1(vbox.TestDriver):                                         # pylint: disable=R0902
+class tdAddBasic1(vbox.TestDriver):                                         # pylint: disable=too-many-instance-attributes
     """
     Additions Basics #1.
     """
@@ -83,7 +83,7 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
         reporter.log('      Same as --virt-modes hwvirt --cpu-counts 1.');
         return rc;
 
-    def parseOption(self, asArgs, iArg):                                        # pylint: disable=R0912,R0915
+    def parseOption(self, asArgs, iArg):                                  # pylint: disable=too-many-branches,too-many-statements
         if asArgs[iArg] == '--tests':
             iArg += 1;
             if iArg >= len(asArgs): raise base.InvalidOption('The "--tests" takes a colon separated list of tests');

@@ -59,7 +59,7 @@ def _ControllerTypeToName(eControllerType):
         sType = "Storage Controller";
     return sType;
 
-class tdStorageStress(vbox.TestDriver):                                      # pylint: disable=R0902
+class tdStorageStress(vbox.TestDriver):                                      # pylint: disable=too-many-instance-attributes
     """
     Storage testcase.
     """
@@ -124,7 +124,7 @@ class tdStorageStress(vbox.TestDriver):                                      # p
         reporter.log('      Skip the specified VMs when testing.');
         return rc;
 
-    def parseOption(self, asArgs, iArg):                                        # pylint: disable=R0912,R0915
+    def parseOption(self, asArgs, iArg):                                        # pylint: disable=too-many-branches,too-many-statements
         if asArgs[iArg] == '--virt-modes':
             iArg += 1;
             if iArg >= len(asArgs): raise base.InvalidOption('The "--virt-modes" takes a colon separated list of modes');
@@ -325,7 +325,7 @@ class tdStorageStress(vbox.TestDriver):                                      # p
         reporter.testDone(not fRc);
         return fRc;
 
-    # pylint: disable=R0913
+    # pylint: disable=too-many-arguments
 
     def test1OneCfg(self, sVmName, eStorageController, sDiskFormat, sDiskPath1, sDiskPath2, \
                     sGuestFs, cCpus, fHwVirt, fNestedPaging):

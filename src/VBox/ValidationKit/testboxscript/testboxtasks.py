@@ -431,7 +431,7 @@ class TestBoxTestDriverTask(TestBoxBaseTask):
                                             universal_newlines = True,
                                             close_fds  = (False if utils.getHostOs() == 'win' else True),
                                             preexec_fn = (None if utils.getHostOs() in ['win', 'os2']
-                                                          else os.setsid)); # pylint: disable=E1101
+                                                          else os.setsid)); # pylint: disable=no-member
         except Exception as oXcpt:
             self._log('Error creating child process %s: %s' % (asArgs, oXcpt));
             return (False, None);
@@ -517,7 +517,7 @@ class TestBoxTestDriverTask(TestBoxBaseTask):
 
             if iProcGroup > 0:
                 try:
-                    os.killpg(iProcGroup, signal.SIGTERM); # pylint: disable=E1101
+                    os.killpg(iProcGroup, signal.SIGTERM); # pylint: disable=no-member
                 except Exception as oXcpt:
                     self._log('killpg() failed: %s' % (oXcpt,));
 
@@ -533,7 +533,7 @@ class TestBoxTestDriverTask(TestBoxBaseTask):
         #
         if iProcGroup > 0:
             try:
-                os.killpg(iProcGroup, signal.SIGKILL); # pylint: disable=E1101
+                os.killpg(iProcGroup, signal.SIGKILL); # pylint: disable=no-member
             except Exception as oXcpt:
                 self._log('killpg() failed: %s' % (oXcpt,));
 

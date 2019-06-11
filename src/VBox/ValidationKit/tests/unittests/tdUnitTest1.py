@@ -98,7 +98,7 @@ class tdUnitTest1(vbox.TestDriver):
             'testcase/tstVMMR0CallHost-2': '',          # STATUS_STACK_OVERFLOW
             'testcase/tstX86-1': '',                    # Fails on win.x86.
             'tscpasswd': '',                            # ??
-            'tstVMREQ': '',                            # ?? Same as darwin.x86?
+            'tstVMREQ': '',                             # ?? Same as darwin.x86?
         },
         'win.x86': {
             'testcase/tstRTR0TimerDriver': '',          # See xTracker #8041.
@@ -504,7 +504,7 @@ class tdUnitTest1(vbox.TestDriver):
             reporter.errorXcpt();
             return False;
         reporter.log('Exit code [sudo]: %s (%s)' % (iRc, asArgs));
-        return iRc is 0;
+        return iRc == 0;
 
     def _hardenedMkDir(self, sPath):
         """
@@ -564,7 +564,7 @@ class tdUnitTest1(vbox.TestDriver):
                     raise Exception('Failed to remove "%s".' % (sPath,));
         return True;
 
-    def _executeTestCase(self, sName, sFullPath, sTestCaseSubDir, oDevNull): # pylint: disable=R0914
+    def _executeTestCase(self, sName, sFullPath, sTestCaseSubDir, oDevNull): # pylint: disable=too-many-locals
         """
         Executes a test case.
         """

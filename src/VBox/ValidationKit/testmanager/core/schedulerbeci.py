@@ -33,7 +33,7 @@ __version__ = "$Revision$"
 from testmanager.core.schedulerbase  import SchedulerBase, SchedQueueData;
 
 
-class SchdulerBeci(SchedulerBase): # pylint: disable=R0903
+class SchdulerBeci(SchedulerBase): # pylint: disable=too-few-public-methods
     """
     The best-effort-continuous-integration scheduler, BECI for short.
     """

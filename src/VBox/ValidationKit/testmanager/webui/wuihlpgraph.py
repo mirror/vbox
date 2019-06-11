@@ -29,12 +29,12 @@ terms and conditions of either the GPL or the CDDL or both.
 __version__ = "$Revision$"
 
 
-class WuiHlpGraphDataTable(object): # pylint: disable=R0903
+class WuiHlpGraphDataTable(object): # pylint: disable=too-few-public-methods
     """
     Data table container.
     """
 
-    class Row(object): # pylint: disable=R0903
+    class Row(object): # pylint: disable=too-few-public-methods
         """A row."""
         def __init__(self, sGroup, aoValues, asValues = None):
             self.sName    = sGroup;
@@ -58,12 +58,12 @@ class WuiHlpGraphDataTable(object): # pylint: disable=R0903
         return len(self.aoTable) - 1;
 
 
-class WuiHlpGraphDataTableEx(object): # pylint: disable=R0903
+class WuiHlpGraphDataTableEx(object): # pylint: disable=too-few-public-methods
     """
     Data container for an table/graph with optional error bars on the Y values.
     """
 
-    class DataSeries(object): # pylint: disable=R0903
+    class DataSeries(object): # pylint: disable=too-few-public-methods
         """
         A data series.
 
@@ -99,16 +99,16 @@ class WuiHlpGraphDataTableEx(object): # pylint: disable=R0903
 #
 # Dynamically choose implementation.
 #
-if True: # pylint: disable=W0125
+if True: # pylint: disable=using-constant-test
     from testmanager.webui import wuihlpgraphgooglechart        as GraphImplementation;
 else:
     try:
-        import matplotlib; # pylint: disable=W0611,F0401,import-error,wrong-import-order
+        import matplotlib; # pylint: disable=unused-import,import-error,import-error,wrong-import-order
         from testmanager.webui import wuihlpgraphmatplotlib     as GraphImplementation; # pylint: disable=ungrouped-imports
     except:
         from testmanager.webui import wuihlpgraphsimple         as GraphImplementation;
 
-# pylint: disable=C0103
+# pylint: disable=invalid-name
 WuiHlpBarGraph              = GraphImplementation.WuiHlpBarGraph;
 WuiHlpLineGraph             = GraphImplementation.WuiHlpLineGraph;
 WuiHlpLineGraphErrorbarY    = GraphImplementation.WuiHlpLineGraphErrorbarY;

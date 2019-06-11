@@ -153,7 +153,7 @@ class WuiTestResult(WuiContentBase):
                          sFragmentId = sFragment, sTitle = sTitle, fBracketed = False, ).toHtml();
 
     def _recursivelyGenerateEvents(self, oTestResult, sParentName, sLineage, iRow,
-                                   iFailure, oTestSet, iDepth):     # pylint: disable=R0914
+                                   iFailure, oTestSet, iDepth):     # pylint: disable=too-many-locals
         """
         Recursively generate event table rows for the result set.
 
@@ -441,7 +441,7 @@ class WuiTestResult(WuiContentBase):
         return sHtml;
 
 
-    def showTestCaseResultDetails(self,             # pylint: disable=R0914,R0915
+    def showTestCaseResultDetails(self,             # pylint: disable=too-many-locals,too-many-statements
                                   oTestResultTree,
                                   oTestSet,
                                   oBuildEx,

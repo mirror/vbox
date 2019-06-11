@@ -307,7 +307,7 @@ class GlobalResourceLogic(ModelLogicBase):
 # Unit testing.
 #
 
-# pylint: disable=C0111
+# pylint: disable=missing-docstring
 class GlobalResourceDataTestCase(ModelDataBaseTestCase):
     def setUp(self):
         self.aoSamples = [GlobalResourceData(),];

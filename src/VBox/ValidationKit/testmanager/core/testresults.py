@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # $Id$
-# pylint: disable=C0302
+# pylint: disable=too-many-lines
 
 ## @todo Rename this file to testresult.py!
 
@@ -549,7 +549,7 @@ class TestResultFileDataEx(TestResultFileData):
 
 
 
-class TestResultListingData(ModelDataBase): # pylint: disable=R0902
+class TestResultListingData(ModelDataBase): # pylint: disable=too-many-instance-attributes
     """
     Test case result data representation for table listing
     """
@@ -989,7 +989,7 @@ class TestResultFilter(ModelFilterBase):
 
 
 
-class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
+class TestResultLogic(ModelLogicBase): # pylint: disable=too-few-public-methods
     """
     Results grouped by scheduling group.
     """
@@ -1198,7 +1198,7 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
                      sExtraIndent, sTsNow, sInterval );
         return sRet
 
-    def fetchResultsForListing(self, iStart, cMaxRows, tsNow, sInterval, oFilter, enmResultSortBy, # pylint: disable=R0913
+    def fetchResultsForListing(self, iStart, cMaxRows, tsNow, sInterval, oFilter, enmResultSortBy, # pylint: disable=too-many-arguments
                                enmResultsGroupingType, iResultsGroupingValue, fOnlyFailures, fOnlyNeedingReason):
         """
         Fetches TestResults table content.
@@ -2557,7 +2557,7 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
         for sAttr in [ 'value', ]:
             if sAttr in dAttribs:
                 try:
-                    _ = long(dAttribs[sAttr]);  # pylint: disable=R0204
+                    _ = long(dAttribs[sAttr]);  # pylint: disable=redefined-variable-type
                 except:
                     return 'Element %s has an invalid %s attribute value: %s.' % (sName, sAttr, dAttribs[sAttr],);
 
@@ -2853,7 +2853,7 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
 # Unit testing.
 #
 
-# pylint: disable=C0111
+# pylint: disable=missing-docstring
 class TestResultDataTestCase(ModelDataBaseTestCase):
     def setUp(self):
         self.aoSamples = [TestResultData(),];

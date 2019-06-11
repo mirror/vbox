@@ -108,7 +108,7 @@ class FailureCategoryData(ModelDataBase):
         return self.initFromDbRow(aoRow);
 
 
-class FailureCategoryLogic(ModelLogicBase): # pylint: disable=R0903
+class FailureCategoryLogic(ModelLogicBase): # pylint: disable=too-few-public-methods
     """
     Failure Category logic.
     """
@@ -148,7 +148,7 @@ class FailureCategoryLogic(ModelLogicBase): # pylint: disable=R0903
         return aoRows
 
 
-    def fetchForChangeLog(self, idFailureCategory, iStart, cMaxRows, tsNow): # pylint: disable=R0914
+    def fetchForChangeLog(self, idFailureCategory, iStart, cMaxRows, tsNow): # pylint: disable=too-many-locals
         """
         Fetches change log entries for a failure reason.
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # $Id$
-# pylint: disable=C0301
+# pylint: disable=line-too-long
 
 """
 Interface used by the tinderbox server side software to mark build binaries

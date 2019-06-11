@@ -238,7 +238,7 @@ class WuiTestBoxList(WuiListContentWithActionBase):
                      % (len(self._aoEntries), cActive, cDead,)
         return (sTitle, sBody);
 
-    def _formatListEntry(self, iEntry): # pylint: disable=R0914
+    def _formatListEntry(self, iEntry): # pylint: disable=too-many-locals
         from testmanager.webui.wuiadmin import WuiAdmin;
         oEntry  = self._aoEntries[iEntry];
 
@@ -273,7 +273,7 @@ class WuiTestBoxList(WuiListContentWithActionBase):
                 oState = str(oEntry.oStatus.enmState);
             else:
                 from testmanager.webui.wuimain import WuiMain;
-                oState = WuiTmLink(oEntry.oStatus.enmState, WuiMain.ksScriptName,                       # pylint: disable=R0204
+                oState = WuiTmLink(oEntry.oStatus.enmState, WuiMain.ksScriptName,                       # pylint: disable=redefined-variable-type
                                    { WuiMain.ksParamAction: WuiMain.ksActionTestResultDetails,
                                      TestSetData.ksParam_idTestSet: oEntry.oStatus.idTestSet, },
                                    sTitle = '#%u' % (oEntry.oStatus.idTestSet,),

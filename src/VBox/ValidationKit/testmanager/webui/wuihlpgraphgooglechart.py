@@ -67,7 +67,7 @@ class WuiHlpLineGraph(WuiHlpGraphGoogleChartsBase):
         self._fErrorBarY = fEnable;
         return True;
 
-    def renderGraph(self): # pylint: disable=R0914
+    def renderGraph(self): # pylint: disable=too-many-locals
         fSlideFilter = True;
 
         # Tooltips?

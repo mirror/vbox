@@ -716,7 +716,7 @@ class WuiMain(WuiDispatcherBase):
     # The rest of stuff
     #
 
-    def _actionGroupedResultsListing( #pylint: disable=R0914
+    def _actionGroupedResultsListing( #pylint: disable=too-many-locals
             self,
             enmResultsGroupingType,
             oResultsLogicType,

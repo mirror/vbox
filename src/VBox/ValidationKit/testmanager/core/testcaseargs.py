@@ -41,7 +41,7 @@ from testmanager.core.testcase          import TestCaseData, TestCaseDependencyL
 
 # Python 3 hacks:
 if sys.version_info[0] >= 3:
-    long = int;     # pylint: disable=W0622,C0103
+    long = int;     # pylint: disable=redefined-builtin,invalid-name
 
 
 class TestCaseArgsData(ModelDataBase):
@@ -134,7 +134,7 @@ class TestCaseArgsData(ModelDataBase):
         oDb.execute('SELECT * FROM TestCaseArgs WHERE idGenTestCaseArgs = %s', (idGenTestCaseArgs,));
         return self.initFromDbRow(oDb.fetchOne());
 
-    def initFromValues(self, sArgs, cSecTimeout = None, sTestBoxReqExpr = None, sBuildReqExpr = None,  # pylint: disable=R0913
+    def initFromValues(self, sArgs, cSecTimeout = None, sTestBoxReqExpr = None, sBuildReqExpr = None,  # pylint: disable=too-many-arguments
                        cGangMembers = 1, idTestCase = None, idTestCaseArgs = None, tsEffective = None, tsExpire = None,
                        uidAuthor = None, idGenTestCaseArgs = None, sSubName = None):
         """
@@ -395,7 +395,7 @@ class TestCaseArgsLogic(ModelLogicBase):
 # Unit testing.
 #
 
-# pylint: disable=C0111
+# pylint: disable=missing-docstring
 class TestCaseArgsDataTestCase(ModelDataBaseTestCase):
     def setUp(self):
         self.aoSamples = [TestCaseArgsData(),];

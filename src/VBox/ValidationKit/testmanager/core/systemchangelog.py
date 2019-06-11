@@ -35,7 +35,7 @@ from testmanager.core.useraccount import UserAccountLogic;
 from testmanager.core.systemlog   import SystemLogData;
 
 
-class SystemChangelogEntry(object): # pylint: disable=R0902
+class SystemChangelogEntry(object): # pylint: disable=too-many-instance-attributes
     """
     System changelog entry.
     """
@@ -70,7 +70,7 @@ class SystemChangelogLogic(ModelLogicBase):
     ## @}
 
     ## Mapping a changelog entry kind to a table, key and clue.
-    kdWhatToTable = dict({  # pylint: disable=W0142
+    kdWhatToTable = dict({  # pylint: disable=star-args
         ksWhat_TestBox:          ( 'TestBoxes',          'idTestBox',           None, ),
         ksWhat_TestCase:         ( 'TestCasees',         'idTestCase',          None, ),
         ksWhat_Blacklisting:     ( 'Blacklist',          'idBlacklisting',      None, ),

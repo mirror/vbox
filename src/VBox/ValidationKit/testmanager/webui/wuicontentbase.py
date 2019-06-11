@@ -46,7 +46,7 @@ if sys.version_info[0] >= 3:
     unicode = str;  # pylint: disable=redefined-builtin,invalid-name
 
 
-class WuiHtmlBase(object): # pylint: disable=R0903
+class WuiHtmlBase(object): # pylint: disable=too-few-public-methods
     """
     Base class for HTML objects.
     """
@@ -68,7 +68,7 @@ class WuiHtmlBase(object): # pylint: disable=R0903
         return self.toHtml();
 
 
-class WuiLinkBase(WuiHtmlBase): # pylint: disable=R0903
+class WuiLinkBase(WuiHtmlBase): # pylint: disable=too-few-public-methods
     """
     For passing links from WuiListContentBase._formatListEntry.
     """
@@ -117,7 +117,7 @@ class WuiLinkBase(WuiHtmlBase): # pylint: disable=R0903
         return sFmt % (sExtraAttrs, webutils.escapeAttr(self.sUrl), webutils.escapeElem(self.sName));
 
 
-class WuiTmLink(WuiLinkBase): # pylint: disable=R0903
+class WuiTmLink(WuiLinkBase): # pylint: disable=too-few-public-methods
     """ Local link to the test manager. """
 
     kdDbgParams = None;
@@ -138,7 +138,7 @@ class WuiTmLink(WuiLinkBase): # pylint: disable=R0903
         WuiLinkBase.__init__(self, sName, sUrlBase, dParams, sConfirm, sTitle, sFragmentId, fBracketed);
 
 
-class WuiAdminLink(WuiTmLink): # pylint: disable=R0903
+class WuiAdminLink(WuiTmLink): # pylint: disable=too-few-public-methods
     """ Local link to the test manager's admin portion. """
 
     def __init__(self, sName, sAction, tsEffectiveDate = None, dParams = None, sConfirm = None, sTitle = None,
@@ -155,7 +155,7 @@ class WuiAdminLink(WuiTmLink): # pylint: disable=R0903
         WuiTmLink.__init__(self, sName, WuiAdmin.ksScriptName, dParams = dParams, sConfirm = sConfirm, sTitle = sTitle,
                            sFragmentId = sFragmentId, fBracketed = fBracketed);
 
-class WuiMainLink(WuiTmLink): # pylint: disable=R0903
+class WuiMainLink(WuiTmLink): # pylint: disable=too-few-public-methods
     """ Local link to the test manager's main portion. """
 
     def __init__(self, sName, sAction, dParams = None, sConfirm = None, sTitle = None, sFragmentId = None, fBracketed = True):
@@ -169,7 +169,7 @@ class WuiMainLink(WuiTmLink): # pylint: disable=R0903
         WuiTmLink.__init__(self, sName, WuiMain.ksScriptName, dParams = dParams, sConfirm = sConfirm, sTitle = sTitle,
                            sFragmentId = sFragmentId, fBracketed = fBracketed);
 
-class WuiSvnLink(WuiLinkBase): # pylint: disable=R0903
+class WuiSvnLink(WuiLinkBase): # pylint: disable=too-few-public-methods
     """
     For linking to a SVN revision.
     """
@@ -179,7 +179,7 @@ class WuiSvnLink(WuiLinkBase): # pylint: disable=R0903
         WuiLinkBase.__init__(self, sName, config.g_ksTracLogUrlPrefix, { 'rev': iRevision,},
                              fBracketed = fBracketed, sExtraAttrs = sExtraAttrs);
 
-class WuiSvnLinkWithTooltip(WuiSvnLink): # pylint: disable=R0903
+class WuiSvnLinkWithTooltip(WuiSvnLink): # pylint: disable=too-few-public-methods
     """
     For linking to a SVN revision with changelog tooltip.
     """
@@ -201,7 +201,7 @@ class WuiBuildLogLink(WuiLinkBase):
         else:
             WuiLinkBase.__init__(self, sName, sUrl, fBracketed = fBracketed);
 
-class WuiRawHtml(WuiHtmlBase): # pylint: disable=R0903
+class WuiRawHtml(WuiHtmlBase): # pylint: disable=too-few-public-methods
     """
     For passing raw html from WuiListContentBase._formatListEntry.
     """
@@ -212,7 +212,7 @@ class WuiRawHtml(WuiHtmlBase): # pylint: disable=R0903
     def toHtml(self):
         return self.sHtml;
 
-class WuiHtmlKeeper(WuiHtmlBase): # pylint: disable=R0903
+class WuiHtmlKeeper(WuiHtmlBase): # pylint: disable=too-few-public-methods
     """
     For keeping a list of elements, concatenating their toHtml output together.
     """
@@ -237,7 +237,7 @@ class WuiHtmlKeeper(WuiHtmlBase): # pylint: disable=R0903
     def toHtml(self):
         return self.sSep.join(oObj.toHtml() for oObj in self.aoKept);
 
-class WuiSpanText(WuiRawHtml): # pylint: disable=R0903
+class WuiSpanText(WuiRawHtml): # pylint: disable=too-few-public-methods
     """
     Outputs the given text within a span of the given CSS class.
     """
@@ -251,7 +251,7 @@ class WuiSpanText(WuiRawHtml): # pylint: disable=R0903
                                 u'<span class="%s" title="%s">%s</span>'
                                 % ( webutils.escapeAttr(sSpanClass), webutils.escapeAttr(sTitle), webutils.escapeElem(sText),));
 
-class WuiElementText(WuiRawHtml): # pylint: disable=R0903
+class WuiElementText(WuiRawHtml): # pylint: disable=too-few-public-methods
     """
     Outputs the given element text.
     """
@@ -259,7 +259,7 @@ class WuiElementText(WuiRawHtml): # pylint: disable=R0903
         WuiRawHtml.__init__(self, webutils.escapeElem(sText));
 
 
-class WuiContentBase(object): # pylint: disable=R0903
+class WuiContentBase(object): # pylint: disable=too-few-public-methods
     """
     Base for the content classes.
     """
@@ -381,7 +381,7 @@ class WuiContentBase(object): # pylint: disable=R0903
 
         return sHtml;
 
-class WuiSingleContentBase(WuiContentBase): # pylint: disable=R0903
+class WuiSingleContentBase(WuiContentBase): # pylint: disable=too-few-public-methods
     """
     Base for the content classes working on a single data object (oData).
     """
@@ -390,7 +390,7 @@ class WuiSingleContentBase(WuiContentBase): # pylint: disable=R0903
         self._oData = oData;            # Usually ModelDataBase.
 
 
-class WuiFormContentBase(WuiSingleContentBase): # pylint: disable=R0903
+class WuiFormContentBase(WuiSingleContentBase): # pylint: disable=too-few-public-methods
     """
     Base class for simple input form content classes (single data object).
     """

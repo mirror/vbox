@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # $Id$
-# pylint: disable=C0302
+# pylint: disable=too-many-lines
 
 ## @todo Rename this file to testresult.py!
 
@@ -145,7 +145,7 @@ class TestResultFailureDataEx(TestResultFailureData):
         return self;
 
 
-class TestResultListingData(ModelDataBase): # pylint: disable=R0902
+class TestResultListingData(ModelDataBase): # pylint: disable=too-many-instance-attributes
     """
     Test case result data representation for table listing
     """
@@ -254,7 +254,7 @@ class TestResultListingData(ModelDataBase): # pylint: disable=R0902
 
 
 
-class TestResultFailureLogic(ModelLogicBase): # pylint: disable=R0903
+class TestResultFailureLogic(ModelLogicBase): # pylint: disable=too-few-public-methods
     """
     Test result failure reason logic.
     """
@@ -262,7 +262,7 @@ class TestResultFailureLogic(ModelLogicBase): # pylint: disable=R0903
     def __init__(self, oDb):
         ModelLogicBase.__init__(self, oDb)
 
-    def fetchForChangeLog(self, idTestResult, iStart, cMaxRows, tsNow): # pylint: disable=R0914
+    def fetchForChangeLog(self, idTestResult, iStart, cMaxRows, tsNow): # pylint: disable=too-many-locals
         """
         Fetches change log entries for a failure reason.
 
@@ -508,7 +508,7 @@ class TestResultFailureLogic(ModelLogicBase): # pylint: disable=R0903
 # Unit testing.
 #
 
-# pylint: disable=C0111
+# pylint: disable=missing-docstring
 class TestResultFailureDataTestCase(ModelDataBaseTestCase):
     def setUp(self):
         self.aoSamples = [TestResultFailureData(),];

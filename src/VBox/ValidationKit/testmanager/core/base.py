@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # $Id$
-# pylint: disable=C0302
+# pylint: disable=too-many-lines
 
 """
 Test Manager Core - Base Class(es).
@@ -43,14 +43,14 @@ from common import utils;
 
 # Python 3 hacks:
 if sys.version_info[0] >= 3:
-    long = int      # pylint: disable=W0622,C0103
+    long = int      # pylint: disable=redefined-builtin,invalid-name
 
 
 class TMExceptionBase(Exception):
     """
     For exceptions raised by any TestManager component.
     """
-    pass;
+    pass;                               # pylint: disable=unnecessary-pass
 
 
 class TMTooManyRows(TMExceptionBase):
@@ -58,7 +58,7 @@ class TMTooManyRows(TMExceptionBase):
     Too many rows in the result.
     Used by ModelLogicBase decendants.
     """
-    pass;
+    pass;                               # pylint: disable=unnecessary-pass
 
 
 class TMRowNotFound(TMExceptionBase):
@@ -66,7 +66,7 @@ class TMRowNotFound(TMExceptionBase):
     Database row not found.
     Used by ModelLogicBase decendants.
     """
-    pass;
+    pass;                               # pylint: disable=unnecessary-pass
 
 
 class TMRowAlreadyExists(TMExceptionBase):
@@ -74,7 +74,7 @@ class TMRowAlreadyExists(TMExceptionBase):
     Database row already exists (typically raised by addEntry).
     Used by ModelLogicBase decendants.
     """
-    pass;
+    pass;                               # pylint: disable=unnecessary-pass
 
 
 class TMInvalidData(TMExceptionBase):
@@ -82,7 +82,7 @@ class TMInvalidData(TMExceptionBase):
     Data validation failed.
     Used by ModelLogicBase decendants.
     """
-    pass;
+    pass;                               # pylint: disable=unnecessary-pass
 
 
 class TMRowInUse(TMExceptionBase):
@@ -90,7 +90,7 @@ class TMRowInUse(TMExceptionBase):
     Database row is in use and cannot be deleted.
     Used by ModelLogicBase decendants.
     """
-    pass;
+    pass;                               # pylint: disable=unnecessary-pass
 
 
 class TMInFligthCollision(TMExceptionBase):
@@ -99,10 +99,10 @@ class TMInFligthCollision(TMExceptionBase):
     the data there.
     Used by ModelLogicBase decendants.
     """
-    pass;
+    pass;                               # pylint: disable=unnecessary-pass
 
 
-class ModelBase(object): # pylint: disable=R0903
+class ModelBase(object): # pylint: disable=too-few-public-methods
     """
     Something all classes in the logical model inherits from.
 
@@ -114,7 +114,7 @@ class ModelBase(object): # pylint: disable=R0903
         pass;
 
 
-class ModelDataBase(ModelBase): # pylint: disable=R0903
+class ModelDataBase(ModelBase): # pylint: disable=too-few-public-methods
     """
     Something all classes in the data classes in the logical model inherits from.
     """
@@ -197,15 +197,15 @@ class ModelDataBase(ModelBase): # pylint: disable=R0903
         sPrefix = self.getHungarianPrefix(sAttr);
         if sPrefix in ['id', 'uid', 'i', 'off', 'pct']:
             return [-1, '', '-1',];
-        elif sPrefix in ['l', 'c',]:
+        if sPrefix in ['l', 'c',]:
             return [long(-1), '', '-1',];
-        elif sPrefix == 'f':
+        if sPrefix == 'f':
             return ['',];
-        elif sPrefix in ['enm', 'ip', 's', 'ts', 'uuid']:
+        if sPrefix in ['enm', 'ip', 's', 'ts', 'uuid']:
             return ['',];
-        elif sPrefix in ['ai', 'aid', 'al', 'as']:
+        if sPrefix in ['ai', 'aid', 'al', 'as']:
             return [[], '', None]; ## @todo ??
-        elif sPrefix == 'bm':
+        if sPrefix == 'bm':
             return ['', [],]; ## @todo bitmaps.
         raise TMExceptionBase('Unable to classify "%s" (prefix %s)' % (sAttr, sPrefix));
 
@@ -369,9 +369,9 @@ class ModelDataBase(ModelBase): # pylint: disable=R0903
                 dErrors[sParam] = sError;
 
         # Check the NULL requirements of the primary ID(s) for the 'add' and 'edit' actions.
-        if   enmValidateFor == ModelDataBase.ksValidateFor_Add \
-          or enmValidateFor == ModelDataBase.ksValidateFor_AddForeignId \
-          or enmValidateFor == ModelDataBase.ksValidateFor_Edit:
+        if enmValidateFor in (ModelDataBase.ksValidateFor_Add,
+                              ModelDataBase.ksValidateFor_AddForeignId,
+                              ModelDataBase.ksValidateFor_Edit,):
             fMustBeNull = enmValidateFor == ModelDataBase.ksValidateFor_Add;
             sAttr = getattr(self, 'ksIdAttr', None);
             if sAttr is not None:
@@ -571,7 +571,7 @@ class ModelDataBase(ModelBase): # pylint: disable=R0903
 
         if iValue < iMin:
             return (iValue, 'Value too small (min %d)' % (iMin,));
-        elif iValue > iMax:
+        if iValue > iMax:
             return (iValue, 'Value too high (max %d)' % (iMax,));
         return (iValue, None);
 
@@ -595,7 +595,7 @@ class ModelDataBase(ModelBase): # pylint: disable=R0903
 
         if lMin is not None and lValue < lMin:
             return (lValue, 'Value too small (min %d)' % (lMin,));
-        elif lMax is not None and lValue > lMax:
+        if lMax is not None and lValue > lMax:
             return (lValue, 'Value too high (max %d)' % (lMax,));
         return (lValue, None);
 
@@ -661,10 +661,10 @@ class ModelDataBase(ModelBase): # pylint: disable=R0903
             return (sValue, None);
 
         try:
-            socket.inet_pton(socket.AF_INET, sValue); # pylint: disable=E1101
+            socket.inet_pton(socket.AF_INET, sValue); # pylint: disable=no-member
         except:
             try:
-                socket.inet_pton(socket.AF_INET6, sValue); # pylint: disable=E1101
+                socket.inet_pton(socket.AF_INET6, sValue); # pylint: disable=no-member
             except:
                 return (sValue, 'Not a valid IP address.');
 
@@ -1066,7 +1066,7 @@ class ModelDataBase(ModelBase): # pylint: disable=R0903
 
 
 
-# pylint: disable=E1101,C0111,R0903
+# pylint: disable=no-member,missing-docstring,too-few-public-methods
 class ModelDataBaseTestCase(unittest.TestCase):
     """
     Base testcase for ModelDataBase decendants.
@@ -1240,7 +1240,7 @@ class ModelFilterBase(ModelBase):
 
     def __init__(self):
         ModelBase.__init__(self);
-        self.aCriteria = []; # type: list[FilterCriterion]
+        self.aCriteria = [] # type: list[FilterCriterion]
 
     def _initFromParamsWorker(self, oDisp, oCriterion):
         """ Worker for initFromParams. """
@@ -1284,7 +1284,7 @@ class ModelFilterBase(ModelBase):
         return self;
 
 
-class ModelLogicBase(ModelBase): # pylint: disable=R0903
+class ModelLogicBase(ModelBase): # pylint: disable=too-few-public-methods
     """
     Something all classes in the logic classes the logical model inherits from.
     """
@@ -1327,7 +1327,7 @@ class ModelLogicBase(ModelBase): # pylint: disable=R0903
 
 
 
-class AttributeChangeEntry(object): # pylint: disable=R0903
+class AttributeChangeEntry(object): # pylint: disable=too-few-public-methods
     """
     Data class representing the changes made to one attribute.
     """
@@ -1339,7 +1339,7 @@ class AttributeChangeEntry(object): # pylint: disable=R0903
         self.sNewText       = sNewText;
         self.sOldText       = sOldText;
 
-class AttributeChangeEntryPre(AttributeChangeEntry): # pylint: disable=R0903
+class AttributeChangeEntryPre(AttributeChangeEntry): # pylint: disable=too-few-public-methods
     """
     AttributeChangeEntry for preformatted values.
     """
@@ -1347,7 +1347,7 @@ class AttributeChangeEntryPre(AttributeChangeEntry): # pylint: disable=R0903
     def __init__(self, sAttr, oNewRaw, oOldRaw, sNewText, sOldText):
         AttributeChangeEntry.__init__(self, sAttr, oNewRaw, oOldRaw, sNewText, sOldText);
 
-class ChangeLogEntry(object): # pylint: disable=R0903
+class ChangeLogEntry(object): # pylint: disable=too-few-public-methods
     """
     A change log entry returned by the fetchChangeLog method typically
     implemented by ModelLogicBase child classes.

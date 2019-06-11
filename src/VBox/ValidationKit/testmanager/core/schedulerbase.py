@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # $Id$
-# pylint: disable=C0302
+# pylint: disable=too-many-lines
 
 
 """
@@ -351,7 +351,7 @@ class SchedQueueData(ModelDataBase):
         self.idTestSetGangLeader    = None;
         self.cMissingGangMembers    = 1;
 
-    def initFromValues(self, idSchedGroup, idGenTestCaseArgs, idTestGroup, aidTestGroupPreReqs, # pylint: disable=R0913
+    def initFromValues(self, idSchedGroup, idGenTestCaseArgs, idTestGroup, aidTestGroupPreReqs, # pylint: disable=too-many-arguments
                        bmHourlySchedule, cMissingGangMembers,
                        idItem = None, offQueue = None, tsConfig = None, tsLastScheduled = None, idTestSetGangLeader = None):
         """
@@ -1505,7 +1505,7 @@ class SchedulerBase(object):
 # Unit testing.
 #
 
-# pylint: disable=C0111
+# pylint: disable=missing-docstring
 class SchedQueueDataTestCase(ModelDataBaseTestCase):
     def setUp(self):
         self.aoSamples = [SchedQueueData(),];

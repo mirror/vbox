@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # $Id$
-# pylint: disable=C0302
+# pylint: disable=too-many-lines
 
 """
 Test Manager - Test Case.
@@ -856,7 +856,7 @@ class TestCaseDataEx(TestCaseData):
                 aoNewValues.append(TestCaseArgsData().initFromParams(oDispWrapper, fStrict = False));
         return aoNewValues;
 
-    def _validateAndConvertAttribute(self, sAttr, sParam, oValue, aoNilValues, fAllowNull, oDb): # pylint: disable=R0914
+    def _validateAndConvertAttribute(self, sAttr, sParam, oValue, aoNilValues, fAllowNull, oDb): # pylint: disable=too-many-locals
         """
         Validate special arrays and requirement expressions.
 
@@ -998,7 +998,7 @@ class TestCaseLogic(ModelLogicBase):
             aoRows.append(TestCaseDataEx().initFromDbRowEx(aoRow, self._oDb, tsNow));
         return aoRows;
 
-    def fetchForChangeLog(self, idTestCase, iStart, cMaxRows, tsNow): # pylint: disable=R0914
+    def fetchForChangeLog(self, idTestCase, iStart, cMaxRows, tsNow): # pylint: disable=too-many-locals
         """
         Fetches change log entries for a testbox.
 
@@ -1183,7 +1183,7 @@ class TestCaseLogic(ModelLogicBase):
         self._oDb.maybeCommit(fCommit);
         return True;
 
-    def editEntry(self, oData, uidAuthor, fCommit = False):  # pylint: disable=R0914
+    def editEntry(self, oData, uidAuthor, fCommit = False):  # pylint: disable=too-many-locals
         """
         Edit a testcase entry (extended).
         Caller is expected to rollback the database transactions on exception.
@@ -1415,7 +1415,7 @@ class TestCaseLogic(ModelLogicBase):
 # Unit testing.
 #
 
-# pylint: disable=C0111
+# pylint: disable=missing-docstring
 class TestCaseGlobalRsrcDepDataTestCase(ModelDataBaseTestCase):
     def setUp(self):
         self.aoSamples = [TestCaseGlobalRsrcDepData(),];

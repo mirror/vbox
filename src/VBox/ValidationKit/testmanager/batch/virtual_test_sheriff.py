@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # $Id$
-# pylint: disable=C0301
+# pylint: disable=line-too-long
 
 """
 Virtual Test Sheriff.
@@ -274,7 +274,7 @@ class VirtualTestSheriffCaseFile(object):
 
 
 
-class VirtualTestSheriff(object): # pylint: disable=R0903
+class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
     """
     Add build info into Test Manager database.
     """

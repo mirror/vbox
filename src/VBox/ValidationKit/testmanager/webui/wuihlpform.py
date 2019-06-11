@@ -414,7 +414,7 @@ class WuiHlpForm(object):
         return self._addList(sName, aoTestGroups, sLabel, fUseTable = False, sId = 'tmform-checkbox-list-testgroups',
                              sExtraAttribs = sExtraAttribs);
 
-    def addListOfTestCaseArgs(self, sName, aoVariations, sLabel): # pylint: disable=R0915
+    def addListOfTestCaseArgs(self, sName, aoVariations, sLabel): # pylint: disable=too-many-statements
         """
         Adds a list of test case argument variations to the form.
 
@@ -645,7 +645,7 @@ class WuiHlpForm(object):
 
         return self._add(sHtml)
 
-    def addListOfTestGroupMembers(self, sName, aoTestGroupMembers, aoAllTestCases, sLabel,  # pylint: disable=R0914
+    def addListOfTestGroupMembers(self, sName, aoTestGroupMembers, aoAllTestCases, sLabel,  # pylint: disable=too-many-locals
                                   fReadOnly = True):
         """
         For WuiTestGroup.
@@ -762,7 +762,7 @@ class WuiHlpForm(object):
         return self._add(u' </tbody>\n'
                          u'</table>\n');
 
-    def addListOfSchedGroupMembers(self, sName, aoSchedGroupMembers, aoAllTestGroups,  # pylint: disable=R0914
+    def addListOfSchedGroupMembers(self, sName, aoSchedGroupMembers, aoAllTestGroups,  # pylint: disable=too-many-locals
                                    sLabel, fReadOnly = True):
         """
         For WuiAdminSchedGroup.
@@ -861,7 +861,7 @@ class WuiHlpForm(object):
         return self._add(u' </tbody>\n'
                          u'</table>\n');
 
-    def addListOfSchedGroupsForTestBox(self, sName, aoInSchedGroups, aoAllSchedGroups, sLabel,  # pylint: disable=R0914
+    def addListOfSchedGroupsForTestBox(self, sName, aoInSchedGroups, aoAllSchedGroups, sLabel,  # pylint: disable=too-many-locals
                                        fReadOnly = None):
         # type: (str, TestBoxInSchedGroupDataEx, SchedGroupData, str, bool) -> str
         """

@@ -59,7 +59,7 @@ class ReportFilter(TestResultFilter):
 
 
 
-class ReportModelBase(ModelLogicBase): # pylint: disable=R0903
+class ReportModelBase(ModelLogicBase): # pylint: disable=too-few-public-methods
     """
     Something all report logic(/miner) classes inherit from.
     """
@@ -241,7 +241,7 @@ class ReportTransientBase(object):
 
 class ReportFailureReasonTransient(ReportTransientBase):
     """ Details on the test where a failure reason was first/last seen.  """
-    def __init__(self, idBuild, iRevision, sRepository, idTestSet, idTestResult, tsDone,  # pylint: disable=R0913
+    def __init__(self, idBuild, iRevision, sRepository, idTestSet, idTestResult, tsDone,  # pylint: disable=too-many-arguments
                  iPeriod, fEnter, oReason):
         ReportTransientBase.__init__(self, idBuild, iRevision, sRepository, idTestSet, idTestResult, tsDone, iPeriod, fEnter,
                                      oReason.idFailureReason, oReason);
@@ -529,7 +529,7 @@ class ReportFailureReasonSet(ReportPeriodSetBase):
 
 
 
-class ReportLazyModel(ReportModelBase): # pylint: disable=R0903
+class ReportLazyModel(ReportModelBase): # pylint: disable=too-few-public-methods
     """
     The 'lazy bird' report model class.
 
@@ -889,7 +889,7 @@ class ReportLazyModel(ReportModelBase): # pylint: disable=R0903
 
 
 
-class ReportGraphModel(ReportModelBase): # pylint: disable=R0903
+class ReportGraphModel(ReportModelBase): # pylint: disable=too-few-public-methods
     """
     Extended report model used when generating the more complicated graphs
     detailing results, time elapsed and values over time.
@@ -976,7 +976,7 @@ class ReportGraphModel(ReportModelBase): # pylint: disable=R0903
             return oDataSeries;
 
 
-    def __init__(self, oDb, tsNow, cPeriods, cHoursPerPeriod, sSubject, aidSubjects, # pylint: disable=R0913
+    def __init__(self, oDb, tsNow, cPeriods, cHoursPerPeriod, sSubject, aidSubjects, # pylint: disable=too-many-arguments
                  aidTestBoxes, aidBuildCats, aidTestCases, fSepTestVars):
         assert(sSubject == self.ksSubEverything); # dummy
         ReportModelBase.__init__(self, oDb, tsNow, cPeriods, cHoursPerPeriod, sSubject, aidSubjects, oFilter = None);

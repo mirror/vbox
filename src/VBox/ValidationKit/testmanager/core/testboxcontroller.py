@@ -32,7 +32,7 @@ __version__ = "$Revision$"
 # Standard python imports.
 import re;
 import os;
-import string;                          # pylint: disable=W0402
+import string;                          # pylint: disable=deprecated-module
 import sys;
 import uuid;
 
@@ -52,17 +52,17 @@ from testmanager.core.schedulerbase     import SchedulerBase;
 
 # Python 3 hacks:
 if sys.version_info[0] >= 3:
-    long = int;     # pylint: disable=W0622,C0103
+    long = int;     # pylint: disable=redefined-builtin,invalid-name
 
 
 class TestBoxControllerException(TMExceptionBase):
     """
     Exception class for TestBoxController.
     """
-    pass;
+    pass;                               # pylint: disable=unnecessary-pass
 
 
-class TestBoxController(object): # pylint: disable=R0903
+class TestBoxController(object): # pylint: disable=too-few-public-methods
     """
     TestBox Controller class.
     """
@@ -189,7 +189,7 @@ class TestBoxController(object): # pylint: disable=R0903
         valid boolean.
         """
         sValue = self._getStringParam(sName, [ 'True', 'true', '1', 'False', 'false', '0'], sDefValue = str(fDefValue));
-        return sValue == 'True' or sValue == 'true' or sValue == '1';
+        return sValue in ('True', 'true', '1',);
 
     def _getIntParam(self, sName, iMin = None, iMax = None):
         """
@@ -345,7 +345,7 @@ class TestBoxController(object): # pylint: disable=R0903
         oFile.close();
         return fSizeOk;
 
-    def _actionSignOn(self):        # pylint: disable=R0914
+    def _actionSignOn(self):        # pylint: disable=too-many-locals
         """ Implement sign-on """
 
         #
@@ -400,7 +400,7 @@ class TestBoxController(object): # pylint: disable=R0903
         else:
             cPctScratchDiff = 100;
 
-        # pylint: disable=R0916
+        # pylint: disable=too-many-boolean-expressions
         if   self._sTestBoxAddr != oTestBox.ip \
           or sOs                != oTestBox.sOs \
           or sOsVersion         != oTestBox.sOsVersion \
@@ -737,10 +737,10 @@ class TestBoxController(object): # pylint: disable=R0903
             offFile += cbToRead;
 
             abBuf = oSrcFile.read(cbToRead);
-            oDstFile.write(abBuf); # pylint: disable=E1103
+            oDstFile.write(abBuf); # pylint: disable=maybe-no-member
             del abBuf;
 
-        oDstFile.close(); # pylint: disable=E1103
+        oDstFile.close(); # pylint: disable=maybe-no-member
 
         # Done.
         return self._resultResponse(constants.tbresp.STATUS_ACK);

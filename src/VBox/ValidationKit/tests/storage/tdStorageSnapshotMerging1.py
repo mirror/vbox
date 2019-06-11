@@ -78,7 +78,7 @@ def crc32_of_file(filepath):
     return current % 2**32;
 
 
-class tdStorageSnapshot(vbox.TestDriver):                                      # pylint: disable=R0902
+class tdStorageSnapshot(vbox.TestDriver):                                      # pylint: disable=too-many-instance-attributes
     """
     Storage benchmark.
     """
@@ -108,7 +108,7 @@ class tdStorageSnapshot(vbox.TestDriver):                                      #
         reporter.log('      Default: %s' % (':'.join(self.asDiskFormats)));
         return rc;
 
-    def parseOption(self, asArgs, iArg):                                        # pylint: disable=R0912,R0915
+    def parseOption(self, asArgs, iArg):                                        # pylint: disable=too-many-branches,too-many-statements
         if asArgs[iArg] == '--storage-ctrls':
             iArg += 1;
             if iArg >= len(asArgs):

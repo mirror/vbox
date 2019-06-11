@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # $Id$
-# pylint: disable=C0301
+# pylint: disable=line-too-long
 
 """
 Utility for dumping the last X days of data.
@@ -46,7 +46,7 @@ from testmanager.core.db            import TMDatabaseConnection;
 from common                         import utils;
 
 
-class PartialDbDump(object): # pylint: disable=R0903
+class PartialDbDump(object): # pylint: disable=too-few-public-methods
     """
     Dumps or loads the last X days of database data.
 

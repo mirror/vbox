@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # $Id$
-# pylint: disable=C0301
+# pylint: disable=line-too-long
 
 """
 Interface used by the admin to regenerate scheduling queues.
@@ -48,7 +48,7 @@ from testmanager.core.schedgroup    import SchedGroupLogic;
 
 
 
-class RegenSchedQueues(object): # pylint: disable=R0903
+class RegenSchedQueues(object): # pylint: disable=too-few-public-methods
     """
     Regenerates all the scheduling queues.
     """

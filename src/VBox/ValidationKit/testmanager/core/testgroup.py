@@ -746,7 +746,7 @@ class TestGroupLogic(ModelLogicBase):
 # Unit testing.
 #
 
-# pylint: disable=C0111
+# pylint: disable=missing-docstring
 class TestGroupMemberDataTestCase(ModelDataBaseTestCase):
     def setUp(self):
         self.aoSamples = [TestGroupMemberData(),];

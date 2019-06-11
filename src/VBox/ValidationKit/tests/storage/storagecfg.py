@@ -427,7 +427,7 @@ class StorageCfg(object):
         if sTargetOs == 'solaris':
             oStorOs = StorageConfigOsSolaris();
         elif sTargetOs == 'linux':
-            oStorOs = StorageConfigOsLinux(); # pylint: disable=R0204
+            oStorOs = StorageConfigOsLinux(); # pylint: disable=redefined-variable-type
         else:
             fRc = False;
 
@@ -449,11 +449,11 @@ class StorageCfg(object):
         """
 
         # Destroy all volumes first.
-        for sMountPoint in self.dVols.keys(): # pylint: disable=C0201
+        for sMountPoint in self.dVols.keys(): # pylint: disable=consider-iterating-dictionary
             self.destroyVolume(sMountPoint);
 
         # Destroy all pools.
-        for sPool in self.dPools.keys(): # pylint: disable=C0201
+        for sPool in self.dPools.keys(): # pylint: disable=consider-iterating-dictionary
             self.destroyStoragePool(sPool);
 
         self.dVols.clear();

@@ -142,7 +142,7 @@ class FailureReasonDataEx(FailureReasonData):
         return self;
 
 
-class FailureReasonLogic(ModelLogicBase): # pylint: disable=R0903
+class FailureReasonLogic(ModelLogicBase): # pylint: disable=too-few-public-methods
     """
     Failure Reason logic.
     """
@@ -275,7 +275,7 @@ class FailureReasonLogic(ModelLogicBase): # pylint: disable=R0903
         return [(-1, sFirstEntry, '')] + aoRows;
 
 
-    def fetchForChangeLog(self, idFailureReason, iStart, cMaxRows, tsNow): # pylint: disable=R0914
+    def fetchForChangeLog(self, idFailureReason, iStart, cMaxRows, tsNow): # pylint: disable=too-many-locals
         """
         Fetches change log entries for a failure reason.
 

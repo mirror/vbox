@@ -48,7 +48,7 @@ from testdriver import vbox;
 from testdriver import vboxcon;
 
 
-class tdNetBenchmark1(vbox.TestDriver):                                         # pylint: disable=R0902
+class tdNetBenchmark1(vbox.TestDriver):                                         # pylint: disable=too-many-instance-attributes
     """
     Networking benchmark #1.
     """
@@ -129,7 +129,7 @@ class tdNetBenchmark1(vbox.TestDriver):                                         
         reporter.log('                     --throughput-sizes 8192 --test-vms tst-rhel5:tst-win2k3ent:tst-sol10');
         return rc;
 
-    def parseOption(self, asArgs, iArg):                                        # pylint: disable=R0912,R0915
+    def parseOption(self, asArgs, iArg):                                        # pylint: disable=too-many-branches,too-many-statements
         if asArgs[iArg] == '--remote-host':
             iArg += 1;
             if iArg >= len(asArgs): raise base.InvalidOption('The "--remote-host" takes an IP address or a hostname');

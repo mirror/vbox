@@ -142,7 +142,7 @@ class BuildCategoryData(ModelDataBase):
         return False;
 
 
-class BuildCategoryLogic(ModelLogicBase): # pylint: disable=R0903
+class BuildCategoryLogic(ModelLogicBase): # pylint: disable=too-few-public-methods
     """
     Build categories database logic.
     """
@@ -501,7 +501,7 @@ class BuildDataEx(BuildData):
 
 
 
-class BuildLogic(ModelLogicBase): # pylint: disable=R0903
+class BuildLogic(ModelLogicBase): # pylint: disable=too-few-public-methods
     """
     Build database logic (covers build categories as well as builds).
     """
@@ -866,7 +866,7 @@ class BuildLogic(ModelLogicBase): # pylint: disable=R0903
 # Unit testing.
 #
 
-# pylint: disable=C0111
+# pylint: disable=missing-docstring
 class BuildCategoryDataTestCase(ModelDataBaseTestCase):
     def setUp(self):
         self.aoSamples = [BuildCategoryData(),];

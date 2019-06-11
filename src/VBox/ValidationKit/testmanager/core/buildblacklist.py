@@ -118,7 +118,7 @@ class BuildBlacklistData(ModelDataBase):
         return self.initFromDbRow(aoRow);
 
 
-class BuildBlacklistLogic(ModelLogicBase): # pylint: disable=R0903
+class BuildBlacklistLogic(ModelLogicBase): # pylint: disable=too-few-public-methods
     """
     Build Back List logic.
     """

@@ -149,7 +149,7 @@ class BuildSourceData(ModelDataBase):
 
         return (oNewValue, sError);
 
-class BuildSourceLogic(ModelLogicBase): # pylint: disable=R0903
+class BuildSourceLogic(ModelLogicBase): # pylint: disable=too-few-public-methods
     """
     Build source database logic.
     """
@@ -503,7 +503,7 @@ class BuildSourceLogic(ModelLogicBase): # pylint: disable=R0903
 # Unit testing.
 #
 
-# pylint: disable=C0111
+# pylint: disable=missing-docstring
 class BuildSourceDataTestCase(ModelDataBaseTestCase):
     def setUp(self):
         self.aoSamples = [BuildSourceData(),];

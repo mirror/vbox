@@ -148,7 +148,7 @@ class TestBoxConnection(object):
         # Connect to it - may raise exception on failure.
         # When connecting we're using a 15 second timeout, we increase it later.
         #
-        if self._oParsedUrl.scheme == 'https': # pylint: disable=E1101
+        if self._oParsedUrl.scheme == 'https': # pylint: disable=no-member
             fnCtor = httplib.HTTPSConnection;
         else:
             fnCtor = httplib.HTTPConnection;
@@ -198,7 +198,7 @@ class TestBoxConnection(object):
             'Cache-Control':    'max-age=0',
             'Connection':       'keep-alive',
         };
-        sServerPath = '/%s/testboxdisp.py' % (self._oParsedUrl.path.strip('/'),); # pylint: disable=E1101
+        sServerPath = '/%s/testboxdisp.py' % (self._oParsedUrl.path.strip('/'),); # pylint: disable=no-member
         dParams[constants.tbreq.ALL_PARAM_ACTION] = sAction;
         sBody = urllib_urlencode(dParams);
         ##testboxcommons.log2('sServerPath=%s' % (sServerPath,));

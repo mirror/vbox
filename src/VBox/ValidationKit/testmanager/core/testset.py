@@ -536,7 +536,7 @@ class TestSetLogic(ModelLogicBase):
         self._oDb.maybeCommit(fCommit);
         return True;
 
-    def createFile(self, oTestSet, sName, sMime, sKind, sDesc, cbFile, fCommit = False): # pylint: disable=R0914
+    def createFile(self, oTestSet, sName, sMime, sKind, sDesc, cbFile, fCommit = False): # pylint: disable=too-many-locals
         """
         Creates a file and associating with the current test result record in
         the test set.
@@ -824,7 +824,7 @@ class TestSetLogic(ModelLogicBase):
 # Unit testing.
 #
 
-# pylint: disable=C0111
+# pylint: disable=missing-docstring
 class TestSetDataTestCase(ModelDataBaseTestCase):
     def setUp(self):
         self.aoSamples = [TestSetData(),];

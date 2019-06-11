@@ -184,7 +184,7 @@ class tdAutostartOsLinux(tdAutostartOs):
 
         return fRc;
 
-    # pylint: disable=R0913
+    # pylint: disable=too-many-arguments
 
     def runProgAsUser(self, oTxsSession, sTestName, cMsTimeout, sExecName, sAsUser, asArgs = (),
                       oStdIn = '/dev/null', oStdOut = '/dev/null', oStdErr = '/dev/null', oTestPipe = '/dev/null'):
@@ -198,7 +198,7 @@ class tdAutostartOsLinux(tdAutostartOs):
 
         return fRc;
 
-    # pylint: enable=R0913
+    # pylint: enable=too-many-arguments
 
     def createTestVM(self, oSession, oTxsSession, sUser, sVmName):
         """
@@ -354,7 +354,7 @@ class tdAutostartOsSolaris(tdAutostartOs):
 
         return fRc;
 
-    # pylint: disable=R0913
+    # pylint: disable=too-many-arguments
 
     def runProgAsUser(self, oTxsSession, sTestName, cMsTimeout, sExecName, sAsUser, asArgs = (),
                       oStdIn = '/dev/null', oStdOut = '/dev/null', oStdErr = '/dev/null', oTestPipe = '/dev/null'):
@@ -368,7 +368,7 @@ class tdAutostartOsSolaris(tdAutostartOs):
 
         return fRc;
 
-    # pylint: enable=R0913
+    # pylint: enable=too-many-arguments
 
     def createTestVM(self, oSession, oTxsSession, sUser, sVmName):
         """
@@ -445,7 +445,7 @@ class tdAutostartOsWin(tdAutostartOs):
         _ = oTxsSession;
         return False;
 
-class tdAutostart(vbox.TestDriver):                                      # pylint: disable=R0902
+class tdAutostart(vbox.TestDriver):                                      # pylint: disable=too-many-instance-attributes
     """
     Autostart testcase.
     """
@@ -481,7 +481,7 @@ class tdAutostart(vbox.TestDriver):                                      # pylin
         reporter.log('      Skip the specified VMs when testing.');
         return rc;
 
-    def parseOption(self, asArgs, iArg):                                        # pylint: disable=R0912,R0915
+    def parseOption(self, asArgs, iArg):                                        # pylint: disable=too-many-branches,too-many-statements
         if asArgs[iArg] == '--test-build-dir':
             iArg += 1;
             if iArg >= len(asArgs): raise base.InvalidOption('The "--test-build-dir" takes a path argument');
@@ -568,7 +568,7 @@ class tdAutostart(vbox.TestDriver):                                      # pylin
         """
         reporter.testStart('Autostart ' + sVmName);
 
-        oGuestOsHlp = None;             # type: tdAutostartOs
+        oGuestOsHlp = None              # type: tdAutostartOs
         if sVmName == self.ksOsLinux:
             oGuestOsHlp = tdAutostartOsLinux(self, self.sTestBuildDir);
         elif sVmName == self.ksOsSolaris:

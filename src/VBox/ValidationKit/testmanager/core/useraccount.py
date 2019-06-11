@@ -281,7 +281,7 @@ class UserAccountLogic(ModelLogicBase):
 # Unit testing.
 #
 
-# pylint: disable=C0111
+# pylint: disable=missing-docstring
 class UserAccountDataTestCase(ModelDataBaseTestCase):
     def setUp(self):
         self.aoSamples = [UserAccountData(),];

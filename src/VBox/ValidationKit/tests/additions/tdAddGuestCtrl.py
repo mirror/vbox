@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# pylint: disable=C0302
+# pylint: disable=too-many-lines
 
 """
 VirtualBox Validation Kit - Guest Control Tests.
@@ -30,24 +30,21 @@ terms and conditions of either the GPL or the CDDL or both.
 __version__ = "$Revision$"
 
 # Disable bitching about too many arguments per function.
-# pylint: disable=R0913
-
-# Disable bitching about semicolons at the end of lines.
-# pylint: disable=W0301
+# pylint: disable=too-many-arguments
 
 ## @todo Convert map() usage to a cleaner alternative Python now offers.
-# pylint: disable=W0141
+# pylint: disable=bad-builtin
 
 ## @todo Convert the context/test classes into named tuples. Not in the mood right now, so
 #        disabling it.
-# pylint: disable=R0903
+# pylint: disable=too-few-public-methods
 
 # Standard Python imports.
 from array import array
 import errno
 import os
 import random
-import string # pylint: disable=W0402
+import string # pylint: disable=deprecated-module
 import struct
 import sys
 import threading
@@ -69,7 +66,7 @@ from common     import utils;
 
 # Python 3 hacks:
 if sys.version_info[0] >= 3:
-    long = int      # pylint: disable=W0622,C0103
+    long = int      # pylint: disable=redefined-builtin,invalid-name
 
 
 class GuestStream(bytearray):
@@ -88,7 +85,7 @@ class tdCtxTest(object):
     Provides the actual test environment. Should be kept
     as generic as possible.
     """
-    def __init__(self, oSession, oTxsSession, oTestVm): # pylint: disable=W0613
+    def __init__(self, oSession, oTxsSession, oTestVm): # pylint: disable=unused-argument
         ## The desired Main API result.
         self.fRc = False;
         ## IGuest reference.
@@ -187,8 +184,7 @@ class tdTestGuestCtrlBase(object):
                 # Be nice to Guest Additions < 4.3: They don't support session handling and
                 # therefore return WaitFlagNotSupported.
                 #
-                if      waitResult != vboxcon.GuestSessionWaitResult_Start \
-                    and waitResult != vboxcon.GuestSessionWaitResult_WaitFlagNotSupported:
+                if waitResult not in (vboxcon.GuestSessionWaitResult_Start, vboxcon.GuestSessionWaitResult_WaitFlagNotSupported):
                     # Just log, don't assume an error here (will be done in the main loop then).
                     reporter.log('Session did not start successfully, returned wait result: %d' \
                                   % (waitResult,));
@@ -954,7 +950,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         self.asTests    = self.asTestsDef;
         self.asRsrcs    = ['5.3/guestctrl/50mb_rnd.dat', ];
 
-    def parseOption(self, asArgs, iArg):                                        # pylint: disable=R0912,R0915
+    def parseOption(self, asArgs, iArg):                                        # pylint: disable=too-many-branches,too-many-statements
         if asArgs[iArg] == '--add-guest-ctrl-tests':
             iArg += 1;
             iNext = self.oTstDrv.requireMoreArgs(1, asArgs, iArg);
@@ -1196,7 +1192,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
         return fRc;
 
-    def gctrlReadDir(self, oTest, oRes, oGuestSession, subDir = ''): # pylint: disable=R0914
+    def gctrlReadDir(self, oTest, oRes, oGuestSession, subDir = ''): # pylint: disable=too-many-locals
         """
         Helper function to read a guest directory specified in
         the current test.
@@ -1280,8 +1276,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                                        % (i, map(hex, map(ord, oTest.sBuf)), len(oTest.sBuf), \
                                           map(hex, map(ord, oRes.sBuf)), len(oRes.sBuf)));
                         return False;
-                    else:
-                        reporter.log2('Test #%d passed: Buffers match (%d bytes)' % (i, len(oRes.sBuf)));
+                    reporter.log2('Test #%d passed: Buffers match (%d bytes)' % (i, len(oRes.sBuf)));
                 elif     oRes.sBuf is not None \
                      and oRes.sBuf:
                     reporter.error('Test #%d failed: Got no buffer data, expected\n%s (%dbytes)' %
@@ -1337,8 +1332,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                         reporter.log2('Wait returned: %d' % (waitResult,));
                         try:
                             # Try stdout.
-                            if     waitResult == vboxcon.ProcessWaitResult_StdOut \
-                                or waitResult == vboxcon.ProcessWaitResult_WaitFlagNotSupported:
+                            if waitResult in (vboxcon.ProcessWaitResult_StdOut, vboxcon.ProcessWaitResult_WaitFlagNotSupported):
                                 reporter.log2('Reading stdout ...');
                                 abBuf = curProc.Read(1, 64 * 1024, oTest.timeoutMS);
                                 if abBuf:
@@ -1346,8 +1340,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                                     oTest.cbStdOut += len(abBuf);
                                     oTest.sBuf = abBuf; # Appending does *not* work atm, so just assign it. No time now.
                             # Try stderr.
-                            if     waitResult == vboxcon.ProcessWaitResult_StdErr \
-                                or waitResult == vboxcon.ProcessWaitResult_WaitFlagNotSupported:
+                            if waitResult in (vboxcon.ProcessWaitResult_StdErr, vboxcon.ProcessWaitResult_WaitFlagNotSupported):
                                 reporter.log2('Reading stderr ...');
                                 abBuf = curProc.Read(2, 64 * 1024, oTest.timeoutMS);
                                 if abBuf:
@@ -1355,13 +1348,12 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                                     oTest.cbStdErr += len(abBuf);
                                     oTest.sBuf = abBuf; # Appending does *not* work atm, so just assign it. No time now.
                             # Use stdin.
-                            if     waitResult == vboxcon.ProcessWaitResult_StdIn \
-                                or waitResult == vboxcon.ProcessWaitResult_WaitFlagNotSupported:
+                            if waitResult in (vboxcon.ProcessWaitResult_StdIn, vboxcon.ProcessWaitResult_WaitFlagNotSupported):
                                 pass; #reporter.log2('Process (PID %d) needs stdin data' % (curProc.pid,));
                             # Termination or error?
-                            if     waitResult == vboxcon.ProcessWaitResult_Terminate \
-                                or waitResult == vboxcon.ProcessWaitResult_Error \
-                                or waitResult == vboxcon.ProcessWaitResult_Timeout:
+                            if waitResult in (vboxcon.ProcessWaitResult_Terminate,
+                                              vboxcon.ProcessWaitResult_Error,
+                                              vboxcon.ProcessWaitResult_Timeout,):
                                 reporter.log2('Process (PID %d) reported terminate/error/timeout: %d, status: %d' \
                                               % (curProc.PID, waitResult, curProc.status));
                                 break;
@@ -1384,7 +1376,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
         return fRc;
 
-    def testGuestCtrlSessionEnvironment(self, oSession, oTxsSession, oTestVm): # pylint: disable=R0914
+    def testGuestCtrlSessionEnvironment(self, oSession, oTxsSession, oTestVm): # pylint: disable=too-many-locals
         """
         Tests the guest session environment changes.
         """
@@ -1486,7 +1478,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         ];
         return tdTestSessionEx.executeListTestSessions(aoTests, self.oTstDrv, oSession, oTxsSession, oTestVm, 'SessionEnv');
 
-    def testGuestCtrlSession(self, oSession, oTxsSession, oTestVm): # pylint: disable=R0914
+    def testGuestCtrlSession(self, oSession, oTxsSession, oTestVm): # pylint: disable=too-many-locals
         """
         Tests the guest session handling.
         """
@@ -1590,7 +1582,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 fRc = False;
                 break;
         curSessionCount = multiSession[i].getSessionCount(self.oTstDrv.oVBoxMgr);
-        if curSessionCount is not 1:
+        if curSessionCount != 1:
             reporter.error('Final MultiSession count #2 must be 1, got %d' % (curSessionCount,));
             fRc = False;
 
@@ -1611,7 +1603,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             reporter.log('Accessing last standing MultiSession worked, got name="%s"' % (curSessionName,));
             multiSession[iLastSession].closeSession();
             curSessionCount = multiSession[i].getSessionCount(self.oTstDrv.oVBoxMgr);
-            if curSessionCount is not 0:
+            if curSessionCount != 0:
                 reporter.error('Final MultiSession count #3 must be 0, got %d' % (curSessionCount,));
                 fRc = False;
         except:
@@ -1622,7 +1614,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
         return (fRc, oTxsSession);
 
-    def testGuestCtrlSessionFileRefs(self, oSession, oTxsSession, oTestVm): # pylint: disable=R0914
+    def testGuestCtrlSessionFileRefs(self, oSession, oTxsSession, oTestVm): # pylint: disable=too-many-locals
         """
         Tests the guest session file reference handling.
         """
@@ -1649,8 +1641,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             # Be nice to Guest Additions < 4.3: They don't support session handling and
             # therefore return WaitFlagNotSupported.
             #
-            if      waitResult != vboxcon.GuestSessionWaitResult_Start \
-                and waitResult != vboxcon.GuestSessionWaitResult_WaitFlagNotSupported:
+            if waitResult not in (vboxcon.GuestSessionWaitResult_Start, vboxcon.GuestSessionWaitResult_WaitFlagNotSupported):
                 # Just log, don't assume an error here (will be done in the main loop then).
                 reporter.log('Session did not start successfully, returned wait result: %d' \
                               % (waitResult));
@@ -1759,7 +1750,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
     #    fRc = True;
     #    return (fRc, oTxsSession);
 
-    def testGuestCtrlSessionProcRefs(self, oSession, oTxsSession, oTestVm): # pylint: disable=R0914
+    def testGuestCtrlSessionProcRefs(self, oSession, oTxsSession, oTestVm): # pylint: disable=too-many-locals
         """
         Tests the guest session process reference handling.
         """
@@ -1787,8 +1778,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             # Be nice to Guest Additions < 4.3: They don't support session handling and
             # therefore return WaitFlagNotSupported.
             #
-            if      waitResult != vboxcon.GuestSessionWaitResult_Start \
-                and waitResult != vboxcon.GuestSessionWaitResult_WaitFlagNotSupported:
+            if waitResult not in (vboxcon.GuestSessionWaitResult_Start, vboxcon.GuestSessionWaitResult_WaitFlagNotSupported):
                 # Just log, don't assume an error here (will be done in the main loop then).
                 reporter.log('Session did not start successfully, returned wait result: %d' \
                               % (waitResult));
@@ -1916,7 +1906,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
         return (fRc, oTxsSession);
 
-    def testGuestCtrlExec(self, oSession, oTxsSession, oTestVm):                # pylint: disable=R0914,R0915
+    def testGuestCtrlExec(self, oSession, oTxsSession, oTestVm):                # pylint: disable=too-many-locals,too-many-statements
         """
         Tests the basic execution feature.
         """
@@ -2083,7 +2073,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         if fRc is True:
             aSessions = self.oTstDrv.oVBoxMgr.getArray(oSession.o.console.guest, 'sessions');
             cSessions   = len(aSessions);
-            if cSessions is not 0:
+            if cSessions != 0:
                 reporter.error('Found %d stale session(s), expected 0:' % (cSessions,));
                 for (i, aSession) in enumerate(aSessions):
                     reporter.log('\tStale session #%d ("%s")' % (aSession.id, aSession.name));
@@ -2105,8 +2095,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             try:
                 fWaitFor = [ vboxcon.GuestSessionWaitForFlag_Start ];
                 waitResult = curGuestSession.waitForArray(fWaitFor, 30 * 1000);
-                if      waitResult != vboxcon.GuestSessionWaitResult_Start \
-                    and waitResult != vboxcon.GuestSessionWaitResult_WaitFlagNotSupported:
+                if waitResult not in (vboxcon.GuestSessionWaitResult_Start, vboxcon.GuestSessionWaitResult_WaitFlagNotSupported):
                     reporter.error('Session did not start successfully, returned wait result: %d' \
                                    % (waitResult));
                     return (False, oTxsSession);
@@ -2141,7 +2130,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         # No sessions left?
         if fRc is True:
             cSessions = len(self.oTstDrv.oVBoxMgr.getArray(oSession.o.console.guest, 'sessions'));
-            if cSessions is not 0:
+            if cSessions != 0:
                 reporter.error('Found %d stale session(s), expected 0' % (cSessions,));
                 fRc = False;
 
@@ -2163,7 +2152,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             reporter.error('Got wrong stale process result: waitResult is %d, current process status is: %d' \
                             % (waitResult, oGuestProcess.status));
 
-    def testGuestCtrlSessionReboot(self, oSession, oTxsSession, oTestVm): # pylint: disable=R0914
+    def testGuestCtrlSessionReboot(self, oSession, oTxsSession, oTestVm): # pylint: disable=too-many-locals
         """
         Tests guest object notifications when a guest gets rebooted / shutdown.
         These notifications gets sent from the guest sessions in order to make API clients
@@ -2190,8 +2179,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             try:
                 fWaitFor = [ vboxcon.GuestSessionWaitForFlag_Start ];
                 waitResult = oGuestSession.waitForArray(fWaitFor, 30 * 1000);
-                if      waitResult != vboxcon.GuestSessionWaitResult_Start \
-                    and waitResult != vboxcon.GuestSessionWaitResult_WaitFlagNotSupported:
+                if waitResult not in (vboxcon.GuestSessionWaitResult_Start, vboxcon.GuestSessionWaitResult_WaitFlagNotSupported):
                     reporter.error('Session did not start successfully, returned wait result: %d' \
                                    % (waitResult));
                     return (False, oTxsSession);
@@ -2494,7 +2482,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
         return (fRc, oTxsSession);
 
-    def testGuestCtrlDirCreateTemp(self, oSession, oTxsSession, oTestVm): # pylint: disable=R0914
+    def testGuestCtrlDirCreateTemp(self, oSession, oTxsSession, oTestVm): # pylint: disable=too-many-locals
         """
         Tests creation of temporary directories.
         """
@@ -2642,7 +2630,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                     break;
         return (fRc, oTxsSession);
 
-    def testGuestCtrlDirRead(self, oSession, oTxsSession, oTestVm): # pylint: disable=R0914
+    def testGuestCtrlDirRead(self, oSession, oTxsSession, oTestVm): # pylint: disable=too-many-locals
         """
         Tests opening and reading (enumerating) guest directories.
         """
@@ -2794,7 +2782,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             curTest.closeSession();
         return (fRc, oTxsSession);
 
-    def testGuestCtrlFileStat(self, oSession, oTxsSession, oTestVm): # pylint: disable=R0914
+    def testGuestCtrlFileStat(self, oSession, oTxsSession, oTestVm): # pylint: disable=too-many-locals
         """
         Tests querying file information through stat.
         """
@@ -2879,7 +2867,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         #
         return tdTestSessionEx.executeListTestSessions(aoTests, self.oTstDrv, oSession, oTxsSession, oTestVm, 'FsStat');
 
-    def testGuestCtrlFileRead(self, oSession, oTxsSession, oTestVm): # pylint: disable=R0914
+    def testGuestCtrlFileRead(self, oSession, oTxsSession, oTestVm): # pylint: disable=too-many-locals
         """
         Tests reading from guest files.
         """
@@ -3032,7 +3020,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
         return (fRc, oTxsSession);
 
-    def testGuestCtrlFileWrite(self, oSession, oTxsSession, oTestVm): # pylint: disable=R0914
+    def testGuestCtrlFileWrite(self, oSession, oTxsSession, oTestVm): # pylint: disable=too-many-locals
         """
         Tests writing to guest files.
         """
@@ -3324,7 +3312,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
         return (fRc, oTxsSession);
 
-    def testGuestCtrlCopyFrom(self, oSession, oTxsSession, oTestVm): # pylint: disable=R0914
+    def testGuestCtrlCopyFrom(self, oSession, oTxsSession, oTestVm): # pylint: disable=too-many-locals
         """
         Tests copying files from guest to the host.
         """
@@ -3489,7 +3477,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
         return (fRc, oTxsSession);
 
-    def testGuestCtrlUpdateAdditions(self, oSession, oTxsSession, oTestVm): # pylint: disable=R0914
+    def testGuestCtrlUpdateAdditions(self, oSession, oTxsSession, oTestVm): # pylint: disable=too-many-locals
         """
         Tests updating the Guest Additions inside the guest.
         """
@@ -3600,7 +3588,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
 
 
-class tdAddGuestCtrl(vbox.TestDriver):                                         # pylint: disable=R0902,R0904
+class tdAddGuestCtrl(vbox.TestDriver):                                         # pylint: disable=too-many-instance-attributes,too-many-public-methods
     """
     Guest control using VBoxService on the guest.
     """
@@ -3626,7 +3614,7 @@ class tdAddGuestCtrl(vbox.TestDriver):                                         #
         reporter.log('      Same as --virt-modes hwvirt --cpu-counts 1.');
         return rc;
 
-    def parseOption(self, asArgs, iArg):                                        # pylint: disable=R0912,R0915
+    def parseOption(self, asArgs, iArg):                                        # pylint: disable=too-many-branches,too-many-statements
         """
         Parses the testdriver arguments from the command line.
         """
@@ -3652,7 +3640,7 @@ class tdAddGuestCtrl(vbox.TestDriver):                                         #
     #
     # Test execution helpers.
     #
-    def testOneCfg(self, oVM, oTestVm): # pylint: disable=R0915
+    def testOneCfg(self, oVM, oTestVm): # pylint: disable=too-many-statements
         """
         Runs the specified VM thru the tests.
 
@@ -3700,14 +3688,14 @@ class tdAddGuestCtrl(vbox.TestDriver):                                         #
         Helper function to return the remaining time (in ms)
         based from a timeout value and the start time (both in ms).
         """
-        if msTimeout is 0:
+        if msTimeout == 0:
             return 0xFFFFFFFE; # Wait forever.
         msElapsed = base.timestampMilli() - msStart;
         if msElapsed > msTimeout:
             return 0; # No time left.
         return msTimeout - msElapsed;
 
-    def testGuestCtrlManual(self, oSession, oTxsSession, oTestVm):                # pylint: disable=R0914,R0915,W0613,W0612
+    def testGuestCtrlManual(self, oSession, oTxsSession, oTestVm):                # pylint: disable=too-many-locals,too-many-statements,unused-argument,unused-variable
         """
         For manually testing certain bits.
         """

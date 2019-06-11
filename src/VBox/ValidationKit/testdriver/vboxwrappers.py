@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # $Id$
-# pylint: disable=C0302
+# pylint: disable=too-many-lines
 
 """
 VirtualBox Wrapper Classes
@@ -101,7 +101,7 @@ def _nameMachineState(eState):
     return 'Unknown-%s' % (eState,);
 
 
-class VirtualBoxWrapper(object): # pylint: disable=R0903
+class VirtualBoxWrapper(object): # pylint: disable=too-few-public-methods
     """
     Wrapper around the IVirtualBox object that adds some (hopefully) useful
     utility methods
@@ -508,7 +508,7 @@ class ProgressWrapper(TdTaskBase):
         Queries everything that is stable and easy to get at and checks that
         they don't throw errors.
         """
-        if True is True:
+        if True is True: # pylint: disable=comparison-with-itself
             try:
                 iPct        = self.o.operationPercent;
                 sDesc       = self.o.description;
@@ -1279,12 +1279,11 @@ class SessionWrapper(TdTaskBase):
         """
         Helper that translate the adapter type into a driver name.
         """
-        if    eNicType == vboxcon.NetworkAdapterType_Am79C970A \
-           or eNicType == vboxcon.NetworkAdapterType_Am79C973:
+        if eNicType in (vboxcon.NetworkAdapterType_Am79C970A, vboxcon.NetworkAdapterType_Am79C973):
             sName = 'pcnet';
-        elif    eNicType == vboxcon.NetworkAdapterType_I82540EM \
-             or eNicType == vboxcon.NetworkAdapterType_I82543GC \
-             or eNicType == vboxcon.NetworkAdapterType_I82545EM:
+        elif eNicType in (vboxcon.NetworkAdapterType_I82540EM,
+                          vboxcon.NetworkAdapterType_I82543GC,
+                          vboxcon.NetworkAdapterType_I82545EM):
             sName = 'e1000';
         elif eNicType == vboxcon.NetworkAdapterType_Virtio:
             sName = 'virtio-net';
@@ -1561,7 +1560,7 @@ class SessionWrapper(TdTaskBase):
 
         # Resolve missing MAC address prefix by feeding in the host IP address bytes.
         cchMacAddr = len(sMacAddr);
-        if cchMacAddr > 0 and cchMacAddr < 12:
+        if 0 < cchMacAddr < 12:
             sHostIP = netutils.getPrimaryHostIp();
             abHostIP = socket.inet_aton(sHostIP);
             if sys.version_info[0] < 3:
@@ -1924,7 +1923,7 @@ class SessionWrapper(TdTaskBase):
 
         return oHd;
 
-    def createAndAttachHd(self, sHd, sFmt = "VDI", sController = "IDE Controller", cb = 10*1024*1024*1024, # pylint: disable=R0913
+    def createAndAttachHd(self, sHd, sFmt = "VDI", sController = "IDE Controller", cb = 10*1024*1024*1024, # pylint: disable=too-many-arguments
                           iPort = 0, iDevice = 0, fImmutable = True, cMsTimeout = 60000, tMediumVariant = None):
         """
         Creates and attaches a HD to a VM.
@@ -2114,7 +2113,7 @@ class SessionWrapper(TdTaskBase):
         self.oTstDrv.processPendingEvents();
         return True;
 
-    def setupPreferredConfig(self):                                             # pylint: disable=R0914
+    def setupPreferredConfig(self):                                             # pylint: disable=too-many-locals
         """
         Configures the VM according to the preferences of the guest type.
         """
@@ -2179,9 +2178,9 @@ class SessionWrapper(TdTaskBase):
             if not self.setFirmwareType(eFirmwareType): fRc = False;
             if not self.enableUsbHid(fUsbHid):          fRc = False;
             if not self.enableHpet(fHpet):              fRc = False;
-        if  eStorCtlType == vboxcon.StorageControllerType_PIIX3 \
-         or eStorCtlType == vboxcon.StorageControllerType_PIIX4 \
-         or eStorCtlType == vboxcon.StorageControllerType_ICH6:
+        if eStorCtlType in (vboxcon.StorageControllerType_PIIX3,
+                            vboxcon.StorageControllerType_PIIX4,
+                            vboxcon.StorageControllerType_ICH6,):
             if not self.setStorageControllerType(eStorCtlType, "IDE Controller"):
                 fRc = False;
         if self.fpApiVer >= 4.0:
@@ -2189,7 +2188,7 @@ class SessionWrapper(TdTaskBase):
 
         return fRc;
 
-    def addUsbDeviceFilter(self, sName, sVendorId = None, sProductId = None, sRevision = None, # pylint: disable=R0913
+    def addUsbDeviceFilter(self, sName, sVendorId = None, sProductId = None, sRevision = None, # pylint: disable=too-many-arguments
                            sManufacturer = None, sProduct = None, sSerialNumber = None,
                            sPort = None, sRemote = None):
         """
@@ -3032,7 +3031,7 @@ class TxsConnectTask(TdTaskBase):
     class TxsConnectTaskVBoxCallback(vbox.VirtualBoxEventHandlerBase):
         """ Class for looking for IPv4 address changes on interface 0."""
         def __init__(self, dArgs):
-            vbox.VirtualBoxEventHandlerBase.__init__(self, dArgs);              # pylint: disable=W0233
+            vbox.VirtualBoxEventHandlerBase.__init__(self, dArgs);
             self.oParentTask = dArgs['oParentTask'];
             self.sMachineId  = dArgs['sMachineId'];
 
@@ -3043,7 +3042,7 @@ class TxsConnectTask(TdTaskBase):
               and sName  == '/VirtualBox/GuestInfo/Net/0/V4/IP':
                 oParentTask = self.oParentTask;
                 if oParentTask:
-                    oParentTask._setIp(sValue);                                # pylint: disable=W0212
+                    oParentTask._setIp(sValue);                                # pylint: disable=protected-access
 
 
     def __init__(self, oSession, cMsTimeout, sIpAddr, sMacAddr, fReversedSetup):

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # $Id$
-# pylint: disable=C0302
+# pylint: disable=too-many-lines
 
 """
 VirtualBox Specific base testdriver.
@@ -67,8 +67,8 @@ if sys.version_info[0] >= 3:
 # TODO: Find better ways of doing these things, preferrably in vboxapi.
 #
 
-ComException = None;                                                            # pylint: disable=C0103
-__fnComExceptionGetAttr__ = None;                                               # pylint: disable=C0103
+ComException = None;                                                            # pylint: disable=invalid-name
+__fnComExceptionGetAttr__ = None;                                               # pylint: disable=invalid-name
 
 def __MyDefaultGetAttr(oSelf, sName):
     """ __getattribute__/__getattr__ default fake."""
@@ -109,8 +109,8 @@ def __deployExceptionHacks__(oNativeComExceptionClass):
     Deploys the exception and error hacks that helps unifying COM and XPCOM
     exceptions and errors.
     """
-    global ComException                                                         # pylint: disable=C0103
-    global __fnComExceptionGetAttr__                                            # pylint: disable=C0103
+    global ComException                                                         # pylint: disable=invalid-name
+    global __fnComExceptionGetAttr__                                            # pylint: disable=invalid-name
 
     # Hook up our attribute getter for the exception class (ASSUMES new-style).
     if __fnComExceptionGetAttr__ is None:
@@ -209,7 +209,7 @@ class ComError(object):
     VBOX_E_DONT_CALL_AGAIN          = __VBOX_E_BASE + 13;
 
     # Reverse lookup table.
-    dDecimalToConst = {}; # pylint: disable=C0103
+    dDecimalToConst = {}; # pylint: disable=invalid-name
 
     def __init__(self):
         raise base.GenError('No instances, please');
@@ -328,7 +328,7 @@ class ComError(object):
         return sStr;
 
 
-class Build(object): # pylint: disable=R0903
+class Build(object): # pylint: disable=too-few-public-methods
     """
     A VirtualBox build.
 
@@ -371,7 +371,7 @@ class Build(object): # pylint: disable=R0903
             sOut = os.path.join('out', self.sOs + '.' + self.sArch, self.sType);
             sSearch = os.environ.get('VBOX_TD_DEV_TREE', os.path.dirname(__file__)); # Env.var. for older trees or testboxscript.
             sCandidat = None;
-            for i in range(0, 10):                                          # pylint: disable=W0612
+            for i in range(0, 10):                                          # pylint: disable=unused-variable
                 sBldDir = os.path.join(sSearch, sOut);
                 if os.path.isdir(sBldDir):
                     sCandidat = os.path.join(sBldDir, 'bin', 'VBoxSVC' + base.exeSuff());
@@ -452,7 +452,7 @@ class EventHandlerBase(object):
         self.oVBoxMgr   = dArgs['oVBoxMgr'];
         self.oEventSrc  = dArgs['oEventSrc']; # Console/VirtualBox for < 3.3
         self.oListener  = dArgs['oListener'];
-        self.fPassive   = self.oListener != None;
+        self.fPassive   = self.oListener is not None;
         self.sName      = sName
         self.fShutdown  = False;
         self.oThread    = None;
@@ -615,7 +615,7 @@ class ConsoleEventHandlerBase(EventHandlerBase):
         EventHandlerBase.__init__(self, dArgs, self.oSession.fpApiVer, sName);
 
 
-    # pylint: disable=C0111,R0913,W0613
+    # pylint: disable=missing-docstring,too-many-arguments,unused-argument
     def onMousePointerShapeChange(self, fVisible, fAlpha, xHot, yHot, cx, cy, abShape):
         reporter.log2('onMousePointerShapeChange/%s' % (self.sName));
     def onMouseCapabilityChange(self, fSupportsAbsolute, *aArgs): # Extra argument was added in 3.2.
@@ -656,7 +656,7 @@ class ConsoleEventHandlerBase(EventHandlerBase):
     def onShowWindow(self):
         reporter.log2('onShowWindow/%s' % (self.sName));
         return None;
-    # pylint: enable=C0111,R0913,W0613
+    # pylint: enable=missing-docstring,too-many-arguments,unused-argument
 
     def handleEvent(self, oEvt):
         """
@@ -697,7 +697,7 @@ class VirtualBoxEventHandlerBase(EventHandlerBase):
         self.oVBox     = dArgs['oVBox'];
         EventHandlerBase.__init__(self, dArgs, self.oVBox.fpApiVer, sName);
 
-    # pylint: disable=C0111,W0613
+    # pylint: disable=missing-docstring,unused-argument
     def onMachineStateChange(self, sMachineId, eState):
         pass;
     def onMachineDataChange(self, sMachineId):
@@ -723,7 +723,7 @@ class VirtualBoxEventHandlerBase(EventHandlerBase):
         pass;
     def onGuestPropertyChange(self, sMachineId, sName, sValue, sFlags):
         pass;
-    # pylint: enable=C0111,W0613
+    # pylint: enable=missing-docstring,unused-argument
 
     def handleEvent(self, oEvt):
         """
@@ -762,7 +762,7 @@ class SessionConsoleEventHandler(ConsoleEventHandlerBase):
     def __init__(self, dArgs):
         ConsoleEventHandlerBase.__init__(self, dArgs);
 
-    def onMachineStateChange(self, sMachineId, eState):                         # pylint: disable=W0613
+    def onMachineStateChange(self, sMachineId, eState):                         # pylint: disable=unused-argument
         """ Just interrupt the wait loop here so it can check again. """
         _ = sMachineId; _ = eState;
         self.oVBoxMgr.interruptWaitEvents();
@@ -781,7 +781,7 @@ class SessionConsoleEventHandler(ConsoleEventHandlerBase):
 
 
 
-class TestDriver(base.TestDriver):                                              # pylint: disable=R0902
+class TestDriver(base.TestDriver):                                              # pylint: disable=too-many-instance-attributes
     """
     This is the VirtualBox test driver.
     """
@@ -845,7 +845,7 @@ class TestDriver(base.TestDriver):                                              
             return True;
 
         # Try dev build first since that's where I'll be using it first...
-        if True is True:
+        if True is True: # pylint: disable=comparison-with-itself
             try:
                 self.oBuild = Build(self, None);
                 return True;
@@ -1007,7 +1007,7 @@ class TestDriver(base.TestDriver):                                              
             assert(self.oVBoxSvcProcess is None);
         return self.fImportedVBoxApi;
 
-    def _startVBoxSVC(self): # pylint: disable=R0915
+    def _startVBoxSVC(self): # pylint: disable=too-many-statements
         """ Starts VBoxSVC. """
         assert(self.oVBoxSvcProcess is None);
 
@@ -1057,7 +1057,7 @@ class TestDriver(base.TestDriver):                                              
             elif self.sHost == 'win':
                 sWinDbg = 'c:\\Program Files\\Debugging Tools for Windows\\windbg.exe';
                 if not os.path.isfile(sWinDbg): sWinDbg = 'c:\\Program Files\\Debugging Tools for Windows (x64)\\windbg.exe';
-                if not os.path.isfile(sWinDbg): sWinDbg = 'c:\\Programme\\Debugging Tools for Windows\\windbg.exe'; # Localization rulez!  pylint: disable=C0301
+                if not os.path.isfile(sWinDbg): sWinDbg = 'c:\\Programme\\Debugging Tools for Windows\\windbg.exe'; # Localization rulez!  pylint: disable=line-too-long
                 if not os.path.isfile(sWinDbg): sWinDbg = 'c:\\Programme\\Debugging Tools for Windows (x64)\\windbg.exe';
                 if not os.path.isfile(sWinDbg): sWinDbg = 'windbg'; # WinDbg must be in the path; better than nothing.
                 # Assume that everything WinDbg needs is defined using the environment variables.
@@ -1086,8 +1086,8 @@ class TestDriver(base.TestDriver):                                              
 
                 self.oVBoxSvcProcess = base.Process.spawn(sVBoxSVC, sVBoxSVC, '--auto-shutdown'); # SIGUSR1 requirement.
                 try: # Try make sure we get the SIGINT and not VBoxSVC.
-                    os.setpgid(self.oVBoxSvcProcess.getPid(), 0); # pylint: disable=E1101
-                    os.setpgid(0, 0);                             # pylint: disable=E1101
+                    os.setpgid(self.oVBoxSvcProcess.getPid(), 0); # pylint: disable=no-member
+                    os.setpgid(0, 0);                             # pylint: disable=no-member
                 except:
                     reporter.logXcpt();
 
@@ -1128,7 +1128,7 @@ class TestDriver(base.TestDriver):                                              
         #
         # Fudge and pid file.
         #
-        if self.oVBoxSvcProcess != None and not self.oVBoxSvcProcess.wait(cMsFudge):
+        if self.oVBoxSvcProcess is not None and not self.oVBoxSvcProcess.wait(cMsFudge):
             if fWritePidFile:
                 iPid = self.oVBoxSvcProcess.getPid();
                 try:
@@ -1148,7 +1148,7 @@ class TestDriver(base.TestDriver):                                              
             try:    os.remove(self.sVBoxSvcPidFile);
             except: pass;
 
-        return self.oVBoxSvcProcess != None;
+        return self.oVBoxSvcProcess is not None;
 
 
     def _killVBoxSVCByPidFile(self, sPidFile):
@@ -1260,7 +1260,7 @@ class TestDriver(base.TestDriver):                                              
         reporter.log("sys.path: %s" % (sys.path));
 
         try:
-            from vboxapi import VirtualBoxManager # pylint: disable=import-error
+            from vboxapi import VirtualBoxManager;  # pylint: disable=import-error
         except:
             reporter.logXcpt('Error importing vboxapi');
             return False;
@@ -1269,7 +1269,7 @@ class TestDriver(base.TestDriver):                                              
         try:
             # pylint: disable=import-error
             if self.sHost == 'win':
-                from pythoncom import com_error as NativeComExceptionClass  # pylint: disable=E0611
+                from pythoncom import com_error as NativeComExceptionClass  # pylint: disable=no-name-in-module
                 import winerror                 as NativeComErrorClass
             else:
                 from xpcom import Exception     as NativeComExceptionClass
@@ -1391,7 +1391,7 @@ class TestDriver(base.TestDriver):                                              
             _ = oSelf;
             if oXcpt is None: oXcpt = sys.exc_info()[1];
             if sys.platform == 'win32':
-                from pythoncom import com_error as NativeComExceptionClass  # pylint: disable=import-error,E0611
+                from pythoncom import com_error as NativeComExceptionClass  # pylint: disable=import-error,no-name-in-module
             else:
                 from xpcom import Exception     as NativeComExceptionClass  # pylint: disable=import-error
             return isinstance(oXcpt, NativeComExceptionClass);
@@ -1399,7 +1399,7 @@ class TestDriver(base.TestDriver):                                              
         def _xcptIsEqual(oSelf, oXcpt, hrStatus):
             """ See vboxapi. """
             hrXcpt = oSelf.xcptGetResult(oXcpt);
-            return hrXcpt == hrStatus or hrXcpt == hrStatus - 0x100000000;
+            return hrXcpt == hrStatus or hrXcpt == hrStatus - 0x100000000;  # pylint: disable=consider-using-in
 
         def _xcptToString(oSelf, oXcpt):
             """ See vboxapi. """
@@ -1477,10 +1477,10 @@ class TestDriver(base.TestDriver):                                              
                 # XPCOM doesn't crash and burn like COM if you shut it down with interfaces and objects around.
                 # Also, it keeps a number of internal objects and interfaces around to do its job, so shutting
                 # it down before we go looking for dangling interfaces is more or less required.
-                from xpcom import _xpcom as _xpcom;             # pylint: disable=import-error
+                from xpcom import _xpcom as _xpcom;             # pylint: disable=import-error,useless-import-alias
                 hrc   = _xpcom.DeinitCOM();
-                cIfs  = _xpcom._GetInterfaceCount();            # pylint: disable=W0212
-                cObjs = _xpcom._GetGatewayCount();              # pylint: disable=W0212
+                cIfs  = _xpcom._GetInterfaceCount();            # pylint: disable=protected-access
+                cObjs = _xpcom._GetGatewayCount();              # pylint: disable=protected-access
 
                 if cObjs == 0 and cIfs == 0:
                     reporter.log('_teardownVBoxApi: No XPCOM interfaces or objects active. (hrc=%#x)' % (hrc,));
@@ -1488,7 +1488,7 @@ class TestDriver(base.TestDriver):                                              
                     reporter.log('_teardownVBoxApi: %s XPCOM objects and %s interfaces still around! (hrc=%#x)'
                                  % (cObjs, cIfs, hrc));
                     if hasattr(_xpcom, '_DumpInterfaces'):
-                        try:    _xpcom._DumpInterfaces();       # pylint: disable=W0212
+                        try:    _xpcom._DumpInterfaces();       # pylint: disable=protected-access
                         except: reporter.logXcpt('_teardownVBoxApi: _DumpInterfaces failed');
 
                 from xpcom.client import Component;             # pylint: disable=import-error
@@ -1665,7 +1665,7 @@ class TestDriver(base.TestDriver):                                              
             self.oTestVmSet.showUsage();
         return rc;
 
-    def parseOption(self, asArgs, iArg): # pylint: disable=R0915
+    def parseOption(self, asArgs, iArg): # pylint: disable=too-many-statements
         if asArgs[iArg] == '--vbox-session-type':
             iArg += 1;
             if iArg >= len(asArgs):
@@ -1944,7 +1944,7 @@ class TestDriver(base.TestDriver):                                              
             self.processEvents(cMsTimeout - cMsElapsed);
         return None;
 
-    def _logVmInfoUnsafe(self, oVM):                                            # pylint: disable=R0915,R0912
+    def _logVmInfoUnsafe(self, oVM):                                            # pylint: disable=too-many-statements,too-many-branches
         """
         Internal worker for logVmInfo that is wrapped in try/except.
 
@@ -2152,7 +2152,7 @@ class TestDriver(base.TestDriver):                                              
 
         return True;
 
-    def logVmInfo(self, oVM):                                                   # pylint: disable=R0915,R0912
+    def logVmInfo(self, oVM):                                                   # pylint: disable=too-many-statements,too-many-branches
         """
         Logs VM configuration details.
 
@@ -2193,7 +2193,7 @@ class TestDriver(base.TestDriver):                                              
                 except:
                     reporter.logXcpt();
                 else:
-                    if sIdOrDesc == sId or sIdOrDesc == sDesc:
+                    if sIdOrDesc in (sId, sDesc,):
                         sIdOrDesc = sId;
                         break;
         self.processPendingEvents();
@@ -2238,6 +2238,7 @@ class TestDriver(base.TestDriver):                                              
                     self.oVBox.registerMachine(oVM);
                     return oVM;
                 except:
+                    reporter.logXcpt();
                     raise;
             except:
                 reporter.logXcpt();
@@ -2258,7 +2259,7 @@ class TestDriver(base.TestDriver):                                              
             reporter.errorXcpt('failed to create vm "%s"' % (sName));
         return None;
 
-    # pylint: disable=R0913,R0914,R0915
+    # pylint: disable=too-many-arguments,too-many-locals,too-many-statements
     def createTestVM(self,
                      sName,
                      iGroup,
@@ -2374,7 +2375,7 @@ class TestDriver(base.TestDriver):                                              
         self.aoVMs.append(oVM);
         self.logVmInfo(oVM); # testing...
         return oVM;
-    # pylint: enable=R0913,R0914,R0915
+    # pylint: enable=too-many-arguments,too-many-locals,too-many-statements
 
     def createTestVmWithDefaults(self,                                      # pylint: disable=too-many-arguments
                                  sName,
@@ -2608,9 +2609,7 @@ class TestDriver(base.TestDriver):                                              
           and sCurName == sOrgName \
           and sCurName != '' \
           and base.timestampMilli() - msStart < cMsTimeout \
-          and (   eCurState == vboxcon.SessionState_Unlocking \
-               or eCurState == vboxcon.SessionState_Spawning \
-               or eCurState == vboxcon.SessionState_Locked):
+          and eCurState in (vboxcon.SessionState_Unlocking, vboxcon.SessionState_Spawning, vboxcon.SessionState_Locked,):
             self.processEvents(1000);
             try:
                 eCurState = oVM.sessionState;
@@ -2661,7 +2660,7 @@ class TestDriver(base.TestDriver):                                              
                 oResolver.cleanupEnv();
         return fRc;
 
-    def startVmEx(self, oVM, fWait = True, sType = None, sName = None, asEnv = None): # pylint: disable=R0914,R0915
+    def startVmEx(self, oVM, fWait = True, sType = None, sName = None, asEnv = None): # pylint: disable=too-many-locals,too-many-statements
         """
         Start the VM, returning the VM session and progress object on success.
         The session is also added to the task list and to the aoRemoteSessions set.
@@ -2757,12 +2756,12 @@ class TestDriver(base.TestDriver):                                              
                 try:
                     if   self.fpApiVer < 4.3 \
                       or (self.fpApiVer == 4.3 and not hasattr(self.oVBoxMgr, 'getSessionObject')):
-                        oSession = self.oVBoxMgr.mgr.getSessionObject(self.oVBox);  # pylint: disable=E1101
+                        oSession = self.oVBoxMgr.mgr.getSessionObject(self.oVBox);  # pylint: disable=no-member
                     elif self.fpApiVer < 5.2 \
                       or (self.fpApiVer == 5.2 and hasattr(self.oVBoxMgr, 'vbox')):
-                        oSession = self.oVBoxMgr.getSessionObject(self.oVBox);      # pylint: disable=E1101
+                        oSession = self.oVBoxMgr.getSessionObject(self.oVBox);      # pylint: disable=no-member
                     else:
-                        oSession = self.oVBoxMgr.getSessionObject();                # pylint: disable=E1101,E1120
+                        oSession = self.oVBoxMgr.getSessionObject();           # pylint: disable=no-member,no-value-for-parameter
                     if self.fpApiVer < 3.3:
                         oProgress = self.oVBox.openRemoteSession(oSession, sUuid, sType, sEnv);
                     else:
@@ -2774,7 +2773,7 @@ class TestDriver(base.TestDriver):                                              
                         return (None, None);
                     oSession = None;
                     if i >= 0:
-                        reporter.logXcpt('warning: failed to start VM "%s" ("%s") - retrying in %u secs.' % (sUuid, oVM, i));     # pylint: disable=C0301
+                        reporter.logXcpt('warning: failed to start VM "%s" ("%s") - retrying in %u secs.' % (sUuid, oVM, i));     # pylint: disable=line-too-long
                 self.waitOnDirectSessionClose(oVM, 5000 + i * 1000);
         if fWait and oProgress is not None:
             rc = self.waitOnProgress(oProgress);
@@ -2841,7 +2840,7 @@ class TestDriver(base.TestDriver):                                              
         oSession, _ = self.startVmByNameEx(sName, True, sType, asEnv = asEnv);
         return oSession;
 
-    def terminateVmBySession(self, oSession, oProgress = None, fTakeScreenshot = None): # pylint: disable=R0915
+    def terminateVmBySession(self, oSession, oProgress = None, fTakeScreenshot = None): # pylint: disable=too-many-statements
         """
         Terminates the VM specified by oSession and adds the release logs to
         the test report.
@@ -3290,7 +3289,7 @@ class TestDriver(base.TestDriver):                                              
         fRemoveVm  = self.addTask(oSession);
         fRemoveTxs = self.addTask(oTxsSession);
 
-        rc = fnAsync(*aArgs); # pylint: disable=W0142
+        rc = fnAsync(*aArgs); # pylint: disable=star-args
         if rc is True:
             rc = False;
             oTask = self.waitForTasks(cMsTimeout + 1);
@@ -3324,7 +3323,7 @@ class TestDriver(base.TestDriver):                                              
             self.removeTask(oSession);
         return rc;
 
-    # pylint: disable=C0111
+    # pylint: disable=missing-docstring
 
     def txsDisconnect(self, oSession, oTxsSession, cMsTimeout = 30000, fIgnoreErrors = False):
         return self.txsDoTask(oSession, oTxsSession, oTxsSession.asyncDisconnect,
@@ -3423,7 +3422,7 @@ class TestDriver(base.TestDriver):                                              
         return self.txsDoTask(oSession, oTxsSession, oTxsSession.asyncUnpackFile, \
                               (sRemoteFile, sRemoteDir, self.adjustTimeoutMs(cMsTimeout), fIgnoreErrors));
 
-    # pylint: enable=C0111
+    # pylint: enable=missing-docstring
 
     def txsCdWait(self,
                   oSession,             # type: vboxwrappers.SessionWrapper
@@ -3651,7 +3650,7 @@ class TestDriver(base.TestDriver):                                              
             reporter.error('txsRebootAndReconnectViaTcp: failed to get UUID (before)');
         return (fRc, oTxsSession);
 
-    # pylint: disable=R0914,R0913
+    # pylint: disable=too-many-locals,too-many-arguments
 
     def txsRunTest(self, oTxsSession, sTestName, cMsTimeout, sExecName, asArgs = (), asAddEnv = (), sAsUser = ""):
         """
@@ -3809,7 +3808,7 @@ class TestDriver(base.TestDriver):                                              
         reporter.testDone();
         return fRc;
 
-    # pylint: enable=R0914,R0913
+    # pylint: enable=too-many-locals,too-many-arguments
 
 
     #

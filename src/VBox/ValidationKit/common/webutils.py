@@ -189,7 +189,7 @@ def downloadFile(sUrlFile, sDstFile, sLocalPrefix, fnLog, fnError = None, fNoPro
 # Unit testing.
 #
 
-# pylint: disable=C0111
+# pylint: disable=missing-docstring
 class CommonUtilsTestCase(unittest.TestCase):
     def testHasSchema(self):
         self.assertTrue(hasSchema('http://www.oracle.com/'));

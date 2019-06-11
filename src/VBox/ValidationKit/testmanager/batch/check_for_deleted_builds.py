@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # $Id$
-# pylint: disable=C0301
+# pylint: disable=line-too-long
 
 """
 Admin job for checking detecting deleted builds.
@@ -52,7 +52,7 @@ from testmanager.core.build import BuildLogic;
 
 
 
-class BuildChecker(object): # pylint: disable=R0903
+class BuildChecker(object): # pylint: disable=too-few-public-methods
     """
     Add build info into Test Manager database.
     """

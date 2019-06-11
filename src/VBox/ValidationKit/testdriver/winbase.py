@@ -142,7 +142,7 @@ def processCheckPidAndName(uPid, sName):
     fRc = processExists(uPid);
     if fRc is True:
         try:
-            from win32com.client import GetObject; # pylint: disable=F0401
+            from win32com.client import GetObject; # pylint: disable=import-error
             oWmi = GetObject('winmgmts:');
             aoProcesses = oWmi.InstancesOf('Win32_Process');
             for oProcess in aoProcesses:

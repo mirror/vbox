@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # $Id$
-# pylint: disable=C0301
+# pylint: disable=line-too-long
 
 """
 Interface used by the tinderbox server side software to add a fresh build.
@@ -43,7 +43,7 @@ sys.path.append(g_ksTestManagerDir);
 from testmanager.core.db    import TMDatabaseConnection;
 from testmanager.core.build import BuildDataEx, BuildLogic, BuildCategoryData;
 
-class Build(object): # pylint: disable=R0903
+class Build(object): # pylint: disable=too-few-public-methods
     """
     Add build info into Test Manager database.
     """

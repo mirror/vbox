@@ -98,7 +98,7 @@ class TestBoxInSchedGroupDataEx(TestBoxInSchedGroupData):
 
     def __init__(self):
         TestBoxInSchedGroupData.__init__(self);
-        self.oSchedGroup        = None; # type: SchedGroupData
+        self.oSchedGroup        = None  # type: SchedGroupData
 
     def initFromDbRowEx(self, aoRow, oDb, tsNow = None, sPeriodBack = None):
         """
@@ -110,8 +110,8 @@ class TestBoxInSchedGroupDataEx(TestBoxInSchedGroupData):
         return self;
 
 
-# pylint: disable=C0103
-class TestBoxData(ModelDataBase):  # pylint: disable=R0902
+# pylint: disable=invalid-name
+class TestBoxData(ModelDataBase):  # pylint: disable=too-many-instance-attributes
     """
     TestBox Data.
     """
@@ -475,7 +475,7 @@ class TestBoxData(ModelDataBase):  # pylint: disable=R0902
         elif sCpuVendor == 'AuthenticAMD':
             if uFam == 0xf:
                 if uMod < 0x10:                             return 'K8_130nm';
-                if uMod >= 0x60 and uMod < 0x80:            return 'K8_65nm';
+                if 0x60 <= uMod < 0x80:                     return 'K8_65nm';
                 if uMod >= 0x40:                            return 'K8_90nm_AMDV';
                 if uMod in [0x21, 0x23, 0x2b, 0x37, 0x3f]:  return 'K8_90nm_DualCore';
                 return 'AMD_K8_90nm';
@@ -566,7 +566,7 @@ class TestBoxDataEx(TestBoxData):
 
     def __init__(self):
         TestBoxData.__init__(self);
-        self.aoInSchedGroups        = [];   # type: list[TestBoxInSchedGroupData]
+        self.aoInSchedGroups        = []    # type: list[TestBoxInSchedGroupData]
 
     def _initExtraMembersFromDb(self, oDb, tsNow = None, sPeriodBack = None):
         """
@@ -633,7 +633,7 @@ class TestBoxDataEx(TestBoxData):
                 aoNewValues.append(oMember);
         return aoNewValues;
 
-    def _validateAndConvertAttribute(self, sAttr, sParam, oValue, aoNilValues, fAllowNull, oDb): # pylint: disable=R0914
+    def _validateAndConvertAttribute(self, sAttr, sParam, oValue, aoNilValues, fAllowNull, oDb): # pylint: disable=too-many-locals
         """
         Validate special arrays and requirement expressions.
 
@@ -772,7 +772,7 @@ class TestBoxLogic(ModelLogicBase):
             def __init__(self):
                 TestBoxDataEx.__init__(self);
                 self.tsCurrent = None;  # CURRENT_TIMESTAMP
-                self.oStatus   = None;  # type: TestBoxStatusData
+                self.oStatus   = None   # type: TestBoxStatusData
 
         from testmanager.core.testboxstatus import TestBoxStatusData;
 
@@ -810,7 +810,7 @@ class TestBoxLogic(ModelLogicBase):
             aoRows.append(oTestBox);
         return aoRows;
 
-    def fetchForChangeLog(self, idTestBox, iStart, cMaxRows, tsNow): # pylint: disable=R0914
+    def fetchForChangeLog(self, idTestBox, iStart, cMaxRows, tsNow): # pylint: disable=too-many-locals
         """
         Fetches change log entries for a testbox.
 
@@ -1012,7 +1012,7 @@ class TestBoxLogic(ModelLogicBase):
         return True;
 
 
-    def updateOnSignOn(self, idTestBox, idGenTestBox, sTestBoxAddr, sOs, sOsVersion, # pylint: disable=R0913,R0914
+    def updateOnSignOn(self, idTestBox, idGenTestBox, sTestBoxAddr, sOs, sOsVersion, # pylint: disable=too-many-arguments,too-many-locals
                        sCpuVendor, sCpuArch, sCpuName, lCpuRevision, cCpus, fCpuHwVirt, fCpuNestedPaging, fCpu64BitGuest,
                        fChipsetIoMmu, fRawMode, cMbMemory, cMbScratch, sReport, iTestBoxScriptRev, iPythonHexVersion):
         """
@@ -1152,8 +1152,6 @@ class TestBoxLogic(ModelLogicBase):
                             uidAuthor = uidAuthor, fCommit = fCommit, sComment = sComment);
         except TMInFligthCollision:
             return False;
-        except:
-            raise;
         return True;
 
 
@@ -1176,7 +1174,7 @@ class TestBoxLogic(ModelLogicBase):
 # Unit testing.
 #
 
-# pylint: disable=C0111
+# pylint: disable=missing-docstring
 class TestBoxDataTestCase(ModelDataBaseTestCase):
     def setUp(self):
         self.aoSamples = [TestBoxData(),];

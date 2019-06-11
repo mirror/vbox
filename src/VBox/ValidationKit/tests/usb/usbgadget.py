@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # $Id$
-# pylint: disable=C0302
+# pylint: disable=too-many-lines
 
 """
 UTS (USB Test Service) client.
@@ -192,7 +192,7 @@ def zeroByteArray(cb):
     """Returns an array with the given size containing 0."""
     abArray = array.array('B', (0, ));
     cb = cb - 1;
-    for i in range(cb): # pylint: disable=W0612
+    for i in range(cb): # pylint: disable=unused-variable
         abArray.append(0);
     return abArray;
 
@@ -984,7 +984,7 @@ class TransportTcp(TransportBase):
                 try:
                     if oXcpt[0] == errno.EWOULDBLOCK:
                         return True;
-                    if utils.getHostOs == 'win' and oXcpt[0] == errno.WSAEWOULDBLOCK: # pylint: disable=E1101
+                    if utils.getHostOs == 'win' and oXcpt[0] == errno.WSAEWOULDBLOCK: # pylint: disable=no-member
                         return True;
                 except: pass;
         except:
@@ -1122,7 +1122,7 @@ class TransportTcp(TransportBase):
         oWakeupR = None;
         oWakeupW = None;
         if hasattr(socket, 'socketpair'):
-            try:    (oWakeupR, oWakeupW) = socket.socketpair();         # pylint: disable=E1101
+            try:    (oWakeupR, oWakeupW) = socket.socketpair();         # pylint: disable=no-member
             except: reporter.logXcpt('socket.socketpair() failed');
 
         # Update the state.

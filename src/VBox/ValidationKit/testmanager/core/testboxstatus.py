@@ -296,7 +296,7 @@ class TestBoxStatusLogic(ModelLogicBase):
 # Unit testing.
 #
 
-# pylint: disable=C0111
+# pylint: disable=missing-docstring
 class TestBoxStatusDataTestCase(ModelDataBaseTestCase):
     def setUp(self):
         self.aoSamples = [TestBoxStatusData(),];

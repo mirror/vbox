@@ -811,7 +811,7 @@ class WuiAdmin(WuiDispatcherBase):
         return self._actionGenericDoDelOld(GlobalResourceLogic, GlobalResourceData.ksParam_idGlobalRsrc,
                                            self.ksActionGlobalRsrcShowAll);
 
-    def _actionGlobalRsrcShowAddEdit(self, sAction): # pylint: disable=C0103
+    def _actionGlobalRsrcShowAddEdit(self, sAction): # pylint: disable=invalid-name
         """Show Global Resource creation or edit dialog"""
         from testmanager.core.globalresource           import GlobalResourceLogic, GlobalResourceData;
         from testmanager.webui.wuiadminglobalrsrc      import WuiGlobalResource;

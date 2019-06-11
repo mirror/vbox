@@ -104,7 +104,7 @@ class VcsRevisionData(ModelDataBase):
         return self;
 
 
-class VcsRevisionLogic(ModelLogicBase): # pylint: disable=R0903
+class VcsRevisionLogic(ModelLogicBase): # pylint: disable=too-few-public-methods
     """
     VCS revisions database logic.
     """
@@ -233,7 +233,7 @@ class VcsRevisionLogic(ModelLogicBase): # pylint: disable=R0903
 # Unit testing.
 #
 
-# pylint: disable=C0111
+# pylint: disable=missing-docstring
 class VcsRevisionDataTestCase(ModelDataBaseTestCase):
     def setUp(self):
         self.aoSamples = [VcsRevisionData(),];

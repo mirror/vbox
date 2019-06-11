@@ -36,7 +36,7 @@ import unittest;
 from testmanager.core.base import ModelDataBase, ModelDataBaseTestCase, ModelLogicBase, TMExceptionBase;
 
 
-class SystemLogData(ModelDataBase):  # pylint: disable=R0902
+class SystemLogData(ModelDataBase):  # pylint: disable=too-many-instance-attributes
     """
     SystemLog Data.
     """
@@ -165,7 +165,7 @@ class SystemLogLogic(ModelLogicBase):
 # Unit testing.
 #
 
-# pylint: disable=C0111
+# pylint: disable=missing-docstring
 class SystemLogDataTestCase(ModelDataBaseTestCase):
     def setUp(self):
         self.aoSamples = [SystemLogData(),];

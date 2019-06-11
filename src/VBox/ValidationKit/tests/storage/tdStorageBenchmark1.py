@@ -35,9 +35,9 @@ import os;
 import socket;
 import sys;
 if sys.version_info[0] >= 3:
-    from io       import StringIO as StringIO;      # pylint: disable=import-error,no-name-in-module
+    from io       import StringIO as StringIO;      # pylint: disable=import-error,no-name-in-module,useless-import-alias
 else:
-    from StringIO import StringIO as StringIO;      # pylint: disable=import-error,no-name-in-module
+    from StringIO import StringIO as StringIO;      # pylint: disable=import-error,no-name-in-module,useless-import-alias
 
 # Only the main script needs to modify the path.
 try:    __file__
@@ -60,13 +60,13 @@ import storagecfg;
 
 def _ControllerTypeToName(eControllerType):
     """ Translate a controller type to a name. """
-    if eControllerType == vboxcon.StorageControllerType_PIIX3 or eControllerType == vboxcon.StorageControllerType_PIIX4:
+    if eControllerType in (vboxcon.StorageControllerType_PIIX3, eControllerType == vboxcon.StorageControllerType_PIIX4,):
         sType = "IDE Controller";
     elif eControllerType == vboxcon.StorageControllerType_IntelAhci:
         sType = "SATA Controller";
     elif eControllerType == vboxcon.StorageControllerType_LsiLogicSas:
         sType = "SAS Controller";
-    elif eControllerType == vboxcon.StorageControllerType_LsiLogic or eControllerType == vboxcon.StorageControllerType_BusLogic:
+    elif eControllerType in (vboxcon.StorageControllerType_LsiLogic, vboxcon.StorageControllerType_BusLogic,):
         sType = "SCSI Controller";
     elif eControllerType == vboxcon.StorageControllerType_NVMe:
         sType = "NVMe Controller";
@@ -403,7 +403,7 @@ class StorTestCfgMgr(object):
 
         return asTestCfg;
 
-class tdStorageBenchmark(vbox.TestDriver):                                      # pylint: disable=R0902
+class tdStorageBenchmark(vbox.TestDriver):                                      # pylint: disable=too-many-instance-attributes
     """
     Storage benchmark.
     """
@@ -578,7 +578,7 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
         reporter.log('      Default: %s' % (self.sEncryptAlgoDef));
         return rc;
 
-    def parseOption(self, asArgs, iArg):                                        # pylint: disable=R0912,R0915
+    def parseOption(self, asArgs, iArg):                                        # pylint: disable=too-many-branches,too-many-statements
         if asArgs[iArg] == '--virt-modes':
             iArg += 1;
             if iArg >= len(asArgs): raise base.InvalidOption('The "--virt-modes" takes a colon separated list of modes');
@@ -943,7 +943,7 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
         if sBenchmark == 'iozone':
             oTst = IozoneTest(oExecutor, dTestSet);
         elif sBenchmark == 'fio':
-            oTst = FioTest(oExecutor, dTestSet); # pylint: disable=R0204
+            oTst = FioTest(oExecutor, dTestSet); # pylint: disable=redefined-variable-type
 
         if oTst is not None:
             fRc = oTst.prepare();
@@ -1044,7 +1044,7 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
 
         return (None, None);
 
-    def testOneCfg(self, sVmName, eStorageController, sHostIoCache, sDiskFormat, # pylint: disable=R0913,R0914,R0915
+    def testOneCfg(self, sVmName, eStorageController, sHostIoCache, sDiskFormat, # pylint: disable=too-many-arguments,too-many-locals,too-many-statements
                    sDiskVariant, sDiskPath, cCpus, sIoTest, sVirtMode, sTestSet):
         """
         Runs the specified VM thru test #1.
@@ -1108,8 +1108,7 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
                     fRc = fRc and oSession.setStorageControllerHostIoCache(_ControllerTypeToName(eStorageController), False);
 
                 iDevice = 0;
-                if eStorageController == vboxcon.StorageControllerType_PIIX3 or \
-                   eStorageController == vboxcon.StorageControllerType_PIIX4:
+                if eStorageController in (vboxcon.StorageControllerType_PIIX3, vboxcon.StorageControllerType_PIIX4,):
                     iDevice = 1; # Master is for the OS.
 
                 oHdParent = None;
@@ -1140,8 +1139,7 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
                         oSession.o.machine.setExtraData('VBoxInternal2/EnableDiskIntegrityDriver', '1');
 
                         iLun = 0;
-                        if eStorageController == vboxcon.StorageControllerType_PIIX3 or \
-                           eStorageController == vboxcon.StorageControllerType_PIIX4:
+                        if eStorageController in (vboxcon.StorageControllerType_PIIX3, vboxcon.StorageControllerType_PIIX4,):
                             iLun = 1
                         sDrv, fDrvScsi = self.getStorageDriverFromEnum(eStorageController, True);
                         if fDrvScsi:

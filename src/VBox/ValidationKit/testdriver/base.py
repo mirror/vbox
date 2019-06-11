@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # $Id$
-# pylint: disable=C0302
+# pylint: disable=too-many-lines
 
 """
 Base testdriver module.
@@ -221,7 +221,7 @@ def sendUserSignal1(uPid, fSudo = False):
     if sys.platform == 'win32':
         fRc = False;
     else:
-        fRc = __processSudoKill(uPid, signal.SIGUSR1, fSudo); # pylint: disable=E1101
+        fRc = __processSudoKill(uPid, signal.SIGUSR1, fSudo); # pylint: disable=no-member
     return fRc;
 
 def processTerminate(uPid, fSudo = False):
@@ -245,7 +245,7 @@ def processKill(uPid, fSudo = False):
     if sys.platform == 'win32':
         fRc = winbase.processKill(uPid);
     else:
-        fRc = __processSudoKill(uPid, signal.SIGKILL, fSudo); # pylint: disable=E1101
+        fRc = __processSudoKill(uPid, signal.SIGKILL, fSudo); # pylint: disable=no-member
     return fRc;
 
 def processKillWithNameCheck(uPid, sName):
@@ -306,7 +306,7 @@ def processCheckPidAndName(uPid, sName):
                 return False;
 
             # ps fails with non-zero exit code if the pid wasn't found.
-            if iExitCode is not 0:
+            if iExitCode != 0:
                 return False;
             if sCurName is None:
                 return False;
@@ -379,7 +379,7 @@ class TdTaskBase(object):
 
     def __del__(self):
         """In case we need it later on."""
-        pass;
+        pass;   # pylint: disable=unnecessary-pass
 
     def toString(self):
         """
@@ -394,7 +394,7 @@ class TdTaskBase(object):
 
     def lockTask(self):
         """ Wrapper around oCv.acquire(). """
-        if True is True: # change to False for debugging deadlocks.
+        if True is True: # change to False for debugging deadlocks. # pylint: disable=comparison-with-itself
             self.oCv.acquire();
         else:
             msStartWait = timestampMilli();
@@ -599,7 +599,7 @@ class Process(TdTaskBase):
                 if winbase.processPollByHandle(self.hWin):
                     try:
                         (uPid, uStatus) = os.waitpid(self.hWin, 0);
-                        if uPid == self.hWin or uPid == self.uPid:
+                        if uPid in (self.hWin, self.uPid,):
                             self.hWin.Detach(); # waitpid closed it, so it's now invalid.
                             self.hWin = None;
                             uPid = self.uPid;
@@ -612,7 +612,7 @@ class Process(TdTaskBase):
                     uStatus = 0;        # pylint: disable=redefined-variable-type
             else:
                 try:
-                    (uPid, uStatus) = os.waitpid(self.uPid, os.WNOHANG); # pylint: disable=E1101
+                    (uPid, uStatus) = os.waitpid(self.uPid, os.WNOHANG); # pylint: disable=no-member
                 except:
                     reporter.logXcpt();
                     uPid    = self.uPid;
@@ -772,7 +772,7 @@ class SubTestDriverBase(object):
         return iArg;
 
 
-class TestDriverBase(object): # pylint: disable=R0902
+class TestDriverBase(object): # pylint: disable=too-many-instance-attributes
     """
     The base test driver.
     """
@@ -1627,7 +1627,7 @@ class TestDriverBase(object): # pylint: disable=R0902
         return iRc;
 
 
-    def innerMain(self, asArgs = None): # pylint: disable=R0915
+    def innerMain(self, asArgs = None): # pylint: disable=too-many-statements
         """
         Exception wrapped main() worker.
         """
@@ -1748,14 +1748,14 @@ class TestDriverBase(object): # pylint: disable=R0902
         return rtexitcode.RTEXITCODE_SUCCESS;
 
 # The old, deprecated name.
-TestDriver = TestDriverBase; # pylint: disable=C0103
+TestDriver = TestDriverBase; # pylint: disable=invalid-name
 
 
 #
 # Unit testing.
 #
 
-# pylint: disable=C0111
+# pylint: disable=missing-docstring
 class TestDriverBaseTestCase(unittest.TestCase):
     def setUp(self):
         self.oTstDrv = TestDriverBase();

@@ -161,7 +161,7 @@ class RemoteExecutor(object):
             if sInput is not None:
                 oStdIn = StdInOutBuffer(sInput);
             else:
-                oStdIn = '/dev/null'; # pylint: disable=R0204
+                oStdIn = '/dev/null'; # pylint: disable=redefined-variable-type
             fRc = self.oTxsSession.syncExecEx(sExec, (sExec,) + asArgs,
                                               oStdIn = oStdIn, oStdOut = oStdOut,
                                               oStdErr = oStdErr, cMsTimeout = cMsTimeout);
