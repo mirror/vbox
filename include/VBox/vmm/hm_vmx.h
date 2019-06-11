@@ -759,7 +759,7 @@ typedef const EPTPT *PCEPTPT;
 
 /**
  * VMX VPID flush types.
- * @note Valid enum members are in accordance to the VT-x spec.
+ * Valid enum members are in accordance with the VT-x spec.
  */
 typedef enum
 {
@@ -780,7 +780,7 @@ AssertCompileSize(VMXTLBFLUSHVPID, 4);
 
 /**
  * VMX EPT flush types.
- * @note Valid enums values are in accordance to the VT-x spec.
+ * @note Valid enums values are in accordance with the VT-x spec.
  */
 typedef enum
 {
@@ -797,7 +797,7 @@ AssertCompileSize(VMXTLBFLUSHEPT, 4);
 
 /**
  * VMX Posted Interrupt Descriptor.
- * In accordance to the VT-x spec.
+ * In accordance with the VT-x spec.
  */
 typedef struct VMXPOSTEDINTRDESC
 {
@@ -1058,7 +1058,7 @@ typedef const VMXEXITINSTRINFO *PCVMXEXITINSTRINFO;
 
 
 /** @name VMXMSRPM_XXX - VMX MSR-bitmap permissions.
- * These are not in accordance to the Intel spec. but used internally by VirtualBox.
+ * These are -not- specified by Intel but used internally by VirtualBox.
  * @{ */
 /** Guest software reads of this MSR must not cause a VM-exit. */
 #define VMXMSRPM_ALLOW_RD                                       RT_BIT(0)
@@ -1088,7 +1088,7 @@ typedef const VMXEXITINSTRINFO *PCVMXEXITINSTRINFO;
 
 /**
  * VMX MSR autoload/store slot.
- * In accordance to the VT-x spec.
+ * In accordance with the VT-x spec.
  */
 typedef struct VMXAUTOMSR
 {
@@ -1978,6 +1978,11 @@ typedef enum
     VMXVMCSFIELDACCESS_HIGH
 } VMXVMCSFIELDACCESS;
 AssertCompileSize(VMXVMCSFIELDACCESS, 4);
+
+/** VMCS field encoding type: Full. */
+#define VMX_VMCS_ENC_ACCESS_TYPE_FULL                           0
+/** VMCS field encoding type: High. */
+#define VMX_VMCS_ENC_ACCESS_TYPE_HIGH                           1
 /** @} */
 
 
@@ -1991,6 +1996,15 @@ typedef enum
     VMXVMCSFIELDTYPE_HOST_STATE
 } VMXVMCSFIELDTYPE;
 AssertCompileSize(VMXVMCSFIELDTYPE, 4);
+
+/** VMCS field encoding type: Control. */
+#define VMX_VMCS_ENC_TYPE_CONTROL                               0
+/** VMCS field encoding type: VM-exit information / read-only fields. */
+#define VMX_VMCS_ENC_TYPE_VMEXIT_INFO                           1
+/** VMCS field encoding type: Guest-state. */
+#define VMX_VMCS_ENC_TYPE_GUEST_STATE                           2
+/** VMCS field encoding type: Host-state. */
+#define VMX_VMCS_ENC_TYPE_HOST_STATE                            3
 /** @} */
 
 
@@ -2004,7 +2018,68 @@ typedef enum
     VMXVMCSFIELDWIDTH_NATURAL
 } VMXVMCSFIELDWIDTH;
 AssertCompileSize(VMXVMCSFIELDWIDTH, 4);
+
+/** VMCS field encoding width: 16-bit. */
+#define VMX_VMCS_ENC_WIDTH_16BIT                                0
+/** VMCS field encoding width: 64-bit. */
+#define VMX_VMCS_ENC_WIDTH_64BIT                                1
+/** VMCS field encoding width: 32-bit. */
+#define VMX_VMCS_ENC_WIDTH_32BIT                                2
+/** VMCS field encoding width: Natural width. */
+#define VMX_VMCS_ENC_WIDTH_NATURAL                              3
 /** @} */
+
+
+/** @name VMCS field.
+ * @{ */
+typedef union
+{
+    struct
+    {
+        /** The access type; 0=full, 1=high of 64-bit fields. */
+        uint32_t    fAccessType  : 1;
+        /** The index. */
+        uint32_t    u8Index      : 8;
+        /** The type; 0=control, 1=VM-exit info, 2=guest-state, 3=host-state. */
+        uint32_t    u2Type       : 2;
+        /** Reserved (MBZ). */
+        uint32_t    u1Reserved0  : 1;
+        /** The width; 0=16-bit, 1=64-bit, 2=32-bit, 3=natural-width. */
+        uint32_t    u2Width      : 2;
+        /** Reserved (MBZ). */
+        uint32_t    u18Reserved0 : 18;
+    } n;
+
+    /* The unsigned integer view. */
+    uint32_t    u;
+} VMXVMCSFIELD;
+AssertCompileSize(VMXVMCSFIELD, 4);
+/** Pointer to a VMCS field encoding. */
+typedef VMXVMCSFIELD *PVMXVMCSFIELD;
+/** Pointer to a const VMCS field encoding. */
+typedef const VMXVMCSFIELD *PCVMXVMCSFIELD;
+
+/** VMCS field encoding: Mask of reserved bits (bits 63:15 MBZ), bit 12 is
+ *  not included! */
+#define VMX_VMCS_ENC_RSVD_MASK                                  UINT64_C(0xffffffffffff8000)
+
+/** Bits fields for VMCS field encoding. */
+#define VMX_BF_VMCS_ENC_ACCESS_TYPE_SHIFT                       0
+#define VMX_BF_VMCS_ENC_ACCESS_TYPE_MASK                        UINT32_C(0x00000001)
+#define VMX_BF_VMCS_ENC_INDEX_SHIFT                             1
+#define VMX_BF_VMCS_ENC_INDEX_MASK                              UINT32_C(0x000003fe)
+#define VMX_BF_VMCS_ENC_TYPE_SHIFT                              10
+#define VMX_BF_VMCS_ENC_TYPE_MASK                               UINT32_C(0x00000c00)
+#define VMX_BF_VMCS_ENC_RSVD_12_SHIFT                           12
+#define VMX_BF_VMCS_ENC_RSVD_12_MASK                            UINT32_C(0x00001000)
+#define VMX_BF_VMCS_ENC_WIDTH_SHIFT                             13
+#define VMX_BF_VMCS_ENC_WIDTH_MASK                              UINT32_C(0x00006000)
+#define VMX_BF_VMCS_ENC_RSVD_15_31_SHIFT                        15
+#define VMX_BF_VMCS_ENC_RSVD_15_31_MASK                         UINT32_C(0xffff8000)
+RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_VMCS_ENC_, UINT32_C(0), UINT32_MAX,
+                            (ACCESS_TYPE, INDEX, TYPE, RSVD_12, WIDTH, RSVD_15_31));
+/** @} */
+
 
 /** @name VM-entry instruction length.
  * @{ */
@@ -2526,6 +2601,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EXIT_REASON_, UINT32_C(0), UINT32_MAX,
 RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_ENTRY_INT_INFO_, UINT32_C(0), UINT32_MAX,
                             (VECTOR, TYPE, ERR_CODE_VALID, RSVD_12_30, VALID));
 /** @} */
+
 
 /** @name VM-entry exception error code.
  * @{ */
@@ -3211,79 +3287,6 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_VMCS_PENDING_DBG_XCPT_, UINT64_C(0), UINT64_M
 /** @} */
 
 
-/** @name VMCS field encoding.
- * @{ */
-typedef union
-{
-    struct
-    {
-        /** The access type; 0=full, 1=high of 64-bit fields. */
-        uint32_t    fAccessType  : 1;
-        /** The index. */
-        uint32_t    u8Index      : 8;
-        /** The type; 0=control, 1=VM-exit info, 2=guest-state, 3=host-state. */
-        uint32_t    u2Type       : 2;
-        /** Reserved (MBZ). */
-        uint32_t    u1Reserved0  : 1;
-        /** The width; 0=16-bit, 1=64-bit, 2=32-bit, 3=natural-width. */
-        uint32_t    u2Width      : 2;
-        /** Reserved (MBZ). */
-        uint32_t    u18Reserved0 : 18;
-    } n;
-    /* The unsigned integer view. */
-    uint32_t    u;
-} VMXVMCSFIELDENC;
-AssertCompileSize(VMXVMCSFIELDENC, 4);
-/** Pointer to a VMCS field encoding. */
-typedef VMXVMCSFIELDENC *PVMXVMCSFIELDENC;
-/** Pointer to a const VMCS field encoding. */
-typedef const VMXVMCSFIELDENC *PCVMXVMCSFIELDENC;
-
-/** VMCS field encoding type: Full. */
-#define VMX_VMCS_ENC_ACCESS_TYPE_FULL                           0
-/** VMCS field encoding type: High. */
-#define VMX_VMCS_ENC_ACCESS_TYPE_HIGH                           1
-
-/** VMCS field encoding type: Control. */
-#define VMX_VMCS_ENC_TYPE_CONTROL                               0
-/** VMCS field encoding type: VM-exit information / read-only fields. */
-#define VMX_VMCS_ENC_TYPE_VMEXIT_INFO                           1
-/** VMCS field encoding type: Guest-state. */
-#define VMX_VMCS_ENC_TYPE_GUEST_STATE                           2
-/** VMCS field encoding type: Host-state. */
-#define VMX_VMCS_ENC_TYPE_HOST_STATE                            3
-
-/** VMCS field encoding width: 16-bit. */
-#define VMX_VMCS_ENC_WIDTH_16BIT                                0
-/** VMCS field encoding width: 64-bit. */
-#define VMX_VMCS_ENC_WIDTH_64BIT                                1
-/** VMCS field encoding width: 32-bit. */
-#define VMX_VMCS_ENC_WIDTH_32BIT                                2
-/** VMCS field encoding width: Natural width. */
-#define VMX_VMCS_ENC_WIDTH_NATURAL                              3
-
-/** VMCS field encoding: Mask of reserved bits (bits 63:15 MBZ), bit 12 is
- *  not included! */
-#define VMX_VMCS_ENC_RSVD_MASK                                  UINT64_C(0xffffffffffff8000)
-
-/** Bits fields for VMCS field encoding. */
-#define VMX_BF_VMCS_ENC_ACCESS_TYPE_SHIFT                       0
-#define VMX_BF_VMCS_ENC_ACCESS_TYPE_MASK                        UINT32_C(0x00000001)
-#define VMX_BF_VMCS_ENC_INDEX_SHIFT                             1
-#define VMX_BF_VMCS_ENC_INDEX_MASK                              UINT32_C(0x000003fe)
-#define VMX_BF_VMCS_ENC_TYPE_SHIFT                              10
-#define VMX_BF_VMCS_ENC_TYPE_MASK                               UINT32_C(0x00000c00)
-#define VMX_BF_VMCS_ENC_RSVD_12_SHIFT                           12
-#define VMX_BF_VMCS_ENC_RSVD_12_MASK                            UINT32_C(0x00001000)
-#define VMX_BF_VMCS_ENC_WIDTH_SHIFT                             13
-#define VMX_BF_VMCS_ENC_WIDTH_MASK                              UINT32_C(0x00006000)
-#define VMX_BF_VMCS_ENC_RSVD_15_31_SHIFT                        15
-#define VMX_BF_VMCS_ENC_RSVD_15_31_MASK                         UINT32_C(0xffff8000)
-RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_VMCS_ENC_, UINT32_C(0), UINT32_MAX,
-                            (ACCESS_TYPE, INDEX, TYPE, RSVD_12, WIDTH, RSVD_15_31));
-/** @} */
-
-
 /** @defgroup grp_hm_vmx_virt    VMX virtualization.
  * @{
  */
@@ -3441,7 +3444,7 @@ typedef const VMXVEXITEVENTINFO *PCVMXVEXITEVENTINFO;
  * Virtual VMCS.
  *
  * This is our custom format. Relevant fields from this VMCS will be merged into the
- * actual VMCS (/shadow) when we execute nested-guest code using hardware-assisted
+ * actual/shadow VMCS when we execute nested-guest code using hardware-assisted
  * VMX.
  *
  * The first 8 bytes must be in accordance with Intel spec. 24.2 "Format of the VMCS
