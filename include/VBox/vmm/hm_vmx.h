@@ -3439,13 +3439,17 @@ typedef const VMXVEXITEVENTINFO *PCVMXVEXITEVENTINFO;
 
 /**
  * Virtual VMCS.
- * This is our custom format and merged into the actual VMCS (/shadow) when we
- * execute nested-guest code using hardware-assisted VMX.
  *
- * The first 8 bytes are as per Intel spec. 24.2 "Format of the VMCS Region".
+ * This is our custom format. Relevant fields from this VMCS will be merged into the
+ * actual VMCS (/shadow) when we execute nested-guest code using hardware-assisted
+ * VMX.
+ *
+ * The first 8 bytes must be in accordance with Intel spec. 24.2 "Format of the VMCS
+ * Region".
  *
  * The offset and size of the VMCS state field (fVmcsState) is also fixed (not by
- * Intel but for our own requirements) as we use it to offset into guest memory.
+ * the Intel spec. but for our own requirements) as we use it to offset into guest
+ * memory.
  *
  * Although the guest is supposed to access the VMCS only through the execution of
  * VMX instructions (VMREAD, VMWRITE etc.), since the VMCS may reside in guest
