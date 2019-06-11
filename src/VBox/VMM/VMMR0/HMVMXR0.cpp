@@ -1408,7 +1408,7 @@ static int hmR0VmxAllocVmcsInfo(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo, bool fIsNs
             {
                 rc = hmR0VmxPageAllocZ(&pVmcsInfo->hMemObjMsrBitmap, &pVmcsInfo->pvMsrBitmap, &pVmcsInfo->HCPhysMsrBitmap);
                 if (   RT_SUCCESS(rc)
-                    && fIsNstGstVmcs)
+                    && !fIsNstGstVmcs)
                     ASMMemFill32(pVmcsInfo->pvMsrBitmap, X86_PAGE_4K_SIZE, UINT32_C(0xffffffff));
             }
 
