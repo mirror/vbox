@@ -5432,11 +5432,13 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Rd_Cd, uint8_t, iGReg, uint8_t, iCrReg)
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
     if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
     {
+        PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+        Assert(pVmcs);
         switch (iCrReg)
         {
             /* CR0/CR4 reads are subject to masking when in VMX non-root mode. */
-            case 0: crX = CPUMGetGuestVmxMaskedCr0(pVCpu, &pVCpu->cpum.GstCtx); break;
-            case 4: crX = CPUMGetGuestVmxMaskedCr4(pVCpu, &pVCpu->cpum.GstCtx); break;
+            case 0: crX = CPUMGetGuestVmxMaskedCr0(pVCpu, &pVCpu->cpum.GstCtx, pVmcs->u64Cr0Mask.u); break;
+            case 4: crX = CPUMGetGuestVmxMaskedCr4(pVCpu, &pVCpu->cpum.GstCtx, pVmcs->u64Cr4Mask.u); break;
 
             case 3:
             {
@@ -5471,9 +5473,16 @@ IEM_CIMPL_DEF_2(iemCImpl_smsw_reg, uint8_t, iGReg, uint8_t, enmEffOpSize)
     IEM_SVM_CHECK_READ_CR0_INTERCEPT(pVCpu, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-    uint64_t const u64GuestCr0 = !IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
-                               ? pVCpu->cpum.GstCtx.cr0
-                               : CPUMGetGuestVmxMaskedCr0(pVCpu, &pVCpu->cpum.GstCtx);
+    uint64_t u64MaskedCr0;
+    if (!IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
+        u64MaskedCr0 = pVCpu->cpum.GstCtx.cr0;
+    else
+    {
+        PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+        Assert(pVmcs);
+        u64MaskedCr0 = CPUMGetGuestVmxMaskedCr0(pVCpu, &pVCpu->cpum.GstCtx, pVmcs->u64Cr0Mask.u);
+    }
+    uint64_t const u64GuestCr0 = u64MaskedCr0;
 #else
     uint64_t const u64GuestCr0 = pVCpu->cpum.GstCtx.cr0;
 #endif
@@ -5517,9 +5526,16 @@ IEM_CIMPL_DEF_2(iemCImpl_smsw_mem, uint8_t, iEffSeg, RTGCPTR, GCPtrEffDst)
     IEM_SVM_CHECK_READ_CR0_INTERCEPT(pVCpu, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-    uint64_t const u64GuestCr0 = !IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
-                               ? pVCpu->cpum.GstCtx.cr0
-                               : CPUMGetGuestVmxMaskedCr0(pVCpu, &pVCpu->cpum.GstCtx);
+    uint64_t u64MaskedCr0;
+    if (!IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
+        u64MaskedCr0 = pVCpu->cpum.GstCtx.cr0;
+    else
+    {
+        PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+        Assert(pVmcs);
+        u64MaskedCr0 = CPUMGetGuestVmxMaskedCr0(pVCpu, &pVCpu->cpum.GstCtx, pVmcs->u64Cr0Mask.u);
+    }
+    uint64_t const u64GuestCr0 = u64MaskedCr0;
 #else
     uint64_t const u64GuestCr0 = pVCpu->cpum.GstCtx.cr0;
 #endif
