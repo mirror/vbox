@@ -10546,8 +10546,6 @@ static VBOXSTRICTRC hmR0VmxPreRunGuest(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient
      * Virtualize memory-mapped accesses to the physical APIC (may take locks).
      */
     PVM pVM = pVCpu->CTX_SUFF(pVM);
-    PCVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
-    Assert(pVmcsInfo);
     if (   !pVCpu->hm.s.vmx.u64GstMsrApicBase
         && hmR0VmxIsProcCtls2Set(pVCpu, pVmxTransient, VMX_PROC_CTLS2_VIRT_APIC_ACCESS)
         && PDMHasApic(pVM))
