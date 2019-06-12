@@ -2326,10 +2326,11 @@ static void hmR0VmxCheckHostEferMsr(PCVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo)
  * Verifies whether the guest/host MSR pairs in the auto-load/store area in the
  * VMCS are correct.
  *
- * @param   pVCpu       The cross context virtual CPU structure.
- * @param   pVmcsInfo   The VMCS info. object.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   pVmcsInfo       The VMCS info. object.
+ * @param   fIsNstGstVmcs   Whether this is a nested-guest VMCS.
  */
-static void hmR0VmxCheckAutoLoadStoreMsrs(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo)
+static void hmR0VmxCheckAutoLoadStoreMsrs(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo, bool fIsNstGstVmcs)
 {
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 
@@ -2396,8 +2397,27 @@ static void hmR0VmxCheckAutoLoadStoreMsrs(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo)
             }
             else
             {
-                AssertMsgReturnVoid((fMsrpm & VMXMSRPM_ALLOW_RD_WR) == VMXMSRPM_ALLOW_RD_WR,
-                                    ("u32Msr=%#RX32 cMsrs=%u No passthru read/write!\n", pGuestMsrLoad->u32Msr, cMsrs));
+                if (!fIsNstGstVmcs)
+                {
+                    AssertMsgReturnVoid((fMsrpm & VMXMSRPM_ALLOW_RD_WR) == VMXMSRPM_ALLOW_RD_WR,
+                                        ("u32Msr=%#RX32 cMsrs=%u No passthru read/write!\n", pGuestMsrLoad->u32Msr, cMsrs));
+                }
+                else
+                {
+                    /*
+                     * A nested-guest VMCS must -also- allow read/write passthrough for the MSR for us to
+                     * execute a nested-guest with MSR passthrough.
+                     *
+                     * Check if the nested-guest MSR bitmap allows passthrough, and if so, assert that we
+                     * allow passthrough too.
+                     */
+                    void const *pvMsrBitmapNstGst = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvMsrBitmap);
+                    Assert(pvMsrBitmapNstGst);
+                    uint32_t const fMsrpmNstGst = CPUMGetVmxMsrPermission(pvMsrBitmapNstGst, pGuestMsrLoad->u32Msr);
+                    AssertMsgReturnVoid(fMsrpm == fMsrpmNstGst,
+                                        ("u32Msr=%#RX32 cMsrs=%u Permission mismatch fMsrpm=%#x fMsrpmNstGst=%#x!\n",
+                                         pGuestMsrLoad->u32Msr, cMsrs, fMsrpm, fMsrpmNstGst));
+                }
             }
         }
 
@@ -10842,7 +10862,7 @@ static void hmR0VmxPreRunGuestCommitted(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransien
 
 #ifdef VBOX_STRICT
     Assert(pVCpu->hm.s.vmx.fUpdatedHostAutoMsrs);
-    hmR0VmxCheckAutoLoadStoreMsrs(pVCpu, pVmcsInfo);
+    hmR0VmxCheckAutoLoadStoreMsrs(pVCpu, pVmcsInfo, pVmxTransient->fIsNestedGuest);
     hmR0VmxCheckHostEferMsr(pVCpu, pVmcsInfo);
     AssertRC(hmR0VmxCheckVmcsCtls(pVCpu, pVmcsInfo));
 #endif
