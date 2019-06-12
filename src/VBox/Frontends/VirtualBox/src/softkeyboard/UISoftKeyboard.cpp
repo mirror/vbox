@@ -1540,14 +1540,6 @@ void UIKeyboardLayoutReader::parseKey(UISoftKeyboardRow &row)
             bool fOk = false;
             key.setScanCodePrefix(strCode.toInt(&fOk, 16));
         }
-        else if (m_xmlReader.name() == "keycap")
-        {
-            QString strCap = m_xmlReader.readElementText();
-            if (strKeyCap.isEmpty())
-                strKeyCap = strCap;
-            else
-                strKeyCap += "\n" + strCap;
-        }
         else if (m_xmlReader.name() == "cutout")
             parseCutout(key);
         else if (m_xmlReader.name() == "position")
@@ -1563,7 +1555,6 @@ void UIKeyboardLayoutReader::parseKey(UISoftKeyboardRow &row)
         else
             m_xmlReader.skipCurrentElement();
     }
-    //key.setStaticKeyCap(strKeyCap);
 }
 
 void UIKeyboardLayoutReader::parseKeySpace(UISoftKeyboardRow &row)
