@@ -4092,7 +4092,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitApicAccess(PVMCPU pVCpu, uint16_t offAccess,
     else if (fAccess & IEM_ACCESS_TYPE_WRITE)
         enmAccess = VMXAPICACCESS_LINEAR_WRITE;
     else
-        enmAccess = VMXAPICACCESS_LINEAR_WRITE;
+        enmAccess = VMXAPICACCESS_LINEAR_READ;
 
     uint64_t const u64ExitQual = RT_BF_MAKE(VMX_BF_EXIT_QUAL_APIC_ACCESS_OFFSET, offAccess)
                                | RT_BF_MAKE(VMX_BF_EXIT_QUAL_APIC_ACCESS_TYPE,   enmAccess);
