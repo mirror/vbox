@@ -2813,6 +2813,57 @@ VMM_INT_DECL(bool) CPUMIsGuestNmiBlocking(PVMCPU pVCpu)
 
 
 /**
+ * Sets blocking delivery of NMIs to the guest.
+ *
+ * @param   pVCpu   The cross context virtual CPU structure.
+ * @param   fBlock  Whether NMIs are blocked or not.
+ */
+VMM_INT_DECL(void) CPUMSetGuestNmiBlocking(PVMCPU pVCpu, bool fBlock)
+{
+#ifndef IN_RC
+    /*
+     * Set the state of guest-NMI blocking in any of the following cases:
+     *   - We're not executing a nested-guest.
+     *   - We're executing an SVM nested-guest[1].
+     *   - We're executing a VMX nested-guest without virtual-NMIs enabled.
+     *
+     * [1] -- SVM does not support virtual-NMIs or virtual-NMI blocking.
+     *        SVM hypervisors must track NMI blocking themselves by intercepting
+     *        the IRET instruction after injection of an NMI.
+     */
+    PCPUMCTX pCtx = &pVCpu->cpum.s.Guest;
+    if (   !CPUMIsGuestInNestedHwvirtMode(pCtx)
+        ||  CPUMIsGuestInSvmNestedHwVirtMode(pCtx)
+        || !CPUMIsGuestVmxPinCtlsSet(pVCpu, pCtx, VMX_PIN_CTLS_VIRT_NMI))
+    {
+        if (fBlock)
+        {
+            if (!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_BLOCK_NMIS))
+                VMCPU_FF_SET(pVCpu, VMCPU_FF_BLOCK_NMIS);
+        }
+        else
+        {
+            if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_BLOCK_NMIS))
+                VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_BLOCK_NMIS);
+        }
+        return;
+    }
+
+    /*
+     * Set the state of virtual-NMI blocking, if we are executing a
+     * VMX nested-guest with virtual-NMIs enabled.
+     */
+    return CPUMSetGuestVmxVirtNmiBlocking(pVCpu, pCtx, fBlock);
+#else
+    if (fBlock)
+        VMCPU_FF_SET(pVCpu, VMCPU_FF_BLOCK_NMIS);
+    else
+        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_BLOCK_NMIS);
+#endif
+}
+
+
+/**
  * Checks whether the SVM nested-guest has physical interrupts enabled.
  *
  * @returns true if interrupts are enabled, false otherwise.

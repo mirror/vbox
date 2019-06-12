@@ -2395,8 +2395,29 @@ DECLINLINE(bool) CPUMIsGuestVmxVirtNmiBlocking(PCVMCPU pVCpu, PCCPUMCTX pCtx)
      * VMX nested-guest with virtual-NMIs enabled.
      */
     RT_NOREF(pVCpu);
+    Assert(CPUMIsGuestInVmxNonRootMode(pCtx));
     Assert(CPUMIsGuestVmxPinCtlsSet(pVCpu, pCtx, VMX_PIN_CTLS_VIRT_NMI));
     return pCtx->hwvirt.vmx.fVirtNmiBlocking;
+#endif
+}
+
+/**
+ * Sets or clears VMX nested-guest virtual-NMI blocking.
+ *
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
+ * @param   pCtx        The guest-CPU context.
+ * @param   fBlocking   Whether virtual-NMI blocking is in effect or not.
+ */
+DECLINLINE(void) CPUMSetGuestVmxVirtNmiBlocking(PCVMCPU pVCpu, PCPUMCTX pCtx, bool fBlocking)
+{
+#ifdef IN_RC
+    RT_NOREF3(pVCpu, pCtx, fBlocking);
+    AssertReleaseFailedReturnVoid();
+#else
+    RT_NOREF(pVCpu);
+    Assert(CPUMIsGuestInVmxNonRootMode(pCtx));
+    Assert(CPUMIsGuestVmxPinCtlsSet(pVCpu, pCtx, VMX_PIN_CTLS_VIRT_NMI));
+    pCtx->hwvirt.vmx.fVirtNmiBlocking = fBlocking;
 #endif
 }
 
@@ -2579,7 +2600,7 @@ typedef enum CPUMINTERRUPTIBILITY
 
 VMM_INT_DECL(CPUMINTERRUPTIBILITY) CPUMGetGuestInterruptibility(PVMCPU pVCpu);
 VMM_INT_DECL(bool)                 CPUMIsGuestNmiBlocking(PVMCPU pVCpu);
-
+VMM_INT_DECL(void)                 CPUMSetGuestNmiBlocking(PVMCPU pVCpu, bool fBlock);
 
 /** @name Typical scalable bus frequency values.
  * @{ */
