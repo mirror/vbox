@@ -2199,7 +2199,6 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
                 if (    VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_NMI)
                     && !VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_BLOCK_NMIS))
                 {
-                    bool fInjectNmi = true;
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
                     if (   CPUMIsGuestInVmxNonRootMode(&pVCpu->cpum.GstCtx)
                         && CPUMIsGuestVmxPinCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PIN_CTLS_NMI_EXIT))
@@ -2207,8 +2206,8 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
                         rc2 = VBOXSTRICTRC_VAL(IEMExecVmxVmexitXcptNmi(pVCpu));
                         Assert(rc2 != VINF_VMX_INTERCEPT_NOT_ACTIVE);
                         UPDATE_RC();
-                        fInjectNmi = false;
                     }
+                    else
 #endif
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
                     if (   CPUMIsGuestInSvmNestedHwVirtMode(&pVCpu->cpum.GstCtx)
@@ -2219,10 +2218,9 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
                                   && rc2 != VINF_SVM_VMEXIT
                                   && rc2 != VINF_NO_CHANGE, ("%Rrc\n", rc2));
                         UPDATE_RC();
-                        fInjectNmi = false;
                     }
+                    else
 #endif
-                    if (fInjectNmi)
                     {
                         rc2 = TRPMAssertTrap(pVCpu, X86_XCPT_NMI, TRPM_TRAP);
                         if (rc2 == VINF_SUCCESS)
