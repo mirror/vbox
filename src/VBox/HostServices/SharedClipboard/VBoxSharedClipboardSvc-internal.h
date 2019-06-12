@@ -54,7 +54,7 @@ typedef struct _VBOXCLIPBOARDCLIENTURITRANSFER
     /** Pointer to the client state (parent). */
     VBOXCLIPBOARDCLIENTSTATE      *pState;
     /** The transfer's own (local) area.
-     *  The area itself has a clipboard ID assigned, which gets shared (maintained) across all
+     *  The area itself has a clipboard area ID assigned, which gets shared (maintained / locked) across all
      *  VMs via VBoxSVC. */
     SharedClipboardArea            Area;
     /** The transfer's URI list, containing the fs object root entries. */
@@ -121,14 +121,7 @@ typedef struct _VBOXCLIPBOARDCLIENTDATA
     /** General client state data. */
     VBOXCLIPBOARDCLIENTSTATE       State;
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
-    /** List of concurrent transfers.
-     *  At the moment we only support one transfer at a time (per client). */
-    RTLISTANCHOR                   TransferList;
-    /** Data related to URI transfer handling. */
-    VBOXCLIPBOARDCLIENTURITRANSFER Transfer;
-    /** Number of concurrent transfers.
-     *  At the moment we only support one transfer at a time (per client). */
-    uint32_t                       cTransfers;
+    SHAREDCLIPBOARDURICTX          URI;
 #endif
 } VBOXCLIPBOARDCLIENTDATA, *PVBOXCLIPBOARDCLIENTDATA;
 
@@ -136,17 +129,22 @@ typedef struct _VBOXCLIPBOARDCLIENTDATA
  * The service functions. Locking is between the service thread and the platform-dependent (window) thread.
  */
 uint32_t vboxSvcClipboardGetMode(void);
-int vboxSvcClipboardReportMsg(PVBOXCLIPBOARDCLIENTDATA pClientData, uint32_t u32Msg, uint32_t u32Formats);
+int vboxSvcClipboardReportMsg(PVBOXCLIPBOARDCLIENTDATA pClientData, uint32_t uMsg, uint32_t uFormats);
 int vboxSvcClipboardCompleteReadData(PVBOXCLIPBOARDCLIENTDATA pClientData, int rc, uint32_t cbActual);
 
-int vboxSvcClipboardClientStateInit(PVBOXCLIPBOARDCLIENTSTATE pState, uint32_t uClientID);
-void vboxSvcClipboardClientStateReset(PVBOXCLIPBOARDCLIENTSTATE pState);
-
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
-void vboxClipboardSvcURIDirDataDestroy(PVBOXCLIPBOARDDIRDATA pDirData);
-void vboxClipboardSvcURIFileHdrDestroy(PVBOXCLIPBOARDFILEHDR pFileHdr);
-void vboxClipboardSvcURIFileDataDestroy(PVBOXCLIPBOARDFILEDATA pFileData);
-#endif
+# ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+bool vboxSvcClipboardURIMsgIsAllowed(uint32_t uMode, uint32_t uMsg);
+int  vboxSvcClipboardURIReportMsg(PVBOXCLIPBOARDCLIENTDATA pClientData, uint32_t u32Msg, uint32_t u32Formats);
+bool vboxSvcClipboardURIReturnMsg(PVBOXCLIPBOARDCLIENTDATA pClientData, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
+bool vboxSvcClipboardURIDataHdrIsValid(PVBOXCLIPBOARDDATAHDR pDataHdr);
+bool vboxSvcClipboardURIDataChunkIsValid(PVBOXCLIPBOARDDATACHUNK pDataChunk);
+void vboxSvcClipboardURIDirDataDestroy(PVBOXCLIPBOARDDIRDATA pDirData);
+bool vboxSvcClipboardURIDirDataIsValid(PVBOXCLIPBOARDDIRDATA pDirData);
+void vboxSvcClipboardURIFileHdrDestroy(PVBOXCLIPBOARDFILEHDR pFileHdr);
+bool vboxSvcClipboardURIFileHdrIsValid(PVBOXCLIPBOARDFILEHDR pFileHdr, PVBOXCLIPBOARDDATAHDR pDataHdr);
+void vboxSvcClipboardURIFileDataDestroy(PVBOXCLIPBOARDFILEDATA pFileData);
+bool vboxSvcClipboardURIFileDataIsValid(PVBOXCLIPBOARDFILEDATA pFileData, PVBOXCLIPBOARDDATAHDR pDataHdr);
+# endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
 
 /*
  * Platform-dependent implementations.

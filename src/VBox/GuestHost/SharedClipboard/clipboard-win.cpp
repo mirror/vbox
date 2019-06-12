@@ -627,7 +627,7 @@ int VBoxClipboardWinHandleWMSetFormats(const PVBOXCLIPBOARDWINCTX pCtx, VBOXCLIP
     }
     else if (fFormats & VBOX_SHARED_CLIPBOARD_FMT_HTML)
     {
-       LogFunc(("VBOX_CLIPBOARD_WIN_REGFMT_HTML\n"));
+       LogFunc(("VBOX_SHARED_CLIPBOARD_FMT_HTML\n"));
        cfFormat = RegisterClipboardFormat(VBOX_CLIPBOARD_WIN_REGFMT_HTML);
        if (cfFormat != 0)
            hClip = SetClipboardData(cfFormat, NULL);
@@ -653,7 +653,10 @@ int VBoxClipboardWinURIHandleWMSetFormats(const PVBOXCLIPBOARDWINCTX pWinCtx, PS
     RT_NOREF(pWinCtx);
 
     if (!(fFormats & VBOX_SHARED_CLIPBOARD_FMT_URI_LIST))
+    {
+        AssertFailed(); /* Should never get here. */
         return VERR_NOT_SUPPORTED;
+    }
 
     int rc;
 
@@ -690,8 +693,7 @@ int VBoxClipboardWinURIHandleWMSetFormats(const PVBOXCLIPBOARDWINCTX pWinCtx, PS
                     HRESULT hr = OleSetClipboard(pWinURITransferCtx->pDataObj);
                     if (SUCCEEDED(hr))
                     {
-                        pURICtx->cTransfers++;
-                        break;
+                        /* Nothing to do here yet. */
                     }
                     else
                     {

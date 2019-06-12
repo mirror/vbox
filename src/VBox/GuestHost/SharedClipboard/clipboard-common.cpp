@@ -397,6 +397,69 @@ void SharedClipboardDataHeaderDestroy(PVBOXCLIPBOARDDATAHDR pDataHdr)
 }
 
 /**
+ * Initializes an URI object context.
+ *
+ * @returns VBox status code.
+ * @param   pObjCtx             URI object context to initialize.
+ */
+int SharedClipboardURIObjCtxInit(PSHAREDCLIPBOARDCLIENTURIOBJCTX pObjCtx)
+{
+    AssertPtrReturn(pObjCtx, VERR_INVALID_POINTER);
+
+    LogFlowFuncEnter();
+
+    pObjCtx->pObj = NULL;
+
+    return VINF_SUCCESS;
+}
+
+/**
+ * Uninitializes an URI object context.
+ *
+ * @param   pObjCtx             URI object context to uninitialize.
+ */
+void SharedClipboardURIObjCtxUninit(PSHAREDCLIPBOARDCLIENTURIOBJCTX pObjCtx)
+{
+    AssertPtrReturnVoid(pObjCtx);
+
+    LogFlowFuncEnter();
+
+    if (pObjCtx->pObj)
+    {
+        pObjCtx->pObj->Close();
+        delete pObjCtx->pObj;
+    }
+
+    pObjCtx->pObj = NULL;
+}
+
+/**
+ * Returns the URI object context's URI object.
+ *
+ * @returns Pointer to the URI object context's URI object.
+ * @param   pObjCtx             URI object context to return the URI object for.
+ */
+SharedClipboardURIObject *SharedClipboardURIObjCtxGetObj(PSHAREDCLIPBOARDCLIENTURIOBJCTX pObjCtx)
+{
+    AssertPtrReturn(pObjCtx, NULL);
+    return pObjCtx->pObj;
+}
+
+/**
+ * Returns if an URI object context is valid or not.
+ *
+ * @returns \c true if valid, \c false if not.
+ * @param   pObjCtx             URI object context to check.
+ */
+bool SharedClipboardURIObjCtxIsValid(PSHAREDCLIPBOARDCLIENTURIOBJCTX pObjCtx)
+{
+    return (   pObjCtx
+            && pObjCtx->pObj
+            && pObjCtx->pObj->IsComplete() == false
+            && pObjCtx->pObj->IsOpen());
+}
+
+/**
  * Initializes an URI clipboard transfer struct.
  *
  * @returns VBox status code.
@@ -425,6 +488,7 @@ int SharedClipboardURITransferCreate(SHAREDCLIPBOARDURITRANSFERDIR enmDir, PSHAR
         rc = SharedClipboardMetaDataInit(&pTransfer->Meta);
         if (RT_SUCCESS(rc))
         {
+            pTransfer->pArea     = NULL; /* Will be created later if needed. */
             pTransfer->pProvider = SharedClipboardProvider::Create(pCtx);
             if (pTransfer->pProvider)
             {
@@ -500,9 +564,22 @@ void SharedClipboardURITransferReset(PSHAREDCLIPBOARDURITRANSFER pTransfer)
 }
 
 /**
+ * Returns the clipboard area for a clipboard URI transfer.
+ *
+ * @returns Current clipboard area, or NULL if none.
+ * @param   pTransfer           URI clipboard transfer to return clipboard area for.
+ */
+SharedClipboardArea *SharedClipboardURITransferGetArea(PSHAREDCLIPBOARDURITRANSFER pTransfer)
+{
+    AssertPtrReturn(pTransfer, NULL);
+
+    return pTransfer->pArea;
+}
+
+/**
  * Returns the current URI object for a clipboard URI transfer.
  *
- * @returns VBox status code.
+ * @returns Current URI object, or NULL if none.
  * @param   pTransfer           URI clipboard transfer to return current URI object for.
  */
 const SharedClipboardURIObject *SharedClipboardURITransferGetCurrentObject(PSHAREDCLIPBOARDURITRANSFER pTransfer)
@@ -515,7 +592,7 @@ const SharedClipboardURIObject *SharedClipboardURITransferGetCurrentObject(PSHAR
 /**
  * Returns the provider for a clipboard URI transfer.
  *
- * @returns VBox status code.
+ * @returns Current provider, or NULL if none.
  * @param   pTransfer           URI clipboard transfer to return provider for.
  */
 SharedClipboardProvider *SharedClipboardURITransferGetProvider(PSHAREDCLIPBOARDURITRANSFER pTransfer)
@@ -531,7 +608,7 @@ SharedClipboardProvider *SharedClipboardURITransferGetProvider(PSHAREDCLIPBOARDU
  * @returns Pointer to URI list.
  * @param   pTransfer           URI clipboard transfer to return URI list for.
  */
-const SharedClipboardURIList *SharedClipboardURITransferGetList(PSHAREDCLIPBOARDURITRANSFER pTransfer)
+SharedClipboardURIList *SharedClipboardURITransferGetList(PSHAREDCLIPBOARDURITRANSFER pTransfer)
 {
     return &pTransfer->URIList;
 }
@@ -542,7 +619,7 @@ const SharedClipboardURIList *SharedClipboardURITransferGetList(PSHAREDCLIPBOARD
  * @returns Pointer to URI object.
  * @param   pTransfer           URI clipboard transfer to return URI object for.
  */
-const SharedClipboardURIObject *SharedClipboardURITransferGetObject(PSHAREDCLIPBOARDURITRANSFER pTransfer, uint64_t uIdx)
+SharedClipboardURIObject *SharedClipboardURITransferGetObject(PSHAREDCLIPBOARDURITRANSFER pTransfer, uint64_t uIdx)
 {
     return pTransfer->URIList.At(uIdx);
 }
@@ -727,7 +804,13 @@ static int sharedClipboardURITransferMetaDataAddInternal(PSHAREDCLIPBOARDURITRAN
     int rc = SharedClipboardMetaDataAdd(&pTransfer->Meta, pvMeta, cbMeta);
     if (RT_SUCCESS(rc))
     {
-        /** @todo Accounting? */
+        /* Meta data complete? */
+        if (SharedClipboardMetaDataGetUsed(&pTransfer->Meta) == pTransfer->Header.cbMeta)
+        {
+            rc = pTransfer->URIList.SetFromURIData(SharedClipboardMetaDataRaw(&pTransfer->Meta),
+                                                   SharedClipboardMetaDataGetUsed(&pTransfer->Meta),
+                                                   SHAREDCLIPBOARDURILIST_FLAGS_NONE);
+        }
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -1111,6 +1194,7 @@ int SharedClipboardURICtxTransferRemove(PSHAREDCLIPBOARDURICTX pURI, PSHAREDCLIP
     {
 
         RTListNodeRemove(&pTransfer->Node);
+        Assert(pURI->cTransfers);
         pURI->cTransfers--;
     }
 
@@ -1153,6 +1237,19 @@ uint32_t SharedClipboardURICtxGetActiveTransfers(PSHAREDCLIPBOARDURICTX pURI)
 {
     AssertPtrReturn(pURI, 0);
     return pURI->cTransfers;
+}
+
+/**
+ * Returns whether the maximum of concurrent transfers of a specific URI context has been reached or not.
+ *
+ * @returns \c if maximum has been reached, \c false if not.
+ * @param   pURI                URI clipboard context to determine value for.
+ */
+bool SharedClipboardURICtxMaximumTransfersReached(PSHAREDCLIPBOARDURICTX pURI)
+{
+    AssertPtrReturn(pURI, true);
+
+    return pURI->cTransfers < pURI->cMaxTransfers;
 }
 #endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
 

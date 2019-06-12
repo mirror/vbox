@@ -62,6 +62,7 @@ struct _VBOXCLIPBOARDCONTEXT
     /** Windows-specific context data. */
     VBOXCLIPBOARDWINCTX      Win;
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+    /** URI transfer data. */
     SHAREDCLIPBOARDURICTX    URI;
 #endif
 };
@@ -634,13 +635,20 @@ static int vboxClipboardCreateWindow(PVBOXCLIPBOARDCONTEXT pCtx)
 static DECLCALLBACK(void) vboxClipboardOnURITransferComplete(PSHAREDCLIPBOARDURITRANSFERCALLBACKDATA pData, int rc)
 {
     RT_NOREF(rc);
-    LogFlowFunc(("rc=%Rrc\n", rc));
+
+    LogFlowFunc(("pData=%p, rc=%Rrc\n", pData, rc));
 
     PSHAREDCLIPBOARDURICTX pCtx = (PSHAREDCLIPBOARDURICTX)pData->pvUser;
     AssertPtr(pCtx);
 
     PSHAREDCLIPBOARDURITRANSFER pTransfer = pData->pTransfer;
     AssertPtr(pTransfer);
+
+    if (pTransfer->pvUser) /* SharedClipboardWinURITransferCtx */
+    {
+        delete pTransfer->pvUser;
+        pTransfer->pvUser = NULL;
+    }
 
     int rc2 = SharedClipboardURICtxTransferRemove(pCtx, pTransfer);
     AssertRC(rc2);

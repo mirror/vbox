@@ -245,7 +245,7 @@ struct _CLIPREADCBREQ
  *
  */
 int VBoxClipboardSvcImplReadData(PVBOXCLIPBOARDCLIENTDATA pClientData,
-                          uint32_t u32Format, void *pv, uint32_t cb, uint32_t *pcbActual)
+                                 uint32_t u32Format, void *pv, uint32_t cb, uint32_t *pcbActual)
 {
     LogFlowFunc(("pClientData=%p, u32Format=%02X, pv=%p, cb=%u, pcbActual=%p\n",
                  pClientData, u32Format, pv, cb, pcbActual));

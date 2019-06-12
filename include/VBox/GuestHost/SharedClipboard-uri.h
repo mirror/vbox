@@ -637,6 +637,15 @@ typedef enum _SHAREDCLIPBOARDURITRANSFERDIR
 } SHAREDCLIPBOARDURITRANSFERDIR;
 
 /**
+ * Structure for handling a single URI object context.
+ */
+typedef struct _SHAREDCLIPBOARDCLIENTURIOBJCTX
+{
+    /** Pointer to current object being processed. */
+    SharedClipboardURIObject      *pObj;
+} SHAREDCLIPBOARDCLIENTURIOBJCTX, *PSHAREDCLIPBOARDCLIENTURIOBJCTX;
+
+/**
  * Structure for maintaining a single URI transfer.
  *
  ** @todo Not yet thread safe.
@@ -653,8 +662,14 @@ typedef struct _SHAREDCLIPBOARDURITRANSFER
     VBOXCLIPBOARDDATAHDR                Header;
     /** The transfer's meta data cache. */
     SHAREDCLIPBOARDMETADATA             Meta;
+    /** The transfer's own (local) area, if any (can be NULL if not needed).
+     *  The area itself has a clipboard area ID assigned.
+     *  On the host this area ID gets shared (maintained / locked) across all VMs via VBoxSVC. */
+    SharedClipboardArea                *pArea;
     /** The URI list for this transfer. */
     SharedClipboardURIList              URIList;
+    /** Context of current object being handled. */
+    SHAREDCLIPBOARDCLIENTURIOBJCTX      ObjCtx;
     /** The Shared Clipboard provider in charge for this transfer. */
     SharedClipboardProvider            *pProvider;
     /** Opaque pointer to implementation-specific parameters. */
@@ -680,16 +695,25 @@ typedef struct _SHAREDCLIPBOARDURICTX
     /** Number of concurrent transfers.
      *  At the moment we only support only one transfer at a time. */
     uint32_t                    cTransfers;
+    /** Maximum Number of concurrent transfers.
+     *  At the moment we only support one transfer at a time (per client). */
+    uint32_t                    cMaxTransfers;
 } SHAREDCLIPBOARDURICTX, *PSHAREDCLIPBOARDURICTX;
+
+int SharedClipboardURIObjCtxInit(PSHAREDCLIPBOARDCLIENTURIOBJCTX pObjCtx);
+void SharedClipboardURIObjCtxUninit(PSHAREDCLIPBOARDCLIENTURIOBJCTX pObjCtx);
+SharedClipboardURIObject *SharedClipboardURIObjCtxGetObj(PSHAREDCLIPBOARDCLIENTURIOBJCTX pObjCtx);
+bool SharedClipboardURIObjCtxIsValid(PSHAREDCLIPBOARDCLIENTURIOBJCTX pObjCtx);
 
 int SharedClipboardURITransferCreate(SHAREDCLIPBOARDURITRANSFERDIR enmDir, PSHAREDCLIPBOARDPROVIDERCREATIONCTX pCtx,
                                      PSHAREDCLIPBOARDURITRANSFER *ppTransfer);
 int SharedClipboardURITransferDestroy(PSHAREDCLIPBOARDURITRANSFER pTransfer);
 void SharedClipboardURITransferReset(PSHAREDCLIPBOARDURITRANSFER pTransfer);
+SharedClipboardArea *SharedClipboardURITransferGetArea(PSHAREDCLIPBOARDURITRANSFER pTransfer);
 const SharedClipboardURIObject *SharedClipboardURITransferGetCurrentObject(PSHAREDCLIPBOARDURITRANSFER pTransfer);
 SharedClipboardProvider *SharedClipboardURITransferGetProvider(PSHAREDCLIPBOARDURITRANSFER pTransfer);
-const SharedClipboardURIList *SharedClipboardURITransferGetList(PSHAREDCLIPBOARDURITRANSFER pTransfer);
-const SharedClipboardURIObject *SharedClipboardURITransferGetObject(PSHAREDCLIPBOARDURITRANSFER pTransfer, uint64_t uIdx);
+SharedClipboardURIList *SharedClipboardURITransferGetList(PSHAREDCLIPBOARDURITRANSFER pTransfer);
+SharedClipboardURIObject *SharedClipboardURITransferGetObject(PSHAREDCLIPBOARDURITRANSFER pTransfer, uint64_t uIdx);
 int SharedClipboardURITransferRun(PSHAREDCLIPBOARDURITRANSFER pTransfer, bool fAsync);
 void SharedClipboardURITransferSetCallbacks(PSHAREDCLIPBOARDURITRANSFER pTransfer, PSHAREDCLIPBOARDURITRANSFERCALLBACKS pCallbacks);
 
@@ -708,6 +732,7 @@ void SharedClipboardURICtxDestroy(PSHAREDCLIPBOARDURICTX pURI);
 void SharedClipboardURICtxReset(PSHAREDCLIPBOARDURICTX pURI);
 PSHAREDCLIPBOARDURITRANSFER SharedClipboardURICtxGetTransfer(PSHAREDCLIPBOARDURICTX pURI, uint32_t uIdx);
 uint32_t SharedClipboardURICtxGetActiveTransfers(PSHAREDCLIPBOARDURICTX pURI);
+bool SharedClipboardURICtxMaximumTransfersReached(PSHAREDCLIPBOARDURICTX pURI);
 int SharedClipboardURICtxTransferAdd(PSHAREDCLIPBOARDURICTX pURI, PSHAREDCLIPBOARDURITRANSFER pTransfer);
 int SharedClipboardURICtxTransferRemove(PSHAREDCLIPBOARDURICTX pURI, PSHAREDCLIPBOARDURITRANSFER pTransfer);
 

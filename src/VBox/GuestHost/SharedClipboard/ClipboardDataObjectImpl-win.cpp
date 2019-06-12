@@ -47,7 +47,7 @@
 VBoxClipboardWinDataObject::VBoxClipboardWinDataObject(PSHAREDCLIPBOARDURITRANSFER pTransfer,
                                                        LPFORMATETC pFormatEtc, LPSTGMEDIUM pStgMed, ULONG cFormats)
     : m_enmStatus(Uninitialized)
-    , m_lRefCount(0)
+    , m_lRefCount(1)
     , m_cFormats(0)
     , m_pTransfer(pTransfer)
     , m_pStream(NULL)

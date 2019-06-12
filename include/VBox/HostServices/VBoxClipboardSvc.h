@@ -444,12 +444,5 @@ bool VBoxSvcClipboardGetHeadless(void);
 bool VBoxSvcClipboardLock(void);
 void VBoxSvcClipboardUnlock(void);
 
-# ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
-bool VBoxSvcClipboardDataHdrIsValid(PVBOXCLIPBOARDDATAHDR pDataHdr);
-bool VBoxSvcClipboardDataChunkIsValid(PVBOXCLIPBOARDDATACHUNK pDataChunk);
-bool VBoxSvcClipboardDirDataIsValid(PVBOXCLIPBOARDDIRDATA pDirData);
-bool VBoxSvcClipboardFileHdrIsValid(PVBOXCLIPBOARDFILEHDR pFileHdr, PVBOXCLIPBOARDDATAHDR pDataHdr);
-bool VBoxSvcClipboardFileDataIsValid(PVBOXCLIPBOARDFILEDATA pFileData, PVBOXCLIPBOARDDATAHDR pDataHdr);
-# endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
-
 #endif /* !VBOX_INCLUDED_HostServices_VBoxClipboardSvc_h */
+

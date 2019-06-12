@@ -20,11 +20,153 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_SHARED_CLIPBOARD
+#include <VBox/log.h>
+
+#include <VBox/err.h>
 #include <VBox/HostServices/VBoxClipboardSvc.h>
 #include <VBox/HostServices/VBoxClipboardExt.h>
 
 #include <iprt/path.h>
 
+#include "VBoxSharedClipboardSvc-internal.h"
+
+
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+/**
+ * Returns whether a HGCM message is allowed in a certain service mode or not.
+ *
+ * @returns \c true if message is allowed, \c false if not.
+ * @param   uMode               Service mode to check allowance for.
+ * @param   uMsg                HGCM message to check allowance for.
+ */
+bool vboxSvcClipboardURIMsgIsAllowed(uint32_t uMode, uint32_t uMsg)
+{
+    const bool fHostToGuest =    uMode == VBOX_SHARED_CLIPBOARD_MODE_HOST_TO_GUEST
+                              || uMode == VBOX_SHARED_CLIPBOARD_MODE_BIDIRECTIONAL;
+
+    const bool fGuestToHost =    uMode == VBOX_SHARED_CLIPBOARD_MODE_GUEST_TO_HOST
+                              || uMode == VBOX_SHARED_CLIPBOARD_MODE_BIDIRECTIONAL;
+
+    bool fAllowed = false; /* If in doubt, don't allow. */
+
+    switch (uMsg)
+    {
+        case VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_READ_DATA_HDR:
+            RT_FALL_THROUGH();
+        case VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_READ_DATA_CHUNK:
+            RT_FALL_THROUGH();
+        case VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_READ_DIR:
+            RT_FALL_THROUGH();
+        case VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_READ_FILE_HDR:
+            RT_FALL_THROUGH();
+        case VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_READ_FILE_DATA:
+            fAllowed = fGuestToHost;
+            break;
+
+        case VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_WRITE_DATA_HDR:
+            RT_FALL_THROUGH();
+        case VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_WRITE_DATA_CHUNK:
+            RT_FALL_THROUGH();
+        case VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_WRITE_DIR:
+            RT_FALL_THROUGH();
+        case VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_WRITE_FILE_HDR:
+            RT_FALL_THROUGH();
+        case VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_WRITE_FILE_DATA:
+            fAllowed = fHostToGuest;
+            break;
+
+        case VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_CANCEL:
+            RT_FALL_THROUGH();
+        case VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_ERROR:
+            fAllowed = fHostToGuest || fGuestToHost;
+            break;
+
+        default:
+            break;
+    }
+
+    LogFlowFunc(("uMsg=%RU32, uMode=%RU32 -> fAllowed=%RTbool\n", uMsg, uMode, fAllowed));
+    return fAllowed;
+}
+
+int vboxSvcClipboardURIReportMsg(PVBOXCLIPBOARDCLIENTDATA pClientData, uint32_t uMsg, uint32_t uFormats)
+{
+    AssertPtrReturn(pClientData, VERR_INVALID_POINTER);
+
+    RT_NOREF(uFormats);
+
+    LogFlowFunc(("uMsg=%RU32\n", uMsg));
+
+    if (!vboxSvcClipboardURIMsgIsAllowed(vboxSvcClipboardGetMode(), uMsg))
+        return VERR_ACCESS_DENIED;
+
+    int rc = VINF_SUCCESS;
+
+    switch (uMsg)
+    {
+        case VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_READ_DATA_HDR:
+        {
+            if (SharedClipboardURICtxMaximumTransfersReached(&pClientData->URI))
+            {
+                rc = VERR_SHCLPB_MAX_TRANSFERS_REACHED;
+                break;
+            }
+
+            break;
+        }
+
+        case VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_WRITE_DATA_HDR:
+        {
+            if (SharedClipboardURICtxMaximumTransfersReached(&pClientData->URI))
+            {
+                rc = VERR_SHCLPB_MAX_TRANSFERS_REACHED;
+                break;
+            }
+
+            break;
+        }
+
+        case VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_READ_DATA_CHUNK:
+            break;
+        case VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_WRITE_DATA_CHUNK:
+            break;
+        case VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_READ_DIR:
+            break;
+        case VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_WRITE_DIR:
+            break;
+        case VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_READ_FILE_HDR:
+            break;
+        case VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_WRITE_FILE_HDR:
+            break;
+        case VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_READ_FILE_DATA:
+            break;
+        case VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_WRITE_FILE_DATA:
+            break;
+        case VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_CANCEL:
+            break;
+        case VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_ERROR:
+            break;
+
+        default:
+            AssertMsgFailed(("Invalid message %RU32\n", uMsg));
+            rc = VERR_INVALID_PARAMETER;
+            break;
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+bool vboxSvcClipboardURIReturnMsg(PVBOXCLIPBOARDCLIENTDATA pClientData, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
+{
+    RT_NOREF(cParms);
+    RT_NOREF(paParms, pClientData);
+
+    bool fHandled = false;
+
+    LogFlowFunc(("fHandled=%RTbool\n", fHandled));
+    return fHandled;
+}
 
 /**
  * Returns whether a given clipboard data header is valid or not.
@@ -32,7 +174,7 @@
  * @returns \c true if valid, \c false if not.
  * @param   pDataHdr            Clipboard data header to validate.
  */
-bool VBoxSvcClipboardDataHdrIsValid(PVBOXCLIPBOARDDATAHDR pDataHdr)
+bool vboxSvcClipboardURIDataHdrIsValid(PVBOXCLIPBOARDDATAHDR pDataHdr)
 {
     RT_NOREF(pDataHdr);
     return true; /** @todo Implement this. */
@@ -44,7 +186,7 @@ bool VBoxSvcClipboardDataHdrIsValid(PVBOXCLIPBOARDDATAHDR pDataHdr)
  * @returns \c true if valid, \c false if not.
  * @param   pDataChunk          Clipboard data chunk to validate.
  */
-bool VBoxSvcClipboardDataChunkIsValid(PVBOXCLIPBOARDDATACHUNK pDataChunk)
+bool vboxSvcClipboardURIDataChunkIsValid(PVBOXCLIPBOARDDATACHUNK pDataChunk)
 {
     RT_NOREF(pDataChunk);
     return true; /** @todo Implement this. */
@@ -56,7 +198,7 @@ bool VBoxSvcClipboardDataChunkIsValid(PVBOXCLIPBOARDDATACHUNK pDataChunk)
  * @returns \c true if valid, \c false if not.
  * @param   pDirData            Clipboard directory data to validate.
  */
-bool VBoxSvcClipboardDirDataIsValid(PVBOXCLIPBOARDDIRDATA pDirData)
+bool vboxSvcClipboardURIDirDataIsValid(PVBOXCLIPBOARDDIRDATA pDirData)
 {
     if (   !pDirData->cbPath
         || pDirData->cbPath > RTPATH_MAX)
@@ -75,7 +217,7 @@ bool VBoxSvcClipboardDirDataIsValid(PVBOXCLIPBOARDDIRDATA pDirData)
  * @param   pFileHdr            Clipboard file header to validate.
  * @param   pDataHdr            Data header to use for validation.
  */
-bool VBoxSvcClipboardFileHdrIsValid(PVBOXCLIPBOARDFILEHDR pFileHdr, PVBOXCLIPBOARDDATAHDR pDataHdr)
+bool vboxSvcClipboardURIFileHdrIsValid(PVBOXCLIPBOARDFILEHDR pFileHdr, PVBOXCLIPBOARDDATAHDR pDataHdr)
 {
     if (   !pFileHdr->cbFilePath
         || pFileHdr->cbFilePath > RTPATH_MAX)
@@ -97,9 +239,10 @@ bool VBoxSvcClipboardFileHdrIsValid(PVBOXCLIPBOARDFILEHDR pFileHdr, PVBOXCLIPBOA
  * @param   pFileData           Clipboard file data to validate.
  * @param   pDataHdr            Data header to use for validation.
  */
-bool VBoxSvcClipboardFileDataIsValid(PVBOXCLIPBOARDFILEDATA pFileData, PVBOXCLIPBOARDDATAHDR pDataHdr)
+bool vboxSvcClipboardURIFileDataIsValid(PVBOXCLIPBOARDFILEDATA pFileData, PVBOXCLIPBOARDDATAHDR pDataHdr)
 {
     RT_NOREF(pFileData, pDataHdr);
     return true;
 }
+#endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
 
