@@ -391,7 +391,8 @@ void UIMediumEnumerator::sltHandleStorageDeviceChange(CMediumAttachment comAttac
              fRemoved, fSilent));
 
     /* Parse attachment: */
-    parseAttachment(comAttachment);
+    QList<QUuid> result;
+    parseAttachment(comAttachment, result);
 }
 
 void UIMediumEnumerator::sltHandleMediumChange(CMediumAttachment comAttachment)
@@ -400,7 +401,8 @@ void UIMediumEnumerator::sltHandleMediumChange(CMediumAttachment comAttachment)
     LogRel2(("GUI: UIMediumEnumerator: OnMediumChanged event received\n"));
 
     /* Parse attachment: */
-    parseAttachment(comAttachment);
+    QList<QUuid> result;
+    parseAttachment(comAttachment, result);
 }
 
 void UIMediumEnumerator::sltHandleMediumConfigChange(CMedium comMedium)
@@ -409,7 +411,8 @@ void UIMediumEnumerator::sltHandleMediumConfigChange(CMedium comMedium)
     LogRel2(("GUI: UIMediumEnumerator: OnMediumConfigChanged event received\n"));
 
     /* Parse medium: */
-    parseMedium(comMedium);
+    QList<QUuid> result;
+    parseMedium(comMedium, result);
 }
 
 void UIMediumEnumerator::sltHandleMediumRegistered(const QUuid &uMediumId, KDeviceType enmMediumType, bool fRegistered)
@@ -756,11 +759,8 @@ void UIMediumEnumerator::recacheFromActualUsage(const CMediumMap &currentCMedium
 
 #else /* VBOX_GUI_WITH_NEW_MEDIA_EVENTS */
 
-QList<QUuid> UIMediumEnumerator::parseAttachment(CMediumAttachment &comAttachment)
+void UIMediumEnumerator::parseAttachment(CMediumAttachment comAttachment, QList<QUuid> &result)
 {
-    /* Prepare result: */
-    QList<QUuid> result;
-
     /* Make sure attachment is valid: */
     if (comAttachment.isNull())
     {
@@ -780,7 +780,7 @@ QList<QUuid> UIMediumEnumerator::parseAttachment(CMediumAttachment &comAttachmen
         else
         {
             /* Parse medium: */
-            result << parseMedium(comMedium);
+            parseMedium(comMedium, result);
 
             // WORKAROUND:
             // In current architecture there is no way to determine medium previously mounted
@@ -824,16 +824,10 @@ QList<QUuid> UIMediumEnumerator::parseAttachment(CMediumAttachment &comAttachmen
             }
         }
     }
-
-    /* Return result: */
-    return result;
 }
 
-QList<QUuid> UIMediumEnumerator::parseMedium(CMedium &comMedium)
+void UIMediumEnumerator::parseMedium(CMedium comMedium, QList<QUuid> &result)
 {
-    /* Prepare result: */
-    QList<QUuid> result;
-
     /* Make sure medium is valid: */
     if (comMedium.isNull())
     {
@@ -873,9 +867,6 @@ QList<QUuid> UIMediumEnumerator::parseMedium(CMedium &comMedium)
             }
         }
     }
-
-    /* Return result: */
-    return result;
 }
 
 #endif /* VBOX_GUI_WITH_NEW_MEDIA_EVENTS */

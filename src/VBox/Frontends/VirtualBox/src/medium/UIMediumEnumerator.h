@@ -182,12 +182,14 @@ private:
     void recacheFromActualUsage(const CMediumMap &currentCMediums,
                                 const QList<QUuid> &currentCMediumIDs);
 #else /* VBOX_GUI_WITH_NEW_MEDIA_EVENTS */
-    /** Parses incoming @a comAttachment.
-      * @returns a list of newly enumerated media IDs. */
-    QList<QUuid> parseAttachment(CMediumAttachment &comAttachment);
-    /** Parses incoming @a comMedium.
-      * @returns a list of newly enumerated media IDs. */
-    QList<QUuid> parseMedium(CMedium &comMedium);
+    /** Parses incoming @a comAttachment, enumerating the media it has attached.
+      * @param  result  Brings the list of previously enumerated media
+      *                 IDs to be appended with newly enumerated. */
+    void parseAttachment(CMediumAttachment comAttachment, QList<QUuid> &result);
+    /** Parses incoming @a comMedium, enumerating the media it represents.
+      * @param  result  Brings the list of previously enumerated media
+      *                 IDs to be appended with newly enumerated. */
+    void parseMedium(CMedium comMedium, QList<QUuid> &result);
 #endif /* VBOX_GUI_WITH_NEW_MEDIA_EVENTS */
 
     /** Holds whether consolidated medium-enumeration process is in progress. */
