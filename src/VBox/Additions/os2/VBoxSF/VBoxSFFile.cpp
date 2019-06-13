@@ -123,26 +123,89 @@ DECLINLINE(void) vboxSfOs2FreeBigBuffer(void *pvBuf)
 }
 
 
+/**
+ * Checks a EA buffer intended for file or directory creation.
+ *
+ * @retval  NO_ERROR if empty list.
+ * @retval  ERROR_EAS_NOT_SUPPORTED not empty.
+ * @retval  ERROR_PROTECTION_VIOLATION if the address is invalid.
+ *
+ * @param   pEaOp       The EA buffer to check out.
+ */
+DECL_NO_INLINE(RT_NOTHING, APIRET) vboxSfOs2CheckEaOpForCreation(EAOP const *pEaOp)
+{
+    EAOP   EaOp = { NULL, NULL, 0 };
+    APIRET rc   = KernCopyIn(&EaOp, pEaOp, sizeof(EaOp));
+    Log(("vboxSfOs2CheckEasForCreation: %p: rc=%u %#x %#x %#x\n", pEaOp, rc, EaOp.fpFEAList, EaOp.fpGEAList, EaOp.oError));
+    if (rc == NO_ERROR)
+    {
+        EaOp.fpFEAList = (PFEALIST)KernSelToFlat((uintptr_t)EaOp.fpFEAList);
+        if (EaOp.fpFEAList)
+        {
+            FEALIST FeaList = { 0, {0, 0, 0} };
+            rc = KernCopyIn(&FeaList, EaOp.fpFEAList, sizeof(FeaList));
+            Log(("vboxSfOs2CheckEasForCreation: FeaList %p: rc=%u: %#x {%#x %#x %#x}\n",
+                 EaOp.fpFEAList, rc, FeaList.cbList, FeaList.list[0].cbName, FeaList.list[0].cbValue, FeaList.list[0].fEA));
+            if (rc != NO_ERROR)
+            {
+                rc = KernCopyIn(&FeaList, EaOp.fpFEAList, sizeof(FeaList.cbList));
+                Log(("vboxSfOs2CheckEasForCreation: FeaList %p: rc=%u: %#x\n", EaOp.fpFEAList, rc, FeaList.cbList));
+            }
+            if (rc == NO_ERROR && FeaList.cbList > sizeof(FeaList.cbList))
+                rc = ERROR_EAS_NOT_SUPPORTED;
+        }
+    }
+    return rc;
+}
+
 
 DECLASM(APIRET)
 FS32_OPENCREATE(PCDFSI pCdFsi, PVBOXSFCD pCdFsd, PCSZ pszName, LONG offCurDirEnd,
                 PSFFSI pSfFsi, PVBOXSFSYFI pSfFsd, ULONG fOpenMode, USHORT fOpenFlags,
-                PUSHORT puAction, ULONG fAttribs, BYTE const *pbEaBuf, PUSHORT pfGenFlag)
+                PUSHORT puAction, ULONG fAttribs, EAOP const *pEaOp, PUSHORT pfGenFlag)
 {
-    LogFlow(("FS32_OPENCREATE: pCdFsi=%p pCdFsd=%p pszName=%p:{%s} offCurDirEnd=%d pSfFsi=%p pSfFsd=%p fOpenMode=%#x fOpenFlags=%#x puAction=%p fAttribs=%#x pbEaBuf=%p pfGenFlag=%p\n",
-             pCdFsi, pCdFsd, pszName, pszName, offCurDirEnd, pSfFsi, pSfFsd, fOpenMode, fOpenFlags, puAction, fAttribs, pbEaBuf, pfGenFlag));
+    LogFlow(("FS32_OPENCREATE: pCdFsi=%p pCdFsd=%p pszName=%p:{%s} offCurDirEnd=%d pSfFsi=%p pSfFsd=%p fOpenMode=%#x fOpenFlags=%#x puAction=%p fAttribs=%#x pEaOp=%p pfGenFlag=%p\n",
+             pCdFsi, pCdFsd, pszName, pszName, offCurDirEnd, pSfFsi, pSfFsd, fOpenMode, fOpenFlags, puAction, fAttribs, pEaOp, pfGenFlag));
     RT_NOREF(pfGenFlag, pCdFsi);
 
     /*
      * Validate and convert parameters.
      */
-    /* No EAs. */
-    if (!pbEaBuf)
+    /* No EAs. We may need to put in some effort to determin the absense of EAs,
+       because CMD.exe likes to supply them when opening the source file of a
+       copy operation. */
+    if (!pEaOp)
     { /* likely */ }
     else
     {
-        LogRel(("FS32_OPENCREATE: Returns ERROR_EAS_NOT_SUPPORTED [%p];\n", pbEaBuf));
-        return ERROR_EAS_NOT_SUPPORTED;
+        switch (fOpenFlags & 0x13)
+        {
+            case OPEN_ACTION_FAIL_IF_EXISTS | OPEN_ACTION_FAIL_IF_NEW:      /* 0x00 */
+            case OPEN_ACTION_OPEN_IF_EXISTS | OPEN_ACTION_FAIL_IF_NEW:      /* 0x01 */
+                LogFlow(("FS32_OPENCREATE: Ignoring EAOP for non-create/replace action (%u).\n",
+                         vboxSfOs2CheckEaOpForCreation(pEaOp)));
+                break;
+
+            case OPEN_ACTION_FAIL_IF_EXISTS | OPEN_ACTION_CREATE_IF_NEW:    /* 0x10 */
+            case OPEN_ACTION_OPEN_IF_EXISTS | OPEN_ACTION_CREATE_IF_NEW:    /* 0x11 */ /** @todo */
+            case OPEN_ACTION_REPLACE_IF_EXISTS | OPEN_ACTION_FAIL_IF_NEW:   /* 0x02 */
+            case OPEN_ACTION_REPLACE_IF_EXISTS | OPEN_ACTION_CREATE_IF_NEW: /* 0x12 */
+            {
+                APIRET rc = vboxSfOs2CheckEaOpForCreation(pEaOp);
+                if (rc == NO_ERROR)
+                {
+                    Log(("FS32_OPENCREATE: Ignoring empty EAOP.\n"));
+                    break;
+                }
+                Log(("FS32_OPENCREATE: Returns %u%s [%p];\n",
+                     rc, rc == ERROR_EAS_NOT_SUPPORTED ? " (ERROR_EAS_NOT_SUPPORTED)" : "", pEaOp));
+                return rc;
+            }
+
+            default:
+                LogRel(("FS32_OPENCREATE: Invalid file open flags: %#x\n", fOpenFlags));
+                return VERR_INVALID_PARAMETER;
+        }
     }
 
     /* No direct access. */
