@@ -1,6 +1,8 @@
 <?xml version="1.0"?>
 <!-- https://www.ibm.com/support/knowledgecenter/en/ssw_aix_71/com.ibm.aix.keyboardtechref/doc/kybdtech/Key.htm -->
-<layout defaultHeight="50" defaultWidth="50">
+<physicallayout defaultHeight="50" defaultWidth="50">
+    <name>102_iso</name>
+    <id>d41a0398-92a0-4ba4-beba-3d91a5dd0e50</id>
     <row>
         <key>
             <position>110</position>
@@ -451,4 +453,4 @@
             <scancode>0x4d</scancode>
         </key>
     </row>
-</layout>
+</physicallayout>

@@ -2,5 +2,6 @@
     <qresource suffix="/">
         <file alias="101_ansi.xml">xml/101_ansi.xml</file>
         <file alias="102_iso.xml">xml/102_iso.xml</file>
+        <file alias="us_international.xml">xml/us_international.xml</file>
     </qresource>
 </RCC>

@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <!-- https://www.ibm.com/support/knowledgecenter/en/ssw_aix_71/com.ibm.aix.keyboardtechref/doc/kybdtech/Key.htm -->
-<layout defaultHeight="50" defaultWidth="50">
+<physicallayout defaultHeight="50" defaultWidth="50">
     <name>101_ansi</name>
     <id>368efa94-3744-48c5-9d5a-59c2f15fe5ec</id>
     <row>
@@ -451,4 +451,4 @@
 
     </row>
 
-</layout>
+</physicallayout>
