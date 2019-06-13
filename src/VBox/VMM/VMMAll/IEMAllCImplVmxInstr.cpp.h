@@ -2717,19 +2717,11 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexit(PVMCPU pVCpu, uint32_t uExitReason, uint64_
     RT_NOREF3(pVCpu, uExitReason, u64ExitQual);
     return VINF_EM_RAW_EMULATE_INSTR;
 # else
-    IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_CR0 | CPUMCTX_EXTRN_CR3 | CPUMCTX_EXTRN_CR4       /* Control registers */
-                            | CPUMCTX_EXTRN_DR7 | CPUMCTX_EXTRN_DR6                           /* Debug registers */
-                            | CPUMCTX_EXTRN_EFER                                              /* MSRs */
-                            | CPUMCTX_EXTRN_SYSENTER_MSRS
-                            | CPUMCTX_EXTRN_OTHER_MSRS    /* PAT */
-                            | CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_RSP | CPUMCTX_EXTRN_RFLAGS    /* GPRs */
-                            | CPUMCTX_EXTRN_SREG_MASK                                         /* Segment registers */
-                            | CPUMCTX_EXTRN_TR                                                /* Task register */
-                            | CPUMCTX_EXTRN_LDTR | CPUMCTX_EXTRN_GDTR | CPUMCTX_EXTRN_IDTR    /* Table registers */
-                            | CPUMCTX_EXTRN_HWVIRT);                                          /* Hardware virtualization state */
-
     PVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
     Assert(pVmcs);
+
+    /* Import all the guest-CPU state required for the VM-exit. */
+    IEM_CTX_IMPORT_RET(pVCpu, IEM_CPUMCTX_EXTRN_VMX_VMEXIT_MASK);
 
     /* Ensure VM-entry interruption information valid bit isn't set. */
     Assert(!VMX_ENTRY_INT_INFO_IS_VALID(pVmcs->u32EntryIntInfo));
