@@ -232,7 +232,12 @@ typedef uint8_t IEMMODE;
 
 /** The CPUMCTX_EXTRN_XXX mask that the IEM VM-exit code will import on-demand when
  *  needed, primarily because there are several IEM VM-exit interface functions and
- *  some of which may not cause a VM-exit at all. */
+ *  some of which may not cause a VM-exit at all.
+ *
+ *  This is currently unused, but keeping it here in case we can get away a bit more
+ *  fine-grained state handling.
+ *
+ *  @note Update HM_CHANGED_VMX_VMEXIT_MASK if something here changes. */
 # define IEM_CPUMCTX_EXTRN_VMX_VMEXIT_MASK         (  CPUMCTX_EXTRN_CR0 | CPUMCTX_EXTRN_CR3 | CPUMCTX_EXTRN_CR4 \
                                                     | CPUMCTX_EXTRN_DR7 | CPUMCTX_EXTRN_DR6 \
                                                     | CPUMCTX_EXTRN_EFER \
