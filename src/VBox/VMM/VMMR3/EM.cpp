@@ -1755,7 +1755,7 @@ static int emR3SvmNstGstIntrIntercept(PVMCPU pVCpu)
     if (   CPUMIsGuestPhysIntrEnabled(pVCpu)
         && CPUMIsGuestSvmCtrlInterceptSet(pVCpu, &pVCpu->cpum.GstCtx, SVM_CTRL_INTERCEPT_INTR))
     {
-        CPUM_IMPORT_EXTRN_RET(pVCpu, IEM_CPUMCTX_EXTRN_SVM_VMEXIT_MASK);
+        CPUM_ASSERT_NOT_EXTRN(pVCpu, IEM_CPUMCTX_EXTRN_SVM_VMEXIT_MASK);
         VBOXSTRICTRC rcStrict = IEMExecSvmVmexit(pVCpu, SVM_EXIT_INTR, 0, 0);
         if (RT_SUCCESS(rcStrict))
         {
@@ -1786,7 +1786,7 @@ static int emR3SvmNstGstVirtIntrIntercept(PVMCPU pVCpu)
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
     if (CPUMIsGuestSvmCtrlInterceptSet(pVCpu, &pVCpu->cpum.GstCtx, SVM_CTRL_INTERCEPT_VINTR))
     {
-        CPUM_IMPORT_EXTRN_RET(pVCpu, IEM_CPUMCTX_EXTRN_SVM_VMEXIT_MASK);
+        CPUM_ASSERT_NOT_EXTRN(pVCpu, IEM_CPUMCTX_EXTRN_SVM_VMEXIT_MASK);
         VBOXSTRICTRC rcStrict = IEMExecSvmVmexit(pVCpu, SVM_EXIT_VINTR, 0, 0);
         if (RT_SUCCESS(rcStrict))
         {
