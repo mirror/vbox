@@ -510,7 +510,7 @@ static DECLCALLBACK(void) svcCall(void *,
 
     switch (u32Function)
     {
-        case VBOX_SHARED_CLIPBOARD_FN_GET_HOST_MSG:
+        case VBOX_SHARED_CLIPBOARD_GUEST_FN_GET_HOST_MSG:
         {
             /* The quest requests a host message. */
             LogFunc(("VBOX_SHARED_CLIPBOARD_FN_GET_HOST_MSG\n"));
@@ -554,7 +554,7 @@ static DECLCALLBACK(void) svcCall(void *,
             }
         } break;
 
-        case VBOX_SHARED_CLIPBOARD_FN_REPORT_FORMATS:
+        case VBOX_SHARED_CLIPBOARD_GUEST_FN_REPORT_FORMATS:
         {
             /* The guest reports that some formats are available. */
             LogFunc(("VBOX_SHARED_CLIPBOARD_FN_REPORT_FORMATS\n"));
@@ -600,9 +600,14 @@ static DECLCALLBACK(void) svcCall(void *,
                                 creationCtx.enmSource = SHAREDCLIPBOARDPROVIDERSOURCE_HOSTSERVICE;
 
                                 PSHAREDCLIPBOARDURITRANSFER pTransfer;
-                                rc = SharedClipboardURITransferCreate(SHAREDCLIPBOARDURITRANSFERDIR_READ, &creationCtx, &pTransfer);
+                                rc = SharedClipboardURITransferCreate(SHAREDCLIPBOARDURITRANSFERDIR_READ,
+                                                                      &creationCtx, &pTransfer);
                                 if (RT_SUCCESS(rc))
+                                {
                                     rc = SharedClipboardURICtxTransferAdd(&pClientData->URI, pTransfer);
+                                    if (RT_SUCCESS(rc))
+                                        rc = vboxSvcClipboardURIAreaRegister(&pClientData->State, pTransfer);
+                                }
                             }
                             else
                                 rc = VERR_SHCLPB_MAX_TRANSFERS_REACHED;
@@ -616,7 +621,7 @@ static DECLCALLBACK(void) svcCall(void *,
             }
         } break;
 
-        case VBOX_SHARED_CLIPBOARD_FN_READ_DATA:
+        case VBOX_SHARED_CLIPBOARD_GUEST_FN_READ_DATA:
         {
             /* The guest wants to read data in the given format. */
             LogFunc(("VBOX_SHARED_CLIPBOARD_FN_READ_DATA\n"));
@@ -715,7 +720,7 @@ static DECLCALLBACK(void) svcCall(void *,
             }
         } break;
 
-        case VBOX_SHARED_CLIPBOARD_FN_WRITE_DATA:
+        case VBOX_SHARED_CLIPBOARD_GUEST_FN_WRITE_DATA:
         {
             /* The guest writes the requested data. */
             LogFunc(("VBOX_SHARED_CLIPBOARD_FN_WRITE_DATA\n"));

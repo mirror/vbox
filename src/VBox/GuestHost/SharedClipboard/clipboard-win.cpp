@@ -30,6 +30,8 @@
 #define LOG_GROUP LOG_GROUP_SHARED_CLIPBOARD
 #include <VBox/log.h>
 
+#include <VBox/err.h>
+
 #include <VBox/GuestHost/SharedClipboard.h>
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
 # include <VBox/GuestHost/SharedClipboard-uri.h>
@@ -658,61 +660,54 @@ int VBoxClipboardWinURIHandleWMSetFormats(const PVBOXCLIPBOARDWINCTX pWinCtx, PS
         return VERR_NOT_SUPPORTED;
     }
 
-    int rc;
-
-    const uint32_t cTransfers = SharedClipboardURICtxGetActiveTransfers(pURICtx);
-
-    LogFunc(("cTransfers=%RU32\n", cTransfers));
-
-    if (cTransfers == 0) /* Only allow one transfer at a time for now. */
+    if (SharedClipboardURICtxMaximumTransfersReached(pURICtx))
     {
-        PSHAREDCLIPBOARDURITRANSFER pTransfer;
-        rc = SharedClipboardURITransferCreate(SHAREDCLIPBOARDURITRANSFERDIR_WRITE, pProviderCtx, &pTransfer);
+        LogRel(("Clipboard: Only one transfer at a time supported (current %RU32 transfer(s) active), skipping\n",
+                SharedClipboardURICtxGetActiveTransfers(pURICtx)));
+        return VERR_SHCLPB_MAX_TRANSFERS_REACHED;
+    }
+
+    /* We want to read from the guest. */
+    PSHAREDCLIPBOARDURITRANSFER pTransfer;
+    int rc = SharedClipboardURITransferCreate(SHAREDCLIPBOARDURITRANSFERDIR_READ, pProviderCtx, &pTransfer);
+    if (RT_SUCCESS(rc))
+        rc = SharedClipboardURICtxTransferAdd(pURICtx, pTransfer);
+
+    SharedClipboardWinURITransferCtx *pWinURITransferCtx = new SharedClipboardWinURITransferCtx();
+
+    pTransfer->pvUser = pWinURITransferCtx;
+    pTransfer->cbUser = sizeof(SharedClipboardWinURITransferCtx);
+
+    pWinURITransferCtx->pDataObj = new VBoxClipboardWinDataObject(pTransfer);
+    if (pWinURITransferCtx->pDataObj)
+    {
+        rc = pWinURITransferCtx->pDataObj->Init();
         if (RT_SUCCESS(rc))
-            rc = SharedClipboardURICtxTransferAdd(pURICtx, pTransfer);
-
-        SharedClipboardWinURITransferCtx *pWinURITransferCtx = new SharedClipboardWinURITransferCtx();
-
-        pTransfer->pvUser = pWinURITransferCtx;
-        pTransfer->cbUser = sizeof(SharedClipboardWinURITransferCtx);
-
-        pWinURITransferCtx->pDataObj = new VBoxClipboardWinDataObject(pTransfer);
-        if (pWinURITransferCtx->pDataObj)
         {
-            rc = pWinURITransferCtx->pDataObj->Init();
-            if (RT_SUCCESS(rc))
-            {
-                VBoxClipboardWinClose();
-                /* Note: Clipboard must be closed first before calling OleSetClipboard(). */
+            VBoxClipboardWinClose();
+            /* Note: Clipboard must be closed first before calling OleSetClipboard(). */
 
-                /** @todo There is a potential race between VBoxClipboardWinClose() and OleSetClipboard(),
-                 *        where another application could own the clipboard (open), and thus the call to
-                 *        OleSetClipboard() will fail. Needs (better) fixing. */
-                for (unsigned uTries = 0; uTries < 3; uTries++)
+            /** @todo There is a potential race between VBoxClipboardWinClose() and OleSetClipboard(),
+             *        where another application could own the clipboard (open), and thus the call to
+             *        OleSetClipboard() will fail. Needs (better) fixing. */
+            for (unsigned uTries = 0; uTries < 3; uTries++)
+            {
+                HRESULT hr = OleSetClipboard(pWinURITransferCtx->pDataObj);
+                if (SUCCEEDED(hr))
                 {
-                    HRESULT hr = OleSetClipboard(pWinURITransferCtx->pDataObj);
-                    if (SUCCEEDED(hr))
-                    {
-                        /* Nothing to do here yet. */
-                    }
-                    else
-                    {
-                        rc = VERR_ACCESS_DENIED; /** @todo Fudge; fix this. */
-                        LogRel(("Clipboard: Failed with %Rhrc when setting data object to clipboard\n", hr));
-                        RTThreadSleep(100); /* Wait a bit. */
-                    }
+                    /* Nothing to do here yet. */
+                }
+                else
+                {
+                    rc = VERR_ACCESS_DENIED; /** @todo Fudge; fix this. */
+                    LogRel(("Clipboard: Failed with %Rhrc when setting data object to clipboard\n", hr));
+                    RTThreadSleep(100); /* Wait a bit. */
                 }
             }
         }
-        else
-            rc = VERR_NO_MEMORY;
     }
     else
-    {
-        rc = VERR_ALREADY_EXISTS; /** @todo Fudge; fix this. */
-        LogRel(("Clipboard: Only one transfer at a time supported (current %RU32 transfer(s) active), skipping\n",
-                pURICtx->cTransfers));
-    }
+        rc = VERR_NO_MEMORY;
 
     LogFlowFuncLeaveRC(rc);
     return rc;

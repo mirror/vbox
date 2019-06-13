@@ -96,7 +96,7 @@ VBGLR3DECL(int) VbglR3ClipboardGetHostMsg(HGCMCLIENTID idClient, uint32_t *pidMs
 {
     VBoxClipboardGetHostMsg Msg;
 
-    VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient, VBOX_SHARED_CLIPBOARD_FN_GET_HOST_MSG, VBOX_SHARED_CLIPBOARD_CPARMS_GET_HOST_MSG);
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient, VBOX_SHARED_CLIPBOARD_GUEST_FN_GET_HOST_MSG, VBOX_SHARED_CLIPBOARD_CPARMS_GET_HOST_MSG);
     VbglHGCMParmUInt32Set(&Msg.msg, 0);
     VbglHGCMParmUInt32Set(&Msg.formats, 0);
 
@@ -134,7 +134,7 @@ VBGLR3DECL(int) VbglR3ClipboardReadData(HGCMCLIENTID idClient, uint32_t fFormat,
 {
     VBoxClipboardReadDataMsg Msg;
 
-    VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient, VBOX_SHARED_CLIPBOARD_FN_READ_DATA, VBOX_SHARED_CLIPBOARD_CPARMS_READ_DATA);
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient, VBOX_SHARED_CLIPBOARD_GUEST_FN_READ_DATA, VBOX_SHARED_CLIPBOARD_CPARMS_READ_DATA);
     VbglHGCMParmUInt32Set(&Msg.format, fFormat);
     VbglHGCMParmPtrSet(&Msg.ptr, pv, cb);
     VbglHGCMParmUInt32Set(&Msg.size, 0);
@@ -171,7 +171,7 @@ VBGLR3DECL(int) VbglR3ClipboardReadDataHdr(HGCMCLIENTID idClient, PVBOXCLIPBOARD
     VBoxClipboardReadDataHdrMsg Msg;
     RT_ZERO(Msg);
     VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient,
-                       VBOX_SHARED_CLIPBOARD_FN_READ_DATA_HDR, VBOX_SHARED_CLIPBOARD_CPARMS_READ_DATA_HDR);
+                       VBOX_SHARED_CLIPBOARD_GUEST_FN_READ_DATA_HDR, VBOX_SHARED_CLIPBOARD_CPARMS_READ_DATA_HDR);
     Msg.uContext.SetUInt32(0);
     Msg.uFlags.SetUInt32(0);
     Msg.uScreenId.SetUInt32(0);
@@ -217,7 +217,7 @@ VBGLR3DECL(int) VbglR3ClipboardReadDataHdr(HGCMCLIENTID idClient, PVBOXCLIPBOARD
 VBGLR3DECL(int) VbglR3ClipboardWriteDataHdr(HGCMCLIENTID idClient, const PVBOXCLIPBOARDDATAHDR pDataHdr)
 {
     VBoxClipboardWriteDataHdrMsg Msg;
-    VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient, VBOX_SHARED_CLIPBOARD_FN_WRITE_DATA_HDR, VBOX_SHARED_CLIPBOARD_CPARMS_WRITE_DATA_HDR);
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient, VBOX_SHARED_CLIPBOARD_GUEST_FN_WRITE_DATA_HDR, VBOX_SHARED_CLIPBOARD_CPARMS_WRITE_DATA_HDR);
 
     Msg.uContext.SetUInt32(0);                                          /** @todo Not used yet. */
     Msg.uFlags.SetUInt32(pDataHdr->uFlags);                             /** @todo Not used yet. */
@@ -259,7 +259,7 @@ static int vbglR3ClipboardReadDataChunk(HGCMCLIENTID idClient, PVBOXCLIPBOARDDAT
     RT_ZERO(Msg);
 
     VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient,
-                       VBOX_SHARED_CLIPBOARD_FN_READ_DATA_CHUNK, VBOX_SHARED_CLIPBOARD_CPARMS_READ_DATA_CHUNK);
+                       VBOX_SHARED_CLIPBOARD_GUEST_FN_READ_DATA_CHUNK, VBOX_SHARED_CLIPBOARD_CPARMS_READ_DATA_CHUNK);
     Msg.pvData.SetPtr(pvData, cbData);
     Msg.cbData.SetUInt32(0);
     Msg.pvChecksum.SetPtr(NULL, 0);
@@ -412,7 +412,7 @@ static int vbglR3ClipboardWriteDataChunk(HGCMCLIENTID idClient, PVBOXCLIPBOARDDA
     RT_ZERO(Msg);
 
     VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient,
-                       VBOX_SHARED_CLIPBOARD_FN_WRITE_DATA_CHUNK, VBOX_SHARED_CLIPBOARD_CPARMS_WRITE_DATA_CHUNK);
+                       VBOX_SHARED_CLIPBOARD_GUEST_FN_WRITE_DATA_CHUNK, VBOX_SHARED_CLIPBOARD_CPARMS_WRITE_DATA_CHUNK);
     Msg.pvData.SetPtr(pvData, cbData);
     Msg.cbData.SetUInt32(0);
     Msg.pvChecksum.SetPtr(NULL, 0);
@@ -561,7 +561,7 @@ VBGLR3DECL(int) VbglR3ClipboardReadDir(HGCMCLIENTID idClient,
     VBoxClipboardReadDirMsg Msg;
     RT_ZERO(Msg);
 
-    VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient, VBOX_SHARED_CLIPBOARD_FN_READ_DIR, VBOX_SHARED_CLIPBOARD_CPARMS_READ_DIR);
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient, VBOX_SHARED_CLIPBOARD_GUEST_FN_READ_DIR, VBOX_SHARED_CLIPBOARD_CPARMS_READ_DIR);
     /** @todo Context ID not used yet. */
     Msg.uContext.SetUInt32(0);
     Msg.pvName.SetPtr(pszDirname, cbDirname);
@@ -607,7 +607,7 @@ VBGLR3DECL(int) VbglR3ClipboardWriteDir(HGCMCLIENTID idClient,
     VBoxClipboardWriteDirMsg Msg;
     RT_ZERO(Msg);
 
-    VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient, VBOX_SHARED_CLIPBOARD_FN_WRITE_DIR, VBOX_SHARED_CLIPBOARD_CPARMS_WRITE_DIR);
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient, VBOX_SHARED_CLIPBOARD_GUEST_FN_WRITE_DIR, VBOX_SHARED_CLIPBOARD_CPARMS_WRITE_DIR);
     /** @todo Context ID not used yet. */
     Msg.pvName.SetPtr((void *)pszPath, (uint32_t)cbPathSz);
     Msg.cbName.SetUInt32(cbPathSz);
@@ -644,7 +644,7 @@ VBGLR3DECL(int) VbglR3ClipboardReadFileHdr(HGCMCLIENTID  idClient,
     RT_ZERO(Msg);
 
     VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient,
-                       VBOX_SHARED_CLIPBOARD_FN_READ_FILE_HDR, VBOX_SHARED_CLIPBOARD_CPARMS_READ_FILE_HDR);
+                       VBOX_SHARED_CLIPBOARD_GUEST_FN_READ_FILE_HDR, VBOX_SHARED_CLIPBOARD_CPARMS_READ_FILE_HDR);
     Msg.uContext.SetUInt32(0); /** @todo Not used yet. */
     Msg.pvName.SetPtr(pszFilename, cbFilename);
     Msg.cbName.SetUInt32(cbFilename);
@@ -692,7 +692,7 @@ VBGLR3DECL(int) VbglR3ClipboardWriteFileHdr(HGCMCLIENTID idClient, const char *p
     VBoxClipboardWriteFileHdrMsg MsgHdr;
     RT_ZERO(MsgHdr);
 
-    VBGL_HGCM_HDR_INIT(&MsgHdr.hdr, idClient, VBOX_SHARED_CLIPBOARD_FN_WRITE_FILE_HDR, VBOX_SHARED_CLIPBOARD_CPARMS_WRITE_FILE_HDR);
+    VBGL_HGCM_HDR_INIT(&MsgHdr.hdr, idClient, VBOX_SHARED_CLIPBOARD_GUEST_FN_WRITE_FILE_HDR, VBOX_SHARED_CLIPBOARD_CPARMS_WRITE_FILE_HDR);
     MsgHdr.uContext.SetUInt32(0);                                                    /* Context ID; unused at the moment. */
     MsgHdr.pvName.SetPtr((void *)pszFilename, (uint32_t)(cbFileSz));
     MsgHdr.cbName.SetUInt32(cbFileSz);
@@ -725,7 +725,7 @@ VBGLR3DECL(int) VbglR3ClipboardReadFileData(HGCMCLIENTID          idClient,
     RT_ZERO(Msg);
 
     VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient,
-                       VBOX_SHARED_CLIPBOARD_FN_READ_FILE_DATA, VBOX_SHARED_CLIPBOARD_CPARMS_READ_FILE_DATA);
+                       VBOX_SHARED_CLIPBOARD_GUEST_FN_READ_FILE_DATA, VBOX_SHARED_CLIPBOARD_CPARMS_READ_FILE_DATA);
     Msg.uContext.SetUInt32(0);
     Msg.pvData.SetPtr(pvData, cbData);
     Msg.cbData.SetUInt32(0);
@@ -762,7 +762,7 @@ VBGLR3DECL(int) VbglR3ClipboardWriteFileData(HGCMCLIENTID idClient, void *pvData
     VBoxClipboardWriteFileDataMsg MsgData;
     RT_ZERO(MsgData);
 
-    VBGL_HGCM_HDR_INIT(&MsgData.hdr, idClient, VBOX_SHARED_CLIPBOARD_FN_WRITE_FILE_DATA, VBOX_SHARED_CLIPBOARD_CPARMS_READ_FILE_DATA);
+    VBGL_HGCM_HDR_INIT(&MsgData.hdr, idClient, VBOX_SHARED_CLIPBOARD_GUEST_FN_WRITE_FILE_DATA, VBOX_SHARED_CLIPBOARD_CPARMS_READ_FILE_DATA);
     MsgData.uContext.SetUInt32(0);                                                    /* Context ID; unused at the moment. */
     MsgData.pvData.SetPtr(pvData, cbData);
     MsgData.cbData.SetUInt32(cbData);
@@ -790,7 +790,7 @@ VBGLR3DECL(int) VbglR3ClipboardReportFormats(HGCMCLIENTID idClient, uint32_t fFo
 {
     VBoxClipboardWriteFormatsMsg Msg;
 
-    VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient, VBOX_SHARED_CLIPBOARD_FN_REPORT_FORMATS, VBOX_SHARED_CLIPBOARD_CPARMS_FORMATS);
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient, VBOX_SHARED_CLIPBOARD_GUEST_FN_REPORT_FORMATS, VBOX_SHARED_CLIPBOARD_CPARMS_FORMATS);
     VbglHGCMParmUInt32Set(&Msg.formats, fFormats);
 
     return VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
@@ -811,7 +811,7 @@ VBGLR3DECL(int) VbglR3ClipboardReportFormats(HGCMCLIENTID idClient, uint32_t fFo
 static int vbglR3ClipboardWriteDataRaw(HGCMCLIENTID idClient, uint32_t fFormat, void *pv, uint32_t cb)
 {
     VBoxClipboardWriteDataMsg Msg;
-    VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient, VBOX_SHARED_CLIPBOARD_FN_WRITE_DATA, VBOX_SHARED_CLIPBOARD_CPARMS_WRITE_DATA);
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient, VBOX_SHARED_CLIPBOARD_GUEST_FN_WRITE_DATA, VBOX_SHARED_CLIPBOARD_CPARMS_WRITE_DATA);
     VbglHGCMParmUInt32Set(&Msg.format, fFormat);
     VbglHGCMParmPtrSet(&Msg.ptr, pv, cb);
 
@@ -858,7 +858,7 @@ static int vbglR3ClipboardWriteErrorInternal(HGCMCLIENTID idClient, int rcErr)
     VBoxClipboardWriteErrorMsg Msg;
     RT_ZERO(Msg);
 
-    VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient, VBOX_SHARED_CLIPBOARD_FN_WRITE_ERROR, 2);
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient, VBOX_SHARED_CLIPBOARD_GUEST_FN_WRITE_ERROR, 2);
     /** @todo Context ID not used yet. */
     Msg.uContext.SetUInt32(0);
     Msg.rc.SetUInt32((uint32_t)rcErr); /* uint32_t vs. int. */

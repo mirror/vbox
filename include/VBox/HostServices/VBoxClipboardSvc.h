@@ -64,47 +64,47 @@
  * The service functions which are called by guest.
  */
 /** Calls the host and waits (blocking) for an host event VBOX_SHARED_CLIPBOARD_HOST_MSG_*. */
-#define VBOX_SHARED_CLIPBOARD_FN_GET_HOST_MSG      1
+#define VBOX_SHARED_CLIPBOARD_GUEST_FN_GET_HOST_MSG      1
 /** Sends a list of available formats to the host. */
-#define VBOX_SHARED_CLIPBOARD_FN_REPORT_FORMATS    2
+#define VBOX_SHARED_CLIPBOARD_GUEST_FN_REPORT_FORMATS    2
 /** Reads data in specified format from the host. */
-#define VBOX_SHARED_CLIPBOARD_FN_READ_DATA         3
+#define VBOX_SHARED_CLIPBOARD_GUEST_FN_READ_DATA         3
 /** Writes data in requested format to the host. */
-#define VBOX_SHARED_CLIPBOARD_FN_WRITE_DATA        4
+#define VBOX_SHARED_CLIPBOARD_GUEST_FN_WRITE_DATA        4
 /** Reads the data header at the beginning of a (new) data transfer from the host.
  *  New since URI handling was implemented. */
-#define VBOX_SHARED_CLIPBOARD_FN_READ_DATA_HDR     5
+#define VBOX_SHARED_CLIPBOARD_GUEST_FN_READ_DATA_HDR     5
 /** Writes data in requested format to the host. */
-#define VBOX_SHARED_CLIPBOARD_FN_READ_DATA_CHUNK   6
+#define VBOX_SHARED_CLIPBOARD_GUEST_FN_READ_DATA_CHUNK   6
 /** Writes the data header at the beginning of a (new) data transfer to the host.
  *  New since URI handling was implemented. */
-#define VBOX_SHARED_CLIPBOARD_FN_WRITE_DATA_HDR    7
+#define VBOX_SHARED_CLIPBOARD_GUEST_FN_WRITE_DATA_HDR    7
 /** Writes data in requested format to the host. */
-#define VBOX_SHARED_CLIPBOARD_FN_WRITE_DATA_CHUNK  8
+#define VBOX_SHARED_CLIPBOARD_GUEST_FN_WRITE_DATA_CHUNK  8
 /** Reads a new directory entry from the host.
  *  New since URI handling was implemented. */
-#define VBOX_SHARED_CLIPBOARD_FN_READ_DIR          9
+#define VBOX_SHARED_CLIPBOARD_GUEST_FN_READ_DIR          9
 /** Writes a new directory entry to the host.
  *  New since URI handling was implemented. */
-#define VBOX_SHARED_CLIPBOARD_FN_WRITE_DIR         10
+#define VBOX_SHARED_CLIPBOARD_GUEST_FN_WRITE_DIR         10
 /** Reads a new file header entry from the host.
  *  New since URI handling was implemented. */
-#define VBOX_SHARED_CLIPBOARD_FN_READ_FILE_HDR     11
+#define VBOX_SHARED_CLIPBOARD_GUEST_FN_READ_FILE_HDR     11
 /** Writes a new file header entry to the host.
      *  New since URI handling was implemented. */
-#define VBOX_SHARED_CLIPBOARD_FN_WRITE_FILE_HDR    12
+#define VBOX_SHARED_CLIPBOARD_GUEST_FN_WRITE_FILE_HDR    12
 /** Reads a new file data chunk entry from the host.
  *  New since URI handling was implemented. */
-#define VBOX_SHARED_CLIPBOARD_FN_READ_FILE_DATA    13
+#define VBOX_SHARED_CLIPBOARD_GUEST_FN_READ_FILE_DATA    13
 /** Writes a new file data chunk entry to the host.
  *  New since URI handling was implemented. */
-#define VBOX_SHARED_CLIPBOARD_FN_WRITE_FILE_DATA   14
+#define VBOX_SHARED_CLIPBOARD_GUEST_FN_WRITE_FILE_DATA   14
 /** Reports cancellation of the current operation to the host.
  *  New since URI handling was implemented. */
-#define VBOX_SHARED_CLIPBOARD_FN_WRITE_CANCEL      15
+#define VBOX_SHARED_CLIPBOARD_GUEST_FN_WRITE_CANCEL      15
 /** Reports an error to the host.
  *  New since URI handling was implemented. */
-#define VBOX_SHARED_CLIPBOARD_FN_WRITE_ERROR       16
+#define VBOX_SHARED_CLIPBOARD_GUEST_FN_WRITE_ERROR       16
 
 /** The maximum default chunk size for a single data transfer. */
 #define VBOX_SHARED_CLIPBOARD_MAX_CHUNK_SIZE       _64K
@@ -346,12 +346,12 @@ typedef struct _VBoxClipboardErrorMsg
  */
 enum eVBoxClipboardCallbackMagics
 {
-    CB_MAGIC_CLIPBOARD_WRITE_DATA_HDR   = VBOX_CLIPBOARD_CB_MAGIC_MAKE(VBOX_SHARED_CLIPBOARD_FN_WRITE_DATA_HDR, 0),
-    CB_MAGIC_CLIPBOARD_WRITE_DATA_CHUNK = VBOX_CLIPBOARD_CB_MAGIC_MAKE(VBOX_SHARED_CLIPBOARD_FN_WRITE_DATA_CHUNK, 0),
-    CB_MAGIC_CLIPBOARD_WRITE_DIR        = VBOX_CLIPBOARD_CB_MAGIC_MAKE(VBOX_SHARED_CLIPBOARD_FN_WRITE_DIR, 0),
-    CB_MAGIC_CLIPBOARD_WRITE_FILE_HDR   = VBOX_CLIPBOARD_CB_MAGIC_MAKE(VBOX_SHARED_CLIPBOARD_FN_WRITE_FILE_HDR, 0),
-    CB_MAGIC_CLIPBOARD_WRITE_FILE_DATA  = VBOX_CLIPBOARD_CB_MAGIC_MAKE(VBOX_SHARED_CLIPBOARD_FN_WRITE_FILE_DATA, 0),
-    CB_MAGIC_CLIPBOARD_WRITE_ERROR      = VBOX_CLIPBOARD_CB_MAGIC_MAKE(VBOX_SHARED_CLIPBOARD_FN_WRITE_ERROR, 0)
+    CB_MAGIC_CLIPBOARD_WRITE_DATA_HDR   = VBOX_CLIPBOARD_CB_MAGIC_MAKE(VBOX_SHARED_CLIPBOARD_GUEST_FN_WRITE_DATA_HDR, 0),
+    CB_MAGIC_CLIPBOARD_WRITE_DATA_CHUNK = VBOX_CLIPBOARD_CB_MAGIC_MAKE(VBOX_SHARED_CLIPBOARD_GUEST_FN_WRITE_DATA_CHUNK, 0),
+    CB_MAGIC_CLIPBOARD_WRITE_DIR        = VBOX_CLIPBOARD_CB_MAGIC_MAKE(VBOX_SHARED_CLIPBOARD_GUEST_FN_WRITE_DIR, 0),
+    CB_MAGIC_CLIPBOARD_WRITE_FILE_HDR   = VBOX_CLIPBOARD_CB_MAGIC_MAKE(VBOX_SHARED_CLIPBOARD_GUEST_FN_WRITE_FILE_HDR, 0),
+    CB_MAGIC_CLIPBOARD_WRITE_FILE_DATA  = VBOX_CLIPBOARD_CB_MAGIC_MAKE(VBOX_SHARED_CLIPBOARD_GUEST_FN_WRITE_FILE_DATA, 0),
+    CB_MAGIC_CLIPBOARD_WRITE_ERROR      = VBOX_CLIPBOARD_CB_MAGIC_MAKE(VBOX_SHARED_CLIPBOARD_GUEST_FN_WRITE_ERROR, 0)
 };
 
 /**
@@ -443,6 +443,14 @@ typedef struct _VBOXCLIPBOARDERRORDATA
 bool VBoxSvcClipboardGetHeadless(void);
 bool VBoxSvcClipboardLock(void);
 void VBoxSvcClipboardUnlock(void);
+
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+int VBoxSvcClipboardURIReadDataHdr(uint32_t cParms, VBOXHGCMSVCPARM paParms[], PVBOXCLIPBOARDDATAHDR pDataHdr);
+int VBoxSvcClipboardURIReadDataChunk(uint32_t cParms, VBOXHGCMSVCPARM paParms[], PVBOXCLIPBOARDDATACHUNK pDataChunk);
+int VBoxSvcClipboardURIReadDir(uint32_t cParms, VBOXHGCMSVCPARM paParms[], PVBOXCLIPBOARDDIRDATA pDirData);
+int VBoxSvcClipboardURIReadFileHdr(uint32_t cParms, VBOXHGCMSVCPARM paParms[], PVBOXCLIPBOARDFILEHDR pFileHdr);
+int VBoxSvcClipboardURIReadFileData(uint32_t cParms, VBOXHGCMSVCPARM paParms[], PVBOXCLIPBOARDFILEDATA pFileData);
+#endif
 
 #endif /* !VBOX_INCLUDED_HostServices_VBoxClipboardSvc_h */
 

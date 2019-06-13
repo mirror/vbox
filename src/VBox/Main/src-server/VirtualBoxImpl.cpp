@@ -3425,7 +3425,7 @@ HRESULT VirtualBox::i_onClipboardAreaRegister(const std::vector<com::Utf8Str> &a
     {
         try
         {
-            if (m->SharedClipboard.mapClipboardAreas.size() >= m->SharedClipboard.uMaxClipboardAreas)
+            if (m->SharedClipboard.mapClipboardAreas.size() < m->SharedClipboard.uMaxClipboardAreas)
             {
                 for (unsigned uTries = 0; uTries < 32; uTries++) /* Don't try too hard. */
                 {

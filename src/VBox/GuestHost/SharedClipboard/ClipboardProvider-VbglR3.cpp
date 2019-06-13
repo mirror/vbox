@@ -64,8 +64,8 @@ int SharedClipboardProviderVbglR3::WriteDataHdr(const PVBOXCLIPBOARDDATAHDR pDat
     return rc;
 }
 
-int SharedClipboardProviderVbglR3::ReadMetaData(const PVBOXCLIPBOARDDATAHDR pDataHdr, void *pvMeta, uint32_t cbMeta,
-                                                uint32_t *pcbRead, uint32_t fFlags /* = 0 */)
+int SharedClipboardProviderVbglR3::ReadDataChunkk(const PVBOXCLIPBOARDDATAHDR pDataHdr, void *pvChunk, uint32_t cbChunk,
+                                                  uint32_t *pcbRead, uint32_t fFlags /* = 0 */)
 {
     RT_NOREF(fFlags);
 
@@ -74,12 +74,12 @@ int SharedClipboardProviderVbglR3::ReadMetaData(const PVBOXCLIPBOARDDATAHDR pDat
     int rc = VINF_SUCCESS;
 
     uint32_t cbReadTotal = 0;
-    uint32_t cbToRead = RT_MIN(pDataHdr->cbMeta, cbMeta);
+    uint32_t cbToRead = RT_MIN(pDataHdr->cbMeta, cbChunk);
 
     while (cbToRead)
     {
         uint32_t cbRead;
-        rc = VbglR3ClipboardReadMetaData(m_uClientID, pDataHdr, (uint8_t *)pvMeta + cbReadTotal, cbToRead, &cbRead);
+        rc = VbglR3ClipboardReadMetaData(m_uClientID, pDataHdr, (uint8_t *)pvChunk + cbReadTotal, cbToRead, &cbRead);
         if (RT_FAILURE(rc))
             break;
 
@@ -98,8 +98,8 @@ int SharedClipboardProviderVbglR3::ReadMetaData(const PVBOXCLIPBOARDDATAHDR pDat
     return rc;
 }
 
-int SharedClipboardProviderVbglR3::WriteMetaData(const PVBOXCLIPBOARDDATAHDR pDataHdr, const void *pvMeta, uint32_t cbMeta,
-                                                 uint32_t *pcbWritten, uint32_t fFlags /* = 0 */)
+int SharedClipboardProviderVbglR3::WriteDataChunk(const PVBOXCLIPBOARDDATAHDR pDataHdr, const void *pvChunk, uint32_t cbChunk,
+                                                  uint32_t *pcbWritten, uint32_t fFlags /* = 0 */)
 {
     RT_NOREF(fFlags);
 
@@ -108,12 +108,12 @@ int SharedClipboardProviderVbglR3::WriteMetaData(const PVBOXCLIPBOARDDATAHDR pDa
     int rc = VINF_SUCCESS;
 
     uint32_t cbWrittenTotal = 0;
-    uint32_t cbToWrite      = RT_MIN(pDataHdr->cbMeta, cbMeta);
+    uint32_t cbToWrite      = RT_MIN(pDataHdr->cbMeta, cbChunk);
 
     while (cbToWrite)
     {
         uint32_t cbWritten;
-        rc = VbglR3ClipboardWriteMetaData(m_uClientID, pDataHdr, (uint8_t *)pvMeta + cbWrittenTotal, cbToWrite, &cbWritten);
+        rc = VbglR3ClipboardWriteMetaData(m_uClientID, pDataHdr, (uint8_t *)pvChunk + cbWrittenTotal, cbToWrite, &cbWritten);
         if (RT_FAILURE(rc))
             break;
 
