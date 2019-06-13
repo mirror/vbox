@@ -182,6 +182,10 @@ private:
     void recacheFromActualUsage(const CMediumMap &currentCMediums,
                                 const QList<QUuid> &currentCMediumIDs);
 #else /* VBOX_GUI_WITH_NEW_MEDIA_EVENTS */
+    /** Parses incoming @a comMachine, enumerating ONLY KNOWN media it has.
+      * @param  result  Brings the list of previously enumerated media
+      *                 IDs to be appended with newly enumerated. */
+    void parseMachine(CMachine comMachine, QList<QUuid> &result);
     /** Parses incoming @a comAttachment, enumerating the media it has attached.
       * @param  result  Brings the list of previously enumerated media
       *                 IDs to be appended with newly enumerated. */
