@@ -284,7 +284,8 @@ class UISoftKeyboardLayout
 {
 
 public:
-
+    UISoftKeyboardLayout()
+        :m_pPhysicalLayout(0){}
     /** The physical layout used by this layout. */
     UISoftKeyboardPhysicalLayout *m_pPhysicalLayout;
     QString m_strName;
@@ -384,7 +385,6 @@ private:
     int   m_iTopMargin;
     int   m_iRightMargin;
     int   m_iBottomMargin;
-    bool  m_fInKeyCapEditMode;
 
     QMenu   *m_pContextMenu;
     QAction *m_pShowPositionsAction;
@@ -433,13 +433,16 @@ public:
         QString m_strAltGr;
     };
 
-    bool  parseFile(const QString &strFileName, UISoftKeyboardLayout &layout, QUuid &physicalLayoutUid);
+    bool  parseFile(const QString &strFileName);
 
 private:
 
-
-    void  parseKey(QMap<int, KeyCaptions> &keyCapMap);
+    void  parseKey();
     QXmlStreamReader m_xmlReader;
+    /** Map key is the key position and the value is the captions of the key. */
+    QMap<int, KeyCaptions> m_keyCapMap;
+    QUuid m_physicalLayoutUid;
+    QString m_strName;
 };
 
 /*********************************************************************************************************************************
@@ -979,7 +982,6 @@ UISoftKeyboardWidget::UISoftKeyboardWidget(QWidget *pParent /* = 0 */)
     , m_iTopMargin(10)
     , m_iRightMargin(10)
     , m_iBottomMargin(10)
-    , m_fInKeyCapEditMode(false)
     , m_pContextMenu(0)
     , m_pShowPositionsAction(0)
     , m_pLayoutEditModeToggleAction(0)
@@ -1516,29 +1518,29 @@ bool UISoftKeyboardWidget::loadKeyboardLayout(const QString &strLayoutName)
     if (strLayoutName.isEmpty())
         return false;
 
-    m_layouts.append(UISoftKeyboardLayout());
-    UISoftKeyboardLayout &newLayout = m_layouts.back();
     UIKeyboardLayoutReader keyboardLayoutReader;
-    QUuid physicalLayoutUid;
-    if (!keyboardLayoutReader.parseFile(strLayoutName, newLayout, physicalLayoutUid))
-    {
-        m_layouts.removeLast();
-        return false;
-    }
-    return true;
-//     //const QMap<int, QString> &keyCapMap = keyCapReader.keyCapMap();
 
-//     //for (int i = 0; i < m_rows.size(); ++i)
-//     {
-//         //QVector<UISoftKeyboardKey> &keys = m_rows[i].keys();
-//         // for (int j = 0; j < keys.size(); ++j)
-//         // {
-//         //     UISoftKeyboardKey &key = keys[j];
-//         //     if (keyCapMap.contains(key.position()))
-//         //         key.setKeyCap(keyCapMap[key.position()]);
-//         // }
-//     }
-//     emit sigKeyCapChange(strFileName);
+    if (!keyboardLayoutReader.parseFile(strLayoutName))
+        return false;
+
+    // m_layouts.append(UISoftKeyboardLayout());
+    // UISoftKeyboardLayout &newLayout = m_layouts.back();
+
+
+    /* Search for the physical layout among the one stored in m_pPhysicalLayout: */
+    // for (int i = 0; i < m_physicalLayouts.size(); ++i)
+    // {
+    //     if (physicalLayoutUid == m_physicalLayouts[i].m_uId)
+    //         newLayout.m_pPhysicalLayout = &(m_physicalLayouts[i]);
+    // }
+
+    // /* If no pyhsical layout with the UUID the keyboard layout refers is found then cancel loading the keyboard layout: */
+    // if (!newLayout.m_pPhysicalLayout)
+    // {
+    //     m_layouts.removeLast();
+    //     return false;
+    // }
+    return true;
 
 }
 
@@ -1855,7 +1857,7 @@ QVector<QPoint> UIPhysicalLayoutReader::computeKeyVertices(const UISoftKeyboardK
 *   UIKeyboardLayoutReader implementation.                                                                                  *
 *********************************************************************************************************************************/
 
-bool UIKeyboardLayoutReader::parseFile(const QString &strFileName, UISoftKeyboardLayout &layout, QUuid &physicalLayoutUid)
+bool UIKeyboardLayoutReader::parseFile(const QString &strFileName)
 {
     QFile xmlFile(strFileName);
     if (!xmlFile.exists())
@@ -1869,24 +1871,21 @@ bool UIKeyboardLayoutReader::parseFile(const QString &strFileName, UISoftKeyboar
     if (!m_xmlReader.readNextStartElement() || m_xmlReader.name() != "layout")
         return false;
 
-    /** Map key is the key position and the value is the captions of the key. */
-    QMap<int, KeyCaptions> keyCapMap;
-
     while (m_xmlReader.readNextStartElement())
     {
         if (m_xmlReader.name() == "key")
-            parseKey(keyCapMap);
+            parseKey();
         else if (m_xmlReader.name() == "name")
-            layout.m_strName = m_xmlReader.readElementText();
+            m_strName = m_xmlReader.readElementText();
         else if (m_xmlReader.name() == "physicallayoutid")
-            physicalLayoutUid = QUuid(m_xmlReader.readElementText());
+            m_physicalLayoutUid = QUuid(m_xmlReader.readElementText());
         else
             m_xmlReader.skipCurrentElement();
     }
     return true;
 }
 
-void  UIKeyboardLayoutReader::parseKey(QMap<int, KeyCaptions> &keyCapMap)
+void  UIKeyboardLayoutReader::parseKey()
 {
     KeyCaptions keyCaptions;
     int iKeyPosition = 0;
@@ -1903,7 +1902,7 @@ void  UIKeyboardLayoutReader::parseKey(QMap<int, KeyCaptions> &keyCapMap)
         else
             m_xmlReader.skipCurrentElement();
     }
-    keyCapMap.insert(iKeyPosition, keyCaptions);
+    m_keyCapMap.insert(iKeyPosition, keyCaptions);
 }
 
 /*********************************************************************************************************************************
