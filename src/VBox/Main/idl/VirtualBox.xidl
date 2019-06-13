@@ -12920,6 +12920,11 @@ and "VAR" for unsetting. -->
         <note>This method follows symbolic links by default at the moment, this
           may change in the future.</note>
 
+        <note>One idiosyncrasy of the current implementation is that you will NOT
+          get VBOX_E_OBJECT_NOT_FOUND returned here if the directory doesn't exist.
+          Instead the read function will fail with VBOX_E_IPRT_ERROR.  This will
+          be fixed soon.</note>
+
         <result name="VBOX_E_OBJECT_NOT_FOUND">
           Directory to open was not found.
         </result>

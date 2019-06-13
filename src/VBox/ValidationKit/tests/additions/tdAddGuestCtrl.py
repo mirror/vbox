@@ -1235,12 +1235,13 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         cFiles   = 0;    # Number of files read.
         cOthers  = 0;    # Other files.
 
-        #
+        ##
+        ## @todo r=bird: Unlike fileOpen, directoryOpen will not fail if the directory does not exist.
+        ##       This is of course a bug in the implementation, as it is documented to return
+        ##       VBOX_E_OBJECT_NOT_FOUND or VBOX_E_IPRT_ERROR!
+        ##
+
         # Open the directory:
-        #
-        # Note! Unlike fileOpen, directoryOpen will not fail if the directory does not exist.
-        #       Looks like it won't do nothing till you read from it.
-        #
         #reporter.log2('Directory="%s", filter="%s", fFlags="%s"' % (sCurDir, sFilter, fFlags));
         try:
             oCurDir = oGuestSession.directoryOpen(sCurDir, sFilter, fFlags);
@@ -1254,6 +1255,10 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 oFsObjInfo = oCurDir.read();
             except Exception as oXcpt:
                 if vbox.ComError.notEqual(oXcpt, vbox.ComError.VBOX_E_OBJECT_NOT_FOUND):
+                    ##
+                    ## @todo r=bird: Change this to reporter.errorXcpt() once directoryOpen() starts
+                    ##       working the way it is documented.
+                    ##
                     reporter.maybeErrXcpt(fIsError, 'Error reading directory "%s":' % (sCurDir,)); # See above why 'maybe'.
                     fRc = False;
                 #else: reporter.log2('\tNo more directory entries for "%s"' % (sCurDir,));

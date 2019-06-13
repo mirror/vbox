@@ -1130,21 +1130,21 @@ int GuestSession::i_directoryOpen(const GuestDirectoryOpenInfo &openInfo,
     /* Create the directory object. */
     HRESULT hr = pDirectory.createObject();
     if (FAILED(hr))
-        return VERR_COM_UNEXPECTED;
+        return Global::vboxStatusCodeFromCOM(hr);
 
     /* Register a new object ID. */
     uint32_t idObject;
-    int rc = i_objectRegister(pDirectory, SESSIONOBJECTTYPE_DIRECTORY, &idObject);
-    if (RT_FAILURE(rc))
+    int vrc = i_objectRegister(pDirectory, SESSIONOBJECTTYPE_DIRECTORY, &idObject);
+    if (RT_FAILURE(vrc))
     {
         pDirectory.setNull();
-        return rc;
+        return vrc;
     }
 
     Console *pConsole = mParent->i_getConsole();
     AssertPtr(pConsole);
 
-    int vrc = pDirectory->init(pConsole, this /* Parent */, idObject, openInfo);
+    vrc = pDirectory->init(pConsole, this /* Parent */, idObject, openInfo);
     if (RT_FAILURE(vrc))
         return vrc;
 
@@ -3425,7 +3425,7 @@ HRESULT GuestSession::directoryOpen(const com::Utf8Str &aPath, const com::Utf8St
     openInfo.mFilter = aFilter;
     openInfo.mFlags = fFlags;
 
-    ComObjPtr <GuestDirectory> pDirectory; int rcGuest;
+    ComObjPtr<GuestDirectory> pDirectory; int rcGuest;
     int vrc = i_directoryOpen(openInfo, pDirectory, &rcGuest);
     if (RT_SUCCESS(vrc))
     {

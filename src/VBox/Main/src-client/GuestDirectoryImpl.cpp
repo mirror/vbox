@@ -103,19 +103,20 @@ int GuestDirectory::init(Console *pConsole, GuestSession *pSession, ULONG aObjec
          * it later in subsequent read() calls.
          * Note: No guest rc available because operation is asynchronous.
          */
-        vrc = mData.mProcessTool.init(mSession, procInfo,
-                                      true /* Async */, NULL /* Guest rc */);
+        vrc = mData.mProcessTool.init(mSession, procInfo, true /* Async */, NULL /* Guest rc */);
+
+/** @todo r=bird: IGuest::directoryOpen need to fail if the directory doesn't
+ *        exist like it is documented to do.  It seems this async approach or
+ *        something is delaying such errors till GuestDirectory::read() is
+ *        called, which is clearly messed up.
+ */
     }
 
+    /* Confirm a successful initialization when it's the case. */
     if (RT_SUCCESS(vrc))
-    {
-        /* Confirm a successful initialization when it's the case. */
         autoInitSpan.setSucceeded();
-        return vrc;
-    }
     else
         autoInitSpan.setFailed();
-
     return vrc;
 }
 
