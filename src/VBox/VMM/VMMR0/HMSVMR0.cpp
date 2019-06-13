@@ -796,7 +796,7 @@ VMMR0DECL(int) SVMR0TermVM(PVM pVM)
 /**
  * Returns whether the VMCB Clean Bits feature is supported.
  *
- * @return @c true if supported, @c false otherwise.
+ * @returns @c true if supported, @c false otherwise.
  * @param   pVCpu       The cross context virtual CPU structure.
  */
 DECLINLINE(bool) hmR0SvmSupportsVmcbCleanBits(PVMCPU pVCpu)
@@ -816,7 +816,7 @@ DECLINLINE(bool) hmR0SvmSupportsVmcbCleanBits(PVMCPU pVCpu)
 /**
  * Returns whether the decode assists feature is supported.
  *
- * @return @c true if supported, @c false otherwise.
+ * @returns @c true if supported, @c false otherwise.
  * @param   pVCpu       The cross context virtual CPU structure.
  */
 DECLINLINE(bool) hmR0SvmSupportsDecodeAssists(PVMCPU pVCpu)
@@ -836,7 +836,7 @@ DECLINLINE(bool) hmR0SvmSupportsDecodeAssists(PVMCPU pVCpu)
 /**
  * Returns whether the NRIP_SAVE feature is supported.
  *
- * @return @c true if supported, @c false otherwise.
+ * @returns @c true if supported, @c false otherwise.
  * @param   pVCpu       The cross context virtual CPU structure.
  */
 DECLINLINE(bool) hmR0SvmSupportsNextRipSave(PVMCPU pVCpu)
