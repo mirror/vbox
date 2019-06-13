@@ -167,8 +167,7 @@ VMM_INT_DECL(void) HMNotifySvmNstGstVmexit(PVMCPU pVCpu, PCPUMCTX pCtx)
      * to the guest VMCB after the #VMEXIT.
      */
     CPUMImportGuestStateOnDemand(pVCpu, CPUMCTX_EXTRN_ALL);
-    AssertMsg(!(pVCpu->cpum.GstCtx.fExtrn & CPUMCTX_EXTRN_ALL),
-              ("fExtrn=%#RX64 fExtrnMbz=%#RX64\n", pVCpu->cpum.GstCtx.fExtrn, CPUMCTX_EXTRN_ALL));
+    CPUM_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_ALL);
     ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_ALL_GUEST);
 }
 # endif
