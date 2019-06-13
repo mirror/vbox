@@ -291,12 +291,12 @@ class tdTestExec(tdTestGuestCtrlBase):
     Specifies exactly one guest control execution test.
     Has a default timeout of 5 minutes (for safety).
     """
-    def __init__(self, sCmd = "", aArgs = None, aEnv = None, fFlags = None,             # pylint: disable=too-many-arguments
+    def __init__(self, sCmd = "", asArgs = None, aEnv = None, fFlags = None,             # pylint: disable=too-many-arguments
                  timeoutMS = 5 * 60 * 1000, sUser = None, sPassword = None, sDomain = None, fWaitForExit = True):
         tdTestGuestCtrlBase.__init__(self);
         self.oCreds = tdCtxCreds(sUser, sPassword, sDomain);
         self.sCmd = sCmd;
-        self.aArgs = aArgs if aArgs is not None else [sCmd,];
+        self.asArgs = asArgs if asArgs is not None else [sCmd,];
         self.aEnv = aEnv;
         self.fFlags = fFlags or [];
         self.timeoutMS = timeoutMS;
@@ -832,12 +832,12 @@ class tdTestUpdateAdditions(tdTestGuestCtrlBase):
     """
     Test updating the Guest Additions inside the guest.
     """
-    def __init__(self, sSrc = "", aArgs = None, fFlags = None,
+    def __init__(self, sSrc = "", asArgs = None, fFlags = None,
                  sUser = None, sPassword = None, sDomain = None):
         tdTestGuestCtrlBase.__init__(self);
         self.oCreds = tdCtxCreds(sUser, sPassword, sDomain);
         self.sSrc = sSrc;
-        self.aArgs = aArgs;
+        self.asArgs = asArgs;
         self.fFlags = fFlags;
 
 class tdTestResult(object):
@@ -919,7 +919,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         self.asTestsDef = \
         [
             'session_basic', 'session_env', 'session_file_ref', 'session_dir_ref', 'session_proc_ref', 'session_reboot',
-            'exec_basic', 'exec_errorlevel', 'exec_timeout',
+            'exec_basic', 'exec_timeout',
             'dir_create', 'dir_create_temp', 'dir_read',
             'file_remove', 'file_stat', 'file_read', 'file_write',
             'copy_to', 'copy_from',
@@ -1002,12 +1002,6 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         fSkip = 'exec_basic' not in self.asTests or fRc is False;
         if fSkip is False:
             fRc, oTxsSession = self.testGuestCtrlExec(oSession, oTxsSession, oTestVm);
-        reporter.testDone(fSkip);
-
-        reporter.testStart('Execution Error Levels');
-        fSkip = 'exec_errorlevel' not in self.asTests or fRc is False;
-        if fSkip is False:
-            fRc, oTxsSession = self.testGuestCtrlExecErrorLevel(oSession, oTxsSession, oTestVm);
         reporter.testDone(fSkip);
 
         reporter.testStart('Execution Timeouts');
@@ -1319,29 +1313,29 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 if     oTest.uExitStatus != oRes.uExitStatus \
                     or oTest.iExitCode   != oRes.iExitCode:
                     fRc = reporter.error('Test #%d (%s) failed: Got exit status + code %d,%d, expected %d,%d'
-                                         % (i, oTest.aArgs,  oTest.uExitStatus, oTest.iExitCode,
+                                         % (i, oTest.asArgs,  oTest.uExitStatus, oTest.iExitCode,
                                             oRes.uExitStatus, oRes.iExitCode));
 
                 # Compare test / result buffers on successful process execution.
                 if oTest.sBuf is not None and oRes.sBuf is not None:
                     if not utils.areBytesEqual(oTest.sBuf, oRes.sBuf):
                         fRc = reporter.error('Test #%d (%s) failed: Got buffer\n%s (%d bytes), expected\n%s (%d bytes)'
-                                             % (i, oTest.aArgs,
+                                             % (i, oTest.asArgs,
                                                 map(hex, map(ord, oTest.sBuf)), len(oTest.sBuf),
                                                 map(hex, map(ord, oRes.sBuf)),  len(oRes.sBuf)));
                     reporter.log2('Test #%d passed: Buffers match (%d bytes)' % (i, len(oRes.sBuf)));
                 elif oRes.sBuf and not oTest.sBuf:
                     fRc = reporter.error('Test #%d (%s) failed: Got no buffer data, expected\n%s (%dbytes)' %
-                                         (i, oTest.aArgs, map(hex, map(ord, oRes.sBuf)), len(oRes.sBuf),));
+                                         (i, oTest.asArgs, map(hex, map(ord, oRes.sBuf)), len(oRes.sBuf),));
 
                 if oRes.cbStdOut is not None and oRes.cbStdOut != oTest.cbStdOut:
                     fRc = reporter.error('Test #%d (%s) failed: Got %d bytes of stdout data, expected %d'
-                                         % (i, oTest.aArgs, oTest.cbStdOut, oRes.cbStdOut));
+                                         % (i, oTest.asArgs, oTest.cbStdOut, oRes.cbStdOut));
                 if oRes.cbStdErr is not None and oRes.cbStdErr != oTest.cbStdErr:
                     fRc = reporter.error('Test #%d (%s) failed: Got %d bytes of stderr data, expected %d'
-                                         % (i, oTest.aArgs, oTest.cbStdErr, oRes.cbStdErr));
+                                         % (i, oTest.asArgs, oTest.cbStdErr, oRes.cbStdErr));
         else:
-            fRc = reporter.error('Test #%d (%s) failed: Got %s, expected %s' % (i, oTest.aArgs, fRcExec, oRes.fRc));
+            fRc = reporter.error('Test #%d (%s) failed: Got %s, expected %s' % (i, oTest.asArgs, fRcExec, oRes.fRc));
         return fRc;
 
     def gctrlExecute(self, oTest, oGuestSession, fIsError):
@@ -1372,16 +1366,16 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         # Start the process:
         #
         reporter.log2('Executing sCmd=%s, fFlags=%s, timeoutMS=%d, asArgs=%s, asEnv=%s'
-                      % (oTest.sCmd, oTest.fFlags, oTest.timeoutMS, oTest.aArgs, oTest.aEnv,));
+                      % (oTest.sCmd, oTest.fFlags, oTest.timeoutMS, oTest.asArgs, oTest.aEnv,));
         try:
             oProcess = oGuestSession.processCreate(oTest.sCmd,
-                                                   oTest.aArgs if self.oTstDrv.fpApiVer >= 5.0 else oTest.aArgs[1:],
+                                                   oTest.asArgs if self.oTstDrv.fpApiVer >= 5.0 else oTest.asArgs[1:],
                                                    oTest.aEnv, oTest.fFlags, oTest.timeoutMS);
         except:
-            reporter.maybeErrXcpt(fIsError, 'asArgs=%s' % (oTest.aArgs,));
+            reporter.maybeErrXcpt(fIsError, 'asArgs=%s' % (oTest.asArgs,));
             return False;
         if oProcess is None:
-            return reporter.error('oProcess is None! (%s)' % (oTest.aArgs,));
+            return reporter.error('oProcess is None! (%s)' % (oTest.asArgs,));
 
         #time.sleep(5); # try this if you want to see races here.
 
@@ -1392,14 +1386,14 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         try:
             eWaitResult = oProcess.waitForArray(aeWaitFor, oTest.timeoutMS);
         except:
-            reporter.maybeErrXcpt(fIsError, 'waitforArray failed for asArgs=%s' % (oTest.aArgs,));
+            reporter.maybeErrXcpt(fIsError, 'waitforArray failed for asArgs=%s' % (oTest.asArgs,));
             fRc = False;
         else:
             try:
                 eStatus = oProcess.status;
                 iPid    = oProcess.PID;
             except:
-                fRc = reporter.errorXcpt('asArgs=%s' % (oTest.aArgs,));
+                fRc = reporter.errorXcpt('asArgs=%s' % (oTest.asArgs,));
             else:
                 reporter.log2('Wait result returned: %d, current process status is: %d' % (eWaitResult, eStatus,));
 
@@ -1431,7 +1425,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                             except: pass;
                             break;
                         except:
-                            fRc = reporter.errorXcpt('asArgs=%s' % (oTest.aArgs,));
+                            fRc = reporter.errorXcpt('asArgs=%s' % (oTest.asArgs,));
                             break;
                         reporter.log2('Wait returned: %d' % (eWaitResult,));
 
@@ -1463,7 +1457,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                                            vboxcon.ProcessWaitResult_Error,
                                            vboxcon.ProcessWaitResult_Timeout,):
                             try:    eStatus = oProcess.status;
-                            except: fRc = reporter.errorXcpt('asArgs=%s' % (oTest.aArgs,));
+                            except: fRc = reporter.errorXcpt('asArgs=%s' % (oTest.asArgs,));
                             reporter.log2('Process (PID %d) reported terminate/error/timeout: %d, status: %d'
                                           % (iPid, eWaitResult, eStatus,));
                             break;
@@ -1472,7 +1466,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                     _, oTest.cbStdOut, oTest.cbStdErr = acbFdOut;
 
                     try:    eStatus = oProcess.status;
-                    except: fRc = reporter.errorXcpt('asArgs=%s' % (oTest.aArgs,));
+                    except: fRc = reporter.errorXcpt('asArgs=%s' % (oTest.asArgs,));
                     reporter.log2('Final process status (PID %d) is: %d' % (iPid, eStatus));
                     reporter.log2('Process (PID %d) %d stdout, %d stderr' % (iPid, oTest.cbStdOut, oTest.cbStdErr));
 
@@ -1483,7 +1477,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             oTest.uExitStatus = oProcess.status;
             oTest.iExitCode   = oProcess.exitCode;
         except:
-            fRc = reporter.errorXcpt('asArgs=%s' % (oTest.aArgs,));
+            fRc = reporter.errorXcpt('asArgs=%s' % (oTest.asArgs,));
         reporter.log2('Process (PID %d) has exit code: %d; status: %d ' % (iPid, oTest.iExitCode, oTest.uExitStatus));
         return fRc;
 
@@ -1866,7 +1860,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         """
 
         sCmd = self.getGuestSystemShell(oTestVm);
-        aArgs = [sCmd,];
+        asArgs = [sCmd,];
 
         # Use credential defaults.
         oCreds = tdCtxCreds();
@@ -1900,7 +1894,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         for i in xrange(0, cStaleProcs):
             try:
                 oGuestSession.processCreate(sCmd,
-                                            aArgs if self.oTstDrv.fpApiVer >= 5.0 else aArgs[1:], [],
+                                            asArgs if self.oTstDrv.fpApiVer >= 5.0 else asArgs[1:], [],
                                             [ vboxcon.ProcessCreateFlag_WaitForStdOut ], \
                                             30 * 1000);
                 # Note: Use a timeout in the call above for not letting the stale processes
@@ -1921,14 +1915,14 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             # Fire off non-stale processes and wait for termination.
             #
             if oTestVm.isWindows() or oTestVm.isOS2():
-                aArgs = [ sCmd, '/C', 'dir', '/S', self.getGuestSystemDir(oTestVm), ];
+                asArgs = [ sCmd, '/C', 'dir', '/S', self.getGuestSystemDir(oTestVm), ];
             else:
-                aArgs = [ sCmd, '-c', 'ls -la ' + self.getGuestSystemDir(oTestVm), ];
+                asArgs = [ sCmd, '-c', 'ls -la ' + self.getGuestSystemDir(oTestVm), ];
             reporter.log2('Starting non-stale processes...');
             aoProcesses = [];
             for i in xrange(0, cStaleProcs):
                 try:
-                    oCurProc = oGuestSession.processCreate(sCmd, aArgs if self.oTstDrv.fpApiVer >= 5.0 else aArgs[1:],
+                    oCurProc = oGuestSession.processCreate(sCmd, asArgs if self.oTstDrv.fpApiVer >= 5.0 else asArgs[1:],
                                                            [], [], 0); # Infinite timeout.
                     aoProcesses.append(oCurProc);
                 except:
@@ -1963,14 +1957,14 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             # Fire off non-stale blocking processes which are terminated via terminate().
             #
             if oTestVm.isWindows() or oTestVm.isOS2():
-                aArgs = [ sCmd, '/C', 'pause'];
+                asArgs = [ sCmd, '/C', 'pause'];
             else:
-                aArgs = [ sCmd ];
+                asArgs = [ sCmd ];
             reporter.log2('Starting blocking processes...');
             aoProcesses = [];
             for i in xrange(0, cStaleProcs):
                 try:
-                    oCurProc = oGuestSession.processCreate(sCmd, aArgs if self.oTstDrv.fpApiVer >= 5.0 else aArgs[1:],
+                    oCurProc = oGuestSession.processCreate(sCmd, asArgs if self.oTstDrv.fpApiVer >= 5.0 else asArgs[1:],
                                                            [],  [], 30 * 1000);
                     # Note: Use a timeout in the call above for not letting the stale processes
                     #       hanging around forever.  This can happen if the installed Guest Additions
@@ -2013,6 +2007,8 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
         # Paths:
         sVBoxControl    = None; ## @todo Get path of installed Guest Additions. Later.
+        sShell          = self.getGuestSystemShell(oTestVm);
+        sShellOpt       = '/C' if oTestVm.isWindows() or oTestVm.isOS2() else '-c';
         sSystemDir      = self.getGuestSystemDir(oTestVm);
         sFileForReading = self.getGuestSystemFileForReading(oTestVm);
         if oTestVm.isWindows() or oTestVm.isOS2():
@@ -2044,46 +2040,49 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             #[ tdTestExec(sCmd = "CON", tdTestResultExec() ],
         ];
 
+        atExec = [];
         if oTestVm.isWindows() or oTestVm.isOS2():
-            atExec = [
+            atExec += [
                 # Basic execution.
-                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'dir', '/S', sSystemDir ]),
+                [ tdTestExec(sCmd = sImageOut, asArgs = [ sImageOut, '/C', 'dir', '/S', sSystemDir ]),
                   tdTestResultExec(fRc = True) ],
-                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'dir', '/S', sFileForReading ]),
+                [ tdTestExec(sCmd = sImageOut, asArgs = [ sImageOut, '/C', 'dir', '/S', sFileForReading ]),
                   tdTestResultExec(fRc = True) ],
-                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'dir', '/S', sSystemDir + '\\nonexist.dll' ]),
+                [ tdTestExec(sCmd = sImageOut, asArgs = [ sImageOut, '/C', 'dir', '/S', sSystemDir + '\\nonexist.dll' ]),
                   tdTestResultExec(fRc = True, iExitCode = 1) ],
-                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'dir', '/S', '/wrongparam' ]),
+                [ tdTestExec(sCmd = sImageOut, asArgs = [ sImageOut, '/C', 'dir', '/S', '/wrongparam' ]),
+                  tdTestResultExec(fRc = True, iExitCode = 1) ],
+                [ tdTestExec(sCmd = sShell, asArgs = [ sShell, sShellOpt, 'wrongcommand' ]),
                   tdTestResultExec(fRc = True, iExitCode = 1) ],
                 # StdOut.
-                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'dir', '/S', sSystemDir ]),
+                [ tdTestExec(sCmd = sImageOut, asArgs = [ sImageOut, '/C', 'dir', '/S', sSystemDir ]),
                   tdTestResultExec(fRc = True) ],
-                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'dir', '/S', 'stdout-non-existing' ]),
+                [ tdTestExec(sCmd = sImageOut, asArgs = [ sImageOut, '/C', 'dir', '/S', 'stdout-non-existing' ]),
                   tdTestResultExec(fRc = True, iExitCode = 1) ],
                 # StdErr.
-                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'dir', '/S', sSystemDir ]),
+                [ tdTestExec(sCmd = sImageOut, asArgs = [ sImageOut, '/C', 'dir', '/S', sSystemDir ]),
                   tdTestResultExec(fRc = True) ],
-                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'dir', '/S', 'stderr-non-existing' ]),
+                [ tdTestExec(sCmd = sImageOut, asArgs = [ sImageOut, '/C', 'dir', '/S', 'stderr-non-existing' ]),
                   tdTestResultExec(fRc = True, iExitCode = 1) ],
                 # StdOut + StdErr.
-                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'dir', '/S', sSystemDir ]),
+                [ tdTestExec(sCmd = sImageOut, asArgs = [ sImageOut, '/C', 'dir', '/S', sSystemDir ]),
                   tdTestResultExec(fRc = True) ],
-                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'dir', '/S', 'stdouterr-non-existing' ]),
+                [ tdTestExec(sCmd = sImageOut, asArgs = [ sImageOut, '/C', 'dir', '/S', 'stdouterr-non-existing' ]),
                   tdTestResultExec(fRc = True, iExitCode = 1) ],
             ];
             # atExec.extend([
                 # FIXME: Failing tests.
                 # Environment variables.
-                # [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'set', 'TEST_NONEXIST' ],
+                # [ tdTestExec(sCmd = sImageOut, asArgs = [ sImageOut, '/C', 'set', 'TEST_NONEXIST' ],
                 #   tdTestResultExec(fRc = True, iExitCode = 1) ]
-                # [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'set', 'windir' ],
+                # [ tdTestExec(sCmd = sImageOut, asArgs = [ sImageOut, '/C', 'set', 'windir' ],
                 #              fFlags = [ vboxcon.ProcessCreateFlag_WaitForStdOut, vboxcon.ProcessCreateFlag_WaitForStdErr ]),
                 #   tdTestResultExec(fRc = True, sBuf = 'windir=C:\\WINDOWS\r\n') ],
-                # [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'set', 'TEST_FOO' ],
+                # [ tdTestExec(sCmd = sImageOut, asArgs = [ sImageOut, '/C', 'set', 'TEST_FOO' ],
                 #              aEnv = [ 'TEST_FOO=BAR' ],
                 #              fFlags = [ vboxcon.ProcessCreateFlag_WaitForStdOut, vboxcon.ProcessCreateFlag_WaitForStdErr ]),
                 #   tdTestResultExec(fRc = True, sBuf = 'TEST_FOO=BAR\r\n') ],
-                # [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'set', 'TEST_FOO' ],
+                # [ tdTestExec(sCmd = sImageOut, asArgs = [ sImageOut, '/C', 'set', 'TEST_FOO' ],
                 #              aEnv = [ 'TEST_FOO=BAR', 'TEST_BAZ=BAR' ],
                 #              fFlags = [ vboxcon.ProcessCreateFlag_WaitForStdOut, vboxcon.ProcessCreateFlag_WaitForStdErr ]),
                 #   tdTestResultExec(fRc = True, sBuf = 'TEST_FOO=BAR\r\n') ]
@@ -2092,46 +2091,48 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 ## @todo Add task which gets killed at some random time while letting the guest output something.
             #];
         else:
-            atExec = [
+            atExec += [
                 # Basic execution.
-                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '-R', sSystemDir ]),
+                [ tdTestExec(sCmd = sImageOut, asArgs = [ sImageOut, '-R', sSystemDir ]),
                   tdTestResultExec(fRc = True, iExitCode = 1) ],
-                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, sFileForReading ]),
+                [ tdTestExec(sCmd = sImageOut, asArgs = [ sImageOut, sFileForReading ]),
                   tdTestResultExec(fRc = True) ],
-                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '--wrong-parameter' ]),
+                [ tdTestExec(sCmd = sImageOut, asArgs = [ sImageOut, '--wrong-parameter' ]),
                   tdTestResultExec(fRc = True, iExitCode = 2) ],
-                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/non/existent' ]),
+                [ tdTestExec(sCmd = sImageOut, asArgs = [ sImageOut, '/non/existent' ]),
                   tdTestResultExec(fRc = True, iExitCode = 2) ],
+                [ tdTestExec(sCmd = sShell, asArgs = [ sShell, sShellOpt, 'wrongcommand' ]),
+                  tdTestResultExec(fRc = True, iExitCode = 127) ],
                 # StdOut.
-                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, sSystemDir ]),
+                [ tdTestExec(sCmd = sImageOut, asArgs = [ sImageOut, sSystemDir ]),
                   tdTestResultExec(fRc = True) ],
-                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, 'stdout-non-existing' ]),
+                [ tdTestExec(sCmd = sImageOut, asArgs = [ sImageOut, 'stdout-non-existing' ]),
                   tdTestResultExec(fRc = True, iExitCode = 2) ],
                 # StdErr.
-                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, sSystemDir ]),
+                [ tdTestExec(sCmd = sImageOut, asArgs = [ sImageOut, sSystemDir ]),
                   tdTestResultExec(fRc = True) ],
-                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, 'stderr-non-existing' ]),
+                [ tdTestExec(sCmd = sImageOut, asArgs = [ sImageOut, 'stderr-non-existing' ]),
                   tdTestResultExec(fRc = True, iExitCode = 2) ],
                 # StdOut + StdErr.
-                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, sSystemDir ]),
+                [ tdTestExec(sCmd = sImageOut, asArgs = [ sImageOut, sSystemDir ]),
                   tdTestResultExec(fRc = True) ],
-                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, 'stdouterr-non-existing' ]),
+                [ tdTestExec(sCmd = sImageOut, asArgs = [ sImageOut, 'stdouterr-non-existing' ]),
                   tdTestResultExec(fRc = True, iExitCode = 2) ],
             ];
             # atExec.extend([
                 # FIXME: Failing tests.
                 # Environment variables.
-                # [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'set', 'TEST_NONEXIST' ],
+                # [ tdTestExec(sCmd = sImageOut, asArgs = [ sImageOut, '/C', 'set', 'TEST_NONEXIST' ],
                 #   tdTestResultExec(fRc = True, iExitCode = 1) ]
-                # [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'set', 'windir' ],
+                # [ tdTestExec(sCmd = sImageOut, asArgs = [ sImageOut, '/C', 'set', 'windir' ],
                 #
                 #              fFlags = [ vboxcon.ProcessCreateFlag_WaitForStdOut, vboxcon.ProcessCreateFlag_WaitForStdErr ]),
                 #   tdTestResultExec(fRc = True, sBuf = 'windir=C:\\WINDOWS\r\n') ],
-                # [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'set', 'TEST_FOO' ],
+                # [ tdTestExec(sCmd = sImageOut, asArgs = [ sImageOut, '/C', 'set', 'TEST_FOO' ],
                 #              aEnv = [ 'TEST_FOO=BAR' ],
                 #              fFlags = [ vboxcon.ProcessCreateFlag_WaitForStdOut, vboxcon.ProcessCreateFlag_WaitForStdErr ]),
                 #   tdTestResultExec(fRc = True, sBuf = 'TEST_FOO=BAR\r\n') ],
-                # [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'set', 'TEST_FOO' ],
+                # [ tdTestExec(sCmd = sImageOut, asArgs = [ sImageOut, '/C', 'set', 'TEST_FOO' ],
                 #              aEnv = [ 'TEST_FOO=BAR', 'TEST_BAZ=BAR' ],
                 #              fFlags = [ vboxcon.ProcessCreateFlag_WaitForStdOut, vboxcon.ProcessCreateFlag_WaitForStdErr ]),
                 #   tdTestResultExec(fRc = True, sBuf = 'TEST_FOO=BAR\r\n') ]
@@ -2140,11 +2141,15 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 ## @todo Add task which gets killed at some random time while letting the guest output something.
             #];
 
+        #
+        for iExitCode in xrange(0, 127):
+            atExec.append([ tdTestExec(sCmd = sShell, asArgs = [ sShell, sShellOpt, 'exit %s' % iExitCode ]),
+                            tdTestResultExec(fRc = True, iExitCode = iExitCode) ]);
+
         if sVBoxControl:
             # Paths with spaces on windows.
-            atExec.append([ tdTestExec(sCmd = sVBoxControl, aArgs = [ sVBoxControl, 'version' ]),
+            atExec.append([ tdTestExec(sCmd = sVBoxControl, asArgs = [ sVBoxControl, 'version' ]),
                            tdTestResultExec(fRc = True) ]);
-
 
         # Build up the final test array for the first batch.
         atTests = atInvalid + atExec;
@@ -2299,12 +2304,12 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         # Create a process.
         #
         sImage = self.getGuestSystemShell(oTestVm);
-        aArgs  = [ sImage, ];
+        asArgs  = [ sImage, ];
         aEnv   = [];
         fFlags = [];
         try:
             oGuestProcess = oGuestSession.processCreate(sImage,
-                                                        aArgs if self.oTstDrv.fpApiVer >= 5.0 else aArgs[1:], aEnv, fFlags,
+                                                        asArgs if self.oTstDrv.fpApiVer >= 5.0 else asArgs[1:], aEnv, fFlags,
                                                         30 * 1000);
         except:
             fRc = reporter.error('Failed to start shell process (%s)' % (sImage,));
@@ -2367,186 +2372,125 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
         return (fRc, oTxsSession);
 
-    def testGuestCtrlExecErrorLevel(self, oSession, oTxsSession, oTestVm):
-        """
-        Tests handling of error levels from started guest processes.
-        """
-
-        sImage = self.getGuestSystemShell(oTestVm);
-
-        aaTests = [];
-        if oTestVm.isWindows():
-            sSystem32 = self.getGuestSystemDir(oTestVm);
-            aaTests.extend([
-                # Simple.
-                [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'wrongcommand' ]),
-                  tdTestResultExec(fRc = True, iExitCode = 1) ],
-                [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'exit', '22' ]),
-                  tdTestResultExec(fRc = True, iExitCode = 22) ],
-                [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'set', 'ERRORLEVEL=234' ]),
-                  tdTestResultExec(fRc = True, iExitCode = 0) ],
-                [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'echo', '%WINDIR%' ]),
-                  tdTestResultExec(fRc = True, iExitCode = 0) ],
-                [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'set', 'ERRORLEVEL=0' ]),
-                  tdTestResultExec(fRc = True, iExitCode = 0) ],
-                [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'dir', sSystem32 ]),
-                  tdTestResultExec(fRc = True, iExitCode = 0) ],
-                [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'dir', sSystem32 + '\\kernel32.dll' ]),
-                  tdTestResultExec(fRc = True, iExitCode = 0) ],
-                [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'dir', 'c:\\nonexisting-file' ]),
-                  tdTestResultExec(fRc = True, iExitCode = 1) ],
-                [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'dir', 'c:\\nonexisting-dir\\' ]),
-                  tdTestResultExec(fRc = True, iExitCode = 1) ]
-                # FIXME: Failing tests.
-                # With stdout.
-                # [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'dir', sSystem32 ],
-                #              fFlags = [ vboxcon.ProcessCreateFlag_WaitForStdOut ]),
-                #   tdTestResultExec(fRc = True, iExitCode = 0) ],
-                # [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'dir', 'c:\\nonexisting-file' ],
-                #              fFlags = [ vboxcon.ProcessCreateFlag_WaitForStdOut ]),
-                #   tdTestResultExec(fRc = True, iExitCode = 1) ],
-                # [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'dir', 'c:\\nonexisting-dir\\' ],
-                #              fFlags = [ vboxcon.ProcessCreateFlag_WaitForStdOut ]),
-                #   tdTestResultExec(fRc = True, iExitCode = 1) ],
-                # With stderr.
-                # [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'dir', sSystem32],
-                #              fFlags = [ vboxcon.ProcessCreateFlag_WaitForStdErr ]),
-                #   tdTestResultExec(fRc = True, iExitCode = 0) ],
-                # [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'dir', 'c:\\nonexisting-file' ],
-                #              fFlags = [ vboxcon.ProcessCreateFlag_WaitForStdErr ]),
-                #   tdTestResultExec(fRc = True, iExitCode = 1) ],
-                # [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'dir', 'c:\\nonexisting-dir\\' ],
-                #              fFlags = [ vboxcon.ProcessCreateFlag_WaitForStdErr ]),
-                #   tdTestResultExec(fRc = True, iExitCode = 1) ],
-                # With stdout/stderr.
-                # [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'dir', sSystem32 ],
-                #              fFlags = [ vboxcon.ProcessCreateFlag_WaitForStdOut, vboxcon.ProcessCreateFlag_WaitForStdErr ]),
-                #   tdTestResultExec(fRc = True, iExitCode = 0) ],
-                # [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'dir', 'c:\\nonexisting-file' ],
-                #              fFlags = [ vboxcon.ProcessCreateFlag_WaitForStdOut, vboxcon.ProcessCreateFlag_WaitForStdErr ]),
-                #   tdTestResultExec(fRc = True, iExitCode = 1) ],
-                # [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'dir', 'c:\\nonexisting-dir\\' ],
-                #              fFlags = [ vboxcon.ProcessCreateFlag_WaitForStdOut, vboxcon.ProcessCreateFlag_WaitForStdErr ]),
-                #   tdTestResultExec(fRc = True, iExitCode = 1) ]
-                ## @todo Test stdin!
-            ]);
-        elif oTestVm.isLinux():
-            aaTests.extend([
-                # Simple.
-                [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '-c', 'wrongcommand' ]),
-                  tdTestResultExec(fRc = True, iExitCode = 127) ],
-                [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '-c', 'exit 22' ]),
-                  tdTestResultExec(fRc = True, iExitCode = 22) ],
-                [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '-c', 'echo $PWD' ]),
-                  tdTestResultExec(fRc = True, iExitCode = 0) ],
-                [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '-c', 'export MY_ERRORLEVEL=0' ]),
-                  tdTestResultExec(fRc = True, iExitCode = 0) ],
-                [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '-c', 'ls /etc' ]),
-                  tdTestResultExec(fRc = True, iExitCode = 0) ],
-                [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '-c', 'ls /bin/sh' ]),
-                  tdTestResultExec(fRc = True, iExitCode = 0) ],
-                [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '-c', 'ls /non/existing/file' ]),
-                  tdTestResultExec(fRc = True, iExitCode = 2) ],
-                [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '-c', 'ls /non/existing/dir/' ]),
-                  tdTestResultExec(fRc = True, iExitCode = 2) ]
-            ]);
-
-        fRc = True;
-        for (i, aTest) in enumerate(aaTests):
-            oCurTest = aTest[0]; # tdTestExec, use an index, later.
-            oCurRes  = aTest[1]; # tdTestResult
-            oCurTest.setEnvironment(oSession, oTxsSession, oTestVm);
-            fRc, oCurGuestSession = oCurTest.createSession('testGuestCtrlExecErrorLevel: Test #%d' % (i,));
-            if fRc is False:
-                reporter.error('Test #%d failed: Could not create session' % (i,));
-                break;
-            fRc = self.gctrlExecDoTest(i, oCurTest, oCurRes, oCurGuestSession);
-            oCurTest.closeSession();
-            if fRc is False:
-                break;
-
-        return (fRc, oTxsSession);
-
     def testGuestCtrlExecTimeout(self, oSession, oTxsSession, oTestVm):
         """
         Tests handling of timeouts of started guest processes.
         """
 
-        sImage = self.getGuestSystemShell(oTestVm);
+        sShell = self.getGuestSystemShell(oTestVm);
 
         # Use credential defaults.
         oCreds = tdCtxCreds();
         oCreds.applyDefaultsIfNotSet(oTestVm);
 
-        fRc = True;
+        #
+        # Create a session.
+        #
         try:
             oGuest = oSession.o.console.guest;
             oGuestSession = oGuest.createSession(oCreds.sUser, oCreds.sPassword, oCreds.sDomain, "testGuestCtrlExecTimeout");
-            oGuestSession.waitForArray([ vboxcon.GuestSessionWaitForFlag_Start ], 30 * 1000);
-            # Create a process which never terminates and should timeout when
-            # waiting for termination.
-            try:
-                curProc = oGuestSession.processCreate(sImage, [sImage,] if self.oTstDrv.fpApiVer >= 5.0 else [], \
+            eWaitResult = oGuestSession.waitForArray([ vboxcon.GuestSessionWaitForFlag_Start, ], 30 * 1000);
+        except:
+            return (reporter.errorXcpt(), oTxsSession);
+
+        # Be nice to Guest Additions < 4.3: They don't support session handling and therefore return WaitFlagNotSupported.
+        if eWaitResult not in (vboxcon.GuestSessionWaitResult_Start, vboxcon.GuestSessionWaitResult_WaitFlagNotSupported):
+            return (reporter.error('Session did not start successfully - wait error: %d' % (eWaitResult,)), oTxsSession);
+        reporter.log('Session successfully started');
+
+        #
+        # Create a process which never terminates and should timeout when
+        # waiting for termination.
+        #
+        fRc = True;
+        try:
+            oCurProcess = oGuestSession.processCreate(sShell, [sShell,] if self.oTstDrv.fpApiVer >= 5.0 else [],
                                                       [], [], 30 * 1000);
-                reporter.log('Waiting for process 1 being started ...');
-                waitRes = curProc.waitForArray([ vboxcon.ProcessWaitForFlag_Start ], 30 * 1000);
-                if waitRes != vboxcon.ProcessWaitResult_Start:
-                    reporter.error('Waiting for process 1 to start failed, got status %d');
-                    fRc = False;
-                if fRc:
-                    reporter.log('Waiting for process 1 to time out within 1ms ...');
-                    waitRes = curProc.waitForArray([ vboxcon.ProcessWaitForFlag_Terminate ], 1);
-                    if waitRes != vboxcon.ProcessWaitResult_Timeout:
-                        reporter.error('Waiting for process 1 did not time out when it should (1)');
-                        fRc = False;
-                    else:
-                        reporter.log('Waiting for process 1 timed out (1), good');
-                if fRc:
-                    reporter.log('Waiting for process 1 to time out within 5000ms ...');
-                    waitRes = curProc.waitForArray([ vboxcon.ProcessWaitForFlag_Terminate ], 5000);
-                    if waitRes != vboxcon.ProcessWaitResult_Timeout:
-                        reporter.error('Waiting for process 1 did not time out when it should, got wait result %d' % (waitRes,));
-                        fRc = False;
-                    else:
-                        reporter.log('Waiting for process 1 timed out (5000), good');
-                ## @todo Add curProc.terminate() as soon as it's implemented.
+        except:
+            fRc = reporter.errorXcpt();
+        else:
+            reporter.log('Waiting for process 1 being started ...');
+            try:
+                eWaitResult = oCurProcess.waitForArray([ vboxcon.ProcessWaitForFlag_Start ], 30 * 1000);
             except:
-                reporter.errorXcpt('Exception for process 1:');
-                fRc = False;
-            # Create a lengthly running guest process which will be killed by VBoxService on the
-            # guest because it ran out of execution time (5 seconds).
-            if fRc:
+                fRc = reporter.errorXcpt();
+            else:
+                if eWaitResult != vboxcon.ProcessWaitResult_Start:
+                    fRc = reporter.error('Waiting for process 1 to start failed, got status %d' % (eWaitResult,));
+                else:
+                    for msWait in (1, 32, 2000,):
+                        reporter.log('Waiting for process 1 to time out within %sms ...' % (msWait,));
+                        try:
+                            eWaitResult = oCurProcess.waitForArray([ vboxcon.ProcessWaitForFlag_Terminate, ], msWait);
+                        except:
+                            fRc = reporter.errorXcpt();
+                            break;
+                        if eWaitResult != vboxcon.ProcessWaitResult_Timeout:
+                            fRc = reporter.error('Waiting for process 1 did not time out in %sms as expected: %d'
+                                                 % (msWait, eWaitResult,));
+                            break;
+                        reporter.log('Waiting for process 1 timed out in %u ms, good' % (msWait,));
+
                 try:
-                    curProc = oGuestSession.processCreate(sImage, [sImage,] if self.oTstDrv.fpApiVer >= 5.0 else [], \
-                                                          [], [], 5 * 1000);
-                    reporter.log('Waiting for process 2 being started ...');
-                    waitRes = curProc.waitForArray([ vboxcon.ProcessWaitForFlag_Start ], 30 * 1000);
-                    if waitRes != vboxcon.ProcessWaitResult_Start:
-                        reporter.error('Waiting for process 1 to start failed, got status %d');
-                        fRc = False;
-                    if fRc:
-                        reporter.log('Waiting for process 2 to get killed because it ran out of execution time ...');
-                        waitRes = curProc.waitForArray([ vboxcon.ProcessWaitForFlag_Terminate ], 30 * 1000);
-                        if waitRes != vboxcon.ProcessWaitResult_Timeout:
-                            reporter.error('Waiting for process 2 did not time out when it should, got wait result %d' \
-                                           % (waitRes,));
-                            fRc = False;
-                    if fRc:
-                        reporter.log('Waiting for process 2 indicated an error, good');
-                        if curProc.status != vboxcon.ProcessStatus_TimedOutKilled:
-                            reporter.error('Status of process 2 wrong; excepted %d, got %d' \
-                                           % (vboxcon.ProcessStatus_TimedOutKilled, curProc.status));
-                            fRc = False;
-                        else:
-                            reporter.log('Status of process 2 correct (%d)' % (vboxcon.ProcessStatus_TimedOutKilled,));
-                    ## @todo Add curProc.terminate() as soon as it's implemented.
+                    oCurProcess.terminate();
                 except:
-                    reporter.errorXcpt('Exception for process 2:');
-                    fRc = False;
+                    reporter.errorXcpt();
+            oCurProcess = None;
+
+            #
+            # Create another process that doesn't terminate, but which will be killed by VBoxService
+            # because it ran out of execution time (3 seconds).
+            #
+            try:
+                oCurProcess = oGuestSession.processCreate(sShell, [sShell,] if self.oTstDrv.fpApiVer >= 5.0 else [],
+                                                          [], [], 3 * 1000);
+            except:
+                fRc = reporter.errorXcpt();
+            else:
+                reporter.log('Waiting for process 2 being started ...');
+                try:
+                    eWaitResult = oCurProcess.waitForArray([ vboxcon.ProcessWaitForFlag_Start ], 30 * 1000);
+                except:
+                    fRc = reporter.errorXcpt();
+                else:
+                    if eWaitResult != vboxcon.ProcessWaitResult_Start:
+                        fRc = reporter.error('Waiting for process 2 to start failed, got status %d' % (eWaitResult,));
+                    else:
+                        reporter.log('Waiting for process 2 to get killed for running out of execution time ...');
+                        try:
+                            eWaitResult = oCurProcess.waitForArray([ vboxcon.ProcessWaitForFlag_Terminate, ], 15 * 1000);
+                        except:
+                            fRc = reporter.errorXcpt();
+                        else:
+                            if eWaitResult != vboxcon.ProcessWaitResult_Timeout:
+                                fRc = reporter.error('Waiting for process 2 did not time out when it should, got wait result %d'
+                                                     % (eWaitResult,));
+                            else:
+                                reporter.log('Waiting for process 2 did not time out, good: %s' % (eWaitResult,));
+                                try:
+                                    eStatus = oCurProcess.status;
+                                except:
+                                    fRc = reporter.errorXcpt();
+                                else:
+                                    if eStatus != vboxcon.ProcessStatus_TimedOutKilled:
+                                        fRc = reporter.error('Status of process 2 wrong; excepted %d, got %d'
+                                                             % (vboxcon.ProcessStatus_TimedOutKilled, eStatus));
+                                    else:
+                                        reporter.log('Status of process 2 is TimedOutKilled (%d) is it should be.'
+                                                     % (vboxcon.ProcessStatus_TimedOutKilled,));
+                        try:
+                            oCurProcess.terminate();
+                        except:
+                            reporter.logXcpt();
+                oCurProcess = None;
+
+        #
+        # Clean up the session.
+        #
+        try:
             oGuestSession.close();
         except:
-            reporter.errorXcpt('Could not handle session:');
-            fRc = False;
+            fRc = reporter.errorXcpt();
 
         return (fRc, oTxsSession);
 
@@ -3666,7 +3610,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 # Test the (optional) installer arguments. This will extract the
                 # installer into our guest's scratch directory.
                 [ tdTestUpdateAdditions(sSrc = self.oTstDrv.getGuestAdditionsIso(),
-                                        aArgs = [ '/extract', '/D=' + sScratch ]),
+                                        asArgs = [ '/extract', '/D=' + sScratch ]),
                   tdTestResult(fRc = True) ]
                 # Some debg ISO. Only enable locally.
                 #[ tdTestUpdateAdditions(
@@ -3688,7 +3632,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 reporter.error('Test #%d failed: Could not create session' % (i,));
                 break;
             try:
-                oCurProgress = oCurTest.oTest.oGuest.updateGuestAdditions(oCurTest.sSrc, oCurTest.aArgs, oCurTest.fFlags);
+                oCurProgress = oCurTest.oTest.oGuest.updateGuestAdditions(oCurTest.sSrc, oCurTest.asArgs, oCurTest.fFlags);
                 if oCurProgress is not None:
                     oProgress = vboxwrappers.ProgressWrapper(oCurProgress, self.oTstDrv.oVBoxMgr, self.oTstDrv, "gctrlUpGA");
                     try:
@@ -3848,12 +3792,12 @@ class tdAddGuestCtrl(vbox.TestDriver):                                         #
         _ = oGuestSession.waitForArray(aWaitFor, 30 * 1000);
 
         sCmd = SubTstDrvAddGuestCtrl.getGuestSystemShell(oTestVm);
-        aArgs = [ sCmd, '/C', 'dir', '/S', 'c:\\windows' ];
+        asArgs = [ sCmd, '/C', 'dir', '/S', 'c:\\windows' ];
         aEnv = [];
         fFlags = [];
 
         for _ in xrange(100):
-            oProc = oGuestSession.processCreate(sCmd, aArgs if self.fpApiVer >= 5.0 else aArgs[1:],
+            oProc = oGuestSession.processCreate(sCmd, asArgs if self.fpApiVer >= 5.0 else asArgs[1:],
                                                 aEnv, fFlags, 30 * 1000);
 
             aWaitFor = [ vboxcon.ProcessWaitForFlag_Terminate ];
