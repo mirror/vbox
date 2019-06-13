@@ -107,6 +107,10 @@ UIMediumEnumerator::UIMediumEnumerator()
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigMachineRegistered,
             this, &UIMediumEnumerator::sltHandleMachineRegistration);
 #else /* VBOX_GUI_WITH_NEW_MEDIA_EVENTS */
+    /* Machine related events: */
+    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigMachineDataChange,
+            this, &UIMediumEnumerator::sltHandleMachineDataChange);
+    /* Medium related events: */
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigStorageControllerChange,
             this, &UIMediumEnumerator::sltHandleStorageControllerChange);
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigStorageDeviceChange,
@@ -374,6 +378,18 @@ void UIMediumEnumerator::sltHandleSnapshotDeleted(const QUuid &uMachineID, const
 }
 
 #else /* VBOX_GUI_WITH_NEW_MEDIA_EVENTS */
+
+void UIMediumEnumerator::sltHandleMachineDataChange(const QUuid &uMachineId)
+{
+    //printf("MachineDataChange: machine-id=%s\n",
+    //       uMachineId.toString().toUtf8().constData());
+    LogRel2(("GUI: UIMediumEnumerator: MachineDataChange event received, Machine ID = {%s}\n",
+             uMachineId.toString().toUtf8().constData()));
+
+    /* Parse machine ID: */
+    QList<QUuid> result;
+    parseMachineId(uMachineId, result);
+}
 
 void UIMediumEnumerator::sltHandleStorageControllerChange(const QUuid &uMachineId, const QString &strControllerName)
 {
