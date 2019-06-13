@@ -1169,10 +1169,10 @@ int GuestSession::i_directoryOpen(const GuestDirectoryOpenInfo &openInfo,
     }
     catch (std::bad_alloc &)
     {
-        rc = VERR_NO_MEMORY;
+        vrc = VERR_NO_MEMORY;
     }
 
-    if (RT_SUCCESS(rc))
+    if (RT_SUCCESS(vrc))
     {
         /* Nothing further to do here yet. */
         if (prcGuest)
