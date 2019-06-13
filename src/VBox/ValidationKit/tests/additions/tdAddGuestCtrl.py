@@ -1219,7 +1219,6 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
         return fRc;
 
-
     def gctrlReadDirTree(self, oTest, oGuestSession, fIsError, sSubDir = None):
         """
         Helper function to recursively read a guest directory tree specified in the current test.
@@ -1822,7 +1821,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         aeWaitFor = [ vboxcon.GuestSessionWaitForFlag_Start ];
         try:
             oGuest        = oSession.o.console.guest;
-            oGuestSession = oGuest.createSession(oCreds.sUser, oCreds.sPassword, oCreds.sDomain, "testGuestCtrlSessionFileRefs");
+            oGuestSession = oGuest.createSession(oCreds.sUser, oCreds.sPassword, oCreds.sDomain, "testGuestCtrlSessionProcRefs");
             eWaitResult   = oGuestSession.waitForArray(aeWaitFor, 30 * 1000);
         except:
             return (reporter.errorXcpt(), oTxsSession);
@@ -2184,26 +2183,32 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         while the main test routine reboots the guest. It then compares the expected guest process result
         and logs an error if appropriate.
         """
-        reporter.log('Waiting for stale process getting killed ...');
-        waitResult = oGuestProcess.waitForArray([ vboxcon.ProcessWaitForFlag_Terminate ], 5 * 60 * 1000);
+        reporter.log('Waiting for process to get terminated at reboot ...');
+        try:
+            eWaitResult = oGuestProcess.waitForArray([ vboxcon.ProcessWaitForFlag_Terminate ], 5 * 60 * 1000);
+        except:
+            return reporter.errorXcpt('waitForArray failed');
+        try:
+            eStatus = oGuestProcess.status
+        except:
+            return reporter.errorXcpt('failed to get status (wait result %d)' % (eWaitResult,));
 
-        if  waitResult == vboxcon.ProcessWaitResult_Terminate \
-        and oGuestProcess.status == vboxcon.ProcessStatus_Down:
+        if eWaitResult == vboxcon.ProcessWaitResult_Terminate and eStatus == vboxcon.ProcessStatus_Down:
             reporter.log('Stale process was correctly terminated (status: down)');
-        else:
-            reporter.error('Got wrong stale process result: waitResult is %d, current process status is: %d' \
-                            % (waitResult, oGuestProcess.status));
+            return True;
+
+        return reporter.error('Process wait across reboot failed: eWaitResult=%d, expected %d; eStatus=%d, expected %d'
+                              % (eWaitResult, vboxcon.ProcessWaitResult_Terminate, eStatus, vboxcon.ProcessStatus_Down,));
 
     def testGuestCtrlSessionReboot(self, oSession, oTxsSession, oTestVm): # pylint: disable=too-many-locals
         """
         Tests guest object notifications when a guest gets rebooted / shutdown.
+
         These notifications gets sent from the guest sessions in order to make API clients
         aware of guest session changes.
 
-        For that to test we create a stale guest process and trigger a reboot on the guest.
+        To test that we create a stale guest process and trigger a reboot of the guest.
         """
-
-        sImage = self.getGuestSystemShell(oTestVm);
 
         # Use credential defaults.
         oCreds = tdCtxCreds();
@@ -2211,63 +2216,91 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
         fRc = True;
 
+        #
+        # Start a session.
+        #
+        aeWaitFor = [ vboxcon.GuestSessionWaitForFlag_Start ];
         try:
-            reporter.log('Creating session ...');
-            oGuest = oSession.o.console.guest;
-            oGuestSession = oGuest.createSession(oCreds.sUser, oCreds.sPassword, oCreds.sDomain, 'testGuestCtrlExecReboot');
-            try:
-                aeWaitFor = [ vboxcon.GuestSessionWaitForFlag_Start ];
-                waitResult = oGuestSession.waitForArray(aeWaitFor, 30 * 1000);
-                if waitResult not in (vboxcon.GuestSessionWaitResult_Start, vboxcon.GuestSessionWaitResult_WaitFlagNotSupported):
-                    reporter.error('Session did not start successfully, returned wait result: %d' \
-                                   % (waitResult));
-                    return (False, oTxsSession);
-                reporter.log('Session successfully started');
-            except:
-                # Just log, don't assume an error here (will be done in the main loop then).
-                reporter.logXcpt('Waiting for guest session to start failed:');
-                return (False, oTxsSession);
-
-            try:
-                aArgs = [ sImage ];
-                aEnv = [];
-                fFlags = [];
-                oGuestProcess = oGuestSession.processCreate(sImage,
-                                                            aArgs if self.oTstDrv.fpApiVer >= 5.0 else aArgs[1:], aEnv, fFlags,
-                                                            30 * 1000);
-                waitResult = oGuestProcess.waitForArray([ vboxcon.ProcessWaitForFlag_Start ], 30 * 1000);
-                reporter.log2('Starting process wait result returned: %d, current process status is: %d' \
-                              % (waitResult, oGuestProcess.status));
-            except:
-                reporter.logXcpt('Creating stale process failed:');
-                fRc = False;
-
-            if fRc:
-                reporter.log('Creating reboot thread ...');
-                oThreadReboot = threading.Thread(target = self.threadForTestGuestCtrlSessionReboot,
-                                                 args=(oGuestProcess,),
-                                                 name=('threadForTestGuestCtrlSessionReboot'));
-                oThreadReboot.setDaemon(True);
-                oThreadReboot.start();
-
-                reporter.log('Waiting for reboot ....');
-                time.sleep(15);
-                reporter.log('Rebooting guest and reconnecting TxS');
-
-                (oSession, oTxsSession) = self.oTstDrv.txsRebootAndReconnectViaTcp(oSession, oTxsSession, cMsTimeout = 3 * 60000);
-
-                reporter.log('Waiting for thread to finish ...');
-                oThreadReboot.join();
-            try:
-                reporter.log2('Closing guest session ...');
-                oGuestSession.close();
-                oGuestSession = None;
-            except:
-                # Just log, don't assume an error here (will be done in the main loop then).
-                reporter.logXcpt('Closing guest session failed:');
-                fRc = False;
+            oGuest        = oSession.o.console.guest;
+            oGuestSession = oGuest.createSession(oCreds.sUser, oCreds.sPassword, oCreds.sDomain, "testGuestCtrlSessionReboot");
+            eWaitResult   = oGuestSession.waitForArray(aeWaitFor, 30 * 1000);
         except:
-            reporter.logXcpt('Could not create one session:');
+            return (reporter.errorXcpt(), oTxsSession);
+
+        # Be nice to Guest Additions < 4.3: They don't support session handling and therefore return WaitFlagNotSupported.
+        if eWaitResult not in (vboxcon.GuestSessionWaitResult_Start, vboxcon.GuestSessionWaitResult_WaitFlagNotSupported):
+            return (reporter.error('Session did not start successfully - wait error: %d' % (eWaitResult,)), oTxsSession);
+        reporter.log('Session successfully started');
+
+        #
+        # Create a process.
+        #
+        sImage = self.getGuestSystemShell(oTestVm);
+        aArgs  = [ sImage, ];
+        aEnv   = [];
+        fFlags = [];
+        try:
+            oGuestProcess = oGuestSession.processCreate(sImage,
+                                                        aArgs if self.oTstDrv.fpApiVer >= 5.0 else aArgs[1:], aEnv, fFlags,
+                                                        30 * 1000);
+        except:
+            fRc = reporter.error('Failed to start shell process (%s)' % (sImage,));
+        else:
+            try:
+                eWaitResult = oGuestProcess.waitForArray([ vboxcon.ProcessWaitForFlag_Start ], 30 * 1000);
+            except:
+                fRc = reporter.errorXcpt('Waiting for shell process (%s) to start failed' % (sImage,));
+            else:
+                # Check the result and state:
+                try:    eStatus = oGuestProcess.status;
+                except: fRc = reporter.errorXcpt('Waiting for shell process (%s) to start failed' % (sImage,));
+                else:
+                    reporter.log2('Starting process wait result returned: %d;  Process status is: %d' % (eWaitResult, eStatus,));
+                    if eWaitResult != vboxcon.ProcessWaitResult_Start:
+                        fRc = reporter.error('wait for ProcessWaitForFlag_Start failed: %d, expected %d (Start)'
+                                             % (eWaitResult, vboxcon.ProcessWaitResult_Start,));
+                    elif eStatus != vboxcon.ProcessStatus_Started:
+                        fRc = reporter.error('Unexpected process status after startup: %d, wanted %d (Started)'
+                                             % (eStatus, vboxcon.ProcessStatus_Started,));
+                    else:
+                        # Create a thread that waits on the process to terminate
+                        reporter.log('Creating reboot thread ...');
+                        oThreadReboot = threading.Thread(target = self.threadForTestGuestCtrlSessionReboot,
+                                                         args = (oGuestProcess,),
+                                                         name = ('threadForTestGuestCtrlSessionReboot'));
+                        oThreadReboot.setDaemon(True);
+                        oThreadReboot.start();
+
+                        # Not sure why this fudge is needed...
+                        reporter.log('5 second wait fudge before triggering reboot ...');
+                        self.oTstDrv.sleep(5);
+
+                        # Do the reboot.
+                        reporter.log('Rebooting guest and reconnecting TXS ...');
+                        (oSession, oTxsSession) = self.oTstDrv.txsRebootAndReconnectViaTcp(oSession, oTxsSession,
+                                                                                           cMsTimeout = 3 * 60000);
+                        if not oSession or not oTxsSession:
+                            try:    oGuestProcess.terminate();
+                            except: reporter.logXcpt();
+                            fRc = False;
+
+                        reporter.log('Waiting for thread to finish ...');
+                        oThreadReboot.join();
+
+            #
+            # Try make sure we don't leave with a stale process on failure.
+            #
+            try:    oGuestProcess.terminate();
+            except: reporter.logXcpt();
+
+        #
+        # Close the session.
+        #
+        reporter.log2('Closing guest session ...');
+        try:
+            oGuestSession.close();
+        except:
+            fRc = reporter.errorXcpt();
 
         return (fRc, oTxsSession);
 
