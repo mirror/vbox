@@ -3328,17 +3328,17 @@ static DECLCALLBACK(void) hmR3Info(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszA
             bool const    fRealOnV86Active  = pVmcsInfo->RealMode.fRealOnV86Active;
             bool const    fNstGstVmcsActive = pVCpu->hm.s.vmx.fSwitchedToNstGstVmcs;
 
-            pHlp->pfnPrintf(pHlp, "  %s VMCS active\n", fNstGstVmcsActive ? "Nested-guest" :" Guest");
-            pHlp->pfnPrintf(pHlp, "  Real-on-v86 active = %RTbool\n", fRealOnV86Active);
+            pHlp->pfnPrintf(pHlp, "  %s VMCS active\n", fNstGstVmcsActive ? "Nested-guest" : "Guest");
+            pHlp->pfnPrintf(pHlp, "    Real-on-v86 active = %RTbool\n", fRealOnV86Active);
             if (fRealOnV86Active)
             {
-                pHlp->pfnPrintf(pHlp, "    EFlags  = %#x\n", pVmcsInfo->RealMode.Eflags.u32);
-                pHlp->pfnPrintf(pHlp, "    Attr CS = %#x\n", pVmcsInfo->RealMode.AttrCS.u);
-                pHlp->pfnPrintf(pHlp, "    Attr SS = %#x\n", pVmcsInfo->RealMode.AttrSS.u);
-                pHlp->pfnPrintf(pHlp, "    Attr DS = %#x\n", pVmcsInfo->RealMode.AttrDS.u);
-                pHlp->pfnPrintf(pHlp, "    Attr ES = %#x\n", pVmcsInfo->RealMode.AttrES.u);
-                pHlp->pfnPrintf(pHlp, "    Attr FS = %#x\n", pVmcsInfo->RealMode.AttrFS.u);
-                pHlp->pfnPrintf(pHlp, "    Attr GS = %#x\n", pVmcsInfo->RealMode.AttrGS.u);
+                pHlp->pfnPrintf(pHlp, "      EFlags  = %#x\n", pVmcsInfo->RealMode.Eflags.u32);
+                pHlp->pfnPrintf(pHlp, "      Attr CS = %#x\n", pVmcsInfo->RealMode.AttrCS.u);
+                pHlp->pfnPrintf(pHlp, "      Attr SS = %#x\n", pVmcsInfo->RealMode.AttrSS.u);
+                pHlp->pfnPrintf(pHlp, "      Attr DS = %#x\n", pVmcsInfo->RealMode.AttrDS.u);
+                pHlp->pfnPrintf(pHlp, "      Attr ES = %#x\n", pVmcsInfo->RealMode.AttrES.u);
+                pHlp->pfnPrintf(pHlp, "      Attr FS = %#x\n", pVmcsInfo->RealMode.AttrFS.u);
+                pHlp->pfnPrintf(pHlp, "      Attr GS = %#x\n", pVmcsInfo->RealMode.AttrGS.u);
             }
         }
     }
