@@ -330,7 +330,8 @@ int vboxSfOs2UtilQPathInfo(int argc, char **argv)
         if (rc != ERROR_INVALID_LEVEL)
             printf("%s: FIL_QUERYEASFROMLISTL -> %u\n", argv[i], rc);
 
-        EaOp.fpGEA2List = (PGEA2LIST)memcpy(&Gea2List, &Gea2ListOrg, sizeof(Gea2List));
+        //EaOp.fpGEA2List = (PGEA2LIST)memcpy(&Gea2List, &Gea2ListOrg, sizeof(Gea2List));
+        EaOp.fpGEA2List = (PGEA2LIST)0xfefefef7;
         EaOp.fpFEA2List = &u.FeaList;
         EaOp.oError     = 0;
         memset(&u, '\0', sizeof(u));
