@@ -68,6 +68,13 @@ enum UIKeyType
     UIKeyType_Max
 };
 
+struct KeyCaptions
+{
+    QString m_strBase;
+    QString m_strShift;
+    QString m_strAltGr;
+};
+
 /*********************************************************************************************************************************
 *   UILayoutEditor definition.                                                                                  *
 *********************************************************************************************************************************/
@@ -284,11 +291,15 @@ class UISoftKeyboardLayout
 {
 
 public:
+
     UISoftKeyboardLayout()
         :m_pPhysicalLayout(0){}
     /** The physical layout used by this layout. */
     UISoftKeyboardPhysicalLayout *m_pPhysicalLayout;
     QString m_strName;
+    /** We cache the key caps here instead of reading the layout files each time layout changes.
+      * Map key is the key position and the value is the captions of the key. */
+    QMap<int, KeyCaptions> m_keyCapMap;
 };
 
 /*********************************************************************************************************************************
@@ -426,14 +437,10 @@ class UIKeyboardLayoutReader
 
 public:
 
-    struct KeyCaptions
-    {
-        QString m_strBase;
-        QString m_strShift;
-        QString m_strAltGr;
-    };
-
     bool  parseFile(const QString &strFileName);
+    const QUuid &physicalLayoutUUID() const;
+    const QString &name() const;
+    const QMap<int, KeyCaptions> &keyCapMap() const;
 
 private:
 
@@ -1422,12 +1429,9 @@ void UISoftKeyboardWidget::keyStateChange(UISoftKeyboardKey* pKey)
 
 void UISoftKeyboardWidget::loadDefaultLayout()
 {
-    /* Choose the first layout action's data as the default layout: */
-    // if (m_defaultLayouts.isEmpty())
-    //     return;
-    // const QString &strLayout = m_defaultLayouts.at(0);
-    // if (loadPhysicalLayout(strLayout))
-    //     emit sigLayoutChange(strLayout);
+    if (m_layouts.isEmpty())
+        return;
+    setCurrentLayout(&(m_layouts[0]));
 }
 
 void UISoftKeyboardWidget::showContextMenu(const QPoint &globalPoint)
@@ -1523,25 +1527,25 @@ bool UISoftKeyboardWidget::loadKeyboardLayout(const QString &strLayoutName)
     if (!keyboardLayoutReader.parseFile(strLayoutName))
         return false;
 
-    // m_layouts.append(UISoftKeyboardLayout());
-    // UISoftKeyboardLayout &newLayout = m_layouts.back();
 
-
+    UISoftKeyboardPhysicalLayout *pPhysicalLayout = 0;
     /* Search for the physical layout among the one stored in m_pPhysicalLayout: */
-    // for (int i = 0; i < m_physicalLayouts.size(); ++i)
-    // {
-    //     if (physicalLayoutUid == m_physicalLayouts[i].m_uId)
-    //         newLayout.m_pPhysicalLayout = &(m_physicalLayouts[i]);
-    // }
+    for (int i = 0; i < m_physicalLayouts.size(); ++i)
+    {
+        if (keyboardLayoutReader.physicalLayoutUUID() == m_physicalLayouts[i].m_uId)
+            pPhysicalLayout = &(m_physicalLayouts[i]);
+    }
 
-    // /* If no pyhsical layout with the UUID the keyboard layout refers is found then cancel loading the keyboard layout: */
-    // if (!newLayout.m_pPhysicalLayout)
-    // {
-    //     m_layouts.removeLast();
-    //     return false;
-    // }
+    /* If no pyhsical layout with the UUID the keyboard layout refers is found then cancel loading the keyboard layout: */
+    if (!pPhysicalLayout)
+        return false;
+
+    m_layouts.append(UISoftKeyboardLayout());
+    UISoftKeyboardLayout &newLayout = m_layouts.back();
+    newLayout.m_pPhysicalLayout = pPhysicalLayout;
+    newLayout.m_strName = keyboardLayoutReader.name();
+    newLayout.m_keyCapMap = keyboardLayoutReader.keyCapMap();
     return true;
-
 }
 
 void UISoftKeyboardWidget::reset()
@@ -1631,8 +1635,24 @@ void UISoftKeyboardWidget::setCurrentLayout(UISoftKeyboardLayout *pLayout)
     emit sigLayoutChange(m_pCurrentKeyboardLayout->m_strName);
 
     if (m_pLayoutEditor)
-    {
         m_pLayoutEditor->setLayoutName(m_pCurrentKeyboardLayout->m_strName);
+    const QMap<int, KeyCaptions> &keyCapMap = m_pCurrentKeyboardLayout->m_keyCapMap;
+
+    /* Update the key captions: */
+    QVector<UISoftKeyboardRow> &rows = m_pCurrentKeyboardLayout->m_pPhysicalLayout->m_rows;
+    for (int i = 0; i < rows.size(); ++i)
+    {
+        QVector<UISoftKeyboardKey> &keys = rows[i].keys();
+        for (int j = 0; j < keys.size(); ++j)
+        {
+            UISoftKeyboardKey &key = keys[j];
+            if (!keyCapMap.contains(key.position()))
+                continue;
+            const KeyCaptions &captions = keyCapMap.value(key.position());
+            key.setBaseCaption(captions.m_strBase);
+            key.setShiftCaption(captions.m_strShift);
+            key.setAltGrCaption(captions.m_strAltGr);
+        }
     }
 }
 
@@ -1883,6 +1903,21 @@ bool UIKeyboardLayoutReader::parseFile(const QString &strFileName)
             m_xmlReader.skipCurrentElement();
     }
     return true;
+}
+
+const QUuid &UIKeyboardLayoutReader::physicalLayoutUUID() const
+{
+    return m_physicalLayoutUid;
+}
+
+const QString &UIKeyboardLayoutReader::name() const
+{
+    return m_strName;
+}
+
+const QMap<int, KeyCaptions> &UIKeyboardLayoutReader::keyCapMap() const
+{
+    return m_keyCapMap;
 }
 
 void  UIKeyboardLayoutReader::parseKey()

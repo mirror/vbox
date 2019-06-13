@@ -124,8 +124,8 @@
     </key>
     <key>
         <position>5</position>
-        <basecaption></basecaption>
-        <shiftcaption></shiftcaption>
+        <basecaption>4</basecaption>
+        <shiftcaption>$</shiftcaption>
         <altgrcaption></altgrcaption>
     </key>
     <key>
@@ -202,7 +202,7 @@
     </key>
     <key>
         <position>16</position>
-        <basecaption></basecaption>
+        <basecaption>Tab</basecaption>
         <shiftcaption></shiftcaption>
         <altgrcaption></altgrcaption>
     </key>
@@ -304,7 +304,7 @@
     </key>
     <key>
         <position>30</position>
-        <basecaption></basecaption>
+        <basecaption>CapsLock</basecaption>
         <shiftcaption></shiftcaption>
         <altgrcaption></altgrcaption>
     </key>
@@ -460,7 +460,7 @@
     </key>
     <key>
         <position>58</position>
-        <basecaption></basecaption>
+        <basecaption>Ctrl</basecaption>
         <shiftcaption></shiftcaption>
         <altgrcaption></altgrcaption>
     </key>
