@@ -863,7 +863,7 @@ class tdTestResultExec(tdTestResult):
     Holds a guest process execution test result,
     including the exit code, status + fFlags.
     """
-    def __init__(self, fRc = False, uExitStatus = 500, iExitCode = 0, sBuf = None, cbBuf = 0, cbStdOut = 0, cbStdErr = 0):
+    def __init__(self, fRc = False, uExitStatus = 500, iExitCode = 0, sBuf = None, cbBuf = 0, cbStdOut = None, cbStdErr = None):
         tdTestResult.__init__(self);
         ## The overall test result.
         self.fRc = fRc;
@@ -1311,120 +1311,180 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         when needed in actual execution tests.
         """
         reporter.log('Testing #%d, cmd="%s" ...' % (i, oTest.sCmd));
-        fRc = self.gctrlExecute(oTest, oGuestSession);
-        if fRc is oRes.fRc:
-            if fRc is True:
+        fRcExec = self.gctrlExecute(oTest, oGuestSession, oRes.fRc);
+        if fRcExec == oRes.fRc:
+            fRc = True;
+            if fRcExec is True:
                 # Compare exit status / code on successful process execution.
                 if     oTest.uExitStatus != oRes.uExitStatus \
                     or oTest.iExitCode   != oRes.iExitCode:
-                    reporter.error('Test #%d failed: Got exit status + code %d,%d, expected %d,%d'
-                                   % (i, oTest.uExitStatus, oTest.iExitCode, oRes.uExitStatus,  oRes.iExitCode));
-                    return False;
-            if fRc is True:
-                # Compare test / result buffers on successful process execution.
-                if      oTest.sBuf is not None \
-                    and oRes.sBuf is not None:
-                    if bytes(oTest.sBuf) != bytes(oRes.sBuf):
-                        reporter.error('Test #%d failed: Got buffer\n%s (%d bytes), expected\n%s (%d bytes)'
-                                       % (i, map(hex, map(ord, oTest.sBuf)), len(oTest.sBuf), \
-                                          map(hex, map(ord, oRes.sBuf)), len(oRes.sBuf)));
-                        return False;
-                    reporter.log2('Test #%d passed: Buffers match (%d bytes)' % (i, len(oRes.sBuf)));
-                elif     oRes.sBuf is not None \
-                     and oRes.sBuf:
-                    reporter.error('Test #%d failed: Got no buffer data, expected\n%s (%dbytes)' %
-                                   (i, map(hex, map(ord, oRes.sBuf)), len(oRes.sBuf)));
-                    return False;
-                elif     oRes.cbStdOut > 0 \
-                     and oRes.cbStdOut != oTest.cbStdOut:
-                    reporter.error('Test #%d failed: Got %d stdout data, expected %d'
-                                   % (i, oTest.cbStdOut, oRes.cbStdOut));
-                    return False;
-        else:
-            reporter.error('Test #%d failed: Got %s, expected %s' % (i, fRc, oRes.fRc));
-            return False;
-        return True;
+                    fRc = reporter.error('Test #%d (%s) failed: Got exit status + code %d,%d, expected %d,%d'
+                                         % (i, oTest.aArgs,  oTest.uExitStatus, oTest.iExitCode,
+                                            oRes.uExitStatus, oRes.iExitCode));
 
-    def gctrlExecute(self, oTest, oGuestSession):
+                # Compare test / result buffers on successful process execution.
+                if oTest.sBuf is not None and oRes.sBuf is not None:
+                    if not utils.areBytesEqual(oTest.sBuf, oRes.sBuf):
+                        fRc = reporter.error('Test #%d (%s) failed: Got buffer\n%s (%d bytes), expected\n%s (%d bytes)'
+                                             % (i, oTest.aArgs,
+                                                map(hex, map(ord, oTest.sBuf)), len(oTest.sBuf),
+                                                map(hex, map(ord, oRes.sBuf)),  len(oRes.sBuf)));
+                    reporter.log2('Test #%d passed: Buffers match (%d bytes)' % (i, len(oRes.sBuf)));
+                elif oRes.sBuf and not oTest.sBuf:
+                    fRc = reporter.error('Test #%d (%s) failed: Got no buffer data, expected\n%s (%dbytes)' %
+                                         (i, oTest.aArgs, map(hex, map(ord, oRes.sBuf)), len(oRes.sBuf),));
+
+                if oRes.cbStdOut is not None and oRes.cbStdOut != oTest.cbStdOut:
+                    fRc = reporter.error('Test #%d (%s) failed: Got %d bytes of stdout data, expected %d'
+                                         % (i, oTest.aArgs, oTest.cbStdOut, oRes.cbStdOut));
+                if oRes.cbStdErr is not None and oRes.cbStdErr != oTest.cbStdErr:
+                    fRc = reporter.error('Test #%d (%s) failed: Got %d bytes of stderr data, expected %d'
+                                         % (i, oTest.aArgs, oTest.cbStdErr, oRes.cbStdErr));
+        else:
+            fRc = reporter.error('Test #%d (%s) failed: Got %s, expected %s' % (i, oTest.aArgs, fRcExec, oRes.fRc));
+        return fRc;
+
+    def gctrlExecute(self, oTest, oGuestSession, fIsError):
         """
-        Helper function to execute a program on a guest, specified in
-        the current test.
+        Helper function to execute a program on a guest, specified in the current test.
+
+        Note! This weirdo returns results (process exitcode and status) in oTest.
         """
         fRc = True; # Be optimistic.
+
+        # Reset the weird result stuff:
+        oTest.cbStdOut    = 0;
+        oTest.cbStdErr    = 0;
+        oTest.sBuf        = '';
+        oTest.uExitStatus = 0;
+        oTest.iExitCode   = 0;
 
         ## @todo Compare execution timeouts!
         #tsStart = base.timestampMilli();
 
-        reporter.log2('Using session user=%s, sDomain=%s, name=%s, timeout=%d'
-                      % (oGuestSession.user, oGuestSession.domain,  oGuestSession.name, oGuestSession.timeout));
-        reporter.log2('Executing sCmd=%s, fFlags=%s, timeoutMS=%d, aArgs=%s, aEnv=%s'
-                      % (oTest.sCmd, oTest.fFlags, oTest.timeoutMS, oTest.aArgs, oTest.aEnv));
         try:
-            curProc = oGuestSession.processCreate(oTest.sCmd,
-                                                  oTest.aArgs if self.oTstDrv.fpApiVer >= 5.0 else oTest.aArgs[1:],
-                                                  oTest.aEnv, oTest.fFlags, oTest.timeoutMS);
-            if curProc is not None:
-                reporter.log2('Process start requested, waiting for start (%dms) ...' % (oTest.timeoutMS,));
-                aeWaitFor = [ vboxcon.ProcessWaitForFlag_Start ];
-                waitResult = curProc.waitForArray(aeWaitFor, oTest.timeoutMS);
-                reporter.log2('Wait result returned: %d, current process status is: %d' % (waitResult, curProc.status));
+            reporter.log2('Using session user=%s, sDomain=%s, name=%s, timeout=%d'
+                          % (oGuestSession.user, oGuestSession.domain, oGuestSession.name, oGuestSession.timeout,));
+        except:
+            return reporter.errorXcpt();
 
-                if curProc.status == vboxcon.ProcessStatus_Started:
-                    aeWaitFor = [ vboxcon.ProcessWaitForFlag_Terminate ];
+        #
+        # Start the process:
+        #
+        reporter.log2('Executing sCmd=%s, fFlags=%s, timeoutMS=%d, asArgs=%s, asEnv=%s'
+                      % (oTest.sCmd, oTest.fFlags, oTest.timeoutMS, oTest.aArgs, oTest.aEnv,));
+        try:
+            oProcess = oGuestSession.processCreate(oTest.sCmd,
+                                                   oTest.aArgs if self.oTstDrv.fpApiVer >= 5.0 else oTest.aArgs[1:],
+                                                   oTest.aEnv, oTest.fFlags, oTest.timeoutMS);
+        except:
+            reporter.maybeErrXcpt(fIsError, 'asArgs=%s' % (oTest.aArgs,));
+            return False;
+        if oProcess is None:
+            return reporter.error('oProcess is None! (%s)' % (oTest.aArgs,));
+
+        #time.sleep(5); # try this if you want to see races here.
+
+        # Wait for the process to start properly:
+        reporter.log2('Process start requested, waiting for start (%dms) ...' % (oTest.timeoutMS,));
+        iPid = -1;
+        aeWaitFor = [ vboxcon.ProcessWaitForFlag_Start, ];
+        try:
+            eWaitResult = oProcess.waitForArray(aeWaitFor, oTest.timeoutMS);
+        except:
+            reporter.maybeErrXcpt(fIsError, 'waitforArray failed for asArgs=%s' % (oTest.aArgs,));
+            fRc = False;
+        else:
+            try:
+                eStatus = oProcess.status;
+                iPid    = oProcess.PID;
+            except:
+                fRc = reporter.errorXcpt('asArgs=%s' % (oTest.aArgs,));
+            else:
+                reporter.log2('Wait result returned: %d, current process status is: %d' % (eWaitResult, eStatus,));
+
+                #
+                # Wait for the process to run to completion if necessary.
+                #
+                # Note! The above eWaitResult return value can be ignored as it will
+                #       (mostly) reflect the process status anyway.
+                #
+                if eStatus == vboxcon.ProcessStatus_Started:
+
+                    # What to wait for:
+                    aeWaitFor = [ vboxcon.ProcessWaitForFlag_Terminate, ];
                     if vboxcon.ProcessCreateFlag_WaitForStdOut in oTest.fFlags:
                         aeWaitFor.append(vboxcon.ProcessWaitForFlag_StdOut);
                     if vboxcon.ProcessCreateFlag_WaitForStdErr in oTest.fFlags:
                         aeWaitFor.append(vboxcon.ProcessWaitForFlag_StdErr);
                     ## @todo Add vboxcon.ProcessWaitForFlag_StdIn.
-                    reporter.log2('Process (PID %d) started, waiting for termination (%dms), waitFlags=%s ...'
-                                  % (curProc.PID, oTest.timeoutMS, aeWaitFor));
-                    while True:
-                        waitResult = curProc.waitForArray(aeWaitFor, oTest.timeoutMS);
-                        reporter.log2('Wait returned: %d' % (waitResult,));
-                        try:
-                            # Try stdout.
-                            if waitResult in (vboxcon.ProcessWaitResult_StdOut, vboxcon.ProcessWaitResult_WaitFlagNotSupported):
-                                reporter.log2('Reading stdout ...');
-                                abBuf = curProc.Read(1, 64 * 1024, oTest.timeoutMS);
-                                if abBuf:
-                                    reporter.log2('Process (PID %d) got %d bytes of stdout data' % (curProc.PID, len(abBuf)));
-                                    oTest.cbStdOut += len(abBuf);
-                                    oTest.sBuf = abBuf; # Appending does *not* work atm, so just assign it. No time now.
-                            # Try stderr.
-                            if waitResult in (vboxcon.ProcessWaitResult_StdErr, vboxcon.ProcessWaitResult_WaitFlagNotSupported):
-                                reporter.log2('Reading stderr ...');
-                                abBuf = curProc.Read(2, 64 * 1024, oTest.timeoutMS);
-                                if abBuf:
-                                    reporter.log2('Process (PID %d) got %d bytes of stderr data' % (curProc.PID, len(abBuf)));
-                                    oTest.cbStdErr += len(abBuf);
-                                    oTest.sBuf = abBuf; # Appending does *not* work atm, so just assign it. No time now.
-                            # Use stdin.
-                            if waitResult in (vboxcon.ProcessWaitResult_StdIn, vboxcon.ProcessWaitResult_WaitFlagNotSupported):
-                                pass; #reporter.log2('Process (PID %d) needs stdin data' % (curProc.pid,));
-                            # Termination or error?
-                            if waitResult in (vboxcon.ProcessWaitResult_Terminate,
-                                              vboxcon.ProcessWaitResult_Error,
-                                              vboxcon.ProcessWaitResult_Timeout,):
-                                reporter.log2('Process (PID %d) reported terminate/error/timeout: %d, status: %d'
-                                              % (curProc.PID, waitResult, curProc.status));
-                                break;
-                        except:
-                            # Just skip reads which returned nothing.
-                            pass;
-                    reporter.log2('Final process status (PID %d) is: %d' % (curProc.PID, curProc.status));
-                    reporter.log2('Process (PID %d) %d stdout, %d stderr' % (curProc.PID, oTest.cbStdOut, oTest.cbStdErr));
-            oTest.uExitStatus = curProc.status;
-            oTest.iExitCode = curProc.exitCode;
-            reporter.log2('Process (PID %d) has exit code: %d' % (curProc.PID, oTest.iExitCode));
-        except KeyboardInterrupt:
-            reporter.error('Process (PID %d) execution interrupted' % (curProc.PID,));
-            if curProc is not None:
-                curProc.close();
-        except:
-            # Just log, don't assume an error here (will be done in the main loop then).
-            reporter.logXcpt('Execution exception for command "%s":' % (oTest.sCmd,));
-            fRc = False;
 
+                    reporter.log2('Process (PID %d) started, waiting for termination (%dms), aeWaitFor=%s ...'
+                                  % (iPid, oTest.timeoutMS, aeWaitFor));
+                    acbFdOut = [0,0,0];
+                    while True:
+                        try:
+                            eWaitResult = oProcess.waitForArray(aeWaitFor, oTest.timeoutMS);
+                        except KeyboardInterrupt: # Not sure how helpful this is, but whatever.
+                            reporter.error('Process (PID %d) execution interrupted' % (iPid,));
+                            try: oProcess.close();
+                            except: pass;
+                            break;
+                        except:
+                            fRc = reporter.errorXcpt('asArgs=%s' % (oTest.aArgs,));
+                            break;
+                        reporter.log2('Wait returned: %d' % (eWaitResult,));
+
+                        # Process output:
+                        for eFdResult, iFd, sFdNm in [ (vboxcon.ProcessWaitResult_StdOut, 1, 'stdout'),
+                                                       (vboxcon.ProcessWaitResult_StdErr, 2, 'stderr'), ]:
+                            if eWaitResult in (eFdResult, vboxcon.ProcessWaitResult_WaitFlagNotSupported):
+                                reporter.log2('Reading %s ...' % (sFdNm,));
+                                try:
+                                    abBuf = oProcess.Read(1, 64 * 1024, oTest.timeoutMS);
+                                except KeyboardInterrupt: # Not sure how helpful this is, but whatever.
+                                    reporter.error('Process (PID %d) execution interrupted' % (iPid,));
+                                    try: oProcess.close();
+                                    except: pass;
+                                except:
+                                    pass; ## @todo test for timeouts and fail on anything else!
+                                else:
+                                    if abBuf:
+                                        reporter.log2('Process (PID %d) got %d bytes of %s data' % (iPid, len(abBuf), sFdNm,));
+                                        acbFdOut[iFd] += len(abBuf);
+                                        oTest.sBuf     = abBuf; ## @todo Figure out how to uniform + append!
+
+                        ## Process input (todo):
+                        #if eWaitResult in (vboxcon.ProcessWaitResult_StdIn, vboxcon.ProcessWaitResult_WaitFlagNotSupported):
+                        #    reporter.log2('Process (PID %d) needs stdin data' % (iPid,));
+
+                        # Termination or error?
+                        if eWaitResult in (vboxcon.ProcessWaitResult_Terminate,
+                                           vboxcon.ProcessWaitResult_Error,
+                                           vboxcon.ProcessWaitResult_Timeout,):
+                            try:    eStatus = oProcess.status;
+                            except: fRc = reporter.errorXcpt('asArgs=%s' % (oTest.aArgs,));
+                            reporter.log2('Process (PID %d) reported terminate/error/timeout: %d, status: %d'
+                                          % (iPid, eWaitResult, eStatus,));
+                            break;
+
+                    # End of the wait loop.
+                    _, oTest.cbStdOut, oTest.cbStdErr = acbFdOut;
+
+                    try:    eStatus = oProcess.status;
+                    except: fRc = reporter.errorXcpt('asArgs=%s' % (oTest.aArgs,));
+                    reporter.log2('Final process status (PID %d) is: %d' % (iPid, eStatus));
+                    reporter.log2('Process (PID %d) %d stdout, %d stderr' % (iPid, oTest.cbStdOut, oTest.cbStdErr));
+
+        #
+        # Get the final status and exit code of the process.
+        #
+        try:
+            oTest.uExitStatus = oProcess.status;
+            oTest.iExitCode   = oProcess.exitCode;
+        except:
+            fRc = reporter.errorXcpt('asArgs=%s' % (oTest.aArgs,));
+        reporter.log2('Process (PID %d) has exit code: %d; status: %d ' % (iPid, oTest.iExitCode, oTest.uExitStatus));
         return fRc;
 
     def testGuestCtrlSessionEnvironment(self, oSession, oTxsSession, oTestVm): # pylint: disable=too-many-locals
@@ -1951,16 +2011,24 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         Tests the basic execution feature.
         """
 
+        # Paths:
+        sVBoxControl    = None; ## @todo Get path of installed Guest Additions. Later.
+        sSystemDir      = self.getGuestSystemDir(oTestVm);
+        sFileForReading = self.getGuestSystemFileForReading(oTestVm);
         if oTestVm.isWindows() or oTestVm.isOS2():
             sImageOut = self.getGuestSystemShell(oTestVm);
+            if oTestVm.isWindows():
+                sVBoxControl = "C:\\Program Files\\Oracle\\VirtualBox Guest Additions\\VBoxControl.exe";
         else:
             sImageOut = "/bin/ls";
+            if oTestVm.isLinux(): ## @todo check solaris and darwin.
+                sVBoxControl = "/usr/bin/VBoxControl"; # Symlink
 
         # Use credential defaults.
         oCreds = tdCtxCreds();
         oCreds.applyDefaultsIfNotSet(oTestVm);
 
-        aaInvalid = [
+        atInvalid = [
             # Invalid parameters.
             [ tdTestExec(), tdTestResultExec() ],
             # Non-existent / invalid image.
@@ -1976,38 +2044,34 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             #[ tdTestExec(sCmd = "CON", tdTestResultExec() ],
         ];
 
-        if oTestVm.isWindows():
-            sVBoxControl = "C:\\Program Files\\Oracle\\VirtualBox Guest Additions\\VBoxControl.exe";
-            sSystem32 = self.getGuestSystemDir(oTestVm);
-            aaExec = [
+        if oTestVm.isWindows() or oTestVm.isOS2():
+            atExec = [
                 # Basic execution.
-                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'dir', '/S', sSystem32 ]),
+                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'dir', '/S', sSystemDir ]),
                   tdTestResultExec(fRc = True) ],
-                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'dir', '/S', sSystem32 + '\\kernel32.dll' ]),
+                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'dir', '/S', sFileForReading ]),
                   tdTestResultExec(fRc = True) ],
-                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'dir', '/S', sSystem32 + '\\nonexist.dll' ]),
+                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'dir', '/S', sSystemDir + '\\nonexist.dll' ]),
                   tdTestResultExec(fRc = True, iExitCode = 1) ],
                 [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'dir', '/S', '/wrongparam' ]),
                   tdTestResultExec(fRc = True, iExitCode = 1) ],
-                # Paths with spaces.
-                ## @todo Get path of installed Guest Additions. Later.
-                [ tdTestExec(sCmd = sVBoxControl, aArgs = [ sVBoxControl, 'version' ]),
-                  tdTestResultExec(fRc = True) ],
                 # StdOut.
-                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'dir', '/S', sSystem32 ]),
+                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'dir', '/S', sSystemDir ]),
                   tdTestResultExec(fRc = True) ],
                 [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'dir', '/S', 'stdout-non-existing' ]),
                   tdTestResultExec(fRc = True, iExitCode = 1) ],
                 # StdErr.
-                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'dir', '/S', sSystem32 ]),
+                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'dir', '/S', sSystemDir ]),
                   tdTestResultExec(fRc = True) ],
                 [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'dir', '/S', 'stderr-non-existing' ]),
                   tdTestResultExec(fRc = True, iExitCode = 1) ],
                 # StdOut + StdErr.
-                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'dir', '/S', sSystem32 ]),
+                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'dir', '/S', sSystemDir ]),
                   tdTestResultExec(fRc = True) ],
                 [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'dir', '/S', 'stdouterr-non-existing' ]),
-                  tdTestResultExec(fRc = True, iExitCode = 1) ]
+                  tdTestResultExec(fRc = True, iExitCode = 1) ],
+            ];
+            # atExec.extend([
                 # FIXME: Failing tests.
                 # Environment variables.
                 # [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'set', 'TEST_NONEXIST' ],
@@ -2026,38 +2090,35 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
                 ## @todo Create some files (or get files) we know the output size of to validate output length!
                 ## @todo Add task which gets killed at some random time while letting the guest output something.
-            ];
-        elif oTestVm.isLinux():
-            sVBoxControl = "/usr/bin/VBoxControl"; # Symlink
-            aaExec = [
+            #];
+        else:
+            atExec = [
                 # Basic execution.
-                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '-R', '/etc' ]),
+                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '-R', sSystemDir ]),
                   tdTestResultExec(fRc = True, iExitCode = 1) ],
-                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/bin/sh' ]),
+                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, sFileForReading ]),
                   tdTestResultExec(fRc = True) ],
                 [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '--wrong-parameter' ]),
                   tdTestResultExec(fRc = True, iExitCode = 2) ],
                 [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/non/existent' ]),
                   tdTestResultExec(fRc = True, iExitCode = 2) ],
-                # Paths with spaces.
-                ## @todo Get path of installed Guest Additions. Later.
-                [ tdTestExec(sCmd = sVBoxControl, aArgs = [ sVBoxControl, 'version' ]),
-                  tdTestResultExec(fRc = True) ],
                 # StdOut.
-                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/etc' ]),
+                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, sSystemDir ]),
                   tdTestResultExec(fRc = True) ],
                 [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, 'stdout-non-existing' ]),
                   tdTestResultExec(fRc = True, iExitCode = 2) ],
                 # StdErr.
-                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/etc' ]),
+                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, sSystemDir ]),
                   tdTestResultExec(fRc = True) ],
                 [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, 'stderr-non-existing' ]),
                   tdTestResultExec(fRc = True, iExitCode = 2) ],
                 # StdOut + StdErr.
-                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/etc' ]),
+                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, sSystemDir ]),
                   tdTestResultExec(fRc = True) ],
                 [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, 'stdouterr-non-existing' ]),
-                  tdTestResultExec(fRc = True, iExitCode = 2) ]
+                  tdTestResultExec(fRc = True, iExitCode = 2) ],
+            ];
+            # atExec.extend([
                 # FIXME: Failing tests.
                 # Environment variables.
                 # [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'set', 'TEST_NONEXIST' ],
@@ -2077,50 +2138,53 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
                 ## @todo Create some files (or get files) we know the output size of to validate output length!
                 ## @todo Add task which gets killed at some random time while letting the guest output something.
-            ];
+            #];
+
+        if sVBoxControl:
+            # Paths with spaces on windows.
+            atExec.append([ tdTestExec(sCmd = sVBoxControl, aArgs = [ sVBoxControl, 'version' ]),
+                           tdTestResultExec(fRc = True) ]);
+
 
         # Build up the final test array for the first batch.
-        aaTests = [];
-        aaTests.extend(aaInvalid);
-        if aaExec is not None:
-            aaTests.extend(aaExec);
-        fRc = True;
-
-        if fRc is False:
-            return (fRc, oTxsSession);
+        atTests = atInvalid + atExec;
 
         #
         # First batch: One session per guest process.
         #
         reporter.log('One session per guest process ...');
-        for (i, aTest) in enumerate(aaTests):
-            oCurTest = aTest[0]; # tdTestExec, use an index, later.
-            oCurRes  = aTest[1]; # tdTestResultExec
+        fRc = True;
+        for (i, tTest) in enumerate(atTests):
+            oCurTest = tTest[0]  # type: tdTestExec
+            oCurRes  = tTest[1]  # type: tdTestResultExec
             oCurTest.setEnvironment(oSession, oTxsSession, oTestVm);
-            fRc, oCurGuestSession = oCurTest.createSession('testGuestCtrlExec: Test #%d' % (i,));
-            if fRc is False:
+            fRc, oCurGuestSession = oCurTest.createSession('testGuestCtrlExec: Test #%d' % (i,), True);
+            if fRc is not True:
                 reporter.error('Test #%d failed: Could not create session' % (i,));
                 break;
             fRc = self.gctrlExecDoTest(i, oCurTest, oCurRes, oCurGuestSession);
-            if fRc is False:
+            if fRc is not True:
                 break;
-            fRc = oCurTest.closeSession();
-            if fRc is False:
+            fRc = oCurTest.closeSession(True);
+            if fRc is not True:
                 break;
 
         reporter.log('Execution of all tests done, checking for stale sessions');
 
         # No sessions left?
-        if fRc is True:
+        try:
             aSessions = self.oTstDrv.oVBoxMgr.getArray(oSession.o.console.guest, 'sessions');
-            cSessions   = len(aSessions);
+        except:
+            fRc = reporter.errorXcpt();
+        else:
+            cSessions = len(aSessions);
             if cSessions != 0:
-                reporter.error('Found %d stale session(s), expected 0:' % (cSessions,));
+                fRc = reporter.error('Found %d stale session(s), expected 0:' % (cSessions,));
                 for (i, aSession) in enumerate(aSessions):
-                    reporter.log('\tStale session #%d ("%s")' % (aSession.id, aSession.name));
-                fRc = False;
+                    try:    reporter.log('  Stale session #%d ("%s")' % (aSession.id, aSession.name));
+                    except: reporter.errorXcpt();
 
-        if fRc is False:
+        if fRc is not True:
             return (fRc, oTxsSession);
 
         reporter.log('Now using one guest session for all tests ...');
@@ -2128,53 +2192,52 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         #
         # Second batch: One session for *all* guest processes.
         #
-        oGuest = oSession.o.console.guest;
+
+        # Create session.
+        reporter.log('Creating session for all tests ...');
+        aeWaitFor = [ vboxcon.GuestSessionWaitForFlag_Start, ];
         try:
-            reporter.log('Creating session for all tests ...');
+            oGuest = oSession.o.console.guest;
             oCurGuestSession = oGuest.createSession(oCreds.sUser, oCreds.sPassword, oCreds.sDomain,
                                                    'testGuestCtrlExec: One session for all tests');
-            try:
-                aeWaitFor = [ vboxcon.GuestSessionWaitForFlag_Start ];
-                waitResult = oCurGuestSession.waitForArray(aeWaitFor, 30 * 1000);
-                if waitResult not in (vboxcon.GuestSessionWaitResult_Start, vboxcon.GuestSessionWaitResult_WaitFlagNotSupported):
-                    reporter.error('Session did not start successfully, returned wait result: %d' \
-                                   % (waitResult));
-                    return (False, oTxsSession);
+        except:
+            return (reporter.errorXcpt(), oTxsSession);
+
+        try:
+            eWaitResult = oCurGuestSession.waitForArray(aeWaitFor, 30 * 1000);
+        except:
+            fRc = reporter.errorXcpt('Waiting for guest session to start failed:');
+        else:
+            if eWaitResult not in (vboxcon.GuestSessionWaitResult_Start, vboxcon.GuestSessionWaitResult_WaitFlagNotSupported):
+                fRc = reporter.error('Session did not start successfully, returned wait result: %d' % (eWaitResult,));
+            else:
                 reporter.log('Session successfully started');
-            except:
-                # Just log, don't assume an error here (will be done in the main loop then).
-                reporter.logXcpt('Waiting for guest session to start failed:');
-                return (False, oTxsSession);
-            # Note: Not waiting for the guest session to start here
-            #       is intentional. This must be handled by the process execution
-            #       call then.
-            for (i, aTest) in enumerate(aaTests):
-                oCurTest = aTest[0]; # tdTestExec, use an index, later.
-                oCurRes  = aTest[1]; # tdTestResultExec
-                oCurTest.setEnvironment(oSession, oTxsSession, oTestVm);
-                fRc = self.gctrlExecDoTest(i, oCurTest, oCurRes, oCurGuestSession);
-                if fRc is False:
-                    break;
+
+                # Do the tests within this session.
+                for (i, tTest) in enumerate(atTests):
+                    oCurTest = tTest[0] # type: tdTestExec
+                    oCurRes  = tTest[1] # type: tdTestResultExec
+
+                    oCurTest.setEnvironment(oSession, oTxsSession, oTestVm);
+                    fRc = self.gctrlExecDoTest(i, oCurTest, oCurRes, oCurGuestSession);
+                    if fRc is False:
+                        break;
+
+            # Close the session.
+            reporter.log2('Closing guest session ...');
             try:
-                reporter.log2('Closing guest session ...');
                 oCurGuestSession.close();
                 oCurGuestSession = None;
             except:
-                # Just log, don't assume an error here (will be done in the main loop then).
-                reporter.logXcpt('Closing guest session failed:');
-                fRc = False;
-        except:
-            reporter.logXcpt('Could not create one session:');
+                fRc = reporter.errorXcpt('Closing guest session failed:');
 
-        reporter.log('Execution of all tests done, checking for stale sessions again');
-
-        # No sessions left?
-        if fRc is True:
-            cSessions = len(self.oTstDrv.oVBoxMgr.getArray(oSession.o.console.guest, 'sessions'));
-            if cSessions != 0:
-                reporter.error('Found %d stale session(s), expected 0' % (cSessions,));
-                fRc = False;
-
+            # No sessions left?
+            reporter.log('Execution of all tests done, checking for stale sessions again');
+            try:    cSessions = len(self.oTstDrv.oVBoxMgr.getArray(oSession.o.console.guest, 'sessions'));
+            except: fRc = reporter.errorXcpt();
+            else:
+                if cSessions != 0:
+                    fRc = reporter.error('Found %d stale session(s), expected 0' % (cSessions,));
         return (fRc, oTxsSession);
 
     def threadForTestGuestCtrlSessionReboot(self, oGuestProcess):
