@@ -194,8 +194,26 @@ RT_C_DECLS_BEGIN
                                                   | HM_CHANGED_SVM_MASK          \
                                                   | HM_CHANGED_GUEST_APIC_TPR)
 
-/** Mask of what state might have changed when \#VMEXIT is emulated. */
+/** Mask of what state might have changed when VMRUN is emulated. */
 # define HM_CHANGED_SVM_VMRUN_MASK               HM_CHANGED_SVM_VMEXIT_MASK
+#endif
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+/** Mask of what state might have changed when VM-exit is emulated.
+ *
+ *  This is currently unused, but keeping it here in case we can get away a bit more
+ *  fine-grained state handling.
+ *
+ *  @note Update IEM_CPUMCTX_EXTRN_VMX_VMEXIT_MASK when this changes. */
+# define HM_CHANGED_VMX_VMEXIT_MASK             (  HM_CHANGED_GUEST_CR0 | HM_CHANGED_GUEST_CR3 | HM_CHANGED_GUEST_CR4 \
+                                                 | HM_CHANGED_GUEST_DR7 | HM_CHANGED_GUEST_DR6 \
+                                                 | HM_CHANGED_GUEST_EFER_MSR \
+                                                 | HM_CHANGED_GUEST_SYSENTER_MSR_MASK \
+                                                 | HM_CHANGED_GUEST_OTHER_MSRS    /* for PAT MSR */ \
+                                                 | HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RSP | HM_CHANGED_GUEST_RFLAGS \
+                                                 | HM_CHANGED_GUEST_SREG_MASK \
+                                                 | HM_CHANGED_GUEST_TR \
+                                                 | HM_CHANGED_GUEST_LDTR | HM_CHANGED_GUEST_GDTR | HM_CHANGED_GUEST_IDTR \
+                                                 | HM_CHANGED_GUEST_HWVIRT )
 #endif
 /** @} */
 
