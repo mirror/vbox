@@ -1797,7 +1797,7 @@ segment CODE16
         je near .quiet
 segment DATA16
 .szMessage:
-        db 'VirtualBox Guest Additions IFS for OS/2', 0dh, 0ah, 0
+        db 'VirtualBox Guest Additions IFS for OS/2 version ', VBOX_VERSION_STRING, ' r', VBOX_SVN_REV_STR, 0dh, 0ah, 0
 segment CODE16
         mov     bx, .szMessage
         call    NAME(FS_INIT_FPUTS)
