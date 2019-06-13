@@ -41,6 +41,7 @@ import uuid;
 from testdriver import base;
 from testdriver import reporter;
 from testdriver import vboxcon;
+from common import pathutils;
 from common import utils;
 
 
@@ -893,6 +894,10 @@ class BaseTestVm(object):
                 fRc = oSession.close() and fRc;
         return fRc;
 
+    def pathJoinEx(self, sBase, *asAppend):
+        """ See common.pathutils.joinEx(). """
+        return pathutils.joinEx(self.isWindows() or self.isOS2(), sBase, *asAppend);
+
 
 
 ## @todo Inherit from BaseTestVm
@@ -1359,6 +1364,10 @@ class TestVm(object):
         if sUser == 'vboxuser': # Default unattended installation user and password.
             return 'changeme';
         return 'password';
+
+    def pathJoinEx(self, sBase, *asAppend):
+        """ See common.pathutils.joinEx(). """
+        return pathutils.joinEx(self.isWindows() or self.isOS2(), sBase, *asAppend);
 
 
 

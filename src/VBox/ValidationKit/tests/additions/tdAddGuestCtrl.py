@@ -852,21 +852,18 @@ class tdTestResultDirRead(tdTestResult):
     """
     Test result for reading guest directories.
     """
-    def __init__(self, fRc = False,
-                 numFiles = 0, numDirs = 0):
+    def __init__(self, fRc = False, cFiles = 0, cDirs = 0, cOthers = None):
         tdTestResult.__init__(self, fRc = fRc);
-        self.numFiles = numFiles;
-        self.numDirs = numDirs;
+        self.cFiles = cFiles;
+        self.cDirs = cDirs;
+        self.cOthers = cOthers;
 
 class tdTestResultExec(tdTestResult):
     """
     Holds a guest process execution test result,
     including the exit code, status + fFlags.
     """
-    def __init__(self, fRc = False, \
-                 uExitStatus = 500, iExitCode = 0, \
-                 sBuf = None, cbBuf = 0, \
-                 cbStdOut = 0, cbStdErr = 0):
+    def __init__(self, fRc = False, uExitStatus = 500, iExitCode = 0, sBuf = None, cbBuf = 0, cbStdOut = 0, cbStdErr = 0):
         tdTestResult.__init__(self);
         ## The overall test result.
         self.fRc = fRc;
@@ -1083,6 +1080,44 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
         return (fRc, oTxsSession);
 
+    @staticmethod
+    def getGuestSystemDir(oTestVm):
+        """
+        Helper for finding a system directory in the test VM that we can play around with.
+
+        On Windows this is always the System32 directory, so this function can be used as
+        basis for locating other files in or under that directory.
+        """
+        if oTestVm.isWindows():
+            if oTestVm.sKind in ['WindowsNT4', 'WindowsNT3x',]:
+                return 'C:\\Winnt\\System32';
+            return 'C:\\Windows\\System32';
+        if oTestVm.isOS2():
+            return 'C:\\OS2\\DLL';
+        return "/bin";
+
+    @staticmethod
+    def getGuestSystemShell(oTestVm):
+        """
+        Helper for finding the default system shell in the test VM.
+        """
+        if oTestVm.isWindows():
+            return SubTstDrvAddGuestCtrl.getGuestSystemDir(oTestVm) + '\\cmd.exe';
+        if oTestVm.isOS2():
+            return SubTstDrvAddGuestCtrl.getGuestSystemDir(oTestVm) + '\\..\\CMD.EXE';
+        return "/bin/sh";
+
+    @staticmethod
+    def getGuestSystemFileForReading(oTestVm):
+        """
+        Helper for finding a file in the test VM that we can read.
+        """
+        if oTestVm.isWindows():
+            return SubTstDrvAddGuestCtrl.getGuestSystemDir(oTestVm) + '\\ntdll.dll';
+        if oTestVm.isOS2():
+            return SubTstDrvAddGuestCtrl.getGuestSystemDir(oTestVm) + '\\DOSCALL1.DLL';
+        return "/bin/sh";
+
     def gctrlCopyFileFrom(self, oGuestSession, sSrc, sDst, fFlags, fExpected):
         """
         Helper function to copy a single file from the guest to the host.
@@ -1184,65 +1219,87 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
         return fRc;
 
-    def gctrlReadDir(self, oTest, oRes, oGuestSession, subDir = ''): # pylint: disable=too-many-locals
+
+    def gctrlReadDirTree(self, oTest, oGuestSession, fIsError, sSubDir = None):
         """
-        Helper function to read a guest directory specified in
-        the current test.
+        Helper function to recursively read a guest directory tree specified in the current test.
         """
         sDir     = oTest.sDirectory;
         sFilter  = oTest.sFilter;
         fFlags   = oTest.fFlags;
+        oTestVm  = oTest.oCreds.oTestVm;
+        sCurDir  = oTestVm.pathJoinEx(sDir, sSubDir) if sSubDir else sDir;
 
-        fRc = True; # Be optimistic.
-        cDirs = 0;  # Number of directories read.
-        cFiles = 0; # Number of files read.
+        fRc      = True; # Be optimistic.
+        cDirs    = 0;    # Number of directories read.
+        cFiles   = 0;    # Number of files read.
+        cOthers  = 0;    # Other files.
 
+        #
+        # Open the directory:
+        #
+        # Note! Unlike fileOpen, directoryOpen will not fail if the directory does not exist.
+        #       Looks like it won't do nothing till you read from it.
+        #
+        #reporter.log2('Directory="%s", filter="%s", fFlags="%s"' % (sCurDir, sFilter, fFlags));
         try:
-            sCurDir = os.path.join(sDir, subDir);
-            #reporter.log2('Directory="%s", filter="%s", fFlags="%s"' % (sCurDir, sFilter, fFlags));
             oCurDir = oGuestSession.directoryOpen(sCurDir, sFilter, fFlags);
-            while fRc:
-                try:
-                    oFsObjInfo = oCurDir.read();
-                    if     oFsObjInfo.name == "." \
-                        or oFsObjInfo.name == "..":
-                        #reporter.log2('\tSkipping "%s"' % oFsObjInfo.name);
-                        continue; # Skip "." and ".." entries.
-                    if oFsObjInfo.type is vboxcon.FsObjType_Directory:
-                        #reporter.log2('\tDirectory "%s"' % oFsObjInfo.name);
-                        cDirs += 1;
-                        sSubDir = oFsObjInfo.name;
-                        if subDir != "":
-                            sSubDir = os.path.join(subDir, oFsObjInfo.name);
-                        fRc, cSubDirs, cSubFiles = self.gctrlReadDir(oTest, oRes, oGuestSession, sSubDir);
-                        cDirs += cSubDirs;
-                        cFiles += cSubFiles;
-                    elif oFsObjInfo.type is vboxcon.FsObjType_File:
-                        #reporter.log2('\tFile "%s"' % oFsObjInfo.name);
-                        cFiles += 1;
-                    elif oFsObjInfo.type is vboxcon.FsObjType_Symlink:
-                        #reporter.log2('\tSymlink "%s" -- not tested yet' % oFsObjInfo.name);
-                        pass;
-                    else:
-                        reporter.error('\tDirectory "%s" contains invalid directory entry "%s" (type %d)' % \
-                                       (sCurDir, oFsObjInfo.name, oFsObjInfo.type));
-                        fRc = False;
-                except Exception as oXcpt:
-                    # No necessarily an error -- could be VBOX_E_OBJECT_NOT_FOUND. See reference.
-                    if vbox.ComError.equal(oXcpt, vbox.ComError.VBOX_E_OBJECT_NOT_FOUND):
-                        #reporter.log2('\tNo more directory entries for "%s"' % (sCurDir,));
-                        break
-                    # Just log, don't assume an error here (will be done in the main loop then).
-                    reporter.logXcpt('\tDirectory open exception for directory="%s":' % (sCurDir,));
+        except:
+            reporter.maybeErrXcpt(fIsError, 'sCurDir=%s sFilter=%s fFlags=%s' % (sCurDir, sFilter, fFlags,))
+            return (False, 0, 0, 0);
+
+        # Read the directory.
+        while fRc is True:
+            try:
+                oFsObjInfo = oCurDir.read();
+            except Exception as oXcpt:
+                if vbox.ComError.notEqual(oXcpt, vbox.ComError.VBOX_E_OBJECT_NOT_FOUND):
+                    reporter.maybeErrXcpt(fIsError, 'Error reading directory "%s":' % (sCurDir,)); # See above why 'maybe'.
                     fRc = False;
-                    break;
+                #else: reporter.log2('\tNo more directory entries for "%s"' % (sCurDir,));
+                break;
+
+            try:
+                sName = oFsObjInfo.name;
+                eType = oFsObjInfo.type;
+            except:
+                fRc = reporter.errorXcpt();
+                break;
+
+            if sName in ('.', '..', ):
+                if eType != vboxcon.FsObjType_Directory:
+                    fRc = reporter.error('Wrong type for "%s": %d, expected %d (Directory)'
+                                         % (sName, eType, vboxcon.FsObjType_Directory));
+            elif eType == vboxcon.FsObjType_Directory:
+                #reporter.log2('  Directory "%s"' % oFsObjInfo.name);
+                aSubResult = self.gctrlReadDirTree(oTest, oGuestSession, fIsError,
+                                                   oTestVm.pathJoinEx(sSubDir, sName) if sSubDir else sName);
+                fRc      = aSubResult[0];
+                cDirs   += aSubResult[1] + 1;
+                cFiles  += aSubResult[2];
+                cOthers += aSubResult[3];
+            elif eType is vboxcon.FsObjType_File:
+                #reporter.log2('  File "%s"' % oFsObjInfo.name);
+                cFiles += 1;
+            elif eType is vboxcon.FsObjType_Symlink:
+                 #reporter.log2('  Symlink "%s" -- not tested yet' % oFsObjInfo.name);
+                cOthers += 1;
+            elif    oTestVm.isWindows() \
+                 or oTestVm.isOS2() \
+                 or eType not in (vboxcon.FsObjType_Fifo, vboxcon.FsObjType_DevChar, vboxcon.FsObjType_DevBlock,
+                                  vboxcon.FsObjType_Socket, vboxcon.FsObjType_WhiteOut):
+                fRc = reporter.error('Directory "%s" contains invalid directory entry "%s" (type %d)' %
+                                     (sCurDir, oFsObjInfo.name, oFsObjInfo.type,));
+            else:
+                cOthers += 1;
+
+        # Close the directory
+        try:
             oCurDir.close();
         except:
-            # Just log, don't assume an error here (will be done in the main loop then).
-            reporter.logXcpt('\tDirectory open exception for directory="%s":' % (sCurDir,));
-            fRc = False;
+            fRc = reporter.errorXcpt('sCurDir=%s' % (sCurDir));
 
-        return (fRc, cDirs, cFiles);
+        return (fRc, cDirs, cFiles, cOthers);
 
     def gctrlExecDoTest(self, i, oTest, oRes, oGuestSession):
         """
@@ -1600,18 +1657,13 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
         return (fRc, oTxsSession);
 
-    def testGuestCtrlSessionFileRefs(self, oSession, oTxsSession, oTestVm): # pylint: disable=too-many-locals
+    def testGuestCtrlSessionFileRefs(self, oSession, oTxsSession, oTestVm):
         """
         Tests the guest session file reference handling.
         """
 
         # Find a file to play around with:
-        if oTestVm.isWindows():
-            sFile = "C:\\Windows\\System32\\ntdll.dll";
-            if oTestVm.sKind in ['WindowsNT4', 'WindowsNT3x',]:
-                sFile = "C:\\Winnt\\System32\\ntdll.dll";
-        else:
-            sFile = "/bin/sh";
+        sFile = self.getGuestSystemFileForReading(oTestVm);
 
         # Use credential defaults.
         oCreds = tdCtxCreds();
@@ -1659,7 +1711,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         except: fRc = reporter.errorXcpt();
         else:
             if cFiles != cStaleFiles:
-                fRc = reporter.error('Test failed: Got %d stale files, expected %d' % (cFiles, cStaleFiles));
+                fRc = reporter.error('Got %d stale files, expected %d' % (cFiles, cStaleFiles));
 
         if fRc is True:
             #
@@ -1684,7 +1736,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             except: fRc = reporter.errorXcpt();
             else:
                 if cFiles != cStaleFiles * 2:
-                    fRc = reporter.error('Test failed: Got %d total files, expected %d' % (cFiles, cStaleFiles * 2));
+                    fRc = reporter.error('Got %d total files, expected %d' % (cFiles, cStaleFiles * 2));
 
             # Close them.
             reporter.log2('Closing all non-stale files again ...');
@@ -1701,7 +1753,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             # anymore for) and the opened and then closed non-stale files (that we still keep
             # a reference in aoFiles[] for).
             if cFiles != cStaleFiles:
-                fRc = reporter.error('Test failed: Got %d total files, expected %d' % (cFiles, cStaleFiles));
+                fRc = reporter.error('Got %d total files, expected %d' % (cFiles, cStaleFiles));
 
             #
             # Check that all (referenced) non-stale files are now in the "closed" state.
@@ -1714,7 +1766,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                     fRc = reporter.errorXcpt('Checking status of file #%d failed:' % (i,));
                 else:
                     if eFileStatus != vboxcon.FileStatus_Closed:
-                        fRc = reporter.error('Test failed: Non-stale file #%d has status %d, expected %d'
+                        fRc = reporter.error('Non-stale file #%d has status %d, expected %d'
                                              % (i, eFileStatus, vboxcon.FileStatus_Closed));
 
         if fRc is True:
@@ -1749,10 +1801,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         Tests the guest session process reference handling.
         """
 
-        if oTestVm.isWindows():
-            sCmd = "C:\\windows\\system32\\cmd.exe";
-        elif oTestVm.isLinux():
-            sCmd = "/bin/sh";
+        sCmd = self.getGuestSystemShell(oTestVm);
         aArgs = [sCmd,];
 
         # Use credential defaults.
@@ -1762,141 +1811,134 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         # Number of stale guest processes to create.
         cStaleProcs = 10;
 
-        fRc = True;
+        #
+        # Start a session.
+        #
+        aeWaitFor = [ vboxcon.GuestSessionWaitForFlag_Start ];
         try:
-            oGuest = oSession.o.console.guest;
-            oGuestSession = oGuest.createSession(oCreds.sUser, oCreds.sPassword, oCreds.sDomain, "testGuestCtrlSessionProcRefs");
-            aeWaitFor = [ vboxcon.GuestSessionWaitForFlag_Start ];
-            waitResult = oGuestSession.waitForArray(aeWaitFor, 30 * 1000);
-            #
-            # Be nice to Guest Additions < 4.3: They don't support session handling and
-            # therefore return WaitFlagNotSupported.
-            #
-            if waitResult not in (vboxcon.GuestSessionWaitResult_Start, vboxcon.GuestSessionWaitResult_WaitFlagNotSupported):
-                # Just log, don't assume an error here (will be done in the main loop then).
-                reporter.log('Session did not start successfully, returned wait result: %d' \
-                              % (waitResult));
-                return (False, oTxsSession);
-            reporter.log('Session successfully started');
+            oGuest        = oSession.o.console.guest;
+            oGuestSession = oGuest.createSession(oCreds.sUser, oCreds.sPassword, oCreds.sDomain, "testGuestCtrlSessionFileRefs");
+            eWaitResult   = oGuestSession.waitForArray(aeWaitFor, 30 * 1000);
+        except:
+            return (reporter.errorXcpt(), oTxsSession);
 
+        # Be nice to Guest Additions < 4.3: They don't support session handling and therefore return WaitFlagNotSupported.
+        if eWaitResult not in (vboxcon.GuestSessionWaitResult_Start, vboxcon.GuestSessionWaitResult_WaitFlagNotSupported):
+            return (reporter.error('Session did not start successfully - wait error: %d' % (eWaitResult,)), oTxsSession);
+        reporter.log('Session successfully started');
+
+        #
+        # Fire off forever-running processes and "forget" them (stale entries).
+        # For them we don't have any references anymore intentionally.
+        #
+        reporter.log2('Starting stale processes...');
+        fRc = True;
+        for i in xrange(0, cStaleProcs):
+            try:
+                oGuestSession.processCreate(sCmd,
+                                            aArgs if self.oTstDrv.fpApiVer >= 5.0 else aArgs[1:], [],
+                                            [ vboxcon.ProcessCreateFlag_WaitForStdOut ], \
+                                            30 * 1000);
+                # Note: Use a timeout in the call above for not letting the stale processes
+                #       hanging around forever.  This can happen if the installed Guest Additions
+                #       do not support terminating guest processes.
+            except:
+                fRc = reporter.errorXcpt('Creating stale process #%d failed:' % (i,));
+                break;
+
+        try:    cProcesses = len(self.oTstDrv.oVBoxMgr.getArray(oGuestSession, 'processes'));
+        except: fRc = reporter.errorXcpt();
+        else:
+            if cProcesses != cStaleProcs:
+                fRc = reporter.error('Got %d stale processes, expected %d' % (cProcesses, cStaleProcs));
+
+        if fRc is True:
             #
-            # Fire off forever-running processes and "forget" them (stale entries).
-            # For them we don't have any references anymore intentionally.
+            # Fire off non-stale processes and wait for termination.
             #
-            reporter.log2('Starting stale processes');
+            if oTestVm.isWindows() or oTestVm.isOS2():
+                aArgs = [ sCmd, '/C', 'dir', '/S', self.getGuestSystemDir(oTestVm), ];
+            else:
+                aArgs = [ sCmd, '-c', 'ls -la ' + self.getGuestSystemDir(oTestVm), ];
+            reporter.log2('Starting non-stale processes...');
+            aoProcesses = [];
             for i in xrange(0, cStaleProcs):
                 try:
-                    oGuestSession.processCreate(sCmd,
-                                                aArgs if self.oTstDrv.fpApiVer >= 5.0 else aArgs[1:], [],
-                                                [ vboxcon.ProcessCreateFlag_WaitForStdOut ], \
-                                                30 * 1000);
+                    oCurProc = oGuestSession.processCreate(sCmd, aArgs if self.oTstDrv.fpApiVer >= 5.0 else aArgs[1:],
+                                                           [], [], 0); # Infinite timeout.
+                    aoProcesses.append(oCurProc);
+                except:
+                    fRc = reporter.errorXcpt('Creating non-stale process #%d failed:' % (i,));
+                    break;
+
+            reporter.log2('Waiting for non-stale processes to terminate...');
+            for i, oProcess in enumerate(aoProcesses):
+                try:
+                    oProcess.waitForArray([ vboxcon.ProcessWaitForFlag_Terminate, ], 30 * 1000);
+                    eProcessStatus = oProcess.status;
+                except:
+                    fRc = reporter.errorXcpt('Waiting for non-stale process #%d failed:' % (i,));
+                else:
+                    if eProcessStatus != vboxcon.ProcessStatus_TerminatedNormally:
+                        fRc = reporter.error('Waiting for non-stale processes #%d resulted in status %d, expected %d'
+                                             % (i, eProcessStatus, vboxcon.ProcessStatus_TerminatedNormally));
+
+            try:    cProcesses = len(self.oTstDrv.oVBoxMgr.getArray(oGuestSession, 'processes'));
+            except: fRc = reporter.errorXcpt();
+            else:
+                # Here we count the stale processes (that is, processes we don't have a reference
+                # anymore for) and the started + terminated non-stale processes (that we still keep
+                # a reference in aoProcesses[] for).
+                if cProcesses != (cStaleProcs * 2):
+                    fRc = reporter.error('Got %d total processes, expected %d' % (cProcesses, cStaleProcs));
+
+        if fRc is True:
+            reporter.log2('All non-stale processes terminated');
+
+            #
+            # Fire off non-stale blocking processes which are terminated via terminate().
+            #
+            if oTestVm.isWindows() or oTestVm.isOS2():
+                aArgs = [ sCmd, '/C', 'pause'];
+            else:
+                aArgs = [ sCmd ];
+            reporter.log2('Starting blocking processes...');
+            aoProcesses = [];
+            for i in xrange(0, cStaleProcs):
+                try:
+                    oCurProc = oGuestSession.processCreate(sCmd, aArgs if self.oTstDrv.fpApiVer >= 5.0 else aArgs[1:],
+                                                           [],  [], 30 * 1000);
                     # Note: Use a timeout in the call above for not letting the stale processes
                     #       hanging around forever.  This can happen if the installed Guest Additions
                     #       do not support terminating guest processes.
+                    aoProcesses.append(oCurProc);
                 except:
-                    reporter.logXcpt('Creating stale process #%d failed:' % (i,));
-                    fRc = False;
+                    fRc = reporter.errorXcpt('Creating non-stale blocking process #%d failed:' % (i,));
                     break;
 
-            if fRc:
-                cProcs = len(self.oTstDrv.oVBoxMgr.getArray(oGuestSession, 'processes'));
-                if cProcs != cStaleProcs:
-                    reporter.error('Test failed: Got %d stale processes, expected %d' % (cProcs, cStaleProcs));
-                    fRc = False;
+            reporter.log2('Terminating blocking processes...');
+            for i, oProcess in enumerate(aoProcesses):
+                try:
+                    oProcess.terminate();
+                except: # Termination might not be supported, just skip and log it.
+                    reporter.logXcpt('Termination of blocking process #%d failed, skipped:' % (i,));
 
-            if fRc:
-                #
-                # Fire off non-stale processes and wait for termination.
-                #
-                if oTestVm.isWindows():
-                    aArgs = [ sCmd, '/C', 'dir', '/S', 'C:\\Windows\\system'];
-                else:
-                    aArgs = [ sCmd, '-c', 'date'];
-                reporter.log2('Starting non-stale processes');
-                aaProcs = [];
-                for i in xrange(0, cStaleProcs):
-                    try:
-                        oCurProc = oGuestSession.processCreate(sCmd, aArgs if self.oTstDrv.fpApiVer >= 5.0 else aArgs[1:],
-                                                               [], [], 0); # Infinite timeout.
-                        aaProcs.append(oCurProc);
-                    except:
-                        reporter.logXcpt('Creating non-stale process #%d failed:' % (i,));
-                        fRc = False;
-                        break;
-            if fRc:
-                reporter.log2('Waiting for non-stale processes to terminate');
-                for i in xrange(0, cStaleProcs):
-                    try:
-                        aaProcs[i].waitForArray([ vboxcon.ProcessWaitForFlag_Terminate ], 30 * 1000);
-                        curProcStatus = aaProcs[i].status;
-                        if aaProcs[i].status != vboxcon.ProcessStatus_TerminatedNormally:
-                            reporter.error('Test failed: Waiting for non-stale processes #%d'
-                                           ' resulted in status %d, expected %d' \
-                                   % (i, curProcStatus, vboxcon.ProcessStatus_TerminatedNormally));
-                            fRc = False;
-                    except:
-                        reporter.logXcpt('Waiting for non-stale process #%d failed:' % (i,));
-                        fRc = False;
-                        break;
-                cProcs = len(self.oTstDrv.oVBoxMgr.getArray(oGuestSession, 'processes'));
-                # Here we count the stale processes (that is, processes we don't have a reference
-                # anymore for) and the started + terminated non-stale processes (that we still keep
-                # a reference in aaProcs[] for).
-                if cProcs != (cStaleProcs * 2):
-                    reporter.error('Test failed: Got %d total processes, expected %d' \
-                                   % (cProcs, cStaleProcs));
-                    fRc = False;
-                if fRc:
-                    #
-                    # Check if all (referenced) non-stale processes now are in "terminated" state.
-                    #
-                    for i in xrange(0, cStaleProcs):
-                        curProcStatus = aaProcs[i].status;
-                        if aaProcs[i].status != vboxcon.ProcessStatus_TerminatedNormally:
-                            reporter.error('Test failed: Non-stale processes #%d has status %d, expected %d' \
-                                   % (i, curProcStatus, vboxcon.ProcessStatus_TerminatedNormally));
-                            fRc = False;
-            if fRc:
-                reporter.log2('All non-stale processes terminated');
+            # There still should be 20 processes because we terminated the 10 newest ones.
+            try:    cProcesses = len(self.oTstDrv.oVBoxMgr.getArray(oGuestSession, 'processes'));
+            except: fRc = reporter.errorXcpt();
+            else:
+                if cProcesses != (cStaleProcs * 2):
+                    fRc = reporter.error('Got %d total processes, expected %d' % (cProcesses, cStaleProcs));
+                reporter.log2('Final guest session processes count: %d' % (cProcesses,));
 
-                # Fire off blocking processes which are terminated via terminate().
-                if oTestVm.isWindows():
-                    aArgs = [ sCmd, '/C', 'dir', '/S', 'C:\\Windows'];
-                else:
-                    aArgs = [ sCmd ];
-                reporter.log2('Starting blocking processes');
-                aaProcs = [];
-                for i in xrange(0, cStaleProcs):
-                    try:
-                        oCurProc = oGuestSession.processCreate(sCmd, aArgs if self.oTstDrv.fpApiVer >= 5.0 else aArgs[1:],
-                                                               [],  [], 30 * 1000);
-                        # Note: Use a timeout in the call above for not letting the stale processes
-                        #       hanging around forever.  This can happen if the installed Guest Additions
-                        #       do not support terminating guest processes.
-                        aaProcs.append(oCurProc);
-                    except:
-                        reporter.logXcpt('Creating blocking process failed:');
-                        fRc = False;
-                        break;
-            if fRc:
-                reporter.log2('Terminating blocking processes');
-                for i in xrange(0, cStaleProcs):
-                    try:
-                        aaProcs[i].terminate();
-                    except: # Termination might not be supported, just skip and log it.
-                        reporter.logXcpt('Termination of blocking process failed, skipped:');
-                cProcs = len(self.oTstDrv.oVBoxMgr.getArray(oGuestSession, 'processes'));
-                if cProcs != (cStaleProcs * 2): # Still should be 20 processes because we terminated the 10 newest ones.
-                    reporter.error('Test failed: Got %d total processes, expected %d' % (cProcs, cStaleProcs * 2));
-                    fRc = False;
-            cProcs = len(self.oTstDrv.oVBoxMgr.getArray(oGuestSession, 'processes'));
-            reporter.log2('Final guest session processes count: %d' % (cProcs,));
-            # Now try to close the session and see what happens.
-            reporter.log2('Closing guest session ...');
+        #
+        # Now try to close the session and see what happens.
+        #
+        reporter.log2('Closing guest session ...');
+        try:
             oGuestSession.close();
         except:
-            reporter.logXcpt('Testing for stale processes failed:');
-            fRc = False;
+            fRc = reporter.errorXcpt('Testing for stale processes failed:');
 
         return (fRc, oTxsSession);
 
@@ -1905,8 +1947,8 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         Tests the basic execution feature.
         """
 
-        if oTestVm.isWindows():
-            sImageOut = "C:\\windows\\system32\\cmd.exe";
+        if oTestVm.isWindows() or oTestVm.isOS2():
+            sImageOut = self.getGuestSystemShell(oTestVm);
         else:
             sImageOut = "/bin/ls";
 
@@ -1932,13 +1974,14 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
         if oTestVm.isWindows():
             sVBoxControl = "C:\\Program Files\\Oracle\\VirtualBox Guest Additions\\VBoxControl.exe";
+            sSystem32 = self.getGuestSystemDir(oTestVm);
             aaExec = [
-                # Basic executon.
-                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'dir', '/S', 'c:\\windows\\system32' ]),
+                # Basic execution.
+                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'dir', '/S', sSystem32 ]),
                   tdTestResultExec(fRc = True) ],
-                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'dir', '/S', 'c:\\windows\\system32\\kernel32.dll' ]),
+                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'dir', '/S', sSystem32 + '\\kernel32.dll' ]),
                   tdTestResultExec(fRc = True) ],
-                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'dir', '/S', 'c:\\windows\\system32\\nonexist.dll' ]),
+                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'dir', '/S', sSystem32 + '\\nonexist.dll' ]),
                   tdTestResultExec(fRc = True, iExitCode = 1) ],
                 [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'dir', '/S', '/wrongparam' ]),
                   tdTestResultExec(fRc = True, iExitCode = 1) ],
@@ -1947,17 +1990,17 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 [ tdTestExec(sCmd = sVBoxControl, aArgs = [ sVBoxControl, 'version' ]),
                   tdTestResultExec(fRc = True) ],
                 # StdOut.
-                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'dir', '/S', 'c:\\windows\\system32' ]),
+                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'dir', '/S', sSystem32 ]),
                   tdTestResultExec(fRc = True) ],
                 [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'dir', '/S', 'stdout-non-existing' ]),
                   tdTestResultExec(fRc = True, iExitCode = 1) ],
                 # StdErr.
-                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'dir', '/S', 'c:\\windows\\system32' ]),
+                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'dir', '/S', sSystem32 ]),
                   tdTestResultExec(fRc = True) ],
                 [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'dir', '/S', 'stderr-non-existing' ]),
                   tdTestResultExec(fRc = True, iExitCode = 1) ],
                 # StdOut + StdErr.
-                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'dir', '/S', 'c:\\windows\\system32' ]),
+                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'dir', '/S', sSystem32 ]),
                   tdTestResultExec(fRc = True) ],
                 [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'dir', '/S', 'stdouterr-non-existing' ]),
                   tdTestResultExec(fRc = True, iExitCode = 1) ]
@@ -1983,7 +2026,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         elif oTestVm.isLinux():
             sVBoxControl = "/usr/bin/VBoxControl"; # Symlink
             aaExec = [
-                # Basic executon.
+                # Basic execution.
                 [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '-R', '/etc' ]),
                   tdTestResultExec(fRc = True, iExitCode = 1) ],
                 [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/bin/sh' ]),
@@ -2155,10 +2198,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         For that to test we create a stale guest process and trigger a reboot on the guest.
         """
 
-        if oTestVm.isWindows():
-            sImage = "C:\\windows\\system32\\cmd.exe";
-        else:
-            sImage = "/bin/sh";
+        sImage = self.getGuestSystemShell(oTestVm);
 
         # Use credential defaults.
         oCreds = tdCtxCreds();
@@ -2231,13 +2271,11 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         Tests handling of error levels from started guest processes.
         """
 
-        if oTestVm.isWindows():
-            sImage = "C:\\windows\\system32\\cmd.exe";
-        else:
-            sImage = "/bin/sh";
+        sImage = self.getGuestSystemShell(oTestVm);
 
         aaTests = [];
         if oTestVm.isWindows():
+            sSystem32 = self.getGuestSystemDir(oTestVm);
             aaTests.extend([
                 # Simple.
                 [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'wrongcommand' ]),
@@ -2250,9 +2288,9 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                   tdTestResultExec(fRc = True, iExitCode = 0) ],
                 [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'set', 'ERRORLEVEL=0' ]),
                   tdTestResultExec(fRc = True, iExitCode = 0) ],
-                [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'dir', 'c:\\windows\\system32' ]),
+                [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'dir', sSystem32 ]),
                   tdTestResultExec(fRc = True, iExitCode = 0) ],
-                [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'dir', 'c:\\windows\\system32\\kernel32.dll' ]),
+                [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'dir', sSystem32 + '\\kernel32.dll' ]),
                   tdTestResultExec(fRc = True, iExitCode = 0) ],
                 [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'dir', 'c:\\nonexisting-file' ]),
                   tdTestResultExec(fRc = True, iExitCode = 1) ],
@@ -2260,7 +2298,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                   tdTestResultExec(fRc = True, iExitCode = 1) ]
                 # FIXME: Failing tests.
                 # With stdout.
-                # [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'dir', 'c:\\windows\\system32' ],
+                # [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'dir', sSystem32 ],
                 #              fFlags = [ vboxcon.ProcessCreateFlag_WaitForStdOut ]),
                 #   tdTestResultExec(fRc = True, iExitCode = 0) ],
                 # [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'dir', 'c:\\nonexisting-file' ],
@@ -2270,7 +2308,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 #              fFlags = [ vboxcon.ProcessCreateFlag_WaitForStdOut ]),
                 #   tdTestResultExec(fRc = True, iExitCode = 1) ],
                 # With stderr.
-                # [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'dir', 'c:\\windows\\system32' ],
+                # [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'dir', sSystem32],
                 #              fFlags = [ vboxcon.ProcessCreateFlag_WaitForStdErr ]),
                 #   tdTestResultExec(fRc = True, iExitCode = 0) ],
                 # [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'dir', 'c:\\nonexisting-file' ],
@@ -2280,7 +2318,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 #              fFlags = [ vboxcon.ProcessCreateFlag_WaitForStdErr ]),
                 #   tdTestResultExec(fRc = True, iExitCode = 1) ],
                 # With stdout/stderr.
-                # [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'dir', 'c:\\windows\\system32' ],
+                # [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'dir', sSystem32 ],
                 #              fFlags = [ vboxcon.ProcessCreateFlag_WaitForStdOut, vboxcon.ProcessCreateFlag_WaitForStdErr ]),
                 #   tdTestResultExec(fRc = True, iExitCode = 0) ],
                 # [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'dir', 'c:\\nonexisting-file' ],
@@ -2333,10 +2371,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         Tests handling of timeouts of started guest processes.
         """
 
-        if oTestVm.isWindows():
-            sImage = "C:\\windows\\system32\\cmd.exe";
-        else:
-            sImage = "/bin/sh";
+        sImage = self.getGuestSystemShell(oTestVm);
 
         # Use credential defaults.
         oCreds = tdCtxCreds();
@@ -2624,73 +2659,92 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                     break;
         return (fRc, oTxsSession);
 
-    def testGuestCtrlDirRead(self, oSession, oTxsSession, oTestVm): # pylint: disable=too-many-locals
+    def testGuestCtrlDirRead(self, oSession, oTxsSession, oTestVm):
         """
         Tests opening and reading (enumerating) guest directories.
         """
 
-        aaTests = [];
-        if oTestVm.isWindows():
-            aaTests.extend([
-                # Invalid stuff.
-                [ tdTestDirRead(sDirectory = ''), tdTestResultDirRead(fRc = False) ],
-                [ tdTestDirRead(sDirectory = 'C:\\Windows', fFlags = [ 1234 ]), tdTestResultDirRead() ],
-                [ tdTestDirRead(sDirectory = 'C:\\Windows', sFilter = '*.foo'), tdTestResultDirRead() ],
+        sSystemDir = self.getGuestSystemDir(oTestVm);
+        atTests = [
+            # Invalid stuff.
+            [ tdTestDirRead(sDirectory = ''), tdTestResultDirRead() ],
+            [ tdTestDirRead(sDirectory = sSystemDir, fFlags = [ 1234 ]), tdTestResultDirRead() ],
+            [ tdTestDirRead(sDirectory = sSystemDir, sFilter = '*.foo'), tdTestResultDirRead() ],
+            # Non-existing stuff.
+            [ tdTestDirRead(sDirectory = oTestVm.pathJoinEx(sSystemDir, 'really-no-such-subdir')), tdTestResultDirRead() ],
+            [ tdTestDirRead(sDirectory = oTestVm.pathJoinEx(sSystemDir, 'non', 'existing')), tdTestResultDirRead() ],
+        ];
+
+        if oTestVm.isWindows() or oTestVm.isOS2():
+            atTests.extend([
                 # More unusual stuff.
                 [ tdTestDirRead(sDirectory = 'z:\\'), tdTestResultDirRead() ],
                 [ tdTestDirRead(sDirectory = '\\\\uncrulez\\foo'), tdTestResultDirRead() ],
-                # Non-existing stuff.
-                [ tdTestDirRead(sDirectory = 'c:\\Apps\\nonexisting'), tdTestResultDirRead() ],
-                [ tdTestDirRead(sDirectory = 'c:\\Apps\\testDirRead'), tdTestResultDirRead() ]
             ]);
-
-            if oTestVm.sVmName.startswith('tst-xpsp2'):
-                aaTests.extend([
-                    # Reading directories.
-                    [ tdTestDirRead(sDirectory = '../../Windows/Media'),
-                      tdTestResultDirRead(fRc = True, numFiles = 38) ],
-                    [ tdTestDirRead(sDirectory = 'c:\\Windows\\Help'),
-                      tdTestResultDirRead(fRc = True, numDirs = 13, numFiles = 574) ],
-                    [ tdTestDirRead(sDirectory = 'c:\\Windows\\Web'),
-                      tdTestResultDirRead(fRc = True, numDirs = 3, numFiles = 49) ]
-                ]);
-        elif oTestVm.isLinux():
-            aaTests.extend([
-                # Invalid stuff.
-                [ tdTestDirRead(sDirectory = ''), tdTestResultDirRead() ],
-                [ tdTestDirRead(sDirectory = '/etc', fFlags = [ 1234 ]), tdTestResultDirRead() ],
-                [ tdTestDirRead(sDirectory = '/etc', sFilter = '*.foo'), tdTestResultDirRead() ],
+        else:
+            atTests.extend([
                 # More unusual stuff.
                 [ tdTestDirRead(sDirectory = 'z:/'), tdTestResultDirRead() ],
                 [ tdTestDirRead(sDirectory = '\\\\uncrulez\\foo'), tdTestResultDirRead() ],
-                # Non-existing stuff.
-                [ tdTestDirRead(sDirectory = '/etc/non/existing'), tdTestResultDirRead() ]
+            ]);
+        # Read the system directory (ASSUMES at least 5 files in it):
+        atTests.append([ tdTestDirRead(sDirectory = sSystemDir), tdTestResultDirRead(fRc = True, cFiles = -5, cDirs = None) ]);
+        ## @todo trailing slash
+
+        ## @todo this is very very inflexible.
+        ## Would be better to create a dir tree using TXS and make sure we get it back exactly as expected.
+        if oTestVm.sVmName.startswith('tst-xpsp2'):
+            atTests.extend([
+                # Reading directories.
+                [ tdTestDirRead(sDirectory = '../../Windows/Media'),
+                  tdTestResultDirRead(fRc = True, cFiles = 38) ],
+                [ tdTestDirRead(sDirectory = 'C:\\Windows\\Help'),
+                  tdTestResultDirRead(fRc = True, cDirs = 13, cFiles = 574) ],
+                [ tdTestDirRead(sDirectory = 'C:\\Windows\\Web'),
+                  tdTestResultDirRead(fRc = True, cDirs = 3, cFiles = 49) ]
             ]);
 
+
         fRc = True;
-        for (i, aTest) in enumerate(aaTests):
-            oCurTest = aTest[0]; # tdTestExec, use an index, later.
-            oCurRes  = aTest[1]; # tdTestResult
+        for (i, tTest) in enumerate(atTests):
+            oCurTest = tTest[0]   # type: tdTestExec
+            oCurRes  = tTest[1]   # type: tdTestResultDirRead
+
             reporter.log('Testing #%d, dir="%s" ...' % (i, oCurTest.sDirectory));
             oCurTest.setEnvironment(oSession, oTxsSession, oTestVm);
-            fRc, oCurGuestSession = oCurTest.createSession('testGuestCtrlDirRead: Test #%d' % (i,));
-            if fRc is False:
-                reporter.error('Test #%d failed: Could not create session' % (i,));
+            fRc, oCurGuestSession = oCurTest.createSession('testGuestCtrlDirRead: Test #%d' % (i,), True);
+            if fRc is not True:
                 break;
-            (fRc2, cDirs, cFiles) = self.gctrlReadDir(oCurTest, oCurRes, oCurGuestSession);
-            oCurTest.closeSession();
+            (fRc2, cDirs, cFiles, cOthers) = self.gctrlReadDirTree(oCurTest, oCurGuestSession, oCurRes.fRc);
+            oCurTest.closeSession(True);
+
             reporter.log2('Test #%d: Returned %d directories, %d files total' % (i, cDirs, cFiles));
             if fRc2 is oCurRes.fRc:
                 if fRc2 is True:
-                    if oCurRes.numFiles != cFiles:
-                        reporter.error('Test #%d failed: Got %d files, expected %d' % (i, cFiles, oCurRes.numFiles));
-                        fRc = False;
-                    if oCurRes.numDirs != cDirs:
-                        reporter.error('Test #%d failed: Got %d directories, expected %d' % (i, cDirs, oCurRes.numDirs));
-                        fRc = False;
+                    if oCurRes.cFiles is None:
+                        pass; # ignore
+                    elif oCurRes.cFiles >= 0 and cFiles != oCurRes.cFiles:
+                        fRc = reporter.error('Test #%d failed: Got %d files, expected %d' % (i, cFiles, oCurRes.cFiles));
+                    elif oCurRes.cFiles < 0 and cFiles < -oCurRes.cFiles:
+                        fRc = reporter.error('Test #%d failed: Got %d files, expected at least %d'
+                                             % (i, cFiles, -oCurRes.cFiles));
+                    if oCurRes.cDirs is None:
+                        pass; # ignore
+                    elif oCurRes.cDirs >= 0 and cDirs != oCurRes.cDirs:
+                        fRc = reporter.error('Test #%d failed: Got %d directories, expected %d' % (i, cDirs, oCurRes.cDirs));
+                    elif oCurRes.cDirs < 0 and cDirs < -oCurRes.cDirs:
+                        fRc = reporter.error('Test #%d failed: Got %d directories, expected at least %d'
+                                             % (i, cDirs, -oCurRes.cDirs));
+                    if oCurRes.cOthers is None:
+                        pass; # ignore
+                    elif oCurRes.cOthers >= 0 and cOthers != oCurRes.cOthers:
+                        fRc = reporter.error('Test #%d failed: Got %d other types, expected %d' % (i, cOthers, oCurRes.cOthers));
+                    elif oCurRes.cOthers < 0 and cOthers < -oCurRes.cOthers:
+                        fRc = reporter.error('Test #%d failed: Got %d other types, expected at least %d'
+                                             % (i, cOthers, -oCurRes.cOthers));
+
             else:
-                reporter.error('Test #%d failed: Got %s, expected %s' % (i, fRc2, oCurRes.fRc));
-                fRc = False;
+                fRc = reporter.error('Test #%d failed: Got %s, expected %s' % (i, fRc2, oCurRes.fRc));
 
         return (fRc, oTxsSession);
 
@@ -3692,7 +3746,7 @@ class tdAddGuestCtrl(vbox.TestDriver):                                         #
         aWaitFor = [ vboxcon.GuestSessionWaitForFlag_Start ];
         _ = oGuestSession.waitForArray(aWaitFor, 30 * 1000);
 
-        sCmd = 'c:\\windows\\system32\\cmd.exe';
+        sCmd = SubTstDrvAddGuestCtrl.getGuestSystemShell(oTestVm);
         aArgs = [ sCmd, '/C', 'dir', '/S', 'c:\\windows' ];
         aEnv = [];
         fFlags = [];
