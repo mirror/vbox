@@ -759,34 +759,24 @@ void UIMediumEnumerator::recacheFromActualUsage(const CMediumMap &currentCMedium
 
 #else /* VBOX_GUI_WITH_NEW_MEDIA_EVENTS */
 
-void UIMediumEnumerator::parseMachine(CMachine comMachine, QList<QUuid> &result)
+void UIMediumEnumerator::parseMachineId(const QUuid &uMachineId, QList<QUuid> &result)
 {
-    /* Acquire machine ID: */
-    const QUuid uMachineId = comMachine.GetId();
-    if (!comMachine.isOk())
+    /* For each the cached UIMedium we have: */
+    foreach (const QUuid &uMediumId, mediumIDs())
     {
-        LogRel2(("GUI: UIMediumEnumerator:  Unable to acquire machine ID!\n"));
-        msgCenter().cannotAcquireMachineParameter(comMachine);
-    }
-    else
-    {
-        /* For each the cached UIMedium we have: */
-        foreach (const QUuid &uMediumId, mediumIDs())
+        /* Check if medium isn't NULL, used by our
+         * machine and wasn't already enumerated. */
+        const UIMedium guiMedium = medium(uMediumId);
+        if (   !guiMedium.isNull()
+            && guiMedium.machineIds().contains(uMachineId)
+            && !result.contains(uMediumId))
         {
-            /* Check if medium isn't NULL, used by our
-             * machine and wasn't already enumerated. */
-            const UIMedium guiMedium = medium(uMediumId);
-            if (   !guiMedium.isNull()
-                && guiMedium.machineIds().contains(uMachineId)
-                && !result.contains(uMediumId))
-            {
-                /* Enumerate corresponding UIMedium: */
-                LogRel2(("GUI: UIMediumEnumerator:  Medium {%s} of machine {%s} will be enumerated..\n",
-                         uMediumId.toString().toUtf8().constData(),
-                         uMachineId.toString().toUtf8().constData()));
-                createMediumEnumerationTask(guiMedium);
-                result << uMediumId;
-            }
+            /* Enumerate corresponding UIMedium: */
+            LogRel2(("GUI: UIMediumEnumerator:  Medium {%s} of machine {%s} will be enumerated..\n",
+                     uMediumId.toString().toUtf8().constData(),
+                     uMachineId.toString().toUtf8().constData()));
+            createMediumEnumerationTask(guiMedium);
+            result << uMediumId;
         }
     }
 }
@@ -828,8 +818,18 @@ void UIMediumEnumerator::parseAttachment(CMediumAttachment comAttachment, QList<
             }
             else
             {
-                /* Parse machine: */
-                parseMachine(comMachine, result);
+                /* Acquire machine ID: */
+                const QUuid uMachineId = comMachine.GetId();
+                if (!comMachine.isOk())
+                {
+                    LogRel2(("GUI: UIMediumEnumerator:  Unable to acquire machine ID!\n"));
+                    msgCenter().cannotAcquireMachineParameter(comMachine);
+                }
+                else
+                {
+                    /* Parse machine ID: */
+                    parseMachineId(uMachineId, result);
+                }
             }
         }
     }
