@@ -29,22 +29,12 @@ terms and conditions of either the GPL or the CDDL or both.
 """
 __version__ = "$Revision$"
 
-# Disable bitching about too many arguments per function.
-# pylint: disable=too-many-arguments
-
-## @todo Convert map() usage to a cleaner alternative Python now offers.
-# pylint: disable=bad-builtin
-
-## @todo Convert the context/test classes into named tuples. Not in the mood right now, so
-#        disabling it.
-# pylint: disable=too-few-public-methods
-
 # Standard Python imports.
 from array import array
 import errno
 import os
 import random
-import string # pylint: disable=deprecated-module
+import string
 import struct
 import sys
 import threading
@@ -67,13 +57,14 @@ from common     import utils;
 # Python 3 hacks:
 if sys.version_info[0] >= 3:
     long = int      # pylint: disable=redefined-builtin,invalid-name
+    xrange = range; # pylint: disable=redefined-builtin,invalid-name
 
 
 class GuestStream(bytearray):
     """
     Class for handling a guest process input/output stream.
     """
-    def appendStream(self, stream, convertTo='<b'):
+    def appendStream(self, stream, convertTo = '<b'):
         """
         Appends and converts a byte sequence to this object;
         handy for displaying a guest stream.
@@ -82,14 +73,14 @@ class GuestStream(bytearray):
 
 class tdCtxTest(object):
     """
-    Provides the actual test environment. Should be kept
-    as generic as possible.
+    Provides the actual test environment.
+    Should be kept as generic as possible.
     """
     def __init__(self, oSession, oTxsSession, oTestVm): # pylint: disable=unused-argument
         ## The desired Main API result.
         self.fRc = False;
         ## IGuest reference.
-        self.oGuest      = oSession.o.console.guest;
+        self.oGuest      = oSession.o.console.guest; ## @todo may throw shit
         self.oSesison    = oSession;
         self.oTxsSesison = oTxsSession;
         self.oTestVm     = oTestVm;
@@ -124,6 +115,7 @@ class tdCtxCreds(object):
 class tdTestGuestCtrlBase(object):
     """
     Base class for all guest control tests.
+
     Note: This test ASSUMES that working Guest Additions
           were installed and running on the guest to be tested.
     """
@@ -149,14 +141,14 @@ class tdTestGuestCtrlBase(object):
         reporter.log('Creating + uploading log data file "%s"' % sFileName);
         sHstFileName = os.path.join(oTstDrv.sScratchPath, sFileName);
         try:
-            oCurTestFile     = open(sHstFileName, "wb");
+            oCurTestFile = open(sHstFileName, "wb");
             oCurTestFile.write(aData);
             oCurTestFile.close();
-            reporter.addLogFile(sHstFileName, 'misc/other', sDesc);
         except:
-            reporter.error('Unable to create temporary file for "%s"' % sDesc);
+            return reporter.error('Unable to create temporary file for "%s"' % (sDesc,));
+        return reporter.addLogFile(sHstFileName, 'misc/other', sDesc);
 
-    def createSession(self, sName):
+    def createSession(self, sName, fIsError = False):
         """
         Creates (opens) a guest session.
         Returns (True, IGuestSession) on success or (False, None) on failure.
@@ -164,36 +156,37 @@ class tdTestGuestCtrlBase(object):
         if self.oGuestSession is None:
             if sName is None:
                 sName = "<untitled>";
+
+            reporter.log('Creating session "%s" ...' % (sName,));
             try:
-                reporter.log('Creating session "%s" ...' % (sName,));
                 self.oGuestSession = self.oTest.oGuest.createSession(self.oCreds.sUser,
                                                                      self.oCreds.sPassword,
                                                                      self.oCreds.sDomain,
                                                                      sName);
             except:
                 # Just log, don't assume an error here (will be done in the main loop then).
-                reporter.logXcpt('Creating a guest session "%s" failed; sUser="%s", pw="%s", sDomain="%s":'
-                                 % (sName, self.oCreds.sUser, self.oCreds.sPassword, self.oCreds.sDomain));
+                reporter.maybeErrXcpt(fIsError, 'Creating a guest session "%s" failed; sUser="%s", pw="%s", sDomain="%s":'
+                                      % (sName, self.oCreds.sUser, self.oCreds.sPassword, self.oCreds.sDomain));
                 return (False, None);
 
+            reporter.log('Waiting for session "%s" to start within %dms...' % (sName, self.timeoutMS));
+            aeWaitFor = [ vboxcon.GuestSessionWaitForFlag_Start, ];
             try:
-                reporter.log('Waiting for session "%s" to start within %dms...' % (sName, self.timeoutMS));
-                fWaitFor = [ vboxcon.GuestSessionWaitForFlag_Start ];
-                waitResult = self.oGuestSession.waitForArray(fWaitFor, self.timeoutMS);
+                waitResult = self.oGuestSession.waitForArray(aeWaitFor, self.timeoutMS);
+
                 #
                 # Be nice to Guest Additions < 4.3: They don't support session handling and
                 # therefore return WaitFlagNotSupported.
                 #
                 if waitResult not in (vboxcon.GuestSessionWaitResult_Start, vboxcon.GuestSessionWaitResult_WaitFlagNotSupported):
                     # Just log, don't assume an error here (will be done in the main loop then).
-                    reporter.log('Session did not start successfully, returned wait result: %d' \
-                                  % (waitResult,));
+                    reporter.maybeErr(fIsError, 'Session did not start successfully, returned wait result: %d' % (waitResult,));
                     return (False, None);
                 reporter.log('Session "%s" successfully started' % (sName,));
             except:
                 # Just log, don't assume an error here (will be done in the main loop then).
-                reporter.logXcpt('Waiting for guest session "%s" (usr=%s;pw=%s;dom=%s) to start failed:'
-                                 % (sName, self.oCreds.sUser, self.oCreds.sPassword, self.oCreds.sDomain,));
+                reporter.maybeErrXcpt(fIsError, 'Waiting for guest session "%s" (usr=%s;pw=%s;dom=%s) to start failed:'
+                                      % (sName, self.oCreds.sUser, self.oCreds.sPassword, self.oCreds.sDomain,));
                 return (False, None);
         else:
             reporter.log('Warning: Session already set; this is probably not what you want');
@@ -209,19 +202,23 @@ class tdTestGuestCtrlBase(object):
         self.oGuestSession = oGuestSession;
         return self.oGuestSession;
 
-    def closeSession(self):
+    def closeSession(self, fIsError = False):
         """
         Closes the guest session.
         """
         if self.oGuestSession is not None:
-            sName = self.oGuestSession.name;
             try:
-                reporter.log('Closing session "%s" ...' % (sName,));
+                sName = self.oGuestSession.name;
+            except:
+                return reporter.errorXcpt();
+
+            reporter.log('Closing session "%s" ...' % (sName,));
+            try:
                 self.oGuestSession.close();
                 self.oGuestSession = None;
             except:
                 # Just log, don't assume an error here (will be done in the main loop then).
-                reporter.logXcpt('Closing guest session "%s" failed:' % (sName,));
+                reporter.maybeErrXcpt(fIsError, 'Closing guest session "%s" failed:' % (sName,));
                 return False;
         return True;
 
@@ -229,34 +226,34 @@ class tdTestCopyFrom(tdTestGuestCtrlBase):
     """
     Test for copying files from the guest to the host.
     """
-    def __init__(self, sSrc = "", sDst = "", sUser = None, sPassword = None, aFlags = None):
+    def __init__(self, sSrc = "", sDst = "", sUser = None, sPassword = None, fFlags = None):
         tdTestGuestCtrlBase.__init__(self);
         self.oCreds = tdCtxCreds(sUser, sPassword, sDomain = None);
         self.sSrc = sSrc;
         self.sDst = sDst;
-        self.aFlags = aFlags;
+        self.fFlags = fFlags;
 
 class tdTestCopyTo(tdTestGuestCtrlBase):
     """
     Test for copying files from the host to the guest.
     """
-    def __init__(self, sSrc = "", sDst = "", sUser = None, sPassword = None, aFlags = None):
+    def __init__(self, sSrc = "", sDst = "", sUser = None, sPassword = None, fFlags = None):
         tdTestGuestCtrlBase.__init__(self);
         self.oCreds = tdCtxCreds(sUser, sPassword, sDomain = None);
         self.sSrc = sSrc;
         self.sDst = sDst;
-        self.aFlags = aFlags;
+        self.fFlags = fFlags;
 
 class tdTestDirCreate(tdTestGuestCtrlBase):
     """
     Test for directoryCreate call.
     """
-    def __init__(self, sDirectory = "", sUser = None, sPassword = None, fMode = 0, aFlags = None):
+    def __init__(self, sDirectory = "", sUser = None, sPassword = None, fMode = 0, fFlags = None):
         tdTestGuestCtrlBase.__init__(self);
         self.oCreds = tdCtxCreds(sUser, sPassword, sDomain = None);
         self.sDirectory = sDirectory;
         self.fMode = fMode;
-        self.aFlags = aFlags;
+        self.fFlags = fFlags;
 
 class tdTestDirCreateTemp(tdTestGuestCtrlBase):
     """
@@ -274,37 +271,34 @@ class tdTestDirOpen(tdTestGuestCtrlBase):
     """
     Test for the directoryOpen call.
     """
-    def __init__(self, sDirectory = "", sUser = None, sPassword = None,
-                 sFilter = "", aFlags = None):
+    def __init__(self, sDirectory = "", sUser = None, sPassword = None, sFilter = "", fFlags = None):
         tdTestGuestCtrlBase.__init__(self);
         self.oCreds = tdCtxCreds(sUser, sPassword, sDomain = None);
         self.sDirectory = sDirectory;
         self.sFilter = sFilter;
-        self.aFlags = aFlags or [];
+        self.fFlags = fFlags or [];
 
 class tdTestDirRead(tdTestDirOpen):
     """
     Test for the opening, reading and closing a certain directory.
     """
     def __init__(self, sDirectory = "", sUser = None, sPassword = None,
-                 sFilter = "", aFlags = None):
-        tdTestDirOpen.__init__(self, sDirectory, sUser, sPassword, sFilter, aFlags);
+                 sFilter = "", fFlags = None):
+        tdTestDirOpen.__init__(self, sDirectory, sUser, sPassword, sFilter, fFlags);
 
 class tdTestExec(tdTestGuestCtrlBase):
     """
     Specifies exactly one guest control execution test.
     Has a default timeout of 5 minutes (for safety).
     """
-    def __init__(self, sCmd = "", aArgs = None, aEnv = None, \
-                 aFlags = None, timeoutMS = 5 * 60 * 1000, \
-                 sUser = None, sPassword = None, sDomain = None, \
-                 fWaitForExit = True):
+    def __init__(self, sCmd = "", aArgs = None, aEnv = None, fFlags = None,             # pylint: disable=too-many-arguments
+                 timeoutMS = 5 * 60 * 1000, sUser = None, sPassword = None, sDomain = None, fWaitForExit = True):
         tdTestGuestCtrlBase.__init__(self);
         self.oCreds = tdCtxCreds(sUser, sPassword, sDomain);
         self.sCmd = sCmd;
         self.aArgs = aArgs if aArgs is not None else [sCmd,];
         self.aEnv = aEnv;
-        self.aFlags = aFlags or [];
+        self.fFlags = fFlags or [];
         self.timeoutMS = timeoutMS;
         self.fWaitForExit = fWaitForExit;
         self.uExitStatus = 0;
@@ -364,22 +358,18 @@ class tdTestFileReadWrite(tdTestGuestCtrlBase):
     """
     Tests reading from guest files.
     """
-    def __init__(self, sFile = "", sUser = None, sPassword = None,
-                 sOpenMode = "r", sDisposition = "",
-                 sSharingMode = "",
-                 lCreationMode = 0, cbOffset = 0, cbToReadWrite = 0,
-                 aBuf = None):
+    def __init__(self, sFile = "", sUser = None, sPassword = None, sOpenMode = "r", # pylint: disable=too-many-arguments
+                 sDisposition = "", sSharingMode = "", fCreationMode = 0, offFile = 0, cbToReadWrite = 0, abBuf = None):
         tdTestGuestCtrlBase.__init__(self);
         self.oCreds = tdCtxCreds(sUser, sPassword, sDomain = None);
         self.sFile = sFile;
         self.sOpenMode = sOpenMode;
         self.sDisposition = sDisposition;
         self.sSharingMode = sSharingMode;
-        self.lCreationMode = lCreationMode;
-        self.cbOffset = cbOffset; ## r=bird: Wrong prefix. Just 'off' will suffice, alternatively 'offFile'.
-                                  ##         'cbOffset' looks like sizeof(offFile), which is probably 8 bytes these days. :-)
+        self.fCreationMode = fCreationMode;
+        self.offFile = offFile;
         self.cbToReadWrite = cbToReadWrite;
-        self.aBuf = aBuf;
+        self.abBuf = abBuf;
 
     def getOpenAction(self):
         """ Converts string disposition to open action enum. """
@@ -410,7 +400,7 @@ class tdTestSession(tdTestGuestCtrlBase):
     def __init__(self, sUser = None, sPassword = None, sDomain = None, sSessionName = ""):
         tdTestGuestCtrlBase.__init__(self);
         self.sSessionName = sSessionName;
-        self.oCreds = tdCtxCreds(sUser, sPassword, sDomain);
+        self.oCreds       = tdCtxCreds(sUser, sPassword, sDomain);
 
     def getSessionCount(self, oVBoxMgr):
         """
@@ -419,7 +409,11 @@ class tdTestSession(tdTestGuestCtrlBase):
         """
         if self.oTest.oGuest is None:
             return 0;
-        aoSession = oVBoxMgr.getArray(self.oTest.oGuest, 'sessions')
+        try:
+            aoSession = oVBoxMgr.getArray(self.oTest.oGuest, 'sessions')
+        except:
+            reporter.errorXcpt('sSessionName: %s' % (self.sSessionName,));
+            return 0;
         return len(aoSession);
 
 class tdTestSessionEx(tdTestGuestCtrlBase):
@@ -451,16 +445,16 @@ class tdTestSessionEx(tdTestGuestCtrlBase):
             try:
                 fRc = self.executeSteps(oTstDrv, oCurSession, sMsgPrefix);
             except:
-                reporter.errorXcpt('%s: Unexpected exception executing test steps' % (sMsgPrefix,));
-                fRc = False;
+                fRc = reporter.errorXcpt('%s: Unexpected exception executing test steps' % (sMsgPrefix,));
 
-            fRc2 = self.closeSession();
+            #
+            # Close the session.
+            #
+            fRc2 = self.closeSession(True);
             if fRc2 is False:
-                reporter.error('%s: Session could not be closed' % (sMsgPrefix,));
-                fRc = False;
+                fRc = reporter.error('%s: Session could not be closed' % (sMsgPrefix,));
         else:
-            reporter.error('%s: Session creation failed' % (sMsgPrefix,));
-            fRc = False;
+            fRc = reporter.error('%s: Session creation failed' % (sMsgPrefix,));
         return fRc;
 
     def executeSteps(self, oTstDrv, oGstCtrlSession, sMsgPrefix):
@@ -474,7 +468,7 @@ class tdTestSessionEx(tdTestGuestCtrlBase):
             if fRc2 is True:
                 pass;
             elif fRc2 is None:
-                reporter.log('skipping remaining %d steps' % (len(self.aoSteps) - i - 1,));
+                reporter.log('%s: skipping remaining %d steps' % (sMsgPrefix, len(self.aoSteps) - i - 1,));
                 break;
             else:
                 fRc = False;
@@ -488,12 +482,11 @@ class tdTestSessionEx(tdTestGuestCtrlBase):
         fRc = True;
         for (i, oCurTest) in enumerate(aoTests):
             try:
-                fRc2 = oCurTest.execute(oTstDrv, oVmSession, oTxsSession, oTestVm, '%s, test %#d' % (sMsgPrefix, i,));
+                fRc2 = oCurTest.execute(oTstDrv, oVmSession, oTxsSession, oTestVm, '%s / %#d' % (sMsgPrefix, i,));
                 if fRc2 is not True:
                     fRc = False;
             except:
-                reporter.errorXcpt('Unexpected exception executing test #%d' % (i,));
-                fRc = False;
+                fRc = reporter.errorXcpt('%s: Unexpected exception executing test #%d' % (sMsgPrefix, i ,));
 
         return (fRc, oTxsSession);
 
@@ -511,10 +504,9 @@ class tdSessionStepBase(object):
         Returns False on failure (must be reported as error).
         Returns None if to skip the remaining steps.
         """
-        reporter.error('%s: Missing execute implementation: %s' % (sMsgPrefix, self,));
         _ = oTstDrv;
         _ = oGstCtrlSession;
-        return False;
+        return reporter.error('%s: Missing execute implementation: %s' % (sMsgPrefix, self,));
 
 
 class tdStepRequireMinimumApiVer(tdSessionStepBase):
@@ -562,22 +554,19 @@ class tdStepSessionSetEnv(tdSessionStepBase):
             # Is this an expected failure?
             if vbox.ComError.equal(oXcpt, self.hrcExpected):
                 return True;
-            reporter.errorXcpt('%s: Expected hrc=%#x (%s) got %#x (%s) instead (setenv %s=%s)'
-                               % (sMsgPrefix, self.hrcExpected, vbox.ComError.toString(self.hrcExpected),
-                                  vbox.ComError.getXcptResult(oXcpt),
-                                  vbox.ComError.toString(vbox.ComError.getXcptResult(oXcpt)),
-                                  self.sVar, self.sValue,));
-            return False;
+            return reporter.errorXcpt('%s: Expected hrc=%#x (%s) got %#x (%s) instead (setenv %s=%s)'
+                                      % (sMsgPrefix, self.hrcExpected, vbox.ComError.toString(self.hrcExpected),
+                                         vbox.ComError.getXcptResult(oXcpt),
+                                         vbox.ComError.toString(vbox.ComError.getXcptResult(oXcpt)),
+                                         self.sVar, self.sValue,));
         except:
-            reporter.errorXcpt('%s: Unexpected exception in tdStepSessionSetEnv::execute (%s=%s)'
-                               % (sMsgPrefix, self.sVar, self.sValue,));
-            return False;
+            return reporter.errorXcpt('%s: Unexpected exception in tdStepSessionSetEnv::execute (%s=%s)'
+                                      % (sMsgPrefix, self.sVar, self.sValue,));
 
         # Should we succeed?
         if self.hrcExpected != 0:
-            reporter.error('%s: Expected hrcExpected=%#x, got S_OK (putenv %s=%s)'
-                           % (sMsgPrefix, self.hrcExpected, self.sVar, self.sValue,));
-            return False;
+            return reporter.error('%s: Expected hrcExpected=%#x, got S_OK (putenv %s=%s)'
+                                  % (sMsgPrefix, self.hrcExpected, self.sVar, self.sValue,));
         return True;
 
 class tdStepSessionUnsetEnv(tdSessionStepBase):
@@ -603,22 +592,19 @@ class tdStepSessionUnsetEnv(tdSessionStepBase):
             # Is this an expected failure?
             if vbox.ComError.equal(oXcpt, self.hrcExpected):
                 return True;
-            reporter.errorXcpt('%s: Expected hrc=%#x (%s) got %#x (%s) instead (unsetenv %s)'
-                               % (sMsgPrefix, self.hrcExpected, vbox.ComError.toString(self.hrcExpected),
-                                  vbox.ComError.getXcptResult(oXcpt),
-                                  vbox.ComError.toString(vbox.ComError.getXcptResult(oXcpt)),
-                                  self.sVar,));
-            return False;
+            return reporter.errorXcpt('%s: Expected hrc=%#x (%s) got %#x (%s) instead (unsetenv %s)'
+                                       % (sMsgPrefix, self.hrcExpected, vbox.ComError.toString(self.hrcExpected),
+                                          vbox.ComError.getXcptResult(oXcpt),
+                                          vbox.ComError.toString(vbox.ComError.getXcptResult(oXcpt)),
+                                          self.sVar,));
         except:
-            reporter.errorXcpt('%s: Unexpected exception in tdStepSessionUnsetEnv::execute (%s)'
-                               % (sMsgPrefix, self.sVar,));
-            return False;
+            return reporter.errorXcpt('%s: Unexpected exception in tdStepSessionUnsetEnv::execute (%s)'
+                                      % (sMsgPrefix, self.sVar,));
 
         # Should we succeed?
         if self.hrcExpected != 0:
-            reporter.error('%s: Expected hrcExpected=%#x, got S_OK (unsetenv %s)'
-                           % (sMsgPrefix, self.hrcExpected, self.sVar,));
-            return False;
+            return reporter.error('%s: Expected hrcExpected=%#x, got S_OK (unsetenv %s)'
+                                  % (sMsgPrefix, self.hrcExpected, self.sVar,));
         return True;
 
 class tdStepSessionBulkEnv(tdSessionStepBase):
@@ -644,16 +630,14 @@ class tdStepSessionBulkEnv(tdSessionStepBase):
             # Is this an expected failure?
             if vbox.ComError.equal(oXcpt, self.hrcExpected):
                 return True;
-            reporter.errorXcpt('%s: Expected hrc=%#x (%s) got %#x (%s) instead (asEnv=%s)'
-                               % (sMsgPrefix, self.hrcExpected, vbox.ComError.toString(self.hrcExpected),
-                                  vbox.ComError.getXcptResult(oXcpt),
-                                  vbox.ComError.toString(vbox.ComError.getXcptResult(oXcpt)),
-                                  self.asEnv,));
-            return False;
+            return reporter.errorXcpt('%s: Expected hrc=%#x (%s) got %#x (%s) instead (asEnv=%s)'
+                                       % (sMsgPrefix, self.hrcExpected, vbox.ComError.toString(self.hrcExpected),
+                                          vbox.ComError.getXcptResult(oXcpt),
+                                          vbox.ComError.toString(vbox.ComError.getXcptResult(oXcpt)),
+                                          self.asEnv,));
         except:
-            reporter.errorXcpt('%s: Unexpected exception writing the environmentChanges property (asEnv=%s).'
-                               % (sMsgPrefix, self.asEnv));
-            return False;
+            return reporter.errorXcpt('%s: Unexpected exception writing the environmentChanges property (asEnv=%s).'
+                                      % (sMsgPrefix, self.asEnv));
         return True;
 
 class tdStepSessionClearEnv(tdStepSessionBulkEnv):
@@ -687,8 +671,7 @@ class tdStepSessionCheckEnv(tdSessionStepBase):
             else:
                 asCurEnv = oTstDrv.oVBoxMgr.getArray(oGstCtrlSession, 'environment');
         except:
-            reporter.errorXcpt('%s: Unexpected exception reading the environmentChanges property.' % (sMsgPrefix,));
-            return False;
+            return reporter.errorXcpt('%s: Unexpected exception reading the environmentChanges property.' % (sMsgPrefix,));
 
         #
         # Compare it with the expected one by trying to remove each expected value
@@ -700,11 +683,9 @@ class tdStepSessionCheckEnv(tdSessionStepBase):
             try:
                 asCopy.remove(sExpected);
             except:
-                reporter.error('%s: Expected "%s" to be in the resulting environment' % (sMsgPrefix, sExpected,));
-                fRc = False;
+                fRc = reporter.error('%s: Expected "%s" to be in the resulting environment' % (sMsgPrefix, sExpected,));
         for sUnexpected in asCopy:
-            reporter.error('%s: Unexpected "%s" in the resulting environment' % (sMsgPrefix, sUnexpected,));
-            fRc = False;
+            fRc = reporter.error('%s: Unexpected "%s" in the resulting environment' % (sMsgPrefix, sUnexpected,));
 
         if fRc is not True:
             reporter.log2('%s: Current environment: %s' % (sMsgPrefix, asCurEnv));
@@ -851,13 +832,13 @@ class tdTestUpdateAdditions(tdTestGuestCtrlBase):
     """
     Test updating the Guest Additions inside the guest.
     """
-    def __init__(self, sSrc = "", aArgs = None, aFlags = None,
+    def __init__(self, sSrc = "", aArgs = None, fFlags = None,
                  sUser = None, sPassword = None, sDomain = None):
         tdTestGuestCtrlBase.__init__(self);
         self.oCreds = tdCtxCreds(sUser, sPassword, sDomain);
         self.sSrc = sSrc;
         self.aArgs = aArgs;
-        self.aFlags = aFlags;
+        self.fFlags = fFlags;
 
 class tdTestResult(object):
     """
@@ -880,7 +861,7 @@ class tdTestResultDirRead(tdTestResult):
 class tdTestResultExec(tdTestResult):
     """
     Holds a guest process execution test result,
-    including the exit code, status + aFlags.
+    including the exit code, status + fFlags.
     """
     def __init__(self, fRc = False, \
                  uExitStatus = 500, iExitCode = 0, \
@@ -915,11 +896,11 @@ class tdTestResultFileReadWrite(tdTestResult):
     Test result for reading + writing guest directories.
     """
     def __init__(self, fRc = False,
-                 cbProcessed = 0, cbOffset = 0, aBuf = None):
+                 cbProcessed = 0, offFile = 0, abBuf = None):
         tdTestResult.__init__(self, fRc = fRc);
         self.cbProcessed = cbProcessed;
-        self.cbOffset = cbOffset;
-        self.aBuf = aBuf;
+        self.offFile = offFile;
+        self.abBuf = abBuf;
 
 class tdTestResultSession(tdTestResult):
     """
@@ -1102,50 +1083,61 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
         return (fRc, oTxsSession);
 
-    def gctrlCopyFileFrom(self, oGuestSession, sSrc, sDst, aFlags):
+    def gctrlCopyFileFrom(self, oGuestSession, sSrc, sDst, fFlags, fExpected):
         """
         Helper function to copy a single file from the guest to the host.
         """
-        fRc = True; # Be optimistic.
+        reporter.log2('Copying guest file "%s" to host "%s"' % (sSrc, sDst));
         try:
-            reporter.log2('Copying guest file "%s" to host "%s"' % (sSrc, sDst));
             if self.oTstDrv.fpApiVer >= 5.0:
-                curProgress = oGuestSession.fileCopyFromGuest(sSrc, sDst, aFlags);
+                oCurProgress = oGuestSession.fileCopyFromGuest(sSrc, sDst, fFlags);
             else:
-                curProgress = oGuestSession.copyFrom(sSrc, sDst, aFlags);
-            if curProgress is not None:
-                oProgress = vboxwrappers.ProgressWrapper(curProgress, self.oTstDrv.oVBoxMgr, self.oTstDrv, "gctrlFileCopyFrom");
-                try:
-                    oProgress.wait();
-                    if not oProgress.isSuccess():
-                        oProgress.logResult(fIgnoreErrors = True);
-                        fRc = False;
-                except:
-                    reporter.logXcpt('Waiting exception for sSrc="%s", sDst="%s":' % (sSrc, sDst));
-                    fRc = False;
-            else:
-                reporter.error('No progress object returned');
-                fRc = False;
+                oCurProgress = oGuestSession.copyFrom(sSrc, sDst, fFlags);
         except:
-            # Just log, don't assume an error here (will be done in the main loop then).
-            reporter.logXcpt('Copy from exception for sSrc="%s", sDst="%s":' % (sSrc, sDst));
-            fRc = False;
+            reporter.maybeErrXcpt(fExpected, 'Copy from exception for sSrc="%s", sDst="%s":' % (sSrc, sDst,));
+            return False;
+        if oCurProgress is None:
+            return reporter.error('No progress object returned');
+        oProgress = vboxwrappers.ProgressWrapper(oCurProgress, self.oTstDrv.oVBoxMgr, self.oTstDrv, "gctrlFileCopyFrom");
+        oProgress.wait();
+        if not oProgress.isSuccess():
+            oProgress.logResult(fIgnoreErrors = not fExpected);
+            return False;
+        return True;
 
-        return fRc;
+    def gctrlCopyDirFrom(self, oGuestSession, sSrc, sDst, fFlags, fExpected):
+        """
+        Helper function to copy a directory from the guest to the host.
+        """
+        reporter.log2('Copying guest dir "%s" to host "%s"' % (sSrc, sDst));
+        try:
+            oCurProgress = oGuestSession.directoryCopyFromGuest(sSrc, sDst, fFlags);
+        except:
+            reporter.maybeErrXcpt(fExpected, 'Copy dir from exception for sSrc="%s", sDst="%s":' % (sSrc, sDst,));
+            return False;
+        if oCurProgress is None:
+            return reporter.error('No progress object returned');
 
-    def gctrlCopyFileTo(self, oGuestSession, sSrc, sDst, aFlags):
+        oProgress = vboxwrappers.ProgressWrapper(oCurProgress, self.oTstDrv.oVBoxMgr, self.oTstDrv, "gctrlDirCopyFrom");
+        oProgress.wait();
+        if not oProgress.isSuccess():
+            oProgress.logResult(fIgnoreErrors = not fExpected);
+            return False;
+        return True;
+
+    def gctrlCopyFileTo(self, oGuestSession, sSrc, sDst, fFlags):
         """
         Helper function to copy a single file from host to the guest.
         """
         fRc = True; # Be optimistic.
         try:
-            reporter.log2('Copying host file "%s" to guest "%s" (flags %s)' % (sSrc, sDst, aFlags));
+            reporter.log2('Copying host file "%s" to guest "%s" (flags %s)' % (sSrc, sDst, fFlags));
             if self.oTstDrv.fpApiVer >= 5.0:
-                curProgress = oGuestSession.fileCopyToGuest(sSrc, sDst, aFlags);
+                oCurProgress = oGuestSession.fileCopyToGuest(sSrc, sDst, fFlags);
             else:
-                curProgress = oGuestSession.copyTo(sSrc, sDst, aFlags);
-            if curProgress is not None:
-                oProgress = vboxwrappers.ProgressWrapper(curProgress, self.oTstDrv.oVBoxMgr, self.oTstDrv, "gctrlCopyFileTo");
+                oCurProgress = oGuestSession.copyTo(sSrc, sDst, fFlags);
+            if oCurProgress is not None:
+                oProgress = vboxwrappers.ProgressWrapper(oCurProgress, self.oTstDrv.oVBoxMgr, self.oTstDrv, "gctrlCopyFileTo");
                 try:
                     oProgress.wait();
                     if not oProgress.isSuccess():
@@ -1174,7 +1166,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
         try:
             oGuestSession.directoryCreate(oTest.sDirectory, \
-                                          oTest.fMode, oTest.aFlags);
+                                          oTest.fMode, oTest.fFlags);
             if self.oTstDrv.fpApiVer >= 5.0:
                 fDirExists = oGuestSession.directoryExists(oTest.sDirectory, False);
             else:
@@ -1199,7 +1191,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         """
         sDir     = oTest.sDirectory;
         sFilter  = oTest.sFilter;
-        aFlags   = oTest.aFlags;
+        fFlags   = oTest.fFlags;
 
         fRc = True; # Be optimistic.
         cDirs = 0;  # Number of directories read.
@@ -1207,8 +1199,8 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
         try:
             sCurDir = os.path.join(sDir, subDir);
-            #reporter.log2('Directory="%s", filter="%s", aFlags="%s"' % (sCurDir, sFilter, aFlags));
-            oCurDir = oGuestSession.directoryOpen(sCurDir, sFilter, aFlags);
+            #reporter.log2('Directory="%s", filter="%s", fFlags="%s"' % (sCurDir, sFilter, fFlags));
+            oCurDir = oGuestSession.directoryOpen(sCurDir, sFilter, fFlags);
             while fRc:
                 try:
                     oFsObjInfo = oCurDir.read();
@@ -1302,33 +1294,31 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         ## @todo Compare execution timeouts!
         #tsStart = base.timestampMilli();
 
-        reporter.log2('Using session user=%s, sDomain=%s, name=%s, timeout=%d' \
-                      % (oGuestSession.user, oGuestSession.domain, \
-                         oGuestSession.name, oGuestSession.timeout));
-        reporter.log2('Executing sCmd=%s, aFlags=%s, timeoutMS=%d, aArgs=%s, aEnv=%s' \
-                      % (oTest.sCmd, oTest.aFlags, oTest.timeoutMS, \
-                         oTest.aArgs, oTest.aEnv));
+        reporter.log2('Using session user=%s, sDomain=%s, name=%s, timeout=%d'
+                      % (oGuestSession.user, oGuestSession.domain,  oGuestSession.name, oGuestSession.timeout));
+        reporter.log2('Executing sCmd=%s, fFlags=%s, timeoutMS=%d, aArgs=%s, aEnv=%s'
+                      % (oTest.sCmd, oTest.fFlags, oTest.timeoutMS, oTest.aArgs, oTest.aEnv));
         try:
             curProc = oGuestSession.processCreate(oTest.sCmd,
                                                   oTest.aArgs if self.oTstDrv.fpApiVer >= 5.0 else oTest.aArgs[1:],
-                                                  oTest.aEnv, oTest.aFlags, oTest.timeoutMS);
+                                                  oTest.aEnv, oTest.fFlags, oTest.timeoutMS);
             if curProc is not None:
                 reporter.log2('Process start requested, waiting for start (%dms) ...' % (oTest.timeoutMS,));
-                fWaitFor = [ vboxcon.ProcessWaitForFlag_Start ];
-                waitResult = curProc.waitForArray(fWaitFor, oTest.timeoutMS);
+                aeWaitFor = [ vboxcon.ProcessWaitForFlag_Start ];
+                waitResult = curProc.waitForArray(aeWaitFor, oTest.timeoutMS);
                 reporter.log2('Wait result returned: %d, current process status is: %d' % (waitResult, curProc.status));
 
                 if curProc.status == vboxcon.ProcessStatus_Started:
-                    fWaitFor = [ vboxcon.ProcessWaitForFlag_Terminate ];
-                    if vboxcon.ProcessCreateFlag_WaitForStdOut in oTest.aFlags:
-                        fWaitFor.append(vboxcon.ProcessWaitForFlag_StdOut);
-                    if vboxcon.ProcessCreateFlag_WaitForStdErr in oTest.aFlags:
-                        fWaitFor.append(vboxcon.ProcessWaitForFlag_StdErr);
+                    aeWaitFor = [ vboxcon.ProcessWaitForFlag_Terminate ];
+                    if vboxcon.ProcessCreateFlag_WaitForStdOut in oTest.fFlags:
+                        aeWaitFor.append(vboxcon.ProcessWaitForFlag_StdOut);
+                    if vboxcon.ProcessCreateFlag_WaitForStdErr in oTest.fFlags:
+                        aeWaitFor.append(vboxcon.ProcessWaitForFlag_StdErr);
                     ## @todo Add vboxcon.ProcessWaitForFlag_StdIn.
-                    reporter.log2('Process (PID %d) started, waiting for termination (%dms), waitFlags=%s ...' \
-                                  % (curProc.PID, oTest.timeoutMS, fWaitFor));
+                    reporter.log2('Process (PID %d) started, waiting for termination (%dms), waitFlags=%s ...'
+                                  % (curProc.PID, oTest.timeoutMS, aeWaitFor));
                     while True:
-                        waitResult = curProc.waitForArray(fWaitFor, oTest.timeoutMS);
+                        waitResult = curProc.waitForArray(aeWaitFor, oTest.timeoutMS);
                         reporter.log2('Wait returned: %d' % (waitResult,));
                         try:
                             # Try stdout.
@@ -1354,7 +1344,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                             if waitResult in (vboxcon.ProcessWaitResult_Terminate,
                                               vboxcon.ProcessWaitResult_Error,
                                               vboxcon.ProcessWaitResult_Timeout,):
-                                reporter.log2('Process (PID %d) reported terminate/error/timeout: %d, status: %d' \
+                                reporter.log2('Process (PID %d) reported terminate/error/timeout: %d, status: %d'
                                               % (curProc.PID, waitResult, curProc.status));
                                 break;
                         except:
@@ -1478,12 +1468,15 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         ];
         return tdTestSessionEx.executeListTestSessions(aoTests, self.oTstDrv, oSession, oTxsSession, oTestVm, 'SessionEnv');
 
-    def testGuestCtrlSession(self, oSession, oTxsSession, oTestVm): # pylint: disable=too-many-locals
+    def testGuestCtrlSession(self, oSession, oTxsSession, oTestVm):
         """
         Tests the guest session handling.
         """
 
-        aaTests = [
+        #
+        # Parameters.
+        #
+        atTests = [
             # Invalid parameters.
             [ tdTestSession(sUser = ''), tdTestResultSession() ],
             [ tdTestSession(sPassword = 'bar'), tdTestResultSession() ],
@@ -1497,118 +1490,111 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             #       then will fail. See note below.
             [ tdTestSession(sUser = 'foo', sPassword = 'bar', sDomain = 'boo'), tdTestResultSession() ],
             # Correct credentials.
-            [ tdTestSession(),
-              tdTestResultSession(fRc = True, cNumSessions = 1) ]
+            [ tdTestSession(), tdTestResultSession(fRc = True, cNumSessions = 1) ]
         ];
 
-        # Parameters.
         fRc = True;
-        for (i, aTest) in enumerate(aaTests):
-            curTest = aTest[0]; # tdTestSession, use an index, later.
-            curRes  = aTest[1]; # tdTestResult
-            curTest.setEnvironment(oSession, oTxsSession, oTestVm);
-            reporter.log('Testing #%d, user="%s", sPassword="%s", sDomain="%s" ...' \
-                         % (i, curTest.oCreds.sUser, curTest.oCreds.sPassword, curTest.oCreds.sDomain));
-            curGuestSessionName = 'testGuestCtrlSession: Test #%d' % (i);
-            fRc2, curGuestSession = curTest.createSession(curGuestSessionName);
+        for (i, tTest) in enumerate(atTests):
+            oCurTest = tTest[0] # type: tdTestSession
+            oCurRes  = tTest[1] # type: tdTestResult
+
+            oCurTest.setEnvironment(oSession, oTxsSession, oTestVm);
+            reporter.log('Testing #%d, user="%s", sPassword="%s", sDomain="%s" ...'
+                         % (i, oCurTest.oCreds.sUser, oCurTest.oCreds.sPassword, oCurTest.oCreds.sDomain));
+            sCurGuestSessionName = 'testGuestCtrlSession: Test #%d' % (i,);
+            fRc2, oCurGuestSession = oCurTest.createSession(sCurGuestSessionName, fIsError = oCurRes.fRc);
+
             # See note about < 4.3 Guest Additions above.
-            if      curGuestSession is not None \
-                and curGuestSession.protocolVersion >= 2 \
-                and fRc2 is not curRes.fRc:
-                reporter.error('Test #%d failed: Session creation failed: Got %s, expected %s' \
-                               % (i, fRc2, curRes.fRc));
-                fRc = False;
+            uProtocolVersion = 2;
+            if oCurGuestSession is not None:
+                try:
+                    uProtocolVersion = oCurGuestSession.protocolVersion;
+                except:
+                    fRc = reporter.errorXcpt('Test #%d' % (i,));
+
+            if uProtocolVersion >= 2 and fRc2 is not oCurRes.fRc:
+                fRc = reporter.error('Test #%d failed: Session creation failed: Got %s, expected %s' % (i, fRc2, oCurRes.fRc,));
+
+            if fRc2 and oCurGuestSession is None:
+                fRc = reporter.error('Test #%d failed: no session object' % (i,));
+                fRc2 = False;
+
             if fRc2:
-                # On Guest Additions < 4.3 getSessionCount() always will return 1, so skip the
-                # check then.
-                if curGuestSession.protocolVersion >= 2:
-                    curSessionCount = curTest.getSessionCount(self.oTstDrv.oVBoxMgr);
-                    if curSessionCount is not curRes.cNumSessions:
-                        reporter.error('Test #%d failed: Session count does not match: Got %d, expected %d' \
-                                       % (i, curSessionCount, curRes.cNumSessions));
-                        fRc = False;
-                        break;
-                if      curGuestSession is not None \
-                    and curGuestSession.name != curGuestSessionName:
-                    reporter.error('Test #%d failed: Session name does not match: Got "%s", expected "%s"' \
-                                   % (i, curGuestSession.name, curGuestSessionName));
-                    fRc = False;
-                    break;
-            fRc2 = curTest.closeSession();
+                if uProtocolVersion >= 2: # For Guest Additions < 4.3 getSessionCount() always will return 1.
+                    cCurSessions = oCurTest.getSessionCount(self.oTstDrv.oVBoxMgr);
+                    if cCurSessions != oCurRes.cNumSessions:
+                        fRc = reporter.error('Test #%d failed: Session count does not match: Got %d, expected %d'
+                                             % (i, cCurSessions, oCurRes.cNumSessions));
+                try:
+                    sObjName = oCurGuestSession.name;
+                except:
+                    fRc = reporter.errorXcpt('Test #%d' % (i,));
+                else:
+                    if sObjName != sCurGuestSessionName:
+                        fRc = reporter.error('Test #%d failed: Session name does not match: Got "%s", expected "%s"'
+                                             % (i, sObjName, sCurGuestSessionName));
+            fRc2 = oCurTest.closeSession(True);
             if fRc2 is False:
-                reporter.error('Test #%d failed: Session could not be closed' % (i,));
-                fRc = False;
-                break;
+                fRc = reporter.error('Test #%d failed: Session could not be closed' % (i,));
 
         if fRc is False:
             return (False, oTxsSession);
 
+        #
         # Multiple sessions.
-        iMaxGuestSessions = 31; # Maximum number of concurrent guest session allowed.
+        #
+        cMaxGuestSessions = 31; # Maximum number of concurrent guest session allowed.
                                 # Actually, this is 32, but we don't test session 0.
-        multiSession = {};
+        aoMultiSessions = {};
         reporter.log2('Opening multiple guest tsessions at once ...');
-        for i in range(iMaxGuestSessions + 1):
-            multiSession[i] = tdTestSession(sSessionName = 'MultiSession #%d' % (i,));
-            multiSession[i].setEnvironment(oSession, oTxsSession, oTestVm);
-            curSessionCount = multiSession[i].getSessionCount(self.oTstDrv.oVBoxMgr);
-            reporter.log2('MultiSession test #%d count is %d' % (i, curSessionCount));
-            if curSessionCount is not i:
-                reporter.error('MultiSession count #%d must be %d, got %d' % (i, i, curSessionCount));
-                fRc = False;
-                break;
-            fRc2, _ = multiSession[i].createSession('MultiSession #%d' % (i,));
+        for i in xrange(cMaxGuestSessions + 1):
+            aoMultiSessions[i] = tdTestSession(sSessionName = 'MultiSession #%d' % (i,));
+            aoMultiSessions[i].setEnvironment(oSession, oTxsSession, oTestVm);
+
+            cCurSessions = aoMultiSessions[i].getSessionCount(self.oTstDrv.oVBoxMgr);
+            reporter.log2('MultiSession test #%d count is %d' % (i, cCurSessions));
+            if cCurSessions != i:
+                return (reporter.error('MultiSession count is %d, expected %d' % (cCurSessions, i)), oTxsSession);
+            fRc2, _ = aoMultiSessions[i].createSession('MultiSession #%d' % (i,), i < cMaxGuestSessions);
             if fRc2 is not True:
-                if i < iMaxGuestSessions:
-                    reporter.error('MultiSession #%d test failed' % (i,));
-                    fRc = False;
-                else:
-                    reporter.log('MultiSession #%d exceeded concurrent guest session count, good' % (i,));
+                if i < cMaxGuestSessions:
+                    return (reporter.error('MultiSession #%d test failed' % (i,)), oTxsSession);
+                reporter.log('MultiSession #%d exceeded concurrent guest session count, good' % (i,));
                 break;
 
-        curSessionCount = multiSession[i].getSessionCount(self.oTstDrv.oVBoxMgr);
-        if curSessionCount is not iMaxGuestSessions:
-            reporter.error('Final MultiSession count must be %d, got %d'
-                           % (iMaxGuestSessions, curSessionCount));
-            return (False, oTxsSession);
+        cCurSessions = aoMultiSessions[i].getSessionCount(self.oTstDrv.oVBoxMgr);
+        if cCurSessions is not cMaxGuestSessions:
+            return (reporter.error('Final session count %d, expected %d ' % (cCurSessions, cMaxGuestSessions,)), oTxsSession);
 
         reporter.log2('Closing MultiSessions ...');
-        iLastSession = iMaxGuestSessions - 1;
-        for i in range(iLastSession): # Close all but the last opened session.
-            fRc2 = multiSession[i].closeSession();
-            reporter.log2('MultiSession #%d count is %d' % (i, multiSession[i].getSessionCount(self.oTstDrv.oVBoxMgr),));
+        for i in xrange(cMaxGuestSessions):
+            # Close this session:
+            oClosedGuestSession = aoMultiSessions[i].oGuestSession;
+            fRc2 = aoMultiSessions[i].closeSession(True);
+            cCurSessions = aoMultiSessions[i].getSessionCount(self.oTstDrv.oVBoxMgr)
+            reporter.log2('MultiSession #%d count is %d' % (i, cCurSessions,));
             if fRc2 is False:
-                reporter.error('Closing MultiSession #%d failed' % (i,));
-                fRc = False;
-                break;
-        curSessionCount = multiSession[i].getSessionCount(self.oTstDrv.oVBoxMgr);
-        if curSessionCount != 1:
-            reporter.error('Final MultiSession count #2 must be 1, got %d' % (curSessionCount,));
-            fRc = False;
+                fRc = reporter.error('Closing MultiSession #%d failed' % (i,));
+            elif cCurSessions != cMaxGuestSessions - (i + 1):
+                fRc = reporter.error('Expected %d session after closing #%d, got %d instead'
+                                     % (cMaxGuestSessions - (i + 1), cCurSessions, i,));
+            assert aoMultiSessions[i].oGuestSession is None or not fRc2;
+            ## @todo any way to check that the session is closed other than the 'sessions' attribute?
 
-        try:
-            # r=bird: multiSession[0].oGuestSession is None! Why don't you just use 'assert' or 'if' to check
-            #         the functioning of the __testcase__?
-
-            # Make sure that accessing the first opened guest session does not work anymore because we just removed (closed) it.
-            curSessionName = multiSession[0].oGuestSession.name;
-            reporter.error('Accessing first removed MultiSession should not be possible, got name="%s"' % (curSessionName,));
-            fRc = False;
-        except:
-            reporter.logXcpt('Could not access first removed MultiSession object, good:');
-
-        try:
-            # Try Accessing last opened session which did not get removed yet.
-            curSessionName = multiSession[iLastSession].oGuestSession.name;
-            reporter.log('Accessing last standing MultiSession worked, got name="%s"' % (curSessionName,));
-            multiSession[iLastSession].closeSession();
-            curSessionCount = multiSession[i].getSessionCount(self.oTstDrv.oVBoxMgr);
-            if curSessionCount != 0:
-                reporter.error('Final MultiSession count #3 must be 0, got %d' % (curSessionCount,));
-                fRc = False;
-        except:
-            reporter.logXcpt('Could not access last standing MultiSession object:');
-            fRc = False;
+            # Try check that none of the remaining sessions got closed.
+            try:
+                aoGuestSessions = self.oTstDrv.oVBoxMgr.getArray(atTests[0][0].oTest.oGuest, 'sessions');
+            except:
+                return (reporter.errorXcpt('i=%d/%d' % (i, cMaxGuestSessions,)), oTxsSession);
+            if oClosedGuestSession in aoGuestSessions:
+                fRc = reporter.error('i=%d/%d: %s should not be in %s'
+                                     % (i, cMaxGuestSessions, oClosedGuestSession, aoGuestSessions));
+            if i + 1 < cMaxGuestSessions: # Not sure what xrange(2,2) does...
+                for j in xrange(i + 1, cMaxGuestSessions):
+                    if aoMultiSessions[j].oGuestSession not in aoGuestSessions:
+                        fRc = reporter.error('i=%d/j=%d/%d: %s should be in %s'
+                                             % (i, j, cMaxGuestSessions, aoMultiSessions[j].oGuestSession, aoGuestSessions));
+                    ## @todo any way to check that they work?
 
         ## @todo Test session timeouts.
 
@@ -1619,9 +1605,12 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         Tests the guest session file reference handling.
         """
 
+        # Find a file to play around with:
         if oTestVm.isWindows():
-            sFile = "C:\\windows\\system32\\kernel32.dll";
-        elif oTestVm.isLinux():
+            sFile = "C:\\Windows\\System32\\ntdll.dll";
+            if oTestVm.sKind in ['WindowsNT4', 'WindowsNT3x',]:
+                sFile = "C:\\Winnt\\System32\\ntdll.dll";
+        else:
             sFile = "/bin/sh";
 
         # Use credential defaults.
@@ -1631,114 +1620,119 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         # Number of stale guest files to create.
         cStaleFiles = 10;
 
-        fRc = True;
+        #
+        # Start a session.
+        #
+        aeWaitFor = [ vboxcon.GuestSessionWaitForFlag_Start ];
         try:
-            oGuest = oSession.o.console.guest;
+            oGuest        = oSession.o.console.guest;
             oGuestSession = oGuest.createSession(oCreds.sUser, oCreds.sPassword, oCreds.sDomain, "testGuestCtrlSessionFileRefs");
-            fWaitFor = [ vboxcon.GuestSessionWaitForFlag_Start ];
-            waitResult = oGuestSession.waitForArray(fWaitFor, 30 * 1000);
-            #
-            # Be nice to Guest Additions < 4.3: They don't support session handling and
-            # therefore return WaitFlagNotSupported.
-            #
-            if waitResult not in (vboxcon.GuestSessionWaitResult_Start, vboxcon.GuestSessionWaitResult_WaitFlagNotSupported):
-                # Just log, don't assume an error here (will be done in the main loop then).
-                reporter.log('Session did not start successfully, returned wait result: %d' \
-                              % (waitResult));
-                return (False, oTxsSession);
-            reporter.log('Session successfully started');
+            eWaitResult   = oGuestSession.waitForArray(aeWaitFor, 30 * 1000);
+        except:
+            return (reporter.errorXcpt(), oTxsSession);
 
+        # Be nice to Guest Additions < 4.3: They don't support session handling and therefore return WaitFlagNotSupported.
+        if eWaitResult not in (vboxcon.GuestSessionWaitResult_Start, vboxcon.GuestSessionWaitResult_WaitFlagNotSupported):
+            return (reporter.error('Session did not start successfully - wait error: %d' % (eWaitResult,)), oTxsSession);
+        reporter.log('Session successfully started');
+
+        #
+        # Open guest files and "forget" them (stale entries).
+        # For them we don't have any references anymore intentionally.
+        #
+        reporter.log2('Opening stale files');
+        fRc = True;
+        for i in xrange(0, cStaleFiles):
+            try:
+                if self.oTstDrv.fpApiVer >= 5.0:
+                    oGuestSession.fileOpen(sFile, vboxcon.FileAccessMode_ReadOnly, vboxcon.FileOpenAction_OpenExisting, 0);
+                else:
+                    oGuestSession.fileOpen(sFile, "r", "oe", 0);
+                # Note: Use a timeout in the call above for not letting the stale processes
+                #       hanging around forever.  This can happen if the installed Guest Additions
+                #       do not support terminating guest processes.
+            except:
+                fRc = reporter.errorXcpt('Opening stale file #%d failed:' % (i,));
+                break;
+
+        try:    cFiles = len(self.oTstDrv.oVBoxMgr.getArray(oGuestSession, 'files'));
+        except: fRc = reporter.errorXcpt();
+        else:
+            if cFiles != cStaleFiles:
+                fRc = reporter.error('Test failed: Got %d stale files, expected %d' % (cFiles, cStaleFiles));
+
+        if fRc is True:
             #
-            # Open guest files and "forget" them (stale entries).
-            # For them we don't have any references anymore intentionally.
+            # Open non-stale files and close them again.
             #
-            reporter.log2('Opening stale files');
-            for i in range(0, cStaleFiles):
+            reporter.log2('Opening non-stale files');
+            aoFiles = [];
+            for i in xrange(0, cStaleFiles):
                 try:
                     if self.oTstDrv.fpApiVer >= 5.0:
-                        oGuestSession.fileOpen(sFile, vboxcon.FileAccessMode_ReadOnly, vboxcon.FileOpenAction_OpenExisting, 0);
+                        oCurFile = oGuestSession.fileOpen(sFile, vboxcon.FileAccessMode_ReadOnly,
+                                                          vboxcon.FileOpenAction_OpenExisting, 0);
                     else:
-                        oGuestSession.fileOpen(sFile, "r", "oe", 0);
-                    # Note: Use a timeout in the call above for not letting the stale processes
-                    #       hanging around forever.  This can happen if the installed Guest Additions
-                    #       do not support terminating guest processes.
+                        oCurFile = oGuestSession.fileOpen(sFile, "r", "oe", 0);
+                    aoFiles.append(oCurFile);
                 except:
-                    reporter.errorXcpt('Opening stale file #%d failed:' % (i,));
-                    fRc = False;
+                    fRc = reporter.errorXcpt('Opening non-stale file #%d failed:' % (i,));
                     break;
 
-            if fRc:
-                cFiles = len(self.oTstDrv.oVBoxMgr.getArray(oGuestSession, 'files'));
-                if cFiles != cStaleFiles:
-                    reporter.error('Test failed: Got %d stale files, expected %d' % (cFiles, cStaleFiles));
-                    fRc = False;
-
-            if fRc:
-                #
-                # Open non-stale files and close them again.
-                #
-                reporter.log2('Opening non-stale files');
-                aaFiles = [];
-                for i in range(0, cStaleFiles):
-                    try:
-                        if self.oTstDrv.fpApiVer >= 5.0:
-                            oCurFile = oGuestSession.fileOpen(sFile, vboxcon.FileAccessMode_ReadOnly,
-                                                              vboxcon.FileOpenAction_OpenExisting, 0);
-                        else:
-                            oCurFile = oGuestSession.fileOpen(sFile, "r", "oe", 0);
-                        aaFiles.append(oCurFile);
-                    except:
-                        reporter.errorXcpt('Opening non-stale file #%d failed:' % (i,));
-                        fRc = False;
-                        break;
-            if fRc:
-                cFiles = len(self.oTstDrv.oVBoxMgr.getArray(oGuestSession, 'files'));
+            # Check the count.
+            try:    cFiles = len(self.oTstDrv.oVBoxMgr.getArray(oGuestSession, 'files'));
+            except: fRc = reporter.errorXcpt();
+            else:
                 if cFiles != cStaleFiles * 2:
-                    reporter.error('Test failed: Got %d total files, expected %d' % (cFiles, cStaleFiles * 2));
-                    fRc = False;
-            if fRc:
-                reporter.log2('Closing all non-stale files again ...');
-                for i in range(0, cStaleFiles):
-                    try:
-                        aaFiles[i].close();
-                    except:
-                        reporter.errorXcpt('Waiting for non-stale file #%d failed:' % (i,));
-                        fRc = False;
-                        break;
-                cFiles = len(self.oTstDrv.oVBoxMgr.getArray(oGuestSession, 'files'));
-                # Here we count the stale files (that is, files we don't have a reference
-                # anymore for) and the opened and then closed non-stale files (that we still keep
-                # a reference in aaFiles[] for).
-                if cFiles != cStaleFiles:
-                    reporter.error('Test failed: Got %d total files, expected %d' \
-                                   % (cFiles, cStaleFiles));
-                    fRc = False;
-                if fRc:
-                    #
-                    # Check if all (referenced) non-stale files now are in "closed" state.
-                    #
-                    reporter.log2('Checking statuses of all non-stale files ...');
-                    for i in range(0, cStaleFiles):
-                        try:
-                            curFilesStatus = aaFiles[i].status;
-                            if curFilesStatus != vboxcon.FileStatus_Closed:
-                                reporter.error('Test failed: Non-stale file #%d has status %d, expected %d' \
-                                       % (i, curFilesStatus, vboxcon.FileStatus_Closed));
-                                fRc = False;
-                        except:
-                            reporter.errorXcpt('Checking status of file #%d failed:' % (i,));
-                            fRc = False;
-                            break;
-            if fRc:
-                reporter.log2('All non-stale files closed');
-            cFiles = len(self.oTstDrv.oVBoxMgr.getArray(oGuestSession, 'files'));
-            reporter.log2('Final guest session file count: %d' % (cFiles,));
-            # Now try to close the session and see what happens.
-            reporter.log2('Closing guest session ...');
+                    fRc = reporter.error('Test failed: Got %d total files, expected %d' % (cFiles, cStaleFiles * 2));
+
+            # Close them.
+            reporter.log2('Closing all non-stale files again ...');
+            for i, oFile in enumerate(aoFiles):
+                try:
+                    oFile.close();
+                except:
+                    fRc = reporter.errorXcpt('Closing non-stale file #%d failed:' % (i,));
+
+            # Check the count again.
+            try:    cFiles = len(self.oTstDrv.oVBoxMgr.getArray(oGuestSession, 'files'));
+            except: fRc = reporter.errorXcpt();
+            # Here we count the stale files (that is, files we don't have a reference
+            # anymore for) and the opened and then closed non-stale files (that we still keep
+            # a reference in aoFiles[] for).
+            if cFiles != cStaleFiles:
+                fRc = reporter.error('Test failed: Got %d total files, expected %d' % (cFiles, cStaleFiles));
+
+            #
+            # Check that all (referenced) non-stale files are now in the "closed" state.
+            #
+            reporter.log2('Checking statuses of all non-stale files ...');
+            for i, oFile in enumerate(aoFiles):
+                try:
+                    eFileStatus = aoFiles[i].status;
+                except:
+                    fRc = reporter.errorXcpt('Checking status of file #%d failed:' % (i,));
+                else:
+                    if eFileStatus != vboxcon.FileStatus_Closed:
+                        fRc = reporter.error('Test failed: Non-stale file #%d has status %d, expected %d'
+                                             % (i, eFileStatus, vboxcon.FileStatus_Closed));
+
+        if fRc is True:
+            reporter.log2('All non-stale files closed');
+
+        try:    cFiles = len(self.oTstDrv.oVBoxMgr.getArray(oGuestSession, 'files'));
+        except: fRc = reporter.errorXcpt();
+        else:   reporter.log2('Final guest session file count: %d' % (cFiles,));
+
+        #
+        # Now try to close the session and see what happens.
+        # Note! Session closing is why we've been doing all the 'if fRc is True' stuff above rather than returning.
+        #
+        reporter.log2('Closing guest session ...');
+        try:
             oGuestSession.close();
         except:
-            reporter.errorXcpt('Testing for stale processes failed:');
-            fRc = False;
+            fRc = reporter.errorXcpt('Testing for stale processes failed:');
 
         return (fRc, oTxsSession);
 
@@ -1772,8 +1766,8 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         try:
             oGuest = oSession.o.console.guest;
             oGuestSession = oGuest.createSession(oCreds.sUser, oCreds.sPassword, oCreds.sDomain, "testGuestCtrlSessionProcRefs");
-            fWaitFor = [ vboxcon.GuestSessionWaitForFlag_Start ];
-            waitResult = oGuestSession.waitForArray(fWaitFor, 30 * 1000);
+            aeWaitFor = [ vboxcon.GuestSessionWaitForFlag_Start ];
+            waitResult = oGuestSession.waitForArray(aeWaitFor, 30 * 1000);
             #
             # Be nice to Guest Additions < 4.3: They don't support session handling and
             # therefore return WaitFlagNotSupported.
@@ -1790,7 +1784,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             # For them we don't have any references anymore intentionally.
             #
             reporter.log2('Starting stale processes');
-            for i in range(0, cStaleProcs):
+            for i in xrange(0, cStaleProcs):
                 try:
                     oGuestSession.processCreate(sCmd,
                                                 aArgs if self.oTstDrv.fpApiVer >= 5.0 else aArgs[1:], [],
@@ -1820,7 +1814,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                     aArgs = [ sCmd, '-c', 'date'];
                 reporter.log2('Starting non-stale processes');
                 aaProcs = [];
-                for i in range(0, cStaleProcs):
+                for i in xrange(0, cStaleProcs):
                     try:
                         oCurProc = oGuestSession.processCreate(sCmd, aArgs if self.oTstDrv.fpApiVer >= 5.0 else aArgs[1:],
                                                                [], [], 0); # Infinite timeout.
@@ -1831,7 +1825,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                         break;
             if fRc:
                 reporter.log2('Waiting for non-stale processes to terminate');
-                for i in range(0, cStaleProcs):
+                for i in xrange(0, cStaleProcs):
                     try:
                         aaProcs[i].waitForArray([ vboxcon.ProcessWaitForFlag_Terminate ], 30 * 1000);
                         curProcStatus = aaProcs[i].status;
@@ -1856,7 +1850,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                     #
                     # Check if all (referenced) non-stale processes now are in "terminated" state.
                     #
-                    for i in range(0, cStaleProcs):
+                    for i in xrange(0, cStaleProcs):
                         curProcStatus = aaProcs[i].status;
                         if aaProcs[i].status != vboxcon.ProcessStatus_TerminatedNormally:
                             reporter.error('Test failed: Non-stale processes #%d has status %d, expected %d' \
@@ -1872,7 +1866,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                     aArgs = [ sCmd ];
                 reporter.log2('Starting blocking processes');
                 aaProcs = [];
-                for i in range(0, cStaleProcs):
+                for i in xrange(0, cStaleProcs):
                     try:
                         oCurProc = oGuestSession.processCreate(sCmd, aArgs if self.oTstDrv.fpApiVer >= 5.0 else aArgs[1:],
                                                                [],  [], 30 * 1000);
@@ -1886,7 +1880,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                         break;
             if fRc:
                 reporter.log2('Terminating blocking processes');
-                for i in range(0, cStaleProcs):
+                for i in xrange(0, cStaleProcs):
                     try:
                         aaProcs[i].terminate();
                     except: # Termination might not be supported, just skip and log it.
@@ -1972,15 +1966,15 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 # [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'set', 'TEST_NONEXIST' ],
                 #   tdTestResultExec(fRc = True, iExitCode = 1) ]
                 # [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'set', 'windir' ],
-                #              aFlags = [ vboxcon.ProcessCreateFlag_WaitForStdOut, vboxcon.ProcessCreateFlag_WaitForStdErr ]),
+                #              fFlags = [ vboxcon.ProcessCreateFlag_WaitForStdOut, vboxcon.ProcessCreateFlag_WaitForStdErr ]),
                 #   tdTestResultExec(fRc = True, sBuf = 'windir=C:\\WINDOWS\r\n') ],
                 # [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'set', 'TEST_FOO' ],
                 #              aEnv = [ 'TEST_FOO=BAR' ],
-                #              aFlags = [ vboxcon.ProcessCreateFlag_WaitForStdOut, vboxcon.ProcessCreateFlag_WaitForStdErr ]),
+                #              fFlags = [ vboxcon.ProcessCreateFlag_WaitForStdOut, vboxcon.ProcessCreateFlag_WaitForStdErr ]),
                 #   tdTestResultExec(fRc = True, sBuf = 'TEST_FOO=BAR\r\n') ],
                 # [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'set', 'TEST_FOO' ],
                 #              aEnv = [ 'TEST_FOO=BAR', 'TEST_BAZ=BAR' ],
-                #              aFlags = [ vboxcon.ProcessCreateFlag_WaitForStdOut, vboxcon.ProcessCreateFlag_WaitForStdErr ]),
+                #              fFlags = [ vboxcon.ProcessCreateFlag_WaitForStdOut, vboxcon.ProcessCreateFlag_WaitForStdErr ]),
                 #   tdTestResultExec(fRc = True, sBuf = 'TEST_FOO=BAR\r\n') ]
 
                 ## @todo Create some files (or get files) we know the output size of to validate output length!
@@ -2023,15 +2017,15 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 #   tdTestResultExec(fRc = True, iExitCode = 1) ]
                 # [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'set', 'windir' ],
                 #
-                #              aFlags = [ vboxcon.ProcessCreateFlag_WaitForStdOut, vboxcon.ProcessCreateFlag_WaitForStdErr ]),
+                #              fFlags = [ vboxcon.ProcessCreateFlag_WaitForStdOut, vboxcon.ProcessCreateFlag_WaitForStdErr ]),
                 #   tdTestResultExec(fRc = True, sBuf = 'windir=C:\\WINDOWS\r\n') ],
                 # [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'set', 'TEST_FOO' ],
                 #              aEnv = [ 'TEST_FOO=BAR' ],
-                #              aFlags = [ vboxcon.ProcessCreateFlag_WaitForStdOut, vboxcon.ProcessCreateFlag_WaitForStdErr ]),
+                #              fFlags = [ vboxcon.ProcessCreateFlag_WaitForStdOut, vboxcon.ProcessCreateFlag_WaitForStdErr ]),
                 #   tdTestResultExec(fRc = True, sBuf = 'TEST_FOO=BAR\r\n') ],
                 # [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'set', 'TEST_FOO' ],
                 #              aEnv = [ 'TEST_FOO=BAR', 'TEST_BAZ=BAR' ],
-                #              aFlags = [ vboxcon.ProcessCreateFlag_WaitForStdOut, vboxcon.ProcessCreateFlag_WaitForStdErr ]),
+                #              fFlags = [ vboxcon.ProcessCreateFlag_WaitForStdOut, vboxcon.ProcessCreateFlag_WaitForStdErr ]),
                 #   tdTestResultExec(fRc = True, sBuf = 'TEST_FOO=BAR\r\n') ]
 
                 ## @todo Create some files (or get files) we know the output size of to validate output length!
@@ -2053,17 +2047,17 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         #
         reporter.log('One session per guest process ...');
         for (i, aTest) in enumerate(aaTests):
-            curTest = aTest[0]; # tdTestExec, use an index, later.
-            curRes  = aTest[1]; # tdTestResultExec
-            curTest.setEnvironment(oSession, oTxsSession, oTestVm);
-            fRc, curGuestSession = curTest.createSession('testGuestCtrlExec: Test #%d' % (i,));
+            oCurTest = aTest[0]; # tdTestExec, use an index, later.
+            oCurRes  = aTest[1]; # tdTestResultExec
+            oCurTest.setEnvironment(oSession, oTxsSession, oTestVm);
+            fRc, oCurGuestSession = oCurTest.createSession('testGuestCtrlExec: Test #%d' % (i,));
             if fRc is False:
                 reporter.error('Test #%d failed: Could not create session' % (i,));
                 break;
-            fRc = self.gctrlExecDoTest(i, curTest, curRes, curGuestSession);
+            fRc = self.gctrlExecDoTest(i, oCurTest, oCurRes, oCurGuestSession);
             if fRc is False:
                 break;
-            fRc = curTest.closeSession();
+            fRc = oCurTest.closeSession();
             if fRc is False:
                 break;
 
@@ -2090,11 +2084,11 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         oGuest = oSession.o.console.guest;
         try:
             reporter.log('Creating session for all tests ...');
-            curGuestSession = oGuest.createSession(oCreds.sUser, oCreds.sPassword, oCreds.sDomain,
+            oCurGuestSession = oGuest.createSession(oCreds.sUser, oCreds.sPassword, oCreds.sDomain,
                                                    'testGuestCtrlExec: One session for all tests');
             try:
-                fWaitFor = [ vboxcon.GuestSessionWaitForFlag_Start ];
-                waitResult = curGuestSession.waitForArray(fWaitFor, 30 * 1000);
+                aeWaitFor = [ vboxcon.GuestSessionWaitForFlag_Start ];
+                waitResult = oCurGuestSession.waitForArray(aeWaitFor, 30 * 1000);
                 if waitResult not in (vboxcon.GuestSessionWaitResult_Start, vboxcon.GuestSessionWaitResult_WaitFlagNotSupported):
                     reporter.error('Session did not start successfully, returned wait result: %d' \
                                    % (waitResult));
@@ -2108,16 +2102,16 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             #       is intentional. This must be handled by the process execution
             #       call then.
             for (i, aTest) in enumerate(aaTests):
-                curTest = aTest[0]; # tdTestExec, use an index, later.
-                curRes  = aTest[1]; # tdTestResultExec
-                curTest.setEnvironment(oSession, oTxsSession, oTestVm);
-                fRc = self.gctrlExecDoTest(i, curTest, curRes, curGuestSession);
+                oCurTest = aTest[0]; # tdTestExec, use an index, later.
+                oCurRes  = aTest[1]; # tdTestResultExec
+                oCurTest.setEnvironment(oSession, oTxsSession, oTestVm);
+                fRc = self.gctrlExecDoTest(i, oCurTest, oCurRes, oCurGuestSession);
                 if fRc is False:
                     break;
             try:
                 reporter.log2('Closing guest session ...');
-                curGuestSession.close();
-                curGuestSession = None;
+                oCurGuestSession.close();
+                oCurGuestSession = None;
             except:
                 # Just log, don't assume an error here (will be done in the main loop then).
                 reporter.logXcpt('Closing guest session failed:');
@@ -2177,8 +2171,8 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             oGuest = oSession.o.console.guest;
             oGuestSession = oGuest.createSession(oCreds.sUser, oCreds.sPassword, oCreds.sDomain, 'testGuestCtrlExecReboot');
             try:
-                fWaitFor = [ vboxcon.GuestSessionWaitForFlag_Start ];
-                waitResult = oGuestSession.waitForArray(fWaitFor, 30 * 1000);
+                aeWaitFor = [ vboxcon.GuestSessionWaitForFlag_Start ];
+                waitResult = oGuestSession.waitForArray(aeWaitFor, 30 * 1000);
                 if waitResult not in (vboxcon.GuestSessionWaitResult_Start, vboxcon.GuestSessionWaitResult_WaitFlagNotSupported):
                     reporter.error('Session did not start successfully, returned wait result: %d' \
                                    % (waitResult));
@@ -2192,9 +2186,9 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             try:
                 aArgs = [ sImage ];
                 aEnv = [];
-                aFlags = [];
+                fFlags = [];
                 oGuestProcess = oGuestSession.processCreate(sImage,
-                                                            aArgs if self.oTstDrv.fpApiVer >= 5.0 else aArgs[1:], aEnv, aFlags,
+                                                            aArgs if self.oTstDrv.fpApiVer >= 5.0 else aArgs[1:], aEnv, fFlags,
                                                             30 * 1000);
                 waitResult = oGuestProcess.waitForArray([ vboxcon.ProcessWaitForFlag_Start ], 30 * 1000);
                 reporter.log2('Starting process wait result returned: %d, current process status is: %d' \
@@ -2267,33 +2261,33 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 # FIXME: Failing tests.
                 # With stdout.
                 # [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'dir', 'c:\\windows\\system32' ],
-                #              aFlags = [ vboxcon.ProcessCreateFlag_WaitForStdOut ]),
+                #              fFlags = [ vboxcon.ProcessCreateFlag_WaitForStdOut ]),
                 #   tdTestResultExec(fRc = True, iExitCode = 0) ],
                 # [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'dir', 'c:\\nonexisting-file' ],
-                #              aFlags = [ vboxcon.ProcessCreateFlag_WaitForStdOut ]),
+                #              fFlags = [ vboxcon.ProcessCreateFlag_WaitForStdOut ]),
                 #   tdTestResultExec(fRc = True, iExitCode = 1) ],
                 # [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'dir', 'c:\\nonexisting-dir\\' ],
-                #              aFlags = [ vboxcon.ProcessCreateFlag_WaitForStdOut ]),
+                #              fFlags = [ vboxcon.ProcessCreateFlag_WaitForStdOut ]),
                 #   tdTestResultExec(fRc = True, iExitCode = 1) ],
                 # With stderr.
                 # [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'dir', 'c:\\windows\\system32' ],
-                #              aFlags = [ vboxcon.ProcessCreateFlag_WaitForStdErr ]),
+                #              fFlags = [ vboxcon.ProcessCreateFlag_WaitForStdErr ]),
                 #   tdTestResultExec(fRc = True, iExitCode = 0) ],
                 # [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'dir', 'c:\\nonexisting-file' ],
-                #              aFlags = [ vboxcon.ProcessCreateFlag_WaitForStdErr ]),
+                #              fFlags = [ vboxcon.ProcessCreateFlag_WaitForStdErr ]),
                 #   tdTestResultExec(fRc = True, iExitCode = 1) ],
                 # [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'dir', 'c:\\nonexisting-dir\\' ],
-                #              aFlags = [ vboxcon.ProcessCreateFlag_WaitForStdErr ]),
+                #              fFlags = [ vboxcon.ProcessCreateFlag_WaitForStdErr ]),
                 #   tdTestResultExec(fRc = True, iExitCode = 1) ],
                 # With stdout/stderr.
                 # [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'dir', 'c:\\windows\\system32' ],
-                #              aFlags = [ vboxcon.ProcessCreateFlag_WaitForStdOut, vboxcon.ProcessCreateFlag_WaitForStdErr ]),
+                #              fFlags = [ vboxcon.ProcessCreateFlag_WaitForStdOut, vboxcon.ProcessCreateFlag_WaitForStdErr ]),
                 #   tdTestResultExec(fRc = True, iExitCode = 0) ],
                 # [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'dir', 'c:\\nonexisting-file' ],
-                #              aFlags = [ vboxcon.ProcessCreateFlag_WaitForStdOut, vboxcon.ProcessCreateFlag_WaitForStdErr ]),
+                #              fFlags = [ vboxcon.ProcessCreateFlag_WaitForStdOut, vboxcon.ProcessCreateFlag_WaitForStdErr ]),
                 #   tdTestResultExec(fRc = True, iExitCode = 1) ],
                 # [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'dir', 'c:\\nonexisting-dir\\' ],
-                #              aFlags = [ vboxcon.ProcessCreateFlag_WaitForStdOut, vboxcon.ProcessCreateFlag_WaitForStdErr ]),
+                #              fFlags = [ vboxcon.ProcessCreateFlag_WaitForStdOut, vboxcon.ProcessCreateFlag_WaitForStdErr ]),
                 #   tdTestResultExec(fRc = True, iExitCode = 1) ]
                 ## @todo Test stdin!
             ]);
@@ -2320,15 +2314,15 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
         fRc = True;
         for (i, aTest) in enumerate(aaTests):
-            curTest = aTest[0]; # tdTestExec, use an index, later.
-            curRes  = aTest[1]; # tdTestResult
-            curTest.setEnvironment(oSession, oTxsSession, oTestVm);
-            fRc, curGuestSession = curTest.createSession('testGuestCtrlExecErrorLevel: Test #%d' % (i,));
+            oCurTest = aTest[0]; # tdTestExec, use an index, later.
+            oCurRes  = aTest[1]; # tdTestResult
+            oCurTest.setEnvironment(oSession, oTxsSession, oTestVm);
+            fRc, oCurGuestSession = oCurTest.createSession('testGuestCtrlExecErrorLevel: Test #%d' % (i,));
             if fRc is False:
                 reporter.error('Test #%d failed: Could not create session' % (i,));
                 break;
-            fRc = self.gctrlExecDoTest(i, curTest, curRes, curGuestSession);
-            curTest.closeSession();
+            fRc = self.gctrlExecDoTest(i, oCurTest, oCurRes, oCurGuestSession);
+            oCurTest.closeSession();
             if fRc is False:
                 break;
 
@@ -2442,39 +2436,39 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             # Creating directories.
             [ tdTestDirCreate(sDirectory = sScratch ), tdTestResult() ],
             [ tdTestDirCreate(sDirectory = os.path.join(sScratch, 'foo\\bar\\baz'),
-                              aFlags = [ vboxcon.DirectoryCreateFlag_Parents ] ),
+                              fFlags = [ vboxcon.DirectoryCreateFlag_Parents ] ),
               tdTestResult(fRc = True) ],
             [ tdTestDirCreate(sDirectory = os.path.join(sScratch, 'foo\\bar\\baz'),
-                              aFlags = [ vboxcon.DirectoryCreateFlag_Parents ] ),
+                              fFlags = [ vboxcon.DirectoryCreateFlag_Parents ] ),
               tdTestResult(fRc = True) ],
             # Long (+ random) stuff.
             [ tdTestDirCreate(sDirectory = os.path.join(sScratch,
-                                                        "".join(random.choice(string.ascii_lowercase) for i in range(32))) ),
+                                                        "".join(random.choice(string.ascii_lowercase) for i in xrange(32))) ),
               tdTestResult(fRc = True) ],
             [ tdTestDirCreate(sDirectory = os.path.join(sScratch,
-                                                        "".join(random.choice(string.ascii_lowercase) for i in range(128))) ),
+                                                        "".join(random.choice(string.ascii_lowercase) for i in xrange(128))) ),
               tdTestResult(fRc = True) ],
             # Following two should fail on Windows (paths too long). Both should timeout.
             [ tdTestDirCreate(sDirectory = os.path.join(sScratch,
-                                                        "".join(random.choice(string.ascii_lowercase) for i in range(255))) ),
+                                                        "".join(random.choice(string.ascii_lowercase) for i in xrange(255))) ),
               tdTestResult(fRc = not oTestVm.isWindows()) ],
             [ tdTestDirCreate(sDirectory = os.path.join(sScratch,
-                                                        "".join(random.choice(string.ascii_lowercase) for i in range(255))) ),
+                                                        "".join(random.choice(string.ascii_lowercase) for i in xrange(255))) ),
               tdTestResult(fRc = not oTestVm.isWindows()) ]
         ]);
 
         fRc = True;
         for (i, aTest) in enumerate(aaTests):
-            curTest = aTest[0]; # tdTestExec, use an index, later.
-            curRes  = aTest[1]; # tdTestResult
-            reporter.log('Testing #%d, sDirectory="%s" ...' % (i, curTest.sDirectory));
-            curTest.setEnvironment(oSession, oTxsSession, oTestVm);
-            fRc, curGuestSession = curTest.createSession('testGuestCtrlDirCreate: Test #%d' % (i,));
+            oCurTest = aTest[0]; # tdTestExec, use an index, later.
+            oCurRes  = aTest[1]; # tdTestResult
+            reporter.log('Testing #%d, sDirectory="%s" ...' % (i, oCurTest.sDirectory));
+            oCurTest.setEnvironment(oSession, oTxsSession, oTestVm);
+            fRc, oCurGuestSession = oCurTest.createSession('testGuestCtrlDirCreate: Test #%d' % (i,));
             if fRc is False:
                 reporter.error('Test #%d failed: Could not create session' % (i,));
                 break;
-            fRc = self.gctrlCreateDir(curTest, curRes, curGuestSession);
-            curTest.closeSession();
+            fRc = self.gctrlCreateDir(oCurTest, oCurRes, oCurGuestSession);
+            oCurTest.closeSession();
             if fRc is False:
                 reporter.error('Test #%d failed' % (i,));
                 fRc = False;
@@ -2581,15 +2575,15 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 #   tdTestResult(fRc = True) ],
                 # Random stuff.
                 # [ tdTestDirCreateTemp(
-                #                       sTemplate = "XXX-".join(random.choice(string.ascii_lowercase) for i in range(32)),
+                #                       sTemplate = "XXX-".join(random.choice(string.ascii_lowercase) for i in xrange(32)),
                 #                       sDirectory = sScratch,
                 #                       fSecure = True, fMode = 0o755),
                 #   tdTestResult(fRc = True) ],
-                # [ tdTestDirCreateTemp(sTemplate = "".join('X' for i in range(32)),
+                # [ tdTestDirCreateTemp(sTemplate = "".join('X' for i in xrange(32)),
                 #                       sDirectory = sScratch,
                 #                       fSecure = True, fMode = 0o755),
                 #   tdTestResult(fRc = True) ],
-                # [ tdTestDirCreateTemp(sTemplate = "".join('X' for i in range(128)),
+                # [ tdTestDirCreateTemp(sTemplate = "".join('X' for i in xrange(128)),
                 #                       sDirectory = sScratch,
                 #                       fSecure = True, fMode = 0o755),
                 #   tdTestResult(fRc = True) ]
@@ -2597,33 +2591,33 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
         fRc = True;
         for (i, aTest) in enumerate(aaTests):
-            curTest = aTest[0]; # tdTestExec, use an index, later.
-            curRes  = aTest[1]; # tdTestResult
+            oCurTest = aTest[0]; # tdTestExec, use an index, later.
+            oCurRes  = aTest[1]; # tdTestResult
             reporter.log('Testing #%d, sTemplate="%s", fMode=%#o, path="%s", secure="%s" ...' %
-                         (i, curTest.sTemplate, curTest.fMode, curTest.sDirectory, curTest.fSecure));
-            curTest.setEnvironment(oSession, oTxsSession, oTestVm);
-            fRc, curGuestSession = curTest.createSession('testGuestCtrlDirCreateTemp: Test #%d' % (i,));
+                         (i, oCurTest.sTemplate, oCurTest.fMode, oCurTest.sDirectory, oCurTest.fSecure));
+            oCurTest.setEnvironment(oSession, oTxsSession, oTestVm);
+            fRc, oCurGuestSession = oCurTest.createSession('testGuestCtrlDirCreateTemp: Test #%d' % (i,));
             if fRc is False:
                 reporter.error('Test #%d failed: Could not create session' % (i,));
                 break;
             sDirTemp = "";
             try:
-                sDirTemp = curGuestSession.directoryCreateTemp(curTest.sTemplate, curTest.fMode,
-                                                               curTest.sDirectory, curTest.fSecure);
+                sDirTemp = oCurGuestSession.directoryCreateTemp(oCurTest.sTemplate, oCurTest.fMode,
+                                                               oCurTest.sDirectory, oCurTest.fSecure);
             except:
-                if curRes.fRc is True:
-                    reporter.errorXcpt('Creating temp directory "%s" failed:' % (curTest.sDirectory,));
+                if oCurRes.fRc is True:
+                    reporter.errorXcpt('Creating temp directory "%s" failed:' % (oCurTest.sDirectory,));
                     fRc = False;
                     break;
                 else:
-                    reporter.logXcpt('Creating temp directory "%s" failed expectedly, skipping:' % (curTest.sDirectory,));
-            curTest.closeSession();
+                    reporter.logXcpt('Creating temp directory "%s" failed expectedly, skipping:' % (oCurTest.sDirectory,));
+            oCurTest.closeSession();
             if sDirTemp  != "":
                 reporter.log2('Temporary directory is: %s' % (sDirTemp,));
                 if self.oTstDrv.fpApiVer >= 5.0:
-                    fExists = curGuestSession.directoryExists(sDirTemp, False);
+                    fExists = oCurGuestSession.directoryExists(sDirTemp, False);
                 else:
-                    fExists = curGuestSession.directoryExists(sDirTemp);
+                    fExists = oCurGuestSession.directoryExists(sDirTemp);
                 if fExists is False:
                     reporter.error('Test #%d failed: Temporary directory "%s" does not exists' % (i, sDirTemp));
                     fRc = False;
@@ -2640,7 +2634,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             aaTests.extend([
                 # Invalid stuff.
                 [ tdTestDirRead(sDirectory = ''), tdTestResultDirRead(fRc = False) ],
-                [ tdTestDirRead(sDirectory = 'C:\\Windows', aFlags = [ 1234 ]), tdTestResultDirRead() ],
+                [ tdTestDirRead(sDirectory = 'C:\\Windows', fFlags = [ 1234 ]), tdTestResultDirRead() ],
                 [ tdTestDirRead(sDirectory = 'C:\\Windows', sFilter = '*.foo'), tdTestResultDirRead() ],
                 # More unusual stuff.
                 [ tdTestDirRead(sDirectory = 'z:\\'), tdTestResultDirRead() ],
@@ -2664,7 +2658,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             aaTests.extend([
                 # Invalid stuff.
                 [ tdTestDirRead(sDirectory = ''), tdTestResultDirRead() ],
-                [ tdTestDirRead(sDirectory = '/etc', aFlags = [ 1234 ]), tdTestResultDirRead() ],
+                [ tdTestDirRead(sDirectory = '/etc', fFlags = [ 1234 ]), tdTestResultDirRead() ],
                 [ tdTestDirRead(sDirectory = '/etc', sFilter = '*.foo'), tdTestResultDirRead() ],
                 # More unusual stuff.
                 [ tdTestDirRead(sDirectory = 'z:/'), tdTestResultDirRead() ],
@@ -2675,27 +2669,27 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
         fRc = True;
         for (i, aTest) in enumerate(aaTests):
-            curTest = aTest[0]; # tdTestExec, use an index, later.
-            curRes  = aTest[1]; # tdTestResult
-            reporter.log('Testing #%d, dir="%s" ...' % (i, curTest.sDirectory));
-            curTest.setEnvironment(oSession, oTxsSession, oTestVm);
-            fRc, curGuestSession = curTest.createSession('testGuestCtrlDirRead: Test #%d' % (i,));
+            oCurTest = aTest[0]; # tdTestExec, use an index, later.
+            oCurRes  = aTest[1]; # tdTestResult
+            reporter.log('Testing #%d, dir="%s" ...' % (i, oCurTest.sDirectory));
+            oCurTest.setEnvironment(oSession, oTxsSession, oTestVm);
+            fRc, oCurGuestSession = oCurTest.createSession('testGuestCtrlDirRead: Test #%d' % (i,));
             if fRc is False:
                 reporter.error('Test #%d failed: Could not create session' % (i,));
                 break;
-            (fRc2, cDirs, cFiles) = self.gctrlReadDir(curTest, curRes, curGuestSession);
-            curTest.closeSession();
+            (fRc2, cDirs, cFiles) = self.gctrlReadDir(oCurTest, oCurRes, oCurGuestSession);
+            oCurTest.closeSession();
             reporter.log2('Test #%d: Returned %d directories, %d files total' % (i, cDirs, cFiles));
-            if fRc2 is curRes.fRc:
+            if fRc2 is oCurRes.fRc:
                 if fRc2 is True:
-                    if curRes.numFiles != cFiles:
-                        reporter.error('Test #%d failed: Got %d files, expected %d' % (i, cFiles, curRes.numFiles));
+                    if oCurRes.numFiles != cFiles:
+                        reporter.error('Test #%d failed: Got %d files, expected %d' % (i, cFiles, oCurRes.numFiles));
                         fRc = False;
-                    if curRes.numDirs != cDirs:
-                        reporter.error('Test #%d failed: Got %d directories, expected %d' % (i, cDirs, curRes.numDirs));
+                    if oCurRes.numDirs != cDirs:
+                        reporter.error('Test #%d failed: Got %d directories, expected %d' % (i, cDirs, oCurRes.numDirs));
                         fRc = False;
             else:
-                reporter.error('Test #%d failed: Got %s, expected %s' % (i, fRc2, curRes.fRc));
+                reporter.error('Test #%d failed: Got %s, expected %s' % (i, fRc2, oCurRes.fRc));
                 fRc = False;
 
         return (fRc, oTxsSession);
@@ -2759,27 +2753,27 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
         fRc = True;
         for (i, aTest) in enumerate(aaTests):
-            curTest = aTest[0]; # tdTestExec, use an index, later.
-            curRes  = aTest[1]; # tdTestResult
-            reporter.log('Testing #%d, file="%s" ...' % (i, curTest.sFile));
-            curTest.setEnvironment(oSession, oTxsSession, oTestVm);
-            fRc, curGuestSession = curTest.createSession('testGuestCtrlFileRemove: Test #%d' % (i,));
+            oCurTest = aTest[0]; # tdTestExec, use an index, later.
+            oCurRes  = aTest[1]; # tdTestResult
+            reporter.log('Testing #%d, file="%s" ...' % (i, oCurTest.sFile));
+            oCurTest.setEnvironment(oSession, oTxsSession, oTestVm);
+            fRc, oCurGuestSession = oCurTest.createSession('testGuestCtrlFileRemove: Test #%d' % (i,));
             if fRc is False:
                 reporter.error('Test #%d failed: Could not create session' % (i,));
                 break;
             try:
                 if self.oTstDrv.fpApiVer >= 5.0:
-                    curGuestSession.fsObjRemove(curTest.sFile);
+                    oCurGuestSession.fsObjRemove(oCurTest.sFile);
                 else:
-                    curGuestSession.fileRemove(curTest.sFile);
+                    oCurGuestSession.fileRemove(oCurTest.sFile);
             except:
-                if curRes.fRc is True:
-                    reporter.errorXcpt('Removing file "%s" failed:' % (curTest.sFile,));
+                if oCurRes.fRc is True:
+                    reporter.errorXcpt('Removing file "%s" failed:' % (oCurTest.sFile,));
                     fRc = False;
                     break;
                 else:
-                    reporter.logXcpt('Removing file "%s" failed expectedly, skipping:' % (curTest.sFile,));
-            curTest.closeSession();
+                    reporter.logXcpt('Removing file "%s" failed expectedly, skipping:' % (oCurTest.sFile,));
+            oCurTest.closeSession();
         return (fRc, oTxsSession);
 
     def testGuestCtrlFileStat(self, oSession, oTxsSession, oTestVm): # pylint: disable=too-many-locals
@@ -2924,13 +2918,13 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                     # Reading from beginning.
                     [ tdTestFileReadWrite(sFile = 'C:\\Windows\\System32\\eula.txt',
                                         sOpenMode = 'r', sDisposition = 'oe', cbToReadWrite = 33),
-                      tdTestResultFileReadWrite(fRc = True, aBuf = 'Microsoft(r) Windows(r) XP Profes',
-                                                cbProcessed = 33, cbOffset = 33) ],
+                      tdTestResultFileReadWrite(fRc = True, abBuf = 'Microsoft(r) Windows(r) XP Profes',
+                                                cbProcessed = 33, offFile = 33) ],
                     # Reading from offset.
                     [ tdTestFileReadWrite(sFile = 'C:\\Windows\\System32\\eula.txt',
-                                        sOpenMode = 'r', sDisposition = 'oe', cbOffset = 17769, cbToReadWrite = 31),
-                      tdTestResultFileReadWrite(fRc = True, aBuf = 'only with the HARDWARE. If\x0d\x0a   ',
-                                                cbProcessed = 31, cbOffset = 17769 + 31) ]
+                                        sOpenMode = 'r', sDisposition = 'oe', offFile = 17769, cbToReadWrite = 31),
+                      tdTestResultFileReadWrite(fRc = True, abBuf = 'only with the HARDWARE. If\x0d\x0a   ',
+                                                cbProcessed = 31, offFile = 17769 + 31) ]
                 ]);
         elif oTestVm.isLinux():
             aaTests.extend([
@@ -2947,76 +2941,76 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
         fRc = True;
         for (i, aTest) in enumerate(aaTests):
-            curTest = aTest[0]; # tdTestFileReadWrite, use an index, later.
-            curRes  = aTest[1]; # tdTestResult
-            reporter.log('Testing #%d, sFile="%s", cbToReadWrite=%d, sOpenMode="%s", sDisposition="%s", cbOffset=%d ...' % \
-                         (i, curTest.sFile, curTest.cbToReadWrite, curTest.sOpenMode, curTest.sDisposition, curTest.cbOffset));
-            curTest.setEnvironment(oSession, oTxsSession, oTestVm);
-            fRc, curGuestSession = curTest.createSession('testGuestCtrlFileRead: Test #%d' % (i,));
+            oCurTest = aTest[0]; # tdTestFileReadWrite, use an index, later.
+            oCurRes  = aTest[1]; # tdTestResult
+            reporter.log('Testing #%d, sFile="%s", cbToReadWrite=%d, sOpenMode="%s", sDisposition="%s", offFile=%d ...'
+                         % (i, oCurTest.sFile, oCurTest.cbToReadWrite, oCurTest.sOpenMode,
+                            oCurTest.sDisposition, oCurTest.offFile));
+            oCurTest.setEnvironment(oSession, oTxsSession, oTestVm);
+            fRc, oCurGuestSession = oCurTest.createSession('testGuestCtrlFileRead: Test #%d' % (i,));
             if fRc is False:
                 reporter.error('Test #%d failed: Could not create session' % (i,));
                 break;
             try:
                 fRc2 = True;
-                if curTest.cbOffset > 0: # The offset parameter is gone.
+                if oCurTest.offFile > 0: # The offset parameter is gone.
                     if self.oTstDrv.fpApiVer >= 5.0:
-                        curFile = curGuestSession.fileOpenEx(curTest.sFile, curTest.getAccessMode(), curTest.getOpenAction(),
-                                                             curTest.getSharingMode(), curTest.lCreationMode, []);
-                        curFile.seek(curTest.cbOffset, vboxcon.FileSeekOrigin_Begin);
+                        curFile = oCurGuestSession.fileOpenEx(oCurTest.sFile, oCurTest.getAccessMode(), oCurTest.getOpenAction(),
+                                                              oCurTest.getSharingMode(), oCurTest.fCreationMode, []);
+                        curFile.seek(oCurTest.offFile, vboxcon.FileSeekOrigin_Begin);
                     else:
-                        curFile = curGuestSession.fileOpenEx(curTest.sFile, curTest.sOpenMode, curTest.sDisposition, \
-                                                             curTest.sSharingMode, curTest.lCreationMode, curTest.cbOffset);
+                        curFile = oCurGuestSession.fileOpenEx(oCurTest.sFile, oCurTest.sOpenMode, oCurTest.sDisposition,
+                                                              oCurTest.sSharingMode, oCurTest.fCreationMode, oCurTest.offFile);
                     curOffset = long(curFile.offset);
-                    resOffset = long(curTest.cbOffset);
+                    resOffset = long(oCurTest.offFile);
                     if curOffset != resOffset:
-                        reporter.error('Test #%d failed: Initial offset on open does not match: Got %d, expected %d' \
+                        reporter.error('Test #%d failed: Initial offset on open does not match: Got %d, expected %d'
                                        % (i, curOffset, resOffset));
                         fRc2 = False;
                 else:
                     if self.oTstDrv.fpApiVer >= 5.0:
-                        curFile = curGuestSession.fileOpen(curTest.sFile, curTest.getAccessMode(), curTest.getOpenAction(),
-                                                           curTest.lCreationMode);
+                        curFile = oCurGuestSession.fileOpen(oCurTest.sFile, oCurTest.getAccessMode(), oCurTest.getOpenAction(),
+                                                            oCurTest.fCreationMode);
                     else:
-                        curFile = curGuestSession.fileOpen(curTest.sFile, curTest.sOpenMode, curTest.sDisposition, \
-                                                           curTest.lCreationMode);
-                if  fRc2 \
-                and curTest.cbToReadWrite > 0:
+                        curFile = oCurGuestSession.fileOpen(oCurTest.sFile, oCurTest.sOpenMode, oCurTest.sDisposition,
+                                                            oCurTest.fCreationMode);
+                if fRc2 and oCurTest.cbToReadWrite > 0:
                     ## @todo Split this up in 64K reads. Later.
                     ## @todo Test timeouts.
-                    aBufRead = curFile.read(curTest.cbToReadWrite, 30 * 1000);
-                    if  curRes.cbProcessed > 0 \
-                    and curRes.cbProcessed != len(aBufRead):
+                    aBufRead = curFile.read(oCurTest.cbToReadWrite, 30 * 1000);
+                    if  oCurRes.cbProcessed > 0 \
+                    and oCurRes.cbProcessed != len(aBufRead):
                         reporter.error('Test #%d failed: Read buffer length does not match: Got %d, expected %d'
-                                       % (i, len(aBufRead), curRes.cbProcessed));
+                                       % (i, len(aBufRead), oCurRes.cbProcessed));
                         fRc2 = False;
                     if fRc2:
-                        if  curRes.aBuf is not None \
-                        and not utils.areBytesEqual(curRes.aBuf, aBufRead):
+                        if  oCurRes.abBuf is not None \
+                        and not utils.areBytesEqual(oCurRes.abBuf, aBufRead):
                             reporter.error('Test #%d failed: Got buffer:\n"%s" (%d bytes, type %s)\n'
                                            'Expected buffer:\n"%s" (%d bytes, type %s)'
                                            % (i, map(hex, map(ord, aBufRead)), len(aBufRead), type(aBufRead),
-                                              map(hex, map(ord, curRes.aBuf)), len(curRes.aBuf), type(curRes.aBuf),));
+                                              map(hex, map(ord, oCurRes.abBuf)), len(oCurRes.abBuf), type(oCurRes.abBuf),));
                             reporter.error('Test #%d failed: Got buffer:\n"%s"\nExpected buffer:\n"%s"'
-                                           % (i, aBufRead, curRes.aBuf));
+                                           % (i, aBufRead, oCurRes.abBuf));
                             fRc2 = False;
                 # Test final offset.
                 curOffset = long(curFile.offset);
-                resOffset = long(curRes.cbOffset);
+                resOffset = long(oCurRes.offFile);
                 if curOffset != resOffset:
                     reporter.error('Test #%d failed: Final offset does not match: Got %d, expected %d' \
                                    % (i, curOffset, resOffset));
                     fRc2 = False;
                 curFile.close();
 
-                if fRc2 != curRes.fRc:
-                    reporter.error('Test #%d failed: Got %s, expected %s' % (i, fRc2, curRes.fRc));
+                if fRc2 != oCurRes.fRc:
+                    reporter.error('Test #%d failed: Got %s, expected %s' % (i, fRc2, oCurRes.fRc));
                     fRc = False;
 
             except:
-                reporter.logXcpt('Opening "%s" failed:' % (curTest.sFile,));
+                reporter.logXcpt('Opening "%s" failed:' % (oCurTest.sFile,));
                 fRc = False;
 
-            curTest.closeSession();
+            oCurTest.closeSession();
 
         return (fRc, oTxsSession);
 
@@ -3036,95 +3030,94 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
         aaTests = [];
 
-        cScratchBuf = random.randint(1, 4096);
-        aScratchBuf = os.urandom(cScratchBuf);
+        cbScratchBuf = random.randint(1, 4096);
+        abScratchBuf = os.urandom(cbScratchBuf);
         aaTests.extend([
             # Write to a non-existing file.
             [ tdTestFileReadWrite(sFile = sScratch + 'testGuestCtrlFileWrite.txt',
-                                  sOpenMode = 'w+', sDisposition = 'ce', cbToReadWrite = cScratchBuf,
-                                  aBuf = aScratchBuf),
-              tdTestResultFileReadWrite(fRc = True, aBuf = aScratchBuf, \
-                                        cbProcessed = cScratchBuf, cbOffset = cScratchBuf) ]
+                                  sOpenMode = 'w+', sDisposition = 'ce', cbToReadWrite = cbScratchBuf, abBuf = abScratchBuf),
+              tdTestResultFileReadWrite(fRc = True, abBuf = abScratchBuf, cbProcessed = cbScratchBuf, offFile = cbScratchBuf) ],
         ]);
 
-        aScratchBuf2 = os.urandom(cScratchBuf);
+        aScratchBuf2 = os.urandom(cbScratchBuf);
         aaTests.extend([
             # Append the same amount of data to the just created file.
             [ tdTestFileReadWrite(sFile = sScratch + 'testGuestCtrlFileWrite.txt',
-                                  sOpenMode = 'w+', sDisposition = 'oa', cbToReadWrite = cScratchBuf,
-                                  cbOffset = cScratchBuf, aBuf = aScratchBuf2),
-              tdTestResultFileReadWrite(fRc = True, aBuf = aScratchBuf2, \
-                                        cbProcessed = cScratchBuf, cbOffset = cScratchBuf * 2) ],
+                                  sOpenMode = 'w+', sDisposition = 'oa', cbToReadWrite = cbScratchBuf,
+                                  offFile = cbScratchBuf, abBuf = aScratchBuf2),
+              tdTestResultFileReadWrite(fRc = True, abBuf = aScratchBuf2, cbProcessed = cbScratchBuf,
+                                        offFile = cbScratchBuf * 2) ],
         ]);
 
         fRc = True;
         for (i, aTest) in enumerate(aaTests):
-            curTest = aTest[0]; # tdTestFileReadWrite, use an index, later.
-            curRes  = aTest[1]; # tdTestResult
-            reporter.log('Testing #%d, sFile="%s", cbToReadWrite=%d, sOpenMode="%s", sDisposition="%s", cbOffset=%d ...' % \
-                         (i, curTest.sFile, curTest.cbToReadWrite, curTest.sOpenMode, curTest.sDisposition, curTest.cbOffset));
-            curTest.setEnvironment(oSession, oTxsSession, oTestVm);
-            fRc, curGuestSession = curTest.createSession('testGuestCtrlFileWrite: Test #%d' % (i,));
+            oCurTest = aTest[0]; # tdTestFileReadWrite, use an index, later.
+            oCurRes  = aTest[1]; # tdTestResult
+            reporter.log('Testing #%d, sFile="%s", cbToReadWrite=%d, sOpenMode="%s", sDisposition="%s", offFile=%d ...'
+                         %  (i, oCurTest.sFile, oCurTest.cbToReadWrite, oCurTest.sOpenMode,
+                             oCurTest.sDisposition, oCurTest.offFile,));
+            oCurTest.setEnvironment(oSession, oTxsSession, oTestVm);
+            fRc, oCurGuestSession = oCurTest.createSession('testGuestCtrlFileWrite: Test #%d' % (i,));
             if fRc is False:
                 reporter.error('Test #%d failed: Could not create session' % (i,));
                 break;
 
             try:
-                if curTest.cbOffset > 0: # The offset parameter is gone.
+                if oCurTest.offFile > 0: # The offset parameter is gone.
                     if self.oTstDrv.fpApiVer >= 5.0:
-                        curFile = curGuestSession.fileOpenEx(curTest.sFile, curTest.getAccessMode(), curTest.getOpenAction(),
-                                                             curTest.getSharingMode(), curTest.lCreationMode, []);
-                        curFile.seek(curTest.cbOffset, vboxcon.FileSeekOrigin_Begin);
+                        curFile = oCurGuestSession.fileOpenEx(oCurTest.sFile, oCurTest.getAccessMode(), oCurTest.getOpenAction(),
+                                                             oCurTest.getSharingMode(), oCurTest.fCreationMode, []);
+                        curFile.seek(oCurTest.offFile, vboxcon.FileSeekOrigin_Begin);
                     else:
-                        curFile = curGuestSession.fileOpenEx(curTest.sFile, curTest.sOpenMode, curTest.sDisposition,
-                                                             curTest.sSharingMode, curTest.lCreationMode, curTest.cbOffset);
+                        curFile = oCurGuestSession.fileOpenEx(oCurTest.sFile, oCurTest.sOpenMode, oCurTest.sDisposition,
+                                                             oCurTest.sSharingMode, oCurTest.fCreationMode, oCurTest.offFile);
                     curOffset = long(curFile.offset);
-                    resOffset = long(curTest.cbOffset);
+                    resOffset = long(oCurTest.offFile);
                     if curOffset != resOffset:
                         reporter.error('Test #%d failed: Initial offset on open does not match: Got %d, expected %d' \
                                        % (i, curOffset, resOffset));
                         fRc = False;
                 else:
                     if self.oTstDrv.fpApiVer >= 5.0:
-                        curFile = curGuestSession.fileOpenEx(curTest.sFile, curTest.getAccessMode(), curTest.getOpenAction(),
-                                                             curTest.getSharingMode(), curTest.lCreationMode, []);
+                        curFile = oCurGuestSession.fileOpenEx(oCurTest.sFile, oCurTest.getAccessMode(), oCurTest.getOpenAction(),
+                                                             oCurTest.getSharingMode(), oCurTest.fCreationMode, []);
                     else:
-                        curFile = curGuestSession.fileOpen(curTest.sFile, curTest.sOpenMode, curTest.sDisposition,
-                                                           curTest.lCreationMode);
-                if fRc and curTest.cbToReadWrite > 0:
-                    reporter.log("File '%s' opened" % curTest.sFile);
+                        curFile = oCurGuestSession.fileOpen(oCurTest.sFile, oCurTest.sOpenMode, oCurTest.sDisposition,
+                                                           oCurTest.fCreationMode);
+                if fRc and oCurTest.cbToReadWrite > 0:
+                    reporter.log("File '%s' opened" % oCurTest.sFile);
                     ## @todo Split this up in 64K writes. Later.
                     ## @todo Test timeouts.
-                    cBytesWritten = curFile.write(array('b', curTest.aBuf), 30 * 1000);
-                    if    curRes.cbProcessed > 0 \
-                      and curRes.cbProcessed != cBytesWritten:
+                    cBytesWritten = curFile.write(array('b', oCurTest.abBuf), 30 * 1000);
+                    if    oCurRes.cbProcessed > 0 \
+                      and oCurRes.cbProcessed != cBytesWritten:
                         reporter.error('Test #%d failed: Written buffer length does not match: Got %d, expected %d' \
-                                       % (i, cBytesWritten, curRes.cbProcessed));
+                                       % (i, cBytesWritten, oCurRes.cbProcessed));
                         fRc = False;
                     if fRc:
                         # Verify written content by seeking back to the initial offset and
                         # re-read & compare the written data.
                         try:
                             if self.oTstDrv.fpApiVer >= 5.0:
-                                curFile.seek(-(curTest.cbToReadWrite), vboxcon.FileSeekOrigin_Current);
+                                curFile.seek(-(oCurTest.cbToReadWrite), vboxcon.FileSeekOrigin_Current);
                             else:
-                                curFile.seek(-(curTest.cbToReadWrite), vboxcon.FileSeekType_Current);
+                                curFile.seek(-(oCurTest.cbToReadWrite), vboxcon.FileSeekType_Current);
                         except:
                             reporter.logXcpt('Seeking back to initial write position failed:');
                             fRc = False;
-                        if fRc and long(curFile.offset) != curTest.cbOffset:
+                        if fRc and long(curFile.offset) != oCurTest.offFile:
                             reporter.error('Test #%d failed: Initial write position does not match current position, ' \
-                                           'got %d, expected %d' % (i, long(curFile.offset), curTest.cbOffset));
+                                           'got %d, expected %d' % (i, long(curFile.offset), oCurTest.offFile));
                             fRc = False;
                     if fRc:
-                        aBufRead = curFile.read(curTest.cbToReadWrite, 30 * 1000);
-                        if len(aBufRead) != curTest.cbToReadWrite:
+                        aBufRead = curFile.read(oCurTest.cbToReadWrite, 30 * 1000);
+                        if len(aBufRead) != oCurTest.cbToReadWrite:
                             reporter.error('Test #%d failed: Got buffer length %d, expected %d' \
-                                           % (i, len(aBufRead), curTest.cbToReadWrite));
+                                           % (i, len(aBufRead), oCurTest.cbToReadWrite));
                             fRc = False;
                         if     fRc \
-                           and curRes.aBuf is not None \
-                           and bytes(curRes.aBuf) != bytes(aBufRead):
+                           and oCurRes.abBuf is not None \
+                           and bytes(oCurRes.abBuf) != bytes(aBufRead):
                             reporter.error('Test #%d failed: Read back buffer (%d bytes) does not match ' \
                                            'written content (%d bytes)' % (i, len(aBufRead), len(aBufRead)));
 
@@ -3132,33 +3125,33 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
                             # Download written file from guest.
                             aGstFiles = [];
-                            aGstFiles.append(curTest.sFile.replace('\\', '/'));
+                            aGstFiles.append(oCurTest.sFile.replace('\\', '/'));
                             self.oTstDrv.txsDownloadFiles(oSession, oTxsSession, aGstFiles, fIgnoreErrors = True);
 
                             # Create files with buffer contents and upload those for later (manual) inspection.
-                            curTest.uploadLogData(self.oTstDrv, curRes.aBuf, ('testGuestCtrlWriteTest%d-BufExcepted' % i),
+                            oCurTest.uploadLogData(self.oTstDrv, oCurRes.abBuf, ('testGuestCtrlWriteTest%d-BufExcepted' % i),
                                                                              ('Test #%d: Expected buffer' % i));
-                            curTest.uploadLogData(self.oTstDrv, aBufRead,    ('testGuestCtrlWriteTest%d-BufGot' % i),
+                            oCurTest.uploadLogData(self.oTstDrv, aBufRead,    ('testGuestCtrlWriteTest%d-BufGot' % i),
                                                                              ('Test #%d: Got buffer' % i));
                             fRc = False;
                 # Test final offset.
                 curOffset = long(curFile.offset);
-                resOffset = long(curRes.cbOffset);
+                resOffset = long(oCurRes.offFile);
                 if curOffset != resOffset:
                     reporter.error('Test #%d failed: Final offset does not match: Got %d, expected %d' \
                                    % (i, curOffset, resOffset));
                     fRc = False;
                 if curFile.status == vboxcon.FileStatus_Open:
                     curFile.close();
-                reporter.log("File '%s' closed" % curTest.sFile);
+                reporter.log("File '%s' closed" % oCurTest.sFile);
             except:
-                reporter.logXcpt('Opening "%s" failed:' % (curTest.sFile,));
+                reporter.logXcpt('Opening "%s" failed:' % (oCurTest.sFile,));
                 fRc = False;
 
-            curTest.closeSession();
+            oCurTest.closeSession();
 
-            if fRc != curRes.fRc:
-                reporter.error('Test #%d failed: Got %s, expected %s' % (i, fRc, curRes.fRc));
+            if fRc != oCurRes.fRc:
+                reporter.error('Test #%d failed: Got %s, expected %s' % (i, fRc, oCurRes.fRc));
                 fRc = False;
                 break;
 
@@ -3200,14 +3193,14 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         aaTests.extend([
             # Destination missing.
             [ tdTestCopyTo(sSrc = ''), tdTestResult() ],
-            [ tdTestCopyTo(sSrc = '/placeholder', aFlags = [ 80 ] ), tdTestResult() ],
+            [ tdTestCopyTo(sSrc = '/placeholder', fFlags = [ 80 ] ), tdTestResult() ],
             # Source missing.
             [ tdTestCopyTo(sDst = ''), tdTestResult() ],
-            [ tdTestCopyTo(sDst = '/placeholder', aFlags = [ 80 ] ), tdTestResult() ],
+            [ tdTestCopyTo(sDst = '/placeholder', fFlags = [ 80 ] ), tdTestResult() ],
             # Testing DirectoryCopyFlag flags.
-            [ tdTestCopyTo(sSrc = sTestFileBig, sDst = sScratchGstInvalid, aFlags = [ 80 ] ), tdTestResult() ],
+            [ tdTestCopyTo(sSrc = sTestFileBig, sDst = sScratchGstInvalid, fFlags = [ 80 ] ), tdTestResult() ],
             # Testing FileCopyFlag flags.
-            [ tdTestCopyTo(sSrc = sTestFileBig, sDst = sScratchGstInvalid, aFlags = [ 80 ] ), tdTestResult() ],
+            [ tdTestCopyTo(sSrc = sTestFileBig, sDst = sScratchGstInvalid, fFlags = [ 80 ] ), tdTestResult() ],
             # Nothing to copy (source and/or destination is empty).
             [ tdTestCopyTo(sSrc = 'z:\\'), tdTestResult() ],
             [ tdTestCopyTo(sSrc = '\\\\uncrulez\\foo'), tdTestResult() ],
@@ -3258,32 +3251,32 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                         ## additionally it's not really clear if this fails reliably on all Windows versions, even
                         ## the old ones like XP with a "proper" administrator.
                         #[ tdTestCopyTo(sSrc = os.path.join(sSystemRoot, 'security'),
-                        #               sDst = sScratchGst, aFlags = [ vboxcon.DirectoryCopyFlag_CopyIntoExisting ]),
+                        #               sDst = sScratchGst, fFlags = [ vboxcon.DirectoryCopyFlag_CopyIntoExisting ]),
                         #
                         # Copying directories with regular files.
                         [ tdTestCopyTo(sSrc = os.path.join(sSystemRoot, 'Help'),
-                                       sDst = sScratchGst, aFlags = [ vboxcon.DirectoryCopyFlag_CopyIntoExisting ]),
+                                       sDst = sScratchGst, fFlags = [ vboxcon.DirectoryCopyFlag_CopyIntoExisting ]),
                           tdTestResult(fRc = True) ]
                         ]);
 
         fRc = True;
         for (i, aTest) in enumerate(aaTests):
-            curTest = aTest[0]; # tdTestExec, use an index, later.
-            curRes  = aTest[1]; # tdTestResult
-            reporter.log('Testing #%d, sSrc=%s, sDst=%s, aFlags=%s ...' % \
-                         (i, curTest.sSrc, curTest.sDst, curTest.aFlags));
-            curTest.setEnvironment(oSession, oTxsSession, oTestVm);
-            fRc, curGuestSession = curTest.createSession('testGuestCtrlCopyTo: Test #%d' % (i,));
+            oCurTest = aTest[0]; # tdTestExec, use an index, later.
+            oCurRes  = aTest[1]; # tdTestResult
+            reporter.log('Testing #%d, sSrc=%s, sDst=%s, fFlags=%s ...' % \
+                         (i, oCurTest.sSrc, oCurTest.sDst, oCurTest.fFlags));
+            oCurTest.setEnvironment(oSession, oTxsSession, oTestVm);
+            fRc, oCurGuestSession = oCurTest.createSession('testGuestCtrlCopyTo: Test #%d' % (i,));
             if fRc is False:
                 reporter.error('Test #%d failed: Could not create session' % (i,));
                 break;
 
             fRc2 = False;
-            if os.path.isdir(curTest.sSrc):
+            if os.path.isdir(oCurTest.sSrc):
                 try:
-                    curProgress = curGuestSession.directoryCopyToGuest(curTest.sSrc, curTest.sDst, curTest.aFlags);
-                    if curProgress is not None:
-                        oProgress = vboxwrappers.ProgressWrapper(curProgress, self.oTstDrv.oVBoxMgr, self.oTstDrv, \
+                    oCurProgress = oCurGuestSession.directoryCopyToGuest(oCurTest.sSrc, oCurTest.sDst, oCurTest.fFlags);
+                    if oCurProgress is not None:
+                        oProgress = vboxwrappers.ProgressWrapper(oCurProgress, self.oTstDrv.oVBoxMgr, self.oTstDrv, \
                                                                  "gctrlDirCopyTo");
                         try:
                             oProgress.wait();
@@ -3292,21 +3285,21 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                             else:
                                 oProgress.logResult(fIgnoreErrors = True);
                         except:
-                            reporter.logXcpt('Waiting exception for sSrc="%s", sDst="%s":' % (curTest.sSrc, curTest.sDst));
+                            reporter.logXcpt('Waiting exception for sSrc="%s", sDst="%s":' % (oCurTest.sSrc, oCurTest.sDst));
                     else:
                         reporter.error('No progress object returned');
                 except:
-                    reporter.logXcpt('directoryCopyToGuest exception for sSrc="%s", sDst="%s":' % (curTest.sSrc, curTest.sDst));
+                    reporter.logXcpt('directoryCopyToGuest exception for sSrc="%s", sDst="%s":' % (oCurTest.sSrc, oCurTest.sDst));
             else:
-                fRc2 = self.gctrlCopyFileTo(curGuestSession, curTest.sSrc, curTest.sDst, curTest.aFlags);
+                fRc2 = self.gctrlCopyFileTo(oCurGuestSession, oCurTest.sSrc, oCurTest.sDst, oCurTest.fFlags);
 
-            curTest.closeSession();
+            oCurTest.closeSession();
 
-            if fRc2 is curRes.fRc:
+            if fRc2 is oCurRes.fRc:
                 ## @todo Verify the copied results (size, checksum?).
                 pass;
             else:
-                reporter.error('Test #%d failed: Got %s, expected %s' % (i, fRc2, curRes.fRc));
+                reporter.error('Test #%d failed: Got %s, expected %s' % (i, fRc2, oCurRes.fRc));
                 fRc = False;
                 break;
 
@@ -3349,14 +3342,14 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         aaTests.extend([
             # Destination missing.
             [ tdTestCopyFrom(sSrc = ''), tdTestResult() ],
-            [ tdTestCopyFrom(sSrc = 'Something', aFlags = [ 80 ] ), tdTestResult() ],
+            [ tdTestCopyFrom(sSrc = 'Something', fFlags = [ 80 ] ), tdTestResult() ],
             # Source missing.
             [ tdTestCopyFrom(sDst = ''), tdTestResult() ],
-            [ tdTestCopyFrom(sDst = 'Something', aFlags = [ 80 ] ), tdTestResult() ],
+            [ tdTestCopyFrom(sDst = 'Something', fFlags = [ 80 ] ), tdTestResult() ],
             # Testing DirectoryCopyFlag flags.
-            [ tdTestCopyFrom(sSrc = sSrcDirExisting, sDst = sScratchHstInvalid, aFlags = [ 80 ] ), tdTestResult() ],
+            [ tdTestCopyFrom(sSrc = sSrcDirExisting, sDst = sScratchHstInvalid, fFlags = [ 80 ] ), tdTestResult() ],
             # Testing FileCopyFlag flags.
-            [ tdTestCopyFrom(sSrc = sSrcFileExisting, sDst = sScratchHstInvalid, aFlags = [ 80 ] ), tdTestResult() ],
+            [ tdTestCopyFrom(sSrc = sSrcFileExisting, sDst = sScratchHstInvalid, fFlags = [ 80 ] ), tdTestResult() ],
             # Nothing to copy (sDst is empty / unreachable).
             [ tdTestCopyFrom(sSrc = 'z:\\'), tdTestResult() ],
             [ tdTestCopyFrom(sSrc = '\\\\uncrulez\\foo'), tdTestResult() ],
@@ -3406,74 +3399,59 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                     [ tdTestCopyFrom(sSrc = sSrcDirExisting, sDst = sScratchHst), tdTestResult() ],
                     # Next try with the DirectoryCopyFlag_CopyIntoExisting flag being set.
                     [ tdTestCopyFrom(sSrc = sSrcDirExisting, sDst = sScratchHst,
-                                     aFlags = [ vboxcon.DirectoryCopyFlag_CopyIntoExisting ] ),
+                                     fFlags = [ vboxcon.DirectoryCopyFlag_CopyIntoExisting ] ),
                       tdTestResult(fRc = True) ],
                     # Ditto, with trailing slash.
                     [ tdTestCopyFrom(sSrc = sSrcDirExisting,
-                                     sDst = sScratchHst + "/", aFlags = [ vboxcon.DirectoryCopyFlag_CopyIntoExisting ]),
+                                     sDst = sScratchHst + "/", fFlags = [ vboxcon.DirectoryCopyFlag_CopyIntoExisting ]),
                       tdTestResult(fRc = True) ],
                     # Copying contents of directories into a non-existing directory chain on the host which fail.
                     [ tdTestCopyFrom(sSrc = sSrcDirExisting + sPathSep, sDst = sScratchHstNotExistChain,
-                                     aFlags = [ vboxcon.DirectoryCopyFlag_CopyIntoExisting ]), tdTestResult() ],
+                                     fFlags = [ vboxcon.DirectoryCopyFlag_CopyIntoExisting ]), tdTestResult() ],
                     # Copying contents of directories into a non-existing directory on the host, which should succeed.
                     [ tdTestCopyFrom(sSrc = sSrcDirExisting + sPathSep, sDst = sScratchHstNotExist,
-                                     aFlags = [ vboxcon.DirectoryCopyFlag_CopyIntoExisting ] ),
+                                     fFlags = [ vboxcon.DirectoryCopyFlag_CopyIntoExisting ] ),
                       tdTestResult(fRc = True) ]
                 ]);
 
         fRc = True;
         for (i, aTest) in enumerate(aaTests):
-            curTest = aTest[0]; # tdTestExec, use an index, later.
-            curRes  = aTest[1]; # tdTestResult
-            reporter.log('Testing #%d, sSrc="%s", sDst="%s", aFlags="%s" ...' % \
-                         (i, curTest.sSrc, curTest.sDst, curTest.aFlags));
-            curTest.setEnvironment(oSession, oTxsSession, oTestVm);
-            fRc, curGuestSession = curTest.createSession('testGuestCtrlCopyFrom: Test #%d' % (i,));
-            if fRc is False:
-                reporter.error('Test #%d failed: Could not create session' % (i,));
-                break;
+            oCurTest = aTest[0]; # tdTestExec, use an index, later.
+            oCurRes  = aTest[1]; # tdTestResult
+            reporter.log('Testing #%d, sSrc="%s", sDst="%s", fFlags="%s" ...'
+                         % (i, oCurTest.sSrc, oCurTest.sDst, oCurTest.fFlags,));
 
-            fRc2 = True;
+            oCurTest.setEnvironment(oSession, oTxsSession, oTestVm);
+            fRc2, oCurGuestSession = oCurTest.createSession('testGuestCtrlCopyFrom: Test #%d' % (i,));
+            if fRc2 is not True:
+                fRc = reporter.error('Test #%d failed: Could not create session' % (i,));
+                break;
 
             try:
                 if self.oTstDrv.fpApiVer >= 5.0:
-                    oFsInfo = curGuestSession.fsObjQueryInfo(curTest.sSrc, True); # fFollowSymlinks
+                    oFsInfo = oCurGuestSession.fsObjQueryInfo(oCurTest.sSrc, True); # fFollowSymlinks
                 else:
-                    oFsInfo = curGuestSession.fileQueryInfo(curTest.sSrc);
-
-                if oFsInfo.type is vboxcon.FsObjType_Directory:
-                    curProgress = curGuestSession.directoryCopyFromGuest(curTest.sSrc, curTest.sDst, curTest.aFlags);
-                    if curProgress is not None:
-                        oProgress = vboxwrappers.ProgressWrapper(curProgress, self.oTstDrv.oVBoxMgr, self.oTstDrv, \
-                                                                 "gctrlDirCopyFrom");
-                        try:
-                            oProgress.wait();
-                            if not oProgress.isSuccess():
-                                oProgress.logResult(fIgnoreErrors = True);
-                                fRc2 = False;
-                        except:
-                            reporter.logXcpt('Waiting exception for sSrc="%s", sDst="%s":' % (curTest.sSrc, curTest.sDst));
-                            fRc2 = False;
-                    else:
-                        reporter.error('No progress object returned');
-                        fRc2 = False;
-                elif oFsInfo.type is vboxcon.FsObjType_File:
-                    fRc2 = self.gctrlCopyFileFrom(curGuestSession, curTest.sSrc, curTest.sDst, curTest.aFlags);
+                    oFsInfo = oCurGuestSession.fileQueryInfo(oCurTest.sSrc);
+                eFsObjType = oFsInfo.type;
+            except:
+                if oCurRes.fRc:
+                    reporter.errorXcpt('Query information exception for sSrc="%s", sDst="%s":' % (oCurTest.sSrc, oCurTest.sDst,));
+                else:
+                    reporter.logXcpt(  'Query information exception for sSrc="%s", sDst="%s":' % (oCurTest.sSrc, oCurTest.sDst,));
+                fRc2 = False;
+            else:
+                if eFsObjType == vboxcon.FsObjType_Directory:
+                    fRc2 = self.gctrlCopyDirFrom(oCurGuestSession, oCurTest.sSrc, oCurTest.sDst, oCurTest.fFlags, oCurRes.fRc);
+                elif eFsObjType == vboxcon.FsObjType_File:
+                    fRc2 = self.gctrlCopyFileFrom(oCurGuestSession, oCurTest.sSrc, oCurTest.sDst, oCurTest.fFlags, oCurRes.fRc);
                 else:
                     reporter.log2('Element "%s" not handled (yet), skipping' % oFsInfo.name);
 
-            except:
-                reporter.logXcpt('Query information exception for sSrc="%s", sDst="%s":' % (curTest.sSrc, curTest.sDst));
-                fRc2 = False;
-
-            curTest.closeSession();
-            if fRc2 is curRes.fRc:
-                ## @todo Verify the copied results (size, checksum?).
-                pass;
+            oCurTest.closeSession();
+            if fRc2 == oCurRes.fRc:
+                pass; ## @todo Verify the copied results (size, checksum?).
             else:
-                reporter.error('Test #%d failed: Got %s, expected %s' % (i, fRc2, curRes.fRc));
-                fRc = False;
-                break;
+                fRc = reporter.error('Test #%d failed: Got %s, expected %s' % (i, fRc2, oCurRes.fRc));
 
         return (fRc, oTxsSession);
 
@@ -3488,7 +3466,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             sVBoxValidationKitISO = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../VBoxTestSuite.iso'));
         if not os.path.isfile(sVBoxValidationKitISO):
             sCur = os.getcwd();
-            for i in range(0, 10):
+            for i in xrange(0, 10):
                 sVBoxValidationKitISO = os.path.join(sCur, 'validationkit/VBoxValidationKit.iso');
                 if os.path.isfile(sVBoxValidationKitISO):
                     break;
@@ -3517,9 +3495,9 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 # Source is missing.
                 [ tdTestUpdateAdditions(sSrc = ''), tdTestResult() ],
 
-                # Wrong aFlags.
+                # Wrong fFlags.
                 [ tdTestUpdateAdditions(sSrc = self.oTstDrv.getGuestAdditionsIso(),
-                                        aFlags = [ 1234 ]), tdTestResult() ],
+                                        fFlags = [ 1234 ]), tdTestResult() ],
 
                 # Non-existing .ISO.
                 [ tdTestUpdateAdditions(sSrc = "non-existing.iso"), tdTestResult() ],
@@ -3545,19 +3523,19 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
         fRc = True;
         for (i, aTest) in enumerate(aaTests):
-            curTest = aTest[0]; # tdTestExec, use an index, later.
-            curRes  = aTest[1]; # tdTestResult
-            reporter.log('Testing #%d, sSrc="%s", aFlags="%s" ...' % \
-                         (i, curTest.sSrc, curTest.aFlags));
-            curTest.setEnvironment(oSession, oTxsSession, oTestVm);
-            fRc, _ = curTest.createSession('Test #%d' % (i,));
+            oCurTest = aTest[0]; # tdTestExec, use an index, later.
+            oCurRes  = aTest[1]; # tdTestResult
+            reporter.log('Testing #%d, sSrc="%s", fFlags="%s" ...' % \
+                         (i, oCurTest.sSrc, oCurTest.fFlags));
+            oCurTest.setEnvironment(oSession, oTxsSession, oTestVm);
+            fRc, _ = oCurTest.createSession('Test #%d' % (i,));
             if fRc is False:
                 reporter.error('Test #%d failed: Could not create session' % (i,));
                 break;
             try:
-                curProgress = curTest.oTest.oGuest.updateGuestAdditions(curTest.sSrc, curTest.aArgs, curTest.aFlags);
-                if curProgress is not None:
-                    oProgress = vboxwrappers.ProgressWrapper(curProgress, self.oTstDrv.oVBoxMgr, self.oTstDrv, "gctrlUpGA");
+                oCurProgress = oCurTest.oTest.oGuest.updateGuestAdditions(oCurTest.sSrc, oCurTest.aArgs, oCurTest.fFlags);
+                if oCurProgress is not None:
+                    oProgress = vboxwrappers.ProgressWrapper(oCurProgress, self.oTstDrv.oVBoxMgr, self.oTstDrv, "gctrlUpGA");
                     try:
                         oProgress.wait();
                         if not oProgress.isSuccess():
@@ -3571,16 +3549,16 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                     fRc = False;
             except:
                 # Just log, don't assume an error here (will be done in the main loop then).
-                reporter.logXcpt('Updating Guest Additions exception for sSrc="%s", aFlags="%s":' \
-                                 % (curTest.sSrc, curTest.aFlags));
+                reporter.logXcpt('Updating Guest Additions exception for sSrc="%s", fFlags="%s":' \
+                                 % (oCurTest.sSrc, oCurTest.fFlags));
                 fRc = False;
-            curTest.closeSession();
-            if fRc is curRes.fRc:
+            oCurTest.closeSession();
+            if fRc is oCurRes.fRc:
                 if fRc:
                     ## @todo Verify if Guest Additions were really updated (build, revision, ...).
                     pass;
             else:
-                reporter.error('Test #%d failed: Got %s, expected %s' % (i, fRc, curRes.fRc));
+                reporter.error('Test #%d failed: Got %s, expected %s' % (i, fRc, oCurRes.fRc));
                 fRc = False;
                 break;
 
@@ -3717,11 +3695,11 @@ class tdAddGuestCtrl(vbox.TestDriver):                                         #
         sCmd = 'c:\\windows\\system32\\cmd.exe';
         aArgs = [ sCmd, '/C', 'dir', '/S', 'c:\\windows' ];
         aEnv = [];
-        aFlags = [];
+        fFlags = [];
 
-        for _ in range(100):
+        for _ in xrange(100):
             oProc = oGuestSession.processCreate(sCmd, aArgs if self.fpApiVer >= 5.0 else aArgs[1:],
-                                                aEnv, aFlags, 30 * 1000);
+                                                aEnv, fFlags, 30 * 1000);
 
             aWaitFor = [ vboxcon.ProcessWaitForFlag_Terminate ];
             _ = oProc.waitForArray(aWaitFor, 30 * 1000);
