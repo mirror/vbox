@@ -224,7 +224,24 @@ typedef uint8_t IEMMODE;
                                                     | CPUMCTX_EXTRN_DR7 /* for memory breakpoints */ )
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+/** The CPUMCTX_EXTRN_XXX mask needed when calling IEMExecDecodedVmlaunchVmresume().
+ * IEM will ASSUME the caller has ensured these are already present. */
 # define IEM_CPUMCTX_EXTRN_VMX_VMENTRY_MASK        (  IEM_CPUMCTX_EXTRN_EXEC_DECODED_NO_MEM_MASK \
+                                                    | CPUMCTX_EXTRN_CR2 \
+                                                    | CPUMCTX_EXTRN_HWVIRT )
+
+/** The CPUMCTX_EXTRN_XXX mask that the IEM VM-exit code will import on-demand when
+ *  needed, primarily because there are several IEM VM-exit interface functions and
+ *  some of which may not cause a VM-exit at all. */
+# define IEM_CPUMCTX_EXTRN_VMX_VMEXIT_MASK         (  CPUMCTX_EXTRN_CR0 | CPUMCTX_EXTRN_CR3 | CPUMCTX_EXTRN_CR4 \
+                                                    | CPUMCTX_EXTRN_DR7 | CPUMCTX_EXTRN_DR6 \
+                                                    | CPUMCTX_EXTRN_EFER \
+                                                    | CPUMCTX_EXTRN_SYSENTER_MSRS \
+                                                    | CPUMCTX_EXTRN_OTHER_MSRS    /* for PAT MSR */ \
+                                                    | CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_RSP | CPUMCTX_EXTRN_RFLAGS \
+                                                    | CPUMCTX_EXTRN_SREG_MASK \
+                                                    | CPUMCTX_EXTRN_TR \
+                                                    | CPUMCTX_EXTRN_LDTR | CPUMCTX_EXTRN_GDTR | CPUMCTX_EXTRN_IDTR \
                                                     | CPUMCTX_EXTRN_HWVIRT )
 #endif
 
