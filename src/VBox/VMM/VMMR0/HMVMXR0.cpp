@@ -16009,7 +16009,7 @@ HMVMX_EXIT_DECL hmR0VmxExitXcptOrNmiNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTrans
                 ExitInfo.u64Qual = pVmxTransient->uExitQual;
 
                 VMXVEXITEVENTINFO ExitEventInfo;
-                RT_ZERO(ExitInfo);
+                RT_ZERO(ExitEventInfo);
                 ExitEventInfo.uExitIntInfo         = pVmxTransient->uExitIntInfo;
                 ExitEventInfo.uExitIntErrCode      = pVmxTransient->uExitIntErrorCode;
                 ExitEventInfo.uIdtVectoringInfo    = pVmxTransient->uIdtVectoringInfo;
