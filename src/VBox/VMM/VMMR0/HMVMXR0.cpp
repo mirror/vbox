@@ -10489,6 +10489,8 @@ static int hmR0VmxMergeVmcsNested(PVMCPU pVCpu)
  * @returns Strict VBox status code (i.e. informational status codes too).
  * @retval  VINF_SUCCESS if we can proceed with running the guest, interrupts
  *          have been disabled.
+ * @retval  VINF_VMX_VMEXIT if a nested-guest VM-exit occurs (e.g., while evaluating
+ *          pending events).
  * @retval  VINF_EM_RESET if a triple-fault occurs while injecting a
  *          double-fault into the guest.
  * @retval  VINF_EM_DBG_STEPPED if @a fStepping is true and an event was
@@ -10619,10 +10621,13 @@ static VBOXSTRICTRC hmR0VmxPreRunGuest(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient
      * While evaluating pending events if something failed (unlikely) or if we were
      * preparing to run a nested-guest but performed a nested-guest VM-exit, we should bail.
      */
-    if (   rcStrict != VINF_SUCCESS
-        || (    pVmxTransient->fIsNestedGuest
-            && !CPUMIsGuestInVmxNonRootMode(&pVCpu->cpum.GstCtx)))
+    if (rcStrict != VINF_SUCCESS)
         return rcStrict;
+    if (   pVmxTransient->fIsNestedGuest
+        && !CPUMIsGuestInVmxNonRootMode(&pVCpu->cpum.GstCtx))
+        return VINF_VMX_VMEXIT;
+#else
+    Assert(rcStrict == VINF_SUCCESS);
 #endif
 
     /*
@@ -12629,10 +12634,13 @@ VMMR0DECL(VBOXSTRICTRC) VMXR0RunGuestCode(PVMCPU pVCpu)
         rcStrict = hmR0VmxRunGuestCodeNested(pVCpu, &cLoops);
 #endif
 
-    if (rcStrict == VERR_EM_INTERPRETER)
-        rcStrict = VINF_EM_RAW_EMULATE_INSTR;
-    else if (rcStrict == VINF_EM_RESET)
-        rcStrict = VINF_EM_TRIPLE_FAULT;
+    int const rcLoop = VBOXSTRICTRC_VAL(rcStrict);
+    switch (rcLoop)
+    {
+        case VINF_VMX_VMEXIT:       rcStrict = VINF_SUCCESS;                break;
+        case VERR_EM_INTERPRETER:   rcStrict = VINF_EM_RAW_EMULATE_INSTR;   break;
+        case VINF_EM_RESET:         rcStrict = VINF_EM_TRIPLE_FAULT;        break;
+    }
 
     int rc2 = hmR0VmxExitToRing3(pVCpu, rcStrict);
     if (RT_FAILURE(rc2))
@@ -15993,9 +16001,9 @@ HMVMX_EXIT_DECL hmR0VmxExitXcptOrNmiNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTrans
             rc = hmR0VmxReadExitIntErrorCodeVmcs(pVmxTransient);
             AssertRCReturn(rc, rc);
 
-            uint8_t const  uVector    = VMX_EXIT_INT_INFO_VECTOR(uExitIntInfo);
-            bool const     fIntercept = CPUMIsGuestVmxXcptInterceptSet(pVCpu, &pVCpu->cpum.GstCtx, uVector,
-                                                                       pVmxTransient->uExitIntErrorCode);
+            uint8_t const uVector    = VMX_EXIT_INT_INFO_VECTOR(uExitIntInfo);
+            bool const    fIntercept = CPUMIsGuestVmxXcptInterceptSet(pVCpu, &pVCpu->cpum.GstCtx, uVector,
+                                                                      pVmxTransient->uExitIntErrorCode);
             if (fIntercept)
             {
                 rc  = hmR0VmxReadExitQualVmcs(pVCpu, pVmxTransient);
