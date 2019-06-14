@@ -181,6 +181,47 @@ def reportError(oErr, sText):
     reporter.error(sText);
     return reporter.error(stringifyErrorInfo(oErrObj));
 
+def formatComOrXpComException(oType, oXcpt):
+    """
+    Callback installed with the reporter to better format COM exceptions.
+    Similar to format_exception_only, only it returns None if not interested.
+    """
+    _ = oType;
+    oVBoxMgr = vboxcon.goHackModuleClass.oVBoxMgr;
+    if oVBoxMgr is None:
+        return None;
+    if not oVBoxMgr.xcptIsOurXcptKind(oXcpt):               # pylint: disable=not-callable
+        return None;
+
+    if platform.system() == 'Windows':
+        hrc = oXcpt.hresult;
+        if hrc == ComError.DISP_E_EXCEPTION and oXcpt.excepinfo is not None and len(oXcpt.excepinfo) > 5:
+            hrc    = oXcpt.excepinfo[5];
+            sWhere = oXcpt.excepinfo[1];
+            sMsg   = oXcpt.excepinfo[2];
+        else:
+            sWhere = None;
+            sMsg   = oXcpt.strerror;
+    else:
+        hrc    = oXcpt.errno;
+        sWhere = None;
+        sMsg   = oXcpt.msg;
+
+    sHrc = oVBoxMgr.xcptToString(hrc);                      # pylint: disable=not-callable
+    if sHrc.find('(') < 0:
+        sHrc = '%s (%#x)' % (sHrc, hrc & 0xffffffff);
+
+    asRet = ['COM-Xcpt: %s' % (sHrc,)];
+    if sMsg and sWhere:
+        asRet.append('--------- %s: %s' % (sWhere, sMsg,));
+    elif sMsg:
+        asRet.append('--------- %s' % (sMsg,));
+    return asRet;
+    #if sMsg and sWhere:
+    #    return ['COM-Xcpt: %s - %s: %s' % (sHrc, sWhere, sMsg,)];
+    #if sMsg:
+    #    return ['COM-Xcpt: %s - %s' % (sHrc, sMsg,)];
+    #return ['COM-Xcpt: %s' % (sHrc,)];
 
 #
 # Classes
@@ -1344,6 +1385,7 @@ class TestDriver(base.TestDriver):                                              
             # Install the constant wrapping hack.
             vboxcon.goHackModuleClass.oVBoxMgr  = self.oVBoxMgr; # VBoxConstantWrappingHack.
             vboxcon.fpApiVer                    = self.fpApiVer;
+            reporter.setComXcptFormatter(formatComOrXpComException);
 
         except:
             self.oVBoxMgr = None;
@@ -1431,6 +1473,7 @@ class TestDriver(base.TestDriver):                                              
         self.oVBoxMgr         = None;
         self.oVBox            = None;
         vboxcon.goHackModuleClass.oVBoxMgr = None; # VBoxConstantWrappingHack.
+        reporter.setComXcptFormatter(None);
 
         # Do garbage collection to try get rid of those objects.
         try:
