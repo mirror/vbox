@@ -1222,6 +1222,12 @@ class VirtualBoxManager(object):
                     oValue = getattr(self.statuses, sKey)
                     if type(oValue) is int:
                         dErrorValToName[oValue] = sKey
+            # Always prefer the COM names (see aliasing in platform specific code):
+            for sKey in ('S_OK', 'E_FAIL', 'E_ABORT', 'E_POINTER', 'E_NOINTERFACE', 'E_INVALIDARG',
+                         'E_OUTOFMEMORY', 'E_NOTIMPL', 'E_UNEXPECTED',):
+                oValue = getattr(self.statuses, sKey, None)
+                if oValue is not None:
+                    dErrorValToName[oValue] = sKey
             self._dErrorValToName = dErrorValToName
 
         # Do the lookup, falling back on formatting the status number.
