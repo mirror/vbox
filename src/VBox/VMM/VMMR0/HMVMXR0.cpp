@@ -982,7 +982,6 @@ static int hmR0VmxRemoveXcptIntercept(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient,
  */
 static int hmR0VmxLoadVmcs(PVMXVMCSINFO pVmcsInfo)
 {
-    Assert(pVmcsInfo);
     Assert(pVmcsInfo->HCPhysVmcs);
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 
@@ -1008,7 +1007,6 @@ static int hmR0VmxLoadVmcs(PVMXVMCSINFO pVmcsInfo)
  */
 static int hmR0VmxClearVmcs(PVMXVMCSINFO pVmcsInfo)
 {
-    Assert(pVmcsInfo);
     Assert(pVmcsInfo->HCPhysVmcs);
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 
@@ -1031,9 +1029,6 @@ static int hmR0VmxClearVmcs(PVMXVMCSINFO pVmcsInfo)
  */
 static int hmR0VmxSwitchVmcs(PVMXVMCSINFO pVmcsInfoFrom, PVMXVMCSINFO pVmcsInfoTo)
 {
-    Assert(pVmcsInfoFrom);
-    Assert(pVmcsInfoTo);
-
     /*
      * Clear the VMCS we are switching out if it has not already been cleared.
      * This will sync any CPU internal data back to the VMCS.
@@ -3495,7 +3490,6 @@ static int hmR0VmxSetupVmcsCtlsNested(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo)
  */
 static int hmR0VmxSetupVmcs(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo, bool fIsNstGstVmcs)
 {
-    Assert(pVmcsInfo);
     Assert(pVmcsInfo->pvVmcs);
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 
