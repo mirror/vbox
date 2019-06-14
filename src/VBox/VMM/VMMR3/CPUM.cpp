@@ -1676,7 +1676,7 @@ static void cpumR3InitVmxGuestMsrs(PVM pVM, PCVMXMSRS pHostVmxMsrs, PCCPUMFEATUR
          * CPU features and/or micro-architecture/generation. Why? Ask Intel.
          */
         uint64_t const uHostMsr = fIsNstGstHwExecAllowed ? pHostVmxMsrs->u64Cr0Fixed1 : 0xffffffff;
-        pGuestVmxMsrs->u64Cr0Fixed1 = uHostMsr | VMX_V_CR0_FIXED0;   /* Make sure the CR0 MB1 bits are not clear. */
+        pGuestVmxMsrs->u64Cr0Fixed1 = uHostMsr | pGuestVmxMsrs->u64Cr0Fixed0;   /* Make sure the CR0 MB1 bits are not clear. */
     }
 
     /* CR4 Fixed-0. */
@@ -1685,7 +1685,7 @@ static void cpumR3InitVmxGuestMsrs(PVM pVM, PCVMXMSRS pHostVmxMsrs, PCCPUMFEATUR
     /* CR4 Fixed-1. */
     {
         uint64_t const uHostMsr = fIsNstGstHwExecAllowed ? pHostVmxMsrs->u64Cr4Fixed1 : CPUMGetGuestCR4ValidMask(pVM);
-        pGuestVmxMsrs->u64Cr4Fixed1 = uHostMsr | VMX_V_CR4_FIXED0;   /* Make sure the CR4 MB1 bits are not clear. */
+        pGuestVmxMsrs->u64Cr4Fixed1 = uHostMsr | pGuestVmxMsrs->u64Cr4Fixed0;   /* Make sure the CR4 MB1 bits are not clear. */
     }
 
     /* VMCS Enumeration. */
