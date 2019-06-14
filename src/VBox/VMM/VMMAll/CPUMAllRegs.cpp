@@ -1924,7 +1924,7 @@ VMM_INT_DECL(int)   CPUMSetGuestXcr0(PVMCPU pVCpu, uint64_t uNewValue)
  * @returns true if in real mode, otherwise false.
  * @param   pVCpu       The cross context virtual CPU structure.
  */
-VMMDECL(bool) CPUMIsGuestNXEnabled(PVMCPU pVCpu)
+VMMDECL(bool) CPUMIsGuestNXEnabled(PCVMCPU pVCpu)
 {
     CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_EFER);
     return !!(pVCpu->cpum.s.Guest.msrEFER & MSR_K6_EFER_NXE);
@@ -1937,7 +1937,7 @@ VMMDECL(bool) CPUMIsGuestNXEnabled(PVMCPU pVCpu)
  * @returns true if in real mode, otherwise false.
  * @param   pVCpu       The cross context virtual CPU structure.
  */
-VMMDECL(bool) CPUMIsGuestPageSizeExtEnabled(PVMCPU pVCpu)
+VMMDECL(bool) CPUMIsGuestPageSizeExtEnabled(PCVMCPU pVCpu)
 {
     CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_CR4);
     /* PAE or AMD64 implies support for big pages regardless of CR4.PSE */
@@ -1951,7 +1951,7 @@ VMMDECL(bool) CPUMIsGuestPageSizeExtEnabled(PVMCPU pVCpu)
  * @returns true if in real mode, otherwise false.
  * @param   pVCpu       The cross context virtual CPU structure.
  */
-VMMDECL(bool) CPUMIsGuestPagingEnabled(PVMCPU pVCpu)
+VMMDECL(bool) CPUMIsGuestPagingEnabled(PCVMCPU pVCpu)
 {
     CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_CR0);
     return !!(pVCpu->cpum.s.Guest.cr0 & X86_CR0_PG);
@@ -1964,7 +1964,7 @@ VMMDECL(bool) CPUMIsGuestPagingEnabled(PVMCPU pVCpu)
  * @returns true if in real mode, otherwise false.
  * @param   pVCpu       The cross context virtual CPU structure.
  */
-VMMDECL(bool) CPUMIsGuestR0WriteProtEnabled(PVMCPU pVCpu)
+VMMDECL(bool) CPUMIsGuestR0WriteProtEnabled(PCVMCPU pVCpu)
 {
     CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_CR0);
     return !!(pVCpu->cpum.s.Guest.cr0 & X86_CR0_WP);
@@ -1977,7 +1977,7 @@ VMMDECL(bool) CPUMIsGuestR0WriteProtEnabled(PVMCPU pVCpu)
  * @returns true if in real mode, otherwise false.
  * @param   pVCpu       The cross context virtual CPU structure.
  */
-VMMDECL(bool) CPUMIsGuestInRealMode(PVMCPU pVCpu)
+VMMDECL(bool) CPUMIsGuestInRealMode(PCVMCPU pVCpu)
 {
     CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_CR0);
     return !(pVCpu->cpum.s.Guest.cr0 & X86_CR0_PE);
@@ -1990,7 +1990,7 @@ VMMDECL(bool) CPUMIsGuestInRealMode(PVMCPU pVCpu)
  * @returns @c true if it is, @c false if not.
  * @param   pVCpu       The cross context virtual CPU structure.
  */
-VMMDECL(bool) CPUMIsGuestInRealOrV86Mode(PVMCPU pVCpu)
+VMMDECL(bool) CPUMIsGuestInRealOrV86Mode(PCVMCPU pVCpu)
 {
     CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_CR0 | CPUMCTX_EXTRN_RFLAGS);
     return !(pVCpu->cpum.s.Guest.cr0 & X86_CR0_PE)
@@ -2004,7 +2004,7 @@ VMMDECL(bool) CPUMIsGuestInRealOrV86Mode(PVMCPU pVCpu)
  * @returns true if in protected mode, otherwise false.
  * @param   pVCpu       The cross context virtual CPU structure.
  */
-VMMDECL(bool) CPUMIsGuestInProtectedMode(PVMCPU pVCpu)
+VMMDECL(bool) CPUMIsGuestInProtectedMode(PCVMCPU pVCpu)
 {
     CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_CR0);
     return !!(pVCpu->cpum.s.Guest.cr0 & X86_CR0_PE);
@@ -2017,7 +2017,7 @@ VMMDECL(bool) CPUMIsGuestInProtectedMode(PVMCPU pVCpu)
  * @returns true if in paged protected mode, otherwise false.
  * @param   pVCpu       The cross context virtual CPU structure.
  */
-VMMDECL(bool) CPUMIsGuestInPagedProtectedMode(PVMCPU pVCpu)
+VMMDECL(bool) CPUMIsGuestInPagedProtectedMode(PCVMCPU pVCpu)
 {
     CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_CR0);
     return (pVCpu->cpum.s.Guest.cr0 & (X86_CR0_PE | X86_CR0_PG)) == (X86_CR0_PE | X86_CR0_PG);
@@ -2030,7 +2030,7 @@ VMMDECL(bool) CPUMIsGuestInPagedProtectedMode(PVMCPU pVCpu)
  * @returns true if in long mode, otherwise false.
  * @param   pVCpu       The cross context virtual CPU structure.
  */
-VMMDECL(bool) CPUMIsGuestInLongMode(PVMCPU pVCpu)
+VMMDECL(bool) CPUMIsGuestInLongMode(PCVMCPU pVCpu)
 {
     CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_EFER);
     return (pVCpu->cpum.s.Guest.msrEFER & MSR_K6_EFER_LMA) == MSR_K6_EFER_LMA;
@@ -2043,7 +2043,7 @@ VMMDECL(bool) CPUMIsGuestInLongMode(PVMCPU pVCpu)
  * @returns true if in PAE mode, otherwise false.
  * @param   pVCpu       The cross context virtual CPU structure.
  */
-VMMDECL(bool) CPUMIsGuestInPAEMode(PVMCPU pVCpu)
+VMMDECL(bool) CPUMIsGuestInPAEMode(PCVMCPU pVCpu)
 {
     CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_CR4 | CPUMCTX_EXTRN_CR0 | CPUMCTX_EXTRN_EFER);
     /* Intel mentions EFER.LMA and EFER.LME in different parts of their spec. We shall use EFER.LMA rather
@@ -2090,7 +2090,7 @@ VMM_INT_DECL(bool) CPUMIsGuestIn64BitCodeSlow(PCPUMCTX pCtx)
  *          really RPL=0, @c false if we've not (RPL=1 really is RPL=1).
  * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  */
-VMM_INT_DECL(bool) CPUMIsGuestInRawMode(PVMCPU pVCpu)
+VMM_INT_DECL(bool) CPUMIsGuestInRawMode(PCVMCPU pVCpu)
 {
     return pVCpu->cpum.s.fRawEntered;
 }

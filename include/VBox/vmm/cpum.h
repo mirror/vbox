@@ -1449,17 +1449,17 @@ VMM_INT_DECL(uint64_t) CPUMGetGuestCR4ValidMask(PVM pVM);
 /** @name Misc Guest Predicate Functions.
  * @{  */
 VMMDECL(bool)       CPUMIsGuestIn64BitCode(PVMCPU pVCpu);
-VMMDECL(bool)       CPUMIsGuestNXEnabled(PVMCPU pVCpu);
-VMMDECL(bool)       CPUMIsGuestPageSizeExtEnabled(PVMCPU pVCpu);
-VMMDECL(bool)       CPUMIsGuestPagingEnabled(PVMCPU pVCpu);
-VMMDECL(bool)       CPUMIsGuestR0WriteProtEnabled(PVMCPU pVCpu);
-VMMDECL(bool)       CPUMIsGuestInRealMode(PVMCPU pVCpu);
-VMMDECL(bool)       CPUMIsGuestInRealOrV86Mode(PVMCPU pVCpu);
-VMMDECL(bool)       CPUMIsGuestInProtectedMode(PVMCPU pVCpu);
-VMMDECL(bool)       CPUMIsGuestInPagedProtectedMode(PVMCPU pVCpu);
-VMMDECL(bool)       CPUMIsGuestInLongMode(PVMCPU pVCpu);
-VMMDECL(bool)       CPUMIsGuestInPAEMode(PVMCPU pVCpu);
-VMM_INT_DECL(bool)  CPUMIsGuestInRawMode(PVMCPU pVCpu);
+VMMDECL(bool)       CPUMIsGuestNXEnabled(PCVMCPU pVCpu);
+VMMDECL(bool)       CPUMIsGuestPageSizeExtEnabled(PCVMCPU pVCpu);
+VMMDECL(bool)       CPUMIsGuestPagingEnabled(PCVMCPU pVCpu);
+VMMDECL(bool)       CPUMIsGuestR0WriteProtEnabled(PCVMCPU pVCpu);
+VMMDECL(bool)       CPUMIsGuestInRealMode(PCVMCPU pVCpu);
+VMMDECL(bool)       CPUMIsGuestInRealOrV86Mode(PCVMCPU pVCpu);
+VMMDECL(bool)       CPUMIsGuestInProtectedMode(PCVMCPU pVCpu);
+VMMDECL(bool)       CPUMIsGuestInPagedProtectedMode(PCVMCPU pVCpu);
+VMMDECL(bool)       CPUMIsGuestInLongMode(PCVMCPU pVCpu);
+VMMDECL(bool)       CPUMIsGuestInPAEMode(PCVMCPU pVCpu);
+VMM_INT_DECL(bool)  CPUMIsGuestInRawMode(PCVMCPU pVCpu);
 /** @} */
 
 /** @name Nested Hardware-Virtualization Helpers.
