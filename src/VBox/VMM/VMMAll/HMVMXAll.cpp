@@ -1237,9 +1237,21 @@ VMM_INT_DECL(void) HMNotifyVmxNstGstVmexit(PVMCPU pVCpu, PCPUMCTX pCtx)
 {
     NOREF(pCtx);
 
-    /* There shouldn't be any externally kept state at this point. */
-    AssertMsg(!(pVCpu->cpum.GstCtx.fExtrn & CPUMCTX_EXTRN_ALL),
-              ("fExtrn=%#RX64 fExtrnMbz=%#RX64\n", pVCpu->cpum.GstCtx.fExtrn, CPUMCTX_EXTRN_ALL));
+    /*
+     * Transitions to ring-3 flag a full CPU-state change except if we transition to ring-3
+     * in response to a physical CPU interrupt as no changes to the guest-CPU state are
+     * expected (see VINF_EM_RAW_INTERRUPT handling in hmR0VmxExitToRing3).
+     *
+     * However, with nested-guests, the state -can- change on trips to ring-3 for we might
+     * try to inject a nested-guest physical interrupt and cause a VMX_EXIT_EXT_INT VM-exit
+     * for the nested-guest from ring-3.
+     *
+     * Flag reloading of just the guest-CPU state is -not- sufficient since HM also needs
+     * to reload related state with VM-entry/VM-exit controls and so on. Flag reloading
+     * the entire state.
+     */
+    CPUM_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_ALL);
+    ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_ALL_GUEST);
 
     /*
      * Make sure we need to merge the guest VMCS controls with the nested-guest

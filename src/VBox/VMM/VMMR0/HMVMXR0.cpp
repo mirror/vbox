@@ -4463,7 +4463,7 @@ static int hmR0VmxExportGuestEntryExitCtls(PVMCPU pVCpu, PVMXTRANSIENT pVmxTrans
              *
              * For nested-guests, the "IA-32e mode guest" control we initialize with what is
              * required to get the nested-guest working with hardware-assisted VMX execution.
-             * It depends on the nested-guest's IA32_EFER.LMA bit. Remember, a nested-hypervisor
+             * It depends on the nested-guest's IA32_EFER.LMA bit. Remember, a guest hypervisor
              * can skip intercepting changes to the EFER MSR. This is why it it needs to be done
              * here rather than while merging the guest VMCS controls.
              */
@@ -4911,6 +4911,7 @@ static int hmR0VmxExportGuestCR0(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
         /*
          * Figure out fixed CR0 bits in VMX operation.
          */
+        /** @todo Why do we need to OR and AND the fixed-0 and fixed-1 bits below? */
         uint64_t       fSetCr0 = pVM->hm.s.vmx.Msrs.u64Cr0Fixed0 & pVM->hm.s.vmx.Msrs.u64Cr0Fixed1;
         uint64_t const fZapCr0 = pVM->hm.s.vmx.Msrs.u64Cr0Fixed0 | pVM->hm.s.vmx.Msrs.u64Cr0Fixed1;
         if (pVM->hm.s.vmx.fUnrestrictedGuest)
@@ -5035,6 +5036,9 @@ static int hmR0VmxExportGuestCR0(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
              * (to read from the nested-guest CR0 read-shadow) than the guest hypervisor
              * originally supplied. We must copy those bits from the nested-guest CR0 into
              * the nested-guest CR0 read-shadow.
+             *
+             * Note! We are zapping away any CR0 fixed bits of our VMX emulation and applying
+             *       the hardware's VMX CR0 fixed bits here.
              */
             HMVMX_CPUMCTX_ASSERT(pVCpu, CPUMCTX_EXTRN_CR0);
             uint64_t       u64GuestCr0  = pVCpu->cpum.GstCtx.cr0;
@@ -5198,6 +5202,7 @@ static VBOXSTRICTRC hmR0VmxExportGuestCR3AndCR4(PVMCPU pVCpu, PVMXTRANSIENT pVmx
         /*
          * Figure out fixed CR4 bits in VMX operation.
          */
+        /** @todo Why do we need to OR and AND the fixed-0 and fixed-1 bits below? */
         uint64_t const fSetCr4 = pVM->hm.s.vmx.Msrs.u64Cr4Fixed0 & pVM->hm.s.vmx.Msrs.u64Cr4Fixed1;
         uint64_t const fZapCr4 = pVM->hm.s.vmx.Msrs.u64Cr4Fixed0 | pVM->hm.s.vmx.Msrs.u64Cr4Fixed1;
 
@@ -7758,7 +7763,17 @@ static int hmR0VmxImportGuestState(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo, uint64
                     u64Val = u32Val;
                     u64Val = (u64Val    & ~pVmcsInfo->u64Cr0Mask)
                            | (u64Shadow &  pVmcsInfo->u64Cr0Mask);
-
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+                    /*
+                     * Reapply the nested-guest's CR0 fixed bits that might have been altered while
+                     * exporting the nested-guest CR0 for executing using hardware-assisted VMX.
+                     */
+                    if (CPUMIsGuestInVmxNonRootMode(pCtx))
+                    {
+                        u64Val |= pCtx->hwvirt.vmx.Msrs.u64Cr0Fixed0;
+                        u64Val &= pCtx->hwvirt.vmx.Msrs.u64Cr0Fixed1;
+                    }
+#endif
                     VMMRZCallRing3Disable(pVCpu);   /* May call into PGM which has Log statements. */
                     CPUMSetGuestCR0(pVCpu, u64Val);
                     VMMRZCallRing3Enable(pVCpu);
@@ -7781,6 +7796,17 @@ static int hmR0VmxImportGuestState(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo, uint64
                     u64Val = u32Val;
                     u64Val = (u64Val    & ~pVmcsInfo->u64Cr4Mask)
                            | (u64Shadow &  pVmcsInfo->u64Cr4Mask);
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+                    /*
+                     * Reapply the nested-guest's CR4 fixed bits that might have been altered while
+                     * exporting the nested-guest CR4 for executing using hardware-assisted VMX.
+                     */
+                    if (CPUMIsGuestInVmxNonRootMode(pCtx))
+                    {
+                        u64Val |= pCtx->hwvirt.vmx.Msrs.u64Cr4Fixed0;
+                        u64Val &= pCtx->hwvirt.vmx.Msrs.u64Cr4Fixed1;
+                    }
+#endif
                     pCtx->cr4 = u64Val;
                 }
 
@@ -9510,7 +9536,7 @@ static VBOXSTRICTRC hmR0VmxExportGuestStateOptimal(PVMCPU pVCpu, PVMXTRANSIENT p
  * Tries to determine what part of the guest-state VT-x has deemed as invalid
  * and update error record fields accordingly.
  *
- * @return VMX_IGS_* return codes.
+ * @returns VMX_IGS_* error codes.
  * @retval VMX_IGS_REASON_NOT_FOUND if this function could not find anything
  *         wrong with the guest state.
  *
@@ -9540,6 +9566,7 @@ static uint32_t hmR0VmxCheckGuestState(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo)
         /*
          * CR0.
          */
+        /** @todo Why do we need to OR and AND the fixed-0 and fixed-1 bits below? */
         uint32_t       fSetCr0 = (uint32_t)(pVM->hm.s.vmx.Msrs.u64Cr0Fixed0 & pVM->hm.s.vmx.Msrs.u64Cr0Fixed1);
         uint32_t const fZapCr0 = (uint32_t)(pVM->hm.s.vmx.Msrs.u64Cr0Fixed0 | pVM->hm.s.vmx.Msrs.u64Cr0Fixed1);
         /* Exceptions for unrestricted guest execution for fixed CR0 bits (PE, PG).
@@ -9562,6 +9589,7 @@ static uint32_t hmR0VmxCheckGuestState(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo)
         /*
          * CR4.
          */
+        /** @todo Why do we need to OR and AND the fixed-0 and fixed-1 bits below? */
         uint64_t const fSetCr4 = (pVM->hm.s.vmx.Msrs.u64Cr4Fixed0 & pVM->hm.s.vmx.Msrs.u64Cr4Fixed1);
         uint64_t const fZapCr4 = (pVM->hm.s.vmx.Msrs.u64Cr4Fixed0 | pVM->hm.s.vmx.Msrs.u64Cr4Fixed1);
 
@@ -10245,13 +10273,13 @@ static int hmR0VmxMergeVmcsNested(PVMCPU pVCpu)
      * VM-entry controls:
      * These controls contains state that depends on the nested-guest state (primarily
      * EFER MSR) and is thus not constant between VMLAUNCH/VMRESUME and the nested-guest
-     * VM-exit. Although the nested-hypervisor cannot change it, we need to in order to
+     * VM-exit. Although the guest hypervisor cannot change it, we need to in order to
      * properly continue executing the nested-guest if the EFER MSR changes but does not
      * cause a nested-guest VM-exits.
      *
      * VM-exit controls:
      * These controls specify the host state on return. We cannot use the controls from
-     * the guest-hypervisor state as is as it would contain the guest state rather than
+     * the guest hypervisor state as is as it would contain the guest state rather than
      * the host state. Since the host state is subject to change (e.g. preemption, trips
      * to ring-3, longjmp and rescheduling to a different host CPU) they are not constant
      * through VMLAUNCH/VMRESUME and the nested-guest VM-exit.
@@ -10266,7 +10294,7 @@ static int hmR0VmxMergeVmcsNested(PVMCPU pVCpu)
      *
      * VM-exit MSR-load areas:
      * This must contain the real host MSRs with hardware-assisted VMX execution. Hence,
-     * we can entirely ignore what the nested-hypervisor wants to load here.
+     * we can entirely ignore what the guest hypervisor wants to load here.
      */
 
     /*
