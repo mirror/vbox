@@ -43,20 +43,27 @@
 /**
  * Converts dos-style attributes to Unix attributes.
  *
- * @returns
+ * @returns Normalized mode mask.
  * @param   fMode       The mode mask containing dos-style attributes only.
  * @param   pszName     The filename which this applies to (exe check).
  * @param   cbName      The length of that filename. (optional, set 0)
  * @param   uReparseTag The reparse tag if RTFS_DOS_NT_REPARSE_POINT is set.
+ * @param   fType       RTFS_TYPE_XXX to normalize against, 0 if not known.
  */
-RTFMODE rtFsModeFromDos(RTFMODE fMode, const char *pszName, size_t cbName, uint32_t uReparseTag)
+RTFMODE rtFsModeFromDos(RTFMODE fMode, const char *pszName, size_t cbName, uint32_t uReparseTag, RTFMODE fType)
 {
+    Assert(!(fType & ~RTFS_TYPE_MASK));
+
     fMode &= ~((1 << RTFS_DOS_SHIFT) - 1);
 
-    /* everything is readable. */
+    /* Forcibly set the directory attribute if caller desires it. */
+    if (fType == RTFS_TYPE_DIRECTORY)
+        fMode |= RTFS_DOS_DIRECTORY;
+
+    /* Everything is readable. */
     fMode |= RTFS_UNIX_IRUSR | RTFS_UNIX_IRGRP | RTFS_UNIX_IROTH;
     if (fMode & RTFS_DOS_DIRECTORY)
-        /* directories are executable. */
+        /* Directories are executable. */
         fMode |= RTFS_TYPE_DIRECTORY | RTFS_UNIX_IXUSR | RTFS_UNIX_IXGRP | RTFS_UNIX_IXOTH;
     else
     {
@@ -107,12 +114,17 @@ RTFMODE rtFsModeFromDos(RTFMODE fMode, const char *pszName, size_t cbName, uint3
  * @param   fMode       The mode mask containing dos-style attributes only.
  * @param   pszName     The filename which this applies to (hidden check).
  * @param   cbName      The length of that filename. (optional, set 0)
+ * @param   fType       RTFS_TYPE_XXX to normalize against, 0 if not known.
  */
-RTFMODE rtFsModeFromUnix(RTFMODE fMode, const char *pszName, size_t cbName)
+RTFMODE rtFsModeFromUnix(RTFMODE fMode, const char *pszName, size_t cbName, RTFMODE fType)
 {
+    Assert(!(fType & ~RTFS_TYPE_MASK));
     NOREF(cbName);
 
     fMode &= RTFS_UNIX_MASK;
+
+    if (!(fType & RTFS_TYPE_MASK) && fType)
+        fMode |= fType;
 
     if (!(fMode & (RTFS_UNIX_IWUSR | RTFS_UNIX_IWGRP | RTFS_UNIX_IWOTH)))
         fMode |= RTFS_DOS_READONLY;
@@ -141,13 +153,16 @@ RTFMODE rtFsModeFromUnix(RTFMODE fMode, const char *pszName, size_t cbName)
  * @param   fMode       The mode mask that may contain a partial/incomplete mask.
  * @param   pszName     The filename which this applies to (exe check).
  * @param   cbName      The length of that filename. (optional, set 0)
+ * @param   fType       RTFS_TYPE_XXX to normalize against, 0 if not known.
  */
-RTFMODE rtFsModeNormalize(RTFMODE fMode, const char *pszName, size_t cbName)
+RTFMODE rtFsModeNormalize(RTFMODE fMode, const char *pszName, size_t cbName, RTFMODE fType)
 {
+    Assert(!(fType & ~RTFS_TYPE_MASK));
+
     if (!(fMode & RTFS_UNIX_MASK))
-        fMode = rtFsModeFromDos(fMode, pszName, cbName, RTFSMODE_SYMLINK_REPARSE_TAG);
+        fMode = rtFsModeFromDos(fMode, pszName, cbName, RTFSMODE_SYMLINK_REPARSE_TAG, fType);
     else if (!(fMode & RTFS_DOS_MASK))
-        fMode = rtFsModeFromUnix(fMode, pszName, cbName);
+        fMode = rtFsModeFromUnix(fMode, pszName, cbName, fType);
     else if (!(fMode & RTFS_TYPE_MASK))
         fMode |= fMode & RTFS_DOS_DIRECTORY ? RTFS_TYPE_DIRECTORY : RTFS_TYPE_FILE;
     else if (RTFS_IS_DIRECTORY(fMode))

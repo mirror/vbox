@@ -131,7 +131,7 @@ void rtFsConvertStatToObjInfo(PRTFSOBJINFO pObjInfo, const struct stat *pStat, c
 #endif
     Assert(RTFS_TYPE_MASK == S_IFMT);
 
-    pObjInfo->Attr.fMode  = rtFsModeFromUnix(fMode, pszName, cbName);
+    pObjInfo->Attr.fMode  = rtFsModeFromUnix(fMode, pszName, cbName, 0);
 
     /* additional unix attribs */
     pObjInfo->Attr.enmAdditional          = RTFSOBJATTRADD_UNIX;

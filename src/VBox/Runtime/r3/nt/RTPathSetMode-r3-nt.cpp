@@ -40,7 +40,7 @@
 
 RTDECL(int) RTPathSetMode(const char *pszPath, RTFMODE fMode)
 {
-    fMode = rtFsModeNormalize(fMode, pszPath, 0);
+    fMode = rtFsModeNormalize(fMode, pszPath, 0, 0);
     AssertReturn(rtFsModeIsValidPermissions(fMode), VERR_INVALID_FMODE);
 
     /*

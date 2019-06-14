@@ -1321,7 +1321,7 @@ RTDECL(int)         RTVfsObjSetMode(RTVFSOBJ hVfsObj, RTFMODE fMode, RTFMODE fMa
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->uMagic == RTVFSOBJ_MAGIC, VERR_INVALID_HANDLE);
 
-    fMode = rtFsModeNormalize(fMode, NULL, 0);
+    fMode = rtFsModeNormalize(fMode, NULL, 0, 0);
     if (!rtFsModeIsValid(fMode))
         return VERR_INVALID_PARAMETER;
 
@@ -2748,7 +2748,7 @@ RTDECL(int) RTVfsDirCreateDir(RTVFSDIR hVfsDir, const char *pszRelPath, RTFMODE 
     AssertPtrReturn(pszRelPath, VERR_INVALID_POINTER);
     AssertPtrNullReturn(phVfsDir, VERR_INVALID_POINTER);
     AssertReturn(!(fFlags & ~RTDIRCREATE_FLAGS_VALID_MASK), VERR_INVALID_FLAGS);
-    fMode = rtFsModeNormalize(fMode, pszRelPath, 0);
+    fMode = rtFsModeNormalize(fMode, pszRelPath, 0, RTFS_TYPE_DIRECTORY);
     AssertReturn(rtFsModeIsValidPermissions(fMode), VERR_INVALID_FMODE);
     if (!(fFlags & RTDIRCREATE_FLAGS_NOT_CONTENT_INDEXED_DONT_SET))
         fMode |= RTFS_DOS_NT_NOT_CONTENT_INDEXED;
@@ -3301,7 +3301,7 @@ RTDECL(int)  RTVfsSymlinkSetMode(RTVFSSYMLINK hVfsSym, RTFMODE fMode, RTFMODE fM
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->uMagic == RTVFSSYMLINK_MAGIC, VERR_INVALID_HANDLE);
 
-    fMode = rtFsModeNormalize(fMode, NULL, 0);
+    fMode = rtFsModeNormalize(fMode, NULL, 0, RTFS_TYPE_SYMLINK);
     if (!rtFsModeIsValid(fMode))
         return VERR_INVALID_PARAMETER;
 

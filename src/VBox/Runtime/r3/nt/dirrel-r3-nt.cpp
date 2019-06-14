@@ -292,7 +292,7 @@ RTDECL(int) RTDirRelDirCreate(RTDIR hDir, const char *pszRelPath, RTFMODE fMode,
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTDIR_MAGIC, VERR_INVALID_HANDLE);
     AssertReturn(!(fCreate & ~RTDIRCREATE_FLAGS_VALID_MASK), VERR_INVALID_FLAGS);
-    fMode = rtFsModeNormalize(fMode, pszRelPath, 0);
+    fMode = rtFsModeNormalize(fMode, pszRelPath, 0, RTFS_TYPE_DIRECTORY);
     AssertReturn(rtFsModeIsValidPermissions(fMode), VERR_INVALID_FMODE);
     AssertPtrNullReturn(phSubDir, VERR_INVALID_POINTER);
 
@@ -490,7 +490,7 @@ RTDECL(int) RTDirRelPathSetMode(RTDIR hDir, const char *pszRelPath, RTFMODE fMod
     PRTDIRINTERNAL pThis = hDir;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTDIR_MAGIC, VERR_INVALID_HANDLE);
-    fMode = rtFsModeNormalize(fMode, pszRelPath, 0);
+    fMode = rtFsModeNormalize(fMode, pszRelPath, 0, 0);
     AssertReturn(rtFsModeIsValidPermissions(fMode), VERR_INVALID_FMODE);
     AssertMsgReturn(RTPATH_F_IS_VALID(fFlags, 0), ("%#x\n", fFlags), VERR_INVALID_FLAGS);
 

@@ -1950,7 +1950,7 @@ static void rtFsFatObj_InitFromDirEntry(PRTFSFATOBJ pObj, PCFATDIRENTRY pDirEntr
     pObj->pVol              = pVol;
     pObj->offEntryInDir     = offEntryInDir;
     pObj->fAttrib           = ((RTFMODE)pDirEntry->fAttrib << RTFS_DOS_SHIFT) & RTFS_DOS_MASK_OS2;
-    pObj->fAttrib           = rtFsModeFromDos(pObj->fAttrib, (char *)&pDirEntry->achName[0], sizeof(pDirEntry->achName), 0);
+    pObj->fAttrib           = rtFsModeFromDos(pObj->fAttrib, (char *)&pDirEntry->achName[0], sizeof(pDirEntry->achName), 0, 0);
     pObj->cbObject          = pDirEntry->cbFile;
     pObj->fMaybeDirtyFat    = false;
     pObj->fMaybeDirtyDirEnt = false;

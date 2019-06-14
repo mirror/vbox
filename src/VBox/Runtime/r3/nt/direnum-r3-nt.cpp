@@ -813,7 +813,7 @@ RTDECL(int) RTDirReadEx(RTDIR hDir, PRTDIRENTRYEX pDirEntry, size_t *pcbDirEntry
         RTTimeSpecSetNtTime(&pDirEntry->Info.ChangeTime,        pBoth->ChangeTime.QuadPart);
 
         pDirEntry->Info.Attr.fMode  = rtFsModeFromDos((pBoth->FileAttributes << RTFS_DOS_SHIFT) & RTFS_DOS_MASK_NT,
-                                                       pszName, cchName, pBoth->EaSize);
+                                                       pszName, cchName, pBoth->EaSize, 0);
     }
 #ifdef IPRT_WITH_NT_PATH_PASSTHRU
     else

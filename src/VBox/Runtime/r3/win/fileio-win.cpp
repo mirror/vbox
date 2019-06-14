@@ -1037,7 +1037,7 @@ RTR3DECL(int) RTFileQueryInfo(RTFILE hFile, PRTFSOBJINFO pObjInfo, RTFSOBJATTRAD
 
     RT_ZERO(*pObjInfo);
     pObjInfo->Attr.enmAdditional = enmAdditionalAttribs;
-    pObjInfo->Attr.fMode = rtFsModeFromDos(RTFS_DOS_NT_DEVICE, "", 0, 0);
+    pObjInfo->Attr.fMode = rtFsModeFromDos(RTFS_DOS_NT_DEVICE, "", 0, 0, 0);
     return VINF_SUCCESS;
 #else
 

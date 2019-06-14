@@ -315,7 +315,7 @@ DECLHIDDEN(int) rtPathNtQueryInfoFromHandle(HANDLE hFile, void *pvBuf, size_t cb
         RTTimeSpecSetNtTime(&pObjInfo->ChangeTime,        pAllInfo->BasicInformation.ChangeTime.QuadPart);
         pObjInfo->Attr.fMode = rtFsModeFromDos(  (pAllInfo->BasicInformation.FileAttributes << RTFS_DOS_SHIFT)
                                                & RTFS_DOS_MASK_NT,
-                                               pszPath, pszPath ? strlen(pszPath) : 0, uReparseTag);
+                                               pszPath, pszPath ? strlen(pszPath) : 0, uReparseTag, 0);
         pObjInfo->Attr.enmAdditional = enmAddAttr;
         if (enmAddAttr == RTFSOBJATTRADD_UNIX)
         {
@@ -402,7 +402,7 @@ DECLHIDDEN(int) rtPathNtQueryInfoWorker(HANDLE hRootDir, UNICODE_STRING *pNtName
                 RTTimeSpecSetNtTime(&pObjInfo->ModificationTime,  uBuf.NetOpenInfo.LastWriteTime.QuadPart);
                 RTTimeSpecSetNtTime(&pObjInfo->ChangeTime,        uBuf.NetOpenInfo.ChangeTime.QuadPart);
                 pObjInfo->Attr.fMode = rtFsModeFromDos((uBuf.NetOpenInfo.FileAttributes << RTFS_DOS_SHIFT) & RTFS_DOS_MASK_NT,
-                                                       pszPath, strlen(pszPath), 0 /*uReparseTag*/);
+                                                       pszPath, strlen(pszPath), 0 /*uReparseTag*/, 0);
                 pObjInfo->Attr.enmAdditional = enmAddAttr;
 
                 return rtPathNtQueryInfoFillInDummyData(VINF_SUCCESS, pObjInfo, enmAddAttr);
@@ -584,7 +584,7 @@ DECLHIDDEN(int) rtPathNtQueryInfoWorker(HANDLE hRootDir, UNICODE_STRING *pNtName
                 RTTimeSpecSetNtTime(&pObjInfo->ChangeTime,        uBuf.Both.ChangeTime.QuadPart);
 
                 pObjInfo->Attr.fMode  = rtFsModeFromDos((uBuf.Both.FileAttributes << RTFS_DOS_SHIFT) & RTFS_DOS_MASK_NT,
-                                                        pszPath, strlen(pszPath), uBuf.Both.EaSize);
+                                                        pszPath, strlen(pszPath), uBuf.Both.EaSize, 0);
 
                 pObjInfo->Attr.enmAdditional = enmAddAttr;
                 if (enmAddAttr == RTFSOBJATTRADD_UNIX)

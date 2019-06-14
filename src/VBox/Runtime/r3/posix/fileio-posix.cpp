@@ -818,7 +818,7 @@ RTR3DECL(int) RTFileSetMode(RTFILE hFile, RTFMODE fMode)
     /*
      * Normalize the mode and call the API.
      */
-    fMode = rtFsModeNormalize(fMode, NULL, 0);
+    fMode = rtFsModeNormalize(fMode, NULL, 0, RTFS_TYPE_FILE);
     if (!rtFsModeIsValid(fMode))
         return VERR_INVALID_PARAMETER;
 
