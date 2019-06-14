@@ -5008,7 +5008,7 @@ static int hmR0VmxExportGuestCR0(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
                 uXcptBitmap |= RT_BIT(X86_XCPT_GP);
             Assert(pVM->hm.s.fNestedPaging || (uXcptBitmap & RT_BIT(X86_XCPT_PF)));
 
-            /* Apply the fixed CR0 bits and enable caching. */
+            /* Apply the hardware specified fixed CR0 bits and enable caching. */
             u64GuestCr0 |= fSetCr0;
             u64GuestCr0 &= fZapCr0;
             u64GuestCr0 &= ~(uint64_t)(X86_CR0_CD | X86_CR0_NW);
@@ -5036,9 +5036,6 @@ static int hmR0VmxExportGuestCR0(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
              * (to read from the nested-guest CR0 read-shadow) than the guest hypervisor
              * originally supplied. We must copy those bits from the nested-guest CR0 into
              * the nested-guest CR0 read-shadow.
-             *
-             * Note! We are zapping away any CR0 fixed bits of our VMX emulation and applying
-             *       the hardware's VMX CR0 fixed bits here.
              */
             HMVMX_CPUMCTX_ASSERT(pVCpu, CPUMCTX_EXTRN_CR0);
             uint64_t       u64GuestCr0  = pVCpu->cpum.GstCtx.cr0;
@@ -5046,7 +5043,11 @@ static int hmR0VmxExportGuestCR0(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
             Assert(!RT_HI_U32(u64GuestCr0));
             Assert(u64GuestCr0 & X86_CR0_NE);
 
-            /* Apply the fixed CR0 bits and enable caching. */
+            /*
+             * Apply the hardware specified fixed CR0 bits and enable caching.
+             * Note! We could be altering our VMX emulation's fixed bits. We thus
+             *       need to re-apply them while importing CR0.
+             */
             u64GuestCr0 |= fSetCr0;
             u64GuestCr0 &= fZapCr0;
             u64GuestCr0 &= ~(uint64_t)(X86_CR0_CD | X86_CR0_NW);
@@ -5284,7 +5285,11 @@ static VBOXSTRICTRC hmR0VmxExportGuestCR3AndCR4(PVMCPU pVCpu, PVMXTRANSIENT pVmx
             }
         }
 
-        /* Apply the fixed CR4 bits (mainly CR4.VMXE). */
+        /*
+         * Apply the hardware specified fixed CR4 bits (mainly CR4.VMXE).
+         * Note! For nested-guests, we could be altering our VMX emulation's
+         *       fixed bits. We thus need to re-apply them while importing CR4.
+         */
         u64GuestCr4 |= fSetCr4;
         u64GuestCr4 &= fZapCr4;
 
