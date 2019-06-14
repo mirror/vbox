@@ -502,6 +502,11 @@ void UIMediumEnumerator::sltHandleMediumRegistered(const QUuid &uMediumId, KDevi
 
             /* And notify listeners: */
             emit sigMediumDeleted(uMediumId);
+
+            /* Besides that we should enumerate all the
+             * 1st level children of deleted medium: */
+            QList<QUuid> result;
+            enumerateAllMediaOfMediumWithId(uMediumId, result);
         }
     }
 }
@@ -890,6 +895,29 @@ void UIMediumEnumerator::enumerateAllMediaOfMachineWithId(const QUuid &uMachineI
             LogRel2(("GUI: UIMediumEnumerator:  Medium {%s} of machine {%s} will be enumerated..\n",
                      uMediumId.toString().toUtf8().constData(),
                      uMachineId.toString().toUtf8().constData()));
+            createMediumEnumerationTask(guiMedium);
+            result << uMediumId;
+        }
+    }
+}
+
+void UIMediumEnumerator::enumerateAllMediaOfMediumWithId(const QUuid &uParentMediumId, QList<QUuid> &result)
+{
+    /* For each the cached UIMedium we have: */
+    foreach (const QUuid &uMediumId, mediumIDs())
+    {
+        /* Check if medium isn't NULL, and is
+         * a child of specified parent medium. */
+        const UIMedium guiMedium = medium(uMediumId);
+        if (   !guiMedium.isNull()
+            && guiMedium.parentID() == uParentMediumId)
+        {
+            /* Enumerate corresponding UIMedium: */
+            //printf(" Medium to recache: %s\n",
+            //       uMediumId.toString().toUtf8().constData());
+            LogRel2(("GUI: UIMediumEnumerator:  Medium {%s} a child of medium {%s} will be enumerated..\n",
+                     uMediumId.toString().toUtf8().constData(),
+                     uParentMediumId.toString().toUtf8().constData()));
             createMediumEnumerationTask(guiMedium);
             result << uMediumId;
         }

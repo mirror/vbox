@@ -198,6 +198,10 @@ private:
       * @param  result  Brings the list of previously enumerated media
       *                 IDs to be appended with newly enumerated. */
     void enumerateAllMediaOfMachineWithId(const QUuid &uMachineId, QList<QUuid> &result);
+    /** Enumerates all the children media of medium with certain @a uMediumId.
+      * @param  result  Brings the list of previously enumerated media
+      *                 IDs to be appended with newly enumerated. */
+    void enumerateAllMediaOfMediumWithId(const QUuid &uMediumId, QList<QUuid> &result);
 #endif /* VBOX_GUI_WITH_NEW_MEDIA_EVENTS */
 
     /** Holds whether consolidated medium-enumeration process is in progress. */
