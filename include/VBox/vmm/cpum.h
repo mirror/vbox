@@ -1448,8 +1448,6 @@ VMM_INT_DECL(uint64_t) CPUMGetGuestCR4ValidMask(PVM pVM);
 
 /** @name Misc Guest Predicate Functions.
  * @{  */
-VMMDECL(bool)       CPUMIsGuestIn16BitCode(PVMCPU pVCpu);
-VMMDECL(bool)       CPUMIsGuestIn32BitCode(PVMCPU pVCpu);
 VMMDECL(bool)       CPUMIsGuestIn64BitCode(PVMCPU pVCpu);
 VMMDECL(bool)       CPUMIsGuestNXEnabled(PVMCPU pVCpu);
 VMMDECL(bool)       CPUMIsGuestPageSizeExtEnabled(PVMCPU pVCpu);
