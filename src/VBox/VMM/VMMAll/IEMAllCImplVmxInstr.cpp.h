@@ -1980,27 +1980,30 @@ IEM_STATIC void iemVmxVmexitLoadHostControlRegsMsrs(PVMCPU pVCpu)
 
     /* CR0. */
     {
-        /* Bits 63:32, 28:19, 17, 15:6, ET, CD, NW and CR0 MB1 bits are not modified. */
-        uint64_t const uCr0Fixed0  = pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.u64Cr0Fixed0;
-        uint64_t const fCr0IgnMask = UINT64_C(0xffffffff1ff8ffc0) | X86_CR0_ET | X86_CR0_CD | X86_CR0_NW | uCr0Fixed0;
-        uint64_t const uHostCr0    = pVmcs->u64HostCr0.u;
-        uint64_t const uGuestCr0   = pVCpu->cpum.GstCtx.cr0;
-        uint64_t const uValidCr0   = (uHostCr0 & ~fCr0IgnMask) | (uGuestCr0 & fCr0IgnMask);
-        CPUMSetGuestCR0(pVCpu, uValidCr0);
+        /* Bits 63:32, 28:19, 17, 15:6, ET, CD, NW and fixed CR0 bits are not modified. */
+        uint64_t const uCr0Mb1       = pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.u64Cr0Fixed0;
+        uint64_t const uCr0Mb0       = pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.u64Cr0Fixed1;
+        uint64_t const fCr0IgnMask   = UINT64_C(0xffffffff1ffaffc0) | X86_CR0_ET | X86_CR0_CD | X86_CR0_NW | uCr0Mb1 | ~uCr0Mb0;
+        uint64_t const uHostCr0      = pVmcs->u64HostCr0.u;
+        uint64_t const uGuestCr0     = pVCpu->cpum.GstCtx.cr0;
+        uint64_t const uValidHostCr0 = (uHostCr0 & ~fCr0IgnMask) | (uGuestCr0 & fCr0IgnMask);
+        CPUMSetGuestCR0(pVCpu, uValidHostCr0);
     }
 
     /* CR4. */
     {
-        /* CR4 MB1 bits are not modified. */
-        uint64_t const fCr4IgnMask = pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.u64Cr4Fixed0;
-        uint64_t const uHostCr4    = pVmcs->u64HostCr4.u;
-        uint64_t const uGuestCr4   = pVCpu->cpum.GstCtx.cr4;
-        uint64_t       uValidCr4   = (uHostCr4 & ~fCr4IgnMask) | (uGuestCr4 & fCr4IgnMask);
+        /* Fixed CR4 bits are not modified. */
+        uint64_t const uCr4Mb1       = pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.u64Cr4Fixed0;
+        uint64_t const uCr4Mb0       = pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.u64Cr4Fixed1;
+        uint64_t const fCr4IgnMask   = uCr4Mb1 | ~uCr4Mb0;
+        uint64_t const uHostCr4      = pVmcs->u64HostCr4.u;
+        uint64_t const uGuestCr4     = pVCpu->cpum.GstCtx.cr4;
+        uint64_t       uValidHostCr4 = (uHostCr4 & ~fCr4IgnMask) | (uGuestCr4 & fCr4IgnMask);
         if (fHostInLongMode)
-            uValidCr4 |= X86_CR4_PAE;
+            uValidHostCr4 |= X86_CR4_PAE;
         else
-            uValidCr4 &= ~X86_CR4_PCIDE;
-        CPUMSetGuestCR4(pVCpu, uValidCr4);
+            uValidHostCr4 &= ~X86_CR4_PCIDE;
+        CPUMSetGuestCR4(pVCpu, uValidHostCr4);
     }
 
     /* CR3 (host value validated while checking host-state during VM-entry). */
@@ -2720,8 +2723,15 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexit(PVMCPU pVCpu, uint32_t uExitReason, uint64_
     PVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
     Assert(pVmcs);
 
-    /* Import all the guest-CPU state required for the VM-exit. */
-    IEM_CTX_IMPORT_RET(pVCpu, IEM_CPUMCTX_EXTRN_VMX_VMEXIT_MASK);
+    /*
+     * Import all the guest-CPU state.
+     *
+     * HM on returning to guest execution would have to reset up a whole lot of state
+     * anyway, (e.g., VM-entry/VM-exit controls) and we do not ever import a part of
+     * the state and flag reloading the entire state on re-entry. So import the entire
+     * state here, see HMNotifyVmxNstGstVmexit() for more comments.
+     */
+    IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_ALL);
 
     /* Ensure VM-entry interruption information valid bit isn't set. */
     Assert(!VMX_ENTRY_INT_INFO_IS_VALID(pVmcs->u32EntryIntInfo));
@@ -6662,7 +6672,7 @@ IEM_STATIC int iemVmxVmentryCheckExecCtls(PVMCPU pVCpu, const char *pszInstr)
          */
         /** @todo r=ramshankar: This is done primarily to simplify recursion scenarios while
          *        redirecting accesses between the APIC-access page and the virtual-APIC
-         *        page. If any nested hypervisor requires this, we can implement it later. */
+         *        page. If any guest hypervisor requires this, we can implement it later. */
         if (pVmcs->u32ProcCtls & VMX_PROC_CTLS_USE_TPR_SHADOW)
         {
             RTGCPHYS const GCPhysVirtApic = pVmcs->u64AddrVirtApic.u;
@@ -7444,7 +7454,7 @@ IEM_STATIC void iemVmxVmentryInitReadOnlyFields(PVMCPU pVCpu)
 {
     /*
      * Any VMCS field which we do not establish on every VM-exit but may potentially
-     * be used on the VM-exit path of a nested hypervisor -and- is not explicitly
+     * be used on the VM-exit path of a guest hypervisor -and- is not explicitly
      * specified to be undefined needs to be initialized here.
      *
      * Thus, it is especially important to clear the Exit qualification field
