@@ -386,9 +386,9 @@ void UIMediumEnumerator::sltHandleMachineDataChange(const QUuid &uMachineId)
     LogRel2(("GUI: UIMediumEnumerator: MachineDataChange event received, Machine ID = {%s}\n",
              uMachineId.toString().toUtf8().constData()));
 
-    /* Parse machine ID: */
+    /* Enumerate all the media of machine with this ID: */
     QList<QUuid> result;
-    parseMachineId(uMachineId, result);
+    enumerateAllMediaOfMachineWithId(uMachineId, result);
 }
 
 void UIMediumEnumerator::sltHandleStorageControllerChange(const QUuid &uMachineId, const QString &strControllerName)
@@ -413,8 +413,8 @@ void UIMediumEnumerator::sltHandleStorageDeviceChange(CMediumAttachment comAttac
 
 void UIMediumEnumerator::sltHandleMediumChange(CMediumAttachment comAttachment)
 {
-    //printf("OnMediumChanged\n");
-    LogRel2(("GUI: UIMediumEnumerator: OnMediumChanged event received\n"));
+    //printf("MediumChanged\n");
+    LogRel2(("GUI: UIMediumEnumerator: MediumChanged event received\n"));
 
     /* Parse attachment: */
     QList<QUuid> result;
@@ -423,8 +423,8 @@ void UIMediumEnumerator::sltHandleMediumChange(CMediumAttachment comAttachment)
 
 void UIMediumEnumerator::sltHandleMediumConfigChange(CMedium comMedium)
 {
-    //printf("OnMediumConfigChanged\n");
-    LogRel2(("GUI: UIMediumEnumerator: OnMediumConfigChanged event received\n"));
+    //printf("MediumConfigChanged\n");
+    LogRel2(("GUI: UIMediumEnumerator: MediumConfigChanged event received\n"));
 
     /* Parse medium: */
     QList<QUuid> result;
@@ -433,11 +433,11 @@ void UIMediumEnumerator::sltHandleMediumConfigChange(CMedium comMedium)
 
 void UIMediumEnumerator::sltHandleMediumRegistered(const QUuid &uMediumId, KDeviceType enmMediumType, bool fRegistered)
 {
-    //printf("OnMediumRegistered: medium-id=%s, medium-type=%d, registered=%d\n",
+    //printf("MediumRegistered: medium-id=%s, medium-type=%d, registered=%d\n",
     //       uMediumId.toString().toUtf8().constData(), enmMediumType, fRegistered);
     //printf(" Medium to recache: %s\n",
     //       uMediumId.toString().toUtf8().constData());
-    LogRel2(("GUI: UIMediumEnumerator: OnMediumRegistered event received, Medium ID = {%s}, Medium type = {%d}, Registered = {%d}\n",
+    LogRel2(("GUI: UIMediumEnumerator: MediumRegistered event received, Medium ID = {%s}, Medium type = {%d}, Registered = {%d}\n",
              uMediumId.toString().toUtf8().constData(), enmMediumType, fRegistered));
 
     /* New medium registered: */
@@ -775,28 +775,6 @@ void UIMediumEnumerator::recacheFromActualUsage(const CMediumMap &currentCMedium
 
 #else /* VBOX_GUI_WITH_NEW_MEDIA_EVENTS */
 
-void UIMediumEnumerator::parseMachineId(const QUuid &uMachineId, QList<QUuid> &result)
-{
-    /* For each the cached UIMedium we have: */
-    foreach (const QUuid &uMediumId, mediumIDs())
-    {
-        /* Check if medium isn't NULL, used by our
-         * machine and wasn't already enumerated. */
-        const UIMedium guiMedium = medium(uMediumId);
-        if (   !guiMedium.isNull()
-            && guiMedium.machineIds().contains(uMachineId)
-            && !result.contains(uMediumId))
-        {
-            /* Enumerate corresponding UIMedium: */
-            LogRel2(("GUI: UIMediumEnumerator:  Medium {%s} of machine {%s} will be enumerated..\n",
-                     uMediumId.toString().toUtf8().constData(),
-                     uMachineId.toString().toUtf8().constData()));
-            createMediumEnumerationTask(guiMedium);
-            result << uMediumId;
-        }
-    }
-}
-
 void UIMediumEnumerator::parseAttachment(CMediumAttachment comAttachment, QList<QUuid> &result)
 {
     /* Make sure attachment is valid: */
@@ -843,8 +821,8 @@ void UIMediumEnumerator::parseAttachment(CMediumAttachment comAttachment, QList<
                 }
                 else
                 {
-                    /* Parse machine ID: */
-                    parseMachineId(uMachineId, result);
+                    /* Enumerate all the media of machine with this ID: */
+                    enumerateAllMediaOfMachineWithId(uMachineId, result);
                 }
             }
         }
@@ -890,6 +868,30 @@ void UIMediumEnumerator::parseMedium(CMedium comMedium, QList<QUuid> &result)
                 createMediumEnumerationTask(m_media.value(uMediumId));
                 result << uMediumId;
             }
+        }
+    }
+}
+
+void UIMediumEnumerator::enumerateAllMediaOfMachineWithId(const QUuid &uMachineId, QList<QUuid> &result)
+{
+    /* For each the cached UIMedium we have: */
+    foreach (const QUuid &uMediumId, mediumIDs())
+    {
+        /* Check if medium isn't NULL, used by our
+         * machine and wasn't already enumerated. */
+        const UIMedium guiMedium = medium(uMediumId);
+        if (   !guiMedium.isNull()
+            && guiMedium.machineIds().contains(uMachineId)
+            && !result.contains(uMediumId))
+        {
+            /* Enumerate corresponding UIMedium: */
+            printf(" Medium to recache: %s\n",
+                   uMediumId.toString().toUtf8().constData());
+            LogRel2(("GUI: UIMediumEnumerator:  Medium {%s} of machine {%s} will be enumerated..\n",
+                     uMediumId.toString().toUtf8().constData(),
+                     uMachineId.toString().toUtf8().constData()));
+            createMediumEnumerationTask(guiMedium);
+            result << uMediumId;
         }
     }
 }
