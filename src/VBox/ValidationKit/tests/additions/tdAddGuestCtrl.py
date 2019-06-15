@@ -37,6 +37,7 @@ import random
 import string
 import struct
 import sys
+import tarfile;
 import threading
 import time
 
@@ -848,6 +849,20 @@ class tdTestResult(object):
         ## The overall test result.
         self.fRc = fRc;
 
+class tdTestResultFailure(tdTestResult):
+    """
+    Base class for test results.
+    """
+    def __init__(self):
+        tdTestResult.__init__(self, fRc = False);
+
+class tdTestResultSuccess(tdTestResult):
+    """
+    Base class for test results.
+    """
+    def __init__(self):
+        tdTestResult.__init__(self, fRc = True);
+
 class tdTestResultDirRead(tdTestResult):
     """
     Test result for reading guest directories.
@@ -907,6 +922,49 @@ class tdTestResultSession(tdTestResult):
         tdTestResult.__init__(self, fRc = fRc);
         self.cNumSessions = cNumSessions;
 
+class GstFsObj(object):
+    """ A file system object we created in the guest for test purposes. """
+    def __init__(self, oParent, sPath):
+        self.oParent   = oParent    # type: GstFsDir
+        self.sPath     = sPath      # type: str
+        self.sName     = sPath      # type: str
+        if oParent:
+            assert sPath.startswith(oParent.sPath);
+            self.sName = sPath[len(oParent.sPath) + 1:];
+            # Add to parent.
+            oParent.aoChildren.append(self);
+            oParent.dChildrenUpper[self.sName.upper()] = self;
+
+class GstFsFile(GstFsObj):
+    """ A file object in the guest. """
+    def __init__(self, oParent, sPath, abContent):
+        GstFsObj.__init__(self, oParent, sPath);
+        self.abContent = abContent          # type: bytearray
+        self.cbContent = len(abContent);
+        self.off       = 0;
+
+    def read(self, cbToRead):
+        assert self.off <= self.cbContent;
+        cbLeft = self.cbContent - self.off;
+        if cbLeft < cbToRead:
+            cbToRead = cbLeft;
+        abRet = self.abContent[self.off:(self.off + cbToRead)];
+        assert len(abRet) == cbToRead;
+        self.off += cbToRead;
+        return abRet;
+
+class GstFsDir(GstFsObj):
+    """ A file object in the guest. """
+    def __init__(self, oParent, sPath):
+        GstFsObj.__init__(self, oParent, sPath);
+        self.aoChildren     = []  # type: list(GsFsObj)
+        self.dChildrenUpper = {}  # type: dict(str,GsFsObj)
+
+    def contains(self, sName):
+        """ Checks if the directory contains the given name. """
+        return sName.upper() in self.dChildrenUpper
+
+
 class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
     """
     Sub-test driver for executing guest control (VBoxService, IGuest) tests.
@@ -925,8 +983,20 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             'copy_to', 'copy_from',
             'update_additions'
         ];
-        self.asTests    = self.asTestsDef;
-        self.asRsrcs    = ['5.3/guestctrl/50mb_rnd.dat', ];
+        self.asTests        = self.asTestsDef;
+        self.asRsrcs        = ['5.3/guestctrl/50mb_rnd.dat', ];
+
+        # Directories and files placed in the guest temp area by prepareGuestForTesting.
+        self.oTestRoot      = None      # type: GstFsDir;  ##< The root directory.
+        self.oTestEmptyDir  = None      # type: GstFsDir;  ##< Empty directory.
+        self.oTestManyDir   = None      # type: GstFsDir;  ##< A directory with a few files in it (around 100)
+        self.oTestTreeDir   = None      # type: GstFsDir;  ##< A directory with a mixed tree structure under it.
+        self.cTestTreeFiles = 0;                           ##< Number of files in oTestTreeDir.
+        self.cTestTreeDirs  = 0;                           ##< Number of directories under oTestTreeDir.
+
+        self.aoTestDirs     = []        # type: list(GstFsDir);
+        self.aoTestFiles    = []        # type: list(GstFsFile);
+        self.dTestPaths     = {}        # type: dict(str, GstFsFile);
 
     def parseOption(self, asArgs, iArg):                                        # pylint: disable=too-many-branches,too-many-statements
         if asArgs[iArg] == '--add-guest-ctrl-tests':
@@ -957,122 +1027,77 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         """
         reporter.log("Active tests: %s" % (self.asTests,));
 
+        # The tests. Must-succeed tests should be first.
+        atTests = [
+            ( True,  self.prepareGuestForTesting,           None,               'Preparations',),
+            ( True,  self.testGuestCtrlSession,             'session_basic',    'Session Basics',),
+            ( True,  self.testGuestCtrlExec,                'exec_basic',       'Execution',),
+            ( False, self.testGuestCtrlExecTimeout,         'exec_timeout',     'Execution Timeouts',),
+            ( False, self.testGuestCtrlSessionEnvironment,  'session_env',      'Session Environment',),
+            ( False, self.testGuestCtrlSessionFileRefs,     'session_file_ref', 'Session File References',),
+            #( False, self.testGuestCtrlSessionDirRefs,      'session_dir_ref',  'Session Directory References',),
+            ( False, self.testGuestCtrlSessionProcRefs,     'session_proc_ref', 'Session Process References',),
+            ( False, self.testGuestCtrlDirCreate,           'dir_create',       'Creating directories',),
+            ( False, self.testGuestCtrlDirCreateTemp,       'dir_create_temp',  'Creating temporary directories',),
+            ( False, self.testGuestCtrlDirRead,             'dir_read',         'Reading directories',),
+            ( False, self.testGuestCtrlCopyTo,              'copy_to',          'Copy to guest',),
+            ( False, self.testGuestCtrlCopyFrom,            'copy_from',        'Copy from guest',),
+            ( False, self.testGuestCtrlFileStat,            'file_stat',        'Querying file information (stat)',),
+            ( False, self.testGuestCtrlFileRead,            'file_read',        'File read',),
+            ( False, self.testGuestCtrlFileWrite,           'file_write',       'File write',),
+            ( False, self.testGuestCtrlFileRemove,          'file_remove',      'Removing files',), # Destroys prepped files.
+            ( False, self.testGuestCtrlSessionReboot,       'session_reboot',   'Session w/ Guest Reboot',), # May zap /tmp.
+            ( False, self.testGuestCtrlUpdateAdditions,     'update_additions', 'Updating Guest Additions',),
+        ];
+
         fRc = True;
+        for fMustSucceed, fnHandler, sShortNm, sTestNm in atTests:
+            reporter.testStart(sTestNm);
 
-        # Do the testing.
-        reporter.testStart('Session Basics');
-        fSkip = 'session_basic' not in self.asTests;
-        if fSkip is False:
-            fRc, oTxsSession = self.testGuestCtrlSession(oSession, oTxsSession, oTestVm);
-        reporter.testDone(fSkip);
+            if sShortNm is None or sShortNm in self.asTests:
+                # Returns (fRc, oTxsSession, oSession) - but only the first one is mandatory.
+                aoResult = fnHandler(oSession, oTxsSession, oTestVm);
+                if aoResult is None or isinstance(aoResult, bool):
+                    fRcTest = aoResult;
+                else:
+                    fRcTest = aoResult[0];
+                    if len(aoResult) > 1:
+                        oTxsSession = aoResult[1];
+                        if len(aoResult) > 2:
+                            oSession = aoResult[2];
+                            assert len(aoResult) == 3;
+            else:
+                fRcTest = None;
 
-        reporter.testStart('Session Environment');
-        fSkip = 'session_env' not in self.asTests or fRc is False;
-        if fSkip is False:
-            fRc, oTxsSession = self.testGuestCtrlSessionEnvironment(oSession, oTxsSession, oTestVm);
-        reporter.testDone(fSkip);
+            if fRcTest is False and reporter.testErrorCount() != 0:
+                fRcTest = reporter.error('Buggy test! Returned False w/o logging the error!');
+            if reporter.testDone(fRcTest is None)[1] != 0:
+                fRcTest = False;
+                fRc     = False;
 
-        reporter.testStart('Session File References');
-        fSkip = 'session_file_ref' not in self.asTests;
-        if fSkip is False:
-            fRc, oTxsSession = self.testGuestCtrlSessionFileRefs(oSession, oTxsSession, oTestVm);
-        reporter.testDone(fSkip);
-
-        ## @todo Implement this.
-        #reporter.testStart('Session Directory References');
-        #fSkip = 'session_dir_ref' not in self.asTests;
-        #if fSkip is False:
-        #    fRc, oTxsSession = self.testGuestCtrlSessionDirRefs(oSession, oTxsSession, oTestVm);
-        #reporter.testDone(fSkip);
-
-        reporter.testStart('Session Process References');
-        fSkip = 'session_proc_ref' not in self.asTests or fRc is False;
-        if fSkip is False:
-            fRc, oTxsSession = self.testGuestCtrlSessionProcRefs(oSession, oTxsSession, oTestVm);
-        reporter.testDone(fSkip);
-
-        reporter.testStart('Session w/ Guest Reboot');
-        fSkip =    'session_reboot' not in self.asTests \
-                or self.oTstDrv.fpApiVer <= 6.0; # Not backported yet.
-        if fSkip is False:
-            fRc, oTxsSession = self.testGuestCtrlSessionReboot(oSession, oTxsSession, oTestVm);
-        reporter.testDone(fSkip);
-
-        reporter.testStart('Execution');
-        fSkip = 'exec_basic' not in self.asTests or fRc is False;
-        if fSkip is False:
-            fRc, oTxsSession = self.testGuestCtrlExec(oSession, oTxsSession, oTestVm);
-        reporter.testDone(fSkip);
-
-        reporter.testStart('Execution Timeouts');
-        fSkip = 'exec_timeout' not in self.asTests or fRc is False;
-        if fSkip is False:
-            fRc, oTxsSession = self.testGuestCtrlExecTimeout(oSession, oTxsSession, oTestVm);
-        reporter.testDone(fSkip);
-
-        reporter.testStart('Creating directories');
-        fSkip = 'dir_create' not in self.asTests or fRc is False;
-        if fSkip is False:
-            fRc, oTxsSession = self.testGuestCtrlDirCreate(oSession, oTxsSession, oTestVm);
-        reporter.testDone(fSkip);
-
-        reporter.testStart('Creating temporary directories');
-        fSkip = 'dir_create_temp' not in self.asTests or fRc is False;
-        if fSkip is False:
-            fRc, oTxsSession = self.testGuestCtrlDirCreateTemp(oSession, oTxsSession, oTestVm);
-        reporter.testDone(fSkip);
-
-        reporter.testStart('Reading directories');
-        fSkip = 'dir_read' not in self.asTests or fRc is False;
-        if fSkip is False:
-            fRc, oTxsSession = self.testGuestCtrlDirRead(oSession, oTxsSession, oTestVm);
-        reporter.testDone(fSkip);
-
-        reporter.testStart('Copy to guest');
-        fSkip = 'copy_to' not in self.asTests or fRc is False;
-        if fSkip is False:
-            fRc, oTxsSession = self.testGuestCtrlCopyTo(oSession, oTxsSession, oTestVm);
-        reporter.testDone(fSkip);
-
-        reporter.testStart('Copy from guest');
-        fSkip = 'copy_from' not in self.asTests or fRc is False;
-        if fSkip is False:
-            fRc, oTxsSession = self.testGuestCtrlCopyFrom(oSession, oTxsSession, oTestVm);
-        reporter.testDone(fSkip);
-
-        reporter.testStart('Removing files');
-        fSkip = 'file_remove' not in self.asTests or fRc is False;
-        if fSkip is False:
-            fRc, oTxsSession = self.testGuestCtrlFileRemove(oSession, oTxsSession, oTestVm);
-        reporter.testDone(fSkip);
-
-        reporter.testStart('Querying file information (stat)');
-        fSkip = 'file_stat' not in self.asTests or fRc is False;
-        if fSkip is False:
-            fRc, oTxsSession = self.testGuestCtrlFileStat(oSession, oTxsSession, oTestVm);
-        reporter.testDone(fSkip);
-
-        reporter.testStart('File read');
-        fSkip = 'file_read' not in self.asTests or fRc is False;
-        if fSkip is False:
-            fRc, oTxsSession = self.testGuestCtrlFileRead(oSession, oTxsSession, oTestVm);
-        reporter.testDone(fSkip);
-
-        reporter.testStart('File write');
-        fSkip = 'file_write' not in self.asTests or fRc is False;
-        if fSkip is False:
-            fRc, oTxsSession = self.testGuestCtrlFileWrite(oSession, oTxsSession, oTestVm);
-        reporter.testDone(fSkip);
-
-        reporter.testStart('Updating Guest Additions');
-        fSkip = 'update_additions' not in self.asTests or fRc is False;
-        # Skip test for updating Guest Additions if we run on a too old (Windows) guest.
-        fSkip = oTestVm.sKind in ('WindowsNT4', 'Windows2000', 'WindowsXP', 'Windows2003');
-        if fSkip is False:
-            fRc, oTxsSession = self.testGuestCtrlUpdateAdditions(oSession, oTxsSession, oTestVm);
-        reporter.testDone(fSkip);
+            # Stop execution if this is a must-succeed test and it failed.
+            if fRcTest is False and fMustSucceed is True:
+                reporter.log('Skipping any remaining tests since the previous one failed.');
+                break;
 
         return (fRc, oTxsSession);
+
+    #
+    # Guest locations.
+    #
+
+    @staticmethod
+    def getGuestTempDir(oTestVm):
+        """
+        Helper for finding a temporary directory in the test VM.
+
+        Note! It may be necessary to create it!
+        """
+        if oTestVm.isWindows():
+            return "C:\\Temp";
+        if oTestVm.isOS2():
+            return "C:\\Temp";
+        return '/var/tmp';
 
     @staticmethod
     def getGuestSystemDir(oTestVm):
@@ -1111,6 +1136,261 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         if oTestVm.isOS2():
             return SubTstDrvAddGuestCtrl.getGuestSystemDir(oTestVm) + '\\DOSCALL1.DLL';
         return "/bin/sh";
+
+    #
+    # Guest test files.
+    #
+
+    ## @todo separate this out into a separate class.  This one is way to big and this may be handy for to reuse.
+
+    def __createTestDir(self, oParent, sDir):
+        """
+        Creates a test directory.
+        """
+        oDir = GstFsDir(oParent, sDir);
+        self.aoTestDirs.append(oDir);
+        self.dTestPaths[sDir] = oDir;
+        return oDir;
+
+    def __createTestFile(self, oParent, sFile, oRandom, cbMaxContent):
+        """
+        Creates a test file with random size up to cbMaxContent and random content.
+        """
+        cbFile    = oRandom.randrange(0, cbMaxContent);
+        abContent = bytearray(oRandom.getrandbits(8) for _ in xrange(cbFile));
+
+        oFile = GstFsFile(oParent, sFile, abContent);
+        self.aoTestFiles.append(oFile);
+        self.dTestPaths[sFile] = oFile;
+        return oFile;
+
+    @staticmethod
+    def __createFilename(oParent, oRandom, sCharset, sReservedTrailing):
+        """
+        Creates a filename contains random characters from sCharset and together
+        with oParent.sPath doesn't exceed 230 chars in length.
+        """
+        while True:
+            cchName = oRandom.randrange(1, 230 - len(oParent.sPath));
+            sName = ''.join(oRandom.choice(sCharset) for _ in xrange(cchName));
+            if oParent is None or not oParent.contains(sName):
+                if sName[-1] not in sReservedTrailing:
+                    if sName not in ('.', '..',):
+                        return sName;
+
+    def __createTestStuff(self, oTestVm):
+        """
+        Create a random file set that we can work on in the tests.
+        Returns True/False.
+        """
+
+        # Zap anything left over from a previous run.
+        for oFile in self.aoTestDirs:
+            oFile.oParent   = None;
+        for oFile in self.aoTestFiles:
+            oFile.oParent   = None;
+            oFile.abContent = None;
+        self.oTestRoot      = None;
+        self.oTestEmptyDir  = None;
+        self.oTestManyDir   = None;
+        self.oTestTreeDir   = None;
+        self.cTestTreeFiles = 0;
+        self.cTestTreeDirs  = 0;
+        self.aoTestDirs     = [];
+        self.aoTestFiles    = [];
+        self.dTestPaths     = {};
+
+        # See random.
+        uSeed = utils.timestampMilli();
+        reporter.log('prepareGuestForTesting: random seed %s' % (uSeed,));
+        oRandom = random.Random();
+        oRandom.seed(uSeed);
+
+        # filename characters:
+        ksReservedWinOS2         = '/\\"*:<>?|\t\v\n\r\f\a\b';
+        ksReservedUnix           = '/';
+        ksReservedTrailingWinOS2 = ' .'; # The space is tar's fault. Must be first.
+        ksReservedTrailingUnix   = ' ';
+        sFileCharset             = string.printable;
+        sFileCharsetCommon       = string.printable;
+        sReservedTrailingCommon  = ksReservedTrailingWinOS2;
+
+        if oTestVm.isWindows() or oTestVm.isOS2():
+            sReservedTrailing    = ksReservedTrailingWinOS2;
+            for ch in ksReservedWinOS2:
+                sFileCharset = sFileCharset.replace(ch, '');
+        else:
+            sReservedTrailing    = ksReservedTrailingUnix;
+            for ch in ksReservedUnix:
+                sFileCharset = sFileCharset.replace(ch, '');
+        sFileCharset += '   ...';
+
+        for ch in ksReservedWinOS2:
+            sFileCharsetCommon = sFileCharset.replace(ch, '');
+        sFileCharsetCommon += '   ...';
+
+        # Create the root test dir.
+        sRoot = oTestVm.pathJoinEx(self.getGuestTempDir(oTestVm), 'addgst-1');
+        self.oTestRoot = self.__createTestDir(None, sRoot);
+        self.oTestEmptyDir = self.__createTestDir(self.oTestRoot, oTestVm.pathJoinEx(sRoot, 'empty'));
+
+        # Create a directory with about files in it using the guest specific charset:
+        oDir = self.__createTestDir(self.oTestRoot, oTestVm.pathJoinEx(sRoot, 'many'));
+        self.oTestManyDir = oDir;
+        cManyFiles = oRandom.randrange(92, 128);
+        for _ in xrange(cManyFiles):
+            sName = self.__createFilename(oDir, oRandom, sFileCharset, sReservedTrailing);
+            self.__createTestFile(oDir, oTestVm.pathJoinEx(oDir.sPath, sName), oRandom, 16384);
+
+        # Generate a tree of files and dirs. 2-16 levels deep. Portable character set.
+        cMaxFiles   = oRandom.randrange(128, 384);
+        cMaxDirs    = oRandom.randrange(92, 256);
+        uMaxDepth   = oRandom.randrange(2, 16);
+        oDir        = self.__createTestDir(self.oTestRoot, oTestVm.pathJoinEx(sRoot, 'tree'));
+        self.oTestTreeDir   = oDir;
+        self.cTestTreeFiles = 0;
+        self.cTestTreeDirs  = 0;
+        uDepth              = 0;
+        while self.cTestTreeFiles < cMaxFiles and self.cTestTreeDirs < cMaxDirs:
+            iAction = oRandom.randrange(0, 2+1);
+            # 0: Add a file:
+            if iAction == 0 and self.cTestTreeFiles < cMaxFiles and len(oDir.sPath) < 230 - 2:
+                sName = self.__createFilename(oDir, oRandom, sFileCharsetCommon, sReservedTrailingCommon[1:]); # trailing space ok
+                self.__createTestFile(oDir, oTestVm.pathJoinEx(oDir.sPath, sName), oRandom, 16384);
+                self.cTestTreeFiles += 1;
+            # 1: Add a subdirector and descend into it:
+            elif iAction == 1 and self.cTestTreeDirs < cMaxDirs and uDepth < uMaxDepth and len(oDir.sPath) < 220:
+                sName = self.__createFilename(oDir, oRandom, sFileCharsetCommon, sReservedTrailingCommon);
+                oDir  = self.__createTestDir(oDir, oTestVm.pathJoinEx(oDir.sPath, sName));
+                self.cTestTreeDirs  += 1;
+                uDepth += 1;
+            # 2: Ascend to parent dir:
+            elif iAction == 2 and uDepth > 0:
+                oDir = oDir.oParent;
+                uDepth -= 1;
+
+        return True;
+
+
+    def __uploadTestStuffsFallback(self, oTxsSession, oTestVm, sTarFileGst, sTempDirGst):
+        """
+        Fallback upload method.
+        """
+
+        ## Directories:
+        #for oDir in self.aoTestDirs:
+        #    if oTxsSession.syncMkDirPath(oDir.sPath, 0o777) is not True:
+        #        return reporter.error('Failed to create directory "%s"!' % (oDir.sPath,));
+        #
+        ## Files:
+        #for oFile in self.aoTestFiles:
+        #    if oTxsSession.syncUploadString(oFile.abContent, oFile.sPath) is not True:
+        #        return reporter.error('Failed to create file "%s" with %s content bytes!' % (oFile.sPath, oFile.cbContent));
+
+        sVtsTarExe = 'vts_tar' + oTestVm.getGuestExeSuff();
+        sVtsTarHst = os.path.join(self.oTstDrv.sVBoxValidationKit, oTestVm.getGuestOs(), oTestVm.getGuestArch(), sVtsTarExe);
+        sVtsTarGst = oTestVm.pathJoinEx(sTempDirGst, sVtsTarExe);
+
+        if oTxsSession.syncUploadFile(sVtsTarHst, sVtsTarGst) is not True:
+            return reporter.error('Failed to upload "%s" to the guest as "%s"!' % (sVtsTarHst, sVtsTarGst,));
+
+        fRc = oTxsSession.syncExec(sVtsTarGst, [sVtsTarGst, '-xzf', sTarFileGst, '-C', sTempDirGst,], fWithTestPipe = False);
+        if fRc is not True:
+            return reporter.error('vts_tar failed!');
+        return True;
+
+    def __uploadTestStuff(self, oTxsSession, oTestVm):
+        """
+        Primary upload method.
+        """
+
+        #
+        # Create a tarball.
+        #
+        sTempDirGst  = self.getGuestTempDir(oTestVm);
+        sTarFileHst  = os.path.join(self.oTstDrv.sScratchPath, 'tdAddGuestCtrl-1-Stuff.tar.gz');
+        sTarFileGst  = oTestVm.pathJoinEx(sTempDirGst,         'tdAddGuestCtrl-1-Stuff.tar.gz');
+        chOtherSlash = '\\' if oTestVm.isWindows() or oTestVm.isOS2() else '/';
+        cchSkip      = len(sTempDirGst) + 1;
+
+        reporter.log('Creating tarball "%s" with test files for the guest...' % (sTarFileHst,));
+
+        # Open the tarball:
+        try:
+            oTarFile = tarfile.open(sTarFileHst, 'w:gz');
+        except:
+            return reporter.errorXcpt('Failed to open new tar file: %s' % (sTarFileHst,));
+
+        # Directories:
+        for oDir in self.aoTestDirs:
+            oTarInfo = tarfile.TarInfo(oDir.sPath[cchSkip:].replace(chOtherSlash, '/') + '/');
+            oTarInfo.mode = 0o777;
+            oTarInfo.type = tarfile.DIRTYPE;
+            try:
+                oTarFile.addfile(oTarInfo);
+            except:
+                return reporter.errorXcpt('Failed adding directory tarfile: %s' % (oDir.sPath,));
+
+        # Files:
+        for oFile in self.aoTestFiles:
+            oTarInfo = tarfile.TarInfo(oFile.sPath[cchSkip:].replace(chOtherSlash, '/'));
+            oTarInfo.size = len(oFile.abContent);
+            oFile.off = 0;
+            try:
+                oTarFile.addfile(oTarInfo, oFile);
+            except:
+                return reporter.errorXcpt('Failed adding directory tarfile: %s' % (oFile.sPath,));
+
+        # Complete the tarball.
+        try:
+            oTarFile.close();
+        except:
+            return reporter.errorXcpt('Error closing new tar file: %s' % (sTarFileHst,));
+
+        #
+        # Upload it.
+        #
+        reporter.log('Uploading tarball "%s" to the guest as "%s"...' % (sTarFileHst, sTarFileGst));
+        if oTxsSession.syncUploadFile(sTarFileHst, sTarFileGst) is not True:
+            return reporter.error('Failed upload tarball "%s" as "%s"!' % (sTarFileHst, sTarFileGst,));
+
+        #
+        # Try unpack it.
+        #
+        reporter.log('Unpacking "%s" into "%s"...' % (sTarFileGst, sTempDirGst));
+        if oTxsSession.syncUnpackFile(sTarFileGst, sTempDirGst, fIgnoreErrors = True) is not True:
+            reporter.log('Failed to expand tarball "%s" into "%s", falling back on individual directory and file creation...'
+                         % (sTarFileGst, sTempDirGst,));
+            if self.__uploadTestStuffsFallback(oTxsSession, oTestVm, sTarFileGst, sTempDirGst) is not True:
+                return False;
+        reporter.log('Successfully placed test files and directories in the VM.');
+        return True;
+
+    def prepareGuestForTesting(self, oSession, oTxsSession, oTestVm):
+        """
+        Prepares the VM for testing, uploading a bunch of files and stuff via TXS.
+        Returns success indicator.
+        """
+        _ = oSession;
+
+        #reporter.log('Take snapshot now!');
+        #self.oTstDrv.sleep(22);
+        #return False;
+
+        # Make sure the temporary directory exists.
+        for sDir in [self.getGuestTempDir(oTestVm), ]:
+            if oTxsSession.syncMkDirPath(sDir, 0o777) is not True:
+                return reporter.error('Failed to create directory "%s"!' % (sDir,));
+
+        # Generate and upload some random files and dirs to the guest:
+        if self.__createTestStuff(oTestVm) is not True:
+            return False;
+        return self.__uploadTestStuff(oTxsSession, oTestVm);
+
+
+    #
+    # gctrlXxxx stuff.
+    #
 
     def gctrlCopyFileFrom(self, oGuestSession, sSrc, sDst, fFlags, fExpected):
         """
@@ -2278,6 +2558,11 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         To test that we create a stale guest process and trigger a reboot of the guest.
         """
 
+        ## @todo backport fixes to 6.0 and maybe 5.2
+        if self.oTstDrv.fpApiVer <= 6.0:
+            reporter.log('Skipping: Required fixes not yet backported!');
+            return None;
+
         # Use credential defaults.
         oCreds = tdCtxCreds();
         oCreds.applyDefaultsIfNotSet(oTestVm);
@@ -2499,35 +2784,38 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         Tests creation of guest directories.
         """
 
-        if oTestVm.isWindows():
-            sScratch  = "C:\\Temp\\vboxtest\\testGuestCtrlDirCreate\\";
-        else:
-            sScratch  = "/tmp/testGuestCtrlDirCreate/";
+        sScratch = oTestVm.pathJoinEx(self.getGuestTempDir(oTestVm), 'testGuestCtrlDirCreate');
 
-        aaTests = [];
-        aaTests.extend([
+        atTests = [
             # Invalid stuff.
-            [ tdTestDirCreate(sDirectory = '' ), tdTestResult() ],
+            [ tdTestDirCreate(sDirectory = '' ), tdTestResultFailure() ],
             # More unusual stuff.
-            [ tdTestDirCreate(sDirectory = '..\\..\\' ), tdTestResult() ],
-            [ tdTestDirCreate(sDirectory = '../../' ), tdTestResult() ],
-            [ tdTestDirCreate(sDirectory = 'z:\\' ), tdTestResult() ],
-            [ tdTestDirCreate(sDirectory = '\\\\uncrulez\\foo' ), tdTestResult() ],
+            [ tdTestDirCreate(sDirectory = '../../' ), tdTestResultFailure() ],
+        ];
+        if oTestVm.isWindows() or oTestVm.isOS2():
+            atTests.extend([
+                [ tdTestDirCreate(sDirectory = '..\\..\\' ), tdTestResultFailure() ],
+                [ tdTestDirCreate(sDirectory = 'c:\\' ), tdTestResultFailure() ],
+                [ tdTestDirCreate(sDirectory = 'z:\\' ), tdTestResultFailure() ],
+                [ tdTestDirCreate(sDirectory = '\\\\uncrulez\\foo' ), tdTestResultFailure() ],
+            ]);
+
+        atTests.extend([
             # Creating directories.
-            [ tdTestDirCreate(sDirectory = sScratch ), tdTestResult() ],
+            [ tdTestDirCreate(sDirectory = sScratch ), tdTestResultFailure() ],
             [ tdTestDirCreate(sDirectory = os.path.join(sScratch, 'foo\\bar\\baz'),
                               fFlags = [ vboxcon.DirectoryCreateFlag_Parents ] ),
-              tdTestResult(fRc = True) ],
+              tdTestResultSuccess() ],
             [ tdTestDirCreate(sDirectory = os.path.join(sScratch, 'foo\\bar\\baz'),
                               fFlags = [ vboxcon.DirectoryCreateFlag_Parents ] ),
-              tdTestResult(fRc = True) ],
+              tdTestResultSuccess() ],
             # Long (+ random) stuff.
             [ tdTestDirCreate(sDirectory = os.path.join(sScratch,
                                                         "".join(random.choice(string.ascii_lowercase) for i in xrange(32))) ),
-              tdTestResult(fRc = True) ],
+              tdTestResultSuccess() ],
             [ tdTestDirCreate(sDirectory = os.path.join(sScratch,
                                                         "".join(random.choice(string.ascii_lowercase) for i in xrange(128))) ),
-              tdTestResult(fRc = True) ],
+              tdTestResultSuccess() ],
             # Following two should fail on Windows (paths too long). Both should timeout.
             [ tdTestDirCreate(sDirectory = os.path.join(sScratch,
                                                         "".join(random.choice(string.ascii_lowercase) for i in xrange(255))) ),
@@ -2538,7 +2826,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         ]);
 
         fRc = True;
-        for (i, aTest) in enumerate(aaTests):
+        for (i, aTest) in enumerate(atTests):
             oCurTest = aTest[0]; # tdTestExec, use an index, later.
             oCurRes  = aTest[1]; # tdTestResult
             reporter.log('Testing #%d, sDirectory="%s" ...' % (i, oCurTest.sDirectory));
@@ -2561,116 +2849,116 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         Tests creation of temporary directories.
         """
 
-        aaTests = [];
+        atTests = [];
         if oTestVm.isWindows():
-            aaTests.extend([
+            atTests.extend([
                 # Invalid stuff.
-                [ tdTestDirCreateTemp(sDirectory = ''), tdTestResult() ],
-                [ tdTestDirCreateTemp(sDirectory = 'C:\\Windows', fMode = 1234), tdTestResult() ],
-                [ tdTestDirCreateTemp(sTemplate = '', sDirectory = 'C:\\Windows', fMode = 1234), tdTestResult() ],
-                [ tdTestDirCreateTemp(sTemplate = 'xXx', sDirectory = 'C:\\Windows', fMode = 0o700), tdTestResult() ],
-                [ tdTestDirCreateTemp(sTemplate = 'xxx', sDirectory = 'C:\\Windows', fMode = 0o700), tdTestResult() ],
+                [ tdTestDirCreateTemp(sDirectory = ''), tdTestResultFailure() ],
+                [ tdTestDirCreateTemp(sDirectory = 'C:\\Windows', fMode = 1234), tdTestResultFailure() ],
+                [ tdTestDirCreateTemp(sTemplate = '', sDirectory = 'C:\\Windows', fMode = 1234), tdTestResultFailure() ],
+                [ tdTestDirCreateTemp(sTemplate = 'xXx', sDirectory = 'C:\\Windows', fMode = 0o700), tdTestResultFailure() ],
+                [ tdTestDirCreateTemp(sTemplate = 'xxx', sDirectory = 'C:\\Windows', fMode = 0o700), tdTestResultFailure() ],
                 # More unusual stuff.
-                [ tdTestDirCreateTemp(sTemplate = 'foo', sDirectory = 'z:\\'), tdTestResult() ],
-                [ tdTestDirCreateTemp(sTemplate = 'foo', sDirectory = '\\\\uncrulez\\foo'), tdTestResult() ],
+                [ tdTestDirCreateTemp(sTemplate = 'foo', sDirectory = 'z:\\'), tdTestResultFailure() ],
+                [ tdTestDirCreateTemp(sTemplate = 'foo', sDirectory = '\\\\uncrulez\\foo'), tdTestResultFailure() ],
                 # Non-existing stuff.
-                [ tdTestDirCreateTemp(sTemplate = 'bar', sDirectory = 'c:\\Apps\\nonexisting\\foo'), tdTestResult() ],
+                [ tdTestDirCreateTemp(sTemplate = 'bar', sDirectory = 'c:\\Apps\\nonexisting\\foo'), tdTestResultFailure() ],
                 # FIXME: Failing test. Non Windows path
-                # [ tdTestDirCreateTemp(sTemplate = 'bar', sDirectory = '/tmp/non/existing'), tdTestResult() ]
+                # [ tdTestDirCreateTemp(sTemplate = 'bar', sDirectory = '/tmp/non/existing'), tdTestResultFailure() ]
             ]);
         elif oTestVm.isLinux():
-            aaTests.extend([
+            atTests.extend([
                 # Invalid stuff.
-                [ tdTestDirCreateTemp(sDirectory = ''), tdTestResult() ],
+                [ tdTestDirCreateTemp(sDirectory = ''), tdTestResultFailure() ],
                 [ tdTestDirCreateTemp(sDirectory = '/etc', fMode = 1234) ],
-                [ tdTestDirCreateTemp(sTemplate = '', sDirectory = '/etc', fMode = 1234), tdTestResult() ],
-                [ tdTestDirCreateTemp(sTemplate = 'xXx', sDirectory = '/etc', fMode = 0o700), tdTestResult() ],
-                [ tdTestDirCreateTemp(sTemplate = 'xxx', sDirectory = '/etc', fMode = 0o700), tdTestResult() ],
+                [ tdTestDirCreateTemp(sTemplate = '', sDirectory = '/etc', fMode = 1234), tdTestResultFailure() ],
+                [ tdTestDirCreateTemp(sTemplate = 'xXx', sDirectory = '/etc', fMode = 0o700), tdTestResultFailure() ],
+                [ tdTestDirCreateTemp(sTemplate = 'xxx', sDirectory = '/etc', fMode = 0o700), tdTestResultFailure() ],
                 # More unusual stuff.
-                [ tdTestDirCreateTemp(sTemplate = 'foo', sDirectory = 'z:\\'), tdTestResult() ],
-                [ tdTestDirCreateTemp(sTemplate = 'foo', sDirectory = '\\\\uncrulez\\foo'), tdTestResult() ],
+                [ tdTestDirCreateTemp(sTemplate = 'foo', sDirectory = 'z:\\'), tdTestResultFailure() ],
+                [ tdTestDirCreateTemp(sTemplate = 'foo', sDirectory = '\\\\uncrulez\\foo'), tdTestResultFailure() ],
                 # Non-existing stuff.
-                [ tdTestDirCreateTemp(sTemplate = 'bar', sDirectory = '/non/existing'), tdTestResult() ],
+                [ tdTestDirCreateTemp(sTemplate = 'bar', sDirectory = '/non/existing'), tdTestResultFailure() ],
             ]);
 
             # FIXME: Failing tests.
-            # aaTests.extend([
+            # atTests.extend([
                 # Non-secure variants.
                 # [ tdTestDirCreateTemp(sTemplate = 'XXX',
                 #                       sDirectory = sScratch),
-                #   tdTestResult(fRc = True) ],
+                #   tdTestResultSuccess() ],
                 # [ tdTestDirCreateTemp(sTemplate = 'XXX',
                 #                       sDirectory = sScratch),
-                #   tdTestResult(fRc = True) ],
+                #   tdTestResultSuccess() ],
                 # [ tdTestDirCreateTemp(sTemplate = 'X',
                 #                       sDirectory = sScratch),
-                #   tdTestResult(fRc = True) ],
+                #   tdTestResultSuccess() ],
                 # [ tdTestDirCreateTemp(sTemplate = 'X',
                 #                       sDirectory = sScratch),
-                #   tdTestResult(fRc = True) ],
+                #   tdTestResultSuccess() ],
                 # [ tdTestDirCreateTemp(sTemplate = 'XXX',
                 #                       sDirectory = sScratch,
                 #                       fMode = 0o700),
-                #   tdTestResult(fRc = True) ],
+                #   tdTestResultSuccess() ],
                 # [ tdTestDirCreateTemp(sTemplate = 'XXX',
                 #                     sDirectory = sScratch,
                 #                     fMode = 0o700),
-                #   tdTestResult(fRc = True) ],
+                #   tdTestResultSuccess() ],
                 # [ tdTestDirCreateTemp(sTemplate = 'XXX',
                 #                       sDirectory = sScratch,
                 #                       fMode = 0o755),
-                #   tdTestResult(fRc = True) ],
+                #   tdTestResultSuccess() ],
                 # [ tdTestDirCreateTemp(sTemplate = 'XXX',
                 #                       sDirectory = sScratch,
                 #                       fMode = 0o755),
-                #   tdTestResult(fRc = True) ],
+                #   tdTestResultSuccess() ],
                 # Secure variants.
                 # [ tdTestDirCreateTemp(sTemplate = 'XXX',
                 #                       sDirectory = sScratch, fSecure = True),
-                #   tdTestResult(fRc = True) ],
+                #   tdTestResultSuccess() ],
                 # [ tdTestDirCreateTemp(sTemplate = 'XXX',
                 #                       sDirectory = sScratch, fSecure = True),
-                #   tdTestResult(fRc = True) ],
+                #   tdTestResultSuccess() ],
                 # [ tdTestDirCreateTemp(sTemplate = 'XXX',
                 #                       sDirectory = sScratch, fSecure = True),
-                #   tdTestResult(fRc = True) ],
+                #   tdTestResultSuccess() ],
                 # [ tdTestDirCreateTemp(sTemplate = 'XXX',
                 #                       sDirectory = sScratch, fSecure = True),
-                #   tdTestResult(fRc = True) ],
+                #   tdTestResultSuccess() ],
                 # [ tdTestDirCreateTemp(sTemplate = 'XXX',
                 #                       sDirectory = sScratch,
                 #                       fSecure = True, fMode = 0o700),
-                #   tdTestResult(fRc = True) ],
+                #   tdTestResultSuccess() ],
                 # [ tdTestDirCreateTemp(sTemplate = 'XXX',
                 #                       sDirectory = sScratch,
                 #                       fSecure = True, fMode = 0o700),
-                #   tdTestResult(fRc = True) ],
+                #   tdTestResultSuccess() ],
                 # [ tdTestDirCreateTemp(sTemplate = 'XXX',
                 #                       sDirectory = sScratch,
                 #                       fSecure = True, fMode = 0o755),
-                #   tdTestResult(fRc = True) ],
+                #   tdTestResultSuccess() ],
                 # [ tdTestDirCreateTemp(sTemplate = 'XXX',
                 #                       sDirectory = sScratch,
                 #                       fSecure = True, fMode = 0o755),
-                #   tdTestResult(fRc = True) ],
+                #   tdTestResultSuccess() ],
                 # Random stuff.
                 # [ tdTestDirCreateTemp(
                 #                       sTemplate = "XXX-".join(random.choice(string.ascii_lowercase) for i in xrange(32)),
                 #                       sDirectory = sScratch,
                 #                       fSecure = True, fMode = 0o755),
-                #   tdTestResult(fRc = True) ],
+                #   tdTestResultSuccess() ],
                 # [ tdTestDirCreateTemp(sTemplate = "".join('X' for i in xrange(32)),
                 #                       sDirectory = sScratch,
                 #                       fSecure = True, fMode = 0o755),
-                #   tdTestResult(fRc = True) ],
+                #   tdTestResultSuccess() ],
                 # [ tdTestDirCreateTemp(sTemplate = "".join('X' for i in xrange(128)),
                 #                       sDirectory = sScratch,
                 #                       fSecure = True, fMode = 0o755),
-                #   tdTestResult(fRc = True) ]
+                #   tdTestResultSuccess() ]
             # ]);
 
         fRc = True;
-        for (i, aTest) in enumerate(aaTests):
+        for (i, aTest) in enumerate(atTests):
             oCurTest = aTest[0]; # tdTestExec, use an index, later.
             oCurRes  = aTest[1]; # tdTestResult
             reporter.log('Testing #%d, sTemplate="%s", fMode=%#o, path="%s", secure="%s" ...' %
@@ -2805,53 +3093,53 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         else:
             sFileToDelete = "/home/vbox/.profile";
 
-        aaTests = [];
+        atTests = [];
         if oTestVm.isWindows():
-            aaTests.extend([
+            atTests.extend([
                 # Invalid stuff.
-                [ tdTestFileRemove(sFile = ''), tdTestResult() ],
-                [ tdTestFileRemove(sFile = 'C:\\Windows'), tdTestResult() ],
+                [ tdTestFileRemove(sFile = ''), tdTestResultFailure() ],
+                [ tdTestFileRemove(sFile = 'C:\\Windows'), tdTestResultFailure() ],
                 # More unusual stuff.
-                [ tdTestFileRemove(sFile = 'z:\\'), tdTestResult() ],
-                [ tdTestFileRemove(sFile = '\\\\uncrulez\\foo'), tdTestResult() ],
+                [ tdTestFileRemove(sFile = 'z:\\'), tdTestResultFailure() ],
+                [ tdTestFileRemove(sFile = '\\\\uncrulez\\foo'), tdTestResultFailure() ],
                 # Non-existing stuff.
-                [ tdTestFileRemove(sFile = 'c:\\Apps\\nonexisting'), tdTestResult() ],
+                [ tdTestFileRemove(sFile = 'c:\\Apps\\nonexisting'), tdTestResultFailure() ],
                 # Try to delete system files.
-                [ tdTestFileRemove(sFile = 'c:\\pagefile.sys'), tdTestResult() ],
-                [ tdTestFileRemove(sFile = 'c:\\Windows\\kernel32.sys'), tdTestResult() ] ## r=bird: it's in \system32\ ...
+                [ tdTestFileRemove(sFile = 'c:\\pagefile.sys'), tdTestResultFailure() ],
+                [ tdTestFileRemove(sFile = 'c:\\Windows\\kernel32.sys'), tdTestResultFailure() ] ## r=bird: it's in \system32\ ...
             ]);
 
             if oTestVm.sKind == "WindowsXP":
-                aaTests.extend([
+                atTests.extend([
                     # Try delete some unimportant media stuff.
-                    [ tdTestFileRemove(sFile = 'c:\\Windows\\Media\\chimes.wav'), tdTestResult(fRc = True) ],
+                    [ tdTestFileRemove(sFile = 'c:\\Windows\\Media\\chimes.wav'), tdTestResultSuccess() ],
                     # Second attempt should fail.
-                    [ tdTestFileRemove(sFile = 'c:\\Windows\\Media\\chimes.wav'), tdTestResult() ]
+                    [ tdTestFileRemove(sFile = 'c:\\Windows\\Media\\chimes.wav'), tdTestResultFailure() ]
                 ]);
         elif oTestVm.isLinux():
-            aaTests.extend([
+            atTests.extend([
                 # Invalid stuff.
-                [ tdTestFileRemove(sFile = ''), tdTestResult() ],
-                [ tdTestFileRemove(sFile = 'C:\\Windows'), tdTestResult() ],
+                [ tdTestFileRemove(sFile = ''), tdTestResultFailure() ],
+                [ tdTestFileRemove(sFile = 'C:\\Windows'), tdTestResultFailure() ],
                 # More unusual stuff.
-                [ tdTestFileRemove(sFile = 'z:/'), tdTestResult() ],
-                [ tdTestFileRemove(sFile = '//uncrulez/foo'), tdTestResult() ],
+                [ tdTestFileRemove(sFile = 'z:/'), tdTestResultFailure() ],
+                [ tdTestFileRemove(sFile = '//uncrulez/foo'), tdTestResultFailure() ],
                 # Non-existing stuff.
-                [ tdTestFileRemove(sFile = '/non/existing'), tdTestResult() ],
+                [ tdTestFileRemove(sFile = '/non/existing'), tdTestResultFailure() ],
                 # Try to delete system files.
-                [ tdTestFileRemove(sFile = '/etc'), tdTestResult() ],
-                [ tdTestFileRemove(sFile = '/bin/sh'), tdTestResult() ]
+                [ tdTestFileRemove(sFile = '/etc'), tdTestResultFailure() ],
+                [ tdTestFileRemove(sFile = '/bin/sh'), tdTestResultFailure() ]
             ]);
 
-        aaTests.extend([
+        atTests.extend([
             # Try delete some unimportant stuff.
-            [ tdTestFileRemove(sFile = sFileToDelete), tdTestResult(fRc = True) ],
+            [ tdTestFileRemove(sFile = sFileToDelete), tdTestResultSuccess() ],
             # Second attempt should fail.
-            [ tdTestFileRemove(sFile = sFileToDelete), tdTestResult() ]
+            [ tdTestFileRemove(sFile = sFileToDelete), tdTestResultFailure() ]
         ]);
 
         fRc = True;
-        for (i, aTest) in enumerate(aaTests):
+        for (i, aTest) in enumerate(atTests):
             oCurTest = aTest[0]; # tdTestExec, use an index, later.
             oCurRes  = aTest[1]; # tdTestResult
             reporter.log('Testing #%d, file="%s" ...' % (i, oCurTest.sFile));
@@ -2969,8 +3257,8 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             reporter.error('Could not create scratch directory on guest');
             return (False, oTxsSession);
 
-        aaTests = [];
-        aaTests.extend([
+        atTests = [];
+        atTests.extend([
             # Invalid stuff.
             [ tdTestFileReadWrite(cbToReadWrite = 0), tdTestResultFileReadWrite() ],
             [ tdTestFileReadWrite(sFile = ''), tdTestResultFileReadWrite() ],
@@ -2999,7 +3287,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         ]);
 
         if oTestVm.isWindows():
-            aaTests.extend([
+            atTests.extend([
                 # Create a file which must not exist (but it hopefully does).
                 [ tdTestFileReadWrite(sFile = 'C:\\Windows\\System32\\calc.exe', sOpenMode = 'w', sDisposition = 'ce'),
                   tdTestResultFileReadWrite() ],
@@ -3013,7 +3301,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
             # Note: tst-xppro has other contents in eula.txt.
             if oTestVm.sVmName.startswith('tst-xpsp2'):
-                aaTests.extend([
+                atTests.extend([
                     # Reading from beginning.
                     [ tdTestFileReadWrite(sFile = 'C:\\Windows\\System32\\eula.txt',
                                         sOpenMode = 'r', sDisposition = 'oe', cbToReadWrite = 33),
@@ -3026,7 +3314,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                                                 cbProcessed = 31, offFile = 17769 + 31) ]
                 ]);
         elif oTestVm.isLinux():
-            aaTests.extend([
+            atTests.extend([
                 # Create a file which must not exist (but it hopefully does).
                 [ tdTestFileReadWrite(sFile = '/etc/issue', sOpenMode = 'w', sDisposition = 'ce'),
                   tdTestResultFileReadWrite() ],
@@ -3039,7 +3327,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             ]);
 
         fRc = True;
-        for (i, aTest) in enumerate(aaTests):
+        for (i, aTest) in enumerate(atTests):
             oCurTest = aTest[0]; # tdTestFileReadWrite, use an index, later.
             oCurRes  = aTest[1]; # tdTestResult
             reporter.log('Testing #%d, sFile="%s", cbToReadWrite=%d, sOpenMode="%s", sDisposition="%s", offFile=%d ...'
@@ -3127,11 +3415,11 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             reporter.error('Could not create scratch directory on guest');
             return (False, oTxsSession);
 
-        aaTests = [];
+        atTests = [];
 
         cbScratchBuf = random.randint(1, 4096);
         abScratchBuf = os.urandom(cbScratchBuf);
-        aaTests.extend([
+        atTests.extend([
             # Write to a non-existing file.
             [ tdTestFileReadWrite(sFile = sScratch + 'testGuestCtrlFileWrite.txt',
                                   sOpenMode = 'w+', sDisposition = 'ce', cbToReadWrite = cbScratchBuf, abBuf = abScratchBuf),
@@ -3139,7 +3427,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         ]);
 
         aScratchBuf2 = os.urandom(cbScratchBuf);
-        aaTests.extend([
+        atTests.extend([
             # Append the same amount of data to the just created file.
             [ tdTestFileReadWrite(sFile = sScratch + 'testGuestCtrlFileWrite.txt',
                                   sOpenMode = 'w+', sDisposition = 'oa', cbToReadWrite = cbScratchBuf,
@@ -3149,7 +3437,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         ]);
 
         fRc = True;
-        for (i, aTest) in enumerate(aaTests):
+        for (i, aTest) in enumerate(atTests):
             oCurTest = aTest[0]; # tdTestFileReadWrite, use an index, later.
             oCurRes  = aTest[1]; # tdTestResult
             reporter.log('Testing #%d, sFile="%s", cbToReadWrite=%d, sOpenMode="%s", sDisposition="%s", offFile=%d ...'
@@ -3288,53 +3576,53 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         else:
             reporter.log('Warning: Test file for big copy not found -- some tests might fail');
 
-        aaTests = [];
-        aaTests.extend([
+        atTests = [];
+        atTests.extend([
             # Destination missing.
-            [ tdTestCopyTo(sSrc = ''), tdTestResult() ],
-            [ tdTestCopyTo(sSrc = '/placeholder', fFlags = [ 80 ] ), tdTestResult() ],
+            [ tdTestCopyTo(sSrc = ''), tdTestResultFailure() ],
+            [ tdTestCopyTo(sSrc = '/placeholder', fFlags = [ 80 ] ), tdTestResultFailure() ],
             # Source missing.
-            [ tdTestCopyTo(sDst = ''), tdTestResult() ],
-            [ tdTestCopyTo(sDst = '/placeholder', fFlags = [ 80 ] ), tdTestResult() ],
+            [ tdTestCopyTo(sDst = ''), tdTestResultFailure() ],
+            [ tdTestCopyTo(sDst = '/placeholder', fFlags = [ 80 ] ), tdTestResultFailure() ],
             # Testing DirectoryCopyFlag flags.
-            [ tdTestCopyTo(sSrc = sTestFileBig, sDst = sScratchGstInvalid, fFlags = [ 80 ] ), tdTestResult() ],
+            [ tdTestCopyTo(sSrc = sTestFileBig, sDst = sScratchGstInvalid, fFlags = [ 80 ] ), tdTestResultFailure() ],
             # Testing FileCopyFlag flags.
-            [ tdTestCopyTo(sSrc = sTestFileBig, sDst = sScratchGstInvalid, fFlags = [ 80 ] ), tdTestResult() ],
+            [ tdTestCopyTo(sSrc = sTestFileBig, sDst = sScratchGstInvalid, fFlags = [ 80 ] ), tdTestResultFailure() ],
             # Nothing to copy (source and/or destination is empty).
-            [ tdTestCopyTo(sSrc = 'z:\\'), tdTestResult() ],
-            [ tdTestCopyTo(sSrc = '\\\\uncrulez\\foo'), tdTestResult() ],
-            [ tdTestCopyTo(sSrc = 'non-exist', sDst = os.path.join(sScratchGst, 'non-exist.dll')), tdTestResult() ]
+            [ tdTestCopyTo(sSrc = 'z:\\'), tdTestResultFailure() ],
+            [ tdTestCopyTo(sSrc = '\\\\uncrulez\\foo'), tdTestResultFailure() ],
+            [ tdTestCopyTo(sSrc = 'non-exist', sDst = os.path.join(sScratchGst, 'non-exist.dll')), tdTestResultFailure() ]
         ]);
 
         #
         # Single file handling.
         #
         if self.oTstDrv.fpApiVer > 5.2:
-            aaTests.extend([
-                [ tdTestCopyTo(sSrc = sTestFileBig, sDst = sScratchGstInvalid), tdTestResult() ],
-                [ tdTestCopyTo(sSrc = sTestFileBig, sDst = sScratchGstNotExist), tdTestResult() ],
-                [ tdTestCopyTo(sSrc = sTestFileBig, sDst = sScratchGstNotExist), tdTestResult() ],
+            atTests.extend([
+                [ tdTestCopyTo(sSrc = sTestFileBig, sDst = sScratchGstInvalid), tdTestResultFailure() ],
+                [ tdTestCopyTo(sSrc = sTestFileBig, sDst = sScratchGstNotExist), tdTestResultFailure() ],
+                [ tdTestCopyTo(sSrc = sTestFileBig, sDst = sScratchGstNotExist), tdTestResultFailure() ],
                 [ tdTestCopyTo(sSrc = sTestFileBig, sDst = os.path.join(sScratchGstNotExist, 'renamedfile.dll')),
-                  tdTestResult() ],
+                  tdTestResultFailure() ],
                 [ tdTestCopyTo(sSrc = sTestFileBig, sDst = os.path.join(sScratchGst, 'HostGABig.dat')),
-                  tdTestResult(fRc = True) ],
+                  tdTestResultSuccess() ],
                 [ tdTestCopyTo(sSrc = sTestFileBig, sDst = os.path.join(sScratchGst, 'HostGABig.dat')),
-                  tdTestResult(fRc = True) ],
+                  tdTestResultSuccess() ],
                 # Note: Copying files into directories via Main is supported only in versions > 5.2.
                 # Destination is a directory.
                 [ tdTestCopyTo(sSrc = sTestFileBig, sDst = sScratchGst),
-                  tdTestResult(fRc = True) ],
+                  tdTestResultSuccess() ],
                 # Copy over file again into same directory (overwrite).
                 [ tdTestCopyTo(sSrc = sTestFileBig, sDst = sScratchGst),
-                  tdTestResult(fRc = True) ]
+                  tdTestResultSuccess() ]
             ]);
 
             if oTestVm.isWindows():
-                aaTests.extend([
+                atTests.extend([
                     # Copy the same file over to the guest, but this time store the file into the former
                     # file's ADS (Alternate Data Stream). Only works on Windows, of course.
                     [ tdTestCopyTo(sSrc = sTestFileBig, sDst = os.path.join(sScratchGst, 'HostGABig.dat:ADS-Test')),
-                      tdTestResult(fRc = True) ]
+                      tdTestResultSuccess() ]
                 ]);
 
             #
@@ -3344,7 +3632,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             if self.oTstDrv.fpApiVer > 6.0: # Copying directories via Main is supported only in versions > 5.2.
                 if self.oTstDrv.sHost == "win":
                     sSystemRoot = os.getenv('SystemRoot', 'C:\\Windows')
-                    aaTests.extend([
+                    atTests.extend([
                         # Copying directories with contain files we don't have read access to.
                         ## @todo r=klaus disabled, because this can fill up the guest disk, making other tests fail,
                         ## additionally it's not really clear if this fails reliably on all Windows versions, even
@@ -3355,11 +3643,11 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                         # Copying directories with regular files.
                         [ tdTestCopyTo(sSrc = os.path.join(sSystemRoot, 'Help'),
                                        sDst = sScratchGst, fFlags = [ vboxcon.DirectoryCopyFlag_CopyIntoExisting ]),
-                          tdTestResult(fRc = True) ]
+                          tdTestResultSuccess() ]
                         ]);
 
         fRc = True;
-        for (i, aTest) in enumerate(aaTests):
+        for (i, aTest) in enumerate(atTests):
             oCurTest = aTest[0]; # tdTestExec, use an index, later.
             oCurRes  = aTest[1]; # tdTestResult
             reporter.log('Testing #%d, sSrc=%s, sDst=%s, fFlags=%s ...' % \
@@ -3437,22 +3725,22 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 return (False, oTxsSession);
         reporter.log('Scratch path is: %s' % (sScratchHst,));
 
-        aaTests = [];
-        aaTests.extend([
+        atTests = [];
+        atTests.extend([
             # Destination missing.
-            [ tdTestCopyFrom(sSrc = ''), tdTestResult() ],
-            [ tdTestCopyFrom(sSrc = 'Something', fFlags = [ 80 ] ), tdTestResult() ],
+            [ tdTestCopyFrom(sSrc = ''), tdTestResultFailure() ],
+            [ tdTestCopyFrom(sSrc = 'Something', fFlags = [ 80 ] ), tdTestResultFailure() ],
             # Source missing.
-            [ tdTestCopyFrom(sDst = ''), tdTestResult() ],
-            [ tdTestCopyFrom(sDst = 'Something', fFlags = [ 80 ] ), tdTestResult() ],
+            [ tdTestCopyFrom(sDst = ''), tdTestResultFailure() ],
+            [ tdTestCopyFrom(sDst = 'Something', fFlags = [ 80 ] ), tdTestResultFailure() ],
             # Testing DirectoryCopyFlag flags.
-            [ tdTestCopyFrom(sSrc = sSrcDirExisting, sDst = sScratchHstInvalid, fFlags = [ 80 ] ), tdTestResult() ],
+            [ tdTestCopyFrom(sSrc = sSrcDirExisting, sDst = sScratchHstInvalid, fFlags = [ 80 ] ), tdTestResultFailure() ],
             # Testing FileCopyFlag flags.
-            [ tdTestCopyFrom(sSrc = sSrcFileExisting, sDst = sScratchHstInvalid, fFlags = [ 80 ] ), tdTestResult() ],
+            [ tdTestCopyFrom(sSrc = sSrcFileExisting, sDst = sScratchHstInvalid, fFlags = [ 80 ] ), tdTestResultFailure() ],
             # Nothing to copy (sDst is empty / unreachable).
-            [ tdTestCopyFrom(sSrc = 'z:\\'), tdTestResult() ],
-            [ tdTestCopyFrom(sSrc = '\\\\uncrulez\\foo'), tdTestResult() ],
-            [ tdTestCopyFrom(sSrc = 'non-exist', sDst = os.path.join(sScratchHst, 'non-exist')), tdTestResult() ]
+            [ tdTestCopyFrom(sSrc = 'z:\\'), tdTestResultFailure() ],
+            [ tdTestCopyFrom(sSrc = '\\\\uncrulez\\foo'), tdTestResultFailure() ],
+            [ tdTestCopyFrom(sSrc = 'non-exist', sDst = os.path.join(sScratchHst, 'non-exist')), tdTestResultFailure() ]
         ]);
 
         #
@@ -3460,28 +3748,28 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         #
         if self.oTstDrv.fpApiVer > 5.2:
             reporter.log(("Single file handling"));
-            aaTests.extend([
+            atTests.extend([
                 # Copying single files.
-                [ tdTestCopyFrom(sSrc = sSrcFileExisting, sDst = sScratchHstInvalid), tdTestResult() ],
+                [ tdTestCopyFrom(sSrc = sSrcFileExisting, sDst = sScratchHstInvalid), tdTestResultFailure() ],
                 [ tdTestCopyFrom(sSrc = sSrcFileExisting, sDst = os.path.join(sScratchHstInvalid, 'tstCopyFrom-renamedfile')),
-                  tdTestResult() ],
+                  tdTestResultFailure() ],
                 # Copy over file using a different destination name.
                 [ tdTestCopyFrom(sSrc = sSrcFileExisting, sDst = os.path.join(sScratchHst, 'tstCopyFrom-renamedfile')),
-                  tdTestResult(fRc = True) ],
+                  tdTestResultSuccess() ],
                 # Copy over same file (and overwrite existing one).
                 [ tdTestCopyFrom(sSrc = sSrcFileExisting, sDst = os.path.join(sScratchHst, 'tstCopyFrom-renamedfile')),
-                  tdTestResult(fRc = True) ],
+                  tdTestResultSuccess() ],
                 # Note: Copying files into directories via Main is supported only in versions > 5.2.
                 # Destination is a directory with a trailing slash (should work).
                 # See "cp" syntax.
                 [ tdTestCopyFrom(sSrc = sSrcFileExisting, sDst = sScratchHst + "/"),
-                  tdTestResult(fRc = True) ],
+                  tdTestResultSuccess() ],
                 # Destination is a directory (without a trailing slash, should also work).
                 # See "cp" syntax.
                 [ tdTestCopyFrom(sSrc = sSrcFileExisting, sDst = sScratchHst),
-                  tdTestResult(fRc = True) ],
+                  tdTestResultSuccess() ],
                 # Destination is a non-existing directory.
-                [ tdTestCopyFrom(sSrc = sSrcFileExisting, sDst = sScratchHstNotExist), tdTestResult() ]
+                [ tdTestCopyFrom(sSrc = sSrcFileExisting, sDst = sScratchHstNotExist), tdTestResultFailure() ]
             ]);
 
             #
@@ -3489,32 +3777,32 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             #
             if self.oTstDrv.fpApiVer > 5.2: # Copying directories via Main is supported only in versions > 5.2.
                 reporter.log(("Directory handling"));
-                aaTests.extend([
+                atTests.extend([
                     # Copying entire directories (destination is "<sScratchHst>\Web").
                     [ tdTestCopyFrom(sSrc = sSrcDirExisting, sDst = sScratchHst),
-                      tdTestResult(fRc = True) ],
+                      tdTestResultSuccess() ],
                     # Repeat -- this time it should fail, as the destination directory already exists (and
                     # DirectoryCopyFlag_CopyIntoExisting is not specified).
-                    [ tdTestCopyFrom(sSrc = sSrcDirExisting, sDst = sScratchHst), tdTestResult() ],
+                    [ tdTestCopyFrom(sSrc = sSrcDirExisting, sDst = sScratchHst), tdTestResultFailure() ],
                     # Next try with the DirectoryCopyFlag_CopyIntoExisting flag being set.
                     [ tdTestCopyFrom(sSrc = sSrcDirExisting, sDst = sScratchHst,
                                      fFlags = [ vboxcon.DirectoryCopyFlag_CopyIntoExisting ] ),
-                      tdTestResult(fRc = True) ],
+                      tdTestResultSuccess() ],
                     # Ditto, with trailing slash.
                     [ tdTestCopyFrom(sSrc = sSrcDirExisting,
                                      sDst = sScratchHst + "/", fFlags = [ vboxcon.DirectoryCopyFlag_CopyIntoExisting ]),
-                      tdTestResult(fRc = True) ],
+                      tdTestResultSuccess() ],
                     # Copying contents of directories into a non-existing directory chain on the host which fail.
                     [ tdTestCopyFrom(sSrc = sSrcDirExisting + sPathSep, sDst = sScratchHstNotExistChain,
-                                     fFlags = [ vboxcon.DirectoryCopyFlag_CopyIntoExisting ]), tdTestResult() ],
+                                     fFlags = [ vboxcon.DirectoryCopyFlag_CopyIntoExisting ]), tdTestResultFailure() ],
                     # Copying contents of directories into a non-existing directory on the host, which should succeed.
                     [ tdTestCopyFrom(sSrc = sSrcDirExisting + sPathSep, sDst = sScratchHstNotExist,
                                      fFlags = [ vboxcon.DirectoryCopyFlag_CopyIntoExisting ] ),
-                      tdTestResult(fRc = True) ]
+                      tdTestResultSuccess() ]
                 ]);
 
         fRc = True;
-        for (i, aTest) in enumerate(aaTests):
+        for (i, aTest) in enumerate(atTests):
             oCurTest = aTest[0]; # tdTestExec, use an index, later.
             oCurRes  = aTest[1]; # tdTestResult
             reporter.log('Testing #%d, sSrc="%s", sDst="%s", fFlags="%s" ...'
@@ -3557,7 +3845,19 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
     def testGuestCtrlUpdateAdditions(self, oSession, oTxsSession, oTestVm): # pylint: disable=too-many-locals
         """
         Tests updating the Guest Additions inside the guest.
+
         """
+
+        # Skip test for updating Guest Additions if we run on a too old (Windows) guest.
+        ##
+        ## @todo make it work everywhere!
+        ##
+        if oTestVm.sKind in ('WindowsNT4', 'Windows2000', 'WindowsXP', 'Windows2003'):
+            reporter.log("Skipping updating GAs on old windows vm (sKind=%s)" % (oTestVm.sKind,));
+            return (None, oTxsSession);
+        if oTestVm.isOS2():
+            reporter.log("Skipping updating GAs on OS/2 guest");
+            return (None, oTxsSession);
 
         # Some stupid trickery to guess the location of the iso.
         sVBoxValidationKitISO = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../VBoxValidationKit.iso'));
@@ -3588,40 +3888,40 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 return (False, oTxsSession);
         reporter.log('Scratch path is: %s' % (sScratch,));
 
-        aaTests = [];
+        atTests = [];
         if oTestVm.isWindows():
-            aaTests.extend([
+            atTests.extend([
                 # Source is missing.
-                [ tdTestUpdateAdditions(sSrc = ''), tdTestResult() ],
+                [ tdTestUpdateAdditions(sSrc = ''), tdTestResultFailure() ],
 
                 # Wrong fFlags.
                 [ tdTestUpdateAdditions(sSrc = self.oTstDrv.getGuestAdditionsIso(),
-                                        fFlags = [ 1234 ]), tdTestResult() ],
+                                        fFlags = [ 1234 ]), tdTestResultFailure() ],
 
                 # Non-existing .ISO.
-                [ tdTestUpdateAdditions(sSrc = "non-existing.iso"), tdTestResult() ],
+                [ tdTestUpdateAdditions(sSrc = "non-existing.iso"), tdTestResultFailure() ],
 
                 # Wrong .ISO.
-                [ tdTestUpdateAdditions(sSrc = sVBoxValidationKitISO), tdTestResult() ],
+                [ tdTestUpdateAdditions(sSrc = sVBoxValidationKitISO), tdTestResultFailure() ],
 
                 # The real thing.
                 [ tdTestUpdateAdditions(sSrc = self.oTstDrv.getGuestAdditionsIso()),
-                  tdTestResult(fRc = True) ],
+                  tdTestResultSuccess() ],
                 # Test the (optional) installer arguments. This will extract the
                 # installer into our guest's scratch directory.
                 [ tdTestUpdateAdditions(sSrc = self.oTstDrv.getGuestAdditionsIso(),
                                         asArgs = [ '/extract', '/D=' + sScratch ]),
-                  tdTestResult(fRc = True) ]
+                  tdTestResultSuccess() ]
                 # Some debg ISO. Only enable locally.
                 #[ tdTestUpdateAdditions(
                 #                      sSrc = "V:\\Downloads\\VBoxGuestAdditions-r80354.iso"),
-                #  tdTestResult(fRc = True) ]
+                #  tdTestResultSuccess() ]
             ]);
         else:
             reporter.log('No OS-specific tests for non-Windows yet!');
 
         fRc = True;
-        for (i, aTest) in enumerate(aaTests):
+        for (i, aTest) in enumerate(atTests):
             oCurTest = aTest[0]; # tdTestExec, use an index, later.
             oCurRes  = aTest[1]; # tdTestResult
             reporter.log('Testing #%d, sSrc="%s", fFlags="%s" ...' % \

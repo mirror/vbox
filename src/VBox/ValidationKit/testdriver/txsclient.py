@@ -1636,7 +1636,7 @@ class Session(TdTaskBase):
 
         The task returns True on success, False on failure (logged).
         """
-        return self.startTask(cMsTimeout, fIgnoreErrors, "unpackFile", self.taskUnpackFile, \
+        return self.startTask(cMsTimeout, fIgnoreErrors, "unpackFile", self.taskUnpackFile,
                               (sRemoteFile, sRemoteDir));
 
     def syncUnpackFile(self, sRemoteFile, sRemoteDir, cMsTimeout = 30000, fIgnoreErrors = False):

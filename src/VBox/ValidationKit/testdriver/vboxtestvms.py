@@ -566,6 +566,28 @@ class BaseTestVm(object):
         """
         return self.sKind; #self.aInfo[g_iGuestOsType];
 
+    def getGuestArch(self):
+        """ Same as util.getHostArch. """
+        return 'amd64' if self.sKind.find('_64') >= 0 else 'x86';
+
+    def getGuestOs(self):
+        """ Same as util.getHostOs. """
+        if self.isWindows():    return 'win';
+        if self.isOS2():        return 'os2';
+        if self.isLinux():      return 'linux';
+        reporter.error('getGuestOs does not what to return!');
+        raise Exception();
+
+    def getGuestOsDotArch(self):
+        """ Same as util.getHostOsDotArch. """
+        return self.getGuestOs() + '.' + self.getGuestArch();
+
+    def getGuestExeSuff(self):
+        """ The executable image suffix for the guest. """
+        if self.isWindows() or self.isOS2():
+            return '.exe';
+        return '';
+
     def isWindows(self):
         """ Checks if it's a Windows VM. """
         return self.sGuestOsType == g_ksGuestOsTypeWindows;
@@ -1229,6 +1251,28 @@ class TestVm(object):
         """ Hook into getReconfiguredVm() for children. """
         _ = oTestDrv; _ = oVM; _ = oSession;
         return True;
+
+    def getGuestArch(self):
+        """ Same as util.getHostArch. """
+        return 'amd64' if self.sKind.find('_64') >= 0 else 'x86';
+
+    def getGuestOs(self):
+        """ Same as util.getHostOs. """
+        if self.isWindows():    return 'win';
+        if self.isOS2():        return 'os2';
+        if self.isLinux():      return 'linux';
+        reporter.error('getGuestOs does not what to return!');
+        raise Exception();
+
+    def getGuestExeSuff(self):
+        """ The executable image suffix for the guest. """
+        if self.isWindows() or self.isOS2():
+            return '.exe';
+        return '';
+
+    def getGuestOsDotArch(self):
+        """ Same as util.getHostOsDotArch."""
+        return self.getGuestOs() + '.' + self.getGuestArch();
 
     def isWindows(self):
         """ Checks if it's a Windows VM. """
