@@ -922,47 +922,332 @@ class tdTestResultSession(tdTestResult):
         tdTestResult.__init__(self, fRc = fRc);
         self.cNumSessions = cNumSessions;
 
-class GstFsObj(object):
-    """ A file system object we created in the guest for test purposes. """
-    def __init__(self, oParent, sPath):
-        self.oParent   = oParent    # type: GstFsDir
-        self.sPath     = sPath      # type: str
-        self.sName     = sPath      # type: str
-        if oParent:
-            assert sPath.startswith(oParent.sPath);
-            self.sName = sPath[len(oParent.sPath) + 1:];
-            # Add to parent.
-            oParent.aoChildren.append(self);
-            oParent.dChildrenUpper[self.sName.upper()] = self;
 
-class GstFsFile(GstFsObj):
-    """ A file object in the guest. """
-    def __init__(self, oParent, sPath, abContent):
-        GstFsObj.__init__(self, oParent, sPath);
-        self.abContent = abContent          # type: bytearray
-        self.cbContent = len(abContent);
-        self.off       = 0;
+class TestFileSet(object):
+    """
+    Set of files and directories for use in a test.
+    """
 
-    def read(self, cbToRead):
-        assert self.off <= self.cbContent;
-        cbLeft = self.cbContent - self.off;
-        if cbLeft < cbToRead:
-            cbToRead = cbLeft;
-        abRet = self.abContent[self.off:(self.off + cbToRead)];
-        assert len(abRet) == cbToRead;
-        self.off += cbToRead;
-        return abRet;
+    class GstFsObj(object):
+        """ A file system object we created in the guest for test purposes. """
+        def __init__(self, oParent, sPath):
+            self.oParent   = oParent    # type: GstDir
+            self.sPath     = sPath      # type: str
+            self.sName     = sPath      # type: str
+            if oParent:
+                assert sPath.startswith(oParent.sPath);
+                self.sName = sPath[len(oParent.sPath) + 1:];
+                # Add to parent.
+                oParent.aoChildren.append(self);
+                oParent.dChildrenUpper[self.sName.upper()] = self;
 
-class GstFsDir(GstFsObj):
-    """ A file object in the guest. """
-    def __init__(self, oParent, sPath):
-        GstFsObj.__init__(self, oParent, sPath);
-        self.aoChildren     = []  # type: list(GsFsObj)
-        self.dChildrenUpper = {}  # type: dict(str,GsFsObj)
+    class GstFile(GstFsObj):
+        """ A file object in the guest. """
+        def __init__(self, oParent, sPath, abContent):
+            TestFileSet.GstFsObj.__init__(self, oParent, sPath);
+            self.abContent = abContent          # type: bytearray
+            self.cbContent = len(abContent);
+            self.off       = 0;
 
-    def contains(self, sName):
-        """ Checks if the directory contains the given name. """
-        return sName.upper() in self.dChildrenUpper
+        def read(self, cbToRead):
+            assert self.off <= self.cbContent;
+            cbLeft = self.cbContent - self.off;
+            if cbLeft < cbToRead:
+                cbToRead = cbLeft;
+            abRet = self.abContent[self.off:(self.off + cbToRead)];
+            assert len(abRet) == cbToRead;
+            self.off += cbToRead;
+            return abRet;
+
+    class GstDir(GstFsObj):
+        """ A file object in the guest. """
+        def __init__(self, oParent, sPath):
+            TestFileSet.GstFsObj.__init__(self, oParent, sPath);
+            self.aoChildren     = []  # type: list(GsFsObj)
+            self.dChildrenUpper = {}  # type: dict(str,GsFsObj)
+
+        def contains(self, sName):
+            """ Checks if the directory contains the given name. """
+            return sName.upper() in self.dChildrenUpper
+
+
+    ksReservedWinOS2         = '/\\"*:<>?|\t\v\n\r\f\a\b';
+    ksReservedUnix           = '/';
+    ksReservedTrailingWinOS2 = ' .'; # The space is tar's fault. Must be first.
+    ksReservedTrailingUnix   = ' ';
+
+    def __init__(self, oTestVm, sBasePath, sSubDir, # pylint: disable=too-many-arguments
+                 oRngFileSizes = xrange(0, 16384),
+                 oRngManyFiles = xrange(128, 512),
+                 oRngTreeFiles = xrange(128, 384),
+                 oRngTreeDepth = xrange(92, 256),
+                 oRngTreeDirs  = xrange(2, 16),
+                 cchMaxPath    = 230,
+                 cchMaxName    = 230):
+        ## @name Parameters
+        ## @{
+        self.oTestVm       = oTestVm;
+        self.sBasePath     = sBasePath;
+        self.sSubDir       = sSubDir;
+        self.oRngFileSizes = oRngFileSizes;
+        self.oRngManyFiles = oRngManyFiles;
+        self.oRngTreeFiles = oRngTreeFiles;
+        self.oRngTreeDepth = oRngTreeDepth;
+        self.oRngTreeDirs  = oRngTreeDirs;
+        self.cchMaxPath    = cchMaxPath;
+        self.cchMaxName    = cchMaxName
+        ## @}
+
+        ## @name Charset stuff
+        ## @todo allow more chars for unix hosts + guests.
+        ## @{
+        ## The filename charset.
+        self.sFileCharset             = string.printable;
+        ## The filename charset common to host and guest.
+        self.sFileCharsetCommon       = string.printable;
+        ## Set of characters that should not trail a guest filename.
+        self.sReservedTrailing        = self.ksReservedTrailingWinOS2;
+        ## Set of characters that should not trail a host or guest filename.
+        self.sReservedTrailingCommon  = self.ksReservedTrailingWinOS2;
+        if oTestVm.isWindows() or oTestVm.isOS2():
+            for ch in self.ksReservedWinOS2:
+                self.sFileCharset     = self.sFileCharset.replace(ch, '');
+        else:
+            self.sReservedTrailing    = self.ksReservedTrailingUnix;
+            for ch in self.ksReservedUnix:
+                self.sFileCharset     = self.sFileCharset.replace(ch, '');
+        self.sFileCharset            += '   ...';
+
+        for ch in self.ksReservedWinOS2:
+            self.sFileCharsetCommon   = self.sFileCharset.replace(ch, '');
+        self.sFileCharsetCommon      += '   ...';
+        ## @}
+
+        ## The root directory.
+        self.oRoot      = None      # type: GstDir;
+        ## An empty directory (under root).
+        self.oEmptyDir  = None      # type: GstDir;
+
+        ## A directory with a lot of files in it.
+        self.oManyDir   = None      # type: GstDir;
+
+        ## A directory with a mixed tree structure under it.
+        self.oTreeDir   = None      # type: GstDir;
+        ## Number of files in oTreeDir.
+        self.cTreeFiles = 0;
+        ## Number of directories under oTreeDir.
+        self.cTreeDirs  = 0;
+
+        ## All directories in creation order.
+        self.aoDirs     = []        # type: list(GstDir);
+        ## All files in creation order.
+        self.aoFiles    = []        # type: list(GstFile);
+        ## Path to object lookup.
+        self.dPaths     = {}        # type: dict(str, GstFsObj);
+
+        #
+        # Do the creating.
+        #
+        self.uSeed   = utils.timestampMilli();
+        self.oRandom = random.Random();
+        self.oRandom.seed(self.uSeed);
+        reporter.log('prepareGuestForTesting: random seed %s' % (self.uSeed,));
+
+        self.__createTestStuff();
+
+    def __createTestDir(self, oParent, sDir):
+        """
+        Creates a test directory.
+        """
+        oDir = TestFileSet.GstDir(oParent, sDir);
+        self.aoDirs.append(oDir);
+        self.dPaths[sDir] = oDir;
+        return oDir;
+
+    def __createTestFile(self, oParent, sFile):
+        """
+        Creates a test file with random size up to cbMaxContent and random content.
+        """
+        cbFile = self.oRandom.choice(self.oRngFileSizes);
+        abContent = bytearray(self.oRandom.getrandbits(8) for _ in xrange(cbFile));
+
+        oFile = TestFileSet.GstFile(oParent, sFile, abContent);
+        self.aoFiles.append(oFile);
+        self.dPaths[sFile] = oFile;
+        return oFile;
+
+    def __createFilename(self, oParent, sCharset, sReservedTrailing):
+        """
+        Creates a filename contains random characters from sCharset and together
+        with oParent.sPath doesn't exceed 230 chars in length.
+        """
+        cchMaxName = self.cchMaxPath - len(oParent.sPath) - 1;
+        if cchMaxName > self.cchMaxName:
+            cchMaxName = self.cchMaxName;
+        if cchMaxName <= 1:
+            cchMaxName = 2;
+
+        while True:
+            cchName = self.oRandom.randrange(1, cchMaxName);
+            sName = ''.join(self.oRandom.choice(sCharset) for _ in xrange(cchName));
+            if oParent is None or not oParent.contains(sName):
+                if sName[-1] not in sReservedTrailing:
+                    if sName not in ('.', '..',):
+                        return sName;
+        return ''; # never reached, but makes pylint happy.
+
+    def __createTestStuff(self):
+        """
+        Create a random file set that we can work on in the tests.
+        Returns True/False.
+        """
+
+        # Create the root test dir.
+        sRoot = self.oTestVm.pathJoinEx(self.sBasePath, self.sSubDir);
+        self.oRoot     = self.__createTestDir(None, sRoot);
+        self.oEmptyDir = self.__createTestDir(self.oRoot, self.oTestVm.pathJoinEx(sRoot, 'empty'));
+
+        # Create a directory with about files in it using the guest specific charset:
+        oDir = self.__createTestDir(self.oRoot, self.oTestVm.pathJoinEx(sRoot, 'many'));
+        self.oManyDir = oDir;
+        cManyFiles = self.oRandom.choice(self.oRngManyFiles);
+        for _ in xrange(cManyFiles):
+            sName = self.__createFilename(oDir, self.sFileCharset, self.sReservedTrailing);
+            self.__createTestFile(oDir, self.oTestVm.pathJoinEx(oDir.sPath, sName));
+
+        # Generate a tree of files and dirs. Portable character set.
+        oDir = self.__createTestDir(self.oRoot, self.oTestVm.pathJoinEx(sRoot, 'tree'));
+        uMaxDepth       = self.oRandom.choice(self.oRngTreeDepth);
+        cMaxFiles       = self.oRandom.choice(self.oRngTreeFiles);
+        cMaxDirs        = self.oRandom.choice(self.oRngTreeDirs);
+        self.oTreeDir   = oDir;
+        self.cTreeFiles = 0;
+        self.cTreeDirs  = 0;
+        uDepth          = 0;
+        while self.cTreeFiles < cMaxFiles and self.cTreeDirs < cMaxDirs:
+            iAction = self.oRandom.randrange(0, 2+1);
+            # 0: Add a file:
+            if iAction == 0 and self.cTreeFiles < cMaxFiles and len(oDir.sPath) < 230 - 2:
+                sName = self.__createFilename(oDir, self.sFileCharsetCommon, self.sReservedTrailingCommon);
+                self.__createTestFile(oDir, self.oTestVm.pathJoinEx(oDir.sPath, sName));
+                self.cTreeFiles += 1;
+            # 1: Add a subdirector and descend into it (trailing space is okay here):
+            elif iAction == 1 and self.cTreeDirs < cMaxDirs and uDepth < uMaxDepth and len(oDir.sPath) < 220:
+                sName = self.__createFilename(oDir, self.sFileCharsetCommon, self.sReservedTrailingCommon[1:]);
+                oDir  = self.__createTestDir(oDir, self.oTestVm.pathJoinEx(oDir.sPath, sName));
+                self.cTreeDirs  += 1;
+                uDepth += 1;
+            # 2: Ascend to parent dir:
+            elif iAction == 2 and uDepth > 0:
+                oDir = oDir.oParent;
+                uDepth -= 1;
+
+        return True;
+
+    def createTarball(self, sTarFileHst):
+        """
+        Creates a tarball on the host.
+        Returns success indicator.
+        """
+        reporter.log('Creating tarball "%s" with test files for the guest...' % (sTarFileHst,));
+
+        chOtherSlash = '\\' if self.oTestVm.isWindows() or self.oTestVm.isOS2() else '/';
+        cchSkip      = len(self.sBasePath) + 1;
+
+        # Open the tarball:
+        try:
+            oTarFile = tarfile.open(sTarFileHst, 'w:gz');
+        except:
+            return reporter.errorXcpt('Failed to open new tar file: %s' % (sTarFileHst,));
+
+        # Directories:
+        for oDir in self.aoDirs:
+            oTarInfo = tarfile.TarInfo(oDir.sPath[cchSkip:].replace(chOtherSlash, '/') + '/');
+            oTarInfo.mode = 0o777;
+            oTarInfo.type = tarfile.DIRTYPE;
+            try:
+                oTarFile.addfile(oTarInfo);
+            except:
+                return reporter.errorXcpt('Failed adding directory tarfile: %s' % (oDir.sPath,));
+
+        # Files:
+        for oFile in self.aoFiles:
+            oTarInfo = tarfile.TarInfo(oFile.sPath[cchSkip:].replace(chOtherSlash, '/'));
+            oTarInfo.size = len(oFile.abContent);
+            oFile.off = 0;
+            try:
+                oTarFile.addfile(oTarInfo, oFile);
+            except:
+                return reporter.errorXcpt('Failed adding directory tarfile: %s' % (oFile.sPath,));
+
+        # Complete the tarball.
+        try:
+            oTarFile.close();
+        except:
+            return reporter.errorXcpt('Error closing new tar file: %s' % (sTarFileHst,));
+        return True;
+
+    def __uploadFallback(self, oTxsSession, sTarFileGst, oTstDrv):
+        """
+        Fallback upload method.
+        """
+
+        ## Directories:
+        #for oDir in self.aoDirs:
+        #    if oTxsSession.syncMkDirPath(oDir.sPath, 0o777) is not True:
+        #        return reporter.error('Failed to create directory "%s"!' % (oDir.sPath,));
+        #
+        ## Files:
+        #for oFile in self.aoFiles:
+        #    if oTxsSession.syncUploadString(oFile.abContent, oFile.sPath) is not True:
+        #        return reporter.error('Failed to create file "%s" with %s content bytes!' % (oFile.sPath, oFile.cbContent));
+
+        sVtsTarExe = 'vts_tar' + self.oTestVm.getGuestExeSuff();
+        sVtsTarHst = os.path.join(oTstDrv.sVBoxValidationKit, self.oTestVm.getGuestOs(),
+                                  self.oTestVm.getGuestArch(), sVtsTarExe);
+        sVtsTarGst = self.oTestVm.pathJoinEx(self.sBasePath, sVtsTarExe);
+
+        if oTxsSession.syncUploadFile(sVtsTarHst, sVtsTarGst) is not True:
+            return reporter.error('Failed to upload "%s" to the guest as "%s"!' % (sVtsTarHst, sVtsTarGst,));
+
+        fRc = oTxsSession.syncExec(sVtsTarGst, [sVtsTarGst, '-xzf', sTarFileGst, '-C', self.sBasePath,], fWithTestPipe = False);
+        if fRc is not True:
+            return reporter.error('vts_tar failed!');
+        return True;
+
+    def upload(self, oTxsSession, oTstDrv):
+        """
+        Uploads the files into the guest via the given TXS session.
+
+        Returns True / False.
+        """
+
+        #
+        # Create a tarball.
+        #
+        sTarFileHst = os.path.join(oTstDrv.sScratchPath, 'tdAddGuestCtrl-1-Stuff.tar.gz');
+        sTarFileGst = self.oTestVm.pathJoinEx(self.sBasePath, 'tdAddGuestCtrl-1-Stuff.tar.gz');
+        if self.createTarball(sTarFileHst) is not True:
+            return False;
+
+        #
+        # Upload it.
+        #
+        reporter.log('Uploading tarball "%s" to the guest as "%s"...' % (sTarFileHst, sTarFileGst));
+        if oTxsSession.syncUploadFile(sTarFileHst, sTarFileGst) is not True:
+            return reporter.error('Failed upload tarball "%s" as "%s"!' % (sTarFileHst, sTarFileGst,));
+
+        #
+        # Try unpack it.
+        #
+        reporter.log('Unpacking "%s" into "%s"...' % (sTarFileGst, self.sBasePath));
+        if oTxsSession.syncUnpackFile(sTarFileGst, self.sBasePath, fIgnoreErrors = True) is not True:
+            reporter.log('Failed to expand tarball "%s" into "%s", falling back on individual directory and file creation...'
+                         % (sTarFileGst, self.sBasePath,));
+            if self.__uploadFallback(oTxsSession, sTarFileGst, oTstDrv) is not True:
+                return False;
+        reporter.log('Successfully placed test files and directories in the VM.');
+        return True;
 
 
 class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
@@ -985,18 +1270,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         ];
         self.asTests        = self.asTestsDef;
         self.asRsrcs        = ['5.3/guestctrl/50mb_rnd.dat', ];
-
-        # Directories and files placed in the guest temp area by prepareGuestForTesting.
-        self.oTestRoot      = None      # type: GstFsDir;  ##< The root directory.
-        self.oTestEmptyDir  = None      # type: GstFsDir;  ##< Empty directory.
-        self.oTestManyDir   = None      # type: GstFsDir;  ##< A directory with a few files in it (around 100)
-        self.oTestTreeDir   = None      # type: GstFsDir;  ##< A directory with a mixed tree structure under it.
-        self.cTestTreeFiles = 0;                           ##< Number of files in oTestTreeDir.
-        self.cTestTreeDirs  = 0;                           ##< Number of directories under oTestTreeDir.
-
-        self.aoTestDirs     = []        # type: list(GstFsDir);
-        self.aoTestFiles    = []        # type: list(GstFsFile);
-        self.dTestPaths     = {}        # type: dict(str, GstFsFile);
+        self.oTestFiles     = None  # type: TestFileSet
 
     def parseOption(self, asArgs, iArg):                                        # pylint: disable=too-many-branches,too-many-statements
         if asArgs[iArg] == '--add-guest-ctrl-tests':
@@ -1141,231 +1415,6 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
     # Guest test files.
     #
 
-    ## @todo separate this out into a separate class.  This one is way to big and this may be handy for to reuse.
-
-    def __createTestDir(self, oParent, sDir):
-        """
-        Creates a test directory.
-        """
-        oDir = GstFsDir(oParent, sDir);
-        self.aoTestDirs.append(oDir);
-        self.dTestPaths[sDir] = oDir;
-        return oDir;
-
-    def __createTestFile(self, oParent, sFile, oRandom, cbMaxContent):
-        """
-        Creates a test file with random size up to cbMaxContent and random content.
-        """
-        cbFile    = oRandom.randrange(0, cbMaxContent);
-        abContent = bytearray(oRandom.getrandbits(8) for _ in xrange(cbFile));
-
-        oFile = GstFsFile(oParent, sFile, abContent);
-        self.aoTestFiles.append(oFile);
-        self.dTestPaths[sFile] = oFile;
-        return oFile;
-
-    @staticmethod
-    def __createFilename(oParent, oRandom, sCharset, sReservedTrailing):
-        """
-        Creates a filename contains random characters from sCharset and together
-        with oParent.sPath doesn't exceed 230 chars in length.
-        """
-        while True:
-            cchName = oRandom.randrange(1, 230 - len(oParent.sPath));
-            sName = ''.join(oRandom.choice(sCharset) for _ in xrange(cchName));
-            if oParent is None or not oParent.contains(sName):
-                if sName[-1] not in sReservedTrailing:
-                    if sName not in ('.', '..',):
-                        return sName;
-
-    def __createTestStuff(self, oTestVm):
-        """
-        Create a random file set that we can work on in the tests.
-        Returns True/False.
-        """
-
-        # Zap anything left over from a previous run.
-        for oFile in self.aoTestDirs:
-            oFile.oParent   = None;
-        for oFile in self.aoTestFiles:
-            oFile.oParent   = None;
-            oFile.abContent = None;
-        self.oTestRoot      = None;
-        self.oTestEmptyDir  = None;
-        self.oTestManyDir   = None;
-        self.oTestTreeDir   = None;
-        self.cTestTreeFiles = 0;
-        self.cTestTreeDirs  = 0;
-        self.aoTestDirs     = [];
-        self.aoTestFiles    = [];
-        self.dTestPaths     = {};
-
-        # See random.
-        uSeed = utils.timestampMilli();
-        reporter.log('prepareGuestForTesting: random seed %s' % (uSeed,));
-        oRandom = random.Random();
-        oRandom.seed(uSeed);
-
-        # filename characters:
-        ksReservedWinOS2         = '/\\"*:<>?|\t\v\n\r\f\a\b';
-        ksReservedUnix           = '/';
-        ksReservedTrailingWinOS2 = ' .'; # The space is tar's fault. Must be first.
-        ksReservedTrailingUnix   = ' ';
-        sFileCharset             = string.printable;
-        sFileCharsetCommon       = string.printable;
-        sReservedTrailingCommon  = ksReservedTrailingWinOS2;
-
-        if oTestVm.isWindows() or oTestVm.isOS2():
-            sReservedTrailing    = ksReservedTrailingWinOS2;
-            for ch in ksReservedWinOS2:
-                sFileCharset = sFileCharset.replace(ch, '');
-        else:
-            sReservedTrailing    = ksReservedTrailingUnix;
-            for ch in ksReservedUnix:
-                sFileCharset = sFileCharset.replace(ch, '');
-        sFileCharset += '   ...';
-
-        for ch in ksReservedWinOS2:
-            sFileCharsetCommon = sFileCharset.replace(ch, '');
-        sFileCharsetCommon += '   ...';
-
-        # Create the root test dir.
-        sRoot = oTestVm.pathJoinEx(self.getGuestTempDir(oTestVm), 'addgst-1');
-        self.oTestRoot = self.__createTestDir(None, sRoot);
-        self.oTestEmptyDir = self.__createTestDir(self.oTestRoot, oTestVm.pathJoinEx(sRoot, 'empty'));
-
-        # Create a directory with about files in it using the guest specific charset:
-        oDir = self.__createTestDir(self.oTestRoot, oTestVm.pathJoinEx(sRoot, 'many'));
-        self.oTestManyDir = oDir;
-        cManyFiles = oRandom.randrange(92, 128);
-        for _ in xrange(cManyFiles):
-            sName = self.__createFilename(oDir, oRandom, sFileCharset, sReservedTrailing);
-            self.__createTestFile(oDir, oTestVm.pathJoinEx(oDir.sPath, sName), oRandom, 16384);
-
-        # Generate a tree of files and dirs. 2-16 levels deep. Portable character set.
-        cMaxFiles   = oRandom.randrange(128, 384);
-        cMaxDirs    = oRandom.randrange(92, 256);
-        uMaxDepth   = oRandom.randrange(2, 16);
-        oDir        = self.__createTestDir(self.oTestRoot, oTestVm.pathJoinEx(sRoot, 'tree'));
-        self.oTestTreeDir   = oDir;
-        self.cTestTreeFiles = 0;
-        self.cTestTreeDirs  = 0;
-        uDepth              = 0;
-        while self.cTestTreeFiles < cMaxFiles and self.cTestTreeDirs < cMaxDirs:
-            iAction = oRandom.randrange(0, 2+1);
-            # 0: Add a file:
-            if iAction == 0 and self.cTestTreeFiles < cMaxFiles and len(oDir.sPath) < 230 - 2:
-                sName = self.__createFilename(oDir, oRandom, sFileCharsetCommon, sReservedTrailingCommon[1:]); # trailing space ok
-                self.__createTestFile(oDir, oTestVm.pathJoinEx(oDir.sPath, sName), oRandom, 16384);
-                self.cTestTreeFiles += 1;
-            # 1: Add a subdirector and descend into it:
-            elif iAction == 1 and self.cTestTreeDirs < cMaxDirs and uDepth < uMaxDepth and len(oDir.sPath) < 220:
-                sName = self.__createFilename(oDir, oRandom, sFileCharsetCommon, sReservedTrailingCommon);
-                oDir  = self.__createTestDir(oDir, oTestVm.pathJoinEx(oDir.sPath, sName));
-                self.cTestTreeDirs  += 1;
-                uDepth += 1;
-            # 2: Ascend to parent dir:
-            elif iAction == 2 and uDepth > 0:
-                oDir = oDir.oParent;
-                uDepth -= 1;
-
-        return True;
-
-
-    def __uploadTestStuffsFallback(self, oTxsSession, oTestVm, sTarFileGst, sTempDirGst):
-        """
-        Fallback upload method.
-        """
-
-        ## Directories:
-        #for oDir in self.aoTestDirs:
-        #    if oTxsSession.syncMkDirPath(oDir.sPath, 0o777) is not True:
-        #        return reporter.error('Failed to create directory "%s"!' % (oDir.sPath,));
-        #
-        ## Files:
-        #for oFile in self.aoTestFiles:
-        #    if oTxsSession.syncUploadString(oFile.abContent, oFile.sPath) is not True:
-        #        return reporter.error('Failed to create file "%s" with %s content bytes!' % (oFile.sPath, oFile.cbContent));
-
-        sVtsTarExe = 'vts_tar' + oTestVm.getGuestExeSuff();
-        sVtsTarHst = os.path.join(self.oTstDrv.sVBoxValidationKit, oTestVm.getGuestOs(), oTestVm.getGuestArch(), sVtsTarExe);
-        sVtsTarGst = oTestVm.pathJoinEx(sTempDirGst, sVtsTarExe);
-
-        if oTxsSession.syncUploadFile(sVtsTarHst, sVtsTarGst) is not True:
-            return reporter.error('Failed to upload "%s" to the guest as "%s"!' % (sVtsTarHst, sVtsTarGst,));
-
-        fRc = oTxsSession.syncExec(sVtsTarGst, [sVtsTarGst, '-xzf', sTarFileGst, '-C', sTempDirGst,], fWithTestPipe = False);
-        if fRc is not True:
-            return reporter.error('vts_tar failed!');
-        return True;
-
-    def __uploadTestStuff(self, oTxsSession, oTestVm):
-        """
-        Primary upload method.
-        """
-
-        #
-        # Create a tarball.
-        #
-        sTempDirGst  = self.getGuestTempDir(oTestVm);
-        sTarFileHst  = os.path.join(self.oTstDrv.sScratchPath, 'tdAddGuestCtrl-1-Stuff.tar.gz');
-        sTarFileGst  = oTestVm.pathJoinEx(sTempDirGst,         'tdAddGuestCtrl-1-Stuff.tar.gz');
-        chOtherSlash = '\\' if oTestVm.isWindows() or oTestVm.isOS2() else '/';
-        cchSkip      = len(sTempDirGst) + 1;
-
-        reporter.log('Creating tarball "%s" with test files for the guest...' % (sTarFileHst,));
-
-        # Open the tarball:
-        try:
-            oTarFile = tarfile.open(sTarFileHst, 'w:gz');
-        except:
-            return reporter.errorXcpt('Failed to open new tar file: %s' % (sTarFileHst,));
-
-        # Directories:
-        for oDir in self.aoTestDirs:
-            oTarInfo = tarfile.TarInfo(oDir.sPath[cchSkip:].replace(chOtherSlash, '/') + '/');
-            oTarInfo.mode = 0o777;
-            oTarInfo.type = tarfile.DIRTYPE;
-            try:
-                oTarFile.addfile(oTarInfo);
-            except:
-                return reporter.errorXcpt('Failed adding directory tarfile: %s' % (oDir.sPath,));
-
-        # Files:
-        for oFile in self.aoTestFiles:
-            oTarInfo = tarfile.TarInfo(oFile.sPath[cchSkip:].replace(chOtherSlash, '/'));
-            oTarInfo.size = len(oFile.abContent);
-            oFile.off = 0;
-            try:
-                oTarFile.addfile(oTarInfo, oFile);
-            except:
-                return reporter.errorXcpt('Failed adding directory tarfile: %s' % (oFile.sPath,));
-
-        # Complete the tarball.
-        try:
-            oTarFile.close();
-        except:
-            return reporter.errorXcpt('Error closing new tar file: %s' % (sTarFileHst,));
-
-        #
-        # Upload it.
-        #
-        reporter.log('Uploading tarball "%s" to the guest as "%s"...' % (sTarFileHst, sTarFileGst));
-        if oTxsSession.syncUploadFile(sTarFileHst, sTarFileGst) is not True:
-            return reporter.error('Failed upload tarball "%s" as "%s"!' % (sTarFileHst, sTarFileGst,));
-
-        #
-        # Try unpack it.
-        #
-        reporter.log('Unpacking "%s" into "%s"...' % (sTarFileGst, sTempDirGst));
-        if oTxsSession.syncUnpackFile(sTarFileGst, sTempDirGst, fIgnoreErrors = True) is not True:
-            reporter.log('Failed to expand tarball "%s" into "%s", falling back on individual directory and file creation...'
-                         % (sTarFileGst, sTempDirGst,));
-            if self.__uploadTestStuffsFallback(oTxsSession, oTestVm, sTarFileGst, sTempDirGst) is not True:
-                return False;
-        reporter.log('Successfully placed test files and directories in the VM.');
-        return True;
-
     def prepareGuestForTesting(self, oSession, oTxsSession, oTestVm):
         """
         Prepares the VM for testing, uploading a bunch of files and stuff via TXS.
@@ -1383,9 +1432,8 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 return reporter.error('Failed to create directory "%s"!' % (sDir,));
 
         # Generate and upload some random files and dirs to the guest:
-        if self.__createTestStuff(oTestVm) is not True:
-            return False;
-        return self.__uploadTestStuff(oTxsSession, oTestVm);
+        self.oTestFiles = TestFileSet(oTestVm, self.getGuestTempDir(oTestVm), 'addgst-1');
+        return self.oTestFiles.upload(oTxsSession, self.oTstDrv);
 
 
     #
