@@ -2764,7 +2764,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                     else:
                         reporter.log2('%s: eType=%s (dir=%d)' % (sDirTemp, eType, vboxcon.FsObjType_Directory,));
                         if eType != vboxcon.FsObjType_Directory:
-                            fRc = reporter.error('Temporary directory not created as a directory: eType=%d'
+                            fRc = reporter.error('Temporary directory "%s" not created as a directory: eType=%d'
                                                  % (sDirTemp, eType));
             fRc = oCurTest.closeSession(True) and fRc;
         return (fRc, oTxsSession);
