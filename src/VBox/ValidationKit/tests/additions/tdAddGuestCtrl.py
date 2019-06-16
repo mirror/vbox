@@ -2618,9 +2618,25 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             atTests.extend([
                 [ tdTestDirCreate(sDirectory = '..' ), tdTestResultFailure() ],
                 [ tdTestDirCreate(sDirectory = '../' ), tdTestResultFailure() ],
+                [ tdTestDirCreate(sDirectory = '../..' ), tdTestResultFailure() ],
                 [ tdTestDirCreate(sDirectory = '../../' ), tdTestResultFailure() ],
                 [ tdTestDirCreate(sDirectory = 'C:\\' ), tdTestResultFailure() ],
+                [ tdTestDirCreate(sDirectory = 'C:\\..' ), tdTestResultFailure() ],
+                [ tdTestDirCreate(sDirectory = 'C:\\..\\' ), tdTestResultFailure() ],
+                [ tdTestDirCreate(sDirectory = 'C:/' ), tdTestResultFailure() ],
+                [ tdTestDirCreate(sDirectory = 'C:/.' ), tdTestResultFailure() ],
+                [ tdTestDirCreate(sDirectory = 'C:/./' ), tdTestResultFailure() ],
+                [ tdTestDirCreate(sDirectory = 'C:/..' ), tdTestResultFailure() ],
+                [ tdTestDirCreate(sDirectory = 'C:/../' ), tdTestResultFailure() ],
                 [ tdTestDirCreate(sDirectory = '\\\\uncrulez\\foo' ), tdTestResultFailure() ],
+            ]);
+        else:
+            atTests.extend([
+                [ tdTestDirCreate(sDirectory = '../' ), tdTestResultFailure() ],
+                [ tdTestDirCreate(sDirectory = '../../' ), tdTestResultFailure() ],
+                [ tdTestDirCreate(sDirectory = '/' ), tdTestResultFailure() ],
+                [ tdTestDirCreate(sDirectory = '/..' ), tdTestResultFailure() ],
+                [ tdTestDirCreate(sDirectory = '/../' ), tdTestResultFailure() ],
             ]);
         atTests.extend([
             # Existing directories and files.
@@ -2675,147 +2691,82 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         Tests creation of temporary directories.
         """
 
-        atTests = [];
-        if oTestVm.isWindows():
-            atTests.extend([
-                # Invalid stuff.
-                [ tdTestDirCreateTemp(sDirectory = ''), tdTestResultFailure() ],
-                [ tdTestDirCreateTemp(sDirectory = 'C:\\Windows', fMode = 1234), tdTestResultFailure() ],
-                [ tdTestDirCreateTemp(sTemplate = '', sDirectory = 'C:\\Windows', fMode = 1234), tdTestResultFailure() ],
-                [ tdTestDirCreateTemp(sTemplate = 'xXx', sDirectory = 'C:\\Windows', fMode = 0o700), tdTestResultFailure() ],
-                [ tdTestDirCreateTemp(sTemplate = 'xxx', sDirectory = 'C:\\Windows', fMode = 0o700), tdTestResultFailure() ],
-                # More unusual stuff.
-                [ tdTestDirCreateTemp(sTemplate = 'foo', sDirectory = 'z:\\'), tdTestResultFailure() ],
-                [ tdTestDirCreateTemp(sTemplate = 'foo', sDirectory = '\\\\uncrulez\\foo'), tdTestResultFailure() ],
-                # Non-existing stuff.
-                [ tdTestDirCreateTemp(sTemplate = 'bar', sDirectory = 'c:\\Apps\\nonexisting\\foo'), tdTestResultFailure() ],
-                # FIXME: Failing test. Non Windows path
-                # [ tdTestDirCreateTemp(sTemplate = 'bar', sDirectory = '/tmp/non/existing'), tdTestResultFailure() ]
-            ]);
-        elif oTestVm.isLinux():
-            atTests.extend([
-                # Invalid stuff.
-                [ tdTestDirCreateTemp(sDirectory = ''), tdTestResultFailure() ],
-                [ tdTestDirCreateTemp(sDirectory = '/etc', fMode = 1234) ],
-                [ tdTestDirCreateTemp(sTemplate = '', sDirectory = '/etc', fMode = 1234), tdTestResultFailure() ],
-                [ tdTestDirCreateTemp(sTemplate = 'xXx', sDirectory = '/etc', fMode = 0o700), tdTestResultFailure() ],
-                [ tdTestDirCreateTemp(sTemplate = 'xxx', sDirectory = '/etc', fMode = 0o700), tdTestResultFailure() ],
-                # More unusual stuff.
-                [ tdTestDirCreateTemp(sTemplate = 'foo', sDirectory = 'z:\\'), tdTestResultFailure() ],
-                [ tdTestDirCreateTemp(sTemplate = 'foo', sDirectory = '\\\\uncrulez\\foo'), tdTestResultFailure() ],
-                # Non-existing stuff.
-                [ tdTestDirCreateTemp(sTemplate = 'bar', sDirectory = '/non/existing'), tdTestResultFailure() ],
-            ]);
-
-            # FIXME: Failing tests.
-            # atTests.extend([
-                # Non-secure variants.
-                # [ tdTestDirCreateTemp(sTemplate = 'XXX',
-                #                       sDirectory = sScratch),
-                #   tdTestResultSuccess() ],
-                # [ tdTestDirCreateTemp(sTemplate = 'XXX',
-                #                       sDirectory = sScratch),
-                #   tdTestResultSuccess() ],
-                # [ tdTestDirCreateTemp(sTemplate = 'X',
-                #                       sDirectory = sScratch),
-                #   tdTestResultSuccess() ],
-                # [ tdTestDirCreateTemp(sTemplate = 'X',
-                #                       sDirectory = sScratch),
-                #   tdTestResultSuccess() ],
-                # [ tdTestDirCreateTemp(sTemplate = 'XXX',
-                #                       sDirectory = sScratch,
-                #                       fMode = 0o700),
-                #   tdTestResultSuccess() ],
-                # [ tdTestDirCreateTemp(sTemplate = 'XXX',
-                #                     sDirectory = sScratch,
-                #                     fMode = 0o700),
-                #   tdTestResultSuccess() ],
-                # [ tdTestDirCreateTemp(sTemplate = 'XXX',
-                #                       sDirectory = sScratch,
-                #                       fMode = 0o755),
-                #   tdTestResultSuccess() ],
-                # [ tdTestDirCreateTemp(sTemplate = 'XXX',
-                #                       sDirectory = sScratch,
-                #                       fMode = 0o755),
-                #   tdTestResultSuccess() ],
-                # Secure variants.
-                # [ tdTestDirCreateTemp(sTemplate = 'XXX',
-                #                       sDirectory = sScratch, fSecure = True),
-                #   tdTestResultSuccess() ],
-                # [ tdTestDirCreateTemp(sTemplate = 'XXX',
-                #                       sDirectory = sScratch, fSecure = True),
-                #   tdTestResultSuccess() ],
-                # [ tdTestDirCreateTemp(sTemplate = 'XXX',
-                #                       sDirectory = sScratch, fSecure = True),
-                #   tdTestResultSuccess() ],
-                # [ tdTestDirCreateTemp(sTemplate = 'XXX',
-                #                       sDirectory = sScratch, fSecure = True),
-                #   tdTestResultSuccess() ],
-                # [ tdTestDirCreateTemp(sTemplate = 'XXX',
-                #                       sDirectory = sScratch,
-                #                       fSecure = True, fMode = 0o700),
-                #   tdTestResultSuccess() ],
-                # [ tdTestDirCreateTemp(sTemplate = 'XXX',
-                #                       sDirectory = sScratch,
-                #                       fSecure = True, fMode = 0o700),
-                #   tdTestResultSuccess() ],
-                # [ tdTestDirCreateTemp(sTemplate = 'XXX',
-                #                       sDirectory = sScratch,
-                #                       fSecure = True, fMode = 0o755),
-                #   tdTestResultSuccess() ],
-                # [ tdTestDirCreateTemp(sTemplate = 'XXX',
-                #                       sDirectory = sScratch,
-                #                       fSecure = True, fMode = 0o755),
-                #   tdTestResultSuccess() ],
-                # Random stuff.
-                # [ tdTestDirCreateTemp(
-                #                       sTemplate = "XXX-".join(random.choice(string.ascii_lowercase) for i in xrange(32)),
-                #                       sDirectory = sScratch,
-                #                       fSecure = True, fMode = 0o755),
-                #   tdTestResultSuccess() ],
-                # [ tdTestDirCreateTemp(sTemplate = "".join('X' for i in xrange(32)),
-                #                       sDirectory = sScratch,
-                #                       fSecure = True, fMode = 0o755),
-                #   tdTestResultSuccess() ],
-                # [ tdTestDirCreateTemp(sTemplate = "".join('X' for i in xrange(128)),
-                #                       sDirectory = sScratch,
-                #                       fSecure = True, fMode = 0o755),
-                #   tdTestResultSuccess() ]
-            # ]);
+        sSystemDir = self.getGuestSystemDir(oTestVm);
+        atTests = [
+            # Invalid stuff (template must have one or more trailin 'X'es (upper case only), or a cluster of three or more).
+            [ tdTestDirCreateTemp(sDirectory = ''), tdTestResultFailure() ],
+            [ tdTestDirCreateTemp(sDirectory = sSystemDir, fMode = 1234), tdTestResultFailure() ],
+            [ tdTestDirCreateTemp(sTemplate = 'xXx', sDirectory = sSystemDir, fMode = 0o700), tdTestResultFailure() ],
+            [ tdTestDirCreateTemp(sTemplate = 'xxx', sDirectory = sSystemDir, fMode = 0o700), tdTestResultFailure() ],
+            [ tdTestDirCreateTemp(sTemplate = 'XXx', sDirectory = sSystemDir, fMode = 0o700), tdTestResultFailure() ],
+            [ tdTestDirCreateTemp(sTemplate = 'bar', sDirectory = 'whatever', fMode = 0o700), tdTestResultFailure() ],
+            [ tdTestDirCreateTemp(sTemplate = 'foo', sDirectory = 'it is not used', fMode = 0o700), tdTestResultFailure() ],
+            [ tdTestDirCreateTemp(sTemplate = 'X,so', sDirectory = 'pointless test', fMode = 0o700), tdTestResultFailure() ],
+            # Non-existing stuff.
+            [ tdTestDirCreateTemp(sTemplate = 'XXXXXXX',
+                                  sDirectory = oTestVm.pathJoin(self.getGuestTempDir(oTestVm), 'non', 'existing')),
+                                  tdTestResultFailure() ],
+            # Working stuff:
+            [ tdTestDirCreateTemp(sTemplate = 'X', sDirectory = self.getGuestTempDir(oTestVm)), tdTestResultFailure() ],
+            [ tdTestDirCreateTemp(sTemplate = 'XX', sDirectory = self.getGuestTempDir(oTestVm)), tdTestResultFailure() ],
+            [ tdTestDirCreateTemp(sTemplate = 'XXX', sDirectory = self.getGuestTempDir(oTestVm)), tdTestResultFailure() ],
+            [ tdTestDirCreateTemp(sTemplate = 'XXXXXXX', sDirectory = self.getGuestTempDir(oTestVm)), tdTestResultFailure() ],
+            [ tdTestDirCreateTemp(sTemplate = 'tmpXXXtst', sDirectory = self.getGuestTempDir(oTestVm)), tdTestResultFailure() ],
+            [ tdTestDirCreateTemp(sTemplate = 'tmpXXXtst', sDirectory = self.getGuestTempDir(oTestVm)), tdTestResultFailure() ],
+            [ tdTestDirCreateTemp(sTemplate = 'tmpXXXtst', sDirectory = self.getGuestTempDir(oTestVm)), tdTestResultFailure() ],
+            ## @todo test fSecure and pass weird fMode values once these parameters are implemented in the API.
+        ];
 
         fRc = True;
-        for (i, aTest) in enumerate(atTests):
-            oCurTest = aTest[0]; # tdTestExec, use an index, later.
-            oCurRes  = aTest[1]; # tdTestResult
+        for (i, tTest) in enumerate(atTests):
+            oCurTest = tTest[0] # type: tdTestDirCreateTemp
+            oCurRes  = tTest[1] # type: tdTestResult
             reporter.log('Testing #%d, sTemplate="%s", fMode=%#o, path="%s", secure="%s" ...' %
                          (i, oCurTest.sTemplate, oCurTest.fMode, oCurTest.sDirectory, oCurTest.fSecure));
+
             oCurTest.setEnvironment(oSession, oTxsSession, oTestVm);
-            fRc, oCurGuestSession = oCurTest.createSession('testGuestCtrlDirCreateTemp: Test #%d' % (i,));
+            fRc, oCurGuestSession = oCurTest.createSession('testGuestCtrlDirCreateTemp: Test #%d' % (i,), fIsError = True);
             if fRc is False:
-                reporter.error('Test #%d failed: Could not create session' % (i,));
+                fRc = reporter.error('Test #%d failed: Could not create session' % (i,));
                 break;
-            sDirTemp = "";
+
+            sDirTemp = '';
             try:
                 sDirTemp = oCurGuestSession.directoryCreateTemp(oCurTest.sTemplate, oCurTest.fMode,
-                                                               oCurTest.sDirectory, oCurTest.fSecure);
+                                                                oCurTest.sDirectory, oCurTest.fSecure);
             except:
                 if oCurRes.fRc is True:
-                    reporter.errorXcpt('Creating temp directory "%s" failed:' % (oCurTest.sDirectory,));
-                    fRc = False;
-                    break;
+                    fRc = reporter.errorXcpt('Creating temp directory "%s" failed:' % (oCurTest.sDirectory,));
                 else:
                     reporter.logXcpt('Creating temp directory "%s" failed expectedly, skipping:' % (oCurTest.sDirectory,));
-            oCurTest.closeSession();
-            if sDirTemp  != "":
-                reporter.log2('Temporary directory is: %s' % (sDirTemp,));
-                if self.oTstDrv.fpApiVer >= 5.0:
-                    fExists = oCurGuestSession.directoryExists(sDirTemp, False);
+            else:
+                reporter.log2('Temporary directory is: "%s"' % (sDirTemp,));
+                if not sDirTemp:
+                    fRc = reporter.error('Resulting directory is empty!');
                 else:
-                    fExists = oCurGuestSession.directoryExists(sDirTemp);
-                if fExists is False:
-                    reporter.error('Test #%d failed: Temporary directory "%s" does not exists' % (i, sDirTemp));
-                    fRc = False;
-                    break;
+                    ## @todo This does not work for some unknown reason.
+                    #try:
+                    #    if self.oTstDrv.fpApiVer >= 5.0:
+                    #        fExists = oCurGuestSession.directoryExists(sDirTemp, False);
+                    #    else:
+                    #        fExists = oCurGuestSession.directoryExists(sDirTemp);
+                    #except:
+                    #    fRc = reporter.errorXcpt('sDirTemp=%s' % (sDirTemp,));
+                    #else:
+                    #    if fExists is not True:
+                    #        fRc = reporter.error('Test #%d failed: Temporary directory "%s" does not exists (%s)'
+                    #                             % (i, sDirTemp, fExists));
+                    try:
+                        oFsObjInfo = oCurGuestSession.fsObjQueryInfo(sDirTemp, False);
+                        eType = oFsObjInfo.type;
+                    except:
+                        fRc = reporter.errorXcpt('sDirTemp="%s"' % (sDirTemp,));
+                    else:
+                        reporter.log2('%s: eType=%s (dir=%d)' % (sDirTemp, eType, vboxcon.FsObjType_Directory,));
+                        if eType != vboxcon.FsObjType_Directory:
+                            fRc = reporter.error('Temporary directory not created as a directory: eType=%d'
+                                                 % (sDirTemp, eType));
+            fRc = oCurTest.closeSession(True) and fRc;
         return (fRc, oTxsSession);
 
     def testGuestCtrlDirRead(self, oSession, oTxsSession, oTestVm):
