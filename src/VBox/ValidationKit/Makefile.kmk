@@ -72,6 +72,7 @@ ValidationKit-testdriver_SOURCES := \
 	$(PATH_SUB_CURRENT)/testdriver/txsclient.py \
 	$(PATH_SUB_CURRENT)/testdriver/vbox.py \
 	$(PATH_SUB_CURRENT)/testdriver/vboxcon.py \
+	$(PATH_SUB_CURRENT)/testdriver/vboxtestfileset.py \
 	$(PATH_SUB_CURRENT)/testdriver/vboxtestvms.py \
 	$(PATH_SUB_CURRENT)/testdriver/vboxwrappers.py \
 	$(PATH_SUB_CURRENT)/testdriver/winbase.py \
