@@ -519,7 +519,7 @@ HRESULT GuestSession::getUserHome(com::Utf8Str &aUserHome)
     if (FAILED(hr))
         return hr;
 
-    int rcGuest;
+    int rcGuest = VERR_IPE_UNINITIALIZED_STATUS;
     int vrc = i_pathUserHome(aUserHome, &rcGuest);
     if (RT_FAILURE(vrc))
     {
@@ -557,7 +557,7 @@ HRESULT GuestSession::getUserDocuments(com::Utf8Str &aUserDocuments)
     if (FAILED(hr))
         return hr;
 
-    int rcGuest;
+    int rcGuest = VERR_IPE_UNINITIALIZED_STATUS;
     int vrc = i_pathUserDocuments(aUserDocuments, &rcGuest);
     if (RT_FAILURE(vrc))
     {
@@ -597,9 +597,7 @@ HRESULT GuestSession::getDirectories(std::vector<ComPtr<IGuestDirectory> > &aDir
 
     aDirectories.resize(mData.mDirectories.size());
     size_t i = 0;
-    for(SessionDirectories::iterator it  = mData.mDirectories.begin();
-                                     it != mData.mDirectories.end();
-                                     ++it, ++i)
+    for (SessionDirectories::iterator it = mData.mDirectories.begin(); it != mData.mDirectories.end(); ++it, ++i)
     {
         it->second.queryInterfaceTo(aDirectories[i].asOutParam());
     }
@@ -1535,7 +1533,7 @@ int GuestSession::i_fileOpen(const GuestFileOpenInfo &openInfo, ComObjPtr<GuestF
 
     if (RT_SUCCESS(rc))
     {
-        int rcGuest;
+        int rcGuest = VERR_IPE_UNINITIALIZED_STATUS;
         rc = pFile->i_openFile(30 * 1000 /* 30s timeout */, &rcGuest);
         if (   rc == VERR_GSTCTL_GUEST_ERROR
             && prcGuest)
@@ -3059,7 +3057,7 @@ HRESULT GuestSession::copyFromGuest(const std::vector<com::Utf8Str> &aSources, c
     while (itSource != aSources.end())
     {
         GuestFsObjData objData;
-        int rcGuest;
+        int rcGuest = VERR_IPE_UNINITIALIZED_STATUS;
         int vrc = i_fsQueryInfo(*(itSource), fFollowSymlinks, objData, &rcGuest);
         if (   RT_FAILURE(vrc)
             && !fContinueOnErrors)
@@ -3278,7 +3276,7 @@ HRESULT GuestSession::directoryCreate(const com::Utf8Str &aPath, ULONG aMode,
 
     LogFlowThisFuncEnter();
 
-    ComObjPtr <GuestDirectory> pDirectory; int rcGuest;
+    ComObjPtr <GuestDirectory> pDirectory; int rcGuest = VERR_IPE_UNINITIALIZED_STATUS;
     int vrc = i_directoryCreate(aPath, (uint32_t)aMode, fFlags, &rcGuest);
     if (RT_FAILURE(vrc))
     {
@@ -3310,7 +3308,7 @@ HRESULT GuestSession::directoryCreate(const com::Utf8Str &aPath, ULONG aMode,
 HRESULT GuestSession::directoryCreateTemp(const com::Utf8Str &aTemplateName, ULONG aMode, const com::Utf8Str &aPath,
                                           BOOL aSecure, com::Utf8Str &aDirectory)
 {
-    RT_NOREF(aMode, aSecure);
+    RT_NOREF(aMode, aSecure); /** @todo r=bird: WTF? */
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -3326,7 +3324,7 @@ HRESULT GuestSession::directoryCreateTemp(const com::Utf8Str &aTemplateName, ULO
 
     LogFlowThisFuncEnter();
 
-    int rcGuest;
+    int rcGuest = VERR_IPE_UNINITIALIZED_STATUS;
     int vrc = i_fsCreateTemp(aTemplateName, aPath, true /* Directory */, aDirectory, &rcGuest);
     if (!RT_SUCCESS(vrc))
     {
@@ -3348,11 +3346,11 @@ HRESULT GuestSession::directoryCreateTemp(const com::Utf8Str &aTemplateName, ULO
 
 HRESULT GuestSession::directoryExists(const com::Utf8Str &aPath, BOOL aFollowSymlinks, BOOL *aExists)
 {
-    AutoCaller autoCaller(this);
+    AutoCaller autoCaller(this); /** @todo r=bird: GuestSessionWrap.cpp does already, doesn't it? */
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    if (RT_UNLIKELY((aPath.c_str()) == NULL || *(aPath.c_str()) == '\0'))
-        return setError(E_INVALIDARG, tr("No directory to check existence for specified"));
+    if (RT_UNLIKELY(aPath.isEmpty()))
+        return setError(E_INVALIDARG, tr("Empty path"));
 
     HRESULT hrc = i_isStartedExternal();
     if (FAILED(hrc))
@@ -3360,7 +3358,19 @@ HRESULT GuestSession::directoryExists(const com::Utf8Str &aPath, BOOL aFollowSym
 
     LogFlowThisFuncEnter();
 
-    GuestFsObjData objData; int rcGuest;
+    GuestFsObjData objData;
+    int rcGuest = VERR_IPE_UNINITIALIZED_STATUS;
+    /** @todo r=bird: Please look at i_directoryQueryInfo() and explain why there
+     * is an extra FsObjType_Directory check here...
+     *
+     * Looks a lot like you wanted to replicate the RTDirExists behavior, but when
+     * refactoring in i_directoryQueryInfo you lost overview here.   One problem
+     * could be that the documention is VirtualBox.xidl does not mention what
+     * happens when the path leads to a file system object that isn't a
+     * directory.
+     *
+     * Fix the documention and behaviour so it works like RTDirExists and
+     * RTFileExists.  */
     int vrc = i_directoryQueryInfo(aPath, aFollowSymlinks != FALSE, objData, &rcGuest);
     if (RT_SUCCESS(vrc))
         *aExists = objData.mType == FsObjType_Directory;
@@ -3425,7 +3435,7 @@ HRESULT GuestSession::directoryOpen(const com::Utf8Str &aPath, const com::Utf8St
     openInfo.mFilter = aFilter;
     openInfo.mFlags = fFlags;
 
-    ComObjPtr<GuestDirectory> pDirectory; int rcGuest;
+    ComObjPtr<GuestDirectory> pDirectory; int rcGuest = VERR_IPE_UNINITIALIZED_STATUS;
     int vrc = i_directoryOpen(openInfo, pDirectory, &rcGuest);
     if (RT_SUCCESS(vrc))
     {
@@ -3471,7 +3481,7 @@ HRESULT GuestSession::directoryRemove(const com::Utf8Str &aPath)
     /* No flags; only remove the directory when empty. */
     uint32_t fFlags = DIRREMOVEREC_FLAG_NONE;
 
-    int rcGuest;
+    int rcGuest = VERR_IPE_UNINITIALIZED_STATUS;
     int vrc = i_directoryRemove(aPath, fFlags, &rcGuest);
     if (RT_FAILURE(vrc))
     {
@@ -3553,7 +3563,7 @@ HRESULT GuestSession::directoryRemoveRecursive(const com::Utf8Str &aPath, const 
     if (FAILED(hrc))
         return hrc;
 
-    int rcGuest;
+    int rcGuest = VERR_IPE_UNINITIALIZED_STATUS;
     int vrc = i_directoryRemove(aPath, fFlags, &rcGuest);
     if (RT_FAILURE(vrc))
     {
@@ -3735,7 +3745,7 @@ HRESULT GuestSession::fileExists(const com::Utf8Str &aPath, BOOL aFollowSymlinks
 
     LogFlowThisFuncEnter();
 
-    GuestFsObjData objData; int rcGuest;
+    GuestFsObjData objData; int rcGuest = VERR_IPE_UNINITIALIZED_STATUS;
     int vrc = i_fileQueryInfo(aPath, RT_BOOL(aFollowSymlinks), objData, &rcGuest);
     if (RT_SUCCESS(vrc))
     {
@@ -3868,7 +3878,7 @@ HRESULT GuestSession::fileOpenEx(const com::Utf8Str &aPath, FileAccessMode_T aAc
     openInfo.mfOpenEx = fOpenEx;
 
     ComObjPtr <GuestFile> pFile;
-    int rcGuest;
+    int rcGuest = VERR_IPE_UNINITIALIZED_STATUS;
     int vrc = i_fileOpenEx(aPath, aAccessMode, aOpenAction, aSharingMode, aCreationMode, aFlags, pFile, &rcGuest);
     if (RT_SUCCESS(vrc))
         /* Return directory object to the caller. */
@@ -3907,7 +3917,7 @@ HRESULT GuestSession::fileQuerySize(const com::Utf8Str &aPath, BOOL aFollowSymli
     if (FAILED(hrc))
         return hrc;
 
-    int64_t llSize; int rcGuest;
+    int64_t llSize; int rcGuest = VERR_IPE_UNINITIALIZED_STATUS;
     int vrc = i_fileQuerySize(aPath, aFollowSymlinks != FALSE,  &llSize, &rcGuest);
     if (RT_SUCCESS(vrc))
     {
@@ -3941,7 +3951,7 @@ HRESULT GuestSession::fsObjExists(const com::Utf8Str &aPath, BOOL aFollowSymlink
     *aExists = false;
 
     GuestFsObjData objData;
-    int rcGuest;
+    int rcGuest = VERR_IPE_UNINITIALIZED_STATUS;
     int vrc = i_fsQueryInfo(aPath, aFollowSymlinks != FALSE, objData, &rcGuest);
     if (RT_SUCCESS(vrc))
     {
@@ -3982,7 +3992,7 @@ HRESULT GuestSession::fsObjQueryInfo(const com::Utf8Str &aPath, BOOL aFollowSyml
 
     LogFlowThisFunc(("aPath=%s, aFollowSymlinks=%RTbool\n", aPath.c_str(), RT_BOOL(aFollowSymlinks)));
 
-    GuestFsObjData Info; int rcGuest;
+    GuestFsObjData Info; int rcGuest = VERR_IPE_UNINITIALIZED_STATUS;
     int vrc = i_fsQueryInfo(aPath, aFollowSymlinks != FALSE, Info, &rcGuest);
     if (RT_SUCCESS(vrc))
     {
@@ -4022,7 +4032,7 @@ HRESULT GuestSession::fsObjRemove(const com::Utf8Str &aPath)
 
     LogFlowThisFunc(("aPath=%s\n", aPath.c_str()));
 
-    int rcGuest;
+    int rcGuest = VERR_IPE_UNINITIALIZED_STATUS;
     int vrc = i_fileRemove(aPath, &rcGuest);
     if (RT_FAILURE(vrc))
     {
@@ -4080,7 +4090,7 @@ HRESULT GuestSession::fsObjRename(const com::Utf8Str &aSource,
         fBackend = PATHRENAME_FLAG_NO_REPLACE;
 
     /* Call worker to do the job. */
-    int rcGuest;
+    int rcGuest = VERR_IPE_UNINITIALIZED_STATUS;
     int vrc = i_pathRename(aSource, aDestination, fBackend, &rcGuest);
     if (RT_FAILURE(vrc))
     {
@@ -4315,7 +4325,7 @@ HRESULT GuestSession::waitFor(ULONG aWaitFor, ULONG aTimeoutMS, GuestSessionWait
     /*
      * Note: Do not hold any locks here while waiting!
      */
-    int rcGuest; GuestSessionWaitResult_T waitResult;
+    int rcGuest = VERR_IPE_UNINITIALIZED_STATUS; GuestSessionWaitResult_T waitResult;
     int vrc = i_waitFor(aWaitFor, aTimeoutMS, waitResult, &rcGuest);
     if (RT_SUCCESS(vrc))
         *aReason = waitResult;
