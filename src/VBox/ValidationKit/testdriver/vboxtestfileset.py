@@ -46,6 +46,50 @@ if sys.version_info[0] >= 3:
     xrange = range; # pylint: disable=redefined-builtin,invalid-name
 
 
+
+class GstFsObj(object):
+    """ A file system object we created in the guest for test purposes. """
+    def __init__(self, oParent, sPath):
+        self.oParent   = oParent    # type: GstDir
+        self.sPath     = sPath      # type: str
+        self.sName     = sPath      # type: str
+        if oParent:
+            assert sPath.startswith(oParent.sPath);
+            self.sName = sPath[len(oParent.sPath) + 1:];
+            # Add to parent.
+            oParent.aoChildren.append(self);
+            oParent.dChildrenUpper[self.sName.upper()] = self;
+
+class GstFile(GstFsObj):
+    """ A file object in the guest. """
+    def __init__(self, oParent, sPath, abContent):
+        GstFsObj.__init__(self, oParent, sPath);
+        self.abContent = abContent          # type: bytearray
+        self.cbContent = len(abContent);
+        self.off       = 0;
+
+    def read(self, cbToRead):
+        assert self.off <= self.cbContent;
+        cbLeft = self.cbContent - self.off;
+        if cbLeft < cbToRead:
+            cbToRead = cbLeft;
+        abRet = self.abContent[self.off:(self.off + cbToRead)];
+        assert len(abRet) == cbToRead;
+        self.off += cbToRead;
+        return abRet;
+
+class GstDir(GstFsObj):
+    """ A file object in the guest. """
+    def __init__(self, oParent, sPath):
+        GstFsObj.__init__(self, oParent, sPath);
+        self.aoChildren     = []  # type: list(GsFsObj)
+        self.dChildrenUpper = {}  # type: dict(str,GsFsObj)
+
+    def contains(self, sName):
+        """ Checks if the directory contains the given name. """
+        return sName.upper() in self.dChildrenUpper
+
+
 class TestFileSet(object):
     """
     Generates a set of files and directories for use in a test.
@@ -53,49 +97,6 @@ class TestFileSet(object):
     Uploaded as a tarball and expanded via TXS (if new enough) or uploaded vts_tar
     utility from the validation kit.
     """
-
-    class GstFsObj(object):
-        """ A file system object we created in the guest for test purposes. """
-        def __init__(self, oParent, sPath):
-            self.oParent   = oParent    # type: GstDir
-            self.sPath     = sPath      # type: str
-            self.sName     = sPath      # type: str
-            if oParent:
-                assert sPath.startswith(oParent.sPath);
-                self.sName = sPath[len(oParent.sPath) + 1:];
-                # Add to parent.
-                oParent.aoChildren.append(self);
-                oParent.dChildrenUpper[self.sName.upper()] = self;
-
-    class GstFile(GstFsObj):
-        """ A file object in the guest. """
-        def __init__(self, oParent, sPath, abContent):
-            TestFileSet.GstFsObj.__init__(self, oParent, sPath);
-            self.abContent = abContent          # type: bytearray
-            self.cbContent = len(abContent);
-            self.off       = 0;
-
-        def read(self, cbToRead):
-            assert self.off <= self.cbContent;
-            cbLeft = self.cbContent - self.off;
-            if cbLeft < cbToRead:
-                cbToRead = cbLeft;
-            abRet = self.abContent[self.off:(self.off + cbToRead)];
-            assert len(abRet) == cbToRead;
-            self.off += cbToRead;
-            return abRet;
-
-    class GstDir(GstFsObj):
-        """ A file object in the guest. """
-        def __init__(self, oParent, sPath):
-            TestFileSet.GstFsObj.__init__(self, oParent, sPath);
-            self.aoChildren     = []  # type: list(GsFsObj)
-            self.dChildrenUpper = {}  # type: dict(str,GsFsObj)
-
-        def contains(self, sName):
-            """ Checks if the directory contains the given name. """
-            return sName.upper() in self.dChildrenUpper
-
 
     ksReservedWinOS2         = '/\\"*:<>?|\t\v\n\r\f\a\b';
     ksReservedUnix           = '/';
@@ -163,6 +164,8 @@ class TestFileSet(object):
         self.cTreeFiles = 0;
         ## Number of directories under oTreeDir.
         self.cTreeDirs  = 0;
+        ## Number of other file types under oTreeDir.
+        self.cTreeOthers = 0;
 
         ## All directories in creation order.
         self.aoDirs     = []        # type: list(GstDir);
@@ -241,7 +244,7 @@ class TestFileSet(object):
         """
         Creates a test directory.
         """
-        oDir = TestFileSet.GstDir(oParent, sDir);
+        oDir = GstDir(oParent, sDir);
         self.aoDirs.append(oDir);
         self.dPaths[sDir] = oDir;
         return oDir;
@@ -253,7 +256,7 @@ class TestFileSet(object):
         cbFile = self.oRandom.choice(self.oRngFileSizes);
         abContent = bytearray(self.oRandom.getrandbits(8) for _ in xrange(cbFile));
 
-        oFile = TestFileSet.GstFile(oParent, sFile, abContent);
+        oFile = GstFile(oParent, sFile, abContent);
         self.aoFiles.append(oFile);
         self.dPaths[sFile] = oFile;
         return oFile;
@@ -416,5 +419,4 @@ class TestFileSet(object):
                 return False;
         reporter.log('Successfully placed test files and directories in the VM.');
         return True;
-
 

@@ -1298,6 +1298,108 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
         return (fRc, cDirs, cFiles, cOthers);
 
+    def gctrlReadDirTree2(self, oGuestSession, oDir): # type: (vboxtestfileset.GstDir) -> bool
+        """
+        Helper function to recursively read a guest directory tree specified in the current test.
+        """
+
+        #
+        # Process the directory.
+        #
+
+        # Open the directory:
+        try:
+            oCurDir = oGuestSession.directoryOpen(oDir.sPath, '', None);
+        except:
+            return reporter.errorXcpt('sPath=%s' % (oDir.sPath,));
+
+        # Read the directory.
+        dLeftUpper = dict(oDir.dChildrenUpper);
+        cDot       = 0;
+        cDotDot    = 0;
+        fRc = True;
+        while True:
+            try:
+                oFsObjInfo = oCurDir.read();
+            except Exception as oXcpt:
+                if vbox.ComError.notEqual(oXcpt, vbox.ComError.VBOX_E_OBJECT_NOT_FOUND):
+                    fRc = reporter.errorXcpt('Error reading directory "%s":' % (oDir.sPath,));
+                break;
+
+            try:
+                sName  = oFsObjInfo.name;
+                eType  = oFsObjInfo.type;
+                cbFile = oFsObjInfo.objectSize;
+                ## @todo check further attributes.
+            except:
+                fRc = reporter.errorXcpt();
+                break;
+
+            # '.' and '..' entries are not present in oDir.aoChildren, so special treatment:
+            if sName in ('.', '..', ):
+                if eType != vboxcon.FsObjType_Directory:
+                    fRc = reporter.error('Wrong type for "%s": %d, expected %d (Directory)'
+                                         % (sName, eType, vboxcon.FsObjType_Directory));
+                if sName == '.': cDot    += 1;
+                else:            cDotDot += 1;
+            else:
+                # Find the child and remove it from the dictionary.
+                sNameUpper = sName.upper();
+                oFsObj = dLeftUpper.get(sNameUpper);
+                if oFsObj is None:
+                    fRc = reporter.error('Unknown object "%s" found in "%s" (type %s, size %s)!'
+                                         % (sName, oDir.sPath, eType, cbFile,));
+                else:
+                    del dLeftUpper[sNameUpper];
+
+                    # Check type
+                    if isinstance(oFsObj, vboxtestfileset.GstDir):
+                        if eType != vboxcon.FsObjType_Directory:
+                            fRc = reporter.error('%s: expected directory (%d), got eType=%d!'
+                                                 % (oFsObj.sPath, vboxcon.FsObjType_Directory, eType,));
+                    elif isinstance(oFsObj, vboxtestfileset.GstFile):
+                        if eType != vboxcon.FsObjType_File:
+                            fRc = reporter.error('%s: expected file (%d), got eType=%d!'
+                                                 % (oFsObj.sPath, vboxcon.FsObjType_File, eType,));
+                    else:
+                        fRc = reporter.error('%s: WTF? type=%s' % (oFsObj.sPath, type(oFsObj),));
+
+                    # Check the name.
+                    if oFsObj.sName != sName:
+                        fRc = reporter.error('%s: expected name "%s", got "%s" instead!' % (oFsObj.sPath, oFsObj.sName, sName,));
+
+                    # Check the size if a file.
+                    if isinstance(oFsObj, vboxtestfileset.GstFile) and cbFile != oFsObj.cbContent:
+                        fRc = reporter.error('%s: expected size %s, got %s instead!' % (oFsObj.sPath, oFsObj.cbContent, cbFile,));
+
+                    ## @todo check timestamps and attributes.
+
+        # Close the directory
+        try:
+            oCurDir.close();
+        except:
+            fRc = reporter.errorXcpt('oDir.sPath=%s' % (oDir.sPath,));
+
+        # Any files left over?
+        for sKey in dLeftUpper:
+            oFsObj = dLeftUpper[sKey];
+            fRc = reporter.error('%s: Was not returned! (%s)' % (oFsObj.sPath, type(oFsObj),));
+
+        # Check the dot and dot-dot counts.
+        if cDot != 1:
+            fRc = reporter.error('%s: Found %s "." entries, expected exactly 1!' % (oDir.sPath, cDot,));
+        if cDotDot != 1:
+            fRc = reporter.error('%s: Found %s ".." entries, expected exactly 1!' % (oDir.sPath, cDotDot,));
+
+        #
+        # Recurse into subdirectories using info from oDir.
+        #
+        for oFsObj in oDir.aoChildren:
+            if isinstance(oFsObj, vboxtestfileset.GstDir):
+                fRc = self.gctrlReadDirTree2(oGuestSession, oFsObj) and fRc;
+
+        return fRc;
+
     def gctrlExecDoTest(self, i, oTest, oRes, oGuestSession):
         """
         Wrapper function around gctrlExecute to provide more sanity checking
@@ -2748,18 +2850,16 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         atTests.append([ tdTestDirRead(sDirectory = sSystemDir), tdTestResultDirRead(fRc = True, cFiles = -5, cDirs = None) ]);
         ## @todo trailing slash
 
-        ## @todo this is very very inflexible.
-        ## Would be better to create a dir tree using TXS and make sure we get it back exactly as expected.
-        if oTestVm.sVmName.startswith('tst-xpsp2'):
-            atTests.extend([
-                # Reading directories.
-                [ tdTestDirRead(sDirectory = '../../Windows/Media'),
-                  tdTestResultDirRead(fRc = True, cFiles = 38) ],
-                [ tdTestDirRead(sDirectory = 'C:\\Windows\\Help'),
-                  tdTestResultDirRead(fRc = True, cDirs = 13, cFiles = 574) ],
-                [ tdTestDirRead(sDirectory = 'C:\\Windows\\Web'),
-                  tdTestResultDirRead(fRc = True, cDirs = 3, cFiles = 49) ]
-            ]);
+        # Read from the test file set.
+        atTests.extend([
+            [ tdTestDirRead(sDirectory = self.oTestFiles.oEmptyDir.sPath),
+              tdTestResultDirRead(fRc = True, cFiles = 0, cDirs = 0, cOthers = 0) ],
+            [ tdTestDirRead(sDirectory = self.oTestFiles.oManyDir.sPath),
+              tdTestResultDirRead(fRc = True, cFiles = len(self.oTestFiles.oManyDir.aoChildren), cDirs = 0, cOthers = 0) ],
+            [ tdTestDirRead(sDirectory = self.oTestFiles.oTreeDir.sPath),
+              tdTestResultDirRead(fRc = True, cFiles = self.oTestFiles.cTreeFiles, cDirs = self.oTestFiles.cTreeDirs,
+                                  cOthers = self.oTestFiles.cTreeOthers) ],
+        ]);
 
 
         fRc = True;
@@ -2773,7 +2873,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             if fRc is not True:
                 break;
             (fRc2, cDirs, cFiles, cOthers) = self.gctrlReadDirTree(oCurTest, oCurGuestSession, oCurRes.fRc);
-            oCurTest.closeSession(True);
+            fRc = oCurTest.closeSession(True) and fRc;
 
             reporter.log2('Test #%d: Returned %d directories, %d files total' % (i, cDirs, cFiles));
             if fRc2 is oCurRes.fRc:
@@ -2802,6 +2902,21 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
             else:
                 fRc = reporter.error('Test #%d failed: Got %s, expected %s' % (i, fRc2, oCurRes.fRc));
+
+
+        #
+        # Go over a few directories in the test file set and compare names,
+        # types and sizes rather than just the counts like we did above.
+        #
+        if fRc is True:
+            oCurTest = tdTestDirRead();
+            oCurTest.setEnvironment(oSession, oTxsSession, oTestVm);
+            fRc, oCurGuestSession = oCurTest.createSession('testGuestCtrlDirRead: gctrlReadDirTree2', True);
+            if fRc is True:
+                for oDir in (self.oTestFiles.oEmptyDir, self.oTestFiles.oManyDir, self.oTestFiles.oTreeDir):
+                    reporter.log('Checking "%s" ...' % (oDir.sPath,));
+                    fRc = self.gctrlReadDirTree2(oCurGuestSession, oDir) and fRc;
+                fRc = oCurTest.closeSession(True) and fRc;
 
         return (fRc, oTxsSession);
 
