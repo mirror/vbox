@@ -2067,7 +2067,7 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
                     pTask->pProgress->WaitForOtherProgressCompletion(pProgress1, 0 /* indefinite wait */);
 
                     LogRel(("%s: Cleanup action - the VM config file and the attached images have been deleted\n",
-                            __FUNCTION__, machineNameOrId.c_str()));
+                            __FUNCTION__));
                 }
             }
             else
