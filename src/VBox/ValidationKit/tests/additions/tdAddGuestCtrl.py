@@ -1015,7 +1015,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             else:
                 fRcTest = None;
 
-            if fRcTest is False and reporter.testErrorCount() != 0:
+            if fRcTest is False and reporter.testErrorCount() == 0:
                 fRcTest = reporter.error('Buggy test! Returned False w/o logging the error!');
             if reporter.testDone(fRcTest is None)[1] != 0:
                 fRcTest = False;
@@ -1154,36 +1154,58 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             return False;
         return True;
 
-    def gctrlCopyFileTo(self, oGuestSession, sSrc, sDst, fFlags):
+    def gctrlCopyFileTo(self, oGuestSession, sSrc, sDst, fFlags, fIsError):
         """
-        Helper function to copy a single file from host to the guest.
+        Helper function to copy a single file from the host to the guest.
         """
-        fRc = True; # Be optimistic.
+        reporter.log2('Copying host file "%s" to guest "%s" (flags %s)' % (sSrc, sDst, fFlags));
         try:
-            reporter.log2('Copying host file "%s" to guest "%s" (flags %s)' % (sSrc, sDst, fFlags));
             if self.oTstDrv.fpApiVer >= 5.0:
                 oCurProgress = oGuestSession.fileCopyToGuest(sSrc, sDst, fFlags);
             else:
                 oCurProgress = oGuestSession.copyTo(sSrc, sDst, fFlags);
-            if oCurProgress is not None:
-                oProgress = vboxwrappers.ProgressWrapper(oCurProgress, self.oTstDrv.oVBoxMgr, self.oTstDrv, "gctrlCopyFileTo");
-                try:
-                    oProgress.wait();
-                    if not oProgress.isSuccess():
-                        oProgress.logResult(fIgnoreErrors = True);
-                        fRc = False;
-                except:
-                    reporter.logXcpt('Wait exception for sSrc="%s", sDst="%s":' % (sSrc, sDst));
-                    fRc = False;
-            else:
-                reporter.error('No progress object returned');
-                fRc = False;
         except:
-            # Just log, don't assume an error here (will be done in the main loop then).
-            reporter.logXcpt('Copy to exception for sSrc="%s", sDst="%s":' % (sSrc, sDst));
-            fRc = False;
+            reporter.maybeErrXcpt(fIsError, 'sSrc=%s sDst=%s' % (sSrc, sDst,));
+            return False;
 
-        return fRc;
+        if oCurProgress is None:
+            return reporter.error('No progress object returned');
+        oProgress = vboxwrappers.ProgressWrapper(oCurProgress, self.oTstDrv.oVBoxMgr, self.oTstDrv, "gctrlCopyFileTo");
+
+        try:
+            oProgress.wait();
+            if not oProgress.isSuccess():
+                oProgress.logResult(fIgnoreErrors = not fIsError);
+                return False;
+        except:
+            reporter.maybeErrXcpt(fIsError, 'Wait exception for sSrc="%s", sDst="%s":' % (sSrc, sDst));
+            return False;
+        return True;
+
+    def gctrlCopyDirTo(self, oGuestSession, sSrc, sDst, fFlags, fIsError):
+        """
+        Helper function to copy a directory tree from the host to the guest.
+        """
+        reporter.log2('Copying host directory "%s" to guest "%s" (flags %s)' % (sSrc, sDst, fFlags));
+        try:
+            oCurProgress = oGuestSession.directoryCopyToGuest(sSrc, sDst, fFlags);
+        except:
+            reporter.maybeErrXcpt(fIsError, 'sSrc=%s sDst=%s' % (sSrc, sDst,));
+            return False;
+
+        if oCurProgress is None:
+            return reporter.error('No progress object returned');
+        oProgress = vboxwrappers.ProgressWrapper(oCurProgress, self.oTstDrv.oVBoxMgr, self.oTstDrv, "gctrlCopyFileTo");
+
+        try:
+            oProgress.wait();
+            if not oProgress.isSuccess():
+                oProgress.logResult(fIgnoreErrors = not fIsError);
+                return False;
+        except:
+            reporter.maybeErrXcpt(fIsError, 'Wait exception for sSrc="%s", sDst="%s":' % (sSrc, sDst));
+            return False;
+        return True;
 
     def gctrlCreateDir(self, oTest, oRes, oGuestSession):
         """
@@ -3334,151 +3356,185 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
         return (fRc, oTxsSession);
 
+    @staticmethod
+    def __generateFile(sName, cbFile):
+        """ Helper for generating a file with a given size. """
+        oFile = open(sName, 'wb');
+        while cbFile > 0:
+            cb = cbFile if cbFile < 256*1024 else 256*1024;
+            oFile.write(bytearray(random.getrandbits(8) for _ in xrange(cb)));
+            cbFile -= cb;
+        oFile.close();
+
     def testGuestCtrlCopyTo(self, oSession, oTxsSession, oTestVm):
         """
         Tests copying files from host to the guest.
         """
 
-        if oTestVm.isWindows():
-            sScratchGst = "C:\\Temp\\vboxtest\\testGuestCtrlCopyTo\\";
-            sScratchGstNotExist = "C:\\does-not-exist\\";
-            sScratchGstInvalid = "?*|invalid-name?*|";
+        # Paths.
+        sScratchGst             = oTestVm.pathJoin(self.getGuestTempDir(oTestVm), 'testGuestCtrlCopyTo');
+        #sScratchGstNotExist     = oTestVm.pathJoin(self.getGuestTempDir(oTestVm), 'no-such-file-or-directory');
+        sScratchHstNotExist     = os.path.join(self.oTstDrv.sScratchPath,         'no-such-file-or-directory');
+        sScratchGstPathNotFound = oTestVm.pathJoin(self.getGuestTempDir(oTestVm), 'no-such-directory', 'or-file');
+        #sScratchHstPathNotFound = os.path.join(self.oTstDrv.sScratchPath,         'no-such-directory', 'or-file');
+        sSomeDirHst             = self.oTstDrv.sScriptPath;
+
+        if oTestVm.isWindows() or oTestVm.isOS2():
+            sScratchGstInvalid  = "?*|<invalid-name>";
         else:
-            sScratchGst = "/tmp/"; ## @todo Use "${SCRATCH}/testGuestCtrlCopyTo" as soon as TXS CHMOD is implemented.
-            sScratchGstNotExist = "/tmp/does-not-exist/";
-            sScratchGstInvalid = "/";
+            sScratchGstInvalid  = None;
 
-        if oTxsSession.syncMkDir('${SCRATCH}/testGuestCtrlCopyTo') is False:
-            reporter.error('Could not create scratch directory on guest');
-            return (False, oTxsSession);
 
-        ## @todo r=klaus It's not good to use files with unpredictable size
-        # for testing. Causes all sorts of weird failures as things grow,
-        # exceeding the free space of the test VMs. Especially as this used
-        # the very big (and quickly growing) validation kit ISO originally.
-        sTestFileBig = self.oTstDrv.getFullResourceName('5.3/guestctrl/50mb_rnd.dat');
-        if not os.path.isfile(sTestFileBig):
-            sTestFileBig = self.oTstDrv.getGuestAdditionsIso();
-        if sTestFileBig == '' or not os.path.isfile(sTestFileBig):
-            sTestFileBig = self.oTstDrv.sVBoxValidationKitIso;
-        if os.path.isfile(sTestFileBig):
-            reporter.log('Test file for big copy found at: %s' % (sTestFileBig,));
-        else:
-            reporter.log('Warning: Test file for big copy not found -- some tests might fail');
+        if oTxsSession.syncMkDir(sScratchGst) is not True:
+            return reporter.error('TXS failed to create directory "%s"!' % (sScratchGst,));
 
-        atTests = [];
-        atTests.extend([
-            # Destination missing.
-            [ tdTestCopyTo(sSrc = ''), tdTestResultFailure() ],
-            [ tdTestCopyTo(sSrc = '/placeholder', fFlags = [ 80 ] ), tdTestResultFailure() ],
-            # Source missing.
-            [ tdTestCopyTo(sDst = ''), tdTestResultFailure() ],
-            [ tdTestCopyTo(sDst = '/placeholder', fFlags = [ 80 ] ), tdTestResultFailure() ],
-            # Testing DirectoryCopyFlag flags.
-            [ tdTestCopyTo(sSrc = sTestFileBig, sDst = sScratchGstInvalid, fFlags = [ 80 ] ), tdTestResultFailure() ],
-            # Testing FileCopyFlag flags.
-            [ tdTestCopyTo(sSrc = sTestFileBig, sDst = sScratchGstInvalid, fFlags = [ 80 ] ), tdTestResultFailure() ],
-            # Nothing to copy (source and/or destination is empty).
-            [ tdTestCopyTo(sSrc = 'z:\\'), tdTestResultFailure() ],
-            [ tdTestCopyTo(sSrc = '\\\\uncrulez\\foo'), tdTestResultFailure() ],
-            [ tdTestCopyTo(sSrc = 'non-exist', sDst = os.path.join(sScratchGst, 'non-exist.dll')), tdTestResultFailure() ]
+        # Generate a test file in 32MB to 50 MB range.
+        sBigFileHst  = os.path.join(self.oTstDrv.sScratchPath, 'gctrl-random.data');
+        cbBigFileHst = random.randrange(32*1024*1024, 50*1024*1024);
+        reporter.log('cbBigFileHst=%s' % (cbBigFileHst,));
+        cbLeft       = cbBigFileHst;
+        try:
+            self.__generateFile(sBigFileHst, cbBigFileHst);
+        except:
+            return reporter.errorXcpt('sBigFileHst=%s cbBigFileHst=%s cbLeft=%s' % (sBigFileHst, cbBigFileHst, cbLeft,));
+        reporter.log('cbBigFileHst=%s' % (cbBigFileHst,));
+
+        # Generate an empty file on the host that we can use to save space in the guest.
+        sEmptyFileHst = os.path.join(self.oTstDrv.sScratchPath, 'gctrl-empty.data');
+        try:
+            oFile = open(sEmptyFileHst, "wb");
+            oFile.close();
+        except:
+            return reporter.errorXcpt('sEmptyFileHst=%s' % (sEmptyFileHst,));
+
+        #
+        # Tests.
+        #
+        atTests = [
+            ## @todo because of the way the test stats the source to figure out which API to use,
+            ##       not all of this necessarily testing both file and directory API variants like
+            ##       was intended.  This needs to be addressed by specializing tdTestCopyTo so it
+            ##       would be possible to test feeding directories to the file API and vice versa.
+
+            # Nothing given
+            [ tdTestCopyTo(), tdTestResultFailure() ],
+            # Only one given.
+            [ tdTestCopyTo(sSrc = sBigFileHst), tdTestResultFailure() ],
+            [ tdTestCopyTo(sDst = sScratchGst), tdTestResultFailure() ],
+            # Only one given, invalid flag.
+            [ tdTestCopyTo(sSrc = sBigFileHst, fFlags = [ 0x40000000, ]), tdTestResultFailure() ],
+            [ tdTestCopyTo(sDst = sScratchGst, fFlags = [ 0x40000000, ]), tdTestResultFailure() ],
+            ## Apparently Main doesn't check the flags, so the first test succeeds.
+            ## Both given, but invalid  flags.
+            #[ tdTestCopyTo(sSrc = sBigFileHst, sDst = sScratchGst, fFlags = [ 0x40000000] ), tdTestResultFailure() ],
+            #[ tdTestCopyTo(sSrc = sSomeDirHst, sDst = sScratchGst, fFlags = [ 0x40000000] ), tdTestResultFailure() ],
+            # Bogus source, but no destination.
+            [ tdTestCopyTo(sSrc = sScratchHstNotExist), tdTestResultFailure() ],
+            # Valid sources, but bogus destination (path not found).
+            [ tdTestCopyTo(sSrc = sBigFileHst, sDst = sScratchGstPathNotFound), tdTestResultFailure() ],
+            [ tdTestCopyTo(sSrc = sSomeDirHst, sDst = sScratchGstPathNotFound), tdTestResultFailure() ],
+        ];
+        if sScratchGstInvalid is not None:
+            # Invalid characters in destination path:
+            atTests.extend([
+                [ tdTestCopyTo(sSrc = sBigFileHst, sDst = oTestVm.pathJoin(sScratchGst, sScratchGstInvalid)),
+                  tdTestResultFailure() ],
+                [ tdTestCopyTo(sSrc = sSomeDirHst, sDst = oTestVm.pathJoin(sScratchGst, sScratchGstInvalid)),
+                  tdTestResultFailure() ],
         ]);
 
         #
         # Single file handling.
         #
-        if self.oTstDrv.fpApiVer > 5.2:
+        atTests.extend([
+            [ tdTestCopyTo(sSrc = sBigFileHst, sDst = oTestVm.pathJoin(sScratchGst, 'HostGABig.dat')),
+              tdTestResultSuccess() ],
+            [ tdTestCopyTo(sSrc = sBigFileHst, sDst = oTestVm.pathJoin(sScratchGst, 'HostGABig.dat')),      # Overwrite
+              tdTestResultSuccess() ],
+            [ tdTestCopyTo(sSrc = sEmptyFileHst, sDst = oTestVm.pathJoin(sScratchGst, 'HostGABig.dat')),    # Overwrite
+              tdTestResultSuccess() ],
+        ]);
+        if self.oTstDrv.fpApiVer > 5.2: # Copying files into directories via Main is supported only 6.0 and later.
             atTests.extend([
-                [ tdTestCopyTo(sSrc = sTestFileBig, sDst = sScratchGstInvalid), tdTestResultFailure() ],
-                [ tdTestCopyTo(sSrc = sTestFileBig, sDst = sScratchGstNotExist), tdTestResultFailure() ],
-                [ tdTestCopyTo(sSrc = sTestFileBig, sDst = sScratchGstNotExist), tdTestResultFailure() ],
-                [ tdTestCopyTo(sSrc = sTestFileBig, sDst = os.path.join(sScratchGstNotExist, 'renamedfile.dll')),
-                  tdTestResultFailure() ],
-                [ tdTestCopyTo(sSrc = sTestFileBig, sDst = os.path.join(sScratchGst, 'HostGABig.dat')),
-                  tdTestResultSuccess() ],
-                [ tdTestCopyTo(sSrc = sTestFileBig, sDst = os.path.join(sScratchGst, 'HostGABig.dat')),
-                  tdTestResultSuccess() ],
-                # Note: Copying files into directories via Main is supported only in versions > 5.2.
-                # Destination is a directory.
-                [ tdTestCopyTo(sSrc = sTestFileBig, sDst = sScratchGst),
-                  tdTestResultSuccess() ],
-                # Copy over file again into same directory (overwrite).
-                [ tdTestCopyTo(sSrc = sTestFileBig, sDst = sScratchGst),
-                  tdTestResultSuccess() ]
+                [ tdTestCopyTo(sSrc = sBigFileHst, sDst = sScratchGst), tdTestResultSuccess() ],
+                [ tdTestCopyTo(sSrc = sBigFileHst, sDst = sScratchGst), tdTestResultSuccess() ],            # Overwrite
+                [ tdTestCopyTo(sSrc = sEmptyFileHst, sDst = oTestVm.pathJoin(sScratchGst, os.path.split(sBigFileHst)[1])),
+                  tdTestResultSuccess() ],                                                                  # Overwrite
             ]);
 
-            if oTestVm.isWindows():
-                atTests.extend([
-                    # Copy the same file over to the guest, but this time store the file into the former
-                    # file's ADS (Alternate Data Stream). Only works on Windows, of course.
-                    [ tdTestCopyTo(sSrc = sTestFileBig, sDst = os.path.join(sScratchGst, 'HostGABig.dat:ADS-Test')),
-                      tdTestResultSuccess() ]
-                ]);
+        if oTestVm.isWindows():
+            # Copy to a Windows alternative data stream (ADS).
+            atTests.extend([
+                [ tdTestCopyTo(sSrc = sBigFileHst, sDst = os.path.join(sScratchGst, 'HostGABig.dat:ADS-Test')),
+                  tdTestResultSuccess() ],
+                [ tdTestCopyTo(sSrc = sEmptyFileHst, sDst = os.path.join(sScratchGst, 'HostGABig.dat:ADS-Test')),
+                  tdTestResultSuccess() ],
+            ]);
 
-            #
-            # Directory handling.
-            #
-            ## @todo r=michaln disabled completely, can fill up the guest disk or fail without giving a reason
-            if self.oTstDrv.fpApiVer > 6.0: # Copying directories via Main is supported only in versions > 5.2.
-                if self.oTstDrv.sHost == "win":
-                    sSystemRoot = os.getenv('SystemRoot', 'C:\\Windows')
-                    atTests.extend([
-                        # Copying directories with contain files we don't have read access to.
-                        ## @todo r=klaus disabled, because this can fill up the guest disk, making other tests fail,
-                        ## additionally it's not really clear if this fails reliably on all Windows versions, even
-                        ## the old ones like XP with a "proper" administrator.
-                        #[ tdTestCopyTo(sSrc = os.path.join(sSystemRoot, 'security'),
-                        #               sDst = sScratchGst, fFlags = [ vboxcon.DirectoryCopyFlag_CopyIntoExisting ]),
-                        #
-                        # Copying directories with regular files.
-                        [ tdTestCopyTo(sSrc = os.path.join(sSystemRoot, 'Help'),
-                                       sDst = sScratchGst, fFlags = [ vboxcon.DirectoryCopyFlag_CopyIntoExisting ]),
-                          tdTestResultSuccess() ]
-                        ]);
+        #
+        # Directory handling.
+        #
+        if self.oTstDrv.fpApiVer > 5.2: # Copying directories via Main is supported only in versions > 5.2.
+            # Create a directory to copy.
+            sHstCopyDir = os.path.join(self.oTstDrv.sScratchPath, 'gctrl-srcdir');
+            try:   ## @todo Take the TestFileSet idea to the generic realm, making host and guest specializations/whatever.
+                os.mkdir(sHstCopyDir);
+                os.mkdir(           os.path.join(sHstCopyDir, 'subdir1'));
+                os.mkdir(           os.path.join(sHstCopyDir, 'subdir2'));
+                os.mkdir(           os.path.join(sHstCopyDir, 'subdir2', 'subsub1'));
+                self.__generateFile(os.path.join(sHstCopyDir, 'subdir2', 'subsub1', 'file0'), 0);
+                self.__generateFile(os.path.join(sHstCopyDir, 'subdir2', 'subsub1', 'file1'), 1023);
+                self.__generateFile(os.path.join(sHstCopyDir, 'subdir2', 'subsub1', 'file2'), 2048);
+                self.__generateFile(os.path.join(sHstCopyDir, 'subdir2', 'subsub1', 'file3'), 2047);
+                self.__generateFile(os.path.join(sHstCopyDir, 'subdir2', 'subsub1', 'file4'), 16887);
+                self.__generateFile(os.path.join(sHstCopyDir, 'subdir2', 'subsub1', 'file4'), 32);
+                os.mkdir(           os.path.join(sHstCopyDir, 'subdir2', 'subsub2'));
+                self.__generateFile(os.path.join(sHstCopyDir, 'subdir2', 'subsub2', 'file5'), 31);
+                self.__generateFile(os.path.join(sHstCopyDir, 'subdir2', 'subsub2', 'file6'), 1);
+                self.__generateFile(os.path.join(sHstCopyDir, 'subdir2', 'subsub2', 'file7'), 1);
+                self.__generateFile(os.path.join(sHstCopyDir, 'subdir2', 'subsub2', 'file8'), 0);
+                os.mkdir(           os.path.join(sHstCopyDir, 'subdir2', 'subsub3'));
+                self.__generateFile(os.path.join(sHstCopyDir, 'subdir2', 'subsub3', 'file9'), 9);
+                self.__generateFile(os.path.join(sHstCopyDir, 'subdir2', 'subsub3', 'file10'), 63);
+                self.__generateFile(os.path.join(sHstCopyDir, 'subdir2', 'subsub3', 'file11'), 11);
+                self.__generateFile(os.path.join(sHstCopyDir, 'subdir2', 'subsub3', 'file12'), 67);
+                os.mkdir(           os.path.join(sHstCopyDir, 'subdir3'));
+                self.__generateFile(os.path.join(sHstCopyDir, 'file13'), 13);
+                self.__generateFile(os.path.join(sHstCopyDir, 'file14'), 67);
+                self.__generateFile(os.path.join(sHstCopyDir, 'file15'), 1111);
+            except:
+                reporter.errorXcpt('Error generating test tree on the host for the copy test (%s)' % (sHstCopyDir,));
+
+            atTests.extend([
+                [ tdTestCopyTo(sSrc = sHstCopyDir, sDst = sScratchGst, fFlags = [ vboxcon.DirectoryCopyFlag_CopyIntoExisting ]),
+                  tdTestResultSuccess() ],
+                ## @todo r=bird: Why does this fail???
+                # [ tdTestCopyTo(sSrc = sHstCopyDir, sDst = oTestVm.pathJoin(sScratchGst, 'target-dir')), tdTestResultSuccess() ],
+            ]);
 
         fRc = True;
-        for (i, aTest) in enumerate(atTests):
-            oCurTest = aTest[0]; # tdTestExec, use an index, later.
-            oCurRes  = aTest[1]; # tdTestResult
-            reporter.log('Testing #%d, sSrc=%s, sDst=%s, fFlags=%s ...' % \
-                         (i, oCurTest.sSrc, oCurTest.sDst, oCurTest.fFlags));
+        for (i, tTest) in enumerate(atTests):
+            oCurTest = tTest[0]; # tdTestCopyTo
+            oCurRes  = tTest[1]; # tdTestResult
+            reporter.log('Testing #%d, sSrc=%s, sDst=%s, fFlags=%s ...' % (i, oCurTest.sSrc, oCurTest.sDst, oCurTest.fFlags));
+
             oCurTest.setEnvironment(oSession, oTxsSession, oTestVm);
-            fRc, oCurGuestSession = oCurTest.createSession('testGuestCtrlCopyTo: Test #%d' % (i,));
-            if fRc is False:
-                reporter.error('Test #%d failed: Could not create session' % (i,));
+            fRc, oCurGuestSession = oCurTest.createSession('testGuestCtrlCopyTo: Test #%d' % (i,), fIsError = True);
+            if fRc is not True:
+                fRc = reporter.error('Test #%d failed: Could not create session' % (i,));
                 break;
 
             fRc2 = False;
-            if os.path.isdir(oCurTest.sSrc):
-                try:
-                    oCurProgress = oCurGuestSession.directoryCopyToGuest(oCurTest.sSrc, oCurTest.sDst, oCurTest.fFlags);
-                    if oCurProgress is not None:
-                        oProgress = vboxwrappers.ProgressWrapper(oCurProgress, self.oTstDrv.oVBoxMgr, self.oTstDrv, \
-                                                                 "gctrlDirCopyTo");
-                        try:
-                            oProgress.wait();
-                            if oProgress.isSuccess():
-                                fRc2 = True;
-                            else:
-                                oProgress.logResult(fIgnoreErrors = True);
-                        except:
-                            reporter.logXcpt('Waiting exception for sSrc="%s", sDst="%s":' % (oCurTest.sSrc, oCurTest.sDst));
-                    else:
-                        reporter.error('No progress object returned');
-                except:
-                    reporter.logXcpt('directoryCopyToGuest exception for sSrc="%s", sDst="%s":' % (oCurTest.sSrc, oCurTest.sDst));
+            if os.path.isdir(oCurTest.sSrc): ## @todo r=bird: Not good enough. Test case must know which one it's testing.
+                fRc2 = self.gctrlCopyDirTo(oCurGuestSession, oCurTest.sSrc, oCurTest.sDst, oCurTest.fFlags, oCurRes.fRc);
             else:
-                fRc2 = self.gctrlCopyFileTo(oCurGuestSession, oCurTest.sSrc, oCurTest.sDst, oCurTest.fFlags);
-
-            oCurTest.closeSession();
-
-            if fRc2 is oCurRes.fRc:
-                ## @todo Verify the copied results (size, checksum?).
-                pass;
+                fRc2 = self.gctrlCopyFileTo(oCurGuestSession, oCurTest.sSrc, oCurTest.sDst, oCurTest.fFlags, oCurRes.fRc);
+            if fRc2 is not oCurRes.fRc:
+                fRc = reporter.error('Test #%d failed: Got %s, expected %s' % (i, fRc2, oCurRes.fRc));
             else:
-                reporter.error('Test #%d failed: Got %s, expected %s' % (i, fRc2, oCurRes.fRc));
-                fRc = False;
-                break;
+                pass; ## @todo verify what was copied!!
+
+            fRc = oCurTest.closeSession(True) and fRc;
 
         return (fRc, oTxsSession);
 
