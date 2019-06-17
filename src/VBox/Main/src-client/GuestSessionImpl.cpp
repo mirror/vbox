@@ -2983,6 +2983,7 @@ HRESULT GuestSession::fileCopyFromGuest(const com::Utf8Str &aSource, const com::
     {
         for (size_t i = 0; i < aFlags.size(); i++)
             fFlags |= aFlags[i];
+        /** @todo r=bird: Please reject unknown flags. */
     }
 
     GuestSessionFsSourceSet SourceSet;
@@ -3010,6 +3011,7 @@ HRESULT GuestSession::fileCopyToGuest(const com::Utf8Str &aSource, const com::Ut
     {
         for (size_t i = 0; i < aFlags.size(); i++)
             fFlags |= aFlags[i];
+        /** @todo r=bird: Please reject unknown flags. */
     }
 
     GuestSessionFsSourceSet SourceSet;
@@ -3204,6 +3206,7 @@ HRESULT GuestSession::directoryCopyFromGuest(const com::Utf8Str &aSource, const 
     {
         for (size_t i = 0; i < aFlags.size(); i++)
             fFlags |= aFlags[i];
+        /** @todo r=bird: Please reject unknown flags. */
     }
 
     GuestSessionFsSourceSet SourceSet;
@@ -3232,6 +3235,7 @@ HRESULT GuestSession::directoryCopyToGuest(const com::Utf8Str &aSource, const co
     {
         for (size_t i = 0; i < aFlags.size(); i++)
             fFlags |= aFlags[i];
+        /** @todo r=bird: Please reject unknown flags. */
     }
 
     GuestSessionFsSourceSet SourceSet;
@@ -3265,6 +3269,7 @@ HRESULT GuestSession::directoryCreate(const com::Utf8Str &aPath, ULONG aMode,
         for (size_t i = 0; i < aFlags.size(); i++)
             fFlags |= aFlags[i];
 
+        /** @todo r=bird: This should be: if (fFlags & ~DirectoryCreateFlag_Parents) */
         if (fFlags)
             if (!(fFlags & DirectoryCreateFlag_Parents))
                 return setError(E_INVALIDARG, tr("Unknown flags (%#x)"), fFlags);
