@@ -198,6 +198,8 @@ VBGLR3DECL(int) VbglR3ClipboardReadDataHdr(HGCMCLIENTID idClient, PVBOXCLIPBOARD
         Msg.enmCompression.GetUInt32(&pDataHdr->enmCompression);
         Msg.enmChecksumType.GetUInt32((uint32_t *)&pDataHdr->enmChecksumType);
         Msg.cbChecksum.GetUInt32(&pDataHdr->cbChecksum);
+
+        AssertReturn(SharedClipboardURIDataHdrIsValid(pDataHdr), VERR_INVALID_PARAMETER);
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -207,8 +209,8 @@ VBGLR3DECL(int) VbglR3ClipboardReadDataHdr(HGCMCLIENTID idClient, PVBOXCLIPBOARD
 /**
  * Sends a guest clipboard data header to the host.
  *
- * This is usually called in reply to a VBOX_SHARED_CLIPBOARD_HOST_MSG_WRITE_DATA_HDR message
- * from the host.
+ * This is usually called in reply to a VBOX_SHARED_CLIPBOARD_HOST_READ_DATA message from the host
+ * (if URI format is specified).
  *
  * @returns VBox status code.
  * @param   idClient        The client id returned by VbglR3ClipboardConnect().
@@ -217,22 +219,32 @@ VBGLR3DECL(int) VbglR3ClipboardReadDataHdr(HGCMCLIENTID idClient, PVBOXCLIPBOARD
 VBGLR3DECL(int) VbglR3ClipboardWriteDataHdr(HGCMCLIENTID idClient, const PVBOXCLIPBOARDDATAHDR pDataHdr)
 {
     VBoxClipboardWriteDataHdrMsg Msg;
+    RT_ZERO(Msg);
+
     VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient, VBOX_SHARED_CLIPBOARD_GUEST_FN_WRITE_DATA_HDR, VBOX_SHARED_CLIPBOARD_CPARMS_WRITE_DATA_HDR);
+
+    AssertReturn(SharedClipboardURIDataHdrIsValid(pDataHdr), VERR_INVALID_PARAMETER);
 
     Msg.uContext.SetUInt32(0);                                          /** @todo Not used yet. */
     Msg.uFlags.SetUInt32(pDataHdr->uFlags);                             /** @todo Not used yet. */
-    Msg.uScreenId.SetUInt32(pDataHdr->uScreenId);                       /** @todo Not used for guest->host (yet). */
+    Msg.uScreenId.SetUInt32(pDataHdr->uScreenId);                       /** @todo Not used yet. */
     Msg.cbTotal.SetUInt64(pDataHdr->cbTotal);
     Msg.cbMeta.SetUInt32(pDataHdr->cbMeta);
-    Msg.cbMetaFmt.SetPtr(pDataHdr->pvMetaFmt, pDataHdr->cbMetaFmt);
+    Msg.pvMetaFmt.SetPtr(pDataHdr->pvMetaFmt, pDataHdr->cbMetaFmt);
     Msg.cbMetaFmt.SetUInt32(pDataHdr->cbMetaFmt);
     Msg.cObjects.SetUInt64(pDataHdr->cObjects);
     Msg.enmCompression.SetUInt32(pDataHdr->enmCompression);             /** @todo Not used yet. */
-    Msg.enmChecksumType.SetUInt32(pDataHdr->enmChecksumType);           /** @todo Not used yet. */
-    Msg.cbChecksum.SetPtr(pDataHdr->pvChecksum, pDataHdr->cbChecksum);  /** @todo Not used yet. */
-    Msg.cbChecksum.SetUInt32(pDataHdr->cbChecksum);                     /** @todo Not used yet. */
+    Msg.enmChecksumType.SetUInt32(RTDIGESTTYPE_INVALID);                /** @todo Not used yet. */
+    Msg.pvChecksum.SetPtr(NULL, 0);                                     /** @todo Not used yet. */
+    Msg.cbChecksum.SetUInt32(0);                                        /** @todo Not used yet. */
 
-    return VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
+    int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
+
+    LogFlowFunc(("cbTotal=%RU64, cbMeta=%RU32, pvMetaFmt=%p (%RU32), cObjects=%RU64, rc=%Rrc\n",
+                 pDataHdr->cbTotal, pDataHdr->cbMeta, pDataHdr->pvMetaFmt, pDataHdr->cbMetaFmt, pDataHdr->cObjects, rc));
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
 }
 
 /**
@@ -788,9 +800,9 @@ VBGLR3DECL(int) VbglR3ClipboardWriteFileData(HGCMCLIENTID idClient, void *pvData
  */
 VBGLR3DECL(int) VbglR3ClipboardReportFormats(HGCMCLIENTID idClient, uint32_t fFormats)
 {
-    VBoxClipboardWriteFormatsMsg Msg;
+    VBoxClipboardReportFormatsMsg Msg;
 
-    VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient, VBOX_SHARED_CLIPBOARD_GUEST_FN_REPORT_FORMATS, VBOX_SHARED_CLIPBOARD_CPARMS_FORMATS);
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient, VBOX_SHARED_CLIPBOARD_GUEST_FN_REPORT_FORMATS, VBOX_SHARED_CLIPBOARD_CPARMS_REPORT_FORMATS);
     VbglHGCMParmUInt32Set(&Msg.formats, fFormats);
 
     return VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));

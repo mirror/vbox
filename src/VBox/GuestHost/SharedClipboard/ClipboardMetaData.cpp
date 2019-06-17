@@ -74,6 +74,8 @@ int SharedClipboardMetaDataAdd(PSHAREDCLIPBOARDMETADATA pMeta, const void *pvDat
 {
     AssertPtrReturn(pMeta, VERR_INVALID_POINTER);
 
+    LogFlowFunc(("pvDataAdd=%p, cbDatadd=%RU32\n", pvDataAdd, cbDataAdd));
+
     if (!cbDataAdd)
         return VINF_SUCCESS;
     AssertPtrReturn(pvDataAdd, VERR_INVALID_POINTER);

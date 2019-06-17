@@ -239,7 +239,7 @@ struct SharedClipboardAreaData
 };
 
 /** Map of Shared Clipboard areas. The key defines the area ID. */
-typedef std::map<ULONG, SharedClipboardAreaData> SharedClipboardAreaMap;
+typedef std::map<ULONG, SharedClipboardAreaData *> SharedClipboardAreaMap;
 
 /**
  * Structure for keeping global Shared Clipboard data within the VirtualBox object.
@@ -3380,30 +3380,56 @@ struct GuestPropertyEvent : public VirtualBox::CallbackEvent
 /**
  * Generates a new clipboard area on the host by opening (and locking) a new, temporary directory.
  *
- * @returns HRESULT
- * @param   AreaData            Area data to use for clipboard area creation.
+ * @returns VBox status code.
+ * @param   uAreaID             Clipboard area ID to use for creation.
  * @param   fFlags              Additional creation flags; currently unused and ignored.
+ * @param   ppAreaData          Where to return the created clipboard area on success.
  */
-int VirtualBox::i_clipboardAreaCreate(SharedClipboardAreaData &AreaData, uint32_t fFlags)
+int VirtualBox::i_clipboardAreaCreate(ULONG uAreaID, uint32_t fFlags, SharedClipboardAreaData **ppAreaData)
 {
     RT_NOREF(fFlags);
-    int vrc = AreaData.Area.OpenTemp(AreaData.uID, SHAREDCLIPBOARDAREA_OPEN_FLAGS_MUST_NOT_EXIST);
-    LogFlowFunc(("uID=%RU32, rc=%Rrc\n", AreaData.uID, vrc));
+
+    int vrc;
+
+    SharedClipboardAreaData *pAreaData = new SharedClipboardAreaData();
+    if (pAreaData)
+    {
+        vrc = pAreaData->Area.OpenTemp(uAreaID, SHAREDCLIPBOARDAREA_OPEN_FLAGS_MUST_NOT_EXIST);
+        if (RT_SUCCESS(vrc))
+        {
+            pAreaData->uID = uAreaID;
+
+            *ppAreaData = pAreaData;
+        }
+    }
+    else
+        vrc = VERR_NO_MEMORY;
+
+    LogFlowFunc(("uID=%RU32, rc=%Rrc\n", uAreaID, vrc));
     return vrc;
 }
 
 /**
  * Destroys a formerly created clipboard area.
  *
- * @returns HRESULT
- * @param   AreaData            Area data to use for clipboard area destruction.
+ * @returns VBox status code.
+ * @param   pAreaData           Area data to destroy. The pointer will be invalid on successful return.
  */
-int VirtualBox::i_clipboardAreaDestroy(SharedClipboardAreaData &AreaData)
+int VirtualBox::i_clipboardAreaDestroy(SharedClipboardAreaData *pAreaData)
 {
+    if (!pAreaData)
+        return VINF_SUCCESS;
+
     /** @todo Do we need a worker for this to not block here for too long?
      *        This could take a while to clean up huge areas ... */
-    int vrc = AreaData.Area.Close();
-    LogFlowFunc(("uID=%RU32, rc=%Rrc\n", AreaData.uID, vrc));
+    int vrc = pAreaData->Area.Close();
+    if (RT_SUCCESS(vrc))
+    {
+        delete pAreaData;
+        pAreaData = NULL;
+    }
+
+    LogFlowFunc(("uID=%RU32, rc=%Rrc\n", pAreaData->uID, vrc));
     return vrc;
 }
 
@@ -3435,13 +3461,11 @@ HRESULT VirtualBox::i_onClipboardAreaRegister(const std::vector<com::Utf8Str> &a
                     if (m->SharedClipboard.mapClipboardAreas.find(uAreaID) != m->SharedClipboard.mapClipboardAreas.end())
                         continue;
 
-                    SharedClipboardAreaData AreaData;
-                    AreaData.uID = uAreaID;
-
-                    vrc = i_clipboardAreaCreate(AreaData, 0 /* fFlags */);
+                    SharedClipboardAreaData *pAreaData;
+                    vrc = i_clipboardAreaCreate(uAreaID, 0 /* fFlags */, &pAreaData);
                     if (RT_SUCCESS(vrc))
                     {
-                        m->SharedClipboard.mapClipboardAreas[uAreaID] = AreaData;
+                        m->SharedClipboard.mapClipboardAreas[uAreaID] = pAreaData;
                         m->SharedClipboard.uMostRecentClipboardAreaID = uAreaID;
 
                         /** @todo Implement collision detection / wrap-around. */
@@ -3450,7 +3474,7 @@ HRESULT VirtualBox::i_onClipboardAreaRegister(const std::vector<com::Utf8Str> &a
                             *aID = uAreaID;
 
                         LogThisFunc(("Registered new clipboard area %RU32: '%s'\n",
-                                     uAreaID, AreaData.Area.GetDirAbs()));
+                                     uAreaID, pAreaData->Area.GetDirAbs()));
                         break;
                     }
                 }
@@ -3494,7 +3518,7 @@ HRESULT VirtualBox::i_onClipboardAreaUnregister(ULONG aID)
         SharedClipboardAreaMap::iterator itArea = m->SharedClipboard.mapClipboardAreas.find(aID);
         if (itArea != m->SharedClipboard.mapClipboardAreas.end())
         {
-            if (itArea->second.Area.GetRefCount() == 0)
+            if (itArea->second->Area.GetRefCount() == 0)
             {
                 vrc = i_clipboardAreaDestroy(itArea->second);
                 if (RT_SUCCESS(vrc))
@@ -3533,7 +3557,7 @@ HRESULT VirtualBox::i_onClipboardAreaAttach(ULONG aID)
         SharedClipboardAreaMap::iterator itArea = m->SharedClipboard.mapClipboardAreas.find(aID);
         if (itArea != m->SharedClipboard.mapClipboardAreas.end())
         {
-            uint32_t cRefs = itArea->second.Area.AddRef();
+            uint32_t cRefs = itArea->second->Area.AddRef();
             LogFlowThisFunc(("aID=%RU32 -> cRefs=%RU32\n", aID, cRefs));
             vrc = VINF_SUCCESS;
         }
@@ -3564,7 +3588,7 @@ HRESULT VirtualBox::i_onClipboardAreaDetach(ULONG aID)
         SharedClipboardAreaMap::iterator itArea = m->SharedClipboard.mapClipboardAreas.find(aID);
         if (itArea != m->SharedClipboard.mapClipboardAreas.end())
         {
-            uint32_t cRefs = itArea->second.Area.Release();
+            uint32_t cRefs = itArea->second->Area.Release();
             LogFlowThisFunc(("aID=%RU32 -> cRefs=%RU32\n", aID, cRefs));
             vrc = VINF_SUCCESS;
         }
@@ -3614,7 +3638,7 @@ ULONG VirtualBox::i_onClipboardAreaGetRefCount(ULONG aID)
         SharedClipboardAreaMap::iterator itArea = m->SharedClipboard.mapClipboardAreas.find(aID);
         if (itArea != m->SharedClipboard.mapClipboardAreas.end())
         {
-            cRefCount = itArea->second.Area.GetRefCount();
+            cRefCount = itArea->second->Area.GetRefCount();
         }
 
         rc2 = RTCritSectLeave(&m->SharedClipboard.CritSect);

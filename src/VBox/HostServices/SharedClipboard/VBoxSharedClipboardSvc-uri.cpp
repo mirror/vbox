@@ -96,6 +96,14 @@ void SharedClipboardURIFileDataDestroy(PVBOXCLIPBOARDFILEDATA pFileData)
     }
 }
 
+/**
+ * Reads an URI data header from HGCM service parameters.
+ *
+ * @returns VBox status code.
+ * @param   cParms              Number of HGCM parameters supplied in \a paParms.
+ * @param   paParms             Array of HGCM parameters.
+ * @param   pDataHdr            Where to store the result.
+ */
 int VBoxSvcClipboardURIReadDataHdr(uint32_t cParms, VBOXHGCMSVCPARM paParms[], PVBOXCLIPBOARDDATAHDR pDataHdr)
 {
     if (cParms != VBOX_SHARED_CLIPBOARD_CPARMS_WRITE_DATA_HDR)
@@ -139,6 +147,14 @@ int VBoxSvcClipboardURIReadDataHdr(uint32_t cParms, VBOXHGCMSVCPARM paParms[], P
     return rc;
 }
 
+/**
+ * Reads an URI data chunk from HGCM service parameters.
+ *
+ * @returns VBox status code.
+ * @param   cParms              Number of HGCM parameters supplied in \a paParms.
+ * @param   paParms             Array of HGCM parameters.
+ * @param   pDataHdr            Where to store the result.
+ */
 int VBoxSvcClipboardURIReadDataChunk(uint32_t cParms, VBOXHGCMSVCPARM paParms[], PVBOXCLIPBOARDDATACHUNK pDataChunk)
 {
     if (cParms != VBOX_SHARED_CLIPBOARD_CPARMS_WRITE_DATA_CHUNK)
@@ -165,6 +181,14 @@ int VBoxSvcClipboardURIReadDataChunk(uint32_t cParms, VBOXHGCMSVCPARM paParms[],
     return rc;
 }
 
+/**
+ * Reads an URI directory entry from HGCM service parameters.
+ *
+ * @returns VBox status code.
+ * @param   cParms              Number of HGCM parameters supplied in \a paParms.
+ * @param   paParms             Array of HGCM parameters.
+ * @param   pDataHdr            Where to store the result.
+ */
 int VBoxSvcClipboardURIReadDir(uint32_t cParms, VBOXHGCMSVCPARM paParms[], PVBOXCLIPBOARDDIRDATA pDirData)
 {
     if (cParms != VBOX_SHARED_CLIPBOARD_CPARMS_WRITE_DIR)
@@ -191,6 +215,14 @@ int VBoxSvcClipboardURIReadDir(uint32_t cParms, VBOXHGCMSVCPARM paParms[], PVBOX
     return rc;
 }
 
+/**
+ * Reads an URI file header from HGCM service parameters.
+ *
+ * @returns VBox status code.
+ * @param   cParms              Number of HGCM parameters supplied in \a paParms.
+ * @param   paParms             Array of HGCM parameters.
+ * @param   pDataHdr            Where to store the result.
+ */
 int VBoxSvcClipboardURIReadFileHdr(uint32_t cParms, VBOXHGCMSVCPARM paParms[], PVBOXCLIPBOARDFILEHDR pFileHdr)
 {
     if (cParms != VBOX_SHARED_CLIPBOARD_CPARMS_WRITE_FILE_HDR)
@@ -216,6 +248,14 @@ int VBoxSvcClipboardURIReadFileHdr(uint32_t cParms, VBOXHGCMSVCPARM paParms[], P
     return rc;
 }
 
+/**
+ * Reads an URI file data chunk from HGCM service parameters.
+ *
+ * @returns VBox status code.
+ * @param   cParms              Number of HGCM parameters supplied in \a paParms.
+ * @param   paParms             Array of HGCM parameters.
+ * @param   pDataHdr            Where to store the result.
+ */
 int VBoxSvcClipboardURIReadFileData(uint32_t cParms, VBOXHGCMSVCPARM paParms[], PVBOXCLIPBOARDFILEDATA pFileData)
 {
     if (cParms != VBOX_SHARED_CLIPBOARD_CPARMS_WRITE_FILE_DATA)
@@ -288,6 +328,8 @@ int vboxSvcClipboardURIHandler(uint32_t u32ClientID,
 
     const PSHAREDCLIPBOARDURITRANSFER pTransfer = SharedClipboardURICtxGetTransfer(&pClientData->URI, 0 /* Index */);
 
+    bool fWrite = false;
+
     rc = VERR_INVALID_PARAMETER; /* Play safe. */
 
     switch (u32Function)
@@ -314,20 +356,10 @@ int vboxSvcClipboardURIHandler(uint32_t u32ClientID,
         }
 
         case VBOX_SHARED_CLIPBOARD_GUEST_FN_WRITE_DATA_HDR:
-            RT_FALL_THROUGH();
-#if 0
-            case VBOX_SHARED_CLIPBOARD_GUEST_FN_WRITE_DATA_CHUNK:
-            RT_FALL_THROUGH();
-        case VBOX_SHARED_CLIPBOARD_GUEST_FN_WRITE_DIR:
-            RT_FALL_THROUGH();
-        case VBOX_SHARED_CLIPBOARD_GUEST_FN_WRITE_FILE_HDR:
-            RT_FALL_THROUGH();
-        case VBOX_SHARED_CLIPBOARD_GUEST_FN_WRITE_FILE_DATA:
-            RT_FALL_THROUGH();
-        case VBOX_SHARED_CLIPBOARD_GUEST_FN_WRITE_CANCEL:
-            RT_FALL_THROUGH();
-        case VBOX_SHARED_CLIPBOARD_GUEST_FN_WRITE_ERROR:
         {
+
+            RT_BREAKPOINT();
+
             if (   u32Function == VBOX_SHARED_CLIPBOARD_GUEST_FN_WRITE_DATA_HDR
                 && SharedClipboardURICtxMaximumTransfersReached(&pClientData->URI))
             {
@@ -335,20 +367,9 @@ int vboxSvcClipboardURIHandler(uint32_t u32ClientID,
                 break;
             }
 
-            SHAREDCLIPBOARDPROVIDERWRITEPARMS writeParms;
-            RT_ZERO(writeParms);
-
-            writeParms.u.HostService.uMsg    = u32Function;
-            writeParms.u.HostService.cParms  = cParms;
-            writeParms.u.HostService.paParms = paParms;
-
-            rc = pTransfer->pProvider->Write(&writeParms);
-
-
-
+            fWrite = true;
             break;
         }
-#endif
 
         case VBOX_SHARED_CLIPBOARD_GUEST_FN_WRITE_DATA_CHUNK:
         {
@@ -360,6 +381,7 @@ int vboxSvcClipboardURIHandler(uint32_t u32ClientID,
                 break;
             }
 
+           fWrite = true;
 #if 0
             if (RT_SUCCESS(rc))
             {
@@ -644,6 +666,21 @@ int vboxSvcClipboardURIHandler(uint32_t u32ClientID,
             break;
     }
 
+    if (RT_SUCCESS(rc))
+    {
+        if (fWrite)
+        {
+            SHAREDCLIPBOARDPROVIDERWRITEPARMS writeParms;
+            RT_ZERO(writeParms);
+
+            writeParms.u.HostService.uMsg    = u32Function;
+            writeParms.u.HostService.cParms  = cParms;
+            writeParms.u.HostService.paParms = paParms;
+
+            rc = pTransfer->pProvider->OnWrite(&writeParms);
+        }
+    }
+
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
@@ -706,14 +743,18 @@ int vboxSvcClipboardURIAreaRegister(PVBOXCLIPBOARDCLIENTSTATE pClientState, PSHA
     RT_ZERO(parms);
 
     parms.uID                  = NIL_SHAREDCLIPBOARDAREAID;
-    parms.u.fn_register.pvData = SharedClipboardMetaDataMutableRaw(&pTransfer->Cache.Meta);
-    parms.u.fn_register.cbData = (uint32_t)SharedClipboardMetaDataGetUsed(&pTransfer->Cache.Meta);
+    parms.u.fn_register.pvData = SharedClipboardMetaDataMutableRaw(&pTransfer->State.Meta);
+    parms.u.fn_register.cbData = (uint32_t)SharedClipboardMetaDataGetUsed(&pTransfer->State.Meta);
 
     /* As the meta data is now complete, register a new clipboard on the host side. */
     int rc = g_pfnExtension(g_pvExtension, VBOX_CLIPBOARD_EXT_FN_AREA_REGISTER, &parms, sizeof(parms));
     if (RT_SUCCESS(rc))
+    {
+        /* Note: Do *not* specify SHAREDCLIPBOARDAREA_OPEN_FLAGS_MUST_NOT_EXIST as flags here, as VBoxSVC took care of the
+         *       clipboard area creation already. */
         rc = pTransfer->pArea->OpenTemp(parms.uID /* Area ID */,
-                                        SHAREDCLIPBOARDAREA_OPEN_FLAGS_MUST_NOT_EXIST);
+                                        SHAREDCLIPBOARDAREA_OPEN_FLAGS_NONE);
+    }
 
     LogFlowFunc(("Registered new clipboard area (%RU32) by client %RU32 with rc=%Rrc\n",
                  parms.uID, pClientState->u32ClientID, rc));
@@ -813,14 +854,19 @@ int vboxSvcClipboardURIAreaDetach(PVBOXCLIPBOARDCLIENTSTATE pClientState, PSHARE
 
     const uint32_t uAreaID = pTransfer->pArea->GetID();
 
-    VBOXCLIPBOARDEXTAREAPARMS parms;
-    RT_ZERO(parms);
-    parms.uID = uAreaID;
+    int rc = VINF_SUCCESS;
 
-    int rc = g_pfnExtension(g_pvExtension, VBOX_CLIPBOARD_EXT_FN_AREA_DETACH, &parms, sizeof(parms));
+    if (g_pfnExtension)
+    {
+        VBOXCLIPBOARDEXTAREAPARMS parms;
+        RT_ZERO(parms);
+        parms.uID = uAreaID;
 
-    LogFlowFunc(("Detached client %RU32 from clipboard area %RU32 with rc=%Rrc\n",
-                 pClientState->u32ClientID, uAreaID, rc));
+        rc = g_pfnExtension(g_pvExtension, VBOX_CLIPBOARD_EXT_FN_AREA_DETACH, &parms, sizeof(parms));
+
+        LogFlowFunc(("Detached client %RU32 from clipboard area %RU32 with rc=%Rrc\n",
+                     pClientState->u32ClientID, uAreaID, rc));
+    }
 
     LogFlowFuncLeaveRC(rc);
     return rc;

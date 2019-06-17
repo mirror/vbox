@@ -199,7 +199,7 @@ bool VBoxClipboardWinIsNewAPI(PVBOXCLIPBOARDWINAPINEW pAPI)
  * @returns VBox status code.
  * @param   pCtx                Windows clipboard context to use to add ourselves.
  */
-int VBoxClipboardWinAddToCBChain(PVBOXCLIPBOARDWINCTX pCtx)
+int VBoxClipboardWinChainAdd(PVBOXCLIPBOARDWINCTX pCtx)
 {
     const PVBOXCLIPBOARDWINAPINEW pAPI = &pCtx->newAPI;
 
@@ -232,7 +232,7 @@ int VBoxClipboardWinAddToCBChain(PVBOXCLIPBOARDWINCTX pCtx)
  * @returns VBox status code.
  * @param   pCtx                Windows clipboard context to use to remove ourselves.
  */
-int VBoxClipboardWinRemoveFromCBChain(PVBOXCLIPBOARDWINCTX pCtx)
+int VBoxClipboardWinChainRemove(PVBOXCLIPBOARDWINCTX pCtx)
 {
     if (!pCtx->hWnd)
         return VINF_SUCCESS;
@@ -285,6 +285,38 @@ VOID CALLBACK VBoxClipboardWinChainPingProc(HWND hWnd, UINT uMsg, ULONG_PTR dwDa
     AssertPtrReturnVoid(pCtx);
 
     pCtx->oldAPI.fCBChainPingInProcess = FALSE;
+}
+
+/**
+ * Passes a window message to the next window in the clipboard chain.
+ *
+ * @returns LRESULT
+ * @param   pWinCtx             Window context to use.
+ * @param   msg                 Window message to pass.
+ * @param   wParam              WPARAM to pass.
+ * @param   lParam              LPARAM to pass.
+ */
+LRESULT VBoxClipboardWinChainPassToNext(PVBOXCLIPBOARDWINCTX pWinCtx,
+                                        UINT msg, WPARAM wParam, LPARAM lParam)
+{
+    LogFlowFuncEnter();
+
+    LRESULT lresultRc = 0;
+
+    if (pWinCtx->hWndNextInChain)
+    {
+        LogFunc(("hWndNextInChain=%p\n", pWinCtx->hWndNextInChain));
+
+        /* Pass the message to next window in the clipboard chain. */
+        DWORD_PTR dwResult;
+        lresultRc = SendMessageTimeout(pWinCtx->hWndNextInChain, msg, wParam, lParam, 0,
+                                       VBOX_CLIPBOARD_CBCHAIN_TIMEOUT_MS, &dwResult);
+        if (!lresultRc)
+            lresultRc = dwResult;
+    }
+
+    LogFlowFunc(("lresultRc=%ld\n", lresultRc));
+    return lresultRc;
 }
 
 /**
@@ -377,7 +409,7 @@ int VBoxClipboardWinGetFormats(PVBOXCLIPBOARDWINCTX pCtx, PVBOXCLIPBOARDFORMATS 
     }
     else
     {
-        LogFlowFunc(("pfFormats=0x%08X\n", pfFormats));
+        LogFlowFunc(("fFormats=0x%08X\n", fFormats));
         *pfFormats = fFormats;
     }
 
@@ -603,10 +635,208 @@ int VBoxClipboardWinConvertMIMEToCFHTML(const char *pszSource, size_t cb, char *
     return VINF_SUCCESS;
 }
 
-int VBoxClipboardWinHandleWMSetFormats(const PVBOXCLIPBOARDWINCTX pCtx, VBOXCLIPBOARDFORMATS fFormats)
+#ifdef LOG_ENABLED
+/**
+ * Dumps data using a specified clipboard format.
+ *
+ * @param   pv                  Pointer to data to dump.
+ * @param   cb                  Size (in bytes) of data to dump.
+ * @param   u32Format           Clipboard format to use for dumping.
+ */
+void VBoxClipboardWinDump(const void *pv, size_t cb, VBOXCLIPBOARDFORMAT u32Format)
 {
-    RT_NOREF(pCtx);
+    if (u32Format & VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT)
+    {
+        LogFunc(("VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT:\n"));
+        if (pv && cb)
+            LogFunc(("%ls\n", pv));
+        else
+            LogFunc(("%p %zu\n", pv, cb));
+    }
+    else if (u32Format & VBOX_SHARED_CLIPBOARD_FMT_BITMAP)
+        LogFunc(("VBOX_SHARED_CLIPBOARD_FMT_BITMAP\n"));
+    else if (u32Format & VBOX_SHARED_CLIPBOARD_FMT_HTML)
+    {
+        LogFunc(("VBOX_SHARED_CLIPBOARD_FMT_HTML:\n"));
+        if (pv && cb)
+        {
+            LogFunc(("%s\n", pv));
 
+            //size_t cb = RTStrNLen(pv, );
+            char *pszBuf = (char *)RTMemAllocZ(cb + 1);
+            RTStrCopy(pszBuf, cb + 1, (const char *)pv);
+            for (size_t off = 0; off < cb; ++off)
+            {
+                if (pszBuf[off] == '\n' || pszBuf[off] == '\r')
+                    pszBuf[off] = ' ';
+            }
+
+            LogFunc(("%s\n", pszBuf));
+            RTMemFree(pszBuf);
+        }
+        else
+            LogFunc(("%p %zu\n", pv, cb));
+    }
+    else
+        LogFunc(("Invalid format %02X\n", u32Format));
+}
+#else  /* !LOG_ENABLED */
+#   define VBoxClipboardWinDump(__pv, __cb, __format) do { NOREF(__pv); NOREF(__cb); NOREF(__format); } while (0)
+#endif /* !LOG_ENABLED */
+
+/**
+ * Handles the WM_CHANGECBCHAIN code.
+ *
+ * @returns LRESULT
+ * @param   pWinCtx             Windows context to use.
+ * @param   hWnd                Window handle to use.
+ * @param   msg                 Message ID to pass on.
+ * @param   wParam              wParam to pass on
+ * @param   lParam              lParam to pass on.
+ */
+LRESULT VBoxClipboardWinHandleWMChangeCBChain(PVBOXCLIPBOARDWINCTX pWinCtx,
+                                              HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+    LRESULT lresultRc = 0;
+
+    LogFlowFuncEnter();
+
+    if (VBoxClipboardWinIsNewAPI(&pWinCtx->newAPI))
+    {
+        lresultRc = DefWindowProc(hWnd, msg, wParam, lParam);
+    }
+    else /* Old API */
+    {
+        HWND hwndRemoved = (HWND)wParam;
+        HWND hwndNext    = (HWND)lParam;
+
+        if (hwndRemoved == pWinCtx->hWndNextInChain)
+        {
+            /* The window that was next to our in the chain is being removed.
+             * Relink to the new next window.
+             */
+            pWinCtx->hWndNextInChain = hwndNext;
+        }
+        else
+        {
+            if (pWinCtx->hWndNextInChain)
+            {
+                /* Pass the message further. */
+                DWORD_PTR dwResult;
+                lresultRc = SendMessageTimeout(pWinCtx->hWndNextInChain, WM_CHANGECBCHAIN, wParam, lParam, 0,
+                                                VBOX_CLIPBOARD_CBCHAIN_TIMEOUT_MS,
+                                                &dwResult);
+                if (!lresultRc)
+                    lresultRc = (LRESULT)dwResult;
+            }
+        }
+    }
+
+    LogFlowFunc(("lresultRc=%ld\n", lresultRc));
+    return lresultRc;
+}
+
+/**
+ * Handles the WM_DESTROY code.
+ *
+ * @returns VBox status code.
+ * @param   pWinCtx             Windows context to use.
+ */
+int VBoxClipboardWinHandleWMDestroy(PVBOXCLIPBOARDWINCTX pWinCtx)
+{
+    LogFlowFuncEnter();
+
+    int rc = VINF_SUCCESS;
+
+    /* MS recommends to remove from Clipboard chain in this callback. */
+    VBoxClipboardWinChainRemove(pWinCtx);
+
+    if (pWinCtx->oldAPI.timerRefresh)
+    {
+        Assert(pWinCtx->hWnd);
+        KillTimer(pWinCtx->hWnd, 0);
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+/**
+ * Handles the WM_RENDERALLFORMATS message.
+ *
+ * @returns VBox status code.
+ * @param   pWinCtx             Windows context to use.
+ * @param   hWnd                Window handle to use.
+ */
+int VBoxClipboardWinHandleWMRenderAllFormats(PVBOXCLIPBOARDWINCTX pWinCtx, HWND hWnd)
+{
+    RT_NOREF(pWinCtx);
+
+    LogFlowFuncEnter();
+
+    /* Do nothing. The clipboard formats will be unavailable now, because the
+     * windows is to be destroyed and therefore the guest side becomes inactive.
+     */
+    int rc = VBoxClipboardWinOpen(hWnd);
+    if (RT_SUCCESS(rc))
+    {
+        VBoxClipboardWinClear();
+        VBoxClipboardWinClose();
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+/**
+ * Handles the WM_TIMER code, which is needed if we're running with the so-called "old" Windows clipboard API.
+ * Does nothing if we're running with the "new" Windows API.
+ *
+ * @returns VBox status code.
+ * @param   pWinCtx             Windows context to use.
+ */
+int VBoxClipboardWinHandleWMTimer(PVBOXCLIPBOARDWINCTX pWinCtx)
+{
+    int rc = VINF_SUCCESS;
+
+    if (!VBoxClipboardWinIsNewAPI(&pWinCtx->newAPI)) /* Only run when using the "old" Windows API. */
+    {
+        LogFlowFuncEnter();
+
+        HWND hViewer = GetClipboardViewer();
+
+        /* Re-register ourselves in the clipboard chain if our last ping
+         * timed out or there seems to be no valid chain. */
+        if (!hViewer || pWinCtx->oldAPI.fCBChainPingInProcess)
+        {
+            VBoxClipboardWinChainRemove(pWinCtx);
+            VBoxClipboardWinChainAdd(pWinCtx);
+       }
+
+       /* Start a new ping by passing a dummy WM_CHANGECBCHAIN to be
+        * processed by ourselves to the chain. */
+       pWinCtx->oldAPI.fCBChainPingInProcess = TRUE;
+
+       hViewer = GetClipboardViewer();
+       if (hViewer)
+           SendMessageCallback(hViewer, WM_CHANGECBCHAIN, (WPARAM)pWinCtx->hWndNextInChain, (LPARAM)pWinCtx->hWndNextInChain,
+                               VBoxClipboardWinChainPingProc, (ULONG_PTR)pWinCtx);
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+/**
+ * Announces a clipboard format to the Windows clipboard.
+ * The actual rendering (setting) of the clipboard data will be done later with a separate WM_RENDERFORMAT message.
+ *
+ * @returns VBox status code. VERR_NOT_SUPPORTED if the format is not supported / handled.
+ * @param   pWinCtx             Windows context to use.
+ * @param   fFormats            Clipboard format(s) to announce.
+ */
+int VBoxClipboardWinAnnounceFormats(PVBOXCLIPBOARDWINCTX pWinCtx, VBOXCLIPBOARDFORMATS fFormats)
+{
     LogFunc(("fFormats=0x%x\n", fFormats));
 
     HANDLE hClip    = NULL;
@@ -619,24 +849,30 @@ int VBoxClipboardWinHandleWMSetFormats(const PVBOXCLIPBOARDWINCTX pCtx, VBOXCLIP
 
     if (fFormats & VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT)
     {
-       LogFunc(("CF_UNICODETEXT\n"));
-       hClip = SetClipboardData(CF_UNICODETEXT, NULL);
+        LogFunc(("CF_UNICODETEXT\n"));
+        hClip = SetClipboardData(CF_UNICODETEXT, NULL);
     }
     else if (fFormats & VBOX_SHARED_CLIPBOARD_FMT_BITMAP)
     {
-       LogFunc(("CF_DIB\n"));
-       hClip = SetClipboardData(CF_DIB, NULL);
+        LogFunc(("CF_DIB\n"));
+        hClip = SetClipboardData(CF_DIB, NULL);
     }
     else if (fFormats & VBOX_SHARED_CLIPBOARD_FMT_HTML)
     {
-       LogFunc(("VBOX_SHARED_CLIPBOARD_FMT_HTML\n"));
-       cfFormat = RegisterClipboardFormat(VBOX_CLIPBOARD_WIN_REGFMT_HTML);
-       if (cfFormat != 0)
-           hClip = SetClipboardData(cfFormat, NULL);
+        LogFunc(("VBOX_SHARED_CLIPBOARD_FMT_HTML\n"));
+        cfFormat = RegisterClipboardFormat(VBOX_CLIPBOARD_WIN_REGFMT_HTML);
+        if (cfFormat != 0)
+            hClip = SetClipboardData(cfFormat, NULL);
     }
     else
     {
-       rc = VERR_NOT_SUPPORTED;
+        LogRel(("Shared Clipboard: Unsupported format(s) (0x%x), skipping\n", fFormats));
+        rc = VERR_NOT_SUPPORTED;
+    }
+
+    if (RT_SUCCESS(rc))
+    {
+        pWinCtx->hWndClipboardOwnerUs = GetClipboardOwner();
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -644,70 +880,88 @@ int VBoxClipboardWinHandleWMSetFormats(const PVBOXCLIPBOARDWINCTX pCtx, VBOXCLIP
 }
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
-int VBoxClipboardWinURIHandleWMSetFormats(const PVBOXCLIPBOARDWINCTX pWinCtx, PSHAREDCLIPBOARDURICTX pURICtx,
-                                          PSHAREDCLIPBOARDPROVIDERCREATIONCTX pProviderCtx,
-                                          VBOXCLIPBOARDFORMATS fFormats)
+/**
+ * Main entry function for reading an URI transfer from a source.
+ *
+ * @returns VBox status code.
+ * @param   pWinCtx             Windows context to use.
+ * @param   pURICtx             URI context to use.
+ * @param   pProviderCtx        Provider (creation) context to use.
+ * @param   fFormats            Format to handle for the transfer.
+ */
+int VBoxClipboardWinURIReadMain(PVBOXCLIPBOARDWINCTX pWinCtx, PSHAREDCLIPBOARDURICTX pURICtx,
+                                PSHAREDCLIPBOARDPROVIDERCREATIONCTX pProviderCtx, VBOXCLIPBOARDFORMATS fFormats)
 {
-    AssertPtrReturn(pWinCtx, VERR_INVALID_POINTER);
     AssertPtrReturn(pURICtx, VERR_INVALID_POINTER);
     AssertPtrReturn(pProviderCtx, VERR_INVALID_POINTER);
 
-    RT_NOREF(pWinCtx);
+    /* Sanity. */
+    AssertReturn(fFormats & VBOX_SHARED_CLIPBOARD_FMT_URI_LIST, VERR_NOT_SUPPORTED);
 
-    if (!(fFormats & VBOX_SHARED_CLIPBOARD_FMT_URI_LIST))
-    {
-        AssertFailed(); /* Should never get here. */
-        return VERR_NOT_SUPPORTED;
-    }
+    LogFlowFunc(("fFormats=0x%x\n", fFormats));
 
     if (SharedClipboardURICtxMaximumTransfersReached(pURICtx))
     {
-        LogRel(("Clipboard: Only one transfer at a time supported (current %RU32 transfer(s) active), skipping\n",
+        LogRel(("Shared Clipboard: Only one transfer at a time supported (current %RU32 transfer(s) active), skipping\n",
                 SharedClipboardURICtxGetActiveTransfers(pURICtx)));
         return VERR_SHCLPB_MAX_TRANSFERS_REACHED;
     }
 
-    /* We want to read from the guest. */
+    /* We want to read from the source. */
     PSHAREDCLIPBOARDURITRANSFER pTransfer;
     int rc = SharedClipboardURITransferCreate(SHAREDCLIPBOARDURITRANSFERDIR_READ, pProviderCtx, &pTransfer);
     if (RT_SUCCESS(rc))
-        rc = SharedClipboardURICtxTransferAdd(pURICtx, pTransfer);
-
-    SharedClipboardWinURITransferCtx *pWinURITransferCtx = new SharedClipboardWinURITransferCtx();
-
-    pTransfer->pvUser = pWinURITransferCtx;
-    pTransfer->cbUser = sizeof(SharedClipboardWinURITransferCtx);
-
-    pWinURITransferCtx->pDataObj = new VBoxClipboardWinDataObject(pTransfer);
-    if (pWinURITransferCtx->pDataObj)
     {
-        rc = pWinURITransferCtx->pDataObj->Init();
+        rc = SharedClipboardURICtxTransferAdd(pURICtx, pTransfer);
         if (RT_SUCCESS(rc))
         {
-            VBoxClipboardWinClose();
-            /* Note: Clipboard must be closed first before calling OleSetClipboard(). */
-
-            /** @todo There is a potential race between VBoxClipboardWinClose() and OleSetClipboard(),
-             *        where another application could own the clipboard (open), and thus the call to
-             *        OleSetClipboard() will fail. Needs (better) fixing. */
-            for (unsigned uTries = 0; uTries < 3; uTries++)
+            SharedClipboardWinURITransferCtx *pWinURITransferCtx = new SharedClipboardWinURITransferCtx();
+            if (pWinURITransferCtx)
             {
-                HRESULT hr = OleSetClipboard(pWinURITransferCtx->pDataObj);
-                if (SUCCEEDED(hr))
+                pTransfer->pvUser = pWinURITransferCtx;
+                pTransfer->cbUser = sizeof(SharedClipboardWinURITransferCtx);
+
+                pWinURITransferCtx->pDataObj = new VBoxClipboardWinDataObject(pTransfer);
+                if (pWinURITransferCtx->pDataObj)
                 {
-                    /* Nothing to do here yet. */
+                    rc = pWinURITransferCtx->pDataObj->Init();
+                    if (RT_SUCCESS(rc))
+                    {
+                        VBoxClipboardWinClose();
+                        /* Note: Clipboard must be closed first before calling OleSetClipboard(). */
+
+                        /** @todo There is a potential race between VBoxClipboardWinClose() and OleSetClipboard(),
+                         *        where another application could own the clipboard (open), and thus the call to
+                         *        OleSetClipboard() will fail. Needs (better) fixing. */
+                        for (unsigned uTries = 0; uTries < 3; uTries++)
+                        {
+                            HRESULT hr = OleSetClipboard(pWinURITransferCtx->pDataObj);
+                            if (SUCCEEDED(hr))
+                            {
+                                /*
+                                 * Calling OleSetClipboard() changed the clipboard owner, which in turn will let us receive
+                                 * a WM_CLIPBOARDUPDATE message. To not confuse ourselves with our own clipboard owner changes,
+                                 * save a new window handle and deal with it in WM_CLIPBOARDUPDATE.
+                                 */
+                                pWinCtx->hWndClipboardOwnerUs = GetClipboardOwner();
+                                break;
+                            }
+                            else
+                            {
+                                rc = VERR_ACCESS_DENIED; /** @todo Fudge; fix this. */
+                                LogRel(("Shared Clipboard: Failed with %Rhrc when setting data object to clipboard\n", hr));
+                                RTThreadSleep(100); /* Wait a bit. */
+                            }
+                        }
+                    }
                 }
                 else
-                {
-                    rc = VERR_ACCESS_DENIED; /** @todo Fudge; fix this. */
-                    LogRel(("Clipboard: Failed with %Rhrc when setting data object to clipboard\n", hr));
-                    RTThreadSleep(100); /* Wait a bit. */
-                }
+                    rc = VERR_NO_MEMORY;
             }
+            else
+                rc = VERR_NO_MEMORY;
         }
     }
-    else
-        rc = VERR_NO_MEMORY;
 
     LogFlowFuncLeaveRC(rc);
     return rc;

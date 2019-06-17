@@ -37,9 +37,9 @@ typedef uint32_t VBOXCLIPBOARDFORMAT;
 /** Pointer to a single Shared Clipboard format. */
 typedef VBOXCLIPBOARDFORMAT *PVBOXCLIPBOARDFORMAT;
 
-/** Bit map of Shared Clipboard format. */
+/** Bit map of Shared Clipboard formats. */
 typedef uint32_t VBOXCLIPBOARDFORMATS;
-/** Pointer to a bit map of Shared Clipboard format. */
+/** Pointer to a bit map of Shared Clipboard formats. */
 typedef VBOXCLIPBOARDFORMATS *PVBOXCLIPBOARDFORMATS;
 
 /**

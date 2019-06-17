@@ -21,9 +21,9 @@
 
 #include <iprt/alloc.h>
 #include <iprt/assert.h>
-#include <iprt/errcore.h>
 #include <iprt/path.h>
 
+#include <VBox/err.h>
 #include <VBox/log.h>
 #include <VBox/GuestHost/clipboard-helper.h>
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
@@ -352,7 +352,50 @@ int vboxClipboardBmpGetDib(const void *pvSrc, size_t cbSrc, const void **ppvDest
     return VINF_SUCCESS;
 }
 
+#ifdef VBOX_STRICT
+int vboxClipboardDbgDumpHtml(const char *pszSrc, size_t cbSrc)
+{
+    size_t cchIgnored = 0;
+    int rc = RTStrNLenEx(pszSrc, cbSrc, &cchIgnored);
+    if (RT_SUCCESS(rc))
+    {
+        char *pszBuf = (char *)RTMemAllocZ(cbSrc + 1);
+        if (pszBuf)
+        {
+            rc = RTStrCopy(pszBuf, cbSrc + 1, (const char *)pszSrc);
+            if (RT_SUCCESS(rc))
+            {
+                for (size_t i = 0; i < cbSrc; ++i)
+                    if (pszBuf[i] == '\n' || pszBuf[i] == '\r')
+                        pszBuf[i] = ' ';
+            }
+            else
+                LogFunc(("Error in copying string\n"));
+            LogFunc(("Removed \\r\\n: %s\n", pszBuf));
+            RTMemFree(pszBuf);
+        }
+        else
+            rc = VERR_NO_MEMORY;
+    }
+
+    return rc;
+}
+#endif
+
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+/**
+ * Returns the size (in bytes) of the announced meta data.
+ *
+ * @returns Announced meta data size in bytes.
+ * @param   pDataHdr            Data header struct to get announced meta data size for.
+ */
+uint32_t SharedClipboardURIDataHdrGetMetaDataSize(PVBOXCLIPBOARDDATAHDR pDataHdr)
+{
+    AssertPtrReturn(pDataHdr, 0);
+
+    return pDataHdr->cbMeta;
+}
+
 /**
  * Initializes an URI data header struct.
  *
@@ -363,7 +406,7 @@ int SharedClipboardURIDataHdrInit(PVBOXCLIPBOARDDATAHDR pDataHdr)
 {
     AssertPtrReturn(pDataHdr, VERR_INVALID_POINTER);
 
-    RT_BZERO(pDataHdr, sizeof(VBOXCLIPBOARDDATAHDR));
+    SharedClipboardURIDataHdrReset(pDataHdr);
 
     return VINF_SUCCESS;
 }
@@ -382,6 +425,14 @@ void SharedClipboardURIDataHdrDestroy(PVBOXCLIPBOARDDATAHDR pDataHdr)
     {
         Assert(pDataHdr->cbMetaFmt);
 
+        PSHAREDCLIPBOARDMETADATAFMT pMetaDatafmt = (PSHAREDCLIPBOARDMETADATAFMT)pDataHdr->pvMetaFmt;
+        AssertPtr(pMetaDatafmt);
+        if (pMetaDatafmt->pvFmt)
+        {
+            Assert(pMetaDatafmt->cbFmt);
+            RTMemFree(pMetaDatafmt->pvFmt);
+        }
+
         RTMemFree(pDataHdr->pvMetaFmt);
         pDataHdr->pvMetaFmt = NULL;
         pDataHdr->cbMetaFmt = 0;
@@ -395,6 +446,21 @@ void SharedClipboardURIDataHdrDestroy(PVBOXCLIPBOARDDATAHDR pDataHdr)
         pDataHdr->pvChecksum = NULL;
         pDataHdr->cbChecksum = 0;
     }
+}
+
+/**
+ * Resets an URI data header struct.
+ *
+ * @returns VBox status code.
+ * @param   pDataHdr            Data header struct to reset.
+ */
+void SharedClipboardURIDataHdrReset(PVBOXCLIPBOARDDATAHDR pDataHdr)
+{
+    AssertPtrReturnVoid(pDataHdr);
+
+    LogFlowFuncEnter();
+
+    RT_BZERO(pDataHdr, sizeof(VBOXCLIPBOARDDATAHDR));
 }
 
 /**
@@ -558,12 +624,12 @@ int SharedClipboardURITransferCreate(SHAREDCLIPBOARDURITRANSFERDIR enmDir, PSHAR
     if (!pTransfer)
         return VERR_NO_MEMORY;
 
-    pTransfer->enmDir = enmDir;
+    pTransfer->State.enmDir = enmDir;
 
-    int rc = SharedClipboardURIDataHdrInit(&pTransfer->Cache.Header);
+    int rc = SharedClipboardURIDataHdrInit(&pTransfer->State.Header);
     if (RT_SUCCESS(rc))
     {
-        rc = SharedClipboardMetaDataInit(&pTransfer->Cache.Meta);
+        rc = SharedClipboardMetaDataInit(&pTransfer->State.Meta);
         if (RT_SUCCESS(rc))
         {
             pTransfer->pArea     = NULL; /* Will be created later if needed. */
@@ -605,8 +671,8 @@ int SharedClipboardURITransferDestroy(PSHAREDCLIPBOARDURITRANSFER pTransfer)
     if (RT_FAILURE(rc))
         return rc;
 
-    SharedClipboardURIDataHdrDestroy(&pTransfer->Cache.Header);
-    SharedClipboardMetaDataDestroy(&pTransfer->Cache.Meta);
+    SharedClipboardURIDataHdrDestroy(&pTransfer->State.Header);
+    SharedClipboardMetaDataDestroy(&pTransfer->State.Meta);
 
     if (pTransfer->pProvider)
     {
@@ -702,6 +768,13 @@ SharedClipboardURIObject *SharedClipboardURITransferGetObject(PSHAREDCLIPBOARDUR
     return pTransfer->URIList.At(uIdx);
 }
 
+/**
+ * Runs (starts) an URI transfer, either in synchronous or asynchronous (threaded) mode.
+ *
+ * @returns VBox status code.
+ * @param   pTransfer           URI clipboard transfer to run.
+ * @param   fAsync              Whether to run the transfer synchronously or asynchronously.
+ */
 int SharedClipboardURITransferRun(PSHAREDCLIPBOARDURITRANSFER pTransfer, bool fAsync)
 {
     AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
@@ -716,9 +789,9 @@ int SharedClipboardURITransferRun(PSHAREDCLIPBOARDURITRANSFER pTransfer, bool fA
     }
     else
     {
-        if (pTransfer->enmDir == SHAREDCLIPBOARDURITRANSFERDIR_READ)
+        if (pTransfer->State.enmDir == SHAREDCLIPBOARDURITRANSFERDIR_READ)
             rc = SharedClipboardURITransferRead(pTransfer);
-        else if (pTransfer->enmDir == SHAREDCLIPBOARDURITRANSFERDIR_WRITE)
+        else if (pTransfer->State.enmDir == SHAREDCLIPBOARDURITRANSFERDIR_WRITE)
             rc = SharedClipboardURITransferWrite(pTransfer);
         else
             rc = VERR_NOT_IMPLEMENTED;
@@ -762,9 +835,9 @@ static int sharedClipboardURITransferThreadCreate(PSHAREDCLIPBOARDURITRANSFER pT
 
     PFNRTTHREAD pfnRTThread = NULL;
 
-    if (pTransfer->enmDir == SHAREDCLIPBOARDURITRANSFERDIR_READ)
+    if (pTransfer->State.enmDir == SHAREDCLIPBOARDURITRANSFERDIR_READ)
         pfnRTThread = sharedClipboardURITransferReadThread;
-    else if (pTransfer->enmDir == SHAREDCLIPBOARDURITRANSFERDIR_WRITE)
+    else if (pTransfer->State.enmDir == SHAREDCLIPBOARDURITRANSFERDIR_WRITE)
         pfnRTThread = sharedClipboardURITransferWriteThread;
 
     AssertPtrReturn(pfnRTThread, VERR_NOT_SUPPORTED);
@@ -822,7 +895,26 @@ int SharedClipboardURITransferRead(PSHAREDCLIPBOARDURITRANSFER pTransfer)
 
     int rc = SharedClipboardURITransferMetaDataRead(pTransfer, NULL /* pcbRead */);
     if (RT_SUCCESS(rc))
+    {
         rc = SharedClipboardURITransferWriteObjects(pTransfer);
+        if (RT_SUCCESS(rc))
+        {
+            if (pTransfer->Callbacks.pfnTransferComplete)
+            {
+                SHAREDCLIPBOARDURITRANSFERCALLBACKDATA callbackData = { pTransfer, pTransfer->Callbacks.pvUser };
+                pTransfer->Callbacks.pfnTransferComplete(&callbackData, rc);
+            }
+        }
+    }
+
+    if (RT_FAILURE(rc))
+    {
+        if (pTransfer->Callbacks.pfnTransferError)
+        {
+            SHAREDCLIPBOARDURITRANSFERCALLBACKDATA callbackData = { pTransfer, pTransfer->Callbacks.pvUser };
+            pTransfer->Callbacks.pfnTransferError(&callbackData, rc);
+        }
+    }
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -875,21 +967,12 @@ static int sharedClipboardURITransferReadThread(RTTHREAD hThread, void *pvUser)
  * @param   pvMeta              Pointer to meta data buffer.
  * @param   cbMeta              Size (in bytes) of meta data buffer.
  */
-static int sharedClipboardURITransferMetaDataAddInternal(PSHAREDCLIPBOARDURITRANSFER pTransfer, const void *pvMeta, uint32_t cbMeta)
+static int sharedClipboardURITransferMetaDataAddInternal(PSHAREDCLIPBOARDURITRANSFER pTransfer,
+                                                         const void *pvMeta, uint32_t cbMeta)
 {
-    LogFlowFuncEnter();
+    LogFlowFunc(("pvMeta=%p, cbMeta=%RU32\n", pvMeta, cbMeta));
 
-    int rc = SharedClipboardMetaDataAdd(&pTransfer->Cache.Meta, pvMeta, cbMeta);
-    if (RT_SUCCESS(rc))
-    {
-        /* Meta data complete? */
-        if (SharedClipboardMetaDataGetUsed(&pTransfer->Cache.Meta) == pTransfer->Cache.Header.cbMeta)
-        {
-            rc = pTransfer->URIList.SetFromURIData(SharedClipboardMetaDataRaw(&pTransfer->Cache.Meta),
-                                                   SharedClipboardMetaDataGetUsed(&pTransfer->Cache.Meta),
-                                                   SHAREDCLIPBOARDURILIST_FLAGS_NONE);
-        }
-    }
+    int rc = SharedClipboardMetaDataAdd(&pTransfer->State.Meta, pvMeta, cbMeta);
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -914,6 +997,58 @@ int SharedClipboardURITransferMetaDataAdd(PSHAREDCLIPBOARDURITRANSFER pTransfer,
 }
 
 /**
+ * Marks the meta data as being complete and initializes everything needed for the transfer to begin.
+ *
+ * @returns VBox status code.
+ * @param   pTransfer           URI clipboard transfer to mark meta data complete for.
+ */
+int SharedClipboardURITransferMetaDataComplete(PSHAREDCLIPBOARDURITRANSFER pTransfer)
+{
+    AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
+
+    LogFlowFuncEnter();
+
+    int rc = pTransfer->URIList.SetFromURIData(SharedClipboardMetaDataRaw(&pTransfer->State.Meta),
+                                               SharedClipboardMetaDataGetUsed(&pTransfer->State.Meta),
+                                               SHAREDCLIPBOARDURILIST_FLAGS_NONE);
+    if (RT_SUCCESS(rc))
+    {
+        pTransfer->State.Header.cbTotal  = pTransfer->URIList.GetTotalBytes();
+        pTransfer->State.Header.cbMeta   = (uint32_t)SharedClipboardMetaDataGetUsed(&pTransfer->State.Meta);
+        pTransfer->State.Header.cObjects = pTransfer->URIList.GetTotalCount();
+
+        PSHAREDCLIPBOARDMETADATAFMT pMetaDataFmt = (PSHAREDCLIPBOARDMETADATAFMT)RTMemAllocZ(sizeof(SHAREDCLIPBOARDMETADATAFMT));
+        if (pMetaDataFmt)
+        {
+            char *pszFmt = NULL;
+            rc = RTStrAAppend(&pszFmt, "VBoxShClURIList");
+            if (RT_SUCCESS(rc))
+            {
+                pMetaDataFmt->uVer  = 1;
+                pMetaDataFmt->pvFmt = pszFmt;
+                pMetaDataFmt->cbFmt = (uint32_t)strlen(pszFmt) + 1 /* Include terminating zero */;
+
+                pTransfer->State.Header.pvMetaFmt = pMetaDataFmt;
+                pTransfer->State.Header.cbMetaFmt = sizeof(PSHAREDCLIPBOARDMETADATAFMT) + pMetaDataFmt->cbFmt;
+            }
+        }
+        else
+            rc = VERR_NO_MEMORY;
+
+        if (RT_SUCCESS(rc))
+        {
+            /** @todo Add checksum support. */
+
+            if (!SharedClipboardURIDataHdrIsValid(&pTransfer->State.Header))
+                rc = VERR_INVALID_PARAMETER;
+        }
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+/**
  * Reads meta for a clipboard URI transfer.
  *
  * @returns VBox status code.
@@ -925,11 +1060,11 @@ int SharedClipboardURITransferMetaDataRead(PSHAREDCLIPBOARDURITRANSFER pTransfer
     AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
 
     /* Destroy any former meta data. */
-    SharedClipboardMetaDataDestroy(&pTransfer->Cache.Meta);
+    SharedClipboardMetaDataDestroy(&pTransfer->State.Meta);
 
     uint32_t cbReadTotal = 0;
 
-    int rc = pTransfer->pProvider->ReadDataHdr(&pTransfer->Cache.Header);
+    int rc = pTransfer->pProvider->ReadDataHdr(&pTransfer->State.Header);
     if (RT_SUCCESS(rc))
     {
         uint32_t cbMeta = _4K; /** @todo Improve. */
@@ -937,11 +1072,11 @@ int SharedClipboardURITransferMetaDataRead(PSHAREDCLIPBOARDURITRANSFER pTransfer
 
         if (pvMeta)
         {
-            uint32_t cbMetaToRead = pTransfer->Cache.Header.cbMeta;
+            uint32_t cbMetaToRead = pTransfer->State.Header.cbMeta;
             while (cbMetaToRead)
             {
                 uint32_t cbMetaRead;
-                rc = pTransfer->pProvider->ReadDataChunk(&pTransfer->Cache.Header, pvMeta, cbMeta, &cbMetaRead);
+                rc = pTransfer->pProvider->ReadDataChunk(&pTransfer->State.Header, pvMeta, cbMeta, &cbMetaRead);
                 if (RT_SUCCESS(rc))
                     rc = sharedClipboardURITransferMetaDataAddInternal(pTransfer, pvMeta, cbMeta);
 
@@ -985,22 +1120,22 @@ int SharedClipboardURITransferMetaDataWrite(PSHAREDCLIPBOARDURITRANSFER pTransfe
 
     uint32_t cbWrittenTotal = 0;
 
-    int rc = pTransfer->pProvider->WriteDataHdr(&pTransfer->Cache.Header);
+    int rc = pTransfer->pProvider->WriteDataHdr(&pTransfer->State.Header);
     if (RT_SUCCESS(rc))
     {
         /* Sanity. */
-        Assert(pTransfer->Cache.Header.cbMeta == pTransfer->Cache.Meta.cbUsed);
+        Assert(pTransfer->State.Header.cbMeta == pTransfer->State.Meta.cbUsed);
 
-        uint32_t cbMetaToWrite = pTransfer->Cache.Header.cbMeta;
+        uint32_t cbMetaToWrite = pTransfer->State.Header.cbMeta;
         while (cbMetaToWrite)
         {
             uint32_t cbMetaWritten;
-            rc = pTransfer->pProvider->WriteDataChunk(&pTransfer->Cache.Header, (uint8_t *)pTransfer->Cache.Meta.pvMeta + cbWrittenTotal,
+            rc = pTransfer->pProvider->WriteDataChunk(&pTransfer->State.Header, (uint8_t *)pTransfer->State.Meta.pvMeta + cbWrittenTotal,
                                                       cbMetaToWrite, &cbMetaWritten, 0 /* fFlags */);
             if (RT_SUCCESS(rc))
             {
                 cbWrittenTotal += cbMetaWritten;
-                Assert(cbWrittenTotal <= pTransfer->Cache.Header.cbMeta);
+                Assert(cbWrittenTotal <= pTransfer->State.Header.cbMeta);
             }
         }
 
@@ -1159,7 +1294,26 @@ int SharedClipboardURITransferWrite(PSHAREDCLIPBOARDURITRANSFER pTransfer)
 
     int rc = SharedClipboardURITransferMetaDataWrite(pTransfer, NULL /* pcbWritten */);
     if (RT_SUCCESS(rc))
+    {
         rc = SharedClipboardURITransferWriteObjects(pTransfer);
+        if (RT_SUCCESS(rc))
+        {
+            if (pTransfer->Callbacks.pfnTransferComplete)
+            {
+                SHAREDCLIPBOARDURITRANSFERCALLBACKDATA callbackData = { pTransfer, pTransfer->Callbacks.pvUser };
+                pTransfer->Callbacks.pfnTransferComplete(&callbackData, rc);
+            }
+        }
+    }
+
+    if (RT_FAILURE(rc))
+    {
+        if (pTransfer->Callbacks.pfnTransferError)
+        {
+            SHAREDCLIPBOARDURITRANSFERCALLBACKDATA callbackData = { pTransfer, pTransfer->Callbacks.pvUser };
+            pTransfer->Callbacks.pfnTransferError(&callbackData, rc);
+        }
+    }
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -1182,7 +1336,12 @@ int SharedClipboardURICtxInit(PSHAREDCLIPBOARDURICTX pURI)
     {
         RTListInit(&pURI->List);
 
-        pURI->cTransfers = 0;
+        pURI->cTransfers    = 0;
+        pURI->cMaxTransfers = 1; /* For now we only support one transfer per client at a time. */
+
+#ifdef DEBUG_andy
+        pURI->cMaxTransfers = UINT32_MAX;
+#endif
 
         SharedClipboardURICtxReset(pURI);
     }
@@ -1241,8 +1400,8 @@ int SharedClipboardURICtxTransferAdd(PSHAREDCLIPBOARDURICTX pURI, PSHAREDCLIPBOA
 
     LogFlowFuncEnter();
 
-    if (pURI->cTransfers) /* Only one transfer per URI context allowed at the moment. */
-        return VERR_ALREADY_EXISTS;
+    if (pURI->cTransfers == pURI->cMaxTransfers)
+        return VERR_SHCLPB_MAX_TRANSFERS_REACHED;
 
     RTListAppend(&pURI->List, &pTransfer->Node);
     pURI->cTransfers++;
@@ -1329,7 +1488,8 @@ bool SharedClipboardURICtxMaximumTransfersReached(PSHAREDCLIPBOARDURICTX pURI)
 
     LogFlowFunc(("cTransfers=%RU32\n", pURI->cTransfers));
 
-    return pURI->cTransfers < pURI->cMaxTransfers;
+    Assert(pURI->cTransfers <= pURI->cMaxTransfers);
+    return pURI->cTransfers == pURI->cMaxTransfers;
 }
 #endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
 

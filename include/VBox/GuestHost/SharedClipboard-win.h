@@ -97,6 +97,8 @@ typedef struct _VBOXCLIPBOARDWINCTX
     HWND                        hWnd;
     /** Window handle which is next to us in the clipboard chain. */
     HWND                        hWndNextInChain;
+    /** Window handle of the clipboard owner *if* we are the owner. */
+    HWND                        hWndClipboardOwnerUs;
     /** Structure for maintaining the new clipboard API. */
     VBOXCLIPBOARDWINAPINEW      newAPI;
     /** Structure for maintaining the old clipboard API. */
@@ -106,11 +108,14 @@ typedef struct _VBOXCLIPBOARDWINCTX
 int VBoxClipboardWinOpen(HWND hWnd);
 int VBoxClipboardWinClose(void);
 int VBoxClipboardWinClear(void);
+
 int VBoxClipboardWinCheckAndInitNewAPI(PVBOXCLIPBOARDWINAPINEW pAPI);
 bool VBoxClipboardWinIsNewAPI(PVBOXCLIPBOARDWINAPINEW pAPI);
-int VBoxClipboardWinAddToCBChain(PVBOXCLIPBOARDWINCTX pCtx);
-int VBoxClipboardWinRemoveFromCBChain(PVBOXCLIPBOARDWINCTX pCtx);
+
+int VBoxClipboardWinChainAdd(PVBOXCLIPBOARDWINCTX pCtx);
+int VBoxClipboardWinChainRemove(PVBOXCLIPBOARDWINCTX pCtx);
 VOID CALLBACK VBoxClipboardWinChainPingProc(HWND hWnd, UINT uMsg, ULONG_PTR dwData, LRESULT lResult);
+LRESULT VBoxClipboardWinChainPassToNext(PVBOXCLIPBOARDWINCTX pWinCtx, UINT msg, WPARAM wParam, LPARAM lParam);
 
 VBOXCLIPBOARDFORMAT VBoxClipboardWinClipboardFormatToVBox(UINT uFormat);
 int VBoxClipboardWinGetFormats(PVBOXCLIPBOARDWINCTX pCtx, PVBOXCLIPBOARDFORMAT pfFormats);
@@ -124,10 +129,19 @@ bool VBoxClipboardWinIsCFHTML(const char *pszSource);
 int VBoxClipboardWinConvertCFHTMLToMIME(const char *pszSource, const uint32_t cch, char **ppszOutput, uint32_t *pcbOutput);
 int VBoxClipboardWinConvertMIMEToCFHTML(const char *pszSource, size_t cb, char **ppszOutput, uint32_t *pcbOutput);
 
-int VBoxClipboardWinHandleWMSetFormats(const PVBOXCLIPBOARDWINCTX pCtx, VBOXCLIPBOARDFORMATS fFormats);
+void VBoxClipboardWinDump(const void *pv, size_t cb, VBOXCLIPBOARDFORMAT u32Format);
+int VBoxClipboardWinOHandleMSetFormats(PVBOXCLIPBOARDWINCTX pWinCtx, PSHAREDCLIPBOARDURICTX pURICtx,
+                                       PSHAREDCLIPBOARDPROVIDERCREATIONCTX pProviderCtx);
+
+LRESULT VBoxClipboardWinHandleWMChangeCBChain(PVBOXCLIPBOARDWINCTX pWinCtx, HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+int VBoxClipboardWinHandleWMDestroy(PVBOXCLIPBOARDWINCTX pWinCtx);
+int VBoxClipboardWinHandleWMRenderAllFormats(PVBOXCLIPBOARDWINCTX pWinCtx, HWND hWnd);
+int VBoxClipboardWinHandleWMTimer(PVBOXCLIPBOARDWINCTX pWinCtx);
+
+int VBoxClipboardWinAnnounceFormats(PVBOXCLIPBOARDWINCTX pWinCtx, VBOXCLIPBOARDFORMATS fFormats);
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
-int VBoxClipboardWinURIHandleWMSetFormats(const PVBOXCLIPBOARDWINCTX pCtx, PSHAREDCLIPBOARDURICTX pURICtx,
-                                          PSHAREDCLIPBOARDPROVIDERCREATIONCTX pProviderCtx, VBOXCLIPBOARDFORMATS fFormats);
+int VBoxClipboardWinURIReadMain(PVBOXCLIPBOARDWINCTX pWinCtx, PSHAREDCLIPBOARDURICTX pURICtx,
+                                PSHAREDCLIPBOARDPROVIDERCREATIONCTX pProviderCtx, VBOXCLIPBOARDFORMATS fFormats);
 #endif
 
 # ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST

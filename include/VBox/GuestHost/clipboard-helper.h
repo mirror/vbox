@@ -169,6 +169,16 @@ int vboxClipboardDibToBmp(const void *pvSrc, size_t cbSrc, void **ppvDst, size_t
  */
 int vboxClipboardBmpGetDib(const void *pvSrc, size_t cbSrc, const void **ppvDst, size_t *pcbDst);
 
+#ifdef VBOX_STRICT
+/**
+ * Dumps HTML data to the debug log.
+ *
+ * @returns VBox status code.
+ * @param   pszSrc              HTML data to dump.
+ * @param   cb                  Size (in bytes) of HTML data to dump.
+ */
+int vboxClipboardDbgDumpHtml(const char *pszSrc, size_t cbSrc);
+#endif
 
 #endif /* !VBOX_INCLUDED_GuestHost_clipboard_helper_h */
 

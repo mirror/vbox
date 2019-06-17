@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Shared Clipboard - Provider implementation.
+ * Shared Clipboard - Provider base class implementation.
  */
 
 /*
@@ -64,7 +64,7 @@ SharedClipboardProvider *SharedClipboardProvider::Create(PSHAREDCLIPBOARDPROVIDE
     {
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_GUEST
         case SHAREDCLIPBOARDPROVIDERSOURCE_VBGLR3:
-            pProvider = new SharedClipboardProviderVbglR3(pCtx->u.VBGLR3.uClientID);
+            pProvider = new SharedClipboardProviderVbglR3(pCtx->u.VbglR3.uClientID);
             break;
 #endif
 
@@ -77,6 +77,9 @@ SharedClipboardProvider *SharedClipboardProvider::Create(PSHAREDCLIPBOARDPROVIDE
             AssertFailed();
             break;
     }
+
+    if (pProvider)
+        pProvider->SetCallbacks(pCtx->pCallbacks);
 
     return pProvider;
 }
@@ -102,6 +105,26 @@ uint32_t SharedClipboardProvider::Release(void)
     LogFlowFuncEnter();
     Assert(m_cRefs);
     return ASMAtomicDecU32(&m_cRefs);
+}
+
+/**
+ * Sets or unsets the callback table to be used for a clipboard provider.
+ *
+ * @returns VBox status code.
+ * @param   pCallbacks          Pointer to callback table to set. Specify NULL to unset existing callbacks.
+ */
+void SharedClipboardProvider::SetCallbacks(PSHAREDCLIPBOARDPROVIDERCALLBACKS pCallbacks)
+{
+    /* pCallbacks might be NULL to unset callbacks. */
+
+    LogFlowFunc(("pCallbacks=%p\n", pCallbacks));
+
+    if (pCallbacks)
+    {
+        m_Callbacks = *pCallbacks;
+    }
+    else
+        RT_ZERO(m_Callbacks);
 }
 
 /*

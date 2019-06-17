@@ -126,15 +126,15 @@ typedef struct _VBoxClipboardGetHostMsg
 
 #define VBOX_SHARED_CLIPBOARD_CPARMS_GET_HOST_MSG 2
 
-typedef struct _VBoxClipboardWriteFormatsMsg
+typedef struct _VBoxClipboardReportFormatsMsg
 {
     VBGLIOCHGCMCALL hdr;
 
     /* VBOX_SHARED_CLIPBOARD_FMT_* */
     HGCMFunctionParameter formats; /* OUT uint32_t */
-} VBoxClipboardWriteFormatsMsg;
+} VBoxClipboardReportFormatsMsg;
 
-#define VBOX_SHARED_CLIPBOARD_CPARMS_FORMATS 1
+#define VBOX_SHARED_CLIPBOARD_CPARMS_REPORT_FORMATS 1
 
 typedef struct _VBoxClipboardReadDataMsg
 {
@@ -368,9 +368,11 @@ typedef struct _VBOXCLIPBOARDDATAHDR
     /** Meta data size (in bytes) to transfer.
      *  This size also is part of cbTotal already. */
     uint32_t                    cbMeta;
-    /** Meta format buffer. */
+    /** Meta data format.
+     *  Is SHAREDCLIPBOARDMETADATAFMT. */
     void                       *pvMetaFmt;
-    /** Size (in bytes) of meta format buffer. */
+    /** Size (in bytes) of meta format buffer.
+     *  Is sizeof(SHAREDCLIPBOARDMETADATAFMT). */
     uint32_t                    cbMetaFmt;
     /** Number of objects (files/directories) to transfer. */
     uint64_t                    cObjects;

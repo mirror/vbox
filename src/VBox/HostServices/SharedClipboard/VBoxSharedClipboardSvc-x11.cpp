@@ -529,14 +529,14 @@ struct _CLIPBACKEND
     } reportData;
 };
 
-int vboxSvcClipboardReportMsg(PVBOXCLIPBOARDCLIENTDATA pClientData, uint32_t u32Msg, uint32_t u32Formats)
+int vboxSvcClipboardReportMsg(PVBOXCLIPBOARDCLIENTDATA pClientData, uint32_t uMsg, uint32_t uFormats)
 {
-    RT_NOREF(u32Formats);
+    RT_NOREF(uFormats);
     CLIPBACKEND *pBackend = pClientData->State.pCtx->pBackend;
 
     int rc;
 
-    if (   (u32Msg == VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA)
+    if (   (uMsg == VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA)
         && !pBackend->writeData.timeout)
     {
         rc = VBoxClipboardSvcImplWriteData(pClientData, pBackend->writeData.pv, pBackend->writeData.cb, pBackend->writeData.format);

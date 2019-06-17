@@ -78,7 +78,7 @@ SharedClipboardArea::~SharedClipboardArea(void)
  */
 uint32_t SharedClipboardArea::AddRef(void)
 {
-    return ASMAtomicIncU32(&m_cRefs);
+    return ++m_cRefs;
 }
 
 /**
@@ -88,8 +88,10 @@ uint32_t SharedClipboardArea::AddRef(void)
  */
 uint32_t SharedClipboardArea::Release(void)
 {
-    Assert(m_cRefs);
-    return ASMAtomicDecU32(&m_cRefs);
+    if (m_cRefs)
+        m_cRefs--;
+
+    return m_cRefs;
 }
 
 /**
@@ -195,7 +197,7 @@ int SharedClipboardArea::PathConstruct(const char *pszBase, SHAREDCLIPBOARDAREAI
             rc = RTPathAppend(pszPath, cbPath, "Clipboard-");
             if (RT_SUCCESS(rc))
             {
-                char szID[8];
+                char szID[16];
                 ssize_t cchID = RTStrFormatU32(szID, sizeof(szID), uID, 10, 0, 0, 0);
                 if (cchID)
                 {
@@ -241,7 +243,7 @@ int SharedClipboardArea::OpenEx(const char *pszPath,
                                 SHAREDCLIPBOARDAREAOPENFLAGS fFlags /* = SHAREDCLIPBOARDAREA_OPEN_FLAGS_NONE */)
 {
     AssertPtrReturn(pszPath, VERR_INVALID_POINTER);
-    AssertReturn(fFlags == 0, VERR_INVALID_PARAMETER); /* Flags not supported yet. */
+    AssertReturn(!(fFlags & ~SHAREDCLIPBOARDAREA_OPEN_FLAGS_VALID_MASK), VERR_INVALID_FLAGS);
 
     char szAreaDir[RTPATH_MAX];
     int rc = SharedClipboardArea::PathConstruct(pszPath, uID, szAreaDir, sizeof(szAreaDir));
@@ -277,7 +279,7 @@ int SharedClipboardArea::OpenEx(const char *pszPath,
 int SharedClipboardArea::OpenTemp(SHAREDCLIPBOARDAREAID uID,
                                   SHAREDCLIPBOARDAREAOPENFLAGS fFlags /* = SHAREDCLIPBOARDAREA_OPEN_FLAGS_NONE */)
 {
-    AssertReturn(fFlags == 0, VERR_INVALID_PARAMETER); /* Flags not supported yet. */
+    AssertReturn(!(fFlags & ~SHAREDCLIPBOARDAREA_OPEN_FLAGS_VALID_MASK), VERR_INVALID_FLAGS);
 
     /*
      * Get the user's temp directory. Don't use the user's root directory (or

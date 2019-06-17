@@ -99,11 +99,21 @@ int SharedClipboardProviderHostService::Event::Wait(RTMSINTERVAL uTimeoutMs)
     return rc;
 }
 
+/**
+ * Returns the event's (raw) data (mutable).
+ *
+ * @returns Pointer to the event's raw data.
+ */
 void *SharedClipboardProviderHostService::Event::DataRaw()
 {
     return mpvData;
 }
 
+/**
+ * Returns the event's data size (in bytes).
+ *
+ * @returns Data size (in bytes).
+ */
 uint32_t SharedClipboardProviderHostService::Event::DataSize()
 {
     return mcbData;
@@ -124,15 +134,26 @@ int SharedClipboardProviderHostService::ReadDataHdr(PVBOXCLIPBOARDDATAHDR pDataH
 {
     int rc;
 
-    Event *pEvent = eventGet(VBOX_SHARED_CLIPBOARD_GUEST_FN_WRITE_DATA_HDR);
-    if (pEvent)
+    if (m_Callbacks.pfnReadDataHdr)
     {
-        rc = pEvent->Wait(m_uTimeoutMs);
-        if (RT_SUCCESS(rc))
-            memcpy(pDataHdr, pEvent->DataRaw(), pEvent->DataSize());
+        SHAREDCLIPBOARDPROVIDERCALLBACKDATA data = { this, m_Callbacks.pvUser };
+        rc = m_Callbacks.pfnReadDataHdr(&data);
     }
     else
-        rc = VERR_NOT_FOUND;
+        rc = VERR_NOT_SUPPORTED;
+
+    if (RT_SUCCESS(rc))
+    {
+        Event *pEvent = eventGet(VBOX_SHARED_CLIPBOARD_GUEST_FN_WRITE_DATA_HDR);
+        if (pEvent)
+        {
+            rc = pEvent->Wait(m_uTimeoutMs);
+            if (RT_SUCCESS(rc))
+                memcpy(pDataHdr, pEvent->DataRaw(), pEvent->DataSize());
+        }
+        else
+            rc = VERR_NOT_FOUND;
+    }
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -276,9 +297,7 @@ int SharedClipboardProviderHostService::OnWrite(PSHAREDCLIPBOARDPROVIDERWRITEPAR
             {
                 Event *pEvent = eventGet(pParms->u.HostService.uMsg);
                 if (pEvent)
-                {
                     rc = pEvent->SetData(&dataHdr, sizeof(dataHdr));
-                }
             }
             break;
         }
