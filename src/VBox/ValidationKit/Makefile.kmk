@@ -68,6 +68,7 @@ ValidationKit-testdriver_SOURCES := \
 	$(PATH_SUB_CURRENT)/testdriver/base.py \
 	$(PATH_SUB_CURRENT)/testdriver/btresolver.py \
 	$(PATH_SUB_CURRENT)/testdriver/reporter.py \
+	$(PATH_SUB_CURRENT)/testdriver/testfileset.py \
 	$(PATH_SUB_CURRENT)/testdriver/tst-txsclient.py \
 	$(PATH_SUB_CURRENT)/testdriver/txsclient.py \
 	$(PATH_SUB_CURRENT)/testdriver/vbox.py \

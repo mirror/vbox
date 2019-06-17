@@ -48,6 +48,7 @@ sys.path.append(g_ksValidationKitDir);
 # Validation Kit imports.
 from testdriver import reporter;
 from testdriver import base;
+from testdriver import testfileset;
 from testdriver import vbox;
 from testdriver import vboxcon;
 from testdriver import vboxtestfileset;
@@ -232,7 +233,7 @@ class tdTestCopyFrom(tdTestGuestCtrlBase):
         self.sSrc = sSrc;
         self.sDst = sDst;
         self.fFlags = fFlags;
-        self.oSrc = oSrc  # type: vboxtestfileset.GstFsObj
+        self.oSrc = oSrc  # type: testfileset.TestFsObj
         if oSrc and not sSrc:
             self.sSrc = oSrc.sPath;
 
@@ -1348,7 +1349,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
         return (fRc, cDirs, cFiles, cOthers);
 
-    def gctrlReadDirTree2(self, oGuestSession, oDir): # type: (vboxtestfileset.GstDir) -> bool
+    def gctrlReadDirTree2(self, oGuestSession, oDir): # type: (testfileset.TestDir) -> bool
         """
         Helper function to recursively read a guest directory tree specified in the current test.
         """
@@ -1403,11 +1404,11 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                     del dLeftUpper[sNameUpper];
 
                     # Check type
-                    if isinstance(oFsObj, vboxtestfileset.GstDir):
+                    if isinstance(oFsObj, testfileset.TestDir):
                         if eType != vboxcon.FsObjType_Directory:
                             fRc = reporter.error('%s: expected directory (%d), got eType=%d!'
                                                  % (oFsObj.sPath, vboxcon.FsObjType_Directory, eType,));
-                    elif isinstance(oFsObj, vboxtestfileset.GstFile):
+                    elif isinstance(oFsObj, testfileset.TestFile):
                         if eType != vboxcon.FsObjType_File:
                             fRc = reporter.error('%s: expected file (%d), got eType=%d!'
                                                  % (oFsObj.sPath, vboxcon.FsObjType_File, eType,));
@@ -1419,7 +1420,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                         fRc = reporter.error('%s: expected name "%s", got "%s" instead!' % (oFsObj.sPath, oFsObj.sName, sName,));
 
                     # Check the size if a file.
-                    if isinstance(oFsObj, vboxtestfileset.GstFile) and cbFile != oFsObj.cbContent:
+                    if isinstance(oFsObj, testfileset.TestFile) and cbFile != oFsObj.cbContent:
                         fRc = reporter.error('%s: expected size %s, got %s instead!' % (oFsObj.sPath, oFsObj.cbContent, cbFile,));
 
                     ## @todo check timestamps and attributes.
@@ -1445,7 +1446,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         # Recurse into subdirectories using info from oDir.
         #
         for oFsObj in oDir.aoChildren:
-            if isinstance(oFsObj, vboxtestfileset.GstDir):
+            if isinstance(oFsObj, testfileset.TestDir):
                 fRc = self.gctrlReadDirTree2(oGuestSession, oFsObj) and fRc;
 
         return fRc;
@@ -3574,7 +3575,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         # Paths.
         #
         sScratchHst             = os.path.join(self.oTstDrv.sScratchPath, "testGctrlCopyFrom");
-        oExistingFileGst        = self.oTestFiles.chooseRandomFileFromTree();
+        oExistingFileGst        = self.oTestFiles.chooseRandomFile();
         oNonEmptyDirGst         = self.oTestFiles.chooseRandomDirFromTree(fNonEmpty = True);
         oEmptyDirGst            = self.oTestFiles.oEmptyDir;
 
