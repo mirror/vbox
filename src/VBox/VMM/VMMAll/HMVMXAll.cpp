@@ -524,9 +524,11 @@ static bool hmVmxIsCodeSelectorOk(PCCPUMSELREG pSel, unsigned uStackDpl)
                     ("%#x\n", pSel->Attr.u),
                     false);
 
-    /* For conforming segments, CS.DPL must be <= SS.DPL, while CS.DPL
-       must equal SS.DPL for non-confroming segments.
-       Note! This is also a hard requirement like above. */
+    /*
+     * For conforming segments, CS.DPL must be <= SS.DPL, while CS.DPL must equal
+     * SS.DPL for non-confroming segments.
+     * Note! This is also a hard requirement like above.
+     */
     AssertMsgReturn(  pSel->Attr.n.u4Type & X86_SEL_TYPE_CONF
                     ? pSel->Attr.n.u2Dpl <= uStackDpl
                     : pSel->Attr.n.u2Dpl == uStackDpl,
@@ -762,22 +764,22 @@ VMM_INT_DECL(bool) HMCanExecuteVmxGuest(PVMCPU pVCpu, PCCPUMCTX pCtx)
                             STAM_COUNTER_INC(&pVCpu->hm.s.StatVmxCheckBadV86SelBase);
                             return false;
                         }
-                        if (   (pCtx->cs.u32Limit != 0xffff)
-                            || (pCtx->ds.u32Limit != 0xffff)
-                            || (pCtx->es.u32Limit != 0xffff)
-                            || (pCtx->ss.u32Limit != 0xffff)
-                            || (pCtx->fs.u32Limit != 0xffff)
-                            || (pCtx->gs.u32Limit != 0xffff))
+                        if (   pCtx->cs.u32Limit != 0xffff
+                            || pCtx->ds.u32Limit != 0xffff
+                            || pCtx->es.u32Limit != 0xffff
+                            || pCtx->ss.u32Limit != 0xffff
+                            || pCtx->fs.u32Limit != 0xffff
+                            || pCtx->gs.u32Limit != 0xffff)
                         {
                             STAM_COUNTER_INC(&pVCpu->hm.s.StatVmxCheckBadV86SelLimit);
                             return false;
                         }
-                        if (   (pCtx->cs.Attr.u != 0xf3)
-                            || (pCtx->ds.Attr.u != 0xf3)
-                            || (pCtx->es.Attr.u != 0xf3)
-                            || (pCtx->ss.Attr.u != 0xf3)
-                            || (pCtx->fs.Attr.u != 0xf3)
-                            || (pCtx->gs.Attr.u != 0xf3))
+                        if (   pCtx->cs.Attr.u != 0xf3
+                            || pCtx->ds.Attr.u != 0xf3
+                            || pCtx->es.Attr.u != 0xf3
+                            || pCtx->ss.Attr.u != 0xf3
+                            || pCtx->fs.Attr.u != 0xf3
+                            || pCtx->gs.Attr.u != 0xf3)
                         {
                             STAM_COUNTER_INC(&pVCpu->hm.s.StatVmxCheckBadV86SelAttr);
                             return false;
@@ -1152,13 +1154,13 @@ VMM_INT_DECL(void) HMDumpHwvirtVmxState(PVMCPU pVCpu)
 /**
  * Gets the active (in use) VMCS info. object for the specified VCPU.
  *
- * This is either the guest or nested-guest VMCS and need not necessarily pertain to
- * the "current" VMCS (in the VMX definition of the term). For instance, if the
- * VM-entry failed due to an invalid-guest state, we may have "cleared" the VMCS
- * while returning to ring-3. The VMCS info. object for that VMCS would still be
- * active and returned so that we could dump the VMCS fields to ring-3 for
- * diagnostics. This function is thus only used to distinguish between the
- * nested-guest or guest VMCS.
+ * This is either the guest or nested-guest VMCS info. and need not necessarily
+ * pertain to the "current" VMCS (in the VMX definition of the term). For instance,
+ * if the VM-entry failed due to an invalid-guest state, we may have "cleared" the
+ * current VMCS while returning to ring-3. However, the VMCS info. object for that
+ * VMCS would still be active and returned here so that we could dump the VMCS
+ * fields to ring-3 for diagnostics. This function is thus only used to
+ * distinguish between the nested-guest or guest VMCS.
  *
  * @returns The active VMCS information.
  * @param   pVCpu   The cross context virtual CPU structure.
