@@ -22,10 +22,10 @@
 #define LOG_GROUP LOG_GROUP_SHARED_CLIPBOARD
 #include <VBox/log.h>
 
-#include <VBox/err.h>
 #include <VBox/HostServices/VBoxClipboardSvc.h>
 #include <VBox/HostServices/VBoxClipboardExt.h>
 
+#include <iprt/errcore.h>
 #include <iprt/path.h>
 
 #include "VBoxSharedClipboardSvc-internal.h"
