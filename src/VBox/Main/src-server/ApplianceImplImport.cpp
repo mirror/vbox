@@ -1296,6 +1296,7 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
 
     int vrc = VINF_SUCCESS;
     HRESULT hrc = S_OK;
+    bool fKeepDownloadedObject = false;//in the future should be passed from the caller
     Utf8Str strLastActualErrorDesc("No errors");
 
     /* Clear the list of imported machines, if any */
@@ -1457,7 +1458,6 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
                                               aVBoxValues[0],
                                               VBox,
                                               pProgress);
-
             if (FAILED(hrc))
             {
                 strLastActualErrorDesc = Utf8StrFmt("%s: Cloud import (cloud phase) failed. "
@@ -1473,9 +1473,6 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
     else
     {
         hrc = setErrorVrc(VERR_NOT_SUPPORTED, tr("Import from Cloud isn't supported for more than one VM instance."));
-
-        /* Reset the state so others can call methods again */
-//      m->state = ApplianceIdle;
         return hrc;
     }
 
@@ -1498,26 +1495,29 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
          */
 
         {
-            /* small explanation here, the image here points out to the whole downloaded object (not to the image only)
-             * filled during the first cloud import stage (in the ICloudClient::importInstance()) */
-            GET_VSD_DESCRIPTION_BY_TYPE(VirtualSystemDescriptionType_HardDiskImage)//aVBoxValues is set in this #define
-            if (aVBoxValues.size() == 0)
-                hrc = setErrorVrc(VERR_NOT_FOUND, generalRollBackErrorMessage.c_str());
-            else
+            if (!fKeepDownloadedObject)
             {
-                vsdData = aVBoxValues[0];
-                //try to delete the downloaded object
-                bool fExist = RTPathExists(vsdData.c_str());
-                if (fExist)
+                /* small explanation here, the image here points out to the whole downloaded object (not to the image only)
+                 * filled during the first cloud import stage (in the ICloudClient::importInstance()) */
+                GET_VSD_DESCRIPTION_BY_TYPE(VirtualSystemDescriptionType_HardDiskImage)//aVBoxValues is set in this #define
+                if (aVBoxValues.size() == 0)
+                    hrc = setErrorVrc(VERR_NOT_FOUND, generalRollBackErrorMessage.c_str());
+                else
                 {
-                    vrc = RTFileDelete(vsdData.c_str());
-                    if (RT_FAILURE(vrc))
+                    vsdData = aVBoxValues[0];
+                    //try to delete the downloaded object
+                    bool fExist = RTPathExists(vsdData.c_str());
+                    if (fExist)
                     {
-                        hrc = setErrorVrc(vrc, generalRollBackErrorMessage.c_str());
-                        LogRel(("%s: Rollback action - the object %s hasn't been deleted\n", __FUNCTION__, vsdData.c_str()));
+                        vrc = RTFileDelete(vsdData.c_str());
+                        if (RT_FAILURE(vrc))
+                        {
+                            hrc = setErrorVrc(vrc, generalRollBackErrorMessage.c_str());
+                            LogRel(("%s: Rollback action - the object %s hasn't been deleted\n", __FUNCTION__, vsdData.c_str()));
+                        }
+                        else
+                            LogRel(("%s: Rollback action - the object %s has been deleted\n", __FUNCTION__, vsdData.c_str()));
                     }
-                    else
-                        LogRel(("%s: Rollback action - the object %s has been deleted\n", __FUNCTION__, vsdData.c_str()));
                 }
             }
         }
@@ -1555,13 +1555,13 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
     }
     else
     {
-        /* Small explanation here, the image here points out to the whole downloaded object (not to the image only)
-         * filled during the first cloud import stage (in the ICloudClient::importInstance()) */
-        GET_VSD_DESCRIPTION_BY_TYPE(VirtualSystemDescriptionType_HardDiskImage)//aVBoxValues is set in this #define
-        if (aVBoxValues.size() == 0)
-            throw setErrorVrc(VERR_NOT_FOUND, "%s: The description of the downloaded object wasn't found", __FUNCTION__);
-
-        Utf8Str strAbsSrcPath(aVBoxValues[0]);
+        Utf8Str strMachineFolder;
+        Utf8Str strAbsSrcPath;
+        Utf8Str strGroup("/");//default VM group
+        Utf8Str strTargetFormat("VMDK");//default image format
+        Bstr bstrSettingsFilename;
+        SystemProperties *pSysProps = NULL;
+        RTCList<Utf8Str> extraCreatedFiles;/* All extra created files, it's used during cleanup */
 
         /* Put all VFS* declaration here because they are needed to be release by the corresponding
            RTVfs***Release functions in the case of exception */
@@ -1569,23 +1569,17 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
         RTVFSFSSTREAM hVfsFssObject = NIL_RTVFSFSSTREAM;
         RTVFSIOSTREAM hVfsIosCurr = NIL_RTVFSIOSTREAM;
 
-        /* Continue and create new VM using data from VSD and downloaded object.
-         * The downloaded images should be converted to VDI/VMDK if they have another format */
         try
         {
-            Utf8Str strInstId("default cloud instance id");
-            {
-                GET_VSD_DESCRIPTION_BY_TYPE(VirtualSystemDescriptionType_CloudInstanceId)//aVBoxValues is set in this #define
-                if (aVBoxValues.size() != 0)//paranoia but anyway...
-                    strInstId = aVBoxValues[0];
-                LogRel(("%s: Importing cloud instance %s\n", __FUNCTION__, strInstId.c_str()));
-            }
+            /* Small explanation here, the image here points out to the whole downloaded object (not to the image only)
+             * filled during the first cloud import stage (in the ICloudClient::importInstance()) */
+            GET_VSD_DESCRIPTION_BY_TYPE(VirtualSystemDescriptionType_HardDiskImage)//aVBoxValues is set in this #define
+            if (aVBoxValues.size() == 0)
+                throw setErrorVrc(VERR_NOT_FOUND, "%s: The description of the downloaded object wasn't found", __FUNCTION__);
 
-            Utf8Str strGroup("/");//default VM group
-            Utf8Str strTargetFormat("VMDK");//default image format
+            strAbsSrcPath = aVBoxValues[0];
 
             /* Based on the VM name, create a target machine path. */
-            Bstr bstrSettingsFilename;
             hrc = mVirtualBox->ComposeMachineFilename(Bstr(strVMName).raw(),
                                                       Bstr(strGroup).raw(),
                                                       NULL /* aCreateFlags */,
@@ -1593,14 +1587,28 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
                                                       bstrSettingsFilename.asOutParam());
             if (FAILED(hrc)) throw hrc;
 
-            Utf8Str strMachineFolder(bstrSettingsFilename);
+            strMachineFolder = bstrSettingsFilename;
             strMachineFolder.stripFilename();
 
             /* Get the system properties. */
-            SystemProperties *pSysProps = mVirtualBox->i_getSystemProperties();
+            pSysProps = mVirtualBox->i_getSystemProperties();
+            if (pSysProps == NULL)
+                throw VBOX_E_OBJECT_NOT_FOUND;
 
             ComObjPtr<MediumFormat> trgFormat;
             trgFormat = pSysProps->i_mediumFormatFromExtension(strTargetFormat);
+            if (trgFormat.isNull())
+                throw VBOX_E_OBJECT_NOT_FOUND;
+
+            /* Continue and create new VM using data from VSD and downloaded object.
+             * The downloaded images should be converted to VDI/VMDK if they have another format */
+            Utf8Str strInstId("default cloud instance id");
+            {
+                GET_VSD_DESCRIPTION_BY_TYPE(VirtualSystemDescriptionType_CloudInstanceId)//aVBoxValues is set in this #define
+                if (aVBoxValues.size() != 0)//paranoia but anyway...
+                    strInstId = aVBoxValues[0];
+                LogRel(("%s: Importing cloud instance %s\n", __FUNCTION__, strInstId.c_str()));
+            }
 
             /* Processing the downloaded object (prepare for the local import) */
             RTVFSIOSTREAM hVfsIosSrc;
@@ -1649,7 +1657,7 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
                             memory = vsdData.toUInt32();
                     }
                     vsys.ullMemorySize = memory;
-                    LogRel(("%s: Size of RAM is %dMB\n", __FUNCTION__, vsys.ullMemorySize));
+                    LogRel(("%s: Size of RAM is %d MB\n", __FUNCTION__, vsys.ullMemorySize));
                 }
 
                 {
@@ -1815,6 +1823,9 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
                             vrc = RTVfsFileWrite(hVfsDstFile, pvBuffered, cbBuffered, &cbWritten);
                             if (RT_FAILURE(vrc))
                                 throw  setErrorVrc(vrc, tr("Could not write into the file '%s' (%Rrc)"), strAbsDstPath.c_str(), vrc);
+
+                            /* Remember this file */
+                            extraCreatedFiles.append(strAbsDstPath);
                         }
                         catch (HRESULT aRc)
                         {
@@ -1837,10 +1848,6 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
                                     "The exception (%Rrc)\n", __FUNCTION__, hrc);
                             LogRel((strLastActualErrorDesc.c_str()));
                         }
-
-//                      /* Don't forget to release all resources */
-//                      RTVfsFileRelease(hVfsDstFile);
-//                      RTVfsIoStrmReadAllFree(pvBuffered, cbBuffered);
                     }
                     else
                     {
@@ -1991,40 +1998,179 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
 
         LogRel(("%s: Cloud import (local phase) final result (%Rrc).\n", __FUNCTION__, hrc));
 
+        /* Try to free VFS stuff because some of them might not be released due to the exception */
+        if (hVfsIosCurr != NIL_RTVFSIOSTREAM)
+            RTVfsIoStrmRelease(hVfsIosCurr);
+        if (hVfsObj != NIL_RTVFSOBJ)
+            RTVfsObjRelease(hVfsObj);
+        if (hVfsFssObject != NIL_RTVFSFSSTREAM)
+            RTVfsFsStrmRelease(hVfsFssObject);
+
+        /* Small explanation here.
+         * After adding extracted files into the actual VSD the returned list will contain not only the
+         * record about the downloaded object but also the records about the extracted files from this object.
+         * It's needed to go through this list to find the record about the downloaded object.
+         * But it was the first record added into the list, so aVBoxValues[0] should be correct here.
+         */
+        GET_VSD_DESCRIPTION_BY_TYPE(VirtualSystemDescriptionType_HardDiskImage)//aVBoxValues is set in this #define
+        if (!fKeepDownloadedObject)
+        {
+            if (aVBoxValues.size() != 0)
+            {
+                vsdData = aVBoxValues[0];
+                //try to delete the downloaded object
+                bool fExist = RTPathExists(vsdData.c_str());
+                if (fExist)
+                {
+                    vrc = RTFileDelete(vsdData.c_str());
+                    if (RT_FAILURE(vrc))
+                        LogRel(("%s: Cleanup action - the downloaded object %s hasn't been deleted\n", __FUNCTION__, vsdData.c_str()));
+                    else
+                        LogRel(("%s: Cleanup action - the downloaded object %s has been deleted\n", __FUNCTION__, vsdData.c_str()));
+                }
+            }
+        }
+
         if (FAILED(hrc))
         {
-            /* Try to free VFS stuff because some of them might not be released due to the exception */
-            if (hVfsIosCurr != NIL_RTVFSIOSTREAM)
-                RTVfsIoStrmRelease(hVfsIosCurr);
-            if (hVfsObj != NIL_RTVFSOBJ)
-                RTVfsObjRelease(hVfsObj);
-            if (hVfsFssObject != NIL_RTVFSFSSTREAM)
-                RTVfsFsStrmRelease(hVfsFssObject);
-
             /* What to do here?
-             * Delete or not the downloaded object?
              * For now:
-             *  - check the list of imported images, detach them and next delete.
              *  - check the registration of created VM and delete one.
-             *  - check some other leavings if they may exist and delete them too.
+             *  - check the list of imported images, detach them and next delete if they have still registered in the VBox.
+             *  - check some other leavings and delete them if they exist.
              */
 
-            /* Small explanation here.
-             * After adding extracted files into the actual VSD the returned list will contain not only the
-             * record about the downloaded object but also the records about the extracted files from this object.
-             * It's needed to go through this list to find the record about the downloaded object.
-             * But it was the first record added into the list, so aVBoxValues[0] should be correct here.
-             */
-            GET_VSD_DESCRIPTION_BY_TYPE(VirtualSystemDescriptionType_HardDiskImage)//aVBoxValues is set in this #define
-            if (aVBoxValues.size() != 0)
-                hrc = setError(hrc, "%s: Cloud import (local phase) failed. Find the root cause in the log file. "
-                                    "But the first phase was successful and the downloaded object was stored as \'%s\'\n",
-                                    __FUNCTION__, Utf8Str(aVBoxValues[0]).c_str());
+            /* It's not needed to call "pTask->pProgress->SetNextOperation(BstrFmt("The cleanup phase").raw(), 50)" here
+             * because, WaitForOtherProgressCompletion() calls the SetNextOperation() iternally.
+             * At least, it's strange that the operation description is set to the previous value. */
+
+            ComPtr<IMachine> pMachine;
+            Utf8Str machineNameOrId = strVMName;
+
+            /* m->llGuidsMachinesCreated is filled in the i_importMachineGeneric()/i_importVBoxMachine()
+             * after successful registration of new VM */
+            if (!m->llGuidsMachinesCreated.empty())
+                machineNameOrId = m->llGuidsMachinesCreated.front().toString();
+
+            hrc = mVirtualBox->FindMachine(Bstr(machineNameOrId).raw(), pMachine.asOutParam());
+
+            if (SUCCEEDED(hrc))
+            {
+                LogRel(("%s: Cleanup action - the VM with the name(or id) %s was found\n", __FUNCTION__, machineNameOrId.c_str()));
+                SafeIfaceArray<IMedium> aMedia;
+                hrc = pMachine->Unregister(CleanupMode_DetachAllReturnHardDisksOnly, ComSafeArrayAsOutParam(aMedia));
+                if (SUCCEEDED(hrc))
+                {
+                    LogRel(("%s: Cleanup action - the VM %s has been unregistered\n", __FUNCTION__, machineNameOrId.c_str()));
+                    ComPtr<IProgress> pProgress1;
+                    hrc = pMachine->DeleteConfig(ComSafeArrayAsInParam(aMedia), pProgress1.asOutParam());
+                    pTask->pProgress->WaitForOtherProgressCompletion(pProgress1, 0 /* indefinite wait */);
+
+                    LogRel(("%s: Cleanup action - the VM config file and the attached images have been deleted\n",
+                            __FUNCTION__, machineNameOrId.c_str()));
+                }
+            }
+            else
+            {
+                /* Re-check the items in the array with the images names (paths).
+                 * if the import fails before creation VM, then VM won't be found
+                 * -> VM can't be unregistered and the images can't be deleted.
+                 * The rest items in the array aVBoxValues are the images which might
+                 * have still been registered in the VBox.
+                 * So go through the array and detach-unregister-delete those images */
+
+                /* have to get write lock as the whole find/update sequence must be done
+                 * in one critical section, otherwise there are races which can lead to
+                 * multiple Medium objects with the same content */
+
+                AutoWriteLock treeLock(mVirtualBox->i_getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
+
+                for (size_t i = 1; i < aVBoxValues.size(); ++i)
+                {
+                    vsdData = aVBoxValues[i];
+                    ComObjPtr<Medium> poHardDisk;
+                    hrc = mVirtualBox->i_findHardDiskByLocation(vsdData, false, &poHardDisk);
+                    if (SUCCEEDED(hrc))
+                    {
+                        hrc = mVirtualBox->i_unregisterMedium((Medium*)(poHardDisk));
+                        if (SUCCEEDED(hrc))
+                        {
+                            ComPtr<IProgress> pProgress1;
+                            hrc = poHardDisk->DeleteStorage(pProgress1.asOutParam());
+                            pTask->pProgress->WaitForOtherProgressCompletion(pProgress1, 0 /* indefinite wait */);
+                        }
+                        if (SUCCEEDED(hrc))
+                            LogRel(("%s: Cleanup action - the image %s has been deleted\n", __FUNCTION__, vsdData.c_str()));
+                    }
+                    else if (hrc == VBOX_E_OBJECT_NOT_FOUND)
+                    {
+                        LogRel(("%s: Cleanup action - the image %s wasn't found. Nothing to delete.\n", __FUNCTION__, vsdData.c_str()));
+                        hrc = S_OK;
+                    }
+
+                }
+            }
+
+            /* Deletion of all additional files which were created during unpacking the downloaded object */
+            for (size_t i = 0; i < extraCreatedFiles.size(); ++i)
+            {
+                vrc = RTFileDelete(extraCreatedFiles.at(i).c_str());
+                if (RT_FAILURE(vrc))
+                    hrc = setErrorBoth(VBOX_E_IPRT_ERROR, vrc);
+                else
+                    LogRel(("%s: Cleanup action - file %s has been deleted\n", __FUNCTION__, extraCreatedFiles.at(i).c_str()));
+            }
+
+            /* Deletion of the other files in the VM folder and the folder itself */
+            {
+                RTDIR   hDir;
+                vrc = RTDirOpen(&hDir, strMachineFolder.c_str());
+                if (RT_SUCCESS(vrc))
+                {
+                    for (;;)
+                    {
+                        RTDIRENTRYEX Entry;
+                        vrc = RTDirReadEx(hDir, &Entry, NULL /*pcbDirEntry*/, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK);
+                        if (RT_FAILURE(vrc))
+                        {
+                            AssertLogRelMsg(vrc == VERR_NO_MORE_FILES, ("%Rrc\n", vrc));
+                            break;
+                        }
+                        if (RTFS_IS_FILE(Entry.Info.Attr.fMode))
+                        {
+                            vrc = RTFileDelete(Entry.szName);
+                            if (RT_FAILURE(vrc))
+                                hrc = setErrorBoth(VBOX_E_IPRT_ERROR, vrc);
+                            else
+                                LogRel(("%s: Cleanup action - file %s has been deleted\n", __FUNCTION__, Entry.szName));
+                        }
+                    }
+                    RTDirClose(hDir);
+                }
+
+                vrc = RTDirRemove(strMachineFolder.c_str());
+                if (RT_FAILURE(vrc))
+                    hrc = setErrorBoth(VBOX_E_IPRT_ERROR, vrc);
+            }
+
+            if (FAILED(hrc))
+                LogRel(("%s: Cleanup action - some leavings still may exist in the folder %s\n",
+                        __FUNCTION__, strMachineFolder.c_str()));
+        }
+        else
+        {
+            /* See explanation in the Appliance::i_importImpl() where Progress was setup */
+            ULONG operationCount;
+            ULONG currOperation;
+            pTask->pProgress->COMGETTER(OperationCount)(&operationCount);
+            pTask->pProgress->COMGETTER(Operation)(&currOperation);
+            while (++currOperation < operationCount)
+            {
+                pTask->pProgress->SetNextOperation(BstrFmt("Skipping the cleanup phase. All right.").raw(), 25);
+                LogRel(("%s: Skipping the cleanup step %d\n", __FUNCTION__, currOperation));
+            }
         }
     }
-
-    /* Reset the state so others can call methods again */
-//  m->state = ApplianceIdle;
 
     LogFlowFunc(("rc=%Rhrc\n", hrc));
     LogFlowFuncLeave();
@@ -2887,20 +3033,52 @@ HRESULT Appliance::i_importImpl(const LocationInfo &locInfo,
              * 2. Import the custom image into the Object Storage (OCI format - TAR file with QCOW2 image and JSON file):
              *    - 2 operations (starting and waiting)
              * 3. Download the object from the Object Storage:
-             *    - 2 operations (starting and waiting)
+             *    - 1 operation (starting and downloadind is one operation)
              * 4. Open the object, extract QCOW2 image and convert one QCOW2->VDI:
-             *    - 1 operation (extracting and conversion are piped)
+             *    - 1 operation (extracting and conversion are piped) because only 1 base bootable image is imported for now
              * 5. Create VM with user settings and attach the converted image to VM:
              *    - 1 operation.
+             * 6. Cleanup phase.
+             *    - 1 to N operations.
+             *    The number of the correct Progress operations are much tricky here.
+             *    Whether Machine::deleteConfig() is called or Medium::deleteStorage() is called in the loop.
+             *    Both require a new Progress object. To work with these functions the original Progress object uses
+             *    the function Progress::waitForOtherProgressCompletion().
+             *    Example 1:
+             *      1 image was registered in the VBox, 1 VM was created and image was attahced. Next something fails
+             *    and we should clean up the disk space. Machine::unregister() return the list of HDDs for deletion.
+             *    Machine::deleteConfig() deletes these HDDs but except this a VM setting file, a previous VM setting
+             *    file, the snapshots are also deleted. And the original Progress should count these steps correctly.
+             *    In this example we will have only couple additional files - VM setting files. As result we
+             *    speculate that the number of cleanup operations will be 3: 1 image + 1 setting file + 1 prev setting file.
+             *    No snapshots and logs here. But possible situation when the image wasn't attached due to some error.
+             *    Thus the number of operations will be 2 instead of 3 (VM registered but no HDDs).
+             *    Example 2:
+             *      1 image was registered in the VBox, VM wasn't created due to an error. Here we have only
+             *    1 operation which uses Progress it's Medium::deleteStorage(). Loop with one interation.
              *
-             * Total: 2+2+2+1+1 = 8 operations
+             *    The problem here is in that we don't know exactly how many operations will be when Progress has been
+             *    setting up here. We just may speculate.
              *
-             * See src/VBox/ExtPacks/Puel/OCI/OCICloudClient.h.
+             *    What to do if the number of the imported images will be more than 1 in the future?
+             *    What to do if some cloud operations won't be needed for the other Cloud providers?
+             *    What to do if the number of cloud operations will differ among Cloud providers?
+             *    Only Cloud provider shall know the answer on the last two questions.
+             *    As result, we speculate about tne number of the operations in the Cloud and we speculate
+             *    about the number of the local operations.
+             *
+             * Total: 2+2+1(cloud) + 1+1(local) + 1+1+1(cleanup) = 10 operations
+             *
+             * Weight "#define"s for the CLoud operations are located in the file OCICloudClient.h.
              * Weight of cloud import operations (1-3 items from above):
-             * Total = 750 = 10+40+50+50+200x2+200.
+             * Total = 750 = 25+75(start and wait)+25+375(start and wait)+250(download)
              *
              * Weight of local import operations (4-5 items from above):
-             * Total = 250 = 200 (extract and convert) + 50 (create VM, attach disks)
+             * Total = 150 = 100 (extract and convert) + 50 (create VM, attach disks)
+             *
+             * Weight of local cleanup operations (6 item from above):
+             * Some speculation here...
+             * Total = 100 = 50 (1 image) + 25 (1 setting file)+ 25 (1 prev setting file)
              */
             try
             {
@@ -2909,7 +3087,7 @@ HRESULT Appliance::i_importImpl(const LocationInfo &locInfo,
                     rc = progress->init(mVirtualBox, static_cast<IAppliance *>(this),
                                         Utf8Str(tr("Importing VM from Cloud...")),
                                         TRUE /* aCancelable */,
-                                        8, // ULONG cOperations,
+                                        10, // ULONG cOperations,
                                         1000, // ULONG ulTotalOperationsWeight,
                                         Utf8Str(tr("Importing VM from Cloud...")), // aFirstOperationDescription
                                         10); // ULONG ulFirstOperationWeight
