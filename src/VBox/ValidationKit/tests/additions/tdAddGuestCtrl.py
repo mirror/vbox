@@ -238,7 +238,10 @@ class tdTestCopyFrom(tdTestGuestCtrlBase):
             self.sSrc = oSrc.sPath;
 
 class tdTestCopyFromDir(tdTestCopyFrom):
-    pass;
+
+    def __init__(self, sSrc = "", sDst = "", sUser = None, sPassword = None, fFlags = None, oSrc = None, fIntoDst = False):
+        tdTestCopyFrom.__init__(self, sSrc, sDst, sUser, sPassword, fFlags, oSrc);
+        self.fIntoDst = fIntoDst; # hint to the verification code that sDst == oSrc, rather than sDst+oSrc.sNAme == oSrc.
 
 class tdTestCopyFromFile(tdTestCopyFrom):
     pass;
@@ -258,7 +261,7 @@ class tdTestRemoveHostDir(object):
             try:
                 os.rmdir(self.sDir);
             except:
-                reporter.errorXcpt('%s: sDir=%s' % (sMsgPrefix, self.sDir,));
+                return reporter.errorXcpt('%s: sDir=%s' % (sMsgPrefix, self.sDir,));
         return True;
 
 
@@ -1123,10 +1126,6 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         """
         _ = oSession;
 
-        #reporter.log('Take snapshot now!');
-        #self.oTstDrv.sleep(22);
-        #return False;
-
         # Make sure the temporary directory exists.
         for sDir in [self.getGuestTempDir(oTestVm), ]:
             if oTxsSession.syncMkDirPath(sDir, 0o777) is not True:
@@ -1141,18 +1140,21 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
     # gctrlXxxx stuff.
     #
 
-    def gctrlCopyFileFrom(self, oGuestSession, sSrc, sDst, fFlags, fExpected):
+    def gctrlCopyFileFrom(self, oGuestSession, oTest, fExpected):
         """
         Helper function to copy a single file from the guest to the host.
         """
-        reporter.log2('Copying guest file "%s" to host "%s"' % (sSrc, sDst));
+        #
+        # Do the copying.
+        #
+        reporter.log2('Copying guest file "%s" to host "%s"' % (oTest.sSrc, oTest.sDst));
         try:
             if self.oTstDrv.fpApiVer >= 5.0:
-                oCurProgress = oGuestSession.fileCopyFromGuest(sSrc, sDst, fFlags);
+                oCurProgress = oGuestSession.fileCopyFromGuest(oTest.sSrc, oTest.sDst, oTest.fFlags);
             else:
-                oCurProgress = oGuestSession.copyFrom(sSrc, sDst, fFlags);
+                oCurProgress = oGuestSession.copyFrom(oTest.sSrc, oTest.sDst, oTest.fFlags);
         except:
-            reporter.maybeErrXcpt(fExpected, 'Copy from exception for sSrc="%s", sDst="%s":' % (sSrc, sDst,));
+            reporter.maybeErrXcpt(fExpected, 'Copy from exception for sSrc="%s", sDst="%s":' % (oTest.sSrc, oTest.sDst,));
             return False;
         if oCurProgress is None:
             return reporter.error('No progress object returned');
@@ -1161,17 +1163,91 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         if not oProgress.isSuccess():
             oProgress.logResult(fIgnoreErrors = not fExpected);
             return False;
+
+        #
+        # Check the result if we can.
+        #
+        if oTest.oSrc:
+            assert isinstance(oTest.oSrc, testfileset.TestFile);
+            sDst = oTest.sDst;
+            if os.path.isdir(sDst):
+                sDst = os.path.join(sDst, oTest.oSrc.sName);
+            try:
+                oFile = open(sDst, 'rb');
+            except:
+                return reporter.errorXcpt('open(%s) failed during verfication' % (sDst,));
+            fEqual = oTest.oSrc.equalFile(oFile);
+            oFile.close();
+            if not fEqual:
+                return reporter.error('Content differs for "%s"' % (sDst,));
+
         return True;
 
-    def gctrlCopyDirFrom(self, oGuestSession, sSrc, sDst, fFlags, fExpected):
+    def __compareTestDir(self, oDir, sHostPath): # type: (testfileset.TestDir, str) -> bool
+        """
+        Recursively compare the content of oDir and sHostPath.
+
+        Returns True on success, False + error logging on failure.
+
+        Note! This ASSUMES that nothing else was copied to sHostPath!
+        """
+        #
+        # First check out all the entries and files in the directory.
+        #
+        dLeftUpper = dict(oDir.dChildrenUpper);
+        try:
+            asEntries = os.listdir(sHostPath);
+        except:
+            return reporter.errorXcpt('os.listdir(%s) failed' % (sHostPath,));
+
+        fRc = True;
+        for sEntry in asEntries:
+            sEntryUpper = sEntry.upper();
+            if sEntryUpper not in dLeftUpper:
+                fRc = reporter.error('Unexpected entry "%s" in "%s"' % (sEntry, sHostPath,));
+            else:
+                oFsObj = dLeftUpper[sEntryUpper];
+                del dLeftUpper[sEntryUpper];
+
+                if isinstance(oFsObj, testfileset.TestFile):
+                    sFilePath = os.path.join(sHostPath, oFsObj.sName);
+                    try:
+                        oFile = open(sFilePath, 'rb');
+                    except:
+                        fRc = reporter.errorXcpt('open(%s) failed during verfication' % (sFilePath,));
+                    else:
+                        fEqual = oFsObj.equalFile(oFile);
+                        oFile.close();
+                        if not fEqual:
+                            fRc = reporter.error('Content differs for "%s"' % (sFilePath,));
+
+        # List missing entries:
+        for sKey in dLeftUpper:
+            oEntry = dLeftUpper[sKey];
+            fRc = reporter.error('%s: Missing %s "%s" (src path: %s)'
+                                 % (sHostPath, oEntry.sName,
+                                    'file' if isinstance(oEntry, testfileset.TestFile) else 'directory', oEntry.sPath));
+
+        #
+        # Recurse into subdirectories.
+        #
+        for oFsObj in oDir.aoChildren:
+            if isinstance(oFsObj, testfileset.TestDir):
+                fRc = self.__compareTestDir(oFsObj, os.path.join(sHostPath, oFsObj.sName)) and fRc;
+        return fRc;
+
+    def gctrlCopyDirFrom(self, oGuestSession, oTest, fExpected):
         """
         Helper function to copy a directory from the guest to the host.
         """
-        reporter.log2('Copying guest dir "%s" to host "%s"' % (sSrc, sDst));
+        #
+        # Do the copying.
+        #
+        reporter.log2('Copying guest dir "%s" to host "%s"' % (oTest.sSrc, oTest.sDst));
         try:
-            oCurProgress = oGuestSession.directoryCopyFromGuest(sSrc, sDst, fFlags);
+            oCurProgress = oGuestSession.directoryCopyFromGuest(oTest.sSrc, oTest.sDst, oTest.fFlags);
         except:
-            reporter.maybeErrXcpt(fExpected, 'Copy dir from exception for sSrc="%s", sDst="%s":' % (sSrc, sDst,));
+            reporter.maybeErrXcpt(fExpected, 'Copy dir from exception for sSrc="%s", sDst="%s":' % (oTest.sSrc, oTest.sDst,));
             return False;
         if oCurProgress is None:
             return reporter.error('No progress object returned');
@@ -1181,6 +1257,19 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         if not oProgress.isSuccess():
             oProgress.logResult(fIgnoreErrors = not fExpected);
             return False;
+
+        #
+        # Check the result if we can.
+        #
+        if oTest.oSrc:
+            assert isinstance(oTest.oSrc, testfileset.TestDir);
+            sDst = oTest.sDst;
+            if oTest.fIntoDst:
+                return self.__compareTestDir(oTest.oSrc, os.path.join(sDst, oTest.oSrc.sName));
+            oDummy = testfileset.TestDir(None, 'dummy');
+            oDummy.aoChildren = [oTest.oSrc,]
+            oDummy.dChildrenUpper = { oTest.oSrc.sName.upper(): oTest.oSrc, };
+            return self.__compareTestDir(oDummy, sDst);
         return True;
 
     def gctrlCopyFileTo(self, oGuestSession, sSrc, sDst, fFlags, fIsError):
@@ -3575,6 +3664,9 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         # Paths.
         #
         sScratchHst             = os.path.join(self.oTstDrv.sScratchPath, "testGctrlCopyFrom");
+        sScratchDstDir1Hst      = os.path.join(sScratchHst, "dstdir1");
+        sScratchDstDir2Hst      = os.path.join(sScratchHst, "dstdir2");
+        sScratchDstDir3Hst      = os.path.join(sScratchHst, "dstdir3");
         oExistingFileGst        = self.oTestFiles.chooseRandomFile();
         oNonEmptyDirGst         = self.oTestFiles.chooseRandomDirFromTree(fNonEmpty = True);
         oEmptyDirGst            = self.oTestFiles.oEmptyDir;
@@ -3593,9 +3685,15 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 return reporter.error('Failed to wipe "%s"' % (sScratchHst,));
         else:
             try:
-                os.mkdir(sScratchHst)
+                os.mkdir(sScratchHst);
             except:
-                return reporter.errorXcpt('sScratchHst=%s' % (sScratchHst, ));
+                return reporter.errorXcpt('os.mkdir(%s)' % (sScratchHst, ));
+
+        for sSubDir in (sScratchDstDir1Hst, sScratchDstDir2Hst, sScratchDstDir3Hst):
+            try:
+                os.mkdir(sSubDir);
+            except:
+                return reporter.errorXcpt('os.mkdir(%s)' % (sSubDir, ));
 
         #
         # Bad parameter tests.
@@ -3678,31 +3776,31 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         #
         atTests.extend([
             # Copy the empty guest directory (should end up as sScratchHst/empty):
-            [ tdTestCopyFromDir(oSrc = oEmptyDirGst, sDst = sScratchHst), tdTestResultSuccess() ],
+            [ tdTestCopyFromDir(oSrc = oEmptyDirGst, sDst = sScratchDstDir1Hst), tdTestResultSuccess() ],
             # Repeat -- this time it should fail, as the destination directory already exists (and
             # DirectoryCopyFlag_CopyIntoExisting is not specified):
-            [ tdTestCopyFromDir(oSrc = oEmptyDirGst, sDst = sScratchHst), tdTestResultFailure() ],
+            [ tdTestCopyFromDir(oSrc = oEmptyDirGst, sDst = sScratchDstDir1Hst), tdTestResultFailure() ],
             # Add the DirectoryCopyFlag_CopyIntoExisting flag being set and it should work.
-            [ tdTestCopyFromDir(oSrc = oEmptyDirGst, sDst = sScratchHst,
+            [ tdTestCopyFromDir(oSrc = oEmptyDirGst, sDst = sScratchDstDir1Hst,
                                 fFlags = [ vboxcon.DirectoryCopyFlag_CopyIntoExisting, ]), tdTestResultSuccess() ],
-            # Try again with trailing slash
-            [ tdTestRemoveHostDir(os.path.join(sScratchHst, 'empty')), tdTestResult() ],
-            [ tdTestCopyFromDir(oSrc = oEmptyDirGst, sDst = sScratchHst + os.path.sep),
+            # Try again with trailing slash, should yield the same result:
+            [ tdTestRemoveHostDir(os.path.join(sScratchDstDir1Hst, 'empty')), tdTestResult() ],
+            [ tdTestCopyFromDir(oSrc = oEmptyDirGst, sDst = sScratchDstDir1Hst + os.path.sep),
               tdTestResultSuccess() ],
-            [ tdTestCopyFromDir(oSrc = oEmptyDirGst, sDst = sScratchHst + os.path.sep),
+            [ tdTestCopyFromDir(oSrc = oEmptyDirGst, sDst = sScratchDstDir1Hst + os.path.sep),
               tdTestResultFailure() ],
-            [ tdTestCopyFromDir(oSrc = oEmptyDirGst, sDst = sScratchHst + os.path.sep,
+            [ tdTestCopyFromDir(oSrc = oEmptyDirGst, sDst = sScratchDstDir1Hst + os.path.sep,
                                 fFlags = [ vboxcon.DirectoryCopyFlag_CopyIntoExisting, ]), tdTestResultSuccess() ],
-            # Copy with a different destination name:
-            [ tdTestCopyFromDir(oSrc = oEmptyDirGst, sDst = os.path.join(sScratchHst, 'empty2')),
+            # Copy with a different destination name just for the heck of it:
+            [ tdTestCopyFromDir(oSrc = oEmptyDirGst, sDst = os.path.join(sScratchHst, 'empty2'), fIntoDst = True),
               tdTestResultFailure() ],
             # Now the same using a directory with files in it:
-            [ tdTestCopyFromDir(oSrc = oNonEmptyDirGst, sDst = sScratchHst), tdTestResultSuccess() ],
-            [ tdTestCopyFromDir(oSrc = oNonEmptyDirGst, sDst = sScratchHst), tdTestResultFailure() ],
-            [ tdTestCopyFromDir(oSrc = oNonEmptyDirGst, sDst = sScratchHst,
+            [ tdTestCopyFromDir(oSrc = oNonEmptyDirGst, sDst = sScratchDstDir2Hst), tdTestResultSuccess() ],
+            [ tdTestCopyFromDir(oSrc = oNonEmptyDirGst, sDst = sScratchDstDir2Hst), tdTestResultFailure() ],
+            [ tdTestCopyFromDir(oSrc = oNonEmptyDirGst, sDst = sScratchDstDir2Hst,
                                 fFlags = [ vboxcon.DirectoryCopyFlag_CopyIntoExisting, ]), tdTestResultSuccess() ],
             # Copy the entire test tree:
-            [ tdTestCopyFromDir(sSrc = self.oTestFiles.oTreeDir.sPath, sDst = sScratchHst), tdTestResultSuccess() ],
+            [ tdTestCopyFromDir(sSrc = self.oTestFiles.oTreeDir.sPath, sDst = sScratchDstDir3Hst), tdTestResultSuccess() ],
         ]);
 
         #
@@ -3732,16 +3830,13 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                     break;
 
                 if isinstance(oCurTest, tdTestCopyFromFile):
-                    fRc2 = self.gctrlCopyFileFrom(oCurGuestSession, oCurTest.sSrc, oCurTest.sDst, oCurTest.fFlags, oCurRes.fRc);
+                    fRc2 = self.gctrlCopyFileFrom(oCurGuestSession, oCurTest, oCurRes.fRc);
                 else:
-                    fRc2 = self.gctrlCopyDirFrom(oCurGuestSession, oCurTest.sSrc, oCurTest.sDst, oCurTest.fFlags, oCurRes.fRc);
+                    fRc2 = self.gctrlCopyDirFrom(oCurGuestSession, oCurTest, oCurRes.fRc);
 
                 if fRc2 != oCurRes.fRc:
                     fRc = reporter.error('Test #%d failed: Got %s, expected %s' % (i, fRc2, oCurRes.fRc));
                     fRc2 = False;
-
-                if fRc2 is True:
-                    pass; ## @todo verify the result.
 
                 fRc = oCurTest.closeSession(fIsError = True) and fRc;
 
