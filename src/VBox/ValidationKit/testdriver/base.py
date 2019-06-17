@@ -325,6 +325,46 @@ def processCheckPidAndName(uPid, sName):
             fRc = True;
     return fRc;
 
+def wipeDirectory(sDir):
+    """
+    Deletes all file and sub-directories in sDir, leaving sDir in empty afterwards.
+    Returns the number of errors after logging them as errors.
+    """
+    if not os.path.exists(sDir):
+        return 0;
+
+    try:
+        asNames = os.listdir(sDir);
+    except:
+        return reporter.errorXcpt('os.listdir("%s")' % (sDir));
+
+    cErrors = 0;
+    for sName in asNames:
+        # Build full path and lstat the object.
+        sFullName = os.path.join(sDir, sName)
+        try:
+            oStat = os.lstat(sFullName);
+        except:
+            reporter.errorXcpt('lstat("%s")' % (sFullName,));
+            cErrors = cErrors + 1;
+            continue;
+
+        if stat.S_ISDIR(oStat.st_mode):
+            # Directory - recurse and try remove it.
+            cErrors = cErrors + wipeDirectory(sFullName);
+            try:
+                os.rmdir(sFullName);
+            except:
+                reporter.errorXcpt('rmdir("%s")' % (sFullName,));
+                cErrors = cErrors + 1;
+        else:
+            # File, symlink, fifo or something - remove/unlink.
+            try:
+                os.remove(sFullName);
+            except:
+                reporter.errorXcpt('remove("%s")' % (sFullName,));
+                cErrors = cErrors + 1;
+    return cErrors;
 
 
 #
@@ -898,51 +938,12 @@ class TestDriverBase(object): # pylint: disable=too-many-instance-attributes
     # Scratch related utility methods.
     #
 
-    def __wipeScratchRecurse(self, sDir):
-        """
-        Deletes all file and sub-directories in sDir.
-        Returns the number of errors.
-        """
-        try:
-            asNames = os.listdir(sDir);
-        except:
-            reporter.errorXcpt('os.listdir("%s")' % (sDir));
-            return False;
-
-        cErrors = 0;
-        for sName in asNames:
-            # Build full path and lstat the object.
-            sFullName = os.path.join(sDir, sName)
-            try:
-                oStat = os.lstat(sFullName);
-            except:
-                reporter.errorXcpt('lstat("%s")' % (sFullName));
-                cErrors = cErrors + 1;
-                continue;
-
-            if stat.S_ISDIR(oStat.st_mode):
-                # Directory - recurse and try remove it.
-                cErrors = cErrors + self.__wipeScratchRecurse(sFullName);
-                try:
-                    os.rmdir(sFullName);
-                except:
-                    reporter.errorXcpt('rmdir("%s")' % (sFullName));
-                    cErrors = cErrors + 1;
-            else:
-                # File, symlink, fifo or something - remove/unlink.
-                try:
-                    os.remove(sFullName);
-                except:
-                    reporter.errorXcpt('remove("%s")' % (sFullName));
-                    cErrors = cErrors + 1;
-        return cErrors;
-
     def wipeScratch(self):
         """
         Removes the content of the scratch directory.
         Returns True on no errors, False + log entries on errors.
         """
-        cErrors = self.__wipeScratchRecurse(self.sScratchPath);
+        cErrors = wipeDirectory(self.sScratchPath);
         return cErrors == 0;
 
     #
