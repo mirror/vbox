@@ -352,8 +352,8 @@ int vboxClipboardBmpGetDib(const void *pvSrc, size_t cbSrc, const void **ppvDest
     return VINF_SUCCESS;
 }
 
-#ifdef VBOX_STRICT
-int vboxClipboardDbgDumpHtml(const char *pszSrc, size_t cbSrc)
+#ifdef LOG_ENABLED
+int VBoxClipboardDbgDumpHtml(const char *pszSrc, size_t cbSrc)
 {
     size_t cchIgnored = 0;
     int rc = RTStrNLenEx(pszSrc, cbSrc, &cchIgnored);
@@ -380,7 +380,45 @@ int vboxClipboardDbgDumpHtml(const char *pszSrc, size_t cbSrc)
 
     return rc;
 }
-#endif
+
+void VBoxClipboardDbgDumpData(const void *pv, size_t cb, VBOXCLIPBOARDFORMAT u32Format)
+{
+    if (u32Format & VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT)
+    {
+        LogFunc(("VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT:\n"));
+        if (pv && cb)
+            LogFunc(("%ls\n", pv));
+        else
+            LogFunc(("%p %zu\n", pv, cb));
+    }
+    else if (u32Format & VBOX_SHARED_CLIPBOARD_FMT_BITMAP)
+        LogFunc(("VBOX_SHARED_CLIPBOARD_FMT_BITMAP\n"));
+    else if (u32Format & VBOX_SHARED_CLIPBOARD_FMT_HTML)
+    {
+        LogFunc(("VBOX_SHARED_CLIPBOARD_FMT_HTML:\n"));
+        if (pv && cb)
+        {
+            LogFunc(("%s\n", pv));
+
+            //size_t cb = RTStrNLen(pv, );
+            char *pszBuf = (char *)RTMemAllocZ(cb + 1);
+            RTStrCopy(pszBuf, cb + 1, (const char *)pv);
+            for (size_t off = 0; off < cb; ++off)
+            {
+                if (pszBuf[off] == '\n' || pszBuf[off] == '\r')
+                    pszBuf[off] = ' ';
+            }
+
+            LogFunc(("%s\n", pszBuf));
+            RTMemFree(pszBuf);
+        }
+        else
+            LogFunc(("%p %zu\n", pv, cb));
+    }
+    else
+        LogFunc(("Invalid format %02X\n", u32Format));
+}
+#endif /* LOG_ENABLED */
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
 /**

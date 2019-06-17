@@ -129,8 +129,6 @@ bool VBoxClipboardWinIsCFHTML(const char *pszSource);
 int VBoxClipboardWinConvertCFHTMLToMIME(const char *pszSource, const uint32_t cch, char **ppszOutput, uint32_t *pcbOutput);
 int VBoxClipboardWinConvertMIMEToCFHTML(const char *pszSource, size_t cb, char **ppszOutput, uint32_t *pcbOutput);
 
-void VBoxClipboardWinDump(const void *pv, size_t cb, VBOXCLIPBOARDFORMAT u32Format);
-
 LRESULT VBoxClipboardWinHandleWMChangeCBChain(PVBOXCLIPBOARDWINCTX pWinCtx, HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 int VBoxClipboardWinHandleWMDestroy(PVBOXCLIPBOARDWINCTX pWinCtx);
 int VBoxClipboardWinHandleWMRenderAllFormats(PVBOXCLIPBOARDWINCTX pWinCtx, HWND hWnd);

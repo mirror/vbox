@@ -118,7 +118,9 @@ static void vboxClipboardGetData(uint32_t u32Format, const void *pvSrc, uint32_t
         memcpy(pvDst, pvSrc, cbSrc);
     }
 
-    VBoxClipboardWinDump(pvDst, cbSrc, u32Format);
+#ifdef LOG_ENABLED
+    VBoxClipboardDbgDumpData(pvDst, cbSrc, u32Format);
+#endif
 
     return;
 }
@@ -684,7 +686,7 @@ int VBoxClipboardSvcImplReadData(PVBOXCLIPBOARDCLIENTDATA pClientData, uint32_t 
                                              pv, cb, pcbActual);
 #ifdef VBOX_STRICT
                         LogFlowFunc(("Raw HTML clipboard data from host:"));
-                        vboxClipboardDbgDumpHtml((char *)pv, cb);
+                        VBoxClipboardDbgDumpHtml((char *)pv, cb);
 #endif
                         GlobalUnlock(hClip);
                     }
@@ -749,7 +751,9 @@ int VBoxClipboardSvcImplWriteData(PVBOXCLIPBOARDCLIENTDATA pClientData, void *pv
      */
     Assert(pClientData->State.data.pv == NULL && pClientData->State.data.cb == 0 && pClientData->State.data.u32Format == 0);
 
-    VBoxClipboardWinDump(pv, cb, u32Format);
+#ifdef LOG_ENABLED
+    VBoxClipboardDbgDumpData(pv, cb, u32Format);
+#endif
 
     if (cb > 0)
     {

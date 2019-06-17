@@ -32,6 +32,8 @@
 
 #include <iprt/string.h>
 
+#include <VBox/GuestHost/SharedClipboard.h>
+
 /** Constants needed for string conversions done by the Linux/Mac clipboard code. */
 enum {
     /** In Linux, lines end with a linefeed character. */
@@ -169,7 +171,7 @@ int vboxClipboardDibToBmp(const void *pvSrc, size_t cbSrc, void **ppvDst, size_t
  */
 int vboxClipboardBmpGetDib(const void *pvSrc, size_t cbSrc, const void **ppvDst, size_t *pcbDst);
 
-#ifdef VBOX_STRICT
+#ifdef LOG_ENABLED
 /**
  * Dumps HTML data to the debug log.
  *
@@ -177,8 +179,17 @@ int vboxClipboardBmpGetDib(const void *pvSrc, size_t cbSrc, const void **ppvDst,
  * @param   pszSrc              HTML data to dump.
  * @param   cbSrc               Size (in bytes) of HTML data to dump.
  */
-int vboxClipboardDbgDumpHtml(const char *pszSrc, size_t cbSrc);
-#endif
+int VBoxClipboardDbgDumpHtml(const char *pszSrc, size_t cbSrc);
+
+/**
+ * Dumps data using a specified clipboard format.
+ *
+ * @param   pv                  Pointer to data to dump.
+ * @param   cb                  Size (in bytes) of data to dump.
+ * @param   u32Format           Clipboard format to use for dumping.
+ */
+void VBoxClipboardDbgDumpData(const void *pv, size_t cb, VBOXCLIPBOARDFORMAT u32Format);
+#endif /* LOG_ENABLED */
 
 #endif /* !VBOX_INCLUDED_GuestHost_clipboard_helper_h */
 

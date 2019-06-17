@@ -635,55 +635,6 @@ int VBoxClipboardWinConvertMIMEToCFHTML(const char *pszSource, size_t cb, char *
     return VINF_SUCCESS;
 }
 
-#ifdef LOG_ENABLED
-/**
- * Dumps data using a specified clipboard format.
- *
- * @param   pv                  Pointer to data to dump.
- * @param   cb                  Size (in bytes) of data to dump.
- * @param   u32Format           Clipboard format to use for dumping.
- */
-void VBoxClipboardWinDump(const void *pv, size_t cb, VBOXCLIPBOARDFORMAT u32Format)
-{
-    if (u32Format & VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT)
-    {
-        LogFunc(("VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT:\n"));
-        if (pv && cb)
-            LogFunc(("%ls\n", pv));
-        else
-            LogFunc(("%p %zu\n", pv, cb));
-    }
-    else if (u32Format & VBOX_SHARED_CLIPBOARD_FMT_BITMAP)
-        LogFunc(("VBOX_SHARED_CLIPBOARD_FMT_BITMAP\n"));
-    else if (u32Format & VBOX_SHARED_CLIPBOARD_FMT_HTML)
-    {
-        LogFunc(("VBOX_SHARED_CLIPBOARD_FMT_HTML:\n"));
-        if (pv && cb)
-        {
-            LogFunc(("%s\n", pv));
-
-            //size_t cb = RTStrNLen(pv, );
-            char *pszBuf = (char *)RTMemAllocZ(cb + 1);
-            RTStrCopy(pszBuf, cb + 1, (const char *)pv);
-            for (size_t off = 0; off < cb; ++off)
-            {
-                if (pszBuf[off] == '\n' || pszBuf[off] == '\r')
-                    pszBuf[off] = ' ';
-            }
-
-            LogFunc(("%s\n", pszBuf));
-            RTMemFree(pszBuf);
-        }
-        else
-            LogFunc(("%p %zu\n", pv, cb));
-    }
-    else
-        LogFunc(("Invalid format %02X\n", u32Format));
-}
-#else  /* !LOG_ENABLED */
-#   define VBoxClipboardWinDump(__pv, __cb, __format) do { NOREF(__pv); NOREF(__cb); NOREF(__format); } while (0)
-#endif /* !LOG_ENABLED */
-
 /**
  * Handles the WM_CHANGECBCHAIN code.
  *
