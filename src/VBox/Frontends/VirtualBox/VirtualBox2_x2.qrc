@@ -110,6 +110,7 @@
         <file alias="os_type_16px_x2.png">images/x2/os_type_16px_x2.png</file>
         <file alias="os_ubuntu_64_x2.png">images/x2/os_ubuntu_64_x2.png</file>
         <file alias="os_ubuntu_x2.png">images/x2/os_ubuntu_x2.png</file>
+        <file alias="os_version_16px_x2.png">images/x2/os_version_16px_x2.png</file>
         <file alias="os_win10_64_x2.png">images/x2/os_win10_64_x2.png</file>
         <file alias="os_win10_x2.png">images/x2/os_win10_x2.png</file>
         <file alias="os_win2k12_64_x2.png">images/x2/os_win2k12_64_x2.png</file>
