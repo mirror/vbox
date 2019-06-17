@@ -86,6 +86,23 @@ else
     DEVICE_MODE=0660
 fi
 
+KERN_VER=`uname -r`
+MODULE_LIST="vboxdrv vboxnetflt vboxnetadp vboxpci"
+# Secure boot state.
+case "`mokutil --sb-state 2>/dev/null`" in
+    *"disabled in shim"*) unset HAVE_SEC_BOOT;;
+    *"SecureBoot enabled"*) HAVE_SEC_BOOT=true;;
+    *) unset HAVE_SEC_BOOT;;
+esac
+# So far we can only sign modules on Ubuntu and on Debian 10 and later.
+DEB_PUB_KEY=/var/lib/shim-signed/mok/MOK.der
+DEB_PRIV_KEY=/var/lib/shim-signed/mok/MOK.priv
+unset HAVE_DEB_KEY
+case "`mokutil --test-key "$DEB_PUB_KEY" 2>/dev/null`" in
+    *"is already"*) DEB_KEY_ENROLLED=true;;
+    *) unset DEB_KEY_ENROLLED;;
+esac
+
 [ -r /etc/default/virtualbox ] && . /etc/default/virtualbox
 
 # Preamble for Gentoo
@@ -251,6 +268,16 @@ start()
     begin_msg "Starting VirtualBox services" console
     if [ -d /proc/xen ]; then
         failure "Running VirtualBox in a Xen environment is not supported"
+    fi
+    if test -n "$HAVE_SEC_BOOT" && test -z "$DEB_KEY_ENROLLED"; then
+        if test -n "$HAVE_DEB_KEY"; then
+            begin_msg "You must re-start your system to finish Debian secure boot set-up." console
+        else
+            begin_msg "You must sign these kernel modules before using VirtualBox:
+  $MODULE_LIST
+See the documenatation for your Linux distribution." console
+        fi
+        return 0
     fi
     if ! running vboxdrv; then
         if ! rm -f $DEVICE; then
@@ -463,6 +490,26 @@ setup()
     depmod -a
     sync
     succ_msg "VirtualBox kernel modules built"
+    # Secure boot on Ubuntu and Debian.
+    if test -n "$HAVE_SEC_BOOT" &&
+        type update-secureboot-policy >/dev/null 2>&1; then
+        SHIM_NOTRIGGER=y update-secureboot-policy --new-key
+    fi
+    if test -f "$DEB_PUB_KEY" && test -f "$DEB_PRIV_KEY"; then
+        HAVE_DEB_KEY=true
+        for i in $MODULE_LIST; do
+            kmodsign sha512 /var/lib/shim-signed/mok/MOK.priv \
+                /var/lib/shim-signed/mok/MOK.der \
+                /lib/modules/"$KERN_VER"/misc/"$i".ko
+        done
+        # update-secureboot-policy "expects" DKMS modules.
+        # Work around this and talk to the authors as soon
+        # as possible to fix it.
+        mkdir -p /var/lib/dkms/vbox-temp
+        update-secureboot-policy --enroll-key 2>/dev/null ||
+            begin_msg "Failed to enroll secure boot key." console
+        rmdir -p /var/lib/dkms/vbox-temp 2>/dev/null
+    fi
 }
 
 dmnstatus()
