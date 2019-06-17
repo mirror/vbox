@@ -67,21 +67,33 @@ private slots:
     void sltHandlePutKeyboardSequence(QVector<LONG> sequence);
     void sltHandleStatusBarContextMenuRequest(const QPoint &point);
 
+    /** Handles the signal we get from the layout selector widget.
+      * Selection changed is forwarded to the keyboard widget. */
+    void sltLayoutSelectionChanged(const QString &strLayoutName);
+
+    /** Handles the signal we get from the keyboard widget. */
+    void sltCurentLayoutChanged();
+
+    void sltShowLayoutSelector();
+    void sltShowLayoutEditor();
+    void sltKeyToEditChanged(UISoftKeyboardKey* pKey);
+    void sltLayoutEdited();
+    /** Make th necessary changes to data structures when th key captions updated. */
+    void sltKeyCaptionsEdited(UISoftKeyboardKey* pKey);
+
 private:
 
     void prepareObjects();
     void prepareConnections();
     void saveSettings();
     void loadSettings();
-    void updateStatusBarMessage();
+    void updateStatusBarMessage(const QString &strLayoutName);
     CKeyboard& keyboard() const;
 
     UISession     *m_pSession;
     QHBoxLayout   *m_pMainLayout;
-    UISoftKeyboardWidget       *m_pContainerWidget;
+    UISoftKeyboardWidget       *m_pKeyboardWidget;
     QString       m_strMachineName;
-    QString       m_strLayoutName;
-    QString       m_strKeyCapFileName;
     QSplitter      *m_pSplitter;
     QToolButton    *m_pSettingsButton;
     QStackedWidget *m_pSidePanelContainerWidget;
