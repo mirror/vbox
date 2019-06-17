@@ -440,7 +440,7 @@ HRESULT Machine::exportTo(const ComPtr<IAppliance> &aAppliance, const com::Utf8S
                 strLocation = bstrLocation;
 
                 Utf8Str ext = strLocation;
-                ext.assignEx(RTPathSuffix(ext.c_str()));//returns extension with dot (".iso")
+                ext.assignEx(RTPathSuffix(strLocation.c_str()));//returns extension with dot (".iso")
 
                 int eq = ext.compare(".iso", Utf8Str::CaseInsensitive);
                 if (eq != 0)
