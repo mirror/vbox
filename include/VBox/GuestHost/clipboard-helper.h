@@ -175,7 +175,7 @@ int vboxClipboardBmpGetDib(const void *pvSrc, size_t cbSrc, const void **ppvDst,
  *
  * @returns VBox status code.
  * @param   pszSrc              HTML data to dump.
- * @param   cb                  Size (in bytes) of HTML data to dump.
+ * @param   cbSrc               Size (in bytes) of HTML data to dump.
  */
 int vboxClipboardDbgDumpHtml(const char *pszSrc, size_t cbSrc);
 #endif
