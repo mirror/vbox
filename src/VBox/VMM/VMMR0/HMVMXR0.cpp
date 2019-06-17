@@ -1355,10 +1355,10 @@ static int hmR0VmxLeaveRootMode(void)
     RTCCUINTREG const fEFlags = ASMIntDisableFlags();
 
     /* If we're for some reason not in VMX root mode, then don't leave it. */
-    RTCCUINTREG const uHostCR4 = ASMGetCR4();
+    RTCCUINTREG const uHostCr4 = ASMGetCR4();
 
     int rc;
-    if (uHostCR4 & X86_CR4_VMXE)
+    if (uHostCr4 & X86_CR4_VMXE)
     {
         /* Exit VMX root mode and clear the VMX bit in CR4. */
         VMXDisable();
@@ -3620,8 +3620,8 @@ VMMR0DECL(void) VMXR0GlobalTerm()
 VMMR0DECL(int) VMXR0EnableCpu(PHMPHYSCPU pHostCpu, PVM pVM, void *pvCpuPage, RTHCPHYS HCPhysCpuPage, bool fEnabledByHost,
                               PCSUPHWVIRTMSRS pHwvirtMsrs)
 {
-    Assert(pHostCpu);
-    Assert(pHwvirtMsrs);
+    AssertPtr(pHostCpu);
+    AssertPtr(pHwvirtMsrs);
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 
     /* Enable VT-x if it's not already enabled by the host. */
@@ -3679,6 +3679,7 @@ VMMR0DECL(int) VMXR0DisableCpu(void *pvCpuPage, RTHCPHYS HCPhysCpuPage)
  */
 VMMR0DECL(int) VMXR0InitVM(PVM pVM)
 {
+    AssertPtr(pVM);
     LogFlowFunc(("pVM=%p\n", pVM));
 
     int rc = hmR0VmxStructsAlloc(pVM);
@@ -3700,6 +3701,7 @@ VMMR0DECL(int) VMXR0InitVM(PVM pVM)
  */
 VMMR0DECL(int) VMXR0TermVM(PVM pVM)
 {
+    AssertPtr(pVM);
     LogFlowFunc(("pVM=%p\n", pVM));
 
 #ifdef VBOX_WITH_CRASHDUMP_MAGIC
@@ -3723,7 +3725,7 @@ VMMR0DECL(int) VMXR0TermVM(PVM pVM)
  */
 VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
 {
-    AssertPtrReturn(pVM, VERR_INVALID_PARAMETER);
+    AssertPtr(pVM);
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 
     LogFlowFunc(("pVM=%p\n", pVM));
@@ -3732,8 +3734,8 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
      * At least verify if VMX is enabled, since we can't check if we're in
      * VMX root mode or not without causing a #GP.
      */
-    RTCCUINTREG const uHostCR4 = ASMGetCR4();
-    if (RT_LIKELY(uHostCR4 & X86_CR4_VMXE))
+    RTCCUINTREG const uHostCr4 = ASMGetCR4();
+    if (RT_LIKELY(uHostCr4 & X86_CR4_VMXE))
     { /* likely */ }
     else
         return VERR_VMX_NOT_IN_VMX_ROOT_MODE;
@@ -3890,6 +3892,7 @@ static bool hmR0VmxIsValidReadField(uint32_t idxField)
  */
 VMMR0DECL(int) VMXR0Execute64BitsHandler(PVMCPU pVCpu, HM64ON32OP enmOp, uint32_t cParams, uint32_t *paParam)
 {
+    AssertPtr(pVCpu);
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     AssertReturn(pVM->hm.s.pfnHost32ToGuest64R0, VERR_HM_NO_32_TO_64_SWITCHER);
     Assert(enmOp > HM64ON32OP_INVALID && enmOp < HM64ON32OP_END);
@@ -5093,7 +5096,7 @@ static VBOXSTRICTRC hmR0VmxExportGuestCR3AndCR4(PVMCPU pVCpu, PVMXTRANSIENT pVmx
     {
         HMVMX_CPUMCTX_ASSERT(pVCpu, CPUMCTX_EXTRN_CR3);
 
-        RTGCPHYS GCPhysGuestCR3 = NIL_RTGCPHYS;
+        RTGCPHYS GCPhysGuestCr3 = NIL_RTGCPHYS;
         if (pVM->hm.s.fNestedPaging)
         {
             PVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
@@ -5140,7 +5143,7 @@ static VBOXSTRICTRC hmR0VmxExportGuestCR3AndCR4(PVMCPU pVCpu, PVMXTRANSIENT pVmx
                  * guest is using paging or we have unrestricted guest execution to handle
                  * the guest when it's not using paging.
                  */
-                GCPhysGuestCR3 = pCtx->cr3;
+                GCPhysGuestCr3 = pCtx->cr3;
             }
             else
             {
@@ -5165,20 +5168,20 @@ static VBOXSTRICTRC hmR0VmxExportGuestCR3AndCR4(PVMCPU pVCpu, PVMXTRANSIENT pVmx
                 else
                     AssertMsgFailedReturn(("%Rrc\n",  rc), rc);
 
-                GCPhysGuestCR3 = GCPhys;
+                GCPhysGuestCr3 = GCPhys;
             }
 
-            Log4Func(("u32GuestCr3=%#RGp (GstN)\n", GCPhysGuestCR3));
-            rc = VMXWriteVmcsGstN(VMX_VMCS_GUEST_CR3, GCPhysGuestCR3);
+            Log4Func(("u32GuestCr3=%#RGp (GstN)\n", GCPhysGuestCr3));
+            rc = VMXWriteVmcsGstN(VMX_VMCS_GUEST_CR3, GCPhysGuestCr3);
             AssertRCReturn(rc, rc);
         }
         else
         {
             /* Non-nested paging case, just use the hypervisor's CR3. */
-            RTHCPHYS const HCPhysGuestCR3 = PGMGetHyperCR3(pVCpu);
+            RTHCPHYS const HCPhysGuestCr3 = PGMGetHyperCR3(pVCpu);
 
-            Log4Func(("u32GuestCr3=%#RHv (HstN)\n", HCPhysGuestCR3));
-            rc = VMXWriteVmcsHstN(VMX_VMCS_GUEST_CR3, HCPhysGuestCR3);
+            Log4Func(("u32GuestCr3=%#RHv (HstN)\n", HCPhysGuestCr3));
+            rc = VMXWriteVmcsHstN(VMX_VMCS_GUEST_CR3, HCPhysGuestCr3);
             AssertRCReturn(rc, rc);
         }
 
@@ -6589,6 +6592,7 @@ static void hmR0VmxInitVmcsReadCache(PVMCPU pVCpu)
  */
 VMMR0DECL(int) VMXWriteVmcs64Ex(PVMCPU pVCpu, uint32_t idxField, uint64_t u64Val)
 {
+    AssertPtr(pVCpu);
     int rc;
     switch (idxField)
     {
@@ -7970,6 +7974,7 @@ static int hmR0VmxImportGuestState(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo, uint64
  */
 VMMR0DECL(int) VMXR0ImportStateOnDemand(PVMCPU pVCpu, uint64_t fWhat)
 {
+    AssertPtr(pVCpu);
     PCVMXVMCSINFO pVmcsInfo = hmGetVmxActiveVmcsInfo(pVCpu);
     return hmR0VmxImportGuestState(pVCpu, pVmcsInfo, fWhat);
 }
@@ -8464,7 +8469,6 @@ DECLINLINE(int) hmR0VmxLongJmpToRing3(PVMCPU pVCpu)
  */
 static int hmR0VmxExitToRing3(PVMCPU pVCpu, VBOXSTRICTRC rcExit)
 {
-    Assert(pVCpu);
     HMVMX_ASSERT_PREEMPT_SAFE(pVCpu);
 
     PVMXVMCSINFO pVmcsInfo = hmGetVmxActiveVmcsInfo(pVCpu);
@@ -9145,8 +9149,8 @@ VMMR0DECL(int) VMXR0Enter(PVMCPU pVCpu)
 
 #ifdef VBOX_STRICT
     /* At least verify VMX is enabled, since we can't check if we're in VMX root mode without #GP'ing. */
-    RTCCUINTREG uHostCR4 = ASMGetCR4();
-    if (!(uHostCR4 & X86_CR4_VMXE))
+    RTCCUINTREG uHostCr4 = ASMGetCR4();
+    if (!(uHostCr4 & X86_CR4_VMXE))
     {
         LogRelFunc(("X86_CR4_VMXE bit in CR4 is not set!\n"));
         return VERR_VMX_X86_CR4_VMXE_CLEARED;
@@ -9191,7 +9195,8 @@ VMMR0DECL(int) VMXR0Enter(PVMCPU pVCpu)
  */
 VMMR0DECL(void) VMXR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, PVMCPU pVCpu, bool fGlobalInit)
 {
-    NOREF(fGlobalInit);
+    AssertPtr(pVCpu);
+    RT_NOREF1(fGlobalInit);
 
     switch (enmEvent)
     {
@@ -12602,6 +12607,7 @@ static bool hmR0VmxAnyExpensiveProbesEnabled(void)
  */
 VMMR0DECL(VBOXSTRICTRC) VMXR0RunGuestCode(PVMCPU pVCpu)
 {
+    AssertPtr(pVCpu);
     PCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
     Assert(VMMRZCallRing3IsEnabled(pVCpu));
     Assert(!ASMAtomicUoReadU64(&pCtx->fExtrn));
