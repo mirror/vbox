@@ -2919,7 +2919,7 @@
  * @{
  */
 /** Maximum of concurrent clipboard transfers has been reached. */
-#define VERR_SHCLPB_MAX_TRANSFERS_REACHED           (-7000)
+#define VERR_SHCLPB_MAX_TRANSFERS_REACHED           (-7100)
 /** @} */
 /* SED-END */
 
