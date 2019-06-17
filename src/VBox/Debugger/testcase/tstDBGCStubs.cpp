@@ -603,17 +603,17 @@ VMMR3DECL(int) CFGMR3QueryStringDef(PCFGMNODE pNode, const char *pszName, char *
 
 #include <VBox/vmm/cpum.h>
 
-VMMDECL(uint64_t) CPUMGetGuestCR3(PVMCPU pVCpu)
+VMMDECL(uint64_t) CPUMGetGuestCR3(PCVMCPU pVCpu)
 {
     return 0;
 }
 
-VMMDECL(uint64_t) CPUMGetGuestCR4(PVMCPU pVCpu)
+VMMDECL(uint64_t) CPUMGetGuestCR4(PCVMCPU pVCpu)
 {
     return 0;
 }
 
-VMMDECL(RTSEL) CPUMGetGuestCS(PVMCPU pVCpu)
+VMMDECL(RTSEL) CPUMGetGuestCS(PCVMCPU pVCpu)
 {
     return 0;
 }
@@ -623,17 +623,17 @@ VMMDECL(PCCPUMCTXCORE) CPUMGetGuestCtxCore(PVMCPU pVCpu)
     return NULL;
 }
 
-VMMDECL(uint32_t) CPUMGetGuestEIP(PVMCPU pVCpu)
+VMMDECL(uint32_t) CPUMGetGuestEIP(PCVMCPU pVCpu)
 {
     return 0;
 }
 
-VMMDECL(uint64_t) CPUMGetGuestRIP(PVMCPU pVCpu)
+VMMDECL(uint64_t) CPUMGetGuestRIP(PCVMCPU pVCpu)
 {
     return 0;
 }
 
-VMMDECL(RTGCPTR) CPUMGetGuestIDTR(PVMCPU pVCpu, uint16_t *pcbLimit)
+VMMDECL(RTGCPTR) CPUMGetGuestIDTR(PCVMCPU pVCpu, uint16_t *pcbLimit)
 {
     return 0;
 }
@@ -663,7 +663,7 @@ VMMDECL(bool) CPUMIsGuestIn64BitCode(PVMCPU pVCpu)
     return false;
 }
 
-VMMDECL(uint32_t) CPUMGetGuestEFlags(PVMCPU pVCpu)
+VMMDECL(uint32_t) CPUMGetGuestEFlags(PCVMCPU pVCpu)
 {
     return 2;
 }

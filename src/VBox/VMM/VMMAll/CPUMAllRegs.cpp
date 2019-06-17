@@ -905,7 +905,7 @@ VMMDECL(void) CPUMSetGuestEFER(PVMCPU pVCpu, uint64_t val)
 }
 
 
-VMMDECL(RTGCPTR) CPUMGetGuestIDTR(PVMCPU pVCpu, uint16_t *pcbLimit)
+VMMDECL(RTGCPTR) CPUMGetGuestIDTR(PCVMCPU pVCpu, uint16_t *pcbLimit)
 {
     CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_IDTR);
     if (pcbLimit)
@@ -914,7 +914,7 @@ VMMDECL(RTGCPTR) CPUMGetGuestIDTR(PVMCPU pVCpu, uint16_t *pcbLimit)
 }
 
 
-VMMDECL(RTSEL) CPUMGetGuestTR(PVMCPU pVCpu, PCPUMSELREGHID pHidden)
+VMMDECL(RTSEL) CPUMGetGuestTR(PCVMCPU pVCpu, PCPUMSELREGHID pHidden)
 {
     CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_TR);
     if (pHidden)
@@ -923,42 +923,42 @@ VMMDECL(RTSEL) CPUMGetGuestTR(PVMCPU pVCpu, PCPUMSELREGHID pHidden)
 }
 
 
-VMMDECL(RTSEL) CPUMGetGuestCS(PVMCPU pVCpu)
+VMMDECL(RTSEL) CPUMGetGuestCS(PCVMCPU pVCpu)
 {
     CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_CS);
     return pVCpu->cpum.s.Guest.cs.Sel;
 }
 
 
-VMMDECL(RTSEL) CPUMGetGuestDS(PVMCPU pVCpu)
+VMMDECL(RTSEL) CPUMGetGuestDS(PCVMCPU pVCpu)
 {
     CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_DS);
     return pVCpu->cpum.s.Guest.ds.Sel;
 }
 
 
-VMMDECL(RTSEL) CPUMGetGuestES(PVMCPU pVCpu)
+VMMDECL(RTSEL) CPUMGetGuestES(PCVMCPU pVCpu)
 {
     CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_ES);
     return pVCpu->cpum.s.Guest.es.Sel;
 }
 
 
-VMMDECL(RTSEL) CPUMGetGuestFS(PVMCPU pVCpu)
+VMMDECL(RTSEL) CPUMGetGuestFS(PCVMCPU pVCpu)
 {
     CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_FS);
     return pVCpu->cpum.s.Guest.fs.Sel;
 }
 
 
-VMMDECL(RTSEL) CPUMGetGuestGS(PVMCPU pVCpu)
+VMMDECL(RTSEL) CPUMGetGuestGS(PCVMCPU pVCpu)
 {
     CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_GS);
     return pVCpu->cpum.s.Guest.gs.Sel;
 }
 
 
-VMMDECL(RTSEL) CPUMGetGuestSS(PVMCPU pVCpu)
+VMMDECL(RTSEL) CPUMGetGuestSS(PCVMCPU pVCpu)
 {
     CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_SS);
     return pVCpu->cpum.s.Guest.ss.Sel;
@@ -987,14 +987,14 @@ VMMDECL(uint64_t)   CPUMGetGuestFlatSP(PVMCPU pVCpu)
 }
 
 
-VMMDECL(RTSEL) CPUMGetGuestLDTR(PVMCPU pVCpu)
+VMMDECL(RTSEL) CPUMGetGuestLDTR(PCVMCPU pVCpu)
 {
     CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_LDTR);
     return pVCpu->cpum.s.Guest.ldtr.Sel;
 }
 
 
-VMMDECL(RTSEL) CPUMGetGuestLdtrEx(PVMCPU pVCpu, uint64_t *pGCPtrBase, uint32_t *pcbLimit)
+VMMDECL(RTSEL) CPUMGetGuestLdtrEx(PCVMCPU pVCpu, uint64_t *pGCPtrBase, uint32_t *pcbLimit)
 {
     CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_LDTR);
     *pGCPtrBase = pVCpu->cpum.s.Guest.ldtr.u64Base;
@@ -1003,35 +1003,35 @@ VMMDECL(RTSEL) CPUMGetGuestLdtrEx(PVMCPU pVCpu, uint64_t *pGCPtrBase, uint32_t *
 }
 
 
-VMMDECL(uint64_t) CPUMGetGuestCR0(PVMCPU pVCpu)
+VMMDECL(uint64_t) CPUMGetGuestCR0(PCVMCPU pVCpu)
 {
     CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_CR0);
     return pVCpu->cpum.s.Guest.cr0;
 }
 
 
-VMMDECL(uint64_t) CPUMGetGuestCR2(PVMCPU pVCpu)
+VMMDECL(uint64_t) CPUMGetGuestCR2(PCVMCPU pVCpu)
 {
     CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_CR2);
     return pVCpu->cpum.s.Guest.cr2;
 }
 
 
-VMMDECL(uint64_t) CPUMGetGuestCR3(PVMCPU pVCpu)
+VMMDECL(uint64_t) CPUMGetGuestCR3(PCVMCPU pVCpu)
 {
     CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_CR3);
     return pVCpu->cpum.s.Guest.cr3;
 }
 
 
-VMMDECL(uint64_t) CPUMGetGuestCR4(PVMCPU pVCpu)
+VMMDECL(uint64_t) CPUMGetGuestCR4(PCVMCPU pVCpu)
 {
     CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_CR4);
     return pVCpu->cpum.s.Guest.cr4;
 }
 
 
-VMMDECL(uint64_t) CPUMGetGuestCR8(PVMCPU pVCpu)
+VMMDECL(uint64_t) CPUMGetGuestCR8(PCVMCPU pVCpu)
 {
     uint64_t u64;
     int rc = CPUMGetGuestCRx(pVCpu, DISCREG_CR8, &u64);
@@ -1041,91 +1041,91 @@ VMMDECL(uint64_t) CPUMGetGuestCR8(PVMCPU pVCpu)
 }
 
 
-VMMDECL(void) CPUMGetGuestGDTR(PVMCPU pVCpu, PVBOXGDTR pGDTR)
+VMMDECL(void) CPUMGetGuestGDTR(PCVMCPU pVCpu, PVBOXGDTR pGDTR)
 {
     CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_GDTR);
     *pGDTR = pVCpu->cpum.s.Guest.gdtr;
 }
 
 
-VMMDECL(uint32_t) CPUMGetGuestEIP(PVMCPU pVCpu)
+VMMDECL(uint32_t) CPUMGetGuestEIP(PCVMCPU pVCpu)
 {
     CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_RIP);
     return pVCpu->cpum.s.Guest.eip;
 }
 
 
-VMMDECL(uint64_t) CPUMGetGuestRIP(PVMCPU pVCpu)
+VMMDECL(uint64_t) CPUMGetGuestRIP(PCVMCPU pVCpu)
 {
     CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_RIP);
     return pVCpu->cpum.s.Guest.rip;
 }
 
 
-VMMDECL(uint32_t) CPUMGetGuestEAX(PVMCPU pVCpu)
+VMMDECL(uint32_t) CPUMGetGuestEAX(PCVMCPU pVCpu)
 {
     CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_RAX);
     return pVCpu->cpum.s.Guest.eax;
 }
 
 
-VMMDECL(uint32_t) CPUMGetGuestEBX(PVMCPU pVCpu)
+VMMDECL(uint32_t) CPUMGetGuestEBX(PCVMCPU pVCpu)
 {
     CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_RBX);
     return pVCpu->cpum.s.Guest.ebx;
 }
 
 
-VMMDECL(uint32_t) CPUMGetGuestECX(PVMCPU pVCpu)
+VMMDECL(uint32_t) CPUMGetGuestECX(PCVMCPU pVCpu)
 {
     CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_RCX);
     return pVCpu->cpum.s.Guest.ecx;
 }
 
 
-VMMDECL(uint32_t) CPUMGetGuestEDX(PVMCPU pVCpu)
+VMMDECL(uint32_t) CPUMGetGuestEDX(PCVMCPU pVCpu)
 {
     CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_RDX);
     return pVCpu->cpum.s.Guest.edx;
 }
 
 
-VMMDECL(uint32_t) CPUMGetGuestESI(PVMCPU pVCpu)
+VMMDECL(uint32_t) CPUMGetGuestESI(PCVMCPU pVCpu)
 {
     CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_RSI);
     return pVCpu->cpum.s.Guest.esi;
 }
 
 
-VMMDECL(uint32_t) CPUMGetGuestEDI(PVMCPU pVCpu)
+VMMDECL(uint32_t) CPUMGetGuestEDI(PCVMCPU pVCpu)
 {
     CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_RDI);
     return pVCpu->cpum.s.Guest.edi;
 }
 
 
-VMMDECL(uint32_t) CPUMGetGuestESP(PVMCPU pVCpu)
+VMMDECL(uint32_t) CPUMGetGuestESP(PCVMCPU pVCpu)
 {
     CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_RSP);
     return pVCpu->cpum.s.Guest.esp;
 }
 
 
-VMMDECL(uint32_t) CPUMGetGuestEBP(PVMCPU pVCpu)
+VMMDECL(uint32_t) CPUMGetGuestEBP(PCVMCPU pVCpu)
 {
     CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_RBP);
     return pVCpu->cpum.s.Guest.ebp;
 }
 
 
-VMMDECL(uint32_t) CPUMGetGuestEFlags(PVMCPU pVCpu)
+VMMDECL(uint32_t) CPUMGetGuestEFlags(PCVMCPU pVCpu)
 {
     CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_RFLAGS);
     return pVCpu->cpum.s.Guest.eflags.u32;
 }
 
 
-VMMDECL(int) CPUMGetGuestCRx(PVMCPU pVCpu, unsigned iReg, uint64_t *pValue)
+VMMDECL(int) CPUMGetGuestCRx(PCVMCPU pVCpu, unsigned iReg, uint64_t *pValue)
 {
     switch (iReg)
     {
@@ -1171,49 +1171,49 @@ VMMDECL(int) CPUMGetGuestCRx(PVMCPU pVCpu, unsigned iReg, uint64_t *pValue)
 }
 
 
-VMMDECL(uint64_t) CPUMGetGuestDR0(PVMCPU pVCpu)
+VMMDECL(uint64_t) CPUMGetGuestDR0(PCVMCPU pVCpu)
 {
     CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_DR0_DR3);
     return pVCpu->cpum.s.Guest.dr[0];
 }
 
 
-VMMDECL(uint64_t) CPUMGetGuestDR1(PVMCPU pVCpu)
+VMMDECL(uint64_t) CPUMGetGuestDR1(PCVMCPU pVCpu)
 {
     CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_DR0_DR3);
     return pVCpu->cpum.s.Guest.dr[1];
 }
 
 
-VMMDECL(uint64_t) CPUMGetGuestDR2(PVMCPU pVCpu)
+VMMDECL(uint64_t) CPUMGetGuestDR2(PCVMCPU pVCpu)
 {
     CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_DR0_DR3);
     return pVCpu->cpum.s.Guest.dr[2];
 }
 
 
-VMMDECL(uint64_t) CPUMGetGuestDR3(PVMCPU pVCpu)
+VMMDECL(uint64_t) CPUMGetGuestDR3(PCVMCPU pVCpu)
 {
     CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_DR0_DR3);
     return pVCpu->cpum.s.Guest.dr[3];
 }
 
 
-VMMDECL(uint64_t) CPUMGetGuestDR6(PVMCPU pVCpu)
+VMMDECL(uint64_t) CPUMGetGuestDR6(PCVMCPU pVCpu)
 {
     CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_DR6);
     return pVCpu->cpum.s.Guest.dr[6];
 }
 
 
-VMMDECL(uint64_t) CPUMGetGuestDR7(PVMCPU pVCpu)
+VMMDECL(uint64_t) CPUMGetGuestDR7(PCVMCPU pVCpu)
 {
     CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_DR7);
     return pVCpu->cpum.s.Guest.dr[7];
 }
 
 
-VMMDECL(int) CPUMGetGuestDRx(PVMCPU pVCpu, uint32_t iReg, uint64_t *pValue)
+VMMDECL(int) CPUMGetGuestDRx(PCVMCPU pVCpu, uint32_t iReg, uint64_t *pValue)
 {
     CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_DR_MASK);
     AssertReturn(iReg <= DISDREG_DR7, VERR_INVALID_PARAMETER);
@@ -1225,7 +1225,7 @@ VMMDECL(int) CPUMGetGuestDRx(PVMCPU pVCpu, uint32_t iReg, uint64_t *pValue)
 }
 
 
-VMMDECL(uint64_t) CPUMGetGuestEFER(PVMCPU pVCpu)
+VMMDECL(uint64_t) CPUMGetGuestEFER(PCVMCPU pVCpu)
 {
     CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_EFER);
     return pVCpu->cpum.s.Guest.msrEFER;
@@ -2782,7 +2782,7 @@ VMM_INT_DECL(CPUMINTERRUPTIBILITY) CPUMGetGuestInterruptibility(PVMCPU pVCpu)
  * @returns @c true if NMIs are blocked, @c false otherwise.
  * @param   pVCpu       The cross context virtual CPU structure.
  */
-VMM_INT_DECL(bool) CPUMIsGuestNmiBlocking(PVMCPU pVCpu)
+VMM_INT_DECL(bool) CPUMIsGuestNmiBlocking(PCVMCPU pVCpu)
 {
 #ifndef IN_RC
     /*
