@@ -822,7 +822,7 @@ AssertCompileSizeAlignment(VMCPU, 4096);
 # define VMCPU_FF_IS_SET(pVCpu, fFlag)      RT_BOOL((pVCpu)->fLocalForcedActions & (fFlag))
 #else
 # define VMCPU_FF_IS_SET(pVCpu, fFlag) \
-    ([](PVMCPU a_pVCpu) -> bool \
+    ([](PCVMCPU a_pVCpu) -> bool \
     { \
         AssertCompile(RT_IS_POWER_OF_TWO(fFlag)); \
         AssertCompile((fFlag) == RT_BIT_64(fFlag##_BIT)); \
