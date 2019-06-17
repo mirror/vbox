@@ -33,21 +33,20 @@ VBoxSharedClipboard_INCS.win  = \
 	$(VBOX_PATH_SDK)
 
 VBoxSharedClipboard_SOURCES = \
-	VBoxSharedClipboardSvc.cpp
+	VBoxSharedClipboardSvc.cpp \
+	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-common.cpp
 VBoxSharedClipboard_SOURCES.win = \
 	VBoxSharedClipboardSvc-win.cpp \
 	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-win.cpp \
 	VBoxSharedClipboardSvc.rc
 VBoxSharedClipboard_SOURCES.darwin = \
 	VBoxSharedClipboardSvc-darwin.cpp \
-	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-common.cpp \
 	darwin-pasteboard.cpp
 ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
  VBoxSharedClipboard_DEFS    += VBOX_WITH_SHARED_CLIPBOARD_HOST
  VBoxSharedClipboard_SOURCES += \
 	VBoxSharedClipboardSvc-uri.cpp \
 	VBoxSharedClipboardSvc-utils.cpp \
-	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-common.cpp \
 	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardArea.cpp \
 	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardMetaData.cpp \
 	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardPath.cpp \
