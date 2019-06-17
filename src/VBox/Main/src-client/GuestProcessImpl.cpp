@@ -1781,7 +1781,8 @@ HRESULT GuestProcess::read(ULONG aHandle, ULONG aToRead, ULONG aTimeoutMS, std::
 
     HRESULT hr = S_OK;
 
-    uint32_t cbRead; int rcGuest;
+    uint32_t cbRead;
+    int rcGuest = VERR_IPE_UNINITIALIZED_STATUS;
     int vrc = i_readData(aHandle, aToRead, aTimeoutMS, &aData.front(), aToRead, &cbRead, &rcGuest);
     if (RT_SUCCESS(vrc))
     {
@@ -1820,7 +1821,7 @@ HRESULT GuestProcess::terminate()
 
     HRESULT hr = S_OK;
 
-    int rcGuest;
+    int rcGuest = VERR_IPE_UNINITIALIZED_STATUS;
     int vrc = i_terminateProcess(30 * 1000 /* Timeout in ms */, &rcGuest);
     if (RT_FAILURE(vrc))
     {
@@ -1866,7 +1867,7 @@ HRESULT GuestProcess::waitFor(ULONG aWaitFor, ULONG aTimeoutMS, ProcessWaitResul
      */
     HRESULT hr = S_OK;
 
-    int rcGuest;
+    int rcGuest = VERR_IPE_UNINITIALIZED_STATUS;
     ProcessWaitResult_T waitResult;
     int vrc = i_waitFor(aWaitFor, aTimeoutMS, waitResult, &rcGuest);
     if (RT_SUCCESS(vrc))
@@ -1916,7 +1917,8 @@ HRESULT GuestProcess::write(ULONG aHandle, ULONG aFlags, const std::vector<BYTE>
 
     HRESULT hr = S_OK;
 
-    uint32_t cbWritten; int rcGuest;
+    uint32_t cbWritten;
+    int rcGuest = VERR_IPE_UNINITIALIZED_STATUS;
     uint32_t cbData = (uint32_t)aData.size();
     void *pvData = cbData > 0? (void *)&aData.front(): NULL;
     int vrc = i_writeData(aHandle, aFlags, pvData, cbData, aTimeoutMS, &cbWritten, &rcGuest);
@@ -2104,9 +2106,9 @@ int GuestProcessTool::run(      GuestSession              *pGuestSession,
                           const GuestProcessStartupInfo   &startupInfo,
                                 int                       *prcGuest /* = NULL */)
 {
-    int rcGuest;
+    int rcGuest = VERR_IPE_UNINITIALIZED_STATUS;
 
-    GuestProcessToolErrorInfo errorInfo;
+    GuestProcessToolErrorInfo errorInfo = { VERR_IPE_UNINITIALIZED_STATUS, UINT32_MAX };
     int vrc = runErrorInfo(pGuestSession, startupInfo, errorInfo);
     if (RT_SUCCESS(vrc))
     {
@@ -2165,9 +2167,9 @@ int GuestProcessTool::runEx(      GuestSession              *pGuestSession,
                                   uint32_t                   cStrmOutObjects,
                                   int                       *prcGuest /* = NULL */)
 {
-    int rcGuest;
+    int rcGuest = VERR_IPE_UNINITIALIZED_STATUS;
 
-    GuestProcessToolErrorInfo errorInfo;
+    GuestProcessToolErrorInfo errorInfo = { VERR_IPE_UNINITIALIZED_STATUS, UINT32_MAX };
     int vrc = GuestProcessTool::runExErrorInfo(pGuestSession, startupInfo, paStrmOutObjects, cStrmOutObjects, errorInfo);
     if (RT_SUCCESS(vrc))
     {

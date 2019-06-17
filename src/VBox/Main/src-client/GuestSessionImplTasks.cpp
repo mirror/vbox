@@ -271,7 +271,8 @@ int GuestSessionTask::directoryCreateOnGuest(const com::Utf8Str &strPath,
     LogFlowFunc(("strPath=%s, enmDirectoryCreateFlags=0x%x, fMode=%RU32, fFollowSymlinks=%RTbool, fCanExist=%RTbool\n",
                  strPath.c_str(), enmDirectoryCreateFlags, fMode, fFollowSymlinks, fCanExist));
 
-    GuestFsObjData objData; int rcGuest;
+    GuestFsObjData objData;
+    int rcGuest = VERR_IPE_UNINITIALIZED_STATUS;
     int rc = mSession->i_directoryQueryInfo(strPath, fFollowSymlinks, objData, &rcGuest);
     if (RT_SUCCESS(rc))
     {
@@ -1118,7 +1119,8 @@ int FsList::AddDirFromGuest(const Utf8Str &strPath, const Utf8Str &strSubDir /* 
 
     const ComObjPtr<GuestSession> &pSession = mTask.GetSession();
 
-    ComObjPtr <GuestDirectory> pDir; int rcGuest;
+    ComObjPtr <GuestDirectory> pDir;
+    int rcGuest = VERR_IPE_UNINITIALIZED_STATUS;
     int rc = pSession->i_directoryOpen(dirOpenInfo, pDir, &rcGuest);
     if (RT_FAILURE(rc))
     {
@@ -1475,7 +1477,8 @@ HRESULT GuestSessionTaskCopyFrom::Init(const Utf8Str &strTaskDesc)
 
         LogFlowFunc(("strSrc=%s, strDst=%s, fFollowSymlinks=%RTbool\n", strSrc.c_str(), strDst.c_str(), fFollowSymlinks));
 
-        GuestFsObjData srcObjData; int rcGuest;
+        GuestFsObjData srcObjData;
+        int rcGuest = VERR_IPE_UNINITIALIZED_STATUS;
         rc = mSession->i_fsQueryInfo(strSrc, fFollowSymlinks, srcObjData, &rcGuest);
         if (RT_FAILURE(rc))
         {
@@ -1986,7 +1989,8 @@ int GuestSessionTaskUpdateAdditions::copyFileToGuest(GuestSession *pSession, RTV
             dstOpenInfo.mAccessMode  = FileAccessMode_WriteOnly;
             dstOpenInfo.mSharingMode = FileSharingMode_All; /** @todo Use _Read when implemented. */
 
-            ComObjPtr<GuestFile> dstFile; int rcGuest;
+            ComObjPtr<GuestFile> dstFile;
+            int rcGuest = VERR_IPE_UNINITIALIZED_STATUS;
             rc = mSession->i_fileOpen(dstOpenInfo, dstFile, &rcGuest);
             if (RT_FAILURE(rc))
             {

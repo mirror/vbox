@@ -354,7 +354,7 @@ HRESULT GuestDirectory::close()
 
     HRESULT hr = S_OK;
 
-    int rcGuest;
+    int rcGuest = VERR_IPE_UNINITIALIZED_STATUS;
     int vrc = i_closeInternal(&rcGuest);
     if (RT_FAILURE(vrc))
     {
@@ -388,7 +388,8 @@ HRESULT GuestDirectory::read(ComPtr<IFsObjInfo> &aObjInfo)
 
     HRESULT hr = S_OK;
 
-    ComObjPtr<GuestFsObjInfo> fsObjInfo; int rcGuest;
+    ComObjPtr<GuestFsObjInfo> fsObjInfo;
+    int rcGuest = VERR_IPE_UNINITIALIZED_STATUS;
     int vrc = i_readInternal(fsObjInfo, &rcGuest);
     if (RT_SUCCESS(vrc))
     {
