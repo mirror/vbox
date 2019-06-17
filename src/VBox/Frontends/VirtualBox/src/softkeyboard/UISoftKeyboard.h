@@ -36,10 +36,15 @@
 /* Forward declarations: */
 class QHBoxLayout;
 class QVBoxLayout;
-class UISoftKeyboardWidget;
 class QToolButton;
+class UILayoutEditor;
+class UILayoutSelector;
 class UISession;
 class UISoftKeyboardKey;
+class UISoftKeyboardLayout;
+class UISoftKeyboardWidget;
+class QSplitter;
+class QStackedWidget;
 
 class UISoftKeyboard : public QIWithRetranslateUI<QMainWindow>
 {
@@ -60,8 +65,6 @@ private slots:
 
     void sltHandleKeyboardLedsChange();
     void sltHandlePutKeyboardSequence(QVector<LONG> sequence);
-    void sltHandleLayoutChange(const QString &strLayoutName);
-    void sltHandleKeyCapFileChange(const QString &strKeyCapFileName);
     void sltHandleStatusBarContextMenuRequest(const QPoint &point);
 
 private:
@@ -79,7 +82,11 @@ private:
     QString       m_strMachineName;
     QString       m_strLayoutName;
     QString       m_strKeyCapFileName;
-    QToolButton   *m_pSettingsButton;
+    QSplitter      *m_pSplitter;
+    QToolButton    *m_pSettingsButton;
+    QStackedWidget *m_pSidePanelContainerWidget;
+    UILayoutEditor *m_pLayoutEditor;
+    UILayoutSelector *m_pLayoutSelector;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_softkeyboard_UISoftKeyboard_h */

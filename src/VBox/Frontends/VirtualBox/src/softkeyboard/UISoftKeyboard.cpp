@@ -22,11 +22,14 @@
 #include <QGroupBox>
 #include <QLabel>
 #include <QLineEdit>
+#include <QListWidget>
 #include <QMenu>
 #include <QPainter>
 #include <QPushButton>
+#include <QSplitter>
 #include <QStatusBar>
 #include <QStyle>
+#include <QStackedWidget>
 #include <QToolButton>
 #include <QXmlStreamReader>
 #include <QVBoxLayout>
@@ -48,6 +51,8 @@
 
 /* Forward declarations: */
 class UISoftKeyboardWidget;
+class UISoftKeyboardLayout;
+class UISoftKeyboardRow;
 
 enum UIKeyState
 {
@@ -75,6 +80,36 @@ struct KeyCaptions
     QString m_strAltGr;
 };
 
+
+/*********************************************************************************************************************************
+*   UISoftKeyboardPhysicalLayout definition.                                                                                     *
+*********************************************************************************************************************************/
+
+class UISoftKeyboardPhysicalLayout
+{
+
+public:
+
+    void setName(const QString &strName)
+    {
+        m_strName = strName;
+    }
+
+    const QString &name() const
+    {
+        return m_strName;
+    }
+
+    QString  m_strFileName;
+    QUuid    m_uId;
+
+    QVector<UISoftKeyboardRow>  m_rows;
+
+private:
+
+    QString  m_strName;
+};
+
 /*********************************************************************************************************************************
 *   UILayoutEditor definition.                                                                                  *
 *********************************************************************************************************************************/
@@ -85,16 +120,16 @@ class UILayoutEditor : public QIWithRetranslateUI<QWidget>
 
 signals:
 
-    void sigKeyCaptionEdited();
-    void sigPhysicalLayoutChanged(int iIndex);
-    void sigLayoutNameChanged(const QString &strName);
+    void sigLayoutEdited();
+    void sigGoBackButton();
 
 public:
 
     UILayoutEditor(QWidget *pParent = 0);
     void setKey(UISoftKeyboardKey *pKey);
-    void setLayoutName(const QString &strName);
-    void setPhysicalLayoutNames(const QStringList &strPhysicalLayoutNames);
+
+    void setLayoutToEdit(UISoftKeyboardLayout *pLayout);
+    void setPhysicalLayoutList(const QVector<UISoftKeyboardPhysicalLayout> &physicalLayouts);
 
 protected:
 
@@ -106,6 +141,7 @@ private slots:
     void sltKeyShiftCaptionChange();
     void sltKeyAltGrCaptionChange();
     void sltLayoutNameChange();
+    void sltHandlePhysicalLayoutChanged();
 
 private:
 
@@ -114,6 +150,7 @@ private:
     QWidget *prepareKeyCaptionEditWidgets();
 
     QGridLayout *m_pEditorLayout;
+    QToolButton *m_pGoBackButton;
     QGroupBox *m_pSelectedKeyGroupBox;
     QGroupBox *m_pCaptionEditGroupBox;
 
@@ -135,6 +172,44 @@ private:
 
     /** The key which is being currently edited. Might be Null. */
     UISoftKeyboardKey  *m_pKey;
+    /** The layout which is being currently edited. */
+    UISoftKeyboardLayout *m_pLayout;
+    QVector<UISoftKeyboardPhysicalLayout> m_physicalLayouts;
+};
+
+/*********************************************************************************************************************************
+*   UILayoutSelector definition.                                                                                  *
+*********************************************************************************************************************************/
+
+class UILayoutSelector : public QIWithRetranslateUI<QWidget>
+{
+    Q_OBJECT;
+
+signals:
+
+    void sigApplySelectedLayout(const QString &strSelectedLayoutName);
+    void sigEditSelectedLayout();
+
+public:
+
+    UILayoutSelector(QWidget *pParent = 0);
+    void setLayoutList(const QStringList &layoutNames);
+    QString selectedLayoutName() const;
+    void selectLayoutByName(const QString &strLayoutName);
+
+protected:
+
+    virtual void retranslateUi() /* override */;
+
+private slots:
+
+
+private:
+    void prepareObjects();
+
+    QListWidget *m_pLayoutListWidget;
+    QToolButton *m_pApplyLayoutButton;
+    QToolButton *m_pEditLayoutButton;
 };
 
 /*********************************************************************************************************************************
@@ -268,22 +343,6 @@ private:
 
 
 /*********************************************************************************************************************************
-*   UISoftKeyboardPhysicalLayout definition.                                                                                     *
-*********************************************************************************************************************************/
-
-class UISoftKeyboardPhysicalLayout
-{
-
-public:
-
-    QString  m_strName;
-    QString  m_strFileName;
-    QUuid    m_uId;
-
-    QVector<UISoftKeyboardRow>  m_rows;
-};
-
-/*********************************************************************************************************************************
 *   UISoftKeyboardLayout definition.                                                                                  *
 *********************************************************************************************************************************/
 
@@ -294,12 +353,27 @@ public:
 
     UISoftKeyboardLayout()
         :m_pPhysicalLayout(0){}
+
+    void setName(const QString &strName)
+    {
+        m_strName = strName;
+    }
+
+    const QString &name() const
+    {
+        return m_strName;
+    }
+
     /** The physical layout used by this layout. */
     UISoftKeyboardPhysicalLayout *m_pPhysicalLayout;
-    QString m_strName;
+
     /** We cache the key caps here instead of reading the layout files each time layout changes.
       * Map key is the key position and the value is the captions of the key. */
     QMap<int, KeyCaptions> m_keyCapMap;
+
+private:
+
+    QString m_strName;
 };
 
 /*********************************************************************************************************************************
@@ -321,26 +395,27 @@ signals:
 
     void sigPutKeyboardSequence(QVector<LONG> sequence);
     void sigLayoutChange(const QString &strLayoutName);
-    void sigKeyCapChange(const QString &strKepCapFileName);
+    void sigLayoutListChanged(QStringList layoutNames);
 
 public:
 
     UISoftKeyboardWidget(QWidget *pParent = 0);
 
-    virtual QSize minimumSizeHint() const;
-    virtual QSize sizeHint() const;
+    virtual QSize minimumSizeHint() const /* override */;
+    virtual QSize sizeHint() const  /* override */;
     void keyStateChange(UISoftKeyboardKey* pKey);
-    void loadDefaultLayout();
+    void loadLayouts();
     void showContextMenu(const QPoint &globalPoint);
+    void applyLayoutByName(const QString &strLayoutName);
+    QStringList layoutNameList() const;
+    const QVector<UISoftKeyboardPhysicalLayout> &physicalLayouts() const;
 
 protected:
 
-    void paintEvent(QPaintEvent *pEvent) /* override */;
-    void mousePressEvent(QMouseEvent *pEvent) /* override */;
-    void mouseReleaseEvent(QMouseEvent *pEvent) /* override */;
-    void mouseMoveEvent(QMouseEvent *pEvent) /* override */;
-    bool eventFilter(QObject *pWatched, QEvent *pEvent)/* override */;
-
+    virtual void paintEvent(QPaintEvent *pEvent) /* override */;
+    virtual void mousePressEvent(QMouseEvent *pEvent) /* override */;
+    virtual void mouseReleaseEvent(QMouseEvent *pEvent) /* override */;
+    virtual void mouseMoveEvent(QMouseEvent *pEvent) /* override */;
     virtual void retranslateUi() /* override */;
 
 private slots:
@@ -349,9 +424,7 @@ private slots:
     void sltHandleSaveLayout();
     void sltHandleLayoutEditModeToggle(bool fToggle);
     void sltHandleNewLayout();
-    void sltHandleKeyCaptionEdited();
     void sltPhysicalLayoutForLayoutChanged(int iIndex);
-    void sltLayoutNameChange(const QString &strName);
 
 private:
 
@@ -365,11 +438,13 @@ private:
     bool               loadPhysicalLayout(const QString &strLayoutFileName);
     bool               loadKeyboardLayout(const QString &strLayoutName);
     void               reset();
-    void               configure();
     void               prepareObjects();
     /** Sets m_pKeyBeingEdited. */
     void               setKeyBeingEdited(UISoftKeyboardKey *pKey);
     void               setCurrentLayout(UISoftKeyboardLayout *pLayout);
+    void               emitLayoutNames();
+    UISoftKeyboardLayout *findLayoutByName(const QString &strName);
+
     UISoftKeyboardKey *m_pKeyUnderMouse;
     UISoftKeyboardKey *m_pKeyBeingEdited;
 
@@ -400,7 +475,6 @@ private:
     QMenu   *m_pContextMenu;
     QAction *m_pShowPositionsAction;
     QAction *m_pLayoutEditModeToggleAction;
-    UILayoutEditor *m_pLayoutEditor;
     Mode       m_enmMode;
 };
 
@@ -459,6 +533,7 @@ private:
 UILayoutEditor::UILayoutEditor(QWidget *pParent /* = 0 */)
     :QIWithRetranslateUI<QWidget>(pParent)
     , m_pEditorLayout(0)
+    , m_pGoBackButton(0)
     , m_pSelectedKeyGroupBox(0)
     , m_pCaptionEditGroupBox(0)
     , m_pPhysicalLayoutCombo(0)
@@ -502,22 +577,30 @@ void UILayoutEditor::setKey(UISoftKeyboardKey *pKey)
         m_pAltGrCaptionEdit->setText(m_pKey->altGrCaption());
 }
 
-void UILayoutEditor::setLayoutName(const QString &strName)
+void UILayoutEditor::setLayoutToEdit(UISoftKeyboardLayout *pLayout)
 {
+    if (m_pLayout != pLayout)
+        return;
     if (m_pLayoutNameEdit)
-        m_pLayoutNameEdit->setText(strName);
+        m_pLayoutNameEdit->setText(m_pLayout->name());
+    update();
 }
 
-void UILayoutEditor::setPhysicalLayoutNames(const QStringList &strPhysicalLayoutNames)
+void UILayoutEditor::setPhysicalLayoutList(const QVector<UISoftKeyboardPhysicalLayout> &physicalLayouts)
 {
+    m_physicalLayouts = physicalLayouts;
+
     if (!m_pPhysicalLayoutCombo)
         return;
-    foreach (const QString &strName, strPhysicalLayoutNames)
-        m_pPhysicalLayoutCombo->addItem(strName);
+    m_pPhysicalLayoutCombo->clear();
+    foreach (const UISoftKeyboardPhysicalLayout &physicalLayout, physicalLayouts)
+        m_pPhysicalLayoutCombo->addItem(physicalLayout.name(), physicalLayout.m_uId);
 }
 
 void UILayoutEditor::retranslateUi()
 {
+    if (m_pGoBackButton)
+        m_pGoBackButton->setToolTip(UISoftKeyboard::tr("Return Back to Layout List"));
     if (m_pPhysicalLayoutLabel)
         m_pPhysicalLayoutLabel->setText(UISoftKeyboard::tr("Physical Layout"));
     if (m_pLayoutNameLabel)
@@ -543,7 +626,7 @@ void UILayoutEditor::sltKeyBaseCaptionChange()
     if (!m_pKey || !m_pBaseCaptionEdit)
         return;
     m_pKey->setBaseCaption(m_pBaseCaptionEdit->text());
-    emit sigKeyCaptionEdited();
+    emit sigLayoutEdited();
 }
 
 void UILayoutEditor::sltKeyShiftCaptionChange()
@@ -551,7 +634,7 @@ void UILayoutEditor::sltKeyShiftCaptionChange()
     if (!m_pKey || !m_pShiftCaptionEdit)
         return;
     m_pKey->setShiftCaption(m_pShiftCaptionEdit->text());
-    emit sigKeyCaptionEdited();
+    emit sigLayoutEdited();
 }
 
 void UILayoutEditor::sltKeyAltGrCaptionChange()
@@ -559,14 +642,22 @@ void UILayoutEditor::sltKeyAltGrCaptionChange()
     if (!m_pKey || !m_pAltGrCaptionEdit)
         return;
     m_pKey->setAltGrCaption(m_pAltGrCaptionEdit->text());
-    emit sigKeyCaptionEdited();
+    emit sigLayoutEdited();
 }
 
 void UILayoutEditor::sltLayoutNameChange()
 {
     if (!m_pLayoutNameEdit)
         return;
-    emit sigLayoutNameChanged(m_pLayoutNameEdit->text());
+    emit sigLayoutEdited();
+}
+
+void UILayoutEditor::sltHandlePhysicalLayoutChanged()
+{
+    if (!m_pPhysicalLayoutCombo)
+        return;
+
+
 }
 
 void UILayoutEditor::prepareObjects()
@@ -576,26 +667,31 @@ void UILayoutEditor::prepareObjects()
         return;
     setLayout(m_pEditorLayout);
 
+    m_pGoBackButton = new QToolButton;
+    m_pGoBackButton->setIcon(UIIconPool::defaultIcon(UIIconPool::UIDefaultIconType_ArrowBack));
+    m_pEditorLayout->addWidget(m_pGoBackButton, 0, 0, 1, 1);
+    connect(m_pGoBackButton, &QToolButton::pressed, this, &UILayoutEditor::sigGoBackButton);
+
     m_pLayoutNameLabel = new QLabel;
     m_pLayoutNameEdit = new QLineEdit;
     m_pLayoutNameLabel->setBuddy(m_pLayoutNameEdit);
-    m_pEditorLayout->addWidget(m_pLayoutNameLabel, 0, 0, 1, 1);
-    m_pEditorLayout->addWidget(m_pLayoutNameEdit, 0, 1, 1, 1);
+    m_pEditorLayout->addWidget(m_pLayoutNameLabel, 1, 0, 1, 1);
+    m_pEditorLayout->addWidget(m_pLayoutNameEdit, 1, 1, 1, 1);
     connect(m_pLayoutNameEdit, &QLineEdit::editingFinished, this, &UILayoutEditor::sltLayoutNameChange);
 
 
     m_pPhysicalLayoutLabel = new QLabel;
     m_pPhysicalLayoutCombo = new QComboBox;
     m_pPhysicalLayoutLabel->setBuddy(m_pPhysicalLayoutCombo);
-    m_pEditorLayout->addWidget(m_pPhysicalLayoutLabel, 1, 0, 1, 1);
-    m_pEditorLayout->addWidget(m_pPhysicalLayoutCombo, 1, 1, 1, 1);
+    m_pEditorLayout->addWidget(m_pPhysicalLayoutLabel, 2, 0, 1, 1);
+    m_pEditorLayout->addWidget(m_pPhysicalLayoutCombo, 2, 1, 1, 1);
     connect(m_pPhysicalLayoutCombo, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
-            this, &UILayoutEditor::sigPhysicalLayoutChanged);
+            this, &UILayoutEditor::sltHandlePhysicalLayoutChanged);
 
     m_pSelectedKeyGroupBox = new QGroupBox;
     m_pSelectedKeyGroupBox->setEnabled(false);
 
-    m_pEditorLayout->addWidget(m_pSelectedKeyGroupBox, 2, 0, 1, 2);
+    m_pEditorLayout->addWidget(m_pSelectedKeyGroupBox, 3, 0, 1, 2);
     QGridLayout *pSelectedKeyLayout = new QGridLayout(m_pSelectedKeyGroupBox);
     pSelectedKeyLayout->setSpacing(0);
     pSelectedKeyLayout->setContentsMargins(0, 0, 0, 0);
@@ -664,6 +760,86 @@ QWidget *UILayoutEditor::prepareKeyCaptionEditWidgets()
     if (pSpacer)
         pCaptionEditorLayout->addItem(pSpacer, 4, 1);
     return m_pCaptionEditGroupBox;
+}
+
+/*********************************************************************************************************************************
+*   UILayoutSelector implementation.                                                                                  *
+*********************************************************************************************************************************/
+
+UILayoutSelector::UILayoutSelector(QWidget *pParent /* = 0 */)
+    :QIWithRetranslateUI<QWidget>(pParent)
+    , m_pLayoutListWidget(0)
+    , m_pApplyLayoutButton(0)
+    , m_pEditLayoutButton(0)
+{
+    prepareObjects();
+}
+
+QString UILayoutSelector::selectedLayoutName() const
+{
+    if (!m_pLayoutListWidget || !m_pLayoutListWidget->currentItem())
+        return QString();
+    return m_pLayoutListWidget->currentItem()->text();
+}
+
+void UILayoutSelector::selectLayoutByName(const QString &strLayoutName)
+{
+    if (!m_pLayoutListWidget)
+        return;
+    QList<QListWidgetItem *> items = m_pLayoutListWidget->findItems(strLayoutName, Qt::MatchFixedString |Qt::MatchCaseSensitive);
+    if (items.isEmpty())
+        return;
+    QListWidgetItem *pItem = items[0];
+    if (!pItem || pItem == m_pLayoutListWidget->currentItem())
+        return;
+    m_pLayoutListWidget->setCurrentItem(pItem);
+}
+
+void UILayoutSelector::setLayoutList(const QStringList &layoutNames)
+{
+    if (!m_pLayoutListWidget)
+        return;
+    m_pLayoutListWidget->clear();
+    foreach (const QString &strLayoutName, layoutNames)
+        m_pLayoutListWidget->addItem(strLayoutName);
+}
+
+void UILayoutSelector::retranslateUi()
+{
+    if (m_pApplyLayoutButton)
+        m_pApplyLayoutButton->setToolTip(UISoftKeyboard::tr("Use the selected layout"));
+    if (m_pEditLayoutButton)
+        m_pEditLayoutButton->setToolTip(UISoftKeyboard::tr("Edit the selected layout"));
+}
+
+void UILayoutSelector::prepareObjects()
+{
+    QVBoxLayout *pLayout = new QVBoxLayout;
+    if (!pLayout)
+        return;
+    pLayout->setSpacing(0);
+    setLayout(pLayout);
+
+    m_pLayoutListWidget = new QListWidget;
+    pLayout->addWidget(m_pLayoutListWidget);
+    connect(m_pLayoutListWidget, &QListWidget::currentTextChanged, this, &UILayoutSelector::sigApplySelectedLayout);
+
+    QHBoxLayout *pButtonsLayout = new QHBoxLayout;
+    pLayout->addLayout(pButtonsLayout);
+
+    // m_pApplyLayoutButton = new QToolButton;
+    // m_pApplyLayoutButton->setIcon(UIIconPool::iconSet(":/keyboard_16px.png"));
+    // pButtonsLayout->addWidget(m_pApplyLayoutButton);
+
+
+    m_pEditLayoutButton = new QToolButton;
+    m_pEditLayoutButton->setIcon(UIIconPool::iconSet(":/keyboard_settings_16px.png"));
+    pButtonsLayout->addWidget(m_pEditLayoutButton);
+    connect(m_pEditLayoutButton, &QToolButton::pressed, this, &UILayoutSelector::sigEditSelectedLayout);
+
+    pButtonsLayout->addStretch(2);
+
+    retranslateUi();
 }
 
 /*********************************************************************************************************************************
@@ -994,19 +1170,18 @@ UISoftKeyboardWidget::UISoftKeyboardWidget(QWidget *pParent /* = 0 */)
     , m_pLayoutEditModeToggleAction(0)
     , m_enmMode(Mode_Keyboard)
 {
-
-    configure();
     prepareObjects();
 }
 
 QSize UISoftKeyboardWidget::minimumSizeHint() const
 {
-    return m_minimumSize;
+    return QSize(0.5 * m_minimumSize.width(), 0.5 * m_minimumSize.height());
 }
 
 QSize UISoftKeyboardWidget::sizeHint() const
 {
-    return m_minimumSize;
+    return QSize(0.5 * m_minimumSize.width(), 0.5 * m_minimumSize.height());
+    //return m_minimumSize;
 }
 
 void UISoftKeyboardWidget::paintEvent(QPaintEvent *pEvent) /* override */
@@ -1029,16 +1204,6 @@ void UISoftKeyboardWidget::paintEvent(QPaintEvent *pEvent) /* override */
     int unitSize = qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin);
     float fLedRadius =  0.8 * unitSize;
     float fLedMargin =  0.6 * unitSize;
-
-    if (m_enmMode == Mode_LayoutEdit)
-    {
-        m_pLayoutEditor->setGeometry(width() - iEditDialogWidth, 0,
-                                     iEditDialogWidth, height());
-        m_pLayoutEditor->show();
-        m_pLayoutEditor->setFocus();
-    }
-    else
-        m_pLayoutEditor->hide();
 
     if (!m_pCurrentKeyboardLayout || m_iInitialWidth == 0 || m_iInitialHeight == 0)
         return;
@@ -1140,38 +1305,38 @@ void UISoftKeyboardWidget::mouseMoveEvent(QMouseEvent *pEvent)
     keyUnderMouse(pEvent);
 }
 
-bool UISoftKeyboardWidget::eventFilter(QObject *pWatched, QEvent *pEvent)
-{
-    if (pWatched != m_pLayoutEditor)
-        return QIWithRetranslateUI<QWidget>::eventFilter(pWatched, pEvent);
+// bool UISoftKeyboardWidget::eventFilter(QObject *pWatched, QEvent *pEvent)
+// {
+//     if (pWatched != m_pLayoutEditor)
+//         return QIWithRetranslateUI<QWidget>::eventFilter(pWatched, pEvent);
 
-    switch (pEvent->type())
-    {
-        case QEvent::KeyPress:
-        {
-            QKeyEvent *pKeyEvent = dynamic_cast<QKeyEvent*>(pEvent);
-            if (pKeyEvent && pKeyEvent->key() == Qt::Key_Escape)
-            {
-                setKeyBeingEdited(0);
-                update();
-                return true;
-            }
-            else if (pKeyEvent && (pKeyEvent->key() == Qt::Key_Enter || pKeyEvent->key() == Qt::Key_Return))
-            {
-                // if (m_pKeyBeingEdited)
-                //     m_pKeyBeingEdited->setStaticKeyCap(m_pLayoutEditor->text());
-                setKeyBeingEdited(0);
-                update();
-                return true;
-            }
-            break;
-        }
-        default:
-            break;
-    }
+//     switch (pEvent->type())
+//     {
+//         case QEvent::KeyPress:
+//         {
+//             QKeyEvent *pKeyEvent = dynamic_cast<QKeyEvent*>(pEvent);
+//             if (pKeyEvent && pKeyEvent->key() == Qt::Key_Escape)
+//             {
+//                 setKeyBeingEdited(0);
+//                 update();
+//                 return true;
+//             }
+//             else if (pKeyEvent && (pKeyEvent->key() == Qt::Key_Enter || pKeyEvent->key() == Qt::Key_Return))
+//             {
+//                 // if (m_pKeyBeingEdited)
+//                 //     m_pKeyBeingEdited->setStaticKeyCap(m_pLayoutEditor->text());
+//                 setKeyBeingEdited(0);
+//                 update();
+//                 return true;
+//             }
+//             break;
+//         }
+//         default:
+//             break;
+//     }
 
-    return QIWithRetranslateUI<QWidget>::eventFilter(pWatched, pEvent);
-}
+//     return QIWithRetranslateUI<QWidget>::eventFilter(pWatched, pEvent);
+// }
 
 
 void UISoftKeyboardWidget::retranslateUi()
@@ -1241,7 +1406,7 @@ void UISoftKeyboardWidget::sltHandleSaveLayout()
     xmlWriter.setAutoFormatting(true);
     xmlWriter.writeStartDocument("1.0");
     xmlWriter.writeStartElement("layout");
-    xmlWriter.writeTextElement("name", m_pCurrentKeyboardLayout->m_strName);
+    xmlWriter.writeTextElement("name", m_pCurrentKeyboardLayout->name());
     xmlWriter.writeTextElement("physicallayoutid", m_pCurrentKeyboardLayout->m_pPhysicalLayout->m_uId.toString());
 
     QVector<UISoftKeyboardRow> &rows = m_pCurrentKeyboardLayout->m_pPhysicalLayout->m_rows;
@@ -1313,13 +1478,8 @@ void UISoftKeyboardWidget::sltHandleNewLayout()
     m_layouts.append(UISoftKeyboardLayout());
     UISoftKeyboardLayout &newLayout = m_layouts.back();
     newLayout.m_pPhysicalLayout = &(m_physicalLayouts[0]);
-    newLayout.m_strName = QString(UISoftKeyboard::tr("Unnamed"));
+    newLayout.setName(QString(UISoftKeyboard::tr("Unnamed")));
     setCurrentLayout(&newLayout);
-}
-
-void UISoftKeyboardWidget::sltHandleKeyCaptionEdited()
-{
-    update();
 }
 
 void UISoftKeyboardWidget::sltPhysicalLayoutForLayoutChanged(int iIndex)
@@ -1333,14 +1493,6 @@ void UISoftKeyboardWidget::sltPhysicalLayoutForLayoutChanged(int iIndex)
         return;
     m_pCurrentKeyboardLayout->m_pPhysicalLayout = &(m_physicalLayouts[iIndex]);
     update();
-}
-
-void UISoftKeyboardWidget::sltLayoutNameChange(const QString &strName)
-{
-    if (!m_pCurrentKeyboardLayout)
-        return;
-    m_pCurrentKeyboardLayout->m_strName = strName;
-    emit sigLayoutChange(m_pCurrentKeyboardLayout->m_strName);
 }
 
 void UISoftKeyboardWidget::setNewMinimumSize(const QSize &size)
@@ -1427,17 +1579,18 @@ void UISoftKeyboardWidget::keyStateChange(UISoftKeyboardKey* pKey)
     }
 }
 
-void UISoftKeyboardWidget::loadDefaultLayout()
-{
-    if (m_layouts.isEmpty())
-        return;
-    setCurrentLayout(&(m_layouts[0]));
-}
-
 void UISoftKeyboardWidget::showContextMenu(const QPoint &globalPoint)
 {
     m_pContextMenu->exec(globalPoint);
     update();
+}
+
+void UISoftKeyboardWidget::applyLayoutByName(const QString &strLayoutName)
+{
+    UISoftKeyboardLayout *pLayout = findLayoutByName(strLayoutName);
+    if (!pLayout)
+        return;
+    setCurrentLayout(pLayout);
 }
 
 void UISoftKeyboardWidget::handleKeyRelease(UISoftKeyboardKey *pKey)
@@ -1511,9 +1664,9 @@ bool UISoftKeyboardWidget::loadPhysicalLayout(const QString &strLayoutFileName)
     }
     int iInitialWidth = iMaxWidth + m_iRightMargin;
     int iInitialHeight = iY + m_iBottomMargin;
-    float fScale = 1.0f;
-    setNewMinimumSize(QSize(fScale * iInitialWidth, fScale * iInitialHeight));
-    setInitialSize(fScale * iInitialWidth, fScale * iInitialHeight);
+
+    setNewMinimumSize(QSize(iInitialWidth, iInitialHeight));
+    setInitialSize(iInitialWidth, iInitialHeight);
     return true;
 }
 
@@ -1543,7 +1696,7 @@ bool UISoftKeyboardWidget::loadKeyboardLayout(const QString &strLayoutName)
     m_layouts.append(UISoftKeyboardLayout());
     UISoftKeyboardLayout &newLayout = m_layouts.back();
     newLayout.m_pPhysicalLayout = pPhysicalLayout;
-    newLayout.m_strName = keyboardLayoutReader.name();
+    newLayout.setName(keyboardLayoutReader.name());
     newLayout.m_keyCapMap = keyboardLayoutReader.keyCapMap();
     return true;
 }
@@ -1554,7 +1707,7 @@ void UISoftKeyboardWidget::reset()
     //m_rows.clear();
 }
 
-void UISoftKeyboardWidget::configure()
+void UISoftKeyboardWidget::loadLayouts()
 {
     /* Load physical layouts from resources: */
     QStringList physicalLayoutNames;
@@ -1564,35 +1717,18 @@ void UISoftKeyboardWidget::configure()
 
     /* Load keyboard layouts from resources: */
     QStringList keyboardLayoutNames;
-    keyboardLayoutNames << ":/us_international.xml";
+    keyboardLayoutNames << ":/us_international.xml"
+                        <<":/german.xml";
     foreach (const QString &strName, keyboardLayoutNames)
-    {
         loadKeyboardLayout(strName);
-    }
-
-    setMouseTracking(true);
-    setContextMenuPolicy(Qt::CustomContextMenu);
-    connect(this, &UISoftKeyboardWidget::customContextMenuRequested,
-            this, &UISoftKeyboardWidget::sltHandleContextMenuRequest);
+    emitLayoutNames();
+    if (m_layouts.isEmpty())
+        return;
+    setCurrentLayout(&(m_layouts[0]));
 }
 
 void UISoftKeyboardWidget::prepareObjects()
 {
-    m_pLayoutEditor = new UILayoutEditor(this);
-    if (m_pLayoutEditor)
-    {
-        m_pLayoutEditor->hide();
-        m_pLayoutEditor->installEventFilter(this);
-
-        QStringList physicalLayoutNames;
-        for (int i = 0; i < m_physicalLayouts.size(); ++i)
-            physicalLayoutNames << m_physicalLayouts[i].m_strName;
-        m_pLayoutEditor->setPhysicalLayoutNames(physicalLayoutNames);
-
-        connect(m_pLayoutEditor, &UILayoutEditor::sigKeyCaptionEdited, this, &UISoftKeyboardWidget::sltHandleKeyCaptionEdited);
-        connect(m_pLayoutEditor, &UILayoutEditor::sigPhysicalLayoutChanged, this, &UISoftKeyboardWidget::sltPhysicalLayoutForLayoutChanged);
-        connect(m_pLayoutEditor, &UILayoutEditor::sigLayoutNameChanged, this, &UISoftKeyboardWidget::sltLayoutNameChange);
-    }
     m_pContextMenu = new QMenu(this);
 
     QAction *pNewLayoutAction = m_pContextMenu->addAction(UISoftKeyboard::tr("New Layout..."));
@@ -1611,6 +1747,11 @@ void UISoftKeyboardWidget::prepareObjects()
     m_pShowPositionsAction->setCheckable(true);
     m_pShowPositionsAction->setChecked(false);
 #endif
+
+    setMouseTracking(true);
+    setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(this, &UISoftKeyboardWidget::customContextMenuRequested,
+            this, &UISoftKeyboardWidget::sltHandleContextMenuRequest);
 }
 
 void UISoftKeyboardWidget::setKeyBeingEdited(UISoftKeyboardKey* pKey)
@@ -1618,8 +1759,8 @@ void UISoftKeyboardWidget::setKeyBeingEdited(UISoftKeyboardKey* pKey)
     if (m_pKeyBeingEdited == pKey)
         return;
     m_pKeyBeingEdited = pKey;
-    if (m_pLayoutEditor)
-        m_pLayoutEditor->setKey(pKey);
+    // if (m_pLayoutEditor)
+    //     m_pLayoutEditor->setKey(pKey);
 }
 
 void UISoftKeyboardWidget::setCurrentLayout(UISoftKeyboardLayout *pLayout)
@@ -1632,10 +1773,8 @@ void UISoftKeyboardWidget::setCurrentLayout(UISoftKeyboardLayout *pLayout)
         emit sigLayoutChange(QString());
         return;
     }
-    emit sigLayoutChange(m_pCurrentKeyboardLayout->m_strName);
+    emit sigLayoutChange(m_pCurrentKeyboardLayout->name());
 
-    if (m_pLayoutEditor)
-        m_pLayoutEditor->setLayoutName(m_pCurrentKeyboardLayout->m_strName);
     const QMap<int, KeyCaptions> &keyCapMap = m_pCurrentKeyboardLayout->m_keyCapMap;
 
     /* Update the key captions: */
@@ -1654,6 +1793,34 @@ void UISoftKeyboardWidget::setCurrentLayout(UISoftKeyboardLayout *pLayout)
             key.setAltGrCaption(captions.m_strAltGr);
         }
     }
+}
+
+void UISoftKeyboardWidget::emitLayoutNames()
+{
+    emit sigLayoutListChanged(layoutNameList());
+}
+
+UISoftKeyboardLayout *UISoftKeyboardWidget::findLayoutByName(const QString &strName)
+{
+    for (int i = 0; i < m_layouts.size(); ++i)
+    {
+        if (m_layouts[i].name() == strName)
+            return &(m_layouts[i]);
+    }
+    return 0;
+}
+
+QStringList UISoftKeyboardWidget::layoutNameList() const
+{
+    QStringList layoutNames;
+    foreach (const UISoftKeyboardLayout &layout, m_layouts)
+        layoutNames << layout.name();
+    return layoutNames;
+}
+
+const QVector<UISoftKeyboardPhysicalLayout> &UISoftKeyboardWidget::physicalLayouts() const
+{
+    return m_physicalLayouts;
 }
 
 /*********************************************************************************************************************************
@@ -1686,7 +1853,7 @@ bool UIPhysicalLayoutReader::parseXMLFile(const QString &strFileName, UISoftKeyb
         else if (m_xmlReader.name() == "space")
             parseRowSpace(rows);
         else if (m_xmlReader.name() == "name")
-            physicalLayout.m_strName = m_xmlReader.readElementText();
+            physicalLayout.setName(m_xmlReader.readElementText());
         else if (m_xmlReader.name() == "id")
             physicalLayout.m_uId = m_xmlReader.readElementText();
         else
@@ -1951,7 +2118,10 @@ UISoftKeyboard::UISoftKeyboard(QWidget *pParent,
     , m_pMainLayout(0)
     , m_pContainerWidget(0)
     , m_strMachineName(strMachineName)
+    , m_pSplitter(0)
     , m_pSettingsButton(0)
+    , m_pSidePanelContainerWidget(0)
+    , m_pLayoutEditor(0)
 {
     setWindowTitle(QString("%1 - %2").arg(m_strMachineName).arg(tr("Soft Keyboard")));
     setAttribute(Qt::WA_DeleteOnClose);
@@ -1959,7 +2129,7 @@ UISoftKeyboard::UISoftKeyboard(QWidget *pParent,
     prepareConnections();
 
     if (m_pContainerWidget)
-        m_pContainerWidget->loadDefaultLayout();
+        m_pContainerWidget->loadLayouts();
 
     loadSettings();
     retranslateUi();
@@ -2008,22 +2178,6 @@ void UISoftKeyboard::sltHandlePutKeyboardSequence(QVector<LONG> sequence)
     keyboard().PutScancodes(sequence);
 }
 
-void UISoftKeyboard::sltHandleLayoutChange(const QString &strLayoutName)
-{
-    if (m_strLayoutName == strLayoutName)
-        return;
-    m_strLayoutName = strLayoutName;
-    updateStatusBarMessage();
-}
-
-void UISoftKeyboard::sltHandleKeyCapFileChange(const QString &strKeyCapFileName)
-{
-    if (strKeyCapFileName == m_strKeyCapFileName)
-        return;
-    m_strKeyCapFileName = strKeyCapFileName;
-    updateStatusBarMessage();
-}
-
 void UISoftKeyboard::sltHandleStatusBarContextMenuRequest(const QPoint &point)
 {
     if (m_pContainerWidget)
@@ -2032,13 +2186,28 @@ void UISoftKeyboard::sltHandleStatusBarContextMenuRequest(const QPoint &point)
 
 void UISoftKeyboard::prepareObjects()
 {
+    m_pSplitter = new QSplitter;
+    if (!m_pSplitter)
+        return;
+    setCentralWidget(m_pSplitter);
+
+    m_pSidePanelContainerWidget = new QStackedWidget;
+    m_pSplitter->addWidget(m_pSidePanelContainerWidget);
+
+    m_pLayoutSelector = new UILayoutSelector;
+    if (m_pLayoutSelector)
+        m_pSidePanelContainerWidget->addWidget(m_pLayoutSelector);
+
+    m_pLayoutEditor = new UILayoutEditor;
+    if (m_pLayoutEditor)
+        m_pSidePanelContainerWidget->addWidget(m_pLayoutEditor);
+
     m_pContainerWidget = new UISoftKeyboardWidget;
     if (!m_pContainerWidget)
         return;
     m_pContainerWidget->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
-    setCentralWidget(m_pContainerWidget);
     m_pContainerWidget->updateGeometry();
-
+    m_pSplitter->addWidget(m_pContainerWidget);
 
     statusBar()->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(statusBar(), &QStatusBar::customContextMenuRequested,
@@ -2061,8 +2230,6 @@ void UISoftKeyboard::prepareConnections()
 {
     connect(m_pSession, &UISession::sigKeyboardLedsChange, this, &UISoftKeyboard::sltHandleKeyboardLedsChange);
     connect(m_pContainerWidget, &UISoftKeyboardWidget::sigPutKeyboardSequence, this, &UISoftKeyboard::sltHandlePutKeyboardSequence);
-    connect(m_pContainerWidget, &UISoftKeyboardWidget::sigLayoutChange, this, &UISoftKeyboard::sltHandleLayoutChange);
-    connect(m_pContainerWidget, &UISoftKeyboardWidget::sigKeyCapChange, this, &UISoftKeyboard::sltHandleKeyCapFileChange);
 }
 
 void UISoftKeyboard::saveSettings()
