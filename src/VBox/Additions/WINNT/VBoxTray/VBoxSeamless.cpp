@@ -76,7 +76,7 @@ DECLCALLBACK(int) VBoxSeamlessInit(const PVBOXSERVICEENV pEnv, void **ppInstance
     uint64_t const uNtVersion = RTSystemGetNtVersion();
     if (uNtVersion < RTSYSTEM_MAKE_NT_VERSION(5, 0, 0)) /* Windows NT 4.0 or older */
     {
-        Log(("VBoxTray: VBoxSeamlessInit: Windows NT 4.0 or older not supported!\n"));
+        LogRel(("Seamless: Windows NT 4.0 or older not supported!\n"));
         rc = VERR_NOT_SUPPORTED;
     }
     else
@@ -88,19 +88,23 @@ DECLCALLBACK(int) VBoxSeamlessInit(const PVBOXSERVICEENV pEnv, void **ppInstance
             *(PFNRT *)&pCtx->pfnVBoxHookInstallWindowTracker = RTLdrGetFunction(pCtx->hModHook, "VBoxHookInstallWindowTracker");
             *(PFNRT *)&pCtx->pfnVBoxHookRemoveWindowTracker  = RTLdrGetFunction(pCtx->hModHook, "VBoxHookRemoveWindowTracker");
 
-            /* rc should contain success status */
-            AssertRC(rc); /** @todo r=andy Makes no sense here!? */
+            if (   pCtx->pfnVBoxHookInstallWindowTracker
+                && pCtx->pfnVBoxHookRemoveWindowTracker)
+            {
+                VBoxSeamlessSetSupported(TRUE);
 
-            VBoxSeamlessSetSupported(TRUE);
-
-            *ppInstance = pCtx;
+                *ppInstance = pCtx;
+            }
+            else
+            {
+                LogRel(("Seamless: Not supported, skipping\n"));
+                rc = VERR_NOT_SUPPORTED;
+            }
         }
         else
         {
-            if (rc == VERR_FILE_NOT_FOUND)
-                VBoxTrayShowError("VBoxHook.dll not found");
-
-            LogFlowFunc(("Unable to load %s, rc=%Rrc\n", VBOXHOOK_DLL_NAME, rc));
+            LogRel(("Seamless: Could not load %s (%Rrc), skipping\n", VBOXHOOK_DLL_NAME, rc));
+            rc = VERR_NOT_SUPPORTED;
         }
     }
 
