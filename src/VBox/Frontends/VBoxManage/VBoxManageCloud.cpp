@@ -218,7 +218,7 @@ static RTEXITCODE listCloudInstances(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT 
         pVMIdsHolder, COMGETTER(Values)(ComSafeArrayAsOutParam(arrayVMIds)),
             RTEXITCODE_FAILURE);
 
-    RTPrintf("List of instances for the cloud profile \'%ls\' \nand compartment \'%s\':\n",
+    RTPrintf("The list of the instances for the cloud profile \'%ls\' \nand compartment \'%s\':\n",
              bstrProfileName.raw(), strCompartmentId.c_str());
     size_t cIds = arrayVMIds.size();
     size_t cNames = arrayVMNames.size();
@@ -336,7 +336,6 @@ static RTEXITCODE listCloudImages(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pCo
     com::SafeArray<BSTR> arrayVMIds;
     ComPtr<IProgress> pProgress;
 
-    RTPrintf("Getting a list of available cloud images...\n");
     RTPrintf("Reply is in the form \'image name\' = \'image id\'\n");
     CHECK_ERROR2_RET(hrc, oCloudClient,
                      ListImages(ComSafeArrayAsInParam(imageStates),
@@ -354,7 +353,7 @@ static RTEXITCODE listCloudImages(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pCo
         pVMIdsHolder, COMGETTER(Values)(ComSafeArrayAsOutParam(arrayVMIds)),
             RTEXITCODE_FAILURE);
 
-    RTPrintf("List of images for the cloud profile \'%ls\' \nand compartment \'%s\':\n",
+    RTPrintf("The list of the images for the cloud profile \'%ls\' \nand compartment \'%s\':\n",
              bstrProfileName.raw(), strCompartmentId.c_str());
     size_t cNames = arrayVMNames.size();
     size_t cIds = arrayVMIds.size();
