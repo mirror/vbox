@@ -861,7 +861,31 @@ HRESULT VirtualBox::initMedia(const Guid &uuidRegistry,
 
         rc = i_registerMedium(pHardDisk, &pHardDisk, treeLock);
         if (SUCCEEDED(rc))
+        {
             uIdsForNotify[pHardDisk->i_getId()] = DeviceType_HardDisk;
+            // Add children IDs to notification using non-recursive children enumeration.
+            std::vector<std::pair<MediaList::const_iterator, const MediaList&> > llEnumStack;
+            const MediaList& mediaList = pHardDisk->i_getChildren();
+            llEnumStack.push_back(std::pair<MediaList::const_iterator, const MediaList&>(mediaList.begin(), mediaList));
+            while (!llEnumStack.empty())
+            {
+                if (llEnumStack.back().first == llEnumStack.back().second.end())
+                {
+                    llEnumStack.pop_back();
+                    if (!llEnumStack.empty())
+                        ++llEnumStack.back().first;
+                    continue;
+                }
+                uIdsForNotify[(*llEnumStack.back().first)->i_getId()] = DeviceType_HardDisk;
+                const MediaList& childMediaList = (*llEnumStack.back().first)->i_getChildren();
+                if (!childMediaList.empty())
+                {
+                    llEnumStack.push_back(std::pair<MediaList::const_iterator, const MediaList&>(childMediaList.begin(), childMediaList));
+                    continue;
+                }
+                ++llEnumStack.back().first;
+            }
+        }
         // Avoid trouble with lock/refcount, before returning or not.
         treeLock.release();
         pHardDisk.setNull();
