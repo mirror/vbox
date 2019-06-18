@@ -864,12 +864,12 @@ HRESULT VirtualBox::initMedia(const Guid &uuidRegistry,
         {
             uIdsForNotify[pHardDisk->i_getId()] = DeviceType_HardDisk;
             // Add children IDs to notification using non-recursive children enumeration.
-            std::vector<std::pair<MediaList::const_iterator, const MediaList&> > llEnumStack;
+            std::vector<std::pair<MediaList::const_iterator, ComObjPtr<Medium> > > llEnumStack;
             const MediaList& mediaList = pHardDisk->i_getChildren();
-            llEnumStack.push_back(std::pair<MediaList::const_iterator, const MediaList&>(mediaList.begin(), mediaList));
+            llEnumStack.push_back(std::pair<MediaList::const_iterator, ComObjPtr<Medium> >(mediaList.begin(), pHardDisk));
             while (!llEnumStack.empty())
             {
-                if (llEnumStack.back().first == llEnumStack.back().second.end())
+                if (llEnumStack.back().first == llEnumStack.back().second->i_getChildren().end())
                 {
                     llEnumStack.pop_back();
                     if (!llEnumStack.empty())
@@ -880,7 +880,8 @@ HRESULT VirtualBox::initMedia(const Guid &uuidRegistry,
                 const MediaList& childMediaList = (*llEnumStack.back().first)->i_getChildren();
                 if (!childMediaList.empty())
                 {
-                    llEnumStack.push_back(std::pair<MediaList::const_iterator, const MediaList&>(childMediaList.begin(), childMediaList));
+                    llEnumStack.push_back(std::pair<MediaList::const_iterator, ComObjPtr<Medium> >(childMediaList.begin(),
+                                                                                             *llEnumStack.back().first));
                     continue;
                 }
                 ++llEnumStack.back().first;
