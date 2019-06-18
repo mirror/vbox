@@ -25990,24 +25990,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   -->
   <interface
     name="ICloudClient" extends="$unknown"
-    uuid="3e5b1c4d-dcf8-401b-954f-39d5fdcf8d75"
+    uuid="7b54f41a-91d6-11e9-9c93-b7d487e5e15b"
     wsmap="managed" reservedMethods="13" reservedAttributes="8"
     >
-
-    <method name="exportLaunchVM">
-      <desc>
-        Exports and optionally launch a VM described in description parameter
-      </desc>
-      <param name="description" type="IVirtualSystemDescription" dir="in">
-        <desc>VirtualSystemDescription object which is describing a machine and all required parameters.</desc>
-      </param>
-      <param name="progress" type="IProgress" dir="in">
-        <desc>Progress object to track the operation completion.</desc>
-      </param>
-      <param name="virtualBox" type="IVirtualBox" dir="in">
-        <desc>Reference to the server-side API root object.</desc>
-      </param>
-    </method>
 
     <method name="getExportLaunchDescriptionForm">
       <desc>
@@ -26024,6 +26009,53 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <param name="form" type="IVirtualSystemDescriptionForm" dir="out">
         <desc>
           An IForm instance for editing the virtual system description.
+        </desc>
+      </param>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>
+          Progress object to track the operation completion.
+        </desc>
+      </param>
+    </method>
+
+    <method name="exportLaunchVM">
+      <desc>
+        Exports and optionally launch a VM described in description parameter
+      </desc>
+      <param name="description" type="IVirtualSystemDescription" dir="in">
+        <desc>VirtualSystemDescription object which is describing a machine and all required parameters.</desc>
+      </param>
+      <param name="progress" type="IProgress" dir="in">
+        <desc>Progress object to track the operation completion.</desc>
+      </param>
+      <param name="virtualBox" type="IVirtualBox" dir="in">
+        <desc>Reference to the server-side API root object.</desc>
+      </param>
+    </method>
+
+    <method name="getLaunchDescriptionForm">
+      <param name="description" type="IVirtualSystemDescription" dir="in">
+        <desc>
+          Virtual system description to be edited.
+        </desc>
+      </param>
+      <param name="form" type="IVirtualSystemDescriptionForm" dir="out">
+        <desc>
+          An IForm instance for editing the virtual system description.
+        </desc>
+      </param>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>
+          Progress object to track the operation completion.
+        </desc>
+      </param>
+    </method>
+
+    <method name="launchVM">
+      <param name="description" type="IVirtualSystemDescription" dir="in">
+        <desc>
+          Virtual system description object which describes the
+          machine and all required parameters.
         </desc>
       </param>
       <param name="progress" type="IProgress" dir="return">
