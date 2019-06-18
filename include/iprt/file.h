@@ -981,6 +981,7 @@ RTDECL(int) RTFileCreateTemp(char *pszTemplate, RTFMODE fMode);
  * could manipulate; however the exact criteria will be specified on a
  * platform-by-platform basis as platform support is added.
  * @see RTPathIsSecure for the current list of criteria.
+ *
  * @returns iprt status code.
  * @returns VERR_NOT_SUPPORTED if the interface can not be supported on the
  *                             current platform at this time.

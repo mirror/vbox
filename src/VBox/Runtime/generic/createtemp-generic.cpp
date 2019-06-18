@@ -39,18 +39,16 @@
 #include <iprt/string.h>
 
 
-static int rtCreateTempValidateTemplate(char *pszTemplate, char **ppszX,
-                                        unsigned *pcXes)
+/**
+ * The X'es may be trailing, or they may be a cluster of 3 or more inside
+ * the file name.
+ */
+static int rtCreateTempValidateTemplate(char *pszTemplate, char **ppszX, unsigned *pcXes)
 {
-    /*
-     * Validate input and count X'es.
-     *
-     * The X'es may be trailing, or they may be a cluster of 3 or more inside
-     * the file name.
-     */
     AssertPtr(pszTemplate);
     AssertPtr(ppszX);
     AssertPtr(pcXes);
+
     unsigned    cXes = 0;
     char       *pszX = strchr(pszTemplate, '\0');
     if (   pszX != pszTemplate
@@ -65,9 +63,9 @@ static int rtCreateTempValidateTemplate(char *pszTemplate, char **ppszX,
             pszFilename += 3;
             do
             {
-                if (    pszXEnd[-1] == 'X'
-                    &&  pszXEnd[-2] == 'X'
-                    &&  pszXEnd[-3] == 'X')
+                if (   pszXEnd[-1] == 'X'
+                    && pszXEnd[-2] == 'X'
+                    && pszXEnd[-3] == 'X')
                 {
                     pszX = pszXEnd - 3;
                     cXes = 3;
@@ -86,13 +84,9 @@ static int rtCreateTempValidateTemplate(char *pszTemplate, char **ppszX,
     }
 
     /* fail if none found. */
-    if (!cXes)
-    {
-        AssertFailed();
-        return VERR_INVALID_PARAMETER;
-    }
     *ppszX = pszX;
     *pcXes = cXes;
+    AssertReturn(cXes > 0, VERR_INVALID_PARAMETER);
     return VINF_SUCCESS;
 }
 
@@ -143,26 +137,22 @@ RT_EXPORT_SYMBOL(RTDirCreateTemp);
 /** @todo Test case for this once it is implemented. */
 RTDECL(int) RTDirCreateTempSecure(char *pszTemplate)
 {
-    size_t cchDir;
-    char chOld;
-    int rc;
     /* bool fSafe; */
 
     /* Temporarily convert pszTemplate to a path. */
+    size_t cchDir = 0;
     RTPathParseSimple(pszTemplate, &cchDir, NULL, NULL);
-    chOld = pszTemplate[cchDir];
+    char chOld = pszTemplate[cchDir];
     pszTemplate[cchDir] = '\0';
     /** @todo Implement this. */
-    rc = /* RTPathIsSecure(pszTemplate, &fSafe) */ VERR_NOT_SUPPORTED;
+    int rc = /* RTPathIsSecure(pszTemplate, &fSafe) */ VERR_NOT_SUPPORTED;
     pszTemplate[cchDir] = chOld;
     if (RT_SUCCESS(rc) /* && fSafe */)
         return RTDirCreateTemp(pszTemplate, 0700);
-    else
-    {
-        *pszTemplate = '\0';
-        /** @todo Replace VERR_PERMISSION_DENIED.  VERR_INSECURE? */
-        return RT_FAILURE(rc) ? rc : VERR_PERMISSION_DENIED;
-    }
+
+    *pszTemplate = '\0';
+    /** @todo Replace VERR_PERMISSION_DENIED.  VERR_INSECURE? */
+    return RT_FAILURE(rc) ? rc : VERR_PERMISSION_DENIED;
 }
 RT_EXPORT_SYMBOL(RTDirCreateTempSecure);
 
@@ -171,23 +161,23 @@ RTDECL(int) RTFileCreateTemp(char *pszTemplate, RTFMODE fMode)
 {
     char       *pszX = NULL;
     unsigned    cXes = 0;
-    RTFILE      hFile;
     int rc = rtCreateTempValidateTemplate(pszTemplate, &pszX, &cXes);
     if (RT_FAILURE(rc))
     {
         *pszTemplate = '\0';
         return rc;
     }
+
     /*
      * Try ten thousand times.
      */
     int i = 10000;
     while (i-- > 0)
     {
-        uint64_t fOpen =   RTFILE_O_WRITE | RTFILE_O_DENY_ALL
-                         | RTFILE_O_CREATE | RTFILE_O_NOT_CONTENT_INDEXED
-                         | fMode << RTFILE_O_CREATE_MODE_SHIFT;
+        uint64_t fOpen = RTFILE_O_WRITE | RTFILE_O_DENY_ALL | RTFILE_O_CREATE | RTFILE_O_NOT_CONTENT_INDEXED
+                       | fMode << RTFILE_O_CREATE_MODE_SHIFT;
         rtCreateTempFillTemplate(pszX, cXes);
+        RTFILE hFile = NIL_RTFILE;
         rc = RTFileOpen(&hFile, pszTemplate, fOpen);
         if (RT_SUCCESS(rc))
         {
@@ -212,26 +202,22 @@ RT_EXPORT_SYMBOL(RTFileCreateTemp);
 /** @todo Test case for this once it is implemented. */
 RTDECL(int) RTFileCreateTempSecure(char *pszTemplate)
 {
-    size_t cchDir;
-    char chOld;
-    int rc;
     /* bool fSafe; */
 
     /* Temporarily convert pszTemplate to a path. */
+    size_t cchDir = 0;
     RTPathParseSimple(pszTemplate, &cchDir, NULL, NULL);
-    chOld = pszTemplate[cchDir];
+    char chOld = pszTemplate[cchDir];
     pszTemplate[cchDir] = '\0';
     /** @todo Implement this. */
-    rc = /* RTPathIsSecure(pszTemplate, &fSafe) */ VERR_NOT_SUPPORTED;
+    int rc = /* RTPathIsSecure(pszTemplate, &fSafe) */ VERR_NOT_SUPPORTED;
     pszTemplate[cchDir] = chOld;
     if (RT_SUCCESS(rc) /* && fSafe */)
         return RTFileCreateTemp(pszTemplate, 0600);
-    else
-    {
-        *pszTemplate = '\0';
-        /** @todo Replace VERR_PERMISSION_DENIED.  VERR_INSECURE? */
-        return RT_FAILURE(rc) ? rc : VERR_PERMISSION_DENIED;
-    }
+
+    *pszTemplate = '\0';
+    /** @todo Replace VERR_PERMISSION_DENIED.  VERR_INSECURE? */
+    return RT_FAILURE(rc) ? rc : VERR_PERMISSION_DENIED;
 }
 RT_EXPORT_SYMBOL(RTFileCreateTempSecure);
 
