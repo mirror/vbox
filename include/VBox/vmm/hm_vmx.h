@@ -1692,12 +1692,18 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EPT_VPID_CAP_, UINT64_C(0), UINT64_MAX,
 /** @} */
 
 
-/** @name VMCS field encoding: 16-bit guest fields.
+/** @name VMCS field encoding: 16-bit control fields.
  * @{
  */
 #define VMX_VMCS16_VPID                                         0x0000
 #define VMX_VMCS16_POSTED_INT_NOTIFY_VECTOR                     0x0002
 #define VMX_VMCS16_EPTP_INDEX                                   0x0004
+/** @} */
+
+
+/** @name VMCS field encoding: 16-bit guest-state fields.
+ * @{
+ */
 #define VMX_VMCS16_GUEST_ES_SEL                                 0x0800
 #define VMX_VMCS16_GUEST_CS_SEL                                 0x0802
 #define VMX_VMCS16_GUEST_SS_SEL                                 0x0804
@@ -1711,7 +1717,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EPT_VPID_CAP_, UINT64_C(0), UINT64_MAX,
 /** @} */
 
 
-/** @name VMCS field encoding: 16-bits host fields.
+/** @name VMCS field encoding: 16-bits host-state fields.
  * @{
  */
 #define VMX_VMCS16_HOST_ES_SEL                                  0x0c00
@@ -1788,7 +1794,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EPT_VPID_CAP_, UINT64_C(0), UINT64_MAX,
 /** @} */
 
 
-/** @name VMCS field encoding: 64-bit guest fields.
+/** @name VMCS field encoding: 64-bit guest-state fields.
  * @{
  */
 #define VMX_VMCS64_GUEST_VMCS_LINK_PTR_FULL                     0x2800
@@ -1814,7 +1820,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EPT_VPID_CAP_, UINT64_C(0), UINT64_MAX,
 /** @} */
 
 
-/** @name VMCS field encoding: 64-bit host fields.
+/** @name VMCS field encoding: 64-bit host-state fields.
  * @{
  */
 #define VMX_VMCS64_HOST_PAT_FULL                                0x2c00
@@ -1900,7 +1906,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EPT_VPID_CAP_, UINT64_C(0), UINT64_MAX,
 /** @} */
 
 
-/** @name Natural width control fields.
+/** @name VMCS field encoding: Natural-width control fields.
  * @{
  */
 #define VMX_VMCS_CTRL_CR0_MASK                                  0x6000
@@ -1914,7 +1920,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EPT_VPID_CAP_, UINT64_C(0), UINT64_MAX,
 /** @} */
 
 
-/** @name Natural width read-only data fields.
+/** @name Natural-width read-only data fields.
  * @{
  */
 #define VMX_VMCS_RO_EXIT_QUALIFICATION                          0x6400
@@ -1926,7 +1932,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EPT_VPID_CAP_, UINT64_C(0), UINT64_MAX,
 /** @} */
 
 
-/** @name VMCS field encoding: Natural width guest-state fields.
+/** @name VMCS field encoding: Natural-width guest-state fields.
  * @{
  */
 #define VMX_VMCS_GUEST_CR0                                      0x6800
@@ -1952,7 +1958,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EPT_VPID_CAP_, UINT64_C(0), UINT64_MAX,
 /** @} */
 
 
-/** @name VMCS field encoding: Natural width host-state fields.
+/** @name VMCS field encoding: Natural-width host-state fields.
  * @{
  */
 #define VMX_VMCS_HOST_CR0                                       0x6c00
@@ -3463,6 +3469,9 @@ typedef const VMXVEXITEVENTINFO *PCVMXVEXITEVENTINFO;
  * We always treat natural-width fields as 64-bit in our implementation since
  * it's easier, allows for teleporation in the future and does not affect guest
  * software.
+ *
+ * Note! Any fields that are added or modified here, make sure to update the
+ *       corresponding fields in g_aoffVmcsMap in IEM.
  */
 #pragma pack(1)
 typedef struct
