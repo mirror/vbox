@@ -83,13 +83,13 @@ DECLINLINE(uint8_t) HMVmxGetVmcsFieldWidthEff(uint32_t uFieldEnc)
  * @returns @c true if it's a read-only field, @c false otherwise.
  * @param   uFieldEnc   The VMCS field encoding.
  *
- * @remarks Warning! This function does not verify the encoding is for a valid and
- *          supported VMCS field.
+ * @remarks Warning! This function does not verify that the encoding is for a valid
+ *          and/or supported VMCS field.
  */
 DECLINLINE(bool) HMVmxIsVmcsFieldReadOnly(uint32_t uFieldEnc)
 {
     /* See Intel spec. B.4.2 "Natural-Width Read-Only Data Fields". */
-    return (RT_BF_GET(uFieldEnc, VMX_BF_VMCS_ENC_TYPE) == VMXVMCSFIELDTYPE_VMEXIT_INFO);
+    return (RT_BF_GET(uFieldEnc, VMX_BF_VMCSFIELD_TYPE) == VMXVMCSFIELDTYPE_VMEXIT_INFO);
 }
 
 /**

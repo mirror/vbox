@@ -24,6 +24,7 @@
 #include <iprt/x86.h>
 #include <iprt/asm-amd64-x86.h>
 #include <iprt/thread.h>
+#include <iprt/mem.h>
 
 #include <VBox/vmm/pdmapi.h>
 #include <VBox/vmm/dbgf.h>
@@ -488,6 +489,242 @@ static VBOXSTRICTRC hmR0VmxExitHostNmi(PVMCPU pVCpu);
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+/**
+ * Array of all VMCS fields.
+ * Any fields added to the VT-x spec. should be added here.
+ *
+ * Currently only used to derive shadow VMCS fields for hardware-assisted execution
+ * of nested-guests.
+ */
+static const uint32_t g_aVmcsFields[] =
+{
+    /* 16-bit control fields. */
+    VMX_VMCS16_VPID,
+    VMX_VMCS16_POSTED_INT_NOTIFY_VECTOR,
+    VMX_VMCS16_EPTP_INDEX,
+
+    /* 16-bit guest-state fields. */
+    VMX_VMCS16_GUEST_ES_SEL,
+    VMX_VMCS16_GUEST_CS_SEL,
+    VMX_VMCS16_GUEST_SS_SEL,
+    VMX_VMCS16_GUEST_DS_SEL,
+    VMX_VMCS16_GUEST_FS_SEL,
+    VMX_VMCS16_GUEST_GS_SEL,
+    VMX_VMCS16_GUEST_LDTR_SEL,
+    VMX_VMCS16_GUEST_TR_SEL,
+    VMX_VMCS16_GUEST_INTR_STATUS,
+    VMX_VMCS16_GUEST_PML_INDEX,
+
+    /* 16-bits host-state fields. */
+    VMX_VMCS16_HOST_ES_SEL,
+    VMX_VMCS16_HOST_CS_SEL,
+    VMX_VMCS16_HOST_SS_SEL,
+    VMX_VMCS16_HOST_DS_SEL,
+    VMX_VMCS16_HOST_FS_SEL,
+    VMX_VMCS16_HOST_GS_SEL,
+    VMX_VMCS16_HOST_TR_SEL,
+
+    /* 64-bit control fields. */
+    VMX_VMCS64_CTRL_IO_BITMAP_A_FULL,
+    VMX_VMCS64_CTRL_IO_BITMAP_A_HIGH,
+    VMX_VMCS64_CTRL_IO_BITMAP_B_FULL,
+    VMX_VMCS64_CTRL_IO_BITMAP_B_HIGH,
+    VMX_VMCS64_CTRL_MSR_BITMAP_FULL,
+    VMX_VMCS64_CTRL_MSR_BITMAP_HIGH,
+    VMX_VMCS64_CTRL_EXIT_MSR_STORE_FULL,
+    VMX_VMCS64_CTRL_EXIT_MSR_STORE_HIGH,
+    VMX_VMCS64_CTRL_EXIT_MSR_LOAD_FULL,
+    VMX_VMCS64_CTRL_EXIT_MSR_LOAD_HIGH,
+    VMX_VMCS64_CTRL_ENTRY_MSR_LOAD_FULL,
+    VMX_VMCS64_CTRL_ENTRY_MSR_LOAD_HIGH,
+    VMX_VMCS64_CTRL_EXEC_VMCS_PTR_FULL,
+    VMX_VMCS64_CTRL_EXEC_VMCS_PTR_HIGH,
+    VMX_VMCS64_CTRL_EXEC_PML_ADDR_FULL,
+    VMX_VMCS64_CTRL_EXEC_PML_ADDR_HIGH,
+    VMX_VMCS64_CTRL_TSC_OFFSET_FULL,
+    VMX_VMCS64_CTRL_TSC_OFFSET_HIGH,
+    VMX_VMCS64_CTRL_VIRT_APIC_PAGEADDR_FULL,
+    VMX_VMCS64_CTRL_VIRT_APIC_PAGEADDR_HIGH,
+    VMX_VMCS64_CTRL_APIC_ACCESSADDR_FULL,
+    VMX_VMCS64_CTRL_APIC_ACCESSADDR_HIGH,
+    VMX_VMCS64_CTRL_POSTED_INTR_DESC_FULL,
+    VMX_VMCS64_CTRL_POSTED_INTR_DESC_HIGH,
+    VMX_VMCS64_CTRL_VMFUNC_CTRLS_FULL,
+    VMX_VMCS64_CTRL_VMFUNC_CTRLS_HIGH,
+    VMX_VMCS64_CTRL_EPTP_FULL,
+    VMX_VMCS64_CTRL_EPTP_HIGH,
+    VMX_VMCS64_CTRL_EOI_BITMAP_0_FULL,
+    VMX_VMCS64_CTRL_EOI_BITMAP_0_HIGH,
+    VMX_VMCS64_CTRL_EOI_BITMAP_1_FULL,
+    VMX_VMCS64_CTRL_EOI_BITMAP_1_HIGH,
+    VMX_VMCS64_CTRL_EOI_BITMAP_2_FULL,
+    VMX_VMCS64_CTRL_EOI_BITMAP_2_HIGH,
+    VMX_VMCS64_CTRL_EOI_BITMAP_3_FULL,
+    VMX_VMCS64_CTRL_EOI_BITMAP_3_HIGH,
+    VMX_VMCS64_CTRL_EPTP_LIST_FULL,
+    VMX_VMCS64_CTRL_EPTP_LIST_HIGH,
+    VMX_VMCS64_CTRL_VMREAD_BITMAP_FULL,
+    VMX_VMCS64_CTRL_VMREAD_BITMAP_HIGH,
+    VMX_VMCS64_CTRL_VMWRITE_BITMAP_FULL,
+    VMX_VMCS64_CTRL_VMWRITE_BITMAP_HIGH,
+    VMX_VMCS64_CTRL_VIRTXCPT_INFO_ADDR_FULL,
+    VMX_VMCS64_CTRL_VIRTXCPT_INFO_ADDR_HIGH,
+    VMX_VMCS64_CTRL_XSS_EXITING_BITMAP_FULL,
+    VMX_VMCS64_CTRL_XSS_EXITING_BITMAP_HIGH,
+    VMX_VMCS64_CTRL_ENCLS_EXITING_BITMAP_FULL,
+    VMX_VMCS64_CTRL_ENCLS_EXITING_BITMAP_HIGH,
+    VMX_VMCS64_CTRL_TSC_MULTIPLIER_FULL,
+    VMX_VMCS64_CTRL_TSC_MULTIPLIER_HIGH,
+
+    /* 64-bit read-only data fields. */
+    VMX_VMCS64_RO_GUEST_PHYS_ADDR_FULL,
+    VMX_VMCS64_RO_GUEST_PHYS_ADDR_HIGH,
+
+    /* 64-bit guest-state fields. */
+    VMX_VMCS64_GUEST_VMCS_LINK_PTR_FULL,
+    VMX_VMCS64_GUEST_VMCS_LINK_PTR_HIGH,
+    VMX_VMCS64_GUEST_DEBUGCTL_FULL,
+    VMX_VMCS64_GUEST_DEBUGCTL_HIGH,
+    VMX_VMCS64_GUEST_PAT_FULL,
+    VMX_VMCS64_GUEST_PAT_HIGH,
+    VMX_VMCS64_GUEST_EFER_FULL,
+    VMX_VMCS64_GUEST_EFER_HIGH,
+    VMX_VMCS64_GUEST_PERF_GLOBAL_CTRL_FULL,
+    VMX_VMCS64_GUEST_PERF_GLOBAL_CTRL_HIGH,
+    VMX_VMCS64_GUEST_PDPTE0_FULL,
+    VMX_VMCS64_GUEST_PDPTE0_HIGH,
+    VMX_VMCS64_GUEST_PDPTE1_FULL,
+    VMX_VMCS64_GUEST_PDPTE1_HIGH,
+    VMX_VMCS64_GUEST_PDPTE2_FULL,
+    VMX_VMCS64_GUEST_PDPTE2_HIGH,
+    VMX_VMCS64_GUEST_PDPTE3_FULL,
+    VMX_VMCS64_GUEST_PDPTE3_HIGH,
+    VMX_VMCS64_GUEST_BNDCFGS_FULL,
+    VMX_VMCS64_GUEST_BNDCFGS_HIGH,
+
+    /* 64-bit host-state fields. */
+    VMX_VMCS64_HOST_PAT_FULL,
+    VMX_VMCS64_HOST_PAT_HIGH,
+    VMX_VMCS64_HOST_EFER_FULL,
+    VMX_VMCS64_HOST_EFER_HIGH,
+    VMX_VMCS64_HOST_PERF_GLOBAL_CTRL_FULL,
+    VMX_VMCS64_HOST_PERF_GLOBAL_CTRL_HIGH,
+
+    /* 32-bit control fields. */
+    VMX_VMCS32_CTRL_PIN_EXEC,
+    VMX_VMCS32_CTRL_PROC_EXEC,
+    VMX_VMCS32_CTRL_EXCEPTION_BITMAP,
+    VMX_VMCS32_CTRL_PAGEFAULT_ERROR_MASK,
+    VMX_VMCS32_CTRL_PAGEFAULT_ERROR_MATCH,
+    VMX_VMCS32_CTRL_CR3_TARGET_COUNT,
+    VMX_VMCS32_CTRL_EXIT,
+    VMX_VMCS32_CTRL_EXIT_MSR_STORE_COUNT,
+    VMX_VMCS32_CTRL_EXIT_MSR_LOAD_COUNT,
+    VMX_VMCS32_CTRL_ENTRY,
+    VMX_VMCS32_CTRL_ENTRY_MSR_LOAD_COUNT,
+    VMX_VMCS32_CTRL_ENTRY_INTERRUPTION_INFO,
+    VMX_VMCS32_CTRL_ENTRY_EXCEPTION_ERRCODE,
+    VMX_VMCS32_CTRL_ENTRY_INSTR_LENGTH,
+    VMX_VMCS32_CTRL_TPR_THRESHOLD,
+    VMX_VMCS32_CTRL_PROC_EXEC2,
+    VMX_VMCS32_CTRL_PLE_GAP,
+    VMX_VMCS32_CTRL_PLE_WINDOW,
+
+    /* 32-bits read-only fields. */
+    VMX_VMCS32_RO_VM_INSTR_ERROR,
+    VMX_VMCS32_RO_EXIT_REASON,
+    VMX_VMCS32_RO_EXIT_INTERRUPTION_INFO,
+    VMX_VMCS32_RO_EXIT_INTERRUPTION_ERROR_CODE,
+    VMX_VMCS32_RO_IDT_VECTORING_INFO,
+    VMX_VMCS32_RO_IDT_VECTORING_ERROR_CODE,
+    VMX_VMCS32_RO_EXIT_INSTR_LENGTH,
+    VMX_VMCS32_RO_EXIT_INSTR_INFO,
+
+    /* 32-bit guest-state fields. */
+    VMX_VMCS32_GUEST_ES_LIMIT,
+    VMX_VMCS32_GUEST_CS_LIMIT,
+    VMX_VMCS32_GUEST_SS_LIMIT,
+    VMX_VMCS32_GUEST_DS_LIMIT,
+    VMX_VMCS32_GUEST_FS_LIMIT,
+    VMX_VMCS32_GUEST_GS_LIMIT,
+    VMX_VMCS32_GUEST_LDTR_LIMIT,
+    VMX_VMCS32_GUEST_TR_LIMIT,
+    VMX_VMCS32_GUEST_GDTR_LIMIT,
+    VMX_VMCS32_GUEST_IDTR_LIMIT,
+    VMX_VMCS32_GUEST_ES_ACCESS_RIGHTS,
+    VMX_VMCS32_GUEST_CS_ACCESS_RIGHTS,
+    VMX_VMCS32_GUEST_SS_ACCESS_RIGHTS,
+    VMX_VMCS32_GUEST_DS_ACCESS_RIGHTS,
+    VMX_VMCS32_GUEST_FS_ACCESS_RIGHTS,
+    VMX_VMCS32_GUEST_GS_ACCESS_RIGHTS,
+    VMX_VMCS32_GUEST_LDTR_ACCESS_RIGHTS,
+    VMX_VMCS32_GUEST_TR_ACCESS_RIGHTS,
+    VMX_VMCS32_GUEST_INT_STATE,
+    VMX_VMCS32_GUEST_ACTIVITY_STATE,
+    VMX_VMCS32_GUEST_SMBASE,
+    VMX_VMCS32_GUEST_SYSENTER_CS,
+    VMX_VMCS32_PREEMPT_TIMER_VALUE,
+
+    /* 32-bit host-state fields. */
+    VMX_VMCS32_HOST_SYSENTER_CS,
+
+    /* Natural-width control fields. */
+    VMX_VMCS_CTRL_CR0_MASK,
+    VMX_VMCS_CTRL_CR4_MASK,
+    VMX_VMCS_CTRL_CR0_READ_SHADOW,
+    VMX_VMCS_CTRL_CR4_READ_SHADOW,
+    VMX_VMCS_CTRL_CR3_TARGET_VAL0,
+    VMX_VMCS_CTRL_CR3_TARGET_VAL1,
+    VMX_VMCS_CTRL_CR3_TARGET_VAL2,
+    VMX_VMCS_CTRL_CR3_TARGET_VAL3,
+
+    /* Natural-width read-only data fields. */
+    VMX_VMCS_RO_EXIT_QUALIFICATION,
+    VMX_VMCS_RO_IO_RCX,
+    VMX_VMCS_RO_IO_RSI,
+    VMX_VMCS_RO_IO_RDI,
+    VMX_VMCS_RO_IO_RIP,
+    VMX_VMCS_RO_GUEST_LINEAR_ADDR,
+
+    /* Natural-width guest-state field */
+    VMX_VMCS_GUEST_CR0,
+    VMX_VMCS_GUEST_CR3,
+    VMX_VMCS_GUEST_CR4,
+    VMX_VMCS_GUEST_ES_BASE,
+    VMX_VMCS_GUEST_CS_BASE,
+    VMX_VMCS_GUEST_SS_BASE,
+    VMX_VMCS_GUEST_DS_BASE,
+    VMX_VMCS_GUEST_FS_BASE,
+    VMX_VMCS_GUEST_GS_BASE,
+    VMX_VMCS_GUEST_LDTR_BASE,
+    VMX_VMCS_GUEST_TR_BASE,
+    VMX_VMCS_GUEST_GDTR_BASE,
+    VMX_VMCS_GUEST_IDTR_BASE,
+    VMX_VMCS_GUEST_DR7,
+    VMX_VMCS_GUEST_RSP,
+    VMX_VMCS_GUEST_RIP,
+    VMX_VMCS_GUEST_RFLAGS,
+    VMX_VMCS_GUEST_PENDING_DEBUG_XCPTS,
+    VMX_VMCS_GUEST_SYSENTER_ESP,
+    VMX_VMCS_GUEST_SYSENTER_EIP,
+
+    /* Natural-width host-state fields */
+    VMX_VMCS_HOST_CR0,
+    VMX_VMCS_HOST_CR3,
+    VMX_VMCS_HOST_CR4,
+    VMX_VMCS_HOST_FS_BASE,
+    VMX_VMCS_HOST_GS_BASE,
+    VMX_VMCS_HOST_TR_BASE,
+    VMX_VMCS_HOST_GDTR_BASE,
+    VMX_VMCS_HOST_IDTR_BASE,
+    VMX_VMCS_HOST_SYSENTER_ESP,
+    VMX_VMCS_HOST_SYSENTER_EIP,
+    VMX_VMCS_HOST_RSP,
+    VMX_VMCS_HOST_RIP
+};
+#endif /* VBOX_WITH_NESTED_HWVIRT_VMX */
+
 #ifdef VMX_USE_CACHED_VMCS_ACCESSES
 static const uint32_t g_aVmcsCacheSegBase[] =
 {
@@ -1374,6 +1611,90 @@ static int hmR0VmxLeaveRootMode(void)
 }
 
 
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+/**
+ * Initializes the shadow VMCS.
+ *
+ * This builds an array (for use later while executing a nested-guest) of VMCS
+ * fields to copy into the shadow VMCS.
+ *
+ * @param   pVM     The cross context VM structure.
+ */
+static void hmR0VmxInitShadowVmcsFieldsArray(PVM pVM)
+{
+    uint32_t const cVmcsFields = RT_ELEMENTS(g_aVmcsFields);
+    for (uint32_t i = 0; i < cVmcsFields; i++)
+    {
+        /*
+         * If the VMCS field depends on a CPU feature that is not exposed to the guest,
+         * we must not include it in the shadow VMCS fields array. Guests attempting to
+         * VMREAD/VMWRITE such VMCS fields would cause a VM-exit and we shall emulate
+         * the required behavior.
+         */
+        uint32_t const uVmcsField      = g_aVmcsFields[i];
+        bool const     fVmcsFieldValid = CPUMIsGuestVmxVmcsFieldValid(pVM, uVmcsField);
+        if (fVmcsFieldValid)
+        {
+            pVM->hm.s.vmx.paShadowVmcsFields[i] = uVmcsField;
+            ++pVM->hm.s.vmx.cShadowVmcsFields;
+        }
+    }
+}
+
+
+/**
+ * Initializes the VMREAD/VMWRITE bitmaps.
+ *
+ * @param   pVM                 The cross context VM structure.
+ */
+static void hmR0VmxInitVmreadVmwriteBitmaps(PVM pVM)
+{
+    /*
+     * By default, ensure guest attempts to acceses to any VMCS fields cause VM-exits.
+     */
+    uint32_t const  cbBitmap        = X86_PAGE_4K_SIZE;
+    uint8_t        *pbVmreadBitmap  = (uint8_t *)pVM->hm.s.vmx.pvVmreadBitmap;
+    uint8_t        *pbVmwriteBitmap = (uint8_t *)pVM->hm.s.vmx.pvVmwriteBitmap;
+    ASMMemFill32(pbVmreadBitmap,  cbBitmap, UINT32_C(0xffffffff));
+    ASMMemFill32(pbVmwriteBitmap, cbBitmap, UINT32_C(0xffffffff));
+
+    uint32_t const *paShadowVmcsFields = pVM->hm.s.vmx.paShadowVmcsFields;
+    uint32_t const  cShadowVmcsFields  = pVM->hm.s.vmx.cShadowVmcsFields;
+
+    /*
+     * Initialize the VMREAD bitmap.
+     * All valid guest VMCS fields (read-only and read-write) can be accessed
+     * using VMREAD without causing a VM-exit.
+     */
+    for (uint32_t i = 0; i < cShadowVmcsFields; i++)
+    {
+        uint32_t const uVmcsField = paShadowVmcsFields[i];
+        Assert(!(uVmcsField & VMX_VMCSFIELD_RSVD_MASK));
+        uint8_t *pbField = pbVmreadBitmap + (uVmcsField >> 3);
+        ASMBitClear(pbField, uVmcsField & 7);
+    }
+
+    /*
+     * Initialize the VMWRITE bitmap.
+     * Allow the guest to write to read-only guest VMCS fields only if the
+     * host CPU supports it, otherwise it would cause a VMWRITE instruction error.
+     */
+    bool const fHasVmwriteAll = RT_BOOL(pVM->hm.s.vmx.Msrs.u64Misc & VMX_MISC_VMWRITE_ALL);
+    for (uint32_t i = 0; i < cShadowVmcsFields; i++)
+    {
+        uint32_t const uVmcsField = paShadowVmcsFields[i];
+        if (   fHasVmwriteAll
+            || !HMVmxIsVmcsFieldReadOnly(uVmcsField))
+        {
+            Assert(!(uVmcsField & VMX_VMCSFIELD_RSVD_MASK));
+            uint8_t *pbField = pbVmwriteBitmap + (uVmcsField >> 3);
+            ASMBitClear(pbField, uVmcsField & 7);
+        }
+    }
+}
+#endif /* VBOX_WITH_NESTED_HWVIRT_VMX */
+
+
 /**
  * Allocates and maps a physically contiguous page. The allocated page is
  * zero'd out (used by various VT-x structures).
@@ -1432,11 +1753,13 @@ static void hmR0VmxInitVmcsInfo(PVMXVMCSINFO pVmcsInfo)
     memset(pVmcsInfo, 0, sizeof(*pVmcsInfo));
 
     Assert(pVmcsInfo->hMemObjVmcs          == NIL_RTR0MEMOBJ);
+    Assert(pVmcsInfo->hMemObjShadowVmcs    == NIL_RTR0MEMOBJ);
     Assert(pVmcsInfo->hMemObjMsrBitmap     == NIL_RTR0MEMOBJ);
     Assert(pVmcsInfo->hMemObjGuestMsrLoad  == NIL_RTR0MEMOBJ);
     Assert(pVmcsInfo->hMemObjGuestMsrStore == NIL_RTR0MEMOBJ);
     Assert(pVmcsInfo->hMemObjHostMsrLoad   == NIL_RTR0MEMOBJ);
     pVmcsInfo->HCPhysVmcs          = NIL_RTHCPHYS;
+    pVmcsInfo->HCPhysShadowVmcs    = NIL_RTHCPHYS;
     pVmcsInfo->HCPhysMsrBitmap     = NIL_RTHCPHYS;
     pVmcsInfo->HCPhysGuestMsrLoad  = NIL_RTHCPHYS;
     pVmcsInfo->HCPhysGuestMsrStore = NIL_RTHCPHYS;
@@ -1456,6 +1779,10 @@ static void hmR0VmxInitVmcsInfo(PVMXVMCSINFO pVmcsInfo)
 static void hmR0VmxFreeVmcsInfo(PVM pVM, PVMXVMCSINFO pVmcsInfo)
 {
     hmR0VmxPageFree(&pVmcsInfo->hMemObjVmcs, &pVmcsInfo->pvVmcs, &pVmcsInfo->HCPhysVmcs);
+
+    if (   pVM->cpum.ro.GuestFeatures.fVmx
+        && (pVM->hm.s.vmx.Msrs.ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_VMCS_SHADOWING))
+        hmR0VmxPageFree(&pVmcsInfo->hMemObjShadowVmcs, &pVmcsInfo->pvShadowVmcs, &pVmcsInfo->HCPhysShadowVmcs);
 
     if (pVM->hm.s.vmx.Msrs.ProcCtls.n.allowed1 & VMX_PROC_CTLS_USE_MSR_BITMAPS)
         hmR0VmxPageFree(&pVmcsInfo->hMemObjMsrBitmap, &pVmcsInfo->pvMsrBitmap, &pVmcsInfo->HCPhysMsrBitmap);
@@ -1486,16 +1813,29 @@ static int hmR0VmxAllocVmcsInfo(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo, bool fIsNs
     {
         if (!fIsNstGstVmcs)
         {
-            /* Get the allocated virtual-APIC page from the virtual APIC device. */
-            if (   PDMHasApic(pVCpu->CTX_SUFF(pVM))
-                && (pVM->hm.s.vmx.Msrs.ProcCtls.n.allowed1 & VMX_PROC_CTLS_USE_TPR_SHADOW))
+            /* Allocate the shadow VMCS if supported by the CPU. */
+            if (   pVM->cpum.ro.GuestFeatures.fVmx
+                && (pVM->hm.s.vmx.Msrs.ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_VMCS_SHADOWING))
+                rc = hmR0VmxPageAllocZ(&pVmcsInfo->hMemObjShadowVmcs, &pVmcsInfo->pvShadowVmcs, &pVmcsInfo->HCPhysShadowVmcs);
+
+            if (RT_SUCCESS(rc))
             {
-                rc = APICGetApicPageForCpu(pVCpu, &pVmcsInfo->HCPhysVirtApic, (PRTR0PTR)&pVmcsInfo->pbVirtApic,
-                                           NULL /* pR3Ptr */, NULL /* pRCPtr */);
+                /* Get the allocated virtual-APIC page from the virtual APIC device. */
+                if (   PDMHasApic(pVCpu->CTX_SUFF(pVM))
+                    && (pVM->hm.s.vmx.Msrs.ProcCtls.n.allowed1 & VMX_PROC_CTLS_USE_TPR_SHADOW))
+                {
+                    rc = APICGetApicPageForCpu(pVCpu, &pVmcsInfo->HCPhysVirtApic, (PRTR0PTR)&pVmcsInfo->pbVirtApic,
+                                               NULL /* pR3Ptr */, NULL /* pRCPtr */);
+                }
             }
         }
         else
         {
+            /* We don't yet support exposing VMCS shadowing to the guest. */
+            Assert(pVmcsInfo->HCPhysShadowVmcs == NIL_RTHCPHYS);
+            Assert(!pVmcsInfo->pvShadowVmcs);
+
+            /* The host-physical address of the virtual-APIC page in guest memory is taken directly. */
             Assert(pVmcsInfo->HCPhysVirtApic == NIL_RTHCPHYS);
             Assert(!pVmcsInfo->pbVirtApic);
         }
@@ -1568,6 +1908,16 @@ static void hmR0VmxStructsFree(PVM pVM)
     hmR0VmxPageFree(&pVM->hm.s.vmx.hMemObjScratch, &pVM->hm.s.vmx.pbScratch, &pVM->hm.s.vmx.HCPhysScratch);
 #endif
     hmR0VmxPageFree(&pVM->hm.s.vmx.hMemObjApicAccess, (PRTR0PTR)&pVM->hm.s.vmx.pbApicAccess, &pVM->hm.s.vmx.HCPhysApicAccess);
+
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+    if (   pVM->cpum.ro.GuestFeatures.fVmx
+        && (pVM->hm.s.vmx.Msrs.ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_VMCS_SHADOWING))
+    {
+        RTMemFree(pVM->hm.s.vmx.paShadowVmcsFields);
+        hmR0VmxPageFree(&pVM->hm.s.vmx.hMemObjVmreadBitmap,  &pVM->hm.s.vmx.pvVmreadBitmap,  &pVM->hm.s.vmx.HCPhysVmreadBitmap);
+        hmR0VmxPageFree(&pVM->hm.s.vmx.hMemObjVmwriteBitmap, &pVM->hm.s.vmx.pvVmwriteBitmap, &pVM->hm.s.vmx.HCPhysVmwriteBitmap);
+    }
+#endif
 
     for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
@@ -1656,6 +2006,38 @@ static int hmR0VmxStructsAlloc(PVM pVM)
         }
     }
 
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+    /* Allocate the shadow VMCS fields array, VMREAD, VMWRITE bitmaps if VMCS shadowing supported by the CPU. */
+    if (   pVM->cpum.ro.GuestFeatures.fVmx
+        && (pVM->hm.s.vmx.Msrs.ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_VMCS_SHADOWING))
+    {
+        pVM->hm.s.vmx.paShadowVmcsFields = (uint32_t *)RTMemAllocZ(sizeof(g_aVmcsFields));
+        if (RT_LIKELY(pVM->hm.s.vmx.paShadowVmcsFields))
+        {
+            rc = hmR0VmxPageAllocZ(&pVM->hm.s.vmx.hMemObjVmreadBitmap, &pVM->hm.s.vmx.pvVmreadBitmap,
+                                   &pVM->hm.s.vmx.HCPhysVmreadBitmap);
+            if (RT_SUCCESS(rc))
+            {
+                rc = hmR0VmxPageAllocZ(&pVM->hm.s.vmx.hMemObjVmwriteBitmap, &pVM->hm.s.vmx.pvVmwriteBitmap,
+                                       &pVM->hm.s.vmx.HCPhysVmwriteBitmap);
+                if (RT_SUCCESS(rc))
+                {
+                    hmR0VmxInitShadowVmcsFieldsArray(pVM);
+                    hmR0VmxInitVmreadVmwriteBitmaps(pVM);
+                }
+            }
+        }
+        else
+            rc = VERR_NO_MEMORY;
+
+        if (RT_FAILURE(rc))
+        {
+            hmR0VmxStructsFree(pVM);
+            return rc;
+        }
+    }
+#endif
+
     /*
      * Initialize per-VCPU VT-x structures.
      */
@@ -1691,7 +2073,6 @@ static int hmR0VmxStructsAlloc(PVM pVM)
     return VINF_SUCCESS;
 }
 
-
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
 /**
  * Returns whether an MSR at the given MSR-bitmap offset is intercepted or not.
@@ -1709,7 +2090,6 @@ DECLINLINE(bool) hmR0VmxIsMsrBitSet(const void *pvMsrBitmap, uint16_t offMsr, in
     return ASMBitTest(pbMsrBitmap + offMsr, iBit);
 }
 #endif
-
 
 /**
  * Sets the permission bits for the specified MSR in the given MSR bitmap.
@@ -3843,7 +4223,7 @@ static bool hmR0VmxIs32BitSwitcherSafe(PCCPUMCTX pCtx)
 # endif /* VBOX_ENABLE_64_BITS_GUESTS */
 
 # ifdef VBOX_STRICT
-static bool hmR0VmxIsValidWriteField(uint32_t idxField)
+static bool hmR0VmxIsValidWriteFieldInCache(uint32_t idxField)
 {
     switch (idxField)
     {
@@ -3867,7 +4247,7 @@ static bool hmR0VmxIsValidWriteField(uint32_t idxField)
     return false;
 }
 
-static bool hmR0VmxIsValidReadField(uint32_t idxField)
+static bool hmR0VmxIsValidReadFieldInCache(uint32_t idxField)
 {
     switch (idxField)
     {
@@ -3876,7 +4256,7 @@ static bool hmR0VmxIsValidReadField(uint32_t idxField)
             return true;
     }
     /* Remaining readable fields should also be writable. */
-    return hmR0VmxIsValidWriteField(idxField);
+    return hmR0VmxIsValidWriteFieldInCache(idxField);
 }
 # endif /* VBOX_STRICT */
 
@@ -3901,10 +4281,10 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVMCPU pVCpu, HM64ON32OP enmOp, uint32_
 
 #ifdef VBOX_STRICT
     for (uint32_t i = 0; i < pVCpu->hm.s.vmx.VmcsCache.Write.cValidEntries; i++)
-        Assert(hmR0VmxIsValidWriteField(pVCpu->hm.s.vmx.VmcsCache.Write.aField[i]));
+        Assert(hmR0VmxIsValidWriteFieldInCache(pVCpu->hm.s.vmx.VmcsCache.Write.aField[i]));
 
     for (uint32_t i = 0; i <pVCpu->hm.s.vmx.VmcsCache.Read.cValidEntries; i++)
-        Assert(hmR0VmxIsValidReadField(pVCpu->hm.s.vmx.VmcsCache.Read.aField[i]));
+        Assert(hmR0VmxIsValidReadFieldInCache(pVCpu->hm.s.vmx.VmcsCache.Read.aField[i]));
 #endif
 
     /* Disable interrupts. */

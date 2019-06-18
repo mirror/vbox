@@ -527,7 +527,8 @@ typedef struct HM
         bool                        fVpid;
         /** Set if VT-x VPID is allowed. */
         bool                        fAllowVpid;
-        /** Set if unrestricted guest execution is in use (real and protected mode without paging). */
+        /** Set if unrestricted guest execution is in use (real and protected mode
+         *  without paging). */
         bool                        fUnrestrictedGuest;
         /** Set if unrestricted guest execution is allowed to be used. */
         bool                        fAllowUnrestricted;
@@ -538,7 +539,8 @@ typedef struct HM
 
         /** Virtual address of the TSS page used for real mode emulation. */
         R3PTRTYPE(PVBOXTSS)         pRealModeTSS;
-        /** Virtual address of the identity page table used for real mode and protected mode without paging emulation in EPT mode. */
+        /** Virtual address of the identity page table used for real mode and protected
+         *  mode without paging emulation in EPT mode. */
         R3PTRTYPE(PX86PD)           pNonPagingModeEPTPageTable;
 
         /** Physical address of the APIC-access page. */
@@ -548,9 +550,26 @@ typedef struct HM
         /** Virtual address of the APIC-access page. */
         R0PTRTYPE(uint8_t *)        pbApicAccess;
 
+        /** Physical address of the VMREAD bitmap. */
+        RTHCPHYS                    HCPhysVmreadBitmap;
+        /** Ring-0 memory object for the VMREAD bitmap. */
+        RTR0MEMOBJ                  hMemObjVmreadBitmap;
+        /** Pointer to the VMREAD bitmap. */
+        R0PTRTYPE(void *)           pvVmreadBitmap;
+
+        /** Physical address of the VMWRITE bitmap. */
+        RTHCPHYS                    HCPhysVmwriteBitmap;
+        /** Ring-0 memory object for the VMWRITE bitmap. */
+        RTR0MEMOBJ                  hMemObjVmwriteBitmap;
+        /** Pointer to the VMWRITE bitmap. */
+        R0PTRTYPE(void *)           pvVmwriteBitmap;
+
 #ifdef VBOX_WITH_CRASHDUMP_MAGIC
+        /** Physical address of the crash-dump scratch area. */
         RTHCPHYS                    HCPhysScratch;
+        /** Ring-0 memory object for the crash-dump scratch area. */
         RTR0MEMOBJ                  hMemObjScratch;
+        /** Pointer to the crash-dump scratch bitmap. */
         R0PTRTYPE(uint8_t *)        pbScratch;
 #endif
 
@@ -582,6 +601,13 @@ typedef struct HM
 
         /** Host-physical address for a failing VMXON instruction. */
         RTHCPHYS                    HCPhysVmxEnableError;
+
+        /** Pointer to the shadow VMCS fields array. */
+        R0PTRTYPE(uint32_t *)       paShadowVmcsFields;
+        RTR0PTR                     pvR0Alignment1;
+        /** Number of elements in the shadow VMCS fields array. */
+        uint32_t                    cShadowVmcsFields;
+        uint32_t                    u32Alignemnt0;
     } vmx;
 
     struct
@@ -758,6 +784,13 @@ typedef struct VMXVMCSINFO
     RTR0MEMOBJ                  hMemObjVmcs;
     /** Host-virtual address of the VMCS. */
     R0PTRTYPE(void *)           pvVmcs;
+
+    /** Host-physical address of the shadow VMCS. */
+    RTHCPHYS                    HCPhysShadowVmcs;
+    /** R0 memory object for the shadow VMCS. */
+    RTR0MEMOBJ                  hMemObjShadowVmcs;
+    /** Host-virtual address of the shadow VMCS. */
+    R0PTRTYPE(void *)           pvShadowVmcs;
 
     /** Host-physical address of the virtual APIC page. */
     RTHCPHYS                    HCPhysVirtApic;
