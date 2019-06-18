@@ -1035,24 +1035,24 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         # The tests. Must-succeed tests should be first.
         atTests = [
             ( True,  self.prepareGuestForTesting,           None,               'Preparations',),
-            #( True,  self.testGuestCtrlSession,             'session_basic',    'Session Basics',),
-            #( True,  self.testGuestCtrlExec,                'exec_basic',       'Execution',),
-            #( False, self.testGuestCtrlExecTimeout,         'exec_timeout',     'Execution Timeouts',),
-            #( False, self.testGuestCtrlSessionEnvironment,  'session_env',      'Session Environment',),
-            #( False, self.testGuestCtrlSessionFileRefs,     'session_file_ref', 'Session File References',),
-            ##( False, self.testGuestCtrlSessionDirRefs,      'session_dir_ref',  'Session Directory References',),
-            #( False, self.testGuestCtrlSessionProcRefs,     'session_proc_ref', 'Session Process References',),
-            #( False, self.testGuestCtrlDirCreate,           'dir_create',       'Creating directories',),
-            #( False, self.testGuestCtrlDirCreateTemp,       'dir_create_temp',  'Creating temporary directories',),
-            #( False, self.testGuestCtrlDirRead,             'dir_read',         'Reading directories',),
-            #( False, self.testGuestCtrlCopyTo,              'copy_to',          'Copy to guest',),
-            #( False, self.testGuestCtrlCopyFrom,            'copy_from',        'Copy from guest',),
+            ( True,  self.testGuestCtrlSession,             'session_basic',    'Session Basics',),
+            ( True,  self.testGuestCtrlExec,                'exec_basic',       'Execution',),
+            ( False, self.testGuestCtrlExecTimeout,         'exec_timeout',     'Execution Timeouts',),
+            ( False, self.testGuestCtrlSessionEnvironment,  'session_env',      'Session Environment',),
+            ( False, self.testGuestCtrlSessionFileRefs,     'session_file_ref', 'Session File References',),
+            #( False, self.testGuestCtrlSessionDirRefs,      'session_dir_ref',  'Session Directory References',),
+            ( False, self.testGuestCtrlSessionProcRefs,     'session_proc_ref', 'Session Process References',),
+            ( False, self.testGuestCtrlDirCreate,           'dir_create',       'Creating directories',),
+            ( False, self.testGuestCtrlDirCreateTemp,       'dir_create_temp',  'Creating temporary directories',),
+            ( False, self.testGuestCtrlDirRead,             'dir_read',         'Reading directories',),
+            ( False, self.testGuestCtrlCopyTo,              'copy_to',          'Copy to guest',),
+            ( False, self.testGuestCtrlCopyFrom,            'copy_from',        'Copy from guest',),
             ( False, self.testGuestCtrlFileStat,            'file_stat',        'Querying file information (stat)',),
-            #( False, self.testGuestCtrlFileRead,            'file_read',        'File read',),
-            #( False, self.testGuestCtrlFileWrite,           'file_write',       'File write',),
-            #( False, self.testGuestCtrlFileRemove,          'file_remove',      'Removing files',), # Destroys prepped files.
-            #( False, self.testGuestCtrlSessionReboot,       'session_reboot',   'Session w/ Guest Reboot',), # May zap /tmp.
-            #( False, self.testGuestCtrlUpdateAdditions,     'update_additions', 'Updating Guest Additions',),
+            ( False, self.testGuestCtrlFileRead,            'file_read',        'File read',),
+            ( False, self.testGuestCtrlFileWrite,           'file_write',       'File write',),
+            ( False, self.testGuestCtrlFileRemove,          'file_remove',      'Removing files',), # Destroys prepped files.
+            ( False, self.testGuestCtrlSessionReboot,       'session_reboot',   'Session w/ Guest Reboot',), # May zap /tmp.
+            ( False, self.testGuestCtrlUpdateAdditions,     'update_additions', 'Updating Guest Additions',),
         ];
 
         fRc = True;
