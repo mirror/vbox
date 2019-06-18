@@ -1153,13 +1153,27 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         """
         _ = oSession;
 
+        #
         # Make sure the temporary directory exists.
+        #
         for sDir in [self.getGuestTempDir(oTestVm), ]:
             if oTxsSession.syncMkDirPath(sDir, 0o777) is not True:
                 return reporter.error('Failed to create directory "%s"!' % (sDir,));
 
-        # Generate and upload some random files and dirs to the guest:
-        self.oTestFiles = vboxtestfileset.TestFileSet(oTestVm, self.getGuestTempDir(oTestVm), 'addgst-1');
+        #
+        # Generate and upload some random files and dirs to the guest.
+        # Note! Make sure we don't run into too-long-path issues when using
+        #       the test files on the host if.
+        #
+        cchGst = len(self.getGuestTempDir(oTestVm)) + 1 + len('addgst-1') + 1;
+        cchHst = len(self.oTstDrv.sScratchPath) + 1 + len('cp2/addgst-1') + 1;
+        cchMaxPath = 230;
+        if cchHst > cchGst:
+            cchMaxPath -= cchHst - cchGst;
+            reporter.log('cchMaxPath=%s (cchHst=%s, cchGst=%s)' % (cchMaxPath, cchHst, cchGst,));
+        self.oTestFiles = vboxtestfileset.TestFileSet(oTestVm,
+                                                      self.getGuestTempDir(oTestVm), 'addgst-1',
+                                                      cchMaxPath = cchMaxPath);
         return self.oTestFiles.upload(oTxsSession, self.oTstDrv);
 
 
