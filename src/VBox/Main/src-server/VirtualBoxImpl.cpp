@@ -838,7 +838,8 @@ HRESULT VirtualBox::initMedia(const Guid &uuidRegistry,
 
     AutoWriteLock treeLock(i_getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
 
-    std::map<Guid, DeviceType_T> uIdsForNotify;
+    // the order of notification is critical for GUI, so use std::list<std::pair> instead of map
+    std::list<std::pair<Guid, DeviceType_T> > uIdsForNotify;
 
     HRESULT rc = S_OK;
     settings::MediaList::const_iterator it;
@@ -862,7 +863,7 @@ HRESULT VirtualBox::initMedia(const Guid &uuidRegistry,
         rc = i_registerMedium(pHardDisk, &pHardDisk, treeLock);
         if (SUCCEEDED(rc))
         {
-            uIdsForNotify[pHardDisk->i_getId()] = DeviceType_HardDisk;
+            uIdsForNotify.push_back(std::pair<Guid, DeviceType_T>(pHardDisk->i_getId(), DeviceType_HardDisk));
             // Add children IDs to notification using non-recursive children enumeration.
             std::vector<std::pair<MediaList::const_iterator, ComObjPtr<Medium> > > llEnumStack;
             const MediaList& mediaList = pHardDisk->i_getChildren();
@@ -876,7 +877,7 @@ HRESULT VirtualBox::initMedia(const Guid &uuidRegistry,
                         ++llEnumStack.back().first;
                     continue;
                 }
-                uIdsForNotify[(*llEnumStack.back().first)->i_getId()] = DeviceType_HardDisk;
+                uIdsForNotify.push_back(std::pair<Guid, DeviceType_T>((*llEnumStack.back().first)->i_getId(), DeviceType_HardDisk));
                 const MediaList& childMediaList = (*llEnumStack.back().first)->i_getChildren();
                 if (!childMediaList.empty())
                 {
@@ -913,7 +914,7 @@ HRESULT VirtualBox::initMedia(const Guid &uuidRegistry,
 
         rc = i_registerMedium(pImage, &pImage, treeLock);
         if (SUCCEEDED(rc))
-            uIdsForNotify[pImage->i_getId()] = DeviceType_DVD;
+            uIdsForNotify.push_back(std::pair<Guid, DeviceType_T>(pImage->i_getId(), DeviceType_DVD));
         // Avoid trouble with lock/refcount, before returning or not.
         treeLock.release();
         pImage.setNull();
@@ -940,7 +941,7 @@ HRESULT VirtualBox::initMedia(const Guid &uuidRegistry,
 
         rc = i_registerMedium(pImage, &pImage, treeLock);
         if (SUCCEEDED(rc))
-            uIdsForNotify[pImage->i_getId()] = DeviceType_Floppy;
+            uIdsForNotify.push_back(std::pair<Guid, DeviceType_T>(pImage->i_getId(), DeviceType_Floppy));
         // Avoid trouble with lock/refcount, before returning or not.
         treeLock.release();
         pImage.setNull();
@@ -950,7 +951,7 @@ HRESULT VirtualBox::initMedia(const Guid &uuidRegistry,
 
     if (SUCCEEDED(rc))
     {
-        for (std::map<com::Guid, DeviceType_T>::const_iterator itItem = uIdsForNotify.begin();
+        for (std::list<std::pair<Guid, DeviceType_T> >::const_iterator itItem = uIdsForNotify.begin();
              itItem != uIdsForNotify.end();
              ++itItem)
         {
