@@ -193,7 +193,7 @@
  */
 uint16_t const g_aoffVmcsMap[16][VMX_V_VMCS_MAX_INDEX + 1] =
 {
-    /* VMX_VMCS_ENC_WIDTH_16BIT | VMX_VMCS_ENC_TYPE_CONTROL: */
+    /* VMX_VMCSFIELD_WIDTH_16BIT | VMX_VMCSFIELD_TYPE_CONTROL: */
     {
         /*     0 */ RT_UOFFSETOF(VMXVVMCS, u16Vpid),
         /*     1 */ RT_UOFFSETOF(VMXVVMCS, u16PostIntNotifyVector),
@@ -202,14 +202,14 @@ uint16_t const g_aoffVmcsMap[16][VMX_V_VMCS_MAX_INDEX + 1] =
         /* 11-18 */ UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX,
         /* 19-25 */ UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX
     },
-    /* VMX_VMCS_ENC_WIDTH_16BIT | VMX_VMCS_ENC_TYPE_VMEXIT_INFO: */
+    /* VMX_VMCSFIELD_WIDTH_16BIT | VMX_VMCSFIELD_TYPE_VMEXIT_INFO: */
     {
         /*   0-7 */ UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX,
         /*  8-15 */ UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX,
         /* 16-23 */ UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX,
         /* 24-25 */ UINT16_MAX, UINT16_MAX
     },
-    /* VMX_VMCS_ENC_WIDTH_16BIT | VMX_VMCS_ENC_TYPE_GUEST_STATE: */
+    /* VMX_VMCSFIELD_WIDTH_16BIT | VMX_VMCSFIELD_TYPE_GUEST_STATE: */
     {
         /*     0 */ RT_UOFFSETOF(VMXVVMCS, GuestEs),
         /*     1 */ RT_UOFFSETOF(VMXVVMCS, GuestCs),
@@ -224,7 +224,7 @@ uint16_t const g_aoffVmcsMap[16][VMX_V_VMCS_MAX_INDEX + 1] =
         /* 10-17 */ UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX,
         /* 18-25 */ UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX
     },
-    /* VMX_VMCS_ENC_WIDTH_16BIT | VMX_VMCS_ENC_TYPE_HOST_STATE: */
+    /* VMX_VMCSFIELD_WIDTH_16BIT | VMX_VMCSFIELD_TYPE_HOST_STATE: */
     {
         /*     0 */ RT_UOFFSETOF(VMXVVMCS, HostEs),
         /*     1 */ RT_UOFFSETOF(VMXVVMCS, HostCs),
@@ -237,7 +237,7 @@ uint16_t const g_aoffVmcsMap[16][VMX_V_VMCS_MAX_INDEX + 1] =
         /* 15-22 */ UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX,
         /* 23-25 */ UINT16_MAX, UINT16_MAX, UINT16_MAX
     },
-    /* VMX_VMCS_ENC_WIDTH_64BIT | VMX_VMCS_ENC_TYPE_CONTROL: */
+    /* VMX_VMCSFIELD_WIDTH_64BIT | VMX_VMCSFIELD_TYPE_CONTROL: */
     {
         /*     0 */ RT_UOFFSETOF(VMXVVMCS, u64AddrIoBitmapA),
         /*     1 */ RT_UOFFSETOF(VMXVVMCS, u64AddrIoBitmapB),
@@ -266,7 +266,7 @@ uint16_t const g_aoffVmcsMap[16][VMX_V_VMCS_MAX_INDEX + 1] =
         /*    24 */ RT_UOFFSETOF(VMXVVMCS, u64SpptPtr),
         /*    25 */ RT_UOFFSETOF(VMXVVMCS, u64TscMultiplier)
     },
-    /* VMX_VMCS_ENC_WIDTH_64BIT | VMX_VMCS_ENC_TYPE_VMEXIT_INFO: */
+    /* VMX_VMCSFIELD_WIDTH_64BIT | VMX_VMCSFIELD_TYPE_VMEXIT_INFO: */
     {
         /*     0 */ RT_UOFFSETOF(VMXVVMCS, u64RoGuestPhysAddr),
         /*   1-8 */ UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX,
@@ -274,7 +274,7 @@ uint16_t const g_aoffVmcsMap[16][VMX_V_VMCS_MAX_INDEX + 1] =
         /* 17-24 */ UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX,
         /*    25 */ UINT16_MAX
     },
-    /* VMX_VMCS_ENC_WIDTH_64BIT | VMX_VMCS_ENC_TYPE_GUEST_STATE: */
+    /* VMX_VMCSFIELD_WIDTH_64BIT | VMX_VMCSFIELD_TYPE_GUEST_STATE: */
     {
         /*     0 */ RT_UOFFSETOF(VMXVVMCS, u64VmcsLinkPtr),
         /*     1 */ RT_UOFFSETOF(VMXVVMCS, u64GuestDebugCtlMsr),
@@ -290,7 +290,7 @@ uint16_t const g_aoffVmcsMap[16][VMX_V_VMCS_MAX_INDEX + 1] =
         /* 11-18 */ UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX,
         /* 19-25 */ UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX
     },
-    /* VMX_VMCS_ENC_WIDTH_64BIT | VMX_VMCS_ENC_TYPE_HOST_STATE: */
+    /* VMX_VMCSFIELD_WIDTH_64BIT | VMX_VMCSFIELD_TYPE_HOST_STATE: */
     {
         /*     0 */ RT_UOFFSETOF(VMXVVMCS, u64HostPatMsr),
         /*     1 */ RT_UOFFSETOF(VMXVVMCS, u64HostEferMsr),
@@ -299,7 +299,7 @@ uint16_t const g_aoffVmcsMap[16][VMX_V_VMCS_MAX_INDEX + 1] =
         /* 11-18 */ UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX,
         /* 19-25 */ UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX
     },
-    /* VMX_VMCS_ENC_WIDTH_32BIT | VMX_VMCS_ENC_TYPE_CONTROL: */
+    /* VMX_VMCSFIELD_WIDTH_32BIT | VMX_VMCSFIELD_TYPE_CONTROL: */
     {
         /*     0 */ RT_UOFFSETOF(VMXVVMCS, u32PinCtls),
         /*     1 */ RT_UOFFSETOF(VMXVVMCS, u32ProcCtls),
@@ -321,7 +321,7 @@ uint16_t const g_aoffVmcsMap[16][VMX_V_VMCS_MAX_INDEX + 1] =
         /*    17 */ RT_UOFFSETOF(VMXVVMCS, u32PleWindow),
         /* 18-25 */ UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX
     },
-    /* VMX_VMCS_ENC_WIDTH_32BIT | VMX_VMCS_ENC_TYPE_VMEXIT_INFO: */
+    /* VMX_VMCSFIELD_WIDTH_32BIT | VMX_VMCSFIELD_TYPE_VMEXIT_INFO: */
     {
         /*     0 */ RT_UOFFSETOF(VMXVVMCS, u32RoVmInstrError),
         /*     1 */ RT_UOFFSETOF(VMXVVMCS, u32RoExitReason),
@@ -335,7 +335,7 @@ uint16_t const g_aoffVmcsMap[16][VMX_V_VMCS_MAX_INDEX + 1] =
         /* 16-23 */ UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX,
         /* 24-25 */ UINT16_MAX, UINT16_MAX
     },
-    /* VMX_VMCS_ENC_WIDTH_32BIT | VMX_VMCS_ENC_TYPE_GUEST_STATE: */
+    /* VMX_VMCSFIELD_WIDTH_32BIT | VMX_VMCSFIELD_TYPE_GUEST_STATE: */
     {
         /*     0 */ RT_UOFFSETOF(VMXVVMCS, u32GuestEsLimit),
         /*     1 */ RT_UOFFSETOF(VMXVVMCS, u32GuestCsLimit),
@@ -362,7 +362,7 @@ uint16_t const g_aoffVmcsMap[16][VMX_V_VMCS_MAX_INDEX + 1] =
         /*    22 */ RT_UOFFSETOF(VMXVVMCS, u32PreemptTimer),
         /* 23-25 */ UINT16_MAX, UINT16_MAX, UINT16_MAX
     },
-    /* VMX_VMCS_ENC_WIDTH_32BIT | VMX_VMCS_ENC_TYPE_HOST_STATE: */
+    /* VMX_VMCSFIELD_WIDTH_32BIT | VMX_VMCSFIELD_TYPE_HOST_STATE: */
     {
         /*     0 */ RT_UOFFSETOF(VMXVVMCS, u32HostSysenterCs),
         /*   1-8 */ UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX,
@@ -370,7 +370,7 @@ uint16_t const g_aoffVmcsMap[16][VMX_V_VMCS_MAX_INDEX + 1] =
         /* 17-24 */ UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX,
         /*    25 */ UINT16_MAX
     },
-    /* VMX_VMCS_ENC_WIDTH_NATURAL | VMX_VMCS_ENC_TYPE_CONTROL: */
+    /* VMX_VMCSFIELD_WIDTH_NATURAL | VMX_VMCSFIELD_TYPE_CONTROL: */
     {
         /*     0 */ RT_UOFFSETOF(VMXVVMCS, u64Cr0Mask),
         /*     1 */ RT_UOFFSETOF(VMXVVMCS, u64Cr4Mask),
@@ -384,7 +384,7 @@ uint16_t const g_aoffVmcsMap[16][VMX_V_VMCS_MAX_INDEX + 1] =
         /* 16-23 */ UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX,
         /* 24-25 */ UINT16_MAX, UINT16_MAX
     },
-    /* VMX_VMCS_ENC_WIDTH_NATURAL | VMX_VMCS_ENC_TYPE_VMEXIT_INFO: */
+    /* VMX_VMCSFIELD_WIDTH_NATURAL | VMX_VMCSFIELD_TYPE_VMEXIT_INFO: */
     {
         /*     0 */ RT_UOFFSETOF(VMXVVMCS, u64RoExitQual),
         /*     1 */ RT_UOFFSETOF(VMXVVMCS, u64RoIoRcx),
@@ -396,7 +396,7 @@ uint16_t const g_aoffVmcsMap[16][VMX_V_VMCS_MAX_INDEX + 1] =
         /* 14-21 */ UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX,
         /* 22-25 */ UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX
     },
-    /* VMX_VMCS_ENC_WIDTH_NATURAL | VMX_VMCS_ENC_TYPE_GUEST_STATE: */
+    /* VMX_VMCSFIELD_WIDTH_NATURAL | VMX_VMCSFIELD_TYPE_GUEST_STATE: */
     {
         /*     0 */ RT_UOFFSETOF(VMXVVMCS, u64GuestCr0),
         /*     1 */ RT_UOFFSETOF(VMXVVMCS, u64GuestCr3),
@@ -420,7 +420,7 @@ uint16_t const g_aoffVmcsMap[16][VMX_V_VMCS_MAX_INDEX + 1] =
         /*    19 */ RT_UOFFSETOF(VMXVVMCS, u64GuestSysenterEip),
         /* 20-25 */ UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX
     },
-    /* VMX_VMCS_ENC_WIDTH_NATURAL | VMX_VMCS_ENC_TYPE_HOST_STATE: */
+    /* VMX_VMCSFIELD_WIDTH_NATURAL | VMX_VMCSFIELD_TYPE_HOST_STATE: */
     {
         /*     0 */ RT_UOFFSETOF(VMXVVMCS, u64HostCr0),
         /*     1 */ RT_UOFFSETOF(VMXVVMCS, u64HostCr3),
@@ -450,10 +450,10 @@ DECLINLINE(RTSEL) iemVmxVmcsGetHostSelReg(PCVMXVVMCS pVmcs, uint8_t iSegReg)
 {
     Assert(iSegReg < X86_SREG_COUNT);
     RTSEL HostSel;
-    uint8_t  const  uWidth     = VMX_VMCS_ENC_WIDTH_16BIT;
-    uint8_t  const  uType      = VMX_VMCS_ENC_TYPE_HOST_STATE;
+    uint8_t  const  uWidth     = VMX_VMCSFIELD_WIDTH_16BIT;
+    uint8_t  const  uType      = VMX_VMCSFIELD_TYPE_HOST_STATE;
     uint8_t  const  uWidthType = (uWidth << 2) | uType;
-    uint8_t  const  uIndex     = iSegReg + RT_BF_GET(VMX_VMCS16_HOST_ES_SEL, VMX_BF_VMCS_ENC_INDEX);
+    uint8_t  const  uIndex     = iSegReg + RT_BF_GET(VMX_VMCS16_HOST_ES_SEL, VMX_BF_VMCSFIELD_INDEX);
     Assert(uIndex <= VMX_V_VMCS_MAX_INDEX);
     uint16_t const  offField   = g_aoffVmcsMap[uWidthType][uIndex];
     uint8_t  const *pbVmcs     = (uint8_t *)pVmcs;
@@ -477,10 +477,10 @@ IEM_STATIC void iemVmxVmcsSetGuestSegReg(PCVMXVVMCS pVmcs, uint8_t iSegReg, PCCP
 
     /* Selector. */
     {
-        uint8_t  const  uWidth     = VMX_VMCS_ENC_WIDTH_16BIT;
-        uint8_t  const  uType      = VMX_VMCS_ENC_TYPE_GUEST_STATE;
+        uint8_t  const  uWidth     = VMX_VMCSFIELD_WIDTH_16BIT;
+        uint8_t  const  uType      = VMX_VMCSFIELD_TYPE_GUEST_STATE;
         uint8_t  const  uWidthType = (uWidth << 2) | uType;
-        uint8_t  const  uIndex     = iSegReg + RT_BF_GET(VMX_VMCS16_GUEST_ES_SEL, VMX_BF_VMCS_ENC_INDEX);
+        uint8_t  const  uIndex     = iSegReg + RT_BF_GET(VMX_VMCS16_GUEST_ES_SEL, VMX_BF_VMCSFIELD_INDEX);
         Assert(uIndex <= VMX_V_VMCS_MAX_INDEX);
         uint16_t const  offField   = g_aoffVmcsMap[uWidthType][uIndex];
         uint8_t        *pbVmcs     = (uint8_t *)pVmcs;
@@ -490,10 +490,10 @@ IEM_STATIC void iemVmxVmcsSetGuestSegReg(PCVMXVVMCS pVmcs, uint8_t iSegReg, PCCP
 
     /* Limit. */
     {
-        uint8_t  const  uWidth     = VMX_VMCS_ENC_WIDTH_32BIT;
-        uint8_t  const  uType      = VMX_VMCS_ENC_TYPE_GUEST_STATE;
+        uint8_t  const  uWidth     = VMX_VMCSFIELD_WIDTH_32BIT;
+        uint8_t  const  uType      = VMX_VMCSFIELD_TYPE_GUEST_STATE;
         uint8_t  const  uWidthType = (uWidth << 2) | uType;
-        uint8_t  const  uIndex     = iSegReg + RT_BF_GET(VMX_VMCS32_GUEST_ES_LIMIT, VMX_BF_VMCS_ENC_INDEX);
+        uint8_t  const  uIndex     = iSegReg + RT_BF_GET(VMX_VMCS32_GUEST_ES_LIMIT, VMX_BF_VMCSFIELD_INDEX);
         Assert(uIndex <= VMX_V_VMCS_MAX_INDEX);
         uint16_t const  offField   = g_aoffVmcsMap[uWidthType][uIndex];
         uint8_t        *pbVmcs     = (uint8_t *)pVmcs;
@@ -503,10 +503,10 @@ IEM_STATIC void iemVmxVmcsSetGuestSegReg(PCVMXVVMCS pVmcs, uint8_t iSegReg, PCCP
 
     /* Base. */
     {
-        uint8_t  const  uWidth     = VMX_VMCS_ENC_WIDTH_NATURAL;
-        uint8_t  const  uType      = VMX_VMCS_ENC_TYPE_GUEST_STATE;
+        uint8_t  const  uWidth     = VMX_VMCSFIELD_WIDTH_NATURAL;
+        uint8_t  const  uType      = VMX_VMCSFIELD_TYPE_GUEST_STATE;
         uint8_t  const  uWidthType = (uWidth << 2) | uType;
-        uint8_t  const  uIndex     = iSegReg + RT_BF_GET(VMX_VMCS_GUEST_ES_BASE, VMX_BF_VMCS_ENC_INDEX);
+        uint8_t  const  uIndex     = iSegReg + RT_BF_GET(VMX_VMCS_GUEST_ES_BASE, VMX_BF_VMCSFIELD_INDEX);
         Assert(uIndex <= VMX_V_VMCS_MAX_INDEX);
         uint16_t const  offField   = g_aoffVmcsMap[uWidthType][uIndex];
         uint8_t  const *pbVmcs     = (uint8_t *)pVmcs;
@@ -519,10 +519,10 @@ IEM_STATIC void iemVmxVmcsSetGuestSegReg(PCVMXVVMCS pVmcs, uint8_t iSegReg, PCCP
         uint32_t const fValidAttrMask = X86DESCATTR_TYPE | X86DESCATTR_DT  | X86DESCATTR_DPL | X86DESCATTR_P
                                       | X86DESCATTR_AVL  | X86DESCATTR_L   | X86DESCATTR_D   | X86DESCATTR_G
                                       | X86DESCATTR_UNUSABLE;
-        uint8_t  const  uWidth     = VMX_VMCS_ENC_WIDTH_32BIT;
-        uint8_t  const  uType      = VMX_VMCS_ENC_TYPE_GUEST_STATE;
+        uint8_t  const  uWidth     = VMX_VMCSFIELD_WIDTH_32BIT;
+        uint8_t  const  uType      = VMX_VMCSFIELD_TYPE_GUEST_STATE;
         uint8_t  const  uWidthType = (uWidth << 2) | uType;
-        uint8_t  const  uIndex     = iSegReg + RT_BF_GET(VMX_VMCS32_GUEST_ES_ACCESS_RIGHTS, VMX_BF_VMCS_ENC_INDEX);
+        uint8_t  const  uIndex     = iSegReg + RT_BF_GET(VMX_VMCS32_GUEST_ES_ACCESS_RIGHTS, VMX_BF_VMCSFIELD_INDEX);
         Assert(uIndex <= VMX_V_VMCS_MAX_INDEX);
         uint16_t const  offField   = g_aoffVmcsMap[uWidthType][uIndex];
         uint8_t        *pbVmcs     = (uint8_t *)pVmcs;
@@ -552,10 +552,10 @@ IEM_STATIC int iemVmxVmcsGetGuestSegReg(PCVMXVVMCS pVmcs, uint8_t iSegReg, PCPUM
     /* Selector. */
     uint16_t u16Sel;
     {
-        uint8_t  const  uWidth     = VMX_VMCS_ENC_WIDTH_16BIT;
-        uint8_t  const  uType      = VMX_VMCS_ENC_TYPE_GUEST_STATE;
+        uint8_t  const  uWidth     = VMX_VMCSFIELD_WIDTH_16BIT;
+        uint8_t  const  uType      = VMX_VMCSFIELD_TYPE_GUEST_STATE;
         uint8_t  const  uWidthType = (uWidth << 2) | uType;
-        uint8_t  const  uIndex     = iSegReg + RT_BF_GET(VMX_VMCS16_GUEST_ES_SEL, VMX_BF_VMCS_ENC_INDEX);
+        uint8_t  const  uIndex     = iSegReg + RT_BF_GET(VMX_VMCS16_GUEST_ES_SEL, VMX_BF_VMCSFIELD_INDEX);
         AssertReturn(uIndex <= VMX_V_VMCS_MAX_INDEX, VERR_IEM_IPE_3);
         uint16_t const  offField   = g_aoffVmcsMap[uWidthType][uIndex];
         uint8_t  const *pbVmcs     = (uint8_t *)pVmcs;
@@ -566,10 +566,10 @@ IEM_STATIC int iemVmxVmcsGetGuestSegReg(PCVMXVVMCS pVmcs, uint8_t iSegReg, PCPUM
     /* Limit. */
     uint32_t u32Limit;
     {
-        uint8_t  const  uWidth     = VMX_VMCS_ENC_WIDTH_32BIT;
-        uint8_t  const  uType      = VMX_VMCS_ENC_TYPE_GUEST_STATE;
+        uint8_t  const  uWidth     = VMX_VMCSFIELD_WIDTH_32BIT;
+        uint8_t  const  uType      = VMX_VMCSFIELD_TYPE_GUEST_STATE;
         uint8_t  const  uWidthType = (uWidth << 2) | uType;
-        uint8_t  const  uIndex     = iSegReg + RT_BF_GET(VMX_VMCS32_GUEST_ES_LIMIT, VMX_BF_VMCS_ENC_INDEX);
+        uint8_t  const  uIndex     = iSegReg + RT_BF_GET(VMX_VMCS32_GUEST_ES_LIMIT, VMX_BF_VMCSFIELD_INDEX);
         AssertReturn(uIndex <= VMX_V_VMCS_MAX_INDEX, VERR_IEM_IPE_3);
         uint16_t const  offField   = g_aoffVmcsMap[uWidthType][uIndex];
         uint8_t  const *pbVmcs     = (uint8_t *)pVmcs;
@@ -580,10 +580,10 @@ IEM_STATIC int iemVmxVmcsGetGuestSegReg(PCVMXVVMCS pVmcs, uint8_t iSegReg, PCPUM
     /* Base. */
     uint64_t u64Base;
     {
-        uint8_t  const  uWidth     = VMX_VMCS_ENC_WIDTH_NATURAL;
-        uint8_t  const  uType      = VMX_VMCS_ENC_TYPE_GUEST_STATE;
+        uint8_t  const  uWidth     = VMX_VMCSFIELD_WIDTH_NATURAL;
+        uint8_t  const  uType      = VMX_VMCSFIELD_TYPE_GUEST_STATE;
         uint8_t  const  uWidthType = (uWidth << 2) | uType;
-        uint8_t  const  uIndex     = iSegReg + RT_BF_GET(VMX_VMCS_GUEST_ES_BASE, VMX_BF_VMCS_ENC_INDEX);
+        uint8_t  const  uIndex     = iSegReg + RT_BF_GET(VMX_VMCS_GUEST_ES_BASE, VMX_BF_VMCSFIELD_INDEX);
         AssertReturn(uIndex <= VMX_V_VMCS_MAX_INDEX, VERR_IEM_IPE_3);
         uint16_t const  offField   = g_aoffVmcsMap[uWidthType][uIndex];
         uint8_t  const *pbVmcs     = (uint8_t *)pVmcs;
@@ -595,10 +595,10 @@ IEM_STATIC int iemVmxVmcsGetGuestSegReg(PCVMXVVMCS pVmcs, uint8_t iSegReg, PCPUM
     /* Attributes. */
     uint32_t u32Attr;
     {
-        uint8_t  const  uWidth     = VMX_VMCS_ENC_WIDTH_32BIT;
-        uint8_t  const  uType      = VMX_VMCS_ENC_TYPE_GUEST_STATE;
+        uint8_t  const  uWidth     = VMX_VMCSFIELD_WIDTH_32BIT;
+        uint8_t  const  uType      = VMX_VMCSFIELD_TYPE_GUEST_STATE;
         uint8_t  const  uWidthType = (uWidth << 2) | uType;
-        uint8_t  const  uIndex     = iSegReg + RT_BF_GET(VMX_VMCS32_GUEST_ES_ACCESS_RIGHTS, VMX_BF_VMCS_ENC_INDEX);
+        uint8_t  const  uIndex     = iSegReg + RT_BF_GET(VMX_VMCS32_GUEST_ES_ACCESS_RIGHTS, VMX_BF_VMCSFIELD_INDEX);
         AssertReturn(uIndex <= VMX_V_VMCS_MAX_INDEX, VERR_IEM_IPE_3);
         uint16_t const  offField   = g_aoffVmcsMap[uWidthType][uIndex];
         uint8_t  const *pbVmcs     = (uint8_t *)pVmcs;
@@ -627,10 +627,10 @@ IEM_STATIC int iemVmxVmcsGetGuestSegReg(PCVMXVVMCS pVmcs, uint8_t iSegReg, PCPUM
 IEM_STATIC uint64_t iemVmxVmcsGetCr3TargetValue(PCVMXVVMCS pVmcs, uint8_t idxCr3Target)
 {
     Assert(idxCr3Target < VMX_V_CR3_TARGET_COUNT);
-    uint8_t  const  uWidth         = VMX_VMCS_ENC_WIDTH_NATURAL;
-    uint8_t  const  uType          = VMX_VMCS_ENC_TYPE_CONTROL;
+    uint8_t  const  uWidth         = VMX_VMCSFIELD_WIDTH_NATURAL;
+    uint8_t  const  uType          = VMX_VMCSFIELD_TYPE_CONTROL;
     uint8_t  const  uWidthType     = (uWidth << 2) | uType;
-    uint8_t  const  uIndex         = idxCr3Target + RT_BF_GET(VMX_VMCS_CTRL_CR3_TARGET_VAL0, VMX_BF_VMCS_ENC_INDEX);
+    uint8_t  const  uIndex         = idxCr3Target + RT_BF_GET(VMX_VMCS_CTRL_CR3_TARGET_VAL0, VMX_BF_VMCSFIELD_INDEX);
     Assert(uIndex <= VMX_V_VMCS_MAX_INDEX);
     uint16_t const  offField       = g_aoffVmcsMap[uWidthType][uIndex];
     uint8_t  const *pbVmcs         = (uint8_t *)pVmcs;
@@ -7596,10 +7596,10 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmreadCommon(PVMCPU pVCpu, uint8_t cbInstr, uint64
 
     VMXVMCSFIELD VmcsField;
     VmcsField.u = u64VmcsField;
-    uint8_t  const uWidth     = RT_BF_GET(VmcsField.u, VMX_BF_VMCS_ENC_WIDTH);
-    uint8_t  const uType      = RT_BF_GET(VmcsField.u, VMX_BF_VMCS_ENC_TYPE);
+    uint8_t  const uWidth     = RT_BF_GET(VmcsField.u, VMX_BF_VMCSFIELD_WIDTH);
+    uint8_t  const uType      = RT_BF_GET(VmcsField.u, VMX_BF_VMCSFIELD_TYPE);
     uint8_t  const uWidthType = (uWidth << 2) | uType;
-    uint8_t  const uIndex     = RT_BF_GET(VmcsField.u, VMX_BF_VMCS_ENC_INDEX);
+    uint8_t  const uIndex     = RT_BF_GET(VmcsField.u, VMX_BF_VMCSFIELD_INDEX);
     AssertReturn(uIndex <= VMX_V_VMCS_MAX_INDEX, VERR_IEM_IPE_2);
     uint16_t const offField   = g_aoffVmcsMap[uWidthType][uIndex];
     Assert(offField < VMX_V_VMCS_SIZE);
@@ -7618,10 +7618,10 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmreadCommon(PVMCPU pVCpu, uint8_t cbInstr, uint64
     uint8_t const uEffWidth = HMVmxGetVmcsFieldWidthEff(VmcsField.u);
     switch (uEffWidth)
     {
-        case VMX_VMCS_ENC_WIDTH_64BIT:
-        case VMX_VMCS_ENC_WIDTH_NATURAL: *pu64Dst = *(uint64_t *)pbField; break;
-        case VMX_VMCS_ENC_WIDTH_32BIT:   *pu64Dst = *(uint32_t *)pbField; break;
-        case VMX_VMCS_ENC_WIDTH_16BIT:   *pu64Dst = *(uint16_t *)pbField; break;
+        case VMX_VMCSFIELD_WIDTH_64BIT:
+        case VMX_VMCSFIELD_WIDTH_NATURAL: *pu64Dst = *(uint64_t *)pbField; break;
+        case VMX_VMCSFIELD_WIDTH_32BIT:   *pu64Dst = *(uint32_t *)pbField; break;
+        case VMX_VMCSFIELD_WIDTH_16BIT:   *pu64Dst = *(uint16_t *)pbField; break;
     }
     return VINF_SUCCESS;
 }
@@ -7851,10 +7851,10 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmwrite(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
 
     VMXVMCSFIELD VmcsField;
     VmcsField.u = u64VmcsField;
-    uint8_t  const uWidth     = RT_BF_GET(VmcsField.u, VMX_BF_VMCS_ENC_WIDTH);
-    uint8_t  const uType      = RT_BF_GET(VmcsField.u, VMX_BF_VMCS_ENC_TYPE);
+    uint8_t  const uWidth     = RT_BF_GET(VmcsField.u, VMX_BF_VMCSFIELD_WIDTH);
+    uint8_t  const uType      = RT_BF_GET(VmcsField.u, VMX_BF_VMCSFIELD_TYPE);
     uint8_t  const uWidthType = (uWidth << 2) | uType;
-    uint8_t  const uIndex     = RT_BF_GET(VmcsField.u, VMX_BF_VMCS_ENC_INDEX);
+    uint8_t  const uIndex     = RT_BF_GET(VmcsField.u, VMX_BF_VMCSFIELD_INDEX);
     AssertReturn(uIndex <= VMX_V_VMCS_MAX_INDEX, VERR_IEM_IPE_2);
     uint16_t const offField   = g_aoffVmcsMap[uWidthType][uIndex];
     Assert(offField < VMX_V_VMCS_SIZE);
@@ -7869,10 +7869,10 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmwrite(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
     uint8_t const uEffWidth = HMVmxGetVmcsFieldWidthEff(VmcsField.u);
     switch (uEffWidth)
     {
-        case VMX_VMCS_ENC_WIDTH_64BIT:
-        case VMX_VMCS_ENC_WIDTH_NATURAL: *(uint64_t *)pbField = u64Val; break;
-        case VMX_VMCS_ENC_WIDTH_32BIT:   *(uint32_t *)pbField = u64Val; break;
-        case VMX_VMCS_ENC_WIDTH_16BIT:   *(uint16_t *)pbField = u64Val; break;
+        case VMX_VMCSFIELD_WIDTH_64BIT:
+        case VMX_VMCSFIELD_WIDTH_NATURAL: *(uint64_t *)pbField = u64Val; break;
+        case VMX_VMCSFIELD_WIDTH_32BIT:   *(uint32_t *)pbField = u64Val; break;
+        case VMX_VMCSFIELD_WIDTH_16BIT:   *(uint16_t *)pbField = u64Val; break;
     }
 
     iemVmxVmSucceed(pVCpu);
