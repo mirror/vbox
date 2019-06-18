@@ -636,7 +636,7 @@ class Session(TdTaskBase):
 
         rc = self.waitForTask(self.cMsTimeout + 5000);
         if rc is False:
-            reporter.maybeErrXcpt(self.fErr, 'asyncToSync: waitForTask failed...');
+            reporter.maybeErr(self.fErr, 'asyncToSync: waitForTask failed...');
             self.cancelTask();
             #reporter.log2('asyncToSync(%s): returns False (#2)' % (fnAsync, rc));
             return False;
