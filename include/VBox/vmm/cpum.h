@@ -1481,6 +1481,7 @@ VMM_INT_DECL(bool)      CPUMIsSvmIoInterceptSet(void *pvIoBitmap, uint16_t u16Po
 VMM_INT_DECL(int)       CPUMGetSvmMsrpmOffsetAndBit(uint32_t idMsr, uint16_t *pbOffMsrpm, uint8_t *puMsrpmBit);
 
 /* VMX helpers. */
+VMM_INT_DECL(bool)      CPUMIsGuestVmxVmcsFieldValid(PVM pVM, uint64_t u64VmcsField);
 VMM_INT_DECL(bool)      CPUMIsGuestVmxIoInterceptSet(PCVMCPU pVCpu, uint16_t u16Port, uint8_t cbAccess);
 VMM_INT_DECL(bool)      CPUMIsGuestVmxVmreadVmwriteInterceptSet(PCVMCPU pVCpu, uint32_t uExitReason, uint64_t u64FieldEnc);
 VMM_INT_DECL(uint32_t)  CPUMGetVmxMsrPermission(void const *pvMsrBitmap, uint32_t idMsr);

@@ -3276,6 +3276,277 @@ VMM_INT_DECL(bool) CPUMGetVmxIoBitmapPermission(void const *pvIoBitmapA, void co
 
 
 /**
+ * Returns whether the given VMCS field is valid and supported for the guest.
+ *
+ * @param   pVM             The cross context VM structure.
+ * @param   u64VmcsField    The VMCS field.
+ *
+ * @remarks This takes into account the CPU features exposed to the guest.
+ */
+VMM_INT_DECL(bool) CPUMIsGuestVmxVmcsFieldValid(PVM pVM, uint64_t u64VmcsField)
+{
+#ifndef IN_RC
+    uint32_t const uFieldEncHi = RT_HI_U32(u64VmcsField);
+    uint32_t const uFieldEncLo = RT_LO_U32(u64VmcsField);
+    if (!uFieldEncHi)
+    { /* likely */ }
+    else
+        return false;
+
+    PCCPUMFEATURES pFeat = &pVM->cpum.s.GuestFeatures;
+    switch (uFieldEncLo)
+    {
+        /*
+         * 16-bit fields.
+         */
+        /* Control fields. */
+        case VMX_VMCS16_VPID:                             return pFeat->fVmxVpid;
+        case VMX_VMCS16_POSTED_INT_NOTIFY_VECTOR:         return pFeat->fVmxPostedInt;
+        case VMX_VMCS16_EPTP_INDEX:                       return pFeat->fVmxEptXcptVe;
+
+        /* Guest-state fields. */
+        case VMX_VMCS16_GUEST_ES_SEL:
+        case VMX_VMCS16_GUEST_CS_SEL:
+        case VMX_VMCS16_GUEST_SS_SEL:
+        case VMX_VMCS16_GUEST_DS_SEL:
+        case VMX_VMCS16_GUEST_FS_SEL:
+        case VMX_VMCS16_GUEST_GS_SEL:
+        case VMX_VMCS16_GUEST_LDTR_SEL:
+        case VMX_VMCS16_GUEST_TR_SEL:                     return true;
+        case VMX_VMCS16_GUEST_INTR_STATUS:                return pFeat->fVmxVirtIntDelivery;
+        case VMX_VMCS16_GUEST_PML_INDEX:                  return pFeat->fVmxPml;
+
+        /* Host-state fields. */
+        case VMX_VMCS16_HOST_ES_SEL:
+        case VMX_VMCS16_HOST_CS_SEL:
+        case VMX_VMCS16_HOST_SS_SEL:
+        case VMX_VMCS16_HOST_DS_SEL:
+        case VMX_VMCS16_HOST_FS_SEL:
+        case VMX_VMCS16_HOST_GS_SEL:
+        case VMX_VMCS16_HOST_TR_SEL:                      return true;
+
+        /*
+         * 64-bit fields.
+         */
+        /* Control fields. */
+        case VMX_VMCS64_CTRL_IO_BITMAP_A_FULL:
+        case VMX_VMCS64_CTRL_IO_BITMAP_A_HIGH:
+        case VMX_VMCS64_CTRL_IO_BITMAP_B_FULL:
+        case VMX_VMCS64_CTRL_IO_BITMAP_B_HIGH:            return pFeat->fVmxUseIoBitmaps;
+        case VMX_VMCS64_CTRL_MSR_BITMAP_FULL:
+        case VMX_VMCS64_CTRL_MSR_BITMAP_HIGH:             return pFeat->fVmxUseMsrBitmaps;
+        case VMX_VMCS64_CTRL_EXIT_MSR_STORE_FULL:
+        case VMX_VMCS64_CTRL_EXIT_MSR_STORE_HIGH:
+        case VMX_VMCS64_CTRL_EXIT_MSR_LOAD_FULL:
+        case VMX_VMCS64_CTRL_EXIT_MSR_LOAD_HIGH:
+        case VMX_VMCS64_CTRL_ENTRY_MSR_LOAD_FULL:
+        case VMX_VMCS64_CTRL_ENTRY_MSR_LOAD_HIGH:
+        case VMX_VMCS64_CTRL_EXEC_VMCS_PTR_FULL:
+        case VMX_VMCS64_CTRL_EXEC_VMCS_PTR_HIGH:          return true;
+        case VMX_VMCS64_CTRL_EXEC_PML_ADDR_FULL:
+        case VMX_VMCS64_CTRL_EXEC_PML_ADDR_HIGH:          return pFeat->fVmxPml;
+        case VMX_VMCS64_CTRL_TSC_OFFSET_FULL:
+        case VMX_VMCS64_CTRL_TSC_OFFSET_HIGH:             return true;
+        case VMX_VMCS64_CTRL_VIRT_APIC_PAGEADDR_FULL:
+        case VMX_VMCS64_CTRL_VIRT_APIC_PAGEADDR_HIGH:     return pFeat->fVmxUseTprShadow;
+        case VMX_VMCS64_CTRL_APIC_ACCESSADDR_FULL:
+        case VMX_VMCS64_CTRL_APIC_ACCESSADDR_HIGH:        return pFeat->fVmxVirtApicAccess;
+        case VMX_VMCS64_CTRL_POSTED_INTR_DESC_FULL:
+        case VMX_VMCS64_CTRL_POSTED_INTR_DESC_HIGH:       return pFeat->fVmxPostedInt;
+        case VMX_VMCS64_CTRL_VMFUNC_CTRLS_FULL:
+        case VMX_VMCS64_CTRL_VMFUNC_CTRLS_HIGH:           return pFeat->fVmxVmFunc;
+        case VMX_VMCS64_CTRL_EPTP_FULL:
+        case VMX_VMCS64_CTRL_EPTP_HIGH:                   return pFeat->fVmxEpt;
+        case VMX_VMCS64_CTRL_EOI_BITMAP_0_FULL:
+        case VMX_VMCS64_CTRL_EOI_BITMAP_0_HIGH:
+        case VMX_VMCS64_CTRL_EOI_BITMAP_1_FULL:
+        case VMX_VMCS64_CTRL_EOI_BITMAP_1_HIGH:
+        case VMX_VMCS64_CTRL_EOI_BITMAP_2_FULL:
+        case VMX_VMCS64_CTRL_EOI_BITMAP_2_HIGH:
+        case VMX_VMCS64_CTRL_EOI_BITMAP_3_FULL:
+        case VMX_VMCS64_CTRL_EOI_BITMAP_3_HIGH:           return pFeat->fVmxVirtIntDelivery;
+        case VMX_VMCS64_CTRL_EPTP_LIST_FULL:
+        case VMX_VMCS64_CTRL_EPTP_LIST_HIGH:
+        {
+            PCVMCPU pVCpu = &pVM->aCpus[0];
+            uint64_t const uVmFuncMsr = pVCpu->cpum.s.Guest.hwvirt.vmx.Msrs.u64VmFunc;
+            return RT_BOOL(RT_BF_GET(uVmFuncMsr, VMX_BF_VMFUNC_EPTP_SWITCHING));
+        }
+        case VMX_VMCS64_CTRL_VMREAD_BITMAP_FULL:
+        case VMX_VMCS64_CTRL_VMREAD_BITMAP_HIGH:
+        case VMX_VMCS64_CTRL_VMWRITE_BITMAP_FULL:
+        case VMX_VMCS64_CTRL_VMWRITE_BITMAP_HIGH:         return pFeat->fVmxVmcsShadowing;
+        case VMX_VMCS64_CTRL_VIRTXCPT_INFO_ADDR_FULL:
+        case VMX_VMCS64_CTRL_VIRTXCPT_INFO_ADDR_HIGH:     return pFeat->fVmxEptXcptVe;
+        case VMX_VMCS64_CTRL_XSS_EXITING_BITMAP_FULL:
+        case VMX_VMCS64_CTRL_XSS_EXITING_BITMAP_HIGH:     return pFeat->fVmxXsavesXrstors;
+        case VMX_VMCS64_CTRL_ENCLS_EXITING_BITMAP_FULL:
+        case VMX_VMCS64_CTRL_ENCLS_EXITING_BITMAP_HIGH:   return false;
+        case VMX_VMCS64_CTRL_TSC_MULTIPLIER_FULL:
+        case VMX_VMCS64_CTRL_TSC_MULTIPLIER_HIGH:         return pFeat->fVmxUseTscScaling;
+
+        /* Read-only data fields. */
+        case VMX_VMCS64_RO_GUEST_PHYS_ADDR_FULL:
+        case VMX_VMCS64_RO_GUEST_PHYS_ADDR_HIGH:          return pFeat->fVmxEpt;
+
+        /* Guest-state fields. */
+        case VMX_VMCS64_GUEST_VMCS_LINK_PTR_FULL:
+        case VMX_VMCS64_GUEST_VMCS_LINK_PTR_HIGH:
+        case VMX_VMCS64_GUEST_DEBUGCTL_FULL:
+        case VMX_VMCS64_GUEST_DEBUGCTL_HIGH:              return true;
+        case VMX_VMCS64_GUEST_PAT_FULL:
+        case VMX_VMCS64_GUEST_PAT_HIGH:                   return pFeat->fVmxEntryLoadPatMsr || pFeat->fVmxExitSavePatMsr;
+        case VMX_VMCS64_GUEST_EFER_FULL:
+        case VMX_VMCS64_GUEST_EFER_HIGH:                  return pFeat->fVmxEntryLoadEferMsr || pFeat->fVmxExitSaveEferMsr;
+        case VMX_VMCS64_GUEST_PERF_GLOBAL_CTRL_FULL:
+        case VMX_VMCS64_GUEST_PERF_GLOBAL_CTRL_HIGH:      return false;
+        case VMX_VMCS64_GUEST_PDPTE0_FULL:
+        case VMX_VMCS64_GUEST_PDPTE0_HIGH:
+        case VMX_VMCS64_GUEST_PDPTE1_FULL:
+        case VMX_VMCS64_GUEST_PDPTE1_HIGH:
+        case VMX_VMCS64_GUEST_PDPTE2_FULL:
+        case VMX_VMCS64_GUEST_PDPTE2_HIGH:
+        case VMX_VMCS64_GUEST_PDPTE3_FULL:
+        case VMX_VMCS64_GUEST_PDPTE3_HIGH:                return pFeat->fVmxEpt;
+        case VMX_VMCS64_GUEST_BNDCFGS_FULL:
+        case VMX_VMCS64_GUEST_BNDCFGS_HIGH:               return false;
+
+        /* Host-state fields. */
+        case VMX_VMCS64_HOST_PAT_FULL:
+        case VMX_VMCS64_HOST_PAT_HIGH:                    return pFeat->fVmxExitLoadPatMsr;
+        case VMX_VMCS64_HOST_EFER_FULL:
+        case VMX_VMCS64_HOST_EFER_HIGH:                   return pFeat->fVmxExitLoadEferMsr;
+        case VMX_VMCS64_HOST_PERF_GLOBAL_CTRL_FULL:
+        case VMX_VMCS64_HOST_PERF_GLOBAL_CTRL_HIGH:       return false;
+
+        /*
+         * 32-bit fields.
+         */
+        /* Control fields. */
+        case VMX_VMCS32_CTRL_PIN_EXEC:
+        case VMX_VMCS32_CTRL_PROC_EXEC:
+        case VMX_VMCS32_CTRL_EXCEPTION_BITMAP:
+        case VMX_VMCS32_CTRL_PAGEFAULT_ERROR_MASK:
+        case VMX_VMCS32_CTRL_PAGEFAULT_ERROR_MATCH:
+        case VMX_VMCS32_CTRL_CR3_TARGET_COUNT:
+        case VMX_VMCS32_CTRL_EXIT:
+        case VMX_VMCS32_CTRL_EXIT_MSR_STORE_COUNT:
+        case VMX_VMCS32_CTRL_EXIT_MSR_LOAD_COUNT:
+        case VMX_VMCS32_CTRL_ENTRY:
+        case VMX_VMCS32_CTRL_ENTRY_MSR_LOAD_COUNT:
+        case VMX_VMCS32_CTRL_ENTRY_INTERRUPTION_INFO:
+        case VMX_VMCS32_CTRL_ENTRY_EXCEPTION_ERRCODE:
+        case VMX_VMCS32_CTRL_ENTRY_INSTR_LENGTH:          return true;
+        case VMX_VMCS32_CTRL_TPR_THRESHOLD:               return pFeat->fVmxUseTprShadow;
+        case VMX_VMCS32_CTRL_PROC_EXEC2:                  return pFeat->fVmxSecondaryExecCtls;
+        case VMX_VMCS32_CTRL_PLE_GAP:
+        case VMX_VMCS32_CTRL_PLE_WINDOW:                  return pFeat->fVmxPauseLoopExit;
+
+        /* Read-only data fields. */
+        case VMX_VMCS32_RO_VM_INSTR_ERROR:
+        case VMX_VMCS32_RO_EXIT_REASON:
+        case VMX_VMCS32_RO_EXIT_INTERRUPTION_INFO:
+        case VMX_VMCS32_RO_EXIT_INTERRUPTION_ERROR_CODE:
+        case VMX_VMCS32_RO_IDT_VECTORING_INFO:
+        case VMX_VMCS32_RO_IDT_VECTORING_ERROR_CODE:
+        case VMX_VMCS32_RO_EXIT_INSTR_LENGTH:
+        case VMX_VMCS32_RO_EXIT_INSTR_INFO:               return true;
+
+        /* Guest-state fields. */
+        case VMX_VMCS32_GUEST_ES_LIMIT:
+        case VMX_VMCS32_GUEST_CS_LIMIT:
+        case VMX_VMCS32_GUEST_SS_LIMIT:
+        case VMX_VMCS32_GUEST_DS_LIMIT:
+        case VMX_VMCS32_GUEST_FS_LIMIT:
+        case VMX_VMCS32_GUEST_GS_LIMIT:
+        case VMX_VMCS32_GUEST_LDTR_LIMIT:
+        case VMX_VMCS32_GUEST_TR_LIMIT:
+        case VMX_VMCS32_GUEST_GDTR_LIMIT:
+        case VMX_VMCS32_GUEST_IDTR_LIMIT:
+        case VMX_VMCS32_GUEST_ES_ACCESS_RIGHTS:
+        case VMX_VMCS32_GUEST_CS_ACCESS_RIGHTS:
+        case VMX_VMCS32_GUEST_SS_ACCESS_RIGHTS:
+        case VMX_VMCS32_GUEST_DS_ACCESS_RIGHTS:
+        case VMX_VMCS32_GUEST_FS_ACCESS_RIGHTS:
+        case VMX_VMCS32_GUEST_GS_ACCESS_RIGHTS:
+        case VMX_VMCS32_GUEST_LDTR_ACCESS_RIGHTS:
+        case VMX_VMCS32_GUEST_TR_ACCESS_RIGHTS:
+        case VMX_VMCS32_GUEST_INT_STATE:
+        case VMX_VMCS32_GUEST_ACTIVITY_STATE:
+        case VMX_VMCS32_GUEST_SMBASE:
+        case VMX_VMCS32_GUEST_SYSENTER_CS:                return true;
+        case VMX_VMCS32_PREEMPT_TIMER_VALUE:              return pFeat->fVmxPreemptTimer;
+
+        /* Host-state fields. */
+        case VMX_VMCS32_HOST_SYSENTER_CS:                 return true;
+
+        /*
+         * Natural-width fields.
+         */
+        /* Control fields. */
+        case VMX_VMCS_CTRL_CR0_MASK:
+        case VMX_VMCS_CTRL_CR4_MASK:
+        case VMX_VMCS_CTRL_CR0_READ_SHADOW:
+        case VMX_VMCS_CTRL_CR4_READ_SHADOW:
+        case VMX_VMCS_CTRL_CR3_TARGET_VAL0:
+        case VMX_VMCS_CTRL_CR3_TARGET_VAL1:
+        case VMX_VMCS_CTRL_CR3_TARGET_VAL2:
+        case VMX_VMCS_CTRL_CR3_TARGET_VAL3:               return true;
+
+        /* Read-only data fields. */
+        case VMX_VMCS_RO_EXIT_QUALIFICATION:
+        case VMX_VMCS_RO_IO_RCX:
+        case VMX_VMCS_RO_IO_RSI:
+        case VMX_VMCS_RO_IO_RDI:
+        case VMX_VMCS_RO_IO_RIP:
+        case VMX_VMCS_RO_GUEST_LINEAR_ADDR:               return true;
+
+        /* Guest-state fields. */
+        case VMX_VMCS_GUEST_CR0:
+        case VMX_VMCS_GUEST_CR3:
+        case VMX_VMCS_GUEST_CR4:
+        case VMX_VMCS_GUEST_ES_BASE:
+        case VMX_VMCS_GUEST_CS_BASE:
+        case VMX_VMCS_GUEST_SS_BASE:
+        case VMX_VMCS_GUEST_DS_BASE:
+        case VMX_VMCS_GUEST_FS_BASE:
+        case VMX_VMCS_GUEST_GS_BASE:
+        case VMX_VMCS_GUEST_LDTR_BASE:
+        case VMX_VMCS_GUEST_TR_BASE:
+        case VMX_VMCS_GUEST_GDTR_BASE:
+        case VMX_VMCS_GUEST_IDTR_BASE:
+        case VMX_VMCS_GUEST_DR7:
+        case VMX_VMCS_GUEST_RSP:
+        case VMX_VMCS_GUEST_RIP:
+        case VMX_VMCS_GUEST_RFLAGS:
+        case VMX_VMCS_GUEST_PENDING_DEBUG_XCPTS:
+        case VMX_VMCS_GUEST_SYSENTER_ESP:
+        case VMX_VMCS_GUEST_SYSENTER_EIP:                 return true;
+
+        /* Host-state fields. */
+        case VMX_VMCS_HOST_CR0:
+        case VMX_VMCS_HOST_CR3:
+        case VMX_VMCS_HOST_CR4:
+        case VMX_VMCS_HOST_FS_BASE:
+        case VMX_VMCS_HOST_GS_BASE:
+        case VMX_VMCS_HOST_TR_BASE:
+        case VMX_VMCS_HOST_GDTR_BASE:
+        case VMX_VMCS_HOST_IDTR_BASE:
+        case VMX_VMCS_HOST_SYSENTER_ESP:
+        case VMX_VMCS_HOST_SYSENTER_EIP:
+        case VMX_VMCS_HOST_RSP:
+        case VMX_VMCS_HOST_RIP:                           return true;
+    }
+
+    return false;
+#else
+    RT_NOREF2(pVM, u64VmcsField);
+    return false;
+#endif
+}
+
+
+/**
  * Checks whether the given I/O access should cause a nested-guest VM-exit.
  *
  * @returns @c true if set, @c false otherwise.
