@@ -88,6 +88,9 @@ private:
 
 UIMediumEnumerator::UIMediumEnumerator()
     : m_fMediumEnumerationInProgress(false)
+#ifdef VBOX_GUI_WITH_NEW_MEDIA_EVENTS
+    , m_fMediumEnumerationRequested(false)
+#endif
 {
     /* Allow UIMedium to be used in inter-thread signals: */
     qRegisterMetaType<UIMedium>();
@@ -194,6 +197,9 @@ void UIMediumEnumerator::startMediumEnumeration(const CMediumVector &comMedia /*
      * wizard instead and enumerate only comMedia in 'else' case. */
     if (comMedia.isEmpty())
     {
+#ifdef VBOX_GUI_WITH_NEW_MEDIA_EVENTS
+        m_fMediumEnumerationRequested = true;
+#endif
         addMediaToMap(vboxGlobal().virtualBox().GetHardDisks(), media);
         addMediaToMap(vboxGlobal().host().GetDVDDrives(), media);
         addMediaToMap(vboxGlobal().virtualBox().GetDVDImages(), media);
@@ -202,6 +208,9 @@ void UIMediumEnumerator::startMediumEnumeration(const CMediumVector &comMedia /*
     }
     else
     {
+#ifdef VBOX_GUI_WITH_NEW_MEDIA_EVENTS
+        m_fMediumEnumerationRequested = false;
+#endif
         addMediaToMap(vboxGlobal().host().GetDVDDrives(), media);
         addMediaToMap(vboxGlobal().virtualBox().GetDVDImages(), media);
         addMediaToMap(comMedia, media);

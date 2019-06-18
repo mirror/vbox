@@ -166,8 +166,12 @@ void UIVMInformationDialog::prepare()
     /* Load settings: */
     loadSettings();
 
-    /* This is needed at least for some vm to show correct storage info. For the manager UI enumeration has been done already: */
+    /* This is needed at least for some VM to show correct storage info. */
+#ifndef VBOX_GUI_WITH_NEW_MEDIA_EVENTS
     if (vboxGlobal().uiType() == VBoxGlobal::UIType_RuntimeUI)
+#else
+    if (!vboxGlobal().isFullMediumEnumerationRequested())
+#endif
         vboxGlobal().startMediumEnumeration();
 }
 

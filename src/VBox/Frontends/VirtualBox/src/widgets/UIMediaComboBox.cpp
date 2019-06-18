@@ -57,7 +57,12 @@ void UIMediaComboBox::refresh()
 
 void UIMediaComboBox::repopulate()
 {
+    /* Start medium-enumeration (if necessary): */
+#ifndef VBOX_GUI_WITH_NEW_MEDIA_EVENTS
     if (!vboxGlobal().isMediumEnumerationInProgress())
+#else
+    if (!vboxGlobal().isFullMediumEnumerationRequested())
+#endif
         vboxGlobal().startMediumEnumeration();
     else
         refresh();

@@ -2573,6 +2573,15 @@ bool VBoxGlobal::isMediumEnumerationInProgress() const
            && m_pMediumEnumerator->isMediumEnumerationInProgress();
 }
 
+#ifdef VBOX_GUI_WITH_NEW_MEDIA_EVENTS
+bool VBoxGlobal::isFullMediumEnumerationRequested() const
+{
+    /* Redirect request to medium-enumerator: */
+    return    m_pMediumEnumerator
+           && m_pMediumEnumerator->isFullMediumEnumerationRequested();
+}
+#endif
+
 UIMedium VBoxGlobal::medium(const QUuid &uMediumID) const
 {
     if (m_meCleanupProtectionToken.tryLockForRead())

@@ -79,7 +79,12 @@ UIMediumSelector::UIMediumSelector(UIMediumDeviceType enmMediumType, const QStri
     , m_strMachineName(machineName)
     , m_strMachineGuestOSTypeId(strMachineGuestOSTypeId)
 {
+    /* Start medium-enumeration (if necessary): */
+#ifndef VBOX_GUI_WITH_NEW_MEDIA_EVENTS
     if (vboxGlobal().uiType() == VBoxGlobal::UIType_RuntimeUI)
+#else
+    if (!vboxGlobal().isFullMediumEnumerationRequested())
+#endif
         vboxGlobal().startMediumEnumeration();
     configure();
     finalize();

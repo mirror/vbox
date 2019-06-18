@@ -483,6 +483,10 @@ public:
         void refreshMedia();
         /** Returns whether medium-enumeration is in progress. */
         bool isMediumEnumerationInProgress() const;
+#ifdef VBOX_GUI_WITH_NEW_MEDIA_EVENTS
+        /** Returns whether full medium-enumeration is requested. */
+        bool isFullMediumEnumerationRequested() const;
+#endif
         /** Returns enumerated medium with certain @a uMediumID. */
         UIMedium medium(const QUuid &uMediumID) const;
         /** Returns enumerated medium IDs. */
