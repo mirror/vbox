@@ -60,7 +60,6 @@ public:
 protected:
 
     virtual void retranslateUi() /* override */;
-    bool eventFilter(QObject *pWatched, QEvent *pEvent)/* override */;
 
 private slots:
 
@@ -81,6 +80,7 @@ private slots:
     void sltShowHideSidePanel();
     void sltCopyLayout();
     void sltSaveLayout();
+    void sltStatusBarMessage(const QString &strMessage);
 
 private:
 
