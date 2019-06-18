@@ -132,6 +132,8 @@ class tdTestGuestCtrlBase(object):
         Sets the test environment required for this test.
         """
         self.oTest = tdCtxTest(oSession, oTxsSession, oTestVm);
+        if self.oCreds is None:
+            self.oCreds = tdCtxCreds();
         self.oCreds.applyDefaultsIfNotSet(oTestVm);
         return self.oTest;
 
@@ -739,7 +741,7 @@ class tdStepStat(tdSessionStepBase):
     """
     Stats a file system object.
     """
-    def __init__(self, sPath, hrcExpected = 0, fFound = True, fFollowLinks = True, enmType = None):
+    def __init__(self, sPath, hrcExpected = 0, fFound = True, fFollowLinks = True, enmType = None, oTestFsObj = None):
         self.sPath        = sPath;
         self.hrcExpected  = hrcExpected;
         self.fFound       = fFound;
@@ -747,6 +749,7 @@ class tdStepStat(tdSessionStepBase):
         self.enmType      = enmType if enmType is not None else vboxcon.FsObjType_File;
         self.cbExactSize  = None;
         self.cbMinSize    = None;
+        self.oTestFsObj   = oTestFsObj  # type: testfileset.TestFsObj
 
     def execute(self, oTstDrv, oGstCtrlSession, sMsgPrefix):
         """
@@ -814,13 +817,23 @@ class tdStepStat(tdSessionStepBase):
 
 class tdStepStatDir(tdStepStat):
     """ Checks for an existing directory. """
-    def __init__(self, sDirPath):
-        tdStepStat.__init__(self, sPath = sDirPath, enmType = vboxcon.FsObjType_Directory);
+    def __init__(self, sDirPath, oTestDir = None):
+        tdStepStat.__init__(self, sPath = sDirPath, enmType = vboxcon.FsObjType_Directory, oTestFsObj = oTestDir);
+
+class tdStepStatDirEx(tdStepStatDir):
+    """ Checks for an existing directory given a TestDir object. """
+    def __init__(self, oTestDir): # type: (testfileset.TestDir)
+        tdStepStatDir.__init__(self, oTestDir.sPath, oTestDir);
 
 class tdStepStatFile(tdStepStat):
     """ Checks for an existing file  """
-    def __init__(self, sFilePath):
-        tdStepStat.__init__(self, sPath = sFilePath, enmType = vboxcon.FsObjType_File);
+    def __init__(self, sFilePath = None, oTestFile = None):
+        tdStepStat.__init__(self, sPath = sFilePath, enmType = vboxcon.FsObjType_File, oTestFsObj = oTestFile);
+
+class tdStepStatFileEx(tdStepStatFile):
+    """ Checks for an existing file given a TestFile object. """
+    def __init__(self, oTestFile): # type: (testfileset.TestFile)
+        tdStepStatFile.__init__(self, oTestFile.sPath, oTestFile);
 
 class tdStepStatFileSize(tdStepStat):
     """ Checks for an existing file of a given expected size.. """
@@ -1022,24 +1035,24 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         # The tests. Must-succeed tests should be first.
         atTests = [
             ( True,  self.prepareGuestForTesting,           None,               'Preparations',),
-            ( True,  self.testGuestCtrlSession,             'session_basic',    'Session Basics',),
-            ( True,  self.testGuestCtrlExec,                'exec_basic',       'Execution',),
-            ( False, self.testGuestCtrlExecTimeout,         'exec_timeout',     'Execution Timeouts',),
-            ( False, self.testGuestCtrlSessionEnvironment,  'session_env',      'Session Environment',),
-            ( False, self.testGuestCtrlSessionFileRefs,     'session_file_ref', 'Session File References',),
-            #( False, self.testGuestCtrlSessionDirRefs,      'session_dir_ref',  'Session Directory References',),
-            ( False, self.testGuestCtrlSessionProcRefs,     'session_proc_ref', 'Session Process References',),
-            ( False, self.testGuestCtrlDirCreate,           'dir_create',       'Creating directories',),
-            ( False, self.testGuestCtrlDirCreateTemp,       'dir_create_temp',  'Creating temporary directories',),
-            ( False, self.testGuestCtrlDirRead,             'dir_read',         'Reading directories',),
-            ( False, self.testGuestCtrlCopyTo,              'copy_to',          'Copy to guest',),
-            ( False, self.testGuestCtrlCopyFrom,            'copy_from',        'Copy from guest',),
+            #( True,  self.testGuestCtrlSession,             'session_basic',    'Session Basics',),
+            #( True,  self.testGuestCtrlExec,                'exec_basic',       'Execution',),
+            #( False, self.testGuestCtrlExecTimeout,         'exec_timeout',     'Execution Timeouts',),
+            #( False, self.testGuestCtrlSessionEnvironment,  'session_env',      'Session Environment',),
+            #( False, self.testGuestCtrlSessionFileRefs,     'session_file_ref', 'Session File References',),
+            ##( False, self.testGuestCtrlSessionDirRefs,      'session_dir_ref',  'Session Directory References',),
+            #( False, self.testGuestCtrlSessionProcRefs,     'session_proc_ref', 'Session Process References',),
+            #( False, self.testGuestCtrlDirCreate,           'dir_create',       'Creating directories',),
+            #( False, self.testGuestCtrlDirCreateTemp,       'dir_create_temp',  'Creating temporary directories',),
+            #( False, self.testGuestCtrlDirRead,             'dir_read',         'Reading directories',),
+            #( False, self.testGuestCtrlCopyTo,              'copy_to',          'Copy to guest',),
+            #( False, self.testGuestCtrlCopyFrom,            'copy_from',        'Copy from guest',),
             ( False, self.testGuestCtrlFileStat,            'file_stat',        'Querying file information (stat)',),
-            ( False, self.testGuestCtrlFileRead,            'file_read',        'File read',),
-            ( False, self.testGuestCtrlFileWrite,           'file_write',       'File write',),
-            ( False, self.testGuestCtrlFileRemove,          'file_remove',      'Removing files',), # Destroys prepped files.
-            ( False, self.testGuestCtrlSessionReboot,       'session_reboot',   'Session w/ Guest Reboot',), # May zap /tmp.
-            ( False, self.testGuestCtrlUpdateAdditions,     'update_additions', 'Updating Guest Additions',),
+            #( False, self.testGuestCtrlFileRead,            'file_read',        'File read',),
+            #( False, self.testGuestCtrlFileWrite,           'file_write',       'File write',),
+            #( False, self.testGuestCtrlFileRemove,          'file_remove',      'Removing files',), # Destroys prepped files.
+            #( False, self.testGuestCtrlSessionReboot,       'session_reboot',   'Session w/ Guest Reboot',), # May zap /tmp.
+            #( False, self.testGuestCtrlUpdateAdditions,     'update_additions', 'Updating Guest Additions',),
         ];
 
         fRc = True;
@@ -3114,83 +3127,130 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
         # Basic stuff, existing stuff.
         aoTests = [
-            tdTestSessionEx([ tdStepStatDir('.'),
-                              tdStepStatDir('..'),
-                            ]),
+            tdTestSessionEx([
+                tdStepStatDir('.'),
+                tdStepStatDir('..'),
+                tdStepStatDir(self.getGuestTempDir(oTestVm)),
+                tdStepStatDir(self.getGuestSystemDir(oTestVm)),
+                tdStepStatDirEx(self.oTestFiles.oRoot),
+                tdStepStatDirEx(self.oTestFiles.oEmptyDir),
+                tdStepStatDirEx(self.oTestFiles.oTreeDir),
+                tdStepStatDirEx(self.oTestFiles.chooseRandomDirFromTree()),
+                tdStepStatDirEx(self.oTestFiles.chooseRandomDirFromTree()),
+                tdStepStatDirEx(self.oTestFiles.chooseRandomDirFromTree()),
+                tdStepStatDirEx(self.oTestFiles.chooseRandomDirFromTree()),
+                tdStepStatDirEx(self.oTestFiles.chooseRandomDirFromTree()),
+                tdStepStatDirEx(self.oTestFiles.chooseRandomDirFromTree()),
+                tdStepStatFile(self.getGuestSystemFileForReading(oTestVm)),
+                tdStepStatFile(self.getGuestSystemShell(oTestVm)),
+                tdStepStatFileEx(self.oTestFiles.chooseRandomFile()),
+                tdStepStatFileEx(self.oTestFiles.chooseRandomFile()),
+                tdStepStatFileEx(self.oTestFiles.chooseRandomFile()),
+                tdStepStatFileEx(self.oTestFiles.chooseRandomFile()),
+                tdStepStatFileEx(self.oTestFiles.chooseRandomFile()),
+                tdStepStatFileEx(self.oTestFiles.chooseRandomFile()),
+            ]),
         ];
-        if oTestVm.isWindows():
-            aoTests += [ tdTestSessionEx([ tdStepStatDir('C:\\Windows'),
-                                           tdStepStatDir('C:\\Windows\\System32'),
-                                           tdStepStatDir('C:\\Windows\\System32\\'),
-                                           tdStepStatDir('C:\\Windows\\System32\\.'),
-                                           tdStepStatDir('C:\\Windows\\System32\\.\\'),
-                                           tdStepStatDir('C:\\Windows\\System32\\..'),
-                                           tdStepStatDir('C:\\Windows\\System32\\..\\'),
-                                           tdStepStatDir('C:\\Windows\\System32\\..\\\\'),
-                                           tdStepStatDir('C:\\Windows\\System32\\\\..\\\\'),
-                                           tdStepStatDir('C:/Windows/System32'),
-                                           tdStepStatDir('C:/Windows/System32/'),
-                                           tdStepStatDir('c:/winDowS/sYsTeM32/'),
-                                           tdStepStatDir('C:/Windows/System32/.'),
-                                           tdStepStatDir('C:/Windows/System32/./'),
-                                           tdStepStatDir('C:/Windows/System32/..'),
-                                           tdStepStatDir('C:/Windows/System32/../'),
-                                           tdStepStatDir('C:/Windows/System32/..//'),
-                                           tdStepStatDir('C:/Windows/System32//..//'),
-                                           tdStepStatFile('C:\\Windows\\System32\\kernel32.dll'),
-                                           tdStepStatFile('C:/Windows/System32/kernel32.dll')
-                                         ]) ];
-        elif oTestVm.isOS2():
-            aoTests += [ tdTestSessionEx([ tdStepStatDir('C:\\OS2'),
-                                           tdStepStatDir('C:\\OS2\\DLL'),
-                                           tdStepStatDir('C:\\OS2\\DLL\\'),
-                                           tdStepStatDir('C:/OS2/DLL'),
-                                           tdStepStatDir('c:/OS2/DLL'),
-                                           tdStepStatDir('c:/OS2/DLL/'),
-                                           tdStepStatFile('C:\\CONFIG.SYS'),
-                                           tdStepStatFile('C:\\OS2\\DLL\\DOSCALL1.DLL'),
-                                         ]) ];
-        else: # generic unix.
-            aoTests += [ tdTestSessionEx([ tdStepStatDir('/'),
-                                           tdStepStatDir('///'),
-                                           tdStepStatDir('/usr/bin/.'),
-                                           tdStepStatDir('/usr/bin/./'),
-                                           tdStepStatDir('/usr/bin/..'),
-                                           tdStepStatDir('/usr/bin/../'),
-                                           tdStepStatFile('/bin/ls'),
-                                           tdStepStatFile('/bin/cp'),
-                                           tdStepStatFile('/bin/date'),
-                                         ]) ];
+
         # None existing stuff.
-        if oTestVm.isWindows() or oTestVm.isOS2():
-            aoTests += [ tdTestSessionEx([ tdStepStatFileNotFound('C:\\NoSuchFileOrDirectory', ),
-                                           tdStepStatPathNotFound('C:\\NoSuchDirectory\\'),
-                                           tdStepStatPathNotFound('C:/NoSuchDirectory/'),
-                                           tdStepStatPathNotFound('C:\\NoSuchDirectory\\.'),
-                                           tdStepStatPathNotFound('C:/NoSuchDirectory/.'),
-                                           tdStepStatPathNotFound('C:\\NoSuchDirectory\\NoSuchFileOrDirectory'),
-                                           tdStepStatPathNotFound('C:/NoSuchDirectory/NoSuchFileOrDirectory'),
-                                           tdStepStatPathNotFound('C:/NoSuchDirectory/NoSuchFileOrDirectory/'),
-                                           tdStepStatPathNotFound('N:\\'), # ASSUMES nothing mounted on N:!
-                                           tdStepStatPathNotFound('\\\\NoSuchUncServerName\\NoSuchShare'),
-                                         ]) ];
-        else: # generic unix.
-            aoTests += [ tdTestSessionEx([ tdStepStatFileNotFound('/NoSuchFileOrDirectory', ),
-                                           tdStepStatFileNotFound('/bin/NoSuchFileOrDirectory'),
-                                           tdStepStatPathNotFound('/NoSuchDirectory/'),
-                                           tdStepStatPathNotFound('/NoSuchDirectory/.'),
-                                         ]) ];
+        sSysDir = self.getGuestSystemDir(oTestVm);
+        sSep    = oTestVm.pathSep();
+        aoTests += [
+            tdTestSessionEx([
+                tdStepStatFileNotFound(oTestVm.pathJoin(sSysDir, 'NoSuchFileOrDirectory')),
+                tdStepStatPathNotFound(oTestVm.pathJoin(sSysDir, 'NoSuchFileOrDirectory') + sSep),
+                tdStepStatPathNotFound(oTestVm.pathJoin(sSysDir, 'NoSuchFileOrDirectory', '.')),
+                tdStepStatPathNotFound(oTestVm.pathJoin(sSysDir, 'NoSuchFileOrDirectory', 'NoSuchFileOrSubDirectory')),
+                tdStepStatPathNotFound(oTestVm.pathJoin(sSysDir, 'NoSuchFileOrDirectory', 'NoSuchFileOrSubDirectory') + sSep),
+                tdStepStatPathNotFound(oTestVm.pathJoin(sSysDir, 'NoSuchFileOrDirectory', 'NoSuchFileOrSubDirectory', '.')),
+                #tdStepStatPathNotFound('N:\\'), # ASSUMES nothing mounted on N:!
+                #tdStepStatPathNotFound('\\\\NoSuchUncServerName\\NoSuchShare'),
+            ]),
+        ];
         # Invalid parameter check.
         aoTests += [ tdTestSessionEx([ tdStepStat('', vbox.ComError.E_INVALIDARG), ]), ];
-
-        # Some test VM specific tests.
-        if oTestVm.sVmName.startswith('tst-xpsp2'):
-            aoTests += [ tdTestSessionEx([ tdStepStatFileSize('c:\\Windows\\system32\\kernel32.dll', 983552), ]) ];
 
         #
         # Execute the tests.
         #
-        return tdTestSessionEx.executeListTestSessions(aoTests, self.oTstDrv, oSession, oTxsSession, oTestVm, 'FsStat');
+        fRc, oTxsSession = tdTestSessionEx.executeListTestSessions(aoTests, self.oTstDrv, oSession, oTxsSession,
+                                                                   oTestVm, 'FsStat');
+        #
+        # Test the full test file set.
+        #
+        if self.oTstDrv.fpApiVer < 5.0:
+            return (fRc, oTxsSession);
+
+        oTest = tdTestGuestCtrlBase();
+        oTest.setEnvironment(oSession, oTxsSession, oTestVm);
+        fRc2, oGuestSession = oTest.createSession('FsStat on TestFileSet', True);
+        if fRc2 is not True:
+            return (False, oTxsSession);
+
+        for sPath in self.oTestFiles.dPaths:
+            oFsObj = self.oTestFiles.dPaths[sPath];
+            reporter.log2('testGuestCtrlFileStat: %s sPath=%s'
+                          % ('file' if isinstance(oFsObj, testfileset.TestFile) else 'dir ', oFsObj.sPath,));
+
+            # Query the information:
+            try:
+                oFsInfo = oGuestSession.fsObjQueryInfo(oFsObj.sPath, False);
+            except:
+                fRc = reporter.errorXcpt('sPath=%s type=%s: fsObjQueryInfo trouble!' % (oFsObj.sPath, type(oFsObj),));
+                continue;
+            if oFsInfo is None:
+                fRc = reporter.error('sPath=%s type=%s: No info object returned!' % (oFsObj.sPath, type(oFsObj),));
+                continue;
+
+            # Check attributes:
+            try:
+                eType    = oFsInfo.type;
+                cbObject = oFsInfo.objectSize;
+            except:
+                fRc = reporter.errorXcpt('sPath=%s type=%s: attribute access trouble!' % (oFsObj.sPath, type(oFsObj),));
+                continue;
+
+            if isinstance(oFsObj, testfileset.TestFile):
+                if eType != vboxcon.FsObjType_File:
+                    fRc = reporter.error('sPath=%s type=file: eType=%s, expected %s!'
+                                         % (oFsObj.sPath, eType, vboxcon.FsObjType_File));
+                if cbObject != oFsObj.cbContent:
+                    fRc = reporter.error('sPath=%s type=file: cbObject=%s, expected %s!'
+                                         % (oFsObj.sPath, cbObject, oFsObj.cbContent));
+                fFileExists = True;
+                fDirExists  = False;
+            elif isinstance(oFsObj, testfileset.TestDir):
+                if eType != vboxcon.FsObjType_Directory:
+                    fRc = reporter.error('sPath=%s type=dir: eType=%s, expected %s!'
+                                         % (oFsObj.sPath, eType, vboxcon.FsObjType_Directory));
+                fFileExists = False;
+                fDirExists  = True;
+            else:
+                fRc = reporter.error('sPath=%s type=%s: Unexpected oFsObj type!' % (oFsObj.sPath, type(oFsObj),));
+                continue;
+
+            # Check the directoryExists and fileExists results too.
+            try:
+                fExistsResult = oGuestSession.fileExists(oFsObj.sPath, False);
+            except:
+                fRc = reporter.errorXcpt('sPath=%s type=%s: fileExists trouble!' % (oFsObj.sPath, type(oFsObj),));
+            else:
+                if fExistsResult != fFileExists:
+                    fRc = reporter.error('sPath=%s type=%s: fileExists returned %s, expected %s!'
+                                         % (oFsObj.sPath, type(oFsObj), fExistsResult, fFileExists));
+
+            if not self.fSkipKnownBugs: ## @todo At least two different failures here.
+                try:
+                    fExistsResult = oGuestSession.directoryExists(oFsObj.sPath, False);
+                except:
+                    fRc = reporter.errorXcpt('sPath=%s type=%s: directoryExists trouble!' % (oFsObj.sPath, type(oFsObj),));
+                else:
+                    if fExistsResult != fDirExists:
+                        fRc = reporter.error('sPath=%s type=%s: directoryExists returned %s, expected %s!'
+                                             % (oFsObj.sPath, type(oFsObj), fExistsResult, fDirExists));
+
+        fRc = oTest.closeSession(True) and fRc;
+        return (fRc, oTxsSession);
 
     def testGuestCtrlFileRead(self, oSession, oTxsSession, oTestVm): # pylint: disable=too-many-locals
         """
