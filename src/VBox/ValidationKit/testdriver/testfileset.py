@@ -411,11 +411,19 @@ class TestFileSet(object):
         Returns True on success, False + error logging on failure.
         """
 
+        # We only need to flip DOS slashes to unix ones, since windows & OS/2 can handle unix slashes.
+        fDosToUnix = self.fDosStyle and os.path.sep != '\\';
+
         # The directories:
         for oDir in self.aoDirs:
             sPath = oDir.sPath;
             if sAltBase:
-                sPath = sAltBase + sPath[len(self.sBasePath):];
+                if fDosToUnix:
+                    sPath = sAltBase + sPath[len(self.sBasePath):].replace('\\', os.path.sep);
+                else:
+                    sPath = sAltBase + sPath[len(self.sBasePath):];
+            elif fDosToUnix:
+                sPath = sPath.replace('\\', os.path.sep);
 
             try:
                 os.mkdir(sPath, 0o770);
@@ -426,7 +434,12 @@ class TestFileSet(object):
         for oFile in self.aoFiles:
             sPath = oFile.sPath;
             if sAltBase:
-                sPath = sAltBase + sPath[len(self.sBasePath):];
+                if fDosToUnix:
+                    sPath = sAltBase + sPath[len(self.sBasePath):].replace('\\', os.path.sep);
+                else:
+                    sPath = sAltBase + sPath[len(self.sBasePath):];
+            elif fDosToUnix:
+                sPath = sPath.replace('\\', os.path.sep);
 
             try:
                 oFile = open(sPath, 'wb');
