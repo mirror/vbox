@@ -64,9 +64,9 @@ protected:
 
 private slots:
 
-    void sltHandleKeyboardLedsChange();
-    void sltHandlePutKeyboardSequence(QVector<LONG> sequence);
-    void sltHandleStatusBarContextMenuRequest(const QPoint &point);
+    void sltKeyboardLedsChange();
+    void sltPutKeyboardSequence(QVector<LONG> sequence);
+    void sltStatusBarContextMenuRequest(const QPoint &point);
     /** Handles the signal we get from the layout selector widget.
       * Selection changed is forwarded to the keyboard widget. */
     void sltLayoutSelectionChanged(const QString &strLayoutName);
@@ -79,6 +79,8 @@ private slots:
     /** Make th necessary changes to data structures when th key captions updated. */
     void sltKeyCaptionsEdited(UISoftKeyboardKey* pKey);
     void sltShowHideSidePanel();
+    void sltCopyLayout();
+    void sltSaveLayout();
 
 private:
 
@@ -87,6 +89,7 @@ private:
     void saveSettings();
     void loadSettings();
     void updateStatusBarMessage(const QString &strLayoutName);
+    void updateLayoutSelector();
     CKeyboard& keyboard() const;
 
     UISession     *m_pSession;
