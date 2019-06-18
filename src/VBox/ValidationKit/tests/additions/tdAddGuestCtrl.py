@@ -277,6 +277,12 @@ class tdTestCopyTo(tdTestGuestCtrlBase):
         self.sDst = sDst;
         self.fFlags = fFlags;
 
+class tdTestCopyToFile(tdTestCopyTo):
+    pass;
+
+class tdTestCopyToDir(tdTestCopyTo):
+    pass;
+
 class tdTestDirCreate(tdTestGuestCtrlBase):
     """
     Test for directoryCreate call.
@@ -973,7 +979,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             'update_additions'
         ];
         self.asTests        = self.asTestsDef;
-        self.asRsrcs        = ['5.3/guestctrl/50mb_rnd.dat', ];
+        self.fSkipKnownBugs = False;
         self.oTestFiles     = None  # type: vboxtestfileset.TestFileSet
 
     def parseOption(self, asArgs, iArg):                                        # pylint: disable=too-many-branches,too-many-statements
@@ -989,12 +995,20 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                         raise base.InvalidOption('The "--add-guest-ctrl-tests" value "%s" is not valid; valid values are: %s'
                                                  % (s, ' '.join(self.asTestsDef)));
             return iNext;
+        if asArgs[iArg] == '--add-guest-ctrl-skip-known-bugs':
+            self.fSkipKnownBugs = True;
+            return iArg + 1;
+        if asArgs[iArg] == '--no-add-guest-ctrl-skip-known-bugs':
+            self.fSkipKnownBugs = False;
+            return iArg + 1;
         return iArg;
 
     def showUsage(self):
         base.SubTestDriverBase.showUsage(self);
         reporter.log('  --add-guest-ctrl-tests  <s1[:s2[:]]>');
         reporter.log('      Default: %s  (all)' % (':'.join(self.asTestsDef)));
+        reporter.log('  --add-guest-ctrl-skip-known-bugs');
+        reporter.log('      Skips known bugs.  Default: --no-add-guest-ctrl-skip-known-bugs');
         return True;
 
     def testIt(self, oTestVm, oSession, oTxsSession):
@@ -1008,24 +1022,24 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         # The tests. Must-succeed tests should be first.
         atTests = [
             ( True,  self.prepareGuestForTesting,           None,               'Preparations',),
-            ( True,  self.testGuestCtrlSession,             'session_basic',    'Session Basics',),
-            ( True,  self.testGuestCtrlExec,                'exec_basic',       'Execution',),
-            ( False, self.testGuestCtrlExecTimeout,         'exec_timeout',     'Execution Timeouts',),
-            ( False, self.testGuestCtrlSessionEnvironment,  'session_env',      'Session Environment',),
-            ( False, self.testGuestCtrlSessionFileRefs,     'session_file_ref', 'Session File References',),
-            #( False, self.testGuestCtrlSessionDirRefs,      'session_dir_ref',  'Session Directory References',),
-            ( False, self.testGuestCtrlSessionProcRefs,     'session_proc_ref', 'Session Process References',),
-            ( False, self.testGuestCtrlDirCreate,           'dir_create',       'Creating directories',),
-            ( False, self.testGuestCtrlDirCreateTemp,       'dir_create_temp',  'Creating temporary directories',),
-            ( False, self.testGuestCtrlDirRead,             'dir_read',         'Reading directories',),
-            ( False, self.testGuestCtrlCopyTo,              'copy_to',          'Copy to guest',),
-            ( False, self.testGuestCtrlCopyFrom,            'copy_from',        'Copy from guest',),
-            ( False, self.testGuestCtrlFileStat,            'file_stat',        'Querying file information (stat)',),
-            ( False, self.testGuestCtrlFileRead,            'file_read',        'File read',),
-            ( False, self.testGuestCtrlFileWrite,           'file_write',       'File write',),
-            ( False, self.testGuestCtrlFileRemove,          'file_remove',      'Removing files',), # Destroys prepped files.
-            ( False, self.testGuestCtrlSessionReboot,       'session_reboot',   'Session w/ Guest Reboot',), # May zap /tmp.
-            ( False, self.testGuestCtrlUpdateAdditions,     'update_additions', 'Updating Guest Additions',),
+            #( True,  self.testGuestCtrlSession,             'session_basic',    'Session Basics',),
+            #( True,  self.testGuestCtrlExec,                'exec_basic',       'Execution',),
+            #( False, self.testGuestCtrlExecTimeout,         'exec_timeout',     'Execution Timeouts',),
+            #( False, self.testGuestCtrlSessionEnvironment,  'session_env',      'Session Environment',),
+            #( False, self.testGuestCtrlSessionFileRefs,     'session_file_ref', 'Session File References',),
+            ##( False, self.testGuestCtrlSessionDirRefs,      'session_dir_ref',  'Session Directory References',),
+            #( False, self.testGuestCtrlSessionProcRefs,     'session_proc_ref', 'Session Process References',),
+            #( False, self.testGuestCtrlDirCreate,           'dir_create',       'Creating directories',),
+            #( False, self.testGuestCtrlDirCreateTemp,       'dir_create_temp',  'Creating temporary directories',),
+            #( False, self.testGuestCtrlDirRead,             'dir_read',         'Reading directories',),
+             ( False, self.testGuestCtrlCopyTo,              'copy_to',          'Copy to guest',),
+            #( False, self.testGuestCtrlCopyFrom,            'copy_from',        'Copy from guest',),
+            #( False, self.testGuestCtrlFileStat,            'file_stat',        'Querying file information (stat)',),
+            #( False, self.testGuestCtrlFileRead,            'file_read',        'File read',),
+            #( False, self.testGuestCtrlFileWrite,           'file_write',       'File write',),
+            #( False, self.testGuestCtrlFileRemove,          'file_remove',      'Removing files',), # Destroys prepped files.
+            #( False, self.testGuestCtrlSessionReboot,       'session_reboot',   'Session w/ Guest Reboot',), # May zap /tmp.
+            #( False, self.testGuestCtrlUpdateAdditions,     'update_additions', 'Updating Guest Additions',),
         ];
 
         fRc = True;
@@ -3484,30 +3498,58 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             cbFile -= cb;
         oFile.close();
 
-    def testGuestCtrlCopyTo(self, oSession, oTxsSession, oTestVm):
+    def testGuestCtrlCopyTo(self, oSession, oTxsSession, oTestVm): # pylint: disable=too-many-locals
         """
         Tests copying files from host to the guest.
         """
 
-        # Paths.
-        sScratchGst             = oTestVm.pathJoin(self.getGuestTempDir(oTestVm), 'testGuestCtrlCopyTo');
+        #
+        # Paths and test files.
+        #
+        sScratchHst             = os.path.join(self.oTstDrv.sScratchPath,         'cp2');
+        sScratchTestFilesHst    = os.path.join(sScratchHst, self.oTestFiles.sSubDir);
+        sScratchEmptyDirHst     = os.path.join(sScratchTestFilesHst, self.oTestFiles.oEmptyDir.sName);
+        sScratchNonEmptyDirHst  = self.oTestFiles.chooseRandomDirFromTree().buildPath(sScratchHst, os.path.sep);
+        sScratchTreeDirHst      = os.path.join(sScratchTestFilesHst, self.oTestFiles.oTreeDir.sName);
+
+        sScratchGst             = oTestVm.pathJoin(self.getGuestTempDir(oTestVm), 'cp2');
+        sScratchDstDir1Gst      = oTestVm.pathJoin(sScratchGst, 'dstdir1');
+        sScratchDstDir2Gst      = oTestVm.pathJoin(sScratchGst, 'dstdir2');
+        sScratchDstDir3Gst      = oTestVm.pathJoin(sScratchGst, 'dstdir3');
+        sScratchDstDir4Gst      = oTestVm.pathJoin(sScratchGst, 'dstdir4');
         #sScratchGstNotExist     = oTestVm.pathJoin(self.getGuestTempDir(oTestVm), 'no-such-file-or-directory');
         sScratchHstNotExist     = os.path.join(self.oTstDrv.sScratchPath,         'no-such-file-or-directory');
         sScratchGstPathNotFound = oTestVm.pathJoin(self.getGuestTempDir(oTestVm), 'no-such-directory', 'or-file');
         #sScratchHstPathNotFound = os.path.join(self.oTstDrv.sScratchPath,         'no-such-directory', 'or-file');
-        sSomeDirHst             = self.oTstDrv.sScriptPath;
 
         if oTestVm.isWindows() or oTestVm.isOS2():
             sScratchGstInvalid  = "?*|<invalid-name>";
         else:
             sScratchGstInvalid  = None;
+        if utils.getHostOs() in ('win', 'os2'):
+            sScratchHstInvalid  = "?*|<invalid-name>";
+        else:
+            sScratchHstInvalid  = None;
 
-        if oTxsSession.syncMkDir(sScratchGst) is not True:
-            return reporter.error('TXS failed to create directory "%s"!' % (sScratchGst,));
+        for sDir in (sScratchGst, sScratchDstDir1Gst, sScratchDstDir2Gst, sScratchDstDir3Gst, sScratchDstDir4Gst):
+            if oTxsSession.syncMkDir(sDir) is not True:
+                return reporter.error('TXS failed to create directory "%s"!' % (sDir,));
 
-        # Generate a test file in 32MB to 50 MB range.
+        # Put the test file set under sScratchHst.
+        if os.path.exists(sScratchHst):
+            if base.wipeDirectory(sScratchHst) != 0:
+                return reporter.error('Failed to wipe "%s"' % (sScratchHst,));
+        else:
+            try:
+                os.mkdir(sScratchHst);
+            except:
+                return reporter.errorXcpt('os.mkdir(%s)' % (sScratchHst, ));
+        if self.oTestFiles.writeToDisk(sScratchHst) is not True:
+            return reporter.error('Filed to write test files to "%s" on the host!' % (sScratchHst,));
+
+        # Generate a test file in 32MB to 64 MB range.
         sBigFileHst  = os.path.join(self.oTstDrv.sScratchPath, 'gctrl-random.data');
-        cbBigFileHst = random.randrange(32*1024*1024, 50*1024*1024);
+        cbBigFileHst = random.randrange(32*1024*1024, 64*1024*1024);
         reporter.log('cbBigFileHst=%s' % (cbBigFileHst,));
         cbLeft       = cbBigFileHst;
         try:
@@ -3528,35 +3570,53 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         # Tests.
         #
         atTests = [
-            ## @todo because of the way the test stats the source to figure out which API to use,
-            ##       not all of this necessarily testing both file and directory API variants like
-            ##       was intended.  This needs to be addressed by specializing tdTestCopyTo so it
-            ##       would be possible to test feeding directories to the file API and vice versa.
-
-            # Nothing given
-            [ tdTestCopyTo(), tdTestResultFailure() ],
-            # Only one given.
-            [ tdTestCopyTo(sSrc = sBigFileHst), tdTestResultFailure() ],
-            [ tdTestCopyTo(sDst = sScratchGst), tdTestResultFailure() ],
-            # Only one given, invalid flag.
-            [ tdTestCopyTo(sSrc = sBigFileHst, fFlags = [ 0x40000000, ]), tdTestResultFailure() ],
-            [ tdTestCopyTo(sDst = sScratchGst, fFlags = [ 0x40000000, ]), tdTestResultFailure() ],
-            ## Apparently Main doesn't check the flags, so the first test succeeds.
-            ## Both given, but invalid  flags.
-            #[ tdTestCopyTo(sSrc = sBigFileHst, sDst = sScratchGst, fFlags = [ 0x40000000] ), tdTestResultFailure() ],
-            #[ tdTestCopyTo(sSrc = sSomeDirHst, sDst = sScratchGst, fFlags = [ 0x40000000] ), tdTestResultFailure() ],
-            # Bogus source, but no destination.
-            [ tdTestCopyTo(sSrc = sScratchHstNotExist), tdTestResultFailure() ],
-            # Valid sources, but bogus destination (path not found).
-            [ tdTestCopyTo(sSrc = sBigFileHst, sDst = sScratchGstPathNotFound), tdTestResultFailure() ],
-            [ tdTestCopyTo(sSrc = sSomeDirHst, sDst = sScratchGstPathNotFound), tdTestResultFailure() ],
+            # Nothing given:
+            [ tdTestCopyToFile(), tdTestResultFailure() ],
+            [ tdTestCopyToDir(),  tdTestResultFailure() ],
+            # Only source given:
+            [ tdTestCopyToFile(sSrc = sBigFileHst), tdTestResultFailure() ],
+            [ tdTestCopyToDir( sSrc = sScratchEmptyDirHst), tdTestResultFailure() ],
+            # Only destination given:
+            [ tdTestCopyToFile(sDst = oTestVm.pathJoin(sScratchGst, 'dstfile')), tdTestResultFailure() ],
+            [ tdTestCopyToDir( sDst = sScratchGst), tdTestResultFailure() ],
         ];
-        if sScratchGstInvalid is not None:
-            # Invalid characters in destination path:
+        if not self.fSkipKnownBugs:
             atTests.extend([
-                [ tdTestCopyTo(sSrc = sBigFileHst, sDst = oTestVm.pathJoin(sScratchGst, sScratchGstInvalid)),
+                ## @todo Apparently Main doesn't check the flags, so the first test succeeds.
+                # Both given, but invalid flags.
+                [ tdTestCopyToFile(sSrc = sBigFileHst, sDst = sScratchGst, fFlags = [ 0x40000000] ), tdTestResultFailure() ],
+                [ tdTestCopyToDir( sSrc = sScratchEmptyDirHst, sDst = sScratchGst, fFlags = [ 0x40000000] ),
                   tdTestResultFailure() ],
-                [ tdTestCopyTo(sSrc = sSomeDirHst, sDst = oTestVm.pathJoin(sScratchGst, sScratchGstInvalid)),
+            ]);
+        atTests.extend([
+            # Non-existing source, but no destination:
+            [ tdTestCopyToFile(sSrc = sScratchHstNotExist), tdTestResultFailure() ],
+            [ tdTestCopyToDir( sSrc = sScratchHstNotExist), tdTestResultFailure() ],
+            # Valid sources, but destination path not found:
+            [ tdTestCopyToFile(sSrc = sBigFileHst, sDst = sScratchGstPathNotFound), tdTestResultFailure() ],
+            [ tdTestCopyToDir( sSrc = sScratchEmptyDirHst, sDst = sScratchGstPathNotFound), tdTestResultFailure() ],
+            # Valid destination, but source file/dir not found:
+            [ tdTestCopyToFile(sSrc = sScratchHstNotExist, sDst = oTestVm.pathJoin(sScratchGst, 'dstfile')),
+                               tdTestResultFailure() ],
+            [ tdTestCopyToDir( sSrc = sScratchHstNotExist, sDst = sScratchGst), tdTestResultFailure() ],
+            # Wrong type:
+            [ tdTestCopyToFile(sSrc = sScratchEmptyDirHst, sDst = oTestVm.pathJoin(sScratchGst, 'dstfile')),
+              tdTestResultFailure() ],
+            [ tdTestCopyToDir( sSrc = sBigFileHst, sDst = sScratchGst), tdTestResultFailure() ],
+        ]);
+        # Invalid characters in destination or source path:
+        if sScratchGstInvalid is not None:
+            atTests.extend([
+                [ tdTestCopyToFile(sSrc = sBigFileHst, sDst = oTestVm.pathJoin(sScratchGst, sScratchGstInvalid)),
+                  tdTestResultFailure() ],
+                [ tdTestCopyToDir( sSrc = sScratchEmptyDirHst, sDst = oTestVm.pathJoin(sScratchGst, sScratchGstInvalid)),
+                  tdTestResultFailure() ],
+        ]);
+        if sScratchHstInvalid is not None:
+            atTests.extend([
+                [ tdTestCopyToFile(sSrc = os.path.join(self.oTstDrv.sScratchPath, sScratchHstInvalid), sDst = sScratchGst),
+                  tdTestResultFailure() ],
+                [ tdTestCopyToDir( sSrc = os.path.join(self.oTstDrv.sScratchPath, sScratchHstInvalid), sDst = sScratchGst),
                   tdTestResultFailure() ],
         ]);
 
@@ -3564,27 +3624,27 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         # Single file handling.
         #
         atTests.extend([
-            [ tdTestCopyTo(sSrc = sBigFileHst, sDst = oTestVm.pathJoin(sScratchGst, 'HostGABig.dat')),
+            [ tdTestCopyToFile(sSrc = sBigFileHst,   sDst = oTestVm.pathJoin(sScratchGst, 'HostGABig.dat')),
               tdTestResultSuccess() ],
-            [ tdTestCopyTo(sSrc = sBigFileHst, sDst = oTestVm.pathJoin(sScratchGst, 'HostGABig.dat')),      # Overwrite
+            [ tdTestCopyToFile(sSrc = sBigFileHst,   sDst = oTestVm.pathJoin(sScratchGst, 'HostGABig.dat')),    # Overwrite
               tdTestResultSuccess() ],
-            [ tdTestCopyTo(sSrc = sEmptyFileHst, sDst = oTestVm.pathJoin(sScratchGst, 'HostGABig.dat')),    # Overwrite
+            [ tdTestCopyToFile(sSrc = sEmptyFileHst, sDst = oTestVm.pathJoin(sScratchGst, 'HostGABig.dat')),    # Overwrite
               tdTestResultSuccess() ],
         ]);
         if self.oTstDrv.fpApiVer > 5.2: # Copying files into directories via Main is supported only 6.0 and later.
             atTests.extend([
-                [ tdTestCopyTo(sSrc = sBigFileHst, sDst = sScratchGst), tdTestResultSuccess() ],
-                [ tdTestCopyTo(sSrc = sBigFileHst, sDst = sScratchGst), tdTestResultSuccess() ],            # Overwrite
-                [ tdTestCopyTo(sSrc = sEmptyFileHst, sDst = oTestVm.pathJoin(sScratchGst, os.path.split(sBigFileHst)[1])),
+                [ tdTestCopyToFile(sSrc = sBigFileHst,   sDst = sScratchGst), tdTestResultSuccess() ],
+                [ tdTestCopyToFile(sSrc = sBigFileHst,   sDst = sScratchGst), tdTestResultSuccess() ],            # Overwrite
+                [ tdTestCopyToFile(sSrc = sEmptyFileHst, sDst = oTestVm.pathJoin(sScratchGst, os.path.split(sBigFileHst)[1])),
                   tdTestResultSuccess() ],                                                                  # Overwrite
             ]);
 
         if oTestVm.isWindows():
             # Copy to a Windows alternative data stream (ADS).
             atTests.extend([
-                [ tdTestCopyTo(sSrc = sBigFileHst, sDst = os.path.join(sScratchGst, 'HostGABig.dat:ADS-Test')),
+                [ tdTestCopyToFile(sSrc = sBigFileHst,   sDst = os.path.join(sScratchGst, 'HostGABig.dat:ADS-Test')),
                   tdTestResultSuccess() ],
-                [ tdTestCopyTo(sSrc = sEmptyFileHst, sDst = os.path.join(sScratchGst, 'HostGABig.dat:ADS-Test')),
+                [ tdTestCopyToFile(sSrc = sEmptyFileHst, sDst = os.path.join(sScratchGst, 'HostGABig.dat:ADS-Test')),
                   tdTestResultSuccess() ],
             ]);
 
@@ -3592,41 +3652,41 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         # Directory handling.
         #
         if self.oTstDrv.fpApiVer > 5.2: # Copying directories via Main is supported only in versions > 5.2.
-            # Create a directory to copy.
-            sHstCopyDir = os.path.join(self.oTstDrv.sScratchPath, 'gctrl-srcdir');
-            try:   ## @todo Take the TestFileSet idea to the generic realm, making host and guest specializations/whatever.
-                os.mkdir(sHstCopyDir);
-                os.mkdir(           os.path.join(sHstCopyDir, 'subdir1'));
-                os.mkdir(           os.path.join(sHstCopyDir, 'subdir2'));
-                os.mkdir(           os.path.join(sHstCopyDir, 'subdir2', 'subsub1'));
-                self.__generateFile(os.path.join(sHstCopyDir, 'subdir2', 'subsub1', 'file0'), 0);
-                self.__generateFile(os.path.join(sHstCopyDir, 'subdir2', 'subsub1', 'file1'), 1023);
-                self.__generateFile(os.path.join(sHstCopyDir, 'subdir2', 'subsub1', 'file2'), 2048);
-                self.__generateFile(os.path.join(sHstCopyDir, 'subdir2', 'subsub1', 'file3'), 2047);
-                self.__generateFile(os.path.join(sHstCopyDir, 'subdir2', 'subsub1', 'file4'), 16887);
-                self.__generateFile(os.path.join(sHstCopyDir, 'subdir2', 'subsub1', 'file4'), 32);
-                os.mkdir(           os.path.join(sHstCopyDir, 'subdir2', 'subsub2'));
-                self.__generateFile(os.path.join(sHstCopyDir, 'subdir2', 'subsub2', 'file5'), 31);
-                self.__generateFile(os.path.join(sHstCopyDir, 'subdir2', 'subsub2', 'file6'), 1);
-                self.__generateFile(os.path.join(sHstCopyDir, 'subdir2', 'subsub2', 'file7'), 1);
-                self.__generateFile(os.path.join(sHstCopyDir, 'subdir2', 'subsub2', 'file8'), 0);
-                os.mkdir(           os.path.join(sHstCopyDir, 'subdir2', 'subsub3'));
-                self.__generateFile(os.path.join(sHstCopyDir, 'subdir2', 'subsub3', 'file9'), 9);
-                self.__generateFile(os.path.join(sHstCopyDir, 'subdir2', 'subsub3', 'file10'), 63);
-                self.__generateFile(os.path.join(sHstCopyDir, 'subdir2', 'subsub3', 'file11'), 11);
-                self.__generateFile(os.path.join(sHstCopyDir, 'subdir2', 'subsub3', 'file12'), 67);
-                os.mkdir(           os.path.join(sHstCopyDir, 'subdir3'));
-                self.__generateFile(os.path.join(sHstCopyDir, 'file13'), 13);
-                self.__generateFile(os.path.join(sHstCopyDir, 'file14'), 67);
-                self.__generateFile(os.path.join(sHstCopyDir, 'file15'), 1111);
-            except:
-                reporter.errorXcpt('Error generating test tree on the host for the copy test (%s)' % (sHstCopyDir,));
-
             atTests.extend([
-                [ tdTestCopyTo(sSrc = sHstCopyDir, sDst = sScratchGst, fFlags = [ vboxcon.DirectoryCopyFlag_CopyIntoExisting ]),
+                [ tdTestCopyToDir(sSrc = sScratchEmptyDirHst, sDst = sScratchDstDir1Gst),   tdTestResultSuccess() ],
+                [ tdTestCopyToDir(sSrc = sScratchEmptyDirHst, sDst = sScratchDstDir1Gst),   tdTestResultFailure() ],
+                [ tdTestCopyToDir(sSrc = sScratchEmptyDirHst, sDst = sScratchDstDir1Gst,
+                                 fFlags = [vboxcon.DirectoryCopyFlag_CopyIntoExisting]),    tdTestResultSuccess() ],
+                # Try again with trailing slash, should yield the same result:
+                [ tdTestCopyToDir(sSrc = sScratchEmptyDirHst, sDst = sScratchDstDir2Gst + oTestVm.pathSep()),
                   tdTestResultSuccess() ],
-                ## @todo r=bird: Why does this fail???
-                # [ tdTestCopyTo(sSrc = sHstCopyDir, sDst = oTestVm.pathJoin(sScratchGst, 'target-dir')), tdTestResultSuccess() ],
+                [ tdTestCopyToDir(sSrc = sScratchEmptyDirHst, sDst = sScratchDstDir2Gst + oTestVm.pathSep()),
+                  tdTestResultFailure() ],
+                [ tdTestCopyToDir(sSrc = sScratchEmptyDirHst, sDst = sScratchDstDir2Gst + oTestVm.pathSep(),
+                                  fFlags = [vboxcon.DirectoryCopyFlag_CopyIntoExisting]),
+                  tdTestResultSuccess() ],
+            ]);
+            if not self.fSkipKnownBugs:
+                atTests.extend([
+                    # Copy with a different destination name just for the heck of it:
+                    [ tdTestCopyToDir(sSrc = sScratchEmptyDirHst, sDst = oTestVm.pathJoin(sScratchDstDir1Gst, 'empty2')),
+                      tdTestResultSuccess() ],
+                ]);
+            atTests.extend([
+                # Now the same using a directory with files in it:
+                [ tdTestCopyToDir(sSrc = sScratchNonEmptyDirHst, sDst = sScratchDstDir3Gst),    tdTestResultSuccess() ],
+                [ tdTestCopyToDir(sSrc = sScratchNonEmptyDirHst, sDst = sScratchDstDir3Gst),    tdTestResultFailure() ],
+            ]);
+            if not self.fSkipKnownBugs:
+                atTests.extend([
+                    [ tdTestCopyToDir(sSrc = sScratchNonEmptyDirHst, sDst = sScratchDstDir3Gst,
+                                      fFlags = [vboxcon.DirectoryCopyFlag_CopyIntoExisting]),       tdTestResultSuccess() ],
+                ]);
+            atTests.extend([
+                #[ tdTestRemoveGuestDir(sScratchDstDir2Gst, tdTestResult() ],
+                # Copy the entire test tree:
+                [ tdTestCopyToDir(sSrc = sScratchTreeDirHst, sDst = sScratchDstDir4Gst), tdTestResultSuccess() ],
+                #[ tdTestRemoveGuestDir(sScratchDstDir3Gst, tdTestResult() ],
             ]);
 
         fRc = True;
@@ -3642,14 +3702,12 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 break;
 
             fRc2 = False;
-            if os.path.isdir(oCurTest.sSrc): ## @todo r=bird: Not good enough. Test case must know which one it's testing.
-                fRc2 = self.gctrlCopyDirTo(oCurGuestSession, oCurTest.sSrc, oCurTest.sDst, oCurTest.fFlags, oCurRes.fRc);
-            else:
+            if isinstance(oCurTest, tdTestCopyToFile):
                 fRc2 = self.gctrlCopyFileTo(oCurGuestSession, oCurTest.sSrc, oCurTest.sDst, oCurTest.fFlags, oCurRes.fRc);
+            else:
+                fRc2 = self.gctrlCopyDirTo(oCurGuestSession, oCurTest.sSrc, oCurTest.sDst, oCurTest.fFlags, oCurRes.fRc);
             if fRc2 is not oCurRes.fRc:
                 fRc = reporter.error('Test #%d failed: Got %s, expected %s' % (i, fRc2, oCurRes.fRc));
-            else:
-                pass; ## @todo verify what was copied!!
 
             fRc = oCurTest.closeSession(True) and fRc;
 
@@ -3771,37 +3829,37 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 [ tdTestCopyFromFile(oSrc = oExistingFileGst, sDst = sScratchHst + os.path.sep), tdTestResultSuccess() ],
             ]);
 
-        #
-        # Directory tree copying:
-        #
-        atTests.extend([
-            # Copy the empty guest directory (should end up as sScratchHst/empty):
-            [ tdTestCopyFromDir(oSrc = oEmptyDirGst, sDst = sScratchDstDir1Hst), tdTestResultSuccess() ],
-            # Repeat -- this time it should fail, as the destination directory already exists (and
-            # DirectoryCopyFlag_CopyIntoExisting is not specified):
-            [ tdTestCopyFromDir(oSrc = oEmptyDirGst, sDst = sScratchDstDir1Hst), tdTestResultFailure() ],
-            # Add the DirectoryCopyFlag_CopyIntoExisting flag being set and it should work.
-            [ tdTestCopyFromDir(oSrc = oEmptyDirGst, sDst = sScratchDstDir1Hst,
-                                fFlags = [ vboxcon.DirectoryCopyFlag_CopyIntoExisting, ]), tdTestResultSuccess() ],
-            # Try again with trailing slash, should yield the same result:
-            [ tdTestRemoveHostDir(os.path.join(sScratchDstDir1Hst, 'empty')), tdTestResult() ],
-            [ tdTestCopyFromDir(oSrc = oEmptyDirGst, sDst = sScratchDstDir1Hst + os.path.sep),
-              tdTestResultSuccess() ],
-            [ tdTestCopyFromDir(oSrc = oEmptyDirGst, sDst = sScratchDstDir1Hst + os.path.sep),
-              tdTestResultFailure() ],
-            [ tdTestCopyFromDir(oSrc = oEmptyDirGst, sDst = sScratchDstDir1Hst + os.path.sep,
-                                fFlags = [ vboxcon.DirectoryCopyFlag_CopyIntoExisting, ]), tdTestResultSuccess() ],
-            # Copy with a different destination name just for the heck of it:
-            [ tdTestCopyFromDir(oSrc = oEmptyDirGst, sDst = os.path.join(sScratchHst, 'empty2'), fIntoDst = True),
-              tdTestResultFailure() ],
-            # Now the same using a directory with files in it:
-            [ tdTestCopyFromDir(oSrc = oNonEmptyDirGst, sDst = sScratchDstDir2Hst), tdTestResultSuccess() ],
-            [ tdTestCopyFromDir(oSrc = oNonEmptyDirGst, sDst = sScratchDstDir2Hst), tdTestResultFailure() ],
-            [ tdTestCopyFromDir(oSrc = oNonEmptyDirGst, sDst = sScratchDstDir2Hst,
-                                fFlags = [ vboxcon.DirectoryCopyFlag_CopyIntoExisting, ]), tdTestResultSuccess() ],
-            # Copy the entire test tree:
-            [ tdTestCopyFromDir(sSrc = self.oTestFiles.oTreeDir.sPath, sDst = sScratchDstDir3Hst), tdTestResultSuccess() ],
-        ]);
+            #
+            # Directory tree copying:
+            #
+            atTests.extend([
+                # Copy the empty guest directory (should end up as sScratchHst/empty):
+                [ tdTestCopyFromDir(oSrc = oEmptyDirGst, sDst = sScratchDstDir1Hst), tdTestResultSuccess() ],
+                # Repeat -- this time it should fail, as the destination directory already exists (and
+                # DirectoryCopyFlag_CopyIntoExisting is not specified):
+                [ tdTestCopyFromDir(oSrc = oEmptyDirGst, sDst = sScratchDstDir1Hst), tdTestResultFailure() ],
+                # Add the DirectoryCopyFlag_CopyIntoExisting flag being set and it should work.
+                [ tdTestCopyFromDir(oSrc = oEmptyDirGst, sDst = sScratchDstDir1Hst,
+                                    fFlags = [ vboxcon.DirectoryCopyFlag_CopyIntoExisting, ]), tdTestResultSuccess() ],
+                # Try again with trailing slash, should yield the same result:
+                [ tdTestRemoveHostDir(os.path.join(sScratchDstDir1Hst, 'empty')), tdTestResult() ],
+                [ tdTestCopyFromDir(oSrc = oEmptyDirGst, sDst = sScratchDstDir1Hst + os.path.sep),
+                  tdTestResultSuccess() ],
+                [ tdTestCopyFromDir(oSrc = oEmptyDirGst, sDst = sScratchDstDir1Hst + os.path.sep),
+                  tdTestResultFailure() ],
+                [ tdTestCopyFromDir(oSrc = oEmptyDirGst, sDst = sScratchDstDir1Hst + os.path.sep,
+                                    fFlags = [ vboxcon.DirectoryCopyFlag_CopyIntoExisting, ]), tdTestResultSuccess() ],
+                # Copy with a different destination name just for the heck of it:
+                [ tdTestCopyFromDir(oSrc = oEmptyDirGst, sDst = os.path.join(sScratchHst, 'empty2'), fIntoDst = True),
+                  tdTestResultFailure() ],
+                # Now the same using a directory with files in it:
+                [ tdTestCopyFromDir(oSrc = oNonEmptyDirGst, sDst = sScratchDstDir2Hst), tdTestResultSuccess() ],
+                [ tdTestCopyFromDir(oSrc = oNonEmptyDirGst, sDst = sScratchDstDir2Hst), tdTestResultFailure() ],
+                [ tdTestCopyFromDir(oSrc = oNonEmptyDirGst, sDst = sScratchDstDir2Hst,
+                                    fFlags = [ vboxcon.DirectoryCopyFlag_CopyIntoExisting, ]), tdTestResultSuccess() ],
+                # Copy the entire test tree:
+                [ tdTestCopyFromDir(sSrc = self.oTestFiles.oTreeDir.sPath, sDst = sScratchDstDir3Hst), tdTestResultSuccess() ],
+            ]);
 
         #
         # Execute the tests.

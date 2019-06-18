@@ -51,16 +51,29 @@ if sys.version_info[0] >= 3:
 
 class TestFsObj(object):
     """ A file system object we created in for test purposes. """
-    def __init__(self, oParent, sPath):
+    def __init__(self, oParent, sPath, sName = None):
         self.oParent   = oParent    # type: TestDir
         self.sPath     = sPath      # type: str
-        self.sName     = sPath      # type: str
+        self.sName     = sName      # type: str
         if oParent:
             assert sPath.startswith(oParent.sPath);
+            assert sName is None;
             self.sName = sPath[len(oParent.sPath) + 1:];
             # Add to parent.
             oParent.aoChildren.append(self);
             oParent.dChildrenUpper[self.sName.upper()] = self;
+
+    def buildPath(self, sRoot, sSep):
+        """
+        Build the path from sRoot using sSep.
+
+        This is handy for getting the path to an object in a different context
+        (OS, path) than what it was generated for.
+        """
+        if self.oParent:
+            return self.oParent.buildPath(sRoot, sSep) + sSep + self.sName;
+        return sRoot + sSep + self.sName;
+
 
 class TestFile(TestFsObj):
     """ A file object in the guest. """
@@ -121,8 +134,8 @@ class TestFile(TestFsObj):
 
 class TestDir(TestFsObj):
     """ A file object in the guest. """
-    def __init__(self, oParent, sPath):
-        TestFsObj.__init__(self, oParent, sPath);
+    def __init__(self, oParent, sPath, sName = None):
+        TestFsObj.__init__(self, oParent, sPath, sName);
         self.aoChildren     = []  # type: list(TestFsObj)
         self.dChildrenUpper = {}  # type: dict(str, TestFsObj)
 
@@ -282,11 +295,11 @@ class TestFileSet(object):
                     return sName;
         return ''; # never reached, but makes pylint happy.
 
-    def __createTestDir(self, oParent, sDir):
+    def __createTestDir(self, oParent, sDir, sName = None):
         """
         Creates a test directory.
         """
-        oDir = TestDir(oParent, sDir);
+        oDir = TestDir(oParent, sDir, sName);
         self.aoDirs.append(oDir);
         self.dPaths[sDir] = oDir;
         return oDir;
@@ -313,7 +326,7 @@ class TestFileSet(object):
         # Create the root test dir.
         #
         sRoot = pathutils.joinEx(self.fDosStyle, self.sBasePath, self.sSubDir);
-        self.oRoot     = self.__createTestDir(None, sRoot);
+        self.oRoot     = self.__createTestDir(None, sRoot, self.sSubDir);
         self.oEmptyDir = self.__createTestDir(self.oRoot, pathutils.joinEx(self.fDosStyle, sRoot, 'empty'));
 
         #
@@ -442,20 +455,20 @@ class TestFileSet(object):
                 sPath = sPath.replace('\\', os.path.sep);
 
             try:
-                oFile = open(sPath, 'wb');
+                oOutFile = open(sPath, 'wb');
             except:
                 return reporter.errorXcpt('open(%s, "wb") failed' % (sPath,));
             try:
                 if sys.version_info[0] < 3:
-                    oFile.write(bytes(oFile.abContent));
+                    oOutFile.write(bytes(oFile.abContent));
                 else:
-                    oFile.write(oFile.abContent);
+                    oOutFile.write(oFile.abContent);
             except:
-                try:    oFile.close();
+                try:    oOutFile.close();
                 except: pass;
                 return reporter.errorXcpt('%s: write(%s bytes) failed' % (sPath, oFile.cbContent,));
             try:
-                oFile.close();
+                oOutFile.close();
             except:
                 return reporter.errorXcpt('%s: close() failed' % (sPath,));
 

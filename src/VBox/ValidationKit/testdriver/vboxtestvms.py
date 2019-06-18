@@ -920,6 +920,9 @@ class BaseTestVm(object):
         """ See common.pathutils.joinEx(). """
         return pathutils.joinEx(self.isWindows() or self.isOS2(), sBase, *asAppend);
 
+    def pathSep(self):
+        """ Returns the preferred paths separator for the guest OS. """
+        return '\\' if self.isWindows() or self.isOS2() else '/';
 
 
 ## @todo Inherit from BaseTestVm
