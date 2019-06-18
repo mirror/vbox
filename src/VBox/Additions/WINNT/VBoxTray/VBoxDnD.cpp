@@ -146,7 +146,7 @@ int VBoxDnDWnd::Initialize(PVBOXDNDCONTEXT pCtx)
             AssertRC(rc2);
 
             if (!pCtx->fStarted) /* Did the thread fail to start? */
-                rc = VERR_GENERAL_FAILURE; /** @todo Find a better rc. */
+                rc = VERR_NOT_SUPPORTED; /* Report back DnD as not being supported. */
         }
     }
 
