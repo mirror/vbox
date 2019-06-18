@@ -188,6 +188,7 @@ signals:
 
     void sigLayoutSelectionChanged(const QString &strSelectedLayoutName);
     void sigShowLayoutEditor();
+    void sigCloseLayoutList();
 
 public:
 
@@ -203,11 +204,14 @@ private slots:
 
 
 private:
+
     void prepareObjects();
 
     QListWidget *m_pLayoutListWidget;
     QToolButton *m_pApplyLayoutButton;
     QToolButton *m_pEditLayoutButton;
+    QLabel      *m_pTitleLabel;
+    QToolButton *m_pCloseButton;
 };
 
 /*********************************************************************************************************************************
@@ -434,7 +438,6 @@ private slots:
 
     void sltHandleContextMenuRequest(const QPoint &point);
     void sltHandleSaveLayout();
-    void sltHandleNewLayout();
     void sltPhysicalLayoutForLayoutChanged(int iIndex);
 
 private:
@@ -485,8 +488,7 @@ private:
 
     QMenu   *m_pContextMenu;
     QAction *m_pShowPositionsAction;
-    QAction *m_pLayoutEditModeToggleAction;
-    Mode       m_enmMode;
+    Mode     m_enmMode;
 };
 
 /*********************************************************************************************************************************
@@ -535,6 +537,38 @@ private:
     QMap<int, KeyCaptions> m_keyCapMap;
     QUuid m_physicalLayoutUid;
     QString m_strName;
+};
+
+
+/*********************************************************************************************************************************
+*   UISoftKeyboardStatusBarWidget  definition.                                                                                   *
+*********************************************************************************************************************************/
+
+class UISoftKeyboardStatusBarWidget : public QIWithRetranslateUI<QWidget>
+{
+    Q_OBJECT;
+
+signals:
+
+    void sigShowHideSidePanel();
+
+public:
+
+    UISoftKeyboardStatusBarWidget(QWidget *pParent = 0);
+    void updateMessage(const QString &strMessage);
+
+protected:
+
+    virtual void retranslateUi() /* override */;
+
+private slots:
+
+
+private:
+
+    void prepareObjects();
+    QToolButton  *m_pLayoutListButton;
+    QLabel       *m_pMessageLabel;
 };
 
 /*********************************************************************************************************************************
@@ -686,6 +720,7 @@ void UILayoutEditor::prepareObjects()
 
     m_pGoBackButton = new QToolButton;
     m_pGoBackButton->setIcon(UIIconPool::defaultIcon(UIIconPool::UIDefaultIconType_ArrowBack));
+    m_pGoBackButton->setStyleSheet("QToolButton { border: 0px none black; margin: 0px 0px 0px 0px; } QToolButton::menu-indicator {image: none;}");
     m_pEditorLayout->addWidget(m_pGoBackButton, 0, 0, 1, 1);
     connect(m_pGoBackButton, &QToolButton::pressed, this, &UILayoutEditor::sigGoBackButton);
 
@@ -803,6 +838,8 @@ UILayoutSelector::UILayoutSelector(QWidget *pParent /* = 0 */)
     , m_pLayoutListWidget(0)
     , m_pApplyLayoutButton(0)
     , m_pEditLayoutButton(0)
+    , m_pTitleLabel(0)
+    , m_pCloseButton(0)
 {
     prepareObjects();
 }
@@ -840,6 +877,10 @@ void UILayoutSelector::retranslateUi()
         m_pApplyLayoutButton->setToolTip(UISoftKeyboard::tr("Use the selected layout"));
     if (m_pEditLayoutButton)
         m_pEditLayoutButton->setToolTip(UISoftKeyboard::tr("Edit the selected layout"));
+    if (m_pTitleLabel)
+        m_pTitleLabel->setText(UISoftKeyboard::tr("Layout List"));
+    if (m_pCloseButton)
+        m_pCloseButton->setToolTip(UISoftKeyboard::tr("Close the layout list"));
 }
 
 void UILayoutSelector::prepareObjects()
@@ -849,6 +890,17 @@ void UILayoutSelector::prepareObjects()
         return;
     pLayout->setSpacing(0);
     setLayout(pLayout);
+
+    QHBoxLayout *pTitleLayout = new QHBoxLayout;
+    m_pCloseButton = new QToolButton;
+    m_pCloseButton->setIcon(UIIconPool::defaultIcon(UIIconPool::UIDefaultIconType_DialogCancel));
+    m_pCloseButton->setStyleSheet("QToolButton { border: 0px none black; margin: 0px 0px 0px 0px; } QToolButton::menu-indicator {image: none;}");
+    connect(m_pCloseButton, &QToolButton::pressed, this, &UILayoutSelector::sigCloseLayoutList);
+    pTitleLayout->addWidget(m_pCloseButton);
+    pTitleLayout->addStretch(2);
+    m_pTitleLabel = new QLabel;
+    pTitleLayout->addWidget(m_pTitleLabel);
+    pLayout->addLayout(pTitleLayout);
 
     m_pLayoutListWidget = new QListWidget;
     pLayout->addWidget(m_pLayoutListWidget);
@@ -1192,7 +1244,6 @@ UISoftKeyboardWidget::UISoftKeyboardWidget(QWidget *pParent /* = 0 */)
     , m_iBottomMargin(10)
     , m_pContextMenu(0)
     , m_pShowPositionsAction(0)
-    , m_pLayoutEditModeToggleAction(0)
     , m_enmMode(Mode_Keyboard)
 {
     prepareObjects();
@@ -1511,18 +1562,6 @@ void UISoftKeyboardWidget::updateKeyCaptionsInLayout(UISoftKeyboardKey *pKey)
     m_pCurrentKeyboardLayout->updateKeyCaptions(pKey->position(), newCaptions);
 }
 
-void UISoftKeyboardWidget::sltHandleNewLayout()
-{
-    /* We need at least one physical layout: */
-    if (m_physicalLayouts.isEmpty())
-        return;
-    m_layouts.append(UISoftKeyboardLayout());
-    UISoftKeyboardLayout &newLayout = m_layouts.back();
-    newLayout.m_physicalLayoutUuid = m_physicalLayouts[0].m_uId;
-    newLayout.setName(QString(UISoftKeyboard::tr("Unnamed")));
-    setCurrentLayout(&newLayout);
-}
-
 void UISoftKeyboardWidget::sltPhysicalLayoutForLayoutChanged(int iIndex)
 {
     if (!m_pCurrentKeyboardLayout)
@@ -1790,16 +1829,6 @@ void UISoftKeyboardWidget::loadLayouts()
 void UISoftKeyboardWidget::prepareObjects()
 {
     m_pContextMenu = new QMenu(this);
-
-    QAction *pNewLayoutAction = m_pContextMenu->addAction(UISoftKeyboard::tr("New Layout..."));
-    connect(pNewLayoutAction, &QAction::triggered, this, &UISoftKeyboardWidget::sltHandleNewLayout);
-
-    m_pLayoutEditModeToggleAction = m_pContextMenu->addAction(UISoftKeyboard::tr("Edit the layout"));
-    m_pLayoutEditModeToggleAction->setCheckable(true);
-    m_pLayoutEditModeToggleAction->setChecked(false);
-
-    QAction *pSaveLayoutAction = m_pContextMenu->addAction(UISoftKeyboard::tr("Save layout to file..."));
-    connect(pSaveLayoutAction, &QAction::triggered, this, &UISoftKeyboardWidget::sltHandleSaveLayout);
 
 #ifdef DEBUG
     m_pShowPositionsAction = m_pContextMenu->addAction(UISoftKeyboard::tr("Show key positions instead of key caps"));
@@ -2165,6 +2194,57 @@ void  UIKeyboardLayoutReader::parseKey()
     m_keyCapMap.insert(iKeyPosition, keyCaptions);
 }
 
+
+/*********************************************************************************************************************************
+*   UISoftKeyboardStatusBarWidget  implementation.                                                                               *
+*********************************************************************************************************************************/
+
+UISoftKeyboardStatusBarWidget::UISoftKeyboardStatusBarWidget(QWidget *pParent /* = 0*/ )
+    : QIWithRetranslateUI<QWidget>(pParent)
+    , m_pLayoutListButton(0)
+    , m_pMessageLabel(0)
+{
+    prepareObjects();
+}
+
+void UISoftKeyboardStatusBarWidget::retranslateUi()
+{
+    if (m_pLayoutListButton)
+        m_pLayoutListButton->setToolTip(tr("Show the Layout List"));
+}
+
+void UISoftKeyboardStatusBarWidget::prepareObjects()
+{
+    QHBoxLayout *pLayout = new QHBoxLayout;
+    if (!pLayout)
+        return;
+    pLayout->setContentsMargins(0, 0, 0, 0);
+    setLayout(pLayout);
+
+    m_pLayoutListButton = new QToolButton;
+    if (m_pLayoutListButton)
+    {
+        m_pLayoutListButton->setIcon(UIIconPool::iconSet(":/file_manager_properties_24px.png"));
+        m_pLayoutListButton->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+        const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
+        m_pLayoutListButton->resize(QSize(iIconMetric, iIconMetric));
+        m_pLayoutListButton->setStyleSheet("QToolButton { border: 0px none black; margin: 0px 0px 0px 0px; } QToolButton::menu-indicator {image: none;}");
+        connect(m_pLayoutListButton, &QToolButton::pressed, this, &UISoftKeyboardStatusBarWidget::sigShowHideSidePanel);
+        pLayout->addWidget(m_pLayoutListButton);
+    }
+
+    m_pMessageLabel = new QLabel;
+    pLayout->addWidget(m_pMessageLabel);
+    retranslateUi();
+}
+
+void UISoftKeyboardStatusBarWidget::updateMessage(const QString &strMessage)
+{
+    if (!m_pMessageLabel)
+        return;
+    m_pMessageLabel->setText(strMessage);
+}
+
 /*********************************************************************************************************************************
 *   UISoftKeyboard implementation.                                                                                  *
 *********************************************************************************************************************************/
@@ -2177,9 +2257,10 @@ UISoftKeyboard::UISoftKeyboard(QWidget *pParent,
     , m_pKeyboardWidget(0)
     , m_strMachineName(strMachineName)
     , m_pSplitter(0)
-    , m_pSettingsButton(0)
-    , m_pSidePanelContainerWidget(0)
+    , m_pSidePanelWidget(0)
     , m_pLayoutEditor(0)
+    , m_pLayoutSelector(0)
+    , m_pStatusBarWidget(0)
 {
     setWindowTitle(QString("%1 - %2").arg(m_strMachineName).arg(tr("Soft Keyboard")));
     setAttribute(Qt::WA_DeleteOnClose);
@@ -2191,7 +2272,10 @@ UISoftKeyboard::UISoftKeyboard(QWidget *pParent,
         m_pKeyboardWidget->loadLayouts();
         /* Update the selector widget: */
         if (m_pLayoutSelector)
+        {
             m_pLayoutSelector->setLayoutList(m_pKeyboardWidget->layoutNameList());
+                        m_pLayoutSelector->setCurrentLayout(m_pKeyboardWidget->currentLayout() ? m_pKeyboardWidget->currentLayout()->name() : QString());
+        }
         if (m_pLayoutEditor)
             m_pLayoutEditor->setPhysicalLayoutList(m_pKeyboardWidget->physicalLayouts());
     }
@@ -2207,25 +2291,25 @@ UISoftKeyboard::~UISoftKeyboard()
 
 void UISoftKeyboard::retranslateUi()
 {
-    if (m_pSettingsButton)
-        m_pSettingsButton->setToolTip(tr("Settings Menu"));
 }
 
 bool UISoftKeyboard::eventFilter(QObject *pWatched, QEvent *pEvent)
 {
-    if (pWatched != m_pSettingsButton)
-        return QIWithRetranslateUI<QMainWindow>::eventFilter(pWatched, pEvent);
+    Q_UNUSED(pWatched);
+    Q_UNUSED(pEvent);
+    // if (pWatched != m_pLayoutListButton)
+    //     return QIWithRetranslateUI<QMainWindow>::eventFilter(pWatched, pEvent);
 
-    if (pEvent->type() == QEvent::MouseButtonPress)
-    {
-        QMouseEvent *pMouseEvent = dynamic_cast<QMouseEvent*>(pEvent);
-        if (pMouseEvent && pMouseEvent->button() == Qt::LeftButton)
-        {
-            if (m_pKeyboardWidget)
-                m_pKeyboardWidget->showContextMenu(m_pSettingsButton->mapToGlobal(pMouseEvent->pos()));
-            return true;
-        }
-    }
+    // if (pEvent->type() == QEvent::MouseButtonPress)
+    // {
+    //     QMouseEvent *pMouseEvent = dynamic_cast<QMouseEvent*>(pEvent);
+    //     if (pMouseEvent && pMouseEvent->button() == Qt::LeftButton)
+    //     {
+    //         if (m_pKeyboardWidget)
+    //             m_pKeyboardWidget->showContextMenu(m_pLayoutListButton->mapToGlobal(pMouseEvent->pos()));
+    //         return true;
+    //     }
+    // }
 
     return QIWithRetranslateUI<QMainWindow>::eventFilter(pWatched, pEvent);
 }
@@ -2267,18 +2351,18 @@ void UISoftKeyboard::sltCurentLayoutChanged()
 
 void UISoftKeyboard::sltShowLayoutSelector()
 {
-    if (m_pSidePanelContainerWidget && m_pLayoutSelector)
-        m_pSidePanelContainerWidget->setCurrentWidget(m_pLayoutSelector);
+    if (m_pSidePanelWidget && m_pLayoutSelector)
+        m_pSidePanelWidget->setCurrentWidget(m_pLayoutSelector);
     if (m_pKeyboardWidget)
         m_pKeyboardWidget->toggleEditMode(false);
 }
 
 void UISoftKeyboard::sltShowLayoutEditor()
 {
-    if (m_pSidePanelContainerWidget && m_pLayoutEditor)
+    if (m_pSidePanelWidget && m_pLayoutEditor)
     {
         m_pLayoutEditor->setLayoutToEdit(m_pKeyboardWidget->currentLayout());
-        m_pSidePanelContainerWidget->setCurrentWidget(m_pLayoutEditor);
+        m_pSidePanelWidget->setCurrentWidget(m_pLayoutEditor);
     }
     if (m_pKeyboardWidget)
         m_pKeyboardWidget->toggleEditMode(true);
@@ -2311,23 +2395,36 @@ void UISoftKeyboard::sltKeyCaptionsEdited(UISoftKeyboardKey* pKey)
     }
 }
 
+void UISoftKeyboard::sltShowHideSidePanel()
+{
+    if (!m_pSidePanelWidget)
+        return;
+    m_pSidePanelWidget->setVisible(!m_pSidePanelWidget->isVisible());
+}
+
 void UISoftKeyboard::prepareObjects()
 {
     m_pSplitter = new QSplitter;
     if (!m_pSplitter)
         return;
     setCentralWidget(m_pSplitter);
+    m_pSidePanelWidget = new QStackedWidget;
+    if (!m_pSidePanelWidget)
+        return;
 
-    m_pSidePanelContainerWidget = new QStackedWidget;
-    m_pSplitter->addWidget(m_pSidePanelContainerWidget);
+    m_pSidePanelWidget->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Maximum);
+    m_pSidePanelWidget->hide();
+
+    m_pSplitter->addWidget(m_pSidePanelWidget);
+    m_pSplitter->setCollapsible(0, false);
 
     m_pLayoutSelector = new UILayoutSelector;
     if (m_pLayoutSelector)
-        m_pSidePanelContainerWidget->addWidget(m_pLayoutSelector);
+        m_pSidePanelWidget->addWidget(m_pLayoutSelector);
 
     m_pLayoutEditor = new UILayoutEditor;
     if (m_pLayoutEditor)
-        m_pSidePanelContainerWidget->addWidget(m_pLayoutEditor);
+        m_pSidePanelWidget->addWidget(m_pLayoutEditor);
 
     m_pKeyboardWidget = new UISoftKeyboardWidget;
     if (!m_pKeyboardWidget)
@@ -2336,19 +2433,9 @@ void UISoftKeyboard::prepareObjects()
     m_pKeyboardWidget->updateGeometry();
     m_pSplitter->addWidget(m_pKeyboardWidget);
 
-    statusBar()->setContextMenuPolicy(Qt::CustomContextMenu);
-    connect(statusBar(), &QStatusBar::customContextMenuRequested,
-            this, &UISoftKeyboard::sltHandleStatusBarContextMenuRequest);
-
     statusBar()->setStyleSheet( "QStatusBar::item { border: 0px}" );
-
-    m_pSettingsButton = new QToolButton;
-    m_pSettingsButton->setIcon(UIIconPool::iconSet(":/keyboard_settings_16px.png"));
-    m_pSettingsButton->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-    const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
-    m_pSettingsButton->resize(QSize(iIconMetric, iIconMetric));
-    m_pSettingsButton->setStyleSheet("QToolButton { border: 0px none black; margin: 0px 0px 0px 0px; } QToolButton::menu-indicator {image: none;}");
-    statusBar()->addPermanentWidget(m_pSettingsButton);
+    m_pStatusBarWidget = new UISoftKeyboardStatusBarWidget;
+    statusBar()->addWidget(m_pStatusBarWidget);
 
     retranslateUi();
 }
@@ -2362,9 +2449,12 @@ void UISoftKeyboard::prepareConnections()
 
     connect(m_pLayoutSelector, &UILayoutSelector::sigLayoutSelectionChanged, this, &UISoftKeyboard::sltLayoutSelectionChanged);
     connect(m_pLayoutSelector, &UILayoutSelector::sigShowLayoutEditor, this, &UISoftKeyboard::sltShowLayoutEditor);
+    connect(m_pLayoutSelector, &UILayoutSelector::sigCloseLayoutList, this, &UISoftKeyboard::sltShowHideSidePanel);
     connect(m_pLayoutEditor, &UILayoutEditor::sigGoBackButton, this, &UISoftKeyboard::sltShowLayoutSelector);
     connect(m_pLayoutEditor, &UILayoutEditor::sigLayoutEdited, this, &UISoftKeyboard::sltLayoutEdited);
     connect(m_pLayoutEditor, &UILayoutEditor::sigKeyCaptionsEdited, this, &UISoftKeyboard::sltKeyCaptionsEdited);
+
+    connect(m_pStatusBarWidget, &UISoftKeyboardStatusBarWidget::sigShowHideSidePanel, this, &UISoftKeyboard::sltShowHideSidePanel);
 }
 
 void UISoftKeyboard::saveSettings()
@@ -2377,14 +2467,16 @@ void UISoftKeyboard::loadSettings()
 
 void UISoftKeyboard::updateStatusBarMessage(const QString &strName)
 {
+    if (!m_pStatusBarWidget)
+        return;
     QString strMessage;
     if (!strName.isEmpty())
     {
         strMessage += QString("%1: %2").arg(tr("Layout")).arg(strName);
-        statusBar()->showMessage(strMessage);
+        m_pStatusBarWidget->updateMessage(strMessage);
     }
     else
-        statusBar()->showMessage(QString());
+        m_pStatusBarWidget->updateMessage(QString());
 }
 
 CKeyboard& UISoftKeyboard::keyboard() const

@@ -42,6 +42,7 @@ class UILayoutSelector;
 class UISession;
 class UISoftKeyboardKey;
 class UISoftKeyboardLayout;
+class UISoftKeyboardStatusBarWidget;
 class UISoftKeyboardWidget;
 class QSplitter;
 class QStackedWidget;
@@ -66,20 +67,18 @@ private slots:
     void sltHandleKeyboardLedsChange();
     void sltHandlePutKeyboardSequence(QVector<LONG> sequence);
     void sltHandleStatusBarContextMenuRequest(const QPoint &point);
-
     /** Handles the signal we get from the layout selector widget.
       * Selection changed is forwarded to the keyboard widget. */
     void sltLayoutSelectionChanged(const QString &strLayoutName);
-
     /** Handles the signal we get from the keyboard widget. */
     void sltCurentLayoutChanged();
-
     void sltShowLayoutSelector();
     void sltShowLayoutEditor();
     void sltKeyToEditChanged(UISoftKeyboardKey* pKey);
     void sltLayoutEdited();
     /** Make th necessary changes to data structures when th key captions updated. */
     void sltKeyCaptionsEdited(UISoftKeyboardKey* pKey);
+    void sltShowHideSidePanel();
 
 private:
 
@@ -95,10 +94,10 @@ private:
     UISoftKeyboardWidget       *m_pKeyboardWidget;
     QString       m_strMachineName;
     QSplitter      *m_pSplitter;
-    QToolButton    *m_pSettingsButton;
-    QStackedWidget *m_pSidePanelContainerWidget;
+    QStackedWidget *m_pSidePanelWidget;
     UILayoutEditor *m_pLayoutEditor;
     UILayoutSelector *m_pLayoutSelector;
+    UISoftKeyboardStatusBarWidget *m_pStatusBarWidget;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_softkeyboard_UISoftKeyboard_h */
