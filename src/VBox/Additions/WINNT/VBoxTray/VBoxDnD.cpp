@@ -689,8 +689,9 @@ int VBoxDnDWnd::RegisterAsDropTarget(void)
 
         if (FAILED(hr))
         {
-            LogRel(("DnD: Creating drop target failed with hr=%Rhrc\n", hr));
-            rc = VERR_GENERAL_FAILURE; /** @todo Find a better rc. */
+            if (hr != DRAGDROP_E_INVALIDHWND) /* Could be because the DnD host service is not available. */
+                LogRel(("DnD: Creating drop target failed with hr=%Rhrc\n", hr));
+            rc = VERR_NOT_SUPPORTED; /* Report back DnD as not being supported. */
         }
         else
         {
