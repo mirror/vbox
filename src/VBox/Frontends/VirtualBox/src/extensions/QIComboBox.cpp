@@ -259,6 +259,13 @@ int QIComboBox::findData(const QVariant &data,
     return m_pComboBox->findData(data, iRole, flags);
 }
 
+void QIComboBox::clear()
+{
+    /* Redirect to combo-box: */
+    AssertPtrReturnVoid(m_pComboBox);
+    m_pComboBox->clear();
+}
+
 void QIComboBox::setIconSize(const QSize &size) const
 {
     /* Redirect to combo-box: */

@@ -107,6 +107,9 @@ public:
 
 public slots:
 
+    /** Clears the combobox, removing all items. */
+    void clear();
+
     /** Defines the @a size of the icons shown in the combo-box. */
     void setIconSize(const QSize &size) const;
     /** Defines the combo-box insert @a policy. */
