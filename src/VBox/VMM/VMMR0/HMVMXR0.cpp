@@ -10485,9 +10485,15 @@ static uint32_t hmR0VmxCheckGuestState(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo)
         {
             HMVMX_CHECK_BREAK(!(u64Val & 0xfff), VMX_IGS_VMCS_LINK_PTR_RESERVED);
             /** @todo Bits beyond the processor's physical-address width MBZ. */
-            /** @todo 32-bit located in memory referenced by value of this field (as a
-             *        physical address) must contain the processor's VMCS revision ID. */
             /** @todo SMM checks. */
+            Assert(pVmcsInfo->HCPhysShadowVmcs == u64Val);
+            Assert(pVmcsInfo->pvShadowVmcs);
+            VMXVMCSREVID VmcsRevId;
+            VmcsRevId.u = *(uint32_t *)pVmcsInfo->pvShadowVmcs;
+            HMVMX_CHECK_BREAK(VmcsRevId.n.u31RevisionId == RT_BF_GET(pVM->hm.s.vmx.Msrs.u64Basic, VMX_BF_BASIC_VMCS_ID),
+                              VMX_IGS_VMCS_LINK_PTR_SHADOW_VMCS_ID_INVALID);
+            HMVMX_CHECK_BREAK(VmcsRevId.n.fIsShadowVmcs == !!(pVmcsInfo->u32ProcCtls2 & VMX_PROC_CTLS2_VMCS_SHADOWING),
+                              VMX_IGS_VMCS_LINK_PTR_NOT_SHADOW);
         }
 
         /** @todo Checks on Guest Page-Directory-Pointer-Table Entries when guest is
