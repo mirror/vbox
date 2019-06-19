@@ -90,7 +90,7 @@ endif
 # Use newly intruduced global media related events for
 # medium enumeration purposes.
 #
-#VBOX_GUI_WITH_NEW_MEDIA_EVENTS := 1
+VBOX_GUI_WITH_NEW_MEDIA_EVENTS := 1
 
 
 #
