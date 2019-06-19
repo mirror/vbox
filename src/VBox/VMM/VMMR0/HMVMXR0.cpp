@@ -1255,6 +1255,50 @@ static int hmR0VmxClearVmcs(PVMXVMCSINFO pVmcsInfo)
 
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+#if 0
+/**
+ * Loads the shadow VMCS specified by the VMCS info. object.
+ *
+ * @returns VBox status code.
+ * @param   pVmcsInfo       The VMCS info. object.
+ */
+static int hmR0VmxLoadShadowVmcs(PVMXVMCSINFO pVmcsInfo)
+{
+    Assert(pVmcsInfo->HCPhysShadowVmcs);
+    Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
+
+    if (pVmcsInfo->fShadowVmcsState & VMX_V_VMCS_LAUNCH_STATE_CLEAR)
+    {
+        int rc = VMXLoadVmcs(pVmcsInfo->HCPhysShadowVmcs);
+        if (RT_SUCCESS(rc))
+        {
+            pVmcsInfo->fShadowVmcsState |= VMX_V_VMCS_LAUNCH_STATE_ACTIVE;
+            return VINF_SUCCESS;
+        }
+        return rc;
+    }
+    return VERR_VMX_INVALID_VMCS_LAUNCH_STATE;
+}
+
+
+/**
+ * Clears the shadow VMCS specified by the VMCS info. object.
+ *
+ * @returns VBox status code.
+ * @param   pVmcsInfo       The VMCS info. object.
+ */
+static int hmR0VmxClearShadowVmcs(PVMXVMCSINFO pVmcsInfo)
+{
+    Assert(pVmcsInfo->HCPhysShadowVmcs);
+    Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
+
+    int rc = VMXClearVmcs(pVmcsInfo->HCPhysShadowVmcs);
+    if (RT_SUCCESS(rc))
+        pVmcsInfo->fShadowVmcsState = VMX_V_VMCS_LAUNCH_STATE_CLEAR;
+    return rc;
+}
+#endif
+
 /**
  * Switches the current VMCS to the one specified.
  *
