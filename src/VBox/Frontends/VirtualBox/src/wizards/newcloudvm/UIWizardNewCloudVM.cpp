@@ -142,7 +142,7 @@ private:
 
 
 /*********************************************************************************************************************************
-*   Class UIWizardNewCloudVM implementation.                                                                                      *
+*   Class UIWizardNewCloudVM implementation.                                                                                     *
 *********************************************************************************************************************************/
 
 UIWizardNewCloudVM::UIWizardNewCloudVM(QWidget *pParent, bool fImportFromOCIByDefault, const QString &strFileName)

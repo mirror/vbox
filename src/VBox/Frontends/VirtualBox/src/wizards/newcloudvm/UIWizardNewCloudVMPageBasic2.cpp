@@ -35,7 +35,7 @@
 
 
 /*********************************************************************************************************************************
-*   Class UIWizardNewCloudVMPage2 implementation.                                                                                 *
+*   Class UIWizardNewCloudVMPage2 implementation.                                                                                *
 *********************************************************************************************************************************/
 
 UIWizardNewCloudVMPage2::UIWizardNewCloudVMPage2()
@@ -62,7 +62,7 @@ void UIWizardNewCloudVMPage2::refreshFormPropertiesTable()
 
 
 /*********************************************************************************************************************************
-*   Class UIWizardNewCloudVMPageBasic2 implementation.                                                                            *
+*   Class UIWizardNewCloudVMPageBasic2 implementation.                                                                           *
 *********************************************************************************************************************************/
 
 UIWizardNewCloudVMPageBasic2::UIWizardNewCloudVMPageBasic2(const QString &strFileName)

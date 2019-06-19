@@ -42,7 +42,7 @@
 
 
 /*********************************************************************************************************************************
-*   Class UIWizardNewCloudVMPage1 implementation.                                                                                 *
+*   Class UIWizardNewCloudVMPage1 implementation.                                                                                *
 *********************************************************************************************************************************/
 
 UIWizardNewCloudVMPage1::UIWizardNewCloudVMPage1(bool fImportFromOCIByDefault)
@@ -543,7 +543,7 @@ CVirtualSystemDescriptionForm UIWizardNewCloudVMPage1::vsdForm() const
 
 
 /*********************************************************************************************************************************
-*   Class UIWizardNewCloudVMPageBasic1 implementation.                                                                            *
+*   Class UIWizardNewCloudVMPageBasic1 implementation.                                                                           *
 *********************************************************************************************************************************/
 
 UIWizardNewCloudVMPageBasic1::UIWizardNewCloudVMPageBasic1(bool fImportFromOCIByDefault)
