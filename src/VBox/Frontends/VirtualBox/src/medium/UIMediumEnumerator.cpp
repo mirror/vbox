@@ -402,17 +402,17 @@ void UIMediumEnumerator::sltHandleMachineDataChange(const QUuid &uMachineId)
 
 void UIMediumEnumerator::sltHandleStorageControllerChange(const QUuid &uMachineId, const QString &strControllerName)
 {
-    //printf("OnStorageControllerChanged: machine-id=%s, controller-name=%s\n",
+    //printf("StorageControllerChanged: machine-id=%s, controller-name=%s\n",
     //       uMachineId.toString().toUtf8().constData(), strControllerName.toUtf8().constData());
-    LogRel2(("GUI: UIMediumEnumerator: OnStorageControllerChanged event received, Medium ID = {%s}, Controller Name = {%s}\n",
+    LogRel2(("GUI: UIMediumEnumerator: StorageControllerChanged event received, Medium ID = {%s}, Controller Name = {%s}\n",
              uMachineId.toString().toUtf8().constData(), strControllerName.toUtf8().constData()));
 }
 
 void UIMediumEnumerator::sltHandleStorageDeviceChange(CMediumAttachment comAttachment, bool fRemoved, bool fSilent)
 {
-    //printf("OnStorageDeviceChanged: removed=%d, silent=%d\n",
+    //printf("StorageDeviceChanged: removed=%d, silent=%d\n",
     //       fRemoved, fSilent);
-    LogRel2(("GUI: UIMediumEnumerator: OnStorageDeviceChanged event received, Removed = {%d}, Silent = {%d}\n",
+    LogRel2(("GUI: UIMediumEnumerator: StorageDeviceChanged event received, Removed = {%d}, Silent = {%d}\n",
              fRemoved, fSilent));
 
     /* Parse attachment: */
