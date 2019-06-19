@@ -80,6 +80,7 @@ private slots:
     void sltShowHideSidePanel();
     void sltCopyLayout();
     void sltSaveLayout();
+    void sltDeleteLayout();
     void sltStatusBarMessage(const QString &strMessage);
 
 private:
