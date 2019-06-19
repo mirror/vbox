@@ -3605,10 +3605,10 @@ static int hmR0VmxSetupVmcsProcCtls2(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo)
     if (pVM->hm.s.fNestedPaging)
         fVal |= VMX_PROC_CTLS2_EPT;
 
-    /* Enable the INVPCID instruction if supported by the hardware and we expose
-      it to the guest. Without this, guest executing INVPCID would cause a #UD. */
-    if (   (pVM->hm.s.vmx.Msrs.ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_INVPCID)
-        && pVM->cpum.ro.GuestFeatures.fInvpcid)
+    /* Enable the INVPCID instruction if we expose it to the guest and is supported
+       by the hardware. Without this, guest executing INVPCID would cause a #UD. */
+    if (   pVM->cpum.ro.GuestFeatures.fInvpcid
+        && (pVM->hm.s.vmx.Msrs.ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_INVPCID))
         fVal |= VMX_PROC_CTLS2_INVPCID;
 
     /* Enable VPID. */
@@ -3642,10 +3642,10 @@ static int hmR0VmxSetupVmcsProcCtls2(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo)
         AssertRCReturn(rc, rc);
     }
 
-    /* Enable the RDTSCP instruction if supported by the hardware and we expose
-       it to the guest. Without this, guest executing RDTSCP would cause a #UD. */
-    if (   (pVM->hm.s.vmx.Msrs.ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_RDTSCP)
-        && pVM->cpum.ro.GuestFeatures.fRdTscP)
+    /* Enable the RDTSCP instruction if we expose it to the guest and is supported
+       by the hardware. Without this, guest executing RDTSCP would cause a #UD. */
+    if (   pVM->cpum.ro.GuestFeatures.fRdTscP
+        && (pVM->hm.s.vmx.Msrs.ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_RDTSCP))
         fVal |= VMX_PROC_CTLS2_RDTSCP;
 
     /* Enable Pause-Loop exiting. */
