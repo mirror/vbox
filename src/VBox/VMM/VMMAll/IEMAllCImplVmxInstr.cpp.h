@@ -807,7 +807,7 @@ DECL_FORCE_INLINE(void) iemVmxVmcsSetExitInstrInfo(PVMCPU pVCpu, uint32_t uExitI
 /**
  * Implements VMSucceed for VMX instruction success.
  *
- * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pVCpu   The cross context virtual CPU structure.
  */
 DECL_FORCE_INLINE(void) iemVmxVmSucceed(PVMCPU pVCpu)
 {
@@ -818,7 +818,7 @@ DECL_FORCE_INLINE(void) iemVmxVmSucceed(PVMCPU pVCpu)
 /**
  * Implements VMFailInvalid for VMX instruction failure.
  *
- * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pVCpu   The cross context virtual CPU structure.
  */
 DECL_FORCE_INLINE(void) iemVmxVmFailInvalid(PVMCPU pVCpu)
 {
@@ -843,8 +843,8 @@ DECL_FORCE_INLINE(void) iemVmxVmFail(PVMCPU pVCpu, VMXINSTRERR enmInsErr)
  * implementation.
  *
  * @returns @c true if it's within the valid limit, @c false otherwise.
- * @param   pVCpu           The cross context virtual CPU structure.
- * @param   uMsrCount       The MSR area count to check.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   uMsrCount   The MSR area count to check.
  */
 DECL_FORCE_INLINE(bool) iemVmxIsAutoMsrCountValid(PCVMCPU pVCpu, uint32_t uMsrCount)
 {
@@ -861,11 +861,12 @@ DECL_FORCE_INLINE(bool) iemVmxIsAutoMsrCountValid(PCVMCPU pVCpu, uint32_t uMsrCo
  * Flushes the current VMCS contents back to guest memory.
  *
  * @returns VBox status code.
- * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   pVCpu   The cross context virtual CPU structure.
  */
 DECL_FORCE_INLINE(int) iemVmxCommitCurrentVmcsToMemory(PVMCPU pVCpu)
 {
     Assert(IEM_VMX_HAS_CURRENT_VMCS(pVCpu));
+    Assert(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs));
     int rc = PGMPhysSimpleWriteGCPhys(pVCpu->CTX_SUFF(pVM), IEM_VMX_GET_CURRENT_VMCS(pVCpu),
                                       pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs), sizeof(VMXVVMCS));
     IEM_VMX_CLEAR_CURRENT_VMCS(pVCpu);
@@ -876,7 +877,7 @@ DECL_FORCE_INLINE(int) iemVmxCommitCurrentVmcsToMemory(PVMCPU pVCpu)
 /**
  * Implements VMSucceed for the VMREAD instruction and increments the guest RIP.
  *
- * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   pVCpu   The cross context virtual CPU structure.
  */
 DECL_FORCE_INLINE(void) iemVmxVmreadSuccess(PVMCPU pVCpu, uint8_t cbInstr)
 {
@@ -1138,7 +1139,7 @@ IEM_STATIC VMXVDIAG iemVmxGetDiagVmexitPdpteRsvd(unsigned iPdpte)
  * Saves the guest control registers, debug registers and some MSRs are part of
  * VM-exit.
  *
- * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pVCpu   The cross context virtual CPU structure.
  */
 IEM_STATIC void iemVmxVmexitSaveGuestControlRegsMsrs(PVMCPU pVCpu)
 {
@@ -1191,7 +1192,7 @@ IEM_STATIC void iemVmxVmexitSaveGuestControlRegsMsrs(PVMCPU pVCpu)
 /**
  * Saves the guest force-flags in preparation of entering the nested-guest.
  *
- * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pVCpu   The cross context virtual CPU structure.
  */
 IEM_STATIC void iemVmxVmentrySaveNmiBlockingFF(PVMCPU pVCpu)
 {
@@ -1232,7 +1233,7 @@ IEM_STATIC void iemVmxVmentrySaveNmiBlockingFF(PVMCPU pVCpu)
 /**
  * Restores the guest force-flags in preparation of exiting the nested-guest.
  *
- * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pVCpu   The cross context virtual CPU structure.
  */
 IEM_STATIC void iemVmxVmexitRestoreNmiBlockingFF(PVMCPU pVCpu)
 {
@@ -1247,7 +1248,7 @@ IEM_STATIC void iemVmxVmexitRestoreNmiBlockingFF(PVMCPU pVCpu)
 /**
  * Perform a VMX transition updated PGM, IEM and CPUM.
  *
- * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pVCpu   The cross context virtual CPU structure.
  */
 IEM_STATIC int iemVmxWorldSwitch(PVMCPU pVCpu)
 {
@@ -1284,7 +1285,8 @@ IEM_STATIC int iemVmxWorldSwitch(PVMCPU pVCpu)
 /**
  * Calculates the current VMX-preemption timer value.
  *
- * @param   pVCpu       The cross context virtual CPU structure.
+ * @returns The current VMX-preemption timer value.
+ * @param   pVCpu   The cross context virtual CPU structure.
  */
 IEM_STATIC uint32_t iemVmxCalcPreemptTimer(PVMCPU pVCpu)
 {
@@ -1331,7 +1333,7 @@ IEM_STATIC uint32_t iemVmxCalcPreemptTimer(PVMCPU pVCpu)
 /**
  * Saves guest segment registers, GDTR, IDTR, LDTR, TR as part of VM-exit.
  *
- * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pVCpu   The cross context virtual CPU structure.
  */
 IEM_STATIC void iemVmxVmexitSaveGuestSegRegs(PVMCPU pVCpu)
 {
@@ -2771,9 +2773,9 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrNeedsInfo(PVMCPU pVCpu, uint32_t uExitR
  * VMX VM-exit handler for VM-exits due to INVLPG.
  *
  * @returns Strict VBox status code.
- * @param   pVCpu           The cross context virtual CPU structure.
- * @param   GCPtrPage       The guest-linear address of the page being invalidated.
- * @param   cbInstr         The instruction length in bytes.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   GCPtrPage   The guest-linear address of the page being invalidated.
+ * @param   cbInstr     The instruction length in bytes.
  */
 IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrInvlpg(PVMCPU pVCpu, RTGCPTR GCPtrPage, uint8_t cbInstr)
 {
@@ -2907,14 +2909,14 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrClts(PVMCPU pVCpu, uint8_t cbInstr)
  * (CR0/CR4 write).
  *
  * @returns Strict VBox status code.
- * @param   pVCpu           The cross context virtual CPU structure.
- * @param   iCrReg          The control register (either CR0 or CR4).
- * @param   uGuestCrX       The current guest CR0/CR4.
- * @param   puNewCrX        Pointer to the new CR0/CR4 value. Will be updated
- *                          if no VM-exit is caused.
- * @param   iGReg           The general register from which the CR0/CR4 value is
- *                          being loaded.
- * @param   cbInstr         The instruction length in bytes.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   iCrReg      The control register (either CR0 or CR4).
+ * @param   uGuestCrX   The current guest CR0/CR4.
+ * @param   puNewCrX    Pointer to the new CR0/CR4 value. Will be updated if no
+ *                      VM-exit is caused.
+ * @param   iGReg       The general register from which the CR0/CR4 value is being
+ *                      loaded.
+ * @param   cbInstr     The instruction length in bytes.
  */
 IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrMovToCr0Cr4(PVMCPU pVCpu, uint8_t iCrReg, uint64_t *puNewCrX, uint8_t iGReg,
                                                      uint8_t cbInstr)
@@ -3315,8 +3317,8 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrMwait(PVMCPU pVCpu, bool fMonitorHwArme
  * VMX VM-exit handler for VM-exits due to PAUSE.
  *
  * @returns VBox strict status code.
- * @param   pVCpu               The cross context virtual CPU structure.
- * @param   cbInstr             The instruction length in bytes.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   cbInstr     The instruction length in bytes.
  */
 IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrPause(PVMCPU pVCpu, uint8_t cbInstr)
 {
@@ -3486,7 +3488,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitTaskSwitchWithInfo(PVMCPU pVCpu, PCVMXVEXITI
  * VMX VM-exit handler for VM-exits due to expiring of the preemption timer.
  *
  * @returns VBox strict status code.
- * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   pVCpu   The cross context virtual CPU structure.
  */
 IEM_STATIC VBOXSTRICTRC iemVmxVmexitPreemptTimer(PVMCPU pVCpu)
 {
@@ -3594,7 +3596,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitExtInt(PVMCPU pVCpu, uint8_t uVector, bool f
  * an event.
  *
  * @returns VBox strict status code.
- * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pVCpu   The cross context virtual CPU structure.
  */
 IEM_STATIC VBOXSTRICTRC iemVmxVmexitEventDoubleFault(PVMCPU pVCpu)
 {
@@ -3640,9 +3642,9 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitEventDoubleFault(PVMCPU pVCpu)
  * all the relevant VM-exit information.
  *
  * @returns VBox strict status code.
- * @param   pVCpu               The cross context virtual CPU structure.
- * @param   pExitInfo           Pointer to the VM-exit information.
- * @param   pExitEventInfo      Pointer to the VM-exit event information.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   pExitInfo       Pointer to the VM-exit information.
+ * @param   pExitEventInfo  Pointer to the VM-exit event information.
  */
 IEM_STATIC VBOXSTRICTRC iemVmxVmexitEventWithInfo(PVMCPU pVCpu, PCVMXVEXITINFO pExitInfo, PCVMXVEXITEVENTINFO pExitEventInfo)
 {
@@ -3788,7 +3790,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitEvent(PVMCPU pVCpu, uint8_t uVector, uint32_
  * VMX VM-exit handler for VM-exits due to a triple fault.
  *
  * @returns VBox strict status code.
- * @param   pVCpu               The cross context virtual CPU structure.
+ * @param   pVCpu   The cross context virtual CPU structure.
  */
 IEM_STATIC VBOXSTRICTRC iemVmxVmexitTripleFault(PVMCPU pVCpu)
 {
@@ -3844,9 +3846,9 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitApicAccess(PVMCPU pVCpu, uint16_t offAccess,
  * relevant VM-exit information.
  *
  * @returns VBox strict status code.
- * @param   pVCpu               The cross context virtual CPU structure.
- * @param   pExitInfo           Pointer to the VM-exit information.
- * @param   pExitEventInfo      Pointer to the VM-exit event information.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   pExitInfo       Pointer to the VM-exit information.
+ * @param   pExitEventInfo  Pointer to the VM-exit event information.
  */
 IEM_STATIC VBOXSTRICTRC iemVmxVmexitApicAccessWithInfo(PVMCPU pVCpu, PCVMXVEXITINFO pExitInfo,
                                                        PCVMXVEXITEVENTINFO pExitEventInfo)
@@ -3907,7 +3909,7 @@ DECLINLINE(void) iemVmxVirtApicSetPendingWrite(PVMCPU pVCpu, uint16_t offApic)
  * Clears any pending virtual-APIC write emulation.
  *
  * @returns The virtual-APIC offset that was written before clearing it.
- * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pVCpu   The cross context virtual CPU structure.
  */
 DECLINLINE(uint16_t) iemVmxVirtApicClearPendingWrite(PVMCPU pVCpu)
 {
@@ -3924,8 +3926,8 @@ DECLINLINE(uint16_t) iemVmxVirtApicClearPendingWrite(PVMCPU pVCpu)
  * Reads a 32-bit register from the virtual-APIC page at the given offset.
  *
  * @returns The register from the virtual-APIC page.
- * @param   pVCpu       The cross context virtual CPU structure.
- * @param   offReg      The offset of the register being read.
+ * @param   pVCpu   The cross context virtual CPU structure.
+ * @param   offReg  The offset of the register being read.
  */
 IEM_STATIC uint32_t iemVmxVirtApicReadRaw32(PVMCPU pVCpu, uint16_t offReg)
 {
@@ -3950,8 +3952,8 @@ IEM_STATIC uint32_t iemVmxVirtApicReadRaw32(PVMCPU pVCpu, uint16_t offReg)
  * Reads a 64-bit register from the virtual-APIC page at the given offset.
  *
  * @returns The register from the virtual-APIC page.
- * @param   pVCpu       The cross context virtual CPU structure.
- * @param   offReg      The offset of the register being read.
+ * @param   pVCpu   The cross context virtual CPU structure.
+ * @param   offReg  The offset of the register being read.
  */
 IEM_STATIC uint64_t iemVmxVirtApicReadRaw64(PVMCPU pVCpu, uint16_t offReg)
 {
@@ -3975,9 +3977,9 @@ IEM_STATIC uint64_t iemVmxVirtApicReadRaw64(PVMCPU pVCpu, uint16_t offReg)
 /**
  * Writes a 32-bit register to the virtual-APIC page at the given offset.
  *
- * @param   pVCpu       The cross context virtual CPU structure.
- * @param   offReg      The offset of the register being written.
- * @param   uReg        The register value to write.
+ * @param   pVCpu   The cross context virtual CPU structure.
+ * @param   offReg  The offset of the register being written.
+ * @param   uReg    The register value to write.
  */
 IEM_STATIC void iemVmxVirtApicWriteRaw32(PVMCPU pVCpu, uint16_t offReg, uint32_t uReg)
 {
@@ -3997,9 +3999,9 @@ IEM_STATIC void iemVmxVirtApicWriteRaw32(PVMCPU pVCpu, uint16_t offReg, uint32_t
 /**
  * Writes a 64-bit register to the virtual-APIC page at the given offset.
  *
- * @param   pVCpu       The cross context virtual CPU structure.
- * @param   offReg      The offset of the register being written.
- * @param   uReg        The register value to write.
+ * @param   pVCpu   The cross context virtual CPU structure.
+ * @param   offReg  The offset of the register being written.
+ * @param   uReg    The register value to write.
  */
 IEM_STATIC void iemVmxVirtApicWriteRaw64(PVMCPU pVCpu, uint16_t offReg, uint64_t uReg)
 {
@@ -4540,7 +4542,7 @@ static int iemVmxVirtApicGetHighestSetBitInReg(PVMCPU pVCpu, uint16_t offReg, ui
 /**
  * Evaluates pending virtual interrupts.
  *
- * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pVCpu   The cross context virtual CPU structure.
  */
 IEM_STATIC void iemVmxEvalPendingVirtIntrs(PVMCPU pVCpu)
 {
@@ -4568,7 +4570,7 @@ IEM_STATIC void iemVmxEvalPendingVirtIntrs(PVMCPU pVCpu)
  * Performs PPR virtualization.
  *
  * @returns VBox strict status code.
- * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pVCpu   The cross context virtual CPU structure.
  */
 IEM_STATIC void iemVmxPprVirtualization(PVMCPU pVCpu)
 {
@@ -4601,7 +4603,7 @@ IEM_STATIC void iemVmxPprVirtualization(PVMCPU pVCpu)
  * Performs VMX TPR virtualization.
  *
  * @returns VBox strict status code.
- * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pVCpu   The cross context virtual CPU structure.
  */
 IEM_STATIC VBOXSTRICTRC iemVmxTprVirtualization(PVMCPU pVCpu)
 {
@@ -4712,7 +4714,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxEoiVirtualization(PVMCPU pVCpu)
  * Performs self-IPI virtualization.
  *
  * @returns VBox strict status code.
- * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pVCpu   The cross context virtual CPU structure.
  */
 IEM_STATIC VBOXSTRICTRC iemVmxSelfIpiVirtualization(PVMCPU pVCpu)
 {
@@ -4742,7 +4744,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxSelfIpiVirtualization(PVMCPU pVCpu)
  * Performs VMX APIC-write emulation.
  *
  * @returns VBox strict status code.
- * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pVCpu   The cross context virtual CPU structure.
  */
 IEM_STATIC VBOXSTRICTRC iemVmxApicWriteEmulation(PVMCPU pVCpu)
 {
@@ -4979,8 +4981,8 @@ IEM_STATIC int iemVmxVmentryCheckGuestControlRegsMsrs(PVMCPU pVCpu, const char *
 /**
  * Checks guest segment registers, LDTR and TR as part of VM-entry.
  *
- * @param   pVCpu           The cross context virtual CPU structure.
- * @param   pszInstr        The VMX instruction name (for logging purposes).
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pszInstr    The VMX instruction name (for logging purposes).
  */
 IEM_STATIC int iemVmxVmentryCheckGuestSegRegs(PVMCPU pVCpu, const char *pszInstr)
 {
@@ -5367,8 +5369,8 @@ IEM_STATIC int iemVmxVmentryCheckGuestSegRegs(PVMCPU pVCpu, const char *pszInstr
 /**
  * Checks guest GDTR and IDTR as part of VM-entry.
  *
- * @param   pVCpu           The cross context virtual CPU structure.
- * @param   pszInstr        The VMX instruction name (for logging purposes).
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pszInstr    The VMX instruction name (for logging purposes).
  */
 IEM_STATIC int iemVmxVmentryCheckGuestGdtrIdtr(PVMCPU pVCpu,  const char *pszInstr)
 {
@@ -5413,8 +5415,8 @@ IEM_STATIC int iemVmxVmentryCheckGuestGdtrIdtr(PVMCPU pVCpu,  const char *pszIns
 /**
  * Checks guest RIP and RFLAGS as part of VM-entry.
  *
- * @param   pVCpu           The cross context virtual CPU structure.
- * @param   pszInstr        The VMX instruction name (for logging purposes).
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pszInstr    The VMX instruction name (for logging purposes).
  */
 IEM_STATIC int iemVmxVmentryCheckGuestRipRFlags(PVMCPU pVCpu, const char *pszInstr)
 {
@@ -5487,8 +5489,8 @@ IEM_STATIC int iemVmxVmentryCheckGuestRipRFlags(PVMCPU pVCpu, const char *pszIns
 /**
  * Checks guest non-register state as part of VM-entry.
  *
- * @param   pVCpu           The cross context virtual CPU structure.
- * @param   pszInstr        The VMX instruction name (for logging purposes).
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pszInstr    The VMX instruction name (for logging purposes).
  */
 IEM_STATIC int iemVmxVmentryCheckGuestNonRegState(PVMCPU pVCpu,  const char *pszInstr)
 {
@@ -5779,8 +5781,8 @@ IEM_STATIC int iemVmxVmentryCheckGuestPdptesForCr3(PVMCPU pVCpu, const char *psz
 /**
  * Checks guest PDPTEs as part of VM-entry.
  *
- * @param   pVCpu           The cross context virtual CPU structure.
- * @param   pszInstr        The VMX instruction name (for logging purposes).
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pszInstr    The VMX instruction name (for logging purposes).
  */
 IEM_STATIC int iemVmxVmentryCheckGuestPdptes(PVMCPU pVCpu, const char *pszInstr)
 {
@@ -5815,8 +5817,8 @@ IEM_STATIC int iemVmxVmentryCheckGuestPdptes(PVMCPU pVCpu, const char *pszInstr)
  * Checks guest-state as part of VM-entry.
  *
  * @returns VBox status code.
- * @param   pVCpu           The cross context virtual CPU structure.
- * @param   pszInstr        The VMX instruction name (for logging purposes).
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pszInstr    The VMX instruction name (for logging purposes).
  */
 IEM_STATIC int iemVmxVmentryCheckGuestState(PVMCPU pVCpu, const char *pszInstr)
 {
@@ -5847,8 +5849,8 @@ IEM_STATIC int iemVmxVmentryCheckGuestState(PVMCPU pVCpu, const char *pszInstr)
  * Checks host-state as part of VM-entry.
  *
  * @returns VBox status code.
- * @param   pVCpu           The cross context virtual CPU structure.
- * @param   pszInstr        The VMX instruction name (for logging purposes).
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pszInstr    The VMX instruction name (for logging purposes).
  */
 IEM_STATIC int iemVmxVmentryCheckHostState(PVMCPU pVCpu, const char *pszInstr)
 {
@@ -6051,8 +6053,8 @@ IEM_STATIC int iemVmxVmentryCheckHostState(PVMCPU pVCpu, const char *pszInstr)
  * See Intel spec. 26.2.1.3 "VM-Entry Control Fields".
  *
  * @returns VBox status code.
- * @param   pVCpu           The cross context virtual CPU structure.
- * @param   pszInstr        The VMX instruction name (for logging purposes).
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pszInstr    The VMX instruction name (for logging purposes).
  */
 IEM_STATIC int iemVmxVmentryCheckEntryCtls(PVMCPU pVCpu, const char *pszInstr)
 {
@@ -6159,8 +6161,8 @@ IEM_STATIC int iemVmxVmentryCheckEntryCtls(PVMCPU pVCpu, const char *pszInstr)
  * See Intel spec. 26.2.1.2 "VM-Exit Control Fields".
  *
  * @returns VBox status code.
- * @param   pVCpu           The cross context virtual CPU structure.
- * @param   pszInstr        The VMX instruction name (for logging purposes).
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pszInstr    The VMX instruction name (for logging purposes).
  */
 IEM_STATIC int iemVmxVmentryCheckExitCtls(PVMCPU pVCpu, const char *pszInstr)
 {
@@ -6219,8 +6221,8 @@ IEM_STATIC int iemVmxVmentryCheckExitCtls(PVMCPU pVCpu, const char *pszInstr)
  * See Intel spec. 26.2.1.1 "VM-Execution Control Fields".
  *
  * @returns VBox status code.
- * @param   pVCpu           The cross context virtual CPU structure.
- * @param   pszInstr        The VMX instruction name (for logging purposes).
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pszInstr    The VMX instruction name (for logging purposes).
  *
  * @remarks This may update secondary-processor based VM-execution control fields
  *          in the current VMCS if necessary.
@@ -6787,7 +6789,7 @@ IEM_STATIC int iemVmxVmentryLoadGuestAutoMsrs(PVMCPU pVCpu, const char *pszInstr
  * Loads the guest-state non-register state as part of VM-entry.
  *
  * @returns VBox status code.
- * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   pVCpu   The cross context virtual CPU structure.
  *
  * @remarks This must be called only after loading the nested-guest register state
  *          (especially nested-guest RIP).
@@ -6844,8 +6846,8 @@ IEM_STATIC void iemVmxVmentryLoadGuestNonRegState(PVMCPU pVCpu)
  * Loads the guest-state as part of VM-entry.
  *
  * @returns VBox status code.
- * @param   pVCpu           The cross context virtual CPU structure.
- * @param   pszInstr        The VMX instruction name (for logging purposes).
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pszInstr    The VMX instruction name (for logging purposes).
  *
  * @remarks This must be done after all the necessary steps prior to loading of
  *          guest-state (e.g. checking various VMCS state).
@@ -7183,7 +7185,7 @@ IEM_STATIC int iemVmxVmentryInjectEvent(PVMCPU pVCpu, const char *pszInstr)
 /**
  * Initializes all read-only VMCS fields as part of VM-entry.
  *
- * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pVCpu   The cross context virtual CPU structure.
  */
 IEM_STATIC void iemVmxVmentryInitReadOnlyFields(PVMCPU pVCpu)
 {
@@ -7228,10 +7230,10 @@ IEM_STATIC void iemVmxVmentryInitReadOnlyFields(PVMCPU pVCpu)
  * VMLAUNCH/VMRESUME instruction execution worker.
  *
  * @returns Strict VBox status code.
- * @param   pVCpu           The cross context virtual CPU structure.
- * @param   cbInstr         The instruction length in bytes.
- * @param   uInstrId        The instruction identity (VMXINSTRID_VMLAUNCH or
- *                          VMXINSTRID_VMRESUME).
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   cbInstr     The instruction length in bytes.
+ * @param   uInstrId    The instruction identity (VMXINSTRID_VMLAUNCH or
+ *                      VMXINSTRID_VMRESUME).
  *
  * @remarks Common VMX instruction checks are already expected to by the caller,
  *          i.e. CR4.VMXE, Real/V86 mode, EFER/CS.L checks.
@@ -7885,12 +7887,11 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmwrite(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
  * VMCLEAR instruction execution worker.
  *
  * @returns Strict VBox status code.
- * @param   pVCpu           The cross context virtual CPU structure.
- * @param   cbInstr         The instruction length in bytes.
- * @param   iEffSeg         The effective segment register to use with @a GCPtrVmcs.
- * @param   GCPtrVmcs       The linear address of the VMCS pointer.
- * @param   pExitInfo       Pointer to the VM-exit information. Optional, can be
- *                          NULL.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   cbInstr     The instruction length in bytes.
+ * @param   iEffSeg     The effective segment register to use with @a GCPtrVmcs.
+ * @param   GCPtrVmcs   The linear address of the VMCS pointer.
+ * @param   pExitInfo   Pointer to the VM-exit information. Optional, can be NULL.
  *
  * @remarks Common VMX instruction checks are already expected to by the caller,
  *          i.e. VMX operation, CR4.VMXE, Real/V86 mode, EFER/CS.L checks.
@@ -7990,8 +7991,6 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmclear(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
     if (   IEM_VMX_HAS_CURRENT_VMCS(pVCpu)
         && IEM_VMX_GET_CURRENT_VMCS(pVCpu) == GCPhysVmcs)
     {
-        Assert(GCPhysVmcs != NIL_RTGCPHYS);                     /* Paranoia. */
-        Assert(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs));
         pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs)->fVmcsState = fVmcsLaunchStateClear;
         iemVmxCommitCurrentVmcsToMemory(pVCpu);
         Assert(!IEM_VMX_HAS_CURRENT_VMCS(pVCpu));
@@ -8015,13 +8014,12 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmclear(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
  * VMPTRST instruction execution worker.
  *
  * @returns Strict VBox status code.
- * @param   pVCpu           The cross context virtual CPU structure.
- * @param   cbInstr         The instruction length in bytes.
- * @param   iEffSeg         The effective segment register to use with @a GCPtrVmcs.
- * @param   GCPtrVmcs       The linear address of where to store the current VMCS
- *                          pointer.
- * @param   pExitInfo       Pointer to the VM-exit information. Optional, can be
- *                          NULL.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   cbInstr     The instruction length in bytes.
+ * @param   iEffSeg     The effective segment register to use with @a GCPtrVmcs.
+ * @param   GCPtrVmcs   The linear address of where to store the current VMCS
+ *                      pointer.
+ * @param   pExitInfo   Pointer to the VM-exit information. Optional, can be NULL.
  *
  * @remarks Common VMX instruction checks are already expected to by the caller,
  *          i.e. VMX operation, CR4.VMXE, Real/V86 mode, EFER/CS.L checks.
@@ -8069,11 +8067,10 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmptrst(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
  * VMPTRLD instruction execution worker.
  *
  * @returns Strict VBox status code.
- * @param   pVCpu           The cross context virtual CPU structure.
- * @param   cbInstr         The instruction length in bytes.
- * @param   GCPtrVmcs       The linear address of the current VMCS pointer.
- * @param   pExitInfo       Pointer to the VM-exit information. Optional, can be
- *                          NULL.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   cbInstr     The instruction length in bytes.
+ * @param   GCPtrVmcs   The linear address of the current VMCS pointer.
+ * @param   pExitInfo   Pointer to the VM-exit information. Optional, can be NULL.
  *
  * @remarks Common VMX instruction checks are already expected to by the caller,
  *          i.e. VMX operation, CR4.VMXE, Real/V86 mode, EFER/CS.L checks.
@@ -8409,13 +8406,12 @@ IEM_STATIC VBOXSTRICTRC iemVmxInvvpid(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
  * VMXON instruction execution worker.
  *
  * @returns Strict VBox status code.
- * @param   pVCpu           The cross context virtual CPU structure.
- * @param   cbInstr         The instruction length in bytes.
- * @param   iEffSeg         The effective segment register to use with @a
- *                          GCPtrVmxon.
- * @param   GCPtrVmxon      The linear address of the VMXON pointer.
- * @param   pExitInfo       Pointer to the VM-exit information. Optional, can be
- *                          NULL.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   cbInstr     The instruction length in bytes.
+ * @param   iEffSeg     The effective segment register to use with @a
+ *                      GCPtrVmxon.
+ * @param   GCPtrVmxon  The linear address of the VMXON pointer.
+ * @param   pExitInfo   Pointer to the VM-exit information. Optional, can be NULL.
  *
  * @remarks Common VMX instruction checks are already expected to by the caller,
  *          i.e. CR4.VMXE, Real/V86 mode, EFER/CS.L checks.
