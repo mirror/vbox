@@ -863,13 +863,28 @@ DECL_FORCE_INLINE(bool) iemVmxIsAutoMsrCountValid(PCVMCPU pVCpu, uint32_t uMsrCo
  * @returns VBox status code.
  * @param   pVCpu   The cross context virtual CPU structure.
  */
-DECL_FORCE_INLINE(int) iemVmxCommitCurrentVmcsToMemory(PVMCPU pVCpu)
+DECL_FORCE_INLINE(int) iemVmxWriteCurrentVmcsToGstMem(PVMCPU pVCpu)
 {
-    Assert(IEM_VMX_HAS_CURRENT_VMCS(pVCpu));
     Assert(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs));
+    Assert(IEM_VMX_HAS_CURRENT_VMCS(pVCpu));
     int rc = PGMPhysSimpleWriteGCPhys(pVCpu->CTX_SUFF(pVM), IEM_VMX_GET_CURRENT_VMCS(pVCpu),
                                       pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs), sizeof(VMXVVMCS));
-    IEM_VMX_CLEAR_CURRENT_VMCS(pVCpu);
+    return rc;
+}
+
+
+/**
+ * Populates the current VMCS contents from guest memory.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu   The cross context virtual CPU structure.
+ */
+DECL_FORCE_INLINE(int) iemVmxReadCurrentVmcsFromGstMem(PVMCPU pVCpu)
+{
+    Assert(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs));
+    Assert(IEM_VMX_HAS_CURRENT_VMCS(pVCpu));
+    int rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), (void *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs),
+                                     IEM_VMX_GET_CURRENT_VMCS(pVCpu), sizeof(VMXVVMCS));
     return rc;
 }
 
@@ -7992,8 +8007,8 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmclear(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
         && IEM_VMX_GET_CURRENT_VMCS(pVCpu) == GCPhysVmcs)
     {
         pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs)->fVmcsState = fVmcsLaunchStateClear;
-        iemVmxCommitCurrentVmcsToMemory(pVCpu);
-        Assert(!IEM_VMX_HAS_CURRENT_VMCS(pVCpu));
+        iemVmxWriteCurrentVmcsToGstMem(pVCpu);
+        IEM_VMX_CLEAR_CURRENT_VMCS(pVCpu);
     }
     else
     {
@@ -8207,13 +8222,13 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmptrld(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
     {
         if (IEM_VMX_HAS_CURRENT_VMCS(pVCpu))
         {
-            iemVmxCommitCurrentVmcsToMemory(pVCpu);
-            Assert(!IEM_VMX_HAS_CURRENT_VMCS(pVCpu));
+            iemVmxWriteCurrentVmcsToGstMem(pVCpu);
+            IEM_VMX_CLEAR_CURRENT_VMCS(pVCpu);
         }
 
-        /* Finally, cache the new VMCS from guest memory and mark it as the current VMCS. */
-        rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), (void *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs), GCPhysVmcs,
-                                     sizeof(VMXVVMCS));
+        /* Set the new VMCS as the current VMCS and read it from guest memory. */
+        IEM_VMX_SET_CURRENT_VMCS(pVCpu, GCPhysVmcs);
+        rc = iemVmxReadCurrentVmcsFromGstMem(pVCpu);
         if (RT_SUCCESS(rc))
         { /* likely */ }
         else
@@ -8222,7 +8237,6 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmptrld(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
             pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmptrld_PtrReadPhys;
             return rc;
         }
-        IEM_VMX_SET_CURRENT_VMCS(pVCpu, GCPhysVmcs);
     }
 
     Assert(IEM_VMX_HAS_CURRENT_VMCS(pVCpu));
