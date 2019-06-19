@@ -408,14 +408,19 @@ class TdTaskBase(object):
     The base task.
     """
 
-    def __init__(self, sCaller):
-        self.sDbgCreated    = '%s: %s' % (utils.getTimePrefix(), sCaller);
-        self.fSignalled     = False;
-        self.__oRLock       = threading.RLock();
-        self.oCv            = threading.Condition(self.__oRLock);
-        self.oOwner         = None;
-        self.msStart        = timestampMilli();
-        self.oLocker        = None;
+    def __init__(self, sCaller, fnProcessEvents = None):
+        self.sDbgCreated        = '%s: %s' % (utils.getTimePrefix(), sCaller);
+        self.fSignalled         = False;
+        self.__oRLock           = threading.RLock();
+        self.oCv                = threading.Condition(self.__oRLock);
+        self.oOwner             = None;
+        self.msStart            = timestampMilli();
+        self.oLocker            = None;
+
+        ## Callback function that takes no parameters and will not be called holding the lock.
+        ## It is a hack to work the XPCOM and COM event queues, so we won't hold back events
+        ## that could block task progress (i.e. hangs VM).
+        self.fnProcessEvents    = fnProcessEvents;
 
     def __del__(self):
         """In case we need it later on."""
@@ -539,11 +544,14 @@ class TdTaskBase(object):
 
         Overriable.
         """
+        if self.fnProcessEvents:
+            self.fnProcessEvents();
+
         self.lockTask();
 
         fState = self.pollTask(True);
         if not fState:
-            # Don't wait more than 1s.  This allow lazy state polling.
+            # Don't wait more than 1s.  This allow lazy state polling and avoid event processing trouble.
             msStart = timestampMilli();
             while not fState:
                 cMsElapsed = timestampMilli() - msStart;
@@ -557,10 +565,20 @@ class TdTaskBase(object):
                     self.oCv.wait(cMsWait / 1000.0);
                 except:
                     pass;
+
+                if self.fnProcessEvents:
+                    self.unlockTask();
+                    self.fnProcessEvents();
+                    self.lockTask();
+
                 reporter.doPollWork('TdTaskBase.waitForTask');
                 fState = self.pollTask(True);
 
         self.unlockTask();
+
+        if self.fnProcessEvents:
+            self.fnProcessEvents();
+
         return fState;
 
 
