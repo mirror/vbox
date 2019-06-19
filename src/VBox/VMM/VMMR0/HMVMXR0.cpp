@@ -1279,6 +1279,7 @@ static int hmR0VmxLoadShadowVmcs(PVMXVMCSINFO pVmcsInfo)
     }
     return VERR_VMX_INVALID_VMCS_LAUNCH_STATE;
 }
+#endif
 
 
 /**
@@ -1297,7 +1298,7 @@ static int hmR0VmxClearShadowVmcs(PVMXVMCSINFO pVmcsInfo)
         pVmcsInfo->fShadowVmcsState = VMX_V_VMCS_LAUNCH_STATE_CLEAR;
     return rc;
 }
-#endif
+
 
 /**
  * Switches the current VMCS to the one specified.
@@ -1824,9 +1825,11 @@ static void hmR0VmxFreeVmcsInfo(PVM pVM, PVMXVMCSINFO pVmcsInfo)
 {
     hmR0VmxPageFree(&pVmcsInfo->hMemObjVmcs, &pVmcsInfo->pvVmcs, &pVmcsInfo->HCPhysVmcs);
 
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
     if (   pVM->cpum.ro.GuestFeatures.fVmx
         && (pVM->hm.s.vmx.Msrs.ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_VMCS_SHADOWING))
         hmR0VmxPageFree(&pVmcsInfo->hMemObjShadowVmcs, &pVmcsInfo->pvShadowVmcs, &pVmcsInfo->HCPhysShadowVmcs);
+#endif
 
     if (pVM->hm.s.vmx.Msrs.ProcCtls.n.allowed1 & VMX_PROC_CTLS_USE_MSR_BITMAPS)
         hmR0VmxPageFree(&pVmcsInfo->hMemObjMsrBitmap, &pVmcsInfo->pvMsrBitmap, &pVmcsInfo->HCPhysMsrBitmap);
@@ -1857,11 +1860,12 @@ static int hmR0VmxAllocVmcsInfo(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo, bool fIsNs
     {
         if (!fIsNstGstVmcs)
         {
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
             /* Allocate the shadow VMCS if supported by the CPU. */
             if (   pVM->cpum.ro.GuestFeatures.fVmx
                 && (pVM->hm.s.vmx.Msrs.ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_VMCS_SHADOWING))
                 rc = hmR0VmxPageAllocZ(&pVmcsInfo->hMemObjShadowVmcs, &pVmcsInfo->pvShadowVmcs, &pVmcsInfo->HCPhysShadowVmcs);
-
+#endif
             if (RT_SUCCESS(rc))
             {
                 /* Get the allocated virtual-APIC page from the virtual APIC device. */
@@ -3951,7 +3955,24 @@ static int hmR0VmxSetupVmcs(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo, bool fIsNstGst
                         {
                             rc = hmR0VmxSetupVmcsXcptBitmap(pVCpu, pVmcsInfo);
                             if (RT_SUCCESS(rc))
-                            { /* likely */ }
+                            {
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+                                /* If VMCS shadowing is used, initialize the shadow VMCS. */
+                                if (pVmcsInfo->u32ProcCtls2 & VMX_PROC_CTLS2_VMCS_SHADOWING)
+                                {
+                                    Assert(pVmcsInfo->pvShadowVmcs);
+                                    VMXVMCSREVID VmcsRevId;
+                                    VmcsRevId.u = RT_BF_GET(pVM->hm.s.vmx.Msrs.u64Basic, VMX_BF_BASIC_VMCS_ID);
+                                    VmcsRevId.n.fIsShadowVmcs = 1;
+                                    *(uint32_t *)pVmcsInfo->pvShadowVmcs = VmcsRevId.u;
+                                    rc = hmR0VmxClearShadowVmcs(pVmcsInfo);
+                                    if (RT_SUCCESS(rc))
+                                    { /* likely */ }
+                                    else
+                                        LogRelFunc(("Failed to initialize shadow VMCS. rc=%Rrc\n", rc));
+                                }
+#endif
+                            }
                             else
                                 LogRelFunc(("Failed to initialize exception bitmap. rc=%Rrc\n", rc));
                         }
