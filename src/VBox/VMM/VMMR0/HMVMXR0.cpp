@@ -8887,11 +8887,17 @@ static int hmR0VmxExitToRing3(PVMCPU pVCpu, VBOXSTRICTRC rcExit)
          * Ensure we don't accidentally clear a pending HM event without clearing the VMCS.
          * This can be pretty hard to debug otherwise, interrupts might get injected twice
          * occasionally, see @bugref{9180#c42}.
+         *
+         * However, if the VM-entry failed, any VM entry-interruption info. field would
+         * be left unmodified as the event would not have been injected to the guest. In
+         * such cases, don't assert, we're not going to continue guest execution anyway.
          */
+        uint32_t uExitReason;
         uint32_t uEntryIntInfo;
-        int rc = VMXReadVmcs32(VMX_VMCS32_CTRL_ENTRY_INTERRUPTION_INFO, &uEntryIntInfo);
+        int rc = VMXReadVmcs32(VMX_VMCS32_RO_EXIT_REASON, &uExitReason);
+        rc    |= VMXReadVmcs32(VMX_VMCS32_CTRL_ENTRY_INTERRUPTION_INFO, &uEntryIntInfo);
         AssertRC(rc);
-        Assert(!VMX_ENTRY_INT_INFO_IS_VALID(uEntryIntInfo));
+        Assert(VMX_EXIT_REASON_HAS_ENTRY_FAILED(uExitReason) || !VMX_ENTRY_INT_INFO_IS_VALID(uEntryIntInfo));
     }
 #endif
 
