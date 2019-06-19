@@ -8206,23 +8206,14 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmptrld(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
      * the cache of an existing, current VMCS back to guest memory before loading a new,
      * different current VMCS.
      */
-    bool fLoadVmcsFromMem;
-    if (IEM_VMX_HAS_CURRENT_VMCS(pVCpu))
+    if (IEM_VMX_GET_CURRENT_VMCS(pVCpu) != GCPhysVmcs)
     {
-        if (IEM_VMX_GET_CURRENT_VMCS(pVCpu) != GCPhysVmcs)
+        if (IEM_VMX_HAS_CURRENT_VMCS(pVCpu))
         {
             iemVmxCommitCurrentVmcsToMemory(pVCpu);
             Assert(!IEM_VMX_HAS_CURRENT_VMCS(pVCpu));
-            fLoadVmcsFromMem = true;
         }
-        else
-            fLoadVmcsFromMem = false;
-    }
-    else
-        fLoadVmcsFromMem = true;
 
-    if (fLoadVmcsFromMem)
-    {
         /* Finally, cache the new VMCS from guest memory and mark it as the current VMCS. */
         rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), (void *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs), GCPhysVmcs,
                                      sizeof(VMXVVMCS));
