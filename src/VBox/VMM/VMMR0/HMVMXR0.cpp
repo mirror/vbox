@@ -3632,7 +3632,8 @@ static int hmR0VmxSetupVmcsProcCtls2(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo)
     }
 #endif
 
-    /* Virtualize-APIC accesses if supported by the CPU. The virtual-APIC page is where the TPR shadow resides. */
+    /* Virtualize-APIC accesses if supported by the CPU. The virtual-APIC page is
+       where the TPR shadow resides. */
     /** @todo VIRT_X2APIC support, it's mutually exclusive with this. So must be
      *        done dynamically. */
     if (pVM->hm.s.vmx.Msrs.ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_VIRT_APIC_ACCESS)
@@ -3792,15 +3793,18 @@ static int hmR0VmxSetupVmcsProcCtls(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo)
  * @returns VBox status code.
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   pVmcsInfo       The VMCS info. object.
+ *
+ * @remarks Must be called after secondary processor-based VM-execution controls
+ *          have been initialized!
  */
 static int hmR0VmxSetupVmcsMiscCtls(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo)
 {
-    /* Set the auto-load/store MSR area addresses in the VMCS. */
-    int rc = hmR0VmxSetupVmcsAutoLoadStoreMsrAddrs(pVCpu, pVmcsInfo);
+    /* Set the VMCS link pointer in the VMCS. */
+    int rc = hmR0VmxSetupVmcsLinkPtr(pVCpu, pVmcsInfo);
     if (RT_SUCCESS(rc))
     {
-        /* Set the VMCS link pointer in the VMCS. */
-        rc = hmR0VmxSetupVmcsLinkPtr(pVCpu, pVmcsInfo);
+        /* Set the auto-load/store MSR area addresses in the VMCS. */
+        rc = hmR0VmxSetupVmcsAutoLoadStoreMsrAddrs(pVCpu, pVmcsInfo);
         if (RT_SUCCESS(rc))
         {
             /* Set the CR0/CR4 guest/host mask. */
@@ -3817,10 +3821,10 @@ static int hmR0VmxSetupVmcsMiscCtls(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo)
             LogRelFunc(("Failed to initialize VMCS CR0/CR4 guest/host mask. rc=%Rrc\n", rc));
         }
         else
-            LogRelFunc(("Failed to initialize VMCS link pointer. rc=%Rrc\n", rc));
+            LogRelFunc(("Failed to initialize VMCS auto-load/store MSR addresses. rc=%Rrc\n", rc));
     }
     else
-        LogRelFunc(("Failed to initialize VMCS auto-load/store MSR addresses. rc=%Rrc\n", rc));
+        LogRelFunc(("Failed to initialize VMCS link pointer. rc=%Rrc\n", rc));
     return rc;
 }
 
