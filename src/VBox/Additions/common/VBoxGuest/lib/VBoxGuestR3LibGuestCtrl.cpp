@@ -1122,7 +1122,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlFileGetReadAt(PVBGLR3GUESTCTRLCMDCTX pCtx,
         VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, vbglR3GuestCtrlGetMsgFunctionNo(pCtx->uClientID), pCtx->uNumParms);
         VbglHGCMParmUInt32Set(&Msg.context, HOST_MSG_FILE_READ_AT);
         VbglHGCMParmUInt32Set(&Msg.handle, 0);
-        VbglHGCMParmUInt32Set(&Msg.offset, 0);
+        VbglHGCMParmUInt64Set(&Msg.offset, 0);
         VbglHGCMParmUInt32Set(&Msg.size, 0);
 
         rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
@@ -1201,7 +1201,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlFileGetWriteAt(PVBGLR3GUESTCTRLCMDCTX pCtx, uint3
         VbglHGCMParmUInt32Set(&Msg.handle, 0);
         VbglHGCMParmPtrSet(&Msg.data, pvData, cbData);
         VbglHGCMParmUInt32Set(&Msg.size, 0);
-        VbglHGCMParmUInt32Set(&Msg.offset, 0);
+        VbglHGCMParmUInt64Set(&Msg.offset, 0);
 
         rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
         if (RT_SUCCESS(rc))
