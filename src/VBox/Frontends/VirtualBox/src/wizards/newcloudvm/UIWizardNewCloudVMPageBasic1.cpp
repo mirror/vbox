@@ -16,11 +16,10 @@
  */
 
 /* Qt includes: */
-#include <QFileInfo>
 #include <QHeaderView>
+#include <QGridLayout>
 #include <QLabel>
 #include <QListWidget>
-#include <QStackedLayout>
 #include <QTableWidget>
 #include <QVBoxLayout>
 
@@ -28,17 +27,15 @@
 #include "QIComboBox.h"
 #include "QIRichTextLabel.h"
 #include "QIToolButton.h"
-#include "VBoxGlobal.h"
-#include "UIEmptyFilePathSelector.h"
 #include "UIIconPool.h"
 #include "UIMessageCenter.h"
 #include "UIVirtualBoxManager.h"
 #include "UIWizardNewCloudVM.h"
 #include "UIWizardNewCloudVMPageBasic1.h"
-#include "UIWizardNewCloudVMPageBasic2.h"
 
 /* COM includes: */
 #include "CStringArray.h"
+#include "CVirtualSystemDescription.h"
 
 
 /*********************************************************************************************************************************
@@ -50,10 +47,6 @@ UIWizardNewCloudVMPage1::UIWizardNewCloudVMPage1(bool fImportFromOCIByDefault)
     , m_pSourceLayout(0)
     , m_pSourceLabel(0)
     , m_pSourceComboBox(0)
-    , m_pStackedLayout(0)
-    , m_pLocalContainerLayout(0)
-    , m_pFileLabel(0)
-    , m_pFileSelector(0)
     , m_pCloudContainerLayout(0)
     , m_pAccountLabel(0)
     , m_pAccountComboBox(0)
@@ -68,17 +61,6 @@ void UIWizardNewCloudVMPage1::populateSources()
 {
     /* To be executed just once, so combo should be empty: */
     AssertReturnVoid(m_pSourceComboBox->count() == 0);
-
-    /* Compose hardcoded sources list, there might be few of list items: */
-    QStringList sources;
-    sources << "local";
-    /* Add that list to combo: */
-    foreach (const QString &strShortName, sources)
-    {
-        /* Compose empty combo item, fill it's data: */
-        m_pSourceComboBox->addItem(QString());
-        m_pSourceComboBox->setItemData(m_pSourceComboBox->count() - 1, strShortName, SourceData_ShortName);
-    }
 
     /* Do we have OCI source? */
     bool fOCIPresent = false;
@@ -125,8 +107,6 @@ void UIWizardNewCloudVMPage1::populateSources()
     /* Set default: */
     if (m_fImportFromOCIByDefault && fOCIPresent)
         setSource("OCI");
-    else
-        setSource("local");
 }
 
 void UIWizardNewCloudVMPage1::populateAccounts()
@@ -442,12 +422,6 @@ void UIWizardNewCloudVMPage1::populateFormProperties()
     }
 }
 
-void UIWizardNewCloudVMPage1::updatePageAppearance()
-{
-    /* Update page appearance according to chosen source: */
-    m_pStackedLayout->setCurrentIndex((int)isSourceCloudOne());
-}
-
 void UIWizardNewCloudVMPage1::updateSourceComboToolTip()
 {
     const int iCurrentIndex = m_pSourceComboBox->currentIndex();
@@ -499,13 +473,6 @@ QString UIWizardNewCloudVMPage1::source() const
 {
     const int iIndex = m_pSourceComboBox->currentIndex();
     return m_pSourceComboBox->itemData(iIndex, SourceData_ShortName).toString();
-}
-
-bool UIWizardNewCloudVMPage1::isSourceCloudOne(int iIndex /* = -1 */) const
-{
-    if (iIndex == -1)
-        iIndex = m_pSourceComboBox->currentIndex();
-    return m_pSourceComboBox->itemData(iIndex, SourceData_IsItCloudFormat).toBool();
 }
 
 QUuid UIWizardNewCloudVMPage1::sourceId() const
@@ -599,161 +566,102 @@ UIWizardNewCloudVMPageBasic1::UIWizardNewCloudVMPageBasic1(bool fImportFromOCIBy
             pMainLayout->addLayout(m_pSourceLayout);
         }
 
-        /* Create stacked layout: */
-        m_pStackedLayout = new QStackedLayout;
-        if (m_pStackedLayout)
+        /* Create cloud container layout: */
+        m_pCloudContainerLayout = new QGridLayout;
+        if (m_pCloudContainerLayout)
         {
-            /* Create local container: */
-            QWidget *pLocalContainer = new QWidget(this);
-            if (pLocalContainer)
+            m_pCloudContainerLayout->setContentsMargins(0, 0, 0, 0);
+            m_pCloudContainerLayout->setColumnStretch(0, 0);
+            m_pCloudContainerLayout->setColumnStretch(1, 1);
+            m_pCloudContainerLayout->setRowStretch(2, 0);
+            m_pCloudContainerLayout->setRowStretch(3, 1);
+
+            /* Create account label: */
+            m_pAccountLabel = new QLabel(this);
+            if (m_pAccountLabel)
             {
-                /* Create local container layout: */
-                m_pLocalContainerLayout = new QGridLayout(pLocalContainer);
-                if (m_pLocalContainerLayout)
+                /* Add into layout: */
+                m_pCloudContainerLayout->addWidget(m_pAccountLabel, 0, 0, Qt::AlignRight);
+            }
+            /* Create sub-layout: */
+            QHBoxLayout *pSubLayout = new QHBoxLayout;
+            if (pSubLayout)
+            {
+                pSubLayout->setContentsMargins(0, 0, 0, 0);
+                pSubLayout->setSpacing(1);
+
+                /* Create account combo-box: */
+                m_pAccountComboBox = new QIComboBox(this);
+                if (m_pAccountComboBox)
                 {
-                    m_pLocalContainerLayout->setContentsMargins(0, 0, 0, 0);
-                    m_pLocalContainerLayout->setColumnStretch(0, 0);
-                    m_pLocalContainerLayout->setColumnStretch(1, 1);
-                    m_pLocalContainerLayout->setRowStretch(2, 1);
+                    m_pAccountLabel->setBuddy(m_pAccountComboBox);
 
-                    /* Create file label: */
-                    m_pFileLabel = new QLabel;
-                    if (m_pFileLabel)
-                    {
-                        /* Add into layout: */
-                        m_pLocalContainerLayout->addWidget(m_pFileLabel, 0, 0, Qt::AlignRight);
-                    }
+                    /* Add into layout: */
+                    pSubLayout->addWidget(m_pAccountComboBox);
+                }
+                /* Create account tool-button: */
+                m_pAccountToolButton = new QIToolButton(this);
+                if (m_pAccountToolButton)
+                {
+                    m_pAccountToolButton->setIcon(UIIconPool::iconSet(":/cloud_profile_manager_16px.png",
+                                                                      ":/cloud_profile_manager_disabled_16px.png"));
 
-                    /* Create file-path selector: */
-                    m_pFileSelector = new UIEmptyFilePathSelector(this);
-                    if (m_pFileSelector)
-                    {
-                        m_pFileLabel->setBuddy(m_pFileSelector);
-                        m_pFileSelector->setHomeDir(vboxGlobal().documentsPath());
-                        m_pFileSelector->setMode(UIEmptyFilePathSelector::Mode_File_Open);
-                        m_pFileSelector->setButtonPosition(UIEmptyFilePathSelector::RightPosition);
-                        m_pFileSelector->setEditable(true);
-
-                        /* Add into layout: */
-                        m_pLocalContainerLayout->addWidget(m_pFileSelector, 0, 1);
-                    }
+                    /* Add into layout: */
+                    pSubLayout->addWidget(m_pAccountToolButton);
                 }
 
                 /* Add into layout: */
-                m_pStackedLayout->addWidget(pLocalContainer);
+                m_pCloudContainerLayout->addLayout(pSubLayout, 0, 1);
             }
 
-            /* Create cloud container: */
-            QWidget *pCloudContainer = new QWidget(this);
-            if (pCloudContainer)
+            /* Create profile property table: */
+            m_pAccountPropertyTable = new QTableWidget(this);
+            if (m_pAccountPropertyTable)
             {
-                /* Create cloud container layout: */
-                m_pCloudContainerLayout = new QGridLayout(pCloudContainer);
-                if (m_pCloudContainerLayout)
-                {
-                    m_pCloudContainerLayout->setContentsMargins(0, 0, 0, 0);
-                    m_pCloudContainerLayout->setColumnStretch(0, 0);
-                    m_pCloudContainerLayout->setColumnStretch(1, 1);
-                    m_pCloudContainerLayout->setRowStretch(2, 0);
-                    m_pCloudContainerLayout->setRowStretch(3, 1);
-
-                    /* Create account label: */
-                    m_pAccountLabel = new QLabel;
-                    if (m_pAccountLabel)
-                    {
-                        /* Add into layout: */
-                        m_pCloudContainerLayout->addWidget(m_pAccountLabel, 0, 0, Qt::AlignRight);
-                    }
-
-                    /* Create sub-layout: */
-                    QHBoxLayout *pSubLayout = new QHBoxLayout;
-                    if (pSubLayout)
-                    {
-                        pSubLayout->setContentsMargins(0, 0, 0, 0);
-                        pSubLayout->setSpacing(1);
-
-                        /* Create account combo-box: */
-                        m_pAccountComboBox = new QComboBox;
-                        if (m_pAccountComboBox)
-                        {
-                            m_pAccountLabel->setBuddy(m_pAccountComboBox);
-
-                            /* Add into layout: */
-                            pSubLayout->addWidget(m_pAccountComboBox);
-                        }
-
-                        /* Create account tool-button: */
-                        m_pAccountToolButton = new QIToolButton;
-                        if (m_pAccountToolButton)
-                        {
-                            m_pAccountToolButton->setIcon(UIIconPool::iconSet(":/cloud_profile_manager_16px.png",
-                                                                              ":/cloud_profile_manager_disabled_16px.png"));
-
-                            /* Add into layout: */
-                            pSubLayout->addWidget(m_pAccountToolButton);
-                        }
-
-                        /* Add into layout: */
-                        m_pCloudContainerLayout->addLayout(pSubLayout, 0, 1);
-                    }
-
-                    /* Create profile property table: */
-                    m_pAccountPropertyTable = new QTableWidget;
-                    if (m_pAccountPropertyTable)
-                    {
-                        const QFontMetrics fm(m_pAccountPropertyTable->font());
-                        const int iFontWidth = fm.width('x');
-                        const int iTotalWidth = 50 * iFontWidth;
-                        const int iFontHeight = fm.height();
-                        const int iTotalHeight = 4 * iFontHeight;
-                        m_pAccountPropertyTable->setMinimumSize(QSize(iTotalWidth, iTotalHeight));
-//                        m_pAccountPropertyTable->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
-                        m_pAccountPropertyTable->setAlternatingRowColors(true);
-                        m_pAccountPropertyTable->horizontalHeader()->setVisible(false);
-                        m_pAccountPropertyTable->verticalHeader()->setVisible(false);
-                        m_pAccountPropertyTable->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
-
-                        /* Add into layout: */
-                        m_pCloudContainerLayout->addWidget(m_pAccountPropertyTable, 1, 1);
-                    }
-
-                    /* Create account instance label: */
-                    m_pAccountInstanceLabel = new QLabel;
-                    if (m_pAccountInstanceLabel)
-                    {
-                        /* Add into layout: */
-                        m_pCloudContainerLayout->addWidget(m_pAccountInstanceLabel, 2, 0, Qt::AlignRight);
-                    }
-
-                    /* Create profile instances table: */
-                    m_pAccountInstanceList = new QListWidget;
-                    if (m_pAccountInstanceList)
-                    {
-                        m_pAccountInstanceLabel->setBuddy(m_pAccountInstanceLabel);
-                        const QFontMetrics fm(m_pAccountInstanceList->font());
-                        const int iFontWidth = fm.width('x');
-                        const int iTotalWidth = 50 * iFontWidth;
-                        const int iFontHeight = fm.height();
-                        const int iTotalHeight = 4 * iFontHeight;
-                        m_pAccountInstanceList->setMinimumSize(QSize(iTotalWidth, iTotalHeight));
-//                        m_pAccountInstanceList->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
-                        m_pAccountInstanceList->setAlternatingRowColors(true);
-
-                        /* Add into layout: */
-                        m_pCloudContainerLayout->addWidget(m_pAccountInstanceList, 2, 1, 2, 1);
-                    }
-                }
+                const QFontMetrics fm(m_pAccountPropertyTable->font());
+                const int iFontWidth = fm.width('x');
+                const int iTotalWidth = 50 * iFontWidth;
+                const int iFontHeight = fm.height();
+                const int iTotalHeight = 4 * iFontHeight;
+                m_pAccountPropertyTable->setMinimumSize(QSize(iTotalWidth, iTotalHeight));
+                //m_pAccountPropertyTable->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
+                m_pAccountPropertyTable->setAlternatingRowColors(true);
+                m_pAccountPropertyTable->horizontalHeader()->setVisible(false);
+                m_pAccountPropertyTable->verticalHeader()->setVisible(false);
+                m_pAccountPropertyTable->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
 
                 /* Add into layout: */
-                m_pStackedLayout->addWidget(pCloudContainer);
+                m_pCloudContainerLayout->addWidget(m_pAccountPropertyTable, 1, 1);
+            }
+
+            /* Create account instance label: */
+            m_pAccountInstanceLabel = new QLabel(this);
+            if (m_pAccountInstanceLabel)
+            {
+                /* Add into layout: */
+                m_pCloudContainerLayout->addWidget(m_pAccountInstanceLabel, 2, 0, Qt::AlignRight);
+            }
+            /* Create profile instances table: */
+            m_pAccountInstanceList = new QListWidget(this);
+            if (m_pAccountInstanceList)
+            {
+                m_pAccountInstanceLabel->setBuddy(m_pAccountInstanceLabel);
+                const QFontMetrics fm(m_pAccountInstanceList->font());
+                const int iFontWidth = fm.width('x');
+                const int iTotalWidth = 50 * iFontWidth;
+                const int iFontHeight = fm.height();
+                const int iTotalHeight = 4 * iFontHeight;
+                m_pAccountInstanceList->setMinimumSize(QSize(iTotalWidth, iTotalHeight));
+                //m_pAccountInstanceList->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
+                m_pAccountInstanceList->setAlternatingRowColors(true);
+
+                /* Add into layout: */
+                m_pCloudContainerLayout->addWidget(m_pAccountInstanceList, 2, 1, 2, 1);
             }
 
             /* Add into layout: */
-            pMainLayout->addLayout(m_pStackedLayout);
+            pMainLayout->addLayout(m_pCloudContainerLayout);
         }
-
-        /* Add vertical stretch finally: */
-        pMainLayout->addStretch();
     }
 
     /* Populate sources: */
@@ -771,9 +679,7 @@ UIWizardNewCloudVMPageBasic1::UIWizardNewCloudVMPageBasic1(bool fImportFromOCIBy
                 this, &UIWizardNewCloudVMPageBasic1::sltHandleSourceChange);
     connect(m_pSourceComboBox, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::activated),
             this, &UIWizardNewCloudVMPageBasic1::sltHandleSourceChange);
-    connect(m_pFileSelector, &UIEmptyFilePathSelector::pathChanged,
-            this, &UIWizardNewCloudVMPageBasic1::completeChanged);
-    connect(m_pAccountComboBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
+    connect(m_pAccountComboBox, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::currentIndexChanged),
             this, &UIWizardNewCloudVMPageBasic1::sltHandleAccountComboChange);
     connect(m_pAccountToolButton, &QIToolButton::clicked,
             this, &UIWizardNewCloudVMPageBasic1::sltHandleAccountButtonClick);
@@ -782,7 +688,6 @@ UIWizardNewCloudVMPageBasic1::UIWizardNewCloudVMPageBasic1(bool fImportFromOCIBy
 
     /* Register fields: */
     registerField("source", this, "source");
-    registerField("isSourceCloudOne", this, "isSourceCloudOne");
     registerField("profile", this, "profile");
     registerField("appliance", this, "appliance");
     registerField("vsdForm", this, "vsdForm");
@@ -815,29 +720,23 @@ void UIWizardNewCloudVMPageBasic1::retranslateUi()
     setTitle(UIWizardNewCloudVM::tr("Appliance to import"));
 
     /* Translate main label: */
-    m_pLabelMain->setText(UIWizardNewCloudVM::tr("Please choose the source to import appliance from.  This can be a "
-                                                "local file system to import OVF archive or one of known  cloud "
-                                                "service providers to import cloud VM from."));
+    m_pLabelMain->setText(UIWizardNewCloudVM::tr("Please choose the source to import appliance from.  This can be "
+                                                 "one of known cloud service providers to import cloud VM from."));
 
     /* Translate source label: */
     m_pSourceLabel->setText(tr("&Source:"));
-    /* Translate hardcoded values of Source combo-box: */
-    m_pSourceComboBox->setItemText(0, UIWizardNewCloudVM::tr("Local File System"));
-    m_pSourceComboBox->setItemData(0, UIWizardNewCloudVM::tr("Import from local file system."), Qt::ToolTipRole);
     /* Translate received values of Source combo-box.
      * We are enumerating starting from 0 for simplicity: */
     for (int i = 0; i < m_pSourceComboBox->count(); ++i)
-        if (isSourceCloudOne(i))
-        {
-            m_pSourceComboBox->setItemText(i, m_pSourceComboBox->itemData(i, SourceData_Name).toString());
-            m_pSourceComboBox->setItemData(i, UIWizardNewCloudVM::tr("Import from cloud service provider."), Qt::ToolTipRole);
-        }
+    {
+        m_pSourceComboBox->setItemText(i, m_pSourceComboBox->itemData(i, SourceData_Name).toString());
+        m_pSourceComboBox->setItemData(i, UIWizardNewCloudVM::tr("Import from cloud service provider."), Qt::ToolTipRole);
+    }
 
-    /* Translate local stuff: */
-    m_pFileLabel->setText(UIWizardNewCloudVM::tr("&File:"));
-    m_pFileSelector->setChooseButtonToolTip(UIWizardNewCloudVM::tr("Choose a virtual appliance file to import..."));
-    m_pFileSelector->setFileDialogTitle(UIWizardNewCloudVM::tr("Please choose a virtual appliance file to import"));
-    m_pFileSelector->setFileFilters(UIWizardNewCloudVM::tr("Open Virtualization Format (%1)").arg("*.ova *.ovf"));
+    /* Translate description label: */
+    m_pLabelDescription->setText(UIWizardNewCloudVM::tr("<p>Please choose one of cloud service accounts you have registered to "
+                                                        "import virtual machine from.  Corresponding machines list will be "
+                                                        "updated.  To continue, select one of machines to import below.</p>"));
 
     /* Translate cloud stuff: */
     m_pAccountLabel->setText(UIWizardNewCloudVM::tr("&Account:"));
@@ -845,7 +744,6 @@ void UIWizardNewCloudVMPageBasic1::retranslateUi()
 
     /* Adjust label widths: */
     QList<QWidget*> labels;
-    labels << m_pFileLabel;
     labels << m_pSourceLabel;
     labels << m_pAccountLabel;
     labels << m_pAccountInstanceLabel;
@@ -853,11 +751,7 @@ void UIWizardNewCloudVMPageBasic1::retranslateUi()
     foreach (QWidget *pLabel, labels)
         iMaxWidth = qMax(iMaxWidth, pLabel->minimumSizeHint().width());
     m_pSourceLayout->setColumnMinimumWidth(0, iMaxWidth);
-    m_pLocalContainerLayout->setColumnMinimumWidth(0, iMaxWidth);
     m_pCloudContainerLayout->setColumnMinimumWidth(0, iMaxWidth);
-
-    /* Update page appearance: */
-    updatePageAppearance();
 
     /* Update tool-tips: */
     updateSourceComboToolTip();
@@ -872,78 +766,31 @@ void UIWizardNewCloudVMPageBasic1::initializePage()
 
 bool UIWizardNewCloudVMPageBasic1::isComplete() const
 {
+    /* Initial result: */
     bool fResult = true;
 
-    /* Check appliance settings: */
-    if (fResult)
-    {
-        const bool fOVF = !isSourceCloudOne();
-        const bool fCSP = !fOVF;
+    /* Check cloud settings: */
+    fResult =    !m_comCloudProfile.isNull()
+              && !m_comCloudClient.isNull()
+              && !machineId().isNull();
 
-        fResult =    (   fOVF
-                      && VBoxGlobal::hasAllowedExtension(m_pFileSelector->path().toLower(), OVFFileExts)
-                      && QFile::exists(m_pFileSelector->path()))
-                  || (   fCSP
-                      && !m_comCloudProfile.isNull()
-                      && !m_comCloudClient.isNull()
-                      && !machineId().isNull());
-    }
-
+    /* Return result: */
     return fResult;
 }
 
 bool UIWizardNewCloudVMPageBasic1::validatePage()
 {
-    if (isSourceCloudOne())
-    {
-        /* Create appliance & populate form properties: */
-        populateFormProperties();
-        /* And make sure they are not null: */
-        return m_comAppliance.isNotNull() && m_comVSDForm.isNotNull();
-    }
-    else
-    {
-        /* Get import appliance widget: */
-        ImportAppliancePointer pImportApplianceWidget = field("applianceWidget").value<ImportAppliancePointer>();
-        AssertMsg(!pImportApplianceWidget.isNull(), ("Appliance Widget is not set!\n"));
+    /* Initial result: */
+    bool fResult = true;
 
-        /* If file name was changed: */
-        if (m_pFileSelector->isModified())
-        {
-            /* Check if set file contains valid appliance: */
-            if (!pImportApplianceWidget->setFile(m_pFileSelector->path()))
-                return false;
-            /* Reset the modified bit afterwards: */
-            m_pFileSelector->resetModified();
-        }
+    /* Create appliance & populate form properties: */
+    populateFormProperties();
+    /* And make sure they are not NULL: */
+    fResult =    m_comAppliance.isNotNull()
+              && m_comVSDForm.isNotNull();
 
-        /* If we have a valid ovf proceed to the appliance settings page: */
-        return pImportApplianceWidget->isValid();
-    }
-}
-
-void UIWizardNewCloudVMPageBasic1::updatePageAppearance()
-{
-    /* Call to base-class: */
-    UIWizardNewCloudVMPage1::updatePageAppearance();
-
-    /* Update page appearance according to chosen storage-type: */
-    if (isSourceCloudOne())
-    {
-        m_pLabelDescription->setText(UIWizardNewCloudVM::
-                                     tr("<p>Please choose one of cloud service accounts you have registered to import virtual "
-                                        "machine from.  Corresponding machines list will be updated.  To continue, "
-                                        "select one of machines to import below.</p>"));
-        m_pAccountInstanceList->setFocus();
-    }
-    else
-    {
-        m_pLabelDescription->setText(UIWizardNewCloudVM::
-                                     tr("<p>Please choose a file to import the virtual appliance from.  VirtualBox currently "
-                                        "supports importing appliances saved in the Open Virtualization Format (OVF).  "
-                                        "To continue, select the file to import below.</p>"));
-        m_pFileSelector->setFocus();
-    }
+    /* Return result: */
+    return fResult;
 }
 
 void UIWizardNewCloudVMPageBasic1::sltHandleSourceChange()
@@ -952,7 +799,6 @@ void UIWizardNewCloudVMPageBasic1::sltHandleSourceChange()
     updateSourceComboToolTip();
 
     /* Refresh required settings: */
-    updatePageAppearance();
     populateAccounts();
     populateAccountProperties();
     populateAccountInstances();

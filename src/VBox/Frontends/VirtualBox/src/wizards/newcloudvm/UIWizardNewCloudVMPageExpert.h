@@ -30,23 +30,21 @@ class QGroupBox;
 
 /** UIWizardPage extension for UIWizardNewCloudVMPage1 and UIWizardNewCloudVMPage2. */
 class UIWizardNewCloudVMPageExpert : public UIWizardPage,
-                                    public UIWizardNewCloudVMPage1,
-                                    public UIWizardNewCloudVMPage2
+                                     public UIWizardNewCloudVMPage1,
+                                     public UIWizardNewCloudVMPage2
 {
     Q_OBJECT;
     Q_PROPERTY(QString source READ source WRITE setSource);
-    Q_PROPERTY(bool isSourceCloudOne READ isSourceCloudOne);
     Q_PROPERTY(CCloudProfile profile READ profile);
     Q_PROPERTY(CAppliance appliance READ appliance);
     Q_PROPERTY(CVirtualSystemDescriptionForm vsdForm READ vsdForm);
     Q_PROPERTY(QString machineId READ machineId);
-    Q_PROPERTY(ImportAppliancePointer applianceWidget READ applianceWidget);
 
 public:
 
     /** Constructs expert page.
       * @param  strFileName  Brings appliance file name. */
-    UIWizardNewCloudVMPageExpert(bool fImportFromOCIByDefault, const QString &strFileName);
+    UIWizardNewCloudVMPageExpert(bool fImportFromOCIByDefault);
 
 protected:
 
@@ -68,16 +66,10 @@ protected:
     /** Performs page validation. */
     virtual bool validatePage() /* override */;
 
-    /** Updates page appearance. */
-    virtual void updatePageAppearance() /* override */;
-
 private slots:
 
     /** Handles import source change. */
     void sltHandleSourceChange();
-
-    /** Handles file-path change. */
-    void sltFilePathChangeHandler();
 
     /** Handles change in account combo-box. */
     void sltHandleAccountComboChange();

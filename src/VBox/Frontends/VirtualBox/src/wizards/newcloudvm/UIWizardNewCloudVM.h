@@ -44,15 +44,11 @@ public:
         PageExpert
     };
 
-    /** Constructs export appliance wizard passing @a pParent to the base-class.
-      * @param  strFileName  Brings appliance file name. */
-    UIWizardNewCloudVM(QWidget *pParent, bool fImportFromOCIByDefault, const QString &strFileName);
+    /** Constructs import appliance wizard passing @a pParent to the base-class. */
+    UIWizardNewCloudVM(QWidget *pParent, bool fImportFromOCIByDefault);
 
     /** Prepares all. */
     virtual void prepare() /* override */;
-
-    /** Returns whether appliance is valid. */
-    bool isValid() const;
 
     /** Imports appliance. */
     bool importAppliance();
@@ -62,22 +58,13 @@ protected:
     /** Handles translation event. */
     virtual void retranslateUi() /* override */;
 
-protected slots:
-
-    /** Handles change for page with @a iId. */
-    virtual void sltCurrentIdChanged(int iId) /* override */;
-    /** Handles custom button 2 click  for page with @a iId. */
-    virtual void sltCustomButtonClicked(int iId) /* override */;
-
 private:
 
     /** Holds whether default source should be Import from OCI. */
-    bool     m_fImportFromOCIByDefault;
-    /** Handles the appliance file name. */
-    QString  m_strFileName;
+    bool  m_fImportFromOCIByDefault;
 };
 
 /** Safe pointer to appliance wizard. */
-typedef QPointer<UIWizardNewCloudVM> UISafePointerWizardImportApp;
+typedef QPointer<UIWizardNewCloudVM> UISafePointerWizardNewCloudVM;
 
 #endif /* !FEQT_INCLUDED_SRC_wizards_newcloudvm_UIWizardNewCloudVM_h */

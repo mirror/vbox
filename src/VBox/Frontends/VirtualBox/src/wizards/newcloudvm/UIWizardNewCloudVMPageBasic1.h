@@ -22,7 +22,6 @@
 #endif
 
 /* GUI includes: */
-#include "UIWizardImportAppDefs.h"
 #include "UIWizardPage.h"
 
 /* COM includes: */
@@ -35,14 +34,13 @@
 #include "CVirtualSystemDescriptionForm.h"
 
 /* Forward declarations: */
+class QGridLayout;
 class QLabel;
 class QListWidget;
 class QTableWidget;
-class QStackedLayout;
 class QIComboBox;
 class QIRichTextLabel;
 class QIToolButton;
-class UIEmptyFilePathSelector;
 
 /** Source combo data fields. */
 enum
@@ -78,9 +76,6 @@ protected:
     /** Populates form properties. */
     void populateFormProperties();
 
-    /** Updates page appearance. */
-    virtual void updatePageAppearance();
-
     /** Updates source combo tool-tips. */
     void updateSourceComboToolTip();
     /** Updates account property table tool-tips. */
@@ -92,8 +87,6 @@ protected:
     void setSource(const QString &strSource);
     /** Returns source. */
     QString source() const;
-    /** Returns whether source under certain @a iIndex is cloud one. */
-    bool isSourceCloudOne(int iIndex = -1) const;
 
     /** Returns source ID. */
     QUuid sourceId() const;
@@ -131,22 +124,12 @@ protected:
     /** Holds the source type combo-box instance. */
     QIComboBox  *m_pSourceComboBox;
 
-    /** Holds the stacked layout instance. */
-    QStackedLayout *m_pStackedLayout;
-
-    /** Holds the local container layout instance. */
-    QGridLayout             *m_pLocalContainerLayout;
-    /** Holds the file label instance. */
-    QLabel                  *m_pFileLabel;
-    /** Holds the file selector instance. */
-    UIEmptyFilePathSelector *m_pFileSelector;
-
     /** Holds the cloud container layout instance. */
     QGridLayout  *m_pCloudContainerLayout;
     /** Holds the account label instance. */
     QLabel       *m_pAccountLabel;
     /** Holds the account combo-box instance. */
-    QComboBox    *m_pAccountComboBox;
+    QIComboBox   *m_pAccountComboBox;
     /** Holds the account management tool-button instance. */
     QIToolButton *m_pAccountToolButton;
     /** Holds the account property table instance. */
@@ -162,7 +145,6 @@ class UIWizardNewCloudVMPageBasic1 : public UIWizardPage, public UIWizardNewClou
 {
     Q_OBJECT;
     Q_PROPERTY(QString source READ source WRITE setSource);
-    Q_PROPERTY(bool isSourceCloudOne READ isSourceCloudOne);
     Q_PROPERTY(CCloudProfile profile READ profile);
     Q_PROPERTY(CAppliance appliance READ appliance);
     Q_PROPERTY(CVirtualSystemDescriptionForm vsdForm READ vsdForm);
@@ -189,9 +171,6 @@ protected:
 
     /** Performs page validation. */
     virtual bool validatePage() /* override */;
-
-    /** Updates page appearance. */
-    virtual void updatePageAppearance() /* override */;
 
 private slots:
 

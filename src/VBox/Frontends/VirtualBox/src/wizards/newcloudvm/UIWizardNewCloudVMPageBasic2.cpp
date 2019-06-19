@@ -17,20 +17,16 @@
 
 /* Qt includes: */
 #include <QLabel>
-#include <QPointer>
-#include <QStackedLayout>
 #include <QVBoxLayout>
 
 /* GUI includes: */
 #include "QIRichTextLabel.h"
-#include "UIApplianceUnverifiedCertificateViewer.h"
 #include "UIMessageCenter.h"
 #include "UIWizardNewCloudVM.h"
 #include "UIWizardNewCloudVMPageBasic2.h"
 
 /* COM includes: */
-#include "CAppliance.h"
-#include "CCertificate.h"
+#include "CVirtualSystemDescription.h"
 #include "CVirtualSystemDescriptionForm.h"
 
 
@@ -39,16 +35,7 @@
 *********************************************************************************************************************************/
 
 UIWizardNewCloudVMPage2::UIWizardNewCloudVMPage2()
-    : m_pSettingsCntLayout(0)
 {
-}
-
-void UIWizardNewCloudVMPage2::updatePageAppearance()
-{
-    /* Check whether there was cloud source selected: */
-    const bool fIsSourceCloudOne = fieldImp("isSourceCloudOne").toBool();
-    /* Update page appearance according to chosen source: */
-    m_pSettingsCntLayout->setCurrentIndex((int)fIsSourceCloudOne);
 }
 
 void UIWizardNewCloudVMPage2::refreshFormPropertiesTable()
@@ -65,8 +52,7 @@ void UIWizardNewCloudVMPage2::refreshFormPropertiesTable()
 *   Class UIWizardNewCloudVMPageBasic2 implementation.                                                                           *
 *********************************************************************************************************************************/
 
-UIWizardNewCloudVMPageBasic2::UIWizardNewCloudVMPageBasic2(const QString &strFileName)
-    : m_enmCertText(kCertText_Uninitialized)
+UIWizardNewCloudVMPageBasic2::UIWizardNewCloudVMPageBasic2()
 {
     /* Create main layout: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
@@ -80,76 +66,14 @@ UIWizardNewCloudVMPageBasic2::UIWizardNewCloudVMPageBasic2(const QString &strFil
             pMainLayout->addWidget(m_pLabel);
         }
 
-        /* Create settings container layout: */
-        m_pSettingsCntLayout = new QStackedLayout;
-        if (m_pSettingsCntLayout)
+        /* Create form editor widget: */
+        m_pFormEditor = new UIFormEditorWidget(this);
+        if (m_pFormEditor)
         {
-            /* Create appliance widget container: */
-            QWidget *pApplianceWidgetCnt = new QWidget(this);
-            if (pApplianceWidgetCnt)
-            {
-                /* Create appliance widget layout: */
-                QVBoxLayout *pApplianceWidgetLayout = new QVBoxLayout(pApplianceWidgetCnt);
-                if (pApplianceWidgetLayout)
-                {
-                    pApplianceWidgetLayout->setContentsMargins(0, 0, 0, 0);
-
-                    /* Create appliance widget: */
-                    m_pApplianceWidget = new UIApplianceImportEditorWidget(pApplianceWidgetCnt);
-                    if (m_pApplianceWidget)
-                    {
-                        m_pApplianceWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::MinimumExpanding);
-                        m_pApplianceWidget->setFile(strFileName);
-
-                        /* Add into layout: */
-                        pApplianceWidgetLayout->addWidget(m_pApplianceWidget);
-                    }
-
-                    /* Create certificate label: */
-                    m_pCertLabel = new QLabel(QString(), pApplianceWidgetCnt);
-                    if (m_pCertLabel)
-                    {
-                        /* Add into layout: */
-                        pApplianceWidgetLayout->addWidget(m_pCertLabel);
-                    }
-                }
-
-                /* Add into layout: */
-                m_pSettingsCntLayout->addWidget(pApplianceWidgetCnt);
-            }
-
-            /* Create form editor container: */
-            QWidget *pFormEditorCnt = new QWidget(this);
-            if (pFormEditorCnt)
-            {
-                /* Create form editor layout: */
-                QVBoxLayout *pFormEditorLayout = new QVBoxLayout(pFormEditorCnt);
-                if (pFormEditorLayout)
-                {
-                    pFormEditorLayout->setContentsMargins(0, 0, 0, 0);
-
-                    /* Create form editor widget: */
-                    m_pFormEditor = new UIFormEditorWidget(pFormEditorCnt);
-                    if (m_pFormEditor)
-                    {
-                        /* Add into layout: */
-                        pFormEditorLayout->addWidget(m_pFormEditor);
-                    }
-                }
-
-                /* Add into layout: */
-                m_pSettingsCntLayout->addWidget(pFormEditorCnt);
-            }
-
             /* Add into layout: */
-            pMainLayout->addLayout(m_pSettingsCntLayout);
+            pMainLayout->addWidget(m_pFormEditor);
         }
     }
-
-    /* Register classes: */
-    qRegisterMetaType<ImportAppliancePointer>();
-    /* Register fields: */
-    registerField("applianceWidget", this, "applianceWidget");
 }
 
 void UIWizardNewCloudVMPageBasic2::retranslateUi()
@@ -157,120 +81,20 @@ void UIWizardNewCloudVMPageBasic2::retranslateUi()
     /* Translate page: */
     setTitle(UIWizardNewCloudVM::tr("Appliance settings"));
 
-    /* Update page appearance: */
-    updatePageAppearance();
-
-    /* Translate the certificate label: */
-    switch (m_enmCertText)
-    {
-        case kCertText_Unsigned:
-            m_pCertLabel->setText(UIWizardNewCloudVM::tr("Appliance is not signed"));
-            break;
-        case kCertText_IssuedTrusted:
-            m_pCertLabel->setText(UIWizardNewCloudVM::tr("Appliance signed by %1 (trusted)").arg(m_strSignedBy));
-            break;
-        case kCertText_IssuedExpired:
-            m_pCertLabel->setText(UIWizardNewCloudVM::tr("Appliance signed by %1 (expired!)").arg(m_strSignedBy));
-            break;
-        case kCertText_IssuedUnverified:
-            m_pCertLabel->setText(UIWizardNewCloudVM::tr("Unverified signature by %1!").arg(m_strSignedBy));
-            break;
-        case kCertText_SelfSignedTrusted:
-            m_pCertLabel->setText(UIWizardNewCloudVM::tr("Self signed by %1 (trusted)").arg(m_strSignedBy));
-            break;
-        case kCertText_SelfSignedExpired:
-            m_pCertLabel->setText(UIWizardNewCloudVM::tr("Self signed by %1 (expired!)").arg(m_strSignedBy));
-            break;
-        case kCertText_SelfSignedUnverified:
-            m_pCertLabel->setText(UIWizardNewCloudVM::tr("Unverified self signed signature by %1!").arg(m_strSignedBy));
-            break;
-        default:
-            AssertFailed();
-            RT_FALL_THRU();
-        case kCertText_Uninitialized:
-            m_pCertLabel->setText("<uninitialized page>");
-            break;
-    }
+    /* Translate description label: */
+    m_pLabel->setText(UIWizardNewCloudVM::tr("These are the the suggested settings of the cloud VM import procedure, they are "
+                                             "influencing the resulting local VM instance.  You can change many of the "
+                                             "properties shown by double-clicking on the items and disable others using the "
+                                             "check boxes below."));
 }
 
 void UIWizardNewCloudVMPageBasic2::initializePage()
 {
-    /* Update widget visibility: */
-    updatePageAppearance();
-
-    /* Check whether there was cloud source selected: */
-    const bool fIsSourceCloudOne = field("isSourceCloudOne").toBool();
-    if (fIsSourceCloudOne)
-        refreshFormPropertiesTable();
-    else
-    {
-        /* Acquire appliance: */
-        CAppliance *pAppliance = m_pApplianceWidget->appliance();
-
-        /* Check if pAppliance is alive. If not just return here.
-         * This prevents crashes when an invalid ova file is supllied: */
-        if (!pAppliance)
-        {
-            if (wizard())
-                wizard()->reject();
-            return;
-        }
-
-        /* Acquire certificate: */
-        CCertificate comCertificate = pAppliance->GetCertificate();
-        if (comCertificate.isNull())
-            m_enmCertText = kCertText_Unsigned;
-        else
-        {
-            /* Pick a 'signed-by' name: */
-            m_strSignedBy = comCertificate.GetFriendlyName();
-
-            /* If trusted, just select the right message: */
-            if (comCertificate.GetTrusted())
-            {
-                if (comCertificate.GetSelfSigned())
-                    m_enmCertText = !comCertificate.GetExpired() ? kCertText_SelfSignedTrusted : kCertText_SelfSignedExpired;
-                else
-                    m_enmCertText = !comCertificate.GetExpired() ? kCertText_IssuedTrusted     : kCertText_IssuedExpired;
-            }
-            else
-            {
-                /* Not trusted!  Must ask the user whether to continue in this case: */
-                m_enmCertText = comCertificate.GetSelfSigned() ? kCertText_SelfSignedUnverified : kCertText_IssuedUnverified;
-
-                /* Translate page early: */
-                retranslateUi();
-
-                /* Instantiate the dialog: */
-                QPointer<UIApplianceUnverifiedCertificateViewer> pDialog = new UIApplianceUnverifiedCertificateViewer(this, comCertificate);
-                AssertPtrReturnVoid(pDialog.data());
-
-                /* Show viewer in modal mode: */
-                const int iResultCode = pDialog->exec();
-
-                /* Leave if viewer destroyed prematurely: */
-                if (!pDialog)
-                    return;
-                /* Delete viewer finally: */
-                delete pDialog;
-
-                /* Dismiss the entire import-appliance wizard if user rejects certificate: */
-                if (iResultCode == QDialog::Rejected)
-                    wizard()->reject();
-            }
-        }
-    }
+    /* Refresh form properties: */
+    refreshFormPropertiesTable();
 
     /* Translate page: */
     retranslateUi();
-}
-
-void UIWizardNewCloudVMPageBasic2::cleanupPage()
-{
-    /* Rollback settings: */
-    m_pApplianceWidget->restoreDefaults();
-    /* Call to base-class: */
-    UIWizardPage::cleanupPage();
 }
 
 bool UIWizardNewCloudVMPageBasic2::validatePage()
@@ -281,23 +105,18 @@ bool UIWizardNewCloudVMPageBasic2::validatePage()
     /* Lock finish button: */
     startProcessing();
 
-    /* Check whether there was cloud source selected: */
-    const bool fIsSourceCloudOne = fieldImp("isSourceCloudOne").toBool();
-    if (fIsSourceCloudOne)
-    {
-        /* Check whether we have proper VSD form: */
-        CVirtualSystemDescriptionForm comForm = fieldImp("vsdForm").value<CVirtualSystemDescriptionForm>();
-        fResult = comForm.isNotNull();
-        Assert(fResult);
+    /* Check whether we have proper VSD form: */
+    CVirtualSystemDescriptionForm comForm = fieldImp("vsdForm").value<CVirtualSystemDescriptionForm>();
+    fResult = comForm.isNotNull();
+    Assert(fResult);
 
-        /* Give changed VSD back to appliance: */
-        if (fResult)
-        {
-            comForm.GetVirtualSystemDescription();
-            fResult = comForm.isOk();
-            if (!fResult)
-                msgCenter().cannotAcquireVirtualSystemDescriptionFormProperty(comForm);
-        }
+    /* Give changed VSD back to appliance: */
+    if (fResult)
+    {
+        comForm.GetVirtualSystemDescription();
+        fResult = comForm.isOk();
+        if (!fResult)
+            msgCenter().cannotAcquireVirtualSystemDescriptionFormProperty(comForm);
     }
 
     /* Try to import appliance: */
@@ -309,29 +128,4 @@ bool UIWizardNewCloudVMPageBasic2::validatePage()
 
     /* Return result: */
     return fResult;
-}
-
-void UIWizardNewCloudVMPageBasic2::updatePageAppearance()
-{
-    /* Call to base-class: */
-    UIWizardNewCloudVMPage2::updatePageAppearance();
-
-    /* Check whether there was cloud source selected: */
-    const bool fIsSourceCloudOne = field("isSourceCloudOne").toBool();
-    if (fIsSourceCloudOne)
-    {
-        m_pLabel->setText(UIWizardNewCloudVM::tr("These are the the suggested settings of the cloud VM import "
-                                                "procedure, they are influencing the resulting local VM instance. "
-                                                "You can change many of the properties shown by double-clicking "
-                                                "on the items and disable others using the check boxes below."));
-        m_pFormEditor->setFocus();
-    }
-    else
-    {
-        m_pLabel->setText(UIWizardNewCloudVM::tr("These are the virtual machines contained in the appliance "
-                                                "and the suggested settings of the imported VirtualBox machines. "
-                                                "You can change many of the properties shown by double-clicking "
-                                                "on the items and disable others using the check boxes below."));
-        m_pApplianceWidget->setFocus();
-    }
 }

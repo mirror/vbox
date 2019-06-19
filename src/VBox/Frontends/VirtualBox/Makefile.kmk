@@ -958,7 +958,6 @@ VirtualBox_QT_MOCSRCS = \
 	src/widgets/UIMenuToolBar.cpp \
 	src/widgets/UITabBar.cpp \
 	src/widgets/graphics/UIGraphicsScrollBar.cpp \
-	src/wizards/newcloudvm/UIWizardNewCloudVM.cpp \
 	src/wizards/importappliance/UIWizardImportApp.cpp
 
 
