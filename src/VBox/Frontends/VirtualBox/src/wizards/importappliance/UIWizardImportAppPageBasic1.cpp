@@ -673,7 +673,7 @@ UIWizardImportAppPageBasic1::UIWizardImportAppPageBasic1(bool fImportFromOCIByDe
                         pSubLayout->setSpacing(1);
 
                         /* Create account combo-box: */
-                        m_pAccountComboBox = new QComboBox;
+                        m_pAccountComboBox = new QIComboBox;
                         if (m_pAccountComboBox)
                         {
                             m_pAccountLabel->setBuddy(m_pAccountComboBox);
@@ -773,7 +773,7 @@ UIWizardImportAppPageBasic1::UIWizardImportAppPageBasic1(bool fImportFromOCIByDe
             this, &UIWizardImportAppPageBasic1::sltHandleSourceChange);
     connect(m_pFileSelector, &UIEmptyFilePathSelector::pathChanged,
             this, &UIWizardImportAppPageBasic1::completeChanged);
-    connect(m_pAccountComboBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
+    connect(m_pAccountComboBox, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::currentIndexChanged),
             this, &UIWizardImportAppPageBasic1::sltHandleAccountComboChange);
     connect(m_pAccountToolButton, &QIToolButton::clicked,
             this, &UIWizardImportAppPageBasic1::sltHandleAccountButtonClick);

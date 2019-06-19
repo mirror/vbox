@@ -146,7 +146,7 @@ protected:
     /** Holds the account label instance. */
     QLabel       *m_pAccountLabel;
     /** Holds the account combo-box instance. */
-    QComboBox    *m_pAccountComboBox;
+    QIComboBox   *m_pAccountComboBox;
     /** Holds the account management tool-button instance. */
     QIToolButton *m_pAccountToolButton;
     /** Holds the account property table instance. */
