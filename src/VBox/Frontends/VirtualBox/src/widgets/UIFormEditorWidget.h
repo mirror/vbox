@@ -22,6 +22,7 @@
 #endif
 
 /* Qt includes: */
+#include <QPointer>
 #include <QWidget>
 
 /* Forward declarations: */
