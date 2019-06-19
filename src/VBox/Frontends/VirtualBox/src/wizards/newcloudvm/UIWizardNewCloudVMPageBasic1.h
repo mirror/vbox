@@ -103,6 +103,8 @@ protected:
 
     /** Holds whether default source should be Import from OCI. */
     bool  m_fImportFromOCIByDefault;
+    /** Holds whether starting page was polished. */
+    bool  m_fPolished;
 
     /** Holds the Cloud Provider Manager reference. */
     CCloudProviderManager          m_comCloudProviderManager;

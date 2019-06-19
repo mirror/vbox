@@ -166,15 +166,6 @@ UIWizardNewCloudVMPageExpert::UIWizardNewCloudVMPageExpert(bool fImportFromOCIBy
 
     /* Populate sources: */
     populateSources();
-    /* Populate accounts: */
-    populateAccounts();
-    /* Populate account properties: */
-    populateAccountProperties();
-    /* Populate account instances: */
-    populateAccountInstances();
-    /* Populate form properties: */
-    populateFormProperties();
-    refreshFormPropertiesTable();
 
     /* Setup connections: */
     if (gpManager)
@@ -240,6 +231,13 @@ void UIWizardNewCloudVMPageExpert::retranslateUi()
 
 void UIWizardNewCloudVMPageExpert::initializePage()
 {
+    /* If wasn't polished yet: */
+    if (!m_fPolished)
+    {
+        QMetaObject::invokeMethod(this, "sltHandleSourceChange", Qt::QueuedConnection);
+        m_fPolished = true;
+    }
+
     /* Translate page: */
     retranslateUi();
 }
