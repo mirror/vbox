@@ -2177,8 +2177,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             try:
                 oGuestSession.processCreate(sCmd,
                                             asArgs if self.oTstDrv.fpApiVer >= 5.0 else asArgs[1:], [],
-                                            [ vboxcon.ProcessCreateFlag_WaitForStdOut ], \
-                                            30 * 1000);
+                                            [ vboxcon.ProcessCreateFlag_WaitForStdOut ], 30 * 1000);
                 # Note: Use a timeout in the call above for not letting the stale processes
                 #       hanging around forever.  This can happen if the installed Guest Additions
                 #       do not support terminating guest processes.
@@ -2793,15 +2792,14 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             [ tdTestDirCreate(sDirectory = '' ), tdTestResultFailure() ],
             # More unusual stuff.
             [ tdTestDirCreate(sDirectory = oTestVm.pathJoin('..', '.') ), tdTestResultFailure() ],
+            [ tdTestDirCreate(sDirectory = oTestVm.pathJoin('..', '..') ), tdTestResultFailure() ],
+            [ tdTestDirCreate(sDirectory = '..' ), tdTestResultFailure() ],
+            [ tdTestDirCreate(sDirectory = '../' ), tdTestResultFailure() ],
+            [ tdTestDirCreate(sDirectory = '../../' ), tdTestResultFailure() ],
+            [ tdTestDirCreate(sDirectory = '/' ), tdTestResultFailure() ],
+            [ tdTestDirCreate(sDirectory = '/..' ), tdTestResultFailure() ],
+            [ tdTestDirCreate(sDirectory = '/../' ), tdTestResultFailure() ],
         ];
-        if True: #self.oTstDrv.fpApiVer > 5.2:
-            atTests.extend([
-                [ tdTestDirCreate(sDirectory = oTestVm.pathJoin('..', '..') ), tdTestResultFailure() ],
-                [ tdTestDirCreate(sDirectory = '..' ), tdTestResultFailure() ],
-                [ tdTestDirCreate(sDirectory = '../' ), tdTestResultFailure() ],
-                [ tdTestDirCreate(sDirectory = '../../' ), tdTestResultFailure() ],
-            ]);
-
         if oTestVm.isWindows() or oTestVm.isOS2():
             atTests.extend([
                 [ tdTestDirCreate(sDirectory = 'C:\\' ), tdTestResultFailure() ],
@@ -2814,20 +2812,11 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 [ tdTestDirCreate(sDirectory = 'C:/../' ), tdTestResultFailure() ],
                 [ tdTestDirCreate(sDirectory = '\\\\uncrulez\\foo' ), tdTestResultFailure() ],
             ]);
-        else:
-            atTests.extend([
-                [ tdTestDirCreate(sDirectory = '/' ), tdTestResultFailure() ],
-                [ tdTestDirCreate(sDirectory = '/..' ), tdTestResultFailure() ],
-                [ tdTestDirCreate(sDirectory = '/../' ), tdTestResultFailure() ],
-            ]);
         atTests.extend([
             # Existing directories and files.
             [ tdTestDirCreate(sDirectory = self.getGuestSystemDir(oTestVm) ), tdTestResultFailure() ],
             [ tdTestDirCreate(sDirectory = self.getGuestSystemShell(oTestVm) ), tdTestResultFailure() ],
             [ tdTestDirCreate(sDirectory = self.getGuestSystemFileForReading(oTestVm) ), tdTestResultFailure() ],
-        ]);
-
-        atTests.extend([
             # Creating directories.
             [ tdTestDirCreate(sDirectory = sScratch ), tdTestResultSuccess() ],
             [ tdTestDirCreate(sDirectory = oTestVm.pathJoin(sScratch, 'foo', 'bar', 'baz'),
