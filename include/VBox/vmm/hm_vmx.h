@@ -428,6 +428,10 @@ AssertCompileSizeAlignment(VMXRESTOREHOST, 8);
 #define VMX_IGS_CS_ATTR_DPL_INVALID                             621
 /** PAE PDPTE reserved bits not set to 0. */
 #define VMX_IGS_PAE_PDPTE_RESERVED                              623
+/** VMCS link pointer does not point to a shadow VMCS. */
+#define VMX_IGS_VMCS_LINK_PTR_NOT_SHADOW                        624
+/** VMCS link pointer to a shadow VMCS with invalid VMCS revision identifer. */
+#define VMX_IGS_VMCS_LINK_PTR_SHADOW_VMCS_ID_INVALID            625
 /** @} */
 
 /** @name VMX VMCS-Read cache indices.
