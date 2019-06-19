@@ -1675,7 +1675,9 @@ void UISoftKeyboardWidget::deleteCurrentLayout()
 
     QDir fileToDelete;
     QString strFilePath(m_pCurrentKeyboardLayout->sourceFilePath());
-    bool fFileExists = fileToDelete.exists(strFilePath);
+    bool fFileExists = false;
+    if (!strFilePath.isEmpty())
+        fFileExists = fileToDelete.exists(strFilePath);
 
     if (fFileExists)
     {
