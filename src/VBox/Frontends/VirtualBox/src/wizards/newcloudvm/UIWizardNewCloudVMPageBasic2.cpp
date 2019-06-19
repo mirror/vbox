@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIWizardImportAppPageBasic2 class implementation.
+ * VBox Qt GUI - UIWizardNewCloudVMPageBasic2 class implementation.
  */
 
 /*
@@ -25,8 +25,8 @@
 #include "QIRichTextLabel.h"
 #include "UIApplianceUnverifiedCertificateViewer.h"
 #include "UIMessageCenter.h"
-#include "UIWizardImportApp.h"
-#include "UIWizardImportAppPageBasic2.h"
+#include "UIWizardNewCloudVM.h"
+#include "UIWizardNewCloudVMPageBasic2.h"
 
 /* COM includes: */
 #include "CAppliance.h"
@@ -35,15 +35,15 @@
 
 
 /*********************************************************************************************************************************
-*   Class UIWizardImportAppPage2 implementation.                                                                                 *
+*   Class UIWizardNewCloudVMPage2 implementation.                                                                                 *
 *********************************************************************************************************************************/
 
-UIWizardImportAppPage2::UIWizardImportAppPage2()
+UIWizardNewCloudVMPage2::UIWizardNewCloudVMPage2()
     : m_pSettingsCntLayout(0)
 {
 }
 
-void UIWizardImportAppPage2::updatePageAppearance()
+void UIWizardNewCloudVMPage2::updatePageAppearance()
 {
     /* Check whether there was cloud source selected: */
     const bool fIsSourceCloudOne = fieldImp("isSourceCloudOne").toBool();
@@ -51,7 +51,7 @@ void UIWizardImportAppPage2::updatePageAppearance()
     m_pSettingsCntLayout->setCurrentIndex((int)fIsSourceCloudOne);
 }
 
-void UIWizardImportAppPage2::refreshFormPropertiesTable()
+void UIWizardNewCloudVMPage2::refreshFormPropertiesTable()
 {
     /* Acquire VSD form: */
     CVirtualSystemDescriptionForm comForm = fieldImp("vsdForm").value<CVirtualSystemDescriptionForm>();
@@ -62,10 +62,10 @@ void UIWizardImportAppPage2::refreshFormPropertiesTable()
 
 
 /*********************************************************************************************************************************
-*   Class UIWizardImportAppPageBasic2 implementation.                                                                            *
+*   Class UIWizardNewCloudVMPageBasic2 implementation.                                                                            *
 *********************************************************************************************************************************/
 
-UIWizardImportAppPageBasic2::UIWizardImportAppPageBasic2(const QString &strFileName)
+UIWizardNewCloudVMPageBasic2::UIWizardNewCloudVMPageBasic2(const QString &strFileName)
     : m_enmCertText(kCertText_Uninitialized)
 {
     /* Create main layout: */
@@ -152,10 +152,10 @@ UIWizardImportAppPageBasic2::UIWizardImportAppPageBasic2(const QString &strFileN
     registerField("applianceWidget", this, "applianceWidget");
 }
 
-void UIWizardImportAppPageBasic2::retranslateUi()
+void UIWizardNewCloudVMPageBasic2::retranslateUi()
 {
     /* Translate page: */
-    setTitle(UIWizardImportApp::tr("Appliance settings"));
+    setTitle(UIWizardNewCloudVM::tr("Appliance settings"));
 
     /* Update page appearance: */
     updatePageAppearance();
@@ -164,25 +164,25 @@ void UIWizardImportAppPageBasic2::retranslateUi()
     switch (m_enmCertText)
     {
         case kCertText_Unsigned:
-            m_pCertLabel->setText(UIWizardImportApp::tr("Appliance is not signed"));
+            m_pCertLabel->setText(UIWizardNewCloudVM::tr("Appliance is not signed"));
             break;
         case kCertText_IssuedTrusted:
-            m_pCertLabel->setText(UIWizardImportApp::tr("Appliance signed by %1 (trusted)").arg(m_strSignedBy));
+            m_pCertLabel->setText(UIWizardNewCloudVM::tr("Appliance signed by %1 (trusted)").arg(m_strSignedBy));
             break;
         case kCertText_IssuedExpired:
-            m_pCertLabel->setText(UIWizardImportApp::tr("Appliance signed by %1 (expired!)").arg(m_strSignedBy));
+            m_pCertLabel->setText(UIWizardNewCloudVM::tr("Appliance signed by %1 (expired!)").arg(m_strSignedBy));
             break;
         case kCertText_IssuedUnverified:
-            m_pCertLabel->setText(UIWizardImportApp::tr("Unverified signature by %1!").arg(m_strSignedBy));
+            m_pCertLabel->setText(UIWizardNewCloudVM::tr("Unverified signature by %1!").arg(m_strSignedBy));
             break;
         case kCertText_SelfSignedTrusted:
-            m_pCertLabel->setText(UIWizardImportApp::tr("Self signed by %1 (trusted)").arg(m_strSignedBy));
+            m_pCertLabel->setText(UIWizardNewCloudVM::tr("Self signed by %1 (trusted)").arg(m_strSignedBy));
             break;
         case kCertText_SelfSignedExpired:
-            m_pCertLabel->setText(UIWizardImportApp::tr("Self signed by %1 (expired!)").arg(m_strSignedBy));
+            m_pCertLabel->setText(UIWizardNewCloudVM::tr("Self signed by %1 (expired!)").arg(m_strSignedBy));
             break;
         case kCertText_SelfSignedUnverified:
-            m_pCertLabel->setText(UIWizardImportApp::tr("Unverified self signed signature by %1!").arg(m_strSignedBy));
+            m_pCertLabel->setText(UIWizardNewCloudVM::tr("Unverified self signed signature by %1!").arg(m_strSignedBy));
             break;
         default:
             AssertFailed();
@@ -193,7 +193,7 @@ void UIWizardImportAppPageBasic2::retranslateUi()
     }
 }
 
-void UIWizardImportAppPageBasic2::initializePage()
+void UIWizardNewCloudVMPageBasic2::initializePage()
 {
     /* Update widget visibility: */
     updatePageAppearance();
@@ -265,7 +265,7 @@ void UIWizardImportAppPageBasic2::initializePage()
     retranslateUi();
 }
 
-void UIWizardImportAppPageBasic2::cleanupPage()
+void UIWizardNewCloudVMPageBasic2::cleanupPage()
 {
     /* Rollback settings: */
     m_pApplianceWidget->restoreDefaults();
@@ -273,7 +273,7 @@ void UIWizardImportAppPageBasic2::cleanupPage()
     UIWizardPage::cleanupPage();
 }
 
-bool UIWizardImportAppPageBasic2::validatePage()
+bool UIWizardNewCloudVMPageBasic2::validatePage()
 {
     /* Initial result: */
     bool fResult = true;
@@ -302,7 +302,7 @@ bool UIWizardImportAppPageBasic2::validatePage()
 
     /* Try to import appliance: */
     if (fResult)
-        fResult = qobject_cast<UIWizardImportApp*>(wizard())->importAppliance();
+        fResult = qobject_cast<UIWizardNewCloudVM*>(wizard())->importAppliance();
 
     /* Unlock finish button: */
     endProcessing();
@@ -311,16 +311,16 @@ bool UIWizardImportAppPageBasic2::validatePage()
     return fResult;
 }
 
-void UIWizardImportAppPageBasic2::updatePageAppearance()
+void UIWizardNewCloudVMPageBasic2::updatePageAppearance()
 {
     /* Call to base-class: */
-    UIWizardImportAppPage2::updatePageAppearance();
+    UIWizardNewCloudVMPage2::updatePageAppearance();
 
     /* Check whether there was cloud source selected: */
     const bool fIsSourceCloudOne = field("isSourceCloudOne").toBool();
     if (fIsSourceCloudOne)
     {
-        m_pLabel->setText(UIWizardImportApp::tr("These are the the suggested settings of the cloud VM import "
+        m_pLabel->setText(UIWizardNewCloudVM::tr("These are the the suggested settings of the cloud VM import "
                                                 "procedure, they are influencing the resulting local VM instance. "
                                                 "You can change many of the properties shown by double-clicking "
                                                 "on the items and disable others using the check boxes below."));
@@ -328,7 +328,7 @@ void UIWizardImportAppPageBasic2::updatePageAppearance()
     }
     else
     {
-        m_pLabel->setText(UIWizardImportApp::tr("These are the virtual machines contained in the appliance "
+        m_pLabel->setText(UIWizardNewCloudVM::tr("These are the virtual machines contained in the appliance "
                                                 "and the suggested settings of the imported VirtualBox machines. "
                                                 "You can change many of the properties shown by double-clicking "
                                                 "on the items and disable others using the check boxes below."));

@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIWizardImportApp class implementation.
+ * VBox Qt GUI - UIWizardNewCloudVM class implementation.
  */
 
 /*
@@ -30,24 +30,24 @@
 #include "QIFileDialog.h"
 #include "VBoxGlobal.h"
 #include "UIMessageCenter.h"
-#include "UIWizardImportApp.h"
-#include "UIWizardImportAppPageBasic1.h"
-#include "UIWizardImportAppPageBasic2.h"
-#include "UIWizardImportAppPageExpert.h"
+#include "UIWizardNewCloudVM.h"
+#include "UIWizardNewCloudVMPageBasic1.h"
+#include "UIWizardNewCloudVMPageBasic2.h"
+#include "UIWizardNewCloudVMPageExpert.h"
 
 /* COM includes: */
 #include "CProgress.h"
 
 
 /* Import license viewer: */
-class UIImportLicenseViewer : public QIDialog
+class UINewCloudVMLicenseViewer : public QIDialog
 {
     Q_OBJECT;
 
 public:
 
     /* Constructor: */
-    UIImportLicenseViewer(QWidget *pParent)
+    UINewCloudVMLicenseViewer(QWidget *pParent)
         : QIDialog(pParent)
     {
         /* Create widgets: */
@@ -71,10 +71,10 @@ public:
         retranslateUi();
 
         /* Setup connections: */
-        connect(m_pButtonBox, &QDialogButtonBox::rejected, this, &UIImportLicenseViewer::reject);
-        connect(m_pButtonBox, &QDialogButtonBox::accepted, this, &UIImportLicenseViewer::accept);
-        connect(m_pPrintButton, &QPushButton::clicked,     this, &UIImportLicenseViewer::sltPrint);
-        connect(m_pSaveButton,  &QPushButton::clicked,     this, &UIImportLicenseViewer::sltSave);
+        connect(m_pButtonBox, &QDialogButtonBox::rejected, this, &UINewCloudVMLicenseViewer::reject);
+        connect(m_pButtonBox, &QDialogButtonBox::accepted, this, &UINewCloudVMLicenseViewer::accept);
+        connect(m_pPrintButton, &QPushButton::clicked,     this, &UINewCloudVMLicenseViewer::sltPrint);
+        connect(m_pSaveButton,  &QPushButton::clicked,     this, &UINewCloudVMLicenseViewer::sltSave);
     }
 
     /* Content setter: */
@@ -142,10 +142,10 @@ private:
 
 
 /*********************************************************************************************************************************
-*   Class UIWizardImportApp implementation.                                                                                      *
+*   Class UIWizardNewCloudVM implementation.                                                                                      *
 *********************************************************************************************************************************/
 
-UIWizardImportApp::UIWizardImportApp(QWidget *pParent, bool fImportFromOCIByDefault, const QString &strFileName)
+UIWizardNewCloudVM::UIWizardNewCloudVM(QWidget *pParent, bool fImportFromOCIByDefault, const QString &strFileName)
     : UIWizard(pParent, WizardType_ImportAppliance)
     , m_fImportFromOCIByDefault(fImportFromOCIByDefault)
     , m_strFileName(strFileName)
@@ -159,7 +159,7 @@ UIWizardImportApp::UIWizardImportApp(QWidget *pParent, bool fImportFromOCIByDefa
 #endif /* VBOX_WS_MAC */
 }
 
-void UIWizardImportApp::prepare()
+void UIWizardNewCloudVM::prepare()
 {
     /* Create corresponding pages: */
     switch (mode())
@@ -167,13 +167,13 @@ void UIWizardImportApp::prepare()
         case WizardMode_Basic:
         {
             if (m_fImportFromOCIByDefault || m_strFileName.isEmpty())
-                setPage(Page1, new UIWizardImportAppPageBasic1(m_fImportFromOCIByDefault));
-            setPage(Page2, new UIWizardImportAppPageBasic2(m_strFileName));
+                setPage(Page1, new UIWizardNewCloudVMPageBasic1(m_fImportFromOCIByDefault));
+            setPage(Page2, new UIWizardNewCloudVMPageBasic2(m_strFileName));
             break;
         }
         case WizardMode_Expert:
         {
-            setPage(PageExpert, new UIWizardImportAppPageExpert(m_fImportFromOCIByDefault, m_strFileName));
+            setPage(PageExpert, new UIWizardNewCloudVMPageExpert(m_fImportFromOCIByDefault, m_strFileName));
             break;
         }
         default:
@@ -186,7 +186,7 @@ void UIWizardImportApp::prepare()
     UIWizard::prepare();
 }
 
-bool UIWizardImportApp::isValid() const
+bool UIWizardNewCloudVM::isValid() const
 {
     bool fResult = false;
     if (UIApplianceImportEditorWidget *pImportApplianceWidget = field("applianceWidget").value<ImportAppliancePointer>())
@@ -194,7 +194,7 @@ bool UIWizardImportApp::isValid() const
     return fResult;
 }
 
-bool UIWizardImportApp::importAppliance()
+bool UIWizardNewCloudVM::importAppliance()
 {
     /* Check whether there was cloud source selected: */
     const bool fIsSourceCloudOne = field("isSourceCloudOne").toBool();
@@ -240,7 +240,7 @@ bool UIWizardImportApp::importAppliance()
         QList < QPair <QString, QString> > licAgreements = pImportApplianceWidget->licenseAgreements();
         if (!licAgreements.isEmpty())
         {
-            UIImportLicenseViewer ilv(this);
+            UINewCloudVMLicenseViewer ilv(this);
             for (int i = 0; i < licAgreements.size(); ++ i)
             {
                 const QPair <QString, QString> &lic = licAgreements.at(i);
@@ -254,7 +254,7 @@ bool UIWizardImportApp::importAppliance()
     }
 }
 
-void UIWizardImportApp::retranslateUi()
+void UIWizardNewCloudVM::retranslateUi()
 {
     /* Call to base-class: */
     UIWizard::retranslateUi();
@@ -265,7 +265,7 @@ void UIWizardImportApp::retranslateUi()
     setButtonText(QWizard::FinishButton, tr("Import"));
 }
 
-void UIWizardImportApp::sltCurrentIdChanged(int iId)
+void UIWizardNewCloudVM::sltCurrentIdChanged(int iId)
 {
     /* Call to base-class: */
     UIWizard::sltCurrentIdChanged(iId);
@@ -274,7 +274,7 @@ void UIWizardImportApp::sltCurrentIdChanged(int iId)
                                           (mode() == WizardMode_Expert && iId == PageExpert));
 }
 
-void UIWizardImportApp::sltCustomButtonClicked(int iId)
+void UIWizardNewCloudVM::sltCustomButtonClicked(int iId)
 {
     /* Call to base-class: */
     UIWizard::sltCustomButtonClicked(iId);
@@ -291,4 +291,4 @@ void UIWizardImportApp::sltCustomButtonClicked(int iId)
 }
 
 
-#include "UIWizardImportApp.moc"
+#include "UIWizardNewCloudVM.moc"

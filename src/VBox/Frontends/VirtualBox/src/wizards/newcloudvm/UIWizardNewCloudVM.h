@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIWizardImportApp class declaration.
+ * VBox Qt GUI - UIWizardNewCloudVM class declaration.
  */
 
 /*
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef FEQT_INCLUDED_SRC_wizards_importappliance_UIWizardImportApp_h
-#define FEQT_INCLUDED_SRC_wizards_importappliance_UIWizardImportApp_h
+#ifndef FEQT_INCLUDED_SRC_wizards_newcloudvm_UIWizardNewCloudVM_h
+#define FEQT_INCLUDED_SRC_wizards_newcloudvm_UIWizardNewCloudVM_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -25,7 +25,7 @@
 #include "UIWizard.h"
 
 /** Import Appliance wizard. */
-class UIWizardImportApp : public UIWizard
+class UIWizardNewCloudVM : public UIWizard
 {
     Q_OBJECT;
 
@@ -46,7 +46,7 @@ public:
 
     /** Constructs export appliance wizard passing @a pParent to the base-class.
       * @param  strFileName  Brings appliance file name. */
-    UIWizardImportApp(QWidget *pParent, bool fImportFromOCIByDefault, const QString &strFileName);
+    UIWizardNewCloudVM(QWidget *pParent, bool fImportFromOCIByDefault, const QString &strFileName);
 
     /** Prepares all. */
     virtual void prepare() /* override */;
@@ -78,6 +78,6 @@ private:
 };
 
 /** Safe pointer to appliance wizard. */
-typedef QPointer<UIWizardImportApp> UISafePointerWizardImportApp;
+typedef QPointer<UIWizardNewCloudVM> UISafePointerWizardImportApp;
 
-#endif /* !FEQT_INCLUDED_SRC_wizards_importappliance_UIWizardImportApp_h */
+#endif /* !FEQT_INCLUDED_SRC_wizards_newcloudvm_UIWizardNewCloudVM_h */

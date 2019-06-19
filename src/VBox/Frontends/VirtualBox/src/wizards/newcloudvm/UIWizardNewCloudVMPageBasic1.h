@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIWizardImportAppPageBasic1 class declaration.
+ * VBox Qt GUI - UIWizardNewCloudVMPageBasic1 class declaration.
  */
 
 /*
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef FEQT_INCLUDED_SRC_wizards_importappliance_UIWizardImportAppPageBasic1_h
-#define FEQT_INCLUDED_SRC_wizards_importappliance_UIWizardImportAppPageBasic1_h
+#ifndef FEQT_INCLUDED_SRC_wizards_newcloudvm_UIWizardNewCloudVMPageBasic1_h
+#define FEQT_INCLUDED_SRC_wizards_newcloudvm_UIWizardNewCloudVMPageBasic1_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -60,12 +60,12 @@ enum
 };
 
 /** UIWizardPageBase extension for 1st page of the Import Appliance wizard. */
-class UIWizardImportAppPage1 : public UIWizardPageBase
+class UIWizardNewCloudVMPage1 : public UIWizardPageBase
 {
 protected:
 
     /** Constructs 1st page base. */
-    UIWizardImportAppPage1(bool fImportFromOCIByDefault);
+    UIWizardNewCloudVMPage1(bool fImportFromOCIByDefault);
 
     /** Populates sources. */
     void populateSources();
@@ -157,8 +157,8 @@ protected:
     QListWidget  *m_pAccountInstanceList;
 };
 
-/** UIWizardPage extension for 1st page of the Import Appliance wizard, extends UIWizardImportAppPage1 as well. */
-class UIWizardImportAppPageBasic1 : public UIWizardPage, public UIWizardImportAppPage1
+/** UIWizardPage extension for 1st page of the Import Appliance wizard, extends UIWizardNewCloudVMPage1 as well. */
+class UIWizardNewCloudVMPageBasic1 : public UIWizardPage, public UIWizardNewCloudVMPage1
 {
     Q_OBJECT;
     Q_PROPERTY(QString source READ source WRITE setSource);
@@ -171,7 +171,7 @@ class UIWizardImportAppPageBasic1 : public UIWizardPage, public UIWizardImportAp
 public:
 
     /** Constructs 1st basic page. */
-    UIWizardImportAppPageBasic1(bool fImportFromOCIByDefault);
+    UIWizardNewCloudVMPageBasic1(bool fImportFromOCIByDefault);
 
 protected:
 
@@ -212,4 +212,4 @@ private:
     QIRichTextLabel *m_pLabelDescription;
 };
 
-#endif /* !FEQT_INCLUDED_SRC_wizards_importappliance_UIWizardImportAppPageBasic1_h */
+#endif /* !FEQT_INCLUDED_SRC_wizards_newcloudvm_UIWizardNewCloudVMPageBasic1_h */

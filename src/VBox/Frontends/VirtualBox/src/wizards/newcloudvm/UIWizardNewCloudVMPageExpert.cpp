@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIWizardImportAppPageExpert class implementation.
+ * VBox Qt GUI - UIWizardNewCloudVMPageExpert class implementation.
  */
 
 /*
@@ -34,12 +34,12 @@
 #include "UIIconPool.h"
 #include "UIMessageCenter.h"
 #include "UIVirtualBoxManager.h"
-#include "UIWizardImportApp.h"
-#include "UIWizardImportAppPageExpert.h"
+#include "UIWizardNewCloudVM.h"
+#include "UIWizardNewCloudVMPageExpert.h"
 
 
-UIWizardImportAppPageExpert::UIWizardImportAppPageExpert(bool fImportFromOCIByDefault, const QString &strFileName)
-    : UIWizardImportAppPage1(fImportFromOCIByDefault)
+UIWizardNewCloudVMPageExpert::UIWizardNewCloudVMPageExpert(bool fImportFromOCIByDefault, const QString &strFileName)
+    : UIWizardNewCloudVMPage1(fImportFromOCIByDefault)
     , m_pCntSource(0)
     , m_pSettingsCnt(0)
 {
@@ -262,17 +262,17 @@ UIWizardImportAppPageExpert::UIWizardImportAppPageExpert(bool fImportFromOCIByDe
     /* Setup connections: */
     if (gpManager)
         connect(gpManager, &UIVirtualBoxManager::sigCloudProfileManagerChange,
-                this, &UIWizardImportAppPageExpert::sltHandleSourceChange);
+                this, &UIWizardNewCloudVMPageExpert::sltHandleSourceChange);
     connect(m_pSourceComboBox, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::activated),
-            this, &UIWizardImportAppPageExpert::sltHandleSourceChange);
+            this, &UIWizardNewCloudVMPageExpert::sltHandleSourceChange);
     connect(m_pFileSelector, &UIEmptyFilePathSelector::pathChanged,
-            this, &UIWizardImportAppPageExpert::sltFilePathChangeHandler);
+            this, &UIWizardNewCloudVMPageExpert::sltFilePathChangeHandler);
     connect(m_pAccountComboBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
-            this, &UIWizardImportAppPageExpert::sltHandleAccountComboChange);
+            this, &UIWizardNewCloudVMPageExpert::sltHandleAccountComboChange);
     connect(m_pAccountToolButton, &QIToolButton::clicked,
-            this, &UIWizardImportAppPageExpert::sltHandleAccountButtonClick);
+            this, &UIWizardNewCloudVMPageExpert::sltHandleAccountButtonClick);
     connect(m_pAccountInstanceList, &QListWidget::currentRowChanged,
-            this, &UIWizardImportAppPageExpert::sltHandleInstanceListChange);
+            this, &UIWizardNewCloudVMPageExpert::sltHandleInstanceListChange);
 
     /* Register classes: */
     qRegisterMetaType<ImportAppliancePointer>();
@@ -286,7 +286,7 @@ UIWizardImportAppPageExpert::UIWizardImportAppPageExpert(bool fImportFromOCIByDe
     registerField("applianceWidget", this, "applianceWidget");
 }
 
-bool UIWizardImportAppPageExpert::event(QEvent *pEvent)
+bool UIWizardNewCloudVMPageExpert::event(QEvent *pEvent)
 {
     /* Handle known event types: */
     switch (pEvent->type())
@@ -306,30 +306,30 @@ bool UIWizardImportAppPageExpert::event(QEvent *pEvent)
     return UIWizardPage::event(pEvent);
 }
 
-void UIWizardImportAppPageExpert::retranslateUi()
+void UIWizardNewCloudVMPageExpert::retranslateUi()
 {
     /* Translate appliance container: */
-    m_pCntSource->setTitle(UIWizardImportApp::tr("Source"));
+    m_pCntSource->setTitle(UIWizardNewCloudVM::tr("Source"));
 
     /* Translate hardcoded values of Source combo-box: */
-    m_pSourceComboBox->setItemText(0, UIWizardImportApp::tr("Local File System"));
-    m_pSourceComboBox->setItemData(0, UIWizardImportApp::tr("Import from local file system."), Qt::ToolTipRole);
+    m_pSourceComboBox->setItemText(0, UIWizardNewCloudVM::tr("Local File System"));
+    m_pSourceComboBox->setItemData(0, UIWizardNewCloudVM::tr("Import from local file system."), Qt::ToolTipRole);
     /* Translate received values of Source combo-box.
      * We are enumerating starting from 0 for simplicity: */
     for (int i = 0; i < m_pSourceComboBox->count(); ++i)
         if (isSourceCloudOne(i))
         {
             m_pSourceComboBox->setItemText(i, m_pSourceComboBox->itemData(i, SourceData_Name).toString());
-            m_pSourceComboBox->setItemData(i, UIWizardImportApp::tr("Import from cloud service provider."), Qt::ToolTipRole);
+            m_pSourceComboBox->setItemData(i, UIWizardNewCloudVM::tr("Import from cloud service provider."), Qt::ToolTipRole);
         }
 
     /* Translate file selector: */
-    m_pFileSelector->setChooseButtonToolTip(UIWizardImportApp::tr("Choose a virtual appliance file to import..."));
-    m_pFileSelector->setFileDialogTitle(UIWizardImportApp::tr("Please choose a virtual appliance file to import"));
-    m_pFileSelector->setFileFilters(UIWizardImportApp::tr("Open Virtualization Format (%1)").arg("*.ova *.ovf"));
+    m_pFileSelector->setChooseButtonToolTip(UIWizardNewCloudVM::tr("Choose a virtual appliance file to import..."));
+    m_pFileSelector->setFileDialogTitle(UIWizardNewCloudVM::tr("Please choose a virtual appliance file to import"));
+    m_pFileSelector->setFileFilters(UIWizardNewCloudVM::tr("Open Virtualization Format (%1)").arg("*.ova *.ovf"));
 
     /* Translate settings container: */
-    m_pSettingsCnt->setTitle(UIWizardImportApp::tr("Settings"));
+    m_pSettingsCnt->setTitle(UIWizardNewCloudVM::tr("Settings"));
 
     /* Update page appearance: */
     updatePageAppearance();
@@ -339,13 +339,13 @@ void UIWizardImportAppPageExpert::retranslateUi()
     updateAccountPropertyTableToolTips();
 }
 
-void UIWizardImportAppPageExpert::initializePage()
+void UIWizardNewCloudVMPageExpert::initializePage()
 {
     /* Translate page: */
     retranslateUi();
 }
 
-bool UIWizardImportAppPageExpert::isComplete() const
+bool UIWizardNewCloudVMPageExpert::isComplete() const
 {
     bool fResult = true;
 
@@ -370,7 +370,7 @@ bool UIWizardImportAppPageExpert::isComplete() const
     return fResult;
 }
 
-bool UIWizardImportAppPageExpert::validatePage()
+bool UIWizardNewCloudVMPageExpert::validatePage()
 {
     /* Initial result: */
     bool fResult = true;
@@ -399,7 +399,7 @@ bool UIWizardImportAppPageExpert::validatePage()
 
     /* Try to import appliance: */
     if (fResult)
-        fResult = qobject_cast<UIWizardImportApp*>(wizard())->importAppliance();
+        fResult = qobject_cast<UIWizardNewCloudVM*>(wizard())->importAppliance();
 
     /* Unlock finish button: */
     endProcessing();
@@ -408,11 +408,11 @@ bool UIWizardImportAppPageExpert::validatePage()
     return fResult;
 }
 
-void UIWizardImportAppPageExpert::updatePageAppearance()
+void UIWizardNewCloudVMPageExpert::updatePageAppearance()
 {
     /* Call to base-class: */
-    UIWizardImportAppPage1::updatePageAppearance();
-    UIWizardImportAppPage2::updatePageAppearance();
+    UIWizardNewCloudVMPage1::updatePageAppearance();
+    UIWizardNewCloudVMPage2::updatePageAppearance();
 
     /* Update page appearance according to chosen storage-type: */
     if (isSourceCloudOne())
@@ -421,7 +421,7 @@ void UIWizardImportAppPageExpert::updatePageAppearance()
         m_pFileSelector->setFocus();
 }
 
-void UIWizardImportAppPageExpert::sltHandleSourceChange()
+void UIWizardNewCloudVMPageExpert::sltHandleSourceChange()
 {
     /* Update tool-tip: */
     updateSourceComboToolTip();
@@ -436,7 +436,7 @@ void UIWizardImportAppPageExpert::sltHandleSourceChange()
     emit completeChanged();
 }
 
-void UIWizardImportAppPageExpert::sltFilePathChangeHandler()
+void UIWizardNewCloudVMPageExpert::sltFilePathChangeHandler()
 {
     /* Check if set file contains valid appliance: */
     if (   QFile::exists(m_pFileSelector->path())
@@ -449,7 +449,7 @@ void UIWizardImportAppPageExpert::sltFilePathChangeHandler()
     emit completeChanged();
 }
 
-void UIWizardImportAppPageExpert::sltHandleAccountComboChange()
+void UIWizardNewCloudVMPageExpert::sltHandleAccountComboChange()
 {
     /* Refresh required settings: */
     populateAccountProperties();
@@ -459,14 +459,14 @@ void UIWizardImportAppPageExpert::sltHandleAccountComboChange()
     emit completeChanged();
 }
 
-void UIWizardImportAppPageExpert::sltHandleAccountButtonClick()
+void UIWizardNewCloudVMPageExpert::sltHandleAccountButtonClick()
 {
     /* Open Cloud Profile Manager: */
     if (gpManager)
         gpManager->openCloudProfileManager();
 }
 
-void UIWizardImportAppPageExpert::sltHandleInstanceListChange()
+void UIWizardNewCloudVMPageExpert::sltHandleInstanceListChange()
 {
     populateFormProperties();
     refreshFormPropertiesTable();

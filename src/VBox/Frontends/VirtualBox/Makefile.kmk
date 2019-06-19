@@ -324,6 +324,7 @@ VBOX_GUI_INC_DIRS = \
 	./src/widgets \
 	./src/widgets/graphics \
 	./src/wizards \
+	./src/wizards/newcloudvm \
 	./src/wizards/newvm \
 	./src/wizards/newvd \
 	./src/wizards/clonevm \
@@ -675,6 +676,10 @@ VirtualBox_QT_MOCHDRS = \
 	src/widgets/graphics/UIGraphicsZoomButton.h \
 	src/widgets/graphics/UIGraphicsToolBar.h \
 	src/widgets/graphics/UIGraphicsTextPane.h \
+	src/wizards/newcloudvm/UIWizardNewCloudVM.h \
+	src/wizards/newcloudvm/UIWizardNewCloudVMPageBasic1.h \
+	src/wizards/newcloudvm/UIWizardNewCloudVMPageBasic2.h \
+	src/wizards/newcloudvm/UIWizardNewCloudVMPageExpert.h \
 	src/wizards/newvm/UIWizardNewVM.h \
 	src/wizards/newvm/UIWizardNewVMPageBasic1.h \
 	src/wizards/newvm/UIWizardNewVMPageBasic2.h \
@@ -953,6 +958,7 @@ VirtualBox_QT_MOCSRCS = \
 	src/widgets/UIMenuToolBar.cpp \
 	src/widgets/UITabBar.cpp \
 	src/widgets/graphics/UIGraphicsScrollBar.cpp \
+	src/wizards/newcloudvm/UIWizardNewCloudVM.cpp \
 	src/wizards/importappliance/UIWizardImportApp.cpp
 
 
@@ -1107,6 +1113,10 @@ VirtualBox_SOURCES = \
 	src/widgets/graphics/UIGraphicsZoomButton.cpp \
 	src/widgets/graphics/UIGraphicsToolBar.cpp \
 	src/widgets/graphics/UIGraphicsTextPane.cpp \
+	src/wizards/newcloudvm/UIWizardNewCloudVM.cpp \
+	src/wizards/newcloudvm/UIWizardNewCloudVMPageBasic1.cpp \
+	src/wizards/newcloudvm/UIWizardNewCloudVMPageBasic2.cpp \
+	src/wizards/newcloudvm/UIWizardNewCloudVMPageExpert.cpp \
 	src/wizards/newvm/UIWizardNewVM.cpp \
 	src/wizards/newvm/UIWizardNewVMPageBasic1.cpp \
 	src/wizards/newvm/UIWizardNewVMPageBasic2.cpp \
@@ -1911,6 +1921,7 @@ QTGUI_DOXYFILE_INPUT_DIRS := \
 		wizards/exportappliance \
 		wizards/firstrun \
 		wizards/importappliance \
+		wizards/newcloudvm \
 		wizards/newvd \
 		wizards/newvm)
 

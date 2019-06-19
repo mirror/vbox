@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIWizardImportAppPageBasic2 class declaration.
+ * VBox Qt GUI - UIWizardNewCloudVMPageBasic2 class declaration.
  */
 
 /*
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef FEQT_INCLUDED_SRC_wizards_importappliance_UIWizardImportAppPageBasic2_h
-#define FEQT_INCLUDED_SRC_wizards_importappliance_UIWizardImportAppPageBasic2_h
+#ifndef FEQT_INCLUDED_SRC_wizards_newcloudvm_UIWizardNewCloudVMPageBasic2_h
+#define FEQT_INCLUDED_SRC_wizards_newcloudvm_UIWizardNewCloudVMPageBasic2_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -32,12 +32,12 @@ class QStackedLayout;
 class QIRichTextLabel;
 
 /** UIWizardPageBase extension for 2nd page of the Import Appliance wizard. */
-class UIWizardImportAppPage2 : public UIWizardPageBase
+class UIWizardNewCloudVMPage2 : public UIWizardPageBase
 {
 protected:
 
     /** Constructs 2nd page base. */
-    UIWizardImportAppPage2();
+    UIWizardNewCloudVMPage2();
 
     /** Updates page appearance. */
     virtual void updatePageAppearance();
@@ -57,8 +57,8 @@ protected:
     UIFormEditorWidgetPointer  m_pFormEditor;
 };
 
-/** UIWizardPage extension for 2nd page of the Import Appliance wizard, extends UIWizardImportAppPage2 as well. */
-class UIWizardImportAppPageBasic2 : public UIWizardPage, public UIWizardImportAppPage2
+/** UIWizardPage extension for 2nd page of the Import Appliance wizard, extends UIWizardNewCloudVMPage2 as well. */
+class UIWizardNewCloudVMPageBasic2 : public UIWizardPage, public UIWizardNewCloudVMPage2
 {
     Q_OBJECT;
     Q_PROPERTY(ImportAppliancePointer applianceWidget READ applianceWidget);
@@ -67,7 +67,7 @@ public:
 
     /** Constructs 2nd basic page.
       * @param  strFileName  Brings appliance file name. */
-    UIWizardImportAppPageBasic2(const QString &strFileName);
+    UIWizardNewCloudVMPageBasic2(const QString &strFileName);
 
 protected:
 
@@ -107,4 +107,4 @@ private:
     QString  m_strSignedBy;
 };
 
-#endif /* !FEQT_INCLUDED_SRC_wizards_importappliance_UIWizardImportAppPageBasic2_h */
+#endif /* !FEQT_INCLUDED_SRC_wizards_newcloudvm_UIWizardNewCloudVMPageBasic2_h */

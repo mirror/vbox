@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIWizardImportAppPageExpert class declaration.
+ * VBox Qt GUI - UIWizardNewCloudVMPageExpert class declaration.
  */
 
 /*
@@ -15,23 +15,23 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef FEQT_INCLUDED_SRC_wizards_importappliance_UIWizardImportAppPageExpert_h
-#define FEQT_INCLUDED_SRC_wizards_importappliance_UIWizardImportAppPageExpert_h
+#ifndef FEQT_INCLUDED_SRC_wizards_newcloudvm_UIWizardNewCloudVMPageExpert_h
+#define FEQT_INCLUDED_SRC_wizards_newcloudvm_UIWizardNewCloudVMPageExpert_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
 
 /* GUI includes: */
-#include "UIWizardImportAppPageBasic1.h"
-#include "UIWizardImportAppPageBasic2.h"
+#include "UIWizardNewCloudVMPageBasic1.h"
+#include "UIWizardNewCloudVMPageBasic2.h"
 
 /* Forward declarations: */
 class QGroupBox;
 
-/** UIWizardPage extension for UIWizardImportAppPage1 and UIWizardImportAppPage2. */
-class UIWizardImportAppPageExpert : public UIWizardPage,
-                                    public UIWizardImportAppPage1,
-                                    public UIWizardImportAppPage2
+/** UIWizardPage extension for UIWizardNewCloudVMPage1 and UIWizardNewCloudVMPage2. */
+class UIWizardNewCloudVMPageExpert : public UIWizardPage,
+                                    public UIWizardNewCloudVMPage1,
+                                    public UIWizardNewCloudVMPage2
 {
     Q_OBJECT;
     Q_PROPERTY(QString source READ source WRITE setSource);
@@ -46,7 +46,7 @@ public:
 
     /** Constructs expert page.
       * @param  strFileName  Brings appliance file name. */
-    UIWizardImportAppPageExpert(bool fImportFromOCIByDefault, const QString &strFileName);
+    UIWizardNewCloudVMPageExpert(bool fImportFromOCIByDefault, const QString &strFileName);
 
 protected:
 
@@ -95,4 +95,4 @@ private:
     QGroupBox *m_pSettingsCnt;
 };
 
-#endif /* !FEQT_INCLUDED_SRC_wizards_importappliance_UIWizardImportAppPageExpert_h */
+#endif /* !FEQT_INCLUDED_SRC_wizards_newcloudvm_UIWizardNewCloudVMPageExpert_h */
