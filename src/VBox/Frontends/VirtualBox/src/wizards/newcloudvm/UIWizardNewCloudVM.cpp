@@ -27,7 +27,7 @@
 
 
 UIWizardNewCloudVM::UIWizardNewCloudVM(QWidget *pParent, bool fImportFromOCIByDefault)
-    : UIWizard(pParent, WizardType_ImportAppliance)
+    : UIWizard(pParent, WizardType_NewCloudVM)
     , m_fImportFromOCIByDefault(fImportFromOCIByDefault)
 {
 #ifndef VBOX_WS_MAC

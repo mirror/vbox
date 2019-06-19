@@ -838,6 +838,7 @@ enum WizardType
     WizardType_CloneVM,
     WizardType_ExportAppliance,
     WizardType_ImportAppliance,
+    WizardType_NewCloudVM,
     WizardType_FirstRun,
     WizardType_NewVD,
     WizardType_CloneVD
