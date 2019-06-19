@@ -2792,15 +2792,18 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             # Invalid stuff.
             [ tdTestDirCreate(sDirectory = '' ), tdTestResultFailure() ],
             # More unusual stuff.
-            [ tdTestDirCreate(sDirectory = oTestVm.pathJoin('..', '..') ), tdTestResultFailure() ],
             [ tdTestDirCreate(sDirectory = oTestVm.pathJoin('..', '.') ), tdTestResultFailure() ],
         ];
-        if oTestVm.isWindows() or oTestVm.isOS2():
+        if True: #self.oTstDrv.fpApiVer > 5.2:
             atTests.extend([
+                [ tdTestDirCreate(sDirectory = oTestVm.pathJoin('..', '..') ), tdTestResultFailure() ],
                 [ tdTestDirCreate(sDirectory = '..' ), tdTestResultFailure() ],
                 [ tdTestDirCreate(sDirectory = '../' ), tdTestResultFailure() ],
-                [ tdTestDirCreate(sDirectory = '../..' ), tdTestResultFailure() ],
                 [ tdTestDirCreate(sDirectory = '../../' ), tdTestResultFailure() ],
+            ]);
+
+        if oTestVm.isWindows() or oTestVm.isOS2():
+            atTests.extend([
                 [ tdTestDirCreate(sDirectory = 'C:\\' ), tdTestResultFailure() ],
                 [ tdTestDirCreate(sDirectory = 'C:\\..' ), tdTestResultFailure() ],
                 [ tdTestDirCreate(sDirectory = 'C:\\..\\' ), tdTestResultFailure() ],
@@ -2813,8 +2816,6 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             ]);
         else:
             atTests.extend([
-                [ tdTestDirCreate(sDirectory = '../' ), tdTestResultFailure() ],
-                [ tdTestDirCreate(sDirectory = '../../' ), tdTestResultFailure() ],
                 [ tdTestDirCreate(sDirectory = '/' ), tdTestResultFailure() ],
                 [ tdTestDirCreate(sDirectory = '/..' ), tdTestResultFailure() ],
                 [ tdTestDirCreate(sDirectory = '/../' ), tdTestResultFailure() ],
@@ -2862,8 +2863,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
             fRc = oCurTest.closeSession(fIsError = True) and fRc;
             if fRc is False:
-                reporter.error('Test #%d failed' % (i,));
-                break;
+                fRc = reporter.error('Test #%d failed' % (i,));
 
         return (fRc, oTxsSession);
 
@@ -3896,7 +3896,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             [ tdTestCopyFromFile(oSrc = oExistingFileGst, sDst = os.path.join(sScratchHst, 'copyfile2')),
               tdTestResultSuccess() ],
         ]);
-        if self.oTstDrv.fpApiVer >= 5.2:
+        if self.oTstDrv.fpApiVer > 5.2:
             # Copy into a directory.
             atTests.extend([
                 [ tdTestCopyFromFile(oSrc = oExistingFileGst, sDst = sScratchHst), tdTestResultSuccess() ],
