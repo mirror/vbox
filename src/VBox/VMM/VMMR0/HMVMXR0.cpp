@@ -3623,6 +3623,15 @@ static int hmR0VmxSetupVmcsProcCtls2(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo)
     if (pVM->hm.s.vmx.fUnrestrictedGuest)
         fVal |= VMX_PROC_CTLS2_UNRESTRICTED_GUEST;
 
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+#if 0
+    /* Enable VMCS shadowing if supported by the hardware and VMX is exposed to the guest. */
+    if (   pVM->cpum.ro.GuestFeatures.fVmx
+        && (pVM->hm.s.vmx.Msrs.ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_VMCS_SHADOWING))
+        fVal |= VMX_PROC_CTLS2_VMCS_SHADOWING;
+#endif
+#endif
+
 #if 0
     if (pVM->hm.s.fVirtApicRegs)
     {
