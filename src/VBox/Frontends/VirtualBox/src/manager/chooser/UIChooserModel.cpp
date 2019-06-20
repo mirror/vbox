@@ -1139,6 +1139,7 @@ void UIChooserModel::prepareContextMenu()
         m_pContextMenuGlobal->addSeparator();
         m_pContextMenuGlobal->addAction(actionPool()->action(UIActionIndexST_M_File_S_ImportAppliance));
         m_pContextMenuGlobal->addAction(actionPool()->action(UIActionIndexST_M_File_S_ExportAppliance));
+        m_pContextMenuGlobal->addAction(actionPool()->action(UIActionIndexST_M_File_S_NewCloudVM));
 # ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
         m_pContextMenuGlobal->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowExtraDataManager));
 # endif
@@ -1153,6 +1154,7 @@ void UIChooserModel::prepareContextMenu()
         m_pContextMenuGlobal->addSeparator();
         m_pContextMenuGlobal->addAction(actionPool()->action(UIActionIndexST_M_File_S_ImportAppliance));
         m_pContextMenuGlobal->addAction(actionPool()->action(UIActionIndexST_M_File_S_ExportAppliance));
+        m_pContextMenuGlobal->addAction(actionPool()->action(UIActionIndexST_M_File_S_NewCloudVM));
         m_pContextMenuGlobal->addSeparator();
 # ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
         m_pContextMenuGlobal->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowExtraDataManager));
