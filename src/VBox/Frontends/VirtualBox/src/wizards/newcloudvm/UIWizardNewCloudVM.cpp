@@ -68,7 +68,7 @@ bool UIWizardNewCloudVM::createCloudVM()
 {
     /* Acquire prepared client and description: */
     CCloudClient comCloudClient = field("client").value<CCloudClient>();
-    CVirtualSystemDescription comDescription = field("description").value<CVirtualSystemDescription>();
+    CVirtualSystemDescription comDescription = field("vsd").value<CVirtualSystemDescription>();
     AssertReturn(comCloudClient.isNotNull() && comDescription.isNotNull(), false);
 
     /* Initiate cloud VM creation porocedure: */
