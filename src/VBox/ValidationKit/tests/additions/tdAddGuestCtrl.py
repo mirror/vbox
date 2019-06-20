@@ -82,8 +82,8 @@ class tdCtxTest(object):
         self.fRc = False;
         ## IGuest reference.
         self.oGuest      = oSession.o.console.guest; ## @todo may throw shit
-        self.oSesison    = oSession;
-        self.oTxsSesison = oTxsSession;
+        self.oSession    = oSession;
+        self.oTxsSession = oTxsSession;
         self.oTestVm     = oTestVm;
 
 class tdCtxCreds(object):
@@ -425,9 +425,9 @@ class tdTestFileOpen(tdTestGuestCtrlBase):
             return False;
         return True;
 
-    def doStepsOnOpenedFile(self, fExpectSuccess):
+    def doStepsOnOpenedFile(self, fExpectSuccess, fpApiVer):
         """ Overridden by children to do more testing. """
-        _ = fExpectSuccess;
+        _ = fExpectSuccess; _ = fpApiVer;
         return True;
 
     def doCloseStep(self):
@@ -442,11 +442,11 @@ class tdTestFileOpen(tdTestGuestCtrlBase):
             self.oOpenedFile = None;
         return True;
 
-    def doSteps(self, fExpectSuccess):
+    def doSteps(self, fExpectSuccess, fpApiVer):
         """ Do the tests. """
         fRc = self.doOpenStep(fExpectSuccess);
         if fRc is True:
-            fRc = self.doStepsOnOpenedFile(fExpectSuccess);
+            fRc = self.doStepsOnOpenedFile(fExpectSuccess, fpApiVer);
         if self.oOpenedFile:
             fRc = self.doCloseStep() and fRc;
         return fRc;
@@ -461,40 +461,41 @@ class tdTestFileOpenCheckSize(tdTestFileOpen):
         tdTestFileOpen.__init__(self, sFile, eAccessMode, eAction, eSharing, fCreationMode, sUser, sPassword);
         self.cbOpenExpected = cbOpenExpected;
 
-    def doStepsOnOpenedFile(self, fExpectSuccess):
+    def doStepsOnOpenedFile(self, fExpectSuccess, fpApiVer):
         #
         # Call parent.
         #
-        fRc = tdTestFileOpen.doStepsOnOpenedFile(self, fExpectSuccess);
+        fRc = tdTestFileOpen.doStepsOnOpenedFile(self, fExpectSuccess, fpApiVer);
 
         #
-        # Check the size.
+        # Check the size.  Requires 6.0 or later (E_NOTIMPL in 5.2).
         #
-        try:
-            oFsObjInfo = self.oOpenedFile.queryInfo();
-        except:
-            return reporter.errorXcpt('queryInfo([%s, %s, %s, %s, %s, %s])'
-                                      % (self.sFile, self.eAccessMode, self.eAction, self.eSharing,
-                                         self.fCreationMode, self.afOpenFlags,));
-        if oFsObjInfo is None:
-            return reporter.error('IGuestFile::queryInfo returned None');
-        try:
-            cbFile = oFsObjInfo.objectSize;
-        except:
-            return reporter.errorXcpt();
-        if cbFile != self.cbOpenExpected:
-            return reporter.error('Wrong file size after open (%d): %s, expected %s (file %s) (#1)'
-                                  % (self.eAction, cbFile, self.cbOpenExpected, self.sFile));
+        if fpApiVer >= 6.0:
+            try:
+                oFsObjInfo = self.oOpenedFile.queryInfo();
+            except:
+                return reporter.errorXcpt('queryInfo([%s, %s, %s, %s, %s, %s])'
+                                          % (self.sFile, self.eAccessMode, self.eAction, self.eSharing,
+                                             self.fCreationMode, self.afOpenFlags,));
+            if oFsObjInfo is None:
+                return reporter.error('IGuestFile::queryInfo returned None');
+            try:
+                cbFile = oFsObjInfo.objectSize;
+            except:
+                return reporter.errorXcpt();
+            if cbFile != self.cbOpenExpected:
+                return reporter.error('Wrong file size after open (%d): %s, expected %s (file %s) (#1)'
+                                      % (self.eAction, cbFile, self.cbOpenExpected, self.sFile));
 
-        try:
-            cbFile = self.oOpenedFile.querySize();
-        except:
-            return reporter.errorXcpt('querySize([%s, %s, %s, %s, %s, %s])'
-                                      % (self.sFile, self.eAccessMode, self.eAction, self.eSharing,
-                                         self.fCreationMode, self.afOpenFlags,));
-        if cbFile != self.cbOpenExpected:
-            return reporter.error('Wrong file size after open (%d): %s, expected %s (file %s) (#2)'
-                                  % (self.eAction, cbFile, self.cbOpenExpected, self.sFile));
+            try:
+                cbFile = self.oOpenedFile.querySize();
+            except:
+                return reporter.errorXcpt('querySize([%s, %s, %s, %s, %s, %s])'
+                                          % (self.sFile, self.eAccessMode, self.eAction, self.eSharing,
+                                             self.fCreationMode, self.afOpenFlags,));
+            if cbFile != self.cbOpenExpected:
+                return reporter.error('Wrong file size after open (%d): %s, expected %s (file %s) (#2)'
+                                      % (self.eAction, cbFile, self.cbOpenExpected, self.sFile));
 
         return fRc;
 
@@ -3495,7 +3496,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 fRc = reporter.error('Test #%d failed: Could not create session' % (i,));
                 break;
 
-            fRc2 = oCurTest.doSteps(oCurRes.fRc);
+            fRc2 = oCurTest.doSteps(oCurRes.fRc, self.oTstDrv.fpApiVer);
             if fRc2 != oCurRes.fRc:
                 fRc = reporter.error('Test #%d result mismatch: Got %s, expected %s' % (i, fRc2, oCurRes.fRc,));
 
@@ -3717,31 +3718,56 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             #
             # Check stat info on the file as well as querySize.
             #
-            try:
-                oFsObjInfo = oFile.queryInfo();
-            except:
-                fRc = reporter.errorXcpt('%s: queryInfo()' % (oTestFile.sPath,));
-            else:
-                if oFsObjInfo is None:
-                    fRc = reporter.error('IGuestFile::queryInfo returned None');
+            if self.oTstDrv.fpApiVer > 5.2:
+                try:
+                    oFsObjInfo = oFile.queryInfo();
+                except:
+                    fRc = reporter.errorXcpt('%s: queryInfo()' % (oTestFile.sPath,));
                 else:
-                    try:
-                        cbFile = oFsObjInfo.objectSize;
-                    except:
-                        fRc = reporter.errorXcpt();
+                    if oFsObjInfo is None:
+                        fRc = reporter.error('IGuestFile::queryInfo returned None');
                     else:
-                        if cbFile != oTestFile.cbContent:
-                            fRc = reporter.error('%s: queryInfo returned incorrect file size: %s, expected %s'
-                                                 % (oTestFile.sPath, cbFile, oTestFile.cbContent));
+                        try:
+                            cbFile = oFsObjInfo.objectSize;
+                        except:
+                            fRc = reporter.errorXcpt();
+                        else:
+                            if cbFile != oTestFile.cbContent:
+                                fRc = reporter.error('%s: queryInfo returned incorrect file size: %s, expected %s'
+                                                     % (oTestFile.sPath, cbFile, oTestFile.cbContent));
 
+                try:
+                    cbFile = oFile.querySize();
+                except:
+                    fRc = reporter.errorXcpt('%s: querySize()' % (oTestFile.sPath,));
+                else:
+                    if cbFile != oTestFile.cbContent:
+                        fRc = reporter.error('%s: querySize returned incorrect file size: %s, expected %s'
+                                             % (oTestFile.sPath, cbFile, oTestFile.cbContent));
+
+            #
+            # Use seek to test the file size and do a few other end-relative seeks.
+            #
             try:
-                cbFile = oFile.querySize();
+                cbFile = oFile.seek(0, vboxcon.FileSeekOrigin_End);
             except:
-                fRc = reporter.errorXcpt('%s: querySize()' % (oTestFile.sPath,));
+                fRc = reporter.errorXcpt('%s: seek(0,End)' % (oTestFile.sPath,));
             else:
                 if cbFile != oTestFile.cbContent:
-                    fRc = reporter.error('%s: querySize returned incorrect file size: %s, expected %s'
+                    fRc = reporter.error('%s: seek(0,End) returned incorrect file size: %s, expected %s'
                                          % (oTestFile.sPath, cbFile, oTestFile.cbContent));
+            if oTestFile.cbContent > 0:
+                for _ in xrange(12):
+                    offSeek = self.oTestFiles.oRandom.randrange(oTestFile.cbContent + 1);
+                    try:
+                        offFile = oFile.seek(-offSeek, vboxcon.FileSeekOrigin_End);
+                    except:
+                        fRc = reporter.errorXcpt('%s: seek(%s,End)' % (oTestFile.sPath, -offSeek,));
+                    else:
+                        if offFile != oTestFile.cbContent - offSeek:
+                            fRc = reporter.error('%s: seek(%s,End) returned incorrect offset: %s, expected %s (cbContent=%s)'
+                                                 % (oTestFile.sPath, -offSeek, offSeek, oTestFile.cbContent - offSeek,
+                                                    oTestFile.cbContent,));
 
             #
             # Close it and we're done with this file.
