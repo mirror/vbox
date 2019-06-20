@@ -413,7 +413,11 @@ double UIWizard::ratio() const
             dRatio += 0.1;
             break;
         case WizardType_ExportAppliance:
+        case WizardType_ImportAppliance:
             dRatio += 0.3;
+            break;
+        case WizardType_NewCloudVM:
+            dRatio += 0.7;
             break;
         case WizardType_FirstRun:
             dRatio += 0.3;
