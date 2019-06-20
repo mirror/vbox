@@ -670,7 +670,7 @@ static int vgsvcGstCtrlSessionHandleFileSeek(const PVBOXSERVICECTRLSESSION pSess
         static const uint8_t s_abMethods[GUEST_FILE_SEEKTYPE_END + 1] =
         {
             UINT8_MAX, RTFILE_SEEK_BEGIN, UINT8_MAX, UINT8_MAX, RTFILE_SEEK_CURRENT,
-            UINT8_MAX, UINT8_MAX, UINT8_MAX, GUEST_FILE_SEEKTYPE_END
+            UINT8_MAX, UINT8_MAX, UINT8_MAX, RTFILE_SEEK_END
         };
         if (   uSeekMethod < RT_ELEMENTS(s_abMethods)
             && s_abMethods[uSeekMethod] != UINT8_MAX)
