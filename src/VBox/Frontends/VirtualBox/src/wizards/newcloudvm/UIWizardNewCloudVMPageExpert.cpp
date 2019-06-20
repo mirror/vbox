@@ -31,33 +31,29 @@
 #include "UIWizardNewCloudVM.h"
 #include "UIWizardNewCloudVMPageExpert.h"
 
-/* COM includes: */
-#include "CVirtualSystemDescription.h"
 
-
-UIWizardNewCloudVMPageExpert::UIWizardNewCloudVMPageExpert(bool fImportFromOCIByDefault)
-    : UIWizardNewCloudVMPage1(fImportFromOCIByDefault)
-    , m_pCntSource(0)
+UIWizardNewCloudVMPageExpert::UIWizardNewCloudVMPageExpert()
+    : m_pCntDestination(0)
     , m_pSettingsCnt(0)
 {
     /* Create main layout: */
     QHBoxLayout *pMainLayout = new QHBoxLayout(this);
     if (pMainLayout)
     {
-        /* Create source container: */
-        m_pCntSource = new QGroupBox(this);
-        if (m_pCntSource)
+        /* Create destination container: */
+        m_pCntDestination = new QGroupBox(this);
+        if (m_pCntDestination)
         {
-            /* Create source layout: */
-            m_pSourceLayout = new QGridLayout(m_pCntSource);
-            if (m_pSourceLayout)
+            /* Create destination layout: */
+            m_pDestinationLayout = new QGridLayout(m_pCntDestination);
+            if (m_pDestinationLayout)
             {
-                /* Create source selector: */
-                m_pSourceComboBox = new QIComboBox(m_pCntSource);
-                if (m_pSourceComboBox)
+                /* Create destination selector: */
+                m_pDestinationComboBox = new QIComboBox(m_pCntDestination);
+                if (m_pDestinationComboBox)
                 {
                     /* Add into layout: */
-                    m_pSourceLayout->addWidget(m_pSourceComboBox, 0, 0);
+                    m_pDestinationLayout->addWidget(m_pDestinationComboBox, 0, 0);
                 }
 
                 /* Create cloud container layout: */
@@ -75,14 +71,14 @@ UIWizardNewCloudVMPageExpert::UIWizardNewCloudVMPageExpert(bool fImportFromOCIBy
                         pSubLayout->setSpacing(1);
 
                         /* Create account combo-box: */
-                        m_pAccountComboBox = new QIComboBox(m_pCntSource);
+                        m_pAccountComboBox = new QIComboBox(m_pCntDestination);
                         if (m_pAccountComboBox)
                         {
                             /* Add into layout: */
                             pSubLayout->addWidget(m_pAccountComboBox);
                         }
                         /* Create account tool-button: */
-                        m_pAccountToolButton = new QIToolButton(m_pCntSource);
+                        m_pAccountToolButton = new QIToolButton(m_pCntDestination);
                         if (m_pAccountToolButton)
                         {
                             m_pAccountToolButton->setIcon(UIIconPool::iconSet(":/cloud_profile_manager_16px.png",
@@ -97,7 +93,7 @@ UIWizardNewCloudVMPageExpert::UIWizardNewCloudVMPageExpert(bool fImportFromOCIBy
                     }
 
                     /* Create profile property table: */
-                    m_pAccountPropertyTable = new QTableWidget(m_pCntSource);
+                    m_pAccountPropertyTable = new QTableWidget(m_pCntDestination);
                     if (m_pAccountPropertyTable)
                     {
                         const QFontMetrics fm(m_pAccountPropertyTable->font());
@@ -117,29 +113,29 @@ UIWizardNewCloudVMPageExpert::UIWizardNewCloudVMPageExpert(bool fImportFromOCIBy
                     }
 
                     /* Create profile instances table: */
-                    m_pAccountInstanceList = new QListWidget(m_pCntSource);
-                    if (m_pAccountInstanceList)
+                    m_pAccountImageList = new QListWidget(m_pCntDestination);
+                    if (m_pAccountImageList)
                     {
-                        const QFontMetrics fm(m_pAccountInstanceList->font());
+                        const QFontMetrics fm(m_pAccountImageList->font());
                         const int iFontWidth = fm.width('x');
                         const int iTotalWidth = 50 * iFontWidth;
                         const int iFontHeight = fm.height();
                         const int iTotalHeight = 4 * iFontHeight;
-                        m_pAccountInstanceList->setMinimumSize(QSize(iTotalWidth, iTotalHeight));
-                        //m_pAccountInstanceList->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
-                        m_pAccountInstanceList->setAlternatingRowColors(true);
+                        m_pAccountImageList->setMinimumSize(QSize(iTotalWidth, iTotalHeight));
+                        //m_pAccountImageList->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
+                        m_pAccountImageList->setAlternatingRowColors(true);
 
                         /* Add into layout: */
-                        m_pCloudContainerLayout->addWidget(m_pAccountInstanceList, 2, 0);
+                        m_pCloudContainerLayout->addWidget(m_pAccountImageList, 2, 0);
                     }
 
                     /* Add into layout: */
-                    m_pSourceLayout->addLayout(m_pCloudContainerLayout, 1, 0);
+                    m_pDestinationLayout->addLayout(m_pCloudContainerLayout, 1, 0);
                 }
             }
 
             /* Add into layout: */
-            pMainLayout->addWidget(m_pCntSource);
+            pMainLayout->addWidget(m_pCntDestination);
         }
 
         /* Create settings container: */
@@ -164,28 +160,26 @@ UIWizardNewCloudVMPageExpert::UIWizardNewCloudVMPageExpert(bool fImportFromOCIBy
         }
     }
 
-    /* Populate sources: */
-    populateSources();
+    /* Populate destinations: */
+    populateDestinations();
 
     /* Setup connections: */
     if (gpManager)
         connect(gpManager, &UIVirtualBoxManager::sigCloudProfileManagerChange,
-                this, &UIWizardNewCloudVMPageExpert::sltHandleSourceChange);
-    connect(m_pSourceComboBox, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::activated),
-            this, &UIWizardNewCloudVMPageExpert::sltHandleSourceChange);
+                this, &UIWizardNewCloudVMPageExpert::sltHandleDestinationChange);
+    connect(m_pDestinationComboBox, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::activated),
+            this, &UIWizardNewCloudVMPageExpert::sltHandleDestinationChange);
     connect(m_pAccountComboBox, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::currentIndexChanged),
             this, &UIWizardNewCloudVMPageExpert::sltHandleAccountComboChange);
     connect(m_pAccountToolButton, &QIToolButton::clicked,
             this, &UIWizardNewCloudVMPageExpert::sltHandleAccountButtonClick);
-    connect(m_pAccountInstanceList, &QListWidget::currentRowChanged,
+    connect(m_pAccountImageList, &QListWidget::currentRowChanged,
             this, &UIWizardNewCloudVMPageExpert::sltHandleInstanceListChange);
 
     /* Register fields: */
-    registerField("source", this, "source");
-    registerField("profile", this, "profile");
-    registerField("appliance", this, "appliance");
+    registerField("client", this, "client");
+    registerField("vsd", this, "vsd");
     registerField("vsdForm", this, "vsdForm");
-    registerField("machineId", this, "machineId");
 }
 
 bool UIWizardNewCloudVMPageExpert::event(QEvent *pEvent)
@@ -210,22 +204,22 @@ bool UIWizardNewCloudVMPageExpert::event(QEvent *pEvent)
 
 void UIWizardNewCloudVMPageExpert::retranslateUi()
 {
-    /* Translate appliance container: */
-    m_pCntSource->setTitle(UIWizardNewCloudVM::tr("Source"));
+    /* Translate destination container: */
+    m_pCntDestination->setTitle(UIWizardNewCloudVM::tr("Destination"));
 
-    /* Translate received values of Source combo-box.
+    /* Translate received values of Destination combo-box.
      * We are enumerating starting from 0 for simplicity: */
-    for (int i = 0; i < m_pSourceComboBox->count(); ++i)
+    for (int i = 0; i < m_pDestinationComboBox->count(); ++i)
     {
-        m_pSourceComboBox->setItemText(i, m_pSourceComboBox->itemData(i, SourceData_Name).toString());
-        m_pSourceComboBox->setItemData(i, UIWizardNewCloudVM::tr("Import from cloud service provider."), Qt::ToolTipRole);
+        m_pDestinationComboBox->setItemText(i, m_pDestinationComboBox->itemData(i, DestinationData_Name).toString());
+        m_pDestinationComboBox->setItemData(i, UIWizardNewCloudVM::tr("Create VM for cloud service provider."), Qt::ToolTipRole);
     }
 
     /* Translate settings container: */
     m_pSettingsCnt->setTitle(UIWizardNewCloudVM::tr("Settings"));
 
     /* Update tool-tips: */
-    updateSourceComboToolTip();
+    updateDestinationComboToolTip();
     updateAccountPropertyTableToolTips();
 }
 
@@ -234,7 +228,7 @@ void UIWizardNewCloudVMPageExpert::initializePage()
     /* If wasn't polished yet: */
     if (!m_fPolished)
     {
-        QMetaObject::invokeMethod(this, "sltHandleSourceChange", Qt::QueuedConnection);
+        QMetaObject::invokeMethod(this, "sltHandleDestinationChange", Qt::QueuedConnection);
         m_fPolished = true;
     }
 
@@ -248,11 +242,10 @@ bool UIWizardNewCloudVMPageExpert::isComplete() const
     bool fResult = true;
 
     /* Check cloud settings: */
-    fResult =    !m_comCloudProfile.isNull()
-              && !m_comCloudClient.isNull()
-              && !machineId().isNull()
-              && !m_comAppliance.isNull()
-              && !m_comVSDForm.isNull();
+    fResult =    client().isNotNull()
+              && !imageId().isNull()
+              && vsd().isNotNull()
+              && vsdForm().isNotNull();
 
     /* Return result: */
     return fResult;
@@ -271,7 +264,7 @@ bool UIWizardNewCloudVMPageExpert::validatePage()
     fResult = comForm.isNotNull();
     Assert(fResult);
 
-    /* Give changed VSD back to appliance: */
+    /* Give changed VSD back: */
     if (fResult)
     {
         comForm.GetVirtualSystemDescription();
@@ -280,9 +273,9 @@ bool UIWizardNewCloudVMPageExpert::validatePage()
             msgCenter().cannotAcquireVirtualSystemDescriptionFormProperty(comForm);
     }
 
-    /* Try to import appliance: */
+    /* Try to create cloud VM: */
     if (fResult)
-        fResult = qobject_cast<UIWizardNewCloudVM*>(wizard())->importAppliance();
+        fResult = qobject_cast<UIWizardNewCloudVM*>(wizard())->createCloudVM();
 
     /* Unlock finish button: */
     endProcessing();
@@ -291,15 +284,15 @@ bool UIWizardNewCloudVMPageExpert::validatePage()
     return fResult;
 }
 
-void UIWizardNewCloudVMPageExpert::sltHandleSourceChange()
+void UIWizardNewCloudVMPageExpert::sltHandleDestinationChange()
 {
     /* Update tool-tip: */
-    updateSourceComboToolTip();
+    updateDestinationComboToolTip();
 
     /* Refresh required settings: */
     populateAccounts();
     populateAccountProperties();
-    populateAccountInstances();
+    populateAccountImages();
     populateFormProperties();
     refreshFormPropertiesTable();
     emit completeChanged();
@@ -309,7 +302,7 @@ void UIWizardNewCloudVMPageExpert::sltHandleAccountComboChange()
 {
     /* Refresh required settings: */
     populateAccountProperties();
-    populateAccountInstances();
+    populateAccountImages();
     populateFormProperties();
     refreshFormPropertiesTable();
     emit completeChanged();
@@ -324,6 +317,7 @@ void UIWizardNewCloudVMPageExpert::sltHandleAccountButtonClick()
 
 void UIWizardNewCloudVMPageExpert::sltHandleInstanceListChange()
 {
+    /* Refresh required settings: */
     populateFormProperties();
     refreshFormPropertiesTable();
     emit completeChanged();

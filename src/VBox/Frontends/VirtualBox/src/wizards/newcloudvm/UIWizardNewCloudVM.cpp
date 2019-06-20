@@ -26,9 +26,8 @@
 #include "CProgress.h"
 
 
-UIWizardNewCloudVM::UIWizardNewCloudVM(QWidget *pParent, bool fImportFromOCIByDefault)
+UIWizardNewCloudVM::UIWizardNewCloudVM(QWidget *pParent)
     : UIWizard(pParent, WizardType_NewCloudVM)
-    , m_fImportFromOCIByDefault(fImportFromOCIByDefault)
 {
 #ifndef VBOX_WS_MAC
     /* Assign watermark: */
@@ -46,13 +45,13 @@ void UIWizardNewCloudVM::prepare()
     {
         case WizardMode_Basic:
         {
-            setPage(Page1, new UIWizardNewCloudVMPageBasic1(m_fImportFromOCIByDefault));
+            setPage(Page1, new UIWizardNewCloudVMPageBasic1);
             setPage(Page2, new UIWizardNewCloudVMPageBasic2);
             break;
         }
         case WizardMode_Expert:
         {
-            setPage(PageExpert, new UIWizardNewCloudVMPageExpert(m_fImportFromOCIByDefault));
+            setPage(PageExpert, new UIWizardNewCloudVMPageExpert);
             break;
         }
         default:
@@ -65,30 +64,28 @@ void UIWizardNewCloudVM::prepare()
     UIWizard::prepare();
 }
 
-bool UIWizardNewCloudVM::importAppliance()
+bool UIWizardNewCloudVM::createCloudVM()
 {
-    /* Acquire prepared appliance: */
-    CAppliance comAppliance = field("appliance").value<CAppliance>();
-    AssertReturn(!comAppliance.isNull(), false);
+    /* Acquire prepared client and description: */
+    CCloudClient comCloudClient = field("client").value<CCloudClient>();
+    CVirtualSystemDescription comDescription = field("description").value<CVirtualSystemDescription>();
+    AssertReturn(comCloudClient.isNotNull() && comDescription.isNotNull(), false);
 
-    /* No options for cloud VMs for now: */
-    QVector<KImportOptions> options;
-
-    /* Initiate import porocedure: */
-    CProgress comProgress = comAppliance.ImportMachines(options);
+    /* Initiate cloud VM creation porocedure: */
+    CProgress comProgress = comCloudClient.LaunchVM(comDescription);
 
     /* Show error message if necessary: */
-    if (!comAppliance.isOk())
-        msgCenter().cannotImportAppliance(comAppliance, this);
+    if (!comCloudClient.isOk())
+        msgCenter().cannotCreateCloudMachine(comCloudClient, this);
     else
     {
-        /* Show "Import appliance" progress: */
-        msgCenter().showModalProgressDialog(comProgress, tr("Importing Appliance ..."), ":/progress_import_90px.png", this, 0);
+        /* Show "Create Cloud Machine" progress: */
+        msgCenter().showModalProgressDialog(comProgress, tr("Create Cloud Machine ..."), ":/progress_import_90px.png", this, 0);
         if (!comProgress.GetCanceled())
         {
             /* Show error message if necessary: */
             if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-                msgCenter().cannotImportAppliance(comProgress, comAppliance.GetPath(), this);
+                msgCenter().cannotCreateCloudMachine(comProgress, this);
             else
                 return true;
         }
@@ -104,6 +101,6 @@ void UIWizardNewCloudVM::retranslateUi()
     UIWizard::retranslateUi();
 
     /* Translate wizard: */
-    setWindowTitle(tr("Import Virtual Appliance"));
-    setButtonText(QWizard::FinishButton, tr("Import"));
+    setWindowTitle(tr("Create Cloud Virtual Machine"));
+    setButtonText(QWizard::FinishButton, tr("Create"));
 }

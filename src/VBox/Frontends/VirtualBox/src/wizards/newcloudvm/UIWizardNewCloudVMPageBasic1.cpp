@@ -34,36 +34,35 @@
 #include "UIWizardNewCloudVMPageBasic1.h"
 
 /* COM includes: */
+#include "CAppliance.h"
 #include "CStringArray.h"
-#include "CVirtualSystemDescription.h"
 
 
 /*********************************************************************************************************************************
 *   Class UIWizardNewCloudVMPage1 implementation.                                                                                *
 *********************************************************************************************************************************/
 
-UIWizardNewCloudVMPage1::UIWizardNewCloudVMPage1(bool fImportFromOCIByDefault)
-    : m_fImportFromOCIByDefault(fImportFromOCIByDefault)
-    , m_fPolished(false)
-    , m_pSourceLayout(0)
-    , m_pSourceLabel(0)
-    , m_pSourceComboBox(0)
+UIWizardNewCloudVMPage1::UIWizardNewCloudVMPage1()
+    : m_fPolished(false)
+    , m_pDestinationLayout(0)
+    , m_pDestinationLabel(0)
+    , m_pDestinationComboBox(0)
     , m_pCloudContainerLayout(0)
     , m_pAccountLabel(0)
     , m_pAccountComboBox(0)
     , m_pAccountToolButton(0)
     , m_pAccountPropertyTable(0)
-    , m_pAccountInstanceLabel(0)
-    , m_pAccountInstanceList(0)
+    , m_pAccountImageLabel(0)
+    , m_pAccountImageList(0)
 {
 }
 
-void UIWizardNewCloudVMPage1::populateSources()
+void UIWizardNewCloudVMPage1::populateDestinations()
 {
     /* To be executed just once, so combo should be empty: */
-    AssertReturnVoid(m_pSourceComboBox->count() == 0);
+    AssertReturnVoid(m_pDestinationComboBox->count() == 0);
 
-    /* Do we have OCI source? */
+    /* Do we have OCI destination? */
     bool fOCIPresent = false;
 
     /* Main API request sequence, can be interrupted after any step: */
@@ -94,20 +93,19 @@ void UIWizardNewCloudVMPage1::populateSources()
                 continue;
 
             /* Compose empty item, fill it's data: */
-            m_pSourceComboBox->addItem(QString());
-            m_pSourceComboBox->setItemData(m_pSourceComboBox->count() - 1, comProvider.GetId(),        SourceData_ID);
-            m_pSourceComboBox->setItemData(m_pSourceComboBox->count() - 1, comProvider.GetName(),      SourceData_Name);
-            m_pSourceComboBox->setItemData(m_pSourceComboBox->count() - 1, comProvider.GetShortName(), SourceData_ShortName);
-            m_pSourceComboBox->setItemData(m_pSourceComboBox->count() - 1, true,                       SourceData_IsItCloudFormat);
-            if (m_pSourceComboBox->itemData(m_pSourceComboBox->count() - 1, SourceData_ShortName).toString() == "OCI")
+            m_pDestinationComboBox->addItem(QString());
+            m_pDestinationComboBox->setItemData(m_pDestinationComboBox->count() - 1, comProvider.GetId(),        DestinationData_ID);
+            m_pDestinationComboBox->setItemData(m_pDestinationComboBox->count() - 1, comProvider.GetName(),      DestinationData_Name);
+            m_pDestinationComboBox->setItemData(m_pDestinationComboBox->count() - 1, comProvider.GetShortName(), DestinationData_ShortName);
+            if (m_pDestinationComboBox->itemData(m_pDestinationComboBox->count() - 1, DestinationData_ShortName).toString() == "OCI")
                 fOCIPresent = true;
         }
     }
     while (0);
 
     /* Set default: */
-    if (m_fImportFromOCIByDefault && fOCIPresent)
-        setSource("OCI");
+    if (fOCIPresent)
+        setDestination("OCI");
 }
 
 void UIWizardNewCloudVMPage1::populateAccounts()
@@ -126,16 +124,16 @@ void UIWizardNewCloudVMPage1::populateAccounts()
     m_comCloudProvider = CCloudProvider();
 
     /* If provider chosen: */
-    if (!sourceId().isNull())
+    if (!destinationId().isNull())
     {
         /* Main API request sequence, can be interrupted after any step: */
         do
         {
             /* (Re)initialize Cloud Provider: */
-            m_comCloudProvider = m_comCloudProviderManager.GetProviderById(sourceId());
+            m_comCloudProvider = m_comCloudProviderManager.GetProviderById(destinationId());
             if (!m_comCloudProviderManager.isOk())
             {
-                msgCenter().cannotFindCloudProvider(m_comCloudProviderManager, sourceId());
+                msgCenter().cannotFindCloudProvider(m_comCloudProviderManager, destinationId());
                 break;
             }
 
@@ -270,13 +268,13 @@ void UIWizardNewCloudVMPage1::populateAccountProperties()
     m_pAccountPropertyTable->blockSignals(false);
 }
 
-void UIWizardNewCloudVMPage1::populateAccountInstances()
+void UIWizardNewCloudVMPage1::populateAccountImages()
 {
     /* Block signals while updating: */
-    m_pAccountInstanceList->blockSignals(true);
+    m_pAccountImageList->blockSignals(true);
 
     /* Clear list initially: */
-    m_pAccountInstanceList->clear();
+    m_pAccountImageList->clear();
     /* Clear Cloud Client: */
     m_comCloudClient = CCloudClient();
 
@@ -294,24 +292,23 @@ void UIWizardNewCloudVMPage1::populateAccountInstances()
                 break;
             }
 
-            /* Gather VM names, ids and states.
-             * Currently we are interested in Running and Stopped VMs only. */
+            /* Gather image names, ids and states.
+             * Currently we are interested in Available images only. */
             CStringArray comNames;
             CStringArray comIDs;
-            const QVector<KCloudMachineState> cloudMachineStates  = QVector<KCloudMachineState>()
-                                                                 << KCloudMachineState_Running
-                                                                 << KCloudMachineState_Stopped;
+            const QVector<KCloudImageState> cloudImageStates  = QVector<KCloudImageState>()
+                                                             << KCloudImageState_Available;
 
-            /* Ask for cloud VMs: */
-            CProgress comProgress = m_comCloudClient.ListInstances(cloudMachineStates, comNames, comIDs);
+            /* Ask for cloud custom images: */
+            CProgress comProgress = m_comCloudClient.ListImages(cloudImageStates, comNames, comIDs);
             if (!m_comCloudClient.isOk())
             {
                 msgCenter().cannotAcquireCloudClientParameter(m_comCloudClient);
                 break;
             }
 
-            /* Show "Acquire cloud instances" progress: */
-            msgCenter().showModalProgressDialog(comProgress, UIWizardNewCloudVM::tr("Acquire cloud instances..."),
+            /* Show "Acquire cloud images" progress: */
+            msgCenter().showModalProgressDialog(comProgress, UIWizardNewCloudVM::tr("Acquire cloud images..."),
                                                 ":/progress_reading_appliance_90px.png", 0, 0);
             if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
             {
@@ -325,7 +322,7 @@ void UIWizardNewCloudVMPage1::populateAccountInstances()
             for (int i = 0; i < names.size(); ++i)
             {
                 /* Create list item: */
-                QListWidgetItem *pItem = new QListWidgetItem(names.at(i), m_pAccountInstanceList);
+                QListWidgetItem *pItem = new QListWidgetItem(names.at(i), m_pAccountImageList);
                 if (pItem)
                 {
                     pItem->setFlags(pItem->flags() & ~Qt::ItemIsEditable);
@@ -334,21 +331,20 @@ void UIWizardNewCloudVMPage1::populateAccountInstances()
             }
 
             /* Choose the 1st one by default if possible: */
-            if (m_pAccountInstanceList->count())
-                m_pAccountInstanceList->setCurrentRow(0);
+            if (m_pAccountImageList->count())
+                m_pAccountImageList->setCurrentRow(0);
         }
         while (0);
     }
 
     /* Unblock signals after update: */
-    m_pAccountInstanceList->blockSignals(false);
+    m_pAccountImageList->blockSignals(false);
 }
 
 void UIWizardNewCloudVMPage1::populateFormProperties()
 {
-    /* Clear appliance: */
-    m_comAppliance = CAppliance();
-    /* Clear form properties: */
+    /* Clear description & form properties: */
+    m_comVSD = CVirtualSystemDescription();
     m_comVSDForm = CVirtualSystemDescriptionForm();
 
     /* If client created: */
@@ -366,53 +362,49 @@ void UIWizardNewCloudVMPage1::populateFormProperties()
                 break;
             }
 
-            /* Remember appliance: */
-            m_comAppliance = comAppliance;
-
-            /* Read cloud instance info: */
-            CProgress comReadProgress = m_comAppliance.Read(QString("OCI://%1/%2").arg(profileName(), machineId()));
-            if (!m_comAppliance.isOk())
+            /* Create virtual system description: */
+            comAppliance.CreateVirtualSystemDescriptions(1);
+            if (!comAppliance.isOk())
             {
-                msgCenter().cannotImportAppliance(m_comAppliance);
-                break;
-            }
-
-            /* Show "Read appliance" progress: */
-            msgCenter().showModalProgressDialog(comReadProgress, UIWizardNewCloudVM::tr("Read appliance..."),
-                                                ":/progress_reading_appliance_90px.png", 0, 0);
-            if (!comReadProgress.isOk() || comReadProgress.GetResultCode() != 0)
-            {
-                msgCenter().cannotImportAppliance(comReadProgress, m_comAppliance.GetPath());
+                msgCenter().cannotCreateVirtualSystemDescription(comAppliance);
                 break;
             }
 
             /* Acquire virtual system description: */
-            QVector<CVirtualSystemDescription> descriptions = m_comAppliance.GetVirtualSystemDescriptions();
-            if (!m_comAppliance.isOk())
+            QVector<CVirtualSystemDescription> descriptions = comAppliance.GetVirtualSystemDescriptions();
+            if (!comAppliance.isOk())
             {
-                msgCenter().cannotAcquireVirtualSystemDescription(m_comAppliance);
+                msgCenter().cannotAcquireVirtualSystemDescription(comAppliance);
                 break;
             }
 
             /* Make sure there is at least one virtual system description created: */
             AssertReturnVoid(!descriptions.isEmpty());
-            CVirtualSystemDescription comDescription = descriptions.at(0);
+            m_comVSD = descriptions.at(0);
+
+            /* Add image id to virtual system description: */
+            m_comVSD.AddDescription(KVirtualSystemDescriptionType_CloudImageId, imageId(), QString());
+            if (!m_comVSD.isOk())
+            {
+                msgCenter().cannotAddVirtualSystemDescriptionValue(m_comVSD);
+                break;
+            }
 
             /* Read Cloud Client description form: */
             CVirtualSystemDescriptionForm comForm;
-            CProgress comImportDescriptionFormProgress = m_comCloudClient.GetImportDescriptionForm(comVBox, comDescription, comForm);
+            CProgress comLaunchDescriptionFormProgress = m_comCloudClient.GetLaunchDescriptionForm(m_comVSD, comForm);
             if (!m_comCloudClient.isOk())
             {
                 msgCenter().cannotAcquireCloudClientParameter(m_comCloudClient);
                 break;
             }
 
-            /* Show "Acquire import form" progress: */
-            msgCenter().showModalProgressDialog(comImportDescriptionFormProgress, UIWizardNewCloudVM::tr("Acquire import form..."),
+            /* Show "Acquire launch form" progress: */
+            msgCenter().showModalProgressDialog(comLaunchDescriptionFormProgress, UIWizardNewCloudVM::tr("Acquire launch form..."),
                                                 ":/progress_reading_appliance_90px.png", 0, 0);
-            if (!comImportDescriptionFormProgress.isOk() || comImportDescriptionFormProgress.GetResultCode() != 0)
+            if (!comLaunchDescriptionFormProgress.isOk() || comLaunchDescriptionFormProgress.GetResultCode() != 0)
             {
-                msgCenter().cannotAcquireCloudClientParameter(comImportDescriptionFormProgress);
+                msgCenter().cannotAcquireCloudClientParameter(comLaunchDescriptionFormProgress);
                 break;
             }
 
@@ -423,12 +415,12 @@ void UIWizardNewCloudVMPage1::populateFormProperties()
     }
 }
 
-void UIWizardNewCloudVMPage1::updateSourceComboToolTip()
+void UIWizardNewCloudVMPage1::updateDestinationComboToolTip()
 {
-    const int iCurrentIndex = m_pSourceComboBox->currentIndex();
-    const QString strCurrentToolTip = m_pSourceComboBox->itemData(iCurrentIndex, Qt::ToolTipRole).toString();
+    const int iCurrentIndex = m_pDestinationComboBox->currentIndex();
+    const QString strCurrentToolTip = m_pDestinationComboBox->itemData(iCurrentIndex, Qt::ToolTipRole).toString();
     AssertMsg(!strCurrentToolTip.isEmpty(), ("Data not found!"));
-    m_pSourceComboBox->setToolTip(strCurrentToolTip);
+    m_pDestinationComboBox->setToolTip(strCurrentToolTip);
 }
 
 void UIWizardNewCloudVMPage1::updateAccountPropertyTableToolTips()
@@ -463,23 +455,23 @@ void UIWizardNewCloudVMPage1::adjustAccountPropertyTable()
     m_pAccountPropertyTable->horizontalHeader()->setStretchLastSection(true);
 }
 
-void UIWizardNewCloudVMPage1::setSource(const QString &strSource)
+void UIWizardNewCloudVMPage1::setDestination(const QString &strDestination)
 {
-    const int iIndex = m_pSourceComboBox->findData(strSource, SourceData_ShortName);
+    const int iIndex = m_pDestinationComboBox->findData(strDestination, DestinationData_ShortName);
     AssertMsg(iIndex != -1, ("Data not found!"));
-    m_pSourceComboBox->setCurrentIndex(iIndex);
+    m_pDestinationComboBox->setCurrentIndex(iIndex);
 }
 
-QString UIWizardNewCloudVMPage1::source() const
+QString UIWizardNewCloudVMPage1::destination() const
 {
-    const int iIndex = m_pSourceComboBox->currentIndex();
-    return m_pSourceComboBox->itemData(iIndex, SourceData_ShortName).toString();
+    const int iIndex = m_pDestinationComboBox->currentIndex();
+    return m_pDestinationComboBox->itemData(iIndex, DestinationData_ShortName).toString();
 }
 
-QUuid UIWizardNewCloudVMPage1::sourceId() const
+QUuid UIWizardNewCloudVMPage1::destinationId() const
 {
-    const int iIndex = m_pSourceComboBox->currentIndex();
-    return m_pSourceComboBox->itemData(iIndex, SourceData_ID).toUuid();
+    const int iIndex = m_pDestinationComboBox->currentIndex();
+    return m_pDestinationComboBox->itemData(iIndex, DestinationData_ID).toUuid();
 }
 
 QString UIWizardNewCloudVMPage1::profileName() const
@@ -488,20 +480,20 @@ QString UIWizardNewCloudVMPage1::profileName() const
     return m_pAccountComboBox->itemData(iIndex, AccountData_ProfileName).toString();
 }
 
-QString UIWizardNewCloudVMPage1::machineId() const
+QString UIWizardNewCloudVMPage1::imageId() const
 {
-    QListWidgetItem *pItem = m_pAccountInstanceList->currentItem();
+    QListWidgetItem *pItem = m_pAccountImageList->currentItem();
     return pItem ? pItem->data(Qt::UserRole).toString() : QString();
 }
 
-CCloudProfile UIWizardNewCloudVMPage1::profile() const
+CCloudClient UIWizardNewCloudVMPage1::client() const
 {
-    return m_comCloudProfile;
+    return m_comCloudClient;
 }
 
-CAppliance UIWizardNewCloudVMPage1::appliance() const
+CVirtualSystemDescription UIWizardNewCloudVMPage1::vsd() const
 {
-    return m_comAppliance;
+    return m_comVSD;
 }
 
 CVirtualSystemDescriptionForm UIWizardNewCloudVMPage1::vsdForm() const
@@ -514,9 +506,8 @@ CVirtualSystemDescriptionForm UIWizardNewCloudVMPage1::vsdForm() const
 *   Class UIWizardNewCloudVMPageBasic1 implementation.                                                                           *
 *********************************************************************************************************************************/
 
-UIWizardNewCloudVMPageBasic1::UIWizardNewCloudVMPageBasic1(bool fImportFromOCIByDefault)
-    : UIWizardNewCloudVMPage1(fImportFromOCIByDefault)
-    , m_pLabelMain(0)
+UIWizardNewCloudVMPageBasic1::UIWizardNewCloudVMPageBasic1()
+    : m_pLabelMain(0)
     , m_pLabelDescription(0)
 {
     /* Create main layout: */
@@ -531,28 +522,28 @@ UIWizardNewCloudVMPageBasic1::UIWizardNewCloudVMPageBasic1(bool fImportFromOCIBy
             pMainLayout->addWidget(m_pLabelMain);
         }
 
-        /* Create source layout: */
-        m_pSourceLayout = new QGridLayout;
-        if (m_pSourceLayout)
+        /* Create destination layout: */
+        m_pDestinationLayout = new QGridLayout;
+        if (m_pDestinationLayout)
         {
-            m_pSourceLayout->setColumnStretch(0, 0);
-            m_pSourceLayout->setColumnStretch(1, 1);
+            m_pDestinationLayout->setColumnStretch(0, 0);
+            m_pDestinationLayout->setColumnStretch(1, 1);
 
-            /* Create source label: */
-            m_pSourceLabel = new QLabel(this);
-            if (m_pSourceLabel)
+            /* Create destination label: */
+            m_pDestinationLabel = new QLabel(this);
+            if (m_pDestinationLabel)
             {
                 /* Add into layout: */
-                m_pSourceLayout->addWidget(m_pSourceLabel, 0, 0, Qt::AlignRight);
+                m_pDestinationLayout->addWidget(m_pDestinationLabel, 0, 0, Qt::AlignRight);
             }
-            /* Create source selector: */
-            m_pSourceComboBox = new QIComboBox(this);
-            if (m_pSourceComboBox)
+            /* Create destination selector: */
+            m_pDestinationComboBox = new QIComboBox(this);
+            if (m_pDestinationComboBox)
             {
-                m_pSourceLabel->setBuddy(m_pSourceComboBox);
+                m_pDestinationLabel->setBuddy(m_pDestinationComboBox);
 
                 /* Add into layout: */
-                m_pSourceLayout->addWidget(m_pSourceComboBox, 0, 1);
+                m_pDestinationLayout->addWidget(m_pDestinationComboBox, 0, 1);
             }
 
             /* Create description label: */
@@ -560,11 +551,11 @@ UIWizardNewCloudVMPageBasic1::UIWizardNewCloudVMPageBasic1(bool fImportFromOCIBy
             if (m_pLabelDescription)
             {
                 /* Add into layout: */
-                m_pSourceLayout->addWidget(m_pLabelDescription, 1, 0, 1, 2);
+                m_pDestinationLayout->addWidget(m_pLabelDescription, 1, 0, 1, 2);
             }
 
             /* Add into layout: */
-            pMainLayout->addLayout(m_pSourceLayout);
+            pMainLayout->addLayout(m_pDestinationLayout);
         }
 
         /* Create cloud container layout: */
@@ -636,28 +627,28 @@ UIWizardNewCloudVMPageBasic1::UIWizardNewCloudVMPageBasic1(bool fImportFromOCIBy
             }
 
             /* Create account instance label: */
-            m_pAccountInstanceLabel = new QLabel(this);
-            if (m_pAccountInstanceLabel)
+            m_pAccountImageLabel = new QLabel(this);
+            if (m_pAccountImageLabel)
             {
                 /* Add into layout: */
-                m_pCloudContainerLayout->addWidget(m_pAccountInstanceLabel, 2, 0, Qt::AlignRight);
+                m_pCloudContainerLayout->addWidget(m_pAccountImageLabel, 2, 0, Qt::AlignRight);
             }
             /* Create profile instances table: */
-            m_pAccountInstanceList = new QListWidget(this);
-            if (m_pAccountInstanceList)
+            m_pAccountImageList = new QListWidget(this);
+            if (m_pAccountImageList)
             {
-                m_pAccountInstanceLabel->setBuddy(m_pAccountInstanceLabel);
-                const QFontMetrics fm(m_pAccountInstanceList->font());
+                m_pAccountImageLabel->setBuddy(m_pAccountImageLabel);
+                const QFontMetrics fm(m_pAccountImageList->font());
                 const int iFontWidth = fm.width('x');
                 const int iTotalWidth = 50 * iFontWidth;
                 const int iFontHeight = fm.height();
                 const int iTotalHeight = 4 * iFontHeight;
-                m_pAccountInstanceList->setMinimumSize(QSize(iTotalWidth, iTotalHeight));
-                //m_pAccountInstanceList->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
-                m_pAccountInstanceList->setAlternatingRowColors(true);
+                m_pAccountImageList->setMinimumSize(QSize(iTotalWidth, iTotalHeight));
+                //m_pAccountImageList->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
+                m_pAccountImageList->setAlternatingRowColors(true);
 
                 /* Add into layout: */
-                m_pCloudContainerLayout->addWidget(m_pAccountInstanceList, 2, 1, 2, 1);
+                m_pCloudContainerLayout->addWidget(m_pAccountImageList, 2, 1, 2, 1);
             }
 
             /* Add into layout: */
@@ -665,28 +656,26 @@ UIWizardNewCloudVMPageBasic1::UIWizardNewCloudVMPageBasic1(bool fImportFromOCIBy
         }
     }
 
-    /* Populate sources: */
-    populateSources();
+    /* Populate destinations: */
+    populateDestinations();
 
     /* Setup connections: */
     if (gpManager)
         connect(gpManager, &UIVirtualBoxManager::sigCloudProfileManagerChange,
-                this, &UIWizardNewCloudVMPageBasic1::sltHandleSourceChange);
-    connect(m_pSourceComboBox, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::activated),
-            this, &UIWizardNewCloudVMPageBasic1::sltHandleSourceChange);
+                this, &UIWizardNewCloudVMPageBasic1::sltHandleDestinationChange);
+    connect(m_pDestinationComboBox, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::activated),
+            this, &UIWizardNewCloudVMPageBasic1::sltHandleDestinationChange);
     connect(m_pAccountComboBox, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::currentIndexChanged),
             this, &UIWizardNewCloudVMPageBasic1::sltHandleAccountComboChange);
     connect(m_pAccountToolButton, &QIToolButton::clicked,
             this, &UIWizardNewCloudVMPageBasic1::sltHandleAccountButtonClick);
-    connect(m_pAccountInstanceList, &QListWidget::currentRowChanged,
+    connect(m_pAccountImageList, &QListWidget::currentRowChanged,
             this, &UIWizardNewCloudVMPageBasic1::completeChanged);
 
     /* Register fields: */
-    registerField("source", this, "source");
-    registerField("profile", this, "profile");
-    registerField("appliance", this, "appliance");
+    registerField("client", this, "client");
+    registerField("vsd", this, "vsd");
     registerField("vsdForm", this, "vsdForm");
-    registerField("machineId", this, "machineId");
 }
 
 bool UIWizardNewCloudVMPageBasic1::event(QEvent *pEvent)
@@ -712,44 +701,45 @@ bool UIWizardNewCloudVMPageBasic1::event(QEvent *pEvent)
 void UIWizardNewCloudVMPageBasic1::retranslateUi()
 {
     /* Translate page: */
-    setTitle(UIWizardNewCloudVM::tr("Appliance to import"));
+    setTitle(UIWizardNewCloudVM::tr("Destination to create"));
 
     /* Translate main label: */
-    m_pLabelMain->setText(UIWizardNewCloudVM::tr("Please choose the source to import appliance from.  This can be "
-                                                 "one of known cloud service providers to import cloud VM from."));
+    m_pLabelMain->setText(UIWizardNewCloudVM::tr("Please choose the destination to create cloud virtual machine in.  This can "
+                                                 "be one of known cloud service providers below."));
 
-    /* Translate source label: */
-    m_pSourceLabel->setText(tr("&Source:"));
-    /* Translate received values of Source combo-box.
+    /* Translate destination label: */
+    m_pDestinationLabel->setText(tr("&Destination:"));
+    /* Translate received values of Destination combo-box.
      * We are enumerating starting from 0 for simplicity: */
-    for (int i = 0; i < m_pSourceComboBox->count(); ++i)
+    for (int i = 0; i < m_pDestinationComboBox->count(); ++i)
     {
-        m_pSourceComboBox->setItemText(i, m_pSourceComboBox->itemData(i, SourceData_Name).toString());
-        m_pSourceComboBox->setItemData(i, UIWizardNewCloudVM::tr("Import from cloud service provider."), Qt::ToolTipRole);
+        m_pDestinationComboBox->setItemText(i, m_pDestinationComboBox->itemData(i, DestinationData_Name).toString());
+        m_pDestinationComboBox->setItemData(i, UIWizardNewCloudVM::tr("Create VM for cloud service provider."), Qt::ToolTipRole);
     }
 
     /* Translate description label: */
     m_pLabelDescription->setText(UIWizardNewCloudVM::tr("<p>Please choose one of cloud service accounts you have registered to "
-                                                        "import virtual machine from.  Corresponding machines list will be "
-                                                        "updated.  To continue, select one of machines to import below.</p>"));
+                                                        "create virtual machine for.  Existing custom images list will be "
+                                                        "updated.  To continue, select one of custom images to create virtual "
+                                                        "machine on the basis of it.</p>"));
 
     /* Translate cloud stuff: */
     m_pAccountLabel->setText(UIWizardNewCloudVM::tr("&Account:"));
-    m_pAccountInstanceLabel->setText(UIWizardNewCloudVM::tr("&Machines:"));
+    m_pAccountImageLabel->setText(UIWizardNewCloudVM::tr("&Images:"));
 
     /* Adjust label widths: */
     QList<QWidget*> labels;
-    labels << m_pSourceLabel;
+    labels << m_pDestinationLabel;
     labels << m_pAccountLabel;
-    labels << m_pAccountInstanceLabel;
+    labels << m_pAccountImageLabel;
     int iMaxWidth = 0;
     foreach (QWidget *pLabel, labels)
         iMaxWidth = qMax(iMaxWidth, pLabel->minimumSizeHint().width());
-    m_pSourceLayout->setColumnMinimumWidth(0, iMaxWidth);
+    m_pDestinationLayout->setColumnMinimumWidth(0, iMaxWidth);
     m_pCloudContainerLayout->setColumnMinimumWidth(0, iMaxWidth);
 
     /* Update tool-tips: */
-    updateSourceComboToolTip();
+    updateDestinationComboToolTip();
     updateAccountPropertyTableToolTips();
 }
 
@@ -758,7 +748,7 @@ void UIWizardNewCloudVMPageBasic1::initializePage()
     /* If wasn't polished yet: */
     if (!m_fPolished)
     {
-        QMetaObject::invokeMethod(this, "sltHandleSourceChange", Qt::QueuedConnection);
+        QMetaObject::invokeMethod(this, "sltHandleDestinationChange", Qt::QueuedConnection);
         m_fPolished = true;
     }
 
@@ -772,9 +762,8 @@ bool UIWizardNewCloudVMPageBasic1::isComplete() const
     bool fResult = true;
 
     /* Check cloud settings: */
-    fResult =    !m_comCloudProfile.isNull()
-              && !m_comCloudClient.isNull()
-              && !machineId().isNull();
+    fResult =    client().isNotNull()
+              && !imageId().isNull();
 
     /* Return result: */
     return fResult;
@@ -785,25 +774,25 @@ bool UIWizardNewCloudVMPageBasic1::validatePage()
     /* Initial result: */
     bool fResult = true;
 
-    /* Create appliance & populate form properties: */
+    /* Populate vsd and form properties: */
     populateFormProperties();
     /* And make sure they are not NULL: */
-    fResult =    m_comAppliance.isNotNull()
-              && m_comVSDForm.isNotNull();
+    fResult =    vsd().isNotNull()
+              && vsdForm().isNotNull();
 
     /* Return result: */
     return fResult;
 }
 
-void UIWizardNewCloudVMPageBasic1::sltHandleSourceChange()
+void UIWizardNewCloudVMPageBasic1::sltHandleDestinationChange()
 {
     /* Update tool-tip: */
-    updateSourceComboToolTip();
+    updateDestinationComboToolTip();
 
     /* Refresh required settings: */
     populateAccounts();
     populateAccountProperties();
-    populateAccountInstances();
+    populateAccountImages();
     emit completeChanged();
 }
 
@@ -811,7 +800,7 @@ void UIWizardNewCloudVMPageBasic1::sltHandleAccountComboChange()
 {
     /* Refresh required settings: */
     populateAccountProperties();
-    populateAccountInstances();
+    populateAccountImages();
     emit completeChanged();
 }
 

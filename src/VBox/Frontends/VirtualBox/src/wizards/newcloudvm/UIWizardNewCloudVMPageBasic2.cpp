@@ -79,11 +79,11 @@ UIWizardNewCloudVMPageBasic2::UIWizardNewCloudVMPageBasic2()
 void UIWizardNewCloudVMPageBasic2::retranslateUi()
 {
     /* Translate page: */
-    setTitle(UIWizardNewCloudVM::tr("Appliance settings"));
+    setTitle(UIWizardNewCloudVM::tr("Cloud Virtual Machine settings"));
 
     /* Translate description label: */
-    m_pLabel->setText(UIWizardNewCloudVM::tr("These are the the suggested settings of the cloud VM import procedure, they are "
-                                             "influencing the resulting local VM instance.  You can change many of the "
+    m_pLabel->setText(UIWizardNewCloudVM::tr("These are the the suggested settings of the cloud VM creation procedure, they are "
+                                             "influencing the resulting cloud VM instance.  You can change many of the "
                                              "properties shown by double-clicking on the items and disable others using the "
                                              "check boxes below."));
 }
@@ -110,7 +110,7 @@ bool UIWizardNewCloudVMPageBasic2::validatePage()
     fResult = comForm.isNotNull();
     Assert(fResult);
 
-    /* Give changed VSD back to appliance: */
+    /* Give changed VSD back: */
     if (fResult)
     {
         comForm.GetVirtualSystemDescription();
@@ -119,9 +119,9 @@ bool UIWizardNewCloudVMPageBasic2::validatePage()
             msgCenter().cannotAcquireVirtualSystemDescriptionFormProperty(comForm);
     }
 
-    /* Try to import appliance: */
+    /* Try to create cloud VM: */
     if (fResult)
-        fResult = qobject_cast<UIWizardNewCloudVM*>(wizard())->importAppliance();
+        fResult = qobject_cast<UIWizardNewCloudVM*>(wizard())->createCloudVM();
 
     /* Unlock finish button: */
     endProcessing();

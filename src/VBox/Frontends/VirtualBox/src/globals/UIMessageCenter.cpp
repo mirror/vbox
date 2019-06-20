@@ -78,6 +78,7 @@
 #include "CExtPackFile.h"
 #include "CHostNetworkInterface.h"
 #include "CVFSExplorer.h"
+#include "CVirtualSystemDescription.h"
 #include "CVirtualSystemDescriptionForm.h"
 #ifdef VBOX_WITH_DRAG_AND_DROP
 # include "CGuest.h"
@@ -1701,6 +1702,20 @@ void UIMessageCenter::cannotCreateCloudClient(const CCloudProfile &comProfile, Q
           UIErrorString::formatErrorInfo(comProfile));
 }
 
+void UIMessageCenter::cannotCreateCloudMachine(const CCloudClient &comClient, QWidget *pParent /* = 0 */) const
+{
+    error(pParent, MessageType_Error,
+          tr("Failed to create cloud machine."),
+          UIErrorString::formatErrorInfo(comClient));
+}
+
+void UIMessageCenter::cannotCreateCloudMachine(const CProgress &comProgress, QWidget *pParent /* = 0 */) const
+{
+    error(pParent, MessageType_Error,
+          tr("Failed to create cloud machine."),
+          UIErrorString::formatErrorInfo(comProgress));
+}
+
 void UIMessageCenter::cannotAcquireCloudClientParameter(const CCloudClient &comClient, QWidget *pParent /* = 0 */) const
 {
     error(pParent, MessageType_Error,
@@ -1922,6 +1937,13 @@ void UIMessageCenter::cannotAcquireVirtualSystemDescription(const CAppliance &co
 {
     error(pParent, MessageType_Critical, tr("<p>Cannot create a virtual system description.</p>"),
           UIErrorString::formatErrorInfo(comAppliance));
+}
+
+void UIMessageCenter::cannotAddVirtualSystemDescriptionValue(const CVirtualSystemDescription &comDescription,
+                                                             QWidget *pParent /* = 0 */) const
+{
+    error(pParent, MessageType_Critical, tr("<p>Cannot add a virtual system description value.</p>"),
+          UIErrorString::formatErrorInfo(comDescription));
 }
 
 void UIMessageCenter::cannotAcquireVirtualSystemDescriptionFormProperty(const CVirtualSystemDescriptionForm &comForm,

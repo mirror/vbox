@@ -34,17 +34,14 @@ class UIWizardNewCloudVMPageExpert : public UIWizardPage,
                                      public UIWizardNewCloudVMPage2
 {
     Q_OBJECT;
-    Q_PROPERTY(QString source READ source WRITE setSource);
-    Q_PROPERTY(CCloudProfile profile READ profile);
-    Q_PROPERTY(CAppliance appliance READ appliance);
+    Q_PROPERTY(CCloudClient client READ client);
+    Q_PROPERTY(CVirtualSystemDescription vsd READ vsd);
     Q_PROPERTY(CVirtualSystemDescriptionForm vsdForm READ vsdForm);
-    Q_PROPERTY(QString machineId READ machineId);
 
 public:
 
-    /** Constructs expert page.
-      * @param  strFileName  Brings appliance file name. */
-    UIWizardNewCloudVMPageExpert(bool fImportFromOCIByDefault);
+    /** Constructs expert page. */
+    UIWizardNewCloudVMPageExpert();
 
 protected:
 
@@ -68,8 +65,8 @@ protected:
 
 private slots:
 
-    /** Handles import source change. */
-    void sltHandleSourceChange();
+    /** Handles change in destination combo-box. */
+    void sltHandleDestinationChange();
 
     /** Handles change in account combo-box. */
     void sltHandleAccountComboChange();
@@ -81,8 +78,8 @@ private slots:
 
 private:
 
-    /** Holds the source container instance. */
-    QGroupBox *m_pCntSource;
+    /** Holds the destination container instance. */
+    QGroupBox *m_pCntDestination;
     /** Holds the settings container instance. */
     QGroupBox *m_pSettingsCnt;
 };

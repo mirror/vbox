@@ -26,11 +26,11 @@
 
 /* COM includes: */
 #include "COMEnums.h"
-#include "CAppliance.h"
 #include "CCloudClient.h"
 #include "CCloudProfile.h"
 #include "CCloudProvider.h"
 #include "CCloudProviderManager.h"
+#include "CVirtualSystemDescription.h"
 #include "CVirtualSystemDescriptionForm.h"
 
 /* Forward declarations: */
@@ -42,13 +42,12 @@ class QIComboBox;
 class QIRichTextLabel;
 class QIToolButton;
 
-/** Source combo data fields. */
+/** Destination combo data fields. */
 enum
 {
-    SourceData_ID              = Qt::UserRole + 1,
-    SourceData_Name            = Qt::UserRole + 2,
-    SourceData_ShortName       = Qt::UserRole + 3,
-    SourceData_IsItCloudFormat = Qt::UserRole + 4
+    DestinationData_ID              = Qt::UserRole + 1,
+    DestinationData_Name            = Qt::UserRole + 2,
+    DestinationData_ShortName       = Qt::UserRole + 3
 };
 
 /** Account combo data fields. */
@@ -57,52 +56,50 @@ enum
     AccountData_ProfileName = Qt::UserRole + 1
 };
 
-/** UIWizardPageBase extension for 1st page of the Import Appliance wizard. */
+/** UIWizardPageBase extension for 1st page of the New Cloud VM wizard. */
 class UIWizardNewCloudVMPage1 : public UIWizardPageBase
 {
 protected:
 
     /** Constructs 1st page base. */
-    UIWizardNewCloudVMPage1(bool fImportFromOCIByDefault);
+    UIWizardNewCloudVMPage1();
 
-    /** Populates sources. */
-    void populateSources();
+    /** Populates destinations. */
+    void populateDestinations();
     /** Populates accounts. */
     void populateAccounts();
     /** Populates account properties. */
     void populateAccountProperties();
-    /** Populates account instances. */
-    void populateAccountInstances();
+    /** Populates account images. */
+    void populateAccountImages();
     /** Populates form properties. */
     void populateFormProperties();
 
-    /** Updates source combo tool-tips. */
-    void updateSourceComboToolTip();
+    /** Updates destination combo tool-tips. */
+    void updateDestinationComboToolTip();
     /** Updates account property table tool-tips. */
     void updateAccountPropertyTableToolTips();
     /** Adjusts account property table. */
     void adjustAccountPropertyTable();
 
-    /** Defines @a strSource. */
-    void setSource(const QString &strSource);
-    /** Returns source. */
-    QString source() const;
+    /** Defines @a strDestination. */
+    void setDestination(const QString &strDestination);
+    /** Returns destination. */
+    QString destination() const;
+    /** Returns destination ID. */
+    QUuid destinationId() const;
 
-    /** Returns source ID. */
-    QUuid sourceId() const;
     /** Returns profile name. */
     QString profileName() const;
-    /** Returns machine ID. */
-    QString machineId() const;
-    /** Returns Cloud Profile object. */
-    CCloudProfile profile() const;
-    /** Returns Appliance object. */
-    CAppliance appliance() const;
+    /** Returns image ID. */
+    QString imageId() const;
+    /** Returns Cloud Client. */
+    CCloudClient client() const;
+    /** Returns Virtual System Description object. */
+    CVirtualSystemDescription vsd() const;
     /** Returns Virtual System Description Form object. */
     CVirtualSystemDescriptionForm vsdForm() const;
 
-    /** Holds whether default source should be Import from OCI. */
-    bool  m_fImportFromOCIByDefault;
     /** Holds whether starting page was polished. */
     bool  m_fPolished;
 
@@ -114,17 +111,17 @@ protected:
     CCloudProfile                  m_comCloudProfile;
     /** Holds the Cloud Client object reference. */
     CCloudClient                   m_comCloudClient;
-    /** Holds the Appliance object reference. */
-    CAppliance                     m_comAppliance;
+    /** Holds the Virtual System Description object reference. */
+    CVirtualSystemDescription      m_comVSD;
     /** Holds the Virtual System Description Form object reference. */
     CVirtualSystemDescriptionForm  m_comVSDForm;
 
-    /** Holds the source layout instance. */
-    QGridLayout *m_pSourceLayout;
-    /** Holds the source type label instance. */
-    QLabel      *m_pSourceLabel;
-    /** Holds the source type combo-box instance. */
-    QIComboBox  *m_pSourceComboBox;
+    /** Holds the destination layout instance. */
+    QGridLayout *m_pDestinationLayout;
+    /** Holds the destination type label instance. */
+    QLabel      *m_pDestinationLabel;
+    /** Holds the destination type combo-box instance. */
+    QIComboBox  *m_pDestinationComboBox;
 
     /** Holds the cloud container layout instance. */
     QGridLayout  *m_pCloudContainerLayout;
@@ -136,26 +133,24 @@ protected:
     QIToolButton *m_pAccountToolButton;
     /** Holds the account property table instance. */
     QTableWidget *m_pAccountPropertyTable;
-    /** Holds the account instance label instance. */
-    QLabel       *m_pAccountInstanceLabel;
-    /** Holds the account instance list instance. */
-    QListWidget  *m_pAccountInstanceList;
+    /** Holds the account image label instance. */
+    QLabel       *m_pAccountImageLabel;
+    /** Holds the account image list instance. */
+    QListWidget  *m_pAccountImageList;
 };
 
-/** UIWizardPage extension for 1st page of the Import Appliance wizard, extends UIWizardNewCloudVMPage1 as well. */
+/** UIWizardPage extension for 1st page of the New Cloud VM wizard, extends UIWizardNewCloudVMPage1 as well. */
 class UIWizardNewCloudVMPageBasic1 : public UIWizardPage, public UIWizardNewCloudVMPage1
 {
     Q_OBJECT;
-    Q_PROPERTY(QString source READ source WRITE setSource);
-    Q_PROPERTY(CCloudProfile profile READ profile);
-    Q_PROPERTY(CAppliance appliance READ appliance);
+    Q_PROPERTY(CCloudClient client READ client);
+    Q_PROPERTY(CVirtualSystemDescription vsd READ vsd);
     Q_PROPERTY(CVirtualSystemDescriptionForm vsdForm READ vsdForm);
-    Q_PROPERTY(QString machineId READ machineId);
 
 public:
 
     /** Constructs 1st basic page. */
-    UIWizardNewCloudVMPageBasic1(bool fImportFromOCIByDefault);
+    UIWizardNewCloudVMPageBasic1();
 
 protected:
 
@@ -176,8 +171,8 @@ protected:
 
 private slots:
 
-    /** Handles import source change. */
-    void sltHandleSourceChange();
+    /** Handles change in destination combo-box. */
+    void sltHandleDestinationChange();
 
     /** Handles change in account combo-box. */
     void sltHandleAccountComboChange();
