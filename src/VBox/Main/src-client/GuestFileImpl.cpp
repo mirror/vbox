@@ -1035,15 +1035,16 @@ int GuestFile::i_waitForRead(GuestWaitEvent *pEvent, uint32_t uTimeoutMS,
     {
         if (evtType == VBoxEventType_OnGuestFileRead)
         {
+            vrc = VINF_SUCCESS;
+
             ComPtr<IGuestFileReadEvent> pFileEvent = pIEvent;
             Assert(!pFileEvent.isNull());
 
-            HRESULT hr;
             if (pvData)
             {
                 com::SafeArray <BYTE> data;
-                hr = pFileEvent->COMGETTER(Data)(ComSafeArrayAsOutParam(data));
-                ComAssertComRC(hr);
+                HRESULT hrc1 = pFileEvent->COMGETTER(Data)(ComSafeArrayAsOutParam(data));
+                ComAssertComRC(hrc1);
                 const size_t cbRead = data.size();
                 if (cbRead)
                 {
@@ -1052,13 +1053,19 @@ int GuestFile::i_waitForRead(GuestWaitEvent *pEvent, uint32_t uTimeoutMS,
                     else
                         vrc = VERR_BUFFER_OVERFLOW;
                 }
-                else
-                    vrc = VERR_NO_DATA;
+                /* else: used to be VERR_NO_DATA, but that messes stuff up. */
+
+                if (pcbRead)
+                {
+                    *pcbRead = (uint32_t)cbRead;
+                    Assert(*pcbRead == cbRead);
+                }
             }
-            if (pcbRead)
+            else if (pcbRead)
             {
-                hr = pFileEvent->COMGETTER(Processed)((ULONG*)pcbRead);
-                ComAssertComRC(hr);
+                *pcbRead = 0;
+                HRESULT hrc2 = pFileEvent->COMGETTER(Processed)((ULONG *)pcbRead);
+                ComAssertComRC(hrc2); NOREF(hrc2);
             }
         }
         else
