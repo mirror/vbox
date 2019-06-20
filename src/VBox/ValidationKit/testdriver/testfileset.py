@@ -131,6 +131,76 @@ class TestFile(TestFsObj):
 
         return True;
 
+    @staticmethod
+    def hexFormatBytes(abBuf):
+        """ Formats a buffer/string/whatever as a string of hex bytes """
+        if sys.version_info[0] >= 3:
+            if utils.isString(abBuf):
+                try:    abBuf = bytes(abBuf, 'utf-8');
+                except: pass;
+        else:
+            if utils.isString(abBuf):
+                try:    abBuf = bytearray(abBuf, 'utf-8');      # pylint: disable=redefined-variable-type
+                except: pass;
+        sRet = '';
+        off = 0;
+        for off, bByte in enumerate(abBuf):
+            if off > 0:
+                sRet += ' ' if off & 7 else '-';
+            if isinstance(bByte, int):
+                sRet += '%02x' % (bByte,);
+            else:
+                sRet += '%02x' % (ord(bByte),);
+        return sRet;
+
+    def equalMemory(self, abBuf, offFile = 0):
+        """
+        Compares the content of the given buffer with the file content at that
+        file offset.
+
+        Returns True if it matches, False + error logging if it does not match.
+        """
+        if not abBuf:
+            return True;
+        if offFile >= self.cbContent:
+            return reporter.error('buffer @ %s LB %s is beyond the end of the file (%s bytes)!'
+                                  % (offFile, len(abBuf), self.cbContent,));
+        if offFile + len(abBuf) > self.cbContent:
+            return reporter.error('buffer @ %s LB %s is partially beyond the end of the file (%s bytes)!'
+                                  % (offFile, len(abBuf), self.cbContent,));
+        if utils.areBytesEqual(abBuf, self.abContent[offFile:(offFile + len(abBuf))]):
+            return True;
+
+        reporter.error('mismatch with buffer @ %s LB %s (cbContent=%s)!' % (offFile, len(abBuf), self.cbContent,));
+        reporter.error('    type(abBuf): %s' % (type(abBuf),));
+        #if isinstance(abBuf, memoryview):
+        #    reporter.error('  nbytes=%s len=%s itemsize=%s type(obj)=%s'
+        #                   % (abBuf.nbytes, len(abBuf),  abBuf.itemsize, type(abBuf.obj),));
+        reporter.error('type(abContent): %s' % (type(self.abContent),));
+
+        offBuf = 0;
+        cbLeft = len(abBuf);
+        while cbLeft > 0:
+            cbLine = min(16, cbLeft);
+            abBuf1 = abBuf[offBuf:(offBuf + cbLine)];
+            abBuf2 = self.abContent[offFile:(offFile + cbLine)];
+            if not utils.areBytesEqual(abBuf1, abBuf2):
+                try:    sStr1 = self.hexFormatBytes(abBuf1);
+                except: sStr1 = 'oops';
+                try:    sStr2 = self.hexFormatBytes(abBuf2);
+                except: sStr2 = 'oops';
+                reporter.log('%#10x: %s' % (offBuf, sStr1,));
+                reporter.log('%#10x: %s' % (offFile, sStr2,));
+
+            # Advance.
+            offBuf  += 16;
+            offFile += 16;
+            cbLeft  -= 16;
+
+        return False;
+
+
+
 
 class TestDir(TestFsObj):
     """ A file object in the guest. """
@@ -514,6 +584,12 @@ class TestFileSetUnitTests(unittest.TestCase):
         oSet = TestFileSet(False, '/tmp', 'unittest');
         self.assertTrue(isinstance(oSet.chooseRandomDirFromTree(), TestDir));
         self.assertTrue(isinstance(oSet.chooseRandomFile(), TestFile));
+
+    def testHexFormatBytes(self):
+        self.assertEqual(TestFile.hexFormatBytes(bytearray([0,1,2,3,4,5,6,7,8,9])),
+                         '00 01 02 03 04 05 06 07-08 09');
+        self.assertEqual(TestFile.hexFormatBytes(memoryview(bytearray([0,1,2,3,4,5,6,7,8,9,10, 16]))),
+                         '00 01 02 03 04 05 06 07-08 09 0a 10');
 
 
 if __name__ == '__main__':
