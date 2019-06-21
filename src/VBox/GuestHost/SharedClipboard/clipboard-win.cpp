@@ -30,7 +30,7 @@
 #define LOG_GROUP LOG_GROUP_SHARED_CLIPBOARD
 #include <VBox/log.h>
 
-#include <VBox/err.h>
+#include <iprt/errcore.h>
 
 #include <VBox/GuestHost/SharedClipboard.h>
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
