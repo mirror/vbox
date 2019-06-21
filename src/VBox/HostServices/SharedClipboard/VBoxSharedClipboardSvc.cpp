@@ -97,6 +97,9 @@
  * do any file locking in a clipboard area, but keeps the clipboard areas's
  * directory open to prevent deletion by third party processes.
  *
+ * @todo We might use some VFS / container (IPRT?) for this instead of the
+ *       host's file system directly?
+ *
  * @section sec_uri_structure           URI handling structure.
  *
  * All structures / classes are designed for running on both, on the guest
