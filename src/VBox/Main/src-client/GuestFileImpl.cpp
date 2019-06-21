@@ -663,7 +663,7 @@ int GuestFile::i_openFile(uint32_t uTimeoutMS, int *prcGuest)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    LogFlowThisFunc(("strFile=%s, enmAccessMode=0x%x, enmOpenAction=0x%x, uCreationMode=%RU32, mfOpenEx=%RU32\n",
+    LogFlowThisFunc(("strFile=%s, enmAccessMode=%d, enmOpenAction=%d, uCreationMode=%o, mfOpenEx=%#x\n",
                      mData.mOpenInfo.mFilename.c_str(), mData.mOpenInfo.mAccessMode, mData.mOpenInfo.mOpenAction,
                      mData.mOpenInfo.mCreationMode, mData.mOpenInfo.mfOpenEx));
 
@@ -690,8 +690,8 @@ int GuestFile::i_openFile(uint32_t uTimeoutMS, int *prcGuest)
         case FileAccessMode_ReadOnly:   pszAccessMode = "r";  break;
         case FileAccessMode_WriteOnly:  pszAccessMode = "w";  break;
         case FileAccessMode_ReadWrite:  pszAccessMode = "r+"; break;
-        case FileAccessMode_AppendOnly: RT_FALL_THRU();
-        case FileAccessMode_AppendRead: return VERR_NOT_IMPLEMENTED;
+        case FileAccessMode_AppendOnly: pszAccessMode = "a";  break;
+        case FileAccessMode_AppendRead: pszAccessMode = "a+"; break;
         default:                        return VERR_INVALID_PARAMETER;
     }
 
@@ -737,7 +737,7 @@ int GuestFile::i_openFile(uint32_t uTimeoutMS, int *prcGuest)
     HGCMSvcSetStr(&paParms[i++], pszOpenAction);
     HGCMSvcSetStr(&paParms[i++], pszSharingMode);
     HGCMSvcSetU32(&paParms[i++], mData.mOpenInfo.mCreationMode);
-    HGCMSvcSetU64(&paParms[i++], mData.mOpenInfo.muOffset);
+    HGCMSvcSetU64(&paParms[i++], 0 /*unused offset*/);
     /** @todo Next protocol version: add flags, replace strings, remove initial offset. */
 
     alock.release(); /* Drop write lock before sending. */
