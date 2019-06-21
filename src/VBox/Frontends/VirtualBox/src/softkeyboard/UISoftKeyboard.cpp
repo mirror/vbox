@@ -26,6 +26,7 @@
 #include <QListWidget>
 #include <QMenu>
 #include <QPainter>
+#include <QPicture>
 #include <QPushButton>
 #include <QSplitter>
 #include <QStatusBar>
@@ -83,6 +84,7 @@ struct KeyCaptions
     QString m_strBase;
     QString m_strShift;
     QString m_strAltGr;
+    QString m_strShiftAltGr;
 };
 
 
@@ -146,6 +148,7 @@ private slots:
     void sltKeyBaseCaptionChange(const QString &strCaption);
     void sltKeyShiftCaptionChange(const QString &strCaption);
     void sltKeyAltGrCaptionChange(const QString &strCaption);
+    void sltKeyShiftAltGrCaptionChange(const QString &strCaption);
     void sltPhysicalLayoutChanged();
     void sltLayoutNameChanged(const QString &strCaption);
 
@@ -155,7 +158,7 @@ private:
     void prepareConnections();
     QWidget *prepareKeyCaptionEditWidgets();
     void reset();
-
+    void resetKeyWidgets();
     QGridLayout *m_pEditorLayout;
     QToolButton *m_pGoBackButton;
     QGroupBox *m_pSelectedKeyGroupBox;
@@ -170,6 +173,7 @@ private:
     QLabel *m_pBaseCaptionLabel;
     QLabel *m_pShiftCaptionLabel;
     QLabel *m_pAltGrCaptionLabel;
+    QLabel *m_pShiftAltGrCaptionLabel;
 
     QLineEdit *m_pLayoutNameEdit;
     QLineEdit *m_pScanCodeEdit;
@@ -177,6 +181,7 @@ private:
     QLineEdit *m_pBaseCaptionEdit;
     QLineEdit *m_pShiftCaptionEdit;
     QLineEdit *m_pAltGrCaptionEdit;
+    QLineEdit *m_pShiftAltGrCaptionEdit;
 
     /** The key which is being currently edited. Might be Null. */
     UISoftKeyboardKey  *m_pKey;
@@ -284,6 +289,9 @@ public:
     const QString altGrCaption() const;
     void  setAltGrCaption(const QString &strAltGrCaption);
 
+    const QString shiftAltGrCaption() const;
+    void  setShiftAltGrCaption(const QString &strAltGrCaption);
+
     const QString text() const;
 
     void setWidth(int iWidth);
@@ -324,7 +332,7 @@ public:
     int cutoutCorner() const;
     int cutoutWidth() const;
     int cutoutHeight() const;
-
+    QPicture m_textPixmap;
 private:
 
     void updateState(bool fPressed);
@@ -335,6 +343,8 @@ private:
     QString    m_strBaseCaption;
     QString    m_strShiftCaption;
     QString    m_strAltGrCaption;
+    QString    m_strShiftAltGrCaption;
+
     /** m_strText is concatenation of base, shift, and altgr captions. */
     QString    m_strText;
 
@@ -616,12 +626,14 @@ UILayoutEditor::UILayoutEditor(QWidget *pParent /* = 0 */)
     , m_pBaseCaptionLabel(0)
     , m_pShiftCaptionLabel(0)
     , m_pAltGrCaptionLabel(0)
+    , m_pShiftAltGrCaptionLabel(0)
     , m_pLayoutNameEdit(0)
     , m_pScanCodeEdit(0)
     , m_pPositionEdit(0)
     , m_pBaseCaptionEdit(0)
     , m_pShiftCaptionEdit(0)
     , m_pAltGrCaptionEdit(0)
+    , m_pShiftAltGrCaptionEdit(0)
     , m_pKey(0)
     , m_pLayout(0)
 {
@@ -642,13 +654,18 @@ void UILayoutEditor::setKey(UISoftKeyboardKey *pKey)
             m_pKey->setBaseCaption(m_pBaseCaptionEdit->text());
         if (m_pKey->altGrCaption() != m_pAltGrCaptionEdit->text())
             m_pKey->setAltGrCaption(m_pAltGrCaptionEdit->text());
+        if (m_pKey->shiftAltGrCaption() != m_pShiftAltGrCaptionEdit->text())
+            m_pKey->setShiftAltGrCaption(m_pShiftAltGrCaptionEdit->text());
     }
 
     m_pKey = pKey;
     if (m_pSelectedKeyGroupBox)
         m_pSelectedKeyGroupBox->setEnabled(m_pKey);
     if (!m_pKey)
+    {
+        resetKeyWidgets();
         return;
+    }
     if (m_pScanCodeEdit)
         m_pScanCodeEdit->setText(QString::number(m_pKey->scanCode(), 16));
     if (m_pPositionEdit)
@@ -659,6 +676,8 @@ void UILayoutEditor::setKey(UISoftKeyboardKey *pKey)
         m_pShiftCaptionEdit->setText(m_pKey->shiftCaption());
     if (m_pAltGrCaptionEdit)
         m_pAltGrCaptionEdit->setText(m_pKey->altGrCaption());
+    if (m_pShiftAltGrCaptionEdit)
+        m_pShiftAltGrCaptionEdit->setText(m_pKey->shiftAltGrCaption());
 }
 
 void UILayoutEditor::setLayoutToEdit(UISoftKeyboardLayout *pLayout)
@@ -711,6 +730,8 @@ void UILayoutEditor::retranslateUi()
         m_pShiftCaptionLabel->setText(UISoftKeyboard::tr("Shift"));
     if (m_pAltGrCaptionLabel)
         m_pAltGrCaptionLabel->setText(UISoftKeyboard::tr("AltGr"));
+   if (m_pShiftAltGrCaptionLabel)
+        m_pShiftAltGrCaptionLabel->setText(UISoftKeyboard::tr("ShiftAltGr"));
     if (m_pCaptionEditGroupBox)
         m_pCaptionEditGroupBox->setTitle(UISoftKeyboard::tr("Captions"));
     if (m_pSelectedKeyGroupBox)
@@ -738,6 +759,14 @@ void UILayoutEditor::sltKeyAltGrCaptionChange(const QString &strCaption)
     if (!m_pKey  || m_pKey->altGrCaption() == strCaption)
         return;
     m_pKey->setAltGrCaption(strCaption);
+    emit sigKeyCaptionsEdited(m_pKey);
+}
+
+void UILayoutEditor::sltKeyShiftAltGrCaptionChange(const QString &strCaption)
+{
+    if (!m_pKey  || m_pKey->shiftAltGrCaption() == strCaption)
+        return;
+    m_pKey->setShiftAltGrCaption(strCaption);
     emit sigKeyCaptionsEdited(m_pKey);
 }
 
@@ -862,6 +891,14 @@ QWidget *UILayoutEditor::prepareKeyCaptionEditWidgets()
     pCaptionEditorLayout->addWidget(m_pAltGrCaptionEdit, 2, 1);
     connect(m_pAltGrCaptionEdit, &QLineEdit::textChanged, this, &UILayoutEditor::sltKeyAltGrCaptionChange);
 
+    m_pShiftAltGrCaptionLabel = new QLabel;
+    m_pShiftAltGrCaptionEdit = new QLineEdit;
+    m_pShiftAltGrCaptionLabel->setBuddy(m_pShiftAltGrCaptionEdit);
+    pCaptionEditorLayout->addWidget(m_pShiftAltGrCaptionLabel, 3, 0);
+    pCaptionEditorLayout->addWidget(m_pShiftAltGrCaptionEdit, 3, 1);
+    connect(m_pShiftAltGrCaptionEdit, &QLineEdit::textChanged, this, &UILayoutEditor::sltKeyShiftAltGrCaptionChange);
+
+
     QSpacerItem *pSpacer = new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Expanding);
     if (pSpacer)
         pCaptionEditorLayout->addItem(pSpacer, 4, 1);
@@ -872,6 +909,11 @@ void UILayoutEditor::reset()
 {
     if (m_pLayoutNameEdit)
         m_pLayoutNameEdit->clear();
+    resetKeyWidgets();
+}
+
+void UILayoutEditor::resetKeyWidgets()
+{
     if (m_pScanCodeEdit)
         m_pScanCodeEdit->clear();
     if (m_pPositionEdit)
@@ -882,6 +924,8 @@ void UILayoutEditor::reset()
         m_pShiftCaptionEdit->clear();
     if (m_pAltGrCaptionEdit)
         m_pAltGrCaptionEdit->clear();
+    if (m_pShiftAltGrCaptionEdit)
+        m_pShiftAltGrCaptionEdit->clear();
 }
 
 /*********************************************************************************************************************************
@@ -1122,6 +1166,17 @@ void UISoftKeyboardKey::setAltGrCaption(const QString &strAltGrCaption)
     updateText();
 }
 
+const QString UISoftKeyboardKey::shiftAltGrCaption() const
+{
+    return m_strShiftAltGrCaption;
+}
+
+void UISoftKeyboardKey::setShiftAltGrCaption(const QString &strShiftAltGrCaption)
+{
+    m_strShiftAltGrCaption = strShiftAltGrCaption;
+    updateText();
+}
+
 const QString UISoftKeyboardKey::text() const
 {
     return m_strText;
@@ -1299,13 +1354,46 @@ void UISoftKeyboardKey::updateState(bool fPressed)
 
 void UISoftKeyboardKey::updateText()
 {
-    m_strText.clear();
+
+    QPainter painter(&m_textPixmap);
+    painter.setPen(QColor(0,0,0));
+    painter.setRenderHint(QPainter::Antialiasing);
+    QFont painterFont(painter.font());
+
+    painterFont.setPixelSize(15);
+    painterFont.setBold(true);
+    painter.setFont(painterFont);
+    QFontMetrics fontMetric = painter.fontMetrics();
+    int iSideMargin = 1 * fontMetric.width('X');
+
+    int iX = 0;
+    int iY = fontMetric.height();
     if (!m_strShiftCaption.isEmpty())
-        m_strText += QString("%1\n").arg(m_strShiftCaption);
-    if (!m_strBaseCaption.isEmpty())
-        m_strText += QString("%1\n").arg(m_strBaseCaption);
-    if (!m_strAltGrCaption.isEmpty())
-        m_strText += QString("%1\n").arg(m_strAltGrCaption);
+    {
+        painter.drawText(iX + iSideMargin, iY, m_strShiftCaption);
+        painter.drawText(iX + iSideMargin, 2 * iY, m_strBaseCaption);
+    }
+    else
+    {
+        int iSpaceIndex = m_strBaseCaption.indexOf(" " );
+        if (iSpaceIndex == -1)
+            painter.drawText(iX + iSideMargin, iY, m_strBaseCaption);
+        else
+        {
+            painter.drawText(iX + iSideMargin, iY, m_strBaseCaption.left(iSpaceIndex));
+            painter.drawText(iX + iSideMargin, 2 * iY, m_strBaseCaption.right(m_strBaseCaption.length() - iSpaceIndex - 1));
+        }
+    }
+
+    if (!m_strShiftAltGrCaption.isEmpty())
+    {
+        painter.drawText(keyGeometry().width() - fontMetric.width('X') - iSideMargin, iY, m_strShiftAltGrCaption);
+        painter.drawText(keyGeometry().width() - fontMetric.width('X') - iSideMargin, 2 * iY, m_strAltGrCaption);
+    }
+    else
+        painter.drawText(keyGeometry().width() - fontMetric.width('X') - iSideMargin, 2 * iY, m_strAltGrCaption);
+
+    painter.end();
 }
 
 /*********************************************************************************************************************************
@@ -1456,7 +1544,7 @@ void UISoftKeyboardWidget::paintEvent(QPaintEvent *pEvent) /* override */
     QPainter painter(this);
     QFont painterFont(font());
     painterFont.setPixelSize(15);
-    painterFont.setBold(false);
+    painterFont.setBold(true);
     painter.setFont(painterFont);
     painter.setRenderHint(QPainter::Antialiasing);
     painter.scale(m_fScaleFactorX, m_fScaleFactorY);
@@ -1494,13 +1582,7 @@ void UISoftKeyboardWidget::paintEvent(QPaintEvent *pEvent) /* override */
 
             painter.drawPolygon(key.polygon());
 
-
-            QRect textRect(0.55 * unitSize, 1 * unitSize
-                           , key.keyGeometry().width(), key.keyGeometry().height());
-            if (m_pShowPositionsAction && m_pShowPositionsAction->isChecked())
-                painter.drawText(textRect, Qt::TextWordWrap, QString::number(key.position()));
-            else
-                painter.drawText(textRect, Qt::TextWordWrap, key.text());
+            key.m_textPixmap.play(&painter);
 
             if (key.type() != UIKeyType_Ordinary)
             {
@@ -1639,6 +1721,7 @@ void UISoftKeyboardWidget::saveCurentLayoutToFile()
            xmlWriter.writeTextElement("basecaption", key.baseCaption());
            xmlWriter.writeTextElement("shiftcaption", key.shiftCaption());
            xmlWriter.writeTextElement("altgrcaption", key.altGrCaption());
+           xmlWriter.writeTextElement("shiftaltgrcaption", key.shiftAltGrCaption());
            xmlWriter.writeEndElement();
        }
    }
@@ -1711,6 +1794,7 @@ void UISoftKeyboardWidget::toggleEditMode(bool fIsEditMode)
         m_enmMode = Mode_Keyboard;
         m_pKeyBeingEdited = 0;
     }
+    update();
 }
 
 void UISoftKeyboardWidget::updateKeyCaptionsInLayout(UISoftKeyboardKey *pKey)
@@ -1723,6 +1807,7 @@ void UISoftKeyboardWidget::updateKeyCaptionsInLayout(UISoftKeyboardKey *pKey)
     newCaptions.m_strBase = pKey->baseCaption();
     newCaptions.m_strShift = pKey->shiftCaption();
     newCaptions.m_strAltGr = pKey->altGrCaption();
+    newCaptions.m_strShiftAltGr = pKey->shiftAltGrCaption();
     m_pCurrentKeyboardLayout->updateKeyCaptions(pKey->position(), newCaptions);
 }
 
@@ -2056,6 +2141,7 @@ void UISoftKeyboardWidget::setCurrentLayout(UISoftKeyboardLayout *pLayout)
             key.setBaseCaption(captions.m_strBase);
             key.setShiftCaption(captions.m_strShift);
             key.setAltGrCaption(captions.m_strAltGr);
+            key.setShiftAltGrCaption(captions.m_strShiftAltGr);
         }
     }
     update();
@@ -2374,6 +2460,8 @@ void  UIKeyboardLayoutReader::parseKey()
             keyCaptions.m_strShift = m_xmlReader.readElementText();
         else if (m_xmlReader.name() == "altgrcaption")
             keyCaptions.m_strAltGr = m_xmlReader.readElementText();
+        else if (m_xmlReader.name() == "shiftaltgrcaption")
+            keyCaptions.m_strShiftAltGr = m_xmlReader.readElementText();
         else if (m_xmlReader.name() == "position")
             iKeyPosition = m_xmlReader.readElementText().toInt();
         else
@@ -2521,6 +2609,8 @@ void UISoftKeyboard::sltShowLayoutSelector()
         m_pSidePanelWidget->setCurrentWidget(m_pLayoutSelector);
     if (m_pKeyboardWidget)
         m_pKeyboardWidget->toggleEditMode(false);
+    if (m_pLayoutEditor)
+        m_pLayoutEditor->setKey(0);
 }
 
 void UISoftKeyboard::sltShowLayoutEditor()
