@@ -153,6 +153,16 @@ class TestFile(TestFsObj):
                 sRet += '%02x' % (ord(bByte),);
         return sRet;
 
+    def checkRange(self, cbRange, offFile = 0):
+        """ Check if the specified range is entirely within the file or not. """
+        if offFile >= self.cbContent:
+            return reporter.error('buffer @ %s LB %s is beyond the end of the file (%s bytes)!'
+                                  % (offFile, cbRange, self.cbContent,));
+        if offFile + cbRange > self.cbContent:
+            return reporter.error('buffer @ %s LB %s is partially beyond the end of the file (%s bytes)!'
+                                  % (offFile, cbRange, self.cbContent,));
+        return True;
+
     def equalMemory(self, abBuf, offFile = 0):
         """
         Compares the content of the given buffer with the file content at that
@@ -162,14 +172,16 @@ class TestFile(TestFsObj):
         """
         if not abBuf:
             return True;
-        if offFile >= self.cbContent:
-            return reporter.error('buffer @ %s LB %s is beyond the end of the file (%s bytes)!'
-                                  % (offFile, len(abBuf), self.cbContent,));
-        if offFile + len(abBuf) > self.cbContent:
-            return reporter.error('buffer @ %s LB %s is partially beyond the end of the file (%s bytes)!'
-                                  % (offFile, len(abBuf), self.cbContent,));
-        if utils.areBytesEqual(abBuf, self.abContent[offFile:(offFile + len(abBuf))]):
-            return True;
+
+        if not self.checkRange(len(abBuf), offFile):
+            return False;
+
+        if sys.version_info[0] >= 3:
+            if utils.areBytesEqual(abBuf, self.abContent[offFile:(offFile + len(abBuf))]):
+                return True;
+        else:
+            if utils.areBytesEqual(abBuf, buffer(self.abContent, offFile, len(abBuf))): # pylint: disable=undefined-variable
+                return True;
 
         reporter.error('mismatch with buffer @ %s LB %s (cbContent=%s)!' % (offFile, len(abBuf), self.cbContent,));
         reporter.error('    type(abBuf): %s' % (type(abBuf),));
@@ -200,6 +212,56 @@ class TestFile(TestFsObj):
         return False;
 
 
+class TestFileZeroFilled(TestFile):
+    """
+    Zero filled test file.
+    """
+
+    def __init__(self, oParent, sPath, cbContent):
+        TestFile.__init__(self, oParent, sPath, bytearray(1));
+        self.cbContent = cbContent;
+
+    def read(self, cbToRead):
+        """ read() emulation. """
+        assert self.off <= self.cbContent;
+        cbLeft = self.cbContent - self.off;
+        if cbLeft < cbToRead:
+            cbToRead = cbLeft;
+        abRet = bytearray(cbToRead);
+        assert len(abRet) == cbToRead;
+        self.off += cbToRead;
+        if sys.version_info[0] < 3:
+            return bytes(abRet);
+        return abRet;
+
+    def equalFile(self, oFile):
+        _ = oFile;
+        assert False, "not implemented";
+        return False;
+
+    def equalMemory(self, abBuf, offFile = 0):
+        if not abBuf:
+            return True;
+
+        if not self.checkRange(len(abBuf), offFile):
+            return False;
+
+        if utils.areBytesEqual(abBuf, bytearray(len(abBuf))):
+            return True;
+
+        cErrors = 0;
+        offBuf = 0
+        while offBuf < len(abBuf):
+            bByte = abBuf[offBuf];
+            if not isinstance(bByte, int):
+                bByte = ord(bByte);
+            if bByte != 0:
+                reporter.error('Mismatch @ %s/%s: %#x, expected 0!' % (offFile, offBuf, bByte,));
+                cErrors += 1;
+                if cErrors > 32:
+                    return False;
+            offBuf += 1;
+        return cErrors == 0;
 
 
 class TestDir(TestFsObj):

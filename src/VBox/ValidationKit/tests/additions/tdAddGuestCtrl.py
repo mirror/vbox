@@ -3514,17 +3514,61 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             return None;
 
         #
-        # Open and read all the files in the test file set.
+        # Do everything in one session.
         #
-
         oTest = tdTestGuestCtrlBase();
         oTest.setEnvironment(oSession, oTxsSession, oTestVm);
         fRc2, oGuestSession = oTest.createSession('FsStat on TestFileSet', True);
         if fRc2 is not True:
             return (False, oTxsSession);
 
+        #
+        # Create a really big zero filled, up to 1 GiB, adding it to the list of
+        # files from the set.
+        #
+        # Note! This code sucks a bit because we don't have a working setSize nor
+        #       any way to figure out how much free space there is in the guest.
+        #
+        aoExtraFiles = [];
+        sBigName = self.oTestFiles.generateFilenameEx();
+        sBigPath = oTestVm.pathJoin(self.oTestFiles.oRoot.sPath, sBigName);
         fRc = True;
-        for oTestFile in self.oTestFiles.aoFiles: # type: testfileset.TestFile
+        try:
+            oFile = oGuestSession.fileOpenEx(sBigPath, vboxcon.FileAccessMode_ReadWrite, vboxcon.FileOpenAction_CreateOrReplace,
+                                             vboxcon.FileSharingMode_All, 0, []);
+        except:
+            fRc = reporter.errorXcpt('sBigName=%s' % (sBigPath,));
+        else:
+            cbBigFile = 0;
+            while cbBigFile < (1024 + 32)*1024*1024:
+                cbBigFile += 32*1024*1024;
+                try:
+                    oFile.seek(cbBigFile, vboxcon.FileSeekOrigin_Begin);
+                    oFile.write(bytearray(1), 60*1000);
+                except:
+                    reporter.logXcpt('cbBigFile=%s' % (sBigPath,));
+                    break;
+            try:
+                cbBigFile = oFile.seek(0, vboxcon.FileSeekOrigin_End);
+            except:
+                fRc = reporter.errorXcpt('sBigName=%s' % (sBigPath,));
+            try:
+                oFile.close();
+            except:
+                fRc = reporter.errorXcpt('sBigName=%s' % (sBigPath,));
+            if fRc is True:
+                reporter.log('Big file: %s bytes: %s' % (cbBigFile, sBigPath,));
+                aoExtraFiles.append(testfileset.TestFileZeroFilled(None, sBigPath, cbBigFile));
+            else:
+                try:
+                    oGuestSession.fsObjRemove(sBigPath);
+                except:
+                    reporter.errorXcpt('fsObjRemove(sBigName=%s)' % (sBigPath,));
+
+        #
+        # Open and read all the files in the test file set.
+        #
+        for oTestFile in aoExtraFiles + self.oTestFiles.aoFiles: # type: testfileset.TestFile
             reporter.log2('Test file: %s bytes, "%s" ...' % (oTestFile.cbContent, oTestFile.sPath,));
 
             #
@@ -3544,12 +3588,16 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 acbChunks = xrange(1,128);
             elif oTestFile.cbContent < 1024:
                 acbChunks = (2048, 127, 63, 32, 29, 17, 16, 15, 9);
+            elif oTestFile.cbContent < 8*1024*1024:
+                acbChunks = (128*1024, 32*1024, 8191, 255);
             else:
-                acbChunks = (128 * 1024, 32 * 1024, 8192, 1024, 128);
+                acbChunks = (768*1024, 128*1024);
+
             for cbChunk in acbChunks:
                 # Read the whole file straight thru:
-                #reporter.log2('... cbChunk=%s' % (cbChunk,));
+                if oTestFile.cbContent >= 1024*1024: reporter.log2('... cbChunk=%s' % (cbChunk,));
                 offFile = 0;
+                cReads = 0;
                 while offFile <= oTestFile.cbContent:
                     try:
                         abRead = oFile.read(cbChunk, 30*1000);
@@ -3568,6 +3616,9 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                         fRc = reporter.error('%s: read mismatch @ %s LB %s' % (oTestFile.sPath, offFile, cbRead));
                         break;
                     offFile += cbRead;
+                    cReads  += 1;
+                    if cReads > 8192:
+                        break;
 
                 # Seek to start of file.
                 try:
@@ -3582,12 +3633,10 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             #
             # Random reads.
             #
-            for _ in xrange(16):
+            for _ in xrange(8):
                 offFile  = self.oTestFiles.oRandom.randrange(0, oTestFile.cbContent + 1024);
-                cbToRead = self.oTestFiles.oRandom.randrange(1, oTestFile.cbContent + 256);
-                if cbToRead > 1024*1024:
-                    cbToRead = 1024*1024;
-                #reporter.log2('... %s LB %s' % (offFile, cbToRead,));
+                cbToRead = self.oTestFiles.oRandom.randrange(1, min(oTestFile.cbContent + 256, 768*1024));
+                if oTestFile.cbContent >= 1024*1024: reporter.log2('... %s LB %s' % (offFile, cbToRead,));
 
                 try:
                     offActual = oFile.seek(offFile, vboxcon.FileSeekOrigin_Begin);
@@ -3631,12 +3680,10 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             #
             # Random reads using readAt.
             #
-            for _ in xrange(16):
+            for _ in xrange(12):
                 offFile  = self.oTestFiles.oRandom.randrange(0, oTestFile.cbContent + 1024);
-                cbToRead = self.oTestFiles.oRandom.randrange(1, oTestFile.cbContent + 256);
-                if cbToRead > 1024*1024:
-                    cbToRead = 1024*1024;
-                #reporter.log2('... %s LB %s (readAt)' % (offFile, cbToRead,));
+                cbToRead = self.oTestFiles.oRandom.randrange(1, min(oTestFile.cbContent + 256, 768*1024));
+                if oTestFile.cbContent >= 1024*1024: reporter.log2('... %s LB %s (readAt)' % (offFile, cbToRead,));
 
                 try:
                     abRead = oFile.readAt(offFile, cbToRead, 30*1000);
@@ -3645,12 +3692,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                                              % (oTestFile.sPath, offFile, cbToRead, oTestFile.cbContent));
                 else:
                     cbRead = len(abRead);
-                    if offFile >= oTestFile.cbContent or offFile + cbRead > oTestFile.cbContent:
-                        if cbRead != 0:
-                            fRc = reporter.error('%s: Read returned data beyond end of file: %s + %s = %s vs cbContent=%s (#2)'
-                                                 % (oTestFile.sPath, offFile, cbRead, offFile + cbRead, oTestFile.cbContent,));
-                    if    offFile + cbRead <= oTestFile.cbContent \
-                      and not utils.areBytesEqual(abRead, oTestFile.abContent[offFile:(offFile + cbRead)]):
+                    if not oTestFile.equalMemory(abRead, offFile):
                         fRc = reporter.error('%s: random readAt mismatch @ %s LB %s' % (oTestFile.sPath, offFile, cbRead,));
 
                 if not self.fSkipKnownBugs:
@@ -3682,38 +3724,47 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             #
             # A few negative things.
             #
+
+            # Zero byte reads -> E_INVALIDARG.
             try:
                 abRead = oFile.read(0, 30*1000);
             except Exception as oXcpt:
                 if vbox.ComError.notEqual(oXcpt, vbox.ComError.E_INVALIDARG):
-                    reporter.errorXcpt('read(0,30s) did not raise E_INVALIDARG as expected!');
+                    fRc = reporter.errorXcpt('read(0,30s) did not raise E_INVALIDARG as expected!');
             else:
-                reporter.error('read(0,30s) did not fail!');
+                fRc = reporter.error('read(0,30s) did not fail!');
 
             try:
                 abRead = oFile.readAt(0, 0, 30*1000);
             except Exception as oXcpt:
                 if vbox.ComError.notEqual(oXcpt, vbox.ComError.E_INVALIDARG):
-                    reporter.errorXcpt('readAt(0,0,30s) did not raise E_INVALIDARG as expected!');
+                    fRc = reporter.errorXcpt('readAt(0,0,30s) did not raise E_INVALIDARG as expected!');
             else:
-                reporter.error('readAt(0,0,30s) did not fail!');
+                fRc = reporter.error('readAt(0,0,30s) did not fail!');
 
-            if not self.fSkipKnownBugs: ## @todo Place a restriction on how much we permit being read in a single request.
-                try:                    ##       Document it in VirtualBox.xidl.
-                    abRead = oFile.read(1024*1024*1024, 30*1000);
-                except Exception as oXcpt:
-                    if vbox.ComError.notEqual(oXcpt, vbox.ComError.E_INVALIDARG):
-                        reporter.errorXcpt('read(1GiB,30s) did not raise E_INVALIDARG as expected!');
-                else:
-                    reporter.error('read(1GiB,30s) did not fail! len(abRead)=%s' % (len(abRead), ));
+            # See what happens when we read 1GiB.  We should get a max of 1MiB back.
+            ## @todo Document this behaviour in VirtualBox.xidl.
+            try:
+                oFile.seek(0, vboxcon.FileSeekOrigin_Begin);
+            except:
+                fRc = reporter.error('seek(0)');
+            try:
+                abRead = oFile.read(1024*1024*1024, 30*1000);
+            except:
+                fRc = reporter.errorXcpt('read(1GiB,30s)');
+            else:
+                if len(abRead) != min(oTestFile.cbContent, 1024*1024):
+                    fRc = reporter.error('Expected read(1GiB,30s) to return %s bytes, got %s bytes instead'
+                                         % (min(oTestFile.cbContent, 1024*1024), len(abRead),));
 
-                try:
-                    abRead = oFile.readAt(0, 1024*1024*1024, 30*1000);
-                except Exception as oXcpt:
-                    if vbox.ComError.notEqual(oXcpt, vbox.ComError.E_INVALIDARG):
-                        reporter.errorXcpt('readAt(0,1GiB,30s) did not raise E_INVALIDARG as expected!');
-                else:
-                    reporter.error('readAt(0,1GiB,30s) did not fail! len(abRead)=%s' % (len(abRead), ));
+            try:
+                abRead = oFile.readAt(0, 1024*1024*1024, 30*1000);
+            except:
+                fRc = reporter.errorXcpt('readAt(0,1GiB,30s)');
+            else:
+                if len(abRead) != min(oTestFile.cbContent, 1024*1024):
+                    reporter.error('Expected readAt(0, 1GiB,30s) to return %s bytes, got %s bytes instead'
+                                   % (min(oTestFile.cbContent, 1024*1024), len(abRead),));
 
             #
             # Check stat info on the file as well as querySize.
@@ -3757,7 +3808,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                     fRc = reporter.error('%s: seek(0,End) returned incorrect file size: %s, expected %s'
                                          % (oTestFile.sPath, cbFile, oTestFile.cbContent));
             if oTestFile.cbContent > 0:
-                for _ in xrange(12):
+                for _ in xrange(5):
                     offSeek = self.oTestFiles.oRandom.randrange(oTestFile.cbContent + 1);
                     try:
                         offFile = oFile.seek(-offSeek, vboxcon.FileSeekOrigin_End);
@@ -3777,7 +3828,17 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             except:
                 fRc = reporter.errorXcpt('%s: error closing the file' % (oTestFile.sPath,));
 
+        #
+        # Clean up.
+        #
+        for oTestFile in aoExtraFiles:
+            try:
+                oGuestSession.fsObjRemove(sBigPath);
+            except:
+                fRc = reporter.errorXcpt('fsObjRemove(%s)' % (sBigPath,));
+
         fRc = oTest.closeSession(True) and fRc;
+
         return (fRc, oTxsSession);
 
 
