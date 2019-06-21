@@ -99,6 +99,10 @@
         <file alias="cloud_profile_try_32px.png">images/cloud_profile_try_32px.png</file>
         <file alias="cloud_profile_try_disabled_16px.png">images/cloud_profile_try_disabled_16px.png</file>
         <file alias="cloud_profile_try_disabled_32px.png">images/cloud_profile_try_disabled_32px.png</file>
+        <file alias="cloud_vm_new_16px.png">images/cloud_vm_new_16px.png</file>
+        <file alias="cloud_vm_new_32px.png">images/cloud_vm_new_32px.png</file>
+        <file alias="cloud_vm_new_disabled_16px.png">images/cloud_vm_new_disabled_16px.png</file>
+        <file alias="cloud_vm_new_disabled_32px.png">images/cloud_vm_new_disabled_32px.png</file>
         <file alias="collapse_all_16px.png">images/collapse_all_16px.png</file>
         <file alias="connect_16px.png">images/connect_16px.png</file>
         <file alias="connect_on_16px.png">images/connect_on_16px.png</file>

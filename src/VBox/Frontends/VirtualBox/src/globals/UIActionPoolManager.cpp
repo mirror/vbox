@@ -251,8 +251,8 @@ public:
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleSelectorFileShowNewCloudVMWizard(UIActionPool *pParent)
         : UIActionSimple(pParent,
-                         ":/import_32px.png", ":/import_16px.png",
-                         ":/import_disabled_32px.png", ":/import_disabled_16px.png")
+                         ":/cloud_vm_new_32px.png", ":/cloud_vm_new_16px.png",
+                         ":/cloud_vm_new_disabled_32px.png", ":/cloud_vm_new_disabled_16px.png")
     {}
 
 protected:
