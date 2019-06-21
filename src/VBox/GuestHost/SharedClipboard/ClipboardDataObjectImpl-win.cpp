@@ -390,6 +390,8 @@ STDMETHODIMP VBoxClipboardWinDataObject::GetData(LPFORMATETC pFormatEtc, LPSTGME
         case FormatIndex_FileDescriptorW: /* Unicode */
 #endif
         {
+            break;
+#if 0
             const bool fUnicode = lIndex == FormatIndex_FileDescriptorW;
 
             LogFlowFunc(("FormatIndex_FileDescriptor%s\n", fUnicode ? "W" : "A"));
@@ -413,6 +415,7 @@ STDMETHODIMP VBoxClipboardWinDataObject::GetData(LPFORMATETC pFormatEtc, LPSTGME
                     }
                 }
             }
+#endif
             break;
         }
 

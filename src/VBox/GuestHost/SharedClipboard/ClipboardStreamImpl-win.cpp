@@ -187,13 +187,7 @@ STDMETHODIMP VBoxClipboardWinStreamImpl::Read(void *pvBuffer, ULONG nBytesToRead
 
     if (cbToRead)
     {
-        VBOXCLIPBOARDFILEDATA FileData;
-        RT_ZERO(FileData);
-
-        FileData.pvData = pvBuffer;
-        FileData.cbData = cbToRead;
-
-        rc = m_pURITransfer->pProvider->ReadFileData(&FileData, &cbRead);
+        rc = m_pURITransfer->pProvider->ReadFileData(pvBuffer, cbToRead, 0 /* fFlags */, &cbRead);
         if (RT_SUCCESS(rc))
         {
 //            pObj->AddProcessed(cbRead);

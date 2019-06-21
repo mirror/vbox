@@ -315,6 +315,8 @@ static LRESULT vboxClipboardWinProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd,
 
        case VBOX_CLIPBOARD_WM_SET_FORMATS:
        {
+            LogFunc(("VBOX_CLIPBOARD_WM_SET_FORMATS\n"));
+
             /* Announce available formats. Do not insert data -- will be inserted in WM_RENDERFORMAT. */
             VBOXCLIPBOARDFORMATS fFormats = (uint32_t)lParam;
             if (fFormats != VBOX_SHARED_CLIPBOARD_FMT_NONE) /* Could arrive with some older GA versions. */
@@ -329,14 +331,36 @@ static LRESULT vboxClipboardWinProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd,
                     {
                         LogFunc(("VBOX_SHARED_CLIPBOARD_FMT_URI_LIST\n"));
 
-                        SHAREDCLIPBOARDPROVIDERCREATIONCTX providerCtx;
-                        RT_ZERO(providerCtx);
-                        providerCtx.enmSource = SHAREDCLIPBOARDPROVIDERSOURCE_VBGLR3;
-                        providerCtx.u.VbglR3.uClientID = pCtx->u32ClientID;
+                        PSHAREDCLIPBOARDURITRANSFER pTransfer;
+                        rc = SharedClipboardURITransferCreate(SHAREDCLIPBOARDURITRANSFERDIR_READ, &pTransfer);
+                        if (RT_SUCCESS(rc))
+                        {
+                            SHAREDCLIPBOARDURITRANSFERCALLBACKS TransferCallbacks;
+                            RT_ZERO(TransferCallbacks);
 
-                        rc = VBoxClipboardWinURIReadMain(pWinCtx, &pCtx->URI, &providerCtx, fFormats);
+                            TransferCallbacks.pvUser              = &pCtx->URI;
+                            TransferCallbacks.pfnTransferComplete = vboxClipboardOnURITransferComplete;
+                            TransferCallbacks.pfnTransferError    = vboxClipboardOnURITransferError;
 
-                        /* Note: VBoxClipboardWinURIReadMain() takes care of closing the clipboard. */
+                            SharedClipboardURITransferSetCallbacks(pTransfer, &TransferCallbacks);
+
+                            SHAREDCLIPBOARDPROVIDERCREATIONCTX creationCtx;
+                            RT_ZERO(creationCtx);
+                            creationCtx.enmSource = SHAREDCLIPBOARDPROVIDERSOURCE_VBGLR3;
+                            creationCtx.u.VbglR3.uClientID = pCtx->u32ClientID;
+
+                            rc = SharedClipboardURITransferProviderCreate(pTransfer, &creationCtx);
+                            if (RT_SUCCESS(rc))
+                            {
+                                rc = SharedClipboardURICtxTransferAdd(&pCtx->URI, pTransfer);
+                                if (RT_SUCCESS(rc))
+                                    rc = VBoxClipboardWinURIAnnounce(pWinCtx, &pCtx->URI, pTransfer);
+                            }
+
+                            /* Note: VBoxClipboardWinURIAnnounce() takes care of closing the clipboard. */
+
+                            LogFunc(("VBOX_SHARED_CLIPBOARD_FMT_URI_LIST: rc=%Rrc\n", rc));
+                        }
                     }
                     else
                     {
@@ -426,72 +450,59 @@ static LRESULT vboxClipboardWinProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd,
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
                else if (uFormat == VBOX_SHARED_CLIPBOARD_FMT_URI_LIST)
                {
-                   const uint32_t cTransfers = SharedClipboardURICtxGetActiveTransfers(&pCtx->URI);
+                   LogFunc(("VBOX_SHARED_CLIPBOARD_FMT_URI_LIST cTransfers=%RU32\n",
+                            SharedClipboardURICtxGetActiveTransfers(&pCtx->URI)));
 
-                   LogFunc(("VBOX_SHARED_CLIPBOARD_FMT_URI_LIST cTransfers=%RU32\n", cTransfers));
+                    PSHAREDCLIPBOARDURITRANSFER pTransfer;
+                    rc = SharedClipboardURITransferCreate(SHAREDCLIPBOARDURITRANSFERDIR_WRITE, &pTransfer);
+                    if (RT_SUCCESS(rc))
+                    {
+                        SHAREDCLIPBOARDURITRANSFERCALLBACKS TransferCallbacks;
+                        RT_ZERO(TransferCallbacks);
 
-                   if (cTransfers == 0) /* Only allow one transfer at a time for now. */
-                   {
-                       SHAREDCLIPBOARDPROVIDERCREATIONCTX creationCtx;
-                       RT_ZERO(creationCtx);
-                       creationCtx.enmSource = SHAREDCLIPBOARDPROVIDERSOURCE_VBGLR3;
-                       creationCtx.u.VbglR3.uClientID = pCtx->u32ClientID;
+                        TransferCallbacks.pvUser              = &pCtx->URI;
+                        TransferCallbacks.pfnTransferComplete = vboxClipboardOnURITransferComplete;
+                        TransferCallbacks.pfnTransferError    = vboxClipboardOnURITransferError;
 
-                       PSHAREDCLIPBOARDURITRANSFER pTransfer;
-                       rc = SharedClipboardURITransferCreate(SHAREDCLIPBOARDURITRANSFERDIR_WRITE, &creationCtx, &pTransfer);
-                       if (RT_SUCCESS(rc))
-                       {
-                           SHAREDCLIPBOARDURITRANSFERCALLBACKS TransferCallbacks;
-                           RT_ZERO(TransferCallbacks);
+                        SharedClipboardURITransferSetCallbacks(pTransfer, &TransferCallbacks);
 
-                           TransferCallbacks.pvUser              = &pCtx->URI;
-                           TransferCallbacks.pfnTransferComplete = vboxClipboardOnURITransferComplete;
-                           TransferCallbacks.pfnTransferError    = vboxClipboardOnURITransferError;
+                        SHAREDCLIPBOARDPROVIDERCREATIONCTX creationCtx;
+                        RT_ZERO(creationCtx);
+                        creationCtx.enmSource = SHAREDCLIPBOARDPROVIDERSOURCE_VBGLR3;
+                        creationCtx.u.VbglR3.uClientID = pCtx->u32ClientID;
 
-                           SharedClipboardURITransferSetCallbacks(pTransfer, &TransferCallbacks);
-
-                           rc = SharedClipboardURICtxTransferAdd(&pCtx->URI, pTransfer);
-                           if (RT_SUCCESS(rc))
-                           {
-                               /* The data data in CF_HDROP format, as the files are locally present and don't need to be
+                        rc = SharedClipboardURITransferProviderCreate(pTransfer, &creationCtx);
+                        if (RT_SUCCESS(rc))
+                        {
+                            rc = SharedClipboardURICtxTransferAdd(&pCtx->URI, pTransfer);
+                            if (RT_SUCCESS(rc))
+                            {
+                                /* The data data in CF_HDROP format, as the files are locally present and don't need to be
                                 * presented as a IDataObject or IStream. */
-                               hClip = GetClipboardData(CF_HDROP);
-                               if (hClip)
-                               {
-                                   HDROP hDrop = (HDROP)GlobalLock(hClip);
-                                   if (hDrop)
-                                   {
-                                       char *pszList;
-                                       size_t cbList;
-                                       rc = VBoxClipboardWinDropFilesToStringList((DROPFILES *)hDrop, &pszList, &cbList);
-                                       if (RT_SUCCESS(rc))
-                                       {
-                                           rc = SharedClipboardURITransferMetaDataAdd(pTransfer, pszList, (uint32_t)cbList);
-                                           RTMemFree(pszList);
-                                       }
+                                hClip = GetClipboardData(CF_HDROP);
+                                if (hClip)
+                                {
+                                    HDROP hDrop = (HDROP)GlobalLock(hClip);
+                                    if (hDrop)
+                                    {
+                                        rc = VBoxClipboardWinDropFilesToTransfer((DROPFILES *)hDrop, pTransfer);
 
-                                       GlobalUnlock(hClip);
+                                        GlobalUnlock(hClip);
 
-                                       if (RT_SUCCESS(rc))
-                                       {
-                                           rc = SharedClipboardURITransferMetaDataComplete(pTransfer);
-                                           if (RT_SUCCESS(rc))
-                                               rc = SharedClipboardURITransferRun(pTransfer, true /* fAsync */);
-                                       }
-                                   }
-                                   else
-                                   {
-                                       hClip = NULL;
-                                   }
-                               }
-                           }
-                       }
-                   }
-                   else
-                   {
-                       rc = VERR_SHCLPB_MAX_TRANSFERS_REACHED;
-                       LogRel(("Clipboard: Only one transfer at a time supported (current %RU32 transfer(s) active), skipping\n",
-                               cTransfers));
+                                        if (RT_SUCCESS(rc))
+                                        {
+                                            rc = SharedClipboardURITransferPrepare(pTransfer);
+                                            if (RT_SUCCESS(rc))
+                                                rc = SharedClipboardURITransferRun(pTransfer, true /* fAsync */);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        hClip = NULL;
+                                    }
+                                }
+                            }
+                        }
                    }
 
                    if (RT_FAILURE(rc))
@@ -604,7 +615,7 @@ static DECLCALLBACK(void) vboxClipboardOnURITransferComplete(PSHAREDCLIPBOARDURI
 
     LogFlowFunc(("pData=%p, rc=%Rrc\n", pData, rc));
 
-    LogRel(("Shared Clipboard: Transfer to destination complete"));
+    LogRel2(("Shared Clipboard: Transfer to destination complete\n"));
 
     PSHAREDCLIPBOARDURICTX pCtx = (PSHAREDCLIPBOARDURICTX)pData->pvUser;
     AssertPtr(pCtx);

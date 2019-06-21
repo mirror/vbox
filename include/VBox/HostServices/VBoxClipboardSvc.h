@@ -194,20 +194,20 @@ typedef struct _VBoxClipboardDataHdrMsg
      * cbTotal = cbMeta + additional size for files etc.
      */
     HGCMFunctionParameter cbMeta;          /* OUT uint64_t */
-    /** Meta data format. */
-    HGCMFunctionParameter pvMetaFmt;       /* OUT ptr */
     /** Size (in bytes) of meta data format. */
     HGCMFunctionParameter cbMetaFmt;       /* OUT uint32_t */
+    /** Meta data format. */
+    HGCMFunctionParameter pvMetaFmt;       /* OUT ptr */
     /* Number of objects (files/directories) to transfer. */
     HGCMFunctionParameter cObjects;        /* OUT uint64_t */
     /** Compression type. */
     HGCMFunctionParameter enmCompression;  /* OUT uint32_t */
     /** Checksum type. */
     HGCMFunctionParameter enmChecksumType; /* OUT uint32_t */
-    /** Checksum buffer for the entire data to be transferred. */
-    HGCMFunctionParameter pvChecksum;      /* OUT ptr */
     /** Size (in bytes) of checksum. */
     HGCMFunctionParameter cbChecksum;      /* OUT uint32_t */
+    /** Checksum buffer for the entire data to be transferred. */
+    HGCMFunctionParameter pvChecksum;      /* OUT ptr */
 } VBoxClipboardReadDataHdrMsg, VBoxClipboardWriteDataHdrMsg;
 
 #define VBOX_SHARED_CLIPBOARD_CPARMS_READ_DATA_HDR  12
@@ -226,14 +226,14 @@ typedef struct _VBoxClipboardDataChunkMsg
 
     /** Context ID. Unused at the moment. */
     HGCMFunctionParameter uContext;     /* OUT uint32_t */
-    /** Data block to send. */
-    HGCMFunctionParameter pvData;       /* OUT ptr */
     /** Size (in bytes) of data block to send. */
     HGCMFunctionParameter cbData;       /* OUT uint32_t */
-    /** (Rolling) Checksum, based on checksum type in data header. */
-    HGCMFunctionParameter pvChecksum;   /* OUT ptr */
+    /** Data block to send. */
+    HGCMFunctionParameter pvData;       /* OUT ptr */
     /** Size (in bytes) of checksum. */
     HGCMFunctionParameter cbChecksum;   /* OUT uint32_t */
+    /** (Rolling) Checksum, based on checksum type in data header. */
+    HGCMFunctionParameter pvChecksum;   /* OUT ptr */
 } VBoxClipboardReadDataChunkMsg, VBoxClipboardWriteDataChunkMsg;
 
 #define VBOX_SHARED_CLIPBOARD_CPARMS_READ_DATA_CHUNK  5
@@ -252,10 +252,10 @@ typedef struct _VBoxClipboardDirMsg
 
     /** Context ID. Unused at the moment. */
     HGCMFunctionParameter uContext;     /* OUT uint32_t */
-    /** Directory name. */
-    HGCMFunctionParameter pvName;       /* OUT ptr */
     /** Size (in bytes) of directory name. */
     HGCMFunctionParameter cbName;       /* OUT uint32_t */
+    /** Directory name. */
+    HGCMFunctionParameter pvName;       /* OUT ptr */
     /** Directory mode. */
     HGCMFunctionParameter fMode;        /* OUT uint32_t */
 } VBoxClipboardReadDirMsg, VBoxClipboardWriteDirMsg;
@@ -276,10 +276,10 @@ typedef struct _VBoxClipboardFileHdrMsg
 
     /** Context ID. Unused at the moment. */
     HGCMFunctionParameter uContext;     /* OUT uint32_t */
-    /** File path. */
-    HGCMFunctionParameter pvName;       /* OUT ptr */
     /** Size (in bytes) of file path. */
     HGCMFunctionParameter cbName;       /* OUT uint32_t */
+    /** File path. */
+    HGCMFunctionParameter pvName;       /* OUT ptr */
     /** Optional flags; unused at the moment. */
     HGCMFunctionParameter uFlags;       /* OUT uint32_t */
     /** File creation mode. */
@@ -304,15 +304,15 @@ typedef struct _VBoxClipboardFileDataMsg
 
     /** Context ID. Unused at the moment. */
     HGCMFunctionParameter uContext;     /* OUT uint32_t */
-    /** Current data chunk. */
-    HGCMFunctionParameter pvData;       /* OUT ptr */
     /** Size (in bytes) of current data chunk. */
     HGCMFunctionParameter cbData;       /* OUT uint32_t */
+    /** Current data chunk. */
+    HGCMFunctionParameter pvData;       /* OUT ptr */
+    /** Size (in bytes) of current data chunk checksum. */
+    HGCMFunctionParameter cbChecksum;   /* OUT uint32_t */
     /** Checksum of data block, based on the checksum
      *  type in the data header. Optional. */
     HGCMFunctionParameter pvChecksum;   /* OUT ptr */
-    /** Size (in bytes) of curren data chunk checksum. */
-    HGCMFunctionParameter cbChecksum;   /* OUT uint32_t */
 } VBoxClipboardReadFileDataMsg, VBoxClipboardWriteFileDataMsg;
 
 #define VBOX_SHARED_CLIPBOARD_CPARMS_READ_FILE_DATA  5
@@ -368,12 +368,12 @@ typedef struct _VBOXCLIPBOARDDATAHDR
     /** Meta data size (in bytes) to transfer.
      *  This size also is part of cbTotal already. */
     uint32_t                    cbMeta;
-    /** Meta data format.
-     *  Is SHAREDCLIPBOARDMETADATAFMT. */
-    void                       *pvMetaFmt;
     /** Size (in bytes) of meta format buffer.
      *  Is sizeof(SHAREDCLIPBOARDMETADATAFMT). */
     uint32_t                    cbMetaFmt;
+    /** Meta data format.
+     *  Is SHAREDCLIPBOARDMETADATAFMT. */
+    void                       *pvMetaFmt;
     /** Number of objects (files/directories) to transfer. */
     uint64_t                    cObjects;
     /** Compression type. Currently unused, so specify 0.
@@ -381,12 +381,12 @@ typedef struct _VBOXCLIPBOARDDATAHDR
     uint32_t                    enmCompression;
     /** Checksum type. Currently unused, so specify RTDIGESTTYPE_INVALID. */
     RTDIGESTTYPE                enmChecksumType;
+    /** Size (in bytes) of checksum. */
+    uint32_t                    cbChecksum;
     /** The actual checksum buffer for the entire data to be transferred,
      *  based on enmChksumType. If RTDIGESTTYPE_INVALID is specified,
      *  no checksum is being used and pvChecksum will be NULL. */
     void                       *pvChecksum;
-    /** Size (in bytes) of checksum. */
-    uint32_t                    cbChecksum;
 } VBOXCLIPBOARDDATAHDR, *PVBOXCLIPBOARDDATAHDR;
 
 typedef struct _VBOXCLIPBOARDDATACHUNK

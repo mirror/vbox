@@ -49,6 +49,7 @@ int SharedClipboardURIList::appendEntry(const char *pcszSource, const char *pcsz
 {
     AssertPtrReturn(pcszSource, VERR_INVALID_POINTER);
     AssertPtrReturn(pcszTarget, VERR_INVALID_POINTER);
+    AssertReturn(!(fFlags & ~SHAREDCLIPBOARDURILIST_FLAGS_VALID_MASK), VERR_INVALID_FLAGS);
 
     LogFlowFunc(("pcszSource=%s, pcszTarget=%s, fFlags=0x%x\n", pcszSource, pcszTarget, fFlags));
 
@@ -291,26 +292,14 @@ int SharedClipboardURIList::AppendNativePath(const char *pszPath, SHAREDCLIPBOAR
 {
     AssertPtrReturn(pszPath, VERR_INVALID_POINTER);
 
-    int rc;
-    char *pszPathNative = RTStrDup(pszPath);
-    if (pszPathNative)
+    char *pszPathURI;
+    int rc = SharedClipboardMetaDataConvertToFormat(pszPath, strlen(pszPath), SHAREDCLIPBOARDMETADATAFMT_URI_LIST,
+                                                    (void **)&pszPathURI, NULL /* cbData */);
+    if (RT_SUCCESS(rc))
     {
-        RTPathChangeToUnixSlashes(pszPathNative, true /* fForce */);
-
-        char *pszPathURI = RTUriCreate("file" /* pszScheme */, NULL /* pszAuthority */,
-                                       pszPathNative, NULL /* pszQuery */, NULL /* pszFragment */);
-        if (pszPathURI)
-        {
-            rc = AppendURIPath(pszPathURI, fFlags);
-            RTStrFree(pszPathURI);
-        }
-        else
-            rc = VERR_INVALID_PARAMETER;
-
-        RTStrFree(pszPathNative);
+        rc = AppendURIPath(pszPathURI, fFlags);
+        RTStrFree(pszPathURI);
     }
-    else
-        rc = VERR_NO_MEMORY;
 
     return rc;
 }
@@ -492,9 +481,9 @@ void SharedClipboardURIList::RemoveFirst(void)
 
 int SharedClipboardURIList::SetFromURIData(const void *pvData, size_t cbData, SHAREDCLIPBOARDURILISTFLAGS fFlags)
 {
-    Assert(fFlags == 0); RT_NOREF1(fFlags);
     AssertPtrReturn(pvData, VERR_INVALID_POINTER);
     AssertReturn(cbData, VERR_INVALID_PARAMETER);
+    AssertReturn(!(fFlags & ~SHAREDCLIPBOARDURILIST_FLAGS_VALID_MASK), VERR_INVALID_FLAGS);
 
     if (!RTStrIsValidEncoding(static_cast<const char *>(pvData)))
         return VERR_INVALID_PARAMETER;
@@ -533,6 +522,7 @@ int SharedClipboardURIList::SetFromURIData(const void *pvData, size_t cbData, SH
             break;
     }
 
+    LogFlowFuncLeaveRC(rc);
     return rc;
 }
 

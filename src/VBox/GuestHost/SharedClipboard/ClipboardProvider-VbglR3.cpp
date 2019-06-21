@@ -44,11 +44,16 @@ SharedClipboardProviderVbglR3::~SharedClipboardProviderVbglR3(void)
 {
 }
 
-int SharedClipboardProviderVbglR3::ReadDataHdr(PVBOXCLIPBOARDDATAHDR pDataHdr)
+int SharedClipboardProviderVbglR3::ReadDataHdr(PVBOXCLIPBOARDDATAHDR *ppDataHdr)
 {
     LogFlowFuncEnter();
 
-    int rc = VbglR3ClipboardReadDataHdr(m_uClientID, pDataHdr);
+    VBOXCLIPBOARDDATAHDR dataHdr;
+    int rc = VbglR3ClipboardReadDataHdr(m_uClientID, &dataHdr);
+    if (RT_SUCCESS(rc))
+    {
+        *ppDataHdr = SharedClipboardURIDataHdrDup(&dataHdr);
+    }
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -64,8 +69,8 @@ int SharedClipboardProviderVbglR3::WriteDataHdr(const PVBOXCLIPBOARDDATAHDR pDat
     return rc;
 }
 
-int SharedClipboardProviderVbglR3::ReadDataChunkk(const PVBOXCLIPBOARDDATAHDR pDataHdr, void *pvChunk, uint32_t cbChunk,
-                                                  uint32_t *pcbRead, uint32_t fFlags /* = 0 */)
+int SharedClipboardProviderVbglR3::ReadDataChunk(const PVBOXCLIPBOARDDATAHDR pDataHdr, void *pvChunk, uint32_t cbChunk,
+                                                 uint32_t fFlags /* = 0 */, uint32_t *pcbRead /* = NULL */)
 {
     RT_NOREF(fFlags);
 
@@ -99,7 +104,7 @@ int SharedClipboardProviderVbglR3::ReadDataChunkk(const PVBOXCLIPBOARDDATAHDR pD
 }
 
 int SharedClipboardProviderVbglR3::WriteDataChunk(const PVBOXCLIPBOARDDATAHDR pDataHdr, const void *pvChunk, uint32_t cbChunk,
-                                                  uint32_t *pcbWritten, uint32_t fFlags /* = 0 */)
+                                                  uint32_t fFlags /* = 0 */, uint32_t *pcbWritten /* = NULL */)
 {
     RT_NOREF(fFlags);
 
@@ -128,15 +133,20 @@ int SharedClipboardProviderVbglR3::WriteDataChunk(const PVBOXCLIPBOARDDATAHDR pD
             *pcbWritten = cbWrittenTotal;
     }
 
-    LogFlowFuncLeaveRC(rc);
+    LogFlowFunc(("cbWrittenTotal=%RU32, rc=%Rrc\n", cbWrittenTotal, rc));
     return rc;
 }
 
-int SharedClipboardProviderVbglR3::ReadDirectory(PVBOXCLIPBOARDDIRDATA pDirData)
+int SharedClipboardProviderVbglR3::ReadDirectory(PVBOXCLIPBOARDDIRDATA *ppDirData)
 {
     LogFlowFuncEnter();
 
-    int rc = VbglR3ClipboardReadDir(m_uClientID, pDirData->pszPath, pDirData->cbPath, &pDirData->cbPath, &pDirData->fMode);
+    VBOXCLIPBOARDDIRDATA dirData;
+    int rc = VbglR3ClipboardReadDir(m_uClientID, dirData.pszPath, dirData.cbPath, &dirData.cbPath, &dirData.fMode);
+    if (RT_SUCCESS(rc))
+    {
+        *ppDirData = SharedClipboardURIDirDataDup(&dirData);
+    }
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -152,12 +162,18 @@ int SharedClipboardProviderVbglR3::WriteDirectory(const PVBOXCLIPBOARDDIRDATA pD
     return rc;
 }
 
-int SharedClipboardProviderVbglR3::ReadFileHdr(PVBOXCLIPBOARDFILEHDR pFileHdr)
+int SharedClipboardProviderVbglR3::ReadFileHdr(PVBOXCLIPBOARDFILEHDR *ppFileHdr)
 {
     LogFlowFuncEnter();
 
-    int rc = VbglR3ClipboardReadFileHdr(m_uClientID, pFileHdr->pszFilePath, pFileHdr->cbFilePath,
-                                        &pFileHdr->fFlags, &pFileHdr->fMode, &pFileHdr->cbSize);
+    VBOXCLIPBOARDFILEHDR fileHdr;
+    int rc = VbglR3ClipboardReadFileHdr(m_uClientID, fileHdr.pszFilePath, fileHdr.cbFilePath,
+                                        &fileHdr.fFlags, &fileHdr.fMode, &fileHdr.cbSize);
+    if (RT_SUCCESS(rc))
+    {
+        *ppFileHdr = SharedClipboardURIFileHdrDup(&fileHdr);
+    }
+
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
@@ -172,25 +188,31 @@ int SharedClipboardProviderVbglR3::WriteFileHdr(const PVBOXCLIPBOARDFILEHDR pFil
     return rc;
 }
 
-int SharedClipboardProviderVbglR3::ReadFileData(PVBOXCLIPBOARDFILEDATA pFileData, uint32_t *pcbRead)
+int SharedClipboardProviderVbglR3::ReadFileData(void *pvData, uint32_t cbData, uint32_t fFlags /* = 0 */,
+                                                uint32_t *pcbRead /* = NULL */)
 {
+    RT_NOREF(fFlags);
+
     AssertPtrReturn(pcbRead, VERR_INVALID_POINTER);
 
     LogFlowFuncEnter();
 
-    int rc = VbglR3ClipboardReadFileData(m_uClientID, pFileData->pvData, pFileData->cbData, pcbRead);
+    int rc = VbglR3ClipboardReadFileData(m_uClientID, pvData, cbData, pcbRead);
 
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
-int SharedClipboardProviderVbglR3::WriteFileData(const PVBOXCLIPBOARDFILEDATA pFileData, uint32_t *pcbWritten)
+int SharedClipboardProviderVbglR3::WriteFileData(void *pvData, uint32_t cbData, uint32_t fFlags /* = 0 */,
+                                                 uint32_t *pcbWritten /* = NULL */)
 {
+    RT_NOREF(fFlags);
+
     AssertPtrReturn(pcbWritten, VERR_INVALID_POINTER);
 
     LogFlowFuncEnter();
 
-    int rc = VbglR3ClipboardWriteFileData(m_uClientID, pFileData->pvData, pFileData->cbData, pcbWritten);
+    int rc = VbglR3ClipboardWriteFileData(m_uClientID, pvData, cbData, pcbWritten);
 
     LogFlowFuncLeaveRC(rc);
     return rc;

@@ -832,87 +832,70 @@ int VBoxClipboardWinAnnounceFormats(PVBOXCLIPBOARDWINCTX pWinCtx, VBOXCLIPBOARDF
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
 /**
- * Main entry function for reading an URI transfer from a source.
+ * Announces URI data (via IDataObject) to Windows.
+ * This creates the necessary IDataObject + IStream implementations and initiates the actual transfers required for getting
+ * the meta data. Whether or not the actual (file++) transfer(s) are happening is up to the user (at some point) later then.
  *
  * @returns VBox status code.
  * @param   pWinCtx             Windows context to use.
  * @param   pURICtx             URI context to use.
- * @param   pProviderCtx        Provider (creation) context to use.
- * @param   fFormats            Format to handle for the transfer.
+ * @param   pTransfer           URI transfer to use.
  */
-int VBoxClipboardWinURIReadMain(PVBOXCLIPBOARDWINCTX pWinCtx, PSHAREDCLIPBOARDURICTX pURICtx,
-                                PSHAREDCLIPBOARDPROVIDERCREATIONCTX pProviderCtx, VBOXCLIPBOARDFORMATS fFormats)
+int VBoxClipboardWinURIAnnounce(PVBOXCLIPBOARDWINCTX pWinCtx, PSHAREDCLIPBOARDURICTX pURICtx,
+                                PSHAREDCLIPBOARDURITRANSFER pTransfer)
 {
     AssertPtrReturn(pURICtx, VERR_INVALID_POINTER);
-    AssertPtrReturn(pProviderCtx, VERR_INVALID_POINTER);
+    AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
 
-    /* Sanity. */
-    AssertReturn(fFormats & VBOX_SHARED_CLIPBOARD_FMT_URI_LIST, VERR_NOT_SUPPORTED);
+    LogFlowFuncEnter();
 
-    LogFlowFunc(("fFormats=0x%x\n", fFormats));
+    int rc;
 
-    if (SharedClipboardURICtxMaximumTransfersReached(pURICtx))
+    SharedClipboardWinURITransferCtx *pWinURITransferCtx = new SharedClipboardWinURITransferCtx();
+    if (pWinURITransferCtx)
     {
-        LogRel(("Shared Clipboard: Only one transfer at a time supported (current %RU32 transfer(s) active), skipping\n",
-                SharedClipboardURICtxGetActiveTransfers(pURICtx)));
-        return VERR_SHCLPB_MAX_TRANSFERS_REACHED;
-    }
+        pTransfer->pvUser = pWinURITransferCtx;
+        pTransfer->cbUser = sizeof(SharedClipboardWinURITransferCtx);
 
-    /* We want to read from the source. */
-    PSHAREDCLIPBOARDURITRANSFER pTransfer;
-    int rc = SharedClipboardURITransferCreate(SHAREDCLIPBOARDURITRANSFERDIR_READ, pProviderCtx, &pTransfer);
-    if (RT_SUCCESS(rc))
-    {
-        rc = SharedClipboardURICtxTransferAdd(pURICtx, pTransfer);
-        if (RT_SUCCESS(rc))
+        pWinURITransferCtx->pDataObj = new VBoxClipboardWinDataObject(pTransfer);
+        if (pWinURITransferCtx->pDataObj)
         {
-            SharedClipboardWinURITransferCtx *pWinURITransferCtx = new SharedClipboardWinURITransferCtx();
-            if (pWinURITransferCtx)
+            rc = pWinURITransferCtx->pDataObj->Init();
+            if (RT_SUCCESS(rc))
             {
-                pTransfer->pvUser = pWinURITransferCtx;
-                pTransfer->cbUser = sizeof(SharedClipboardWinURITransferCtx);
+                VBoxClipboardWinClose();
+                /* Note: Clipboard must be closed first before calling OleSetClipboard(). */
 
-                pWinURITransferCtx->pDataObj = new VBoxClipboardWinDataObject(pTransfer);
-                if (pWinURITransferCtx->pDataObj)
+                /** @todo There is a potential race between VBoxClipboardWinClose() and OleSetClipboard(),
+                 *        where another application could own the clipboard (open), and thus the call to
+                 *        OleSetClipboard() will fail. Needs (better) fixing. */
+                for (unsigned uTries = 0; uTries < 3; uTries++)
                 {
-                    rc = pWinURITransferCtx->pDataObj->Init();
-                    if (RT_SUCCESS(rc))
+                    HRESULT hr = OleSetClipboard(pWinURITransferCtx->pDataObj);
+                    if (SUCCEEDED(hr))
                     {
-                        VBoxClipboardWinClose();
-                        /* Note: Clipboard must be closed first before calling OleSetClipboard(). */
-
-                        /** @todo There is a potential race between VBoxClipboardWinClose() and OleSetClipboard(),
-                         *        where another application could own the clipboard (open), and thus the call to
-                         *        OleSetClipboard() will fail. Needs (better) fixing. */
-                        for (unsigned uTries = 0; uTries < 3; uTries++)
-                        {
-                            HRESULT hr = OleSetClipboard(pWinURITransferCtx->pDataObj);
-                            if (SUCCEEDED(hr))
-                            {
-                                /*
-                                 * Calling OleSetClipboard() changed the clipboard owner, which in turn will let us receive
-                                 * a WM_CLIPBOARDUPDATE message. To not confuse ourselves with our own clipboard owner changes,
-                                 * save a new window handle and deal with it in WM_CLIPBOARDUPDATE.
-                                 */
-                                pWinCtx->hWndClipboardOwnerUs = GetClipboardOwner();
-                                break;
-                            }
-                            else
-                            {
-                                rc = VERR_ACCESS_DENIED; /** @todo Fudge; fix this. */
-                                LogRel(("Shared Clipboard: Failed with %Rhrc when setting data object to clipboard\n", hr));
-                                RTThreadSleep(100); /* Wait a bit. */
-                            }
-                        }
+                        /*
+                         * Calling OleSetClipboard() changed the clipboard owner, which in turn will let us receive
+                         * a WM_CLIPBOARDUPDATE message. To not confuse ourselves with our own clipboard owner changes,
+                         * save a new window handle and deal with it in WM_CLIPBOARDUPDATE.
+                         */
+                        pWinCtx->hWndClipboardOwnerUs = GetClipboardOwner();
+                        break;
+                    }
+                    else
+                    {
+                        rc = VERR_ACCESS_DENIED; /** @todo Fudge; fix this. */
+                        LogRel(("Shared Clipboard: Failed with %Rhrc when setting data object to clipboard\n", hr));
+                        RTThreadSleep(100); /* Wait a bit. */
                     }
                 }
-                else
-                    rc = VERR_NO_MEMORY;
             }
-            else
-                rc = VERR_NO_MEMORY;
         }
+        else
+            rc = VERR_NO_MEMORY;
     }
+    else
+        rc = VERR_NO_MEMORY;
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -924,15 +907,12 @@ int VBoxClipboardWinURIReadMain(PVBOXCLIPBOARDWINCTX pWinCtx, PSHAREDCLIPBOARDUR
  *
  * @returns VBox status code.
  * @param   pDropFiles          Pointer to DROPFILES structure to convert.
- * @param   ppszData            Where to return the converted (allocated) data on success.
- *                              Must be free'd by the caller with RTMemFree().
- * @param   pcbData             Size (in bytes) of the allocated data returned.
+ * @param   pTransfer           Transfer where to add the string list to.
  */
-int VBoxClipboardWinDropFilesToStringList(DROPFILES *pDropFiles, char **ppszbData, size_t *pcbData)
+int VBoxClipboardWinDropFilesToTransfer(DROPFILES *pDropFiles, PSHAREDCLIPBOARDURITRANSFER pTransfer)
 {
     AssertPtrReturn(pDropFiles, VERR_INVALID_POINTER);
-    AssertPtrReturn(ppszbData,  VERR_INVALID_POINTER);
-    AssertPtrReturn(pcbData,    VERR_INVALID_POINTER);
+    AssertPtrReturn(pTransfer,  VERR_INVALID_POINTER);
 
     /* Do we need to do Unicode stuff? */
     const bool fUnicode = RT_BOOL(pDropFiles->fWide);
@@ -1011,18 +991,30 @@ int VBoxClipboardWinDropFilesToStringList(DROPFILES *pDropFiles, char **ppszbDat
 
             LogRel(("Shared Clipboard: Adding guest file '%s'\n", pszFileUtf8));
 
-            rc = RTStrAAppendExN(&pszFiles, 1 /* cPairs */, pszFileUtf8, cchFileUtf8);
+            char    *pszFileURI;
+            uint32_t cchFileURI;
+            rc = SharedClipboardMetaDataConvertToFormat(pszFileUtf8, strlen(pszFileUtf8), SHAREDCLIPBOARDMETADATAFMT_URI_LIST,
+                                                        (void **)&pszFileURI, &cchFileURI);
             if (RT_SUCCESS(rc))
-                cchFiles += cchFileUtf8;
+            {
+                LogFlowFunc(("\tURI is: %s (%RU32)\n", pszFileURI, cchFileURI));
+
+                rc = RTStrAAppendExN(&pszFiles, 1 /* cPairs */, pszFileURI, cchFileURI);
+                if (RT_SUCCESS(rc))
+                    cchFiles += cchFileURI;
+
+                RTStrFree(pszFileURI);
+            }
         }
-        else
-            LogFunc(("Error handling file entry #%u, rc=%Rrc\n", i, rc));
 
         if (pszFileUtf8)
             RTStrFree(pszFileUtf8);
 
         if (RT_FAILURE(rc))
+        {
+            LogFunc(("Error handling file entry #%u, rc=%Rrc\n", i, rc));
             break;
+        }
 
         /* Add separation between filenames.
          * Note: Also do this for the last element of the list. */
@@ -1034,31 +1026,12 @@ int VBoxClipboardWinDropFilesToStringList(DROPFILES *pDropFiles, char **ppszbDat
     if (RT_SUCCESS(rc))
     {
         cchFiles += 1; /* Add string termination. */
-        uint32_t cbFiles = cchFiles * sizeof(char);
+        uint32_t cbFiles = cchFiles * sizeof(char); /* UTF-8. */
 
         LogFlowFunc(("cFiles=%u, cchFiles=%RU32, cbFiles=%RU32, pszFiles=0x%p\n",
                      cFiles, cchFiles, cbFiles, pszFiles));
 
-        /* Translate the list into URI elements. */
-        SharedClipboardURIList lstURI;
-        rc = lstURI.AppendNativePathsFromList(pszFiles, cbFiles,
-                                              SHAREDCLIPBOARDURILIST_FLAGS_ABSOLUTE_PATHS);
-        if (RT_SUCCESS(rc))
-        {
-            RTCString strRoot = lstURI.GetRootEntries();
-            size_t cbRoot = strRoot.length() + 1; /* Include termination */
-
-            void *pvData = RTMemAlloc(cbRoot);
-            if (pvData)
-            {
-                memcpy(pvData, strRoot.c_str(), cbRoot);
-
-                *ppszbData = (char *)pvData;
-                *pcbData   = cbRoot;
-            }
-            else
-                rc = VERR_NO_MEMORY;
-        }
+        rc = SharedClipboardURITransferMetaDataAdd(pTransfer, pszFiles, cbFiles);
     }
 
     LogFlowFunc(("Building CF_HDROP list rc=%Rrc, pszFiles=0x%p, cFiles=%RU16, cchFiles=%RU32\n",

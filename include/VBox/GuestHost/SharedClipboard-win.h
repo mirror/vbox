@@ -121,7 +121,7 @@ VBOXCLIPBOARDFORMAT VBoxClipboardWinClipboardFormatToVBox(UINT uFormat);
 int VBoxClipboardWinGetFormats(PVBOXCLIPBOARDWINCTX pCtx, PVBOXCLIPBOARDFORMAT pfFormats);
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
-int VBoxClipboardWinDropFilesToStringList(DROPFILES *pDropFiles, char **ppszData, size_t *pcbData);
+int VBoxClipboardWinDropFilesToTransfer(DROPFILES *pDropFiles, PSHAREDCLIPBOARDURITRANSFER pTransfer);
 #endif
 
 int VBoxClipboardWinGetCFHTMLHeaderValue(const char *pszSrc, const char *pszOption, uint32_t *puValue);
@@ -136,8 +136,8 @@ int VBoxClipboardWinHandleWMTimer(PVBOXCLIPBOARDWINCTX pWinCtx);
 
 int VBoxClipboardWinAnnounceFormats(PVBOXCLIPBOARDWINCTX pWinCtx, VBOXCLIPBOARDFORMATS fFormats);
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
-int VBoxClipboardWinURIReadMain(PVBOXCLIPBOARDWINCTX pWinCtx, PSHAREDCLIPBOARDURICTX pURICtx,
-                                PSHAREDCLIPBOARDPROVIDERCREATIONCTX pProviderCtx, VBOXCLIPBOARDFORMATS fFormats);
+int VBoxClipboardWinURIAnnounce(PVBOXCLIPBOARDWINCTX pWinCtx, PSHAREDCLIPBOARDURICTX pURICtx,
+                                PSHAREDCLIPBOARDURITRANSFER pTransfer);
 #endif
 
 # ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST

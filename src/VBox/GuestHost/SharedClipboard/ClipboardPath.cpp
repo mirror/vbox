@@ -73,8 +73,10 @@ int SharedClipboardPathSanitizeFilename(char *pszPath, size_t cbPath)
  */
 int SharedClipboardPathSanitize(char *pszPath, size_t cbPath)
 {
-    /** @todo */
     RT_NOREF(pszPath, cbPath);
+
+    /** @todo */
+
     return VINF_SUCCESS;
 }
 

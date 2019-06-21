@@ -22,16 +22,21 @@
 #define LOG_GROUP LOG_GROUP_SHARED_CLIPBOARD
 #include <VBox/GuestHost/SharedClipboard-uri.h>
 
+#include <iprt/path.h>
+#include <iprt/uri.h>
+
 /**
  * Initializes a clipboard meta data struct.
  *
  * @returns VBox status code.
  * @param   pMeta               Meta data struct to initialize.
+ * @param   enmFmt              Meta data format to use.
  */
-int SharedClipboardMetaDataInit(PSHAREDCLIPBOARDMETADATA pMeta)
+int SharedClipboardMetaDataInit(PSHAREDCLIPBOARDMETADATA pMeta, SHAREDCLIPBOARDMETADATAFMT enmFmt)
 {
     AssertPtrReturn(pMeta, VERR_INVALID_POINTER);
 
+    pMeta->enmFmt = enmFmt;
     pMeta->pvMeta = NULL;
     pMeta->cbMeta = 0;
     pMeta->cbUsed = 0;
@@ -46,8 +51,6 @@ int SharedClipboardMetaDataInit(PSHAREDCLIPBOARDMETADATA pMeta)
  */
 void SharedClipboardMetaDataDestroy(PSHAREDCLIPBOARDMETADATA pMeta)
 {
-    AssertPtrReturnVoid(pMeta);
-
     if (!pMeta)
         return;
 
@@ -93,6 +96,67 @@ int SharedClipboardMetaDataAdd(PSHAREDCLIPBOARDMETADATA pMeta, const void *pvDat
 }
 
 /**
+ * Converts data to a specific meta data format.
+ *
+ * @returns VBox status code. VERR_NOT_SUPPORTED if the format is unknown.
+ * @param   pvData              Pointer to data to convert.
+ * @param   cbData              Size (in bytes) of data to convert.
+ * @param   enmFmt              Meta data format to convert data to.
+ * @param   ppvData             Where to store the converted data on success. Caller must free the data accordingly.
+ * @param   pcbData             Where to store the size (in bytes) of the converted data. Optional.
+ */
+int SharedClipboardMetaDataConvertToFormat(const void *pvData, size_t cbData, SHAREDCLIPBOARDMETADATAFMT enmFmt,
+                                           void **ppvData, uint32_t *pcbData)
+{
+    AssertPtrReturn(pvData,  VERR_INVALID_POINTER);
+    AssertReturn   (cbData,  VERR_INVALID_PARAMETER);
+    AssertPtrReturn(ppvData, VERR_INVALID_POINTER);
+
+    /* pcbData is optional. */
+
+    RT_NOREF(cbData);
+
+    int rc = VERR_INVALID_PARAMETER;
+
+    switch (enmFmt)
+    {
+        case SHAREDCLIPBOARDMETADATAFMT_URI_LIST:
+        {
+            char *pszTmp = RTStrDup((char *)pvData);
+            if (!pszTmp)
+            {
+                rc = VERR_NO_MEMORY;
+                break;
+            }
+
+            RTPathChangeToUnixSlashes(pszTmp, true /* fForce */);
+
+            char  *pszURI;
+            rc = RTUriFileCreateEx(pszTmp, RTPATH_STR_F_STYLE_UNIX, &pszURI, 0 /*cbUri*/, NULL /* pcchUri */);
+            if (RT_SUCCESS(rc))
+            {
+                *ppvData = pszURI;
+                if (pcbData)
+                    *pcbData = (uint32_t)strlen(pszURI);
+
+                rc = VINF_SUCCESS;
+            }
+
+            RTStrFree(pszTmp);
+            break;
+        }
+
+        default:
+            rc = VERR_NOT_SUPPORTED;
+            AssertFailed();
+            break;
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+/**
  * Resizes the data buffer of a meta data struct.
  * Note: At the moment only supports growing the data buffer.
  *
@@ -126,7 +190,6 @@ int SharedClipboardMetaDataResize(PSHAREDCLIPBOARDMETADATA pMeta, uint32_t cbNew
     {
         AssertPtr(pMeta->pvMeta);
         pvTmp = RTMemRealloc(pMeta->pvMeta, cbNewSize);
-        RT_BZERO(pvTmp, cbNewSize);
     }
 
     if (pvTmp)

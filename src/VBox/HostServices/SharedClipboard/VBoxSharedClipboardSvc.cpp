@@ -569,18 +569,22 @@ static DECLCALLBACK(void) svcCall(void *,
                         {
                             if (!SharedClipboardURICtxMaximumTransfersReached(&pClientData->URI))
                             {
-                                SHAREDCLIPBOARDPROVIDERCREATIONCTX creationCtx;
-                                RT_ZERO(creationCtx);
-                                creationCtx.enmSource = SHAREDCLIPBOARDPROVIDERSOURCE_HOSTSERVICE;
-
                                 PSHAREDCLIPBOARDURITRANSFER pTransfer;
-                                rc = SharedClipboardURITransferCreate(SHAREDCLIPBOARDURITRANSFERDIR_READ,
-                                                                      &creationCtx, &pTransfer);
+                                rc = SharedClipboardURITransferCreate(SHAREDCLIPBOARDURITRANSFERDIR_READ, &pTransfer);
                                 if (RT_SUCCESS(rc))
                                 {
-                                    rc = SharedClipboardURICtxTransferAdd(&pClientData->URI, pTransfer);
+                                    rc = vboxSvcClipboardURIAreaRegister(&pClientData->State, pTransfer);
                                     if (RT_SUCCESS(rc))
-                                        rc = vboxSvcClipboardURIAreaRegister(&pClientData->State, pTransfer);
+                                    {
+                                        SHAREDCLIPBOARDPROVIDERCREATIONCTX creationCtx;
+                                        RT_ZERO(creationCtx);
+                                        creationCtx.enmSource = SHAREDCLIPBOARDPROVIDERSOURCE_HOSTSERVICE;
+                                        creationCtx.u.HostService.pArea = pTransfer->pArea;
+
+                                        rc = SharedClipboardURITransferProviderCreate(pTransfer, &creationCtx);
+                                        if (RT_SUCCESS(rc))
+                                            rc = SharedClipboardURICtxTransferAdd(&pClientData->URI, pTransfer);
+                                    }
                                 }
                             }
                             else
@@ -726,11 +730,10 @@ static DECLCALLBACK(void) svcCall(void *,
                 uint32_t u32Format;
 
                 rc = HGCMSvcGetU32(&paParms[0], &u32Format);
-                if (RT_SUCCESS (rc))
+                if (RT_SUCCESS(rc))
                 {
                     rc = VBoxHGCMParmPtrGet(&paParms[1], &pv, &cb);
-
-                    if (RT_SUCCESS (rc))
+                    if (RT_SUCCESS(rc))
                     {
                         if (   vboxSvcClipboardGetMode() != VBOX_SHARED_CLIPBOARD_MODE_GUEST_TO_HOST
                             && vboxSvcClipboardGetMode() != VBOX_SHARED_CLIPBOARD_MODE_BIDIRECTIONAL)

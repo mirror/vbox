@@ -153,15 +153,16 @@ static bool s_fReqHdr = false;
 
 bool vboxSvcClipboardURIReturnMsg(PVBOXCLIPBOARDCLIENTDATA pClientData, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
-    RT_NOREF(cParms);
+    RT_NOREF(pClientData, cParms, paParms);
 
     bool fHandled = false;
 
+#if 0
     PSHAREDCLIPBOARDURITRANSFER pTransfer = SharedClipboardURICtxGetTransfer(&pClientData->URI, 0 /* Index */);
     if (pTransfer)
     {
         if (   !s_fReqHdr
-            && pTransfer->State.Header.cObjects == 0) /** @todo For now we ASSUME that a header has been received when cObject > 0. */
+            && !pTransfer->State.pHeader)
         {
             LogFlowFunc(("VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA\n"));
 
@@ -175,6 +176,7 @@ bool vboxSvcClipboardURIReturnMsg(PVBOXCLIPBOARDCLIENTDATA pClientData, uint32_t
         {
         }
     }
+#endif
 
     LogFlowFunc(("fHandled=%RTbool\n", fHandled));
     return fHandled;
