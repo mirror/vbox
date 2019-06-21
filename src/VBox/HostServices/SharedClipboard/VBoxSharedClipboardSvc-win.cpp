@@ -697,7 +697,7 @@ int VBoxClipboardSvcImplReadData(PVBOXCLIPBOARDCLIENTDATA pClientData, uint32_t 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
         else if (u32Format & VBOX_SHARED_CLIPBOARD_FMT_URI_LIST)
         {
-            AssertFailed(); /* @todo */
+            AssertFailed(); /** @todo */
         }
 #endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
         VBoxClipboardWinClose();
