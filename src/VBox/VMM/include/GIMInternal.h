@@ -94,8 +94,8 @@ typedef struct GIMCPU
 typedef GIMCPU *PGIMCPU;
 
 /**
- * Callback when a debug buffer read has completed and before signaling
- * the next read.
+ * Callback when a debug buffer read has completed and before signalling the next
+ * read.
  *
  * @param   pVM             The cross context VM structure.
  */

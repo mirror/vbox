@@ -461,7 +461,7 @@ VMMR3DECL(int) GIMR3GetDebugSetup(PVM pVM, PGIMDEBUGSETUP pDbgSetup)
  * @param   pcbRead             The size of the read buffer as well as where to store
  *                              the number of bytes read.
  * @param   pfnReadComplete     Callback when the buffer has been read and
- *                              before signaling reading of the next buffer.
+ *                              before signalling reading of the next buffer.
  *                              Optional, can be NULL.
  * @thread  EMT.
  */

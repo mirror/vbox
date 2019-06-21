@@ -2497,7 +2497,7 @@ bool emR3IsExecutionAllowed(PVM pVM, PVMCPU pVCpu)
  * suspended (state already saved) and deconstruction is next in line.
  *
  * All interaction from other thread are done using forced actions
- * and signaling of the wait object.
+ * and signalling of the wait object.
  *
  * @returns VBox status code, informational status codes may indicate failure.
  * @param   pVM         The cross context VM structure.

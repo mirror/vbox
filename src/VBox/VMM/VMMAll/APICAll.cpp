@@ -522,7 +522,7 @@ static void apicSignalNextPendingIntr(PVMCPU pVCpu)
             if (   !uPpr
                 ||  XAPIC_PPR_GET_PP(uVector) > XAPIC_PPR_GET_PP(uPpr))
             {
-                Log2(("APIC%u: apicSignalNextPendingIntr: Signaling pending interrupt. uVector=%#x\n", pVCpu->idCpu, uVector));
+                Log2(("APIC%u: apicSignalNextPendingIntr: Signalling pending interrupt. uVector=%#x\n", pVCpu->idCpu, uVector));
                 apicSetInterruptFF(pVCpu, PDMAPICIRQ_HARDWARE);
             }
             else
@@ -1540,7 +1540,7 @@ static VBOXSTRICTRC apicSetLvtEntry(PVMCPU pVCpu, uint16_t offLvt, uint32_t uLvt
 
     /*
      * It is unclear whether we should signal a 'send illegal vector' error here and ignore updating
-     * the LVT entry when the delivery mode is 'fixed'[1] or update it in addition to signaling the
+     * the LVT entry when the delivery mode is 'fixed'[1] or update it in addition to signalling the
      * error or not signal the error at all. For now, we'll allow setting illegal vectors into the LVT
      * but set the 'send illegal vector' error here. The 'receive illegal vector' error will be set if
      * the interrupt for the vector happens to be generated, see apicPostInterrupt().
