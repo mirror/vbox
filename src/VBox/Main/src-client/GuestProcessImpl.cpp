@@ -1341,12 +1341,12 @@ ProcessWaitResult_T GuestProcess::i_waitFlagsToResultEx(uint32_t fWaitFlags,
 
     if (newStatus == ProcessStatus_Started)
     {
-        /**
+        /*
          * Filter out waits which are *not* supported using
          * older guest control Guest Additions.
          *
-         ** @todo ProcessWaitForFlag_Std* flags are not implemented yet.
          */
+        /** @todo ProcessWaitForFlag_Std* flags are not implemented yet. */
         if (uProtocol < 99) /* See @todo above. */
         {
             if (   waitResult == ProcessWaitResult_None
@@ -1656,6 +1656,7 @@ int GuestProcess::i_waitForStatusChange(GuestWaitEvent *pEvent, uint32_t uTimeou
     return vrc;
 }
 
+#if 0 /* Unused */
 /* static */
 bool GuestProcess::i_waitResultImpliesEx(ProcessWaitResult_T waitResult, ProcessStatus_T procStatus, uint32_t uProtocol)
 {
@@ -1686,6 +1687,7 @@ bool GuestProcess::i_waitResultImpliesEx(ProcessWaitResult_T waitResult, Process
 
     return fImplies;
 }
+#endif /* unused */
 
 int GuestProcess::i_writeData(uint32_t uHandle, uint32_t uFlags,
                               void *pvData, size_t cbData, uint32_t uTimeoutMS, uint32_t *puWritten, int *prcGuest)
