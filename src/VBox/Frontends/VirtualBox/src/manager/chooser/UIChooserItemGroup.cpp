@@ -998,6 +998,8 @@ void UIChooserItemGroup::sltGroupToggleFinish(bool fToggled)
     model()->updateLayout();
     /* Update toggle-button tool-tip: */
     updateToggleButtonToolTip();
+    /* Repaint finally: */
+    update();
 
     /* Toggle finished: */
     emit sigToggleFinished();
