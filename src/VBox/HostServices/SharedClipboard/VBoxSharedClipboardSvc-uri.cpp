@@ -292,7 +292,7 @@ int vboxSvcClipboardURIHandler(uint32_t u32ClientID,
         return VERR_WRONG_ORDER;
     }
 
-    bool fDispatchToProvider = false; /* Whether to (also) dispatch the HCGCM data to the transfer provider. */
+    bool fDispatchToProvider = false; /* Whether to (also) dispatch the HGCM data to the transfer provider. */
 
     int rc = VERR_INVALID_PARAMETER; /* Play safe. */
 
@@ -464,8 +464,6 @@ int vboxSvcClipboardURIHandler(uint32_t u32ClientID,
                 AssertPtrBreakStmt(pArea, rc = VERR_WRONG_ORDER);
 
                 const char *pszCacheDir = pArea->GetDirAbs();
-
-    RT_BREAKPOINT();
 
                 char pszPathAbs[RTPATH_MAX];
                 rc = RTPathJoin(pszPathAbs, sizeof(pszPathAbs), pszCacheDir, fileHdr.pszFilePath);
