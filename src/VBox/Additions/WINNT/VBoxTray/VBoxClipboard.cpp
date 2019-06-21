@@ -28,7 +28,7 @@
 #include <iprt/asm.h>
 #include <iprt/ldr.h>
 
-#include <VBox/err.h>
+#include <iprt/errcore.h>
 
 #include <VBox/GuestHost/SharedClipboard.h>
 #include <VBox/GuestHost/SharedClipboard-win.h>
