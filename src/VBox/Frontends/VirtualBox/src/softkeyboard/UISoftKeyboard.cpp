@@ -1354,7 +1354,6 @@ void UISoftKeyboardKey::updateState(bool fPressed)
 
 void UISoftKeyboardKey::updateText()
 {
-
     QPainter painter(&m_textPixmap);
     painter.setPen(QColor(0,0,0));
     painter.setRenderHint(QPainter::Antialiasing);
@@ -1364,7 +1363,7 @@ void UISoftKeyboardKey::updateText()
     painterFont.setBold(true);
     painter.setFont(painterFont);
     QFontMetrics fontMetric = painter.fontMetrics();
-    int iSideMargin = 1 * fontMetric.width('X');
+    int iSideMargin = 0.5 * fontMetric.width('X');
 
     int iX = 0;
     int iY = fontMetric.height();
@@ -2093,6 +2092,8 @@ void UISoftKeyboardWidget::prepareObjects()
     m_pShowPositionsAction = m_pContextMenu->addAction(UISoftKeyboard::tr("Show key positions instead of key caps"));
     m_pShowPositionsAction->setCheckable(true);
     m_pShowPositionsAction->setChecked(false);
+#else
+    Q_UNUSED(m_pShowPositionsAction);
 #endif
 
     setMouseTracking(true);
