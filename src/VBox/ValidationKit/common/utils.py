@@ -2090,8 +2090,17 @@ def areBytesEqual(oLeft, oRight):
         #print('string compare: %s' % (oLeft == oRight,));
         return oLeft == oRight;
 
-    # Convert strings to byte arrays:
+    #
+    # See if byte/buffer stuff that can be compared directory. If not convert
+    # strings to bytes.
+    #
+    # Note! For 2.x, we must convert both sides to the buffer type or the
+    #       comparison may fail despite it working okay in test cases.
+    #
     if sys.version_info[0] >= 3:
+        if isinstance(oLeft, (bytearray, memoryview, bytes)) and isinstance(oRight, (bytearray, memoryview, bytes)):  # pylint: disable=undefined-variable
+            return oLeft == oRight;
+
         if isString(oLeft):
             try:    oLeft = bytes(oLeft, 'utf-8');
             except: pass;
@@ -2099,6 +2108,14 @@ def areBytesEqual(oLeft, oRight):
             try:    oRight = bytes(oRight, 'utf-8');
             except: pass;
     else:
+        if isinstance(oLeft, (bytearray, buffer)) and isinstance(oRight, (bytearray, buffer)): # pylint: disable=undefined-variable
+            if isinstance(oLeft, bytearray):
+                oLeft  = buffer(oLeft);                     # pylint: disable=redefined-variable-type,undefined-variable
+            else:
+                oRight = buffer(oRight);                    # pylint: disable=redefined-variable-type,undefined-variable
+            #print('buf/byte #1 compare: %s (%s vs %s)' % (oLeft == oRight, type(oLeft), type(oRight),));
+            return oLeft == oRight;
+
         if isString(oLeft):
             try:    oLeft = bytearray(oLeft, 'utf-8');      # pylint: disable=redefined-variable-type
             except: pass;
@@ -2110,6 +2127,19 @@ def areBytesEqual(oLeft, oRight):
     if type(oLeft) is type(oRight):
         #print('same type now: %s' % (oLeft == oRight,));
         return oLeft == oRight;
+
+    # Check if we now have buffer/memoryview vs bytes/bytesarray again.
+    if sys.version_info[0] >= 3:
+        if isinstance(oLeft, (bytearray, memoryview, bytes)) and isinstance(oRight, (bytearray, memoryview, bytes)):  # pylint: disable=undefined-variable
+            return oLeft == oRight;
+    else:
+        if isinstance(oLeft, (bytearray, buffer)) and isinstance(oRight, (bytearray, buffer)): # pylint: disable=undefined-variable
+            if isinstance(oLeft, bytearray):
+                oLeft  = buffer(oLeft);                     # pylint: disable=redefined-variable-type,undefined-variable
+            else:
+                oRight = buffer(oRight);                    # pylint: disable=redefined-variable-type,undefined-variable
+            #print('buf/byte #2 compare: %s (%s vs %s)' % (oLeft == oRight, type(oLeft), type(oRight),));
+            return oLeft == oRight;
 
     # Do item by item comparison:
     if len(oLeft) != len(oRight):
@@ -2185,9 +2215,13 @@ class BuildCategoryDataTestCase(unittest.TestCase):
             pass;
         else:
             self.assertEqual(areBytesEqual(buffer(bytearray([0x30,0x31,0x32,0x33,0x34]), 1),
-                                           bytearray([0x31,0x32,0x32,0x34])), False);
+                                                       bytearray([0x31,0x32,0x33,0x34])), True);
             self.assertEqual(areBytesEqual(buffer(bytearray([0x30,0x31,0x32,0x33,0x34]), 1),
-                                           buffer(bytearray([0x31,0x32,0x33,0x34,0x34]), 0, 4)), True);
+                                                       bytearray([0x99,0x32,0x32,0x34])), False);
+            self.assertEqual(areBytesEqual(buffer(bytearray([0x30,0x31,0x32,0x33,0x34]), 1),
+                                                buffer(bytearray([0x31,0x32,0x33,0x34,0x34]), 0, 4)), True);
+            self.assertEqual(areBytesEqual(buffer(bytearray([0x30,0x31,0x32,0x33,0x34]), 1),
+                                                buffer(bytearray([0x99,0x32,0x33,0x34,0x34]), 0, 4)), False);
             self.assertEqual(areBytesEqual(buffer(bytearray([0x30,0x31,0x32,0x33,0x34]), 1), b'1234'), True);
             self.assertEqual(areBytesEqual(buffer(bytearray([0x30,0x31,0x32,0x33,0x34]), 1),  '1234'), True);
             self.assertEqual(areBytesEqual(buffer(bytearray([0x30,0x31,0x32,0x33,0x34]), 1), u'1234'), True);
