@@ -67,6 +67,62 @@
  *                                      platform-specific backend
  *
  * This section may be written in the future :)
+ *
+ * @section sec_uri_intro               Transferring files.
+ *
+ * Since VBox x.x.x transferring files via Shared Clipboard is supported.
+ * See the VBOX_WITH_SHARED_CLIPBOARD_URI_LIST define for supported / enabled
+ * platforms.
+ *
+ * Copying files / directories from guest A to guest B requires the host
+ * service to act as a proxy and cache, as we don't allow direct VM-to-VM
+ * communication. Copying from / to the host also is taken into account.
+ *
+ * Support for VRDE (VRDP) is not implemented yet (see #9498).
+ *
+ * @section sec_uri_areas               Clipboard areas.
+ *
+ * For larger / longer transfers there might be file data
+ * temporarily cached on the host, which has not been transferred to the
+ * destination yet. Such a cache is called a "Shared Clipboard Area", which
+ * in turn is identified by a unique ID across all VMs running on the same
+ * host. To control the access (and needed cleanup) of such clipboard areas,
+ * VBoxSVC (Main) is used for this task. A Shared Clipboard client can register,
+ * unregister, attach to and detach from a clipboard area. If all references
+ * to a clipboard area are released, a clipboard area gets detroyed automatically
+ * by VBoxSVC.
+ *
+ * By default a clipboard area lives in the user's temporary directory in the
+ * sub folder "VirtualBox Shared Clipboards/clipboard-<ID>". VBoxSVC does not
+ * do any file locking in a clipboard area, but keeps the clipboard areas's
+ * directory open to prevent deletion by third party processes.
+ *
+ * @section sec_uri_structure           URI handling structure.
+ *
+ * All structures / classes are designed for running on both, on the guest
+ * (via VBoxTray / VBoxClient) or on the host (host service) to avoid code
+ * duplication where applicable.
+ *
+ * Per HGCM client there is a so-called "URI context", which in turn can have
+ * one or mulitple so-called "URI transfer" objects. At the moment we only support
+ * on concurrent URI transfer per URI context. It's being used for reading from a
+ * source or writing to destination, depening on its direction. An URI transfer
+ * can have optional callbacks which might be needed by various implementations.
+ * Also, transfers optionally can run in an asynchronous thread to prevent
+ * blocking the UI while running.
+ *
+ * An URI transfer can maintain its own clipboard area; for the host service such
+ * a clipboard area is coupled to a clipboard area registered or attached with
+ * VBoxSVC.
+ *
+ * @section sec_uri_providers           URI providers.
+ *
+ * For certain implementations (for example on Windows guests / hosts, using
+ * IDataObject and IStream objects) a more flexible approach reqarding reading /
+ * writing is needed. For this so-called URI providers abstract the way of how
+ * data is being read / written in the current context (host / guest), while
+ * the rest of the code stays the same.
+ *
  */
 
 
