@@ -40,6 +40,7 @@
 
 #include <VBox/com/array.h>
 #include <VBox/com/listeners.h>
+#include <VBox/AssertGuest.h>
 
 
 /**
@@ -582,6 +583,19 @@ int GuestFile::i_onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOST
             }
             break;
         }
+
+        case GUEST_FILE_NOTIFYTYPE_SET_SIZE:
+            ASSERT_GUEST_MSG_STMT_BREAK(pSvcCbData->mParms == 4, ("mParms=%u\n", pSvcCbData->mParms),
+                                        rc = VERR_WRONG_PARAMETER_COUNT);
+            ASSERT_GUEST_MSG_STMT_BREAK(pSvcCbData->mpaParms[idx].type == VBOX_HGCM_SVC_PARM_64BIT,
+                                        ("type=%u\n", pSvcCbData->mpaParms[idx].type),
+                                        rc = VERR_WRONG_PARAMETER_TYPE);
+            dataCb.u.SetSize.cbSize = pSvcCbData->mpaParms[idx].u.uint64;
+            Log3ThisFunc(("cbSize=%RU64\n", dataCb.u.SetSize.cbSize));
+
+            fireGuestFileSizeChangedEvent(mEventSource, mSession, this, dataCb.u.SetSize.cbSize);
+            rc = VINF_SUCCESS;
+            break;
 
         default:
             break;
@@ -1517,8 +1531,78 @@ HRESULT GuestFile::setACL(const com::Utf8Str &aAcl, ULONG aMode)
 
 HRESULT GuestFile::setSize(LONG64 aSize)
 {
-    RT_NOREF(aSize);
-    ReturnComNotImplemented();
+    LogFlowThisFuncEnter();
+
+    /*
+     * Validate.
+     */
+    if (aSize < 0)
+        return setError(E_INVALIDARG, tr("The size (%RI64) cannot be a negative value"), aSize);
+
+    /*
+     * Register event callbacks.
+     */
+    int             vrc;
+    GuestWaitEvent *pWaitEvent = NULL;
+    GuestEventTypes lstEventTypes;
+    try
+    {
+        lstEventTypes.push_back(VBoxEventType_OnGuestFileStateChanged);
+        lstEventTypes.push_back(VBoxEventType_OnGuestFileSizeChanged);
+    }
+    catch (std::bad_alloc &)
+    {
+        return E_OUTOFMEMORY;
+    }
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    vrc = registerWaitEvent(lstEventTypes, &pWaitEvent);
+    if (RT_SUCCESS(vrc))
+    {
+        /*
+         * Send of the HGCM message.
+         */
+        VBOXHGCMSVCPARM aParms[3];
+        HGCMSvcSetU32(&aParms[0], pWaitEvent->ContextID());
+        HGCMSvcSetU32(&aParms[1], mObjectID /* File handle */);
+        HGCMSvcSetU64(&aParms[2], aSize);
+
+        alock.release(); /* Drop write lock before sending. */
+
+        vrc = sendMessage(HOST_MSG_FILE_SET_SIZE, RT_ELEMENTS(aParms), aParms);
+        if (RT_SUCCESS(vrc))
+        {
+            /*
+             * Wait for the event.
+             */
+            VBoxEventType_T enmEvtType;
+            ComPtr<IEvent>  pIEvent;
+            vrc = waitForEvent(pWaitEvent, RT_MS_1MIN / 2, &enmEvtType, pIEvent.asOutParam());
+            if (RT_SUCCESS(vrc))
+            {
+                if (enmEvtType == VBoxEventType_OnGuestFileSizeChanged)
+                    vrc = VINF_SUCCESS;
+                else
+                    vrc = VWRN_GSTCTL_OBJECTSTATE_CHANGED;
+            }
+            if (RT_FAILURE(vrc) && pWaitEvent->HasGuestError()) /* Return guest rc if available. */
+                vrc = pWaitEvent->GetGuestError();
+        }
+
+        /*
+         * Unregister the wait event and deal with error reporting if needed.
+         */
+        unregisterWaitEvent(pWaitEvent);
+    }
+    HRESULT hrc;
+    if (RT_SUCCESS(vrc))
+        hrc = S_OK;
+    else
+        hrc = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Setting the file size of '%s' to %RU64 (%#RX64) bytes failed: %Rrc"),
+                           mData.mOpenInfo.mFilename.c_str(), aSize, aSize, vrc);
+    LogFlowFuncLeaveRC(vrc);
+    return hrc;
 }
 
 HRESULT GuestFile::write(const std::vector<BYTE> &aData, ULONG aTimeoutMS, ULONG *aWritten)

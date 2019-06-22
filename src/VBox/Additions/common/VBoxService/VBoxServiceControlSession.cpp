@@ -315,9 +315,10 @@ static int vgsvcGstCtrlSessionHandleFileOpen(PVBOXSERVICECTRLSESSION pSession, P
  */
                 uint64_t fFlags;
                 rc = RTFileModeToFlagsEx(szAccess, szDisposition, NULL /* pszSharing, not used yet */, &fFlags);
-                VGSvcVerbose(4, "[File %s] Opening with fFlags=0x%x, rc=%Rrc\n", pFile->szName, fFlags, rc);
+                VGSvcVerbose(4, "[File %s] Opening with fFlags=%#RX64 -> rc=%Rrc\n", pFile->szName, fFlags, rc);
                 if (RT_SUCCESS(rc))
                 {
+                    fFlags |= (uCreationMode << RTFILE_O_CREATE_MODE_SHIFT) & RTFILE_O_CREATE_MODE_MASK;
                     rc = RTFileOpen(&pFile->hFile, pFile->szName, fFlags);
                     if (RT_SUCCESS(rc))
                     {
@@ -749,6 +750,55 @@ static int vgsvcGstCtrlSessionHandleFileTell(const PVBOXSERVICECTRLSESSION pSess
          * Report result back to host.
          */
         int rc2 = VbglR3GuestCtrlFileCbTell(pHostCtx, rc, offCurrent);
+        if (RT_FAILURE(rc2))
+        {
+            VGSvcError("Failed to report file tell status, rc=%Rrc\n", rc2);
+            if (RT_SUCCESS(rc))
+                rc = rc2;
+        }
+    }
+    else
+    {
+        VGSvcError("Error fetching parameters for file tell operation: %Rrc\n", rc);
+        VbglR3GuestCtrlMsgSkip(pHostCtx->uClientID, rc, UINT32_MAX);
+    }
+    return rc;
+}
+
+
+static int vgsvcGstCtrlSessionHandleFileSetSize(const PVBOXSERVICECTRLSESSION pSession, PVBGLR3GUESTCTRLCMDCTX pHostCtx)
+{
+    AssertPtrReturn(pSession, VERR_INVALID_POINTER);
+    AssertPtrReturn(pHostCtx, VERR_INVALID_POINTER);
+
+    /*
+     * Retrieve the request.
+     */
+    uint32_t uHandle = 0;
+    uint64_t cbNew = 0;
+    int rc = VbglR3GuestCtrlFileGetSetSize(pHostCtx, &uHandle, &cbNew);
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Locate the file and ask for the current position.
+         */
+        PVBOXSERVICECTRLFILE pFile = vgsvcGstCtrlSessionFileGetLocked(pSession, uHandle);
+        if (pFile)
+        {
+            rc = RTFileSetSize(pFile->hFile, cbNew);
+            VGSvcVerbose(5, "[File %s]: Changing size to %RU64 (%#RX64), rc=%Rrc\n", pFile->szName, cbNew, cbNew, rc);
+        }
+        else
+        {
+            VGSvcError("File %u (%#x) not found!\n", uHandle, uHandle);
+            cbNew = UINT64_MAX;
+            rc = VERR_NOT_FOUND;
+        }
+
+        /*
+         * Report result back to host.
+         */
+        int rc2 = VbglR3GuestCtrlFileCbSetSize(pHostCtx, rc, cbNew);
         if (RT_FAILURE(rc2))
         {
             VGSvcError("Failed to report file tell status, rc=%Rrc\n", rc2);
@@ -1286,6 +1336,11 @@ int VGSvcGstCtrlSessionHandler(PVBOXSERVICECTRLSESSION pSession, uint32_t uMsg, 
         case HOST_MSG_FILE_TELL:
             if (fImpersonated)
                 rc = vgsvcGstCtrlSessionHandleFileTell(pSession, pHostCtx);
+            break;
+
+        case HOST_MSG_FILE_SET_SIZE:
+            if (fImpersonated)
+                rc = vgsvcGstCtrlSessionHandleFileSetSize(pSession, pHostCtx);
             break;
 
         case HOST_MSG_PATH_RENAME:

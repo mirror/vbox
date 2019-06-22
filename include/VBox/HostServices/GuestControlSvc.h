@@ -194,6 +194,10 @@ enum eHostMsg
      */
     HOST_MSG_FILE_TELL,
     /**
+     * Changes the file size.
+     */
+    HOST_MSG_FILE_SET_SIZE,
+    /**
      * Removes a directory on the guest.
      */
     HOST_MSG_DIR_REMOVE = 320,
@@ -241,6 +245,7 @@ DECLINLINE(const char *) GstCtrlHostMsgtoStr(enum eHostMsg enmMsg)
         RT_CASE_RET_STR(HOST_MSG_FILE_WRITE_AT);
         RT_CASE_RET_STR(HOST_MSG_FILE_SEEK);
         RT_CASE_RET_STR(HOST_MSG_FILE_TELL);
+        RT_CASE_RET_STR(HOST_MSG_FILE_SET_SIZE);
         RT_CASE_RET_STR(HOST_MSG_DIR_REMOVE);
         RT_CASE_RET_STR(HOST_MSG_PATH_RENAME);
         RT_CASE_RET_STR(HOST_MSG_PATH_USER_DOCUMENTS);
@@ -631,7 +636,8 @@ enum GUEST_FILE_NOTIFYTYPE
     GUEST_FILE_NOTIFYTYPE_READ = 30,
     GUEST_FILE_NOTIFYTYPE_WRITE = 40,
     GUEST_FILE_NOTIFYTYPE_SEEK = 50,
-    GUEST_FILE_NOTIFYTYPE_TELL = 60
+    GUEST_FILE_NOTIFYTYPE_TELL = 60,
+    GUEST_FILE_NOTIFYTYPE_SET_SIZE
 };
 
 /**
@@ -1100,6 +1106,21 @@ typedef struct HGCMMsgFileTell
     HGCMFunctionParameter handle;
 } HGCMMsgFileTell;
 
+/**
+ * Changes the file size.
+ */
+typedef struct HGCMMsgFileSetSize
+{
+    VBGLIOCHGCMCALL         Hdr;
+    /** Context ID. */
+    HGCMFunctionParameter   id32Context;
+    /** File handle to seek. */
+    HGCMFunctionParameter   id32Handle;
+    /** The new file size. */
+    HGCMFunctionParameter   cb64NewSize;
+} HGCMMsgFileSetSize;
+
+
 /******************************************************************************
 * HGCM replies from the guest. These are handled in Main's low-level HGCM     *
 * callbacks and dispatched to the appropriate guest object.                   *
@@ -1140,6 +1161,10 @@ typedef struct HGCMReplyFileNotify
         {
             HGCMFunctionParameter offset;
         } tell;
+        struct
+        {
+            HGCMFunctionParameter cb64Size;
+        } SetSize;
     } u;
 } HGCMReplyFileNotify;
 
@@ -1354,6 +1379,11 @@ typedef struct CALLBACKDATA_FILE_NOTIFY
             /** New file offset after successful tell. */
             uint64_t uOffActual;
         } tell;
+        struct
+        {
+            /** The new file siz.e */
+            uint64_t cbSize;
+        } SetSize;
     } u;
 } CALLBACKDATA_FILE_NOTIFY, *PCALLBACKDATA_FILE_NOTIFY;
 

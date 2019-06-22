@@ -23671,9 +23671,14 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         See <link to="IGuestMonitorInfoChangedEvent">IGuestMonitorInfoChangedEvent</link>.
       </desc>
     </const>
+    <const name="OnGuestFileSizeChanged" value="103">
+      <desc>
+        See <link to="IGuestFileSizeChangedEvent">IGuestFileSizeChangedEvent</link>.
+      </desc>
+    </const>
     <!-- End event marker -->
     <!-- @todo rename to 'End' as it is exclusive (we use 'last' to be inclusive). -->
-    <const name="Last" value="103">
+    <const name="Last" value="104">
       <desc>
         Must be last event, used for iterations and structures relying on numerical event values.
       </desc>
@@ -24952,11 +24957,24 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     wsmap="managed" autogen="VBoxEvent" id="OnGuestFileOffsetChanged"
     >
     <desc>
-      Notification when a guest file changed its current offset.
+      Notification when a guest file changed its current offset via <link to="IFile::seek" />.
     </desc>
 
     <attribute name="midlDoesNotLikeEmptyInterfaces" readonly="yes" type="boolean"/>
   </interface>
+
+  <interface
+    name="IGuestFileSizeChangedEvent" extends="IGuestFileEvent"
+    uuid="d78374e9-486e-472f-481b-969746af2480"
+    wsmap="managed" autogen="VBoxEvent" id="OnGuestFileSizeChanged"
+    >
+    <desc>
+      Notification when a guest file changed its size via <link to="IFile::setSize" />.
+    </desc>
+
+    <attribute name="newSize" readonly="yes" type="long long"/>
+  </interface>
+
 
   <interface
     name="IGuestFileReadEvent" extends="IGuestFileIOEvent"
