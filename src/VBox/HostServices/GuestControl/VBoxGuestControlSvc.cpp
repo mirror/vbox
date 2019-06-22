@@ -1493,6 +1493,12 @@ int GstCtrlService::clientMsgSkip(ClientState *pClient, VBOXHGCMCALLHANDLE hCall
                         HGCMSvcSetU64(&aReplyParams[3], 0);                           /* actual */
                         hostCallback(GUEST_MSG_FILE_NOTIFY, 4, aReplyParams);
                         break;
+                    case HOST_MSG_FILE_SET_SIZE:
+                        HGCMSvcSetU32(&aReplyParams[1], GUEST_FILE_NOTIFYTYPE_SET_SIZE); /* type */
+                        HGCMSvcSetU32(&aReplyParams[2], rcSkip);                         /* rc */
+                        HGCMSvcSetU64(&aReplyParams[3], 0);                              /* actual */
+                        hostCallback(GUEST_MSG_FILE_NOTIFY, 4, aReplyParams);
+                        break;
 
                     case HOST_MSG_EXEC_GET_OUTPUT: /** @todo This can't be right/work. */
                     case HOST_MSG_EXEC_TERMINATE:  /** @todo This can't be right/work. */
