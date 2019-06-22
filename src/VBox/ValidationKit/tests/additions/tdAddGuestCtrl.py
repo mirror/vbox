@@ -30,7 +30,6 @@ terms and conditions of either the GPL or the CDDL or both.
 __version__ = "$Revision$"
 
 # Standard Python imports.
-from array import array
 import errno
 import os
 import random
@@ -411,6 +410,10 @@ class tdTestFileOpen(tdTestGuestCtrlBase):
         self.afOpenFlags    = [];
         self.oOpenedFile    = None;
 
+    def toString(self):
+        """ Get a summary string. """
+        return 'eAccessMode=%s eAction=%s sFile=%s' % (self.eAccessMode, self.eAction, self.sFile);
+
     def doOpenStep(self, fExpectSuccess):
         """
         Does the open step, putting the resulting file in oOpenedFile.
@@ -419,9 +422,9 @@ class tdTestFileOpen(tdTestGuestCtrlBase):
             self.oOpenedFile = self.oGuestSession.fileOpenEx(self.sFile, self.eAccessMode, self.eAction,
                                                              self.eSharing, self.fCreationMode, self.afOpenFlags);
         except:
-            reporter.maybeErr(fExpectSuccess, 'fileOpenEx(%s, %s, %s, %s, %s, %s)'
-                              % (self.sFile, self.eAccessMode, self.eAction, self.eSharing,
-                                 self.fCreationMode, self.afOpenFlags,));
+            reporter.maybeErrXcpt(fExpectSuccess, 'fileOpenEx(%s, %s, %s, %s, %s, %s)'
+                                  % (self.sFile, self.eAccessMode, self.eAction, self.eSharing,
+                                     self.fCreationMode, self.afOpenFlags,));
             return False;
         return True;
 
@@ -461,6 +464,9 @@ class tdTestFileOpenCheckSize(tdTestFileOpen):
         tdTestFileOpen.__init__(self, sFile, eAccessMode, eAction, eSharing, fCreationMode, sUser, sPassword);
         self.cbOpenExpected = cbOpenExpected;
 
+    def toString(self):
+        return 'cbOpenExpected=%s %s' % (self.cbOpenExpected, tdTestFileOpen.toString(self),);
+
     def doStepsOnOpenedFile(self, fExpectSuccess, fpApiVer):
         #
         # Call parent.
@@ -499,44 +505,141 @@ class tdTestFileOpenCheckSize(tdTestFileOpen):
 
         return fRc;
 
-class tdTestFileReadWrite(tdTestGuestCtrlBase):
+
+class tdTestFileOpenAndWrite(tdTestFileOpen):
     """
-    Tests reading from guest files.
+    Opens the file and writes one or more chunks to it.
+
+    The chunks are a list of tuples(offset, bytes), where offset can be None
+    if no seeking should be performed.
     """
-    def __init__(self, sFile = "", sUser = None, sPassword = None, sOpenMode = "r", # pylint: disable=too-many-arguments
-                 sDisposition = "", sSharingMode = "", fCreationMode = 0, offFile = 0, cbToReadWrite = 0, abBuf = None):
-        tdTestGuestCtrlBase.__init__(self);
-        self.oCreds = tdCtxCreds(sUser, sPassword, sDomain = None);
-        self.sFile = sFile;
-        self.sOpenMode = sOpenMode;
-        self.sDisposition = sDisposition;
-        self.sSharingMode = sSharingMode;
-        self.fCreationMode = fCreationMode;
-        self.offFile = offFile;
-        self.cbToReadWrite = cbToReadWrite;
-        self.abBuf = abBuf;
+    def __init__(self, sFile = "", eAccessMode = None, eAction = None, eSharing = None, # pylint: disable=too-many-arguments
+                 fCreationMode = 0o660, atChunks = None, fUseAtApi = False, abContent = None, sUser = None, sPassword = None):
+        tdTestFileOpen.__init__(self, sFile, eAccessMode if eAccessMode is not None else vboxcon.FileAccessMode_WriteOnly,
+                                eAction, eSharing, fCreationMode, sUser, sPassword);
+        assert atChunks is not None;
+        self.atChunks  = atChunks   # type: list(tuple(int,bytearray))
+        self.fUseAtApi = fUseAtApi;
+        self.abContent = abContent  # type: bytearray
 
-    def getOpenAction(self):
-        """ Converts string disposition to open action enum. """
-        if self.sDisposition == 'oe': return vboxcon.FileOpenAction_OpenExisting;
-        if self.sDisposition == 'oc': return vboxcon.FileOpenAction_OpenOrCreate;
-        if self.sDisposition == 'ce': return vboxcon.FileOpenAction_CreateNew;
-        if self.sDisposition == 'ca': return vboxcon.FileOpenAction_CreateOrReplace;
-        if self.sDisposition == 'ot': return vboxcon.FileOpenAction_OpenExistingTruncated;
-        if self.sDisposition == 'oa': return vboxcon.FileOpenAction_AppendOrCreate;
-        raise base.GenError(self.sDisposition);
+    def toString(self):
+        sChunks = ', '.join('%s LB %s' % (tChunk[0], len(tChunk[1]),) for tChunk in self.atChunks);
+        sApi = 'writeAt' if self.fUseAtApi else 'write';
+        return '%s [%s] %s' % (sApi, sChunks, tdTestFileOpen.toString(self),);
 
-    def getAccessMode(self):
-        """ Converts open mode to access mode enum. """
-        if self.sOpenMode == 'r':  return vboxcon.FileAccessMode_ReadOnly;
-        if self.sOpenMode == 'w':  return vboxcon.FileAccessMode_WriteOnly;
-        if self.sOpenMode == 'w+': return vboxcon.FileAccessMode_ReadWrite;
-        if self.sOpenMode == 'r+': return vboxcon.FileAccessMode_ReadWrite;
-        raise base.GenError(self.sOpenMode);
+    def doStepsOnOpenedFile(self, fExpectSuccess, fpApiVer):
+        #
+        # Call parent.
+        #
+        fRc = tdTestFileOpen.doStepsOnOpenedFile(self, fExpectSuccess, fpApiVer);
 
-    def getSharingMode(self):
-        """ Converts the sharing mode. """
-        return vboxcon.FileSharingMode_All;
+        #
+        # Do the writing.
+        #
+        for tChunk in self.atChunks:
+            offFile, abBuf = tChunk;
+            assert offFile is not None or not self.fUseAtApi;
+            if self.fUseAtApi:
+                reporter.log2('writeAt(%s, %s bytes)' % (offFile, len(abBuf),));
+                try:
+                    cbWritten = self.oOpenedFile.writeAt(offFile, abBuf, 30*1000);
+                except:
+                    return reporter.errorXcpt('writeAt(%s, %s bytes)' % (offFile, len(abBuf),));
+            else:
+                if offFile is not None:
+                    try:
+                        self.oOpenedFile.seek(offFile, vboxcon.FileSeekOrigin_Begin);
+                    except:
+                        return reporter.errorXcpt('seek(%s,Begin)' % (offFile, ));
+                elif self.eAction != vboxcon.FileOpenAction_AppendOrCreate:
+                    try:
+                        offFile = self.oOpenedFile.seek(0, vboxcon.FileSeekOrigin_Current);
+                    except:
+                        return reporter.errorXcpt();
+
+                reporter.log2('write(%s bytes @ %s)' % (len(abBuf), offFile,));
+                try:
+                    cbWritten = self.oOpenedFile.write(abBuf, 30*1000);
+                except:
+                    return reporter.errorXcpt('write(%s bytes @ %s)' % (len(abBuf), offFile));
+
+            # Check how much was written, ASSUMING nothing we push thru here is too big:
+            if cbWritten != len(abBuf):
+                fRc = reporter.errorXcpt('Wrote less than expected: %s out of %s, expected all to be written'
+                                         % (cbWritten, len(abBuf),));
+
+            #
+            # Update the file content tracker if we've got one and can:
+            #
+            if self.abContent is not None:
+                if cbWritten < len(abBuf):
+                    abBuf = abBuf[:cbWritten];
+
+                # In append mode, the current file offset shall be disregarded and the
+                # write always goes to the end of the file, regardless of writeAt or write.
+                # Note that RTFileWriteAt only naturally behaves this way on linux, so
+                # VBoxService makes the linux behaviour general across all OSes.
+                if self.eAction == vboxcon.FileOpenAction_AppendOrCreate:
+                    reporter.log('len(self.abContent)=%s + %s' % (len(self.abContent), cbWritten, ));
+                    self.abContent.extend(abBuf);
+                elif offFile is not None:
+                    reporter.log('len(self.abContent)=%s + %s @ %s' % (len(self.abContent), cbWritten, offFile, ));
+                    if offFile > len(self.abContent):
+                        self.abContent.extend(bytearray(offFile - len(self.abContent)));
+                    self.abContent[offFile:offFile + cbWritten] = abBuf;
+                reporter.log('len(self.abContent)=%s' % (len(self.abContent),));
+
+        return fRc;
+
+
+class tdTestFileOpenAndCheckContent(tdTestFileOpen):
+    """
+    Opens the file and checks the content using the read API.
+    """
+    def __init__(self, sFile = "", eSharing = None, abContent = None, cbContentExpected = None, sUser = None, sPassword = None):
+        tdTestFileOpen.__init__(self, sFile = sFile, eSharing = eSharing, sUser = sUser, sPassword = sPassword);
+        self.abContent = abContent  # type: bytearray
+        self.cbContentExpected = cbContentExpected;
+
+    def toString(self):
+        return 'check content %s (%s) %s' % (len(self.abContent), self.cbContentExpected, tdTestFileOpen.toString(self),);
+
+    def doStepsOnOpenedFile(self, fExpectSuccess, fpApiVer):
+        #
+        # Call parent.
+        #
+        fRc = tdTestFileOpen.doStepsOnOpenedFile(self, fExpectSuccess, fpApiVer);
+
+        #
+        # Check the expected content size.
+        #
+        if self.cbContentExpected is not None:
+            if len(self.abContent) != self.cbContentExpected:
+                fRc = reporter.error('Incorrect abContent size: %s, expected %s'
+                                     % (len(self.abContent), self.cbContentExpected,));
+
+        #
+        # Read the file and compare it with the content.
+        #
+        offFile = 0;
+        while True:
+            try:
+                abChunk = self.oOpenedFile.read(512*1024, 30*1000);
+            except:
+                return reporter.errorXcpt('read(512KB) @ %s' % (offFile,));
+            cbChunk = len(abChunk);
+            if cbChunk == 0:
+                if offFile != len(self.abContent):
+                    fRc = reporter.error('Unexpected EOF @ %s, len(abContent)=%s' % (offFile, len(self.abContent),));
+                break;
+            if offFile + cbChunk > len(self.abContent):
+                fRc = reporter.error('File is larger than expected: at least %s bytes, expected %s bytes'
+                                     % (offFile + cbChunk, len(self.abContent),));
+            elif not utils.areBytesEqual(abChunk, self.abContent[offFile:(offFile + cbChunk)]):
+                fRc = reporter.error('Mismatch in range %s LB %s!' % (offFile, cbChunk,));
+            offFile += cbChunk;
+
+        return fRc;
 
 class tdTestSession(tdTestGuestCtrlBase):
     """
@@ -560,6 +663,7 @@ class tdTestSession(tdTestGuestCtrlBase):
             reporter.errorXcpt('sSessionName: %s' % (self.sSessionName,));
             return 0;
         return len(aoSession);
+
 
 class tdTestSessionEx(tdTestGuestCtrlBase):
     """
@@ -3377,6 +3481,8 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             oTestVm.pathJoin(sTempDir, 'file-open-0'),
             oTestVm.pathJoin(sTempDir, 'file-open-1'),
             oTestVm.pathJoin(sTempDir, 'file-open-2'),
+            oTestVm.pathJoin(sTempDir, 'file-open-3'),
+            oTestVm.pathJoin(sTempDir, 'file-open-4'),
         ];
         asNonEmptyFiles = [
             oTestVm.pathJoin(sTempDir, 'file-open-10'),
@@ -3442,6 +3548,11 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             # Create or replace a new file.
             [ tdTestFileOpenCheckSize(sFile = asFiles[2], eAction = vboxcon.FileOpenAction_CreateOrReplace,
                                       eAccessMode = vboxcon.FileAccessMode_ReadWrite),                  tdTestResultSuccess() ],
+            # Create and append to file (weird stuff).
+            [ tdTestFileOpenCheckSize(sFile = asFiles[3], eAction = vboxcon.FileOpenAction_AppendOrCreate,
+                                      eAccessMode = vboxcon.FileAccessMode_ReadWrite),                  tdTestResultSuccess() ],
+            [ tdTestFileOpenCheckSize(sFile = asFiles[4], eAction = vboxcon.FileOpenAction_AppendOrCreate,
+                                      eAccessMode = vboxcon.FileAccessMode_WriteOnly),                  tdTestResultSuccess() ],
             # Open the non-empty files in non-destructive modes.
             [ tdTestFileOpenCheckSize(sFile = asNonEmptyFiles[0], cbOpenExpected = len(sContent)),      tdTestResultSuccess() ],
             [ tdTestFileOpenCheckSize(sFile = asNonEmptyFiles[1], cbOpenExpected = len(sContent),
@@ -3539,15 +3650,39 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         except:
             fRc = reporter.errorXcpt('sBigName=%s' % (sBigPath,));
         else:
+            # Does setSize work now?
+            fUseFallback = True;
+            try:
+                oFile.setSize(0);
+                oFile.setSize(64);
+                fUseFallback = False;
+            except Exception as oXcpt:
+                reporter.logXcpt();
+
+            # Grow the file till we hit trouble, typical VERR_DISK_FULL, then
+            # reduce the file size if we have a working setSize.
             cbBigFile = 0;
             while cbBigFile < (1024 + 32)*1024*1024:
-                cbBigFile += 32*1024*1024;
-                try:
-                    oFile.seek(cbBigFile, vboxcon.FileSeekOrigin_Begin);
-                    oFile.write(bytearray(1), 60*1000);
-                except:
-                    reporter.logXcpt('cbBigFile=%s' % (sBigPath,));
-                    break;
+                if not fUseFallback:
+                    cbBigFile += 16*1024*1024;
+                    try:
+                        oFile.setSize(cbBigFile);
+                    except Exception as oXcpt:
+                        reporter.logXcpt('cbBigFile=%s' % (sBigPath,));
+                        try:
+                            cbBigFile -= 16*1024*1024;
+                            oFile.setSize(cbBigFile);
+                        except:
+                            reporter.logXcpt('cbBigFile=%s' % (sBigPath,));
+                        break;
+                else:
+                    cbBigFile += 32*1024*1024;
+                    try:
+                        oFile.seek(cbBigFile, vboxcon.FileSeekOrigin_Begin);
+                        oFile.write(bytearray(1), 60*1000);
+                    except:
+                        reporter.logXcpt('cbBigFile=%s' % (sBigPath,));
+                        break;
             try:
                 cbBigFile = oFile.seek(0, vboxcon.FileSeekOrigin_End);
             except:
@@ -3595,7 +3730,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
             for cbChunk in acbChunks:
                 # Read the whole file straight thru:
-                if oTestFile.cbContent >= 1024*1024: reporter.log2('... cbChunk=%s' % (cbChunk,));
+                #if oTestFile.cbContent >= 1024*1024: reporter.log2('... cbChunk=%s' % (cbChunk,));
                 offFile = 0;
                 cReads = 0;
                 while offFile <= oTestFile.cbContent:
@@ -3636,7 +3771,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             for _ in xrange(8):
                 offFile  = self.oTestFiles.oRandom.randrange(0, oTestFile.cbContent + 1024);
                 cbToRead = self.oTestFiles.oRandom.randrange(1, min(oTestFile.cbContent + 256, 768*1024));
-                if oTestFile.cbContent >= 1024*1024: reporter.log2('... %s LB %s' % (offFile, cbToRead,));
+                #if oTestFile.cbContent >= 1024*1024: reporter.log2('... %s LB %s' % (offFile, cbToRead,));
 
                 try:
                     offActual = oFile.seek(offFile, vboxcon.FileSeekOrigin_Begin);
@@ -3683,7 +3818,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             for _ in xrange(12):
                 offFile  = self.oTestFiles.oRandom.randrange(0, oTestFile.cbContent + 1024);
                 cbToRead = self.oTestFiles.oRandom.randrange(1, min(oTestFile.cbContent + 256, 768*1024));
-                if oTestFile.cbContent >= 1024*1024: reporter.log2('... %s LB %s (readAt)' % (offFile, cbToRead,));
+                #if oTestFile.cbContent >= 1024*1024: reporter.log2('... %s LB %s (readAt)' % (offFile, cbToRead,));
 
                 try:
                     abRead = oFile.readAt(offFile, cbToRead, 30*1000);
@@ -3850,133 +3985,80 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             reporter.log('Skipping because of pre 5.0 API');
             return None;
 
-        if oTestVm.isWindows():
-            sScratch = "C:\\Temp\\vboxtest\\testGuestCtrlFileWrite\\";
-        else:
-            sScratch = "/tmp/";
+        #
+        # The test file and its content.
+        #
+        sFile     = oTestVm.pathJoin(self.getGuestTempDir(oTestVm), 'gctrl-write-1');
+        abContent = bytearray(0);
 
-        if oTxsSession.syncMkDir('${SCRATCH}/testGuestCtrlFileWrite') is False:
-            reporter.error('Could not create scratch directory on guest');
-            return (False, oTxsSession);
+        #
+        # The tests.
+        #
+        def randBytes(cbHowMany):
+            """ Returns an bytearray of random bytes. """
+            return bytearray(self.oTestFiles.oRandom.getrandbits(8) for _ in xrange(cbHowMany));
 
-        atTests = [];
+        aoTests = [
+            # Write at end:
+            tdTestFileOpenAndWrite(sFile = sFile, eAction = vboxcon.FileOpenAction_CreateNew, abContent = abContent,
+                                   atChunks = [(None, randBytes(1)), (None, randBytes(77)), (None, randBytes(98)),]),
+            tdTestFileOpenAndCheckContent(sFile = sFile, abContent = abContent, cbContentExpected = 1+77+98), # 176
+            # Appending:
+            tdTestFileOpenAndWrite(sFile = sFile, eAction = vboxcon.FileOpenAction_AppendOrCreate, abContent = abContent,
+                                   atChunks = [(None, randBytes(255)), (None, randBytes(33)),]),
+            tdTestFileOpenAndCheckContent(sFile = sFile, abContent = abContent, cbContentExpected = 176 + 255+33), # 464
+            tdTestFileOpenAndWrite(sFile = sFile, eAction = vboxcon.FileOpenAction_AppendOrCreate, abContent = abContent,
+                                   atChunks = [(10, randBytes(44)),]),
+            tdTestFileOpenAndCheckContent(sFile = sFile, abContent = abContent, cbContentExpected = 464 + 44), # 508
+            # Write within existing:
+            tdTestFileOpenAndWrite(sFile = sFile, eAction = vboxcon.FileOpenAction_OpenExisting, abContent = abContent,
+                                   atChunks = [(0, randBytes(1)), (50, randBytes(77)), (255, randBytes(199)),]),
+            tdTestFileOpenAndCheckContent(sFile = sFile, abContent = abContent, cbContentExpected = 508),
+            # Writing around and over the end:
+            tdTestFileOpenAndWrite(sFile = sFile, abContent = abContent,
+                                   atChunks = [(500, randBytes(9)), (508, randBytes(15)), (512, randBytes(12)),]),
+            tdTestFileOpenAndCheckContent(sFile = sFile, abContent = abContent, cbContentExpected = 512+12),
 
-        cbScratchBuf = random.randint(1, 4096);
-        abScratchBuf = os.urandom(cbScratchBuf);
-        atTests.extend([
-            # Write to a non-existing file.
-            [ tdTestFileReadWrite(sFile = sScratch + 'testGuestCtrlFileWrite.txt',
-                                  sOpenMode = 'w+', sDisposition = 'ce', cbToReadWrite = cbScratchBuf, abBuf = abScratchBuf),
-              tdTestResultFileReadWrite(fRc = True, abBuf = abScratchBuf, cbProcessed = cbScratchBuf, offFile = cbScratchBuf) ],
-        ]);
+            # writeAt appending:
+            tdTestFileOpenAndWrite(sFile = sFile, abContent = abContent, fUseAtApi = True,
+                                   atChunks = [(0, randBytes(23)), (6, randBytes(1018)),]),
+            tdTestFileOpenAndCheckContent(sFile = sFile, abContent = abContent, cbContentExpected = 6+1018), # 1024
+            # writeAt within existing:
+            tdTestFileOpenAndWrite(sFile = sFile, abContent = abContent, fUseAtApi = True,
+                                   atChunks = [(1000, randBytes(23)), (1, randBytes(990)),]),
+            tdTestFileOpenAndCheckContent(sFile = sFile, abContent = abContent, cbContentExpected = 1024),
+            # writeAt around and over the end:
+            tdTestFileOpenAndWrite(sFile = sFile, abContent = abContent, fUseAtApi = True,
+                                   atChunks = [(1024, randBytes(63)), (1080, randBytes(968)),]),
+            tdTestFileOpenAndCheckContent(sFile = sFile, abContent = abContent, cbContentExpected = 1080+968), # 2048
+            # writeAt beyond the end:
+            tdTestFileOpenAndWrite(sFile = sFile, abContent = abContent, fUseAtApi = True, atChunks = [(3070, randBytes(2)),]),
+            tdTestFileOpenAndCheckContent(sFile = sFile, abContent = abContent, cbContentExpected = 3072),
+            # write beyond the end:
+            tdTestFileOpenAndWrite(sFile = sFile, abContent = abContent, atChunks = [(4090, randBytes(6)),]),
+            tdTestFileOpenAndCheckContent(sFile = sFile, abContent = abContent, cbContentExpected = 4096),
+        ];
 
-        aScratchBuf2 = os.urandom(cbScratchBuf);
-        atTests.extend([
-            # Append the same amount of data to the just created file.
-            [ tdTestFileReadWrite(sFile = sScratch + 'testGuestCtrlFileWrite.txt',
-                                  sOpenMode = 'w+', sDisposition = 'oa', cbToReadWrite = cbScratchBuf,
-                                  offFile = cbScratchBuf, abBuf = aScratchBuf2),
-              tdTestResultFileReadWrite(fRc = True, abBuf = aScratchBuf2, cbProcessed = cbScratchBuf,
-                                        offFile = cbScratchBuf * 2) ],
-        ]);
+        for (i, oCurTest) in enumerate(aoTests):
+            reporter.log('Testing #%d: %s ...' % (i, oCurTest.toString(),));
 
-        fRc = True;
-        for (i, aTest) in enumerate(atTests):
-            oCurTest = aTest[0]; # tdTestFileReadWrite, use an index, later.
-            oCurRes  = aTest[1]; # tdTestResult
-            reporter.log('Testing #%d, sFile="%s", cbToReadWrite=%d, sOpenMode="%s", sDisposition="%s", offFile=%d ...'
-                         %  (i, oCurTest.sFile, oCurTest.cbToReadWrite, oCurTest.sOpenMode,
-                             oCurTest.sDisposition, oCurTest.offFile,));
             oCurTest.setEnvironment(oSession, oTxsSession, oTestVm);
-            fRc, oCurGuestSession = oCurTest.createSession('testGuestCtrlFileWrite: Test #%d' % (i,));
-            if fRc is False:
-                reporter.error('Test #%d failed: Could not create session' % (i,));
+            fRc, _ = oCurTest.createSession('testGuestCtrlFileWrite: Test #%d' % (i,), True);
+            if fRc is not True:
+                fRc = reporter.error('Test #%d failed: Could not create session' % (i,));
                 break;
 
-            try:
-                if oCurTest.offFile > 0: # The offset parameter is gone.
-                    curFile = oCurGuestSession.fileOpenEx(oCurTest.sFile, oCurTest.getAccessMode(), oCurTest.getOpenAction(),
-                                                         oCurTest.getSharingMode(), oCurTest.fCreationMode, []);
-                    curFile.seek(oCurTest.offFile, vboxcon.FileSeekOrigin_Begin);
-                    curOffset = long(curFile.offset);
-                    resOffset = long(oCurTest.offFile);
-                    if curOffset != resOffset:
-                        reporter.error('Test #%d failed: Initial offset on open does not match: Got %d, expected %d' \
-                                       % (i, curOffset, resOffset));
-                        fRc = False;
-                else:
-                    curFile = oCurGuestSession.fileOpenEx(oCurTest.sFile, oCurTest.getAccessMode(), oCurTest.getOpenAction(),
-                                                         oCurTest.getSharingMode(), oCurTest.fCreationMode, []);
-                if fRc and oCurTest.cbToReadWrite > 0:
-                    reporter.log("File '%s' opened" % oCurTest.sFile);
-                    ## @todo Split this up in 64K writes. Later.
-                    ## @todo Test timeouts.
-                    cBytesWritten = curFile.write(array('b', oCurTest.abBuf), 30 * 1000);
-                    if    oCurRes.cbProcessed > 0 \
-                      and oCurRes.cbProcessed != cBytesWritten:
-                        reporter.error('Test #%d failed: Written buffer length does not match: Got %d, expected %d' \
-                                       % (i, cBytesWritten, oCurRes.cbProcessed));
-                        fRc = False;
-                    if fRc:
-                        # Verify written content by seeking back to the initial offset and
-                        # re-read & compare the written data.
-                        try:
-                            if self.oTstDrv.fpApiVer >= 5.0:
-                                curFile.seek(-(oCurTest.cbToReadWrite), vboxcon.FileSeekOrigin_Current);
-                            else:
-                                curFile.seek(-(oCurTest.cbToReadWrite), vboxcon.FileSeekType_Current);
-                        except:
-                            reporter.logXcpt('Seeking back to initial write position failed:');
-                            fRc = False;
-                        if fRc and long(curFile.offset) != oCurTest.offFile:
-                            reporter.error('Test #%d failed: Initial write position does not match current position, ' \
-                                           'got %d, expected %d' % (i, long(curFile.offset), oCurTest.offFile));
-                            fRc = False;
-                    if fRc:
-                        aBufRead = curFile.read(oCurTest.cbToReadWrite, 30 * 1000);
-                        if len(aBufRead) != oCurTest.cbToReadWrite:
-                            reporter.error('Test #%d failed: Got buffer length %d, expected %d' \
-                                           % (i, len(aBufRead), oCurTest.cbToReadWrite));
-                            fRc = False;
-                        if     fRc \
-                           and oCurRes.abBuf is not None \
-                           and bytes(oCurRes.abBuf) != bytes(aBufRead):
-                            reporter.error('Test #%d failed: Read back buffer (%d bytes) does not match ' \
-                                           'written content (%d bytes)' % (i, len(aBufRead), len(aBufRead)));
+            fRc2 = oCurTest.doSteps(True, self.oTstDrv.fpApiVer);
+            if fRc2 is not True:
+                fRc = reporter.error('Test #%d failed!' % (i,));
 
-                            curFile.close();
+            fRc = oCurTest.closeSession(True) and fRc;
 
-                            # Download written file from guest.
-                            aGstFiles = [];
-                            aGstFiles.append(oCurTest.sFile.replace('\\', '/'));
-                            self.oTstDrv.txsDownloadFiles(oSession, oTxsSession, aGstFiles, fIgnoreErrors = True);
-
-                            # Create files with buffer contents and upload those for later (manual) inspection.
-                            oCurTest.uploadLogData(self.oTstDrv, oCurRes.abBuf, ('testGuestCtrlWriteTest%d-BufExcepted' % i),
-                                                                             ('Test #%d: Expected buffer' % i));
-                            oCurTest.uploadLogData(self.oTstDrv, aBufRead,    ('testGuestCtrlWriteTest%d-BufGot' % i),
-                                                                             ('Test #%d: Got buffer' % i));
-                            fRc = False;
-                # Test final offset.
-                curOffset = long(curFile.offset);
-                resOffset = long(oCurRes.offFile);
-                if curOffset != resOffset:
-                    reporter.error('Test #%d failed: Final offset does not match: Got %d, expected %d' \
-                                   % (i, curOffset, resOffset));
-                    fRc = False;
-                if curFile.status == vboxcon.FileStatus_Open:
-                    curFile.close();
-                reporter.log("File '%s' closed" % oCurTest.sFile);
-            except:
-                reporter.logXcpt('Opening "%s" failed:' % (oCurTest.sFile,));
-                fRc = False;
-
-            oCurTest.closeSession();
-
-            if fRc != oCurRes.fRc:
-                reporter.error('Test #%d failed: Got %s, expected %s' % (i, fRc, oCurRes.fRc));
-                fRc = False;
-                break;
+        #
+        # Cleanup
+        #
+        if oTxsSession.syncRmFile(sFile) is not True:
+            fRc = reporter.error('Failed to remove write-test file: %s' % (sFile, ));
 
         return (fRc, oTxsSession);
 
@@ -4134,9 +4216,9 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         if oTestVm.isWindows():
             # Copy to a Windows alternative data stream (ADS).
             atTests.extend([
-                [ tdTestCopyToFile(sSrc = sBigFileHst,   sDst = os.path.join(sScratchGst, 'HostGABig.dat:ADS-Test')),
+                [ tdTestCopyToFile(sSrc = sBigFileHst,   sDst = oTestVm.pathJoin(sScratchGst, 'HostGABig.dat:ADS-Test')),
                   tdTestResultSuccess() ],
-                [ tdTestCopyToFile(sSrc = sEmptyFileHst, sDst = os.path.join(sScratchGst, 'HostGABig.dat:ADS-Test')),
+                [ tdTestCopyToFile(sSrc = sEmptyFileHst, sDst = oTestVm.pathJoin(sScratchGst, 'HostGABig.dat:ADS-Test')),
                   tdTestResultSuccess() ],
             ]);
 
@@ -4172,7 +4254,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             if not self.fSkipKnownBugs:
                 atTests.extend([
                     [ tdTestCopyToDir(sSrc = sScratchNonEmptyDirHst, sDst = sScratchDstDir3Gst,
-                                      fFlags = [vboxcon.DirectoryCopyFlag_CopyIntoExisting]),       tdTestResultSuccess() ],
+                                      fFlags = [vboxcon.DirectoryCopyFlag_CopyIntoExisting]),   tdTestResultSuccess() ],
                 ]);
             atTests.extend([
                 #[ tdTestRemoveGuestDir(sScratchDstDir2Gst, tdTestResult() ],
