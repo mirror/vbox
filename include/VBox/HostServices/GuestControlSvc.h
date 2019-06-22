@@ -136,14 +136,14 @@ enum eHostMsg
      */
     HOST_MSG_SESSION_CLOSE = 21,
     /**
-     * The host wants to execute something in the guest. This can be a command line
-     * or starting a program.
-     ** Note: Legacy (VBox < 4.3) message.
+     * The host wants to execute something in the guest. This can be a command
+     * line or starting a program.
+     * @note Legacy (VBox < 4.3) message.
      */
     HOST_MSG_EXEC_CMD = 100,
     /**
      * Sends input data for stdin to a running process executed by HOST_EXEC_CMD.
-     ** Note: Legacy (VBox < 4.3) message.
+     * @note Legacy (VBox < 4.3) message.
      */
     HOST_MSG_EXEC_SET_INPUT = 101,
     /**
@@ -168,25 +168,23 @@ enum eHostMsg
     /**
      * Closes a guest file.
      */
-    HOST_MSG_FILE_CLOSE = 241,
+    HOST_MSG_FILE_CLOSE,
     /**
      * Reads from an opened guest file.
      */
     HOST_MSG_FILE_READ = 250,
     /**
-     * Reads from an opened guest file at
-     * a specified offset.
+     * Reads from an opened guest file at a specified offset.
      */
-    HOST_MSG_FILE_READ_AT = 251,
+    HOST_MSG_FILE_READ_AT,
     /**
      * Write to an opened guest file.
      */
     HOST_MSG_FILE_WRITE = 260,
     /**
-     * Write to an opened guest file at
-     * a specified offset.
+     * Write to an opened guest file at a specified offset.
      */
-    HOST_MSG_FILE_WRITE_AT = 261,
+    HOST_MSG_FILE_WRITE_AT,
     /**
      * Changes the read & write position of an opened guest file.
      */
@@ -194,7 +192,7 @@ enum eHostMsg
     /**
      * Gets the current file position of an opened guest file.
      */
-    HOST_MSG_FILE_TELL = 271,
+    HOST_MSG_FILE_TELL,
     /**
      * Removes a directory on the guest.
      */
@@ -206,11 +204,14 @@ enum eHostMsg
     /**
      * Retrieves the user's documents directory.
      */
-    HOST_MSG_PATH_USER_DOCUMENTS = 331,
+    HOST_MSG_PATH_USER_DOCUMENTS,
     /**
      * Retrieves the user's home directory.
      */
-    HOST_MSG_PATH_USER_HOME = 332
+    HOST_MSG_PATH_USER_HOME,
+
+    /** Blow the type up to 32-bits. */
+    HOST_MSG_32BIT_HACK = 0x7fffffff
 };
 
 
@@ -244,6 +245,7 @@ DECLINLINE(const char *) GstCtrlHostMsgtoStr(enum eHostMsg enmMsg)
         RT_CASE_RET_STR(HOST_MSG_PATH_RENAME);
         RT_CASE_RET_STR(HOST_MSG_PATH_USER_DOCUMENTS);
         RT_CASE_RET_STR(HOST_MSG_PATH_USER_HOME);
+        RT_CASE_RET_STR(HOST_MSG_32BIT_HACK);
     }
     return "Unknown";
 }
