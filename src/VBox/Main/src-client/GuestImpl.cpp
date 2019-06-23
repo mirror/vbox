@@ -79,19 +79,16 @@ HRESULT Guest::init(Console *aParent)
 
     unconst(mParent) = aParent;
 
-    /* Confirm a successful initialization when it's the case */
-    autoInitSpan.setSucceeded();
-
-    ULONG aMemoryBalloonSize;
+    ULONG aMemoryBalloonSize = 0;
     HRESULT hr = mParent->i_machine()->COMGETTER(MemoryBalloonSize)(&aMemoryBalloonSize);
-    if (hr == S_OK) /** @todo r=andy SUCCEEDED? */
+    if (SUCCEEDED(hr))
         mMemoryBalloonSize = aMemoryBalloonSize;
     else
         mMemoryBalloonSize = 0; /* Default is no ballooning */
 
-    BOOL fPageFusionEnabled;
+    BOOL fPageFusionEnabled = FALSE;
     hr = mParent->i_machine()->COMGETTER(PageFusionEnabled)(&fPageFusionEnabled);
-    if (hr == S_OK) /** @todo r=andy SUCCEEDED? */
+    if (SUCCEEDED(hr))
         mfPageFusionEnabled = fPageFusionEnabled;
     else
         mfPageFusionEnabled = false; /* Default is no page fusion*/
@@ -112,7 +109,7 @@ HRESULT Guest::init(Console *aParent)
     mMagic = GUEST_MAGIC;
     int vrc = RTTimerLRCreate(&mStatTimer, 1000 /* ms */,
                               &Guest::i_staticUpdateStats, this);
-    AssertMsgRC(vrc, ("Failed to create guest statistics update timer (%Rrc)\n", vrc));
+    AssertMsgRC(vrc, ("Failed to create guest statistics update timer (%Rrc) - ignored\n", vrc));
 
     hr = unconst(mEventSource).createObject();
     if (SUCCEEDED(hr))
@@ -121,26 +118,35 @@ HRESULT Guest::init(Console *aParent)
     mCpus = 1;
 
 #ifdef VBOX_WITH_DRAG_AND_DROP
-    try
+    if (SUCCEEDED(hr))
     {
-        GuestDnD::createInstance(this /* pGuest */);
-        hr = unconst(mDnDSource).createObject();
-        if (SUCCEEDED(hr))
-            hr = mDnDSource->init(this /* pGuest */);
-        if (SUCCEEDED(hr))
+        try
         {
-            hr = unconst(mDnDTarget).createObject();
+            GuestDnD::createInstance(this /* pGuest */);
+            hr = unconst(mDnDSource).createObject();
             if (SUCCEEDED(hr))
-                hr = mDnDTarget->init(this /* pGuest */);
-        }
+                hr = mDnDSource->init(this /* pGuest */);
+            if (SUCCEEDED(hr))
+            {
+                hr = unconst(mDnDTarget).createObject();
+                if (SUCCEEDED(hr))
+                    hr = mDnDTarget->init(this /* pGuest */);
+            }
 
-        LogFlowFunc(("Drag and drop initializied with hr=%Rhrc\n", hr));
-    }
-    catch (std::bad_alloc &)
-    {
-        hr = E_OUTOFMEMORY;
+            LogFlowFunc(("Drag and drop initializied with hr=%Rhrc\n", hr));
+        }
+        catch (std::bad_alloc &)
+        {
+            hr = E_OUTOFMEMORY;
+        }
     }
 #endif
+
+    /* Confirm a successful initialization when it's the case: */
+    if (SUCCEEDED(hr))
+        autoInitSpan.setSucceeded();
+    else
+        autoInitSpan.setFailed();
 
     LogFlowFunc(("hr=%Rhrc\n", hr));
     return hr;
