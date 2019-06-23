@@ -135,7 +135,10 @@ RTFMODE rtFsModeFromUnix(RTFMODE fMode, const char *pszName, size_t cbName, RTFM
     if (!(fMode & RTFS_DOS_HIDDEN) && pszName)
     {
         pszName = RTPathFilename(pszName);
-        if (pszName && *pszName == '.')
+        if (   pszName
+            && pszName[0] == '.'
+            && pszName[1] != '\0' /* exclude "." */
+            && (pszName[1] != '.' || pszName[2] != '\0')) /* exclude ".." */
             fMode |= RTFS_DOS_HIDDEN;
     }
     return fMode;
