@@ -297,10 +297,9 @@ HRESULT GuestFile::getOffset(LONG64 *aOffset)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-/** @todo r=bird: Why do you have both a offset and a tell() function?
- * After a ReadAt or WriteAt with a non-current offset, the tell() result will
- * differ from this value, because mOffCurrent is only ever incremented with
- * data read or written.  */
+    /* Note! This will not be accurate with older (< 5.2.32, 6.0.0 - 6.0.9)
+             guest additions when using writeAt, readAt or writing to a file
+             opened in append mode. */
     *aOffset = mData.mOffCurrent;
 
     return S_OK;
@@ -506,7 +505,7 @@ int GuestFile::i_onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOST
 
                 AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-                mData.mOffCurrent += cbRead;
+                mData.mOffCurrent += cbRead; /* Bogus for readAt, which is why we've got GUEST_FILE_NOTIFYTYPE_READ_OFFSET. */
 
                 alock.release();
 
@@ -568,7 +567,7 @@ int GuestFile::i_onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOST
 
                 AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-                mData.mOffCurrent += cbWritten;
+                mData.mOffCurrent += cbWritten; /* Bogus for writeAt and append mode, thus GUEST_FILE_NOTIFYTYPE_WRITE_OFFSET. */
 
                 alock.release();
 
@@ -625,31 +624,15 @@ int GuestFile::i_onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOST
 
                 alock.release();
 
-                fireGuestFileOffsetChangedEvent(mEventSource, mSession, this, mData.mOffCurrent, 0 /* Processed */);
+                fireGuestFileOffsetChangedEvent(mEventSource, mSession, this, dataCb.u.seek.uOffActual, 0 /* Processed */);
             }
             break;
         }
 
         case GUEST_FILE_NOTIFYTYPE_TELL:
-        {
-            if (pSvcCbData->mParms == 4)
-            {
-                rc = HGCMSvcGetU64(&pSvcCbData->mpaParms[idx++], &dataCb.u.tell.uOffActual);
-                if (RT_FAILURE(rc))
-                    break;
-
-                Log3ThisFunc(("uOffActual=%RU64\n", dataCb.u.tell.uOffActual));
-
-                AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-                mData.mOffCurrent = dataCb.u.tell.uOffActual;
-
-                alock.release();
-
-                fireGuestFileOffsetChangedEvent(mEventSource, mSession, this, mData.mOffCurrent, 0 /* Processed */);
-            }
+            /* We don't issue any HOST_MSG_FILE_TELL, so we shouldn't get these notifications! */
+            AssertFailed();
             break;
-        }
 
         case GUEST_FILE_NOTIFYTYPE_SET_SIZE:
             ASSERT_GUEST_MSG_STMT_BREAK(pSvcCbData->mParms == 4, ("mParms=%u\n", pSvcCbData->mParms),

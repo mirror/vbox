@@ -14160,6 +14160,13 @@ and "VAR" for unsetting. -->
 
         The <link to="IFile::seek"/> is used to change this attribute without
         transfering any file data like read and write does.
+
+        <note> This will not always be correct with older guest additions
+        (version 5.2.30 and earlier, as well as versions 6.0.0 thru 6.0.8)
+        after a calling <link to="IFile::readAt"/> or <link to="IFile::writeAt"/>,
+        or after calling <link to="IFile::write"/> on a file in append mode.
+        The correct file offset can be obtained using <link to="IFile::seek"/>.</note>
+
       </desc>
     </attribute>
     <attribute name="status" type="FileStatus" readonly="yes">
