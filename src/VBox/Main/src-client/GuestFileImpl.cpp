@@ -297,9 +297,14 @@ HRESULT GuestFile::getOffset(LONG64 *aOffset)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    /* Note! This will not be accurate with older (< 5.2.32, 6.0.0 - 6.0.9)
-             guest additions when using writeAt, readAt or writing to a file
-             opened in append mode. */
+    /*
+     * This is updated by GuestFile::i_onFileNotify() when read, write and seek
+     * confirmation messages are recevied.
+     *
+     * Note! This will not be accurate with older (< 5.2.32, 6.0.0 - 6.0.9)
+     *       guest additions when using writeAt, readAt or writing to a file
+     *       opened in append mode.
+     */
     *aOffset = mData.mOffCurrent;
 
     return S_OK;
