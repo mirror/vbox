@@ -428,9 +428,9 @@ class tdTestFileOpen(tdTestGuestCtrlBase):
             return False;
         return True;
 
-    def doStepsOnOpenedFile(self, fExpectSuccess, fpApiVer):
+    def doStepsOnOpenedFile(self, fExpectSuccess, oSubTst):
         """ Overridden by children to do more testing. """
-        _ = fExpectSuccess; _ = fpApiVer;
+        _ = fExpectSuccess; _ = oSubTst;
         return True;
 
     def doCloseStep(self):
@@ -445,11 +445,11 @@ class tdTestFileOpen(tdTestGuestCtrlBase):
             self.oOpenedFile = None;
         return True;
 
-    def doSteps(self, fExpectSuccess, fpApiVer):
+    def doSteps(self, fExpectSuccess, oSubTst):
         """ Do the tests. """
         fRc = self.doOpenStep(fExpectSuccess);
         if fRc is True:
-            fRc = self.doStepsOnOpenedFile(fExpectSuccess, fpApiVer);
+            fRc = self.doStepsOnOpenedFile(fExpectSuccess, oSubTst);
         if self.oOpenedFile:
             fRc = self.doCloseStep() and fRc;
         return fRc;
@@ -467,16 +467,16 @@ class tdTestFileOpenCheckSize(tdTestFileOpen):
     def toString(self):
         return 'cbOpenExpected=%s %s' % (self.cbOpenExpected, tdTestFileOpen.toString(self),);
 
-    def doStepsOnOpenedFile(self, fExpectSuccess, fpApiVer):
+    def doStepsOnOpenedFile(self, fExpectSuccess, oSubTst):
         #
         # Call parent.
         #
-        fRc = tdTestFileOpen.doStepsOnOpenedFile(self, fExpectSuccess, fpApiVer);
+        fRc = tdTestFileOpen.doStepsOnOpenedFile(self, fExpectSuccess, oSubTst);
 
         #
         # Check the size.  Requires 6.0 or later (E_NOTIMPL in 5.2).
         #
-        if fpApiVer >= 6.0:
+        if oSubTst.oTstDrv.fpApiVer >= 6.0:
             try:
                 oFsObjInfo = self.oOpenedFile.queryInfo();
             except:
@@ -520,6 +520,8 @@ class tdTestFileOpenAndWrite(tdTestFileOpen):
         assert atChunks is not None;
         self.atChunks  = atChunks   # type: list(tuple(int,bytearray))
         self.fUseAtApi = fUseAtApi;
+        self.fAppend   = (   eAccessMode in (vboxcon.FileAccessMode_AppendOnly, vboxcon.FileAccessMode_AppendRead)
+                          or eAction == vboxcon.FileOpenAction_AppendOrCreate);
         self.abContent = abContent  # type: bytearray
 
     def toString(self):
@@ -527,35 +529,68 @@ class tdTestFileOpenAndWrite(tdTestFileOpen):
         sApi = 'writeAt' if self.fUseAtApi else 'write';
         return '%s [%s] %s' % (sApi, sChunks, tdTestFileOpen.toString(self),);
 
-    def doStepsOnOpenedFile(self, fExpectSuccess, fpApiVer):
+    def doStepsOnOpenedFile(self, fExpectSuccess, oSubTst):
         #
         # Call parent.
         #
-        fRc = tdTestFileOpen.doStepsOnOpenedFile(self, fExpectSuccess, fpApiVer);
+        fRc = tdTestFileOpen.doStepsOnOpenedFile(self, fExpectSuccess, oSubTst);
 
         #
         # Do the writing.
         #
-        for tChunk in self.atChunks:
-            offFile, abBuf = tChunk;
-            assert offFile is not None or not self.fUseAtApi;
+        for offFile, abBuf in self.atChunks:
             if self.fUseAtApi:
+                #
+                # writeAt:
+                #
+                assert offFile is not None;
                 reporter.log2('writeAt(%s, %s bytes)' % (offFile, len(abBuf),));
+                if self.fAppend:
+                    if self.abContent is not None: # Try avoid seek as it updates the cached offset in GuestFileImpl.
+                        offExpectAfter = len(self.abContent);
+                    else:
+                        try:
+                            offSave        = self.oOpenedFile.seek(0, vboxcon.FileSeekOrigin_Current);
+                            offExpectAfter = self.oOpenedFile.seek(0, vboxcon.FileSeekOrigin_End);
+                            self.oOpenedFile.seek(offSave, vboxcon.FileSeekOrigin_Begin);
+                        except:
+                            return reporter.errorXcpt();
+                    offExpectAfter += len(abBuf);
+                else:
+                    offExpectAfter = offFile + len(abBuf);
+
                 try:
                     cbWritten = self.oOpenedFile.writeAt(offFile, abBuf, 30*1000);
                 except:
                     return reporter.errorXcpt('writeAt(%s, %s bytes)' % (offFile, len(abBuf),));
+
             else:
+                #
+                # write:
+                #
+                if self.fAppend:
+                    if self.abContent is not None: # Try avoid seek as it updates the cached offset in GuestFileImpl.
+                        offExpectAfter = len(self.abContent);
+                    else:
+                        try:
+                            offSave        = self.oOpenedFile.seek(0, vboxcon.FileSeekOrigin_Current);
+                            offExpectAfter = self.oOpenedFile.seek(0, vboxcon.FileSeekOrigin_End);
+                            self.oOpenedFile.seek(offSave, vboxcon.FileSeekOrigin_Begin);
+                        except:
+                            return reporter.errorXcpt('seek(0,End)');
                 if offFile is not None:
                     try:
                         self.oOpenedFile.seek(offFile, vboxcon.FileSeekOrigin_Begin);
                     except:
-                        return reporter.errorXcpt('seek(%s,Begin)' % (offFile, ));
-                elif self.eAction != vboxcon.FileOpenAction_AppendOrCreate:
+                        return reporter.errorXcpt('seek(%s,Begin)' % (offFile,));
+                else:
                     try:
                         offFile = self.oOpenedFile.seek(0, vboxcon.FileSeekOrigin_Current);
                     except:
                         return reporter.errorXcpt();
+                if not self.fAppend:
+                    offExpectAfter = offFile;
+                offExpectAfter += len(abBuf);
 
                 reporter.log2('write(%s bytes @ %s)' % (len(abBuf), offFile,));
                 try:
@@ -563,10 +598,14 @@ class tdTestFileOpenAndWrite(tdTestFileOpen):
                 except:
                     return reporter.errorXcpt('write(%s bytes @ %s)' % (len(abBuf), offFile));
 
+            #
             # Check how much was written, ASSUMING nothing we push thru here is too big:
+            #
             if cbWritten != len(abBuf):
                 fRc = reporter.errorXcpt('Wrote less than expected: %s out of %s, expected all to be written'
                                          % (cbWritten, len(abBuf),));
+                if not self.fAppend:
+                    offExpectAfter -= len(abBuf) - cbWritten;
 
             #
             # Update the file content tracker if we've got one and can:
@@ -575,20 +614,42 @@ class tdTestFileOpenAndWrite(tdTestFileOpen):
                 if cbWritten < len(abBuf):
                     abBuf = abBuf[:cbWritten];
 
+                #
                 # In append mode, the current file offset shall be disregarded and the
                 # write always goes to the end of the file, regardless of writeAt or write.
-                # Note that RTFileWriteAt only naturally behaves this way on linux, so
-                # VBoxService makes the linux behaviour general across all OSes.
-                if self.eAction == vboxcon.FileOpenAction_AppendOrCreate:
-                    reporter.log('len(self.abContent)=%s + %s' % (len(self.abContent), cbWritten, ));
+                # Note that RTFileWriteAt only naturally behaves this way on linux and
+                # (probably) windows, so VBoxService makes that behaviour generic across
+                # all OSes.
+                #
+                if self.fAppend:
+                    reporter.log2('len(self.abContent)=%s + %s' % (len(self.abContent), cbWritten, ));
                     self.abContent.extend(abBuf);
-                elif offFile is not None:
-                    reporter.log('len(self.abContent)=%s + %s @ %s' % (len(self.abContent), cbWritten, offFile, ));
+                else:
+                    if offFile is None:
+                        offFile = offExpectAfter - cbWritten;
+                    reporter.log2('len(self.abContent)=%s + %s @ %s' % (len(self.abContent), cbWritten, offFile, ));
                     if offFile > len(self.abContent):
                         self.abContent.extend(bytearray(offFile - len(self.abContent)));
                     self.abContent[offFile:offFile + cbWritten] = abBuf;
-                reporter.log('len(self.abContent)=%s' % (len(self.abContent),));
+                reporter.log2('len(self.abContent)=%s' % (len(self.abContent),));
 
+            #
+            # Check the resulting file offset with IGuestFile::offset.
+            #
+            try:
+                offApi  = self.oOpenedFile.offset; # Must be gotten first!
+                offSeek = self.oOpenedFile.seek(0, vboxcon.FileSeekOrigin_Current);
+            except:
+                fRc = reporter.errorXcpt();
+            else:
+                reporter.log2('offApi=%s offSeek=%s offExpectAfter=%s' % (offApi, offSeek, offExpectAfter,));
+                if offSeek != offExpectAfter:
+                    fRc = reporter.error('Seek offset is %s, expected %s after %s bytes write @ %s (offApi=%s)'
+                                         % (offSeek, offExpectAfter, len(abBuf), offFile, offApi,));
+                if offApi != offExpectAfter:
+                    fRc = reporter.error('IGuestFile::offset is %s, expected %s after %s bytes write @ %s (offSeek=%s)'
+                                         % (offApi, offExpectAfter, len(abBuf), offFile, offSeek,));
+        # for each chunk - end
         return fRc;
 
 
@@ -604,11 +665,11 @@ class tdTestFileOpenAndCheckContent(tdTestFileOpen):
     def toString(self):
         return 'check content %s (%s) %s' % (len(self.abContent), self.cbContentExpected, tdTestFileOpen.toString(self),);
 
-    def doStepsOnOpenedFile(self, fExpectSuccess, fpApiVer):
+    def doStepsOnOpenedFile(self, fExpectSuccess, oSubTst):
         #
         # Call parent.
         #
-        fRc = tdTestFileOpen.doStepsOnOpenedFile(self, fExpectSuccess, fpApiVer);
+        fRc = tdTestFileOpen.doStepsOnOpenedFile(self, fExpectSuccess, oSubTst);
 
         #
         # Check the expected content size.
@@ -3607,7 +3668,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 fRc = reporter.error('Test #%d failed: Could not create session' % (i,));
                 break;
 
-            fRc2 = oCurTest.doSteps(oCurRes.fRc, self.oTstDrv.fpApiVer);
+            fRc2 = oCurTest.doSteps(oCurRes.fRc, self);
             if fRc2 != oCurRes.fRc:
                 fRc = reporter.error('Test #%d result mismatch: Got %s, expected %s' % (i, fRc2, oCurRes.fRc,));
 
@@ -4031,10 +4092,11 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             tdTestFileOpenAndWrite(sFile = sFile, abContent = abContent, fUseAtApi = True,
                                    atChunks = [(1024, randBytes(63)), (1080, randBytes(968)),]),
             tdTestFileOpenAndCheckContent(sFile = sFile, abContent = abContent, cbContentExpected = 1080+968), # 2048
-            # writeAt beyond the end:
+
+            # writeAt beyond the end (gap is filled with zeros):
             tdTestFileOpenAndWrite(sFile = sFile, abContent = abContent, fUseAtApi = True, atChunks = [(3070, randBytes(2)),]),
             tdTestFileOpenAndCheckContent(sFile = sFile, abContent = abContent, cbContentExpected = 3072),
-            # write beyond the end:
+            # write beyond the end (gap is filled with zeros):
             tdTestFileOpenAndWrite(sFile = sFile, abContent = abContent, atChunks = [(4090, randBytes(6)),]),
             tdTestFileOpenAndCheckContent(sFile = sFile, abContent = abContent, cbContentExpected = 4096),
         ];
@@ -4048,7 +4110,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 fRc = reporter.error('Test #%d failed: Could not create session' % (i,));
                 break;
 
-            fRc2 = oCurTest.doSteps(True, self.oTstDrv.fpApiVer);
+            fRc2 = oCurTest.doSteps(True, self);
             if fRc2 is not True:
                 fRc = reporter.error('Test #%d failed!' % (i,));
 
