@@ -1266,6 +1266,7 @@ void UIFormEditorModel::prepare()
 {
     /* Prepare hardcoded icons map: */
     m_icons["Name"]                = UIIconPool::iconSet(":/name_16px.png");
+    m_icons["Display Name"]        = UIIconPool::iconSet(":/name_16px.png");
     m_icons["Type"]                = UIIconPool::iconSet(":/os_type_16px.png");
     m_icons["Version"]             = UIIconPool::iconSet(":/os_version_16px.png");
     m_icons["CPU"]                 = UIIconPool::iconSet(":/cpu_16px.png");
