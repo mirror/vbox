@@ -96,6 +96,48 @@ int VBoxSvcClipboardURIReadDataHdr(uint32_t cParms, VBOXHGCMSVCPARM paParms[], P
 }
 
 /**
+ * Reads an URI data header from HGCM service parameters.
+ *
+ * @returns VBox status code.
+ * @param   cParms              Number of HGCM parameters supplied in \a paParms.
+ * @param   paParms             Array of HGCM parameters.
+ * @param   pDataHdr            Pointer to data to write the the HGCM parameters.
+ */
+int VBoxSvcClipboardURIWriteDataHdr(uint32_t cParms, VBOXHGCMSVCPARM paParms[], PVBOXCLIPBOARDDATAHDR pDataHdr)
+{
+    int rc;
+
+    if (cParms == VBOX_SHARED_CLIPBOARD_CPARMS_READ_DATA_HDR)
+    {
+        /** @todo Set pvMetaFmt + cbMetaFmt. */
+        /** @todo Calculate header checksum. */
+
+        /* Note: Context ID (paParms[0]) not used yet. */
+        HGCMSvcSetU32(&paParms[1],  pDataHdr->uFlags);
+        HGCMSvcSetU32(&paParms[2],  pDataHdr->uScreenId);
+        HGCMSvcSetU64(&paParms[3],  pDataHdr->cbTotal);
+        HGCMSvcSetU32(&paParms[4],  pDataHdr->cbMeta);
+        HGCMSvcSetU32(&paParms[5],  pDataHdr->cbMetaFmt);
+        HGCMSvcSetPv (&paParms[6],  pDataHdr->pvMetaFmt, pDataHdr->cbMetaFmt);
+        HGCMSvcSetU64(&paParms[7],  pDataHdr->cObjects);
+        HGCMSvcSetU32(&paParms[8],  pDataHdr->enmCompression);
+        HGCMSvcSetU32(&paParms[9],  (uint32_t)pDataHdr->enmChecksumType);
+        HGCMSvcSetU32(&paParms[10], pDataHdr->cbChecksum);
+        HGCMSvcSetPv (&paParms[11], pDataHdr->pvChecksum, pDataHdr->cbChecksum);
+
+        LogFlowFunc(("fFlags=0x%x, cbMeta=%RU32, cbTotalSize=%RU64, cObj=%RU64\n",
+                     pDataHdr->uFlags, pDataHdr->cbMeta, pDataHdr->cbTotal, pDataHdr->cObjects));
+
+        rc = VINF_SUCCESS;
+    }
+    else
+        rc = VERR_INVALID_PARAMETER;
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+/**
  * Reads an URI data chunk from HGCM service parameters.
  *
  * @returns VBox status code.
@@ -123,6 +165,37 @@ int VBoxSvcClipboardURIReadDataChunk(uint32_t cParms, VBOXHGCMSVCPARM paParms[],
             if (!SharedClipboardURIDataChunkIsValid(pDataChunk))
                 rc = VERR_INVALID_PARAMETER;
         }
+    }
+    else
+        rc = VERR_INVALID_PARAMETER;
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+/**
+ * Writes an URI data chunk to HGCM service parameters.
+ *
+ * @returns VBox status code.
+ * @param   cParms              Number of HGCM parameters supplied in \a paParms.
+ * @param   paParms             Array of HGCM parameters.
+ * @param   pDataChunk          Pointer to data to write the the HGCM parameters.
+ */
+int VBoxSvcClipboardURIWriteDataChunk(uint32_t cParms, VBOXHGCMSVCPARM paParms[], PVBOXCLIPBOARDDATACHUNK pDataChunk)
+{
+    int rc;
+
+    if (cParms == VBOX_SHARED_CLIPBOARD_CPARMS_READ_DATA_CHUNK)
+    {
+        /** @todo Calculate chunk checksum. */
+
+        /* Note: Context ID (paParms[0]) not used yet. */
+        HGCMSvcSetU32(&paParms[1], pDataChunk->cbData);
+        HGCMSvcSetPv (&paParms[2], pDataChunk->pvData, pDataChunk->cbData);
+        HGCMSvcSetU32(&paParms[3], pDataChunk->cbChecksum);
+        HGCMSvcSetPv (&paParms[4], pDataChunk->pvChecksum, pDataChunk->cbChecksum);
+
+        rc = VINF_SUCCESS;
     }
     else
         rc = VERR_INVALID_PARAMETER;
@@ -168,6 +241,34 @@ int VBoxSvcClipboardURIReadDir(uint32_t cParms, VBOXHGCMSVCPARM paParms[], PVBOX
 }
 
 /**
+ * Writes an URI directory entry to HGCM service parameters.
+ *
+ * @returns VBox status code.
+ * @param   cParms              Number of HGCM parameters supplied in \a paParms.
+ * @param   paParms             Array of HGCM parameters.
+ * @param   pDirData            Pointer to data to write the the HGCM parameters.
+ */
+int VBoxSvcClipboardURIWriteDir(uint32_t cParms, VBOXHGCMSVCPARM paParms[], PVBOXCLIPBOARDDIRDATA pDirData)
+{
+    int rc;
+
+    if (cParms == VBOX_SHARED_CLIPBOARD_CPARMS_READ_DIR)
+    {
+        /* Note: Context ID (paParms[0]) not used yet. */
+        HGCMSvcSetU32(&paParms[1], pDirData->cbPath);
+        HGCMSvcSetPv (&paParms[2], pDirData->pszPath, pDirData->cbPath);
+        HGCMSvcSetU32(&paParms[3], pDirData->fMode);
+
+        rc = VINF_SUCCESS;
+    }
+    else
+        rc = VERR_INVALID_PARAMETER;
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+/**
  * Reads an URI file header from HGCM service parameters.
  *
  * @returns VBox status code.
@@ -203,6 +304,36 @@ int VBoxSvcClipboardURIReadFileHdr(uint32_t cParms, VBOXHGCMSVCPARM paParms[], P
 }
 
 /**
+ * Writes an URI file header to HGCM service parameters.
+ *
+ * @returns VBox status code.
+ * @param   cParms              Number of HGCM parameters supplied in \a paParms.
+ * @param   paParms             Array of HGCM parameters.
+ * @param   pFileHdr            Pointer to data to write the the HGCM parameters.
+ */
+int VBoxSvcClipboardURIWriteFileHdr(uint32_t cParms, VBOXHGCMSVCPARM paParms[], PVBOXCLIPBOARDFILEHDR pFileHdr)
+{
+    int rc;
+
+    if (cParms == VBOX_SHARED_CLIPBOARD_CPARMS_READ_FILE_HDR)
+    {
+        /* Note: Context ID (paParms[0]) not used yet. */
+        HGCMSvcSetU32(&paParms[1], pFileHdr->cbFilePath);
+        HGCMSvcSetPv (&paParms[2], pFileHdr->pszFilePath, pFileHdr->cbFilePath);
+        HGCMSvcSetU32(&paParms[3], pFileHdr->fFlags);
+        HGCMSvcSetU32(&paParms[4], pFileHdr->fMode);
+        HGCMSvcSetU64(&paParms[5], pFileHdr->cbSize);
+
+        rc = VINF_SUCCESS;
+    }
+    else
+        rc = VERR_INVALID_PARAMETER;
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+/**
  * Reads an URI file data chunk from HGCM service parameters.
  *
  * @returns VBox status code.
@@ -226,6 +357,35 @@ int VBoxSvcClipboardURIReadFileData(uint32_t cParms, VBOXHGCMSVCPARM paParms[], 
             rc = HGCMSvcGetPv(&paParms[4], &pFileData->pvChecksum, &pFileData->cbChecksum);
 
         LogFlowFunc(("pvData=0x%p, cbData=%RU32\n", pFileData->pvData, pFileData->cbData));
+    }
+    else
+        rc = VERR_INVALID_PARAMETER;
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+/**
+ * Writes an URI file data chunk to HGCM service parameters.
+ *
+ * @returns VBox status code.
+ * @param   cParms              Number of HGCM parameters supplied in \a paParms.
+ * @param   paParms             Array of HGCM parameters.
+ * @param   pFileData           Pointer to data to write the the HGCM parameters.
+ */
+int VBoxSvcClipboardURIWriteFileData(uint32_t cParms, VBOXHGCMSVCPARM paParms[], PVBOXCLIPBOARDFILEDATA pFileData)
+{
+    int rc;
+
+    if (cParms == VBOX_SHARED_CLIPBOARD_CPARMS_READ_FILE_DATA)
+    {
+        /* Note: Context ID (paParms[0]) not used yet. */
+        HGCMSvcSetU32(&paParms[1], pFileData->cbData);
+        HGCMSvcSetPv (&paParms[2], pFileData->pvData, pFileData->cbData);
+        HGCMSvcSetU32(&paParms[3], pFileData->cbChecksum);
+        HGCMSvcSetPv (&paParms[4], pFileData->pvChecksum, pFileData->cbChecksum);
+
+        rc = VINF_SUCCESS;
     }
     else
         rc = VERR_INVALID_PARAMETER;
@@ -292,7 +452,7 @@ int vboxSvcClipboardURIHandler(uint32_t u32ClientID,
         return VERR_WRONG_ORDER;
     }
 
-    bool fDispatchToProvider = false; /* Whether to (also) dispatch the HGCM data to the transfer provider. */
+    bool fWriteToProvider = false; /* Whether to (also) dispatch the HGCM data to the transfer provider. */
 
     int rc = VERR_INVALID_PARAMETER; /* Play safe. */
 
@@ -596,12 +756,12 @@ int vboxSvcClipboardURIHandler(uint32_t u32ClientID,
             break;
     }
 
-    if (fDispatchToProvider)
+    if (fWriteToProvider)
         rc = VINF_SUCCESS;
 
     if (RT_SUCCESS(rc))
     {
-        if (fDispatchToProvider)
+        if (fWriteToProvider)
         {
             SHAREDCLIPBOARDPROVIDERWRITEPARMS writeParms;
             RT_ZERO(writeParms);

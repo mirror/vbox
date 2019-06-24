@@ -127,7 +127,8 @@ static void vboxClipboardGetData(uint32_t u32Format, const void *pvSrc, uint32_t
  * @returns VBox status code.
  * @param   pCtx                Clipboard context to use.
  * @param   fFormat             Format to receive data in.
- * @param   uTimeoutMs          Timeout (in ms). Specify 0 if no waiting is required.
+ * @param   uTimeoutMs          Timeout (in ms) to wait until the render event has been triggered.
+ *                              Specify 0 if no waiting is required.
  */
 static int vboxClipboardWinRequestData(PVBOXCLIPBOARDCONTEXT pCtx, VBOXCLIPBOARDFORMAT fFormat,
                                        RTMSINTERVAL uTimeoutMs)
@@ -327,10 +328,9 @@ static LRESULT CALLBACK vboxClipboardWinWndProc(HWND hwnd, UINT msg, WPARAM wPar
                         if (pTransfer)
                         {
                             rc = VBoxClipboardWinURIAnnounce(pWinCtx, &pCtx->pClientData->URI, pTransfer);
-                            if (RT_SUCCESS(rc))
-                            {
-                                rc = vboxClipboardWinRequestData(pCtx, fFormats, 0 /* Waiting not required */); /** FIX !!!!!!!!!!!! NEEDS TO GO INTO IDATAOBJECT GetData() !!!! */
-                            }
+
+                            /* Note: The actual requesting + retrieving of data will be done in the IDataObject implementation
+                                     (ClipboardDataObjectImpl::GetData()). */
                         }
                         else
                             AssertFailedStmt(rc = VERR_NOT_FOUND);

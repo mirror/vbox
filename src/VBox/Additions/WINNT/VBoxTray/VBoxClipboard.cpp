@@ -346,7 +346,8 @@ static LRESULT vboxClipboardWinProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd,
 
                             SHAREDCLIPBOARDPROVIDERCREATIONCTX creationCtx;
                             RT_ZERO(creationCtx);
-                            creationCtx.enmSource = SHAREDCLIPBOARDPROVIDERSOURCE_VBGLR3;
+                            creationCtx.enmSource = SHAREDCLIPBOARDURIPROVIDERSOURCE_VBGLR3;
+                            creationCtx.enmDir    = SHAREDCLIPBOARDURITRANSFERDIR_READ;
                             creationCtx.u.VbglR3.uClientID = pCtx->u32ClientID;
 
                             rc = SharedClipboardURITransferProviderCreate(pTransfer, &creationCtx);
@@ -468,7 +469,8 @@ static LRESULT vboxClipboardWinProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd,
 
                         SHAREDCLIPBOARDPROVIDERCREATIONCTX creationCtx;
                         RT_ZERO(creationCtx);
-                        creationCtx.enmSource = SHAREDCLIPBOARDPROVIDERSOURCE_VBGLR3;
+                        creationCtx.enmSource = SHAREDCLIPBOARDURIPROVIDERSOURCE_VBGLR3;
+                        creationCtx.enmDir    = SHAREDCLIPBOARDURITRANSFERDIR_WRITE;
                         creationCtx.u.VbglR3.uClientID = pCtx->u32ClientID;
 
                         rc = SharedClipboardURITransferProviderCreate(pTransfer, &creationCtx);

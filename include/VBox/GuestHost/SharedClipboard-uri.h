@@ -502,17 +502,17 @@ typedef struct _SHAREDCLIPBOARDURITRANSFERSTATE
 } SHAREDCLIPBOARDURITRANSFERSTATE, *PSHAREDCLIPBOARDURITRANSFERSTATE;
 
 /**
- * Enumeration to specify the Shared Clipboard provider source type.
+ * Enumeration to specify the Shared Clipboard URI provider source type.
  */
-typedef enum SHAREDCLIPBOARDPROVIDERSOURCE
+typedef enum SHAREDCLIPBOARDURIPROVIDERSOURCE
 {
     /** Invalid source type. */
-    SHAREDCLIPBOARDPROVIDERSOURCE_INVALID = 0,
+    SHAREDCLIPBOARDURIPROVIDERSOURCE_INVALID = 0,
     /** Source is VbglR3. */
-    SHAREDCLIPBOARDPROVIDERSOURCE_VBGLR3,
+    SHAREDCLIPBOARDURIPROVIDERSOURCE_VBGLR3,
     /** Source is the host service. */
-    SHAREDCLIPBOARDPROVIDERSOURCE_HOSTSERVICE
-} SHAREDCLIPBOARDPROVIDERSOURCE;
+    SHAREDCLIPBOARDURIPROVIDERSOURCE_HOSTSERVICE
+} SHAREDCLIPBOARDURIPROVIDERSOURCE;
 
 class SharedClipboardProvider;
 
@@ -552,7 +552,9 @@ typedef struct _SHAREDCLIPBOARDPROVIDERCALLBACKS
 typedef struct _SHAREDCLIPBOARDPROVIDERCREATIONCTX
 {
     /** Specifies what the source of the provider is. */
-    SHAREDCLIPBOARDPROVIDERSOURCE     enmSource;
+    SHAREDCLIPBOARDURIPROVIDERSOURCE  enmSource;
+    /** Specifies whether the provider will read or write data. */
+    SHAREDCLIPBOARDURITRANSFERDIR     enmDir;
     /** Optional callback table; can be NULL if not needed. */
     PSHAREDCLIPBOARDPROVIDERCALLBACKS pCallbacks;
     union
@@ -623,6 +625,8 @@ public:
     void SetCallbacks(PSHAREDCLIPBOARDPROVIDERCALLBACKS pCallbacks);
 
 public: /* Interface to be implemented. */
+
+    virtual int Prepare(void);
 
     virtual int ReadDataHdr(PVBOXCLIPBOARDDATAHDR *ppDataHdr);
     virtual int WriteDataHdr(const PVBOXCLIPBOARDDATAHDR pDataHdr);
@@ -696,6 +700,8 @@ protected:
 
     /** Number of references to this instance. */
     volatile uint32_t                m_cRefs;
+    /** The provider's transfer direction. */
+    SHAREDCLIPBOARDURITRANSFERDIR    m_enmDir;
     /** The provider's callback table. */
     SHAREDCLIPBOARDPROVIDERCALLBACKS m_Callbacks;
     /** Default timeout (in ms) for waiting for events. */
@@ -758,6 +764,8 @@ public:
 
 public:
 
+    int Prepare(void);
+
     int ReadDataHdr(PVBOXCLIPBOARDDATAHDR *ppDataHdr);
     int WriteDataHdr(const PVBOXCLIPBOARDDATAHDR pDataHdr);
 
@@ -810,6 +818,14 @@ typedef DECLCALLBACK(void) FNSHAREDCLIPBOARDURITRANSFERSTARTED(PSHAREDCLIPBOARDU
 /** Pointer to a FNSHAREDCLIPBOARDURITRANSFERSTARTED function. */
 typedef FNSHAREDCLIPBOARDURITRANSFERSTARTED *PFNSHAREDCLIPBOARDURITRANSFERSTARTED;
 
+typedef DECLCALLBACK(void) FNSHAREDCLIPBOARDURITRANSFERPREPARE(PSHAREDCLIPBOARDURITRANSFERCALLBACKDATA pData);
+/** Pointer to a FNSHAREDCLIPBOARDURITRANSFERPREPARE function. */
+typedef FNSHAREDCLIPBOARDURITRANSFERPREPARE *PFNSHAREDCLIPBOARDURITRANSFERPREPARE;
+
+typedef DECLCALLBACK(void) FNSHAREDCLIPBOARDURIMETADATACOMPLETE(PSHAREDCLIPBOARDURITRANSFERCALLBACKDATA pData);
+/** Pointer to a FNSHAREDCLIPBOARDURIMETADATACOMPLETE function. */
+typedef FNSHAREDCLIPBOARDURIMETADATACOMPLETE *PFNSHAREDCLIPBOARDURIMETADATACOMPLETE;
+
 typedef DECLCALLBACK(void) FNSHAREDCLIPBOARDURITRANSFERCANCELED(PSHAREDCLIPBOARDURITRANSFERCALLBACKDATA pData);
 /** Pointer to a FNSHAREDCLIPBOARDURITRANSFERCANCELED function. */
 typedef FNSHAREDCLIPBOARDURITRANSFERCANCELED *PFNSHAREDCLIPBOARDURITRANSFERCANCELED;
@@ -830,8 +846,12 @@ typedef struct _SHAREDCLIPBOARDURITRANSFERCALLBACKS
 {
     /** Saved user pointer. */
     void                                 *pvUser;
+    /** Function pointer, called when the transfer is going to be prepared. */
+    PFNSHAREDCLIPBOARDURITRANSFERPREPARE  pfnTransferPrepare;
     /** Function pointer, called when the transfer has been started. */
     PFNSHAREDCLIPBOARDURITRANSFERSTARTED  pfnTransferStarted;
+    /** Function pointer, called when reading / writing meta data is complete. */
+    PFNSHAREDCLIPBOARDURIMETADATACOMPLETE pfnMetaDataComplete;
     /** Function pointer, called when the transfer is complete. */
     PFNSHAREDCLIPBOARDURITRANSFERCOMPLETE pfnTransferComplete;
     /** Function pointer, called when the transfer has been canceled. */
@@ -932,11 +952,11 @@ SharedClipboardProvider *SharedClipboardURITransferGetProvider(PSHAREDCLIPBOARDU
 SharedClipboardURIList *SharedClipboardURITransferGetList(PSHAREDCLIPBOARDURITRANSFER pTransfer);
 SharedClipboardURIObject *SharedClipboardURITransferGetObject(PSHAREDCLIPBOARDURITRANSFER pTransfer, uint64_t uIdx);
 int SharedClipboardURITransferRun(PSHAREDCLIPBOARDURITRANSFER pTransfer, bool fAsync);
-void SharedClipboardURITransferSetCallbacks(PSHAREDCLIPBOARDURITRANSFER pTransfer, PSHAREDCLIPBOARDURITRANSFERCALLBACKS pCallbacks);
+void SharedClipboardURITransferSetCallbacks(PSHAREDCLIPBOARDURITRANSFER pTransfer,
+                                            PSHAREDCLIPBOARDURITRANSFERCALLBACKS pCallbacks);
 
 int SharedClipboardURITransferMetaDataAdd(PSHAREDCLIPBOARDURITRANSFER pTransfer, const void *pvMeta, uint32_t cbMeta);
 bool SharedClipboardURITransferMetaDataIsComplete(PSHAREDCLIPBOARDURITRANSFER pTransfer);
-int SharedClipboardURITransferMetaGet(PSHAREDCLIPBOARDURITRANSFER pTransfer, const void *pvMeta, uint32_t cbMeta);
 int SharedClipboardURITransferMetaDataRead(PSHAREDCLIPBOARDURITRANSFER pTransfer, uint32_t *pcbRead);
 int SharedClipboardURITransferMetaDataWrite(PSHAREDCLIPBOARDURITRANSFER pTransfer, uint32_t *pcbWritten);
 

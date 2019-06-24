@@ -50,9 +50,21 @@ SharedClipboardProviderHostService::~SharedClipboardProviderHostService(void)
     m_pArea->Release();
 }
 
+int SharedClipboardProviderHostService::Prepare(void)
+{
+    LogFlowFuncEnter();
+
+    /*return vboxSvcClipboardReportMsg(,
+                                     VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA, );*/
+    return 0;
+}
+
 int SharedClipboardProviderHostService::ReadDataHdr(PVBOXCLIPBOARDDATAHDR *ppDataHdr)
 {
-    RT_NOREF(ppDataHdr);
+    AssertPtrReturn(ppDataHdr, VERR_INVALID_POINTER);
+
+    LogFlowFuncEnter();
+
     /*return eventWait(VBOX_SHARED_CLIPBOARD_GUEST_FN_WRITE_DATA_HDR, m_Callbacks.pfnReadDataHdr, m_uTimeoutMs,
                      (void **)ppDataHdr);*/
     return 0;
@@ -60,7 +72,7 @@ int SharedClipboardProviderHostService::ReadDataHdr(PVBOXCLIPBOARDDATAHDR *ppDat
 
 int SharedClipboardProviderHostService::WriteDataHdr(const PVBOXCLIPBOARDDATAHDR pDataHdr)
 {
-    RT_NOREF(pDataHdr);
+    AssertPtrReturn(pDataHdr, VERR_INVALID_POINTER);
 
     LogFlowFuncEnter();
 

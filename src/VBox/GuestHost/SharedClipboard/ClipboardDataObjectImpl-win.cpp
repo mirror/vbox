@@ -120,6 +120,9 @@ VBoxClipboardWinDataObject::VBoxClipboardWinDataObject(PSHAREDCLIPBOARDURITRANSF
         m_cFormats  = cAllFormats;
         m_enmStatus = Initialized;
 
+        int rc2 = RTSemEventCreate(&m_EventMetaDataComplete);
+        AssertRC(rc2);
+
         AssertPtr(m_pTransfer->pProvider);
         m_pTransfer->pProvider->AddRef();
     }
@@ -129,6 +132,8 @@ VBoxClipboardWinDataObject::VBoxClipboardWinDataObject(PSHAREDCLIPBOARDURITRANSF
 
 VBoxClipboardWinDataObject::~VBoxClipboardWinDataObject(void)
 {
+    RTSemEventDestroy(m_EventMetaDataComplete);
+
     if (m_pTransfer->pProvider)
         m_pTransfer->pProvider->Release();
 
@@ -217,26 +222,29 @@ int VBoxClipboardWinDataObject::copyToHGlobal(const void *pvData, size_t cbData,
 }
 
 /**
- * Creates a FILEGROUPDESCRIPTOR object from a given Shared Clipboard URI list and stores
- * the result into an HGLOBAL object.
+ * Creates a FILEGROUPDESCRIPTOR object from a given URI transfer and stores the result into an HGLOBAL object.
  *
  * @returns VBox status code.
- * @param   URIList             URI list to create object for.
+ * @param   pTransfer           URI transfer to create file grou desciprtor for.
  * @param   fUnicode            Whether the FILEGROUPDESCRIPTOR object shall contain Unicode data or not.
  * @param   phGlobal            Where to store the allocated HGLOBAL object on success.
  */
-int VBoxClipboardWinDataObject::createFileGroupDescriptorFromURIList(const SharedClipboardURIList &URIList,
-                                                                     bool fUnicode, HGLOBAL *phGlobal)
+int VBoxClipboardWinDataObject::createFileGroupDescriptorFromTransfer(PSHAREDCLIPBOARDURITRANSFER pTransfer,
+                                                                      bool fUnicode, HGLOBAL *phGlobal)
 {
-    AssertReturn(URIList.GetRootCount(), VERR_INVALID_PARAMETER);
-    AssertPtrReturn(phGlobal,            VERR_INVALID_POINTER);
+    AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
+    AssertPtrReturn(phGlobal,  VERR_INVALID_POINTER);
 
     LogFlowFuncEnter();
+
+    SharedClipboardURIList *pURIList = SharedClipboardURITransferGetList(pTransfer);
+    if (!pURIList)
+        return VERR_WRONG_ORDER;
 
     const size_t cbFileGroupDescriptor = fUnicode ? sizeof(FILEGROUPDESCRIPTORW) : sizeof(FILEGROUPDESCRIPTORA);
     const size_t cbFileDescriptor = fUnicode ? sizeof(FILEDESCRIPTORW) : sizeof(FILEDESCRIPTORA);
 
-    const UINT   cItems = (UINT)URIList.GetRootCount(); /** @todo UINT vs. uint64_t */
+    const UINT   cItems = (UINT)pURIList->GetRootCount(); /** @todo UINT vs. uint64_t */
     const size_t cbFGD  = cbFileGroupDescriptor + (cbFileDescriptor * (cItems - 1));
 
     LogFunc(("fUnicode=%RTbool, cItems=%u, cbFileDescriptor=%zu\n", fUnicode, cItems, cbFileDescriptor));
@@ -257,7 +265,7 @@ int VBoxClipboardWinDataObject::createFileGroupDescriptorFromURIList(const Share
         FILEDESCRIPTOR *pFD = &pFGD->fgd[i];
         RT_BZERO(pFD, cbFileDescriptor);
 
-        const SharedClipboardURIObject *pObj = URIList.At(i);
+        const SharedClipboardURIObject *pObj = pURIList->At(i);
         AssertPtr(pObj);
         const char *pszFile = pObj->GetSourcePathAbs().c_str();
         AssertPtr(pszFile);
@@ -372,7 +380,7 @@ STDMETHODIMP VBoxClipboardWinDataObject::GetData(LPFORMATETC pFormatEtc, LPSTGME
 
     HRESULT hr = DV_E_FORMATETC; /* Play safe. */
 
-    LogRel2(("Clipboard: cfFormat=%RI16, sFormat=%s, tyMed=%RU32, dwAspect=%RU32 -> lIndex=%u\n",
+    LogRel2(("Shared Clipboard: cfFormat=%RI16, sFormat=%s, tyMed=%RU32, dwAspect=%RU32 -> lIndex=%u\n",
              pThisFormat->cfFormat, VBoxClipboardWinDataObject::ClipboardFormatToString(pFormatEtc->cfFormat),
              pThisFormat->tymed, pThisFormat->dwAspect, lIndex));
 
@@ -390,32 +398,47 @@ STDMETHODIMP VBoxClipboardWinDataObject::GetData(LPFORMATETC pFormatEtc, LPSTGME
         case FormatIndex_FileDescriptorW: /* Unicode */
 #endif
         {
-            break;
-#if 0
-            const bool fUnicode = lIndex == FormatIndex_FileDescriptorW;
-
-            LogFlowFunc(("FormatIndex_FileDescriptor%s\n", fUnicode ? "W" : "A"));
-
-            int rc = SharedClipboardURITransferMetaDataRead(m_pTransfer, NULL /* cbRead */);
+            int rc = SharedClipboardURITransferPrepare(m_pTransfer);
             if (RT_SUCCESS(rc))
             {
-                const SharedClipboardURIList *pURIList = SharedClipboardURITransferGetList(m_pTransfer);
-                if (    pURIList
-                    && !pURIList->IsEmpty())
+                const bool fUnicode = lIndex == FormatIndex_FileDescriptorW;
+
+                LogFlowFunc(("FormatIndex_FileDescriptor%s\n", fUnicode ? "W" : "A"));
+
+                /* Register needed callbacks so that we can wait for the meta data to arrive here. */
+                SHAREDCLIPBOARDURITRANSFERCALLBACKS Callbacks;
+                RT_ZERO(Callbacks);
+                Callbacks.pfnMetaDataComplete = VBoxClipboardWinDataObject::onMetaDataCompleteCallback;
+
+                SharedClipboardURITransferSetCallbacks(m_pTransfer, &Callbacks);
+
+                /* Start the transfer asynchronously in a separate thread. */
+                rc = SharedClipboardURITransferRun(m_pTransfer, true /* fAsync */);
+                if (RT_SUCCESS(rc))
                 {
-                    HGLOBAL hGlobal;
-                    rc = createFileGroupDescriptorFromURIList(*pURIList, fUnicode, &hGlobal);
+                    /* Wait for the meta data to arrive. */
+                    LogFlowFunc(("Waiting for meta data to arrive ...\n"));
+                    rc = RTSemEventWait(m_EventMetaDataComplete, 30 * 1000 /* 30s timeout */);
                     if (RT_SUCCESS(rc))
                     {
-                        pMedium->tymed   = TYMED_HGLOBAL;
-                        pMedium->hGlobal = hGlobal;
-                        /* Note: hGlobal now is being owned by pMedium / the caller. */
+                        const SharedClipboardURIList *pURIList = SharedClipboardURITransferGetList(m_pTransfer);
+                        if (    pURIList
+                            && !pURIList->IsEmpty())
+                        {
+                            HGLOBAL hGlobal;
+                            rc = createFileGroupDescriptorFromTransfer(m_pTransfer, fUnicode, &hGlobal);
+                            if (RT_SUCCESS(rc))
+                            {
+                                pMedium->tymed   = TYMED_HGLOBAL;
+                                pMedium->hGlobal = hGlobal;
+                                /* Note: hGlobal now is being owned by pMedium / the caller. */
 
-                        hr = S_OK;
+                                hr = S_OK;
+                            }
+                        }
                     }
                 }
             }
-#endif
             break;
         }
 
@@ -451,7 +474,7 @@ STDMETHODIMP VBoxClipboardWinDataObject::GetData(LPFORMATETC pFormatEtc, LPSTGME
     }
 
     if (hr == DV_E_FORMATETC)
-        LogRel(("Clipboard: Error handling format\n"));
+        LogRel(("Shared Clipboard: Error handling format\n"));
 
     LogFlowFunc(("hr=%Rhrc\n", hr));
     return hr;
@@ -688,7 +711,7 @@ bool VBoxClipboardWinDataObject::lookupFormatEtc(LPFORMATETC pFormatEtc, ULONG *
             /* Note: Do *not* compare dwAspect here, as this can be dynamic, depending on how the object should be represented. */
             //&& pFormatEtc->dwAspect == m_pFormatEtc[i].dwAspect)
         {
-            LogRel3(("Clipboard: Format found: tyMed=%RI32, cfFormat=%RI16, sFormats=%s, dwAspect=%RI32, ulIndex=%RU32\n",
+            LogRel3(("Shared Clipboard: Format found: tyMed=%RI32, cfFormat=%RI16, sFormats=%s, dwAspect=%RI32, ulIndex=%RU32\n",
                       pFormatEtc->tymed, pFormatEtc->cfFormat, VBoxClipboardWinDataObject::ClipboardFormatToString(m_pFormatEtc[i].cfFormat),
                       pFormatEtc->dwAspect, i));
             if (puIndex)
@@ -697,7 +720,7 @@ bool VBoxClipboardWinDataObject::lookupFormatEtc(LPFORMATETC pFormatEtc, ULONG *
         }
     }
 
-    LogRel3(("Clipboard: Format NOT found: tyMed=%RI32, cfFormat=%RI16, sFormats=%s, dwAspect=%RI32\n",
+    LogRel3(("Shared Clipboard: Format NOT found: tyMed=%RI32, cfFormat=%RI16, sFormats=%s, dwAspect=%RI32\n",
              pFormatEtc->tymed, pFormatEtc->cfFormat, VBoxClipboardWinDataObject::ClipboardFormatToString(pFormatEtc->cfFormat),
              pFormatEtc->dwAspect));
 
@@ -718,5 +741,16 @@ void VBoxClipboardWinDataObject::registerFormat(LPFORMATETC pFormatEtc, CLIPFORM
 
     LogFlowFunc(("Registered format=%ld, sFormat=%s\n",
                  pFormatEtc->cfFormat, VBoxClipboardWinDataObject::ClipboardFormatToString(pFormatEtc->cfFormat)));
+}
+
+/* static */
+DECLCALLBACK(void) VBoxClipboardWinDataObject::onMetaDataCompleteCallback(PSHAREDCLIPBOARDURITRANSFERCALLBACKDATA pData)
+{
+    VBoxClipboardWinDataObject *pThis = (VBoxClipboardWinDataObject *)pData->pvUser;
+
+    LogFlowFunc(("pThis=%p\n", pThis));
+
+    int rc2 = RTSemEventSignal(pThis->m_EventMetaDataComplete);
+    AssertRC(rc2);
 }
 

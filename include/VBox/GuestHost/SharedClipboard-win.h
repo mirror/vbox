@@ -215,11 +215,16 @@ protected:
     static int Thread(RTTHREAD hThread, void *pvUser);
 
     int copyToHGlobal(const void *pvData, size_t cbData, UINT fFlags, HGLOBAL *phGlobal);
-    int createFileGroupDescriptorFromURIList(const SharedClipboardURIList &URIList, bool fUnicode, HGLOBAL *phGlobal);
+    int createFileGroupDescriptorFromTransfer(PSHAREDCLIPBOARDURITRANSFER pTransfer,
+                                              bool fUnicode, HGLOBAL *phGlobal);
 
     bool lookupFormatEtc(LPFORMATETC pFormatEtc, ULONG *puIndex);
     void registerFormat(LPFORMATETC pFormatEtc, CLIPFORMAT clipFormat, TYMED tyMed = TYMED_HGLOBAL,
                         LONG lindex = -1, DWORD dwAspect = DVASPECT_CONTENT, DVTARGETDEVICE *pTargetDevice = NULL);
+
+protected: /* URI transfer callbacks */
+
+    static DECLCALLBACK(void) onMetaDataCompleteCallback(PSHAREDCLIPBOARDURITRANSFERCALLBACKDATA pData);
 
 protected:
 
@@ -231,6 +236,8 @@ protected:
     PSHAREDCLIPBOARDURITRANSFER m_pTransfer;
     IStream                    *m_pStream;
     ULONG                       m_uObjIdx;
+    /** Event being triggered when reading the meta data has been completed.*/
+    RTSEMEVENT                  m_EventMetaDataComplete;
 };
 
 class VBoxClipboardWinEnumFormatEtc : public IEnumFORMATETC
