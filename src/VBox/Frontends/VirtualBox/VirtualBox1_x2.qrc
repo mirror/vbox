@@ -409,6 +409,5 @@
         <file alias="log_viewer_find_disabled_32px_x2.png">images/x2/log_viewer_find_disabled_32px_x2.png</file>
         <file alias="log_viewer_goto_next_bookmark_16px_x2.png">images/x2/log_viewer_goto_next_bookmark_16px_x2.png</file>
         <file alias="log_viewer_goto_previous_bookmark_16px_x2.png">images/x2/log_viewer_goto_previous_bookmark_16px_x2.png</file>
-        <file alias="log_viewer_goto_selected_bookmark_16px_x2.png">images/x2/log_viewer_goto_selected_bookmark_16px_x2.png</file>
     </qresource>
 </RCC>

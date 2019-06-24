@@ -1,5 +1,6 @@
 <RCC>
     <qresource suffix="/">
+        <file alias="log_viewer_goto_selected_bookmark_16px_x2.png">images/x2/log_viewer_goto_selected_bookmark_16px_x2.png</file>
         <file alias="log_viewer_options_16px_x2.png">images/x2/log_viewer_options_16px_x2.png</file>
         <file alias="log_viewer_options_32px_x2.png">images/x2/log_viewer_options_32px_x2.png</file>
         <file alias="log_viewer_options_disabled_16px_x2.png">images/x2/log_viewer_options_disabled_16px_x2.png</file>
@@ -90,11 +91,11 @@
         <file alias="os_opensuse_64_x2.png">images/x2/os_opensuse_64_x2.png</file>
         <file alias="os_opensuse_x2.png">images/x2/os_opensuse_x2.png</file>
         <file alias="os_oracle_64_x2.png">images/x2/os_oracle_64_x2.png</file>
+        <file alias="os_oracle_x2.png">images/x2/os_oracle_x2.png</file>
         <file alias="os_oraclesolaris_64_x2.png">images/x2/os_oraclesolaris_64_x2.png</file>
         <file alias="os_oraclesolaris_x2.png">images/x2/os_oraclesolaris_x2.png</file>
-        <file alias="os_oracle_x2.png">images/x2/os_oracle_x2.png</file>
-        <file alias="os_os2ecs_x2.png">images/x2/os_os2ecs_x2.png</file>
         <file alias="os_os2_other_x2.png">images/x2/os_os2_other_x2.png</file>
+        <file alias="os_os2ecs_x2.png">images/x2/os_os2ecs_x2.png</file>
         <file alias="os_os2warp3_x2.png">images/x2/os_os2warp3_x2.png</file>
         <file alias="os_os2warp45_x2.png">images/x2/os_os2warp45_x2.png</file>
         <file alias="os_os2warp4_x2.png">images/x2/os_os2warp4_x2.png</file>
@@ -129,10 +130,10 @@
         <file alias="os_win8_x2.png">images/x2/os_win8_x2.png</file>
         <file alias="os_win95_x2.png">images/x2/os_win95_x2.png</file>
         <file alias="os_win98_x2.png">images/x2/os_win98_x2.png</file>
-        <file alias="os_winme_x2.png">images/x2/os_winme_x2.png</file>
-        <file alias="os_winnt4_x2.png">images/x2/os_winnt4_x2.png</file>
         <file alias="os_win_other_64_x2.png">images/x2/os_win_other_64_x2.png</file>
         <file alias="os_win_other_x2.png">images/x2/os_win_other_x2.png</file>
+        <file alias="os_winme_x2.png">images/x2/os_winme_x2.png</file>
+        <file alias="os_winnt4_x2.png">images/x2/os_winnt4_x2.png</file>
         <file alias="os_winvista_64_x2.png">images/x2/os_winvista_64_x2.png</file>
         <file alias="os_winvista_x2.png">images/x2/os_winvista_x2.png</file>
         <file alias="os_winxp_64_x2.png">images/x2/os_winxp_64_x2.png</file>
@@ -279,14 +280,14 @@
         <file alias="state_saved_16px_x2.png">images/x2/state_saved_16px_x2.png</file>
         <file alias="state_saving_16px_x2.png">images/x2/state_saving_16px_x2.png</file>
         <file alias="state_stuck_16px_x2.png">images/x2/state_stuck_16px_x2.png</file>
+        <file alias="status_check_16px_x2.png">images/x2/status_check_16px_x2.png</file>
+        <file alias="status_error_16px_x2.png">images/x2/status_error_16px_x2.png</file>
         <file alias="statusbar_16px_x2.png">images/x2/statusbar_16px_x2.png</file>
         <file alias="statusbar_disabled_16px_x2.png">images/x2/statusbar_disabled_16px_x2.png</file>
         <file alias="statusbar_on_16px_x2.png">images/x2/statusbar_on_16px_x2.png</file>
         <file alias="statusbar_on_disabled_16px_x2.png">images/x2/statusbar_on_disabled_16px_x2.png</file>
         <file alias="statusbar_settings_16px_x2.png">images/x2/statusbar_settings_16px_x2.png</file>
         <file alias="statusbar_settings_disabled_16px_x2.png">images/x2/statusbar_settings_disabled_16px_x2.png</file>
-        <file alias="status_check_16px_x2.png">images/x2/status_check_16px_x2.png</file>
-        <file alias="status_error_16px_x2.png">images/x2/status_error_16px_x2.png</file>
         <file alias="subnet_16px_x2.png">images/x2/subnet_16px_x2.png</file>
         <file alias="tools_banner_global_200px_x2.png">images/x2/tools_banner_global_200px_x2.png</file>
         <file alias="tools_banner_machine_200px_x2.png">images/x2/tools_banner_machine_200px_x2.png</file>
@@ -318,6 +319,7 @@
         <file alias="usb_unavailable_disabled_16px_x2.png">images/x2/usb_unavailable_disabled_16px_x2.png</file>
         <file alias="usb_warning_16px_x2.png">images/x2/usb_warning_16px_x2.png</file>
         <file alias="usb_write_16px_x2.png">images/x2/usb_write_16px_x2.png</file>
+        <file alias="vcn_16px_x2.png">images/x2/vcn_16px_x2.png</file>
         <file alias="video_capture_16px_x2.png">images/x2/video_capture_16px_x2.png</file>
         <file alias="video_capture_disabled_16px_x2.png">images/x2/video_capture_disabled_16px_x2.png</file>
         <file alias="video_capture_on_16px_x2.png">images/x2/video_capture_on_16px_x2.png</file>
@@ -386,7 +388,6 @@
         <file alias="vm_start_disabled_32px_x2.png">images/x2/vm_start_disabled_32px_x2.png</file>
         <file alias="vm_start_headless_16px_x2.png">images/x2/vm_start_headless_16px_x2.png</file>
         <file alias="vm_start_separate_16px_x2.png">images/x2/vm_start_separate_16px_x2.png</file>
-        <file alias="vcn_16px_x2.png">images/x2/vcn_16px_x2.png</file>
         <file alias="vrdp_16px_x2.png">images/x2/vrdp_16px_x2.png</file>
         <file alias="vrdp_24px_x2.png">images/x2/vrdp_24px_x2.png</file>
         <file alias="vrdp_32px_x2.png">images/x2/vrdp_32px_x2.png</file>
