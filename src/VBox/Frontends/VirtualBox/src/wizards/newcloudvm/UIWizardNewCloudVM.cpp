@@ -31,10 +31,10 @@ UIWizardNewCloudVM::UIWizardNewCloudVM(QWidget *pParent)
 {
 #ifndef VBOX_WS_MAC
     /* Assign watermark: */
-    assignWatermark(":/wizard_ovf_import.png");
+    assignWatermark(":/wizard_new_cloud_vm.png");
 #else
     /* Assign background image: */
-    assignBackground(":/wizard_ovf_import_bg.png");
+    assignBackground(":/wizard_new_cloud_vm_bg.png");
 #endif
 }
 

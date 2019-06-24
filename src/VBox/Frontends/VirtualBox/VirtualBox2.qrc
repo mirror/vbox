@@ -1,6 +1,5 @@
 <RCC>
     <qresource suffix="/">
-        <file alias="log_viewer_options_32px.png">images/log_viewer_options_32px.png</file>
         <file alias="log_viewer_options_disabled_16px.png">images/log_viewer_options_disabled_16px.png</file>
         <file alias="log_viewer_options_disabled_32px.png">images/log_viewer_options_disabled_32px.png</file>
         <file alias="log_viewer_refresh_16px.png">images/log_viewer_refresh_16px.png</file>
@@ -407,6 +406,8 @@
         <file alias="wizard_clone_bg.png">images/wizard_clone_bg.png</file>
         <file alias="wizard_first_run.png">images/wizard_first_run.png</file>
         <file alias="wizard_first_run_bg.png">images/wizard_first_run_bg.png</file>
+        <file alias="wizard_new_cloud_vm.png">images/wizard_new_cloud_vm.png</file>
+        <file alias="wizard_new_cloud_vm_bg.png">images/wizard_new_cloud_vm_bg.png</file>
         <file alias="wizard_new_harddisk.png">images/wizard_new_harddisk.png</file>
         <file alias="wizard_new_harddisk_bg.png">images/wizard_new_harddisk_bg.png</file>
         <file alias="wizard_new_welcome.png">images/wizard_new_welcome.png</file>
