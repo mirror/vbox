@@ -26238,7 +26238,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <param name="uid" type="wstring" dir="in">
         <desc>the UUID of image in the Cloud.</desc>
       </param>
-      <param name="parameters" type="wstring" dir="in" safearray="yes">      
+      <param name="parameters" type="wstring" dir="in" safearray="yes">
         <desc>Each parameter in the array must be in the form "name=value".</desc>
       </param>
       <param name="progress" type="IProgress" dir="return">
