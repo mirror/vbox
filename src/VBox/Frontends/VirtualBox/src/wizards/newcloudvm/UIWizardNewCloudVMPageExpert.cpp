@@ -289,6 +289,9 @@ void UIWizardNewCloudVMPageExpert::sltHandleDestinationChange()
     /* Update tool-tip: */
     updateDestinationComboToolTip();
 
+    /* Make image list focused by default: */
+    m_pAccountImageList->setFocus();
+
     /* Refresh required settings: */
     populateAccounts();
     populateAccountProperties();
