@@ -14228,9 +14228,7 @@ and "VAR" for unsetting. -->
       <desc>
         Reads data from this file.
 
-        <result name="E_NOTIMPL">
-          The method is not implemented yet.
-        </result>
+        The file current position (<link to="IFile::offset"/>) is updated on success.
       </desc>
       <param name="toRead" type="unsigned long" dir="in">
         <desc>Number of bytes to read.</desc>
@@ -14250,9 +14248,7 @@ and "VAR" for unsetting. -->
       <desc>
         Reads data from an offset of this file.
 
-        <result name="E_NOTIMPL">
-          The method is not implemented yet.
-        </result>
+        The file current position (<link to="IFile::offset"/>) is updated on success.
       </desc>
       <param name="offset" type="long long" dir="in">
         <desc>Offset in bytes to start reading.</desc>
@@ -14315,10 +14311,6 @@ and "VAR" for unsetting. -->
     <method name="setSize">
       <desc>
         Changes the file size.
-
-        <result name="E_NOTIMPL">
-          The method is not implemented yet.
-        </result>
       </desc>
       <param name="size" type="long long" dir="in">
         <desc>The new file size.</desc>
@@ -14328,6 +14320,8 @@ and "VAR" for unsetting. -->
     <method name="write">
       <desc>
         Writes bytes to this file.
+
+        The file current position (<link to="IFile::offset"/>) is updated on success.
       </desc>
       <param name="data" type="octet" dir="in" safearray="yes">
         <desc>
@@ -14350,12 +14344,13 @@ and "VAR" for unsetting. -->
       <desc>
         Writes bytes at a certain offset to this file.
 
-        <result name="E_NOTIMPL">
-          The method is not implemented yet.
-        </result>
+        The file current position (<link to="IFile::offset"/>) is updated on success.
       </desc>
       <param name="offset" type="long long" dir="in">
-        <desc>Offset in bytes to start writing.</desc>
+        <desc>Offset in bytes to start writing.  If the file was opened with the
+        <link to="IFile::accessMode"/> set to <link to="FileAccessMode_AppendOnly"/>
+        or <link to="FileAccessMode_AppendRead"/>, the offset is ignored and the
+        write always goes to the end of the file.</desc>
       </param>
       <param name="data" type="octet" dir="in" safearray="yes">
         <desc>
