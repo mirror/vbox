@@ -26011,7 +26011,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   <interface
     name="ICloudClient" extends="$unknown"
     uuid="7b54f41a-91d6-11e9-9c93-b7d487e5e15b"
-    wsmap="managed" reservedMethods="13" reservedAttributes="8"
+    wsmap="managed" reservedMethods="10" reservedAttributes="8"
     >
 
     <method name="getExportLaunchDescriptionForm">
@@ -26219,6 +26219,44 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
     </method>
 
+    <method name="createImage">
+      <desc>
+        Create an image in the Cloud.
+      </desc>
+      <param name="parameters" type="wstring" dir="in" safearray="yes">      
+        <desc>Each parameter in the array must be in the form "name=value".</desc>
+      </param>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>Progress object to track the operation completion.</desc>
+      </param>
+    </method>
+
+    <method name="exportImage">
+      <desc>
+        Export an existing image with passed id somewhere in the Cloud.
+      </desc>
+      <param name="uid" type="wstring" dir="in">
+        <desc>the UUID of image in the Cloud.</desc>
+      </param>
+      <param name="parameters" type="wstring" dir="in" safearray="yes">      
+        <desc>Each parameter in the array must be in the form "name=value".</desc>
+      </param>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>Progress object to track the operation completion.</desc>
+      </param>
+    </method>
+
+    <method name="deleteImage">
+      <desc>
+        Delete an existing image with passed id from the Cloud.
+      </desc>
+      <param name="uid" type="wstring" dir="in">
+        <desc>the UUID of image in the Cloud.</desc>
+      </param>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>Progress object to track the operation completion.</desc>
+      </param>
+    </method>
   </interface>
 
   <!--
