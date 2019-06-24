@@ -333,6 +333,7 @@ static int vgsvcGstCtrlSessionHandleFileOpen(PVBOXSERVICECTRLSESSION pSession, P
                              */
                             uHandle = VBOX_GUESTCTRL_CONTEXTID_GET_OBJECT(pHostCtx->uContextID);
                             pFile->uHandle = uHandle;
+                            pFile->fOpen   = fFlags;
                             RTListAppend(&pSession->lstFiles, &pFile->Node);
                             VGSvcVerbose(2, "[File %s] Opened (ID=%RU32)\n", pFile->szName, pFile->uHandle);
                         }
@@ -447,7 +448,8 @@ static int vgsvcGstCtrlSessionHandleFileRead(const PVBOXSERVICECTRLSESSION pSess
          * If the request is larger than our scratch buffer, try grow it - just
          * ignore failure as the host better respect our buffer limits.
          */
-        size_t cbRead = 0;
+        uint32_t offNew = 0;
+        size_t   cbRead = 0;
         PVBOXSERVICECTRLFILE pFile = vgsvcGstCtrlSessionFileGetLocked(pSession, uHandle);
         if (pFile)
         {
@@ -455,7 +457,8 @@ static int vgsvcGstCtrlSessionHandleFileRead(const PVBOXSERVICECTRLSESSION pSess
                  vgsvcGstCtrlSessionGrowScratchBuf(ppvScratchBuf, pcbScratchBuf, cbToRead);
 
             rc = RTFileRead(pFile->hFile, *ppvScratchBuf, RT_MIN(cbToRead, *pcbScratchBuf), &cbRead);
-            VGSvcVerbose(5, "[File %s] Read %zu/%RU32 bytes, rc=%Rrc\n", pFile->szName, cbRead, cbToRead, rc);
+            offNew = (int64_t)RTFileTell(pFile->hFile);
+            VGSvcVerbose(5, "[File %s] Read %zu/%RU32 bytes, rc=%Rrc, offNew=%RI64\n", pFile->szName, cbRead, cbToRead, rc, offNew);
         }
         else
         {
@@ -466,7 +469,11 @@ static int vgsvcGstCtrlSessionHandleFileRead(const PVBOXSERVICECTRLSESSION pSess
         /*
          * Report result and data back to the host.
          */
-        int rc2 = VbglR3GuestCtrlFileCbRead(pHostCtx, rc, *ppvScratchBuf, (uint32_t)cbRead);
+        int rc2;
+        if (g_fControlHostFeatures0 & VBOX_GUESTCTRL_HF_0_NOTIFY_RDWR_OFFSET)
+            rc2 = VbglR3GuestCtrlFileCbReadOffset(pHostCtx, rc, *ppvScratchBuf, (uint32_t)cbRead, offNew);
+        else
+            rc2 = VbglR3GuestCtrlFileCbRead(pHostCtx, rc, *ppvScratchBuf, (uint32_t)cbRead);
         if (RT_FAILURE(rc2))
         {
             VGSvcError("Failed to report file read status, rc=%Rrc\n", rc2);
@@ -504,7 +511,8 @@ static int vgsvcGstCtrlSessionHandleFileReadAt(const PVBOXSERVICECTRLSESSION pSe
          * If the request is larger than our scratch buffer, try grow it - just
          * ignore failure as the host better respect our buffer limits.
          */
-        size_t cbRead = 0;
+        int64_t offNew = 0;
+        size_t  cbRead = 0;
         PVBOXSERVICECTRLFILE pFile = vgsvcGstCtrlSessionFileGetLocked(pSession, uHandle);
         if (pFile)
         {
@@ -512,7 +520,14 @@ static int vgsvcGstCtrlSessionHandleFileReadAt(const PVBOXSERVICECTRLSESSION pSe
                  vgsvcGstCtrlSessionGrowScratchBuf(ppvScratchBuf, pcbScratchBuf, cbToRead);
 
             rc = RTFileReadAt(pFile->hFile, (RTFOFF)offReadAt, *ppvScratchBuf, RT_MIN(cbToRead, *pcbScratchBuf), &cbRead);
-            VGSvcVerbose(5, "[File %s] Read %zu bytes @ %RU64, rc=%Rrc\n", pFile->szName, cbRead, offReadAt, rc);
+            if (RT_SUCCESS(rc))
+            {
+                offNew = offReadAt + cbRead;
+                RTFileSeek(pFile->hFile, offNew, RTFILE_SEEK_BEGIN, NULL); /* RTFileReadAt does not always change position. */
+            }
+            else
+                offNew = (int64_t)RTFileTell(pFile->hFile);
+            VGSvcVerbose(5, "[File %s] Read %zu bytes @ %RU64, rc=%Rrc, offNew=%RI64\n", pFile->szName, cbRead, offReadAt, rc, offNew);
         }
         else
         {
@@ -523,7 +538,11 @@ static int vgsvcGstCtrlSessionHandleFileReadAt(const PVBOXSERVICECTRLSESSION pSe
         /*
          * Report result and data back to the host.
          */
-        int rc2 = VbglR3GuestCtrlFileCbRead(pHostCtx, rc, *ppvScratchBuf, (uint32_t)cbRead);
+        int rc2;
+        if (g_fControlHostFeatures0 & VBOX_GUESTCTRL_HF_0_NOTIFY_RDWR_OFFSET)
+            rc2 = VbglR3GuestCtrlFileCbReadOffset(pHostCtx, rc, *ppvScratchBuf, (uint32_t)cbRead, offNew);
+        else
+            rc2 = VbglR3GuestCtrlFileCbRead(pHostCtx, rc, *ppvScratchBuf, (uint32_t)cbRead);
         if (RT_FAILURE(rc2))
         {
             VGSvcError("Failed to report file read at status, rc=%Rrc\n", rc2);
@@ -560,13 +579,15 @@ static int vgsvcGstCtrlSessionHandleFileWrite(const PVBOXSERVICECTRLSESSION pSes
         /*
          * Locate the file and do the writing.
          */
-        size_t cbWritten = 0;
+        int64_t offNew    = 0;
+        size_t  cbWritten = 0;
         PVBOXSERVICECTRLFILE pFile = vgsvcGstCtrlSessionFileGetLocked(pSession, uHandle);
         if (pFile)
         {
             rc = RTFileWrite(pFile->hFile, *ppvScratchBuf, RT_MIN(cbToWrite, *pcbScratchBuf), &cbWritten);
-            VGSvcVerbose(5, "[File %s] Writing %p LB %RU32 =>  %Rrc, cbWritten=%zu\n",
-                         pFile->szName, *ppvScratchBuf, RT_MIN(cbToWrite, *pcbScratchBuf), rc, cbWritten);
+            offNew = (int64_t)RTFileTell(pFile->hFile);
+            VGSvcVerbose(5, "[File %s] Writing %p LB %RU32 =>  %Rrc, cbWritten=%zu, offNew=%RI64\n",
+                         pFile->szName, *ppvScratchBuf, RT_MIN(cbToWrite, *pcbScratchBuf), rc, cbWritten, offNew);
         }
         else
         {
@@ -577,7 +598,11 @@ static int vgsvcGstCtrlSessionHandleFileWrite(const PVBOXSERVICECTRLSESSION pSes
         /*
          * Report result back to host.
          */
-        int rc2 = VbglR3GuestCtrlFileCbWrite(pHostCtx, rc, (uint32_t)cbWritten);
+        int rc2;
+        if (g_fControlHostFeatures0 & VBOX_GUESTCTRL_HF_0_NOTIFY_RDWR_OFFSET)
+            rc2 = VbglR3GuestCtrlFileCbWriteOffset(pHostCtx, rc, (uint32_t)cbWritten, offNew);
+        else
+            rc2 = VbglR3GuestCtrlFileCbWrite(pHostCtx, rc, (uint32_t)cbWritten);
         if (RT_FAILURE(rc2))
         {
             VGSvcError("Failed to report file write status, rc=%Rrc\n", rc2);
@@ -615,13 +640,26 @@ static int vgsvcGstCtrlSessionHandleFileWriteAt(const PVBOXSERVICECTRLSESSION pS
         /*
          * Locate the file and do the writing.
          */
-        size_t cbWritten = 0;
+        int64_t offNew    = 0;
+        size_t  cbWritten = 0;
         PVBOXSERVICECTRLFILE pFile = vgsvcGstCtrlSessionFileGetLocked(pSession, uHandle);
         if (pFile)
         {
             rc = RTFileWriteAt(pFile->hFile, (RTFOFF)offWriteAt, *ppvScratchBuf, RT_MIN(cbToWrite, *pcbScratchBuf), &cbWritten);
-            VGSvcVerbose(5, "[File %s] Writing %p LB %RU32 @ %RU64 =>  %Rrc, cbWritten=%zu\n",
-                         pFile->szName, *ppvScratchBuf, RT_MIN(cbToWrite, *pcbScratchBuf), offWriteAt, rc, cbWritten);
+            if (RT_SUCCESS(rc))
+            {
+                offNew = offWriteAt + cbWritten;
+
+                /* RTFileWriteAt does not always change position: */
+                if (!(pFile->fOpen & RTFILE_O_APPEND))
+                    RTFileSeek(pFile->hFile, offNew, RTFILE_SEEK_BEGIN, NULL);
+                else
+                    RTFileSeek(pFile->hFile, 0, RTFILE_SEEK_END, (uint64_t *)&offNew);
+            }
+            else
+                offNew = (int64_t)RTFileTell(pFile->hFile);
+            VGSvcVerbose(5, "[File %s] Writing %p LB %RU32 @ %RU64 =>  %Rrc, cbWritten=%zu, offNew=%RI64\n",
+                         pFile->szName, *ppvScratchBuf, RT_MIN(cbToWrite, *pcbScratchBuf), offWriteAt, rc, cbWritten, offNew);
         }
         else
         {
@@ -632,7 +670,11 @@ static int vgsvcGstCtrlSessionHandleFileWriteAt(const PVBOXSERVICECTRLSESSION pS
         /*
          * Report result back to host.
          */
-        int rc2 = VbglR3GuestCtrlFileCbWrite(pHostCtx, rc, (uint32_t)cbWritten);
+        int rc2;
+        if (g_fControlHostFeatures0 & VBOX_GUESTCTRL_HF_0_NOTIFY_RDWR_OFFSET)
+            rc2 = VbglR3GuestCtrlFileCbWriteOffset(pHostCtx, rc, (uint32_t)cbWritten, offNew);
+        else
+            rc2 = VbglR3GuestCtrlFileCbWrite(pHostCtx, rc, (uint32_t)cbWritten);
         if (RT_FAILURE(rc2))
         {
             VGSvcError("Failed to report file write status, rc=%Rrc\n", rc2);
@@ -1657,6 +1699,7 @@ static RTEXITCODE vgsvcGstCtrlSessionSpawnWorker(PVBOXSERVICECTRLSESSION pSessio
         return VGSvcError("Error connecting to guest control service, rc=%Rrc\n", rc);
     g_fControlSupportsOptimizations = VbglR3GuestCtrlSupportsOptimizations(idClient);
     g_idControlSvcClient            = idClient;
+    VbglR3GuestCtrlQueryFeatures(idClient, &g_fControlHostFeatures0);
 
     rc = vgsvcGstCtrlSessionReadKeyAndAccept(idClient, pSession->StartupInfo.uSessionID);
     if (RT_SUCCESS(rc))

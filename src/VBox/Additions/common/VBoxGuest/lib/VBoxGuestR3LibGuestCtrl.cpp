@@ -308,6 +308,85 @@ VBGLR3DECL(int) VbglR3GuestCtrlMakeMeMaster(uint32_t idClient)
 
 
 /**
+ * Reports features to the host and retrieve host feature set.
+ *
+ * @returns VBox status code.
+ * @param   idClient        The client ID returned by VbglR3GuestCtrlConnect().
+ * @param   fGuestFeatures  Features to report, VBOX_GUESTCTRL_GF_XXX.
+ * @param   pfHostFeatures  Where to store the features VBOX_GUESTCTRL_HF_XXX.
+ */
+VBGLR3DECL(int) VbglR3GuestCtrlReportFeatures(uint32_t idClient, uint64_t fGuestFeatures, uint64_t *pfHostFeatures)
+{
+    int rc;
+    do
+    {
+        struct
+        {
+            VBGLIOCHGCMCALL         Hdr;
+            HGCMFunctionParameter   f64Features0;
+            HGCMFunctionParameter   f64Features1;
+        } Msg;
+        VBGL_HGCM_HDR_INIT(&Msg.Hdr, idClient, GUEST_MSG_REPORT_FEATURES, 2);
+        VbglHGCMParmUInt64Set(&Msg.f64Features0, fGuestFeatures);
+        VbglHGCMParmUInt64Set(&Msg.f64Features1, VBOX_GUESTCTRL_GF_1_MUST_BE_ONE);
+
+        rc = VbglR3HGCMCall(&Msg.Hdr, sizeof(Msg.Hdr));
+        if (RT_SUCCESS(rc))
+        {
+            Assert(Msg.f64Features0.type == VMMDevHGCMParmType_64bit);
+            Assert(Msg.f64Features1.type == VMMDevHGCMParmType_64bit);
+            if (Msg.f64Features1.u.value64 & VBOX_GUESTCTRL_GF_1_MUST_BE_ONE)
+                rc = VERR_NOT_SUPPORTED;
+            else if (pfHostFeatures)
+                *pfHostFeatures = Msg.f64Features0.u.value64;
+            break;
+        }
+    } while (rc == VERR_INTERRUPTED);
+    return rc;
+
+}
+
+
+/**
+ * Query the host features.
+ *
+ * @returns VBox status code.
+ * @param   idClient        The client ID returned by VbglR3GuestCtrlConnect().
+ * @param   pfHostFeatures  Where to store the host feature, VBOX_GUESTCTRL_HF_XXX.
+ */
+VBGLR3DECL(int) VbglR3GuestCtrlQueryFeatures(uint32_t idClient, uint64_t *pfHostFeatures)
+{
+    int rc;
+    do
+    {
+        struct
+        {
+            VBGLIOCHGCMCALL         Hdr;
+            HGCMFunctionParameter   f64Features0;
+            HGCMFunctionParameter   f64Features1;
+        } Msg;
+        VBGL_HGCM_HDR_INIT(&Msg.Hdr, idClient, GUEST_MSG_QUERY_FEATURES, 2);
+        VbglHGCMParmUInt64Set(&Msg.f64Features0, 0);
+        VbglHGCMParmUInt64Set(&Msg.f64Features1, RT_BIT_64(63));
+
+        rc = VbglR3HGCMCall(&Msg.Hdr, sizeof(Msg.Hdr));
+        if (RT_SUCCESS(rc))
+        {
+            Assert(Msg.f64Features0.type == VMMDevHGCMParmType_64bit);
+            Assert(Msg.f64Features1.type == VMMDevHGCMParmType_64bit);
+            if (Msg.f64Features1.u.value64 & RT_BIT_64(63))
+                rc = VERR_NOT_SUPPORTED;
+            else if (pfHostFeatures)
+                *pfHostFeatures = Msg.f64Features0.u.value64;
+            break;
+        }
+    } while (rc == VERR_INTERRUPTED);
+    return rc;
+
+}
+
+
+/**
  * Peeks at the next host message, waiting for one to turn up.
  *
  * @returns VBox status code.
@@ -1442,6 +1521,23 @@ VBGLR3DECL(int) VbglR3GuestCtrlFileCbRead(PVBGLR3GUESTCTRLCMDCTX pCtx,
 }
 
 
+VBGLR3DECL(int) VbglR3GuestCtrlFileCbReadOffset(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t uRc,
+                                                void *pvData, uint32_t cbData, int64_t offNew)
+{
+    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
+
+    HGCMReplyFileNotify Msg;
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_MSG_FILE_NOTIFY, 5);
+    VbglHGCMParmUInt32Set(&Msg.context, pCtx->uContextID);
+    VbglHGCMParmUInt32Set(&Msg.type, GUEST_FILE_NOTIFYTYPE_READ_OFFSET);
+    VbglHGCMParmUInt32Set(&Msg.rc, uRc);
+    VbglHGCMParmPtrSet(&Msg.u.ReadOffset.pvData, pvData, cbData);
+    VbglHGCMParmUInt64Set(&Msg.u.ReadOffset.off64New, (uint64_t)offNew);
+
+    return VbglR3HGCMCall(&Msg.hdr, RT_UOFFSET_AFTER(HGCMReplyFileNotify, u.read));
+}
+
+
 VBGLR3DECL(int) VbglR3GuestCtrlFileCbWrite(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t uRc, uint32_t cbWritten)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
@@ -1452,6 +1548,22 @@ VBGLR3DECL(int) VbglR3GuestCtrlFileCbWrite(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t
     VbglHGCMParmUInt32Set(&Msg.type, GUEST_FILE_NOTIFYTYPE_WRITE);
     VbglHGCMParmUInt32Set(&Msg.rc, uRc);
     VbglHGCMParmUInt32Set(&Msg.u.write.written, cbWritten);
+
+    return VbglR3HGCMCall(&Msg.hdr, RT_UOFFSET_AFTER(HGCMReplyFileNotify, u.write));
+}
+
+
+VBGLR3DECL(int) VbglR3GuestCtrlFileCbWriteOffset(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t uRc, uint32_t cbWritten, int64_t offNew)
+{
+    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
+
+    HGCMReplyFileNotify Msg;
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_MSG_FILE_NOTIFY, 5);
+    VbglHGCMParmUInt32Set(&Msg.context, pCtx->uContextID);
+    VbglHGCMParmUInt32Set(&Msg.type, GUEST_FILE_NOTIFYTYPE_WRITE_OFFSET);
+    VbglHGCMParmUInt32Set(&Msg.rc, uRc);
+    VbglHGCMParmUInt32Set(&Msg.u.WriteOffset.cb32Written, cbWritten);
+    VbglHGCMParmUInt64Set(&Msg.u.WriteOffset.off64New, (uint64_t)offNew);
 
     return VbglR3HGCMCall(&Msg.hdr, RT_UOFFSET_AFTER(HGCMReplyFileNotify, u.write));
 }

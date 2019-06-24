@@ -78,6 +78,8 @@ static RTSEMEVENTMULTI      g_hControlEvent = NIL_RTSEMEVENTMULTI;
 static uint64_t             g_idControlSession;
 /** The guest control service client ID. */
 uint32_t                    g_idControlSvcClient = 0;
+/** VBOX_GUESTCTRL_HF_XXX */
+uint64_t                    g_fControlHostFeatures0 = 0;
 #if 0 /** @todo process limit */
 /** How many started guest processes are kept into memory for supplying
  *  information to the host. Default is 256 processes. If 0 is specified,
@@ -209,6 +211,16 @@ static DECLCALLBACK(int) vgsvcGstCtrlInit(void)
         {
             VGSvcVerbose(3, "Guest control service client ID=%RU32%s\n",
                          g_idControlSvcClient, g_fControlSupportsOptimizations ? " w/ optimizations" : "");
+
+            /*
+             * Report features to the host.
+             */
+            rc = VbglR3GuestCtrlReportFeatures(g_idControlSvcClient, VBOX_GUESTCTRL_GF_0_SET_SIZE, &g_fControlHostFeatures0);
+            if (RT_SUCCESS(rc))
+                VGSvcVerbose(3, "Host features: %#RX64\n", g_fControlHostFeatures0);
+            else
+                VGSvcVerbose(1, "Warning! Feature reporing failed: %Rrc\n", rc);
+
             return VINF_SUCCESS;
         }
         VGSvcError("Failed to become guest control master: %Rrc\n", rc);

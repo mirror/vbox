@@ -112,7 +112,10 @@ public:
     int         i_sessionCreate(const GuestSessionStartupInfo &ssInfo, const GuestCredentials &guestCreds,
                                 ComObjPtr<GuestSession> &pGuestSession);
     inline bool i_sessionExists(uint32_t uSessionID);
-
+    /** Returns the VBOX_GUESTCTRL_GF_0_XXX mask reported by the guest. */
+    uint64_t    i_getGuestControlFeatures0() const { return mData.mfGuestFeatures0; }
+    /** Returns the VBOX_GUESTCTRL_GF_1_XXX mask reported by the guest. */
+    uint64_t    i_getGuestControlFeatures1() const { return mData.mfGuestFeatures1; }
 #endif
     /** @}  */
 
@@ -192,6 +195,9 @@ private:
     {
         Data() : mOSType(VBOXOSTYPE_Unknown),  mAdditionsRunLevel(AdditionsRunLevelType_None)
             , mAdditionsVersionFull(0), mAdditionsRevision(0), mAdditionsFeatures(0)
+#ifdef VBOX_WITH_GUEST_CONTROL
+            , mfGuestFeatures0(0), mfGuestFeatures1(0)
+#endif
         { }
 
         VBOXOSTYPE                  mOSType;        /**@< For internal used. VBOXOSTYPE_Unknown if not reported. */
@@ -205,6 +211,10 @@ private:
         Utf8Str                     mInterfaceVersion;
 #ifdef VBOX_WITH_GUEST_CONTROL
         GuestSessions               mGuestSessions;
+        /** Guest control features (reported by the guest), VBOX_GUESTCTRL_GF_0_XXX. */
+        uint64_t                    mfGuestFeatures0;
+        /** Guest control features (reported by the guest), VBOX_GUESTCTRL_GF_1_XXX. */
+        uint64_t                    mfGuestFeatures1;
 #endif
     } mData;
 

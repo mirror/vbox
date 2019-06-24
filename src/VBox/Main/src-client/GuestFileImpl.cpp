@@ -519,6 +519,41 @@ int GuestFile::i_onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOST
             break;
         }
 
+        case GUEST_FILE_NOTIFYTYPE_READ_OFFSET:
+        {
+            ASSERT_GUEST_MSG_STMT_BREAK(pSvcCbData->mParms == 5, ("mParms=%u\n", pSvcCbData->mParms),
+                                        rc = VERR_WRONG_PARAMETER_COUNT);
+            ASSERT_GUEST_MSG_STMT_BREAK(pSvcCbData->mpaParms[idx].type == VBOX_HGCM_SVC_PARM_PTR,
+                                        ("type=%u\n", pSvcCbData->mpaParms[idx].type),
+                                        rc = VERR_WRONG_PARAMETER_TYPE);
+            ASSERT_GUEST_MSG_STMT_BREAK(pSvcCbData->mpaParms[idx + 1].type == VBOX_HGCM_SVC_PARM_64BIT,
+                                        ("type=%u\n", pSvcCbData->mpaParms[idx].type),
+                                        rc = VERR_WRONG_PARAMETER_TYPE);
+            BYTE const * const pbData = (BYTE const *)pSvcCbData->mpaParms[idx].u.pointer.addr;
+            uint32_t const     cbRead = pSvcCbData->mpaParms[idx].u.pointer.size;
+            int64_t            offNew = (int64_t)pSvcCbData->mpaParms[idx + 1].u.uint64;
+            Log3ThisFunc(("cbRead=%RU32 offNew=%RI64 (%#RX64)\n", cbRead, offNew, offNew));
+
+            AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+            if (offNew < 0) /* non-seekable */
+                offNew = mData.mOffCurrent + cbRead;
+            mData.mOffCurrent = offNew;
+            alock.release();
+
+            try
+            {
+                com::SafeArray<BYTE> data((size_t)cbRead);
+                data.initFrom(pbData, cbRead);
+                fireGuestFileReadEvent(mEventSource, mSession, this, offNew, cbRead, ComSafeArrayAsInParam(data));
+                rc = VINF_SUCCESS;
+            }
+            catch (std::bad_alloc &)
+            {
+                rc = VERR_NO_MEMORY;
+            }
+            break;
+        }
+
         case GUEST_FILE_NOTIFYTYPE_WRITE:
         {
             if (pSvcCbData->mParms == 4)
@@ -538,6 +573,38 @@ int GuestFile::i_onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOST
                 alock.release();
 
                 fireGuestFileWriteEvent(mEventSource, mSession, this, mData.mOffCurrent, cbWritten);
+            }
+            break;
+        }
+
+        case GUEST_FILE_NOTIFYTYPE_WRITE_OFFSET:
+        {
+            ASSERT_GUEST_MSG_STMT_BREAK(pSvcCbData->mParms == 5, ("mParms=%u\n", pSvcCbData->mParms),
+                                        rc = VERR_WRONG_PARAMETER_COUNT);
+            ASSERT_GUEST_MSG_STMT_BREAK(pSvcCbData->mpaParms[idx].type == VBOX_HGCM_SVC_PARM_32BIT,
+                                        ("type=%u\n", pSvcCbData->mpaParms[idx].type),
+                                        rc = VERR_WRONG_PARAMETER_TYPE);
+            ASSERT_GUEST_MSG_STMT_BREAK(pSvcCbData->mpaParms[idx + 1].type == VBOX_HGCM_SVC_PARM_64BIT,
+                                        ("type=%u\n", pSvcCbData->mpaParms[idx].type),
+                                        rc = VERR_WRONG_PARAMETER_TYPE);
+            uint32_t const  cbWritten = pSvcCbData->mpaParms[idx].u.uint32;
+            int64_t         offNew    = (int64_t)pSvcCbData->mpaParms[idx + 1].u.uint64;
+            Log3ThisFunc(("cbWritten=%RU32 offNew=%RI64 (%#RX64)\n", cbWritten, offNew, offNew));
+
+            AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+            if (offNew < 0) /* non-seekable */
+                offNew = mData.mOffCurrent + cbWritten;
+            mData.mOffCurrent = offNew;
+            alock.release();
+
+            try
+            {
+                fireGuestFileWriteEvent(mEventSource, mSession, this, offNew, cbWritten);
+                rc = VINF_SUCCESS;
+            }
+            catch (std::bad_alloc &)
+            {
+                rc = VERR_NO_MEMORY;
             }
             break;
         }
