@@ -428,7 +428,7 @@ void UIWizardImportAppPage1::populateFormProperties()
 
             /* Show "Acquire import form" progress: */
             msgCenter().showModalProgressDialog(comImportDescriptionFormProgress, UIWizardImportApp::tr("Acquire import form..."),
-                                                ":/progress_reading_appliance_90px.png", 0, 0);
+                                                ":/progress_refresh_90px.png", 0, 0);
             if (!comImportDescriptionFormProgress.isOk() || comImportDescriptionFormProgress.GetResultCode() != 0)
             {
                 msgCenter().cannotAcquireCloudClientParameter(comImportDescriptionFormProgress);

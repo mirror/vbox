@@ -1,6 +1,5 @@
 <RCC>
     <qresource suffix="/">
-        <file alias="log_viewer_goto_selected_bookmark_16px_x2.png">images/x2/log_viewer_goto_selected_bookmark_16px_x2.png</file>
         <file alias="log_viewer_options_16px_x2.png">images/x2/log_viewer_options_16px_x2.png</file>
         <file alias="log_viewer_options_32px_x2.png">images/x2/log_viewer_options_32px_x2.png</file>
         <file alias="log_viewer_options_disabled_16px_x2.png">images/x2/log_viewer_options_disabled_16px_x2.png</file>
@@ -161,6 +160,7 @@
         <file alias="progress_media_move_90px_x2.png">images/x2/progress_media_move_90px_x2.png</file>
         <file alias="progress_media_resize_90px_x2.png">images/x2/progress_media_resize_90px_x2.png</file>
         <file alias="progress_network_interface_90px_x2.png">images/x2/progress_network_interface_90px_x2.png</file>
+        <file alias="progress_new_cloud_vm_90px_x2.png">images/x2/progress_new_cloud_vm_90px_x2.png</file>
         <file alias="progress_poweroff_90px_x2.png">images/x2/progress_poweroff_90px_x2.png</file>
         <file alias="progress_reading_appliance_90px_x2.png">images/x2/progress_reading_appliance_90px_x2.png</file>
         <file alias="progress_refresh_90px_x2.png">images/x2/progress_refresh_90px_x2.png</file>

@@ -80,7 +80,7 @@ bool UIWizardNewCloudVM::createCloudVM()
     else
     {
         /* Show "Create Cloud Machine" progress: */
-        msgCenter().showModalProgressDialog(comProgress, tr("Create Cloud Machine ..."), ":/progress_import_90px.png", this, 0);
+        msgCenter().showModalProgressDialog(comProgress, tr("Create Cloud Machine ..."), ":/progress_new_cloud_vm_90px.png", this, 0);
         if (!comProgress.GetCanceled())
         {
             /* Show error message if necessary: */
