@@ -114,11 +114,20 @@ public:
     QString  m_strFileName;
     QUuid    m_uId;
 
-    QVector<UISoftKeyboardRow>  m_rows;
+    const QVector<UISoftKeyboardRow> &rows() const
+    {
+        return m_rows;
+    }
+
+    QVector<UISoftKeyboardRow> &rows()
+    {
+        return m_rows;
+    }
 
 private:
 
     QString  m_strName;
+    QVector<UISoftKeyboardRow>  m_rows;
 };
 
 /*********************************************************************************************************************************
@@ -465,6 +474,7 @@ public:
     void updateKeyCaptionsInLayout(UISoftKeyboardKey *pKey);
     void saveCurentLayoutToFile();
     void copyCurentLayout();
+    float layoutAspectRation();
 
 protected:
 
@@ -489,7 +499,7 @@ private:
     UISoftKeyboardKey *keyUnderMouse(const QPoint &point);
     void               handleKeyPress(UISoftKeyboardKey *pKey);
     void               handleKeyRelease(UISoftKeyboardKey *pKey);
-    bool               loadPhysicalLayout(const QString &strLayoutFileName);
+    bool               loadPhysicalLayout(const QString &strLayoutFileName, bool isNumPad = false);
     bool               loadKeyboardLayout(const QString &strLayoutName);
     void               reset();
     void               prepareObjects();
@@ -500,6 +510,7 @@ private:
     UISoftKeyboardLayout *findLayoutByName(const QString &strName);
     /** Looks under the default keyboard layout folder and add the file names to the fileList. */
     void               lookAtDefaultLayoutFolder(QStringList &fileList);
+
     UISoftKeyboardKey *m_pKeyUnderMouse;
     UISoftKeyboardKey *m_pKeyBeingEdited;
 
@@ -511,6 +522,7 @@ private:
     QColor m_keyEditColor;
     QVector<UISoftKeyboardKey*> m_pressedModifiers;
     QVector<UISoftKeyboardPhysicalLayout> m_physicalLayouts;
+    UISoftKeyboardPhysicalLayout          m_numPadLayout;
     QVector<UISoftKeyboardLayout>         m_layouts;
     UISoftKeyboardLayout *m_pCurrentKeyboardLayout;
 
@@ -1529,18 +1541,19 @@ UISoftKeyboardWidget::UISoftKeyboardWidget(QWidget *pParent /* = 0 */)
 
 QSize UISoftKeyboardWidget::minimumSizeHint() const
 {
-    return QSize(0.5 * m_minimumSize.width(), 0.5 * m_minimumSize.height());
+    float fScale = 0.5f;
+    return QSize(fScale * m_minimumSize.width(), fScale * m_minimumSize.height());
 }
 
 QSize UISoftKeyboardWidget::sizeHint() const
 {
-    return QSize(0.5 * m_minimumSize.width(), 0.5 * m_minimumSize.height());
+    float fScale = 0.5f;
+    return QSize(fScale * m_minimumSize.width(), fScale * m_minimumSize.height());
 }
 
 void UISoftKeyboardWidget::paintEvent(QPaintEvent *pEvent) /* override */
 {
     Q_UNUSED(pEvent);
-
     m_fScaleFactorX = width() / (float) m_iInitialWidth;
     m_fScaleFactorY = height() / (float) m_iInitialHeight;
 
@@ -1562,7 +1575,7 @@ void UISoftKeyboardWidget::paintEvent(QPaintEvent *pEvent) /* override */
     if (!pPhysicalLayout)
         return;
 
-    QVector<UISoftKeyboardRow> &rows = pPhysicalLayout->m_rows;
+    QVector<UISoftKeyboardRow> &rows = pPhysicalLayout->rows();
     for (int i = 0; i < rows.size(); ++i)
     {
         QVector<UISoftKeyboardKey> &keys = rows[i].keys();
@@ -1710,7 +1723,7 @@ void UISoftKeyboardWidget::saveCurentLayoutToFile()
     xmlWriter.writeTextElement("name", m_pCurrentKeyboardLayout->name());
     xmlWriter.writeTextElement("physicallayoutid", pPhysicalLayout->m_uId.toString());
 
-    QVector<UISoftKeyboardRow> &rows = pPhysicalLayout->m_rows;
+    QVector<UISoftKeyboardRow> &rows = pPhysicalLayout->rows();
     for (int i = 0; i < rows.size(); ++i)
     {
         QVector<UISoftKeyboardKey> &keys = rows[i].keys();
@@ -1745,6 +1758,13 @@ void UISoftKeyboardWidget::copyCurentLayout()
     newLayout.setIsFromResources(false);
     newLayout.setSourceFilePath(QString());
     addLayout(newLayout);
+}
+
+float UISoftKeyboardWidget::layoutAspectRation()
+{
+    if (m_iInitialWidth == 0)
+        return 1.f;
+    return  m_iInitialHeight / (float) m_iInitialWidth;
 }
 
 void UISoftKeyboardWidget::deleteCurrentLayout()
@@ -1859,7 +1879,7 @@ UISoftKeyboardKey *UISoftKeyboardWidget::keyUnderMouse(const QPoint &eventPositi
         return 0;
 
     UISoftKeyboardKey *pKey = 0;
-    QVector<UISoftKeyboardRow> &rows = pPhysicalLayout->m_rows;
+    QVector<UISoftKeyboardRow> &rows = pPhysicalLayout->rows();
     for (int i = 0; i < rows.size(); ++i)
     {
         QVector<UISoftKeyboardKey> &keys = rows[i].keys();
@@ -1967,26 +1987,47 @@ void UISoftKeyboardWidget::handleKeyRelease(UISoftKeyboardKey *pKey)
     emit sigPutKeyboardSequence(sequence);
 }
 
-bool UISoftKeyboardWidget::loadPhysicalLayout(const QString &strLayoutFileName)
+bool UISoftKeyboardWidget::loadPhysicalLayout(const QString &strLayoutFileName, bool isNumPad /* = false */)
 {
     if (strLayoutFileName.isEmpty())
         return false;
     UIPhysicalLayoutReader reader;
-    m_physicalLayouts.append(UISoftKeyboardPhysicalLayout());
-    UISoftKeyboardPhysicalLayout &newPhysicalLayout = m_physicalLayouts.back();
+    UISoftKeyboardPhysicalLayout *newPhysicalLayout = 0;
+    if (!isNumPad)
+    {
+        m_physicalLayouts.append(UISoftKeyboardPhysicalLayout());
+        newPhysicalLayout = &(m_physicalLayouts.back());
+    }
+    else
+        newPhysicalLayout = &(m_numPadLayout);
 
-    if (!reader.parseXMLFile(strLayoutFileName, newPhysicalLayout))
+    if (!reader.parseXMLFile(strLayoutFileName, *newPhysicalLayout))
     {
         m_physicalLayouts.removeLast();
         return false;
     }
 
+    if (isNumPad)
+        return true;
+
     int iY = m_iTopMargin;
     int iMaxWidth = 0;
-    QVector<UISoftKeyboardRow> &rows = newPhysicalLayout.m_rows;
+    const QVector<UISoftKeyboardRow> &numPadRows = m_numPadLayout.rows();
+    QVector<UISoftKeyboardRow> &rows = newPhysicalLayout->rows();
     for (int i = 0; i < rows.size(); ++i)
     {
         UISoftKeyboardRow &row = rows[i];
+        /* Start adding the numpad keys after the 0th row: */
+        if (i > 0)
+        {
+            int iNumPadRowIndex = i - 1;
+            if (iNumPadRowIndex < numPadRows.size())
+            {
+                for (int m = 0; m < numPadRows[iNumPadRowIndex].keys().size(); ++m)
+                    row.keys().append(numPadRows[iNumPadRowIndex].keys()[m]);
+            }
+        }
+
         int iX = m_iLeftMargin;
         int iRowHeight = row.defaultHeight();
         for (int j = 0; j < row.keys().size(); ++j)
@@ -2010,9 +2051,8 @@ bool UISoftKeyboardWidget::loadPhysicalLayout(const QString &strLayoutFileName)
     }
     int iInitialWidth = iMaxWidth + m_iRightMargin;
     int iInitialHeight = iY + m_iBottomMargin;
-
-    setNewMinimumSize(QSize(iInitialWidth, iInitialHeight));
-    setInitialSize(iInitialWidth, iInitialHeight);
+    m_iInitialWidth = qMax(m_iInitialWidth, iInitialWidth);
+    m_iInitialHeight = qMax(m_iInitialHeight, iInitialHeight);
     return true;
 }
 
@@ -2058,10 +2098,14 @@ void UISoftKeyboardWidget::reset()
 void UISoftKeyboardWidget::loadLayouts()
 {
     /* Load physical layouts from resources: */
+    loadPhysicalLayout(":/numpad.xml", true);
     QStringList physicalLayoutNames;
     physicalLayoutNames << ":/101_ansi.xml" << ":/102_iso.xml";
     foreach (const QString &strName, physicalLayoutNames)
         loadPhysicalLayout(strName);
+
+    setNewMinimumSize(QSize(m_iInitialWidth, m_iInitialHeight));
+    setInitialSize(m_iInitialWidth, m_iInitialHeight);
 
     /* Add keyboard layouts from resources: */
     QStringList keyboardLayoutNames;
@@ -2133,7 +2177,7 @@ void UISoftKeyboardWidget::setCurrentLayout(UISoftKeyboardLayout *pLayout)
         return;
 
     /* Update the key captions: */
-    QVector<UISoftKeyboardRow> &rows = pPhysicalLayout->m_rows;
+    QVector<UISoftKeyboardRow> &rows = pPhysicalLayout->rows();
     for (int i = 0; i < rows.size(); ++i)
     {
         QVector<UISoftKeyboardKey> &keys = rows[i].keys();
@@ -2211,11 +2255,15 @@ bool UIPhysicalLayoutReader::parseXMLFile(const QString &strFileName, UISoftKeyb
     QXmlStreamAttributes attributes = m_xmlReader.attributes();
     int iDefaultWidth = attributes.value("defaultWidth").toInt();
     int iDefaultHeight = attributes.value("defaultHeight").toInt();
-    QVector<UISoftKeyboardRow> &rows = physicalLayout.m_rows;
+    QVector<UISoftKeyboardRow> &rows = physicalLayout.rows();
+    int iRowCount = 0;
     while (m_xmlReader.readNextStartElement())
     {
         if (m_xmlReader.name() == "row")
+        {
             parseRow(iDefaultWidth, iDefaultHeight, rows);
+            ++iRowCount;
+        }
         else if (m_xmlReader.name() == "space")
             parseRowSpace(rows);
         else if (m_xmlReader.name() == "name")
@@ -2765,9 +2813,13 @@ void UISoftKeyboard::saveSettings()
 
 void UISoftKeyboard::loadSettings()
 {
+    float fKeyboardAspectRatio = 1.0f;
+    if (m_pKeyboardWidget)
+        fKeyboardAspectRatio = m_pKeyboardWidget->layoutAspectRation();
+
     const QRect desktopRect = gpDesktop->availableGeometry(this);
     int iDefaultWidth = desktopRect.width() / 2;
-    int iDefaultHeight = desktopRect.height() * 3 / 4;
+    int iDefaultHeight = iDefaultWidth * fKeyboardAspectRatio;//desktopRect.height() * 3 / 4;
     QRect defaultGeometry(0, 0, iDefaultWidth, iDefaultHeight);
 
     QWidget *pParentWidget = qobject_cast<QWidget*>(parent());
