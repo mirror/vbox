@@ -890,6 +890,8 @@ public:
         , m_idMasterClient(UINT32_MAX)
         , m_fLegacyMode(true)
         , m_cPreparedSessions(0)
+        , m_fGuestFeatures0(0)
+        , m_fGuestFeatures1(0)
     {
         RTListInit(&m_PreparedSessions);
     }
@@ -1165,6 +1167,7 @@ int GstCtrlService::clientMakeMeMaster(ClientState *pClient, VBOXHGCMCALLHANDLE 
  * @param   pClient     The client state.
  * @param   hCall       The client's call handle.
  * @param   cParms      Number of parameters.
+ * @param   paParms     Array of parameters.
  */
 int GstCtrlService::clientReportFeatures(ClientState *pClient, VBOXHGCMCALLHANDLE hCall,
                                          uint32_t cParms, VBOXHGCMSVCPARM paParms[])
@@ -1215,9 +1218,9 @@ int GstCtrlService::clientReportFeatures(ClientState *pClient, VBOXHGCMCALLHANDL
  * @retval  VINF_HGCM_ASYNC_EXECUTE on success (we complete the message here).
  * @retval  VERR_WRONG_PARAMETER_COUNT
  *
- * @param   pClient     The client state.
  * @param   hCall       The client's call handle.
  * @param   cParms      Number of parameters.
+ * @param   paParms     Array of parameters.
  */
 int GstCtrlService::clientQueryFeatures(VBOXHGCMCALLHANDLE hCall, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
