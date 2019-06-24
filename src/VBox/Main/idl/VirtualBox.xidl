@@ -26223,7 +26223,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <desc>
         Create an image in the Cloud.
       </desc>
-      <param name="parameters" type="wstring" dir="in" safearray="yes">      
+      <param name="parameters" type="wstring" dir="in" safearray="yes">
         <desc>Each parameter in the array must be in the form "name=value".</desc>
       </param>
       <param name="progress" type="IProgress" dir="return">
