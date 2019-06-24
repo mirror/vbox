@@ -91,6 +91,7 @@ private:
     void loadSettings();
     void updateStatusBarMessage(const QString &strLayoutName);
     void updateLayoutSelector();
+    void setDialogGeometry(const QRect &geometry);
     CKeyboard& keyboard() const;
 
     UISession     *m_pSession;
