@@ -85,12 +85,6 @@ typedef struct VBOXUSBHUB_PNPHOOK_COMPLETION
     VBOXUSBHOOK_REQUEST Rq;
 } VBOXUSBHUB_PNPHOOK_COMPLETION, *PVBOXUSBHUB_PNPHOOK_COMPLETION;
 
-/*
- * Comment out VBOX_USB3PORT definition to disable hooking to multiple drivers (#6509)
- */
-#define VBOX_USB3PORT
-
-#ifdef VBOX_USB3PORT
 #define VBOXUSBMON_MAXDRIVERS 5
 typedef struct VBOXUSB_PNPDRIVER
 {
@@ -98,16 +92,11 @@ typedef struct VBOXUSB_PNPDRIVER
     VBOXUSBHUB_PNPHOOK UsbHubPnPHook;
     PDRIVER_DISPATCH   pfnHookStub;
 } VBOXUSB_PNPDRIVER, *PVBOXUSB_PNPDRIVER;
-#endif /* !VBOX_USB3PORT */
 
 typedef struct VBOXUSBMONGLOBALS
 {
     PDEVICE_OBJECT pDevObj;
-#ifdef VBOX_USB3PORT
     VBOXUSB_PNPDRIVER pDrivers[VBOXUSBMON_MAXDRIVERS];
-#else /* !VBOX_USB3PORT */
-    VBOXUSBHUB_PNPHOOK UsbHubPnPHook;
-#endif /* !VBOX_USB3PORT */
     KEVENT OpenSynchEvent;
     IO_REMOVE_LOCK RmLock;
     uint32_t cOpens;
@@ -555,85 +544,6 @@ static DECLCALLBACK(BOOLEAN) vboxUsbObjDevObjSearcherWalker(PDEVICE_OBJECT pTopD
 VOID vboxUsbMonHubDevWalk(PFNVBOXUSBMONDEVWALKER pfnWalker, PVOID pvWalker, ULONG fFlags)
 {
     NTSTATUS Status = STATUS_UNSUCCESSFUL;
-#ifndef VBOX_USB3PORT
-    UNICODE_STRING szStandardHubName;
-    PDRIVER_OBJECT pDrvObj = NULL;
-    szStandardHubName.Length = 0;
-    szStandardHubName.MaximumLength = 0;
-    szStandardHubName.Buffer = 0;
-    RtlInitUnicodeString(&szStandardHubName, L"\\Driver\\usbhub");
-    UNICODE_STRING szStandardHubPdoNamePrefix;
-    szStandardHubPdoNamePrefix.Length = 0;
-    szStandardHubPdoNamePrefix.MaximumLength = 0;
-    szStandardHubPdoNamePrefix.Buffer = 0;
-    RtlInitUnicodeString(&szStandardHubPdoNamePrefix, L"\\Device\\USBPDO-");
-
-    for (int i = 0; i < 16; i++)
-    {
-        WCHAR           szwHubName[32] = {0};
-        char            szHubName[32] = {0};
-        ANSI_STRING     AnsiName;
-        UNICODE_STRING  UnicodeName;
-        PDEVICE_OBJECT  pHubDevObj;
-        PFILE_OBJECT    pHubFileObj;
-
-        sprintf(szHubName, "\\Device\\USBPDO-%d", i);
-
-        RtlInitAnsiString(&AnsiName, szHubName);
-
-        UnicodeName.Length = 0;
-        UnicodeName.MaximumLength = sizeof (szwHubName);
-        UnicodeName.Buffer = szwHubName;
-
-        RtlInitAnsiString(&AnsiName, szHubName);
-        Status = RtlAnsiStringToUnicodeString(&UnicodeName, &AnsiName, FALSE);
-        if (Status == STATUS_SUCCESS)
-        {
-            Status = IoGetDeviceObjectPointer(&UnicodeName, FILE_READ_DATA, &pHubFileObj, &pHubDevObj);
-            if (Status == STATUS_SUCCESS)
-            {
-                LOG(("IoGetDeviceObjectPointer for \\Device\\USBPDO-%d returned %p %p", i, pHubDevObj, pHubFileObj));
-
-                VBOXUSBOBJDRVOBJSEARCHER Data = {0};
-                Data.pDrvName = &szStandardHubName;
-                Data.pPdoNamePrefix = &szStandardHubPdoNamePrefix;
-                Data.fFlags = fFlags;
-
-                vboxUsbObjDevStackWalk(pHubDevObj, vboxUsbObjDevObjSearcherWalker, &Data);
-                if (Data.pDevObj)
-                {
-                    LOG(("found hub dev obj (0x%p)", Data.pDevObj));
-                    if (!pfnWalker(pHubFileObj, pHubDevObj, Data.pDevObj, pvWalker))
-                    {
-                        LOG(("the walker said to stop"));
-                        ObDereferenceObject(Data.pDevObj);
-                        ObDereferenceObject(pHubFileObj);
-                        break;
-                    }
-
-                    LOG(("going forward.."));
-                    ObDereferenceObject(Data.pDevObj);
-                }
-                else
-                {
-                    LOG(("no hub driver obj found"));
-                    ASSERT_WARN(!Data.pDevObj, ("non-null dev obj poiter returned (0x%p)", Data.pDevObj));
-                }
-
-                /* this will dereference both file and dev obj */
-                ObDereferenceObject(pHubFileObj);
-            }
-            else
-            {
-                LOG(("IoGetDeviceObjectPointer returned Status (0x%x) for (\\Device\\USBPDO-%d)", Status, i));
-            }
-        }
-        else
-        {
-            WARN(("RtlAnsiStringToUnicodeString failed, Status (0x%x) for Ansu name (\\Device\\USBPDO-%d)", Status, i));
-        }
-    }
-#else /* VBOX_USB3PORT */
     RT_NOREF1(fFlags);
     PWSTR szwHubList;
     Status = IoGetDeviceInterfaces(&GUID_DEVINTERFACE_USB_HUB, NULL, 0, &szwHubList);
@@ -672,7 +582,6 @@ VOID vboxUsbMonHubDevWalk(PFNVBOXUSBMONDEVWALKER pfnWalker, PVOID pvWalker, ULON
         }
         ExFreePool(szwHubList);
     }
-#endif /* VBOX_USB3PORT */
 }
 
 typedef struct VBOXUSBMONFINDHUBWALKER
@@ -1082,11 +991,7 @@ NTSTATUS _stdcall VBoxUsbPnPCompletion(DEVICE_OBJECT *pDevObj, IRP *pIrp, void *
 #ifdef DEBUG_misha
     NTSTATUS tmpStatus = pIrp->IoStatus.Status;
 #endif
-#ifdef VBOX_USB3PORT
     PVBOXUSBHOOK_ENTRY pHook = pRequest->pHook;
-#else /* !VBOX_USB3PORT */
-    PVBOXUSBHOOK_ENTRY pHook = &g_VBoxUsbMonGlobals.UsbHubPnPHook.Hook;
-#endif /* !VBOX_USB3PORT */
     NTSTATUS Status = VBoxUsbHookRequestComplete(pHook, pDevObj, pIrp, pRequest);
     VBoxUsbMonMemFree(pRequest);
 #ifdef DEBUG_misha
@@ -1105,15 +1010,8 @@ NTSTATUS _stdcall VBoxUsbPnPCompletion(DEVICE_OBJECT *pDevObj, IRP *pIrp, void *
  * @param   pDevObj     Device object.
  * @param   pIrp         Request packet.
  */
-#ifdef VBOX_USB3PORT
 static NTSTATUS vboxUsbMonPnPHook(IN PVBOXUSBHOOK_ENTRY pHook, IN PDEVICE_OBJECT pDevObj, IN PIRP pIrp)
-#else /* !VBOX_USB3PORT */
-NTSTATUS _stdcall VBoxUsbMonPnPHook(IN PDEVICE_OBJECT pDevObj, IN PIRP pIrp)
-#endif /* !VBOX_USB3PORT */
 {
-#ifndef VBOX_USB3PORT
-    PVBOXUSBHOOK_ENTRY pHook = &g_VBoxUsbMonGlobals.UsbHubPnPHook.Hook;
-#endif /* !VBOX_USB3PORT */
     LOG(("==>PnP: Mn(%s), PDO(0x%p), IRP(0x%p), Status(0x%x)", vboxUsbDbgStrPnPMn(IoGetCurrentIrpStackLocation(pIrp)->MinorFunction), pDevObj, pIrp, pIrp->IoStatus.Status));
 
     if (!VBoxUsbHookRetain(pHook))
@@ -1148,7 +1046,6 @@ NTSTATUS _stdcall VBoxUsbMonPnPHook(IN PDEVICE_OBJECT pDevObj, IN PIRP pIrp)
     return Status;
 }
 
-#ifdef VBOX_USB3PORT
 /**
  * Device PnP hook stubs.
  *
@@ -1275,7 +1172,6 @@ static NTSTATUS vboxUsbMonInstallAllHooks()
     vboxUsbMonHubDevWalk(vboxUsbMonHookDrvObjWalker, NULL, VBOXUSBMONHUBWALK_F_ALL);
     return STATUS_SUCCESS;
 }
-#endif /* VBOX_USB3PORT */
 
 static NTSTATUS vboxUsbMonHookCheckInit()
 {
@@ -1285,39 +1181,13 @@ static NTSTATUS vboxUsbMonHookCheckInit()
         LOG(("hook inited already, success"));
         return STATUS_SUCCESS;
     }
-#ifdef VBOX_USB3PORT
     return vboxUsbMonInstallAllHooks();
-#else /* !VBOX_USB3PORT */
-    PDRIVER_OBJECT pDrvObj = vboxUsbMonHookFindHubDrvObj();
-    if (pDrvObj)
-    {
-        VBoxUsbHookInit(&g_VBoxUsbMonGlobals.UsbHubPnPHook.Hook, pDrvObj, IRP_MJ_PNP, VBoxUsbMonPnPHook);
-        fIsHookInited = true;
-        LOG(("SUCCESS"));
-        return STATUS_SUCCESS;
-    }
-    WARN(("hub drv obj not found, fail"));
-    return STATUS_UNSUCCESSFUL;
-#endif /* !VBOX_USB3PORT */
 }
 
 static NTSTATUS vboxUsbMonHookInstall()
 {
-#ifdef VBOX_USB3PORT
     /* Nothing to do here as we have already installed all hooks in vboxUsbMonHookCheckInit(). */
     return STATUS_SUCCESS;
-#else /* !VBOX_USB3PORT */
-#ifdef VBOXUSBMON_DBG_NO_PNPHOOK
-    return STATUS_SUCCESS;
-#else
-    if (g_VBoxUsbMonGlobals.UsbHubPnPHook.fUninitFailed)
-    {
-        WARN(("trying to hook usbhub pnp after the unhook failed, do nothing & pretend success"));
-        return STATUS_SUCCESS;
-    }
-    return VBoxUsbHookInstall(&g_VBoxUsbMonGlobals.UsbHubPnPHook.Hook);
-#endif
-#endif /* !VBOX_USB3PORT */
 }
 
 static NTSTATUS vboxUsbMonHookUninstall()
@@ -1325,7 +1195,6 @@ static NTSTATUS vboxUsbMonHookUninstall()
 #ifdef VBOXUSBMON_DBG_NO_PNPHOOK
     return STATUS_SUCCESS;
 #else
-#ifdef VBOX_USB3PORT
     NTSTATUS Status = STATUS_SUCCESS;
     for (int i = 0; i < VBOXUSBMON_MAXDRIVERS; i++)
     {
@@ -1353,14 +1222,6 @@ static NTSTATUS vboxUsbMonHookUninstall()
             }
         }
     }
-#else /* !VBOX_USB3PORT */
-    NTSTATUS Status = VBoxUsbHookUninstall(&g_VBoxUsbMonGlobals.UsbHubPnPHook.Hook);
-    if (!NT_SUCCESS(Status))
-    {
-        AssertMsgFailed(("usbhub pnp unhook failed, setting the fUninitFailed flag, the current value of fUninitFailed (%d)", g_VBoxUsbMonGlobals.UsbHubPnPHook.fUninitFailed));
-        g_VBoxUsbMonGlobals.UsbHubPnPHook.fUninitFailed = true;
-    }
-#endif /* !VBOX_USB3PORT */
     return Status;
 #endif
 }
@@ -1939,14 +1800,14 @@ NTSTATUS _stdcall DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
     LOGREL(("Built %s %s", __DATE__, __TIME__));
 
     memset (&g_VBoxUsbMonGlobals, 0, sizeof (g_VBoxUsbMonGlobals));
-#ifdef VBOX_USB3PORT
+
     VBOX_PNPHOOKSTUB_INIT(0);
     VBOX_PNPHOOKSTUB_INIT(1);
     VBOX_PNPHOOKSTUB_INIT(2);
     VBOX_PNPHOOKSTUB_INIT(3);
     VBOX_PNPHOOKSTUB_INIT(4);
     AssertCompile(VBOXUSBMON_MAXDRIVERS == 5);
-#endif /* VBOX_USB3PORT */
+
     KeInitializeEvent(&g_VBoxUsbMonGlobals.OpenSynchEvent, SynchronizationEvent, TRUE /* signaled */);
     IoInitializeRemoveLock(&g_VBoxUsbMonGlobals.RmLock, VBOXUSBMON_MEMTAG, 1, 100);
     UNICODE_STRING DevName;
