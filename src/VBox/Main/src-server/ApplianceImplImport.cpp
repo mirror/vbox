@@ -1851,6 +1851,10 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
                     }
                     else
                     {
+                        /* Just skip the rest images if they exist. Only the first image is used as the base image. */
+                        if (currImageObjectNum >= 1)
+                            continue;
+
                         /* Image format is supported by VBox so extract the file and try to convert
                          * one to the default format (which is VMDK for now) */
                         Utf8Str z(bstrSettingsFilename);
@@ -2166,7 +2170,7 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
             pTask->pProgress->COMGETTER(Operation)(&currOperation);
             while (++currOperation < operationCount)
             {
-                pTask->pProgress->SetNextOperation(BstrFmt("Skipping the cleanup phase. All right.").raw(), 25);
+                pTask->pProgress->SetNextOperation(BstrFmt("Skipping the cleanup phase. All right.").raw(), 1);
                 LogRel(("%s: Skipping the cleanup step %d\n", __FUNCTION__, currOperation));
             }
         }
@@ -3034,7 +3038,7 @@ HRESULT Appliance::i_importImpl(const LocationInfo &locInfo,
              *    - 2 operations (starting and waiting)
              * 3. Download the object from the Object Storage:
              *    - 1 operation (starting and downloadind is one operation)
-             * 4. Open the object, extract QCOW2 image and convert one QCOW2->VDI:
+             * 4. Open the object, extract an image and convert one to VDI:
              *    - 1 operation (extracting and conversion are piped) because only 1 base bootable image is imported for now
              * 5. Create VM with user settings and attach the converted image to VM:
              *    - 1 operation.
@@ -3044,32 +3048,14 @@ HRESULT Appliance::i_importImpl(const LocationInfo &locInfo,
              *    Whether Machine::deleteConfig() is called or Medium::deleteStorage() is called in the loop.
              *    Both require a new Progress object. To work with these functions the original Progress object uses
              *    the function Progress::waitForOtherProgressCompletion().
-             *    Example 1:
-             *      1 image was registered in the VBox, 1 VM was created and image was attahced. Next something fails
-             *    and we should clean up the disk space. Machine::unregister() return the list of HDDs for deletion.
-             *    Machine::deleteConfig() deletes these HDDs but except this a VM setting file, a previous VM setting
-             *    file, the snapshots are also deleted. And the original Progress should count these steps correctly.
-             *    In this example we will have only couple additional files - VM setting files. As result we
-             *    speculate that the number of cleanup operations will be 3: 1 image + 1 setting file + 1 prev setting file.
-             *    No snapshots and logs here. But possible situation when the image wasn't attached due to some error.
-             *    Thus the number of operations will be 2 instead of 3 (VM registered but no HDDs).
-             *    Example 2:
-             *      1 image was registered in the VBox, VM wasn't created due to an error. Here we have only
-             *    1 operation which uses Progress it's Medium::deleteStorage(). Loop with one interation.
              *
-             *    The problem here is in that we don't know exactly how many operations will be when Progress has been
-             *    setting up here. We just may speculate.
-             *
-             *    What to do if the number of the imported images will be more than 1 in the future?
-             *    What to do if some cloud operations won't be needed for the other Cloud providers?
-             *    What to do if the number of cloud operations will differ among Cloud providers?
-             *    Only Cloud provider shall know the answer on the last two questions.
-             *    As result, we speculate about tne number of the operations in the Cloud and we speculate
-             *    about the number of the local operations.
-             *
+             * Some speculation here...
              * Total: 2+2+1(cloud) + 1+1(local) + 1+1+1(cleanup) = 10 operations
+             * or
+             * Total: 2+2+1(cloud) + 1+1(local) + 1(cleanup) = 8 operations
+             * if VM wasn't created we would have only 1 registered image for cleanup.
              *
-             * Weight "#define"s for the CLoud operations are located in the file OCICloudClient.h.
+             * Weight "#define"s for the Cloud operations are located in the file OCICloudClient.h.
              * Weight of cloud import operations (1-3 items from above):
              * Total = 750 = 25+75(start and wait)+25+375(start and wait)+250(download)
              *
@@ -3078,7 +3064,9 @@ HRESULT Appliance::i_importImpl(const LocationInfo &locInfo,
              *
              * Weight of local cleanup operations (6 item from above):
              * Some speculation here...
-             * Total = 100 = 50 (1 image) + 25 (1 setting file)+ 25 (1 prev setting file)
+             * Total = 3 = 1 (1 image) + 1 (1 setting file)+ 1 (1 prev setting file) - quick operations
+             * or
+             * Total = 1 (1 image) if VM wasn't created we would have only 1 registered image for now.
              */
             try
             {
@@ -3089,8 +3077,8 @@ HRESULT Appliance::i_importImpl(const LocationInfo &locInfo,
                                         TRUE /* aCancelable */,
                                         10, // ULONG cOperations,
                                         1000, // ULONG ulTotalOperationsWeight,
-                                        Utf8Str(tr("Importing VM from Cloud...")), // aFirstOperationDescription
-                                        10); // ULONG ulFirstOperationWeight
+                                        Utf8Str(tr("Start import VM from the Cloud...")), // aFirstOperationDescription
+                                        25); // ULONG ulFirstOperationWeight
                 if (SUCCEEDED(rc))
                     pTask = new TaskCloud(this, TaskCloud::Import, locInfo, progress);
                 else
