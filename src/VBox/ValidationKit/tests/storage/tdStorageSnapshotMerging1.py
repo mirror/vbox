@@ -239,13 +239,16 @@ class tdStorageSnapshot(vbox.TestDriver):                                      #
         if self.fpApiVer >= 4.0:
             try:
                 if self.fpApiVer >= 4.3:
-                    oProgress = oVM.deleteConfig([]);
+                    oProgressCom = oVM.deleteConfig([]);
                 else:
-                    oProgress = oVM.delete(None);
+                    oProgressCom = oVM.delete(None);
             except:
                 reporter.logXcpt();
             else:
+                oProgress = vboxwrappers.ProgressWrapper(oProgressCom, self.oVBoxMgr, self.oVBox.oTstDrv,
+                                                 'Delete VM %s' % (oVM.name));
                 oProgress.wait(cMsTimeout = 15*60*1000); # 15 min
+                oProgress.logResult();
         else:
             try:    oVM.deleteSettings();
             except: reporter.logXcpt();
