@@ -214,6 +214,7 @@ ifdef VBOX_GSOAP_INSTALLED
   ifeq ($(KBUILD_TARGET),win)
    vboxsoap_USES     = vccprecomp
    vboxsoap_PCH_HDR := $(VBOXWEB_SOAP_SERVER_H)
+   vboxsoap_CXXFLAGS += -Zm127
   endif
   vboxsoap_CXXFLAGS += $(VBOX_C_CXX_FLAGS_NO_UNUSED_PARAMETERS)
   vboxsoap_CXXFLAGS.win += -bigobj
