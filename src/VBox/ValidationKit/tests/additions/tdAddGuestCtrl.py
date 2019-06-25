@@ -223,19 +223,19 @@ class tdTestCopyFrom(tdTestGuestCtrlBase):
     """
     Test for copying files from the guest to the host.
     """
-    def __init__(self, sSrc = "", sDst = "", oCreds = None, fFlags = None, oSrc = None):
+    def __init__(self, sSrc = "", sDst = "", oCreds = None, afFlags = None, oSrc = None):
         tdTestGuestCtrlBase.__init__(self, oCreds = oCreds);
         self.sSrc = sSrc;
         self.sDst = sDst;
-        self.fFlags = fFlags;
+        self.afFlags = afFlags;
         self.oSrc = oSrc  # type: testfileset.TestFsObj
         if oSrc and not sSrc:
             self.sSrc = oSrc.sPath;
 
 class tdTestCopyFromDir(tdTestCopyFrom):
 
-    def __init__(self, sSrc = "", sDst = "", oCreds = None, fFlags = None, oSrc = None, fIntoDst = False):
-        tdTestCopyFrom.__init__(self, sSrc, sDst, oCreds, fFlags, oSrc);
+    def __init__(self, sSrc = "", sDst = "", oCreds = None, afFlags = None, oSrc = None, fIntoDst = False):
+        tdTestCopyFrom.__init__(self, sSrc, sDst, oCreds, afFlags, oSrc);
         self.fIntoDst = fIntoDst; # hint to the verification code that sDst == oSrc, rather than sDst+oSrc.sNAme == oSrc.
 
 class tdTestCopyFromFile(tdTestCopyFrom):
@@ -265,11 +265,11 @@ class tdTestCopyTo(tdTestGuestCtrlBase):
     """
     Test for copying files from the host to the guest.
     """
-    def __init__(self, sSrc = "", sDst = "", oCreds = None, fFlags = None):
+    def __init__(self, sSrc = "", sDst = "", oCreds = None, afFlags = None):
         tdTestGuestCtrlBase.__init__(self, oCreds = oCreds);
         self.sSrc = sSrc;
         self.sDst = sDst;
-        self.fFlags = fFlags;
+        self.afFlags = afFlags;
 
 class tdTestCopyToFile(tdTestCopyTo):
     pass;
@@ -281,11 +281,11 @@ class tdTestDirCreate(tdTestGuestCtrlBase):
     """
     Test for directoryCreate call.
     """
-    def __init__(self, sDirectory = "", oCreds = None, fMode = 0, fFlags = None):
+    def __init__(self, sDirectory = "", oCreds = None, fMode = 0, afFlags = None):
         tdTestGuestCtrlBase.__init__(self, oCreds = oCreds);
         self.sDirectory = sDirectory;
         self.fMode = fMode;
-        self.fFlags = fFlags;
+        self.afFlags = afFlags;
 
 class tdTestDirCreateTemp(tdTestGuestCtrlBase):
     """
@@ -302,31 +302,31 @@ class tdTestDirOpen(tdTestGuestCtrlBase):
     """
     Test for the directoryOpen call.
     """
-    def __init__(self, sDirectory = "", oCreds = None, sFilter = "", fFlags = None):
+    def __init__(self, sDirectory = "", oCreds = None, sFilter = "", afFlags = None):
         tdTestGuestCtrlBase.__init__(self, oCreds = oCreds);
         self.sDirectory = sDirectory;
         self.sFilter = sFilter;
-        self.fFlags = fFlags or [];
+        self.afFlags = afFlags or [];
 
 class tdTestDirRead(tdTestDirOpen):
     """
     Test for the opening, reading and closing a certain directory.
     """
-    def __init__(self, sDirectory = "", oCreds = None, sFilter = "", fFlags = None):
-        tdTestDirOpen.__init__(self, sDirectory, oCreds, sFilter, fFlags);
+    def __init__(self, sDirectory = "", oCreds = None, sFilter = "", afFlags = None):
+        tdTestDirOpen.__init__(self, sDirectory, oCreds, sFilter, afFlags);
 
 class tdTestExec(tdTestGuestCtrlBase):
     """
     Specifies exactly one guest control execution test.
     Has a default timeout of 5 minutes (for safety).
     """
-    def __init__(self, sCmd = "", asArgs = None, aEnv = None, fFlags = None,             # pylint: disable=too-many-arguments
+    def __init__(self, sCmd = "", asArgs = None, aEnv = None, afFlags = None,             # pylint: disable=too-many-arguments
                  timeoutMS = 5 * 60 * 1000, oCreds = None, fWaitForExit = True):
         tdTestGuestCtrlBase.__init__(self, oCreds = oCreds);
         self.sCmd = sCmd;
         self.asArgs = asArgs if asArgs is not None else [sCmd,];
         self.aEnv = aEnv;
-        self.fFlags = fFlags or [];
+        self.afFlags = afFlags or [];
         self.timeoutMS = timeoutMS;
         self.fWaitForExit = fWaitForExit;
         self.uExitStatus = 0;
@@ -1289,7 +1289,7 @@ class tdTestResultDirRead(tdTestResult):
 class tdTestResultExec(tdTestResult):
     """
     Holds a guest process execution test result,
-    including the exit code, status + fFlags.
+    including the exit code, status + afFlags.
     """
     def __init__(self, fRc = False, uExitStatus = 500, iExitCode = 0, sBuf = None, cbBuf = 0, cbStdOut = None, cbStdErr = None):
         tdTestResult.__init__(self);
@@ -1554,9 +1554,9 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         reporter.log2('Copying guest file "%s" to host "%s"' % (oTest.sSrc, oTest.sDst));
         try:
             if self.oTstDrv.fpApiVer >= 5.0:
-                oCurProgress = oGuestSession.fileCopyFromGuest(oTest.sSrc, oTest.sDst, oTest.fFlags);
+                oCurProgress = oGuestSession.fileCopyFromGuest(oTest.sSrc, oTest.sDst, oTest.afFlags);
             else:
-                oCurProgress = oGuestSession.copyFrom(oTest.sSrc, oTest.sDst, oTest.fFlags);
+                oCurProgress = oGuestSession.copyFrom(oTest.sSrc, oTest.sDst, oTest.afFlags);
         except:
             reporter.maybeErrXcpt(fExpected, 'Copy from exception for sSrc="%s", sDst="%s":' % (oTest.sSrc, oTest.sDst,));
             return False;
@@ -1649,7 +1649,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         #
         reporter.log2('Copying guest dir "%s" to host "%s"' % (oTest.sSrc, oTest.sDst));
         try:
-            oCurProgress = oGuestSession.directoryCopyFromGuest(oTest.sSrc, oTest.sDst, oTest.fFlags);
+            oCurProgress = oGuestSession.directoryCopyFromGuest(oTest.sSrc, oTest.sDst, oTest.afFlags);
         except:
             reporter.maybeErrXcpt(fExpected, 'Copy dir from exception for sSrc="%s", sDst="%s":' % (oTest.sSrc, oTest.sDst,));
             return False;
@@ -1676,16 +1676,16 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             return self.__compareTestDir(oDummy, sDst);
         return True;
 
-    def gctrlCopyFileTo(self, oGuestSession, sSrc, sDst, fFlags, fIsError):
+    def gctrlCopyFileTo(self, oGuestSession, sSrc, sDst, afFlags, fIsError):
         """
         Helper function to copy a single file from the host to the guest.
         """
-        reporter.log2('Copying host file "%s" to guest "%s" (flags %s)' % (sSrc, sDst, fFlags));
+        reporter.log2('Copying host file "%s" to guest "%s" (flags %s)' % (sSrc, sDst, afFlags));
         try:
             if self.oTstDrv.fpApiVer >= 5.0:
-                oCurProgress = oGuestSession.fileCopyToGuest(sSrc, sDst, fFlags);
+                oCurProgress = oGuestSession.fileCopyToGuest(sSrc, sDst, afFlags);
             else:
-                oCurProgress = oGuestSession.copyTo(sSrc, sDst, fFlags);
+                oCurProgress = oGuestSession.copyTo(sSrc, sDst, afFlags);
         except:
             reporter.maybeErrXcpt(fIsError, 'sSrc=%s sDst=%s' % (sSrc, sDst,));
             return False;
@@ -1704,13 +1704,13 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             return False;
         return True;
 
-    def gctrlCopyDirTo(self, oGuestSession, sSrc, sDst, fFlags, fIsError):
+    def gctrlCopyDirTo(self, oGuestSession, sSrc, sDst, afFlags, fIsError):
         """
         Helper function to copy a directory tree from the host to the guest.
         """
-        reporter.log2('Copying host directory "%s" to guest "%s" (flags %s)' % (sSrc, sDst, fFlags));
+        reporter.log2('Copying host directory "%s" to guest "%s" (flags %s)' % (sSrc, sDst, afFlags));
         try:
-            oCurProgress = oGuestSession.directoryCopyToGuest(sSrc, sDst, fFlags);
+            oCurProgress = oGuestSession.directoryCopyToGuest(sSrc, sDst, afFlags);
         except:
             reporter.maybeErrXcpt(fIsError, 'sSrc=%s sDst=%s' % (sSrc, sDst,));
             return False;
@@ -1735,10 +1735,10 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         """
         reporter.log2('Creating directory "%s"' % (oTest.sDirectory,));
         try:
-            oGuestSession.directoryCreate(oTest.sDirectory, oTest.fMode, oTest.fFlags);
+            oGuestSession.directoryCreate(oTest.sDirectory, oTest.fMode, oTest.afFlags);
         except:
-            reporter.maybeErrXcpt(oRes.fRc, 'Failed to create "%s" fMode=%o fFlags=%s'
-                                  % (oTest.sDirectory, oTest.fMode, oTest.fFlags,));
+            reporter.maybeErrXcpt(oRes.fRc, 'Failed to create "%s" fMode=%o afFlags=%s'
+                                  % (oTest.sDirectory, oTest.fMode, oTest.afFlags,));
             return not oRes.fRc;
         if oRes.fRc is not True:
             return reporter.error('Did not expect to create directory "%s"!' % (oTest.sDirectory,));
@@ -1762,7 +1762,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         """
         sDir     = oTest.sDirectory;
         sFilter  = oTest.sFilter;
-        fFlags   = oTest.fFlags;
+        afFlags  = oTest.afFlags;
         oTestVm  = oTest.oCreds.oTestVm;
         sCurDir  = oTestVm.pathJoin(sDir, sSubDir) if sSubDir else sDir;
 
@@ -1778,11 +1778,11 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         ##
 
         # Open the directory:
-        #reporter.log2('Directory="%s", filter="%s", fFlags="%s"' % (sCurDir, sFilter, fFlags));
+        #reporter.log2('Directory="%s", filter="%s", afFlags="%s"' % (sCurDir, sFilter, afFlags));
         try:
-            oCurDir = oGuestSession.directoryOpen(sCurDir, sFilter, fFlags);
+            oCurDir = oGuestSession.directoryOpen(sCurDir, sFilter, afFlags);
         except:
-            reporter.maybeErrXcpt(fIsError, 'sCurDir=%s sFilter=%s fFlags=%s' % (sCurDir, sFilter, fFlags,))
+            reporter.maybeErrXcpt(fIsError, 'sCurDir=%s sFilter=%s afFlags=%s' % (sCurDir, sFilter, afFlags,))
             return (False, 0, 0, 0);
 
         # Read the directory.
@@ -2010,12 +2010,12 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         #
         # Start the process:
         #
-        reporter.log2('Executing sCmd=%s, fFlags=%s, timeoutMS=%d, asArgs=%s, asEnv=%s'
-                      % (oTest.sCmd, oTest.fFlags, oTest.timeoutMS, oTest.asArgs, oTest.aEnv,));
+        reporter.log2('Executing sCmd=%s, afFlags=%s, timeoutMS=%d, asArgs=%s, asEnv=%s'
+                      % (oTest.sCmd, oTest.afFlags, oTest.timeoutMS, oTest.asArgs, oTest.aEnv,));
         try:
             oProcess = oGuestSession.processCreate(oTest.sCmd,
                                                    oTest.asArgs if self.oTstDrv.fpApiVer >= 5.0 else oTest.asArgs[1:],
-                                                   oTest.aEnv, oTest.fFlags, oTest.timeoutMS);
+                                                   oTest.aEnv, oTest.afFlags, oTest.timeoutMS);
         except:
             reporter.maybeErrXcpt(fIsError, 'asArgs=%s' % (oTest.asArgs,));
             return False;
@@ -2052,9 +2052,9 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
                     # What to wait for:
                     aeWaitFor = [ vboxcon.ProcessWaitForFlag_Terminate, ];
-                    if vboxcon.ProcessCreateFlag_WaitForStdOut in oTest.fFlags:
+                    if vboxcon.ProcessCreateFlag_WaitForStdOut in oTest.afFlags:
                         aeWaitFor.append(vboxcon.ProcessWaitForFlag_StdOut);
-                    if vboxcon.ProcessCreateFlag_WaitForStdErr in oTest.fFlags:
+                    if vboxcon.ProcessCreateFlag_WaitForStdErr in oTest.afFlags:
                         aeWaitFor.append(vboxcon.ProcessWaitForFlag_StdErr);
                     ## @todo Add vboxcon.ProcessWaitForFlag_StdIn.
 
@@ -2720,15 +2720,15 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 # [ tdTestExec(sCmd = sImageOut, asArgs = [ sImageOut, '/C', 'set', 'TEST_NONEXIST' ],
                 #   tdTestResultExec(fRc = True, iExitCode = 1) ]
                 # [ tdTestExec(sCmd = sImageOut, asArgs = [ sImageOut, '/C', 'set', 'windir' ],
-                #              fFlags = [ vboxcon.ProcessCreateFlag_WaitForStdOut, vboxcon.ProcessCreateFlag_WaitForStdErr ]),
+                #              afFlags = [ vboxcon.ProcessCreateFlag_WaitForStdOut, vboxcon.ProcessCreateFlag_WaitForStdErr ]),
                 #   tdTestResultExec(fRc = True, sBuf = 'windir=C:\\WINDOWS\r\n') ],
                 # [ tdTestExec(sCmd = sImageOut, asArgs = [ sImageOut, '/C', 'set', 'TEST_FOO' ],
                 #              aEnv = [ 'TEST_FOO=BAR' ],
-                #              fFlags = [ vboxcon.ProcessCreateFlag_WaitForStdOut, vboxcon.ProcessCreateFlag_WaitForStdErr ]),
+                #              afFlags = [ vboxcon.ProcessCreateFlag_WaitForStdOut, vboxcon.ProcessCreateFlag_WaitForStdErr ]),
                 #   tdTestResultExec(fRc = True, sBuf = 'TEST_FOO=BAR\r\n') ],
                 # [ tdTestExec(sCmd = sImageOut, asArgs = [ sImageOut, '/C', 'set', 'TEST_FOO' ],
                 #              aEnv = [ 'TEST_FOO=BAR', 'TEST_BAZ=BAR' ],
-                #              fFlags = [ vboxcon.ProcessCreateFlag_WaitForStdOut, vboxcon.ProcessCreateFlag_WaitForStdErr ]),
+                #              afFlags = [ vboxcon.ProcessCreateFlag_WaitForStdOut, vboxcon.ProcessCreateFlag_WaitForStdErr ]),
                 #   tdTestResultExec(fRc = True, sBuf = 'TEST_FOO=BAR\r\n') ]
 
                 ## @todo Create some files (or get files) we know the output size of to validate output length!
@@ -2770,15 +2770,15 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 #   tdTestResultExec(fRc = True, iExitCode = 1) ]
                 # [ tdTestExec(sCmd = sImageOut, asArgs = [ sImageOut, '/C', 'set', 'windir' ],
                 #
-                #              fFlags = [ vboxcon.ProcessCreateFlag_WaitForStdOut, vboxcon.ProcessCreateFlag_WaitForStdErr ]),
+                #              afFlags = [ vboxcon.ProcessCreateFlag_WaitForStdOut, vboxcon.ProcessCreateFlag_WaitForStdErr ]),
                 #   tdTestResultExec(fRc = True, sBuf = 'windir=C:\\WINDOWS\r\n') ],
                 # [ tdTestExec(sCmd = sImageOut, asArgs = [ sImageOut, '/C', 'set', 'TEST_FOO' ],
                 #              aEnv = [ 'TEST_FOO=BAR' ],
-                #              fFlags = [ vboxcon.ProcessCreateFlag_WaitForStdOut, vboxcon.ProcessCreateFlag_WaitForStdErr ]),
+                #              afFlags = [ vboxcon.ProcessCreateFlag_WaitForStdOut, vboxcon.ProcessCreateFlag_WaitForStdErr ]),
                 #   tdTestResultExec(fRc = True, sBuf = 'TEST_FOO=BAR\r\n') ],
                 # [ tdTestExec(sCmd = sImageOut, asArgs = [ sImageOut, '/C', 'set', 'TEST_FOO' ],
                 #              aEnv = [ 'TEST_FOO=BAR', 'TEST_BAZ=BAR' ],
-                #              fFlags = [ vboxcon.ProcessCreateFlag_WaitForStdOut, vboxcon.ProcessCreateFlag_WaitForStdErr ]),
+                #              afFlags = [ vboxcon.ProcessCreateFlag_WaitForStdOut, vboxcon.ProcessCreateFlag_WaitForStdErr ]),
                 #   tdTestResultExec(fRc = True, sBuf = 'TEST_FOO=BAR\r\n') ]
 
                 ## @todo Create some files (or get files) we know the output size of to validate output length!
@@ -2954,11 +2954,11 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         #
         sImage = self.getGuestSystemShell(oTestVm);
         asArgs  = [ sImage, ];
-        aEnv   = [];
-        fFlags = [];
+        aEnv    = [];
+        afFlags = [];
         try:
             oGuestProcess = oGuestSession.processCreate(sImage,
-                                                        asArgs if self.oTstDrv.fpApiVer >= 5.0 else asArgs[1:], aEnv, fFlags,
+                                                        asArgs if self.oTstDrv.fpApiVer >= 5.0 else asArgs[1:], aEnv, afFlags,
                                                         30 * 1000);
         except:
             fRc = reporter.error('Failed to start shell process (%s)' % (sImage,));
@@ -3183,9 +3183,9 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             # Creating directories.
             [ tdTestDirCreate(sDirectory = sScratch ), tdTestResultSuccess() ],
             [ tdTestDirCreate(sDirectory = oTestVm.pathJoin(sScratch, 'foo', 'bar', 'baz'),
-                              fFlags = (vboxcon.DirectoryCreateFlag_Parents,) ), tdTestResultSuccess() ],
+                              afFlags = (vboxcon.DirectoryCreateFlag_Parents,) ), tdTestResultSuccess() ],
             [ tdTestDirCreate(sDirectory = oTestVm.pathJoin(sScratch, 'foo', 'bar', 'baz'),
-                              fFlags = (vboxcon.DirectoryCreateFlag_Parents,) ), tdTestResultSuccess() ],
+                              afFlags = (vboxcon.DirectoryCreateFlag_Parents,) ), tdTestResultSuccess() ],
             # Long random names.
             [ tdTestDirCreate(sDirectory = oTestVm.pathJoin(sScratch, self.oTestFiles.generateFilenameEx(36, 28))),
               tdTestResultSuccess() ],
@@ -3311,7 +3311,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         atTests = [
             # Invalid stuff.
             [ tdTestDirRead(sDirectory = ''), tdTestResultDirRead() ],
-            [ tdTestDirRead(sDirectory = sSystemDir, fFlags = [ 1234 ]), tdTestResultDirRead() ],
+            [ tdTestDirRead(sDirectory = sSystemDir, afFlags = [ 1234 ]), tdTestResultDirRead() ],
             [ tdTestDirRead(sDirectory = sSystemDir, sFilter = '*.foo'), tdTestResultDirRead() ],
             # Non-existing stuff.
             [ tdTestDirRead(sDirectory = oTestVm.pathJoin(sSystemDir, 'really-no-such-subdir')), tdTestResultDirRead() ],
@@ -4372,8 +4372,8 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             atTests.extend([
                 ## @todo Apparently Main doesn't check the flags, so the first test succeeds.
                 # Both given, but invalid flags.
-                [ tdTestCopyToFile(sSrc = sBigFileHst, sDst = sScratchGst, fFlags = [ 0x40000000] ), tdTestResultFailure() ],
-                [ tdTestCopyToDir( sSrc = sScratchEmptyDirHst, sDst = sScratchGst, fFlags = [ 0x40000000] ),
+                [ tdTestCopyToFile(sSrc = sBigFileHst, sDst = sScratchGst, afFlags = [ 0x40000000] ), tdTestResultFailure() ],
+                [ tdTestCopyToDir( sSrc = sScratchEmptyDirHst, sDst = sScratchGst, afFlags = [ 0x40000000] ),
                   tdTestResultFailure() ],
             ]);
         atTests.extend([
@@ -4444,14 +4444,14 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 [ tdTestCopyToDir(sSrc = sScratchEmptyDirHst, sDst = sScratchDstDir1Gst),   tdTestResultSuccess() ],
                 [ tdTestCopyToDir(sSrc = sScratchEmptyDirHst, sDst = sScratchDstDir1Gst),   tdTestResultFailure() ],
                 [ tdTestCopyToDir(sSrc = sScratchEmptyDirHst, sDst = sScratchDstDir1Gst,
-                                 fFlags = [vboxcon.DirectoryCopyFlag_CopyIntoExisting]),    tdTestResultSuccess() ],
+                                 afFlags = [vboxcon.DirectoryCopyFlag_CopyIntoExisting]),    tdTestResultSuccess() ],
                 # Try again with trailing slash, should yield the same result:
                 [ tdTestCopyToDir(sSrc = sScratchEmptyDirHst, sDst = sScratchDstDir2Gst + oTestVm.pathSep()),
                   tdTestResultSuccess() ],
                 [ tdTestCopyToDir(sSrc = sScratchEmptyDirHst, sDst = sScratchDstDir2Gst + oTestVm.pathSep()),
                   tdTestResultFailure() ],
                 [ tdTestCopyToDir(sSrc = sScratchEmptyDirHst, sDst = sScratchDstDir2Gst + oTestVm.pathSep(),
-                                  fFlags = [vboxcon.DirectoryCopyFlag_CopyIntoExisting]),
+                                  afFlags = [vboxcon.DirectoryCopyFlag_CopyIntoExisting]),
                   tdTestResultSuccess() ],
             ]);
             if not self.fSkipKnownBugs:
@@ -4468,7 +4468,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             if not self.fSkipKnownBugs:
                 atTests.extend([
                     [ tdTestCopyToDir(sSrc = sScratchNonEmptyDirHst, sDst = sScratchDstDir3Gst,
-                                      fFlags = [vboxcon.DirectoryCopyFlag_CopyIntoExisting]),   tdTestResultSuccess() ],
+                                      afFlags = [vboxcon.DirectoryCopyFlag_CopyIntoExisting]),   tdTestResultSuccess() ],
                 ]);
             atTests.extend([
                 #[ tdTestRemoveGuestDir(sScratchDstDir2Gst, tdTestResult() ],
@@ -4481,7 +4481,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         for (i, tTest) in enumerate(atTests):
             oCurTest = tTest[0]; # tdTestCopyTo
             oCurRes  = tTest[1]; # tdTestResult
-            reporter.log('Testing #%d, sSrc=%s, sDst=%s, fFlags=%s ...' % (i, oCurTest.sSrc, oCurTest.sDst, oCurTest.fFlags));
+            reporter.log('Testing #%d, sSrc=%s, sDst=%s, afFlags=%s ...' % (i, oCurTest.sSrc, oCurTest.sDst, oCurTest.afFlags));
 
             oCurTest.setEnvironment(oSession, oTxsSession, oTestVm);
             fRc, oCurGuestSession = oCurTest.createSession('testGuestCtrlCopyTo: Test #%d' % (i,));
@@ -4491,9 +4491,9 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
             fRc2 = False;
             if isinstance(oCurTest, tdTestCopyToFile):
-                fRc2 = self.gctrlCopyFileTo(oCurGuestSession, oCurTest.sSrc, oCurTest.sDst, oCurTest.fFlags, oCurRes.fRc);
+                fRc2 = self.gctrlCopyFileTo(oCurGuestSession, oCurTest.sSrc, oCurTest.sDst, oCurTest.afFlags, oCurRes.fRc);
             else:
-                fRc2 = self.gctrlCopyDirTo(oCurGuestSession, oCurTest.sSrc, oCurTest.sDst, oCurTest.fFlags, oCurRes.fRc);
+                fRc2 = self.gctrlCopyDirTo(oCurGuestSession, oCurTest.sSrc, oCurTest.sDst, oCurTest.afFlags, oCurRes.fRc);
             if fRc2 is not oCurRes.fRc:
                 fRc = reporter.error('Test #%d failed: Got %s, expected %s' % (i, fRc2, oCurRes.fRc));
 
@@ -4558,9 +4558,9 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             ## @todo main isn't validating flags, so these theses will succeed.
             ##
             ## Invalid flags:
-            #[ tdTestCopyFromFile(oSrc = oExistingFileGst, sDst = os.path.join(sScratchHst, 'somefile'), fFlags = [ 0x40000000] ),
+            #[ tdTestCopyFromFile(oSrc = oExistingFileGst, sDst = os.path.join(sScratchHst, 'somefile'), afFlags = [0x40000000]),
             #  tdTestResultFailure() ],
-            #[ tdTestCopyFromDir( oSrc = oEmptyDirGst, sDst = os.path.join(sScratchHst, 'somedir'),  fFlags = [ 0x40000000] ),
+            #[ tdTestCopyFromDir( oSrc = oEmptyDirGst, sDst = os.path.join(sScratchHst, 'somedir'),  afFlags = [ 0x40000000] ),
             #  tdTestResultFailure() ],
             # Non-existing sources:
             [ tdTestCopyFromFile(sSrc = oTestVm.pathJoin(self.oTestFiles.oRoot.sPath, 'no-such-file-or-directory'),
@@ -4628,7 +4628,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 [ tdTestCopyFromDir(oSrc = oEmptyDirGst, sDst = sScratchDstDir1Hst), tdTestResultFailure() ],
                 # Add the DirectoryCopyFlag_CopyIntoExisting flag being set and it should work.
                 [ tdTestCopyFromDir(oSrc = oEmptyDirGst, sDst = sScratchDstDir1Hst,
-                                    fFlags = [ vboxcon.DirectoryCopyFlag_CopyIntoExisting, ]), tdTestResultSuccess() ],
+                                    afFlags = [ vboxcon.DirectoryCopyFlag_CopyIntoExisting, ]), tdTestResultSuccess() ],
                 # Try again with trailing slash, should yield the same result:
                 [ tdTestRemoveHostDir(os.path.join(sScratchDstDir1Hst, 'empty')), tdTestResult() ],
                 [ tdTestCopyFromDir(oSrc = oEmptyDirGst, sDst = sScratchDstDir1Hst + os.path.sep),
@@ -4636,7 +4636,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 [ tdTestCopyFromDir(oSrc = oEmptyDirGst, sDst = sScratchDstDir1Hst + os.path.sep),
                   tdTestResultFailure() ],
                 [ tdTestCopyFromDir(oSrc = oEmptyDirGst, sDst = sScratchDstDir1Hst + os.path.sep,
-                                    fFlags = [ vboxcon.DirectoryCopyFlag_CopyIntoExisting, ]), tdTestResultSuccess() ],
+                                    afFlags = [ vboxcon.DirectoryCopyFlag_CopyIntoExisting, ]), tdTestResultSuccess() ],
                 # Copy with a different destination name just for the heck of it:
                 [ tdTestCopyFromDir(oSrc = oEmptyDirGst, sDst = os.path.join(sScratchHst, 'empty2'), fIntoDst = True),
                   tdTestResultFailure() ],
@@ -4644,7 +4644,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 [ tdTestCopyFromDir(oSrc = oNonEmptyDirGst, sDst = sScratchDstDir2Hst), tdTestResultSuccess() ],
                 [ tdTestCopyFromDir(oSrc = oNonEmptyDirGst, sDst = sScratchDstDir2Hst), tdTestResultFailure() ],
                 [ tdTestCopyFromDir(oSrc = oNonEmptyDirGst, sDst = sScratchDstDir2Hst,
-                                    fFlags = [ vboxcon.DirectoryCopyFlag_CopyIntoExisting, ]), tdTestResultSuccess() ],
+                                    afFlags = [ vboxcon.DirectoryCopyFlag_CopyIntoExisting, ]), tdTestResultSuccess() ],
                 # Copy the entire test tree:
                 [ tdTestCopyFromDir(sSrc = self.oTestFiles.oTreeDir.sPath, sDst = sScratchDstDir3Hst), tdTestResultSuccess() ],
             ]);
@@ -4657,9 +4657,9 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             oCurTest = tTest[0]
             oCurRes  = tTest[1] # type: tdTestResult
             if isinstance(oCurTest, tdTestCopyFrom):
-                reporter.log('Testing #%d, %s: sSrc="%s", sDst="%s", fFlags="%s" ...'
+                reporter.log('Testing #%d, %s: sSrc="%s", sDst="%s", afFlags="%s" ...'
                              % (i, "directory" if isinstance(oCurTest, tdTestCopyFromDir) else "file",
-                                oCurTest.sSrc, oCurTest.sDst, oCurTest.fFlags,));
+                                oCurTest.sSrc, oCurTest.sDst, oCurTest.afFlags,));
             else:
                 reporter.log('Testing #%d, tdTestRemoveHostDir "%s"  ...' % (i, oCurTest.sDir,));
             if isinstance(oCurTest, tdTestCopyFromDir) and self.oTstDrv.fpApiVer < 6.0:
@@ -4682,7 +4682,6 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
                 if fRc2 != oCurRes.fRc:
                     fRc = reporter.error('Test #%d failed: Got %s, expected %s' % (i, fRc2, oCurRes.fRc));
-                    fRc2 = False;
 
                 fRc = oCurTest.closeSession() and fRc;
 
