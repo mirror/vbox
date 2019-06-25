@@ -305,6 +305,7 @@ public:
     const QString shiftAltGrCaption() const;
     void  setShiftAltGrCaption(const QString &strAltGrCaption);
 
+    void resetCaptions();
     const QString text() const;
 
     void setWidth(int iWidth);
@@ -1193,6 +1194,15 @@ void UISoftKeyboardKey::setShiftAltGrCaption(const QString &strShiftAltGrCaption
     updateText();
 }
 
+void UISoftKeyboardKey::resetCaptions()
+{
+    m_strBaseCaption.clear();
+    m_strShiftCaption.clear();
+    m_strAltGrCaption.clear();
+    m_strShiftAltGrCaption.clear();
+    updateText();
+}
+
 const QString UISoftKeyboardKey::text() const
 {
     return m_strText;
@@ -2014,6 +2024,7 @@ bool UISoftKeyboardWidget::loadPhysicalLayout(const QString &strLayoutFileName, 
     int iMaxWidth = 0;
     const QVector<UISoftKeyboardRow> &numPadRows = m_numPadLayout.rows();
     QVector<UISoftKeyboardRow> &rows = newPhysicalLayout->rows();
+    int iKeyCount = 0;
     for (int i = 0; i < rows.size(); ++i)
     {
         UISoftKeyboardRow &row = rows[i];
@@ -2032,6 +2043,7 @@ bool UISoftKeyboardWidget::loadPhysicalLayout(const QString &strLayoutFileName, 
         int iRowHeight = row.defaultHeight();
         for (int j = 0; j < row.keys().size(); ++j)
         {
+            ++iKeyCount;
             UISoftKeyboardKey &key = (row.keys())[j];
             key.setKeyGeometry(QRect(iX, iY, key.width(), key.height()));
             key.setPolygon(QPolygon(UIPhysicalLayoutReader::computeKeyVertices(key)));
@@ -2053,6 +2065,7 @@ bool UISoftKeyboardWidget::loadPhysicalLayout(const QString &strLayoutFileName, 
     int iInitialHeight = iY + m_iBottomMargin;
     m_iInitialWidth = qMax(m_iInitialWidth, iInitialWidth);
     m_iInitialHeight = qMax(m_iInitialHeight, iInitialHeight);
+    printf("%s total key count: %d\n", qPrintable(strLayoutFileName), iKeyCount - 3 /* substract OS an menu keys */);
     return true;
 }
 
@@ -2100,7 +2113,9 @@ void UISoftKeyboardWidget::loadLayouts()
     /* Load physical layouts from resources: */
     loadPhysicalLayout(":/numpad.xml", true);
     QStringList physicalLayoutNames;
-    physicalLayoutNames << ":/101_ansi.xml" << ":/102_iso.xml";
+    physicalLayoutNames << ":/101_ansi.xml"
+                        << ":/102_iso.xml"
+                        << ":/106_iso.xml";
     foreach (const QString &strName, physicalLayoutNames)
         loadPhysicalLayout(strName);
 
@@ -2110,7 +2125,7 @@ void UISoftKeyboardWidget::loadLayouts()
     /* Add keyboard layouts from resources: */
     QStringList keyboardLayoutNames;
     keyboardLayoutNames << ":/us_international.xml"
-                        <<":/german.xml"
+                        << ":/german.xml"
                         << ":/us.xml";
 
     foreach (const QString &strName, keyboardLayoutNames)
@@ -2185,7 +2200,10 @@ void UISoftKeyboardWidget::setCurrentLayout(UISoftKeyboardLayout *pLayout)
         {
             UISoftKeyboardKey &key = keys[j];
             if (!keyCapMap.contains(key.position()))
+            {
+                key.resetCaptions();
                 continue;
+            }
             const KeyCaptions &captions = keyCapMap.value(key.position());
             key.setBaseCaption(captions.m_strBase);
             key.setShiftCaption(captions.m_strShift);
@@ -2877,6 +2895,5 @@ void UISoftKeyboard::setDialogGeometry(const QRect &geometry)
     if (gEDataManager->softKeyboardDialogShouldBeMaximized())
         showMaximized();
 }
-
 
 #include "UISoftKeyboard.moc"

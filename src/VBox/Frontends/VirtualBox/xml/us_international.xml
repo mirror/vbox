@@ -217,18 +217,49 @@
         <basecaption>Insert</basecaption>
         <shiftcaption></shiftcaption>
         <altgrcaption></altgrcaption>
+        <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>80</position>
         <basecaption>Home</basecaption>
         <shiftcaption></shiftcaption>
         <altgrcaption></altgrcaption>
+        <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>85</position>
         <basecaption>Page Up</basecaption>
         <shiftcaption></shiftcaption>
         <altgrcaption></altgrcaption>
+        <shiftaltgrcaption></shiftaltgrcaption>
+    </key>
+    <key>
+        <position>90</position>
+        <basecaption>Num Lock</basecaption>
+        <shiftcaption></shiftcaption>
+        <altgrcaption></altgrcaption>
+        <shiftaltgrcaption></shiftaltgrcaption>
+    </key>
+    <key>
+        <position>95</position>
+        <basecaption>/</basecaption>
+        <shiftcaption></shiftcaption>
+        <altgrcaption></altgrcaption>
+        <shiftaltgrcaption></shiftaltgrcaption>
+    </key>
+    <key>
+        <position>100</position>
+        <basecaption>*</basecaption>
+        <shiftcaption></shiftcaption>
+        <altgrcaption></altgrcaption>
+        <shiftaltgrcaption></shiftaltgrcaption>
+    </key>
+    <key>
+        <position>105</position>
+        <basecaption>-</basecaption>
+        <shiftcaption></shiftcaption>
+        <altgrcaption></altgrcaption>
+        <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>16</position>
@@ -333,18 +364,49 @@
         <basecaption>Delete</basecaption>
         <shiftcaption></shiftcaption>
         <altgrcaption></altgrcaption>
+        <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>81</position>
         <basecaption>End</basecaption>
         <shiftcaption></shiftcaption>
         <altgrcaption></altgrcaption>
+        <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>86</position>
         <basecaption>Page Down</basecaption>
         <shiftcaption></shiftcaption>
         <altgrcaption></altgrcaption>
+        <shiftaltgrcaption></shiftaltgrcaption>
+    </key>
+    <key>
+        <position>91</position>
+        <basecaption>7</basecaption>
+        <shiftcaption></shiftcaption>
+        <altgrcaption></altgrcaption>
+        <shiftaltgrcaption></shiftaltgrcaption>
+    </key>
+    <key>
+        <position>96</position>
+        <basecaption>8</basecaption>
+        <shiftcaption></shiftcaption>
+        <altgrcaption></altgrcaption>
+        <shiftaltgrcaption></shiftaltgrcaption>
+    </key>
+    <key>
+        <position>101</position>
+        <basecaption>9</basecaption>
+        <shiftcaption></shiftcaption>
+        <altgrcaption></altgrcaption>
+        <shiftaltgrcaption></shiftaltgrcaption>
+    </key>
+    <key>
+        <position>106</position>
+        <basecaption></basecaption>
+        <shiftcaption>+</shiftcaption>
+        <altgrcaption></altgrcaption>
+        <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>30</position>
@@ -433,6 +495,27 @@
     <key>
         <position>43</position>
         <basecaption>Enter</basecaption>
+        <shiftcaption></shiftcaption>
+        <altgrcaption></altgrcaption>
+        <shiftaltgrcaption></shiftaltgrcaption>
+    </key>
+    <key>
+        <position>92</position>
+        <basecaption>4</basecaption>
+        <shiftcaption></shiftcaption>
+        <altgrcaption></altgrcaption>
+        <shiftaltgrcaption></shiftaltgrcaption>
+    </key>
+    <key>
+        <position>97</position>
+        <basecaption>5</basecaption>
+        <shiftcaption></shiftcaption>
+        <altgrcaption></altgrcaption>
+        <shiftaltgrcaption></shiftaltgrcaption>
+    </key>
+    <key>
+        <position>102</position>
+        <basecaption>6</basecaption>
         <shiftcaption></shiftcaption>
         <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
@@ -529,6 +612,34 @@
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
+        <position>93</position>
+        <basecaption></basecaption>
+        <shiftcaption>1</shiftcaption>
+        <altgrcaption></altgrcaption>
+        <shiftaltgrcaption></shiftaltgrcaption>
+    </key>
+    <key>
+        <position>98</position>
+        <basecaption>2</basecaption>
+        <shiftcaption></shiftcaption>
+        <altgrcaption></altgrcaption>
+        <shiftaltgrcaption></shiftaltgrcaption>
+    </key>
+    <key>
+        <position>103</position>
+        <basecaption>3</basecaption>
+        <shiftcaption></shiftcaption>
+        <altgrcaption></altgrcaption>
+        <shiftaltgrcaption></shiftaltgrcaption>
+    </key>
+    <key>
+        <position>108</position>
+        <basecaption>Enter</basecaption>
+        <shiftcaption></shiftcaption>
+        <altgrcaption></altgrcaption>
+        <shiftaltgrcaption></shiftaltgrcaption>
+    </key>
+    <key>
         <position>58</position>
         <basecaption>Ctrl</basecaption>
         <shiftcaption></shiftcaption>
@@ -601,6 +712,20 @@
     <key>
         <position>89</position>
         <basecaption>→</basecaption>
+        <shiftcaption></shiftcaption>
+        <altgrcaption></altgrcaption>
+        <shiftaltgrcaption></shiftaltgrcaption>
+    </key>
+    <key>
+        <position>99</position>
+        <basecaption>0</basecaption>
+        <shiftcaption></shiftcaption>
+        <altgrcaption></altgrcaption>
+        <shiftaltgrcaption></shiftaltgrcaption>
+    </key>
+    <key>
+        <position>104</position>
+        <basecaption>.</basecaption>
         <shiftcaption></shiftcaption>
         <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
