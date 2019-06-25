@@ -182,6 +182,181 @@ static DECLCALLBACK(int) virtioScsiR3LoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSS
 }
 #endif
 
+
+/**
+ * Memory mapped I/O Handler for read operations.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pDevIns     The device instance.
+ * @param   pvUser      User argument.
+ * @param   GCPhysAddr  Physical address (in GC) where the read starts.
+ * @param   pv          Where to store the result.
+ * @param   cb          Number of bytes read.
+ */
+PDMBOTHCBDECL(int) virtioScsiMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
+{
+    RT_NOREF_PV(pDevIns); RT_NOREF_PV(pvUser); RT_NOREF_PV(GCPhysAddr); RT_NOREF_PV(pv); RT_NOREF_PV(cb);
+
+    /* the linux driver does not make use of the MMIO area. */
+    AssertMsgFailed(("MMIO Read\n"));
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Memory mapped I/O Handler for write operations.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pDevIns     The device instance.
+ * @param   pvUser      User argument.
+ * @param   GCPhysAddr  Physical address (in GC) where the read starts.
+ * @param   pv          Where to fetch the result.
+ * @param   cb          Number of bytes to write.
+ */
+PDMBOTHCBDECL(int) virtioScsiMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void const *pv, unsigned cb)
+{
+    RT_NOREF_PV(pDevIns); RT_NOREF_PV(pvUser); RT_NOREF_PV(GCPhysAddr); RT_NOREF_PV(pv); RT_NOREF_PV(cb);
+
+    /* the linux driver does not make use of the MMIO area. */
+    AssertMsgFailed(("MMIO Write\n"));
+    return VINF_SUCCESS;
+}
+
+/**
+ * Port I/O Handler for IN operations.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pDevIns     The device instance.
+ * @param   pvUser      User argument.
+ * @param   uPort       Port number used for the IN operation.
+ * @param   pu32        Where to store the result.
+ * @param   cb          Number of bytes read.
+ */
+PDMBOTHCBDECL(int) virtioScsiIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t *pu32, unsigned cb)
+{
+//    PVIRTIOSCSI pVirtioScsi = PDMINS_2_DATA(pDevIns, PVIRTIOSCSI);
+    unsigned iRegister = uPort % 4;
+    NOREF(iRegister);
+    NOREF(pDevIns);
+    NOREF(pu32);
+    RT_NOREF_PV(pvUser); RT_NOREF_PV(cb);
+
+    Assert(cb == 1);
+
+//    return buslogicRegisterRead(pBusLogic, iRegister, pu32);
+    return 0;
+}
+
+
+/**
+ * Port I/O Handler for OUT operations.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pDevIns     The device instance.
+ * @param   pvUser      User argument.
+ * @param   uPort       Port number used for the IN operation.
+ * @param   u32         The value to output.
+ * @param   cb          The value size in bytes.
+ */
+PDMBOTHCBDECL(int) virtioScsiIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t u32, unsigned cb)
+{
+//    PVIRTIOSCSI pVirtioScsi = PDMINS_2_DATA(pDevIns, PVIRTIOSCSI);
+    unsigned iRegister = uPort % 4;
+    uint8_t uVal = (uint8_t)u32;
+    NOREF(uVal);
+    NOREF(iRegister);
+    RT_NOREF2(pvUser, cb);
+    NOREF(u32);
+
+    Assert(cb == 1);
+
+//    int rc = buslogicRegisterWrite(pBusLogic, iRegister, (uint8_t)uVal);
+    int rc = 0;
+    Log2(("#%d %s: pvUser=%#p cb=%d u32=%#x uPort=%#x rc=%Rrc\n",
+          pDevIns->iInstance, __FUNCTION__, pvUser, cb, u32, uPort, rc));
+
+    return rc;
+}
+/**
+ * @callback_method_impl{FNPCIIOREGIONMAP}
+ */
+static DECLCALLBACK(int) devVirtioScsiR3MmioMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
+                                           RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
+{
+    RT_NOREF(pPciDev, iRegion);
+    PVIRTIOSCSI  pThis = PDMINS_2_DATA(pDevIns, PVIRTIOSCSI);
+    int   rc = VINF_SUCCESS;
+
+    Log2(("%s: registering MMIO area at GCPhysAddr=%RGp cb=%RGp\n", __FUNCTION__, GCPhysAddress, cb));
+
+    Assert(cb >= 32);
+
+    if (enmType == PCI_ADDRESS_SPACE_MEM)
+    {
+        /* We use the assigned size here, because we currently only support page aligned MMIO ranges. */
+        rc = PDMDevHlpMMIORegister(pDevIns, GCPhysAddress, cb, NULL /*pvUser*/,
+                                   IOMMMIO_FLAGS_READ_PASSTHRU | IOMMMIO_FLAGS_WRITE_PASSTHRU,
+                                   virtioScsiMMIOWrite, virtioScsiMMIORead, "virtio-scsi MMIO");
+        if (RT_FAILURE(rc))
+            return rc;
+
+        if (pThis->fR0Enabled)
+        {
+            rc = PDMDevHlpMMIORegisterR0(pDevIns, GCPhysAddress, cb, NIL_RTR0PTR /*pvUser*/,
+                                         "virtioScsiMMIOWrite", "virtioScsiMMIORead");
+            if (RT_FAILURE(rc))
+                return rc;
+        }
+
+        if (pThis->fGCEnabled)
+        {
+            rc = PDMDevHlpMMIORegisterRC(pDevIns, GCPhysAddress, cb, NIL_RTRCPTR /*pvUser*/,
+                                         "virtioScsiMMIOWrite", "virtioScsiMMIORead");
+            if (RT_FAILURE(rc))
+                return rc;
+        }
+
+        pThis->MMIOBase = GCPhysAddress;
+    }
+    else if (enmType == PCI_ADDRESS_SPACE_IO)
+    {
+        rc = PDMDevHlpIOPortRegister(pDevIns, (RTIOPORT)GCPhysAddress, 32,
+                                     NULL, virtioScsiIOPortWrite, virtioScsiIOPortRead, NULL, NULL, "virtio-scsi PCI");
+        if (RT_FAILURE(rc))
+            return rc;
+
+        if (pThis->fR0Enabled)
+        {
+            rc = PDMDevHlpIOPortRegisterR0(pDevIns, (RTIOPORT)GCPhysAddress, 32,
+                                           0, "virtioScsiIOPortWrite", "virtioScsiIOPortRead", NULL, NULL, "virtio-scsi PCI");
+            if (RT_FAILURE(rc))
+                return rc;
+        }
+
+        if (pThis->fGCEnabled)
+        {
+            rc = PDMDevHlpIOPortRegisterRC(pDevIns, (RTIOPORT)GCPhysAddress, 32,
+                                           0, "virtioScsiIOPortWrite", "virtioScsiIOPortRead", NULL, NULL, "virtio-scsi PCI");
+            if (RT_FAILURE(rc))
+                return rc;
+        }
+
+        pThis->IOPortBase = (RTIOPORT)GCPhysAddress;
+    }
+    else
+        AssertMsgFailed(("Invalid enmType=%d\n", enmType));
+
+    return rc;
+}
+
+
+
+
+
 /**
  * @copydoc FNPDMDEVRESET
  */
@@ -275,20 +450,35 @@ static DECLCALLBACK(int) devVirtioScsiConstruct(PPDMDEVINS pDevIns, int iInstanc
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("virtio-scsi configuration error: failed to read GCEnabled as boolean"));
-    Log(("%s: fGCEnabled=%d\n", __FUNCTION__, pThis->fGCEnabled));
+    LogFunc(("fGCEnabled=%d\n", pThis->fGCEnabled));
 
     rc = CFGMR3QueryBoolDef(pCfg, "R0Enabled", &pThis->fR0Enabled, true);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("virtio-scsi configuration error: failed to read R0Enabled as boolean"));
-    Log(("%s: fR0Enabled=%d\n", __FUNCTION__, pThis->fR0Enabled));
+    LogFunc(("R0Enabled=%d\n", pThis->fGCEnabled));
 
     rc = CFGMR3QueryIntegerDef(pCfg, "NumTargets", &pThis->cTargets, true);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("virtio-scsi configuration error: failed to read NumTargets as integer"));
-    Log(("%s: fGCEnabled=%d\n", __FUNCTION__, pThis->fGCEnabled));
+    LogFunc(("NumTargets=%d\n", pThis->fGCEnabled));
 
+
+LogFunc(("Register PCI device\n"));
+
+    rc = PDMDevHlpPCIRegister(pDevIns, &pThis->dev);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("virtio-scsi cannot register with PCI bus"));
+
+//    rc = PDMDevHlpPCIIORegionRegister(pDevIns, 0, 32, PCI_ADDRESS_SPACE_IO, devVirtioScsiR3MmioMap);
+//    if (RT_FAILURE(rc))
+//        return PDMDEV_SET_ERROR(pDevIns, rc, N_("virtio-scsi cannot register PCI I/O address space"));
+
+//    rc = PDMDevHlpPCIIORegionRegister(pDevIns, 1, 32, PCI_ADDRESS_SPACE_MEM, devVirtioScsiR3MmioMap);
+//    if (RT_FAILURE(rc))
+//        return PDMDEV_SET_ERROR(pDevIns, rc, N_("virtio-scsi cannot register PCI mmio address space"));
+    NOREF(devVirtioScsiR3MmioMap);
 #if 0
     if (fBootable)
     {
@@ -301,16 +491,6 @@ static DECLCALLBACK(int) devVirtioScsiConstruct(PPDMDEVINS pDevIns, int iInstanc
             return PDMDEV_SET_ERROR(pDevIns, rc, N_("virtio-scsi cannot register BIOS I/O handlers"));
     }
 
-    /* Set up the compatibility I/O range. */
-    rc = virtioScsiR3RegisterISARange(pThis, pThis->uDefaultISABaseCode);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc, N_("virtio-scsi cannot register ISA I/O handlers"));
-
-    /* Initialize task queue. */
-    rc = PDMDevHlpQueueCreate(pDevIns, sizeof(PDMQUEUEITEMCORE), 5, 0,
-                              virtioScsiR3NotifyQueueConsumer, true, "virtio-scsiTask", &pThis->pNotifierQueueR3);
-    if (RT_FAILURE(rc))
-        return rc;
     pThis->pNotifierQueueR0 = PDMQueueR0Ptr(pThis->pNotifierQueueR3);
     pThis->pNotifierQueueRC = PDMQueueRCPtr(pThis->pNotifierQueueR3);
 
@@ -348,10 +528,9 @@ static DECLCALLBACK(int) devVirtioScsiConstruct(PPDMDEVINS pDevIns, int iInstanc
         /* Initialize static parts of the device. */
         pDevice->iLUN = i;
         pDevice->pVirtioScsiR3 = pThis;
-Log(("Attaching: Lun=%d, pszName=%s\n",  pDevice->iLUN, pszName));
+LogFunc(("Attaching: Lun=%d, pszName=%s\n",  pDevice->iLUN, pszName));
         /* Attach SCSI driver. */
         rc = PDMDevHlpDriverAttach(pDevIns, pDevice->iLUN, &pDevice->IBase, &pDevice->pDrvBase, pszName);
-Log(("rc=%d\n", rc));
         if (RT_SUCCESS(rc))
         {
 #if 0
@@ -448,7 +627,7 @@ static DECLCALLBACK(int)  devVirtioScsiR3Attach(PPDMDEVINS pDevIns, unsigned iLU
     PVIRTIOSCSIDEV pDevice = &pThis->aDevInstances[iLUN];
     int rc;
 
-LogFlowFunc(("iLun=%d"))
+LogFlowFunc(("iLun=%d"));
 
     AssertMsgReturn(fFlags & PDM_TACH_FLAGS_NOT_HOT_PLUG,
                     ("virtio-scsi: Device does not support hotplugging\n"),
@@ -528,6 +707,7 @@ static DECLCALLBACK(void) devVirtioScsiR3Detach(PPDMDEVINS pDevIns, unsigned iLU
 //    pDevice->pDrvMediaEx = NULL;
 
 }
+
 
 /**
  * The device registration structure.
