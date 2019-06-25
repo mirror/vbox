@@ -108,9 +108,9 @@ class tdTestGuestCtrlBase(object):
     Note: This test ASSUMES that working Guest Additions
           were installed and running on the guest to be tested.
     """
-    def __init__(self):
+    def __init__(self, oCreds = None):
         self.oGuest    = None;      ##< IGuest.
-        self.oCreds    = None       ##< type: tdCtxCreds
+        self.oCreds    = oCreds     ##< type: tdCtxCreds
         self.timeoutMS = 30 * 1000; ##< 30s timeout
         self.oGuestSession = None;  ##< IGuestSession reference or None.
 
@@ -223,9 +223,8 @@ class tdTestCopyFrom(tdTestGuestCtrlBase):
     """
     Test for copying files from the guest to the host.
     """
-    def __init__(self, sSrc = "", sDst = "", sUser = None, sPassword = None, fFlags = None, oSrc = None):
-        tdTestGuestCtrlBase.__init__(self);
-        self.oCreds = tdCtxCreds(sUser, sPassword, sDomain = None);
+    def __init__(self, sSrc = "", sDst = "", oCreds = None, fFlags = None, oSrc = None):
+        tdTestGuestCtrlBase.__init__(self, oCreds = oCreds);
         self.sSrc = sSrc;
         self.sDst = sDst;
         self.fFlags = fFlags;
@@ -235,8 +234,8 @@ class tdTestCopyFrom(tdTestGuestCtrlBase):
 
 class tdTestCopyFromDir(tdTestCopyFrom):
 
-    def __init__(self, sSrc = "", sDst = "", sUser = None, sPassword = None, fFlags = None, oSrc = None, fIntoDst = False):
-        tdTestCopyFrom.__init__(self, sSrc, sDst, sUser, sPassword, fFlags, oSrc);
+    def __init__(self, sSrc = "", sDst = "", oCreds = None, fFlags = None, oSrc = None, fIntoDst = False):
+        tdTestCopyFrom.__init__(self, sSrc, sDst, oCreds, fFlags, oSrc);
         self.fIntoDst = fIntoDst; # hint to the verification code that sDst == oSrc, rather than sDst+oSrc.sNAme == oSrc.
 
 class tdTestCopyFromFile(tdTestCopyFrom):
@@ -266,9 +265,8 @@ class tdTestCopyTo(tdTestGuestCtrlBase):
     """
     Test for copying files from the host to the guest.
     """
-    def __init__(self, sSrc = "", sDst = "", sUser = None, sPassword = None, fFlags = None):
-        tdTestGuestCtrlBase.__init__(self);
-        self.oCreds = tdCtxCreds(sUser, sPassword, sDomain = None);
+    def __init__(self, sSrc = "", sDst = "", oCreds = None, fFlags = None):
+        tdTestGuestCtrlBase.__init__(self, oCreds = oCreds);
         self.sSrc = sSrc;
         self.sDst = sDst;
         self.fFlags = fFlags;
@@ -283,9 +281,8 @@ class tdTestDirCreate(tdTestGuestCtrlBase):
     """
     Test for directoryCreate call.
     """
-    def __init__(self, sDirectory = "", sUser = None, sPassword = None, fMode = 0, fFlags = None):
-        tdTestGuestCtrlBase.__init__(self);
-        self.oCreds = tdCtxCreds(sUser, sPassword, sDomain = None);
+    def __init__(self, sDirectory = "", oCreds = None, fMode = 0, fFlags = None):
+        tdTestGuestCtrlBase.__init__(self, oCreds = oCreds);
         self.sDirectory = sDirectory;
         self.fMode = fMode;
         self.fFlags = fFlags;
@@ -294,9 +291,8 @@ class tdTestDirCreateTemp(tdTestGuestCtrlBase):
     """
     Test for the directoryCreateTemp call.
     """
-    def __init__(self, sDirectory = "", sTemplate = "", sUser = None, sPassword = None, fMode = 0, fSecure = False):
-        tdTestGuestCtrlBase.__init__(self);
-        self.oCreds = tdCtxCreds(sUser, sPassword, sDomain = None);
+    def __init__(self, sDirectory = "", sTemplate = "", oCreds = None, fMode = 0, fSecure = False):
+        tdTestGuestCtrlBase.__init__(self, oCreds = oCreds);
         self.sDirectory = sDirectory;
         self.sTemplate = sTemplate;
         self.fMode = fMode;
@@ -306,9 +302,8 @@ class tdTestDirOpen(tdTestGuestCtrlBase):
     """
     Test for the directoryOpen call.
     """
-    def __init__(self, sDirectory = "", sUser = None, sPassword = None, sFilter = "", fFlags = None):
-        tdTestGuestCtrlBase.__init__(self);
-        self.oCreds = tdCtxCreds(sUser, sPassword, sDomain = None);
+    def __init__(self, sDirectory = "", oCreds = None, sFilter = "", fFlags = None):
+        tdTestGuestCtrlBase.__init__(self, oCreds = oCreds);
         self.sDirectory = sDirectory;
         self.sFilter = sFilter;
         self.fFlags = fFlags or [];
@@ -317,9 +312,8 @@ class tdTestDirRead(tdTestDirOpen):
     """
     Test for the opening, reading and closing a certain directory.
     """
-    def __init__(self, sDirectory = "", sUser = None, sPassword = None,
-                 sFilter = "", fFlags = None):
-        tdTestDirOpen.__init__(self, sDirectory, sUser, sPassword, sFilter, fFlags);
+    def __init__(self, sDirectory = "", oCreds = None, sFilter = "", fFlags = None):
+        tdTestDirOpen.__init__(self, sDirectory, oCreds, sFilter, fFlags);
 
 class tdTestExec(tdTestGuestCtrlBase):
     """
@@ -327,9 +321,8 @@ class tdTestExec(tdTestGuestCtrlBase):
     Has a default timeout of 5 minutes (for safety).
     """
     def __init__(self, sCmd = "", asArgs = None, aEnv = None, fFlags = None,             # pylint: disable=too-many-arguments
-                 timeoutMS = 5 * 60 * 1000, sUser = None, sPassword = None, sDomain = None, fWaitForExit = True):
-        tdTestGuestCtrlBase.__init__(self);
-        self.oCreds = tdCtxCreds(sUser, sPassword, sDomain);
+                 timeoutMS = 5 * 60 * 1000, oCreds = None, fWaitForExit = True):
+        tdTestGuestCtrlBase.__init__(self, oCreds = oCreds);
         self.sCmd = sCmd;
         self.asArgs = asArgs if asArgs is not None else [sCmd,];
         self.aEnv = aEnv;
@@ -346,27 +339,24 @@ class tdTestFileExists(tdTestGuestCtrlBase):
     """
     Test for the file exists API call (fileExists).
     """
-    def __init__(self, sFile = "", sUser = None, sPassword = None):
-        tdTestGuestCtrlBase.__init__(self);
-        self.oCreds = tdCtxCreds(sUser, sPassword, sDomain = None);
+    def __init__(self, sFile = "", oCreds = None):
+        tdTestGuestCtrlBase.__init__(self, oCreds = oCreds);
         self.sFile = sFile;
 
 class tdTestFileRemove(tdTestGuestCtrlBase):
     """
     Test querying guest file information.
     """
-    def __init__(self, sFile = "", sUser = None, sPassword = None):
-        tdTestGuestCtrlBase.__init__(self);
-        self.oCreds = tdCtxCreds(sUser, sPassword, sDomain = None);
+    def __init__(self, sFile = "", oCreds = None):
+        tdTestGuestCtrlBase.__init__(self, oCreds = oCreds);
         self.sFile = sFile;
 
 class tdTestRemoveBase(tdTestGuestCtrlBase):
     """
     Removal base.
     """
-    def __init__(self, sPath, fRcExpect = True, sUser = None, sPassword = None):
-        tdTestGuestCtrlBase.__init__(self);
-        self.oCreds    = tdCtxCreds(sUser, sPassword, sDomain = None);
+    def __init__(self, sPath, fRcExpect = True, oCreds = None):
+        tdTestGuestCtrlBase.__init__(self, oCreds = oCreds);
         self.sPath     = sPath;
         self.fRcExpect = fRcExpect;
 
@@ -391,8 +381,8 @@ class tdTestRemoveFile(tdTestRemoveBase):
     """
     Remove a single file.
     """
-    def __init__(self, sPath, fRcExpect = True, sUser = None, sPassword = None):
-        tdTestRemoveBase.__init__(self, sPath, fRcExpect, sUser, sPassword);
+    def __init__(self, sPath, fRcExpect = True, oCreds = None):
+        tdTestRemoveBase.__init__(self, sPath, fRcExpect, oCreds);
 
     def execute(self, oSubTstDrv):
         reporter.log2('Deleting file "%s" ...' % (self.sPath,));
@@ -413,8 +403,8 @@ class tdTestRemoveDir(tdTestRemoveBase):
     """
     Remove a single directory if empty.
     """
-    def __init__(self, sPath, fRcExpect = True, sUser = None, sPassword = None):
-        tdTestRemoveBase.__init__(self, sPath, fRcExpect, sUser, sPassword);
+    def __init__(self, sPath, fRcExpect = True, oCreds = None):
+        tdTestRemoveBase.__init__(self, sPath, fRcExpect, oCreds);
 
     def execute(self, oSubTstDrv):
         _ = oSubTstDrv;
@@ -433,8 +423,8 @@ class tdTestRemoveTree(tdTestRemoveBase):
     """
     Recursively remove a directory tree.
     """
-    def __init__(self, sPath, afFlags = None, fRcExpect = True, fNotExist = False, sUser = None, sPassword = None):
-        tdTestRemoveBase.__init__(self, sPath, fRcExpect, sUser, sPassword);
+    def __init__(self, sPath, afFlags = None, fRcExpect = True, fNotExist = False, oCreds = None):
+        tdTestRemoveBase.__init__(self, sPath, fRcExpect, oCreds = None);
         self.afFlags = afFlags if afFlags is not None else [];
         self.fNotExist = fNotExist; # Hack for the ContentOnly scenario where the dir does not exist.
 
@@ -478,9 +468,8 @@ class tdTestFileStat(tdTestGuestCtrlBase):
     """
     Test querying guest file information.
     """
-    def __init__(self, sFile = "", sUser = None, sPassword = None, cbSize = 0, eFileType = 0):
-        tdTestGuestCtrlBase.__init__(self);
-        self.oCreds = tdCtxCreds(sUser, sPassword, sDomain = None);
+    def __init__(self, sFile = "", oCreds = None, cbSize = 0, eFileType = 0):
+        tdTestGuestCtrlBase.__init__(self, oCreds = oCreds);
         self.sFile = sFile;
         self.cbSize = cbSize;
         self.eFileType = eFileType;
@@ -489,18 +478,16 @@ class tdTestFileIO(tdTestGuestCtrlBase):
     """
     Test for the IGuestFile object.
     """
-    def __init__(self, sFile = "", sUser = None, sPassword = None):
-        tdTestGuestCtrlBase.__init__(self);
-        self.oCreds = tdCtxCreds(sUser, sPassword, sDomain = None);
+    def __init__(self, sFile = "", oCreds = None):
+        tdTestGuestCtrlBase.__init__(self, oCreds = oCreds);
         self.sFile = sFile;
 
 class tdTestFileQuerySize(tdTestGuestCtrlBase):
     """
     Test for the file size query API call (fileQuerySize).
     """
-    def __init__(self, sFile = "", sUser = None, sPassword = None):
-        tdTestGuestCtrlBase.__init__(self);
-        self.oCreds = tdCtxCreds(sUser, sPassword, sDomain = None);
+    def __init__(self, sFile = "", oCreds = None):
+        tdTestGuestCtrlBase.__init__(self, oCreds = oCreds);
         self.sFile = sFile;
 
 class tdTestFileOpen(tdTestGuestCtrlBase):
@@ -508,9 +495,8 @@ class tdTestFileOpen(tdTestGuestCtrlBase):
     Tests opening a guest files.
     """
     def __init__(self, sFile = "", eAccessMode = None, eAction = None, eSharing = None,
-                 fCreationMode = 0o660, sUser = None, sPassword = None):
-        tdTestGuestCtrlBase.__init__(self);
-        self.oCreds         = tdCtxCreds(sUser, sPassword, sDomain = None);
+                 fCreationMode = 0o660, oCreds = None):
+        tdTestGuestCtrlBase.__init__(self, oCreds = oCreds);
         self.sFile          = sFile;
         self.eAccessMode    = eAccessMode if eAccessMode is not None else vboxcon.FileAccessMode_ReadOnly;
         self.eAction        = eAction if eAction is not None else vboxcon.FileOpenAction_OpenExisting;
@@ -569,8 +555,8 @@ class tdTestFileOpenCheckSize(tdTestFileOpen):
     Opens a file and checks the size.
     """
     def __init__(self, sFile = "", eAccessMode = None, eAction = None, eSharing = None,
-                 fCreationMode = 0o660, cbOpenExpected = 0, sUser = None, sPassword = None):
-        tdTestFileOpen.__init__(self, sFile, eAccessMode, eAction, eSharing, fCreationMode, sUser, sPassword);
+                 fCreationMode = 0o660, cbOpenExpected = 0, oCreds = None):
+        tdTestFileOpen.__init__(self, sFile, eAccessMode, eAction, eSharing, fCreationMode, oCreds);
         self.cbOpenExpected = cbOpenExpected;
 
     def toString(self):
@@ -623,9 +609,9 @@ class tdTestFileOpenAndWrite(tdTestFileOpen):
     if no seeking should be performed.
     """
     def __init__(self, sFile = "", eAccessMode = None, eAction = None, eSharing = None, # pylint: disable=too-many-arguments
-                 fCreationMode = 0o660, atChunks = None, fUseAtApi = False, abContent = None, sUser = None, sPassword = None):
+                 fCreationMode = 0o660, atChunks = None, fUseAtApi = False, abContent = None, oCreds = None):
         tdTestFileOpen.__init__(self, sFile, eAccessMode if eAccessMode is not None else vboxcon.FileAccessMode_WriteOnly,
-                                eAction, eSharing, fCreationMode, sUser, sPassword);
+                                eAction, eSharing, fCreationMode, oCreds);
         assert atChunks is not None;
         self.atChunks  = atChunks   # type: list(tuple(int,bytearray))
         self.fUseAtApi = fUseAtApi;
@@ -766,8 +752,8 @@ class tdTestFileOpenAndCheckContent(tdTestFileOpen):
     """
     Opens the file and checks the content using the read API.
     """
-    def __init__(self, sFile = "", eSharing = None, abContent = None, cbContentExpected = None, sUser = None, sPassword = None):
-        tdTestFileOpen.__init__(self, sFile = sFile, eSharing = eSharing, sUser = sUser, sPassword = sPassword);
+    def __init__(self, sFile = "", eSharing = None, abContent = None, cbContentExpected = None, oCreds = None):
+        tdTestFileOpen.__init__(self, sFile = sFile, eSharing = eSharing, oCreds = oCreds);
         self.abContent = abContent  # type: bytearray
         self.cbContentExpected = cbContentExpected;
 
@@ -817,9 +803,8 @@ class tdTestSession(tdTestGuestCtrlBase):
     Test the guest session handling.
     """
     def __init__(self, sUser = None, sPassword = None, sDomain = None, sSessionName = ""):
-        tdTestGuestCtrlBase.__init__(self);
+        tdTestGuestCtrlBase.__init__(self, oCreds = tdCtxCreds(sUser, sPassword, sDomain));
         self.sSessionName = sSessionName;
-        self.oCreds       = tdCtxCreds(sUser, sPassword, sDomain);
 
     def getSessionCount(self, oVBoxMgr):
         """
@@ -1263,10 +1248,8 @@ class tdTestUpdateAdditions(tdTestGuestCtrlBase):
     """
     Test updating the Guest Additions inside the guest.
     """
-    def __init__(self, sSrc = "", asArgs = None, fFlags = None,
-                 sUser = None, sPassword = None, sDomain = None):
-        tdTestGuestCtrlBase.__init__(self);
-        self.oCreds = tdCtxCreds(sUser, sPassword, sDomain);
+    def __init__(self, sSrc = "", asArgs = None, fFlags = None, oCreds = None):
+        tdTestGuestCtrlBase.__init__(self, oCreds = oCreds);
         self.sSrc = sSrc;
         self.asArgs = asArgs;
         self.fFlags = fFlags;
