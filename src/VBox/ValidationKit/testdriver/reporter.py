@@ -502,6 +502,8 @@ class LocalReporter(ReporterBase):
                 sLogText = '%s %30s: %s' % (sTsPrf, sCaller, sText);
             else:
                 sLogText = '%s %s' % (sTsPrf, sText);
+            if self.iDebug > 1:
+                sLogText = 'err=%u %s' % (self.cErrors, sLogText,);
 
             # output it.
             if sys.version_info[0] >= 3:

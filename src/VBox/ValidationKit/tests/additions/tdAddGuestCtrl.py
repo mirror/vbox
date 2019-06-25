@@ -150,7 +150,7 @@ class tdTestGuestCtrlBase(object):
             return reporter.error('Unable to create temporary file for "%s"' % (sDesc,));
         return reporter.addLogFile(sHstFileName, 'misc/other', sDesc);
 
-    def createSession(self, sName, fIsError = False):
+    def createSession(self, sName, fIsError = True):
         """
         Creates (opens) a guest session.
         Returns (True, IGuestSession) on success or (False, None) on failure.
@@ -204,7 +204,7 @@ class tdTestGuestCtrlBase(object):
         self.oGuestSession = oGuestSession;
         return self.oGuestSession;
 
-    def closeSession(self, fIsError = False):
+    def closeSession(self, fIsError = True):
         """
         Closes the guest session.
         """
@@ -364,6 +364,111 @@ class tdTestFileRemove(tdTestGuestCtrlBase):
         tdTestGuestCtrlBase.__init__(self);
         self.oCreds = tdCtxCreds(sUser, sPassword, sDomain = None);
         self.sFile = sFile;
+
+class tdTestRemoveBase(tdTestGuestCtrlBase):
+    """
+    Removal base.
+    """
+    def __init__(self, sPath, fRcExpect = True, sUser = None, sPassword = None):
+        tdTestGuestCtrlBase.__init__(self);
+        self.oCreds    = tdCtxCreds(sUser, sPassword, sDomain = None);
+        self.sPath     = sPath;
+        self.fRcExpect = fRcExpect;
+
+    def execute(self, oSubTstDrv):
+        """
+        Executes the test, returns True/False.
+        """
+        _ = oSubTstDrv;
+        return True;
+
+    def checkRemoved(self, sType):
+        """ Check that the object was removed using fObjExists. """
+        try:
+            fExists = self.oGuestSession.fsObjExists(self.sPath, False);
+        except:
+            return reporter.errorXcpt('fsObjExists failed on "%s" after deletion (type: %s)' % (self.sPath, sType));
+        if fExists:
+            return reporter.errorXcpt('fsObjExists says "%s" still exists after deletion (type: %s)!' % (self.sPath, sType));
+        return True;
+
+class tdTestRemoveFile(tdTestRemoveBase):
+    """
+    Remove a single file.
+    """
+    def __init__(self, sPath, fRcExpect = True, sUser = None, sPassword = None):
+        tdTestRemoveBase.__init__(self, sPath, fRcExpect, sUser, sPassword);
+
+    def execute(self, oSubTstDrv):
+        reporter.log2('Deleting file "%s" ...' % (self.sPath,));
+        try:
+            if oSubTstDrv.oTstDrv.fpApiVer >= 5.0:
+                self.oGuestSession.fsObjRemove(self.sPath);
+            else:
+                self.oGuestSession.fileRemove(self.sPath);
+        except:
+            reporter.maybeErrXcpt(self.fRcExpect, 'Removing "%s" failed' % (self.sPath,));
+            return False;
+        return self.checkRemoved('file');
+
+class tdTestRemoveDir(tdTestRemoveBase):
+    """
+    Remove a single directory if empty.
+    """
+    def __init__(self, sPath, fRcExpect = True, sUser = None, sPassword = None):
+        tdTestRemoveBase.__init__(self, sPath, fRcExpect, sUser, sPassword);
+
+    def execute(self, oSubTstDrv):
+        _ = oSubTstDrv;
+        reporter.log2('Deleting directory "%s" ...' % (self.sPath,));
+        try:
+            self.oGuestSession.directoryRemove(self.sPath);
+        except:
+            reporter.maybeErrXcpt(self.fRcExpect, 'Removing "%s" (as a directory) failed' % (self.sPath,));
+            return False;
+        return self.checkRemoved('directory');
+
+class tdTestRemoveTree(tdTestRemoveBase):
+    """
+    Recursively remove a directory tree.
+    """
+    def __init__(self, sPath, afFlags = None, fRcExpect = True, sUser = None, sPassword = None):
+        tdTestRemoveBase.__init__(self, sPath, fRcExpect, sUser, sPassword);
+        self.afFlags = afFlags if afFlags is not None else [];
+
+    def execute(self, oSubTstDrv):
+        reporter.log2('Deleting tree "%s" ...' % (self.sPath,));
+        try:
+            oProgress = self.oGuestSession.directoryRemoveRecursive(self.sPath, self.afFlags);
+        except:
+            reporter.maybeErrXcpt(self.fRcExpect, 'Removing directory tree "%s" failed (afFlags=%s)'
+                                  % (self.sPath, self.afFlags));
+            return False;
+
+        oWrappedProgress = vboxwrappers.ProgressWrapper(oProgress, oSubTstDrv.oTstDrv.oVBoxMgr, oSubTstDrv.oTstDrv,
+                                                        "remove-tree: %s" % (self.sPath,));
+        oWrappedProgress.wait();
+        if not oWrappedProgress.isSuccess():
+            oWrappedProgress.logResult(fIgnoreErrors = not self.fRcExpect);
+            return False;
+
+        if vboxcon.DirectoryRemoveRecFlag_ContentOnly in self.afFlags:
+            # Cannot use directoryExists here as it is buggy.
+            try:
+                if oSubTstDrv.oTstDrv.fpApiVer >= 5.0:
+                    oFsObjInfo = self.oGuestSession.fsObjQueryInfo(self.sPath, False);
+                else:
+                    oFsObjInfo = self.oGuestSession.fileQueryInfo(self.sPath);
+                eType = oFsObjInfo.type;
+            except:
+                return reporter.errorXcpt('sPath=%s' % (self.sPath,));
+            if eType != vboxcon.FsObjType_Directory:
+                return reporter.error('Found file type %d, expected directory (%d) for %s after rmtree/OnlyContent'
+                                      % (eType, vboxcon.FsObjType_Directory, self.sPath,));
+            return True;
+
+        return self.checkRemoved('tree');
+
 
 class tdTestFileStat(tdTestGuestCtrlBase):
     """
@@ -702,6 +807,7 @@ class tdTestFileOpenAndCheckContent(tdTestFileOpen):
 
         return fRc;
 
+
 class tdTestSession(tdTestGuestCtrlBase):
     """
     Test the guest session handling.
@@ -760,7 +866,7 @@ class tdTestSessionEx(tdTestGuestCtrlBase):
             #
             # Close the session.
             #
-            fRc2 = self.closeSession(True);
+            fRc2 = self.closeSession();
             if fRc2 is False:
                 fRc = reporter.error('%s: Session could not be closed' % (sMsgPrefix,));
         else:
@@ -2200,7 +2306,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                     if sObjName != sCurGuestSessionName:
                         fRc = reporter.error('Test #%d failed: Session name does not match: Got "%s", expected "%s"'
                                              % (i, sObjName, sCurGuestSessionName));
-            fRc2 = oCurTest.closeSession(True);
+            fRc2 = oCurTest.closeSession();
             if fRc2 is False:
                 fRc = reporter.error('Test #%d failed: Session could not be closed' % (i,));
 
@@ -2237,7 +2343,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         for i in xrange(cMaxGuestSessions):
             # Close this session:
             oClosedGuestSession = aoMultiSessions[i].oGuestSession;
-            fRc2 = aoMultiSessions[i].closeSession(True);
+            fRc2 = aoMultiSessions[i].closeSession();
             cCurSessions = aoMultiSessions[i].getSessionCount(self.oTstDrv.oVBoxMgr)
             reporter.log2('MultiSession #%d count is %d' % (i, cCurSessions,));
             if fRc2 is False:
@@ -2714,14 +2820,14 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             oCurTest = tTest[0]  # type: tdTestExec
             oCurRes  = tTest[1]  # type: tdTestResultExec
             oCurTest.setEnvironment(oSession, oTxsSession, oTestVm);
-            fRc, oCurGuestSession = oCurTest.createSession('testGuestCtrlExec: Test #%d' % (i,), True);
+            fRc, oCurGuestSession = oCurTest.createSession('testGuestCtrlExec: Test #%d' % (i,));
             if fRc is not True:
                 reporter.error('Test #%d failed: Could not create session' % (i,));
                 break;
             fRc = self.gctrlExecDoTest(i, oCurTest, oCurRes, oCurGuestSession);
             if fRc is not True:
                 break;
-            fRc = oCurTest.closeSession(True);
+            fRc = oCurTest.closeSession();
             if fRc is not True:
                 break;
 
@@ -3114,13 +3220,13 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             reporter.log('Testing #%d, sDirectory="%s" ...' % (i, oCurTest.sDirectory));
 
             oCurTest.setEnvironment(oSession, oTxsSession, oTestVm);
-            fRc, oCurGuestSession = oCurTest.createSession('testGuestCtrlDirCreate: Test #%d' % (i,), fIsError = True);
+            fRc, oCurGuestSession = oCurTest.createSession('testGuestCtrlDirCreate: Test #%d' % (i,));
             if fRc is False:
                 return reporter.error('Test #%d failed: Could not create session' % (i,));
 
             fRc = self.gctrlCreateDir(oCurTest, oCurRes, oCurGuestSession);
 
-            fRc = oCurTest.closeSession(fIsError = True) and fRc;
+            fRc = oCurTest.closeSession() and fRc;
             if fRc is False:
                 fRc = reporter.error('Test #%d failed' % (i,));
 
@@ -3165,7 +3271,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                          (i, oCurTest.sTemplate, oCurTest.fMode, oCurTest.sDirectory, oCurTest.fSecure));
 
             oCurTest.setEnvironment(oSession, oTxsSession, oTestVm);
-            fRc, oCurGuestSession = oCurTest.createSession('testGuestCtrlDirCreateTemp: Test #%d' % (i,), fIsError = True);
+            fRc, oCurGuestSession = oCurTest.createSession('testGuestCtrlDirCreateTemp: Test #%d' % (i,));
             if fRc is False:
                 fRc = reporter.error('Test #%d failed: Could not create session' % (i,));
                 break;
@@ -3206,7 +3312,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                         if eType != vboxcon.FsObjType_Directory:
                             fRc = reporter.error('Temporary directory "%s" not created as a directory: eType=%d'
                                                  % (sDirTemp, eType));
-            fRc = oCurTest.closeSession(True) and fRc;
+            fRc = oCurTest.closeSession() and fRc;
         return (fRc, oTxsSession);
 
     def testGuestCtrlDirRead(self, oSession, oTxsSession, oTestVm):
@@ -3260,11 +3366,11 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
             reporter.log('Testing #%d, dir="%s" ...' % (i, oCurTest.sDirectory));
             oCurTest.setEnvironment(oSession, oTxsSession, oTestVm);
-            fRc, oCurGuestSession = oCurTest.createSession('testGuestCtrlDirRead: Test #%d' % (i,), True);
+            fRc, oCurGuestSession = oCurTest.createSession('testGuestCtrlDirRead: Test #%d' % (i,));
             if fRc is not True:
                 break;
             (fRc2, cDirs, cFiles, cOthers) = self.gctrlReadDirTree(oCurTest, oCurGuestSession, oCurRes.fRc);
-            fRc = oCurTest.closeSession(True) and fRc;
+            fRc = oCurTest.closeSession() and fRc;
 
             reporter.log2('Test #%d: Returned %d directories, %d files total' % (i, cDirs, cFiles));
             if fRc2 is oCurRes.fRc:
@@ -3302,96 +3408,157 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         if fRc is True:
             oCurTest = tdTestDirRead();
             oCurTest.setEnvironment(oSession, oTxsSession, oTestVm);
-            fRc, oCurGuestSession = oCurTest.createSession('testGuestCtrlDirRead: gctrlReadDirTree2', True);
+            fRc, oCurGuestSession = oCurTest.createSession('testGuestCtrlDirRead: gctrlReadDirTree2');
             if fRc is True:
                 for oDir in (self.oTestFiles.oEmptyDir, self.oTestFiles.oManyDir, self.oTestFiles.oTreeDir):
                     reporter.log('Checking "%s" ...' % (oDir.sPath,));
                     fRc = self.gctrlReadDirTree2(oCurGuestSession, oDir) and fRc;
-                fRc = oCurTest.closeSession(True) and fRc;
+                fRc = oCurTest.closeSession() and fRc;
 
         return (fRc, oTxsSession);
+
 
     def testGuestCtrlFileRemove(self, oSession, oTxsSession, oTestVm):
         """
         Tests removing guest files.
         """
 
-        ## @todo r=bird: This fails on windows 7 RTM.  Just create a stupid file and delete it again,
-        #                this chord.wav stuff is utter nonsense.
-        if oTestVm.isWindows():
-            sFileToDelete = "c:\\Windows\\Media\\chord.wav";
-        else:
-            sFileToDelete = "/home/vbox/.profile";
+        # Something is busted here wrt progress wrappers or something... debugging.
+        if self.oTstDrv.fpApiVer < 10.0:
+            return None;
 
-        atTests = [];
-        if oTestVm.isWindows():
-            atTests.extend([
-                # Invalid stuff.
-                [ tdTestFileRemove(sFile = ''), tdTestResultFailure() ],
-                [ tdTestFileRemove(sFile = 'C:\\Windows'), tdTestResultFailure() ],
-                # More unusual stuff.
-                [ tdTestFileRemove(sFile = 'z:\\'), tdTestResultFailure() ],
-                [ tdTestFileRemove(sFile = '\\\\uncrulez\\foo'), tdTestResultFailure() ],
-                # Non-existing stuff.
-                [ tdTestFileRemove(sFile = 'c:\\Apps\\nonexisting'), tdTestResultFailure() ],
-                # Try to delete system files.
-                [ tdTestFileRemove(sFile = 'c:\\pagefile.sys'), tdTestResultFailure() ],
-                [ tdTestFileRemove(sFile = 'c:\\Windows\\kernel32.sys'), tdTestResultFailure() ] ## r=bird: it's in \system32\ ...
-            ]);
+        #
+        # Create a directory with a few files in it using TXS that we'll use for the initial tests.
+        #
+        asTestDirs = [
+            oTestVm.pathJoin(self.oTestFiles.oRoot.sPath, 'rmtestdir-1'),                             # [0]
+            oTestVm.pathJoin(self.oTestFiles.oRoot.sPath, 'rmtestdir-1', 'subdir-1'),                 # [1]
+            oTestVm.pathJoin(self.oTestFiles.oRoot.sPath, 'rmtestdir-1', 'subdir-1', 'subsubdir-1'),  # [2]
+            oTestVm.pathJoin(self.oTestFiles.oRoot.sPath, 'rmtestdir-2'),                             # [3]
+            oTestVm.pathJoin(self.oTestFiles.oRoot.sPath, 'rmtestdir-2', 'subdir-2'),                 # [4]
+            oTestVm.pathJoin(self.oTestFiles.oRoot.sPath, 'rmtestdir-2', 'subdir-2', 'subsbudir-2'),  # [5]
+            oTestVm.pathJoin(self.oTestFiles.oRoot.sPath, 'rmtestdir-3'),                             # [6]
+            oTestVm.pathJoin(self.oTestFiles.oRoot.sPath, 'rmtestdir-4'),                             # [7]
+            oTestVm.pathJoin(self.oTestFiles.oRoot.sPath, 'rmtestdir-5'),                             # [8]
+            oTestVm.pathJoin(self.oTestFiles.oRoot.sPath, 'rmtestdir-5', 'subdir-5'),                 # [9]
+        ]
+        asTestFiles = [
+            oTestVm.pathJoin(asTestDirs[0], 'file-0'), # [0]
+            oTestVm.pathJoin(asTestDirs[0], 'file-1'), # [1]
+            oTestVm.pathJoin(asTestDirs[0], 'file-2'), # [2]
+            oTestVm.pathJoin(asTestDirs[1], 'file-3'), # [3] - subdir-1
+            oTestVm.pathJoin(asTestDirs[1], 'file-4'), # [4] - subdir-1
+            oTestVm.pathJoin(asTestDirs[2], 'file-5'), # [5] - subsubdir-1
+            oTestVm.pathJoin(asTestDirs[3], 'file-6'), # [6] - rmtestdir-2
+            oTestVm.pathJoin(asTestDirs[4], 'file-7'), # [7] - subdir-2
+            oTestVm.pathJoin(asTestDirs[5], 'file-8'), # [8] - subsubdir-2
+        ];
+        for sDir in asTestDirs:
+            if oTxsSession.syncMkDir(sDir) is not True:
+                return reporter.error('Failed to create test dir "%s"!' % (sDir,));
+        for sFile in asTestFiles:
+            if oTxsSession.syncUploadString(sFile, sFile) is not True:
+                return reporter.error('Failed to create test file "%s"!' % (sFile,));
 
-            if oTestVm.sKind == "WindowsXP":
-                atTests.extend([
-                    # Try delete some unimportant media stuff.
-                    [ tdTestFileRemove(sFile = 'c:\\Windows\\Media\\chimes.wav'), tdTestResultSuccess() ],
-                    # Second attempt should fail.
-                    [ tdTestFileRemove(sFile = 'c:\\Windows\\Media\\chimes.wav'), tdTestResultFailure() ]
-                ]);
-        elif oTestVm.isLinux():
-            atTests.extend([
-                # Invalid stuff.
-                [ tdTestFileRemove(sFile = ''), tdTestResultFailure() ],
-                [ tdTestFileRemove(sFile = 'C:\\Windows'), tdTestResultFailure() ],
-                # More unusual stuff.
-                [ tdTestFileRemove(sFile = 'z:/'), tdTestResultFailure() ],
-                [ tdTestFileRemove(sFile = '//uncrulez/foo'), tdTestResultFailure() ],
-                # Non-existing stuff.
-                [ tdTestFileRemove(sFile = '/non/existing'), tdTestResultFailure() ],
-                # Try to delete system files.
-                [ tdTestFileRemove(sFile = '/etc'), tdTestResultFailure() ],
-                [ tdTestFileRemove(sFile = '/bin/sh'), tdTestResultFailure() ]
-            ]);
 
-        atTests.extend([
-            # Try delete some unimportant stuff.
-            [ tdTestFileRemove(sFile = sFileToDelete), tdTestResultSuccess() ],
-            # Second attempt should fail.
-            [ tdTestFileRemove(sFile = sFileToDelete), tdTestResultFailure() ]
-        ]);
+        #
+        # Tear down the directories and files.
+        #
+        aoTests = [
+            # Negative tests first:
+            tdTestRemoveFile(asTestDirs[0], fRcExpect = False),
+            tdTestRemoveDir(asTestDirs[0], fRcExpect = False),
+            tdTestRemoveDir(asTestFiles[0], fRcExpect = False),
+            tdTestRemoveFile(oTestVm.pathJoin(self.oTestFiles.oEmptyDir.sPath, 'no-such-file'), fRcExpect = False),
+            tdTestRemoveDir(oTestVm.pathJoin(self.oTestFiles.oEmptyDir.sPath, 'no-such-dir'), fRcExpect = False),
+            tdTestRemoveFile(oTestVm.pathJoin(self.oTestFiles.oEmptyDir.sPath, 'no-such-dir', 'no-file'), fRcExpect = False),
+            tdTestRemoveDir(oTestVm.pathJoin(self.oTestFiles.oEmptyDir.sPath, 'no-such-dir', 'no-subdir'), fRcExpect = False),
+            tdTestRemoveTree(asTestDirs[0], afFlags = [], fRcExpect = False), # Only removes empty dirs, this isn't empty.
+            tdTestRemoveTree(asTestDirs[0], afFlags = [vboxcon.DirectoryRemoveRecFlag_None,], fRcExpect = False), # ditto
+            # Empty paths:
+            tdTestRemoveFile('', fRcExpect = False),
+            tdTestRemoveDir('', fRcExpect = False),
+            tdTestRemoveTree('', fRcExpect = False),
+            # Now actually remove stuff:
+            tdTestRemoveDir(asTestDirs[7], fRcExpect = True),
+            tdTestRemoveFile(asTestDirs[6], fRcExpect = False),
+            tdTestRemoveDir(asTestDirs[6], fRcExpect = True),
+            tdTestRemoveFile(asTestFiles[0], fRcExpect = True),
+            tdTestRemoveFile(asTestFiles[0], fRcExpect = False),
+            tdTestRemoveTree(asTestDirs[9], fRcExpect = False), # Have subdirs, no flags == single rmdir.
+            tdTestRemoveTree(asTestDirs[9], afFlags = [vboxcon.DirectoryRemoveRecFlag_ContentOnly,], fRcExpect = True),
+            tdTestRemoveTree(asTestDirs[9], fRcExpect = True),
+            tdTestRemoveTree(asTestDirs[3], fRcExpect = False), # Have subdirs & files, no flags == single rmdir.
+            tdTestRemoveTree(asTestDirs[3], afFlags = [vboxcon.DirectoryRemoveRecFlag_ContentOnly,], fRcExpect = True),
+            tdTestRemoveTree(asTestDirs[3], fRcExpect = True),
+            tdTestRemoveTree(asTestDirs[0], afFlags = [vboxcon.DirectoryRemoveRecFlag_ContentAndDir,], fRcExpect = True),
+            tdTestRemoveTree(asTestDirs[0], afFlags = [vboxcon.DirectoryRemoveRecFlag_ContentAndDir,], fRcExpect = False),
+        ];
 
+        #
+        # Execution loop
+        #
         fRc = True;
-        for (i, aTest) in enumerate(atTests):
-            oCurTest = aTest[0]; # tdTestExec, use an index, later.
-            oCurRes  = aTest[1]; # tdTestResult
-            reporter.log('Testing #%d, file="%s" ...' % (i, oCurTest.sFile));
-            oCurTest.setEnvironment(oSession, oTxsSession, oTestVm);
-            fRc, oCurGuestSession = oCurTest.createSession('testGuestCtrlFileRemove: Test #%d' % (i,));
+        for (i, oTest) in enumerate(aoTests): # int, tdTestRemoveBase
+            reporter.log('Testing #%d, path="%s" %s ...' % (i, oTest.sPath, oTest.__class__.__name__));
+            oTest.setEnvironment(oSession, oTxsSession, oTestVm);
+            fRc, _ = oTest.createSession('testGuestCtrlFileRemove: Test #%d' % (i,));
             if fRc is False:
-                reporter.error('Test #%d failed: Could not create session' % (i,));
+                fRc = reporter.error('Test #%d failed: Could not create session' % (i,));
                 break;
-            try:
-                if self.oTstDrv.fpApiVer >= 5.0:
-                    oCurGuestSession.fsObjRemove(oCurTest.sFile);
+            fRc = oTest.execute(self) and fRc;
+            fRc = oTest.closeSession() and fRc;
+
+
+        if fRc is True:
+            oCurTest = tdTestDirRead();
+            oCurTest.setEnvironment(oSession, oTxsSession, oTestVm);
+            fRc, oCurGuestSession = oCurTest.createSession('remove final');
+            if fRc is True:
+
+                #
+                # Delete all the files in the many subdir of the test set.
+                #
+                reporter.log('Deleting the file in "%s" ...' % (self.oTestFiles.oManyDir.sPath,));
+                for oFile in self.oTestFiles.oManyDir.aoChildren:
+                    reporter.log2('"%s"' % (oFile.sPath,));
+                    try:
+                        if self.oTstDrv.fpApiVer >= 5.0:
+                            oCurGuestSession.fsObjRemove(oFile.sPath);
+                        else:
+                            oCurGuestSession.fileRemove(oFile.sPath);
+                    except:
+                        fRc = reporter.errorXcpt('Removing "%s" failed' % (oFile.sPath,));
+
+                # Remove the directory itself to verify that we've removed all the files in it:
+                reporter.log('Removing the directory "%s" ...' % (self.oTestFiles.oManyDir.sPath,));
+                try:
+                    oCurGuestSession.directoryRemove(self.oTestFiles.oManyDir.sPath);
+                except:
+                    fRc = reporter.errorXcpt('Removing directory "%s" failed' % (self.oTestFiles.oManyDir.sPath,));
+
+                #
+                # Recursively delete the entire test file tree from the root up.
+                #
+                try:
+                    oProgress = oCurGuestSession.directoryRemoveRecursive(self.oTestFiles.oRoot.sPath,
+                                                                          [vboxcon.DirectoryRemoveRecFlag_ContentAndDir,]);
+                except:
+                    fRc = reporter.errorXcpt('Removing tree "%s" failed' % (self.oTestFiles.oRoot.sPath,));
                 else:
-                    oCurGuestSession.fileRemove(oCurTest.sFile);
-            except:
-                if oCurRes.fRc is True:
-                    reporter.errorXcpt('Removing file "%s" failed:' % (oCurTest.sFile,));
-                    fRc = False;
-                    break;
-                else:
-                    reporter.logXcpt('Removing file "%s" failed expectedly, skipping:' % (oCurTest.sFile,));
-            oCurTest.closeSession();
+                    reporter.log2('#3: fRc=%s' % (fRc));
+                    oWrappedProgress = vboxwrappers.ProgressWrapper(oProgress, self.oTstDrv.oVBoxMgr, self.oTstDrv,
+                                                                    "remove-tree-root: %s" % (self.oTestFiles.oRoot.sPath,));
+                    reporter.log2('waiting ...')
+                    oWrappedProgress.wait();
+                    reporter.log2('isSuccess=%s' % (oWrappedProgress.isSuccess(),));
+                    if not oWrappedProgress.isSuccess():
+                        fRc = oWrappedProgress.logResult();
+
+                fRc = oCurTest.closeSession() and fRc;
+
         return (fRc, oTxsSession);
+
 
     def testGuestCtrlFileStat(self, oSession, oTxsSession, oTestVm): # pylint: disable=too-many-locals
         """
@@ -3456,7 +3623,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
         oTest = tdTestGuestCtrlBase();
         oTest.setEnvironment(oSession, oTxsSession, oTestVm);
-        fRc2, oGuestSession = oTest.createSession('FsStat on TestFileSet', True);
+        fRc2, oGuestSession = oTest.createSession('FsStat on TestFileSet');
         if fRc2 is not True:
             return (False, oTxsSession);
 
@@ -3522,7 +3689,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                         fRc = reporter.error('sPath=%s type=%s: directoryExists returned %s, expected %s!'
                                              % (oFsObj.sPath, type(oFsObj), fExistsResult, fDirExists));
 
-        fRc = oTest.closeSession(True) and fRc;
+        fRc = oTest.closeSession() and fRc;
         return (fRc, oTxsSession);
 
     def testGuestCtrlFileOpen(self, oSession, oTxsSession, oTestVm): # pylint: disable=too-many-locals
@@ -3663,7 +3830,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                             oCurTest.eSharing, oCurTest.fCreationMode, oCurTest.afOpenFlags,));
 
             oCurTest.setEnvironment(oSession, oTxsSession, oTestVm);
-            fRc, _ = oCurTest.createSession('testGuestCtrlFileOpen: Test #%d' % (i,), True);
+            fRc, _ = oCurTest.createSession('testGuestCtrlFileOpen: Test #%d' % (i,));
             if fRc is not True:
                 fRc = reporter.error('Test #%d failed: Could not create session' % (i,));
                 break;
@@ -3672,7 +3839,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             if fRc2 != oCurRes.fRc:
                 fRc = reporter.error('Test #%d result mismatch: Got %s, expected %s' % (i, fRc2, oCurRes.fRc,));
 
-            fRc = oCurTest.closeSession(True) and fRc;
+            fRc = oCurTest.closeSession() and fRc;
 
         return (fRc, oTxsSession);
 
@@ -3690,7 +3857,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         #
         oTest = tdTestGuestCtrlBase();
         oTest.setEnvironment(oSession, oTxsSession, oTestVm);
-        fRc2, oGuestSession = oTest.createSession('FsStat on TestFileSet', True);
+        fRc2, oGuestSession = oTest.createSession('FsStat on TestFileSet');
         if fRc2 is not True:
             return (False, oTxsSession);
 
@@ -4033,7 +4200,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             except:
                 fRc = reporter.errorXcpt('fsObjRemove(%s)' % (sBigPath,));
 
-        fRc = oTest.closeSession(True) and fRc;
+        fRc = oTest.closeSession() and fRc;
 
         return (fRc, oTxsSession);
 
@@ -4105,7 +4272,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             reporter.log('Testing #%d: %s ...' % (i, oCurTest.toString(),));
 
             oCurTest.setEnvironment(oSession, oTxsSession, oTestVm);
-            fRc, _ = oCurTest.createSession('testGuestCtrlFileWrite: Test #%d' % (i,), True);
+            fRc, _ = oCurTest.createSession('testGuestCtrlFileWrite: Test #%d' % (i,));
             if fRc is not True:
                 fRc = reporter.error('Test #%d failed: Could not create session' % (i,));
                 break;
@@ -4114,7 +4281,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             if fRc2 is not True:
                 fRc = reporter.error('Test #%d failed!' % (i,));
 
-            fRc = oCurTest.closeSession(True) and fRc;
+            fRc = oCurTest.closeSession() and fRc;
 
         #
         # Cleanup
@@ -4332,7 +4499,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             reporter.log('Testing #%d, sSrc=%s, sDst=%s, fFlags=%s ...' % (i, oCurTest.sSrc, oCurTest.sDst, oCurTest.fFlags));
 
             oCurTest.setEnvironment(oSession, oTxsSession, oTestVm);
-            fRc, oCurGuestSession = oCurTest.createSession('testGuestCtrlCopyTo: Test #%d' % (i,), fIsError = True);
+            fRc, oCurGuestSession = oCurTest.createSession('testGuestCtrlCopyTo: Test #%d' % (i,));
             if fRc is not True:
                 fRc = reporter.error('Test #%d failed: Could not create session' % (i,));
                 break;
@@ -4345,7 +4512,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             if fRc2 is not oCurRes.fRc:
                 fRc = reporter.error('Test #%d failed: Got %s, expected %s' % (i, fRc2, oCurRes.fRc));
 
-            fRc = oCurTest.closeSession(True) and fRc;
+            fRc = oCurTest.closeSession() and fRc;
 
         return (fRc, oTxsSession);
 
@@ -4518,7 +4685,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 fRc = oCurTest.execute(self.oTstDrv, oSession, oTxsSession, oTestVm, 'testing #%d' % (i,));
             else:
                 oCurTest.setEnvironment(oSession, oTxsSession, oTestVm);
-                fRc2, oCurGuestSession = oCurTest.createSession('testGuestCtrlCopyFrom: Test #%d' % (i,), fIsError = True);
+                fRc2, oCurGuestSession = oCurTest.createSession('testGuestCtrlCopyFrom: Test #%d' % (i,));
                 if fRc2 is not True:
                     fRc = reporter.error('Test #%d failed: Could not create session' % (i,));
                     break;
@@ -4532,7 +4699,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                     fRc = reporter.error('Test #%d failed: Got %s, expected %s' % (i, fRc2, oCurRes.fRc));
                     fRc2 = False;
 
-                fRc = oCurTest.closeSession(fIsError = True) and fRc;
+                fRc = oCurTest.closeSession() and fRc;
 
         return (fRc, oTxsSession);
 
