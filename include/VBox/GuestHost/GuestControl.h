@@ -86,7 +86,7 @@ enum eProcessStatus
  */
 /** No remove flags specified. */
 #define DIRREMOVEREC_FLAG_NONE                 UINT32_C(0x0)
-/** Recursively deletes the directorie's contents. */
+/** Recursively deletes the directory contents. */
 #define DIRREMOVEREC_FLAG_RECURSIVE            RT_BIT(0)
 /** Delete the content of the directory and the directory itself. */
 #define DIRREMOVEREC_FLAG_CONTENT_AND_DIR      RT_BIT(1)
