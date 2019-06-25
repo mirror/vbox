@@ -2354,6 +2354,20 @@ DECLINLINE(bool) CPUMIsGuestVmxMovToCr0Cr4InterceptSet(PCVMCPU pVCpu, PCCPUMCTX 
     return false;
 }
 
+/**
+ * Returns whether the guest has an active, current VMCS.
+ *
+ * @returns @c true if the guest has an active, current VMCS, @c false otherwise.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
+ * @param   pCtx        Pointer to the context.
+ */
+DECLINLINE(bool) CPUMIsGuestVmxCurrentVmcsValid(PCVMCPU pVCpu, PCCPUMCTX pCtx)
+{
+    RT_NOREF(pVCpu);
+    RTGCPHYS const GCPhysVmcs = pCtx->hwvirt.vmx.GCPhysVmcs;
+    return RT_BOOL(GCPhysVmcs != NIL_RTGCPHYS);
+}
+
 # endif /* !IN_RC */
 
 /**
