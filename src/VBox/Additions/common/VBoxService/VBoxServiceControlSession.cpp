@@ -130,7 +130,6 @@ static PVBOXSERVICECTRLFILE vgsvcGstCtrlSessionFileGetLocked(const PVBOXSERVICEC
  * @param   cchDir              The length of the directory we're recursing into,
  *                              including the trailing slash.
  * @param   pDirEntry           The dir entry buffer.  (Shared to save stack.)
- * @param   pObjInfo            The object info buffer.  (ditto)
  */
 static int vgsvcGstCtrlSessionHandleDirRemoveSub(char *pszDir, size_t cchDir, PRTDIRENTRY pDirEntry)
 {
