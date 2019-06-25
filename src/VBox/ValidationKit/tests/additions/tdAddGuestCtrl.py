@@ -1248,11 +1248,11 @@ class tdTestUpdateAdditions(tdTestGuestCtrlBase):
     """
     Test updating the Guest Additions inside the guest.
     """
-    def __init__(self, sSrc = "", asArgs = None, fFlags = None, oCreds = None):
+    def __init__(self, sSrc = "", asArgs = None, afFlags = None, oCreds = None):
         tdTestGuestCtrlBase.__init__(self, oCreds = oCreds);
         self.sSrc = sSrc;
         self.asArgs = asArgs;
-        self.fFlags = fFlags;
+        self.afFlags = afFlags;
 
 class tdTestResult(object):
     """
@@ -4694,6 +4694,11 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
         """
 
+        ## @todo currently disabled everywhere.
+        if self.oTstDrv.fpApiVer < 100.0:
+            reporter.log("Skipping updating GAs everywhere for now...");
+            return None;
+
         # Skip test for updating Guest Additions if we run on a too old (Windows) guest.
         ##
         ## @todo make it work everywhere!
@@ -4705,33 +4710,16 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             reporter.log("Skipping updating GAs on OS/2 guest");
             return (None, oTxsSession);
 
-        # Some stupid trickery to guess the location of the iso.
-        sVBoxValidationKitISO = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../VBoxValidationKit.iso'));
-        if not os.path.isfile(sVBoxValidationKitISO):
-            sVBoxValidationKitISO = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../VBoxTestSuite.iso'));
-        if not os.path.isfile(sVBoxValidationKitISO):
-            sCur = os.getcwd();
-            for i in xrange(0, 10):
-                sVBoxValidationKitISO = os.path.join(sCur, 'validationkit/VBoxValidationKit.iso');
-                if os.path.isfile(sVBoxValidationKitISO):
-                    break;
-                sVBoxValidationKitISO = os.path.join(sCur, 'testsuite/VBoxTestSuite.iso');
-                if os.path.isfile(sVBoxValidationKitISO):
-                    break;
-                sCur = os.path.abspath(os.path.join(sCur, '..'));
-                if i is None: pass; # shut up pychecker/pylint.
-        if os.path.isfile(sVBoxValidationKitISO):
-            reporter.log('Validation Kit .ISO found at: %s' % (sVBoxValidationKitISO,));
-        else:
-            reporter.log('Warning: Validation Kit .ISO not found -- some tests might fail');
+        sVBoxValidationKitIso = self.oTstDrv.sVBoxValidationKitIso;
+        if not os.path.isfile(sVBoxValidationKitIso):
+            return reporter.log('Validation Kit .ISO not found at "%s"' % (sVBoxValidationKitIso,));
 
         sScratch = os.path.join(self.oTstDrv.sScratchPath, "testGctrlUpdateAdditions");
         try:
             os.makedirs(sScratch);
         except OSError as e:
             if e.errno != errno.EEXIST:
-                reporter.error('Failed: Unable to create scratch directory \"%s\"' % (sScratch,));
-                return (False, oTxsSession);
+                return reporter.error('Failed: Unable to create scratch directory \"%s\"' % (sScratch,));
         reporter.log('Scratch path is: %s' % (sScratch,));
 
         atTests = [];
@@ -4740,15 +4728,15 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 # Source is missing.
                 [ tdTestUpdateAdditions(sSrc = ''), tdTestResultFailure() ],
 
-                # Wrong fFlags.
+                # Wrong flags.
                 [ tdTestUpdateAdditions(sSrc = self.oTstDrv.getGuestAdditionsIso(),
-                                        fFlags = [ 1234 ]), tdTestResultFailure() ],
+                                        afFlags = [ 1234 ]), tdTestResultFailure() ],
 
                 # Non-existing .ISO.
                 [ tdTestUpdateAdditions(sSrc = "non-existing.iso"), tdTestResultFailure() ],
 
                 # Wrong .ISO.
-                [ tdTestUpdateAdditions(sSrc = sVBoxValidationKitISO), tdTestResultFailure() ],
+                [ tdTestUpdateAdditions(sSrc = sVBoxValidationKitIso), tdTestResultFailure() ],
 
                 # The real thing.
                 [ tdTestUpdateAdditions(sSrc = self.oTstDrv.getGuestAdditionsIso()),
@@ -4767,44 +4755,43 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             reporter.log('No OS-specific tests for non-Windows yet!');
 
         fRc = True;
-        for (i, aTest) in enumerate(atTests):
-            oCurTest = aTest[0]; # tdTestExec, use an index, later.
-            oCurRes  = aTest[1]; # tdTestResult
-            reporter.log('Testing #%d, sSrc="%s", fFlags="%s" ...' % \
-                         (i, oCurTest.sSrc, oCurTest.fFlags));
+        for (i, tTest) in enumerate(atTests):
+            oCurTest = tTest[0]  # type: tdTestUpdateAdditions
+            oCurRes  = tTest[1]  # type: tdTestResult
+            reporter.log('Testing #%d, sSrc="%s", afFlags="%s" ...' % (i, oCurTest.sSrc, oCurTest.afFlags,));
+
             oCurTest.setEnvironment(oSession, oTxsSession, oTestVm);
             fRc, _ = oCurTest.createSession('Test #%d' % (i,));
-            if fRc is False:
-                reporter.error('Test #%d failed: Could not create session' % (i,));
+            if fRc is not True:
+                fRc = reporter.error('Test #%d failed: Could not create session' % (i,));
                 break;
+
             try:
-                oCurProgress = oCurTest.oGuest.updateGuestAdditions(oCurTest.sSrc, oCurTest.asArgs, oCurTest.fFlags);
+                oCurProgress = oCurTest.oGuest.updateGuestAdditions(oCurTest.sSrc, oCurTest.asArgs, oCurTest.afFlags);
+            except:
+                reporter.maybeErrXcpt(oCurRes.fRc, 'Updating Guest Additions exception for sSrc="%s", afFlags="%s":'
+                                      % (oCurTest.sSrc, oCurTest.afFlags,));
+                fRc = False;
+            else:
                 if oCurProgress is not None:
-                    oProgress = vboxwrappers.ProgressWrapper(oCurProgress, self.oTstDrv.oVBoxMgr, self.oTstDrv, "gctrlUpGA");
-                    try:
-                        oProgress.wait();
-                        if not oProgress.isSuccess():
-                            oProgress.logResult(fIgnoreErrors = True);
-                            fRc = False;
-                    except:
-                        reporter.logXcpt('Waiting exception for updating Guest Additions:');
+                    oWrapperProgress = vboxwrappers.ProgressWrapper(oCurProgress, self.oTstDrv.oVBoxMgr,
+                                                                    self.oTstDrv, "gctrlUpGA");
+                    oWrapperProgress.wait();
+                    if not oWrapperProgress.isSuccess():
+                        oWrapperProgress.logResult(fIgnoreErrors = not oCurRes.fRc);
                         fRc = False;
                 else:
-                    reporter.error('No progress object returned');
-                    fRc = False;
-            except:
-                # Just log, don't assume an error here (will be done in the main loop then).
-                reporter.logXcpt('Updating Guest Additions exception for sSrc="%s", fFlags="%s":' \
-                                 % (oCurTest.sSrc, oCurTest.fFlags));
-                fRc = False;
+                    fRc = reporter.error('No progress object returned');
+
             oCurTest.closeSession();
             if fRc is oCurRes.fRc:
                 if fRc:
                     ## @todo Verify if Guest Additions were really updated (build, revision, ...).
+                    ## @todo r=bird: Not possible since you're installing the same GAs as before...
+                    ##               Maybe check creation dates on certain .sys/.dll/.exe files?
                     pass;
             else:
-                reporter.error('Test #%d failed: Got %s, expected %s' % (i, fRc, oCurRes.fRc));
-                fRc = False;
+                fRc = reporter.error('Test #%d failed: Got %s, expected %s' % (i, fRc, oCurRes.fRc));
                 break;
 
         return (fRc, oTxsSession);
@@ -4940,11 +4927,11 @@ class tdAddGuestCtrl(vbox.TestDriver):                                         #
         sCmd = SubTstDrvAddGuestCtrl.getGuestSystemShell(oTestVm);
         asArgs = [ sCmd, '/C', 'dir', '/S', 'c:\\windows' ];
         aEnv = [];
-        fFlags = [];
+        afFlags = [];
 
         for _ in xrange(100):
             oProc = oGuestSession.processCreate(sCmd, asArgs if self.fpApiVer >= 5.0 else asArgs[1:],
-                                                aEnv, fFlags, 30 * 1000);
+                                                aEnv, afFlags, 30 * 1000);
 
             aWaitFor = [ vboxcon.ProcessWaitForFlag_Terminate ];
             _ = oProc.waitForArray(aWaitFor, 30 * 1000);
