@@ -793,6 +793,418 @@ static RTEXITCODE handleCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT
     return errorNoSubcommand();
 }
 
+
+static RTEXITCODE createCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pCommonOpts)
+{
+    HRESULT hrc = S_OK;
+    hrc = checkAndSetCommonOptions(a, pCommonOpts);
+    if (FAILED(hrc))
+        return RTEXITCODE_FAILURE;
+
+    static const RTGETOPTDEF s_aOptions[] =
+    {
+        { "--compartment-id", 'c', RTGETOPT_REQ_STRING },
+        { "--instance-id",    'i', RTGETOPT_REQ_STRING },
+        { "--display-name",   'd', RTGETOPT_REQ_STRING }
+    };
+    RTGETOPTSTATE GetState;
+    RTGETOPTUNION ValueUnion;
+    int vrc = RTGetOptInit(&GetState, a->argc, a->argv, s_aOptions, RT_ELEMENTS(s_aOptions), iFirst, 0);
+    AssertRCReturn(vrc, RTEXITCODE_FAILURE);
+
+    Utf8Str strCompartmentId("compartment-id");
+    Utf8Str strInstanceId("instance-id");
+    Utf8Str strDisplayName("display-name");
+    com::SafeArray<BSTR>  parameters;
+
+    int c;
+    while ((c = RTGetOpt(&GetState, &ValueUnion)) != 0)
+    {
+        switch (c)
+        {
+            case 'c':
+                strCompartmentId.append("=").append(ValueUnion.psz);
+                Bstr(strCompartmentId).detachTo(parameters.appendedRaw());
+                break;
+            case 'i':
+                strInstanceId.append("=").append(ValueUnion.psz);
+                Bstr(strInstanceId).detachTo(parameters.appendedRaw());
+                break;
+            case 'd':
+                strDisplayName.append("=").append(ValueUnion.psz);
+                Bstr(strDisplayName).detachTo(parameters.appendedRaw());
+                break;
+            case VINF_GETOPT_NOT_OPTION:
+                return errorUnknownSubcommand(ValueUnion.psz);
+            default:
+                return errorGetOpt(c, &ValueUnion);
+        }
+    }
+
+    Bstr bstrProfileName;
+    ComPtr<ICloudProfile> pCloudProfile = pCommonOpts->profile.pCloudProfile;
+    pCloudProfile->COMGETTER(Name)(bstrProfileName.asOutParam());
+
+    ComObjPtr<ICloudClient> oCloudClient;
+    CHECK_ERROR2_RET(hrc, pCloudProfile,
+                     CreateCloudClient(oCloudClient.asOutParam()),
+                     RTEXITCODE_FAILURE);
+    RTPrintf("Creating cloud image with name \'%s\' from the instance \'%s\'...\n",
+             strDisplayName.c_str(), strInstanceId.c_str());
+
+    ComPtr<IProgress> progress;
+    CHECK_ERROR2_RET(hrc, oCloudClient,
+                     CreateImage(ComSafeArrayAsInParam(parameters), progress.asOutParam()),
+                     RTEXITCODE_FAILURE);
+    hrc = showProgress(progress);
+    CHECK_PROGRESS_ERROR_RET(progress, ("Creating cloud image failed"), RTEXITCODE_FAILURE);
+
+    if (SUCCEEDED(hrc))
+        RTPrintf("Cloud image was created successfully\n");
+
+    return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+}
+
+
+static RTEXITCODE exportCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pCommonOpts)
+{
+    HRESULT hrc = S_OK;
+    hrc = checkAndSetCommonOptions(a, pCommonOpts);
+    if (FAILED(hrc))
+        return RTEXITCODE_FAILURE;
+
+    static const RTGETOPTDEF s_aOptions[] =
+    {
+        { "--bucket-name",    'b', RTGETOPT_REQ_STRING },
+        { "--object-name",    'o', RTGETOPT_REQ_STRING },
+        { "--image-id",       'i', RTGETOPT_REQ_STRING }
+    };
+    RTGETOPTSTATE GetState;
+    RTGETOPTUNION ValueUnion;
+    int vrc = RTGetOptInit(&GetState, a->argc, a->argv, s_aOptions, RT_ELEMENTS(s_aOptions), iFirst, 0);
+    AssertRCReturn(vrc, RTEXITCODE_FAILURE);
+
+    Utf8Str strBucketName("bucket-name");
+    Utf8Str strObjectName("object-name");
+    Utf8Str strImageId;
+    com::SafeArray<BSTR>  parameters;
+
+    int c;
+    while ((c = RTGetOpt(&GetState, &ValueUnion)) != 0)
+    {
+        switch (c)
+        {
+            case 'b':
+                strBucketName.append("=").append(ValueUnion.psz);
+                Bstr(strBucketName).detachTo(parameters.appendedRaw());
+                break;
+            case 'o':
+                strObjectName.append("=").append(ValueUnion.psz);
+                Bstr(strObjectName).detachTo(parameters.appendedRaw());
+                break;
+            case 'i':
+                strImageId = ValueUnion.psz;
+                Bstr(strImageId).detachTo(parameters.appendedRaw());
+                break;
+            case VINF_GETOPT_NOT_OPTION:
+                return errorUnknownSubcommand(ValueUnion.psz);
+            default:
+                return errorGetOpt(c, &ValueUnion);
+        }
+    }
+
+    Bstr bstrProfileName;
+    ComPtr<ICloudProfile> pCloudProfile = pCommonOpts->profile.pCloudProfile;
+    pCloudProfile->COMGETTER(Name)(bstrProfileName.asOutParam());
+
+    ComObjPtr<ICloudClient> oCloudClient;
+    CHECK_ERROR2_RET(hrc, pCloudProfile,
+                     CreateCloudClient(oCloudClient.asOutParam()),
+                     RTEXITCODE_FAILURE);
+    RTPrintf("Exporting cloud image \'%s\' to the object \'%s\'...\n", strImageId.c_str(), strObjectName.c_str());
+
+    ComPtr<IProgress> progress;
+    CHECK_ERROR2_RET(hrc, oCloudClient,
+                     ExportImage(Bstr(strImageId).raw(), ComSafeArrayAsInParam(parameters), progress.asOutParam()),
+                     RTEXITCODE_FAILURE);
+    hrc = showProgress(progress);
+    CHECK_PROGRESS_ERROR_RET(progress, ("Cloud image export failed"), RTEXITCODE_FAILURE);
+
+    if (SUCCEEDED(hrc))
+        RTPrintf("Cloud image was exported successfully\n");
+
+    return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+}
+
+static RTEXITCODE importCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pCommonOpts)
+{
+    HRESULT hrc = S_OK;
+    hrc = checkAndSetCommonOptions(a, pCommonOpts);
+    if (FAILED(hrc))
+        return RTEXITCODE_FAILURE;
+
+    static const RTGETOPTDEF s_aOptions[] =
+    {
+        { "--compartment-id", 'c', RTGETOPT_REQ_STRING },
+        { "--bucket-name",    'b', RTGETOPT_REQ_STRING },
+        { "--object-name",    'o', RTGETOPT_REQ_STRING },
+        { "--display-name",   'd', RTGETOPT_REQ_STRING }
+    };
+    RTGETOPTSTATE GetState;
+    RTGETOPTUNION ValueUnion;
+    int vrc = RTGetOptInit(&GetState, a->argc, a->argv, s_aOptions, RT_ELEMENTS(s_aOptions), iFirst, 0);
+    AssertRCReturn(vrc, RTEXITCODE_FAILURE);
+
+    Utf8Str strCompartmentId("compartment-id");
+    Utf8Str strBucketName("bucket-name");
+    Utf8Str strObjectName("object-name");
+    Utf8Str strDisplayName("display-name");
+    com::SafeArray<BSTR>  parameters;
+
+    int c;
+    while ((c = RTGetOpt(&GetState, &ValueUnion)) != 0)
+    {
+        switch (c)
+        {
+            case 'c':
+                strCompartmentId.append("=").append(ValueUnion.psz);
+                Bstr(strCompartmentId).detachTo(parameters.appendedRaw());
+                break;
+            case 'b':
+                strBucketName.append("=").append(ValueUnion.psz);
+                Bstr(strBucketName).detachTo(parameters.appendedRaw());
+                break;
+            case 'o':
+                strObjectName.append("=").append(ValueUnion.psz);
+                Bstr(strObjectName).detachTo(parameters.appendedRaw());
+                break;
+            case 'd':
+                strDisplayName.append("=").append(ValueUnion.psz);
+                Bstr(strDisplayName).detachTo(parameters.appendedRaw());
+                break;
+            case VINF_GETOPT_NOT_OPTION:
+                return errorUnknownSubcommand(ValueUnion.psz);
+            default:
+                return errorGetOpt(c, &ValueUnion);
+        }
+    }
+
+    Bstr bstrProfileName;
+    ComPtr<ICloudProfile> pCloudProfile = pCommonOpts->profile.pCloudProfile;
+    pCloudProfile->COMGETTER(Name)(bstrProfileName.asOutParam());
+
+    ComObjPtr<ICloudClient> oCloudClient;
+    CHECK_ERROR2_RET(hrc, pCloudProfile,
+                     CreateCloudClient(oCloudClient.asOutParam()),
+                     RTEXITCODE_FAILURE);
+    RTPrintf("Creating cloud image \'%s\' from an object \'%s\'...\n", strDisplayName.c_str(), strObjectName.c_str());
+
+    ComPtr<IProgress> progress;
+    CHECK_ERROR2_RET(hrc, oCloudClient,
+                     CreateImage(ComSafeArrayAsInParam(parameters), progress.asOutParam()),
+                     RTEXITCODE_FAILURE);
+    hrc = showProgress(progress);
+    CHECK_PROGRESS_ERROR_RET(progress, ("Cloud image creation failed"), RTEXITCODE_FAILURE);
+
+    if (SUCCEEDED(hrc))
+        RTPrintf("Cloud image was created successfully\n");
+
+    return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+}
+
+static RTEXITCODE showCloudImageInfo(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pCommonOpts)
+{
+    HRESULT hrc = S_OK;
+    hrc = checkAndSetCommonOptions(a, pCommonOpts);
+    if (FAILED(hrc))
+        return RTEXITCODE_FAILURE;
+
+    static const RTGETOPTDEF s_aOptions[] =
+    {
+        { "--image-id", 'i', RTGETOPT_REQ_STRING }
+    };
+    RTGETOPTSTATE GetState;
+    RTGETOPTUNION ValueUnion;
+    int vrc = RTGetOptInit(&GetState, a->argc, a->argv, s_aOptions, RT_ELEMENTS(s_aOptions), iFirst, 0);
+    AssertRCReturn(vrc, RTEXITCODE_FAILURE);
+
+    Utf8Str strImageId;
+
+    int c;
+    while ((c = RTGetOpt(&GetState, &ValueUnion)) != 0)
+    {
+        switch (c)
+        {
+            case 'i':
+                strImageId = ValueUnion.psz;
+                break;
+            case VINF_GETOPT_NOT_OPTION:
+                return errorUnknownSubcommand(ValueUnion.psz);
+            default:
+                return errorGetOpt(c, &ValueUnion);
+        }
+    }
+
+    Bstr bstrProfileName;
+    ComPtr<ICloudProfile> pCloudProfile = pCommonOpts->profile.pCloudProfile;
+    pCloudProfile->COMGETTER(Name)(bstrProfileName.asOutParam());
+
+    ComObjPtr<ICloudClient> oCloudClient;
+    CHECK_ERROR2_RET(hrc, pCloudProfile,
+                     CreateCloudClient(oCloudClient.asOutParam()),
+                     RTEXITCODE_FAILURE);
+    RTPrintf("Getting information about the cloud image with id \'%s\'...\n", strImageId.c_str());
+
+    com::SafeArray<BSTR> parameters;
+    ComPtr<IStringArray> infoArray;
+    com::SafeArray<BSTR> pStrInfoArray;
+    ComPtr<IProgress> pProgress;
+
+    RTPrintf("Reply is in the form \'image property\' = \'value\'\n");
+    CHECK_ERROR2_RET(hrc, oCloudClient,
+                     GetImageInfo(Bstr(strImageId.c_str()).raw(),
+                                  ComSafeArrayAsInParam(parameters),
+                                  infoArray.asOutParam(),
+                                  pProgress.asOutParam()),
+                     RTEXITCODE_FAILURE);
+
+    hrc = showProgress(pProgress);
+    CHECK_PROGRESS_ERROR_RET(pProgress, ("Getting information about the cloud image failed"), RTEXITCODE_FAILURE);
+
+    CHECK_ERROR2_RET(hrc,
+                     infoArray, COMGETTER(Values)(ComSafeArrayAsOutParam(pStrInfoArray)),
+                     RTEXITCODE_FAILURE);
+
+    RTPrintf("General information about the image:\n");
+    size_t cParamNames = pStrInfoArray.size();
+    for (size_t k = 0; k < cParamNames; k++)
+    {
+        Utf8Str data(pStrInfoArray[k]);
+        RTPrintf("\t%s\n", data.c_str());
+    }
+
+    return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+}
+
+static RTEXITCODE updateCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pCommonOpts)
+{
+    RT_NOREF(a);
+    RT_NOREF(iFirst);
+    RT_NOREF(pCommonOpts);
+    return RTEXITCODE_SUCCESS;
+}
+
+static RTEXITCODE deleteCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pCommonOpts)
+{
+    HRESULT hrc = S_OK;
+    hrc = checkAndSetCommonOptions(a, pCommonOpts);
+    if (FAILED(hrc))
+        return RTEXITCODE_FAILURE;
+
+    static const RTGETOPTDEF s_aOptions[] =
+    {
+        { "--id", 'i', RTGETOPT_REQ_STRING }
+    };
+    RTGETOPTSTATE GetState;
+    RTGETOPTUNION ValueUnion;
+    int vrc = RTGetOptInit(&GetState, a->argc, a->argv, s_aOptions, RT_ELEMENTS(s_aOptions), iFirst, 0);
+    AssertRCReturn(vrc, RTEXITCODE_FAILURE);
+
+    Utf8Str strImageId;
+
+    int c;
+    while ((c = RTGetOpt(&GetState, &ValueUnion)) != 0)
+    {
+        switch (c)
+        {
+            case 'i':
+                strImageId = ValueUnion.psz;
+                break;
+            case VINF_GETOPT_NOT_OPTION:
+                return errorUnknownSubcommand(ValueUnion.psz);
+            default:
+                return errorGetOpt(c, &ValueUnion);
+        }
+    }
+
+    Bstr bstrProfileName;
+    ComPtr<ICloudProfile> pCloudProfile = pCommonOpts->profile.pCloudProfile;
+    pCloudProfile->COMGETTER(Name)(bstrProfileName.asOutParam());
+
+    ComObjPtr<ICloudClient> oCloudClient;
+    CHECK_ERROR2_RET(hrc, pCloudProfile,
+                     CreateCloudClient(oCloudClient.asOutParam()),
+                     RTEXITCODE_FAILURE);
+    RTPrintf("Deleting cloud image with id %s...\n", strImageId.c_str());
+
+    ComPtr<IProgress> progress;
+    CHECK_ERROR2_RET(hrc, oCloudClient,
+                     DeleteImage(Bstr(strImageId.c_str()).raw(), progress.asOutParam()),
+                     RTEXITCODE_FAILURE);
+    hrc = showProgress(progress);
+    CHECK_PROGRESS_ERROR_RET(progress, ("Deleting cloud image failed"), RTEXITCODE_FAILURE);
+
+    if (SUCCEEDED(hrc))
+        RTPrintf("Cloud image with was deleted successfully\n");
+
+    return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+}
+
+static RTEXITCODE handleCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pCommonOpts)
+{
+    if (a->argc < 1)
+        return errorNoSubcommand();
+
+    static const RTGETOPTDEF s_aOptions[] =
+    {
+        { "create",         1000, RTGETOPT_REQ_NOTHING },
+        { "export",         1001, RTGETOPT_REQ_NOTHING },
+        { "import",         1002, RTGETOPT_REQ_NOTHING },
+        { "info",           1003, RTGETOPT_REQ_NOTHING },
+        { "update",         1004, RTGETOPT_REQ_NOTHING },
+        { "delete",         1005, RTGETOPT_REQ_NOTHING }
+    };
+
+    RTGETOPTSTATE GetState;
+    int vrc = RTGetOptInit(&GetState, a->argc, a->argv, s_aOptions, RT_ELEMENTS(s_aOptions), iFirst, 0);
+    AssertRCReturn(vrc, RTEXITCODE_FAILURE);
+
+    int c;
+    RTGETOPTUNION ValueUnion;
+    while ((c = RTGetOpt(&GetState, &ValueUnion)) != 0)
+    {
+        switch (c)
+        {
+            /* Sub-commands: */
+            case 1000:
+//              setCurrentSubcommand(HELP_SCOPE_CLOUDIMAGE_CREATE);
+                return createCloudImage(a, GetState.iNext, pCommonOpts);
+            case 1001:
+//              setCurrentSubcommand(HELP_SCOPE_CLOUDIMAGE_EXPORT);
+                return exportCloudImage(a, GetState.iNext, pCommonOpts);
+            case 1002:
+//              setCurrentSubcommand(HELP_SCOPE_CLOUDIMAGE_IMPORT);
+                return importCloudImage(a, GetState.iNext, pCommonOpts);
+            case 1003:
+//              setCurrentSubcommand(HELP_SCOPE_CLOUDIMAGE_INFO);
+                return showCloudImageInfo(a, GetState.iNext, pCommonOpts);
+            case 1004:
+//              setCurrentSubcommand(HELP_SCOPE_CLOUDIMAGE_UPDATE);
+                return updateCloudImage(a, GetState.iNext, pCommonOpts);
+            case 1005:
+//              setCurrentSubcommand(HELP_SCOPE_CLOUDIMAGE_DELETE);
+                return deleteCloudImage(a, GetState.iNext, pCommonOpts);
+            case VINF_GETOPT_NOT_OPTION:
+                return errorUnknownSubcommand(ValueUnion.psz);
+
+            default:
+                return errorGetOpt(c, &ValueUnion);
+        }
+    }
+
+    return errorNoSubcommand();
+}
+
 RTEXITCODE handleCloud(HandlerArg *a)
 {
     if (a->argc < 1)
@@ -831,6 +1243,8 @@ RTEXITCODE handleCloud(HandlerArg *a)
             /* Sub-commands: */
             case 1000:
                 return handleCloudLists(a, GetState.iNext, &commonOpts);
+            case 1001:
+                return handleCloudImage(a, GetState.iNext, &commonOpts);
             case 1002:
                 return handleCloudInstance(a, GetState.iNext, &commonOpts);
             case VINF_GETOPT_NOT_OPTION:
