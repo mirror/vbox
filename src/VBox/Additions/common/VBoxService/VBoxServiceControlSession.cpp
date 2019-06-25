@@ -132,7 +132,7 @@ static PVBOXSERVICECTRLFILE vgsvcGstCtrlSessionFileGetLocked(const PVBOXSERVICEC
  * @param   pDirEntry           The dir entry buffer.  (Shared to save stack.)
  * @param   pObjInfo            The object info buffer.  (ditto)
  */
-static int vgsvcGstCtrlSessionHandleDirRemoveSub(char *pszDir, size_t cchDir, PRTDIRENTRY pDirEntry, PRTFSOBJINFO pObjInfo)
+static int vgsvcGstCtrlSessionHandleDirRemoveSub(char *pszDir, size_t cchDir, PRTDIRENTRY pDirEntry)
 {
     RTDIR hDir;
     int rc = RTDirOpen(&hDir, pszDir);
@@ -144,34 +144,25 @@ static int vgsvcGstCtrlSessionHandleDirRemoveSub(char *pszDir, size_t cchDir, PR
         if (!RTDirEntryIsStdDotLink(pDirEntry))
         {
             /* Construct the full name of the entry. */
-            if (cchDir + pDirEntry->cbName + 1 /* dir slash */ >= RTPATH_MAX)
+            if (cchDir + pDirEntry->cbName + 1 /* dir slash */ < RTPATH_MAX)
+                memcpy(&pszDir[cchDir], pDirEntry->szName, pDirEntry->cbName + 1);
+            else
             {
                 rc = VERR_FILENAME_TOO_LONG;
                 break;
             }
-            memcpy(&pszDir[cchDir], pDirEntry->szName, pDirEntry->cbName + 1);
 
-            /* Deal with the unknown type. */
+            /* Switch on type. */
             if (pDirEntry->enmType == RTDIRENTRYTYPE_UNKNOWN)
-            {
-                rc = RTPathQueryInfoEx(pszDir, pObjInfo, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK);
-                if (RT_SUCCESS(rc) && RTFS_IS_DIRECTORY(pObjInfo->Attr.fMode))
-                    pDirEntry->enmType = RTDIRENTRYTYPE_DIRECTORY;
-                else if (RT_SUCCESS(rc) && RTFS_IS_FILE(pObjInfo->Attr.fMode))
-                    pDirEntry->enmType = RTDIRENTRYTYPE_FILE;
-                else if (RT_SUCCESS(rc) && RTFS_IS_SYMLINK(pObjInfo->Attr.fMode))
-                    pDirEntry->enmType = RTDIRENTRYTYPE_SYMLINK;
-            }
-
-            /* Try the delete the fs object. */
+                RTDirQueryUnknownType(pszDir, false /*fFollowSymlinks*/, &pDirEntry->enmType);
             switch (pDirEntry->enmType)
             {
                 case RTDIRENTRYTYPE_DIRECTORY:
                 {
-                    size_t cchSubDir = cchDir + pDirEntry->cbName;
-                    pszDir[cchSubDir++] = '/';
+                    size_t cchSubDir    = cchDir + pDirEntry->cbName;
+                    pszDir[cchSubDir++] = RTPATH_SLASH;
                     pszDir[cchSubDir]   = '\0';
-                    rc = vgsvcGstCtrlSessionHandleDirRemoveSub(pszDir, cchSubDir, pDirEntry, pObjInfo);
+                    rc = vgsvcGstCtrlSessionHandleDirRemoveSub(pszDir, cchSubDir, pDirEntry);
                     if (RT_SUCCESS(rc))
                     {
                         pszDir[cchSubDir] = '\0';
@@ -179,8 +170,6 @@ static int vgsvcGstCtrlSessionHandleDirRemoveSub(char *pszDir, size_t cchDir, PR
                     }
                     break;
                 }
-
-                /** @todo Implement deleting symlinks? Play safe for now. */
 
                 default:
                     rc = VERR_DIR_NOT_EMPTY;
@@ -229,9 +218,9 @@ static int vgsvcGstCtrlSessionHandleDirRemove(PVBOXSERVICECTRLSESSION pSession, 
                 }
                 else /* Only remove empty directory structures. Will fail if non-empty. */
                 {
-                    RTDIRENTRY  dirEntry;
-                    RTFSOBJINFO objInfo;
-                    rc = vgsvcGstCtrlSessionHandleDirRemoveSub(szDir, strlen(szDir), &dirEntry, &objInfo);
+                    RTDIRENTRY DirEntry;
+                    RTPathEnsureTrailingSeparator(szDir, sizeof(szDir));
+                    rc = vgsvcGstCtrlSessionHandleDirRemoveSub(szDir, strlen(szDir), &DirEntry);
                 }
                 VGSvcVerbose(4, "[Dir %s]: rmdir /s (%#x) -> rc=%Rrc\n", szDir, fFlags, rc);
             }
