@@ -3586,9 +3586,9 @@ VMM_INT_DECL(bool) CPUMIsGuestVmxIoInterceptSet(PCVMCPU pVCpu, uint16_t u16Port,
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   uExitReason     The VM-exit reason (VMX_EXIT_VMREAD or
  *                          VMX_EXIT_VMREAD).
- * @param   u64FieldEnc     The VMCS field encoding.
+ * @param   u64VmcsField    The VMCS field.
  */
-VMM_INT_DECL(bool) CPUMIsGuestVmxVmreadVmwriteInterceptSet(PCVMCPU pVCpu, uint32_t uExitReason, uint64_t u64FieldEnc)
+VMM_INT_DECL(bool) CPUMIsGuestVmxVmreadVmwriteInterceptSet(PCVMCPU pVCpu, uint32_t uExitReason, uint64_t u64VmcsField)
 {
 #ifndef IN_RC
     Assert(CPUMIsGuestInVmxNonRootMode(&pVCpu->cpum.s.Guest));
@@ -3598,7 +3598,7 @@ VMM_INT_DECL(bool) CPUMIsGuestVmxVmreadVmwriteInterceptSet(PCVMCPU pVCpu, uint32
     /*
      * Without VMCS shadowing, all VMREAD and VMWRITE instructions are intercepted.
      */
-    if (!pVCpu->CTX_SUFF(pVM)->cpum.s.GuestFeatures.fVmxVmcsShadowing)
+    if (!CPUMIsGuestVmxProcCtls2Set(pVCpu, &pVCpu->cpum.s.Guest, VMX_PROC_CTLS2_VMCS_SHADOWING))
         return true;
 
     /*
@@ -3606,27 +3606,25 @@ VMM_INT_DECL(bool) CPUMIsGuestVmxVmreadVmwriteInterceptSet(PCVMCPU pVCpu, uint32
      * is intercepted. This excludes any reserved bits in the valid parts of the field
      * encoding (i.e. bit 12).
      */
-    if (u64FieldEnc & VMX_VMCSFIELD_RSVD_MASK)
+    if (u64VmcsField & VMX_VMCSFIELD_RSVD_MASK)
         return true;
 
     /*
      * Finally, consult the VMREAD/VMWRITE bitmap whether to intercept the instruction or not.
      */
-    uint32_t const u32FieldEnc = RT_LO_U32(u64FieldEnc);
-    Assert(u32FieldEnc >> 3 < VMX_V_VMREAD_VMWRITE_BITMAP_SIZE);
-    Assert(pVCpu->cpum.s.Guest.hwvirt.vmx.CTX_SUFF(pvVmreadBitmap));
+    uint32_t const u32VmcsField = RT_LO_U32(u64VmcsField);
     uint8_t const *pbBitmap = uExitReason == VMX_EXIT_VMREAD
                             ? (uint8_t const *)pVCpu->cpum.s.Guest.hwvirt.vmx.CTX_SUFF(pvVmreadBitmap)
                             : (uint8_t const *)pVCpu->cpum.s.Guest.hwvirt.vmx.CTX_SUFF(pvVmwriteBitmap);
     Assert(pbBitmap);
-    pbBitmap += (u32FieldEnc >> 3);
-    if (*pbBitmap & RT_BIT(u32FieldEnc & 7))
+    Assert(u32VmcsField >> 3 < VMX_V_VMREAD_VMWRITE_BITMAP_SIZE);
+    pbBitmap += (u32VmcsField >> 3);
+    if (*pbBitmap & RT_BIT(u32VmcsField & 7))
         return true;
 
     return false;
-
 #else
-    RT_NOREF3(pVCpu, uExitReason, u64FieldEnc);
+    RT_NOREF3(pVCpu, uExitReason, u64VmcsField);
     return false;
 #endif
 }
