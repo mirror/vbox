@@ -63,6 +63,8 @@ if sys.version_info[0] >= 3:
 class GuestStream(bytearray):
     """
     Class for handling a guest process input/output stream.
+
+    @todo write stdout/stderr tests.
     """
     def appendStream(self, stream, convertTo = '<b'):
         """
@@ -71,19 +73,6 @@ class GuestStream(bytearray):
         """
         self.extend(struct.pack(convertTo, stream));
 
-class tdCtxTest(object):
-    """
-    Provides the actual test environment.
-    Should be kept as generic as possible.
-    """
-    def __init__(self, oSession, oTxsSession, oTestVm): # pylint: disable=unused-argument
-        ## The desired Main API result.
-        self.fRc = False;
-        ## IGuest reference.
-        self.oGuest      = oSession.o.console.guest; ## @todo may throw shit
-        self.oSession    = oSession;
-        self.oTxsSession = oTxsSession;
-        self.oTestVm     = oTestVm;
 
 class tdCtxCreds(object):
     """
@@ -120,21 +109,27 @@ class tdTestGuestCtrlBase(object):
           were installed and running on the guest to be tested.
     """
     def __init__(self):
-        self.oTest  = None;
-        self.oCreds = None;
-        self.timeoutMS = 30 * 1000; # 30s timeout
-        ## IGuestSession reference or None.
-        self.oGuestSession = None;
+        self.oGuest    = None;      ##< IGuest.
+        self.oCreds    = None       ##< type: tdCtxCreds
+        self.timeoutMS = 30 * 1000; ##< 30s timeout
+        self.oGuestSession = None;  ##< IGuestSession reference or None.
 
     def setEnvironment(self, oSession, oTxsSession, oTestVm):
         """
         Sets the test environment required for this test.
         """
-        self.oTest = tdCtxTest(oSession, oTxsSession, oTestVm);
+        _ = oTxsSession;
+
+        try:
+            self.oGuest = oSession.o.console.guest;
+        except:
+            reporter.errorXcpt();
+
         if self.oCreds is None:
             self.oCreds = tdCtxCreds();
         self.oCreds.applyDefaultsIfNotSet(oTestVm);
-        return self.oTest;
+
+        return True;
 
     def uploadLogData(self, oTstDrv, aData, sFileName, sDesc):
         """
@@ -161,10 +156,10 @@ class tdTestGuestCtrlBase(object):
 
             reporter.log('Creating session "%s" ...' % (sName,));
             try:
-                self.oGuestSession = self.oTest.oGuest.createSession(self.oCreds.sUser,
-                                                                     self.oCreds.sPassword,
-                                                                     self.oCreds.sDomain,
-                                                                     sName);
+                self.oGuestSession = self.oGuest.createSession(self.oCreds.sUser,
+                                                               self.oCreds.sPassword,
+                                                               self.oCreds.sDomain,
+                                                               sName);
             except:
                 # Just log, don't assume an error here (will be done in the main loop then).
                 reporter.maybeErrXcpt(fIsError, 'Creating a guest session "%s" failed; sUser="%s", pw="%s", sDomain="%s":'
@@ -831,10 +826,10 @@ class tdTestSession(tdTestGuestCtrlBase):
         Helper for returning the number of currently
         opened guest sessions of a VM.
         """
-        if self.oTest.oGuest is None:
+        if self.oGuest is None:
             return 0;
         try:
-            aoSession = oVBoxMgr.getArray(self.oTest.oGuest, 'sessions')
+            aoSession = oVBoxMgr.getArray(self.oGuest, 'sessions')
         except:
             reporter.errorXcpt('sSessionName: %s' % (self.sSessionName,));
             return 0;
@@ -2365,7 +2360,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
             # Try check that none of the remaining sessions got closed.
             try:
-                aoGuestSessions = self.oTstDrv.oVBoxMgr.getArray(atTests[0][0].oTest.oGuest, 'sessions');
+                aoGuestSessions = self.oTstDrv.oVBoxMgr.getArray(atTests[0][0].oGuest, 'sessions');
             except:
                 return (reporter.errorXcpt('i=%d/%d' % (i, cMaxGuestSessions,)), oTxsSession);
             if oClosedGuestSession in aoGuestSessions:
@@ -4800,7 +4795,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 reporter.error('Test #%d failed: Could not create session' % (i,));
                 break;
             try:
-                oCurProgress = oCurTest.oTest.oGuest.updateGuestAdditions(oCurTest.sSrc, oCurTest.asArgs, oCurTest.fFlags);
+                oCurProgress = oCurTest.oGuest.updateGuestAdditions(oCurTest.sSrc, oCurTest.asArgs, oCurTest.fFlags);
                 if oCurProgress is not None:
                     oProgress = vboxwrappers.ProgressWrapper(oCurProgress, self.oTstDrv.oVBoxMgr, self.oTstDrv, "gctrlUpGA");
                     try:
