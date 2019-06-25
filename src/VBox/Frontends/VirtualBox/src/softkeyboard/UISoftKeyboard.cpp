@@ -540,7 +540,6 @@ private:
     int   m_iBottomMargin;
 
     QMenu   *m_pContextMenu;
-    QAction *m_pShowPositionsAction;
     Mode     m_enmMode;
 };
 
@@ -1393,6 +1392,9 @@ void UISoftKeyboardKey::updateText()
 
     int iX = 0;
     int iY = fontMetric.height();
+#if 0
+    painter.drawText(iX + iSideMargin, iY, QString::number(m_iPosition));
+#else
     if (!m_strShiftCaption.isEmpty())
     {
         painter.drawText(iX + iSideMargin, iY, m_strShiftCaption);
@@ -1417,7 +1419,7 @@ void UISoftKeyboardKey::updateText()
     }
     else
         painter.drawText(keyGeometry().width() - fontMetric.width('X') - iSideMargin, 2 * iY, m_strAltGrCaption);
-
+#endif
     painter.end();
 }
 
@@ -1543,7 +1545,6 @@ UISoftKeyboardWidget::UISoftKeyboardWidget(QWidget *pParent /* = 0 */)
     , m_iRightMargin(10)
     , m_iBottomMargin(10)
     , m_pContextMenu(0)
-    , m_pShowPositionsAction(0)
     , m_enmMode(Mode_Keyboard)
 {
     prepareObjects();
@@ -2065,7 +2066,7 @@ bool UISoftKeyboardWidget::loadPhysicalLayout(const QString &strLayoutFileName, 
     int iInitialHeight = iY + m_iBottomMargin;
     m_iInitialWidth = qMax(m_iInitialWidth, iInitialWidth);
     m_iInitialHeight = qMax(m_iInitialHeight, iInitialHeight);
-    printf("%s total key count: %d\n", qPrintable(strLayoutFileName), iKeyCount - 3 /* substract OS an menu keys */);
+    //printf("%s total key count: %d\n", qPrintable(strLayoutFileName), iKeyCount - 3 /* substract OS an menu keys */);
     return true;
 }
 
@@ -2115,7 +2116,7 @@ void UISoftKeyboardWidget::loadLayouts()
     QStringList physicalLayoutNames;
     physicalLayoutNames << ":/101_ansi.xml"
                         << ":/102_iso.xml"
-                        << ":/106_iso.xml";
+                        << ":/106_japanese.xml";
     foreach (const QString &strName, physicalLayoutNames)
         loadPhysicalLayout(strName);
 
@@ -2126,7 +2127,8 @@ void UISoftKeyboardWidget::loadLayouts()
     QStringList keyboardLayoutNames;
     keyboardLayoutNames << ":/us_international.xml"
                         << ":/german.xml"
-                        << ":/us.xml";
+                        << ":/us.xml"
+                        << ":/greek.xml";
 
     foreach (const QString &strName, keyboardLayoutNames)
         loadKeyboardLayout(strName);
@@ -2150,14 +2152,6 @@ void UISoftKeyboardWidget::loadLayouts()
 void UISoftKeyboardWidget::prepareObjects()
 {
     m_pContextMenu = new QMenu(this);
-
-#ifdef DEBUG
-    m_pShowPositionsAction = m_pContextMenu->addAction(UISoftKeyboard::tr("Show key positions instead of key caps"));
-    m_pShowPositionsAction->setCheckable(true);
-    m_pShowPositionsAction->setChecked(false);
-#else
-    Q_UNUSED(m_pShowPositionsAction);
-#endif
 
     setMouseTracking(true);
     setContextMenuPolicy(Qt::CustomContextMenu);

@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<!-- https://www.ibm.com/support/knowledgecenter/en/ssw_aix_71/com.ibm.aix.keyboardtechref/doc/kybdtech/Key.htm -->
+<!-- http://hp.vector.co.jp/authors/VA003720/lpproj/others/kbdjpn.htm -->
 <physicallayout defaultHeight="50" defaultWidth="50">
     <name>106_iso</name>
     <id>92798be2-80b4-4f19-859f-bf3065b46fec</id>
@@ -139,10 +139,14 @@
             <position>13</position>
             <scancode>0x0d</scancode>
         </key>
+        <!-- https://www.win.tue.nl/~aeb/linux/kbd/scancodes-8.html -->
         <key>
-            <width>110</width>
-
+            <position>14</position>
+            <scancode>0x7d</scancode>
+        </key>
+        <key>
             <position>15</position>
+            <width>55</width>
             <scancode>0x0e</scancode>
         </key>
         <space>
@@ -317,15 +321,10 @@
     </row>
     <row>
         <key>
-            <width>75</width>
-
+            <width>125</width>
             <type>modifier</type>
             <position>44</position>
             <scancode>0x2a</scancode>
-        </key>
-        <key>
-            <position>45</position>
-            <scancode>0x35</scancode>
         </key>
         <key>
             <position>46</position>
@@ -368,10 +367,13 @@
             <scancode>0x35</scancode>
         </key>
         <key>
-            <width>140</width>
-
-            <type>modifier</type>
+            <position>56</position>
+            <scancode>0x73</scancode>
+        </key>
+        <key>
             <position>57</position>
+            <width>90</width>
+            <type>modifier</type>
             <scancode>0x36</scancode>
         </key>
         <space>
@@ -389,50 +391,55 @@
     </row>
     <row>
         <key>
-            <width>90</width>
-
-            <type>modifier</type>
             <position>58</position>
+            <width>95</width>
+            <type>modifier</type>
             <scancode>0x1d</scancode>
         </key>
-        <key>
-
-            <width>75</width>
-            <type>modifier</type>
+        <key><!-- Win / OS -->
             <position>227</position>
+            <type>modifier</type>
             <scancodeprefix>0xe0</scancodeprefix>
             <scancode>0x5b</scancode>
         </key>
-        <key>
+        <key><!-- Alt -->
             <position>60</position>
-
             <width>75</width>
             <type>modifier</type>
             <scancode>0x38</scancode>
         </key>
         <key>
-            <width>235</width>
+            <position>131</position>
+            <scancode>0x7B</scancode>
+        </key>
+        <key><!-- Space -->
             <position>61</position>
+            <width>115</width>
             <scancode>0x39</scancode>
         </key>
         <key>
+            <position>132</position>
+            <scancode>0x79</scancode>
+        </key>
+        <key>
+            <position>133</position>
+            <scancode>0x70</scancode>
+        </key>
 
+        <key><!-- AltGr -->
+            <position>62</position>
             <width>75</width>
             <type>modifier</type>
-            <position>62</position>
             <scancodeprefix>0xe0</scancodeprefix>
             <scancode>0x38</scancode>
         </key>
-        <key>
-
-            <width>75</width>
-            <type>modifier</type>
+        <key><!-- Win / OS -->
             <position>231</position>
+            <type>modifier</type>
             <scancodeprefix>0xe0</scancodeprefix>
             <scancode>0x5c</scancode>
         </key>
         <key>
-
             <width>75</width>
             <scancodeprefix>0xe0</scancodeprefix>
             <scancode>0x5d</scancode>
