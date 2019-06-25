@@ -389,7 +389,7 @@ class tdTestRemoveBase(tdTestGuestCtrlBase):
         except:
             return reporter.errorXcpt('fsObjExists failed on "%s" after deletion (type: %s)' % (self.sPath, sType));
         if fExists:
-            return reporter.errorXcpt('fsObjExists says "%s" still exists after deletion (type: %s)!' % (self.sPath, sType));
+            return reporter.error('fsObjExists says "%s" still exists after deletion (type: %s)!' % (self.sPath, sType));
         return True;
 
 class tdTestRemoveFile(tdTestRemoveBase):
@@ -408,7 +408,10 @@ class tdTestRemoveFile(tdTestRemoveBase):
                 self.oGuestSession.fileRemove(self.sPath);
         except:
             reporter.maybeErrXcpt(self.fRcExpect, 'Removing "%s" failed' % (self.sPath,));
-            return False;
+            return not self.fRcExpect;
+        if not self.fRcExpect:
+            return reporter.error('Expected removing "%s" to failed, but it succeeded' % (self.sPath,));
+
         return self.checkRemoved('file');
 
 class tdTestRemoveDir(tdTestRemoveBase):
@@ -425,16 +428,20 @@ class tdTestRemoveDir(tdTestRemoveBase):
             self.oGuestSession.directoryRemove(self.sPath);
         except:
             reporter.maybeErrXcpt(self.fRcExpect, 'Removing "%s" (as a directory) failed' % (self.sPath,));
-            return False;
+            return not self.fRcExpect;
+        if not self.fRcExpect:
+            return reporter.error('Expected removing "%s" (dir) to failed, but it succeeded' % (self.sPath,));
+
         return self.checkRemoved('directory');
 
 class tdTestRemoveTree(tdTestRemoveBase):
     """
     Recursively remove a directory tree.
     """
-    def __init__(self, sPath, afFlags = None, fRcExpect = True, sUser = None, sPassword = None):
+    def __init__(self, sPath, afFlags = None, fRcExpect = True, fNotExist = False, sUser = None, sPassword = None):
         tdTestRemoveBase.__init__(self, sPath, fRcExpect, sUser, sPassword);
         self.afFlags = afFlags if afFlags is not None else [];
+        self.fNotExist = fNotExist; # Hack for the ContentOnly scenario where the dir does not exist.
 
     def execute(self, oSubTstDrv):
         reporter.log2('Deleting tree "%s" ...' % (self.sPath,));
@@ -443,16 +450,18 @@ class tdTestRemoveTree(tdTestRemoveBase):
         except:
             reporter.maybeErrXcpt(self.fRcExpect, 'Removing directory tree "%s" failed (afFlags=%s)'
                                   % (self.sPath, self.afFlags));
-            return False;
+            return not self.fRcExpect;
 
         oWrappedProgress = vboxwrappers.ProgressWrapper(oProgress, oSubTstDrv.oTstDrv.oVBoxMgr, oSubTstDrv.oTstDrv,
                                                         "remove-tree: %s" % (self.sPath,));
         oWrappedProgress.wait();
         if not oWrappedProgress.isSuccess():
             oWrappedProgress.logResult(fIgnoreErrors = not self.fRcExpect);
-            return False;
+            return not self.fRcExpect;
+        if not self.fRcExpect:
+            return reporter.error('Expected removing "%s" (tree) to failed, but it succeeded' % (self.sPath,));
 
-        if vboxcon.DirectoryRemoveRecFlag_ContentOnly in self.afFlags:
+        if vboxcon.DirectoryRemoveRecFlag_ContentAndDir not in self.afFlags  and  not self.fNotExist:
             # Cannot use directoryExists here as it is buggy.
             try:
                 if oSubTstDrv.oTstDrv.fpApiVer >= 5.0:
@@ -3423,10 +3432,6 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         Tests removing guest files.
         """
 
-        # Something is busted here wrt progress wrappers or something... debugging.
-        if self.oTstDrv.fpApiVer < 10.0:
-            return None;
-
         #
         # Create a directory with a few files in it using TXS that we'll use for the initial tests.
         #
@@ -3460,7 +3465,6 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             if oTxsSession.syncUploadString(sFile, sFile) is not True:
                 return reporter.error('Failed to create test file "%s"!' % (sFile,));
 
-
         #
         # Tear down the directories and files.
         #
@@ -3485,14 +3489,19 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             tdTestRemoveDir(asTestDirs[6], fRcExpect = True),
             tdTestRemoveFile(asTestFiles[0], fRcExpect = True),
             tdTestRemoveFile(asTestFiles[0], fRcExpect = False),
-            tdTestRemoveTree(asTestDirs[9], fRcExpect = False), # Have subdirs, no flags == single rmdir.
-            tdTestRemoveTree(asTestDirs[9], afFlags = [vboxcon.DirectoryRemoveRecFlag_ContentOnly,], fRcExpect = True),
-            tdTestRemoveTree(asTestDirs[9], fRcExpect = True),
-            tdTestRemoveTree(asTestDirs[3], fRcExpect = False), # Have subdirs & files, no flags == single rmdir.
+            # 17:
+            tdTestRemoveTree(asTestDirs[8], fRcExpect = True),  # Removes empty subdirs and leaves the dir itself.
+            tdTestRemoveDir(asTestDirs[8], fRcExpect = True),
+            tdTestRemoveTree(asTestDirs[3], fRcExpect = False), # Have subdirs & files,
             tdTestRemoveTree(asTestDirs[3], afFlags = [vboxcon.DirectoryRemoveRecFlag_ContentOnly,], fRcExpect = True),
-            tdTestRemoveTree(asTestDirs[3], fRcExpect = True),
+            tdTestRemoveDir(asTestDirs[3], fRcExpect = True),
             tdTestRemoveTree(asTestDirs[0], afFlags = [vboxcon.DirectoryRemoveRecFlag_ContentAndDir,], fRcExpect = True),
-            tdTestRemoveTree(asTestDirs[0], afFlags = [vboxcon.DirectoryRemoveRecFlag_ContentAndDir,], fRcExpect = False),
+            # No error if already delete (RTDirRemoveRecursive artifact).
+            tdTestRemoveTree(asTestDirs[0], afFlags = [vboxcon.DirectoryRemoveRecFlag_ContentAndDir,], fRcExpect = True),
+            tdTestRemoveTree(asTestDirs[0], afFlags = [vboxcon.DirectoryRemoveRecFlag_ContentOnly,],
+                             fNotExist = True, fRcExpect = True),
+            # Exception is when not specifying any flags the the guest does not call RTDirRemoveRecursive but does its own thing.
+            tdTestRemoveTree(asTestDirs[0], afFlags = [], fRcExpect = False),
         ];
 
         #
@@ -3508,7 +3517,6 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 break;
             fRc = oTest.execute(self) and fRc;
             fRc = oTest.closeSession() and fRc;
-
 
         if fRc is True:
             oCurTest = tdTestDirRead();
