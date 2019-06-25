@@ -26010,8 +26010,8 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   -->
   <interface
     name="ICloudClient" extends="$unknown"
-    uuid="7b54f41a-91d6-11e9-9c93-b7d487e5e15b"
-    wsmap="managed" reservedMethods="9" reservedAttributes="8"
+    uuid="33c307e4-cb7e-44ec-9d30-a8c5927bc6e8"
+    wsmap="managed" reservedMethods="13" reservedAttributes="8"
     >
 
     <method name="getExportLaunchDescriptionForm">
