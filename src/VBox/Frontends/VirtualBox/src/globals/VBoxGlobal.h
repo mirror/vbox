@@ -493,8 +493,10 @@ public:
         QList<QUuid> mediumIDs() const;
         /** Creates medium on the basis of passed @a guiMedium description. */
         void createMedium(const UIMedium &guiMedium);
+#ifndef VBOX_GUI_WITH_NEW_MEDIA_EVENTS
         /** Deletes medium with certain @a uMediumID. */
         void deleteMedium(const QUuid &uMediumID);
+#endif
 
         /** Opens external medium by passed @a strMediumLocation.
           * @param  enmMediumType      Brings the medium type.

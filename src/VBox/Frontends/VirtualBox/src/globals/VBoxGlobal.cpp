@@ -2621,6 +2621,7 @@ void VBoxGlobal::createMedium(const UIMedium &guiMedium)
     }
 }
 
+#ifndef VBOX_GUI_WITH_NEW_MEDIA_EVENTS
 void VBoxGlobal::deleteMedium(const QUuid &uMediumID)
 {
     if (m_meCleanupProtectionToken.tryLockForRead())
@@ -2631,6 +2632,7 @@ void VBoxGlobal::deleteMedium(const QUuid &uMediumID)
         m_meCleanupProtectionToken.unlock();
     }
 }
+#endif
 
 QUuid VBoxGlobal::openMedium(UIMediumDeviceType enmMediumType, QString strMediumLocation, QWidget *pParent /* = 0 */)
 {

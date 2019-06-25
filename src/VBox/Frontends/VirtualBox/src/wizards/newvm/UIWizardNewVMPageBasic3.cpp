@@ -111,7 +111,9 @@ void UIWizardNewVMPage3::ensureNewVirtualDiskDeleted()
         return;
 
     /* Remember virtual-disk attributes: */
+#ifndef VBOX_GUI_WITH_NEW_MEDIA_EVENTS
     QUuid uMediumID = m_virtualDisk.GetId();
+#endif
     QString strLocation = m_virtualDisk.GetLocation();
     /* Prepare delete storage progress: */
     CProgress progress = m_virtualDisk.DeleteStorage();
@@ -125,8 +127,10 @@ void UIWizardNewVMPage3::ensureNewVirtualDiskDeleted()
     else
         msgCenter().cannotDeleteHardDiskStorage(m_virtualDisk, strLocation, thisImp());
 
+#ifndef VBOX_GUI_WITH_NEW_MEDIA_EVENTS
     /* Inform VBoxGlobal about it: */
     vboxGlobal().deleteMedium(uMediumID);
+#endif
 
     /* Detach virtual-disk anyway: */
     m_virtualDisk.detach();

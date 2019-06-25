@@ -422,7 +422,9 @@ bool UIMediumItemHD::remove()
 
     /* Remember some of hard-disk attributes: */
     CMedium hardDisk = medium().medium();
+#ifndef VBOX_GUI_WITH_NEW_MEDIA_EVENTS
     QUuid uMediumID = id();
+#endif
 
     /* Propose to remove medium storage: */
     if (!maybeRemoveStorage())
@@ -436,8 +438,10 @@ bool UIMediumItemHD::remove()
         return false;
     }
 
+#ifndef VBOX_GUI_WITH_NEW_MEDIA_EVENTS
     /* Remove UIMedium finally: */
     vboxGlobal().deleteMedium(uMediumID);
+#endif
 
     /* True by default: */
     return true;
@@ -549,7 +553,9 @@ bool UIMediumItemCD::remove()
 
     /* Remember some of optical-disk attributes: */
     CMedium image = medium().medium();
+#ifndef VBOX_GUI_WITH_NEW_MEDIA_EVENTS
     QUuid uMediumID = id();
+#endif
 
     /* Close optical-disk: */
     image.Close();
@@ -559,8 +565,10 @@ bool UIMediumItemCD::remove()
         return false;
     }
 
+#ifndef VBOX_GUI_WITH_NEW_MEDIA_EVENTS
     /* Remove UIMedium finally: */
     vboxGlobal().deleteMedium(uMediumID);
+#endif
 
     /* True by default: */
     return true;
@@ -620,7 +628,9 @@ bool UIMediumItemFD::remove()
 
     /* Remember some of floppy-disk attributes: */
     CMedium image = medium().medium();
+#ifndef VBOX_GUI_WITH_NEW_MEDIA_EVENTS
     QUuid uMediumID = id();
+#endif
 
     /* Close floppy-disk: */
     image.Close();
@@ -630,8 +640,10 @@ bool UIMediumItemFD::remove()
         return false;
     }
 
+#ifndef VBOX_GUI_WITH_NEW_MEDIA_EVENTS
     /* Remove UIMedium finally: */
     vboxGlobal().deleteMedium(uMediumID);
+#endif
 
     /* True by default: */
     return true;
