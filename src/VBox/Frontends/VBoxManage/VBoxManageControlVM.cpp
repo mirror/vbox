@@ -1648,7 +1648,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                 dvdMedium->COMGETTER(Id)(uuid.asOutParam());
             else
                 uuid = Guid().toString();
-            CHECK_ERROR(machine, MountMedium(Bstr("IDE Controller"), 1, 0, uuid, FALSE /* aForce */));
+            CHECK_ERROR(sessionMachine, MountMedium(Bstr("IDE Controller"), 1, 0, uuid, FALSE /* aForce */));
         }
         else if (!strcmp(a->argv[1], "floppyattach"))
         {
@@ -1704,7 +1704,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                 }
             }
             floppyMedium->COMGETTER(Id)(uuid.asOutParam());
-            CHECK_ERROR(machine, MountMedium(Bstr("Floppy Controller"), 0, 0, uuid, FALSE /* aForce */));
+            CHECK_ERROR(sessionMachine, MountMedium(Bstr("Floppy Controller"), 0, 0, uuid, FALSE /* aForce */));
         }
 #endif /* obsolete dvdattach/floppyattach */
         else if (!strcmp(a->argv[1], "guestmemoryballoon"))
@@ -1854,7 +1854,8 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             RTFileClose(pngFile);
         }
 #ifdef VBOX_WITH_RECORDING
-        else if (!strcmp(a->argv[1], "recording"))
+        else if (   !strcmp(a->argv[1], "recording")
+                 || !strcmp(a->argv[1], "videocap") /* legacy command */)
         {
             if (a->argc < 3)
             {
@@ -1864,7 +1865,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             }
 
             ComPtr<IRecordingSettings> recordingSettings;
-            CHECK_ERROR_BREAK(machine, COMGETTER(RecordingSettings)(recordingSettings.asOutParam()));
+            CHECK_ERROR_BREAK(sessionMachine, COMGETTER(RecordingSettings)(recordingSettings.asOutParam()));
 
             SafeIfaceArray <IRecordingScreenSettings> saRecordingScreenScreens;
             CHECK_ERROR_BREAK(recordingSettings, COMGETTER(Screens)(ComSafeArrayAsOutParam(saRecordingScreenScreens)));
@@ -1886,7 +1887,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             else if (!strcmp(a->argv[2], "screens"))
             {
                 ULONG cMonitors = 64;
-                CHECK_ERROR_BREAK(machine, COMGETTER(MonitorCount)(&cMonitors));
+                CHECK_ERROR_BREAK(sessionMachine, COMGETTER(MonitorCount)(&cMonitors));
                 com::SafeArray<BOOL> saScreens(cMonitors);
                 if (   a->argc == 4
                     && !strcmp(a->argv[3], "all"))
