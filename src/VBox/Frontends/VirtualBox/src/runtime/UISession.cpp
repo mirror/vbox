@@ -1396,7 +1396,8 @@ void UISession::cleanupFramebuffers()
     m_frameBufferVector.clear();
 
     /* Make sure action-pool knows guest-screen count: */
-    actionPool()->toRuntime()->setGuestScreenCount(m_frameBufferVector.size());
+    if (actionPool())
+        actionPool()->toRuntime()->setGuestScreenCount(m_frameBufferVector.size());
 }
 
 void UISession::cleanupConsoleEventHandlers()
