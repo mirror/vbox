@@ -25,6 +25,8 @@
   encoding="utf-8"
   indent="no"/>
 
+<xsl:param name="g_sErrHFile"/>
+
 <xsl:template match="/">
 <xsl:text># -*- coding: utf-8 -*-
 
@@ -68,8 +70,14 @@ class VirtualBoxReflectionInfo:
     def __init__(self, fIsSym):
         self.__fIsSym = fIsSym
 
-    __dValues = {</xsl:text>
+    # iprt/err.h + VBox/err.h constants:
+    __dVBoxStatuses = {</xsl:text>
+    <xsl:value-of select="document($g_sErrHFile)"/>
 
+    <xsl:text disable-output-escaping="yes"><![CDATA[
+    }
+
+    __dValues = {]]></xsl:text>
     <xsl:for-each select="//enum">
         <xsl:text>
         '</xsl:text> <xsl:value-of select="@name"/><xsl:text>': {</xsl:text>
@@ -82,8 +90,10 @@ class VirtualBoxReflectionInfo:
         <xsl:text>
         },</xsl:text>
     </xsl:for-each>
-    <!-- hack alert: force new output element to avoid large reallocations. -->
+    <!-- VBox status codes: -->
     <xsl:text disable-output-escaping="yes"><![CDATA[
+        # iprt/err.h + VBox/err.h constants:
+        'VBoxStatus': __dVBoxStatuses,
     }
 
     __dValuesSym = {]]></xsl:text>
@@ -103,7 +113,7 @@ class VirtualBoxReflectionInfo:
     <xsl:text disable-output-escaping="yes"><![CDATA[
     }
 
-    __dValuesFlat = {]]></xsl:text>
+    __dValuesFlat = dict({]]></xsl:text>
     <xsl:for-each select="//enum">
         <xsl:variable name="ename">
             <xsl:value-of select="@name"/>
@@ -123,9 +133,10 @@ class VirtualBoxReflectionInfo:
         '</xsl:text> <xsl:value-of select="@name"/> <xsl:text>': </xsl:text>
         <xsl:value-of select="@value"/><xsl:text>,</xsl:text>
     </xsl:for-each>
+
     <!-- hack alert: force new output element to avoid large reallocations. -->
     <xsl:text>
-    }
+    }, **__dVBoxStatuses)
 
     __dValuesFlatSym = {</xsl:text>
     <xsl:for-each select="//enum">
