@@ -3613,16 +3613,12 @@ VMM_INT_DECL(bool) CPUMIsGuestVmxVmreadVmwriteInterceptSet(PCVMCPU pVCpu, uint32
      * Finally, consult the VMREAD/VMWRITE bitmap whether to intercept the instruction or not.
      */
     uint32_t const u32VmcsField = RT_LO_U32(u64VmcsField);
-    uint8_t const *pbBitmap = uExitReason == VMX_EXIT_VMREAD
-                            ? (uint8_t const *)pVCpu->cpum.s.Guest.hwvirt.vmx.CTX_SUFF(pvVmreadBitmap)
-                            : (uint8_t const *)pVCpu->cpum.s.Guest.hwvirt.vmx.CTX_SUFF(pvVmwriteBitmap);
+    uint8_t const *pbBitmap     = uExitReason == VMX_EXIT_VMREAD
+                                ? (uint8_t const *)pVCpu->cpum.s.Guest.hwvirt.vmx.CTX_SUFF(pvVmreadBitmap)
+                                : (uint8_t const *)pVCpu->cpum.s.Guest.hwvirt.vmx.CTX_SUFF(pvVmwriteBitmap);
     Assert(pbBitmap);
     Assert(u32VmcsField >> 3 < VMX_V_VMREAD_VMWRITE_BITMAP_SIZE);
-    pbBitmap += (u32VmcsField >> 3);
-    if (*pbBitmap & RT_BIT(u32VmcsField & 7))
-        return true;
-
-    return false;
+    return ASMBitTest(pbBitmap + (u32VmcsField >> 3), u32VmcsField & 7);
 #else
     RT_NOREF3(pVCpu, uExitReason, u64VmcsField);
     return false;
