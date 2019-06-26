@@ -16560,6 +16560,11 @@ HMVMX_EXIT_DECL hmR0VmxExitVmread(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
 
+    /*
+     * Strictly speaking we should not get VMREAD VM-exits for shadow VMCS fields and
+     * thus might not need to import the shadow VMCS state, it's safer just in case
+     * code elsewhere dares look at unsynced VMCS fields.
+     */
     int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
     rc    |= hmR0VmxImportGuestState(pVCpu, pVmxTransient->pVmcsInfo, CPUMCTX_EXTRN_RSP | CPUMCTX_EXTRN_SREG_MASK
                                                                     | CPUMCTX_EXTRN_HWVIRT
@@ -16627,9 +16632,9 @@ HMVMX_EXIT_DECL hmR0VmxExitVmwrite(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 
     /*
      * Although we should not get VMWRITE VM-exits for shadow VMCS fields, since
-     * our HM hook that gets invoked when IEM's VMWRITE instruction emulation
-     * modifies the current VMCS signals re-loading the entire shadow VMCS, we
-     * should also save the entire shadow VMCS here.
+     * our HM hook gets invoked when IEM's VMWRITE instruction emulation modifies
+     * the current VMCS signals re-loading the entire shadow VMCS, we should also
+     * save the entire shadow VMCS here.
      */
     int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
     rc    |= hmR0VmxImportGuestState(pVCpu, pVmxTransient->pVmcsInfo, CPUMCTX_EXTRN_RSP | CPUMCTX_EXTRN_SREG_MASK
