@@ -1865,6 +1865,13 @@ HRESULT GuestProcess::waitFor(ULONG aWaitFor, ULONG aTimeoutMS, ProcessWaitResul
 
     LogFlowThisFuncEnter();
 
+    /* Validate flags: */
+    static ULONG const s_fValidFlags = ProcessWaitForFlag_None   | ProcessWaitForFlag_Start  | ProcessWaitForFlag_Terminate
+                                     | ProcessWaitForFlag_StdIn  | ProcessWaitForFlag_StdOut | ProcessWaitForFlag_StdErr;
+    if (aWaitFor & ~s_fValidFlags)
+        return setErrorBoth(E_INVALIDARG, VERR_INVALID_FLAGS, tr("Flags value %#x, invalid: %#x"),
+                            aWaitFor, aWaitFor & ~s_fValidFlags);
+
     /*
      * Note: Do not hold any locks here while waiting!
      */
@@ -1913,6 +1920,11 @@ HRESULT GuestProcess::waitForArray(const std::vector<ProcessWaitForFlag_T> &aWai
 HRESULT GuestProcess::write(ULONG aHandle, ULONG aFlags, const std::vector<BYTE> &aData,
                             ULONG aTimeoutMS, ULONG *aWritten)
 {
+    static ULONG const s_fValidFlags = ProcessInputFlag_None | ProcessInputFlag_EndOfFile;
+    if (aFlags & ~s_fValidFlags)
+        return setErrorBoth(E_INVALIDARG, VERR_INVALID_FLAGS, tr("Flags value %#x, invalid: %#x"),
+                            aFlags, aFlags & ~s_fValidFlags);
+
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
@@ -1921,9 +1933,9 @@ HRESULT GuestProcess::write(ULONG aHandle, ULONG aFlags, const std::vector<BYTE>
     HRESULT hr = S_OK;
 
     uint32_t cbWritten;
-    int rcGuest = VERR_IPE_UNINITIALIZED_STATUS;
-    uint32_t cbData = (uint32_t)aData.size();
-    void *pvData = cbData > 0? (void *)&aData.front(): NULL;
+    int      rcGuest = VERR_IPE_UNINITIALIZED_STATUS;
+    uint32_t cbData  = (uint32_t)aData.size();
+    void    *pvData  = cbData > 0 ? (void *)&aData.front() : NULL;
     int vrc = i_writeData(aHandle, aFlags, pvData, cbData, aTimeoutMS, &cbWritten, &rcGuest);
     if (RT_FAILURE(vrc))
     {
