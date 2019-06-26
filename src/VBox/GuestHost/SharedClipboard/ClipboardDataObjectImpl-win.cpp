@@ -420,6 +420,9 @@ STDMETHODIMP VBoxClipboardWinDataObject::GetData(LPFORMATETC pFormatEtc, LPSTGME
                         }
                     }
                 }
+
+                if (RT_FAILURE(rc))
+                    LogRel(("Shared Clipboard: Data object unable to receive meta data, rc=%Rrc\n", rc));
             }
             break;
         }

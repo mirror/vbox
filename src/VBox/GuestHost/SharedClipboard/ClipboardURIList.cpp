@@ -486,9 +486,6 @@ int SharedClipboardURIList::SetFromURIData(const void *pvData, size_t cbData, SH
     AssertReturn(cbData, VERR_INVALID_PARAMETER);
     AssertReturn(!(fFlags & ~SHAREDCLIPBOARDURILIST_FLAGS_VALID_MASK), VERR_INVALID_FLAGS);
 
-    if (!RTStrIsValidEncoding(static_cast<const char *>(pvData)))
-        return VERR_INVALID_PARAMETER;
-
     RTCList<RTCString> lstURI =
         RTCString(static_cast<const char *>(pvData), cbData - 1).split("\r\n");
     if (lstURI.isEmpty())

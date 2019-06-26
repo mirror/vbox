@@ -42,64 +42,204 @@ extern PFNHGCMSVCEXT g_pfnExtension;
 extern void *g_pvExtension;
 
 
-static DECLCALLBACK(int) vboxSvcClipboardURIProviderImplReadDataHdr(PSHAREDCLIPBOARDPROVIDERCTX pCtx,
-                                                                    PVBOXCLIPBOARDDATAHDR *ppDataHdr)
+/*********************************************************************************************************************************
+*   Provider implementation                                                                                                                    *
+*********************************************************************************************************************************/
+
+int VBoxSvcClipboardProviderImplURIReadDataHdr(PSHAREDCLIPBOARDPROVIDERCTX pCtx, PVBOXCLIPBOARDDATAHDR *ppDataHdr)
 {
-    RT_NOREF(pCtx, ppDataHdr);
-    return VERR_NOT_IMPLEMENTED;
-}
+    LogFlowFuncEnter();
 
-static DECLCALLBACK(int) vboxSvcClipboardURIProviderImplReadObjHdr(PSHAREDCLIPBOARDPROVIDERCTX pCtx,
-                                                                   PVBOXCLIPBOARDDATAHDR *ppDataHdr)
-{
-    RT_NOREF(pCtx, ppDataHdr);
-    return VERR_NOT_IMPLEMENTED;
-}
+    PVBOXCLIPBOARDCLIENTDATA pClientData = (PVBOXCLIPBOARDCLIENTDATA)pCtx->pvUser;
+    AssertPtr(pClientData);
 
-static DECLCALLBACK(int) vboxSvcClipboardURIProviderImplReadDir(PSHAREDCLIPBOARDPROVIDERCTX pCtx,
-                                                                PVBOXCLIPBOARDDIRDATA *ppDirData)
-{
-    RT_NOREF(pCtx, ppDirData);
-    return VERR_NOT_IMPLEMENTED;
-}
+    PSHAREDCLIPBOARDURITRANSFERPAYLOAD pPayload;
+    int rc = SharedClipboardURITransferEventWait(pCtx->pTransfer, SHAREDCLIPBOARDURITRANSFEREVENTTYPE_METADATA_HDR,
+                                                 30 * 1000 /* Timeout in ms */, &pPayload);
+    if (RT_SUCCESS(rc))
+    {
+        Assert(pPayload->cbData == sizeof(VBOXCLIPBOARDDATAHDR));
+        *ppDataHdr = (PVBOXCLIPBOARDDATAHDR)pPayload->pvData;
 
-static DECLCALLBACK(int) vboxSvcClipboardURIProviderImplReadFileHdr(PSHAREDCLIPBOARDPROVIDERCTX pCtx,
-                                                                    PVBOXCLIPBOARDFILEHDR *ppFileHdr)
-{
-    RT_NOREF(pCtx, ppFileHdr);
-    return VERR_NOT_IMPLEMENTED;
-}
+        RTMemFree(pPayload);
+    }
 
-static DECLCALLBACK(int) vboxSvcClipboardURIProviderImplReadFileData(PSHAREDCLIPBOARDPROVIDERCTX pCtX,
-                                                                     void *pvData, uint32_t cbData, uint32_t fFlags,
-                                                                     uint32_t *pcbRead)
-{
-#if 0
-    const PVBOXCLIPBOARDCLIENTDATA pClientData = (PVBOXCLIPBOARDCLIENTDATA)pCtx->pvUser;
-
-    return pObjCtx->pObj->Read(pvBuf, cbBuf, pcbWritten);
-#endif
-
-    RT_NOREF(pCtX, pvData, cbData, fFlags, pcbRead);
-    return VERR_NOT_IMPLEMENTED;
-}
-
-#if 0
-int vboxSvcClipboardURIAnnounce(uint32_t u32Function, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
-{
-    Provider.pfnReadDataHdr    = vboxSvcClipboardURIProviderImplReadDataHdr;
-    Provider.pfnReadDataChunk  = vboxSvcClipboardURIProviderImplReadDataChunk;
-    Provider.pfnReadDir        = vboxSvcClipboardURIProviderImplReadDir;
-    Provider.pfnReadFileHdr    = vboxSvcClipboardURIProviderImplReadFileHdr;
-    Provider.pfnReadFileData   = vboxSvcClipboardURIProviderImplReadFileData;
-
-    Provider.pvUser =
-
-    SharedClipboardURITransferSetProvider(&Provider);
-
+    LogFlowFuncLeaveRC(rc);
     return rc;
 }
-#endif
+
+int VBoxSvcClipboardProviderImplURIWriteDataHdr(PSHAREDCLIPBOARDPROVIDERCTX pCtx, const PVBOXCLIPBOARDDATAHDR pDataHdr)
+{
+    RT_NOREF(pCtx, pDataHdr);
+
+    LogFlowFuncEnter();
+
+    return VERR_NOT_IMPLEMENTED;
+}
+
+int VBoxSvcClipboardProviderImplURIReadDataChunk(PSHAREDCLIPBOARDPROVIDERCTX pCtx, const PVBOXCLIPBOARDDATAHDR pDataHdr,
+                                                 void *pvChunk, uint32_t cbChunk, uint32_t fFlags, uint32_t *pcbRead)
+{
+    RT_NOREF(pDataHdr, fFlags);
+
+    LogFlowFuncEnter();
+
+    PVBOXCLIPBOARDCLIENTDATA pClientData = (PVBOXCLIPBOARDCLIENTDATA)pCtx->pvUser;
+    AssertPtr(pClientData);
+
+    PSHAREDCLIPBOARDURITRANSFERPAYLOAD pPayload;
+    int rc = SharedClipboardURITransferEventWait(pCtx->pTransfer, SHAREDCLIPBOARDURITRANSFEREVENTTYPE_METADATA_CHUNK,
+                                                 30 * 1000 /* Timeout in ms */, &pPayload);
+    if (RT_SUCCESS(rc))
+    {
+        Assert(pPayload->cbData == sizeof(VBOXCLIPBOARDDATACHUNK));
+
+        const uint32_t cbToRead = RT_MIN(cbChunk, pPayload->cbData);
+
+        memcpy(pvChunk, pPayload->pvData, cbToRead);
+
+        SharedClipboardURITransferPayloadFree(pPayload);
+
+        if (pcbRead)
+            *pcbRead = cbToRead;
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+int VBoxSvcClipboardProviderImplURIWriteDataChunk(PSHAREDCLIPBOARDPROVIDERCTX pCtx, const PVBOXCLIPBOARDDATAHDR pDataHdr,
+                                                  const void *pvChunk, uint32_t cbChunk, uint32_t fFlags, uint32_t *pcbWritten)
+{
+    RT_NOREF(pCtx, pDataHdr, pvChunk, cbChunk, fFlags, pcbWritten);
+
+    LogFlowFuncEnter();
+
+    return VERR_NOT_IMPLEMENTED;
+}
+
+int VBoxSvcClipboardProviderImplURIReadDir(PSHAREDCLIPBOARDPROVIDERCTX pCtx, PVBOXCLIPBOARDDIRDATA *ppDirData)
+{
+    RT_NOREF(pCtx, ppDirData);
+
+    LogFlowFuncEnter();
+
+    return VERR_NOT_IMPLEMENTED;
+}
+
+int VBoxSvcClipboardProviderImplURIWriteDir(PSHAREDCLIPBOARDPROVIDERCTX pCtx, const PVBOXCLIPBOARDDIRDATA pDirData)
+{
+    RT_NOREF(pCtx, pDirData);
+
+    LogFlowFuncEnter();
+
+    return VERR_NOT_IMPLEMENTED;
+}
+
+int VBoxSvcClipboardProviderImplURIReadFileHdr(PSHAREDCLIPBOARDPROVIDERCTX pCtx, PVBOXCLIPBOARDFILEHDR *ppFileHdr)
+{
+    RT_NOREF(pCtx, ppFileHdr);
+
+    LogFlowFuncEnter();
+
+    return VERR_NOT_IMPLEMENTED;
+}
+
+int VBoxSvcClipboardProviderImplURIWriteFileHdr(PSHAREDCLIPBOARDPROVIDERCTX pCtx, const PVBOXCLIPBOARDFILEHDR pFileHdr)
+{
+    RT_NOREF(pCtx, pFileHdr);
+
+    LogFlowFuncEnter();
+
+    return VERR_NOT_IMPLEMENTED;
+}
+
+int VBoxSvcClipboardProviderImplURIReadFileData(PSHAREDCLIPBOARDPROVIDERCTX pCtx, void *pvData, uint32_t cbData, uint32_t fFlags,
+                                                uint32_t *pcbRead)
+{
+    RT_NOREF(pCtx, pvData, cbData, fFlags, pcbRead);
+
+    LogFlowFuncEnter();
+
+    return VERR_NOT_IMPLEMENTED;
+}
+
+int VBoxSvcClipboardProviderImplURIWriteFileData(PSHAREDCLIPBOARDPROVIDERCTX pCtx, void *pvData, uint32_t cbData, uint32_t fFlags,
+                                                 uint32_t *pcbWritten)
+{
+    RT_NOREF(pCtx, pvData, cbData, fFlags, pcbWritten);
+
+    LogFlowFuncEnter();
+
+    return VERR_NOT_IMPLEMENTED;
+}
+
+/*********************************************************************************************************************************
+*   URI callbacks                                                                                                                    *
+*********************************************************************************************************************************/
+
+DECLCALLBACK(void) VBoxSvcClipboardURITransferPrepareCallback(PSHAREDCLIPBOARDURITRANSFERCALLBACKDATA pData)
+{
+    LogFlowFuncEnter();
+
+    LogFlowFuncEnter();
+
+    AssertPtrReturnVoid(pData);
+
+    PVBOXCLIPBOARDCLIENTDATA pClientData = (PVBOXCLIPBOARDCLIENTDATA)pData->pvUser;
+    AssertPtrReturnVoid(pClientData);
+
+    /* Tell the guest that it can start sending URI data. */
+    int rc2 = vboxSvcClipboardReportMsg(pClientData, VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA,
+                                        VBOX_SHARED_CLIPBOARD_FMT_URI_LIST);
+    AssertRC(rc2);
+
+    rc2 = SharedClipboardURITransferEventRegister(pData->pTransfer, SHAREDCLIPBOARDURITRANSFEREVENTTYPE_METADATA_HDR);
+    AssertRC(rc2);
+    rc2 = SharedClipboardURITransferEventRegister(pData->pTransfer, SHAREDCLIPBOARDURITRANSFEREVENTTYPE_METADATA_CHUNK);
+    AssertRC(rc2);
+}
+
+DECLCALLBACK(void) VBoxSvcClipboardURIDataHeaderCompleteCallback(PSHAREDCLIPBOARDURITRANSFERCALLBACKDATA pData)
+{
+    LogFlowFuncEnter();
+
+    RT_NOREF(pData);
+}
+
+DECLCALLBACK(void) VBoxSvcClipboardURIDataCompleteCallback(PSHAREDCLIPBOARDURITRANSFERCALLBACKDATA pData)
+{
+    LogFlowFuncEnter();
+
+    VBoxClipboardSvcImplURIOnDataHeaderComplete(pData);
+}
+
+DECLCALLBACK(void) VBoxSvcClipboardURITransferCompleteCallback(PSHAREDCLIPBOARDURITRANSFERCALLBACKDATA pData, int rc)
+{
+    LogFlowFuncEnter();
+
+    RT_NOREF(pData, rc);
+
+    LogRel2(("Shared Clipboard: Transfer complete\n"));
+}
+
+DECLCALLBACK(void) VBoxSvcClipboardURITransferCanceledCallback(PSHAREDCLIPBOARDURITRANSFERCALLBACKDATA pData)
+{
+    LogFlowFuncEnter();
+
+    RT_NOREF(pData);
+
+    LogRel2(("Shared Clipboard: Transfer canceled\n"));
+}
+
+DECLCALLBACK(void) VBoxSvcClipboardURITransferErrorCallback(PSHAREDCLIPBOARDURITRANSFERCALLBACKDATA pData, int rc)
+{
+    LogFlowFuncEnter();
+
+    RT_NOREF(pData, rc);
+
+    LogRel(("Shared Clipboard: Transfer failed with %Rrc\n", rc));
+}
 
 /**
  * Gets an URI data header from HGCM service parameters.
@@ -496,9 +636,9 @@ int vboxSvcClipboardURIHandler(uint32_t u32ClientID,
         return VERR_NOT_SUPPORTED;
     }
 
-    if (!SharedClipboardURICtxGetRunningTransfers(&pClientData->URI))
+    if (!SharedClipboardURICtxGetTotalTransfers(&pClientData->URI))
     {
-        LogFunc(("No running transfers found\n"));
+        LogFunc(("No transfers found\n"));
         return VERR_WRONG_ORDER;
     }
 
@@ -533,9 +673,23 @@ int vboxSvcClipboardURIHandler(uint32_t u32ClientID,
             VBOXCLIPBOARDDATAHDR dataHdr;
             rc = SharedClipboardURIDataHdrInit(&dataHdr);
             if (RT_SUCCESS(rc))
+            {
                 rc = VBoxSvcClipboardURIGetDataHdr(cParms, paParms, &dataHdr);
-            /*if (RT_SUCCESS(rc))
-                rc = SharedClipboardURITransferSetDataHeader(&dataHdr);*/
+                if (RT_SUCCESS(rc))
+                {
+                    void    *pvData = SharedClipboardURIDataHdrDup(&dataHdr);
+                    uint32_t cbData = sizeof(VBOXCLIPBOARDDATAHDR);
+
+                    PSHAREDCLIPBOARDURITRANSFERPAYLOAD pPayload;
+                    rc = SharedClipboardURITransferPayloadAlloc(SHAREDCLIPBOARDURITRANSFEREVENTTYPE_METADATA_HDR,
+                                                                pvData, cbData, &pPayload);
+                    if (RT_SUCCESS(rc))
+                    {
+                        rc = SharedClipboardURITransferEventSignal(pTransfer, SHAREDCLIPBOARDURITRANSFEREVENTTYPE_METADATA_HDR,
+                                                                   pPayload);
+                    }
+                }
+            }
             break;
         }
 
@@ -552,14 +706,24 @@ int vboxSvcClipboardURIHandler(uint32_t u32ClientID,
             VBOXCLIPBOARDDATACHUNK dataChunk;
             rc = SharedClipboardURIDataChunkInit(&dataChunk);
             if (RT_SUCCESS(rc))
-                rc = VBoxSvcClipboardURIGetDataChunk(cParms, paParms, &dataChunk);
-    #if 0
-            if (RT_SUCCESS(rc))
             {
-                VBOXCLIPBOARDTRANSFEREVENT Event = { &dataChunk, sizeof(dataChunk) };
-                rc = SharedClipboardURITransferSendEvent(WRITE_DATA_CHUNK, &Event);
+                rc = VBoxSvcClipboardURIGetDataChunk(cParms, paParms, &dataChunk);
+                if (RT_SUCCESS(rc))
+                {
+                    void    *pvData = SharedClipboardURIDataChunkDup(&dataChunk);
+                    uint32_t cbData = sizeof(VBOXCLIPBOARDDATACHUNK);
+
+                    PSHAREDCLIPBOARDURITRANSFERPAYLOAD pPayload;
+                    rc = SharedClipboardURITransferPayloadAlloc(SHAREDCLIPBOARDURITRANSFEREVENTTYPE_METADATA_CHUNK,
+                                                                pvData, cbData, &pPayload);
+                    if (RT_SUCCESS(rc))
+                    {
+                        rc = SharedClipboardURITransferEventSignal(pTransfer, SHAREDCLIPBOARDURITRANSFEREVENTTYPE_METADATA_CHUNK,
+                                                                   pPayload);
+                    }
+
+                }
             }
-        #endif
             break;
         }
 

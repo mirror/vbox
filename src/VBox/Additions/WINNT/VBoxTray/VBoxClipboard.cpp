@@ -595,7 +595,9 @@ static LRESULT vboxClipboardWinProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd,
                         LogFunc(("VBOX_SHARED_CLIPBOARD_FMT_URI_LIST\n"));
 
                         PSHAREDCLIPBOARDURITRANSFER pTransfer;
-                        rc = SharedClipboardURITransferCreate(SHAREDCLIPBOARDURITRANSFERDIR_READ, &pTransfer);
+                        rc = SharedClipboardURITransferCreate(SHAREDCLIPBOARDURITRANSFERDIR_READ,
+                                                              SHAREDCLIPBOARDSOURCE_REMOTE,
+                                                              &pTransfer);
                         if (RT_SUCCESS(rc))
                         {
                             SHAREDCLIPBOARDURITRANSFERCALLBACKS TransferCallbacks;
@@ -619,8 +621,6 @@ static LRESULT vboxClipboardWinProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd,
                             creationCtx.Interface.pfnReadFileData   = vboxClipboardURIReadFileData;
 
                             creationCtx.pvUser = pCtx;
-
-                            creationCtx.u.VbglR3.uClientID = pCtx->u32ClientID;
 
                             rc = SharedClipboardURITransferProviderCreate(pTransfer, &creationCtx);
                             if (RT_SUCCESS(rc))
@@ -727,7 +727,9 @@ static LRESULT vboxClipboardWinProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd,
                             SharedClipboardURICtxGetRunningTransfers(&pCtx->URI)));
 
                     PSHAREDCLIPBOARDURITRANSFER pTransfer;
-                    rc = SharedClipboardURITransferCreate(SHAREDCLIPBOARDURITRANSFERDIR_WRITE, &pTransfer);
+                    rc = SharedClipboardURITransferCreate(SHAREDCLIPBOARDURITRANSFERDIR_WRITE,
+                                                          SHAREDCLIPBOARDSOURCE_LOCAL,
+                                                          &pTransfer);
                     if (RT_SUCCESS(rc))
                     {
                         SHAREDCLIPBOARDURITRANSFERCALLBACKS TransferCallbacks;
@@ -742,7 +744,15 @@ static LRESULT vboxClipboardWinProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd,
                         SHAREDCLIPBOARDPROVIDERCREATIONCTX creationCtx;
                         RT_ZERO(creationCtx);
                         creationCtx.enmSource          = SHAREDCLIPBOARDSOURCE_LOCAL;
-                        creationCtx.u.VbglR3.uClientID = pCtx->u32ClientID;
+
+                        RT_ZERO(creationCtx.Interface);
+                        creationCtx.Interface.pfnWriteDataHdr   = vboxClipboardURIWriteDataHdr;
+                        creationCtx.Interface.pfnWriteDataChunk = vboxClipboardURIWriteDataChunk;
+                        creationCtx.Interface.pfnWriteDirectory = vboxClipboardURIWriteDir;
+                        creationCtx.Interface.pfnWriteFileHdr   = vboxClipboardURIWriteFileHdr;
+                        creationCtx.Interface.pfnWriteFileData  = vboxClipboardURIWriteFileData;
+
+                        creationCtx.pvUser = pCtx;
 
                         rc = SharedClipboardURITransferProviderCreate(pTransfer, &creationCtx);
                         if (RT_SUCCESS(rc))

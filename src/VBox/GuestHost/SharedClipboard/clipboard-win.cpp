@@ -851,15 +851,7 @@ int VBoxClipboardWinURITransferCreate(PVBOXCLIPBOARDWINCTX pWinCtx, PSHAREDCLIPB
 
     int rc;
 
-    if (pTransfer->pvUser)
-    {
-        Assert(pTransfer->cbUser == sizeof(SharedClipboardWinURITransferCtx));
-        SharedClipboardWinURITransferCtx *pWinURITransferCtx = (SharedClipboardWinURITransferCtx *)pTransfer->pvUser;
-        Assert(pWinURITransferCtx);
-
-        if (pWinURITransferCtx->pDataObj)
-            delete pWinURITransferCtx->pDataObj;
-    }
+    AssertReturn(pTransfer->pvUser == NULL, VERR_WRONG_ORDER);
 
     SharedClipboardWinURITransferCtx *pWinURITransferCtx = new SharedClipboardWinURITransferCtx();
     if (pWinURITransferCtx)

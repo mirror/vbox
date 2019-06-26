@@ -28,6 +28,7 @@
 
 #include <VBox/GuestHost/SharedClipboard.h>
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+# include <iprt/semaphore.h>
 # include <VBox/GuestHost/SharedClipboard-uri.h>
 #endif
 
@@ -42,30 +43,6 @@ typedef struct _VBOXCLIPBOARDCLIENTURIOBJCTX
 } VBOXCLIPBOARDCLIENTURIOBJCTX, *PVBOXCLIPBOARDCLIENTURIOBJCTX;
 
 struct VBOXCLIPBOARDCLIENTSTATE;
-
-/**
- * Structure for maintaining a single URI transfer.
- * A transfer can contain one or multiple files / directories.
- */
-typedef struct _VBOXCLIPBOARDCLIENTURITRANSFER
-{
-    /** Node for keeping this transfer in a RTList. */
-    RTLISTNODE                     Node;
-    /** Pointer to the client state (parent). */
-    VBOXCLIPBOARDCLIENTSTATE      *pState;
-    /** The transfer's own (local) area.
-     *  The area itself has a clipboard area ID assigned, which gets shared (maintained / locked) across all
-     *  VMs via VBoxSVC. */
-    SharedClipboardArea            Area;
-    /** The transfer's URI list, containing the fs object root entries. */
-    SharedClipboardURIList         List;
-    /** Current object being handled. */
-    VBOXCLIPBOARDCLIENTURIOBJCTX   ObjCtx;
-    /** The transfer header, needed for verification and accounting. */
-    VBOXCLIPBOARDDATAHDR           Hdr;
-    /** Intermediate meta data object. */
-    SHAREDCLIPBOARDMETADATA        Meta;
-} VBOXCLIPBOARDCLIENTURITRANSFER, *PVBOXCLIPBOARDCLIENTURITRANSFER;
 #endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
 
 /**
@@ -161,21 +138,28 @@ int VBoxClipboardSvcImplWriteData(PVBOXCLIPBOARDCLIENTDATA pClientData, void *pv
 int VBoxClipboardSvcImplSync(PVBOXCLIPBOARDCLIENTDATA pClientData);
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+int VBoxSvcClipboardProviderImplURIReadDataHdr(PSHAREDCLIPBOARDPROVIDERCTX pCtx, PVBOXCLIPBOARDDATAHDR *ppDataHdr);
+int VBoxSvcClipboardProviderImplURIWriteDataHdr(PSHAREDCLIPBOARDPROVIDERCTX pCtx, const PVBOXCLIPBOARDDATAHDR pDataHdr);
+int VBoxSvcClipboardProviderImplURIReadDataChunk(PSHAREDCLIPBOARDPROVIDERCTX pCtx, const PVBOXCLIPBOARDDATAHDR pDataHdr, void *pvChunk, uint32_t cbChunk, uint32_t fFlags, uint32_t *pcbRead);
+int VBoxSvcClipboardProviderImplURIWriteDataChunk(PSHAREDCLIPBOARDPROVIDERCTX pCtx, const PVBOXCLIPBOARDDATAHDR pDataHdr, const void *pvChunk, uint32_t cbChunk, uint32_t fFlags, uint32_t *pcbWritten);
+int VBoxSvcClipboardProviderImplURIReadDir(PSHAREDCLIPBOARDPROVIDERCTX pCtx, PVBOXCLIPBOARDDIRDATA *ppDirData);
+int VBoxSvcClipboardProviderImplURIWriteDir(PSHAREDCLIPBOARDPROVIDERCTX pCtx, const PVBOXCLIPBOARDDIRDATA pDirData);
+int VBoxSvcClipboardProviderImplURIReadFileHdr(PSHAREDCLIPBOARDPROVIDERCTX pCtx, PVBOXCLIPBOARDFILEHDR *ppFileHdr);
+int VBoxSvcClipboardProviderImplURIWriteFileHdr(PSHAREDCLIPBOARDPROVIDERCTX pCtx, const PVBOXCLIPBOARDFILEHDR pFileHdr);
+int VBoxSvcClipboardProviderImplURIReadFileData(PSHAREDCLIPBOARDPROVIDERCTX pCtx, void *pvData, uint32_t cbData, uint32_t fFlags, uint32_t *pcbRead);
+int VBoxSvcClipboardProviderImplURIWriteFileData(PSHAREDCLIPBOARDPROVIDERCTX pCtx, void *pvData, uint32_t cbData, uint32_t fFlags, uint32_t *pcbWritten);
+
+DECLCALLBACK(void) VBoxSvcClipboardURITransferPrepareCallback(PSHAREDCLIPBOARDURITRANSFERCALLBACKDATA pData);
+DECLCALLBACK(void) VBoxSvcClipboardURIDataHeaderCompleteCallback(PSHAREDCLIPBOARDURITRANSFERCALLBACKDATA pData);
+DECLCALLBACK(void) VBoxSvcClipboardURIDataCompleteCallback(PSHAREDCLIPBOARDURITRANSFERCALLBACKDATA pData);
+DECLCALLBACK(void) VBoxSvcClipboardURITransferCompleteCallback(PSHAREDCLIPBOARDURITRANSFERCALLBACKDATA pData, int rc);
+DECLCALLBACK(void) VBoxSvcClipboardURITransferCanceledCallback(PSHAREDCLIPBOARDURITRANSFERCALLBACKDATA pData);
+DECLCALLBACK(void) VBoxSvcClipboardURITransferErrorCallback(PSHAREDCLIPBOARDURITRANSFERCALLBACKDATA pData, int rc);
+
 int VBoxClipboardSvcImplURITransferCreate(PVBOXCLIPBOARDCLIENTDATA pClientData, PSHAREDCLIPBOARDURITRANSFER pTransfer);
 int VBoxClipboardSvcImplURITransferDestroy(PVBOXCLIPBOARDCLIENTDATA pClientData, PSHAREDCLIPBOARDURITRANSFER pTransfer);
 
-int VBoxClipboardSvcImplURIReadDataHdr(PSHAREDCLIPBOARDPROVIDERCTX pCtx, PVBOXCLIPBOARDDATAHDR *ppDataHdr);
-int VBoxClipboardSvcImplURIWriteDataHdr(PSHAREDCLIPBOARDPROVIDERCTX pCtx, const PVBOXCLIPBOARDDATAHDR pDataHdr);
-int VBoxClipboardSvcImplURIReadDataChunk(PSHAREDCLIPBOARDPROVIDERCTX pCtx, const PVBOXCLIPBOARDDATAHDR pDataHdr, void *pvChunk, uint32_t cbChunk, uint32_t fFlags, uint32_t *pcbRead);
-int VBoxClipboardSvcImplURIWriteDataChunk(PSHAREDCLIPBOARDPROVIDERCTX pCtx, const PVBOXCLIPBOARDDATAHDR pDataHdr, const void *pvChunk, uint32_t cbChunk, uint32_t fFlags, uint32_t *pcbWritten);
-
-int VBoxClipboardSvcImplURIReadDir(PSHAREDCLIPBOARDPROVIDERCTX pCtx, PVBOXCLIPBOARDDIRDATA *ppDirData);
-int VBoxClipboardSvcImplURIWriteDir(PSHAREDCLIPBOARDPROVIDERCTX pCtx, const PVBOXCLIPBOARDDIRDATA pDirData);
-
-int VBoxClipboardSvcImplURIReadFileHdr(PSHAREDCLIPBOARDPROVIDERCTX pCtx, PVBOXCLIPBOARDFILEHDR *ppFileHdr);
-int VBoxClipboardSvcImplURIWriteFileHdr(PSHAREDCLIPBOARDPROVIDERCTX pCtx, const PVBOXCLIPBOARDFILEHDR pFileHdr);
-int VBoxClipboardSvcImplURIReadFileData(PSHAREDCLIPBOARDPROVIDERCTX pCtx, void *pvData, uint32_t cbData, uint32_t fFlags, uint32_t *pcbRead);
-int VBoxClipboardSvcImplURIWriteFileData(PSHAREDCLIPBOARDPROVIDERCTX pCtx, void *pvData, uint32_t cbData, uint32_t fFlags, uint32_t *pcbWritten);
+void VBoxClipboardSvcImplURIOnDataHeaderComplete(PSHAREDCLIPBOARDURITRANSFERCALLBACKDATA pData);
 #endif
 
 /* Host unit testing interface */

@@ -137,7 +137,7 @@ static int vboxClipboardSvcWinRequestData(PVBOXCLIPBOARDCONTEXT pCtx, VBOXCLIPBO
     Assert(pCtx->hRenderEvent);
     Assert(pCtx->pClientData->State.data.pv == NULL && pCtx->pClientData->State.data.cb == 0 && pCtx->pClientData->State.data.u32Format == 0);
 
-    LogFlowFunc(("fFormat=%02X\n", fFormat));
+    LogFlowFunc(("fFormat=%02X, uTimeoutMs=%RU32\n", fFormat, uTimeoutMs));
 
     int rc = vboxSvcClipboardReportMsg(pCtx->pClientData, VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA, fFormat);
     if (   RT_SUCCESS(rc)
@@ -769,22 +769,7 @@ int VBoxClipboardSvcImplWriteData(PVBOXCLIPBOARDCLIENTDATA pClientData, void *pv
 }
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
-DECLCALLBACK(void) vboxClipboardSvcWinURITransferPrepareCallback(PSHAREDCLIPBOARDURITRANSFERCALLBACKDATA pData)
-{
-    LogFlowFuncEnter();
-
-    AssertPtrReturnVoid(pData);
-
-    PVBOXCLIPBOARDCLIENTDATA pClientData = (PVBOXCLIPBOARDCLIENTDATA)pData->pvUser;
-    AssertPtrReturnVoid(pClientData);
-
-    /* Tell the guest that it can start sending URI data. */
-    int rc2 = vboxSvcClipboardReportMsg(pClientData, VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA,
-                                        VBOX_SHARED_CLIPBOARD_FMT_URI_LIST);
-    AssertRC(rc2);
-}
-
-DECLCALLBACK(void) vboxClipboardSvcWinURIDataCompleteCallback(PSHAREDCLIPBOARDURITRANSFERCALLBACKDATA pData)
+void VBoxClipboardSvcImplURIOnDataHeaderComplete(PSHAREDCLIPBOARDURITRANSFERCALLBACKDATA pData)
 {
     LogFlowFuncEnter();
 
@@ -803,16 +788,9 @@ DECLCALLBACK(void) vboxClipboardSvcWinURIDataCompleteCallback(PSHAREDCLIPBOARDUR
 
 int VBoxClipboardSvcImplURITransferCreate(PVBOXCLIPBOARDCLIENTDATA pClientData, PSHAREDCLIPBOARDURITRANSFER pTransfer)
 {
+    RT_NOREF(pClientData, pTransfer);
+
     LogFlowFuncEnter();
-
-    /* Register needed callbacks so that we can wait for the meta data to arrive here. */
-    SHAREDCLIPBOARDURITRANSFERCALLBACKS Callbacks;
-    RT_ZERO(Callbacks);
-
-    Callbacks.pvUser              = pClientData;
-    Callbacks.pfnTransferPrepare  = vboxClipboardSvcWinURITransferPrepareCallback;
-
-    SharedClipboardURITransferSetCallbacks(pTransfer, &Callbacks);
 
     return VINF_SUCCESS;
 }
@@ -824,77 +802,6 @@ int VBoxClipboardSvcImplURITransferDestroy(PVBOXCLIPBOARDCLIENTDATA pClientData,
     VBoxClipboardWinURITransferDestroy(&pClientData->State.pCtx->Win, pTransfer);
 
     return VINF_SUCCESS;
-}
-
-int VBoxClipboardSvcImplURIReadDataHdr(PSHAREDCLIPBOARDPROVIDERCTX pCtx, PVBOXCLIPBOARDDATAHDR *ppDataHdr)
-{
-    RT_NOREF(ppDataHdr);
-
-    LogFlowFuncEnter();
-
-    PVBOXCLIPBOARDCLIENTDATA pClientData = (PVBOXCLIPBOARDCLIENTDATA)pCtx->pvUser;
-    AssertPtr(pClientData);
-
-
-    return VERR_NOT_IMPLEMENTED;
-}
-
-int VBoxClipboardSvcImplURIWriteDataHdr(PSHAREDCLIPBOARDPROVIDERCTX pCtx, const PVBOXCLIPBOARDDATAHDR pDataHdr)
-{
-    RT_NOREF(pCtx, pDataHdr);
-    return VERR_NOT_IMPLEMENTED;
-}
-
-int VBoxClipboardSvcImplURIReadDataChunk(PSHAREDCLIPBOARDPROVIDERCTX pCtx, const PVBOXCLIPBOARDDATAHDR pDataHdr,
-                                         void *pvChunk, uint32_t cbChunk, uint32_t fFlags, uint32_t *pcbRead)
-{
-    RT_NOREF(pCtx, pDataHdr, pvChunk, cbChunk, fFlags, pcbRead);
-    return VERR_NOT_IMPLEMENTED;
-}
-
-int VBoxClipboardSvcImplURIWriteDataChunk(PSHAREDCLIPBOARDPROVIDERCTX pCtx, const PVBOXCLIPBOARDDATAHDR pDataHdr,
-                                          const void *pvChunk, uint32_t cbChunk, uint32_t fFlags, uint32_t *pcbWritten)
-{
-    RT_NOREF(pCtx, pDataHdr, pvChunk, cbChunk, fFlags, pcbWritten);
-    return VERR_NOT_IMPLEMENTED;
-}
-
-int VBoxClipboardSvcImplURIReadDir(PSHAREDCLIPBOARDPROVIDERCTX pCtx, PVBOXCLIPBOARDDIRDATA *ppDirData)
-{
-    RT_NOREF(pCtx, ppDirData);
-    return VERR_NOT_IMPLEMENTED;
-}
-
-int VBoxClipboardSvcImplURIWriteDir(PSHAREDCLIPBOARDPROVIDERCTX pCtx, const PVBOXCLIPBOARDDIRDATA pDirData)
-{
-    RT_NOREF(pCtx, pDirData);
-    return VERR_NOT_IMPLEMENTED;
-}
-
-int VBoxClipboardSvcImplURIReadFileHdr(PSHAREDCLIPBOARDPROVIDERCTX pCtx, PVBOXCLIPBOARDFILEHDR *ppFileHdr)
-{
-    RT_NOREF(pCtx, ppFileHdr);
-    return VERR_NOT_IMPLEMENTED;
-}
-
-int VBoxClipboardSvcImplURIWriteFileHdr(PSHAREDCLIPBOARDPROVIDERCTX pCtx, const PVBOXCLIPBOARDFILEHDR pFileHdr)
-{
-    RT_NOREF(pCtx, pFileHdr);
-    return VERR_NOT_IMPLEMENTED;
-}
-
-int VBoxClipboardSvcImplURIReadFileData(PSHAREDCLIPBOARDPROVIDERCTX pCtx, void *pvData, uint32_t cbData, uint32_t fFlags,
-                                        uint32_t *pcbRead)
-{
-    RT_NOREF(pCtx, pvData, cbData, fFlags, pcbRead);
-    return VERR_NOT_IMPLEMENTED;
-}
-
-int VBoxClipboardSvcImplURIWriteFileData(PSHAREDCLIPBOARDPROVIDERCTX pCtx, void *pvData, uint32_t cbData, uint32_t fFlags,
-                                         uint32_t *pcbWritten)
-{
-    RT_NOREF(pCtx, pvData, cbData, fFlags, pcbWritten);
-    return VERR_NOT_IMPLEMENTED;
 }
 #endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
 
