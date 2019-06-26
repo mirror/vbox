@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <layout>
     <name>German</name>
+    <nativename>Deutsch</nativename>
     <physicallayoutid>{d41a0398-92a0-4ba4-beba-3d91a5dd0e50}</physicallayoutid>
     <key>
         <position>110</position>

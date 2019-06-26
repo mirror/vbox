@@ -165,6 +165,7 @@ private slots:
     void sltKeyShiftAltGrCaptionChange(const QString &strCaption);
     void sltPhysicalLayoutChanged();
     void sltLayoutNameChanged(const QString &strCaption);
+    void sltLayoutNativeNameChanged(const QString &strCaption);
 
 private:
 
@@ -182,6 +183,7 @@ private:
     QLabel *m_pTitleLabel;
     QLabel *m_pPhysicalLayoutLabel;
     QLabel *m_pLayoutNameLabel;
+    QLabel *m_pLayoutNativeNameLabel;
     QLabel *m_pScanCodeLabel;
     QLabel *m_pPositionLabel;
     QLabel *m_pBaseCaptionLabel;
@@ -190,6 +192,7 @@ private:
     QLabel *m_pShiftAltGrCaptionLabel;
 
     QLineEdit *m_pLayoutNameEdit;
+    QLineEdit *m_pLayoutNativeNameEdit;
     QLineEdit *m_pScanCodeEdit;
     QLineEdit *m_pPositionEdit;
     QLineEdit *m_pBaseCaptionEdit;
@@ -409,6 +412,9 @@ public:
     void setName(const QString &strName);
     const QString &name() const;
 
+    void setNativeName(const QString &strLocaName);
+    const QString &nativeName() const;
+
     void setSourceFilePath(const QString& strSourceFilePath);
     const QString& sourceFilePath() const;
 
@@ -436,8 +442,9 @@ private:
     /** We cache the key caps here instead of reading the layout files each time layout changes.
       * Map key is the key position and the value is the captions of the key. */
     QMap<int, KeyCaptions> m_keyCapMap;
-
+    /** This is the English name of the layout. */
     QString m_strName;
+    QString m_strNativeName;
     QString m_strSourceFilePath;
     bool    m_fEditable;
     bool    m_fIsFromResources;
@@ -601,6 +608,7 @@ public:
     bool  parseFile(const QString &strFileName);
     const QUuid &physicalLayoutUUID() const;
     const QString &name() const;
+    const QString &nativeName() const;
     const QMap<int, KeyCaptions> &keyCapMap() const;
 
 private:
@@ -611,6 +619,7 @@ private:
     QMap<int, KeyCaptions> m_keyCapMap;
     QUuid m_physicalLayoutUid;
     QString m_strName;
+    QString m_strNativeName;
 };
 
 
@@ -697,6 +706,7 @@ UILayoutEditor::UILayoutEditor(QWidget *pParent /* = 0 */)
     , m_pTitleLabel(0)
     , m_pPhysicalLayoutLabel(0)
     , m_pLayoutNameLabel(0)
+    , m_pLayoutNativeNameLabel(0)
     , m_pScanCodeLabel(0)
     , m_pPositionLabel(0)
     , m_pBaseCaptionLabel(0)
@@ -704,6 +714,7 @@ UILayoutEditor::UILayoutEditor(QWidget *pParent /* = 0 */)
     , m_pAltGrCaptionLabel(0)
     , m_pShiftAltGrCaptionLabel(0)
     , m_pLayoutNameEdit(0)
+    , m_pLayoutNativeNameEdit(0)
     , m_pScanCodeEdit(0)
     , m_pPositionEdit(0)
     , m_pBaseCaptionEdit(0)
@@ -768,6 +779,9 @@ void UILayoutEditor::setLayoutToEdit(UISoftKeyboardLayout *pLayout)
     if (m_pLayoutNameEdit)
         m_pLayoutNameEdit->setText(m_pLayout ? m_pLayout->name() : QString());
 
+    if (m_pLayoutNativeNameEdit)
+        m_pLayoutNativeNameEdit->setText(m_pLayout ? m_pLayout->nativeName() : QString());
+
     if (m_pPhysicalLayoutCombo && m_pLayout)
     {
         int iIndex = m_pPhysicalLayoutCombo->findData(m_pLayout->physicalLayoutUuid());
@@ -798,7 +812,9 @@ void UILayoutEditor::retranslateUi()
     if (m_pPhysicalLayoutLabel)
         m_pPhysicalLayoutLabel->setText(UISoftKeyboard::tr("Physical Layout"));
     if (m_pLayoutNameLabel)
-        m_pLayoutNameLabel->setText(UISoftKeyboard::tr("Layout Name"));
+        m_pLayoutNameLabel->setText(UISoftKeyboard::tr("English Name"));
+    if (m_pLayoutNativeNameLabel)
+        m_pLayoutNativeNameLabel->setText(UISoftKeyboard::tr("Native Language Name"));
     if (m_pScanCodeLabel)
         m_pScanCodeLabel->setText(UISoftKeyboard::tr("Scan Code"));
     if (m_pPositionLabel)
@@ -867,6 +883,14 @@ void UILayoutEditor::sltLayoutNameChanged(const QString &strName)
     emit sigLayoutEdited();
 }
 
+void UILayoutEditor::sltLayoutNativeNameChanged(const QString &strNativeName)
+{
+    if (!m_pLayout || m_pLayout->nativeName() == strNativeName)
+        return;
+    m_pLayout->setNativeName(strNativeName);
+    emit sigLayoutEdited();
+}
+
 void UILayoutEditor::prepareObjects()
 {
     m_pEditorLayout = new QGridLayout;
@@ -888,27 +912,34 @@ void UILayoutEditor::prepareObjects()
     pTitleLayout->addWidget(m_pTitleLabel);
     m_pEditorLayout->addLayout(pTitleLayout, 0, 0, 1, 2);
 
+    m_pLayoutNativeNameLabel = new QLabel;
+    m_pLayoutNativeNameEdit = new QLineEdit;
+    m_pLayoutNativeNameLabel->setBuddy(m_pLayoutNativeNameEdit);
+    m_pEditorLayout->addWidget(m_pLayoutNativeNameLabel, 2, 0, 1, 1);
+    m_pEditorLayout->addWidget(m_pLayoutNativeNameEdit, 2, 1, 1, 1);
+    connect(m_pLayoutNativeNameEdit, &QLineEdit::textChanged, this, &UILayoutEditor::sltLayoutNativeNameChanged);
+
 
     m_pLayoutNameLabel = new QLabel;
     m_pLayoutNameEdit = new QLineEdit;
     m_pLayoutNameLabel->setBuddy(m_pLayoutNameEdit);
-    m_pEditorLayout->addWidget(m_pLayoutNameLabel, 2, 0, 1, 1);
-    m_pEditorLayout->addWidget(m_pLayoutNameEdit, 2, 1, 1, 1);
+    m_pEditorLayout->addWidget(m_pLayoutNameLabel, 3, 0, 1, 1);
+    m_pEditorLayout->addWidget(m_pLayoutNameEdit, 3, 1, 1, 1);
     connect(m_pLayoutNameEdit, &QLineEdit::textChanged, this, &UILayoutEditor::sltLayoutNameChanged);
 
 
     m_pPhysicalLayoutLabel = new QLabel;
     m_pPhysicalLayoutCombo = new QComboBox;
     m_pPhysicalLayoutLabel->setBuddy(m_pPhysicalLayoutCombo);
-    m_pEditorLayout->addWidget(m_pPhysicalLayoutLabel, 3, 0, 1, 1);
-    m_pEditorLayout->addWidget(m_pPhysicalLayoutCombo, 3, 1, 1, 1);
+    m_pEditorLayout->addWidget(m_pPhysicalLayoutLabel, 4, 0, 1, 1);
+    m_pEditorLayout->addWidget(m_pPhysicalLayoutCombo, 4, 1, 1, 1);
     connect(m_pPhysicalLayoutCombo, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
             this, &UILayoutEditor::sltPhysicalLayoutChanged);
 
     m_pSelectedKeyGroupBox = new QGroupBox;
     m_pSelectedKeyGroupBox->setEnabled(false);
 
-    m_pEditorLayout->addWidget(m_pSelectedKeyGroupBox, 4, 0, 1, 2);
+    m_pEditorLayout->addWidget(m_pSelectedKeyGroupBox, 5, 0, 1, 2);
     QGridLayout *pSelectedKeyLayout = new QGridLayout(m_pSelectedKeyGroupBox);
     pSelectedKeyLayout->setSpacing(0);
     pSelectedKeyLayout->setContentsMargins(0, 0, 0, 0);
@@ -1563,6 +1594,16 @@ const QString &UISoftKeyboardLayout::name() const
     return m_strName;
 }
 
+void UISoftKeyboardLayout::setNativeName(const QString &strNativeName)
+{
+    m_strNativeName = strNativeName;
+}
+
+const QString &UISoftKeyboardLayout::nativeName() const
+{
+    return m_strNativeName;
+}
+
 void UISoftKeyboardLayout::setEditable(bool fEditable)
 {
     m_fEditable = fEditable;
@@ -1601,6 +1642,8 @@ const QMap<int, KeyCaptions> &UISoftKeyboardLayout::keyCapMap() const
 bool UISoftKeyboardLayout::operator==(const UISoftKeyboardLayout &otherLayout)
 {
     if (m_strName != otherLayout.m_strName)
+        return false;
+    if (m_strNativeName != otherLayout.m_strNativeName)
         return false;
     if (m_physicalLayoutUuid != otherLayout.m_physicalLayoutUuid)
         return false;
@@ -1838,6 +1881,7 @@ void UISoftKeyboardWidget::saveCurentLayoutToFile()
     xmlWriter.writeStartDocument("1.0");
     xmlWriter.writeStartElement("layout");
     xmlWriter.writeTextElement("name", m_pCurrentKeyboardLayout->name());
+    xmlWriter.writeTextElement("nativename", m_pCurrentKeyboardLayout->nativeName());
     xmlWriter.writeTextElement("physicallayoutid", pPhysicalLayout->m_uId.toString());
 
     QVector<UISoftKeyboardRow> &rows = pPhysicalLayout->rows();
@@ -1869,8 +1913,14 @@ void UISoftKeyboardWidget::saveCurentLayoutToFile()
 void UISoftKeyboardWidget::copyCurentLayout()
 {
     UISoftKeyboardLayout newLayout(*(m_pCurrentKeyboardLayout));
-    QString strNewName = QString("%1-%2").arg(newLayout.name()).arg(tr("Copy"));
+    QString strNewName;
+    if (!newLayout.name().isEmpty())
+        strNewName= QString("%1-%2").arg(newLayout.name()).arg(tr("Copy"));
+    QString strNewNativeName;
+    if (!newLayout.nativeName().isEmpty())
+        strNewNativeName= QString("%1-%2").arg(newLayout.nativeName()).arg(tr("Copy"));
     newLayout.setName(strNewName);
+    newLayout.setNativeName(strNewNativeName);
     newLayout.setEditable(true);
     newLayout.setIsFromResources(false);
     newLayout.setSourceFilePath(QString());
@@ -2246,6 +2296,7 @@ bool UISoftKeyboardWidget::loadKeyboardLayout(const QString &strLayoutFileName)
     UISoftKeyboardLayout &newLayout = m_layouts.back();
     newLayout.setPhysicalLayoutUuid(pPhysicalLayout->m_uId);
     newLayout.setName(keyboardLayoutReader.name());
+    newLayout.setNativeName(keyboardLayoutReader.nativeName());
     newLayout.setSourceFilePath(strLayoutFileName);
     newLayout.setKeyCapMap(keyboardLayoutReader.keyCapMap());
     return true;
@@ -2652,6 +2703,8 @@ bool UIKeyboardLayoutReader::parseFile(const QString &strFileName)
             parseKey();
         else if (m_xmlReader.name() == "name")
             m_strName = m_xmlReader.readElementText();
+        else if (m_xmlReader.name() == "nativename")
+            m_strNativeName = m_xmlReader.readElementText();
         else if (m_xmlReader.name() == "physicallayoutid")
             m_physicalLayoutUid = QUuid(m_xmlReader.readElementText());
         else
@@ -2668,6 +2721,11 @@ const QUuid &UIKeyboardLayoutReader::physicalLayoutUUID() const
 const QString &UIKeyboardLayoutReader::name() const
 {
     return m_strName;
+}
+
+const QString &UIKeyboardLayoutReader::nativeName() const
+{
+    return m_strNativeName;
 }
 
 const QMap<int, KeyCaptions> &UIKeyboardLayoutReader::keyCapMap() const
