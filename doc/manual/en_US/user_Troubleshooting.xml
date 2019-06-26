@@ -1382,8 +1382,8 @@
       </orderedlist>
 
       <para>
-        Extracting d3d8 and d3d9.dll from a Vista/Windows7 installation
-        CD or Service Pack ISO:
+        <emphasis role="bold">Extracting d3d8 and d3d9.dll from a
+        Vista/Windows7 installation CD or Service Pack ISO:</emphasis>
       </para>
 
       <orderedlist>
