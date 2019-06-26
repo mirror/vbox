@@ -1187,12 +1187,13 @@ static void cpumR3FreeVmxHwVirtState(PVM pVM)
 static int cpumR3AllocVmxHwVirtState(PVM pVM)
 {
     int rc = VINF_SUCCESS;
-    uint32_t const cPages = (2 * VMX_V_VMCS_PAGES)
+    uint32_t const cPages = VMX_V_VMCS_PAGES
+                          + VMX_V_SHADOW_VMCS_PAGES
                           + VMX_V_VIRT_APIC_PAGES
-                          + (2 * VMX_V_VMREAD_VMWRITE_BITMAP_SIZE)
-                          + (3 * VMX_V_AUTOMSR_AREA_SIZE)
-                          + VMX_V_MSR_BITMAP_SIZE
-                          + (VMX_V_IO_BITMAP_A_SIZE + VMX_V_IO_BITMAP_B_SIZE);
+                          + (2 * VMX_V_VMREAD_VMWRITE_BITMAP_PAGES)
+                          + (3 * VMX_V_AUTOMSR_AREA_PAGES)
+                          + VMX_V_MSR_BITMAP_PAGES
+                          + (VMX_V_IO_BITMAP_A_PAGES + VMX_V_IO_BITMAP_B_PAGES);
     LogRel(("CPUM: Allocating %u pages for the nested-guest VMCS and related structures\n", pVM->cCpus * cPages));
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
@@ -1203,7 +1204,6 @@ static int cpumR3AllocVmxHwVirtState(PVM pVM)
         /*
          * Allocate the nested-guest current VMCS.
          */
-        Assert(VMX_V_VMCS_PAGES == 1);
         pCtx->hwvirt.vmx.pVmcsR3 = (PVMXVVMCS)SUPR3ContAlloc(VMX_V_VMCS_PAGES,
                                                              &pCtx->hwvirt.vmx.pVmcsR0,
                                                              &pCtx->hwvirt.vmx.HCPhysVmcs);
@@ -1218,7 +1218,6 @@ static int cpumR3AllocVmxHwVirtState(PVM pVM)
         /*
          * Allocate the nested-guest shadow VMCS.
          */
-        Assert(VMX_V_VMCS_PAGES == 1);
         pCtx->hwvirt.vmx.pShadowVmcsR3 = (PVMXVVMCS)SUPR3ContAlloc(VMX_V_VMCS_PAGES,
                                                                    &pCtx->hwvirt.vmx.pShadowVmcsR0,
                                                                    &pCtx->hwvirt.vmx.HCPhysShadowVmcs);
@@ -1339,7 +1338,7 @@ static int cpumR3AllocVmxHwVirtState(PVM pVM)
          * Zero out all allocated pages (should compress well for saved-state).
          */
         memset(pCtx->hwvirt.vmx.CTX_SUFF(pVmcs),               0, VMX_V_VMCS_SIZE);
-        memset(pCtx->hwvirt.vmx.CTX_SUFF(pShadowVmcs),         0, VMX_V_VMCS_SIZE);
+        memset(pCtx->hwvirt.vmx.CTX_SUFF(pShadowVmcs),         0, VMX_V_SHADOW_VMCS_SIZE);
         memset(pCtx->hwvirt.vmx.CTX_SUFF(pvVmreadBitmap),      0, VMX_V_VMREAD_VMWRITE_BITMAP_SIZE);
         memset(pCtx->hwvirt.vmx.CTX_SUFF(pvVmwriteBitmap),     0, VMX_V_VMREAD_VMWRITE_BITMAP_SIZE);
         memset(pCtx->hwvirt.vmx.CTX_SUFF(pEntryMsrLoadArea),   0, VMX_V_AUTOMSR_AREA_SIZE);
@@ -1370,7 +1369,7 @@ DECLINLINE(void) cpumR3ResetVmxHwVirtState(PVMCPU pVCpu)
     Assert(pCtx->hwvirt.vmx.CTX_SUFF(pShadowVmcs));
 
     memset(pCtx->hwvirt.vmx.CTX_SUFF(pVmcs),       0, VMX_V_VMCS_SIZE);
-    memset(pCtx->hwvirt.vmx.CTX_SUFF(pShadowVmcs), 0, VMX_V_VMCS_SIZE);
+    memset(pCtx->hwvirt.vmx.CTX_SUFF(pShadowVmcs), 0, VMX_V_SHADOW_VMCS_SIZE);
     pCtx->hwvirt.vmx.GCPhysVmxon       = NIL_RTGCPHYS;
     pCtx->hwvirt.vmx.GCPhysShadowVmcs  = NIL_RTGCPHYS;
     pCtx->hwvirt.vmx.GCPhysVmxon       = NIL_RTGCPHYS;
@@ -1427,7 +1426,7 @@ DECLCALLBACK(void) cpumR3InfoVmxFeatures(PVM pVM, PCDBGFINFOHLP pHlp, const char
         VMXFEATDUMP("MovDRxExit - Mov-DR exiting                            ", fVmxMovDRxExit);
         VMXFEATDUMP("UncondIoExit - Unconditional I/O exiting               ", fVmxUncondIoExit);
         VMXFEATDUMP("UseIoBitmaps - Use I/O bitmaps                         ", fVmxUseIoBitmaps);
-        VMXFEATDUMP("MonitorTrapFlag - Monitor trap flag                    ", fVmxMonitorTrapFlag);
+        VMXFEATDUMP("MonitorTrapFlag - Monitor Trap Flag                    ", fVmxMonitorTrapFlag);
         VMXFEATDUMP("UseMsrBitmaps - MSR bitmaps                            ", fVmxUseMsrBitmaps);
         VMXFEATDUMP("MonitorExit - MONITOR exiting                          ", fVmxMonitorExit);
         VMXFEATDUMP("PauseExit - PAUSE exiting                              ", fVmxPauseExit);
@@ -1469,7 +1468,7 @@ DECLCALLBACK(void) cpumR3InfoVmxFeatures(PVM pVM, PCDBGFINFOHLP pHlp, const char
         /* Miscellaneous data. */
         VMXFEATDUMP("ExitSaveEferLma - Save IA32_EFER.LMA on VM-exit        ", fVmxExitSaveEferLma);
         VMXFEATDUMP("IntelPt - Intel PT (Processor Trace) in VMX operation  ", fVmxIntelPt);
-        VMXFEATDUMP("VmwriteAll - Write allowed to read-only VMCS fields    ", fVmxVmwriteAll);
+        VMXFEATDUMP("VmwriteAll - VMWRITE to any supported VMCS field       ", fVmxVmwriteAll);
         VMXFEATDUMP("EntryInjectSoftInt - Inject softint. with 0-len instr. ", fVmxEntryInjectSoftInt);
 #undef VMXFEATDUMP
     }
@@ -1893,7 +1892,7 @@ void cpumR3InitVmxGuestFeaturesAndMsrs(PVM pVM, PCVMXMSRS pHostVmxMsrs, PVMXMSRS
     EmuFeat.fVmxSavePreemptTimer      = 0;
     EmuFeat.fVmxExitSaveEferLma       = 1;
     EmuFeat.fVmxIntelPt               = 0;
-    EmuFeat.fVmxVmwriteAll            = 0;
+    EmuFeat.fVmxVmwriteAll            = 0;  /** @todo NSTVMX: enable this. */
     EmuFeat.fVmxEntryInjectSoftInt    = 0;
 
     /*
