@@ -813,12 +813,20 @@ void UILayoutEditor::retranslateUi()
         m_pPhysicalLayoutLabel->setText(UISoftKeyboard::tr("Physical Layout"));
     if (m_pLayoutNameLabel)
         m_pLayoutNameLabel->setText(UISoftKeyboard::tr("English Name"));
+    if (m_pLayoutNameEdit)
+        m_pLayoutNameEdit->setToolTip(UISoftKeyboard::tr("Name of the Layout in English"));
     if (m_pLayoutNativeNameLabel)
         m_pLayoutNativeNameLabel->setText(UISoftKeyboard::tr("Native Language Name"));
+    if (m_pLayoutNativeNameEdit)
+        m_pLayoutNativeNameEdit->setToolTip(UISoftKeyboard::tr("Name of the Layout in the native Language"));
     if (m_pScanCodeLabel)
         m_pScanCodeLabel->setText(UISoftKeyboard::tr("Scan Code"));
+    if (m_pScanCodeEdit)
+        m_pScanCodeEdit->setToolTip(UISoftKeyboard::tr("The scan code the key produces. Not editable"));
     if (m_pPositionLabel)
         m_pPositionLabel->setText(UISoftKeyboard::tr("Position"));
+    if (m_pPositionEdit)
+        m_pPositionEdit->setToolTip(UISoftKeyboard::tr("The physical position of the key. Not editable"));
     if (m_pBaseCaptionLabel)
         m_pBaseCaptionLabel->setText(UISoftKeyboard::tr("Base"));
     if (m_pShiftCaptionLabel)
