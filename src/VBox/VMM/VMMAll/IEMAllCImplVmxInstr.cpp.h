@@ -2608,8 +2608,11 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexit(PVMCPU pVCpu, uint32_t uExitReason, uint64_
     else
         Log3(("vmexit: Loading host-state failed. uExitReason=%u rc=%Rrc\n", uExitReason, VBOXSTRICTRC_VAL(rcStrict)));
 
+    /* Notify HM that the current VMCS fields have been modified. */
+    HMNotifyVmxNstGstCurrentVmcsChanged(pVCpu);
+
     /* Notify HM that we've completed the VM-exit. */
-    HMNotifyVmxNstGstVmexit(pVCpu, &pVCpu->cpum.GstCtx);
+    HMNotifyVmxNstGstVmexit(pVCpu);
 
     /* We're no longer in nested-guest execution mode. */
     pVCpu->cpum.GstCtx.hwvirt.vmx.fInVmxNonRootMode = false;
@@ -4572,7 +4575,7 @@ IEM_STATIC void iemVmxEvalPendingVirtIntrs(PVMCPU pVCpu)
 
         if ((uRvi >> 4) > (uPpr >> 4))
         {
-            Log2(("eval_virt_intrs: uRvi=%#x uPpr=%#x - Signaling pending interrupt\n", uRvi, uPpr));
+            Log2(("eval_virt_intrs: uRvi=%#x uPpr=%#x - Signalling pending interrupt\n", uRvi, uPpr));
             VMCPU_FF_SET(pVCpu, VMCPU_FF_INTERRUPT_NESTED_GUEST);
         }
         else
@@ -5708,7 +5711,7 @@ IEM_STATIC int iemVmxVmentryCheckGuestNonRegState(PVMCPU pVCpu,  const char *psz
         /* Read the VMCS-link pointer from guest memory. */
         Assert(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pShadowVmcs));
         int rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pShadowVmcs),
-                                         GCPhysShadowVmcs, VMX_V_VMCS_SIZE);
+                                         GCPhysShadowVmcs, VMX_V_SHADOW_VMCS_SIZE);
         if (RT_SUCCESS(rc))
         { /* likely */ }
         else
@@ -7530,7 +7533,55 @@ IEM_STATIC bool iemVmxIsRdmsrWrmsrInterceptSet(PCVMCPU pVCpu, uint32_t uExitReas
 
 
 /**
- * VMREAD common (memory/register) instruction execution worker
+ * VMREAD instruction execution worker that does not perform any validation checks.
+ *
+ * Callers are expected to have performed the necessary checks and to ensure the
+ * VMREAD will succeed.
+ *
+ * @param   pVmcs           Pointer to the virtual VMCS.
+ * @param   pu64Dst         Where to write the VMCS value.
+ * @param   u64VmcsField    The VMCS field.
+ *
+ * @remarks May be called with interrupts disabled.
+ */
+IEM_STATIC void iemVmxVmreadNoCheck(PCVMXVVMCS pVmcs, uint64_t *pu64Dst, uint64_t u64VmcsField)
+{
+    VMXVMCSFIELD VmcsField;
+    VmcsField.u = u64VmcsField;
+    uint8_t  const uWidth     = RT_BF_GET(VmcsField.u, VMX_BF_VMCSFIELD_WIDTH);
+    uint8_t  const uType      = RT_BF_GET(VmcsField.u, VMX_BF_VMCSFIELD_TYPE);
+    uint8_t  const uWidthType = (uWidth << 2) | uType;
+    uint8_t  const uIndex     = RT_BF_GET(VmcsField.u, VMX_BF_VMCSFIELD_INDEX);
+    Assert(uIndex <= VMX_V_VMCS_MAX_INDEX);
+    uint16_t const offField   = g_aoffVmcsMap[uWidthType][uIndex];
+    Assert(offField < VMX_V_VMCS_SIZE);
+    AssertCompile(VMX_V_SHADOW_VMCS_SIZE == VMX_V_VMCS_SIZE);
+
+    /*
+     * Read the VMCS component based on the field's effective width.
+     *
+     * The effective width is 64-bit fields adjusted to 32-bits if the access-type
+     * indicates high bits (little endian).
+     *
+     * Note! The caller is responsible to trim the result and update registers
+     * or memory locations are required. Here we just zero-extend to the largest
+     * type (i.e. 64-bits).
+     */
+    uint8_t const *pbVmcs    = (uint8_t const *)pVmcs;
+    uint8_t const *pbField   = pbVmcs + offField;
+    uint8_t const  uEffWidth = HMVmxGetVmcsFieldWidthEff(VmcsField.u);
+    switch (uEffWidth)
+    {
+        case VMX_VMCSFIELD_WIDTH_64BIT:
+        case VMX_VMCSFIELD_WIDTH_NATURAL: *pu64Dst = *(uint64_t const *)pbField; break;
+        case VMX_VMCSFIELD_WIDTH_32BIT:   *pu64Dst = *(uint32_t const *)pbField; break;
+        case VMX_VMCSFIELD_WIDTH_16BIT:   *pu64Dst = *(uint16_t const *)pbField; break;
+    }
+}
+
+
+/**
+ * VMREAD common (memory/register) instruction execution worker.
  *
  * @returns Strict VBox status code.
  * @param   pVCpu           The cross context virtual CPU structure.
@@ -7602,44 +7653,13 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmreadCommon(PVMCPU pVCpu, uint8_t cbInstr, uint64
     }
 
     /*
-     * Setup reading from the current or shadow VMCS.
+     * Reading from the current or shadow VMCS.
      */
-    uint8_t *pbVmcs;
-    if (!IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
-        pbVmcs = (uint8_t *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
-    else
-        pbVmcs = (uint8_t *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pShadowVmcs);
-    Assert(pbVmcs);
-
-    VMXVMCSFIELD VmcsField;
-    VmcsField.u = u64VmcsField;
-    uint8_t  const uWidth     = RT_BF_GET(VmcsField.u, VMX_BF_VMCSFIELD_WIDTH);
-    uint8_t  const uType      = RT_BF_GET(VmcsField.u, VMX_BF_VMCSFIELD_TYPE);
-    uint8_t  const uWidthType = (uWidth << 2) | uType;
-    uint8_t  const uIndex     = RT_BF_GET(VmcsField.u, VMX_BF_VMCSFIELD_INDEX);
-    AssertReturn(uIndex <= VMX_V_VMCS_MAX_INDEX, VERR_IEM_IPE_2);
-    uint16_t const offField   = g_aoffVmcsMap[uWidthType][uIndex];
-    Assert(offField < VMX_V_VMCS_SIZE);
-
-    /*
-     * Read the VMCS component based on the field's effective width.
-     *
-     * The effective width is 64-bit fields adjusted to 32-bits if the access-type
-     * indicates high bits (little endian).
-     *
-     * Note! The caller is responsible to trim the result and update registers
-     * or memory locations are required. Here we just zero-extend to the largest
-     * type (i.e. 64-bits).
-     */
-    uint8_t      *pbField   = pbVmcs + offField;
-    uint8_t const uEffWidth = HMVmxGetVmcsFieldWidthEff(VmcsField.u);
-    switch (uEffWidth)
-    {
-        case VMX_VMCSFIELD_WIDTH_64BIT:
-        case VMX_VMCSFIELD_WIDTH_NATURAL: *pu64Dst = *(uint64_t *)pbField; break;
-        case VMX_VMCSFIELD_WIDTH_32BIT:   *pu64Dst = *(uint32_t *)pbField; break;
-        case VMX_VMCSFIELD_WIDTH_16BIT:   *pu64Dst = *(uint16_t *)pbField; break;
-    }
+    PCVMXVVMCS pVmcs = !IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
+                     ? pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs)
+                     : pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pShadowVmcs);
+    Assert(pVmcs);
+    iemVmxVmreadNoCheck(pVmcs, pu64Dst, u64VmcsField);
     return VINF_SUCCESS;
 }
 
@@ -7739,6 +7759,51 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmreadMem(PVMCPU pVCpu, uint8_t cbInstr, uint8_t i
 
     Log(("vmread/mem: iemVmxVmreadCommon failed rc=%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
     return rcStrict;
+}
+
+
+/**
+ * VMWRITE instruction execution worker that does not perform any validation
+ * checks.
+ *
+ * Callers are expected to have performed the necessary checks and to ensure the
+ * VMWRITE will succeed.
+ *
+ * @param   pVmcs           Pointer to the virtual VMCS.
+ * @param   u64Val          The value to write.
+ * @param   u64VmcsField    The VMCS field.
+ *
+ * @remarks May be called with interrupts disabled.
+ */
+IEM_STATIC void iemVmxVmwriteNoCheck(PVMXVVMCS pVmcs, uint64_t u64Val, uint64_t u64VmcsField)
+{
+    VMXVMCSFIELD VmcsField;
+    VmcsField.u = u64VmcsField;
+    uint8_t  const uWidth     = RT_BF_GET(VmcsField.u, VMX_BF_VMCSFIELD_WIDTH);
+    uint8_t  const uType      = RT_BF_GET(VmcsField.u, VMX_BF_VMCSFIELD_TYPE);
+    uint8_t  const uWidthType = (uWidth << 2) | uType;
+    uint8_t  const uIndex     = RT_BF_GET(VmcsField.u, VMX_BF_VMCSFIELD_INDEX);
+    Assert(uIndex <= VMX_V_VMCS_MAX_INDEX);
+    uint16_t const offField   = g_aoffVmcsMap[uWidthType][uIndex];
+    Assert(offField < VMX_V_VMCS_SIZE);
+    AssertCompile(VMX_V_SHADOW_VMCS_SIZE == VMX_V_VMCS_SIZE);
+
+    /*
+     * Write the VMCS component based on the field's effective width.
+     *
+     * The effective width is 64-bit fields adjusted to 32-bits if the access-type
+     * indicates high bits (little endian).
+     */
+    uint8_t      *pbVmcs    = (uint8_t *)pVmcs;
+    uint8_t      *pbField   = pbVmcs + offField;
+    uint8_t const uEffWidth = HMVmxGetVmcsFieldWidthEff(VmcsField.u);
+    switch (uEffWidth)
+    {
+        case VMX_VMCSFIELD_WIDTH_64BIT:
+        case VMX_VMCSFIELD_WIDTH_NATURAL: *(uint64_t *)pbField = u64Val; break;
+        case VMX_VMCSFIELD_WIDTH_32BIT:   *(uint32_t *)pbField = u64Val; break;
+        case VMX_VMCSFIELD_WIDTH_16BIT:   *(uint16_t *)pbField = u64Val; break;
+    }
 }
 
 
@@ -7857,40 +7922,18 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmwrite(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
     }
 
     /*
-     * Setup writing to the current or shadow VMCS.
+     * Write to the current or shadow VMCS.
      */
-    uint8_t *pbVmcs;
-    if (!IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
-        pbVmcs = (uint8_t *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
-    else
-        pbVmcs = (uint8_t *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pShadowVmcs);
-    Assert(pbVmcs);
+    bool const fInVmxNonRootMode = IEM_VMX_IS_NON_ROOT_MODE(pVCpu);
+    PVMXVVMCS pVmcs = !fInVmxNonRootMode
+                    ? pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs)
+                    : pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pShadowVmcs);
+    Assert(pVmcs);
+    iemVmxVmwriteNoCheck(pVmcs, u64Val, u64VmcsField);
 
-    VMXVMCSFIELD VmcsField;
-    VmcsField.u = u64VmcsField;
-    uint8_t  const uWidth     = RT_BF_GET(VmcsField.u, VMX_BF_VMCSFIELD_WIDTH);
-    uint8_t  const uType      = RT_BF_GET(VmcsField.u, VMX_BF_VMCSFIELD_TYPE);
-    uint8_t  const uWidthType = (uWidth << 2) | uType;
-    uint8_t  const uIndex     = RT_BF_GET(VmcsField.u, VMX_BF_VMCSFIELD_INDEX);
-    AssertReturn(uIndex <= VMX_V_VMCS_MAX_INDEX, VERR_IEM_IPE_2);
-    uint16_t const offField   = g_aoffVmcsMap[uWidthType][uIndex];
-    Assert(offField < VMX_V_VMCS_SIZE);
-
-    /*
-     * Write the VMCS component based on the field's effective width.
-     *
-     * The effective width is 64-bit fields adjusted to 32-bits if the access-type
-     * indicates high bits (little endian).
-     */
-    uint8_t      *pbField   = pbVmcs + offField;
-    uint8_t const uEffWidth = HMVmxGetVmcsFieldWidthEff(VmcsField.u);
-    switch (uEffWidth)
-    {
-        case VMX_VMCSFIELD_WIDTH_64BIT:
-        case VMX_VMCSFIELD_WIDTH_NATURAL: *(uint64_t *)pbField = u64Val; break;
-        case VMX_VMCSFIELD_WIDTH_32BIT:   *(uint32_t *)pbField = u64Val; break;
-        case VMX_VMCSFIELD_WIDTH_16BIT:   *(uint16_t *)pbField = u64Val; break;
-    }
+    /* Notify HM that the VMCS content might have changed. */
+    if (!fInVmxNonRootMode)
+        HMNotifyVmxNstGstCurrentVmcsChanged(pVCpu);
 
     iemVmxVmSucceed(pVCpu);
     iemRegAddToRipAndClearRF(pVCpu, cbInstr);
@@ -8230,7 +8273,10 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmptrld(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
         IEM_VMX_SET_CURRENT_VMCS(pVCpu, GCPhysVmcs);
         rc = iemVmxReadCurrentVmcsFromGstMem(pVCpu);
         if (RT_SUCCESS(rc))
-        { /* likely */ }
+        {
+            /* Notify HM that a new, current VMCS is loaded. */
+            HMNotifyVmxNstGstCurrentVmcsChanged(pVCpu);
+        }
         else
         {
             Log(("vmptrld: Failed to read VMCS at %#RGp, rc=%Rrc\n", GCPhysVmcs, rc));
