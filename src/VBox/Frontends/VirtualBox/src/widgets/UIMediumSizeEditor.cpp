@@ -23,7 +23,7 @@
 
 /* GUI includes: */
 #include "QILineEdit.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "UIConverter.h"
 #include "UIMediumSizeEditor.h"
 
@@ -36,7 +36,7 @@ const qulonglong UIMediumSizeEditor::m_uSectorSize = 512;
 UIMediumSizeEditor::UIMediumSizeEditor(QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_uSizeMin(_4M)
-    , m_uSizeMax(vboxGlobal().virtualBox().GetSystemProperties().GetInfoVDSize())
+    , m_uSizeMax(uiCommon().virtualBox().GetSystemProperties().GetInfoVDSize())
     , m_iSliderScale(calculateSliderScale(m_uSizeMax))
     , m_uSize(0)
     , m_enmSizeSuffix(SizeSuffix_Byte)
@@ -59,8 +59,8 @@ void UIMediumSizeEditor::setMediumSize(qulonglong uSize)
     m_pSlider->setValue(sizeMBToSlider(m_uSize, m_iSliderScale));
     m_pSlider->blockSignals(false);
     m_pEditor->blockSignals(true);
-    m_pEditor->setText(vboxGlobal().formatSize(m_uSize));
-    m_enmSizeSuffix = vboxGlobal().parseSizeSuffix(m_pEditor->text());
+    m_pEditor->setText(uiCommon().formatSize(m_uSize));
+    m_enmSizeSuffix = uiCommon().parseSizeSuffix(m_pEditor->text());
     m_pEditor->blockSignals(false);
 
     /* Update the tool-tips: */
@@ -70,8 +70,8 @@ void UIMediumSizeEditor::setMediumSize(qulonglong uSize)
 void UIMediumSizeEditor::retranslateUi()
 {
     /* Translate labels: */
-    m_pLabelMinSize->setText(vboxGlobal().formatSize(m_uSizeMin));
-    m_pLabelMaxSize->setText(vboxGlobal().formatSize(m_uSizeMax));
+    m_pLabelMinSize->setText(uiCommon().formatSize(m_uSizeMin));
+    m_pLabelMaxSize->setText(uiCommon().formatSize(m_uSizeMax));
 
     /* Translate fields: */
     m_pSlider->setToolTip(tr("Holds the size of this medium."));
@@ -87,8 +87,8 @@ void UIMediumSizeEditor::sltSizeSliderChanged(int iValue)
     m_uSize = sliderToSizeMB(iValue, m_iSliderScale);
     /* Update the other widget: */
     m_pEditor->blockSignals(true);
-    m_pEditor->setText(vboxGlobal().formatSize(m_uSize));
-    m_enmSizeSuffix = vboxGlobal().parseSizeSuffix(m_pEditor->text());
+    m_pEditor->setText(uiCommon().formatSize(m_uSize));
+    m_enmSizeSuffix = uiCommon().parseSizeSuffix(m_pEditor->text());
     m_pEditor->blockSignals(false);
     /* Update the tool-tips: */
     updateSizeToolTips(m_uSize);
@@ -108,7 +108,7 @@ void UIMediumSizeEditor::sltSizeEditorEditingFinished()
     }
 
     /* Update the current size: */
-    m_uSize = checkSectorSizeAlignment(vboxGlobal().parseSize(strSizeString));
+    m_uSize = checkSectorSizeAlignment(uiCommon().parseSize(strSizeString));
 
     /* Update the other widget: */
     m_pSlider->blockSignals(true);
@@ -122,10 +122,10 @@ void UIMediumSizeEditor::sltSizeEditorEditingFinished()
 
 QString UIMediumSizeEditor::ensureSizeSuffix(const QString &strSizeString)
 {
-    if (vboxGlobal().hasSizeSuffix(strSizeString))
+    if (uiCommon().hasSizeSuffix(strSizeString))
     {
         /* Update the m_enmSizeSuffix: */
-        m_enmSizeSuffix = vboxGlobal().parseSizeSuffix(strSizeString);
+        m_enmSizeSuffix = uiCommon().parseSizeSuffix(strSizeString);
         return strSizeString;
     }
 
@@ -195,7 +195,7 @@ void UIMediumSizeEditor::prepare()
             m_pEditor->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
             m_pEditor->setFixedWidthByText("88888.88 MB");
             m_pEditor->setAlignment(Qt::AlignRight);
-            m_pEditor->setValidator(new QRegExpValidator(QRegExp(vboxGlobal().sizeRegexp()), this));
+            m_pEditor->setValidator(new QRegExpValidator(QRegExp(uiCommon().sizeRegexp()), this));
             connect(m_pEditor, &QILineEdit::editingFinished,
                     this, &UIMediumSizeEditor::sltSizeEditorEditingFinished);
 
@@ -284,7 +284,7 @@ qulonglong UIMediumSizeEditor::sliderToSizeMB(int uValue, int iSliderScale)
 
 void UIMediumSizeEditor::updateSizeToolTips(qulonglong uSize)
 {
-    const QString strToolTip = tr("<nobr>%1 (%2 B)</nobr>").arg(vboxGlobal().formatSize(uSize)).arg(uSize);
+    const QString strToolTip = tr("<nobr>%1 (%2 B)</nobr>").arg(uiCommon().formatSize(uSize)).arg(uSize);
     m_pSlider->setToolTip(strToolTip);
     m_pEditor->setToolTip(strToolTip);
 }

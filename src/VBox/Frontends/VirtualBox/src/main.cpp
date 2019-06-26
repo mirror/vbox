@@ -25,7 +25,7 @@
 #endif
 
 /* GUI includes: */
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "UIStarter.h"
 #include "UIModalWindowManager.h"
 #ifdef VBOX_WS_MAC
@@ -441,7 +441,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
 
 #ifdef VBOX_WS_MAC
         /* Apply font fixes (before QApplication get created and instantiated font-hints): */
-        switch (VBoxGlobal::determineOsRelease())
+        switch (UICommon::determineOsRelease())
         {
             case MacOSXRelease_Mavericks: QFont::insertSubstitution(".Lucida Grande UI", "Lucida Grande"); break;
             case MacOSXRelease_Yosemite:  QFont::insertSubstitution(".Helvetica Neue DeskInterface", "Helvetica Neue"); break;
@@ -510,12 +510,12 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
 # endif /* !Q_OS_SOLARIS */
 
         /* Qt version check (major.minor are sensitive, fix number is ignored): */
-        if (VBoxGlobal::qtRTVersion() < (VBoxGlobal::qtCTVersion() & 0xFFFF00))
+        if (UICommon::qtRTVersion() < (UICommon::qtCTVersion() & 0xFFFF00))
         {
             QString strMsg = QApplication::tr("Executable <b>%1</b> requires Qt %2.x, found Qt %3.")
                                               .arg(qAppName())
-                                              .arg(VBoxGlobal::qtCTVersionString().section('.', 0, 1))
-                                              .arg(VBoxGlobal::qtRTVersionString());
+                                              .arg(UICommon::qtCTVersionString().section('.', 0, 1))
+                                              .arg(UICommon::qtRTVersionString());
             QMessageBox::critical(0, QApplication::tr("Incompatible Qt Library Error"),
                                   strMsg, QMessageBox::Abort, 0);
             qFatal("%s", strMsg.toUtf8().constData());
@@ -530,24 +530,24 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
         UIStarter::create();
 #ifndef VBOX_RUNTIME_UI
         /* Create global app instance for Selector UI: */
-        VBoxGlobal::create(VBoxGlobal::UIType_SelectorUI);
+        UICommon::create(UICommon::UIType_SelectorUI);
 #else
         /* Create global app instance for Runtime UI: */
-        VBoxGlobal::create(VBoxGlobal::UIType_RuntimeUI);
+        UICommon::create(UICommon::UIType_RuntimeUI);
 #endif
 
         /* Simulate try-catch block: */
         do
         {
-            /* Exit if VBoxGlobal is not valid: */
-            if (!vboxGlobal().isValid())
+            /* Exit if UICommon is not valid: */
+            if (!uiCommon().isValid())
                 break;
 
             /* Init link between UI starter and global app instance: */
             gStarter->init();
 
-            /* Exit if VBoxGlobal pre-processed arguments: */
-            if (vboxGlobal().processArgs())
+            /* Exit if UICommon pre-processed arguments: */
+            if (uiCommon().processArgs())
                 break;
 
             // WORKAROUND:
@@ -573,7 +573,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
         while (0);
 
         /* Destroy global app instance: */
-        VBoxGlobal::destroy();
+        UICommon::destroy();
         /* Destroy UI starter: */
         UIStarter::destroy();
 
@@ -609,7 +609,7 @@ int main(int argc, char **argv, char **envp)
     for (int i = 1; i < argc && !(fStartVM && fSeparateProcess); ++i)
     {
         /* NOTE: the check here must match the corresponding check for the
-         * options to start a VM in hardenedmain.cpp and VBoxGlobal.cpp exactly,
+         * options to start a VM in hardenedmain.cpp and UICommon.cpp exactly,
          * otherwise there will be weird error messages. */
         if (   !::strcmp(argv[i], "--startvm")
             || !::strcmp(argv[i], "-startvm"))

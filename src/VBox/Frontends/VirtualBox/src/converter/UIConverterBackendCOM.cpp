@@ -135,29 +135,29 @@ template<> QString toString(const KMachineState &state)
 {
     switch (state)
     {
-        case KMachineState_PoweredOff:             return QApplication::translate("VBoxGlobal", "Powered Off", "MachineState");
-        case KMachineState_Saved:                  return QApplication::translate("VBoxGlobal", "Saved", "MachineState");
-        case KMachineState_Aborted:                return QApplication::translate("VBoxGlobal", "Aborted", "MachineState");
-        case KMachineState_Teleported:             return QApplication::translate("VBoxGlobal", "Teleported", "MachineState");
-        case KMachineState_Running:                return QApplication::translate("VBoxGlobal", "Running", "MachineState");
-        case KMachineState_Paused:                 return QApplication::translate("VBoxGlobal", "Paused", "MachineState");
-        case KMachineState_Stuck:                  return QApplication::translate("VBoxGlobal", "Guru Meditation", "MachineState");
-        case KMachineState_Teleporting:            return QApplication::translate("VBoxGlobal", "Teleporting", "MachineState");
-        case KMachineState_Snapshotting:           return QApplication::translate("VBoxGlobal", "Taking Snapshot", "MachineState");
-        case KMachineState_OnlineSnapshotting:     return QApplication::translate("VBoxGlobal", "Taking Online Snapshot", "MachineState");
-        case KMachineState_LiveSnapshotting:       return QApplication::translate("VBoxGlobal", "Taking Live Snapshot", "MachineState");
-        case KMachineState_Starting:               return QApplication::translate("VBoxGlobal", "Starting", "MachineState");
-        case KMachineState_Stopping:               return QApplication::translate("VBoxGlobal", "Stopping", "MachineState");
-        case KMachineState_Saving:                 return QApplication::translate("VBoxGlobal", "Saving", "MachineState");
-        case KMachineState_Restoring:              return QApplication::translate("VBoxGlobal", "Restoring", "MachineState");
-        case KMachineState_TeleportingPausedVM:    return QApplication::translate("VBoxGlobal", "Teleporting Paused VM", "MachineState");
-        case KMachineState_TeleportingIn:          return QApplication::translate("VBoxGlobal", "Teleporting", "MachineState");
-        case KMachineState_FaultTolerantSyncing:   return QApplication::translate("VBoxGlobal", "Fault Tolerant Syncing", "MachineState");
-        case KMachineState_DeletingSnapshotOnline: return QApplication::translate("VBoxGlobal", "Deleting Snapshot", "MachineState");
-        case KMachineState_DeletingSnapshotPaused: return QApplication::translate("VBoxGlobal", "Deleting Snapshot", "MachineState");
-        case KMachineState_RestoringSnapshot:      return QApplication::translate("VBoxGlobal", "Restoring Snapshot", "MachineState");
-        case KMachineState_DeletingSnapshot:       return QApplication::translate("VBoxGlobal", "Deleting Snapshot", "MachineState");
-        case KMachineState_SettingUp:              return QApplication::translate("VBoxGlobal", "Setting Up", "MachineState");
+        case KMachineState_PoweredOff:             return QApplication::translate("UICommon", "Powered Off", "MachineState");
+        case KMachineState_Saved:                  return QApplication::translate("UICommon", "Saved", "MachineState");
+        case KMachineState_Aborted:                return QApplication::translate("UICommon", "Aborted", "MachineState");
+        case KMachineState_Teleported:             return QApplication::translate("UICommon", "Teleported", "MachineState");
+        case KMachineState_Running:                return QApplication::translate("UICommon", "Running", "MachineState");
+        case KMachineState_Paused:                 return QApplication::translate("UICommon", "Paused", "MachineState");
+        case KMachineState_Stuck:                  return QApplication::translate("UICommon", "Guru Meditation", "MachineState");
+        case KMachineState_Teleporting:            return QApplication::translate("UICommon", "Teleporting", "MachineState");
+        case KMachineState_Snapshotting:           return QApplication::translate("UICommon", "Taking Snapshot", "MachineState");
+        case KMachineState_OnlineSnapshotting:     return QApplication::translate("UICommon", "Taking Online Snapshot", "MachineState");
+        case KMachineState_LiveSnapshotting:       return QApplication::translate("UICommon", "Taking Live Snapshot", "MachineState");
+        case KMachineState_Starting:               return QApplication::translate("UICommon", "Starting", "MachineState");
+        case KMachineState_Stopping:               return QApplication::translate("UICommon", "Stopping", "MachineState");
+        case KMachineState_Saving:                 return QApplication::translate("UICommon", "Saving", "MachineState");
+        case KMachineState_Restoring:              return QApplication::translate("UICommon", "Restoring", "MachineState");
+        case KMachineState_TeleportingPausedVM:    return QApplication::translate("UICommon", "Teleporting Paused VM", "MachineState");
+        case KMachineState_TeleportingIn:          return QApplication::translate("UICommon", "Teleporting", "MachineState");
+        case KMachineState_FaultTolerantSyncing:   return QApplication::translate("UICommon", "Fault Tolerant Syncing", "MachineState");
+        case KMachineState_DeletingSnapshotOnline: return QApplication::translate("UICommon", "Deleting Snapshot", "MachineState");
+        case KMachineState_DeletingSnapshotPaused: return QApplication::translate("UICommon", "Deleting Snapshot", "MachineState");
+        case KMachineState_RestoringSnapshot:      return QApplication::translate("UICommon", "Restoring Snapshot", "MachineState");
+        case KMachineState_DeletingSnapshot:       return QApplication::translate("UICommon", "Deleting Snapshot", "MachineState");
+        case KMachineState_SettingUp:              return QApplication::translate("UICommon", "Setting Up", "MachineState");
         // case KMachineState_FirstOnline:
         // case KMachineState_LastOnline:
         // case KMachineState_FirstTransient:
@@ -172,10 +172,10 @@ template<> QString toString(const KSessionState &state)
 {
     switch (state)
     {
-        case KSessionState_Unlocked:  return QApplication::translate("VBoxGlobal", "Unlocked", "SessionState");
-        case KSessionState_Locked:    return QApplication::translate("VBoxGlobal", "Locked", "SessionState");
-        case KSessionState_Spawning:  return QApplication::translate("VBoxGlobal", "Spawning", "SessionState");
-        case KSessionState_Unlocking: return QApplication::translate("VBoxGlobal", "Unlocking", "SessionState");
+        case KSessionState_Unlocked:  return QApplication::translate("UICommon", "Unlocked", "SessionState");
+        case KSessionState_Locked:    return QApplication::translate("UICommon", "Locked", "SessionState");
+        case KSessionState_Spawning:  return QApplication::translate("UICommon", "Spawning", "SessionState");
+        case KSessionState_Unlocking: return QApplication::translate("UICommon", "Unlocking", "SessionState");
         default: AssertMsgFailed(("No text for %d", state)); break;
     }
     return QString();
@@ -186,12 +186,12 @@ template<> QString toString(const KParavirtProvider &type)
 {
     switch (type)
     {
-        case KParavirtProvider_None:    return QApplication::translate("VBoxGlobal", "None", "ParavirtProvider");
-        case KParavirtProvider_Default: return QApplication::translate("VBoxGlobal", "Default", "ParavirtProvider");
-        case KParavirtProvider_Legacy:  return QApplication::translate("VBoxGlobal", "Legacy", "ParavirtProvider");
-        case KParavirtProvider_Minimal: return QApplication::translate("VBoxGlobal", "Minimal", "ParavirtProvider");
-        case KParavirtProvider_HyperV:  return QApplication::translate("VBoxGlobal", "Hyper-V", "ParavirtProvider");
-        case KParavirtProvider_KVM:     return QApplication::translate("VBoxGlobal", "KVM", "ParavirtProvider");
+        case KParavirtProvider_None:    return QApplication::translate("UICommon", "None", "ParavirtProvider");
+        case KParavirtProvider_Default: return QApplication::translate("UICommon", "Default", "ParavirtProvider");
+        case KParavirtProvider_Legacy:  return QApplication::translate("UICommon", "Legacy", "ParavirtProvider");
+        case KParavirtProvider_Minimal: return QApplication::translate("UICommon", "Minimal", "ParavirtProvider");
+        case KParavirtProvider_HyperV:  return QApplication::translate("UICommon", "Hyper-V", "ParavirtProvider");
+        case KParavirtProvider_KVM:     return QApplication::translate("UICommon", "KVM", "ParavirtProvider");
         default: AssertMsgFailed(("No text for %d", type)); break;
     }
     return QString();
@@ -202,13 +202,13 @@ template<> QString toString(const KDeviceType &type)
 {
     switch (type)
     {
-        case KDeviceType_Null:         return QApplication::translate("VBoxGlobal", "None", "DeviceType");
-        case KDeviceType_Floppy:       return QApplication::translate("VBoxGlobal", "Floppy", "DeviceType");
-        case KDeviceType_DVD:          return QApplication::translate("VBoxGlobal", "Optical", "DeviceType");
-        case KDeviceType_HardDisk:     return QApplication::translate("VBoxGlobal", "Hard Disk", "DeviceType");
-        case KDeviceType_Network:      return QApplication::translate("VBoxGlobal", "Network", "DeviceType");
-        case KDeviceType_USB:          return QApplication::translate("VBoxGlobal", "USB", "DeviceType");
-        case KDeviceType_SharedFolder: return QApplication::translate("VBoxGlobal", "Shared Folder", "DeviceType");
+        case KDeviceType_Null:         return QApplication::translate("UICommon", "None", "DeviceType");
+        case KDeviceType_Floppy:       return QApplication::translate("UICommon", "Floppy", "DeviceType");
+        case KDeviceType_DVD:          return QApplication::translate("UICommon", "Optical", "DeviceType");
+        case KDeviceType_HardDisk:     return QApplication::translate("UICommon", "Hard Disk", "DeviceType");
+        case KDeviceType_Network:      return QApplication::translate("UICommon", "Network", "DeviceType");
+        case KDeviceType_USB:          return QApplication::translate("UICommon", "USB", "DeviceType");
+        case KDeviceType_SharedFolder: return QApplication::translate("UICommon", "Shared Folder", "DeviceType");
         default: AssertMsgFailed(("No text for %d", type)); break;
     }
     return QString();
@@ -219,10 +219,10 @@ template<> QString toString(const KClipboardMode &mode)
 {
     switch (mode)
     {
-        case KClipboardMode_Disabled:      return QApplication::translate("VBoxGlobal", "Disabled", "ClipboardType");
-        case KClipboardMode_HostToGuest:   return QApplication::translate("VBoxGlobal", "Host To Guest", "ClipboardType");
-        case KClipboardMode_GuestToHost:   return QApplication::translate("VBoxGlobal", "Guest To Host", "ClipboardType");
-        case KClipboardMode_Bidirectional: return QApplication::translate("VBoxGlobal", "Bidirectional", "ClipboardType");
+        case KClipboardMode_Disabled:      return QApplication::translate("UICommon", "Disabled", "ClipboardType");
+        case KClipboardMode_HostToGuest:   return QApplication::translate("UICommon", "Host To Guest", "ClipboardType");
+        case KClipboardMode_GuestToHost:   return QApplication::translate("UICommon", "Guest To Host", "ClipboardType");
+        case KClipboardMode_Bidirectional: return QApplication::translate("UICommon", "Bidirectional", "ClipboardType");
         default: AssertMsgFailed(("No text for %d", mode)); break;
     }
     return QString();
@@ -233,10 +233,10 @@ template<> QString toString(const KDnDMode &mode)
 {
     switch (mode)
     {
-        case KDnDMode_Disabled:      return QApplication::translate("VBoxGlobal", "Disabled", "DragAndDropType");
-        case KDnDMode_HostToGuest:   return QApplication::translate("VBoxGlobal", "Host To Guest", "DragAndDropType");
-        case KDnDMode_GuestToHost:   return QApplication::translate("VBoxGlobal", "Guest To Host", "DragAndDropType");
-        case KDnDMode_Bidirectional: return QApplication::translate("VBoxGlobal", "Bidirectional", "DragAndDropType");
+        case KDnDMode_Disabled:      return QApplication::translate("UICommon", "Disabled", "DragAndDropType");
+        case KDnDMode_HostToGuest:   return QApplication::translate("UICommon", "Host To Guest", "DragAndDropType");
+        case KDnDMode_GuestToHost:   return QApplication::translate("UICommon", "Guest To Host", "DragAndDropType");
+        case KDnDMode_Bidirectional: return QApplication::translate("UICommon", "Bidirectional", "DragAndDropType");
         default: AssertMsgFailed(("No text for %d", mode)); break;
     }
     return QString();
@@ -247,11 +247,11 @@ template<> QString toString(const KPointingHIDType &type)
 {
     switch (type)
     {
-        case KPointingHIDType_PS2Mouse:      return QApplication::translate("VBoxGlobal", "PS/2 Mouse", "PointingHIDType");
-        case KPointingHIDType_USBMouse:      return QApplication::translate("VBoxGlobal", "USB Mouse", "PointingHIDType");
-        case KPointingHIDType_USBTablet:     return QApplication::translate("VBoxGlobal", "USB Tablet", "PointingHIDType");
-        case KPointingHIDType_ComboMouse:    return QApplication::translate("VBoxGlobal", "PS/2 and USB Mouse", "PointingHIDType");
-        case KPointingHIDType_USBMultiTouch: return QApplication::translate("VBoxGlobal", "USB Multi-Touch Tablet", "PointingHIDType");
+        case KPointingHIDType_PS2Mouse:      return QApplication::translate("UICommon", "PS/2 Mouse", "PointingHIDType");
+        case KPointingHIDType_USBMouse:      return QApplication::translate("UICommon", "USB Mouse", "PointingHIDType");
+        case KPointingHIDType_USBTablet:     return QApplication::translate("UICommon", "USB Tablet", "PointingHIDType");
+        case KPointingHIDType_ComboMouse:    return QApplication::translate("UICommon", "PS/2 and USB Mouse", "PointingHIDType");
+        case KPointingHIDType_USBMultiTouch: return QApplication::translate("UICommon", "USB Multi-Touch Tablet", "PointingHIDType");
         default: AssertMsgFailed(("No text for %d", type)); break;
     }
     return QString();
@@ -262,10 +262,10 @@ template<> QString toString(const KGraphicsControllerType &type)
 {
     switch (type)
     {
-        case KGraphicsControllerType_Null:     return QApplication::translate("VBoxGlobal", "None",     "GraphicsControllerType");
-        case KGraphicsControllerType_VBoxVGA:  return QApplication::translate("VBoxGlobal", "VBoxVGA",  "GraphicsControllerType");
-        case KGraphicsControllerType_VMSVGA:   return QApplication::translate("VBoxGlobal", "VMSVGA",   "GraphicsControllerType");
-        case KGraphicsControllerType_VBoxSVGA: return QApplication::translate("VBoxGlobal", "VBoxSVGA", "GraphicsControllerType");
+        case KGraphicsControllerType_Null:     return QApplication::translate("UICommon", "None",     "GraphicsControllerType");
+        case KGraphicsControllerType_VBoxVGA:  return QApplication::translate("UICommon", "VBoxVGA",  "GraphicsControllerType");
+        case KGraphicsControllerType_VMSVGA:   return QApplication::translate("UICommon", "VMSVGA",   "GraphicsControllerType");
+        case KGraphicsControllerType_VBoxSVGA: return QApplication::translate("UICommon", "VBoxSVGA", "GraphicsControllerType");
         default: AssertMsgFailed(("No text for %d", type)); break;
     }
     return QString();
@@ -275,10 +275,10 @@ template<> QString toString(const KGraphicsControllerType &type)
 template<> KGraphicsControllerType fromString<KGraphicsControllerType>(const QString &strType)
 {
     QHash<QString, KGraphicsControllerType> list;
-    list.insert(QApplication::translate("VBoxGlobal", "None",     "GraphicsControllerType"), KGraphicsControllerType_Null);
-    list.insert(QApplication::translate("VBoxGlobal", "VBoxVGA",  "GraphicsControllerType"), KGraphicsControllerType_VBoxVGA);
-    list.insert(QApplication::translate("VBoxGlobal", "VMSVGA",   "GraphicsControllerType"), KGraphicsControllerType_VMSVGA);
-    list.insert(QApplication::translate("VBoxGlobal", "VBoxSVGA", "GraphicsControllerType"), KGraphicsControllerType_VBoxSVGA);
+    list.insert(QApplication::translate("UICommon", "None",     "GraphicsControllerType"), KGraphicsControllerType_Null);
+    list.insert(QApplication::translate("UICommon", "VBoxVGA",  "GraphicsControllerType"), KGraphicsControllerType_VBoxVGA);
+    list.insert(QApplication::translate("UICommon", "VMSVGA",   "GraphicsControllerType"), KGraphicsControllerType_VMSVGA);
+    list.insert(QApplication::translate("UICommon", "VBoxSVGA", "GraphicsControllerType"), KGraphicsControllerType_VBoxSVGA);
     if (!list.contains(strType))
     {
         AssertMsgFailed(("No value for '%s'", strType.toUtf8().constData()));
@@ -291,12 +291,12 @@ template<> QString toString(const KMediumType &type)
 {
     switch (type)
     {
-        case KMediumType_Normal:       return QApplication::translate("VBoxGlobal", "Normal", "MediumType");
-        case KMediumType_Immutable:    return QApplication::translate("VBoxGlobal", "Immutable", "MediumType");
-        case KMediumType_Writethrough: return QApplication::translate("VBoxGlobal", "Writethrough", "MediumType");
-        case KMediumType_Shareable:    return QApplication::translate("VBoxGlobal", "Shareable", "MediumType");
-        case KMediumType_Readonly:     return QApplication::translate("VBoxGlobal", "Readonly", "MediumType");
-        case KMediumType_MultiAttach:  return QApplication::translate("VBoxGlobal", "Multi-attach", "MediumType");
+        case KMediumType_Normal:       return QApplication::translate("UICommon", "Normal", "MediumType");
+        case KMediumType_Immutable:    return QApplication::translate("UICommon", "Immutable", "MediumType");
+        case KMediumType_Writethrough: return QApplication::translate("UICommon", "Writethrough", "MediumType");
+        case KMediumType_Shareable:    return QApplication::translate("UICommon", "Shareable", "MediumType");
+        case KMediumType_Readonly:     return QApplication::translate("UICommon", "Readonly", "MediumType");
+        case KMediumType_MultiAttach:  return QApplication::translate("UICommon", "Multi-attach", "MediumType");
         default: AssertMsgFailed(("No text for %d", type)); break;
     }
     return QString();
@@ -309,27 +309,27 @@ template<> QString toString(const KMediumVariant &variant)
     switch ((int)variant)
     {
         case KMediumVariant_Standard:
-            return QApplication::translate("VBoxGlobal", "Dynamically allocated storage", "MediumVariant");
+            return QApplication::translate("UICommon", "Dynamically allocated storage", "MediumVariant");
         case (KMediumVariant)(KMediumVariant_Standard | KMediumVariant_VdiZeroExpand):
-            return QApplication::translate("VBoxGlobal", "New dynamically allocated storage", "MediumVariant");
+            return QApplication::translate("UICommon", "New dynamically allocated storage", "MediumVariant");
         case (KMediumVariant)(KMediumVariant_Standard | KMediumVariant_Diff):
-            return QApplication::translate("VBoxGlobal", "Dynamically allocated differencing storage", "MediumVariant");
+            return QApplication::translate("UICommon", "Dynamically allocated differencing storage", "MediumVariant");
         case (KMediumVariant)(KMediumVariant_Standard | KMediumVariant_Fixed):
-            return QApplication::translate("VBoxGlobal", "Fixed size storage", "MediumVariant");
+            return QApplication::translate("UICommon", "Fixed size storage", "MediumVariant");
         case (KMediumVariant)(KMediumVariant_Standard | KMediumVariant_VmdkSplit2G):
-            return QApplication::translate("VBoxGlobal", "Dynamically allocated storage split into files of less than 2GB", "MediumVariant");
+            return QApplication::translate("UICommon", "Dynamically allocated storage split into files of less than 2GB", "MediumVariant");
         case (KMediumVariant)(KMediumVariant_Standard | KMediumVariant_VmdkSplit2G | KMediumVariant_Diff):
-            return QApplication::translate("VBoxGlobal", "Dynamically allocated differencing storage split into files of less than 2GB", "MediumVariant");
+            return QApplication::translate("UICommon", "Dynamically allocated differencing storage split into files of less than 2GB", "MediumVariant");
         case (KMediumVariant)(KMediumVariant_Standard | KMediumVariant_Fixed | KMediumVariant_VmdkSplit2G):
-            return QApplication::translate("VBoxGlobal", "Fixed size storage split into files of less than 2GB", "MediumVariant");
+            return QApplication::translate("UICommon", "Fixed size storage split into files of less than 2GB", "MediumVariant");
         case (KMediumVariant)(KMediumVariant_Standard | KMediumVariant_VmdkStreamOptimized):
-            return QApplication::translate("VBoxGlobal", "Dynamically allocated compressed storage", "MediumVariant");
+            return QApplication::translate("UICommon", "Dynamically allocated compressed storage", "MediumVariant");
         case (KMediumVariant)(KMediumVariant_Standard | KMediumVariant_VmdkStreamOptimized | KMediumVariant_Diff):
-            return QApplication::translate("VBoxGlobal", "Dynamically allocated differencing compressed storage", "MediumVariant");
+            return QApplication::translate("UICommon", "Dynamically allocated differencing compressed storage", "MediumVariant");
         case (KMediumVariant)(KMediumVariant_Standard | KMediumVariant_Fixed | KMediumVariant_VmdkESX):
-            return QApplication::translate("VBoxGlobal", "Fixed size ESX storage", "MediumVariant");
+            return QApplication::translate("UICommon", "Fixed size ESX storage", "MediumVariant");
         case (KMediumVariant)(KMediumVariant_Standard | KMediumVariant_Fixed | KMediumVariant_VmdkRawDisk):
-            return QApplication::translate("VBoxGlobal", "Fixed size storage on raw disk", "MediumVariant");
+            return QApplication::translate("UICommon", "Fixed size storage on raw disk", "MediumVariant");
         default:
             AssertMsgFailed(("No text for %d", variant)); break;
     }
@@ -341,13 +341,13 @@ template<> QString toString(const KNetworkAttachmentType &type)
 {
     switch (type)
     {
-        case KNetworkAttachmentType_Null:       return QApplication::translate("VBoxGlobal", "Not attached", "NetworkAttachmentType");
-        case KNetworkAttachmentType_NAT:        return QApplication::translate("VBoxGlobal", "NAT", "NetworkAttachmentType");
-        case KNetworkAttachmentType_Bridged:    return QApplication::translate("VBoxGlobal", "Bridged Adapter", "NetworkAttachmentType");
-        case KNetworkAttachmentType_Internal:   return QApplication::translate("VBoxGlobal", "Internal Network", "NetworkAttachmentType");
-        case KNetworkAttachmentType_HostOnly:   return QApplication::translate("VBoxGlobal", "Host-only Adapter", "NetworkAttachmentType");
-        case KNetworkAttachmentType_Generic:    return QApplication::translate("VBoxGlobal", "Generic Driver", "NetworkAttachmentType");
-        case KNetworkAttachmentType_NATNetwork: return QApplication::translate("VBoxGlobal", "NAT Network", "NetworkAttachmentType");
+        case KNetworkAttachmentType_Null:       return QApplication::translate("UICommon", "Not attached", "NetworkAttachmentType");
+        case KNetworkAttachmentType_NAT:        return QApplication::translate("UICommon", "NAT", "NetworkAttachmentType");
+        case KNetworkAttachmentType_Bridged:    return QApplication::translate("UICommon", "Bridged Adapter", "NetworkAttachmentType");
+        case KNetworkAttachmentType_Internal:   return QApplication::translate("UICommon", "Internal Network", "NetworkAttachmentType");
+        case KNetworkAttachmentType_HostOnly:   return QApplication::translate("UICommon", "Host-only Adapter", "NetworkAttachmentType");
+        case KNetworkAttachmentType_Generic:    return QApplication::translate("UICommon", "Generic Driver", "NetworkAttachmentType");
+        case KNetworkAttachmentType_NATNetwork: return QApplication::translate("UICommon", "NAT Network", "NetworkAttachmentType");
         default: AssertMsgFailed(("No text for %d", type)); break;
     }
     return QString();
@@ -358,13 +358,13 @@ template<> QString toString(const KNetworkAdapterType &type)
 {
     switch (type)
     {
-        case KNetworkAdapterType_Am79C970A: return QApplication::translate("VBoxGlobal", "PCnet-PCI II (Am79C970A)", "NetworkAdapterType");
-        case KNetworkAdapterType_Am79C973:  return QApplication::translate("VBoxGlobal", "PCnet-FAST III (Am79C973)", "NetworkAdapterType");
-        case KNetworkAdapterType_I82540EM:  return QApplication::translate("VBoxGlobal", "Intel PRO/1000 MT Desktop (82540EM)", "NetworkAdapterType");
-        case KNetworkAdapterType_I82543GC:  return QApplication::translate("VBoxGlobal", "Intel PRO/1000 T Server (82543GC)", "NetworkAdapterType");
-        case KNetworkAdapterType_I82545EM:  return QApplication::translate("VBoxGlobal", "Intel PRO/1000 MT Server (82545EM)", "NetworkAdapterType");
+        case KNetworkAdapterType_Am79C970A: return QApplication::translate("UICommon", "PCnet-PCI II (Am79C970A)", "NetworkAdapterType");
+        case KNetworkAdapterType_Am79C973:  return QApplication::translate("UICommon", "PCnet-FAST III (Am79C973)", "NetworkAdapterType");
+        case KNetworkAdapterType_I82540EM:  return QApplication::translate("UICommon", "Intel PRO/1000 MT Desktop (82540EM)", "NetworkAdapterType");
+        case KNetworkAdapterType_I82543GC:  return QApplication::translate("UICommon", "Intel PRO/1000 T Server (82543GC)", "NetworkAdapterType");
+        case KNetworkAdapterType_I82545EM:  return QApplication::translate("UICommon", "Intel PRO/1000 MT Server (82545EM)", "NetworkAdapterType");
 #ifdef VBOX_WITH_VIRTIO
-        case KNetworkAdapterType_Virtio:    return QApplication::translate("VBoxGlobal", "Paravirtualized Network (virtio-net)", "NetworkAdapterType");
+        case KNetworkAdapterType_Virtio:    return QApplication::translate("UICommon", "Paravirtualized Network (virtio-net)", "NetworkAdapterType");
 #endif /* VBOX_WITH_VIRTIO */
         default: AssertMsgFailed(("No text for %d", type)); break;
     }
@@ -377,11 +377,11 @@ template<> QString toString(const KNetworkAdapterPromiscModePolicy &policy)
     switch (policy)
     {
         case KNetworkAdapterPromiscModePolicy_Deny:
-            return QApplication::translate("VBoxGlobal", "Deny", "NetworkAdapterPromiscModePolicy");
+            return QApplication::translate("UICommon", "Deny", "NetworkAdapterPromiscModePolicy");
         case KNetworkAdapterPromiscModePolicy_AllowNetwork:
-            return QApplication::translate("VBoxGlobal", "Allow VMs", "NetworkAdapterPromiscModePolicy");
+            return QApplication::translate("UICommon", "Allow VMs", "NetworkAdapterPromiscModePolicy");
         case KNetworkAdapterPromiscModePolicy_AllowAll:
-            return QApplication::translate("VBoxGlobal", "Allow All", "NetworkAdapterPromiscModePolicy");
+            return QApplication::translate("UICommon", "Allow All", "NetworkAdapterPromiscModePolicy");
         default:
             AssertMsgFailed(("No text for %d", policy)); break;
     }
@@ -393,11 +393,11 @@ template<> QString toString(const KPortMode &mode)
 {
     switch (mode)
     {
-        case KPortMode_Disconnected: return QApplication::translate("VBoxGlobal", "Disconnected", "PortMode");
-        case KPortMode_HostPipe:     return QApplication::translate("VBoxGlobal", "Host Pipe", "PortMode");
-        case KPortMode_HostDevice:   return QApplication::translate("VBoxGlobal", "Host Device", "PortMode");
-        case KPortMode_RawFile:      return QApplication::translate("VBoxGlobal", "Raw File", "PortMode");
-        case KPortMode_TCP:          return QApplication::translate("VBoxGlobal", "TCP", "PortMode");
+        case KPortMode_Disconnected: return QApplication::translate("UICommon", "Disconnected", "PortMode");
+        case KPortMode_HostPipe:     return QApplication::translate("UICommon", "Host Pipe", "PortMode");
+        case KPortMode_HostDevice:   return QApplication::translate("UICommon", "Host Device", "PortMode");
+        case KPortMode_RawFile:      return QApplication::translate("UICommon", "Raw File", "PortMode");
+        case KPortMode_TCP:          return QApplication::translate("UICommon", "TCP", "PortMode");
         default: AssertMsgFailed(("No text for %d", mode)); break;
     }
     return QString();
@@ -407,11 +407,11 @@ template<> QString toString(const KPortMode &mode)
 template<> KPortMode fromString<KPortMode>(const QString &strMode)
 {
     QHash<QString, KPortMode> list;
-    list.insert(QApplication::translate("VBoxGlobal", "Disconnected", "PortMode"), KPortMode_Disconnected);
-    list.insert(QApplication::translate("VBoxGlobal", "Host Pipe", "PortMode"),    KPortMode_HostPipe);
-    list.insert(QApplication::translate("VBoxGlobal", "Host Device", "PortMode"),  KPortMode_HostDevice);
-    list.insert(QApplication::translate("VBoxGlobal", "Raw File", "PortMode"),     KPortMode_RawFile);
-    list.insert(QApplication::translate("VBoxGlobal", "TCP", "PortMode"),          KPortMode_TCP);
+    list.insert(QApplication::translate("UICommon", "Disconnected", "PortMode"), KPortMode_Disconnected);
+    list.insert(QApplication::translate("UICommon", "Host Pipe", "PortMode"),    KPortMode_HostPipe);
+    list.insert(QApplication::translate("UICommon", "Host Device", "PortMode"),  KPortMode_HostDevice);
+    list.insert(QApplication::translate("UICommon", "Raw File", "PortMode"),     KPortMode_RawFile);
+    list.insert(QApplication::translate("UICommon", "TCP", "PortMode"),          KPortMode_TCP);
     if (!list.contains(strMode))
     {
         AssertMsgFailed(("No value for '%s'", strMode.toUtf8().constData()));
@@ -424,9 +424,9 @@ template<> QString toString(const KUSBControllerType &type)
 {
     switch (type)
     {
-        case KUSBControllerType_OHCI: return QApplication::translate("VBoxGlobal", "OHCI", "USBControllerType");
-        case KUSBControllerType_EHCI: return QApplication::translate("VBoxGlobal", "EHCI", "USBControllerType");
-        case KUSBControllerType_XHCI: return QApplication::translate("VBoxGlobal", "xHCI", "USBControllerType");
+        case KUSBControllerType_OHCI: return QApplication::translate("UICommon", "OHCI", "USBControllerType");
+        case KUSBControllerType_EHCI: return QApplication::translate("UICommon", "EHCI", "USBControllerType");
+        case KUSBControllerType_XHCI: return QApplication::translate("UICommon", "xHCI", "USBControllerType");
         default: AssertMsgFailed(("No text for %d", type)); break;
     }
     return QString();
@@ -437,12 +437,12 @@ template<> QString toString(const KUSBDeviceState &state)
 {
     switch (state)
     {
-        case KUSBDeviceState_NotSupported: return QApplication::translate("VBoxGlobal", "Not supported", "USBDeviceState");
-        case KUSBDeviceState_Unavailable:  return QApplication::translate("VBoxGlobal", "Unavailable", "USBDeviceState");
-        case KUSBDeviceState_Busy:         return QApplication::translate("VBoxGlobal", "Busy", "USBDeviceState");
-        case KUSBDeviceState_Available:    return QApplication::translate("VBoxGlobal", "Available", "USBDeviceState");
-        case KUSBDeviceState_Held:         return QApplication::translate("VBoxGlobal", "Held", "USBDeviceState");
-        case KUSBDeviceState_Captured:     return QApplication::translate("VBoxGlobal", "Captured", "USBDeviceState");
+        case KUSBDeviceState_NotSupported: return QApplication::translate("UICommon", "Not supported", "USBDeviceState");
+        case KUSBDeviceState_Unavailable:  return QApplication::translate("UICommon", "Unavailable", "USBDeviceState");
+        case KUSBDeviceState_Busy:         return QApplication::translate("UICommon", "Busy", "USBDeviceState");
+        case KUSBDeviceState_Available:    return QApplication::translate("UICommon", "Available", "USBDeviceState");
+        case KUSBDeviceState_Held:         return QApplication::translate("UICommon", "Held", "USBDeviceState");
+        case KUSBDeviceState_Captured:     return QApplication::translate("UICommon", "Captured", "USBDeviceState");
         default: AssertMsgFailed(("No text for %d", state)); break;
     }
     return QString();
@@ -453,8 +453,8 @@ template<> QString toString(const KUSBDeviceFilterAction &action)
 {
     switch (action)
     {
-        case KUSBDeviceFilterAction_Ignore: return QApplication::translate("VBoxGlobal", "Ignore", "USBDeviceFilterAction");
-        case KUSBDeviceFilterAction_Hold:   return QApplication::translate("VBoxGlobal", "Hold", "USBDeviceFilterAction");
+        case KUSBDeviceFilterAction_Ignore: return QApplication::translate("UICommon", "Ignore", "USBDeviceFilterAction");
+        case KUSBDeviceFilterAction_Hold:   return QApplication::translate("UICommon", "Hold", "USBDeviceFilterAction");
         default: AssertMsgFailed(("No text for %d", action)); break;
     }
     return QString();
@@ -464,8 +464,8 @@ template<> QString toString(const KUSBDeviceFilterAction &action)
 template<> KUSBDeviceFilterAction fromString<KUSBDeviceFilterAction>(const QString &strAction)
 {
     QHash<QString, KUSBDeviceFilterAction> list;
-    list.insert(QApplication::translate("VBoxGlobal", "Ignore", "USBDeviceFilterAction"), KUSBDeviceFilterAction_Ignore);
-    list.insert(QApplication::translate("VBoxGlobal", "Hold", "USBDeviceFilterAction"),   KUSBDeviceFilterAction_Hold);
+    list.insert(QApplication::translate("UICommon", "Ignore", "USBDeviceFilterAction"), KUSBDeviceFilterAction_Ignore);
+    list.insert(QApplication::translate("UICommon", "Hold", "USBDeviceFilterAction"),   KUSBDeviceFilterAction_Hold);
     if (!list.contains(strAction))
     {
         AssertMsgFailed(("No value for '%s'", strAction.toUtf8().constData()));
@@ -478,15 +478,15 @@ template<> QString toString(const KAudioDriverType &type)
 {
     switch (type)
     {
-        case KAudioDriverType_Null:        return QApplication::translate("VBoxGlobal", "Null Audio Driver", "AudioDriverType");
-        case KAudioDriverType_WinMM:       return QApplication::translate("VBoxGlobal", "Windows Multimedia", "AudioDriverType");
-        case KAudioDriverType_OSS:         return QApplication::translate("VBoxGlobal", "OSS Audio Driver", "AudioDriverType");
-        case KAudioDriverType_ALSA:        return QApplication::translate("VBoxGlobal", "ALSA Audio Driver", "AudioDriverType");
-        case KAudioDriverType_DirectSound: return QApplication::translate("VBoxGlobal", "Windows DirectSound", "AudioDriverType");
-        case KAudioDriverType_CoreAudio:   return QApplication::translate("VBoxGlobal", "CoreAudio", "AudioDriverType");
+        case KAudioDriverType_Null:        return QApplication::translate("UICommon", "Null Audio Driver", "AudioDriverType");
+        case KAudioDriverType_WinMM:       return QApplication::translate("UICommon", "Windows Multimedia", "AudioDriverType");
+        case KAudioDriverType_OSS:         return QApplication::translate("UICommon", "OSS Audio Driver", "AudioDriverType");
+        case KAudioDriverType_ALSA:        return QApplication::translate("UICommon", "ALSA Audio Driver", "AudioDriverType");
+        case KAudioDriverType_DirectSound: return QApplication::translate("UICommon", "Windows DirectSound", "AudioDriverType");
+        case KAudioDriverType_CoreAudio:   return QApplication::translate("UICommon", "CoreAudio", "AudioDriverType");
         // case KAudioDriverType_MMPM:
-        case KAudioDriverType_Pulse:       return QApplication::translate("VBoxGlobal", "PulseAudio", "AudioDriverType");
-        case KAudioDriverType_SolAudio:    return QApplication::translate("VBoxGlobal", "Solaris Audio", "AudioDriverType");
+        case KAudioDriverType_Pulse:       return QApplication::translate("UICommon", "PulseAudio", "AudioDriverType");
+        case KAudioDriverType_SolAudio:    return QApplication::translate("UICommon", "Solaris Audio", "AudioDriverType");
         default: AssertMsgFailed(("No text for %d", type)); break;
     }
     return QString();
@@ -496,15 +496,15 @@ template<> QString toString(const KAudioDriverType &type)
 template<> KAudioDriverType fromString<KAudioDriverType>(const QString &strType)
 {
     QHash<QString, KAudioDriverType> list;
-    list.insert(QApplication::translate("VBoxGlobal", "Null Audio Driver", "AudioDriverType"),   KAudioDriverType_Null);
-    list.insert(QApplication::translate("VBoxGlobal", "Windows Multimedia", "AudioDriverType"),  KAudioDriverType_WinMM);
-    list.insert(QApplication::translate("VBoxGlobal", "OSS Audio Driver", "AudioDriverType"),    KAudioDriverType_OSS);
-    list.insert(QApplication::translate("VBoxGlobal", "ALSA Audio Driver", "AudioDriverType"),   KAudioDriverType_ALSA);
-    list.insert(QApplication::translate("VBoxGlobal", "Windows DirectSound", "AudioDriverType"), KAudioDriverType_DirectSound);
-    list.insert(QApplication::translate("VBoxGlobal", "CoreAudio", "AudioDriverType"),           KAudioDriverType_CoreAudio);
+    list.insert(QApplication::translate("UICommon", "Null Audio Driver", "AudioDriverType"),   KAudioDriverType_Null);
+    list.insert(QApplication::translate("UICommon", "Windows Multimedia", "AudioDriverType"),  KAudioDriverType_WinMM);
+    list.insert(QApplication::translate("UICommon", "OSS Audio Driver", "AudioDriverType"),    KAudioDriverType_OSS);
+    list.insert(QApplication::translate("UICommon", "ALSA Audio Driver", "AudioDriverType"),   KAudioDriverType_ALSA);
+    list.insert(QApplication::translate("UICommon", "Windows DirectSound", "AudioDriverType"), KAudioDriverType_DirectSound);
+    list.insert(QApplication::translate("UICommon", "CoreAudio", "AudioDriverType"),           KAudioDriverType_CoreAudio);
     // list.insert(..., KAudioDriverType_MMPM);
-    list.insert(QApplication::translate("VBoxGlobal", "PulseAudio", "AudioDriverType"),          KAudioDriverType_Pulse);
-    list.insert(QApplication::translate("VBoxGlobal", "Solaris Audio", "AudioDriverType"),       KAudioDriverType_SolAudio);
+    list.insert(QApplication::translate("UICommon", "PulseAudio", "AudioDriverType"),          KAudioDriverType_Pulse);
+    list.insert(QApplication::translate("UICommon", "Solaris Audio", "AudioDriverType"),       KAudioDriverType_SolAudio);
     if (!list.contains(strType))
     {
         AssertMsgFailed(("No value for '%s'", strType.toUtf8().constData()));
@@ -517,9 +517,9 @@ template<> QString toString(const KAudioControllerType &type)
 {
     switch (type)
     {
-        case KAudioControllerType_AC97: return QApplication::translate("VBoxGlobal", "ICH AC97", "AudioControllerType");
-        case KAudioControllerType_SB16: return QApplication::translate("VBoxGlobal", "SoundBlaster 16", "AudioControllerType");
-        case KAudioControllerType_HDA:  return QApplication::translate("VBoxGlobal", "Intel HD Audio", "AudioControllerType");
+        case KAudioControllerType_AC97: return QApplication::translate("UICommon", "ICH AC97", "AudioControllerType");
+        case KAudioControllerType_SB16: return QApplication::translate("UICommon", "SoundBlaster 16", "AudioControllerType");
+        case KAudioControllerType_HDA:  return QApplication::translate("UICommon", "Intel HD Audio", "AudioControllerType");
         default: AssertMsgFailed(("No text for %d", type)); break;
     }
     return QString();
@@ -529,9 +529,9 @@ template<> QString toString(const KAudioControllerType &type)
 template<> KAudioControllerType fromString<KAudioControllerType>(const QString &strType)
 {
     QHash<QString, KAudioControllerType> list;
-    list.insert(QApplication::translate("VBoxGlobal", "ICH AC97", "AudioControllerType"),        KAudioControllerType_AC97);
-    list.insert(QApplication::translate("VBoxGlobal", "SoundBlaster 16", "AudioControllerType"), KAudioControllerType_SB16);
-    list.insert(QApplication::translate("VBoxGlobal", "Intel HD Audio", "AudioControllerType"),  KAudioControllerType_HDA);
+    list.insert(QApplication::translate("UICommon", "ICH AC97", "AudioControllerType"),        KAudioControllerType_AC97);
+    list.insert(QApplication::translate("UICommon", "SoundBlaster 16", "AudioControllerType"), KAudioControllerType_SB16);
+    list.insert(QApplication::translate("UICommon", "Intel HD Audio", "AudioControllerType"),  KAudioControllerType_HDA);
     if (!list.contains(strType))
     {
         AssertMsgFailed(("No value for '%s'", strType.toUtf8().constData()));
@@ -544,9 +544,9 @@ template<> QString toString(const KAuthType &type)
 {
     switch (type)
     {
-        case KAuthType_Null:     return QApplication::translate("VBoxGlobal", "Null", "AuthType");
-        case KAuthType_External: return QApplication::translate("VBoxGlobal", "External", "AuthType");
-        case KAuthType_Guest:    return QApplication::translate("VBoxGlobal", "Guest", "AuthType");
+        case KAuthType_Null:     return QApplication::translate("UICommon", "Null", "AuthType");
+        case KAuthType_External: return QApplication::translate("UICommon", "External", "AuthType");
+        case KAuthType_Guest:    return QApplication::translate("UICommon", "Guest", "AuthType");
         default: AssertMsgFailed(("No text for %d", type)); break;
     }
     return QString();
@@ -556,9 +556,9 @@ template<> QString toString(const KAuthType &type)
 template<> KAuthType fromString<KAuthType>(const QString &strType)
 {
     QHash<QString, KAuthType> list;
-    list.insert(QApplication::translate("VBoxGlobal", "Null", "AuthType"),     KAuthType_Null);
-    list.insert(QApplication::translate("VBoxGlobal", "External", "AuthType"), KAuthType_External);
-    list.insert(QApplication::translate("VBoxGlobal", "Guest", "AuthType"),    KAuthType_Guest);
+    list.insert(QApplication::translate("UICommon", "Null", "AuthType"),     KAuthType_Null);
+    list.insert(QApplication::translate("UICommon", "External", "AuthType"), KAuthType_External);
+    list.insert(QApplication::translate("UICommon", "Guest", "AuthType"),    KAuthType_Guest);
     if (!list.contains(strType))
     {
         AssertMsgFailed(("No value for '%s'", strType.toUtf8().constData()));
@@ -571,14 +571,14 @@ template<> QString toString(const KStorageBus &bus)
 {
     switch (bus)
     {
-        case KStorageBus_IDE:        return QApplication::translate("VBoxGlobal", "IDE", "StorageBus");
-        case KStorageBus_SATA:       return QApplication::translate("VBoxGlobal", "SATA", "StorageBus");
-        case KStorageBus_SCSI:       return QApplication::translate("VBoxGlobal", "SCSI", "StorageBus");
-        case KStorageBus_Floppy:     return QApplication::translate("VBoxGlobal", "Floppy", "StorageBus");
-        case KStorageBus_SAS:        return QApplication::translate("VBoxGlobal", "SAS", "StorageBus");
-        case KStorageBus_USB:        return QApplication::translate("VBoxGlobal", "USB", "StorageBus");
-        case KStorageBus_PCIe:       return QApplication::translate("VBoxGlobal", "PCIe", "StorageBus");
-        case KStorageBus_VirtioSCSI: return QApplication::translate("VBoxGlobal", "virtio-scsi", "StorageBus");
+        case KStorageBus_IDE:        return QApplication::translate("UICommon", "IDE", "StorageBus");
+        case KStorageBus_SATA:       return QApplication::translate("UICommon", "SATA", "StorageBus");
+        case KStorageBus_SCSI:       return QApplication::translate("UICommon", "SCSI", "StorageBus");
+        case KStorageBus_Floppy:     return QApplication::translate("UICommon", "Floppy", "StorageBus");
+        case KStorageBus_SAS:        return QApplication::translate("UICommon", "SAS", "StorageBus");
+        case KStorageBus_USB:        return QApplication::translate("UICommon", "USB", "StorageBus");
+        case KStorageBus_PCIe:       return QApplication::translate("UICommon", "PCIe", "StorageBus");
+        case KStorageBus_VirtioSCSI: return QApplication::translate("UICommon", "virtio-scsi", "StorageBus");
         default:                     AssertMsgFailed(("No text for %d", bus)); break;
     }
     return QString();
@@ -588,14 +588,14 @@ template<> QString toString(const KStorageBus &bus)
 template<> KStorageBus fromString<KStorageBus>(const QString &strType)
 {
     QHash<QString, KStorageBus> list;
-    list.insert(QApplication::translate("VBoxGlobal", "IDE", "StorageBus"),         KStorageBus_IDE);
-    list.insert(QApplication::translate("VBoxGlobal", "SATA", "StorageBus"),        KStorageBus_SATA);
-    list.insert(QApplication::translate("VBoxGlobal", "SCSI", "StorageBus"),        KStorageBus_SCSI);
-    list.insert(QApplication::translate("VBoxGlobal", "Floppy", "StorageBus"),      KStorageBus_Floppy);
-    list.insert(QApplication::translate("VBoxGlobal", "SAS", "StorageBus"),         KStorageBus_SAS);
-    list.insert(QApplication::translate("VBoxGlobal", "USB", "StorageBus"),         KStorageBus_USB);
-    list.insert(QApplication::translate("VBoxGlobal", "PCIe", "StorageBus"),        KStorageBus_PCIe);
-    list.insert(QApplication::translate("VBoxGlobal", "virtio-scsi", "StorageBus"), KStorageBus_VirtioSCSI);
+    list.insert(QApplication::translate("UICommon", "IDE", "StorageBus"),         KStorageBus_IDE);
+    list.insert(QApplication::translate("UICommon", "SATA", "StorageBus"),        KStorageBus_SATA);
+    list.insert(QApplication::translate("UICommon", "SCSI", "StorageBus"),        KStorageBus_SCSI);
+    list.insert(QApplication::translate("UICommon", "Floppy", "StorageBus"),      KStorageBus_Floppy);
+    list.insert(QApplication::translate("UICommon", "SAS", "StorageBus"),         KStorageBus_SAS);
+    list.insert(QApplication::translate("UICommon", "USB", "StorageBus"),         KStorageBus_USB);
+    list.insert(QApplication::translate("UICommon", "PCIe", "StorageBus"),        KStorageBus_PCIe);
+    list.insert(QApplication::translate("UICommon", "virtio-scsi", "StorageBus"), KStorageBus_VirtioSCSI);
     if (!list.contains(strType))
     {
         AssertMsgFailed(("No value for '%s'", strType.toUtf8().constData()));
@@ -608,17 +608,17 @@ template<> QString toString(const KStorageControllerType &type)
 {
     switch (type)
     {
-        case KStorageControllerType_LsiLogic:    return QApplication::translate("VBoxGlobal", "Lsilogic", "StorageControllerType");
-        case KStorageControllerType_BusLogic:    return QApplication::translate("VBoxGlobal", "BusLogic", "StorageControllerType");
-        case KStorageControllerType_IntelAhci:   return QApplication::translate("VBoxGlobal", "AHCI", "StorageControllerType");
-        case KStorageControllerType_PIIX3:       return QApplication::translate("VBoxGlobal", "PIIX3", "StorageControllerType");
-        case KStorageControllerType_PIIX4:       return QApplication::translate("VBoxGlobal", "PIIX4", "StorageControllerType");
-        case KStorageControllerType_ICH6:        return QApplication::translate("VBoxGlobal", "ICH6", "StorageControllerType");
-        case KStorageControllerType_I82078:      return QApplication::translate("VBoxGlobal", "I82078", "StorageControllerType");
-        case KStorageControllerType_LsiLogicSas: return QApplication::translate("VBoxGlobal", "LsiLogic SAS", "StorageControllerType");
-        case KStorageControllerType_USB:         return QApplication::translate("VBoxGlobal", "USB", "StorageControllerType");
-        case KStorageControllerType_NVMe:        return QApplication::translate("VBoxGlobal", "NVMe", "StorageControllerType");
-        case KStorageControllerType_VirtioSCSI:  return QApplication::translate("VBoxGlobal", "virtio-scsi", "StorageControllerType");
+        case KStorageControllerType_LsiLogic:    return QApplication::translate("UICommon", "Lsilogic", "StorageControllerType");
+        case KStorageControllerType_BusLogic:    return QApplication::translate("UICommon", "BusLogic", "StorageControllerType");
+        case KStorageControllerType_IntelAhci:   return QApplication::translate("UICommon", "AHCI", "StorageControllerType");
+        case KStorageControllerType_PIIX3:       return QApplication::translate("UICommon", "PIIX3", "StorageControllerType");
+        case KStorageControllerType_PIIX4:       return QApplication::translate("UICommon", "PIIX4", "StorageControllerType");
+        case KStorageControllerType_ICH6:        return QApplication::translate("UICommon", "ICH6", "StorageControllerType");
+        case KStorageControllerType_I82078:      return QApplication::translate("UICommon", "I82078", "StorageControllerType");
+        case KStorageControllerType_LsiLogicSas: return QApplication::translate("UICommon", "LsiLogic SAS", "StorageControllerType");
+        case KStorageControllerType_USB:         return QApplication::translate("UICommon", "USB", "StorageControllerType");
+        case KStorageControllerType_NVMe:        return QApplication::translate("UICommon", "NVMe", "StorageControllerType");
+        case KStorageControllerType_VirtioSCSI:  return QApplication::translate("UICommon", "virtio-scsi", "StorageControllerType");
         default: AssertMsgFailed(("No text for %d", type)); break;
     }
     return QString();
@@ -628,17 +628,17 @@ template<> QString toString(const KStorageControllerType &type)
 template<> KStorageControllerType fromString<KStorageControllerType>(const QString &strType)
 {
     QHash<QString, KStorageControllerType> list;
-    list.insert(QApplication::translate("VBoxGlobal", "Lsilogic", "StorageControllerType"),     KStorageControllerType_LsiLogic);
-    list.insert(QApplication::translate("VBoxGlobal", "BusLogic", "StorageControllerType"),     KStorageControllerType_BusLogic);
-    list.insert(QApplication::translate("VBoxGlobal", "AHCI", "StorageControllerType"),         KStorageControllerType_IntelAhci);
-    list.insert(QApplication::translate("VBoxGlobal", "PIIX3", "StorageControllerType"),        KStorageControllerType_PIIX3);
-    list.insert(QApplication::translate("VBoxGlobal", "PIIX4", "StorageControllerType"),        KStorageControllerType_PIIX4);
-    list.insert(QApplication::translate("VBoxGlobal", "ICH6", "StorageControllerType"),         KStorageControllerType_ICH6);
-    list.insert(QApplication::translate("VBoxGlobal", "I82078", "StorageControllerType"),       KStorageControllerType_I82078);
-    list.insert(QApplication::translate("VBoxGlobal", "LsiLogic SAS", "StorageControllerType"), KStorageControllerType_LsiLogicSas);
-    list.insert(QApplication::translate("VBoxGlobal", "USB", "StorageControllerType"),          KStorageControllerType_USB);
-    list.insert(QApplication::translate("VBoxGlobal", "NVMe", "StorageControllerType"),         KStorageControllerType_NVMe);
-    list.insert(QApplication::translate("VBoxGlobal", "virtio-scsi", "StorageControllerType"),  KStorageControllerType_VirtioSCSI);
+    list.insert(QApplication::translate("UICommon", "Lsilogic", "StorageControllerType"),     KStorageControllerType_LsiLogic);
+    list.insert(QApplication::translate("UICommon", "BusLogic", "StorageControllerType"),     KStorageControllerType_BusLogic);
+    list.insert(QApplication::translate("UICommon", "AHCI", "StorageControllerType"),         KStorageControllerType_IntelAhci);
+    list.insert(QApplication::translate("UICommon", "PIIX3", "StorageControllerType"),        KStorageControllerType_PIIX3);
+    list.insert(QApplication::translate("UICommon", "PIIX4", "StorageControllerType"),        KStorageControllerType_PIIX4);
+    list.insert(QApplication::translate("UICommon", "ICH6", "StorageControllerType"),         KStorageControllerType_ICH6);
+    list.insert(QApplication::translate("UICommon", "I82078", "StorageControllerType"),       KStorageControllerType_I82078);
+    list.insert(QApplication::translate("UICommon", "LsiLogic SAS", "StorageControllerType"), KStorageControllerType_LsiLogicSas);
+    list.insert(QApplication::translate("UICommon", "USB", "StorageControllerType"),          KStorageControllerType_USB);
+    list.insert(QApplication::translate("UICommon", "NVMe", "StorageControllerType"),         KStorageControllerType_NVMe);
+    list.insert(QApplication::translate("UICommon", "virtio-scsi", "StorageControllerType"),  KStorageControllerType_VirtioSCSI);
     if (!list.contains(strType))
     {
         AssertMsgFailed(("No value for '%s'", strType.toUtf8().constData()));
@@ -651,8 +651,8 @@ template<> QString toString(const KChipsetType &type)
 {
     switch (type)
     {
-        case KChipsetType_PIIX3: return QApplication::translate("VBoxGlobal", "PIIX3", "ChipsetType");
-        case KChipsetType_ICH9:  return QApplication::translate("VBoxGlobal", "ICH9", "ChipsetType");
+        case KChipsetType_PIIX3: return QApplication::translate("UICommon", "PIIX3", "ChipsetType");
+        case KChipsetType_ICH9:  return QApplication::translate("UICommon", "ICH9", "ChipsetType");
         default: AssertMsgFailed(("No text for %d", type)); break;
     }
     return QString();
@@ -663,8 +663,8 @@ template<> QString toString(const KNATProtocol &protocol)
 {
     switch (protocol)
     {
-        case KNATProtocol_UDP: return QApplication::translate("VBoxGlobal", "UDP", "NATProtocol");
-        case KNATProtocol_TCP: return QApplication::translate("VBoxGlobal", "TCP", "NATProtocol");
+        case KNATProtocol_UDP: return QApplication::translate("UICommon", "UDP", "NATProtocol");
+        case KNATProtocol_TCP: return QApplication::translate("UICommon", "TCP", "NATProtocol");
         default: AssertMsgFailed(("No text for %d", protocol)); break;
     }
     return QString();
@@ -705,15 +705,15 @@ template<> QString toInternalString(const KGuestSessionStatus &enmStatus)
 {
     switch (enmStatus)
     {
-        case KGuestSessionStatus_Undefined:           return QApplication::translate("VBoxGlobal", "Undefined",          "GuestSessionStatus");
-        case KGuestSessionStatus_Starting:            return QApplication::translate("VBoxGlobal", "Starting",           "GuestSessionStatus");
-        case KGuestSessionStatus_Started:             return QApplication::translate("VBoxGlobal", "Started",            "GuestSessionStatus");
-        case KGuestSessionStatus_Terminating:         return QApplication::translate("VBoxGlobal", "Terminating",        "GuestSessionStatus");
-        case KGuestSessionStatus_Terminated:          return QApplication::translate("VBoxGlobal", "Terminated",         "GuestSessionStatus");
-        case KGuestSessionStatus_TimedOutKilled:      return QApplication::translate("VBoxGlobal", "TimedOutKilled",     "GuestSessionStatus");
-        case KGuestSessionStatus_TimedOutAbnormally:  return QApplication::translate("VBoxGlobal", "TimedOutAbnormally", "GuestSessionStatus");
-        case KGuestSessionStatus_Down:                return QApplication::translate("VBoxGlobal", "Down",               "GuestSessionStatus");
-        case KGuestSessionStatus_Error:               return QApplication::translate("VBoxGlobal", "Error",              "GuestSessionStatus");
+        case KGuestSessionStatus_Undefined:           return QApplication::translate("UICommon", "Undefined",          "GuestSessionStatus");
+        case KGuestSessionStatus_Starting:            return QApplication::translate("UICommon", "Starting",           "GuestSessionStatus");
+        case KGuestSessionStatus_Started:             return QApplication::translate("UICommon", "Started",            "GuestSessionStatus");
+        case KGuestSessionStatus_Terminating:         return QApplication::translate("UICommon", "Terminating",        "GuestSessionStatus");
+        case KGuestSessionStatus_Terminated:          return QApplication::translate("UICommon", "Terminated",         "GuestSessionStatus");
+        case KGuestSessionStatus_TimedOutKilled:      return QApplication::translate("UICommon", "TimedOutKilled",     "GuestSessionStatus");
+        case KGuestSessionStatus_TimedOutAbnormally:  return QApplication::translate("UICommon", "TimedOutAbnormally", "GuestSessionStatus");
+        case KGuestSessionStatus_Down:                return QApplication::translate("UICommon", "Down",               "GuestSessionStatus");
+        case KGuestSessionStatus_Error:               return QApplication::translate("UICommon", "Error",              "GuestSessionStatus");
         default: AssertMsgFailed(("No text for %d", enmStatus)); break;
     }
     return QString();
@@ -722,15 +722,15 @@ template<> QString toInternalString(const KGuestSessionStatus &enmStatus)
 template<> KGuestSessionStatus fromInternalString<KGuestSessionStatus>(const QString &strStatus)
 {
     QHash<QString, KGuestSessionStatus> list;
-    list.insert(QApplication::translate("VBoxGlobal", "Undefined",          "GuestSessionStatus"),  KGuestSessionStatus_Undefined);
-    list.insert(QApplication::translate("VBoxGlobal", "Starting",           "GuestSessionStatus"),  KGuestSessionStatus_Starting);
-    list.insert(QApplication::translate("VBoxGlobal", "Started",            "GuestSessionStatus"),  KGuestSessionStatus_Started);
-    list.insert(QApplication::translate("VBoxGlobal", "Terminating",        "GuestSessionStatus"),  KGuestSessionStatus_Terminating);
-    list.insert(QApplication::translate("VBoxGlobal", "Terminated",         "GuestSessionStatus"),  KGuestSessionStatus_Terminated);
-    list.insert(QApplication::translate("VBoxGlobal", "TimedOutKilled",     "GuestSessionStatus"),  KGuestSessionStatus_TimedOutKilled);
-    list.insert(QApplication::translate("VBoxGlobal", "TimedOutAbnormally", "GuestSessionStatus"),  KGuestSessionStatus_TimedOutAbnormally);
-    list.insert(QApplication::translate("VBoxGlobal", "Down",               "GuestSessionStatus"),  KGuestSessionStatus_Down);
-    list.insert(QApplication::translate("VBoxGlobal", "Error",              "GuestSessionStatus"),  KGuestSessionStatus_Error);
+    list.insert(QApplication::translate("UICommon", "Undefined",          "GuestSessionStatus"),  KGuestSessionStatus_Undefined);
+    list.insert(QApplication::translate("UICommon", "Starting",           "GuestSessionStatus"),  KGuestSessionStatus_Starting);
+    list.insert(QApplication::translate("UICommon", "Started",            "GuestSessionStatus"),  KGuestSessionStatus_Started);
+    list.insert(QApplication::translate("UICommon", "Terminating",        "GuestSessionStatus"),  KGuestSessionStatus_Terminating);
+    list.insert(QApplication::translate("UICommon", "Terminated",         "GuestSessionStatus"),  KGuestSessionStatus_Terminated);
+    list.insert(QApplication::translate("UICommon", "TimedOutKilled",     "GuestSessionStatus"),  KGuestSessionStatus_TimedOutKilled);
+    list.insert(QApplication::translate("UICommon", "TimedOutAbnormally", "GuestSessionStatus"),  KGuestSessionStatus_TimedOutAbnormally);
+    list.insert(QApplication::translate("UICommon", "Down",               "GuestSessionStatus"),  KGuestSessionStatus_Down);
+    list.insert(QApplication::translate("UICommon", "Error",              "GuestSessionStatus"),  KGuestSessionStatus_Error);
     if (!list.contains(strStatus))
     {
         AssertMsgFailed(("No value for '%s'", strStatus.toUtf8().constData()));
@@ -742,18 +742,18 @@ template<> QString toInternalString(const KProcessStatus &enmStatus)
 {
     switch (enmStatus)
     {
-        case KProcessStatus_Undefined:            return QApplication::translate("VBoxGlobal", "Undefined",            "ProcessStatus");
-        case KProcessStatus_Starting:             return QApplication::translate("VBoxGlobal", "Starting",             "ProcessStatus");
-        case KProcessStatus_Started:              return QApplication::translate("VBoxGlobal", "Started",              "ProcessStatus");
-        case KProcessStatus_Paused:               return QApplication::translate("VBoxGlobal", "Paused",               "ProcessStatus");
-        case KProcessStatus_Terminating:          return QApplication::translate("VBoxGlobal", "Terminating",          "ProcessStatus");
-        case KProcessStatus_TerminatedNormally:   return QApplication::translate("VBoxGlobal", "TerminatedNormally",   "ProcessStatus");
-        case KProcessStatus_TerminatedSignal:     return QApplication::translate("VBoxGlobal", "TerminatedSignal",     "ProcessStatus");
-        case KProcessStatus_TerminatedAbnormally: return QApplication::translate("VBoxGlobal", "TerminatedAbnormally", "ProcessStatus");
-        case KProcessStatus_TimedOutKilled:       return QApplication::translate("VBoxGlobal", "TimedOutKilled",       "ProcessStatus");
-        case KProcessStatus_TimedOutAbnormally:   return QApplication::translate("VBoxGlobal", "TimedOutAbnormally",   "ProcessStatus");
-        case KProcessStatus_Down:                 return QApplication::translate("VBoxGlobal", "Down",                 "ProcessStatus");
-        case KProcessStatus_Error:                return QApplication::translate("VBoxGlobal", "Error",                "ProcessStatus");
+        case KProcessStatus_Undefined:            return QApplication::translate("UICommon", "Undefined",            "ProcessStatus");
+        case KProcessStatus_Starting:             return QApplication::translate("UICommon", "Starting",             "ProcessStatus");
+        case KProcessStatus_Started:              return QApplication::translate("UICommon", "Started",              "ProcessStatus");
+        case KProcessStatus_Paused:               return QApplication::translate("UICommon", "Paused",               "ProcessStatus");
+        case KProcessStatus_Terminating:          return QApplication::translate("UICommon", "Terminating",          "ProcessStatus");
+        case KProcessStatus_TerminatedNormally:   return QApplication::translate("UICommon", "TerminatedNormally",   "ProcessStatus");
+        case KProcessStatus_TerminatedSignal:     return QApplication::translate("UICommon", "TerminatedSignal",     "ProcessStatus");
+        case KProcessStatus_TerminatedAbnormally: return QApplication::translate("UICommon", "TerminatedAbnormally", "ProcessStatus");
+        case KProcessStatus_TimedOutKilled:       return QApplication::translate("UICommon", "TimedOutKilled",       "ProcessStatus");
+        case KProcessStatus_TimedOutAbnormally:   return QApplication::translate("UICommon", "TimedOutAbnormally",   "ProcessStatus");
+        case KProcessStatus_Down:                 return QApplication::translate("UICommon", "Down",                 "ProcessStatus");
+        case KProcessStatus_Error:                return QApplication::translate("UICommon", "Error",                "ProcessStatus");
         default: AssertMsgFailed(("No text for %d", enmStatus)); break;
     }
     return QString();
@@ -762,18 +762,18 @@ template<> QString toInternalString(const KProcessStatus &enmStatus)
 template<> KProcessStatus fromInternalString<KProcessStatus>(const QString &strStatus)
 {
     QHash<QString, KProcessStatus> list;
-    list.insert(QApplication::translate("VBoxGlobal", "Undefined",            "ProcessStatus"),  KProcessStatus_Undefined);
-    list.insert(QApplication::translate("VBoxGlobal", "Starting",             "ProcessStatus"),  KProcessStatus_Starting);
-    list.insert(QApplication::translate("VBoxGlobal", "Started",              "ProcessStatus"),  KProcessStatus_Started);
-    list.insert(QApplication::translate("VBoxGlobal", "Paused",               "ProcessStatus"),  KProcessStatus_Paused);
-    list.insert(QApplication::translate("VBoxGlobal", "Terminating",          "ProcessStatus"),  KProcessStatus_Terminating);
-    list.insert(QApplication::translate("VBoxGlobal", "TerminatedNormally",   "ProcessStatus"),  KProcessStatus_TerminatedNormally);
-    list.insert(QApplication::translate("VBoxGlobal", "TerminatedSignal",     "ProcessStatus"),  KProcessStatus_TerminatedSignal);
-    list.insert(QApplication::translate("VBoxGlobal", "TerminatedAbnormally", "ProcessStatus"),  KProcessStatus_TerminatedAbnormally);
-    list.insert(QApplication::translate("VBoxGlobal", "TimedOutKilled",       "ProcessStatus"),  KProcessStatus_TimedOutKilled);
-    list.insert(QApplication::translate("VBoxGlobal", "TimedOutAbnormally",   "ProcessStatus"),  KProcessStatus_TimedOutAbnormally);
-    list.insert(QApplication::translate("VBoxGlobal", "Down",                 "ProcessStatus"),  KProcessStatus_Down);
-    list.insert(QApplication::translate("VBoxGlobal", "Error",                "ProcessStatus"),  KProcessStatus_Error);
+    list.insert(QApplication::translate("UICommon", "Undefined",            "ProcessStatus"),  KProcessStatus_Undefined);
+    list.insert(QApplication::translate("UICommon", "Starting",             "ProcessStatus"),  KProcessStatus_Starting);
+    list.insert(QApplication::translate("UICommon", "Started",              "ProcessStatus"),  KProcessStatus_Started);
+    list.insert(QApplication::translate("UICommon", "Paused",               "ProcessStatus"),  KProcessStatus_Paused);
+    list.insert(QApplication::translate("UICommon", "Terminating",          "ProcessStatus"),  KProcessStatus_Terminating);
+    list.insert(QApplication::translate("UICommon", "TerminatedNormally",   "ProcessStatus"),  KProcessStatus_TerminatedNormally);
+    list.insert(QApplication::translate("UICommon", "TerminatedSignal",     "ProcessStatus"),  KProcessStatus_TerminatedSignal);
+    list.insert(QApplication::translate("UICommon", "TerminatedAbnormally", "ProcessStatus"),  KProcessStatus_TerminatedAbnormally);
+    list.insert(QApplication::translate("UICommon", "TimedOutKilled",       "ProcessStatus"),  KProcessStatus_TimedOutKilled);
+    list.insert(QApplication::translate("UICommon", "TimedOutAbnormally",   "ProcessStatus"),  KProcessStatus_TimedOutAbnormally);
+    list.insert(QApplication::translate("UICommon", "Down",                 "ProcessStatus"),  KProcessStatus_Down);
+    list.insert(QApplication::translate("UICommon", "Error",                "ProcessStatus"),  KProcessStatus_Error);
 
     if (!list.contains(strStatus))
     {

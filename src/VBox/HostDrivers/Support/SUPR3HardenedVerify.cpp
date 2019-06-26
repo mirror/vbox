@@ -199,7 +199,7 @@ static SUPINSTFILE const    g_aSupInstallFiles[] =
     {   kSupIFT_Exe,  kSupID_AppBin,             true, "VirtualBox" SUPLIB_EXE_SUFF },
     {   kSupIFT_Exe,  kSupID_AppBin,             true, "VirtualBoxVM" SUPLIB_EXE_SUFF },
     {   kSupIFT_Dll,  kSupID_AppPrivArch,        true, "VirtualBoxVM" SUPLIB_DLL_SUFF },
-    {   kSupIFT_Dll,  kSupID_AppPrivArch,        true, "VBoxGlobal" SUPLIB_DLL_SUFF },
+    {   kSupIFT_Dll,  kSupID_AppPrivArch,        true, "UICommon" SUPLIB_DLL_SUFF },
 # if !defined(RT_OS_DARWIN) && !defined(RT_OS_WINDOWS) && !defined(RT_OS_OS2)
     {   kSupIFT_Dll,  kSupID_AppSharedLib,       true, "VBoxKeyboard" SUPLIB_DLL_SUFF },
 # endif

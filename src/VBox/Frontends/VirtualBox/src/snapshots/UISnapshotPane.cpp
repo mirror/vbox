@@ -343,25 +343,25 @@ SnapshotAgeFormat UISnapshotItem::updateAge()
     else if (then.secsTo(now) > 60 * 60 * 24)
     {
         strAge = tr("%1 (%2 ago)", "date time (how long ago)")
-                    .arg(then.toString(Qt::LocalDate), VBoxGlobal::daysToString(then.secsTo(now) / 60 / 60 / 24));
+                    .arg(then.toString(Qt::LocalDate), UICommon::daysToString(then.secsTo(now) / 60 / 60 / 24));
         enmAgeFormat = SnapshotAgeFormat_InDays;
     }
     else if (then.secsTo(now) > 60 * 60)
     {
         strAge = tr("%1 (%2 ago)", "date time (how long ago)")
-                    .arg(then.toString(Qt::LocalDate), VBoxGlobal::hoursToString(then.secsTo(now) / 60 / 60));
+                    .arg(then.toString(Qt::LocalDate), UICommon::hoursToString(then.secsTo(now) / 60 / 60));
         enmAgeFormat = SnapshotAgeFormat_InHours;
     }
     else if (then.secsTo(now) > 60)
     {
         strAge = tr("%1 (%2 ago)", "date time (how long ago)")
-                    .arg(then.toString(Qt::LocalDate), VBoxGlobal::minutesToString(then.secsTo(now) / 60));
+                    .arg(then.toString(Qt::LocalDate), UICommon::minutesToString(then.secsTo(now) / 60));
         enmAgeFormat = SnapshotAgeFormat_InMinutes;
     }
     else
     {
         strAge = tr("%1 (%2 ago)", "date time (how long ago)")
-                    .arg(then.toString(Qt::LocalDate), VBoxGlobal::secondsToString(then.secsTo(now)));
+                    .arg(then.toString(Qt::LocalDate), UICommon::secondsToString(then.secsTo(now)));
         enmAgeFormat = SnapshotAgeFormat_InSeconds;
     }
 
@@ -922,9 +922,9 @@ void UISnapshotPane::sltApplySnapshotDetailsChanges()
         /* Open a session (this call will handle all errors): */
         CSession comSession;
         if (m_enmSessionState != KSessionState_Unlocked)
-            comSession = vboxGlobal().openExistingSession(m_uMachineId);
+            comSession = uiCommon().openExistingSession(m_uMachineId);
         else
-            comSession = vboxGlobal().openSession(m_uMachineId);
+            comSession = uiCommon().openSession(m_uMachineId);
         if (comSession.isNotNull())
         {
             /* Get corresponding machine object: */
@@ -978,9 +978,9 @@ void UISnapshotPane::sltApplySnapshotDetailsChanges()
         /* Open a session (this call will handle all errors): */
         CSession comSession;
         if (m_enmSessionState != KSessionState_Unlocked)
-            comSession = vboxGlobal().openExistingSession(m_uMachineId);
+            comSession = uiCommon().openExistingSession(m_uMachineId);
         else
-            comSession = vboxGlobal().openSession(m_uMachineId);
+            comSession = uiCommon().openSession(m_uMachineId);
         if (comSession.isNotNull())
         {
             /* Get corresponding machine object: */
@@ -1108,7 +1108,7 @@ void UISnapshotPane::sltHandleItemChange(QTreeWidgetItem *pItem)
             if (comSnapshot.GetName() != pSnapshotItem->text(Column_Name))
             {
                 /* We need to open a session when we manipulate the snapshot data of a machine: */
-                CSession comSession = vboxGlobal().openExistingSession(comSnapshot.GetMachine().GetId());
+                CSession comSession = uiCommon().openExistingSession(comSnapshot.GetMachine().GetId());
                 if (!comSession.isNull())
                 {
                     /// @todo Add settings save validation.
@@ -1521,9 +1521,9 @@ bool UISnapshotPane::takeSnapshot(bool fAutomatically /* = false */)
         /* Open a session (this call will handle all errors): */
         CSession comSession;
         if (m_enmSessionState != KSessionState_Unlocked)
-            comSession = vboxGlobal().openExistingSession(m_uMachineId);
+            comSession = uiCommon().openExistingSession(m_uMachineId);
         else
-            comSession = vboxGlobal().openSession(m_uMachineId);
+            comSession = uiCommon().openSession(m_uMachineId);
         if (comSession.isNull())
             break;
 
@@ -1562,9 +1562,9 @@ bool UISnapshotPane::takeSnapshot(bool fAutomatically /* = false */)
                 windowManager().registerNewParent(pDlg, pDlgParent);
 
                 /* Assign corresponding icon: */
-                QIcon icon = vboxGlobal().vmUserIcon(comMachine);
+                QIcon icon = uiCommon().vmUserIcon(comMachine);
                 if (icon.isNull())
-                    icon = vboxGlobal().vmGuestOSTypeIcon(comMachine.GetOSTypeId());
+                    icon = uiCommon().vmGuestOSTypeIcon(comMachine.GetOSTypeId());
                 pDlg->setIcon(icon);
 
                 /* Assign corresponding snapshot name: */
@@ -1655,9 +1655,9 @@ bool UISnapshotPane::deleteSnapshot(bool fAutomatically /* = false */)
         /* Open a session (this call will handle all errors): */
         CSession comSession;
         if (m_enmSessionState != KSessionState_Unlocked)
-            comSession = vboxGlobal().openExistingSession(m_uMachineId);
+            comSession = uiCommon().openExistingSession(m_uMachineId);
         else
-            comSession = vboxGlobal().openSession(m_uMachineId);
+            comSession = uiCommon().openSession(m_uMachineId);
         if (comSession.isNull())
             break;
 
@@ -1735,7 +1735,7 @@ bool UISnapshotPane::restoreSnapshot(bool fAutomatically /* = false */)
         }
 
         /* Open a direct session (this call will handle all errors): */
-        CSession comSession = vboxGlobal().openSession(m_uMachineId);
+        CSession comSession = uiCommon().openSession(m_uMachineId);
         if (comSession.isNull())
             break;
 

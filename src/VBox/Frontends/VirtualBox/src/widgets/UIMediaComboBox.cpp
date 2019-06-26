@@ -41,7 +41,7 @@ void UIMediaComboBox::refresh()
     clear(), m_media.clear();
 
     /* Use the medium creation handler to add all the items:  */
-    foreach (const QUuid &uMediumId, vboxGlobal().mediumIDs())
+    foreach (const QUuid &uMediumId, uiCommon().mediumIDs())
         sltHandleMediumCreated(uMediumId);
 
     /* If at least one real medium present, remove null medium: */
@@ -59,11 +59,11 @@ void UIMediaComboBox::repopulate()
 {
     /* Start medium-enumeration (if necessary): */
 #ifndef VBOX_GUI_WITH_NEW_MEDIA_EVENTS
-    if (!vboxGlobal().isMediumEnumerationInProgress())
+    if (!uiCommon().isMediumEnumerationInProgress())
 #else
-    if (!vboxGlobal().isFullMediumEnumerationRequested())
+    if (!uiCommon().isFullMediumEnumerationRequested())
 #endif
-        vboxGlobal().startMediumEnumeration();
+        uiCommon().startMediumEnumeration();
     else
         refresh();
 }
@@ -108,7 +108,7 @@ QString UIMediaComboBox::location(int iIndex /* = -1 */) const
 void UIMediaComboBox::sltHandleMediumCreated(const QUuid &uMediumId)
 {
     /* Search for corresponding medium: */
-    UIMedium guiMedium = vboxGlobal().medium(uMediumId);
+    UIMedium guiMedium = uiCommon().medium(uMediumId);
 
     /* Ignore media (and their children) which are
      * marked as hidden or attached to hidden machines only: */
@@ -137,7 +137,7 @@ void UIMediaComboBox::sltHandleMediumCreated(const QUuid &uMediumId)
 void UIMediaComboBox::sltHandleMediumEnumerated(const QUuid &uMediumId)
 {
     /* Search for corresponding medium: */
-    UIMedium guiMedium = vboxGlobal().medium(uMediumId);
+    UIMedium guiMedium = uiCommon().medium(uMediumId);
 
     /* Add only 1. NULL medium and 2. media of required type: */
     if (!guiMedium.isNull() && guiMedium.type() != m_enmMediaType)
@@ -205,15 +205,15 @@ void UIMediaComboBox::prepare()
     setSizePolicy(sp1);
 
     /* Setup medium-processing handlers: */
-    connect(&vboxGlobal(), &VBoxGlobal::sigMediumCreated,
+    connect(&uiCommon(), &UICommon::sigMediumCreated,
             this, &UIMediaComboBox::sltHandleMediumCreated);
-    connect(&vboxGlobal(), &VBoxGlobal::sigMediumDeleted,
+    connect(&uiCommon(), &UICommon::sigMediumDeleted,
             this, &UIMediaComboBox::sltHandleMediumDeleted);
 
     /* Setup medium-enumeration handlers: */
-    connect(&vboxGlobal(), &VBoxGlobal::sigMediumEnumerationStarted,
+    connect(&uiCommon(), &UICommon::sigMediumEnumerationStarted,
             this, &UIMediaComboBox::sltHandleMediumEnumerationStart);
-    connect(&vboxGlobal(), &VBoxGlobal::sigMediumEnumerated,
+    connect(&uiCommon(), &UICommon::sigMediumEnumerated,
             this, &UIMediaComboBox::sltHandleMediumEnumerated);
 
     /* Setup other connections: */

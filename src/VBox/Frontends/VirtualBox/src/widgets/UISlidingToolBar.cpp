@@ -19,7 +19,7 @@
 #include <QHBoxLayout>
 
 /* GUI includes: */
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "UISlidingToolBar.h"
 #include "UIAnimationFramework.h"
 #include "UIMachineWindow.h"
@@ -124,7 +124,7 @@ void UISlidingToolBar::prepare()
     /* Use Qt API to enable translucency: */
     setAttribute(Qt::WA_TranslucentBackground);
 #elif defined(VBOX_WS_X11)
-    if (vboxGlobal().isCompositingManagerRunning())
+    if (uiCommon().isCompositingManagerRunning())
     {
         /* Use Qt API to enable translucency: */
         setAttribute(Qt::WA_TranslucentBackground);
@@ -184,14 +184,14 @@ void UISlidingToolBar::prepareGeometry()
     {
         case Position_Top:
         {
-            VBoxGlobal::setTopLevelGeometry(this, m_parentRect.x(), m_parentRect.y()                         + m_indentRect.height(),
+            UICommon::setTopLevelGeometry(this, m_parentRect.x(), m_parentRect.y()                         + m_indentRect.height(),
                                                   qMax(m_parentRect.width(), sh.width()), sh.height());
             m_pWidget->setGeometry(0, -sh.height(), qMax(width(), sh.width()), sh.height());
             break;
         }
         case Position_Bottom:
         {
-            VBoxGlobal::setTopLevelGeometry(this, m_parentRect.x(), m_parentRect.y() + m_parentRect.height() - m_indentRect.height() - sh.height(),
+            UICommon::setTopLevelGeometry(this, m_parentRect.x(), m_parentRect.y() + m_parentRect.height() - m_indentRect.height() - sh.height(),
                                                   qMax(m_parentRect.width(), sh.width()), sh.height());
             m_pWidget->setGeometry(0,  sh.height(), qMax(width(), sh.width()), sh.height());
             break;
@@ -199,7 +199,7 @@ void UISlidingToolBar::prepareGeometry()
     }
 
 #ifdef VBOX_WS_X11
-    if (!vboxGlobal().isCompositingManagerRunning())
+    if (!uiCommon().isCompositingManagerRunning())
     {
         /* Use Xshape otherwise: */
         setMask(m_pWidget->geometry());
@@ -241,13 +241,13 @@ void UISlidingToolBar::adjustGeometry()
     {
         case Position_Top:
         {
-            VBoxGlobal::setTopLevelGeometry(this, m_parentRect.x(), m_parentRect.y()                         + m_indentRect.height(),
+            UICommon::setTopLevelGeometry(this, m_parentRect.x(), m_parentRect.y()                         + m_indentRect.height(),
                                                   qMax(m_parentRect.width(), sh.width()), sh.height());
             break;
         }
         case Position_Bottom:
         {
-            VBoxGlobal::setTopLevelGeometry(this, m_parentRect.x(), m_parentRect.y() + m_parentRect.height() - m_indentRect.height() - sh.height(),
+            UICommon::setTopLevelGeometry(this, m_parentRect.x(), m_parentRect.y() + m_parentRect.height() - m_indentRect.height() - sh.height(),
                                                   qMax(m_parentRect.width(), sh.width()), sh.height());
             break;
         }
@@ -256,7 +256,7 @@ void UISlidingToolBar::adjustGeometry()
     m_pWidget->setGeometry(0, 0, qMax(width(), sh.width()), sh.height());
 
 #ifdef VBOX_WS_X11
-    if (!vboxGlobal().isCompositingManagerRunning())
+    if (!uiCommon().isCompositingManagerRunning())
     {
         /* Use Xshape otherwise: */
         setMask(m_pWidget->geometry());
@@ -292,7 +292,7 @@ void UISlidingToolBar::setWidgetGeometry(const QRect &rect)
     m_pWidget->setGeometry(rect);
 
 #ifdef VBOX_WS_X11
-    if (!vboxGlobal().isCompositingManagerRunning())
+    if (!uiCommon().isCompositingManagerRunning())
     {
         /* Use Xshape otherwise: */
         setMask(m_pWidget->geometry());

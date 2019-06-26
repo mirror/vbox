@@ -24,7 +24,7 @@
 
 /* GUI includes: */
 #include "QIProcess.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "VBoxUtils.h"
 #include "UIDownloaderExtensionPack.h"
 #include "UIExtraDataManager.h"
@@ -285,25 +285,25 @@ void UIUpdateStepVirtualBox::sltStartStep()
 {
     /* Compose query: */
     QUrlQuery url;
-    url.addQueryItem("platform", vboxGlobal().virtualBox().GetPackageType());
+    url.addQueryItem("platform", uiCommon().virtualBox().GetPackageType());
     /* Check if branding is active: */
-    if (vboxGlobal().brandingIsActive())
+    if (uiCommon().brandingIsActive())
     {
         /* Branding: Check whether we have a local branding file which tells us our version suffix "FOO"
                      (e.g. 3.06.54321_FOO) to identify this installation: */
-        url.addQueryItem("version", QString("%1_%2_%3").arg(vboxGlobal().virtualBox().GetVersion())
-                                                       .arg(vboxGlobal().virtualBox().GetRevision())
-                                                       .arg(vboxGlobal().brandingGetKey("VerSuffix")));
+        url.addQueryItem("version", QString("%1_%2_%3").arg(uiCommon().virtualBox().GetVersion())
+                                                       .arg(uiCommon().virtualBox().GetRevision())
+                                                       .arg(uiCommon().brandingGetKey("VerSuffix")));
     }
     else
     {
         /* Use hard coded version set by VBOX_VERSION_STRING: */
-        url.addQueryItem("version", QString("%1_%2").arg(vboxGlobal().virtualBox().GetVersion())
-                                                    .arg(vboxGlobal().virtualBox().GetRevision()));
+        url.addQueryItem("version", QString("%1_%2").arg(uiCommon().virtualBox().GetVersion())
+                                                    .arg(uiCommon().virtualBox().GetRevision()));
     }
     url.addQueryItem("count", QString::number(gEDataManager->applicationUpdateCheckCounter()));
     url.addQueryItem("branch", VBoxUpdateData(gEDataManager->applicationUpdateData()).branchName());
-    QString strUserAgent(QString("VirtualBox %1 <%2>").arg(vboxGlobal().virtualBox().GetVersion()).arg(platformInfo()));
+    QString strUserAgent(QString("VirtualBox %1 <%2>").arg(uiCommon().virtualBox().GetVersion()).arg(platformInfo()));
 
     /* Send GET request: */
     UserDictionary headers;
@@ -409,7 +409,7 @@ void UIUpdateStepVirtualBoxExtensionPack::sltStartStep()
     }
 
     /* Get extension pack: */
-    CExtPack extPack = vboxGlobal().virtualBox().GetExtensionPackManager().Find(GUI_ExtPackName);
+    CExtPack extPack = uiCommon().virtualBox().GetExtensionPackManager().Find(GUI_ExtPackName);
     /* Return if extension pack is NOT installed: */
     if (extPack.isNull())
     {
@@ -418,7 +418,7 @@ void UIUpdateStepVirtualBoxExtensionPack::sltStartStep()
     }
 
     /* Get VirtualBox version: */
-    UIVersion vboxVersion(vboxGlobal().vboxVersionStringNormalized());
+    UIVersion vboxVersion(uiCommon().vboxVersionStringNormalized());
     /* Get extension pack version: */
     QString strExtPackVersion(extPack.GetVersion());
 
@@ -481,14 +481,14 @@ void UIUpdateStepVirtualBoxExtensionPack::sltHandleDownloadedExtensionPack(const
 {
     /* Warn the user about extension pack was downloaded and saved, propose to install it: */
     if (msgCenter().proposeInstallExtentionPack(GUI_ExtPackName, strSource, QDir::toNativeSeparators(strTarget)))
-        vboxGlobal().doExtPackInstallation(strTarget, strDigest, windowManager().networkManagerOrMainWindowShown(), NULL);
+        uiCommon().doExtPackInstallation(strTarget, strDigest, windowManager().networkManagerOrMainWindowShown(), NULL);
     /* Propose to delete the downloaded extension pack: */
     if (msgCenter().proposeDeleteExtentionPack(QDir::toNativeSeparators(strTarget)))
     {
         /* Delete the downloaded extension pack: */
         QFile::remove(QDir::toNativeSeparators(strTarget));
         /* Get the list of old extension pack files in VirtualBox homefolder: */
-        const QStringList oldExtPackFiles = QDir(vboxGlobal().homeFolder()).entryList(QStringList("*.vbox-extpack"),
+        const QStringList oldExtPackFiles = QDir(uiCommon().homeFolder()).entryList(QStringList("*.vbox-extpack"),
                                                                                       QDir::Files);
         /* Propose to delete old extension pack files if there are any: */
         if (oldExtPackFiles.size())
@@ -498,7 +498,7 @@ void UIUpdateStepVirtualBoxExtensionPack::sltHandleDownloadedExtensionPack(const
                 foreach (const QString &strExtPackFile, oldExtPackFiles)
                 {
                     /* Delete the old extension pack file: */
-                    QFile::remove(QDir::toNativeSeparators(QDir(vboxGlobal().homeFolder()).filePath(strExtPackFile)));
+                    QFile::remove(QDir::toNativeSeparators(QDir(uiCommon().homeFolder()).filePath(strExtPackFile)));
                 }
             }
         }
@@ -528,7 +528,7 @@ UIUpdateManager::UIUpdateManager()
 
 #ifdef VBOX_WITH_UPDATE_REQUEST
     /* Ask updater to check for the first time, for Selector UI only: */
-    if (gEDataManager->applicationUpdateEnabled() && vboxGlobal().uiType() == VBoxGlobal::UIType_SelectorUI)
+    if (gEDataManager->applicationUpdateEnabled() && uiCommon().uiType() == UICommon::UIType_SelectorUI)
         QTimer::singleShot(0, this, SLOT(sltCheckIfUpdateIsNecessary()));
 #endif /* VBOX_WITH_UPDATE_REQUEST */
 }

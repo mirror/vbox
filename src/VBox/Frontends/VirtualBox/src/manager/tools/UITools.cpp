@@ -23,7 +23,7 @@
 #include "UIToolsModel.h"
 #include "UIToolsView.h"
 #include "UIVirtualBoxManagerWidget.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 
 
 UITools::UITools(UIVirtualBoxManagerWidget *pParent)

@@ -19,7 +19,7 @@
 #include "UIGlobalSettingsUpdate.h"
 #include "UIExtraDataManager.h"
 #include "UIMessageCenter.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 
 
 /** Global settings: Update page data structure. */

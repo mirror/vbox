@@ -21,7 +21,7 @@
 /* GUI includes: */
 #include "QITreeView.h"
 #include "UIApplianceExportEditorWidget.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "UIMessageCenter.h"
 
 /* COM includes: */
@@ -66,7 +66,7 @@ CAppliance* UIApplianceExportEditorWidget::init()
 {
     if (m_pAppliance)
         delete m_pAppliance;
-    CVirtualBox vbox = vboxGlobal().virtualBox();
+    CVirtualBox vbox = uiCommon().virtualBox();
     /* Create a appliance object */
     m_pAppliance = new CAppliance(vbox.CreateAppliance());
 //    bool fResult = m_pAppliance->isOk();

@@ -24,7 +24,7 @@
 #include "UIConverter.h"
 #include "UIMachineSettingsSerial.h"
 #include "UIErrorString.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 
 /* COM includes: */
 #include "CSerialPort.h"
@@ -156,8 +156,8 @@ UIMachineSettingsSerial::UIMachineSettingsSerial(UIMachineSettingsSerialPage *pP
 
     /* Set initial values: */
     /* Note: If you change one of the following don't forget retranslateUi. */
-    mCbNumber->insertItem(0, vboxGlobal().toCOMPortName(0, 0));
-    mCbNumber->insertItems(0, vboxGlobal().COMPortNames());
+    mCbNumber->insertItem(0, uiCommon().toCOMPortName(0, 0));
+    mCbNumber->insertItems(0, uiCommon().COMPortNames());
 
     mCbMode->addItem(""); /* KPortMode_Disconnected */
     mCbMode->addItem(""); /* KPortMode_HostPipe */
@@ -184,7 +184,7 @@ void UIMachineSettingsSerial::polishTab()
 {
     /* Polish port page: */
     ulong uIRQ, uIOBase;
-    const bool fStd = vboxGlobal().toCOMPortNumbers(mCbNumber->currentText(), uIRQ, uIOBase);
+    const bool fStd = uiCommon().toCOMPortNumbers(mCbNumber->currentText(), uIRQ, uIOBase);
     const KPortMode enmMode = gpConverter->fromString<KPortMode>(mCbMode->currentText());
     mGbSerial->setEnabled(m_pParent->isMachineOffline());
     mLbNumber->setEnabled(m_pParent->isMachineOffline());
@@ -208,7 +208,7 @@ void UIMachineSettingsSerial::loadPortData(const UIDataSettingsMachineSerialPort
 
     /* Load port data: */
     mGbSerial->setChecked(portData.m_fPortEnabled);
-    mCbNumber->setCurrentIndex(mCbNumber->findText(vboxGlobal().toCOMPortName(portData.m_uIRQ, portData.m_uIOBase)));
+    mCbNumber->setCurrentIndex(mCbNumber->findText(uiCommon().toCOMPortName(portData.m_uIRQ, portData.m_uIOBase)));
     mLeIRQ->setText(QString::number(portData.m_uIRQ));
     mLeIOPort->setText("0x" + QString::number(portData.m_uIOBase, 16).toUpper());
     mCbMode->setCurrentIndex(mCbMode->findText(gpConverter->toString(portData.m_hostMode)));
@@ -250,7 +250,7 @@ QString UIMachineSettingsSerial::pageTitle() const
 bool UIMachineSettingsSerial::isUserDefined()
 {
     ulong a, b;
-    return !vboxGlobal().toCOMPortNumbers(mCbNumber->currentText(), a, b);
+    return !uiCommon().toCOMPortNumbers(mCbNumber->currentText(), a, b);
 }
 
 void UIMachineSettingsSerial::retranslateUi()
@@ -258,7 +258,7 @@ void UIMachineSettingsSerial::retranslateUi()
     /* Translate uic generated strings: */
     Ui::UIMachineSettingsSerial::retranslateUi(this);
 
-    mCbNumber->setItemText(mCbNumber->count() - 1, vboxGlobal().toCOMPortName(0, 0));
+    mCbNumber->setItemText(mCbNumber->count() - 1, uiCommon().toCOMPortName(0, 0));
 
     mCbMode->setItemText(4, gpConverter->toString(KPortMode_TCP));
     mCbMode->setItemText(3, gpConverter->toString(KPortMode_RawFile));
@@ -282,7 +282,7 @@ void UIMachineSettingsSerial::sltGbSerialToggled(bool fOn)
 void UIMachineSettingsSerial::sltCbNumberActivated(const QString &strText)
 {
     ulong uIRQ, uIOBase;
-    bool fStd = vboxGlobal().toCOMPortNumbers(strText, uIRQ, uIOBase);
+    bool fStd = uiCommon().toCOMPortNumbers(strText, uIRQ, uIOBase);
 
     mLeIRQ->setEnabled(!fStd);
     mLeIOPort->setEnabled(!fStd);
@@ -467,7 +467,7 @@ bool UIMachineSettingsSerialPage::validate(QList<UIValidationMessage> &messages)
 
         /* Prepare message: */
         UIValidationMessage message;
-        message.first = vboxGlobal().removeAccelMark(m_pTabWidget->tabText(m_pTabWidget->indexOf(pTab)));
+        message.first = uiCommon().removeAccelMark(m_pTabWidget->tabText(m_pTabWidget->indexOf(pTab)));
 
         /* Check the port attribute emptiness & uniqueness: */
         const QString strIRQ(pPage->mLeIRQ->text());
@@ -560,7 +560,7 @@ void UIMachineSettingsSerialPage::prepare()
         AssertPtrReturnVoid(m_pTabWidget);
         {
             /* How many ports to display: */
-            const ulong uCount = vboxGlobal().virtualBox().GetSystemProperties().GetSerialPortCount();
+            const ulong uCount = uiCommon().virtualBox().GetSystemProperties().GetSerialPortCount();
 
             /* Create corresponding port tabs: */
             for (ulong uPort = 0; uPort < uCount; ++uPort)

@@ -33,7 +33,7 @@
 #include "UIProgressDialog.h"
 #include "UIProgressEventHandler.h"
 #include "UISpecialControls.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #ifdef VBOX_WS_MAC
 # include "VBoxUtils-darwin.h"
 #endif
@@ -423,10 +423,10 @@ void UIProgressDialog::updateProgressState()
         iDays     = iHours   / 24;
         iHours   -= iDays    * 24;
 
-        const QString strDays = VBoxGlobal::daysToString(iDays);
-        const QString strHours = VBoxGlobal::hoursToString(iHours);
-        const QString strMinutes = VBoxGlobal::minutesToString(iMinutes);
-        const QString strSeconds = VBoxGlobal::secondsToString(iSeconds);
+        const QString strDays = UICommon::daysToString(iDays);
+        const QString strHours = UICommon::hoursToString(iHours);
+        const QString strMinutes = UICommon::minutesToString(iMinutes);
+        const QString strSeconds = UICommon::secondsToString(iSeconds);
 
         const QString strTwoComp = tr("%1, %2 remaining", "You may wish to translate this more like \"Time remaining: %1, %2\"");
         const QString strOneComp = tr("%1 remaining", "You may wish to translate this more like \"Time remaining: %1\"");

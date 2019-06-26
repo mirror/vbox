@@ -18,7 +18,7 @@
 /* GUI includes: */
 #include "UIWizardFirstRun.h"
 #include "UIWizardFirstRunPageBasic.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "UIMessageCenter.h"
 #include "UIMedium.h"
 
@@ -47,7 +47,7 @@ bool UIWizardFirstRun::insertMedium()
     bool fSuccess = true;
 
     /* Get global VBox object: */
-    CVirtualBox comVbox = vboxGlobal().virtualBox();
+    CVirtualBox comVbox = uiCommon().virtualBox();
     /* Get machine OS type: */
     const CGuestOSType &comOsType = comVbox.GetGuestOSType(m_machine.GetOSTypeId());
     /* Get recommended controller bus & type: */
@@ -79,7 +79,7 @@ bool UIWizardFirstRun::insertMedium()
 
     /* Get chosen 'dvd' medium to mount: */
     const QUuid uMediumId = field("id").toUuid();
-    const UIMedium guiMedium = vboxGlobal().medium(uMediumId);
+    const UIMedium guiMedium = uiCommon().medium(uMediumId);
     const CMedium comMedium = guiMedium.medium();
 
     /* Mount medium to the predefined port/device: */
@@ -145,7 +145,7 @@ bool UIWizardFirstRun::isBootHardDiskAttached(const CMachine &machine)
     /* Result is 'false' initially: */
     bool fIsBootHardDiskAttached = false;
     /* Get 'vbox' global object: */
-    CVirtualBox vbox = vboxGlobal().virtualBox();
+    CVirtualBox vbox = uiCommon().virtualBox();
     /* Determine machine 'OS type': */
     const CGuestOSType &osType = vbox.GetGuestOSType(machine.GetOSTypeId());
     /* Determine recommended controller's 'bus' & 'type': */

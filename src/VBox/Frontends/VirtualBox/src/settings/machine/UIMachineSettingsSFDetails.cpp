@@ -21,7 +21,7 @@
 
 /* Other includes */
 #include "UIMachineSettingsSFDetails.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 
 
 UIMachineSettingsSFDetails::UIMachineSettingsSFDetails(DialogType type,

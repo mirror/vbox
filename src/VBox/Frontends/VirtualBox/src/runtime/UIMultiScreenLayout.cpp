@@ -29,7 +29,7 @@
 #include "UIMessageCenter.h"
 #include "UIExtraDataManager.h"
 #include "UIDesktopWidgetWatchdog.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 
 /* COM includes: */
 #include "COMEnums.h"
@@ -67,7 +67,7 @@ void UIMultiScreenLayout::update()
     /* Load all combinations stored in the settings file.
      * We have to make sure they are valid, which means there have to be unique combinations
      * and all guests screens need there own host screen. */
-    bool fShouldWeAutoMountGuestScreens = gEDataManager->autoMountGuestScreensEnabled(vboxGlobal().managedVMUuid());
+    bool fShouldWeAutoMountGuestScreens = gEDataManager->autoMountGuestScreensEnabled(uiCommon().managedVMUuid());
     LogRel(("GUI: UIMultiScreenLayout::update: GUI/AutomountGuestScreens is %s\n", fShouldWeAutoMountGuestScreens ? "enabled" : "disabled"));
     foreach (int iGuestScreen, m_guestScreens)
     {
@@ -78,7 +78,7 @@ void UIMultiScreenLayout::update()
         if (!fValid)
         {
             /* If the user ever selected a combination in the view menu, we have the following entry: */
-            iHostScreen = gEDataManager->hostScreenForPassedGuestScreen(iGuestScreen, vboxGlobal().managedVMUuid());
+            iHostScreen = gEDataManager->hostScreenForPassedGuestScreen(iGuestScreen, uiCommon().managedVMUuid());
             /* Revalidate: */
             fValid =    iHostScreen >= 0 && iHostScreen < m_cHostScreens /* In the host screen bounds? */
                      && m_screenMap.key(iHostScreen, -1) == -1; /* Not taken already? */
@@ -90,7 +90,7 @@ void UIMultiScreenLayout::update()
              * This makes sure that on first use fullscreen/seamless window opens on the same host-screen as the normal window was before.
              * This even works with multi-screen. The user just have to move all the normal windows to the target host-screens
              * and they will magically open there in fullscreen/seamless also. */
-            QRect geo = gEDataManager->machineWindowGeometry(UIVisualStateType_Normal, iGuestScreen, vboxGlobal().managedVMUuid());
+            QRect geo = gEDataManager->machineWindowGeometry(UIVisualStateType_Normal, iGuestScreen, uiCommon().managedVMUuid());
             /* If geometry is valid: */
             if (!geo.isNull())
             {
@@ -284,7 +284,7 @@ void UIMultiScreenLayout::saveScreenMapping()
     foreach (const int &iGuestScreen, m_guestScreens)
     {
         const int iHostScreen = m_screenMap.value(iGuestScreen, -1);
-        gEDataManager->setHostScreenForPassedGuestScreen(iGuestScreen, iHostScreen, vboxGlobal().managedVMUuid());
+        gEDataManager->setHostScreenForPassedGuestScreen(iGuestScreen, iHostScreen, uiCommon().managedVMUuid());
     }
 }
 

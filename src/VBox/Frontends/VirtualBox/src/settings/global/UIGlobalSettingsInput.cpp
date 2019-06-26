@@ -25,7 +25,7 @@
 #include "QIStyledItemDelegate.h"
 #include "QITableView.h"
 #include "QIWidgetValidator.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "UIActionPool.h"
 #include "UIGlobalSettingsInput.h"
 #include "UIHostComboEditor.h"
@@ -920,7 +920,7 @@ void UIGlobalSettingsInput::loadToCacheFrom(QVariant &data)
         oldInputData.shortcuts() << UIDataShortcutRow(pParent,
                                                       strShortcutKey,
                                                       shortcut.scope(),
-                                                      VBoxGlobal::removeAccelMark(shortcut.description()),
+                                                      UICommon::removeAccelMark(shortcut.description()),
                                                       shortcut.sequence().toString(QKeySequence::NativeText),
                                                       shortcut.defaultSequence().toString(QKeySequence::NativeText));
     }
@@ -982,7 +982,7 @@ bool UIGlobalSettingsInput::validate(QList<UIValidationMessage> &messages)
     if (!m_pSelectorModel->isAllShortcutsUnique())
     {
         UIValidationMessage message;
-        message.first = VBoxGlobal::removeAccelMark(m_pTabWidget->tabText(UIHotKeyTableIndex_Selector));
+        message.first = UICommon::removeAccelMark(m_pTabWidget->tabText(UIHotKeyTableIndex_Selector));
         message.second << tr("Some items have the same shortcuts assigned.");
         messages << message;
         fPass = false;
@@ -992,7 +992,7 @@ bool UIGlobalSettingsInput::validate(QList<UIValidationMessage> &messages)
     if (!m_pMachineModel->isAllShortcutsUnique())
     {
         UIValidationMessage message;
-        message.first = VBoxGlobal::removeAccelMark(m_pTabWidget->tabText(UIHotKeyTableIndex_Machine));
+        message.first = UICommon::removeAccelMark(m_pTabWidget->tabText(UIHotKeyTableIndex_Machine));
         message.second << tr("Some items have the same shortcuts assigned.");
         messages << message;
         fPass = false;
@@ -1140,7 +1140,7 @@ void UIGlobalSettingsInput::prepareTabMachine()
         m_pTabWidget->insertTab(UIHotKeyTableIndex_Machine, pMachineTab, QString());
 
         /* In the VM process we start by displaying the Runtime UI tab: */
-        if (vboxGlobal().uiType() == VBoxGlobal::UIType_RuntimeUI)
+        if (uiCommon().uiType() == UICommon::UIType_RuntimeUI)
             m_pTabWidget->setCurrentWidget(pMachineTab);
     }
 }

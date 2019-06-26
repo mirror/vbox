@@ -32,7 +32,7 @@
 #include "UIVisoConfigurationPanel.h"
 #include "UIVisoCreatorOptionsPanel.h"
 #include "UIVisoContentBrowser.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #ifdef VBOX_WS_MAC
 # include "VBoxUtils-darwin.h"
 #endif
@@ -610,7 +610,7 @@ void UIVisoCreator::setDialogGeometry(const QRect &geometry)
     resize(geometry.size());
 #else /* VBOX_WS_MAC */
     /* Use the new approach for Windows/X11: */
-    VBoxGlobal::setTopLevelGeometry(this, geometry);
+    UICommon::setTopLevelGeometry(this, geometry);
 #endif /* !VBOX_WS_MAC */
 
     /* Maximize (if necessary): */

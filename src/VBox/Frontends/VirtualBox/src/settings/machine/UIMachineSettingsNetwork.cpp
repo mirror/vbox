@@ -24,7 +24,7 @@
 #include "UIMachineSettingsNetwork.h"
 #include "UIErrorString.h"
 #include "UIExtraDataManager.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 
 /* COM includes: */
 #include "CNetworkAdapter.h"
@@ -383,7 +383,7 @@ bool UIMachineSettingsNetwork::validate(QList<UIValidationMessage> &messages)
 
     /* Prepare message: */
     UIValidationMessage message;
-    message.first = vboxGlobal().removeAccelMark(tabTitle());
+    message.first = uiCommon().removeAccelMark(tabTitle());
 
     /* Validate alternatives: */
     switch (attachmentType())
@@ -481,7 +481,7 @@ QWidget *UIMachineSettingsNetwork::setOrderAfter(QWidget *pAfter)
 
 QString UIMachineSettingsNetwork::tabTitle() const
 {
-    return VBoxGlobal::tr("Adapter %1").arg(QString("&%1").arg(m_iSlot + 1));
+    return UICommon::tr("Adapter %1").arg(QString("&%1").arg(m_iSlot + 1));
 }
 
 KNetworkAttachmentType UIMachineSettingsNetwork::attachmentType() const
@@ -754,7 +754,7 @@ void UIMachineSettingsNetwork::sltHandleAdvancedButtonStateChange()
 
 void UIMachineSettingsNetwork::sltGenerateMac()
 {
-    m_pMACEditor->setText(vboxGlobal().host().GenerateMACAddress());
+    m_pMACEditor->setText(uiCommon().host().GenerateMACAddress());
 }
 
 void UIMachineSettingsNetwork::sltOpenPortForwardingDlg()
@@ -1273,7 +1273,7 @@ void UIMachineSettingsNetworkPage::prepare()
               * but in this place the m_machine field isn't set yet. My observation (on Linux)
               * is that the limitation to 4 isn't necessary any more, but this needs to be checked
               * on all platforms to be certain that it's usable everywhere. */
-            const ulong uCount = qMin((ULONG)4, vboxGlobal().virtualBox().GetSystemProperties().GetMaxNetworkAdapters(KChipsetType_PIIX3));
+            const ulong uCount = qMin((ULONG)4, uiCommon().virtualBox().GetSystemProperties().GetMaxNetworkAdapters(KChipsetType_PIIX3));
 
             /* Create corresponding adapter tabs: */
             for (ulong uSlot = 0; uSlot < uCount; ++uSlot)
@@ -1308,7 +1308,7 @@ void UIMachineSettingsNetworkPage::refreshBridgedAdapterList()
 {
     /* Reload bridged interface list: */
     m_bridgedAdapterList.clear();
-    const CHostNetworkInterfaceVector &ifaces = vboxGlobal().host().GetNetworkInterfaces();
+    const CHostNetworkInterfaceVector &ifaces = uiCommon().host().GetNetworkInterfaces();
     for (int i = 0; i < ifaces.size(); ++i)
     {
         const CHostNetworkInterface &iface = ifaces[i];
@@ -1341,7 +1341,7 @@ void UIMachineSettingsNetworkPage::refreshHostInterfaceList()
 {
     /* Reload host-only interface list: */
     m_hostInterfaceList.clear();
-    const CHostNetworkInterfaceVector &ifaces = vboxGlobal().host().GetNetworkInterfaces();
+    const CHostNetworkInterfaceVector &ifaces = uiCommon().host().GetNetworkInterfaces();
     for (int i = 0; i < ifaces.size(); ++i)
     {
         const CHostNetworkInterface &iface = ifaces[i];
@@ -1374,7 +1374,7 @@ void UIMachineSettingsNetworkPage::refreshNATNetworkList()
 {
     /* Reload NAT network list: */
     m_natNetworkList.clear();
-    const CNATNetworkVector &nws = vboxGlobal().virtualBox().GetNATNetworks();
+    const CNATNetworkVector &nws = uiCommon().virtualBox().GetNATNetworks();
     for (int i = 0; i < nws.size(); ++i)
     {
         const CNATNetwork &nw = nws[i];
@@ -1386,7 +1386,7 @@ void UIMachineSettingsNetworkPage::refreshNATNetworkList()
 QStringList UIMachineSettingsNetworkPage::otherInternalNetworkList()
 {
     /* Load total internal network list of all VMs: */
-    const CVirtualBox vbox = vboxGlobal().virtualBox();
+    const CVirtualBox vbox = uiCommon().virtualBox();
     const QStringList otherInternalNetworks(QList<QString>::fromVector(vbox.GetInternalNetworks()));
     return otherInternalNetworks;
 }
@@ -1395,7 +1395,7 @@ QStringList UIMachineSettingsNetworkPage::otherInternalNetworkList()
 QStringList UIMachineSettingsNetworkPage::otherGenericDriverList()
 {
     /* Load total generic driver list of all VMs: */
-    const CVirtualBox vbox = vboxGlobal().virtualBox();
+    const CVirtualBox vbox = uiCommon().virtualBox();
     const QStringList otherGenericDrivers(QList<QString>::fromVector(vbox.GetGenericNetworkDrivers()));
     return otherGenericDrivers;
 }

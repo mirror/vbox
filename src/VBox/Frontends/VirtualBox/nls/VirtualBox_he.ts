@@ -11560,7 +11560,7 @@ a guest session</source>
     </message>
 </context>
 <context>
-    <name>VBoxGlobal</name>
+    <name>UICommon</name>
     <message>
         <source>Name</source>
         <comment>details report</comment>

@@ -324,8 +324,8 @@
         <File Id="file_VirtualBoxVM.exe" Name="VirtualBoxVM.exe"
             Source="$(env.PATH_OUT)\bin\VirtualBoxVM.exe">
         </File>
-        <File Id="file_VBoxGlobal.dll" Name="VBoxGlobal.dll"
-            Source="$(env.PATH_OUT)\bin\VBoxGlobal.dll">
+        <File Id="file_UICommon.dll" Name="UICommon.dll"
+            Source="$(env.PATH_OUT)\bin\UICommon.dll">
         </File>
         <?if $(env.VBOX_WITH_HARDENING) = "yes" ?>
             <File Id="file_VirtualBoxVM.dll" Name="VirtualBoxVM.dll"

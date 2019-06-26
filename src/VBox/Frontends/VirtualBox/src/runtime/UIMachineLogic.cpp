@@ -49,7 +49,7 @@
 #include "UIMachineView.h"
 #include "UIMachineWindow.h"
 #include "UISession.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "UIMessageCenter.h"
 #include "UIPopupCenter.h"
 #include "UISettingsDialogSpecific.h"
@@ -506,7 +506,7 @@ void UIMachineLogic::notifyAbout3DOverlayVisibilityChange(bool fVisible)
 void UIMachineLogic::sltHandleVBoxSVCAvailabilityChange()
 {
     /* Do nothing if VBoxSVC still availabile: */
-    if (vboxGlobal().isVBoxSVCAvailable())
+    if (uiCommon().isVBoxSVCAvailable())
         return;
 
     /* Warn user about that: */
@@ -562,7 +562,7 @@ void UIMachineLogic::sltMachineStateChanged()
             /* Take the screenshot for debugging purposes: */
             takeScreenshot(strLogFolder + "/VBox.png", "png");
             /* How should we handle Guru Meditation? */
-            switch (gEDataManager->guruMeditationHandlerType(vboxGlobal().managedVMUuid()))
+            switch (gEDataManager->guruMeditationHandlerType(uiCommon().managedVMUuid()))
             {
                 /* Ask how to proceed; Power off VM if proposal accepted: */
                 case GuruMeditationHandlerType_Default:
@@ -625,7 +625,7 @@ void UIMachineLogic::sltMachineStateChanged()
             {
                 /* VM has been powered off, saved, teleported or aborted.
                  * We must close Runtime UI: */
-                if (vboxGlobal().isSeparateProcess())
+                if (uiCommon().isSeparateProcess())
                 {
                     /* Hack: The VM process is terminating, so wait a bit to make sure that
                      * the session is unlocked and the GUI process can save extradata
@@ -743,9 +743,9 @@ void UIMachineLogic::sltUSBDeviceStateChange(const CUSBDevice &device, bool fIsA
     if (!error.isNull())
     {
         if (fIsAttached)
-            popupCenter().cannotAttachUSBDevice(activeMachineWindow(), error, vboxGlobal().details(device), machineName());
+            popupCenter().cannotAttachUSBDevice(activeMachineWindow(), error, uiCommon().details(device), machineName());
         else
-            popupCenter().cannotDetachUSBDevice(activeMachineWindow(), error, vboxGlobal().details(device), machineName());
+            popupCenter().cannotDetachUSBDevice(activeMachineWindow(), error, uiCommon().details(device), machineName());
     }
 }
 
@@ -962,7 +962,7 @@ void UIMachineLogic::prepareRequiredFeatures()
 void UIMachineLogic::prepareSessionConnections()
 {
     /* We should watch for VBoxSVC availability changes: */
-    connect(&vboxGlobal(), SIGNAL(sigVBoxSVCAvailabilityChange()),
+    connect(&uiCommon(), SIGNAL(sigVBoxSVCAvailabilityChange()),
             this, SLOT(sltHandleVBoxSVCAvailabilityChange()));
 
     /* We should watch for requested modes: */
@@ -1271,7 +1271,7 @@ void UIMachineLogic::prepareDock()
     /* Get dock icon disable overlay action: */
     QAction *pDockIconDisableOverlay = actionPool()->action(UIActionIndexRT_M_Dock_M_DockSettings_T_DisableOverlay);
     /* Prepare dock icon disable overlay action with initial data: */
-    pDockIconDisableOverlay->setChecked(gEDataManager->dockIconDisableOverlay(vboxGlobal().managedVMUuid()));
+    pDockIconDisableOverlay->setChecked(gEDataManager->dockIconDisableOverlay(uiCommon().managedVMUuid()));
     /* Connect dock icon disable overlay related signals: */
     connect(pDockIconDisableOverlay, SIGNAL(triggered(bool)),
             this, SLOT(sltDockIconDisableOverlayChanged(bool)));
@@ -1288,7 +1288,7 @@ void UIMachineLogic::prepareDock()
         /* Add separator: */
         m_pDockSettingsMenuSeparator = pDockSettingsMenu->addSeparator();
 
-        int extraDataUpdateMonitor = gEDataManager->realtimeDockIconUpdateMonitor(vboxGlobal().managedVMUuid());
+        int extraDataUpdateMonitor = gEDataManager->realtimeDockIconUpdateMonitor(uiCommon().managedVMUuid());
         if (visibleWindowsList.contains(extraDataUpdateMonitor))
             m_DockIconPreviewMonitor = extraDataUpdateMonitor;
         else
@@ -1316,13 +1316,13 @@ void UIMachineLogic::prepareDock()
     pDockMenu->setAsDockMenu();
 
     /* Now the dock icon preview: */
-    QPixmap pixmap = vboxGlobal().vmUserPixmap(machine(), QSize(42, 42));
+    QPixmap pixmap = uiCommon().vmUserPixmap(machine(), QSize(42, 42));
     if (pixmap.isNull())
-        pixmap = vboxGlobal().vmGuestOSTypePixmap(guest().GetOSTypeId(), QSize(42, 42));
+        pixmap = uiCommon().vmGuestOSTypePixmap(guest().GetOSTypeId(), QSize(42, 42));
     m_pDockIconPreview = new UIDockIconPreview(uisession(), pixmap);
 
     /* Should the dock-icon be updated at runtime? */
-    bool fEnabled = gEDataManager->realtimeDockIconUpdateEnabled(vboxGlobal().managedVMUuid());
+    bool fEnabled = gEDataManager->realtimeDockIconUpdateEnabled(uiCommon().managedVMUuid());
     if (fEnabled)
         pDockEnablePreviewMonitor->setChecked(true);
     else
@@ -1402,7 +1402,7 @@ void UIMachineLogic::updateDock()
         /* Only if currently selected monitor for icon preview is not enabled: */
         if (!visibleWindowsList.contains(m_DockIconPreviewMonitor))
         {
-            int iExtraDataUpdateMonitor = gEDataManager->realtimeDockIconUpdateMonitor(vboxGlobal().managedVMUuid());
+            int iExtraDataUpdateMonitor = gEDataManager->realtimeDockIconUpdateMonitor(uiCommon().managedVMUuid());
             if (visibleWindowsList.contains(iExtraDataUpdateMonitor))
                 m_DockIconPreviewMonitor = iExtraDataUpdateMonitor;
             else
@@ -1440,11 +1440,11 @@ void UIMachineLogic::updateDock()
 #ifdef VBOX_WITH_DEBUGGER_GUI
 void UIMachineLogic::prepareDebugger()
 {
-    if (vboxGlobal().isDebuggerAutoShowEnabled())
+    if (uiCommon().isDebuggerAutoShowEnabled())
     {
-        if (vboxGlobal().isDebuggerAutoShowStatisticsEnabled())
+        if (uiCommon().isDebuggerAutoShowStatisticsEnabled())
             sltShowDebugStatistics();
-        if (vboxGlobal().isDebuggerAutoShowCommandLineEnabled())
+        if (uiCommon().isDebuggerAutoShowCommandLineEnabled())
             sltShowDebugCommandLine();
     }
 }
@@ -1454,7 +1454,7 @@ void UIMachineLogic::loadSettings()
 {
 #if defined(VBOX_WS_MAC) || defined(VBOX_WS_WIN)
     /* Read cached extra-data value: */
-    m_fIsHidLedsSyncEnabled = gEDataManager->hidLedsSyncState(vboxGlobal().managedVMUuid());
+    m_fIsHidLedsSyncEnabled = gEDataManager->hidLedsSyncState(uiCommon().managedVMUuid());
     /* Subscribe to extra-data changes to be able to enable/disable feature dynamically: */
     connect(gEDataManager, SIGNAL(sigHidLedsSyncStateChange(bool)), this, SLOT(sltHidLedsSyncStateChanged(bool)));
 #endif /* VBOX_WS_MAC || VBOX_WS_WIN */
@@ -1499,7 +1499,7 @@ void UIMachineLogic::cleanupHandlers()
 void UIMachineLogic::cleanupSessionConnections()
 {
     /* We should stop watching for VBoxSVC availability changes: */
-    disconnect(&vboxGlobal(), SIGNAL(sigVBoxSVCAvailabilityChange()),
+    disconnect(&uiCommon(), SIGNAL(sigVBoxSVCAvailabilityChange()),
                this, SLOT(sltHandleVBoxSVCAvailabilityChange()));
 
     /* We should stop watching for requested modes: */
@@ -1913,7 +1913,7 @@ void UIMachineLogic::sltPowerOff()
     }
 
     LogRel(("GUI: User request to power VM off.\n"));
-    MachineCloseAction enmLastCloseAction = gEDataManager->lastMachineCloseAction(vboxGlobal().managedVMUuid());
+    MachineCloseAction enmLastCloseAction = gEDataManager->lastMachineCloseAction(uiCommon().managedVMUuid());
     powerOff(machine().GetSnapshotCount() > 0 && enmLastCloseAction == MachineCloseAction_PowerOff_RestoringSnapshot);
 }
 
@@ -2297,7 +2297,7 @@ void UIMachineLogic::sltMountStorageMedium()
     const UIMediumTarget target = pAction->data().value<UIMediumTarget>();
 
     /* Update current machine mount-target: */
-    vboxGlobal().updateMachineStorage(machine(), target);
+    uiCommon().updateMachineStorage(machine(), target);
 }
 
 void UIMachineLogic::sltAttachUSBDevice()
@@ -2318,13 +2318,13 @@ void UIMachineLogic::sltAttachUSBDevice()
         if (!console().isOk())
         {
             /* Get current host: */
-            CHost host = vboxGlobal().host();
+            CHost host = uiCommon().host();
             /* Search the host for the corresponding USB device: */
             CHostUSBDevice hostDevice = host.FindUSBDeviceById(target.id);
             /* Get USB device from host USB device: */
             CUSBDevice device(hostDevice);
             /* Show a message about procedure failure: */
-            popupCenter().cannotAttachUSBDevice(activeMachineWindow(), console(), vboxGlobal().details(device));
+            popupCenter().cannotAttachUSBDevice(activeMachineWindow(), console(), uiCommon().details(device));
         }
     }
     /* Detach USB device: */
@@ -2338,7 +2338,7 @@ void UIMachineLogic::sltAttachUSBDevice()
         if (!console().isOk())
         {
             /* Show a message about procedure failure: */
-            popupCenter().cannotDetachUSBDevice(activeMachineWindow(), console(), vboxGlobal().details(device));
+            popupCenter().cannotDetachUSBDevice(activeMachineWindow(), console(), uiCommon().details(device));
         }
     }
 }
@@ -2422,14 +2422,14 @@ void UIMachineLogic::sltInstallGuestAdditions()
     if (!isMachineWindowsCreated())
         return;
 
-    CSystemProperties systemProperties = vboxGlobal().virtualBox().GetSystemProperties();
+    CSystemProperties systemProperties = uiCommon().virtualBox().GetSystemProperties();
     QString strAdditions = systemProperties.GetDefaultAdditionsISO();
     if (systemProperties.isOk() && !strAdditions.isEmpty())
         return uisession()->sltInstallGuestAdditionsFrom(strAdditions);
 
     /* Check for the already registered image */
-    CVirtualBox vbox = vboxGlobal().virtualBox();
-    const QString &strName = QString("%1_%2.iso").arg(GUI_GuestAdditionsName, vboxGlobal().vboxVersionStringNormalized());
+    CVirtualBox vbox = uiCommon().virtualBox();
+    const QString &strName = QString("%1_%2.iso").arg(GUI_GuestAdditionsName, uiCommon().vboxVersionStringNormalized());
 
     CMediumVector vec = vbox.GetDVDImages();
     for (CMediumVector::ConstIterator it = vec.begin(); it != vec.end(); ++ it)
@@ -2589,13 +2589,13 @@ void UIMachineLogic::sltSwitchToMachineWindow()
 void UIMachineLogic::sltDockPreviewModeChanged(QAction *pAction)
 {
     bool fEnabled = pAction != actionPool()->action(UIActionIndexRT_M_Dock_M_DockSettings_T_DisableMonitor);
-    gEDataManager->setRealtimeDockIconUpdateEnabled(fEnabled, vboxGlobal().managedVMUuid());
+    gEDataManager->setRealtimeDockIconUpdateEnabled(fEnabled, uiCommon().managedVMUuid());
     updateDockOverlay();
 }
 
 void UIMachineLogic::sltDockPreviewMonitorChanged(QAction *pAction)
 {
-    gEDataManager->setRealtimeDockIconUpdateMonitor(pAction->data().toInt(), vboxGlobal().managedVMUuid());
+    gEDataManager->setRealtimeDockIconUpdateMonitor(pAction->data().toInt(), uiCommon().managedVMUuid());
     updateDockOverlay();
 }
 
@@ -2607,7 +2607,7 @@ void UIMachineLogic::sltChangeDockIconUpdate(bool fEnabled)
         if (m_pDockPreviewSelectMonitorGroup)
         {
             m_pDockPreviewSelectMonitorGroup->setEnabled(fEnabled);
-            m_DockIconPreviewMonitor = qMin(gEDataManager->realtimeDockIconUpdateMonitor(vboxGlobal().managedVMUuid()),
+            m_DockIconPreviewMonitor = qMin(gEDataManager->realtimeDockIconUpdateMonitor(uiCommon().managedVMUuid()),
                                             (int)machine().GetMonitorCount() - 1);
         }
         /* Resize the dock icon in the case the preview monitor has changed. */
@@ -2638,7 +2638,7 @@ void UIMachineLogic::sltChangeDockIconOverlayAppearance(bool fDisabled)
 void UIMachineLogic::sltDockIconDisableOverlayChanged(bool fDisabled)
 {
     /* Write dock icon disable overlay flag to extra-data: */
-    gEDataManager->setDockIconDisableOverlay(fDisabled, vboxGlobal().managedVMUuid());
+    gEDataManager->setDockIconDisableOverlay(fDisabled, uiCommon().managedVMUuid());
 }
 #endif /* VBOX_WS_MAC */
 
@@ -2786,7 +2786,7 @@ void UIMachineLogic::updateMenuDevicesStorage(QMenu *pMenu)
             else pStorageMenu = pMenu;
 
             /* Fill current storage menu: */
-            vboxGlobal().prepareStorageMenu(*pStorageMenu,
+            uiCommon().prepareStorageMenu(*pStorageMenu,
                                             this, SLOT(sltMountStorageMedium()),
                                             machine(), strControllerName, storageSlot);
         }
@@ -2797,7 +2797,7 @@ void UIMachineLogic::updateMenuDevicesNetwork(QMenu *pMenu)
 {
     /* Determine how many adapters we should display: */
     const KChipsetType chipsetType = machine().GetChipsetType();
-    const ULONG uCount = qMin((ULONG)4, vboxGlobal().virtualBox().GetSystemProperties().GetMaxNetworkAdapters(chipsetType));
+    const ULONG uCount = qMin((ULONG)4, uiCommon().virtualBox().GetSystemProperties().GetMaxNetworkAdapters(chipsetType));
 
     /* Enumerate existing network adapters: */
     QMap<int, bool> adapterData;
@@ -2835,7 +2835,7 @@ void UIMachineLogic::updateMenuDevicesNetwork(QMenu *pMenu)
 void UIMachineLogic::updateMenuDevicesUSB(QMenu *pMenu)
 {
     /* Get current host: */
-    const CHost host = vboxGlobal().host();
+    const CHost host = uiCommon().host();
     /* Get host USB device list: */
     const CHostUSBDeviceVector devices = host.GetUSBDevices();
 
@@ -2859,9 +2859,9 @@ void UIMachineLogic::updateMenuDevicesUSB(QMenu *pMenu)
             const CUSBDevice device(hostDevice);
 
             /* Create USB device action: */
-            QAction *pAttachUSBAction = pMenu->addAction(vboxGlobal().details(device),
+            QAction *pAttachUSBAction = pMenu->addAction(uiCommon().details(device),
                                                          this, SLOT(sltAttachUSBDevice()));
-            pAttachUSBAction->setToolTip(vboxGlobal().toolTip(device));
+            pAttachUSBAction->setToolTip(uiCommon().toolTip(device));
             pAttachUSBAction->setCheckable(true);
 
             /* Check if that USB device was already attached to this session: */
@@ -2881,7 +2881,7 @@ void UIMachineLogic::updateMenuDevicesWebCams(QMenu *pMenu)
     pMenu->clear();
 
     /* Get current host: */
-    const CHost host = vboxGlobal().host();
+    const CHost host = uiCommon().host();
     /* Get host webcam list: */
     const CHostVideoInputDeviceVector webcams = host.GetVideoInputDevices();
 
@@ -2909,7 +2909,7 @@ void UIMachineLogic::updateMenuDevicesWebCams(QMenu *pMenu)
             /* Create/configure webcam action: */
             QAction *pAttachWebcamAction = pMenu->addAction(strWebcamName,
                                                             this, SLOT(sltAttachWebCamDevice()));
-            pAttachWebcamAction->setToolTip(vboxGlobal().toolTip(webcam));
+            pAttachWebcamAction->setToolTip(uiCommon().toolTip(webcam));
             pAttachWebcamAction->setCheckable(true);
 
             /* Check if that webcam was already attached to this session: */
@@ -3151,7 +3151,7 @@ void UIMachineLogic::takeScreenshot(const QString &strFile, const QString &strFo
         uMaxHeight  = RT_MAX(uMaxHeight, height);
         QImage shot = QImage(width, height, QImage::Format_RGB32);
         /* For separate process: */
-        if (vboxGlobal().isSeparateProcess())
+        if (uiCommon().isSeparateProcess())
         {
             /* Take screen-data to array first: */
             const QVector<BYTE> screenData = display().TakeScreenShotToArray(i, shot.width(), shot.height(), KBitmapFormat_BGR0);
@@ -3193,7 +3193,7 @@ bool UIMachineLogic::dbgCreated()
     if (m_pDbgGui)
         return true;
 
-    RTLDRMOD hLdrMod = vboxGlobal().getDebuggerModule();
+    RTLDRMOD hLdrMod = uiCommon().getDebuggerModule();
     if (hLdrMod == NIL_RTLDRMOD)
         return false;
 

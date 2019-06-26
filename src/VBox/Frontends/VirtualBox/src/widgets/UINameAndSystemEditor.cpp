@@ -23,7 +23,7 @@
 
 /* GUI includes: */
 #include "QILineEdit.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "UIFilePathSelector.h"
 #include "UINameAndSystemEditor.h"
 
@@ -67,7 +67,7 @@ QString UINameAndSystemEditor::name() const
 QString UINameAndSystemEditor::path() const
 {
     if (!m_pPathSelector)
-        return vboxGlobal().virtualBox().GetSystemProperties().GetDefaultMachineFolder();
+        return uiCommon().virtualBox().GetSystemProperties().GetDefaultMachineFolder();
     return m_pPathSelector->path();
 }
 
@@ -176,7 +176,7 @@ QString UINameAndSystemEditor::familyId() const
 
 CGuestOSType UINameAndSystemEditor::type() const
 {
-    return vboxGlobal().vmGuestOSType(typeId(), familyId());
+    return uiCommon().vmGuestOSType(typeId(), familyId());
 }
 
 void UINameAndSystemEditor::setType(const CGuestOSType &enmType)
@@ -272,7 +272,7 @@ void UINameAndSystemEditor::sltTypeChanged(int iIndex)
     m_strTypeId = m_pComboType->itemData(iIndex, TypeID).toString();
 
     /* Update selected type pixmap: */
-    m_pIconType->setPixmap(vboxGlobal().vmGuestOSTypePixmapDefault(m_strTypeId));
+    m_pIconType->setPixmap(uiCommon().vmGuestOSTypePixmapDefault(m_strTypeId));
 
     /* Save the most recently used item: */
     m_currentIds[m_strFamilyId] = m_strTypeId;
@@ -296,7 +296,7 @@ void UINameAndSystemEditor::prepare()
 void UINameAndSystemEditor::prepareThis()
 {
     /* Check if host supports (AMD-V or VT-x) and long mode: */
-    CHost host = vboxGlobal().host();
+    CHost host = uiCommon().host();
     m_fSupportsHWVirtEx = host.GetProcessorFeature(KProcessorFeature_HWVirtEx);
     m_fSupportsLongMode = host.GetProcessorFeature(KProcessorFeature_LongMode);
 }
@@ -347,7 +347,7 @@ void UINameAndSystemEditor::prepareWidgets()
             m_pPathSelector = new UIFilePathSelector;
             if (m_pPathSelector)
             {
-                QString strDefaultMachineFolder = vboxGlobal().virtualBox().GetSystemProperties().GetDefaultMachineFolder();
+                QString strDefaultMachineFolder = uiCommon().virtualBox().GetSystemProperties().GetDefaultMachineFolder();
                 m_pPathSelector->setPath(strDefaultMachineFolder);
                 m_pPathSelector->setDefaultPath(strDefaultMachineFolder);
 
@@ -437,7 +437,7 @@ void UINameAndSystemEditor::prepareWidgets()
 void UINameAndSystemEditor::prepareFamilyCombo()
 {
     /* Acquire family IDs: */
-    m_familyIDs = vboxGlobal().vmGuestOSFamilyIDs();
+    m_familyIDs = uiCommon().vmGuestOSFamilyIDs();
 
     /* For each known family ID: */
     for (int i = 0; i < m_familyIDs.size(); ++i)
@@ -445,12 +445,12 @@ void UINameAndSystemEditor::prepareFamilyCombo()
         const QString &strFamilyId = m_familyIDs.at(i);
 
         /* Append VM OS family combo: */
-        m_pComboFamily->insertItem(i, vboxGlobal().vmGuestOSFamilyDescription(strFamilyId));
+        m_pComboFamily->insertItem(i, uiCommon().vmGuestOSFamilyDescription(strFamilyId));
         m_pComboFamily->setItemData(i, strFamilyId, TypeID);
 
         /* Fill in the type cache: */
         m_types[strFamilyId] = QList<UIGuestOSType>();
-        foreach (const CGuestOSType &comType, vboxGlobal().vmGuestOSTypeList(strFamilyId))
+        foreach (const CGuestOSType &comType, uiCommon().vmGuestOSTypeList(strFamilyId))
         {
             UIGuestOSType guiType;
             guiType.typeId = comType.GetId();

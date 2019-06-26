@@ -28,7 +28,7 @@
 
 /* GUI includes: */
 #include "QITreeView.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "UIGuestOSTypeSelectionButton.h"
 #include "UIApplianceEditorWidget.h"
 #include "UIConverter.h"
@@ -521,8 +521,8 @@ QVariant UIVirtualHardwareItem::data(int iColumn, int iRole) const
                             strTmp.replace(i, strTmp.length(), "...");
                         value = strTmp; break;
                     }
-                    case KVirtualSystemDescriptionType_OS:               value = vboxGlobal().vmGuestOSTypeDescription(m_strConfigValue); break;
-                    case KVirtualSystemDescriptionType_Memory:           value = m_strConfigValue + " " + VBoxGlobal::tr("MB", "size suffix MBytes=1024 KBytes"); break;
+                    case KVirtualSystemDescriptionType_OS:               value = uiCommon().vmGuestOSTypeDescription(m_strConfigValue); break;
+                    case KVirtualSystemDescriptionType_Memory:           value = m_strConfigValue + " " + UICommon::tr("MB", "size suffix MBytes=1024 KBytes"); break;
                     case KVirtualSystemDescriptionType_SoundCard:        value = gpConverter->toString(static_cast<KAudioControllerType>(m_strConfigValue.toInt())); break;
                     case KVirtualSystemDescriptionType_NetworkAdapter:   value = gpConverter->toString(static_cast<KNetworkAdapterType>(m_strConfigValue.toInt())); break;
                     case KVirtualSystemDescriptionType_CloudInstanceShape:
@@ -662,7 +662,7 @@ QVariant UIVirtualHardwareItem::data(int iColumn, int iRole) const
                     case KVirtualSystemDescriptionType_NetworkAdapter:         value = UIIconPool::iconSet(":/nw_16px.png"); break;
                     case KVirtualSystemDescriptionType_USBController:          value = UIIconPool::iconSet(":/usb_16px.png"); break;
                     case KVirtualSystemDescriptionType_SoundCard:              value = UIIconPool::iconSet(":/sound_16px.png"); break;
-                    case KVirtualSystemDescriptionType_BaseFolder:             value = vboxGlobal().icon(QFileIconProvider::Folder); break;
+                    case KVirtualSystemDescriptionType_BaseFolder:             value = uiCommon().icon(QFileIconProvider::Folder); break;
                     case KVirtualSystemDescriptionType_PrimaryGroup:           value = UIIconPool::iconSet(":/vm_group_name_16px.png"); break;
                     case KVirtualSystemDescriptionType_CloudProfileName:
                     case KVirtualSystemDescriptionType_CloudInstanceShape:
@@ -678,7 +678,7 @@ QVariant UIVirtualHardwareItem::data(int iColumn, int iRole) const
                 }
             }
             else if (iColumn == ApplianceViewSection_ConfigValue && m_enmVSDType == KVirtualSystemDescriptionType_OS)
-                value = vboxGlobal().vmGuestOSTypeIcon(m_strConfigValue);
+                value = uiCommon().vmGuestOSTypeIcon(m_strConfigValue);
             break;
         }
         case Qt::FontRole:
@@ -806,7 +806,7 @@ QWidget *UIVirtualHardwareItem::createEditor(QWidget *pParent, const QStyleOptio
             {
                 QSpinBox *pSpinBox = new QSpinBox(pParent);
                 pSpinBox->setRange(UIApplianceEditorWidget::minGuestRAM(), UIApplianceEditorWidget::maxGuestRAM());
-                pSpinBox->setSuffix(" " + VBoxGlobal::tr("MB", "size suffix MBytes=1024 KBytes"));
+                pSpinBox->setSuffix(" " + UICommon::tr("MB", "size suffix MBytes=1024 KBytes"));
                 pEditor = pSpinBox;
                 break;
             }
@@ -872,7 +872,7 @@ QWidget *UIVirtualHardwareItem::createEditor(QWidget *pParent, const QStyleOptio
             {
                 QComboBox *pComboBox = new QComboBox(pParent);
                 pComboBox->setEditable(true);
-                QVector<QString> groupsVector = vboxGlobal().virtualBox().GetMachineGroups();
+                QVector<QString> groupsVector = uiCommon().virtualBox().GetMachineGroups();
 
                 for (int i = 0; i < groupsVector.size(); ++i)
                     pComboBox->addItem(groupsVector.at(i));
@@ -894,7 +894,7 @@ QWidget *UIVirtualHardwareItem::createEditor(QWidget *pParent, const QStyleOptio
                         AbstractVSDParameterDouble value = get.value<AbstractVSDParameterDouble>();
                         QSpinBox *pSpinBox = new QSpinBox(pParent);
                         pSpinBox->setRange(value.minimum, value.maximum);
-                        pSpinBox->setSuffix(QString(" %1").arg(VBoxGlobal::tr(value.unit.toUtf8().constData())));
+                        pSpinBox->setSuffix(QString(" %1").arg(UICommon::tr(value.unit.toUtf8().constData())));
                         pEditor = pSpinBox;
                         break;
                     }
@@ -1873,7 +1873,7 @@ void UIApplianceEditorWidget::initSystemSettings()
     {
         /* We need some global defaults from the current VirtualBox
            installation */
-        CSystemProperties sp = vboxGlobal().virtualBox().GetSystemProperties();
+        CSystemProperties sp = uiCommon().virtualBox().GetSystemProperties();
         m_minGuestRAM        = sp.GetMinGuestRAM();
         m_maxGuestRAM        = sp.GetMaxGuestRAM();
         m_minGuestCPUCount   = sp.GetMinGuestCPUCount();

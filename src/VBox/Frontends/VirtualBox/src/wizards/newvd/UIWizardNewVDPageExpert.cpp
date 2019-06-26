@@ -32,7 +32,7 @@
 #include "UIConverter.h"
 #include "UIWizardNewVDPageExpert.h"
 #include "UIWizardNewVD.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "UIMessageCenter.h"
 #include "UIIconPool.h"
 #include "QIRichTextLabel.h"
@@ -85,7 +85,7 @@ UIWizardNewVDPageExpert::UIWizardNewVDPageExpert(const QString &strDefaultName, 
                 m_pFormatButtonGroup = new QButtonGroup(m_pFormatCnt);
                 {
                     /* Enumerate medium formats in special order: */
-                    CSystemProperties properties = vboxGlobal().virtualBox().GetSystemProperties();
+                    CSystemProperties properties = uiCommon().virtualBox().GetSystemProperties();
                     const QVector<CMediumFormat> &formats = properties.GetMediumFormats();
                     QMap<QString, CMediumFormat> vdi, preferred, others;
                     foreach (const CMediumFormat &format, formats)

@@ -23,7 +23,7 @@
 #include "UIChooserModel.h"
 #include "UIChooserView.h"
 #include "UIVirtualBoxManagerWidget.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 
 
 UIChooser::UIChooser(UIVirtualBoxManagerWidget *pParent)

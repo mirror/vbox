@@ -16,7 +16,7 @@
  */
 
 /* GUI includes: */
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "UIExtraDataManager.h"
 #include "UIMainEventListener.h"
 #include "UIVirtualBoxEventHandler.h"
@@ -145,14 +145,14 @@ void UIVirtualBoxEventHandlerProxy::prepareListener()
     m_comEventListener = CEventListener(m_pQtListener);
 
     /* Get VirtualBoxClient: */
-    const CVirtualBoxClient comVBoxClient = vboxGlobal().virtualBoxClient();
+    const CVirtualBoxClient comVBoxClient = uiCommon().virtualBoxClient();
     AssertWrapperOk(comVBoxClient);
     /* Get VirtualBoxClient event source: */
     CEventSource comEventSourceVBoxClient = comVBoxClient.GetEventSource();
     AssertWrapperOk(comEventSourceVBoxClient);
 
     /* Get VirtualBox: */
-    const CVirtualBox comVBox = vboxGlobal().virtualBox();
+    const CVirtualBox comVBox = uiCommon().virtualBox();
     AssertWrapperOk(comVBox);
     /* Get VirtualBox event source: */
     CEventSource comEventSourceVBox = comVBox.GetEventSource();

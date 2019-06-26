@@ -21,7 +21,7 @@
 #endif
 
 /* GUI includes: */
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "UIDesktopWidgetWatchdog.h"
 #include "UIMessageCenter.h"
 #include "UISession.h"

@@ -20,7 +20,7 @@
 #include <QUrl>
 
 /* GUI includes: */
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "UINetworkCustomer.h"
 #include "UINetworkManager.h"
 #include "UINetworkManagerDialog.h"
@@ -64,7 +64,7 @@ UINetworkManagerDialog *UINetworkManager::window() const
 UINetworkManagerIndicator *UINetworkManager::createIndicator() const
 {
     /* For Selector UI only: */
-    AssertReturn(vboxGlobal().uiType() == VBoxGlobal::UIType_SelectorUI, 0);
+    AssertReturn(uiCommon().uiType() == UICommon::UIType_SelectorUI, 0);
 
     /* Create network-manager state-indicator: */
     UINetworkManagerIndicator *pNetworkManagerIndicator = new UINetworkManagerIndicator;

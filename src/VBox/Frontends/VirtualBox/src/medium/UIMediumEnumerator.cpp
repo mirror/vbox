@@ -19,7 +19,7 @@
 #include <QSet>
 
 /* GUI includes: */
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "UIMediumEnumerator.h"
 #include "UIMessageCenter.h"
 #include "UIThreadPool.h"
@@ -127,7 +127,7 @@ UIMediumEnumerator::UIMediumEnumerator()
 #endif /* VBOX_GUI_WITH_NEW_MEDIA_EVENTS */
 
     /* Prepare global thread-pool listener: */
-    connect(vboxGlobal().threadPool(), &UIThreadPool::sigTaskComplete,
+    connect(uiCommon().threadPool(), &UIThreadPool::sigTaskComplete,
             this, &UIMediumEnumerator::sltHandleMediumEnumerationTaskComplete);
 }
 
@@ -202,24 +202,24 @@ void UIMediumEnumerator::startMediumEnumeration(const CMediumVector &comMedia /*
 #ifdef VBOX_GUI_WITH_NEW_MEDIA_EVENTS
         m_fMediumEnumerationRequested = true;
 #endif
-        addMediaToMap(vboxGlobal().virtualBox().GetHardDisks(), media);
-        addMediaToMap(vboxGlobal().host().GetDVDDrives(), media);
-        addMediaToMap(vboxGlobal().virtualBox().GetDVDImages(), media);
-        addMediaToMap(vboxGlobal().host().GetFloppyDrives(), media);
-        addMediaToMap(vboxGlobal().virtualBox().GetFloppyImages(), media);
+        addMediaToMap(uiCommon().virtualBox().GetHardDisks(), media);
+        addMediaToMap(uiCommon().host().GetDVDDrives(), media);
+        addMediaToMap(uiCommon().virtualBox().GetDVDImages(), media);
+        addMediaToMap(uiCommon().host().GetFloppyDrives(), media);
+        addMediaToMap(uiCommon().virtualBox().GetFloppyImages(), media);
     }
     else
     {
 #ifdef VBOX_GUI_WITH_NEW_MEDIA_EVENTS
         m_fMediumEnumerationRequested = false;
 #endif
-        addMediaToMap(vboxGlobal().host().GetDVDDrives(), media);
-        addMediaToMap(vboxGlobal().virtualBox().GetDVDImages(), media);
+        addMediaToMap(uiCommon().host().GetDVDDrives(), media);
+        addMediaToMap(uiCommon().virtualBox().GetDVDImages(), media);
         addMediaToMap(comMedia, media);
     }
 
-    /* VBoxGlobal is cleaning up, abort immediately: */
-    if (VBoxGlobal::isCleaningUp())
+    /* UICommon is cleaning up, abort immediately: */
+    if (UICommon::isCleaningUp())
         return;
 
     /* Replace existing media map: */
@@ -256,8 +256,8 @@ void UIMediumEnumerator::enumerateAdditionalMedium(const CMedium &comMedium)
     UIMediumMap media;
     addMediaToMap(inputMedia, media);
 
-    /* VBoxGlobal is cleaning up, abort immediately: */
-    if (VBoxGlobal::isCleaningUp())
+    /* UICommon is cleaning up, abort immediately: */
+    if (UICommon::isCleaningUp())
         return;
 
     /* Throw the media to existing map: */
@@ -467,7 +467,7 @@ void UIMediumEnumerator::sltHandleMediumRegistered(const QUuid &uMediumId, KDevi
         else
         {
             /* Get VBox for temporary usage, it will cache the error info: */
-            CVirtualBox comVBox = vboxGlobal().virtualBox();
+            CVirtualBox comVBox = uiCommon().virtualBox();
             /* Open existing medium, this API can be used to open known medium as well, using ID as location for that: */
             CMedium comMedium = comVBox.OpenMedium(uMediumId.toString(), enmMediumType, KAccessMode_ReadWrite, false);
 
@@ -608,7 +608,7 @@ void UIMediumEnumerator::createMediumEnumerationTask(const UIMedium &guiMedium)
     /* Append to internal set: */
     m_tasks << pTask;
     /* Post into global thread-pool: */
-    vboxGlobal().threadPool()->enqueueTask(pTask);
+    uiCommon().threadPool()->enqueueTask(pTask);
 }
 
 void UIMediumEnumerator::addNullMediumToMap(UIMediumMap &media)
@@ -626,8 +626,8 @@ void UIMediumEnumerator::addMediaToMap(const CMediumVector &inputMedia, UIMedium
     /* Iterate through passed inputMedia vector: */
     foreach (const CMedium &comMedium, inputMedia)
     {
-        /* If VBoxGlobal is cleaning up, abort immediately: */
-        if (VBoxGlobal::isCleaningUp())
+        /* If UICommon is cleaning up, abort immediately: */
+        if (UICommon::isCleaningUp())
             break;
 
         /* Insert UIMedium to the passed media map.
@@ -672,7 +672,7 @@ void UIMediumEnumerator::calculateActualUsage(const QUuid &uMachineID,
                                               const bool fTakeIntoAccountCurrentStateOnly) const
 {
     /* Search for corresponding machine: */
-    CMachine comMachine = vboxGlobal().virtualBox().FindMachine(uMachineID.toString());
+    CMachine comMachine = uiCommon().virtualBox().FindMachine(uMachineID.toString());
     if (comMachine.isNull())
     {
         /* Usually means the machine is already gone, not harmful. */

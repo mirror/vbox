@@ -69,7 +69,7 @@ void UIWizardNewCloudVMPage1::populateDestinations()
     do
     {
         /* Initialize Cloud Provider Manager: */
-        CVirtualBox comVBox = vboxGlobal().virtualBox();
+        CVirtualBox comVBox = uiCommon().virtualBox();
         m_comCloudProviderManager = comVBox.GetCloudProviderManager();
         if (!comVBox.isOk())
         {
@@ -354,7 +354,7 @@ void UIWizardNewCloudVMPage1::populateFormProperties()
         do
         {
             /* Create appliance: */
-            CVirtualBox comVBox = vboxGlobal().virtualBox();
+            CVirtualBox comVBox = uiCommon().virtualBox();
             CAppliance comAppliance = comVBox.CreateAppliance();
             if (!comVBox.isOk())
             {

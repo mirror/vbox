@@ -24,7 +24,7 @@
 #include "UIErrorString.h"
 #include "UICustomFileSystemModel.h"
 #include "UIPathOperations.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 
 const char *UICustomFileSystemModel::strUpDirectoryString = "..";
 
@@ -439,7 +439,7 @@ QVariant UICustomFileSystemModel::data(const QModelIndex &index, int role) const
             if (m_fShowHumanReadableSizes)
             {
                 qulonglong size = item->data(index.column()).toULongLong();
-                return vboxGlobal().formatSize(size);
+                return uiCommon().formatSize(size);
             }
             else
                 return item->data(index.column());

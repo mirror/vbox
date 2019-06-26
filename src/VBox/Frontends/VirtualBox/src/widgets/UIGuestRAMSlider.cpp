@@ -16,7 +16,7 @@
  */
 
 /* GUI includes: */
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "UIGuestRAMSlider.h"
 
 /* COM includes: */
@@ -67,8 +67,8 @@ uint UIGuestRAMSlider::maxRAM() const
 
 void UIGuestRAMSlider::prepare()
 {
-    ulong uFullSize = vboxGlobal().host().GetMemorySize();
-    CSystemProperties sys = vboxGlobal().virtualBox().GetSystemProperties();
+    ulong uFullSize = uiCommon().host().GetMemorySize();
+    CSystemProperties sys = uiCommon().virtualBox().GetSystemProperties();
     m_uMinRAM = sys.GetMinGuestRAM();
     m_uMaxRAM = RT_MIN(RT_ALIGN(uFullSize, _1G / _1M), sys.GetMaxGuestRAM());
 

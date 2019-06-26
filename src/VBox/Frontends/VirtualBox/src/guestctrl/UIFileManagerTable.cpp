@@ -31,7 +31,7 @@
 #include "QILabel.h"
 #include "QILineEdit.h"
 #include "QIToolButton.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "UIActionPool.h"
 #include "UICustomFileSystemModel.h"
 #include "UIErrorString.h"
@@ -1479,7 +1479,7 @@ QString UIFileManagerTable::fileTypeString(KFsObjType type)
 
 /* static */ QString UIFileManagerTable::humanReadableSize(ULONG64 size)
 {
-    return vboxGlobal().formatSize(size);
+    return uiCommon().formatSize(size);
 }
 
 void UIFileManagerTable::optionsUpdated()

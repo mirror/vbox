@@ -28,7 +28,7 @@
 #include "QIComboBox.h"
 #include "QIRichTextLabel.h"
 #include "QIToolButton.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "UIEmptyFilePathSelector.h"
 #include "UIIconPool.h"
 #include "UIMessageCenter.h"
@@ -87,7 +87,7 @@ void UIWizardImportAppPage1::populateSources()
     do
     {
         /* Initialize Cloud Provider Manager: */
-        CVirtualBox comVBox = vboxGlobal().virtualBox();
+        CVirtualBox comVBox = uiCommon().virtualBox();
         m_comCloudProviderManager = comVBox.GetCloudProviderManager();
         if (!comVBox.isOk())
         {
@@ -377,7 +377,7 @@ void UIWizardImportAppPage1::populateFormProperties()
         do
         {
             /* Create appliance: */
-            CVirtualBox comVBox = vboxGlobal().virtualBox();
+            CVirtualBox comVBox = uiCommon().virtualBox();
             CAppliance comAppliance = comVBox.CreateAppliance();
             if (!comVBox.isOk())
             {
@@ -629,7 +629,7 @@ UIWizardImportAppPageBasic1::UIWizardImportAppPageBasic1(bool fImportFromOCIByDe
                     if (m_pFileSelector)
                     {
                         m_pFileLabel->setBuddy(m_pFileSelector);
-                        m_pFileSelector->setHomeDir(vboxGlobal().documentsPath());
+                        m_pFileSelector->setHomeDir(uiCommon().documentsPath());
                         m_pFileSelector->setMode(UIEmptyFilePathSelector::Mode_File_Open);
                         m_pFileSelector->setButtonPosition(UIEmptyFilePathSelector::RightPosition);
                         m_pFileSelector->setEditable(true);
@@ -881,7 +881,7 @@ bool UIWizardImportAppPageBasic1::isComplete() const
         const bool fCSP = !fOVF;
 
         fResult =    (   fOVF
-                      && VBoxGlobal::hasAllowedExtension(m_pFileSelector->path().toLower(), OVFFileExts)
+                      && UICommon::hasAllowedExtension(m_pFileSelector->path().toLower(), OVFFileExts)
                       && QFile::exists(m_pFileSelector->path()))
                   || (   fCSP
                       && !m_comCloudProfile.isNull()

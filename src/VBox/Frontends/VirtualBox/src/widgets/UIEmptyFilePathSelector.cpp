@@ -22,7 +22,7 @@
 #include "QILineEdit.h"
 #include "UIIconPool.h"
 #include "UIEmptyFilePathSelector.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 
 /* Global includes */
 #include <iprt/assert.h>

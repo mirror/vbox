@@ -48,7 +48,7 @@ int main(int argc, char **argv, char **envp)
     for (int i = 1; i < argc && !(fStartVM && fSeparateProcess); ++i)
     {
         /* NOTE: the check here must match the corresponding check for the
-         * options to start a VM in main.cpp and VBoxGlobal.cpp exactly,
+         * options to start a VM in main.cpp and UICommon.cpp exactly,
          * otherwise there will be weird error messages. */
         if (   !MyStrCmp(argv[i], "--startvm")
             || !MyStrCmp(argv[i], "-startvm"))

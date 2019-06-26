@@ -35,7 +35,7 @@
 #ifdef VBOX_WS_MAC
 # include "UIWindowMenuManager.h"
 #endif /* VBOX_WS_MAC */
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 
 /* COM includes: */
 #include "CDHCPServer.h"
@@ -264,7 +264,7 @@ void UIHostNetworkManagerWidget::sltApplyHostNetworkDetailsChanges()
     UIDataHostNetwork newData = m_pDetailsWidget->data();
 
     /* Get host for further activities: */
-    CHost comHost = vboxGlobal().host();
+    CHost comHost = uiCommon().host();
 
     /* Find corresponding interface: */
     CHostNetworkInterface comInterface = comHost.FindHostNetworkInterfaceByName(oldData.m_interface.m_strName);
@@ -313,7 +313,7 @@ void UIHostNetworkManagerWidget::sltApplyHostNetworkDetailsChanges()
             else
             {
                 /* Get VBox for further activities: */
-                CVirtualBox comVBox = vboxGlobal().virtualBox();
+                CVirtualBox comVBox = uiCommon().virtualBox();
 
                 /* Find corresponding DHCP server (create if necessary): */
                 CDHCPServer comServer = comVBox.FindDHCPServerByNetworkName(strNetworkName);
@@ -376,7 +376,7 @@ void UIHostNetworkManagerWidget::sltApplyHostNetworkDetailsChanges()
 void UIHostNetworkManagerWidget::sltCreateHostNetwork()
 {
     /* Get host for further activities: */
-    CHost comHost = vboxGlobal().host();
+    CHost comHost = uiCommon().host();
 
     /* Create interface: */
     CHostNetworkInterface comInterface;
@@ -404,7 +404,7 @@ void UIHostNetworkManagerWidget::sltCreateHostNetwork()
             else
             {
                 /* Get VBox for further activities: */
-                CVirtualBox comVBox = vboxGlobal().virtualBox();
+                CVirtualBox comVBox = uiCommon().virtualBox();
 
                 /* Find corresponding DHCP server (create if necessary): */
                 CDHCPServer comServer = comVBox.FindDHCPServerByNetworkName(strNetworkName);
@@ -441,7 +441,7 @@ void UIHostNetworkManagerWidget::sltRemoveHostNetwork()
         return;
 
     /* Get host for further activities: */
-    CHost comHost = vboxGlobal().host();
+    CHost comHost = uiCommon().host();
 
     /* Find corresponding interface: */
     const CHostNetworkInterface &comInterface = comHost.FindHostNetworkInterfaceByName(strInterfaceName);
@@ -466,7 +466,7 @@ void UIHostNetworkManagerWidget::sltRemoveHostNetwork()
         else
         {
             /* Get VBox for further activities: */
-            CVirtualBox comVBox = vboxGlobal().virtualBox();
+            CVirtualBox comVBox = uiCommon().virtualBox();
 
             /* Find corresponding DHCP server: */
             const CDHCPServer &comServer = comVBox.FindDHCPServerByNetworkName(strNetworkName);
@@ -564,7 +564,7 @@ void UIHostNetworkManagerWidget::sltHandleItemChange(QTreeWidgetItem *pItem)
         return;
 
     /* Get host for further activities: */
-    CHost comHost = vboxGlobal().host();
+    CHost comHost = uiCommon().host();
 
     /* Find corresponding interface: */
     CHostNetworkInterface comInterface = comHost.FindHostNetworkInterfaceByName(oldData.m_interface.m_strName);
@@ -583,7 +583,7 @@ void UIHostNetworkManagerWidget::sltHandleItemChange(QTreeWidgetItem *pItem)
         else
         {
             /* Get VBox for further activities: */
-            CVirtualBox comVBox = vboxGlobal().virtualBox();
+            CVirtualBox comVBox = uiCommon().virtualBox();
 
             /* Find corresponding DHCP server (create if necessary): */
             CDHCPServer comServer = comVBox.FindDHCPServerByNetworkName(strNetworkName);
@@ -825,7 +825,7 @@ void UIHostNetworkManagerWidget::loadHostNetworks()
     m_pTreeWidget->clear();
 
     /* Get host for further activities: */
-    const CHost comHost = vboxGlobal().host();
+    const CHost comHost = uiCommon().host();
 
     /* Get interfaces for further activities: */
     const QVector<CHostNetworkInterface> interfaces = comHost.GetNetworkInterfaces();
@@ -881,7 +881,7 @@ void UIHostNetworkManagerWidget::loadHostNetwork(const CHostNetworkInterface &co
         msgCenter().cannotAcquireHostNetworkInterfaceParameter(comInterface, this);
 
     /* Get VBox for further activities: */
-    CVirtualBox comVBox = vboxGlobal().virtualBox();
+    CVirtualBox comVBox = uiCommon().virtualBox();
 
     /* Find corresponding DHCP server (create if necessary): */
     CDHCPServer comServer = comVBox.FindDHCPServerByNetworkName(strNetworkName);

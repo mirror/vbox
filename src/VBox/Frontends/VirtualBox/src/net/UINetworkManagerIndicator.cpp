@@ -16,7 +16,7 @@
  */
 
 /* GUI includes: */
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "UIIconPool.h"
 #include "UINetworkManagerIndicator.h"
 #include "UINetworkRequest.h"
@@ -61,8 +61,8 @@ void UINetworkManagerIndicator::updateAppearance()
             const QString &strDescription = data.description;
             QString strStatus(data.failed ? tr("failed", "network operation") :
                                             tr("(%1 of %2)")
-                                               .arg(vboxGlobal().formatSize(data.bytesReceived))
-                                               .arg(vboxGlobal().formatSize(data.bytesTotal)));
+                                               .arg(uiCommon().formatSize(data.bytesReceived))
+                                               .arg(uiCommon().formatSize(data.bytesTotal)));
             QString strBodyLine(strBodyItem.arg(strNobreak.arg(strDescription)).arg(strNobreak.arg(strStatus)));
             strBody += strBodyLine;
         }

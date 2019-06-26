@@ -20,7 +20,7 @@
 #include <QTimer>
 
 /* GUI includes: */
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "UIConverter.h"
 #include "UIDetailsGenerator.h"
 #include "UIInformationItem.h"
@@ -438,7 +438,7 @@ QVariant UIInformationDataRuntimeAttributes::data(const QModelIndex &index, int 
                 if (monitorStatus == KGuestMonitorStatus_Disabled)
                 {
                     strResolution += QString(" ");
-                    strResolution += QString(VBoxGlobal::tr("off", "guest monitor status"));
+                    strResolution += QString(UICommon::tr("off", "guest monitor status"));
                 }
                 aResolutions[iScreen] = strResolution;
             }
@@ -464,8 +464,8 @@ QVariant UIInformationDataRuntimeAttributes::data(const QModelIndex &index, int 
 
             /* Determine virtualization attributes: */
             QString strVirtualization = debugger.GetHWVirtExEnabled() ?
-                                        VBoxGlobal::tr("Active", "details report (VT-x/AMD-V)") :
-                                        VBoxGlobal::tr("Inactive", "details report (VT-x/AMD-V)");
+                                        UICommon::tr("Active", "details report (VT-x/AMD-V)") :
+                                        UICommon::tr("Inactive", "details report (VT-x/AMD-V)");
             QString strExecutionEngine;
             switch (debugger.GetExecutionEngine())
             {
@@ -482,15 +482,15 @@ QVariant UIInformationDataRuntimeAttributes::data(const QModelIndex &index, int 
                     AssertFailed();
                     RT_FALL_THRU();
                 case KVMExecutionEngine_NotSet:
-                    strExecutionEngine = VBoxGlobal::tr("not set", "details report (execution engine)");
+                    strExecutionEngine = UICommon::tr("not set", "details report (execution engine)");
                     break;
             }
             QString strNestedPaging = debugger.GetHWVirtExNestedPagingEnabled() ?
-                                      VBoxGlobal::tr("Active", "details report (Nested Paging)") :
-                                      VBoxGlobal::tr("Inactive", "details report (Nested Paging)");
+                                      UICommon::tr("Active", "details report (Nested Paging)") :
+                                      UICommon::tr("Inactive", "details report (Nested Paging)");
             QString strUnrestrictedExecution = debugger.GetHWVirtExUXEnabled() ?
-                                               VBoxGlobal::tr("Active", "details report (Unrestricted Execution)") :
-                                               VBoxGlobal::tr("Inactive", "details report (Unrestricted Execution)");
+                                               UICommon::tr("Active", "details report (Unrestricted Execution)") :
+                                               UICommon::tr("Inactive", "details report (Unrestricted Execution)");
             QString strParavirtProvider = gpConverter->toString(m_machine.GetEffectiveParavirtProvider());
 
             /* Guest information: */
@@ -508,7 +508,7 @@ QVariant UIInformationDataRuntimeAttributes::data(const QModelIndex &index, int 
             if (strOSType.isEmpty())
                 strOSType = tr("Not Detected", "guest os type");
             else
-                strOSType = vboxGlobal().vmGuestOSTypeDescription(strOSType);
+                strOSType = uiCommon().vmGuestOSTypeDescription(strOSType);
 
             /* VRDE information: */
             int iVRDEPort = m_console.GetVRDEServerInfo().GetPort();
@@ -569,7 +569,7 @@ UIInformationDataNetworkStatistics::UIInformationDataNetworkStatistics(const CMa
     : UIInformationDataItem(InformationElementType_NetworkStatistics, machine, console, pModel)
 {
     /* Network statistics: */
-    ulong count = vboxGlobal().virtualBox().GetSystemProperties().GetMaxNetworkAdapters(m_machine.GetChipsetType());
+    ulong count = uiCommon().virtualBox().GetSystemProperties().GetMaxNetworkAdapters(m_machine.GetChipsetType());
     for (ulong i = 0; i < count; ++i)
     {
         CNetworkAdapter na = machine.GetNetworkAdapter(i);
@@ -629,14 +629,14 @@ QVariant UIInformationDataNetworkStatistics::data(const QModelIndex &index, int 
             UITextTable p_text;
 
             /* Enumerate network-adapters: */
-            ulong uCount = vboxGlobal().virtualBox().GetSystemProperties().GetMaxNetworkAdapters(m_machine.GetChipsetType());
+            ulong uCount = uiCommon().virtualBox().GetSystemProperties().GetMaxNetworkAdapters(m_machine.GetChipsetType());
             for (ulong uSlot = 0; uSlot < uCount; ++uSlot)
             {
                 /* Skip disabled adapters: */
                 if (m_machine.GetNetworkAdapter(uSlot).GetEnabled())
                 {
                     QStringList keys = m_links[QString("NA%1").arg(uSlot)];
-                    p_text << UITextTableLine(VBoxGlobal::tr("Adapter %1", "details report (network)").arg(uSlot + 1), QString());
+                    p_text << UITextTableLine(UICommon::tr("Adapter %1", "details report (network)").arg(uSlot + 1), QString());
 
                     foreach (QString strKey, keys)
                         p_text << UITextTableLine(m_names[strKey], QString("%1 %2").arg(m_values[strKey]).arg(m_units[strKey]));
@@ -720,7 +720,7 @@ UIInformationDataStorageStatistics::UIInformationDataStorageStatistics(const CMa
     : UIInformationDataItem(InformationElementType_StorageStatistics, machine, console, pModel)
 {
     /* Storage statistics: */
-    CSystemProperties sp = vboxGlobal().virtualBox().GetSystemProperties();
+    CSystemProperties sp = uiCommon().virtualBox().GetSystemProperties();
     CStorageControllerVector controllers = m_machine.GetStorageControllers();
     int iIDECount = 0;
     foreach (const CStorageController &controller, controllers)

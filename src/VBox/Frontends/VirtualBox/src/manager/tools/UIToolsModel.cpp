@@ -27,7 +27,7 @@
 
 /* GUI includes: */
 #include "QIMessageBox.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "UIActionPoolManager.h"
 #include "UIIconPool.h"
 #include "UITools.h"
@@ -449,7 +449,7 @@ void UIToolsModel::prepareScene()
 void UIToolsModel::prepareItems()
 {
     /* Check if Ext Pack is ready, some of actions my depend on it: */
-    CExtPack extPack = vboxGlobal().virtualBox().GetExtensionPackManager().Find(GUI_ExtPackName);
+    CExtPack extPack = uiCommon().virtualBox().GetExtensionPackManager().Find(GUI_ExtPackName);
     const bool fExtPackAccessible = !extPack.isNull() && extPack.GetUsable();
 
     /* Enable both classes of tools initially: */

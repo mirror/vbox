@@ -28,7 +28,7 @@
 #include "UINetworkManager.h"
 #include "UIExtraDataManager.h"
 #ifndef VBOX_GUI_IN_TST_SSL_CERT_DOWNLOADS
-# include "VBoxGlobal.h"
+# include "UICommon.h"
 # include "VBoxUtils.h"
 # include "CSystemProperties.h"
 #endif
@@ -383,7 +383,7 @@ int UINetworkReplyPrivateThread::applyProxyRules()
 #ifndef VBOX_GUI_IN_TST_SSL_CERT_DOWNLOADS
     /* If the specific proxy settings are enabled, we'll use them
      * unless user disabled that functionality manually. */
-    const CSystemProperties comProperties = vboxGlobal().virtualBox().GetSystemProperties();
+    const CSystemProperties comProperties = uiCommon().virtualBox().GetSystemProperties();
     const KProxyMode enmProxyMode = comProperties.GetProxyMode();
     AssertReturn(comProperties.isOk(), VERR_INTERNAL_ERROR_3);
     switch (enmProxyMode)
@@ -646,7 +646,7 @@ void UINetworkReplyPrivateThread::handleProgressChange(uint64_t cbDownloadTotal,
 QString UINetworkReplyPrivateThread::fullCertificateFileName()
 {
 #ifndef VBOX_GUI_IN_TST_SSL_CERT_DOWNLOADS
-    const QDir homeDir(QDir::toNativeSeparators(vboxGlobal().homeFolder()));
+    const QDir homeDir(QDir::toNativeSeparators(uiCommon().homeFolder()));
     return QDir::toNativeSeparators(homeDir.absoluteFilePath(s_strCertificateFileName));
 #else /* VBOX_GUI_IN_TST_SSL_CERT_DOWNLOADS */
     return QString("/not/such/agency/non-existing-file.cer");

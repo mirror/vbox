@@ -16,7 +16,7 @@
  */
 
 /* GUI includes: */
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "UIActionPool.h"
 #include "UIExtraDataManager.h"
 #include "UIShortcutPool.h"
@@ -376,7 +376,7 @@ void UIShortcutPool::saveOverridesFor(const QString &strPoolExtraDataID)
                                           shortcut.sequence().toString());
     }
     /* Save overrides into the extra-data: */
-    vboxGlobal().virtualBox().SetExtraDataStringList(strPoolExtraDataID, overrides);
+    uiCommon().virtualBox().SetExtraDataStringList(strPoolExtraDataID, overrides);
 }
 
 UIShortcut &UIShortcutPool::shortcut(const QString &strShortcutKey)

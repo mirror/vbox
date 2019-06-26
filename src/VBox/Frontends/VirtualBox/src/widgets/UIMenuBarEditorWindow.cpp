@@ -30,7 +30,7 @@
 
 /* GUI includes: */
 #include "QIToolButton.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "UIActionPoolRuntime.h"
 #include "UIConverter.h"
 #include "UIExtraDataManager.h"
@@ -306,9 +306,9 @@ QString UIAccessibilityInterfaceForUIMenuBarEditorButton::subText(UIMenuBarEdito
 
 UIMenuBarEditorWindow::UIMenuBarEditorWindow(UIMachineWindow *pParent, UIActionPool *pActionPool)
 #ifndef VBOX_WS_MAC
-    : UISlidingToolBar(pParent, pParent->menuBar(), new UIMenuBarEditorWidget(0, false, vboxGlobal().managedVMUuid(), pActionPool), UISlidingToolBar::Position_Top)
+    : UISlidingToolBar(pParent, pParent->menuBar(), new UIMenuBarEditorWidget(0, false, uiCommon().managedVMUuid(), pActionPool), UISlidingToolBar::Position_Top)
 #else
-    : UISlidingToolBar(pParent, 0, new UIMenuBarEditorWidget(0, false, vboxGlobal().managedVMUuid(), pActionPool), UISlidingToolBar::Position_Top)
+    : UISlidingToolBar(pParent, 0, new UIMenuBarEditorWidget(0, false, uiCommon().managedVMUuid(), pActionPool), UISlidingToolBar::Position_Top)
 #endif
 {
 }

@@ -24,7 +24,7 @@
 
 /* GUI includes: */
 #include "QIWidgetValidator.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "UIConverter.h"
 #include "UIIconPool.h"
 #include "UIMessageCenter.h"

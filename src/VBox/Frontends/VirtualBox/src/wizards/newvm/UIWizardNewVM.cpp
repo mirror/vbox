@@ -16,7 +16,7 @@
  */
 
 /* GUI includes: */
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "UIWizardNewVM.h"
 #include "UIWizardNewVMPageBasic1.h"
 #include "UIWizardNewVMPageBasic2.h"
@@ -89,7 +89,7 @@ void UIWizardNewVM::prepare()
 bool UIWizardNewVM::createVM()
 {
     /* Get VBox object: */
-    CVirtualBox vbox = vboxGlobal().virtualBox();
+    CVirtualBox vbox = uiCommon().virtualBox();
 
     /* OS type: */
     CGuestOSType type = field("type").value<CGuestOSType>();
@@ -128,7 +128,7 @@ bool UIWizardNewVM::createVM()
     /* correct the RAM size. IMachine::applyDefaults may have overwritten the user setting: */
     m_machine.SetMemorySize(field("ram").toUInt());
     /* Correct the VRAM size since API does not take fullscreen memory requirements into account: */
-    m_machine.SetVRAMSize(qMax(m_machine.GetVRAMSize(), (ULONG)(VBoxGlobal::requiredVideoMemory(strTypeId) / _1M)));
+    m_machine.SetVRAMSize(qMax(m_machine.GetVRAMSize(), (ULONG)(UICommon::requiredVideoMemory(strTypeId) / _1M)));
 #endif
 
     /* Register the VM prior to attaching hard disks: */
@@ -143,7 +143,7 @@ bool UIWizardNewVM::createVM()
 
 void UIWizardNewVM::configureVM(const QString &strGuestTypeId, const CGuestOSType &comGuestType)
 {
-    CVirtualBox vbox = vboxGlobal().virtualBox();
+    CVirtualBox vbox = uiCommon().virtualBox();
 
     /* RAM size: */
     m_machine.SetMemorySize(field("ram").toInt());
@@ -152,7 +152,7 @@ void UIWizardNewVM::configureVM(const QString &strGuestTypeId, const CGuestOSTyp
     m_machine.SetGraphicsControllerType(comGuestType.GetRecommendedGraphicsController());
 
     /* VRAM size - select maximum between recommended and minimum for fullscreen: */
-    m_machine.SetVRAMSize(qMax(comGuestType.GetRecommendedVRAM(), (ULONG)(VBoxGlobal::requiredVideoMemory(strGuestTypeId) / _1M)));
+    m_machine.SetVRAMSize(qMax(comGuestType.GetRecommendedVRAM(), (ULONG)(UICommon::requiredVideoMemory(strGuestTypeId) / _1M)));
 
     /* Selecting recommended chipset type: */
     m_machine.SetChipsetType(comGuestType.GetRecommendedChipset());
@@ -171,7 +171,7 @@ void UIWizardNewVM::configureVM(const QString &strGuestTypeId, const CGuestOSTyp
     if (!usbDeviceFilters.isNull() && comGuestType.GetRecommendedUSB3() && m_machine.GetUSBProxyAvailable())
     {
         /* USB 3.0 is only available if the proper ExtPack is installed: */
-        CExtPackManager manager = vboxGlobal().virtualBox().GetExtensionPackManager();
+        CExtPackManager manager = uiCommon().virtualBox().GetExtensionPackManager();
         if (manager.IsExtPackUsable(GUI_ExtPackName))
         {
             m_machine.AddUSBController("XHCI", KUSBControllerType_XHCI);
@@ -189,7 +189,7 @@ void UIWizardNewVM::configureVM(const QString &strGuestTypeId, const CGuestOSTyp
          * the missing extpack isn't exactly clean, but it is a
          * necessary evil to patch over legacy compatability issues
          * introduced by the new distribution model. */
-        CExtPackManager manager = vboxGlobal().virtualBox().GetExtensionPackManager();
+        CExtPackManager manager = uiCommon().virtualBox().GetExtensionPackManager();
         if (manager.IsExtPackUsable(GUI_ExtPackName))
             m_machine.AddUSBController("EHCI", KUSBControllerType_EHCI);
     }
@@ -284,7 +284,7 @@ bool UIWizardNewVM::attachDefaultDevices(const CGuestOSType &comGuestType)
 {
     bool success = false;
     QUuid uMachineId = m_machine.GetId();
-    CSession session = vboxGlobal().openSession(uMachineId);
+    CSession session = uiCommon().openSession(uMachineId);
     if (!session.isNull())
     {
         CMachine machine = session.GetMachine();
@@ -297,7 +297,7 @@ bool UIWizardNewVM::attachDefaultDevices(const CGuestOSType &comGuestType)
             CStorageController comHDDController = m_machine.GetStorageControllerByInstance(enmHDDBus, 0);
             if (!comHDDController.isNull())
             {
-                UIMedium vmedium = vboxGlobal().medium(uId);
+                UIMedium vmedium = uiCommon().medium(uId);
                 CMedium medium = vmedium.medium();              /// @todo r=dj can this be cached somewhere?
                 machine.AttachDevice(comHDDController.GetName(), 0, 0, KDeviceType_HardDisk, medium);
                 if (!machine.isOk())
@@ -343,7 +343,7 @@ bool UIWizardNewVM::attachDefaultDevices(const CGuestOSType &comGuestType)
     }
     if (!success)
     {
-        CVirtualBox vbox = vboxGlobal().virtualBox();
+        CVirtualBox vbox = uiCommon().virtualBox();
         /* Unregister on failure */
         QVector<CMedium> aMedia = m_machine.Unregister(KCleanupMode_UnregisterOnly);   /// @todo replace with DetachAllReturnHardDisksOnly once a progress dialog is in place below
         if (vbox.isOk())

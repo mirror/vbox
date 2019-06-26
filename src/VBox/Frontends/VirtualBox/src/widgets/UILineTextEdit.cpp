@@ -26,7 +26,7 @@
 
 /* GUI includes: */
 #include "QIFileDialog.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "UILineTextEdit.h"
 
 
@@ -78,7 +78,7 @@ void UITextEditor::retranslateUi()
 
 void UITextEditor::open()
 {
-    QString fileName = QIFileDialog::getOpenFileName(vboxGlobal().documentsPath(), tr("Text (*.txt);;All (*.*)"), this, tr("Select a file to open..."));
+    QString fileName = QIFileDialog::getOpenFileName(uiCommon().documentsPath(), tr("Text (*.txt);;All (*.*)"), this, tr("Select a file to open..."));
     if (!fileName.isEmpty())
     {
         QFile file(fileName);

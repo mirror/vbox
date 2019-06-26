@@ -22,7 +22,7 @@
 #include "UIWizardCloneVDPageBasic2.h"
 #include "UIWizardCloneVDPageBasic3.h"
 #include "UIWizardCloneVDPageExpert.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "UIMessageCenter.h"
 
 /* COM includes: */
@@ -56,7 +56,7 @@ bool UIWizardCloneVD::copyVirtualDisk()
     AssertReturn(uSize > 0, false);
 
     /* Get VBox object: */
-    CVirtualBox comVBox = vboxGlobal().virtualBox();
+    CVirtualBox comVBox = uiCommon().virtualBox();
 
     /* Create new virtual disk image: */
     CMedium comVirtualDisk = comVBox.CreateMedium(comMediumFormat.GetName(), strMediumPath, KAccessMode_ReadWrite, m_enmSourceVirtualDiskDeviceType);
@@ -97,7 +97,7 @@ bool UIWizardCloneVD::copyVirtualDisk()
     m_comTargetVirtualDisk = comVirtualDisk;
 
     /* Make sure we register the medium to VBox: */
-    vboxGlobal().createMedium(UIMedium(m_comTargetVirtualDisk, UIMediumDeviceType_HardDisk, KMediumState_Created));
+    uiCommon().createMedium(UIMedium(m_comTargetVirtualDisk, UIMediumDeviceType_HardDisk, KMediumState_Created));
 
     return true;
 }

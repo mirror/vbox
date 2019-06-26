@@ -24,7 +24,7 @@
 #endif
 
 /* GUI includes: */
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "UIDesktopWidgetWatchdog.h"
 #include "UIExtraDataManager.h"
 #include "UIMessageCenter.h"
@@ -460,7 +460,7 @@ void UIMouseHandler::sltMousePointerShapeChanged()
     {
         QList<ulong> screenIds = m_viewports.keys();
         for (int i = 0; i < screenIds.size(); ++i)
-            VBoxGlobal::setCursor(m_viewports[screenIds[i]], Qt::BlankCursor);
+            UICommon::setCursor(m_viewports[screenIds[i]], Qt::BlankCursor);
     }
 
     else
@@ -474,7 +474,7 @@ void UIMouseHandler::sltMousePointerShapeChanged()
     {
         QList<ulong> screenIds = m_viewports.keys();
         for (int i = 0; i < screenIds.size(); ++i)
-            VBoxGlobal::setCursor(m_viewports[screenIds[i]], uisession()->cursor());
+            UICommon::setCursor(m_viewports[screenIds[i]], uisession()->cursor());
     }
 
     else
@@ -487,7 +487,7 @@ void UIMouseHandler::sltMousePointerShapeChanged()
     {
         QList<ulong> screenIds = m_viewports.keys();
         for (int i = 0; i < screenIds.size(); ++i)
-            VBoxGlobal::unsetCursor(m_viewports[screenIds[i]]);
+            UICommon::unsetCursor(m_viewports[screenIds[i]]);
     }
 }
 
@@ -1149,7 +1149,7 @@ bool UIMouseHandler::mouseEvent(int iEventType, ulong uScreenId,
                         qApp->processEvents();
 #endif /* VBOX_WS_X11 */
                         machineLogic()->keyboardHandler()->captureKeyboard(uScreenId);
-                        const MouseCapturePolicy mcp = gEDataManager->mouseCapturePolicy(vboxGlobal().managedVMUuid());
+                        const MouseCapturePolicy mcp = gEDataManager->mouseCapturePolicy(uiCommon().managedVMUuid());
                         if (mcp == MouseCapturePolicy_Default)
                             captureMouse(uScreenId);
                     }

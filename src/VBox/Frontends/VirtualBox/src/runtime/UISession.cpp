@@ -32,7 +32,7 @@
 #endif
 
 /* GUI includes: */
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "UIDesktopWidgetWatchdog.h"
 #include "UIExtraDataManager.h"
 #include "UISession.h"
@@ -184,28 +184,28 @@ bool UISession::initialize()
     /* Apply debug settings from the command line. */
     if (!debugger().isNull() && debugger().isOk())
     {
-        if (vboxGlobal().isPatmDisabled())
+        if (uiCommon().isPatmDisabled())
             debugger().SetPATMEnabled(false);
-        if (vboxGlobal().isCsamDisabled())
+        if (uiCommon().isCsamDisabled())
             debugger().SetCSAMEnabled(false);
-        if (vboxGlobal().isSupervisorCodeExecedRecompiled())
+        if (uiCommon().isSupervisorCodeExecedRecompiled())
             debugger().SetRecompileSupervisor(true);
-        if (vboxGlobal().isUserCodeExecedRecompiled())
+        if (uiCommon().isUserCodeExecedRecompiled())
             debugger().SetRecompileUser(true);
-        if (vboxGlobal().areWeToExecuteAllInIem())
+        if (uiCommon().areWeToExecuteAllInIem())
             debugger().SetExecuteAllInIEM(true);
-        if (!vboxGlobal().isDefaultWarpPct())
-            debugger().SetVirtualTimeRate(vboxGlobal().getWarpPct());
+        if (!uiCommon().isDefaultWarpPct())
+            debugger().SetVirtualTimeRate(uiCommon().getWarpPct());
     }
 
     /* Apply ad-hoc reconfigurations from the command line: */
-    if (vboxGlobal().hasFloppyImageToMount())
-        mountAdHocImage(KDeviceType_Floppy, UIMediumDeviceType_Floppy, vboxGlobal().getFloppyImage().toString());
-    if (vboxGlobal().hasDvdImageToMount())
-        mountAdHocImage(KDeviceType_DVD, UIMediumDeviceType_DVD, vboxGlobal().getDvdImage().toString());
+    if (uiCommon().hasFloppyImageToMount())
+        mountAdHocImage(KDeviceType_Floppy, UIMediumDeviceType_Floppy, uiCommon().getFloppyImage().toString());
+    if (uiCommon().hasDvdImageToMount())
+        mountAdHocImage(KDeviceType_DVD, UIMediumDeviceType_DVD, uiCommon().getDvdImage().toString());
 
     /* Power UP if this is NOT separate process: */
-    if (!vboxGlobal().isSeparateProcess())
+    if (!uiCommon().isSeparateProcess())
         if (!powerUp())
             return false;
 
@@ -228,7 +228,7 @@ bool UISession::initialize()
         return false;
 
     /* Fetch corresponding states: */
-    if (vboxGlobal().isSeparateProcess())
+    if (uiCommon().isSeparateProcess())
     {
         m_fIsMouseSupportsAbsolute = mouse().GetAbsoluteSupported();
         m_fIsMouseSupportsRelative = mouse().GetRelativeSupported();
@@ -258,7 +258,7 @@ bool UISession::initialize()
 #endif /* !VBOX_WS_MAC && !VBOX_WS_WIN */
 
 #ifdef VBOX_GUI_WITH_PIDFILE
-    vboxGlobal().createPidfile();
+    uiCommon().createPidfile();
 #endif /* VBOX_GUI_WITH_PIDFILE */
 
     /* Warn listeners about we are initialized: */
@@ -271,21 +271,21 @@ bool UISession::initialize()
 bool UISession::powerUp()
 {
     /* Power UP machine: */
-    CProgress progress = vboxGlobal().shouldStartPaused() ? console().PowerUpPaused() : console().PowerUp();
+    CProgress progress = uiCommon().shouldStartPaused() ? console().PowerUpPaused() : console().PowerUp();
 
     /* Check for immediate failure: */
     if (!console().isOk() || progress.isNull())
     {
-        if (vboxGlobal().showStartVMErrors())
+        if (uiCommon().showStartVMErrors())
             msgCenter().cannotStartMachine(console(), machineName());
         LogRel(("GUI: Aborting startup due to power up issue detected...\n"));
         return false;
     }
 
     /* Some logging right after we powered up: */
-    LogRel(("Qt version: %s\n", VBoxGlobal::qtRTVersionString().toUtf8().constData()));
+    LogRel(("Qt version: %s\n", UICommon::qtRTVersionString().toUtf8().constData()));
 #ifdef VBOX_WS_X11
-    LogRel(("X11 Window Manager code: %d\n", (int)vboxGlobal().typeOfWindowManager()));
+    LogRel(("X11 Window Manager code: %d\n", (int)uiCommon().typeOfWindowManager()));
 #endif
 
     /* Enable 'manual-override',
@@ -311,7 +311,7 @@ bool UISession::powerUp()
     /* Check for progress failure: */
     if (!progress.isOk() || progress.GetResultCode() != 0)
     {
-        if (vboxGlobal().showStartVMErrors())
+        if (uiCommon().showStartVMErrors())
             msgCenter().cannotStartMachine(progress, machineName());
         LogRel(("GUI: Aborting startup due to power up progress issue detected...\n"));
         return false;
@@ -420,8 +420,8 @@ bool UISession::restoreCurrentSnapshot()
     do
     {
         /* Search for corresponding VM: */
-        CVirtualBox vbox = vboxGlobal().virtualBox();
-        const QUuid uMachineID = vboxGlobal().managedVMUuid();
+        CVirtualBox vbox = uiCommon().virtualBox();
+        const QUuid uMachineID = uiCommon().managedVMUuid();
         const CMachine mach = vbox.FindMachine(uMachineID.toString());
         if (!vbox.isOk() || mach.isNull())
         {
@@ -431,8 +431,8 @@ bool UISession::restoreCurrentSnapshot()
         }
 
         /* Open a direct session to modify that VM: */
-        CSession sess = vboxGlobal().openSession(vboxGlobal().managedVMUuid(),
-                                                 vboxGlobal().isSeparateProcess()
+        CSession sess = uiCommon().openSession(uiCommon().managedVMUuid(),
+                                                 uiCommon().isSeparateProcess()
                                                  ? KLockType_Write : KLockType_Shared);
         if (sess.isNull())
         {
@@ -597,7 +597,7 @@ void UISession::sltCloseRuntimeUI()
 void UISession::sltHandleMenuBarConfigurationChange(const QUuid &uMachineID)
 {
     /* Skip unrelated machine IDs: */
-    if (vboxGlobal().managedVMUuid() != uMachineID)
+    if (uiCommon().managedVMUuid() != uMachineID)
         return;
 
     /* Update Mac OS X menu-bar: */
@@ -1026,8 +1026,8 @@ bool UISession::prepare()
 bool UISession::prepareSession()
 {
     /* Open session: */
-    m_session = vboxGlobal().openSession(vboxGlobal().managedVMUuid(),
-                                         vboxGlobal().isSeparateProcess()
+    m_session = uiCommon().openSession(uiCommon().managedVMUuid(),
+                                         uiCommon().isSeparateProcess()
                                          ? KLockType_Shared : KLockType_VM);
     if (m_session.isNull())
         return false;
@@ -1232,7 +1232,7 @@ void UISession::prepareScreens()
         if (countOfVisibleWindows() < 1)
             m_monitorVisibilityVector[0] = true;
     }
-    else if (vboxGlobal().isSeparateProcess())
+    else if (uiCommon().isSeparateProcess())
     {
         /* Update screen visibility status from display directly: */
         for (int iScreenIndex = 0; iScreenIndex < m_monitorVisibilityVector.size(); ++iScreenIndex)
@@ -1275,15 +1275,15 @@ void UISession::loadSessionSettings()
     /* Load extra-data settings: */
     {
         /* Get machine ID: */
-        const QUuid uMachineID = vboxGlobal().managedVMUuid();
+        const QUuid uMachineID = uiCommon().managedVMUuid();
 
         /* Prepare machine-window icon: */
         {
             /* Acquire user machine-window icon: */
-            QIcon icon = vboxGlobal().vmUserIcon(machine());
+            QIcon icon = uiCommon().vmUserIcon(machine());
             /* Use the OS type icon if user one was not set: */
             if (icon.isNull())
-                icon = vboxGlobal().vmGuestOSTypeIcon(machine().GetOSTypeId());
+                icon = uiCommon().vmGuestOSTypeIcon(machine().GetOSTypeId());
             /* Use the default icon if nothing else works: */
             if (icon.isNull())
                 icon = QIcon(":/VirtualBox_48px.png");
@@ -1348,7 +1348,7 @@ void UISession::loadSessionSettings()
         /* What is the default close action and the restricted are? */
         m_defaultCloseAction = gEDataManager->defaultMachineCloseAction(uMachineID);
         m_restrictedCloseActions = gEDataManager->restrictedMachineCloseActions(uMachineID);
-        m_fAllCloseActionsRestricted =  (!vboxGlobal().isSeparateProcess() || (m_restrictedCloseActions & MachineCloseAction_Detach))
+        m_fAllCloseActionsRestricted =  (!uiCommon().isSeparateProcess() || (m_restrictedCloseActions & MachineCloseAction_Detach))
                                      && (m_restrictedCloseActions & MachineCloseAction_SaveState)
                                      && (m_restrictedCloseActions & MachineCloseAction_Shutdown)
                                      && (m_restrictedCloseActions & MachineCloseAction_PowerOff);
@@ -1362,13 +1362,13 @@ void UISession::saveSessionSettings()
     /* Save extra-data settings: */
     {
         /* Disable First RUN Wizard: */
-        gEDataManager->setMachineFirstTimeStarted(false, vboxGlobal().managedVMUuid());
+        gEDataManager->setMachineFirstTimeStarted(false, uiCommon().managedVMUuid());
 
         /* Remember if guest should autoresize: */
         if (actionPool())
         {
             const QAction *pGuestAutoresizeSwitch = actionPool()->action(UIActionIndexRT_M_View_T_GuestAutoresize);
-            gEDataManager->setGuestScreenAutoResizeEnabled(pGuestAutoresizeSwitch->isChecked(), vboxGlobal().managedVMUuid());
+            gEDataManager->setGuestScreenAutoResizeEnabled(pGuestAutoresizeSwitch->isChecked(), uiCommon().managedVMUuid());
         }
 
         /* Cleanup machine-window icon: */
@@ -1459,7 +1459,7 @@ void UISession::cleanupSession()
         m_machine.detach();
 
     /* Close session: */
-    if (!m_session.isNull() && vboxGlobal().isVBoxSVCAvailable())
+    if (!m_session.isNull() && uiCommon().isVBoxSVCAvailable())
     {
         m_session.UnlockMachine();
         m_session.detach();
@@ -1882,13 +1882,13 @@ bool UISession::preprocessInitialization()
     QStringList availableInterfaceNames;
 
     /* Create host network interface names list */
-    foreach (const CHostNetworkInterface &iface, vboxGlobal().host().GetNetworkInterfaces())
+    foreach (const CHostNetworkInterface &iface, uiCommon().host().GetNetworkInterfaces())
     {
         availableInterfaceNames << iface.GetName();
         availableInterfaceNames << iface.GetShortName();
     }
 
-    ulong cCount = vboxGlobal().virtualBox().GetSystemProperties().GetMaxNetworkAdapters(machine().GetChipsetType());
+    ulong cCount = uiCommon().virtualBox().GetSystemProperties().GetMaxNetworkAdapters(machine().GetChipsetType());
     for (ulong uAdapterIndex = 0; uAdapterIndex < cCount; ++uAdapterIndex)
     {
         CNetworkAdapter na = machine().GetNetworkAdapter(uAdapterIndex);
@@ -1939,7 +1939,7 @@ bool UISession::preprocessInitialization()
 bool UISession::mountAdHocImage(KDeviceType enmDeviceType, UIMediumDeviceType enmMediumType, const QString &strMediumName)
 {
     /* Get VBox: */
-    CVirtualBox comVBox = vboxGlobal().virtualBox();
+    CVirtualBox comVBox = uiCommon().virtualBox();
 
     /* Prepare medium to mount: */
     UIMedium guiMedium;
@@ -1961,12 +1961,12 @@ bool UISession::mountAdHocImage(KDeviceType enmDeviceType, UIMediumDeviceType en
         AssertReturn(!uMediumId.isNull(), false);
 
         /* Try to find UIMedium among cached: */
-        guiMedium = vboxGlobal().medium(uMediumId);
+        guiMedium = uiCommon().medium(uMediumId);
         if (guiMedium.isNull())
         {
             /* Cache new one if necessary: */
             guiMedium = UIMedium(comMedium, enmMediumType, KMediumState_Created);
-            vboxGlobal().createMedium(guiMedium);
+            uiCommon().createMedium(guiMedium);
         }
     }
 
@@ -2032,14 +2032,14 @@ bool UISession::mountAdHocImage(KDeviceType enmDeviceType, UIMediumDeviceType en
 bool UISession::postprocessInitialization()
 {
     /* Check if the required virtualization features are active. We get this info only when the session is active. */
-    const bool fIs64BitsGuest = vboxGlobal().virtualBox().GetGuestOSType(guest().GetOSTypeId()).GetIs64Bit();
-    const bool fRecommendVirtEx = vboxGlobal().virtualBox().GetGuestOSType(guest().GetOSTypeId()).GetRecommendedVirtEx();
+    const bool fIs64BitsGuest = uiCommon().virtualBox().GetGuestOSType(guest().GetOSTypeId()).GetIs64Bit();
+    const bool fRecommendVirtEx = uiCommon().virtualBox().GetGuestOSType(guest().GetOSTypeId()).GetRecommendedVirtEx();
     AssertMsg(!fIs64BitsGuest || fRecommendVirtEx, ("Virtualization support missed for 64bit guest!\n"));
     const KVMExecutionEngine enmEngine = debugger().GetExecutionEngine();
     if (fRecommendVirtEx && enmEngine == KVMExecutionEngine_RawMode)
     {
         /* Check whether vt-x / amd-v supported: */
-        bool fVTxAMDVSupported = vboxGlobal().host().GetProcessorFeature(KProcessorFeature_HWVirtEx);
+        bool fVTxAMDVSupported = uiCommon().host().GetProcessorFeature(KProcessorFeature_HWVirtEx);
 
         /* Pause VM: */
         setPause(true);
@@ -2092,7 +2092,7 @@ void UISession::setScreenVisibleHostDesires(ulong uScreenId, bool fIsMonitorVisi
 
     /* And remember the request in extra data for guests with VMSVGA: */
     /* This should be done before the actual hint is sent in case the guest overrides it. */
-    gEDataManager->setLastGuestScreenVisibilityStatus(uScreenId, fIsMonitorVisible, vboxGlobal().managedVMUuid());
+    gEDataManager->setLastGuestScreenVisibilityStatus(uScreenId, fIsMonitorVisible, uiCommon().managedVMUuid());
 }
 
 bool UISession::isScreenVisible(ulong uScreenId) const
@@ -2114,7 +2114,7 @@ void UISession::setScreenVisible(ulong uScreenId, bool fIsMonitorVisible)
     /* Remember 'desired' visibility status: */
     /* See note in UIMachineView::sltHandleNotifyChange() regarding the graphics controller check. */
     if (machine().GetGraphicsControllerType() != KGraphicsControllerType_VMSVGA)
-        gEDataManager->setLastGuestScreenVisibilityStatus(uScreenId, fIsMonitorVisible, vboxGlobal().managedVMUuid());
+        gEDataManager->setLastGuestScreenVisibilityStatus(uScreenId, fIsMonitorVisible, uiCommon().managedVMUuid());
 
     /* Make sure action-pool knows guest-screen visibility status: */
     actionPool()->toRuntime()->setGuestScreenVisible(uScreenId, fIsMonitorVisible);
@@ -2217,7 +2217,7 @@ void UISession::updateHostScreenData()
 void UISession::updateActionRestrictions()
 {
     /* Get host and prepare restrictions: */
-    const CHost host = vboxGlobal().host();
+    const CHost host = uiCommon().host();
     UIExtraDataMetaDefs::RuntimeMenuMachineActionType restrictionForMachine = UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Invalid;
     UIExtraDataMetaDefs::RuntimeMenuViewActionType restrictionForView = UIExtraDataMetaDefs::RuntimeMenuViewActionType_Invalid;
     UIExtraDataMetaDefs::RuntimeMenuDevicesActionType restrictionForDevices = UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_Invalid;
@@ -2225,7 +2225,7 @@ void UISession::updateActionRestrictions()
     /* Separate process stuff: */
     {
         /* Initialize 'Machine' menu: */
-        if (!vboxGlobal().isSeparateProcess())
+        if (!uiCommon().isSeparateProcess())
             restrictionForMachine = (UIExtraDataMetaDefs::RuntimeMenuMachineActionType)(restrictionForMachine | UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Detach);
     }
 
@@ -2272,7 +2272,7 @@ void UISession::updateActionRestrictions()
         /* Initialize Network menu: */
         bool fAtLeastOneAdapterActive = false;
         const KChipsetType chipsetType = machine().GetChipsetType();
-        ULONG uSlots = vboxGlobal().virtualBox().GetSystemProperties().GetMaxNetworkAdapters(chipsetType);
+        ULONG uSlots = uiCommon().virtualBox().GetSystemProperties().GetMaxNetworkAdapters(chipsetType);
         for (ULONG uSlot = 0; uSlot < uSlots; ++uSlot)
         {
             const CNetworkAdapter &adapter = machine().GetNetworkAdapter(uSlot);

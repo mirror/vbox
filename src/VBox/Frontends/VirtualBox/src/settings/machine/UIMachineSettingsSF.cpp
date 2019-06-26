@@ -25,7 +25,7 @@
 #include "UIMachineSettingsSF.h"
 #include "UIMachineSettingsSFDetails.h"
 #include "UIErrorString.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "VBoxUtils.h"
 
 

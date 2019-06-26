@@ -24,7 +24,7 @@
 #include "QIDialogButtonBox.h"
 #include "QIInputDialog.h"
 #include "QITreeWidget.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "UIActionPoolManager.h"
 #include "UIExtraDataManager.h"
 #include "UIIconPool.h"
@@ -197,7 +197,7 @@ void UICloudProfileManagerWidget::sltApplyCloudProfileDetailsChanges()
     UIDataCloudProfile newData = m_pDetailsWidget->data();
 
     /* Get VirtualBox for further activities: */
-    const CVirtualBox comVBox = vboxGlobal().virtualBox();
+    const CVirtualBox comVBox = uiCommon().virtualBox();
 
     /* Get CloudProviderManager for further activities: */
     CCloudProviderManager comCloudProviderManager = comVBox.GetCloudProviderManager();
@@ -306,7 +306,7 @@ void UICloudProfileManagerWidget::sltAddCloudProfile()
     }
 
     /* Get VirtualBox for further activities: */
-    const CVirtualBox comVBox = vboxGlobal().virtualBox();
+    const CVirtualBox comVBox = uiCommon().virtualBox();
 
     /* Get CloudProviderManager for further activities: */
     CCloudProviderManager comCloudProviderManager = comVBox.GetCloudProviderManager();
@@ -373,7 +373,7 @@ void UICloudProfileManagerWidget::sltImportCloudProfiles()
         return;
 
     /* Get VirtualBox for further activities: */
-    const CVirtualBox comVBox = vboxGlobal().virtualBox();
+    const CVirtualBox comVBox = uiCommon().virtualBox();
 
     /* Get CloudProviderManager for further activities: */
     CCloudProviderManager comCloudProviderManager = comVBox.GetCloudProviderManager();
@@ -421,7 +421,7 @@ void UICloudProfileManagerWidget::sltRemoveCloudProfile()
         return;
 
     /* Get VirtualBox for further activities: */
-    const CVirtualBox comVBox = vboxGlobal().virtualBox();
+    const CVirtualBox comVBox = uiCommon().virtualBox();
 
     /* Get CloudProviderManager for further activities: */
     CCloudProviderManager comCloudProviderManager = comVBox.GetCloudProviderManager();
@@ -481,12 +481,12 @@ void UICloudProfileManagerWidget::sltToggleCloudProfileDetailsVisibility(bool fV
 
 void UICloudProfileManagerWidget::sltShowCloudProfileTryPage()
 {
-    vboxGlobal().openURL("https://myservices.us.oraclecloud.com/mycloud/signup");
+    uiCommon().openURL("https://myservices.us.oraclecloud.com/mycloud/signup");
 }
 
 void UICloudProfileManagerWidget::sltShowCloudProfileHelp()
 {
-    vboxGlobal().openURL("https://docs.cloud.oracle.com/iaas/Content/API/Concepts/sdkconfig.htm");
+    uiCommon().openURL("https://docs.cloud.oracle.com/iaas/Content/API/Concepts/sdkconfig.htm");
 }
 
 void UICloudProfileManagerWidget::sltHandleCurrentItemChange()
@@ -709,7 +709,7 @@ void UICloudProfileManagerWidget::loadCloudStuff()
     m_pTreeWidget->clear();
 
     /* Get VirtualBox for further activities: */
-    const CVirtualBox comVBox = vboxGlobal().virtualBox();
+    const CVirtualBox comVBox = uiCommon().virtualBox();
 
     /* Get CloudProviderManager for further activities: */
     const CCloudProviderManager comCloudProviderManager = comVBox.GetCloudProviderManager();

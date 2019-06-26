@@ -18,7 +18,7 @@
 /* GUI includes: */
 #include "QIMainWindow.h"
 #ifdef VBOX_WS_X11
-# include "VBoxGlobal.h"
+# include "UICommon.h"
 #endif
 
 
@@ -35,7 +35,7 @@ void QIMainWindow::restoreGeometry()
     resize(m_geometry.size());
 #elif defined(VBOX_WS_X11)
     /* Use the new approach for X11: */
-    VBoxGlobal::setTopLevelGeometry(this, m_geometry);
+    UICommon::setTopLevelGeometry(this, m_geometry);
 #endif /* VBOX_WS_X11 */
 
     /* Maximize (if necessary): */

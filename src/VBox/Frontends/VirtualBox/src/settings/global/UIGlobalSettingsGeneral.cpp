@@ -22,7 +22,7 @@
 #include "UIGlobalSettingsGeneral.h"
 #include "UIExtraDataManager.h"
 #include "UIErrorString.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 
 
 /** Global settings: General page data structure. */
@@ -159,8 +159,8 @@ void UIGlobalSettingsGeneral::prepare()
         m_pCheckBoxHostScreenSaver->hide();
 
         /* Configure other widgets: */
-        m_pSelectorMachineFolder->setHomeDir(vboxGlobal().homeFolder());
-        m_pSelectorVRDPLibName->setHomeDir(vboxGlobal().homeFolder());
+        m_pSelectorMachineFolder->setHomeDir(uiCommon().homeFolder());
+        m_pSelectorVRDPLibName->setHomeDir(uiCommon().homeFolder());
         m_pSelectorVRDPLibName->setMode(UIFilePathSelector::Mode_File_Open);
     }
 

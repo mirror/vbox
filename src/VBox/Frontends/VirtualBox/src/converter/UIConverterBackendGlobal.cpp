@@ -21,7 +21,7 @@
 #include <QRegularExpression>
 
 /* GUI includes: */
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "UIConverterBackend.h"
 #include "UIIconPool.h"
 
@@ -86,12 +86,12 @@ template<> QString toString(const SizeSuffix &sizeSuffix)
     QString strResult;
     switch (sizeSuffix)
     {
-        case SizeSuffix_Byte:     strResult = QApplication::translate("VBoxGlobal", "B", "size suffix Bytes"); break;
-        case SizeSuffix_KiloByte: strResult = QApplication::translate("VBoxGlobal", "KB", "size suffix KBytes=1024 Bytes"); break;
-        case SizeSuffix_MegaByte: strResult = QApplication::translate("VBoxGlobal", "MB", "size suffix MBytes=1024 KBytes"); break;
-        case SizeSuffix_GigaByte: strResult = QApplication::translate("VBoxGlobal", "GB", "size suffix GBytes=1024 MBytes"); break;
-        case SizeSuffix_TeraByte: strResult = QApplication::translate("VBoxGlobal", "TB", "size suffix TBytes=1024 GBytes"); break;
-        case SizeSuffix_PetaByte: strResult = QApplication::translate("VBoxGlobal", "PB", "size suffix PBytes=1024 TBytes"); break;
+        case SizeSuffix_Byte:     strResult = QApplication::translate("UICommon", "B", "size suffix Bytes"); break;
+        case SizeSuffix_KiloByte: strResult = QApplication::translate("UICommon", "KB", "size suffix KBytes=1024 Bytes"); break;
+        case SizeSuffix_MegaByte: strResult = QApplication::translate("UICommon", "MB", "size suffix MBytes=1024 KBytes"); break;
+        case SizeSuffix_GigaByte: strResult = QApplication::translate("UICommon", "GB", "size suffix GBytes=1024 MBytes"); break;
+        case SizeSuffix_TeraByte: strResult = QApplication::translate("UICommon", "TB", "size suffix TBytes=1024 GBytes"); break;
+        case SizeSuffix_PetaByte: strResult = QApplication::translate("UICommon", "PB", "size suffix PBytes=1024 TBytes"); break;
         default:
         {
             AssertMsgFailed(("No text for size suffix=%d", sizeSuffix));
@@ -105,12 +105,12 @@ template<> QString toString(const SizeSuffix &sizeSuffix)
 template<> SizeSuffix fromString<SizeSuffix>(const QString &strSizeSuffix)
 {
     QHash<QString, SizeSuffix> list;
-    list.insert(QApplication::translate("VBoxGlobal", "B", "size suffix Bytes"),               SizeSuffix_Byte);
-    list.insert(QApplication::translate("VBoxGlobal", "KB", "size suffix KBytes=1024 Bytes"),  SizeSuffix_KiloByte);
-    list.insert(QApplication::translate("VBoxGlobal", "MB", "size suffix MBytes=1024 KBytes"), SizeSuffix_MegaByte);
-    list.insert(QApplication::translate("VBoxGlobal", "GB", "size suffix GBytes=1024 MBytes"), SizeSuffix_GigaByte);
-    list.insert(QApplication::translate("VBoxGlobal", "TB", "size suffix TBytes=1024 GBytes"), SizeSuffix_TeraByte);
-    list.insert(QApplication::translate("VBoxGlobal", "PB", "size suffix PBytes=1024 TBytes"), SizeSuffix_PetaByte);
+    list.insert(QApplication::translate("UICommon", "B", "size suffix Bytes"),               SizeSuffix_Byte);
+    list.insert(QApplication::translate("UICommon", "KB", "size suffix KBytes=1024 Bytes"),  SizeSuffix_KiloByte);
+    list.insert(QApplication::translate("UICommon", "MB", "size suffix MBytes=1024 KBytes"), SizeSuffix_MegaByte);
+    list.insert(QApplication::translate("UICommon", "GB", "size suffix GBytes=1024 MBytes"), SizeSuffix_GigaByte);
+    list.insert(QApplication::translate("UICommon", "TB", "size suffix TBytes=1024 GBytes"), SizeSuffix_TeraByte);
+    list.insert(QApplication::translate("UICommon", "PB", "size suffix PBytes=1024 TBytes"), SizeSuffix_PetaByte);
     if (!list.contains(strSizeSuffix))
     {
         AssertMsgFailed(("No value for '%s'", strSizeSuffix.toUtf8().constData()));
@@ -126,8 +126,8 @@ template<> QString toString(const StorageSlot &storageSlot)
     {
         case KStorageBus_IDE:
         {
-            int iMaxPort = vboxGlobal().virtualBox().GetSystemProperties().GetMaxPortCountForStorageBus(storageSlot.bus);
-            int iMaxDevice = vboxGlobal().virtualBox().GetSystemProperties().GetMaxDevicesPerPortForStorageBus(storageSlot.bus);
+            int iMaxPort = uiCommon().virtualBox().GetSystemProperties().GetMaxPortCountForStorageBus(storageSlot.bus);
+            int iMaxDevice = uiCommon().virtualBox().GetSystemProperties().GetMaxDevicesPerPortForStorageBus(storageSlot.bus);
             if (storageSlot.port < 0 || storageSlot.port > iMaxPort)
             {
                 AssertMsgFailed(("No text for bus=%d & port=%d", storageSlot.bus, storageSlot.port));
@@ -139,18 +139,18 @@ template<> QString toString(const StorageSlot &storageSlot)
                 break;
             }
             if (storageSlot.port == 0 && storageSlot.device == 0)
-                strResult = QApplication::translate("VBoxGlobal", "IDE Primary Master", "StorageSlot");
+                strResult = QApplication::translate("UICommon", "IDE Primary Master", "StorageSlot");
             else if (storageSlot.port == 0 && storageSlot.device == 1)
-                strResult = QApplication::translate("VBoxGlobal", "IDE Primary Slave", "StorageSlot");
+                strResult = QApplication::translate("UICommon", "IDE Primary Slave", "StorageSlot");
             else if (storageSlot.port == 1 && storageSlot.device == 0)
-                strResult = QApplication::translate("VBoxGlobal", "IDE Secondary Master", "StorageSlot");
+                strResult = QApplication::translate("UICommon", "IDE Secondary Master", "StorageSlot");
             else if (storageSlot.port == 1 && storageSlot.device == 1)
-                strResult = QApplication::translate("VBoxGlobal", "IDE Secondary Slave", "StorageSlot");
+                strResult = QApplication::translate("UICommon", "IDE Secondary Slave", "StorageSlot");
             break;
         }
         case KStorageBus_SATA:
         {
-            int iMaxPort = vboxGlobal().virtualBox().GetSystemProperties().GetMaxPortCountForStorageBus(storageSlot.bus);
+            int iMaxPort = uiCommon().virtualBox().GetSystemProperties().GetMaxPortCountForStorageBus(storageSlot.bus);
             if (storageSlot.port < 0 || storageSlot.port > iMaxPort)
             {
                 AssertMsgFailed(("No text for bus=%d & port=%d", storageSlot.bus, storageSlot.port));
@@ -161,12 +161,12 @@ template<> QString toString(const StorageSlot &storageSlot)
                 AssertMsgFailed(("No text for bus=%d & port=%d & device=%d", storageSlot.bus, storageSlot.port, storageSlot.device));
                 break;
             }
-            strResult = QApplication::translate("VBoxGlobal", "SATA Port %1", "StorageSlot").arg(storageSlot.port);
+            strResult = QApplication::translate("UICommon", "SATA Port %1", "StorageSlot").arg(storageSlot.port);
             break;
         }
         case KStorageBus_SCSI:
         {
-            int iMaxPort = vboxGlobal().virtualBox().GetSystemProperties().GetMaxPortCountForStorageBus(storageSlot.bus);
+            int iMaxPort = uiCommon().virtualBox().GetSystemProperties().GetMaxPortCountForStorageBus(storageSlot.bus);
             if (storageSlot.port < 0 || storageSlot.port > iMaxPort)
             {
                 AssertMsgFailed(("No text for bus=%d & port=%d", storageSlot.bus, storageSlot.port));
@@ -177,12 +177,12 @@ template<> QString toString(const StorageSlot &storageSlot)
                 AssertMsgFailed(("No text for bus=%d & port=%d & device=%d", storageSlot.bus, storageSlot.port, storageSlot.device));
                 break;
             }
-            strResult = QApplication::translate("VBoxGlobal", "SCSI Port %1", "StorageSlot").arg(storageSlot.port);
+            strResult = QApplication::translate("UICommon", "SCSI Port %1", "StorageSlot").arg(storageSlot.port);
             break;
         }
         case KStorageBus_SAS:
         {
-            int iMaxPort = vboxGlobal().virtualBox().GetSystemProperties().GetMaxPortCountForStorageBus(storageSlot.bus);
+            int iMaxPort = uiCommon().virtualBox().GetSystemProperties().GetMaxPortCountForStorageBus(storageSlot.bus);
             if (storageSlot.port < 0 || storageSlot.port > iMaxPort)
             {
                 AssertMsgFailed(("No text for bus=%d & port=%d", storageSlot.bus, storageSlot.port));
@@ -193,12 +193,12 @@ template<> QString toString(const StorageSlot &storageSlot)
                 AssertMsgFailed(("No text for bus=%d & port=%d & device=%d", storageSlot.bus, storageSlot.port, storageSlot.device));
                 break;
             }
-            strResult = QApplication::translate("VBoxGlobal", "SAS Port %1", "StorageSlot").arg(storageSlot.port);
+            strResult = QApplication::translate("UICommon", "SAS Port %1", "StorageSlot").arg(storageSlot.port);
             break;
         }
         case KStorageBus_Floppy:
         {
-            int iMaxDevice = vboxGlobal().virtualBox().GetSystemProperties().GetMaxDevicesPerPortForStorageBus(storageSlot.bus);
+            int iMaxDevice = uiCommon().virtualBox().GetSystemProperties().GetMaxDevicesPerPortForStorageBus(storageSlot.bus);
             if (storageSlot.port != 0)
             {
                 AssertMsgFailed(("No text for bus=%d & port=%d", storageSlot.bus, storageSlot.port));
@@ -209,12 +209,12 @@ template<> QString toString(const StorageSlot &storageSlot)
                 AssertMsgFailed(("No text for bus=%d & port=%d & device=%d", storageSlot.bus, storageSlot.port, storageSlot.device));
                 break;
             }
-            strResult = QApplication::translate("VBoxGlobal", "Floppy Device %1", "StorageSlot").arg(storageSlot.device);
+            strResult = QApplication::translate("UICommon", "Floppy Device %1", "StorageSlot").arg(storageSlot.device);
             break;
         }
         case KStorageBus_USB:
         {
-            int iMaxPort = vboxGlobal().virtualBox().GetSystemProperties().GetMaxPortCountForStorageBus(storageSlot.bus);
+            int iMaxPort = uiCommon().virtualBox().GetSystemProperties().GetMaxPortCountForStorageBus(storageSlot.bus);
             if (storageSlot.port < 0 || storageSlot.port > iMaxPort)
             {
                 AssertMsgFailed(("No text for bus=%d & port=%d", storageSlot.bus, storageSlot.port));
@@ -225,12 +225,12 @@ template<> QString toString(const StorageSlot &storageSlot)
                 AssertMsgFailed(("No text for bus=%d & port=%d & device=%d", storageSlot.bus, storageSlot.port, storageSlot.device));
                 break;
             }
-            strResult = QApplication::translate("VBoxGlobal", "USB Port %1", "StorageSlot").arg(storageSlot.port);
+            strResult = QApplication::translate("UICommon", "USB Port %1", "StorageSlot").arg(storageSlot.port);
             break;
         }
         case KStorageBus_PCIe:
         {
-            int iMaxPort = vboxGlobal().virtualBox().GetSystemProperties().GetMaxPortCountForStorageBus(storageSlot.bus);
+            int iMaxPort = uiCommon().virtualBox().GetSystemProperties().GetMaxPortCountForStorageBus(storageSlot.bus);
             if (storageSlot.port < 0 || storageSlot.port > iMaxPort)
             {
                 AssertMsgFailed(("No text for bus=%d & port=%d", storageSlot.bus, storageSlot.port));
@@ -241,12 +241,12 @@ template<> QString toString(const StorageSlot &storageSlot)
                 AssertMsgFailed(("No text for bus=%d & port=%d & device=%d", storageSlot.bus, storageSlot.port, storageSlot.device));
                 break;
             }
-            strResult = QApplication::translate("VBoxGlobal", "NVMe Port %1", "StorageSlot").arg(storageSlot.port);
+            strResult = QApplication::translate("UICommon", "NVMe Port %1", "StorageSlot").arg(storageSlot.port);
             break;
         }
         case KStorageBus_VirtioSCSI:
         {
-            int iMaxPort = vboxGlobal().virtualBox().GetSystemProperties().GetMaxPortCountForStorageBus(storageSlot.bus);
+            int iMaxPort = uiCommon().virtualBox().GetSystemProperties().GetMaxPortCountForStorageBus(storageSlot.bus);
             if (storageSlot.port < 0 || storageSlot.port > iMaxPort)
             {
                 AssertMsgFailed(("No text for bus=%d & port=%d", storageSlot.bus, storageSlot.port));
@@ -257,7 +257,7 @@ template<> QString toString(const StorageSlot &storageSlot)
                 AssertMsgFailed(("No text for bus=%d & port=%d & device=%d", storageSlot.bus, storageSlot.port, storageSlot.device));
                 break;
             }
-            strResult = QApplication::translate("VBoxGlobal", "virtio-scsi Port %1", "StorageSlot").arg(storageSlot.port);
+            strResult = QApplication::translate("UICommon", "virtio-scsi Port %1", "StorageSlot").arg(storageSlot.port);
             break;
         }
         default:
@@ -274,17 +274,17 @@ template<> StorageSlot fromString<StorageSlot>(const QString &strStorageSlot)
 {
     /* Prepare a hash of known port templates: */
     QHash<int, QString> templates;
-    templates[0] = QApplication::translate("VBoxGlobal", "IDE Primary Master", "StorageSlot");
-    templates[1] = QApplication::translate("VBoxGlobal", "IDE Primary Slave", "StorageSlot");
-    templates[2] = QApplication::translate("VBoxGlobal", "IDE Secondary Master", "StorageSlot");
-    templates[3] = QApplication::translate("VBoxGlobal", "IDE Secondary Slave", "StorageSlot");
-    templates[4] = QApplication::translate("VBoxGlobal", "SATA Port %1", "StorageSlot");
-    templates[5] = QApplication::translate("VBoxGlobal", "SCSI Port %1", "StorageSlot");
-    templates[6] = QApplication::translate("VBoxGlobal", "SAS Port %1", "StorageSlot");
-    templates[7] = QApplication::translate("VBoxGlobal", "Floppy Device %1", "StorageSlot");
-    templates[8] = QApplication::translate("VBoxGlobal", "USB Port %1", "StorageSlot");
-    templates[9] = QApplication::translate("VBoxGlobal", "NVMe Port %1", "StorageSlot");
-    templates[10] = QApplication::translate("VBoxGlobal", "virtio-scsi Port %1", "StorageSlot");
+    templates[0] = QApplication::translate("UICommon", "IDE Primary Master", "StorageSlot");
+    templates[1] = QApplication::translate("UICommon", "IDE Primary Slave", "StorageSlot");
+    templates[2] = QApplication::translate("UICommon", "IDE Secondary Master", "StorageSlot");
+    templates[3] = QApplication::translate("UICommon", "IDE Secondary Slave", "StorageSlot");
+    templates[4] = QApplication::translate("UICommon", "SATA Port %1", "StorageSlot");
+    templates[5] = QApplication::translate("UICommon", "SCSI Port %1", "StorageSlot");
+    templates[6] = QApplication::translate("UICommon", "SAS Port %1", "StorageSlot");
+    templates[7] = QApplication::translate("UICommon", "Floppy Device %1", "StorageSlot");
+    templates[8] = QApplication::translate("UICommon", "USB Port %1", "StorageSlot");
+    templates[9] = QApplication::translate("UICommon", "NVMe Port %1", "StorageSlot");
+    templates[10] = QApplication::translate("UICommon", "virtio-scsi Port %1", "StorageSlot");
 
     /* Search for a template index strStorageSlot corresponds to: */
     int iIndex = -1;
@@ -329,8 +329,8 @@ template<> StorageSlot fromString<StorageSlot>(const QString &strStorageSlot)
         {
             if (result.bus == KStorageBus_Null)
                 break;
-            const int iMaxPort = vboxGlobal().virtualBox().GetSystemProperties().GetMaxPortCountForStorageBus(result.bus);
-            const int iMaxDevice = vboxGlobal().virtualBox().GetSystemProperties().GetMaxDevicesPerPortForStorageBus(result.bus);
+            const int iMaxPort = uiCommon().virtualBox().GetSystemProperties().GetMaxPortCountForStorageBus(result.bus);
+            const int iMaxDevice = uiCommon().virtualBox().GetSystemProperties().GetMaxDevicesPerPortForStorageBus(result.bus);
             const LONG iPort = iIndex / iMaxPort;
             const LONG iDevice = iIndex % iMaxPort;
             if (iPort < 0 || iPort > iMaxPort)
@@ -357,7 +357,7 @@ template<> StorageSlot fromString<StorageSlot>(const QString &strStorageSlot)
         {
             if (result.bus == KStorageBus_Null)
                 break;
-            const int iMaxPort = vboxGlobal().virtualBox().GetSystemProperties().GetMaxPortCountForStorageBus(result.bus);
+            const int iMaxPort = uiCommon().virtualBox().GetSystemProperties().GetMaxPortCountForStorageBus(result.bus);
             const LONG iPort = regExp.cap(1).toInt();
             const LONG iDevice = 0;
             if (iPort < 0 || iPort > iMaxPort)
@@ -870,10 +870,10 @@ template<> QString toString(const UIExtraDataMetaDefs::DetailsElementOptionTypeG
     QString strResult;
     switch (enmDetailsElementOptionTypeGeneral)
     {
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral_Name:     strResult = QApplication::translate("VBoxGlobal", "Name"); break;
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral_OS:       strResult = QApplication::translate("VBoxGlobal", "OS"); break;
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral_Location: strResult = QApplication::translate("VBoxGlobal", "Location"); break;
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral_Groups:   strResult = QApplication::translate("VBoxGlobal", "Groups"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral_Name:     strResult = QApplication::translate("UICommon", "Name"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral_OS:       strResult = QApplication::translate("UICommon", "OS"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral_Location: strResult = QApplication::translate("UICommon", "Location"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral_Groups:   strResult = QApplication::translate("UICommon", "Groups"); break;
         default:
         {
             AssertMsgFailed(("No text for details element option type=%d", enmDetailsElementOptionTypeGeneral));
@@ -925,13 +925,13 @@ template<> QString toString(const UIExtraDataMetaDefs::DetailsElementOptionTypeS
     QString strResult;
     switch (enmDetailsElementOptionTypeSystem)
     {
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_RAM:             strResult = QApplication::translate("VBoxGlobal", "RAM"); break;
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_CPUCount:        strResult = QApplication::translate("VBoxGlobal", "CPU Count"); break;
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_CPUExecutionCap: strResult = QApplication::translate("VBoxGlobal", "CPU Execution Cap"); break;
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_BootOrder:       strResult = QApplication::translate("VBoxGlobal", "Boot Order"); break;
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_ChipsetType:     strResult = QApplication::translate("VBoxGlobal", "Chipset Type"); break;
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_Firmware:        strResult = QApplication::translate("VBoxGlobal", "Firmware"); break;
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_Acceleration:    strResult = QApplication::translate("VBoxGlobal", "Acceleration"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_RAM:             strResult = QApplication::translate("UICommon", "RAM"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_CPUCount:        strResult = QApplication::translate("UICommon", "CPU Count"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_CPUExecutionCap: strResult = QApplication::translate("UICommon", "CPU Execution Cap"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_BootOrder:       strResult = QApplication::translate("UICommon", "Boot Order"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_ChipsetType:     strResult = QApplication::translate("UICommon", "Chipset Type"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_Firmware:        strResult = QApplication::translate("UICommon", "Firmware"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_Acceleration:    strResult = QApplication::translate("UICommon", "Acceleration"); break;
         default:
         {
             AssertMsgFailed(("No text for details element option type=%d", enmDetailsElementOptionTypeSystem));
@@ -989,13 +989,13 @@ template<> QString toString(const UIExtraDataMetaDefs::DetailsElementOptionTypeD
     QString strResult;
     switch (enmDetailsElementOptionTypeDisplay)
     {
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_VRAM:               strResult = QApplication::translate("VBoxGlobal", "VRAM"); break;
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_ScreenCount:        strResult = QApplication::translate("VBoxGlobal", "Screen Count"); break;
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_ScaleFactor:        strResult = QApplication::translate("VBoxGlobal", "Scale Factor"); break;
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_GraphicsController: strResult = QApplication::translate("VBoxGlobal", "Graphics Controller"); break;
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_Acceleration:       strResult = QApplication::translate("VBoxGlobal", "Acceleration"); break;
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_VRDE:               strResult = QApplication::translate("VBoxGlobal", "VRDE"); break;
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_Recording:          strResult = QApplication::translate("VBoxGlobal", "Recording"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_VRAM:               strResult = QApplication::translate("UICommon", "VRAM"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_ScreenCount:        strResult = QApplication::translate("UICommon", "Screen Count"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_ScaleFactor:        strResult = QApplication::translate("UICommon", "Scale Factor"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_GraphicsController: strResult = QApplication::translate("UICommon", "Graphics Controller"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_Acceleration:       strResult = QApplication::translate("UICommon", "Acceleration"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_VRDE:               strResult = QApplication::translate("UICommon", "VRDE"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_Recording:          strResult = QApplication::translate("UICommon", "Recording"); break;
         default:
         {
             AssertMsgFailed(("No text for details element option type=%d", enmDetailsElementOptionTypeDisplay));
@@ -1053,9 +1053,9 @@ template<> QString toString(const UIExtraDataMetaDefs::DetailsElementOptionTypeS
     QString strResult;
     switch (enmDetailsElementOptionTypeStorage)
     {
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeStorage_HardDisks:      strResult = QApplication::translate("VBoxGlobal", "Hard Disks"); break;
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeStorage_OpticalDevices: strResult = QApplication::translate("VBoxGlobal", "Optical Devices"); break;
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeStorage_FloppyDevices:  strResult = QApplication::translate("VBoxGlobal", "Floppy Devices"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeStorage_HardDisks:      strResult = QApplication::translate("UICommon", "Hard Disks"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeStorage_OpticalDevices: strResult = QApplication::translate("UICommon", "Optical Devices"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeStorage_FloppyDevices:  strResult = QApplication::translate("UICommon", "Floppy Devices"); break;
         default:
         {
             AssertMsgFailed(("No text for details element option type=%d", enmDetailsElementOptionTypeStorage));
@@ -1105,9 +1105,9 @@ template<> QString toString(const UIExtraDataMetaDefs::DetailsElementOptionTypeA
     QString strResult;
     switch (enmDetailsElementOptionTypeAudio)
     {
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeAudio_Driver:     strResult = QApplication::translate("VBoxGlobal", "Driver"); break;
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeAudio_Controller: strResult = QApplication::translate("VBoxGlobal", "Controller"); break;
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeAudio_IO:         strResult = QApplication::translate("VBoxGlobal", "Input/Output"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeAudio_Driver:     strResult = QApplication::translate("UICommon", "Driver"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeAudio_Controller: strResult = QApplication::translate("UICommon", "Controller"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeAudio_IO:         strResult = QApplication::translate("UICommon", "Input/Output"); break;
         default:
         {
             AssertMsgFailed(("No text for details element option type=%d", enmDetailsElementOptionTypeAudio));
@@ -1157,13 +1157,13 @@ template<> QString toString(const UIExtraDataMetaDefs::DetailsElementOptionTypeN
     QString strResult;
     switch (enmDetailsElementOptionTypeNetwork)
     {
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_NotAttached:     strResult = QApplication::translate("VBoxGlobal", "Not Attached", "network adapter"); break;
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_NAT:             strResult = QApplication::translate("VBoxGlobal", "NAT"); break;
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_BridgetAdapter:  strResult = QApplication::translate("VBoxGlobal", "Bridget Adapter"); break;
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_InternalNetwork: strResult = QApplication::translate("VBoxGlobal", "Internal Network"); break;
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_HostOnlyAdapter: strResult = QApplication::translate("VBoxGlobal", "Host Only Adapter"); break;
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_GenericDriver:   strResult = QApplication::translate("VBoxGlobal", "Generic Driver"); break;
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_NATNetwork:      strResult = QApplication::translate("VBoxGlobal", "NAT Network"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_NotAttached:     strResult = QApplication::translate("UICommon", "Not Attached", "network adapter"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_NAT:             strResult = QApplication::translate("UICommon", "NAT"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_BridgetAdapter:  strResult = QApplication::translate("UICommon", "Bridget Adapter"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_InternalNetwork: strResult = QApplication::translate("UICommon", "Internal Network"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_HostOnlyAdapter: strResult = QApplication::translate("UICommon", "Host Only Adapter"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_GenericDriver:   strResult = QApplication::translate("UICommon", "Generic Driver"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_NATNetwork:      strResult = QApplication::translate("UICommon", "NAT Network"); break;
         default:
         {
             AssertMsgFailed(("No text for details element option type=%d", enmDetailsElementOptionTypeNetwork));
@@ -1221,11 +1221,11 @@ template<> QString toString(const UIExtraDataMetaDefs::DetailsElementOptionTypeS
     QString strResult;
     switch (enmDetailsElementOptionTypeSerial)
     {
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_Disconnected: strResult = QApplication::translate("VBoxGlobal", "Disconnected", "serial port"); break;
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_HostPipe:     strResult = QApplication::translate("VBoxGlobal", "Host Pipe"); break;
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_HostDevice:   strResult = QApplication::translate("VBoxGlobal", "Host Device"); break;
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_RawFile:      strResult = QApplication::translate("VBoxGlobal", "Raw File"); break;
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_TCP:          strResult = QApplication::translate("VBoxGlobal", "TCP"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_Disconnected: strResult = QApplication::translate("UICommon", "Disconnected", "serial port"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_HostPipe:     strResult = QApplication::translate("UICommon", "Host Pipe"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_HostDevice:   strResult = QApplication::translate("UICommon", "Host Device"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_RawFile:      strResult = QApplication::translate("UICommon", "Raw File"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_TCP:          strResult = QApplication::translate("UICommon", "TCP"); break;
         default:
         {
             AssertMsgFailed(("No text for details element option type=%d", enmDetailsElementOptionTypeSerial));
@@ -1279,8 +1279,8 @@ template<> QString toString(const UIExtraDataMetaDefs::DetailsElementOptionTypeU
     QString strResult;
     switch (enmDetailsElementOptionTypeUsb)
     {
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeUsb_Controller:    strResult = QApplication::translate("VBoxGlobal", "Controller"); break;
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeUsb_DeviceFilters: strResult = QApplication::translate("VBoxGlobal", "Device Filters"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeUsb_Controller:    strResult = QApplication::translate("UICommon", "Controller"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeUsb_DeviceFilters: strResult = QApplication::translate("UICommon", "Device Filters"); break;
         default:
         {
             AssertMsgFailed(("No text for details element option type=%d", enmDetailsElementOptionTypeUsb));
@@ -1371,9 +1371,9 @@ template<> QString toString(const UIExtraDataMetaDefs::DetailsElementOptionTypeU
     QString strResult;
     switch (enmDetailsElementOptionTypeUserInterface)
     {
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface_MenuBar:     strResult = QApplication::translate("VBoxGlobal", "Menu Bar"); break;
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface_StatusBar:   strResult = QApplication::translate("VBoxGlobal", "Status Bar"); break;
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface_MiniToolbar: strResult = QApplication::translate("VBoxGlobal", "Mini Toolbar"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface_MenuBar:     strResult = QApplication::translate("UICommon", "Menu Bar"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface_StatusBar:   strResult = QApplication::translate("UICommon", "Status Bar"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface_MiniToolbar: strResult = QApplication::translate("UICommon", "Mini Toolbar"); break;
         default:
         {
             AssertMsgFailed(("No text for details element option type=%d", enmDetailsElementOptionTypeUserInterface));
@@ -1546,18 +1546,18 @@ template<> QString toString(const DetailsElementType &detailsElementType)
     QString strResult;
     switch (detailsElementType)
     {
-        case DetailsElementType_General:     strResult = QApplication::translate("VBoxGlobal", "General", "DetailsElementType"); break;
-        case DetailsElementType_Preview:     strResult = QApplication::translate("VBoxGlobal", "Preview", "DetailsElementType"); break;
-        case DetailsElementType_System:      strResult = QApplication::translate("VBoxGlobal", "System", "DetailsElementType"); break;
-        case DetailsElementType_Display:     strResult = QApplication::translate("VBoxGlobal", "Display", "DetailsElementType"); break;
-        case DetailsElementType_Storage:     strResult = QApplication::translate("VBoxGlobal", "Storage", "DetailsElementType"); break;
-        case DetailsElementType_Audio:       strResult = QApplication::translate("VBoxGlobal", "Audio", "DetailsElementType"); break;
-        case DetailsElementType_Network:     strResult = QApplication::translate("VBoxGlobal", "Network", "DetailsElementType"); break;
-        case DetailsElementType_Serial:      strResult = QApplication::translate("VBoxGlobal", "Serial ports", "DetailsElementType"); break;
-        case DetailsElementType_USB:         strResult = QApplication::translate("VBoxGlobal", "USB", "DetailsElementType"); break;
-        case DetailsElementType_SF:          strResult = QApplication::translate("VBoxGlobal", "Shared folders", "DetailsElementType"); break;
-        case DetailsElementType_UI:          strResult = QApplication::translate("VBoxGlobal", "User interface", "DetailsElementType"); break;
-        case DetailsElementType_Description: strResult = QApplication::translate("VBoxGlobal", "Description", "DetailsElementType"); break;
+        case DetailsElementType_General:     strResult = QApplication::translate("UICommon", "General", "DetailsElementType"); break;
+        case DetailsElementType_Preview:     strResult = QApplication::translate("UICommon", "Preview", "DetailsElementType"); break;
+        case DetailsElementType_System:      strResult = QApplication::translate("UICommon", "System", "DetailsElementType"); break;
+        case DetailsElementType_Display:     strResult = QApplication::translate("UICommon", "Display", "DetailsElementType"); break;
+        case DetailsElementType_Storage:     strResult = QApplication::translate("UICommon", "Storage", "DetailsElementType"); break;
+        case DetailsElementType_Audio:       strResult = QApplication::translate("UICommon", "Audio", "DetailsElementType"); break;
+        case DetailsElementType_Network:     strResult = QApplication::translate("UICommon", "Network", "DetailsElementType"); break;
+        case DetailsElementType_Serial:      strResult = QApplication::translate("UICommon", "Serial ports", "DetailsElementType"); break;
+        case DetailsElementType_USB:         strResult = QApplication::translate("UICommon", "USB", "DetailsElementType"); break;
+        case DetailsElementType_SF:          strResult = QApplication::translate("UICommon", "Shared folders", "DetailsElementType"); break;
+        case DetailsElementType_UI:          strResult = QApplication::translate("UICommon", "User interface", "DetailsElementType"); break;
+        case DetailsElementType_Description: strResult = QApplication::translate("UICommon", "Description", "DetailsElementType"); break;
         default:
         {
             AssertMsgFailed(("No text for details element type=%d", detailsElementType));
@@ -1573,18 +1573,18 @@ template<> DetailsElementType fromString<DetailsElementType>(const QString &strD
     /* Here we have some fancy stuff allowing us
      * to search through the keys using 'case-insensitive' rule: */
     QStringList keys;                                                                      QList<DetailsElementType> values;
-    keys << QApplication::translate("VBoxGlobal", "General", "DetailsElementType");        values << DetailsElementType_General;
-    keys << QApplication::translate("VBoxGlobal", "Preview", "DetailsElementType");        values << DetailsElementType_Preview;
-    keys << QApplication::translate("VBoxGlobal", "System", "DetailsElementType");         values << DetailsElementType_System;
-    keys << QApplication::translate("VBoxGlobal", "Display", "DetailsElementType");        values << DetailsElementType_Display;
-    keys << QApplication::translate("VBoxGlobal", "Storage", "DetailsElementType");        values << DetailsElementType_Storage;
-    keys << QApplication::translate("VBoxGlobal", "Audio", "DetailsElementType");          values << DetailsElementType_Audio;
-    keys << QApplication::translate("VBoxGlobal", "Network", "DetailsElementType");        values << DetailsElementType_Network;
-    keys << QApplication::translate("VBoxGlobal", "Serial ports", "DetailsElementType");   values << DetailsElementType_Serial;
-    keys << QApplication::translate("VBoxGlobal", "USB", "DetailsElementType");            values << DetailsElementType_USB;
-    keys << QApplication::translate("VBoxGlobal", "Shared folders", "DetailsElementType"); values << DetailsElementType_SF;
-    keys << QApplication::translate("VBoxGlobal", "User interface", "DetailsElementType"); values << DetailsElementType_UI;
-    keys << QApplication::translate("VBoxGlobal", "Description", "DetailsElementType");    values << DetailsElementType_Description;
+    keys << QApplication::translate("UICommon", "General", "DetailsElementType");        values << DetailsElementType_General;
+    keys << QApplication::translate("UICommon", "Preview", "DetailsElementType");        values << DetailsElementType_Preview;
+    keys << QApplication::translate("UICommon", "System", "DetailsElementType");         values << DetailsElementType_System;
+    keys << QApplication::translate("UICommon", "Display", "DetailsElementType");        values << DetailsElementType_Display;
+    keys << QApplication::translate("UICommon", "Storage", "DetailsElementType");        values << DetailsElementType_Storage;
+    keys << QApplication::translate("UICommon", "Audio", "DetailsElementType");          values << DetailsElementType_Audio;
+    keys << QApplication::translate("UICommon", "Network", "DetailsElementType");        values << DetailsElementType_Network;
+    keys << QApplication::translate("UICommon", "Serial ports", "DetailsElementType");   values << DetailsElementType_Serial;
+    keys << QApplication::translate("UICommon", "USB", "DetailsElementType");            values << DetailsElementType_USB;
+    keys << QApplication::translate("UICommon", "Shared folders", "DetailsElementType"); values << DetailsElementType_SF;
+    keys << QApplication::translate("UICommon", "User interface", "DetailsElementType"); values << DetailsElementType_UI;
+    keys << QApplication::translate("UICommon", "Description", "DetailsElementType");    values << DetailsElementType_Description;
     /* Invalid type for unknown words: */
     if (!keys.contains(strDetailsElementType, Qt::CaseInsensitive))
         return DetailsElementType_Invalid;
@@ -2039,18 +2039,18 @@ template<> QString toString(const IndicatorType &indicatorType)
     QString strResult;
     switch (indicatorType)
     {
-        case IndicatorType_HardDisks:     strResult = QApplication::translate("VBoxGlobal", "Hard Disks", "IndicatorType"); break;
-        case IndicatorType_OpticalDisks:  strResult = QApplication::translate("VBoxGlobal", "Optical Disks", "IndicatorType"); break;
-        case IndicatorType_FloppyDisks:   strResult = QApplication::translate("VBoxGlobal", "Floppy Disks", "IndicatorType"); break;
-        case IndicatorType_Audio:         strResult = QApplication::translate("VBoxGlobal", "Audio", "IndicatorType"); break;
-        case IndicatorType_Network:       strResult = QApplication::translate("VBoxGlobal", "Network", "IndicatorType"); break;
-        case IndicatorType_USB:           strResult = QApplication::translate("VBoxGlobal", "USB", "IndicatorType"); break;
-        case IndicatorType_SharedFolders: strResult = QApplication::translate("VBoxGlobal", "Shared Folders", "IndicatorType"); break;
-        case IndicatorType_Display:       strResult = QApplication::translate("VBoxGlobal", "Display", "IndicatorType"); break;
-        case IndicatorType_Recording:     strResult = QApplication::translate("VBoxGlobal", "Recording", "IndicatorType"); break;
-        case IndicatorType_Features:      strResult = QApplication::translate("VBoxGlobal", "Features", "IndicatorType"); break;
-        case IndicatorType_Mouse:         strResult = QApplication::translate("VBoxGlobal", "Mouse", "IndicatorType"); break;
-        case IndicatorType_Keyboard:      strResult = QApplication::translate("VBoxGlobal", "Keyboard", "IndicatorType"); break;
+        case IndicatorType_HardDisks:     strResult = QApplication::translate("UICommon", "Hard Disks", "IndicatorType"); break;
+        case IndicatorType_OpticalDisks:  strResult = QApplication::translate("UICommon", "Optical Disks", "IndicatorType"); break;
+        case IndicatorType_FloppyDisks:   strResult = QApplication::translate("UICommon", "Floppy Disks", "IndicatorType"); break;
+        case IndicatorType_Audio:         strResult = QApplication::translate("UICommon", "Audio", "IndicatorType"); break;
+        case IndicatorType_Network:       strResult = QApplication::translate("UICommon", "Network", "IndicatorType"); break;
+        case IndicatorType_USB:           strResult = QApplication::translate("UICommon", "USB", "IndicatorType"); break;
+        case IndicatorType_SharedFolders: strResult = QApplication::translate("UICommon", "Shared Folders", "IndicatorType"); break;
+        case IndicatorType_Display:       strResult = QApplication::translate("UICommon", "Display", "IndicatorType"); break;
+        case IndicatorType_Recording:     strResult = QApplication::translate("UICommon", "Recording", "IndicatorType"); break;
+        case IndicatorType_Features:      strResult = QApplication::translate("UICommon", "Features", "IndicatorType"); break;
+        case IndicatorType_Mouse:         strResult = QApplication::translate("UICommon", "Mouse", "IndicatorType"); break;
+        case IndicatorType_Keyboard:      strResult = QApplication::translate("UICommon", "Keyboard", "IndicatorType"); break;
         default:
         {
             AssertMsgFailed(("No text for indicator type=%d", indicatorType));
@@ -2258,21 +2258,21 @@ template<> QString toString(const InformationElementType &informationElementType
     QString strResult;
     switch (informationElementType)
     {
-        case InformationElementType_General:           strResult = QApplication::translate("VBoxGlobal", "General", "InformationElementType"); break;
-        case InformationElementType_Preview:           strResult = QApplication::translate("VBoxGlobal", "Preview", "InformationElementType"); break;
-        case InformationElementType_System:            strResult = QApplication::translate("VBoxGlobal", "System", "InformationElementType"); break;
-        case InformationElementType_Display:           strResult = QApplication::translate("VBoxGlobal", "Display", "InformationElementType"); break;
-        case InformationElementType_Storage:           strResult = QApplication::translate("VBoxGlobal", "Storage", "InformationElementType"); break;
-        case InformationElementType_Audio:             strResult = QApplication::translate("VBoxGlobal", "Audio", "InformationElementType"); break;
-        case InformationElementType_Network:           strResult = QApplication::translate("VBoxGlobal", "Network", "InformationElementType"); break;
-        case InformationElementType_Serial:            strResult = QApplication::translate("VBoxGlobal", "Serial ports", "InformationElementType"); break;
-        case InformationElementType_USB:               strResult = QApplication::translate("VBoxGlobal", "USB", "InformationElementType"); break;
-        case InformationElementType_SharedFolders:     strResult = QApplication::translate("VBoxGlobal", "Shared folders", "InformationElementType"); break;
-        case InformationElementType_UI:                strResult = QApplication::translate("VBoxGlobal", "User interface", "InformationElementType"); break;
-        case InformationElementType_Description:       strResult = QApplication::translate("VBoxGlobal", "Description", "InformationElementType"); break;
-        case InformationElementType_RuntimeAttributes: strResult = QApplication::translate("VBoxGlobal", "Runtime attributes", "InformationElementType"); break;
-        case InformationElementType_StorageStatistics: strResult = QApplication::translate("VBoxGlobal", "Storage statistics", "InformationElementType"); break;
-        case InformationElementType_NetworkStatistics: strResult = QApplication::translate("VBoxGlobal", "Network statistics", "InformationElementType"); break;
+        case InformationElementType_General:           strResult = QApplication::translate("UICommon", "General", "InformationElementType"); break;
+        case InformationElementType_Preview:           strResult = QApplication::translate("UICommon", "Preview", "InformationElementType"); break;
+        case InformationElementType_System:            strResult = QApplication::translate("UICommon", "System", "InformationElementType"); break;
+        case InformationElementType_Display:           strResult = QApplication::translate("UICommon", "Display", "InformationElementType"); break;
+        case InformationElementType_Storage:           strResult = QApplication::translate("UICommon", "Storage", "InformationElementType"); break;
+        case InformationElementType_Audio:             strResult = QApplication::translate("UICommon", "Audio", "InformationElementType"); break;
+        case InformationElementType_Network:           strResult = QApplication::translate("UICommon", "Network", "InformationElementType"); break;
+        case InformationElementType_Serial:            strResult = QApplication::translate("UICommon", "Serial ports", "InformationElementType"); break;
+        case InformationElementType_USB:               strResult = QApplication::translate("UICommon", "USB", "InformationElementType"); break;
+        case InformationElementType_SharedFolders:     strResult = QApplication::translate("UICommon", "Shared folders", "InformationElementType"); break;
+        case InformationElementType_UI:                strResult = QApplication::translate("UICommon", "User interface", "InformationElementType"); break;
+        case InformationElementType_Description:       strResult = QApplication::translate("UICommon", "Description", "InformationElementType"); break;
+        case InformationElementType_RuntimeAttributes: strResult = QApplication::translate("UICommon", "Runtime attributes", "InformationElementType"); break;
+        case InformationElementType_StorageStatistics: strResult = QApplication::translate("UICommon", "Storage statistics", "InformationElementType"); break;
+        case InformationElementType_NetworkStatistics: strResult = QApplication::translate("UICommon", "Network statistics", "InformationElementType"); break;
         default:
         {
             AssertMsgFailed(("No text for information element type=%d", informationElementType));
@@ -2288,21 +2288,21 @@ template<> InformationElementType fromString<InformationElementType>(const QStri
     /* Here we have some fancy stuff allowing us
      * to search through the keys using 'case-insensitive' rule: */
     QStringList keys;                                                                              QList<InformationElementType> values;
-    keys << QApplication::translate("VBoxGlobal", "General", "InformationElementType");            values << InformationElementType_General;
-    keys << QApplication::translate("VBoxGlobal", "Preview", "InformationElementType");            values << InformationElementType_Preview;
-    keys << QApplication::translate("VBoxGlobal", "System", "InformationElementType");             values << InformationElementType_System;
-    keys << QApplication::translate("VBoxGlobal", "Display", "InformationElementType");            values << InformationElementType_Display;
-    keys << QApplication::translate("VBoxGlobal", "Storage", "InformationElementType");            values << InformationElementType_Storage;
-    keys << QApplication::translate("VBoxGlobal", "Audio", "InformationElementType");              values << InformationElementType_Audio;
-    keys << QApplication::translate("VBoxGlobal", "Network", "InformationElementType");            values << InformationElementType_Network;
-    keys << QApplication::translate("VBoxGlobal", "Serial ports", "InformationElementType");       values << InformationElementType_Serial;
-    keys << QApplication::translate("VBoxGlobal", "USB", "InformationElementType");                values << InformationElementType_USB;
-    keys << QApplication::translate("VBoxGlobal", "Shared folders", "InformationElementType");     values << InformationElementType_SharedFolders;
-    keys << QApplication::translate("VBoxGlobal", "User interface", "InformationElementType");     values << InformationElementType_UI;
-    keys << QApplication::translate("VBoxGlobal", "Description", "InformationElementType");        values << InformationElementType_Description;
-    keys << QApplication::translate("VBoxGlobal", "Runtime attributes", "InformationElementType"); values << InformationElementType_RuntimeAttributes;
-    keys << QApplication::translate("VBoxGlobal", "Storage statistics", "InformationElementType"); values << InformationElementType_StorageStatistics;
-    keys << QApplication::translate("VBoxGlobal", "Network statistics", "InformationElementType"); values << InformationElementType_NetworkStatistics;
+    keys << QApplication::translate("UICommon", "General", "InformationElementType");            values << InformationElementType_General;
+    keys << QApplication::translate("UICommon", "Preview", "InformationElementType");            values << InformationElementType_Preview;
+    keys << QApplication::translate("UICommon", "System", "InformationElementType");             values << InformationElementType_System;
+    keys << QApplication::translate("UICommon", "Display", "InformationElementType");            values << InformationElementType_Display;
+    keys << QApplication::translate("UICommon", "Storage", "InformationElementType");            values << InformationElementType_Storage;
+    keys << QApplication::translate("UICommon", "Audio", "InformationElementType");              values << InformationElementType_Audio;
+    keys << QApplication::translate("UICommon", "Network", "InformationElementType");            values << InformationElementType_Network;
+    keys << QApplication::translate("UICommon", "Serial ports", "InformationElementType");       values << InformationElementType_Serial;
+    keys << QApplication::translate("UICommon", "USB", "InformationElementType");                values << InformationElementType_USB;
+    keys << QApplication::translate("UICommon", "Shared folders", "InformationElementType");     values << InformationElementType_SharedFolders;
+    keys << QApplication::translate("UICommon", "User interface", "InformationElementType");     values << InformationElementType_UI;
+    keys << QApplication::translate("UICommon", "Description", "InformationElementType");        values << InformationElementType_Description;
+    keys << QApplication::translate("UICommon", "Runtime attributes", "InformationElementType"); values << InformationElementType_RuntimeAttributes;
+    keys << QApplication::translate("UICommon", "Storage statistics", "InformationElementType"); values << InformationElementType_StorageStatistics;
+    keys << QApplication::translate("UICommon", "Network statistics", "InformationElementType"); values << InformationElementType_NetworkStatistics;
     /* Invalid type for unknown words: */
     if (!keys.contains(strInformationElementType, Qt::CaseInsensitive))
         return InformationElementType_Invalid;
@@ -2436,12 +2436,12 @@ template<> QString toString(const UIMediumFormat &enmUIMediumFormat)
     QString strResult;
     switch (enmUIMediumFormat)
     {
-        case UIMediumFormat_VDI:       strResult = QApplication::translate("VBoxGlobal", "VDI (VirtualBox Disk Image)", "UIMediumFormat"); break;
-        case UIMediumFormat_VMDK:      strResult = QApplication::translate("VBoxGlobal", "VMDK (Virtual Machine Disk)", "UIMediumFormat"); break;
-        case UIMediumFormat_VHD:       strResult = QApplication::translate("VBoxGlobal", "VHD (Virtual Hard Disk)", "UIMediumFormat"); break;
-        case UIMediumFormat_Parallels: strResult = QApplication::translate("VBoxGlobal", "HDD (Parallels Hard Disk)", "UIMediumFormat"); break;
-        case UIMediumFormat_QED:       strResult = QApplication::translate("VBoxGlobal", "QED (QEMU enhanced disk)", "UIMediumFormat"); break;
-        case UIMediumFormat_QCOW:      strResult = QApplication::translate("VBoxGlobal", "QCOW (QEMU Copy-On-Write)", "UIMediumFormat"); break;
+        case UIMediumFormat_VDI:       strResult = QApplication::translate("UICommon", "VDI (VirtualBox Disk Image)", "UIMediumFormat"); break;
+        case UIMediumFormat_VMDK:      strResult = QApplication::translate("UICommon", "VMDK (Virtual Machine Disk)", "UIMediumFormat"); break;
+        case UIMediumFormat_VHD:       strResult = QApplication::translate("UICommon", "VHD (Virtual Hard Disk)", "UIMediumFormat"); break;
+        case UIMediumFormat_Parallels: strResult = QApplication::translate("UICommon", "HDD (Parallels Hard Disk)", "UIMediumFormat"); break;
+        case UIMediumFormat_QED:       strResult = QApplication::translate("UICommon", "QED (QEMU enhanced disk)", "UIMediumFormat"); break;
+        case UIMediumFormat_QCOW:      strResult = QApplication::translate("UICommon", "QCOW (QEMU Copy-On-Write)", "UIMediumFormat"); break;
         default:
         {
             AssertMsgFailed(("No text for medium format=%d", enmUIMediumFormat));
@@ -2497,9 +2497,9 @@ template<> QString toString(const UISettingsDefs::RecordingMode &enmRecordingMod
     QString strResult;
     switch (enmRecordingMode)
     {
-        case UISettingsDefs::RecordingMode_VideoAudio: strResult = QApplication::translate("VBoxGlobal", "Video/Audio", "UISettingsDefs::RecordingMode"); break;
-        case UISettingsDefs::RecordingMode_VideoOnly:  strResult = QApplication::translate("VBoxGlobal", "Video Only",  "UISettingsDefs::RecordingMode"); break;
-        case UISettingsDefs::RecordingMode_AudioOnly:  strResult = QApplication::translate("VBoxGlobal", "Audio Only",  "UISettingsDefs::RecordingMode"); break;
+        case UISettingsDefs::RecordingMode_VideoAudio: strResult = QApplication::translate("UICommon", "Video/Audio", "UISettingsDefs::RecordingMode"); break;
+        case UISettingsDefs::RecordingMode_VideoOnly:  strResult = QApplication::translate("UICommon", "Video Only",  "UISettingsDefs::RecordingMode"); break;
+        case UISettingsDefs::RecordingMode_AudioOnly:  strResult = QApplication::translate("UICommon", "Audio Only",  "UISettingsDefs::RecordingMode"); break;
         default:
         {
             AssertMsgFailed(("No text for recording mode format=%d", enmRecordingMode));

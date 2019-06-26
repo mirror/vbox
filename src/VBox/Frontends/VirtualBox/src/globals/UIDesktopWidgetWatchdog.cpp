@@ -29,7 +29,7 @@
 /* GUI includes: */
 #include "UIDesktopWidgetWatchdog.h"
 #ifdef VBOX_WS_X11
-# include "VBoxGlobal.h"
+# include "UICommon.h"
 #endif /* VBOX_WS_X11 */
 
 /* Other VBox includes: */
@@ -152,7 +152,7 @@ UIInvisibleWindow::UIInvisibleWindow(int iHostScreenIndex)
     /* Apply visual and mouse-event mask for that 1 pixel: */
     setMask(QRect(0, 0, 1, 1));
     /* For composite WMs make this 1 pixel transparent: */
-    if (vboxGlobal().isCompositingManagerRunning())
+    if (uiCommon().isCompositingManagerRunning())
         setAttribute(Qt::WA_TranslucentBackground);
     /* Install fallback handler: */
     QTimer::singleShot(5000, this, SLOT(sltFallback()));

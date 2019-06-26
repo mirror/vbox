@@ -64,7 +64,7 @@ void UIWizardNewVMPage3::getWithFileOpenDialog()
     /* Get opened medium id: */
     QUuid uMediumId;
 
-    int returnCode = vboxGlobal().openMediumSelectorDialog(thisImp(), UIMediumDeviceType_HardDisk,
+    int returnCode = uiCommon().openMediumSelectorDialog(thisImp(), UIMediumDeviceType_HardDisk,
                                                            uMediumId,
                                                            fieldImp("machineFolder").toString(),
                                                            fieldImp("machineBaseName").toString(),
@@ -128,8 +128,8 @@ void UIWizardNewVMPage3::ensureNewVirtualDiskDeleted()
         msgCenter().cannotDeleteHardDiskStorage(m_virtualDisk, strLocation, thisImp());
 
 #ifndef VBOX_GUI_WITH_NEW_MEDIA_EVENTS
-    /* Inform VBoxGlobal about it: */
-    vboxGlobal().deleteMedium(uMediumID);
+    /* Inform UICommon about it: */
+    uiCommon().deleteMedium(uMediumID);
 #endif
 
     /* Detach virtual-disk anyway: */
@@ -216,7 +216,7 @@ void UIWizardNewVMPageBasic3::retranslateUi()
 
     /* Translate widgets: */
     QString strRecommendedHDD = field("type").value<CGuestOSType>().isNull() ? QString() :
-                                VBoxGlobal::formatSize(field("type").value<CGuestOSType>().GetRecommendedHDD());
+                                UICommon::formatSize(field("type").value<CGuestOSType>().GetRecommendedHDD());
     m_pLabel->setText(UIWizardNewVM::tr("<p>If you wish you can add a virtual hard disk to the new machine. "
                                         "You can either create a new hard disk file or select one from the list "
                                         "or from another location using the folder icon.</p>"
@@ -263,7 +263,7 @@ bool UIWizardNewVMPageBasic3::isComplete() const
     /* Make sure 'virtualDisk' field feats the rules: */
     return m_pDiskSkip->isChecked() ||
            !m_pDiskPresent->isChecked() ||
-           !vboxGlobal().medium(m_pDiskSelector->id()).isNull();
+           !uiCommon().medium(m_pDiskSelector->id()).isNull();
 }
 
 bool UIWizardNewVMPageBasic3::validatePage()

@@ -28,7 +28,7 @@
 #include "QIMessageBox.h"
 #include "QITabWidget.h"
 #include "QIToolButton.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "UIDesktopWidgetWatchdog.h"
 #include "UIExtraDataManager.h"
 #include "UIFDCreationDialog.h"
@@ -81,11 +81,11 @@ UIMediumSelector::UIMediumSelector(UIMediumDeviceType enmMediumType, const QStri
 {
     /* Start medium-enumeration (if necessary): */
 #ifndef VBOX_GUI_WITH_NEW_MEDIA_EVENTS
-    if (vboxGlobal().uiType() == VBoxGlobal::UIType_RuntimeUI)
+    if (uiCommon().uiType() == UICommon::UIType_RuntimeUI)
 #else
-    if (!vboxGlobal().isFullMediumEnumerationRequested())
+    if (!uiCommon().isFullMediumEnumerationRequested())
 #endif
-        vboxGlobal().startMediumEnumeration();
+        uiCommon().startMediumEnumeration();
     configure();
     finalize();
 }
@@ -238,11 +238,11 @@ void UIMediumSelector::prepareMenuAndToolBar()
 void UIMediumSelector::prepareConnections()
 {
     /* Configure medium-enumeration connections: */
-    connect(&vboxGlobal(), &VBoxGlobal::sigMediumEnumerationStarted,
+    connect(&uiCommon(), &UICommon::sigMediumEnumerationStarted,
             this, &UIMediumSelector::sltHandleMediumEnumerationStart);
-    connect(&vboxGlobal(), &VBoxGlobal::sigMediumEnumerated,
+    connect(&uiCommon(), &UICommon::sigMediumEnumerated,
             this, &UIMediumSelector::sltHandleMediumEnumerated);
-    connect(&vboxGlobal(), &VBoxGlobal::sigMediumEnumerationFinished,
+    connect(&uiCommon(), &UICommon::sigMediumEnumerationFinished,
             this, &UIMediumSelector::sltHandleMediumEnumerationFinish);
     if (m_pActionAdd)
         connect(m_pActionAdd, &QAction::triggered, this, &UIMediumSelector::sltAddMedium);
@@ -312,7 +312,7 @@ UIMediumItem* UIMediumSelector::createHardDiskItem(const UIMedium &medium, QITre
         if (!pParentMediumItem)
         {
             /* Make sure corresponding parent medium is already cached! */
-            UIMedium parentMedium = vboxGlobal().medium(medium.parentID());
+            UIMedium parentMedium = uiCommon().medium(medium.parentID());
             if (parentMedium.isNull())
                 AssertMsgFailed(("Parent medium with ID={%s} was not found!\n", medium.parentID().toString().toUtf8().constData()));
             /* Try to create parent medium-item: */
@@ -444,7 +444,7 @@ void UIMediumSelector::sltButtonLeaveEmpty()
 
 void UIMediumSelector::sltAddMedium()
 {
-    QUuid uMediumID = vboxGlobal().openMediumWithFileOpenDialog(m_enmMediumType, this, m_strMachineFolder);
+    QUuid uMediumID = uiCommon().openMediumWithFileOpenDialog(m_enmMediumType, this, m_strMachineFolder);
     if (uMediumID.isNull())
         return;
     repopulateTreeWidget();
@@ -453,7 +453,7 @@ void UIMediumSelector::sltAddMedium()
 
 void UIMediumSelector::sltCreateMedium()
 {
-    QUuid uMediumId = vboxGlobal().openMediumCreatorDialog(this, m_enmMediumType, m_strMachineFolder,
+    QUuid uMediumId = uiCommon().openMediumCreatorDialog(this, m_enmMediumType, m_strMachineFolder,
                                                            m_strMachineName, m_strMachineGuestOSTypeId);
     if (uMediumId.isNull())
         return;
@@ -500,7 +500,7 @@ void UIMediumSelector::sltHandleMediumEnumerationFinish()
 void UIMediumSelector::sltHandleRefresh()
 {
     /* Initialize media enumation: */
-    vboxGlobal().startMediumEnumeration();
+    uiCommon().startMediumEnumeration();
     /* Update the search: */
     m_pSearchWidget->search(m_pTreeWidget);
 }
@@ -619,7 +619,7 @@ void UIMediumSelector::showEvent(QShowEvent *pEvent)
     resize(proposedSize);
 
     if (m_pParent)
-        VBoxGlobal::centerWidget(this, m_pParent, false);
+        UICommon::centerWidget(this, m_pParent, false);
 
 }
 
@@ -638,9 +638,9 @@ void UIMediumSelector::repopulateTreeWidget()
     m_pNotAttachedSubTreeRoot = 0;
     QVector<UIMediumItem*> menuItemVector;
 
-    foreach (const QUuid &uMediumID, vboxGlobal().mediumIDs())
+    foreach (const QUuid &uMediumID, uiCommon().mediumIDs())
     {
-        UIMedium medium = vboxGlobal().medium(uMediumID);
+        UIMedium medium = uiCommon().medium(uMediumID);
         if (medium.type() == m_enmMediumType)
         {
             bool isMediumAttached = !(medium.medium().GetMachineIds().isEmpty());

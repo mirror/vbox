@@ -21,7 +21,7 @@
 /* GUI includes: */
 #include "QILabelSeparator.h"
 #include "QIRichTextLabel.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "UIMessageCenter.h"
 #include "UIWizardExportApp.h"
 #include "UIWizardExportAppDefs.h"
@@ -42,7 +42,7 @@ UIWizardExportAppPage1::UIWizardExportAppPage1()
 void UIWizardExportAppPage1::populateVMSelectorItems(const QStringList &selectedVMNames)
 {
     /* Add all VM items into VM selector: */
-    foreach (const CMachine &machine, vboxGlobal().virtualBox().GetMachines())
+    foreach (const CMachine &machine, uiCommon().virtualBox().GetMachines())
     {
         QPixmap pixIcon;
         QString strName;
@@ -53,9 +53,9 @@ void UIWizardExportAppPage1::populateVMSelectorItems(const QStringList &selected
         const int iIconMetric = pStyle->pixelMetric(QStyle::PM_SmallIconSize);
         if (machine.GetAccessible())
         {
-            pixIcon = vboxGlobal().vmUserPixmapDefault(machine);
+            pixIcon = uiCommon().vmUserPixmapDefault(machine);
             if (pixIcon.isNull())
-                pixIcon = vboxGlobal().vmGuestOSTypePixmapDefault(machine.GetOSTypeId());
+                pixIcon = uiCommon().vmGuestOSTypePixmapDefault(machine.GetOSTypeId());
             strName = machine.GetName();
             uUuid = machine.GetId();
             fEnabled = machine.GetSessionState() == KSessionState_Unlocked;
@@ -65,7 +65,7 @@ void UIWizardExportAppPage1::populateVMSelectorItems(const QStringList &selected
         {
             QString settingsFile = machine.GetSettingsFilePath();
             QFileInfo fi(settingsFile);
-            strName = VBoxGlobal::hasAllowedExtension(fi.completeSuffix(), VBoxFileExts) ? fi.completeBaseName() : fi.fileName();
+            strName = UICommon::hasAllowedExtension(fi.completeSuffix(), VBoxFileExts) ? fi.completeBaseName() : fi.fileName();
             pixIcon = QPixmap(":/os_other.png").scaled(iIconMetric, iIconMetric, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
         }
         QListWidgetItem *pItem = new UIVMListWidgetItem(pixIcon, strName, uUuid, fInSaveState, m_pVMSelector);

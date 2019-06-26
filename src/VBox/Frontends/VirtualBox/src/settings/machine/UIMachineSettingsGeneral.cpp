@@ -21,7 +21,7 @@
 
 /* GUI includes: */
 #include "QIWidgetValidator.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "UIConverter.h"
 #include "UIErrorString.h"
 #include "UIMachineSettingsGeneral.h"
@@ -354,7 +354,7 @@ bool UIMachineSettingsGeneral::validate(QList<UIValidationMessage> &messages)
     UIValidationMessage message;
 
     /* 'Basic' tab validations: */
-    message.first = VBoxGlobal::removeAccelMark(mTwGeneral->tabText(0));
+    message.first = UICommon::removeAccelMark(mTwGeneral->tabText(0));
     message.second.clear();
 
     /* VM name validation: */
@@ -378,7 +378,7 @@ bool UIMachineSettingsGeneral::validate(QList<UIValidationMessage> &messages)
         messages << message;
 
     /* 'Encryption' tab validations: */
-    message.first = VBoxGlobal::removeAccelMark(mTwGeneral->tabText(3));
+    message.first = UICommon::removeAccelMark(mTwGeneral->tabText(3));
     message.second.clear();
 
     /* Encryption validation: */
@@ -387,7 +387,7 @@ bool UIMachineSettingsGeneral::validate(QList<UIValidationMessage> &messages)
     {
 #ifdef VBOX_WITH_EXTPACK
         /* Encryption Extension Pack presence test: */
-        const CExtPack extPack = vboxGlobal().virtualBox().GetExtensionPackManager().Find(GUI_ExtPackName);
+        const CExtPack extPack = uiCommon().virtualBox().GetExtensionPackManager().Find(GUI_ExtPackName);
         if (extPack.isNull() || !extPack.GetUsable())
         {
             message.second << tr("You are trying to enable disk encryption for this virtual machine. "
@@ -704,7 +704,7 @@ bool UIMachineSettingsGeneral::saveBasicData()
             if (fSuccess)
             {
                 // Must update long mode CPU feature bit when os type changed:
-                CVirtualBox vbox = vboxGlobal().virtualBox();
+                CVirtualBox vbox = uiCommon().virtualBox();
                 // Should we check global object getters?
                 const CGuestOSType &comNewType = vbox.GetGuestOSType(newGeneralData.m_strGuestOsTypeId);
                 m_machine.SetCPUProperty(KCPUPropertyType_LongMode, comNewType.GetIs64Bit());

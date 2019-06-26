@@ -33,7 +33,7 @@
 #include "QIFileDialog.h"
 #include "QIMessageBox.h"
 #include "QIWidgetValidator.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "UIIconPool.h"
 #include "UIWizardNewVD.h"
 #include "UIErrorString.h"
@@ -434,7 +434,7 @@ void AbstractControllerType::setCtrType (KStorageControllerType aCtrType)
 
 DeviceTypeList AbstractControllerType::deviceTypeList() const
 {
-    return vboxGlobal().virtualBox().GetSystemProperties().GetDeviceTypesForStorageBus (mBusType).toList();
+    return uiCommon().virtualBox().GetSystemProperties().GetDeviceTypesForStorageBus (mBusType).toList();
 }
 
 void AbstractControllerType::updateBusInfo()
@@ -696,7 +696,7 @@ ControllerItem::ControllerItem (AbstractItem *aParent, const QString &aName,
             break;
     }
 
-    mUseIoCache = vboxGlobal().virtualBox().GetSystemProperties().GetDefaultIoCacheSettingForStorageController (aControllerType);
+    mUseIoCache = uiCommon().virtualBox().GetSystemProperties().GetDefaultIoCacheSettingForStorageController (aControllerType);
 }
 
 ControllerItem::~ControllerItem()
@@ -750,7 +750,7 @@ uint ControllerItem::portCount()
 
 uint ControllerItem::maxPortCount()
 {
-    return (uint)vboxGlobal().virtualBox().GetSystemProperties().GetMaxPortCountForStorageBus(ctrBusType());
+    return (uint)uiCommon().virtualBox().GetSystemProperties().GetMaxPortCountForStorageBus(ctrBusType());
 }
 
 bool ControllerItem::ctrUseIoCache() const
@@ -776,7 +776,7 @@ void ControllerItem::setCtrType (KStorageControllerType aCtrType)
 void ControllerItem::setPortCount (uint aPortCount)
 {
     /* Limit maximum port count: */
-    mPortCount = qMin(aPortCount, (uint)vboxGlobal().virtualBox().GetSystemProperties().GetMaxPortCountForStorageBus(ctrBusType()));
+    mPortCount = qMin(aPortCount, (uint)uiCommon().virtualBox().GetSystemProperties().GetMaxPortCountForStorageBus(ctrBusType()));
 }
 
 void ControllerItem::setCtrUseIoCache (bool aUseIoCache)
@@ -787,7 +787,7 @@ void ControllerItem::setCtrUseIoCache (bool aUseIoCache)
 SlotsList ControllerItem::ctrAllSlots() const
 {
     SlotsList allSlots;
-    CSystemProperties sp = vboxGlobal().virtualBox().GetSystemProperties();
+    CSystemProperties sp = uiCommon().virtualBox().GetSystemProperties();
     for (ULONG i = 0; i < sp.GetMaxPortCountForStorageBus (mCtrType->busType()); ++ i)
         for (ULONG j = 0; j < sp.GetMaxDevicesPerPortForStorageBus (mCtrType->busType()); ++ j)
             allSlots << StorageSlot (mCtrType->busType(), i, j);
@@ -970,7 +970,7 @@ void AttachmentItem::setAttMediumId (const QUuid &uAttMediumId)
 {
     /// @todo is this required?
     //AssertMsg(!aAttMediumId.isNull(), ("Medium ID value can't be null!\n"));
-    mAttMediumId = vboxGlobal().medium(uAttMediumId).id();
+    mAttMediumId = uiCommon().medium(uAttMediumId).id();
     cache();
 }
 
@@ -1031,7 +1031,7 @@ QString AttachmentItem::attEncryptionPasswordID() const
 
 void AttachmentItem::cache()
 {
-    UIMedium medium = vboxGlobal().medium(mAttMediumId);
+    UIMedium medium = uiCommon().medium(mAttMediumId);
 
     /* Cache medium information */
     mAttName = medium.name (true);
@@ -1322,49 +1322,49 @@ QVariant StorageModel::data (const QModelIndex &aIndex, int aRole) const
         {
             return (m_configurationAccessLevel == ConfigurationAccessLevel_Full) &&
                    (qobject_cast<RootItem*>(mRootItem)->childCount(KStorageBus_IDE) <
-                    vboxGlobal().virtualBox().GetSystemProperties().GetMaxInstancesOfStorageBus(chipsetType(), KStorageBus_IDE));
+                    uiCommon().virtualBox().GetSystemProperties().GetMaxInstancesOfStorageBus(chipsetType(), KStorageBus_IDE));
         }
         case R_IsMoreSATAControllersPossible:
         {
             return (m_configurationAccessLevel == ConfigurationAccessLevel_Full) &&
                    (qobject_cast<RootItem*>(mRootItem)->childCount(KStorageBus_SATA) <
-                    vboxGlobal().virtualBox().GetSystemProperties().GetMaxInstancesOfStorageBus(chipsetType(), KStorageBus_SATA));
+                    uiCommon().virtualBox().GetSystemProperties().GetMaxInstancesOfStorageBus(chipsetType(), KStorageBus_SATA));
         }
         case R_IsMoreSCSIControllersPossible:
         {
             return (m_configurationAccessLevel == ConfigurationAccessLevel_Full) &&
                    (qobject_cast<RootItem*>(mRootItem)->childCount(KStorageBus_SCSI) <
-                    vboxGlobal().virtualBox().GetSystemProperties().GetMaxInstancesOfStorageBus(chipsetType(), KStorageBus_SCSI));
+                    uiCommon().virtualBox().GetSystemProperties().GetMaxInstancesOfStorageBus(chipsetType(), KStorageBus_SCSI));
         }
         case R_IsMoreFloppyControllersPossible:
         {
             return (m_configurationAccessLevel == ConfigurationAccessLevel_Full) &&
                    (qobject_cast<RootItem*>(mRootItem)->childCount(KStorageBus_Floppy) <
-                    vboxGlobal().virtualBox().GetSystemProperties().GetMaxInstancesOfStorageBus(chipsetType(), KStorageBus_Floppy));
+                    uiCommon().virtualBox().GetSystemProperties().GetMaxInstancesOfStorageBus(chipsetType(), KStorageBus_Floppy));
         }
         case R_IsMoreSASControllersPossible:
         {
             return (m_configurationAccessLevel == ConfigurationAccessLevel_Full) &&
                    (qobject_cast<RootItem*>(mRootItem)->childCount(KStorageBus_SAS) <
-                    vboxGlobal().virtualBox().GetSystemProperties().GetMaxInstancesOfStorageBus(chipsetType(), KStorageBus_SAS));
+                    uiCommon().virtualBox().GetSystemProperties().GetMaxInstancesOfStorageBus(chipsetType(), KStorageBus_SAS));
         }
         case R_IsMoreUSBControllersPossible:
         {
             return (m_configurationAccessLevel == ConfigurationAccessLevel_Full) &&
                    (qobject_cast<RootItem*>(mRootItem)->childCount(KStorageBus_USB) <
-                    vboxGlobal().virtualBox().GetSystemProperties().GetMaxInstancesOfStorageBus(chipsetType(), KStorageBus_USB));
+                    uiCommon().virtualBox().GetSystemProperties().GetMaxInstancesOfStorageBus(chipsetType(), KStorageBus_USB));
         }
         case R_IsMoreNVMeControllersPossible:
         {
             return (m_configurationAccessLevel == ConfigurationAccessLevel_Full) &&
                    (qobject_cast<RootItem*>(mRootItem)->childCount(KStorageBus_PCIe) <
-                    vboxGlobal().virtualBox().GetSystemProperties().GetMaxInstancesOfStorageBus(chipsetType(), KStorageBus_PCIe));
+                    uiCommon().virtualBox().GetSystemProperties().GetMaxInstancesOfStorageBus(chipsetType(), KStorageBus_PCIe));
         }
         case R_IsMoreVirtioSCSIControllersPossible:
         {
             return (m_configurationAccessLevel == ConfigurationAccessLevel_Full) &&
                    (qobject_cast<RootItem*>(mRootItem)->childCount(KStorageBus_VirtioSCSI) <
-                    vboxGlobal().virtualBox().GetSystemProperties().GetMaxInstancesOfStorageBus(chipsetType(), KStorageBus_VirtioSCSI));
+                    uiCommon().virtualBox().GetSystemProperties().GetMaxInstancesOfStorageBus(chipsetType(), KStorageBus_VirtioSCSI));
         }
         case R_IsMoreAttachmentsPossible:
         {
@@ -1373,7 +1373,7 @@ QVariant StorageModel::data (const QModelIndex &aIndex, int aRole) const
                 if (item->rtti() == AbstractItem::Type_ControllerItem)
                 {
                     ControllerItem *ctr = qobject_cast<ControllerItem*>(item);
-                    CSystemProperties sp = vboxGlobal().virtualBox().GetSystemProperties();
+                    CSystemProperties sp = uiCommon().virtualBox().GetSystemProperties();
                     const bool fIsMoreAttachmentsPossible = (ULONG)rowCount(aIndex) <
                                                             (sp.GetMaxPortCountForStorageBus(ctr->ctrBusType()) *
                                                              sp.GetMaxDevicesPerPortForStorageBus(ctr->ctrBusType()));
@@ -1720,9 +1720,9 @@ bool StorageModel::setData (const QModelIndex &aIndex, const QVariant &aValue, i
 
                     /* Lets make sure there is enough of place for all the remaining attachments: */
                     const uint uMaxPortCount =
-                        (uint)vboxGlobal().virtualBox().GetSystemProperties().GetMaxPortCountForStorageBus(enmNewCtrBusType);
+                        (uint)uiCommon().virtualBox().GetSystemProperties().GetMaxPortCountForStorageBus(enmNewCtrBusType);
                     const uint uMaxDevicePerPortCount =
-                        (uint)vboxGlobal().virtualBox().GetSystemProperties().GetMaxDevicesPerPortForStorageBus(enmNewCtrBusType);
+                        (uint)uiCommon().virtualBox().GetSystemProperties().GetMaxDevicesPerPortForStorageBus(enmNewCtrBusType);
                     const QList<QUuid> ids = pItemController->attachmentIDs();
                     if (uMaxPortCount * uMaxDevicePerPortCount < (uint)ids.size())
                     {
@@ -2096,7 +2096,7 @@ QMap<KStorageBus, int> StorageModel::maximumControllerTypes() const
     for (int iStorageBusType = KStorageBus_IDE; iStorageBusType < KStorageBus_Max; ++iStorageBusType)
     {
         maximumMap.insert((KStorageBus)iStorageBusType,
-                          vboxGlobal().virtualBox().GetSystemProperties().GetMaxInstancesOfStorageBus(chipsetType(), (KStorageBus)iStorageBusType));
+                          uiCommon().virtualBox().GetSystemProperties().GetMaxInstancesOfStorageBus(chipsetType(), (KStorageBus)iStorageBusType));
     }
     return maximumMap;
 }
@@ -2552,13 +2552,13 @@ bool UIMachineSettingsStorage::validate(QList<UIValidationMessage> &messages)
             const QString key(m_pModelStorage->data(attIndex, StorageModel::R_AttMediumId).toString());
             const QString value(QString("%1 (%2)").arg(ctrName, gpConverter->toString(attSlot)));
             /* Check for emptiness: */
-            if (vboxGlobal().medium(key).isNull() && enmAttDevice == KDeviceType_HardDisk)
+            if (uiCommon().medium(key).isNull() && enmAttDevice == KDeviceType_HardDisk)
             {
                 message.second << tr("No hard disk is selected for <i>%1</i>.").arg(value);
                 fPass = false;
             }
             /* Check for coincidence: */
-            if (!vboxGlobal().medium(key).isNull() && config.contains(key))
+            if (!uiCommon().medium(key).isNull() && config.contains(key))
             {
                 message.second << tr("<i>%1</i> is using a disk that is already attached to <i>%2</i>.")
                                      .arg(value).arg(config[key]);
@@ -2746,7 +2746,7 @@ void UIMachineSettingsStorage::showEvent(QShowEvent *pEvent)
 void UIMachineSettingsStorage::sltHandleMediumEnumerated(const QUuid &uMediumId)
 {
     /* Search for corresponding medium: */
-    const UIMedium medium = vboxGlobal().medium(uMediumId);
+    const UIMedium medium = uiCommon().medium(uMediumId);
 
     const QModelIndex rootIndex = m_pModelStorage->root();
     for (int i = 0; i < m_pModelStorage->rowCount(rootIndex); ++i)
@@ -3224,7 +3224,7 @@ void UIMachineSettingsStorage::sltPrepareOpenMediumMenu()
 
 void UIMachineSettingsStorage::sltCreateNewHardDisk()
 {
-    const QUuid uMediumId = vboxGlobal().openMediumCreatorDialog(this, UIMediumDeviceType_HardDisk, m_strMachineSettingsFilePath,
+    const QUuid uMediumId = uiCommon().openMediumCreatorDialog(this, UIMediumDeviceType_HardDisk, m_strMachineSettingsFilePath,
                                                                  m_strMachineName, m_strMachineGuestOSTypeId);
 
     if (!uMediumId.isNull())
@@ -3241,7 +3241,7 @@ void UIMachineSettingsStorage::sltChooseExistingMedium()
     const QString strMachineFolder(QFileInfo(m_strMachineSettingsFilePath).absolutePath());
 
     QUuid uMediumId;
-    int iResult = vboxGlobal().openMediumSelectorDialog(this, m_pMediumIdHolder->type(), uMediumId,
+    int iResult = uiCommon().openMediumSelectorDialog(this, m_pMediumIdHolder->type(), uMediumId,
                                                         strMachineFolder, m_strMachineName,
                                                         m_strMachineGuestOSTypeId,
                                                         true /* enable create action: */);
@@ -3276,7 +3276,7 @@ void UIMachineSettingsStorage::sltChooseRecentMedium()
         const QStringList mediumInfoList = pChooseRecentMediumAction->data().toString().split(',');
         const UIMediumDeviceType enmMediumType = (UIMediumDeviceType)mediumInfoList[0].toUInt();
         const QString strMediumLocation = mediumInfoList[1];
-        const QUuid uMediumId = vboxGlobal().openMedium(enmMediumType, strMediumLocation, this);
+        const QUuid uMediumId = uiCommon().openMedium(enmMediumType, strMediumLocation, this);
         if (!uMediumId.isNull())
             m_pMediumIdHolder->setId(uMediumId);
     }
@@ -3709,12 +3709,12 @@ void UIMachineSettingsStorage::prepare()
 
 #ifdef VBOX_GUI_WITH_NEW_MEDIA_EVENTS
     /* Start medium-enumeration (only if necessary): */
-    if (!vboxGlobal().isFullMediumEnumerationRequested())
+    if (!uiCommon().isFullMediumEnumerationRequested())
 #endif
     /* Enumerate Media. We need at least the MediaList filled, so this is the
      * lasted point, where we can start. The rest of the media checking is done
      * in a background thread. */
-    vboxGlobal().startMediumEnumeration();
+    uiCommon().startMediumEnumeration();
 
     /* Layout created in the .ui file. */
     AssertPtrReturnVoid(mLtStorage);
@@ -3967,9 +3967,9 @@ void UIMachineSettingsStorage::prepareStorageWidgets()
 void UIMachineSettingsStorage::prepareConnections()
 {
     /* Configure this: */
-    connect(&vboxGlobal(), SIGNAL(sigMediumEnumerated(const QUuid &)),
+    connect(&uiCommon(), SIGNAL(sigMediumEnumerated(const QUuid &)),
             this, SLOT(sltHandleMediumEnumerated(const QUuid &)));
-    connect(&vboxGlobal(), SIGNAL(sigMediumDeleted(const QUuid &)),
+    connect(&uiCommon(), SIGNAL(sigMediumDeleted(const QUuid &)),
             this, SLOT(sltHandleMediumDeleted(const QUuid &)));
 
     /* Configure tree-view: */
@@ -4094,7 +4094,7 @@ void UIMachineSettingsStorage::addAttachmentWrapper(KDeviceType enmDeviceType)
     const QString strMachineFolder(QFileInfo(m_strMachineSettingsFilePath).absolutePath());
 
     QUuid uMediumId;
-    int iResult = vboxGlobal().openMediumSelectorDialog(this, UIMediumDefs::mediumTypeToLocal(enmDeviceType), uMediumId,
+    int iResult = uiCommon().openMediumSelectorDialog(this, UIMediumDefs::mediumTypeToLocal(enmDeviceType), uMediumId,
                                                         strMachineFolder, m_strMachineName,
                                                         m_strMachineGuestOSTypeId,
                                                         true /* enable cr1eate action: */);
@@ -4189,9 +4189,9 @@ void UIMachineSettingsStorage::addChooseExistingMediumAction(QMenu *pOpenMediumM
 
 void UIMachineSettingsStorage::addChooseHostDriveActions(QMenu *pOpenMediumMenu)
 {
-    foreach (const QUuid &uMediumId, vboxGlobal().mediumIDs())
+    foreach (const QUuid &uMediumId, uiCommon().mediumIDs())
     {
-        const UIMedium medium = vboxGlobal().medium(uMediumId);
+        const UIMedium medium = uiCommon().medium(uMediumId);
         if (medium.isHostDrive() && m_pMediumIdHolder->type() == medium.type())
         {
             QAction *pHostDriveAction = pOpenMediumMenu->addAction(medium.name());
@@ -4567,7 +4567,7 @@ bool UIMachineSettingsStorage::createStorageAttachment(const UISettingsCacheMach
         if (fSuccess)
         {
             /* Create attachment: */
-            const UIMedium vboxMedium = vboxGlobal().medium(newAttachmentData.m_uAttachmentMediumId);
+            const UIMedium vboxMedium = uiCommon().medium(newAttachmentData.m_uAttachmentMediumId);
             const CMedium comMedium = vboxMedium.medium();
             m_machine.AttachDevice(newControllerData.m_strControllerName,
                                    newAttachmentData.m_iAttachmentPort,
@@ -4655,7 +4655,7 @@ bool UIMachineSettingsStorage::updateStorageAttachment(const UISettingsCacheMach
         if (fSuccess)
         {
             /* Remount attachment: */
-            const UIMedium vboxMedium = vboxGlobal().medium(newAttachmentData.m_uAttachmentMediumId);
+            const UIMedium vboxMedium = uiCommon().medium(newAttachmentData.m_uAttachmentMediumId);
             const CMedium comMedium = vboxMedium.medium();
             m_machine.MountMedium(newControllerData.m_strControllerName,
                                   newAttachmentData.m_iAttachmentPort,

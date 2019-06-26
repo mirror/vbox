@@ -40,7 +40,7 @@
 #include "UIMessageCenter.h"
 #include "UIModalWindowManager.h"
 #include "UIPopupCenter.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 
 /* COM includes: */
 #include "CSession.h"

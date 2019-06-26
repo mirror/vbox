@@ -399,7 +399,7 @@ ifdef VBOX_WITH_DEBUGGER_GUI
 endif
 ifdef VBOX_WITH_HARDENING
  VBOX_DI_VBAPP_DYLIBS += \
- 	MacOS/VBoxGlobal.dylib \
+ 	MacOS/UICommon.dylib \
  	MacOS/VirtualBoxVM.dylib \
  	MacOS/VBoxNetDHCP.dylib \
  	MacOS/VBoxNetNAT.dylib \

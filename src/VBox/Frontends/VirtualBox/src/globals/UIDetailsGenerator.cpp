@@ -23,7 +23,7 @@
 #include "UIConverter.h"
 #include "UIDetailsGenerator.h"
 #include "UIErrorString.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 
 /* COM includes: */
 #include "COMEnums.h"
@@ -63,7 +63,7 @@ UITextTable UIDetailsGenerator::generateMachineInformationGeneral(CMachine &comM
     /* Operating system: */
     if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral_OS)
         table << UITextTableLine(QApplication::translate("UIDetails", "Operating System", "details (general)"),
-                                 vboxGlobal().vmGuestOSTypeDescription(comMachine.GetOSTypeId()));
+                                 uiCommon().vmGuestOSTypeDescription(comMachine.GetOSTypeId()));
 
     /* Settings file location: */
     if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral_Location)
@@ -136,7 +136,7 @@ UITextTable UIDetailsGenerator::generateMachineInformationSystem(CMachine &comMa
     if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_BootOrder)
     {
         QStringList bootOrder;
-        for (ulong i = 1; i <= vboxGlobal().virtualBox().GetSystemProperties().GetMaxBootPosition(); ++i)
+        for (ulong i = 1; i <= uiCommon().virtualBox().GetSystemProperties().GetMaxBootPosition(); ++i)
         {
             const KDeviceType enmDeviceType = comMachine.GetBootOrder(i);
             if (enmDeviceType == KDeviceType_Null)
@@ -184,7 +184,7 @@ UITextTable UIDetailsGenerator::generateMachineInformationSystem(CMachine &comMa
     if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_Acceleration)
     {
         QStringList acceleration;
-        if (vboxGlobal().virtualBox().GetHost().GetProcessorFeature(KProcessorFeature_HWVirtEx))
+        if (uiCommon().virtualBox().GetHost().GetProcessorFeature(KProcessorFeature_HWVirtEx))
         {
             /* VT-x/AMD-V: */
             if (comMachine.GetHWVirtExProperty(KHWVirtExPropertyType_Enabled))
@@ -371,10 +371,10 @@ UITextTable UIDetailsGenerator::generateMachineInformationStorage(CMachine &comM
                 continue;
 
             /* Prepare attachment information: */
-            QString strAttachmentInfo = vboxGlobal().details(attachment.GetMedium(), false, false);
+            QString strAttachmentInfo = uiCommon().details(attachment.GetMedium(), false, false);
             /* That hack makes sure 'Inaccessible' word is always bold: */
             { // hack
-                const QString strInaccessibleString(VBoxGlobal::tr("Inaccessible", "medium"));
+                const QString strInaccessibleString(UICommon::tr("Inaccessible", "medium"));
                 const QString strBoldInaccessibleString(QString("<b>%1</b>").arg(strInaccessibleString));
                 strAttachmentInfo.replace(strInaccessibleString, strBoldInaccessibleString);
             } // hack
@@ -501,7 +501,7 @@ UITextTable UIDetailsGenerator::generateMachineInformationNetwork(CMachine &comM
     }
 
     /* Iterate over all the adapters: */
-    const ulong uCount = vboxGlobal().virtualBox().GetSystemProperties().GetMaxNetworkAdapters(comMachine.GetChipsetType());
+    const ulong uCount = uiCommon().virtualBox().GetSystemProperties().GetMaxNetworkAdapters(comMachine.GetChipsetType());
     for (ulong uSlot = 0; uSlot < uCount; ++uSlot)
     {
         const CNetworkAdapter comAdapter = comMachine.GetNetworkAdapter(uSlot);
@@ -594,7 +594,7 @@ UITextTable UIDetailsGenerator::generateMachineInformationSerial(CMachine &comMa
     }
 
     /* Iterate over all the ports: */
-    const ulong uCount = vboxGlobal().virtualBox().GetSystemProperties().GetSerialPortCount();
+    const ulong uCount = uiCommon().virtualBox().GetSystemProperties().GetSerialPortCount();
     for (ulong uSlot = 0; uSlot < uCount; ++uSlot)
     {
         const CSerialPort comPort = comMachine.GetSerialPort(uSlot);
@@ -605,7 +605,7 @@ UITextTable UIDetailsGenerator::generateMachineInformationSerial(CMachine &comMa
 
         /* Gather port information: */
         const KPortMode enmMode = comPort.GetHostMode();
-        const QString strModeTemplate = vboxGlobal().toCOMPortName(comPort.GetIRQ(), comPort.GetIOBase()) + ", ";
+        const QString strModeTemplate = uiCommon().toCOMPortName(comPort.GetIRQ(), comPort.GetIOBase()) + ", ";
         QString strModeType;
         switch (enmMode)
         {

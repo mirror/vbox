@@ -16,7 +16,7 @@
  */
 
 /* GUI includes: */
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "UIActionPoolManager.h"
 #include "UIExtraDataManager.h"
 #include "UIIconPool.h"
@@ -2993,7 +2993,7 @@ void UIActionPoolManager::updateMenuFile()
     pMenu->clear();
 
     /* Check if Ext Pack is ready, some of actions my depend on it: */
-    CExtPack extPack = vboxGlobal().virtualBox().GetExtensionPackManager().Find(GUI_ExtPackName);
+    CExtPack extPack = uiCommon().virtualBox().GetExtensionPackManager().Find(GUI_ExtPackName);
     const bool fExtPackAccessible = !extPack.isNull() && extPack.GetUsable();
 
     /* The Application / 'File' menu contents is very different depending on host type. */

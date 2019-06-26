@@ -36,7 +36,7 @@
 #include "UIAnimationFramework.h"
 #include "UIIconPool.h"
 #include "UIDesktopWidgetWatchdog.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #ifdef VBOX_WS_X11
 # include "UIExtraDataManager.h"
 #endif
@@ -281,7 +281,7 @@ void UIMiniToolBarPrivate::prepare()
 
     /* Left margin: */
 #ifdef VBOX_WS_X11
-    if (vboxGlobal().isCompositingManagerRunning())
+    if (uiCommon().isCompositingManagerRunning())
         m_spacings << widgetForAction(addWidget(new QWidget));
 #else /* !VBOX_WS_X11 */
     m_spacings << widgetForAction(addWidget(new QWidget));
@@ -336,7 +336,7 @@ void UIMiniToolBarPrivate::prepare()
 
     /* Right margin: */
 #ifdef VBOX_WS_X11
-    if (vboxGlobal().isCompositingManagerRunning())
+    if (uiCommon().isCompositingManagerRunning())
         m_spacings << widgetForAction(addWidget(new QWidget));
 #else /* !VBOX_WS_X11 */
     m_spacings << widgetForAction(addWidget(new QWidget));
@@ -346,7 +346,7 @@ void UIMiniToolBarPrivate::prepare()
 void UIMiniToolBarPrivate::rebuildShape()
 {
 #ifdef VBOX_WS_X11
-    if (!vboxGlobal().isCompositingManagerRunning())
+    if (!uiCommon().isCompositingManagerRunning())
         return;
 #endif /* VBOX_WS_X11 */
 
@@ -398,7 +398,7 @@ Qt::WindowFlags UIMiniToolBar::defaultWindowFlags(GeometryType geometryType)
 
 #ifdef VBOX_WS_X11
     /* Depending on current WM: */
-    switch (vboxGlobal().typeOfWindowManager())
+    switch (uiCommon().typeOfWindowManager())
     {
         // WORKAROUND:
         // By strange reason, frameless full-screen windows under certain WMs
@@ -793,12 +793,12 @@ void UIMiniToolBar::sltAdjust()
         case GeometryType_Full:
         {
             /* Determine whether we should use the native full-screen mode: */
-            const bool fUseNativeFullScreen = VBoxGlobal::supportsFullScreenMonitorsProtocolX11() &&
+            const bool fUseNativeFullScreen = UICommon::supportsFullScreenMonitorsProtocolX11() &&
                                               !gEDataManager->legacyFullscreenModeRequested();
             if (fUseNativeFullScreen)
             {
                 /* Tell recent window managers which host-screen this window should be mapped to: */
-                VBoxGlobal::setFullScreenMonitorX11(this, iHostScreen);
+                UICommon::setFullScreenMonitorX11(this, iHostScreen);
             }
 
             /* Set appropriate window size: */
@@ -852,7 +852,7 @@ void UIMiniToolBar::prepare()
     setAttribute(Qt::WA_TranslucentBackground);
 #elif defined(VBOX_WS_X11)
     /* Enable translucency through Qt API if supported: */
-    if (vboxGlobal().isCompositingManagerRunning())
+    if (uiCommon().isCompositingManagerRunning())
         setAttribute(Qt::WA_TranslucentBackground);
 #endif /* VBOX_WS_X11 */
 
@@ -926,8 +926,8 @@ void UIMiniToolBar::prepare()
 
 #ifdef VBOX_WS_X11
     /* Hide mini-toolbar from taskbar and pager: */
-    vboxGlobal().setSkipTaskBarFlag(this);
-    vboxGlobal().setSkipPagerFlag(this);
+    uiCommon().setSkipTaskBarFlag(this);
+    uiCommon().setSkipPagerFlag(this);
 #endif
 }
 
@@ -997,7 +997,7 @@ bool UIMiniToolBar::eventFilter(QObject *pWatched, QEvent *pEvent)
 #if   defined(VBOX_WS_WIN)
         emit sigNotifyAboutWindowActivationStolen();
 #elif defined(VBOX_WS_X11)
-        switch (vboxGlobal().typeOfWindowManager())
+        switch (uiCommon().typeOfWindowManager())
         {
             case X11WMType_GNOMEShell:
             case X11WMType_Mutter:

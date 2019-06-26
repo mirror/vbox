@@ -22,7 +22,7 @@
 #include "UINetworkManagerDialog.h"
 #include "UINetworkManagerIndicator.h"
 #include "UINetworkCustomer.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 
 
 UINetworkRequest::UINetworkRequest(UINetworkRequestType enmType,

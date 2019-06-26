@@ -20,7 +20,7 @@
 #include <QStringList>
 
 /* GUI includes: */
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "UIUpdateDefs.h"
 
 
@@ -96,7 +96,7 @@ bool VBoxUpdateData::isNeedToCheck() const
         return true;
 
     /* Return 'true' if saved version value is NOT valid or NOT equal to current: */
-    if (!version().isValid() || version() != UIVersion(vboxGlobal().vboxVersionStringNormalized()))
+    if (!version().isValid() || version() != UIVersion(uiCommon().vboxVersionStringNormalized()))
         return true;
 
     /* Return 'false' in all other cases: */
@@ -213,7 +213,7 @@ void VBoxUpdateData::encode()
                               m_enmBranchIndex == BranchAllRelease ? "allrelease" : "stable";
 
         /* Encode 'version' value: */
-        QString versionValue = UIVersion(vboxGlobal().vboxVersionStringNormalized()).toString();
+        QString versionValue = UIVersion(uiCommon().vboxVersionStringNormalized()).toString();
 
         /* Composite m_strData: */
         m_strData = QString("%1, %2, %3, %4").arg(remindPeriod, remindDate, branchValue, versionValue);

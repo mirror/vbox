@@ -26,7 +26,7 @@
 #include "UIDetailsModel.h"
 #include "UIMachinePreview.h"
 #include "UIGraphicsRotatorButton.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "UIIconPool.h"
 #include "UIConverter.h"
 #include "UIGraphicsTextPane.h"
@@ -62,7 +62,7 @@ UIDetailsElementInterface::UIDetailsElementInterface(UIDetailsSet *pParent, Deta
     , m_pTask(0)
 {
     /* Listen for the global thread-pool: */
-    connect(vboxGlobal().threadPool(), SIGNAL(sigTaskComplete(UITask*)),
+    connect(uiCommon().threadPool(), SIGNAL(sigTaskComplete(UITask*)),
             this, SLOT(sltUpdateAppearanceFinished(UITask*)));
 
     /* Translate finally: */
@@ -86,7 +86,7 @@ void UIDetailsElementInterface::updateAppearance()
         /* Prepare update task: */
         m_pTask = createUpdateTask();
         /* Post task into global thread-pool: */
-        vboxGlobal().threadPool()->enqueueTask(m_pTask);
+        uiCommon().threadPool()->enqueueTask(m_pTask);
     }
 }
 

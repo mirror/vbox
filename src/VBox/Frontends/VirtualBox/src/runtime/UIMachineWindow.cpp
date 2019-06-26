@@ -23,7 +23,7 @@
 #include <QTimer>
 
 /* GUI includes: */
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "UIConverter.h"
 #include "UIModalWindowManager.h"
 #include "UIExtraDataManager.h"
@@ -130,10 +130,10 @@ void UIMachineWindow::prepare()
     const QString strWindowClass = QString("VirtualBox Machine");
     QString strWindowName = strWindowClass;
     /* Check if we want Window Manager to distinguish Virtual Machine windows: */
-    if (gEDataManager->distinguishMachineWindowGroups(vboxGlobal().managedVMUuid()))
-        strWindowName = QString("VirtualBox Machine UUID: %1").arg(vboxGlobal().managedVMUuid().toString());
+    if (gEDataManager->distinguishMachineWindowGroups(uiCommon().managedVMUuid()))
+        strWindowName = QString("VirtualBox Machine UUID: %1").arg(uiCommon().managedVMUuid().toString());
     /* Assign WM_CLASS property: */
-    VBoxGlobal::setWMClass(this, strWindowName, strWindowClass);
+    UICommon::setWMClass(this, strWindowName, strWindowClass);
 #endif
 }
 
@@ -312,7 +312,7 @@ void UIMachineWindow::closeEvent(QCloseEvent *pCloseEvent)
         return;
 
     /* If there is a close hook script defined: */
-    const QString strScript = gEDataManager->machineCloseHookScript(vboxGlobal().managedVMUuid());
+    const QString strScript = gEDataManager->machineCloseHookScript(uiCommon().managedVMUuid());
     if (!strScript.isEmpty())
     {
         /* Execute asynchronously and leave: */
@@ -374,7 +374,7 @@ void UIMachineWindow::closeEvent(QCloseEvent *pCloseEvent)
                 if (!fIsPaused)
                 {
                     /* If that is NOT the separate VM process UI: */
-                    if (!vboxGlobal().isSeparateProcess())
+                    if (!uiCommon().isSeparateProcess())
                     {
                         /* We are not going to show close-dialog: */
                         fShowCloseDialog = false;

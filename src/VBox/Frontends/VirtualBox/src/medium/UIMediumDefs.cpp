@@ -17,7 +17,7 @@
 
 /* GUI includes: */
 #include "UIMediumDefs.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 
 /* COM includes: */
 #include "CMediumFormat.h"
@@ -105,7 +105,7 @@ QList<QPair<QString, QString> > UIMediumDefs::FloppyBackends(const CVirtualBox &
 
 QString UIMediumDefs::getPreferredExtensionForMedium(KDeviceType enmDeviceType)
 {
-    CSystemProperties comSystemProperties = vboxGlobal().virtualBox().GetSystemProperties();
+    CSystemProperties comSystemProperties = uiCommon().virtualBox().GetSystemProperties();
     QVector<CMediumFormat> mediumFormats = comSystemProperties.GetMediumFormats();
     for (int i = 0; i < mediumFormats.size(); ++i)
     {
@@ -127,7 +127,7 @@ QString UIMediumDefs::getPreferredExtensionForMedium(KDeviceType enmDeviceType)
 
 QVector<CMediumFormat> UIMediumDefs::getFormatsForDeviceType(KDeviceType enmDeviceType)
 {
-    CSystemProperties comSystemProperties = vboxGlobal().virtualBox().GetSystemProperties();
+    CSystemProperties comSystemProperties = uiCommon().virtualBox().GetSystemProperties();
     QVector<CMediumFormat> mediumFormats = comSystemProperties.GetMediumFormats();
     QVector<CMediumFormat> formatList;
     for (int i = 0; i < mediumFormats.size(); ++i)

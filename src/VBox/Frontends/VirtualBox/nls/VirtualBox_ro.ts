@@ -16238,7 +16238,7 @@ Versiunea %1</translation>
     </message>
 </context>
 <context>
-    <name>VBoxGlobal</name>
+    <name>UICommon</name>
     <message>
         <source>Differencing</source>
         <comment>hard disk</comment>

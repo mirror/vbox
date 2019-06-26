@@ -20346,7 +20346,7 @@ Version %1</source>
     </message>
 </context>
 <context>
-    <name>VBoxGlobal</name>
+    <name>UICommon</name>
     <message>
         <source>Differencing</source>
         <comment>hard disk</comment>

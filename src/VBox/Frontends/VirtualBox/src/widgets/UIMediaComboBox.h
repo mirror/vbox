@@ -26,7 +26,7 @@
 #include <QString>
 
 /* GUI includes: */
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "UILibraryDefs.h"
 
 /** QComboBox subclass representing a list of registered media. */

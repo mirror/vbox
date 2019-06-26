@@ -24,7 +24,7 @@
 #include "UIConverter.h"
 #include "UIWizardCloneVDPageBasic1.h"
 #include "UIWizardCloneVD.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "QIRichTextLabel.h"
 
 /* COM includes: */
@@ -99,7 +99,7 @@ UIWizardCloneVDPageBasic1::UIWizardCloneVDPageBasic1(KDeviceType enmDeviceType)
             m_pFormatButtonGroup = new QButtonGroup(this);
             {
                 /* Enumerate medium formats in special order: */
-                CSystemProperties properties = vboxGlobal().virtualBox().GetSystemProperties();
+                CSystemProperties properties = uiCommon().virtualBox().GetSystemProperties();
                 const QVector<CMediumFormat> &formats = properties.GetMediumFormats();
                 QMap<QString, CMediumFormat> vdi, preferred, others;
                 foreach (const CMediumFormat &format, formats)

@@ -21,7 +21,7 @@
 #include <QPixmapCache>
 
 /* GUI includes: */
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "UIImageTools.h"
 #include "UIMenuBar.h"
 
@@ -31,7 +31,7 @@ UIMenuBar::UIMenuBar(QWidget *pParent /* = 0 */)
     , m_fShowBetaLabel(false)
 {
     /* Check for beta versions: */
-    if (vboxGlobal().isBeta())
+    if (uiCommon().isBeta())
         m_fShowBetaLabel = true;
 }
 

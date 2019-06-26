@@ -44,7 +44,7 @@
 #include "UIVMLogViewerSearchPanel.h"
 #include "UIVMLogViewerOptionsPanel.h"
 #include "UIToolBar.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 
 /* COM includes: */
 #include "CSystemProperties.h"
@@ -797,7 +797,7 @@ bool UIVMLogViewerWidget::createLogViewerPages()
                                      "Please select a Virtual Machine to see its logs"));
     }
 
-    const CSystemProperties &sys = vboxGlobal().virtualBox().GetSystemProperties();
+    const CSystemProperties &sys = uiCommon().virtualBox().GetSystemProperties();
     unsigned cMaxLogs = sys.GetLogHistoryCount() + 1 /*VBox.log*/ + 1 /*VBoxHardening.log*/; /** @todo Add api for getting total possible log count! */
     bool logFileRead = false;
     for (unsigned i = 0; i < cMaxLogs && !noLogsToShow; ++i)

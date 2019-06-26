@@ -26,7 +26,7 @@
 #include "UIDetailsSet.h"
 #include "UIVirtualBoxEventHandler.h"
 #include "UIVirtualMachineItem.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 
 /* COM includes: */
 #include "CUSBController.h"
@@ -578,8 +578,8 @@ void UIDetailsSet::prepareConnections()
     connect(gVBoxEvents, SIGNAL(sigSnapshotRestore(QUuid, QUuid)), this, SLOT(sltMachineAttributesChange(QUuid)));
 
     /* Meidum-enumeration connections: */
-    connect(&vboxGlobal(), SIGNAL(sigMediumEnumerationStarted()), this, SLOT(sltUpdateAppearance()));
-    connect(&vboxGlobal(), SIGNAL(sigMediumEnumerationFinished()), this, SLOT(sltUpdateAppearance()));
+    connect(&uiCommon(), SIGNAL(sigMediumEnumerationStarted()), this, SLOT(sltUpdateAppearance()));
+    connect(&uiCommon(), SIGNAL(sigMediumEnumerationFinished()), this, SLOT(sltUpdateAppearance()));
 }
 
 QVariant UIDetailsSet::data(int iKey) const

@@ -39,7 +39,7 @@
 #endif /* VBOX_GUI_WITH_EXTRADATA_MANAGER_UI */
 
 /* GUI includes: */
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "UIActionPool.h"
 #include "UIConverter.h"
 #include "UIDesktopWidgetWatchdog.h"
@@ -162,7 +162,7 @@ void UIExtraDataEventHandler::prepareListener()
     m_comEventListener = CEventListener(m_pQtListener);
 
     /* Get VirtualBox: */
-    const CVirtualBox comVBox = vboxGlobal().virtualBox();
+    const CVirtualBox comVBox = uiCommon().virtualBox();
     AssertWrapperOk(comVBox);
     /* Get VirtualBox event source: */
     CEventSource comEventSourceVBox = comVBox.GetEventSource();
@@ -213,11 +213,11 @@ void UIExtraDataEventHandler::cleanupListener()
     }
 
     /* Make sure VBoxSVC is available: */
-    if (!vboxGlobal().isVBoxSVCAvailable())
+    if (!uiCommon().isVBoxSVCAvailable())
         return;
 
     /* Get VirtualBox: */
-    const CVirtualBox comVBox = vboxGlobal().virtualBox();
+    const CVirtualBox comVBox = uiCommon().virtualBox();
     AssertWrapperOk(comVBox);
     /* Get VirtualBox event source: */
     CEventSource comEventSourceVBox = comVBox.GetEventSource();
@@ -415,7 +415,7 @@ void UIChooserPaneDelegate::fetchPixmapInfo(const QModelIndex &index, QPixmap &p
 {
     /* If proper machine ID passed => return corresponding pixmap/size: */
     if (index.data(Field_ID).toUuid() != UIExtraDataManager::GlobalID)
-        pixmap = vboxGlobal().vmGuestOSTypePixmapDefault(index.data(Field_OsTypeID).toString(), &pixmapSize);
+        pixmap = uiCommon().vmGuestOSTypePixmapDefault(index.data(Field_OsTypeID).toString(), &pixmapSize);
     else
     {
         /* For global ID we return static pixmap/size: */
@@ -739,7 +739,7 @@ void UIExtraDataManagerWindow::showAndRaise(QWidget*)
     /* Raise: */
     activateWindow();
 //    /* Center according passed widget: */
-//    VBoxGlobal::centerWidget(this, pCenterWidget, false);
+//    UICommon::centerWidget(this, pCenterWidget, false);
 }
 
 void UIExtraDataManagerWindow::sltMachineRegistered(const QUuid &uID, bool fRegistered)
@@ -753,7 +753,7 @@ void UIExtraDataManagerWindow::sltMachineRegistered(const QUuid &uID, bool fRegi
             knownIDs.append(chooserID(iRow));
 
         /* Get machine items: */
-        const CMachineVector machines = vboxGlobal().virtualBox().GetMachines();
+        const CMachineVector machines = uiCommon().virtualBox().GetMachines();
         /* Look for the proper place to insert new machine item: */
         QUuid uPositionID = UIExtraDataManager::GlobalID;
         foreach (const CMachine &machine, machines)
@@ -1172,7 +1172,7 @@ void UIExtraDataManagerWindow::sltSave()
     AssertReturnVoid(pSenderAction && m_pActionSave);
 
     /* Compose initial file-name: */
-    const QString strInitialFileName = QDir(vboxGlobal().homeFolder()).absoluteFilePath(QString("%1_ExtraData.xml").arg(currentChooserName()));
+    const QString strInitialFileName = QDir(uiCommon().homeFolder()).absoluteFilePath(QString("%1_ExtraData.xml").arg(currentChooserName()));
     /* Open file-save dialog to choose file to save extra-data into: */
     const QString strFileName = QIFileDialog::getSaveFileName(strInitialFileName, "XML files (*.xml)", this,
                                                               "Choose file to save extra-data into..", 0, true, true);
@@ -1259,7 +1259,7 @@ void UIExtraDataManagerWindow::sltLoad()
     AssertReturnVoid(pSenderAction && m_pActionLoad);
 
     /* Compose initial file-name: */
-    const QString strInitialFileName = QDir(vboxGlobal().homeFolder()).absoluteFilePath(QString("%1_ExtraData.xml").arg(currentChooserName()));
+    const QString strInitialFileName = QDir(uiCommon().homeFolder()).absoluteFilePath(QString("%1_ExtraData.xml").arg(currentChooserName()));
     /* Open file-open dialog to choose file to open extra-data into: */
     const QString strFileName = QIFileDialog::getOpenFileName(strInitialFileName, "XML files (*.xml)", this,
                                                               "Choose file to load extra-data from..");
@@ -1584,7 +1584,7 @@ void UIExtraDataManagerWindow::preparePaneChooser()
                     /* Add global chooser item into source-model: */
                     addChooserItemByID(UIExtraDataManager::GlobalID);
                     /* Add machine chooser items into source-model: */
-                    CMachineVector machines = vboxGlobal().virtualBox().GetMachines();
+                    CMachineVector machines = uiCommon().virtualBox().GetMachines();
                     foreach (const CMachine &machine, machines)
                         addChooserItemByMachine(machine);
                     /* And sort proxy-model: */
@@ -1861,7 +1861,7 @@ void UIExtraDataManagerWindow::addChooserItemByID(const QUuid &uID,
         return addChooserItem(uID, QString("Global"), QString(), iPosition);
 
     /* Search for the corresponding machine by ID: */
-    CVirtualBox vbox = vboxGlobal().virtualBox();
+    CVirtualBox vbox = uiCommon().virtualBox();
     const CMachine machine = vbox.FindMachine(uID.toString());
     /* Make sure VM is accessible: */
     if (vbox.isOk() && !machine.isNull() && machine.GetAccessible())
@@ -2090,7 +2090,7 @@ void UIExtraDataManager::hotloadMachineExtraDataMap(const QUuid &uID)
     AssertReturnVoid(!m_data.contains(uID));
 
     /* Search for corresponding machine: */
-    CVirtualBox vbox = vboxGlobal().virtualBox();
+    CVirtualBox vbox = uiCommon().virtualBox();
     CMachine machine = vbox.FindMachine(uID.toString());
     AssertReturnVoid(vbox.isOk() && !machine.isNull());
 
@@ -2134,7 +2134,7 @@ QString UIExtraDataManager::extraDataString(const QString &strKey, const QUuid &
 void UIExtraDataManager::setExtraDataString(const QString &strKey, const QString &strValue, const QUuid &uID /* = GlobalID */)
 {
     /* Make sure VBoxSVC is available: */
-    if (!vboxGlobal().isVBoxSVCAvailable())
+    if (!uiCommon().isVBoxSVCAvailable())
         return;
 
     /* Hot-load machine extra-data map if necessary: */
@@ -2151,7 +2151,7 @@ void UIExtraDataManager::setExtraDataString(const QString &strKey, const QString
     if (uID == GlobalID)
     {
         /* Get global object: */
-        CVirtualBox comVBox = vboxGlobal().virtualBox();
+        CVirtualBox comVBox = uiCommon().virtualBox();
         /* Update global extra-data: */
         comVBox.SetExtraData(strKey, strValue);
         if (!comVBox.isOk())
@@ -2171,7 +2171,7 @@ void UIExtraDataManager::setExtraDataString(const QString &strKey, const QString
     else
     {
         /* Search for corresponding machine: */
-        CVirtualBox comVBox = vboxGlobal().virtualBox();
+        CVirtualBox comVBox = uiCommon().virtualBox();
         const CMachine comMachine = comVBox.FindMachine(uID.toString());
         AssertReturnVoid(comVBox.isOk() && !comMachine.isNull());
         /* Check the configuration access-level: */
@@ -2181,9 +2181,9 @@ void UIExtraDataManager::setExtraDataString(const QString &strKey, const QString
         /* Prepare machine session: */
         CSession comSession;
         if (enmLevel == ConfigurationAccessLevel_Full)
-            comSession = vboxGlobal().openSession(uID);
+            comSession = uiCommon().openSession(uID);
         else
-            comSession = vboxGlobal().openExistingSession(uID);
+            comSession = uiCommon().openExistingSession(uID);
         AssertReturnVoid(!comSession.isNull());
         /* Get machine from that session: */
         CMachine comSessionMachine = comSession.GetMachine();
@@ -2231,7 +2231,7 @@ QStringList UIExtraDataManager::extraDataStringList(const QString &strKey, const
 void UIExtraDataManager::setExtraDataStringList(const QString &strKey, const QStringList &value, const QUuid &uID /* = GlobalID */)
 {
     /* Make sure VBoxSVC is available: */
-    if (!vboxGlobal().isVBoxSVCAvailable())
+    if (!uiCommon().isVBoxSVCAvailable())
         return;
 
     /* Hot-load machine extra-data map if necessary: */
@@ -2248,7 +2248,7 @@ void UIExtraDataManager::setExtraDataStringList(const QString &strKey, const QSt
     if (uID == GlobalID)
     {
         /* Get global object: */
-        CVirtualBox comVBox = vboxGlobal().virtualBox();
+        CVirtualBox comVBox = uiCommon().virtualBox();
         /* Update global extra-data: */
         comVBox.SetExtraDataStringList(strKey, value);
         if (!comVBox.isOk())
@@ -2268,7 +2268,7 @@ void UIExtraDataManager::setExtraDataStringList(const QString &strKey, const QSt
     else
     {
         /* Search for corresponding machine: */
-        CVirtualBox comVBox = vboxGlobal().virtualBox();
+        CVirtualBox comVBox = uiCommon().virtualBox();
         const CMachine comMachine = comVBox.FindMachine(uID.toString());
         AssertReturnVoid(comVBox.isOk() && !comMachine.isNull());
         /* Check the configuration access-level: */
@@ -2278,9 +2278,9 @@ void UIExtraDataManager::setExtraDataStringList(const QString &strKey, const QSt
         /* Prepare machine session: */
         CSession comSession;
         if (enmLevel == ConfigurationAccessLevel_Full)
-            comSession = vboxGlobal().openSession(uID);
+            comSession = uiCommon().openSession(uID);
         else
-            comSession = vboxGlobal().openExistingSession(uID);
+            comSession = uiCommon().openExistingSession(uID);
         AssertReturnVoid(!comSession.isNull());
         /* Get machine from that session: */
         CMachine comSessionMachine = comSession.GetMachine();
@@ -2746,7 +2746,7 @@ QRect UIExtraDataManager::selectorWindowGeometry(QWidget *pWidget)
 #ifdef VBOX_WS_WIN
     /* Make sure resulting geometry is within current bounds: */
     if (fOk && !availableGeometry.contains(geometry))
-        geometry = VBoxGlobal::getNormalized(geometry, QRegion(availableGeometry));
+        geometry = UICommon::getNormalized(geometry, QRegion(availableGeometry));
 #endif /* VBOX_WS_WIN */
 
     /* As final fallback, move default-geometry to available-geometry' center: */
@@ -4196,7 +4196,7 @@ QRect UIExtraDataManager::informationWindowGeometry(QWidget *pWidget, QWidget *p
 #ifdef VBOX_WS_WIN
     /* Make sure resulting geometry is within current bounds: */
     if (fOk && !availableGeometry.contains(geometry))
-        geometry = VBoxGlobal::getNormalized(geometry, QRegion(availableGeometry));
+        geometry = UICommon::getNormalized(geometry, QRegion(availableGeometry));
 #endif /* VBOX_WS_WIN */
 
     /* As a fallback, move default-geometry to pParentWidget' geometry center: */
@@ -4513,7 +4513,7 @@ QRect UIExtraDataManager::extraDataManagerGeometry(QWidget *pWidget)
 #ifdef VBOX_WS_WIN
     /* Make sure resulting geometry is within current bounds: */
     if (fOk && !availableGeometry.contains(geometry))
-        geometry = VBoxGlobal::getNormalized(geometry, QRegion(availableGeometry));
+        geometry = UICommon::getNormalized(geometry, QRegion(availableGeometry));
 #endif /* VBOX_WS_WIN */
 
     /* As final fallback, move default-geometry to available-geometry' center: */
@@ -4630,7 +4630,7 @@ QRect UIExtraDataManager::logWindowGeometry(QWidget *pWidget, const QRect &defau
 
     /* Make sure resulting geometry is within current bounds: */
     if (!availableGeometry.contains(geometry))
-        geometry = VBoxGlobal::getNormalized(geometry, QRegion(availableGeometry));
+        geometry = UICommon::getNormalized(geometry, QRegion(availableGeometry));
 #endif /* VBOX_WS_WIN */
 
     /* Return result: */
@@ -4778,8 +4778,8 @@ void UIExtraDataManager::sltExtraDataChange(const QUuid &uMachineID, const QStri
     else
     {
         /* Current VM only: */
-        if (   vboxGlobal().uiType() == VBoxGlobal::UIType_RuntimeUI
-            && uMachineID == vboxGlobal().managedVMUuid())
+        if (   uiCommon().uiType() == UICommon::UIType_RuntimeUI
+            && uMachineID == uiCommon().managedVMUuid())
         {
             /* HID LEDs sync state changed (allowed if not restricted)? */
             if (strKey == GUI_HidLedsSync)
@@ -4842,7 +4842,7 @@ void UIExtraDataManager::prepare()
 void UIExtraDataManager::prepareGlobalExtraDataMap()
 {
     /* Get CVirtualBox: */
-    CVirtualBox vbox = vboxGlobal().virtualBox();
+    CVirtualBox vbox = uiCommon().virtualBox();
 
     /* Make sure at least empty map is created: */
     m_data[GlobalID] = ExtraDataMap();
@@ -5030,7 +5030,7 @@ QRect UIExtraDataManager::dialogGeometry(const QString &strKey, QWidget *pWidget
 
     /* Make sure resulting geometry is within current bounds: */
     if (!availableGeometry.contains(geometry))
-        geometry = VBoxGlobal::getNormalized(geometry, QRegion(availableGeometry));
+        geometry = UICommon::getNormalized(geometry, QRegion(availableGeometry));
 #endif /* VBOX_WS_WIN */
 
     /* Return result: */

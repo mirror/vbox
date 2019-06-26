@@ -21,7 +21,7 @@
 #endif /* !VBOX_WS_MAC */
 
 /* GUI includes: */
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "UIMessageCenter.h"
 #include "UIPopupCenter.h"
 #include "UISession.h"
@@ -284,7 +284,7 @@ void UIMachineLogicSeamless::prepareMachineWindows()
     setMachineWindowsCreated(true);
 
 #ifdef VBOX_WS_X11
-    switch (vboxGlobal().typeOfWindowManager())
+    switch (uiCommon().typeOfWindowManager())
     {
         case X11WMType_GNOMEShell:
         case X11WMType_Mutter:

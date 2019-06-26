@@ -31,7 +31,7 @@
 #include "UIDetailsGroup.h"
 #include "UIDetailsElement.h"
 #include "UIExtraDataManager.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 
 
 /*********************************************************************************************************************************

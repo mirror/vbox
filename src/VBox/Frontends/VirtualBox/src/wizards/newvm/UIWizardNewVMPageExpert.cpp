@@ -66,7 +66,7 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert(const QString &strGroup)
                 {
                     m_pRamEditor->setMinimum(m_pRamSlider->minimum());
                     m_pRamEditor->setMaximum(m_pRamSlider->maximum());
-                    vboxGlobal().setMinimumWidthAccordingSymbolCount(m_pRamEditor, 5);
+                    uiCommon().setMinimumWidthAccordingSymbolCount(m_pRamEditor, 5);
                 }
                 m_pRamUnits = new QLabel(m_pMemoryCnt);
                 {
@@ -236,9 +236,9 @@ void UIWizardNewVMPageExpert::retranslateUi()
     /* Translate widgets: */
     m_pNameAndSystemCnt->setTitle(UIWizardNewVM::tr("Name and operating system"));
     m_pMemoryCnt->setTitle(UIWizardNewVM::tr("&Memory size"));
-    m_pRamUnits->setText(VBoxGlobal::tr("MB", "size suffix MBytes=1024 KBytes"));
-    m_pRamMin->setText(QString("%1 %2").arg(m_pRamSlider->minRAM()).arg(VBoxGlobal::tr("MB", "size suffix MBytes=1024 KBytes")));
-    m_pRamMax->setText(QString("%1 %2").arg(m_pRamSlider->maxRAM()).arg(VBoxGlobal::tr("MB", "size suffix MBytes=1024 KBytes")));
+    m_pRamUnits->setText(UICommon::tr("MB", "size suffix MBytes=1024 KBytes"));
+    m_pRamMin->setText(QString("%1 %2").arg(m_pRamSlider->minRAM()).arg(UICommon::tr("MB", "size suffix MBytes=1024 KBytes")));
+    m_pRamMax->setText(QString("%1 %2").arg(m_pRamSlider->maxRAM()).arg(UICommon::tr("MB", "size suffix MBytes=1024 KBytes")));
     m_pDiskCnt->setTitle(UIWizardNewVM::tr("Hard disk"));
     m_pDiskSkip->setText(UIWizardNewVM::tr("&Do not add a virtual hard disk"));
     m_pDiskCreate->setText(UIWizardNewVM::tr("&Create a virtual hard disk now"));
@@ -273,7 +273,7 @@ bool UIWizardNewVMPageExpert::isComplete() const
      * 'virtualDisk' field feats the rules: */
     return UIWizardPage::isComplete() &&
            (m_pRamSlider->value() >= qMax(1, (int)m_pRamSlider->minRAM()) && m_pRamSlider->value() <= (int)m_pRamSlider->maxRAM()) &&
-           (m_pDiskSkip->isChecked() || !m_pDiskPresent->isChecked() || !vboxGlobal().medium(m_pDiskSelector->id()).isNull());
+           (m_pDiskSkip->isChecked() || !m_pDiskPresent->isChecked() || !uiCommon().medium(m_pDiskSelector->id()).isNull());
 }
 
 bool UIWizardNewVMPageExpert::validatePage()

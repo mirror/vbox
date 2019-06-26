@@ -20,7 +20,7 @@
 #include <QThread>
 
 /* GUI includes: */
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "UIMainEventListener.h"
 
 /* COM includes: */
@@ -221,7 +221,7 @@ void UIMainEventListener::unregisterSources()
 STDMETHODIMP UIMainEventListener::HandleEvent(VBoxEventType_T, IEvent *pEvent)
 {
     /* Try to acquire COM cleanup protection token first: */
-    if (!vboxGlobal().comTokenTryLockForRead())
+    if (!uiCommon().comTokenTryLockForRead())
         return S_OK;
 
     CEvent comEvent(pEvent);
@@ -527,7 +527,7 @@ STDMETHODIMP UIMainEventListener::HandleEvent(VBoxEventType_T, IEvent *pEvent)
     }
 
     /* Unlock COM cleanup protection token: */
-    vboxGlobal().comTokenUnlock();
+    uiCommon().comTokenUnlock();
 
     return S_OK;
 }

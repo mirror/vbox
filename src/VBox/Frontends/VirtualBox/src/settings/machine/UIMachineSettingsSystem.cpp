@@ -24,7 +24,7 @@
 #include "UIIconPool.h"
 #include "UIMachineSettingsSystem.h"
 #include "UIErrorString.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 
 /* COM includes: */
 #include "CBIOSSettings.h"
@@ -252,10 +252,10 @@ void UIMachineSettingsSystem::loadToCacheFrom(QVariant &data)
     UIDataSettingsMachineSystem oldSystemData;
 
     /* Gather support flags: */
-    oldSystemData.m_fSupportedPAE = vboxGlobal().host().GetProcessorFeature(KProcessorFeature_PAE);
-    oldSystemData.m_fSupportedNestedHwVirtEx = vboxGlobal().host().GetProcessorFeature(KProcessorFeature_NestedHWVirt);
-    oldSystemData.m_fSupportedHwVirtEx = vboxGlobal().host().GetProcessorFeature(KProcessorFeature_HWVirtEx);
-    oldSystemData.m_fSupportedNestedPaging = vboxGlobal().host().GetProcessorFeature(KProcessorFeature_NestedPaging);
+    oldSystemData.m_fSupportedPAE = uiCommon().host().GetProcessorFeature(KProcessorFeature_PAE);
+    oldSystemData.m_fSupportedNestedHwVirtEx = uiCommon().host().GetProcessorFeature(KProcessorFeature_NestedHWVirt);
+    oldSystemData.m_fSupportedHwVirtEx = uiCommon().host().GetProcessorFeature(KProcessorFeature_HWVirtEx);
+    oldSystemData.m_fSupportedNestedPaging = uiCommon().host().GetProcessorFeature(KProcessorFeature_NestedPaging);
 
     /* Gather old 'Motherboard' data: */
     oldSystemData.m_iMemorySize = m_machine.GetMemorySize();
@@ -435,17 +435,17 @@ bool UIMachineSettingsSystem::validate(QList<UIValidationMessage> &messages)
     {
         /* Prepare message: */
         UIValidationMessage message;
-        message.first = VBoxGlobal::removeAccelMark(m_pTabWidgetSystem->tabText(0));
+        message.first = UICommon::removeAccelMark(m_pTabWidgetSystem->tabText(0));
 
         /* RAM amount test: */
-        const ulong uFullSize = vboxGlobal().host().GetMemorySize();
+        const ulong uFullSize = uiCommon().host().GetMemorySize();
         if (m_pSliderMemorySize->value() > (int)m_pSliderMemorySize->maxRAMAlw())
         {
             message.second << tr(
                 "More than <b>%1%</b> of the host computer's memory (<b>%2</b>) is assigned to the virtual machine. "
                 "Not enough memory is left for the host operating system. Please select a smaller amount.")
                 .arg((unsigned)qRound((double)m_pSliderMemorySize->maxRAMAlw() / uFullSize * 100.0))
-                .arg(vboxGlobal().formatSize((uint64_t)uFullSize * _1M));
+                .arg(uiCommon().formatSize((uint64_t)uFullSize * _1M));
             fPass = false;
         }
         else if (m_pSliderMemorySize->value() > (int)m_pSliderMemorySize->maxRAMOpt())
@@ -454,7 +454,7 @@ bool UIMachineSettingsSystem::validate(QList<UIValidationMessage> &messages)
                 "More than <b>%1%</b> of the host computer's memory (<b>%2</b>) is assigned to the virtual machine. "
                 "There might not be enough memory left for the host operating system. Please consider selecting a smaller amount.")
                 .arg((unsigned)qRound((double)m_pSliderMemorySize->maxRAMOpt() / uFullSize * 100.0))
-                .arg(vboxGlobal().formatSize((uint64_t)uFullSize * _1M));
+                .arg(uiCommon().formatSize((uint64_t)uFullSize * _1M));
         }
 
         /* Chipset type vs IO-APIC test: */
@@ -484,10 +484,10 @@ bool UIMachineSettingsSystem::validate(QList<UIValidationMessage> &messages)
     {
         /* Prepare message: */
         UIValidationMessage message;
-        message.first = VBoxGlobal::removeAccelMark(m_pTabWidgetSystem->tabText(1));
+        message.first = UICommon::removeAccelMark(m_pTabWidgetSystem->tabText(1));
 
         /* VCPU amount test: */
-        const int cTotalCPUs = vboxGlobal().host().GetProcessorOnlineCoreCount();
+        const int cTotalCPUs = uiCommon().host().GetProcessorOnlineCoreCount();
         if (m_pSliderCPUCount->value() > 2 * cTotalCPUs)
         {
             message.second << tr(
@@ -577,7 +577,7 @@ bool UIMachineSettingsSystem::validate(QList<UIValidationMessage> &messages)
     {
         /* Prepare message: */
         UIValidationMessage message;
-        message.first = VBoxGlobal::removeAccelMark(m_pTabWidgetSystem->tabText(2));
+        message.first = UICommon::removeAccelMark(m_pTabWidgetSystem->tabText(2));
 
         /* HW Virt Ex test: */
         if (!isHWVirtExSupported() && isHWVirtExEnabled())
@@ -885,7 +885,7 @@ void UIMachineSettingsSystem::prepareTabMotherboard()
             /* Configure editor: */
             m_pEditorMemorySize->setMinimum(m_pSliderMemorySize->minRAM());
             m_pEditorMemorySize->setMaximum(m_pSliderMemorySize->maxRAM());
-            vboxGlobal().setMinimumWidthAccordingSymbolCount(m_pEditorMemorySize, 5);
+            uiCommon().setMinimumWidthAccordingSymbolCount(m_pEditorMemorySize, 5);
         }
 
         /* Boot-order layout created in the .ui file. */
@@ -917,7 +917,7 @@ void UIMachineSettingsSystem::prepareTabMotherboard()
                  * so we should get them (randomely?) from the list of all device types.
                  * Until there will be separate Main getter for list of supported boot device types,
                  * this list will be hard-coded here... */
-                const CSystemProperties properties = vboxGlobal().virtualBox().GetSystemProperties();
+                const CSystemProperties properties = uiCommon().virtualBox().GetSystemProperties();
                 const int iPossibleBootListSize = qMin((ULONG)4, properties.GetMaxBootPosition());
                 for (int iBootPosition = 1; iBootPosition <= iPossibleBootListSize; ++iBootPosition)
                 {
@@ -973,8 +973,8 @@ void UIMachineSettingsSystem::prepareTabMotherboard()
 void UIMachineSettingsSystem::prepareTabProcessor()
 {
     /* Prepare common variables: */
-    const CSystemProperties properties = vboxGlobal().virtualBox().GetSystemProperties();
-    const uint uHostCPUs = vboxGlobal().host().GetProcessorOnlineCoreCount();
+    const CSystemProperties properties = uiCommon().virtualBox().GetSystemProperties();
+    const uint uHostCPUs = uiCommon().host().GetProcessorOnlineCoreCount();
     m_uMinGuestCPU = properties.GetMinGuestCPUCount();
     m_uMaxGuestCPU = qMin(2 * uHostCPUs, (uint)properties.GetMaxGuestCPUCount());
     m_uMinGuestCPUExecCap = 1;
@@ -1002,7 +1002,7 @@ void UIMachineSettingsSystem::prepareTabProcessor()
             /* Configure editor: */
             m_pEditorCPUCount->setMinimum(m_uMinGuestCPU);
             m_pEditorCPUCount->setMaximum(m_uMaxGuestCPU);
-            vboxGlobal().setMinimumWidthAccordingSymbolCount(m_pEditorCPUCount, 4);
+            uiCommon().setMinimumWidthAccordingSymbolCount(m_pEditorCPUCount, 4);
         }
 
         /* CPU-execution-cap slider created in the .ui file. */
@@ -1025,7 +1025,7 @@ void UIMachineSettingsSystem::prepareTabProcessor()
             /* Configure editor: */
             m_pEditorCPUExecCap->setMinimum(m_uMinGuestCPUExecCap);
             m_pEditorCPUExecCap->setMaximum(m_uMaxGuestCPUExecCap);
-            vboxGlobal().setMinimumWidthAccordingSymbolCount(m_pEditorCPUExecCap, 4);
+            uiCommon().setMinimumWidthAccordingSymbolCount(m_pEditorCPUExecCap, 4);
         }
     }
 }

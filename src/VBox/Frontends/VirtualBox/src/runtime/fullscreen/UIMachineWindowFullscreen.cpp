@@ -23,7 +23,7 @@
 #endif
 
 /* GUI includes: */
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "UIDesktopWidgetWatchdog.h"
 #include "UIExtraDataManager.h"
 #include "UISession.h"
@@ -64,7 +64,7 @@ UIMachineWindowFullscreen::UIMachineWindowFullscreen(UIMachineLogic *pMachineLog
 void UIMachineWindowFullscreen::handleNativeNotification(const QString &strNativeNotificationName)
 {
     /* Make sure this method is only used for ML and next: */
-    AssertReturnVoid(vboxGlobal().osRelease() > MacOSXRelease_Lion);
+    AssertReturnVoid(uiCommon().osRelease() > MacOSXRelease_Lion);
 
     /* Log all arrived notifications: */
     LogRel(("UIMachineWindowFullscreen::handleNativeNotification: Notification '%s' received.\n",
@@ -154,7 +154,7 @@ void UIMachineWindowFullscreen::sltRevokeWindowActivation()
 void UIMachineWindowFullscreen::sltEnterNativeFullscreen(UIMachineWindow *pMachineWindow)
 {
     /* Make sure this slot is called only under ML and next: */
-    AssertReturnVoid(vboxGlobal().osRelease() > MacOSXRelease_Lion);
+    AssertReturnVoid(uiCommon().osRelease() > MacOSXRelease_Lion);
 
     /* Make sure it is NULL or 'this' window passed: */
     if (pMachineWindow && pMachineWindow != this)
@@ -181,7 +181,7 @@ void UIMachineWindowFullscreen::sltEnterNativeFullscreen(UIMachineWindow *pMachi
 void UIMachineWindowFullscreen::sltExitNativeFullscreen(UIMachineWindow *pMachineWindow)
 {
     /* Make sure this slot is called only under ML and next: */
-    AssertReturnVoid(vboxGlobal().osRelease() > MacOSXRelease_Lion);
+    AssertReturnVoid(uiCommon().osRelease() > MacOSXRelease_Lion);
 
     /* Make sure it is NULL or 'this' window passed: */
     if (pMachineWindow && pMachineWindow != this)
@@ -230,7 +230,7 @@ void UIMachineWindowFullscreen::prepareVisualState()
 
 #ifdef VBOX_WS_MAC
     /* Native fullscreen stuff on ML and next: */
-    if (vboxGlobal().osRelease() > MacOSXRelease_Lion)
+    if (uiCommon().osRelease() > MacOSXRelease_Lion)
     {
         /* Make sure this window has fullscreen logic: */
         UIMachineLogicFullscreen *pFullscreenLogic = qobject_cast<UIMachineLogicFullscreen*>(machineLogic());
@@ -260,14 +260,14 @@ void UIMachineWindowFullscreen::prepareVisualState()
 void UIMachineWindowFullscreen::prepareMiniToolbar()
 {
     /* Make sure mini-toolbar is not restricted: */
-    if (!gEDataManager->miniToolbarEnabled(vboxGlobal().managedVMUuid()))
+    if (!gEDataManager->miniToolbarEnabled(uiCommon().managedVMUuid()))
         return;
 
     /* Create mini-toolbar: */
     m_pMiniToolBar = new UIMiniToolBar(this,
                                        GeometryType_Full,
-                                       gEDataManager->miniToolbarAlignment(vboxGlobal().managedVMUuid()),
-                                       gEDataManager->autoHideMiniToolbar(vboxGlobal().managedVMUuid()),
+                                       gEDataManager->miniToolbarAlignment(uiCommon().managedVMUuid()),
+                                       gEDataManager->autoHideMiniToolbar(uiCommon().managedVMUuid()),
                                        screenId());
     AssertPtrReturnVoid(m_pMiniToolBar);
     {
@@ -293,7 +293,7 @@ void UIMachineWindowFullscreen::cleanupMiniToolbar()
         return;
 
     /* Save mini-toolbar settings: */
-    gEDataManager->setAutoHideMiniToolbar(m_pMiniToolBar->autoHide(), vboxGlobal().managedVMUuid());
+    gEDataManager->setAutoHideMiniToolbar(m_pMiniToolBar->autoHide(), uiCommon().managedVMUuid());
     /* Delete mini-toolbar: */
     delete m_pMiniToolBar;
     m_pMiniToolBar = 0;
@@ -304,7 +304,7 @@ void UIMachineWindowFullscreen::cleanupVisualState()
 {
 #ifdef VBOX_WS_MAC
     /* Native fullscreen stuff on ML and next: */
-    if (vboxGlobal().osRelease() > MacOSXRelease_Lion)
+    if (uiCommon().osRelease() > MacOSXRelease_Lion)
     {
         /* Unregister from native fullscreen notifications: */
         UICocoaApplication::instance()->unregisterFromNotificationOfWindow("NSWindowWillEnterFullScreenNotification", this);
@@ -342,7 +342,7 @@ void UIMachineWindowFullscreen::placeOnScreen()
     move(workingArea.topLeft());
 
     /* Resize window to the appropriate size on Lion and previous: */
-    if (vboxGlobal().osRelease() <= MacOSXRelease_Lion)
+    if (uiCommon().osRelease() <= MacOSXRelease_Lion)
         resize(workingArea.size());
     /* Resize window to the appropriate size on ML and next if it's screen has no own user-space: */
     else if (!pFullscreenLogic->screensHaveSeparateSpaces() && m_uScreenId != 0)
@@ -353,7 +353,7 @@ void UIMachineWindowFullscreen::placeOnScreen()
     else
     {
         /* Load normal geometry first of all: */
-        QRect geo = gEDataManager->machineWindowGeometry(UIVisualStateType_Normal, m_uScreenId, vboxGlobal().managedVMUuid());
+        QRect geo = gEDataManager->machineWindowGeometry(UIVisualStateType_Normal, m_uScreenId, uiCommon().managedVMUuid());
         /* If normal geometry is null => use frame-buffer size: */
         if (geo.isNull())
         {
@@ -365,7 +365,7 @@ void UIMachineWindowFullscreen::placeOnScreen()
             geo = QRect(QPoint(0, 0), QSize(800, 600).boundedTo(workingArea.size()));
         /* Move window to the center of working-area: */
         geo.moveCenter(workingArea.center());
-        VBoxGlobal::setTopLevelGeometry(this, geo);
+        UICommon::setTopLevelGeometry(this, geo);
     }
 
 #elif defined(VBOX_WS_WIN)
@@ -378,12 +378,12 @@ void UIMachineWindowFullscreen::placeOnScreen()
 #elif defined(VBOX_WS_X11)
 
     /* Determine whether we should use the native full-screen mode: */
-    const bool fUseNativeFullScreen = VBoxGlobal::supportsFullScreenMonitorsProtocolX11() &&
+    const bool fUseNativeFullScreen = UICommon::supportsFullScreenMonitorsProtocolX11() &&
                                       !gEDataManager->legacyFullscreenModeRequested();
     if (fUseNativeFullScreen)
     {
         /* Tell recent window managers which host-screen this window should be mapped to: */
-        VBoxGlobal::setFullScreenMonitorX11(this, pFullscreenLogic->hostScreenForGuestScreen(m_uScreenId));
+        UICommon::setFullScreenMonitorX11(this, pFullscreenLogic->hostScreenForGuestScreen(m_uScreenId));
     }
 
     /* Set appropriate window geometry: */
@@ -419,7 +419,7 @@ void UIMachineWindowFullscreen::showInNecessaryMode()
         placeOnScreen();
 
         /* Simple show() for ML and next, showFullScreen() otherwise: */
-        if (vboxGlobal().osRelease() > MacOSXRelease_Lion)
+        if (uiCommon().osRelease() > MacOSXRelease_Lion)
             show();
         else
             showFullScreen();

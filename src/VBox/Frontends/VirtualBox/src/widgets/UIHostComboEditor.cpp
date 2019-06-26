@@ -31,7 +31,7 @@
 
 /* GUI includes: */
 #include "QIToolButton.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "UIExtraDataManager.h"
 #include "UIHostComboEditor.h"
 #include "UIIconPool.h"

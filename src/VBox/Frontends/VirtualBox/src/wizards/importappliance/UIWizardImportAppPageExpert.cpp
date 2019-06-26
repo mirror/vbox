@@ -28,7 +28,7 @@
 /* GUI includes: */
 #include "QIComboBox.h"
 #include "QIToolButton.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "UIApplianceImportEditorWidget.h"
 #include "UIEmptyFilePathSelector.h"
 #include "UIIconPool.h"
@@ -82,7 +82,7 @@ UIWizardImportAppPageExpert::UIWizardImportAppPageExpert(bool fImportFromOCIByDe
                             m_pFileSelector = new UIEmptyFilePathSelector(pLocalContainer);
                             if (m_pFileSelector)
                             {
-                                m_pFileSelector->setHomeDir(vboxGlobal().documentsPath());
+                                m_pFileSelector->setHomeDir(uiCommon().documentsPath());
                                 m_pFileSelector->setMode(UIEmptyFilePathSelector::Mode_File_Open);
                                 m_pFileSelector->setButtonPosition(UIEmptyFilePathSelector::RightPosition);
                                 m_pFileSelector->setEditable(true);
@@ -356,7 +356,7 @@ bool UIWizardImportAppPageExpert::isComplete() const
         const bool fCSP = !fOVF;
 
         fResult =    (   fOVF
-                      && VBoxGlobal::hasAllowedExtension(m_pFileSelector->path().toLower(), OVFFileExts)
+                      && UICommon::hasAllowedExtension(m_pFileSelector->path().toLower(), OVFFileExts)
                       && QFile::exists(m_pFileSelector->path())
                       && m_pApplianceWidget->isValid())
                   || (   fCSP

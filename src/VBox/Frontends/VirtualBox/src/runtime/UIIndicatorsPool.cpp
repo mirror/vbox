@@ -34,7 +34,7 @@
 #include "UIIconPool.h"
 #include "UIHostComboEditor.h"
 #include "QIStatusBarIndicator.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 
 /* COM includes: */
 #include "CAudioAdapter.h"
@@ -471,7 +471,7 @@ public:
         connect(m_pSession, SIGNAL(sigMachineStateChange()),
                 this, SLOT(sltHandleMachineStateChange()));
         /* Fetch maximum network adapters count: */
-        const CVirtualBox vbox = vboxGlobal().virtualBox();
+        const CVirtualBox vbox = uiCommon().virtualBox();
         const CMachine machine = m_pSession->machine();
         m_cMaxNetworkAdapters = vbox.GetSystemProperties().GetMaxNetworkAdapters(machine.GetChipsetType());
         /* Create auto-update timer: */
@@ -630,7 +630,7 @@ private:
             /* Enumerate all the USB devices: */
             const CConsole console = m_pSession->console();
             foreach (const CUSBDevice &usbDevice, console.GetUSBDevices())
-                strFullData += s_strTableRow1.arg(vboxGlobal().details(usbDevice));
+                strFullData += s_strTableRow1.arg(uiCommon().details(usbDevice));
             /* Handle 'no-usb-devices' case: */
             if (strFullData.isNull())
                 strFullData = s_strTableRow1
@@ -693,7 +693,7 @@ private:
         for (QMap<QString, QString>::const_iterator it = sfs.constBegin(); it != sfs.constEnd(); ++it)
         {
             /* Select slashes depending on the OS type: */
-            if (VBoxGlobal::isDOSType(guest.GetOSTypeId()))
+            if (UICommon::isDOSType(guest.GetOSTypeId()))
                 strFullData += s_strTableRow2.arg(QString("<b>\\\\vboxsvr\\%1</b>").arg(it.key()), it.value());
             else
                 strFullData += s_strTableRow2.arg(QString("<b>%1</b>").arg(it.key()), it.value());
@@ -743,7 +743,7 @@ private:
 
         /* Video Memory: */
         const ULONG uVRAMSize = machine.GetVRAMSize();
-        const QString strVRAMSize = VBoxGlobal::tr("<nobr>%1 MB</nobr>", "details report").arg(uVRAMSize);
+        const QString strVRAMSize = UICommon::tr("<nobr>%1 MB</nobr>", "details report").arg(uVRAMSize);
         strFullData += s_strTableRow2
             .arg(QApplication::translate("UIIndicatorsPool", "Video memory", "Display tooltip"), strVRAMSize);
 
@@ -757,12 +757,12 @@ private:
         }
 
         /* 3D acceleration: */
-        const bool fAcceleration3D = machine.GetAccelerate3DEnabled() && vboxGlobal().is3DAvailable();
+        const bool fAcceleration3D = machine.GetAccelerate3DEnabled() && uiCommon().is3DAvailable();
         if (fAcceleration3D)
         {
             const QString strAcceleration3D = fAcceleration3D ?
-                VBoxGlobal::tr("Enabled", "details report (3D Acceleration)") :
-                VBoxGlobal::tr("Disabled", "details report (3D Acceleration)");
+                UICommon::tr("Enabled", "details report (3D Acceleration)") :
+                UICommon::tr("Disabled", "details report (3D Acceleration)");
             strFullData += s_strTableRow2
                 .arg(QApplication::translate("UIIndicatorsPool", "3D acceleration", "Display tooltip"), strAcceleration3D);
         }
@@ -1016,19 +1016,19 @@ private:
                 enmEngine = KVMExecutionEngine_NotSet;
                 RT_FALL_THRU();
             case KVMExecutionEngine_NotSet:
-                strExecutionEngine = VBoxGlobal::tr("not set", "details report (execution engine)");
+                strExecutionEngine = UICommon::tr("not set", "details report (execution engine)");
                 break;
         }
 
         /* Nested Paging feature: */
         const QString strNestedPaging = m_pSession->isHWVirtExNestedPagingEnabled() ?
-                                        VBoxGlobal::tr("Active", "details report (Nested Paging)") :
-                                        VBoxGlobal::tr("Inactive", "details report (Nested Paging)");
+                                        UICommon::tr("Active", "details report (Nested Paging)") :
+                                        UICommon::tr("Inactive", "details report (Nested Paging)");
 
         /* Unrestricted Execution feature: */
         const QString strUnrestrictExec = m_pSession->isHWVirtExUXEnabled() ?
-                                          VBoxGlobal::tr("Active", "details report (Unrestricted Execution)") :
-                                          VBoxGlobal::tr("Inactive", "details report (Unrestricted Execution)");
+                                          UICommon::tr("Active", "details report (Unrestricted Execution)") :
+                                          UICommon::tr("Inactive", "details report (Unrestricted Execution)");
 
         /* CPU Execution Cap feature: */
         QString strCPUExecCap = QString::number(machine.GetCPUExecutionCap());
@@ -1038,15 +1038,15 @@ private:
 
         /* Prepare tool-tip: */
         QString strFullData;
-        //strFullData += s_strTableRow2.arg(VBoxGlobal::tr("VT-x/AMD-V", "details report"),                   strVirtualization);
-        strFullData += s_strTableRow2.arg(VBoxGlobal::tr("Execution engine", "details report"),             strExecutionEngine);
-        strFullData += s_strTableRow2.arg(VBoxGlobal::tr("Nested Paging"),                                  strNestedPaging);
-        strFullData += s_strTableRow2.arg(VBoxGlobal::tr("Unrestricted Execution"),                         strUnrestrictExec);
-        strFullData += s_strTableRow2.arg(VBoxGlobal::tr("Execution Cap", "details report"),                strCPUExecCap);
-        strFullData += s_strTableRow2.arg(VBoxGlobal::tr("Paravirtualization Interface", "details report"), strParavirt);
+        //strFullData += s_strTableRow2.arg(UICommon::tr("VT-x/AMD-V", "details report"),                   strVirtualization);
+        strFullData += s_strTableRow2.arg(UICommon::tr("Execution engine", "details report"),             strExecutionEngine);
+        strFullData += s_strTableRow2.arg(UICommon::tr("Nested Paging"),                                  strNestedPaging);
+        strFullData += s_strTableRow2.arg(UICommon::tr("Unrestricted Execution"),                         strUnrestrictExec);
+        strFullData += s_strTableRow2.arg(UICommon::tr("Execution Cap", "details report"),                strCPUExecCap);
+        strFullData += s_strTableRow2.arg(UICommon::tr("Paravirtualization Interface", "details report"), strParavirt);
         const int cpuCount = machine.GetCPUCount();
         if (cpuCount > 1)
-            strFullData += s_strTableRow2.arg(VBoxGlobal::tr("Processors", "details report"), QString::number(cpuCount));
+            strFullData += s_strTableRow2.arg(UICommon::tr("Processors", "details report"), QString::number(cpuCount));
 
         /* Update tool-tip: */
         setToolTip(s_strTable.arg(strFullData));
@@ -1276,7 +1276,7 @@ QPoint UIIndicatorsPool::mapIndicatorPositionToGlobal(IndicatorType enmIndicator
 void UIIndicatorsPool::sltHandleConfigurationChange(const QUuid &uMachineID)
 {
     /* Skip unrelated machine IDs: */
-    if (vboxGlobal().managedVMUuid() != uMachineID)
+    if (uiCommon().managedVMUuid() != uMachineID)
         return;
 
     /* Update pool: */
@@ -1392,7 +1392,7 @@ void UIIndicatorsPool::prepareUpdateTimer()
 void UIIndicatorsPool::updatePool()
 {
     /* Acquire status-bar availability: */
-    m_fEnabled = gEDataManager->statusBarEnabled(vboxGlobal().managedVMUuid());
+    m_fEnabled = gEDataManager->statusBarEnabled(uiCommon().managedVMUuid());
     /* If status-bar is not enabled: */
     if (!m_fEnabled)
     {
@@ -1408,7 +1408,7 @@ void UIIndicatorsPool::updatePool()
     }
 
     /* Acquire status-bar restrictions: */
-    m_restrictions = gEDataManager->restrictedStatusBarIndicators(vboxGlobal().managedVMUuid());
+    m_restrictions = gEDataManager->restrictedStatusBarIndicators(uiCommon().managedVMUuid());
     /* Remove restricted indicators: */
     foreach (const IndicatorType &indicatorType, m_restrictions)
     {
@@ -1420,7 +1420,7 @@ void UIIndicatorsPool::updatePool()
     }
 
     /* Acquire status-bar order: */
-    m_order = gEDataManager->statusBarIndicatorOrder(vboxGlobal().managedVMUuid());
+    m_order = gEDataManager->statusBarIndicatorOrder(uiCommon().managedVMUuid());
     /* Make sure the order is complete taking restrictions into account: */
     for (int iType = IndicatorType_Invalid; iType < IndicatorType_Max; ++iType)
     {

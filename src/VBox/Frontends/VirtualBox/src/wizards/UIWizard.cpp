@@ -24,7 +24,7 @@
 #include "UIIconPool.h"
 #include "UIWizard.h"
 #include "UIWizardPage.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "QIRichTextLabel.h"
 #include "UIExtraDataManager.h"
 

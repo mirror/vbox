@@ -9763,7 +9763,7 @@ a guest session</source>
     </message>
 </context>
 <context>
-    <name>VBoxGlobal</name>
+    <name>UICommon</name>
     <message>
         <source>Inaccessible</source>
         <comment>medium</comment>

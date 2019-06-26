@@ -22,7 +22,7 @@
 
 /* GUI includes: */
 #include "QIFileDialog.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "UIDownloaderUserManual.h"
 #include "UIMessageCenter.h"
 #include "UIModalWindowManager.h"
@@ -48,10 +48,10 @@ UIDownloaderUserManual::UIDownloaderUserManual()
         s_pInstance = this;
 
     /* Get version number and adjust it for test and trunk builds. The server only has official releases. */
-    const QString strVersion = UIVersion(vboxGlobal().vboxVersionStringNormalized()).effectiveReleasedVersion().toString();
+    const QString strVersion = UIVersion(uiCommon().vboxVersionStringNormalized()).effectiveReleasedVersion().toString();
 
     /* Compose User Manual filename: */
-    QString strUserManualFullFileName = vboxGlobal().helpFile();
+    QString strUserManualFullFileName = uiCommon().helpFile();
     QString strUserManualShortFileName = QFileInfo(strUserManualFullFileName).fileName();
 
     /* Add sources: */
@@ -61,7 +61,7 @@ UIDownloaderUserManual::UIDownloaderUserManual()
     addSource(strSource2);
 
     /* Set target: */
-    QString strUserManualDestination = QDir(vboxGlobal().homeFolder()).absoluteFilePath(strUserManualShortFileName);
+    QString strUserManualDestination = QDir(uiCommon().homeFolder()).absoluteFilePath(strUserManualShortFileName);
     setTarget(strUserManualDestination);
 }
 

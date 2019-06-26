@@ -19,7 +19,7 @@
 #include "UIConsoleEventHandler.h"
 #include "UIMainEventListener.h"
 #include "UIExtraDataManager.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "UISession.h"
 #ifdef VBOX_WS_MAC
 # include "VBoxUtils.h"

@@ -616,7 +616,7 @@ void RangedIntegerEditor::setRangedInteger(const RangedIntegerData &rangedIntege
     setValue(rangedInteger.integer());
     m_strSuffix = rangedInteger.suffix();
     setSuffix(m_strSuffix.isEmpty() ? QString() :
-              QString(" %1").arg(QApplication::translate("VBoxGlobal", m_strSuffix.toUtf8().constData())));
+              QString(" %1").arg(QApplication::translate("UICommon", m_strSuffix.toUtf8().constData())));
 }
 
 RangedIntegerData RangedIntegerEditor::rangedInteger() const

@@ -31,7 +31,7 @@
 #include "UIExtraDataManager.h"
 #include "UIMessageCenter.h"
 #include "UIConverter.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "QIDialogButtonBox.h"
 
 /* COM includes: */
@@ -210,7 +210,7 @@ void UIVMCloseDialog::accept()
     if (newCloseAction == MachineCloseAction_PowerOff &&
         m_enmLastCloseAction == MachineCloseAction_Shutdown && !m_fIsACPIEnabled)
         newCloseAction = MachineCloseAction_Shutdown;
-    gEDataManager->setLastMachineCloseAction(newCloseAction, vboxGlobal().managedVMUuid());
+    gEDataManager->setLastMachineCloseAction(newCloseAction, uiCommon().managedVMUuid());
 
     /* Hide the dialog: */
     hide();
@@ -524,7 +524,7 @@ void UIVMCloseDialog::configure()
     KMachineState machineState = m_comMachine.GetState();
 
     /* Check which close-actions are resticted: */
-    bool fIsDetachAllowed = vboxGlobal().isSeparateProcess() && !(m_restictedCloseActions & MachineCloseAction_Detach);
+    bool fIsDetachAllowed = uiCommon().isSeparateProcess() && !(m_restictedCloseActions & MachineCloseAction_Detach);
     bool fIsStateSavingAllowed = !(m_restictedCloseActions & MachineCloseAction_SaveState);
     bool fIsACPIShutdownAllowed = !(m_restictedCloseActions & MachineCloseAction_Shutdown);
     bool fIsPowerOffAllowed = !(m_restictedCloseActions & MachineCloseAction_PowerOff);
@@ -556,7 +556,7 @@ void UIVMCloseDialog::configure()
     /* Check which radio-button should be initially chosen: */
     QRadioButton *pRadioButtonToChoose = 0;
     /* If choosing 'last choice' is possible: */
-    m_enmLastCloseAction = gEDataManager->lastMachineCloseAction(vboxGlobal().managedVMUuid());
+    m_enmLastCloseAction = gEDataManager->lastMachineCloseAction(uiCommon().managedVMUuid());
     if (m_enmLastCloseAction == MachineCloseAction_Detach && fIsDetachAllowed)
     {
         pRadioButtonToChoose = m_pRadioButtonDetach;

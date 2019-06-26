@@ -33,7 +33,7 @@
 #include "UIIconPool.h"
 #include "UIVMLogViewerDialog.h"
 #include "UIVMLogViewerWidget.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #ifdef VBOX_WS_MAC
 # include "VBoxUtils-darwin.h"
 #endif

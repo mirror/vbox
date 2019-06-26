@@ -19,7 +19,7 @@
 #include <QAbstractButton>
 
 /* GUI includes: */
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "UIWizard.h"
 #include "UIWizardPage.h"
 

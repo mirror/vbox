@@ -22,7 +22,7 @@
 /* GUI includes: */
 #include "QIRichTextLabel.h"
 #include "QIToolButton.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "UIIconPool.h"
 #include "UIMediaComboBox.h"
 #include "UIMedium.h"
@@ -40,7 +40,7 @@ void UIWizardFirstRunPage::onOpenMediumWithFileOpenDialog()
 {
     /* Get opened vboxMedium id: */
     QUuid uMediumId;
-    vboxGlobal().openMediumSelectorDialog(thisImp(), UIMediumDeviceType_DVD, uMediumId, "", "", "", true);
+    uiCommon().openMediumSelectorDialog(thisImp(), UIMediumDeviceType_DVD, uMediumId, "", "", "", true);
     /* Update medium-combo if necessary: */
     if (!uMediumId.isNull())
         m_pMediaSelector->setCurrentItem(uMediumId);
@@ -133,7 +133,7 @@ void UIWizardFirstRunPageBasic::initializePage()
 bool UIWizardFirstRunPageBasic::isComplete() const
 {
     /* Make sure valid medium chosen: */
-    return !vboxGlobal().medium(id()).isNull();
+    return !uiCommon().medium(id()).isNull();
 }
 
 bool UIWizardFirstRunPageBasic::validatePage()

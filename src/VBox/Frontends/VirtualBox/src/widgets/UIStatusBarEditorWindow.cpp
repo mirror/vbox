@@ -31,7 +31,7 @@
 
 /* GUI includes: */
 #include "QIToolButton.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "UIConverter.h"
 #include "UIExtraDataManager.h"
 #include "UIIconPool.h"
@@ -392,7 +392,7 @@ void UIStatusBarEditorButton::updatePixmap()
 *********************************************************************************************************************************/
 
 UIStatusBarEditorWindow::UIStatusBarEditorWindow(UIMachineWindow *pParent)
-    : UISlidingToolBar(pParent, pParent->statusBar(), new UIStatusBarEditorWidget(0, false, vboxGlobal().managedVMUuid()), UISlidingToolBar::Position_Bottom)
+    : UISlidingToolBar(pParent, pParent->statusBar(), new UIStatusBarEditorWidget(0, false, uiCommon().managedVMUuid()), UISlidingToolBar::Position_Bottom)
 {
 }
 

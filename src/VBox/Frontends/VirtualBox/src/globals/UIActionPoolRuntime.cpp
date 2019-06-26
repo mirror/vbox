@@ -16,7 +16,7 @@
  */
 
 /* GUI includes: */
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "UIActionPoolRuntime.h"
 #include "UIConverter.h"
 #include "UIDesktopWidgetWatchdog.h"
@@ -3240,7 +3240,7 @@ void UIActionPoolRuntime::setRestrictionForMenuDebugger(UIActionRestrictionLevel
 void UIActionPoolRuntime::sltHandleConfigurationChange(const QUuid &uMachineID)
 {
     /* Skip unrelated machine IDs: */
-    if (vboxGlobal().managedVMUuid() != uMachineID)
+    if (uiCommon().managedVMUuid() != uMachineID)
         return;
 
     /* Update configuration: */
@@ -3342,7 +3342,7 @@ void UIActionPoolRuntime::sltHandleActionTriggerViewScreenRescale(QAction *pActi
     /* Change scale-factor directly: */
     const double dScaleFactor = pAction->property("Requested Scale Factor").toDouble();
     const int iGuestScreenIndex = pAction->property("Guest Screen Index").toInt();
-    gEDataManager->setScaleFactor(dScaleFactor, vboxGlobal().managedVMUuid(), iGuestScreenIndex);
+    gEDataManager->setScaleFactor(dScaleFactor, uiCommon().managedVMUuid(), iGuestScreenIndex);
 }
 
 void UIActionPoolRuntime::preparePool()
@@ -3480,7 +3480,7 @@ void UIActionPoolRuntime::prepareConnections()
 void UIActionPoolRuntime::updateConfiguration()
 {
     /* Get machine ID: */
-    const QUuid uMachineID = vboxGlobal().managedVMUuid();
+    const QUuid uMachineID = uiCommon().managedVMUuid();
     if (uMachineID.isNull())
         return;
 
@@ -3545,7 +3545,7 @@ void UIActionPoolRuntime::updateConfiguration()
 
     /* Recache extension-pack related action restrictions: */
 #if VBOX_WITH_EXTPACK
-    CExtPack extPack = vboxGlobal().virtualBox().GetExtensionPackManager().Find(GUI_ExtPackName);
+    CExtPack extPack = uiCommon().virtualBox().GetExtensionPackManager().Find(GUI_ExtPackName);
 #else
     CExtPack extPack;
 #endif
@@ -3558,7 +3558,7 @@ void UIActionPoolRuntime::updateConfiguration()
 
     /* Recache close related action restrictions: */
     MachineCloseAction restrictedCloseActions = gEDataManager->restrictedMachineCloseActions(uMachineID);
-    bool fAllCloseActionsRestricted =    (!vboxGlobal().isSeparateProcess() || (restrictedCloseActions & MachineCloseAction_Detach))
+    bool fAllCloseActionsRestricted =    (!uiCommon().isSeparateProcess() || (restrictedCloseActions & MachineCloseAction_Detach))
                                       && (restrictedCloseActions & MachineCloseAction_SaveState)
                                       && (restrictedCloseActions & MachineCloseAction_Shutdown)
                                       && (restrictedCloseActions & MachineCloseAction_PowerOff);
@@ -3618,7 +3618,7 @@ void UIActionPoolRuntime::updateMenus()
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
     /* 'Debug' menu: */
-    addMenu(m_mainMenus, action(UIActionIndexRT_M_Debug), vboxGlobal().isDebuggerEnabled());
+    addMenu(m_mainMenus, action(UIActionIndexRT_M_Debug), uiCommon().isDebuggerEnabled());
     updateMenuDebug();
 #endif
 
@@ -4008,7 +4008,7 @@ void UIActionPoolRuntime::updateMenuViewRescale(QMenu *pMenu)
 
     /* Get corresponding screen index and scale-factor: */
     const int iGuestScreenIndex = pMenu->property("Guest Screen Index").toInt();
-    const double dCurrentScaleFactor = gEDataManager->scaleFactor(vboxGlobal().managedVMUuid(), iGuestScreenIndex);
+    const double dCurrentScaleFactor = gEDataManager->scaleFactor(uiCommon().managedVMUuid(), iGuestScreenIndex);
 
     /* Create exclusive 'rescale' action-group: */
     QActionGroup *pActionGroup = new QActionGroup(pMenu);

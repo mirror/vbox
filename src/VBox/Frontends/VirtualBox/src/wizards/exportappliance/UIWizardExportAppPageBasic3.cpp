@@ -22,7 +22,7 @@
 /* GUI includes: */
 #include "QILabelSeparator.h"
 #include "QIRichTextLabel.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "UIMessageCenter.h"
 #include "UIWizardExportApp.h"
 #include "UIWizardExportAppPageBasic3.h"
@@ -61,7 +61,7 @@ void UIWizardExportAppPage3::refreshApplianceSettingsWidget()
         foreach (const QUuid &uMachineId, uuids)
         {
             /* Get the machine with the uMachineId: */
-            CVirtualBox comVBox = vboxGlobal().virtualBox();
+            CVirtualBox comVBox = uiCommon().virtualBox();
             CMachine comMachine = comVBox.FindMachine(uMachineId.toString());
             if (comVBox.isOk() && comMachine.isNotNull())
             {

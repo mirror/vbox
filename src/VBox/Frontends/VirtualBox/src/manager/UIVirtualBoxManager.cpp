@@ -288,9 +288,9 @@ void UIVirtualBoxManager::sltHandleMediumEnumerationFinish()
 
     /* Look for at least one inaccessible medium: */
     bool fIsThereAnyInaccessibleMedium = false;
-    foreach (const QUuid &uMediumID, vboxGlobal().mediumIDs())
+    foreach (const QUuid &uMediumID, uiCommon().mediumIDs())
     {
-        if (vboxGlobal().medium(uMediumID).state() == KMediumState_Inaccessible)
+        if (uiCommon().medium(uMediumID).state() == KMediumState_Inaccessible)
         {
             fIsThereAnyInaccessibleMedium = true;
             break;
@@ -307,9 +307,9 @@ void UIVirtualBoxManager::sltHandleMediumEnumerationFinish()
 
 void UIVirtualBoxManager::sltHandleOpenUrlCall(QList<QUrl> list /* = QList<QUrl>() */)
 {
-    /* If passed list is empty, we take the one from VBoxGlobal: */
+    /* If passed list is empty, we take the one from UICommon: */
     if (list.isEmpty())
-        list = vboxGlobal().takeArgumentUrls();
+        list = uiCommon().takeArgumentUrls();
 
     /* Check if we are can handle the dropped urls: */
     for (int i = 0; i < list.size(); ++i)
@@ -323,32 +323,32 @@ void UIVirtualBoxManager::sltHandleOpenUrlCall(QList<QUrl> list /* = QList<QUrl>
         if (!strFile.isEmpty() && QFile::exists(strFile))
         {
             /* And has allowed VBox config file extension: */
-            if (VBoxGlobal::hasAllowedExtension(strFile, VBoxFileExts))
+            if (UICommon::hasAllowedExtension(strFile, VBoxFileExts))
             {
                 /* Handle VBox config file: */
-                CVirtualBox comVBox = vboxGlobal().virtualBox();
+                CVirtualBox comVBox = uiCommon().virtualBox();
                 CMachine comMachine = comVBox.FindMachine(strFile);
                 if (comVBox.isOk() && comMachine.isNotNull())
-                    vboxGlobal().launchMachine(comMachine);
+                    uiCommon().launchMachine(comMachine);
                 else
                     sltOpenAddMachineDialog(strFile);
             }
             /* And has allowed VBox OVF file extension: */
-            else if (VBoxGlobal::hasAllowedExtension(strFile, OVFFileExts))
+            else if (UICommon::hasAllowedExtension(strFile, OVFFileExts))
             {
                 /* Allow only one file at the time: */
                 sltOpenImportApplianceWizard(strFile);
                 break;
             }
             /* And has allowed VBox extension pack file extension: */
-            else if (VBoxGlobal::hasAllowedExtension(strFile, VBoxExtPackFileExts))
+            else if (UICommon::hasAllowedExtension(strFile, VBoxExtPackFileExts))
             {
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
                 /* Prevent update manager from proposing us to update EP: */
                 gUpdateManager->setEPInstallationRequested(true);
 #endif
                 /* Propose the user to install EP described by the arguments @a list. */
-                vboxGlobal().doExtPackInstallation(strFile, QString(), this, NULL);
+                uiCommon().doExtPackInstallation(strFile, QString(), this, NULL);
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
                 /* Allow update manager to propose us to update EP: */
                 gUpdateManager->setEPInstallationRequested(false);
@@ -619,7 +619,7 @@ void UIVirtualBoxManager::sltOpenAddMachineDialog(const QString &strFileName /* 
 #else
     QString strTmpFile = strFileName;
 #endif
-    CVirtualBox comVBox = vboxGlobal().virtualBox();
+    CVirtualBox comVBox = uiCommon().virtualBox();
 
     /* Lock the action preventing cascade calls: */
     actionPool()->action(UIActionIndexST_M_Welcome_S_Add)->setProperty("opened", true);
@@ -686,7 +686,7 @@ void UIVirtualBoxManager::sltOpenMachineSettingsDialog(QString strCategory /* = 
     /* Process href from VM details / description: */
     if (!strCategory.isEmpty() && strCategory[0] != '#')
     {
-        vboxGlobal().openURL(strCategory);
+        uiCommon().openURL(strCategory);
     }
     else
     {
@@ -745,7 +745,7 @@ void UIVirtualBoxManager::sltPerformMachineMove()
     AssertMsgReturnVoid(pItem, ("Current item should be selected!\n"));
 
     /* Open a session thru which we will modify the machine: */
-    CSession comSession = vboxGlobal().openSession(pItem->id(), KLockType_Write);
+    CSession comSession = uiCommon().openSession(pItem->id(), KLockType_Write);
     if (comSession.isNull())
         return;
 
@@ -754,7 +754,7 @@ void UIVirtualBoxManager::sltPerformMachineMove()
     AssertMsgReturnVoid(comSession.isOk() && comMachine.isNotNull(), ("Unable to acquire machine!\n"));
 
     /* Open a file dialog for the user to select a destination folder. Start with the default machine folder: */
-    CVirtualBox comVBox = vboxGlobal().virtualBox();
+    CVirtualBox comVBox = uiCommon().virtualBox();
     QString strBaseFolder = comVBox.GetSystemProperties().GetDefaultMachineFolder();
     QString strTitle = tr("Select a destination folder to move the selected virtual machine");
     QString strDestinationFolder = QIFileDialog::getExistingDirectory(strBaseFolder, this, strTitle);
@@ -780,7 +780,7 @@ void UIVirtualBoxManager::sltPerformStartOrShowMachine()
     /* Start selected VMs in corresponding mode: */
     QList<UIVirtualMachineItem*> items = currentItems();
     AssertMsgReturnVoid(!items.isEmpty(), ("At least one item should be selected!\n"));
-    performStartOrShowVirtualMachines(items, VBoxGlobal::LaunchMode_Invalid);
+    performStartOrShowVirtualMachines(items, UICommon::LaunchMode_Invalid);
 }
 
 void UIVirtualBoxManager::sltPerformStartMachineNormal()
@@ -788,7 +788,7 @@ void UIVirtualBoxManager::sltPerformStartMachineNormal()
     /* Start selected VMs in corresponding mode: */
     QList<UIVirtualMachineItem*> items = currentItems();
     AssertMsgReturnVoid(!items.isEmpty(), ("At least one item should be selected!\n"));
-    performStartOrShowVirtualMachines(items, VBoxGlobal::LaunchMode_Default);
+    performStartOrShowVirtualMachines(items, UICommon::LaunchMode_Default);
 }
 
 void UIVirtualBoxManager::sltPerformStartMachineHeadless()
@@ -796,7 +796,7 @@ void UIVirtualBoxManager::sltPerformStartMachineHeadless()
     /* Start selected VMs in corresponding mode: */
     QList<UIVirtualMachineItem*> items = currentItems();
     AssertMsgReturnVoid(!items.isEmpty(), ("At least one item should be selected!\n"));
-    performStartOrShowVirtualMachines(items, VBoxGlobal::LaunchMode_Headless);
+    performStartOrShowVirtualMachines(items, UICommon::LaunchMode_Headless);
 }
 
 void UIVirtualBoxManager::sltPerformStartMachineDetachable()
@@ -804,7 +804,7 @@ void UIVirtualBoxManager::sltPerformStartMachineDetachable()
     /* Start selected VMs in corresponding mode: */
     QList<UIVirtualMachineItem*> items = currentItems();
     AssertMsgReturnVoid(!items.isEmpty(), ("At least one item should be selected!\n"));
-    performStartOrShowVirtualMachines(items, VBoxGlobal::LaunchMode_Separate);
+    performStartOrShowVirtualMachines(items, UICommon::LaunchMode_Separate);
 }
 
 void UIVirtualBoxManager::sltPerformDiscardMachineState()
@@ -834,7 +834,7 @@ void UIVirtualBoxManager::sltPerformDiscardMachineState()
     foreach (UIVirtualMachineItem *pItem, itemsToDiscard)
     {
         /* Open a session to modify VM: */
-        CSession comSession = vboxGlobal().openSession(pItem->id());
+        CSession comSession = uiCommon().openSession(pItem->id());
         if (comSession.isNull())
             return;
 
@@ -879,7 +879,7 @@ void UIVirtualBoxManager::sltPerformPauseOrResumeMachine(bool fPause)
             continue;
 
         /* Open a session to modify VM state: */
-        CSession comSession = vboxGlobal().openExistingSession(pItem->id());
+        CSession comSession = uiCommon().openExistingSession(pItem->id());
         if (comSession.isNull())
             return;
 
@@ -930,7 +930,7 @@ void UIVirtualBoxManager::sltPerformResetMachine()
     foreach (UIVirtualMachineItem *pItem, itemsToReset)
     {
         /* Open a session to modify VM state: */
-        CSession comSession = vboxGlobal().openExistingSession(pItem->id());
+        CSession comSession = uiCommon().openExistingSession(pItem->id());
         if (comSession.isNull())
             return;
 
@@ -976,7 +976,7 @@ void UIVirtualBoxManager::sltPerformSaveMachineState()
             continue;
 
         /* Open a session to modify VM state: */
-        CSession comSession = vboxGlobal().openExistingSession(pItem->id());
+        CSession comSession = uiCommon().openExistingSession(pItem->id());
         if (comSession.isNull())
             return;
 
@@ -1036,7 +1036,7 @@ void UIVirtualBoxManager::sltPerformShutdownMachine()
     foreach (UIVirtualMachineItem *pItem, itemsToShutdown)
     {
         /* Open a session to modify VM state: */
-        CSession comSession = vboxGlobal().openExistingSession(pItem->id());
+        CSession comSession = uiCommon().openExistingSession(pItem->id());
         if (comSession.isNull())
             return;
 
@@ -1079,7 +1079,7 @@ void UIVirtualBoxManager::sltPerformPowerOffMachine()
     foreach (UIVirtualMachineItem *pItem, itemsToPowerOff)
     {
         /* Open a session to modify VM state: */
-        CSession comSession = vboxGlobal().openExistingSession(pItem->id());
+        CSession comSession = uiCommon().openExistingSession(pItem->id());
         if (comSession.isNull())
             return;
 
@@ -1258,7 +1258,7 @@ void UIVirtualBoxManager::prepare()
 {
 #ifdef VBOX_WS_X11
     /* Assign same name to both WM_CLASS name & class for now: */
-    VBoxGlobal::setWMClass(this, "VirtualBox Manager", "VirtualBox Manager");
+    UICommon::setWMClass(this, "VirtualBox Manager", "VirtualBox Manager");
 #endif
 
 #ifdef VBOX_WS_MAC
@@ -1270,8 +1270,8 @@ void UIVirtualBoxManager::prepare()
 #endif
 
     /* Cache medium data early if necessary: */
-    if (vboxGlobal().agressiveCaching())
-        vboxGlobal().startMediumEnumeration();
+    if (uiCommon().agressiveCaching())
+        uiCommon().startMediumEnumeration();
 
     /* Prepare: */
     prepareIcon();
@@ -1292,7 +1292,7 @@ void UIVirtualBoxManager::prepare()
 
 #ifdef VBOX_WS_MAC
     /* Beta label? */
-    if (vboxGlobal().isBeta())
+    if (uiCommon().isBeta())
     {
         QPixmap betaLabel = ::betaLabel(QSize(100, 16));
         ::darwinLabelWindow(this, &betaLabel, true);
@@ -1300,7 +1300,7 @@ void UIVirtualBoxManager::prepare()
 #endif /* VBOX_WS_MAC */
 
     /* If there are unhandled URLs we should handle them after manager is shown: */
-    if (vboxGlobal().argumentUrlsPresent())
+    if (uiCommon().argumentUrlsPresent())
         QMetaObject::invokeMethod(this, "sltHandleOpenUrlCall", Qt::QueuedConnection);
 }
 
@@ -1387,7 +1387,7 @@ void UIVirtualBoxManager::prepareConnections()
 #endif
 
     /* Medium enumeration connections: */
-    connect(&vboxGlobal(), &VBoxGlobal::sigMediumEnumerationFinished,
+    connect(&uiCommon(), &UICommon::sigMediumEnumerationFinished,
             this, &UIVirtualBoxManager::sltHandleMediumEnumerationFinish);
 
     /* Widget connections: */
@@ -1624,7 +1624,7 @@ bool UIVirtualBoxManager::isSingleGroupSelected() const
     return m_pWidget->isSingleGroupSelected();
 }
 
-void UIVirtualBoxManager::performStartOrShowVirtualMachines(const QList<UIVirtualMachineItem*> &items, VBoxGlobal::LaunchMode enmLaunchMode)
+void UIVirtualBoxManager::performStartOrShowVirtualMachines(const QList<UIVirtualMachineItem*> &items, UICommon::LaunchMode enmLaunchMode)
 {
     /* Do nothing while group saving is in progress: */
     if (isGroupSavingInProgress())
@@ -1657,15 +1657,15 @@ void UIVirtualBoxManager::performStartOrShowVirtualMachines(const QList<UIVirtua
                 && fStartConfirmed))
         {
             /* Fetch item launch mode: */
-            VBoxGlobal::LaunchMode enmItemLaunchMode = enmLaunchMode;
-            if (enmItemLaunchMode == VBoxGlobal::LaunchMode_Invalid)
-                enmItemLaunchMode = UIVirtualMachineItem::isItemRunningHeadless(pItem) ? VBoxGlobal::LaunchMode_Separate :
-                                    qApp->keyboardModifiers() == Qt::ShiftModifier     ? VBoxGlobal::LaunchMode_Headless :
-                                                                                         VBoxGlobal::LaunchMode_Default;
+            UICommon::LaunchMode enmItemLaunchMode = enmLaunchMode;
+            if (enmItemLaunchMode == UICommon::LaunchMode_Invalid)
+                enmItemLaunchMode = UIVirtualMachineItem::isItemRunningHeadless(pItem) ? UICommon::LaunchMode_Separate :
+                                    qApp->keyboardModifiers() == Qt::ShiftModifier     ? UICommon::LaunchMode_Headless :
+                                                                                         UICommon::LaunchMode_Default;
 
             /* Launch current VM: */
             CMachine machine = pItem->machine();
-            vboxGlobal().launchMachine(machine, enmItemLaunchMode);
+            uiCommon().launchMachine(machine, enmItemLaunchMode);
         }
     }
 }
@@ -2036,7 +2036,7 @@ bool UIVirtualBoxManager::isAtLeastOneItemAbleToShutdown(const QList<UIVirtualMa
         if (!UIVirtualMachineItem::isItemRunning(pItem))
             continue;
         /* Skip session failures: */
-        CSession session = vboxGlobal().openExistingSession(pItem->id());
+        CSession session = uiCommon().openExistingSession(pItem->id());
         if (session.isNull())
             continue;
         /* Skip console failures: */

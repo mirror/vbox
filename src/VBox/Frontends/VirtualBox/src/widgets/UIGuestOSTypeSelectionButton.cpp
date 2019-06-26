@@ -21,7 +21,7 @@
 #include <QStyle>
 
 /* GUI includes */
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "UIGuestOSTypeSelectionButton.h"
 
 
@@ -60,11 +60,11 @@ bool UIGuestOSTypeSelectionButton::isMenuShown() const
 void UIGuestOSTypeSelectionButton::setOSTypeId(const QString &strOSTypeId)
 {
     m_strOSTypeId = strOSTypeId;
-    CGuestOSType enmType = vboxGlobal().vmGuestOSType(strOSTypeId);
+    CGuestOSType enmType = uiCommon().vmGuestOSType(strOSTypeId);
 
 #ifndef VBOX_WS_MAC
     /* Looks ugly on the Mac: */
-    setIcon(vboxGlobal().vmGuestOSTypePixmapDefault(enmType.GetId()));
+    setIcon(uiCommon().vmGuestOSTypePixmapDefault(enmType.GetId()));
 #endif
 
     setText(enmType.GetDescription());
@@ -81,12 +81,12 @@ void UIGuestOSTypeSelectionButton::populateMenu()
     m_pMainMenu->clear();
 
     /* Create a list of all possible OS types: */
-    foreach(const QString &strFamilyId, vboxGlobal().vmGuestOSFamilyIDs())
+    foreach(const QString &strFamilyId, uiCommon().vmGuestOSFamilyIDs())
     {
-        QMenu *pSubMenu = m_pMainMenu->addMenu(vboxGlobal().vmGuestOSFamilyDescription(strFamilyId));
-        foreach (const CGuestOSType &comType, vboxGlobal().vmGuestOSTypeList(strFamilyId))
+        QMenu *pSubMenu = m_pMainMenu->addMenu(uiCommon().vmGuestOSFamilyDescription(strFamilyId));
+        foreach (const CGuestOSType &comType, uiCommon().vmGuestOSTypeList(strFamilyId))
         {
-            QAction *pAction = pSubMenu->addAction(vboxGlobal().vmGuestOSTypePixmapDefault(comType.GetId()),
+            QAction *pAction = pSubMenu->addAction(uiCommon().vmGuestOSTypePixmapDefault(comType.GetId()),
                                                    comType.GetDescription());
             connect(pAction, &QAction::triggered,
                     m_pSignalMapper, static_cast<void(QSignalMapper::*)(void)>(&QSignalMapper::map));

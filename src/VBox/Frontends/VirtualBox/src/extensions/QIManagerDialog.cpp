@@ -24,7 +24,7 @@
 /* GUI includes: */
 #include "QIDialogButtonBox.h"
 #include "QIManagerDialog.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "UIDesktopWidgetWatchdog.h"
 #ifdef VBOX_WS_MAC
 # include "UIToolBar.h"
@@ -103,7 +103,7 @@ void QIManagerDialog::prepare()
     finalize();
 
     /* Center according requested widget: */
-    VBoxGlobal::centerWidget(this, pCenterWidget, false);
+    UICommon::centerWidget(this, pCenterWidget, false);
 
     /* Load the dialog's settings from extradata */
     loadSettings();
@@ -239,7 +239,7 @@ void QIManagerDialog::setDialogGeometry(const QRect &geometry)
     resize(geometry.size());
 #else /* VBOX_WS_MAC */
     /* Use the new approach for Windows/X11: */
-    VBoxGlobal::setTopLevelGeometry(this, geometry);
+    UICommon::setTopLevelGeometry(this, geometry);
 #endif /* !VBOX_WS_MAC */
 
     /* Maximize (if necessary): */

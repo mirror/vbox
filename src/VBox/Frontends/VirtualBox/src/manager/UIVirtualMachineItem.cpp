@@ -22,7 +22,7 @@
 
 /* GUI includes: */
 #include "UIVirtualMachineItem.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "UIConverter.h"
 #include "UIExtraDataManager.h"
 #ifdef VBOX_WS_MAC
@@ -164,7 +164,7 @@ bool UIVirtualMachineItem::recache()
         /* this should be in sync with
          * UIMessageCenter::confirm_machineDeletion() */
         QFileInfo fi(m_strSettingsFile);
-        QString name = VBoxGlobal::hasAllowedExtension(fi.completeSuffix(), VBoxFileExts) ?
+        QString name = UICommon::hasAllowedExtension(fi.completeSuffix(), VBoxFileExts) ?
                        fi.completeBaseName() : fi.fileName();
         needsResort = name != m_strName;
         m_strName = name;
@@ -196,16 +196,16 @@ void UIVirtualMachineItem::recachePixmap()
     if (m_fAccessible)
     {
         /* First, we are trying to acquire personal machine guest OS type icon: */
-        m_pixmap = vboxGlobal().vmUserPixmapDefault(m_machine, &m_logicalPixmapSize);
+        m_pixmap = uiCommon().vmUserPixmapDefault(m_machine, &m_logicalPixmapSize);
         /* If there is nothing, we are using icon corresponding to cached guest OS type: */
         if (m_pixmap.isNull())
-            m_pixmap = vboxGlobal().vmGuestOSTypePixmapDefault(m_strOSTypeId, &m_logicalPixmapSize);
+            m_pixmap = uiCommon().vmGuestOSTypePixmapDefault(m_strOSTypeId, &m_logicalPixmapSize);
     }
     /* Otherwise: */
     else
     {
         /* We are using "Other" guest OS type icon: */
-        m_pixmap = vboxGlobal().vmGuestOSTypePixmapDefault("Other", &m_logicalPixmapSize);
+        m_pixmap = uiCommon().vmGuestOSTypePixmapDefault("Other", &m_logicalPixmapSize);
     }
 }
 
@@ -241,7 +241,7 @@ bool UIVirtualMachineItem::switchTo()
 
 #if defined (VBOX_WS_WIN) || defined (VBOX_WS_X11)
 
-    return vboxGlobal().activateWindow(id, true);
+    return uiCommon().activateWindow(id, true);
 
 #elif defined (VBOX_WS_MAC)
     /*
@@ -312,7 +312,7 @@ bool UIVirtualMachineItem::isItemRunningHeadless(UIVirtualMachineItem *pItem)
     if (isItemRunning(pItem))
     {
         /* Open session to determine which frontend VM is started with: */
-        CSession session = vboxGlobal().openExistingSession(pItem->id());
+        CSession session = uiCommon().openExistingSession(pItem->id());
         if (!session.isNull())
         {
             /* Acquire the session name: */

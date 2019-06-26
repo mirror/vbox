@@ -21656,7 +21656,7 @@ Versione %1</translation>
     </message>
 </context>
 <context>
-    <name>VBoxGlobal</name>
+    <name>UICommon</name>
     <message>
         <source>Unknown device %1:%2</source>
         <comment>USB device details</comment>

@@ -26,7 +26,7 @@
 /* GUI includes: */
 #include "UIGraphicsTextPane.h"
 #include "UIRichTextString.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 
 /* Other VBox includes: */
 #include <iprt/assert.h>
@@ -382,9 +382,9 @@ void UIGraphicsTextPane::updateHoverStuff()
 {
     /* Update mouse-cursor: */
     if (m_strHoveredAnchor.isNull())
-        VBoxGlobal::unsetCursor(this);
+        UICommon::unsetCursor(this);
     else
-        VBoxGlobal::setCursor(this, Qt::PointingHandCursor);
+        UICommon::setCursor(this, Qt::PointingHandCursor);
 
     /* Update text-layout: */
     updateTextLayout();

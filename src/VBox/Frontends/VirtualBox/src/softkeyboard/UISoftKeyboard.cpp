@@ -48,7 +48,7 @@
 #include "UISession.h"
 #include "UISoftKeyboard.h"
 #include "QIToolButton.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #ifdef VBOX_WS_MAC
 # include "VBoxUtils-darwin.h"
 #endif
@@ -1837,7 +1837,7 @@ void UISoftKeyboardWidget::saveCurentLayoutToFile()
     if (!m_pCurrentKeyboardLayout)
         return;
 
-    QString strHomeFolder = vboxGlobal().homeFolder();
+    QString strHomeFolder = uiCommon().homeFolder();
     QDir dir(strHomeFolder);
     if (!dir.exists(strSubDirectorName))
     {
@@ -2436,7 +2436,7 @@ UISoftKeyboardLayout *UISoftKeyboardWidget::findLayoutByName(const QString &strN
 
 void UISoftKeyboardWidget::lookAtDefaultLayoutFolder(QStringList &fileList)
 {
-    QString strFolder = QString("%1%2%3").arg(vboxGlobal().homeFolder()).arg(QDir::separator()).arg(strSubDirectorName);
+    QString strFolder = QString("%1%2%3").arg(uiCommon().homeFolder()).arg(QDir::separator()).arg(strSubDirectorName);
     QDir dir(strFolder);
     if (!dir.exists())
         return;
@@ -3234,7 +3234,7 @@ void UISoftKeyboard::setDialogGeometry(const QRect &geometry)
     resize(geometry.size());
 #else /* VBOX_WS_MAC */
     /* Use the new approach for Windows/X11: */
-    VBoxGlobal::setTopLevelGeometry(this, geometry);
+    UICommon::setTopLevelGeometry(this, geometry);
 #endif /* !VBOX_WS_MAC */
 
     /* Maximize (if necessary): */

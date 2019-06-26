@@ -30,7 +30,7 @@
 #include "QILabel.h"
 #include "QIMessageBox.h"
 #include "QITabWidget.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "UIActionPoolManager.h"
 #include "UIExtraDataManager.h"
 #include "UIMediumDetailsWidget.h"
@@ -267,7 +267,7 @@ void UIMediumManagerWidget::sltApplyMediumDetailsChanges()
     UIDataMedium newData = m_pDetailsWidget->data();
 
     /* Search for corresponding medium: */
-    CMedium comMedium = vboxGlobal().medium(pMediumItem->id()).medium();
+    CMedium comMedium = uiCommon().medium(pMediumItem->id()).medium();
 
     /* Try to assign new medium type: */
     if (   comMedium.isOk()
@@ -313,8 +313,8 @@ void UIMediumManagerWidget::sltApplyMediumDetailsChanges()
         if (!comMedium.isOk())
             msgCenter().cannotResizeHardDiskStorage(comMedium,
                                                     oldData.m_options.m_strLocation,
-                                                    vboxGlobal().formatSize(oldData.m_options.m_uLogicalSize),
-                                                    vboxGlobal().formatSize(newData.m_options.m_uLogicalSize),
+                                                    uiCommon().formatSize(oldData.m_options.m_uLogicalSize),
+                                                    uiCommon().formatSize(newData.m_options.m_uLogicalSize),
                                                     this);
         else
         {
@@ -326,8 +326,8 @@ void UIMediumManagerWidget::sltApplyMediumDetailsChanges()
             if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
                 msgCenter().cannotResizeHardDiskStorage(comProgress,
                                                         oldData.m_options.m_strLocation,
-                                                        vboxGlobal().formatSize(oldData.m_options.m_uLogicalSize),
-                                                        vboxGlobal().formatSize(newData.m_options.m_uLogicalSize),
+                                                        uiCommon().formatSize(oldData.m_options.m_uLogicalSize),
+                                                        uiCommon().formatSize(newData.m_options.m_uLogicalSize),
                                                         this);
         }
     }
@@ -355,7 +355,7 @@ void UIMediumManagerWidget::sltApplyMediumDetailsChanges()
 void UIMediumManagerWidget::sltHandleMediumCreated(const QUuid &uMediumID)
 {
     /* Search for corresponding medium: */
-    UIMedium medium = vboxGlobal().medium(uMediumID);
+    UIMedium medium = uiCommon().medium(uMediumID);
 
     /* Ignore non-interesting media: */
     if (medium.isNull() || medium.isHostDrive())
@@ -378,7 +378,7 @@ void UIMediumManagerWidget::sltHandleMediumCreated(const QUuid &uMediumID)
      * 2. if there is no currently medium-item selected
      * we have to choose newly added medium-item as current one: */
     if (   !m_fPreventChangeCurrentItem
-        && (   !vboxGlobal().isMediumEnumerationInProgress()
+        && (   !uiCommon().isMediumEnumerationInProgress()
             || !mediumItem(medium.type())))
         setCurrentItem(treeWidget(medium.type()), pMediumItem);
 }
@@ -402,7 +402,7 @@ void UIMediumManagerWidget::sltHandleMediumEnumerationStart()
     /* Reset and show progress-bar: */
     if (m_pProgressBar)
     {
-        m_pProgressBar->setMaximum(vboxGlobal().mediumIDs().size());
+        m_pProgressBar->setMaximum(uiCommon().mediumIDs().size());
         m_pProgressBar->setValue(0);
         m_pProgressBar->show();
     }
@@ -431,7 +431,7 @@ void UIMediumManagerWidget::sltHandleMediumEnumerationStart()
 void UIMediumManagerWidget::sltHandleMediumEnumerated(const QUuid &uMediumID)
 {
     /* Search for corresponding medium: */
-    UIMedium medium = vboxGlobal().medium(uMediumID);
+    UIMedium medium = uiCommon().medium(uMediumID);
 
     /* Ignore non-interesting media: */
     if (medium.isNull() || medium.isHostDrive())
@@ -485,14 +485,14 @@ void UIMediumManagerWidget::sltHandleMachineStateChange(const QUuid &uId, const 
 
 void UIMediumManagerWidget::sltAddMedium()
 {
-    QString strDefaultMachineFolder = vboxGlobal().virtualBox().GetSystemProperties().GetDefaultMachineFolder();
-    vboxGlobal().openMediumWithFileOpenDialog(currentMediumType(), this,
+    QString strDefaultMachineFolder = uiCommon().virtualBox().GetSystemProperties().GetDefaultMachineFolder();
+    uiCommon().openMediumWithFileOpenDialog(currentMediumType(), this,
                                               strDefaultMachineFolder, true /* use most recent medium folder */);
 }
 
 void UIMediumManagerWidget::sltCreateMedium()
 {
-    vboxGlobal().openMediumCreatorDialog(this, currentMediumType());
+    uiCommon().openMediumCreatorDialog(this, currentMediumType());
 }
 
 void UIMediumManagerWidget::sltCopyMedium()
@@ -579,7 +579,7 @@ void UIMediumManagerWidget::sltToggleMediumSearchVisibility(bool fVisible)
 void UIMediumManagerWidget::sltRefreshAll()
 {
     /* Start medium-enumeration: */
-    vboxGlobal().startMediumEnumeration();
+    uiCommon().startMediumEnumeration();
 }
 
 void UIMediumManagerWidget::sltHandleCurrentTabChanged()
@@ -695,11 +695,11 @@ void UIMediumManagerWidget::prepare()
 
     /* Start medium-enumeration (if necessary): */
 #ifndef VBOX_GUI_WITH_NEW_MEDIA_EVENTS
-    if (!vboxGlobal().isMediumEnumerationInProgress())
+    if (!uiCommon().isMediumEnumerationInProgress())
 #else
-    if (!vboxGlobal().isFullMediumEnumerationRequested())
+    if (!uiCommon().isFullMediumEnumerationRequested())
 #endif
-        vboxGlobal().startMediumEnumeration();
+        uiCommon().startMediumEnumeration();
     /* Emulate medium-enumeration otherwise: */
     else
     {
@@ -707,7 +707,7 @@ void UIMediumManagerWidget::prepare()
         sltHandleMediumEnumerationStart();
 
         /* Finish medium-enumeration (if necessary): */
-        if (!vboxGlobal().isMediumEnumerationInProgress())
+        if (!uiCommon().isMediumEnumerationInProgress())
             sltHandleMediumEnumerationFinish();
     }
 }
@@ -719,17 +719,17 @@ void UIMediumManagerWidget::prepareConnections()
             this, &UIMediumManagerWidget::sltHandleMachineStateChange);
 
     /* Configure medium-processing connections: */
-    connect(&vboxGlobal(), &VBoxGlobal::sigMediumCreated,
+    connect(&uiCommon(), &UICommon::sigMediumCreated,
             this, &UIMediumManagerWidget::sltHandleMediumCreated);
-    connect(&vboxGlobal(), &VBoxGlobal::sigMediumDeleted,
+    connect(&uiCommon(), &UICommon::sigMediumDeleted,
             this, &UIMediumManagerWidget::sltHandleMediumDeleted);
 
     /* Configure medium-enumeration connections: */
-    connect(&vboxGlobal(), &VBoxGlobal::sigMediumEnumerationStarted,
+    connect(&uiCommon(), &UICommon::sigMediumEnumerationStarted,
             this, &UIMediumManagerWidget::sltHandleMediumEnumerationStart);
-    connect(&vboxGlobal(), &VBoxGlobal::sigMediumEnumerated,
+    connect(&uiCommon(), &UICommon::sigMediumEnumerated,
             this, &UIMediumManagerWidget::sltHandleMediumEnumerated);
-    connect(&vboxGlobal(), &VBoxGlobal::sigMediumEnumerationFinished,
+    connect(&uiCommon(), &UICommon::sigMediumEnumerationFinished,
             this, &UIMediumManagerWidget::sltHandleMediumEnumerationFinish);
 }
 
@@ -1001,7 +1001,7 @@ void UIMediumManagerWidget::repopulateTreeWidgets()
 
     /* Create medium-items (do not change current one): */
     m_fPreventChangeCurrentItem = true;
-    foreach (const QUuid &uMediumID, vboxGlobal().mediumIDs())
+    foreach (const QUuid &uMediumID, uiCommon().mediumIDs())
         sltHandleMediumCreated(uMediumID);
     m_fPreventChangeCurrentItem = false;
 
@@ -1064,7 +1064,7 @@ void UIMediumManagerWidget::updateActions()
     UIMediumItem *pMediumItem = currentMediumItem();
 
     /* Calculate actions accessibility: */
-    bool fNotInEnumeration = !vboxGlobal().isMediumEnumerationInProgress();
+    bool fNotInEnumeration = !uiCommon().isMediumEnumerationInProgress();
 
     /* Apply actions accessibility: */
     bool fActionEnabledCopy = fNotInEnumeration && pMediumItem && checkMediumFor(pMediumItem, Action_Copy);
@@ -1133,7 +1133,7 @@ void UIMediumManagerWidget::updateTabIcons(UIMediumItem *pMediumItem, Action act
             *pfInaccessible = true;
 
             if (m_pTabWidget)
-                m_pTabWidget->setTabIcon(tabIndex(mediumType), vboxGlobal().warningIcon());
+                m_pTabWidget->setTabIcon(tabIndex(mediumType), uiCommon().warningIcon());
 
             break;
         }
@@ -1170,7 +1170,7 @@ void UIMediumManagerWidget::updateTabIcons(UIMediumItem *pMediumItem, Action act
             if (m_pTabWidget)
             {
                 if (*pfInaccessible)
-                    m_pTabWidget->setTabIcon(tabIndex(mediumType), vboxGlobal().warningIcon());
+                    m_pTabWidget->setTabIcon(tabIndex(mediumType), uiCommon().warningIcon());
                 else
                     m_pTabWidget->setTabIcon(tabIndex(mediumType), *pIcon);
             }
@@ -1299,7 +1299,7 @@ UIMediumItem* UIMediumManagerWidget::createHardDiskItem(const UIMedium &medium)
                 if (!pParentMediumItem)
                 {
                     /* Make sure corresponding parent medium is already cached! */
-                    UIMedium parentMedium = vboxGlobal().medium(medium.parentID());
+                    UIMedium parentMedium = uiCommon().medium(medium.parentID());
                     if (parentMedium.isNull())
                         AssertMsgFailed(("Parent medium with ID={%s} was not found!\n", medium.parentID().toString().toUtf8().constData()));
                     /* Try to create parent medium-item: */
@@ -1358,9 +1358,9 @@ void UIMediumManagerWidget::updateMediumItem(const UIMedium &medium)
 
 #ifdef VBOX_GUI_WITH_NEW_MEDIA_EVENTS
     /* Update all the children recursively as well: */
-    foreach(const QUuid &uMediumId, vboxGlobal().mediumIDs())
+    foreach(const QUuid &uMediumId, uiCommon().mediumIDs())
     {
-        UIMedium guiMedium = vboxGlobal().medium(uMediumId);
+        UIMedium guiMedium = uiCommon().medium(uMediumId);
         if (   !guiMedium.isNull()
             && guiMedium.parentID() == medium.id())
             updateMediumItem(guiMedium);

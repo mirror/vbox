@@ -31,7 +31,7 @@
 
 /* GUI includes: */
 #include "QIToolButton.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "UIApplianceExportEditorWidget.h"
 #include "UIConverter.h"
 #include "UIEmptyFilePathSelector.h"
@@ -575,7 +575,7 @@ bool UIWizardExportAppPageExpert::isComplete() const
         const bool fCSP =    field("isFormatCloudOne").toBool();
 
         fResult =    (   fOVF
-                      && VBoxGlobal::hasAllowedExtension(path().toLower(), OVFFileExts))
+                      && UICommon::hasAllowedExtension(path().toLower(), OVFFileExts))
                   || (   fCSP
                       && m_comCloudProfile.isNotNull()
                       && m_comAppliance.isNotNull()

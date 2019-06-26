@@ -26,7 +26,7 @@
 /* GUI includes: */
 #include "UIWizardNewVMPageBasic2.h"
 #include "UIWizardNewVM.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "UIGuestRAMSlider.h"
 #include "QIRichTextLabel.h"
 
@@ -68,7 +68,7 @@ UIWizardNewVMPageBasic2::UIWizardNewVMPageBasic2()
             {
                 m_pRamEditor->setMinimum(m_pRamSlider->minimum());
                 m_pRamEditor->setMaximum(m_pRamSlider->maximum());
-                vboxGlobal().setMinimumWidthAccordingSymbolCount(m_pRamEditor, 5);
+                uiCommon().setMinimumWidthAccordingSymbolCount(m_pRamEditor, 5);
             }
             m_pRamUnits = new QLabel(this);
             {
@@ -134,9 +134,9 @@ void UIWizardNewVMPageBasic2::retranslateUi()
                                         "to be allocated to the virtual machine.</p>"
                                         "<p>The recommended memory size is <b>%1</b> MB.</p>")
                                         .arg(strRecommendedRAM));
-    m_pRamUnits->setText(VBoxGlobal::tr("MB", "size suffix MBytes=1024 KBytes"));
-    m_pRamMin->setText(QString("%1 %2").arg(m_pRamSlider->minRAM()).arg(VBoxGlobal::tr("MB", "size suffix MBytes=1024 KBytes")));
-    m_pRamMax->setText(QString("%1 %2").arg(m_pRamSlider->maxRAM()).arg(VBoxGlobal::tr("MB", "size suffix MBytes=1024 KBytes")));
+    m_pRamUnits->setText(UICommon::tr("MB", "size suffix MBytes=1024 KBytes"));
+    m_pRamMin->setText(QString("%1 %2").arg(m_pRamSlider->minRAM()).arg(UICommon::tr("MB", "size suffix MBytes=1024 KBytes")));
+    m_pRamMax->setText(QString("%1 %2").arg(m_pRamSlider->maxRAM()).arg(UICommon::tr("MB", "size suffix MBytes=1024 KBytes")));
 }
 
 void UIWizardNewVMPageBasic2::initializePage()

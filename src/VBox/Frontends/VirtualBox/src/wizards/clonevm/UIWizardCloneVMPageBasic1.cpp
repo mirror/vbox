@@ -28,7 +28,7 @@
 #include "UIFilePathSelector.h"
 #include "UIWizardCloneVM.h"
 #include "UIWizardCloneVMPageBasic1.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 
 /* COM includes: */
 #include "CVirtualBox.h"
@@ -91,7 +91,7 @@ void UIWizardCloneVMPage1::setCloneFilePath(const QString &path)
 
 void UIWizardCloneVMPage1::composeCloneFilePath()
 {
-    CVirtualBox vbox = vboxGlobal().virtualBox();
+    CVirtualBox vbox = uiCommon().virtualBox();
     setCloneFilePath(vbox.ComposeMachineFilename(m_pNameLineEdit ? m_pNameLineEdit->text() : QString(),
                                                  m_strGroup,
                                                  QString::null,

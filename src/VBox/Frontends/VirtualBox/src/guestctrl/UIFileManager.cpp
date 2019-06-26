@@ -35,7 +35,7 @@
 #include "UIFileManagerHostTable.h"
 #include "UIGuestControlInterface.h"
 #include "UIToolBar.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 
 /* COM includes: */
 #include "CFsObjInfo.h"
@@ -663,7 +663,7 @@ void UIFileManager::cleanupListener(ComObjPtr<UIMainEventListenerImpl> &QtListen
     }
 
     /* Make sure VBoxSVC is available: */
-    if (!vboxGlobal().isVBoxSVCAvailable())
+    if (!uiCommon().isVBoxSVCAvailable())
         return;
 
     /* Unregister event listener for CProgress event source: */

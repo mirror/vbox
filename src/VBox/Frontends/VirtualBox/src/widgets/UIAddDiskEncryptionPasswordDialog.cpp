@@ -30,7 +30,7 @@
 #include "QIDialogButtonBox.h"
 #include "QIStyledItemDelegate.h"
 #include "QIWithRetranslateUI.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "UIAddDiskEncryptionPasswordDialog.h"
 #include "UIIconPool.h"
 #include "UIMedium.h"
@@ -573,7 +573,7 @@ void UIAddDiskEncryptionPasswordDialog::prepare()
 bool UIAddDiskEncryptionPasswordDialog::isPasswordValid(const QUuid &uMediumId, const QString strPassword)
 {
     /* Look for the medium with passed ID: */
-    const UIMedium uimedium = vboxGlobal().medium(uMediumId);
+    const UIMedium uimedium = uiCommon().medium(uMediumId);
     if (!uimedium.isNull())
     {
         /* Check wrapped medium for validity: */

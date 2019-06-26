@@ -25,7 +25,7 @@
 
 /* GUI includes: */
 #include "QIMessageBox.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "UIActionPoolManager.h"
 #include "UIChooser.h"
 #include "UIChooserHandlerMouse.h"
@@ -228,7 +228,7 @@ void UIChooserModel::setSelectedItem(const QString &strDefinition)
     else if (strItemType == "m")
     {
         /* Check if machine-item with passed descriptor (name or id) registered: */
-        CMachine comMachine = vboxGlobal().virtualBox().FindMachine(strItemDescriptor);
+        CMachine comMachine = uiCommon().virtualBox().FindMachine(strItemDescriptor);
         if (!comMachine.isNull())
         {
             /* Search for machine-item with required name: */
@@ -658,7 +658,7 @@ void UIChooserModel::sltMachineRegistered(const QUuid &uId, const bool fRegister
             updateLayout();
 
             /* Select newly added item: */
-            CMachine comMachine = vboxGlobal().virtualBox().FindMachine(uId.toString());
+            CMachine comMachine = uiCommon().virtualBox().FindMachine(uId.toString());
             setSelectedItem(root()->searchForItem(comMachine.GetName(),
                                                  UIChooserItemSearchFlag_Machine |
                                                  UIChooserItemSearchFlag_ExactName));
@@ -680,7 +680,7 @@ void UIChooserModel::sltReloadMachine(const QUuid &uId)
         updateLayout();
 
         /* Select newly added item: */
-        CMachine comMachine = vboxGlobal().virtualBox().FindMachine(uId.toString());
+        CMachine comMachine = uiCommon().virtualBox().FindMachine(uId.toString());
         setSelectedItem(root()->searchForItem(comMachine.GetName(),
                                              UIChooserItemSearchFlag_Machine |
                                              UIChooserItemSearchFlag_ExactName));
@@ -1129,7 +1129,7 @@ void UIChooserModel::prepareContextMenu()
     if (m_pContextMenuGlobal)
     {
         /* Check if Ext Pack is ready, some of actions my depend on it: */
-        CExtPack extPack = vboxGlobal().virtualBox().GetExtensionPackManager().Find(GUI_ExtPackName);
+        CExtPack extPack = uiCommon().virtualBox().GetExtensionPackManager().Find(GUI_ExtPackName);
         const bool fExtPackAccessible = !extPack.isNull() && extPack.GetUsable();
 
 #ifdef VBOX_WS_MAC
@@ -1508,7 +1508,7 @@ void UIChooserModel::unregisterMachines(const QList<QUuid> &ids)
 {
     /* Populate machine list: */
     QList<CMachine> machines;
-    CVirtualBox vbox = vboxGlobal().virtualBox();
+    CVirtualBox vbox = uiCommon().virtualBox();
     foreach (const QUuid &uId, ids)
     {
         CMachine machine = vbox.FindMachine(uId.toString());

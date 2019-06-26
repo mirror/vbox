@@ -21,7 +21,7 @@
 #endif /* !VBOX_WS_MAC */
 
 /* GUI includes: */
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "UIDesktopWidgetWatchdog.h"
 #include "UIMessageCenter.h"
 #include "UISession.h"
@@ -160,8 +160,8 @@ void UIMachineLogicNormal::sltToggleMenuBar()
     AssertReturnVoid(isMachineWindowsCreated());
 
     /* Invert menu-bar availability option: */
-    const bool fEnabled = gEDataManager->menuBarEnabled(vboxGlobal().managedVMUuid());
-    gEDataManager->setMenuBarEnabled(!fEnabled, vboxGlobal().managedVMUuid());
+    const bool fEnabled = gEDataManager->menuBarEnabled(uiCommon().managedVMUuid());
+    gEDataManager->setMenuBarEnabled(!fEnabled, uiCommon().managedVMUuid());
 }
 #endif /* !RT_OS_DARWIN */
 
@@ -210,8 +210,8 @@ void UIMachineLogicNormal::sltToggleStatusBar()
     AssertReturnVoid(isMachineWindowsCreated());
 
     /* Invert status-bar availability option: */
-    const bool fEnabled = gEDataManager->statusBarEnabled(vboxGlobal().managedVMUuid());
-    gEDataManager->setStatusBarEnabled(!fEnabled, vboxGlobal().managedVMUuid());
+    const bool fEnabled = gEDataManager->statusBarEnabled(uiCommon().managedVMUuid());
+    gEDataManager->setStatusBarEnabled(!fEnabled, uiCommon().managedVMUuid());
 }
 
 void UIMachineLogicNormal::sltHandleActionTriggerViewScreenToggle(int iIndex, bool fEnabled)

@@ -28,7 +28,7 @@
 /* GUI includes: */
 #include "UIWizardNewVDPageBasic3.h"
 #include "UIWizardNewVD.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "UIMessageCenter.h"
 #include "UIIconPool.h"
 #include "QIFileDialog.h"
@@ -50,7 +50,7 @@ UIWizardNewVDPage3::UIWizardNewVDPage3(const QString &strDefaultName, const QStr
     : m_strDefaultName(strDefaultName.isEmpty() ? QString("NewVirtualDisk1") : strDefaultName)
     , m_strDefaultPath(strDefaultPath)
     , m_uMediumSizeMin(_4M)
-    , m_uMediumSizeMax(vboxGlobal().virtualBox().GetSystemProperties().GetInfoVDSize())
+    , m_uMediumSizeMax(uiCommon().virtualBox().GetSystemProperties().GetInfoVDSize())
 {
 }
 
@@ -93,7 +93,7 @@ void UIWizardNewVDPage3::onSelectLocationButtonClicked()
     /* Open corresponding file-dialog: */
     QString strChosenFilePath = QIFileDialog::getSaveFileName(folder.absoluteFilePath(strFileName),
                                                               strBackendsList, thisImp(),
-                                                              VBoxGlobal::tr("Please choose a location for new virtual hard disk file"));
+                                                              UICommon::tr("Please choose a location for new virtual hard disk file"));
 
     /* If there was something really chosen: */
     if (!strChosenFilePath.isEmpty())

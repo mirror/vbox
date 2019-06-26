@@ -30,7 +30,7 @@
 #include "UIExtraDataManager.h"
 #include "UIIconPool.h"
 #include "VBoxAboutDlg.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 
 /* Other VBox includes: */
 #include <iprt/path.h>
@@ -112,8 +112,8 @@ void VBoxAboutDlg::prepare()
     QString strPath(":/about.png");
 
     /* Branding: Use a custom about splash picture if set: */
-    const QString strSplash = vboxGlobal().brandingGetKey("UI/AboutSplash");
-    if (vboxGlobal().brandingIsActive() && !strSplash.isEmpty())
+    const QString strSplash = uiCommon().brandingGetKey("UI/AboutSplash");
+    if (uiCommon().brandingIsActive() && !strSplash.isEmpty())
     {
         char szExecPath[1024];
         RTPathExecDir(szExecPath, 1024);
@@ -170,7 +170,7 @@ void VBoxAboutDlg::prepareLabel()
         QPalette palette;
         /* Branding: Set a different text color (because splash also could be white),
          * otherwise use white as default color: */
-        const QString strColor = vboxGlobal().brandingGetKey("UI/AboutTextColor");
+        const QString strColor = uiCommon().brandingGetKey("UI/AboutTextColor");
         if (!strColor.isEmpty())
             palette.setColor(QPalette::WindowText, QColor(strColor).name());
         else

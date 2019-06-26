@@ -21,7 +21,7 @@
 #include <QTimer>
 
 /* GUI includes: */
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "UIDesktopWidgetWatchdog.h"
 #include "UIExtraDataManager.h"
 #include "UISession.h"
@@ -125,14 +125,14 @@ void UIMachineWindowSeamless::prepareVisualState()
 void UIMachineWindowSeamless::prepareMiniToolbar()
 {
     /* Make sure mini-toolbar is not restricted: */
-    if (!gEDataManager->miniToolbarEnabled(vboxGlobal().managedVMUuid()))
+    if (!gEDataManager->miniToolbarEnabled(uiCommon().managedVMUuid()))
         return;
 
     /* Create mini-toolbar: */
     m_pMiniToolBar = new UIMiniToolBar(this,
                                        GeometryType_Available,
-                                       gEDataManager->miniToolbarAlignment(vboxGlobal().managedVMUuid()),
-                                       gEDataManager->autoHideMiniToolbar(vboxGlobal().managedVMUuid()),
+                                       gEDataManager->miniToolbarAlignment(uiCommon().managedVMUuid()),
+                                       gEDataManager->autoHideMiniToolbar(uiCommon().managedVMUuid()),
                                        screenId());
     AssertPtrReturnVoid(m_pMiniToolBar);
     {
@@ -158,7 +158,7 @@ void UIMachineWindowSeamless::cleanupMiniToolbar()
         return;
 
     /* Save mini-toolbar settings: */
-    gEDataManager->setAutoHideMiniToolbar(m_pMiniToolBar->autoHide(), vboxGlobal().managedVMUuid());
+    gEDataManager->setAutoHideMiniToolbar(m_pMiniToolBar->autoHide(), uiCommon().managedVMUuid());
     /* Delete mini-toolbar: */
     delete m_pMiniToolBar;
     m_pMiniToolBar = 0;

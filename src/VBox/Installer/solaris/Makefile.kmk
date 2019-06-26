@@ -369,7 +369,7 @@ ifdef VBOX_WITH_HARDENING
 	VBoxNetDHCP.so \
 	VBoxNetNAT.so \
 	$(if $(VBOX_WITH_VBOXSDL),VBoxSDL.so,) \
-	$(if $(VBOX_WITH_QTGUI),VirtualBoxVM.so VBoxGlobal.so,)
+	$(if $(VBOX_WITH_QTGUI),VirtualBoxVM.so UICommon.so,)
 endif
 
 ## @def SOLARIS_STRIP_OBJS

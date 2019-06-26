@@ -28,7 +28,7 @@
 /* GUI includes: */
 #include "QIDialog.h"
 #include "QIFileDialog.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "UIMessageCenter.h"
 #include "UIWizardImportApp.h"
 #include "UIWizardImportAppPageBasic1.h"
@@ -99,7 +99,7 @@ private slots:
     /* Save stuff: */
     void sltSave()
     {
-        QString fileName = QIFileDialog::getSaveFileName(vboxGlobal().documentsPath(), tr("Text (*.txt)"),
+        QString fileName = QIFileDialog::getSaveFileName(uiCommon().documentsPath(), tr("Text (*.txt)"),
                                                          this, tr("Save license to file..."));
         if (!fileName.isEmpty())
         {

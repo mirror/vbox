@@ -27,7 +27,7 @@
 
 /* GUI includes: */
 #include "QIMessageBox.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "UIConverter.h"
 #include "UIMessageCenter.h"
 #include "UIProgressDialog.h"
@@ -695,7 +695,7 @@ int UIMessageCenter::confirmMachineRemoval(const QList<CMachine> &machines) cons
         {
             /* Compose machine name: */
             QFileInfo fi(machine.GetSettingsFilePath());
-            strMachineName = VBoxGlobal::hasAllowedExtension(fi.completeSuffix(), VBoxFileExts) ? fi.completeBaseName() : fi.fileName();
+            strMachineName = UICommon::hasAllowedExtension(fi.completeSuffix(), VBoxFileExts) ? fi.completeBaseName() : fi.fileName();
             /* Increment inacessible machine count: */
             ++cInacessibleMachineCount;
         }
@@ -1269,7 +1269,7 @@ bool UIMessageCenter::confirmMediumRelease(const UIMedium &medium, bool fInduced
 {
     /* Prepare the usage: */
     QStringList usage;
-    CVirtualBox vbox = vboxGlobal().virtualBox();
+    CVirtualBox vbox = uiCommon().virtualBox();
     foreach (const QUuid &uMachineID, medium.curStateMachineIds())
     {
         CMachine machine = vbox.FindMachine(uMachineID.toString());
@@ -2112,7 +2112,7 @@ void UIMessageCenter::showRuntimeError(const CConsole &console, bool fFatal, con
     /* Format error-details: */
     QString formatted("<!--EOM-->");
     if (!strErrorMsg.isEmpty())
-        formatted.prepend(QString("<p>%1.</p>").arg(vboxGlobal().emphasize(strErrorMsg)));
+        formatted.prepend(QString("<p>%1.</p>").arg(uiCommon().emphasize(strErrorMsg)));
     if (!strErrorId.isEmpty())
         formatted += QString("<table bgcolor=#EEEEEE border=0 cellspacing=5 "
                              "cellpadding=0 width=100%>"
@@ -2336,7 +2336,7 @@ bool UIMessageCenter::cannotEnterFullscreenMode(ULONG /* uWidth */, ULONG /* uHe
                           tr("<p>Could not switch the guest display to full-screen mode due to insufficient guest video memory.</p>"
                              "<p>You should configure the virtual machine to have at least <b>%1</b> of video memory.</p>"
                              "<p>Press <b>Ignore</b> to switch to full-screen mode anyway or press <b>Cancel</b> to cancel the operation.</p>")
-                             .arg(VBoxGlobal::formatSize(uMinVRAM)),
+                             .arg(UICommon::formatSize(uMinVRAM)),
                           0 /* auto-confirm id */,
                           tr("Ignore"));
 }
@@ -2348,7 +2348,7 @@ void UIMessageCenter::cannotEnterSeamlessMode(ULONG /* uWidth */, ULONG /* uHeig
              "video memory.</p>"
              "<p>You should configure the virtual machine to have at "
              "least <b>%1</b> of video memory.</p>")
-             .arg(VBoxGlobal::formatSize(uMinVRAM)));
+             .arg(UICommon::formatSize(uMinVRAM)));
 }
 
 bool UIMessageCenter::cannotSwitchScreenInFullscreen(quint64 uMinVRAM) const
@@ -2357,7 +2357,7 @@ bool UIMessageCenter::cannotSwitchScreenInFullscreen(quint64 uMinVRAM) const
                           tr("<p>Could not change the guest screen to this host screen due to insufficient guest video memory.</p>"
                              "<p>You should configure the virtual machine to have at least <b>%1</b> of video memory.</p>"
                              "<p>Press <b>Ignore</b> to switch the screen anyway or press <b>Cancel</b> to cancel the operation.</p>")
-                             .arg(VBoxGlobal::formatSize(uMinVRAM)),
+                             .arg(UICommon::formatSize(uMinVRAM)),
                           0 /* auto-confirm id */,
                           tr("Ignore"));
 }
@@ -2369,7 +2369,7 @@ void UIMessageCenter::cannotSwitchScreenInSeamless(quint64 uMinVRAM) const
              "due to insufficient guest video memory.</p>"
              "<p>You should configure the virtual machine to have at "
              "least <b>%1</b> of video memory.</p>")
-             .arg(VBoxGlobal::formatSize(uMinVRAM)));
+             .arg(UICommon::formatSize(uMinVRAM)));
 }
 
 void UIMessageCenter::cannotAddDiskEncryptionPassword(const CConsole &console)
@@ -2424,7 +2424,7 @@ bool UIMessageCenter::confirmDownloadGuestAdditions(const QString &strUrl, qulon
     return questionBinary(windowManager().networkManagerOrMainWindowShown(), MessageType_Question,
                           tr("<p>Are you sure you want to download the <b>VirtualBox Guest Additions</b> disk image file "
                              "from <nobr><a href=\"%1\">%1</a></nobr> (size %2 bytes)?</p>")
-                             .arg(strUrl, QLocale(VBoxGlobal::languageId()).toString(uSize)),
+                             .arg(strUrl, QLocale(UICommon::languageId()).toString(uSize)),
                           0 /* auto-confirm id */,
                           tr("Download"));
 }
@@ -2485,7 +2485,7 @@ bool UIMessageCenter::confirmDownloadUserManual(const QString &strURL, qulonglon
     return questionBinary(windowManager().networkManagerOrMainWindowShown(), MessageType_Question,
                           tr("<p>Are you sure you want to download the <b>VirtualBox User Manual</b> "
                              "from <nobr><a href=\"%1\">%1</a></nobr> (size %2 bytes)?</p>")
-                             .arg(strURL, QLocale(VBoxGlobal::languageId()).toString(uSize)),
+                             .arg(strURL, QLocale(UICommon::languageId()).toString(uSize)),
                           0 /* auto-confirm id */,
                           tr("Download"));
 }
@@ -2524,7 +2524,7 @@ bool UIMessageCenter::confirmDownloadExtensionPack(const QString &strExtPackName
     return questionBinary(windowManager().networkManagerOrMainWindowShown(), MessageType_Question,
                           tr("<p>Are you sure you want to download the <b><nobr>%1</nobr></b> "
                              "from <nobr><a href=\"%2\">%2</a></nobr> (size %3 bytes)?</p>")
-                             .arg(strExtPackName, strURL, QLocale(VBoxGlobal::languageId()).toString(uSize)),
+                             .arg(strExtPackName, strURL, QLocale(UICommon::languageId()).toString(uSize)),
                           0 /* auto-confirm id */,
                           tr("Download"));
 }
@@ -2827,33 +2827,33 @@ bool UIMessageCenter::confirmOverridingFilesIfExists(const QVector<QString> &str
 
 void UIMessageCenter::sltShowHelpWebDialog()
 {
-    vboxGlobal().openURL("https://www.virtualbox.org");
+    uiCommon().openURL("https://www.virtualbox.org");
 }
 
 void UIMessageCenter::sltShowBugTracker()
 {
-    vboxGlobal().openURL("https://www.virtualbox.org/wiki/Bugtracker");
+    uiCommon().openURL("https://www.virtualbox.org/wiki/Bugtracker");
 }
 
 void UIMessageCenter::sltShowForums()
 {
-    vboxGlobal().openURL("https://forums.virtualbox.org/");
+    uiCommon().openURL("https://forums.virtualbox.org/");
 }
 
 void UIMessageCenter::sltShowOracle()
 {
-    vboxGlobal().openURL("http://www.oracle.com/us/technologies/virtualization/virtualbox/overview/index.html");
+    uiCommon().openURL("http://www.oracle.com/us/technologies/virtualization/virtualbox/overview/index.html");
 }
 
 void UIMessageCenter::sltShowHelpAboutDialog()
 {
-    CVirtualBox vbox = vboxGlobal().virtualBox();
+    CVirtualBox vbox = uiCommon().virtualBox();
     QString strFullVersion;
-    if (vboxGlobal().brandingIsActive())
+    if (uiCommon().brandingIsActive())
     {
         strFullVersion = QString("%1 r%2 - %3").arg(vbox.GetVersion())
                                                .arg(vbox.GetRevision())
-                                               .arg(vboxGlobal().brandingGetKey("Name"));
+                                               .arg(uiCommon().brandingGetKey("Name"));
     }
     else
     {
@@ -2869,12 +2869,12 @@ void UIMessageCenter::sltShowHelpHelpDialog()
 {
 #ifndef VBOX_OSE
     /* For non-OSE version we just open it: */
-    sltShowUserManual(vboxGlobal().helpFile());
+    sltShowUserManual(uiCommon().helpFile());
 #else /* #ifndef VBOX_OSE */
     /* For OSE version we have to check if it present first: */
-    QString strUserManualFileName1 = vboxGlobal().helpFile();
+    QString strUserManualFileName1 = uiCommon().helpFile();
     QString strShortFileName = QFileInfo(strUserManualFileName1).fileName();
-    QString strUserManualFileName2 = QDir(vboxGlobal().homeFolder()).absoluteFilePath(strShortFileName);
+    QString strUserManualFileName2 = QDir(uiCommon().homeFolder()).absoluteFilePath(strShortFileName);
     /* Show if user manual already present: */
     if (QFile::exists(strUserManualFileName1))
         sltShowUserManual(strUserManualFileName1);
@@ -2917,10 +2917,10 @@ void UIMessageCenter::sltShowUserManual(const QString &strLocation)
     AssertRC(rc);
     QProcess::startDetached(QString(szViewerPath) + "/kchmviewer", QStringList(strLocation));
 # else /* #ifndef VBOX_OSE */
-    vboxGlobal().openURL("file://" + strLocation);
+    uiCommon().openURL("file://" + strLocation);
 # endif /* #ifdef VBOX_OSE */
 #elif defined (VBOX_WS_MAC)
-    vboxGlobal().openURL("file://" + strLocation);
+    uiCommon().openURL("file://" + strLocation);
 #endif
 }
 
@@ -3006,8 +3006,8 @@ int UIMessageCenter::showMessageBox(QWidget *pParent, MessageType enmType,
     QStringList confirmedMessageList;
     if (!strAutoConfirmId.isEmpty())
     {
-        const QUuid uID = vboxGlobal().uiType() == VBoxGlobal::UIType_RuntimeUI
-                        ? vboxGlobal().managedVMUuid()
+        const QUuid uID = uiCommon().uiType() == UICommon::UIType_RuntimeUI
+                        ? uiCommon().managedVMUuid()
                         : UIExtraDataManager::GlobalID;
         confirmedMessageList = gEDataManager->suppressedMessages(uID);
         if (   confirmedMessageList.contains(strAutoConfirmId)

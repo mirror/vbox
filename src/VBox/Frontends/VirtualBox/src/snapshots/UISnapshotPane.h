@@ -23,7 +23,7 @@
 
 /* GUI includes: */
 #include "QIWithRetranslateUI.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 
 /* COM includes: */
 #include "CMachine.h"

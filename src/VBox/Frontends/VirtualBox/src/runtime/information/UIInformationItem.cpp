@@ -22,7 +22,7 @@
 #include <QUrl>
 
 /* GUI includes: */
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "UIIconPool.h"
 #include "UIInformationItem.h"
 

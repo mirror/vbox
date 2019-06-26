@@ -28,7 +28,7 @@
 #include "UIFilePathSelector.h"
 #include "UIMedium.h"
 #include "UIMessageCenter.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 
 /* COM includes: */
 #include "CSystemProperties.h"
@@ -160,13 +160,13 @@ QString UIFDCreationDialog::getDefaultFolder() const
 
     QString strInitialPath = m_strDefaultFolder;
     if (strInitialPath.isEmpty())
-        strInitialPath = vboxGlobal().virtualBox().GetSystemProperties().GetDefaultMachineFolder();
+        strInitialPath = uiCommon().virtualBox().GetSystemProperties().GetDefaultMachineFolder();
 
     if (strInitialPath.isEmpty())
         return strInitialPath;
 
     QString strDiskname = !(m_strMachineName.isEmpty()) ? m_strMachineName : "NewFloppyDisk";
-    strDiskname = VBoxGlobal::findUniqueFileName(m_strDefaultFolder, strDiskname);
+    strDiskname = UICommon::findUniqueFileName(m_strDefaultFolder, strDiskname);
 
     strInitialPath = QDir(strInitialPath).absoluteFilePath(strDiskname + "." + strPreferredExtension);
     return strInitialPath;
@@ -179,7 +179,7 @@ void UIFDCreationDialog::accept()
     if (m_pFilePathselector->path().isEmpty() || mediumFormats.isEmpty())
         return;
 
-    CVirtualBox vbox = vboxGlobal().virtualBox();
+    CVirtualBox vbox = uiCommon().virtualBox();
     QString strMediumLocation = m_pFilePathselector->path();
 
     CMedium newMedium = vbox.CreateMedium(mediumFormats[0].GetName(), strMediumLocation,
@@ -214,8 +214,8 @@ void UIFDCreationDialog::accept()
     /* Store the id of the newly create medium: */
     m_uMediumID = newMedium.GetId();
 
-    /* Notify VBoxGlobal about the new medium: */
-    vboxGlobal().createMedium(UIMedium(newMedium, UIMediumDeviceType_Floppy, KMediumState_Created));
+    /* Notify UICommon about the new medium: */
+    uiCommon().createMedium(UIMedium(newMedium, UIMediumDeviceType_Floppy, KMediumState_Created));
 
     /* After a successful creation and initilization of the floppy disk we call base class accept
        effectively closing this dialog: */

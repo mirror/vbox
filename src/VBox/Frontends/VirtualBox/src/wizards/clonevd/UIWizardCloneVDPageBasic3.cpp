@@ -24,7 +24,7 @@
 /* GUI includes: */
 #include "UIWizardCloneVDPageBasic3.h"
 #include "UIWizardCloneVD.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "UIMessageCenter.h"
 #include "UIIconPool.h"
 #include "QIFileDialog.h"

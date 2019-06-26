@@ -19618,7 +19618,7 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     </message>
 </context>
 <context>
-    <name>VBoxGlobal</name>
+    <name>UICommon</name>
     <message>
         <source>Unknown device %1:%2</source>
         <comment>USB device details</comment>

@@ -26,7 +26,7 @@
 #include "UIMachineLogic.h"
 #include "UIMachineView.h"
 #include "UISession.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 
 /* COM includes: */
 #include "COMEnums.h"
@@ -115,7 +115,7 @@ void UIAbstractDockIconPreviewHelper::initPreviewImages()
 void UIAbstractDockIconPreviewHelper::drawOverlayIcons(CGContextRef context)
 {
     /* Determine whether dock icon overlay is not disabled: */
-    if (!gEDataManager->dockIconDisableOverlay(vboxGlobal().managedVMUuid()))
+    if (!gEDataManager->dockIconDisableOverlay(uiCommon().managedVMUuid()))
     {
         /* Initialize overlay rectangle: */
         CGRect overlayRect = CGRectMake(0, 0, 0, 0);

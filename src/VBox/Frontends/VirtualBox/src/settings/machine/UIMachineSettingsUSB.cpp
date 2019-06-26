@@ -29,7 +29,7 @@
 #include "UIMachineSettingsUSBFilterDetails.h"
 #include "UIErrorString.h"
 #include "UIToolBar.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 
 /* COM includes: */
 #include "CConsole.h"
@@ -183,7 +183,7 @@ private slots:
         clear();
         m_usbDeviceMap.clear();
 
-        CHost host = vboxGlobal().host();
+        CHost host = uiCommon().host();
 
         bool fIsUSBEmpty = host.GetUSBDevices().size() == 0;
         if (fIsUSBEmpty)
@@ -199,7 +199,7 @@ private slots:
             {
                 CHostUSBDevice dev = devvec[i];
                 CUSBDevice usb(dev);
-                QAction *pAction = addAction(vboxGlobal().details(usb));
+                QAction *pAction = addAction(uiCommon().details(usb));
                 pAction->setCheckable(true);
                 m_usbDeviceMap[pAction] = usb;
                 /* Check if created item was already attached to this session: */
@@ -228,7 +228,7 @@ private:
                 CUSBDevice usb = m_usbDeviceMap[pAction];
                 if (!usb.isNull())
                 {
-                    QToolTip::showText(pHelpEvent->globalPos(), vboxGlobal().toolTip(usb));
+                    QToolTip::showText(pHelpEvent->globalPos(), uiCommon().toolTip(usb));
                     return true;
                 }
             }
@@ -493,7 +493,7 @@ bool UIMachineSettingsUSB::validate(QList<UIValidationMessage> &messages)
 
 #ifdef VBOX_WITH_EXTPACK
     /* USB 2.0/3.0 Extension Pack presence test: */
-    const CExtPack extPack = vboxGlobal().virtualBox().GetExtensionPackManager().Find(GUI_ExtPackName);
+    const CExtPack extPack = uiCommon().virtualBox().GetExtensionPackManager().Find(GUI_ExtPackName);
     if (   mGbUSB->isChecked()
         && (mRbUSB2->isChecked() || mRbUSB3->isChecked())
         && (extPack.isNull() || !extPack.GetUsable()))
@@ -678,7 +678,7 @@ void UIMachineSettingsUSB::sltAddFilterConfirmed(QAction *pAction)
     /* Prepare new USB filter data: */
     UIDataSettingsMachineUSBFilter filterData;
     filterData.m_fActive = true;
-    filterData.m_strName = vboxGlobal().details(usb);
+    filterData.m_strName = uiCommon().details(usb);
     filterData.m_fHostUSBDevice = false;
     filterData.m_strVendorId = QString().sprintf("%04hX", usb.GetVendorId());
     filterData.m_strProductId = QString().sprintf("%04hX", usb.GetProductId());

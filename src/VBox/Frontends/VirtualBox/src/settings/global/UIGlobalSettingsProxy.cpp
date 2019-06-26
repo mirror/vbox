@@ -24,7 +24,7 @@
 #include "UIGlobalSettingsProxy.h"
 #include "UIExtraDataManager.h"
 #include "UIMessageCenter.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "VBoxUtils.h"
 
 /* COM includes: */

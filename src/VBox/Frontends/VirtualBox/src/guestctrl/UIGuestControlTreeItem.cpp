@@ -20,7 +20,7 @@
 #include "UIExtraDataManager.h"
 #include "UIGuestControlTreeItem.h"
 #include "UIGuestProcessControlWidget.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 
 /* COM includes: */
 #include "CGuest.h"
@@ -89,7 +89,7 @@ void UIGuestControlTreeItem::cleanupListener(CEventSource comEventSource)
     }
 
     /* Make sure VBoxSVC is available: */
-    if (!vboxGlobal().isVBoxSVCAvailable())
+    if (!uiCommon().isVBoxSVCAvailable())
         return;
 
     /* Unregister event listener for CProgress event source: */

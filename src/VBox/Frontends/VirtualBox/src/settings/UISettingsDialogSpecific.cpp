@@ -17,7 +17,7 @@
 
 /* GUI includes: */
 #include "QIWidgetValidator.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "UIExtraDataManager.h"
 #include "UIMessageCenter.h"
 #include "UISettingsDefs.h"
@@ -119,7 +119,7 @@ void UISettingsDialogGlobal::retranslateUi()
 void UISettingsDialogGlobal::loadOwnData()
 {
     /* Get properties: */
-    CSystemProperties comProperties = vboxGlobal().virtualBox().GetSystemProperties();
+    CSystemProperties comProperties = uiCommon().virtualBox().GetSystemProperties();
     /* Prepare global data: */
     qRegisterMetaType<UISettingsDataGlobal>();
     UISettingsDataGlobal data(comProperties);
@@ -132,7 +132,7 @@ void UISettingsDialogGlobal::loadOwnData()
 void UISettingsDialogGlobal::saveOwnData()
 {
     /* Get properties: */
-    CSystemProperties comProperties = vboxGlobal().virtualBox().GetSystemProperties();
+    CSystemProperties comProperties = uiCommon().virtualBox().GetSystemProperties();
     /* Prepare global data: */
     qRegisterMetaType<UISettingsDataGlobal>();
     UISettingsDataGlobal data(comProperties);
@@ -343,7 +343,7 @@ void UISettingsDialogMachine::retranslateUi()
 
     /* We have to make sure that the Network, Serial pages are retranslated
      * before they are revalidated. Cause: They do string comparing within
-     * vboxGlobal which is retranslated at that point already: */
+     * UICommon which is retranslated at that point already: */
     QEvent event(QEvent::LanguageChange);
     if (QWidget *pPage = m_pSelector->idToPage(MachineSettingsPageType_Network))
         qApp->sendEvent(pPage, &event);
@@ -401,8 +401,8 @@ void UISettingsDialogMachine::loadOwnData()
 
     /* Prepare session: */
     m_session = configurationAccessLevel() == ConfigurationAccessLevel_Null ? CSession() :
-                configurationAccessLevel() == ConfigurationAccessLevel_Full ? vboxGlobal().openSession(m_uMachineId) :
-                                                                              vboxGlobal().openExistingSession(m_uMachineId);
+                configurationAccessLevel() == ConfigurationAccessLevel_Full ? uiCommon().openSession(m_uMachineId) :
+                                                                              uiCommon().openExistingSession(m_uMachineId);
     /* Check that session was created: */
     if (m_session.isNull())
         return;
@@ -427,8 +427,8 @@ void UISettingsDialogMachine::saveOwnData()
 
     /* Prepare session: */
     m_session = configurationAccessLevel() == ConfigurationAccessLevel_Null ? CSession() :
-                configurationAccessLevel() == ConfigurationAccessLevel_Full ? vboxGlobal().openSession(m_uMachineId) :
-                                                                              vboxGlobal().openExistingSession(m_uMachineId);
+                configurationAccessLevel() == ConfigurationAccessLevel_Full ? uiCommon().openSession(m_uMachineId) :
+                                                                              uiCommon().openExistingSession(m_uMachineId);
     /* Check that session was created: */
     if (m_session.isNull())
         return;
@@ -502,7 +502,7 @@ QString UISettingsDialogMachine::title() const
 {
     QString strDialogTitle;
     /* Get corresponding machine (required to compose dialog title): */
-    const CMachine &machine = vboxGlobal().virtualBox().FindMachine(m_uMachineId.toString());
+    const CMachine &machine = uiCommon().virtualBox().FindMachine(m_uMachineId.toString());
     if (!machine.isNull())
         strDialogTitle = tr("%1 - %2").arg(machine.GetName()).arg(titleExtension());
     return strDialogTitle;
@@ -670,7 +670,7 @@ void UISettingsDialogMachine::prepare()
 #endif
 
     /* Allow to reset first-run flag just when medium-enumeration was finished: */
-    connect(&vboxGlobal(), &VBoxGlobal::sigMediumEnumerationFinished,
+    connect(&uiCommon(), &UICommon::sigMediumEnumerationFinished,
             this, &UISettingsDialogMachine::sltAllowResetFirstRunFlag);
 
     /* Make sure settings window will be updated on session/machine state/data changes: */
@@ -682,7 +682,7 @@ void UISettingsDialogMachine::prepare()
             this, &UISettingsDialogMachine::sltMachineDataChanged);
 
     /* Get corresponding machine (required to determine dialog type and page availability): */
-    m_machine = vboxGlobal().virtualBox().FindMachine(m_uMachineId.toString());
+    m_machine = uiCommon().virtualBox().FindMachine(m_uMachineId.toString());
     AssertMsg(!m_machine.isNull(), ("Can't find corresponding machine!\n"));
     m_enmSessionState = m_machine.GetSessionState();
     m_enmMachineState = m_machine.GetState();

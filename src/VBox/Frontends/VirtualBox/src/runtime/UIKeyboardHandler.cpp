@@ -38,7 +38,7 @@
 #endif
 
 /* GUI includes: */
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "UIExtraDataManager.h"
 #include "UIMessageCenter.h"
 #include "UIPopupCenter.h"
@@ -647,7 +647,7 @@ bool UIKeyboardHandler::nativeEventFilter(void *pMessage, ulong uScreenId)
             // WORKAROUND:
             // Can't do COM inter-process calls from a SendMessage handler,
             // see http://support.microsoft.com/kb/131056.
-            if (vboxGlobal().isSeparateProcess() && InSendMessage())
+            if (uiCommon().isSeparateProcess() && InSendMessage())
             {
                 PostMessage(pMsg->hwnd, pMsg->message, pMsg->wParam, pMsg->lParam);
                 fResult = true;
@@ -1019,7 +1019,7 @@ void UIKeyboardHandler::loadSettings()
     /* Extra data settings: */
     {
         /* CAD setting: */
-        m_fPassCADtoGuest = gEDataManager->passCADtoGuest(vboxGlobal().managedVMUuid());
+        m_fPassCADtoGuest = gEDataManager->passCADtoGuest(uiCommon().managedVMUuid());
     }
 }
 
@@ -1519,7 +1519,7 @@ void UIKeyboardHandler::keyEventHandleHostComboRelease(ulong uScreenId)
                         finaliseCaptureKeyboard();
                         if (fCaptureMouse)
                         {
-                            const MouseCapturePolicy mcp = gEDataManager->mouseCapturePolicy(vboxGlobal().managedVMUuid());
+                            const MouseCapturePolicy mcp = gEDataManager->mouseCapturePolicy(uiCommon().managedVMUuid());
                             if (mcp == MouseCapturePolicy_Default || mcp == MouseCapturePolicy_HostComboOnly)
                                 machineLogic()->mouseHandler()->captureMouse(uScreenId);
                         }

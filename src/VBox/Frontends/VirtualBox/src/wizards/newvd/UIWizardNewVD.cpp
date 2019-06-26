@@ -19,7 +19,7 @@
 #include <QVariant>
 
 /* GUI includes: */
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "UIWizardNewVD.h"
 #include "UIWizardNewVDPageBasic1.h"
 #include "UIWizardNewVDPageBasic2.h"
@@ -62,7 +62,7 @@ bool UIWizardNewVD::createVirtualDisk()
     AssertReturn(uSize > 0, false);
 
     /* Get VBox object: */
-    CVirtualBox vbox = vboxGlobal().virtualBox();
+    CVirtualBox vbox = uiCommon().virtualBox();
 
     /* Create new virtual hard-disk: */
     CMedium virtualDisk = vbox.CreateMedium(mediumFormat.GetName(), strMediumPath, KAccessMode_ReadWrite, KDeviceType_HardDisk);
@@ -102,8 +102,8 @@ bool UIWizardNewVD::createVirtualDisk()
     /* Remember created virtual-disk: */
     m_virtualDisk = virtualDisk;
 
-    /* Inform VBoxGlobal about it: */
-    vboxGlobal().createMedium(UIMedium(m_virtualDisk, UIMediumDeviceType_HardDisk, KMediumState_Created));
+    /* Inform UICommon about it: */
+    uiCommon().createMedium(UIMedium(m_virtualDisk, UIMediumDeviceType_HardDisk, KMediumState_Created));
 
     return true;
 }

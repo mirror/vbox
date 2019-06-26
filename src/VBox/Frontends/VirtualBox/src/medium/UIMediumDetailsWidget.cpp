@@ -37,7 +37,7 @@
 #include "UIMediumDetailsWidget.h"
 #include "UIMediumManager.h"
 #include "UIMediumSizeEditor.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 
 /* COM includes: */
 #include "CSystemProperties.h"
@@ -776,8 +776,8 @@ void UIMediumDetailsWidget::retranslateValidation(QWidget *pWidget /* = 0 */)
 //                                               .arg(m_oldData.m_options.m_strDescription).arg(m_newData.m_options.m_strDescription));
     if (!pWidget || pWidget == m_pErrorPaneSize)
         m_pErrorPaneSize->setToolTip(tr("Cannot change medium size from <b>%1</b> to <b>%2</b> as storage shrinking is currently not implemented.")
-                                        .arg(vboxGlobal().formatSize(m_oldData.m_options.m_uLogicalSize))
-                                        .arg(vboxGlobal().formatSize(m_newData.m_options.m_uLogicalSize)));
+                                        .arg(uiCommon().formatSize(m_oldData.m_options.m_uLogicalSize))
+                                        .arg(uiCommon().formatSize(m_newData.m_options.m_uLogicalSize)));
 }
 
 void UIMediumDetailsWidget::updateButtonStates()

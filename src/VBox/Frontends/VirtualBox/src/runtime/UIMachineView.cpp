@@ -23,7 +23,7 @@
 #include <QAbstractNativeEventFilter>
 
 /* GUI includes: */
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "UIActionPoolRuntime.h"
 #include "UIDesktopWidgetWatchdog.h"
 #include "UIExtraDataManager.h"
@@ -228,7 +228,7 @@ void UIMachineView::applyMachineViewScaleFactor()
         return;
 
     /* Acquire selected scale-factor: */
-    double dScaleFactor = gEDataManager->scaleFactor(vboxGlobal().managedVMUuid(), m_uScreenId);
+    double dScaleFactor = gEDataManager->scaleFactor(uiCommon().managedVMUuid(), m_uScreenId);
 
     /* Take the device-pixel-ratio into account: */
     frameBuffer()->setDevicePixelRatio(gpDesktop->devicePixelRatio(machineWindow()));
@@ -242,7 +242,7 @@ void UIMachineView::applyMachineViewScaleFactor()
     frameBuffer()->setUseUnscaledHiDPIOutput(fUseUnscaledHiDPIOutput);
 
     /* Propagate the scale-factor related attributes to 3D service if necessary: */
-    if (machine().GetAccelerate3DEnabled() && vboxGlobal().is3DAvailable())
+    if (machine().GetAccelerate3DEnabled() && uiCommon().is3DAvailable())
     {
         double dScaleFactorFor3D = dScaleFactor;
 #if defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
@@ -305,7 +305,7 @@ void UIMachineView::sltPerformGuestResize(const QSize &toSize)
         storeGuestSizeHint(size);
 
     /* If auto-mount of guest-screens (auto-pilot) enabled: */
-    if (gEDataManager->autoMountGuestScreensEnabled(vboxGlobal().managedVMUuid()))
+    if (gEDataManager->autoMountGuestScreensEnabled(uiCommon().managedVMUuid()))
     {
         /* Do not send a hint if nothing has changed to prevent the guest being notified about its own changes: */
         if (   (int)m_pFrameBuffer->width() != size.width() || (int)m_pFrameBuffer->height() != size.height()
@@ -502,11 +502,11 @@ void UIMachineView::sltDesktopResized()
 void UIMachineView::sltHandleScaleFactorChange(const QUuid &uMachineID)
 {
     /* Skip unrelated machine IDs: */
-    if (uMachineID != vboxGlobal().managedVMUuid())
+    if (uMachineID != uiCommon().managedVMUuid())
         return;
 
     /* Acquire selected scale-factor: */
-    double dScaleFactor = gEDataManager->scaleFactor(vboxGlobal().managedVMUuid(), m_uScreenId);
+    double dScaleFactor = gEDataManager->scaleFactor(uiCommon().managedVMUuid(), m_uScreenId);
 
     /* Take the device-pixel-ratio into account: */
     const double dDevicePixelRatioActual = frameBuffer()->devicePixelRatioActual();
@@ -518,7 +518,7 @@ void UIMachineView::sltHandleScaleFactorChange(const QUuid &uMachineID)
     frameBuffer()->setUseUnscaledHiDPIOutput(fUseUnscaledHiDPIOutput);
 
     /* Propagate the scale-factor related attributes to 3D service if necessary: */
-    if (machine().GetAccelerate3DEnabled() && vboxGlobal().is3DAvailable())
+    if (machine().GetAccelerate3DEnabled() && uiCommon().is3DAvailable())
     {
         double dScaleFactorFor3D = dScaleFactor;
 #if defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
@@ -550,11 +550,11 @@ void UIMachineView::sltHandleScaleFactorChange(const QUuid &uMachineID)
 void UIMachineView::sltHandleScalingOptimizationChange(const QUuid &uMachineID)
 {
     /* Skip unrelated machine IDs: */
-    if (uMachineID != vboxGlobal().managedVMUuid())
+    if (uMachineID != uiCommon().managedVMUuid())
         return;
 
     /* Take the scaling-optimization type into account: */
-    frameBuffer()->setScalingOptimizationType(gEDataManager->scalingOptimizationType(vboxGlobal().managedVMUuid()));
+    frameBuffer()->setScalingOptimizationType(gEDataManager->scalingOptimizationType(uiCommon().managedVMUuid()));
 
     /* Update viewport: */
     viewport()->update();
@@ -696,10 +696,10 @@ void UIMachineView::prepareFrameBuffer()
 #endif /* !VBOX_WITH_VIDEOHWACCEL */
 
         /* Take scaling optimization type into account: */
-        m_pFrameBuffer->setScalingOptimizationType(gEDataManager->scalingOptimizationType(vboxGlobal().managedVMUuid()));
+        m_pFrameBuffer->setScalingOptimizationType(gEDataManager->scalingOptimizationType(uiCommon().managedVMUuid()));
 
         /* Acquire selected scale-factor: */
-        double dScaleFactor = gEDataManager->scaleFactor(vboxGlobal().managedVMUuid(), m_uScreenId);
+        double dScaleFactor = gEDataManager->scaleFactor(uiCommon().managedVMUuid(), m_uScreenId);
 
         /* Take the device-pixel-ratio into account: */
         const double dDevicePixelRatioFormal = gpDesktop->devicePixelRatio(machineWindow());
@@ -714,7 +714,7 @@ void UIMachineView::prepareFrameBuffer()
         m_pFrameBuffer->setUseUnscaledHiDPIOutput(fUseUnscaledHiDPIOutput);
 
         /* Propagate the scale-factor related attributes to 3D service if necessary: */
-        if (machine().GetAccelerate3DEnabled() && vboxGlobal().is3DAvailable())
+        if (machine().GetAccelerate3DEnabled() && uiCommon().is3DAvailable())
         {
             double dScaleFactorFor3D = dScaleFactor;
 #if defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
@@ -942,7 +942,7 @@ QSize UIMachineView::sizeHint() const
     /// @todo Fix all DEBUGGER stuff!
     /* HACK ALERT! Really ugly workaround for the resizing to 9x1 done by DevVGA if provoked before power on. */
     if (size.width() < 16 || size.height() < 16)
-        if (vboxGlobal().shouldStartPaused() || vboxGlobal().isDebuggerAutoShowEnabled())
+        if (uiCommon().shouldStartPaused() || uiCommon().isDebuggerAutoShowEnabled())
             size = QSize(640, 480);
 #endif /* !VBOX_WITH_DEBUGGER_GUI */
 
@@ -1012,13 +1012,13 @@ bool UIMachineView::guestScreenVisibilityStatus() const
         return true;
 
     /* Actual value for other guest-screens: */
-    return gEDataManager->lastGuestScreenVisibilityStatus(m_uScreenId, vboxGlobal().managedVMUuid());
+    return gEDataManager->lastGuestScreenVisibilityStatus(m_uScreenId, uiCommon().managedVMUuid());
 }
 
 QSize UIMachineView::guestScreenSizeHint() const
 {
     /* Load guest-screen size-hint: */
-    QSize sizeHint = gEDataManager->lastGuestScreenSizeHint(m_uScreenId, vboxGlobal().managedVMUuid());
+    QSize sizeHint = gEDataManager->lastGuestScreenSizeHint(m_uScreenId, uiCommon().managedVMUuid());
 
     /* Invent the default if necessary: */
     if (!sizeHint.isValid())
@@ -1036,7 +1036,7 @@ void UIMachineView::storeGuestSizeHint(const QSize &sizeHint)
     /* Save guest-screen size-hint: */
     LogRel2(("GUI: UIMachineView::storeGuestSizeHint: Storing guest-screen size-hint for screen %d as %dx%d\n",
              (int)screenId(), sizeHint.width(), sizeHint.height()));
-    gEDataManager->setLastGuestScreenSizeHint(m_uScreenId, sizeHint, vboxGlobal().managedVMUuid());
+    gEDataManager->setLastGuestScreenSizeHint(m_uScreenId, sizeHint, uiCommon().managedVMUuid());
 }
 
 void UIMachineView::handleScaleChange()
@@ -1103,7 +1103,7 @@ void UIMachineView::takePausePixmapLive()
     screenShot.fill(0);
 
     /* For separate process: */
-    if (vboxGlobal().isSeparateProcess())
+    if (uiCommon().isSeparateProcess())
     {
         /* Take screen-data to array: */
         const QVector<BYTE> screenData = display().TakeScreenShotToArray(screenId(), screenShot.width(), screenShot.height(), KBitmapFormat_BGR0);

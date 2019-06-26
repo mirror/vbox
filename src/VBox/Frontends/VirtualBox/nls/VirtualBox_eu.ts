@@ -4,7 +4,7 @@
 <context>
     <name>@@@</name>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="+606"/>
+        <location filename="../src/globals/UICommon.cpp" line="+606"/>
         <source>English</source>
         <comment>Native language name</comment>
         <translation>Euskara</translation>
@@ -5608,7 +5608,7 @@ a guest session</source>
         <translation>Hedapen pakete agiriak (%1)</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="+3014"/>
+        <location filename="../src/globals/UICommon.cpp" line="+3014"/>
         <location filename="../src/settings/global/UIGlobalSettingsExtension.cpp" line="+88"/>
         <source>Extensions</source>
         <translation>Hedapenak</translation>
@@ -10438,7 +10438,7 @@ a guest session</source>
         <translation type="vanished">Hautatu diska irudia...</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="-661"/>
+        <location filename="../src/globals/UICommon.cpp" line="-661"/>
         <source>Choose/Create a disk image...</source>
         <comment>This is used for hard disks, optical media and floppies</comment>
         <translation type="unfinished"></translation>
@@ -17190,9 +17190,9 @@ a guest session</source>
     </message>
 </context>
 <context>
-    <name>VBoxGlobal</name>
+    <name>UICommon</name>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="+356"/>
+        <location filename="../src/globals/UICommon.cpp" line="+356"/>
         <source>Unknown device %1:%2</source>
         <comment>USB device details</comment>
         <translation>Gailu ezezaguna %1:%2</translation>
@@ -17716,7 +17716,7 @@ a guest session</source>
         <translation>Hostalari Gailua</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="+479"/>
+        <location filename="../src/globals/UICommon.cpp" line="+479"/>
         <source>User-defined</source>
         <comment>serial port</comment>
         <translation>Erabiltzaileak-zehaztuta</translation>
@@ -17884,7 +17884,7 @@ a guest session</source>
         <translation>Intel PRO/1000 T Zerbitzaria (82543GC)</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="-465"/>
+        <location filename="../src/globals/UICommon.cpp" line="-465"/>
         <source>&lt;nobr&gt;Vendor ID: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
         <translation>&lt;nobr&gt;Saltzaile ID-a: %1&lt;/nobr&gt;</translation>
@@ -18307,7 +18307,7 @@ a guest session</source>
         <translation>Ohinarriko diska gogor hau zeharka erantsita dago hurrengo ezberdinketa diska gogorra erabiliz:</translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/globals/VBoxGlobal.cpp" line="-2698"/>
+        <location filename="../src/globals/UICommon.cpp" line="-2698"/>
         <source>%n year(s)</source>
         <translation>
             <numerusform>%n urte</numerusform>
@@ -18380,7 +18380,7 @@ a guest session</source>
     <message>
         <location filename="../src/converter/UIConverterBackendGlobal.cpp" line="+89"/>
         <location line="+19"/>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="+24"/>
+        <location filename="../src/globals/UICommon.cpp" line="+24"/>
         <location line="+28"/>
         <location line="+44"/>
         <location line="+36"/>
@@ -18391,7 +18391,7 @@ a guest session</source>
     <message>
         <location line="-18"/>
         <location line="+19"/>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="-107"/>
+        <location filename="../src/globals/UICommon.cpp" line="-107"/>
         <location line="+29"/>
         <location line="+44"/>
         <location line="+35"/>
@@ -18410,7 +18410,7 @@ a guest session</source>
         <location line="+1"/>
         <location filename="../src/converter/UIConverterBackendGlobal.cpp" line="-18"/>
         <location line="+19"/>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="-107"/>
+        <location filename="../src/globals/UICommon.cpp" line="-107"/>
         <location line="+30"/>
         <location line="+44"/>
         <location line="+34"/>
@@ -18421,7 +18421,7 @@ a guest session</source>
     <message>
         <location filename="../src/converter/UIConverterBackendGlobal.cpp" line="-18"/>
         <location line="+19"/>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="-107"/>
+        <location filename="../src/globals/UICommon.cpp" line="-107"/>
         <location line="+31"/>
         <location line="+44"/>
         <location line="+33"/>
@@ -18432,7 +18432,7 @@ a guest session</source>
     <message>
         <location line="-18"/>
         <location line="+19"/>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="-107"/>
+        <location filename="../src/globals/UICommon.cpp" line="-107"/>
         <location line="+32"/>
         <location line="+44"/>
         <location line="+32"/>
@@ -18443,7 +18443,7 @@ a guest session</source>
     <message>
         <location line="-18"/>
         <location line="+19"/>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="-107"/>
+        <location filename="../src/globals/UICommon.cpp" line="-107"/>
         <location line="+33"/>
         <location line="+44"/>
         <location line="+31"/>
@@ -18472,7 +18472,7 @@ a guest session</source>
         <translation>Mugagabeko Exekuzioa</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="+2426"/>
+        <location filename="../src/globals/UICommon.cpp" line="+2426"/>
         <source>Unknown device</source>
         <comment>USB device details</comment>
         <translation>Gailu ezezaguna</translation>
@@ -19675,7 +19675,7 @@ a guest session</source>
         <translation type="obsolete">Diska gogor birtual agiri guztiak (%1)</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="-29"/>
+        <location filename="../src/globals/UICommon.cpp" line="-29"/>
         <source>Please choose a virtual optical disk file</source>
         <translation>Mesedez hautatu diska optiko birtual agiri bat</translation>
     </message>

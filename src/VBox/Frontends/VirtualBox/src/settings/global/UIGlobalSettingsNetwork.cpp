@@ -20,7 +20,7 @@
 #include <QMenu>
 
 /* GUI includes: */
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "UIIconPool.h"
 #include "UIConverter.h"
 #include "UIErrorString.h"
@@ -237,7 +237,7 @@ void UIGlobalSettingsNetwork::loadToCacheFrom(QVariant &data)
     UIDataSettingsGlobalNetwork oldNetworkData;
 
     /* Gather old network data: */
-    foreach (const CNATNetwork &network, vboxGlobal().virtualBox().GetNATNetworks())
+    foreach (const CNATNetwork &network, uiCommon().virtualBox().GetNATNetworks())
         loadToCacheFromNATNetwork(network, m_pCache->child(network.GetNetworkName()));
 
     /* Cache old network data: */
@@ -692,7 +692,7 @@ bool UIGlobalSettingsNetwork::removeNATNetwork(const UISettingsCacheGlobalNetwor
         //const UIDataSettingsGlobalNetworkNAT &newNatData = cache.data();
 
         /* Get VBox for further activities: */
-        CVirtualBox comVBox = vboxGlobal().virtualBox();
+        CVirtualBox comVBox = uiCommon().virtualBox();
         /* Search for a NAT network with required name: */
         CNATNetwork comNetwork = comVBox.FindNATNetworkByName(oldNatData.m_strName);
         fSuccess = comVBox.isOk() && comNetwork.isNotNull();
@@ -725,7 +725,7 @@ bool UIGlobalSettingsNetwork::createNATNetwork(const UISettingsCacheGlobalNetwor
         const UIDataSettingsGlobalNetworkNAT &newNatData = cache.data();
 
         /* Get VBox for further activities: */
-        CVirtualBox comVBox = vboxGlobal().virtualBox();
+        CVirtualBox comVBox = uiCommon().virtualBox();
         /* Create NAT network with required name: */
         CNATNetwork comNetwork = comVBox.CreateNATNetwork(newNatData.m_strNewName);
         fSuccess = comVBox.isOk() && comNetwork.isNotNull();
@@ -828,7 +828,7 @@ bool UIGlobalSettingsNetwork::updateNATNetwork(const UISettingsCacheGlobalNetwor
         const UIDataSettingsGlobalNetworkNAT &newNatData = cache.data();
 
         /* Get VBox for further activities: */
-        CVirtualBox comVBox = vboxGlobal().virtualBox();
+        CVirtualBox comVBox = uiCommon().virtualBox();
         /* Search for a NAT network with required name: */
         CNATNetwork comNetwork = comVBox.FindNATNetworkByName(oldNatData.m_strName);
         fSuccess = comVBox.isOk() && comNetwork.isNotNull();

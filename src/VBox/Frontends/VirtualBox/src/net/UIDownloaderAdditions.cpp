@@ -22,7 +22,7 @@
 
 /* GUI includes: */
 #include "QIFileDialog.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "UIDownloaderAdditions.h"
 #include "UIMessageCenter.h"
 #include "UIModalWindowManager.h"
@@ -51,14 +51,14 @@ UIDownloaderAdditions::UIDownloaderAdditions()
         s_pInstance = this;
 
     /* Get version number and adjust it for test and trunk builds. The server only has official releases. */
-    const QString strVersion = UIVersion(vboxGlobal().vboxVersionStringNormalized()).effectiveReleasedVersion().toString();
+    const QString strVersion = UIVersion(uiCommon().vboxVersionStringNormalized()).effectiveReleasedVersion().toString();
 
     /* Prepare source/target: */
     const QString strSourceName = QString("%1_%2.iso").arg(GUI_GuestAdditionsName, strVersion);
     const QString strSourcePath = QString("https://download.virtualbox.org/virtualbox/%1/").arg(strVersion);
     const QString strSource = strSourcePath + strSourceName;
     const QString strPathSHA256SumsFile = QString("https://www.virtualbox.org/download/hashes/%1/SHA256SUMS").arg(strVersion);
-    const QString strTarget = QDir(vboxGlobal().homeFolder()).absoluteFilePath(QString("%1.tmp").arg(strSourceName));
+    const QString strTarget = QDir(uiCommon().homeFolder()).absoluteFilePath(QString("%1.tmp").arg(strSourceName));
 
     /* Set source/target: */
     setSource(strSource);

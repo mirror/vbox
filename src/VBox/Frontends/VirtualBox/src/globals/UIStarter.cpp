@@ -19,7 +19,7 @@
 #include <QApplication>
 
 /* GUI includes: */
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "UIExtraDataManager.h"
 #include "UIMessageCenter.h"
 #include "UIStarter.h"
@@ -76,19 +76,19 @@ UIStarter::~UIStarter()
 
 void UIStarter::init()
 {
-    /* Listen for VBoxGlobal signals: */
-    connect(&vboxGlobal(), &VBoxGlobal::sigAskToRestartUI,
+    /* Listen for UICommon signals: */
+    connect(&uiCommon(), &UICommon::sigAskToRestartUI,
             this, &UIStarter::sltRestartUI);
-    connect(&vboxGlobal(), &VBoxGlobal::sigAskToCommitData,
+    connect(&uiCommon(), &UICommon::sigAskToCommitData,
             this, &UIStarter::sltHandleCommitDataRequest);
 }
 
 void UIStarter::deinit()
 {
-    /* Listen for VBoxGlobal signals no more: */
-    disconnect(&vboxGlobal(), &VBoxGlobal::sigAskToRestartUI,
+    /* Listen for UICommon signals no more: */
+    disconnect(&uiCommon(), &UICommon::sigAskToRestartUI,
                this, &UIStarter::sltRestartUI);
-    disconnect(&vboxGlobal(), &VBoxGlobal::sigAskToCommitData,
+    disconnect(&uiCommon(), &UICommon::sigAskToCommitData,
                this, &UIStarter::sltHandleCommitDataRequest);
 }
 
@@ -101,8 +101,8 @@ void UIStarter::prepare()
 
 void UIStarter::sltStartUI()
 {
-    /* Exit if VBoxGlobal is not valid: */
-    if (!vboxGlobal().isValid())
+    /* Exit if UICommon is not valid: */
+    if (!uiCommon().isValid())
         return;
 
 #ifndef VBOX_RUNTIME_UI
@@ -123,7 +123,7 @@ void UIStarter::sltStartUI()
 # else /* !VBOX_BLEEDING_EDGE */
 #  ifndef DEBUG
     /* Show BETA warning if necessary: */
-    const QString vboxVersion(vboxGlobal().virtualBox().GetVersion());
+    const QString vboxVersion(uiCommon().virtualBox().GetVersion());
     if (   vboxVersion.contains("BETA")
         && gEDataManager->preventBetaBuildWarningForVersion() != vboxVersion)
         msgCenter().showBetaBuildWarning();
@@ -133,14 +133,14 @@ void UIStarter::sltStartUI()
 #else /* VBOX_RUNTIME_UI */
 
     /* Make sure Runtime UI is even possible, quit if not: */
-    if (vboxGlobal().managedVMUuid().isNull())
+    if (uiCommon().managedVMUuid().isNull())
     {
         msgCenter().cannotStartRuntime();
         return QApplication::quit();
     }
 
     /* Make sure machine is started, quit if not: */
-    if (!UIMachine::startMachine(vboxGlobal().managedVMUuid()))
+    if (!UIMachine::startMachine(uiCommon().managedVMUuid()))
         return QApplication::quit();
 
 #endif /* VBOX_RUNTIME_UI */
@@ -170,8 +170,8 @@ void UIStarter::cleanup()
 
 void UIStarter::sltHandleCommitDataRequest()
 {
-    /* Exit if VBoxGlobal is not valid: */
-    if (!vboxGlobal().isValid())
+    /* Exit if UICommon is not valid: */
+    if (!uiCommon().isValid())
         return;
 
 #ifdef VBOX_RUNTIME_UI

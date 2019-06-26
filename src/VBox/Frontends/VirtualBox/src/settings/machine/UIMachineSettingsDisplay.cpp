@@ -22,7 +22,7 @@
 #include "UIExtraDataManager.h"
 #include "UIMachineSettingsDisplay.h"
 #include "UIErrorString.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "VBox2DHelpers.h"
 
 /* COM includes: */
@@ -318,7 +318,7 @@ void UIMachineSettingsDisplay::setGuestOSType(CGuestOSType comGuestOSType)
 #ifdef VBOX_WITH_CRHGSMI
     /* Check if WDDM mode supported by the guest OS type: */
     const QString strGuestOSTypeId = m_comGuestOSType.isNotNull() ? m_comGuestOSType.GetId() : QString();
-    m_fWddmModeSupported = VBoxGlobal::isWddmCompatibleOsType(strGuestOSTypeId);
+    m_fWddmModeSupported = UICommon::isWddmCompatibleOsType(strGuestOSTypeId);
 #endif
 
     /* Recheck video RAM requirement: */
@@ -562,10 +562,10 @@ bool UIMachineSettingsDisplay::validate(QList<UIValidationMessage> &messages)
     {
         /* Prepare message: */
         UIValidationMessage message;
-        message.first = VBoxGlobal::removeAccelMark(m_pTabWidget->tabText(0));
+        message.first = UICommon::removeAccelMark(m_pTabWidget->tabText(0));
 
         /* 3D acceleration test: */
-        if (m_pCheckbox3D->isChecked() && !vboxGlobal().is3DAvailable())
+        if (m_pCheckbox3D->isChecked() && !uiCommon().is3DAvailable())
         {
             message.second << tr("The virtual machine is set up to use hardware graphics acceleration. "
                                  "However the host system does not currently provide this, "
@@ -575,14 +575,14 @@ bool UIMachineSettingsDisplay::validate(QList<UIValidationMessage> &messages)
         /* Video RAM amount test: */
         if (shouldWeWarnAboutLowVRAM() && !m_comGuestOSType.isNull())
         {
-            quint64 uNeedBytes = VBoxGlobal::requiredVideoMemory(m_comGuestOSType.GetId(), m_pEditorVideoScreenCount->value());
+            quint64 uNeedBytes = UICommon::requiredVideoMemory(m_comGuestOSType.GetId(), m_pEditorVideoScreenCount->value());
 
             /* Basic video RAM amount test: */
             if ((quint64)m_pEditorVideoMemorySize->value() * _1M < uNeedBytes)
             {
                 message.second << tr("The virtual machine is currently assigned less than <b>%1</b> of video memory "
                                      "which is the minimum amount required to switch to full-screen or seamless mode.")
-                                     .arg(vboxGlobal().formatSize(uNeedBytes, 0, FormatSize_RoundUp));
+                                     .arg(uiCommon().formatSize(uNeedBytes, 0, FormatSize_RoundUp));
             }
 #ifdef VBOX_WITH_VIDEOHWACCEL
             /* 2D acceleration video RAM amount test: */
@@ -593,7 +593,7 @@ bool UIMachineSettingsDisplay::validate(QList<UIValidationMessage> &messages)
                 {
                     message.second << tr("The virtual machine is currently assigned less than <b>%1</b> of video memory "
                                          "which is the minimum amount required for High Definition Video to be played efficiently.")
-                                         .arg(vboxGlobal().formatSize(uNeedBytes, 0, FormatSize_RoundUp));
+                                         .arg(uiCommon().formatSize(uNeedBytes, 0, FormatSize_RoundUp));
                 }
             }
 #endif /* VBOX_WITH_VIDEOHWACCEL */
@@ -607,7 +607,7 @@ bool UIMachineSettingsDisplay::validate(QList<UIValidationMessage> &messages)
                     message.second << tr("The virtual machine is set up to use hardware graphics acceleration "
                                          "and the operating system hint is set to Windows Vista or later. "
                                          "For best performance you should set the machine's video memory to at least <b>%1</b>.")
-                                         .arg(vboxGlobal().formatSize(uNeedBytes, 0, FormatSize_RoundUp));
+                                         .arg(uiCommon().formatSize(uNeedBytes, 0, FormatSize_RoundUp));
                 }
             }
 #endif /* VBOX_WITH_CRHGSMI */
@@ -631,11 +631,11 @@ bool UIMachineSettingsDisplay::validate(QList<UIValidationMessage> &messages)
     {
         /* Prepare message: */
         UIValidationMessage message;
-        message.first = VBoxGlobal::removeAccelMark(m_pTabWidget->tabText(1));
+        message.first = UICommon::removeAccelMark(m_pTabWidget->tabText(1));
 
 #ifdef VBOX_WITH_EXTPACK
         /* VRDE Extension Pack presence test: */
-        CExtPack extPack = vboxGlobal().virtualBox().GetExtensionPackManager().Find(GUI_ExtPackName);
+        CExtPack extPack = uiCommon().virtualBox().GetExtensionPackManager().Find(GUI_ExtPackName);
         if (m_pCheckboxRemoteDisplay->isChecked() && (extPack.isNull() || !extPack.GetUsable()))
         {
             message.second << tr("Remote Display is currently enabled for this virtual machine. "
@@ -709,7 +709,7 @@ void UIMachineSettingsDisplay::retranslateUi()
     Ui::UIMachineSettingsDisplay::retranslateUi(this);
 
     /* Screen stuff: */
-    CSystemProperties sys = vboxGlobal().virtualBox().GetSystemProperties();
+    CSystemProperties sys = uiCommon().virtualBox().GetSystemProperties();
     m_pEditorVideoMemorySize->setSuffix(QString(" %1").arg(tr("MB")));
     m_pLabelVideoMemorySizeMin->setText(tr("%1 MB").arg(m_iMinVRAM));
     m_pLabelVideoMemorySizeMax->setText(tr("%1 MB").arg(m_iMaxVRAMVisible));
@@ -964,7 +964,7 @@ void UIMachineSettingsDisplay::prepare()
 void UIMachineSettingsDisplay::prepareTabScreen()
 {
     /* Prepare common variables: */
-    const CSystemProperties sys = vboxGlobal().virtualBox().GetSystemProperties();
+    const CSystemProperties sys = uiCommon().virtualBox().GetSystemProperties();
     m_iMinVRAM = sys.GetMinGuestVRAM();
     m_iMaxVRAM = sys.GetMaxGuestVRAM();
     m_iMaxVRAMVisible = m_iMaxVRAM;
@@ -988,7 +988,7 @@ void UIMachineSettingsDisplay::prepareTabScreen()
         AssertPtrReturnVoid(m_pEditorVideoMemorySize);
         {
             /* Configure editor: */
-            vboxGlobal().setMinimumWidthAccordingSymbolCount(m_pEditorVideoMemorySize, 7);
+            uiCommon().setMinimumWidthAccordingSymbolCount(m_pEditorVideoMemorySize, 7);
             m_pEditorVideoMemorySize->setMinimum(m_iMinVRAM);
             m_pEditorVideoMemorySize->setMaximum(m_iMaxVRAMVisible);
         }
@@ -1120,7 +1120,7 @@ void UIMachineSettingsDisplay::prepareTabRecording()
         AssertPtrReturnVoid(m_pEditorVideoCaptureWidth);
         {
             /* Configure editor: */
-            vboxGlobal().setMinimumWidthAccordingSymbolCount(m_pEditorVideoCaptureWidth, 5);
+            uiCommon().setMinimumWidthAccordingSymbolCount(m_pEditorVideoCaptureWidth, 5);
             m_pEditorVideoCaptureWidth->setMinimum(16);
             m_pEditorVideoCaptureWidth->setMaximum(2880);
         }
@@ -1129,7 +1129,7 @@ void UIMachineSettingsDisplay::prepareTabRecording()
         AssertPtrReturnVoid(m_pEditorVideoCaptureHeight);
         {
             /* Configure editor: */
-            vboxGlobal().setMinimumWidthAccordingSymbolCount(m_pEditorVideoCaptureHeight, 5);
+            uiCommon().setMinimumWidthAccordingSymbolCount(m_pEditorVideoCaptureHeight, 5);
             m_pEditorVideoCaptureHeight->setMinimum(16);
             m_pEditorVideoCaptureHeight->setMaximum(1800);
         }
@@ -1152,7 +1152,7 @@ void UIMachineSettingsDisplay::prepareTabRecording()
         AssertPtrReturnVoid(m_pEditorVideoCaptureFrameRate);
         {
             /* Configure editor: */
-            vboxGlobal().setMinimumWidthAccordingSymbolCount(m_pEditorVideoCaptureFrameRate, 3);
+            uiCommon().setMinimumWidthAccordingSymbolCount(m_pEditorVideoCaptureFrameRate, 3);
             m_pEditorVideoCaptureFrameRate->setMinimum(1);
             m_pEditorVideoCaptureFrameRate->setMaximum(30);
         }
@@ -1179,7 +1179,7 @@ void UIMachineSettingsDisplay::prepareTabRecording()
         AssertPtrReturnVoid(m_pEditorVideoCaptureBitRate);
         {
             /* Configure editor: */
-            vboxGlobal().setMinimumWidthAccordingSymbolCount(m_pEditorVideoCaptureBitRate, 5);
+            uiCommon().setMinimumWidthAccordingSymbolCount(m_pEditorVideoCaptureBitRate, 5);
             m_pEditorVideoCaptureBitRate->setMinimum(VIDEO_CAPTURE_BIT_RATE_MIN);
             m_pEditorVideoCaptureBitRate->setMaximum(VIDEO_CAPTURE_BIT_RATE_MAX);
         }
@@ -1247,7 +1247,7 @@ void UIMachineSettingsDisplay::checkVRAMRequirements()
 
     /* Get monitors count and base video memory requirements: */
     const int cGuestScreenCount = m_pEditorVideoScreenCount->value();
-    quint64 uNeedMBytes = VBoxGlobal::requiredVideoMemory(m_comGuestOSType.GetId(), cGuestScreenCount) / _1M;
+    quint64 uNeedMBytes = UICommon::requiredVideoMemory(m_comGuestOSType.GetId(), cGuestScreenCount) / _1M;
 
     /* Initial value: */
     m_iMaxVRAMVisible = cGuestScreenCount * 32;

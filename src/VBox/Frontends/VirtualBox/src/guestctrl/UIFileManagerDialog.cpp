@@ -25,7 +25,7 @@
 #include "UIIconPool.h"
 #include "UIFileManager.h"
 #include "UIFileManagerDialog.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #ifdef VBOX_WS_MAC
 # include "VBoxUtils-darwin.h"
 #endif

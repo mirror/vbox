@@ -32,7 +32,7 @@
 #include "UIToolBar.h"
 #include "UIIconPool.h"
 #include "UIVMInformationDialog.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 
 /* COM includes: */
 #include "CGuest.h"
@@ -527,7 +527,7 @@ void UIGuestProcessControlWidget::cleanupListener()
     }
 
     /* Make sure VBoxSVC is available: */
-    if (!vboxGlobal().isVBoxSVCAvailable())
+    if (!uiCommon().isVBoxSVCAvailable())
         return;
 
     /* Get CProgress event source: */

@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - VBoxGlobal class declaration.
+ * VBox Qt GUI - UICommon class declaration.
  */
 
 /*
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef FEQT_INCLUDED_SRC_globals_VBoxGlobal_h
-#define FEQT_INCLUDED_SRC_globals_VBoxGlobal_h
+#ifndef FEQT_INCLUDED_SRC_globals_UICommon_h
+#define FEQT_INCLUDED_SRC_globals_UICommon_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -63,7 +63,7 @@ class UIIconPoolGeneral;
 class UIThreadPool;
 
 /** QObject subclass containing common GUI functionality. */
-class SHARED_LIBRARY_STUFF VBoxGlobal : public QObject
+class SHARED_LIBRARY_STUFF UICommon : public QObject
 {
     Q_OBJECT;
 
@@ -125,16 +125,16 @@ public:
         LaunchRunning_Yes      /**< Start the VM running. */
     };
 
-    /** Returns VBoxGlobal instance. */
-    static VBoxGlobal *instance() { return s_pInstance; }
-    /** Creates VBoxGlobal instance of passed @a enmType. */
+    /** Returns UICommon instance. */
+    static UICommon *instance() { return s_pInstance; }
+    /** Creates UICommon instance of passed @a enmType. */
     static void create(UIType enmType);
-    /** Destroys VBoxGlobal instance. */
+    /** Destroys UICommon instance. */
     static void destroy();
 
     /** @name Common stuff.
      * @{ */
-        /** Returns whether VBoxGlobal cleanup is in progress. */
+        /** Returns whether UICommon cleanup is in progress. */
         static bool isCleaningUp() { return s_fCleaningUp; }
 
         /** Returns Qt runtime version string. */
@@ -153,7 +153,7 @@ public:
         /** Returns Qt compiled version. */
         static uint qtCTVersion();
 
-        /** Returns whether VBoxGlobal instance is properly initialized. */
+        /** Returns whether UICommon instance is properly initialized. */
         bool isValid() const { return m_fValid; }
 
         /** Returns the UI type. */
@@ -169,7 +169,7 @@ public:
 #ifdef VBOX_WS_MAC
         /** Mac OS X: Returns #MacOSXRelease determined by <i>uname</i> call. */
         static MacOSXRelease determineOsRelease();
-        /** Mac OS X: Returns #MacOSXRelease determined during VBoxGlobal prepare routine. */
+        /** Mac OS X: Returns #MacOSXRelease determined during UICommon prepare routine. */
         MacOSXRelease osRelease() const { return m_enmMacOSVersion; }
 #endif
 
@@ -698,10 +698,10 @@ protected slots:
 private:
 
     /** Construcs global VirtualBox object of passed @a enmType. */
-    VBoxGlobal(UIType enmType);
+    UICommon(UIType enmType);
 
     /** Destrucs global VirtualBox object. */
-    virtual ~VBoxGlobal() /* override */;
+    virtual ~UICommon() /* override */;
 
 
     /** @name COM: Virtual Media create functions.
@@ -765,12 +765,12 @@ private:
         void comWrappersReinit();
     /** @} */
 
-    /** Holds the singleton VBoxGlobal instance. */
-    static VBoxGlobal *s_pInstance;
+    /** Holds the singleton UICommon instance. */
+    static UICommon *s_pInstance;
 
     /** @name Common stuff.
      * @{ */
-        /** Holds whether VBoxGlobal cleanup is in progress. */
+        /** Holds whether UICommon cleanup is in progress. */
         static bool  s_fCleaningUp;
 
         /** Holds the currently loaded language ID. */
@@ -782,7 +782,7 @@ private:
         /** Holds the UI type. */
         UIType  m_enmType;
 
-        /** Holds whether VBoxGlobal instance is properly initialized. */
+        /** Holds whether UICommon instance is properly initialized. */
         bool  m_fValid;
 
 #ifdef VBOX_WS_MAC
@@ -931,17 +931,17 @@ private:
 #if defined(VBOX_WS_WIN)
     /** @name ATL stuff.
      * @{ */
-        /** Holds the ATL module instance (for use with VBoxGlobal shared library only).
+        /** Holds the ATL module instance (for use with UICommon shared library only).
           * @note  Required internally by ATL (constructor records instance in global variable). */
         ATL::CComModule _Module;
     /** @} */
 #endif
 
     /** Allows for shortcut access. */
-    friend VBoxGlobal &vboxGlobal();
+    friend UICommon &uiCommon();
 };
 
-/** Singleton VBoxGlobal 'official' name. */
-inline VBoxGlobal &vboxGlobal() { return *VBoxGlobal::instance(); }
+/** Singleton UICommon 'official' name. */
+inline UICommon &uiCommon() { return *UICommon::instance(); }
 
-#endif /* !FEQT_INCLUDED_SRC_globals_VBoxGlobal_h */
+#endif /* !FEQT_INCLUDED_SRC_globals_UICommon_h */

@@ -27,7 +27,7 @@
 /* GUI includes: */
 #include "QIMainWindow.h"
 #include "QIWithRetranslateUI.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 
 /* Forward declarations: */
 class QMenu;
@@ -299,7 +299,7 @@ private:
     /** @name VM launching stuff.
       * @{ */
         /** Launches or shows virtual machines represented by passed @a items in corresponding @a enmLaunchMode (for launch). */
-        void performStartOrShowVirtualMachines(const QList<UIVirtualMachineItem*> &items, VBoxGlobal::LaunchMode enmLaunchMode);
+        void performStartOrShowVirtualMachines(const QList<UIVirtualMachineItem*> &items, UICommon::LaunchMode enmLaunchMode);
     /** @} */
 
     /** @name Action update stuff.

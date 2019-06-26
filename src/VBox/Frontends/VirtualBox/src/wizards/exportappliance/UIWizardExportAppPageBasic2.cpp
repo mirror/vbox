@@ -34,7 +34,7 @@
 /* GUI includes: */
 #include "QIRichTextLabel.h"
 #include "QIToolButton.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "UIConverter.h"
 #include "UIEmptyFilePathSelector.h"
 #include "UIIconPool.h"
@@ -94,7 +94,7 @@ void UIWizardExportAppPage2::populateFormats()
 
     /* Initialize Cloud Provider Manager: */
     bool fOCIPresent = false;
-    CVirtualBox comVBox = vboxGlobal().virtualBox();
+    CVirtualBox comVBox = uiCommon().virtualBox();
     m_comCloudProviderManager = comVBox.GetCloudProviderManager();
     /* Show error message if necessary: */
     if (!comVBox.isOk())
@@ -312,7 +312,7 @@ void UIWizardExportAppPage2::populateFormProperties()
             const QUuid uMachineId = uuids.first();
 
             /* Get the machine with the uMachineId: */
-            CVirtualBox comVBox = vboxGlobal().virtualBox();
+            CVirtualBox comVBox = uiCommon().virtualBox();
             CMachine comMachine = comVBox.FindMachine(uMachineId.toString());
             if (!comVBox.isOk())
             {
@@ -433,7 +433,7 @@ void UIWizardExportAppPage2::refreshFileSelectorPath()
     {
         /* Compose file selector path: */
         const QString strPath = QDir::toNativeSeparators(QString("%1/%2")
-                                                         .arg(vboxGlobal().documentsPath())
+                                                         .arg(uiCommon().documentsPath())
                                                          .arg(m_strFileSelectorName + m_strFileSelectorExt));
         m_pFileSelector->setPath(strPath);
     }
@@ -1046,7 +1046,7 @@ bool UIWizardExportAppPageBasic2::isComplete() const
     if (isFormatCloudOne())
         fResult = m_comCloudProfile.isNotNull();
     else
-        fResult = VBoxGlobal::hasAllowedExtension(path().toLower(), OVFFileExts);
+        fResult = UICommon::hasAllowedExtension(path().toLower(), OVFFileExts);
 
     /* Return result: */
     return fResult;

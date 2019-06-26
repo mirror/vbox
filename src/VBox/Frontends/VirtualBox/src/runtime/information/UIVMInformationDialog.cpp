@@ -31,7 +31,7 @@
 #include "UIIconPool.h"
 #include "QITabWidget.h"
 #include "QIDialogButtonBox.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "VBoxUtils.h"
 #include "UIInformationConfiguration.h"
 #include "UIInformationRuntime.h"
@@ -99,7 +99,7 @@ UIVMInformationDialog::~UIVMInformationDialog()
 
 bool UIVMInformationDialog::shouldBeMaximized() const
 {
-    return gEDataManager->informationWindowShouldBeMaximized(vboxGlobal().managedVMUuid());
+    return gEDataManager->informationWindowShouldBeMaximized(uiCommon().managedVMUuid());
 }
 
 void UIVMInformationDialog::retranslateUi()
@@ -168,11 +168,11 @@ void UIVMInformationDialog::prepare()
 
     /* This is needed at least for some VM to show correct storage info. */
 #ifndef VBOX_GUI_WITH_NEW_MEDIA_EVENTS
-    if (vboxGlobal().uiType() == VBoxGlobal::UIType_RuntimeUI)
+    if (uiCommon().uiType() == UICommon::UIType_RuntimeUI)
 #else
-    if (!vboxGlobal().isFullMediumEnumerationRequested())
+    if (!uiCommon().isFullMediumEnumerationRequested())
 #endif
-        vboxGlobal().startMediumEnumeration();
+        uiCommon().startMediumEnumeration();
 }
 
 void UIVMInformationDialog::prepareThis()
@@ -290,7 +290,7 @@ void UIVMInformationDialog::loadSettings()
     /* Restore window geometry: */
     {
         /* Load geometry: */
-        m_geometry = gEDataManager->informationWindowGeometry(this, m_pMachineWindow, vboxGlobal().managedVMUuid());
+        m_geometry = gEDataManager->informationWindowGeometry(this, m_pMachineWindow, uiCommon().managedVMUuid());
 
         /* Restore geometry: */
         LogRel2(("GUI: UIVMInformationDialog: Restoring geometry to: Origin=%dx%d, Size=%dx%d\n",
@@ -305,9 +305,9 @@ void UIVMInformationDialog::saveSettings()
     {
         /* Save geometry: */
 #ifdef VBOX_WS_MAC
-        gEDataManager->setInformationWindowGeometry(m_geometry, ::darwinIsWindowMaximized(this), vboxGlobal().managedVMUuid());
+        gEDataManager->setInformationWindowGeometry(m_geometry, ::darwinIsWindowMaximized(this), uiCommon().managedVMUuid());
 #else /* VBOX_WS_MAC */
-        gEDataManager->setInformationWindowGeometry(m_geometry, isMaximized(), vboxGlobal().managedVMUuid());
+        gEDataManager->setInformationWindowGeometry(m_geometry, isMaximized(), uiCommon().managedVMUuid());
 #endif /* !VBOX_WS_MAC */
         LogRel2(("GUI: UIVMInformationDialog: Geometry saved as: Origin=%dx%d, Size=%dx%d\n",
                  m_geometry.x(), m_geometry.y(), m_geometry.width(), m_geometry.height()));

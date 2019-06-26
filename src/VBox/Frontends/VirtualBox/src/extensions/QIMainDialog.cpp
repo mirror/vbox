@@ -28,7 +28,7 @@
 
 /* GUI includes: */
 #include "QIMainDialog.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "VBoxUtils.h"
 
 /* Other VBox includes: */
@@ -232,7 +232,7 @@ void QIMainDialog::polishEvent(QShowEvent *)
 
     /* Explicit centering according to our parent: */
     if (m_fIsAutoCentering)
-        VBoxGlobal::centerWidget(this, parentWidget(), false);
+        UICommon::centerWidget(this, parentWidget(), false);
 
     /* Mark dialog as polished: */
     m_fPolished = true;

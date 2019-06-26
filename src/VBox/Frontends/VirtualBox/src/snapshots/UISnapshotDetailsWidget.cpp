@@ -38,7 +38,7 @@
 #include "UIIconPool.h"
 #include "UISnapshotDetailsWidget.h"
 #include "UIMessageCenter.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 #include "VBoxUtils.h"
 
 /* COM includes: */
@@ -461,7 +461,7 @@ void UIScreenshotViewer::prepare()
     /* Screenshot viewer is an application-modal window: */
     setWindowModality(Qt::ApplicationModal);
     /* With the pointing-hand cursor: */
-    VBoxGlobal::setCursor(this, Qt::PointingHandCursor);
+    UICommon::setCursor(this, Qt::PointingHandCursor);
     /* And it's being deleted when closed: */
     setAttribute(Qt::WA_DeleteOnClose);
 
@@ -499,7 +499,7 @@ void UIScreenshotViewer::prepare()
     adjustWindowSize();
 
     /* Center according requested widget: */
-    VBoxGlobal::centerWidget(this, parentWidget(), false);
+    UICommon::centerWidget(this, parentWidget(), false);
 }
 
 void UIScreenshotViewer::adjustWindowSize()
@@ -1203,8 +1203,8 @@ QString UISnapshotDetailsWidget::detailsReport(DetailsElementType enmType,
             /* Operating System: */
             ++iRowCount;
             strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIDetails", "Operating System", "details (general)"),
-                                                     empReport(vboxGlobal().vmGuestOSTypeDescription(comMachine.GetOSTypeId()),
-                                                               vboxGlobal().vmGuestOSTypeDescription(comMachineOld.GetOSTypeId())));
+                                                     empReport(uiCommon().vmGuestOSTypeDescription(comMachine.GetOSTypeId()),
+                                                               uiCommon().vmGuestOSTypeDescription(comMachineOld.GetOSTypeId())));
 
             /* Location of the settings file: */
             QString strSettingsFilePath = comMachine.GetSettingsFilePath();
@@ -1621,7 +1621,7 @@ QString UISnapshotDetailsWidget::bootOrderReport(const CMachine &comMachine)
     /* Prepare report: */
     QStringList aReport;
     /* Iterate through boot device types: */
-    for (ulong i = 1; i <= vboxGlobal().virtualBox().GetSystemProperties().GetMaxBootPosition(); ++i)
+    for (ulong i = 1; i <= uiCommon().virtualBox().GetSystemProperties().GetMaxBootPosition(); ++i)
     {
         const KDeviceType enmDevice = comMachine.GetBootOrder(i);
         if (enmDevice != KDeviceType_Null)
@@ -1665,7 +1665,7 @@ QString UISnapshotDetailsWidget::accelerationReport(const CMachine &comMachine)
     /* Prepare report: */
     QStringList aReport;
     /* VT-x/AMD-V and Nested Paging? */
-    if (vboxGlobal().host().GetProcessorFeature(KProcessorFeature_HWVirtEx))
+    if (uiCommon().host().GetProcessorFeature(KProcessorFeature_HWVirtEx))
     {
         /* VT-x/AMD-V? */
         if (comMachine.GetHWVirtExProperty(KHWVirtExPropertyType_Enabled))
@@ -1720,7 +1720,7 @@ QString UISnapshotDetailsWidget::displayAccelerationReport(CMachine comMachine)
         aReport << QApplication::translate("UIDetails", "2D Video", "details (display)");
 #endif
     /* 3D Acceleration? */
-    if (comMachine.GetAccelerate3DEnabled() && vboxGlobal().is3DAvailable())
+    if (comMachine.GetAccelerate3DEnabled() && uiCommon().is3DAvailable())
         aReport << QApplication::translate("UIDetails", "3D", "details (display)");
     /* Compose and return report: */
     return aReport.isEmpty() ? QString() : aReport.join(", ");
@@ -1794,7 +1794,7 @@ QPair<QStringList, QList<QMap<QString, QString> > > UISnapshotDetailsWidget::sto
 
             /* Prepare current medium information: */
             const QString strMediumInfo = comAttachment.isOk()
-                                        ? wipeHtmlStuff(vboxGlobal().details(comAttachment.GetMedium(), false))
+                                        ? wipeHtmlStuff(uiCommon().details(comAttachment.GetMedium(), false))
                                         : QString();
 
             /* Cache current slot/medium information: */
@@ -1845,7 +1845,7 @@ QStringList UISnapshotDetailsWidget::networkReport(CMachine comMachine)
     /* Prepare report: */
     QStringList aReport;
     /* Iterate through machine network adapters: */
-    const ulong iCount = vboxGlobal().virtualBox().GetSystemProperties().GetMaxNetworkAdapters(comMachine.GetChipsetType());
+    const ulong iCount = uiCommon().virtualBox().GetSystemProperties().GetMaxNetworkAdapters(comMachine.GetChipsetType());
     for (ulong iSlot = 0; iSlot < iCount; ++iSlot)
     {
         /* Get current network adapter: */
@@ -1903,7 +1903,7 @@ QStringList UISnapshotDetailsWidget::serialReport(CMachine comMachine)
     /* Prepare report: */
     QStringList aReport;
     /* Iterate through machine serial ports: */
-    const ulong iCount = vboxGlobal().virtualBox().GetSystemProperties().GetSerialPortCount();
+    const ulong iCount = uiCommon().virtualBox().GetSystemProperties().GetSerialPortCount();
     for (ulong iSlot = 0; iSlot < iCount; ++iSlot)
     {
         /* Get current serial port: */
@@ -1914,7 +1914,7 @@ QStringList UISnapshotDetailsWidget::serialReport(CMachine comMachine)
             const KPortMode enmMode = comPort.GetHostMode();
             /* Compose the data: */
             QStringList aInfo;
-            aInfo << vboxGlobal().toCOMPortName(comPort.GetIRQ(), comPort.GetIOBase());
+            aInfo << uiCommon().toCOMPortName(comPort.GetIRQ(), comPort.GetIOBase());
             if (   enmMode == KPortMode_HostPipe
                 || enmMode == KPortMode_HostDevice
                 || enmMode == KPortMode_TCP

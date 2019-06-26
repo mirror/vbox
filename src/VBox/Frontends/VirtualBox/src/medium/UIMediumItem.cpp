@@ -26,7 +26,7 @@
 #include "UIIconPool.h"
 #include "UIMediumItem.h"
 #include "UIMessageCenter.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 
 /* COM includes: */
 #include "CMachine.h"
@@ -168,8 +168,8 @@ void UIMediumItem::setMedium(const UIMedium &guiMedium)
 bool UIMediumItem::operator<(const QTreeWidgetItem &other) const
 {
     int iColumn = treeWidget()->sortColumn();
-    ULONG64 uThisValue = vboxGlobal().parseSize(      text(iColumn));
-    ULONG64 uThatValue = vboxGlobal().parseSize(other.text(iColumn));
+    ULONG64 uThisValue = uiCommon().parseSize(      text(iColumn));
+    ULONG64 uThatValue = uiCommon().parseSize(other.text(iColumn));
     return uThisValue && uThatValue ? uThisValue < uThatValue : QTreeWidgetItem::operator<(other);
 }
 
@@ -181,7 +181,7 @@ bool UIMediumItem::isMediumModifiable() const
         return false;
     foreach (const QUuid &uMachineId, medium().curStateMachineIds())
     {
-        CMachine comMachine = vboxGlobal().virtualBox().FindMachine(uMachineId.toString());
+        CMachine comMachine = uiCommon().virtualBox().FindMachine(uMachineId.toString());
         if (comMachine.isNull())
             continue;
         if (comMachine.GetState() != KMachineState_PoweredOff &&
@@ -204,7 +204,7 @@ bool UIMediumItem::changeMediumType(KMediumType enmOldType, KMediumType enmNewTy
     /* Cache the list of vms the medium is attached to. We will need this for the re-attachment: */
     foreach (const QUuid &uMachineId, medium().curStateMachineIds())
     {
-        const CMachine &comMachine = vboxGlobal().virtualBox().FindMachine(uMachineId.toString());
+        const CMachine &comMachine = uiCommon().virtualBox().FindMachine(uMachineId.toString());
         if (comMachine.isNull())
             continue;
         CMediumAttachmentVector attachments = comMachine.GetMediumAttachments();
@@ -227,7 +227,7 @@ bool UIMediumItem::changeMediumType(KMediumType enmOldType, KMediumType enmNewTy
         return false;
 
     /* Search for corresponding medium: */
-    CMedium comMedium = vboxGlobal().medium(id()).medium();
+    CMedium comMedium = uiCommon().medium(id()).medium();
 
     /* Attempt to change medium type: */
     comMedium.SetType(enmNewType);
@@ -319,7 +319,7 @@ void UIMediumItem::refresh()
 bool UIMediumItem::releaseFrom(const QUuid &uMachineId)
 {
     /* Open session: */
-    CSession session = vboxGlobal().openSession(uMachineId);
+    CSession session = uiCommon().openSession(uMachineId);
     if (session.isNull())
         return false;
 
@@ -355,7 +355,7 @@ bool UIMediumItem::attachTo(const AttachmentCache &attachmentCache)
         return false;
 
     /* Open session: */
-    CSession session = vboxGlobal().openSession(attachmentCache.m_uMachineId);
+    CSession session = uiCommon().openSession(attachmentCache.m_uMachineId);
     if (session.isNull())
         return false;
 
@@ -440,7 +440,7 @@ bool UIMediumItemHD::remove()
 
 #ifndef VBOX_GUI_WITH_NEW_MEDIA_EVENTS
     /* Remove UIMedium finally: */
-    vboxGlobal().deleteMedium(uMediumID);
+    uiCommon().deleteMedium(uMediumID);
 #endif
 
     /* True by default: */
@@ -567,7 +567,7 @@ bool UIMediumItemCD::remove()
 
 #ifndef VBOX_GUI_WITH_NEW_MEDIA_EVENTS
     /* Remove UIMedium finally: */
-    vboxGlobal().deleteMedium(uMediumID);
+    uiCommon().deleteMedium(uMediumID);
 #endif
 
     /* True by default: */
@@ -642,7 +642,7 @@ bool UIMediumItemFD::remove()
 
 #ifndef VBOX_GUI_WITH_NEW_MEDIA_EVENTS
     /* Remove UIMedium finally: */
-    vboxGlobal().deleteMedium(uMediumID);
+    uiCommon().deleteMedium(uMediumID);
 #endif
 
     /* True by default: */

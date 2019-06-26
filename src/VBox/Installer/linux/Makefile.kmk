@@ -245,7 +245,7 @@ ifdef VBOX_WITH_QTGUI
  	VBoxKeyboard.so \
  	VirtualBox \
  	VirtualBoxVM \
- 	VBoxGlobal.so \
+ 	UICommon.so \
  	$(if $(VBOX_WITH_DEBUGGER_GUI),VBoxDbg.so DbgPlugInDiggers.so)
  ifdef VBOX_WITH_HARDENING
   VBOX_LNX_STRIP_BIN += \

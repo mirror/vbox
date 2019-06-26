@@ -34,7 +34,7 @@
 #include "UIGraphicsTextPane.h"
 #include "UIIconPool.h"
 #include "UIVirtualBoxManager.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 
 
 UIDetailsElement::UIDetailsElement(UIDetailsSet *pParent, DetailsElementType enmType, bool fOpened)
@@ -428,7 +428,7 @@ void UIDetailsElement::sltHandleAnchorClicked(const QString &strAnchor)
         StorageSlot storageSlot = gpConverter->fromString<StorageSlot>(strData.section(',', 1));
 
         /* Fill storage-menu: */
-        vboxGlobal().prepareStorageMenu(menu, this, SLOT(sltMountStorageMedium()),
+        uiCommon().prepareStorageMenu(menu, this, SLOT(sltMountStorageMedium()),
                                         machine(), strControllerName, storageSlot);
 
         /* Exec menu: */
@@ -446,7 +446,7 @@ void UIDetailsElement::sltMountStorageMedium()
     const UIMediumTarget target = pAction->data().value<UIMediumTarget>();
 
     /* Update current machine mount-target: */
-    vboxGlobal().updateMachineStorage(machine(), target);
+    uiCommon().updateMachineStorage(machine(), target);
 }
 
 void UIDetailsElement::prepareElement()
@@ -604,9 +604,9 @@ void UIDetailsElement::handleHoverEvent(QGraphicsSceneHoverEvent *pEvent)
 void UIDetailsElement::updateNameHoverLink()
 {
     if (m_fNameHovered)
-        VBoxGlobal::setCursor(this, Qt::PointingHandCursor);
+        UICommon::setCursor(this, Qt::PointingHandCursor);
     else
-        VBoxGlobal::unsetCursor(this);
+        UICommon::unsetCursor(this);
     update();
 }
 

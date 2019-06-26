@@ -45,9 +45,9 @@ public:
     /** Create the singleton UI starter instance. */
     static void destroy();
 
-    /** Init VBoxGlobal connections. */
+    /** Init UICommon connections. */
     void init();
-    /** Deinit VBoxGlobal connections. */
+    /** Deinit UICommon connections. */
     void deinit();
 
 private slots:

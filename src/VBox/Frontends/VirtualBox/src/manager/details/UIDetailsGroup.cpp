@@ -27,7 +27,7 @@
 #include "UIDetailsSet.h"
 #include "UIExtraDataManager.h"
 #include "UIVirtualMachineItem.h"
-#include "VBoxGlobal.h"
+#include "UICommon.h"
 
 
 UIDetailsGroup::UIDetailsGroup(QGraphicsScene *pParent)
