@@ -258,7 +258,14 @@ void VBoxSvcClipboardUnlock(void)
  */
 static bool vboxSvcClipboardReturnMsg(PVBOXCLIPBOARDCLIENTDATA pClientData, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
-    RT_NOREF(cParms);
+    /** @todo r=andy The client at the moment supplies two parameters, which we can
+     *        use by filling in the next message type sent by the host service.
+     *        Make this more flexible later, as I don't want to break the existing protocol right now. */
+    if (cParms < 2)
+    {
+        AssertFailed(); /* Should never happen. */
+        return false;
+    }
 
     /* Message priority is taken into account. */
     if (pClientData->State.fHostMsgQuit)
@@ -384,7 +391,8 @@ int vboxSvcClipboardReportMsg(PVBOXCLIPBOARDCLIENTDATA pClientData, uint32_t uMs
             if (pClientData->State.fAsync)
             {
                 /* The client waits for a response. */
-                bool fMessageReturned = vboxSvcClipboardReturnMsg(pClientData, 0 /* cParms, fix */,
+                bool fMessageReturned = vboxSvcClipboardReturnMsg(pClientData,
+                                                                  pClientData->State.async.cParms,
                                                                   pClientData->State.async.paParms);
 
                 /* Make a copy of the handle. */
@@ -409,6 +417,27 @@ int vboxSvcClipboardReportMsg(PVBOXCLIPBOARDCLIENTDATA pClientData, uint32_t uMs
         }
         else
             VBoxSvcClipboardUnlock();
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+
+int vboxSvcClipboardSetSource(PVBOXCLIPBOARDCLIENTDATA pClientData, SHAREDCLIPBOARDSOURCE enmSource)
+{
+    if (!pClientData) /* If no client connected (anymore), bail out. */
+        return VINF_SUCCESS;
+
+    int rc = VINF_SUCCESS;
+
+    if (VBoxSvcClipboardLock())
+    {
+        pClientData->State.enmSource = enmSource;
+
+        LogFlowFunc(("Source of client %RU32 is now %RU32\n", pClientData->State.u32ClientID, pClientData->State.enmSource));
+
+        VBoxSvcClipboardUnlock();
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -584,6 +613,7 @@ static DECLCALLBACK(void) svcCall(void *,
 
                         pClientData->State.fAsync           = true;
                         pClientData->State.async.callHandle = callHandle;
+                        pClientData->State.async.cParms     = cParms;
                         pClientData->State.async.paParms    = paParms;
                     }
 
@@ -622,14 +652,19 @@ static DECLCALLBACK(void) svcCall(void *,
                     }
                     else
                     {
+                        rc = vboxSvcClipboardSetSource(pClientData, SHAREDCLIPBOARDSOURCE_REMOTE);
+
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
                         if (   RT_SUCCESS(rc)
                             && (u32Formats & VBOX_SHARED_CLIPBOARD_FMT_URI_LIST))
                         {
-                            if (!SharedClipboardURICtxMaximumTransfersReached(&pClientData->URI))
+                            if (!SharedClipboardURICtxTransfersMaximumReached(&pClientData->URI))
                             {
+                                SharedClipboardURICtxTransfersCleanup(&pClientData->URI);
+
                                 PSHAREDCLIPBOARDURITRANSFER pTransfer;
-                                rc = SharedClipboardURITransferCreate(SHAREDCLIPBOARDURITRANSFERDIR_READ, &pTransfer);
+                                rc = SharedClipboardURITransferCreate(SHAREDCLIPBOARDURITRANSFERDIR_READ,
+                                                                      SHAREDCLIPBOARDSOURCE_REMOTE, &pTransfer);
                                 if (RT_SUCCESS(rc))
                                 {
                                     rc = vboxSvcClipboardURIAreaRegister(&pClientData->State, pTransfer);
@@ -637,18 +672,49 @@ static DECLCALLBACK(void) svcCall(void *,
                                     {
                                         SHAREDCLIPBOARDPROVIDERCREATIONCTX creationCtx;
                                         RT_ZERO(creationCtx);
-                                        creationCtx.enmSource = SHAREDCLIPBOARDURIPROVIDERSOURCE_HOSTSERVICE;
-                                        creationCtx.enmDir    = SHAREDCLIPBOARDURITRANSFERDIR_READ;
+
+                                        creationCtx.enmSource = pClientData->State.enmSource;
+
+                                        RT_ZERO(creationCtx.Interface);
+                                        creationCtx.Interface.pfnReadDataHdr    = VBoxClipboardSvcImplURIReadDataHdr;
+                                        creationCtx.Interface.pfnReadDataChunk  = VBoxClipboardSvcImplURIReadDataChunk;
+                                        creationCtx.Interface.pfnReadDirectory  = VBoxClipboardSvcImplURIReadDir;
+                                        creationCtx.Interface.pfnReadFileHdr    = VBoxClipboardSvcImplURIReadFileHdr;
+                                        creationCtx.Interface.pfnReadFileData   = VBoxClipboardSvcImplURIReadFileData;
+
+                                        creationCtx.Interface.pfnWriteDataHdr    = VBoxClipboardSvcImplURIWriteDataHdr;
+                                        creationCtx.Interface.pfnWriteDataChunk  = VBoxClipboardSvcImplURIWriteDataChunk;
+                                        creationCtx.Interface.pfnWriteDirectory  = VBoxClipboardSvcImplURIWriteDir;
+                                        creationCtx.Interface.pfnWriteFileHdr    = VBoxClipboardSvcImplURIWriteFileHdr;
+                                        creationCtx.Interface.pfnWriteFileData   = VBoxClipboardSvcImplURIWriteFileData;
+
+                                        creationCtx.pvUser = pClientData;
+
                                         creationCtx.u.HostService.pArea = pTransfer->pArea;
 
                                         rc = SharedClipboardURITransferProviderCreate(pTransfer, &creationCtx);
                                         if (RT_SUCCESS(rc))
                                             rc = SharedClipboardURICtxTransferAdd(&pClientData->URI, pTransfer);
                                     }
+
+                                    if (RT_SUCCESS(rc))
+                                    {
+                                        rc = VBoxClipboardSvcImplURITransferCreate(pClientData, pTransfer);
+                                    }
+                                    else
+                                    {
+                                        VBoxClipboardSvcImplURITransferDestroy(pClientData, pTransfer);
+                                        SharedClipboardURITransferDestroy(pTransfer);
+                                    }
                                 }
                             }
                             else
                                 rc = VERR_SHCLPB_MAX_TRANSFERS_REACHED;
+
+                            LogFunc(("VBOX_SHARED_CLIPBOARD_FMT_URI_LIST: %Rrc\n", rc));
+
+                            if (RT_FAILURE(rc))
+                                LogRel(("Shared Clipboard: Initializing URI guest to host read transfer failed with %Rrc\n", rc));
                         }
 #endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
 
@@ -688,82 +754,149 @@ static DECLCALLBACK(void) svcCall(void *,
             }
             else
             {
-                uint32_t u32Format;
-                void     *pv;
-                uint32_t cb;
+                if (   vboxSvcClipboardGetMode() != VBOX_SHARED_CLIPBOARD_MODE_HOST_TO_GUEST
+                    && vboxSvcClipboardGetMode() != VBOX_SHARED_CLIPBOARD_MODE_BIDIRECTIONAL)
+                {
+                    rc = VERR_ACCESS_DENIED;
+                    break;
+                }
 
+                uint32_t u32Format;
                 rc = HGCMSvcGetU32(&paParms[0], &u32Format);
                 if (RT_SUCCESS(rc))
                 {
-                    rc = VBoxHGCMParmPtrGet(&paParms[1], &pv, &cb);
-
-                    if (RT_SUCCESS (rc))
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+                    if (u32Format == VBOX_SHARED_CLIPBOARD_FMT_URI_LIST)
                     {
-                        if (   vboxSvcClipboardGetMode() != VBOX_SHARED_CLIPBOARD_MODE_HOST_TO_GUEST
-                            && vboxSvcClipboardGetMode() != VBOX_SHARED_CLIPBOARD_MODE_BIDIRECTIONAL)
+                        if (!SharedClipboardURICtxTransfersMaximumReached(&pClientData->URI))
                         {
-                            rc = VERR_NOT_SUPPORTED;
-                            break;
-                        }
+                            SharedClipboardURICtxTransfersCleanup(&pClientData->URI);
 
-                        uint32_t cbActual = 0;
-
-                        if (g_pfnExtension)
-                        {
-                            VBOXCLIPBOARDEXTPARMS parms;
-                            RT_ZERO(parms);
-
-                            parms.u32Format = u32Format;
-                            parms.u.pvData  = pv;
-                            parms.cbData    = cb;
-
-                            g_fReadingData = true;
-
-                            rc = g_pfnExtension(g_pvExtension, VBOX_CLIPBOARD_EXT_FN_DATA_READ, &parms, sizeof (parms));
-                            LogFlowFunc(("DATA: g_fDelayedAnnouncement = %d, g_u32DelayedFormats = 0x%x\n", g_fDelayedAnnouncement, g_u32DelayedFormats));
-
-                            if (g_fDelayedAnnouncement)
+                            PSHAREDCLIPBOARDURITRANSFER pTransfer;
+                            rc = SharedClipboardURITransferCreate(SHAREDCLIPBOARDURITRANSFERDIR_WRITE,
+                                                                  pClientData->State.enmSource,
+                                                                  &pTransfer);
+                            if (RT_SUCCESS(rc))
                             {
-                                vboxSvcClipboardReportMsg(g_pClientData, VBOX_SHARED_CLIPBOARD_HOST_MSG_REPORT_FORMATS, g_u32DelayedFormats);
-                                g_fDelayedAnnouncement = false;
-                                g_u32DelayedFormats = 0;
-                            }
+                                /* Attach to the most recent clipboard area. */
+                                rc = vboxSvcClipboardURIAreaAttach(&pClientData->State, pTransfer, 0 /* Area ID */);
+                                if (RT_SUCCESS(rc))
+                                {
+                                    SHAREDCLIPBOARDPROVIDERCREATIONCTX creationCtx;
+                                    RT_ZERO(creationCtx);
 
-                            g_fReadingData = false;
+                                    creationCtx.enmSource = SharedClipboardURITransferGetSource(pTransfer);
 
-                            if (RT_SUCCESS (rc))
-                            {
-                                cbActual = parms.cbData;
+                                    RT_ZERO(creationCtx.Interface);
+
+                                    creationCtx.Interface.pfnReadDataHdr    = VBoxClipboardSvcImplURIReadDataHdr;
+                                    creationCtx.Interface.pfnReadDataChunk  = VBoxClipboardSvcImplURIReadDataChunk;
+                                    creationCtx.Interface.pfnReadDirectory  = VBoxClipboardSvcImplURIReadDir;
+                                    creationCtx.Interface.pfnReadFileHdr    = VBoxClipboardSvcImplURIReadFileHdr;
+                                    creationCtx.Interface.pfnReadFileData   = VBoxClipboardSvcImplURIReadFileData;
+
+                                    creationCtx.Interface.pfnWriteDataHdr    = VBoxClipboardSvcImplURIWriteDataHdr;
+                                    creationCtx.Interface.pfnWriteDataChunk  = VBoxClipboardSvcImplURIWriteDataChunk;
+                                    creationCtx.Interface.pfnWriteDirectory  = VBoxClipboardSvcImplURIWriteDir;
+                                    creationCtx.Interface.pfnWriteFileHdr    = VBoxClipboardSvcImplURIWriteFileHdr;
+                                    creationCtx.Interface.pfnWriteFileData   = VBoxClipboardSvcImplURIWriteFileData;
+
+                                    creationCtx.pvUser = pClientData;
+
+                                    creationCtx.u.HostService.pArea = pTransfer->pArea;
+
+                                    rc = SharedClipboardURITransferProviderCreate(pTransfer, &creationCtx);
+                                    if (RT_SUCCESS(rc))
+                                        rc = SharedClipboardURICtxTransferAdd(&pClientData->URI, pTransfer);
+                                }
+
+                                if (RT_SUCCESS(rc))
+                                {
+                                    rc = VBoxClipboardSvcImplURITransferCreate(pClientData, pTransfer);
+                                }
+                                else
+                                {
+                                    VBoxClipboardSvcImplURITransferDestroy(pClientData, pTransfer);
+                                    SharedClipboardURITransferDestroy(pTransfer);
+                                }
                             }
                         }
+                        else
+                            rc = VERR_SHCLPB_MAX_TRANSFERS_REACHED;
 
-                        /* Release any other pending read, as we only
-                         * support one pending read at one time. */
-                        rc = vboxSvcClipboardCompleteReadData(pClientData, VERR_NO_DATA, 0);
-                        if (RT_SUCCESS(rc))
-                            rc = VBoxClipboardSvcImplReadData(pClientData, u32Format, pv, cb, &cbActual);
-
-                        /* Remember our read request until it is completed.
-                         * See the protocol description above for more
-                         * information. */
-                        if (rc == VINF_HGCM_ASYNC_EXECUTE)
-                        {
-                            if (VBoxSvcClipboardLock())
-                            {
-                                pClientData->State.asyncRead.callHandle = callHandle;
-                                pClientData->State.asyncRead.paParms    = paParms;
-                                pClientData->State.fReadPending         = true;
-                                fAsynchronousProcessing = true;
-                                VBoxSvcClipboardUnlock();
-                            }
-                            else
-                                rc = VERR_NOT_SUPPORTED;
-                        }
-                        else if (RT_SUCCESS (rc))
-                        {
-                            HGCMSvcSetU32(&paParms[2], cbActual);
-                        }
+                        if (RT_FAILURE(rc))
+                            LogRel(("Shared Clipboard: Initializing URI host to guest write transfer failed with %Rrc\n", rc));
                     }
+                    else
+                    {
+#endif
+                        void    *pv;
+                        uint32_t cb;
+                        rc = VBoxHGCMParmPtrGet(&paParms[1], &pv, &cb);
+                        if (RT_SUCCESS(rc))
+                        {
+                            uint32_t cbActual = 0;
+
+                            if (g_pfnExtension)
+                            {
+                                VBOXCLIPBOARDEXTPARMS parms;
+                                RT_ZERO(parms);
+
+                                parms.u32Format = u32Format;
+                                parms.u.pvData  = pv;
+                                parms.cbData    = cb;
+
+                                g_fReadingData = true;
+
+                                rc = g_pfnExtension(g_pvExtension, VBOX_CLIPBOARD_EXT_FN_DATA_READ, &parms, sizeof (parms));
+                                LogFlowFunc(("DATA: g_fDelayedAnnouncement = %d, g_u32DelayedFormats = 0x%x\n", g_fDelayedAnnouncement, g_u32DelayedFormats));
+
+                                if (g_fDelayedAnnouncement)
+                                {
+                                    vboxSvcClipboardReportMsg(g_pClientData, VBOX_SHARED_CLIPBOARD_HOST_MSG_REPORT_FORMATS, g_u32DelayedFormats);
+                                    g_fDelayedAnnouncement = false;
+                                    g_u32DelayedFormats = 0;
+                                }
+
+                                g_fReadingData = false;
+
+                                if (RT_SUCCESS (rc))
+                                {
+                                    cbActual = parms.cbData;
+                                }
+                            }
+
+                            /* Release any other pending read, as we only
+                             * support one pending read at one time. */
+                            rc = vboxSvcClipboardCompleteReadData(pClientData, VERR_NO_DATA, 0);
+                            if (RT_SUCCESS(rc))
+                                rc = VBoxClipboardSvcImplReadData(pClientData, u32Format, pv, cb, &cbActual);
+
+                            /* Remember our read request until it is completed.
+                             * See the protocol description above for more
+                             * information. */
+                            if (rc == VINF_HGCM_ASYNC_EXECUTE)
+                            {
+                                if (VBoxSvcClipboardLock())
+                                {
+                                    pClientData->State.asyncRead.callHandle = callHandle;
+                                    pClientData->State.asyncRead.cParms     = cParms;
+                                    pClientData->State.asyncRead.paParms    = paParms;
+                                    pClientData->State.fReadPending         = true;
+                                    fAsynchronousProcessing = true;
+                                    VBoxSvcClipboardUnlock();
+                                }
+                                else
+                                    rc = VERR_NOT_SUPPORTED;
+                            }
+                            else if (RT_SUCCESS (rc))
+                            {
+                                HGCMSvcSetU32(&paParms[2], cbActual);
+                            }
+                        }
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+                    }
+#endif
                 }
             }
         } break;
@@ -985,20 +1118,6 @@ static DECLCALLBACK(int) svcHostCall(void *,
     LogFlowFunc(("svcHostCall: rc = %Rrc\n", rc));
     return rc;
 }
-
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
-DECLCALLBACK(int) vboxClipboardSvcReadDataHdrCallback(PSHAREDCLIPBOARDPROVIDERCALLBACKDATA pData)
-{
-    LogFlowFuncEnter();
-
-    PVBOXCLIPBOARDCLIENTDATA pClientData = (PVBOXCLIPBOARDCLIENTDATA)pData->pvUser;
-
-    int rc = vboxSvcClipboardReportMsg(pClientData,
-                                       VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_READ_DATA_HDR, VBOX_SHARED_CLIPBOARD_FMT_URI_LIST);
-    LogFlowFuncLeaveRC(rc);
-    return rc;
-}
-#endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
 
 #ifndef UNIT_TEST
 /**

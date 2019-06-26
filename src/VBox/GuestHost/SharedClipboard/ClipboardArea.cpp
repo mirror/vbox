@@ -114,22 +114,27 @@ int SharedClipboardArea::Unlock(void)
     return RTCritSectLeave(&m_CritSect);
 }
 
-int SharedClipboardArea::AddFile(const char *pszFile)
+int SharedClipboardArea::AddObject(const char *pszPath, const SHAREDCLIPBOARDAREAOBJ &Obj)
 {
-    AssertPtrReturn(pszFile, VERR_INVALID_POINTER);
+    AssertPtrReturn(pszPath, VERR_INVALID_POINTER);
 
-    if (!this->m_lstFiles.contains(pszFile))
-        this->m_lstFiles.append(pszFile);
+    AssertReturn(m_mapObj.find(pszPath) == m_mapObj.end(), VERR_ALREADY_EXISTS);
+
+    m_mapObj[pszPath] = Obj; /** @todo Throw? */
+
     return VINF_SUCCESS;
 }
 
-int SharedClipboardArea::AddDir(const char *pszDir)
+int SharedClipboardArea::GetObject(const char *pszPath, PSHAREDCLIPBOARDAREAOBJ pObj)
 {
-    AssertPtrReturn(pszDir, VERR_INVALID_POINTER);
+    SharedClipboardAreaFsObjMap::const_iterator itObj = m_mapObj.find(pszPath);
+    if (itObj != m_mapObj.end())
+    {
+        *pObj = itObj->second;
+        return VINF_SUCCESS;
+    }
 
-    if (!this->m_lstDirs.contains(pszDir))
-        this->m_lstDirs.append(pszDir);
-    return VINF_SUCCESS;
+    return VERR_NOT_FOUND;
 }
 
 int SharedClipboardArea::initInternal(void)
@@ -305,8 +310,7 @@ int SharedClipboardArea::Reset(bool fDeleteContent)
         }
         else
         {
-            this->m_lstDirs.clear();
-            this->m_lstFiles.clear();
+
         }
     }
 
@@ -329,6 +333,7 @@ int SharedClipboardArea::Rollback(void)
 
     int rc = VINF_SUCCESS;
 
+#if 0
     /* Rollback by removing any stuff created.
      * Note: Only remove empty directories, never ever delete
      *       anything recursive here! Steam (tm) knows best ... :-) */
@@ -369,6 +374,7 @@ int SharedClipboardArea::Rollback(void)
         if (RT_SUCCESS(rc))
             rc = rc2;
     }
+#endif
 
     LogFlowFuncLeaveRC(rc);
     return rc;

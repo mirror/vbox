@@ -81,10 +81,273 @@ static char s_szClipWndClassName[] = VBOX_CLIPBOARD_WNDCLASS_NAME;
 *   Prototypes                                                                                                                   *
 *********************************************************************************************************************************/
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
-static DECLCALLBACK(void) vboxClipboardOnURITransferComplete(PSHAREDCLIPBOARDURITRANSFERCALLBACKDATA pData, int rc);
-static DECLCALLBACK(void) vboxClipboardOnURITransferError(PSHAREDCLIPBOARDURITRANSFERCALLBACKDATA pData, int rc);
+static DECLCALLBACK(void) vboxClipboardURITransferCompleteCallback(PSHAREDCLIPBOARDURITRANSFERCALLBACKDATA pData, int rc);
+static DECLCALLBACK(void) vboxClipboardURITransferErrorCallback(PSHAREDCLIPBOARDURITRANSFERCALLBACKDATA pData, int rc);
 #endif
 
+
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+static DECLCALLBACK(void) vboxClipboardURITransferCompleteCallback(PSHAREDCLIPBOARDURITRANSFERCALLBACKDATA pData, int rc)
+{
+    RT_NOREF(rc);
+
+    LogFlowFunc(("pData=%p, rc=%Rrc\n", pData, rc));
+
+    LogRel2(("Shared Clipboard: Transfer to destination complete\n"));
+
+    PSHAREDCLIPBOARDURICTX pCtx = (PSHAREDCLIPBOARDURICTX)pData->pvUser;
+    AssertPtr(pCtx);
+
+    PSHAREDCLIPBOARDURITRANSFER pTransfer = pData->pTransfer;
+    AssertPtr(pTransfer);
+
+    if (pTransfer->pvUser) /* SharedClipboardWinURITransferCtx */
+    {
+        delete pTransfer->pvUser;
+        pTransfer->pvUser = NULL;
+    }
+
+    int rc2 = SharedClipboardURICtxTransferRemove(pCtx, pTransfer);
+    AssertRC(rc2);
+}
+
+static DECLCALLBACK(void) vboxClipboardURITransferErrorCallback(PSHAREDCLIPBOARDURITRANSFERCALLBACKDATA pData, int rc)
+{
+    RT_NOREF(rc);
+
+    LogFlowFunc(("pData=%p, rc=%Rrc\n", pData, rc));
+
+    LogRel(("Shared Clipboard: Transfer to destination failed with %Rrc\n", rc));
+
+    PSHAREDCLIPBOARDURICTX pCtx = (PSHAREDCLIPBOARDURICTX)pData->pvUser;
+    AssertPtr(pCtx);
+
+    PSHAREDCLIPBOARDURITRANSFER pTransfer = pData->pTransfer;
+    AssertPtr(pTransfer);
+
+    if (pTransfer->pvUser) /* SharedClipboardWinURITransferCtx */
+    {
+        delete pTransfer->pvUser;
+        pTransfer->pvUser = NULL;
+    }
+
+    int rc2 = SharedClipboardURICtxTransferRemove(pCtx, pTransfer);
+    AssertRC(rc2);
+}
+
+static int vboxClipboardURIReadDataHdr(PSHAREDCLIPBOARDPROVIDERCTX pCtx, PVBOXCLIPBOARDDATAHDR *ppDataHdr)
+{
+    LogFlowFuncEnter();
+
+    PVBOXCLIPBOARDCONTEXT pThisCtx = (PVBOXCLIPBOARDCONTEXT)pCtx->pvUser;
+    AssertPtr(pThisCtx);
+
+    LogFlowFunc(("c=%RU32\n", pThisCtx->u32ClientID));
+
+    VBOXCLIPBOARDDATAHDR dataHdr;
+    SharedClipboardURIDataHdrInit(&dataHdr);
+
+    int rc = VbglR3ClipboardReadDataHdr(pThisCtx->u32ClientID, &dataHdr);
+    if (RT_SUCCESS(rc))
+    {
+        *ppDataHdr = SharedClipboardURIDataHdrDup(&dataHdr);
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+static int vboxClipboardURIWriteDataHdr(PSHAREDCLIPBOARDPROVIDERCTX pCtx, const PVBOXCLIPBOARDDATAHDR pDataHdr)
+{
+    LogFlowFuncEnter();
+
+    PVBOXCLIPBOARDCONTEXT pThisCtx = (PVBOXCLIPBOARDCONTEXT)pCtx->pvUser;
+    AssertPtr(pThisCtx);
+
+    int rc = VbglR3ClipboardWriteDataHdr(pThisCtx->u32ClientID, pDataHdr);
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+static int vboxClipboardURIReadDataChunk(PSHAREDCLIPBOARDPROVIDERCTX pCtx, const PVBOXCLIPBOARDDATAHDR pDataHdr,
+                                         void *pvChunk, uint32_t cbChunk, uint32_t fFlags, uint32_t *pcbRead)
+{
+    RT_NOREF(fFlags);
+
+    LogFlowFuncEnter();
+
+    PVBOXCLIPBOARDCONTEXT pThisCtx = (PVBOXCLIPBOARDCONTEXT)pCtx->pvUser;
+    AssertPtr(pThisCtx);
+
+    int rc = VINF_SUCCESS;
+
+    uint32_t cbReadTotal = 0;
+    uint32_t cbToRead = RT_MIN(pDataHdr->cbMeta, cbChunk);
+
+    while (cbToRead)
+    {
+        uint32_t cbRead;
+        rc = VbglR3ClipboardReadMetaData(pThisCtx->u32ClientID, pDataHdr, (uint8_t *)pvChunk + cbReadTotal, cbToRead, &cbRead);
+        if (RT_FAILURE(rc))
+            break;
+
+        cbReadTotal += cbRead;
+        Assert(cbToRead >= cbRead);
+        cbToRead    -= cbRead;
+    }
+
+    if (RT_SUCCESS(rc))
+    {
+        if (pcbRead)
+            *pcbRead = cbReadTotal;
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+static int vboxClipboardURIWriteDataChunk(PSHAREDCLIPBOARDPROVIDERCTX pCtx, const PVBOXCLIPBOARDDATAHDR pDataHdr,
+                                          const void *pvChunk, uint32_t cbChunk, uint32_t fFlags, uint32_t *pcbWritten)
+{
+    RT_NOREF(fFlags);
+
+    LogFlowFuncEnter();
+
+    PVBOXCLIPBOARDCONTEXT pThisCtx = (PVBOXCLIPBOARDCONTEXT)pCtx->pvUser;
+    AssertPtr(pThisCtx);
+
+    int rc = VINF_SUCCESS;
+
+    uint32_t cbWrittenTotal = 0;
+    uint32_t cbToWrite      = RT_MIN(pDataHdr->cbMeta, cbChunk);
+
+    while (cbToWrite)
+    {
+        uint32_t cbWritten;
+        rc = VbglR3ClipboardWriteMetaData(pThisCtx->u32ClientID, pDataHdr, (uint8_t *)pvChunk + cbWrittenTotal, cbToWrite,
+                                          &cbWritten);
+        if (RT_FAILURE(rc))
+            break;
+
+        cbWrittenTotal += cbWritten;
+        Assert(cbToWrite >= cbWritten);
+        cbToWrite      -= cbWritten;
+    }
+
+    if (RT_SUCCESS(rc))
+    {
+        if (pcbWritten)
+            *pcbWritten = cbWrittenTotal;
+    }
+
+    LogFlowFunc(("cbWrittenTotal=%RU32, rc=%Rrc\n", cbWrittenTotal, rc));
+    return rc;
+}
+
+static int vboxClipboardURIReadDir(PSHAREDCLIPBOARDPROVIDERCTX pCtx, PVBOXCLIPBOARDDIRDATA *ppDirData)
+{
+    LogFlowFuncEnter();
+
+    PVBOXCLIPBOARDCONTEXT pThisCtx = (PVBOXCLIPBOARDCONTEXT)pCtx->pvUser;
+    AssertPtr(pThisCtx);
+
+    VBOXCLIPBOARDDIRDATA dirData;
+    SharedClipboardURIDirDataInit(&dirData);
+
+    int rc = VbglR3ClipboardReadDir(pThisCtx->u32ClientID, dirData.pszPath, dirData.cbPath, &dirData.cbPath, &dirData.fMode);
+    if (RT_SUCCESS(rc))
+    {
+        *ppDirData = SharedClipboardURIDirDataDup(&dirData);
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+static int vboxClipboardURIWriteDir(PSHAREDCLIPBOARDPROVIDERCTX pCtx, const PVBOXCLIPBOARDDIRDATA pDirData)
+{
+    LogFlowFuncEnter();
+
+    PVBOXCLIPBOARDCONTEXT pThisCtx = (PVBOXCLIPBOARDCONTEXT)pCtx->pvUser;
+    AssertPtr(pThisCtx);
+
+    int rc = VbglR3ClipboardWriteDir(pThisCtx->u32ClientID, pDirData->pszPath, pDirData->cbPath, pDirData->fMode);
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+static int vboxClipboardURIReadFileHdr(PSHAREDCLIPBOARDPROVIDERCTX pCtx, PVBOXCLIPBOARDFILEHDR *ppFileHdr)
+{
+    LogFlowFuncEnter();
+
+    PVBOXCLIPBOARDCONTEXT pThisCtx = (PVBOXCLIPBOARDCONTEXT)pCtx->pvUser;
+    AssertPtr(pThisCtx);
+
+    VBOXCLIPBOARDFILEHDR fileHdr;
+    SharedClipboardURIFileHdrInit(&fileHdr);
+
+    int rc = VbglR3ClipboardReadFileHdr(pThisCtx->u32ClientID, fileHdr.pszFilePath, fileHdr.cbFilePath,
+                                        &fileHdr.fFlags, &fileHdr.fMode, &fileHdr.cbSize);
+    if (RT_SUCCESS(rc))
+    {
+        *ppFileHdr = SharedClipboardURIFileHdrDup(&fileHdr);
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+static int vboxClipboardURIWriteFileHdr(PSHAREDCLIPBOARDPROVIDERCTX pCtx, const PVBOXCLIPBOARDFILEHDR pFileHdr)
+{
+    LogFlowFuncEnter();
+
+    PVBOXCLIPBOARDCONTEXT pThisCtx = (PVBOXCLIPBOARDCONTEXT)pCtx->pvUser;
+    AssertPtr(pThisCtx);
+
+    int rc = VbglR3ClipboardWriteFileHdr(pThisCtx->u32ClientID, pFileHdr->pszFilePath, pFileHdr->cbFilePath,
+                                         pFileHdr->fFlags, pFileHdr->fMode, pFileHdr->cbSize);
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+static int vboxClipboardURIReadFileData(PSHAREDCLIPBOARDPROVIDERCTX pCtx, void *pvData, uint32_t cbData, uint32_t fFlags,
+                                        uint32_t *pcbRead)
+{
+    RT_NOREF(fFlags);
+
+    AssertPtrReturn(pcbRead, VERR_INVALID_POINTER);
+
+    LogFlowFuncEnter();
+
+    PVBOXCLIPBOARDCONTEXT pThisCtx = (PVBOXCLIPBOARDCONTEXT)pCtx->pvUser;
+    AssertPtr(pThisCtx);
+
+    int rc = VbglR3ClipboardReadFileData(pThisCtx->u32ClientID, pvData, cbData, pcbRead);
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+static int vboxClipboardURIWriteFileData(PSHAREDCLIPBOARDPROVIDERCTX pCtx, void *pvData, uint32_t cbData, uint32_t fFlags,
+                                         uint32_t *pcbWritten)
+{
+    RT_NOREF(fFlags);
+
+    AssertPtrReturn(pcbWritten, VERR_INVALID_POINTER);
+
+    LogFlowFuncEnter();
+
+    PVBOXCLIPBOARDCONTEXT pThisCtx = (PVBOXCLIPBOARDCONTEXT)pCtx->pvUser;
+    AssertPtr(pThisCtx);
+
+    int rc = VbglR3ClipboardWriteFileData(pThisCtx->u32ClientID, pvData, cbData, pcbWritten);
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+#endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
 
 static LRESULT vboxClipboardWinProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
@@ -98,13 +361,13 @@ static LRESULT vboxClipboardWinProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd,
     {
        case WM_CLIPBOARDUPDATE:
        {
-            const HWND hWndClipboardOwner = GetClipboardOwner();
-            if (pWinCtx->hWndClipboardOwnerUs != hWndClipboardOwner)
-            {
-                LogFunc(("WM_CLIPBOARDUPDATE: hWndOldClipboardOwner=%p, hWndNewClipboardOwner=%p\n",
-                         pWinCtx->hWndClipboardOwnerUs, hWndClipboardOwner));
+           const HWND hWndClipboardOwner = GetClipboardOwner();
+           if (pWinCtx->hWndClipboardOwnerUs != hWndClipboardOwner)
+           {
+               LogFunc(("WM_CLIPBOARDUPDATE: hWndOldClipboardOwner=%p, hWndNewClipboardOwner=%p\n",
+                        pWinCtx->hWndClipboardOwnerUs, hWndClipboardOwner));
 
-                /* Clipboard was updated by another application.
+               /* Clipboard was updated by another application.
                 * Report available formats to the host. */
                VBOXCLIPBOARDFORMATS fFormats;
                int rc = VBoxClipboardWinGetFormats(&pCtx->Win, &fFormats);
@@ -113,7 +376,7 @@ static LRESULT vboxClipboardWinProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd,
                    LogFunc(("WM_CLIPBOARDUPDATE: Reporting formats 0x%x\n", fFormats));
                    rc = VbglR3ClipboardReportFormats(pCtx->u32ClientID, fFormats);
                }
-            }
+           }
        }
        break;
 
@@ -339,15 +602,24 @@ static LRESULT vboxClipboardWinProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd,
                             RT_ZERO(TransferCallbacks);
 
                             TransferCallbacks.pvUser              = &pCtx->URI;
-                            TransferCallbacks.pfnTransferComplete = vboxClipboardOnURITransferComplete;
-                            TransferCallbacks.pfnTransferError    = vboxClipboardOnURITransferError;
+                            TransferCallbacks.pfnTransferComplete = vboxClipboardURITransferCompleteCallback;
+                            TransferCallbacks.pfnTransferError    = vboxClipboardURITransferErrorCallback;
 
                             SharedClipboardURITransferSetCallbacks(pTransfer, &TransferCallbacks);
 
                             SHAREDCLIPBOARDPROVIDERCREATIONCTX creationCtx;
                             RT_ZERO(creationCtx);
-                            creationCtx.enmSource = SHAREDCLIPBOARDURIPROVIDERSOURCE_VBGLR3;
-                            creationCtx.enmDir    = SHAREDCLIPBOARDURITRANSFERDIR_READ;
+                            creationCtx.enmSource = SHAREDCLIPBOARDSOURCE_REMOTE;
+
+                            RT_ZERO(creationCtx.Interface);
+                            creationCtx.Interface.pfnReadDataHdr    = vboxClipboardURIReadDataHdr;
+                            creationCtx.Interface.pfnReadDataChunk  = vboxClipboardURIReadDataChunk;
+                            creationCtx.Interface.pfnReadDirectory  = vboxClipboardURIReadDir;
+                            creationCtx.Interface.pfnReadFileHdr    = vboxClipboardURIReadFileHdr;
+                            creationCtx.Interface.pfnReadFileData   = vboxClipboardURIReadFileData;
+
+                            creationCtx.pvUser = pCtx;
+
                             creationCtx.u.VbglR3.uClientID = pCtx->u32ClientID;
 
                             rc = SharedClipboardURITransferProviderCreate(pTransfer, &creationCtx);
@@ -355,10 +627,10 @@ static LRESULT vboxClipboardWinProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd,
                             {
                                 rc = SharedClipboardURICtxTransferAdd(&pCtx->URI, pTransfer);
                                 if (RT_SUCCESS(rc))
-                                    rc = VBoxClipboardWinURIAnnounce(pWinCtx, &pCtx->URI, pTransfer);
+                                    rc = VBoxClipboardWinURITransferCreate(pWinCtx, pTransfer);
                             }
 
-                            /* Note: VBoxClipboardWinURIAnnounce() takes care of closing the clipboard. */
+                            /* Note: VBoxClipboardWinURITransferCreate() takes care of closing the clipboard. */
 
                             LogFunc(("VBOX_SHARED_CLIPBOARD_FMT_URI_LIST: rc=%Rrc\n", rc));
                         }
@@ -452,7 +724,7 @@ static LRESULT vboxClipboardWinProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd,
                else if (uFormat == VBOX_SHARED_CLIPBOARD_FMT_URI_LIST)
                {
                    LogFunc(("VBOX_SHARED_CLIPBOARD_FMT_URI_LIST cTransfers=%RU32\n",
-                            SharedClipboardURICtxGetActiveTransfers(&pCtx->URI)));
+                            SharedClipboardURICtxGetRunningTransfers(&pCtx->URI)));
 
                     PSHAREDCLIPBOARDURITRANSFER pTransfer;
                     rc = SharedClipboardURITransferCreate(SHAREDCLIPBOARDURITRANSFERDIR_WRITE, &pTransfer);
@@ -462,15 +734,14 @@ static LRESULT vboxClipboardWinProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd,
                         RT_ZERO(TransferCallbacks);
 
                         TransferCallbacks.pvUser              = &pCtx->URI;
-                        TransferCallbacks.pfnTransferComplete = vboxClipboardOnURITransferComplete;
-                        TransferCallbacks.pfnTransferError    = vboxClipboardOnURITransferError;
+                        TransferCallbacks.pfnTransferComplete = vboxClipboardURITransferCompleteCallback;
+                        TransferCallbacks.pfnTransferError    = vboxClipboardURITransferErrorCallback;
 
                         SharedClipboardURITransferSetCallbacks(pTransfer, &TransferCallbacks);
 
                         SHAREDCLIPBOARDPROVIDERCREATIONCTX creationCtx;
                         RT_ZERO(creationCtx);
-                        creationCtx.enmSource = SHAREDCLIPBOARDURIPROVIDERSOURCE_VBGLR3;
-                        creationCtx.enmDir    = SHAREDCLIPBOARDURITRANSFERDIR_WRITE;
+                        creationCtx.enmSource          = SHAREDCLIPBOARDSOURCE_LOCAL;
                         creationCtx.u.VbglR3.uClientID = pCtx->u32ClientID;
 
                         rc = SharedClipboardURITransferProviderCreate(pTransfer, &creationCtx);
@@ -609,56 +880,6 @@ static int vboxClipboardCreateWindow(PVBOXCLIPBOARDCONTEXT pCtx)
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
-
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
-static DECLCALLBACK(void) vboxClipboardOnURITransferComplete(PSHAREDCLIPBOARDURITRANSFERCALLBACKDATA pData, int rc)
-{
-    RT_NOREF(rc);
-
-    LogFlowFunc(("pData=%p, rc=%Rrc\n", pData, rc));
-
-    LogRel2(("Shared Clipboard: Transfer to destination complete\n"));
-
-    PSHAREDCLIPBOARDURICTX pCtx = (PSHAREDCLIPBOARDURICTX)pData->pvUser;
-    AssertPtr(pCtx);
-
-    PSHAREDCLIPBOARDURITRANSFER pTransfer = pData->pTransfer;
-    AssertPtr(pTransfer);
-
-    if (pTransfer->pvUser) /* SharedClipboardWinURITransferCtx */
-    {
-        delete pTransfer->pvUser;
-        pTransfer->pvUser = NULL;
-    }
-
-    int rc2 = SharedClipboardURICtxTransferRemove(pCtx, pTransfer);
-    AssertRC(rc2);
-}
-
-static DECLCALLBACK(void) vboxClipboardOnURITransferError(PSHAREDCLIPBOARDURITRANSFERCALLBACKDATA pData, int rc)
-{
-    RT_NOREF(rc);
-
-    LogFlowFunc(("pData=%p, rc=%Rrc\n", pData, rc));
-
-    LogRel(("Shared Clipboard: Transfer to destination failed with %Rrc\n", rc));
-
-    PSHAREDCLIPBOARDURICTX pCtx = (PSHAREDCLIPBOARDURICTX)pData->pvUser;
-    AssertPtr(pCtx);
-
-    PSHAREDCLIPBOARDURITRANSFER pTransfer = pData->pTransfer;
-    AssertPtr(pTransfer);
-
-    if (pTransfer->pvUser) /* SharedClipboardWinURITransferCtx */
-    {
-        delete pTransfer->pvUser;
-        pTransfer->pvUser = NULL;
-    }
-
-    int rc2 = SharedClipboardURICtxTransferRemove(pCtx, pTransfer);
-    AssertRC(rc2);
-}
-#endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
 
 static void vboxClipboardDestroy(PVBOXCLIPBOARDCONTEXT pCtx)
 {

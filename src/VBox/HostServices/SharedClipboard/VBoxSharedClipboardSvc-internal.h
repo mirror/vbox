@@ -81,6 +81,8 @@ struct VBOXCLIPBOARDCLIENTSTATE
 
     uint32_t u32ClientID;
 
+    SHAREDCLIPBOARDSOURCE enmSource;
+
     /** The guest is waiting for a message. */
     bool fAsync;
     /** The guest is waiting for data from the host */
@@ -94,11 +96,13 @@ struct VBOXCLIPBOARDCLIENTSTATE
 
     struct {
         VBOXHGCMCALLHANDLE callHandle;
+        uint32_t           cParms;
         VBOXHGCMSVCPARM   *paParms;
     } async;
 
     struct {
         VBOXHGCMCALLHANDLE callHandle;
+        uint32_t           cParms;
         VBOXHGCMSVCPARM   *paParms;
     } asyncRead;
 
@@ -128,9 +132,10 @@ typedef struct _VBOXCLIPBOARDCLIENTDATA
 /*
  * The service functions. Locking is between the service thread and the platform-dependent (window) thread.
  */
+int vboxSvcClipboardCompleteReadData(PVBOXCLIPBOARDCLIENTDATA pClientData, int rc, uint32_t cbActual);
 uint32_t vboxSvcClipboardGetMode(void);
 int vboxSvcClipboardReportMsg(PVBOXCLIPBOARDCLIENTDATA pClientData, uint32_t uMsg, uint32_t uFormats);
-int vboxSvcClipboardCompleteReadData(PVBOXCLIPBOARDCLIENTDATA pClientData, int rc, uint32_t cbActual);
+int vboxSvcClipboardSetSource(PVBOXCLIPBOARDCLIENTDATA pClientData, SHAREDCLIPBOARDSOURCE enmSource);
 
 # ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
 bool vboxSvcClipboardURIMsgIsAllowed(uint32_t uMode, uint32_t uMsg);
@@ -156,12 +161,21 @@ int VBoxClipboardSvcImplWriteData(PVBOXCLIPBOARDCLIENTDATA pClientData, void *pv
 int VBoxClipboardSvcImplSync(PVBOXCLIPBOARDCLIENTDATA pClientData);
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
-int VBoxClipboardSvcImplURIReadDir(PVBOXCLIPBOARDCLIENTDATA pClientData, PVBOXCLIPBOARDDIRDATA pDirData);
-int VBoxClipboardSvcImplURIWriteDir(PVBOXCLIPBOARDCLIENTDATA pClientData, PVBOXCLIPBOARDDIRDATA pDirData);
-int VBoxClipboardSvcImplURIReadFileHdr(PVBOXCLIPBOARDCLIENTDATA pClientData, PVBOXCLIPBOARDFILEHDR pFileHdr);
-int VBoxClipboardSvcImplURIWriteFileHdr(PVBOXCLIPBOARDCLIENTDATA pClientData, PVBOXCLIPBOARDFILEHDR pFileHdr);
-int VBoxClipboardSvcImplURIReadFileData(PVBOXCLIPBOARDCLIENTDATA pClientData, PVBOXCLIPBOARDFILEDATA pFileData);
-int VBoxClipboardSvcImplURIWriteFileData(PVBOXCLIPBOARDCLIENTDATA pClientData, PVBOXCLIPBOARDFILEDATA pFileData);
+int VBoxClipboardSvcImplURITransferCreate(PVBOXCLIPBOARDCLIENTDATA pClientData, PSHAREDCLIPBOARDURITRANSFER pTransfer);
+int VBoxClipboardSvcImplURITransferDestroy(PVBOXCLIPBOARDCLIENTDATA pClientData, PSHAREDCLIPBOARDURITRANSFER pTransfer);
+
+int VBoxClipboardSvcImplURIReadDataHdr(PSHAREDCLIPBOARDPROVIDERCTX pCtx, PVBOXCLIPBOARDDATAHDR *ppDataHdr);
+int VBoxClipboardSvcImplURIWriteDataHdr(PSHAREDCLIPBOARDPROVIDERCTX pCtx, const PVBOXCLIPBOARDDATAHDR pDataHdr);
+int VBoxClipboardSvcImplURIReadDataChunk(PSHAREDCLIPBOARDPROVIDERCTX pCtx, const PVBOXCLIPBOARDDATAHDR pDataHdr, void *pvChunk, uint32_t cbChunk, uint32_t fFlags, uint32_t *pcbRead);
+int VBoxClipboardSvcImplURIWriteDataChunk(PSHAREDCLIPBOARDPROVIDERCTX pCtx, const PVBOXCLIPBOARDDATAHDR pDataHdr, const void *pvChunk, uint32_t cbChunk, uint32_t fFlags, uint32_t *pcbWritten);
+
+int VBoxClipboardSvcImplURIReadDir(PSHAREDCLIPBOARDPROVIDERCTX pCtx, PVBOXCLIPBOARDDIRDATA *ppDirData);
+int VBoxClipboardSvcImplURIWriteDir(PSHAREDCLIPBOARDPROVIDERCTX pCtx, const PVBOXCLIPBOARDDIRDATA pDirData);
+
+int VBoxClipboardSvcImplURIReadFileHdr(PSHAREDCLIPBOARDPROVIDERCTX pCtx, PVBOXCLIPBOARDFILEHDR *ppFileHdr);
+int VBoxClipboardSvcImplURIWriteFileHdr(PSHAREDCLIPBOARDPROVIDERCTX pCtx, const PVBOXCLIPBOARDFILEHDR pFileHdr);
+int VBoxClipboardSvcImplURIReadFileData(PSHAREDCLIPBOARDPROVIDERCTX pCtx, void *pvData, uint32_t cbData, uint32_t fFlags, uint32_t *pcbRead);
+int VBoxClipboardSvcImplURIWriteFileData(PSHAREDCLIPBOARDPROVIDERCTX pCtx, void *pvData, uint32_t cbData, uint32_t fFlags, uint32_t *pcbWritten);
 #endif
 
 /* Host unit testing interface */

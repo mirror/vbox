@@ -136,8 +136,8 @@ int VBoxClipboardWinHandleWMTimer(PVBOXCLIPBOARDWINCTX pWinCtx);
 
 int VBoxClipboardWinAnnounceFormats(PVBOXCLIPBOARDWINCTX pWinCtx, VBOXCLIPBOARDFORMATS fFormats);
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
-int VBoxClipboardWinURIAnnounce(PVBOXCLIPBOARDWINCTX pWinCtx, PSHAREDCLIPBOARDURICTX pURICtx,
-                                PSHAREDCLIPBOARDURITRANSFER pTransfer);
+int VBoxClipboardWinURITransferCreate(PVBOXCLIPBOARDWINCTX pWinCtx, PSHAREDCLIPBOARDURITRANSFER pTransfer);
+void VBoxClipboardWinURITransferDestroy(PVBOXCLIPBOARDWINCTX pWinCtx, PSHAREDCLIPBOARDURITRANSFER pTransfer);
 #endif
 
 # ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
@@ -203,6 +203,7 @@ public: /* IDataObjectAsyncCapability methods. */
 public:
 
     int Init(void);
+    void OnMetaDataComplete(PSHAREDCLIPBOARDURITRANSFER pTransfer);
     void OnTransferComplete(int rc = VINF_SUCCESS);
     void OnTransferCanceled();
 
@@ -221,11 +222,6 @@ protected:
     bool lookupFormatEtc(LPFORMATETC pFormatEtc, ULONG *puIndex);
     void registerFormat(LPFORMATETC pFormatEtc, CLIPFORMAT clipFormat, TYMED tyMed = TYMED_HGLOBAL,
                         LONG lindex = -1, DWORD dwAspect = DVASPECT_CONTENT, DVTARGETDEVICE *pTargetDevice = NULL);
-
-protected: /* URI transfer callbacks */
-
-    static DECLCALLBACK(void) onMetaDataCompleteCallback(PSHAREDCLIPBOARDURITRANSFERCALLBACKDATA pData);
-
 protected:
 
     Status                      m_enmStatus;

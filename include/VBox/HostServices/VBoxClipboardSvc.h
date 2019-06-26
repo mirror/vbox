@@ -401,6 +401,11 @@ typedef struct _VBOXCLIPBOARDDATACHUNK
     uint32_t                    cbChecksum;
 } VBOXCLIPBOARDDATACHUNK, *PVBOXCLIPBOARDDATACHUNK;
 
+typedef struct _VBOXCLIPBOARDOBJHDR
+{
+    uint32_t                    enmType;
+} VBOXCLIPBOARDOBJHDR, *PVBOXCLIPBOARDOBJHDR;
+
 typedef struct _VBOXCLIPBOARDDIRDATA
 {
     /** Directory path. */
@@ -447,16 +452,16 @@ bool VBoxSvcClipboardLock(void);
 void VBoxSvcClipboardUnlock(void);
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
-int VBoxSvcClipboardURIReadDataHdr(uint32_t cParms, VBOXHGCMSVCPARM paParms[], PVBOXCLIPBOARDDATAHDR pDataHdr);
-int VBoxSvcClipboardURIWriteDataHdr(uint32_t cParms, VBOXHGCMSVCPARM paParms[], PVBOXCLIPBOARDDATAHDR pDataHdr);
-int VBoxSvcClipboardURIReadDataChunk(uint32_t cParms, VBOXHGCMSVCPARM paParms[], PVBOXCLIPBOARDDATACHUNK pDataChunk);
-int VBoxSvcClipboardURIWriteDataChunk(uint32_t cParms, VBOXHGCMSVCPARM paParms[], PVBOXCLIPBOARDDATACHUNK pDataChunk);
-int VBoxSvcClipboardURIReadDir(uint32_t cParms, VBOXHGCMSVCPARM paParms[], PVBOXCLIPBOARDDIRDATA pDirData);
-int VBoxSvcClipboardURIWriteDir(uint32_t cParms, VBOXHGCMSVCPARM paParms[], PVBOXCLIPBOARDDIRDATA pDirData);
-int VBoxSvcClipboardURIReadFileHdr(uint32_t cParms, VBOXHGCMSVCPARM paParms[], PVBOXCLIPBOARDFILEHDR pFileHdr);
-int VBoxSvcClipboardURIWriteFileHdr(uint32_t cParms, VBOXHGCMSVCPARM paParms[], PVBOXCLIPBOARDFILEHDR pFileHdr);
-int VBoxSvcClipboardURIReadFileData(uint32_t cParms, VBOXHGCMSVCPARM paParms[], PVBOXCLIPBOARDFILEDATA pFileData);
-int VBoxSvcClipboardURIWriteFileData(uint32_t cParms, VBOXHGCMSVCPARM paParms[], PVBOXCLIPBOARDFILEDATA pFileData);
+int VBoxSvcClipboardURIGetDataHdr(uint32_t cParms, VBOXHGCMSVCPARM paParms[], PVBOXCLIPBOARDDATAHDR pDataHdr);
+int VBoxSvcClipboardURISetDataHdr(uint32_t cParms, VBOXHGCMSVCPARM paParms[], PVBOXCLIPBOARDDATAHDR pDataHdr);
+int VBoxSvcClipboardURISetDataChunk(uint32_t cParms, VBOXHGCMSVCPARM paParms[], PVBOXCLIPBOARDDATACHUNK pDataChunk);
+int VBoxSvcClipboardURISetDataChunk(uint32_t cParms, VBOXHGCMSVCPARM paParms[], PVBOXCLIPBOARDDATACHUNK pDataChunk);
+int VBoxSvcClipboardURIGetDir(uint32_t cParms, VBOXHGCMSVCPARM paParms[], PVBOXCLIPBOARDDIRDATA pDirData);
+int VBoxSvcClipboardURISetDir(uint32_t cParms, VBOXHGCMSVCPARM paParms[], PVBOXCLIPBOARDDIRDATA pDirData);
+int VBoxSvcClipboardURIGetFileHdr(uint32_t cParms, VBOXHGCMSVCPARM paParms[], PVBOXCLIPBOARDFILEHDR pFileHdr);
+int VBoxSvcClipboardURISetFileHdr(uint32_t cParms, VBOXHGCMSVCPARM paParms[], PVBOXCLIPBOARDFILEHDR pFileHdr);
+int VBoxSvcClipboardURIGetFileData(uint32_t cParms, VBOXHGCMSVCPARM paParms[], PVBOXCLIPBOARDFILEDATA pFileData);
+int VBoxSvcClipboardURISetFileData(uint32_t cParms, VBOXHGCMSVCPARM paParms[], PVBOXCLIPBOARDFILEDATA pFileData);
 #endif
 
 #endif /* !VBOX_INCLUDED_HostServices_VBoxClipboardSvc_h */

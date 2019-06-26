@@ -54,9 +54,7 @@ int SharedClipboardProviderHostService::Prepare(void)
 {
     LogFlowFuncEnter();
 
-    /*return vboxSvcClipboardReportMsg(,
-                                     VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA, );*/
-    return 0;
+    return VINF_SUCCESS;
 }
 
 int SharedClipboardProviderHostService::ReadDataHdr(PVBOXCLIPBOARDDATAHDR *ppDataHdr)
@@ -65,9 +63,7 @@ int SharedClipboardProviderHostService::ReadDataHdr(PVBOXCLIPBOARDDATAHDR *ppDat
 
     LogFlowFuncEnter();
 
-    /*return eventWait(VBOX_SHARED_CLIPBOARD_GUEST_FN_WRITE_DATA_HDR, m_Callbacks.pfnReadDataHdr, m_uTimeoutMs,
-                     (void **)ppDataHdr);*/
-    return 0;
+    return VERR_NOT_IMPLEMENTED;
 }
 
 int SharedClipboardProviderHostService::WriteDataHdr(const PVBOXCLIPBOARDDATAHDR pDataHdr)
@@ -83,10 +79,7 @@ int SharedClipboardProviderHostService::ReadDataChunk(const PVBOXCLIPBOARDDATAHD
                                                       uint32_t fFlags /* = 0 */, uint32_t *pcbRead /* = NULL*/)
 {
     RT_NOREF(pDataHdr, pvChunk, cbChunk, fFlags, pcbRead);
-
-    /*return eventWait(VBOX_SHARED_CLIPBOARD_GUEST_FN_WRITE_DATA_CHUNK, m_Callbacks.pfnReadDataChunk, m_uTimeoutMs,
-                     (void **)ppDataChunk);*/
-    return 0;
+    return VERR_NOT_IMPLEMENTED;
 }
 
 int SharedClipboardProviderHostService::WriteDataChunk(const PVBOXCLIPBOARDDATAHDR pDataHdr, const void *pvChunk, uint32_t cbChunk,
@@ -98,9 +91,8 @@ int SharedClipboardProviderHostService::WriteDataChunk(const PVBOXCLIPBOARDDATAH
 
 int SharedClipboardProviderHostService::ReadDirectory(PVBOXCLIPBOARDDIRDATA *ppDirData)
 {
-    //return eventWait(VBOX_SHARED_CLIPBOARD_GUEST_FN_WRITE_DIR, NULL, m_uTimeoutMs, (void **)ppDirData);
     RT_NOREF(ppDirData);
-    return 0;
+    return VERR_NOT_IMPLEMENTED;
 }
 
 int SharedClipboardProviderHostService::WriteDirectory(const PVBOXCLIPBOARDDIRDATA pDirData)
@@ -118,8 +110,7 @@ int SharedClipboardProviderHostService::WriteDirectory(const PVBOXCLIPBOARDDIRDA
 int SharedClipboardProviderHostService::ReadFileHdr(PVBOXCLIPBOARDFILEHDR *ppFileHdr)
 {
     RT_NOREF(ppFileHdr);
-    //return eventWait(VBOX_SHARED_CLIPBOARD_GUEST_FN_WRITE_FILE_HDR, NULL, m_uTimeoutMs, (void **)ppFileHdr);
-    return 0;
+    return VERR_NOT_IMPLEMENTED;
 }
 
 int SharedClipboardProviderHostService::WriteFileHdr(const PVBOXCLIPBOARDFILEHDR pFileHdr)
@@ -138,8 +129,7 @@ int SharedClipboardProviderHostService::ReadFileData(void *pvData, uint32_t cbDa
                                                      uint32_t *pcbRead /* = NULL */)
 {
     RT_NOREF(pvData, cbData, fFlags, pcbRead);
-    //return eventWait(VBOX_SHARED_CLIPBOARD_GUEST_FN_WRITE_FILE_DATA, NULL, m_uTimeoutMs, (void **)ppFileData);
-    return 0;
+    return VERR_NOT_IMPLEMENTED;
 }
 
 int SharedClipboardProviderHostService::WriteFileData(void *pvData, uint32_t cbData, uint32_t fFlags /* = 0 */,

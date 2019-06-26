@@ -157,28 +157,101 @@ bool vboxSvcClipboardURIReturnMsg(PVBOXCLIPBOARDCLIENTDATA pClientData, uint32_t
 
     bool fHandled = false;
 
-#if 0
+    /* For now we only support one transfer at a time. */
     PSHAREDCLIPBOARDURITRANSFER pTransfer = SharedClipboardURICtxGetTransfer(&pClientData->URI, 0 /* Index */);
-    if (pTransfer)
+    if (!pTransfer)
+        return fHandled;
+
+#if 1
+    int rc = 0;
+#else
+    /* Sanity. */
+    Assert(pTransfer->State.enmDir == SHAREDCLIPBOARDURITRANSFERDIR_READ);
+
+    int rc;
+
+    /* Note: Message priority / order is taken into account here. */
+    if (pTransfer->State.pHeader)
     {
-        if (   !s_fReqHdr
-            && !pTransfer->State.pHeader)
+        LogFlowFunc(("VBOX_SHARED_CLIPBOARD_GUEST_FN_READ_DATA_HDR\n"));
+        rc = VBoxSvcClipboardURIWriteDataHdr(cParms, paParms, pTransfer->State.pHeader);
+        if (RT_SUCCESS(rc))
         {
-            LogFlowFunc(("VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA\n"));
+            /* We're done witht the data header, destroy it. */
+            SharedClipboardURIDataHdrFree(pTransfer->State.pHeader);
+            pTransfer->State.pHeader = NULL;
 
-            HGCMSvcSetU32(&paParms[0], VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA);
-            HGCMSvcSetU32(&paParms[1], VBOX_SHARED_CLIPBOARD_FMT_URI_LIST /* fFormats */);
             fHandled = true;
-
-            s_fReqHdr = true;
-        }
-        else
-        {
         }
     }
+    else if (pTransfer->State.pMeta)
+    {
+        LogFlowFunc(("VBOX_SHARED_CLIPBOARD_GUEST_FN_READ_DATA_CHUNK\n"));
+
+        uint32_t cbBuf = _64K;
+        uint8_t  pvBuf[_64K]; /** @todo Improve */
+
+        uint32_t cbRead;
+        rc = SharedClipboardMetaDataRead(pTransfer->State.pMeta, pvBuf, cbBuf, &cbRead);
+        if (RT_SUCCESS(rc))
+        {
+            Assert(cbRead <= cbBuf);
+
+            VBOXCLIPBOARDDATACHUNK dataChunk;
+            RT_ZERO(dataChunk);
+            dataChunk.pvData = pvBuf;
+            dataChunk.cbData = cbRead;
+
+            rc = VBoxSvcClipboardURIWriteDataChunk(cParms, paParms, &dataChunk);
+        }
+
+        /* Has all meta data been read? */
+        if (RT_SUCCESS(rc))
+        {
+            if (SharedClipboardMetaDataGetUsed(pTransfer->State.pMeta) == 0)
+            {
+                SharedClipboardMetaDataFree(pTransfer->State.pMeta);
+                pTransfer->State.pMeta = NULL;
+            }
+
+            fHandled = true;
+        }
+    }
+    else if (pTransfer->pURIList)
+    {
+        PSHAREDCLIPBOARDCLIENTURIOBJCTX pObjCtx = SharedClipboardURITransferGetCurrentObjCtx(pTransfer);
+        if (!SharedClipboardURIObjCtxIsValid(pObjCtx))
+        {
+            if (!pTransfer->pURIList->IsEmpty())
+                pObjCtx->pObj = pTransfer->pURIList->First();
+        }
+
+        if (   pObjCtx
+            && pObjCtx->pObj)
+        {
+            switch (pObjCtx->pObj->GetType())
+            {
+                case SharedClipboardURIObject::Type_Directory:
+                {
+                    rc = VBoxSvcClipboardURIWriteDir(cParms, paParms, &dataChunk);
+                    break;
+                }
+            }
+        }
+
+        if (0)
+        {
+            delete pTransfer->pURIList;
+            pTransfer->pURIList = NULL;
+        }
+
+        fHandled = true;
+    }
+    else
+        rc = VERR_WRONG_ORDER;
 #endif
 
-    LogFlowFunc(("fHandled=%RTbool\n", fHandled));
+    LogFlowFunc(("rc=%Rrc, fHandled=%RTbool\n", rc, fHandled));
     return fHandled;
 }
 #endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */

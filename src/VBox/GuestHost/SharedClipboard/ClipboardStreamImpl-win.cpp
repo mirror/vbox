@@ -53,20 +53,13 @@ VBoxClipboardWinStreamImpl::VBoxClipboardWinStreamImpl(VBoxClipboardWinDataObjec
     , m_uObjIdx(uObjIdx)
 {
     AssertPtr(m_pURITransfer);
-    AssertPtr(m_pURITransfer->pProvider);
 
     LogFunc(("m_uObjIdx=%RU64\n", uObjIdx));
-
-    m_pURITransfer->pProvider->AddRef();
 }
 
 VBoxClipboardWinStreamImpl::~VBoxClipboardWinStreamImpl(void)
 {
     LogFlowThisFuncEnter();
-
-    if (   m_pURITransfer
-        && m_pURITransfer->pProvider)
-        m_pURITransfer->pProvider->Release();
 }
 
 /*
@@ -187,7 +180,8 @@ STDMETHODIMP VBoxClipboardWinStreamImpl::Read(void *pvBuffer, ULONG nBytesToRead
 
     if (cbToRead)
     {
-        rc = m_pURITransfer->pProvider->ReadFileData(pvBuffer, cbToRead, 0 /* fFlags */, &cbRead);
+        rc = m_pURITransfer->ProviderIface.pfnReadFileData(&m_pURITransfer->ProviderCtx,
+                                                           pvBuffer, cbToRead, 0 /* fFlags */, &cbRead);
         if (RT_SUCCESS(rc))
         {
 //            pObj->AddProcessed(cbRead);

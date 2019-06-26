@@ -36,20 +36,21 @@ int SharedClipboardMetaDataInit(PSHAREDCLIPBOARDMETADATA pMeta, SHAREDCLIPBOARDM
 {
     AssertPtrReturn(pMeta, VERR_INVALID_POINTER);
 
-    pMeta->enmFmt = enmFmt;
-    pMeta->pvMeta = NULL;
-    pMeta->cbMeta = 0;
-    pMeta->cbUsed = 0;
+    pMeta->enmFmt    = enmFmt;
+    pMeta->pvMeta    = NULL;
+    pMeta->cbMeta    = 0;
+    pMeta->cbUsed    = 0;
+    pMeta->cbOffRead = 0;
 
     return VINF_SUCCESS;
 }
 
 /**
- * Destroys a clipboard meta data struct by free'ing all its data.
+ * Destroys a clipboard meta data struct by free'ing all its data, internal version.
  *
  * @param   pMeta               Meta data struct to destroy.
  */
-void SharedClipboardMetaDataDestroy(PSHAREDCLIPBOARDMETADATA pMeta)
+static void sharedClipboardMetaDataDestroyInternal(PSHAREDCLIPBOARDMETADATA pMeta)
 {
     if (!pMeta)
         return;
@@ -65,6 +66,32 @@ void SharedClipboardMetaDataDestroy(PSHAREDCLIPBOARDMETADATA pMeta)
     }
 
     pMeta->cbUsed = 0;
+}
+
+/**
+ * Destroys a clipboard meta data struct by free'ing all its data.
+ *
+ * @param   pMeta               Meta data struct to destroy.
+ */
+void SharedClipboardMetaDataDestroy(PSHAREDCLIPBOARDMETADATA pMeta)
+{
+    sharedClipboardMetaDataDestroyInternal(pMeta);
+}
+
+/**
+ * Frees a clipboard meta data struct.
+ *
+ * @param   pMeta               Meta data struct to free.
+ */
+void SharedClipboardMetaDataFree(PSHAREDCLIPBOARDMETADATA pMeta)
+{
+    if (pMeta)
+    {
+        sharedClipboardMetaDataDestroyInternal(pMeta);
+
+        RTMemFree(pMeta);
+        pMeta = NULL;
+    }
 }
 
 /**
@@ -151,6 +178,48 @@ int SharedClipboardMetaDataConvertToFormat(const void *pvData, size_t cbData, SH
             AssertFailed();
             break;
     }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+/**
+ * Reads meta data.
+ *
+ * @returns VBox status code.
+ * @param   pMeta               Meta data struct to read from.
+ * @param   pvBuf               Buffer where to store the read data.
+ * @param   cbBuf               Size of buffer (in bytes) where to store the data.
+ * @param   pcbRead             Where to return the read amount in bytes. Optional.
+ */
+int SharedClipboardMetaDataRead(PSHAREDCLIPBOARDMETADATA pMeta, void *pvBuf, uint32_t cbBuf, uint32_t *pcbRead)
+{
+    AssertPtrReturn(pMeta, VERR_INVALID_POINTER);
+    AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
+    AssertPtrReturn(cbBuf, VERR_INVALID_PARAMETER);
+    /* pcRead is optional. */
+
+    int rc = VINF_SUCCESS;
+
+    uint32_t cbRead   = 0;
+    uint32_t cbToRead = pMeta->cbUsed - pMeta->cbOffRead;
+
+    if (cbBuf > cbToRead)
+        cbBuf = cbToRead;
+
+    if (cbToRead)
+    {
+        memcpy(pvBuf, (uint8_t *)pMeta->pvMeta + pMeta->cbOffRead, cbToRead);
+
+        Assert(pMeta->cbUsed >= cbToRead);
+        pMeta->cbUsed -= cbToRead;
+
+        pMeta->cbOffRead += cbToRead;
+        Assert(pMeta->cbOffRead <= pMeta->cbMeta);
+    }
+
+    if (pcbRead)
+        *pcbRead = cbRead;
 
     LogFlowFuncLeaveRC(rc);
     return rc;

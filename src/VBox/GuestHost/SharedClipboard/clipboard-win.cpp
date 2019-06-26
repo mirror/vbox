@@ -39,6 +39,10 @@
 #include <VBox/GuestHost/SharedClipboard-win.h>
 #include <VBox/GuestHost/clipboard-helper.h>
 
+
+DECLCALLBACK(void) vboxClipboardWinURIMetaDataCompleteCallback(PSHAREDCLIPBOARDURITRANSFERCALLBACKDATA pData);
+
+
 /**
  * Opens the clipboard of a specific window.
  *
@@ -832,7 +836,8 @@ int VBoxClipboardWinAnnounceFormats(PVBOXCLIPBOARDWINCTX pWinCtx, VBOXCLIPBOARDF
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
 /**
- * Announces URI data (via IDataObject) to Windows.
+ * Creates an URI transfer by announcing URI data (via IDataObject) to Windows.
+ *
  * This creates the necessary IDataObject + IStream implementations and initiates the actual transfers required for getting
  * the meta data. Whether or not the actual (file++) transfer(s) are happening is up to the user (at some point) later then.
  *
@@ -841,15 +846,23 @@ int VBoxClipboardWinAnnounceFormats(PVBOXCLIPBOARDWINCTX pWinCtx, VBOXCLIPBOARDF
  * @param   pURICtx             URI context to use.
  * @param   pTransfer           URI transfer to use.
  */
-int VBoxClipboardWinURIAnnounce(PVBOXCLIPBOARDWINCTX pWinCtx, PSHAREDCLIPBOARDURICTX pURICtx,
-                                PSHAREDCLIPBOARDURITRANSFER pTransfer)
+int VBoxClipboardWinURITransferCreate(PVBOXCLIPBOARDWINCTX pWinCtx, PSHAREDCLIPBOARDURITRANSFER pTransfer)
 {
-    AssertPtrReturn(pURICtx, VERR_INVALID_POINTER);
     AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
 
     LogFlowFuncEnter();
 
     int rc;
+
+    if (pTransfer->pvUser)
+    {
+        Assert(pTransfer->cbUser == sizeof(SharedClipboardWinURITransferCtx));
+        SharedClipboardWinURITransferCtx *pWinURITransferCtx = (SharedClipboardWinURITransferCtx *)pTransfer->pvUser;
+        Assert(pWinURITransferCtx);
+
+        if (pWinURITransferCtx->pDataObj)
+            delete pWinURITransferCtx->pDataObj;
+    }
 
     SharedClipboardWinURITransferCtx *pWinURITransferCtx = new SharedClipboardWinURITransferCtx();
     if (pWinURITransferCtx)
@@ -899,6 +912,40 @@ int VBoxClipboardWinURIAnnounce(PVBOXCLIPBOARDWINCTX pWinCtx, PSHAREDCLIPBOARDUR
 
     LogFlowFuncLeaveRC(rc);
     return rc;
+}
+
+/**
+ * Destroys implementation-specific data for an URI transfer.
+ *
+ * @param   pWinCtx             Windows context to use.
+ * @param   pTransfer           URI transfer to create implementation-specific data for.
+ */
+void VBoxClipboardWinURITransferDestroy(PVBOXCLIPBOARDWINCTX pWinCtx, PSHAREDCLIPBOARDURITRANSFER pTransfer)
+{
+    RT_NOREF(pWinCtx);
+
+    if (!pTransfer)
+        return;
+
+    LogFlowFuncEnter();
+
+    if (pTransfer->pvUser)
+    {
+        Assert(pTransfer->cbUser == sizeof(SharedClipboardWinURITransferCtx));
+        SharedClipboardWinURITransferCtx *pWinURITransferCtx = (SharedClipboardWinURITransferCtx *)pTransfer->pvUser;
+        Assert(pWinURITransferCtx);
+
+        if (pWinURITransferCtx->pDataObj)
+        {
+            delete pWinURITransferCtx->pDataObj;
+            pWinURITransferCtx->pDataObj = NULL;
+        }
+
+        delete pWinURITransferCtx;
+
+        pTransfer->pvUser = NULL;
+        pTransfer->cbUser = 0;
+    }
 }
 
 /**

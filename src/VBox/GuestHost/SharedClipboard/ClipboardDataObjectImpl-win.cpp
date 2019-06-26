@@ -122,9 +122,6 @@ VBoxClipboardWinDataObject::VBoxClipboardWinDataObject(PSHAREDCLIPBOARDURITRANSF
 
         int rc2 = RTSemEventCreate(&m_EventMetaDataComplete);
         AssertRC(rc2);
-
-        AssertPtr(m_pTransfer->pProvider);
-        m_pTransfer->pProvider->AddRef();
     }
 
     LogFlowFunc(("cAllFormats=%RU32, hr=%Rhrc\n", cAllFormats, hr));
@@ -133,9 +130,6 @@ VBoxClipboardWinDataObject::VBoxClipboardWinDataObject(PSHAREDCLIPBOARDURITRANSF
 VBoxClipboardWinDataObject::~VBoxClipboardWinDataObject(void)
 {
     RTSemEventDestroy(m_EventMetaDataComplete);
-
-    if (m_pTransfer->pProvider)
-        m_pTransfer->pProvider->Release();
 
     if (m_pStream)
         m_pStream->Release();
@@ -405,13 +399,6 @@ STDMETHODIMP VBoxClipboardWinDataObject::GetData(LPFORMATETC pFormatEtc, LPSTGME
 
                 LogFlowFunc(("FormatIndex_FileDescriptor%s\n", fUnicode ? "W" : "A"));
 
-                /* Register needed callbacks so that we can wait for the meta data to arrive here. */
-                SHAREDCLIPBOARDURITRANSFERCALLBACKS Callbacks;
-                RT_ZERO(Callbacks);
-                Callbacks.pfnMetaDataComplete = VBoxClipboardWinDataObject::onMetaDataCompleteCallback;
-
-                SharedClipboardURITransferSetCallbacks(m_pTransfer, &Callbacks);
-
                 /* Start the transfer asynchronously in a separate thread. */
                 rc = SharedClipboardURITransferRun(m_pTransfer, true /* fAsync */);
                 if (RT_SUCCESS(rc))
@@ -421,20 +408,15 @@ STDMETHODIMP VBoxClipboardWinDataObject::GetData(LPFORMATETC pFormatEtc, LPSTGME
                     rc = RTSemEventWait(m_EventMetaDataComplete, 30 * 1000 /* 30s timeout */);
                     if (RT_SUCCESS(rc))
                     {
-                        const SharedClipboardURIList *pURIList = SharedClipboardURITransferGetList(m_pTransfer);
-                        if (    pURIList
-                            && !pURIList->IsEmpty())
+                        HGLOBAL hGlobal;
+                        rc = createFileGroupDescriptorFromTransfer(m_pTransfer, fUnicode, &hGlobal);
+                        if (RT_SUCCESS(rc))
                         {
-                            HGLOBAL hGlobal;
-                            rc = createFileGroupDescriptorFromTransfer(m_pTransfer, fUnicode, &hGlobal);
-                            if (RT_SUCCESS(rc))
-                            {
-                                pMedium->tymed   = TYMED_HGLOBAL;
-                                pMedium->hGlobal = hGlobal;
-                                /* Note: hGlobal now is being owned by pMedium / the caller. */
+                            pMedium->tymed   = TYMED_HGLOBAL;
+                            pMedium->hGlobal = hGlobal;
+                            /* Note: hGlobal now is being owned by pMedium / the caller. */
 
-                                hr = S_OK;
-                            }
+                            hr = S_OK;
                         }
                     }
                 }
@@ -604,6 +586,16 @@ int VBoxClipboardWinDataObject::Init(void)
     return VINF_SUCCESS;
 }
 
+DECLCALLBACK(void) VBoxClipboardWinDataObject::OnMetaDataComplete(PSHAREDCLIPBOARDURITRANSFER pTransfer)
+{
+    LogFlowFuncEnter();
+
+    AssertReturnVoid(pTransfer == m_pTransfer);
+
+    int rc2 = RTSemEventSignal(m_EventMetaDataComplete);
+    AssertRC(rc2);
+}
+
 void VBoxClipboardWinDataObject::OnTransferComplete(int rc /* = VINF_SUCESS */)
 {
     RT_NOREF(rc);
@@ -741,16 +733,5 @@ void VBoxClipboardWinDataObject::registerFormat(LPFORMATETC pFormatEtc, CLIPFORM
 
     LogFlowFunc(("Registered format=%ld, sFormat=%s\n",
                  pFormatEtc->cfFormat, VBoxClipboardWinDataObject::ClipboardFormatToString(pFormatEtc->cfFormat)));
-}
-
-/* static */
-DECLCALLBACK(void) VBoxClipboardWinDataObject::onMetaDataCompleteCallback(PSHAREDCLIPBOARDURITRANSFERCALLBACKDATA pData)
-{
-    VBoxClipboardWinDataObject *pThis = (VBoxClipboardWinDataObject *)pData->pvUser;
-
-    LogFlowFunc(("pThis=%p\n", pThis));
-
-    int rc2 = RTSemEventSignal(pThis->m_EventMetaDataComplete);
-    AssertRC(rc2);
 }
 
