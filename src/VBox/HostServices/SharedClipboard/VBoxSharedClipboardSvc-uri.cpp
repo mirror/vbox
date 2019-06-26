@@ -43,7 +43,7 @@ extern void *g_pvExtension;
 
 
 /*********************************************************************************************************************************
-*   Provider implementation                                                                                                                    *
+*   Provider implementation                                                                                                      *
 *********************************************************************************************************************************/
 
 int VBoxSvcClipboardProviderImplURIReadDataHdr(PSHAREDCLIPBOARDPROVIDERCTX pCtx, PVBOXCLIPBOARDDATAHDR *ppDataHdr)
@@ -174,8 +174,9 @@ int VBoxSvcClipboardProviderImplURIWriteFileData(PSHAREDCLIPBOARDPROVIDERCTX pCt
     return VERR_NOT_IMPLEMENTED;
 }
 
+
 /*********************************************************************************************************************************
-*   URI callbacks                                                                                                                    *
+*   URI callbacks                                                                                                                *
 *********************************************************************************************************************************/
 
 DECLCALLBACK(void) VBoxSvcClipboardURITransferPrepareCallback(PSHAREDCLIPBOARDURITRANSFERCALLBACKDATA pData)
