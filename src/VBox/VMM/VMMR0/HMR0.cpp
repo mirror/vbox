@@ -1171,12 +1171,45 @@ VMMR0_INT_DECL(int) HMR0InitVM(PVM pVM)
     Assert(!(pVM->hm.s.vmx.fSupported && pVM->hm.s.svm.fSupported));
     if (pVM->hm.s.vmx.fSupported)
     {
-        pVM->hm.s.vmx.fUsePreemptTimer     &= g_HmR0.hwvirt.u.vmx.fUsePreemptTimer; /* Can be overridden by CFGM see HMR3Init(). */
+        pVM->hm.s.vmx.fUsePreemptTimer     &= g_HmR0.hwvirt.u.vmx.fUsePreemptTimer; /* Can be overridden by CFGM in HMR3Init(). */
         pVM->hm.s.vmx.cPreemptTimerShift    = g_HmR0.hwvirt.u.vmx.cPreemptTimerShift;
         pVM->hm.s.vmx.u64HostCr4            = g_HmR0.hwvirt.u.vmx.u64HostCr4;
         pVM->hm.s.vmx.u64HostMsrEfer        = g_HmR0.hwvirt.u.vmx.u64HostMsrEfer;
         pVM->hm.s.vmx.u64HostSmmMonitorCtl  = g_HmR0.hwvirt.u.vmx.u64HostSmmMonitorCtl;
         HMGetVmxMsrsFromHwvirtMsrs(&g_HmR0.hwvirt.Msrs, &pVM->hm.s.vmx.Msrs);
+
+        /* Enable VPID if supported and configured. */
+        if (pVM->hm.s.vmx.Msrs.ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_VPID)
+            pVM->hm.s.vmx.fVpid = pVM->hm.s.vmx.fAllowVpid; /* Can be overridden by CFGM in HMR3Init(). */
+
+        /* Use VMCS shadowing if supported. */
+        Assert(!pVM->hm.s.vmx.fUseVmcsShadowing);
+        if (   pVM->cpum.ro.GuestFeatures.fVmx
+            && (pVM->hm.s.vmx.Msrs.ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_VMCS_SHADOWING))
+            pVM->hm.s.vmx.fUseVmcsShadowing = true;
+
+        /* Use the VMCS controls for swapping the EFER MSR if supported. */
+        Assert(!pVM->hm.s.vmx.fSupportsVmcsEfer);
+#if HC_ARCH_BITS == 64
+        if (   (pVM->hm.s.vmx.Msrs.EntryCtls.n.allowed1 & VMX_ENTRY_CTLS_LOAD_EFER_MSR)
+            && (pVM->hm.s.vmx.Msrs.ExitCtls.n.allowed1  & VMX_EXIT_CTLS_LOAD_EFER_MSR)
+            && (pVM->hm.s.vmx.Msrs.ExitCtls.n.allowed1  & VMX_EXIT_CTLS_SAVE_EFER_MSR))
+            pVM->hm.s.vmx.fSupportsVmcsEfer = true;
+#endif
+
+#if 0
+        /* Enable APIC register virtualization and virtual-interrupt delivery if supported. */
+        if (   (pVM->hm.s.vmx.Msrs.ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_APIC_REG_VIRT)
+            && (pVM->hm.s.vmx.Msrs.ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_VIRT_INTR_DELIVERY))
+            pVM->hm.s.fVirtApicRegs = true;
+
+        /* Enable posted-interrupt processing if supported. */
+        /** @todo Add and query IPRT API for host OS support for posted-interrupt IPI
+         *        here. */
+        if (   (pVM->hm.s.vmx.Msrs.PinCtls.n.allowed1  & VMX_PIN_CTLS_POSTED_INT)
+            && (pVM->hm.s.vmx.Msrs.ExitCtls.n.allowed1 & VMX_EXIT_CTLS_ACK_EXT_INT))
+            pVM->hm.s.fPostedIntrs = true;
+#endif
     }
     else if (pVM->hm.s.svm.fSupported)
     {

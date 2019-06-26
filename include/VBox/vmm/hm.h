@@ -181,8 +181,9 @@ VMM_INT_DECL(bool)              HMAreNestedPagingAndFullGuestExecEnabled(PVM pVM
 VMM_INT_DECL(bool)              HMIsLongModeAllowed(PVM pVM);
 VMM_INT_DECL(bool)              HMIsNestedPagingActive(PVM pVM);
 VMM_INT_DECL(bool)              HMIsMsrBitmapActive(PVM pVM);
-# ifdef VBOX_WITH_NESTED_HWVIRT_SVM
-VMM_INT_DECL(void)              HMNotifyVmxNstGstVmexit(PVMCPU pVCpu, PCPUMCTX pCtx);
+# ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+VMM_INT_DECL(void)              HMNotifyVmxNstGstVmexit(PVMCPU pVCpu);
+VMM_INT_DECL(void)              HMNotifyVmxNstGstCurrentVmcsChanged(PVMCPU pVCpu);
 # endif
 /** @} */
 

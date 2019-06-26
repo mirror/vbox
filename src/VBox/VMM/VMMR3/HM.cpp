@@ -1596,30 +1596,6 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
                        VERR_HM_IPE_1);
 
     /*
-     * Enable VPID if configured and supported.
-     */
-    if (pVM->hm.s.vmx.Msrs.ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_VPID)
-        pVM->hm.s.vmx.fVpid = pVM->hm.s.vmx.fAllowVpid;
-
-#if 0
-    /*
-     * Enable APIC register virtualization and virtual-interrupt delivery if supported.
-     */
-    if (   (pVM->hm.s.vmx.Msrs.ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_APIC_REG_VIRT)
-        && (pVM->hm.s.vmx.Msrs.ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_VIRT_INTR_DELIVERY))
-        pVM->hm.s.fVirtApicRegs = true;
-
-    /*
-     * Enable posted-interrupt processing if supported.
-     */
-    /** @todo Add and query IPRT API for host OS support for posted-interrupt IPI
-     *        here. */
-    if (   (pVM->hm.s.vmx.Msrs.PinCtls.n.allowed1  & VMX_PIN_CTLS_POSTED_INT)
-        && (pVM->hm.s.vmx.Msrs.ExitCtls.n.allowed1 & VMX_EXIT_CTLS_ACK_EXT_INT))
-        pVM->hm.s.fPostedIntrs = true;
-#endif
-
-    /*
      * Disallow RDTSCP in the guest if there is no secondary process-based VM execution controls as otherwise
      * RDTSCP would cause a #UD. There might be no CPUs out there where this happens, as RDTSCP was introduced
      * in Nehalems and secondary VM exec. controls should be supported in all of them, but nonetheless it's Intel...
@@ -1770,12 +1746,6 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
     else
         Assert(!pVM->hm.s.vmx.fUnrestrictedGuest);
 
-    if (pVM->hm.s.fVirtApicRegs)
-        LogRel(("HM:   Enabled APIC-register virtualization support\n"));
-
-    if (pVM->hm.s.fPostedIntrs)
-        LogRel(("HM:   Enabled posted-interrupt processing support\n"));
-
     if (pVM->hm.s.vmx.fVpid)
     {
         LogRel(("HM: Enabled VPID\n"));
@@ -1797,6 +1767,15 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
         LogRel(("HM: Enabled VMX-preemption timer (cPreemptTimerShift=%u)\n", pVM->hm.s.vmx.cPreemptTimerShift));
     else
         LogRel(("HM: Disabled VMX-preemption timer\n"));
+
+    if (pVM->hm.s.fVirtApicRegs)
+        LogRel(("HM: Enabled APIC-register virtualization support\n"));
+
+    if (pVM->hm.s.fPostedIntrs)
+        LogRel(("HM: Enabled posted-interrupt processing support\n"));
+
+    if (pVM->hm.s.vmx.fUseVmcsShadowing)
+        LogRel(("HM: Enabled VMCS shadowing support\n"));
 
     return VINF_SUCCESS;
 }

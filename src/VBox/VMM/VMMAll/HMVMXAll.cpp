@@ -1231,14 +1231,11 @@ VMM_INT_DECL(TRPMEVENT) HMVmxEventToTrpmEventType(uint32_t uIntInfo)
  * IEM).
  *
  * @param   pVCpu   The cross context virtual CPU structure.
- * @param   pCtx    Pointer to the guest-CPU context.
  *
  * @remarks Can be called from ring-0 as well as ring-3.
  */
-VMM_INT_DECL(void) HMNotifyVmxNstGstVmexit(PVMCPU pVCpu, PCPUMCTX pCtx)
+VMM_INT_DECL(void) HMNotifyVmxNstGstVmexit(PVMCPU pVCpu)
 {
-    NOREF(pCtx);
-
     /*
      * Transitions to ring-3 flag a full CPU-state change except if we transition to ring-3
      * in response to a physical CPU interrupt as no changes to the guest-CPU state are
@@ -1248,19 +1245,46 @@ VMM_INT_DECL(void) HMNotifyVmxNstGstVmexit(PVMCPU pVCpu, PCPUMCTX pCtx)
      * try to inject a nested-guest physical interrupt and cause a VMX_EXIT_EXT_INT VM-exit
      * for the nested-guest from ring-3.
      *
-     * Flag reloading of just the guest-CPU state is -not- sufficient since HM also needs
-     * to reload related state with VM-entry/VM-exit controls and so on. Flag reloading
-     * the entire state.
+     * Signalling reload of just the guest-CPU state that changed with the VM-exit is -not-
+     * sufficient since HM also needs to reload state related to VM-entry/VM-exit controls
+     * etc. So signal reloading of the entire state. It does not seem worth making this any
+     * more fine grained at the moment.
      */
     CPUM_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_ALL);
     ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_ALL_GUEST);
 
     /*
      * Make sure we need to merge the guest VMCS controls with the nested-guest
-     * VMCS controls on the next nested-guest VM entry.
+     * VMCS controls on the next nested-guest VM-entry.
      */
     pVCpu->hm.s.vmx.fMergedNstGstCtls = false;
 }
+
+
+/**
+ * Notification callback for when the guest hypervisor's current VMCS is loaded or
+ * changed outside VMX R0 code (e.g. in IEM).
+ *
+ * This need -not- be called for modifications to the guest hypervisor's current
+ * VMCS when the guest is in VMX non-root mode as VMCS shadowing is not applicable
+ * there.
+ *
+ * @param   pVCpu   The cross context virtual CPU structure.
+ *
+ * @remarks Can be called from ring-0 as well as ring-3.
+ */
+VMM_INT_DECL(void) HMNotifyVmxNstGstCurrentVmcsChanged(PVMCPU pVCpu)
+{
+    CPUM_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_HWVIRT);
+    ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, CPUMCTX_EXTRN_HWVIRT);
+
+    /*
+     * Make sure we need to copy the guest hypervisor's current VMCS into the shadow VMCS
+     * on the next guest VM-entry.
+     */
+    pVCpu->hm.s.vmx.fCopiedNstGstToShadowVmcs = false;
+}
+
 # endif /* VBOX_WITH_NESTED_HWVIRT_VMX */
 #endif /* IN_RC */
 

@@ -594,7 +594,9 @@ typedef struct HM
         uint64_t                    u64HostMsrEfer;
         /** Whether the CPU supports VMCS fields for swapping EFER. */
         bool                        fSupportsVmcsEfer;
-        uint8_t                     u8Alignment2[7];
+        /** Whether to use VMCS shadowing. */
+        bool                        fUseVmcsShadowing;
+        uint8_t                     u8Alignment2[6];
 
         /** VMX MSR values. */
         VMXMSRS                     Msrs;
@@ -602,12 +604,14 @@ typedef struct HM
         /** Host-physical address for a failing VMXON instruction. */
         RTHCPHYS                    HCPhysVmxEnableError;
 
-        /** Pointer to the shadow VMCS fields array. */
+        /** Pointer to the shadow VMCS read-only fields array. */
+        R0PTRTYPE(uint32_t *)       paShadowVmcsRoFields;
+        /** Pointer to the shadow VMCS read/write fields array. */
         R0PTRTYPE(uint32_t *)       paShadowVmcsFields;
-        RTR0PTR                     pvR0Alignment1;
-        /** Number of elements in the shadow VMCS fields array. */
+        /** Number of elements in the shadow VMCS read-only fields array. */
+        uint32_t                    cShadowVmcsRoFields;
+        /** Number of elements in the shadow VMCS read-write fields array. */
         uint32_t                    cShadowVmcsFields;
-        uint32_t                    u32Alignemnt0;
     } vmx;
 
     struct
@@ -983,8 +987,10 @@ typedef struct HMCPU
             /** Whether the static guest VMCS controls has been merged with the
              *  nested-guest VMCS controls. */
             bool                        fMergedNstGstCtls;
+            /** Whether the nested-guest VMCS has been copied to the shadow VMCS. */
+            bool                        fCopiedNstGstToShadowVmcs;
             /** Alignment. */
-            bool                        afAlignment0[6];
+            bool                        afAlignment0[5];
             /** Cached guest APIC-base MSR for identifying when to map the APIC-access page. */
             uint64_t                    u64GstMsrApicBase;
             /** VMCS cache for batched vmread/vmwrites. */

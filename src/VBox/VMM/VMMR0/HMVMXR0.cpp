@@ -104,6 +104,7 @@
                                       | CPUMCTX_EXTRN_CR3             \
                                       | CPUMCTX_EXTRN_CR4             \
                                       | CPUMCTX_EXTRN_DR7             \
+                                      | CPUMCTX_EXTRN_HWVIRT          \
                                       | CPUMCTX_EXTRN_HM_VMX_MASK)
 
 /**
@@ -354,7 +355,7 @@ DECLINLINE(VBOXSTRICTRC)           hmR0VmxHandleExit(PVMCPU pVCpu, PVMXTRANSIENT
 DECLINLINE(VBOXSTRICTRC)           hmR0VmxHandleExitNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient);
 #endif
 
-static int  hmR0VmxImportGuestState(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo, uint64_t fWhat);
+static int  hmR0VmxImportGuestState(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo, uint64_t fWhat);
 #if HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS)
 static void hmR0VmxInitVmcsReadCache(PVMCPU pVCpu);
 #endif
@@ -478,10 +479,10 @@ static VBOXSTRICTRC hmR0VmxExitXcptBP(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 static VBOXSTRICTRC hmR0VmxExitXcptGP(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient);
 static VBOXSTRICTRC hmR0VmxExitXcptAC(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient);
 static VBOXSTRICTRC hmR0VmxExitXcptGeneric(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient);
-static VBOXSTRICTRC hmR0VmxExitLmsw(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo, uint8_t cbInstr, uint16_t uMsw, RTGCPTR GCPtrEffDst);
-static VBOXSTRICTRC hmR0VmxExitClts(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo, uint8_t cbInstr);
-static VBOXSTRICTRC hmR0VmxExitMovFromCrX(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo, uint8_t cbInstr, uint8_t iGReg, uint8_t iCrReg);
-static VBOXSTRICTRC hmR0VmxExitMovToCrX(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo, uint8_t cbInstr, uint8_t iGReg, uint8_t iCrReg);
+static VBOXSTRICTRC hmR0VmxExitLmsw(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo, uint8_t cbInstr, uint16_t uMsw, RTGCPTR GCPtrEffDst);
+static VBOXSTRICTRC hmR0VmxExitClts(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo, uint8_t cbInstr);
+static VBOXSTRICTRC hmR0VmxExitMovFromCrX(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo, uint8_t cbInstr, uint8_t iGReg, uint8_t iCrReg);
+static VBOXSTRICTRC hmR0VmxExitMovToCrX(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo, uint8_t cbInstr, uint8_t iGReg, uint8_t iCrReg);
 static VBOXSTRICTRC hmR0VmxExitHostNmi(PVMCPU pVCpu);
 /** @} */
 
@@ -1216,23 +1217,18 @@ static int hmR0VmxRemoveXcptIntercept(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient,
  *
  * @returns VBox status code.
  * @param   pVmcsInfo       The VMCS info. object.
+ *
+ * @remarks Can be called with interrupts disabled.
  */
 static int hmR0VmxLoadVmcs(PVMXVMCSINFO pVmcsInfo)
 {
-    Assert(pVmcsInfo->HCPhysVmcs);
+    Assert(pVmcsInfo->HCPhysVmcs != 0 && pVmcsInfo->HCPhysVmcs != NIL_RTHCPHYS);
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 
-    if (pVmcsInfo->fVmcsState & VMX_V_VMCS_LAUNCH_STATE_CLEAR)
-    {
-        int rc = VMXLoadVmcs(pVmcsInfo->HCPhysVmcs);
-        if (RT_SUCCESS(rc))
-        {
-            pVmcsInfo->fVmcsState |= VMX_V_VMCS_LAUNCH_STATE_CURRENT;
-            return VINF_SUCCESS;
-        }
-        return rc;
-    }
-    return VERR_VMX_INVALID_VMCS_LAUNCH_STATE;
+    int rc = VMXLoadVmcs(pVmcsInfo->HCPhysVmcs);
+    if (RT_SUCCESS(rc))
+        pVmcsInfo->fVmcsState |= VMX_V_VMCS_LAUNCH_STATE_CURRENT;
+    return rc;
 }
 
 
@@ -1241,10 +1237,12 @@ static int hmR0VmxLoadVmcs(PVMXVMCSINFO pVmcsInfo)
  *
  * @returns VBox status code.
  * @param   pVmcsInfo       The VMCS info. object.
+ *
+ * @remarks Can be called with interrupts disabled.
  */
 static int hmR0VmxClearVmcs(PVMXVMCSINFO pVmcsInfo)
 {
-    Assert(pVmcsInfo->HCPhysVmcs);
+    Assert(pVmcsInfo->HCPhysVmcs != 0 && pVmcsInfo->HCPhysVmcs != NIL_RTHCPHYS);
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 
     int rc = VMXClearVmcs(pVmcsInfo->HCPhysVmcs);
@@ -1255,31 +1253,24 @@ static int hmR0VmxClearVmcs(PVMXVMCSINFO pVmcsInfo)
 
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-#if 0
 /**
  * Loads the shadow VMCS specified by the VMCS info. object.
  *
  * @returns VBox status code.
  * @param   pVmcsInfo       The VMCS info. object.
+ *
+ * @remarks Can be called with interrupts disabled.
  */
 static int hmR0VmxLoadShadowVmcs(PVMXVMCSINFO pVmcsInfo)
 {
-    Assert(pVmcsInfo->HCPhysShadowVmcs);
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
+    Assert(pVmcsInfo->HCPhysShadowVmcs != 0 && pVmcsInfo->HCPhysShadowVmcs != NIL_RTHCPHYS);
 
-    if (pVmcsInfo->fShadowVmcsState & VMX_V_VMCS_LAUNCH_STATE_CLEAR)
-    {
-        int rc = VMXLoadVmcs(pVmcsInfo->HCPhysShadowVmcs);
-        if (RT_SUCCESS(rc))
-        {
-            pVmcsInfo->fShadowVmcsState |= VMX_V_VMCS_LAUNCH_STATE_ACTIVE;
-            return VINF_SUCCESS;
-        }
-        return rc;
-    }
-    return VERR_VMX_INVALID_VMCS_LAUNCH_STATE;
+    int rc = VMXLoadVmcs(pVmcsInfo->HCPhysShadowVmcs);
+    if (RT_SUCCESS(rc))
+        pVmcsInfo->fShadowVmcsState |= VMX_V_VMCS_LAUNCH_STATE_CURRENT;
+    return rc;
 }
-#endif
 
 
 /**
@@ -1287,11 +1278,13 @@ static int hmR0VmxLoadShadowVmcs(PVMXVMCSINFO pVmcsInfo)
  *
  * @returns VBox status code.
  * @param   pVmcsInfo       The VMCS info. object.
+ *
+ * @remarks Can be called with interrupts disabled.
  */
 static int hmR0VmxClearShadowVmcs(PVMXVMCSINFO pVmcsInfo)
 {
-    Assert(pVmcsInfo->HCPhysShadowVmcs);
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
+    Assert(pVmcsInfo->HCPhysShadowVmcs != 0 && pVmcsInfo->HCPhysShadowVmcs != NIL_RTHCPHYS);
 
     int rc = VMXClearVmcs(pVmcsInfo->HCPhysShadowVmcs);
     if (RT_SUCCESS(rc))
@@ -1319,7 +1312,15 @@ static int hmR0VmxSwitchVmcs(PVMXVMCSINFO pVmcsInfoFrom, PVMXVMCSINFO pVmcsInfoT
     {
         int rc = hmR0VmxClearVmcs(pVmcsInfoFrom);
         if (RT_SUCCESS(rc))
-        { /* likely */ }
+        {
+            /*
+             * The shadow VMCS, if any, would not be active at this point since we
+             * would have cleared it while importing the virtual hardware-virtualization
+             * state as part the VMLAUNCH/VMRESUME VM-exit. Hence, there's no need to
+             * clear the shadow VMCS here, just assert for safety.
+             */
+            Assert(!pVmcsInfoFrom->pvShadowVmcs || pVmcsInfoFrom->fShadowVmcsState == VMX_V_VMCS_LAUNCH_STATE_CLEAR);
+        }
         else
             return rc;
     }
@@ -1656,90 +1657,6 @@ static int hmR0VmxLeaveRootMode(void)
 }
 
 
-#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-/**
- * Initializes the shadow VMCS.
- *
- * This builds an array (for use later while executing a nested-guest) of VMCS
- * fields to copy into the shadow VMCS.
- *
- * @param   pVM     The cross context VM structure.
- */
-static void hmR0VmxInitShadowVmcsFieldsArray(PVM pVM)
-{
-    uint32_t const cVmcsFields = RT_ELEMENTS(g_aVmcsFields);
-    for (uint32_t i = 0; i < cVmcsFields; i++)
-    {
-        /*
-         * If the VMCS field depends on a CPU feature that is not exposed to the guest,
-         * we must not include it in the shadow VMCS fields array. Guests attempting to
-         * VMREAD/VMWRITE such VMCS fields would cause a VM-exit and we shall emulate
-         * the required behavior.
-         */
-        uint32_t const uVmcsField      = g_aVmcsFields[i];
-        bool const     fVmcsFieldValid = CPUMIsGuestVmxVmcsFieldValid(pVM, uVmcsField);
-        if (fVmcsFieldValid)
-        {
-            pVM->hm.s.vmx.paShadowVmcsFields[i] = uVmcsField;
-            ++pVM->hm.s.vmx.cShadowVmcsFields;
-        }
-    }
-}
-
-
-/**
- * Initializes the VMREAD/VMWRITE bitmaps.
- *
- * @param   pVM                 The cross context VM structure.
- */
-static void hmR0VmxInitVmreadVmwriteBitmaps(PVM pVM)
-{
-    /*
-     * By default, ensure guest attempts to acceses to any VMCS fields cause VM-exits.
-     */
-    uint32_t const  cbBitmap        = X86_PAGE_4K_SIZE;
-    uint8_t        *pbVmreadBitmap  = (uint8_t *)pVM->hm.s.vmx.pvVmreadBitmap;
-    uint8_t        *pbVmwriteBitmap = (uint8_t *)pVM->hm.s.vmx.pvVmwriteBitmap;
-    ASMMemFill32(pbVmreadBitmap,  cbBitmap, UINT32_C(0xffffffff));
-    ASMMemFill32(pbVmwriteBitmap, cbBitmap, UINT32_C(0xffffffff));
-
-    uint32_t const *paShadowVmcsFields = pVM->hm.s.vmx.paShadowVmcsFields;
-    uint32_t const  cShadowVmcsFields  = pVM->hm.s.vmx.cShadowVmcsFields;
-
-    /*
-     * Initialize the VMREAD bitmap.
-     * All valid guest VMCS fields (read-only and read-write) can be accessed
-     * using VMREAD without causing a VM-exit.
-     */
-    for (uint32_t i = 0; i < cShadowVmcsFields; i++)
-    {
-        uint32_t const uVmcsField = paShadowVmcsFields[i];
-        Assert(!(uVmcsField & VMX_VMCSFIELD_RSVD_MASK));
-        uint8_t *pbField = pbVmreadBitmap + (uVmcsField >> 3);
-        ASMBitClear(pbField, uVmcsField & 7);
-    }
-
-    /*
-     * Initialize the VMWRITE bitmap.
-     * Allow the guest to write to read-only guest VMCS fields only if the
-     * host CPU supports it, otherwise it would cause a VMWRITE instruction error.
-     */
-    bool const fHasVmwriteAll = RT_BOOL(pVM->hm.s.vmx.Msrs.u64Misc & VMX_MISC_VMWRITE_ALL);
-    for (uint32_t i = 0; i < cShadowVmcsFields; i++)
-    {
-        uint32_t const uVmcsField = paShadowVmcsFields[i];
-        if (   fHasVmwriteAll
-            || !HMVmxIsVmcsFieldReadOnly(uVmcsField))
-        {
-            Assert(!(uVmcsField & VMX_VMCSFIELD_RSVD_MASK));
-            uint8_t *pbField = pbVmwriteBitmap + (uVmcsField >> 3);
-            ASMBitClear(pbField, uVmcsField & 7);
-        }
-    }
-}
-#endif /* VBOX_WITH_NESTED_HWVIRT_VMX */
-
-
 /**
  * Allocates and maps a physically contiguous page. The allocated page is
  * zero'd out (used by various VT-x structures).
@@ -1826,8 +1743,7 @@ static void hmR0VmxFreeVmcsInfo(PVM pVM, PVMXVMCSINFO pVmcsInfo)
     hmR0VmxPageFree(&pVmcsInfo->hMemObjVmcs, &pVmcsInfo->pvVmcs, &pVmcsInfo->HCPhysVmcs);
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-    if (   pVM->cpum.ro.GuestFeatures.fVmx
-        && (pVM->hm.s.vmx.Msrs.ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_VMCS_SHADOWING))
+    if (pVM->hm.s.vmx.fUseVmcsShadowing)
         hmR0VmxPageFree(&pVmcsInfo->hMemObjShadowVmcs, &pVmcsInfo->pvShadowVmcs, &pVmcsInfo->HCPhysShadowVmcs);
 #endif
 
@@ -1861,9 +1777,7 @@ static int hmR0VmxAllocVmcsInfo(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo, bool fIsNs
         if (!fIsNstGstVmcs)
         {
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-            /* Allocate the shadow VMCS if supported by the CPU. */
-            if (   pVM->cpum.ro.GuestFeatures.fVmx
-                && (pVM->hm.s.vmx.Msrs.ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_VMCS_SHADOWING))
+            if (pVM->hm.s.vmx.fUseVmcsShadowing)
                 rc = hmR0VmxPageAllocZ(&pVmcsInfo->hMemObjShadowVmcs, &pVmcsInfo->pvShadowVmcs, &pVmcsInfo->HCPhysShadowVmcs);
 #endif
             if (RT_SUCCESS(rc))
@@ -1958,10 +1872,10 @@ static void hmR0VmxStructsFree(PVM pVM)
     hmR0VmxPageFree(&pVM->hm.s.vmx.hMemObjApicAccess, (PRTR0PTR)&pVM->hm.s.vmx.pbApicAccess, &pVM->hm.s.vmx.HCPhysApicAccess);
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-    if (   pVM->cpum.ro.GuestFeatures.fVmx
-        && (pVM->hm.s.vmx.Msrs.ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_VMCS_SHADOWING))
+    if (pVM->hm.s.vmx.fUseVmcsShadowing)
     {
         RTMemFree(pVM->hm.s.vmx.paShadowVmcsFields);
+        RTMemFree(pVM->hm.s.vmx.paShadowVmcsRoFields);
         hmR0VmxPageFree(&pVM->hm.s.vmx.hMemObjVmreadBitmap,  &pVM->hm.s.vmx.pvVmreadBitmap,  &pVM->hm.s.vmx.HCPhysVmreadBitmap);
         hmR0VmxPageFree(&pVM->hm.s.vmx.hMemObjVmwriteBitmap, &pVM->hm.s.vmx.pvVmwriteBitmap, &pVM->hm.s.vmx.HCPhysVmwriteBitmap);
     }
@@ -2055,12 +1969,15 @@ static int hmR0VmxStructsAlloc(PVM pVM)
     }
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-    /* Allocate the shadow VMCS fields array, VMREAD, VMWRITE bitmaps if VMCS shadowing supported by the CPU. */
-    if (   pVM->cpum.ro.GuestFeatures.fVmx
-        && (pVM->hm.s.vmx.Msrs.ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_VMCS_SHADOWING))
+    /* Allocate the shadow VMCS fields array, VMREAD, VMWRITE bitmaps.. */
+    if (pVM->hm.s.vmx.fUseVmcsShadowing)
     {
-        pVM->hm.s.vmx.paShadowVmcsFields = (uint32_t *)RTMemAllocZ(sizeof(g_aVmcsFields));
-        if (RT_LIKELY(pVM->hm.s.vmx.paShadowVmcsFields))
+        Assert(!pVM->hm.s.vmx.cShadowVmcsFields);
+        Assert(!pVM->hm.s.vmx.cShadowVmcsRoFields);
+        pVM->hm.s.vmx.paShadowVmcsFields   = (uint32_t *)RTMemAllocZ(sizeof(g_aVmcsFields));
+        pVM->hm.s.vmx.paShadowVmcsRoFields = (uint32_t *)RTMemAllocZ(sizeof(g_aVmcsFields));
+        if (RT_LIKELY(   pVM->hm.s.vmx.paShadowVmcsFields
+                      && pVM->hm.s.vmx.paShadowVmcsRoFields))
         {
             rc = hmR0VmxPageAllocZ(&pVM->hm.s.vmx.hMemObjVmreadBitmap, &pVM->hm.s.vmx.pvVmreadBitmap,
                                    &pVM->hm.s.vmx.HCPhysVmreadBitmap);
@@ -2068,11 +1985,6 @@ static int hmR0VmxStructsAlloc(PVM pVM)
             {
                 rc = hmR0VmxPageAllocZ(&pVM->hm.s.vmx.hMemObjVmwriteBitmap, &pVM->hm.s.vmx.pvVmwriteBitmap,
                                        &pVM->hm.s.vmx.HCPhysVmwriteBitmap);
-                if (RT_SUCCESS(rc))
-                {
-                    hmR0VmxInitShadowVmcsFieldsArray(pVM);
-                    hmR0VmxInitVmreadVmwriteBitmaps(pVM);
-                }
             }
         }
         else
@@ -3375,6 +3287,130 @@ static int hmR0VmxSetupTaggedTlb(PVM pVM)
 }
 
 
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+/**
+ * Sets up the shadow VMCS fields arrays.
+ *
+ * This function builds arrays of VMCS fields to sync the shadow VMCS later while
+ * executing the guest.
+ *
+ * @returns VBox status code.
+ * @param   pVM     The cross context VM structure.
+ */
+static int hmR0VmxSetupShadowVmcsFieldsArrays(PVM pVM)
+{
+    /*
+     * Paranoia. Ensure we haven't exposed the VMWRITE-All VMX feature to the guest
+     * when the host does not support it.
+     */
+    bool const fGstVmwriteAll = pVM->cpum.ro.GuestFeatures.fVmxVmwriteAll;
+    if (   !fGstVmwriteAll
+        || (pVM->hm.s.vmx.Msrs.u64Misc & VMX_MISC_VMWRITE_ALL))
+    { /* likely. */ }
+    else
+    {
+        LogRelFunc(("VMX VMWRITE-All feature exposed to the guest but host CPU does not support it!\n"));
+        pVM->aCpus[0].hm.s.u32HMError = VMX_UFC_GST_HOST_VMWRITE_ALL;
+        return VERR_HM_UNSUPPORTED_CPU_FEATURE_COMBO;
+    }
+
+    uint32_t const cVmcsFields = RT_ELEMENTS(g_aVmcsFields);
+    uint32_t       cRwFields   = 0;
+    uint32_t       cRoFields   = 0;
+    for (uint32_t i = 0; i < cVmcsFields; i++)
+    {
+        VMXVMCSFIELD VmcsField;
+        VmcsField.u = g_aVmcsFields[i];
+
+        /*
+         * We will be writing "FULL" (64-bit) fields while syncing the shadow VMCS.
+         * Therefore, "HIGH" (32-bit portion of 64-bit) fields must not be included
+         * in the shadow VMCS fields array as they would be redundant.
+         *
+         * If the VMCS field depends on a CPU feature that is not exposed to the guest,
+         * we must not include it in the shadow VMCS fields array. Guests attempting to
+         * VMREAD/VMWRITE such VMCS fields would cause a VM-exit and we shall emulate
+         * the required behavior.
+         */
+        if (   VmcsField.n.fAccessType == VMX_VMCSFIELD_ACCESS_FULL
+            && CPUMIsGuestVmxVmcsFieldValid(pVM, VmcsField.u))
+        {
+            /*
+             * Read-only fields are placed in a separate array so that while syncing shadow
+             * VMCS fields later (which is more performance critical) we can avoid branches.
+             *
+             * However, if the guest can write to all fields (including read-only fields),
+             * we treat it a as read/write field. Otherwise, writing to these fields would
+             * cause a VMWRITE instruction error while syncing the shadow VMCS .
+             */
+            if (   fGstVmwriteAll
+                || !HMVmxIsVmcsFieldReadOnly(VmcsField.u))
+                pVM->hm.s.vmx.paShadowVmcsFields[cRwFields++] = VmcsField.u;
+            else
+                pVM->hm.s.vmx.paShadowVmcsRoFields[cRoFields++] = VmcsField.u;
+        }
+    }
+
+    /* Update the counts. */
+    pVM->hm.s.vmx.cShadowVmcsFields   = cRwFields;
+    pVM->hm.s.vmx.cShadowVmcsRoFields = cRoFields;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Sets up the VMREAD and VMWRITE bitmaps.
+ *
+ * @param   pVM     The cross context VM structure.
+ */
+static void hmR0VmxSetupVmreadVmwriteBitmaps(PVM pVM)
+{
+    /*
+     * By default, ensure guest attempts to acceses to any VMCS fields cause VM-exits.
+     */
+    uint32_t const cbBitmap        = X86_PAGE_4K_SIZE;
+    uint8_t       *pbVmreadBitmap  = (uint8_t *)pVM->hm.s.vmx.pvVmreadBitmap;
+    uint8_t       *pbVmwriteBitmap = (uint8_t *)pVM->hm.s.vmx.pvVmwriteBitmap;
+    ASMMemFill32(pbVmreadBitmap,  cbBitmap, UINT32_C(0xffffffff));
+    ASMMemFill32(pbVmwriteBitmap, cbBitmap, UINT32_C(0xffffffff));
+
+    /*
+     * Skip intercepting VMREAD/VMWRITE to guest read/write fields in the
+     * VMREAD and VMWRITE bitmaps.
+     */
+    {
+        uint32_t const *paShadowVmcsFields = pVM->hm.s.vmx.paShadowVmcsFields;
+        uint32_t const  cShadowVmcsFields  = pVM->hm.s.vmx.cShadowVmcsFields;
+        for (uint32_t i = 0; i < cShadowVmcsFields; i++)
+        {
+            uint32_t const uVmcsField = paShadowVmcsFields[i];
+            Assert(!(uVmcsField & VMX_VMCSFIELD_RSVD_MASK));
+            Assert(uVmcsField >> 3 < cbBitmap);
+            ASMBitClear(pbVmreadBitmap  + (uVmcsField >> 3), uVmcsField & 7);
+            ASMBitClear(pbVmwriteBitmap + (uVmcsField >> 3), uVmcsField & 7);
+        }
+    }
+
+    /*
+     * Skip intercepting VMREAD for guest read-only fields in the VMREAD bitmap
+     * if the host supports VMWRITE to all supported VMCS fields.
+     */
+    if (pVM->hm.s.vmx.Msrs.u64Misc & VMX_MISC_VMWRITE_ALL)
+    {
+        uint32_t const *paShadowVmcsRoFields = pVM->hm.s.vmx.paShadowVmcsRoFields;
+        uint32_t const  cShadowVmcsRoFields  = pVM->hm.s.vmx.cShadowVmcsRoFields;
+        for (uint32_t i = 0; i < cShadowVmcsRoFields; i++)
+        {
+            uint32_t const uVmcsField = paShadowVmcsRoFields[i];
+            Assert(!(uVmcsField & VMX_VMCSFIELD_RSVD_MASK));
+            Assert(uVmcsField >> 3 < cbBitmap);
+            ASMBitClear(pbVmreadBitmap + (uVmcsField >> 3), uVmcsField & 7);
+        }
+    }
+}
+#endif /* VBOX_WITH_NESTED_HWVIRT_VMX */
+
+
 /**
  * Sets up the virtual-APIC page address for the VMCS.
  *
@@ -3424,20 +3460,36 @@ DECLINLINE(int) hmR0VmxSetupVmcsApicAccessAddr(PVMCPU pVCpu)
 }
 
 
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
 /**
- * Sets up the VMCS link pointer for the VMCS.
+ * Sets up the VMREAD bitmap address for the VMCS.
  *
  * @returns VBox status code.
  * @param   pVCpu       The cross context virtual CPU structure.
- * @param   pVmcsInfo   The VMCS info. object.
  */
-DECLINLINE(int) hmR0VmxSetupVmcsLinkPtr(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo)
+DECLINLINE(int) hmR0VmxSetupVmcsVmreadBitmapAddr(PVMCPU pVCpu)
 {
-    NOREF(pVCpu); /* Used implicitly by VMXWriteVmcs64 on 32-bit hosts. */
-    uint64_t const u64VmcsLinkPtr = pVmcsInfo->u64VmcsLinkPtr;
-    Assert(u64VmcsLinkPtr == UINT64_C(0xffffffffffffffff));  /* Bits 63:0 MB1. */
-    return VMXWriteVmcs64(VMX_VMCS64_GUEST_VMCS_LINK_PTR_FULL, u64VmcsLinkPtr);
+    RTHCPHYS const HCPhysVmreadBitmap = pVCpu->CTX_SUFF(pVM)->hm.s.vmx.HCPhysVmreadBitmap;
+    Assert(HCPhysVmreadBitmap != NIL_RTHCPHYS);
+    Assert(!(HCPhysVmreadBitmap & 0xfff));                     /* Bits 11:0 MBZ. */
+    return VMXWriteVmcs64(VMX_VMCS64_CTRL_VMREAD_BITMAP_FULL, HCPhysVmreadBitmap);
 }
+
+
+/**
+ * Sets up the VMWRITE bitmap address for the VMCS.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ */
+DECLINLINE(int) hmR0VmxSetupVmcsVmwriteBitmapAddr(PVMCPU pVCpu)
+{
+    RTHCPHYS const HCPhysVmwriteBitmap = pVCpu->CTX_SUFF(pVM)->hm.s.vmx.HCPhysVmwriteBitmap;
+    Assert(HCPhysVmwriteBitmap != NIL_RTHCPHYS);
+    Assert(!(HCPhysVmwriteBitmap & 0xfff));                     /* Bits 11:0 MBZ. */
+    return VMXWriteVmcs64(VMX_VMCS64_CTRL_VMWRITE_BITMAP_FULL, HCPhysVmwriteBitmap);
+}
+#endif
 
 
 /**
@@ -3623,15 +3675,6 @@ static int hmR0VmxSetupVmcsProcCtls2(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo)
     if (pVM->hm.s.vmx.fUnrestrictedGuest)
         fVal |= VMX_PROC_CTLS2_UNRESTRICTED_GUEST;
 
-#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-#if 0
-    /* Enable VMCS shadowing if supported by the hardware and VMX is exposed to the guest. */
-    if (   pVM->cpum.ro.GuestFeatures.fVmx
-        && (pVM->hm.s.vmx.Msrs.ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_VMCS_SHADOWING))
-        fVal |= VMX_PROC_CTLS2_VMCS_SHADOWING;
-#endif
-#endif
-
 #if 0
     if (pVM->hm.s.fVirtApicRegs)
     {
@@ -3806,21 +3849,30 @@ static int hmR0VmxSetupVmcsProcCtls(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo)
  * @returns VBox status code.
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   pVmcsInfo       The VMCS info. object.
- *
- * @remarks Must be called after secondary processor-based VM-execution controls
- *          have been initialized!
  */
 static int hmR0VmxSetupVmcsMiscCtls(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo)
 {
-    /* Set the VMCS link pointer in the VMCS. */
-    int rc = hmR0VmxSetupVmcsLinkPtr(pVCpu, pVmcsInfo);
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+    if (pVCpu->CTX_SUFF(pVM)->hm.s.vmx.fUseVmcsShadowing)
+    {
+        int rc = hmR0VmxSetupVmcsVmreadBitmapAddr(pVCpu);
+        rc    |= hmR0VmxSetupVmcsVmwriteBitmapAddr(pVCpu);
+        if (RT_SUCCESS(rc))
+        { /* likely */ }
+        else
+        {
+            LogRelFunc(("Failed to setup VMREAD/VMWRITE bitmap addresses. rc=%Rrc\n", rc));
+            return rc;
+        }
+    }
+#endif
+
+    int rc = VMXWriteVmcs64(VMX_VMCS64_GUEST_VMCS_LINK_PTR_FULL, NIL_RTHCPHYS);
     if (RT_SUCCESS(rc))
     {
-        /* Set the auto-load/store MSR area addresses in the VMCS. */
         rc = hmR0VmxSetupVmcsAutoLoadStoreMsrAddrs(pVCpu, pVmcsInfo);
         if (RT_SUCCESS(rc))
         {
-            /* Set the CR0/CR4 guest/host mask. */
             uint64_t const u64Cr0Mask = hmR0VmxGetFixedCr0Mask(pVCpu);
             uint64_t const u64Cr4Mask = hmR0VmxGetFixedCr4Mask(pVCpu);
             rc  = VMXWriteVmcsHstN(VMX_VMCS_CTRL_CR0_MASK, u64Cr0Mask);
@@ -3889,7 +3941,7 @@ static int hmR0VmxSetupVmcsXcptBitmap(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo)
 static int hmR0VmxSetupVmcsCtlsNested(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo)
 {
     PVM pVM = pVCpu->CTX_SUFF(pVM);
-    int rc = hmR0VmxSetupVmcsLinkPtr(pVCpu, pVmcsInfo);
+    int rc = VMXWriteVmcs64(VMX_VMCS64_GUEST_VMCS_LINK_PTR_FULL, NIL_RTHCPHYS);
     if (RT_SUCCESS(rc))
     {
         rc = hmR0VmxSetupVmcsAutoLoadStoreMsrAddrs(pVCpu, pVmcsInfo);
@@ -3966,10 +4018,13 @@ static int hmR0VmxSetupVmcs(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo, bool fIsNstGst
                             if (RT_SUCCESS(rc))
                             {
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-                                /* If VMCS shadowing is used, initialize the shadow VMCS. */
-                                if (pVmcsInfo->u32ProcCtls2 & VMX_PROC_CTLS2_VMCS_SHADOWING)
+                                /*
+                                 * If a shadow VMCS is allocated for the VMCS info. object, initialize the
+                                 * VMCS revision ID and shadow VMCS indicator bit. Also, clear the VMCS
+                                 * making it fit for use when VMCS shadowing is later enabled.
+                                 */
+                                if (pVmcsInfo->pvShadowVmcs)
                                 {
-                                    Assert(pVmcsInfo->pvShadowVmcs);
                                     VMXVMCSREVID VmcsRevId;
                                     VmcsRevId.u = RT_BF_GET(pVM->hm.s.vmx.Msrs.u64Basic, VMX_BF_BASIC_VMCS_ID);
                                     VmcsRevId.n.fIsShadowVmcs = 1;
@@ -4219,17 +4274,23 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
     int rc = hmR0VmxSetupTaggedTlb(pVM);
     if (RT_FAILURE(rc))
     {
-        LogRelFunc(("hmR0VmxSetupTaggedTlb failed! rc=%Rrc\n", rc));
+        LogRelFunc(("Failed to setup tagged TLB. rc=%Rrc\n", rc));
         return rc;
     }
 
-    /* Check if we can use the VMCS controls for swapping the EFER MSR. */
-    Assert(!pVM->hm.s.vmx.fSupportsVmcsEfer);
-#if HC_ARCH_BITS == 64
-    if (   (pVM->hm.s.vmx.Msrs.EntryCtls.n.allowed1 & VMX_ENTRY_CTLS_LOAD_EFER_MSR)
-        && (pVM->hm.s.vmx.Msrs.ExitCtls.n.allowed1  & VMX_EXIT_CTLS_LOAD_EFER_MSR)
-        && (pVM->hm.s.vmx.Msrs.ExitCtls.n.allowed1  & VMX_EXIT_CTLS_SAVE_EFER_MSR))
-        pVM->hm.s.vmx.fSupportsVmcsEfer = true;
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+    /* Setup the shadow VMCS fields array and VMREAD/VMWRITE bitmaps. */
+    if (pVM->hm.s.vmx.fUseVmcsShadowing)
+    {
+        rc = hmR0VmxSetupShadowVmcsFieldsArrays(pVM);
+        if (RT_SUCCESS(rc))
+            hmR0VmxSetupVmreadVmwriteBitmaps(pVM);
+        else
+        {
+            LogRelFunc(("Failed to setup shadow VMCS fields arrays. rc=%Rrc\n", rc));
+            return rc;
+        }
+    }
 #endif
 
     for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
@@ -5344,6 +5405,244 @@ static int hmR0VmxExportGuestRflags(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 }
 
 
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+/**
+ * Copies the nested-guest VMCS to the shadow VMCS.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pVmcsInfo   The VMCS info. object.
+ *
+ * @remarks No-long-jump zone!!!
+ */
+static int hmR0VmxCopyNstGstToShadowVmcs(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo)
+{
+    PVM pVM = pVCpu->CTX_SUFF(pVM);
+    PCVMXVVMCS pVmcsNstGst = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+
+    /*
+     * Disable interrupts so we don't get preempted while the shadow VMCS is the
+     * current VMCS, as we may try saving guest lazy MSRs.
+     *
+     * Strictly speaking the lazy MSRs are not in the VMCS, but I'd rather not risk
+     * calling the import VMCS code which is currently performing the guest MSR reads
+     * (on 64-bit hosts) and accessing the auto-load/store MSR area on 32-bit hosts
+     * and the rest of the VMX leave session machinery.
+     */
+    RTCCUINTREG const fEFlags = ASMIntDisableFlags();
+
+    int rc = hmR0VmxLoadShadowVmcs(pVmcsInfo);
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Copy all guest read/write VMCS fields.
+         *
+         * We don't check for VMWRITE failures here for performance reasons and
+         * because they are not expected to fail, barring irrecoverable conditions
+         * like hardware errors.
+         */
+        uint32_t const cShadowVmcsFields = pVM->hm.s.vmx.cShadowVmcsFields;
+        for (uint32_t i = 0; i < cShadowVmcsFields; i++)
+        {
+            uint64_t       u64Val;
+            uint32_t const uVmcsField = pVM->hm.s.vmx.paShadowVmcsFields[i];
+            IEMReadVmxVmcsField(pVmcsNstGst, uVmcsField, &u64Val);
+            VMXWriteVmcs64(uVmcsField, u64Val);
+        }
+
+        /*
+         * If the host CPU supports writing all VMCS fields, copy the guest read-only
+         * VMCS fields, so the guest can VMREAD them without causing a VM-exit.
+         */
+        if (pVM->hm.s.vmx.Msrs.u64Misc & VMX_MISC_VMWRITE_ALL)
+        {
+            uint32_t const cShadowVmcsRoFields = pVM->hm.s.vmx.cShadowVmcsRoFields;
+            for (uint32_t i = 0; i < cShadowVmcsRoFields; i++)
+            {
+                uint64_t       u64Val;
+                uint32_t const uVmcsField = pVM->hm.s.vmx.paShadowVmcsRoFields[i];
+                IEMReadVmxVmcsField(pVmcsNstGst, uVmcsField, &u64Val);
+                VMXWriteVmcs64(uVmcsField, u64Val);
+            }
+        }
+
+        rc  = hmR0VmxClearShadowVmcs(pVmcsInfo);
+        rc |= hmR0VmxLoadVmcs(pVmcsInfo);
+    }
+
+    ASMSetFlags(fEFlags);
+    return rc;
+}
+
+
+/**
+ * Copies the shadow VMCS to the nested-guest VMCS.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pVmcsInfo   The VMCS info. object.
+ *
+ * @remarks Called with interrupts disabled.
+ */
+static int hmR0VmxCopyShadowToNstGstVmcs(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo)
+{
+    Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
+    PVM pVM = pVCpu->CTX_SUFF(pVM);
+    PVMXVVMCS pVmcsNstGst = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+
+    int rc = hmR0VmxLoadShadowVmcs(pVmcsInfo);
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Copy guest read/write fields from the shadow VMCS.
+         * Guest read-only fields cannot be modified, so no need to copy them.
+         *
+         * We don't check for VMREAD failures here for performance reasons and
+         * because they are not expected to fail, barring irrecoverable conditions
+         * like hardware errors.
+         */
+        uint32_t const cShadowVmcsFields = pVM->hm.s.vmx.cShadowVmcsFields;
+        for (uint32_t i = 0; i < cShadowVmcsFields; i++)
+        {
+            uint64_t       u64Val;
+            uint32_t const uVmcsField = pVM->hm.s.vmx.paShadowVmcsFields[i];
+            VMXReadVmcs64(uVmcsField, &u64Val);
+            IEMWriteVmxVmcsField(pVmcsNstGst, uVmcsField, u64Val);
+        }
+
+        rc  = hmR0VmxClearShadowVmcs(pVmcsInfo);
+        rc |= hmR0VmxLoadVmcs(pVmcsInfo);
+    }
+    return rc;
+}
+
+
+/**
+ * Enables VMCS shadowing for the given VMCS info. object.
+ *
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   pVmcsInfo       The VMCS info. object.
+ *
+ * @remarks No-long-jump zone!!!
+ */
+static void hmR0VmxEnableVmcsShadowing(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo)
+{
+    NOREF(pVCpu); /* Used implicitly by VMXWriteVmcs64 on 32-bit hosts. */
+
+    uint32_t uProcCtls2 = pVmcsInfo->u32ProcCtls2;
+    if (!(uProcCtls2 & VMX_PROC_CTLS2_VMCS_SHADOWING))
+    {
+        Assert(pVmcsInfo->HCPhysShadowVmcs != 0 && pVmcsInfo->HCPhysShadowVmcs != NIL_RTHCPHYS);
+        uProcCtls2 |= VMX_PROC_CTLS2_VMCS_SHADOWING;
+        int rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC2, uProcCtls2);
+        rc    |= VMXWriteVmcs64(VMX_VMCS64_GUEST_VMCS_LINK_PTR_FULL, pVmcsInfo->HCPhysShadowVmcs);
+        AssertRC(rc);
+
+        pVmcsInfo->u32ProcCtls2   = uProcCtls2;
+        pVmcsInfo->u64VmcsLinkPtr = pVmcsInfo->HCPhysShadowVmcs;
+        Log4Func(("Enabled\n"));
+    }
+}
+
+
+/**
+ * Disables VMCS shadowing for the given VMCS info. object.
+ *
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   pVmcsInfo       The VMCS info. object.
+ *
+ * @remarks No-long-jump zone!!!
+ */
+static void hmR0VmxDisableVmcsShadowing(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo)
+{
+    NOREF(pVCpu); /* Used implicitly by VMXWriteVmcs64 on 32-bit hosts. */
+
+    /*
+     * We want all VMREAD and VMWRITE instructions to cause VM-exits, so we clear the
+     * VMCS shadowing control. However, VM-entry requires the shadow VMCS indicator bit
+     * to match the VMCS shadowing control if the VMCS link pointer is not NIL_RTHCPHYS.
+     * Hence, we must also reset the VMCS link pointer to ensure VM-entry does not fail.
+     *
+     * See Intel spec. 26.2.1.1 "VM-Execution Control Fields".
+     * See Intel spec. 26.3.1.5 "Checks on Guest Non-Register State".
+     */
+    uint32_t uProcCtls2 = pVmcsInfo->u32ProcCtls2;
+    if (uProcCtls2 & VMX_PROC_CTLS2_VMCS_SHADOWING)
+    {
+        uProcCtls2 &= ~VMX_PROC_CTLS2_VMCS_SHADOWING;
+        int rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC2, uProcCtls2);
+        rc    |= VMXWriteVmcs64(VMX_VMCS64_GUEST_VMCS_LINK_PTR_FULL, NIL_RTHCPHYS);
+        AssertRC(rc);
+
+        pVmcsInfo->u32ProcCtls2   = uProcCtls2;
+        pVmcsInfo->u64VmcsLinkPtr = NIL_RTHCPHYS;
+        Log4Func(("Disabled\n"));
+    }
+}
+#endif
+
+
+/**
+ * Exports the guest hardware-virtualization state.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   pVmxTransient   The VMX-transient structure.
+ *
+ * @remarks No-long-jump zone!!!
+ */
+static int hmR0VmxExportGuestHwvirtState(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
+{
+    if (ASMAtomicUoReadU64(&pVCpu->hm.s.fCtxChanged) & HM_CHANGED_GUEST_HWVIRT)
+    {
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+        /*
+         * Check if the VMX feature is exposed to the guest and if the host CPU supports
+         * VMCS shadowing.
+         */
+        if (pVCpu->CTX_SUFF(pVM)->hm.s.vmx.fUseVmcsShadowing)
+        {
+            /*
+             * If the guest hypervisor has loaded a current VMCS and is in VMX root mode,
+             * copy the guest hypervisor's current VMCS into the shadow VMCS and enable
+             * VMCS shadowing to skip intercepting some or all VMREAD/VMWRITE VM-exits.
+             *
+             * We check for VMX root mode here in case the guest executes VMXOFF without
+             * clearing the current VMCS pointer and our VMXOFF instruction emulation does
+             * not clear the current VMCS pointer.
+             */
+            PVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
+            if (   CPUMIsGuestInVmxRootMode(&pVCpu->cpum.GstCtx)
+                && !CPUMIsGuestInVmxNonRootMode(&pVCpu->cpum.GstCtx)
+                && CPUMIsGuestVmxCurrentVmcsValid(pVCpu, &pVCpu->cpum.GstCtx))
+            {
+                /* Paranoia. */
+                Assert(!pVmxTransient->fIsNestedGuest);
+
+                /*
+                 * For performance reasons, also check if the guest hypervisor's current VMCS
+                 * was newly loaded or modified before copying it to the shadow VMCS.
+                 */
+                if (!pVCpu->hm.s.vmx.fCopiedNstGstToShadowVmcs)
+                {
+                    int rc = hmR0VmxCopyNstGstToShadowVmcs(pVCpu, pVmcsInfo);
+                    AssertRCReturn(rc, rc);
+                    pVCpu->hm.s.vmx.fCopiedNstGstToShadowVmcs = true;
+                }
+                hmR0VmxEnableVmcsShadowing(pVCpu, pVmcsInfo);
+            }
+            else
+                hmR0VmxDisableVmcsShadowing(pVCpu, pVmcsInfo);
+        }
+#else
+        NOREF(pVmxTransient);
+#endif
+        ASMAtomicUoAndU64(&pVCpu->hm.s.fCtxChanged, ~HM_CHANGED_GUEST_HWVIRT);
+    }
+    return VINF_SUCCESS;
+}
+
+
 /**
  * Exports the guest CR0 control register into the guest-state area in the VMCS.
  *
@@ -5963,7 +6262,7 @@ static int hmR0VmxExportSharedDebugState(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransie
  * @remarks Will import guest CR0 on strict builds during validation of
  *          segments.
  */
-static void hmR0VmxValidateSegmentRegs(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo)
+static void hmR0VmxValidateSegmentRegs(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo)
 {
     /*
      * Validate segment registers. See Intel spec. 26.3.1.2 "Checks on Guest Segment Registers".
@@ -7984,7 +8283,7 @@ static int hmR0VmxImportGuestIntrState(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo)
  * @param   pVmcsInfo   The VMCS info. object.
  * @param   fWhat       What to import, CPUMCTX_EXTRN_XXX.
  */
-static int hmR0VmxImportGuestState(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo, uint64_t fWhat)
+static int hmR0VmxImportGuestState(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo, uint64_t fWhat)
 {
 #define VMXLOCAL_BREAK_RC(a_rc) \
     if (RT_SUCCESS(a_rc))       \
@@ -8299,8 +8598,19 @@ static int hmR0VmxImportGuestState(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo, uint64
                         }
                     }
                 }
+            }
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+            if (fWhat & CPUMCTX_EXTRN_HWVIRT)
+            {
+                if (   (pVmcsInfo->u32ProcCtls2 & VMX_PROC_CTLS2_VMCS_SHADOWING)
+                    && !CPUMIsGuestInVmxNonRootMode(pCtx))
+                {
+                    Assert(CPUMIsGuestInVmxRootMode(pCtx));
+                    rc = hmR0VmxCopyShadowToNstGstVmcs(pVCpu, pVmcsInfo);
+                    VMXLOCAL_BREAK_RC(rc);
+                }
+
 # if 0
                 /** @todo NSTVMX: We handle most of these fields individually by passing it to IEM
                  *        VM-exit handlers as parameters. We would handle it differently when using
@@ -8311,8 +8621,7 @@ static int hmR0VmxImportGuestState(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo, uint64
                  * guest state) and is visible to guest software. Hence, it is technically part of
                  * the guest-CPU state when executing a nested-guest.
                  */
-                if (   (fWhat & CPUMCTX_EXTRN_HWVIRT)
-                    && CPUMIsGuestInVmxNonRootMode(pCtx))
+                if (CPUMIsGuestInVmxNonRootMode(pCtx))
                 {
                     PVMXVVMCS pGstVmcs = pCtx->hwvirt.vmx.CTX_SUFF(pVmcs);
                     rc  = VMXReadVmcs32(VMX_VMCS32_RO_EXIT_REASON,        &pGstVmcs->u32RoExitReason);
@@ -8360,8 +8669,8 @@ static int hmR0VmxImportGuestState(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo, uint64
                     VMXLOCAL_BREAK_RC(rc);
                 }
 # endif
-#endif
             }
+#endif
         } while (0);
 
         if (RT_SUCCESS(rc))
@@ -8433,7 +8742,7 @@ static int hmR0VmxImportGuestState(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo, uint64
 VMMR0DECL(int) VMXR0ImportStateOnDemand(PVMCPU pVCpu, uint64_t fWhat)
 {
     AssertPtr(pVCpu);
-    PCVMXVMCSINFO pVmcsInfo = hmGetVmxActiveVmcsInfo(pVCpu);
+    PVMXVMCSINFO pVmcsInfo = hmGetVmxActiveVmcsInfo(pVCpu);
     return hmR0VmxImportGuestState(pVCpu, pVmcsInfo, fWhat);
 }
 
@@ -8848,6 +9157,23 @@ static int hmR0VmxLeave(PVMCPU pVCpu, bool fImportState)
     int rc = hmR0VmxClearVmcs(pVmcsInfo);
     AssertRCReturn(rc, rc);
 
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+    /*
+     * A valid shadow VMCS is made active as part of VM-entry. It is necessary to
+     * clear a shadow VMCS before allowing that VMCS to become active on another
+     * logical processor. We may or may not be importing guest state which clears
+     * it, so cover for it here.
+     *
+     * See Intel spec. 24.11.1 "Software Use of Virtual-Machine Control Structures".
+     */
+    if (   pVmcsInfo->pvShadowVmcs
+        && pVmcsInfo->fShadowVmcsState != VMX_V_VMCS_LAUNCH_STATE_CLEAR)
+    {
+        rc = hmR0VmxClearShadowVmcs(pVmcsInfo);
+        AssertRCReturn(rc, rc);
+    }
+#endif
+
     Log4Func(("Cleared Vmcs. HostCpuId=%u\n", idCpu));
     NOREF(idCpu);
     return VINF_SUCCESS;
@@ -9082,7 +9408,8 @@ static DECLCALLBACK(int) hmR0VmxCallRing3Callback(PVMCPU pVCpu, VMMCALLRING3 enm
         pVCpu->hm.s.vmx.fUpdatedHostAutoMsrs = false;
         VMCPU_CMPXCHG_STATE(pVCpu, VMCPUSTATE_STARTED_HM, VMCPUSTATE_STARTED_EXEC);
 
-        /* Clear the current VMCS data back to memory. */
+        /* Clear the current VMCS data back to memory (shadow VMCS if any would have been
+           cleared as part of importing the guest state above. */
         hmR0VmxClearVmcs(pVmcsInfo);
 
         /** @todo eliminate the need for calling VMMR0ThreadCtxHookDisable here!  */
@@ -9232,7 +9559,7 @@ static VBOXSTRICTRC hmR0VmxInjectEventVmcs(PVMCPU pVCpu, PVMXTRANSIENT pVmxTrans
             Assert(!CPUMIsGuestInVmxNonRootMode(&pVCpu->cpum.GstCtx));
 
             /* We require RIP, RSP, RFLAGS, CS, IDTR, import them. */
-            PCVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
+            PVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
             int rc2 = hmR0VmxImportGuestState(pVCpu, pVmcsInfo, CPUMCTX_EXTRN_SREG_MASK | CPUMCTX_EXTRN_TABLE_MASK
                                                               | CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_RSP | CPUMCTX_EXTRN_RFLAGS);
             AssertRCReturn(rc2, rc2);
@@ -9875,6 +10202,9 @@ static VBOXSTRICTRC hmR0VmxExportGuestState(PVMCPU pVCpu, PVMXTRANSIENT pVmxTran
     rc |= hmR0VmxExportGuestRflags(pVCpu, pVmxTransient);
     AssertLogRelMsgRCReturn(rc, ("rc=%Rrc\n", rc), rc);
 
+    rc = hmR0VmxExportGuestHwvirtState(pVCpu, pVmxTransient);
+    AssertLogRelMsgRCReturn(rc, ("rc=%Rrc\n", rc), rc);
+
     /* Clear any bits that may be set but exported unconditionally or unused/reserved bits. */
     ASMAtomicUoAndU64(&pVCpu->hm.s.fCtxChanged, ~(  (HM_CHANGED_GUEST_GPRS_MASK & ~HM_CHANGED_GUEST_RSP)
                                                   |  HM_CHANGED_GUEST_CR2
@@ -9887,7 +10217,6 @@ static VBOXSTRICTRC hmR0VmxExportGuestState(PVMCPU pVCpu, PVMXTRANSIENT pVmxTran
                                                   |  HM_CHANGED_GUEST_SYSCALL_MSRS   /* Part of lazy or auto load-store MSRs. */
                                                   |  HM_CHANGED_GUEST_TSC_AUX
                                                   |  HM_CHANGED_GUEST_OTHER_MSRS
-                                                  |  HM_CHANGED_GUEST_HWVIRT         /* More accurate PLE handling someday? */
                                                   | (HM_CHANGED_KEEPER_STATE_MASK & ~HM_CHANGED_VMX_MASK)));
 
     STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExportGuestState, x);
@@ -11084,6 +11413,8 @@ static VBOXSTRICTRC hmR0VmxPreRunGuest(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient
      * Events in TRPM can be injected without inspecting the guest state.
      * If any new events (interrupts/NMI) are pending currently, we try to set up the
      * guest to cause a VM-exit the next time they are ready to receive the event.
+     *
+     * With nested-guests, evaluating pending events may cause VM-exits.
      */
     if (TRPMHasTrap(pVCpu))
         hmR0VmxTrpmTrapToPendingEvent(pVCpu);
@@ -11110,8 +11441,8 @@ static VBOXSTRICTRC hmR0VmxPreRunGuest(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient
      * needs to be done with longjmps or interrupts + preemption enabled. Event injection might
      * also result in triple-faulting the VM.
      *
-     * The above does not apply when executing a nested-guest (since unrestricted guest execution
-     * is a requirement) regardless doing it avoid duplicating code elsewhere.
+     * With nested-guests, the above does not apply since unrestricted guest execution is a
+     * requirement. Regardless, we do this here to avoid duplicating code elsewhere.
      */
     rcStrict = hmR0VmxInjectPendingEvent(pVCpu, pVmxTransient, fIntrState, fStepping);
     if (RT_LIKELY(rcStrict == VINF_SUCCESS))
@@ -11163,7 +11494,7 @@ static VBOXSTRICTRC hmR0VmxPreRunGuest(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient
      * CPU migration.
      *
      * If we are injecting events to a real-on-v86 mode guest, we would have updated RIP and some segment
-     * registers. Hence, loading of the guest state needs to be done -after- injection of events.
+     * registers. Hence, exporting of the guest state needs to be done -after- injection of events.
      */
     rcStrict = hmR0VmxExportGuestStateOptimal(pVCpu, pVmxTransient);
     if (RT_LIKELY(rcStrict == VINF_SUCCESS))
@@ -11656,6 +11987,7 @@ static VBOXSTRICTRC hmR0VmxRunGuestCodeNested(PVMCPU pVCpu, uint32_t *pcLoops)
     uint32_t const cMaxResumeLoops = pVCpu->CTX_SUFF(pVM)->hm.s.cMaxResumeLoops;
     Assert(pcLoops);
     Assert(*pcLoops <= cMaxResumeLoops);
+    Assert(CPUMIsGuestInVmxNonRootMode(&pVCpu->cpum.GstCtx));
 
     VMXTRANSIENT VmxTransient;
     RT_ZERO(VmxTransient);
@@ -13144,7 +13476,7 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExit(PVMCPU pVCpu, PVMXTRANSIENT pVmxTrans
 #define VMEXIT_CALL_RET(a_fSave, a_CallExpr) \
        do { \
             if (a_fSave != 0) \
-                hmR0VmxImportGuestState(pVCpu, HMVMX_CPUMCTX_EXTRN_ALL); \
+                hmR0VmxImportGuestState(pVCpu, pVmxTransient->pVmcsInfo, HMVMX_CPUMCTX_EXTRN_ALL); \
             VBOXSTRICTRC rcStrict = a_CallExpr; \
             if (a_fSave != 0) \
                 ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_ALL_GUEST); \
@@ -13696,7 +14028,7 @@ HMVMX_EXIT_DECL hmR0VmxExitXcptOrNmi(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
     STAM_PROFILE_ADV_START(&pVCpu->hm.s.StatExitXcptNmi, y3);
 
-    PCVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
+    PVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
     int rc = hmR0VmxReadExitIntInfoVmcs(pVmxTransient);
     AssertRCReturn(rc, rc);
 
@@ -13913,7 +14245,7 @@ HMVMX_EXIT_DECL hmR0VmxExitCpuid(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
     /*
      * Get the state we need and update the exit history entry.
      */
-    PCVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
+    PVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
     int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
     rc    |= hmR0VmxImportGuestState(pVCpu, pVmcsInfo, IEM_CPUMCTX_EXTRN_EXEC_DECODED_NO_MEM_MASK);
     AssertRCReturn(rc, rc);
@@ -13965,7 +14297,7 @@ HMVMX_EXIT_DECL hmR0VmxExitGetsec(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
 
-    PCVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
+    PVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
     int rc = hmR0VmxImportGuestState(pVCpu, pVmcsInfo, CPUMCTX_EXTRN_CR4);
     AssertRCReturn(rc, rc);
 
@@ -13984,7 +14316,7 @@ HMVMX_EXIT_DECL hmR0VmxExitRdtsc(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
 
-    PCVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
+    PVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
     int rc = hmR0VmxImportGuestState(pVCpu, pVmcsInfo, IEM_CPUMCTX_EXTRN_MUST_MASK);
     rc    |= hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
     AssertRCReturn(rc, rc);
@@ -14014,7 +14346,7 @@ HMVMX_EXIT_DECL hmR0VmxExitRdtscp(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
 
-    PCVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
+    PVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
     int rc = hmR0VmxImportGuestState(pVCpu, pVmcsInfo, IEM_CPUMCTX_EXTRN_MUST_MASK | CPUMCTX_EXTRN_TSC_AUX);
     rc    |= hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
     AssertRCReturn(rc, rc);
@@ -14044,7 +14376,7 @@ HMVMX_EXIT_DECL hmR0VmxExitRdpmc(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
 
-    PCVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
+    PVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
     int rc = hmR0VmxImportGuestState(pVCpu, pVmcsInfo, CPUMCTX_EXTRN_CR4    | CPUMCTX_EXTRN_CR0
                                                      | CPUMCTX_EXTRN_RFLAGS | CPUMCTX_EXTRN_SS);
     AssertRCReturn(rc, rc);
@@ -14075,7 +14407,7 @@ HMVMX_EXIT_DECL hmR0VmxExitVmcall(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
     VBOXSTRICTRC rcStrict = VERR_VMX_IPE_3;
     if (EMAreHypercallInstructionsEnabled(pVCpu))
     {
-        PCVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
+        PVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
         int rc = hmR0VmxImportGuestState(pVCpu, pVmcsInfo, CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_RFLAGS | CPUMCTX_EXTRN_CR0
                                                          | CPUMCTX_EXTRN_SS  | CPUMCTX_EXTRN_CS     | CPUMCTX_EXTRN_EFER);
         AssertRCReturn(rc, rc);
@@ -14117,7 +14449,7 @@ HMVMX_EXIT_DECL hmR0VmxExitInvlpg(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
     Assert(!pVCpu->CTX_SUFF(pVM)->hm.s.fNestedPaging || pVCpu->hm.s.fUsingDebugLoop);
 
-    PCVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
+    PVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
     int rc = hmR0VmxReadExitQualVmcs(pVCpu, pVmxTransient);
     rc    |= hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
     rc    |= hmR0VmxImportGuestState(pVCpu, pVmcsInfo, IEM_CPUMCTX_EXTRN_EXEC_DECODED_MEM_MASK);
@@ -14146,7 +14478,7 @@ HMVMX_EXIT_DECL hmR0VmxExitMonitor(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
 
-    PCVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
+    PVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
     int rc = hmR0VmxImportGuestState(pVCpu, pVmcsInfo, IEM_CPUMCTX_EXTRN_EXEC_DECODED_MEM_MASK | CPUMCTX_EXTRN_DS);
     rc    |= hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
     AssertRCReturn(rc, rc);
@@ -14171,7 +14503,7 @@ HMVMX_EXIT_DECL hmR0VmxExitMwait(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
 
-    PCVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
+    PVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
     int rc = hmR0VmxImportGuestState(pVCpu, pVmcsInfo, IEM_CPUMCTX_EXTRN_EXEC_DECODED_NO_MEM_MASK);
     rc    |= hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
     AssertRCReturn(rc, rc);
@@ -14258,7 +14590,7 @@ HMVMX_EXIT_DECL hmR0VmxExitXsetbv(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
 
-    PCVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
+    PVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
     int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
     rc    |= hmR0VmxImportGuestState(pVCpu, pVmcsInfo, IEM_CPUMCTX_EXTRN_MUST_MASK | CPUMCTX_EXTRN_CR4);
     AssertRCReturn(rc, rc);
@@ -14291,7 +14623,7 @@ HMVMX_EXIT_DECL hmR0VmxExitInvpcid(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
  */
 HMVMX_EXIT_NSRC_DECL hmR0VmxExitErrInvalidGuestState(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
-    PCVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
+    PVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
     int rc = hmR0VmxImportGuestState(pVCpu, pVmcsInfo, HMVMX_CPUMCTX_EXTRN_ALL);
     AssertRCReturn(rc, rc);
 
@@ -14436,9 +14768,9 @@ HMVMX_EXIT_DECL hmR0VmxExitRdmsr(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
      * (CPUMCTX_EXTRN_ALL_MSRS) here.  We should optimize this to only get
      * MSRs required.  That would require changes to IEM and possibly CPUM too.
      * (Should probably do it lazy fashion from CPUMAllMsrs.cpp). */
-    PCVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
-    uint32_t const idMsr    = pVCpu->cpum.GstCtx.ecx;
-    uint64_t       fImport  = IEM_CPUMCTX_EXTRN_EXEC_DECODED_NO_MEM_MASK | CPUMCTX_EXTRN_ALL_MSRS;
+    PVMXVMCSINFO   pVmcsInfo = pVmxTransient->pVmcsInfo;
+    uint32_t const idMsr     = pVCpu->cpum.GstCtx.ecx;
+    uint64_t       fImport   = IEM_CPUMCTX_EXTRN_EXEC_DECODED_NO_MEM_MASK | CPUMCTX_EXTRN_ALL_MSRS;
     switch (idMsr)
     {
         case MSR_K8_FS_BASE: fImport |= CPUMCTX_EXTRN_FS; break;
@@ -14516,7 +14848,7 @@ HMVMX_EXIT_DECL hmR0VmxExitWrmsr(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
         case MSR_K8_GS_BASE: fImport |= CPUMCTX_EXTRN_GS; break;
     }
 
-    PCVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
+    PVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
     int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
     rc    |= hmR0VmxImportGuestState(pVCpu, pVmcsInfo, fImport);
     AssertRCReturn(rc, rc);
@@ -14684,7 +15016,7 @@ HMVMX_EXIT_DECL hmR0VmxExitMovCRx(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
     STAM_PROFILE_ADV_START(&pVCpu->hm.s.StatExitMovCRx, y2);
 
-    PCVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
+    PVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
     int rc = hmR0VmxReadExitQualVmcs(pVCpu, pVmxTransient);
     rc    |= hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
     AssertRCReturn(rc, rc);
@@ -14837,7 +15169,7 @@ HMVMX_EXIT_DECL hmR0VmxExitIoInstr(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
     STAM_PROFILE_ADV_START(&pVCpu->hm.s.StatExitIO, y1);
 
     PCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
-    PCVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
+    PVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
     int rc = hmR0VmxReadExitQualVmcs(pVCpu, pVmxTransient);
     rc    |= hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
     rc    |= hmR0VmxImportGuestState(pVCpu, pVmcsInfo, IEM_CPUMCTX_EXTRN_MUST_MASK | CPUMCTX_EXTRN_SREG_MASK
@@ -15335,7 +15667,7 @@ HMVMX_EXIT_DECL hmR0VmxExitEptMisconfig(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransien
      * Get sufficent state and update the exit history entry.
      */
     RTGCPHYS GCPhys;
-    PCVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
+    PVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
     int rc = VMXReadVmcs64(VMX_VMCS64_RO_GUEST_PHYS_ADDR_FULL, &GCPhys);
     rc    |= hmR0VmxImportGuestState(pVCpu, pVmcsInfo, IEM_CPUMCTX_EXTRN_MUST_MASK);
     AssertRCReturn(rc, rc);
@@ -15414,7 +15746,7 @@ HMVMX_EXIT_DECL hmR0VmxExitEptViolation(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransien
     }
 
     RTGCPHYS GCPhys;
-    PCVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
+    PVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
     int rc  = VMXReadVmcs64(VMX_VMCS64_RO_GUEST_PHYS_ADDR_FULL, &GCPhys);
     rc     |= hmR0VmxReadExitQualVmcs(pVCpu, pVmxTransient);
     rc     |= hmR0VmxImportGuestState(pVCpu, pVmcsInfo, IEM_CPUMCTX_EXTRN_MUST_MASK);
@@ -15912,8 +16244,7 @@ static VBOXSTRICTRC hmR0VmxExitXcptPF(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 /**
  * VM-exit helper for LMSW.
  */
-static VBOXSTRICTRC hmR0VmxExitLmsw(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo, uint8_t cbInstr, uint16_t uMsw,
-                                    RTGCPTR GCPtrEffDst)
+static VBOXSTRICTRC hmR0VmxExitLmsw(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo, uint8_t cbInstr, uint16_t uMsw, RTGCPTR GCPtrEffDst)
 {
     int rc = hmR0VmxImportGuestState(pVCpu, pVmcsInfo, IEM_CPUMCTX_EXTRN_MUST_MASK);
     AssertRCReturn(rc, rc);
@@ -15938,7 +16269,7 @@ static VBOXSTRICTRC hmR0VmxExitLmsw(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo, uint8
 /**
  * VM-exit helper for CLTS.
  */
-static VBOXSTRICTRC hmR0VmxExitClts(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo, uint8_t cbInstr)
+static VBOXSTRICTRC hmR0VmxExitClts(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo, uint8_t cbInstr)
 {
     int rc = hmR0VmxImportGuestState(pVCpu, pVmcsInfo, IEM_CPUMCTX_EXTRN_MUST_MASK);
     AssertRCReturn(rc, rc);
@@ -15963,7 +16294,7 @@ static VBOXSTRICTRC hmR0VmxExitClts(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo, uint8
 /**
  * VM-exit helper for MOV from CRx (CRx read).
  */
-static VBOXSTRICTRC hmR0VmxExitMovFromCrX(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo, uint8_t cbInstr, uint8_t iGReg, uint8_t iCrReg)
+static VBOXSTRICTRC hmR0VmxExitMovFromCrX(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo, uint8_t cbInstr, uint8_t iGReg, uint8_t iCrReg)
 {
     Assert(iCrReg < 16);
     Assert(iGReg < RT_ELEMENTS(pVCpu->cpum.GstCtx.aGRegs));
@@ -15997,7 +16328,7 @@ static VBOXSTRICTRC hmR0VmxExitMovFromCrX(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo,
 /**
  * VM-exit helper for MOV to CRx (CRx write).
  */
-static VBOXSTRICTRC hmR0VmxExitMovToCrX(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo, uint8_t cbInstr, uint8_t iGReg, uint8_t iCrReg)
+static VBOXSTRICTRC hmR0VmxExitMovToCrX(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo, uint8_t cbInstr, uint8_t iGReg, uint8_t iCrReg)
 {
     int rc = hmR0VmxImportGuestState(pVCpu, pVmcsInfo, IEM_CPUMCTX_EXTRN_MUST_MASK);
     AssertRCReturn(rc, rc);
@@ -16093,6 +16424,7 @@ HMVMX_EXIT_DECL hmR0VmxExitVmclear(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 
     int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
     rc    |= hmR0VmxImportGuestState(pVCpu, pVmxTransient->pVmcsInfo, CPUMCTX_EXTRN_RSP | CPUMCTX_EXTRN_SREG_MASK
+                                                                    | CPUMCTX_EXTRN_HWVIRT
                                                                     | IEM_CPUMCTX_EXTRN_EXEC_DECODED_MEM_MASK);
     rc    |= hmR0VmxReadExitInstrInfoVmcs(pVmxTransient);
     rc    |= hmR0VmxReadExitQualVmcs(pVCpu, pVmxTransient);
@@ -16138,8 +16470,9 @@ HMVMX_EXIT_DECL hmR0VmxExitVmlaunch(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
     VBOXSTRICTRC rcStrict = IEMExecDecodedVmlaunchVmresume(pVCpu, pVmxTransient->cbInstr, VMXINSTRID_VMLAUNCH);
     if (RT_LIKELY(rcStrict == VINF_SUCCESS))
     {
-        rcStrict = VINF_VMX_VMLAUNCH_VMRESUME;
         ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_ALL_GUEST);
+        if (CPUMIsGuestInVmxNonRootMode(&pVCpu->cpum.GstCtx))
+            rcStrict = VINF_VMX_VMLAUNCH_VMRESUME;
     }
     Assert(rcStrict != VINF_IEM_RAISED_XCPT);
     return rcStrict;
@@ -16155,6 +16488,7 @@ HMVMX_EXIT_DECL hmR0VmxExitVmptrld(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 
     int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
     rc    |= hmR0VmxImportGuestState(pVCpu, pVmxTransient->pVmcsInfo, CPUMCTX_EXTRN_RSP | CPUMCTX_EXTRN_SREG_MASK
+                                                                    | CPUMCTX_EXTRN_HWVIRT
                                                                     | IEM_CPUMCTX_EXTRN_EXEC_DECODED_MEM_MASK);
     rc    |= hmR0VmxReadExitInstrInfoVmcs(pVmxTransient);
     rc    |= hmR0VmxReadExitQualVmcs(pVCpu, pVmxTransient);
@@ -16191,6 +16525,7 @@ HMVMX_EXIT_DECL hmR0VmxExitVmptrst(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 
     int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
     rc    |= hmR0VmxImportGuestState(pVCpu, pVmxTransient->pVmcsInfo, CPUMCTX_EXTRN_RSP | CPUMCTX_EXTRN_SREG_MASK
+                                                                    | CPUMCTX_EXTRN_HWVIRT
                                                                     | IEM_CPUMCTX_EXTRN_EXEC_DECODED_MEM_MASK);
     rc    |= hmR0VmxReadExitInstrInfoVmcs(pVmxTransient);
     rc    |= hmR0VmxReadExitQualVmcs(pVCpu, pVmxTransient);
@@ -16227,6 +16562,7 @@ HMVMX_EXIT_DECL hmR0VmxExitVmread(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 
     int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
     rc    |= hmR0VmxImportGuestState(pVCpu, pVmxTransient->pVmcsInfo, CPUMCTX_EXTRN_RSP | CPUMCTX_EXTRN_SREG_MASK
+                                                                    | CPUMCTX_EXTRN_HWVIRT
                                                                     | IEM_CPUMCTX_EXTRN_EXEC_DECODED_MEM_MASK);
     rc    |= hmR0VmxReadExitInstrInfoVmcs(pVmxTransient);
     rc    |= hmR0VmxReadExitQualVmcs(pVCpu, pVmxTransient);
@@ -16273,8 +16609,9 @@ HMVMX_EXIT_DECL hmR0VmxExitVmresume(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
     VBOXSTRICTRC rcStrict = IEMExecDecodedVmlaunchVmresume(pVCpu, pVmxTransient->cbInstr, VMXINSTRID_VMRESUME);
     if (RT_LIKELY(rcStrict == VINF_SUCCESS))
     {
-        rcStrict = VINF_VMX_VMLAUNCH_VMRESUME;
         ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_ALL_GUEST);
+        if (CPUMIsGuestInVmxNonRootMode(&pVCpu->cpum.GstCtx))
+            rcStrict = VINF_VMX_VMLAUNCH_VMRESUME;
     }
     Assert(rcStrict != VINF_IEM_RAISED_XCPT);
     return rcStrict;
@@ -16288,8 +16625,15 @@ HMVMX_EXIT_DECL hmR0VmxExitVmwrite(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
 
+    /*
+     * Although we should not get VMWRITE VM-exits for shadow VMCS fields, since
+     * our HM hook that gets invoked when IEM's VMWRITE instruction emulation
+     * modifies the current VMCS signals re-loading the entire shadow VMCS, we
+     * should also save the entire shadow VMCS here.
+     */
     int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
     rc    |= hmR0VmxImportGuestState(pVCpu, pVmxTransient->pVmcsInfo, CPUMCTX_EXTRN_RSP | CPUMCTX_EXTRN_SREG_MASK
+                                                                    | CPUMCTX_EXTRN_HWVIRT
                                                                     | IEM_CPUMCTX_EXTRN_EXEC_DECODED_MEM_MASK);
     rc    |= hmR0VmxReadExitInstrInfoVmcs(pVmxTransient);
     rc    |= hmR0VmxReadExitQualVmcs(pVCpu, pVmxTransient);
@@ -16305,6 +16649,9 @@ HMVMX_EXIT_DECL hmR0VmxExitVmwrite(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
     ExitInfo.cbInstr     = pVmxTransient->cbInstr;
     if (!ExitInfo.InstrInfo.VmreadVmwrite.fIsRegOperand)
         HMVMX_DECODE_MEM_OPERAND(pVCpu, ExitInfo.InstrInfo.u, ExitInfo.u64Qual, VMXMEMACCESS_READ, &ExitInfo.GCPtrEffAddr);
+
+    /** @todo NSTVMX: Remove later. */
+    Log4Func(("VMWRITE: %#x\n", pVCpu->cpum.GstCtx.aGRegs[ExitInfo.InstrInfo.VmreadVmwrite.iReg2].u32));
 
     VBOXSTRICTRC rcStrict = IEMExecDecodedVmwrite(pVCpu, &ExitInfo);
     if (RT_LIKELY(rcStrict == VINF_SUCCESS))
@@ -16327,6 +16674,7 @@ HMVMX_EXIT_DECL hmR0VmxExitVmxoff(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 
     int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
     rc    |= hmR0VmxImportGuestState(pVCpu, pVmxTransient->pVmcsInfo, CPUMCTX_EXTRN_CR4
+                                                                    | CPUMCTX_EXTRN_HWVIRT
                                                                     | IEM_CPUMCTX_EXTRN_EXEC_DECODED_NO_MEM_MASK);
     AssertRCReturn(rc, rc);
 
@@ -16353,6 +16701,7 @@ HMVMX_EXIT_DECL hmR0VmxExitVmxon(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 
     int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
     rc    |= hmR0VmxImportGuestState(pVCpu, pVmxTransient->pVmcsInfo, CPUMCTX_EXTRN_RSP | CPUMCTX_EXTRN_SREG_MASK
+                                                                    | CPUMCTX_EXTRN_HWVIRT
                                                                     | IEM_CPUMCTX_EXTRN_EXEC_DECODED_MEM_MASK);
     rc    |= hmR0VmxReadExitInstrInfoVmcs(pVmxTransient);
     rc    |= hmR0VmxReadExitQualVmcs(pVCpu, pVmxTransient);
