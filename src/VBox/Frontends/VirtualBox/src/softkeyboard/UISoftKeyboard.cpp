@@ -2444,7 +2444,14 @@ QStringList UISoftKeyboardWidget::layoutNameList() const
 {
     QStringList layoutNames;
     foreach (const UISoftKeyboardLayout &layout, m_layouts)
-        layoutNames << layout.name();
+    {
+        if (layout.nativeName().isEmpty() && !layout.name().isEmpty())
+            layoutNames << layout.name();
+        else if (!layout.nativeName().isEmpty() && layout.name().isEmpty())
+            layoutNames << layout.nativeName();
+        else
+            layoutNames << QString("%1 (%2)").arg(layout.nativeName()).arg(layout.name());
+    }
     return layoutNames;
 }
 
