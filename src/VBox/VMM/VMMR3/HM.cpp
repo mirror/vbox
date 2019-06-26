@@ -697,7 +697,6 @@ static int hmR3InitFinalizeR3(PVM pVM)
                              "Exceptions, NMIs.",
                              "/PROF/CPU%d/HM/SwitchFromGC_2/XcptNmi", i);
         AssertRC(rc);
-
         rc = STAMR3RegisterF(pVM, &pVCpu->hm.s.StatImportGuestState, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL,
                              "Profiling of importing guest state from hardware after VM-exit.",
                              "/PROF/CPU%d/HM/ImportGuestState", i);
