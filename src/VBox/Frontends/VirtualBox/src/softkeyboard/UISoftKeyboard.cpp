@@ -17,6 +17,7 @@
 
 /* Qt includes: */
 #include <QApplication>
+#include <QCheckBox>
 #include <QComboBox>
 #include <QFile>
 #include <QGroupBox>
@@ -329,6 +330,12 @@ public:
     void setType(UIKeyType enmType);
     UIKeyType type() const;
 
+    void setIsNumPadKey(bool fIsNumPadKey);
+    bool isNumPadKey() const;
+
+    void setIsOSMenuKey(bool fIsOSMenuKey);
+    bool isOSMenuKey() const;
+
     void setCutout(int iCorner, int iWidth, int iHeight);
 
     void setParentWidget(UISoftKeyboardWidget* pParent);
@@ -347,21 +354,19 @@ public:
     int cutoutWidth() const;
     int cutoutHeight() const;
     QPicture m_textPixmap;
+
 private:
 
     void updateState(bool fPressed);
     void updateText();
 
     QRect      m_keyGeometry;
-
     QString    m_strBaseCaption;
     QString    m_strShiftCaption;
     QString    m_strAltGrCaption;
     QString    m_strShiftAltGrCaption;
-
     /** m_strText is concatenation of base, shift, and altgr captions. */
     QString    m_strText;
-
     /** Stores the key polygon in local coordinates. */
     QPolygon   m_polygon;
     UIKeyType  m_enmType;
@@ -373,13 +378,20 @@ private:
     int        m_iSpaceWidthAfter;
     LONG       m_scanCode;
     LONG       m_scanCodePrefix;
-    int        m_iCutoutWidth;
-    int        m_iCutoutHeight;
-    /** -1 is for no cutout. 0 is the topleft, 2 is the top right and so on. */
-    int        m_iCutoutCorner;
+
+    /** @name Cutouts are used to create non-rectangle keys polygons.
+      * @{ */
+        int  m_iCutoutWidth;
+        int  m_iCutoutHeight;
+        /** -1 is for no cutout. 0 is the topleft, 2 is the top right and so on. */
+        int  m_iCutoutCorner;
+    /** @} */
+
     /** Key's position in the layout. */
     int        m_iPosition;
     UISoftKeyboardWidget  *m_pParentWidget;
+    bool m_fIsNumPadKey;
+    bool m_fIsOSMenuKey;
 };
 
 
@@ -475,7 +487,13 @@ public:
     void updateKeyCaptionsInLayout(UISoftKeyboardKey *pKey);
     void saveCurentLayoutToFile();
     void copyCurentLayout();
-    float layoutAspectRation();
+    float layoutAspectRatio();
+
+    bool showOSMenuKeys();
+    void setShowOSMenuKeys(bool fShow);
+
+    bool showNumPad();
+    void setShowNumPad(bool fShow);
 
 protected:
 
@@ -532,6 +550,7 @@ private:
     float m_fScaleFactorY;
     int   m_iInitialHeight;
     int   m_iInitialWidth;
+    int   m_iInitialWidthNoNumPad;
     int   m_iXSpacing;
     int   m_iYSpacing;
     int   m_iLeftMargin;
@@ -541,6 +560,9 @@ private:
 
     QMenu   *m_pContextMenu;
     Mode     m_enmMode;
+
+    bool m_fShowOSMenuKeys;
+    bool m_fShowNumPad;
 };
 
 /*********************************************************************************************************************************
@@ -603,6 +625,7 @@ class UISoftKeyboardStatusBarWidget : public QIWithRetranslateUI<QWidget>
 signals:
 
     void sigShowHideSidePanel();
+    void sigShowSettingWidget();
 
 public:
 
@@ -620,7 +643,44 @@ private:
 
     void prepareObjects();
     QToolButton  *m_pLayoutListButton;
+    QToolButton  *m_pSettingsButton;
     QLabel       *m_pMessageLabel;
+};
+
+
+/*********************************************************************************************************************************
+*   UISoftKeyboardSettingsWidget  definition.                                                                                    *
+*********************************************************************************************************************************/
+
+class UISoftKeyboardSettingsWidget : public QIWithRetranslateUI<QWidget>
+{
+    Q_OBJECT;
+
+signals:
+
+    void sigShowNumPad(bool fShow);
+    void sigShowOSMenuKeys(bool fShow);
+
+public:
+
+    UISoftKeyboardSettingsWidget(QWidget *pParent = 0);
+    void setShowOSMenuKeys(bool fShow);
+    void setShowNumPad(bool fShow);
+
+protected:
+
+    virtual void retranslateUi() /* override */;
+
+private slots:
+
+
+private:
+
+    void prepareObjects();
+
+    QCheckBox  *m_pShowNumPadCheckBox;
+    QCheckBox  *m_pShowOsMenuButtonsCheckBox;
+
 };
 
 /*********************************************************************************************************************************
@@ -731,7 +791,10 @@ void UILayoutEditor::retranslateUi()
     if (m_pTitleLabel)
         m_pTitleLabel->setText(UISoftKeyboard::tr("Layout Editor"));
     if (m_pGoBackButton)
+    {
         m_pGoBackButton->setToolTip(UISoftKeyboard::tr("Return Back to Layout List"));
+        m_pGoBackButton->setText(UISoftKeyboard::tr("Back to Layout List"));
+    }
     if (m_pPhysicalLayoutLabel)
         m_pPhysicalLayoutLabel->setText(UISoftKeyboard::tr("Physical Layout"));
     if (m_pLayoutNameLabel)
@@ -813,8 +876,10 @@ void UILayoutEditor::prepareObjects()
 
     QHBoxLayout *pTitleLayout = new QHBoxLayout;
     m_pGoBackButton = new QToolButton;
+    m_pGoBackButton->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
     m_pGoBackButton->setIcon(UIIconPool::defaultIcon(UIIconPool::UIDefaultIconType_ArrowBack));
-    m_pGoBackButton->setStyleSheet("QToolButton { border: 0px none black; margin: 0px 0px 0px 0px; } QToolButton::menu-indicator {image: none;}");
+    //m_pGoBackButton->setStyleSheet("QToolButton { border: 0px none black; margin: 0px 0px 0px 0px; } QToolButton::menu-indicator {image: none;}");
+    m_pGoBackButton->setAutoRaise(true);
     m_pEditorLayout->addWidget(m_pGoBackButton, 0, 0, 1, 1);
     connect(m_pGoBackButton, &QToolButton::clicked, this, &UILayoutEditor::sigGoBackButton);
     pTitleLayout->addWidget(m_pGoBackButton);
@@ -1014,7 +1079,10 @@ void UILayoutSelector::retranslateUi()
     if (m_pTitleLabel)
         m_pTitleLabel->setText(UISoftKeyboard::tr("Layout List"));
     if (m_pCloseButton)
+    {
         m_pCloseButton->setToolTip(UISoftKeyboard::tr("Close the layout list"));
+        m_pCloseButton->setText("Close");
+    }
 }
 
 void UILayoutSelector::prepareObjects()
@@ -1027,8 +1095,10 @@ void UILayoutSelector::prepareObjects()
 
     QHBoxLayout *pTitleLayout = new QHBoxLayout;
     m_pCloseButton = new QToolButton;
+    m_pCloseButton->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
     m_pCloseButton->setIcon(UIIconPool::defaultIcon(UIIconPool::UIDefaultIconType_DialogCancel));
-    m_pCloseButton->setStyleSheet("QToolButton { border: 0px none black; margin: 0px 0px 0px 0px; } QToolButton::menu-indicator {image: none;}");
+    //m_pCloseButton->setStyleSheet("QToolButton { border: 0px none black; margin: 0px 0px 0px 0px; } QToolButton::menu-indicator {image: none;}");
+    m_pCloseButton->setAutoRaise(true);
     connect(m_pCloseButton, &QToolButton::clicked, this, &UILayoutSelector::sigCloseLayoutList);
     pTitleLayout->addWidget(m_pCloseButton);
     pTitleLayout->addStretch(2);
@@ -1136,6 +1206,9 @@ UISoftKeyboardKey::UISoftKeyboardKey()
     , m_iCutoutCorner(-1)
     , m_iPosition(0)
     , m_pParentWidget(0)
+    , m_fIsNumPadKey(false)
+    , m_fIsOSMenuKey(false)
+
 {
 }
 
@@ -1275,6 +1348,26 @@ void UISoftKeyboardKey::setType(UIKeyType enmType)
 UIKeyType UISoftKeyboardKey::type() const
 {
     return m_enmType;
+}
+
+void UISoftKeyboardKey::setIsNumPadKey(bool fIsNumPadKey)
+{
+    m_fIsNumPadKey = fIsNumPadKey;
+}
+
+bool UISoftKeyboardKey::isNumPadKey() const
+{
+    return m_fIsNumPadKey;
+}
+
+void UISoftKeyboardKey::setIsOSMenuKey(bool fIsOSMenuKey)
+{
+    m_fIsOSMenuKey = fIsOSMenuKey;
+}
+
+bool UISoftKeyboardKey::isOSMenuKey() const
+{
+    return m_fIsOSMenuKey;
 }
 
 void UISoftKeyboardKey::setCutout(int iCorner, int iWidth, int iHeight)
@@ -1538,6 +1631,7 @@ UISoftKeyboardWidget::UISoftKeyboardWidget(QWidget *pParent /* = 0 */)
     , m_pCurrentKeyboardLayout(0)
     , m_iInitialHeight(0)
     , m_iInitialWidth(0)
+    , m_iInitialWidthNoNumPad(0)
     , m_iXSpacing(5)
     , m_iYSpacing(5)
     , m_iLeftMargin(10)
@@ -1546,6 +1640,8 @@ UISoftKeyboardWidget::UISoftKeyboardWidget(QWidget *pParent /* = 0 */)
     , m_iBottomMargin(10)
     , m_pContextMenu(0)
     , m_enmMode(Mode_Keyboard)
+    , m_fShowOSMenuKeys(true)
+    , m_fShowNumPad(true)
 {
     prepareObjects();
 }
@@ -1565,7 +1661,13 @@ QSize UISoftKeyboardWidget::sizeHint() const
 void UISoftKeyboardWidget::paintEvent(QPaintEvent *pEvent) /* override */
 {
     Q_UNUSED(pEvent);
-    m_fScaleFactorX = width() / (float) m_iInitialWidth;
+    if (!m_pCurrentKeyboardLayout || m_iInitialWidth == 0 || m_iInitialWidthNoNumPad == 0 || m_iInitialHeight == 0)
+        return;
+
+    if (m_fShowNumPad)
+        m_fScaleFactorX = width() / (float) m_iInitialWidth;
+    else
+        m_fScaleFactorX = width() / (float) m_iInitialWidthNoNumPad;
     m_fScaleFactorY = height() / (float) m_iInitialHeight;
 
     QPainter painter(this);
@@ -1579,8 +1681,6 @@ void UISoftKeyboardWidget::paintEvent(QPaintEvent *pEvent) /* override */
     float fLedRadius =  0.8 * unitSize;
     float fLedMargin =  0.6 * unitSize;
 
-    if (!m_pCurrentKeyboardLayout || m_iInitialWidth == 0 || m_iInitialHeight == 0)
-        return;
 
     UISoftKeyboardPhysicalLayout *pPhysicalLayout = findPhysicalLayout(m_pCurrentKeyboardLayout->physicalLayoutUuid());
     if (!pPhysicalLayout)
@@ -1593,6 +1693,12 @@ void UISoftKeyboardWidget::paintEvent(QPaintEvent *pEvent) /* override */
         for (int j = 0; j < keys.size(); ++j)
         {
             UISoftKeyboardKey &key = keys[j];
+            if (!m_fShowOSMenuKeys && key.isOSMenuKey())
+                continue;
+
+            if (!m_fShowNumPad &&key.isNumPadKey())
+                continue;
+
             painter.translate(key.keyGeometry().x(), key.keyGeometry().y());
 
             if(&key  == m_pKeyBeingEdited)
@@ -1771,11 +1877,37 @@ void UISoftKeyboardWidget::copyCurentLayout()
     addLayout(newLayout);
 }
 
-float UISoftKeyboardWidget::layoutAspectRation()
+float UISoftKeyboardWidget::layoutAspectRatio()
 {
     if (m_iInitialWidth == 0)
         return 1.f;
     return  m_iInitialHeight / (float) m_iInitialWidth;
+}
+
+bool UISoftKeyboardWidget::showOSMenuKeys()
+{
+    return m_fShowOSMenuKeys;
+}
+
+void UISoftKeyboardWidget::setShowOSMenuKeys(bool fShow)
+{
+    if (m_fShowOSMenuKeys == fShow)
+        return;
+    m_fShowOSMenuKeys = fShow;
+    update();
+}
+
+bool UISoftKeyboardWidget::showNumPad()
+{
+    return m_fShowNumPad;
+}
+
+void UISoftKeyboardWidget::setShowNumPad(bool fShow)
+{
+    if (m_fShowNumPad == fShow)
+        return;
+    m_fShowNumPad = fShow;
+    update();
 }
 
 void UISoftKeyboardWidget::deleteCurrentLayout()
@@ -2019,10 +2151,22 @@ bool UISoftKeyboardWidget::loadPhysicalLayout(const QString &strLayoutFileName, 
     }
 
     if (isNumPad)
+    {
+        /* Mark all the key as numpad keys: */
+        for (int i = 0; i < m_numPadLayout.rows().size(); ++i)
+        {
+            UISoftKeyboardRow &row = m_numPadLayout.rows()[i];
+            for (int j = 0; j < row.keys().size(); ++j)
+            {
+                row.keys()[j].setIsNumPadKey(true);
+            }
+        }
         return true;
+    }
 
     int iY = m_iTopMargin;
     int iMaxWidth = 0;
+    int iMaxWidthNoNumPad = 0;
     const QVector<UISoftKeyboardRow> &numPadRows = m_numPadLayout.rows();
     QVector<UISoftKeyboardRow> &rows = newPhysicalLayout->rows();
     int iKeyCount = 0;
@@ -2041,6 +2185,7 @@ bool UISoftKeyboardWidget::loadPhysicalLayout(const QString &strLayoutFileName, 
         }
 
         int iX = m_iLeftMargin;
+        int iXNoNumPad = m_iLeftMargin;
         int iRowHeight = row.defaultHeight();
         for (int j = 0; j < row.keys().size(); ++j)
         {
@@ -2054,17 +2199,29 @@ bool UISoftKeyboardWidget::loadPhysicalLayout(const QString &strLayoutFileName, 
                 iX += m_iXSpacing;
             if (key.spaceWidthAfter() != 0)
                 iX += (m_iXSpacing + key.spaceWidthAfter());
+
+            if (!key.isNumPadKey())
+            {
+                iXNoNumPad += key.width();
+                if (j < row.keys().size() - 1)
+                    iXNoNumPad += m_iXSpacing;
+                if (key.spaceWidthAfter() != 0)
+                    iXNoNumPad += (m_iXSpacing + key.spaceWidthAfter());
+            }
         }
         if (row.spaceHeightAfter() != 0)
             iY += row.spaceHeightAfter() + m_iYSpacing;
         iMaxWidth = qMax(iMaxWidth, iX);
+        iMaxWidthNoNumPad = qMax(iMaxWidthNoNumPad, iXNoNumPad);
         iY += iRowHeight;
         if (i < rows.size() - 1)
             iY += m_iYSpacing;
     }
     int iInitialWidth = iMaxWidth + m_iRightMargin;
+    int iInitialWidthNoNumPad = iMaxWidthNoNumPad + m_iRightMargin;
     int iInitialHeight = iY + m_iBottomMargin;
     m_iInitialWidth = qMax(m_iInitialWidth, iInitialWidth);
+    m_iInitialWidthNoNumPad = qMax(m_iInitialWidthNoNumPad, iInitialWidthNoNumPad);
     m_iInitialHeight = qMax(m_iInitialHeight, iInitialHeight);
     //printf("%s total key count: %d\n", qPrintable(strLayoutFileName), iKeyCount - 3 /* substract OS an menu keys */);
     return true;
@@ -2366,6 +2523,11 @@ void UIPhysicalLayoutReader::parseKey(UISoftKeyboardRow &row)
             else if (strType == "toggleable")
                 key.setType(UIKeyType_Toggleable);
         }
+        else if (m_xmlReader.name() == "osmenukey")
+        {
+            if (m_xmlReader.readElementText() == "true")
+                key.setIsOSMenuKey(true);
+        }
         else
             m_xmlReader.skipCurrentElement();
     }
@@ -2543,6 +2705,7 @@ void  UIKeyboardLayoutReader::parseKey()
 UISoftKeyboardStatusBarWidget::UISoftKeyboardStatusBarWidget(QWidget *pParent /* = 0*/ )
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_pLayoutListButton(0)
+    , m_pSettingsButton(0)
     , m_pMessageLabel(0)
 {
     prepareObjects();
@@ -2551,7 +2714,9 @@ UISoftKeyboardStatusBarWidget::UISoftKeyboardStatusBarWidget(QWidget *pParent /*
 void UISoftKeyboardStatusBarWidget::retranslateUi()
 {
     if (m_pLayoutListButton)
-        m_pLayoutListButton->setToolTip(tr("Show the Layout List"));
+        m_pLayoutListButton->setToolTip(tr("Layout List"));
+    if (m_pSettingsButton)
+        m_pSettingsButton->setToolTip(tr("Settings"));
 }
 
 void UISoftKeyboardStatusBarWidget::prepareObjects()
@@ -2574,6 +2739,18 @@ void UISoftKeyboardStatusBarWidget::prepareObjects()
         pLayout->addWidget(m_pLayoutListButton);
     }
 
+    m_pSettingsButton = new QToolButton;
+    if (m_pSettingsButton)
+    {
+        m_pSettingsButton->setIcon(UIIconPool::iconSet(":/vm_settings_16px.png"));
+        m_pSettingsButton->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+        const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
+        m_pSettingsButton->resize(QSize(iIconMetric, iIconMetric));
+        m_pSettingsButton->setStyleSheet("QToolButton { border: 0px none black; margin: 0px 0px 0px 0px; } QToolButton::menu-indicator {image: none;}");
+        connect(m_pSettingsButton, &QToolButton::clicked, this, &UISoftKeyboardStatusBarWidget::sigShowSettingWidget);
+        pLayout->addWidget(m_pSettingsButton);
+    }
+
     m_pMessageLabel = new QLabel;
     pLayout->addWidget(m_pMessageLabel);
     retranslateUi();
@@ -2585,6 +2762,63 @@ void UISoftKeyboardStatusBarWidget::updateMessage(const QString &strMessage)
         return;
     m_pMessageLabel->setText(strMessage);
 }
+
+
+/*********************************************************************************************************************************
+*   UISoftKeyboardSettingsWidget implementation.                                                                                 *
+*********************************************************************************************************************************/
+
+UISoftKeyboardSettingsWidget::UISoftKeyboardSettingsWidget(QWidget *pParent /* = 0 */)
+    : QIWithRetranslateUI<QWidget>(pParent)
+    , m_pShowNumPadCheckBox(0)
+    , m_pShowOsMenuButtonsCheckBox(0)
+{
+    prepareObjects();
+}
+
+void UISoftKeyboardSettingsWidget::setShowOSMenuKeys(bool fShow)
+{
+    if (m_pShowOsMenuButtonsCheckBox)
+        m_pShowOsMenuButtonsCheckBox->setChecked(fShow);
+}
+
+void UISoftKeyboardSettingsWidget::setShowNumPad(bool fShow)
+{
+    if (m_pShowNumPadCheckBox)
+        m_pShowNumPadCheckBox->setChecked(fShow);
+}
+
+void UISoftKeyboardSettingsWidget::retranslateUi()
+{
+    if (m_pShowNumPadCheckBox)
+        m_pShowNumPadCheckBox->setText(UISoftKeyboard::tr("Show NumPad"));
+    if (m_pShowOsMenuButtonsCheckBox)
+        m_pShowOsMenuButtonsCheckBox->setText(UISoftKeyboard::tr("Show OS/Menu Keys"));
+
+}
+
+void UISoftKeyboardSettingsWidget::prepareObjects()
+{
+    QGridLayout *pSettingsLayout = new QGridLayout;
+    if (!pSettingsLayout)
+        return;
+    m_pShowNumPadCheckBox = new QCheckBox;
+    m_pShowOsMenuButtonsCheckBox = new QCheckBox;
+
+    pSettingsLayout->addWidget(m_pShowNumPadCheckBox, 0, 0);
+    pSettingsLayout->addWidget(m_pShowOsMenuButtonsCheckBox, 1, 0);
+
+    connect(m_pShowNumPadCheckBox, &QCheckBox::toggled, this, &UISoftKeyboardSettingsWidget::sigShowNumPad);
+    connect(m_pShowOsMenuButtonsCheckBox, &QCheckBox::toggled, this, &UISoftKeyboardSettingsWidget::sigShowOSMenuKeys);
+
+    QSpacerItem *pSpacer = new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Expanding);
+    if (pSpacer)
+        pSettingsLayout->addItem(pSpacer, 2, 0);
+
+    setLayout(pSettingsLayout);
+    retranslateUi();
+}
+
 
 /*********************************************************************************************************************************
 *   UISoftKeyboard implementation.                                                                                  *
@@ -2601,6 +2835,7 @@ UISoftKeyboard::UISoftKeyboard(QWidget *pParent,
     , m_pSidePanelWidget(0)
     , m_pLayoutEditor(0)
     , m_pLayoutSelector(0)
+    , m_pSettingsWidget(0)
     , m_pStatusBarWidget(0)
 {
     setWindowTitle(QString("%1 - %2").arg(m_strMachineName).arg(tr("Soft Keyboard")));
@@ -2722,7 +2957,20 @@ void UISoftKeyboard::sltShowHideSidePanel()
     if (!m_pSidePanelWidget)
         return;
     m_pSidePanelWidget->setVisible(!m_pSidePanelWidget->isVisible());
+
+    if (m_pSidePanelWidget->isVisible() && m_pSettingsWidget->isVisible())
+        m_pSettingsWidget->setVisible(false);
 }
+
+void UISoftKeyboard::sltShowHideSettingsWidget()
+{
+    if (!m_pSettingsWidget)
+        return;
+    m_pSettingsWidget->setVisible(!m_pSettingsWidget->isVisible());
+    if (m_pSidePanelWidget->isVisible() && m_pSettingsWidget->isVisible())
+        m_pSidePanelWidget->setVisible(false);
+}
+
 
 void UISoftKeyboard::sltCopyLayout()
 {
@@ -2749,6 +2997,18 @@ void UISoftKeyboard::sltStatusBarMessage(const QString &strMessage)
     statusBar()->showMessage(strMessage, iMessageTimeout);
 }
 
+void UISoftKeyboard::sltShowHideOSMenuKeys(bool fShow)
+{
+    if (m_pKeyboardWidget)
+        m_pKeyboardWidget->setShowOSMenuKeys(fShow);
+}
+
+void UISoftKeyboard::sltShowHideNumPad(bool fShow)
+{
+    if (m_pKeyboardWidget)
+        m_pKeyboardWidget->setShowNumPad(fShow);
+}
+
 void UISoftKeyboard::prepareObjects()
 {
     m_pSplitter = new QSplitter;
@@ -2759,7 +3019,7 @@ void UISoftKeyboard::prepareObjects()
     if (!m_pSidePanelWidget)
         return;
 
-    m_pSidePanelWidget->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Maximum);
+    m_pSidePanelWidget->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
     m_pSidePanelWidget->hide();
 
     m_pLayoutSelector = new UILayoutSelector;
@@ -2770,6 +3030,12 @@ void UISoftKeyboard::prepareObjects()
     if (m_pLayoutEditor)
         m_pSidePanelWidget->addWidget(m_pLayoutEditor);
 
+    m_pSettingsWidget = new UISoftKeyboardSettingsWidget;
+    if (m_pSettingsWidget)
+    {
+        m_pSettingsWidget->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+        m_pSettingsWidget->hide();
+    }
     m_pKeyboardWidget = new UISoftKeyboardWidget;
     if (!m_pKeyboardWidget)
         return;
@@ -2777,8 +3043,11 @@ void UISoftKeyboard::prepareObjects()
     m_pKeyboardWidget->updateGeometry();
     m_pSplitter->addWidget(m_pKeyboardWidget);
     m_pSplitter->addWidget(m_pSidePanelWidget);
+    m_pSplitter->addWidget(m_pSettingsWidget);
+
     m_pSplitter->setCollapsible(0, false);
     m_pSplitter->setCollapsible(1, false);
+    m_pSplitter->setCollapsible(2, false);
 
     statusBar()->setStyleSheet( "QStatusBar::item { border: 0px}" );
     m_pStatusBarWidget = new UISoftKeyboardStatusBarWidget;
@@ -2806,6 +3075,10 @@ void UISoftKeyboard::prepareConnections()
     connect(m_pLayoutEditor, &UILayoutEditor::sigKeyCaptionsEdited, this, &UISoftKeyboard::sltKeyCaptionsEdited);
 
     connect(m_pStatusBarWidget, &UISoftKeyboardStatusBarWidget::sigShowHideSidePanel, this, &UISoftKeyboard::sltShowHideSidePanel);
+    connect(m_pStatusBarWidget, &UISoftKeyboardStatusBarWidget::sigShowSettingWidget, this, &UISoftKeyboard::sltShowHideSettingsWidget);
+
+    connect(m_pSettingsWidget, &UISoftKeyboardSettingsWidget::sigShowOSMenuKeys, this, &UISoftKeyboard::sltShowHideOSMenuKeys);
+    connect(m_pSettingsWidget, &UISoftKeyboardSettingsWidget::sigShowNumPad, this, &UISoftKeyboard::sltShowHideNumPad);
 }
 
 void UISoftKeyboard::saveSettings()
@@ -2827,7 +3100,7 @@ void UISoftKeyboard::loadSettings()
 {
     float fKeyboardAspectRatio = 1.0f;
     if (m_pKeyboardWidget)
-        fKeyboardAspectRatio = m_pKeyboardWidget->layoutAspectRation();
+        fKeyboardAspectRatio = m_pKeyboardWidget->layoutAspectRatio();
 
     const QRect desktopRect = gpDesktop->availableGeometry(this);
     int iDefaultWidth = desktopRect.width() / 2;
@@ -2845,6 +3118,12 @@ void UISoftKeyboard::loadSettings()
     LogRel2(("GUI: Soft Keyboard: Restoring geometry to: Origin=%dx%d, Size=%dx%d\n",
              geometry.x(), geometry.y(), geometry.width(), geometry.height()));
     setDialogGeometry(geometry);
+
+    if (m_pKeyboardWidget && m_pSettingsWidget)
+    {
+        m_pSettingsWidget->setShowOSMenuKeys(m_pKeyboardWidget->showOSMenuKeys());
+        m_pSettingsWidget->setShowNumPad(m_pKeyboardWidget->showNumPad());
+    }
 }
 
 void UISoftKeyboard::updateStatusBarMessage(const QString &strName)

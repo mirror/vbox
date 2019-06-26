@@ -390,16 +390,15 @@
             <scancode>0x1d</scancode>
         </key>
         <key>
-
+            <position>227</position>
             <width>75</width>
             <type>modifier</type>
-            <position>227</position>
             <scancodeprefix>0xe0</scancodeprefix>
             <scancode>0x5b</scancode>
+            <osmenukey>true</osmenukey>
         </key>
         <key>
             <position>60</position>
-
             <width>75</width>
             <type>modifier</type>
             <scancode>0x38</scancode>
@@ -424,12 +423,14 @@
             <position>231</position>
             <scancodeprefix>0xe0</scancodeprefix>
             <scancode>0x5c</scancode>
+            <osmenukey>true</osmenukey>
         </key>
         <key>
-
+            <position>129</position>
             <width>75</width>
             <scancodeprefix>0xe0</scancodeprefix>
             <scancode>0x5d</scancode>
+            <osmenukey>true</osmenukey>
         </key>
         <key>
 

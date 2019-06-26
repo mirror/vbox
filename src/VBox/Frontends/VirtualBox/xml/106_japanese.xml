@@ -401,6 +401,7 @@
             <type>modifier</type>
             <scancodeprefix>0xe0</scancodeprefix>
             <scancode>0x5b</scancode>
+            <osmenukey>true</osmenukey>
         </key>
         <key><!-- Alt -->
             <position>60</position>
@@ -438,11 +439,14 @@
             <type>modifier</type>
             <scancodeprefix>0xe0</scancodeprefix>
             <scancode>0x5c</scancode>
+            <osmenukey>true</osmenukey>
         </key>
-        <key>
+        <key><!-- Menu / Application -->
+            <position>129</position>
             <width>75</width>
             <scancodeprefix>0xe0</scancodeprefix>
             <scancode>0x5d</scancode>
+            <osmenukey>true</osmenukey>
         </key>
         <key>
 
