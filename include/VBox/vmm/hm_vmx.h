@@ -150,6 +150,8 @@ AssertCompileSizeAlignment(VMXRESTOREHOST, 8);
 #define VMX_UFC_EPT_INVEPT_UNAVAILABLE                          13
 /** EPT requires page-walk length of 4. */
 #define VMX_UFC_EPT_PAGE_WALK_LENGTH_UNSUPPORTED                14
+/** VMX VMWRITE all feature exposed to the guest but not supported on host. */
+#define VMX_UFC_GST_HOST_VMWRITE_ALL                            15
 /** @} */
 
 /** @name VMX HM-error codes for VERR_VMX_VMCS_FIELD_CACHE_INVALID.
@@ -3314,6 +3316,11 @@ AssertCompile(!(VMX_V_VMCS_REVISION_ID & RT_BIT(31)));
 #define VMX_V_VMCS_SIZE                                         X86_PAGE_4K_SIZE
 /** The size of the virtual VMCS region (in pages). */
 #define VMX_V_VMCS_PAGES                                        1
+
+/** The size of the virtual shadow VMCS region. */
+#define VMX_V_SHADOW_VMCS_SIZE                                  VMX_V_VMCS_SIZE
+/** The size of the virtual shadow VMCS region (in pages). */
+#define VMX_V_SHADOW_VMCS_PAGES                                 VMX_V_VMCS_PAGES
 
 /** The size of the Virtual-APIC page (in bytes). */
 #define VMX_V_VIRT_APIC_SIZE                                    X86_PAGE_4K_SIZE
