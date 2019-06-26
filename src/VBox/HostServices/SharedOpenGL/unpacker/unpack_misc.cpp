@@ -53,7 +53,7 @@ void crUnpackExtendDeleteQueriesARB(PCrUnpackerState pState)
     GLsizei n = READ_DATA(pState, 8, GLsizei );
     const GLuint *ids = DATA_POINTER(pState, 12, GLuint);
 
-    if (n < 0 || n >= INT32_MAX / sizeof(GLint) / 4 || !DATA_POINTER_CHECK(pState, 12 + n * sizeof(GLuint)))
+    if (n < 0 || n >= (INT32_MAX / 8) / sizeof(GLint) || !DATA_POINTER_CHECK_SIZE(pState, 12 + n * sizeof(GLuint)))
     {
         crError("crUnpackExtendDeleteQueriesARB: parameter 'n' is out of range");
         return;
@@ -135,9 +135,9 @@ void crUnpackExtendVBoxTexPresent(PCrUnpackerState pState)
     GLint cRects = READ_DATA(pState, 24, GLint );
     GLint *pRects = (GLint *)DATA_POINTER(pState, 28, GLvoid );
 
-    if (cRects <= 0 || cRects >= INT32_MAX / sizeof(GLint) / 8 || !DATA_POINTER_CHECK(pState, 28 + 4 * cRects * sizeof(GLint)))
+    if (cRects <= 0 || cRects >= (INT32_MAX / 8) / (4 * sizeof(GLint)) || !DATA_POINTER_CHECK_SIZE(pState, 28 + cRects * 4 * sizeof(GLint)))
     {
-        crError("crUnpackExtendVBoxTexPresent: parameter 'cRects' is out of range");
+        crError("crUnpackExtendVBoxTexPresent: parameter 'cRects' %d is out of range", cRects);
         return;
     }
 

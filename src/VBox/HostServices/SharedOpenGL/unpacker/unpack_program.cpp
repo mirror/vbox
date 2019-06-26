@@ -91,7 +91,7 @@ void crUnpackExtendAreProgramsResidentNV(PCrUnpackerState pState)
     GLsizei n = READ_DATA(pState, 8, GLsizei);
     const GLuint *programs = DATA_POINTER(pState, 12, const GLuint);
 
-    if (n <= 0 || n >= INT32_MAX / sizeof(GLuint) / 4 || !DATA_POINTER_CHECK(pState, 20 + n * sizeof(GLuint)))
+    if (n <= 0 || n >= INT32_MAX / sizeof(GLuint) / 4 || !DATA_POINTER_CHECK_SIZE(pState, 20 + n * sizeof(GLuint)))
     {
         crError("crUnpackExtendAreProgramsResidentNV: %d is out of range", n);
         pState->rcUnpack = VERR_INVALID_PARAMETER;

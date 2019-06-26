@@ -57,7 +57,7 @@ void crUnpackExtendShaderSource(PCrUnpackerState pState)
     /** @todo More verification required here. */
     pos = 20 + count * sizeof(*pLocalLength);
 
-    if (!DATA_POINTER_CHECK(pState, pos))
+    if (!DATA_POINTER_CHECK_SIZE(pState, pos))
     {
         crError("crUnpackExtendShaderSource: pos %d is out of range", pos);
         return;
@@ -71,7 +71,7 @@ void crUnpackExtendShaderSource(PCrUnpackerState pState)
 
     pos_check = pos;
 
-    if (!DATA_POINTER_CHECK(pState, pos_check))
+    if (!DATA_POINTER_CHECK_SIZE(pState, pos_check))
     {
         crError("crUnpackExtendShaderSource: pos %d is out of range", pos);
         return;
@@ -81,7 +81,7 @@ void crUnpackExtendShaderSource(PCrUnpackerState pState)
 
     for (i = 0; i < count; ++i)
     {
-        if (pLocalLength[i] <= 0 || pos_check >= INT32_MAX - pLocalLength[i] || !DATA_POINTER_CHECK(pState, pos_check))
+        if (pLocalLength[i] <= 0 || pos_check >= INT32_MAX - pLocalLength[i] || !DATA_POINTER_CHECK_SIZE(pState, pos_check))
         {
             crError("crUnpackExtendShaderSource: pos %d is out of range", pos_check);
             return;
@@ -89,7 +89,7 @@ void crUnpackExtendShaderSource(PCrUnpackerState pState)
 
         pos_check += pLocalLength[i];
 
-        if (!DATA_POINTER_CHECK(pState, pos_check))
+        if (!DATA_POINTER_CHECK_SIZE(pState, pos_check))
         {
             crError("crUnpackExtendShaderSource: pos %d is out of range", pos_check);
             return;

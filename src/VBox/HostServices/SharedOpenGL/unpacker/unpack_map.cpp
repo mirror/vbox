@@ -36,7 +36,7 @@ void crUnpackMap2d(PCrUnpackerState pState)
     }
 
     cbMax = (ustride * uorder + vstride * vorder) * sizeof(double);
-    if (!DATA_POINTER_CHECK(pState, cbMax))
+    if (!DATA_POINTER_CHECK_SIZE(pState, cbMax))
     {
         crError("crUnpackMap2d: parameters out of range");
         return;
@@ -73,7 +73,7 @@ void crUnpackMap2f(PCrUnpackerState pState)
     }
 
     cbMax = (ustride * uorder + vstride * vorder) * sizeof(float);
-    if (!DATA_POINTER_CHECK(pState, cbMax))
+    if (!DATA_POINTER_CHECK_SIZE(pState, cbMax))
     {
         crError("crUnpackMap2f: parameters out of range");
         return;
@@ -104,7 +104,7 @@ void crUnpackMap1d(PCrUnpackerState pState)
     }
 
     cbMax = stride * order * sizeof(double);
-    if (!DATA_POINTER_CHECK(pState, cbMax))
+    if (!DATA_POINTER_CHECK_SIZE(pState, cbMax))
     {
         crError("crUnpackMap1d: parameters out of range");
         return;
@@ -135,7 +135,7 @@ void crUnpackMap1f(PCrUnpackerState pState)
     }
 
     cbMax = stride * order * sizeof(float);
-    if (!DATA_POINTER_CHECK(pState, cbMax))
+    if (!DATA_POINTER_CHECK_SIZE(pState, cbMax))
     {
         crError("crUnpackMap1f: parameters out of range");
         return;
