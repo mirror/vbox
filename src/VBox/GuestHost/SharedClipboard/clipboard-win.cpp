@@ -40,9 +40,6 @@
 #include <VBox/GuestHost/clipboard-helper.h>
 
 
-DECLCALLBACK(void) vboxClipboardWinURIMetaDataCompleteCallback(PSHAREDCLIPBOARDURITRANSFERCALLBACKDATA pData);
-
-
 /**
  * Opens the clipboard of a specific window.
  *
