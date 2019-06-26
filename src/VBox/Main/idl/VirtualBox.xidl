@@ -26010,8 +26010,8 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   -->
   <interface
     name="ICloudClient" extends="$unknown"
-    uuid="33c307e4-cb7e-44ec-9d30-a8c5927bc6e8"
-    wsmap="managed" reservedMethods="13" reservedAttributes="8"
+    uuid="1c757554-9768-11e9-9319-ab248c01ad59"
+    wsmap="managed" reservedMethods="16" reservedAttributes="8"
     >
 
     <method name="getExportLaunchDescriptionForm">
@@ -26050,6 +26050,28 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
       <param name="virtualBox" type="IVirtualBox" dir="in">
         <desc>Reference to the server-side API root object.</desc>
+      </param>
+    </method>
+
+    <method name="getExportDescriptionForm">
+      <desc>
+        Returns a form for editing the virtual system description for
+        exporting a local VM into a cloud custom image.
+      </desc>
+      <param name="description" type="IVirtualSystemDescription" dir="in">
+        <desc>
+          Virtual system description to be edited.
+        </desc>
+      </param>
+      <param name="form" type="IVirtualSystemDescriptionForm" dir="out">
+        <desc>
+          An IForm instance for editing the virtual system description.
+        </desc>
+      </param>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>
+          Progress object to track the operation completion.
+        </desc>
       </param>
     </method>
 
