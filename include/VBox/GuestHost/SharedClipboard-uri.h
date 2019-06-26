@@ -564,21 +564,6 @@ typedef enum SHAREDCLIPBOARDURITRANSFERSTATUS
 };
 
 /**
- * Enumeration to specify the Shared Clipboard URI source type.
- */
-typedef enum SHAREDCLIPBOARDSOURCE
-{
-    /** Invalid source type. */
-    SHAREDCLIPBOARDSOURCE_INVALID = 0,
-    /** Source is local. */
-    SHAREDCLIPBOARDSOURCE_LOCAL,
-    /** Source is remote. */
-    SHAREDCLIPBOARDSOURCE_REMOTE,
-    /** The usual 32-bit hack. */
-    SHAREDCLIPBOARDSOURCE_32Bit_Hack = 0x7fffffff
-} SHAREDCLIPBOARDSOURCE;
-
-/**
  * Structure for maintaining an URI transfer state.
  * Everything in here will be part of a saved state (later).
  */
