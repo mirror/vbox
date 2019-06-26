@@ -1775,7 +1775,10 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
         LogRel(("HM: Enabled posted-interrupt processing support\n"));
 
     if (pVM->hm.s.vmx.fUseVmcsShadowing)
-        LogRel(("HM: Enabled VMCS shadowing support\n"));
+    {
+        bool const fFullVmcsShadow = RT_BOOL(pVM->hm.s.vmx.Msrs.u64Misc & VMX_MISC_VMWRITE_ALL);
+        LogRel(("HM: Enabled %s VMCS shadowing\n", fFullVmcsShadow ? "full" : "partial"));
+    }
 
     return VINF_SUCCESS;
 }
