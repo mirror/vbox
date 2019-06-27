@@ -3324,14 +3324,12 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 [ tdTestDirRead(sDirectory = 'z:\\'), tdTestResultDirRead() ],
                 [ tdTestDirRead(sDirectory = '\\\\uncrulez\\foo'), tdTestResultDirRead() ],
             ]);
-        else:
-            atTests.extend([
-                # More unusual stuff.
-                [ tdTestDirRead(sDirectory = 'z:/'), tdTestResultDirRead() ],
-                [ tdTestDirRead(sDirectory = '\\\\uncrulez\\foo'), tdTestResultDirRead() ],
-            ]);
+
         # Read the system directory (ASSUMES at least 5 files in it):
-        atTests.append([ tdTestDirRead(sDirectory = sSystemDir), tdTestResultDirRead(fRc = True, cFiles = -5, cDirs = None) ]);
+        # Windows 7+ has inaccessible system32/com/dmp directory that screws up this test, so skip it on windows:
+        if not oTestVm.isWindows():
+            atTests.append([ tdTestDirRead(sDirectory = sSystemDir),
+                             tdTestResultDirRead(fRc = True, cFiles = -5, cDirs = None) ]);
         ## @todo trailing slash
 
         # Read from the test file set.
