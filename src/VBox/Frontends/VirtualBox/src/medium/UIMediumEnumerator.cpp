@@ -45,25 +45,34 @@ template<class T> static QStringList toStringList(const QList<T> &list)
 
 
 /** UITask extension used for medium-enumeration purposes.
-  * @note Indeed property/setProperty API isn't thread-safe stuff.
-  *       This isn't dangerous for us since setter/getter API calls
-  *       are splitted in time by enumerator's logic, but latest Qt
-  *       versions prohibits property/setProperty API usage from
-  *       other than the GUI thread anyway so we will have to rework
-  *       that stuff to be thread-safe one day at least for Qt >= 5.11. */
+  * @note We made setting/getting medium a thread-safe stuff.
+  *       But this wasn't dangerous for us before since
+  *       setter/getter calls are splitted in time by 
+  *       enumeration logic.  Previously we were even using
+  *       property/setProperty API for that but latest Qt
+  *       versions prohibits property/setProperty API usage
+  *       from other than the GUI thread so we had to rework
+  *       that stuff to be thread-safe for Qt >= 5.11. */
 class UITaskMediumEnumeration : public UITask
 {
     Q_OBJECT;
 
 public:
 
-    /** Constructs @a medium-enumeration task. */
-    UITaskMediumEnumeration(const UIMedium &medium)
+    /** Constructs @a guiMedium enumeration task. */
+    UITaskMediumEnumeration(const UIMedium &guiMedium)
         : UITask(UITask::Type_MediumEnumeration)
+        , m_guiMedium(guiMedium)
+    {}
+
+    /** Returns GUI medium. */
+    UIMedium medium() const
     {
-        /* Store medium as property: */
-        /// @todo rework to thread-safe stuff one day
-        setProperty("medium", QVariant::fromValue(medium));
+        /* Acquire under a proper lock: */
+        m_mutex.lock();
+        const UIMedium guiMedium = m_guiMedium;
+        m_mutex.unlock();
+        return guiMedium;
     }
 
 private:
@@ -71,14 +80,16 @@ private:
     /** Contains medium-enumeration task body. */
     virtual void run() /* override */
     {
-        /* Get medium: */
-        /// @todo rework to thread-safe stuff one day
-        UIMedium guiMedium = property("medium").value<UIMedium>();
-        /* Enumerate it: */
-        guiMedium.blockAndQueryState();
-        /* Put it back: */
-        setProperty("medium", QVariant::fromValue(guiMedium));
+        /* Enumerate under a proper lock: */
+        m_mutex.lock();
+        m_guiMedium.blockAndQueryState();
+        m_mutex.unlock();
     }
+
+    /** Holds the mutex to access m_guiMedium member. */
+    mutable QMutex  m_mutex;
+    /** Holds the medium being enumerated. */
+    UIMedium        m_guiMedium;
 };
 
 
@@ -535,7 +546,7 @@ void UIMediumEnumerator::sltHandleMediumEnumerationTaskComplete(UITask *pTask)
     AssertReturnVoid(m_tasks.contains(pTask));
 
     /* Get enumerated UIMedium: */
-    const UIMedium guiMedium = pTask->property("medium").value<UIMedium>();
+    const UIMedium guiMedium = qobject_cast<UITaskMediumEnumeration*>(pTask)->medium();
     const QUuid uMediumKey = guiMedium.key();
     LogRel2(("GUI: UIMediumEnumerator: Medium with key={%s} enumerated\n",
              uMediumKey.toString().toUtf8().constData()));
