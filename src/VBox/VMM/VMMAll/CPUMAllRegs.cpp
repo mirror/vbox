@@ -3549,7 +3549,7 @@ VMM_INT_DECL(bool) CPUMIsGuestVmxVmcsFieldValid(PVM pVM, uint64_t u64VmcsField)
 /**
  * Checks whether the given I/O access should cause a nested-guest VM-exit.
  *
- * @returns @c true if set, @c false otherwise.
+ * @returns @c true if it causes a VM-exit, @c false otherwise.
  * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @param   u16Port     The I/O port being accessed.
  * @param   cbAccess    The size of the I/O access in bytes (1, 2 or 4 bytes).
@@ -3573,6 +3573,49 @@ VMM_INT_DECL(bool) CPUMIsGuestVmxIoInterceptSet(PCVMCPU pVCpu, uint16_t u16Port,
     return false;
 #else
     RT_NOREF3(pVCpu, u16Port, cbAccess);
+    return false;
+#endif
+}
+
+
+/**
+ * Checks whether the Mov-to-CR3 instruction causes a nested-guest VM-exit.
+ *
+ * @returns @c true if it causes a VM-exit, @c false otherwise.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
+ * @param   uNewCr3     The CR3 value being written.
+ */
+VMM_INT_DECL(bool) CPUMIsGuestVmxMovToCr3InterceptSet(PVMCPU pVCpu, uint64_t uNewCr3)
+{
+#ifndef IN_RC
+    /*
+     * If the CR3-load exiting control is set and the new CR3 value does not
+     * match any of the CR3-target values in the VMCS, we must cause a VM-exit.
+     *
+     * See Intel spec. 25.1.3 "Instructions That Cause VM Exits Conditionally".
+     */
+    PCCPUMCTX  pCtx  = &pVCpu->cpum.s.Guest;
+    PCVMXVVMCS pVmcs = pCtx->hwvirt.vmx.CTX_SUFF(pVmcs);
+    if (CPUMIsGuestVmxProcCtlsSet(pVCpu, pCtx, VMX_PROC_CTLS_CR3_LOAD_EXIT))
+    {
+        uint32_t const uCr3TargetCount = pVmcs->u32Cr3TargetCount;
+        Assert(uCr3TargetCount <= VMX_V_CR3_TARGET_COUNT);
+
+        /* If the CR3-target count is 0, we must always cause a VM-exit. */
+        if (uCr3TargetCount == 0)
+            return true;
+
+        /* If the CR3 being written doesn't matches any of the target values, cause a VM-exit. */
+        AssertCompile(VMX_V_CR3_TARGET_COUNT == 4);
+        if (   uNewCr3 != pVmcs->u64Cr3Target0.u
+            && uNewCr3 != pVmcs->u64Cr3Target1.u
+            && uNewCr3 != pVmcs->u64Cr3Target2.u
+            && uNewCr3 != pVmcs->u64Cr3Target3.u)
+            return true;
+    }
+    return false;
+#else
+    RT_NOREF2(pVCpu, uNewCr3);
     return false;
 #endif
 }
