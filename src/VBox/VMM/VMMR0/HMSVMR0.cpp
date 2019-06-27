@@ -3104,6 +3104,7 @@ static void hmR0SvmLeave(PVMCPU pVCpu, bool fImportState)
     STAM_PROFILE_ADV_SET_STOPPED(&pVCpu->hm.s.StatExportGuestState);
     STAM_PROFILE_ADV_SET_STOPPED(&pVCpu->hm.s.StatPreExit);
     STAM_PROFILE_ADV_SET_STOPPED(&pVCpu->hm.s.StatExitHandling);
+    STAM_PROFILE_ADV_SET_STOPPED(&pVCpu->hm.s.StatExitVmentry);
     STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchLongJmpToR3);
 
     VMCPU_CMPXCHG_STATE(pVCpu, VMCPUSTATE_STARTED_HM, VMCPUSTATE_STARTED_EXEC);
@@ -8136,6 +8137,7 @@ HMSVM_EXIT_DECL hmR0SvmExitVmrun(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
 
     VBOXSTRICTRC rcStrict;
     bool const fSupportsNextRipSave = hmR0SvmSupportsNextRipSave(pVCpu);
+    STAM_PROFILE_ADV_START(&pVCpu->hm.s.StatExitVmentry, z);
     if (fSupportsNextRipSave)
     {
         PCSVMVMCB     pVmcb   = hmR0SvmGetCurrentVmcb(pVCpu);
@@ -8149,6 +8151,7 @@ HMSVM_EXIT_DECL hmR0SvmExitVmrun(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
            instruction itself, see @bugref{7243#c126} */
         rcStrict = IEMExecOneBypassEx(pVCpu, CPUMCTX2CORE(&pVCpu->cpum.GstCtx), NULL /* pcbWritten */);
     }
+    STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExitVmentry, z);
 
     if (rcStrict == VINF_SUCCESS)
     {
