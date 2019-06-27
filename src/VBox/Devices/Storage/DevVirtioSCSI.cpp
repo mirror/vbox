@@ -35,7 +35,7 @@
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
-#define VIRTIOSCSI_MAX_DEVICES  16
+#define VIRTIOSCSI_MAX_DEVICES  1
 
 /**
  * Device Instance Data.
@@ -53,19 +53,6 @@ typedef struct VIRTIOSCSIDEV
 
     /** LUN of the device. */
     RTUINT                        iLUN;
-
-    PDMIMEDIAPORT                 IMediaPort;
-    /** Extended media port interface. */
-
-    PDMIMEDIAEXPORT               IMediaExPort;
-    /** Led interface. */
-
-    R3PTRTYPE(PPDMIMEDIA)         pDrvMedia;
-    /** Pointer to the attached driver's extended media interface. */
-
-    R3PTRTYPE(PPDMIMEDIAEX)       pDrvMediaEx;
-    /** The status LED state for this device. */
-
 
     /** Flag whether device is present. */
     bool                          fPresent;
@@ -94,6 +81,13 @@ typedef struct VIRTIOSCSI
     /** Pointer to the device instance - RC ptr. */
     PPDMDEVINSRC                    pDevInsRC;
 
+    /** Queue to send tasks to R3. - HC ptr */
+    R3PTRTYPE(PPDMQUEUE)            pNotifierQueueR3;
+    /** Queue to send tasks to R3. - HC ptr */
+    R0PTRTYPE(PPDMQUEUE)            pNotifierQueueR0;
+    /** Queue to send tasks to R3. - RC ptr */
+    RCPTRTYPE(PPDMQUEUE)            pNotifierQueueRC;
+
     /** The base interface.
      * @todo use PDMDEVINS::IBase  */
     PDMIBASE                        IBase;
@@ -111,6 +105,9 @@ typedef struct VIRTIOSCSI
     /** Base address of the memory mapping. */
     RTGCPHYS                        MMIOBase;
 
+    /** Partner of ILeds. */
+    R3PTRTYPE(PPDMILEDCONNECTORS)   pLedsConnector;
+
 } VIRTIOSCSI, *PVIRTIOSCSI;
 
 
@@ -119,10 +116,8 @@ typedef struct VIRTIOSCSI
  */
 typedef struct VIRTIOSCSIREQ
 {
-    /** PDM extended media interface I/O request hande. */
-    PDMMEDIAEXIOREQ                hIoReq;
     /** Device this task is assigned to. */
-    PVIRTIOSCSIDEV               pTargetDevice;
+    PVIRTIOSCSIDEV                 pTargetDevice;
     /** The command control block from the guest. */
 //    CCBU                           CCBGuest;
     /** Guest physical address of th CCB. */
@@ -139,15 +134,16 @@ typedef struct VIRTIOSCSIREQ
 typedef struct VIRTIOSCSIREQ *PVIRTIOSCSIREQ;
 
 #define VIRTIOSCSI_SAVED_STATE_MINOR_VERSION        0x01
-
-
+/*********************************************************************************************************************************/
 #if 0
+
 /** @callback_method_impl{FNSSMDEVLIVEEXEC}  */
 static DECLCALLBACK(int) virtioScsiR3LiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uPass)
 {
     RT_NOREF(uPass);
     NOREF(pSSM);
     PVIRTIOSCSI pThis = PDMINS_2_DATA(pDevIns, PVIRTIOSCSI);
+    LogFunc(("callback"));
     NOREF(pThis);
     return VINF_SSM_DONT_CALL_AGAIN;
 }
@@ -159,6 +155,7 @@ static DECLCALLBACK(int) virtioScsiR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSS
     NOREF(pSSM);
     NOREF(uVersion);
     PVIRTIOSCSI pThis = PDMINS_2_DATA(pDevIns, PVIRTIOSCSI);
+    LogFunc(("callback"));
     NOREF(pThis);
     return VINF_SSM_DONT_CALL_AGAIN;
 }
@@ -168,6 +165,7 @@ static DECLCALLBACK(int) virtioScsiR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSS
 {
     RT_NOREF(pSSM);
     PVIRTIOSCSI pThis = PDMINS_2_DATA(pDevIns, PVIRTIOSCSI);
+    LogFunc(("callback"));
     NOREF(pThis);
     return VINF_SUCCESS;
 }
@@ -177,6 +175,7 @@ static DECLCALLBACK(int) virtioScsiR3LoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSS
 {
     RT_NOREF(pSSM);
     PVIRTIOSCSI pThis = PDMINS_2_DATA(pDevIns, PVIRTIOSCSI);
+    LogFunc(("callback"));
     NOREF(pThis);
     return VINF_SUCCESS;
 }
@@ -281,6 +280,31 @@ PDMBOTHCBDECL(int) virtioScsiIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOP
 
     return rc;
 }
+
+/**
+ * BusLogic debugger info callback.
+ *
+ * @param   pDevIns     The device instance.
+ * @param   pHlp        The output helpers.
+ * @param   pszArgs     The arguments.
+ */
+static DECLCALLBACK(void) virtioScsiR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
+{
+    PVIRTIOSCSI   pThis = PDMINS_2_DATA(pDevIns, PVIRTIOSCSI);
+    bool        fVerbose = false;
+
+    /* Parse arguments. */
+    if (pszArgs)
+        fVerbose = strstr(pszArgs, "verbose") != NULL;
+
+    /* Show basic information. */
+    pHlp->pfnPrintf(pHlp, "%s#%d: virtio-scsci ",
+                    pDevIns->pReg->szName,
+                    pDevIns->iInstance);
+    pHlp->pfnPrintf(pHlp, "GC=%RTbool R0=%RTbool\n",
+                    !!pThis->fGCEnabled, !!pThis->fR0Enabled);
+}
+
 /**
  * @callback_method_impl{FNPCIIOREGIONMAP}
  */
@@ -354,9 +378,6 @@ static DECLCALLBACK(int) devVirtioScsiR3MmioMap(PPDMDEVINS pDevIns, PPDMPCIDEV p
 }
 
 
-
-
-
 /**
  * @copydoc FNPDMDEVRESET
  */
@@ -371,26 +392,24 @@ static DECLCALLBACK(void) virtioScsiR3Reset(PPDMDEVINS pDevIns)
 //    else
 //    {
 //        ASMAtomicWriteBool(&pThis->fSignalIdle, false);
-//        virtioScsiR3HwReset(pThis, true);
 //   }
 }
 
 static DECLCALLBACK(void) virtioScsiR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 {
+LogFunc(("Relocating virtio-scsci"));
     RT_NOREF(offDelta);
     PVIRTIOSCSI pThis = PDMINS_2_DATA(pDevIns, PVIRTIOSCSI);
-    NOREF(pThis);
 
-//    pThis->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
+    pThis->pDevInsR3 = pDevIns;
 //    pThis->pNotifierQueueRC = PDMQueueRCPtr(pThis->pNotifierQueueR3);
-//
-//    for (uint32_t i = 0; i < VIRTIOSCSI_MAX_DEVICES; i++)
-//   {
-//        PVIRTIOSCSIDEVICE pDevice = &pThis->aDevInstances[i];
-//
-//        pDevice->pvirtio-scsiRC = PDMINS_2_DATA_RCPTR(pDevIns);
-//
-//    }
+
+    for (uint32_t i = 0; i < VIRTIOSCSI_MAX_DEVICES; i++)
+    {
+        PVIRTIOSCSIDEV pDevice = &pThis->aDevInstances[i];
+        pDevice->pVirtioScsiR3 = pThis;;
+
+  }
 
 }
 
@@ -471,14 +490,14 @@ LogFunc(("Register PCI device\n"));
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("virtio-scsi cannot register with PCI bus"));
 
-//    rc = PDMDevHlpPCIIORegionRegister(pDevIns, 0, 32, PCI_ADDRESS_SPACE_IO, devVirtioScsiR3MmioMap);
-//    if (RT_FAILURE(rc))
-//        return PDMDEV_SET_ERROR(pDevIns, rc, N_("virtio-scsi cannot register PCI I/O address space"));
+    rc = PDMDevHlpPCIIORegionRegister(pDevIns, 0, 32, PCI_ADDRESS_SPACE_IO, devVirtioScsiR3MmioMap);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("virtio-scsi cannot register PCI I/O address space"));
 
-//    rc = PDMDevHlpPCIIORegionRegister(pDevIns, 1, 32, PCI_ADDRESS_SPACE_MEM, devVirtioScsiR3MmioMap);
-//    if (RT_FAILURE(rc))
-//        return PDMDEV_SET_ERROR(pDevIns, rc, N_("virtio-scsi cannot register PCI mmio address space"));
-    NOREF(devVirtioScsiR3MmioMap);
+    rc = PDMDevHlpPCIIORegionRegister(pDevIns, 1, 32, PCI_ADDRESS_SPACE_MEM, devVirtioScsiR3MmioMap);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("virtio-scsi cannot register PCI mmio address space"));
+
 #if 0
     if (fBootable)
     {
@@ -490,30 +509,18 @@ LogFunc(("Register PCI device\n"));
         if (RT_FAILURE(rc))
             return PDMDEV_SET_ERROR(pDevIns, rc, N_("virtio-scsi cannot register BIOS I/O handlers"));
     }
+#endif
+
+
+#if 0
+    /* Initialize task queue. */
+    rc = PDMDevHlpQueueCreate(pDevIns, sizeof(PDMQUEUEITEMCORE), 5, 0,
+                              buslogicR3NotifyQueueConsumer, true, "BusLogicTask", &pThis->pNotifierQueueR3);
+    if (RT_FAILURE(rc))
+        return rc;
 
     pThis->pNotifierQueueR0 = PDMQueueR0Ptr(pThis->pNotifierQueueR3);
     pThis->pNotifierQueueRC = PDMQueueRCPtr(pThis->pNotifierQueueR3);
-
-    rc = PDMDevHlpCritSectInit(pDevIns, &pThis->CritSectIntr, RT_SRC_POS, "virtio-scsi-Intr#%u", pDevIns->iInstance);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc, N_("virtio-scsi: cannot create critical section"));
-
-    /*
-     * Create event semaphore and worker thread.
-     */
-    rc = SUPSemEventCreate(pThis->pSupDrvSession, &pThis->hEvtProcess);
-    if (RT_FAILURE(rc))
-        return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
-                                   N_("virtio-scsi: Failed to create SUP event semaphore"));
-
-    char szDevTag[20];
-    RTStrPrintf(szDevTag, sizeof(szDevTag), "VIRTIOSCSI-%u", iInstance);
-
-    rc = PDMDevHlpThreadCreate(pDevIns, &pThis->pThreadWrk, pThis, virtioScsiR3Worker,
-                               virtioScsiR3WorkerWakeUp, 0, RTTHREADTYPE_IO, szDevTag);
-    if (RT_FAILURE(rc))
-        return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
-                                   N_("virtio-scsi: Failed to create worker thread %s"), szDevTag);
 #endif
 
     /* Initialize per device instance. */
@@ -528,39 +535,16 @@ LogFunc(("Register PCI device\n"));
         /* Initialize static parts of the device. */
         pDevice->iLUN = i;
         pDevice->pVirtioScsiR3 = pThis;
-LogFunc(("Attaching: Lun=%d, pszName=%s\n",  pDevice->iLUN, pszName));
+
+        LogFunc(("Attaching: Lun=%d, pszName=%s\n",  pDevice->iLUN, pszName));
         /* Attach SCSI driver. */
         rc = PDMDevHlpDriverAttach(pDevIns, pDevice->iLUN, &pDevice->IBase, &pDevice->pDrvBase, pszName);
         if (RT_SUCCESS(rc))
-        {
-#if 0
-            /* Query the media interface. */
-            pDevice->pDrvMedia = PDMIBASE_QUERY_INTERFACE(pDevice->pDrvBase, PDMIMEDIA);
-            AssertMsgReturn(VALID_PTR(pDevice->pDrvMedia),
-                            ("virtio-scsi configuration error: LUN#%d misses the basic media interface!\n", pDevice->iLUN),
-                            VERR_PDM_MISSING_INTERFACE);
-
-            /* Get the extended media interface. */
-            pDevice->pDrvMediaEx = PDMIBASE_QUERY_INTERFACE(pDevice->pDrvBase, PDMIMEDIAEX);
-            AssertMsgReturn(VALID_PTR(pDevice->pDrvMediaEx),
-                            ("virtio-scsi configuration error: LUN#%d misses the extended media interface!\n", pDevice->iLUN),
-                            VERR_PDM_MISSING_INTERFACE);
-
-#endif
-            rc = pDevice->pDrvMediaEx->pfnIoReqAllocSizeSet(pDevice->pDrvMediaEx, sizeof(VIRTIOSCSIREQ));
-            if (RT_FAILURE(rc))
-                return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
-                                           N_("virtio-scsi configuration error: LUN#%u: Failed to set I/O request size!"),
-                                           pDevice->iLUN);
-
             pDevice->fPresent = true;
-        }
         else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
         {
             pDevice->fPresent    = false;
             pDevice->pDrvBase    = NULL;
-//            pDevice->pDrvMedia   = NULL;
-//            pDevice->pDrvMediaEx = NULL;
             rc = VINF_SUCCESS;
             Log(("virtio-scsi: no driver attached to device %s\n", pszName));
         }
@@ -570,17 +554,14 @@ LogFunc(("Attaching: Lun=%d, pszName=%s\n",  pDevice->iLUN, pszName));
             return rc;
         }
     }
-#if 0
     /*
      * Attach status driver (optional).
      */
+#if 0
     PPDMIBASE pBase;
     rc = PDMDevHlpDriverAttach(pDevIns, PDM_STATUS_LUN, &pThis->IBase, &pBase, "Status Port");
     if (RT_SUCCESS(rc))
-    {
-//        pThis->pLedsConnector = PDMIBASE_QUERY_INTERFACE(pBase, PDMILEDCONNECTORS);
-//        pThis->pMediaNotify = PDMIBASE_QUERY_INTERFACE(pBase, PDMIMEDIANOTIFY);
-    }
+        pThis->pLedsConnector = PDMIBASE_QUERY_INTERFACE(pBase, PDMILEDCONNECTORS);
     else if (rc != VERR_PDM_NO_ATTACHED_DRIVER)
     {
         AssertMsgFailed(("Failed to attach to status driver. rc=%Rrc\n", rc));
@@ -593,8 +574,7 @@ LogFunc(("Attaching: Lun=%d, pszName=%s\n",  pDevice->iLUN, pszName));
                                 NULL, virtioScsiR3LoadExec, virtioScsiR3LoadDone);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("virtio-scsi cannot register save state handlers"));
-
-//#if 0
+#endif
     /*
      * Register the debugger info callback.
      */
@@ -602,77 +582,6 @@ LogFunc(("Attaching: Lun=%d, pszName=%s\n",  pDevice->iLUN, pszName));
     RTStrPrintf(szTmp, sizeof(szTmp), "%s%d", pDevIns->pReg->szName, pDevIns->iInstance);
     PDMDevHlpDBGFInfoRegister(pDevIns, szTmp, "virtio-scsi HBA info", virtioScsiR3Info);
 
-
-    rc = virtioScsiR3HwReset(pThis, true);
-    AssertMsgRC(rc, ("hardware reset of virtio-scsi host adapter failed rc=%Rrc\n", rc));
-#endif
-
-    return rc;
-}
-
-
-/**
- * Attach command.
- *
- * This is called when we change block driver.
- *
- * @returns VBox status code.
- * @param   pDevIns     The device instance.
- * @param   iLUN        The logical unit which is being detached.
- * @param   fFlags      Flags, combination of the PDMDEVATT_FLAGS_* \#defines.
- */
-static DECLCALLBACK(int)  devVirtioScsiR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
-{
-    PVIRTIOSCSI       pThis   = PDMINS_2_DATA(pDevIns, PVIRTIOSCSI);
-    PVIRTIOSCSIDEV pDevice = &pThis->aDevInstances[iLUN];
-    int rc;
-
-LogFlowFunc(("iLun=%d"));
-
-    AssertMsgReturn(fFlags & PDM_TACH_FLAGS_NOT_HOT_PLUG,
-                    ("virtio-scsi: Device does not support hotplugging\n"),
-                    VERR_INVALID_PARAMETER);
-
-    /* the usual paranoia */
-    AssertRelease(!pDevice->pDrvBase);
-    AssertRelease(!pDevice->pDrvMedia);
-    AssertRelease(!pDevice->pDrvMediaEx);
-    Assert(pDevice->iLUN == iLUN);
-
-    /*
-     * Try attach the SCSI driver and get the interfaces,
-     * required as well as optional.
-     */
-    rc = PDMDevHlpDriverAttach(pDevIns, pDevice->iLUN, &pDevice->IBase, &pDevice->pDrvBase, NULL);
-    if (RT_SUCCESS(rc))
-    {
-        /* Query the media interface. */
-        pDevice->pDrvMedia = PDMIBASE_QUERY_INTERFACE(pDevice->pDrvBase, PDMIMEDIA);
-        AssertMsgReturn(VALID_PTR(pDevice->pDrvMedia),
-                        ("virtio-scsi configuration error: LUN#%d misses the basic media interface!\n", pDevice->iLUN),
-                        VERR_PDM_MISSING_INTERFACE);
-
-        /* Get the extended media interface. */
-        pDevice->pDrvMediaEx = PDMIBASE_QUERY_INTERFACE(pDevice->pDrvBase, PDMIMEDIAEX);
-        AssertMsgReturn(VALID_PTR(pDevice->pDrvMediaEx),
-                        ("virtio-scsi configuration error: LUN#%d misses the extended media interface!\n", pDevice->iLUN),
-                        VERR_PDM_MISSING_INTERFACE);
-
-        rc = pDevice->pDrvMediaEx->pfnIoReqAllocSizeSet(pDevice->pDrvMediaEx, sizeof(VIRTIOSCSIREQ));
-        AssertMsgRCReturn(rc, ("virtio-scsi configuration error: LUN#%u: Failed to set I/O request size!", pDevice->iLUN),
-                          rc);
-        pDevice->fPresent = true;
-    }
-    else
-        AssertMsgFailed(("Failed to attach LUN#%d. rc=%Rrc\n", pDevice->iLUN, rc));
-
-    if (RT_FAILURE(rc))
-    {
-        pDevice->fPresent    = false;
-        pDevice->pDrvBase    = NULL;
-        pDevice->pDrvMedia   = NULL;
-        pDevice->pDrvMediaEx = NULL;
-    }
     return rc;
 }
 
@@ -703,9 +612,51 @@ static DECLCALLBACK(void) devVirtioScsiR3Detach(PPDMDEVINS pDevIns, unsigned iLU
      */
     pDevice->fPresent    = false;
     pDevice->pDrvBase    = NULL;
-//    pDevice->pDrvMedia   = NULL;
-//    pDevice->pDrvMediaEx = NULL;
+}
 
+
+/**
+ * Attach command.
+ *
+ * This is called when we change block driver.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns     The device instance.
+ * @param   iLUN        The logical unit which is being detached.
+ * @param   fFlags      Flags, combination of the PDMDEVATT_FLAGS_* \#defines.
+ */
+static DECLCALLBACK(int)  devVirtioScsiR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
+{
+    PVIRTIOSCSI       pThis   = PDMINS_2_DATA(pDevIns, PVIRTIOSCSI);
+    PVIRTIOSCSIDEV pDevice = &pThis->aDevInstances[iLUN];
+    int rc;
+
+LogFlowFunc(("iLun=%d"));
+
+    AssertMsgReturn(fFlags & PDM_TACH_FLAGS_NOT_HOT_PLUG,
+                    ("virtio-scsi: Device does not support hotplugging\n"),
+                    VERR_INVALID_PARAMETER);
+
+    /* the usual paranoia */
+    AssertRelease(!pDevice->pDrvBase);
+    Assert(pDevice->iLUN == iLUN);
+
+    /*
+     * Try attach the SCSI driver and get the interfaces,
+     * required as well as optional.
+     */
+    rc = PDMDevHlpDriverAttach(pDevIns, pDevice->iLUN, &pDevice->IBase, &pDevice->pDrvBase, NULL);
+    if (RT_SUCCESS(rc))
+        pDevice->fPresent = true;
+    else
+        AssertMsgFailed(("Failed to attach LUN#%d. rc=%Rrc\n", pDevice->iLUN, rc));
+
+    if (RT_FAILURE(rc))
+    {
+        pDevice->fPresent    = false;
+        pDevice->pDrvBase    = NULL;
+    }
+    return rc;
 }
 
 
