@@ -33,6 +33,7 @@
 #include <QStatusBar>
 #include <QStyle>
 #include <QStackedWidget>
+#include <QTableWidget>
 #include <QToolButton>
 #include <QXmlStreamReader>
 #include <QVBoxLayout>
@@ -490,7 +491,7 @@ public:
     void toggleEditMode(bool fIsEditMode);
     /** Is called when the captions in UISoftKeyboardKey is changed and forward this changes to
       * corresponding UISoftKeyboardLayout */
-    void updateKeyCaptionsInLayout(UISoftKeyboardKey *pKey);
+    //void updateKeyCaptionsInLayout(UISoftKeyboardKey *pKey);
     void saveCurentLayoutToFile();
     void copyCurentLayout();
     float layoutAspectRatio();
@@ -687,9 +688,9 @@ private:
 
     void prepareObjects();
 
-    QCheckBox  *m_pShowNumPadCheckBox;
-    QCheckBox  *m_pShowOsMenuButtonsCheckBox;
-
+    QCheckBox   *m_pShowNumPadCheckBox;
+    QCheckBox   *m_pShowOsMenuButtonsCheckBox;
+    QTableWidget *m_pColorSelectionTable;
 };
 
 /*********************************************************************************************************************************
@@ -2058,19 +2059,19 @@ void UISoftKeyboardWidget::toggleEditMode(bool fIsEditMode)
     update();
 }
 
-void UISoftKeyboardWidget::updateKeyCaptionsInLayout(UISoftKeyboardKey *pKey)
-{
-    if (!m_pCurrentKeyboardLayout || !pKey)
-        return;
+// void UISoftKeyboardWidget::updateKeyCaptionsInLayout(UISoftKeyboardKey *pKey)
+// {
+//     if (!m_pCurrentKeyboardLayout || !pKey)
+//         return;
 
-    /* Assuming the key captions are changed for the current layout: */
-    KeyCaptions newCaptions;
-    // newCaptions.m_strBase = pKey->baseCaption();
-    // newCaptions.m_strShift = pKey->shiftCaption();
-    // newCaptions.m_strAltGr = pKey->altGrCaption();
-    // newCaptions.m_strShiftAltGr = pKey->shiftAltGrCaption();
-    m_pCurrentKeyboardLayout->updateKeyCaptions(pKey->position(), newCaptions);
-}
+//     /* Assuming the key captions are changed for the current layout: */
+//     KeyCaptions newCaptions;
+//     // newCaptions.m_strBase = pKey->baseCaption();
+//     // newCaptions.m_strShift = pKey->shiftCaption();
+//     // newCaptions.m_strAltGr = pKey->altGrCaption();
+//     // newCaptions.m_strShiftAltGr = pKey->shiftAltGrCaption();
+//     m_pCurrentKeyboardLayout->updateKeyCaptions(pKey->position(), newCaptions);
+// }
 
 void UISoftKeyboardWidget::addLayout(const UISoftKeyboardLayout &newLayout)
 {
@@ -2326,7 +2327,7 @@ bool UISoftKeyboardWidget::loadPhysicalLayout(const QString &strLayoutFileName, 
     m_iInitialWidth = qMax(m_iInitialWidth, iInitialWidth);
     m_iInitialWidthNoNumPad = qMax(m_iInitialWidthNoNumPad, iInitialWidthNoNumPad);
     m_iInitialHeight = qMax(m_iInitialHeight, iInitialHeight);
-    //printf("%s total key count: %d\n", qPrintable(strLayoutFileName), iKeyCount - 3 /* substract OS an menu keys */);
+
     return true;
 }
 
@@ -2886,6 +2887,7 @@ UISoftKeyboardSettingsWidget::UISoftKeyboardSettingsWidget(QWidget *pParent /* =
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_pShowNumPadCheckBox(0)
     , m_pShowOsMenuButtonsCheckBox(0)
+    , m_pColorSelectionTable(0)
 {
     prepareObjects();
 }
@@ -2919,15 +2921,21 @@ void UISoftKeyboardSettingsWidget::prepareObjects()
     m_pShowNumPadCheckBox = new QCheckBox;
     m_pShowOsMenuButtonsCheckBox = new QCheckBox;
 
-    pSettingsLayout->addWidget(m_pShowNumPadCheckBox, 0, 0);
-    pSettingsLayout->addWidget(m_pShowOsMenuButtonsCheckBox, 1, 0);
+    pSettingsLayout->addWidget(m_pShowNumPadCheckBox, 0, 0, 1, 1);
+    pSettingsLayout->addWidget(m_pShowOsMenuButtonsCheckBox, 1, 0, 1, 1);
 
     connect(m_pShowNumPadCheckBox, &QCheckBox::toggled, this, &UISoftKeyboardSettingsWidget::sigShowNumPad);
     connect(m_pShowOsMenuButtonsCheckBox, &QCheckBox::toggled, this, &UISoftKeyboardSettingsWidget::sigShowOSMenuKeys);
 
+    m_pColorSelectionTable = new QTableWidget;
+    pSettingsLayout->addWidget(m_pShowOsMenuButtonsCheckBox, 2, 0, 2, 1);
+    m_pColorSelectionTable->setRowCount(3);
+    m_pColorSelectionTable->setColumnCount(2);
+
+
     QSpacerItem *pSpacer = new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Expanding);
     if (pSpacer)
-        pSettingsLayout->addItem(pSpacer, 2, 0);
+        pSettingsLayout->addItem(pSpacer, 4, 0);
 
     setLayout(pSettingsLayout);
     retranslateUi();
@@ -3059,11 +3067,9 @@ void UISoftKeyboard::sltLayoutEdited()
 
 void UISoftKeyboard::sltKeyCaptionsEdited(UISoftKeyboardKey* pKey)
 {
+    Q_UNUSED(pKey);
     if (m_pKeyboardWidget)
-    {
-        m_pKeyboardWidget->updateKeyCaptionsInLayout(pKey);
         m_pKeyboardWidget->update();
-    }
 }
 
 void UISoftKeyboard::sltShowHideSidePanel()
