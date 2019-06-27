@@ -617,30 +617,6 @@ IEM_STATIC int iemVmxVmcsGetGuestSegReg(PCVMXVVMCS pVmcs, uint8_t iSegReg, PCPUM
 
 
 /**
- * Gets a CR3 target value from the VMCS.
- *
- * @returns VBox status code.
- * @param   pVmcs           Pointer to the virtual VMCS.
- * @param   idxCr3Target    The index of the CR3-target value to retrieve.
- * @param   puValue         Where to store the CR3-target value.
- */
-IEM_STATIC uint64_t iemVmxVmcsGetCr3TargetValue(PCVMXVVMCS pVmcs, uint8_t idxCr3Target)
-{
-    Assert(idxCr3Target < VMX_V_CR3_TARGET_COUNT);
-    uint8_t  const  uWidth         = VMX_VMCSFIELD_WIDTH_NATURAL;
-    uint8_t  const  uType          = VMX_VMCSFIELD_TYPE_CONTROL;
-    uint8_t  const  uWidthType     = (uWidth << 2) | uType;
-    uint8_t  const  uIndex         = idxCr3Target + RT_BF_GET(VMX_VMCS_CTRL_CR3_TARGET_VAL0, VMX_BF_VMCSFIELD_INDEX);
-    Assert(uIndex <= VMX_V_VMCS_MAX_INDEX);
-    uint16_t const  offField       = g_aoffVmcsMap[uWidthType][uIndex];
-    uint8_t  const *pbVmcs         = (uint8_t *)pVmcs;
-    uint8_t  const *pbField        = pbVmcs + offField;
-    uint64_t const uCr3TargetValue = *(uint64_t *)pbField;
-    return uCr3TargetValue;
-}
-
-
-/**
  * Converts an IEM exception event type to a VMX event type.
  *
  * @returns The VMX event type.
@@ -3045,39 +3021,18 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrMovToCr3(PVMCPU pVCpu, uint64_t uNewCr3
      *
      * See Intel spec. 25.1.3 "Instructions That Cause VM Exits Conditionally".
      */
-    if (pVmcs->u32ProcCtls & VMX_PROC_CTLS_CR3_LOAD_EXIT)
+    if (CPUMIsGuestVmxMovToCr3InterceptSet(pVCpu, uNewCr3))
     {
-        uint32_t const uCr3TargetCount = pVmcs->u32Cr3TargetCount;
-        Assert(uCr3TargetCount <= VMX_V_CR3_TARGET_COUNT);
+        Log2(("mov_Cr_Rd: (CR3) Guest intercept -> VM-exit\n"));
 
-        /* If the CR3-target count is 0, we must always cause a VM-exit. */
-        bool fIntercept = RT_BOOL(uCr3TargetCount == 0);
-        if (!fIntercept)
-        {
-            for (uint32_t idxCr3Target = 0; idxCr3Target < uCr3TargetCount; idxCr3Target++)
-            {
-                uint64_t const uCr3TargetValue = iemVmxVmcsGetCr3TargetValue(pVmcs, idxCr3Target);
-                if (uNewCr3 != uCr3TargetValue)
-                {
-                    fIntercept = true;
-                    break;
-                }
-            }
-        }
-
-        if (fIntercept)
-        {
-            Log2(("mov_Cr_Rd: (CR3) Guest intercept -> VM-exit\n"));
-
-            VMXVEXITINFO ExitInfo;
-            RT_ZERO(ExitInfo);
-            ExitInfo.uReason = VMX_EXIT_MOV_CRX;
-            ExitInfo.cbInstr = cbInstr;
-            ExitInfo.u64Qual = RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_REGISTER, 3) /* CR3 */
-                             | RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_ACCESS,   VMX_EXIT_QUAL_CRX_ACCESS_WRITE)
-                             | RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_GENREG,   iGReg);
-            return iemVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
-        }
+        VMXVEXITINFO ExitInfo;
+        RT_ZERO(ExitInfo);
+        ExitInfo.uReason = VMX_EXIT_MOV_CRX;
+        ExitInfo.cbInstr = cbInstr;
+        ExitInfo.u64Qual = RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_REGISTER, 3) /* CR3 */
+                         | RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_ACCESS,   VMX_EXIT_QUAL_CRX_ACCESS_WRITE)
+                         | RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_GENREG,   iGReg);
+        return iemVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
     }
 
     return VINF_VMX_INTERCEPT_NOT_ACTIVE;
