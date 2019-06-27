@@ -3404,9 +3404,6 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitTaskSwitch(PVMCPU pVCpu, IEMTASKSWITCH enmTa
 IEM_STATIC VBOXSTRICTRC iemVmxVmexitTaskSwitchWithInfo(PVMCPU pVCpu, PCVMXVEXITINFO pExitInfo,
                                                        PCVMXVEXITEVENTINFO pExitEventInfo)
 {
-    Assert(pExitInfo);
-    Assert(pExitEventInfo);
-
     /* The Exit qualification is mandatory for all task-switch VM-exits. */
     uint64_t const u64ExitQual = pExitInfo->u64Qual;
     iemVmxVmcsSetExitQual(pVCpu, u64ExitQual);
