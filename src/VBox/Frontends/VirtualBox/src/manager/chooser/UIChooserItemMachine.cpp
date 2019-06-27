@@ -568,12 +568,6 @@ QVariant UIChooserItemMachine::data(int iKey) const
         case MachineItemData_TextSpacing:  return 0;
         case MachineItemData_ButtonMargin: return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 4;
 
-        /* Pixmaps: */
-        case MachineItemData_SettingsButtonPixmap: return UIIconPool::iconSet(":/vm_settings_16px.png");
-        case MachineItemData_StartButtonPixmap:    return UIIconPool::iconSet(":/vm_start_16px.png");
-        case MachineItemData_PauseButtonPixmap:    return UIIconPool::iconSet(":/vm_pause_16px.png");
-        case MachineItemData_CloseButtonPixmap:    return UIIconPool::iconSet(":/exit_16px.png");
-
         /* Default: */
         default: break;
     }

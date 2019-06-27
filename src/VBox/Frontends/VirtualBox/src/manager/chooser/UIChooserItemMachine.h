@@ -182,11 +182,6 @@ private:
         MachineItemData_MinorSpacing,
         MachineItemData_TextSpacing,
         MachineItemData_ButtonMargin,
-        /* Pixmaps: */
-        MachineItemData_SettingsButtonPixmap,
-        MachineItemData_StartButtonPixmap,
-        MachineItemData_PauseButtonPixmap,
-        MachineItemData_CloseButtonPixmap,
     };
 
     /** @name Prepare/cleanup cascade.
