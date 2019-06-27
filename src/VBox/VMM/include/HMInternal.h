@@ -1102,6 +1102,7 @@ typedef struct HMCPU
     STAMPROFILEADV          StatExitIO;
     STAMPROFILEADV          StatExitMovCRx;
     STAMPROFILEADV          StatExitXcptNmi;
+    STAMPROFILEADV          StatExitVmentry;
     STAMPROFILEADV          StatImportGuestState;
     STAMPROFILEADV          StatExportGuestState;
     STAMPROFILEADV          StatLoadGuestFpuState;

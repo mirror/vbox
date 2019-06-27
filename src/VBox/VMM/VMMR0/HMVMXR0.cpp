@@ -9145,6 +9145,7 @@ static int hmR0VmxLeave(PVMCPU pVCpu, bool fImportState)
     STAM_PROFILE_ADV_SET_STOPPED(&pVCpu->hm.s.StatExitIO);
     STAM_PROFILE_ADV_SET_STOPPED(&pVCpu->hm.s.StatExitMovCRx);
     STAM_PROFILE_ADV_SET_STOPPED(&pVCpu->hm.s.StatExitXcptNmi);
+    STAM_PROFILE_ADV_SET_STOPPED(&pVCpu->hm.s.StatExitVmentry);
     STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchLongJmpToR3);
 
     VMCPU_CMPXCHG_STATE(pVCpu, VMCPUSTATE_STARTED_HM, VMCPUSTATE_STARTED_EXEC);
@@ -16467,7 +16468,9 @@ HMVMX_EXIT_DECL hmR0VmxExitVmlaunch(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 
     HMVMX_CHECK_EXIT_DUE_TO_VMX_INSTR(pVCpu, pVmxTransient->uExitReason);
 
+    STAM_PROFILE_ADV_START(&pVCpu->hm.s.StatExitVmentry, z);
     VBOXSTRICTRC rcStrict = IEMExecDecodedVmlaunchVmresume(pVCpu, pVmxTransient->cbInstr, VMXINSTRID_VMLAUNCH);
+    STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExitVmentry, z);
     if (RT_LIKELY(rcStrict == VINF_SUCCESS))
     {
         ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_ALL_GUEST);
@@ -16611,7 +16614,9 @@ HMVMX_EXIT_DECL hmR0VmxExitVmresume(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 
     HMVMX_CHECK_EXIT_DUE_TO_VMX_INSTR(pVCpu, pVmxTransient->uExitReason);
 
+    STAM_PROFILE_ADV_START(&pVCpu->hm.s.StatExitVmentry, z);
     VBOXSTRICTRC rcStrict = IEMExecDecodedVmlaunchVmresume(pVCpu, pVmxTransient->cbInstr, VMXINSTRID_VMRESUME);
+    STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExitVmentry, z);
     if (RT_LIKELY(rcStrict == VINF_SUCCESS))
     {
         ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_ALL_GUEST);
