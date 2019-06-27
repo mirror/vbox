@@ -15871,6 +15871,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVmexitApicAccess(PVMCPU pVCpu, PCVMXVEXITIN
 {
     Assert(pExitInfo);
     Assert(pExitEventInfo);
+    Assert(pExitInfo->uReason == VMX_EXIT_APIC_ACCESS);
     VBOXSTRICTRC rcStrict = iemVmxVmexitApicAccessWithInfo(pVCpu, pExitInfo, pExitEventInfo);
     Assert(!pVCpu->iem.s.cActiveMappings);
     return iemExecStatusCodeFiddling(pVCpu, rcStrict);
@@ -15941,6 +15942,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVmexitXcpt(PVMCPU pVCpu, PCVMXVEXITINFO pEx
 {
     Assert(pExitInfo);
     Assert(pExitEventInfo);
+    Assert(pExitInfo->uReason == VMX_EXIT_XCPT_OR_NMI);
     VBOXSTRICTRC rcStrict = iemVmxVmexitEventWithInfo(pVCpu, pExitInfo, pExitEventInfo);
     Assert(!pVCpu->iem.s.cActiveMappings);
     return iemExecStatusCodeFiddling(pVCpu, rcStrict);
@@ -16070,6 +16072,9 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVmexitInstr(PVMCPU pVCpu, uint32_t uExitRea
  */
 VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVmexitTaskSwitch(PVMCPU pVCpu, PCVMXVEXITINFO pExitInfo, PCVMXVEXITEVENTINFO pExitEventInfo)
 {
+    Assert(pExitInfo);
+    Assert(pExitEventInfo);
+    Assert(pExitInfo->uReason == VMX_EXIT_TASK_SWITCH);
     VBOXSTRICTRC rcStrict = iemVmxVmexitTaskSwitchWithInfo(pVCpu, pExitInfo, pExitEventInfo);
     Assert(!pVCpu->iem.s.cActiveMappings);
     return iemExecStatusCodeFiddling(pVCpu, rcStrict);
