@@ -503,7 +503,7 @@ static NTSTATUS vboxUsbFltDevPopulate(PVBOXUSBFLT_DEVICE pDevice, PDEVICE_OBJECT
             if (!rc)
             {
                 /* This *really* should not happen. */
-                WARN(("Failed to parse Hardware ID", Status));
+                WARN(("Failed to parse Hardware ID"));
                 break;
             }
 
