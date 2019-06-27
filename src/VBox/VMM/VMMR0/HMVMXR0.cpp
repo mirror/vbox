@@ -16849,6 +16849,7 @@ HMVMX_EXIT_DECL hmR0VmxExitXcptOrNmiNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTrans
 
                 VMXVEXITINFO ExitInfo;
                 RT_ZERO(ExitInfo);
+                ExitInfo.uReason = pVmxTransient->uExitReason;
                 ExitInfo.cbInstr = pVmxTransient->cbInstr;
                 ExitInfo.u64Qual = pVmxTransient->uExitQual;
 
@@ -16945,11 +16946,12 @@ HMVMX_EXIT_DECL hmR0VmxExitTaskSwitchNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTran
 
     VMXVEXITINFO ExitInfo;
     RT_ZERO(ExitInfo);
+    ExitInfo.uReason = pVmxTransient->uExitReason;
     ExitInfo.cbInstr = pVmxTransient->cbInstr;
     ExitInfo.u64Qual = pVmxTransient->uExitQual;
 
     VMXVEXITEVENTINFO ExitEventInfo;
-    RT_ZERO(ExitInfo);
+    RT_ZERO(ExitEventInfo);
     ExitEventInfo.uIdtVectoringInfo    = pVmxTransient->uIdtVectoringInfo;
     ExitEventInfo.uIdtVectoringErrCode = pVmxTransient->uIdtVectoringErrorCode;
     return IEMExecVmxVmexitTaskSwitch(pVCpu, &ExitInfo, &ExitEventInfo);
@@ -17252,6 +17254,7 @@ HMVMX_EXIT_DECL hmR0VmxExitMovDRxNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransien
 
         VMXVEXITINFO ExitInfo;
         RT_ZERO(ExitInfo);
+        ExitInfo.uReason = pVmxTransient->uExitReason;
         ExitInfo.cbInstr = pVmxTransient->cbInstr;
         ExitInfo.u64Qual = pVmxTransient->uExitQual;
         return IEMExecVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
@@ -17469,11 +17472,12 @@ HMVMX_EXIT_DECL hmR0VmxExitApicAccessNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTran
 
     VMXVEXITINFO ExitInfo;
     RT_ZERO(ExitInfo);
+    ExitInfo.uReason = pVmxTransient->uExitReason;
     ExitInfo.cbInstr = pVmxTransient->cbInstr;
     ExitInfo.u64Qual = pVmxTransient->uExitQual;
 
     VMXVEXITEVENTINFO ExitEventInfo;
-    RT_ZERO(ExitInfo);
+    RT_ZERO(ExitEventInfo);
     ExitEventInfo.uIdtVectoringInfo    = pVmxTransient->uIdtVectoringInfo;
     ExitEventInfo.uIdtVectoringErrCode = pVmxTransient->uIdtVectoringErrorCode;
     return IEMExecVmxVmexitApicAccess(pVCpu, &ExitInfo, &ExitEventInfo);
