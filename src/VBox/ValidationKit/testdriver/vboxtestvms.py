@@ -814,7 +814,7 @@ class BaseTestVm(object):
             if oGuestOSType:
                 try:
                     eCtrl = oGuestOSType.recommendedHDStorageController;
-                    eBus  = oGuestOSType.RecommendedHDStorageBus;
+                    eBus  = oGuestOSType.recommendedHDStorageBus;
                 except:
                     reporter.errorXcpt();
                 else:
