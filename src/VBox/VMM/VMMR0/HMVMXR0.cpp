@@ -16662,9 +16662,6 @@ HMVMX_EXIT_DECL hmR0VmxExitVmwrite(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
     if (!ExitInfo.InstrInfo.VmreadVmwrite.fIsRegOperand)
         HMVMX_DECODE_MEM_OPERAND(pVCpu, ExitInfo.InstrInfo.u, ExitInfo.u64Qual, VMXMEMACCESS_READ, &ExitInfo.GCPtrEffAddr);
 
-    /** @todo NSTVMX: Remove later. */
-    Log4Func(("VMWRITE: %#x\n", pVCpu->cpum.GstCtx.aGRegs[ExitInfo.InstrInfo.VmreadVmwrite.iReg2].u32));
-
     VBOXSTRICTRC rcStrict = IEMExecDecodedVmwrite(pVCpu, &ExitInfo);
     if (RT_LIKELY(rcStrict == VINF_SUCCESS))
         ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS | HM_CHANGED_GUEST_HWVIRT);
