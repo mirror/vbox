@@ -39,6 +39,7 @@ class UIMouseHandler;
 class UIMachineWindow;
 class UIMachineView;
 class UIDockIconPreview;
+class UISoftKeyboard;
 class CSession;
 class CMachine;
 class CConsole;
@@ -265,7 +266,7 @@ private slots:
     /* "Machine" menu functionality: */
     void sltShowKeyboardSettings();
     void sltShowSoftKeyboard();
-    void sltCloseSoftKeyboard();
+    void sltSoftKeyboardClosed();
     void sltToggleMouseIntegration(bool fEnabled);
     void sltTypeCAD();
 #ifdef VBOX_WS_X11
@@ -437,7 +438,7 @@ private:
     QIManagerDialog *m_pLogViewerDialog;
     QIManagerDialog *m_pFileManagerDialog;
     QIManagerDialog *m_pProcessControlDialog;
-    QIManagerDialog *m_pSoftKeyboardDialog;
+    UISoftKeyboard  *m_pSoftKeyboardDialog;
 
     /* Friend classes: */
     friend class UIMachineWindow;

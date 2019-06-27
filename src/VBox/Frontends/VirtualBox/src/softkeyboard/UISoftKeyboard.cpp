@@ -1959,10 +1959,10 @@ void UISoftKeyboardWidget::copyCurentLayout()
     UISoftKeyboardLayout newLayout(*(m_pCurrentKeyboardLayout));
     QString strNewName;
     if (!newLayout.name().isEmpty())
-        strNewName= QString("%1-%2").arg(newLayout.name()).arg(tr("Copy"));
+        strNewName= QString("%1-%2").arg(newLayout.name()).arg(UISoftKeyboard::tr("Copy"));
     QString strNewNativeName;
     if (!newLayout.nativeName().isEmpty())
-        strNewNativeName= QString("%1-%2").arg(newLayout.nativeName()).arg(tr("Copy"));
+        strNewNativeName= QString("%1-%2").arg(newLayout.nativeName()).arg(UISoftKeyboard::tr("Copy"));
     newLayout.setName(strNewName);
     newLayout.setNativeName(strNewNativeName);
     newLayout.setEditable(true);
@@ -2828,9 +2828,9 @@ UISoftKeyboardStatusBarWidget::UISoftKeyboardStatusBarWidget(QWidget *pParent /*
 void UISoftKeyboardStatusBarWidget::retranslateUi()
 {
     if (m_pLayoutListButton)
-        m_pLayoutListButton->setToolTip(tr("Layout List"));
+        m_pLayoutListButton->setToolTip(UISoftKeyboard::tr("Layout List"));
     if (m_pSettingsButton)
-        m_pSettingsButton->setToolTip(tr("Settings"));
+        m_pSettingsButton->setToolTip(UISoftKeyboard::tr("Settings"));
 }
 
 void UISoftKeyboardStatusBarWidget::prepareObjects()

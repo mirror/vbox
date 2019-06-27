@@ -1604,34 +1604,21 @@ void UIMachineLogic::sltShowSoftKeyboard()
 
     /* Create the soft keyboard only once: */
     if (m_pSoftKeyboardDialog)
-        return;
-
-    UISoftKeyboard *pSoftKeyboard = new UISoftKeyboard(0, uisession(), machine().GetName());
-    // UISoftKeyboardDialogFactory dialogFactory(uisession(), actionPool(), machine().GetName());
-    // dialogFactory.prepare(pSoftKeyboardDialog, activeMachineWindow());
-    if (pSoftKeyboard)
     {
-        //m_pSoftKeyboardDialog = pSoftKeyboardDialog;
-
-        /* Show instance: */
-        pSoftKeyboard->show();
-        // pSoftKeyboardDialog->setWindowState(pSoftKeyboardDialog->windowState() & ~Qt::WindowMinimized);
-        // pSoftKeyboardDialog->activateWindow();
-        // connect(pSoftKeyboardDialog, &QIManagerDialog::sigClose,
-        //         this, &UIMachineLogic::sltCloseSoftKeyboard);
+        m_pSoftKeyboardDialog->raise();
+        return;
+    }
+    m_pSoftKeyboardDialog = new UISoftKeyboard(0, uisession(), machine().GetName());
+    if (m_pSoftKeyboardDialog)
+    {
+        connect(m_pSoftKeyboardDialog, &QMainWindow::destroyed, this, &UIMachineLogic::sltSoftKeyboardClosed);
+        m_pSoftKeyboardDialog->show();
     }
 }
 
-void UIMachineLogic::sltCloseSoftKeyboard()
+void UIMachineLogic::sltSoftKeyboardClosed()
 {
-    // QIManagerDialog* pDialog = qobject_cast<QIManagerDialog*>(sender());
-    // if (m_pSoftKeyboardDialog != pDialog || !pDialog)
-    //     return;
-
-    // /* Set the m_pSoftKeyboardDialog to NULL before closing the dialog. or we will have redundant deletes*/
-    // m_pSoftKeyboardDialog = 0;
-    // pDialog->close();
-    // UISoftKeyboardDialogFactory().cleanup(pDialog);
+    m_pSoftKeyboardDialog = 0;
 }
 
 void UIMachineLogic::sltToggleMouseIntegration(bool fEnabled)
