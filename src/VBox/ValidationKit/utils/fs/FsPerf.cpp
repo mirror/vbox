@@ -2422,8 +2422,9 @@ void fsPerfNtQueryInfoFileWorker(HANDLE hNtFile1, uint32_t fType)
                     )
                 RTTestIFailed("%s/%#x/%c: %#x", pszClass, cbBuf, chType, rcNt);
             if (   (Ios.Status != VirginIos.Status || Ios.Information != VirginIos.Information)
-                && !(   fType == RTFS_TYPE_DIRECTORY /* NTFS/W10-17763 */
-                    && Ios.Status == rcNt && Ios.Information == 0) )
+                && !(fType == RTFS_TYPE_DIRECTORY && Ios.Status == rcNt && Ios.Information == 0) /* NTFS/W10-17763 */
+                && !(   enmClass == FileUnusedInformation
+                     && Ios.Status == rcNt && Ios.Information == sizeof(uBuf)) /* NTFS/VBoxSF/w7rtm */ )
                 RTTestIFailed("%s/%#x/%c: I/O status block was modified: %#x %#zx",
                               pszClass, cbBuf, chType, Ios.Status, Ios.Information);
             if (!ASMMemIsAllU8(&uBuf, sizeof(uBuf), 0xff))
