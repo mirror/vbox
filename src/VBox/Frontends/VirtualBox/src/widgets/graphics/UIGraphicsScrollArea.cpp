@@ -166,9 +166,17 @@ bool UIGraphicsScrollArea::eventFilter(QObject *pObject, QEvent *pEvent)
             case Qt::Horizontal:
             {
                 if (angleDelta.x() > 0)
+#ifdef VBOX_WS_MAC
+                    m_pScrollBar->setValue(m_pScrollBar->value() - pixelDelta.y());
+#else
                     m_pScrollBar->setValue(m_pScrollBar->value() - m_pScrollBar->step());
+#endif
                 else if (angleDelta.x() < 0)
+#ifdef VBOX_WS_MAC
+                    m_pScrollBar->setValue(m_pScrollBar->value() - pixelDelta.y());
+#else
                     m_pScrollBar->setValue(m_pScrollBar->value() + m_pScrollBar->step());
+#endif
                 break;
             }
             /* Scroll viewport vertically: */
@@ -228,7 +236,6 @@ void UIGraphicsScrollArea::prepareWidgets()
     m_pScrollBar = new UIGraphicsScrollBar(m_enmOrientation, this);
     if (m_pScrollBar)
     {
-        m_pScrollBar->setStep(10);
         m_pScrollBar->setZValue(1);
         connect(m_pScrollBar, &UIGraphicsScrollBar::sigValueChanged,
                 this, &UIGraphicsScrollArea::sltHandleScrollBarValueChange);

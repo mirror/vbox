@@ -66,8 +66,6 @@ public:
     /** Returns minimum size-hint. */
     virtual QSizeF minimumSizeHint() const /* override */;
 
-    /** Defines scrolling @a iStep. */
-    void setStep(int iStep);
     /** Returns scrolling step. */
     int step() const;
 
@@ -184,9 +182,6 @@ private:
 
     /** Holds the scroll-bar extent. */
     int  m_iExtent;
-
-    /** Holds the scrolling step. */
-    int  m_iStep;
 
     /** Holds the minimum scroll-bar value. */
     int  m_iMinimum;
