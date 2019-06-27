@@ -859,7 +859,7 @@ class BaseTestVm(object):
             if oGuestOSType:
                 try:
                     eCtrl = oGuestOSType.recommendedDVDStorageController;
-                    eBus  = oGuestOSType.RecommendedDVDStorageBus;
+                    eBus  = oGuestOSType.recommendedDVDStorageBus;
                 except:
                     reporter.errorXcpt();
                 else:
