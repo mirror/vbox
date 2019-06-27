@@ -3601,11 +3601,11 @@ VMM_INT_DECL(bool) CPUMIsGuestVmxMovToCr3InterceptSet(PVMCPU pVCpu, uint64_t uNe
         uint32_t const uCr3TargetCount = pVmcs->u32Cr3TargetCount;
         Assert(uCr3TargetCount <= VMX_V_CR3_TARGET_COUNT);
 
-        /* If the CR3-target count is 0, we must always cause a VM-exit. */
+        /* If the CR3-target count is 0, cause a VM-exit. */
         if (uCr3TargetCount == 0)
             return true;
 
-        /* If the CR3 being written doesn't matches any of the target values, cause a VM-exit. */
+        /* If the CR3 being written doesn't match any of the target values, cause a VM-exit. */
         AssertCompile(VMX_V_CR3_TARGET_COUNT == 4);
         if (   uNewCr3 != pVmcs->u64Cr3Target0.u
             && uNewCr3 != pVmcs->u64Cr3Target1.u
