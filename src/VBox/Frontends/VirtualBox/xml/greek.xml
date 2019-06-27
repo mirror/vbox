@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <layout>
     <name>Greek</name>
+    <id>878fcc44-59bf-4fd9-a73e-fc95b7652281</id>
     <physicallayoutid>{368efa94-3744-48c5-9d5a-59c2f15fe5ec}</physicallayoutid>
     <key>
         <position>110</position>
@@ -158,50 +159,50 @@
     </key>
     <key>
         <position>7</position>
-        <basecaption></basecaption>
-        <shiftcaption></shiftcaption>
-        <altgrcaption></altgrcaption>
-        <shiftaltgrcaption></shiftaltgrcaption>
-    </key>
-    <key>
-        <position>8</position>
         <basecaption>6</basecaption>
         <shiftcaption>^</shiftcaption>
         <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
-        <position>9</position>
+        <position>8</position>
         <basecaption>7</basecaption>
         <shiftcaption>&amp;</shiftcaption>
         <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
-        <position>10</position>
+        <position>9</position>
         <basecaption>8</basecaption>
         <shiftcaption>*</shiftcaption>
         <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
-        <position>11</position>
+        <position>10</position>
         <basecaption>9</basecaption>
         <shiftcaption>(</shiftcaption>
         <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
-        <position>12</position>
+        <position>11</position>
         <basecaption>0</basecaption>
         <shiftcaption>)</shiftcaption>
         <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
-        <position>13</position>
+        <position>12</position>
         <basecaption>-</basecaption>
         <shiftcaption>_</shiftcaption>
+        <altgrcaption></altgrcaption>
+        <shiftaltgrcaption></shiftaltgrcaption>
+    </key>
+    <key>
+        <position>13</position>
+        <basecaption>=</basecaption>
+        <shiftcaption>+</shiftcaption>
         <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>

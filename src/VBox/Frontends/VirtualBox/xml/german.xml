@@ -2,10 +2,11 @@
 <layout>
     <name>German</name>
     <nativename>Deutsch</nativename>
+    <id>e45b1a6f-8b87-424f-a437-c9cec6715311</id>
     <physicallayoutid>{d41a0398-92a0-4ba4-beba-3d91a5dd0e50}</physicallayoutid>
     <key>
         <position>110</position>
-        <basecaption>Esc</basecaption>
+        <basecaption>Escx</basecaption>
         <shiftcaption></shiftcaption>
         <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
