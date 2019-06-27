@@ -390,8 +390,7 @@ static int usbLibDevStrDriverKeyGet(HANDLE hHub, ULONG iPort, LPSTR* plpszName)
     if (!DeviceIoControl(hHub, IOCTL_USB_GET_NODE_CONNECTION_DRIVERKEY_NAME, &Name, sizeof (Name), &Name, sizeof (Name), &cbReturned, NULL))
     {
 #ifdef VBOX_WITH_ANNOYING_USB_ASSERTIONS
-        DWORD dwErr = GetLastError();
-        AssertMsgFailed(("DeviceIoControl 1 fail dwErr (%d)\n", dwErr));
+        AssertMsgFailed(("DeviceIoControl 1 fail dwErr (%d)\n", GetLastError()));
 #endif
         return VERR_GENERAL_FAILURE;
     }
@@ -610,7 +609,7 @@ static int usbLibDevStrDrEntryGet(HANDLE hHub, ULONG iPort, ULONG iDr, USHORT id
                          &cbReturned, NULL))
     {
         DWORD dwErr = GetLastError();
-        LogRel(("Getting USB descriptor failed with error %ld\n", dwErr));
+        LogRel(("Getting USB descriptor (id %u) failed with error %ld\n", iDr, dwErr));
         return RTErrConvertFromWin32(dwErr);
     }
 
@@ -769,6 +768,7 @@ static int usbLibDevGetHubPortDevices(HANDLE hHub, LPCSTR lpcszHubName, ULONG iP
                                   &cbReturned, NULL))
     {
         DWORD dwErr = GetLastError(); NOREF(dwErr);
+        LogRel(("Getting USB connection information failed with error %ld\n", dwErr));
         AssertMsg(dwErr == ERROR_DEVICE_NOT_CONNECTED, (__FUNCTION__": DeviceIoControl failed dwErr (%d)\n", dwErr));
         return VERR_GENERAL_FAILURE;
     }
@@ -813,7 +813,7 @@ static int usbLibDevGetHubPortDevices(HANDLE hHub, LPCSTR lpcszHubName, ULONG iP
     {
         rc = usbLibDevStrDrEntryGetAll(hHub, iPort, &pConInfo->DeviceDescriptor, pCfgDr, &pList);
 #ifdef VBOX_WITH_ANNOYING_USB_ASSERTIONS
-        AssertRC(rc);
+        AssertRC(rc); // this can fail if device suspended
 #endif
     }
 
@@ -877,6 +877,7 @@ static int usbLibDevGetHubDevices(LPCSTR lpszName, PUSBDEVICE *ppDevs, uint32_t 
                             &NodeInfo, sizeof (NodeInfo),
                             &cbReturned, NULL))
         {
+            LogRel(("Getting USB node information failed with error %ld\n", GetLastError()));
             AssertFailed();
             break;
         }
