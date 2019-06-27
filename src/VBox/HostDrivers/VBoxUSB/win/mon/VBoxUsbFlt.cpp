@@ -398,6 +398,69 @@ static bool vboxUsbFltDevStateIsFiltered(PVBOXUSBFLT_DEVICE pDevice)
     return pDevice->enmState >= VBOXUSBFLT_DEVSTATE_CAPTURING;
 }
 
+static uint16_t vboxUsbParseHexNumU16(WCHAR **ppStr)
+{
+    WCHAR       *pStr = *ppStr;
+    WCHAR       wc;
+    uint16_t    num = 0;
+    unsigned    u;
+
+    for (int i = 0; i < 4; ++i)
+    {
+        if (!*pStr)     /* Just in case the string is too short. */
+            break;
+
+        wc = *pStr;
+        u = wc >= 'A' ? wc - 'A' + 10 : wc - '0';   /* Hex digit to number. */
+        num |= u << (12 - 4 * i);
+        pStr++;
+    }
+    *ppStr = pStr;
+
+    return num;
+}
+
+static bool vboxUsbParseHardwareID(WCHAR *pchIdStr, uint16_t *pVid, uint16_t *pPid, uint16_t *pRev)
+{
+#define VID_PREFIX  L"USB\\VID_"
+#define PID_PREFIX  L"&PID_"
+#define REV_PREFIX  L"&REV_"
+
+    *pVid = *pPid = *pRev = 0xFFFF;
+
+    /* The Hardware ID is in the format USB\VID_xxxx&PID_xxxx&REV_xxxx, with 'xxxx'
+     * being 16-bit hexadecimal numbers. The string is coming from the
+     * Windows PnP manager so OEMs should have no opportunity to mess it up.
+     */
+
+    if (wcsncmp(pchIdStr, VID_PREFIX, wcslen(VID_PREFIX)))
+        return false;
+    /* Point to the start of the vendor ID number and parse it. */
+    pchIdStr += wcslen(VID_PREFIX);
+    *pVid = vboxUsbParseHexNumU16(&pchIdStr);
+
+    if (wcsncmp(pchIdStr, PID_PREFIX, wcslen(PID_PREFIX)))
+        return false;
+    /* Point to the start of the product ID number and parse it. */
+    pchIdStr += wcslen(PID_PREFIX);
+    *pPid = vboxUsbParseHexNumU16(&pchIdStr);
+
+    /* The revision might not be there; the Windows documentation is not
+     * entirely clear if it will be always present for USB devices or not.
+     * If it's not there, still consider this a success. */
+    if (wcsncmp(pchIdStr, REV_PREFIX, wcslen(REV_PREFIX)))
+        return true;
+
+    /* Point to the start of the revision number and parse it. */
+    pchIdStr += wcslen(REV_PREFIX);
+    *pRev = vboxUsbParseHexNumU16(&pchIdStr);
+
+    return true;
+#undef VID_PREFIX
+#undef PID_PREFIX
+#undef REV_PREFIX
+}
+
 #define VBOXUSBMON_POPULATE_REQUEST_TIMEOUT_MS 10000
 
 static NTSTATUS vboxUsbFltDevPopulate(PVBOXUSBFLT_DEVICE pDevice, PDEVICE_OBJECT pDo /*, BOOLEAN bPopulateNonFilterProps*/)
@@ -421,8 +484,42 @@ static NTSTATUS vboxUsbFltDevPopulate(PVBOXUSBFLT_DEVICE pDevice, PDEVICE_OBJECT
         Status = VBoxUsbToolGetDescriptor(pDo, pDevDr, sizeof(*pDevDr), USB_DEVICE_DESCRIPTOR_TYPE, 0, 0, VBOXUSBMON_POPULATE_REQUEST_TIMEOUT_MS);
         if (!NT_SUCCESS(Status))
         {
-            WARN(("getting device descriptor failed, Status (0x%x)", Status));
-            break;
+            WCHAR       wchPropBuf[256];
+            ULONG       ulResultLen;
+            bool        rc;
+            uint16_t    vid, pid, rev;
+
+            WARN(("getting device descriptor failed, Status (0x%x); falling back to IoGetDeviceProperty", Status));
+
+            /* Try falling back to IoGetDeviceProperty. */
+            Status = IoGetDeviceProperty(pDo, DevicePropertyHardwareID, sizeof(wchPropBuf), wchPropBuf, &ulResultLen);
+            if (!NT_SUCCESS(Status))
+            {
+                /* This just isn't our day. We have no idea what the device is. */
+                WARN(("IoGetDeviceProperty failed, Status (0x%x)", Status));
+                break;
+            }
+            rc = vboxUsbParseHardwareID(wchPropBuf, &vid, &pid, &rev);
+            if (!rc)
+            {
+                /* This *really* should not happen. */
+                WARN(("Failed to parse Hardware ID", Status));
+                break;
+            }
+
+            LOG(("Parsed HardwareID: vid=%04X, pid=%04X, rev=%04X", vid, pid, rev));
+            if (vid == 0xFFFF || pid == 0xFFFF)
+                break;
+
+            LOG(("Successfully fell back to IoGetDeviceProperty result"));
+            /* The vendor/product ID is what matters. */
+            pDevDr->idVendor  = vid;
+            pDevDr->idProduct = pid;
+            pDevDr->bcdDevice = rev;
+            /* The rest we don't really know. */
+            pDevDr->bDeviceClass    = 0;
+            pDevDr->bDeviceSubClass = 0;
+            pDevDr->bDeviceProtocol = 0;
         }
 
         if (vboxUsbFltBlDevMatchLocked(pDevDr->idVendor, pDevDr->idProduct, pDevDr->bcdDevice))
