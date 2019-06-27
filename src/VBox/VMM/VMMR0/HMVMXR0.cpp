@@ -11067,6 +11067,7 @@ static int hmR0VmxMergeVmcsNested(PVMCPU pVCpu)
     uint32_t const u32ProcCtls2 = (pVmcsNstGst->u32ProcCtls2  & ~VMX_PROC_CTLS2_VPID)
                                 | (pVmcsInfoGst->u32ProcCtls2 & ~(  VMX_PROC_CTLS2_VIRT_APIC_ACCESS
                                                                   | VMX_PROC_CTLS2_INVPCID
+                                                                  | VMX_PROC_CTLS2_VMCS_SHADOWING
                                                                   | VMX_PROC_CTLS2_RDTSCP
                                                                   | VMX_PROC_CTLS2_XSAVES_XRSTORS
                                                                   | VMX_PROC_CTLS2_APIC_REG_VIRT
@@ -14029,14 +14030,15 @@ HMVMX_EXIT_DECL hmR0VmxExitXcptOrNmi(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
     STAM_PROFILE_ADV_START(&pVCpu->hm.s.StatExitXcptNmi, y3);
 
+    Assert(!pVmxTransient->fIsNestedGuest);
     PVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
     int rc = hmR0VmxReadExitIntInfoVmcs(pVmxTransient);
     AssertRCReturn(rc, rc);
 
     uint32_t const uIntType = VMX_EXIT_INT_INFO_TYPE(pVmxTransient->uExitIntInfo);
+    Assert(VMX_EXIT_INT_INFO_IS_VALID(pVmxTransient->uExitIntInfo));
     Assert(   !(pVmcsInfo->u32ExitCtls & VMX_EXIT_CTLS_ACK_EXT_INT)
            && uIntType != VMX_EXIT_INT_INFO_TYPE_EXT_INT);
-    Assert(VMX_EXIT_INT_INFO_IS_VALID(pVmxTransient->uExitIntInfo));
 
     if (uIntType == VMX_EXIT_INT_INFO_TYPE_NMI)
     {
@@ -16795,8 +16797,8 @@ HMVMX_EXIT_DECL hmR0VmxExitXcptOrNmiNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTrans
     AssertRCReturn(rc, rc);
 
     uint64_t const uExitIntInfo = pVmxTransient->uExitIntInfo;
+    uint32_t const uExtIntType  = VMX_EXIT_INT_INFO_TYPE(uExitIntInfo);
     Assert(VMX_EXIT_INT_INFO_IS_VALID(uExitIntInfo));
-    uint32_t const uExtIntType = VMX_EXIT_INT_INFO_TYPE(uExitIntInfo);
 
     /*
      * Make sure not to use stale/previous VM-exit instruction length since we read the
@@ -16809,8 +16811,7 @@ HMVMX_EXIT_DECL hmR0VmxExitXcptOrNmiNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTrans
     {
         /*
          * Physical NMIs:
-         *    We shouldn't direct host physical NMIs to the nested-guest. Dispatch it to the
-         *    host.
+         *    We shouldn't direct host physical NMIs to the nested-guest. Dispatch it to the host.
          */
         case VMX_EXIT_INT_INFO_TYPE_NMI:
             return hmR0VmxExitHostNmi(pVCpu);
