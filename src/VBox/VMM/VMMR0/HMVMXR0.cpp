@@ -13676,7 +13676,7 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExitNested(PVMCPU pVCpu, PVMXTRANSIENT pVm
         case VMX_EXIT_PREEMPT_TIMER:
         {
             /** @todo NSTVMX: Preempt timer. */
-            return hmR0VmxExitErrUnexpected(pVCpu, pVmxTransient);
+            return hmR0VmxExitPreemptTimer(pVCpu, pVmxTransient);
         }
 
         case VMX_EXIT_MOV_DRX:                  return hmR0VmxExitMovDRxNested(pVCpu, pVmxTransient);
@@ -17096,7 +17096,28 @@ HMVMX_EXIT_DECL hmR0VmxExitMovCRxNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransien
             uint8_t const iGReg    = VMX_EXIT_QUAL_CRX_GENREG(pVmxTransient->uExitQual);
             Assert(iGReg < RT_ELEMENTS(pVCpu->cpum.GstCtx.aGRegs));
             uint64_t const uNewCrX = pVCpu->cpum.GstCtx.aGRegs[iGReg].u64;
-            if (CPUMIsGuestVmxMovToCr0Cr4InterceptSet(pVCpu, &pVCpu->cpum.GstCtx, iCrReg, uNewCrX))
+
+            bool fIntercept;
+            switch (iCrReg)
+            {
+                case 0:
+                case 4:
+                    fIntercept = CPUMIsGuestVmxMovToCr0Cr4InterceptSet(pVCpu, &pVCpu->cpum.GstCtx, iCrReg, uNewCrX);
+                    break;
+
+                case 3:
+                    fIntercept = CPUMIsGuestVmxMovToCr3InterceptSet(pVCpu, uNewCrX);
+                    break;
+
+                case 8:
+                    fIntercept = CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS_CR8_LOAD_EXIT);
+                    break;
+
+                default:
+                    fIntercept = false;
+                    break;
+            }
+            if (fIntercept)
             {
                 VMXVEXITINFO ExitInfo;
                 RT_ZERO(ExitInfo);
