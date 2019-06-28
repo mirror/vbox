@@ -58,53 +58,61 @@ static bool rtDirFilterWinNtMatchBase(unsigned iDepth, const char *pszName, PCRT
 
 RTDECL(int) RTDirCreateFullPath(const char *pszPath, RTFMODE fMode)
 {
+    return RTDirCreateFullPathEx(pszPath, fMode, 0);
+}
+
+
+RTDECL(int) RTDirCreateFullPathEx(const char *pszPath, RTFMODE fMode, uint32_t fFlags)
+{
     /*
      * Resolve the path.
      */
-    char szAbsPath[RTPATH_MAX];
-    int rc = RTPathAbs(pszPath, szAbsPath, sizeof(szAbsPath));
-    if (RT_FAILURE(rc))
-        return rc;
+    char *pszAbsPath = RTPathAbsDup(pszPath);
+    if (!pszAbsPath)
+        return VERR_NO_TMP_MEMORY;
 
     /*
      * Iterate the path components making sure each of them exists.
      */
     /* skip volume name */
-    char *psz = &szAbsPath[rtPathVolumeSpecLen(szAbsPath)];
+    char *psz = &pszAbsPath[rtPathVolumeSpecLen(pszAbsPath)];
 
     /* skip the root slash if any */
-    if (    psz[0] == '/'
-#if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
-        ||  psz[0] == '\\'
-#endif
-        )
+    if (RTPATH_IS_SLASH(*psz))
         psz++;
 
     /* iterate over path components. */
+    int rc = VINF_SUCCESS;
     do
     {
         /* the next component is NULL, stop iterating */
         if (!*psz)
             break;
-#if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
-        psz = strpbrk(psz, "\\/");
+#if RTPATH_STYLE == RTPATH_STR_F_STYLE_DOS
+        char *psz2 = strchr(psz, '/');
+        psz = strchr(psz, RTPATH_SLASH);
+        if (psz2 && (!psz || (uintptr_t)psz2 < (uintptr_t)psz))
+            psz = psz;
 #else
-        psz = strchr(psz, '/');
+        psz = strchr(psz, RTPATH_SLASH);
 #endif
         if (psz)
             *psz = '\0';
+
         /*
          * ASSUME that RTDirCreate will return VERR_ALREADY_EXISTS and not VERR_ACCESS_DENIED in those cases
          * where the directory exists but we don't have write access to the parent directory.
          */
-        rc = RTDirCreate(szAbsPath, fMode, 0);
+        rc = RTDirCreate(pszAbsPath, fMode, fFlags);
         if (rc == VERR_ALREADY_EXISTS)
             rc = VINF_SUCCESS;
+
         if (!psz)
             break;
         *psz++ = RTPATH_DELIMITER;
     } while (RT_SUCCESS(rc));
 
+    RTStrFree(pszAbsPath);
     return rc;
 }
 

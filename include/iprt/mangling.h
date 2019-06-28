@@ -769,6 +769,7 @@
 # define RTDirClose                                     RT_MANGLER(RTDirClose)
 # define RTDirCreate                                    RT_MANGLER(RTDirCreate)
 # define RTDirCreateFullPath                            RT_MANGLER(RTDirCreateFullPath)
+# define RTDirCreateFullPathEx                          RT_MANGLER(RTDirCreateFullPathEx)
 # define RTDirCreateTemp                                RT_MANGLER(RTDirCreateTemp)
 # define RTDirCreateTempSecure                          RT_MANGLER(RTDirCreateTempSecure)
 # define RTDirCreateUniqueNumbered                      RT_MANGLER(RTDirCreateUniqueNumbered)

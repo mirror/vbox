@@ -90,8 +90,19 @@ RTDECL(int) RTDirCreate(const char *pszPath, RTFMODE fMode, uint32_t fCreate)
         rc = rtPathToNative(&pszNativePath, pszPath, NULL);
         if (RT_SUCCESS(rc))
         {
+            struct stat st;
             if (mkdir(pszNativePath, fMode & RTFS_UNIX_MASK) == 0)
+            {
+                /* If requested, we try make use the permission bits are set
+                   correctly when asked.  For now, we'll just ignore errors here. */
+                if (fCreate & RTDIRCREATE_FLAGS_IGNORE_UMASK)
+                {
+                    if (   stat(pszNativePath, &st)
+                        || (st.st_mode & 07777) != (fMode & 07777) )
+                        chmod(pszNativePath, fMode & RTFS_UNIX_MASK);
+                }
                 rc = VINF_SUCCESS;
+            }
             else
             {
                 rc = errno;
@@ -108,7 +119,6 @@ RTDECL(int) RTDirCreate(const char *pszPath, RTFMODE fMode, uint32_t fCreate)
                 {
                     rc = RTErrConvertFromErrno(rc);
                     /*fVerifyIsDir = false;   We'll check if it's a dir ourselves since we're going to stat() anyway. */
-                    struct stat st;
                     if (!stat(pszNativePath, &st))
                     {
                         rc = VERR_ALREADY_EXISTS;

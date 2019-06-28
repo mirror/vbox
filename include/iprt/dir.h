@@ -65,8 +65,10 @@ RTDECL(bool) RTDirExists(const char *pszPath);
 #define RTDIRCREATE_FLAGS_NOT_CONTENT_INDEXED_SET           UINT32_C(0)
 /** Ignore errors setting the not-content-indexed flag.  Windows only atm. */
 #define RTDIRCREATE_FLAGS_NOT_CONTENT_INDEXED_NOT_CRITICAL  RT_BIT(2)
+/** Ignore umask when applying the mode. */
+#define RTDIRCREATE_FLAGS_IGNORE_UMASK                      RT_BIT(3)
 /** Valid mask. */
-#define RTDIRCREATE_FLAGS_VALID_MASK                        UINT32_C(0x00000007)
+#define RTDIRCREATE_FLAGS_VALID_MASK                        UINT32_C(0x0000000f)
 /** @} */
 
 /**
@@ -80,14 +82,23 @@ RTDECL(bool) RTDirExists(const char *pszPath);
 RTDECL(int) RTDirCreate(const char *pszPath, RTFMODE fMode, uint32_t fCreate);
 
 /**
- * Creates a directory including all parent directories in the path
- * if they don't exist.
+ * Creates a directory including all non-existing parent directories.
  *
  * @returns iprt status code.
  * @param   pszPath     Path to the directory to create.
  * @param   fMode       The mode of the new directories.
  */
 RTDECL(int) RTDirCreateFullPath(const char *pszPath, RTFMODE fMode);
+
+/**
+ * Creates a directory including all non-existing parent directories.
+ *
+ * @returns iprt status code.
+ * @param   pszPath     Path to the directory to create.
+ * @param   fMode       The mode of the new directories.
+ * @param   fCreate     Create flags, RTDIRCREATE_FLAGS_*.
+ */
+RTDECL(int) RTDirCreateFullPathEx(const char *pszPath, RTFMODE fMode, uint32_t fFlags);
 
 /**
  * Creates a new directory with a unique name using the given template.
