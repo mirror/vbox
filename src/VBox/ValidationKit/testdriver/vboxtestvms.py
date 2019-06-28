@@ -416,14 +416,14 @@ class BaseTestVm(object):
         _ = oTestDrv; _ = oVM; _ = oSession;
         return True;
 
-    def _storageCtrlAndBusToName(self, oVM, eCtrl, eBus):
+    def _storageCtrlAndBusToName(self, oVBoxMgr, oVM, eCtrl, eBus):
         """
         Resolves the storage controller name given type and bus.
 
         Returns String on success, None on failure w/ errors logged.
         """
         try:
-            aoControllers = oVM.storageControllers;
+            aoControllers = oVBoxMgr.getArray(oVM, 'storageControllers');
         except:
             reporter.errorXcpt();
             return None;
@@ -818,7 +818,8 @@ class BaseTestVm(object):
                 except:
                     reporter.errorXcpt();
                 else:
-                    self.__tHddCtrlPortDev = (self._storageCtrlAndBusToName(oVM, eCtrl, eBus), 0, 0); # ASSUMES port 0, device 0.
+                    # ASSUMES port 0, device 0.
+                    self.__tHddCtrlPortDev = (self._storageCtrlAndBusToName(oVBoxWrapped.oVBoxMgr, oVM, eCtrl, eBus), 0, 0);
                     reporter.log2('getHddAddress: %s, %s, %s [IGuestOSType]' % self.__tHddCtrlPortDev);
         return self.__tHddCtrlPortDev;
 
@@ -863,7 +864,8 @@ class BaseTestVm(object):
                 except:
                     reporter.errorXcpt();
                 else:
-                    self.__tDvdCtrlPortDev = (self._storageCtrlAndBusToName(oVM, eCtrl, eBus), 1, 0); # ASSUMES port 1, device 0.
+                    # ASSUMES port 1, device 0.
+                    self.__tDvdCtrlPortDev = (self._storageCtrlAndBusToName(oVBoxWrapped.oVBoxMgr, oVM, eCtrl, eBus), 1, 0);
                     reporter.log2('getDvdAddress: %s, %s, %s [IGuestOSType]' % self.__tDvdCtrlPortDev);
         return self.__tDvdCtrlPortDev;
 
