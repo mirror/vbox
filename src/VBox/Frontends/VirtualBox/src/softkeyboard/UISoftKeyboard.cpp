@@ -792,6 +792,7 @@ void UILayoutEditor::setKey(UISoftKeyboardKey *pKey)
         m_pAltGrCaptionEdit->setText(captions.m_strAltGr);
     if (m_pShiftAltGrCaptionEdit)
         m_pShiftAltGrCaptionEdit->setText(captions.m_strShiftAltGr);
+    m_pBaseCaptionEdit->setFocus();
 }
 
 void UILayoutEditor::setLayoutToEdit(UISoftKeyboardLayout *pLayout)
