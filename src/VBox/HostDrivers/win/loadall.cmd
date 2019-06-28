@@ -1,7 +1,7 @@
 @echo off
 rem $Id$
 rem rem @file
-rem Windows NT batch script for launching loadall.sh
+rem Windows NT batch script for loading the host drivers.
 rem
 
 rem
@@ -27,26 +27,106 @@ rem
 
 
 setlocal ENABLEEXTENSIONS
+setlocal ENABLEDELAYEDEXPANSION
 setlocal
 
+
 rem
-rem loadall.sh should be in the same directory as this script.
+rem find the directory we're in.
 rem
-set MY_SCRIPT=%~dp0loadall.sh
-if exist "%MY_SCRIPT%" goto found
-echo loadall.cmd: failed to find loadall.sh in "%~dp0".
+set MY_DIR=%~dp0
+if exist "%MY_DIR%\load.cmd" goto dir_okay
+echo load.cmd: failed to find load.sh in "%~dp0".
 goto end
 
+:dir_okay
 rem
-rem Found it, convert slashes and tell kmk_ash to interpret it.
+rem We don't use the driver files directly any more because of win10 keeping the open,
+rem so create an alternative directory for the binaries.
 rem
-:found
-set MY_SCRIPT=%MY_SCRIPT:\=/%
-set MY_ARGS=%*
-if ".%MY_ARGS%." NEQ ".." set MY_ARGS=%MY_ARGS:\=/%
-kmk_ash %MY_SCRIPT% %MY_ARGS%
+set MY_ALTDIR=%MY_DIR%\..\LoadedDrivers
+if not exist "%MY_ALTDIR%" mkdir "%MY_ALTDIR%"
 
+rem
+rem Display device states.
+rem
+for %%i in (VBoxNetAdp VBoxNetAdp6 VBoxNetFlt VBoxNetLwf VBoxUSBMon VBoxUSB VBoxDrv) do (
+    set type=
+    for /f "usebackq tokens=*" %%f in (`sc query %%i`) do (set xxx=%%f&&if "!xxx:~0,5!" =="STATE" set type=!xxx!)
+    for /f "usebackq tokens=2 delims=:" %%f in ('!type!') do set type=%%f
+    if "!type!x" == "x" set type= not configured, probably
+    echo load.sh: %%i -!type!
+)
+
+rem
+rem Copy uninstallers and installers and VBoxRT into the dir:
+rem
+echo **
+echo ** Copying installers and uninstallers into %MY_ALTDIR%...
+echo **
+set MY_FAILED=no
+for %%i in (NetAdpUninstall.exe NetAdp6Uninstall.exe USBUninstall.exe NetFltUninstall.exe NetLwfUninstall.exe SUPUninstall.exe ^
+            NetAdpInstall.exe   NetAdp6Install.exe   USBInstall.exe   NetFltInstall.exe   NetLwfInstall.exe   SUPInstall.exe ^
+            VBoxRT.dll) do if exist "%MY_DIR%\%%i" (copy "%MY_DIR%\%%i" "%MY_ALTDIR%\%%i" || set MY_FAILED=yes)
+if "%MY_FAILED%" == "yes" goto end
+
+rem
+rem Unload the drivers.
+rem
+echo **
+echo ** Unloading drivers...
+echo **
+for %%i in (NetAdpUninstall.exe NetAdp6Uninstall.exe USBUninstall.exe NetFltUninstall.exe NetLwfUninstall.exe SUPUninstall.exe) do (
+    if exist "%MY_ALTDIR%\%%i" (echo  * Running %%i...&& "%MY_ALTDIR%\%%i")
+)
+
+rem
+rem Copy the driver files into the directory now that they no longer should be in use and can be overwritten.
+rem
+echo **
+echo ** Copying drivers into %MY_ALTDIR%...
+echo **
+set MY_FAILED=no
+for %%i in (^
+    VBoxDrv.sys     VBoxDrv.inf      VBoxDrv.cat     VBoxDrv-PreW10.cat ^
+    VBoxNetAdp.sys  VBoxNetAdp.inf   VBoxNetAdp.cat ^
+    VBoxNetAdp6.sys VBoxNetAdp6.inf  VBoxNetAdp6.cat VBoxNetAdp6-PreW10.cat ^
+    VBoxNetFlt.sys  VBoxNetFlt.inf   VBoxNetFlt.cat                         VBoxNetFltNobj.dll ^
+    VBoxNetFltM.inf  ^
+    VBoxNetLwf.sys  VBoxNetLwf.inf   VBoxNetLwf.cat  VBoxNetLwf-PreW10.cat  ^
+    VBoxUSB.sys     VBoxUSB.inf      VBoxUSB.cat     VBoxUSB-PreW10.cat     ^
+    VBoxUSBMon.sys  VBoxUSBMon.inf   VBoxUSBMon.cat  VBoxUSBMon-PreW10.cat  ) ^
+do if exist "%MY_DIR%\%%i" (copy "%MY_DIR%\%%i" "%MY_ALTDIR%\%%i" || set MY_FAILED=yes)
+if "%MY_FAILED%" == "yes" goto end
+
+rem
+rem Invoke the installer if asked to do so.
+rem
+if "%1%" == "-u" goto end
+if "%1%" == "--uninstall" goto end
+
+set MY_VER=
+for /f "usebackq delims=[] tokens=2" %%f in (`cmd /c ver`) do set MY_VER=%%f
+for /f "usebackq tokens=2" %%f in ('%MY_VER%') do set MY_VER=%%f
+for /f "usebackq delims=. tokens=1" %%f in ('%MY_VER%') do set MY_VER=%%f
+set MY_VER=0000%MY_VER%
+set MY_VER=%MY_VER:~-2%
+
+echo **
+echo ** Loading drivers (for windows version %MY_VER%)...
+echo **
+
+if "%MY_VER%" GEQ "06" (
+    set MY_INSTALLERS=SUPInstall.exe USBInstall.exe NetLwfInstall.exe NetAdp6Install.exe
+) else (
+    set MY_INSTALLERS=SUPInstall.exe USBInstall.exe NetFltInstall.exe
+    rem NetAdpInstall.exe; - busted
+)
+for %%i in (%MY_INSTALLERS%) do (echo  * Running %%i...&& "%MY_ALTDIR%\%%i" || (echo loadall.cmd: %%i failed&& goto end))
+
+echo * loadall.cmd completed successfully.
 :end
+endlocal
 endlocal
 endlocal
 

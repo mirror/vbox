@@ -37,9 +37,7 @@ VBoxDrvCfg_SOURCES        = cfg/VBoxDrvCfg.cpp
 INSTALLS += HostDrivers-scripts
 HostDrivers-scripts_INST = $(INST_DIST)
 HostDrivers-scripts_EXEC_SOURCES = \
-	loadall.sh \
 	loadall.cmd \
-	load.sh \
 	load.cmd
 
 # generate rules
