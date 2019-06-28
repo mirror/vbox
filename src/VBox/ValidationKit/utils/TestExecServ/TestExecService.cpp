@@ -354,7 +354,7 @@ static int txsReplyInternal(PTXSPKTHDR pReply, const char *pszOpcode, size_t cbE
     }
 
     pReply->cb     = (uint32_t)sizeof(TXSPKTHDR) + (uint32_t)cbExtra;
-    pReply->uCrc32 = 0;
+    pReply->uCrc32 = 0; /* (txsSendPkt sets it) */
 
     return txsSendPkt(pReply);
 }
@@ -628,6 +628,14 @@ static int txsReplaceStringVariables(PCTXSPKTHDR pPktHdr, const char *pszSrc, ch
 #undef IF_VARIABLE_DO
             }
         }
+        /* Undo dollar escape sequences: $$ -> $ */
+        else if (pszDollar[1] == '$')
+        {
+            size_t cchLeft = cchNew - (&pszDollar[1] - pszNew);
+            memmove(pszDollar, &pszDollar[1], cchLeft);
+            pszDollar[cchLeft] = '\0';
+            cchNew -= 1;
+        }
     }
 
     *ppszNew = pszNew;
@@ -778,22 +786,42 @@ static int txsWaitForAck(PCTXSPKTHDR pPktHdr)
     return rc;
 }
 
-///**
-// * Expands the variables in the string and sends it back to the host.
-// *
-// * @returns IPRT status code from send.
-// * @param   pPktHdr             The expand string packet.
-// */
-//static int txsDoExpandString(PCTXSPKTHDR pPktHdr)
-//{
-//    int rc;
-//    char *pszIn;
-//    if (!txsIsStringPktValid(pPktHdr, "string", &pszIn, &rc))
-//        return rc;
-//
-//    txsReplyRc
-//
-//}
+/**
+ * Expands the variables in the string and sends it back to the host.
+ *
+ * @returns IPRT status code from send.
+ * @param   pPktHdr             The expand string packet.
+ */
+static int txsDoExpandString(PCTXSPKTHDR pPktHdr)
+{
+    int rc;
+    char *pszExpanded;
+    if (!txsIsStringPktValid(pPktHdr, "string", &pszExpanded, &rc))
+        return rc;
+
+    struct
+    {
+        TXSPKTHDR   Hdr;
+        char        szString[_64K];
+        char        abPadding[TXSPKT_ALIGNMENT];
+    } Pkt;
+
+    size_t const cbExpanded = strlen(pszExpanded) + 1;
+    if (cbExpanded <= sizeof(Pkt.szString))
+    {
+        memcpy(Pkt.szString, pszExpanded, cbExpanded);
+        rc = txsReplyInternal(&Pkt.Hdr, "STRING  ", cbExpanded);
+    }
+    else
+    {
+        memcpy(Pkt.szString, pszExpanded, sizeof(Pkt.szString));
+        Pkt.szString[0] = '\0';
+        rc = txsReplyInternal(&Pkt.Hdr, "SHORTSTR", sizeof(Pkt.szString));
+    }
+
+    RTStrFree(pszExpanded);
+    return rc;
+}
 
 /**
  * Unpacks a tar file.
@@ -1060,6 +1088,49 @@ static int txsDoList(PCTXSPKTHDR pPktHdr)
     return rc;
 }
 
+/**
+ * Worker for STAT and LSTAT for packing down the file info reply.
+ *
+ * @returns IPRT status code from send.
+ * @param   pInfo               The info to pack down.
+ */
+static int txsReplyObjInfo(PCRTFSOBJINFO pInfo)
+{
+    struct
+    {
+        TXSPKTHDR   Hdr;
+        int64_t     cbObject;
+        int64_t     cbAllocated;
+        int64_t     nsAccessTime;
+        int64_t     nsModificationTime;
+        int64_t     nsChangeTime;
+        int64_t     nsBirthTime;
+        uint32_t    fMode;
+        uint32_t    uid;
+        uint32_t    gid;
+        uint32_t    cHardLinks;
+        uint64_t    INodeIdDevice;
+        uint64_t    INodeId;
+        uint64_t    Device;
+        char        abPadding[TXSPKT_ALIGNMENT];
+    } Pkt;
+
+    Pkt.cbObject            = pInfo->cbObject;
+    Pkt.cbAllocated         = pInfo->cbAllocated;
+    Pkt.nsAccessTime        = RTTimeSpecGetNano(&pInfo->AccessTime);
+    Pkt.nsModificationTime  = RTTimeSpecGetNano(&pInfo->ModificationTime);
+    Pkt.nsChangeTime        = RTTimeSpecGetNano(&pInfo->ChangeTime);
+    Pkt.nsBirthTime         = RTTimeSpecGetNano(&pInfo->BirthTime);
+    Pkt.fMode               = pInfo->Attr.fMode;
+    Pkt.uid                 = pInfo->Attr.u.Unix.uid;
+    Pkt.gid                 = pInfo->Attr.u.Unix.gid;
+    Pkt.cHardLinks          = pInfo->Attr.u.Unix.cHardlinks;
+    Pkt.INodeIdDevice       = pInfo->Attr.u.Unix.INodeIdDevice;
+    Pkt.INodeId             = pInfo->Attr.u.Unix.INodeId;
+    Pkt.Device              = pInfo->Attr.u.Unix.Device;
+
+    return txsReplyInternal(&Pkt.Hdr, "FILEINFO", sizeof(Pkt) - TXSPKT_ALIGNMENT - sizeof(TXSPKTHDR));
+}
 
 /**
  * Get info about a file system object, following all but the symbolic links
@@ -1078,8 +1149,7 @@ static int txsDoLStat(PCTXSPKTHDR pPktHdr)
     RTFSOBJINFO Info;
     rc = RTPathQueryInfoEx(pszPath, &Info, RTFSOBJATTRADD_UNIX, RTPATH_F_ON_LINK);
     if (RT_SUCCESS(rc))
-        /** @todo figure out how to format the return buffer here. */
-        rc = txsReplyNotImplemented(pPktHdr);
+        rc = txsReplyObjInfo(&Info);
     else
         rc = txsReplyRC(pPktHdr, rc, "RTPathQueryInfoEx(\"%s\",,UNIX,ON_LINK)",  pszPath);
 
@@ -1103,8 +1173,7 @@ static int txsDoStat(PCTXSPKTHDR pPktHdr)
     RTFSOBJINFO Info;
     rc = RTPathQueryInfoEx(pszPath, &Info, RTFSOBJATTRADD_UNIX, RTPATH_F_FOLLOW_LINK);
     if (RT_SUCCESS(rc))
-        /** @todo figure out how to format the return buffer here. */
-        rc = txsReplyNotImplemented(pPktHdr);
+        rc = txsReplyObjInfo(&Info);
     else
         rc = txsReplyRC(pPktHdr, rc, "RTPathQueryInfoEx(\"%s\",,UNIX,FOLLOW_LINK)",  pszPath);
 
@@ -1191,25 +1260,36 @@ static int txsDoIsDir(PCTXSPKTHDR pPktHdr)
 }
 
 /**
- * Changes the group of a file, directory of symbolic link.
- *
- * @returns IPRT status code from send.
- * @param   pPktHdr             The chmod packet.
- */
-static int txsDoChGrp(PCTXSPKTHDR pPktHdr)
-{
-    return txsReplyNotImplemented(pPktHdr);
-}
-
-/**
- * Changes the owner of a file, directory of symbolic link.
+ * Changes the owner of a file, directory or symbolic link.
  *
  * @returns IPRT status code from send.
  * @param   pPktHdr             The chmod packet.
  */
 static int txsDoChOwn(PCTXSPKTHDR pPktHdr)
 {
+#ifdef RT_OS_WINDOWS
     return txsReplyNotImplemented(pPktHdr);
+#else
+    /* After the packet header follows a 32-bit UID and 32-bit GID, while the
+       remainder of the packet is the zero terminated path. */
+    size_t const cbMin = sizeof(TXSPKTHDR) + sizeof(RTFMODE) + 2;
+    if (pPktHdr->cb < cbMin)
+        return txsReplyBadMinSize(pPktHdr, cbMin);
+
+    int rc;
+    char *pszPath;
+    if (!txsIsStringValid(pPktHdr, "path", (const char *)(pPktHdr + 1) + sizeof(uint32_t) * 2, &pszPath, NULL, &rc))
+        return rc;
+
+    uint32_t uid = ((uint32_t const *)(pPktHdr + 1))[0];
+    uint32_t gid = ((uint32_t const *)(pPktHdr + 1))[1];
+
+    rc = RTPathSetOwnerEx(pszPath, uid, gid, RTPATH_F_ON_LINK);
+
+    rc = txsReplyRC(pPktHdr, rc, "RTPathSetOwnerEx(\"%s\", %u, %u)", pszPath, uid, gid);
+    RTStrFree(pszPath);
+    return rc;
+#endif
 }
 
 /**
@@ -1349,7 +1429,8 @@ static int txsDoMkDrPath(PCTXSPKTHDR pPktHdr)
         return rc;
 
     RTFMODE fMode = *(RTFMODE const *)(pPktHdr + 1);
-    rc = RTDirCreateFullPath(pszPath, fMode);
+
+    rc = RTDirCreateFullPathEx(pszPath, fMode, RTDIRCREATE_FLAGS_IGNORE_UMASK);
 
     rc = txsReplyRC(pPktHdr, rc, "RTDirCreateFullPath(\"%s\", %#x)", pszPath, fMode);
     RTStrFree(pszPath);
@@ -1376,7 +1457,7 @@ static int txsDoMkDir(PCTXSPKTHDR pPktHdr)
         return rc;
 
     RTFMODE fMode = *(RTFMODE const *)(pPktHdr + 1);
-    rc = RTDirCreate(pszPath, fMode, 0);
+    rc = RTDirCreate(pszPath, fMode, RTDIRCREATE_FLAGS_IGNORE_UMASK);
 
     rc = txsReplyRC(pPktHdr, rc, "RTDirCreate(\"%s\", %#x)", pszPath, fMode);
     RTStrFree(pszPath);
@@ -2909,8 +2990,6 @@ static RTEXITCODE txsMainLoop(void)
             rc = txsDoChMod(pPktHdr);
         else if (txsIsSameOpcode(pPktHdr, "CHOWN   "))
             rc = txsDoChOwn(pPktHdr);
-        else if (txsIsSameOpcode(pPktHdr, "CHGRP   "))
-            rc = txsDoChGrp(pPktHdr);
         else if (txsIsSameOpcode(pPktHdr, "ISDIR   "))
             rc = txsDoIsDir(pPktHdr);
         else if (txsIsSameOpcode(pPktHdr, "ISFILE  "))
@@ -2932,8 +3011,8 @@ static RTEXITCODE txsMainLoop(void)
         else if (txsIsSameOpcode(pPktHdr, "UNPKFILE"))
             rc = txsDoUnpackFile(pPktHdr);
         /* Misc: */
-        //else if (txsIsSameOpcode(pPktHdr, "EXP STR "))
-        //    rc = txsDoExpandString(pPktHdr);
+        else if (txsIsSameOpcode(pPktHdr, "EXP STR "))
+            rc = txsDoExpandString(pPktHdr);
         else
             rc = txsReplyUnknown(pPktHdr);
 
