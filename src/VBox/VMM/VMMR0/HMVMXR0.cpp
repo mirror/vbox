@@ -9712,7 +9712,8 @@ static VBOXSTRICTRC hmR0VmxInjectEventVmcs(PVMCPU pVCpu, PVMXTRANSIENT pVmxTrans
 static VBOXSTRICTRC hmR0VmxEvaluatePendingEvent(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient, uint32_t *pfIntrState)
 {
     PCPUMCTX     pCtx = &pVCpu->cpum.GstCtx;
-    PVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
+    PVMXVMCSINFO pVmcsInfo      = pVmxTransient->pVmcsInfo;
+    bool const   fIsNestedGuest = pVmxTransient->fIsNestedGuest;
 
     /* Get the current interruptibility-state of the guest and then figure out what can be injected. */
     uint32_t const fIntrState = hmR0VmxGetGuestIntrState(pVCpu, pVmxTransient);
@@ -9742,7 +9743,7 @@ static VBOXSTRICTRC hmR0VmxEvaluatePendingEvent(PVMCPU pVCpu, PVMXTRANSIENT pVmx
             && !fBlockMovSS)
         {
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-            if (   pVmxTransient->fIsNestedGuest
+            if (   fIsNestedGuest
                 && CPUMIsGuestVmxPinCtlsSet(pVCpu, pCtx, VMX_PIN_CTLS_NMI_EXIT))
                 return IEMExecVmxVmexitXcptNmi(pVCpu);
 #endif
@@ -9750,7 +9751,7 @@ static VBOXSTRICTRC hmR0VmxEvaluatePendingEvent(PVMCPU pVCpu, PVMXTRANSIENT pVmx
             VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_NMI);
             Log4Func(("Pending NMI\n"));
         }
-        else
+        else if (!fIsNestedGuest)
             hmR0VmxSetNmiWindowExitVmcs(pVCpu, pVmcsInfo);
     }
     /*
@@ -9770,7 +9771,7 @@ static VBOXSTRICTRC hmR0VmxEvaluatePendingEvent(PVMCPU pVCpu, PVMXTRANSIENT pVmx
             && !fBlockMovSS)
         {
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-            if (   pVmxTransient->fIsNestedGuest
+            if (   fIsNestedGuest
                 && CPUMIsGuestVmxPinCtlsSet(pVCpu, pCtx, VMX_PIN_CTLS_EXT_INT_EXIT))
             {
                 VBOXSTRICTRC rcStrict = IEMExecVmxVmexitExtInt(pVCpu, 0/* uVector */, true /* fIntPending */);
@@ -9783,7 +9784,7 @@ static VBOXSTRICTRC hmR0VmxEvaluatePendingEvent(PVMCPU pVCpu, PVMXTRANSIENT pVmx
             if (RT_SUCCESS(rc))
             {
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-                if (   pVmxTransient->fIsNestedGuest
+                if (   fIsNestedGuest
                     && CPUMIsGuestVmxPinCtlsSet(pVCpu, pCtx, VMX_PIN_CTLS_EXT_INT_EXIT)
                     && CPUMIsGuestVmxExitCtlsSet(pVCpu, pCtx, VMX_EXIT_CTLS_ACK_EXT_INT))
                 {
@@ -9797,7 +9798,7 @@ static VBOXSTRICTRC hmR0VmxEvaluatePendingEvent(PVMCPU pVCpu, PVMXTRANSIENT pVmx
             }
             else if (rc == VERR_APIC_INTR_MASKED_BY_TPR)
             {
-                if (   !pVmxTransient->fIsNestedGuest
+                if (   !fIsNestedGuest
                     && (pVmcsInfo->u32ProcCtls & VMX_PROC_CTLS_USE_TPR_SHADOW))
                     hmR0VmxApicSetTprThreshold(pVCpu, pVmcsInfo, u8Interrupt >> 4);
                 STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchTprMaskedIrq);
@@ -9811,7 +9812,7 @@ static VBOXSTRICTRC hmR0VmxEvaluatePendingEvent(PVMCPU pVCpu, PVMXTRANSIENT pVmx
             else
                 STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchGuestIrq);
         }
-        else
+        else if (!fIsNestedGuest)
             hmR0VmxSetIntWindowExitVmcs(pVCpu, pVmcsInfo);
     }
 
