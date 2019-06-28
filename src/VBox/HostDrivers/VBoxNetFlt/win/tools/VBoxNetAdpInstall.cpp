@@ -24,24 +24,77 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
+
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
 #include <VBox/VBoxNetCfg-win.h>
 #include <VBox/VBoxDrvCfg-win.h>
 #include <stdio.h>
 #include <devguid.h>
 
+
+/*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
 #define VBOX_NETADP_APP_NAME L"NetAdpInstall"
 
 #define VBOX_NETADP_HWID L"sun_VBoxNetAdp"
 #ifdef NDIS60
-#define VBOX_NETADP_INF L"VBoxNetAdp6.inf"
-#else /* !NDIS60 */
-#define VBOX_NETADP_INF L"VBoxNetAdp.inf"
-#endif /* !NDIS60 */
+# define VBOX_NETADP_INF L"VBoxNetAdp6.inf"
+#else
+# define VBOX_NETADP_INF L"VBoxNetAdp.inf"
+#endif
+
 
 static VOID winNetCfgLogger(LPCSTR szString)
 {
     printf("%s\n", szString);
 }
+
+
+/** Wrapper around GetfullPathNameW that will try an alternative INF location.
+ *
+ * The default location is the current directory.  If not found there, the
+ * alternative location is the executable directory.  If not found there either,
+ * the first alternative is present to the caller.
+ */
+static DWORD MyGetfullPathNameW(LPCWSTR pwszName, size_t cchFull, LPWSTR pwszFull)
+{
+    LPWSTR pwszFilePart;
+    DWORD dwSize = GetFullPathNameW(pwszName, (DWORD)cchFull, pwszFull, &pwszFilePart);
+    if (dwSize <= 0)
+        return dwSize;
+
+    /* if it doesn't exist, see if the file exists in the same directory as the executable. */
+    if (GetFileAttributesW(pwszFull) == INVALID_FILE_ATTRIBUTES)
+    {
+        WCHAR wsz[512];
+        DWORD cch = GetModuleFileNameW(GetModuleHandle(NULL), &wsz[0], sizeof(wsz) / sizeof(wsz[0]));
+        if (cch > 0)
+        {
+            while (cch > 0 && wsz[cch - 1] != '/' && wsz[cch - 1] != '\\' && wsz[cch - 1] != ':')
+                cch--;
+            unsigned i = 0;
+            while (cch < sizeof(wsz) / sizeof(wsz[0]))
+            {
+                wsz[cch] = pwszFilePart[i++];
+                if (!wsz[cch])
+                {
+                    dwSize = GetFullPathNameW(wsz, (DWORD)cchFull, pwszFull, NULL);
+                    if (dwSize > 0 && GetFileAttributesW(pwszFull) != INVALID_FILE_ATTRIBUTES)
+                        return dwSize;
+                    break;
+                }
+                cch++;
+            }
+        }
+    }
+
+    /* fallback */
+    return GetFullPathNameW(pwszName, (DWORD)cchFull, pwszFull, NULL);
+}
+
 
 static int VBoxNetAdpInstall(void)
 {
@@ -52,13 +105,9 @@ static int VBoxNetAdpInstall(void)
     {
         wprintf(L"adding host-only interface..\n");
 
-        DWORD dwErr = ERROR_SUCCESS;
-        WCHAR MpInf[MAX_PATH];
-
-        if (!GetFullPathNameW(VBOX_NETADP_INF, sizeof(MpInf)/sizeof(MpInf[0]), MpInf, NULL))
-            dwErr = GetLastError();
-
-        if (dwErr == ERROR_SUCCESS)
+        WCHAR wszInfFile[MAX_PATH];
+        DWORD cwcInfFile = MyGetfullPathNameW(VBOX_NETADP_INF, sizeof(wszInfFile) / sizeof(wszInfFile[0]), wszInfFile);
+        if (cwcInfFile > 0)
         {
             INetCfg *pnc;
             LPWSTR lpszLockedBy = NULL;
@@ -66,7 +115,7 @@ static int VBoxNetAdpInstall(void)
             if (hr == S_OK)
             {
 
-                hr = VBoxNetCfgWinNetAdpInstall(pnc, MpInf);
+                hr = VBoxNetCfgWinNetAdpInstall(pnc, wszInfFile);
 
                 if (hr == S_OK)
                 {
@@ -116,9 +165,9 @@ static int VBoxNetAdpInstall(void)
         }
         else
         {
+            DWORD dwErr = GetLastError();
             wprintf(L"GetFullPathNameW failed: winEr = %d\n", dwErr);
             hr = HRESULT_FROM_WIN32(dwErr);
-
         }
         CoUninitialize();
     }
