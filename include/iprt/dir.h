@@ -96,7 +96,7 @@ RTDECL(int) RTDirCreateFullPath(const char *pszPath, RTFMODE fMode);
  * @returns iprt status code.
  * @param   pszPath     Path to the directory to create.
  * @param   fMode       The mode of the new directories.
- * @param   fCreate     Create flags, RTDIRCREATE_FLAGS_*.
+ * @param   fFlags      Create flags, RTDIRCREATE_FLAGS_*.
  */
 RTDECL(int) RTDirCreateFullPathEx(const char *pszPath, RTFMODE fMode, uint32_t fFlags);
 
