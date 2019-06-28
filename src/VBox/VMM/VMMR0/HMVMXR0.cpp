@@ -1003,6 +1003,7 @@ static bool hmR0VmxIsPinCtlsSet(PVMCPU pVCpu, PCVMXTRANSIENT pVmxTransient, uint
 }
 
 
+#if 0
 /**
  * Checks whether one of the given Processor-based VM-execution controls are set.
  *
@@ -1049,7 +1050,6 @@ static bool hmR0VmxIsProcCtls2Set(PVMCPU pVCpu, PCVMXTRANSIENT pVmxTransient, ui
 }
 
 
-#if 0
 /**
  * Checks whether one of the given VM-entry controls are set.
  *
@@ -11399,7 +11399,7 @@ static VBOXSTRICTRC hmR0VmxPreRunGuest(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient
      */
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     if (   !pVCpu->hm.s.vmx.u64GstMsrApicBase
-        && hmR0VmxIsProcCtls2Set(pVCpu, pVmxTransient, VMX_PROC_CTLS2_VIRT_APIC_ACCESS)
+        && (pVM->hm.s.vmx.Msrs.ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_VIRT_APIC_ACCESS)
         && PDMHasApic(pVM))
     {
         int rc = hmR0VmxMapHCApicAccessPage(pVCpu);
@@ -13880,9 +13880,9 @@ static VBOXSTRICTRC hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PVMXTRANSIE
          * On CPUs that support Virtual NMIs, if this VM-exit (be it an exception or EPT violation/misconfig
          * etc.) occurred while delivering the NMI, we need to clear the block-by-NMI field in the guest
          * interruptibility-state before re-delivering the NMI after handling the VM-exit. Otherwise the
-         * subsequent VM-entry would fail.
+         * subsequent VM-entry would fail, see @bugref{7445}.
          *
-         * See Intel spec. 30.7.1.2 "Resuming Guest Software after Handling an Exception". See @bugref{7445}.
+         * See Intel spec. 30.7.1.2 "Resuming Guest Software after Handling an Exception".
          */
         if (   uIdtVectorType == VMX_IDT_VECTORING_INFO_TYPE_NMI
             && (   enmRaise   == IEMXCPTRAISE_PREV_EVENT
@@ -14785,7 +14785,8 @@ HMVMX_EXIT_DECL hmR0VmxExitRdmsr(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
     Log4Func(("ecx=%#RX32\n", idMsr));
 
 #ifdef VBOX_STRICT
-    if (hmR0VmxIsProcCtlsSet(pVCpu, pVmxTransient, VMX_PROC_CTLS_USE_MSR_BITMAPS))
+    Assert(!pVmxTransient->fIsNestedGuest);
+    if (pVmcsInfo->u32ProcCtls & VMX_PROC_CTLS_USE_MSR_BITMAPS)
     {
         if (   hmR0VmxIsAutoLoadGuestMsr(pVmcsInfo, idMsr)
             && idMsr != MSR_K6_EFER)
@@ -14887,8 +14888,8 @@ HMVMX_EXIT_DECL hmR0VmxExitWrmsr(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
             ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_EFER_MSR | HM_CHANGED_VMX_ENTRY_EXIT_CTLS);
         }
 
-        /* Update MSRs that are part of the VMCS and auto-load/store area when MSR-bitmaps are not supported. */
-        if (!hmR0VmxIsProcCtlsSet(pVCpu, pVmxTransient, VMX_PROC_CTLS_USE_MSR_BITMAPS))
+        /* Update MSRs that are part of the VMCS and auto-load/store area when MSR-bitmaps are not used. */
+        if (!(pVmcsInfo->u32ProcCtls & VMX_PROC_CTLS_USE_MSR_BITMAPS))
         {
             switch (idMsr)
             {
