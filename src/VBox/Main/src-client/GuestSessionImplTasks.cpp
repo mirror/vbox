@@ -1428,13 +1428,13 @@ HRESULT GuestSessionTaskCopyFrom::Init(const Utf8Str &strTaskDesc)
 
     /* Create the progress object. */
     ComObjPtr<Progress> pProgress;
-    HRESULT hr = pProgress.createObject();
-    if (FAILED(hr))
-        return hr;
+    HRESULT hrc = pProgress.createObject();
+    if (FAILED(hrc))
+        return hrc;
 
     mProgress = pProgress;
 
-    int rc = VINF_SUCCESS;
+    int vrc = VINF_SUCCESS;
 
     ULONG cOperations = 0;
     Utf8Str strErrorInfo;
@@ -1458,13 +1458,17 @@ HRESULT GuestSessionTaskCopyFrom::Init(const Utf8Str &strTaskDesc)
         {
             /* If the source does not end with a slash, copy over the entire directory
              * (and not just its contents). */
+            /** @todo r=bird: Try get the path style stuff right and stop assuming all guest are windows guests.  */
             if (   !strSrc.endsWith("/")
                 && !strSrc.endsWith("\\"))
             {
+                /** @todo r=bird: All hosts aren't windows either, use RTPATH_IS_SLASH() here! */
                 if (   !strDst.endsWith("/")
                     && !strDst.endsWith("\\"))
                     strDst += "/";
 
+                /** @todo r=bird: Very unnecessary to use Utf8StrFmt(%s) here when Utf8Str()
+                 *        would do perfectly.  Also missing try catch. */
                 strDst += Utf8StrFmt("%s", RTPathFilenameEx(strSrc.c_str(), mfPathStyle));
             }
 
@@ -1479,8 +1483,8 @@ HRESULT GuestSessionTaskCopyFrom::Init(const Utf8Str &strTaskDesc)
 
         GuestFsObjData srcObjData;
         int rcGuest = VERR_IPE_UNINITIALIZED_STATUS;
-        rc = mSession->i_fsQueryInfo(strSrc, fFollowSymlinks, srcObjData, &rcGuest);
-        if (RT_FAILURE(rc))
+        vrc = mSession->i_fsQueryInfo(strSrc, fFollowSymlinks, srcObjData, &rcGuest);
+        if (RT_FAILURE(vrc))
         {
             strErrorInfo = Utf8StrFmt(GuestSession::tr("No such source file/directory: %s"), strSrc.c_str());
             break;
@@ -1491,7 +1495,7 @@ HRESULT GuestSessionTaskCopyFrom::Init(const Utf8Str &strTaskDesc)
             if (itSrc->enmType != FsObjType_Directory)
             {
                 strErrorInfo = Utf8StrFmt(GuestSession::tr("Source is not a file: %s"), strSrc.c_str());
-                rc = VERR_NOT_A_FILE;
+                vrc = VERR_NOT_A_FILE;
                 break;
             }
         }
@@ -1500,7 +1504,7 @@ HRESULT GuestSessionTaskCopyFrom::Init(const Utf8Str &strTaskDesc)
             if (itSrc->enmType != FsObjType_File)
             {
                 strErrorInfo = Utf8StrFmt(GuestSession::tr("Source is not a directory: %s"), strSrc.c_str());
-                rc = VERR_NOT_A_DIRECTORY;
+                vrc = VERR_NOT_A_DIRECTORY;
                 break;
             }
         }
@@ -1509,29 +1513,27 @@ HRESULT GuestSessionTaskCopyFrom::Init(const Utf8Str &strTaskDesc)
         try
         {
             pFsList = new FsList(*this);
-            rc = pFsList->Init(strSrc, strDst, *itSrc);
-            if (RT_SUCCESS(rc))
+            vrc = pFsList->Init(strSrc, strDst, *itSrc);
+            if (RT_SUCCESS(vrc))
             {
                 if (itSrc->enmType == FsObjType_Directory)
-                {
-                    rc = pFsList->AddDirFromGuest(strSrc);
-                }
+                    vrc = pFsList->AddDirFromGuest(strSrc);
                 else
-                    rc = pFsList->AddEntryFromGuest(RTPathFilename(strSrc.c_str()), srcObjData);
+                    vrc = pFsList->AddEntryFromGuest(RTPathFilename(strSrc.c_str()), srcObjData);
             }
 
-            if (RT_FAILURE(rc))
+            if (RT_FAILURE(vrc))
             {
                 delete pFsList;
-                strErrorInfo = Utf8StrFmt(GuestSession::tr("Error adding source '%s' to list: %Rrc"), strSrc.c_str(), rc);
+                strErrorInfo = Utf8StrFmt(GuestSession::tr("Error adding source '%s' to list: %Rrc"), strSrc.c_str(), vrc);
                 break;
             }
 
             mVecLists.push_back(pFsList);
         }
-        catch (...)
+        catch (...)  /** @todo r=bird: Catch std:bad_alloc &, not ... Will avoid headscratching if something is thrown. */
         {
-            rc = VERR_NO_MEMORY;
+            vrc = VERR_NO_MEMORY;
             break;
         }
 
@@ -1547,21 +1549,21 @@ HRESULT GuestSessionTaskCopyFrom::Init(const Utf8Str &strTaskDesc)
         Assert(mVecLists[0]->mVecEntries.size());
 
         Utf8Str strFirstOp = mDest + mVecLists[0]->mVecEntries[0]->strPath;
-        hr = pProgress->init(static_cast<IGuestSession*>(mSession), Bstr(mDesc).raw(),
-                             TRUE /* aCancelable */, cOperations + 1 /* Number of operations */, Bstr(strFirstOp).raw());
+        hrc = pProgress->init(static_cast<IGuestSession*>(mSession), Bstr(mDesc).raw(),
+                              TRUE /* aCancelable */, cOperations + 1 /* Number of operations */, Bstr(strFirstOp).raw());
     }
     else /* If no operations have been defined, go with an "empty" progress object when will be used for error handling. */
-        hr = pProgress->init(static_cast<IGuestSession*>(mSession), Bstr(mDesc).raw(),
-                             TRUE /* aCancelable */, 1 /* cOperations */, Bstr(mDesc).raw());
+        hrc = pProgress->init(static_cast<IGuestSession*>(mSession), Bstr(mDesc).raw(),
+                              TRUE /* aCancelable */, 1 /* cOperations */, Bstr(mDesc).raw());
 
-    if (RT_FAILURE(rc))
+    if (RT_FAILURE(vrc))
     {
         Assert(strErrorInfo.isNotEmpty());
-        setProgressErrorMsg(VBOX_E_IPRT_ERROR, strErrorInfo);
+        setProgressErrorMsg(VBOX_E_IPRT_ERROR, vrc, "%s", strErrorInfo.c_str());
     }
 
-    LogFlowFunc(("Returning %Rhrc (%Rrc)\n", hr, rc));
-    return rc;
+    LogFlowFunc(("Returning %Rhrc (%Rrc)\n", hrc, vrc));
+    return hrc;
 }
 
 int GuestSessionTaskCopyFrom::Run(void)
