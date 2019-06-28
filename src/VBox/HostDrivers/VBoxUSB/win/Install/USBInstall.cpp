@@ -34,14 +34,35 @@
 #include <iprt/assert.h>
 #include <iprt/errcore.h>
 #include <iprt/initterm.h>
+#include <iprt/message.h>
 #include <iprt/param.h>
 #include <iprt/path.h>
+#include <iprt/process.h>
 #include <iprt/stream.h>
 #include <iprt/string.h>
-#include <iprt/errcore.h>
-#include <stdio.h>
+#include <iprt/utf16.h>
 
 #include <VBox/VBoxDrvCfg-win.h>
+
+
+/*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
+/** The support service name. */
+#define SERVICE_NAME    "VBoxUSBMon"
+/** Win32 Device name. */
+#define DEVICE_NAME     "\\\\.\\VBoxUSBMon"
+/** NT Device name. */
+#define DEVICE_NAME_NT   L"\\Device\\VBoxUSBMon"
+/** Win32 Symlink name. */
+#define DEVICE_NAME_DOS  L"\\DosDevices\\VBoxUSBMon"
+
+
+/*********************************************************************************************************************************
+*   Internal Functions                                                                                                           *
+*********************************************************************************************************************************/
+int usblibOsCreateService(void);
+
 
 static DECLCALLBACK(void) vboxUsbLog(VBOXDRVCFG_LOG_SEVERITY enmSeverity, char *pszMsg, void *pvContext)
 {
@@ -67,58 +88,49 @@ static DECLCALLBACK(void) vboxUsbPanic(void *pvPanic)
 #endif
 }
 
-int usblibOsCreateService(void);
 
 int __cdecl main(int argc, char **argv)
 {
-    if (RTR3InitExe(argc, &argv, 0) != VINF_SUCCESS)
-    {
-        printf("Could not init IPRT!\n");
-        return 1;
-    }
+    int rc = RTR3InitExe(argc, &argv, 0);
+    if (RT_FAILURE(rc))
+        return RTMsgInitFailure(rc);
 
     VBoxDrvCfgLoggerSet(vboxUsbLog, NULL);
     VBoxDrvCfgPanicSet(vboxUsbPanic, NULL);
 
     RTPrintf("USB installation\n");
 
-    int rc = usblibOsCreateService();
-
+    rc = usblibOsCreateService();
     if (RT_SUCCESS(rc))
     {
-        LPWSTR  lpszFilePart;
-        WCHAR  szFullPath[MAX_PATH];
-        DWORD  len;
-
-        len = GetFullPathNameW(L".\\VBoxUSB.inf", RT_ELEMENTS(szFullPath), szFullPath, &lpszFilePart);
-        Assert(len);
-
-        HRESULT hr = VBoxDrvCfgInfInstall(szFullPath);
-        if (hr == S_OK)
+        /* Build the path to the INF file: */
+        char szInfFile[RTPATH_MAX];
+        rc = RTProcGetExecutablePath(szInfFile, sizeof(szInfFile)) ? VINF_SUCCESS : VERR_BUFFER_OVERFLOW;
+        if (RT_SUCCESS(rc))
         {
-            RTPrintf("Installation successful.\n");
+            RTPathStripFilename(szInfFile);
+            rc = RTPathAppend(szInfFile, sizeof(szInfFile), "VBoxUSB.inf");
+        }
+        PRTUTF16 pwszInfFile = NULL;
+        if (RT_SUCCESS(rc))
+            rc = RTStrToUtf16(szInfFile, &pwszInfFile);
+        if (RT_SUCCESS(rc))
+        {
+            /* Install the INF file: */
+            HRESULT hr = VBoxDrvCfgInfInstall(pwszInfFile);
+            if (hr == S_OK)
+                RTPrintf("Installation successful.\n");
+            else
+                rc = -1;
+
+            RTUtf16Free(pwszInfFile);
         }
         else
-        {
-            rc = -1;
-        }
+            RTMsgError("Failed to construct INF path: %Rrc", rc);
     }
 
-    if (RT_SUCCESS(rc))
-        rc = 0;
-
-    /** @todo RTR3Term(); */
-    return rc;
+    return RT_SUCCESS(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
-
-/** The support service name. */
-#define SERVICE_NAME    "VBoxUSBMon"
-/** Win32 Device name. */
-#define DEVICE_NAME     "\\\\.\\VBoxUSBMon"
-/** NT Device name. */
-#define DEVICE_NAME_NT   L"\\Device\\VBoxUSBMon"
-/** Win32 Symlink name. */
-#define DEVICE_NAME_DOS  L"\\DosDevices\\VBoxUSBMon"
 
 
 /**
