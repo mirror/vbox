@@ -45,14 +45,12 @@ template<class T> static QStringList toStringList(const QList<T> &list)
 
 
 /** UITask extension used for medium-enumeration purposes.
-  * @note We made setting/getting medium a thread-safe stuff.
-  *       But this wasn't dangerous for us before since
-  *       setter/getter calls are splitted in time by 
-  *       enumeration logic.  Previously we were even using
-  *       property/setProperty API for that but latest Qt
-  *       versions prohibits property/setProperty API usage
-  *       from other than the GUI thread so we had to rework
-  *       that stuff to be thread-safe for Qt >= 5.11. */
+  * @note We made setting/getting medium a thread-safe stuff. But this wasn't
+  *       dangerous for us before since setter/getter calls are splitted in time
+  *       by enumeration logic. Previously we were even using
+  *       property/setProperty API for that but latest Qt versions prohibits
+  *       property/setProperty API usage from other than the GUI thread so we
+  *       had to rework that stuff to be thread-safe for Qt >= 5.11. */
 class UITaskMediumEnumeration : public UITask
 {
     Q_OBJECT;
