@@ -86,6 +86,7 @@ private slots:
     void sltStatusBarMessage(const QString &strMessage);
     void sltShowHideOSMenuKeys(bool fShow);
     void sltShowHideNumPad(bool fShow);
+    void sltHandleColorCellClick(int iColorRow);
 
 private:
 
@@ -93,6 +94,7 @@ private:
     void prepareConnections();
     void saveSettings();
     void loadSettings();
+    void configure();
     void updateStatusBarMessage(const QString &strLayoutName);
     void updateLayoutSelector();
     void setDialogGeometry(const QRect &geometry);

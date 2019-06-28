@@ -18,10 +18,12 @@
 /* Qt includes: */
 #include <QApplication>
 #include <QCheckBox>
+#include <QColorDialog>
 #include <QComboBox>
 #include <QFile>
 #include <QGroupBox>
 #include <QInputDialog>
+#include <QHeaderView>
 #include <QLabel>
 #include <QLineEdit>
 #include <QListWidget>
@@ -502,6 +504,9 @@ public:
     bool showNumPad();
     void setShowNumPad(bool fShow);
 
+    const QColor &color(int iColorType) const;
+    void setColor(int iColorType, const QColor &color);
+
 protected:
 
     virtual void paintEvent(QPaintEvent *pEvent) /* override */;
@@ -542,10 +547,10 @@ private:
     UISoftKeyboardKey *m_pKeyBeingEdited;
 
     UISoftKeyboardKey *m_pKeyPressed;
-    QColor m_keyDefaultColor;
+    QColor m_keyBackgroundColor;
     QColor m_keyHoverColor;
-    QColor m_textDefaultColor;
-    QColor m_textPressedColor;
+    QColor m_fontDefaultColor;
+    QColor m_fontPressedColor;
     QColor m_keyEditColor;
     QVector<UISoftKeyboardKey*> m_pressedModifiers;
     QVector<UISoftKeyboardPhysicalLayout> m_physicalLayouts;
@@ -666,16 +671,31 @@ class UISoftKeyboardSettingsWidget : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
 
+public:
+
+    enum ColorTableRow
+    {
+        ColorTableRow_Background = 0,
+        ColorTableRow_Font,
+        ColorTableRow_Hover,
+        ColorTableRow_Edit,
+        ColorTableRow_Pressed,
+        ColorTableRow_Max
+    };
+
 signals:
 
     void sigShowNumPad(bool fShow);
     void sigShowOSMenuKeys(bool fShow);
+    void sigColorCellClicked(int iColorRow);
+    void sigCloseSettingsWidget();
 
 public:
 
     UISoftKeyboardSettingsWidget(QWidget *pParent = 0);
     void setShowOSMenuKeys(bool fShow);
     void setShowNumPad(bool fShow);
+    void setTableItemColor(ColorTableRow tableRow, const QColor &color);
 
 protected:
 
@@ -683,14 +703,18 @@ protected:
 
 private slots:
 
+    void sltColorCellClicked(int row, int column);
 
 private:
 
     void prepareObjects();
 
-    QCheckBox   *m_pShowNumPadCheckBox;
-    QCheckBox   *m_pShowOsMenuButtonsCheckBox;
+    QCheckBox    *m_pShowNumPadCheckBox;
+    QCheckBox    *m_pShowOsMenuButtonsCheckBox;
+    QGroupBox    *m_pColorTableGroupBox;
     QTableWidget *m_pColorSelectionTable;
+    QLabel       *m_pTitleLabel;
+    QToolButton  *m_pCloseButton;
 };
 
 /*********************************************************************************************************************************
@@ -1163,7 +1187,7 @@ void UILayoutSelector::prepareObjects()
     m_pLayoutListWidget = new QListWidget;
     pLayout->addWidget(m_pLayoutListWidget);
     connect(m_pLayoutListWidget, &QListWidget::currentItemChanged, this, &UILayoutSelector::sltCurrentItemChanged);
-
+    m_pLayoutListWidget->setSelectionMode(QAbstractItemView::SingleSelection);
     QHBoxLayout *pButtonsLayout = new QHBoxLayout;
     pLayout->addLayout(pButtonsLayout);
 
@@ -1711,10 +1735,10 @@ UISoftKeyboardWidget::UISoftKeyboardWidget(QWidget *pParent /* = 0 */)
     , m_pKeyUnderMouse(0)
     , m_pKeyBeingEdited(0)
     , m_pKeyPressed(0)
-    , m_keyDefaultColor(QColor(103, 128, 159))
+    , m_keyBackgroundColor(QColor(103, 128, 159))
     , m_keyHoverColor(QColor(108, 122, 137))
-    , m_textDefaultColor(QColor(46, 49, 49))
-    , m_textPressedColor(QColor(149, 165, 166))
+    , m_fontDefaultColor(QColor(46, 49, 49))
+    , m_fontPressedColor(QColor(149, 165, 166))
     , m_keyEditColor(QColor(249, 165, 166))
     , m_pCurrentKeyboardLayout(0)
     , m_iInitialHeight(0)
@@ -1794,12 +1818,12 @@ void UISoftKeyboardWidget::paintEvent(QPaintEvent *pEvent) /* override */
             else if (&key  == m_pKeyUnderMouse)
                 painter.setBrush(QBrush(m_keyHoverColor));
             else
-                painter.setBrush(QBrush(m_keyDefaultColor));
+                painter.setBrush(QBrush(m_keyBackgroundColor));
 
             if (&key  == m_pKeyPressed)
-                painter.setPen(QPen(QColor(m_textPressedColor), 2));
+                painter.setPen(QPen(QColor(m_fontPressedColor), 2));
             else
-                painter.setPen(QPen(QColor(m_textDefaultColor), 2));
+                painter.setPen(QPen(QColor(m_fontDefaultColor), 2));
 
             painter.drawPolygon(key.polygon());
 
@@ -1809,7 +1833,7 @@ void UISoftKeyboardWidget::paintEvent(QPaintEvent *pEvent) /* override */
             {
                 QColor ledColor;
                 if (key.state() == UIKeyState_NotPressed)
-                    ledColor = m_textDefaultColor;
+                    ledColor = m_fontDefaultColor;
                 else if (key.state() == UIKeyState_Pressed)
                     ledColor = QColor(0, 255, 0);
                 else
@@ -2004,6 +2028,60 @@ void UISoftKeyboardWidget::setShowNumPad(bool fShow)
         return;
     m_fShowNumPad = fShow;
     update();
+}
+
+const QColor &UISoftKeyboardWidget::color(int iColorType) const
+{
+    UISoftKeyboardSettingsWidget::ColorTableRow enmColorType = static_cast<UISoftKeyboardSettingsWidget::ColorTableRow>(iColorType);
+    switch (enmColorType)
+    {
+        case UISoftKeyboardSettingsWidget::ColorTableRow_Background:
+            return m_keyBackgroundColor;
+            break;
+        case UISoftKeyboardSettingsWidget::ColorTableRow_Edit:
+            return m_keyEditColor;
+            break;
+        case UISoftKeyboardSettingsWidget::ColorTableRow_Font:
+            return m_fontDefaultColor;
+            break;
+        case UISoftKeyboardSettingsWidget::ColorTableRow_Hover:
+            return m_keyHoverColor;
+            break;
+        case UISoftKeyboardSettingsWidget::ColorTableRow_Pressed:
+            return m_fontPressedColor;
+            break;
+        case UISoftKeyboardSettingsWidget::ColorTableRow_Max:
+        default:
+            return m_keyBackgroundColor;
+            break;
+    }
+    return m_keyBackgroundColor;
+}
+
+void UISoftKeyboardWidget::setColor(int iColorType, const QColor &color)
+{
+    UISoftKeyboardSettingsWidget::ColorTableRow enmColorType = static_cast<UISoftKeyboardSettingsWidget::ColorTableRow>(iColorType);
+    switch (enmColorType)
+    {
+        case UISoftKeyboardSettingsWidget::ColorTableRow_Background:
+            m_keyBackgroundColor = color;
+            break;
+        case UISoftKeyboardSettingsWidget::ColorTableRow_Edit:
+            m_keyEditColor = color;
+            break;
+        case UISoftKeyboardSettingsWidget::ColorTableRow_Font:
+            m_fontDefaultColor = color;
+            break;
+        case UISoftKeyboardSettingsWidget::ColorTableRow_Hover:
+            m_keyHoverColor = color;
+            break;
+        case UISoftKeyboardSettingsWidget::ColorTableRow_Pressed:
+            m_fontPressedColor = color;
+            break;
+        case UISoftKeyboardSettingsWidget::ColorTableRow_Max:
+        default:
+            break;
+    }
 }
 
 void UISoftKeyboardWidget::deleteCurrentLayout()
@@ -2887,7 +2965,11 @@ UISoftKeyboardSettingsWidget::UISoftKeyboardSettingsWidget(QWidget *pParent /* =
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_pShowNumPadCheckBox(0)
     , m_pShowOsMenuButtonsCheckBox(0)
+    , m_pColorTableGroupBox(0)
     , m_pColorSelectionTable(0)
+    , m_pTitleLabel(0)
+    , m_pCloseButton(0)
+
 {
     prepareObjects();
 }
@@ -2904,13 +2986,51 @@ void UISoftKeyboardSettingsWidget::setShowNumPad(bool fShow)
         m_pShowNumPadCheckBox->setChecked(fShow);
 }
 
+void UISoftKeyboardSettingsWidget::setTableItemColor(ColorTableRow tableRow, const QColor &color)
+{
+    if (!m_pColorSelectionTable)
+        return;
+    QTableWidgetItem *pItem = m_pColorSelectionTable->item(tableRow, 1);
+    if (!pItem)
+        return;
+    pItem->setBackground(color);
+    m_pColorSelectionTable->update();
+}
+
 void UISoftKeyboardSettingsWidget::retranslateUi()
 {
+    if (m_pTitleLabel)
+        m_pTitleLabel->setText(UISoftKeyboard::tr("Keyboard Settings"));
+    if (m_pCloseButton)
+    {
+        m_pCloseButton->setToolTip(UISoftKeyboard::tr("Close the layout list"));
+        m_pCloseButton->setText("Close");
+    }
     if (m_pShowNumPadCheckBox)
         m_pShowNumPadCheckBox->setText(UISoftKeyboard::tr("Show NumPad"));
     if (m_pShowOsMenuButtonsCheckBox)
         m_pShowOsMenuButtonsCheckBox->setText(UISoftKeyboard::tr("Show OS/Menu Keys"));
-
+    if (m_pColorTableGroupBox)
+        m_pColorTableGroupBox->setTitle(UISoftKeyboard::tr("Button Colors"));
+    if (m_pColorSelectionTable)
+    {
+        QTableWidgetItem *pItem = m_pColorSelectionTable->itemAt(ColorTableRow_Background, 0);
+        if (pItem)
+            pItem->setText(UISoftKeyboard::tr("Button Background Color"));
+        pItem = m_pColorSelectionTable->item(ColorTableRow_Font, 0);
+        if (pItem)
+            pItem->setText(UISoftKeyboard::tr("Button Font Color"));
+        pItem = m_pColorSelectionTable->item(ColorTableRow_Hover, 0);
+        if (pItem)
+            pItem->setText(UISoftKeyboard::tr("Button Hover Color"));
+        pItem = m_pColorSelectionTable->item(ColorTableRow_Edit, 0);
+        if (pItem)
+            pItem->setText(UISoftKeyboard::tr("Button Edit Color"));
+        pItem = m_pColorSelectionTable->item(ColorTableRow_Pressed, 0);
+        if (pItem)
+            pItem->setText(UISoftKeyboard::tr("Pressed Button Color"));
+        m_pColorSelectionTable->setToolTip(UISoftKeyboard::tr("Click on the corresponding table cells to modify colors"));
+    }
 }
 
 void UISoftKeyboardSettingsWidget::prepareObjects()
@@ -2918,29 +3038,73 @@ void UISoftKeyboardSettingsWidget::prepareObjects()
     QGridLayout *pSettingsLayout = new QGridLayout;
     if (!pSettingsLayout)
         return;
+
+    QHBoxLayout *pTitleLayout = new QHBoxLayout;
+    m_pCloseButton = new QToolButton;
+    m_pCloseButton->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+    m_pCloseButton->setIcon(UIIconPool::defaultIcon(UIIconPool::UIDefaultIconType_DialogCancel));
+    m_pCloseButton->setAutoRaise(true);
+    connect(m_pCloseButton, &QToolButton::clicked, this, &UISoftKeyboardSettingsWidget::sigCloseSettingsWidget);
+    pTitleLayout->addWidget(m_pCloseButton);
+    pTitleLayout->addStretch(2);
+    m_pTitleLabel = new QLabel;
+    pTitleLayout->addWidget(m_pTitleLabel);
+    pSettingsLayout->addLayout(pTitleLayout, 0, 0, 1, 2);
+
     m_pShowNumPadCheckBox = new QCheckBox;
     m_pShowOsMenuButtonsCheckBox = new QCheckBox;
-
-    pSettingsLayout->addWidget(m_pShowNumPadCheckBox, 0, 0, 1, 1);
-    pSettingsLayout->addWidget(m_pShowOsMenuButtonsCheckBox, 1, 0, 1, 1);
-
+    pSettingsLayout->addWidget(m_pShowNumPadCheckBox, 1, 0, 1, 1);
+    pSettingsLayout->addWidget(m_pShowOsMenuButtonsCheckBox, 2, 0, 1, 1);
     connect(m_pShowNumPadCheckBox, &QCheckBox::toggled, this, &UISoftKeyboardSettingsWidget::sigShowNumPad);
     connect(m_pShowOsMenuButtonsCheckBox, &QCheckBox::toggled, this, &UISoftKeyboardSettingsWidget::sigShowOSMenuKeys);
 
-    m_pColorSelectionTable = new QTableWidget;
-    pSettingsLayout->addWidget(m_pShowOsMenuButtonsCheckBox, 2, 0, 2, 1);
-    m_pColorSelectionTable->setRowCount(3);
-    m_pColorSelectionTable->setColumnCount(2);
+    /* A groupbox to host the color table widget: */
+    m_pColorTableGroupBox = new QGroupBox;
+    QVBoxLayout *pTableGroupBoxLayout = new QVBoxLayout(m_pColorTableGroupBox);
+    pSettingsLayout->addWidget(m_pColorTableGroupBox, 3, 0, 2, 1);
 
+    /* Creating and configuring the color table widget: */
+    m_pColorSelectionTable = new QTableWidget;
+    pTableGroupBoxLayout->addWidget(m_pColorSelectionTable);
+    m_pColorSelectionTable->setRowCount(ColorTableRow_Max);
+    m_pColorSelectionTable->setColumnCount(2);
+    m_pColorSelectionTable->horizontalHeader()->hide();
+    m_pColorSelectionTable->verticalHeader()->hide();
+    m_pColorSelectionTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    m_pColorSelectionTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    m_pColorSelectionTable->setFocusPolicy(Qt::NoFocus);
+    m_pColorSelectionTable->setSelectionMode(QAbstractItemView::NoSelection);
+    connect(m_pColorSelectionTable, &QTableWidget::cellClicked, this, &UISoftKeyboardSettingsWidget::sltColorCellClicked);
+
+    /* Create column 0 items: */
+    m_pColorSelectionTable->setItem(ColorTableRow_Background, 0, new QTableWidgetItem());
+    m_pColorSelectionTable->setItem(ColorTableRow_Font, 0, new QTableWidgetItem());
+    m_pColorSelectionTable->setItem(ColorTableRow_Hover, 0, new QTableWidgetItem());
+    m_pColorSelectionTable->setItem(ColorTableRow_Edit, 0, new QTableWidgetItem());
+    m_pColorSelectionTable->setItem(ColorTableRow_Pressed, 0, new QTableWidgetItem());
+
+    /* Create column 1 items: */
+    for (int i = ColorTableRow_Background; i < ColorTableRow_Max; ++i)
+    {
+        QTableWidgetItem *pItem = new QTableWidgetItem();
+        m_pColorSelectionTable->setItem(static_cast<ColorTableRow>(i), 1, pItem);
+        pItem->setIcon(UIIconPool::defaultIcon(UIIconPool::UIDefaultIconType_ArrowBack));
+    }
 
     QSpacerItem *pSpacer = new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Expanding);
     if (pSpacer)
-        pSettingsLayout->addItem(pSpacer, 4, 0);
+        pSettingsLayout->addItem(pSpacer, 5, 0);
 
     setLayout(pSettingsLayout);
     retranslateUi();
 }
 
+void UISoftKeyboardSettingsWidget::sltColorCellClicked(int row, int column)
+{
+    if (column != 1 || row >= static_cast<int>(ColorTableRow_Max))
+        return;
+    emit sigColorCellClicked(row);
+}
 
 /*********************************************************************************************************************************
 *   UISoftKeyboard implementation.                                                                                  *
@@ -2974,6 +3138,7 @@ UISoftKeyboard::UISoftKeyboard(QWidget *pParent,
     }
 
     loadSettings();
+    configure();
     retranslateUi();
 }
 
@@ -3129,6 +3294,22 @@ void UISoftKeyboard::sltShowHideNumPad(bool fShow)
         m_pKeyboardWidget->setShowNumPad(fShow);
 }
 
+void UISoftKeyboard::sltHandleColorCellClick(int iColorRow)
+{
+    if (!m_pKeyboardWidget || iColorRow >= static_cast<int>(UISoftKeyboardSettingsWidget::ColorTableRow_Max))
+        return;
+    const QColor &currentColor = m_pKeyboardWidget->color(iColorRow);
+    QColorDialog colorDialog(currentColor, this);
+
+    if (colorDialog.exec() == QDialog::Rejected)
+        return;
+    QColor newColor = colorDialog.selectedColor();
+    if (currentColor == newColor)
+        return;
+    m_pKeyboardWidget->setColor(iColorRow, newColor);
+    m_pSettingsWidget->setTableItemColor(static_cast<UISoftKeyboardSettingsWidget::ColorTableRow>(iColorRow), newColor);
+}
+
 void UISoftKeyboard::prepareObjects()
 {
     m_pSplitter = new QSplitter;
@@ -3199,6 +3380,8 @@ void UISoftKeyboard::prepareConnections()
 
     connect(m_pSettingsWidget, &UISoftKeyboardSettingsWidget::sigShowOSMenuKeys, this, &UISoftKeyboard::sltShowHideOSMenuKeys);
     connect(m_pSettingsWidget, &UISoftKeyboardSettingsWidget::sigShowNumPad, this, &UISoftKeyboard::sltShowHideNumPad);
+    connect(m_pSettingsWidget, &UISoftKeyboardSettingsWidget::sigColorCellClicked, this, &UISoftKeyboard::sltHandleColorCellClick);
+    connect(m_pSettingsWidget, &UISoftKeyboardSettingsWidget::sigCloseSettingsWidget, this, &UISoftKeyboard::sltShowHideSettingsWidget);
 }
 
 void UISoftKeyboard::saveSettings()
@@ -3238,11 +3421,20 @@ void UISoftKeyboard::loadSettings()
     LogRel2(("GUI: Soft Keyboard: Restoring geometry to: Origin=%dx%d, Size=%dx%d\n",
              geometry.x(), geometry.y(), geometry.width(), geometry.height()));
     setDialogGeometry(geometry);
+}
 
+void UISoftKeyboard::configure()
+{
+    setWindowIcon(UIIconPool::iconSetFull(":/vm_show_logs_32px.png", ":/vm_show_logs_16px.png"));
     if (m_pKeyboardWidget && m_pSettingsWidget)
     {
         m_pSettingsWidget->setShowOSMenuKeys(m_pKeyboardWidget->showOSMenuKeys());
         m_pSettingsWidget->setShowNumPad(m_pKeyboardWidget->showNumPad());
+
+        for (int i = static_cast<int>(UISoftKeyboardSettingsWidget::ColorTableRow_Background);
+             i < static_cast<int>(UISoftKeyboardSettingsWidget::ColorTableRow_Max); ++i)
+            m_pSettingsWidget->setTableItemColor(static_cast<UISoftKeyboardSettingsWidget::ColorTableRow>(i),
+                                                 m_pKeyboardWidget->color(i));
     }
 }
 
