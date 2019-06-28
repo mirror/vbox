@@ -2038,25 +2038,18 @@ const QColor &UISoftKeyboardWidget::color(int iColorType) const
     {
         case UISoftKeyboardSettingsWidget::ColorTableRow_Background:
             return m_keyBackgroundColor;
-            break;
         case UISoftKeyboardSettingsWidget::ColorTableRow_Edit:
             return m_keyEditColor;
-            break;
         case UISoftKeyboardSettingsWidget::ColorTableRow_Font:
             return m_fontDefaultColor;
-            break;
         case UISoftKeyboardSettingsWidget::ColorTableRow_Hover:
             return m_keyHoverColor;
-            break;
         case UISoftKeyboardSettingsWidget::ColorTableRow_Pressed:
             return m_fontPressedColor;
-            break;
         case UISoftKeyboardSettingsWidget::ColorTableRow_Max:
         default:
             return m_keyBackgroundColor;
-            break;
     }
-    return m_keyBackgroundColor;
 }
 
 void UISoftKeyboardWidget::setColor(int iColorType, const QColor &color)
