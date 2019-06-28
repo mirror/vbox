@@ -26,12 +26,39 @@
 #include <QStateMachine>
 #include <QStyle>
 #include <QStyleOptionGraphicsItem>
+#include <QTimer>
 #include <QTimerEvent>
 
 /* GUI includes: */
 #include "UIGraphicsButton.h"
 #include "UIGraphicsScrollBar.h"
 #include "UIIconPool.h"
+
+
+/** Small functor for QTimer::singleShot worker to perform delayed scrolling. */
+class ScrollFunctor
+{
+public:
+
+    /** Performs delayed scrolling of specified @a pScrollBar to certain @a pos. */
+    ScrollFunctor(UIGraphicsScrollBar *pScrollBar, const QPointF &pos)
+        : m_pScrollBar(pScrollBar)
+        , m_pos(pos)
+    {}
+
+    /** Contains functor's body. */
+    void operator()()
+    {
+        m_pScrollBar->scrollTo(m_pos, 100);
+    }
+
+private:
+
+    /** Holds the scroll-bar reference to scroll. */
+    UIGraphicsScrollBar *m_pScrollBar;
+    /** Holds the position to scroll to. */
+    QPointF              m_pos;
+};
 
 
 /** QIGraphicsWidget subclass providing GUI with graphics scroll-bar taken. */
@@ -217,6 +244,7 @@ UIGraphicsScrollBar::UIGraphicsScrollBar(Qt::Orientation enmOrientation, QGraphi
     , m_iHoverOnTimerId(0)
     , m_iHoverOffTimerId(0)
     , m_iHoveringValue(0)
+    , m_fScrollInProgress(false)
 #ifdef VBOX_WS_MAC
     , m_fRevealed(false)
     , m_iRevealingValue(0)
@@ -242,6 +270,7 @@ UIGraphicsScrollBar::UIGraphicsScrollBar(Qt::Orientation enmOrientation, QIGraph
     , m_iHoverOnTimerId(0)
     , m_iHoverOffTimerId(0)
     , m_iHoveringValue(0)
+    , m_fScrollInProgress(false)
 #ifdef VBOX_WS_MAC
     , m_fRevealed(false)
     , m_iRevealingValue(0)
@@ -268,6 +297,11 @@ QSizeF UIGraphicsScrollBar::minimumSizeHint() const
 int UIGraphicsScrollBar::step() const
 {
     return 2 * QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
+}
+
+int UIGraphicsScrollBar::pageStep() const
+{
+    return 3 * step();
 }
 
 void UIGraphicsScrollBar::setMinimum(int iMinimum)
@@ -322,6 +356,58 @@ int UIGraphicsScrollBar::value() const
     return m_iValue;
 }
 
+void UIGraphicsScrollBar::scrollTo(const QPointF &desiredPos, int iDelay /* = 500 */)
+{
+    /* Prepare current, desired and intermediate positions: */
+    const QPointF currentPos = actualTokenPosition();
+    const int iCurrentY = currentPos.y();
+    const int iCurrentX = currentPos.x();
+    const int iDesiredY = desiredPos.y();
+    const int iDesiredX = desiredPos.x();
+    QPointF intermediatePos;
+
+    /* Calculate intermediate position depending on orientation: */
+    switch (m_enmOrientation)
+    {
+        case Qt::Horizontal:
+        {
+            if (iCurrentX < iDesiredX)
+            {
+                intermediatePos.setY(desiredPos.y());
+                intermediatePos.setX(iCurrentX + pageStep() < iDesiredX ? iCurrentX + pageStep() : iDesiredX);
+            }
+            else if (iCurrentX > iDesiredX)
+            {
+                intermediatePos.setY(desiredPos.y());
+                intermediatePos.setX(iCurrentX - pageStep() > iDesiredX ? iCurrentX - pageStep() : iDesiredX);
+            }
+            break;
+        }
+        case Qt::Vertical:
+        {
+            if (iCurrentY < iDesiredY)
+            {
+                intermediatePos.setX(desiredPos.x());
+                intermediatePos.setY(iCurrentY + pageStep() < iDesiredY ? iCurrentY + pageStep() : iDesiredY);
+            }
+            else if (iCurrentY > iDesiredY)
+            {
+                intermediatePos.setX(desiredPos.x());
+                intermediatePos.setY(iCurrentY - pageStep() > iDesiredY ? iCurrentY - pageStep() : iDesiredY);
+            }
+            break;
+        }
+    }
+
+    /* Move token to intermediate position: */
+    if (!intermediatePos.isNull())
+        sltTokenMoved(intermediatePos);
+
+    /* Continue, if we haven't reached required position: */
+    if ((intermediatePos != desiredPos) && m_fScrollInProgress)
+        QTimer::singleShot(iDelay, ScrollFunctor(this, desiredPos));
+}
+
 void UIGraphicsScrollBar::resizeEvent(QGraphicsSceneResizeEvent *pEvent)
 {
     /* Call to base-class: */
@@ -348,8 +434,22 @@ void UIGraphicsScrollBar::mousePressEvent(QGraphicsSceneMouseEvent *pEvent)
      * influence underlying widgets: */
     pEvent->accept();
 
-    /* Redirect to token move handler: */
-    sltTokenMoved(pEvent->pos());
+    /* Start scrolling sequence: */
+    m_fScrollInProgress = true;
+    scrollTo(pEvent->pos());
+}
+
+void UIGraphicsScrollBar::mouseReleaseEvent(QGraphicsSceneMouseEvent *pEvent)
+{
+    /* Call to base-class: */
+    QIGraphicsWidget::mousePressEvent(pEvent);
+
+    /* Mark event accepted so that it couldn't
+     * influence underlying widgets: */
+    pEvent->accept();
+
+    /* Stop scrolling if any: */
+    m_fScrollInProgress = false;
 }
 
 void UIGraphicsScrollBar::hoverMoveEvent(QGraphicsSceneHoverEvent *)

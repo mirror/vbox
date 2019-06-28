@@ -68,6 +68,8 @@ public:
 
     /** Returns scrolling step. */
     int step() const;
+    /** Returns page scrolling step. */
+    int pageStep() const;
 
     /** Defines @a iMinimum scroll-bar value. */
     void setMinimum(int iMinimum);
@@ -84,6 +86,9 @@ public:
     /** Returns current scroll-bar value. */
     int value() const;
 
+    /** Performs scrolling to certain @a desiredPos with certain @a iDelay. */
+    void scrollTo(const QPointF &desiredPos, int iDelay = 500);
+
 protected:
 
     /** Handles resize @a pEvent. */
@@ -94,6 +99,8 @@ protected:
 
     /** Handles mouse-press @a pEvent. */
     virtual void mousePressEvent(QGraphicsSceneMouseEvent *pEvent) /* override */;
+    /** Handles mouse-release @a pEvent. */
+    virtual void mouseReleaseEvent(QGraphicsSceneMouseEvent *pEvent) /* override */;
 
     /** Handles hover enter @a pEvent. */
     virtual void hoverMoveEvent(QGraphicsSceneHoverEvent *pEvent) /* override */;
@@ -205,6 +212,9 @@ private:
     int   m_iHoverOffTimerId;
     /** Holds the hovering animation value. */
     int   m_iHoveringValue;
+
+    /** Holds whether we are scrolling. */
+    bool  m_fScrollInProgress;
 
 #ifdef VBOX_WS_MAC
     /** Holds whether token is revealed. */
