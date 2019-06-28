@@ -556,6 +556,19 @@ static bool detectLinuxDistroName(const char *pszOsAndVersion, VBOXOSTYPE *penmO
         *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_FedoraCore);
         pszOsAndVersion = RTStrStripL(pszOsAndVersion + 6);
     }
+    else if (   RTStrNICmp(pszOsAndVersion, RT_STR_TUPLE("Ubuntu")) == 0
+             && !RT_C_IS_ALNUM(pszOsAndVersion[6]))
+    {
+        *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Ubuntu);
+        pszOsAndVersion = RTStrStripL(pszOsAndVersion + 6);
+    }
+    else if (    (   RTStrNICmp(pszOsAndVersion, RT_STR_TUPLE("Xubuntu")) == 0
+                  || RTStrNICmp(pszOsAndVersion, RT_STR_TUPLE("Kubuntu")) == 0)
+             && !RT_C_IS_ALNUM(pszOsAndVersion[7]))
+    {
+        *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Ubuntu);
+        pszOsAndVersion = RTStrStripL(pszOsAndVersion + 7);
+    }
     else
         fRet = false;
 
@@ -778,6 +791,114 @@ HRESULT Unattended::i_innerDetectIsoOSLinux(RTVFS hVfsIso, DETECTBUFFER *pBuf, V
                 }
             }
         }
+
+        if (*penmOsType != VBOXOSTYPE_Unknown)
+            return S_FALSE;
+    }
+
+    /*
+     * Ubuntu has a README.diskdefins file on their ISO (already on 4.10 / warty warthog).
+     * Example content:
+     *  #define DISKNAME  Ubuntu 4.10 "Warty Warthog" - Preview amd64 Binary-1
+     *  #define TYPE  binary
+     *  #define TYPEbinary  1
+     *  #define ARCH  amd64
+     *  #define ARCHamd64  1
+     *  #define DISKNUM  1
+     *  #define DISKNUM1  1
+     *  #define TOTALNUM  1
+     *  #define TOTALNUM1  1
+     */
+    vrc = RTVfsFileOpen(hVfsIso, "README.diskdefines", RTFILE_O_READ | RTFILE_O_DENY_NONE | RTFILE_O_OPEN, &hVfsFile);
+    if (RT_SUCCESS(vrc))
+    {
+        RT_ZERO(*pBuf);
+        size_t cchIgn;
+        RTVfsFileRead(hVfsFile, pBuf->sz, sizeof(*pBuf) - 1, &cchIgn);
+        pBuf->sz[sizeof(*pBuf) - 1] = '\0';
+        RTVfsFileRelease(hVfsFile);
+
+        /* Find the DISKNAME and ARCH defines. */
+        const char *pszDiskName = NULL;
+        const char *pszArch     = NULL;
+        char       *psz         = pBuf->sz;
+        for (unsigned i = 0; *psz != '\0'; i++)
+        {
+            while (RT_C_IS_BLANK(*psz))
+                psz++;
+
+            /* Match #define: */
+            static const char s_szDefine[] = "#define";
+            if (   strncmp(psz, s_szDefine, sizeof(s_szDefine) - 1) == 0
+                && RT_C_IS_BLANK(psz[sizeof(s_szDefine) - 1]))
+            {
+                psz = &psz[sizeof(s_szDefine) - 1];
+                while (RT_C_IS_BLANK(*psz))
+                    psz++;
+
+                /* Match the identifier: */
+                char *pszIdentifier = psz;
+                if (RT_C_IS_ALPHA(*psz) || *psz == '_')
+                {
+                    do
+                        psz++;
+                    while (RT_C_IS_ALNUM(*psz) || *psz == '_');
+                    size_t cchIdentifier = psz - pszIdentifier;
+
+                    /* Skip to the value. */
+                    while (RT_C_IS_BLANK(*psz))
+                        psz++;
+                    char *pszValue = psz;
+
+                    /* Skip to EOL and strip the value. */
+                    char *pszEol = psz = strchr(psz, '\n');
+                    if (psz)
+                        *psz++ = '\0';
+                    else
+                        pszEol = strchr(pszValue, '\0');
+                    while (pszEol > pszValue && RT_C_IS_SPACE(pszEol[-1]))
+                        *--pszEol = '\0';
+
+                    LogRelFlow(("Unattended: README.diskdefines: %.*s=%s\n", cchIdentifier, pszIdentifier, pszValue));
+
+                    /* Do identifier matching: */
+                    if (cchIdentifier == sizeof("DISKNAME") - 1 && strncmp(pszIdentifier, RT_STR_TUPLE("DISKNAME")) == 0)
+                        pszDiskName = pszValue;
+                    else if (cchIdentifier == sizeof("ARCH") - 1 && strncmp(pszIdentifier, RT_STR_TUPLE("ARCH")) == 0)
+                        pszArch = pszValue;
+                    else
+                        continue;
+                    if (pszDiskName == NULL || pszArch == NULL)
+                        continue;
+                    break;
+                }
+            }
+
+            /* Next line: */
+            psz = strchr(psz, '\n');
+            if (!psz)
+                break;
+            psz++;
+        }
+
+        /* Did we find both of them? */
+        if (pszDiskName && pszArch)
+        {
+            if (!detectLinuxArch(pszArch, penmOsType, VBOXOSTYPE_Ubuntu))
+                LogRel(("Unattended: README.diskdefines: Unknown: arch='%s'\n", pszArch));
+
+            const char *pszVersion = NULL;
+            if (detectLinuxDistroName(pszDiskName, penmOsType, &pszVersion))
+            {
+                LogRelFlow(("Unattended: README.diskdefines: version=%s\n", pszVersion));
+                try { mStrDetectedOSVersion = RTStrStripL(pszVersion); }
+                catch (std::bad_alloc &) { return E_OUTOFMEMORY; }
+            }
+            else
+                LogRel(("Unattended: README.diskdefines: Unknown: diskname='%s'\n", pszDiskName));
+        }
+        else
+            LogRel(("Unattended: README.diskdefines: Did not find both DISKNAME and ARCH. :-/\n"));
 
         if (*penmOsType != VBOXOSTYPE_Unknown)
             return S_FALSE;
