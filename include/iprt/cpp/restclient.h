@@ -707,7 +707,8 @@ public:
     /** Flags to doCall. */
     enum
     {
-        kDoCall_OciReqSignExcludeBody = 1 /**< Exclude the body when doing OCI request signing. */
+        kDoCall_OciReqSignExcludeBody = 1, /**< Exclude the body when doing OCI request signing. */
+        kDoCall_RequireBody           = 2  /**< The body is required. */
     };
 
 protected:

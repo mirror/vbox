@@ -144,6 +144,7 @@ int RTCRestClientApiBase::ociSignRequest(RTHTTP a_hHttp, RTCString const &a_rStr
     if (RT_SUCCESS(rc))
     {
         if (   a_rStrXmitBody.isNotEmpty()
+            || (a_fFlags & kDoCall_RequireBody)
             || a_enmHttpMethod == RTHTTPMETHOD_POST
             || a_enmHttpMethod == RTHTTPMETHOD_PUT)
             rc = ociSignRequestEnsureContentLength(a_hHttp, a_rStrXmitBody.length());
