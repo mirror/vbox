@@ -143,13 +143,14 @@ int RTCRestClientApiBase::ociSignRequest(RTHTTP a_hHttp, RTCString const &a_rStr
     int rc = ociSignRequestEnsureHost(a_hHttp, a_rStrFullUrl.c_str());
     if (RT_SUCCESS(rc))
     {
-        if (   a_rStrXmitBody.isNotEmpty()
-            || (a_fFlags & kDoCall_RequireBody)
+        bool fHasBody = a_rStrXmitBody.isNotEmpty() || (a_fFlags & kDoCall_RequireBody);
+
+        if (   fHasBody
             || a_enmHttpMethod == RTHTTPMETHOD_POST
             || a_enmHttpMethod == RTHTTPMETHOD_PUT)
             rc = ociSignRequestEnsureContentLength(a_hHttp, a_rStrXmitBody.length());
         if (   RT_SUCCESS(rc)
-            && a_rStrXmitBody.isNotEmpty())
+            && fHasBody)
             rc = ociSignRequestEnsureXContentSha256(a_hHttp, a_rStrXmitBody.c_str(), a_rStrXmitBody.length());
         if (RT_SUCCESS(rc))
             rc = ociSignRequestEnsureDateOrXDate(a_hHttp);
@@ -161,7 +162,6 @@ int RTCRestClientApiBase::ociSignRequest(RTHTTP a_hHttp, RTCString const &a_rStr
             rc = RTHttpSignHeaders(a_hHttp, a_enmHttpMethod, a_rStrFullUrl.c_str(), a_hKey, a_rStrKeyId.c_str(), 0 /*fFlags*/);
         }
     }
-    RT_NOREF_PV(a_fFlags); /* We don't need to use the kDoCall_OciReqSignExcludeBody flag it turns out. */
     return rc;
 }
 
