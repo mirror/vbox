@@ -330,7 +330,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlReportFeatures(uint32_t idClient, uint64_t fGuest
         VbglHGCMParmUInt64Set(&Msg.f64Features0, fGuestFeatures);
         VbglHGCMParmUInt64Set(&Msg.f64Features1, VBOX_GUESTCTRL_GF_1_MUST_BE_ONE);
 
-        rc = VbglR3HGCMCall(&Msg.Hdr, sizeof(Msg.Hdr));
+        rc = VbglR3HGCMCall(&Msg.Hdr, sizeof(Msg));
         if (RT_SUCCESS(rc))
         {
             Assert(Msg.f64Features0.type == VMMDevHGCMParmType_64bit);
@@ -369,7 +369,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlQueryFeatures(uint32_t idClient, uint64_t *pfHost
         VbglHGCMParmUInt64Set(&Msg.f64Features0, 0);
         VbglHGCMParmUInt64Set(&Msg.f64Features1, RT_BIT_64(63));
 
-        rc = VbglR3HGCMCall(&Msg.Hdr, sizeof(Msg.Hdr));
+        rc = VbglR3HGCMCall(&Msg.Hdr, sizeof(Msg));
         if (RT_SUCCESS(rc))
         {
             Assert(Msg.f64Features0.type == VMMDevHGCMParmType_64bit);
