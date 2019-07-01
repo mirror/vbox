@@ -10957,7 +10957,7 @@ static int hmR0VmxMapHCApicAccessPage(PVMCPU pVCpu)
     RTGCPHYS const GCPhysApicBase = u64MsrApicBase & PAGE_BASE_GC_MASK;
     Log4Func(("Mappping HC APIC-access page at %#RGp\n", GCPhysApicBase));
 
-    /* Unalias any existing mapping. */
+    /* Unalias the existing mapping. */
     int rc = PGMHandlerPhysicalReset(pVM, GCPhysApicBase);
     AssertRCReturn(rc, rc);
 
@@ -11397,6 +11397,9 @@ static VBOXSTRICTRC hmR0VmxPreRunGuest(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient
     /*
      * Virtualize memory-mapped accesses to the physical APIC (may take locks).
      */
+    /** @todo Doing this from ring-3 after VM setup phase causes a
+     *        VERR_IOM_MMIO_RANGE_NOT_FOUND guru while booting Visa 64 SMP VM. No
+     *        idea why atm. */
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     if (   !pVCpu->hm.s.vmx.u64GstMsrApicBase
         && (pVM->hm.s.vmx.Msrs.ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_VIRT_APIC_ACCESS)
@@ -15501,7 +15504,7 @@ HMVMX_EXIT_DECL hmR0VmxExitApicAccess(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
     AssertRCReturn(rc, rc);
 
     /* See Intel spec. 27-6 "Exit Qualifications for APIC-access VM-exits from Linear Accesses & Guest-Phyiscal Addresses" */
-    uint32_t uAccessType = VMX_EXIT_QUAL_APIC_ACCESS_TYPE(pVmxTransient->uExitQual);
+    uint32_t const uAccessType = VMX_EXIT_QUAL_APIC_ACCESS_TYPE(pVmxTransient->uExitQual);
     VBOXSTRICTRC rcStrict2;
     switch (uAccessType)
     {
@@ -15515,10 +15518,10 @@ HMVMX_EXIT_DECL hmR0VmxExitApicAccess(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
             RTGCPHYS GCPhys = pVCpu->hm.s.vmx.u64GstMsrApicBase;    /* Always up-to-date, as it is not part of the VMCS. */
             GCPhys &= PAGE_BASE_GC_MASK;
             GCPhys += VMX_EXIT_QUAL_APIC_ACCESS_OFFSET(pVmxTransient->uExitQual);
-            PVM pVM = pVCpu->CTX_SUFF(pVM);
             Log4Func(("Linear access uAccessType=%#x GCPhys=%#RGp Off=%#x\n", uAccessType, GCPhys,
                  VMX_EXIT_QUAL_APIC_ACCESS_OFFSET(pVmxTransient->uExitQual)));
 
+            PVM      pVM  = pVCpu->CTX_SUFF(pVM);
             PCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
             rcStrict2 = IOMMMIOPhysHandler(pVM, pVCpu,
                                            uAccessType == VMX_APIC_ACCESS_TYPE_LINEAR_READ ? 0 : X86_TRAP_PF_RW,
@@ -15536,9 +15539,11 @@ HMVMX_EXIT_DECL hmR0VmxExitApicAccess(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
         }
 
         default:
+        {
             Log4Func(("uAccessType=%#x\n", uAccessType));
             rcStrict2 = VINF_EM_RAW_EMULATE_INSTR;
             break;
+        }
     }
 
     if (rcStrict2 != VINF_SUCCESS)
