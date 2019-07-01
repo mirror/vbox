@@ -498,12 +498,12 @@ class LocalReporter(ReporterBase):
     def log(self, iLevel, sText, sCaller, sTsPrf):
         if iLevel <= self.iVerbose:
             # format it.
-            if self.iDebug > 0:
+            if self.iDebug <= 0:
+                sLogText = '%s %s' % (sTsPrf, sText);
+            elif self.iDebug <= 1:
                 sLogText = '%s %30s: %s' % (sTsPrf, sCaller, sText);
             else:
-                sLogText = '%s %s' % (sTsPrf, sText);
-            if self.iDebug > 1:
-                sLogText = 'err=%u %s' % (self.cErrors, sLogText,);
+                sLogText = '%s e=%u %30s: %s' % (sTsPrf, self.cErrors, sCaller, sText);
 
             # output it.
             if sys.version_info[0] >= 3:
@@ -914,10 +914,12 @@ class RemoteReporter(ReporterBase):
 
     def log(self, iLevel, sText, sCaller, sTsPrf):
         if iLevel <= self.iVerbose:
-            if self.iDebug > 0:
+            if self.iDebug <= 0:
+                sLogText = '%s %s' % (sTsPrf, sText);
+            elif self.iDebug <= 1:
                 sLogText = '%s %30s: %s' % (sTsPrf, sCaller, sText);
             else:
-                sLogText = '%s %s: %s' % (sTsPrf, self.sName, sText);
+                sLogText = '%s e=%u %30s: %s' % (sTsPrf, self.cErrors, sCaller, sText);
             self._writeOutput(sLogText);
         return 0;
 
@@ -1147,11 +1149,17 @@ def logXcptWorker(iLevel, fIncErrors, sPrefix="", sText=None, cFrames=1):
                 asInfo = None;
                 try:
                     asInfo = formatExceptionOnly(oType, oValue, sCaller, sTsPrf);
+                    atEntries = traceback.extract_tb(oTraceback);
+                    atEntries.reverse();
                     if cFrames is not None and cFrames <= 1:
-                        asInfo = asInfo + traceback.format_tb(oTraceback, 1);
+                        if atEntries:
+                            asInfo = asInfo + traceback.format_list(atEntries[:1]);
                     else:
-                        asInfo.append('Traceback:')
-                        asInfo = asInfo + traceback.format_tb(oTraceback, cFrames);
+                        asInfo.append('Traceback (stack order):')
+                        if cFrames is not None and cFrames < len(atEntries):
+                            asInfo = asInfo + traceback.format_list(atEntries[:cFrames]);
+                        else:
+                            asInfo = asInfo + traceback.format_list(atEntries);
                         asInfo.append('Stack:')
                         asInfo = asInfo + traceback.format_stack(oTraceback.tb_frame.f_back, cFrames);
                 except:
