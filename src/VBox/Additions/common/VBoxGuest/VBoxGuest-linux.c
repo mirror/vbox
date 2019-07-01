@@ -1,4 +1,4 @@
-/* $Rev$ */
+/* $Id$ */
 /** @file
  * VBoxGuest - Linux specifics.
  *
