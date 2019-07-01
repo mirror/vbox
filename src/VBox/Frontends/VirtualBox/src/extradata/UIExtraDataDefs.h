@@ -384,6 +384,7 @@ namespace UIExtraDataDefs
     /** @name Soft Keyboard related data
       * @{ */
         extern const char *GUI_SoftKeyboard_DialogGeometry;
+        extern const char *GUI_SoftKeyboard_ColorTheme;
     /** @} */
 
     /** @name File Manager options

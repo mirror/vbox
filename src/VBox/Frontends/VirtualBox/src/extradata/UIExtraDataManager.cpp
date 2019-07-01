@@ -4307,6 +4307,16 @@ bool UIExtraDataManager::softKeyboardDialogShouldBeMaximized()
     return data.size() == 5 && data[4] == GUI_Geometry_State_Max;
 }
 
+void UIExtraDataManager::setSoftKeyboardColorTheme(const QStringList &colorStringList)
+{
+    setExtraDataStringList(GUI_SoftKeyboard_ColorTheme, colorStringList);
+}
+
+QStringList UIExtraDataManager::softKeyboardColorTheme()
+{
+    return extraDataStringList(GUI_SoftKeyboard_ColorTheme);
+}
+
 void UIExtraDataManager::setFileManagerOptions(bool fListDirectoriesFirst,
                                                bool fShowDeleteConfirmation,
                                                bool fShowHumanReadableSizes,

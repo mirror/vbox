@@ -675,6 +675,8 @@ public:
         QRect softKeyboardDialogGeometry(QWidget *pWidget, const QRect &defaultGeometry);
         void setSoftKeyboardDialogGeometry(const QRect &geometry, bool fMaximized);
         bool softKeyboardDialogShouldBeMaximized();
+        void setSoftKeyboardColorTheme(const QStringList &colorStringList);
+        QStringList softKeyboardColorTheme();
     /** @} */
 
     /** @name File Manager options
