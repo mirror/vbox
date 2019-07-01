@@ -16839,6 +16839,7 @@ HMVMX_EXIT_DECL hmR0VmxExitXcptOrNmiNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTrans
         case VMX_EXIT_INT_INFO_TYPE_PRIV_SW_XCPT:
         {
             rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
+            AssertRCReturn(rc, rc);
             RT_FALL_THRU();
         }
         case VMX_EXIT_INT_INFO_TYPE_HW_XCPT:
