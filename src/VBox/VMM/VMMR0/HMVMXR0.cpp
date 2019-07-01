@@ -9308,9 +9308,12 @@ static int hmR0VmxExitToRing3(PVMCPU pVCpu, VBOXSTRICTRC rcExit)
      * a VM-exit with higher priority than interrupt-window or NMI-window VM-exits
      * (e.g. TPR below threshold).
      */
-    int rc = hmR0VmxClearIntWindowExitVmcs(pVmcsInfo);
-    rc    |= hmR0VmxClearNmiWindowExitVmcs(pVmcsInfo);
-    AssertRCReturn(rc, rc);
+    if (!CPUMIsGuestInVmxNonRootMode(&pVCpu->cpum.GstCtx))
+    {
+        int rc = hmR0VmxClearIntWindowExitVmcs(pVmcsInfo);
+        rc    |= hmR0VmxClearNmiWindowExitVmcs(pVmcsInfo);
+        AssertRCReturn(rc, rc);
+    }
 
     /* If we're emulating an instruction, we shouldn't have any TRPM traps pending
        and if we're injecting an event we should have a TRPM trap pending. */
@@ -9320,7 +9323,7 @@ static int hmR0VmxExitToRing3(PVMCPU pVCpu, VBOXSTRICTRC rcExit)
 #endif
 
     /* Save guest state and restore host state bits. */
-    rc = hmR0VmxLeaveSession(pVCpu);
+    int rc = hmR0VmxLeaveSession(pVCpu);
     AssertRCReturn(rc, rc);
     STAM_COUNTER_DEC(&pVCpu->hm.s.StatSwitchLongJmpToR3);
 
