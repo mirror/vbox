@@ -1637,7 +1637,7 @@ class TestDriverBase(object): # pylint: disable=too-many-instance-attributes
         try:
             iRc = self.innerMain(asArgs);
         except:
-            reporter.logXcpt();
+            reporter.logXcpt(cFrames = None);
             try:
                 self.onExit(-1);
             except:
