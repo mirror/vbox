@@ -209,7 +209,7 @@ def formatComOrXpComException(oType, oXcpt):
 
     sHrc = oVBoxMgr.xcptToString(hrc);                      # pylint: disable=not-callable
     if sHrc.find('(') < 0:
-        sHrc = '%s (%#x)' % (sHrc), hrc & 0xffffffff);
+        sHrc = '%s (%#x)' % (sHrc, hrc & 0xffffffff,);
 
     asRet = ['COM-Xcpt: %s' % (sHrc,)];
     if sMsg and sWhere:
