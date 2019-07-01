@@ -364,7 +364,7 @@ class TransportBase(object):
                         for ch in sUtf8:
                             abPayload.append(ord(ch))
                     abPayload.append(0);
-                elif isinstance(o, long):
+                elif isinstance(o, (long, int)):
                     if o < 0 or o > 0xffffffff:
                         reporter.fatal('sendMsg: uint32_t payload is out of range: %s' % (hex(o)));
                         return None;
@@ -1004,9 +1004,17 @@ class Session(TdTaskBase):
             rc = self.recvAckLogged('RMTREE');
         return rc;
 
-    #def "CHMOD   "
-    #def "CHOWN   "
-    #def "CHGRP   "
+    def taskChMod(self, sRemotePath, fMode):
+        rc = self.sendMsg('CHMOD', (int(fMode), sRemotePath,));
+        if rc is True:
+            rc = self.recvAckLogged('CHMOD');
+        return rc;
+
+    def taskChOwn(self, sRemotePath, idUser, idGroup):
+        rc = self.sendMsg('CHOWN', (int(idUser), int(idGroup), sRemotePath,));
+        if rc is True:
+            rc = self.recvAckLogged('CHOWN');
+        return rc;
 
     def taskIsDir(self, sRemoteDir):
         rc = self.sendMsg('ISDIR', (sRemoteDir,));
@@ -1030,7 +1038,7 @@ class Session(TdTaskBase):
     #def "LSTAT   "
     #def "LIST    "
 
-    def taskUploadFile(self, sLocalFile, sRemoteFile):
+    def taskUploadFile(self, sLocalFile, sRemoteFile, fMode, fFallbackOkay):
         #
         # Open the local file (make sure it exist before bothering TXS) and
         # tell TXS that we want to upload a file.
@@ -1042,13 +1050,13 @@ class Session(TdTaskBase):
             return False;
 
         # Common cause with taskUploadStr
-        rc = self.taskUploadCommon(oLocalFile, sRemoteFile);
+        rc = self.taskUploadCommon(oLocalFile, sRemoteFile, fMode, fFallbackOkay);
 
         # Cleanup.
         oLocalFile.close();
         return rc;
 
-    def taskUploadString(self, sContent, sRemoteFile):
+    def taskUploadString(self, sContent, sRemoteFile, fMode, fFallbackOkay):
         # Wrap sContent in a file like class.
         class InStringFile(object): # pylint: disable=too-few-public-methods
             def __init__(self, sContent):
@@ -1067,14 +1075,35 @@ class Session(TdTaskBase):
                 return sRet;
 
         oLocalString = InStringFile(sContent);
-        return self.taskUploadCommon(oLocalString, sRemoteFile);
+        return self.taskUploadCommon(oLocalString, sRemoteFile, fMode, fFallbackOkay);
 
-    def taskUploadCommon(self, oLocalFile, sRemoteFile):
+    def taskUploadCommon(self, oLocalFile, sRemoteFile, fMode, fFallbackOkay):
         """Common worker used by taskUploadFile and taskUploadString."""
+        #
         # Command + ACK.
-        rc = self.sendMsg('PUT FILE', (sRemoteFile,));
-        if rc is True:
-            rc = self.recvAckLogged('PUT FILE');
+        #
+        # Only used the new PUT2FILE command if we've got a non-zero mode mask.
+        # Fall back on the old command if the new one is not known by the TXS.
+        #
+        if fMode == 0:
+            rc = self.sendMsg('PUT FILE', (sRemoteFile,));
+            if rc is True:
+                rc = self.recvAckLogged('PUT FILE');
+        else:
+            rc = self.sendMsg('PUT2FILE', (fMode, sRemoteFile));
+            if rc is True:
+                rc = self.recvAck();
+                if rc is False:
+                    reporter.maybeErr(self.fErr, 'recvAckLogged: PUT2FILE transport error');
+                elif rc is not True:
+                    if rc[0] == 'UNKNOWN' and fFallbackOkay:
+                        # Fallback:
+                        rc = self.sendMsg('PUT FILE', (sRemoteFile,));
+                        if rc is True:
+                            rc = self.recvAckLogged('PUT FILE');
+                    else:
+                        reporter.maybeErr(self.fErr, 'recvAckLogged: PUT2FILE response was %s: %s' % (rc[0], rc[1],));
+                        rc = False;
         if rc is True:
             #
             # Push data packets until eof.
@@ -1515,9 +1544,33 @@ class Session(TdTaskBase):
         """Synchronous version."""
         return self.asyncToSync(self.asyncRmTree, sRemoteTree, cMsTimeout, fIgnoreErrors);
 
-    #def "CHMOD   "
-    #def "CHOWN   "
-    #def "CHGRP   "
+    def asyncChMod(self, sRemotePath, fMode, cMsTimeout = 30000, fIgnoreErrors = False):
+        """
+        Initiates a chmod task.
+
+        Returns True on success, False on failure (logged).
+
+        The task returns True on success, False on failure (logged).
+        """
+        return self.startTask(cMsTimeout, fIgnoreErrors, "chMod", self.taskChMod, (sRemotePath, fMode));
+
+    def syncChMod(self, sRemotePath, fMode, cMsTimeout = 30000, fIgnoreErrors = False):
+        """Synchronous version."""
+        return self.asyncToSync(self.asyncChMod, sRemotePath, fMode, cMsTimeout, fIgnoreErrors);
+
+    def asyncChOwn(self, sRemotePath, idUser, idGroup, cMsTimeout = 30000, fIgnoreErrors = False):
+        """
+        Initiates a chown task.
+
+        Returns True on success, False on failure (logged).
+
+        The task returns True on success, False on failure (logged).
+        """
+        return self.startTask(cMsTimeout, fIgnoreErrors, "chOwn", self.taskChOwn, (sRemotePath, idUser, idGroup));
+
+    def syncChOwn(self, sRemotePath, idUser, idGroup, cMsTimeout = 30000, fIgnoreErrors = False):
+        """Synchronous version."""
+        return self.asyncToSync(self.asyncChMod, sRemotePath, idUser, idGroup, cMsTimeout, fIgnoreErrors);
 
     def asyncIsDir(self, sRemoteDir, cMsTimeout = 30000, fIgnoreErrors = False):
         """
@@ -1568,7 +1621,8 @@ class Session(TdTaskBase):
     #def "LSTAT   "
     #def "LIST    "
 
-    def asyncUploadFile(self, sLocalFile, sRemoteFile, cMsTimeout = 30000, fIgnoreErrors = False):
+    def asyncUploadFile(self, sLocalFile, sRemoteFile,
+                        fMode = 0, fFallbackOkay = True, cMsTimeout = 30000, fIgnoreErrors = False):
         """
         Initiates a download query task.
 
@@ -1576,13 +1630,15 @@ class Session(TdTaskBase):
 
         The task returns True on success, False on failure (logged).
         """
-        return self.startTask(cMsTimeout, fIgnoreErrors, "upload", self.taskUploadFile, (sLocalFile, sRemoteFile));
+        return self.startTask(cMsTimeout, fIgnoreErrors, "upload",
+                              self.taskUploadFile, (sLocalFile, sRemoteFile, fMode, fFallbackOkay));
 
-    def syncUploadFile(self, sLocalFile, sRemoteFile, cMsTimeout = 30000, fIgnoreErrors = False):
+    def syncUploadFile(self, sLocalFile, sRemoteFile, fMode = 0, fFallbackOkay = True, cMsTimeout = 30000, fIgnoreErrors = False):
         """Synchronous version."""
-        return self.asyncToSync(self.asyncUploadFile, sLocalFile, sRemoteFile, cMsTimeout, fIgnoreErrors);
+        return self.asyncToSync(self.asyncUploadFile, sLocalFile, sRemoteFile, fMode, fFallbackOkay, cMsTimeout, fIgnoreErrors);
 
-    def asyncUploadString(self, sContent, sRemoteFile, cMsTimeout = 30000, fIgnoreErrors = False):
+    def asyncUploadString(self, sContent, sRemoteFile,
+                          fMode = 0, fFallbackOkay = True, cMsTimeout = 30000, fIgnoreErrors = False):
         """
         Initiates a upload string task.
 
@@ -1590,11 +1646,12 @@ class Session(TdTaskBase):
 
         The task returns True on success, False on failure (logged).
         """
-        return self.startTask(cMsTimeout, fIgnoreErrors, "uploadString", self.taskUploadString, (sContent, sRemoteFile));
+        return self.startTask(cMsTimeout, fIgnoreErrors, "uploadString",
+                              self.taskUploadString, (sContent, sRemoteFile, fMode, fFallbackOkay));
 
-    def syncUploadString(self, sContent, sRemoteFile, cMsTimeout = 30000, fIgnoreErrors = False):
+    def syncUploadString(self, sContent, sRemoteFile, fMode = 0, fFallbackOkay = True, cMsTimeout = 30000, fIgnoreErrors = False):
         """Synchronous version."""
-        return self.asyncToSync(self.asyncUploadString, sContent, sRemoteFile, cMsTimeout, fIgnoreErrors);
+        return self.asyncToSync(self.asyncUploadString, sContent, sRemoteFile, fMode, fFallbackOkay, cMsTimeout, fIgnoreErrors);
 
     def asyncDownloadFile(self, sRemoteFile, sLocalFile, cMsTimeout = 30000, fIgnoreErrors = False):
         """
