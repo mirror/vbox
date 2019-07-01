@@ -1133,7 +1133,9 @@ void UILayoutSelector::setCurrentLayout(const QString &strLayoutName)
     QListWidgetItem *pItem = items[0];
     if (!pItem || pItem == m_pLayoutListWidget->currentItem())
         return;
+    m_pLayoutListWidget->blockSignals(true);
     m_pLayoutListWidget->setCurrentItem(pItem);
+    m_pLayoutListWidget->blockSignals(false);
 }
 
 void UILayoutSelector::setCurrentLayoutIsEditable(bool fEditable)
@@ -1150,13 +1152,20 @@ void UILayoutSelector::setLayoutList(const QStringList &layoutNames, QList<QUuid
 {
     if (!m_pLayoutListWidget || layoutNames.size() != layoutUidList.size())
         return;
+    QUuid currentItemUid;
+    if (m_pLayoutListWidget->currentItem())
+        currentItemUid = m_pLayoutListWidget->currentItem()->data(Qt::UserRole).toUuid();
+    m_pLayoutListWidget->blockSignals(true);
     m_pLayoutListWidget->clear();
     for (int i = 0; i < layoutNames.size(); ++i)
     {
         QListWidgetItem *pItem = new QListWidgetItem(layoutNames[i], m_pLayoutListWidget);
         pItem->setData(Qt::UserRole, layoutUidList[i]);
         m_pLayoutListWidget->addItem(pItem);
+        if (layoutUidList[i] == currentItemUid)
+            m_pLayoutListWidget->setCurrentItem(pItem);
     }
+    m_pLayoutListWidget->blockSignals(false);
 }
 
 void UILayoutSelector::retranslateUi()
@@ -1204,6 +1213,7 @@ void UILayoutSelector::prepareObjects()
     m_pLayoutListWidget = new QListWidget;
     pLayout->addWidget(m_pLayoutListWidget);
     connect(m_pLayoutListWidget, &QListWidget::currentItemChanged, this, &UILayoutSelector::sltCurrentItemChanged);
+
     m_pLayoutListWidget->setSelectionMode(QAbstractItemView::SingleSelection);
     QHBoxLayout *pButtonsLayout = new QHBoxLayout;
     pLayout->addLayout(pButtonsLayout);
