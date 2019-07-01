@@ -3864,6 +3864,7 @@ static int hmR0VmxSetupVmcsMiscCtls(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo)
     }
 #endif
 
+    Assert(pVmcsInfo->u64VmcsLinkPtr == NIL_RTHCPHYS);
     int rc = VMXWriteVmcs64(VMX_VMCS64_GUEST_VMCS_LINK_PTR_FULL, NIL_RTHCPHYS);
     if (RT_SUCCESS(rc))
     {
@@ -3938,6 +3939,7 @@ static int hmR0VmxSetupVmcsXcptBitmap(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo)
 static int hmR0VmxSetupVmcsCtlsNested(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo)
 {
     PVM pVM = pVCpu->CTX_SUFF(pVM);
+    Assert(pVmcsInfo->u64VmcsLinkPtr == NIL_RTHCPHYS);
     int rc = VMXWriteVmcs64(VMX_VMCS64_GUEST_VMCS_LINK_PTR_FULL, NIL_RTHCPHYS);
     if (RT_SUCCESS(rc))
     {
