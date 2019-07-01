@@ -11042,12 +11042,12 @@ static int hmR0VmxMergeVmcsNested(PVMCPU pVCpu)
     /*
      * Merge the controls with the requirements of the guest VMCS.
      *
-     * We do not need to validate the nested-guest VMX features specified in the
-     * nested-guest VMCS with the features supported by the physical CPU as it's
-     * already done by the VMLAUNCH/VMRESUME instruction emulation.
+     * We do not need to validate the nested-guest VMX features specified in the nested-guest
+     * VMCS with the features supported by the physical CPU as it's already done by the
+     * VMLAUNCH/VMRESUME instruction emulation.
      *
-     * This is because the VMX features exposed by CPUM (through CPUID/MSRs) to the
-     * guest are derived from the VMX features supported by the physical CPU.
+     * This is because the VMX features exposed by CPUM (through CPUID/MSRs) to the guest are
+     * derived from the VMX features supported by the physical CPU.
      */
 
     /* Pin-based VM-execution controls. */
@@ -11087,33 +11087,33 @@ static int hmR0VmxMergeVmcsNested(PVMCPU pVCpu)
      * through VMLAUNCH/VMRESUME and the nested-guest VM-exit.
      *
      * VM-entry MSR-load:
-     * The guest MSRs from the VM-entry MSR-load area are already loaded into the
-     * guest-CPU context by the VMLAUNCH/VMRESUME instruction emulation.
+     * The guest MSRs from the VM-entry MSR-load area are already loaded into the guest-CPU
+     * context by the VMLAUNCH/VMRESUME instruction emulation.
      *
      * VM-exit MSR-store:
-     * The VM-exit emulation will take care of populating the MSRs from the guest-CPU
-     * context back into the VM-exit MSR-store area.
+     * The VM-exit emulation will take care of populating the MSRs from the guest-CPU context
+     * back into the VM-exit MSR-store area.
      *
      * VM-exit MSR-load areas:
-     * This must contain the real host MSRs with hardware-assisted VMX execution. Hence,
-     * we can entirely ignore what the guest hypervisor wants to load here.
+     * This must contain the real host MSRs with hardware-assisted VMX execution. Hence, we
+     * can entirely ignore what the guest hypervisor wants to load here.
      */
 
     /*
      * Exception bitmap.
      *
-     * We could remove #UD from the guest bitmap and merge it with the nested-guest
-     * bitmap here (and avoid doing anything while exporting nested-guest state), but to
-     * keep the code more flexible if intercepting exceptions become more dynamic in
-     * the future we do it as part of exporting the nested-guest state.
+     * We could remove #UD from the guest bitmap and merge it with the nested-guest bitmap
+     * here (and avoid doing anything while exporting nested-guest state), but to keep the
+     * code more flexible if intercepting exceptions become more dynamic in the future we do
+     * it as part of exporting the nested-guest state.
      */
     uint32_t const u32XcptBitmap = pVmcsNstGst->u32XcptBitmap | pVmcsInfoGst->u32XcptBitmap;
 
     /*
      * CR0/CR4 guest/host mask.
      *
-     * Modifications by the nested-guest to CR0/CR4 bits owned by the host and the guest
-     * must cause VM-exits, so we need to merge them here.
+     * Modifications by the nested-guest to CR0/CR4 bits owned by the host and the guest must
+     * cause VM-exits, so we need to merge them here.
      */
     uint64_t const u64Cr0Mask = pVmcsNstGst->u64Cr0Mask.u | pVmcsInfoGst->u64Cr0Mask;
     uint64_t const u64Cr4Mask = pVmcsNstGst->u64Cr4Mask.u | pVmcsInfoGst->u64Cr4Mask;
@@ -11125,8 +11125,8 @@ static int hmR0VmxMergeVmcsNested(PVMCPU pVCpu)
      * hardware-assisted VMX execution of nested-guests and thus the outer guest doesn't
      * normally intercept #PFs, it might intercept them for debugging purposes.
      *
-     * If the outer guest is not intercepting #PFs, we can use the nested-guest #PF
-     * filters. If the outer guest is intercepting #PFs we must intercept all #PFs.
+     * If the outer guest is not intercepting #PFs, we can use the nested-guest #PF filters.
+     * If the outer guest is intercepting #PFs we must intercept all #PFs.
      */
     uint32_t u32XcptPFMask;
     uint32_t u32XcptPFMatch;
@@ -11150,28 +11150,37 @@ static int hmR0VmxMergeVmcsNested(PVMCPU pVCpu)
     /*
      * I/O Bitmap.
      *
-     * We do not use the I/O bitmap that may be provided by the guest hypervisor as we
-     * always intercept all I/O port accesses.
+     * We do not use the I/O bitmap that may be provided by the guest hypervisor as we always
+     * intercept all I/O port accesses.
      */
     Assert(u32ProcCtls & VMX_PROC_CTLS_UNCOND_IO_EXIT);
+
+    /*
+     * VMCS shadowing.
+     *
+     * We do not yet expose VMCS shadowing to the guest and thus VMCS shadowing should not be
+     * enabled while executing the nested-guest.
+     */
+    Assert(!(u32ProcCtls2 & VMX_PROC_CTLS2_VMCS_SHADOWING));
 
     /*
      * APIC-access page.
      *
      * The APIC-access page address has already been initialized while setting up the
-     * nested-guest VMCS. In theory, even if the guest-physical address is invalid, it
-     * should not be on any consequence to the host or to the guest for that matter, but
-     * we only accept valid addresses verified by the VMLAUNCH/VMRESUME instruction
-     * emulation to keep it simple.
+     * nested-guest VMCS. In theory, even if the guest-physical address is invalid, it should
+     * not be of any consequence to the host or to the guest for that matter, but we only
+     * accept valid addresses verified by the VMLAUNCH/VMRESUME instruction emulation to keep
+     * it simple.
      */
 
     /*
      * Virtual-APIC page and TPR threshold.
      *
-     * We shall use the host-physical address of the virtual-APIC page in guest memory directly.
-     * For this reason, we can access the virtual-APIC page of the nested-guest only using
-     * PGM physical handlers as we must not assume a kernel virtual-address mapping exists and
-     * requesting PGM for a mapping could be expensive/resource intensive (PGM mapping cache).
+     * We shall use the host-physical address of the virtual-APIC page in guest memory
+     * directly. For this reason, we can access the virtual-APIC page of the nested-guest only
+     * using PGM physical handlers as we must not assume a kernel virtual-address mapping
+     * exists and requesting PGM for a mapping could be expensive/resource intensive (PGM
+     * mapping cache).
      */
     RTHCPHYS       HCPhysVirtApic  = NIL_RTHCPHYS;
     uint32_t const u32TprThreshold = pVmcsNstGst->u32TprThreshold;
@@ -11265,8 +11274,8 @@ static int hmR0VmxMergeVmcsNested(PVMCPU pVCpu)
     /*
      * MSR bitmap.
      *
-     * The MSR bitmap address has already been initialized while setting up the
-     * nested-guest VMCS, here we need to merge the MSR bitmaps.
+     * The MSR bitmap address has already been initialized while setting up the nested-guest
+     * VMCS, here we need to merge the MSR bitmaps.
      */
     if (u32ProcCtls & VMX_PROC_CTLS_USE_MSR_BITMAPS)
         hmR0VmxMergeMsrBitmapNested(pVCpu, pVmcsInfoNstGst, pVmcsInfoGst);
@@ -11339,7 +11348,7 @@ static VBOXSTRICTRC hmR0VmxPreRunGuest(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient
      * the nested-guest without leaving ring-0. Otherwise, if we came from ring-3
      * we would load the nested-guest VMCS while entering the VMX ring-0 session.
      *
-     * We do this as late as possible to minimize (though not completely remove)
+     * We do this as late as possible to minimize (though not completely eliminate)
      * clearing/loading VMCS again due to premature trips to ring-3 above.
      */
     if (pVmxTransient->fIsNestedGuest)
