@@ -2234,25 +2234,32 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         """
 
         #
-        # Parameters.
+        # Tests:
         #
         atTests = [
             # Invalid parameters.
-            [ tdTestSession(sUser = ''), tdTestResultSession() ],
-            [ tdTestSession(sPassword = 'bar'), tdTestResultSession() ],
-            [ tdTestSession(sDomain = 'boo'),tdTestResultSession() ],
-            [ tdTestSession(sPassword = 'bar', sDomain = 'boo'), tdTestResultSession() ],
+            [ tdTestSession(sUser = ''),                                        tdTestResultSession() ],
             # User account without a passwort - forbidden.
-            [ tdTestSession(sPassword = "" ), tdTestResultSession() ],
-            # Wrong credentials.
-            # Note: On Guest Additions < 4.3 this always succeeds because these don't
+            [ tdTestSession(sPassword = "" ),                                   tdTestResultSession() ],
+            # Various wrong credentials.
+            # Note! Only windows cares about sDomain, the other guests ignores it.
+            # Note! On Guest Additions < 4.3 this always succeeds because these don't
             #       support creating dedicated sessions. Instead, guest process creation
             #       then will fail. See note below.
+            [ tdTestSession(sPassword = 'bar'),                                 tdTestResultSession() ],
+            [ tdTestSession(sUser = 'foo', sPassword = 'bar'),                  tdTestResultSession() ],
+            [ tdTestSession(sPassword = 'bar', sDomain = 'boo'),                tdTestResultSession() ],
             [ tdTestSession(sUser = 'foo', sPassword = 'bar', sDomain = 'boo'), tdTestResultSession() ],
-            # Correct credentials.
-            [ tdTestSession(), tdTestResultSession(fRc = True, cNumSessions = 1) ]
         ];
+        if oTestVm.isWindows(): # domain is ignored elsewhere.
+            atTests.append([ tdTestSession(sDomain = 'boo'),                    tdTestResultSession() ]);
 
+        # Finally, correct credentials.
+        atTests.append([ tdTestSession(),           tdTestResultSession(fRc = True, cNumSessions = 1) ]);
+
+        #
+        # Run the tests.
+        #
         fRc = True;
         for (i, tTest) in enumerate(atTests):
             oCurTest = tTest[0] # type: tdTestSession
@@ -2738,7 +2745,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             atExec += [
                 # Basic execution.
                 [ tdTestExec(sCmd = sImageOut, asArgs = [ sImageOut, '-R', sSystemDir ]),
-                  tdTestResultExec(fRc = True, iExitCode = 1) ],
+                  tdTestResultExec(fRc = True) ],
                 [ tdTestExec(sCmd = sImageOut, asArgs = [ sImageOut, sFileForReading ]),
                   tdTestResultExec(fRc = True) ],
                 [ tdTestExec(sCmd = sImageOut, asArgs = [ sImageOut, '--wrong-parameter' ]),
@@ -2807,16 +2814,12 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             oCurTest = tTest[0]  # type: tdTestExec
             oCurRes  = tTest[1]  # type: tdTestResultExec
             oCurTest.setEnvironment(oSession, oTxsSession, oTestVm);
-            fRc, oCurGuestSession = oCurTest.createSession('testGuestCtrlExec: Test #%d' % (i,));
-            if fRc is not True:
-                reporter.error('Test #%d failed: Could not create session' % (i,));
+            fRc2, oCurGuestSession = oCurTest.createSession('testGuestCtrlExec: Test #%d' % (i,));
+            if fRc2 is not True:
+                fRc = reporter.error('Test #%d failed: Could not create session' % (i,));
                 break;
-            fRc = self.gctrlExecDoTest(i, oCurTest, oCurRes, oCurGuestSession);
-            if fRc is not True:
-                break;
-            fRc = oCurTest.closeSession();
-            if fRc is not True:
-                break;
+            fRc = self.gctrlExecDoTest(i, oCurTest, oCurRes, oCurGuestSession) and fRc;
+            fRc = oCurTest.closeSession() and fRc;
 
         reporter.log('Execution of all tests done, checking for stale sessions');
 
@@ -3435,10 +3438,10 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             oTestVm.pathJoin(asTestDirs[5], 'file-8'), # [8] - subsubdir-2
         ];
         for sDir in asTestDirs:
-            if oTxsSession.syncMkDir(sDir) is not True:
+            if oTxsSession.syncMkDir(sDir, 0o777) is not True:
                 return reporter.error('Failed to create test dir "%s"!' % (sDir,));
         for sFile in asTestFiles:
-            if oTxsSession.syncUploadString(sFile, sFile) is not True:
+            if oTxsSession.syncUploadString(sFile, sFile, 0o666) is not True:
                 return reporter.error('Failed to create test file "%s"!' % (sFile,));
 
         #
@@ -3523,13 +3526,18 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 #
                 # Recursively delete the entire test file tree from the root up.
                 #
+                # Note! On unix we cannot delete the root dir itself since it is residing
+                #       in /var/tmp where only the owner may delete it.  Root is the owner.
+                #
+                if oTestVm.isWindows() or oTestVm.isOS2():
+                    afFlags = [vboxcon.DirectoryRemoveRecFlag_ContentAndDir,];
+                else:
+                    afFlags = [vboxcon.DirectoryRemoveRecFlag_ContentOnly,];
                 try:
-                    oProgress = oCurGuestSession.directoryRemoveRecursive(self.oTestFiles.oRoot.sPath,
-                                                                          [vboxcon.DirectoryRemoveRecFlag_ContentAndDir,]);
+                    oProgress = oCurGuestSession.directoryRemoveRecursive(self.oTestFiles.oRoot.sPath, afFlags);
                 except:
                     fRc = reporter.errorXcpt('Removing tree "%s" failed' % (self.oTestFiles.oRoot.sPath,));
                 else:
-                    reporter.log2('#3: fRc=%s' % (fRc));
                     oWrappedProgress = vboxwrappers.ProgressWrapper(oProgress, self.oTstDrv.oVBoxMgr, self.oTstDrv,
                                                                     "remove-tree-root: %s" % (self.oTestFiles.oRoot.sPath,));
                     reporter.log2('waiting ...')
@@ -3703,7 +3711,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         ];
         sContent = 'abcdefghijklmnopqrstuvwxyz0123456789';
         for sFile in asNonEmptyFiles:
-            if oTxsSession.syncUploadString(sContent, sFile) is not True:
+            if oTxsSession.syncUploadString(sContent, sFile, 0o666) is not True:
                 return reporter.error('Failed to create "%s" via TXS' % (sFile,));
 
         #
@@ -3727,9 +3735,14 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                              eAccessMode = vboxcon.FileAccessMode_ReadWrite,
                              eAction = vboxcon.FileOpenAction_OpenExistingTruncated),                   tdTestResultFailure() ],
             [ tdTestFileOpen(sFile = oTestVm.pathJoin(sTempDir, 'no-such-dir', 'no-such-file')),        tdTestResultFailure() ],
-            # Wrong type:
-            [ tdTestFileOpen(sFile = self.getGuestTempDir(oTestVm)),                                    tdTestResultFailure() ],
-            [ tdTestFileOpen(sFile = self.getGuestSystemDir(oTestVm)),                                  tdTestResultFailure() ],
+        ];
+        if oTestVm.isWindows() or not self.fSkipKnownBugs: # We can open directories on linux, but we shouldn't, right...
+            atTests.extend([
+                # Wrong type:
+                [ tdTestFileOpen(sFile = self.getGuestTempDir(oTestVm)),                                tdTestResultFailure() ],
+                [ tdTestFileOpen(sFile = self.getGuestSystemDir(oTestVm)),                              tdTestResultFailure() ],
+            ]);
+        atTests.extend([
             # O_EXCL and such:
             [ tdTestFileOpen(sFile = sFileForReading, eAction = vboxcon.FileOpenAction_CreateNew,
                              eAccessMode = vboxcon.FileAccessMode_ReadWrite),                           tdTestResultFailure() ],
@@ -3798,7 +3811,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                                       eAction = vboxcon.FileOpenAction_CreateOrReplace),                tdTestResultSuccess() ],
             [ tdTestFileOpenCheckSize(sFile = asNonEmptyFiles[2], eAction = vboxcon.FileOpenAction_CreateOrReplace,
                                       eAccessMode = vboxcon.FileAccessMode_WriteOnly),                  tdTestResultSuccess() ],
-        ];
+        ]);
 
         #
         # Do the testing.
@@ -3999,6 +4012,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 except:
                     fRc = reporter.errorXcpt('%s: offFile=%s cbToRead=%s cbContent=%s'
                                              % (oTestFile.sPath, offFile, cbToRead, oTestFile.cbContent));
+                    cbRead = 0;
                 else:
                     cbRead = len(abRead);
                     if not oTestFile.equalMemory(abRead, offFile):
@@ -4036,36 +4050,31 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 except:
                     fRc = reporter.errorXcpt('%s: offFile=%s cbToRead=%s cbContent=%s'
                                              % (oTestFile.sPath, offFile, cbToRead, oTestFile.cbContent));
+                    cbRead = 0;
                 else:
                     cbRead = len(abRead);
                     if not oTestFile.equalMemory(abRead, offFile):
                         fRc = reporter.error('%s: random readAt mismatch @ %s LB %s' % (oTestFile.sPath, offFile, cbRead,));
 
-                if not self.fSkipKnownBugs:
-                    ## @todo See todo in GuestFile::getOffset() from r127065 (restored in r131439), but essentially
-                    ##       the issue is that 'mCurOffset += cbActuallyRead' doesn't work for non-linear readAt calls.
-                    ##       It should be 'mCurOffset = readAt.offsetParam + cbActuallyRead'.
-                    try:
-                        offActual = oFile.offset;
-                    except:
-                        fRc = reporter.errorXcpt('%s: offFile=%s cbToRead=%s cbContent=%s (#2)'
-                                                 % (oTestFile.sPath, offFile, cbToRead, oTestFile.cbContent));
-                    else:
-                        if offActual != offFile + cbRead:
-                            fRc = reporter.error('%s: IFile.offset is %s, expected %s (offFile=%s cbToRead=%s cbRead=%s) (#2)'
-                                                 % (oTestFile.sPath, offActual, offFile + cbRead, offFile, cbToRead, cbRead));
-                    ## @todo The trouble here is that RTFileReadAt may or may not do the seeking depending on the OS (see docs).
-                    ##       In addition, windows will not update the position if the offset is beyond EOF it seems.
-                    ##       Fix is to always do a RTFileSeek after a successful RTFileReadAt call.
-                    try:
-                        offActual = oFile.seek(0, vboxcon.FileSeekOrigin_Current);
-                    except:
-                        fRc = reporter.errorXcpt('%s: offFile=%s cbToRead=%s cbContent=%s (#2)'
-                                                 % (oTestFile.sPath, offFile, cbToRead, oTestFile.cbContent));
-                    else:
-                        if offActual != offFile + cbRead:
-                            fRc = reporter.error('%s: seek(0,cur) -> %s, expected %s (offFile=%s cbToRead=%s cbRead=%s) (#2)'
-                                                 % (oTestFile.sPath, offActual, offFile + cbRead, offFile, cbToRead, cbRead));
+                try:
+                    offActual = oFile.offset;
+                except:
+                    fRc = reporter.errorXcpt('%s: offFile=%s cbToRead=%s cbContent=%s (#2)'
+                                             % (oTestFile.sPath, offFile, cbToRead, oTestFile.cbContent));
+                else:
+                    if offActual != offFile + cbRead:
+                        fRc = reporter.error('%s: IFile.offset is %s, expected %s (offFile=%s cbToRead=%s cbRead=%s) (#2)'
+                                             % (oTestFile.sPath, offActual, offFile + cbRead, offFile, cbToRead, cbRead));
+
+                try:
+                    offActual = oFile.seek(0, vboxcon.FileSeekOrigin_Current);
+                except:
+                    fRc = reporter.errorXcpt('%s: offFile=%s cbToRead=%s cbContent=%s (#2)'
+                                             % (oTestFile.sPath, offFile, cbToRead, oTestFile.cbContent));
+                else:
+                    if offActual != offFile + cbRead:
+                        fRc = reporter.error('%s: seek(0,cur) -> %s, expected %s (offFile=%s cbToRead=%s cbRead=%s) (#2)'
+                                             % (oTestFile.sPath, offActual, offFile + cbRead, offFile, cbToRead, cbRead));
 
             #
             # A few negative things.
@@ -4318,7 +4327,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             sScratchHstInvalid  = None;
 
         for sDir in (sScratchGst, sScratchDstDir1Gst, sScratchDstDir2Gst, sScratchDstDir3Gst, sScratchDstDir4Gst):
-            if oTxsSession.syncMkDir(sDir) is not True:
+            if oTxsSession.syncMkDir(sDir, 0o777) is not True:
                 return reporter.error('TXS failed to create directory "%s"!' % (sDir,));
 
         # Put the test file set under sScratchHst.

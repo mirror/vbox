@@ -185,6 +185,21 @@ class UnattendedVm(vboxtestvms.BaseTestVm):
             return [self.sInstallIso,];
         return [];
 
+    def _createVmDoIt(self, oTestDrv, eNic0AttachType, sDvdImage):
+        #
+        # Use HostOnly networking for ubuntu and debian VMs to prevent them from
+        # downloading updates and doing database updates during installation.
+        # We want predicable results.
+        #
+        if     eNic0AttachType is None \
+          and self.isLinux() \
+           and (   'ubuntu' in self.sKind.lower()
+                or 'debian' in self.sKind.lower() ):
+            eNic0AttachType = vboxcon.NetworkAttachmentType_HostOnly;
+
+        return vboxtestvms.BaseTestVm._createVmDoIt(self, oTestDrv, eNic0AttachType, sDvdImage);
+
+
     def _createVmPost(self, oTestDrv, oVM, eNic0AttachType, sDvdImage):
         #
         # Adjust the ram, I/O APIC and stuff.
@@ -373,8 +388,10 @@ class tdGuestOsInstTest1(vbox.TestDriver):
         oSet = vboxtestvms.TestVmSet(self.oTestVmManager, fIgnoreSkippedVm = True);
         oSet.aoTestVms.extend([
             # Windows7 RTM:
-            UnattendedVm(oSet, 'tst-w7-32', 'Windows7',     '6.0/uaisos/en_windows_7_enterprise_x86_dvd_x15-70745.iso'),
-            UnattendedVm(oSet, 'tst-w7-64', 'Windows7_64',  '6.0/uaisos/en_windows_7_enterprise_x64_dvd_x15-70749.iso'),
+            UnattendedVm(oSet, 'tst-w7-32', 'Windows7',     '6.0/uaisos/en_windows_7_enterprise_x86_dvd_x15-70745.iso'), # 5.7GiB
+            UnattendedVm(oSet, 'tst-w7-64', 'Windows7_64',  '6.0/uaisos/en_windows_7_enterprise_x64_dvd_x15-70749.iso'), # 10GiB
+            UnattendedVm(oSet, 'tst-ubuntu-16.04-64', 'Ubuntu_64', '6.0/uaisos/ubuntu-16.04-desktop-amd64.iso'),
+            #UnattendedVm(oSet, 'tst-ubuntu-18.04-64', 'Ubuntu_64', '6.0/uaisos/ubuntu-18.04-desktop-amd64.iso'), # >=5.7GiB
         ]);
         self.oTestVmSet = oSet;
 
@@ -390,7 +407,7 @@ class tdGuestOsInstTest1(vbox.TestDriver):
         #
         # Sub-test drivers.
         #
-        self.addSubTestDriver(SubTstDrvAddSharedFolders1(self, fUseAltFsPerfPathForWindows = True)); # !HACK ALERT! UDF cloning.
+        self.addSubTestDriver(SubTstDrvAddSharedFolders1(self));
         self.addSubTestDriver(SubTstDrvAddGuestCtrl(self));
 
 
@@ -510,7 +527,7 @@ class tdGuestOsInstTest1(vbox.TestDriver):
     def actionConfig(self):
         if not self.importVBoxApi(): # So we can use the constant below.
             return False;
-        return self.oTestVmSet.actionConfig(self, eNic0AttachType = vboxcon.NetworkAttachmentType_NAT);
+        return self.oTestVmSet.actionConfig(self);
 
     def actionExecute(self):
         """
