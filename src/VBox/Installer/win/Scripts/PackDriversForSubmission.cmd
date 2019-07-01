@@ -245,7 +245,13 @@ rem
 rem Create the cabient file.
 rem Note! MakeCab is shipped on W10, so we ASSUME it's in the PATH.
 rem
-MakeCab.exe /v2 /F "%_MY_OPT_DDF_FILE%"
+MakeCab.exe /v2 /F "%_MY_OPT_DDF_FILE%" || goto end_failed
+
+rem
+rem EV sign the cabient file.
+rem
+if not exist "sign-ev.cmd" goto end
+call sign-ev.cmd "%_MY_OPT_OUTPUT%" || goto end_failed
 
 goto end
 

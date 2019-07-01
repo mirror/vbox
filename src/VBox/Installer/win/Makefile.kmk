@@ -1060,6 +1060,7 @@ RePackScripts_SOURCES = \
 	$(RePackScripts_0_OUTDIR)/PackDriversForSubmission.cmd \
 	$(RePackScripts_0_OUTDIR)/sign-dual.cmd \
 	$(RePackScripts_0_OUTDIR)/sign-sha1.cmd \
+	$(if-expr defined(VBOX_SIGN_EV_FILE_FN),$(RePackScripts_0_OUTDIR)/sign-ev.cmd,) \
 	$(RePackScripts_0_OUTDIR)/VMMR0.inf \
 	$(RePackScripts_0_OUTDIR)/VBoxExtPackPuel.inf
 if !defined(VBOX_WITH_COMBINED_PACKAGE) || "$(KBUILD_TARGET_ARCH)" == "x86"
@@ -1075,6 +1076,7 @@ RePackScripts_CLEAN = \
 	$(RePackScripts_0_OUTDIR)/PackDriversForSubmission.cmd \
 	$(RePackScripts_0_OUTDIR)/sign-dual.cmd \
 	$(RePackScripts_0_OUTDIR)/sign-sha1.cmd \
+	$(RePackScripts_0_OUTDIR)/sign-ev.cmd \
 	$(RePackScripts_0_OUTDIR)/VMMR0.inf \
 	$(RePackScripts_0_OUTDIR)/VBoxExtPackPuel.inf
 
@@ -1099,6 +1101,15 @@ $$(RePackScripts_0_OUTDIR)/sign-sha1.cmd: | $$(dir $$@)
 		'if ".%1" == "." (echo No .cat file specified & exit /b 1)' \
 		$(subst $(KBUILD_BIN_PATH),%KBUILD_BIN_PATH%,$(subst $(KBUILD_DEVTOOLS),%KBUILD_DEVTOOLS%, \
 		'( $(call VBOX_SIGN_FILE_FN,%1,$(VBOX_PRODUCT) $(VBOX_VERSION_STRING)r$(VBOX_SVN_REV) ($(KBUILD_TARGET_ARCH)),,,disable-dual-signing,&&) ) || exit /b1' \
+		) )
+
+$$(RePackScripts_0_OUTDIR)/sign-ev.cmd: | $$(dir $$@)
+	$(APPEND) -nt "$@" \
+		'if ".%KBUILD_DEVTOOLS%" == "." (echo KBUILD_DEVTOOLS is not set & exit /b 1)' \
+		'if ".%KBUILD_BIN_PATH%" == "." (echo KBUILD_BIN_PATH is not set & exit /b 1)' \
+		'if ".%1" == "." (echo No .cab file specified & exit /b 1)' \
+		$(subst $(KBUILD_BIN_PATH),%KBUILD_BIN_PATH%,$(subst $(KBUILD_DEVTOOLS),%KBUILD_DEVTOOLS%, \
+		'( $(call VBOX_SIGN_EV_FILE_FN,%1) ) || exit /b1' \
 		) )
 
 $$(RePackScripts_0_OUTDIR)/VMMR0.inf: $(PATH_SUB_CURRENT)/Scripts/VMMR0.inf $(MAKEFILE_CURRENT) | $$(dir $$@)
