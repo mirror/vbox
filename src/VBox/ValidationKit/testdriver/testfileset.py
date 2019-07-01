@@ -536,6 +536,7 @@ class TestFileSet(object):
             if self.fDosStyle:
                 sPath = sPath.replace('\\', '/');
             oTarInfo = tarfile.TarInfo(sPath);
+            oTarInfo.mode = 0o666;
             oTarInfo.size = len(oFile.abContent);
             oFile.off = 0;
             try:
