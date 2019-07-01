@@ -283,7 +283,7 @@ setup_modules()
     export KERN_VER
     info "Building the modules for kernel $KERN_VER."
 
-    log "Building the main Guest Additions module for kernel $KERN_VER."
+    log "Building the main Guest Additions $INSTALL_VER module for kernel $KERN_VER."
     if ! myerr=`$BUILDINTMP \
         --save-module-symvers /tmp/vboxguest-Module.symvers \
         --module-source $MODULE_SRC/vboxguest \
