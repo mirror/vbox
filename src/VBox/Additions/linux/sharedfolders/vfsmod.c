@@ -52,6 +52,9 @@
 #endif
 #include <linux/seq_file.h>
 #include <linux/vfs.h>
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 62)
+# include <linux/vermagic.h>
+#endif
 #include <VBox/err.h>
 #include <iprt/path.h>
 
@@ -982,6 +985,15 @@ static int __init init(void)
                 rc = register_filesystem(&g_vboxsf_fs_type);
                 if (rc == 0) {
                     printk(KERN_INFO "vboxsf: Successfully loaded version " VBOX_VERSION_STRING "\n");
+#ifdef VERMAGIC_STRING
+                    LogRel(("vboxsf: Successfully loaded version " VBOX_VERSION_STRING " on %s (LINUX_VERSION_CODE=%#x)\n",
+                            VERMAGIC_STRING, LINUX_VERSION_CODE));
+#elif defined(UTS_RELEASE)
+                    LogRel(("vboxsf: Successfully loaded version " VBOX_VERSION_STRING " on %s (LINUX_VERSION_CODE=%#x)\n",
+                            UTS_RELEASE, LINUX_VERSION_CODE));
+#else
+                    LogRel(("vboxsf: Successfully loaded version " VBOX_VERSION_STRING " (LINUX_VERSION_CODE=%#x)\n", LINUX_VERSION_CODE));
+#endif
                     return 0;
                 }
 
