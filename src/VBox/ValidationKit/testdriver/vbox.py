@@ -209,7 +209,7 @@ def formatComOrXpComException(oType, oXcpt):
 
     sHrc = oVBoxMgr.xcptToString(hrc);                      # pylint: disable=not-callable
     if sHrc.find('(') < 0:
-        sHrc = '%s (%#x)' % (sHrc, hrc & 0xffffffff);
+        sHrc = '%s (%#x)' % (sHrc), hrc & 0xffffffff);
 
     asRet = ['COM-Xcpt: %s' % (sHrc,)];
     if sMsg and sWhere:
@@ -1449,6 +1449,11 @@ class TestDriver(base.TestDriver):                                              
             if oXcpt is None: oXcpt = sys.exc_info()[1];
             return str(oXcpt);
 
+        def _getEnumValueName(oSelf, sEnumTypeNm, oEnumValue, fTypePrefix = False):
+            """ See vboxapi. """
+            _ = oSelf; _ = fTypePrefix;
+            return '%s::%s' % (sEnumTypeNm, oEnumValue);
+
         # Add utilities found in newer vboxapi revision.
         if not hasattr(self.oVBoxMgr, 'xcptIsDeadInterface'):
             import types;
@@ -1457,6 +1462,8 @@ class TestDriver(base.TestDriver):                                              
             self.oVBoxMgr.xcptIsOurXcptKind     = types.MethodType(_xcptIsOurXcptKind,   self.oVBoxMgr);
             self.oVBoxMgr.xcptIsEqual           = types.MethodType(_xcptIsEqual,         self.oVBoxMgr);
             self.oVBoxMgr.xcptToString          = types.MethodType(_xcptToString,        self.oVBoxMgr);
+        if not hasattr(self.oVBoxMgr, 'getEnumValueName'):
+            self.oVBoxMgr.getEnumValueName      = types.MethodType(_getEnumValueName,    self.oVBoxMgr);
 
 
     def _teardownVBoxApi(self):  # pylint: disable=too-many-statements
@@ -1990,100 +1997,85 @@ class TestDriver(base.TestDriver):                                              
     def _logVmInfoUnsafe(self, oVM):                                            # pylint: disable=too-many-statements,too-many-branches
         """
         Internal worker for logVmInfo that is wrapped in try/except.
-
-        This is copy, paste, search, replace and edit of infoCmd from vboxshell.py.
         """
-        oOsType = self.oVBox.getGuestOSType(oVM.OSTypeId)
-        reporter.log("  Name:               %s" % (oVM.name));
-        reporter.log("  ID:                 %s" % (oVM.id));
-        reporter.log("  OS Type:            %s - %s" % (oVM.OSTypeId, oOsType.description));
-        reporter.log("  Machine state:      %s" % (oVM.state));
-        reporter.log("  Session state:      %s" % (oVM.sessionState));
+        reporter.log("  Name:               %s" % (oVM.name,));
+        reporter.log("  ID:                 %s" % (oVM.id,));
+        oOsType = self.oVBox.getGuestOSType(oVM.OSTypeId);
+        reporter.log("  OS Type:            %s - %s" % (oVM.OSTypeId, oOsType.description,));
+        reporter.log("  Machine state:      %s" % (oVM.state,));
+        reporter.log("  Session state:      %s" % (oVM.sessionState,));
         if self.fpApiVer >= 4.2:
-            reporter.log("  Session PID:        %u (%#x)" % (oVM.sessionPID, oVM.sessionPID));
+            reporter.log("  Session PID:        %u (%#x)" % (oVM.sessionPID, oVM.sessionPID,));
         else:
-            reporter.log("  Session PID:        %u (%#x)" % (oVM.sessionPid, oVM.sessionPid));
+            reporter.log("  Session PID:        %u (%#x)" % (oVM.sessionPid, oVM.sessionPid,));
         if self.fpApiVer >= 5.0:
-            reporter.log("  Session Name:       %s" % (oVM.sessionName));
+            reporter.log("  Session Name:       %s" % (oVM.sessionName,));
         else:
-            reporter.log("  Session Name:       %s" % (oVM.sessionType));
-        reporter.log("  CPUs:               %s" % (oVM.CPUCount));
-        reporter.log("  RAM:                %sMB" % (oVM.memorySize));
-        reporter.log("  VRAM:               %sMB" % (oVM.VRAMSize));
-        reporter.log("  Monitors:           %s" % (oVM.monitorCount));
-        if   oVM.chipsetType == vboxcon.ChipsetType_PIIX3: sType = "PIIX3";
-        elif oVM.chipsetType == vboxcon.ChipsetType_ICH9:  sType = "ICH9";
-        else: sType = "unknown %s" % (oVM.chipsetType);
-        reporter.log("  Chipset:            %s" % (sType));
-        if   oVM.firmwareType == vboxcon.FirmwareType_BIOS:    sType = "BIOS";
-        elif oVM.firmwareType == vboxcon.FirmwareType_EFI:     sType = "EFI";
-        elif oVM.firmwareType == vboxcon.FirmwareType_EFI32:   sType = "EFI32";
-        elif oVM.firmwareType == vboxcon.FirmwareType_EFI64:   sType = "EFI64";
-        elif oVM.firmwareType == vboxcon.FirmwareType_EFIDUAL: sType = "EFIDUAL";
-        else: sType = "unknown %s" % (oVM.firmwareType);
-        reporter.log("  Firmware:           %s" % (sType));
-        reporter.log("  HwVirtEx:           %s" % (oVM.getHWVirtExProperty(vboxcon.HWVirtExPropertyType_Enabled)));
-        reporter.log("  VPID support:       %s" % (oVM.getHWVirtExProperty(vboxcon.HWVirtExPropertyType_VPID)));
-        reporter.log("  Nested paging:      %s" % (oVM.getHWVirtExProperty(vboxcon.HWVirtExPropertyType_NestedPaging)));
-        if self.fpApiVer >= 4.2 and hasattr(vboxcon, 'CPUPropertyType_LongMode'):
-            reporter.log("  Long-mode:          %s" % (oVM.getCPUProperty(vboxcon.CPUPropertyType_LongMode)));
-        if self.fpApiVer >= 3.2:
-            reporter.log("  PAE:                %s" % (oVM.getCPUProperty(vboxcon.CPUPropertyType_PAE)));
-            if self.fpApiVer < 5.0:
-                reporter.log("  Synthetic CPU:      %s" % (oVM.getCPUProperty(vboxcon.CPUPropertyType_Synthetic)));
-        else:
-            reporter.log("  PAE:                %s" % (oVM.getCpuProperty(vboxcon.CpuPropertyType_PAE)));
-            reporter.log("  Synthetic CPU:      %s" % (oVM.getCpuProperty(vboxcon.CpuPropertyType_Synthetic)));
-        if self.fpApiVer >= 5.3 and hasattr(vboxcon, 'CPUPropertyType_HWVirt'):
-            reporter.log("  Nested VT-x/AMD-V:  %s" % (oVM.getCPUProperty(vboxcon.CPUPropertyType_HWVirt)));
-        reporter.log("  ACPI:               %s" % (oVM.BIOSSettings.ACPIEnabled));
-        reporter.log("  IO-APIC:            %s" % (oVM.BIOSSettings.IOAPICEnabled));
+            reporter.log("  Session Name:       %s" % (oVM.sessionType,));
+        reporter.log("  CPUs:               %s" % (oVM.CPUCount,));
+        reporter.log("  RAM:                %sMB" % (oVM.memorySize,));
+        reporter.log("  VRAM:               %sMB" % (oVM.VRAMSize,));
+        reporter.log("  Monitors:           %s" % (oVM.monitorCount,));
+        reporter.log("  GraphicsController: %s"
+                     % (self.oVBoxMgr.getEnumValueName('GraphicsControllerType', oVM.graphicsControllerType),));
+        reporter.log("  Chipset:            %s" % (self.oVBoxMgr.getEnumValueName('ChipsetType', oVM.chipsetType),));
+        reporter.log("  Firmware:           %s" % (self.oVBoxMgr.getEnumValueName('FirmwareType', oVM.firmwareType),));
+        reporter.log("  HwVirtEx:           %s" % (oVM.getHWVirtExProperty(vboxcon.HWVirtExPropertyType_Enabled),));
+        reporter.log("  VPID support:       %s" % (oVM.getHWVirtExProperty(vboxcon.HWVirtExPropertyType_VPID),));
+        reporter.log("  Nested paging:      %s" % (oVM.getHWVirtExProperty(vboxcon.HWVirtExPropertyType_NestedPaging),));
+        atTypes = [
+            ( 'CPUPropertyType_PAE',              'PAE:                '),
+            ( 'CPUPropertyType_LongMode',         'Long-mode:          '),
+            ( 'CPUPropertyType_HWVirt',           'Nested VT-x/AMD-V:  '),
+            ( 'CPUPropertyType_APIC',             'APIC:               '),
+            ( 'CPUPropertyType_X2APIC',           'X2APIC:             '),
+            ( 'CPUPropertyType_TripleFaultReset', 'TripleFaultReset:   '),
+            ( 'CPUPropertyType_IBPBOnVMExit',     'IBPBOnVMExit:       '),
+            ( 'CPUPropertyType_SpecCtrl',         'SpecCtrl:           '),
+            ( 'CPUPropertyType_SpecCtrlByHost',   'SpecCtrlByHost:     '),
+        ];
+        for sEnumValue, sDesc in atTypes:
+            if hasattr(vboxcon, sEnumValue):
+                reporter.log("  %s%s" % (sDesc, oVM.getCPUProperty(getattr(vboxcon, sEnumValue)),));
+        reporter.log("  ACPI:               %s" % (oVM.BIOSSettings.ACPIEnabled,));
+        reporter.log("  IO-APIC:            %s" % (oVM.BIOSSettings.IOAPICEnabled,));
         if self.fpApiVer >= 3.2:
             if self.fpApiVer >= 4.2:
-                reporter.log("  HPET:               %s" % (oVM.HPETEnabled));
+                reporter.log("  HPET:               %s" % (oVM.HPETEnabled,));
             else:
-                reporter.log("  HPET:               %s" % (oVM.hpetEnabled));
-        reporter.log("  3D acceleration:    %s" % (oVM.accelerate3DEnabled));
-        reporter.log("  2D acceleration:    %s" % (oVM.accelerate2DVideoEnabled));
-        reporter.log("  TeleporterEnabled:  %s" % (oVM.teleporterEnabled));
-        reporter.log("  TeleporterPort:     %s" % (oVM.teleporterPort));
-        reporter.log("  TeleporterAddress:  %s" % (oVM.teleporterAddress));
-        reporter.log("  TeleporterPassword: %s" % (oVM.teleporterPassword));
-        reporter.log("  Clipboard mode:     %s" % (oVM.clipboardMode));
+                reporter.log("  HPET:               %s" % (oVM.hpetEnabled,));
+        reporter.log("  3D acceleration:    %s" % (oVM.accelerate3DEnabled,));
+        reporter.log("  2D acceleration:    %s" % (oVM.accelerate2DVideoEnabled,));
+        reporter.log("  TeleporterEnabled:  %s" % (oVM.teleporterEnabled,));
+        reporter.log("  TeleporterPort:     %s" % (oVM.teleporterPort,));
+        reporter.log("  TeleporterAddress:  %s" % (oVM.teleporterAddress,));
+        reporter.log("  TeleporterPassword: %s" % (oVM.teleporterPassword,));
+        reporter.log("  Clipboard mode:     %s" % (oVM.clipboardMode,));
         if self.fpApiVer >= 5.0:
-            reporter.log("  Drag and drop mode: %s" % (oVM.dnDMode));
+            reporter.log("  Drag and drop mode: %s" % (oVM.dnDMode,));
         elif self.fpApiVer >= 4.3:
-            reporter.log("  Drag and drop mode: %s" % (oVM.dragAndDropMode));
+            reporter.log("  Drag and drop mode: %s" % (oVM.dragAndDropMode,));
         if self.fpApiVer >= 4.0:
-            reporter.log("  VRDP server:        %s" % (oVM.VRDEServer.enabled));
+            reporter.log("  VRDP server:        %s" % (oVM.VRDEServer.enabled,));
             try:    sPorts = oVM.VRDEServer.getVRDEProperty("TCP/Ports");
             except: sPorts = "";
-            reporter.log("  VRDP server ports:  %s" % (sPorts));
-            reporter.log("  VRDP auth:          %s (%s)" % (oVM.VRDEServer.authType, oVM.VRDEServer.authLibrary));
+            reporter.log("  VRDP server ports:  %s" % (sPorts,));
+            reporter.log("  VRDP auth:          %s (%s)" % (oVM.VRDEServer.authType, oVM.VRDEServer.authLibrary,));
         else:
-            reporter.log("  VRDP server:        %s" % (oVM.VRDPServer.enabled));
-            reporter.log("  VRDP server ports:  %s" % (oVM.VRDPServer.ports));
-        reporter.log("  Last changed:       %s" % (oVM.lastStateChange));
+            reporter.log("  VRDP server:        %s" % (oVM.VRDPServer.enabled,));
+            reporter.log("  VRDP server ports:  %s" % (oVM.VRDPServer.ports,));
+        reporter.log("  Last changed:       %s" % (oVM.lastStateChange,));
 
         aoControllers = self.oVBoxMgr.getArray(oVM, 'storageControllers')
         if aoControllers:
             reporter.log("  Controllers:");
         for oCtrl in aoControllers:
-            reporter.log("    %s %s bus: %s type: %s" % (oCtrl.name, oCtrl.controllerType, oCtrl.bus, oCtrl.controllerType));
-        oAudioAdapter = oVM.audioAdapter;
-        if   oAudioAdapter.audioController == vboxcon.AudioControllerType_AC97: sType = "AC97";
-        elif oAudioAdapter.audioController == vboxcon.AudioControllerType_SB16: sType = "SB16";
-        elif oAudioAdapter.audioController == vboxcon.AudioControllerType_HDA:  sType = "HDA";
-        else: sType = "unknown %s" % (oAudioAdapter.audioController);
-        reporter.log("    AudioController:  %s" % (sType));
-        reporter.log("    AudioEnabled:     %s" % (oAudioAdapter.enabled));
-        if   oAudioAdapter.audioDriver == vboxcon.AudioDriverType_CoreAudio:    sType = "CoreAudio";
-        elif oAudioAdapter.audioDriver == vboxcon.AudioDriverType_DirectSound:  sType = "DirectSound";
-        elif oAudioAdapter.audioDriver == vboxcon.AudioDriverType_Pulse:        sType = "PulseAudio";
-        elif oAudioAdapter.audioDriver == vboxcon.AudioDriverType_OSS:          sType = "OSS";
-        elif oAudioAdapter.audioDriver == vboxcon.AudioDriverType_Null:         sType = "NULL";
-        else: sType = "unknown %s" % (oAudioAdapter.audioDriver);
-        reporter.log("    Host AudioDriver: %s" % (sType));
+            reporter.log("    %s %s bus: %s type: %s" % (oCtrl.name, oCtrl.controllerType, oCtrl.bus, oCtrl.controllerType,));
+        reporter.log("    AudioController:  %s"
+                     % (self.oVBoxMgr.getEnumValueName('AudioControllerType', oVM.audioAdapter.audioController),));
+        reporter.log("    AudioEnabled:     %s" % (oVM.audioAdapter.enabled,));
+        reporter.log("    Host AudioDriver: %s"
+                     % (self.oVBoxMgr.getEnumValueName('AudioDriverType', oVM.audioAdapter.audioDriver),));
 
         self.processPendingEvents();
         aoAttachments = self.oVBoxMgr.getArray(oVM, 'mediumAttachments')
@@ -2094,36 +2086,36 @@ class TestDriver(base.TestDriver):                                              
             oMedium = oAtt.medium
             if oAtt.type == vboxcon.DeviceType_HardDisk:
                 reporter.log("    %s: HDD" % sCtrl);
-                reporter.log("      Id:             %s" % (oMedium.id));
-                reporter.log("      Name:           %s" % (oMedium.name));
-                reporter.log("      Format:         %s" % (oMedium.format));
-                reporter.log("      Location:       %s" % (oMedium.location));
+                reporter.log("      Id:             %s" % (oMedium.id,));
+                reporter.log("      Name:           %s" % (oMedium.name,));
+                reporter.log("      Format:         %s" % (oMedium.format,));
+                reporter.log("      Location:       %s" % (oMedium.location,));
 
             if oAtt.type == vboxcon.DeviceType_DVD:
                 reporter.log("    %s: DVD" % sCtrl);
                 if oMedium:
-                    reporter.log("      Id:             %s" % (oMedium.id));
-                    reporter.log("      Name:           %s" % (oMedium.name));
+                    reporter.log("      Id:             %s" % (oMedium.id,));
+                    reporter.log("      Name:           %s" % (oMedium.name,));
                     if oMedium.hostDrive:
-                        reporter.log("      Host DVD        %s" % (oMedium.location));
+                        reporter.log("      Host DVD        %s" % (oMedium.location,));
                         if oAtt.passthrough:
                             reporter.log("      [passthrough mode]");
                     else:
-                        reporter.log("      Virtual image:  %s" % (oMedium.location));
-                        reporter.log("      Size:           %s" % (oMedium.size));
+                        reporter.log("      Virtual image:  %s" % (oMedium.location,));
+                        reporter.log("      Size:           %s" % (oMedium.size,));
                 else:
                     reporter.log("      empty");
 
             if oAtt.type == vboxcon.DeviceType_Floppy:
                 reporter.log("    %s: Floppy" % sCtrl);
                 if oMedium:
-                    reporter.log("      Id:             %s" % (oMedium.id));
-                    reporter.log("      Name:           %s" % (oMedium.name));
+                    reporter.log("      Id:             %s" % (oMedium.id,));
+                    reporter.log("      Name:           %s" % (oMedium.name,));
                     if oMedium.hostDrive:
-                        reporter.log("      Host floppy:    %s" % (oMedium.location));
+                        reporter.log("      Host floppy:    %s" % (oMedium.location,));
                     else:
-                        reporter.log("      Virtual image:  %s" % (oMedium.location));
-                        reporter.log("      Size:           %s" % (oMedium.size));
+                        reporter.log("      Virtual image:  %s" % (oMedium.location,));
+                        reporter.log("      Size:           %s" % (oMedium.size,));
                 else:
                     reporter.log("      empty");
             self.processPendingEvents();
@@ -2135,46 +2127,40 @@ class TestDriver(base.TestDriver):                                              
             if not oNic.enabled:
                 reporter.log2("    slot #%d found but not enabled, skipping" % (iSlot,));
                 continue;
-            if   oNic.adapterType == vboxcon.NetworkAdapterType_Am79C973:   sType = "PCNet";
-            elif oNic.adapterType == vboxcon.NetworkAdapterType_Am79C970A:  sType = "PCNetOld";
-            elif oNic.adapterType == vboxcon.NetworkAdapterType_I82545EM:   sType = "E1000";
-            elif oNic.adapterType == vboxcon.NetworkAdapterType_I82540EM:   sType = "E1000Desk";
-            elif oNic.adapterType == vboxcon.NetworkAdapterType_I82543GC:   sType = "E1000Srv2";
-            elif oNic.adapterType == vboxcon.NetworkAdapterType_Virtio:     sType = "Virtio";
-            else: sType = "unknown %s" % (oNic.adapterType);
-            reporter.log("    slot #%d: type: %s (%s) MAC Address: %s lineSpeed: %s" % \
-                         (iSlot, sType, oNic.adapterType, oNic.MACAddress, oNic.lineSpeed) );
+            reporter.log("    slot #%d: type: %s (%s) MAC Address: %s lineSpeed: %s"
+                         % (iSlot, self.oVBoxMgr.getEnumValueName('NetworkAdapterType', oNic.adapterType),
+                            oNic.adapterType, oNic.MACAddress, oNic.lineSpeed) );
 
             if   oNic.attachmentType == vboxcon.NetworkAttachmentType_NAT:
-                reporter.log("    attachmentType: NAT (%s)" % (oNic.attachmentType));
+                reporter.log("    attachmentType: NAT (%s)" % (oNic.attachmentType,));
                 if self.fpApiVer >= 4.1:
                     reporter.log("    nat-network:    %s" % (oNic.NATNetwork,));
             elif oNic.attachmentType == vboxcon.NetworkAttachmentType_Bridged:
-                reporter.log("    attachmentType: Bridged (%s)" % (oNic.attachmentType));
+                reporter.log("    attachmentType: Bridged (%s)" % (oNic.attachmentType,));
                 if self.fpApiVer >= 4.1:
-                    reporter.log("    hostInterface:  %s" % (oNic.bridgedInterface));
+                    reporter.log("    hostInterface:  %s" % (oNic.bridgedInterface,));
                 else:
-                    reporter.log("    hostInterface:  %s" % (oNic.hostInterface));
+                    reporter.log("    hostInterface:  %s" % (oNic.hostInterface,));
             elif oNic.attachmentType == vboxcon.NetworkAttachmentType_Internal:
-                reporter.log("    attachmentType: Internal (%s)" % (oNic.attachmentType));
+                reporter.log("    attachmentType: Internal (%s)" % (oNic.attachmentType,));
                 reporter.log("    intnet-name:    %s" % (oNic.internalNetwork,));
             elif oNic.attachmentType == vboxcon.NetworkAttachmentType_HostOnly:
-                reporter.log("    attachmentType: HostOnly (%s)" % (oNic.attachmentType));
+                reporter.log("    attachmentType: HostOnly (%s)" % (oNic.attachmentType,));
                 if self.fpApiVer >= 4.1:
-                    reporter.log("    hostInterface:  %s" % (oNic.hostOnlyInterface));
+                    reporter.log("    hostInterface:  %s" % (oNic.hostOnlyInterface,));
                 else:
-                    reporter.log("    hostInterface:  %s" % (oNic.hostInterface));
+                    reporter.log("    hostInterface:  %s" % (oNic.hostInterface,));
             else:
                 if self.fpApiVer >= 4.1:
                     if oNic.attachmentType == vboxcon.NetworkAttachmentType_Generic:
-                        reporter.log("    attachmentType: Generic (%s)" % (oNic.attachmentType));
-                        reporter.log("    generic-driver: %s" % (oNic.GenericDriver));
+                        reporter.log("    attachmentType: Generic (%s)" % (oNic.attachmentType,));
+                        reporter.log("    generic-driver: %s" % (oNic.GenericDriver,));
                     else:
-                        reporter.log("    attachmentType: unknown-%s" % (oNic.attachmentType));
+                        reporter.log("    attachmentType: unknown-%s" % (oNic.attachmentType,));
                 else:
-                    reporter.log("    attachmentType: unknown-%s" % (oNic.attachmentType));
+                    reporter.log("    attachmentType: unknown-%s" % (oNic.attachmentType,));
             if oNic.traceEnabled:
-                reporter.log("    traceFile:      %s" % (oNic.traceFile));
+                reporter.log("    traceFile:      %s" % (oNic.traceFile,));
             self.processPendingEvents();
 
         reporter.log("  Serial ports:");
@@ -2183,14 +2169,9 @@ class TestDriver(base.TestDriver):                                              
             except: break;
             if oPort is not None and oPort.enabled:
                 enmHostMode = oPort.hostMode;
-                if   enmHostMode == vboxcon.PortMode_Disconnected:      sType = "Disconnected";
-                elif enmHostMode == vboxcon.PortMode_HostPipe:          sType = "HostPipe";
-                elif enmHostMode == vboxcon.PortMode_HostDevice:        sType = "HostDevice";
-                elif enmHostMode == vboxcon.PortMode_RawFile:           sType = "RawFile";
-                elif enmHostMode == vboxcon.PortMode_TCP:               sType = "TCP";
-                else: sType = "unknown %s" % (enmHostMode);
                 reporter.log("    slot #%d: hostMode: %s (%s)  I/O port: %s  IRQ: %s  server: %s  path: %s" %
-                             (iSlot, sType, enmHostMode, oPort.IOBase, oPort.IRQ, oPort.server, oPort.path,) );
+                             (iSlot,  self.oVBoxMgr.getEnumValueName('PortMode', enmHostMode),
+                              enmHostMode, oPort.IOBase, oPort.IRQ, oPort.server, oPort.path,) );
                 self.processPendingEvents();
 
         return True;
