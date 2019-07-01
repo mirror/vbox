@@ -984,7 +984,10 @@ int pdmR3ThreadSuspendAll(PVM pVM)
             case PDMTHREADSTATE_RUNNING:
             {
                 int rc = PDMR3ThreadSuspend(pThread);
-                AssertRCReturnStmt(rc, RTCritSectLeave(&pUVM->pdm.s.ListCritSect), rc);
+                AssertLogRelMsgReturnStmt(RT_SUCCESS(rc),
+                                          ("PDMR3ThreadSuspend -> %Rrc for '%s'\n", rc, RTThreadGetName(pThread->Thread)),
+                                          RTCritSectLeave(&pUVM->pdm.s.ListCritSect),
+                                          rc);
                 break;
             }
 
