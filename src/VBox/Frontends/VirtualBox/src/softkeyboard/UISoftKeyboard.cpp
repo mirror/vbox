@@ -1694,8 +1694,6 @@ QUuid UISoftKeyboardLayout::uid() const
 
 void UISoftKeyboardLayout::drawText(int iKeyPosition, const QRect &keyGeometry, QPainter &painter)
 {
-    painter.setPen(QColor(0,0,0));
-    painter.setRenderHint(QPainter::Antialiasing);
     QFont painterFont(painter.font());
 
     painterFont.setPixelSize(15);
@@ -1750,11 +1748,11 @@ void UISoftKeyboardLayout::drawText(int iKeyPosition, const QRect &keyGeometry, 
 UISoftKeyboardColorTheme::UISoftKeyboardColorTheme()
     : m_colors(QVector<QColor>(KeyboardColorType_Max))
 {
-    m_colors[KeyboardColorType_Background] = QColor(103, 128, 159);
-    m_colors[KeyboardColorType_Hover] = QColor(108, 122, 137);
-    m_colors[KeyboardColorType_Font] = QColor(46, 49, 49);
-    m_colors[KeyboardColorType_Pressed] = QColor(149, 165, 166);
-    m_colors[KeyboardColorType_Edit] = QColor(249, 165, 166);
+    m_colors[KeyboardColorType_Background].setNamedColor("#ff878787");
+    m_colors[KeyboardColorType_Font].setNamedColor("#ff000000");
+    m_colors[KeyboardColorType_Hover].setNamedColor("#ff676767");
+    m_colors[KeyboardColorType_Edit].setNamedColor("#ff9b6767");
+    m_colors[KeyboardColorType_Pressed].setNamedColor("#fffafafa");
 }
 
 void UISoftKeyboardColorTheme::setColor(KeyboardColorType enmColorType, const QColor &color)
@@ -1894,9 +1892,9 @@ void UISoftKeyboardWidget::paintEvent(QPaintEvent *pEvent) /* override */
                 if (key.state() == UIKeyState_NotPressed)
                     ledColor = color(KeyboardColorType_Font);
                 else if (key.state() == UIKeyState_Pressed)
-                    ledColor = QColor(0, 255, 0);
+                    ledColor = QColor(0, 191, 204);
                 else
-                    ledColor = QColor(255, 0, 0);
+                    ledColor = QColor(255, 50, 50);
                 painter.setBrush(ledColor);
                 painter.setPen(ledColor);
                 QRectF rectangle(key.keyGeometry().width() - 2 * fLedMargin, fLedMargin, fLedRadius, fLedRadius);
