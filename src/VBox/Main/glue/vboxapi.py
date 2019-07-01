@@ -1005,6 +1005,10 @@ class VirtualBoxManager(object):
         ## Dictionary for errToString, built on demand.
         self._dErrorValToName = None
 
+        ## Dictionary for resolving enum values to names, two levels of dictionaries.
+        ## First level is indexed by enum name, the next by value.
+        self._ddEnumValueToName = {};
+
         ## The exception class for the selected platform.
         self.oXcptClass = self.platform.xcptGetBaseXcpt()
         global CurXcptClass
@@ -1145,6 +1149,34 @@ class VirtualBoxManager(object):
         global VBoxSdkDir
         return VBoxSdkDir
 
+    def getEnumValueName(self, sEnumTypeNm, oEnumValue, fTypePrefix = False):
+        """
+        Returns the name (string) for the corresponding enum value.
+        """
+        # Cache lookup:
+        dValueNames = self._ddEnumValueToName.get(sEnumTypeNm);
+        if dValueNames is not None:
+            sValueName = dValueNames.get(oEnumValue);
+            if sValueName:
+                return sValueName if not fTypePrefix else '%s_%s' % (sEnumTypeNm, sValueName);
+        else:
+            # Cache miss. Build the reverse lookup dictionary and add it to the cache:
+            dNamedValues = self.constants.all_values(sEnumTypeNm);
+            if len(dNamedValues) > 0:
+
+                dValueNames = dict();
+                for sName in dNamedValues:
+                    dValueNames[dNamedValues[sName]] = sName;
+                self._ddEnumValueToName[sEnumTypeNm] = dValueNames;
+
+                # Lookup the value:
+                sValueName = dValueNames.get(oEnumValue);
+                if sValueName:
+                    return sValueName if not fTypePrefix else '%s_%s' % (sEnumTypeNm, sValueName);
+
+        # Fallback:
+        return '%s_Unknown_%s' % (sEnumTypeNm, oEnumValue);
+
     #
     # Error code utilities.
     #
@@ -1220,8 +1252,8 @@ class VirtualBoxManager(object):
             for sKey in dir(self.statuses):
                 if sKey[0].isupper():
                     oValue = getattr(self.statuses, sKey)
-                    if type(oValue) is int:
-                        dErrorValToName[oValue] = sKey
+                    if isinstance(oValue, (int, long)):
+                        dErrorValToName[int(oValue)] = sKey
             # Always prefer the COM names (see aliasing in platform specific code):
             for sKey in ('S_OK', 'E_FAIL', 'E_ABORT', 'E_POINTER', 'E_NOINTERFACE', 'E_INVALIDARG',
                          'E_OUTOFMEMORY', 'E_NOTIMPL', 'E_UNEXPECTED',):
@@ -1235,7 +1267,7 @@ class VirtualBoxManager(object):
             sStr = self._dErrorValToName[int(hrStatus)]
         except KeyError:
             hrLong = long(hrStatus)
-            sStr = '%#x (%d)' % (hrLong, hrLong)
+            sStr = '%#x (%d)' % (hrLong & 0xffffffff, hrLong)
         return sStr
 
     def xcptGetMessage(self, oXcpt=None):
@@ -1249,10 +1281,4 @@ class VirtualBoxManager(object):
         if sRet is None:
             sRet = self.xcptToString(oXcpt)
         return sRet
-
-    # Legacy, remove in a day or two.
-    errGetStatus = xcptGetStatus
-    errIsDeadInterface = xcptIsDeadInterface
-    errIsOurXcptKind = xcptIsOurXcptKind
-    errGetMessage = xcptGetMessage
 
