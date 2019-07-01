@@ -3206,7 +3206,6 @@ void UISoftKeyboard::sltCurentLayoutChanged()
     /* Update the status bar string: */
     QString strLayoutName = pCurrentLayout ? pCurrentLayout->name() : QString();
     updateStatusBarMessage(strLayoutName);
-    updateLayoutSelector();
 }
 
 void UISoftKeyboard::sltShowLayoutSelector()
@@ -3241,7 +3240,7 @@ void UISoftKeyboard::sltLayoutEdited()
     if (!m_pKeyboardWidget)
         return;
     m_pKeyboardWidget->update();
-    updateLayoutSelector();
+    updateLayoutSelectorList();
     UISoftKeyboardLayout *pCurrentLayout = m_pKeyboardWidget->currentLayout();
 
     /* Update the status bar string: */
@@ -3281,7 +3280,7 @@ void UISoftKeyboard::sltCopyLayout()
     if (!m_pKeyboardWidget)
         return;
     m_pKeyboardWidget->copyCurentLayout();
-    updateLayoutSelector();
+    updateLayoutSelectorList();
 }
 
 void UISoftKeyboard::sltSaveLayout()
@@ -3294,6 +3293,9 @@ void UISoftKeyboard::sltDeleteLayout()
 {
     if (m_pKeyboardWidget)
         m_pKeyboardWidget->deleteCurrentLayout();
+    updateLayoutSelectorList();
+    if (m_pKeyboardWidget && m_pKeyboardWidget->currentLayout() && m_pLayoutSelector)
+        m_pLayoutSelector->setCurrentLayout(m_pKeyboardWidget->currentLayout()->name());
 }
 
 void UISoftKeyboard::sltStatusBarMessage(const QString &strMessage)
@@ -3461,6 +3463,9 @@ void UISoftKeyboard::configure()
             m_pSettingsWidget->setTableItemColor(enmType, m_pKeyboardWidget->color(enmType));
         }
     }
+    updateLayoutSelectorList();
+    if (m_pKeyboardWidget && m_pKeyboardWidget->currentLayout() && m_pLayoutSelector)
+        m_pLayoutSelector->setCurrentLayout(m_pKeyboardWidget->currentLayout()->name());
 }
 
 void UISoftKeyboard::updateStatusBarMessage(const QString &strName)
@@ -3477,12 +3482,11 @@ void UISoftKeyboard::updateStatusBarMessage(const QString &strName)
         m_pStatusBarWidget->updateMessage(QString());
 }
 
-void UISoftKeyboard::updateLayoutSelector()
+void UISoftKeyboard::updateLayoutSelectorList()
 {
     if (!m_pKeyboardWidget || !m_pLayoutSelector)
         return;
     m_pLayoutSelector->setLayoutList(m_pKeyboardWidget->layoutNameList(), m_pKeyboardWidget->layoutUidList());
-    m_pLayoutSelector->setCurrentLayout(m_pKeyboardWidget->currentLayout() ? m_pKeyboardWidget->currentLayout()->name() : QString());
 }
 
 CKeyboard& UISoftKeyboard::keyboard() const
