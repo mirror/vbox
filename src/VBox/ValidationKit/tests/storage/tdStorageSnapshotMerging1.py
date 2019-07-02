@@ -308,7 +308,8 @@ class tdStorageSnapshot(vbox.TestDriver):                                      #
         fRc = True;
         sFile = 't-base' + sExt;
         sHddPath = os.path.join(self.oVBox.oTstDrv.sScratchPath, sFile);
-        oHd = oSession.createBaseHd(sHddPath, sFmt=oDskFmt.id, cb=oOrigBaseHd.logicalSize, cMsTimeout = 15 * 60 * 1000); # 15 min
+        oHd = oSession.createBaseHd(sHddPath, sFmt=oDskFmt.id, cb=oOrigBaseHd.logicalSize,
+                                    cMsTimeout = 15 * 60 * 1000); # 15 min
         #if oSession.createBaseHd can't create disk because it exists, oHd will point to some stub object anyway
         fRc = fRc and oHd is not None and (oHd.logicalSize == oOrigBaseHd.logicalSize);
         fRc = fRc and self.cloneMedium(oOrigBaseHd, oHd);
