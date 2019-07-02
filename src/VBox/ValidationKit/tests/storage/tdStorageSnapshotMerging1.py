@@ -73,7 +73,7 @@ class tdStorageSnapshot(vbox.TestDriver):                                      #
         self.oGuestToGuestVM   = None;
         self.oGuestToGuestSess = None;
         self.oGuestToGuestTxs  = None;
-        self.asStorageCtrlsDef = ['AHCI', 'IDE', 'LsiLogicSAS', 'LsiLogic', 'BusLogic'];
+        self.asStorageCtrlsDef = ['AHCI'];
         self.asStorageCtrls    = self.asStorageCtrlsDef;
         #self.asDiskFormatsDef  = ['VDI', 'VMDK', 'VHD', 'QED', 'Parallels', 'QCOW', 'iSCSI'];
         self.asDiskFormatsDef  = ['VDI', 'VMDK', 'VHD'];
@@ -308,7 +308,7 @@ class tdStorageSnapshot(vbox.TestDriver):                                      #
         fRc = True;
         sFile = 't-base' + sExt;
         sHddPath = os.path.join(self.oVBox.oTstDrv.sScratchPath, sFile);
-        oHd = oSession.createBaseHd(sHddPath, sFmt=oDskFmt.id, cb=oOrigBaseHd.logicalSize);
+        oHd = oSession.createBaseHd(sHddPath, sFmt=oDskFmt.id, cb=oOrigBaseHd.logicalSize, cMsTimeout = 15 * 60 * 1000); # 15 min
         #if oSession.createBaseHd can't create disk because it exists, oHd will point to some stub object anyway
         fRc = fRc and oHd is not None and (oHd.logicalSize == oOrigBaseHd.logicalSize);
         fRc = fRc and self.cloneMedium(oOrigBaseHd, oHd);
@@ -336,7 +336,8 @@ class tdStorageSnapshot(vbox.TestDriver):                                      #
                     sResFilePath = os.path.join(self.oVBox.oTstDrv.sScratchPath, 't_res.vmdk');
                     sResFilePathRaw = os.path.join(self.oVBox.oTstDrv.sScratchPath, 't_res-flat.vmdk');
                     oResHd = oSession.createBaseHd(sResFilePath, sFmt='VMDK', cb=oOrigWithDiffHd.logicalSize,
-                                                   tMediumVariant = (vboxcon.MediumVariant_Fixed, ));
+                                                   tMediumVariant = (vboxcon.MediumVariant_Fixed, ),
+                                                   cMsTimeout = 15 * 60 * 1000); # 15 min
                     fRc = oResHd is not None;
                     fRc = fRc and self.cloneMedium(oHd, oResHd);
 
