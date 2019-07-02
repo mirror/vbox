@@ -168,16 +168,37 @@ RTDECL(int) RTDirRemove(const char *pszPath)
         if (rmdir(pszNativePath))
         {
             rc = errno;
-            if (rc == EEXIST) /* Solaris returns this, the rest have ENOTDIR. */
+            if (rc == EEXIST) /* Solaris returns this, the rest have ENOTEMPTY. */
                 rc = VERR_DIR_NOT_EMPTY;
             else if (rc != ENOTDIR)
                 rc = RTErrConvertFromErrno(rc);
             else
             {
-                rc = RTErrConvertFromErrno(rc);
+                /*
+                 * This may be a valid path-not-found or it may be a non-directory in
+                 * the final component.  FsPerf want us to distinguish between the two,
+                 * and trailing slash shouldn't matter because it doesn't on windows...
+                 */
+                char       *pszFree = NULL;
+                const char *pszStat = pszNativePath;
+                size_t      cch     = strlen(pszNativePath);
+                if (cch > 2 && pszNativePath[cch - 1] == '/')
+                {
+                    pszStat = pszFree = RTMemTmpAlloc(cch);
+                    memcpy(pszFree, pszNativePath, cch);
+                    do
+                        pszFree[--cch] = '\0';
+                    while (cch > 2 && pszFree[cch - 1] == '/');
+                }
+
                 struct stat st;
-                if (!stat(pszNativePath, &st) && !S_ISDIR(st.st_mode))
+                if (!stat(pszStat, &st) && !S_ISDIR(st.st_mode))
                     rc = VERR_NOT_A_DIRECTORY;
+                else
+                    rc = VERR_PATH_NOT_FOUND;
+
+                if (pszFree)
+                    RTMemTmpFree(pszFree);
             }
         }
 
