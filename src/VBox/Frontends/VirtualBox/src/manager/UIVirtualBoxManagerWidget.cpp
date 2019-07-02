@@ -490,8 +490,6 @@ void UIVirtualBoxManagerWidget::prepareConnections()
             this, &UIVirtualBoxManagerWidget::sltHandleChooserPaneIndexChange);
     connect(m_pPaneChooser, &UIChooser::sigSelectionInvalidated,
             this, &UIVirtualBoxManagerWidget::sltHandleChooserPaneSelectionInvalidated);
-    connect(m_pPaneChooser, &UIChooser::sigSlidingStarted,
-            m_pPaneToolsMachine, &UIToolPaneMachine::sigSlidingStarted);
     connect(m_pPaneChooser, &UIChooser::sigToggleStarted,
             m_pPaneToolsMachine, &UIToolPaneMachine::sigToggleStarted);
     connect(m_pPaneChooser, &UIChooser::sigToggleFinished,

@@ -49,9 +49,6 @@ signals:
         /** Notifies listeners about selection invalidated. */
         void sigSelectionInvalidated();
 
-        /** Notifies listeners about sliding started. */
-        void sigSlidingStarted();
-
         /** Notifies listeners about toggling started. */
         void sigToggleStarted();
         /** Notifies listeners about toggling finished. */

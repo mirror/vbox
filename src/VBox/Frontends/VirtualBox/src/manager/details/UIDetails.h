@@ -45,9 +45,6 @@ signals:
                         const QString &strControl,
                         const QUuid &uId);
 
-    /** Notifies listeners about sliding started. */
-    void sigSlidingStarted();
-
     /** Notifies listeners about toggling started. */
     void sigToggleStarted();
     /** Notifies listeners about toggling finished. */

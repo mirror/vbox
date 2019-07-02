@@ -115,7 +115,6 @@ void UIToolPaneMachine::openTool(UIToolType enmType)
                 {
                     /* Configure pane: */
                     m_pPaneDetails->setProperty("ToolType", QVariant::fromValue(UIToolType_Details));
-                    connect(this, &UIToolPaneMachine::sigSlidingStarted, m_pPaneDetails, &UIDetails::sigSlidingStarted);
                     connect(this, &UIToolPaneMachine::sigToggleStarted,  m_pPaneDetails, &UIDetails::sigToggleStarted);
                     connect(this, &UIToolPaneMachine::sigToggleFinished, m_pPaneDetails, &UIDetails::sigToggleFinished);
                     connect(m_pPaneDetails, &UIDetails::sigLinkClicked,  this, &UIToolPaneMachine::sigLinkClicked);

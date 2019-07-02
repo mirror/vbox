@@ -334,10 +334,6 @@ private:
 
         /** Holds the group toggle button instance. */
         UIGraphicsRotatorButton *m_pToggleButton;
-        /** Holds the group enter button instance. */
-        UIGraphicsButton        *m_pEnterButton;
-        /** Holds the group exit button instance. */
-        UIGraphicsButton        *m_pExitButton;
 
         /** Holds the group name editor instance. */
         UIEditorGroupRename *m_pNameEditorWidget;
@@ -391,10 +387,6 @@ private:
         QSize  m_minimumHeaderSize;
         /** Holds cached toggle button size. */
         QSize  m_toggleButtonSize;
-        /** Holds cached enter button size. */
-        QSize  m_enterButtonSize;
-        /** Holds cached exit button size. */
-        QSize  m_exitButtonSize;
     /** @} */
 };
 

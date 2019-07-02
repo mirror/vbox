@@ -51,8 +51,6 @@ class UIToolPaneMachine : public QWidget
 signals:
 
     /** Redirects signal from UIVirtualBoxManager to UIDetails. */
-    void sigSlidingStarted();
-    /** Redirects signal from UIVirtualBoxManager to UIDetails. */
     void sigToggleStarted();
     /** Redirects signal from UIVirtualBoxManager to UIDetails. */
     void sigToggleFinished();

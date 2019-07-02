@@ -49,8 +49,6 @@ UIChooserItemGroup::UIChooserItemGroup(QGraphicsScene *pScene, UIChooserNodeGrou
     , m_iAdditionalHeight(0)
     , m_iHeaderDarkness(110)
     , m_pToggleButton(0)
-    , m_pEnterButton(0)
-    , m_pExitButton(0)
     , m_pNameEditorWidget(0)
     , m_pContainerFavorite(0)
     , m_pLayoutFavorite(0)
@@ -71,8 +69,6 @@ UIChooserItemGroup::UIChooserItemGroup(UIChooserItem *pParent, UIChooserNodeGrou
     , m_iAdditionalHeight(0)
     , m_iHeaderDarkness(110)
     , m_pToggleButton(0)
-    , m_pEnterButton(0)
-    , m_pExitButton(0)
     , m_pNameEditorWidget(0)
     , m_pContainerFavorite(0)
     , m_pLayoutFavorite(0)
@@ -165,11 +161,6 @@ QString UIChooserItemGroup::className()
 
 void UIChooserItemGroup::retranslateUi()
 {
-    /* Update button tool-tips: */
-    if (m_pEnterButton)
-        m_pEnterButton->setToolTip(tr("Enter group"));
-    if (m_pExitButton)
-        m_pExitButton->setToolTip(tr("Exit group"));
     updateToggleButtonToolTip();
 }
 
@@ -213,10 +204,6 @@ void UIChooserItemGroup::hoverMoveEvent(QGraphicsSceneHoverEvent *pEvent)
     if (pos.y() >= iFullHeaderHeight)
         return;
 
-    /* Show enter-button: */
-    if (!isRoot() && m_pEnterButton)
-        m_pEnterButton->show();
-
     /* Call to base-class: */
     UIChooserItem::hoverMoveEvent(pEvent);
 
@@ -229,10 +216,6 @@ void UIChooserItemGroup::hoverLeaveEvent(QGraphicsSceneHoverEvent *pEvent)
     /* Skip if not hovered: */
     if (!isHovered())
         return;
-
-    /* Hide enter-button: */
-    if (m_pEnterButton)
-        m_pEnterButton->hide();
 
     /* Call to base-class: */
     UIChooserItem::hoverLeaveEvent(pEvent);
@@ -570,7 +553,6 @@ void UIChooserItemGroup::updateLayout()
 {
     /* Prepare variables: */
     const int iMarginHL = data(GroupItemData_MarginHL).toInt();
-    const int iMarginHR = data(GroupItemData_MarginHR).toInt();
     const int iMarginV = data(GroupItemData_MarginV).toInt();
     const int iParentIndent = data(GroupItemData_ParentIndent).toInt();
     const int iFullHeaderHeight = m_minimumHeaderSize.height();
@@ -581,35 +563,6 @@ void UIChooserItemGroup::updateLayout()
     {
         /* Acquire view: */
         const QGraphicsView *pView = model()->scene()->views().first();
-
-#if 0
-        /* Header (non-main root-item): */
-        if (!isMainRoot())
-        {
-            /* Hide unnecessary buttons: */
-            if (m_pToggleButton)
-                m_pToggleButton->hide();
-            if (m_pEnterButton)
-                m_pEnterButton->hide();
-
-            /* Exit-button: */
-            if (m_pExitButton)
-            {
-                /* Prepare variables: */
-                int iExitButtonHeight = m_exitButtonSize.height();
-                /* Layout exit-button: */
-                int iExitButtonX = iHorizontalMargin;
-                int iExitButtonY = iExitButtonHeight == iFullHeaderHeight ? iMarginV :
-                                   iMarginV + (iFullHeaderHeight - iExitButtonHeight) / 2;
-                m_pExitButton->setPos(iExitButtonX, iExitButtonY);
-                /* Show exit-button: */
-                m_pExitButton->show();
-            }
-
-            /* Prepare body indent: */
-            iPreviousVerticalIndent = iMarginV + iFullHeaderHeight + iMarginV;
-        }
-#endif
 
         /* Adjust scroll-view geometry: */
         QSize viewSize = pView->size();
@@ -625,10 +578,6 @@ void UIChooserItemGroup::updateLayout()
     /* Header (non-root-item): */
     else
     {
-        /* Hide unnecessary button: */
-        if (m_pExitButton)
-            m_pExitButton->hide();
-
         /* Toggle-button: */
         if (m_pToggleButton)
         {
@@ -641,20 +590,6 @@ void UIChooserItemGroup::updateLayout()
             m_pToggleButton->setPos(iToggleButtonX, iToggleButtonY);
             /* Show toggle-button: */
             m_pToggleButton->show();
-        }
-
-        /* Enter-button: */
-        if (m_pEnterButton)
-        {
-            /* Prepare variables: */
-            int iFullWidth = (int)geometry().width();
-            int iEnterButtonWidth = m_enterButtonSize.width();
-            int iEnterButtonHeight = m_enterButtonSize.height();
-            /* Layout enter-button: */
-            int iEnterButtonX = iFullWidth - iMarginHR - iEnterButtonWidth;
-            int iEnterButtonY = iEnterButtonHeight == iFullHeaderHeight ? iMarginV :
-                                iMarginV + (iFullHeaderHeight - iEnterButtonHeight) / 2;
-            m_pEnterButton->setPos(iEnterButtonX, iEnterButtonY);
         }
 
         /* Prepare body indent: */
@@ -1025,29 +960,8 @@ void UIChooserItemGroup::prepare()
     m_infoFont = font();
     m_minimumHeaderSize = QSize(0, 0);
 
-    /* Prepare header widgets of root item: */
-    if (isRoot())
-    {
-#if 0
-        /* Except main root ofc: */
-        if (!isMainRoot())
-        {
-            /* Setup exit-button: */
-            m_pExitButton = new UIGraphicsButton(this, UIIconPool::iconSet(":/previous_16px.png"));
-            if (m_pExitButton)
-            {
-                m_pExitButton->hide();
-                QSizeF sh = m_pExitButton->minimumSizeHint();
-                m_pExitButton->setTransformOriginPoint(sh.width() / 2, sh.height() / 2);
-                connect(m_pExitButton, &UIGraphicsButton::sigButtonClicked,
-                        this, &UIChooserItemGroup::sltUnindentRoot);
-            }
-            m_exitButtonSize = m_pExitButton ? m_pExitButton->minimumSizeHint().toSize() : QSize(0, 0);
-        }
-#endif
-    }
     /* Prepare header widgets of non-root item: */
-    else
+    if (!isRoot())
     {
         /* Setup toggle-button: */
         m_pToggleButton = new UIGraphicsRotatorButton(this, "additionalHeight", isOpened());
@@ -1060,16 +974,6 @@ void UIChooserItemGroup::prepare()
                     this, &UIChooserItemGroup::sltGroupToggleFinish);
         }
         m_toggleButtonSize = m_pToggleButton ? m_pToggleButton->minimumSizeHint().toSize() : QSize(0, 0);
-
-        /* Setup enter-button: */
-        m_pEnterButton = new UIGraphicsButton(this, UIIconPool::iconSet(":/next_16px.png"));
-        if (m_pEnterButton)
-        {
-            m_pEnterButton->hide();
-            connect(m_pEnterButton, &UIGraphicsButton::sigButtonClicked,
-                    this, &UIChooserItemGroup::sltIndentRoot);
-        }
-        m_enterButtonSize = m_pEnterButton ? m_pEnterButton->minimumSizeHint().toSize() : QSize(0, 0);
 
         /* Setup name-editor: */
         m_pNameEditorWidget = new UIEditorGroupRename(name());
@@ -1461,8 +1365,6 @@ void UIChooserItemGroup::updateVisibleName()
     int iMarginHR = data(GroupItemData_MarginHR).toInt();
     int iHeaderSpacing = data(GroupItemData_HeaderSpacing).toInt();
     int iToggleButtonWidth = m_toggleButtonSize.width();
-    int iEnterButtonWidth = m_enterButtonSize.width();
-    int iExitButtonWidth = m_exitButtonSize.width();
     int iGroupPixmapWidth = m_pixmapSizeGroups.width();
     int iMachinePixmapWidth = m_pixmapSizeMachines.width();
     int iGroupCountTextWidth = m_infoSizeGroups.width();
@@ -1472,9 +1374,7 @@ void UIChooserItemGroup::updateVisibleName()
     /* Left margin: */
     iMaximumWidth -= iMarginHL;
     /* Button width: */
-    if (isRoot())
-        iMaximumWidth -= iExitButtonWidth;
-    else
+    if (!isRoot())
         iMaximumWidth -= iToggleButtonWidth;
     /* Spacing between button and name: */
     iMaximumWidth -= iHeaderSpacing;
@@ -1488,9 +1388,6 @@ void UIChooserItemGroup::updateVisibleName()
         /* Machine info width: */
         if (!m_machineItems.isEmpty())
             iMaximumWidth -= (iMachinePixmapWidth + iMachineCountTextWidth);
-        /* Spacing + button width: */
-        if (!isRoot())
-            iMaximumWidth -= iEnterButtonWidth;
     }
     /* Right margin: */
     iMaximumWidth -= iMarginHR;
@@ -1543,9 +1440,7 @@ void UIChooserItemGroup::updateMinimumHeaderSize()
     /* Calculate minimum width: */
     int iHeaderWidth = 0;
     /* Button width: */
-    if (isRoot())
-        iHeaderWidth += m_exitButtonSize.width();
-    else
+    if (!isRoot())
         iHeaderWidth += m_toggleButtonSize.width();
     iHeaderWidth += /* Spacing between button and name: */
                     iHeaderSpacing +
@@ -1559,16 +1454,11 @@ void UIChooserItemGroup::updateMinimumHeaderSize()
     /* Machine info width: */
     if (!m_machineItems.isEmpty())
         iHeaderWidth += (m_pixmapSizeMachines.width() + m_infoSizeMachines.width());
-    /* Spacing + button width: */
-    if (!isRoot())
-        iHeaderWidth += m_enterButtonSize.width();
 
     /* Calculate maximum height: */
     QList<int> heights;
     /* Button height: */
-    if (isRoot())
-        heights << m_exitButtonSize.height();
-    else
+    if (!isRoot())
         heights << m_toggleButtonSize.height();
     heights /* Minimum name height: */
             << iMinimumNameHeight
@@ -1577,8 +1467,6 @@ void UIChooserItemGroup::updateMinimumHeaderSize()
             /* Machine info heights: */
             << m_pixmapSizeMachines.height() << m_infoSizeMachines.height();
     /* Button height: */
-    if (!isRoot())
-        heights << m_enterButtonSize.height();
     int iHeaderHeight = 0;
     foreach (int iHeight, heights)
         iHeaderHeight = qMax(iHeaderHeight, iHeight);
@@ -1751,9 +1639,7 @@ void UIChooserItemGroup::paintHeader(QPainter *pPainter, const QRect &rect)
 
     /* Paint name: */
     int iNameX = iMarginHL;
-    if (isRoot())
-        iNameX += m_exitButtonSize.width();
-    else
+    if (!isRoot())
         iNameX += m_toggleButtonSize.width();
     iNameX += iHeaderSpacing;
     int iNameY = m_visibleNameSize.height() == iFullHeaderHeight ? iMarginV :
@@ -1772,13 +1658,8 @@ void UIChooserItemGroup::paintHeader(QPainter *pPainter, const QRect &rect)
     /* Should we add more info? */
     if (isHovered())
     {
-        /* Prepare variables: */
-        int iEnterButtonWidth = m_enterButtonSize.width();
-
         /* Indent: */
         int iHorizontalIndent = rect.right() - iMarginHR;
-        if (!isRoot())
-            iHorizontalIndent -= iEnterButtonWidth;
 
         /* Should we draw machine count info? */
         if (!m_strInfoMachines.isEmpty())

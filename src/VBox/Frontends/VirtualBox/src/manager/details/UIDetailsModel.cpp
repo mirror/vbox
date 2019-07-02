@@ -184,11 +184,6 @@ void UIDetailsModel::sltHandleViewResize()
     updateLayout();
 }
 
-void UIDetailsModel::sltHandleSlidingStarted()
-{
-    m_pRoot->stopBuildingGroup();
-}
-
 void UIDetailsModel::sltHandleToggleStarted()
 {
     m_pRoot->stopBuildingGroup();

@@ -158,8 +158,6 @@ public slots:
     /** Handle details view resize. */
     void sltHandleViewResize();
 
-    /** Handles chooser pane signal about item sliding started. */
-    void sltHandleSlidingStarted();
     /** Handles chooser pane signal about group toggle started. */
     void sltHandleToggleStarted();
     /** Handles chooser pane signal about group toggle finished. */
