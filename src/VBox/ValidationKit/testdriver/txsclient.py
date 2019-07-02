@@ -120,11 +120,17 @@ def isValidOpcodeEncoding(sOpcode):
 
 def u32ToByteArray(u32):
     """Encodes the u32 value as a little endian byte (B) array."""
-    return array.array('B', \
-                       (  u32              % 256, \
-                         (u32 // 256)      % 256, \
-                         (u32 // 65536)    % 256, \
+    return array.array('B',
+                       (  u32              % 256,
+                         (u32 // 256)      % 256,
+                         (u32 // 65536)    % 256,
                          (u32 // 16777216) % 256) );
+
+def escapeString(sString):
+    """
+    Does $ escaping of the string so TXS doesn't try do variable expansion.
+    """
+    return sString.replace('$', '$$');
 
 
 
