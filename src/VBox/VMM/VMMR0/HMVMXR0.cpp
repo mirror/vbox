@@ -2626,6 +2626,7 @@ static int hmR0VmxCheckVmcsCtls(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo, bool fIsN
                         pVCpu->hm.s.u32HMError = VMX_VCI_CTRL_TSC_OFFSET,
                         VERR_VMX_VMCS_FIELD_CACHE_INVALID);
 
+    NOREF(pcszVmcs);
     return VINF_SUCCESS;
 }
 
