@@ -1120,6 +1120,7 @@ typedef struct HMCPU
     STAMCOUNTER             StatInjectPendingInterpret;
 
     STAMCOUNTER             StatExitAll;
+    STAMCOUNTER             StatNestedExitAll;
     STAMCOUNTER             StatExitShadowNM;
     STAMCOUNTER             StatExitGuestNM;
     STAMCOUNTER             StatExitShadowPF;       /**< Misleading, currently used for MMIO \#PFs as well. */
@@ -1187,13 +1188,17 @@ typedef struct HMCPU
     STAMCOUNTER             StatSwitchTprMaskedIrq;
     STAMCOUNTER             StatSwitchGuestIrq;
     STAMCOUNTER             StatSwitchHmToR3FF;
+    STAMCOUNTER             StatSwitchVmReq;
+    STAMCOUNTER             StatSwitchPgmPoolFlush;
+    STAMCOUNTER             StatSwitchDma;
     STAMCOUNTER             StatSwitchExitToR3;
     STAMCOUNTER             StatSwitchLongJmpToR3;
     STAMCOUNTER             StatSwitchMaxResumeLoops;
     STAMCOUNTER             StatSwitchHltToR3;
     STAMCOUNTER             StatSwitchApicAccessToR3;
     STAMCOUNTER             StatSwitchPreempt;
-    STAMCOUNTER             StatSwitchPreemptExportHostState;
+    STAMCOUNTER             StatSwitchExportHostState;
+    STAMCOUNTER             StatSwitchNstGstVmexit;
 
     STAMCOUNTER             StatTscParavirt;
     STAMCOUNTER             StatTscOffset;

@@ -8820,6 +8820,7 @@ static VBOXSTRICTRC hmR0VmxCheckForceFlags(PVMCPU pVCpu, bool fStepping)
     if (   VM_FF_IS_SET(pVM, VM_FF_REQUEST)
         || VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_REQUEST))
     {
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchVmReq);
         Log4Func(("Pending VM request forcing us back to ring-3\n"));
         return VINF_EM_PENDING_REQUEST;
     }
@@ -8827,6 +8828,7 @@ static VBOXSTRICTRC hmR0VmxCheckForceFlags(PVMCPU pVCpu, bool fStepping)
     /* Pending PGM pool flushes. */
     if (VM_FF_IS_SET(pVM, VM_FF_PGM_POOL_FLUSH_PENDING))
     {
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchPgmPoolFlush);
         Log4Func(("PGM pool flush pending forcing us back to ring-3\n"));
         return VINF_PGM_POOL_FLUSH_PENDING;
     }
@@ -8834,6 +8836,7 @@ static VBOXSTRICTRC hmR0VmxCheckForceFlags(PVMCPU pVCpu, bool fStepping)
     /* Pending DMA requests. */
     if (VM_FF_IS_SET(pVM, VM_FF_PDM_DMA))
     {
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchDma);
         Log4Func(("Pending DMA request forcing us back to ring-3\n"));
         return VINF_EM_RAW_TO_R3;
     }
@@ -11351,67 +11354,6 @@ static VBOXSTRICTRC hmR0VmxPreRunGuest(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient
     else
         return rcStrict;
 
-#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-    /*
-     * Switch to the nested-guest VMCS as we may have transitioned into executing
-     * the nested-guest without leaving ring-0. Otherwise, if we came from ring-3
-     * we would load the nested-guest VMCS while entering the VMX ring-0 session.
-     *
-     * We do this as late as possible to minimize (though not completely eliminate)
-     * clearing/loading VMCS again due to premature trips to ring-3 above.
-     */
-    if (pVmxTransient->fIsNestedGuest)
-    {
-        if (!pVCpu->hm.s.vmx.fSwitchedToNstGstVmcs)
-        {
-            /*
-             * Ensure we have synced everything from the guest VMCS and also flag that
-             * that we need to export the full (nested) guest-CPU context to the
-             * nested-guest VMCS.
-             */
-            HMVMX_CPUMCTX_ASSERT(pVCpu, HMVMX_CPUMCTX_EXTRN_ALL);
-            ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_HOST_CONTEXT | HM_CHANGED_ALL_GUEST);
-
-            RTCCUINTREG const fEFlags = ASMIntDisableFlags();
-            int rc = hmR0VmxSwitchVmcs(&pVCpu->hm.s.vmx.VmcsInfo, &pVCpu->hm.s.vmx.VmcsInfoNstGst);
-            if (RT_LIKELY(rc == VINF_SUCCESS))
-            {
-                pVCpu->hm.s.vmx.fSwitchedToNstGstVmcs = true;
-                ASMSetFlags(fEFlags);
-                pVmxTransient->pVmcsInfo = &pVCpu->hm.s.vmx.VmcsInfoNstGst;
-
-                /*
-                 * We use a different VM-exit MSR-store area for the nested-guest. Hence,
-                 * flag that we need to update the host MSR values there. Even if we decide
-                 * in the future to share the VM-exit MSR-store area page with the guest,
-                 * if its content differs, we would have to update the host MSRs anyway.
-                 */
-                pVCpu->hm.s.vmx.fUpdatedHostAutoMsrs = false;
-                Assert(!pVmxTransient->fUpdatedTscOffsettingAndPreemptTimer);   /** @todo NSTVMX: Paranoia remove later. */
-            }
-            else
-            {
-                ASMSetFlags(fEFlags);
-                return rc;
-            }
-        }
-
-        /*
-         * Merge guest VMCS controls with the nested-guest VMCS controls.
-         *
-         * Even if we have not executed the guest prior to this (e.g. when resuming
-         * from a saved state), we should be okay with merging controls as we
-         * initialize the guest VMCS controls as part of VM setup phase.
-         */
-        if (!pVCpu->hm.s.vmx.fMergedNstGstCtls)
-        {
-            int rc = hmR0VmxMergeVmcsNested(pVCpu);
-            AssertRCReturn(rc, rc);
-            pVCpu->hm.s.vmx.fMergedNstGstCtls = true;
-        }
-    }
-#endif
-
     /*
      * Virtualize memory-mapped accesses to the physical APIC (may take locks).
      */
@@ -11426,6 +11368,23 @@ static VBOXSTRICTRC hmR0VmxPreRunGuest(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient
         int rc = hmR0VmxMapHCApicAccessPage(pVCpu);
         AssertRCReturn(rc, rc);
     }
+
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+    /*
+     * Merge guest VMCS controls with the nested-guest VMCS controls.
+     *
+     * Even if we have not executed the guest prior to this (e.g. when resuming from a
+     * saved state), we should be okay with merging controls as we initialize the
+     * guest VMCS controls as part of VM setup phase.
+     */
+    if (   pVmxTransient->fIsNestedGuest
+        && !pVCpu->hm.s.vmx.fMergedNstGstCtls)
+    {
+        int rc = hmR0VmxMergeVmcsNested(pVCpu);
+        AssertRCReturn(rc, rc);
+        pVCpu->hm.s.vmx.fMergedNstGstCtls = true;
+    }
+#endif
 
     /*
      * Evaluate events to be injected into the guest.
@@ -11451,7 +11410,10 @@ static VBOXSTRICTRC hmR0VmxPreRunGuest(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient
         return rcStrict;
     if (   pVmxTransient->fIsNestedGuest
         && !CPUMIsGuestInVmxNonRootMode(&pVCpu->cpum.GstCtx))
+    {
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchNstGstVmexit);
         return VINF_VMX_VMEXIT;
+    }
 #else
     Assert(rcStrict == VINF_SUCCESS);
 #endif
@@ -11615,8 +11577,10 @@ static void hmR0VmxPreRunGuestCommitted(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransien
     }
 
     /*
-     * Re-save the host state bits as we may've been preempted (only happens when
-     * thread-context hooks are used or when the VM start function changes).
+     * Re-export the host state bits as we may've been preempted (only happens when
+     * thread-context hooks are used or when the VM start function changes) or if
+     * the host CR0 is modified while loading the guest FPU state above.
+     *
      * The 64-on-32 switcher saves the (64-bit) host state into the VMCS and if we
      * changed the switcher back to 32-bit, we *must* save the 32-bit host state here,
      * see @bugref{8432}.
@@ -11628,7 +11592,7 @@ static void hmR0VmxPreRunGuestCommitted(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransien
     {
         int rc = hmR0VmxExportHostState(pVCpu);
         AssertRC(rc);
-        STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchPreemptExportHostState);
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchExportHostState);
     }
     Assert(!(pVCpu->hm.s.fCtxChanged & HM_CHANGED_HOST_CONTEXT));
 
@@ -11917,6 +11881,45 @@ static VBOXSTRICTRC hmR0VmxRunGuestCodeNormal(PVMCPU pVCpu, uint32_t *pcLoops)
     uint32_t const cMaxResumeLoops = pVCpu->CTX_SUFF(pVM)->hm.s.cMaxResumeLoops;
     Assert(pcLoops);
     Assert(*pcLoops <= cMaxResumeLoops);
+    Assert(!CPUMIsGuestInVmxNonRootMode(&pVCpu->cpum.GstCtx));
+
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+    /*
+     * Switch back from the nested-guest VMCS as we may have transitioned into executing the
+     * guest after a nested-guest VM-exit without leaving ring-0. Otherwise, if we came from
+     * ring-3 we would have loaded the guest VMCS while entering the VMX ring-0 session.
+     */
+    if (pVCpu->hm.s.vmx.fSwitchedToNstGstVmcs)
+    {
+        /*
+         * Ensure we have synced everything from the nested-guest VMCS and also flag that we
+         * need to export the full guest-CPU context to the guest VMCS.
+         */
+        HMVMX_CPUMCTX_ASSERT(pVCpu, HMVMX_CPUMCTX_EXTRN_ALL);
+        ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_HOST_CONTEXT | HM_CHANGED_ALL_GUEST);
+
+        RTCCUINTREG const fEFlags = ASMIntDisableFlags();
+        int rc = hmR0VmxSwitchVmcs(&pVCpu->hm.s.vmx.VmcsInfoNstGst, &pVCpu->hm.s.vmx.VmcsInfo);
+        if (RT_LIKELY(rc == VINF_SUCCESS))
+        {
+            pVCpu->hm.s.vmx.fSwitchedToNstGstVmcs = false;
+            ASMSetFlags(fEFlags);
+
+            /*
+             * We use a different VM-exit MSR-store area for the guest. Hence, flag that
+             * we need to update the host MSR values there. Even if we decide in the future
+             * to share the VM-exit MSR-store area page with the guest, if its content
+             * differs, we would have to update the host MSRs anyway.
+             */
+            pVCpu->hm.s.vmx.fUpdatedHostAutoMsrs  = false;
+        }
+        else
+        {
+            ASMSetFlags(fEFlags);
+            return rc;
+        }
+    }
+#endif
 
     VMXTRANSIENT VmxTransient;
     RT_ZERO(VmxTransient);
@@ -11924,7 +11927,6 @@ static VBOXSTRICTRC hmR0VmxRunGuestCodeNormal(PVMCPU pVCpu, uint32_t *pcLoops)
 
     /* Paranoia. */
     Assert(VmxTransient.pVmcsInfo == &pVCpu->hm.s.vmx.VmcsInfo);
-    Assert(!CPUMIsGuestInVmxNonRootMode(&pVCpu->cpum.GstCtx));
 
     VBOXSTRICTRC rcStrict = VERR_INTERNAL_ERROR_5;
     for (;;)
@@ -11995,6 +11997,7 @@ static VBOXSTRICTRC hmR0VmxRunGuestCodeNormal(PVMCPU pVCpu, uint32_t *pcLoops)
     return rcStrict;
 }
 
+
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
 /**
  * Runs the nested-guest code using hardware-assisted VMX.
@@ -12012,10 +12015,49 @@ static VBOXSTRICTRC hmR0VmxRunGuestCodeNested(PVMCPU pVCpu, uint32_t *pcLoops)
     Assert(*pcLoops <= cMaxResumeLoops);
     Assert(CPUMIsGuestInVmxNonRootMode(&pVCpu->cpum.GstCtx));
 
+    /*
+     * Switch to the nested-guest VMCS as we may have transitioned into executing the
+     * nested-guest without leaving ring-0. Otherwise, if we came from ring-3 we would have
+     * loaded the nested-guest VMCS while entering the VMX ring-0 session.
+     */
+    if (!pVCpu->hm.s.vmx.fSwitchedToNstGstVmcs)
+    {
+        /*
+         * Ensure we have synced everything from the guest VMCS and also flag that we need to
+         * export the full (nested) guest-CPU context to the nested-guest VMCS.
+         */
+        HMVMX_CPUMCTX_ASSERT(pVCpu, HMVMX_CPUMCTX_EXTRN_ALL);
+        ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_HOST_CONTEXT | HM_CHANGED_ALL_GUEST);
+
+        RTCCUINTREG const fEFlags = ASMIntDisableFlags();
+        int rc = hmR0VmxSwitchVmcs(&pVCpu->hm.s.vmx.VmcsInfo, &pVCpu->hm.s.vmx.VmcsInfoNstGst);
+        if (RT_LIKELY(rc == VINF_SUCCESS))
+        {
+            pVCpu->hm.s.vmx.fSwitchedToNstGstVmcs = true;
+            ASMSetFlags(fEFlags);
+
+            /*
+             * We use a different VM-exit MSR-store area for the nested-guest. Hence, flag
+             * that we need to update the host MSR values there. Even if we decide in the
+             * future to share the VM-exit MSR-store area page with the guest, if its content
+             * differs, we would have to update the host MSRs anyway.
+             */
+            pVCpu->hm.s.vmx.fUpdatedHostAutoMsrs  = false;
+        }
+        else
+        {
+            ASMSetFlags(fEFlags);
+            return rc;
+        }
+    }
+
     VMXTRANSIENT VmxTransient;
     RT_ZERO(VmxTransient);
-    VmxTransient.pVmcsInfo = hmGetVmxActiveVmcsInfo(pVCpu);
+    VmxTransient.pVmcsInfo      = hmGetVmxActiveVmcsInfo(pVCpu);
     VmxTransient.fIsNestedGuest = true;
+
+    /* Paranoia. */
+    Assert(VmxTransient.pVmcsInfo == &pVCpu->hm.s.vmx.VmcsInfoNstGst);
 
     VBOXSTRICTRC rcStrict = VERR_INTERNAL_ERROR_5;
     for (;;)
@@ -12057,6 +12099,7 @@ static VBOXSTRICTRC hmR0VmxRunGuestCodeNested(PVMCPU pVCpu, uint32_t *pcLoops)
          */
         AssertMsg(VmxTransient.uExitReason <= VMX_EXIT_MAX, ("%#x\n", VmxTransient.uExitReason));
         STAM_COUNTER_INC(&pVCpu->hm.s.StatExitAll);
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatNestedExitAll);
         STAM_COUNTER_INC(&pVCpu->hm.s.paStatNestedExitReasonR0[VmxTransient.uExitReason & MASK_EXITREASON_STAT]);
         STAM_PROFILE_ADV_STOP_START(&pVCpu->hm.s.StatPreExit, &pVCpu->hm.s.StatExitHandling, x);
         HMVMX_START_EXIT_DISPATCH_PROF();
@@ -12068,14 +12111,23 @@ static VBOXSTRICTRC hmR0VmxRunGuestCodeNested(PVMCPU pVCpu, uint32_t *pcLoops)
          */
         rcStrict = hmR0VmxHandleExitNested(pVCpu, &VmxTransient);
         STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExitHandling, x);
-        if (   rcStrict == VINF_SUCCESS
-            && CPUMIsGuestInVmxNonRootMode(&pVCpu->cpum.GstCtx))
+        if (rcStrict == VINF_SUCCESS)
         {
-            if (++(*pcLoops) <= cMaxResumeLoops)
-                continue;
-            STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchMaxResumeLoops);
-            rcStrict = VINF_EM_RAW_INTERRUPT;
+            if (!CPUMIsGuestInVmxNonRootMode(&pVCpu->cpum.GstCtx))
+            {
+                STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchNstGstVmexit);
+                rcStrict = VINF_VMX_VMEXIT;
+            }
+            else
+            {
+                if (++(*pcLoops) <= cMaxResumeLoops)
+                    continue;
+                STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchMaxResumeLoops);
+                rcStrict = VINF_EM_RAW_INTERRUPT;
+            }
         }
+        else
+            Assert(rcStrict != VINF_VMX_VMEXIT);
         break;
     }
 
@@ -13441,34 +13493,45 @@ VMMR0DECL(VBOXSTRICTRC) VMXR0RunGuestCode(PVMCPU pVCpu)
     VMMRZCallRing3SetNotification(pVCpu, hmR0VmxCallRing3Callback, pCtx);
 
     VBOXSTRICTRC rcStrict;
-    uint32_t cLoops = 0;
-#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-    bool const fInNestedGuestMode = CPUMIsGuestInVmxNonRootMode(pCtx);
-#else
-    bool const fInNestedGuestMode = false;
-#endif
-    if (!fInNestedGuestMode)
+    uint32_t     cLoops = 0;
+    for (;;)
     {
-        if (   !pVCpu->hm.s.fUseDebugLoop
-            && (!VBOXVMM_ANY_PROBES_ENABLED() || !hmR0VmxAnyExpensiveProbesEnabled())
-            && !DBGFIsStepping(pVCpu)
-            && !pVCpu->CTX_SUFF(pVM)->dbgf.ro.cEnabledInt3Breakpoints)
-            rcStrict = hmR0VmxRunGuestCodeNormal(pVCpu, &cLoops);
-        else
-            rcStrict = hmR0VmxRunGuestCodeDebug(pVCpu, &cLoops);
-    }
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-    else
-        rcStrict = VINF_VMX_VMLAUNCH_VMRESUME;
-
-    if (rcStrict == VINF_VMX_VMLAUNCH_VMRESUME)
-        rcStrict = hmR0VmxRunGuestCodeNested(pVCpu, &cLoops);
+        bool const fInNestedGuestMode = CPUMIsGuestInVmxNonRootMode(pCtx);
+#else
+        bool const fInNestedGuestMode = false;
 #endif
+        if (!fInNestedGuestMode)
+        {
+            if (   !pVCpu->hm.s.fUseDebugLoop
+                && (!VBOXVMM_ANY_PROBES_ENABLED() || !hmR0VmxAnyExpensiveProbesEnabled())
+                && !DBGFIsStepping(pVCpu)
+                && !pVCpu->CTX_SUFF(pVM)->dbgf.ro.cEnabledInt3Breakpoints)
+                rcStrict = hmR0VmxRunGuestCodeNormal(pVCpu, &cLoops);
+            else
+                rcStrict = hmR0VmxRunGuestCodeDebug(pVCpu, &cLoops);
+        }
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+        else
+            rcStrict = hmR0VmxRunGuestCodeNested(pVCpu, &cLoops);
+
+        if (rcStrict == VINF_VMX_VMLAUNCH_VMRESUME)
+        {
+            Assert(CPUMIsGuestInVmxNonRootMode(pCtx));
+            continue;
+        }
+        if (rcStrict == VINF_VMX_VMEXIT)
+        {
+            Assert(!CPUMIsGuestInVmxNonRootMode(pCtx));
+            continue;
+        }
+#endif
+        break;
+    }
 
     int const rcLoop = VBOXSTRICTRC_VAL(rcStrict);
     switch (rcLoop)
     {
-        case VINF_VMX_VMEXIT:       rcStrict = VINF_SUCCESS;                break;
         case VERR_EM_INTERPRETER:   rcStrict = VINF_EM_RAW_EMULATE_INSTR;   break;
         case VINF_EM_RESET:         rcStrict = VINF_EM_TRIPLE_FAULT;        break;
     }

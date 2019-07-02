@@ -738,7 +738,8 @@ static int hmR3InitFinalizeR3(PVM pVM)
         AssertRC(rc);
 
 #ifdef VBOX_WITH_STATISTICS
-        HM_REG_COUNTER(&pVCpu->hm.s.StatExitAll,                "/HM/CPU%d/Exit/All", "Exits (total).");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatExitAll,                "/HM/CPU%d/Exit/All", "Total exits (including nested-guest exits).");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatNestedExitAll,          "/HM/CPU%d/Exit/NestedGuest/All", "Total nested-guest exits.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitShadowNM,           "/HM/CPU%d/Exit/Trap/Shw/#NM", "Shadow #NM (device not available, no math co-processor) exception.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitGuestNM,            "/HM/CPU%d/Exit/Trap/Gst/#NM", "Guest #NM (device not available, no math co-processor) exception.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitShadowPF,           "/HM/CPU%d/Exit/Trap/Shw/#PF", "Shadow #PF (page fault) exception.");
@@ -789,15 +790,19 @@ static int hmR3InitFinalizeR3(PVM pVM)
         HM_REG_COUNTER(&pVCpu->hm.s.StatSwitchGuestIrq,         "/HM/CPU%d/Switch/IrqPending", "PDMGetInterrupt() cleared behind our back!?!.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatSwitchPendingHostIrq,   "/HM/CPU%d/Switch/PendingHostIrq", "Exit to ring-3 due to pending host interrupt before executing guest code.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatSwitchHmToR3FF,         "/HM/CPU%d/Switch/HmToR3FF", "Exit to ring-3 due to pending timers, EMT rendezvous, critical section etc.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatSwitchVmReq,            "/HM/CPU%d/Switch/VmReq", "Exit to ring-3 due to pending VM requests.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatSwitchPgmPoolFlush,     "/HM/CPU%d/Switch/PgmPoolFlush", "Exit to ring-3 due to pending PGM pool flush.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatSwitchDma,              "/HM/CPU%d/Switch/PendingDma", "Exit to ring-3 due to pending DMA requests.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatSwitchExitToR3,         "/HM/CPU%d/Switch/ExitToR3", "Exit to ring-3 (total).");
         HM_REG_COUNTER(&pVCpu->hm.s.StatSwitchLongJmpToR3,      "/HM/CPU%d/Switch/LongJmpToR3", "Longjump to ring-3.");
-        HM_REG_COUNTER(&pVCpu->hm.s.StatSwitchMaxResumeLoops,   "/HM/CPU%d/Switch/MaxResumeToR3", "Maximum VMRESUME inner-loop counter reached.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatSwitchMaxResumeLoops,   "/HM/CPU%d/Switch/MaxResumeLoops", "Maximum VMRESUME inner-loop counter reached.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatSwitchHltToR3,          "/HM/CPU%d/Switch/HltToR3", "HLT causing us to go to ring-3.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatSwitchApicAccessToR3,   "/HM/CPU%d/Switch/ApicAccessToR3", "APIC access causing us to go to ring-3.");
 #endif
         HM_REG_COUNTER(&pVCpu->hm.s.StatSwitchPreempt,          "/HM/CPU%d/Switch/Preempting", "EMT has been preempted while in HM context.");
 #ifdef VBOX_WITH_STATISTICS
-        HM_REG_COUNTER(&pVCpu->hm.s.StatSwitchPreemptExportHostState, "/HM/CPU%d/Switch/ExportHostState", "Preemption caused us to re-export the host state.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatSwitchExportHostState,  "/HM/CPU%d/Switch/ExportHostState", "Preemption or entering with nested-guest VMCS caused re-exporting of host state.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatSwitchNstGstVmexit,     "/HM/CPU%d/Switch/NstGstVmexit", "Nested-guest VM-exit occurred.");
 
         HM_REG_COUNTER(&pVCpu->hm.s.StatInjectInterrupt,        "/HM/CPU%d/EventInject/Interrupt", "Injected an external interrupt into the guest.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatInjectXcpt,             "/HM/CPU%d/EventInject/Trap", "Injected an exception into the guest.");
@@ -913,7 +918,7 @@ static int hmR3InitFinalizeR3(PVM pVM)
                 if (pszExitName)
                 {
                     rc = STAMR3RegisterF(pVM, &pVCpu->hm.s.paStatNestedExitReason[j], STAMTYPE_COUNTER, STAMVISIBILITY_USED,
-                                         STAMUNIT_OCCURENCES, pszExitName, "/HM/CPU%d/NestedExit/Reason/%02x", i, j);
+                                         STAMUNIT_OCCURENCES, pszExitName, "/HM/CPU%d/Exit/NestedGuest/Reason/%02x", i, j);
                     AssertRC(rc);
                 }
             }
@@ -926,13 +931,13 @@ static int hmR3InitFinalizeR3(PVM pVM)
                 if (pszExitName)
                 {
                     rc = STAMR3RegisterF(pVM, &pVCpu->hm.s.paStatNestedExitReason[j], STAMTYPE_COUNTER, STAMVISIBILITY_USED,
-                                         STAMUNIT_OCCURENCES, pszExitName, "/HM/CPU%d/NestedExit/Reason/%02x", i, j);
+                                         STAMUNIT_OCCURENCES, pszExitName, "/HM/CPU%d/Exit/NestedGuest/Reason/%02x", i, j);
                     AssertRC(rc);
                 }
             }
         }
         rc = STAMR3RegisterF(pVM, &pVCpu->hm.s.StatNestedExitReasonNpf, STAMTYPE_COUNTER, STAMVISIBILITY_USED,
-                             STAMUNIT_OCCURENCES, "Nested page fault", "/HM/CPU%d/NestedExit/Reason/#NPF", i);
+                             STAMUNIT_OCCURENCES, "Nested page fault", "/HM/CPU%d/Exit/NestedGuest/Reason/#NPF", i);
         AssertRCReturn(rc, rc);
         pVCpu->hm.s.paStatNestedExitReasonR0 = MMHyperR3ToR0(pVM, pVCpu->hm.s.paStatNestedExitReason);
 # ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
