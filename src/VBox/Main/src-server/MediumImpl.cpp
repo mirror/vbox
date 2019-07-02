@@ -3377,13 +3377,13 @@ HRESULT Medium::resize(LONG64 aLogicalSize,
                                     *pMediumLockList);
         if (FAILED(rc))
         {
-            pszError = tr("Failed to create medium lock list when resize '%s'");
+            pszError = tr("Failed to create medium lock list when resizing '%s'");
         }
         else
         {
             rc = pMediumLockList->Lock();
             if (FAILED(rc))
-                pszError = tr("Failed to lock media when compacting '%s'");
+                pszError = tr("Failed to lock media when resizing '%s'");
         }
 
 
@@ -3391,7 +3391,6 @@ HRESULT Medium::resize(LONG64 aLogicalSize,
 
         if (FAILED(rc))
         {
-            delete pMediumLockList;
             throw setError(rc, pszError, i_getLocationFull().c_str());
         }
 
@@ -3402,7 +3401,6 @@ HRESULT Medium::resize(LONG64 aLogicalSize,
                              TRUE /* aCancelable */);
         if (FAILED(rc))
         {
-            delete pMediumLockList;
             throw rc;
         }
     }
