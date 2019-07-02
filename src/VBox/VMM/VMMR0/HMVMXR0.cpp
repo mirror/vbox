@@ -1381,10 +1381,9 @@ static int hmR0VmxSwitchToGstOrNstGstVmcs(PVMCPU pVCpu, bool fSwitchToNstGstVmcs
         ASMSetFlags(fEFlags);
 
         /*
-         * If we are switching to a VMCS that was executed on a different host CPU or was never
-         * executed before, flag that we need to export the host state before executing
-         * guest/nested-guest code using hardware-assisted VMX in addition to exporting the
-         * guest/nested-guest state.
+         * If we are switching to a VMCS that was executed on a different host CPU or was
+         * never executed before, flag that we need to export the host state before executing
+         * guest/nested-guest code using hardware-assisted VMX.
          */
         if (pVmcsInfoTo->idHostCpu == RTMpCpuId())
         { /* likely */ }
