@@ -1463,6 +1463,7 @@ class TestDriver(base.TestDriver):                                              
             self.oVBoxMgr.xcptIsEqual           = types.MethodType(_xcptIsEqual,         self.oVBoxMgr);
             self.oVBoxMgr.xcptToString          = types.MethodType(_xcptToString,        self.oVBoxMgr);
         if not hasattr(self.oVBoxMgr, 'getEnumValueName'):
+            import types;
             self.oVBoxMgr.getEnumValueName      = types.MethodType(_getEnumValueName,    self.oVBoxMgr);
 
 
