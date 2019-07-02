@@ -60,13 +60,17 @@ class UnattendedVm(vboxtestvms.BaseTestVm):
 
     ## @name VM option flags (OR together).
     ## @{
-    kfIdeIrqDelay           = 0x1;
-    kfUbuntuNewAmdBug       = 0x2;
-    kfNoWin81Paravirt       = 0x4;
+    kfUbuntuAvx2Crash       = 0x0001; ## < Disables AVX2 as ubuntu 16.04 think it means AVX512 is available and compiz crashes.
+    kfIdeIrqDelay           = 0x1000;
+    kfUbuntuNewAmdBug       = 0x2000;
+    kfNoWin81Paravirt       = 0x4000;
     ## @}
 
+    ## kfUbuntuAvx2Crash: Extra data that disables AVX2.
+    kasUbuntuAvx2Crash = [ '/CPUM/IsaExts/AVX2:0', ];
+
     ## IRQ delay extra data config for win2k VMs.
-    kasIdeIrqDelay   = [ 'VBoxInternal/Devices/piix3ide/0/Config/IRQDelay:1', ];
+    kasIdeIrqDelay     = [ 'VBoxInternal/Devices/piix3ide/0/Config/IRQDelay:1', ];
 
     def __init__(self, oSet, sVmName, sKind, sInstallIso, fFlags = 0):
         vboxtestvms.BaseTestVm.__init__(self, sVmName, oSet = oSet, sKind = sKind,
@@ -80,8 +84,10 @@ class UnattendedVm(vboxtestvms.BaseTestVm):
         self.fOptPae                = None;
         self.fOptInstallAdditions   = False;
         self.asOptExtraData         = [];
+        if fFlags & self.kfUbuntuAvx2Crash:
+            self.asOptExtraData    += self.kasUbuntuAvx2Crash;
         if fFlags & self.kfIdeIrqDelay:
-            self.asOptExtraData     = self.kasIdeIrqDelay;
+            self.asOptExtraData    += self.kasIdeIrqDelay;
 
     def _unattendedConfigure(self, oIUnattended, oTestDrv): # type: (Any, vbox.TestDriver) -> bool
         """
@@ -390,7 +396,10 @@ class tdGuestOsInstTest1(vbox.TestDriver):
             # Windows7 RTM:
             UnattendedVm(oSet, 'tst-w7-32', 'Windows7',     '6.0/uaisos/en_windows_7_enterprise_x86_dvd_x15-70745.iso'), # ~5.7GiB
             UnattendedVm(oSet, 'tst-w7-64', 'Windows7_64',  '6.0/uaisos/en_windows_7_enterprise_x64_dvd_x15-70749.iso'), # ~10GiB
-            UnattendedVm(oSet, 'tst-ubuntu-16.04-64', 'Ubuntu_64', '6.0/uaisos/ubuntu-16.04-desktop-amd64.iso'),
+            ## @todo 15.10 fails with grub install error.
+            #UnattendedVm(oSet, 'tst-ubuntu-15.10-64', 'Ubuntu_64', '6.0/uaisos/ubuntu-15.10-desktop-amd64.iso'),
+            UnattendedVm(oSet, 'tst-ubuntu-16.04-64', 'Ubuntu_64', '6.0/uaisos/ubuntu-16.04-desktop-amd64.iso',  # ~4.8GiB
+                         UnattendedVm.kfUbuntuAvx2Crash),
             UnattendedVm(oSet, 'tst-ubuntu-16.10-64', 'Ubuntu_64', '6.0/uaisos/ubuntu-16.10-desktop-amd64.iso'), # ~5.1GiB
             UnattendedVm(oSet, 'tst-ubuntu-17.04-64', 'Ubuntu_64', '6.0/uaisos/ubuntu-17.04-desktop-amd64.iso'), # ~4.6GiB
             ## @todo ubuntu 17.10, 18.04 & 18.10 do not work.  They misses all the the build tools (make, gcc, perl, ++)
