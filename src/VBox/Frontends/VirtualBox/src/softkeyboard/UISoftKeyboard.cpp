@@ -420,7 +420,7 @@ public:
     const QUuid &physicalLayoutUuid() const;
 
     void setKeyCapMap(const QMap<int, KeyCaptions> &keyCapMap);
-    QMap<int, KeyCaptions> &keyCapMap();
+    //QMap<int, KeyCaptions> &keyCapMap();
     const QMap<int, KeyCaptions> &keyCapMap() const;
     bool operator==(const UISoftKeyboardLayout &otherLayout);
 
@@ -1611,11 +1611,6 @@ void UISoftKeyboardLayout::setKeyCapMap(const QMap<int, KeyCaptions> &keyCapMap)
     m_keyCapMap = keyCapMap;
 }
 
-QMap<int, KeyCaptions> &UISoftKeyboardLayout::keyCapMap()
-{
-    return m_keyCapMap;
-}
-
 const QMap<int, KeyCaptions> &UISoftKeyboardLayout::keyCapMap() const
 {
     return m_keyCapMap;
@@ -1661,6 +1656,7 @@ const QString UISoftKeyboardLayout::shiftCaption(int iKeyPosition) const
 void UISoftKeyboardLayout::setShiftCaption(int iKeyPosition, const QString &strShiftCaption)
 {
     m_keyCapMap[iKeyPosition].m_strShift = strShiftCaption;
+    m_keyCapMap[iKeyPosition].m_strShift.replace("\\n", "\n");
 }
 
 const QString UISoftKeyboardLayout::altGrCaption(int iKeyPosition) const
@@ -1673,6 +1669,7 @@ const QString UISoftKeyboardLayout::altGrCaption(int iKeyPosition) const
 void UISoftKeyboardLayout::setAltGrCaption(int iKeyPosition, const QString &strAltGrCaption)
 {
     m_keyCapMap[iKeyPosition].m_strAltGr = strAltGrCaption;
+    m_keyCapMap[iKeyPosition].m_strAltGr.replace("\\n", "\n");
 }
 
 const QString UISoftKeyboardLayout::shiftAltGrCaption(int iKeyPosition) const
@@ -1685,6 +1682,7 @@ const QString UISoftKeyboardLayout::shiftAltGrCaption(int iKeyPosition) const
 void UISoftKeyboardLayout::setShiftAltGrCaption(int iKeyPosition, const QString &strShiftAltGrCaption)
 {
     m_keyCapMap[iKeyPosition].m_strShiftAltGr = strShiftAltGrCaption;
+    m_keyCapMap[iKeyPosition].m_strShiftAltGr.replace("\\n", "\n");
 }
 
 const KeyCaptions UISoftKeyboardLayout::keyCaptions(int iKeyPosition) const
@@ -1726,8 +1724,21 @@ void UISoftKeyboardLayout::drawTextInRect(int iKeyPosition, const QRect &keyGeom
         QFontMetrics fontMetrics = painter.fontMetrics();
         int iMargin = 0.25 * fontMetrics.width('X');
 
-        int iTextWidth = 2 * iMargin + qMax(fontMetrics.width(strTopleftString) + fontMetrics.width(strShiftAltGrCaption),
-                                            fontMetrics.width(strBottomleftString) + fontMetrics.width(strAltGrCaption));
+        int iTopWidth = 0;
+
+        QStringList strList;
+        strList << strTopleftString.split("\n", QString::SkipEmptyParts)
+                << strShiftAltGrCaption.split("\n", QString::SkipEmptyParts);
+        foreach (const QString &strPart, strList)
+            iTopWidth = qMax(iTopWidth, fontMetrics.width(strPart));
+        strList.clear();
+        strList << strBottomleftString.split("\n", QString::SkipEmptyParts)
+                << strAltGrCaption.split("\n", QString::SkipEmptyParts);
+
+        int iBottomWidth = 0;
+        foreach (const QString &strPart, strList)
+            iBottomWidth = qMax(iBottomWidth, fontMetrics.width(strPart));
+        int iTextWidth =  2 * iMargin + qMax(iTopWidth, iBottomWidth);
         int iTextHeight = 2 * iMargin + 2 * fontMetrics.height();
 
         if (iTextWidth >= keyGeometry.width() || iTextHeight >= keyGeometry.height())
@@ -1749,15 +1760,6 @@ void UISoftKeyboardLayout::drawTextInRect(int iKeyPosition, const QRect &keyGeom
 
     painter.drawText(textRect, Qt::AlignLeft | Qt::AlignTop, strTopleftString);
     painter.drawText(textRect, Qt::AlignLeft | Qt::AlignBottom, strBottomleftString);
-
-
-    // if (!strShiftCaption.isEmpty() && !strBaseCaption.isEmpty())
-    // {
-    //     painter.drawText(textRect, Qt::AlignLeft | Qt::AlignTop, strShiftCaption);
-    //     painter.drawText(textRect, Qt::AlignLeft | Qt::AlignBottom, strBaseCaption);
-    // }
-    // else
-    //     painter.drawText(textRect, Qt::AlignLeft | Qt::AlignTop, strBaseCaption);
 
     painter.drawText(textRect, Qt::AlignRight | Qt::AlignTop, strShiftAltGrCaption);
     painter.drawText(textRect, Qt::AlignRight | Qt::AlignBottom, strAltGrCaption);
@@ -2957,13 +2959,25 @@ void  UIKeyboardLayoutReader::parseKey()
     while (m_xmlReader.readNextStartElement())
     {
         if (m_xmlReader.name() == "basecaption")
+        {
             keyCaptions.m_strBase = m_xmlReader.readElementText();
+            keyCaptions.m_strBase.replace("\\n", "\n");
+        }
         else if (m_xmlReader.name() == "shiftcaption")
+        {
             keyCaptions.m_strShift = m_xmlReader.readElementText();
+            keyCaptions.m_strShift.replace("\\n", "\n");
+        }
         else if (m_xmlReader.name() == "altgrcaption")
+        {
             keyCaptions.m_strAltGr = m_xmlReader.readElementText();
+            keyCaptions.m_strAltGr.replace("\\n", "\n");
+        }
         else if (m_xmlReader.name() == "shiftaltgrcaption")
+        {
             keyCaptions.m_strShiftAltGr = m_xmlReader.readElementText();
+            keyCaptions.m_strShiftAltGr.replace("\\n", "\n");
+        }
         else if (m_xmlReader.name() == "position")
             iKeyPosition = m_xmlReader.readElementText().toInt();
         else

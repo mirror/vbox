@@ -103,14 +103,14 @@
     </key>
     <key>
         <position>125</position>
-        <basecaption>Scroll Lock</basecaption>
+        <basecaption>Scroll\nLock</basecaption>
         <shiftcaption></shiftcaption>
         <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>126</position>
-        <basecaption>Pause Break</basecaption>
+        <basecaption>Pause\nBreak</basecaption>
         <shiftcaption></shiftcaption>
         <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
@@ -229,14 +229,14 @@
     </key>
     <key>
         <position>85</position>
-        <basecaption>Page Up</basecaption>
+        <basecaption>Page\nUp</basecaption>
         <shiftcaption></shiftcaption>
         <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>90</position>
-        <basecaption>Num Lock</basecaption>
+        <basecaption>Num\nLock</basecaption>
         <shiftcaption></shiftcaption>
         <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
@@ -376,7 +376,7 @@
     </key>
     <key>
         <position>86</position>
-        <basecaption>Page Down</basecaption>
+        <basecaption>Page\nDown</basecaption>
         <shiftcaption></shiftcaption>
         <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
