@@ -61,6 +61,7 @@
 # ifdef VBOX_WITH_NESTED_HWVIRT_SVM
 #  define HMSVM_NESTED_EXITCODE_STAM_COUNTER_INC(u64ExitCode) do { \
         STAM_COUNTER_INC(&pVCpu->hm.s.StatExitAll); \
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatNestedExitAll); \
         if ((u64ExitCode) == SVM_EXIT_NPF) \
             STAM_COUNTER_INC(&pVCpu->hm.s.StatNestedExitReasonNpf); \
         else \
@@ -4259,6 +4260,7 @@ static int hmR0SvmCheckForceFlags(PVMCPU pVCpu)
         if (   VM_FF_IS_SET(pVM, VM_FF_REQUEST)
             || VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_REQUEST))
         {
+            STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchVmReq);
             Log4Func(("Pending VM request forcing us back to ring-3\n"));
             return VINF_EM_PENDING_REQUEST;
         }
@@ -4266,6 +4268,7 @@ static int hmR0SvmCheckForceFlags(PVMCPU pVCpu)
         /* Pending PGM pool flushes. */
         if (VM_FF_IS_SET(pVM, VM_FF_PGM_POOL_FLUSH_PENDING))
         {
+            STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchPgmPoolFlush);
             Log4Func(("PGM pool flush pending forcing us back to ring-3\n"));
             return VINF_PGM_POOL_FLUSH_PENDING;
         }
@@ -4273,6 +4276,7 @@ static int hmR0SvmCheckForceFlags(PVMCPU pVCpu)
         /* Pending DMA requests. */
         if (VM_FF_IS_SET(pVM, VM_FF_PDM_DMA))
         {
+            STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchDma);
             Log4Func(("Pending DMA request forcing us back to ring-3\n"));
             return VINF_EM_RAW_TO_R3;
         }
@@ -5066,6 +5070,8 @@ static int hmR0SvmRunGuestCodeNested(PVMCPU pVCpu, uint32_t *pcLoops)
             rc = VINF_EM_RAW_INTERRUPT;
             break;
         }
+        /** @todo NSTSVM: Add stat for StatSwitchNstGstVmexit. Re-arrange the above code to
+         *        be accurate when doing so, see the corresponding VT-x code. */
 
         /** @todo handle single-stepping   */
     }
