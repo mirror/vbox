@@ -3865,7 +3865,7 @@ DECLINLINE(void) iemVmxVirtApicSetPendingWrite(PVMCPU pVCpu, uint16_t offApic)
     pVCpu->cpum.GstCtx.hwvirt.vmx.offVirtApicWrite = offApic;
 
     /*
-     * Signal that we need to perform virtual-APIC write emulation (TPR/PPR/EOI/Self-IPI
+     * Flag that we need to perform virtual-APIC write emulation (TPR/PPR/EOI/Self-IPI
      * virtualization or APIC-write emulation).
      */
     if (!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_APIC_WRITE))
