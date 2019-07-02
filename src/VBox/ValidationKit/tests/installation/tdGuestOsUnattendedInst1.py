@@ -388,10 +388,17 @@ class tdGuestOsInstTest1(vbox.TestDriver):
         oSet = vboxtestvms.TestVmSet(self.oTestVmManager, fIgnoreSkippedVm = True);
         oSet.aoTestVms.extend([
             # Windows7 RTM:
-            UnattendedVm(oSet, 'tst-w7-32', 'Windows7',     '6.0/uaisos/en_windows_7_enterprise_x86_dvd_x15-70745.iso'), # 5.7GiB
-            UnattendedVm(oSet, 'tst-w7-64', 'Windows7_64',  '6.0/uaisos/en_windows_7_enterprise_x64_dvd_x15-70749.iso'), # 10GiB
+            UnattendedVm(oSet, 'tst-w7-32', 'Windows7',     '6.0/uaisos/en_windows_7_enterprise_x86_dvd_x15-70745.iso'), # ~5.7GiB
+            UnattendedVm(oSet, 'tst-w7-64', 'Windows7_64',  '6.0/uaisos/en_windows_7_enterprise_x64_dvd_x15-70749.iso'), # ~10GiB
             UnattendedVm(oSet, 'tst-ubuntu-16.04-64', 'Ubuntu_64', '6.0/uaisos/ubuntu-16.04-desktop-amd64.iso'),
-            #UnattendedVm(oSet, 'tst-ubuntu-18.04-64', 'Ubuntu_64', '6.0/uaisos/ubuntu-18.04-desktop-amd64.iso'), # >=5.7GiB
+            UnattendedVm(oSet, 'tst-ubuntu-16.10-64', 'Ubuntu_64', '6.0/uaisos/ubuntu-16.10-desktop-amd64.iso'), # ~5.1GiB
+            UnattendedVm(oSet, 'tst-ubuntu-17.04-64', 'Ubuntu_64', '6.0/uaisos/ubuntu-17.04-desktop-amd64.iso'), # ~4.6GiB
+            ## @todo ubuntu 17.10, 18.04 & 18.10 do not work.  They misses all the the build tools (make, gcc, perl, ++)
+            ##       and has signed kmods:
+            ## @todo Mark these as no-install-additions for the time being?
+            #UnattendedVm(oSet, 'tst-ubuntu-17.10-64', 'Ubuntu_64', '6.0/uaisos/ubuntu-17.10-desktop-amd64.iso'), # >4.0Gib
+            #UnattendedVm(oSet, 'tst-ubuntu-18.04-64', 'Ubuntu_64', '6.0/uaisos/ubuntu-18.04-desktop-amd64.iso'), # >5.7GiB
+            #UnattendedVm(oSet, 'tst-ubuntu-18.10-64', 'Ubuntu_64', '6.0/uaisos/ubuntu-18.10-desktop-amd64.iso'),
         ]);
         self.oTestVmSet = oSet;
 
