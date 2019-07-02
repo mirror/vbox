@@ -1293,7 +1293,7 @@ static int hmR0VmxClearShadowVmcs(PVMXVMCSINFO pVmcsInfo)
 
 
 /**
- * Switches the current VMCS to the one specified.
+ * Switches from and to the specified VMCSes.
  *
  * @returns VBox status code.
  * @param   pVmcsInfoFrom   The VMCS info. object we are switching from.
@@ -1343,6 +1343,65 @@ static int hmR0VmxSwitchVmcs(PVMXVMCSINFO pVmcsInfoFrom, PVMXVMCSINFO pVmcsInfoT
      * Finally, load the VMCS we are switching to.
      */
     return hmR0VmxLoadVmcs(pVmcsInfoTo);
+}
+
+
+/**
+ * Switches between the guest VMCS and the nested-guest VMCS as specified by the
+ * caller.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu                   The cross context virtual CPU structure.
+ * @param   fSwitchToNstGstVmcs     Whether to switch to the nested-guest VMCS (pass
+ *                                  true) or guest VMCS (pass false).
+ */
+static int hmR0VmxSwitchToGstOrNstGstVmcs(PVMCPU pVCpu, bool fSwitchToNstGstVmcs)
+{
+    /* Ensure we have synced everything from the guest-CPU context to the VMCS before switching. */
+    HMVMX_CPUMCTX_ASSERT(pVCpu, HMVMX_CPUMCTX_EXTRN_ALL);
+
+    PVMXVMCSINFO pVmcsInfoFrom;
+    PVMXVMCSINFO pVmcsInfoTo;
+    if (fSwitchToNstGstVmcs)
+    {
+        pVmcsInfoFrom = &pVCpu->hm.s.vmx.VmcsInfo;
+        pVmcsInfoTo   = &pVCpu->hm.s.vmx.VmcsInfoNstGst;
+    }
+    else
+    {
+        pVmcsInfoFrom = &pVCpu->hm.s.vmx.VmcsInfoNstGst;
+        pVmcsInfoTo   = &pVCpu->hm.s.vmx.VmcsInfo;
+    }
+
+    RTCCUINTREG const fEFlags = ASMIntDisableFlags();
+    int rc = hmR0VmxSwitchVmcs(pVmcsInfoFrom, pVmcsInfoTo);
+    if (RT_SUCCESS(rc))
+    {
+        pVCpu->hm.s.vmx.fSwitchedToNstGstVmcs = fSwitchToNstGstVmcs;
+        ASMSetFlags(fEFlags);
+
+        /*
+         * If we are switching to a VMCS that was executed on a different host CPU or was never
+         * executed before, flag that we need to export the host state before executing
+         * guest/nested-guest code using hardware-assisted VMX in addition to exporting the
+         * guest/nested-guest state.
+         */
+        if (pVmcsInfoTo->idHostCpu == RTMpCpuId())
+        { /* likely */ }
+        else
+            ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_HOST_CONTEXT | HM_CHANGED_VMX_HOST_GUEST_SHARED_STATE);
+
+        /*
+         * We use a different VM-exit MSR-store areas for the guest and nested-guest. Hence,
+         * flag that we need to update the host MSR values there. Even if we decide in the
+         * future to share the VM-exit MSR-store area page between the guest and nested-guest,
+         * if its content differs, we would have to update the host MSRs anyway.
+         */
+        pVCpu->hm.s.vmx.fUpdatedHostAutoMsrs = false;
+    }
+    else
+        ASMSetFlags(fEFlags);
+    return rc;
 }
 #endif /* VBOX_WITH_NESTED_HWVIRT_VMX */
 
@@ -1726,6 +1785,7 @@ static void hmR0VmxInitVmcsInfo(PVMXVMCSINFO pVmcsInfo)
     pVmcsInfo->HCPhysVirtApic      = NIL_RTHCPHYS;
     pVmcsInfo->HCPhysEPTP          = NIL_RTHCPHYS;
     pVmcsInfo->u64VmcsLinkPtr      = NIL_RTHCPHYS;
+    pVmcsInfo->idHostCpu           = NIL_RTCPUID;
 }
 
 
@@ -6527,8 +6587,10 @@ static int hmR0VmxExportGuestSegRegsXdtr(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransie
             if (   pVmcsInfo->fWasInRealMode
                 && PGMGetGuestMode(pVCpu) >= PGMMODE_PROTECTED)
             {
-                /* Signal that the recompiler must flush its code-cache as the guest -may- rewrite code it will later execute
-                   in real-mode (e.g. OpenBSD 4.0) */
+                /*
+                 * Notify the recompiler must flush its code-cache as the guest -may-
+                 * rewrite code it in real-mode (e.g. OpenBSD 4.0).
+                 */
                 REMFlushTBs(pVM);
                 Log4Func(("Switch to protected mode detected!\n"));
                 pVmcsInfo->fWasInRealMode = false;
@@ -9179,6 +9241,12 @@ static int hmR0VmxLeave(PVMCPU pVCpu, bool fImportState)
         rc = hmR0VmxClearShadowVmcs(pVmcsInfo);
         AssertRCReturn(rc, rc);
     }
+
+    /*
+     * Flag that we need to re-import the host state if we switch to this VMCS before
+     * executing guest or nested-guest code.
+     */
+    pVmcsInfo->idHostCpu = NIL_RTCPUID;
 #endif
 
     Log4Func(("Cleared Vmcs. HostCpuId=%u\n", idCpu));
@@ -11564,8 +11632,10 @@ static void hmR0VmxPreRunGuestCommitted(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransien
     VMCPU_ASSERT_STATE(pVCpu, VMCPUSTATE_STARTED_HM);
     VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC);
 
-    PVM          pVM       = pVCpu->CTX_SUFF(pVM);
-    PVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
+    PVM          pVM           = pVCpu->CTX_SUFF(pVM);
+    PVMXVMCSINFO pVmcsInfo     = pVmxTransient->pVmcsInfo;
+    PHMPHYSCPU   pHostCpu      = hmR0GetCurrentCpu();
+    RTCPUID const idCurrentCpu = pHostCpu->idCpu;
 
     if (!CPUMIsGuestFPUStateActive(pVCpu))
     {
@@ -11641,8 +11711,6 @@ static void hmR0VmxPreRunGuestCommitted(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransien
      * Evaluate if we need to intercept guest RDTSC/P accesses. Set up the
      * VMX-preemption timer based on the next virtual sync clock deadline.
      */
-    PHMPHYSCPU pHostCpu        = hmR0GetCurrentCpu();
-    RTCPUID const idCurrentCpu = pHostCpu->idCpu;
     if (   !pVmxTransient->fUpdatedTscOffsettingAndPreemptTimer
         || idCurrentCpu != pVCpu->hm.s.idLastCpu)
     {
@@ -11654,6 +11722,7 @@ static void hmR0VmxPreRunGuestCommitted(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransien
     hmR0VmxFlushTaggedTlb(pHostCpu, pVCpu, pVmcsInfo);          /* Invalidate the appropriate guest entries from the TLB. */
     Assert(idCurrentCpu == pVCpu->hm.s.idLastCpu);
     pVCpu->hm.s.vmx.LastError.idCurrentCpu = idCurrentCpu;      /* Update the error reporting info. with the current host CPU. */
+    pVmcsInfo->idHostCpu = idCurrentCpu;                        /* Update the CPU for which we updated host-state in this VMCS. */
 
     STAM_PROFILE_ADV_STOP_START(&pVCpu->hm.s.StatEntry, &pVCpu->hm.s.StatInGC, x);
 
@@ -11885,37 +11954,18 @@ static VBOXSTRICTRC hmR0VmxRunGuestCodeNormal(PVMCPU pVCpu, uint32_t *pcLoops)
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
     /*
-     * Switch back from the nested-guest VMCS as we may have transitioned into executing the
-     * guest after a nested-guest VM-exit without leaving ring-0. Otherwise, if we came from
-     * ring-3 we would have loaded the guest VMCS while entering the VMX ring-0 session.
+     * Switch to the guest VMCS as we may have transitioned from executing the nested-guest
+     * without leaving ring-0. Otherwise, if we came from ring-3 we would have loaded the
+     * guest VMCS while entering the VMX ring-0 session.
      */
     if (pVCpu->hm.s.vmx.fSwitchedToNstGstVmcs)
     {
-        /*
-         * Ensure we have synced everything from the nested-guest VMCS and also flag that we
-         * need to export the full guest-CPU context to the guest VMCS.
-         */
-        HMVMX_CPUMCTX_ASSERT(pVCpu, HMVMX_CPUMCTX_EXTRN_ALL);
-        ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_HOST_CONTEXT | HM_CHANGED_ALL_GUEST);
-
-        RTCCUINTREG const fEFlags = ASMIntDisableFlags();
-        int rc = hmR0VmxSwitchVmcs(&pVCpu->hm.s.vmx.VmcsInfoNstGst, &pVCpu->hm.s.vmx.VmcsInfo);
-        if (RT_LIKELY(rc == VINF_SUCCESS))
-        {
-            pVCpu->hm.s.vmx.fSwitchedToNstGstVmcs = false;
-            ASMSetFlags(fEFlags);
-
-            /*
-             * We use a different VM-exit MSR-store area for the guest. Hence, flag that
-             * we need to update the host MSR values there. Even if we decide in the future
-             * to share the VM-exit MSR-store area page with the guest, if its content
-             * differs, we would have to update the host MSRs anyway.
-             */
-            pVCpu->hm.s.vmx.fUpdatedHostAutoMsrs  = false;
-        }
+        int rc = hmR0VmxSwitchToGstOrNstGstVmcs(pVCpu, false /* fSwitchToNstGstVmcs */);
+        if (RT_SUCCESS(rc))
+        { /* likely */ }
         else
         {
-            ASMSetFlags(fEFlags);
+            LogRelFunc(("Failed to switch to the guest VMCS. rc=%Rrc\n", rc));
             return rc;
         }
     }
@@ -12016,37 +12066,18 @@ static VBOXSTRICTRC hmR0VmxRunGuestCodeNested(PVMCPU pVCpu, uint32_t *pcLoops)
     Assert(CPUMIsGuestInVmxNonRootMode(&pVCpu->cpum.GstCtx));
 
     /*
-     * Switch to the nested-guest VMCS as we may have transitioned into executing the
+     * Switch to the nested-guest VMCS as we may have transitioned to executing the
      * nested-guest without leaving ring-0. Otherwise, if we came from ring-3 we would have
      * loaded the nested-guest VMCS while entering the VMX ring-0 session.
      */
     if (!pVCpu->hm.s.vmx.fSwitchedToNstGstVmcs)
     {
-        /*
-         * Ensure we have synced everything from the guest VMCS and also flag that we need to
-         * export the full (nested) guest-CPU context to the nested-guest VMCS.
-         */
-        HMVMX_CPUMCTX_ASSERT(pVCpu, HMVMX_CPUMCTX_EXTRN_ALL);
-        ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_HOST_CONTEXT | HM_CHANGED_ALL_GUEST);
-
-        RTCCUINTREG const fEFlags = ASMIntDisableFlags();
-        int rc = hmR0VmxSwitchVmcs(&pVCpu->hm.s.vmx.VmcsInfo, &pVCpu->hm.s.vmx.VmcsInfoNstGst);
-        if (RT_LIKELY(rc == VINF_SUCCESS))
-        {
-            pVCpu->hm.s.vmx.fSwitchedToNstGstVmcs = true;
-            ASMSetFlags(fEFlags);
-
-            /*
-             * We use a different VM-exit MSR-store area for the nested-guest. Hence, flag
-             * that we need to update the host MSR values there. Even if we decide in the
-             * future to share the VM-exit MSR-store area page with the guest, if its content
-             * differs, we would have to update the host MSRs anyway.
-             */
-            pVCpu->hm.s.vmx.fUpdatedHostAutoMsrs  = false;
-        }
+        int rc = hmR0VmxSwitchToGstOrNstGstVmcs(pVCpu, true /* fSwitchToNstGstVmcs */);
+        if (RT_SUCCESS(rc))
+        { /* likely */ }
         else
         {
-            ASMSetFlags(fEFlags);
+            LogRelFunc(("Failed to switch to the guest VMCS. rc=%Rrc\n", rc));
             return rc;
         }
     }
@@ -16725,10 +16756,9 @@ HMVMX_EXIT_DECL hmR0VmxExitVmwrite(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
 
     /*
-     * Although we should not get VMWRITE VM-exits for shadow VMCS fields, since
-     * our HM hook gets invoked when IEM's VMWRITE instruction emulation modifies
-     * the current VMCS signals re-loading the entire shadow VMCS, we should also
-     * save the entire shadow VMCS here.
+     * Although we should not get VMWRITE VM-exits for shadow VMCS fields, since our HM hook
+     * gets invoked when IEM's VMWRITE instruction emulation modifies the current VMCS and it
+     * flags re-loading the entire shadow VMCS, we should save the entire shadow VMCS here.
      */
     int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
     rc    |= hmR0VmxImportGuestState(pVCpu, pVmxTransient->pVmcsInfo, CPUMCTX_EXTRN_RSP | CPUMCTX_EXTRN_SREG_MASK
