@@ -442,6 +442,7 @@ public:
     QUuid uid() const;
 
     void drawText(int iKeyPosition, const QRect &keyGeometry, QPainter &painter);
+    void drawTextInRect(int iKeyPosition, const QRect &keyGeometry, QPainter &painter);
 
 private:
 
@@ -1647,6 +1648,7 @@ const QString UISoftKeyboardLayout::baseCaption(int iKeyPosition) const
 void UISoftKeyboardLayout::setBaseCaption(int iKeyPosition, const QString &strBaseCaption)
 {
     m_keyCapMap[iKeyPosition].m_strBase = strBaseCaption;
+    m_keyCapMap[iKeyPosition].m_strBase.replace("\\n", "\n");
 }
 
 const QString UISoftKeyboardLayout::shiftCaption(int iKeyPosition) const
@@ -1700,6 +1702,66 @@ void UISoftKeyboardLayout::setUid(const QUuid &uid)
 QUuid UISoftKeyboardLayout::uid() const
 {
     return m_uid;
+}
+
+void UISoftKeyboardLayout::drawTextInRect(int iKeyPosition, const QRect &keyGeometry, QPainter &painter)
+{
+    QFont painterFont(painter.font());
+    int iFontSize = 25;
+
+    const QString &strBaseCaption = baseCaption(iKeyPosition);
+    const QString &strShiftCaption = shiftCaption(iKeyPosition);
+
+    const QString &strShiftAltGrCaption = shiftAltGrCaption(iKeyPosition);
+    const QString &strAltGrCaption = altGrCaption(iKeyPosition);
+
+    const QString &strTopleftString = !strShiftCaption.isEmpty() ? strShiftCaption : strBaseCaption;
+    const QString &strBottomleftString = !strShiftCaption.isEmpty() ? strBaseCaption : QString();
+
+    do
+    {
+        painterFont.setPixelSize(iFontSize);
+        painterFont.setBold(true);
+        painter.setFont(painterFont);
+        QFontMetrics fontMetrics = painter.fontMetrics();
+        int iMargin = 0.25 * fontMetrics.width('X');
+
+        int iTextWidth = 2 * iMargin + qMax(fontMetrics.width(strTopleftString) + fontMetrics.width(strShiftAltGrCaption),
+                                            fontMetrics.width(strBottomleftString) + fontMetrics.width(strAltGrCaption));
+        int iTextHeight = 2 * iMargin + 2 * fontMetrics.height();
+
+        if (iTextWidth >= keyGeometry.width() || iTextHeight >= keyGeometry.height())
+            --iFontSize;
+        else
+            break;
+
+    }while(iFontSize > 1);
+
+
+    QFontMetrics fontMetrics = painter.fontMetrics();
+
+    int iMargin = 0.25 * fontMetrics.width('X');
+
+    QRect textRect(iMargin, iMargin,
+                   keyGeometry.width() - 2 * iMargin,
+                   keyGeometry.height() - 2 * iMargin);
+
+
+    painter.drawText(textRect, Qt::AlignLeft | Qt::AlignTop, strTopleftString);
+    painter.drawText(textRect, Qt::AlignLeft | Qt::AlignBottom, strBottomleftString);
+
+
+    // if (!strShiftCaption.isEmpty() && !strBaseCaption.isEmpty())
+    // {
+    //     painter.drawText(textRect, Qt::AlignLeft | Qt::AlignTop, strShiftCaption);
+    //     painter.drawText(textRect, Qt::AlignLeft | Qt::AlignBottom, strBaseCaption);
+    // }
+    // else
+    //     painter.drawText(textRect, Qt::AlignLeft | Qt::AlignTop, strBaseCaption);
+
+    painter.drawText(textRect, Qt::AlignRight | Qt::AlignTop, strShiftAltGrCaption);
+    painter.drawText(textRect, Qt::AlignRight | Qt::AlignBottom, strAltGrCaption);
+
 }
 
 void UISoftKeyboardLayout::drawText(int iKeyPosition, const QRect &keyGeometry, QPainter &painter)
@@ -1894,7 +1956,8 @@ void UISoftKeyboardWidget::paintEvent(QPaintEvent *pEvent) /* override */
 
             painter.drawPolygon(key.polygon());
 
-            m_pCurrentKeyboardLayout->drawText(key.position(), key.keyGeometry(), painter);
+            //m_pCurrentKeyboardLayout->drawText(key.position(), key.keyGeometry(), painter);
+            m_pCurrentKeyboardLayout->drawTextInRect(key.position(), key.keyGeometry(), painter);
 
             if (key.type() != UIKeyType_Ordinary)
             {
