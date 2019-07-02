@@ -26075,6 +26075,26 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
     </method>
 
+    <method name="exportVM">
+      <desc>
+        Export local VM into the OCI cloud, creating a custom image.
+      </desc>
+      <param name="description" type="IVirtualSystemDescription" dir="in">
+        <desc>
+          Virtual system description object which describes the
+          machine and all required parameters.
+        </desc>
+      </param>
+      <param name="progress" type="IProgress" dir="in">
+        <desc>
+          Progress object to track the operation completion.
+        </desc>
+      </param>
+      <param name="virtualBox" type="IVirtualBox" dir="in">
+        <desc>Reference to the server-side API root object.</desc>
+      </param>
+    </method>
+
     <method name="getLaunchDescriptionForm">
       <param name="description" type="IVirtualSystemDescription" dir="in">
         <desc>
