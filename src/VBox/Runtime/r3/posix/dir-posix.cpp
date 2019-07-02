@@ -184,7 +184,7 @@ RTDECL(int) RTDirRemove(const char *pszPath)
                 size_t      cch     = strlen(pszNativePath);
                 if (cch > 2 && pszNativePath[cch - 1] == '/')
                 {
-                    pszStat = pszFree = RTMemTmpAlloc(cch);
+                    pszStat = pszFree = (char *)RTMemTmpAlloc(cch);
                     memcpy(pszFree, pszNativePath, cch);
                     do
                         pszFree[--cch] = '\0';
