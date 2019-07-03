@@ -354,6 +354,9 @@ create_udev_rule()
         ## @todo 60-vboxadd.rules -> 60-vboxguest.rules ?
         echo "KERNEL=${udev_fix}\"vboxguest\", NAME=\"vboxguest\", OWNER=\"vboxadd\", MODE=\"0660\"" > /etc/udev/rules.d/60-vboxadd.rules
         echo "KERNEL=${udev_fix}\"vboxuser\", NAME=\"vboxuser\", OWNER=\"vboxadd\", MODE=\"0666\"" >> /etc/udev/rules.d/60-vboxadd.rules
+        # Make sure the new rule is noticed.
+        udevadm control --reload 2>&1 || true
+        udevcontrol reload_rules 2>&1 || true
     fi
 }
 
@@ -462,6 +465,8 @@ cleanup()
     fi
     rm -f /sbin/mount.vboxsf 2>/dev/null
     rm -f /etc/udev/rules.d/60-vboxadd.rules 2>/dev/null
+    udevadm control --reload 2>&1 || true
+    udevcontrol reload_rules 2>&1 || true
 }
 
 start()
