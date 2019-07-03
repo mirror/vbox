@@ -385,6 +385,7 @@ namespace UIExtraDataDefs
       * @{ */
         extern const char *GUI_SoftKeyboard_DialogGeometry;
         extern const char *GUI_SoftKeyboard_ColorTheme;
+        extern const char *GUI_SoftKeyboard_SelectedLayout;
     /** @} */
 
     /** @name File Manager options

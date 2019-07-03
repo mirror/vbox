@@ -1,8 +1,7 @@
 <?xml version="1.0"?>
-<!-- https://www.ibm.com/support/knowledgecenter/en/ssw_aix_71/com.ibm.aix.keyboardtechref/doc/kybdtech/Key.htm -->
 <physicallayout defaultHeight="50" defaultWidth="50">
-    <name>102_iso</name>
-    <id>d41a0398-92a0-4ba4-beba-3d91a5dd0e50</id>
+    <name>103_iso</name>
+    <id>a6ee5425-ad96-43e2-96ac-0d148cb73802</id>
     <row>
         <key>
             <position>110</position>
@@ -317,14 +316,14 @@
     </row>
     <row>
         <key>
-            <width>75</width>
-            <type>modifier</type>
             <position>44</position>
+            <width>70</width>
+            <type>modifier</type>
             <scancode>0x2a</scancode>
         </key>
         <key>
             <position>45</position>
-            <scancode>0x35</scancode> <!-- this should be 56 according to micrisift docs. -->
+            <scancode>0x35</scancode>
         </key>
         <key>
             <position>46</position>
@@ -367,8 +366,11 @@
             <scancode>0x35</scancode>
         </key>
         <key>
-            <width>140</width>
-
+            <position>56</position>
+            <scancode>0x73</scancode>
+        </key>
+        <key>
+            <width>90</width>
             <type>modifier</type>
             <position>57</position>
             <scancode>0x36</scancode>
@@ -377,7 +379,6 @@
             <width>80</width>
         </space>
         <key>
-
             <scancodeprefix>0xe0</scancodeprefix>
             <position>83</position>
             <scancode>0x48</scancode>

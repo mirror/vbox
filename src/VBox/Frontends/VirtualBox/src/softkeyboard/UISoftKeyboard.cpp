@@ -239,7 +239,7 @@ public:
 
     UILayoutSelector(QWidget *pParent = 0);
     void setLayoutList(const QStringList &layoutNames, QList<QUuid> layoutIdList);
-    void setCurrentLayout(const QString &strLayoutName);
+    void setCurrentLayout(const QUuid &layoutUid);
     void setCurrentLayoutIsEditable(bool fEditable);
 
 protected:
@@ -420,7 +420,7 @@ public:
     const QUuid &physicalLayoutUuid() const;
 
     void setKeyCapMap(const QMap<int, KeyCaptions> &keyCapMap);
-    //QMap<int, KeyCaptions> &keyCapMap();
+    QMap<int, KeyCaptions> &keyCapMap();
     const QMap<int, KeyCaptions> &keyCapMap() const;
     bool operator==(const UISoftKeyboardLayout &otherLayout);
 
@@ -639,21 +639,13 @@ class UIKeyboardLayoutReader
 
 public:
 
-    bool  parseFile(const QString &strFileName);
-    const QUuid &physicalLayoutUUID() const;
-    const QString &name() const;
-    const QString &nativeName() const;
-    const QMap<int, KeyCaptions> &keyCapMap() const;
+    bool  parseFile(const QString &strFileName, UISoftKeyboardLayout &layout);
 
 private:
 
-    void  parseKey();
+    void  parseKey(QMap<int, KeyCaptions> &keyCapMap);
     QXmlStreamReader m_xmlReader;
     /** Map key is the key position and the value is the captions of the key. */
-    QMap<int, KeyCaptions> m_keyCapMap;
-    QUuid m_physicalLayoutUid;
-    QString m_strName;
-    QString m_strNativeName;
 };
 
 
@@ -1119,23 +1111,31 @@ UILayoutSelector::UILayoutSelector(QWidget *pParent /* = 0 */)
     prepareObjects();
 }
 
-void UILayoutSelector::setCurrentLayout(const QString &strLayoutName)
+void UILayoutSelector::setCurrentLayout(const QUuid &layoutUid)
 {
     if (!m_pLayoutListWidget)
         return;
-    if (strLayoutName.isEmpty())
+    if (layoutUid.isNull())
     {
         m_pLayoutListWidget->selectionModel()->clear();
         return;
     }
-    QList<QListWidgetItem *> items = m_pLayoutListWidget->findItems(strLayoutName, Qt::MatchFixedString |Qt::MatchCaseSensitive);
-    if (items.isEmpty())
+    QListWidgetItem *pFoundItem = 0;
+    for (int i = 0; i < m_pLayoutListWidget->count() && !pFoundItem; ++i)
+    {
+        QListWidgetItem *pItem = m_pLayoutListWidget->item(i);
+        if (!pItem)
+            continue;
+        if (pItem->data(Qt::UserRole).toUuid() == layoutUid)
+            pFoundItem = pItem;
+
+    }
+    if (!pFoundItem)
         return;
-    QListWidgetItem *pItem = items[0];
-    if (!pItem || pItem == m_pLayoutListWidget->currentItem())
+    if (pFoundItem == m_pLayoutListWidget->currentItem())
         return;
     m_pLayoutListWidget->blockSignals(true);
-    m_pLayoutListWidget->setCurrentItem(pItem);
+    m_pLayoutListWidget->setCurrentItem(pFoundItem);
     m_pLayoutListWidget->blockSignals(false);
 }
 
@@ -1611,6 +1611,11 @@ void UISoftKeyboardLayout::setKeyCapMap(const QMap<int, KeyCaptions> &keyCapMap)
     m_keyCapMap = keyCapMap;
 }
 
+QMap<int, KeyCaptions> &UISoftKeyboardLayout::keyCapMap()
+{
+    return m_keyCapMap;
+}
+
 const QMap<int, KeyCaptions> &UISoftKeyboardLayout::keyCapMap() const
 {
     return m_keyCapMap;
@@ -1750,9 +1755,10 @@ void UISoftKeyboardLayout::drawTextInRect(int iKeyPosition, const QRect &keyGeom
 
 
     QFontMetrics fontMetrics = painter.fontMetrics();
-
     int iMargin = 0.25 * fontMetrics.width('X');
-
+#if 0
+    painter.drawText(iMargin, iMargin + fontMetrics.height(), QString::number(iKeyPosition));
+#else
     QRect textRect(iMargin, iMargin,
                    keyGeometry.width() - 2 * iMargin,
                    keyGeometry.height() - 2 * iMargin);
@@ -1763,7 +1769,7 @@ void UISoftKeyboardLayout::drawTextInRect(int iKeyPosition, const QRect &keyGeom
 
     painter.drawText(textRect, Qt::AlignRight | Qt::AlignTop, strShiftAltGrCaption);
     painter.drawText(textRect, Qt::AlignRight | Qt::AlignBottom, strAltGrCaption);
-
+#endif
 }
 
 void UISoftKeyboardLayout::drawText(int iKeyPosition, const QRect &keyGeometry, QPainter &painter)
@@ -2084,6 +2090,7 @@ void UISoftKeyboardWidget::saveCurentLayoutToFile()
     xmlWriter.writeTextElement("name", m_pCurrentKeyboardLayout->name());
     xmlWriter.writeTextElement("nativename", m_pCurrentKeyboardLayout->nativeName());
     xmlWriter.writeTextElement("physicallayoutid", pPhysicalLayout->m_uId.toString());
+    xmlWriter.writeTextElement("id", m_pCurrentKeyboardLayout->uid().toString());
 
     QVector<UISoftKeyboardRow> &rows = pPhysicalLayout->rows();
     for (int i = 0; i < rows.size(); ++i)
@@ -2500,21 +2507,23 @@ bool UISoftKeyboardWidget::loadKeyboardLayout(const QString &strLayoutFileName)
 
     UIKeyboardLayoutReader keyboardLayoutReader;
 
-    if (!keyboardLayoutReader.parseFile(strLayoutFileName))
-        return false;
-
-    UISoftKeyboardPhysicalLayout *pPhysicalLayout = findPhysicalLayout(keyboardLayoutReader.physicalLayoutUUID());
-    /* If no pyhsical layout with the UUID the keyboard layout refers is found then cancel loading the keyboard layout: */
-    if (!pPhysicalLayout)
-        return false;
-
     m_layouts.append(UISoftKeyboardLayout());
     UISoftKeyboardLayout &newLayout = m_layouts.back();
-    newLayout.setPhysicalLayoutUuid(pPhysicalLayout->m_uId);
-    newLayout.setName(keyboardLayoutReader.name());
-    newLayout.setNativeName(keyboardLayoutReader.nativeName());
+
+    if (!keyboardLayoutReader.parseFile(strLayoutFileName, newLayout))
+    {
+        m_layouts.removeLast();
+        return false;
+    }
+
+    UISoftKeyboardPhysicalLayout *pPhysicalLayout = findPhysicalLayout(newLayout.physicalLayoutUuid());
+    /* If no pyhsical layout with the UUID the keyboard layout refers is found then cancel loading the keyboard layout: */
+    if (!pPhysicalLayout)
+    {
+        m_layouts.removeLast();
+        return false;
+    }
     newLayout.setSourceFilePath(strLayoutFileName);
-    newLayout.setKeyCapMap(keyboardLayoutReader.keyCapMap());
     return true;
 }
 
@@ -2540,7 +2549,8 @@ void UISoftKeyboardWidget::loadLayouts()
     QStringList physicalLayoutNames;
     physicalLayoutNames << ":/101_ansi.xml"
                         << ":/102_iso.xml"
-                        << ":/106_japanese.xml";
+                        << ":/106_japanese.xml"
+                        << ":/103_iso.xml";
     foreach (const QString &strName, physicalLayoutNames)
         loadPhysicalLayout(strName);
 
@@ -2552,7 +2562,9 @@ void UISoftKeyboardWidget::loadLayouts()
     keyboardLayoutNames << ":/us_international.xml"
                         << ":/german.xml"
                         << ":/us.xml"
-                        << ":/greek.xml";
+                        << ":/greek.xml"
+                        << ":/japanese.xml"
+                        << ":/brazilian.xml";
 
     foreach (const QString &strName, keyboardLayoutNames)
         loadKeyboardLayout(strName);
@@ -2622,6 +2634,8 @@ UISoftKeyboardLayout *UISoftKeyboardWidget::findLayoutByName(const QString &strN
 
 UISoftKeyboardLayout *UISoftKeyboardWidget::findLayoutByUid(const QUuid &uid)
 {
+    if (uid.isNull())
+        return 0;
     for (int i = 0; i < m_layouts.size(); ++i)
     {
         if (m_layouts[i].uid() == uid)
@@ -2902,7 +2916,7 @@ QVector<QPoint> UIPhysicalLayoutReader::computeKeyVertices(const UISoftKeyboardK
 *   UIKeyboardLayoutReader implementation.                                                                                  *
 *********************************************************************************************************************************/
 
-bool UIKeyboardLayoutReader::parseFile(const QString &strFileName)
+bool UIKeyboardLayoutReader::parseFile(const QString &strFileName, UISoftKeyboardLayout &layout)
 {
     QFile xmlFile(strFileName);
     if (!xmlFile.exists())
@@ -2919,40 +2933,22 @@ bool UIKeyboardLayoutReader::parseFile(const QString &strFileName)
     while (m_xmlReader.readNextStartElement())
     {
         if (m_xmlReader.name() == "key")
-            parseKey();
+            parseKey(layout.keyCapMap());
         else if (m_xmlReader.name() == "name")
-            m_strName = m_xmlReader.readElementText();
+            layout.setName(m_xmlReader.readElementText());
         else if (m_xmlReader.name() == "nativename")
-            m_strNativeName = m_xmlReader.readElementText();
+            layout.setNativeName(m_xmlReader.readElementText());
         else if (m_xmlReader.name() == "physicallayoutid")
-            m_physicalLayoutUid = QUuid(m_xmlReader.readElementText());
+            layout.setPhysicalLayoutUuid(QUuid(m_xmlReader.readElementText()));
+        else if (m_xmlReader.name() == "id")
+            layout.setUid(QUuid(m_xmlReader.readElementText()));
         else
             m_xmlReader.skipCurrentElement();
     }
     return true;
 }
 
-const QUuid &UIKeyboardLayoutReader::physicalLayoutUUID() const
-{
-    return m_physicalLayoutUid;
-}
-
-const QString &UIKeyboardLayoutReader::name() const
-{
-    return m_strName;
-}
-
-const QString &UIKeyboardLayoutReader::nativeName() const
-{
-    return m_strNativeName;
-}
-
-const QMap<int, KeyCaptions> &UIKeyboardLayoutReader::keyCapMap() const
-{
-    return m_keyCapMap;
-}
-
-void  UIKeyboardLayoutReader::parseKey()
+void  UIKeyboardLayoutReader::parseKey(QMap<int, KeyCaptions> &keyCapMap)
 {
     KeyCaptions keyCaptions;
     int iKeyPosition = 0;
@@ -2983,7 +2979,7 @@ void  UIKeyboardLayoutReader::parseKey()
         else
             m_xmlReader.skipCurrentElement();
     }
-    m_keyCapMap.insert(iKeyPosition, keyCaptions);
+    keyCapMap.insert(iKeyPosition, keyCaptions);
 }
 
 
@@ -3372,7 +3368,7 @@ void UISoftKeyboard::sltDeleteLayout()
         m_pKeyboardWidget->deleteCurrentLayout();
     updateLayoutSelectorList();
     if (m_pKeyboardWidget && m_pKeyboardWidget->currentLayout() && m_pLayoutSelector)
-        m_pLayoutSelector->setCurrentLayout(m_pKeyboardWidget->currentLayout()->name());
+        m_pLayoutSelector->setCurrentLayout(m_pKeyboardWidget->currentLayout()->uid());
 }
 
 void UISoftKeyboard::sltStatusBarMessage(const QString &strMessage)
@@ -3496,7 +3492,11 @@ void UISoftKeyboard::saveSettings()
     LogRel2(("GUI: Soft Keyboard: Geometry saved as: Origin=%dx%d, Size=%dx%d\n",
              saveGeometry.x(), saveGeometry.y(), saveGeometry.width(), saveGeometry.height()));
     if (m_pKeyboardWidget)
+    {
         gEDataManager->setSoftKeyboardColorTheme(m_pKeyboardWidget->colorsToStringList());
+        if (m_pKeyboardWidget->currentLayout())
+            gEDataManager->setSoftKeyboardSelectedLayout(m_pKeyboardWidget->currentLayout()->uid());
+    }
 }
 
 void UISoftKeyboard::loadSettings()
@@ -3522,7 +3522,10 @@ void UISoftKeyboard::loadSettings()
              geometry.x(), geometry.y(), geometry.width(), geometry.height()));
     setDialogGeometry(geometry);
     if (m_pKeyboardWidget)
+    {
         m_pKeyboardWidget->colorsFromStringList(gEDataManager->softKeyboardColorTheme());
+        m_pKeyboardWidget->setCurrentLayout(gEDataManager->softKeyboardSelectedLayout());
+    }
 }
 
 void UISoftKeyboard::configure()
@@ -3542,7 +3545,7 @@ void UISoftKeyboard::configure()
     }
     updateLayoutSelectorList();
     if (m_pKeyboardWidget && m_pKeyboardWidget->currentLayout() && m_pLayoutSelector)
-        m_pLayoutSelector->setCurrentLayout(m_pKeyboardWidget->currentLayout()->name());
+        m_pLayoutSelector->setCurrentLayout(m_pKeyboardWidget->currentLayout()->uid());
 }
 
 void UISoftKeyboard::updateStatusBarMessage(const QString &strName)

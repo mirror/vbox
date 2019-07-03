@@ -1,403 +1,404 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <layout>
-    <name>US International</name>
-    <id>3c7b7be7-4d2a-4f65-a21e-208ba2e4ecaf</id>
-    <physicallayoutid>{368efa94-3744-48c5-9d5a-59c2f15fe5ec}</physicallayoutid>
+    <name>Brazilian (ABNT)</name>
+    <nativename>Brasil</nativename>
+    <id>e207bfc4-2a6f-4d9c-a1ef-8e80841dadf2</id>
+    <physicallayoutid>{a6ee5425-ad96-43e2-96ac-0d148cb73802}</physicallayoutid>
     <key>
         <position>110</position>
-        <basecaption>Esc</basecaption>
+        <basecaption></basecaption>
         <shiftcaption></shiftcaption>
         <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>112</position>
-        <basecaption>F1</basecaption>
+        <basecaption></basecaption>
         <shiftcaption></shiftcaption>
         <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>113</position>
-        <basecaption>F2</basecaption>
+        <basecaption></basecaption>
         <shiftcaption></shiftcaption>
         <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>114</position>
-        <basecaption>F3</basecaption>
+        <basecaption></basecaption>
         <shiftcaption></shiftcaption>
         <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>115</position>
-        <basecaption>F4</basecaption>
+        <basecaption></basecaption>
         <shiftcaption></shiftcaption>
         <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>116</position>
-        <basecaption>F5</basecaption>
+        <basecaption></basecaption>
         <shiftcaption></shiftcaption>
         <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>117</position>
-        <basecaption>F6</basecaption>
+        <basecaption></basecaption>
         <shiftcaption></shiftcaption>
         <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>188</position>
-        <basecaption>F7</basecaption>
+        <basecaption></basecaption>
         <shiftcaption></shiftcaption>
         <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>119</position>
-        <basecaption>F8</basecaption>
+        <basecaption></basecaption>
         <shiftcaption></shiftcaption>
         <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>120</position>
-        <basecaption>F9</basecaption>
+        <basecaption></basecaption>
         <shiftcaption></shiftcaption>
         <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>121</position>
-        <basecaption>F10</basecaption>
+        <basecaption></basecaption>
         <shiftcaption></shiftcaption>
         <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>122</position>
-        <basecaption>F11</basecaption>
+        <basecaption></basecaption>
         <shiftcaption></shiftcaption>
         <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>123</position>
-        <basecaption>F12</basecaption>
+        <basecaption></basecaption>
         <shiftcaption></shiftcaption>
         <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>124</position>
-        <basecaption>PrtScr</basecaption>
-        <shiftcaption>SysRq</shiftcaption>
+        <basecaption></basecaption>
+        <shiftcaption></shiftcaption>
         <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>125</position>
-        <basecaption>Scroll\nLock</basecaption>
+        <basecaption></basecaption>
         <shiftcaption></shiftcaption>
         <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>126</position>
-        <basecaption>Pause\nBreak</basecaption>
+        <basecaption></basecaption>
         <shiftcaption></shiftcaption>
         <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>1</position>
-        <basecaption>`</basecaption>
-        <shiftcaption>~</shiftcaption>
+        <basecaption></basecaption>
+        <shiftcaption></shiftcaption>
         <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>2</position>
-        <basecaption>1</basecaption>
-        <shiftcaption>!</shiftcaption>
-        <altgrcaption>¹</altgrcaption>
-        <shiftaltgrcaption>¡</shiftaltgrcaption>
+        <basecaption></basecaption>
+        <shiftcaption></shiftcaption>
+        <altgrcaption></altgrcaption>
+        <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>3</position>
-        <basecaption>2</basecaption>
-        <shiftcaption>@</shiftcaption>
-        <altgrcaption>²</altgrcaption>
+        <basecaption></basecaption>
+        <shiftcaption></shiftcaption>
+        <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>4</position>
-        <basecaption>3</basecaption>
-        <shiftcaption>#</shiftcaption>
-        <altgrcaption>³</altgrcaption>
+        <basecaption></basecaption>
+        <shiftcaption></shiftcaption>
+        <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>5</position>
-        <basecaption>4</basecaption>
-        <shiftcaption>$</shiftcaption>
-        <altgrcaption>¤</altgrcaption>
+        <basecaption></basecaption>
+        <shiftcaption></shiftcaption>
+        <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>6</position>
-        <basecaption>5</basecaption>
-        <shiftcaption>%</shiftcaption>
-        <altgrcaption>€</altgrcaption>
+        <basecaption></basecaption>
+        <shiftcaption></shiftcaption>
+        <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>7</position>
-        <basecaption>6</basecaption>
-        <shiftcaption>^</shiftcaption>
-        <altgrcaption>¼</altgrcaption>
+        <basecaption></basecaption>
+        <shiftcaption></shiftcaption>
+        <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>8</position>
-        <basecaption>7</basecaption>
-        <shiftcaption>&amp;</shiftcaption>
-        <altgrcaption>½</altgrcaption>
+        <basecaption></basecaption>
+        <shiftcaption></shiftcaption>
+        <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>9</position>
-        <basecaption>8</basecaption>
-        <shiftcaption>*</shiftcaption>
-        <altgrcaption>¾</altgrcaption>
+        <basecaption></basecaption>
+        <shiftcaption></shiftcaption>
+        <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>10</position>
-        <basecaption>9</basecaption>
-        <shiftcaption>(</shiftcaption>
-        <altgrcaption>‘</altgrcaption>
+        <basecaption></basecaption>
+        <shiftcaption></shiftcaption>
+        <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>11</position>
-        <basecaption>0</basecaption>
-        <shiftcaption>)</shiftcaption>
-        <altgrcaption>’</altgrcaption>
+        <basecaption></basecaption>
+        <shiftcaption></shiftcaption>
+        <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>12</position>
-        <basecaption>-</basecaption>
-        <shiftcaption>_</shiftcaption>
-        <altgrcaption>¥</altgrcaption>
+        <basecaption></basecaption>
+        <shiftcaption></shiftcaption>
+        <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>13</position>
-        <basecaption>=</basecaption>
-        <shiftcaption>+</shiftcaption>
-        <altgrcaption>×</altgrcaption>
-        <shiftaltgrcaption>÷</shiftaltgrcaption>
+        <basecaption></basecaption>
+        <shiftcaption></shiftcaption>
+        <altgrcaption></altgrcaption>
+        <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>15</position>
-        <basecaption>Backspace</basecaption>
+        <basecaption></basecaption>
         <shiftcaption></shiftcaption>
         <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>75</position>
-        <basecaption>Insert</basecaption>
+        <basecaption></basecaption>
         <shiftcaption></shiftcaption>
         <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>80</position>
-        <basecaption>Home</basecaption>
+        <basecaption></basecaption>
         <shiftcaption></shiftcaption>
         <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>85</position>
-        <basecaption>Page\nUp</basecaption>
+        <basecaption></basecaption>
         <shiftcaption></shiftcaption>
         <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>90</position>
-        <basecaption>Num\nLock</basecaption>
+        <basecaption></basecaption>
         <shiftcaption></shiftcaption>
         <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>95</position>
-        <basecaption>/</basecaption>
+        <basecaption></basecaption>
         <shiftcaption></shiftcaption>
         <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>100</position>
-        <basecaption>*</basecaption>
+        <basecaption></basecaption>
         <shiftcaption></shiftcaption>
         <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>105</position>
-        <basecaption>-</basecaption>
+        <basecaption></basecaption>
         <shiftcaption></shiftcaption>
         <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>16</position>
-        <basecaption>Tab</basecaption>
+        <basecaption></basecaption>
         <shiftcaption></shiftcaption>
         <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>17</position>
-        <basecaption>Q</basecaption>
+        <basecaption></basecaption>
         <shiftcaption></shiftcaption>
-        <altgrcaption>Ä</altgrcaption>
+        <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>18</position>
-        <basecaption>W</basecaption>
+        <basecaption></basecaption>
         <shiftcaption></shiftcaption>
-        <altgrcaption>Å</altgrcaption>
+        <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>19</position>
-        <basecaption>E</basecaption>
+        <basecaption></basecaption>
         <shiftcaption></shiftcaption>
-        <altgrcaption>É</altgrcaption>
+        <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>20</position>
-        <basecaption>R</basecaption>
+        <basecaption></basecaption>
         <shiftcaption></shiftcaption>
-        <altgrcaption>®</altgrcaption>
+        <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>21</position>
-        <basecaption>T</basecaption>
+        <basecaption></basecaption>
         <shiftcaption></shiftcaption>
-        <altgrcaption>Þ</altgrcaption>
+        <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>22</position>
-        <basecaption>Y</basecaption>
+        <basecaption></basecaption>
         <shiftcaption></shiftcaption>
-        <altgrcaption>Ü</altgrcaption>
+        <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>23</position>
-        <basecaption>U</basecaption>
+        <basecaption></basecaption>
         <shiftcaption></shiftcaption>
-        <altgrcaption>Ú</altgrcaption>
+        <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>24</position>
-        <basecaption>I</basecaption>
+        <basecaption></basecaption>
         <shiftcaption></shiftcaption>
-        <altgrcaption>Í</altgrcaption>
+        <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>25</position>
-        <basecaption>O</basecaption>
+        <basecaption></basecaption>
         <shiftcaption></shiftcaption>
-        <altgrcaption>Ó</altgrcaption>
+        <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>26</position>
-        <basecaption>p</basecaption>
+        <basecaption></basecaption>
         <shiftcaption></shiftcaption>
-        <altgrcaption>Ö</altgrcaption>
+        <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>27</position>
-        <basecaption>[</basecaption>
-        <shiftcaption>{</shiftcaption>
-        <altgrcaption>«</altgrcaption>
+        <basecaption></basecaption>
+        <shiftcaption></shiftcaption>
+        <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>28</position>
-        <basecaption>]</basecaption>
-        <shiftcaption>}</shiftcaption>
-        <altgrcaption>»</altgrcaption>
+        <basecaption></basecaption>
+        <shiftcaption></shiftcaption>
+        <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
-        <position>29</position>
-        <basecaption>\</basecaption>
-        <shiftcaption>|</shiftcaption>
-        <altgrcaption>¬</altgrcaption>
-        <shiftaltgrcaption>¦</shiftaltgrcaption>
+        <position>43</position>
+        <basecaption></basecaption>
+        <shiftcaption></shiftcaption>
+        <altgrcaption></altgrcaption>
+        <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>76</position>
-        <basecaption>Delete</basecaption>
+        <basecaption></basecaption>
         <shiftcaption></shiftcaption>
         <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>81</position>
-        <basecaption>End</basecaption>
+        <basecaption></basecaption>
         <shiftcaption></shiftcaption>
         <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>86</position>
-        <basecaption>Page\nDown</basecaption>
+        <basecaption></basecaption>
         <shiftcaption></shiftcaption>
         <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>91</position>
-        <basecaption>7</basecaption>
+        <basecaption></basecaption>
         <shiftcaption></shiftcaption>
         <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>96</position>
-        <basecaption>8</basecaption>
+        <basecaption></basecaption>
         <shiftcaption></shiftcaption>
         <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>101</position>
-        <basecaption>9</basecaption>
+        <basecaption></basecaption>
         <shiftcaption></shiftcaption>
         <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
@@ -405,209 +406,223 @@
     <key>
         <position>106</position>
         <basecaption></basecaption>
-        <shiftcaption>+</shiftcaption>
+        <shiftcaption></shiftcaption>
         <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>30</position>
-        <basecaption>CapsLock</basecaption>
+        <basecaption></basecaption>
         <shiftcaption></shiftcaption>
         <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>31</position>
-        <basecaption>A</basecaption>
+        <basecaption></basecaption>
         <shiftcaption></shiftcaption>
-        <altgrcaption>Á</altgrcaption>
+        <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>32</position>
-        <basecaption>S</basecaption>
+        <basecaption></basecaption>
         <shiftcaption></shiftcaption>
-        <altgrcaption>ß</altgrcaption>
-        <shiftaltgrcaption>§</shiftaltgrcaption>
+        <altgrcaption></altgrcaption>
+        <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>33</position>
-        <basecaption>D</basecaption>
+        <basecaption></basecaption>
         <shiftcaption></shiftcaption>
         <altgrcaption></altgrcaption>
-        <shiftaltgrcaption>Ð</shiftaltgrcaption>
+        <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>34</position>
-        <basecaption>F</basecaption>
+        <basecaption></basecaption>
         <shiftcaption></shiftcaption>
         <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>35</position>
-        <basecaption>G</basecaption>
+        <basecaption></basecaption>
         <shiftcaption></shiftcaption>
         <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>36</position>
-        <basecaption>H</basecaption>
+        <basecaption></basecaption>
         <shiftcaption></shiftcaption>
         <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>37</position>
-        <basecaption>J</basecaption>
+        <basecaption></basecaption>
         <shiftcaption></shiftcaption>
         <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>38</position>
-        <basecaption>K</basecaption>
+        <basecaption></basecaption>
         <shiftcaption></shiftcaption>
         <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>39</position>
-        <basecaption>L</basecaption>
+        <basecaption></basecaption>
         <shiftcaption></shiftcaption>
-        <altgrcaption>Ø</altgrcaption>
-        <shiftaltgrcaption></shiftaltgrcaption>
-    </key>
-    <key>
-        <position>40</position>
-        <basecaption>;</basecaption>
-        <shiftcaption>:</shiftcaption>
-        <altgrcaption>¶</altgrcaption>
-        <shiftaltgrcaption>°</shiftaltgrcaption>
-    </key>
-    <key>
-        <position>41</position>
-        <basecaption>'</basecaption>
-        <shiftcaption>&quot;</shiftcaption>
         <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
-        <position>43</position>
-        <basecaption>Enter</basecaption>
+        <position>40</position>
+        <basecaption></basecaption>
+        <shiftcaption></shiftcaption>
+        <altgrcaption></altgrcaption>
+        <shiftaltgrcaption></shiftaltgrcaption>
+    </key>
+    <key>
+        <position>41</position>
+        <basecaption></basecaption>
+        <shiftcaption></shiftcaption>
+        <altgrcaption></altgrcaption>
+        <shiftaltgrcaption></shiftaltgrcaption>
+    </key>
+    <key>
+        <position>42</position>
+        <basecaption></basecaption>
         <shiftcaption></shiftcaption>
         <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>92</position>
-        <basecaption>4</basecaption>
+        <basecaption></basecaption>
         <shiftcaption></shiftcaption>
         <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>97</position>
-        <basecaption>5</basecaption>
+        <basecaption></basecaption>
         <shiftcaption></shiftcaption>
         <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>102</position>
-        <basecaption>6</basecaption>
+        <basecaption></basecaption>
         <shiftcaption></shiftcaption>
         <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>44</position>
-        <basecaption>Shift</basecaption>
+        <basecaption></basecaption>
+        <shiftcaption></shiftcaption>
+        <altgrcaption></altgrcaption>
+        <shiftaltgrcaption></shiftaltgrcaption>
+    </key>
+    <key>
+        <position>45</position>
+        <basecaption></basecaption>
         <shiftcaption></shiftcaption>
         <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>46</position>
-        <basecaption>Z</basecaption>
+        <basecaption></basecaption>
         <shiftcaption></shiftcaption>
-        <altgrcaption>Æ</altgrcaption>
+        <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>47</position>
-        <basecaption>X</basecaption>
+        <basecaption></basecaption>
         <shiftcaption></shiftcaption>
         <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>48</position>
-        <basecaption>C</basecaption>
+        <basecaption></basecaption>
         <shiftcaption></shiftcaption>
-        <altgrcaption>©</altgrcaption>
-        <shiftaltgrcaption>¢</shiftaltgrcaption>
+        <altgrcaption></altgrcaption>
+        <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>49</position>
-        <basecaption>V</basecaption>
+        <basecaption></basecaption>
         <shiftcaption></shiftcaption>
         <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>50</position>
-        <basecaption>B</basecaption>
+        <basecaption></basecaption>
         <shiftcaption></shiftcaption>
         <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>51</position>
-        <basecaption>N</basecaption>
+        <basecaption></basecaption>
         <shiftcaption></shiftcaption>
-        <altgrcaption>Ñ</altgrcaption>
+        <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>52</position>
-        <basecaption>M</basecaption>
+        <basecaption></basecaption>
         <shiftcaption></shiftcaption>
-        <altgrcaption>µ</altgrcaption>
+        <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>53</position>
-        <basecaption>,</basecaption>
-        <shiftcaption>&lt;</shiftcaption>
+        <basecaption></basecaption>
+        <shiftcaption></shiftcaption>
         <altgrcaption></altgrcaption>
-        <shiftaltgrcaption>Ç</shiftaltgrcaption>
+        <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>54</position>
-        <basecaption>.</basecaption>
-        <shiftcaption>&gt;</shiftcaption>
+        <basecaption></basecaption>
+        <shiftcaption></shiftcaption>
         <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>55</position>
-        <basecaption>/</basecaption>
-        <shiftcaption>?</shiftcaption>
-        <altgrcaption>¿</altgrcaption>
+        <basecaption></basecaption>
+        <shiftcaption></shiftcaption>
+        <altgrcaption></altgrcaption>
+        <shiftaltgrcaption></shiftaltgrcaption>
+    </key>
+    <key>
+        <position>56</position>
+        <basecaption></basecaption>
+        <shiftcaption></shiftcaption>
+        <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>57</position>
-        <basecaption>Shift</basecaption>
+        <basecaption></basecaption>
         <shiftcaption></shiftcaption>
         <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>83</position>
-        <basecaption>↑</basecaption>
+        <basecaption></basecaption>
         <shiftcaption></shiftcaption>
         <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
@@ -615,48 +630,48 @@
     <key>
         <position>93</position>
         <basecaption></basecaption>
-        <shiftcaption>1</shiftcaption>
+        <shiftcaption></shiftcaption>
         <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>98</position>
-        <basecaption>2</basecaption>
+        <basecaption></basecaption>
         <shiftcaption></shiftcaption>
         <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>103</position>
-        <basecaption>3</basecaption>
+        <basecaption></basecaption>
         <shiftcaption></shiftcaption>
         <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>108</position>
-        <basecaption>Enter</basecaption>
+        <basecaption></basecaption>
         <shiftcaption></shiftcaption>
         <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>58</position>
-        <basecaption>Ctrl</basecaption>
+        <basecaption></basecaption>
         <shiftcaption></shiftcaption>
         <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>227</position>
-        <basecaption>OS</basecaption>
+        <basecaption></basecaption>
         <shiftcaption></shiftcaption>
         <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>60</position>
-        <basecaption>Alt</basecaption>
+        <basecaption></basecaption>
         <shiftcaption></shiftcaption>
         <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
@@ -670,63 +685,63 @@
     </key>
     <key>
         <position>62</position>
-        <basecaption>AltGr</basecaption>
+        <basecaption></basecaption>
         <shiftcaption></shiftcaption>
         <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>231</position>
-        <basecaption>OS</basecaption>
+        <basecaption></basecaption>
         <shiftcaption></shiftcaption>
         <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>129</position>
-        <basecaption>Menu</basecaption>
+        <basecaption></basecaption>
         <shiftcaption></shiftcaption>
         <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>64</position>
-        <basecaption>Ctrl</basecaption>
+        <basecaption></basecaption>
         <shiftcaption></shiftcaption>
         <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>79</position>
-        <basecaption>←</basecaption>
+        <basecaption></basecaption>
         <shiftcaption></shiftcaption>
         <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>84</position>
-        <basecaption>↓</basecaption>
+        <basecaption></basecaption>
         <shiftcaption></shiftcaption>
         <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>89</position>
-        <basecaption>→</basecaption>
+        <basecaption></basecaption>
         <shiftcaption></shiftcaption>
         <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>99</position>
-        <basecaption>0</basecaption>
+        <basecaption></basecaption>
         <shiftcaption></shiftcaption>
         <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>
     </key>
     <key>
         <position>104</position>
-        <basecaption>.</basecaption>
+        <basecaption></basecaption>
         <shiftcaption></shiftcaption>
         <altgrcaption></altgrcaption>
         <shiftaltgrcaption></shiftaltgrcaption>

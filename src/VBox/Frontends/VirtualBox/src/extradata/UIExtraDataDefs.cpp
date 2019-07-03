@@ -206,6 +206,7 @@ const char *UIExtraDataDefs::GUI_GuestControl_ProcessControlDialogGeometry = "GU
 /* Soft Keyboard: */
 const char *UIExtraDataDefs::GUI_SoftKeyboard_DialogGeometry = "GUI/SoftKeyboardDialogGeometry";
 const char *UIExtraDataDefs::GUI_SoftKeyboard_ColorTheme  = "GUI/SoftKeyboardColorTheme";
+const char *UIExtraDataDefs::GUI_SoftKeyboard_SelectedLayout  = "GUI/SoftKeyboardSelectedLayout";
 
 /* File Manager options: */
 const char *UIExtraDataDefs::GUI_GuestControl_FileManagerOptions = "GUI/GuestControl/FileManagerOptions";

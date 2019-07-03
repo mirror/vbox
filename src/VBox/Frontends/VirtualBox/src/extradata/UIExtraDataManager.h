@@ -677,6 +677,8 @@ public:
         bool softKeyboardDialogShouldBeMaximized();
         void setSoftKeyboardColorTheme(const QStringList &colorStringList);
         QStringList softKeyboardColorTheme();
+        void setSoftKeyboardSelectedLayout(const QUuid &uLayoutUid);
+        QUuid softKeyboardSelectedLayout();
     /** @} */
 
     /** @name File Manager options
