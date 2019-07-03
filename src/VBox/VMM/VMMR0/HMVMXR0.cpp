@@ -14155,7 +14155,6 @@ HMVMX_EXIT_DECL hmR0VmxExitXcptOrNmi(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
     STAM_PROFILE_ADV_START(&pVCpu->hm.s.StatExitXcptNmi, y3);
 
-    Assert(!pVmxTransient->fIsNestedGuest);
     PVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
     int rc = hmR0VmxReadExitIntInfoVmcs(pVmxTransient);
     AssertRCReturn(rc, rc);
@@ -16294,7 +16293,7 @@ static VBOXSTRICTRC hmR0VmxExitXcptPF(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
     else
     {
 #if !defined(HMVMX_ALWAYS_TRAP_ALL_XCPTS) && !defined(HMVMX_ALWAYS_TRAP_PF)
-        Assert(pVCpu->hm.s.fUsingDebugLoop);
+        Assert(pVmxTransient->fIsNestedGuest || pVCpu->hm.s.fUsingDebugLoop);
 #endif
         pVCpu->hm.s.Event.fPending = false;                  /* In case it's a contributory or vectoring #PF. */
         if (RT_LIKELY(!pVmxTransient->fVectoringDoublePF))
@@ -17003,8 +17002,8 @@ HMVMX_EXIT_DECL hmR0VmxExitXcptOrNmiNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTrans
          *
          * External interrupts:
          *    This should only happen when "acknowledge external interrupts on VM-exit"
-         *    control is set. However, we don't set it when executing guests or
-         *    nested-guests. For nested-guests it is emulated while injecting interrupts into
+         *    control is set. However, we never set this when executing a guest or
+         *    nested-guest. For nested-guests it is emulated while injecting interrupts into
          *    the guest.
          */
         case VMX_EXIT_INT_INFO_TYPE_SW_INT:
