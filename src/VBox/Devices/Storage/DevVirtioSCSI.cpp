@@ -16,6 +16,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
@@ -39,6 +40,7 @@
 #endif
 #include "VBoxSCSI.h"
 #include "VBoxDD.h"
+
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
@@ -522,7 +524,7 @@ static DECLCALLBACK(int) devVirtioScsiConstruct(PPDMDEVINS pDevIns, int iInstanc
     LogFunc(("NumTargets=%d\n", pThis->fGCEnabled));
 
 
-LogFunc(("Register PCI device\n"));
+LogFunc(("Register PCI device and map mmio and ports\n"));
     rc = PDMDevHlpPCIRegister(pDevIns, &pThis->dev);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("virtio-scsi cannot register with PCI bus"));
