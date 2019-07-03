@@ -43,6 +43,7 @@
 #include <iprt/err.h>
 #include <iprt/log.h>
 #include <iprt/mem.h>
+#include <iprt/param.h>
 #include "internal/thread.h"
 #include "internal-r3-win.h"
 
@@ -264,11 +265,19 @@ DECLHIDDEN(int) rtThreadNativeCreate(PRTTHREADINT pThread, PRTNATIVETHREAD pNati
     AssertReturn(pThread->cbStack < ~(unsigned)0, VERR_INVALID_PARAMETER);
 
     /*
+     * If a stack size is given, make sure it's not a multiple of 64KB so that we
+     * get one or more pages for overflow protection.  (ASSUMES 64KB alloc align.)
+     */
+    unsigned cbStack = (unsigned)pThread->cbStack;
+    if (cbStack > 0 && RT_ALIGN_T(cbStack, _64K, unsigned) == cbStack)
+        cbStack += PAGE_SIZE;
+
+    /*
      * Create the thread.
      */
     pThread->hThread = (uintptr_t)INVALID_HANDLE_VALUE;
     unsigned    uThreadId = 0;
-    uintptr_t   hThread = _beginthreadex(NULL, (unsigned)pThread->cbStack, rtThreadNativeMain, pThread, 0, &uThreadId);
+    uintptr_t   hThread   = _beginthreadex(NULL, cbStack, rtThreadNativeMain, pThread, 0, &uThreadId);
     if (hThread != 0 && hThread != ~0U)
     {
         pThread->hThread = hThread;
