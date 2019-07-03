@@ -349,7 +349,7 @@ int vboxSvcClipboardMsgAdd(PVBOXCLIPBOARDCLIENTDATA pClientData, PVBOXCLIPBOARDC
  * Retrieves information about the next message in the queue.
  *
  * @returns IPRT status code. VERR_NO_DATA if no next message is available.
- * @param   pClientDAta         Pointer to the client data structure to get message info for.
+ * @param   pClientData         Pointer to the client data structure to get message info for.
  * @param   puType              Where to store the message type.
  * @param   pcParms             Where to store the message parameter count.
  */
