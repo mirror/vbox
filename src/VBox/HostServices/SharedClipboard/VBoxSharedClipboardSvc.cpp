@@ -946,6 +946,7 @@ static DECLCALLBACK(void) svcCall(void *,
 
                         if (RT_SUCCESS(rc))
                         {
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
                             if (u32Formats & VBOX_SHARED_CLIPBOARD_FMT_URI_LIST)
                             {
                                 /* Tell the guest that we want to start a (reading) transfer. */
@@ -956,6 +957,7 @@ static DECLCALLBACK(void) svcCall(void *,
                                          host service URI handler (vboxSvcClipboardURIHandler). */
                             }
                             else /* Announce simple formats to the OS-specific service implemenation. */
+#endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
                             {
                                 if (g_pfnExtension)
                                 {

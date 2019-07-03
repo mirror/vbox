@@ -26,6 +26,7 @@
 #include <map>
 
 #include <iprt/list.h>
+#include <iprt/cpp/list.h> /* For RTCList. */
 
 #include <VBox/hgcmsvc.h>
 #include <VBox/log.h>
