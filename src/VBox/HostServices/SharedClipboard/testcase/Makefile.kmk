@@ -26,6 +26,7 @@ if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBO
  tstClipboardServiceHost_DEFS     = VBOX_WITH_HGCM UNIT_TEST
  tstClipboardServiceHost_SOURCES  = \
 	../VBoxSharedClipboardSvc.cpp \
+	$(PATH_ROOT)/src/VBox/HostServices/common/message.cpp \
 	tstClipboardServiceHost.cpp
 
 endif
