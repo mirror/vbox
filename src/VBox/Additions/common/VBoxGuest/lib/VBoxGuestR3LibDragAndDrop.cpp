@@ -358,22 +358,22 @@ static int vbglR3DnDHGRecvFileHdr(PVBGLR3GUESTDNDCMDCTX  pCtx,
  *
  * @returns IPRT status code.
  * @param   pCtx                DnD context to use.
- * @param   pListHdr            DnD data header to use. Needed for accounting.
+ * @param   pDataHdr            DnD data header to use. Needed for accounting.
  * @param   pDroppedFiles       Dropped files object to use for maintaining the file creation / locking.
  */
-static int vbglR3DnDHGRecvURIData(PVBGLR3GUESTDNDCMDCTX pCtx, PVBOXDNDSNDListHdr pListHdr, DnDDroppedFiles *pDroppedFiles)
+static int vbglR3DnDHGRecvURIData(PVBGLR3GUESTDNDCMDCTX pCtx, PVBOXDNDSNDDATAHDR pDataHdr, DnDDroppedFiles *pDroppedFiles)
 {
     AssertPtrReturn(pCtx,          VERR_INVALID_POINTER);
-    AssertPtrReturn(pListHdr,      VERR_INVALID_POINTER);
+    AssertPtrReturn(pDataHdr,      VERR_INVALID_POINTER);
     AssertPtrReturn(pDroppedFiles, VERR_INVALID_POINTER);
 
     /* Only count the raw data minus the already received meta data. */
-    Assert(pListHdr->cbTotal >= pListHdr->cbMeta);
-    uint64_t cbToRecvBytes = pListHdr->cbTotal - pListHdr->cbMeta;
-    uint64_t cToRecvObjs   = pListHdr->cObjects;
+    Assert(pDataHdr->cbTotal >= pDataHdr->cbMeta);
+    uint64_t cbToRecvBytes = pDataHdr->cbTotal - pDataHdr->cbMeta;
+    uint64_t cToRecvObjs   = pDataHdr->cObjects;
 
     LogFlowFunc(("cbToRecvBytes=%RU64, cToRecvObjs=%RU64, (cbTotal=%RU64, cbMeta=%RU32)\n",
-                 cbToRecvBytes, cToRecvObjs, pListHdr->cbTotal, pListHdr->cbMeta));
+                 cbToRecvBytes, cToRecvObjs, pDataHdr->cbTotal, pDataHdr->cbMeta));
 
     /* Anything to do at all? */
     /* Note: Do not check for cbToRecvBytes == 0 here, as this might be just
@@ -640,16 +640,16 @@ static int vbglR3DnDHGRecvURIData(PVBGLR3GUESTDNDCMDCTX pCtx, PVBOXDNDSNDListHdr
  *
  * @returns IPRT status code.
  * @param   pCtx                DnD context to use.
- * @param   pListHdr            DnD data header to use. Need for accounting and stuff.
+ * @param   pDataHdr            DnD data header to use. Need for accounting and stuff.
  * @param   pvData              Where to store the received data from the host.
  * @param   cbData              Size (in bytes) of where to store the received data.
  * @param   pcbDataRecv         Where to store the received amount of data (in bytes).
  */
-static int vbglR3DnDHGRecvDataRaw(PVBGLR3GUESTDNDCMDCTX pCtx, PVBOXDNDSNDListHdr pListHdr,
+static int vbglR3DnDHGRecvDataRaw(PVBGLR3GUESTDNDCMDCTX pCtx, PVBOXDNDSNDDATAHDR pDataHdr,
                                   void *pvData, uint32_t cbData, uint32_t *pcbDataRecv)
 {
     AssertPtrReturn(pCtx,            VERR_INVALID_POINTER);
-    AssertPtrReturn(pListHdr,        VERR_INVALID_POINTER);
+    AssertPtrReturn(pDataHdr,        VERR_INVALID_POINTER);
     AssertPtrReturn(pvData,          VERR_INVALID_POINTER);
     AssertReturn(cbData,             VERR_INVALID_PARAMETER);
     AssertPtrNullReturn(pcbDataRecv, VERR_INVALID_POINTER);
@@ -693,16 +693,16 @@ static int vbglR3DnDHGRecvDataRaw(PVBGLR3GUESTDNDCMDCTX pCtx, PVBOXDNDSNDListHdr
  *
  * @returns IPRT status code.
  * @param   pCtx                DnD context to use.
- * @param   pListHdr            Where to store the receivd DnD data header.
+ * @param   pDataHdr            Where to store the receivd DnD data header.
  */
-static int vbglR3DnDHGRecvListHdr(PVBGLR3GUESTDNDCMDCTX pCtx, PVBOXDNDSNDListHdr pListHdr)
+static int vbglR3DnDHGRecvDataHdr(PVBGLR3GUESTDNDCMDCTX pCtx, PVBOXDNDSNDDATAHDR pDataHdr)
 {
     AssertPtrReturn(pCtx,     VERR_INVALID_POINTER);
-    AssertPtrReturn(pListHdr, VERR_INVALID_POINTER);
+    AssertPtrReturn(pDataHdr, VERR_INVALID_POINTER);
 
     Assert(pCtx->uProtocol >= 3); /* Only for protocol v3 and up. */
 
-    VBOXDNDHGSENDListHdrMSG Msg;
+    VBOXDNDHGSENDDATAHDRMSG Msg;
     RT_ZERO(Msg);
     VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, HOST_DND_HG_SND_DATA_HDR, 12);
     Msg.uContext.SetUInt32(0);
@@ -710,27 +710,27 @@ static int vbglR3DnDHGRecvListHdr(PVBGLR3GUESTDNDCMDCTX pCtx, PVBOXDNDSNDListHdr
     Msg.uScreenId.SetUInt32(0);
     Msg.cbTotal.SetUInt64(0);
     Msg.cbMeta.SetUInt32(0);
-    Msg.pvMetaFmt.SetPtr(pListHdr->pvMetaFmt, pListHdr->cbMetaFmt);
+    Msg.pvMetaFmt.SetPtr(pDataHdr->pvMetaFmt, pDataHdr->cbMetaFmt);
     Msg.cbMetaFmt.SetUInt32(0);
     Msg.cObjects.SetUInt64(0);
     Msg.enmCompression.SetUInt32(0);
     Msg.enmChecksumType.SetUInt32(0);
-    Msg.pvChecksum.SetPtr(pListHdr->pvChecksum, pListHdr->cbChecksum);
+    Msg.pvChecksum.SetPtr(pDataHdr->pvChecksum, pDataHdr->cbChecksum);
     Msg.cbChecksum.SetUInt32(0);
 
     int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
     if (RT_SUCCESS(rc))
     {
         /* Msg.uContext not needed here. */
-        Msg.uFlags.GetUInt32(&pListHdr->uFlags);
-        Msg.uScreenId.GetUInt32(&pListHdr->uScreenId);
-        Msg.cbTotal.GetUInt64(&pListHdr->cbTotal);
-        Msg.cbMeta.GetUInt32(&pListHdr->cbMeta);
-        Msg.cbMetaFmt.GetUInt32(&pListHdr->cbMetaFmt);
-        Msg.cObjects.GetUInt64(&pListHdr->cObjects);
-        Msg.enmCompression.GetUInt32(&pListHdr->enmCompression);
-        Msg.enmChecksumType.GetUInt32((uint32_t *)&pListHdr->enmChecksumType);
-        Msg.cbChecksum.GetUInt32(&pListHdr->cbChecksum);
+        Msg.uFlags.GetUInt32(&pDataHdr->uFlags);
+        Msg.uScreenId.GetUInt32(&pDataHdr->uScreenId);
+        Msg.cbTotal.GetUInt64(&pDataHdr->cbTotal);
+        Msg.cbMeta.GetUInt32(&pDataHdr->cbMeta);
+        Msg.cbMetaFmt.GetUInt32(&pDataHdr->cbMetaFmt);
+        Msg.cObjects.GetUInt64(&pDataHdr->cObjects);
+        Msg.enmCompression.GetUInt32(&pDataHdr->enmCompression);
+        Msg.enmChecksumType.GetUInt32((uint32_t *)&pDataHdr->enmChecksumType);
+        Msg.cbChecksum.GetUInt32(&pDataHdr->cbChecksum);
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -743,15 +743,15 @@ static int vbglR3DnDHGRecvListHdr(PVBGLR3GUESTDNDCMDCTX pCtx, PVBOXDNDSNDListHdr
  *
  * @returns IPRT status code.
  * @param   pCtx                DnD context to use.
- * @param   pListHdr            Where to store the data header data.
+ * @param   pDataHdr            Where to store the data header data.
  * @param   ppvData             Returns the received meta data. Needs to be free'd by the caller.
  * @param   pcbData             Where to store the size (in bytes) of the received meta data.
  */
-static int vbglR3DnDHGRecvDataLoop(PVBGLR3GUESTDNDCMDCTX pCtx, PVBOXDNDSNDListHdr pListHdr,
+static int vbglR3DnDHGRecvDataLoop(PVBGLR3GUESTDNDCMDCTX pCtx, PVBOXDNDSNDDATAHDR pDataHdr,
                                    void **ppvData, uint64_t *pcbData)
 {
     AssertPtrReturn(pCtx,     VERR_INVALID_POINTER);
-    AssertPtrReturn(pListHdr, VERR_INVALID_POINTER);
+    AssertPtrReturn(pDataHdr, VERR_INVALID_POINTER);
     AssertPtrReturn(ppvData,  VERR_INVALID_POINTER);
     AssertPtrReturn(pcbData,  VERR_INVALID_POINTER);
 
@@ -760,30 +760,30 @@ static int vbglR3DnDHGRecvDataLoop(PVBGLR3GUESTDNDCMDCTX pCtx, PVBOXDNDSNDListHd
 
     LogFlowFuncEnter();
 
-    rc = vbglR3DnDHGRecvListHdr(pCtx, pListHdr);
+    rc = vbglR3DnDHGRecvDataHdr(pCtx, pDataHdr);
     if (RT_FAILURE(rc))
         return rc;
 
-    LogFlowFunc(("cbTotal=%RU64, cbMeta=%RU32, cObjects=%RU32\n", pListHdr->cbTotal, pListHdr->cbMeta, pListHdr->cObjects));
-    if (pListHdr->cbMeta)
+    LogFlowFunc(("cbTotal=%RU64, cbMeta=%RU32, cObjects=%RU32\n", pDataHdr->cbTotal, pDataHdr->cbMeta, pDataHdr->cObjects));
+    if (pDataHdr->cbMeta)
     {
         uint64_t cbDataTmp = 0;
-        void    *pvDataTmp = RTMemAlloc(pListHdr->cbMeta);
+        void    *pvDataTmp = RTMemAlloc(pDataHdr->cbMeta);
         if (!pvDataTmp)
             rc = VERR_NO_MEMORY;
 
         if (RT_SUCCESS(rc))
         {
             uint8_t *pvDataOff = (uint8_t *)pvDataTmp;
-            while (cbDataTmp < pListHdr->cbMeta)
+            while (cbDataTmp < pDataHdr->cbMeta)
             {
-                rc = vbglR3DnDHGRecvDataRaw(pCtx, pListHdr,
-                                            pvDataOff, RT_MIN(pListHdr->cbMeta - cbDataTmp, pCtx->cbMaxChunkSize),
+                rc = vbglR3DnDHGRecvDataRaw(pCtx, pDataHdr,
+                                            pvDataOff, RT_MIN(pDataHdr->cbMeta - cbDataTmp, pCtx->cbMaxChunkSize),
                                             &cbDataRecv);
                 if (RT_SUCCESS(rc))
                 {
                     LogFlowFunc(("cbDataRecv=%RU32, cbDataTmp=%RU64\n", cbDataRecv, cbDataTmp));
-                    Assert(cbDataTmp + cbDataRecv <= pListHdr->cbMeta);
+                    Assert(cbDataTmp + cbDataRecv <= pDataHdr->cbMeta);
                     cbDataTmp += cbDataRecv;
                     pvDataOff += cbDataRecv;
                 }
@@ -793,7 +793,7 @@ static int vbglR3DnDHGRecvDataLoop(PVBGLR3GUESTDNDCMDCTX pCtx, PVBOXDNDSNDListHd
 
             if (RT_SUCCESS(rc))
             {
-                Assert(cbDataTmp == pListHdr->cbMeta);
+                Assert(cbDataTmp == pDataHdr->cbMeta);
 
                 LogFlowFunc(("Received %RU64 bytes of data\n", cbDataTmp));
 
@@ -832,14 +832,14 @@ static int vbglR3DnDHGRecvDataMainEx(PVBGLR3GUESTDNDCMDCTX        pCtx,
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
     /* The rest is optional. */
 
-    VBOXDNDListHdr ListHdr;
-    RT_ZERO(ListHdr);
+    VBOXDNDDATAHDR dataHdr;
+    RT_ZERO(dataHdr);
 
     AssertMsg(pCtx->cbMaxChunkSize, ("Maximum chunk size must not be 0\n"));
 
-    ListHdr.cbMetaFmt = pCtx->cbMaxChunkSize;
-    ListHdr.pvMetaFmt = RTMemAlloc(ListHdr.cbMetaFmt);
-    if (!ListHdr.pvMetaFmt)
+    dataHdr.cbMetaFmt = pCtx->cbMaxChunkSize;
+    dataHdr.pvMetaFmt = RTMemAlloc(dataHdr.cbMetaFmt);
+    if (!dataHdr.pvMetaFmt)
         return VERR_NO_MEMORY;
 
     DnDURIList lstURI;
@@ -848,7 +848,7 @@ static int vbglR3DnDHGRecvDataMainEx(PVBGLR3GUESTDNDCMDCTX        pCtx,
     void    *pvData = NULL;
     uint64_t cbData = 0;
 
-    int rc = vbglR3DnDHGRecvDataLoop(pCtx, &ListHdr, &pvData, &cbData);
+    int rc = vbglR3DnDHGRecvDataLoop(pCtx, &dataHdr, &pvData, &cbData);
     if (RT_SUCCESS(rc))
     {
         /**
@@ -859,16 +859,16 @@ static int vbglR3DnDHGRecvDataMainEx(PVBGLR3GUESTDNDCMDCTX        pCtx,
          * This keeps the actual (guest OS-)dependent client (like VBoxClient /
          * VBoxTray) small by not having too much redundant code.
          */
-        Assert(ListHdr.cbMetaFmt);
-        AssertPtr(ListHdr.pvMetaFmt);
-        if (DnDMIMEHasFileURLs((char *)ListHdr.pvMetaFmt, ListHdr.cbMetaFmt)) /* URI data. */
+        Assert(dataHdr.cbMetaFmt);
+        AssertPtr(dataHdr.pvMetaFmt);
+        if (DnDMIMEHasFileURLs((char *)dataHdr.pvMetaFmt, dataHdr.cbMetaFmt)) /* URI data. */
         {
             AssertPtr(pvData);
             Assert(cbData);
 
             rc = lstURI.SetFromURIData(pvData, cbData, 0 /* fFlags */);
             if (RT_SUCCESS(rc))
-                rc = vbglR3DnDHGRecvURIData(pCtx, &ListHdr, &droppedFiles);
+                rc = vbglR3DnDHGRecvURIData(pCtx, &dataHdr, &droppedFiles);
 
             if (RT_SUCCESS(rc)) /** @todo Remove this block as soon as we hand in DnDURIList. */
             {
@@ -904,8 +904,8 @@ static int vbglR3DnDHGRecvDataMainEx(PVBGLR3GUESTDNDCMDCTX        pCtx,
         }
     }
 
-    if (ListHdr.pvMetaFmt)
-        RTMemFree(ListHdr.pvMetaFmt);
+    if (dataHdr.pvMetaFmt)
+        RTMemFree(dataHdr.pvMetaFmt);
 
     if (RT_SUCCESS(rc))
     {
@@ -1479,28 +1479,28 @@ VBGLR3DECL(int) VbglR3DnDGHSendAckPending(PVBGLR3GUESTDNDCMDCTX pCtx,
  * @param   pCtx                DnD context to use.
  * @param   pvData              Data block to send.
  * @param   cbData              Size (in bytes) of data block to send.
- * @param   pListHdr            Data header to use -- needed for accounting.
+ * @param   pDataHdr            Data header to use -- needed for accounting.
  */
 static int vbglR3DnDGHSendDataInternal(PVBGLR3GUESTDNDCMDCTX pCtx,
-                                       void *pvData, uint64_t cbData, PVBOXDNDSNDListHdr pListHdr)
+                                       void *pvData, uint64_t cbData, PVBOXDNDSNDDATAHDR pDataHdr)
 {
     AssertPtrReturn(pCtx,     VERR_INVALID_POINTER);
     AssertPtrReturn(pvData,   VERR_INVALID_POINTER);
     AssertReturn(cbData,      VERR_INVALID_PARAMETER);
-    AssertPtrReturn(pListHdr, VERR_INVALID_POINTER);
+    AssertPtrReturn(pDataHdr, VERR_INVALID_POINTER);
 
-    VBOXDNDGHSENDListHdrMSG MsgHdr;
+    VBOXDNDGHSENDDATAHDRMSG MsgHdr;
     RT_ZERO(MsgHdr);
 
     VBGL_HGCM_HDR_INIT(&MsgHdr.hdr, pCtx->uClientID, GUEST_DND_GH_SND_DATA_HDR, 12);
     MsgHdr.uContext.SetUInt32(0);                           /** @todo Not used yet. */
     MsgHdr.uFlags.SetUInt32(0);                             /** @todo Not used yet. */
     MsgHdr.uScreenId.SetUInt32(0);                          /** @todo Not used for guest->host (yet). */
-    MsgHdr.cbTotal.SetUInt64(pListHdr->cbTotal);
-    MsgHdr.cbMeta.SetUInt32(pListHdr->cbMeta);
-    MsgHdr.pvMetaFmt.SetPtr(pListHdr->pvMetaFmt, pListHdr->cbMetaFmt);
-    MsgHdr.cbMetaFmt.SetUInt32(pListHdr->cbMetaFmt);
-    MsgHdr.cObjects.SetUInt64(pListHdr->cObjects);
+    MsgHdr.cbTotal.SetUInt64(pDataHdr->cbTotal);
+    MsgHdr.cbMeta.SetUInt32(pDataHdr->cbMeta);
+    MsgHdr.pvMetaFmt.SetPtr(pDataHdr->pvMetaFmt, pDataHdr->cbMetaFmt);
+    MsgHdr.cbMetaFmt.SetUInt32(pDataHdr->cbMetaFmt);
+    MsgHdr.cObjects.SetUInt64(pDataHdr->cObjects);
     MsgHdr.enmCompression.SetUInt32(0);                     /** @todo Not used yet. */
     MsgHdr.enmChecksumType.SetUInt32(RTDIGESTTYPE_INVALID); /** @todo Not used yet. */
     MsgHdr.pvChecksum.SetPtr(NULL, 0);                      /** @todo Not used yet. */
@@ -1509,7 +1509,7 @@ static int vbglR3DnDGHSendDataInternal(PVBGLR3GUESTDNDCMDCTX pCtx,
     int rc = VbglR3HGCMCall(&MsgHdr.hdr, sizeof(MsgHdr));
 
     LogFlowFunc(("cbTotal=%RU64, cbMeta=%RU32, cObjects=%RU64, rc=%Rrc\n",
-                 pListHdr->cbTotal, pListHdr->cbMeta, pListHdr->cObjects, rc));
+                 pDataHdr->cbTotal, pDataHdr->cbMeta, pDataHdr->cObjects, rc));
 
     if (RT_SUCCESS(rc))
     {
@@ -1732,13 +1732,13 @@ static int vbglR3DnDGHSendRawData(PVBGLR3GUESTDNDCMDCTX pCtx, void *pvData, size
     AssertPtrReturn(pvData, VERR_INVALID_POINTER);
     /* cbData can be 0. */
 
-    VBOXDNDListHdr ListHdr;
-    RT_ZERO(ListHdr);
+    VBOXDNDDATAHDR dataHdr;
+    RT_ZERO(dataHdr);
 
     /* For raw data only the total size is required to be specified. */
-    ListHdr.cbTotal = cbData;
+    dataHdr.cbTotal = cbData;
 
-    return vbglR3DnDGHSendDataInternal(pCtx, pvData, cbData, &ListHdr);
+    return vbglR3DnDGHSendDataInternal(pCtx, pvData, cbData, &dataHdr);
 }
 
 /**
@@ -1785,16 +1785,16 @@ static int vbglR3DnDGHSendURIData(PVBGLR3GUESTDNDCMDCTX pCtx, const void *pvData
             const char     szMetaFmt[] = "text/uri-list";
             const uint32_t cbMetaFmt   = (uint32_t)strlen(szMetaFmt) + 1; /* Include termination. */
 
-            VBOXDNDListHdr ListHdr;
-            ListHdr.uFlags    = 0; /* Flags not used yet. */
-            ListHdr.cbTotal   = cbTotal;
-            ListHdr.cbMeta    = cbURLIist;
-            ListHdr.pvMetaFmt = (void *)szMetaFmt;
-            ListHdr.cbMetaFmt = cbMetaFmt;
-            ListHdr.cObjects  = lstURI.GetTotalCount();
+            VBOXDNDDATAHDR dataHdr;
+            dataHdr.uFlags    = 0; /* Flags not used yet. */
+            dataHdr.cbTotal   = cbTotal;
+            dataHdr.cbMeta    = cbURLIist;
+            dataHdr.pvMetaFmt = (void *)szMetaFmt;
+            dataHdr.cbMetaFmt = cbMetaFmt;
+            dataHdr.cObjects  = lstURI.GetTotalCount();
 
             rc = vbglR3DnDGHSendDataInternal(pCtx,
-                                             pvURIList, cbURLIist, &ListHdr);
+                                             pvURIList, cbURLIist, &dataHdr);
         }
         else
             rc = VERR_INVALID_PARAMETER;

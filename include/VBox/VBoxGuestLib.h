@@ -575,6 +575,7 @@ VBGLR3DECL(int)     VbglR3GetSessionId(uint64_t *pu64IdSession);
 /** @name Shared Clipboard
  * @{ */
 
+#  ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
 /**
  * Enumeration specifying a Shared Clipboard event type.
  */
@@ -608,6 +609,7 @@ typedef struct _VBGLR3CLIPBOARDEVENT
     } u;
 } VBGLR3CLIPBOARDEVENT, *PVBGLR3CLIPBOARDEVENT;
 typedef const PVBGLR3CLIPBOARDEVENT CPVBGLR3CLIPBOARDEVENT;
+#  endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
 
 VBGLR3DECL(int)     VbglR3ClipboardConnect(HGCMCLIENTID *pidClient);
 VBGLR3DECL(int)     VbglR3ClipboardDisconnect(HGCMCLIENTID idClient);
@@ -616,11 +618,11 @@ VBGLR3DECL(int)     VbglR3ClipboardReadData(HGCMCLIENTID idClient, uint32_t fFor
 VBGLR3DECL(int)     VbglR3ClipboardReportFormats(HGCMCLIENTID idClient, uint32_t fFormats);
 VBGLR3DECL(int)     VbglR3ClipboardWriteData(HGCMCLIENTID idClient, uint32_t fFormat, void *pv, uint32_t cb);
 
+#  ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
 VBGLR3DECL(int)     VbglR3ClipboardEventGetNext(HGCMCLIENTID idClient, PSHAREDCLIPBOARDURITRANSFER pTransfer,
                                                 PVBGLR3CLIPBOARDEVENT *ppEvent);
 VBGLR3DECL(void)    VbglR3ClipboardEventFree(PVBGLR3CLIPBOARDEVENT pEvent);
 
-#  ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
 VBGLR3DECL(int)     VbglR3ClipboardListHdrRead(HGCMCLIENTID idClient, PVBOXCLIPBOARDLISTHDR pListHdr);
 VBGLR3DECL(int)     VbglR3ClipboardSendListHdrWrite(HGCMCLIENTID idClient, VBOXCLIPBOARDLISTHANDLE hList, PVBOXCLIPBOARDLISTHDR pListHdr);
 VBGLR3DECL(int)     VbglR3ClipboardListEntryRead(HGCMCLIENTID idClient, PVBOXCLIPBOARDLISTENTRY pListEntry);

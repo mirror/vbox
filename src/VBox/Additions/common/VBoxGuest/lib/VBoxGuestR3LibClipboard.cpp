@@ -187,6 +187,7 @@ static int vbglR3ClipboardGetNextMsgType(HGCMCLIENTID idClient, uint32_t *puMsg,
     return rc;
 }
 
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
 static int vbglR3ClipboardRecvListOpen(HGCMCLIENTID idClient, PVBOXCLIPBOARDLISTHDR pListHdr)
 {
     AssertPtrReturn(pListHdr, VERR_INVALID_POINTER);
@@ -514,7 +515,6 @@ VBGLR3DECL(void) VbglR3ClipboardEventFree(PVBGLR3CLIPBOARDEVENT pEvent)
     pEvent = NULL;
 }
 
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
 /**
  * Sends a list header to the host.
  *
