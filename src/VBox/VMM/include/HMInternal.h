@@ -1201,7 +1201,6 @@ typedef struct HMCPU
     STAMCOUNTER             StatSwitchHltToR3;
     STAMCOUNTER             StatSwitchApicAccessToR3;
     STAMCOUNTER             StatSwitchPreempt;
-    STAMCOUNTER             StatSwitchExportHostState;
     STAMCOUNTER             StatSwitchNstGstVmexit;
 
     STAMCOUNTER             StatTscParavirt;
@@ -1215,6 +1214,7 @@ typedef struct HMCPU
     STAMCOUNTER             StatExportMinimal;
     STAMCOUNTER             StatExportFull;
     STAMCOUNTER             StatLoadGuestFpu;
+    STAMCOUNTER             StatExportHostState;
 
     STAMCOUNTER             StatVmxCheckBadRmSelBase;
     STAMCOUNTER             StatVmxCheckBadRmSelLimit;

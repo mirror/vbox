@@ -1373,12 +1373,16 @@ static int hmR0VmxSwitchToGstOrNstGstVmcs(PVMCPU pVCpu, bool fSwitchToNstGstVmcs
         pVmcsInfoTo   = &pVCpu->hm.s.vmx.VmcsInfo;
     }
 
+    /*
+     * Disable interrupts to prevent being preempted while we switch the current VMCS as the
+     * preemption hook code path acquires the current VMCS.
+     */
     RTCCUINTREG const fEFlags = ASMIntDisableFlags();
+
     int rc = hmR0VmxSwitchVmcs(pVmcsInfoFrom, pVmcsInfoTo);
     if (RT_SUCCESS(rc))
     {
         pVCpu->hm.s.vmx.fSwitchedToNstGstVmcs = fSwitchToNstGstVmcs;
-        ASMSetFlags(fEFlags);
 
         /*
          * If we are switching to a VMCS that was executed on a different host CPU or was
@@ -1389,6 +1393,8 @@ static int hmR0VmxSwitchToGstOrNstGstVmcs(PVMCPU pVCpu, bool fSwitchToNstGstVmcs
         { /* likely */ }
         else
             ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_HOST_CONTEXT | HM_CHANGED_VMX_HOST_GUEST_SHARED_STATE);
+
+        ASMSetFlags(fEFlags);
 
         /*
          * We use a different VM-exit MSR-store areas for the guest and nested-guest. Hence,
@@ -9146,7 +9152,7 @@ static int hmR0VmxLeave(PVMCPU pVCpu, bool fImportState)
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
     Assert(!VMMRZCallRing3IsEnabled(pVCpu));
 
-    RTCPUID idCpu = RTMpCpuId();
+    RTCPUID const idCpu = RTMpCpuId();
     Log4Func(("HostCpuId=%u\n", idCpu));
 
     /*
@@ -11659,9 +11665,8 @@ static void hmR0VmxPreRunGuestCommitted(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransien
      */
     if (pVCpu->hm.s.fCtxChanged & HM_CHANGED_HOST_CONTEXT)
     {
-        int rc = hmR0VmxExportHostState(pVCpu);
-        AssertRC(rc);
-        STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchExportHostState);
+        hmR0VmxExportHostState(pVCpu);
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatExportHostState);
     }
     Assert(!(pVCpu->hm.s.fCtxChanged & HM_CHANGED_HOST_CONTEXT));
 
@@ -12065,8 +12070,8 @@ static VBOXSTRICTRC hmR0VmxRunGuestCodeNested(PVMCPU pVCpu, uint32_t *pcLoops)
     Assert(CPUMIsGuestInVmxNonRootMode(&pVCpu->cpum.GstCtx));
 
     /*
-     * Switch to the nested-guest VMCS as we may have transitioned to executing the
-     * nested-guest without leaving ring-0. Otherwise, if we came from ring-3 we would have
+     * Switch to the nested-guest VMCS as we may have transitioned from executing the
+     * guest without leaving ring-0. Otherwise, if we came from ring-3 we would have
      * loaded the nested-guest VMCS while entering the VMX ring-0 session.
      */
     if (!pVCpu->hm.s.vmx.fSwitchedToNstGstVmcs)
@@ -12076,7 +12081,7 @@ static VBOXSTRICTRC hmR0VmxRunGuestCodeNested(PVMCPU pVCpu, uint32_t *pcLoops)
         { /* likely */ }
         else
         {
-            LogRelFunc(("Failed to switch to the guest VMCS. rc=%Rrc\n", rc));
+            LogRelFunc(("Failed to switch to the nested-guest VMCS. rc=%Rrc\n", rc));
             return rc;
         }
     }
