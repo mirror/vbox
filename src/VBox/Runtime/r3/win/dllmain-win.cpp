@@ -36,6 +36,28 @@
 
 
 /**
+ * Increases the load count on the IPRT DLL so it won't unload.
+ *
+ * This is a separate function so as to not overflow the stack of threads with
+ * very little of it.
+ *
+ * @param   hModule     The IPRT DLL module handle.
+ */
+DECL_NO_INLINE(static, void) EnsureNoUnload(HMODULE hModule)
+{
+    WCHAR wszName[RTPATH_MAX];
+    SetLastError(NO_ERROR);
+    if (   GetModuleFileNameW(hModule, wszName, RT_ELEMENTS(wszName)) > 0
+        && GetLastError() == NO_ERROR)
+    {
+        int cExtraLoads = 32;
+        while (cExtraLoads-- > 0)
+            LoadLibraryW(wszName);
+    }
+}
+
+
+/**
  * The Dll main entry point.
  */
 BOOL __stdcall DllMain(HANDLE hModule, DWORD dwReason, PVOID pvReserved)
@@ -49,18 +71,8 @@ BOOL __stdcall DllMain(HANDLE hModule, DWORD dwReason, PVOID pvReserved)
          * and doesn't get unloaded.
          */
         case DLL_PROCESS_ATTACH:
-        {
-            WCHAR wszName[RTPATH_MAX];
-            SetLastError(NO_ERROR);
-            if (   GetModuleFileNameW((HMODULE)hModule, wszName, RT_ELEMENTS(wszName)) > 0
-                && GetLastError() == NO_ERROR)
-            {
-                int cExtraLoads = 32;
-                while (cExtraLoads-- > 0)
-                    LoadLibraryW(wszName);
-            }
+            EnsureNoUnload((HMODULE)hModule);
             break;
-        }
 
         case DLL_PROCESS_DETACH:
         case DLL_THREAD_ATTACH:
