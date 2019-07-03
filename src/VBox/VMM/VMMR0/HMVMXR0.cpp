@@ -279,7 +279,10 @@ typedef struct VMXTRANSIENT
     /** Whether the VM-exit was caused by a page-fault during delivery of an
      *  external interrupt or NMI. */
     bool                fVectoringPF;
-    bool                afAlignment0[3];
+    /** Whether the TSC_AUX MSR needs to be removed from the auto-load/store MSR
+     *  area after VM-exit. */
+    bool                fRemoveTscAuxMsr;
+    bool                afAlignment0[2];
 
     /** The VMCS info. object. */
     PVMXVMCSINFO        pVmcsInfo;
@@ -11746,22 +11749,21 @@ static void hmR0VmxPreRunGuestCommitted(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransien
      * figures out if we can skip intercepting RDTSCP by calculating the number of
      * host CPU ticks till the next virtual sync deadline (for the dynamic case).
      */
-    if (pVmcsInfo->u32ProcCtls2 & VMX_PROC_CTLS2_RDTSCP)
+    if (    (pVmcsInfo->u32ProcCtls2 & VMX_PROC_CTLS2_RDTSCP)
+        && !(pVmcsInfo->u32ProcCtls & VMX_PROC_CTLS_RDTSC_EXIT))
     {
-        if (!(pVmcsInfo->u32ProcCtls & VMX_PROC_CTLS_RDTSC_EXIT))
-        {
-            /** @todo NSTVMX: This might be broken wrt to merging MSR permissions when
-             *        transitioning to executing the nested-guest. We should probably remove
-             *        the dynamically added MSRs somehow. */
-            hmR0VmxImportGuestState(pVCpu, pVmcsInfo, CPUMCTX_EXTRN_TSC_AUX);
-            /* NB: Because we call hmR0VmxAddAutoLoadStoreMsr with fUpdateHostMsr=true,
-               it's safe even after hmR0VmxUpdateAutoLoadHostMsrs has already been done. */
-            int rc = hmR0VmxAddAutoLoadStoreMsr(pVCpu, pVmxTransient, MSR_K8_TSC_AUX, CPUMGetGuestTscAux(pVCpu),
-                                                true /* fSetReadWrite */, true /* fUpdateHostMsr */);
-            AssertRC(rc);
-        }
-        else
-            hmR0VmxRemoveAutoLoadStoreMsr(pVCpu, pVmxTransient, MSR_K8_TSC_AUX);
+        /** @todo NSTVMX: This might be broken wrt to merging MSR permissions when
+         *        transitioning to executing the nested-guest. We should probably remove
+         *        the dynamically added MSRs somehow. */
+        hmR0VmxImportGuestState(pVCpu, pVmcsInfo, CPUMCTX_EXTRN_TSC_AUX);
+
+        /* NB: Because we call hmR0VmxAddAutoLoadStoreMsr with fUpdateHostMsr=true,
+           it's safe even after hmR0VmxUpdateAutoLoadHostMsrs has already been done. */
+        int rc = hmR0VmxAddAutoLoadStoreMsr(pVCpu, pVmxTransient, MSR_K8_TSC_AUX, CPUMGetGuestTscAux(pVCpu),
+                                            true /* fSetReadWrite */, true /* fUpdateHostMsr */);
+        AssertRC(rc);
+        Assert(!pVmxTransient->fRemoveTscAuxMsr);
+        pVmxTransient->fRemoveTscAuxMsr = true;
     }
 
 #ifdef VBOX_STRICT
@@ -11850,6 +11852,16 @@ static void hmR0VmxPostRunGuest(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient, int r
     AssertRC(rc);
     pVmxTransient->uExitReason    = VMX_EXIT_REASON_BASIC(uExitReason);
     pVmxTransient->fVMEntryFailed = VMX_EXIT_REASON_HAS_ENTRY_FAILED(uExitReason);
+
+    /*
+     * Remove the TSC_AUX MSR from the auto-load/store MSR area and reset any MSR
+     * bitmap permissions, if it was added before VM-entry.
+     */
+    if (pVmxTransient->fRemoveTscAuxMsr)
+    {
+        hmR0VmxRemoveAutoLoadStoreMsr(pVCpu, pVmxTransient, MSR_K8_TSC_AUX);
+        pVmxTransient->fRemoveTscAuxMsr = false;
+    }
 
     /*
      * Check if VMLAUNCH/VMRESUME succeeded.
