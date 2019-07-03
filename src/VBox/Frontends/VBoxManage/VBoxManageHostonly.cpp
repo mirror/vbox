@@ -86,6 +86,7 @@ static RTEXITCODE handleCreate(HandlerArg *a)
 
     if (fMachineReadable)
     {
+        progress->WaitForCompletion(10000); /* Ten seconds should probably be enough. */
         CHECK_PROGRESS_ERROR_RET(progress, (""), RTEXITCODE_FAILURE);
     }
     else
