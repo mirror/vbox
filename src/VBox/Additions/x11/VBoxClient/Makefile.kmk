@@ -65,11 +65,6 @@ ifdef VBOX_WITH_DRAG_AND_DROP
  endif
 endif
 
-# These are static replacements for gcc-specific parts of libstdc++
-VBoxClient_LIBS += \
-	supc++ \
-	gcc_eh
-
 # This forces the memcpy references in the static libraries to go to
 # __wrap_memcpy, which we can wrap around memcpy@GLIBC_2.2.5.  I do not know
 # how else to do that without recompiling or implementing our own memcpy.
