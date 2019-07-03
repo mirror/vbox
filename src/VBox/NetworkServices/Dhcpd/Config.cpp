@@ -73,11 +73,9 @@ int Config::init()
 
 int Config::homeInit()
 {
-    int rc;
-
     /* pathname of ~/.VirtualBox or equivalent */
     char szHome[RTPATH_MAX];
-    rc = com::GetVBoxUserHomeDirectory(szHome, sizeof(szHome), false);
+    int rc = com::GetVBoxUserHomeDirectory(szHome, sizeof(szHome), false);
     if (RT_FAILURE(rc))
     {
         LogDHCP(("unable to find VirtualBox home directory: %Rrs", rc));
@@ -595,7 +593,6 @@ void Config::parseConfig(const xml::ElementNode *root)
 
     parseServer(root);
 
-    /** @todo r=bird: Visual C++ 2010 does not grok this use of 'auto'. */
     // XXX: debug
     for (optmap_t::const_iterator it = m_GlobalOptions.begin(); it != m_GlobalOptions.end(); ++it) {
         std::shared_ptr<DhcpOption> opt(it->second);
@@ -720,7 +717,7 @@ void Config::parseGlobalOptions(const xml::ElementNode *options)
 }
 
 
-/*
+/**
  * VM Config entries are generated automatically from VirtualBox.xml
  * with the MAC fetched from the VM config.  The client id is nowhere
  * in the picture there, so VM config is indexed with plain RTMAC, not
@@ -786,7 +783,7 @@ int Config::parseClientId(OptClientId &aId, const RTCString &aStr)
 }
 
 
-/*
+/**
  * Parse <Option/> element and add the option to the specified optmap.
  */
 void Config::parseOption(const xml::ElementNode *option, optmap_t &optmap)
@@ -844,7 +841,7 @@ void Config::parseOption(const xml::ElementNode *option, optmap_t &optmap)
 }
 
 
-/*
+/**
  * Set m_strBaseName to sanitized version of m_strNetwork that can be
  * used in a path component.
  */
@@ -860,13 +857,17 @@ void Config::sanitizeBaseName()
     if (RT_FAILURE(rc))
         return;
 
-    for (char *p = szBaseName; *p != '\0'; ++p)
-    {
-        if (RTPATH_IS_SEP(*p))
-        {
+    char ch;
+#if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
+    static const char s_szIllegals[] = "/\\\"*:<>?|\t\v\n\r\f\a\b"; /** @todo all control chars... */
+    for (char *p = szBaseName; (ch = *p) != '\0'; ++p)
+        if (strchr(s_szIllegals, ch))
             *p = '_';
-        }
-    }
+#else
+    for (char *p = szBaseName; (ch = *p) != '\0'; ++p)
+        if (RTPATH_IS_SEP(ch))
+            *p = '_';
+#endif
 
     m_strBaseName.assign(szBaseName);
 }

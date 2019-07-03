@@ -49,7 +49,7 @@ include $(KBUILD_PATH)/subheader.kmk
  # (current dir is for for lwipopts.h)
  VBoxNetDhcpd_INCS += . $(addprefix ../../Devices/Network/lwip-new/,$(LWIP_INCS))
 
- VBoxNetDhcpd_DEFS    = KBUILD_TYPE=\"$(KBUILD_TYPE)\"
+ VBoxNetDhcpd_DEFS       = KBUILD_TYPE=\"$(KBUILD_TYPE)\"
  ifneq ($(KBUILD_TARGET),win)
   VBoxNetDhcpd_DEFS     += VBOX_WITH_XPCOM
   VBoxNetDhcpd_INCS     += $(VBOX_XPCOM_INCS)
@@ -58,21 +58,21 @@ include $(KBUILD_PATH)/subheader.kmk
    VBoxNetDhcpd_CXXFLAGS += -std=$(if $(VBOX_GCC_VERSION_CXX),$(if $(VBOX_GCC_VERSION_CXX) < 40700,c++0x,c++11),c++0x)
   endif
  endif
- VBoxNetDhcpd_SOURCES = ../../Main/glue/VBoxLogRelCreate.cpp \
-                        ../../Main/glue/GetVBoxUserHomeDirectory.cpp \
-                        ClientId.cpp \
-                        Config.cpp \
-                        DHCPD.cpp \
-                        Db.cpp \
-                        DhcpMessage.cpp \
-                        DhcpOptions.cpp \
-                        IPv4Pool.cpp \
-                        TimeStamp.cpp \
-                        VBoxNetDhcpd.cpp \
-                        $(addprefix ../../Devices/Network/lwip-new/,$(LWIP_SOURCES))
+ VBoxNetDhcpd_SOURCES = \
+	ClientId.cpp \
+	Config.cpp \
+	DHCPD.cpp \
+	Db.cpp \
+	DhcpMessage.cpp \
+	DhcpOptions.cpp \
+	IPv4Pool.cpp \
+	TimeStamp.cpp \
+	VBoxNetDhcpd.cpp \
+ 	../../Main/glue/VBoxLogRelCreate.cpp \
+	../../Main/glue/GetVBoxUserHomeDirectory.cpp \
+	$(addprefix ../../Devices/Network/lwip-new/,$(LWIP_SOURCES))
 
  VBoxNetDhcpd_LIBS = $(LIB_RUNTIME)
-
  VBoxNetDhcpd_LIBS.solaris += socket nsl
  VBoxNetDhcpd_LDFLAGS.win = /SUBSYSTEM:windows
 

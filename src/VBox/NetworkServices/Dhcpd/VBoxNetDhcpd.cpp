@@ -243,26 +243,12 @@ void VBoxNetDhcpd::r3Fini()
 
 int VBoxNetDhcpd::vmmInit()
 {
-    int rc;
-    try {
-        std::vector<char> vExecDir(RTPATH_MAX);
-        rc = RTPathExecDir(&vExecDir.front(), vExecDir.size());
-        if (RT_FAILURE(rc))
-            return rc;
-        std::string strPath(&vExecDir.front());
-        strPath.append("/VMMR0.r0");
-
-        rc = SUPR3LoadVMM(strPath.c_str());
-        if (RT_FAILURE(rc))
-            return rc;
-
-        rc = VINF_SUCCESS;
-    }
-    catch (...)
-    {
-        rc = VERR_GENERAL_FAILURE;
-    }
-
+    char szPathVMMR0[RTPATH_MAX];
+    int rc = RTPathExecDir(szPathVMMR0, sizeof(szPathVMMR0));
+    if (RT_SUCCESS(rc))
+        rc = RTPathAppend(szPathVMMR0, sizeof(szPathVMMR0), "VMMR0.r0");
+    if (RT_SUCCESS(rc))
+        rc = SUPR3LoadVMM(szPathVMMR0);
     return rc;
 }
 
@@ -315,8 +301,8 @@ int VBoxNetDhcpd::ifOpen(const std::string &strNetwork,
         OpenReq.enmTrunkType = kIntNetTrunkType_WhateverNone;
 
     OpenReq.fFlags = 0;
-    OpenReq.cbSend = 128 * _1K;
-    OpenReq.cbRecv = 256 * _1K;
+    OpenReq.cbSend = _128K;
+    OpenReq.cbRecv = _256K;
 
     OpenReq.hIf = INTNET_HANDLE_INVALID;
 
@@ -470,7 +456,7 @@ int VBoxNetDhcpd::ifProcessInput()
 }
 
 
-/*
+/**
  * Got a frame from the internal network, feed it to the lwIP stack.
  */
 int VBoxNetDhcpd::ifInput(void *pvFrame, uint32_t cbFrame)
@@ -494,7 +480,7 @@ int VBoxNetDhcpd::ifInput(void *pvFrame, uint32_t cbFrame)
      *   pbuf_header(p, ETH_PAD_SIZE);  // reveal padding
      */
     struct pbuf *q = p;
-    uint8_t *pu8Chunk = (uint8_t *)pvFrame;
+    uint8_t *pbChunk = (uint8_t *)pvFrame;
     do {
         uint8_t *payload = (uint8_t *)q->payload;
         size_t len = q->len;
@@ -506,8 +492,8 @@ int VBoxNetDhcpd::ifInput(void *pvFrame, uint32_t cbFrame)
             len -= ETH_PAD_SIZE;
         }
 #endif
-        memcpy(payload, pu8Chunk, len);
-        pu8Chunk += len;
+        memcpy(payload, pbChunk, len);
+        pbChunk += len;
         q = q->next;
     } while (RT_UNLIKELY(q != NULL));
 
@@ -516,7 +502,7 @@ int VBoxNetDhcpd::ifInput(void *pvFrame, uint32_t cbFrame)
 }
 
 
-/*
+/**
  * Got a frame from the lwIP stack, feed it to the internal network.
  */
 err_t VBoxNetDhcpd::netifLinkOutput(pbuf *pPBuf)
