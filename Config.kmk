@@ -349,6 +349,17 @@ endif
 # (Used by the additions build server, don't invert it.)
 #VBOX_WITHOUT_ADDITIONS_ISO = 1
 ## @}
+# Set build options right for building the Additions as an RPM package.
+# VBOX_ONLY_RPM_ADDITIONS = 1
+ifdef VBOX_ONLY_RPM_ADDITIONS
+ VBOX_ONLY_ADDITIONS=1
+ VBOX_ONLY_ADDITIONS_WITHOUT_RTISOMAKER=1
+ # We build the RPMs using public sources.
+ VBOX_OSE=1
+ # We want to re-use parts of the packing pass, but not all.
+ VBOX_WITHOUT_LINUX_GUEST_PACKAGE=1
+ VBOX_WITHOUT_ADDITIONS_ISO=1
+endif
 
 ## @name Documentation
 ## @{
@@ -932,7 +943,10 @@ VBOX_WITH_DARWIN_R0_DARWIN_IMAGE_VERIFICATION = 1
 # Strip binaries of release and profile builds before packing them into the installer
 # archive. When building .deb/.rpms, don't strip the symbols as they are required for
 # the debug packages containing symbols for gdb located in /usr/lib/debug.
-VBOX_DO_STRIP := $(if $(filter release profile,$(KBUILD_TYPE)),1,)
+# In rpm Additions we also need to do part of packing without strip.
+ifndef VBOX_ONLY_RPM_ADDITIONS
+ VBOX_DO_STRIP := $(if $(filter release profile,$(KBUILD_TYPE)),1,)
+endif
 
 
 #
