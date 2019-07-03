@@ -1388,6 +1388,12 @@ static int hmR0VmxSwitchToGstOrNstGstVmcs(PVMCPU pVCpu, bool fSwitchToNstGstVmcs
          * If we are switching to a VMCS that was executed on a different host CPU or was
          * never executed before, flag that we need to export the host state before executing
          * guest/nested-guest code using hardware-assisted VMX.
+         *
+         * This could probably be done in a preemptible context since the preemption hook
+         * will flag the necessary change in host context. However, since preemption is
+         * already disabled and to avoid making assumptions about host specific code in
+         * RTMpCpuId when called with preemption enabled, we'll do this while preemption is
+         * disabled.
          */
         if (pVmcsInfoTo->idHostCpu == RTMpCpuId())
         { /* likely */ }
