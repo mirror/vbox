@@ -79,6 +79,9 @@ private:
 public:
     SeamlessMain(void);
     virtual ~SeamlessMain();
+#ifdef RT_NEED_NEW_AND_DELETE
+    RTMEM_IMPLEMENT_NEW_AND_DELETE();
+#endif
 
     /**
       * Initialise the service.

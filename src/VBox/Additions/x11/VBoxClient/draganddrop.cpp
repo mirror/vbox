@@ -112,6 +112,9 @@ struct DnDEvent
         PVBGLR3DNDEVENT hgcm;
         XEvent x11;
     };
+#ifdef IN_GUEST
+    RTMEM_IMPLEMENT_NEW_AND_DELETE();
+#endif
 };
 
 enum XA_Type
@@ -274,7 +277,9 @@ public:
     Window applicationWindowBelowCursor(Window parentWin) const;
 
 private:
-
+#ifdef RT_NEED_NEW_AND_DELETE
+    RTMEM_IMPLEMENT_NEW_AND_DELETE();
+#endif
     xHelpers(Display *pDisplay)
       : m_pDisplay(pDisplay)
     {
@@ -429,9 +434,10 @@ class VBoxDnDProxyWnd
 {
 
 public:
-
+#ifdef RT_NEED_NEW_AND_DELETE
+    RTMEM_IMPLEMENT_NEW_AND_DELETE();
+#endif
     VBoxDnDProxyWnd(void);
-
     virtual ~VBoxDnDProxyWnd(void);
 
 public:
@@ -450,6 +456,33 @@ public:
     int      iY;
     int      iWidth;
     int      iHeight;
+};
+
+/** This class only serve to avoid dragging in generic new() and delete(). */
+class WrappedXEvent
+{
+public:
+    XEvent m_Event;
+
+public:
+#ifdef RT_NEED_NEW_AND_DELETE
+    RTMEM_IMPLEMENT_NEW_AND_DELETE();
+#endif
+    WrappedXEvent(const XEvent &a_rSrcEvent)
+    {
+        m_Event = a_rSrcEvent;
+    }
+
+    WrappedXEvent()
+    {
+        RT_ZERO(m_Event);
+    }
+
+    WrappedXEvent &operator=(const XEvent &a_rSrcEvent)
+    {
+        m_Event = a_rSrcEvent;
+        return *this;
+    }
 };
 
 /**
@@ -479,6 +512,9 @@ public:
         Mode_32Bit_Hack = 0x7fffffff
     };
 
+#ifdef RT_NEED_NEW_AND_DELETE
+    RTMEM_IMPLEMENT_NEW_AND_DELETE();
+#endif
     DragInstance(Display *pDisplay, DragAndDropService *pParent);
 
 public:
@@ -578,7 +614,7 @@ protected:
     /** Current state of operation mode. */
     volatile uint32_t           m_enmState;
     /** The instance's own X event queue. */
-    RTCMTList<XEvent>           m_eventQueueList;
+    RTCMTList<WrappedXEvent>    m_eventQueueList;
     /** Critical section for providing serialized access to list
      *  event queue's contents. */
     RTCRITSECT                  m_eventQueueCS;
@@ -1483,7 +1519,7 @@ bool DragInstance::waitForX11Msg(XEvent &evX, int iType, RTMSINTERVAL uTimeoutMS
             int rc2 = RTCritSectEnter(&m_eventQueueCS);
             if (RT_SUCCESS(rc2))
             {
-                XEvent e = m_eventQueueList.at(i);
+                XEvent e = m_eventQueueList.at(i).m_Event;
 
                 fFound = e.type == iType;
                 if (fFound)
@@ -1541,7 +1577,7 @@ bool DragInstance::waitForX11ClientMsg(XClientMessageEvent &evMsg, Atom aType,
             int rc2 = RTCritSectEnter(&m_eventQueueCS);
             if (RT_SUCCESS(rc2))
             {
-                XEvent e = m_eventQueueList.at(i);
+                XEvent e = m_eventQueueList.at(i).m_Event;
                 if (   e.type                 == ClientMessage
                     && e.xclient.message_type == aType)
                 {

@@ -1,8 +1,6 @@
 /* $Id$ */
 /** @file
- *
- * Seamless mode:
- * Linux guest.
+ * Seamless mode - X11 guests.
  */
 
 /*
@@ -25,6 +23,10 @@
 
 #include <VBox/log.h>
 #include <iprt/avl.h>
+#ifdef RT_NEED_NEW_AND_DELETE
+# include <iprt/mem.h>
+# include <new>
+#endif
 
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
@@ -74,6 +76,9 @@ public:
         if (mpRects)
             XFree(mpRects);
     }
+#ifdef RT_NEED_NEW_AND_DELETE
+    RTMEM_IMPLEMENT_NEW_AND_DELETE();
+#endif
 
 private:
     // We don't want a copy constructor or assignment operator
@@ -119,6 +124,10 @@ public:
          *        I don't see a need to require this. */
         doWithAll(VBoxGuestWinCleanup, NULL);
     }
+
+#ifdef RT_NEED_NEW_AND_DELETE
+    RTMEM_IMPLEMENT_NEW_AND_DELETE();
+#endif
 
     // Standard operations
     VBoxGuestWinInfo *find(Window hWin)
@@ -256,6 +265,10 @@ public:
     {
         uninit();
     }
+
+#ifdef RT_NEED_NEW_AND_DELETE
+    RTMEM_IMPLEMENT_NEW_AND_DELETE();
+#endif
 };
 
 #endif /* !GA_INCLUDED_SRC_x11_VBoxClient_seamless_x11_h */

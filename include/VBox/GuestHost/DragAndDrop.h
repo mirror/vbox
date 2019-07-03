@@ -52,9 +52,10 @@ typedef uint32_t DNDURIDROPPEDFILEFLAGS;
  */
 class DnDDroppedFiles
 {
-
 public:
-
+#ifdef RT_NEED_NEW_AND_DELETE
+    RTMEM_IMPLEMENT_NEW_AND_DELETE();
+#endif
     DnDDroppedFiles(void);
     DnDDroppedFiles(const char *pszPath, DNDURIDROPPEDFILEFLAGS fFlags = DNDURIDROPPEDFILE_FLAGS_NONE);
     virtual ~DnDDroppedFiles(void);
@@ -144,6 +145,9 @@ public:
         View_Dest_32Bit_Hack = 0x7fffffff
     };
 
+#ifdef RT_NEED_NEW_AND_DELETE
+    RTMEM_IMPLEMENT_NEW_AND_DELETE();
+#endif
     DnDURIObject(void);
     DnDURIObject(Type type,
                  const RTCString &strSrcPathAbs = "",
@@ -270,7 +274,9 @@ typedef uint32_t DNDURILISTFLAGS;
 class DnDURIList
 {
 public:
-
+#ifdef RT_NEED_NEW_AND_DELETE
+    RTMEM_IMPLEMENT_NEW_AND_DELETE();
+#endif
     DnDURIList(void);
     virtual ~DnDURIList(void);
 
