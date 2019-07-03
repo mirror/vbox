@@ -68,13 +68,15 @@ typedef struct _VBOXCLIPBOARDCONTEXT
 #endif
 } VBOXCLIPBOARDCONTEXT, *PVBOXCLIPBOARDCONTEXT;
 
-typedef struct _VBOXCLIPBOARDWRITETHREADCTX
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+typedef struct _VBOXCLIPBOARDURIWRITETHREADCTX
 {
     PVBOXCLIPBOARDCONTEXT       pClipboardCtx;
     PSHAREDCLIPBOARDURITRANSFER pTransfer;
     char                       *papszURIList;
     uint32_t                    cbURIList;
-} VBOXCLIPBOARDWRITETHREADCTX, *PVBOXCLIPBOARDWRITETHREADCTX;
+} VBOXCLIPBOARDURIWRITETHREADCTX, *PVBOXCLIPBOARDURIWRITETHREADCTX;
+#endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
 
 
 /*********************************************************************************************************************************
@@ -102,7 +104,7 @@ static DECLCALLBACK(int) vboxClipboardURIWriteThread(RTTHREAD ThreadSelf, void *
 
     LogFlowFuncEnter();
 
-    PVBOXCLIPBOARDWRITETHREADCTX pCtx = (PVBOXCLIPBOARDWRITETHREADCTX)pvUser;
+    PVBOXCLIPBOARDURIWRITETHREADCTX pCtx = (PVBOXCLIPBOARDURIWRITETHREADCTX)pvUser;
     AssertPtr(pCtx);
 
     RTThreadUserSignal(RTThreadSelf());
@@ -840,8 +842,8 @@ static LRESULT vboxClipboardWinProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd,
                                    rc = VBoxClipboardWinDropFilesToStringList((DROPFILES *)hDrop, &papszList, &cbList);
                                    if (RT_SUCCESS(rc))
                                    {
-                                       PVBOXCLIPBOARDWRITETHREADCTX pThreadCtx
-                                           = (PVBOXCLIPBOARDWRITETHREADCTX)RTMemAllocZ(sizeof(VBOXCLIPBOARDWRITETHREADCTX));
+                                       PVBOXCLIPBOARDURIWRITETHREADCTX pThreadCtx
+                                           = (PVBOXCLIPBOARDURIWRITETHREADCTX)RTMemAllocZ(sizeof(VBOXCLIPBOARDURIWRITETHREADCTX));
                                        if (pThreadCtx)
                                        {
                                            pThreadCtx->pClipboardCtx = pCtx;
