@@ -562,6 +562,115 @@ RTDECL(void) RTMemWipeThoroughly(void *pv, size_t cb, size_t cMinPasses) RT_NO_T
 #endif
 
 
+/** @def RTMEM_IMPLEMENT_NEW_AND_DELETE
+ * Provides a new and delete implementation to a class using IPRT's RTMem
+ * allocator.
+ */
+#if !defined(RTMEM_WRAP_SOME_NEW_AND_DELETE_TO_EF) || defined(RTMEM_NO_WRAP_SOME_NEW_AND_DELETE_TO_EF)
+# ifdef RT_EXCEPTIONS_ENABLED
+#  define RTMEM_IMPLEMENT_NEW_AND_DELETE() \
+        void *operator new(size_t cb) RT_THROW(std::bad_alloc) \
+        { \
+            void *pv = RTMemAlloc(cb); \
+            if (RT_LIKELY(pv)) \
+                return pv; \
+            throw std::bad_alloc(); \
+        } \
+        void *operator new(size_t cb, const std::nothrow_t &nothrow_constant) RT_NO_THROW_DEF \
+        { \
+            NOREF(nothrow_constant); \
+            return RTMemAlloc(cb); \
+        } \
+        void *operator new(size_t cb, void *pvBuf) RT_NO_THROW_DEF \
+        { \
+            NOREF(cb); \
+            return pvBuf; \
+        } \
+        void *operator new[](size_t cb) RT_THROW(std::bad_alloc) \
+        { \
+            void *pv = RTMemAlloc(cb); \
+            if (RT_LIKELY(pv)) \
+                return pv; \
+            throw std::bad_alloc(); \
+        } \
+        void *operator new[](size_t cb, const std::nothrow_t &nothrow_constant) RT_NO_THROW_DEF \
+        { \
+            NOREF(nothrow_constant); \
+            return RTMemAlloc(cb); \
+        } \
+        \
+        void operator delete(void *pv) RT_NO_THROW_DEF \
+        { \
+            RTMemFree(pv); \
+        } \
+        void operator delete(void *pv, const std::nothrow_t &nothrow_constant) RT_NO_THROW_DEF \
+        { \
+            NOREF(nothrow_constant); \
+            RTMemFree(pv); \
+        } \
+        void operator delete[](void *pv) RT_NO_THROW_DEF \
+        { \
+            RTMemFree(pv); \
+        } \
+        void operator delete[](void *pv, const std::nothrow_t &nothrow_constant) RT_NO_THROW_DEF \
+        { \
+            NOREF(nothrow_constant); \
+            RTMemFree(pv); \
+        } \
+        \
+        typedef int UsingIprtNewAndDeleteOperators
+# else  /* !RT_EXCEPTIONS_ENABLED */
+#  define RTMEM_IMPLEMENT_NEW_AND_DELETE() \
+        void *operator new(size_t cb) \
+        { \
+            return RTMemAlloc(cb); \
+        } \
+        void *operator new(size_t cb, const std::nothrow_t &nothrow_constant) \
+        { \
+            NOREF(nothrow_constant); \
+            return RTMemAlloc(cb); \
+        } \
+        void *operator new(size_t cb, void *pvBuf) RT_NO_THROW_DEF \
+        { \
+            NOREF(cb); \
+            return pvBuf; \
+        } \
+        void *operator new[](size_t cb) \
+        { \
+            return RTMemAlloc(cb); \
+        } \
+        void *operator new[](size_t cb, const std::nothrow_t &nothrow_constant) \
+        { \
+            NOREF(nothrow_constant); \
+            return RTMemAlloc(cb); \
+        } \
+        \
+        void operator delete(void *pv) \
+        { \
+            RTMemFree(pv); \
+        } \
+        void operator delete(void *pv, const std::nothrow_t &nothrow_constant) \
+        { \
+            NOREF(nothrow_constant); \
+            RTMemFree(pv); \
+        } \
+        void operator delete[](void *pv) \
+        { \
+            RTMemFree(pv); \
+        } \
+        void operator delete[](void *pv, const std::nothrow_t &nothrow_constant) \
+        { \
+            NOREF(nothrow_constant); \
+            RTMemFree(pv); \
+        } \
+        \
+        typedef int UsingIprtNewAndDeleteOperators
+# endif /* !RT_EXCEPTIONS_ENABLED */
+#else  /* defined(RTMEM_WRAP_SOME_NEW_AND_DELETE_TO_EF) && !defined(RTMEM_NO_WRAP_SOME_NEW_AND_DELETE_TO_EF) */
+# define RTMEM_IMPLEMENT_NEW_AND_DELETE() RTMEMEF_NEW_AND_DELETE_OPERATORS()
+#endif /* defined(RTMEM_WRAP_SOME_NEW_AND_DELETE_TO_EF) && !defined(RTMEM_NO_WRAP_SOME_NEW_AND_DELETE_TO_EF) */
+
+
 #ifdef IN_RING0
 
 /**
@@ -847,6 +956,11 @@ RTDECL(void *) RTMemEfDupEx(const void *pvSrc, size_t cbSrc, size_t cbExtra, con
             NOREF(nothrow_constant); \
             return RTMemEfAlloc(cb, RTMEM_TAG, RT_SRC_POS); \
         } \
+        void *operator new(size_t cb, void *pvBuf) RT_NO_THROW_DEF \
+        { \
+            NOREF(cb); \
+            return pvBuf; \
+        } \
         void *operator new[](size_t cb) RT_THROW(std::bad_alloc) \
         { \
             void *pv = RTMemEfAlloc(cb, RTMEM_TAG, RT_SRC_POS); \
@@ -891,6 +1005,11 @@ RTDECL(void *) RTMemEfDupEx(const void *pvSrc, size_t cbSrc, size_t cbExtra, con
             NOREF(nothrow_constant); \
             return RTMemEfAlloc(cb, RTMEM_TAG, RT_SRC_POS); \
         } \
+        void *operator new(size_t cb, void *pvBuf) RT_NO_THROW_DEF \
+        { \
+            NOREF(cb); \
+            return pvBuf; \
+        } \
         void *operator new[](size_t cb) \
         { \
             return RTMemEfAlloc(cb, RTMEM_TAG, RT_SRC_POS); \
@@ -923,25 +1042,25 @@ RTDECL(void *) RTMemEfDupEx(const void *pvSrc, size_t cbSrc, size_t cbExtra, con
         typedef int UsingElectricNewAndDeleteOperators
 # endif
 # define RTR0MEMEF_NEW_AND_DELETE_OPERATORS_IOKIT() \
-    void *operator new(size_t cb) \
-    { \
-        return RTMemEfAllocZ(cb, RTMEM_TAG, RT_SRC_POS); \
-    } \
-    void *operator new[](size_t cb) \
-    { \
-        return RTMemEfAllocZ(cb, RTMEM_TAG, RT_SRC_POS); \
-    } \
-    \
-    void operator delete(void *pv) \
-    { \
-        RTMemEfFree(pv, RT_SRC_POS); \
-    } \
-    void operator delete[](void *pv) \
-    { \
-        RTMemEfFree(pv, RT_SRC_POS); \
-    } \
-    \
-    typedef int UsingElectricNewAndDeleteOperators
+        void *operator new(size_t cb) \
+        { \
+            return RTMemEfAllocZ(cb, RTMEM_TAG, RT_SRC_POS); \
+        } \
+        void *operator new[](size_t cb) \
+        { \
+            return RTMemEfAllocZ(cb, RTMEM_TAG, RT_SRC_POS); \
+        } \
+        \
+        void operator delete(void *pv) \
+        { \
+            RTMemEfFree(pv, RT_SRC_POS); \
+        } \
+        void operator delete[](void *pv) \
+        { \
+            RTMemEfFree(pv, RT_SRC_POS); \
+        } \
+        \
+        typedef int UsingElectricNewAndDeleteOperators
 #else
 # define RTMEMEF_NEW_AND_DELETE_OPERATORS() \
         typedef int UsingDefaultNewAndDeleteOperators
