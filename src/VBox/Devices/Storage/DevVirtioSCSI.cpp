@@ -197,7 +197,7 @@ static DECLCALLBACK(int) virtioScsiR3LiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSS
     return VINF_SSM_DONT_CALL_AGAIN;
 }
 
-/** @callback_method_impl{FNSSMDEVLOADEEXEC}  */
+/** @callback_method_impl{FNSSMDEVLOADEXEC}  */
 static DECLCALLBACK(int) virtioScsiR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
     RT_NOREF(uPass);
