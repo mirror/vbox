@@ -1178,7 +1178,8 @@ static int hmR3InitFinalizeR0(PVM pVM)
         rc = hmR3InitFinalizeR0Intel(pVM);
     else
         rc = hmR3InitFinalizeR0Amd(pVM);
-    LogRel(("HM: VT-x/AMD-V init method: %s\n", (pVM->hm.s.fGlobalInit) ? "GLOBAL" : "LOCAL"));
+    LogRel((pVM->hm.s.fGlobalInit ? "HM: VT-x/AMD-V init method: Global\n"
+                                  : "HM: VT-x/AMD-V init method: Local\n"));
     RTLogRelSetBuffering(fOldBuffered);
     pVM->hm.s.fInitialized = true;
 
@@ -1317,27 +1318,27 @@ static void hmR3VmxReportProcBasedCtlsMsr(PCVMXCTLSMSR pVmxMsr)
     uint64_t const fAllowed1 = pVmxMsr->n.allowed1;
     uint64_t const fAllowed0 = pVmxMsr->n.allowed0;
     LogRel(("HM: MSR_IA32_VMX_PROCBASED_CTLS       = %#RX64\n", pVmxMsr->u));
-    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "INT_WINDOW_EXIT",         VMX_PROC_CTLS_INT_WINDOW_EXIT);
-    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "USE_TSC_OFFSETTING",      VMX_PROC_CTLS_USE_TSC_OFFSETTING);
-    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "HLT_EXIT",                VMX_PROC_CTLS_HLT_EXIT);
-    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "INVLPG_EXIT",             VMX_PROC_CTLS_INVLPG_EXIT);
-    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "MWAIT_EXIT",              VMX_PROC_CTLS_MWAIT_EXIT);
-    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "RDPMC_EXIT",              VMX_PROC_CTLS_RDPMC_EXIT);
-    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "RDTSC_EXIT",              VMX_PROC_CTLS_RDTSC_EXIT);
-    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "CR3_LOAD_EXIT",           VMX_PROC_CTLS_CR3_LOAD_EXIT);
-    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "CR3_STORE_EXIT",          VMX_PROC_CTLS_CR3_STORE_EXIT);
-    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "CR8_LOAD_EXIT",           VMX_PROC_CTLS_CR8_LOAD_EXIT);
-    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "CR8_STORE_EXIT",          VMX_PROC_CTLS_CR8_STORE_EXIT);
-    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "USE_TPR_SHADOW",          VMX_PROC_CTLS_USE_TPR_SHADOW);
-    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "NMI_WINDOW_EXIT",         VMX_PROC_CTLS_NMI_WINDOW_EXIT);
-    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "MOV_DR_EXIT",             VMX_PROC_CTLS_MOV_DR_EXIT);
-    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "UNCOND_IO_EXIT",          VMX_PROC_CTLS_UNCOND_IO_EXIT);
-    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "USE_IO_BITMAPS",          VMX_PROC_CTLS_USE_IO_BITMAPS);
-    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "MONITOR_TRAP_FLAG",       VMX_PROC_CTLS_MONITOR_TRAP_FLAG);
-    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "USE_MSR_BITMAPS",         VMX_PROC_CTLS_USE_MSR_BITMAPS);
-    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "MONITOR_EXIT",            VMX_PROC_CTLS_MONITOR_EXIT);
-    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "PAUSE_EXIT",              VMX_PROC_CTLS_PAUSE_EXIT);
-    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "USE_SECONDARY_CTLS",      VMX_PROC_CTLS_USE_SECONDARY_CTLS);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "INT_WINDOW_EXIT",    VMX_PROC_CTLS_INT_WINDOW_EXIT);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "USE_TSC_OFFSETTING", VMX_PROC_CTLS_USE_TSC_OFFSETTING);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "HLT_EXIT",           VMX_PROC_CTLS_HLT_EXIT);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "INVLPG_EXIT",        VMX_PROC_CTLS_INVLPG_EXIT);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "MWAIT_EXIT",         VMX_PROC_CTLS_MWAIT_EXIT);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "RDPMC_EXIT",         VMX_PROC_CTLS_RDPMC_EXIT);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "RDTSC_EXIT",         VMX_PROC_CTLS_RDTSC_EXIT);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "CR3_LOAD_EXIT",      VMX_PROC_CTLS_CR3_LOAD_EXIT);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "CR3_STORE_EXIT",     VMX_PROC_CTLS_CR3_STORE_EXIT);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "CR8_LOAD_EXIT",      VMX_PROC_CTLS_CR8_LOAD_EXIT);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "CR8_STORE_EXIT",     VMX_PROC_CTLS_CR8_STORE_EXIT);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "USE_TPR_SHADOW",     VMX_PROC_CTLS_USE_TPR_SHADOW);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "NMI_WINDOW_EXIT",    VMX_PROC_CTLS_NMI_WINDOW_EXIT);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "MOV_DR_EXIT",        VMX_PROC_CTLS_MOV_DR_EXIT);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "UNCOND_IO_EXIT",     VMX_PROC_CTLS_UNCOND_IO_EXIT);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "USE_IO_BITMAPS",     VMX_PROC_CTLS_USE_IO_BITMAPS);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "MONITOR_TRAP_FLAG",  VMX_PROC_CTLS_MONITOR_TRAP_FLAG);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "USE_MSR_BITMAPS",    VMX_PROC_CTLS_USE_MSR_BITMAPS);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "MONITOR_EXIT",       VMX_PROC_CTLS_MONITOR_EXIT);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "PAUSE_EXIT",         VMX_PROC_CTLS_PAUSE_EXIT);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "USE_SECONDARY_CTLS", VMX_PROC_CTLS_USE_SECONDARY_CTLS);
 }
 
 
@@ -1351,33 +1352,33 @@ static void hmR3VmxReportProcBasedCtls2Msr(PCVMXCTLSMSR pVmxMsr)
     uint64_t const fAllowed1 = pVmxMsr->n.allowed1;
     uint64_t const fAllowed0 = pVmxMsr->n.allowed0;
     LogRel(("HM: MSR_IA32_VMX_PROCBASED_CTLS2      = %#RX64\n", pVmxMsr->u));
-    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "VIRT_APIC_ACCESS",      VMX_PROC_CTLS2_VIRT_APIC_ACCESS);
-    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "EPT",                   VMX_PROC_CTLS2_EPT);
-    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "DESC_TABLE_EXIT",       VMX_PROC_CTLS2_DESC_TABLE_EXIT);
-    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "RDTSCP",                VMX_PROC_CTLS2_RDTSCP);
-    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "VIRT_X2APIC_MODE",      VMX_PROC_CTLS2_VIRT_X2APIC_MODE);
-    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "VPID",                  VMX_PROC_CTLS2_VPID);
-    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "WBINVD_EXIT",           VMX_PROC_CTLS2_WBINVD_EXIT);
-    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "UNRESTRICTED_GUEST",    VMX_PROC_CTLS2_UNRESTRICTED_GUEST);
-    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "APIC_REG_VIRT",         VMX_PROC_CTLS2_APIC_REG_VIRT);
-    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "VIRT_INT_DELIVERY",     VMX_PROC_CTLS2_VIRT_INT_DELIVERY);
-    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "PAUSE_LOOP_EXIT",       VMX_PROC_CTLS2_PAUSE_LOOP_EXIT);
-    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "RDRAND_EXIT",           VMX_PROC_CTLS2_RDRAND_EXIT);
-    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "INVPCID",               VMX_PROC_CTLS2_INVPCID);
-    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "VMFUNC",                VMX_PROC_CTLS2_VMFUNC);
-    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "VMCS_SHADOWING",        VMX_PROC_CTLS2_VMCS_SHADOWING);
-    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "ENCLS_EXIT",            VMX_PROC_CTLS2_ENCLS_EXIT);
-    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "RDSEED_EXIT",           VMX_PROC_CTLS2_RDSEED_EXIT);
-    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "PML",                   VMX_PROC_CTLS2_PML);
-    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "EPT_VE",                VMX_PROC_CTLS2_EPT_VE);
-    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "CONCEAL_VMX_FROM_PT",   VMX_PROC_CTLS2_CONCEAL_VMX_FROM_PT);
-    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "XSAVES_XRSTORS",        VMX_PROC_CTLS2_XSAVES_XRSTORS);
-    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "MODE_BASED_EPT_PERM",   VMX_PROC_CTLS2_MODE_BASED_EPT_PERM);
-    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "SPPTP_EPT",             VMX_PROC_CTLS2_SPPTP_EPT);
-    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "PT_EPT",                VMX_PROC_CTLS2_PT_EPT);
-    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "TSC_SCALING",           VMX_PROC_CTLS2_TSC_SCALING);
-    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "USER_WAIT_PAUSE",       VMX_PROC_CTLS2_USER_WAIT_PAUSE);
-    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "ENCLV_EXIT",            VMX_PROC_CTLS2_ENCLV_EXIT);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "VIRT_APIC_ACCESS",    VMX_PROC_CTLS2_VIRT_APIC_ACCESS);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "EPT",                 VMX_PROC_CTLS2_EPT);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "DESC_TABLE_EXIT",     VMX_PROC_CTLS2_DESC_TABLE_EXIT);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "RDTSCP",              VMX_PROC_CTLS2_RDTSCP);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "VIRT_X2APIC_MODE",    VMX_PROC_CTLS2_VIRT_X2APIC_MODE);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "VPID",                VMX_PROC_CTLS2_VPID);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "WBINVD_EXIT",         VMX_PROC_CTLS2_WBINVD_EXIT);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "UNRESTRICTED_GUEST",  VMX_PROC_CTLS2_UNRESTRICTED_GUEST);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "APIC_REG_VIRT",       VMX_PROC_CTLS2_APIC_REG_VIRT);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "VIRT_INT_DELIVERY",   VMX_PROC_CTLS2_VIRT_INT_DELIVERY);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "PAUSE_LOOP_EXIT",     VMX_PROC_CTLS2_PAUSE_LOOP_EXIT);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "RDRAND_EXIT",         VMX_PROC_CTLS2_RDRAND_EXIT);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "INVPCID",             VMX_PROC_CTLS2_INVPCID);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "VMFUNC",              VMX_PROC_CTLS2_VMFUNC);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "VMCS_SHADOWING",      VMX_PROC_CTLS2_VMCS_SHADOWING);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "ENCLS_EXIT",          VMX_PROC_CTLS2_ENCLS_EXIT);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "RDSEED_EXIT",         VMX_PROC_CTLS2_RDSEED_EXIT);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "PML",                 VMX_PROC_CTLS2_PML);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "EPT_VE",              VMX_PROC_CTLS2_EPT_VE);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "CONCEAL_VMX_FROM_PT", VMX_PROC_CTLS2_CONCEAL_VMX_FROM_PT);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "XSAVES_XRSTORS",      VMX_PROC_CTLS2_XSAVES_XRSTORS);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "MODE_BASED_EPT_PERM", VMX_PROC_CTLS2_MODE_BASED_EPT_PERM);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "SPPTP_EPT",           VMX_PROC_CTLS2_SPPTP_EPT);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "PT_EPT",              VMX_PROC_CTLS2_PT_EPT);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "TSC_SCALING",         VMX_PROC_CTLS2_TSC_SCALING);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "USER_WAIT_PAUSE",     VMX_PROC_CTLS2_USER_WAIT_PAUSE);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "ENCLV_EXIT",          VMX_PROC_CTLS2_ENCLV_EXIT);
 }
 
 
@@ -1414,18 +1415,18 @@ static void hmR3VmxReportExitCtlsMsr(PCVMXCTLSMSR pVmxMsr)
     uint64_t const fAllowed1 = pVmxMsr->n.allowed1;
     uint64_t const fAllowed0 = pVmxMsr->n.allowed0;
     LogRel(("HM: MSR_IA32_VMX_EXIT_CTLS            = %#RX64\n", pVmxMsr->u));
-    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "SAVE_DEBUG",             VMX_EXIT_CTLS_SAVE_DEBUG);
-    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "HOST_ADDR_SPACE_SIZE",   VMX_EXIT_CTLS_HOST_ADDR_SPACE_SIZE);
-    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "LOAD_PERF_MSR",          VMX_EXIT_CTLS_LOAD_PERF_MSR);
-    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "ACK_EXT_INT",            VMX_EXIT_CTLS_ACK_EXT_INT);
-    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "SAVE_PAT_MSR",           VMX_EXIT_CTLS_SAVE_PAT_MSR);
-    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "LOAD_PAT_MSR",           VMX_EXIT_CTLS_LOAD_PAT_MSR);
-    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "SAVE_EFER_MSR",          VMX_EXIT_CTLS_SAVE_EFER_MSR);
-    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "LOAD_EFER_MSR",          VMX_EXIT_CTLS_LOAD_EFER_MSR);
-    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "SAVE_PREEMPT_TIMER",     VMX_EXIT_CTLS_SAVE_PREEMPT_TIMER);
-    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "CLEAR_BNDCFGS_MSR",      VMX_EXIT_CTLS_CLEAR_BNDCFGS_MSR);
-    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "CONCEAL_VMX_FROM_PT",    VMX_EXIT_CTLS_CONCEAL_VMX_FROM_PT);
-    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "CLEAR_RTIT_CTL_MSR",     VMX_EXIT_CTLS_CLEAR_RTIT_CTL_MSR);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "SAVE_DEBUG",           VMX_EXIT_CTLS_SAVE_DEBUG);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "HOST_ADDR_SPACE_SIZE", VMX_EXIT_CTLS_HOST_ADDR_SPACE_SIZE);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "LOAD_PERF_MSR",        VMX_EXIT_CTLS_LOAD_PERF_MSR);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "ACK_EXT_INT",          VMX_EXIT_CTLS_ACK_EXT_INT);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "SAVE_PAT_MSR",         VMX_EXIT_CTLS_SAVE_PAT_MSR);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "LOAD_PAT_MSR",         VMX_EXIT_CTLS_LOAD_PAT_MSR);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "SAVE_EFER_MSR",        VMX_EXIT_CTLS_SAVE_EFER_MSR);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "LOAD_EFER_MSR",        VMX_EXIT_CTLS_LOAD_EFER_MSR);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "SAVE_PREEMPT_TIMER",   VMX_EXIT_CTLS_SAVE_PREEMPT_TIMER);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "CLEAR_BNDCFGS_MSR",    VMX_EXIT_CTLS_CLEAR_BNDCFGS_MSR);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "CONCEAL_VMX_FROM_PT",  VMX_EXIT_CTLS_CONCEAL_VMX_FROM_PT);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "CLEAR_RTIT_CTL_MSR",   VMX_EXIT_CTLS_CLEAR_RTIT_CTL_MSR);
 }
 
 
@@ -1538,8 +1539,8 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
     Log(("pVM->hm.s.vmx.fSupported = %d\n", pVM->hm.s.vmx.fSupported));
     AssertLogRelReturn(pVM->hm.s.vmx.Msrs.u64FeatCtrl != 0, VERR_HM_IPE_4);
 
-    LogRel(("HM: Using VT-x implementation 2.0\n"));
-    LogRel(("HM: Max resume loops                  = %u\n", pVM->hm.s.cMaxResumeLoops));
+    LogRel(("HM: Using VT-x implementation 3.0\n"));
+    LogRel(("HM: Max resume loops                  = %u\n",     pVM->hm.s.cMaxResumeLoops));
     LogRel(("HM: Host CR4                          = %#RX64\n", pVM->hm.s.vmx.u64HostCr4));
     LogRel(("HM: Host EFER                         = %#RX64\n", pVM->hm.s.vmx.u64HostMsrEfer));
     LogRel(("HM: MSR_IA32_SMM_MONITOR_CTL          = %#RX64\n", pVM->hm.s.vmx.u64HostSmmMonitorCtl));
@@ -1674,9 +1675,8 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
         }
     }
 
-    LogRel((pVM->hm.s.fAllow64BitGuests
-            ? "HM: Guest support: 32-bit and 64-bit\n"
-            : "HM: Guest support: 32-bit only\n"));
+    LogRel((pVM->hm.s.fAllow64BitGuests ? "HM: Guest support: 32-bit and 64-bit\n"
+                                        : "HM: Guest support: 32-bit only\n"));
 
     /*
      * Call ring-0 to set up the VM.
@@ -1917,12 +1917,11 @@ static int hmR3InitFinalizeR0Amd(PVM pVM)
     else if (CPUMR3GetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_PAE))
         CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_NX);
 
-    LogRel(("HM: %s TPR patching\n", (pVM->hm.s.fTprPatchingAllowed) ? "Enabled" : "Disabled"));
+    LogRel((pVM->hm.s.fTprPatchingAllowed ? "HM: Enabled TPR patching\n"
+                                          : "HM: Disabled TPR patching\n"));
 
-    LogRel((pVM->hm.s.fAllow64BitGuests
-            ? "HM: Guest support: 32-bit and 64-bit\n"
-            : "HM: Guest support: 32-bit only\n"));
-
+    LogRel((pVM->hm.s.fAllow64BitGuests ? "HM: Guest support: 32-bit and 64-bit\n"
+                                        : "HM: Guest support: 32-bit only\n"));
     return VINF_SUCCESS;
 }
 
