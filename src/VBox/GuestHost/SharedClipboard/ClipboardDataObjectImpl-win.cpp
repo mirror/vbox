@@ -33,6 +33,7 @@
 #include <iprt/win/shlobj.h>
 #include <iprt/win/shlwapi.h>
 
+#include <iprt/err.h>
 #include <iprt/path.h>
 #include <iprt/semaphore.h>
 #include <iprt/uri.h>
@@ -120,7 +121,9 @@ VBoxClipboardWinDataObject::VBoxClipboardWinDataObject(PSHAREDCLIPBOARDURITRANSF
         m_cFormats  = cAllFormats;
         m_enmStatus = Initialized;
 
-        int rc2 = RTSemEventCreate(&m_EventMetaDataComplete);
+        int rc2 = RTSemEventCreate(&m_EventListComplete);
+        AssertRC(rc2);
+        rc2 = RTSemEventCreate(&m_EventTransferComplete);
         AssertRC(rc2);
     }
 
@@ -129,7 +132,8 @@ VBoxClipboardWinDataObject::VBoxClipboardWinDataObject(PSHAREDCLIPBOARDURITRANSF
 
 VBoxClipboardWinDataObject::~VBoxClipboardWinDataObject(void)
 {
-    RTSemEventDestroy(m_EventMetaDataComplete);
+    RTSemEventDestroy(m_EventListComplete);
+    RTSemEventDestroy(m_EventTransferComplete);
 
     if (m_pStream)
         m_pStream->Release();
@@ -215,6 +219,90 @@ int VBoxClipboardWinDataObject::copyToHGlobal(const void *pvData, size_t cbData,
     return VERR_ACCESS_DENIED;
 }
 
+/* static */
+
+/**
+ * Thread for reading URI data.
+ * The data object needs the (high level, root) URI listing at the time of ::GetData(), so we need
+ * to block and wait until we have this data (via this thread) and continue.
+ *
+ * @returns VBox status code.
+ * @param   ThreadSelf          Thread handle. Unused at the moment.
+ * @param   pvUser              Pointer to user-provided data. Of type VBoxClipboardWinDataObject.
+ */
+DECLCALLBACK(int) VBoxClipboardWinDataObject::readThread(RTTHREAD ThreadSelf, void *pvUser)
+{
+    RT_NOREF(ThreadSelf);
+
+    LogFlowFuncEnter();
+
+    VBoxClipboardWinDataObject *pThis = (VBoxClipboardWinDataObject *)pvUser;
+
+    PSHAREDCLIPBOARDURITRANSFER pTransfer = pThis->m_pTransfer;
+    AssertPtr(pTransfer);
+
+    pTransfer->Thread.fStarted = true;
+
+    RTThreadUserSignal(RTThreadSelf());
+
+    int rc = SharedClipboardURITransferOpen(pTransfer);
+    if (RT_SUCCESS(rc))
+    {
+        VBOXCLIPBOARDLISTHDR Hdr;
+        rc = SharedClipboardURIListHdrInit(&Hdr);
+        if (RT_SUCCESS(rc))
+        {
+            VBOXCLIPBOARDLISTHANDLE hList;
+            rc = SharedClipboardURITransferListOpen(pTransfer, &Hdr, &hList);
+            if (RT_SUCCESS(rc))
+            {
+                LogFlowFunc(("hList=%RU64, cTotalObjects=%RU64, cbTotalSize=%RU64\n\n",
+                             hList, Hdr.cTotalObjects, Hdr.cbTotalSize));
+
+                for (uint64_t i = 0; i < Hdr.cTotalObjects; i++)
+                {
+                    VBOXCLIPBOARDLISTENTRY Entry;
+                    rc = SharedClipboardURITransferListRead(pTransfer, hList, &Entry);
+                    if (RT_SUCCESS(rc))
+                    {
+
+                    }
+                    else
+                        break;
+
+                    if (pTransfer->Thread.fStop)
+                        break;
+                }
+
+                if (RT_SUCCESS(rc))
+                {
+                    /*
+                     * Signal the "list complete" event so that this data object can return (valid) data via ::GetData().
+                     * This in turn then will create IStream instances (by the OS) for each file system object to handle.
+                     */
+                    int rc2 = RTSemEventSignal(pThis->m_EventListComplete);
+                    AssertRC(rc2);
+
+                    LogFlowFunc(("Waiting for transfer to complete ...\n"));
+
+                    /* Transferring stuff can take a while, so don't use any timeout here. */
+                    rc2 = RTSemEventWait(pThis->m_EventTransferComplete, RT_INDEFINITE_WAIT);
+                    AssertRC(rc2);
+                }
+
+                SharedClipboardURITransferListClose(pTransfer, hList);
+            }
+
+            SharedClipboardURIListHdrDestroy(&Hdr);
+        }
+
+        SharedClipboardURITransferClose(pTransfer);
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
 /**
  * Creates a FILEGROUPDESCRIPTOR object from a given URI transfer and stores the result into an HGLOBAL object.
  *
@@ -231,14 +319,13 @@ int VBoxClipboardWinDataObject::createFileGroupDescriptorFromTransfer(PSHAREDCLI
 
     LogFlowFuncEnter();
 
-    SharedClipboardURIList *pURIList = SharedClipboardURITransferGetList(pTransfer);
-    if (!pURIList)
-        return VERR_WRONG_ORDER;
-
     const size_t cbFileGroupDescriptor = fUnicode ? sizeof(FILEGROUPDESCRIPTORW) : sizeof(FILEGROUPDESCRIPTORA);
     const size_t cbFileDescriptor = fUnicode ? sizeof(FILEDESCRIPTORW) : sizeof(FILEDESCRIPTORA);
 
-    const UINT   cItems = (UINT)pURIList->GetRootCount(); /** @todo UINT vs. uint64_t */
+    const UINT   cItems = (UINT)0; /** @todo UINT vs. uint64_t */
+    if (!cItems)
+        return VERR_NOT_FOUND;
+
     const size_t cbFGD  = cbFileGroupDescriptor + (cbFileDescriptor * (cItems - 1));
 
     LogFunc(("fUnicode=%RTbool, cItems=%u, cbFileDescriptor=%zu\n", fUnicode, cItems, cbFileDescriptor));
@@ -253,7 +340,7 @@ int VBoxClipboardWinDataObject::createFileGroupDescriptorFromTransfer(PSHAREDCLI
     pFGD->cItems = cItems;
 
     char *pszFileSpec = NULL;
-
+#if 0
     for (UINT i = 0; i < cItems; i++)
     {
         FILEDESCRIPTOR *pFD = &pFGD->fgd[i];
@@ -325,6 +412,7 @@ int VBoxClipboardWinDataObject::createFileGroupDescriptorFromTransfer(PSHAREDCLI
         pFD->ftLastWriteTime  =
 #endif
     }
+#endif
 
     if (pszFileSpec)
         RTStrFree(pszFileSpec);
@@ -392,38 +480,48 @@ STDMETHODIMP VBoxClipboardWinDataObject::GetData(LPFORMATETC pFormatEtc, LPSTGME
         case FormatIndex_FileDescriptorW: /* Unicode */
 #endif
         {
-            int rc = SharedClipboardURITransferPrepare(m_pTransfer);
-            if (RT_SUCCESS(rc))
+            const bool fUnicode = lIndex == FormatIndex_FileDescriptorW;
+
+            LogFlowFunc(("FormatIndex_FileDescriptor%s\n", fUnicode ? "W" : "A"));
+
+            int rc;
+
+            /* The caller can call GetData() several times, so make sure we don't do the same transfer multiple times. */
+            if (SharedClipboardURITransferGetStatus(m_pTransfer) == SHAREDCLIPBOARDURITRANSFERSTATUS_NONE)
             {
-                const bool fUnicode = lIndex == FormatIndex_FileDescriptorW;
-
-                LogFlowFunc(("FormatIndex_FileDescriptor%s\n", fUnicode ? "W" : "A"));
-
-                /* Start the transfer asynchronously in a separate thread. */
-                rc = SharedClipboardURITransferRun(m_pTransfer, true /* fAsync */);
+                rc = SharedClipboardURITransferPrepare(m_pTransfer);
                 if (RT_SUCCESS(rc))
                 {
-                    /* Wait for the meta data to arrive. */
-                    LogFlowFunc(("Waiting for meta data to arrive ...\n"));
-                    rc = RTSemEventWait(m_EventMetaDataComplete, 30 * 1000 /* 30s timeout */);
+                    /* Start the transfer asynchronously in a separate thread. */
+                    rc = SharedClipboardURITransferRun(m_pTransfer, &VBoxClipboardWinDataObject::readThread, this);
                     if (RT_SUCCESS(rc))
                     {
-                        HGLOBAL hGlobal;
-                        rc = createFileGroupDescriptorFromTransfer(m_pTransfer, fUnicode, &hGlobal);
+                        LogFunc(("Waiting for listing to arrive ...\n"));
+                        rc = RTSemEventWait(m_EventListComplete, 5 * 60 * 1000 /* 5 min timeout */);
                         if (RT_SUCCESS(rc))
                         {
-                            pMedium->tymed   = TYMED_HGLOBAL;
-                            pMedium->hGlobal = hGlobal;
-                            /* Note: hGlobal now is being owned by pMedium / the caller. */
+                            LogFunc(("Listing complete\n"));
 
-                            hr = S_OK;
+                            HGLOBAL hGlobal;
+                            rc = createFileGroupDescriptorFromTransfer(m_pTransfer, fUnicode, &hGlobal);
+                            if (RT_SUCCESS(rc))
+                            {
+                                pMedium->tymed   = TYMED_HGLOBAL;
+                                pMedium->hGlobal = hGlobal;
+                                /* Note: hGlobal now is being owned by pMedium / the caller. */
+
+                                hr = S_OK;
+                            }
                         }
                     }
                 }
-
-                if (RT_FAILURE(rc))
-                    LogRel(("Shared Clipboard: Data object unable to receive meta data, rc=%Rrc\n", rc));
             }
+            else
+                rc = VERR_ALREADY_EXISTS;
+
+            if (RT_FAILURE(rc))
+                LogRel(("Shared Clipboard: Data object unable to get data, rc=%Rrc\n", rc));
+
             break;
         }
 
@@ -587,16 +685,6 @@ int VBoxClipboardWinDataObject::Init(void)
 {
     LogFlowFuncLeaveRC(VINF_SUCCESS);
     return VINF_SUCCESS;
-}
-
-DECLCALLBACK(void) VBoxClipboardWinDataObject::OnMetaDataComplete(PSHAREDCLIPBOARDURITRANSFER pTransfer)
-{
-    LogFlowFuncEnter();
-
-    AssertReturnVoid(pTransfer == m_pTransfer);
-
-    int rc2 = RTSemEventSignal(m_EventMetaDataComplete);
-    AssertRC(rc2);
 }
 
 void VBoxClipboardWinDataObject::OnTransferComplete(int rc /* = VINF_SUCESS */)

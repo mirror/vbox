@@ -151,7 +151,6 @@ ifdef VBOX_WITH_SHARED_CLIPBOARD
 	VBoxGuestR3LibClipboard.cpp
  ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
  VBoxGuestR3Lib_SOURCES   += \
-	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardMetaData.cpp \
 	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardMIME.cpp
  endif
 endif

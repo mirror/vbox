@@ -883,7 +883,7 @@ static DECLCALLBACK(int) vgsvcClipboardOs2Listener(RTTHREAD ThreadSelf, void *pv
             {
                 uint32_t Msg;
                 uint32_t fFormats;
-                rc = VbglR3ClipboardGetHostMsg(g_u32ClientId, &Msg, &fFormats);
+                rc = VbglR3ClipboardGetHostMsgOld(g_u32ClientId, &Msg, &fFormats);
                 if (RT_SUCCESS(rc))
                 {
                     VGSvcVerbose(3, "vgsvcClipboardOs2Listener: Msg=%#x  fFormats=%#x\n", Msg, fFormats);

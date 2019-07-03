@@ -223,7 +223,7 @@ int vboxClipboardMain(void)
     {
         uint32_t Msg;
         uint32_t fFormats;
-        rc = VbglR3ClipboardGetHostMsg(g_ctx.client, &Msg, &fFormats);
+        rc = VbglR3ClipboardGetHostMsgOld(g_ctx.client, &Msg, &fFormats);
         if (RT_SUCCESS(rc))
         {
             switch (Msg)

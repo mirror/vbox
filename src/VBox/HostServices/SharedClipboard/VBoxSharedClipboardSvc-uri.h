@@ -21,9 +21,7 @@
 # pragma once
 #endif
 
-//int vboxSvcClipboardURIAnnounce(uint32_t u32Function, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
-
-int vboxSvcClipboardURIHandler(uint32_t u32ClientID, void *pvClient, uint32_t u32Function, uint32_t cParms, VBOXHGCMSVCPARM paParms[], uint64_t tsArrival, bool *pfAsync);
+int vboxSvcClipboardURIHandler(PVBOXCLIPBOARDCLIENT pClient, VBOXHGCMCALLHANDLE callHandle, uint32_t u32Function, uint32_t cParms, VBOXHGCMSVCPARM paParms[], uint64_t tsArrival);
 int vboxSvcClipboardURIHostHandler(uint32_t u32Function, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
 
 int vboxSvcClipboardURIAreaRegister(PVBOXCLIPBOARDCLIENTSTATE pClientState, PSHAREDCLIPBOARDURITRANSFER pTransfer);

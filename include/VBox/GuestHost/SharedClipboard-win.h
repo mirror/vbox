@@ -59,6 +59,12 @@
 #define VBOX_CLIPBOARD_WM_SET_FORMATS       WM_USER
 /** Reads data from the clipboard and sends it to the host. */
 #define VBOX_CLIPBOARD_WM_READ_DATA         WM_USER + 1
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+/** Starts a reading transfer from the guest. */
+# define VBOX_CLIPBOARD_WM_URI_START_READ   WM_USER + 2
+/** Starts a writing transfer to the guest. */
+# define VBOX_CLIPBOARD_WM_URI_START_WRITE  WM_USER + 3
+#endif
 
 /* Dynamically load clipboard functions from User32.dll. */
 typedef BOOL WINAPI FNADDCLIPBOARDFORMATLISTENER(HWND);
@@ -121,7 +127,7 @@ VBOXCLIPBOARDFORMAT VBoxClipboardWinClipboardFormatToVBox(UINT uFormat);
 int VBoxClipboardWinGetFormats(PVBOXCLIPBOARDWINCTX pCtx, PVBOXCLIPBOARDFORMAT pfFormats);
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
-int VBoxClipboardWinDropFilesToTransfer(DROPFILES *pDropFiles, PSHAREDCLIPBOARDURITRANSFER pTransfer);
+int VBoxClipboardWinDropFilesToStringList(DROPFILES *pDropFiles, char **papszList, uint32_t *pcbList);
 #endif
 
 int VBoxClipboardWinGetCFHTMLHeaderValue(const char *pszSrc, const char *pszOption, uint32_t *puValue);
@@ -203,11 +209,12 @@ public: /* IDataObjectAsyncCapability methods. */
 public:
 
     int Init(void);
-    void OnMetaDataComplete(PSHAREDCLIPBOARDURITRANSFER pTransfer);
     void OnTransferComplete(int rc = VINF_SUCCESS);
     void OnTransferCanceled();
 
 public:
+
+    static DECLCALLBACK(int) readThread(RTTHREAD ThreadSelf, void *pvUser);
 
     static const char* ClipboardFormatToString(CLIPFORMAT fmt);
 
@@ -232,8 +239,9 @@ protected:
     PSHAREDCLIPBOARDURITRANSFER m_pTransfer;
     IStream                    *m_pStream;
     ULONG                       m_uObjIdx;
-    /** Event being triggered when reading the meta data has been completed.*/
-    RTSEMEVENT                  m_EventMetaDataComplete;
+    /** Event being triggered when reading the transfer list been completed.*/
+    RTSEMEVENT                  m_EventListComplete;
+    RTSEMEVENT                  m_EventTransferComplete;
 };
 
 class VBoxClipboardWinEnumFormatEtc : public IEnumFORMATETC

@@ -293,16 +293,9 @@ int SharedClipboardURIList::AppendNativePath(const char *pszPath, SHAREDCLIPBOAR
 {
     AssertPtrReturn(pszPath, VERR_INVALID_POINTER);
 
-    char *pszPathURI;
-    int rc = SharedClipboardMetaDataConvertToFormat(pszPath, strlen(pszPath), SHAREDCLIPBOARDMETADATAFMT_URI_LIST,
-                                                    (void **)&pszPathURI, NULL /* cbData */);
-    if (RT_SUCCESS(rc))
-    {
-        rc = AppendURIPath(pszPathURI, fFlags);
-        RTStrFree(pszPathURI);
-    }
+    RT_NOREF(fFlags);
 
-    return rc;
+    return VERR_NOT_IMPLEMENTED;
 }
 
 int SharedClipboardURIList::AppendNativePathsFromList(const char *pszNativePaths, size_t cbNativePaths,

@@ -943,12 +943,14 @@ void VBoxClipboardWinURITransferDestroy(PVBOXCLIPBOARDWINCTX pWinCtx, PSHAREDCLI
  *
  * @returns VBox status code.
  * @param   pDropFiles          Pointer to DROPFILES structure to convert.
- * @param   pTransfer           Transfer where to add the string list to.
+ * @param   papszList           Where to store the allocated string list.
+ * @param   pcbList             Where to store the size (in bytes) of the allocated string list.
  */
-int VBoxClipboardWinDropFilesToTransfer(DROPFILES *pDropFiles, PSHAREDCLIPBOARDURITRANSFER pTransfer)
+int VBoxClipboardWinDropFilesToStringList(DROPFILES *pDropFiles, char **papszList, uint32_t *pcbList)
 {
     AssertPtrReturn(pDropFiles, VERR_INVALID_POINTER);
-    AssertPtrReturn(pTransfer,  VERR_INVALID_POINTER);
+    AssertPtrReturn(papszList,  VERR_INVALID_POINTER);
+    AssertPtrReturn(pcbList,    VERR_INVALID_POINTER);
 
     /* Do we need to do Unicode stuff? */
     const bool fUnicode = RT_BOOL(pDropFiles->fWide);
@@ -1027,6 +1029,7 @@ int VBoxClipboardWinDropFilesToTransfer(DROPFILES *pDropFiles, PSHAREDCLIPBOARDU
 
             LogRel(("Shared Clipboard: Adding guest file '%s'\n", pszFileUtf8));
 
+        #if 0
             char    *pszFileURI;
             uint32_t cchFileURI;
             rc = SharedClipboardMetaDataConvertToFormat(pszFileUtf8, strlen(pszFileUtf8), SHAREDCLIPBOARDMETADATAFMT_URI_LIST,
@@ -1041,6 +1044,7 @@ int VBoxClipboardWinDropFilesToTransfer(DROPFILES *pDropFiles, PSHAREDCLIPBOARDU
 
                 RTStrFree(pszFileURI);
             }
+        #endif
         }
 
         if (pszFileUtf8)
@@ -1067,15 +1071,16 @@ int VBoxClipboardWinDropFilesToTransfer(DROPFILES *pDropFiles, PSHAREDCLIPBOARDU
         LogFlowFunc(("cFiles=%u, cchFiles=%RU32, cbFiles=%RU32, pszFiles=0x%p\n",
                      cFiles, cchFiles, cbFiles, pszFiles));
 
-        rc = SharedClipboardURITransferMetaDataAdd(pTransfer, pszFiles, cbFiles);
+        *papszList = pszFiles;
+        *pcbList   = cbFiles;
+    }
+    else
+    {
+        if (pszFiles)
+            RTStrFree(pszFiles);
     }
 
-    LogFlowFunc(("Building CF_HDROP list rc=%Rrc, pszFiles=0x%p, cFiles=%RU16, cchFiles=%RU32\n",
-                 rc, pszFiles, cFiles, cchFiles));
-
-    if (pszFiles)
-        RTStrFree(pszFiles);
-
+    LogFlowFuncLeaveRC(rc);
     return rc;
 }
 #endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */

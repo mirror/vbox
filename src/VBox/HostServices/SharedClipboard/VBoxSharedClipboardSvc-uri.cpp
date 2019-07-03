@@ -41,46 +41,109 @@
 extern PFNHGCMSVCEXT g_pfnExtension;
 extern void *g_pvExtension;
 
+extern ClipboardClientQueue g_listClientsDeferred;
+
 
 /*********************************************************************************************************************************
 *   Provider implementation                                                                                                      *
 *********************************************************************************************************************************/
 
-int VBoxSvcClipboardProviderImplURIReadDataHdr(PSHAREDCLIPBOARDPROVIDERCTX pCtx, PVBOXCLIPBOARDDATAHDR *ppDataHdr)
+DECLCALLBACK(int) vboxSvcClipboardURITransferOpen(PSHAREDCLIPBOARDPROVIDERCTX pCtx)
 {
+    RT_NOREF(pCtx);
+
+    LogFlowFuncLeave();
+    return VINF_SUCCESS;
+}
+
+DECLCALLBACK(int) vboxSvcClipboardURITransferClose(PSHAREDCLIPBOARDPROVIDERCTX pCtx)
+{
+    RT_NOREF(pCtx);
+
+    LogFlowFuncLeave();
+    return VINF_SUCCESS;
+}
+
+DECLCALLBACK(int) vboxSvcClipboardURIListOpen(PSHAREDCLIPBOARDPROVIDERCTX pCtx,
+                                              PVBOXCLIPBOARDLISTHDR pListHdr, PVBOXCLIPBOARDLISTHANDLE phList)
+{
+    RT_NOREF(pCtx, pListHdr, phList);
+
     LogFlowFuncEnter();
 
-    PVBOXCLIPBOARDCLIENTDATA pClientData = (PVBOXCLIPBOARDCLIENTDATA)pCtx->pvUser;
-    AssertPtr(pClientData);
+    int rc = VINF_SUCCESS;
 
-    PSHAREDCLIPBOARDURITRANSFERPAYLOAD pPayload;
-    int rc = SharedClipboardURITransferEventWait(pCtx->pTransfer, SHAREDCLIPBOARDURITRANSFEREVENTTYPE_METADATA_HDR,
-                                                 30 * 1000 /* Timeout in ms */, &pPayload);
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+DECLCALLBACK(int) vboxSvcClipboardURIListClose(PSHAREDCLIPBOARDPROVIDERCTX pCtx, VBOXCLIPBOARDLISTHANDLE hList)
+{
+    RT_NOREF(pCtx, hList);
+
+    LogFlowFuncEnter();
+
+    int rc = VINF_SUCCESS;
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+DECLCALLBACK(int) vboxSvcClipboardURIListHdrRead(PSHAREDCLIPBOARDPROVIDERCTX pCtx,
+                                                 VBOXCLIPBOARDLISTHANDLE hList, PVBOXCLIPBOARDLISTHDR pListHdr)
+{
+    RT_NOREF(pCtx, hList, pListHdr);
+
+    LogFlowFuncEnter();
+
+    PVBOXCLIPBOARDCLIENT pClient = (PVBOXCLIPBOARDCLIENT)pCtx->pvUser;
+    AssertPtr(pClient);
+
+    int rc;
+
+    PVBOXCLIPBOARDCLIENTMSG pMsg = vboxSvcClipboardMsgAlloc(VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_LIST_HDR_READ,
+                                                            VBOX_SHARED_CLIPBOARD_CPARMS_LIST_HDR_READ);
+    if (pMsg)
+    {
+        rc = vboxSvcClipboardMsgAdd(&pClient->pData->State, pMsg, true /* fAppend */);
+        if (RT_SUCCESS(rc))
+            rc = vboxSvcClipboardClientDeferredComplete(pClient, VINF_SUCCESS);
+    }
+    else
+        rc = VERR_NO_MEMORY;
+
     if (RT_SUCCESS(rc))
     {
-        Assert(pPayload->cbData == sizeof(VBOXCLIPBOARDDATAHDR));
-        *ppDataHdr = (PVBOXCLIPBOARDDATAHDR)pPayload->pvData;
+        PSHAREDCLIPBOARDURITRANSFERPAYLOAD pPayload;
+        rc = SharedClipboardURITransferEventWait(pCtx->pTransfer, SHAREDCLIPBOARDURITRANSFEREVENTTYPE_LIST_HDR_READ,
+                                                 30 * 1000 /* Timeout in ms */, &pPayload);
+        if (RT_SUCCESS(rc))
+        {
+            Assert(pPayload->cbData == sizeof(VBOXCLIPBOARDLISTHDR));
+            //*ppListHdr = (PVBOXCLIPBOARDLISTHDR)pPayload->pvData;
 
-        RTMemFree(pPayload);
+            RTMemFree(pPayload);
+        }
     }
 
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
-int VBoxSvcClipboardProviderImplURIWriteDataHdr(PSHAREDCLIPBOARDPROVIDERCTX pCtx, const PVBOXCLIPBOARDDATAHDR pDataHdr)
+DECLCALLBACK(int) vboxSvcClipboardURIListHdrWrite(PSHAREDCLIPBOARDPROVIDERCTX pCtx,
+                                                  VBOXCLIPBOARDLISTHANDLE hList, PVBOXCLIPBOARDLISTHDR pListHdr)
 {
-    RT_NOREF(pCtx, pDataHdr);
+    RT_NOREF(pCtx, hList, pListHdr);
 
     LogFlowFuncEnter();
 
     return VERR_NOT_IMPLEMENTED;
 }
 
-int VBoxSvcClipboardProviderImplURIReadDataChunk(PSHAREDCLIPBOARDPROVIDERCTX pCtx, const PVBOXCLIPBOARDDATAHDR pDataHdr,
-                                                 void *pvChunk, uint32_t cbChunk, uint32_t fFlags, uint32_t *pcbRead)
+DECLCALLBACK(int) vboxSvcClipboardURIListEntryRead(PSHAREDCLIPBOARDPROVIDERCTX pCtx,
+                                                   VBOXCLIPBOARDLISTHANDLE hList, PVBOXCLIPBOARDLISTENTRY pListEntry)
 {
-    RT_NOREF(pDataHdr, fFlags);
+    RT_NOREF(pCtx, hList, pListEntry);
 
     LogFlowFuncEnter();
 
@@ -88,86 +151,78 @@ int VBoxSvcClipboardProviderImplURIReadDataChunk(PSHAREDCLIPBOARDPROVIDERCTX pCt
     AssertPtr(pClientData);
 
     PSHAREDCLIPBOARDURITRANSFERPAYLOAD pPayload;
-    int rc = SharedClipboardURITransferEventWait(pCtx->pTransfer, SHAREDCLIPBOARDURITRANSFEREVENTTYPE_METADATA_CHUNK,
+    int rc = SharedClipboardURITransferEventWait(pCtx->pTransfer, SHAREDCLIPBOARDURITRANSFEREVENTTYPE_LIST_ENTRY_READ,
                                                  30 * 1000 /* Timeout in ms */, &pPayload);
     if (RT_SUCCESS(rc))
     {
-        Assert(pPayload->cbData == sizeof(VBOXCLIPBOARDDATACHUNK));
+        Assert(pPayload->cbData == sizeof(VBOXCLIPBOARDLISTENTRY));
 
-        const uint32_t cbToRead = RT_MIN(cbChunk, pPayload->cbData);
+        PVBOXCLIPBOARDLISTENTRY pListEntry = (PVBOXCLIPBOARDLISTENTRY)pPayload->pvData;
+        AssertPtr(pListEntry);
 
-        memcpy(pvChunk, pPayload->pvData, cbToRead);
+   /*     const uint32_t cbToRead = RT_MIN(cbChunk, pListEntry->cbData);
+
+        memcpy(pvChunk, pListEntry->pvData, cbToRead);*/
 
         SharedClipboardURITransferPayloadFree(pPayload);
 
-        if (pcbRead)
-            *pcbRead = cbToRead;
+/*        if (pcbRead)
+            *pcbRead = cbToRead;*/
     }
 
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
-int VBoxSvcClipboardProviderImplURIWriteDataChunk(PSHAREDCLIPBOARDPROVIDERCTX pCtx, const PVBOXCLIPBOARDDATAHDR pDataHdr,
-                                                  const void *pvChunk, uint32_t cbChunk, uint32_t fFlags, uint32_t *pcbWritten)
+DECLCALLBACK(int) vboxSvcClipboardURIListEntryWrite(PSHAREDCLIPBOARDPROVIDERCTX pCtx,
+                                                    VBOXCLIPBOARDLISTHANDLE hList, PVBOXCLIPBOARDLISTENTRY pListEntry)
 {
-    RT_NOREF(pCtx, pDataHdr, pvChunk, cbChunk, fFlags, pcbWritten);
+    RT_NOREF(pCtx, hList, pListEntry);
 
     LogFlowFuncEnter();
 
     return VERR_NOT_IMPLEMENTED;
 }
 
-int VBoxSvcClipboardProviderImplURIReadDir(PSHAREDCLIPBOARDPROVIDERCTX pCtx, PVBOXCLIPBOARDDIRDATA *ppDirData)
+int vboxSvcClipboardURIObjOpen(PSHAREDCLIPBOARDPROVIDERCTX pCtx, const char *pszPath,
+                               PVBOXCLIPBOARDCREATEPARMS pCreateParms, PSHAREDCLIPBOARDOBJHANDLE phObj)
 {
-    RT_NOREF(pCtx, ppDirData);
+    RT_NOREF(pCtx, pszPath, pCreateParms, phObj);
 
     LogFlowFuncEnter();
 
     return VERR_NOT_IMPLEMENTED;
 }
 
-int VBoxSvcClipboardProviderImplURIWriteDir(PSHAREDCLIPBOARDPROVIDERCTX pCtx, const PVBOXCLIPBOARDDIRDATA pDirData)
+int vboxSvcClipboardURIObjClose(PSHAREDCLIPBOARDPROVIDERCTX pCtx, SHAREDCLIPBOARDOBJHANDLE hObj)
 {
-    RT_NOREF(pCtx, pDirData);
+    RT_NOREF(pCtx, hObj);
+
+    LogFlowFuncEnter();
+
+    int rc = VINF_SUCCESS;
+
+    PVBOXCLIPBOARDCONTEXT pThisCtx = (PVBOXCLIPBOARDCONTEXT)pCtx->pvUser;
+    AssertPtr(pThisCtx);
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+int vboxSvcClipboardURIObjRead(PSHAREDCLIPBOARDPROVIDERCTX pCtx, SHAREDCLIPBOARDOBJHANDLE hObj,
+                               void *pvData, uint32_t cbData, uint32_t fFlags, uint32_t *pcbRead)
+{
+    RT_NOREF(pCtx, pCtx, hObj, pvData, cbData, fFlags, pcbRead);
 
     LogFlowFuncEnter();
 
     return VERR_NOT_IMPLEMENTED;
 }
 
-int VBoxSvcClipboardProviderImplURIReadFileHdr(PSHAREDCLIPBOARDPROVIDERCTX pCtx, PVBOXCLIPBOARDFILEHDR *ppFileHdr)
+int vboxSvcClipboardURIObjWrite(PSHAREDCLIPBOARDPROVIDERCTX pCtx, SHAREDCLIPBOARDOBJHANDLE hObj,
+                                void *pvData, uint32_t cbData, uint32_t fFlags, uint32_t *pcbWritten)
 {
-    RT_NOREF(pCtx, ppFileHdr);
-
-    LogFlowFuncEnter();
-
-    return VERR_NOT_IMPLEMENTED;
-}
-
-int VBoxSvcClipboardProviderImplURIWriteFileHdr(PSHAREDCLIPBOARDPROVIDERCTX pCtx, const PVBOXCLIPBOARDFILEHDR pFileHdr)
-{
-    RT_NOREF(pCtx, pFileHdr);
-
-    LogFlowFuncEnter();
-
-    return VERR_NOT_IMPLEMENTED;
-}
-
-int VBoxSvcClipboardProviderImplURIReadFileData(PSHAREDCLIPBOARDPROVIDERCTX pCtx, void *pvData, uint32_t cbData, uint32_t fFlags,
-                                                uint32_t *pcbRead)
-{
-    RT_NOREF(pCtx, pvData, cbData, fFlags, pcbRead);
-
-    LogFlowFuncEnter();
-
-    return VERR_NOT_IMPLEMENTED;
-}
-
-int VBoxSvcClipboardProviderImplURIWriteFileData(PSHAREDCLIPBOARDPROVIDERCTX pCtx, void *pvData, uint32_t cbData, uint32_t fFlags,
-                                                 uint32_t *pcbWritten)
-{
-    RT_NOREF(pCtx, pvData, cbData, fFlags, pcbWritten);
+    RT_NOREF(pCtx, pCtx, hObj, pvData, cbData, fFlags, pcbWritten);
 
     LogFlowFuncEnter();
 
@@ -183,36 +238,26 @@ DECLCALLBACK(void) VBoxSvcClipboardURITransferPrepareCallback(PSHAREDCLIPBOARDUR
 {
     LogFlowFuncEnter();
 
-    LogFlowFuncEnter();
-
     AssertPtrReturnVoid(pData);
 
     PVBOXCLIPBOARDCLIENTDATA pClientData = (PVBOXCLIPBOARDCLIENTDATA)pData->pvUser;
     AssertPtrReturnVoid(pClientData);
 
+    PSHAREDCLIPBOARDURITRANSFER pTransfer = pData->pTransfer;
+    AssertPtrReturnVoid(pTransfer);
+
+    /* Register needed events. */
+    int rc2 = SharedClipboardURITransferEventRegister(pData->pTransfer, SHAREDCLIPBOARDURITRANSFEREVENTTYPE_LIST_HDR_READ);
+    AssertRC(rc2);
+    rc2 = SharedClipboardURITransferEventRegister(pData->pTransfer, SHAREDCLIPBOARDURITRANSFEREVENTTYPE_LIST_ENTRY_READ);
+    AssertRC(rc2);
+
+#if 0
     /* Tell the guest that it can start sending URI data. */
-    int rc2 = vboxSvcClipboardReportMsg(pClientData, VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA,
-                                        VBOX_SHARED_CLIPBOARD_FMT_URI_LIST);
+    rc2 = vboxSvcClipboardReportMsg(pClientData, VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_TRANSFER_START,
+                                    0 /* u32Formats == 0 means reading data */);
     AssertRC(rc2);
-
-    rc2 = SharedClipboardURITransferEventRegister(pData->pTransfer, SHAREDCLIPBOARDURITRANSFEREVENTTYPE_METADATA_HDR);
-    AssertRC(rc2);
-    rc2 = SharedClipboardURITransferEventRegister(pData->pTransfer, SHAREDCLIPBOARDURITRANSFEREVENTTYPE_METADATA_CHUNK);
-    AssertRC(rc2);
-}
-
-DECLCALLBACK(void) VBoxSvcClipboardURIDataHeaderCompleteCallback(PSHAREDCLIPBOARDURITRANSFERCALLBACKDATA pData)
-{
-    LogFlowFuncEnter();
-
-    RT_NOREF(pData);
-}
-
-DECLCALLBACK(void) VBoxSvcClipboardURIDataCompleteCallback(PSHAREDCLIPBOARDURITRANSFERCALLBACKDATA pData)
-{
-    LogFlowFuncEnter();
-
-    VBoxClipboardSvcImplURIOnDataHeaderComplete(pData);
+#endif
 }
 
 DECLCALLBACK(void) VBoxSvcClipboardURITransferCompleteCallback(PSHAREDCLIPBOARDURITRANSFERCALLBACKDATA pData, int rc)
@@ -243,44 +288,31 @@ DECLCALLBACK(void) VBoxSvcClipboardURITransferErrorCallback(PSHAREDCLIPBOARDURIT
 }
 
 /**
- * Gets an URI data header from HGCM service parameters.
+ * Gets an URI list header from HGCM service parameters.
  *
  * @returns VBox status code.
  * @param   cParms              Number of HGCM parameters supplied in \a paParms.
  * @param   paParms             Array of HGCM parameters.
- * @param   pDataHdr            Where to store the result.
+ * @param   phList              Where to store the list handle.
+ * @param   pListHdr            Where to store the list header.
  */
-int VBoxSvcClipboardURIGetDataHdr(uint32_t cParms, VBOXHGCMSVCPARM paParms[], PVBOXCLIPBOARDDATAHDR pDataHdr)
+int VBoxSvcClipboardURIGetListHdr(uint32_t cParms, VBOXHGCMSVCPARM paParms[],
+                                  PVBOXCLIPBOARDLISTHANDLE phList, PVBOXCLIPBOARDLISTHDR pListHdr)
 {
     int rc;
 
-    if (cParms == VBOX_SHARED_CLIPBOARD_CPARMS_WRITE_DATA_HDR)
+    if (cParms == VBOX_SHARED_CLIPBOARD_CPARMS_LIST_HDR_WRITE)
     {
         /* Note: Context ID (paParms[0]) not used yet. */
-        rc = HGCMSvcGetU32(&paParms[1], &pDataHdr->uFlags);
+        rc = HGCMSvcGetU64(&paParms[1], phList);
         if (RT_SUCCESS(rc))
-            rc = HGCMSvcGetU32(&paParms[2], &pDataHdr->uScreenId);
+            rc = HGCMSvcGetU64(&paParms[2], &pListHdr->cTotalObjects);
         if (RT_SUCCESS(rc))
-            rc = HGCMSvcGetU64(&paParms[3], &pDataHdr->cbTotal);
+            rc = HGCMSvcGetU64(&paParms[3], &pListHdr->cbTotalSize);
         if (RT_SUCCESS(rc))
-            rc = HGCMSvcGetU32(&paParms[4], &pDataHdr->cbMeta);
+            rc = HGCMSvcGetU32(&paParms[4], &pListHdr->enmCompression);
         if (RT_SUCCESS(rc))
-            rc = HGCMSvcGetU32(&paParms[5], &pDataHdr->cbMetaFmt);
-        if (RT_SUCCESS(rc))
-            rc = HGCMSvcGetPv(&paParms[6], &pDataHdr->pvMetaFmt, &pDataHdr->cbMetaFmt);
-        if (RT_SUCCESS(rc))
-            rc = HGCMSvcGetU64(&paParms[7], &pDataHdr->cObjects);
-        if (RT_SUCCESS(rc))
-            rc = HGCMSvcGetU32(&paParms[8], &pDataHdr->enmCompression);
-        if (RT_SUCCESS(rc))
-            rc = HGCMSvcGetU32(&paParms[9], (uint32_t *)&pDataHdr->enmChecksumType);
-        if (RT_SUCCESS(rc))
-            rc = HGCMSvcGetU32(&paParms[10], &pDataHdr->cbChecksum);
-        if (RT_SUCCESS(rc))
-            rc = HGCMSvcGetPv(&paParms[11], &pDataHdr->pvChecksum, &pDataHdr->cbChecksum);
-
-        LogFlowFunc(("fFlags=0x%x, cbMeta=%RU32, cbTotalSize=%RU64, cObj=%RU64\n",
-                     pDataHdr->uFlags, pDataHdr->cbMeta, pDataHdr->cbTotal, pDataHdr->cObjects));
+            rc = HGCMSvcGetU32(&paParms[5], (uint32_t *)&pListHdr->enmChecksumType);
 
         if (RT_SUCCESS(rc))
         {
@@ -296,37 +328,31 @@ int VBoxSvcClipboardURIGetDataHdr(uint32_t cParms, VBOXHGCMSVCPARM paParms[], PV
 }
 
 /**
- * Sets an URI data header to HGCM service parameters.
+ * Sets an URI list header to HGCM service parameters.
  *
  * @returns VBox status code.
  * @param   cParms              Number of HGCM parameters supplied in \a paParms.
  * @param   paParms             Array of HGCM parameters.
- * @param   pDataHdr            Pointer to data to set to the HGCM parameters.
+ * @param   pListHdr            Pointer to data to set to the HGCM parameters.
  */
-int VBoxSvcClipboardURISetDataHdr(uint32_t cParms, VBOXHGCMSVCPARM paParms[], PVBOXCLIPBOARDDATAHDR pDataHdr)
+int VBoxSvcClipboardURISetListHdr(uint32_t cParms, VBOXHGCMSVCPARM paParms[], PVBOXCLIPBOARDLISTHDR pListHdr)
 {
     int rc;
 
-    if (cParms == VBOX_SHARED_CLIPBOARD_CPARMS_READ_DATA_HDR)
+    if (cParms == VBOX_SHARED_CLIPBOARD_CPARMS_LIST_HDR_READ)
     {
         /** @todo Set pvMetaFmt + cbMetaFmt. */
         /** @todo Calculate header checksum. */
 
         /* Note: Context ID (paParms[0]) not used yet. */
-        HGCMSvcSetU32(&paParms[1],  pDataHdr->uFlags);
-        HGCMSvcSetU32(&paParms[2],  pDataHdr->uScreenId);
-        HGCMSvcSetU64(&paParms[3],  pDataHdr->cbTotal);
-        HGCMSvcSetU32(&paParms[4],  pDataHdr->cbMeta);
-        HGCMSvcSetU32(&paParms[5],  pDataHdr->cbMetaFmt);
-        HGCMSvcSetPv (&paParms[6],  pDataHdr->pvMetaFmt, pDataHdr->cbMetaFmt);
-        HGCMSvcSetU64(&paParms[7],  pDataHdr->cObjects);
-        HGCMSvcSetU32(&paParms[8],  pDataHdr->enmCompression);
-        HGCMSvcSetU32(&paParms[9],  (uint32_t)pDataHdr->enmChecksumType);
-        HGCMSvcSetU32(&paParms[10], pDataHdr->cbChecksum);
-        HGCMSvcSetPv (&paParms[11], pDataHdr->pvChecksum, pDataHdr->cbChecksum);
-
-        LogFlowFunc(("fFlags=0x%x, cbMeta=%RU32, cbTotalSize=%RU64, cObj=%RU64\n",
-                     pDataHdr->uFlags, pDataHdr->cbMeta, pDataHdr->cbTotal, pDataHdr->cObjects));
+        HGCMSvcSetU32(&paParms[1], pListHdr->fList);
+        HGCMSvcSetU32(&paParms[2], pListHdr->fFeatures);
+        HGCMSvcSetU32(&paParms[3], pListHdr->cbFilter);
+        HGCMSvcSetPv (&paParms[4], pListHdr->pszFilter, pListHdr->cbFilter);
+        HGCMSvcSetU64(&paParms[5], pListHdr->cTotalObjects);
+        HGCMSvcSetU64(&paParms[6], pListHdr->cbTotalSize);
+        HGCMSvcSetU32(&paParms[7], pListHdr->enmCompression);
+        HGCMSvcSetU32(&paParms[8], (uint32_t)pListHdr->enmChecksumType);
 
         rc = VINF_SUCCESS;
     }
@@ -338,31 +364,33 @@ int VBoxSvcClipboardURISetDataHdr(uint32_t cParms, VBOXHGCMSVCPARM paParms[], PV
 }
 
 /**
- * Gets an URI data chunk from HGCM service parameters.
+ * Gets an URI list entry from HGCM service parameters.
  *
  * @returns VBox status code.
  * @param   cParms              Number of HGCM parameters supplied in \a paParms.
  * @param   paParms             Array of HGCM parameters.
- * @param   pDataChunk          Where to store the result.
+ * @param   phList              Where to store the list handle.
+ * @param   pListEntry          Where to store the list entry.
  */
-int VBoxSvcClipboardURIGetDataChunk(uint32_t cParms, VBOXHGCMSVCPARM paParms[], PVBOXCLIPBOARDDATACHUNK pDataChunk)
+int VBoxSvcClipboardURIGetListEntry(uint32_t cParms, VBOXHGCMSVCPARM paParms[],
+                                    PVBOXCLIPBOARDLISTHANDLE phList, PVBOXCLIPBOARDLISTENTRY pListEntry)
 {
     int rc;
 
-    if (cParms == VBOX_SHARED_CLIPBOARD_CPARMS_WRITE_DATA_CHUNK)
+    if (cParms == VBOX_SHARED_CLIPBOARD_CPARMS_LIST_ENTRY_WRITE)
     {
         /* Note: Context ID (paParms[0]) not used yet. */
-        rc = HGCMSvcGetU32(&paParms[1], &pDataChunk->cbData);
+        rc = HGCMSvcGetU64(&paParms[1], phList);
         if (RT_SUCCESS(rc))
-            rc = HGCMSvcGetPv(&paParms[2], &pDataChunk->pvData, &pDataChunk->cbData);
+            rc = HGCMSvcGetU32(&paParms[2], &pListEntry->fInfo);
         if (RT_SUCCESS(rc))
-            rc = HGCMSvcGetU32(&paParms[3], &pDataChunk->cbChecksum);
+            rc = HGCMSvcGetU32(&paParms[3], &pListEntry->cbInfo);
         if (RT_SUCCESS(rc))
-            rc = HGCMSvcGetPv(&paParms[4], &pDataChunk->pvChecksum, &pDataChunk->cbChecksum);
+            rc = HGCMSvcGetPv(&paParms[4], &pListEntry->pvInfo, &pListEntry->cbInfo);
 
         if (RT_SUCCESS(rc))
         {
-            if (!SharedClipboardURIDataChunkIsValid(pDataChunk))
+            if (!SharedClipboardURIListEntryIsValid(pListEntry))
                 rc = VERR_INVALID_PARAMETER;
         }
     }
@@ -379,21 +407,20 @@ int VBoxSvcClipboardURIGetDataChunk(uint32_t cParms, VBOXHGCMSVCPARM paParms[], 
  * @returns VBox status code.
  * @param   cParms              Number of HGCM parameters supplied in \a paParms.
  * @param   paParms             Array of HGCM parameters.
- * @param   pDataChunk          Pointer to data to set to the HGCM parameters.
+ * @param   pListEntry          Pointer to data to set to the HGCM parameters.
  */
-int VBoxSvcClipboardURISetDataChunk(uint32_t cParms, VBOXHGCMSVCPARM paParms[], PVBOXCLIPBOARDDATACHUNK pDataChunk)
+int VBoxSvcClipboardURISetListEntry(uint32_t cParms, VBOXHGCMSVCPARM paParms[], PVBOXCLIPBOARDLISTENTRY pListEntry)
 {
     int rc;
 
-    if (cParms == VBOX_SHARED_CLIPBOARD_CPARMS_READ_DATA_CHUNK)
+    if (cParms == VBOX_SHARED_CLIPBOARD_CPARMS_LIST_ENTRY_READ)
     {
         /** @todo Calculate chunk checksum. */
 
         /* Note: Context ID (paParms[0]) not used yet. */
-        HGCMSvcSetU32(&paParms[1], pDataChunk->cbData);
-        HGCMSvcSetPv (&paParms[2], pDataChunk->pvData, pDataChunk->cbData);
-        HGCMSvcSetU32(&paParms[3], pDataChunk->cbChecksum);
-        HGCMSvcSetPv (&paParms[4], pDataChunk->pvChecksum, pDataChunk->cbChecksum);
+        HGCMSvcSetU32(&paParms[1], pListEntry->fInfo);
+        HGCMSvcSetU32(&paParms[2], pListEntry->cbInfo);
+        HGCMSvcSetPv (&paParms[3], pListEntry->pvInfo, pListEntry->cbInfo);
 
         rc = VINF_SUCCESS;
     }
@@ -404,188 +431,17 @@ int VBoxSvcClipboardURISetDataChunk(uint32_t cParms, VBOXHGCMSVCPARM paParms[], 
     return rc;
 }
 
-/**
- * Gets an URI directory entry from HGCM service parameters.
- *
- * @returns VBox status code.
- * @param   cParms              Number of HGCM parameters supplied in \a paParms.
- * @param   paParms             Array of HGCM parameters.
- * @param   pDirData            Where to store the result.
- */
-int VBoxSvcClipboardURIGetDir(uint32_t cParms, VBOXHGCMSVCPARM paParms[], PVBOXCLIPBOARDDIRDATA pDirData)
+int VBoxSvcClipboardURIGetError(uint32_t cParms, VBOXHGCMSVCPARM paParms[], int *pRc)
 {
+    AssertPtrReturn(paParms, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pRc,     VERR_INVALID_PARAMETER);
+
     int rc;
 
-    if (cParms == VBOX_SHARED_CLIPBOARD_CPARMS_WRITE_DIR)
+    if (cParms == VBOX_SHARED_CLIPBOARD_CPARMS_ERROR)
     {
         /* Note: Context ID (paParms[0]) not used yet. */
-        rc = HGCMSvcGetU32(&paParms[1], &pDirData->cbPath);
-        if (RT_SUCCESS(rc))
-            rc = HGCMSvcGetPv(&paParms[2], (void **)&pDirData->pszPath, &pDirData->cbPath);
-        if (RT_SUCCESS(rc))
-            rc = HGCMSvcGetU32(&paParms[3], &pDirData->fMode);
-
-        LogFlowFunc(("pszPath=%s, cbPath=%RU32, fMode=0x%x\n", pDirData->pszPath, pDirData->cbPath, pDirData->fMode));
-
-        if (RT_SUCCESS(rc))
-        {
-            if (!SharedClipboardURIDirDataIsValid(pDirData))
-                rc = VERR_INVALID_PARAMETER;
-        }
-    }
-    else
-        rc = VERR_INVALID_PARAMETER;
-
-    LogFlowFuncLeaveRC(rc);
-    return rc;
-}
-
-/**
- * Sets an URI directory entry to HGCM service parameters.
- *
- * @returns VBox status code.
- * @param   cParms              Number of HGCM parameters supplied in \a paParms.
- * @param   paParms             Array of HGCM parameters.
- * @param   pDirData            Pointer to data to set to the HGCM parameters.
- */
-int VBoxSvcClipboardURISetDir(uint32_t cParms, VBOXHGCMSVCPARM paParms[], PVBOXCLIPBOARDDIRDATA pDirData)
-{
-    int rc;
-
-    if (cParms == VBOX_SHARED_CLIPBOARD_CPARMS_READ_DIR)
-    {
-        /* Note: Context ID (paParms[0]) not used yet. */
-        HGCMSvcSetU32(&paParms[1], pDirData->cbPath);
-        HGCMSvcSetPv (&paParms[2], pDirData->pszPath, pDirData->cbPath);
-        HGCMSvcSetU32(&paParms[3], pDirData->fMode);
-
-        rc = VINF_SUCCESS;
-    }
-    else
-        rc = VERR_INVALID_PARAMETER;
-
-    LogFlowFuncLeaveRC(rc);
-    return rc;
-}
-
-/**
- * Reads an URI file header from HGCM service parameters.
- *
- * @returns VBox status code.
- * @param   cParms              Number of HGCM parameters supplied in \a paParms.
- * @param   paParms             Array of HGCM parameters.
- * @param   pFileHdr            Where to store the result.
- */
-int VBoxSvcClipboardURIGetFileHdr(uint32_t cParms, VBOXHGCMSVCPARM paParms[], PVBOXCLIPBOARDFILEHDR pFileHdr)
-{
-    int rc;
-
-    if (cParms == VBOX_SHARED_CLIPBOARD_CPARMS_WRITE_FILE_HDR)
-    {
-        /* Note: Context ID (paParms[0]) not used yet. */
-        rc = HGCMSvcGetU32(&paParms[1], &pFileHdr->cbFilePath);
-        if (RT_SUCCESS(rc))
-            rc = HGCMSvcGetPv(&paParms[2], (void **)&pFileHdr->pszFilePath, &pFileHdr->cbFilePath);
-        if (RT_SUCCESS(rc))
-            rc = HGCMSvcGetU32(&paParms[3], &pFileHdr->fFlags);
-        if (RT_SUCCESS(rc))
-            rc = HGCMSvcGetU32(&paParms[4], &pFileHdr->fMode);
-        if (RT_SUCCESS(rc))
-            rc = HGCMSvcGetU64(&paParms[5], &pFileHdr->cbSize);
-
-        LogFlowFunc(("pszPath=%s, cbPath=%RU32, fMode=0x%x, cbSize=%RU64\n",
-                     pFileHdr->pszFilePath, pFileHdr->cbFilePath, pFileHdr->fMode, pFileHdr->cbSize));
-    }
-    else
-        rc = VERR_INVALID_PARAMETER;
-
-    LogFlowFuncLeaveRC(rc);
-    return rc;
-}
-
-/**
- * Sets an URI file header to HGCM service parameters.
- *
- * @returns VBox status code.
- * @param   cParms              Number of HGCM parameters supplied in \a paParms.
- * @param   paParms             Array of HGCM parameters.
- * @param   pFileHdr            Pointer to data to set to the HGCM parameters.
- */
-int VBoxSvcClipboardURISetFileHdr(uint32_t cParms, VBOXHGCMSVCPARM paParms[], PVBOXCLIPBOARDFILEHDR pFileHdr)
-{
-    int rc;
-
-    if (cParms == VBOX_SHARED_CLIPBOARD_CPARMS_READ_FILE_HDR)
-    {
-        /* Note: Context ID (paParms[0]) not used yet. */
-        HGCMSvcSetU32(&paParms[1], pFileHdr->cbFilePath);
-        HGCMSvcSetPv (&paParms[2], pFileHdr->pszFilePath, pFileHdr->cbFilePath);
-        HGCMSvcSetU32(&paParms[3], pFileHdr->fFlags);
-        HGCMSvcSetU32(&paParms[4], pFileHdr->fMode);
-        HGCMSvcSetU64(&paParms[5], pFileHdr->cbSize);
-
-        rc = VINF_SUCCESS;
-    }
-    else
-        rc = VERR_INVALID_PARAMETER;
-
-    LogFlowFuncLeaveRC(rc);
-    return rc;
-}
-
-/**
- * Gets an URI file data chunk from HGCM service parameters.
- *
- * @returns VBox status code.
- * @param   cParms              Number of HGCM parameters supplied in \a paParms.
- * @param   paParms             Array of HGCM parameters.
- * @param   pFileData           Where to store the result.
- */
-int VBoxSvcClipboardURIGetFileData(uint32_t cParms, VBOXHGCMSVCPARM paParms[], PVBOXCLIPBOARDFILEDATA pFileData)
-{
-    int rc;
-
-    if (cParms == VBOX_SHARED_CLIPBOARD_CPARMS_WRITE_FILE_DATA)
-    {
-        /* Note: Context ID (paParms[0]) not used yet. */
-        rc = HGCMSvcGetU32(&paParms[1], &pFileData->cbData);
-        if (RT_SUCCESS(rc))
-            rc = HGCMSvcGetPv(&paParms[2], &pFileData->pvData, &pFileData->cbData);
-        if (RT_SUCCESS(rc))
-            rc = HGCMSvcGetU32(&paParms[3], &pFileData->cbChecksum);
-        if (RT_SUCCESS(rc))
-            rc = HGCMSvcGetPv(&paParms[4], &pFileData->pvChecksum, &pFileData->cbChecksum);
-
-        LogFlowFunc(("pvData=0x%p, cbData=%RU32\n", pFileData->pvData, pFileData->cbData));
-    }
-    else
-        rc = VERR_INVALID_PARAMETER;
-
-    LogFlowFuncLeaveRC(rc);
-    return rc;
-}
-
-/**
- * Sets an URI file data chunk to HGCM service parameters.
- *
- * @returns VBox status code.
- * @param   cParms              Number of HGCM parameters supplied in \a paParms.
- * @param   paParms             Array of HGCM parameters.
- * @param   pFileData           Pointer to data to set to the HGCM parameters.
- */
-int VBoxSvcClipboardURISetFileData(uint32_t cParms, VBOXHGCMSVCPARM paParms[], PVBOXCLIPBOARDFILEDATA pFileData)
-{
-    int rc;
-
-    if (cParms == VBOX_SHARED_CLIPBOARD_CPARMS_READ_FILE_DATA)
-    {
-        /* Note: Context ID (paParms[0]) not used yet. */
-        HGCMSvcSetU32(&paParms[1], pFileData->cbData);
-        HGCMSvcSetPv (&paParms[2], pFileData->pvData, pFileData->cbData);
-        HGCMSvcSetU32(&paParms[3], pFileData->cbChecksum);
-        HGCMSvcSetPv (&paParms[4], pFileData->pvChecksum, pFileData->cbChecksum);
-
-        rc = VINF_SUCCESS;
+        rc = HGCMSvcGetU32(&paParms[1], (uint32_t *)pRc); /** @todo int vs. uint32_t !!! */
     }
     else
         rc = VERR_INVALID_PARAMETER;
@@ -598,33 +454,34 @@ int VBoxSvcClipboardURISetFileData(uint32_t cParms, VBOXHGCMSVCPARM paParms[], P
  * URI client (guest) handler for the Shared Clipboard host service.
  *
  * @returns VBox status code.
- * @param   u32ClientID         Client ID of the client which called this handler.
- * @param   pvClient            Pointer to client-specific data block.
+ * @param   pClient             Pointer to associated client.
+ * @param   callHandle          The client's call handle of this call.
  * @param   u32Function         Function number being called.
  * @param   cParms              Number of function parameters supplied.
  * @param   paParms             Array function parameters  supplied.
  * @param   tsArrival           Timestamp of arrival.
- * @param   pfAsync             Returns \c true if the response needs to be being asynchronous or \c false if not,
  */
-int vboxSvcClipboardURIHandler(uint32_t u32ClientID,
-                               void *pvClient,
+int vboxSvcClipboardURIHandler(PVBOXCLIPBOARDCLIENT pClient,
+                               VBOXHGCMCALLHANDLE callHandle,
                                uint32_t u32Function,
                                uint32_t cParms,
                                VBOXHGCMSVCPARM paParms[],
-                               uint64_t tsArrival,
-                               bool *pfAsync)
+                               uint64_t tsArrival)
 {
-    RT_NOREF(u32ClientID, paParms, tsArrival, pfAsync);
+    RT_NOREF(paParms, tsArrival);
 
-    LogFlowFunc(("u32ClientID=%RU32, u32Function=%RU32, cParms=%RU32, g_pfnExtension=%p\n",
-                 u32ClientID, u32Function, cParms, g_pfnExtension));
+    LogFlowFunc(("uClient=%RU32, u32Function=%RU32, cParms=%RU32, g_pfnExtension=%p\n",
+                 pClient->uClientID, u32Function, cParms, g_pfnExtension));
 
-    const PVBOXCLIPBOARDCLIENTDATA pClientData = (PVBOXCLIPBOARDCLIENTDATA)pvClient;
+    const PVBOXCLIPBOARDCLIENTDATA pClientData = pClient->pData;
     AssertPtrReturn(pClientData, VERR_INVALID_POINTER);
 
     /* Check if we've the right mode set. */
     if (!vboxSvcClipboardURIMsgIsAllowed(vboxSvcClipboardGetMode(), u32Function))
+    {
+        LogFunc(("Wrong clipboard mode, denying access\n"));
         return VERR_ACCESS_DENIED;
+    }
 
     /* A (valid) service extension is needed because VBoxSVC needs to keep track of the
      * clipboard areas cached on the host. */
@@ -637,56 +494,212 @@ int vboxSvcClipboardURIHandler(uint32_t u32ClientID,
         return VERR_NOT_SUPPORTED;
     }
 
-    if (!SharedClipboardURICtxGetTotalTransfers(&pClientData->URI))
+    int rc = VINF_SUCCESS;
+
+    /*
+     * Pre-check: For certain messages we need to make sure that a (right) transfer is present.
+     */
+    PSHAREDCLIPBOARDURITRANSFER pTransfer = NULL;
+    switch (u32Function)
     {
-        LogFunc(("No transfers found\n"));
-        return VERR_WRONG_ORDER;
+        case VBOX_SHARED_CLIPBOARD_GUEST_FN_GET_HOST_MSG:
+            RT_FALL_THROUGH();
+        case VBOX_SHARED_CLIPBOARD_GUEST_FN_TRANSFER_REPORT:
+            break;
+        default:
+        {
+            if (!SharedClipboardURICtxGetTotalTransfers(&pClientData->URI))
+            {
+                LogFunc(("No transfers found\n"));
+                rc = VERR_WRONG_ORDER;
+                break;
+            }
+
+            const uint32_t uTransferID = 0; /* Only one transfer per client is supported at the moment. */
+
+            pTransfer = SharedClipboardURICtxGetTransfer(&pClientData->URI, uTransferID);
+            if (!pTransfer)
+            {
+                LogFunc(("Transfer with ID %RU32 not found\n", uTransferID));
+                rc = VERR_WRONG_ORDER;
+            }
+            break;
+        }
     }
 
-    const uint32_t uTransferID = 0; /* Only one transfer is supported at the moment. */
+    if (RT_FAILURE(rc))
+        return rc;
 
-    const PSHAREDCLIPBOARDURITRANSFER pTransfer = SharedClipboardURICtxGetTransfer(&pClientData->URI, uTransferID);
-    if (!pTransfer)
-    {
-        LogFunc(("Transfer with ID %RU32 not found\n", uTransferID));
-        return VERR_WRONG_ORDER;
-    }
-
-    bool fWriteToProvider = false; /* Whether to (also) dispatch the HGCM data to the transfer provider. */
-
-    int rc = VERR_INVALID_PARAMETER; /* Play safe. */
+    rc = VERR_INVALID_PARAMETER; /* Play safe. */
 
     switch (u32Function)
     {
-        case VBOX_SHARED_CLIPBOARD_GUEST_FN_READ_DATA_HDR:
+        case VBOX_SHARED_CLIPBOARD_GUEST_FN_TRANSFER_REPORT:
         {
-            LogFlowFunc(("VBOX_SHARED_CLIPBOARD_GUEST_FN_READ_DATA_HDR\n"));
+            LogFlowFunc(("VBOX_SHARED_CLIPBOARD_GUEST_FN_TRANSFER_REPORT\n"));
 
-            VBOXCLIPBOARDDATAHDR dataHdr;
-            rc = VBoxSvcClipboardURISetDataHdr(cParms, paParms, &dataHdr);
+            if (!SharedClipboardURICtxTransfersMaximumReached(&pClientData->URI))
+            {
+                SharedClipboardURICtxTransfersCleanup(&pClientData->URI);
+
+                SHAREDCLIPBOARDURITRANSFERDIR enmDir = SHAREDCLIPBOARDURITRANSFERDIR_READ;
+
+                PSHAREDCLIPBOARDURITRANSFER pTransfer;
+                rc = SharedClipboardURITransferCreate(enmDir,
+                                                      SHAREDCLIPBOARDSOURCE_REMOTE, &pTransfer);
+                if (RT_SUCCESS(rc))
+                {
+                    rc = vboxSvcClipboardURIAreaRegister(&pClientData->State, pTransfer);
+                    if (RT_SUCCESS(rc))
+                    {
+                        SHAREDCLIPBOARDPROVIDERCREATIONCTX creationCtx;
+                        RT_ZERO(creationCtx);
+
+                        creationCtx.enmSource = pClientData->State.enmSource;
+
+                        RT_ZERO(creationCtx.Interface);
+                        creationCtx.Interface.pfnTransferOpen  = vboxSvcClipboardURITransferOpen;
+                        creationCtx.Interface.pfnTransferClose = vboxSvcClipboardURITransferClose;
+                        creationCtx.Interface.pfnListOpen      = vboxSvcClipboardURIListOpen;
+                        creationCtx.Interface.pfnListClose     = vboxSvcClipboardURIListClose;
+                        creationCtx.Interface.pfnObjOpen       = vboxSvcClipboardURIObjOpen;
+                        creationCtx.Interface.pfnObjClose      = vboxSvcClipboardURIObjClose;
+
+                        if (enmDir == SHAREDCLIPBOARDURITRANSFERDIR_READ)
+                        {
+                            creationCtx.Interface.pfnListHdrRead   = vboxSvcClipboardURIListHdrRead;
+                            creationCtx.Interface.pfnListEntryRead = vboxSvcClipboardURIListEntryRead;
+                            creationCtx.Interface.pfnObjRead       = vboxSvcClipboardURIObjRead;
+                        }
+                        else
+                        {
+                            AssertFailed();
+                        }
+
+                        creationCtx.pvUser = pClient;
+
+                        /* Register needed callbacks so that we can wait for the meta data to arrive here. */
+                        SHAREDCLIPBOARDURITRANSFERCALLBACKS Callbacks;
+                        RT_ZERO(Callbacks);
+
+                        Callbacks.pvUser                = pClientData;
+
+                        Callbacks.pfnTransferPrepare    = VBoxSvcClipboardURITransferPrepareCallback;
+                        Callbacks.pfnTransferComplete   = VBoxSvcClipboardURITransferCompleteCallback;
+                        Callbacks.pfnTransferCanceled   = VBoxSvcClipboardURITransferCanceledCallback;
+                        Callbacks.pfnTransferError      = VBoxSvcClipboardURITransferErrorCallback;
+
+                        SharedClipboardURITransferSetCallbacks(pTransfer, &Callbacks);
+
+                        rc = SharedClipboardURITransferProviderCreate(pTransfer, &creationCtx);
+                        if (RT_SUCCESS(rc))
+                            rc = SharedClipboardURICtxTransferAdd(&pClientData->URI, pTransfer);
+                    }
+
+                    if (RT_SUCCESS(rc))
+                    {
+                        rc = VBoxClipboardSvcImplURITransferCreate(pClientData, pTransfer);
+                        if (RT_SUCCESS(rc))
+                            rc = VBoxClipboardSvcImplFormatAnnounce(pClientData, VBOX_SHARED_CLIPBOARD_FMT_URI_LIST);
+                    }
+
+                    if (RT_FAILURE(rc))
+                    {
+                        VBoxClipboardSvcImplURITransferDestroy(pClientData, pTransfer);
+                        SharedClipboardURITransferDestroy(pTransfer);
+                    }
+                }
+            }
+            else
+                rc = VERR_SHCLPB_MAX_TRANSFERS_REACHED;
+
+            LogFunc(("VBOX_SHARED_CLIPBOARD_GUEST_FN_TRANSFER_REPORT: %Rrc\n", rc));
+
+            if (RT_FAILURE(rc))
+                LogRel(("Shared Clipboard: Initializing transfer failed with %Rrc\n", rc));
+
             break;
         }
 
-        case VBOX_SHARED_CLIPBOARD_GUEST_FN_WRITE_DATA_HDR:
+        case VBOX_SHARED_CLIPBOARD_GUEST_FN_GET_HOST_MSG:
         {
-            LogFlowFunc(("VBOX_SHARED_CLIPBOARD_GUEST_FN_WRITE_DATA_HDR\n"));
+            if (cParms == VBOX_SHARED_CLIPBOARD_CPARMS_GET_HOST_MSG)
+            {
+                LogFlowFunc(("VBOX_SHARED_CLIPBOARD_GUEST_FN_GET_HOST_MSG\n"));
+                rc = vboxSvcClipboardMsgGetNextInfo(&pClientData->State,
+                                                    &paParms[0].u.uint32 /* uMsg */, &paParms[1].u.uint32 /* cParms */);
 
-            VBOXCLIPBOARDDATAHDR dataHdr;
-            rc = SharedClipboardURIDataHdrInit(&dataHdr);
+                /* No (new) messages available or some error occurred? */
+                if (   rc == VERR_NO_DATA
+                    || RT_FAILURE(rc))
+                {
+                    uint32_t fFlags = 0;
+                    int rc2 = HGCMSvcGetU32(&paParms[2], &fFlags);
+                    if (   RT_SUCCESS(rc2)
+                        && fFlags) /* Blocking flag set? */
+                    {
+                        /* Defer client returning. */
+                        rc = VINF_HGCM_ASYNC_EXECUTE;
+                    }
+                    else
+                        rc = VERR_INVALID_PARAMETER;
+
+                    LogFlowFunc(("Message queue is empty, returning %Rrc to guest\n", rc));
+                }
+            }
+            break;
+        }
+
+        case VBOX_SHARED_CLIPBOARD_GUEST_FN_LIST_OPEN:
+        {
+            LogFlowFunc(("VBOX_SHARED_CLIPBOARD_GUEST_FN_LIST_OPEN\n"));
+            rc = VINF_SUCCESS;
+            break;
+        }
+
+        case VBOX_SHARED_CLIPBOARD_GUEST_FN_LIST_CLOSE:
+        {
+            LogFlowFunc(("VBOX_SHARED_CLIPBOARD_GUEST_FN_LIST_CLOSE\n"));
+            rc = VINF_SUCCESS;
+            break;
+        }
+
+        case VBOX_SHARED_CLIPBOARD_GUEST_FN_LIST_HDR_READ:
+        {
+            LogFlowFunc(("VBOX_SHARED_CLIPBOARD_GUEST_FN_READ_LIST_HDR\n"));
+
+            VBOXCLIPBOARDLISTHANDLE hList;
+            VBOXCLIPBOARDLISTHDR    hdrList;
+            rc = VBoxSvcClipboardURIGetListHdr(cParms, paParms, &hList, &hdrList);
             if (RT_SUCCESS(rc))
             {
-                rc = VBoxSvcClipboardURIGetDataHdr(cParms, paParms, &dataHdr);
+                if (RT_SUCCESS(rc))
+                    rc = VBoxSvcClipboardURISetListHdr(cParms, paParms, &hdrList);
+            }
+            break;
+        }
+
+        case VBOX_SHARED_CLIPBOARD_GUEST_FN_LIST_HDR_WRITE:
+        {
+            LogFlowFunc(("VBOX_SHARED_CLIPBOARD_GUEST_FN_WRITE_LIST_HDR\n"));
+
+            VBOXCLIPBOARDLISTHDR hdrList;
+            rc = SharedClipboardURIListHdrInit(&hdrList);
+            if (RT_SUCCESS(rc))
+            {
+                VBOXCLIPBOARDLISTHANDLE hList;
+                rc = VBoxSvcClipboardURIGetListHdr(cParms, paParms, &hList, &hdrList);
                 if (RT_SUCCESS(rc))
                 {
-                    void    *pvData = SharedClipboardURIDataHdrDup(&dataHdr);
-                    uint32_t cbData = sizeof(VBOXCLIPBOARDDATAHDR);
+                    void    *pvData = SharedClipboardURIListHdrDup(&hdrList);
+                    uint32_t cbData = sizeof(VBOXCLIPBOARDLISTHDR);
 
                     PSHAREDCLIPBOARDURITRANSFERPAYLOAD pPayload;
-                    rc = SharedClipboardURITransferPayloadAlloc(SHAREDCLIPBOARDURITRANSFEREVENTTYPE_METADATA_HDR,
+                    rc = SharedClipboardURITransferPayloadAlloc(SHAREDCLIPBOARDURITRANSFEREVENTTYPE_LIST_HDR_READ,
                                                                 pvData, cbData, &pPayload);
                     if (RT_SUCCESS(rc))
                     {
-                        rc = SharedClipboardURITransferEventSignal(pTransfer, SHAREDCLIPBOARDURITRANSFEREVENTTYPE_METADATA_HDR,
+                        rc = SharedClipboardURITransferEventSignal(pTransfer, SHAREDCLIPBOARDURITRANSFEREVENTTYPE_LIST_HDR_READ,
                                                                    pPayload);
                     }
                 }
@@ -694,32 +707,33 @@ int vboxSvcClipboardURIHandler(uint32_t u32ClientID,
             break;
         }
 
-        case VBOX_SHARED_CLIPBOARD_GUEST_FN_READ_DATA_CHUNK:
+        case VBOX_SHARED_CLIPBOARD_GUEST_FN_LIST_ENTRY_READ:
         {
-            LogFlowFunc(("VBOX_SHARED_CLIPBOARD_GUEST_FN_READ_DATA_CHUNK\n"));
+            LogFlowFunc(("VBOX_SHARED_CLIPBOARD_GUEST_FN_READ_LIST_ENTRY\n"));
             break;
         }
 
-        case VBOX_SHARED_CLIPBOARD_GUEST_FN_WRITE_DATA_CHUNK:
+        case VBOX_SHARED_CLIPBOARD_GUEST_FN_LIST_ENTRY_WRITE:
         {
-            LogFlowFunc(("VBOX_SHARED_CLIPBOARD_GUEST_FN_WRITE_DATA_CHUNK\n"));
+            LogFlowFunc(("VBOX_SHARED_CLIPBOARD_GUEST_FN_WRITE_LIST_ENTRY\n"));
 
-            VBOXCLIPBOARDDATACHUNK dataChunk;
-            rc = SharedClipboardURIDataChunkInit(&dataChunk);
+            VBOXCLIPBOARDLISTENTRY entryList;
+            rc = SharedClipboardURIListEntryInit(&entryList);
             if (RT_SUCCESS(rc))
             {
-                rc = VBoxSvcClipboardURIGetDataChunk(cParms, paParms, &dataChunk);
+                VBOXCLIPBOARDLISTHANDLE hList;
+                rc = VBoxSvcClipboardURIGetListEntry(cParms, paParms, &hList, &entryList);
                 if (RT_SUCCESS(rc))
                 {
-                    void    *pvData = SharedClipboardURIDataChunkDup(&dataChunk);
-                    uint32_t cbData = sizeof(VBOXCLIPBOARDDATACHUNK);
+                    void    *pvData = SharedClipboardURIListEntryDup(&entryList);
+                    uint32_t cbData = sizeof(VBOXCLIPBOARDLISTENTRY);
 
                     PSHAREDCLIPBOARDURITRANSFERPAYLOAD pPayload;
-                    rc = SharedClipboardURITransferPayloadAlloc(SHAREDCLIPBOARDURITRANSFEREVENTTYPE_METADATA_CHUNK,
+                    rc = SharedClipboardURITransferPayloadAlloc(SHAREDCLIPBOARDURITRANSFEREVENTTYPE_LIST_ENTRY_READ,
                                                                 pvData, cbData, &pPayload);
                     if (RT_SUCCESS(rc))
                     {
-                        rc = SharedClipboardURITransferEventSignal(pTransfer, SHAREDCLIPBOARDURITRANSFEREVENTTYPE_METADATA_CHUNK,
+                        rc = SharedClipboardURITransferEventSignal(pTransfer, SHAREDCLIPBOARDURITRANSFEREVENTTYPE_LIST_ENTRY_READ,
                                                                    pPayload);
                     }
 
@@ -727,16 +741,7 @@ int vboxSvcClipboardURIHandler(uint32_t u32ClientID,
             }
             break;
         }
-
-        case VBOX_SHARED_CLIPBOARD_GUEST_FN_READ_DIR:
-        {
-            LogFlowFunc(("VBOX_SHARED_CLIPBOARD_GUEST_FN_READ_DIR\n"));
-
-            VBOXCLIPBOARDDIRDATA data;
-            rc = VBoxSvcClipboardURISetDir(cParms, paParms, &data);
-            break;
-        }
-
+#if 0
         case VBOX_SHARED_CLIPBOARD_GUEST_FN_WRITE_DIR:
         {
             LogFlowFunc(("VBOX_SHARED_CLIPBOARD_GUEST_FN_WRITE_DIR\n"));
@@ -905,41 +910,49 @@ int vboxSvcClipboardURIHandler(uint32_t u32ClientID,
             }
             break;
         }
+#endif
+        case VBOX_SHARED_CLIPBOARD_GUEST_FN_CANCEL:
+            LogFlowFunc(("VBOX_SHARED_CLIPBOARD_FN_CANCEL\n"));
 
-        case VBOX_SHARED_CLIPBOARD_GUEST_FN_WRITE_CANCEL:
-            LogFlowFunc(("VBOX_SHARED_CLIPBOARD_FN_WRITE_CANCEL\n"));
-            AssertFailedStmt(rc = VERR_NOT_IMPLEMENTED);
+            LogRel2(("Shared Clipboard: Transfer canceled\n"));
             break;
 
-        case VBOX_SHARED_CLIPBOARD_GUEST_FN_WRITE_ERROR:
-            LogFlowFunc(("VBOX_SHARED_CLIPBOARD_FN_WRITE_ERROR\n"));
-            AssertFailedStmt(rc = VERR_NOT_IMPLEMENTED);
+        case VBOX_SHARED_CLIPBOARD_GUEST_FN_ERROR:
+        {
+            LogFlowFunc(("VBOX_SHARED_CLIPBOARD_FN_ERROR\n"));
+
+            int rcGuest;
+            rc = VBoxSvcClipboardURIGetError(cParms,paParms, &rcGuest);
+            if (RT_SUCCESS(rc))
+                LogRel(("Shared Clipboard: Transfer error: %Rrc\n", rcGuest));
             break;
+        }
 
         default:
             AssertMsgFailed(("Not implemented\n"));
             break;
     }
 
-    if (fWriteToProvider)
-        rc = VINF_SUCCESS;
-
-    if (RT_SUCCESS(rc))
+    if (rc == VINF_HGCM_ASYNC_EXECUTE)
     {
-        if (fWriteToProvider)
+        try
         {
-            SHAREDCLIPBOARDPROVIDERWRITEPARMS writeParms;
-            RT_ZERO(writeParms);
-
-            writeParms.u.HostService.uMsg    = u32Function;
-            writeParms.u.HostService.cParms  = cParms;
-            writeParms.u.HostService.paParms = paParms;
-
-            //rc = pTransfer->pProvider->OnWrite(&writeParms);
+            vboxSvcClipboardClientDefer(pClient, callHandle, u32Function, cParms, paParms);
+            g_listClientsDeferred.push_back(pClient->uClientID);
+        }
+        catch (std::bad_alloc &)
+        {
+            rc = VERR_NO_MEMORY;
+            /* Don't report to guest. */
         }
     }
+    else if (pClient)
+    {
+        int rc2 = vboxSvcClipboardClientComplete(pClient, callHandle, rc);
+        AssertRC(rc2);
+    }
 
-    LogFlowFuncLeaveRC(rc);
+    LogFlowFunc(("Returning uClient=%RU32, rc=%Rrc\n", pClient->uClientID, rc));
     return rc;
 }
 
@@ -957,20 +970,19 @@ int vboxSvcClipboardURIHostHandler(uint32_t u32Function,
 {
     RT_NOREF(cParms, paParms);
 
-    int rc = VERR_INVALID_PARAMETER; /* Play safe. */
+    int rc = VERR_NOT_IMPLEMENTED; /* Play safe. */
 
     switch (u32Function)
     {
         case VBOX_SHARED_CLIPBOARD_HOST_FN_CANCEL:
-            AssertFailed(); /** @todo Implement this. */
+            /** @todo */
             break;
 
         case VBOX_SHARED_CLIPBOARD_HOST_FN_ERROR:
-            AssertFailed(); /** @todo Implement this. */
+            /** @todo */
             break;
 
         default:
-            AssertMsgFailed(("Not implemented\n"));
             break;
 
     }
@@ -1005,12 +1017,6 @@ int vboxSvcClipboardURIAreaRegister(PVBOXCLIPBOARDCLIENTSTATE pClientState, PSHA
         RT_ZERO(parms);
 
         parms.uID = NIL_SHAREDCLIPBOARDAREAID;
-
-        if (pTransfer->State.pMeta)
-        {
-            parms.u.fn_register.pvData = SharedClipboardMetaDataMutableRaw(pTransfer->State.pMeta);
-            parms.u.fn_register.cbData = (uint32_t)SharedClipboardMetaDataGetUsed(pTransfer->State.pMeta);
-        }
 
         /* As the meta data is now complete, register a new clipboard on the host side. */
         rc = g_pfnExtension(g_pvExtension, VBOX_CLIPBOARD_EXT_FN_AREA_REGISTER, &parms, sizeof(parms));

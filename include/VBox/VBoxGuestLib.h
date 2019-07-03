@@ -574,57 +574,68 @@ VBGLR3DECL(int)     VbglR3GetSessionId(uint64_t *pu64IdSession);
 # ifdef VBOX_WITH_SHARED_CLIPBOARD
 /** @name Shared Clipboard
  * @{ */
-/**
- * Structure containing the context required for Shared Clipboard operations.
- *
- * Note: Do not change parameter order without also
- *       adapting all structure initializers.
- */
-typedef struct _VBGLR3GUESTCLIPBOARDCMDCTX
-{
-    /** @todo This struct could be handy if we want to implement
-     *        a second communication channel, e.g. via TCP/IP.
-     *        Use a union for the HGCM stuff then. */
 
-    /** HGCM client ID to use for communication. */
-    uint32_t uClientID;
-    /** The VM's current session ID. */
-    uint64_t uSessionID;
-    /** The transfer ID to use. */
-    uint32_t uTransferID;
-    /** Number of parameters retrieved for the current command. */
-    uint32_t uNumParms;
-    /** Max chunk size (in bytes) for data transfers. */
-    uint32_t cbMaxChunkSize;
-} VBGLR3GUESTCLIPBOARDCMDCTX, *PVBGLR3GUESTCLIPBOARDCMDCTX;
+/**
+ * Enumeration specifying a Shared Clipboard event type.
+ */
+typedef enum _VBGLR3CLIPBOARDEVENTTYPE
+{
+    VBGLR3CLIPBOARDEVENTTYPE_INVALID = 0,
+    VBGLR3CLIPBOARDEVENTTYPE_URI_LIST_HDR_READ,
+    VBGLR3CLIPBOARDEVENTTYPE_URI_LIST_HDR_WRITE,
+    VBGLR3CLIPBOARDEVENTTYPE_URI_LIST_ENTRY_READ,
+    VBGLR3CLIPBOARDEVENTTYPE_URI_LIST_ENTRY_WRITE,
+    VBGLR3CLIPBOARDEVENTTYPE_URI_OBJ_OPEN,
+    VBGLR3CLIPBOARDEVENTTYPE_URI_OBJ_CLOSE,
+    VBGLR3CLIPBOARDEVENTTYPE_URI_OBJ_READ,
+    VBGLR3CLIPBOARDEVENTTYPE_URI_OBJ_WRITE,
+    VBGLR3CLIPBOARDEVENTTYPE_URI_CANCEL,
+    VBGLR3CLIPBOARDEVENTTYPE_URI_ERROR,
+    /** Blow the type up to 32-bit. */
+    VBGLR3CLIPBOARDEVENTTYPE_32BIT_HACK = 0x7fffffff
+} VBGLR3CLIPBOARDEVENTTYPE;
+
+typedef struct _VBGLR3CLIPBOARDEVENT
+{
+    /** The event type the union contains. */
+    VBGLR3CLIPBOARDEVENTTYPE enmType;
+    union
+    {
+        struct
+        {
+            PVBOXCLIPBOARDLISTHDR pHdr;
+        } ListHdrRead, ListHdrWrite;
+    } u;
+} VBGLR3CLIPBOARDEVENT, *PVBGLR3CLIPBOARDEVENT;
+typedef const PVBGLR3CLIPBOARDEVENT CPVBGLR3CLIPBOARDEVENT;
 
 VBGLR3DECL(int)     VbglR3ClipboardConnect(HGCMCLIENTID *pidClient);
 VBGLR3DECL(int)     VbglR3ClipboardDisconnect(HGCMCLIENTID idClient);
-VBGLR3DECL(int)     VbglR3ClipboardGetHostMsg(HGCMCLIENTID idClient, uint32_t *pMsg, uint32_t *pfFormats);
+VBGLR3DECL(int)     VbglR3ClipboardGetHostMsgOld(HGCMCLIENTID idClient, uint32_t *pMsg, uint32_t *pfFormats);
 VBGLR3DECL(int)     VbglR3ClipboardReadData(HGCMCLIENTID idClient, uint32_t fFormat, void *pv, uint32_t cb, uint32_t *pcb);
 VBGLR3DECL(int)     VbglR3ClipboardReportFormats(HGCMCLIENTID idClient, uint32_t fFormats);
 VBGLR3DECL(int)     VbglR3ClipboardWriteData(HGCMCLIENTID idClient, uint32_t fFormat, void *pv, uint32_t cb);
 
+VBGLR3DECL(int)     VbglR3ClipboardEventGetNext(HGCMCLIENTID idClient, PSHAREDCLIPBOARDURITRANSFER pTransfer,
+                                                PVBGLR3CLIPBOARDEVENT *ppEvent);
+VBGLR3DECL(void)    VbglR3ClipboardEventFree(PVBGLR3CLIPBOARDEVENT pEvent);
+
 #  ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
-VBGLR3DECL(int)     VbglR3ClipboardReadDataHdr(HGCMCLIENTID idClient, PVBOXCLIPBOARDDATAHDR pDataHdr);
-VBGLR3DECL(int)     VbglR3ClipboardWriteDataHdr(HGCMCLIENTID idClient, const PVBOXCLIPBOARDDATAHDR pDataHdr);
-VBGLR3DECL(int)     VbglR3ClipboardReadMetaData(HGCMCLIENTID idClient, PVBOXCLIPBOARDDATAHDR pDataHdr,
-                                                void *pvMeta, uint32_t cbMeta, uint32_t *pcbRead);
-VBGLR3DECL(int)     VbglR3ClipboardReadMetaDataEx(HGCMCLIENTID idClient, PVBOXCLIPBOARDDATAHDR pDataHdr,
-                                                  void *pvMeta, uint32_t cbMeta, uint32_t *pcbRead);
-VBGLR3DECL(int)     VbglR3ClipboardWriteMetaData(HGCMCLIENTID idClient, PVBOXCLIPBOARDDATAHDR pDataHdr,
-                                                 const void *pvMeta, uint32_t cbMeta, uint32_t *pcbWritten);
-VBGLR3DECL(int)     VbglR3ClipboardWriteMetaDataEx(HGCMCLIENTID idClient, const void *pvMeta, uint32_t cbMeta, uint32_t *pcbWritten);
-VBGLR3DECL(int)     VbglR3ClipboardReadDir(HGCMCLIENTID idClient, char *pszDirname, uint32_t cbDirname, uint32_t *pcbDirnameRecv,
-                                           uint32_t *pfMode);
-VBGLR3DECL(int)     VbglR3ClipboardWriteDir(HGCMCLIENTID idClient, const char  *pszPath, uint32_t cbPath, uint32_t fMode);
-VBGLR3DECL(int)     VbglR3ClipboardReadFileHdr(HGCMCLIENTID  idClient, char *pszFilename, uint32_t cbFilename, uint32_t *puFlags,
-                                               uint32_t *pfMode, uint64_t *pcbTotal);
-VBGLR3DECL(int)     VbglR3ClipboardWriteFileHdr(HGCMCLIENTID idClient, const char *pszFilename, uint32_t cbFilename,
-                                                uint32_t fFlags, uint32_t fMode, uint64_t cbTotal);
-VBGLR3DECL(int)     VbglR3ClipboardReadFileData(HGCMCLIENTID idClient, void *pvData, uint32_t cbData, uint32_t *pcbRead);
-VBGLR3DECL(int)     VbglR3ClipboardWriteFileData(HGCMCLIENTID idClient, void *pvData, uint32_t cbData, uint32_t *pcbWritten);
-VBGLR3DECL(int)     VbglR3ClipboardSendError(HGCMCLIENTID idClient, int rcErr);
+VBGLR3DECL(int)     VbglR3ClipboardListHdrRead(HGCMCLIENTID idClient, PVBOXCLIPBOARDLISTHDR pListHdr);
+VBGLR3DECL(int)     VbglR3ClipboardSendListHdrWrite(HGCMCLIENTID idClient, VBOXCLIPBOARDLISTHANDLE hList, PVBOXCLIPBOARDLISTHDR pListHdr);
+VBGLR3DECL(int)     VbglR3ClipboardListEntryRead(HGCMCLIENTID idClient, PVBOXCLIPBOARDLISTENTRY pListEntry);
+VBGLR3DECL(int)     VbglR3ClipboardSendListEntryWrite(HGCMCLIENTID idClient, VBOXCLIPBOARDLISTHANDLE hList, PVBOXCLIPBOARDLISTENTRY pListEntry);
+
+VBGLR3DECL(int)     VbglR3ClipboardObjOpen(HGCMCLIENTID idClient,
+                                           const char *pszPath, PVBOXCLIPBOARDCREATEPARMS pCreateParms,
+                                           PSHAREDCLIPBOARDOBJHANDLE phObj);
+VBGLR3DECL(int)     VbglR3ClipboardObjClose(HGCMCLIENTID idClient, SHAREDCLIPBOARDOBJHANDLE hObj);
+VBGLR3DECL(int)     VbglR3ClipboardObjRead(HGCMCLIENTID idClient, SHAREDCLIPBOARDOBJHANDLE hObj, void *pvData, uint32_t cbData,
+                                           uint32_t *pcbRead);
+VBGLR3DECL(int)     VbglR3ClipboardObjWrite(HGCMCLIENTID idClient, SHAREDCLIPBOARDOBJHANDLE hObj, void *pvData, uint32_t cbData,
+                                            uint32_t *pcbWritten);
+
+VBGLR3DECL(int)     VbglR3ClipboardWriteError(HGCMCLIENTID idClient, int rcErr);
 #  endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
 /** @} */
 # endif /* VBOX_WITH_SHARED_CLIPBOARD */

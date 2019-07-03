@@ -51,33 +51,37 @@ bool vboxSvcClipboardURIMsgIsAllowed(uint32_t uMode, uint32_t uMsg)
 
     switch (uMsg)
     {
-        case VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_READ_DATA_HDR:
+        case VBOX_SHARED_CLIPBOARD_GUEST_FN_LIST_OPEN:
             RT_FALL_THROUGH();
-        case VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_READ_DATA_CHUNK:
+        case VBOX_SHARED_CLIPBOARD_GUEST_FN_LIST_CLOSE:
             RT_FALL_THROUGH();
-        case VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_READ_DIR:
+        case VBOX_SHARED_CLIPBOARD_GUEST_FN_LIST_HDR_READ:
             RT_FALL_THROUGH();
-        case VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_READ_FILE_HDR:
+        case VBOX_SHARED_CLIPBOARD_GUEST_FN_LIST_ENTRY_READ:
             RT_FALL_THROUGH();
-        case VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_READ_FILE_DATA:
-            fAllowed = fGuestToHost;
-            break;
-
-        case VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_WRITE_DATA_HDR:
+        case VBOX_SHARED_CLIPBOARD_GUEST_FN_OBJ_OPEN:
             RT_FALL_THROUGH();
-        case VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_WRITE_DATA_CHUNK:
+        case VBOX_SHARED_CLIPBOARD_GUEST_FN_OBJ_CLOSE:
             RT_FALL_THROUGH();
-        case VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_WRITE_DIR:
-            RT_FALL_THROUGH();
-        case VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_WRITE_FILE_HDR:
-            RT_FALL_THROUGH();
-        case VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_WRITE_FILE_DATA:
+        case VBOX_SHARED_CLIPBOARD_GUEST_FN_OBJ_READ:
             fAllowed = fHostToGuest;
             break;
 
-        case VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_CANCEL:
+        case VBOX_SHARED_CLIPBOARD_GUEST_FN_LIST_HDR_WRITE:
             RT_FALL_THROUGH();
-        case VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_ERROR:
+        case VBOX_SHARED_CLIPBOARD_GUEST_FN_LIST_ENTRY_WRITE:
+            RT_FALL_THROUGH();
+        case VBOX_SHARED_CLIPBOARD_GUEST_FN_OBJ_WRITE:
+            fAllowed = fGuestToHost;
+            break;
+
+        case VBOX_SHARED_CLIPBOARD_GUEST_FN_TRANSFER_REPORT:
+            RT_FALL_THROUGH();
+        case VBOX_SHARED_CLIPBOARD_GUEST_FN_GET_HOST_MSG:
+            RT_FALL_THROUGH();
+        case VBOX_SHARED_CLIPBOARD_GUEST_FN_CANCEL:
+            RT_FALL_THROUGH();
+        case VBOX_SHARED_CLIPBOARD_GUEST_FN_ERROR:
             fAllowed = fHostToGuest || fGuestToHost;
             break;
 
@@ -89,55 +93,30 @@ bool vboxSvcClipboardURIMsgIsAllowed(uint32_t uMode, uint32_t uMsg)
     return fAllowed;
 }
 
-int vboxSvcClipboardURIReportMsg(PVBOXCLIPBOARDCLIENTDATA pClientData, uint32_t uMsg, uint32_t uFormats)
+int vboxSvcClipboardURIReportMsg(PVBOXCLIPBOARDCLIENTDATA pClientData, uint32_t uMsg, uint32_t uParm)
 {
     AssertPtrReturn(pClientData, VERR_INVALID_POINTER);
-
-    RT_NOREF(uFormats);
-
-    if (!vboxSvcClipboardURIMsgIsAllowed(vboxSvcClipboardGetMode(), uMsg))
-        return VERR_ACCESS_DENIED;
 
     int rc = VINF_SUCCESS;
 
     switch (uMsg)
     {
-        case VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_READ_DATA_HDR:
-            LogFlowFunc(("VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_READ_DATA_HDR\n"));
+        case VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_TRANSFER_START:
+        {
+            LogFlowFunc(("VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_TRANSFER_START\n"));
+
+            if (   vboxSvcClipboardGetMode() != VBOX_SHARED_CLIPBOARD_MODE_HOST_TO_GUEST
+                && vboxSvcClipboardGetMode() != VBOX_SHARED_CLIPBOARD_MODE_BIDIRECTIONAL)
+            {
+                LogFlowFunc(("Wrong clipboard mode, skipping\n"));
+                break;
+            }
+
+            pClientData->State.URI.fTransferStart = true;
+            pClientData->State.URI.enmTransferDir = (SHAREDCLIPBOARDURITRANSFERDIR)uParm;
             break;
-        case VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_WRITE_DATA_HDR:
-            LogFlowFunc(("VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_WRITE_DATA_HDR\n"));
-            break;
-        case VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_READ_DATA_CHUNK:
-            LogFlowFunc(("VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_READ_DATA_CHUNK\n"));
-            break;
-        case VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_WRITE_DATA_CHUNK:
-            LogFlowFunc(("VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_WRITE_DATA_CHUNK\n"));
-            break;
-        case VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_READ_DIR:
-            LogFlowFunc(("VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_READ_DIR\n"));
-            break;
-        case VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_WRITE_DIR:
-            LogFlowFunc(("VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_WRITE_DIR\n"));
-            break;
-        case VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_READ_FILE_HDR:
-            LogFlowFunc(("VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_READ_FILE_HDR\n"));
-            break;
-        case VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_WRITE_FILE_HDR:
-            LogFlowFunc(("VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_WRITE_FILE_HDR\n"));
-            break;
-        case VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_READ_FILE_DATA:
-            LogFlowFunc(("VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_READ_FILE_DATA\n"));
-            break;
-        case VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_WRITE_FILE_DATA:
-            LogFlowFunc(("VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_WRITE_FILE_DATA\n"));
-            break;
-        case VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_CANCEL:
-            LogFlowFunc(("VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_CANCEL\n"));
-            break;
-        case VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_ERROR:
-            LogFlowFunc(("VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_ERROR\n"));
-            break;
+
+        }
 
         default:
             AssertMsgFailed(("Invalid message %RU32\n", uMsg));
@@ -149,18 +128,21 @@ int vboxSvcClipboardURIReportMsg(PVBOXCLIPBOARDCLIENTDATA pClientData, uint32_t 
     return rc;
 }
 
-static bool s_fReqHdr = false;
-
 bool vboxSvcClipboardURIReturnMsg(PVBOXCLIPBOARDCLIENTDATA pClientData, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
     RT_NOREF(pClientData, cParms, paParms);
 
     bool fHandled = false;
 
-    /* For now we only support one transfer at a time. */
-    PSHAREDCLIPBOARDURITRANSFER pTransfer = SharedClipboardURICtxGetTransfer(&pClientData->URI, 0 /* Index */);
-    if (!pTransfer)
-        return fHandled;
+    if (   pClientData->State.URI.fTransferStart
+        && cParms >= 2)
+    {
+        HGCMSvcSetU32(&paParms[0], VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_TRANSFER_START);
+        HGCMSvcSetU32(&paParms[1], pClientData->State.URI.enmTransferDir);
+        pClientData->State.URI.fTransferStart = false;
+
+        fHandled = true;
+    }
 
 #if 1
     int rc = 0;
@@ -174,11 +156,11 @@ bool vboxSvcClipboardURIReturnMsg(PVBOXCLIPBOARDCLIENTDATA pClientData, uint32_t
     if (pTransfer->State.pHeader)
     {
         LogFlowFunc(("VBOX_SHARED_CLIPBOARD_GUEST_FN_READ_DATA_HDR\n"));
-        rc = VBoxSvcClipboardURIWriteDataHdr(cParms, paParms, pTransfer->State.pHeader);
+        rc = VBoxSvcClipboardURIWriteListHdr(cParms, paParms, pTransfer->State.pHeader);
         if (RT_SUCCESS(rc))
         {
             /* We're done witht the data header, destroy it. */
-            SharedClipboardURIDataHdrFree(pTransfer->State.pHeader);
+            SharedClipboardURIListHdrFree(pTransfer->State.pHeader);
             pTransfer->State.pHeader = NULL;
 
             fHandled = true;
@@ -197,12 +179,12 @@ bool vboxSvcClipboardURIReturnMsg(PVBOXCLIPBOARDCLIENTDATA pClientData, uint32_t
         {
             Assert(cbRead <= cbBuf);
 
-            VBOXCLIPBOARDDATACHUNK dataChunk;
-            RT_ZERO(dataChunk);
-            dataChunk.pvData = pvBuf;
-            dataChunk.cbData = cbRead;
+            VBOXCLIPBOARDListEntry ListEntry;
+            RT_ZERO(ListEntry);
+            ListEntry.pvData = pvBuf;
+            ListEntry.cbData = cbRead;
 
-            rc = VBoxSvcClipboardURIWriteDataChunk(cParms, paParms, &dataChunk);
+            rc = VBoxSvcClipboardURIWriteListEntry(cParms, paParms, &ListEntry);
         }
 
         /* Has all meta data been read? */
@@ -233,7 +215,7 @@ bool vboxSvcClipboardURIReturnMsg(PVBOXCLIPBOARDCLIENTDATA pClientData, uint32_t
             {
                 case SharedClipboardURIObject::Type_Directory:
                 {
-                    rc = VBoxSvcClipboardURIWriteDir(cParms, paParms, &dataChunk);
+                    rc = VBoxSvcClipboardURIWriteDir(cParms, paParms, &ListEntry);
                     break;
                 }
             }

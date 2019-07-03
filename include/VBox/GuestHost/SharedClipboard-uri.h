@@ -41,7 +41,306 @@
 #include <iprt/cpp/ministring.h>
 
 #include <VBox/GuestHost/SharedClipboard.h>
-#include <VBox/HostServices/VBoxClipboardSvc.h>
+
+/** @name Shared Clipboard handles.
+ *  @{
+ */
+
+/** A Shared Clipboard list handle. */
+typedef uint64_t VBOXCLIPBOARDLISTHANDLE;
+/** Pointer to a Shared Clipboard list handle. */
+typedef VBOXCLIPBOARDLISTHANDLE *PVBOXCLIPBOARDLISTHANDLE;
+
+/** Specifies an invalid Shared Clipboard list handle. */
+#define SHAREDCLIPBOARDLISTHANDLE_INVALID        0
+
+/** A Shared Clipboard object handle. */
+typedef uint64_t SHAREDCLIPBOARDOBJHANDLE;
+/** Pointer to a Shared Clipboard object handle. */
+typedef SHAREDCLIPBOARDOBJHANDLE *PSHAREDCLIPBOARDOBJHANDLE;
+
+/** Specifies an invalid Shared Clipboard object handle. */
+#define SHAREDCLIPBOARDOBJHANDLE_INVALID         0
+
+/** @} */
+
+/** @name Shared Clipboard open/create flags.
+ *  @{
+ */
+
+/** No flags. Initialization value. */
+#define SHAREDCLIPBOARD_CF_NONE                  (0x00000000)
+
+/** Lookup only the object, do not return a handle. All other flags are ignored. */
+#define SHAREDCLIPBOARD_CF_LOOKUP                (0x00000001)
+
+/** Create/open a directory. */
+#define SHAREDCLIPBOARD_CF_DIRECTORY             (0x00000004)
+
+/** Open/create action to do if object exists
+ *  and if the object does not exists.
+ *  REPLACE file means atomically DELETE and CREATE.
+ *  OVERWRITE file means truncating the file to 0 and
+ *  setting new size.
+ *  When opening an existing directory REPLACE and OVERWRITE
+ *  actions are considered invalid, and cause returning
+ *  FILE_EXISTS with NIL handle.
+ */
+#define SHAREDCLIPBOARD_CF_ACT_MASK_IF_EXISTS      (0x000000F0)
+#define SHAREDCLIPBOARD_CF_ACT_MASK_IF_NEW         (0x00000F00)
+
+/** What to do if object exists. */
+#define SHAREDCLIPBOARD_CF_ACT_OPEN_IF_EXISTS      (0x00000000)
+#define SHAREDCLIPBOARD_CF_ACT_FAIL_IF_EXISTS      (0x00000010)
+#define SHAREDCLIPBOARD_CF_ACT_REPLACE_IF_EXISTS   (0x00000020)
+#define SHAREDCLIPBOARD_CF_ACT_OVERWRITE_IF_EXISTS (0x00000030)
+
+/** What to do if object does not exist. */
+#define SHAREDCLIPBOARD_CF_ACT_CREATE_IF_NEW       (0x00000000)
+#define SHAREDCLIPBOARD_CF_ACT_FAIL_IF_NEW         (0x00000100)
+
+/** Read/write requested access for the object. */
+#define SHAREDCLIPBOARD_CF_ACCESS_MASK_RW          (0x00003000)
+
+/** No access requested. */
+#define SHAREDCLIPBOARD_CF_ACCESS_NONE             (0x00000000)
+/** Read access requested. */
+#define SHAREDCLIPBOARD_CF_ACCESS_READ             (0x00001000)
+/** Write access requested. */
+#define SHAREDCLIPBOARD_CF_ACCESS_WRITE            (0x00002000)
+/** Read/Write access requested. */
+#define SHAREDCLIPBOARD_CF_ACCESS_READWRITE        (SHAREDCLIPBOARD_CF_ACCESS_READ | SHAREDCLIPBOARD_CF_ACCESS_WRITE)
+
+/** Requested share access for the object. */
+#define SHAREDCLIPBOARD_CF_ACCESS_MASK_DENY        (0x0000C000)
+
+/** Allow any access. */
+#define SHAREDCLIPBOARD_CF_ACCESS_DENYNONE         (0x00000000)
+/** Do not allow read. */
+#define SHAREDCLIPBOARD_CF_ACCESS_DENYREAD         (0x00004000)
+/** Do not allow write. */
+#define SHAREDCLIPBOARD_CF_ACCESS_DENYWRITE        (0x00008000)
+/** Do not allow access. */
+#define SHAREDCLIPBOARD_CF_ACCESS_DENYALL          (SHAREDCLIPBOARD_CF_ACCESS_DENYREAD | SHAREDCLIPBOARD_CF_ACCESS_DENYWRITE)
+
+/** Requested access to attributes of the object. */
+#define SHAREDCLIPBOARD_CF_ACCESS_MASK_ATTR        (0x00030000)
+
+/** No access requested. */
+#define SHAREDCLIPBOARD_CF_ACCESS_ATTR_NONE        (0x00000000)
+/** Read access requested. */
+#define SHAREDCLIPBOARD_CF_ACCESS_ATTR_READ        (0x00010000)
+/** Write access requested. */
+#define SHAREDCLIPBOARD_CF_ACCESS_ATTR_WRITE       (0x00020000)
+/** Read/Write access requested. */
+#define SHAREDCLIPBOARD_CF_ACCESS_ATTR_READWRITE   (SHAREDCLIPBOARD_CF_ACCESS_ATTR_READ | SHAREDCLIPBOARD_CF_ACCESS_ATTR_WRITE)
+
+/** The file is opened in append mode. Ignored if SHAREDCLIPBOARD_CF_ACCESS_WRITE is not set. */
+#define SHAREDCLIPBOARD_CF_ACCESS_APPEND           (0x00040000)
+
+/** @} */
+
+/** Result of an open/create request.
+ *  Along with handle value the result code
+ *  identifies what has happened while
+ *  trying to open the object.
+ */
+typedef enum _SHAREDCLIPBOARDCREATERESULT
+{
+    SHAREDCLIPBOARD_CREATERESULT_NONE,
+    /** Specified path does not exist. */
+    SHAREDCLIPBOARD_CREATERESULT_PATH_NOT_FOUND,
+    /** Path to file exists, but the last component does not. */
+    SHAREDCLIPBOARD_CREATERESULT_FILE_NOT_FOUND,
+    /** File already exists and either has been opened or not. */
+    SHAREDCLIPBOARD_CREATERESULT_FILE_EXISTS,
+    /** New file was created. */
+    SHAREDCLIPBOARD_CREATERESULT_FILE_CREATED,
+    /** Existing file was replaced or overwritten. */
+    SHAREDCLIPBOARD_CREATERESULT_FILE_REPLACED,
+    /** Blow the type up to 32-bit. */
+    SHAREDCLIPBOARD_CREATERESULT_32BIT_HACK = 0x7fffffff
+} SHAREDCLIPBOARDCREATERESULT;
+AssertCompile(SHAREDCLIPBOARD_CREATERESULT_NONE == 0);
+AssertCompileSize(SHAREDCLIPBOARDCREATERESULT, 4);
+
+/**
+ * The available additional information in a SHAREDCLIPBOARDFSOBJATTR object.
+ */
+typedef enum _SHAREDCLIPBOARDFSOBJATTRADD
+{
+    /** No additional information is available / requested. */
+    SHAREDCLIPBOARDFSOBJATTRADD_NOTHING = 1,
+    /** The additional unix attributes (SHAREDCLIPBOARDFSOBJATTR::u::Unix) are
+     *  available / requested. */
+    SHAREDCLIPBOARDFSOBJATTRADD_UNIX,
+    /** The additional extended attribute size (SHAREDCLIPBOARDFSOBJATTR::u::EASize) is
+     *  available / requested. */
+    SHAREDCLIPBOARDFSOBJATTRADD_EASIZE,
+    /** The last valid item (inclusive).
+     * The valid range is SHAREDCLIPBOARDFSOBJATTRADD_NOTHING thru
+     * SHAREDCLIPBOARDFSOBJATTRADD_LAST. */
+    SHAREDCLIPBOARDFSOBJATTRADD_LAST = SHAREDCLIPBOARDFSOBJATTRADD_EASIZE,
+
+    /** The usual 32-bit hack. */
+    SHAREDCLIPBOARDFSOBJATTRADD_32BIT_SIZE_HACK = 0x7fffffff
+} SHAREDCLIPBOARDFSOBJATTRADD;
+
+
+/* Assert sizes of the IRPT types we're using below. */
+AssertCompileSize(RTFMODE,      4);
+AssertCompileSize(RTFOFF,       8);
+AssertCompileSize(RTINODE,      8);
+AssertCompileSize(RTTIMESPEC,   8);
+AssertCompileSize(RTDEV,        4);
+AssertCompileSize(RTUID,        4);
+
+/**
+ * Shared Clipboard filesystem object attributes.
+ */
+#pragma pack(1)
+typedef struct _SHAREDCLIPBOARDFSOBJATTR
+{
+    /** Mode flags (st_mode). RTFS_UNIX_*, RTFS_TYPE_*, and RTFS_DOS_*.
+     * @remarks We depend on a number of RTFS_ defines to remain unchanged.
+     *          Fortuntately, these are depending on windows, dos and unix
+     *          standard values, so this shouldn't be much of a pain. */
+    RTFMODE         fMode;
+
+    /** The additional attributes available. */
+    SHAREDCLIPBOARDFSOBJATTRADD  enmAdditional;
+
+    /**
+     * Additional attributes.
+     *
+     * Unless explicitly specified to an API, the API can provide additional
+     * data as it is provided by the underlying OS.
+     */
+    union SHAREDCLIPBOARDFSOBJATTRUNION
+    {
+        /** Additional Unix Attributes
+         * These are available when SHAREDCLIPBOARDFSOBJATTRADD is set in fUnix.
+         */
+         struct SHAREDCLIPBOARDFSOBJATTRUNIX
+         {
+            /** The user owning the filesystem object (st_uid).
+             * This field is ~0U if not supported. */
+            RTUID           uid;
+
+            /** The group the filesystem object is assigned (st_gid).
+             * This field is ~0U if not supported. */
+            RTGID           gid;
+
+            /** Number of hard links to this filesystem object (st_nlink).
+             * This field is 1 if the filesystem doesn't support hardlinking or
+             * the information isn't available.
+             */
+            uint32_t        cHardlinks;
+
+            /** The device number of the device which this filesystem object resides on (st_dev).
+             * This field is 0 if this information is not available. */
+            RTDEV           INodeIdDevice;
+
+            /** The unique identifier (within the filesystem) of this filesystem object (st_ino).
+             * Together with INodeIdDevice, this field can be used as a OS wide unique id
+             * when both their values are not 0.
+             * This field is 0 if the information is not available. */
+            RTINODE         INodeId;
+
+            /** User flags (st_flags).
+             * This field is 0 if this information is not available. */
+            uint32_t        fFlags;
+
+            /** The current generation number (st_gen).
+             * This field is 0 if this information is not available. */
+            uint32_t        GenerationId;
+
+            /** The device number of a character or block device type object (st_rdev).
+             * This field is 0 if the file isn't of a character or block device type and
+             * when the OS doesn't subscribe to the major+minor device idenfication scheme. */
+            RTDEV           Device;
+        } Unix;
+
+        /**
+         * Extended attribute size.
+         */
+        struct SHAREDCLIPBOARDFSOBJATTREASIZE
+        {
+            /** Size of EAs. */
+            RTFOFF          cb;
+        } EASize;
+    } u;
+} SHAREDCLIPBOARDFSOBJATTR;
+#pragma pack()
+AssertCompileSize(SHAREDCLIPBOARDFSOBJATTR, 44);
+/** Pointer to a shared folder filesystem object attributes structure. */
+typedef SHAREDCLIPBOARDFSOBJATTR *PSHAREDCLIPBOARDFSOBJATTR;
+/** Pointer to a const shared folder filesystem object attributes structure. */
+typedef const SHAREDCLIPBOARDFSOBJATTR *PCSHAREDCLIPBOARDFSOBJATTR;
+
+/**
+ * Shared Clipboard file system object information structure.
+ */
+#pragma pack(1)
+typedef struct _SHAREDCLIPBOARDFSOBJINFO
+{
+   /** Logical size (st_size).
+    * For normal files this is the size of the file.
+    * For symbolic links, this is the length of the path name contained
+    * in the symbolic link.
+    * For other objects this fields needs to be specified.
+    */
+   RTFOFF       cbObject;
+
+   /** Disk allocation size (st_blocks * DEV_BSIZE). */
+   RTFOFF       cbAllocated;
+
+   /** Time of last access (st_atime).
+    * @remarks  Here (and other places) we depend on the IPRT timespec to
+    *           remain unchanged. */
+   RTTIMESPEC   AccessTime;
+
+   /** Time of last data modification (st_mtime). */
+   RTTIMESPEC   ModificationTime;
+
+   /** Time of last status change (st_ctime).
+    * If not available this is set to ModificationTime.
+    */
+   RTTIMESPEC   ChangeTime;
+
+   /** Time of file birth (st_birthtime).
+    * If not available this is set to ChangeTime.
+    */
+   RTTIMESPEC   BirthTime;
+
+   /** Attributes. */
+   SHAREDCLIPBOARDFSOBJATTR Attr;
+
+} SHAREDCLIPBOARDFSOBJINFO;
+#pragma pack()
+AssertCompileSize(SHAREDCLIPBOARDFSOBJINFO, 92);
+/** Pointer to a shared folder filesystem object information structure. */
+typedef SHAREDCLIPBOARDFSOBJINFO *PSHAREDCLIPBOARDFSOBJINFO;
+/** Pointer to a const shared folder filesystem object information
+ *  structure. */
+typedef const SHAREDCLIPBOARDFSOBJINFO *PCSHAREDCLIPBOARDFSOBJINFO;
+
+#pragma pack(1)
+typedef struct _VBOXCLIPBOARDCREATEPARMS
+{
+    /** Returned SHAREDCLIPBOARDOBJHANDLE of opened object. */
+    SHAREDCLIPBOARDOBJHANDLE    uHandle;
+    /** Returned result of the operation. */
+    SHAREDCLIPBOARDCREATERESULT enmResult;
+    /** SHAREDCLIPBOARD_CF_* */
+    uint32_t                    fCreate;
+    /**
+     * Attributes of object to create and
+     * returned actual attributes of opened/created object.
+     */
+    SHAREDCLIPBOARDFSOBJINFO    ObjInfo;
+} VBOXCLIPBOARDCREATEPARMS, *PVBOXCLIPBOARDCREATEPARMS;
+#pragma pack()
 
 /** Clipboard area ID. A valid area is >= 1.
  *  If 0 is specified, the last (most recent) area is meant.
@@ -246,6 +545,39 @@ protected:
 };
 
 /**
+ * Structure for a Shared Clipboard list header.
+ */
+typedef struct _VBOXCLIPBOARDLISTHDR
+{
+    uint32_t fList;                 /* IN */
+    uint32_t cbFilter;              /* IN */
+    char    *pszFilter;             /* IN */
+    uint32_t fFeatures;             /* OUT */
+    uint64_t cTotalObjects;         /* OUT */
+    uint64_t cbTotalSize;           /* OUT */
+    uint32_t enmCompression;        /* IN / OUT */
+    uint32_t enmChecksumType;       /* IN / OUT */
+} VBOXCLIPBOARDLISTHDR, *PVBOXCLIPBOARDLISTHDR;
+
+/**
+ * Structure for a Shared Clipboard list entry.
+ */
+typedef struct _VBOXCLIPBOARDLISTENTRY
+{
+    uint32_t fInfo;
+    uint32_t cbInfo;
+    void    *pvInfo;
+} VBOXCLIPBOARDLISTENTRY, *PVBOXCLIPBOARDLISTENTRY;
+
+/**
+ * Structure for a Shared Clipboard object header.
+ */
+typedef struct _VBOXCLIPBOARDOBJHDR
+{
+    uint32_t                    enmType;
+} VBOXCLIPBOARDOBJHDR, *PVBOXCLIPBOARDOBJHDR;
+
+/**
  * Enumeration for specifying a clipboard area object type.
  */
 typedef enum _SHAREDCLIPBOARDAREAOBJTYPE
@@ -429,99 +761,21 @@ protected:
     uint64_t                            m_cbTotal;
 };
 
-int SharedClipboardURIDataHdrAlloc(PVBOXCLIPBOARDDATAHDR *ppDataHdr);
-void SharedClipboardURIDataHdrFree(PVBOXCLIPBOARDDATAHDR pDataHdr);
-PVBOXCLIPBOARDDATAHDR SharedClipboardURIDataHdrDup(PVBOXCLIPBOARDDATAHDR pDataHdr);
-uint32_t SharedClipboardURIDataHdrGetMetaDataSize(PVBOXCLIPBOARDDATAHDR pDataHdr);
-int SharedClipboardURIDataHdrInit(PVBOXCLIPBOARDDATAHDR pDataHdr);
-void SharedClipboardURIDataHdrDestroy(PVBOXCLIPBOARDDATAHDR pDataHdr);
-void SharedClipboardURIDataHdrFree(PVBOXCLIPBOARDDATAHDR pDataHdr);
-void SharedClipboardURIDataHdrReset(PVBOXCLIPBOARDDATAHDR pDataHdr);
-bool SharedClipboardURIDataHdrIsValid(PVBOXCLIPBOARDDATAHDR pDataHdr);
+int SharedClipboardURIListHdrAlloc(PVBOXCLIPBOARDLISTHDR *ppListHdr);
+void SharedClipboardURIListHdrFree(PVBOXCLIPBOARDLISTHDR pListHdr);
+PVBOXCLIPBOARDLISTHDR SharedClipboardURIListHdrDup(PVBOXCLIPBOARDLISTHDR pListHdr);
+int SharedClipboardURIListHdrInit(PVBOXCLIPBOARDLISTHDR pListHdr);
+void SharedClipboardURIListHdrDestroy(PVBOXCLIPBOARDLISTHDR pListHdr);
+void SharedClipboardURIListHdrFree(PVBOXCLIPBOARDLISTHDR pListHdr);
+void SharedClipboardURIListHdrReset(PVBOXCLIPBOARDLISTHDR pListHdr);
+bool SharedClipboardURIListHdrIsValid(PVBOXCLIPBOARDLISTHDR pListHdr);
 
-int SharedClipboardURIDataChunkAlloc(PVBOXCLIPBOARDDATACHUNK *ppDataChunk);
-void SharedClipboardURIDataChunkFree(PVBOXCLIPBOARDDATACHUNK pDataChunk);
-PVBOXCLIPBOARDDATACHUNK SharedClipboardURIDataChunkDup(PVBOXCLIPBOARDDATACHUNK pDataChunk);
-int SharedClipboardURIDataChunkInit(PVBOXCLIPBOARDDATACHUNK pDataChunk);
-void SharedClipboardURIDataChunkDestroy(PVBOXCLIPBOARDDATACHUNK pDataChunk);
-bool SharedClipboardURIDataChunkIsValid(PVBOXCLIPBOARDDATACHUNK pDataChunk);
-
-int SharedClipboardURIDirDataAlloc(PVBOXCLIPBOARDDIRDATA *ppDirData);
-void SharedClipboardURIDirDataFree(PVBOXCLIPBOARDDIRDATA pDirData);
-int SharedClipboardURIDirDataInit(PVBOXCLIPBOARDDIRDATA pDirData);
-void SharedClipboardURIDirDataDestroy(PVBOXCLIPBOARDDIRDATA pDirData);
-PVBOXCLIPBOARDDIRDATA SharedClipboardURIDirDataDup(PVBOXCLIPBOARDDIRDATA pDirData);
-bool SharedClipboardURIDirDataIsValid(PVBOXCLIPBOARDDIRDATA pDirData);
-
-int SharedClipboardURIFileHdrInit(PVBOXCLIPBOARDFILEHDR pFileHdr);
-void SharedClipboardURIFileHdrDestroy(PVBOXCLIPBOARDFILEHDR pFileHdr);
-void SharedClipboardURIFileHdrFree(PVBOXCLIPBOARDFILEHDR pFileHdr);
-PVBOXCLIPBOARDFILEHDR SharedClipboardURIFileHdrDup(PVBOXCLIPBOARDFILEHDR pFileHdr);
-bool SharedClipboardURIFileHdrIsValid(PVBOXCLIPBOARDFILEHDR pFileHdr, PVBOXCLIPBOARDDATAHDR pDataHdr);
-
-void SharedClipboardURIFileDataDestroy(PVBOXCLIPBOARDFILEDATA pFileData);
-PVBOXCLIPBOARDFILEDATA SharedClipboardURIFileDataDup(PVBOXCLIPBOARDFILEDATA pFileData);
-bool SharedClipboardURIFileDataIsValid(PVBOXCLIPBOARDFILEDATA pFileData, PVBOXCLIPBOARDDATAHDR pDataHdr);
-
-/** Specifies a meta data format. */
-typedef uint32_t SHAREDCLIPBOARDMETADATAFMT;
-
-/**
- * Enumeration of meta data formats.
- */
-typedef enum _SHAREDCLIPBOARDMETADATAFMTENUM
-{
-    /** Unknown meta data format; do not use. */
-    SHAREDCLIPBOARDMETADATAFMT_UNKNOWN  = 0,
-    /** Meta data is an URI list.
-     *  UTF-8 format with Unix path separators. Each URI entry is separated by "\r\n". */
-    SHAREDCLIPBOARDMETADATAFMT_URI_LIST = 1
-} SHAREDCLIPBOARDMETADATAFMTENUM;
-
-/**
- * Structure for maintaining meta data format data.
- */
-typedef struct _SHAREDCLIPBOARDMETADATAFMTDATA
-{
-    /** Meta data format version. */
-    uint32_t uVer;
-    /** Actual meta data format data. */
-    void    *pvFmt;
-    /** Size of meta data format data (in bytes). */
-    uint32_t cbFmt;
-} SHAREDCLIPBOARDMETADATAFMTDATA, *PSHAREDCLIPBOARDMETADATAFMTDATA;
-
-/**
- * Structure for keeping Shared Clipboard meta data.
- * The actual format of the meta data depends on the format set in enmFmt.
- */
-typedef struct _SHAREDCLIPBOARDMETADATA
-{
-    /** Format of the data. */
-    SHAREDCLIPBOARDMETADATAFMT  enmFmt;
-    /** Actual meta data block. */
-    void                       *pvMeta;
-    /** Total size (in bytes) of the allocated meta data block .*/
-    uint32_t                    cbMeta;
-    /** How many bytes are being used in the meta data block. */
-    uint32_t                    cbUsed;
-    /** Current reading offset (in bytes). */
-    uint32_t                    cbOffRead;
-} SHAREDCLIPBOARDMETADATA, *PSHAREDCLIPBOARDMETADATA;
-
-int SharedClipboardMetaDataInit(PSHAREDCLIPBOARDMETADATA pMeta, SHAREDCLIPBOARDMETADATAFMT enmFmt);
-void SharedClipboardMetaDataDestroy(PSHAREDCLIPBOARDMETADATA pMeta);
-void SharedClipboardMetaDataFree(PSHAREDCLIPBOARDMETADATA pMeta);
-int SharedClipboardMetaDataAdd(PSHAREDCLIPBOARDMETADATA pMeta, const void *pvDataAdd, uint32_t cbDataAdd);
-int SharedClipboardMetaDataConvertToFormat(const void *pvData, size_t cbData, SHAREDCLIPBOARDMETADATAFMT enmFmt,
-                                           void **ppvData, uint32_t *pcbData);
-int SharedClipboardMetaDataRead(PSHAREDCLIPBOARDMETADATA pMeta, void *pvBuf, uint32_t cbBuf, uint32_t *pcbRead);
-int SharedClipboardMetaDataResize(PSHAREDCLIPBOARDMETADATA pMeta, uint32_t cbNewSize);
-size_t SharedClipboardMetaDataGetFree(PSHAREDCLIPBOARDMETADATA pMeta);
-size_t SharedClipboardMetaDataGetUsed(PSHAREDCLIPBOARDMETADATA pMeta);
-size_t SharedClipboardMetaDataGetSize(PSHAREDCLIPBOARDMETADATA pMeta);
-void *SharedClipboardMetaDataMutableRaw(PSHAREDCLIPBOARDMETADATA pMeta);
-const void *SharedClipboardMetaDataRaw(PSHAREDCLIPBOARDMETADATA pMeta);
+int SharedClipboardURIListEntryAlloc(PVBOXCLIPBOARDLISTENTRY *ppListEntry);
+void SharedClipboardURIListEntryFree(PVBOXCLIPBOARDLISTENTRY pListEntry);
+PVBOXCLIPBOARDLISTENTRY SharedClipboardURIListEntryDup(PVBOXCLIPBOARDLISTENTRY pListEntry);
+int SharedClipboardURIListEntryInit(PVBOXCLIPBOARDLISTENTRY pListEntry);
+void SharedClipboardURIListEntryDestroy(PVBOXCLIPBOARDLISTENTRY pListEntry);
+bool SharedClipboardURIListEntryIsValid(PVBOXCLIPBOARDLISTENTRY pListEntry);
 
 /**
  * Enumeration specifying an URI transfer direction.
@@ -546,9 +800,10 @@ typedef struct _SHAREDCLIPBOARDURITRANSFER SHAREDCLIPBOARDURITRANSFER;
  */
 typedef struct _SHAREDCLIPBOARDCLIENTURIOBJCTX
 {
-    SHAREDCLIPBOARDURITRANSFER    *pTransfer;
-    /** Pointer to current object being processed. */
-    SharedClipboardURIObject      *pObj;
+    SHAREDCLIPBOARDURITRANSFER *pTransfer;
+    SHAREDCLIPBOARDOBJHANDLE    uHandle;
+    SHAREDCLIPBOARDFSOBJINFO   *pObjInfo;
+    uint64_t                    cbProcessed;
 } SHAREDCLIPBOARDCLIENTURIOBJCTX, *PSHAREDCLIPBOARDCLIENTURIOBJCTX;
 
 /**
@@ -582,8 +837,9 @@ typedef struct _SHAREDCLIPBOARDURITRANSFEREVENT
 typedef enum _SHAREDCLIPBOARDURITRANSFEREVENTTYPE
 {
     SHAREDCLIPBOARDURITRANSFEREVENTTYPE_UNKNOWN,
-    SHAREDCLIPBOARDURITRANSFEREVENTTYPE_METADATA_HDR,
-    SHAREDCLIPBOARDURITRANSFEREVENTTYPE_METADATA_CHUNK,
+    SHAREDCLIPBOARDURITRANSFEREVENTTYPE_LIST_HDR_READ,
+    SHAREDCLIPBOARDURITRANSFEREVENTTYPE_LIST_ENTRY_READ,
+    SHAREDCLIPBOARDURITRANSFEREVENTTYPE_FILE_DATA_READ,
     /** Marks the end of the event list. */
     SHAREDCLIPBOARDURITRANSFEREVENTTYPE_LAST,
     /** The usual 32-bit hack. */
@@ -609,15 +865,6 @@ typedef struct _SHAREDCLIPBOARDURITRANSFERSTATE
     SHAREDCLIPBOARDURITRANSFERDIR       enmDir;
     /** The transfer's source. */
     SHAREDCLIPBOARDSOURCE               enmSource;
-    bool                                fHostMsgSendHeader;
-    /** The transfer's cached data header.
-     *  Can be NULL if no header has been received yet. */
-    PVBOXCLIPBOARDDATAHDR               pHeader;
-    bool                                fHostMsgSendMetaDataHdr;
-    bool                                fHostMsgSendMetaDataChunk;
-    /** The transfer's cached meta data.
-     *  Can be NULL if no meta data has been received yet. */
-    PSHAREDCLIPBOARDMETADATA            pMeta;
     /** Context of current object being handled. */
     SHAREDCLIPBOARDCLIENTURIOBJCTX      ObjCtx;
 } SHAREDCLIPBOARDURITRANSFERSTATE, *PSHAREDCLIPBOARDURITRANSFERSTATE;
@@ -651,38 +898,38 @@ typedef struct _SHAREDCLIPBOARDPROVIDERCTX
 #define SHAREDCLIPBOARDPROVIDERFUNCMEMBER(a_Name, a_Member) \
     RT_CONCAT(PFNSHAREDCLIPBOARDPROVIDER, a_Name) a_Member;
 
-SHAREDCLIPBOARDPROVIDERFUNCDECLVOID(PREPARE)
-SHAREDCLIPBOARDPROVIDERFUNCDECL(READDATAHDR, PVBOXCLIPBOARDDATAHDR *ppDataHdr)
-SHAREDCLIPBOARDPROVIDERFUNCDECL(WRITEDATAHDR, const PVBOXCLIPBOARDDATAHDR pDataHdr)
-SHAREDCLIPBOARDPROVIDERFUNCDECL(READDATACHUNK, const PVBOXCLIPBOARDDATAHDR pDataHdr, void *pvChunk, uint32_t cbChunk, uint32_t fFlags, uint32_t *pcbRead)
-SHAREDCLIPBOARDPROVIDERFUNCDECL(WRITEDATACHUNK, const PVBOXCLIPBOARDDATAHDR pDataHdr, const void *pvChunk, uint32_t cbChunk, uint32_t fFlags, uint32_t *pcbWritten)
-SHAREDCLIPBOARDPROVIDERFUNCDECL(READOBJHDR, PVBOXCLIPBOARDOBJHDR *ppObjHdr)
-SHAREDCLIPBOARDPROVIDERFUNCDECL(READDIRECTORY, PVBOXCLIPBOARDDIRDATA *ppDirData)
-SHAREDCLIPBOARDPROVIDERFUNCDECL(WRITEDIRECTORY, const PVBOXCLIPBOARDDIRDATA pDirData)
-SHAREDCLIPBOARDPROVIDERFUNCDECL(READFILEHDR, PVBOXCLIPBOARDFILEHDR *ppFileHdr);
-SHAREDCLIPBOARDPROVIDERFUNCDECL(WRITEFILEHDR, const PVBOXCLIPBOARDFILEHDR pFileHdr);
-SHAREDCLIPBOARDPROVIDERFUNCDECL(READFILEDATA, void *pvData, uint32_t cbData, uint32_t fFlags, uint32_t *pcbRead)
-SHAREDCLIPBOARDPROVIDERFUNCDECL(WRITEFILEDATA, void *pvData, uint32_t cbData, uint32_t fFlags, uint32_t *pcbWritten)
-SHAREDCLIPBOARDPROVIDERFUNCDECLVOID(RESET)
+SHAREDCLIPBOARDPROVIDERFUNCDECLVOID(TRANSFEROPEN)
+SHAREDCLIPBOARDPROVIDERFUNCDECLVOID(TRANSFERCLOSE)
+SHAREDCLIPBOARDPROVIDERFUNCDECL(LISTOPEN, PVBOXCLIPBOARDLISTHDR pListHdr, PVBOXCLIPBOARDLISTHANDLE phList)
+SHAREDCLIPBOARDPROVIDERFUNCDECL(LISTCLOSE, VBOXCLIPBOARDLISTHANDLE hList);
+SHAREDCLIPBOARDPROVIDERFUNCDECL(LISTHDRREAD, VBOXCLIPBOARDLISTHANDLE hList, PVBOXCLIPBOARDLISTHDR pListHdr)
+SHAREDCLIPBOARDPROVIDERFUNCDECL(LISTHDRWRITE, VBOXCLIPBOARDLISTHANDLE hList, PVBOXCLIPBOARDLISTHDR pListHdr)
+SHAREDCLIPBOARDPROVIDERFUNCDECL(LISTENTRYREAD, VBOXCLIPBOARDLISTHANDLE hList, PVBOXCLIPBOARDLISTENTRY pEntry)
+SHAREDCLIPBOARDPROVIDERFUNCDECL(LISTENTRYWRITE, VBOXCLIPBOARDLISTHANDLE hList, PVBOXCLIPBOARDLISTENTRY pEntry)
+SHAREDCLIPBOARDPROVIDERFUNCDECL(OBJOPEN, const char *pszPath, PVBOXCLIPBOARDCREATEPARMS pCreateParms, PSHAREDCLIPBOARDOBJHANDLE phObj)
+SHAREDCLIPBOARDPROVIDERFUNCDECL(OBJCLOSE, SHAREDCLIPBOARDOBJHANDLE hObj)
+SHAREDCLIPBOARDPROVIDERFUNCDECL(OBJREAD, SHAREDCLIPBOARDOBJHANDLE hObj, void *pvData, uint32_t cbData, uint32_t fFlags, uint32_t *pcbRead)
+SHAREDCLIPBOARDPROVIDERFUNCDECL(OBJWRITE, SHAREDCLIPBOARDOBJHANDLE hObj, void *pvData, uint32_t cbData, uint32_t fFlags, uint32_t *pcbWritten)
 
 /**
  * Shared Clipboard URI provider interface table.
  */
 typedef struct _SHAREDCLIPBOARDPROVIDERINTERFACE
 {
-    SHAREDCLIPBOARDPROVIDERFUNCMEMBER(PREPARE, pfnPrepare);
-    SHAREDCLIPBOARDPROVIDERFUNCMEMBER(READDATAHDR, pfnReadDataHdr);
-    SHAREDCLIPBOARDPROVIDERFUNCMEMBER(WRITEDATAHDR, pfnWriteDataHdr);
-    SHAREDCLIPBOARDPROVIDERFUNCMEMBER(WRITEDATACHUNK, pfnWriteDataChunk);
-    SHAREDCLIPBOARDPROVIDERFUNCMEMBER(READDATACHUNK, pfnReadDataChunk);
-    SHAREDCLIPBOARDPROVIDERFUNCMEMBER(READOBJHDR, pfnReadObjHdr);
-    SHAREDCLIPBOARDPROVIDERFUNCMEMBER(READDIRECTORY, pfnReadDirectory);
-    SHAREDCLIPBOARDPROVIDERFUNCMEMBER(WRITEDIRECTORY, pfnWriteDirectory);
-    SHAREDCLIPBOARDPROVIDERFUNCMEMBER(READFILEHDR, pfnReadFileHdr);
-    SHAREDCLIPBOARDPROVIDERFUNCMEMBER(WRITEFILEHDR, pfnWriteFileHdr);
-    SHAREDCLIPBOARDPROVIDERFUNCMEMBER(READFILEDATA, pfnReadFileData);
-    SHAREDCLIPBOARDPROVIDERFUNCMEMBER(WRITEFILEDATA, pfnWriteFileData);
-    SHAREDCLIPBOARDPROVIDERFUNCMEMBER(RESET, pfnReset);
+    SHAREDCLIPBOARDPROVIDERFUNCMEMBER(TRANSFEROPEN, pfnTransferOpen);
+    SHAREDCLIPBOARDPROVIDERFUNCMEMBER(TRANSFERCLOSE, pfnTransferClose);
+    /** Optional. */
+    SHAREDCLIPBOARDPROVIDERFUNCMEMBER(LISTOPEN, pfnListOpen);
+    /** Optional. */
+    SHAREDCLIPBOARDPROVIDERFUNCMEMBER(LISTCLOSE, pfnListClose);
+    SHAREDCLIPBOARDPROVIDERFUNCMEMBER(LISTHDRREAD, pfnListHdrRead);
+    SHAREDCLIPBOARDPROVIDERFUNCMEMBER(LISTHDRWRITE, pfnListHdrWrite);
+    SHAREDCLIPBOARDPROVIDERFUNCMEMBER(LISTENTRYREAD, pfnListEntryRead);
+    SHAREDCLIPBOARDPROVIDERFUNCMEMBER(LISTENTRYWRITE, pfnListEntryWrite);
+    SHAREDCLIPBOARDPROVIDERFUNCMEMBER(OBJOPEN, pfnObjOpen);
+    SHAREDCLIPBOARDPROVIDERFUNCMEMBER(OBJCLOSE, pfnObjClose);
+    SHAREDCLIPBOARDPROVIDERFUNCMEMBER(OBJREAD, pfnObjRead);
+    SHAREDCLIPBOARDPROVIDERFUNCMEMBER(OBJWRITE, pfnObjWrite);
 } SHAREDCLIPBOARDPROVIDERINTERFACE, *PSHAREDCLIPBOARDPROVIDERINTERFACE;
 
 /**
@@ -697,35 +944,6 @@ typedef struct _SHAREDCLIPBOARDPROVIDERCREATIONCTX
     /** Provider callback data. */
     void                             *pvUser;
 } SHAREDCLIPBOARDPROVIDERCREATIONCTX, *PSHAREDCLIPBOARDPROVIDERCREATIONCTX;
-
-/**
- * Structure for read parameters.
- */
-typedef struct _SHAREDCLIPBOARDPROVIDERREADPARMS
-{
-    union
-    {
-        struct
-        {
-        } HostService;
-    } u;
-} SHAREDCLIPBOARDPROVIDERREADPARMS, *PSHAREDCLIPBOARDPROVIDERREADPARMS;
-
-/**
- * Structure for write parameters.
- */
-typedef struct _SHAREDCLIPBOARDPROVIDERWRITEPARMS
-{
-    union
-    {
-        struct
-        {
-            uint32_t         uMsg;
-            uint32_t         cParms;
-            VBOXHGCMSVCPARM *paParms;
-        } HostService;
-    } u;
-} SHAREDCLIPBOARDPROVIDERWRITEPARMS, *PSHAREDCLIPBOARDPROVIDERWRITEPARMS;
 
 struct _SHAREDCLIPBOARDURITRANSFER;
 typedef _SHAREDCLIPBOARDURITRANSFER *PSHAREDCLIPBOARDURITRANSFER;
@@ -754,8 +972,8 @@ typedef struct _SHAREDCLIPBOARDURITRANSFERCALLBACKDATA
 
 SHAREDCLIPBOARDTRANSFERCALLBACKDECLVOID(TRANSFERPREPARE)
 SHAREDCLIPBOARDTRANSFERCALLBACKDECLVOID(TRANSFERSTARTED)
-SHAREDCLIPBOARDTRANSFERCALLBACKDECLVOID(DATAHEADERCOMPLETE)
-SHAREDCLIPBOARDTRANSFERCALLBACKDECLVOID(DATACHUNKCOMPLETE)
+SHAREDCLIPBOARDTRANSFERCALLBACKDECLVOID(LISTHEADERCOMPLETE)
+SHAREDCLIPBOARDTRANSFERCALLBACKDECLVOID(LISTENTRYCOMPLETE)
 SHAREDCLIPBOARDTRANSFERCALLBACKDECL    (TRANSFERCOMPLETE, int rc)
 SHAREDCLIPBOARDTRANSFERCALLBACKDECLVOID(TRANSFERCANCELED)
 SHAREDCLIPBOARDTRANSFERCALLBACKDECL    (TRANSFERERROR, int rc)
@@ -772,10 +990,10 @@ typedef struct _SHAREDCLIPBOARDURITRANSFERCALLBACKS
     SHAREDCLIPBOARDTRANSFERCALLBACKMEMBER(TRANSFERPREPARE, pfnTransferPrepare);
     /** Function pointer, called when the transfer has been started. */
     SHAREDCLIPBOARDTRANSFERCALLBACKMEMBER(TRANSFERSTARTED, pfnTransferStarted);
-    /** Function pointer, called when reading / writing the meta data header is complete. */
-    SHAREDCLIPBOARDTRANSFERCALLBACKMEMBER(DATAHEADERCOMPLETE, pfnDataHeaderComplete);
-    /** Function pointer, called when reading / writing the meta data is complete. */
-    SHAREDCLIPBOARDTRANSFERCALLBACKMEMBER(DATACHUNKCOMPLETE, pfnDataComplete);
+    /** Function pointer, called when reading / writing the list header is complete. */
+    SHAREDCLIPBOARDTRANSFERCALLBACKMEMBER(LISTHEADERCOMPLETE, pfnListHeaderComplete);
+    /** Function pointer, called when reading / writing a list entry is complete. */
+    SHAREDCLIPBOARDTRANSFERCALLBACKMEMBER(LISTENTRYCOMPLETE, pfnListEntryComplete);
     /** Function pointer, called when the transfer is complete. */
     SHAREDCLIPBOARDTRANSFERCALLBACKMEMBER(TRANSFERCOMPLETE, pfnTransferComplete);
     /** Function pointer, called when the transfer has been canceled. */
@@ -794,6 +1012,8 @@ typedef struct _SHAREDCLIPBOARDURITRANSFERTHREAD
     RTTHREAD                    hThread;
     /** Thread started indicator. */
     volatile bool               fStarted;
+    /** Thread stop flag. */
+    volatile bool               fStop;
     /** Thread cancelled flag / indicator. */
     volatile bool               fCancelled;
 } SHAREDCLIPBOARDURITRANSFERTHREAD, *PSHAREDCLIPBOARDURITRANSFERTHREAD;
@@ -839,7 +1059,7 @@ typedef struct _SHAREDCLIPBOARDURICTX
     /** Critical section for serializing access. */
     RTCRITSECT                  CritSect;
     /** List of transfers. */
-     RTLISTANCHOR                List;
+    RTLISTANCHOR                List;
     /** Number of running (concurrent) transfers.
      *  At the moment we only support only one transfer per client at a time. */
     uint32_t                    cRunning;
@@ -852,11 +1072,24 @@ typedef struct _SHAREDCLIPBOARDURICTX
 
 int SharedClipboardURIObjCtxInit(PSHAREDCLIPBOARDCLIENTURIOBJCTX pObjCtx);
 void SharedClipboardURIObjCtxDestroy(PSHAREDCLIPBOARDCLIENTURIOBJCTX pObjCtx);
-SharedClipboardURIObject *SharedClipboardURIObjCtxGetObj(PSHAREDCLIPBOARDCLIENTURIOBJCTX pObjCtx);
 bool SharedClipboardURIObjCtxIsValid(PSHAREDCLIPBOARDCLIENTURIOBJCTX pObjCtx);
 
-int SharedClipboardURITransferCreate(SHAREDCLIPBOARDURITRANSFERDIR enmDir, SHAREDCLIPBOARDSOURCE enmSource, PSHAREDCLIPBOARDURITRANSFER *ppTransfer);
+int SharedClipboardURITransferCreate(SHAREDCLIPBOARDURITRANSFERDIR enmDir, SHAREDCLIPBOARDSOURCE enmSource,
+                                     PSHAREDCLIPBOARDURITRANSFER *ppTransfer);
 int SharedClipboardURITransferDestroy(PSHAREDCLIPBOARDURITRANSFER pTransfer);
+
+int SharedClipboardURITransferOpen(PSHAREDCLIPBOARDURITRANSFER pTransfer);
+int SharedClipboardURITransferClose(PSHAREDCLIPBOARDURITRANSFER pTransfer);
+
+int SharedClipboardURITransferListOpen(PSHAREDCLIPBOARDURITRANSFER pTransfer, PVBOXCLIPBOARDLISTHDR pListHdr,
+                                       PVBOXCLIPBOARDLISTHANDLE phList);
+int SharedClipboardURITransferListClose(PSHAREDCLIPBOARDURITRANSFER pTransfer, VBOXCLIPBOARDLISTHANDLE hList);
+int SharedClipboardURITransferListRead(PSHAREDCLIPBOARDURITRANSFER pTransfer, VBOXCLIPBOARDLISTHANDLE hList,
+                                       PVBOXCLIPBOARDLISTENTRY pEntry);
+int SharedClipboardURITransferListWrite(PSHAREDCLIPBOARDURITRANSFER pTransfer, VBOXCLIPBOARDLISTHANDLE hList,
+                                        PVBOXCLIPBOARDLISTENTRY pEntry);
+bool SharedClipboardURITransferListHandleIsValid(PSHAREDCLIPBOARDURITRANSFER pTransfer, VBOXCLIPBOARDLISTHANDLE hList);
+
 int SharedClipboardURITransferPrepare(PSHAREDCLIPBOARDURITRANSFER pTransfer);
 int SharedClipboardURITransferProviderCreate(PSHAREDCLIPBOARDURITRANSFER pTransfer,
                                              PSHAREDCLIPBOARDPROVIDERCREATIONCTX pCreationCtx);
@@ -868,7 +1101,7 @@ SharedClipboardURIList *SharedClipboardURITransferGetList(PSHAREDCLIPBOARDURITRA
 SharedClipboardURIObject *SharedClipboardURITransferGetObject(PSHAREDCLIPBOARDURITRANSFER pTransfer, uint64_t uIdx);
 SHAREDCLIPBOARDSOURCE SharedClipboardURITransferGetSource(PSHAREDCLIPBOARDURITRANSFER pTransfer);
 SHAREDCLIPBOARDURITRANSFERSTATUS SharedClipboardURITransferGetStatus(PSHAREDCLIPBOARDURITRANSFER pTransfer);
-int SharedClipboardURITransferRun(PSHAREDCLIPBOARDURITRANSFER pTransfer, bool fAsync);
+int SharedClipboardURITransferRun(PSHAREDCLIPBOARDURITRANSFER pTransfer, PFNRTTHREAD pfnThreadFunc, void *pvUser);
 void SharedClipboardURITransferSetCallbacks(PSHAREDCLIPBOARDURITRANSFER pTransfer,
                                             PSHAREDCLIPBOARDURITRANSFERCALLBACKS pCallbacks);
 
@@ -881,11 +1114,6 @@ int SharedClipboardURITransferEventUnregister(PSHAREDCLIPBOARDURITRANSFER pTrans
 int SharedClipboardURITransferEventWait(PSHAREDCLIPBOARDURITRANSFER pTransfer, uint32_t uID, RTMSINTERVAL uTimeoutMs,
                                         PSHAREDCLIPBOARDURITRANSFERPAYLOAD *ppPayload);
 int SharedClipboardURITransferEventSignal(PSHAREDCLIPBOARDURITRANSFER pTransfer, uint32_t uID, PSHAREDCLIPBOARDURITRANSFERPAYLOAD pPayload);
-
-int SharedClipboardURITransferMetaDataAdd(PSHAREDCLIPBOARDURITRANSFER pTransfer, const void *pvMeta, uint32_t cbMeta);
-bool SharedClipboardURITransferMetaDataIsComplete(PSHAREDCLIPBOARDURITRANSFER pTransfer);
-int SharedClipboardURITransferMetaDataRead(PSHAREDCLIPBOARDURITRANSFER pTransfer, uint32_t *pcbRead);
-int SharedClipboardURITransferMetaDataWrite(PSHAREDCLIPBOARDURITRANSFER pTransfer, uint32_t *pcbWritten);
 
 int SharedClipboardURITransferRead(PSHAREDCLIPBOARDURITRANSFER pTransfer);
 int SharedClipboardURITransferReadObjects(PSHAREDCLIPBOARDURITRANSFER pTransfer);
@@ -903,6 +1131,8 @@ void SharedClipboardURICtxTransfersCleanup(PSHAREDCLIPBOARDURICTX pURI);
 bool SharedClipboardURICtxTransfersMaximumReached(PSHAREDCLIPBOARDURICTX pURI);
 int SharedClipboardURICtxTransferAdd(PSHAREDCLIPBOARDURICTX pURI, PSHAREDCLIPBOARDURITRANSFER pTransfer);
 int SharedClipboardURICtxTransferRemove(PSHAREDCLIPBOARDURICTX pURI, PSHAREDCLIPBOARDURITRANSFER pTransfer);
+
+void SharedClipboardFsObjFromIPRT(PSHAREDCLIPBOARDFSOBJINFO pDst, PCRTFSOBJINFO pSrc);
 
 bool SharedClipboardMIMEHasFileURLs(const char *pcszFormat, size_t cchFormatMax);
 bool SharedClipboardMIMENeedsCache(const char *pcszFormat, size_t cchFormatMax);

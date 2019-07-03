@@ -159,19 +159,19 @@ STDMETHODIMP VBoxClipboardWinStreamImpl::Read(void *pvBuffer, ULONG nBytesToRead
 {
     LogFlowThisFuncEnter();
 
-    const SharedClipboardURIObject *pObj = SharedClipboardURITransferGetObject(m_pURITransfer, m_uObjIdx);
+    AssertPtr(m_pURITransfer->State.ObjCtx.pObjInfo);
 
-    if (pObj->IsComplete())
+    const uint64_t cbSize      = m_pURITransfer->State.ObjCtx.pObjInfo->cbObject;
+          uint64_t cbProcessed = m_pURITransfer->State.ObjCtx.cbProcessed;
+
+    if (cbProcessed == cbSize)
     {
         /* There can be 0-byte files. */
-        AssertMsg(pObj->GetSize() == 0, ("Object is complete -- can't read from it anymore\n"));
+        AssertMsg(cbSize == 0, ("Object is complete -- can't read from it anymore\n"));
         if (nBytesRead)
             *nBytesRead = 0; /** @todo If the file size is 0, already return at least 1 byte, else the whole operation will fail. */
         return S_OK; /* Don't report any failures back to Windows. */
     }
-
-    const uint64_t cbSize      = pObj->GetSize();
-    const uint64_t cbProcessed = pObj->GetProcessed();
 
     const uint32_t cbToRead = RT_MIN(cbSize - cbProcessed, nBytesToRead);
           uint32_t cbRead   = 0;
@@ -180,14 +180,17 @@ STDMETHODIMP VBoxClipboardWinStreamImpl::Read(void *pvBuffer, ULONG nBytesToRead
 
     if (cbToRead)
     {
-        rc = m_pURITransfer->ProviderIface.pfnReadFileData(&m_pURITransfer->ProviderCtx,
-                                                           pvBuffer, cbToRead, 0 /* fFlags */, &cbRead);
+        rc = m_pURITransfer->ProviderIface.pfnObjRead(&m_pURITransfer->ProviderCtx, m_pURITransfer->State.ObjCtx.uHandle,
+                                                      pvBuffer, cbToRead, 0 /* fFlags */, &cbRead);
         if (RT_SUCCESS(rc))
         {
-//            pObj->AddProcessed(cbRead);
+            cbProcessed += cbRead;
+            Assert(cbProcessed <= cbSize);
 
-            if (pObj->IsComplete())
+            if (cbProcessed == cbSize)
                 m_pParent->OnTransferComplete();
+
+            m_pURITransfer->State.ObjCtx.cbProcessed = cbProcessed;
         }
     }
 

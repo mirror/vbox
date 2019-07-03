@@ -34,6 +34,7 @@ VBoxSharedClipboard_INCS.win  = \
 
 VBoxSharedClipboard_SOURCES = \
 	VBoxSharedClipboardSvc.cpp \
+	$(PATH_ROOT)/src/VBox/HostServices/common/message.cpp \
 	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-common.cpp
 VBoxSharedClipboard_SOURCES.win = \
 	VBoxSharedClipboardSvc-win.cpp \
@@ -48,7 +49,6 @@ ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
 	VBoxSharedClipboardSvc-uri.cpp \
 	VBoxSharedClipboardSvc-utils.cpp \
 	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardArea.cpp \
-	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardMetaData.cpp \
 	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardPath.cpp \
 	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardURIList.cpp \
 	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardURIObject.cpp \
