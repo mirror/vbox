@@ -69,6 +69,10 @@
 class RT_DECL_CLASS RTCString
 {
 public:
+#ifdef RT_NEED_NEW_AND_DELETE
+    RTMEM_IMPLEMENT_NEW_AND_DELETE();
+#endif
+
     /**
      * Creates an empty string that has no memory allocated.
      */

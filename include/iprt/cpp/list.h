@@ -125,7 +125,11 @@ public:
     inline void leaveWrite() {}
 
     /* Define our own new and delete. */
+#ifdef RT_NEED_NEW_AND_DELETE
+    RTMEM_IMPLEMENT_NEW_AND_DELETE();
+#else
     RTMEMEF_NEW_AND_DELETE_OPERATORS();
+#endif
 };
 
 /**
@@ -826,7 +830,11 @@ public:
     }
 
     /* Define our own new and delete. */
+#ifdef RT_NEED_NEW_AND_DELETE
+    RTMEM_IMPLEMENT_NEW_AND_DELETE();
+#else
     RTMEMEF_NEW_AND_DELETE_OPERATORS();
+#endif
 
     /**
      * The default capacity of the list. This is also used as grow factor.
@@ -975,7 +983,11 @@ public:
         : BASE(other) {}
 
     /* Define our own new and delete. */
+#ifdef RT_NEED_NEW_AND_DELETE
+    RTMEM_IMPLEMENT_NEW_AND_DELETE();
+#else
     RTMEMEF_NEW_AND_DELETE_OPERATORS();
+#endif
 };
 
 /**
@@ -1003,7 +1015,11 @@ public:
         : BASE(cCapacity) {}
 
     /* Define our own new and delete. */
+#ifdef RT_NEED_NEW_AND_DELETE
+    RTMEM_IMPLEMENT_NEW_AND_DELETE();
+#else
     RTMEMEF_NEW_AND_DELETE_OPERATORS();
+#endif
 };
 
 /**
@@ -1031,7 +1047,11 @@ public:
         : BASE(cCapacity) {}
 
     /* Define our own new and delete. */
+#ifdef RT_NEED_NEW_AND_DELETE
+    RTMEM_IMPLEMENT_NEW_AND_DELETE();
+#else
     RTMEMEF_NEW_AND_DELETE_OPERATORS();
+#endif
 };
 
 /** @} */
