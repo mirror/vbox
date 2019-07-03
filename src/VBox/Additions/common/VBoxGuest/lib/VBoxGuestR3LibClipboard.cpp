@@ -160,6 +160,7 @@ VBGLR3DECL(int) VbglR3ClipboardReadData(HGCMCLIENTID idClient, uint32_t fFormat,
     return rc;
 }
 
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
 static int vbglR3ClipboardGetNextMsgType(HGCMCLIENTID idClient, uint32_t *puMsg, uint32_t *pcParms, bool fWait)
 {
     AssertPtrReturn(puMsg,   VERR_INVALID_POINTER);
@@ -187,7 +188,6 @@ static int vbglR3ClipboardGetNextMsgType(HGCMCLIENTID idClient, uint32_t *puMsg,
     return rc;
 }
 
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
 static int vbglR3ClipboardRecvListOpen(HGCMCLIENTID idClient, PVBOXCLIPBOARDLISTHDR pListHdr)
 {
     AssertPtrReturn(pListHdr, VERR_INVALID_POINTER);
