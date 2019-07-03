@@ -158,9 +158,9 @@ using namespace HGCM;
 /*********************************************************************************************************************************
 *   Prototypes                                                                                                                   *
 *********************************************************************************************************************************/
-static int vboxSvcClipboardClientStateInit(PVBOXCLIPBOARDCLIENTSTATE pState, uint32_t uClientID);
-static int vboxSvcClipboardClientStateDestroy(PVBOXCLIPBOARDCLIENTSTATE pState);
-static void vboxSvcClipboardClientStateReset(PVBOXCLIPBOARDCLIENTSTATE pState);
+static int vboxSvcClipboardClientStateInit(PVBOXCLIPBOARDCLIENTDATA pClientData, uint32_t uClientID);
+static int vboxSvcClipboardClientStateDestroy(PVBOXCLIPBOARDCLIENTDATA pClientData);
+static void vboxSvcClipboardClientStateReset(PVBOXCLIPBOARDCLIENTDATA pClientData);
 
 
 /*********************************************************************************************************************************
@@ -264,16 +264,16 @@ void VBoxSvcClipboardUnlock(void)
 /**
  * Resets a client's state message queue.
  *
- * @param   pState              Pointer to the client's state structure to reset message queue for.
+ * @param   pClientData         Pointer to the client data structure to reset message queue for.
  */
-void vboxSvcClipboardMsgQueueReset(PVBOXCLIPBOARDCLIENTSTATE pState)
+void vboxSvcClipboardMsgQueueReset(PVBOXCLIPBOARDCLIENTDATA pClientData)
 {
     LogFlowFuncEnter();
 
-    while (!pState->queueMsg.isEmpty())
+    while (!pClientData->queueMsg.isEmpty())
     {
-        RTMemFree(pState->queueMsg.last());
-        pState->queueMsg.removeLast();
+        RTMemFree(pClientData->queueMsg.last());
+        pClientData->queueMsg.removeLast();
     }
 }
 
@@ -325,20 +325,20 @@ void vboxSvcClipboardMsgFree(PVBOXCLIPBOARDCLIENTMSG pMsg)
  * Adds a new message to a client'S message queue.
  *
  * @returns IPRT status code.
- * @param   pState              Pointer to the client's state structure to add new message to.
+ * @param   pClientData         Pointer to the client data structure to add new message to.
  * @param   pMsg                Pointer to message to add. The queue then owns the pointer.
  * @param   fAppend             Whether to append or prepend the message to the queue.
  */
-int vboxSvcClipboardMsgAdd(PVBOXCLIPBOARDCLIENTSTATE pState, PVBOXCLIPBOARDCLIENTMSG pMsg, bool fAppend)
+int vboxSvcClipboardMsgAdd(PVBOXCLIPBOARDCLIENTDATA pClientData, PVBOXCLIPBOARDCLIENTMSG pMsg, bool fAppend)
 {
     AssertPtrReturn(pMsg, VERR_INVALID_POINTER);
 
     LogFlowFunc(("uMsg=%RU32, cParms=%RU32, fAppend=%RTbool\n", pMsg->m_uMsg, pMsg->m_cParms, fAppend));
 
     if (fAppend)
-        pState->queueMsg.append(pMsg);
+        pClientData->queueMsg.append(pMsg);
     else
-        pState->queueMsg.prepend(pMsg);
+        pClientData->queueMsg.prepend(pMsg);
 
     /** @todo Catch / handle OOM? */
 
@@ -349,24 +349,24 @@ int vboxSvcClipboardMsgAdd(PVBOXCLIPBOARDCLIENTSTATE pState, PVBOXCLIPBOARDCLIEN
  * Retrieves information about the next message in the queue.
  *
  * @returns IPRT status code. VERR_NO_DATA if no next message is available.
- * @param   pState              Pointer to the client's state structure to get message info for.
+ * @param   pClientDAta         Pointer to the client data structure to get message info for.
  * @param   puType              Where to store the message type.
  * @param   pcParms             Where to store the message parameter count.
  */
-int vboxSvcClipboardMsgGetNextInfo(PVBOXCLIPBOARDCLIENTSTATE pState, uint32_t *puType, uint32_t *pcParms)
+int vboxSvcClipboardMsgGetNextInfo(PVBOXCLIPBOARDCLIENTDATA pClientData, uint32_t *puType, uint32_t *pcParms)
 {
     AssertPtrReturn(puType, VERR_INVALID_POINTER);
     AssertPtrReturn(pcParms, VERR_INVALID_POINTER);
 
     int rc;
 
-    if (pState->queueMsg.isEmpty())
+    if (pClientData->queueMsg.isEmpty())
     {
         rc = VERR_NO_DATA;
     }
     else
     {
-        PVBOXCLIPBOARDCLIENTMSG pMsg = pState->queueMsg.first();
+        PVBOXCLIPBOARDCLIENTMSG pMsg = pClientData->queueMsg.first();
         AssertPtr(pMsg);
 
         *puType  = pMsg->m_uMsg;
@@ -384,22 +384,22 @@ int vboxSvcClipboardMsgGetNextInfo(PVBOXCLIPBOARDCLIENTSTATE pState, uint32_t *p
  * Will return VERR_NO_DATA if no next message is available.
  *
  * @returns IPRT status code.
- * @param   pState              Pointer to the client's state structure to get message for.
+ * @param   pClientData         Pointer to the client data structure to get message for.
  * @param   uMsg                Message type to retrieve.
  * @param   cParms              Number of parameters the \@a paParms array can store.
  * @param   paParms             Where to store the message parameters.
  */
-int vboxSvcClipboardMsgGetNext(PVBOXCLIPBOARDCLIENTSTATE pState,
+int vboxSvcClipboardMsgGetNext(PVBOXCLIPBOARDCLIENTDATA pClientData,
                                uint32_t uMsg, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
     LogFlowFunc(("uMsg=%RU32, cParms=%RU32\n", uMsg, cParms));
 
     /* Check for pending messages in our queue. */
-    if (pState->queueMsg.isEmpty())
+    if (pClientData->queueMsg.isEmpty())
         return VERR_NO_DATA;
 
     /* Get the current message. */
-    PVBOXCLIPBOARDCLIENTMSG pMsg = pState->queueMsg.first();
+    PVBOXCLIPBOARDCLIENTMSG pMsg = pClientData->queueMsg.first();
     AssertPtr(pMsg);
 
     int rc = VINF_SUCCESS;
@@ -421,11 +421,11 @@ int vboxSvcClipboardMsgGetNext(PVBOXCLIPBOARDCLIENTSTATE pState,
         rc = Message::CopyParms(paParms, cParms, pMsg->m_paParms, pMsg->m_cParms, true /* fDeepCopy */);
 
         /** @todo Only remove on success? */
-        pState->queueMsg.removeFirst(); /* Remove the current message from the queue. */
+        pClientData->queueMsg.removeFirst(); /* Remove the current message from the queue. */
     }
     else
     {
-        vboxSvcClipboardMsgQueueReset(pState);
+        vboxSvcClipboardMsgQueueReset(pClientData);
         /** @todo Cleanup, send notification to guest. */
     }
 
@@ -705,8 +705,8 @@ static DECLCALLBACK(int) svcDisconnect(void *, uint32_t u32ClientID, void *pvCli
 
     VBoxClipboardSvcImplDisconnect(pClientData);
 
-    vboxSvcClipboardClientStateReset(&pClientData->State);
-    vboxSvcClipboardClientStateDestroy(&pClientData->State);
+    vboxSvcClipboardClientStateReset(pClientData);
+    vboxSvcClipboardClientStateDestroy(pClientData);
 
     RTMemFree(itClient->second);
     g_mapClients.erase(itClient);
@@ -737,10 +737,10 @@ static DECLCALLBACK(int) svcConnect(void *, uint32_t u32ClientID, void *pvClient
             pClient->pData     = (PVBOXCLIPBOARDCLIENTDATA)pvClient;
 
             /* Reset the client state. */
-            vboxSvcClipboardClientStateReset(&pClient->pData->State);
+            vboxSvcClipboardClientStateReset(pClient->pData);
 
             /* (Re-)initialize the client state. */
-            vboxSvcClipboardClientStateInit(&pClient->pData->State, u32ClientID);
+            vboxSvcClipboardClientStateInit(pClient->pData, u32ClientID);
 
             rc = VBoxClipboardSvcImplConnect(pClient->pData, VBoxSvcClipboardGetHeadless());
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
@@ -1345,16 +1345,16 @@ int vboxSvcClipboardClientDeferredSetMsgInfo(PVBOXCLIPBOARDCLIENT pClient, uint3
  * Initializes a Shared Clipboard service's client state.
  *
  * @returns VBox status code.
- * @param   pState              Client state to initialize.
+ * @param   pClientData         Client state to initialize.
  * @param   uClientID           Client ID (HGCM) to use for this client state.
  */
-static int vboxSvcClipboardClientStateInit(PVBOXCLIPBOARDCLIENTSTATE pState, uint32_t uClientID)
+static int vboxSvcClipboardClientStateInit(PVBOXCLIPBOARDCLIENTDATA pClientData, uint32_t uClientID)
 {
     LogFlowFuncEnter();
 
     /* Register the client.
      * Note: Do *not* memset the struct, as it contains classes (for caching). */
-    pState->u32ClientID = uClientID;
+    pClientData->State.u32ClientID = uClientID;
 
     return VINF_SUCCESS;
 }
@@ -1363,13 +1363,13 @@ static int vboxSvcClipboardClientStateInit(PVBOXCLIPBOARDCLIENTSTATE pState, uin
  * Destroys a Shared Clipboard service's client state.
  *
  * @returns VBox status code.
- * @param   pState              Client state to destroy.
+ * @param   pClientData         Client state to destroy.
  */
-static int vboxSvcClipboardClientStateDestroy(PVBOXCLIPBOARDCLIENTSTATE pState)
+static int vboxSvcClipboardClientStateDestroy(PVBOXCLIPBOARDCLIENTDATA pClientData)
 {
     LogFlowFuncEnter();
 
-    vboxSvcClipboardMsgQueueReset(pState);
+    vboxSvcClipboardMsgQueueReset(pClientData);
 
     return VINF_SUCCESS;
 }
@@ -1377,29 +1377,29 @@ static int vboxSvcClipboardClientStateDestroy(PVBOXCLIPBOARDCLIENTSTATE pState)
 /**
  * Resets a Shared Clipboard service's client state.
  *
- * @param   pState              Client state to reset.
+ * @param   pClientData         Client state to reset.
  */
-static void vboxSvcClipboardClientStateReset(PVBOXCLIPBOARDCLIENTSTATE pState)
+static void vboxSvcClipboardClientStateReset(PVBOXCLIPBOARDCLIENTDATA pClientData)
 {
     LogFlowFuncEnter();
 
     /** @todo Clear async / asynRead / ... data? */
-    vboxSvcClipboardMsgQueueReset(pState);
+    vboxSvcClipboardMsgQueueReset(pClientData);
 
-    pState->u32ClientID                  = 0;
-    pState->fAsync                       = false;
-    pState->fReadPending                 = false;
+    pClientData->State.u32ClientID                  = 0;
+    pClientData->State.fAsync                       = false;
+    pClientData->State.fReadPending                 = false;
 
-    pState->fHostMsgQuit                 = false;
-    pState->fHostMsgReadData             = false;
-    pState->fHostMsgFormats              = false;
+    pClientData->State.fHostMsgQuit                 = false;
+    pClientData->State.fHostMsgReadData             = false;
+    pClientData->State.fHostMsgFormats              = false;
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
-    pState->URI.fTransferStart = false;
-    pState->URI.enmTransferDir = SHAREDCLIPBOARDURITRANSFERDIR_UNKNOWN;
+    pClientData->State.URI.fTransferStart = false;
+    pClientData->State.URI.enmTransferDir = SHAREDCLIPBOARDURITRANSFERDIR_UNKNOWN;
 #endif
 
-    pState->u32AvailableFormats = 0;
-    pState->u32RequestedFormat = 0;
+    pClientData->State.u32AvailableFormats = 0;
+    pClientData->State.u32RequestedFormat = 0;
 }
 
 /*

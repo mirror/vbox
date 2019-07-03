@@ -75,7 +75,7 @@ typedef struct VBOXCLIPBOARDCLIENTURISTATE
 
 /**
  * Structure for keeping generic client state data within the Shared Clipboard host service.
- * This structure needs to be serializable by SSM.
+ * This structure needs to be serializable by SSM (must be a POD type).
  */
 typedef struct VBOXCLIPBOARDCLIENTSTATE
 {
@@ -124,9 +124,6 @@ typedef struct VBOXCLIPBOARDCLIENTSTATE
 
     uint32_t u32AvailableFormats;
     uint32_t u32RequestedFormat;
-
-    /** The client's message queue (FIFO). */
-    RTCList<VBOXCLIPBOARDCLIENTMSG *> queueMsg;
 } VBOXCLIPBOARDCLIENTSTATE, *PVBOXCLIPBOARDCLIENTSTATE;
 
 /**
@@ -135,10 +132,12 @@ typedef struct VBOXCLIPBOARDCLIENTSTATE
 typedef struct _VBOXCLIPBOARDCLIENTDATA
 {
     /** General client state data. */
-    VBOXCLIPBOARDCLIENTSTATE       State;
+    VBOXCLIPBOARDCLIENTSTATE          State;
+    /** The client's message queue (FIFO). */
+    RTCList<VBOXCLIPBOARDCLIENTMSG *> queueMsg;
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
     /** URI context data. */
-    SHAREDCLIPBOARDURICTX          URI;
+    SHAREDCLIPBOARDURICTX             URI;
 #endif
 } VBOXCLIPBOARDCLIENTDATA, *PVBOXCLIPBOARDCLIENTDATA;
 
@@ -190,12 +189,12 @@ int vboxSvcClipboardClientComplete(PVBOXCLIPBOARDCLIENT pClient, VBOXHGCMCALLHAN
 int vboxSvcClipboardClientDeferredComplete(PVBOXCLIPBOARDCLIENT pClient, int rc);
 int vboxSvcClipboardClientDeferredSetMsgInfo(PVBOXCLIPBOARDCLIENT pClient, uint32_t uMsg, uint32_t cParms);
 
-void vboxSvcClipboardMsgQueueReset(PVBOXCLIPBOARDCLIENTSTATE pState);
+void vboxSvcClipboardMsgQueueReset(PVBOXCLIPBOARDCLIENTDATA pClientData);
 PVBOXCLIPBOARDCLIENTMSG vboxSvcClipboardMsgAlloc(uint32_t uMsg, uint32_t cParms);
 void vboxSvcClipboardMsgFree(PVBOXCLIPBOARDCLIENTMSG pMsg);
-int vboxSvcClipboardMsgAdd(PVBOXCLIPBOARDCLIENTSTATE pState, PVBOXCLIPBOARDCLIENTMSG pMsg, bool fAppend);
-int vboxSvcClipboardMsgGetNextInfo(PVBOXCLIPBOARDCLIENTSTATE pState, uint32_t *puType, uint32_t *pcParms);
-int vboxSvcClipboardMsgGetNext(PVBOXCLIPBOARDCLIENTSTATE pState,
+int vboxSvcClipboardMsgAdd(PVBOXCLIPBOARDCLIENTDATA pClientData, PVBOXCLIPBOARDCLIENTMSG pMsg, bool fAppend);
+int vboxSvcClipboardMsgGetNextInfo(PVBOXCLIPBOARDCLIENTDATA pClientData, uint32_t *puType, uint32_t *pcParms);
+int vboxSvcClipboardMsgGetNext(PVBOXCLIPBOARDCLIENTDATA pClientData,
                                uint32_t uMsg, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
 
 # ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
