@@ -11752,9 +11752,6 @@ static void hmR0VmxPreRunGuestCommitted(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransien
     if (    (pVmcsInfo->u32ProcCtls2 & VMX_PROC_CTLS2_RDTSCP)
         && !(pVmcsInfo->u32ProcCtls & VMX_PROC_CTLS_RDTSC_EXIT))
     {
-        /** @todo NSTVMX: This might be broken wrt to merging MSR permissions when
-         *        transitioning to executing the nested-guest. We should probably remove
-         *        the dynamically added MSRs somehow. */
         hmR0VmxImportGuestState(pVCpu, pVmcsInfo, CPUMCTX_EXTRN_TSC_AUX);
 
         /* NB: Because we call hmR0VmxAddAutoLoadStoreMsr with fUpdateHostMsr=true,
