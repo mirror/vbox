@@ -458,8 +458,6 @@ static void hmR0PokeCpu(PVMCPU pVCpu, RTCPUID idHostCpu)
  */
 VMM_INT_DECL(int) HMFlushTlb(PVMCPU pVCpu)
 {
-    LogFlow(("HMFlushTlb\n"));
-
     VMCPU_FF_SET(pVCpu, VMCPU_FF_TLB_FLUSH);
     STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushTlbManual);
     return VINF_SUCCESS;
