@@ -23,15 +23,12 @@
 
 #include "Defs.h"
 
-#include <string.h>
-
-#include <iprt/err.h>
-#include <iprt/types.h>
 #include <iprt/asm.h>
-#include <iprt/stdint.h>
+#include <iprt/err.h>
 #include <iprt/net.h>
+#include <iprt/string.h>
+#include <iprt/cpp/ministring.h>
 
-#include <string>
 
 class DhcpClientMessage;
 
@@ -104,9 +101,9 @@ class DhcpOption
         aDst.insert(aDst.end(), pszString, pszString + cb);
     }
 
-    static void append(octets_t &aDst, const std::string &str)
+    static void append(octets_t &aDst, const RTCString &str)
     {
-        append(aDst, str.c_str(), str.size());
+        append(aDst, str.c_str(), str.length());
     }
 
     /* non-overloaded name to avoid ambiguity */
@@ -147,11 +144,13 @@ class DhcpOption
         pos += sizeof(RTNETADDRIPV4);
     }
 
-    static void extract(std::string &aString, octets_t::const_iterator &pos, size_t cb)
+#if 0 /** @todo fix me */
+    static void extract(RTCString &aString, octets_t::const_iterator &pos, size_t cb)
     {
         aString.replace(aString.begin(), aString.end(), &pos[0], &pos[cb]);
         pos += cb;
     }
+#endif
 
 
     /*
@@ -361,15 +360,15 @@ class OptStringBase
   : public DhcpOption
 {
   public:
-    typedef std::string value_t;
+    typedef RTCString value_t;
 
   protected:
-    std::string m_String;
+    RTCString m_String;
 
     explicit OptStringBase(uint8_t aOptCode)
       : DhcpOption(aOptCode, false), m_String() {}
 
-    OptStringBase(uint8_t aOptCode, const std::string &aOptString)
+    OptStringBase(uint8_t aOptCode, const RTCString &aOptString)
       : DhcpOption(aOptCode), m_String(aOptString) {}
 
     OptStringBase(uint8_t aOptCode, const DhcpClientMessage &req)
@@ -385,17 +384,17 @@ class OptStringBase
     }
 
   public:
-    std::string &value() { return m_String; }
-    const std::string &value() const { return m_String; }
+    RTCString &value() { return m_String; }
+    const RTCString &value() const { return m_String; }
 
   protected:
     virtual ssize_t encodeValue(octets_t &dst) const
     {
-        if (!isLengthValid(m_String.size()))
+        if (!isLengthValid(m_String.length()))
             return -1;
 
         append(dst, m_String);
-        return m_String.size();
+        return m_String.length();
     }
 
   public:
@@ -409,10 +408,9 @@ class OptStringBase
         if (!isLengthValid(cb))
             return VERR_INVALID_PARAMETER;
 
-        octets_t::const_iterator pos(src.begin());
-        extract(m_String, pos, cb);
+        int rc = m_String.assignNoThrow((char *)&src.front(), cb); /** @todo encoding. */
         m_fPresent = true;
-        return VINF_SUCCESS;
+        return rc;
     }
 };
 
@@ -426,7 +424,7 @@ class OptString
     OptString()
       : OptStringBase(optcode) {}
 
-    explicit OptString(const std::string &aOptString)
+    explicit OptString(const RTCString &aOptString)
       : OptStringBase(optcode, aOptString) {}
 
     explicit OptString(const DhcpClientMessage &req)

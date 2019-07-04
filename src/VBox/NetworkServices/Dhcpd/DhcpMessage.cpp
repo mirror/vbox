@@ -101,14 +101,13 @@ DhcpClientMessage *DhcpClientMessage::parse(bool broadcasted, const void *buf, s
         return NULL;
     }
 
-    int overload;
-    overload = msg->parseOptions(&bp->bp_vend.Dhcp.dhcp_opts,
-                                 buflen - RT_OFFSETOF(RTNETBOOTP, bp_vend.Dhcp.dhcp_opts));
-    if (overload < 0)
+    int fOptOverload = msg->parseOptions(&bp->bp_vend.Dhcp.dhcp_opts, buflen - RT_OFFSETOF(RTNETBOOTP, bp_vend.Dhcp.dhcp_opts));
+    if (fOptOverload < 0)
         return NULL;
 
     /* "The 'file' field MUST be interpreted next ..." */
-    if (overload & DHCP_OPTION_OVERLOAD_FILE) {
+    if (fOptOverload & RTNET_DHCP_OPTION_OVERLOAD_FILE)
+    {
         int status = msg->parseOptions(bp->bp_file, sizeof(bp->bp_file));
         if (status != 0)
             return NULL;
@@ -123,7 +122,8 @@ DhcpClientMessage *DhcpClientMessage::parse(bool broadcasted, const void *buf, s
     }
 
     /* "... followed by the 'sname' field." */
-    if (overload & DHCP_OPTION_OVERLOAD_SNAME) {
+    if (fOptOverload & RTNET_DHCP_OPTION_OVERLOAD_SNAME)
+    {
         int status = msg->parseOptions(bp->bp_sname, sizeof(bp->bp_sname));
         if (status != 0) /* NB: this includes "nested" Option Overload */
             return NULL;
@@ -149,36 +149,31 @@ DhcpClientMessage *DhcpClientMessage::parse(bool broadcasted, const void *buf, s
 
 int DhcpClientMessage::parseOptions(const void *buf, size_t buflen)
 {
-    uint8_t opt, optlen;
-    const uint8_t *data;
-    int overload;
-
-    overload = 0;
-
-    data = static_cast<const uint8_t *>(buf);
-    while (buflen > 0) {
-        opt = *data++;
+    int            fOptOverload = 0;
+    const uint8_t *data        = static_cast<const uint8_t *>(buf);
+    while (buflen > 0)
+    {
+        uint8_t const opt = *data++;
         --buflen;
 
-        if (opt == RTNET_DHCP_OPT_PAD) {
+        if (opt == RTNET_DHCP_OPT_PAD)
             continue;
-        }
 
-        if (opt == RTNET_DHCP_OPT_END) {
+        if (opt == RTNET_DHCP_OPT_END)
             break;
-        }
 
-        if (buflen == 0) {
+        if (buflen == 0)
+        {
             RTPrintf("option %d has no length field\n", opt);
             return -1;
         }
 
-        optlen = *data++;
+        uint8_t optlen = *data++;
         --buflen;
 
-        if (optlen > buflen) {
-            RTPrintf("option %d truncated (length %d, but only %lu bytes left)\n",
-                   opt, optlen, (unsigned long)buflen);
+        if (optlen > buflen)
+        {
+            RTPrintf("option %d truncated (length %d, but only %lu bytes left)\n", opt, optlen, (unsigned long)buflen);
             return -1;
         }
 
@@ -187,31 +182,30 @@ int DhcpClientMessage::parseOptions(const void *buf, size_t buflen)
         if (it != m_optmap.cend())
             return -1;
 #endif
-        if (opt == RTNET_DHCP_OPT_OPTION_OVERLOAD) {
-            if (optlen != 1) {
-                RTPrintf("Overload Option (option %d) has invalid length %d\n",
-                       opt, optlen);
+        if (opt == RTNET_DHCP_OPT_OPTION_OVERLOAD)
+        {
+            if (optlen != 1)
+            {
+                RTPrintf("Overload Option (option %d) has invalid length %d\n", opt, optlen);
                 return -1;
             }
 
-            overload = *data;
+            fOptOverload = *data;
 
-            if ((overload & ~DHCP_OPTION_OVERLOAD_MASK) != 0) {
-                RTPrintf("Overload Option (option %d) has invalid value 0x%x\n",
-                       opt, overload);
+            if ((fOptOverload & ~RTNET_DHCP_OPTION_OVERLOAD_MASK) != 0)
+            {
+                RTPrintf("Overload Option (option %d) has invalid value 0x%x\n", opt, fOptOverload);
                 return -1;
             }
         }
         else
-        {
             m_rawopts.insert(std::make_pair(opt, octets_t(data, data + optlen)));
-        }
 
-        data += optlen;
+        data   += optlen;
         buflen -= optlen;
     }
 
-    return overload;
+    return fOptOverload;
 }
 
 

@@ -17,7 +17,7 @@
 
 #include "Config.h"
 
-#include <iprt/types.h>
+#include <iprt/ctype.h>
 #include <iprt/net.h>           /* NB: must come before getopt.h */
 #include <iprt/getopt.h>
 #include <iprt/path.h>
@@ -87,9 +87,9 @@ int Config::homeInit()
 }
 
 
-void Config::setNetwork(const std::string &aStrNetwork)
+void Config::setNetwork(const RTCString &aStrNetwork)
 {
-    AssertReturnVoid(m_strNetwork.empty());
+    AssertReturnVoid(m_strNetwork.isEmpty());
 
     m_strNetwork = aStrNetwork;
     sanitizeBaseName();
@@ -103,63 +103,42 @@ void Config::setNetwork(const std::string &aStrNetwork)
  */
 int Config::logInit()
 {
-    int rc;
-    size_t cch;
-
-    if (m_strHome.empty() || m_strBaseName.empty())
-        return VERR_GENERAL_FAILURE;
+    if (m_strHome.isEmpty() || m_strBaseName.isEmpty())
+        return VERR_PATH_ZERO_LENGTH;
 
     /* default log file name */
     char szLogFile[RTPATH_MAX];
-    cch = RTStrPrintf(szLogFile, sizeof(szLogFile),
-                      "%s%c%s-Dhcpd.log",
-                      m_strHome.c_str(), RTPATH_DELIMITER, m_strBaseName.c_str());
-    if (cch >= sizeof(szLogFile))
+    ssize_t cch = RTStrPrintf2(szLogFile, sizeof(szLogFile),
+                               "%s%c%s-Dhcpd.log",
+                               m_strHome.c_str(), RTPATH_DELIMITER, m_strBaseName.c_str());
+    if (cch <= 0)
         return VERR_BUFFER_OVERFLOW;
 
-
-    /* get a writable copy of the base name */
-    char szBaseName[RTPATH_MAX];
-    rc = RTStrCopy(szBaseName, sizeof(szBaseName), m_strBaseName.c_str());
-    if (RT_FAILURE(rc))
-        return rc;
-
-    /* sanitize base name some more to be usable in an environment variable name */
-    for (char *p = szBaseName; *p != '\0'; ++p)
-    {
-        if (   *p != '_'
-            && (*p < '0' || '9' < *p)
-            && (*p < 'a' || 'z' < *p)
-            && (*p < 'A' || 'Z' < *p))
-        {
-            *p = '_';
-        }
-    }
-
-
-    /* name of the environment variable to control logging */
+    /* Sanitize base name some more to be usable in an environment variable name: */
     char szEnvVarBase[128];
-    cch = RTStrPrintf(szEnvVarBase, sizeof(szEnvVarBase),
-                      "VBOXDHCP_%s_RELEASE_LOG", szBaseName);
-    if (cch >= sizeof(szEnvVarBase))
+    cch = RTStrPrintf(szEnvVarBase, sizeof(szEnvVarBase), "VBOXDHCP_%s_RELEASE_LOG", m_strBaseName.c_str());
+    if (cch <= 0)
         return VERR_BUFFER_OVERFLOW;
+    for (char *p = szEnvVarBase; *p != '\0'; ++p)
+        if (*p != '_' && !RT_C_IS_ALNUM(*p))
+            *p = '_';
 
 
-    rc = com::VBoxLogRelCreate("DHCP Server",
-                               szLogFile,
-                               RTLOGFLAGS_PREFIX_TIME_PROG,
-                               "all all.restrict -default.restrict",
-                               szEnvVarBase,
-                               RTLOGDEST_FILE
+    int rc = com::VBoxLogRelCreate("DHCP Server",
+                                   szLogFile,
+                                   RTLOGFLAGS_PREFIX_TIME_PROG,
+                                   "all all.restrict -default.restrict",
+                                   szEnvVarBase,
+                                   RTLOGDEST_FILE
 #ifdef DEBUG
-                               | RTLOGDEST_STDERR
+                                   | RTLOGDEST_STDERR
 #endif
-                               ,
-                               32768 /* cMaxEntriesPerGroup */,
-                               0 /* cHistory */,
-                               0 /* uHistoryFileTime */,
-                               0 /* uHistoryFileSize */,
-                               NULL /* pErrInfo */);
+                                   ,
+                                   32768 /* cMaxEntriesPerGroup */,
+                                   0 /* cHistory */,
+                                   0 /* uHistoryFileTime */,
+                                   0 /* uHistoryFileSize */,
+                                   NULL /* pErrInfo */);
 
     return rc;
 }
@@ -169,7 +148,7 @@ int Config::complete()
 {
     int rc;
 
-    if (m_strNetwork.empty())
+    if (m_strNetwork.isEmpty())
     {
         LogDHCP(("network name is not specified\n"));
         return false;
@@ -211,9 +190,9 @@ int Config::complete()
     }
 
     /* valid netmask */
-    int iPrefixLengh;
-    rc = RTNetMaskToPrefixIPv4(&m_IPv4Netmask, &iPrefixLengh);
-    if (RT_FAILURE(rc) || iPrefixLengh == 0)
+    int cPrefixBits;
+    rc = RTNetMaskToPrefixIPv4(&m_IPv4Netmask, &cPrefixBits);
+    if (RT_FAILURE(rc) || cPrefixBits == 0)
     {
         LogDHCP(("IP mask is not valid: %RTnaipv4\n", m_IPv4Netmask.u));
         return VERR_GENERAL_FAILURE;
@@ -223,8 +202,7 @@ int Config::complete()
     if ((m_IPv4PoolFirst.u & m_IPv4Netmask.u) != (m_IPv4Address.u & m_IPv4Netmask.u))
     {
         LogDHCP(("first pool address is outside the network %RTnaipv4/%d: %RTnaipv4\n",
-                 (m_IPv4Address.u & m_IPv4Netmask.u), iPrefixLengh,
-                 m_IPv4PoolFirst.u));
+                 (m_IPv4Address.u & m_IPv4Netmask.u), cPrefixBits, m_IPv4PoolFirst.u));
         return VERR_GENERAL_FAILURE;
     }
 
@@ -232,8 +210,7 @@ int Config::complete()
     if ((m_IPv4PoolLast.u & m_IPv4Netmask.u) != (m_IPv4Address.u & m_IPv4Netmask.u))
     {
         LogDHCP(("last pool address is outside the network %RTnaipv4/%d: %RTnaipv4\n",
-                 (m_IPv4Address.u & m_IPv4Netmask.u), iPrefixLengh,
-                 m_IPv4PoolLast.u));
+                 (m_IPv4Address.u & m_IPv4Netmask.u), cPrefixBits, m_IPv4PoolLast.u));
         return VERR_GENERAL_FAILURE;
     }
 
@@ -256,7 +233,7 @@ int Config::complete()
 
     if (!fMACGenerated)
         LogDHCP(("MAC address %RTmac\n", &m_MacAddress));
-    LogDHCP(("IP address %RTnaipv4/%d\n", m_IPv4Address.u, iPrefixLengh));
+    LogDHCP(("IP address %RTnaipv4/%d\n", m_IPv4Address.u, cPrefixBits));
     LogDHCP(("address pool %RTnaipv4 - %RTnaipv4\n", m_IPv4PoolFirst.u, m_IPv4PoolLast.u));
 
     return VINF_SUCCESS;
@@ -386,7 +363,7 @@ Config *Config::compat(int argc, char **argv)
                 break;
 
             case 'n': /* --network */
-                if (!config->m_strNetwork.empty())
+                if (!config->m_strNetwork.isEmpty())
                 {
                     RTMsgError("Duplicate --network option");
                     return NULL;
@@ -395,7 +372,7 @@ Config *Config::compat(int argc, char **argv)
                 break;
 
             case 't': /* --trunk-name */
-                if (!config->m_strTrunk.empty())
+                if (!config->m_strTrunk.isEmpty())
                 {
                     RTMsgError("Duplicate --trunk-name option");
                     return NULL;
@@ -640,7 +617,7 @@ void Config::parseServer(const xml::ElementNode *server)
     if (!fHasNetworkName)
         throw ConfigFileError("DHCPServer/@networkName missing");
 
-    setNetwork(strNetworkName.c_str());
+    setNetwork(strNetworkName);
 
     RTCString strTrunkType;
     if (!server->getAttributeValue("trunkType", &strTrunkType))
@@ -662,7 +639,7 @@ void Config::parseServer(const xml::ElementNode *server)
         RTCString strTrunk;
         if (!server->getAttributeValue("trunkName", &strTrunk))
             throw ConfigFileError("DHCPServer/@trunkName missing");
-        m_strTrunk = strTrunk.c_str();
+        m_strTrunk = strTrunk;
     }
     else
         m_strTrunk = "";
@@ -847,29 +824,25 @@ void Config::parseOption(const xml::ElementNode *option, optmap_t &optmap)
  */
 void Config::sanitizeBaseName()
 {
-    int rc;
+    if (m_strNetwork.isNotEmpty())
+    {
+        m_strBaseName = m_strNetwork;
 
-    if (m_strNetwork.empty())
-        return;
-
-    char szBaseName[RTPATH_MAX];
-    rc = RTStrCopy(szBaseName, sizeof(szBaseName), m_strNetwork.c_str());
-    if (RT_FAILURE(rc))
-        return;
-
-    char ch;
+        char ch;
 #if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
-    static const char s_szIllegals[] = "/\\\"*:<>?|\t\v\n\r\f\a\b"; /** @todo all control chars... */
-    for (char *p = szBaseName; (ch = *p) != '\0'; ++p)
-        if (strchr(s_szIllegals, ch))
-            *p = '_';
+        static const char s_szIllegals[] = "/\\\"*:<>?|\t\v\n\r\f\a\b"; /** @todo all control chars... */
+        for (char *psz = m_strBaseName.mutableRaw(); (ch = *psz) != '\0'; ++psz)
+            if (strchr(s_szIllegals, ch))
+                *psz = '_';
 #else
-    for (char *p = szBaseName; (ch = *p) != '\0'; ++p)
-        if (RTPATH_IS_SEP(ch))
-            *p = '_';
+        for (char *psz = m_strBaseName.mutableRaw(); (ch = *psz) != '\0'; ++psz)
+            if (RTPATH_IS_SEP(ch))
+                *psz = '_';
 #endif
-
-    m_strBaseName.assign(szBaseName);
+        m_strBaseName.jolt(); /* Not really necessary, but it's protocol. */
+    }
+    else
+        m_strBaseName.setNull();
 }
 
 

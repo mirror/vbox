@@ -24,10 +24,10 @@
 #include <iprt/types.h>
 #include <iprt/net.h>
 #include <iprt/cpp/xml.h>
+#include <iprt/cpp/ministring.h>
 
 #include <VBox/intnet.h>
 
-#include <string>
 
 #include "Defs.h"
 #include "DhcpOptions.h"
@@ -36,15 +36,15 @@
 
 class Config
 {
-    /* XXX: TODO: also store fixed address assignments, etc? */
+    /** XXX: TODO: also store fixed address assignments, etc? */
     typedef std::map<RTMAC, optmap_t> vmmap_t;
 
-    std::string m_strHome;   /* path of ~/.VirtualBox or equivalent */
+    RTCString m_strHome;   /* path of ~/.VirtualBox or equivalent */
 
-    std::string m_strNetwork;
-    std::string m_strBaseName; /* m_strNetwork sanitized to be usable in a path component */
+    RTCString m_strNetwork;
+    RTCString m_strBaseName; /* m_strNetwork sanitized to be usable in a path component */
 
-    std::string m_strTrunk;
+    RTCString m_strTrunk;
     INTNETTRUNKTYPE m_enmTrunkType;
 
     RTMAC m_MacAddress;
@@ -72,13 +72,13 @@ public: /* factory methods */
     static Config *compat(int argc, char **argv); /* old VBoxNetDHCP flags */
 
 public: /* accessors */
-    const std::string &getHome() const { return m_strHome; }
+    const RTCString &getHome() const { return m_strHome; }
 
-    const std::string &getNetwork() const { return m_strNetwork; }
-    void setNetwork(const std::string &aStrNetwork);
+    const RTCString &getNetwork() const { return m_strNetwork; }
+    void setNetwork(const RTCString &aStrNetwork);
 
-    const std::string &getBaseName() const { return m_strBaseName; }
-    const std::string &getTrunk() const { return m_strTrunk; }
+    const RTCString &getBaseName() const { return m_strBaseName; }
+    const RTCString &getTrunk() const { return m_strTrunk; }
     INTNETTRUNKTYPE getTrunkType() const { return m_enmTrunkType; }
 
     const RTMAC &getMacAddress() const { return m_MacAddress; }

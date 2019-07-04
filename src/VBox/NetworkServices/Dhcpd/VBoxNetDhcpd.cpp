@@ -118,11 +118,11 @@ private:
 
     int vmmInit();
 
-    int ifInit(const std::string &strNetwork,
-               const std::string &strTrunk = std::string(),
+    int ifInit(const RTCString &strNetwork,
+               const RTCString &strTrunk = RTCString(),
                INTNETTRUNKTYPE enmTrunkType = kIntNetTrunkType_WhateverNone);
-    int ifOpen(const std::string &strNetwork,
-               const std::string &strTrunk,
+    int ifOpen(const RTCString &strNetwork,
+               const RTCString &strTrunk,
                INTNETTRUNKTYPE enmTrunkType);
     int ifGetBuf();
     int ifActivate();
@@ -253,8 +253,8 @@ int VBoxNetDhcpd::vmmInit()
 }
 
 
-int VBoxNetDhcpd::ifInit(const std::string &strNetwork,
-                         const std::string &strTrunk,
+int VBoxNetDhcpd::ifInit(const RTCString &strNetwork,
+                         const RTCString &strTrunk,
                          INTNETTRUNKTYPE enmTrunkType)
 {
     int rc;
@@ -275,25 +275,25 @@ int VBoxNetDhcpd::ifInit(const std::string &strNetwork,
 }
 
 
-int VBoxNetDhcpd::ifOpen(const std::string &strNetwork,
-                         const std::string &strTrunk,
+int VBoxNetDhcpd::ifOpen(const RTCString &strNetwork,
+                         const RTCString &strTrunk,
                          INTNETTRUNKTYPE enmTrunkType)
 {
     AssertReturn(m_pSession != NIL_RTR0PTR, VERR_GENERAL_FAILURE);
     AssertReturn(m_hIf == INTNET_HANDLE_INVALID, VERR_GENERAL_FAILURE);
 
     INTNETOPENREQ OpenReq;
-    int rc;
+    RT_ZERO(OpenReq);
 
     OpenReq.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
     OpenReq.Hdr.cbReq = sizeof(OpenReq);
     OpenReq.pSession = m_pSession;
 
-    strncpy(OpenReq.szNetwork, strNetwork.c_str(), sizeof(OpenReq.szNetwork));
-    OpenReq.szNetwork[sizeof(OpenReq.szNetwork) - 1] = '\0';
+    int rc = RTStrCopy(OpenReq.szNetwork, sizeof(OpenReq.szNetwork), strNetwork.c_str());
+    AssertRCReturn(rc, rc);
 
-    strncpy(OpenReq.szTrunk, strTrunk.c_str(), sizeof(OpenReq.szTrunk));
-    OpenReq.szTrunk[sizeof(OpenReq.szTrunk) - 1] = '\0';
+    rc = RTStrCopy(OpenReq.szTrunk, sizeof(OpenReq.szTrunk), strTrunk.c_str());
+    AssertRCReturn(rc, rc);
 
     if (enmTrunkType != kIntNetTrunkType_Invalid)
         OpenReq.enmTrunkType = enmTrunkType;

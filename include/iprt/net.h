@@ -656,6 +656,13 @@ typedef RTNETDHCPOPT const *PCRTNETDHCPOPT;
 #define RTNET_DHCP_OPT_END                  255
 /** @} */
 
+/** @name DHCP Option overload flags (option 52)
+ * @{ */
+#define RTNET_DHCP_OPTION_OVERLOAD_FILE     1
+#define RTNET_DHCP_OPTION_OVERLOAD_SNAME    2
+#define RTNET_DHCP_OPTION_OVERLOAD_MASK     3
+/** @} */
+
 /** @name DHCP Message Types (option 53)
  * @{ */
 #define RTNET_DHCP_MT_DISCOVER      1

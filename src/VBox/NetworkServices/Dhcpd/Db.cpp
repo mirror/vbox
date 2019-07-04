@@ -222,8 +222,6 @@ int Binding::toXML(xml::ElementNode *ndParent) const
 
 Binding *Binding::fromXML(const xml::ElementNode *ndLease)
 {
-    int rc;
-
     /* Lease/@network seems to always have bogus value, ignore it. */
 
     /*
@@ -235,7 +233,7 @@ Binding *Binding::fromXML(const xml::ElementNode *ndLease)
         return NULL;
 
     RTMAC mac;
-    rc = RTNetStrToMacAddr(strMac.c_str(), &mac);
+    int rc = RTNetStrToMacAddr(strMac.c_str(), &mac);
     if (RT_FAILURE(rc))
         return NULL;
 
@@ -639,7 +637,7 @@ bool Db::releaseBinding(const DhcpClientMessage &req)
 }
 
 
-int Db::writeLeases(const std::string &strFileName) const
+int Db::writeLeases(const RTCString &strFileName) const
 {
     LogDHCP(("writing leases to %s\n", strFileName.c_str()));
 
@@ -683,7 +681,7 @@ int Db::writeLeases(const std::string &strFileName) const
 }
 
 
-int Db::loadLeases(const std::string &strFileName)
+int Db::loadLeases(const RTCString &strFileName)
 {
     LogDHCP(("loading leases from %s\n", strFileName.c_str()));
 

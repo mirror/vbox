@@ -21,6 +21,7 @@
 # pragma once
 #endif
 
+#include <iprt/cpp/ministring.h>
 #include "Defs.h"
 #include "Config.h"
 #include "DhcpMessage.h"
@@ -30,7 +31,7 @@
 class DHCPD
 {
     const Config *m_pConfig;
-    std::string m_strLeasesFileName;
+    RTCString m_strLeasesFileName;
     Db m_db;
 
 public:

@@ -23,6 +23,7 @@
 
 #include <iprt/net.h>
 
+#include <iprt/cpp/ministring.h>
 #include <iprt/cpp/xml.h>
 
 #include <list>
@@ -144,10 +145,10 @@ public:
     void expire();
 
 public:
-    int loadLeases(const std::string &strFileName);
+    int loadLeases(const RTCString &strFileName);
     void loadLease(const xml::ElementNode *ndLease);
 
-    int writeLeases(const std::string &strFileName) const;
+    int writeLeases(const RTCString &strFileName) const;
 
 private:
     Binding *createBinding(const ClientId &id = ClientId());
