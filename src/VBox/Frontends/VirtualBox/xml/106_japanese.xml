@@ -75,6 +75,7 @@
         </key>
         <key>
             <position>125</position>
+            <type>lock</type>
             <scancode>0x46</scancode>
         </key>
         <key>

@@ -69,16 +69,13 @@
             <width>25</width>
         </space>
         <key>
-
-
             <position>124</position>
             <scancodeprefix>0xe0</scancodeprefix>
             <scancode>37</scancode>
         </key>
         <key>
-
-
             <position>125</position>
+            <type>lock</type>
             <scancode>0x46</scancode>
         </key>
         <key>
