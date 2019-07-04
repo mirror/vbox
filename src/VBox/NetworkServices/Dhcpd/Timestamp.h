@@ -25,80 +25,88 @@
 
 
 /**
- * Timestamp API uses unsigned time, but we need to be able to refer
- * to events in the past.  Hide the ugly convertions.
+ * Wrapper around RTTIMESPEC.
  *
- * @todo r=bird: Unnecessary mixing of RTTimeNanoTS and RTTimeNow.
+ * @note Originally wanting to use RTTimeNanoTS rather than RTTimeNow.  The term
+ *       "absolute" was used for when the RTTimeNanoTS() value was converted to
+ *       something approximating unix epoch relative time with help of
+ *       RTTimeNow().  Code was later changed to just wrap RTTIMESPEC and drop
+ *       all usage of RTTimeNanoTS, ASSUMING that system time is stable.
  */
 class Timestamp
 {
-    int64_t m_ns;
+    RTTIMESPEC m_TimeSpec;
 
 public:
     Timestamp()
-      : m_ns(0)
-    {}
-
-    Timestamp(uint64_t ns)
-      : m_ns(static_cast<int64_t>(ns))
-    {}
-
-    static Timestamp now()
     {
-        return Timestamp(RTTimeNanoTS());
+        RTTimeSpecSetNano(&m_TimeSpec, 0);
     }
 
-    static Timestamp absSeconds(int64_t sec)
+    Timestamp(PCRTTIMESPEC a_pTimeSpec)
     {
-        RTTIMESPEC delta;
-        RTTimeNow(&delta);
-        RTTimeSpecSubSeconds(&delta, sec);
+        m_TimeSpec = *a_pTimeSpec;
+    }
 
-        uint64_t stampNow = RTTimeNanoTS();
-        return Timestamp(stampNow - RTTimeSpecGetNano(&delta));
+    /** Get a timestamp initialized to current time. */
+    static Timestamp now()
+    {
+        RTTIMESPEC Tmp;
+        return Timestamp(RTTimeNow(&Tmp));
+    }
+
+    /** Get a timestamp with the given value in seconds since unix epoch. */
+    static Timestamp absSeconds(int64_t secTimestamp)
+    {
+        RTTIMESPEC Tmp;
+        return Timestamp(RTTimeSpecSetSeconds(&Tmp, secTimestamp));
     }
 
     Timestamp &addSeconds(int64_t cSecs)
     {
-        m_ns += cSecs * RT_NS_1SEC;
+        RTTimeSpecAddSeconds(&m_TimeSpec, cSecs);
         return *this;
     }
 
     Timestamp &subSeconds(int64_t cSecs)
     {
-        m_ns -= cSecs * RT_NS_1SEC;
+        RTTimeSpecSubSeconds(&m_TimeSpec, cSecs);
         return *this;
     }
 
-
     RTTIMESPEC *getAbsTimeSpec(RTTIMESPEC *pTime) const
     {
-        RTTimeNow(pTime);
-
-        uint64_t stampNow = RTTimeNanoTS();
-        uint64_t delta = stampNow - m_ns;
-        RTTimeSpecSubNano(pTime, delta);
+        *pTime = m_TimeSpec;
         return pTime;
     }
 
     int64_t getAbsSeconds() const
     {
-        RTTIMESPEC time;
-        return RTTimeSpecGetSeconds(getAbsTimeSpec(&time));
+        return RTTimeSpecGetSeconds(&m_TimeSpec);
     }
 
-    size_t absStrFormat(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput) const;
+    /** Only for log formatting. */
+    size_t strFormatHelper(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput) const;
 
-    friend bool operator<(const Timestamp &l, const Timestamp &r);
-    friend bool operator>(const Timestamp &l, const Timestamp &r);
-    friend bool operator<=(const Timestamp &l, const Timestamp &r);
-    friend bool operator>=(const Timestamp &l, const Timestamp &r);
+    int compare(const Timestamp &a_rRight) const
+    {
+        return RTTimeSpecCompare(&m_TimeSpec, &a_rRight.m_TimeSpec);
+    }
+
+    friend bool operator<( const Timestamp &, const Timestamp &);
+    friend bool operator>( const Timestamp &, const Timestamp &);
+    friend bool operator==(const Timestamp &, const Timestamp &);
+    friend bool operator!=(const Timestamp &, const Timestamp &);
+    friend bool operator<=(const Timestamp &, const Timestamp &);
+    friend bool operator>=(const Timestamp &, const Timestamp &);
 };
 
 
-inline bool operator<(const Timestamp &l, const Timestamp &r) { return l.m_ns < r.m_ns; }
-inline bool operator>(const Timestamp &l, const Timestamp &r) { return l.m_ns > r.m_ns; }
-inline bool operator<=(const Timestamp &l, const Timestamp &r) { return l.m_ns <= r.m_ns; }
-inline bool operator>=(const Timestamp &l, const Timestamp &r) { return l.m_ns >= r.m_ns; }
+inline bool operator<( const Timestamp &l, const Timestamp &r) { return l.compare(r) < 0; }
+inline bool operator>( const Timestamp &l, const Timestamp &r) { return l.compare(r) > 0; }
+inline bool operator==(const Timestamp &l, const Timestamp &r) { return l.compare(r) == 0; }
+inline bool operator!=(const Timestamp &l, const Timestamp &r) { return l.compare(r) != 0; }
+inline bool operator<=(const Timestamp &l, const Timestamp &r) { return l.compare(r) <= 0; }
+inline bool operator>=(const Timestamp &l, const Timestamp &r) { return l.compare(r) >= 0; }
 
 #endif /* !VBOX_INCLUDED_SRC_Dhcpd_TimeStamp_h */

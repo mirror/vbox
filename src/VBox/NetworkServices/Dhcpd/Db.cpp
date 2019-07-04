@@ -99,7 +99,7 @@ Binding::rtStrFormat(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
                           &b->m_id, b->stateName());
 
         Timestamp tsIssued = b->issued();
-        cb += tsIssued.absStrFormat(pfnOutput, pvArgOutput);
+        cb += tsIssued.strFormatHelper(pfnOutput, pvArgOutput);
 
         cb += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
                           " for %ds until ",
@@ -107,7 +107,7 @@ Binding::rtStrFormat(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
 
         Timestamp tsValid = b->issued();
         tsValid.addSeconds(b->leaseTime());
-        cb += tsValid.absStrFormat(pfnOutput, pvArgOutput);
+        cb += tsValid.strFormatHelper(pfnOutput, pvArgOutput);
     }
 
     return cb;

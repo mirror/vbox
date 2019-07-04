@@ -22,19 +22,14 @@
 #include "DhcpdInternal.h"
 #include "Timestamp.h"
 
-#include <iprt/string.h>
 
-
-size_t Timestamp::absStrFormat(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput) const
+size_t Timestamp::strFormatHelper(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput) const
 {
-    RTTIMESPEC Spec;
-    getAbsTimeSpec(&Spec);
-
-    RTTIME Time;
-    RTTimeExplode(&Time, &Spec);
-
-    return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
-                       "%RI32-%02u-%02uT%02u:%02u:%02uZ",
-                       Time.i32Year, Time.u8Month, Time.u8MonthDay,
-                       Time.u8Hour, Time.u8Minute, Time.u8Second);
+    RTTIMESPEC TimeSpec;
+    RTTIME     Time;
+    char       szBuf[64];
+    ssize_t    cchBuf = RTTimeToStringEx(RTTimeExplode(&Time, getAbsTimeSpec(&TimeSpec)), szBuf, sizeof(szBuf), 0);
+    Assert(cchBuf > 0);
+    return pfnOutput(pvArgOutput, szBuf, cchBuf);
 }
+
