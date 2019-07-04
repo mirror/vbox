@@ -66,7 +66,7 @@ include $(KBUILD_PATH)/subheader.kmk
 	DhcpMessage.cpp \
 	DhcpOptions.cpp \
 	IPv4Pool.cpp \
-	TimeStamp.cpp \
+	Timestamp.cpp \
 	VBoxNetDhcpd.cpp \
  	../../Main/glue/VBoxLogRelCreate.cpp \
 	../../Main/glue/GetVBoxUserHomeDirectory.cpp \
