@@ -86,7 +86,7 @@
 
 #  define LWIP_DEBUGF(_when, _args) \
      do { \
-         const VBOX_LOGGROUP _group = (_when) >> LWIP_DEBUGF_LOG_GROUP_SHIFT; \
+         const VBOXLOGGROUP _group = (_when) >> LWIP_DEBUGF_LOG_GROUP_SHIFT; \
          if (_group >= LOG_GROUP_DEFAULT) { \
              /* severe => l1; serious => l2; warning => l3; default => l4 */ \
              const unsigned int _level = 1U << (LWIP_DBG_MASK_LEVEL + 1 - ((_when) & LWIP_DBG_MASK_LEVEL)); \
@@ -101,4 +101,4 @@
 # endif /* !LOG_ENABLED */
 
 #endif /* LWIP_DEBUG */
-#endif /* __VBOX_LWIP_LOG_H__ */
+#endif /* !__VBOX_LWIP_LOG_H__ */
