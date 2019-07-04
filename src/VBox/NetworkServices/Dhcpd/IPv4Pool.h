@@ -120,6 +120,9 @@ public:
     int init(const IPv4Range &aRange);
     int init(RTNETADDRIPV4 aFirstAddr, RTNETADDRIPV4 aLastAddr);
 
+    RTNETADDRIPV4 allocate();
+    bool          allocate(RTNETADDRIPV4);
+
     /**
      * Checks if the pool range includes @a addr (allocation status not considered).
      */
@@ -128,17 +131,14 @@ public:
         return m_range.contains(addr);
     }
 
-    RTNETADDRIPV4 allocate();
-    bool          allocate(RTNETADDRIPV4);
-
 private:
-    int insert(const IPv4Range &range);
+    int i_insert(const IPv4Range &range);
 #if 0
-    int insert(IPV4HADDR single)                            { return insert(IPv4Range(single)); }
+    int i_insert(IPV4HADDR single)                            { return i_insert(IPv4Range(single)); }
 #endif
-    int insert(IPV4HADDR first, IPV4HADDR last)             { return insert(IPv4Range(first, last)); }
-    int insert(RTNETADDRIPV4 single)                        { return insert(IPv4Range(single)); }
-    int insert(RTNETADDRIPV4 first, RTNETADDRIPV4 last)     { return insert(IPv4Range(first, last)); }
+    int i_insert(IPV4HADDR first, IPV4HADDR last)             { return i_insert(IPv4Range(first, last)); }
+    int i_insert(RTNETADDRIPV4 single)                        { return i_insert(IPv4Range(single)); }
+    int i_insert(RTNETADDRIPV4 first, RTNETADDRIPV4 last)     { return i_insert(IPv4Range(first, last)); }
 };
 
 #endif /* !VBOX_INCLUDED_SRC_Dhcpd_IPv4Pool_h */

@@ -135,7 +135,8 @@ class Db
 private:
     typedef std::list<Binding *> bindings_t;
 
-    /** Configuration (set at init). */
+    /** Configuration (set at init).
+     * @note Currently not used.  */
     const Config   *m_pConfig;
     /** The lease database. */
     bindings_t      m_bindings;

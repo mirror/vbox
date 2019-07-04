@@ -47,7 +47,7 @@ int IPv4Pool::init(RTNETADDRIPV4 aFirstAddr, RTNETADDRIPV4 aLastAddr)
  * @returns IPRT status code (asserted).
  * @param   a_Range         The range to insert.
  */
-int IPv4Pool::insert(const IPv4Range &a_Range)
+int IPv4Pool::i_insert(const IPv4Range &a_Range)
 {
     /*
      * Check preconditions. Asserting because nobody checks the return code.
@@ -151,13 +151,13 @@ bool IPv4Pool::allocate(RTNETADDRIPV4 a_Addr)
             if (first != last)
             {
                 if (haddr == first)
-                    insert(++first, last);
+                    i_insert(++first, last);
                 else if (haddr == last)
-                    insert(first, --last);
+                    i_insert(first, --last);
                 else
                 {
-                    insert(first, haddr - 1);
-                    insert(haddr + 1, last);
+                    i_insert(first, haddr - 1);
+                    i_insert(haddr + 1, last);
                 }
             }
 
