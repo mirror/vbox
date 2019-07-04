@@ -262,7 +262,6 @@
     <row>
         <key>
             <width>100</width>
-
             <type>toggleable</type>
             <position>30</position>
             <scancode>0x3a</scancode>
