@@ -502,8 +502,15 @@ tstRTLocalIpc_SOURCES = tstRTLocalIpc.cpp
 tstRTLockValidator_TEMPLATE = VBOXR3TSTEXE
 tstRTLockValidator_SOURCES = tstRTLockValidator.cpp
 
-tstLog_TEMPLATE = VBOXR3TSTEXE
-tstLog_SOURCES = tstLog.cpp
+tstLog_TEMPLATE      = VBOXR3TSTEXE
+tstLog_SOURCES       = tstLog.cpp
+tstLog_INCS          = $(tstLog_0_OUTDIR)
+tstLog_INTERMEDIATES = $(tstLog_0_OUTDIR)/tstLogGroups.h
+tstLog_CLEANS        = $(tstLog_0_OUTDIR)/tstLogGroups.h
+$$(tstLog_0_OUTDIR)/tstLogGroups.h: $(PATH_ROOT)/include/VBox/log.h
+	$(call MSG_GENERATE,,$@,$<)
+	$(QUIET)$(RM) -f -- "$@"
+	$(QUIET)$(SED) -n -e 's/^ *LOG_GROUP_\([A-Z0-9_]*\),.*$(DOLLAR)/{ LOG_GROUP_\1, "\1" },/p' --output "$@" "$<"
 
 tstRTMemEf_TEMPLATE = VBOXR3TSTEXE
 tstRTMemEf_SOURCES = tstRTMemEf.cpp
