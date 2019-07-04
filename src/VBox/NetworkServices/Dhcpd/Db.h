@@ -162,19 +162,19 @@ public:
      * @{ */
     int      loadLeases(const RTCString &strFilename);
 private:
-    int      loadLease(const xml::ElementNode *pElmLease);
+    int      i_loadLease(const xml::ElementNode *pElmLease);
 public:
     int      writeLeases(const RTCString &strFilename) const;
     /** @} */
 
 private:
-    Binding *createBinding(const ClientId &id = ClientId());
-    Binding *createBinding(RTNETADDRIPV4 addr, const ClientId &id = ClientId());
+    Binding *i_createBinding(const ClientId &id = ClientId());
+    Binding *i_createBinding(RTNETADDRIPV4 addr, const ClientId &id = ClientId());
 
-    Binding *allocateAddress(const ClientId &id, RTNETADDRIPV4 addr);
+    Binding *i_allocateAddress(const ClientId &id, RTNETADDRIPV4 addr);
 
     /* add binding e.g. from the leases file */
-    int      addBinding(Binding *b);
+    int      i_addBinding(Binding *pNewBinding);
 };
 
 #endif /* !VBOX_INCLUDED_SRC_Dhcpd_Db_h */

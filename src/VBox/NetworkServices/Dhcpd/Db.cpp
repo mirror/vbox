@@ -368,7 +368,7 @@ void Db::expire()
  * @returns Pointer to the binding.
  * @param   id          The client ID.
  */
-Binding *Db::createBinding(const ClientId &id)
+Binding *Db::i_createBinding(const ClientId &id)
 {
     Binding      *pBinding = NULL;
     RTNETADDRIPV4 addr = m_pool.allocate();
@@ -399,7 +399,7 @@ Binding *Db::createBinding(const ClientId &id)
  * @param   addr        The IPv4 address.
  * @param   id          The client.
  */
-Binding *Db::createBinding(RTNETADDRIPV4 addr, const ClientId &id)
+Binding *Db::i_createBinding(RTNETADDRIPV4 addr, const ClientId &id)
 {
     bool fAvailable = m_pool.allocate(addr);
     if (!fAvailable)
@@ -422,7 +422,7 @@ Binding *Db::createBinding(RTNETADDRIPV4 addr, const ClientId &id)
  * Internal worker that allocates an IPv4 address for the given client, taking
  * the preferred address (@a addr) into account when possible and if non-zero.
  */
-Binding *Db::allocateAddress(const ClientId &id, RTNETADDRIPV4 addr)
+Binding *Db::i_allocateAddress(const ClientId &id, RTNETADDRIPV4 addr)
 {
     Assert(addr.u == 0 || addressBelongs(addr));
 
@@ -502,7 +502,7 @@ Binding *Db::allocateAddress(const ClientId &id, RTNETADDRIPV4 addr)
     {
         if (addrBinding == NULL)
         {
-            addrBinding = createBinding(addr, id);
+            addrBinding = i_createBinding(addr, id);
             Assert(addrBinding != NULL);
             LogDHCP(("> .... creating new binding for this address %R[binding]\n", addrBinding));
             return addrBinding;
@@ -528,7 +528,7 @@ Binding *Db::allocateAddress(const ClientId &id, RTNETADDRIPV4 addr)
     }
     else
     {
-        idBinding = createBinding();
+        idBinding = i_createBinding();
         if (idBinding != NULL)
             LogDHCP(("> .... creating new binding\n"));
         else
@@ -585,7 +585,7 @@ Binding *Db::allocateBinding(const DhcpClientMessage &req)
      */
     const ClientId &id(req.clientId());
 
-    Binding *b = allocateAddress(id, reqAddr.value());
+    Binding *b = i_allocateAddress(id, reqAddr.value());
     if (b != NULL)
     {
         Assert(b->id() == id);
@@ -606,9 +606,9 @@ Binding *Db::allocateBinding(const DhcpClientMessage &req)
  * Internal worker used by loadLease().
  *
  * @returns IPRT status code.
- * @param   newb                .
+ * @param   pNewBinding     The new binding to add.
  */
-int Db::addBinding(Binding *pNewBinding)
+int Db::i_addBinding(Binding *pNewBinding)
 {
     /*
      * Validate the binding against the range and existing bindings.
@@ -840,7 +840,7 @@ int Db::loadLeases(const RTCString &strFilename)
     {
         if (pElmLease->nameEquals("Lease"))
         {
-            int rc2 = loadLease(pElmLease);
+            int rc2 = i_loadLease(pElmLease);
             if (RT_SUCCESS(rc2))
             { /* likely */ }
             else if (rc2 == VERR_NO_MEMORY)
@@ -862,7 +862,7 @@ int Db::loadLeases(const RTCString &strFilename)
  * @param   pElmLease           The 'Lease' element to handle.
  * @return  IPRT status code.
  */
-int Db::loadLease(const xml::ElementNode *pElmLease)
+int Db::i_loadLease(const xml::ElementNode *pElmLease)
 {
     Binding *pBinding = NULL;
     try
@@ -881,7 +881,7 @@ int Db::loadLease(const xml::ElementNode *pElmLease)
         else
             LogDHCP(("> LOAD: EXPIRED lease %R[binding]\n", pBinding));
 
-        int rc = addBinding(pBinding);
+        int rc = i_addBinding(pBinding);
         if (RT_FAILURE(rc))
             delete pBinding;
         return rc;
