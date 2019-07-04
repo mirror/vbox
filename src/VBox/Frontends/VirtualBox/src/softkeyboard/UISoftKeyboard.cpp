@@ -115,31 +115,22 @@ class UISoftKeyboardPhysicalLayout
 
 public:
 
-    void setName(const QString &strName)
-    {
-        m_strName = strName;
-    }
+    void setName(const QString &strName);
+    const QString &name() const;
 
-    const QString &name() const
-    {
-        return m_strName;
-    }
+    void setFileName(const QString &strName);
+    const QString &fileName() const;
 
-    QString  m_strFileName;
-    QUuid    m_uId;
+    void setUid(const QUuid &uid);
+    const QUuid &uid() const;
 
-    const QVector<UISoftKeyboardRow> &rows() const
-    {
-        return m_rows;
-    }
-
-    QVector<UISoftKeyboardRow> &rows()
-    {
-        return m_rows;
-    }
+    const QVector<UISoftKeyboardRow> &rows() const;
+    QVector<UISoftKeyboardRow> &rows();
 
 private:
 
+    QString  m_strFileName;
+    QUuid    m_uId;
     QString  m_strName;
     QVector<UISoftKeyboardRow>  m_rows;
 };
@@ -727,6 +718,50 @@ private:
 
 
 /*********************************************************************************************************************************
+*   UISoftKeyboardPhysicalLayout implementation.                                                                                 *
+*********************************************************************************************************************************/
+
+void UISoftKeyboardPhysicalLayout::setName(const QString &strName)
+{
+    m_strName = strName;
+}
+
+const QString &UISoftKeyboardPhysicalLayout::name() const
+{
+    return m_strName;
+}
+
+void UISoftKeyboardPhysicalLayout::setFileName(const QString &strName)
+{
+    m_strFileName = strName;
+}
+
+const QString &UISoftKeyboardPhysicalLayout::fileName() const
+{
+    return m_strFileName;
+}
+
+void UISoftKeyboardPhysicalLayout::setUid(const QUuid &uid)
+{
+    m_uId = uid;
+}
+
+const QUuid &UISoftKeyboardPhysicalLayout::uid() const
+{
+    return m_uId;
+}
+
+const QVector<UISoftKeyboardRow> &UISoftKeyboardPhysicalLayout::rows() const
+{
+    return m_rows;
+}
+
+QVector<UISoftKeyboardRow> &UISoftKeyboardPhysicalLayout::rows()
+{
+    return m_rows;
+}
+
+/*********************************************************************************************************************************
 *   UILayoutEditor implementation.                                                                                  *
 *********************************************************************************************************************************/
 
@@ -779,7 +814,6 @@ void UILayoutEditor::setKey(UISoftKeyboardKey *pKey)
         if (captions.m_strShiftAltGr != m_pShiftAltGrCaptionEdit->text())
             m_pLayout->setShiftAltGrCaption(m_pKey->position(), m_pShiftAltGrCaptionEdit->text());
     }
-
     m_pKey = pKey;
     if (m_pSelectedKeyGroupBox)
         m_pSelectedKeyGroupBox->setEnabled(m_pKey);
@@ -834,7 +868,7 @@ void UILayoutEditor::setPhysicalLayoutList(const QVector<UISoftKeyboardPhysicalL
         return;
     m_pPhysicalLayoutCombo->clear();
     foreach (const UISoftKeyboardPhysicalLayout &physicalLayout, physicalLayouts)
-        m_pPhysicalLayoutCombo->addItem(physicalLayout.name(), physicalLayout.m_uId);
+        m_pPhysicalLayoutCombo->addItem(physicalLayout.name(), physicalLayout.uid());
 }
 
 void UILayoutEditor::retranslateUi()
@@ -2090,7 +2124,7 @@ void UISoftKeyboardWidget::saveCurentLayoutToFile()
     xmlWriter.writeStartElement("layout");
     xmlWriter.writeTextElement("name", m_pCurrentKeyboardLayout->name());
     xmlWriter.writeTextElement("nativename", m_pCurrentKeyboardLayout->nativeName());
-    xmlWriter.writeTextElement("physicallayoutid", pPhysicalLayout->m_uId.toString());
+    xmlWriter.writeTextElement("physicallayoutid", pPhysicalLayout->uid().toString());
     xmlWriter.writeTextElement("id", m_pCurrentKeyboardLayout->uid().toString());
 
     QVector<UISoftKeyboardRow> &rows = pPhysicalLayout->rows();
@@ -2255,9 +2289,9 @@ void UISoftKeyboardWidget::sltPhysicalLayoutForLayoutChanged(int iIndex)
     if (iIndex < 0 || iIndex >= m_physicalLayouts.size())
         return;
 
-    if (m_pCurrentKeyboardLayout->physicalLayoutUuid() == m_physicalLayouts[iIndex].m_uId)
+    if (m_pCurrentKeyboardLayout->physicalLayoutUuid() == m_physicalLayouts[iIndex].uid())
         return;
-    m_pCurrentKeyboardLayout->setPhysicalLayoutUuid(m_physicalLayouts[iIndex].m_uId);
+    m_pCurrentKeyboardLayout->setPhysicalLayoutUuid(m_physicalLayouts[iIndex].uid());
     update();
 }
 
@@ -2532,7 +2566,7 @@ UISoftKeyboardPhysicalLayout *UISoftKeyboardWidget::findPhysicalLayout(const QUu
 {
     for (int i = 0; i < m_physicalLayouts.size(); ++i)
     {
-        if (m_physicalLayouts[i].m_uId == uuid)
+        if (m_physicalLayouts[i].uid() == uuid)
             return &(m_physicalLayouts[i]);
     }
     return 0;
@@ -2704,7 +2738,7 @@ bool UIPhysicalLayoutReader::parseXMLFile(const QString &strFileName, UISoftKeyb
 
     if (!m_xmlReader.readNextStartElement() || m_xmlReader.name() != "physicallayout")
         return false;
-    physicalLayout.m_strFileName = strFileName;
+    physicalLayout.setFileName(strFileName);
 
     QXmlStreamAttributes attributes = m_xmlReader.attributes();
     int iDefaultWidth = attributes.value("defaultWidth").toInt();
@@ -2723,7 +2757,7 @@ bool UIPhysicalLayoutReader::parseXMLFile(const QString &strFileName, UISoftKeyb
         else if (m_xmlReader.name() == "name")
             physicalLayout.setName(m_xmlReader.readElementText());
         else if (m_xmlReader.name() == "id")
-            physicalLayout.m_uId = m_xmlReader.readElementText();
+            physicalLayout.setUid(m_xmlReader.readElementText());
         else
             m_xmlReader.skipCurrentElement();
     }
