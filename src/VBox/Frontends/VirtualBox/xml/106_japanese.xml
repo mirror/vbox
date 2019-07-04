@@ -262,7 +262,7 @@
     <row>
         <key>
             <width>100</width>
-            <type>toggleable</type>
+            <type>lock</type>
             <position>30</position>
             <scancode>0x3a</scancode>
         </key>

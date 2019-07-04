@@ -6,7 +6,7 @@
     <row>
         <key>
             <position>90</position>
-            <type>toggleable</type>
+            <type>lock</type>
             <scancode>0x45</scancode>
         </key>
         <key>

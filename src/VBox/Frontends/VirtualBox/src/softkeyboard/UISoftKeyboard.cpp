@@ -80,8 +80,8 @@ enum UIKeyType
 {
     /** Can be in UIKeyState_NotPressed and UIKeyState_Pressed states. */
     UIKeyType_Ordinary,
-    /** e.g. CapsLock. Can be only in UIKeyState_NotPressed, UIKeyState_Locked */
-    UIKeyType_Toggleable,
+    /** e.g. CapsLock, NumLock. Can be only in UIKeyState_NotPressed, UIKeyState_Locked */
+    UIKeyType_Lock,
     /** e.g. Shift Can be in all 3 states*/
     UIKeyType_Modifier,
     UIKeyType_Max
@@ -1540,7 +1540,7 @@ void UISoftKeyboardKey::updateState(bool fPressed)
                 m_enmState = UIKeyState_NotPressed;
         }
     }
-    else if (m_enmType == UIKeyType_Toggleable)
+    else if (m_enmType == UIKeyType_Lock)
     {
         if (fPressed)
         {
@@ -2839,8 +2839,8 @@ void UIPhysicalLayoutReader::parseKey(UISoftKeyboardRow &row)
             QString strType = m_xmlReader.readElementText();
             if (strType == "modifier")
                 key.setType(UIKeyType_Modifier);
-            else if (strType == "toggleable")
-                key.setType(UIKeyType_Toggleable);
+            else if (strType == "lock")
+                key.setType(UIKeyType_Lock);
         }
         else if (m_xmlReader.name() == "osmenukey")
         {
