@@ -396,6 +396,9 @@ public:
     void setNativeName(const QString &strLocaName);
     const QString &nativeName() const;
 
+    /** Combines name and native name and returns the string. */
+    QString nameString() const;
+
     void setSourceFilePath(const QString& strSourceFilePath);
     const QString& sourceFilePath() const;
 
@@ -1580,6 +1583,18 @@ void UISoftKeyboardLayout::updateKeyCaptions(int iKeyPosition, KeyCaptions &newC
     m_keyCapMap[iKeyPosition] = newCaptions;
 }
 
+QString UISoftKeyboardLayout::nameString() const
+{
+    QString strCombinedName;
+    if (nativeName().isEmpty() && !name().isEmpty())
+        strCombinedName = name();
+    else if (!nativeName().isEmpty() && name().isEmpty())
+        strCombinedName = nativeName();
+    else
+        strCombinedName = QString("%1 (%2)").arg(nativeName()).arg(name());
+    return strCombinedName;
+}
+
 void UISoftKeyboardLayout::setSourceFilePath(const QString& strSourceFilePath)
 {
     m_strSourceFilePath = strSourceFilePath;
@@ -2698,14 +2713,7 @@ QStringList UISoftKeyboardWidget::layoutNameList() const
 {
     QStringList layoutNames;
     foreach (const UISoftKeyboardLayout &layout, m_layouts)
-    {
-        if (layout.nativeName().isEmpty() && !layout.name().isEmpty())
-            layoutNames << layout.name();
-        else if (!layout.nativeName().isEmpty() && layout.name().isEmpty())
-            layoutNames << layout.nativeName();
-        else
-            layoutNames << QString("%1 (%2)").arg(layout.nativeName()).arg(layout.name());
-    }
+        layoutNames << layout.nameString();
     return layoutNames;
 }
 
@@ -3313,8 +3321,9 @@ void UISoftKeyboard::sltCurentLayoutChanged()
     UISoftKeyboardLayout *pCurrentLayout = m_pKeyboardWidget->currentLayout();
 
     /* Update the status bar string: */
-    QString strLayoutName = pCurrentLayout ? pCurrentLayout->name() : QString();
-    updateStatusBarMessage(strLayoutName);
+    if (!pCurrentLayout)
+        return;
+    updateStatusBarMessage(pCurrentLayout->nameString());
 }
 
 void UISoftKeyboard::sltShowLayoutSelector()
