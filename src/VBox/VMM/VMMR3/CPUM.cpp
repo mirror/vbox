@@ -1831,7 +1831,7 @@ void cpumR3InitVmxGuestFeaturesAndMsrs(PVM pVM, PCVMXMSRS pHostVmxMsrs, PVMXMSRS
     CPUMFEATURES EmuFeat;
     RT_ZERO(EmuFeat);
     EmuFeat.fVmx                      = 1;
-    EmuFeat.fVmxInsOutInfo            = 0;
+    EmuFeat.fVmxInsOutInfo            = 1;
     EmuFeat.fVmxExtIntExit            = 1;
     EmuFeat.fVmxNmiExit               = 1;
     EmuFeat.fVmxVirtNmi               = 0;
