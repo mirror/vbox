@@ -2461,8 +2461,16 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexit(PVMCPU pVCpu, uint32_t uExitReason, uint64_
      */
     IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_ALL);
 
-    /* Ensure VM-entry interruption information valid bit isn't set. */
-    Assert(!VMX_ENTRY_INT_INFO_IS_VALID(pVmcs->u32EntryIntInfo));
+    /*
+     * Ensure VM-entry interruption information valid bit is cleared.
+     *
+     * We do it here on every VM-exit so that even premature VM-exits (e.g. those caused
+     * by invalid-guest state or machine-check exceptions) also clear this bit.
+     *
+     * See Intel spec. 27.2 "Recording VM-exit Information And Updating VM-entry control fields".
+     */
+    if (VMX_ENTRY_INT_INFO_IS_VALID(pVmcs->u32EntryIntInfo))
+        pVmcs->u32EntryIntInfo &= ~VMX_ENTRY_INT_INFO_VALID;
 
     /*
      * Update the VM-exit reason and Exit qualification.
@@ -2470,6 +2478,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexit(PVMCPU pVCpu, uint32_t uExitReason, uint64_
      */
     pVmcs->u32RoExitReason = uExitReason;
     pVmcs->u64RoExitQual.u = u64ExitQual;
+
     Log3(("vmexit: uExitReason=%#RX32 u64ExitQual=%#RX64 cs:rip=%04x:%#RX64\n", uExitReason, pVmcs->u64RoExitQual.u,
           pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip));
 
@@ -7064,18 +7073,19 @@ IEM_STATIC int iemVmxVmentryInjectTrpmEvent(PVMCPU pVCpu, uint32_t uEntryIntInfo
     }
 
     int rc = TRPMAssertTrap(pVCpu, uVector, enmTrapType);
-    AssertRCReturn(rc, rc);
+    if (RT_SUCCESS(rc))
+    {
+        if (fErrCodeValid)
+            TRPMSetErrorCode(pVCpu, uErrCode);
 
-    if (fErrCodeValid)
-        TRPMSetErrorCode(pVCpu, uErrCode);
+        if (   enmTrapType == TRPM_TRAP
+            && uVector     == X86_XCPT_PF)
+            TRPMSetFaultAddress(pVCpu, GCPtrFaultAddress);
+        else if (enmTrapType == TRPM_SOFTWARE_INT)
+            TRPMSetInstrLength(pVCpu, cbInstr);
+    }
 
-    if (   enmTrapType == TRPM_TRAP
-        && uVector     == X86_XCPT_PF)
-        TRPMSetFaultAddress(pVCpu, GCPtrFaultAddress);
-    else if (enmTrapType == TRPM_SOFTWARE_INT)
-        TRPMSetInstrLength(pVCpu, cbInstr);
-
-    return VINF_SUCCESS;
+    return rc;
 }
 
 
@@ -7104,30 +7114,30 @@ IEM_STATIC int iemVmxVmentryInjectEvent(PVMCPU pVCpu, const char *pszInstr)
     pVCpu->cpum.GstCtx.hwvirt.vmx.fInterceptEvents = !fEntryIntInfoValid;
     if (fEntryIntInfoValid)
     {
+        int rc;
         uint8_t const uType = VMX_ENTRY_INT_INFO_TYPE(uEntryIntInfo);
         if (uType == VMX_ENTRY_INT_INFO_TYPE_OTHER_EVENT)
         {
             Assert(VMX_ENTRY_INT_INFO_VECTOR(uEntryIntInfo) == VMX_ENTRY_INT_INFO_VECTOR_MTF);
             VMCPU_FF_SET(pVCpu, VMCPU_FF_VMX_MTF);
-            return VINF_SUCCESS;
+            rc = VINF_SUCCESS;
+        }
+        else
+        {
+            rc = iemVmxVmentryInjectTrpmEvent(pVCpu, uEntryIntInfo, pVmcs->u32EntryXcptErrCode, pVmcs->u32EntryInstrLen,
+                                              pVCpu->cpum.GstCtx.cr2);
         }
 
-        int rc = iemVmxVmentryInjectTrpmEvent(pVCpu, uEntryIntInfo, pVmcs->u32EntryXcptErrCode, pVmcs->u32EntryInstrLen,
-                                              pVCpu->cpum.GstCtx.cr2);
-        if (RT_SUCCESS(rc))
-        {
-            /*
-             * We need to clear the VM-entry interruption information field's valid bit on VM-exit.
-             *
-             * However, we do it here on VM-entry because while it continues to not be visible to
-             * guest software until VM-exit, when HM looks at the VMCS to continue nested-guest
-             * execution using hardware-assisted VT-x, it can simply copy the VM-entry interruption
-             * information field.
-             *
-             * See Intel spec. 24.8.3 "VM-Entry Controls for Event Injection".
-             */
-            pVmcs->u32EntryIntInfo &= ~VMX_ENTRY_INT_INFO_VALID;
-        }
+        /*
+         * We need to clear the VM-entry interruption information field's valid bit on VM-exit.
+         *
+         * However, we do it here on VM-entry as well because while it isn't visible to guest
+         * software until VM-exit, when and if HM looks at the VMCS to continue nested-guest
+         * execution using hardware-assisted VT-x, it will not be try to inject the event again.
+         *
+         * See Intel spec. 24.8.3 "VM-Entry Controls for Event Injection".
+         */
+        pVmcs->u32EntryIntInfo &= ~VMX_ENTRY_INT_INFO_VALID;
         return rc;
     }
 
