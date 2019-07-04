@@ -21,49 +21,52 @@
 # pragma once
 #endif
 
-#include <iprt/string.h>
 #include <iprt/time.h>
 
 
-/*
+/**
  * Timestamp API uses unsigned time, but we need to be able to refer
  * to events in the past.  Hide the ugly convertions.
+ *
+ * @todo r=bird: Unnecessary mixing of RTTimeNanoTS and RTTimeNow.
  */
-class TimeStamp
+class Timestamp
 {
     int64_t m_ns;
 
 public:
-    TimeStamp()
-      : m_ns(0) {}
+    Timestamp()
+      : m_ns(0)
+    {}
 
-    TimeStamp(uint64_t ns)
-      : m_ns(static_cast<int64_t>(ns)) {}
+    Timestamp(uint64_t ns)
+      : m_ns(static_cast<int64_t>(ns))
+    {}
 
-    static TimeStamp now()
+    static Timestamp now()
     {
-        return TimeStamp(RTTimeNanoTS());
+        return Timestamp(RTTimeNanoTS());
     }
 
-    static TimeStamp absSeconds(int64_t sec)
+    static Timestamp absSeconds(int64_t sec)
     {
         RTTIMESPEC delta;
         RTTimeNow(&delta);
         RTTimeSpecSubSeconds(&delta, sec);
 
         uint64_t stampNow = RTTimeNanoTS();
-        return TimeStamp(stampNow - RTTimeSpecGetNano(&delta));
+        return Timestamp(stampNow - RTTimeSpecGetNano(&delta));
     }
 
-    TimeStamp &addSeconds(int64_t sec)
+    Timestamp &addSeconds(int64_t cSecs)
     {
-        m_ns += sec * RT_NS_1SEC;
+        m_ns += cSecs * RT_NS_1SEC;
         return *this;
     }
 
-    TimeStamp &subSeconds(int64_t sec)
+    Timestamp &subSeconds(int64_t cSecs)
     {
-        m_ns -= sec * RT_NS_1SEC;
+        m_ns -= cSecs * RT_NS_1SEC;
         return *this;
     }
 
@@ -86,16 +89,16 @@ public:
 
     size_t absStrFormat(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput) const;
 
-    friend bool operator<(const TimeStamp &l, const TimeStamp &r);
-    friend bool operator>(const TimeStamp &l, const TimeStamp &r);
-    friend bool operator<=(const TimeStamp &l, const TimeStamp &r);
-    friend bool operator>=(const TimeStamp &l, const TimeStamp &r);
+    friend bool operator<(const Timestamp &l, const Timestamp &r);
+    friend bool operator>(const Timestamp &l, const Timestamp &r);
+    friend bool operator<=(const Timestamp &l, const Timestamp &r);
+    friend bool operator>=(const Timestamp &l, const Timestamp &r);
 };
 
 
-inline bool operator<(const TimeStamp &l, const TimeStamp &r) { return l.m_ns < r.m_ns; }
-inline bool operator>(const TimeStamp &l, const TimeStamp &r) { return l.m_ns > r.m_ns; }
-inline bool operator<=(const TimeStamp &l, const TimeStamp &r) { return l.m_ns <= r.m_ns; }
-inline bool operator>=(const TimeStamp &l, const TimeStamp &r) { return l.m_ns >= r.m_ns; }
+inline bool operator<(const Timestamp &l, const Timestamp &r) { return l.m_ns < r.m_ns; }
+inline bool operator>(const Timestamp &l, const Timestamp &r) { return l.m_ns > r.m_ns; }
+inline bool operator<=(const Timestamp &l, const Timestamp &r) { return l.m_ns <= r.m_ns; }
+inline bool operator>=(const Timestamp &l, const Timestamp &r) { return l.m_ns >= r.m_ns; }
 
 #endif /* !VBOX_INCLUDED_SRC_Dhcpd_TimeStamp_h */

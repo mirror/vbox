@@ -26,7 +26,7 @@
 # include <iprt/win/winsock2.h>
 #endif
 
-
+#include "DhcpdInternal.h"
 #include <iprt/param.h>
 #include <iprt/errcore.h>
 

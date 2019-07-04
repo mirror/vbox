@@ -15,6 +15,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#include "DhcpdInternal.h"
 #include <iprt/errcore.h>
 #include <iprt/stream.h>
 

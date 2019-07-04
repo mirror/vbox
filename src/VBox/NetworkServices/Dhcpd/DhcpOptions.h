@@ -21,7 +21,7 @@
 # pragma once
 #endif
 
-#include "Defs.h"
+#include "DhcpdInternal.h"
 
 #include <iprt/asm.h>
 #include <iprt/err.h>

@@ -15,6 +15,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#include "DhcpdInternal.h"
 #include "DhcpMessage.h"
 #include "DhcpOptions.h"
 

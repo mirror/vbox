@@ -21,8 +21,8 @@
 # pragma once
 #endif
 
+#include "DhcpdInternal.h"
 #include <iprt/cpp/ministring.h>
-#include "Defs.h"
 #include "Config.h"
 #include "DhcpMessage.h"
 #include "Db.h"

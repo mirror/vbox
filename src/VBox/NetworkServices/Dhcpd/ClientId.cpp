@@ -15,74 +15,69 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#include <algorithm>
 
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
+#include <algorithm>
 #include "ClientId.h"
 
 
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
+/** Indiciates wherther ClientId::rtStrFormat was already registered. */
 bool ClientId::g_fFormatRegistered = false;
 
 
+/**
+ * Registers the ClientId format type callback ("%R[id]").
+ */
 void ClientId::registerFormat()
 {
-    if (g_fFormatRegistered)
-        return;
-
-    int rc = RTStrFormatTypeRegister("id", rtStrFormat, NULL);
-    AssertRC(rc);
-
-    g_fFormatRegistered = true;
+    if (!g_fFormatRegistered)
+    {
+        int rc = RTStrFormatTypeRegister("id", rtStrFormat, NULL);
+        AssertRC(rc);
+        g_fFormatRegistered = RT_SUCCESS(rc);
+    }
 }
 
 
+/**
+ * @callback_method_impl{FNRTSTRFORMATTYPE, Formats ClientId via "%R[id]". }
+ */
 DECLCALLBACK(size_t)
 ClientId::rtStrFormat(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
-             const char *pszType, void const *pvValue,
-             int cchWidth, int cchPrecision, unsigned fFlags,
-             void *pvUser)
+                      const char *pszType, void const *pvValue,
+                      int cchWidth, int cchPrecision, unsigned fFlags,
+                      void *pvUser)
 {
-    const ClientId *id = static_cast<const ClientId *>(pvValue);
+    RT_NOREF(pszType, cchWidth, cchPrecision, fFlags, pvUser);
+    Assert(strcmp(pszType, "id") == 0);
+
+    const ClientId *pThis = static_cast<const ClientId *>(pvValue);
+    if (pThis == NULL)
+        return pfnOutput(pvArgOutput, RT_STR_TUPLE("<NULL>"));
+
     size_t cb = 0;
-
-    AssertReturn(strcmp(pszType, "id") == 0, 0);
-    RT_NOREF(pszType);
-
-    RT_NOREF(cchWidth, cchPrecision, fFlags);
-    RT_NOREF(pvUser);
-
-    if (id == NULL)
+    if (pThis->m_id.present())
     {
-        return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
-                           "<NULL>");
-    }
+        cb += pfnOutput(pvArgOutput, RT_STR_TUPLE("["));
 
-    if (id->m_id.present())
-    {
-        const OptClientId::value_t &idopt = id->m_id.value();
-
-        cb += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
-                          "[");
-
+        const OptClientId::value_t &idopt = pThis->m_id.value();
         for (size_t i = 0; i < idopt.size(); ++i)
-        {
-            cb += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
-                              "%s%02x", (i == 0 ? "" : ":"), idopt[i]);
-        }
+            cb += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "%s%02x", (i == 0 ? "" : ":"), idopt[i]);
 
-        cb += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
-                          "] (");
+        cb += pfnOutput(pvArgOutput, RT_STR_TUPLE("] ("));
     }
 
-    cb += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
-                      "%RTmac", &id->m_mac);
+    cb += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "%RTmac", &pThis->m_mac);
 
-    if (id->m_id.present())
-    {
-        cb += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
-                          ")");
-    }
+    if (pThis->m_id.present())
+        cb += pfnOutput(pvArgOutput, RT_STR_TUPLE(")"));
 
-    return 0;
+    return cb;
 }
 
 
@@ -109,14 +104,13 @@ bool operator<(const ClientId &l, const ClientId &r)
     {
         if (r.m_id.present())
             return l.m_id.value() < r.m_id.value();
-        else
-            return false;       /* the one with id comes last */
+        return false;           /* the one with id comes last */
     }
     else
     {
         if (r.m_id.present())
             return true;        /* the one with id comes last */
-        else
-            return l.m_mac < r.m_mac;
+        return l.m_mac < r.m_mac;
     }
 }
+

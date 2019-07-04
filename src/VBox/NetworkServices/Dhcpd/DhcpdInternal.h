@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * DHCP server - common definitions
+ * DHCP server - Internal header.
  */
 
 /*
@@ -21,6 +21,7 @@
 # pragma once
 #endif
 
+#define LOG_GROUP LOG_GROUP_NET_DHCPD
 #include <iprt/stdint.h>
 #include <iprt/string.h>
 #include <VBox/log.h>
@@ -32,31 +33,42 @@
 #include <memory>
 using std::shared_ptr;
 #else
-#include <tr1/memory>
+# include <tr1/memory>
 using std::tr1::shared_ptr;
 #endif
 
+
+/** Byte vector. */
 typedef std::vector<uint8_t> octets_t;
 
+/** Raw DHCP option map (keyed by option number, byte vector value). */
 typedef std::map<uint8_t, octets_t> rawopts_t;
 
 class DhcpOption;
+/** DHCP option map (keyed by option number, DhcpOption value). */
 typedef std::map<uint8_t, std::shared_ptr<DhcpOption> > optmap_t;
 
-inline bool operator==(const RTMAC &l, const RTMAC &r)
+
+/** Equal compare operator for mac address. */
+DECLINLINE(bool) operator==(const RTMAC &l, const RTMAC &r)
 {
     return memcmp(&l, &r, sizeof(RTMAC)) == 0;
 }
 
-inline bool operator<(const RTMAC &l, const RTMAC &r)
+/** Less-than compare operator for mac address. */
+DECLINLINE(bool) operator<(const RTMAC &l, const RTMAC &r)
 {
     return memcmp(&l, &r, sizeof(RTMAC)) < 0;
 }
 
+
+/** @def LogDHCP
+ * Wrapper around LogRel.  */
 #if 1
-#define LogDHCP LogRel
+# define LogDHCP LogRel
 #else
-#define LogDHCP(args) RTPrintf args
+# include <iprt/stream.h>
+# define LogDHCP(args) RTPrintf args
 #endif
 
 #endif /* !VBOX_INCLUDED_SRC_Dhcpd_Defs_h */

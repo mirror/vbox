@@ -586,6 +586,8 @@ typedef enum VBOXLOGGROUP
     LOG_GROUP_NEM,
     /** The network adaptor driver group. */
     LOG_GROUP_NET_ADP_DRV,
+    /** The DHCP network service deamon. */
+    LOG_GROUP_NET_DHCPD,
     /** The network filter driver group. */
     LOG_GROUP_NET_FLT_DRV,
     /** The common network service group */
@@ -997,6 +999,7 @@ typedef enum VBOXLOGGROUP
     "NAT_SERVICE", \
     "NEM", \
     "NET_ADP_DRV", \
+    "NET_DHCPD",   \
     "NET_FLT_DRV", \
     "NET_SERVICE", \
     "NET_SHAPER", \

@@ -15,6 +15,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#include "DhcpdInternal.h"
 #include <iprt/errcore.h>
 #include <iprt/stream.h>
 
@@ -97,14 +98,14 @@ Binding::rtStrFormat(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
                           " to %R[id], %s, valid from ",
                           &b->m_id, b->stateName());
 
-        TimeStamp tsIssued = b->issued();
+        Timestamp tsIssued = b->issued();
         cb += tsIssued.absStrFormat(pfnOutput, pvArgOutput);
 
         cb += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
                           " for %ds until ",
                           b->leaseTime());
 
-        TimeStamp tsValid = b->issued();
+        Timestamp tsValid = b->issued();
         tsValid.addSeconds(b->leaseTime());
         cb += tsValid.absStrFormat(pfnOutput, pvArgOutput);
     }
@@ -150,12 +151,12 @@ Binding &Binding::setState(const char *pszStateName)
 }
 
 
-bool Binding::expire(TimeStamp deadline)
+bool Binding::expire(Timestamp deadline)
 {
     if (m_state <= Binding::EXPIRED)
         return false;
 
-    TimeStamp t = m_issued;
+    Timestamp t = m_issued;
     t.addSeconds(m_secLease);
 
     if (t < deadline)
@@ -312,14 +313,14 @@ Binding *Binding::fromXML(const xml::ElementNode *ndLease)
 
     if (fHasState)
     {
-        b->m_issued = TimeStamp::absSeconds(issued);
+        b->m_issued = Timestamp::absSeconds(issued);
         b->m_secLease = duration;
         b->setState(strState.c_str());
     }
     else
     {   /* XXX: old code wrote timestamps instead of absolute time. */
         /* pretend that lease has just ended */
-        TimeStamp fakeIssued = TimeStamp::now();
+        Timestamp fakeIssued = Timestamp::now();
         fakeIssued.subSeconds(duration);
         b->m_issued = fakeIssued;
         b->m_secLease = duration;
@@ -332,7 +333,7 @@ Binding *Binding::fromXML(const xml::ElementNode *ndLease)
 
 void Db::expire()
 {
-    const TimeStamp now = TimeStamp::now();
+    const Timestamp now = Timestamp::now();
 
     for (bindings_t::iterator it = m_bindings.begin();
          it != m_bindings.end(); ++it)
@@ -392,7 +393,7 @@ Binding *Db::allocateAddress(const ClientId &id, RTNETADDRIPV4 addr)
      * address in that case.  While here, look for free addresses and
      * addresses that can be reused.
      */
-    const TimeStamp now = TimeStamp::now();
+    const Timestamp now = Timestamp::now();
     for (bindings_t::iterator it = m_bindings.begin();
          it != m_bindings.end(); ++it)
     {

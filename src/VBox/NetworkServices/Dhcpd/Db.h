@@ -21,6 +21,7 @@
 # pragma once
 #endif
 
+#include "DhcpdInternal.h"
 #include <iprt/net.h>
 
 #include <iprt/cpp/ministring.h>
@@ -28,8 +29,7 @@
 
 #include <list>
 
-#include "Defs.h"
-#include "TimeStamp.h"
+#include "Timestamp.h"
 #include "ClientId.h"
 #include "IPv4Pool.h"
 #include "Config.h"
@@ -47,7 +47,7 @@ private:
     const RTNETADDRIPV4 m_addr;
     State m_state;
     ClientId m_id;
-    TimeStamp m_issued;
+    Timestamp m_issued;
     uint32_t m_secLease;
 
 public:
@@ -71,7 +71,7 @@ public:
     const ClientId &id() const { return m_id; }
 
     uint32_t leaseTime() const { return m_secLease; }
-    TimeStamp issued() const { return m_issued; }
+    Timestamp issued() const { return m_issued; }
 
     Binding &setState(State stateParam)
     {
@@ -83,7 +83,7 @@ public:
 
     Binding &setLeaseTime(uint32_t secLease)
     {
-        m_issued = TimeStamp::now();
+        m_issued = Timestamp::now();
         m_secLease = secLease;
         return *this;
     }
@@ -101,8 +101,8 @@ public:
         m_state = FREE;
     }
 
-    bool expire(TimeStamp deadline);
-    bool expire() { return expire(TimeStamp::now()); }
+    bool expire(Timestamp deadline);
+    bool expire() { return expire(Timestamp::now()); }
 
     static Binding *fromXML(const xml::ElementNode *ndLease);
     int toXML(xml::ElementNode *ndParent) const;
