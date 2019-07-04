@@ -770,10 +770,10 @@ void UILayoutEditor::setKey(UISoftKeyboardKey *pKey)
     if (m_pKey)
     {
         KeyCaptions captions = m_pLayout->keyCaptions(m_pKey->position());
+        if (captions.m_strBase != m_pBaseCaptionEdit->text())
+            m_pLayout->setBaseCaption(m_pKey->position(), m_pBaseCaptionEdit->text());
         if (captions.m_strShift != m_pShiftCaptionEdit->text())
             m_pLayout->setShiftCaption(m_pKey->position(), m_pShiftCaptionEdit->text());
-        if (captions.m_strBase != m_pBaseCaptionEdit->text())
-            m_pLayout->setShiftCaption(m_pKey->position(), m_pBaseCaptionEdit->text());
         if (captions.m_strAltGr != m_pAltGrCaptionEdit->text())
             m_pLayout->setAltGrCaption(m_pKey->position(), m_pAltGrCaptionEdit->text());
         if (captions.m_strShiftAltGr != m_pShiftAltGrCaptionEdit->text())
@@ -1976,13 +1976,14 @@ void UISoftKeyboardWidget::paintEvent(QPaintEvent *pEvent) /* override */
                     ledColor = QColor(0, 191, 204);
                 else
                     ledColor = QColor(255, 50, 50);
+                if (m_enmMode == Mode_LayoutEdit)
+                    ledColor = color(KeyboardColorType_Font);
                 painter.setBrush(ledColor);
                 painter.setPen(ledColor);
                 QRectF rectangle(key.keyGeometry().width() - 2 * fLedMargin, fLedMargin, fLedRadius, fLedRadius);
                 painter.drawEllipse(rectangle);
             }
             painter.translate(-key.keyGeometry().x(), -key.keyGeometry().y());
-
         }
     }
 }
