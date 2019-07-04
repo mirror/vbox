@@ -56,9 +56,9 @@ public:
     const RTMAC       &mac() const  { return m_mac; }
     const OptClientId &id() const   { return m_id; }
 
-    /** @name String formatting stuff
+    /** @name String formatting of %R[id].
      * @{ */
-    static void registerFormat(); /* %R[id] */
+    static void registerFormat();
 private:
     static DECLCALLBACK(size_t) rtStrFormat(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, const char *pszType,
                                             void const *pvValue, int cchWidth, int cchPrecision, unsigned fFlags, void *pvUser);

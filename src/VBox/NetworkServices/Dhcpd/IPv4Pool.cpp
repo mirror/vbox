@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * DHCP server - a pool of IPv4 addresses
+ * DHCP server - A pool of IPv4 addresses.
  */
 
 /*
@@ -15,17 +15,19 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
 #include "DhcpdInternal.h"
 #include <iprt/errcore.h>
-#include <iprt/stream.h>
 
 #include "IPv4Pool.h"
 
 
 int IPv4Pool::init(const IPv4Range &aRange)
 {
-    if (!aRange.isValid())
-        return VERR_INVALID_PARAMETER;
+    AssertReturn(aRange.isValid(), VERR_INVALID_PARAMETER);
 
     m_range = aRange;
     m_pool.insert(m_range);
@@ -35,105 +37,132 @@ int IPv4Pool::init(const IPv4Range &aRange)
 
 int IPv4Pool::init(RTNETADDRIPV4 aFirstAddr, RTNETADDRIPV4 aLastAddr)
 {
-    IPv4Range range(aFirstAddr, aLastAddr);
-
-    if (!range.isValid())
-        return VERR_INVALID_PARAMETER;
-
-    m_range = range;
-    m_pool.insert(m_range);
-    return VINF_SUCCESS;
+    return init(IPv4Range(aFirstAddr, aLastAddr));
 }
 
 
-int IPv4Pool::insert(const IPv4Range &range)
+/**
+ * Internal worker for inserting a range into the pool of available addresses.
+ *
+ * @returns IPRT status code (asserted).
+ * @param   a_Range         The range to insert.
+ */
+int IPv4Pool::insert(const IPv4Range &a_Range)
 {
-    if (!m_range.isValid())
-        return VERR_INVALID_PARAMETER;
+    /*
+     * Check preconditions. Asserting because nobody checks the return code.
+     */
+    AssertReturn(m_range.isValid(), VERR_INVALID_STATE);
+    AssertReturn(a_Range.isValid(), VERR_INVALID_PARAMETER);
+    AssertReturn(m_range.contains(a_Range), VERR_INVALID_PARAMETER);
 
-    if (!m_range.contains(range))
-        return VERR_INVALID_PARAMETER;
-
-    it_t it = m_pool.upper_bound(IPv4Range(range.LastAddr)); /* successor */
-    if (it != m_pool.begin())
+    /*
+     * Check that the incoming range doesn't overlap with existing ranges in the pool.
+     */
+    it_t itHint = m_pool.upper_bound(IPv4Range(a_Range.LastAddr)); /* successor, insertion hint */
+#if 0 /** @todo r=bird: This code is wrong.  It has no end() check for starters.  Since the method is
+       *                only for internal consumption, I've replaced it with a strict build assertion. */
+    if (itHint != m_pool.begin())
     {
-        it_t prev(it);
+        it_t prev(itHint);
         --prev;
-        if (range.FirstAddr <= prev->LastAddr) {
-#if 1 /* XXX */
-            RTPrintf("%08x-%08x conflicts with %08x-%08x\n",
-                     range.FirstAddr, range.LastAddr,
-                     prev->FirstAddr, prev->LastAddr);
-#endif
+        if (a_Range.FirstAddr <= prev->LastAddr)
+        {
+            LogDHCP(("%08x-%08x conflicts with %08x-%08x\n",
+                     a_Range.FirstAddr, a_Range.LastAddr,
+                     prev->FirstAddr, prev->LastAddr));
             return VERR_INVALID_PARAMETER;
         }
     }
+#endif
+#ifdef VBOX_STRICT
+    for (it_t it2 = m_pool.begin(); it2 != m_pool.end(); ++it2)
+        AssertMsg(it2->LastAddr < a_Range.FirstAddr || it2->FirstAddr > a_Range.LastAddr,
+                  ("%08RX32-%08RX32 conflicts with %08RX32-%08RX32\n",
+                   a_Range.FirstAddr, a_Range.LastAddr, it2->FirstAddr, it2->LastAddr));
+#endif
 
-    m_pool.insert(it, range);
+    /*
+     * No overlaps, insert it.
+     */
+    m_pool.insert(itHint, a_Range);
     return VINF_SUCCESS;
 }
 
 
+/**
+ * Allocates an available IPv4 address from the pool.
+ *
+ * @returns Non-zero network order IPv4 address on success, zero address
+ *          (0.0.0.0) on failure.
+ */
 RTNETADDRIPV4 IPv4Pool::allocate()
 {
-    if (m_pool.empty())
+    RTNETADDRIPV4 RetAddr;
+    if (!m_pool.empty())
     {
-        RTNETADDRIPV4 res = { 0 };
-        return res;
-    }
+        /* Grab the first address in the pool: */
+        it_t itBeg = m_pool.begin();
+        RetAddr.u = RT_H2N_U32(itBeg->FirstAddr);
 
-    it_t beg = m_pool.begin();
-    ip_haddr_t addr = beg->FirstAddr;
-
-    if (beg->FirstAddr == beg->LastAddr)
-    {
-        m_pool.erase(beg);
+        if (itBeg->FirstAddr == itBeg->LastAddr)
+            m_pool.erase(itBeg);
+        else
+        {
+            /* Trim the entry (re-inserting it): */
+            IPv4Range trimmed = *itBeg;
+            trimmed.FirstAddr += 1;
+            m_pool.erase(itBeg);
+            m_pool.insert(trimmed);
+        }
     }
     else
-    {
-        IPv4Range trimmed = *beg;
-        ++trimmed.FirstAddr;
-        m_pool.erase(beg);
-        m_pool.insert(trimmed);
-    }
-
-    RTNETADDRIPV4 res = { RT_H2N_U32(addr) };
-    return res;
+        RetAddr.u = 0;
+    return RetAddr;
 }
 
 
-bool IPv4Pool::allocate(RTNETADDRIPV4 addr)
+/**
+ * Allocate the given address.
+ *
+ * @returns Success indicator.
+ * @param   a_Addr      The IP address to allocate (network order).
+ */
+bool IPv4Pool::allocate(RTNETADDRIPV4 a_Addr)
 {
-    it_t it = m_pool.lower_bound(IPv4Range(addr)); /* candidate range */
-    if (it == m_pool.end())
-        return false;
-
-    Assert(RT_N2H_U32(addr.u) <= it->LastAddr); /* by definition of < and lower_bound */
-
-    if (!it->contains(addr))
-        return false;
-
-    const ip_haddr_t haddr = RT_N2H_U32(addr.u);
-    ip_haddr_t first = it->FirstAddr;
-    ip_haddr_t last = it->LastAddr;
-
-    m_pool.erase(it);
-    if (first != last)
+    /*
+     * Find the range containing a_Addr.
+     */
+    it_t it = m_pool.lower_bound(IPv4Range(a_Addr)); /* candidate range */
+    if (it != m_pool.end())
     {
-        if (haddr == first)
+        Assert(RT_N2H_U32(a_Addr.u) <= it->LastAddr); /* by definition of < and lower_bound */
+
+        if (it->contains(a_Addr))
         {
-            insert(++first, last);
-        }
-        else if (haddr == last)
-        {
-            insert(first, --last);
-        }
-        else
-        {
-            insert(first, haddr - 1);
-            insert(haddr + 1, last);
+            /*
+             * Remove a_Addr from the range by way of re-insertion.
+             */
+            const IPV4HADDR haddr = RT_N2H_U32(a_Addr.u);
+            IPV4HADDR       first = it->FirstAddr;
+            IPV4HADDR       last  = it->LastAddr;
+
+            m_pool.erase(it);
+            if (first != last)
+            {
+                if (haddr == first)
+                    insert(++first, last);
+                else if (haddr == last)
+                    insert(first, --last);
+                else
+                {
+                    insert(first, haddr - 1);
+                    insert(haddr + 1, last);
+                }
+            }
+
+            return true;
         }
     }
-
-    return true;
+    return false;
 }

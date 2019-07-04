@@ -15,62 +15,46 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
 #include "DhcpdInternal.h"
 #include <iprt/errcore.h>
-#include <iprt/stream.h>
 
 #include "Db.h"
 
 
-Db::Db()
-  : m_pConfig(NULL)
-{
-    return;
-}
-
-
-Db::~Db()
-{
-    /** @todo free bindings */
-}
-
-
-int Db::init(const Config *pConfig)
-{
-    Binding::registerFormat();
-
-    m_pConfig = pConfig;
-
-    m_pool.init(pConfig->getIPv4PoolFirst(),
-                pConfig->getIPv4PoolLast());
-
-    return VINF_SUCCESS;
-}
-
-
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
+/** Indicates whether has been called successfully yet. */
 bool Binding::g_fFormatRegistered = false;
 
 
+/**
+ * Registers the ClientId format type callback ("%R[binding]").
+ */
 void Binding::registerFormat()
 {
-    if (g_fFormatRegistered)
-        return;
-
-    int rc = RTStrFormatTypeRegister("binding", rtStrFormat, NULL);
-    AssertRC(rc);
-
-    g_fFormatRegistered = true;
+    if (!g_fFormatRegistered)
+    {
+        int rc = RTStrFormatTypeRegister("binding", rtStrFormat, NULL);
+        AssertRC(rc);
+        g_fFormatRegistered = true;
+    }
 }
 
 
+/**
+ * @callback_method_impl{FNRTSTRFORMATTYPE, Formats ClientId via "%R[binding]".}
+ */
 DECLCALLBACK(size_t)
 Binding::rtStrFormat(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
                      const char *pszType, void const *pvValue,
                      int cchWidth, int cchPrecision, unsigned fFlags,
                      void *pvUser)
 {
-    const Binding *b = static_cast<const Binding *>(pvValue);
-    size_t cb = 0;
 
     AssertReturn(strcmp(pszType, "binding") == 0, 0);
     RT_NOREF(pszType);
@@ -78,32 +62,21 @@ Binding::rtStrFormat(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
     RT_NOREF(cchWidth, cchPrecision, fFlags);
     RT_NOREF(pvUser);
 
+    const Binding *b = static_cast<const Binding *>(pvValue);
     if (b == NULL)
-    {
-        return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
-                           "<NULL>");
-    }
+        return pfnOutput(pvArgOutput, RT_STR_TUPLE("<NULL>"));
 
-    cb += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
-                      "%RTnaipv4", b->m_addr.u);
-
+    size_t cb = RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "%RTnaipv4", b->m_addr.u);
     if (b->m_state == Binding::FREE)
-    {
-        cb += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
-                          " free");
-    }
+        cb += pfnOutput(pvArgOutput, RT_STR_TUPLE(" free"));
     else
     {
-        cb += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
-                          " to %R[id], %s, valid from ",
-                          &b->m_id, b->stateName());
+        cb += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, " to %R[id], %s, valid from ", &b->m_id, b->stateName());
 
         Timestamp tsIssued = b->issued();
         cb += tsIssued.strFormatHelper(pfnOutput, pvArgOutput);
 
-        cb += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
-                          " for %ds until ",
-                          b->leaseTime());
+        cb += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, " for %ds until ", b->leaseTime());
 
         Timestamp tsValid = b->issued();
         tsValid.addSeconds(b->leaseTime());
@@ -115,19 +88,21 @@ Binding::rtStrFormat(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
 
 const char *Binding::stateName() const
 {
-    switch (m_state) {
-    case FREE:
-        return "free";
-    case RELEASED:
-        return "released";
-    case EXPIRED:
-        return "expired";
-    case OFFERED:
-        return "offered";
-    case ACKED:
-        return "acked";
-    default:
-        return "released";
+    switch (m_state)
+    {
+        case FREE:
+            return "free";
+        case RELEASED:
+            return "released";
+        case EXPIRED:
+            return "expired";
+        case OFFERED:
+            return "offered";
+        case ACKED:
+            return "acked";
+        default:
+            AssertMsgFailed(("%d\n", m_state));
+            return "released";
     }
 }
 
@@ -145,21 +120,31 @@ Binding &Binding::setState(const char *pszStateName)
     else if (strcmp(pszStateName, "acked") == 0)
         m_state = Binding::ACKED;
     else
+    {
+        AssertMsgFailed(("%d\n", m_state));
         m_state = Binding::RELEASED;
+    }
 
     return *this;
 }
 
 
-bool Binding::expire(Timestamp deadline)
+/**
+ * Expires the binding if it's past the specified deadline.
+ *
+ * @returns False if already expired, released or freed, otherwise true (i.e.
+ *          does not indicate whether action was taken or not).
+ * @param   tsDeadline          The expiry deadline to use.
+ */
+bool Binding::expire(Timestamp tsDeadline)
 {
     if (m_state <= Binding::EXPIRED)
         return false;
 
-    Timestamp t = m_issued;
-    t.addSeconds(m_secLease);
+    Timestamp tsExpire = m_issued;
+    tsExpire.addSeconds(m_secLease);
 
-    if (t < deadline)
+    if (tsExpire < tsDeadline)
     {
         if (m_state == Binding::OFFERED)
             setState(Binding::FREE);
@@ -170,58 +155,59 @@ bool Binding::expire(Timestamp deadline)
 }
 
 
-int Binding::toXML(xml::ElementNode *ndParent) const
+/**
+ * Serializes the binding to XML for the lease database.
+ *
+ * @throw  std::bad_alloc
+ */
+void Binding::toXML(xml::ElementNode *pElmParent) const
 {
-    int rc;
-
     /*
      * Lease
      */
-    xml::ElementNode *ndLease = ndParent->createChild("Lease");
-    if (ndLease == NULL)
-        return VERR_GENERAL_FAILURE;
+    xml::ElementNode *pElmLease = pElmParent->createChild("Lease");
 
-    /* XXX: arrange for lease to get deleted if anything below fails */
-
-
-    ndLease->setAttribute("mac", RTCStringFmt("%RTmac", &m_id.mac()));
+    pElmLease->setAttribute("mac", RTCStringFmt("%RTmac", &m_id.mac()));
     if (m_id.id().present())
     {
         /* I'd prefer RTSTRPRINTHEXBYTES_F_SEP_COLON but there's no decoder */
         size_t cbStrId = m_id.id().value().size() * 2 + 1;
         char *pszId = new char[cbStrId];
-        rc = RTStrPrintHexBytes(pszId, cbStrId,
-                                &m_id.id().value().front(), m_id.id().value().size(),
-                                0);
-        ndLease->setAttribute("id", pszId);
+        int rc = RTStrPrintHexBytes(pszId, cbStrId,
+                                    &m_id.id().value().front(), m_id.id().value().size(),
+                                    0);
+        AssertRC(rc);
+        pElmLease->setAttribute("id", pszId);
         delete[] pszId;
     }
 
     /* unused but we need it to keep the old code happy */
-    ndLease->setAttribute("network", "0.0.0.0");
-
-    ndLease->setAttribute("state", stateName());
-
+    pElmLease->setAttribute("network", "0.0.0.0");
+    pElmLease->setAttribute("state", stateName());
 
     /*
      * Lease/Address
      */
-    xml::ElementNode *ndAddr = ndLease->createChild("Address");
-    ndAddr->setAttribute("value", RTCStringFmt("%RTnaipv4", m_addr.u));
-
+    xml::ElementNode *pElmAddr = pElmLease->createChild("Address");
+    pElmAddr->setAttribute("value", RTCStringFmt("%RTnaipv4", m_addr.u));
 
     /*
      * Lease/Time
      */
-    xml::ElementNode *ndTime = ndLease->createChild("Time");
-    ndTime->setAttribute("issued", m_issued.getAbsSeconds());
-    ndTime->setAttribute("expiration", m_secLease);
-
-    return VINF_SUCCESS;
+    xml::ElementNode *pElmTime = pElmLease->createChild("Time");
+    pElmTime->setAttribute("issued", m_issued.getAbsSeconds());
+    pElmTime->setAttribute("expiration", m_secLease);
 }
 
 
-Binding *Binding::fromXML(const xml::ElementNode *ndLease)
+/**
+ * Deserializes the binding from the XML lease database.
+ *
+ * @param   pElmLease   The "Lease" element.
+ * @return  Pointer to the resulting binding, NULL on failure.
+ * @throw   std::bad_alloc
+ */
+Binding *Binding::fromXML(const xml::ElementNode *pElmLease)
 {
     /* Lease/@network seems to always have bogus value, ignore it. */
 
@@ -229,7 +215,7 @@ Binding *Binding::fromXML(const xml::ElementNode *ndLease)
      * Lease/@mac
      */
     RTCString strMac;
-    bool fHasMac = ndLease->getAttributeValue("mac", &strMac);
+    bool fHasMac = pElmLease->getAttributeValue("mac", &strMac);
     if (!fHasMac)
         return NULL;
 
@@ -240,7 +226,7 @@ Binding *Binding::fromXML(const xml::ElementNode *ndLease)
 
     OptClientId id;
     RTCString strId;
-    bool fHasId = ndLease->getAttributeValue("id", &strId);
+    bool fHasId = pElmLease->getAttributeValue("id", &strId);
     if (fHasId)
     {
         /*
@@ -263,12 +249,12 @@ Binding *Binding::fromXML(const xml::ElementNode *ndLease)
      * infer from lease time below.
      */
     RTCString strState;
-    bool fHasState = ndLease->getAttributeValue("state", &strState);
+    bool fHasState = pElmLease->getAttributeValue("state", &strState);
 
     /*
      * Lease/Address
      */
-    const xml::ElementNode *ndAddress = ndLease->findChildElement("Address");
+    const xml::ElementNode *ndAddress = pElmLease->findChildElement("Address");
     if (ndAddress == NULL)
         return NULL;
 
@@ -288,7 +274,7 @@ Binding *Binding::fromXML(const xml::ElementNode *ndLease)
     /*
      * Lease/Time
      */
-    const xml::ElementNode *ndTime = ndLease->findChildElement("Time");
+    const xml::ElementNode *ndTime = pElmLease->findChildElement("Time");
     if (ndTime == NULL)
         return NULL;
 
@@ -331,12 +317,43 @@ Binding *Binding::fromXML(const xml::ElementNode *ndLease)
 }
 
 
+
+/*********************************************************************************************************************************
+*   Class Db Implementation                                                                                                      *
+*********************************************************************************************************************************/
+
+Db::Db()
+    : m_pConfig(NULL)
+{
+}
+
+
+Db::~Db()
+{
+    /** @todo free bindings */
+}
+
+
+int Db::init(const Config *pConfig)
+{
+    Binding::registerFormat();
+
+    m_pConfig = pConfig;
+
+    m_pool.init(pConfig->getIPv4PoolFirst(),
+                pConfig->getIPv4PoolLast());
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Expire old binding (leases).
+ */
 void Db::expire()
 {
     const Timestamp now = Timestamp::now();
-
-    for (bindings_t::iterator it = m_bindings.begin();
-         it != m_bindings.end(); ++it)
+    for (bindings_t::iterator it = m_bindings.begin(); it != m_bindings.end(); ++it)
     {
         Binding *b = *it;
         b->expire(now);
@@ -344,24 +361,50 @@ void Db::expire()
 }
 
 
+/**
+ * Internal worker that creates a binding for the given client, allocating new
+ * IPv4 address for it.
+ *
+ * @returns Pointer to the binding.
+ * @param   id          The client ID.
+ */
 Binding *Db::createBinding(const ClientId &id)
 {
+    Binding      *pBinding = NULL;
     RTNETADDRIPV4 addr = m_pool.allocate();
-    if (addr.u == 0)
-        return NULL;
-
-    Binding *b = new Binding(addr, id);
-    m_bindings.push_front(b);
-    return b;
+    if (addr.u != 0)
+    {
+        try
+        {
+            pBinding = new Binding(addr, id);
+            m_bindings.push_front(pBinding);
+        }
+        catch (std::bad_alloc &)
+        {
+            if (pBinding)
+                delete pBinding;
+            /** @todo free address (no pool method for that)  */
+        }
+    }
+    return pBinding;
 }
 
 
+/**
+ * Internal worker that creates a binding to the specified IPv4 address for the
+ * given client.
+ *
+ * @returns Pointer to the binding.
+ *          NULL if the address is in use or we ran out of memory.
+ * @param   addr        The IPv4 address.
+ * @param   id          The client.
+ */
 Binding *Db::createBinding(RTNETADDRIPV4 addr, const ClientId &id)
 {
     bool fAvailable = m_pool.allocate(addr);
     if (!fAvailable)
     {
-        /*
+        /** @todo
          * XXX: this should not happen.  If the address is from the
          * pool, which we have verified before, then either it's in
          * the free pool or there's an binding (possibly free) for it.
@@ -375,13 +418,13 @@ Binding *Db::createBinding(RTNETADDRIPV4 addr, const ClientId &id)
 }
 
 
+/**
+ * Internal worker that allocates an IPv4 address for the given client, taking
+ * the preferred address (@a addr) into account when possible and if non-zero.
+ */
 Binding *Db::allocateAddress(const ClientId &id, RTNETADDRIPV4 addr)
 {
     Assert(addr.u == 0 || addressBelongs(addr));
-
-    Binding *addrBinding = NULL;
-    Binding *freeBinding = NULL;
-    Binding *reuseBinding = NULL;
 
     if (addr.u != 0)
         LogDHCP(("> allocateAddress %RTnaipv4 to client %R[id]\n", addr.u, &id));
@@ -393,9 +436,11 @@ Binding *Db::allocateAddress(const ClientId &id, RTNETADDRIPV4 addr)
      * address in that case.  While here, look for free addresses and
      * addresses that can be reused.
      */
-    const Timestamp now = Timestamp::now();
-    for (bindings_t::iterator it = m_bindings.begin();
-         it != m_bindings.end(); ++it)
+    Binding        *addrBinding  = NULL;
+    Binding        *freeBinding  = NULL;
+    Binding        *reuseBinding = NULL;
+    const Timestamp now          = Timestamp::now();
+    for (bindings_t::iterator it = m_bindings.begin(); it != m_bindings.end(); ++it)
     {
         Binding *b = *it;
         b->expire(now);
@@ -459,20 +504,17 @@ Binding *Db::allocateAddress(const ClientId &id, RTNETADDRIPV4 addr)
         {
             addrBinding = createBinding(addr, id);
             Assert(addrBinding != NULL);
-            LogDHCP(("> .... creating new binding for this address %R[binding]\n",
-                     addrBinding));
+            LogDHCP(("> .... creating new binding for this address %R[binding]\n", addrBinding));
             return addrBinding;
         }
 
         if (addrBinding->m_state <= Binding::EXPIRED) /* not in use */
         {
-            LogDHCP(("> .... reusing %s binding for this address\n",
-                     addrBinding->stateName()));
+            LogDHCP(("> .... reusing %s binding for this address\n", addrBinding->stateName()));
             addrBinding->giveTo(id);
             return addrBinding;
         }
-        LogDHCP(("> .... cannot reuse %s binding for this address\n",
-                 addrBinding->stateName()));
+        LogDHCP(("> .... cannot reuse %s binding for this address\n", addrBinding->stateName()));
     }
 
     /*
@@ -488,21 +530,18 @@ Binding *Db::allocateAddress(const ClientId &id, RTNETADDRIPV4 addr)
     {
         idBinding = createBinding();
         if (idBinding != NULL)
-        {
             LogDHCP(("> .... creating new binding\n"));
-        }
         else
         {
             idBinding = reuseBinding;
-            LogDHCP(("> .... reusing %s binding %R[binding]\n",
-                     reuseBinding->stateName(), reuseBinding));
+            if (idBinding != NULL)
+                LogDHCP(("> .... reusing %s binding %R[binding]\n", reuseBinding->stateName(), reuseBinding));
+            else
+            {
+                LogDHCP(("> .... failed to allocate binding\n"));
+                return NULL;
+            }
         }
-    }
-
-    if (idBinding == NULL)
-    {
-        LogDHCP(("> .... failed to allocate binding\n"));
-        return NULL;
     }
 
     idBinding->giveTo(id);
@@ -513,9 +552,19 @@ Binding *Db::allocateAddress(const ClientId &id, RTNETADDRIPV4 addr)
 
 
 
+/**
+ * Called by DHCPD to allocate a binding for the specified request.
+ *
+ * @returns Pointer to the binding, NULL on failure.
+ * @param   req                 The DHCP request being served.
+ */
 Binding *Db::allocateBinding(const DhcpClientMessage &req)
 {
     /** @todo XXX: handle fixed address assignments */
+
+    /*
+     * Get and validate the requested address (if present).
+     */
     OptRequestedAddress reqAddr(req);
     if (reqAddr.present() && !addressBelongs(reqAddr.value()))
     {
@@ -531,65 +580,87 @@ Binding *Db::allocateBinding(const DhcpClientMessage &req)
         }
     }
 
+    /*
+     * Allocate the address.
+     */
     const ClientId &id(req.clientId());
 
     Binding *b = allocateAddress(id, reqAddr.value());
-    if (b == NULL)
-        return NULL;
+    if (b != NULL)
+    {
+        Assert(b->id() == id);
 
-    Assert(b->id() == id);
-
-    /** @todo
-     * XXX: handle requests for specific lease time!
-     * XXX: old lease might not have expired yet?
-     */
-    // OptLeaseTime reqLeaseTime(req);
-    b->setLeaseTime(1200);
+        /** @todo
+         * XXX: handle requests for specific lease time!
+         * XXX: old lease might not have expired yet?
+         * Make lease time configurable.
+         */
+        // OptLeaseTime reqLeaseTime(req);
+        b->setLeaseTime(1200);
+    }
     return b;
 }
 
 
-int Db::addBinding(Binding *newb)
+/**
+ * Internal worker used by loadLease().
+ *
+ * @returns IPRT status code.
+ * @param   newb                .
+ */
+int Db::addBinding(Binding *pNewBinding)
 {
-    if (!addressBelongs(newb->m_addr))
+    /*
+     * Validate the binding against the range and existing bindings.
+     */
+    if (!addressBelongs(pNewBinding->m_addr))
     {
-        LogDHCP(("Binding for out of range address %RTnaipv4 ignored\n",
-                 newb->m_addr.u));
-        return VERR_INVALID_PARAMETER;
+        LogDHCP(("Binding for out of range address %RTnaipv4 ignored\n", pNewBinding->m_addr.u));
+        return VERR_OUT_OF_RANGE;
     }
 
-    for (bindings_t::iterator it = m_bindings.begin();
-         it != m_bindings.end(); ++it)
+    for (bindings_t::iterator it = m_bindings.begin(); it != m_bindings.end(); ++it)
     {
         Binding *b = *it;
 
-        if (newb->m_addr.u == b->m_addr.u)
+        if (pNewBinding->m_addr.u == b->m_addr.u)
         {
-            LogDHCP(("> ADD: %R[binding]\n", newb));
+            LogDHCP(("> ADD: %R[binding]\n", pNewBinding));
             LogDHCP(("> .... duplicate ip: %R[binding]\n", b));
-            return VERR_INVALID_PARAMETER;
+            return VERR_DUPLICATE;
         }
 
-        if (newb->m_id == b->m_id)
+        if (pNewBinding->m_id == b->m_id)
         {
-            LogDHCP(("> ADD: %R[binding]\n", newb));
+            LogDHCP(("> ADD: %R[binding]\n", pNewBinding));
             LogDHCP(("> .... duplicate id: %R[binding]\n", b));
-            return VERR_INVALID_PARAMETER;
+            return VERR_DUPLICATE;
         }
     }
 
-    bool ok = m_pool.allocate(newb->m_addr);
-    if (!ok)
+    /*
+     * Allocate the address and add the binding to the list.
+     */
+    AssertLogRelMsgReturn(m_pool.allocate(pNewBinding->m_addr),
+                          ("> ADD: failed to claim IP %R[binding]\n", pNewBinding),
+                          VERR_INTERNAL_ERROR);
+    try
     {
-        LogDHCP(("> ADD: failed to claim IP %R[binding]\n", newb));
-        return VERR_INVALID_PARAMETER;
+        m_bindings.push_back(pNewBinding);
     }
-
-    m_bindings.push_back(newb);
+    catch (std::bad_alloc &)
+    {
+        return VERR_NO_MEMORY;
+    }
     return VINF_SUCCESS;
 }
 
 
+/**
+ * Called by DHCP to cancel an offset.
+ *
+ * @param   req                 The DHCP request.
+ */
 void Db::cancelOffer(const DhcpClientMessage &req)
 {
     const OptRequestedAddress reqAddr(req);
@@ -597,10 +668,9 @@ void Db::cancelOffer(const DhcpClientMessage &req)
         return;
 
     const RTNETADDRIPV4 addr = reqAddr.value();
-    const ClientId &id(req.clientId());
+    const ClientId     &id(req.clientId());
 
-    for (bindings_t::iterator it = m_bindings.begin();
-         it != m_bindings.end(); ++it)
+    for (bindings_t::iterator it = m_bindings.begin(); it != m_bindings.end(); ++it)
     {
         Binding *b = *it;
 
@@ -608,58 +678,88 @@ void Db::cancelOffer(const DhcpClientMessage &req)
         {
             if (b->state() == Binding::OFFERED)
             {
+                LogRel2(("Db::cancelOffer: cancelling %R[binding]\n", b));
                 b->setLeaseTime(0);
                 b->setState(Binding::RELEASED);
             }
+            else
+                LogRel2(("Db::cancelOffer: not offered state: %R[binding]\n", b));
             return;
         }
     }
+    LogRel2(("Db::cancelOffer: not found (%RTnaipv4, %R[id])\n", addr.u, &id));
 }
 
 
+/**
+ * Called by DHCP to cancel an offset.
+ *
+ * @param   req                 The DHCP request.
+ * @returns true if found and released, otherwise false.
+ */
 bool Db::releaseBinding(const DhcpClientMessage &req)
 {
     const RTNETADDRIPV4 addr = req.ciaddr();
-    const ClientId &id(req.clientId());
+    const ClientId     &id(req.clientId());
 
-    for (bindings_t::iterator it = m_bindings.begin();
-         it != m_bindings.end(); ++it)
+    for (bindings_t::iterator it = m_bindings.begin(); it != m_bindings.end(); ++it)
     {
         Binding *b = *it;
 
         if (b->addr().u == addr.u && b->id() == id)
         {
+            LogRel2(("Db::releaseBinding: releasing %R[binding]\n", b));
             b->setState(Binding::RELEASED);
             return true;
         }
     }
 
+    LogRel2(("Db::releaseBinding: not found (%RTnaipv4, %R[id])\n", addr.u, &id));
     return false;
 }
 
 
-int Db::writeLeases(const RTCString &strFileName) const
+/**
+ * Called by DHCPD to write out the lease database to @a strFilename.
+ *
+ * @returns IPRT status code.
+ * @param   strFilename         The file to write it to.
+ */
+int Db::writeLeases(const RTCString &strFilename) const
 {
-    LogDHCP(("writing leases to %s\n", strFileName.c_str()));
+    LogDHCP(("writing leases to %s\n", strFilename.c_str()));
 
+    /*
+     * Create the document and root element.
+     */
     xml::Document doc;
-
-    xml::ElementNode *root = doc.createRootElement("Leases");
-    if (root == NULL)
-        return VERR_INTERNAL_ERROR;
-
-    root->setAttribute("version", "1.0");
-
-    for (bindings_t::const_iterator it = m_bindings.begin();
-         it != m_bindings.end(); ++it)
+    try
     {
-        const Binding *b = *it;
-        b->toXML(root);
+        xml::ElementNode *pElmRoot = doc.createRootElement("Leases");
+        pElmRoot->setAttribute("version", "1.0");
+
+        /*
+         * Add the leases.
+         */
+        for (bindings_t::const_iterator it = m_bindings.begin(); it != m_bindings.end(); ++it)
+        {
+            const Binding *b = *it;
+            b->toXML(pElmRoot);
+        }
+    }
+    catch (std::bad_alloc &)
+    {
+        return VERR_NO_MEMORY;
     }
 
-    try {
+    /*
+     * Write the document to the specified file in a safe manner (written to temporary
+     * file, renamed to destination on success)
+     */
+    try
+    {
         xml::XmlFileWriter writer(doc);
-        writer.write(strFileName.c_str(), true);
+        writer.write(strFilename.c_str(), true /*fSafe*/);
     }
     catch (const xml::EIPRTFailure &e)
     {
@@ -673,24 +773,34 @@ int Db::writeLeases(const RTCString &strFileName) const
     }
     catch (...)
     {
-        LogDHCP(("Unknown exception while writing '%s'\n",
-                 strFileName.c_str()));
-        return VERR_GENERAL_FAILURE;
+        LogDHCP(("Unknown exception while writing '%s'\n", strFilename.c_str()));
+        return VERR_UNEXPECTED_EXCEPTION;
     }
 
     return VINF_SUCCESS;
 }
 
 
-int Db::loadLeases(const RTCString &strFileName)
+/**
+ * Called by DHCPD to load the lease database to @a strFilename.
+ *
+ * @note Does not clear the database state before doing the load.
+ *
+ * @returns IPRT status code.
+ * @param   strFilename         The file to load it from.
+ */
+int Db::loadLeases(const RTCString &strFilename)
 {
-    LogDHCP(("loading leases from %s\n", strFileName.c_str()));
+    LogDHCP(("loading leases from %s\n", strFilename.c_str()));
 
+    /*
+     * Load the file into an XML document.
+     */
     xml::Document doc;
     try
     {
         xml::XmlFileParser parser;
-        parser.read(strFileName.c_str(), doc);
+        parser.read(strFilename.c_str(), doc);
     }
     catch (const xml::EIPRTFailure &e)
     {
@@ -704,40 +814,78 @@ int Db::loadLeases(const RTCString &strFileName)
     }
     catch (...)
     {
-        LogDHCP(("Unknown exception while reading and parsing '%s'\n",
-                 strFileName.c_str()));
-        return VERR_GENERAL_FAILURE;
+        LogDHCP(("Unknown exception while reading and parsing '%s'\n", strFilename.c_str()));
+        return VERR_UNEXPECTED_EXCEPTION;
     }
 
-    xml::ElementNode *ndRoot = doc.getRootElement();
-    if (ndRoot == NULL || !ndRoot->nameEquals("Leases"))
+    /*
+     * Check that the root element is "Leases" and process its children.
+     */
+    xml::ElementNode *pElmRoot = doc.getRootElement();
+    if (!pElmRoot)
     {
+        LogDHCP(("No root element in '%s'\n", strFilename.c_str()));
+        return VERR_NOT_FOUND;
+    }
+    if (!pElmRoot->nameEquals("Leases"))
+    {
+        LogDHCP(("No root element is not 'Leases' in '%s', but '%s'\n", strFilename.c_str(), pElmRoot->getName()));
         return VERR_NOT_FOUND;
     }
 
-    xml::NodesLoop it(*ndRoot);
-    const xml::ElementNode *node;
-    while ((node = it.forAllNodes()) != NULL)
+    int                     rc = VINF_SUCCESS;
+    xml::NodesLoop          it(*pElmRoot);
+    const xml::ElementNode *pElmLease;
+    while ((pElmLease = it.forAllNodes()) != NULL)
     {
-        if (!node->nameEquals("Lease"))
-            continue;
-
-        loadLease(node);
+        if (pElmLease->nameEquals("Lease"))
+        {
+            int rc2 = loadLease(pElmLease);
+            if (RT_SUCCESS(rc2))
+            { /* likely */ }
+            else if (rc2 == VERR_NO_MEMORY)
+                return rc2;
+            else
+                rc = -rc2;
+        }
+        else
+            LogDHCP(("Ignoring unexpected element '%s' under 'Leases'...\n", pElmLease->getName()));
     }
 
-    return VINF_SUCCESS;
+    return rc;
 }
 
 
-void Db::loadLease(const xml::ElementNode *ndLease)
+/**
+ * Internal worker for loadLeases() that handles one 'Lease' element.
+ *
+ * @param   pElmLease           The 'Lease' element to handle.
+ * @return  IPRT status code.
+ */
+int Db::loadLease(const xml::ElementNode *pElmLease)
 {
-    Binding *b = Binding::fromXML(ndLease);
-    bool expired = b->expire();
+    Binding *pBinding = NULL;
+    try
+    {
+        pBinding = Binding::fromXML(pElmLease);
+    }
+    catch (std::bad_alloc &)
+    {
+        return VERR_NO_MEMORY;
+    }
+    if (pBinding)
+    {
+        bool fExpired = pBinding->expire();
+        if (!fExpired)
+            LogDHCP(("> LOAD: lease %R[binding]\n", pBinding));
+        else
+            LogDHCP(("> LOAD: EXPIRED lease %R[binding]\n", pBinding));
 
-    if (!expired)
-        LogDHCP(("> LOAD: lease %R[binding]\n", b));
-    else
-        LogDHCP(("> LOAD: EXPIRED lease %R[binding]\n", b));
-
-    addBinding(b);
+        int rc = addBinding(pBinding);
+        if (RT_FAILURE(rc))
+            delete pBinding;
+        return rc;
+    }
+    LogDHCP(("> LOAD: failed to load lease!\n"));
+    return VERR_PARSE_ERROR;
 }
