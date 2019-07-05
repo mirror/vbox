@@ -153,59 +153,6 @@
                                                               ("fExtrn=%#RX64 fExtrnMbz=%#RX64\n", \
                                                               (a_pVCpu)->cpum.GstCtx.fExtrn, (a_fExtrnMbz)))
 
-/** Helper macro for VM-exit handlers called unexpectedly. */
-#define HMVMX_UNEXPECTED_EXIT_RET(a_pVCpu, a_HmError) \
-    do { \
-        (a_pVCpu)->hm.s.u32HMError = (a_HmError); \
-        return VERR_VMX_UNEXPECTED_EXIT; \
-    } while (0)
-
-#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-/** Macro that does the necessary privilege checks and intercepted VM-exits for
- *  guests that attempted to execute a VMX instruction. */
-# define HMVMX_CHECK_EXIT_DUE_TO_VMX_INSTR(a_pVCpu, a_uExitReason) \
-    do \
-    { \
-        VBOXSTRICTRC rcStrictTmp = hmR0VmxCheckExitDueToVmxInstr((a_pVCpu), (a_uExitReason)); \
-        if (rcStrictTmp == VINF_SUCCESS) \
-        { /* likely */ } \
-        else if (rcStrictTmp == VINF_HM_PENDING_XCPT) \
-        { \
-            Assert((a_pVCpu)->hm.s.Event.fPending); \
-            Log4Func(("Privilege checks failed -> %#x\n", VMX_ENTRY_INT_INFO_VECTOR((a_pVCpu)->hm.s.Event.u64IntInfo))); \
-            return VINF_SUCCESS; \
-        } \
-        else \
-        { \
-            int rcTmp = VBOXSTRICTRC_VAL(rcStrictTmp); \
-            AssertMsgFailedReturn(("Unexpected failure. rc=%Rrc", rcTmp), rcTmp); \
-        } \
-    } while (0)
-
-/** Macro that decodes a memory operand for an instruction VM-exit. */
-# define HMVMX_DECODE_MEM_OPERAND(a_pVCpu, a_uExitInstrInfo, a_uExitQual, a_enmMemAccess, a_pGCPtrEffAddr) \
-    do \
-    { \
-        VBOXSTRICTRC rcStrictTmp = hmR0VmxDecodeMemOperand((a_pVCpu), (a_uExitInstrInfo), (a_uExitQual), (a_enmMemAccess), \
-                                                           (a_pGCPtrEffAddr)); \
-        if (rcStrictTmp == VINF_SUCCESS) \
-        { /* likely */ } \
-        else if (rcStrictTmp == VINF_HM_PENDING_XCPT) \
-        { \
-            uint8_t const uXcptTmp = VMX_ENTRY_INT_INFO_VECTOR((a_pVCpu)->hm.s.Event.u64IntInfo); \
-            Log4Func(("Memory operand decoding failed, raising xcpt %#x\n", uXcptTmp)); \
-            NOREF(uXcptTmp); \
-            return VINF_SUCCESS; \
-        } \
-        else \
-        { \
-            Log4Func(("hmR0VmxDecodeMemOperand failed. rc=%Rrc\n", VBOXSTRICTRC_VAL(rcStrictTmp))); \
-            return rcStrictTmp; \
-        } \
-    } while (0)
-
-#endif /* VBOX_WITH_NESTED_HWVIRT_VMX */
-
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
@@ -362,7 +309,7 @@ static int  hmR0VmxImportGuestState(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo, uint64
 static void hmR0VmxInitVmcsReadCache(PVMCPU pVCpu);
 #endif
 
-/** @name VM-exit handlers.
+/** @name VM-exit handler prototypes.
  * @{
  */
 static FNVMXEXITHANDLER            hmR0VmxExitXcptOrNmi;
@@ -415,7 +362,7 @@ static FNVMXEXITHANDLERNSRC        hmR0VmxExitErrUnexpected;
 /** @} */
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-/** @name Nested-guest VM-exit handlers.
+/** @name Nested-guest VM-exit handler prototypes.
  * @{
  */
 static FNVMXEXITHANDLER            hmR0VmxExitXcptOrNmiNested;
@@ -870,7 +817,7 @@ static const char * const g_apszVmxInstrErrors[HMVMX_INSTR_ERROR_MAX + 1] =
     /* 27 */ "(Not Used)",
     /* 28 */ "Invalid operand to INVEPT/INVVPID."
 };
-#endif /* VBOX_STRICT */
+#endif /* VBOX_STRICT && LOG_ENABLED */
 
 
 /**
@@ -7789,260 +7736,6 @@ DECLINLINE(void) hmR0VmxSetPendingXcptSS(PVMCPU pVCpu, uint32_t u32ErrCode)
                               | RT_BF_MAKE(VMX_BF_ENTRY_INT_INFO_VALID,          1);
     hmR0VmxSetPendingEvent(pVCpu, u32IntInfo, 0 /* cbInstr */, u32ErrCode, 0 /* GCPtrFaultAddress */);
 }
-
-
-/**
- * Decodes the memory operand of an instruction that caused a VM-exit.
- *
- * The Exit qualification field provides the displacement field for memory
- * operand instructions, if any.
- *
- * @returns Strict VBox status code (i.e. informational status codes too).
- * @retval  VINF_SUCCESS if the operand was successfully decoded.
- * @retval  VINF_HM_PENDING_XCPT if an exception was raised while decoding the
- *          operand.
- * @param   pVCpu           The cross context virtual CPU structure.
- * @param   uExitInstrInfo  The VM-exit instruction information field.
- * @param   enmMemAccess    The memory operand's access type (read or write).
- * @param   GCPtrDisp       The instruction displacement field, if any. For
- *                          RIP-relative addressing pass RIP + displacement here.
- * @param   pGCPtrMem       Where to store the effective destination memory address.
- *
- * @remarks Warning! This function ASSUMES the instruction cannot be used in real or
- *          virtual-8086 mode hence skips those checks while verifying if the
- *          segment is valid.
- */
-static VBOXSTRICTRC hmR0VmxDecodeMemOperand(PVMCPU pVCpu, uint32_t uExitInstrInfo, RTGCPTR GCPtrDisp, VMXMEMACCESS enmMemAccess,
-                                            PRTGCPTR pGCPtrMem)
-{
-    Assert(pGCPtrMem);
-    Assert(!CPUMIsGuestInRealOrV86Mode(pVCpu));
-    HMVMX_CPUMCTX_ASSERT(pVCpu, CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_RSP | CPUMCTX_EXTRN_SREG_MASK | CPUMCTX_EXTRN_EFER
-                              | CPUMCTX_EXTRN_CR0);
-
-    static uint64_t const s_auAddrSizeMasks[]   = { UINT64_C(0xffff), UINT64_C(0xffffffff), UINT64_C(0xffffffffffffffff) };
-    static uint64_t const s_auAccessSizeMasks[] = { sizeof(uint16_t), sizeof(uint32_t), sizeof(uint64_t) };
-    AssertCompile(RT_ELEMENTS(s_auAccessSizeMasks) == RT_ELEMENTS(s_auAddrSizeMasks));
-
-    VMXEXITINSTRINFO ExitInstrInfo;
-    ExitInstrInfo.u = uExitInstrInfo;
-    uint8_t const   uAddrSize     =  ExitInstrInfo.All.u3AddrSize;
-    uint8_t const   iSegReg       =  ExitInstrInfo.All.iSegReg;
-    bool const      fIdxRegValid  = !ExitInstrInfo.All.fIdxRegInvalid;
-    uint8_t const   iIdxReg       =  ExitInstrInfo.All.iIdxReg;
-    uint8_t const   uScale        =  ExitInstrInfo.All.u2Scaling;
-    bool const      fBaseRegValid = !ExitInstrInfo.All.fBaseRegInvalid;
-    uint8_t const   iBaseReg      =  ExitInstrInfo.All.iBaseReg;
-    bool const      fIsMemOperand = !ExitInstrInfo.All.fIsRegOperand;
-    bool const      fIsLongMode   =  CPUMIsGuestInLongModeEx(&pVCpu->cpum.GstCtx);
-
-    /*
-     * Validate instruction information.
-     * This shouldn't happen on real hardware but useful while testing our nested hardware-virtualization code.
-     */
-    AssertLogRelMsgReturn(uAddrSize < RT_ELEMENTS(s_auAddrSizeMasks),
-                          ("Invalid address size. ExitInstrInfo=%#RX32\n", ExitInstrInfo.u), VERR_VMX_IPE_1);
-    AssertLogRelMsgReturn(iSegReg  < X86_SREG_COUNT,
-                          ("Invalid segment register. ExitInstrInfo=%#RX32\n", ExitInstrInfo.u), VERR_VMX_IPE_2);
-    AssertLogRelMsgReturn(fIsMemOperand,
-                          ("Expected memory operand. ExitInstrInfo=%#RX32\n", ExitInstrInfo.u), VERR_VMX_IPE_3);
-
-    /*
-     * Compute the complete effective address.
-     *
-     * See AMD instruction spec. 1.4.2 "SIB Byte Format"
-     * See AMD spec. 4.5.2 "Segment Registers".
-     */
-    RTGCPTR GCPtrMem = GCPtrDisp;
-    if (fBaseRegValid)
-        GCPtrMem += pVCpu->cpum.GstCtx.aGRegs[iBaseReg].u64;
-    if (fIdxRegValid)
-        GCPtrMem += pVCpu->cpum.GstCtx.aGRegs[iIdxReg].u64 << uScale;
-
-    RTGCPTR const GCPtrOff = GCPtrMem;
-    if (   !fIsLongMode
-        || iSegReg >= X86_SREG_FS)
-        GCPtrMem += pVCpu->cpum.GstCtx.aSRegs[iSegReg].u64Base;
-    GCPtrMem &= s_auAddrSizeMasks[uAddrSize];
-
-    /*
-     * Validate effective address.
-     * See AMD spec. 4.5.3 "Segment Registers in 64-Bit Mode".
-     */
-    uint8_t const cbAccess = s_auAccessSizeMasks[uAddrSize];
-    Assert(cbAccess > 0);
-    if (fIsLongMode)
-    {
-        if (X86_IS_CANONICAL(GCPtrMem))
-        {
-            *pGCPtrMem = GCPtrMem;
-            return VINF_SUCCESS;
-        }
-
-        /** @todo r=ramshankar: We should probably raise \#SS or \#GP. See AMD spec. 4.12.2
-         *        "Data Limit Checks in 64-bit Mode". */
-        Log4Func(("Long mode effective address is not canonical GCPtrMem=%#RX64\n", GCPtrMem));
-        hmR0VmxSetPendingXcptGP(pVCpu, 0);
-        return VINF_HM_PENDING_XCPT;
-    }
-
-    /*
-     * This is a watered down version of iemMemApplySegment().
-     * Parts that are not applicable for VMX instructions like real-or-v8086 mode
-     * and segment CPL/DPL checks are skipped.
-     */
-    RTGCPTR32 const GCPtrFirst32 = (RTGCPTR32)GCPtrOff;
-    RTGCPTR32 const GCPtrLast32  = GCPtrFirst32 + cbAccess - 1;
-    PCCPUMSELREG    pSel         = &pVCpu->cpum.GstCtx.aSRegs[iSegReg];
-
-    /* Check if the segment is present and usable. */
-    if (    pSel->Attr.n.u1Present
-        && !pSel->Attr.n.u1Unusable)
-    {
-        Assert(pSel->Attr.n.u1DescType);
-        if (!(pSel->Attr.n.u4Type & X86_SEL_TYPE_CODE))
-        {
-            /* Check permissions for the data segment. */
-            if (   enmMemAccess == VMXMEMACCESS_WRITE
-                && !(pSel->Attr.n.u4Type & X86_SEL_TYPE_WRITE))
-            {
-                Log4Func(("Data segment access invalid. iSegReg=%#x Attr=%#RX32\n", iSegReg, pSel->Attr.u));
-                hmR0VmxSetPendingXcptGP(pVCpu, iSegReg);
-                return VINF_HM_PENDING_XCPT;
-            }
-
-            /* Check limits if it's a normal data segment. */
-            if (!(pSel->Attr.n.u4Type & X86_SEL_TYPE_DOWN))
-            {
-                if (   GCPtrFirst32 > pSel->u32Limit
-                    || GCPtrLast32  > pSel->u32Limit)
-                {
-                    Log4Func(("Data segment limit exceeded. "
-                              "iSegReg=%#x GCPtrFirst32=%#RX32 GCPtrLast32=%#RX32 u32Limit=%#RX32\n", iSegReg, GCPtrFirst32,
-                              GCPtrLast32, pSel->u32Limit));
-                    if (iSegReg == X86_SREG_SS)
-                        hmR0VmxSetPendingXcptSS(pVCpu, 0);
-                    else
-                        hmR0VmxSetPendingXcptGP(pVCpu, 0);
-                    return VINF_HM_PENDING_XCPT;
-                }
-            }
-            else
-            {
-               /* Check limits if it's an expand-down data segment.
-                  Note! The upper boundary is defined by the B bit, not the G bit! */
-               if (   GCPtrFirst32 < pSel->u32Limit + UINT32_C(1)
-                   || GCPtrLast32  > (pSel->Attr.n.u1DefBig ? UINT32_MAX : UINT32_C(0xffff)))
-               {
-                   Log4Func(("Expand-down data segment limit exceeded. "
-                             "iSegReg=%#x GCPtrFirst32=%#RX32 GCPtrLast32=%#RX32 u32Limit=%#RX32\n", iSegReg, GCPtrFirst32,
-                             GCPtrLast32, pSel->u32Limit));
-                   if (iSegReg == X86_SREG_SS)
-                       hmR0VmxSetPendingXcptSS(pVCpu, 0);
-                   else
-                       hmR0VmxSetPendingXcptGP(pVCpu, 0);
-                   return VINF_HM_PENDING_XCPT;
-               }
-            }
-        }
-        else
-        {
-            /* Check permissions for the code segment. */
-            if (   enmMemAccess == VMXMEMACCESS_WRITE
-                || (   enmMemAccess == VMXMEMACCESS_READ
-                    && !(pSel->Attr.n.u4Type & X86_SEL_TYPE_READ)))
-            {
-                Log4Func(("Code segment access invalid. Attr=%#RX32\n", pSel->Attr.u));
-                Assert(!CPUMIsGuestInRealOrV86ModeEx(&pVCpu->cpum.GstCtx));
-                hmR0VmxSetPendingXcptGP(pVCpu, 0);
-                return VINF_HM_PENDING_XCPT;
-            }
-
-            /* Check limits for the code segment (normal/expand-down not applicable for code segments). */
-            if (   GCPtrFirst32 > pSel->u32Limit
-                || GCPtrLast32  > pSel->u32Limit)
-            {
-                Log4Func(("Code segment limit exceeded. GCPtrFirst32=%#RX32 GCPtrLast32=%#RX32 u32Limit=%#RX32\n",
-                          GCPtrFirst32, GCPtrLast32, pSel->u32Limit));
-                if (iSegReg == X86_SREG_SS)
-                    hmR0VmxSetPendingXcptSS(pVCpu, 0);
-                else
-                    hmR0VmxSetPendingXcptGP(pVCpu, 0);
-                return VINF_HM_PENDING_XCPT;
-            }
-        }
-    }
-    else
-    {
-        Log4Func(("Not present or unusable segment. iSegReg=%#x Attr=%#RX32\n", iSegReg, pSel->Attr.u));
-        hmR0VmxSetPendingXcptGP(pVCpu, 0);
-        return VINF_HM_PENDING_XCPT;
-    }
-
-    *pGCPtrMem = GCPtrMem;
-    return VINF_SUCCESS;
-}
-
-
-/**
- * Perform the relevant VMX instruction checks for VM-exits that occurred due to the
- * guest attempting to execute a VMX instruction.
- *
- * @returns Strict VBox status code (i.e. informational status codes too).
- * @retval  VINF_SUCCESS if we should continue handling the VM-exit.
- * @retval  VINF_HM_PENDING_XCPT if an exception was raised.
- *
- * @param   pVCpu           The cross context virtual CPU structure.
- * @param   uExitReason     The VM-exit reason.
- *
- * @todo    NSTVMX: Document other error codes when VM-exit is implemented.
- * @remarks No-long-jump zone!!!
- */
-static VBOXSTRICTRC hmR0VmxCheckExitDueToVmxInstr(PVMCPU pVCpu, uint32_t uExitReason)
-{
-    HMVMX_CPUMCTX_ASSERT(pVCpu, CPUMCTX_EXTRN_CR0 | CPUMCTX_EXTRN_RFLAGS | CPUMCTX_EXTRN_SS
-                              | CPUMCTX_EXTRN_CS  | CPUMCTX_EXTRN_EFER);
-
-    /*
-     * The physical CPU would have already checked the CPU mode/code segment.
-     * We shall just assert here for paranoia.
-     * See Intel spec. 25.1.1 "Relative Priority of Faults and VM Exits".
-     */
-    Assert(!CPUMIsGuestInRealOrV86ModeEx(&pVCpu->cpum.GstCtx));
-    Assert(   !CPUMIsGuestInLongModeEx(&pVCpu->cpum.GstCtx)
-           ||  CPUMIsGuestIn64BitCodeEx(&pVCpu->cpum.GstCtx));
-
-    if (uExitReason == VMX_EXIT_VMXON)
-    {
-        HMVMX_CPUMCTX_ASSERT(pVCpu, CPUMCTX_EXTRN_CR4);
-
-        /*
-         * We check CR4.VMXE because it is required to be always set while in VMX operation
-         * by physical CPUs and our CR4 read-shadow is only consulted when executing specific
-         * instructions (CLTS, LMSW, MOV CR, and SMSW) and thus doesn't affect CPU operation
-         * otherwise (i.e. physical CPU won't automatically #UD if Cr4Shadow.VMXE is 0).
-         */
-        if (!CPUMIsGuestVmxEnabled(&pVCpu->cpum.GstCtx))
-        {
-            Log4Func(("CR4.VMXE is not set -> #UD\n"));
-            hmR0VmxSetPendingXcptUD(pVCpu);
-            return VINF_HM_PENDING_XCPT;
-        }
-    }
-    else if (!CPUMIsGuestInVmxRootMode(&pVCpu->cpum.GstCtx))
-    {
-        /*
-         * The guest has not entered VMX operation but attempted to execute a VMX instruction
-         * (other than VMXON), we need to raise a #UD.
-         */
-        Log4Func(("Not in VMX root mode -> #UD\n"));
-        hmR0VmxSetPendingXcptUD(pVCpu);
-        return VINF_HM_PENDING_XCPT;
-    }
-
-    /* All other checks (including VM-exit intercepts) are handled by IEM instruction emulation. */
-    return VINF_SUCCESS;
-}
 #endif /* VBOX_WITH_NESTED_HWVIRT_VMX */
 
 
@@ -13820,6 +13513,13 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExitNested(PVMCPU pVCpu, PVMXTRANSIENT pVm
 /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= VM-exit helpers -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 /* -=-=-=-=-=-=-=-=--=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
 
+/** Macro for VM-exits called unexpectedly. */
+#define HMVMX_UNEXPECTED_EXIT_RET(a_pVCpu, a_HmError) \
+    do { \
+        (a_pVCpu)->hm.s.u32HMError = (a_HmError); \
+        return VERR_VMX_UNEXPECTED_EXIT; \
+    } while (0)
+
 #ifdef VBOX_STRICT
 /* Is there some generic IPRT define for this that are not in Runtime/internal/\* ?? */
 # define HMVMX_ASSERT_PREEMPT_CPUID_VAR() \
@@ -13869,6 +13569,52 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExitNested(PVMCPU pVCpu, PVMXTRANSIENT pVm
 
 # define HMVMX_VALIDATE_EXIT_XCPT_HANDLER_PARAMS(a_pVCpu, a_pVmxTransient)      do { } while (0)
 #endif
+
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+/** Macro that does the necessary privilege checks and intercepted VM-exits for
+ *  guests that attempted to execute a VMX instruction. */
+# define HMVMX_CHECK_EXIT_DUE_TO_VMX_INSTR(a_pVCpu, a_uExitReason) \
+    do \
+    { \
+        VBOXSTRICTRC rcStrictTmp = hmR0VmxCheckExitDueToVmxInstr((a_pVCpu), (a_uExitReason)); \
+        if (rcStrictTmp == VINF_SUCCESS) \
+        { /* likely */ } \
+        else if (rcStrictTmp == VINF_HM_PENDING_XCPT) \
+        { \
+            Assert((a_pVCpu)->hm.s.Event.fPending); \
+            Log4Func(("Privilege checks failed -> %#x\n", VMX_ENTRY_INT_INFO_VECTOR((a_pVCpu)->hm.s.Event.u64IntInfo))); \
+            return VINF_SUCCESS; \
+        } \
+        else \
+        { \
+            int rcTmp = VBOXSTRICTRC_VAL(rcStrictTmp); \
+            AssertMsgFailedReturn(("Unexpected failure. rc=%Rrc", rcTmp), rcTmp); \
+        } \
+    } while (0)
+
+/** Macro that decodes a memory operand for an VM-exit caused by an instruction. */
+# define HMVMX_DECODE_MEM_OPERAND(a_pVCpu, a_uExitInstrInfo, a_uExitQual, a_enmMemAccess, a_pGCPtrEffAddr) \
+    do \
+    { \
+        VBOXSTRICTRC rcStrictTmp = hmR0VmxDecodeMemOperand((a_pVCpu), (a_uExitInstrInfo), (a_uExitQual), (a_enmMemAccess), \
+                                                           (a_pGCPtrEffAddr)); \
+        if (rcStrictTmp == VINF_SUCCESS) \
+        { /* likely */ } \
+        else if (rcStrictTmp == VINF_HM_PENDING_XCPT) \
+        { \
+            uint8_t const uXcptTmp = VMX_ENTRY_INT_INFO_VECTOR((a_pVCpu)->hm.s.Event.u64IntInfo); \
+            Log4Func(("Memory operand decoding failed, raising xcpt %#x\n", uXcptTmp)); \
+            NOREF(uXcptTmp); \
+            return VINF_SUCCESS; \
+        } \
+        else \
+        { \
+            Log4Func(("hmR0VmxDecodeMemOperand failed. rc=%Rrc\n", VBOXSTRICTRC_VAL(rcStrictTmp))); \
+            return rcStrictTmp; \
+        } \
+    } while (0)
+#endif /* VBOX_WITH_NESTED_HWVIRT_VMX */
+
 
 /**
  * Advances the guest RIP by the specified number of bytes.
@@ -14113,6 +13859,261 @@ static VBOXSTRICTRC hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PVMXTRANSIE
            || rcStrict == VINF_EM_RESET || rcStrict == VERR_EM_GUEST_CPU_HANG);
     return rcStrict;
 }
+
+
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+/**
+ * Perform the relevant VMX instruction checks for VM-exits that occurred due to the
+ * guest attempting to execute a VMX instruction.
+ *
+ * @returns Strict VBox status code (i.e. informational status codes too).
+ * @retval  VINF_SUCCESS if we should continue handling the VM-exit.
+ * @retval  VINF_HM_PENDING_XCPT if an exception was raised.
+ *
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   uExitReason     The VM-exit reason.
+ *
+ * @todo    NSTVMX: Document other error codes when VM-exit is implemented.
+ * @remarks No-long-jump zone!!!
+ */
+static VBOXSTRICTRC hmR0VmxCheckExitDueToVmxInstr(PVMCPU pVCpu, uint32_t uExitReason)
+{
+    HMVMX_CPUMCTX_ASSERT(pVCpu, CPUMCTX_EXTRN_CR0 | CPUMCTX_EXTRN_RFLAGS | CPUMCTX_EXTRN_SS
+                              | CPUMCTX_EXTRN_CS  | CPUMCTX_EXTRN_EFER);
+
+    /*
+     * The physical CPU would have already checked the CPU mode/code segment.
+     * We shall just assert here for paranoia.
+     * See Intel spec. 25.1.1 "Relative Priority of Faults and VM Exits".
+     */
+    Assert(!CPUMIsGuestInRealOrV86ModeEx(&pVCpu->cpum.GstCtx));
+    Assert(   !CPUMIsGuestInLongModeEx(&pVCpu->cpum.GstCtx)
+           ||  CPUMIsGuestIn64BitCodeEx(&pVCpu->cpum.GstCtx));
+
+    if (uExitReason == VMX_EXIT_VMXON)
+    {
+        HMVMX_CPUMCTX_ASSERT(pVCpu, CPUMCTX_EXTRN_CR4);
+
+        /*
+         * We check CR4.VMXE because it is required to be always set while in VMX operation
+         * by physical CPUs and our CR4 read-shadow is only consulted when executing specific
+         * instructions (CLTS, LMSW, MOV CR, and SMSW) and thus doesn't affect CPU operation
+         * otherwise (i.e. physical CPU won't automatically #UD if Cr4Shadow.VMXE is 0).
+         */
+        if (!CPUMIsGuestVmxEnabled(&pVCpu->cpum.GstCtx))
+        {
+            Log4Func(("CR4.VMXE is not set -> #UD\n"));
+            hmR0VmxSetPendingXcptUD(pVCpu);
+            return VINF_HM_PENDING_XCPT;
+        }
+    }
+    else if (!CPUMIsGuestInVmxRootMode(&pVCpu->cpum.GstCtx))
+    {
+        /*
+         * The guest has not entered VMX operation but attempted to execute a VMX instruction
+         * (other than VMXON), we need to raise a #UD.
+         */
+        Log4Func(("Not in VMX root mode -> #UD\n"));
+        hmR0VmxSetPendingXcptUD(pVCpu);
+        return VINF_HM_PENDING_XCPT;
+    }
+
+    /* All other checks (including VM-exit intercepts) are handled by IEM instruction emulation. */
+    return VINF_SUCCESS;
+}
+
+/**
+ * Decodes the memory operand of an instruction that caused a VM-exit.
+ *
+ * The Exit qualification field provides the displacement field for memory
+ * operand instructions, if any.
+ *
+ * @returns Strict VBox status code (i.e. informational status codes too).
+ * @retval  VINF_SUCCESS if the operand was successfully decoded.
+ * @retval  VINF_HM_PENDING_XCPT if an exception was raised while decoding the
+ *          operand.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   uExitInstrInfo  The VM-exit instruction information field.
+ * @param   enmMemAccess    The memory operand's access type (read or write).
+ * @param   GCPtrDisp       The instruction displacement field, if any. For
+ *                          RIP-relative addressing pass RIP + displacement here.
+ * @param   pGCPtrMem       Where to store the effective destination memory address.
+ *
+ * @remarks Warning! This function ASSUMES the instruction cannot be used in real or
+ *          virtual-8086 mode hence skips those checks while verifying if the
+ *          segment is valid.
+ */
+static VBOXSTRICTRC hmR0VmxDecodeMemOperand(PVMCPU pVCpu, uint32_t uExitInstrInfo, RTGCPTR GCPtrDisp, VMXMEMACCESS enmMemAccess,
+                                            PRTGCPTR pGCPtrMem)
+{
+    Assert(pGCPtrMem);
+    Assert(!CPUMIsGuestInRealOrV86Mode(pVCpu));
+    HMVMX_CPUMCTX_ASSERT(pVCpu, CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_RSP | CPUMCTX_EXTRN_SREG_MASK | CPUMCTX_EXTRN_EFER
+                              | CPUMCTX_EXTRN_CR0);
+
+    static uint64_t const s_auAddrSizeMasks[]   = { UINT64_C(0xffff), UINT64_C(0xffffffff), UINT64_C(0xffffffffffffffff) };
+    static uint64_t const s_auAccessSizeMasks[] = { sizeof(uint16_t), sizeof(uint32_t), sizeof(uint64_t) };
+    AssertCompile(RT_ELEMENTS(s_auAccessSizeMasks) == RT_ELEMENTS(s_auAddrSizeMasks));
+
+    VMXEXITINSTRINFO ExitInstrInfo;
+    ExitInstrInfo.u = uExitInstrInfo;
+    uint8_t const   uAddrSize     =  ExitInstrInfo.All.u3AddrSize;
+    uint8_t const   iSegReg       =  ExitInstrInfo.All.iSegReg;
+    bool const      fIdxRegValid  = !ExitInstrInfo.All.fIdxRegInvalid;
+    uint8_t const   iIdxReg       =  ExitInstrInfo.All.iIdxReg;
+    uint8_t const   uScale        =  ExitInstrInfo.All.u2Scaling;
+    bool const      fBaseRegValid = !ExitInstrInfo.All.fBaseRegInvalid;
+    uint8_t const   iBaseReg      =  ExitInstrInfo.All.iBaseReg;
+    bool const      fIsMemOperand = !ExitInstrInfo.All.fIsRegOperand;
+    bool const      fIsLongMode   =  CPUMIsGuestInLongModeEx(&pVCpu->cpum.GstCtx);
+
+    /*
+     * Validate instruction information.
+     * This shouldn't happen on real hardware but useful while testing our nested hardware-virtualization code.
+     */
+    AssertLogRelMsgReturn(uAddrSize < RT_ELEMENTS(s_auAddrSizeMasks),
+                          ("Invalid address size. ExitInstrInfo=%#RX32\n", ExitInstrInfo.u), VERR_VMX_IPE_1);
+    AssertLogRelMsgReturn(iSegReg  < X86_SREG_COUNT,
+                          ("Invalid segment register. ExitInstrInfo=%#RX32\n", ExitInstrInfo.u), VERR_VMX_IPE_2);
+    AssertLogRelMsgReturn(fIsMemOperand,
+                          ("Expected memory operand. ExitInstrInfo=%#RX32\n", ExitInstrInfo.u), VERR_VMX_IPE_3);
+
+    /*
+     * Compute the complete effective address.
+     *
+     * See AMD instruction spec. 1.4.2 "SIB Byte Format"
+     * See AMD spec. 4.5.2 "Segment Registers".
+     */
+    RTGCPTR GCPtrMem = GCPtrDisp;
+    if (fBaseRegValid)
+        GCPtrMem += pVCpu->cpum.GstCtx.aGRegs[iBaseReg].u64;
+    if (fIdxRegValid)
+        GCPtrMem += pVCpu->cpum.GstCtx.aGRegs[iIdxReg].u64 << uScale;
+
+    RTGCPTR const GCPtrOff = GCPtrMem;
+    if (   !fIsLongMode
+        || iSegReg >= X86_SREG_FS)
+        GCPtrMem += pVCpu->cpum.GstCtx.aSRegs[iSegReg].u64Base;
+    GCPtrMem &= s_auAddrSizeMasks[uAddrSize];
+
+    /*
+     * Validate effective address.
+     * See AMD spec. 4.5.3 "Segment Registers in 64-Bit Mode".
+     */
+    uint8_t const cbAccess = s_auAccessSizeMasks[uAddrSize];
+    Assert(cbAccess > 0);
+    if (fIsLongMode)
+    {
+        if (X86_IS_CANONICAL(GCPtrMem))
+        {
+            *pGCPtrMem = GCPtrMem;
+            return VINF_SUCCESS;
+        }
+
+        /** @todo r=ramshankar: We should probably raise \#SS or \#GP. See AMD spec. 4.12.2
+         *        "Data Limit Checks in 64-bit Mode". */
+        Log4Func(("Long mode effective address is not canonical GCPtrMem=%#RX64\n", GCPtrMem));
+        hmR0VmxSetPendingXcptGP(pVCpu, 0);
+        return VINF_HM_PENDING_XCPT;
+    }
+
+    /*
+     * This is a watered down version of iemMemApplySegment().
+     * Parts that are not applicable for VMX instructions like real-or-v8086 mode
+     * and segment CPL/DPL checks are skipped.
+     */
+    RTGCPTR32 const GCPtrFirst32 = (RTGCPTR32)GCPtrOff;
+    RTGCPTR32 const GCPtrLast32  = GCPtrFirst32 + cbAccess - 1;
+    PCCPUMSELREG    pSel         = &pVCpu->cpum.GstCtx.aSRegs[iSegReg];
+
+    /* Check if the segment is present and usable. */
+    if (    pSel->Attr.n.u1Present
+        && !pSel->Attr.n.u1Unusable)
+    {
+        Assert(pSel->Attr.n.u1DescType);
+        if (!(pSel->Attr.n.u4Type & X86_SEL_TYPE_CODE))
+        {
+            /* Check permissions for the data segment. */
+            if (   enmMemAccess == VMXMEMACCESS_WRITE
+                && !(pSel->Attr.n.u4Type & X86_SEL_TYPE_WRITE))
+            {
+                Log4Func(("Data segment access invalid. iSegReg=%#x Attr=%#RX32\n", iSegReg, pSel->Attr.u));
+                hmR0VmxSetPendingXcptGP(pVCpu, iSegReg);
+                return VINF_HM_PENDING_XCPT;
+            }
+
+            /* Check limits if it's a normal data segment. */
+            if (!(pSel->Attr.n.u4Type & X86_SEL_TYPE_DOWN))
+            {
+                if (   GCPtrFirst32 > pSel->u32Limit
+                    || GCPtrLast32  > pSel->u32Limit)
+                {
+                    Log4Func(("Data segment limit exceeded. "
+                              "iSegReg=%#x GCPtrFirst32=%#RX32 GCPtrLast32=%#RX32 u32Limit=%#RX32\n", iSegReg, GCPtrFirst32,
+                              GCPtrLast32, pSel->u32Limit));
+                    if (iSegReg == X86_SREG_SS)
+                        hmR0VmxSetPendingXcptSS(pVCpu, 0);
+                    else
+                        hmR0VmxSetPendingXcptGP(pVCpu, 0);
+                    return VINF_HM_PENDING_XCPT;
+                }
+            }
+            else
+            {
+               /* Check limits if it's an expand-down data segment.
+                  Note! The upper boundary is defined by the B bit, not the G bit! */
+               if (   GCPtrFirst32 < pSel->u32Limit + UINT32_C(1)
+                   || GCPtrLast32  > (pSel->Attr.n.u1DefBig ? UINT32_MAX : UINT32_C(0xffff)))
+               {
+                   Log4Func(("Expand-down data segment limit exceeded. "
+                             "iSegReg=%#x GCPtrFirst32=%#RX32 GCPtrLast32=%#RX32 u32Limit=%#RX32\n", iSegReg, GCPtrFirst32,
+                             GCPtrLast32, pSel->u32Limit));
+                   if (iSegReg == X86_SREG_SS)
+                       hmR0VmxSetPendingXcptSS(pVCpu, 0);
+                   else
+                       hmR0VmxSetPendingXcptGP(pVCpu, 0);
+                   return VINF_HM_PENDING_XCPT;
+               }
+            }
+        }
+        else
+        {
+            /* Check permissions for the code segment. */
+            if (   enmMemAccess == VMXMEMACCESS_WRITE
+                || (   enmMemAccess == VMXMEMACCESS_READ
+                    && !(pSel->Attr.n.u4Type & X86_SEL_TYPE_READ)))
+            {
+                Log4Func(("Code segment access invalid. Attr=%#RX32\n", pSel->Attr.u));
+                Assert(!CPUMIsGuestInRealOrV86ModeEx(&pVCpu->cpum.GstCtx));
+                hmR0VmxSetPendingXcptGP(pVCpu, 0);
+                return VINF_HM_PENDING_XCPT;
+            }
+
+            /* Check limits for the code segment (normal/expand-down not applicable for code segments). */
+            if (   GCPtrFirst32 > pSel->u32Limit
+                || GCPtrLast32  > pSel->u32Limit)
+            {
+                Log4Func(("Code segment limit exceeded. GCPtrFirst32=%#RX32 GCPtrLast32=%#RX32 u32Limit=%#RX32\n",
+                          GCPtrFirst32, GCPtrLast32, pSel->u32Limit));
+                if (iSegReg == X86_SREG_SS)
+                    hmR0VmxSetPendingXcptSS(pVCpu, 0);
+                else
+                    hmR0VmxSetPendingXcptGP(pVCpu, 0);
+                return VINF_HM_PENDING_XCPT;
+            }
+        }
+    }
+    else
+    {
+        Log4Func(("Not present or unusable segment. iSegReg=%#x Attr=%#RX32\n", iSegReg, pSel->Attr.u));
+        hmR0VmxSetPendingXcptGP(pVCpu, 0);
+        return VINF_HM_PENDING_XCPT;
+    }
+
+    *pGCPtrMem = GCPtrMem;
+    return VINF_SUCCESS;
+}
+#endif /* VBOX_WITH_NESTED_HWVIRT_VMX */
 
 
 /**
