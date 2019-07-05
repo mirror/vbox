@@ -2300,6 +2300,7 @@ void UISoftKeyboardWidget::updateLockKeyStates(bool fCapsLockState, bool fNumLoc
     if (!pPhysicalLayout)
         return;
     pPhysicalLayout->updateLockKeyStates(fCapsLockState, fNumLockState, fScrollLockState);
+    update();
 }
 
 void UISoftKeyboardWidget::deleteCurrentLayout()
