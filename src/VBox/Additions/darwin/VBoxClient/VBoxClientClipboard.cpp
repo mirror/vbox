@@ -96,7 +96,7 @@ static DECLCALLBACK(int) vbclClipboardDispatcher(RTTHREAD ThreadSelf, void *pvUs
 
         VBoxClientVerbose(2, "waiting for new host request\n");
 
-        rc = VbglR3ClipboardGetHostMsg(g_u32ClientId, &Msg, &fFormats);
+        rc = VbglR3ClipboardGetHostMsgOld(g_u32ClientId, &Msg, &fFormats);
         if (RT_SUCCESS(rc))
         {
             RTCritSectEnter(&g_critsect);
