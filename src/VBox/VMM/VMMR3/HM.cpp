@@ -748,11 +748,15 @@ static int hmR3InitFinalizeR3(PVM pVM)
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitGuestUD,            "/HM/CPU%d/Exit/Trap/Gst/#UD", "Guest #UD (undefined opcode) exception.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitGuestSS,            "/HM/CPU%d/Exit/Trap/Gst/#SS", "Guest #SS (stack-segment fault) exception.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitGuestNP,            "/HM/CPU%d/Exit/Trap/Gst/#NP", "Guest #NP (segment not present) exception.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatExitGuestTS,            "/HM/CPU%d/Exit/Trap/Gst/#TS", "Guest #TS (task switch) exception.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatExitGuestOF,            "/HM/CPU%d/Exit/Trap/Gst/#OF", "Guest #OF (overflow) exception.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitGuestGP,            "/HM/CPU%d/Exit/Trap/Gst/#GP", "Guest #GP (general protection) exception.");
-        HM_REG_COUNTER(&pVCpu->hm.s.StatExitGuestMF,            "/HM/CPU%d/Exit/Trap/Gst/#MF", "Guest #MF (x87 FPU error, math fault) exception.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitGuestDE,            "/HM/CPU%d/Exit/Trap/Gst/#DE", "Guest #DE (divide error) exception.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatExitGuestDF,            "/HM/CPU%d/Exit/Trap/Gst/#DF", "Guest #DF (double fault) exception.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatExitGuestBR,            "/HM/CPU%d/Exit/Trap/Gst/#BR", "Guest #BR (boundary range exceeded) exception.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitGuestAC,            "/HM/CPU%d/Exit/Trap/Gst/#AC", "Guest #AC (alignment check) exception.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitGuestDB,            "/HM/CPU%d/Exit/Trap/Gst/#DB", "Guest #DB (debug) exception.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatExitGuestMF,            "/HM/CPU%d/Exit/Trap/Gst/#MF", "Guest #MF (x87 FPU error, math fault) exception.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitGuestBP,            "/HM/CPU%d/Exit/Trap/Gst/#BP", "Guest #BP (breakpoint) exception.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitGuestXF,            "/HM/CPU%d/Exit/Trap/Gst/#XF", "Guest #XF (extended math fault, SIMD FPU) exception.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitGuestXcpUnk,        "/HM/CPU%d/Exit/Trap/Gst/Other", "Other guest exceptions.");
