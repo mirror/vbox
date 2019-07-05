@@ -66,6 +66,11 @@ class UISoftKeyboardRow;
 class UISoftKeyboardWidget;
 
 const int iMessageTimeout = 3000;
+/** Lock key position are used to identify respective keys. */
+const int iCapsLockPosition = 30;
+const int iNumLockPosition = 90;
+const int iScrollLockPosition = 125;
+
 const QString strSubDirectorName("keyboardLayouts");
 
 enum UIKeyState
@@ -127,12 +132,18 @@ public:
     const QVector<UISoftKeyboardRow> &rows() const;
     QVector<UISoftKeyboardRow> &rows();
 
+    void setLockKey(int iKeyPosition, UISoftKeyboardKey *pKey);
+    UISoftKeyboardKey *lockKey(int iKeyPosition) const;
+    void updateLockKeyStates(bool fCapsLockState, bool fNumLockState, bool fScrollLockState);
+
 private:
 
+    void updateLockKeyState(bool fLockState, UISoftKeyboardKey *pKey);
     QString  m_strFileName;
     QUuid    m_uId;
     QString  m_strName;
     QVector<UISoftKeyboardRow>  m_rows;
+    QMap<int, UISoftKeyboardKey*> m_lockKeys;
 };
 
 /*********************************************************************************************************************************
@@ -346,6 +357,8 @@ public:
     int cutoutWidth() const;
     int cutoutHeight() const;
 
+    void updateLockState(bool fLocked);
+
 private:
 
     void updateState(bool fPressed);
@@ -532,6 +545,10 @@ public:
 
     QStringList colorsToStringList() const;
     void colorsFromStringList(const QStringList &colorStringList);
+
+    /** Unlike modifier and ordinary keys we update the state of the Lock keys thru event singals we receieve
+      * from the guest OS. Parameter fXXXState is true if the corresponding key is locked. */
+    void updateLockKeyStates(bool fCapsLockState, bool fNumLockState, bool fScrollLockState);
 
 protected:
 
@@ -762,6 +779,30 @@ const QVector<UISoftKeyboardRow> &UISoftKeyboardPhysicalLayout::rows() const
 QVector<UISoftKeyboardRow> &UISoftKeyboardPhysicalLayout::rows()
 {
     return m_rows;
+}
+
+void UISoftKeyboardPhysicalLayout::setLockKey(int iKeyPosition, UISoftKeyboardKey *pKey)
+{
+    m_lockKeys[iKeyPosition] = pKey;
+}
+
+UISoftKeyboardKey *UISoftKeyboardPhysicalLayout::lockKey(int iKeyPosition) const
+{
+    return m_lockKeys.value(iKeyPosition, 0);
+}
+
+void UISoftKeyboardPhysicalLayout::updateLockKeyStates(bool fCapsLockState, bool fNumLockState, bool fScrollLockState)
+{
+    updateLockKeyState(fCapsLockState, m_lockKeys.value(iCapsLockPosition, 0));
+    updateLockKeyState(fNumLockState, m_lockKeys.value(iNumLockPosition, 0));
+    updateLockKeyState(fScrollLockState, m_lockKeys.value(iScrollLockPosition, 0));
+}
+
+void UISoftKeyboardPhysicalLayout::updateLockKeyState(bool fLockState, UISoftKeyboardKey *pKey)
+{
+    if (!pKey)
+        return;
+    pKey->updateLockState(fLockState);
 }
 
 /*********************************************************************************************************************************
@@ -1483,12 +1524,16 @@ void UISoftKeyboardKey::setParentWidget(UISoftKeyboardWidget* pParent)
 
 void UISoftKeyboardKey::release()
 {
-    updateState(false);
+    /* Lock key states are controlled by the event signals we get from the guest OS. See updateLockKeyState function: */
+    if (m_enmType != UIKeyType_Lock)
+        updateState(false);
 }
 
 void UISoftKeyboardKey::press()
 {
-    updateState(true);
+    /* Lock key states are controlled by the event signals we get from the guest OS. See updateLockKeyState function: */
+    if (m_enmType != UIKeyType_Lock)
+        updateState(true);
 }
 
 void UISoftKeyboardKey::setPolygon(const QPolygon &polygon)
@@ -1545,13 +1590,14 @@ void UISoftKeyboardKey::updateState(bool fPressed)
     }
     else if (m_enmType == UIKeyType_Lock)
     {
-        if (fPressed)
-        {
-            if (m_enmState == UIKeyState_NotPressed)
-                 m_enmState = UIKeyState_Locked;
-            else
-                m_enmState = UIKeyState_NotPressed;
-        }
+        m_enmState = fPressed ? UIKeyState_Locked : UIKeyState_NotPressed;
+        // if (fPressed)
+        // {
+        //     if (m_enmState == UIKeyState_NotPressed)
+        //          m_enmState = UIKeyState_Locked;
+        //     else
+        //         m_enmState = UIKeyState_NotPressed;
+        // }
     }
     else if (m_enmType == UIKeyType_Ordinary)
     {
@@ -1562,6 +1608,17 @@ void UISoftKeyboardKey::updateState(bool fPressed)
     }
     if (enmPreviousState != state() && m_pParentWidget)
         m_pParentWidget->keyStateChange(this);
+}
+
+void UISoftKeyboardKey::updateLockState(bool fLocked)
+{
+    if (m_enmType != UIKeyType_Lock)
+        return;
+    if (fLocked && m_enmState == UIKeyState_Locked)
+        return;
+    if (!fLocked && m_enmState == UIKeyState_NotPressed)
+        return;
+    updateState(fLocked);
 }
 
 
@@ -1689,9 +1746,7 @@ bool UISoftKeyboardLayout::operator==(const UISoftKeyboardLayout &otherLayout)
 
 const QString UISoftKeyboardLayout::baseCaption(int iKeyPosition) const
 {
-    if (!m_keyCapMap.contains(iKeyPosition))
-        return QString();
-    return m_keyCapMap[iKeyPosition].m_strBase;
+    return m_keyCapMap.value(iKeyPosition, KeyCaptions()).m_strBase;
 }
 
 void UISoftKeyboardLayout::setBaseCaption(int iKeyPosition, const QString &strBaseCaption)
@@ -1915,7 +1970,6 @@ void UISoftKeyboardColorTheme::colorsFromStringList(const QStringList &colorStri
         m_colors[i].setNamedColor(colorStringList[i]);
     }
 }
-
 
 /*********************************************************************************************************************************
 *   UISoftKeyboardWidget implementation.                                                                                  *
@@ -2240,6 +2294,14 @@ void UISoftKeyboardWidget::colorsFromStringList(const QStringList &colorStringLi
     m_colorTheme.colorsFromStringList(colorStringList);
 }
 
+void UISoftKeyboardWidget::updateLockKeyStates(bool fCapsLockState, bool fNumLockState, bool fScrollLockState)
+{
+    UISoftKeyboardPhysicalLayout *pPhysicalLayout = findPhysicalLayout(m_pCurrentKeyboardLayout->physicalLayoutUuid());
+    if (!pPhysicalLayout)
+        return;
+    pPhysicalLayout->updateLockKeyStates(fCapsLockState, fNumLockState, fScrollLockState);
+}
+
 void UISoftKeyboardWidget::deleteCurrentLayout()
 {
     if (!m_pCurrentKeyboardLayout || !m_pCurrentKeyboardLayout->editable() || m_pCurrentKeyboardLayout->isFromResources())
@@ -2360,6 +2422,34 @@ UISoftKeyboardKey *UISoftKeyboardWidget::keyUnderMouse(const QPoint &eventPositi
     return pKey;
 }
 
+void UISoftKeyboardWidget::handleKeyRelease(UISoftKeyboardKey *pKey)
+{
+    if (!pKey)
+        return;
+    if (pKey->type() == UIKeyType_Ordinary)
+        pKey->release();
+    /* We only send the scan codes of Ordinary keys: */
+    if (pKey->type() == UIKeyType_Modifier)
+        return;
+
+    QVector<LONG> sequence;
+    if (pKey->scanCodePrefix() != 0)
+        sequence <<  pKey->scanCodePrefix();
+    sequence << (pKey->scanCode() | 0x80);
+
+    /* Add the pressed modifiers in the reverse order: */
+    for (int i = m_pressedModifiers.size() - 1; i >= 0; --i)
+    {
+        UISoftKeyboardKey *pModifier = m_pressedModifiers[i];
+        if (pModifier->scanCodePrefix() != 0)
+            sequence << pModifier->scanCodePrefix();
+        sequence << (pModifier->scanCode() | 0x80);
+        /* Release the pressed modifiers (if there are not locked): */
+        pModifier->release();
+    }
+    emit sigPutKeyboardSequence(sequence);
+}
+
 void UISoftKeyboardWidget::handleKeyPress(UISoftKeyboardKey *pKey)
 {
     if (!pKey)
@@ -2426,34 +2516,6 @@ UISoftKeyboardLayout *UISoftKeyboardWidget::currentLayout()
     return m_pCurrentKeyboardLayout;
 }
 
-void UISoftKeyboardWidget::handleKeyRelease(UISoftKeyboardKey *pKey)
-{
-    if (!pKey)
-        return;
-    if (pKey->type() == UIKeyType_Ordinary)
-        pKey->release();
-    /* We only send the scan codes of Ordinary keys: */
-    if (pKey->type() == UIKeyType_Modifier)
-        return;
-
-    QVector<LONG> sequence;
-    if (pKey->scanCodePrefix() != 0)
-        sequence <<  pKey->scanCodePrefix();
-    sequence << (pKey->scanCode() | 0x80);
-
-    /* Add the pressed modifiers in the reverse order: */
-    for (int i = m_pressedModifiers.size() - 1; i >= 0; --i)
-    {
-        UISoftKeyboardKey *pModifier = m_pressedModifiers[i];
-        if (pModifier->scanCodePrefix() != 0)
-            sequence << pModifier->scanCodePrefix();
-        sequence << (pModifier->scanCode() | 0x80);
-        /* Release the pressed modifiers (if there are not locked): */
-        pModifier->release();
-    }
-    emit sigPutKeyboardSequence(sequence);
-}
-
 bool UISoftKeyboardWidget::loadPhysicalLayout(const QString &strLayoutFileName, bool isNumPad /* = false */)
 {
     if (strLayoutFileName.isEmpty())
@@ -2515,6 +2577,11 @@ bool UISoftKeyboardWidget::loadPhysicalLayout(const QString &strLayoutFileName, 
         {
             ++iKeyCount;
             UISoftKeyboardKey &key = (row.keys())[j];
+            if (key.position() == iScrollLockPosition ||
+                key.position() == iNumLockPosition ||
+                key.position() == iCapsLockPosition)
+                newPhysicalLayout->setLockKey(key.position(), &key);
+
             key.setKeyGeometry(QRect(iX, iY, key.width(), key.height()));
             key.setPolygon(QPolygon(UIPhysicalLayoutReader::computeKeyVertices(key)));
             key.setParentWidget(this);
@@ -3289,9 +3356,11 @@ void UISoftKeyboard::retranslateUi()
 
 void UISoftKeyboard::sltKeyboardLedsChange()
 {
-    // bool fNumLockLed = m_pSession->isNumLock();
-    // bool fCapsLockLed = m_pSession->isCapsLock();
-    // bool fScrollLockLed = m_pSession->isScrollLock();
+    bool fNumLockLed = m_pSession->isNumLock();
+    bool fCapsLockLed = m_pSession->isCapsLock();
+    bool fScrollLockLed = m_pSession->isScrollLock();
+    if (m_pKeyboardWidget)
+        m_pKeyboardWidget->updateLockKeyStates(fCapsLockLed, fNumLockLed, fScrollLockLed);
 }
 
 void UISoftKeyboard::sltPutKeyboardSequence(QVector<LONG> sequence)
