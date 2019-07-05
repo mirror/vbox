@@ -5121,7 +5121,7 @@ VMMR0DECL(VBOXSTRICTRC) SVMR0RunGuestCode(PVMCPU pVCpu)
     }
 #endif
 
-    /** @todo NSTSVM: Continue in ring-0 after nested-guest #VMEXIT. See VT-x code for
+    /** @todo NSTSVM: Continue in ring-0 after nested-guest \#VMEXIT. See VT-x code for
      *        reference. */
 
     /* Fixup error codes. */
