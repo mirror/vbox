@@ -4226,7 +4226,7 @@ int Console::i_unmountMediumFromGuest(PUVM pUVM, StorageBus_T enmBus, DeviceType
     PPDMIBASE pBase;
     if (enmBus == StorageBus_USB)
         rc = PDMR3UsbQueryDriverOnLun(pUVM, pcszDevice, uInstance, uLUN, "SCSI", &pBase);
-    else if (   (enmBus == StorageBus_SAS || enmBus == StorageBus_SCSI)
+    else if (   (enmBus == StorageBus_SAS || enmBus == StorageBus_SCSI || enmBus == StorageBus_VirtioSCSI)
              || (enmBus == StorageBus_SATA && enmDevType == DeviceType_DVD))
         rc = PDMR3QueryDriverOnLun(pUVM, pcszDevice, uInstance, uLUN, "SCSI", &pBase);
     else /* IDE or Floppy */
@@ -4315,6 +4315,7 @@ int Console::i_removeMediumDriverFromVm(PCFGMNODE pCtlInst,
             && (   (enmBus == StorageBus_SATA && enmDevType == DeviceType_DVD)
                 || enmBus == StorageBus_SAS
                 || enmBus == StorageBus_SCSI
+                || enmBus == StorageBus_VirtioSCSI
                 || enmBus == StorageBus_USB))
         {
             /* Get the current attached driver we have to detach. */
@@ -4570,7 +4571,7 @@ int Console::i_configMediumAttachment(const char *pcszDevice,
          * or for SATA if the new device is a CD/DVD drive.
          */
         if (   (fHotplug || !fAttachDetach)
-            && (   (enmBus == StorageBus_SCSI || enmBus == StorageBus_SAS || enmBus == StorageBus_USB)
+            && (   (enmBus == StorageBus_SCSI || enmBus == StorageBus_SAS || enmBus == StorageBus_USB || enmBus == StorageBus_VirtioSCSI)
                 || (enmBus == StorageBus_SATA && lType == DeviceType_DVD && !fPassthrough)))
         {
             InsertConfigString(pLunL0, "Driver", "SCSI");
@@ -4614,7 +4615,7 @@ int Console::i_configMediumAttachment(const char *pcszDevice,
                                               fHotplug ? 0 : PDM_TACH_FLAGS_NOT_HOT_PLUG, NULL /*ppBase*/);
             }
             else if (   !fHotplug
-                     && (   (enmBus == StorageBus_SAS || enmBus == StorageBus_SCSI)
+                     && (   (enmBus == StorageBus_SAS || enmBus == StorageBus_SCSI || enmBus == StorageBus_VirtioSCSI)
                          || (enmBus == StorageBus_SATA && lType == DeviceType_DVD)))
                 rc = PDMR3DriverAttach(pUVM, pcszDevice, uInstance, uLUN,
                                        fHotplug ? 0 : PDM_TACH_FLAGS_NOT_HOT_PLUG, NULL /*ppBase*/);
