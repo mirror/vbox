@@ -14767,14 +14767,16 @@ HMVMX_EXIT_DECL hmR0VmxExitXcptOrNmi(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
     STAM_PROFILE_ADV_START(&pVCpu->hm.s.StatExitXcptNmi, y3);
 
-    PVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
     int rc = hmR0VmxReadExitIntInfoVmcs(pVmxTransient);
     AssertRCReturn(rc, rc);
 
     uint32_t const uIntType = VMX_EXIT_INT_INFO_TYPE(pVmxTransient->uExitIntInfo);
     Assert(VMX_EXIT_INT_INFO_IS_VALID(pVmxTransient->uExitIntInfo));
+
+    PCVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
     Assert(   !(pVmcsInfo->u32ExitCtls & VMX_EXIT_CTLS_ACK_EXT_INT)
            && uIntType != VMX_EXIT_INT_INFO_TYPE_EXT_INT);
+    NOREF(pVmcsInfo);
 
     if (uIntType == VMX_EXIT_INT_INFO_TYPE_NMI)
     {
