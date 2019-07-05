@@ -7614,6 +7614,7 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptUD(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
 {
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pSvmTransient);
     HMSVM_ASSERT_NOT_IN_NESTED_GUEST(&pVCpu->cpum.GstCtx);
+    STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestUD);
 
     /* Paranoia; Ensure we cannot be called as a result of event delivery. */
     PSVMVMCB pVmcb = pVCpu->hm.s.svm.pVmcb;
@@ -7660,6 +7661,7 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptMF(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
 {
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pSvmTransient);
     HMSVM_CPUMCTX_IMPORT_STATE(pVCpu, HMSVM_CPUMCTX_EXTRN_ALL);
+    STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestMF);
 
     PCPUMCTX pCtx  = &pVCpu->cpum.GstCtx;
     PSVMVMCB pVmcb = hmR0SvmGetCurrentVmcb(pVCpu);
@@ -7701,6 +7703,7 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptDB(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pSvmTransient);
     HMSVM_CPUMCTX_IMPORT_STATE(pVCpu, HMSVM_CPUMCTX_EXTRN_ALL);
     HMSVM_CHECK_EXIT_DUE_TO_EVENT_DELIVERY(pVCpu, pSvmTransient);
+    STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestDB);
 
     if (RT_UNLIKELY(pVCpu->hm.s.Event.fPending))
     {
@@ -7757,6 +7760,7 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptAC(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
 {
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pSvmTransient);
     HMSVM_CHECK_EXIT_DUE_TO_EVENT_DELIVERY(pVCpu, pSvmTransient);
+    STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestAC);
 
     SVMEVENT Event;
     Event.u          = 0;
@@ -7778,6 +7782,7 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptBP(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pSvmTransient);
     HMSVM_CPUMCTX_IMPORT_STATE(pVCpu, HMSVM_CPUMCTX_EXTRN_ALL);
     HMSVM_CHECK_EXIT_DUE_TO_EVENT_DELIVERY(pVCpu, pSvmTransient);
+    STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestBP);
 
     PCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
     int rc = DBGFRZTrap03Handler(pVCpu->CTX_SUFF(pVM), pVCpu, CPUMCTX2CORE(pCtx));
@@ -7876,6 +7881,7 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptGP(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
 {
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pSvmTransient);
     HMSVM_CHECK_EXIT_DUE_TO_EVENT_DELIVERY(pVCpu, pSvmTransient);
+    STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestGP);
 
     PCSVMVMCB pVmcb = hmR0SvmGetCurrentVmcb(pVCpu);
     Assert(pSvmTransient->u64ExitCode == pVmcb->ctrl.u64ExitCode);
@@ -7935,6 +7941,32 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptGeneric(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient
             break;
         }
     }
+
+#ifdef VBOX_WITH_STATISTICS
+    switch (uVector)
+    {
+        case SVM_EXIT_XCPT_DE:             STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestDE);      break;
+        /*   SVM_EXIT_XCPT_DB: */          STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestDB);      break;
+        /*   SVM_EXIT_XCPT_NMI: */         /* Handled elsewhere. */
+        /*   SVM_EXIT_XCPT_BP: */          STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestBP);      break;
+        case SVM_EXIT_XCPT_OF:             STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestOF);      break;
+        case SVM_EXIT_XCPT_BR:             STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestBR);      break;
+        /*   SVM_EXIT_XCPT_UD: */          STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestUD);      break;
+        case SVM_EXIT_XCPT_NM:             STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestOF);      break;
+        case SVM_EXIT_XCPT_DF:             STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestDF);      break;
+        case SVM_EXIT_XCPT_CO_SEG_OVERRUN: /* Legacy */                                         break;
+        case SVM_EXIT_XCPT_TS:             STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestTS);      break;
+        case SVM_EXIT_XCPT_NP:             STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestNP);      break;
+        case SVM_EXIT_XCPT_SS:             STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestSS);      break;
+        case SVM_EXIT_XCPT_GP:             STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestGP);      break;
+        /*   SVM_EXIT_XCPT_PF: */          STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestPF);      break;
+        case SVM_EXIT_XCPT_15:             /* Reserved.      */
+        /*   SVM_EXIT_XCPT_MF: */          STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestMF);      break;
+        /*   SVM_EXIT_XCPT_AC: */          STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestAC);      break;
+        case SVM_EXIT_XCPT_MC:             /* Machine-check exceptions shouldn't happen. */     break;
+        case SVM_EXIT_XCPT_XF:             STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestXF);      break;
+    }
+#endif
 
     hmR0SvmSetPendingEvent(pVCpu, &Event, 0 /* GCPtrFaultAddress */);
     return VINF_SUCCESS;
