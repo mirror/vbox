@@ -91,7 +91,7 @@ void UIWizardExportAppPage3::refreshApplianceSettingsWidget()
 void UIWizardExportAppPage3::refreshFormPropertiesTable()
 {
     /* Acquire VSD form: */
-    CVirtualSystemDescriptionForm comForm = fieldImp("vsdForm").value<CVirtualSystemDescriptionForm>();
+    CVirtualSystemDescriptionForm comForm = fieldImp("vsdExportForm").value<CVirtualSystemDescriptionForm>();
     /* Make sure the properties table get the new description form: */
     if (comForm.isNotNull())
         m_pFormEditor->setVirtualSystemDescriptionForm(comForm);
@@ -215,7 +215,7 @@ bool UIWizardExportAppPageBasic3::validatePage()
     if (fIsFormatCloudOne)
     {
         /* Check whether we have proper VSD form: */
-        CVirtualSystemDescriptionForm comForm = fieldImp("vsdForm").value<CVirtualSystemDescriptionForm>();
+        CVirtualSystemDescriptionForm comForm = fieldImp("vsdExportForm").value<CVirtualSystemDescriptionForm>();
         fResult = comForm.isNotNull();
         Assert(fResult);
 

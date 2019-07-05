@@ -427,7 +427,7 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
     registerField("includeISOsSelected", this, "includeISOsSelected");
     registerField("providerShortName", this, "providerShortName");
     registerField("appliance", this, "appliance");
-    registerField("vsdForm", this, "vsdForm");
+    registerField("vsdExportForm", this, "vsdExportForm");
     registerField("applianceWidget", this, "applianceWidget");
 }
 
@@ -579,7 +579,7 @@ bool UIWizardExportAppPageExpert::isComplete() const
                   || (   fCSP
                       && m_comCloudProfile.isNotNull()
                       && m_comAppliance.isNotNull()
-                      && m_comVSDForm.isNotNull());
+                      && m_comVSDExportForm.isNotNull());
     }
 
     return fResult;
@@ -598,7 +598,7 @@ bool UIWizardExportAppPageExpert::validatePage()
     if (fIsFormatCloudOne)
     {
         /* Check whether we have proper VSD form: */
-        CVirtualSystemDescriptionForm comForm = fieldImp("vsdForm").value<CVirtualSystemDescriptionForm>();
+        CVirtualSystemDescriptionForm comForm = fieldImp("vsdExportForm").value<CVirtualSystemDescriptionForm>();
         fResult = comForm.isNotNull();
         Assert(fResult);
 

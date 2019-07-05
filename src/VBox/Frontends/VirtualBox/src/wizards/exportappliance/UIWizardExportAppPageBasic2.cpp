@@ -298,7 +298,7 @@ void UIWizardExportAppPage2::populateFormProperties()
     /* Clear appliance: */
     m_comAppliance = CAppliance();
     /* Clear form properties: */
-    m_comVSDForm = CVirtualSystemDescriptionForm();
+    m_comVSDExportForm = CVirtualSystemDescriptionForm();
 
     /* If profile chosen: */
     if (m_comCloudProfile.isNotNull())
@@ -347,9 +347,9 @@ void UIWizardExportAppPage2::populateFormProperties()
                 break;
             }
 
-            /* Read Cloud Client description form: */
-            CVirtualSystemDescriptionForm comForm;
-            CProgress comExportDescriptionFormProgress = comCloudClient.GetExportLaunchDescriptionForm(comVSD, comForm);
+            /* Read Cloud Client Export description form: */
+            CVirtualSystemDescriptionForm comExportForm;
+            CProgress comExportDescriptionFormProgress = comCloudClient.GetExportDescriptionForm(comVSD, comExportForm);
             if (!comCloudClient.isOk())
             {
                 msgCenter().cannotAcquireCloudClientParameter(comCloudClient);
@@ -366,7 +366,7 @@ void UIWizardExportAppPage2::populateFormProperties()
             }
 
             /* Remember form: */
-            m_comVSDForm = comForm;
+            m_comVSDExportForm = comExportForm;
         }
         while (0);
     }
@@ -615,9 +615,9 @@ CAppliance UIWizardExportAppPage2::appliance() const
     return m_comAppliance;
 }
 
-CVirtualSystemDescriptionForm UIWizardExportAppPage2::vsdForm() const
+CVirtualSystemDescriptionForm UIWizardExportAppPage2::vsdExportForm() const
 {
-    return m_comVSDForm;
+    return m_comVSDExportForm;
 }
 
 
@@ -907,7 +907,7 @@ UIWizardExportAppPageBasic2::UIWizardExportAppPageBasic2(bool fExportToOCIByDefa
     registerField("includeISOsSelected", this, "includeISOsSelected");
     registerField("providerShortName", this, "providerShortName");
     registerField("appliance", this, "appliance");
-    registerField("vsdForm", this, "vsdForm");
+    registerField("vsdExportForm", this, "vsdExportForm");
 }
 
 bool UIWizardExportAppPageBasic2::event(QEvent *pEvent)
@@ -1064,7 +1064,7 @@ bool UIWizardExportAppPageBasic2::validatePage()
         populateFormProperties();
         /* Which are required to continue to the next page: */
         fResult =    field("appliance").value<CAppliance>().isNotNull()
-                  && field("vsdForm").value<CVirtualSystemDescriptionForm>().isNotNull();
+                  && field("vsdExportForm").value<CVirtualSystemDescriptionForm>().isNotNull();
     }
 
     /* Return result: */

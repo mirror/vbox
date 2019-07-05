@@ -154,8 +154,8 @@ protected:
     QString profileName() const;
     /** Returns Appliance object. */
     CAppliance appliance() const;
-    /** Returns Virtual System Description Form object. */
-    CVirtualSystemDescriptionForm vsdForm() const;
+    /** Returns Virtual System Description Export Form object. */
+    CVirtualSystemDescriptionForm vsdExportForm() const;
 
     /** Holds whether default format should be Export to OCI. */
     bool  m_fExportToOCIByDefault;
@@ -168,8 +168,8 @@ protected:
     CCloudProfile                  m_comCloudProfile;
     /** Holds the Appliance object reference. */
     CAppliance                     m_comAppliance;
-    /** Holds the Virtual System Description Form object reference. */
-    CVirtualSystemDescriptionForm  m_comVSDForm;
+    /** Holds the Virtual System Description Export Form object reference. */
+    CVirtualSystemDescriptionForm  m_comVSDExportForm;
 
     /** Holds the default appliance name. */
     QString  m_strDefaultApplianceName;
@@ -234,7 +234,7 @@ class UIWizardExportAppPageBasic2 : public UIWizardPage, public UIWizardExportAp
     Q_PROPERTY(bool includeISOsSelected READ isIncludeISOsSelected WRITE setIncludeISOsSelected);
     Q_PROPERTY(QString providerShortName READ providerShortName);
     Q_PROPERTY(CAppliance appliance READ appliance);
-    Q_PROPERTY(CVirtualSystemDescriptionForm vsdForm READ vsdForm);
+    Q_PROPERTY(CVirtualSystemDescriptionForm vsdExportForm READ vsdExportForm);
 
 public:
 
