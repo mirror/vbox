@@ -70,11 +70,18 @@ typedef struct VIRTIOSCSITARGET
     /** Flag whether device is present. */
     bool                          fPresent;
 
+    /** Media port interface. */
+    PDMIMEDIAPORT                 IMediaPort;
+    /** Extended media port interface. */
+    PDMIMEDIAEXPORT               IMediaExPort;
     /** Led interface. */
     PDMILEDPORTS                  ILed;
 
     /** The status LED state for this device. */
     PDMLED                        Led;
+
+    /** Number of outstanding tasks on the port. */
+    volatile uint32_t             cOutstandingRequests;
 
 } VIRTIOSCSITARGET;
 typedef VIRTIOSCSITARGET *PVIRTIOSCSITARGET;
@@ -131,8 +138,15 @@ typedef struct VIRTIOSCSI
     /** Base address of the memory mapping. */
     RTGCPHYS                        MMIOBase;
 
+    /** Status LUN: Media Notifys. */
+    R3PTRTYPE(PPDMIMEDIANOTIFY)     pMediaNotify;
+
     /** Partner of ILeds. */
     R3PTRTYPE(PPDMILEDCONNECTORS)   pLedsConnector;
+
+    /** Indicates that PDMDevHlpAsyncNotificationCompleted should be called when
+     * a port is entering the idle state. */
+    bool volatile                   fSignalIdle;
 
 } VIRTIOSCSI, *PVIRTIOSCSI;
 
@@ -292,7 +306,7 @@ PDMBOTHCBDECL(int) virtioScsiIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
 
     Assert(cb == 1);
 
-//    return buslogicRegisterRead(pBusLogic, iRegister, pu32);
+//    return buslogicRegisterRead(pVirtioScsi, iRegister, pu32);
     return 0;
 }
 
@@ -320,7 +334,7 @@ PDMBOTHCBDECL(int) virtioScsiIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOP
 
     Assert(cb == 1);
 
-//    int rc = buslogicRegisterWrite(pBusLogic, iRegister, (uint8_t)uVal);
+//    int rc = buslogicRegisterWrite(pVirtioScsi, iRegister, (uint8_t)uVal);
     int rc = 0;
     Log2(("#%d %s: pvUser=%#p cb=%d u32=%#x uPort=%#x rc=%Rrc\n",
           pDevIns->iInstance, __FUNCTION__, pvUser, cb, u32, uPort, rc));
@@ -331,7 +345,7 @@ PDMBOTHCBDECL(int) virtioScsiIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOP
 /**
  * @callback_method_impl{FNPCIIOREGIONMAP}
  */
-static DECLCALLBACK(int) devVirtioScsiR3MmioMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
+static DECLCALLBACK(int) virtioScsiR3MmioMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
                                            RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
 {
     RT_NOREF(pPciDev, iRegion);
@@ -415,10 +429,164 @@ LogFunc(("Relocating virtio-scsci"));
     {
         PVIRTIOSCSITARGET pTarget = &pThis->aTargetInstances[i];
         pTarget->pVirtioScsiR3 = pThis;;
-
-  }
+    }
 
 }
+
+static DECLCALLBACK(int) virtioScsiR3QueryDeviceLocation(PPDMIMEDIAPORT pInterface, const char **ppcszController,
+                                                       uint32_t *piInstance, uint32_t *piLUN)
+{
+    PVIRTIOSCSITARGET pVirtioScsiTarget = RT_FROM_MEMBER(pInterface, VIRTIOSCSITARGET, IMediaPort);
+    PPDMDEVINS pDevIns = pVirtioScsiTarget->CTX_SUFF(pVirtioScsi)->CTX_SUFF(pDevIns);
+
+    AssertPtrReturn(ppcszController, VERR_INVALID_POINTER);
+    AssertPtrReturn(piInstance, VERR_INVALID_POINTER);
+    AssertPtrReturn(piLUN, VERR_INVALID_POINTER);
+
+    *ppcszController = pDevIns->pReg->szName;
+    *piInstance = pDevIns->iInstance;
+    *piLUN = pVirtioScsiTarget->iLUN;
+
+    return VINF_SUCCESS;
+}
+
+/**
+ * @interface_method_impl{PDMIMEDIAEXPORT,pfnIoReqCopyFromBuf}
+ */
+static DECLCALLBACK(int) virtioScsiR3IoReqCopyFromBuf(PPDMIMEDIAEXPORT pInterface, PDMMEDIAEXIOREQ hIoReq,
+                                                    void *pvIoReqAlloc, uint32_t offDst, PRTSGBUF pSgBuf,
+                                                    size_t cbCopy)
+{
+NOREF(pInterface);
+NOREF(pvIoReqAlloc);
+NOREF(offDst);
+NOREF(pSgBuf);
+
+    RT_NOREF1(hIoReq);
+//    PVIRTIOSCSITARGET pTarget = RT_FROM_MEMBER(pInterface, VIRTIOSCSITARGET, IMediaExPort);
+//    PVIRTIOSCSIREQ pReq = (PVIRTIOSCSIREQ)pvIoReqAlloc;
+
+    size_t cbCopied = 0;
+/*
+    if (RT_UNLIKELY(pReq->fBIOS))
+        cbCopied = vboxscsiCopyToBuf(&pTarget->CTX_SUFF(pVirtioScsi)->VBoxSCSI, pSgBuf, offDst, cbCopy);
+    else
+        cbCopied = virtioScsiR3CopySgBufToGuest(pTarget->CTX_SUFF(pVirtioScsi), pReq, pSgBuf, offDst, cbCopy);
+*/
+    return cbCopied == cbCopy ? VINF_SUCCESS : VERR_PDM_MEDIAEX_IOBUF_OVERFLOW;
+}
+
+/**
+ * @interface_method_impl{PDMIMEDIAEXPORT,pfnIoReqCopyToBuf}
+ */
+static DECLCALLBACK(int) virtioScsiR3IoReqCopyToBuf(PPDMIMEDIAEXPORT pInterface, PDMMEDIAEXIOREQ hIoReq,
+                                                  void *pvIoReqAlloc, uint32_t offSrc, PRTSGBUF pSgBuf,
+                                                  size_t cbCopy)
+{
+NOREF(pInterface);
+NOREF(pvIoReqAlloc);
+NOREF(offSrc);
+NOREF(pSgBuf);
+
+    RT_NOREF1(hIoReq);
+//    PVIRTIOSCSITARGET pTarget = RT_FROM_MEMBER(pInterface, VIRTIOSCSITARGET, IMediaExPort);
+//    PVIRTIOSCSIREQ pReq = (PVIRTIOSCSIREQ)pvIoReqAlloc;
+
+    size_t cbCopied = 0;
+/*
+    if (RT_UNLIKELY(pReq->fBIOS))
+        cbCopied = vboxscsiCopyFromBuf(&pTarget->CTX_SUFF(pVirtioScsi)->VBoxSCSI, pSgBuf, offSrc, cbCopy);
+    else
+        cbCopied = vboxscsiR3CopySgBufFromGuest(pTarget->CTX_SUFF(pVirtioScsi), pReq, pSgBuf, offSrc, cbCopy);
+*/
+    return cbCopied == cbCopy ? VINF_SUCCESS : VERR_PDM_MEDIAEX_IOBUF_UNDERRUN;
+}
+
+/**
+ * @interface_method_impl{PDMIMEDIAEXPORT,pfnIoReqCompleteNotify}
+ */
+static DECLCALLBACK(int) virtioScsiR3IoReqCompleteNotify(PPDMIMEDIAEXPORT pInterface, PDMMEDIAEXIOREQ hIoReq,
+                                                       void *pvIoReqAlloc, int rcReq)
+{
+NOREF(pInterface);
+NOREF(pvIoReqAlloc);
+NOREF(rcReq);
+    RT_NOREF(hIoReq);
+//    PVIRTIOSCSITARGET pTarget = RT_FROM_MEMBER(pInterface, VIRTIOSCSITARGET, IMediaExPort);
+//    virtioScsiR3ReqComplete(pTarget->CTX_SUFF(pVirtioScsi), (VIRTIOSCSIREQ)pvIoReqAlloc, rcReq);
+    return VINF_SUCCESS;
+}
+
+/**
+ * @interface_method_impl{PDMIMEDIAEXPORT,pfnIoReqStateChanged}
+ */
+static DECLCALLBACK(void) virtioScsiR3IoReqStateChanged(PPDMIMEDIAEXPORT pInterface, PDMMEDIAEXIOREQ hIoReq,
+                                                      void *pvIoReqAlloc, PDMMEDIAEXIOREQSTATE enmState)
+{
+
+NOREF(pInterface);
+NOREF(hIoReq);
+NOREF(enmState);
+    RT_NOREF3(hIoReq, pvIoReqAlloc, enmState);
+    PVIRTIOSCSITARGET pTarget = RT_FROM_MEMBER(pInterface, VIRTIOSCSITARGET, IMediaExPort);
+
+    switch (enmState)
+    {
+        case PDMMEDIAEXIOREQSTATE_SUSPENDED:
+        {
+            /* Make sure the request is not accounted for so the VM can suspend successfully. */
+            uint32_t cTasksActive = ASMAtomicDecU32(&pTarget->cOutstandingRequests);
+            if (!cTasksActive && pTarget->CTX_SUFF(pVirtioScsi)->fSignalIdle)
+                PDMDevHlpAsyncNotificationCompleted(pTarget->CTX_SUFF(pVirtioScsi)->pDevInsR3);
+            break;
+        }
+        case PDMMEDIAEXIOREQSTATE_ACTIVE:
+            /* Make sure the request is accounted for so the VM suspends only when the request is complete. */
+            ASMAtomicIncU32(&pTarget->cOutstandingRequests);
+            break;
+        default:
+            AssertMsgFailed(("Invalid request state given %u\n", enmState));
+    }
+}
+
+/**
+ * Gets the pointer to the status LED of a device - called from the SCSI driver.
+ *
+ * @returns VBox status code.
+ * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+ * @param   iLUN            The unit which status LED we desire. Always 0 here as the driver
+ *                          doesn't know about other LUN's.
+ * @param   ppLed           Where to store the LED pointer.
+ */
+static DECLCALLBACK(int) virtioScsiR3DeviceQueryStatusLed(PPDMILEDPORTS pInterface, unsigned iLUN, PPDMLED *ppLed)
+{
+    PVIRTIOSCSITARGET pTarget = RT_FROM_MEMBER(pInterface, VIRTIOSCSITARGET, ILed);
+    if (iLUN == 0)
+    {
+        *ppLed = &pTarget->Led;
+        Assert((*ppLed)->u32Magic == PDMLED_MAGIC);
+        return VINF_SUCCESS;
+    }
+    return VERR_PDM_LUN_NOT_FOUND;
+}
+
+/**
+ * @interface_method_impl{PDMIMEDIAEXPORT,pfnMediumEjected}
+ */
+static DECLCALLBACK(void) virtioScsiR3MediumEjected(PPDMIMEDIAEXPORT pInterface)
+{
+    PVIRTIOSCSITARGET pTarget = RT_FROM_MEMBER(pInterface, VIRTIOSCSITARGET, IMediaExPort);
+    PVIRTIOSCSI pThis = pTarget->CTX_SUFF(pVirtioScsi);
+
+    if (pThis->pMediaNotify)
+    {
+        int rc = VMR3ReqCallNoWait(PDMDevHlpGetVM(pThis->CTX_SUFF(pDevIns)), VMCPUID_ANY,
+                                   (PFNRT)pThis->pMediaNotify->pfnEjected, 2,
+                                   pThis->pMediaNotify, pTarget->iLUN);
+        AssertRC(rc);
+    }
+}
+
 
 /**
  * @interface_method_impl{PDMIBASE,pfnQueryInterface}
@@ -427,8 +595,8 @@ static DECLCALLBACK(void *) virtioScsiR3DeviceQueryInterface(PPDMIBASE pInterfac
 {
     PVIRTIOSCSITARGET pTarget = RT_FROM_MEMBER(pInterface, VIRTIOSCSITARGET, IBase);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pTarget->IBase);
-//    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMEDIAPORT, &pTarget->IMediaPort);
-//    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMEDIAEXPORT, &pTarget->IMediaExPort);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMEDIAPORT, &pTarget->IMediaPort);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMEDIAEXPORT, &pTarget->IMediaExPort);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMILEDPORTS, &pTarget->ILed);
     return NULL;
 }
@@ -453,7 +621,7 @@ static DECLCALLBACK(bool) virtioScsiR3NotifyQueueConsumer(PPDMDEVINS pDevIns, PP
     return true;
 }
 
-static DECLCALLBACK(int) devVirtIoScsiDestruct(PPDMDEVINS pDevIns)
+static DECLCALLBACK(int) virtioScsiDestruct(PPDMDEVINS pDevIns)
 {
     /*
      * Check the versions here as well since the destructor is *always* called.
@@ -463,7 +631,7 @@ static DECLCALLBACK(int) devVirtIoScsiDestruct(PPDMDEVINS pDevIns)
     return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(int) devVirtioScsiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
+static DECLCALLBACK(int) virtioScsiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
 
     PVIRTIOSCSI  pThis = PDMINS_2_DATA(pDevIns, PVIRTIOSCSI);
@@ -530,14 +698,13 @@ LogFunc(("Register PCI device and map mmio and ports\n"));
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("virtio-scsi cannot register with PCI bus"));
 
 LogFunc(("Register io region\n"));
-    rc = PDMDevHlpPCIIORegionRegister(pDevIns, 0, 32, PCI_ADDRESS_SPACE_IO, devVirtioScsiR3MmioMap);
+    rc = PDMDevHlpPCIIORegionRegister(pDevIns, 0, 32, PCI_ADDRESS_SPACE_IO, virtioScsiR3MmioMap);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("virtio-scsi cannot register PCI I/O address space"));
 LogFunc(("Register mmio region\n"));
-    rc = PDMDevHlpPCIIORegionRegister(pDevIns, 1, 32, PCI_ADDRESS_SPACE_MEM, devVirtioScsiR3MmioMap);
+    rc = PDMDevHlpPCIIORegionRegister(pDevIns, 1, 32, PCI_ADDRESS_SPACE_MEM, virtioScsiR3MmioMap);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("virtio-scsi cannot register PCI mmio address space"));
-
 #if 0
     if (fBootable)
     {
@@ -550,7 +717,6 @@ LogFunc(("Register mmio region\n"));
             return PDMDEV_SET_ERROR(pDevIns, rc, N_("virtio-scsi cannot register BIOS I/O handlers"));
     }
 #endif
-
     /* Initialize task queue. */
     rc = PDMDevHlpQueueCreate(pDevIns, sizeof(PDMQUEUEITEMCORE), 5, 0,
                               virtioScsiR3NotifyQueueConsumer, true, "VirtioTask", &pThis->pNotifierQueueR3);
@@ -575,7 +741,7 @@ LogFunc(("Register mmio region\n"));
         pTarget->pVirtioScsiRC = PDMINS_2_DATA_RCPTR(pDevIns);
         pTarget->Led.u32Magic = PDMLED_MAGIC;
         pTarget->IBase.pfnQueryInterface                 = virtioScsiR3DeviceQueryInterface;
-/*      pTarget->IMediaPort.pfnQueryDeviceLocation       = virtioScsiR3QueryDeviceLocation;
+        pTarget->IMediaPort.pfnQueryDeviceLocation       = virtioScsiR3QueryDeviceLocation;
         pTarget->IMediaExPort.pfnIoReqCompleteNotify     = virtioScsiR3IoReqCompleteNotify;
         pTarget->IMediaExPort.pfnIoReqCopyFromBuf        = virtioScsiR3IoReqCopyFromBuf;
         pTarget->IMediaExPort.pfnIoReqCopyToBuf          = virtioScsiR3IoReqCopyToBuf;
@@ -584,7 +750,7 @@ LogFunc(("Register mmio region\n"));
         pTarget->IMediaExPort.pfnIoReqStateChanged       = virtioScsiR3IoReqStateChanged;
         pTarget->IMediaExPort.pfnMediumEjected           = virtioScsiR3MediumEjected;
         pTarget->ILed.pfnQueryStatusLed                  = virtioScsiR3DeviceQueryStatusLed;
-*/
+
         LogFunc(("Attaching: Lun=%d, pszName=%s\n",  pTarget->iLUN, pszName));
         /* Attach SCSI driver. */
         AssertReturn(pTarget->iLUN < RT_ELEMENTS(pThis->aTargetInstances), VERR_PDM_NO_SUCH_LUN);
@@ -605,11 +771,10 @@ LogFunc(("Register mmio region\n"));
         }
     }
 
-#if 0
     /*
      * Attach status driver (optional).
      */
-
+/*
     PPDMIBASE pBase;
     rc = PDMDevHlpDriverAttach(pDevIns, PDM_STATUS_LUN, &pThis->IBase, &pBase, "Status Port");
     if (RT_SUCCESS(rc))
@@ -619,8 +784,7 @@ LogFunc(("Register mmio region\n"));
         AssertMsgFailed(("Failed to attach to status driver. rc=%Rrc\n", rc));
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("virtio-scsi cannot attach to status driver"));
     }
-#endif
-
+*/
     rc = PDMDevHlpSSMRegisterEx(pDevIns, VIRTIOSCSI_SAVED_STATE_MINOR_VERSION, sizeof(*pThis), NULL,
                                 NULL, virtioScsiR3LiveExec, NULL,
                                 NULL, virtioScsiR3SaveExec, NULL,
@@ -648,7 +812,7 @@ LogFunc(("Register mmio region\n"));
  * @param   iLUN        The logical unit which is being detached.
  * @param   fFlags      Flags, combination of the PDMDEVATT_FLAGS_* \#defines.
  */
-static DECLCALLBACK(void) devVirtioScsiR3Detach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
+static DECLCALLBACK(void) virtioScsiR3Detach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
 {
     RT_NOREF(fFlags);
     PVIRTIOSCSI       pThis = PDMINS_2_DATA(pDevIns, PVIRTIOSCSI);
@@ -677,7 +841,7 @@ static DECLCALLBACK(void) devVirtioScsiR3Detach(PPDMDEVINS pDevIns, unsigned iLU
  * @param   iLUN        The logical unit which is being detached.
  * @param   fFlags      Flags, combination of the PDMDEVATT_FLAGS_* \#defines.
  */
-static DECLCALLBACK(int)  devVirtioScsiR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
+static DECLCALLBACK(int)  virtioScsiR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
 {
     PVIRTIOSCSI       pThis   = PDMINS_2_DATA(pDevIns, PVIRTIOSCSI);
     PVIRTIOSCSITARGET pTarget = &pThis->aTargetInstances[iLUN];
@@ -736,9 +900,9 @@ const PDMDEVREG g_DeviceVirtioSCSI =
     /* cbInstance */
     sizeof(VIRTIOSCSI),
     /* pfnConstruct */
-    devVirtioScsiConstruct,
+    virtioScsiConstruct,
     /* pfnDestruct */
-    devVirtIoScsiDestruct,
+    virtioScsiDestruct,
     /* pfnRelocate */
     virtioScsiR3Relocate,
     /* pfnMemSetup */
@@ -752,9 +916,9 @@ const PDMDEVREG g_DeviceVirtioSCSI =
     /* pfnResume */
     NULL,
     /* pfnAttach */
-    devVirtioScsiR3Attach,
+    virtioScsiR3Attach,
     /* pfnDetach */
-    devVirtioScsiR3Detach,
+    virtioScsiR3Detach,
     /* pfnQueryInterface */
     NULL,
     /* pfnInitComplete */
