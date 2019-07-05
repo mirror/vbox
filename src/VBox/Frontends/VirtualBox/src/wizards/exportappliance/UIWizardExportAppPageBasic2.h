@@ -42,6 +42,7 @@ class QComboBox;
 class QGridLayout;
 class QLabel;
 class QLineEdit;
+class QRadioButton;
 class QStackedWidget;
 class QTableWidget;
 class QIRichTextLabel;
@@ -219,6 +220,15 @@ protected:
     QIToolButton *m_pAccountToolButton;
     /** Holds the account property table instance. */
     QTableWidget *m_pAccountPropertyTable;
+
+    /** Holds the machine label instance. */
+    QLabel       *m_pMachineLabel;
+    /** Holds the ask then export radio button instance. */
+    QRadioButton *m_pRadioAskThenExport;
+    /** Holds the export then ask radio button instance. */
+    QRadioButton *m_pRadioExportThenAsk;
+    /** Holds the don't ask radio button instance. */
+    QRadioButton *m_pRadioDoNotAsk;
 };
 
 
