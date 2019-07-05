@@ -103,6 +103,9 @@ private slots:
 
 private:
 
+    /** Holds whether starting page was polished. */
+    bool  m_fPolished;
+
     /** Holds the VM selector container instance. */
     QGroupBox *m_pSelectorCnt;
     /** Holds the appliance widget container reference. */

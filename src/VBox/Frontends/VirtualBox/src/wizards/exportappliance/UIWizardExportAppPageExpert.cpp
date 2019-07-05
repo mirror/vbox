@@ -49,6 +49,7 @@
 
 UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &selectedVMNames, bool fExportToOCIByDefault)
     : UIWizardExportAppPage2(fExportToOCIByDefault)
+    , m_fPolished(false)
     , m_pSelectorCnt(0)
     , m_pApplianceCnt(0)
     , m_pSettingsCnt(0)
@@ -390,12 +391,6 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
     populateFormats();
     /* Populate MAC address policies: */
     populateMACAddressPolicies();
-    /* Populate accounts: */
-    populateAccounts();
-    /* Populate account properties: */
-    populateAccountProperties();
-    /* Populate form properties: */
-    populateFormProperties();
 
     /* Setup connections: */
     if (gpManager)
@@ -533,24 +528,15 @@ void UIWizardExportAppPageExpert::retranslateUi()
 
 void UIWizardExportAppPageExpert::initializePage()
 {
+    /* If wasn't polished yet: */
+    if (!m_fPolished)
+    {
+        QMetaObject::invokeMethod(this, "sltHandleFormatComboChange", Qt::QueuedConnection);
+        m_fPolished = true;
+    }
+
     /* Translate page: */
     retranslateUi();
-
-    /* Refresh file selector name: */
-    // refreshFileSelectorName(); already called from retranslateUi();
-    /* Refresh file selector extension: */
-    refreshFileSelectorExtension();
-    /* Refresh manifest check-box access: */
-    refreshManifestCheckBoxAccess();
-    /* Refresh include ISOs check-box access: */
-    refreshIncludeISOsCheckBoxAccess();
-
-    /* Check whether there was cloud target selected: */
-    const bool fIsFormatCloudOne = field("isFormatCloudOne").toBool();
-    if (fIsFormatCloudOne)
-        refreshFormPropertiesTable();
-    else
-        refreshApplianceSettingsWidget();
 }
 
 void UIWizardExportAppPageExpert::cleanupPage()

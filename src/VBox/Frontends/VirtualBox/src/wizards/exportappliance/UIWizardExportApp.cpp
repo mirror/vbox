@@ -241,7 +241,8 @@ void UIWizardExportApp::prepare()
 
     /* Now, when we are ready, we can
      * fast traver to page 2 if requested: */
-    if (m_fFastTraverToExportOCI)
+    if (   mode() == WizardMode_Basic
+        && m_fFastTraverToExportOCI)
         button(QWizard::NextButton)->click();
 }
 
