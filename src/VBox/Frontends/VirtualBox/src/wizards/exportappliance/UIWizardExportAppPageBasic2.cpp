@@ -344,7 +344,7 @@ void UIWizardExportAppPage2::populateFormProperties()
 
             /* Read Cloud Client Export description form: */
             CVirtualSystemDescriptionForm comExportForm;
-            CProgress comExportDescriptionFormProgress = comCloudClient.GetExportDescriptionForm(comVSD, comExportForm);
+            CProgress comExportDescriptionFormProgress = comCloudClient.GetExportLaunchDescriptionForm(comVSD, comExportForm);
             if (!comCloudClient.isOk())
             {
                 msgCenter().cannotAcquireCloudClientParameter(comCloudClient);
