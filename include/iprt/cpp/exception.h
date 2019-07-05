@@ -88,6 +88,7 @@ private:
      */
     RTCError();
 
+protected:
     /** The exception message. */
     RTCString m_strMsg;
 };
