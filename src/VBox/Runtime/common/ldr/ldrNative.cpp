@@ -178,8 +178,13 @@ RT_EXPORT_SYMBOL(RTLdrLoadEx);
 
 RTDECL(int) RTLdrLoadSystem(const char *pszFilename, bool fNoUnload, PRTLDRMOD phLdrMod)
 {
-    LogFlow(("RTLdrLoadSystem: pszFilename=%p:{%s} fNoUnload=%RTbool phLdrMod=%p\n",
-             pszFilename, pszFilename, fNoUnload, phLdrMod));
+    return RTLdrLoadSystemEx(pszFilename, fNoUnload ? RTLDRLOAD_FLAGS_NO_UNLOAD : 0, phLdrMod);
+}
+
+
+RTDECL(int) RTLdrLoadSystemEx(const char *pszFilename, uint32_t fFlags, PRTLDRMOD phLdrMod)
+{
+    LogFlow(("RTLdrLoadSystemEx: pszFilename=%p:{%s} fFlags=%#RX32 phLdrMod=%p\n", pszFilename, pszFilename, fFlags, phLdrMod));
 
     /*
      * Validate input.
@@ -188,6 +193,8 @@ RTDECL(int) RTLdrLoadSystem(const char *pszFilename, bool fNoUnload, PRTLDRMOD p
     *phLdrMod = NIL_RTLDRMOD;
     AssertPtrReturn(pszFilename, VERR_INVALID_PARAMETER);
     AssertMsgReturn(!RTPathHasPath(pszFilename), ("%s\n", pszFilename), VERR_INVALID_PARAMETER);
+    AssertMsgReturn(!(fFlags & ~(RTLDRLOAD_FLAGS_VALID_MASK | RTLDRLOAD_FLAGS_SO_VER_BEGIN_MASK | RTLDRLOAD_FLAGS_SO_VER_END_MASK)),
+                    ("fFlags=%#RX32\n", fFlags), VERR_INVALID_FLAGS);
 
     /*
      * Check the filename.
@@ -202,7 +209,7 @@ RTDECL(int) RTLdrLoadSystem(const char *pszFilename, bool fNoUnload, PRTLDRMOD p
     /*
      * Let the platform specific code do the rest.
      */
-    int rc = rtldrNativeLoadSystem(pszFilename, pszSuffix, fNoUnload ? RTLDRLOAD_FLAGS_NO_UNLOAD : 0, phLdrMod);
+    int rc = rtldrNativeLoadSystem(pszFilename, pszSuffix, fFlags, phLdrMod);
     LogFlow(("RTLdrLoadSystem: returns %Rrc\n", rc));
     return rc;
 }
@@ -210,9 +217,15 @@ RTDECL(int) RTLdrLoadSystem(const char *pszFilename, bool fNoUnload, PRTLDRMOD p
 
 RTDECL(void *) RTLdrGetSystemSymbol(const char *pszFilename, const char *pszSymbol)
 {
+    return RTLdrGetSystemSymbolEx(pszFilename, pszSymbol, RTLDRLOAD_FLAGS_NO_UNLOAD);
+}
+
+
+RTDECL(void *) RTLdrGetSystemSymbolEx(const char *pszFilename, const char *pszSymbol, uint32_t fFlags)
+{
     void    *pvRet = NULL;
     RTLDRMOD hLdrMod;
-    int rc = RTLdrLoadSystem(pszFilename, true /*fNoUnload*/, &hLdrMod);
+    int rc = RTLdrLoadSystemEx(pszFilename, fFlags | RTLDRLOAD_FLAGS_NO_UNLOAD, &hLdrMod);
     if (RT_SUCCESS(rc))
     {
         rc = RTLdrGetSymbol(hLdrMod, pszSymbol, &pvRet);

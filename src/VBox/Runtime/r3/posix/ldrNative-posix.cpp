@@ -147,11 +147,37 @@ DECLHIDDEN(int) rtldrNativeLoadSystem(const char *pszFilename, const char *pszEx
     /* Combine filename and suffix and then do the loading. */
     size_t const cchFilename = strlen(pszFilename);
     size_t const cchSuffix   = strlen(pszExt);
-    char *pszTmp = (char *)alloca(cchFilename + cchSuffix + 1);
+    char *pszTmp = (char *)alloca(cchFilename + cchSuffix + 16 + 1);
     memcpy(pszTmp, pszFilename, cchFilename);
     memcpy(&pszTmp[cchFilename], pszExt, cchSuffix);
     pszTmp[cchFilename + cchSuffix] = '\0';
 
-    return RTLdrLoadEx(pszTmp, phLdrMod, fFlags, NULL);
+    int rc = RTLdrLoadEx(pszTmp, phLdrMod, fFlags, NULL);
+
+#if !defined(RT_OS_DARWIN) && !defined(RT_OS_OS2) && !defined(RT_OS_WINDOWS)
+    /*
+     * If no version was given after the .so and do .so.MAJOR search according
+     * to the range in the fFlags.
+     */
+    if (RT_FAILURE(rc) && !(fFlags & RTLDRLOAD_FLAGS_NO_SUFFIX))
+    {
+        const char *pszActualSuff = RTPathSuffix(pszTmp);
+        if (pszActualSuff && strcmp(pszActualSuff, ".so") == 0)
+        {
+            uint32_t const uBegin = (fFlags & RTLDRLOAD_FLAGS_SO_VER_BEGIN_MASK) >> RTLDRLOAD_FLAGS_SO_VER_BEGIN_SHIFT;
+            uint32_t const uEnd   = (fFlags & RTLDRLOAD_FLAGS_SO_VER_END_MASK)   >> RTLDRLOAD_FLAGS_SO_VER_END_SHIFT;
+            int32_t const  iIncr  = uBegin <= uEnd ? 1 : -1;
+            for (uint32_t uMajorVer = uBegin; uMajorVer != uEnd; uMajorVer += iIncr)
+            {
+                RTStrPrintf(&pszTmp[cchFilename + cchSuffix], 16 + 1, ".%u", uMajorVer);
+                rc = RTLdrLoadEx(pszTmp, phLdrMod, fFlags, NULL);
+                if (RT_SUCCESS(rc))
+                    break;
+            }
+        }
+    }
+#endif
+
+    return rc;
 }
 

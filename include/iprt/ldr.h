@@ -277,7 +277,7 @@ RTDECL(int) RTLdrLoad(const char *pszFilename, PRTLDRMOD phLdrMod);
  */
 RTDECL(int) RTLdrLoadEx(const char *pszFilename, PRTLDRMOD phLdrMod, uint32_t fFlags, PRTERRINFO pErrInfo);
 
-/** @defgroup RTLDRLOAD_FLAGS_XXX RTLdrLoadEx flags.
+/** @defgroup RTLDRLOAD_FLAGS_XXX Flags for RTLdrLoadEx, RTLdrLoadSystemEx and RTLdrGetSystemSymbolEx
  * @{ */
 /** Symbols defined in this library are not made available to resolve
  * references in subsequently loaded libraries (default). */
@@ -293,7 +293,28 @@ RTDECL(int) RTLdrLoadEx(const char *pszFilename, PRTLDRMOD phLdrMod, uint32_t fF
 #define RTLDRLOAD_FLAGS_NT_SEARCH_DLL_LOAD_DIR  RT_BIT_32(2)
 /** Do not append default suffix.   */
 #define RTLDRLOAD_FLAGS_NO_SUFFIX               RT_BIT_32(3)
-/** The mask of valid flag bits. */
+/** Shift for the first .so.MAJOR version number to try.
+ * Only applicable to RTLdrLoadSystemEx() and RTLdrGetSystemSymbolEx(). */
+#define RTLDRLOAD_FLAGS_SO_VER_BEGIN_SHIFT        12
+/** Mask for the first .so.MAJOR version number to try.
+ * Only applicable to RTLdrLoadSystemEx() and RTLdrGetSystemSymbolEx(). */
+#define RTLDRLOAD_FLAGS_SO_VER_BEGIN_MASK         UINT32_C(0x003ff000)
+/** Shift for the end .so.MAJOR version number (exclusive).
+ * Only applicable to RTLdrLoadSystemEx() and RTLdrGetSystemSymbolEx(). */
+#define RTLDRLOAD_FLAGS_SO_VER_END_SHIFT        22
+/** Mask for the end .so.MAJOR version number (exclusive).
+ * Only applicable to RTLdrLoadSystemEx() and RTLdrGetSystemSymbolEx(). */
+#define RTLDRLOAD_FLAGS_SO_VER_END_MASK         UINT32_C(0xffc00000)
+/** Specifies the range for the .so.MAJOR version number.
+ * Only applicable to RTLdrLoadSystemEx() and RTLdrGetSystemSymbolEx().
+ * Ignored on systems not using .so.
+ * @param a_uBegin  The first version to try.
+ * @param a_uEnd    The version number to stop at (exclusive).
+ */
+#define RTLDRLOAD_FLAGS_SO_VER_RANGE(a_uBegin, a_uEnd) \
+    ( ((a_uBegin) << RTLDRLOAD_FLAGS_SO_VER_BEGIN_SHIFT) | ((a_uEnd) << RTLDRLOAD_FLAGS_SO_VER_END_SHIFT) )
+/** The mask of valid flag bits.
+ * The shared object major version range is excluded. */
 #define RTLDRLOAD_FLAGS_VALID_MASK              UINT32_C(0x0000000f)
 /** @} */
 
@@ -311,14 +332,38 @@ RTDECL(int) RTLdrLoadEx(const char *pszFilename, PRTLDRMOD phLdrMod, uint32_t fF
 RTDECL(int) RTLdrLoadSystem(const char *pszFilename, bool fNoUnload, PRTLDRMOD phLdrMod);
 
 /**
+ * Loads a dynamic load library (/shared object) image file residing in one of
+ * the default system library locations, extended version.
+ *
+ * Only the system library locations are searched. No suffix is required.
+ *
+ * @returns iprt status code.
+ * @param   pszFilename Image filename. No path.
+ * @param   fFlags      RTLDRLOAD_FLAGS_XXX, including RTLDRLOAD_FLAGS_SO_VER_XXX.
+ * @param   phLdrMod    Where to store the handle to the loaded module.
+ */
+RTDECL(int) RTLdrLoadSystemEx(const char *pszFilename, uint32_t fFlags, PRTLDRMOD phLdrMod);
+
+/**
  * Combines RTLdrLoadSystem and RTLdrGetSymbol, with fNoUnload set to true.
  *
  * @returns The symbol value, NULL on failure.  (If you care for a less boolean
  *          status, go thru the necessary API calls yourself.)
  * @param   pszFilename Image filename. No path.
- * @param   pszSymbol       Symbol name.
+ * @param   pszSymbol   Symbol name.
  */
 RTDECL(void *) RTLdrGetSystemSymbol(const char *pszFilename, const char *pszSymbol);
+
+/**
+ * Combines RTLdrLoadSystemEx and RTLdrGetSymbol.
+ *
+ * @returns The symbol value, NULL on failure.  (If you care for a less boolean
+ *          status, go thru the necessary API calls yourself.)
+ * @param   pszFilename Image filename. No path.
+ * @param   pszSymbol   Symbol name.
+ * @param   fFlags      RTLDRLOAD_FLAGS_XXX, including RTLDRLOAD_FLAGS_SO_VER_XXX.
+ */
+RTDECL(void *) RTLdrGetSystemSymbolEx(const char *pszFilename, const char *pszSymbol, uint32_t fFlags);
 
 /**
  * Loads a dynamic load library (/shared object) image file residing in the

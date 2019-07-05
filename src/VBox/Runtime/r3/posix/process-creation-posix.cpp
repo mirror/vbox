@@ -203,9 +203,9 @@ static char *rtProcDynamicCryptR(const char *pszKey, const char *pszSalt, struct
     if (pfnCryptR)
         return pfnCryptR(pszKey, pszSalt, pData);
 
-    pfnCryptR = (PFNCRYPTR)(uintptr_t)RTLdrGetSystemSymbol("libcrypt.so", "crypt_r");
+    pfnCryptR = (PFNCRYPTR)(uintptr_t)RTLdrGetSystemSymbolEx("libcrypt.so", "crypt_r", RTLDRLOAD_FLAGS_SO_VER_RANGE(1, 6));
     if (!pfnCryptR)
-        pfnCryptR = (PFNCRYPTR)(uintptr_t)RTLdrGetSystemSymbol("libxcrypt.so", "crypt_r");
+        pfnCryptR = (PFNCRYPTR)(uintptr_t)RTLdrGetSystemSymbolEx("libxcrypt.so", "crypt_r", RTLDRLOAD_FLAGS_SO_VER_RANGE(1, 32));
     if (pfnCryptR)
     {
         s_pfnCryptR = pfnCryptR;
