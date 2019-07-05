@@ -140,11 +140,25 @@ DECLHIDDEN(int) rtldrNativeLoadSystem(const char *pszFilename, const char *pszEx
      */
     Assert(strchr(pszFilename, '/') == NULL);
 
-    /* Easy if suffix was included. */
-    if (!pszExt)
-        return RTLdrLoadEx(pszFilename, phLdrMod, fFlags, NULL);
+    uint32_t const fFlags2 = fFlags & ~(RTLDRLOAD_FLAGS_SO_VER_BEGIN_MASK | RTLDRLOAD_FLAGS_SO_VER_END_MASK);
 
-    /* Combine filename and suffix and then do the loading. */
+    /*
+     * If no suffix is given and we haven't got any RTLDRLOAD_FLAGS_SO_VER_ range to work
+     * with, we can call RTLdrLoadEx directly.
+     */
+    if (!pszExt)
+    {
+#if !defined(RT_OS_DARWIN) && !defined(RT_OS_OS2) && !defined(RT_OS_WINDOWS)
+        if (    (fFlags & RTLDRLOAD_FLAGS_SO_VER_BEGIN_MASK) >> RTLDRLOAD_FLAGS_SO_VER_BEGIN_SHIFT
+             == (fFlags & RTLDRLOAD_FLAGS_SO_VER_END_MASK)   >> RTLDRLOAD_FLAGS_SO_VER_END_SHIFT)
+#endif
+            return RTLdrLoadEx(pszFilename, phLdrMod, fFlags2, NULL);
+        pszExt = "";
+    }
+
+    /*
+     * Combine filename and suffix and then do the loading.
+     */
     size_t const cchFilename = strlen(pszFilename);
     size_t const cchSuffix   = strlen(pszExt);
     char *pszTmp = (char *)alloca(cchFilename + cchSuffix + 16 + 1);
@@ -152,7 +166,7 @@ DECLHIDDEN(int) rtldrNativeLoadSystem(const char *pszFilename, const char *pszEx
     memcpy(&pszTmp[cchFilename], pszExt, cchSuffix);
     pszTmp[cchFilename + cchSuffix] = '\0';
 
-    int rc = RTLdrLoadEx(pszTmp, phLdrMod, fFlags, NULL);
+    int rc = RTLdrLoadEx(pszTmp, phLdrMod, fFlags2, NULL);
 
 #if !defined(RT_OS_DARWIN) && !defined(RT_OS_OS2) && !defined(RT_OS_WINDOWS)
     /*
@@ -164,13 +178,13 @@ DECLHIDDEN(int) rtldrNativeLoadSystem(const char *pszFilename, const char *pszEx
         const char *pszActualSuff = RTPathSuffix(pszTmp);
         if (pszActualSuff && strcmp(pszActualSuff, ".so") == 0)
         {
-            uint32_t const uBegin = (fFlags & RTLDRLOAD_FLAGS_SO_VER_BEGIN_MASK) >> RTLDRLOAD_FLAGS_SO_VER_BEGIN_SHIFT;
-            uint32_t const uEnd   = (fFlags & RTLDRLOAD_FLAGS_SO_VER_END_MASK)   >> RTLDRLOAD_FLAGS_SO_VER_END_SHIFT;
-            int32_t const  iIncr  = uBegin <= uEnd ? 1 : -1;
-            for (uint32_t uMajorVer = uBegin; uMajorVer != uEnd; uMajorVer += iIncr)
+            int32_t const iBegin    = (fFlags & RTLDRLOAD_FLAGS_SO_VER_BEGIN_MASK) >> RTLDRLOAD_FLAGS_SO_VER_BEGIN_SHIFT;
+            int32_t const iEnd      = (fFlags & RTLDRLOAD_FLAGS_SO_VER_END_MASK)   >> RTLDRLOAD_FLAGS_SO_VER_END_SHIFT;
+            int32_t const iIncr     = iBegin <= iEnd ? 1 : -1;
+            for (int32_t  iMajorVer = iBegin; iMajorVer != iEnd; iMajorVer += iIncr)
             {
-                RTStrPrintf(&pszTmp[cchFilename + cchSuffix], 16 + 1, ".%u", uMajorVer);
-                rc = RTLdrLoadEx(pszTmp, phLdrMod, fFlags, NULL);
+                RTStrPrintf(&pszTmp[cchFilename + cchSuffix], 16 + 1, ".%d", iMajorVer);
+                rc = RTLdrLoadEx(pszTmp, phLdrMod, fFlags2, NULL);
                 if (RT_SUCCESS(rc))
                     break;
             }
