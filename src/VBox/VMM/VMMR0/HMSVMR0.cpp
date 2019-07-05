@@ -7945,22 +7945,22 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptGeneric(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient
 #ifdef VBOX_WITH_STATISTICS
     switch (uVector)
     {
-        case X86_XCPT_DE:               STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestDE);     break;
-        case X86_XCPT_DB:               STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestDB);     break;
-        case X86_XCPT_BP:               STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestBP);     break;
-        case X86_XCPT_OF:               STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestOF);     break;
-        case X86_XCPT_BR:               STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestBR);     break;
-        case X86_XCPT_UD:               STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestUD);     break;
-        case X86_XCPT_NM:               STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestOF);     break;
-        case X86_XCPT_DF:               STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestDF);     break;
-        case X86_XCPT_TS:               STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestTS);     break;
-        case X86_XCPT_NP:               STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestNP);     break;
-        case X86_XCPT_SS:               STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestSS);     break;
-        case X86_XCPT_GP:               STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestGP);     break;
-        case X86_XCPT_PF:               STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestPF);     break;
-        case X86_XCPT_MF:               STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestMF);     break;
-        case X86_XCPT_AC:               STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestAC);     break;
-        case X86_XCPT_XF:               STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestXF);     break;
+        case X86_XCPT_DE:   STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestDE);     break;
+        case X86_XCPT_DB:   STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestDB);     break;
+        case X86_XCPT_BP:   STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestBP);     break;
+        case X86_XCPT_OF:   STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestOF);     break;
+        case X86_XCPT_BR:   STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestBR);     break;
+        case X86_XCPT_UD:   STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestUD);     break;
+        case X86_XCPT_NM:   STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestOF);     break;
+        case X86_XCPT_DF:   STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestDF);     break;
+        case X86_XCPT_TS:   STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestTS);     break;
+        case X86_XCPT_NP:   STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestNP);     break;
+        case X86_XCPT_SS:   STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestSS);     break;
+        case X86_XCPT_GP:   STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestGP);     break;
+        case X86_XCPT_PF:   STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestPF);     break;
+        case X86_XCPT_MF:   STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestMF);     break;
+        case X86_XCPT_AC:   STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestAC);     break;
+        case X86_XCPT_XF:   STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestXF);     break;
         default:
             STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestXcpUnk);
             break;
