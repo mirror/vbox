@@ -14665,15 +14665,15 @@ static VBOXSTRICTRC hmR0VmxExitXcptGP(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 
 
 /**
- * VM-exit exception handler wrapper for generic exceptions. Simply re-injects
- * the exception reported in the VMX transient structure back into the VM.
+ * VM-exit exception handler wrapper for generic exceptions.
  *
- * @remarks Requires uExitIntInfo in the VMX transient structure to be
- *          up-to-date.
+ * This simply re-injects the exception back into the VM without any special
+ * processing.
  */
 static VBOXSTRICTRC hmR0VmxExitXcptGeneric(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_XCPT_HANDLER_PARAMS(pVCpu, pVmxTransient);
+
 #ifndef HMVMX_ALWAYS_TRAP_ALL_XCPTS
     PCVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
     AssertMsg(pVCpu->hm.s.fUsingDebugLoop || pVmcsInfo->RealMode.fRealOnV86Active || pVmxTransient->fIsNestedGuest,
@@ -14686,17 +14686,50 @@ static VBOXSTRICTRC hmR0VmxExitXcptGeneric(PVMCPU pVCpu, PVMXTRANSIENT pVmxTrans
      * Re-inject the exception into the guest. This cannot be a double-fault condition which
      * would have been handled while checking exits due to event delivery.
      */
-    int rc = hmR0VmxReadExitIntErrorCodeVmcs(pVmxTransient);
+    int rc = hmR0VmxReadExitIntInfoVmcs(pVmxTransient);
     rc    |= hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
+    rc    |= hmR0VmxReadExitIntErrorCodeVmcs(pVmxTransient);
     AssertRCReturn(rc, rc);
-    Assert(ASMAtomicUoReadU32(&pVmxTransient->fVmcsFieldsRead) & HMVMX_READ_EXIT_INTERRUPTION_INFO);
 
-#ifdef DEBUG_ramshankar
-    rc |= hmR0VmxImportGuestState(pVCpu, pVmxTransient->pVmcsInfo, CPUMCTX_EXTRN_CS | CPUMCTX_EXTRN_RIP);
-    Log(("hmR0VmxExitXcptGeneric: Reinjecting Xcpt. uVector=%#x cs:rip=%#04x:%#RX64\n",
-         VMX_EXIT_INT_INFO_VECTOR(pVmxTransient->uExitIntInfo), pCtx->cs.Sel, pCtx->rip));
+    uint8_t const uVector = VMX_EXIT_INT_INFO_VECTOR(pVmxTransient->uExitIntInfo);
+
+#ifdef HMVMX_ALWAYS_TRAP_ALL_XCPTS
+    rc = hmR0VmxImportGuestState(pVCpu, pVmxTransient->pVmcsInfo, CPUMCTX_EXTRN_CS | CPUMCTX_EXTRN_RIP);
+    AssertRCReturn(rc, rc);
+    Log4Func(("Reinjecting Xcpt. uVector=%#x cs:rip=%#04x:%#RX64\n", uVector, pCtx->cs.Sel, pCtx->rip));
 #endif
 
+#ifdef VBOX_WITH_STATISTICS
+    switch (uVector)
+    {
+        case X86_XCPT_DE:   STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestDE);     break;
+        case X86_XCPT_DB:   STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestDB);     break;
+        case X86_XCPT_BP:   STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestBP);     break;
+        case X86_XCPT_OF:   STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestOF);     break;
+        case X86_XCPT_BR:   STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestBR);     break;
+        case X86_XCPT_UD:   STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestUD);     break;
+        case X86_XCPT_NM:   STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestOF);     break;
+        case X86_XCPT_DF:   STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestDF);     break;
+        case X86_XCPT_TS:   STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestTS);     break;
+        case X86_XCPT_NP:   STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestNP);     break;
+        case X86_XCPT_SS:   STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestSS);     break;
+        case X86_XCPT_GP:   STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestGP);     break;
+        case X86_XCPT_PF:   STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestPF);     break;
+        case X86_XCPT_MF:   STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestMF);     break;
+        case X86_XCPT_AC:   STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestAC);     break;
+        case X86_XCPT_XF:   STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestXF);     break;
+        default:
+            STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestXcpUnk);
+            break;
+    }
+#endif
+
+    /* We should never call this function for a page-fault, we'd need to pass on the fault address below otherwise. */
+    Assert(   uVector != X86_XCPT_PF
+           || VMX_EXIT_INT_INFO_TYPE(pVmxTransient->uExitIntInfo) != VMX_EXIT_INT_INFO_TYPE_HW_XCPT);
+    NOREF(uVector);
+
+    /* Re-inject the original exception into the guest. */
     hmR0VmxSetPendingEvent(pVCpu, VMX_ENTRY_INT_INFO_FROM_EXIT_INT_INFO(pVmxTransient->uExitIntInfo), pVmxTransient->cbInstr,
                            pVmxTransient->uExitIntErrorCode, 0 /* GCPtrFaultAddress */);
     return VINF_SUCCESS;
@@ -14797,53 +14830,15 @@ HMVMX_EXIT_DECL hmR0VmxExitXcptOrNmi(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 
             switch (uVector)
             {
-                case X86_XCPT_PF: rcStrict = hmR0VmxExitXcptPF(pVCpu, pVmxTransient);      break;
-                case X86_XCPT_GP: rcStrict = hmR0VmxExitXcptGP(pVCpu, pVmxTransient);      break;
-                case X86_XCPT_MF: rcStrict = hmR0VmxExitXcptMF(pVCpu, pVmxTransient);      break;
-                case X86_XCPT_DB: rcStrict = hmR0VmxExitXcptDB(pVCpu, pVmxTransient);      break;
-                case X86_XCPT_BP: rcStrict = hmR0VmxExitXcptBP(pVCpu, pVmxTransient);      break;
-                case X86_XCPT_AC: rcStrict = hmR0VmxExitXcptAC(pVCpu, pVmxTransient);      break;
-
-                case X86_XCPT_NM: STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestNM);
-                                  rcStrict = hmR0VmxExitXcptGeneric(pVCpu, pVmxTransient); break;
-                case X86_XCPT_XF: STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestXF);
-                                  rcStrict = hmR0VmxExitXcptGeneric(pVCpu, pVmxTransient); break;
-                case X86_XCPT_DE: STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestDE);
-                                  rcStrict = hmR0VmxExitXcptGeneric(pVCpu, pVmxTransient); break;
-                case X86_XCPT_UD: STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestUD);
-                                  rcStrict = hmR0VmxExitXcptGeneric(pVCpu, pVmxTransient); break;
-                case X86_XCPT_SS: STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestSS);
-                                  rcStrict = hmR0VmxExitXcptGeneric(pVCpu, pVmxTransient); break;
-                case X86_XCPT_NP: STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestNP);
-                                  rcStrict = hmR0VmxExitXcptGeneric(pVCpu, pVmxTransient); break;
-                case X86_XCPT_TS: STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestTS);
-                                  rcStrict = hmR0VmxExitXcptGeneric(pVCpu, pVmxTransient); break;
+                case X86_XCPT_PF: rcStrict = hmR0VmxExitXcptPF(pVCpu, pVmxTransient);   break;
+                case X86_XCPT_GP: rcStrict = hmR0VmxExitXcptGP(pVCpu, pVmxTransient);   break;
+                case X86_XCPT_MF: rcStrict = hmR0VmxExitXcptMF(pVCpu, pVmxTransient);   break;
+                case X86_XCPT_DB: rcStrict = hmR0VmxExitXcptDB(pVCpu, pVmxTransient);   break;
+                case X86_XCPT_BP: rcStrict = hmR0VmxExitXcptBP(pVCpu, pVmxTransient);   break;
+                case X86_XCPT_AC: rcStrict = hmR0VmxExitXcptAC(pVCpu, pVmxTransient);   break;
                 default:
-                {
-                    STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestXcpUnk);
-                    if (pVmcsInfo->RealMode.fRealOnV86Active)
-                    {
-                        Assert(pVCpu->CTX_SUFF(pVM)->hm.s.vmx.pRealModeTSS);
-                        Assert(PDMVmmDevHeapIsEnabled(pVCpu->CTX_SUFF(pVM)));
-                        Assert(CPUMIsGuestInRealModeEx(&pVCpu->cpum.GstCtx));
-
-                        rc  = hmR0VmxImportGuestState(pVCpu, pVmcsInfo, CPUMCTX_EXTRN_CR0);
-                        rc |= hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
-                        rc |= hmR0VmxReadExitIntErrorCodeVmcs(pVmxTransient);
-                        AssertRCReturn(rc, rc);
-                        hmR0VmxSetPendingEvent(pVCpu, VMX_ENTRY_INT_INFO_FROM_EXIT_INT_INFO(uExitIntInfo),
-                                               pVmxTransient->cbInstr, pVmxTransient->uExitIntErrorCode,
-                                               0 /* GCPtrFaultAddress */);
-                        rcStrict = VINF_SUCCESS;
-                    }
-                    else
-                    {
-                        AssertMsgFailed(("Unexpected VM-exit caused by exception %#x\n", uVector));
-                        pVCpu->hm.s.u32HMError = uVector;
-                        rcStrict = VERR_VMX_UNEXPECTED_EXCEPTION;
-                    }
+                    rcStrict = hmR0VmxExitXcptGeneric(pVCpu, pVmxTransient);
                     break;
-                }
             }
             break;
         }
