@@ -39,11 +39,13 @@
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
-/** 8-bit char -> digit. */
+/** 8-bit char -> digit.
+ * Non-digits have values 255 (most), 254 (zero), 253 (colon) and 252 (space).
+ */
 static const unsigned char g_auchDigits[256] =
 {
-    255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
-    255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,  0,  1,  2,  3,  4,  5,  6,  7,  8,  9,255,255,255,255,255,255,
+    254,255,255,255,255,255,255,255,255,252,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+    252,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,  0,  1,  2,  3,  4,  5,  6,  7,  8,  9,253,255,255,255,255,255,
     255, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35,255,255,255,255,255,
     255, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35,255,255,255,255,255,
     255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
@@ -51,6 +53,7 @@ static const unsigned char g_auchDigits[256] =
     255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
     255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255
 };
+
 /** Approximated overflow shift checks. */
 static const char g_auchShift[36] =
 {
@@ -74,6 +77,12 @@ int main()
             ch = i - 'a' + 10;
         else if (i >= 'A' && i <= 'Z')
             ch = i - 'A' + 10;
+        else if (i == 0)
+            ch = 254;
+        else if (i == ':')
+            ch = 253;
+        else if (i == ' ' || i == '\t')
+            ch = 252;
         if (i == 0)
             printf("\n    %3d", ch);
         else if ((i % 32) == 0)
@@ -972,45 +981,219 @@ RTDECL(int8_t) RTStrToInt8(const char *pszValue)
 RT_EXPORT_SYMBOL(RTStrToInt8);
 
 
-RTDECL(int) RTStrConvertHexBytes(char const *pszHex, void *pv, size_t cb, uint32_t fFlags)
+RTDECL(int) RTStrConvertHexBytesEx(char const *pszHex, void *pv, size_t cb, uint32_t fFlags,
+                                   const char **ppszNext, size_t *pcbReturned)
 {
-    size_t      cbDst;
-    uint8_t    *pbDst;
-    const char *pszSrc;
+    size_t               cbDst  = cb;
+    uint8_t             *pbDst  = (uint8_t *)pv;
+    const unsigned char *pszSrc = (const unsigned char *)pszHex;
+    unsigned char        uchDigit;
 
+    if (pcbReturned)
+        *pcbReturned = 0;
+    if (ppszNext)
+        *ppszNext = NULL;
     AssertPtrReturn(pszHex, VERR_INVALID_POINTER);
-    AssertReturn(!fFlags, VERR_INVALID_PARAMETER);
+    AssertReturn(!(fFlags & ~RTSTRCONVERTHEXBYTES_F_SEP_COLON), VERR_INVALID_FLAGS);
 
-    cbDst  = cb;
-    pbDst  = (uint8_t *)pv;
-    pszSrc = pszHex;
-    for (;;)
+    if (fFlags & RTSTRCONVERTHEXBYTES_F_SEP_COLON)
     {
-        /* Pick the next two digit from the string. */
-        char ch = *pszSrc++;
-        unsigned char uchDigit1 = g_auchDigits[(unsigned char)ch];
-        unsigned char uchDigit2;
-        if (uchDigit1 >= 16)
+        /*
+         * Optional colon separators.
+         */
+        bool fPrevColon = true; /* leading colon is taken to mean leading zero byte */
+        for (;;)
         {
-            if (!ch)
-                return cbDst == 0 ? VINF_SUCCESS : VERR_BUFFER_UNDERFLOW;
-
-            while (ch == ' ' || ch == '\t')
-                ch = *pszSrc++;
-            return ch ? VWRN_TRAILING_CHARS : VWRN_TRAILING_SPACES;
+            /* Pick the next two digit from the string. */
+            uchDigit = g_auchDigits[*pszSrc++];
+            if (uchDigit >= 16)
+            {
+                if (uchDigit == 253 /* colon */)
+                {
+                    Assert(pszSrc[-1] == ':');
+                    if (!fPrevColon)
+                        fPrevColon = true;
+                    /* Add zero byte if there is room. */
+                    else if (cbDst > 0)
+                    {
+                        cbDst--;
+                        *pbDst++ = 0;
+                    }
+                    else
+                    {
+                        if (pcbReturned)
+                            *pcbReturned = pbDst - (uint8_t *)pv;
+                        if (ppszNext)
+                            *ppszNext = (const char *)pszSrc - 1;
+                        return VERR_BUFFER_OVERFLOW;
+                    }
+                    continue;
+                }
+                else
+                    break;
+            }
+            else
+            {
+                /* Got one digit, check what comes next: */
+                unsigned char const uchDigit2 = g_auchDigits[*pszSrc++];
+                if (uchDigit2 < 16)
+                {
+                    if (cbDst > 0)
+                    {
+                        *pbDst++ = (uchDigit << 4) | uchDigit2;
+                        cbDst--;
+                        fPrevColon = false;
+                    }
+                    else
+                    {
+                        if (pcbReturned)
+                            *pcbReturned = pbDst - (uint8_t *)pv;
+                        if (ppszNext)
+                            *ppszNext = (const char *)pszSrc - 1;
+                        return VERR_BUFFER_OVERFLOW;
+                    }
+                }
+                /* Lone digits are only allowed if following a colon or at the very start, because
+                   if there is more than one byte it ambigious whether it is the lead or tail byte
+                   that only has one digit in it.
+                   Note! This also ensures better compatibility with the no-separator variant
+                         (except for single digit strings, which are accepted here but not below). */
+                else if (fPrevColon)
+                {
+                    if (cbDst > 0)
+                    {
+                        *pbDst++ = uchDigit;
+                        cbDst--;
+                    }
+                    else
+                    {
+                        if (pcbReturned)
+                            *pcbReturned = pbDst - (uint8_t *)pv;
+                        if (ppszNext)
+                            *ppszNext = (const char *)pszSrc - 1;
+                        return VERR_BUFFER_OVERFLOW;
+                    }
+                    if (uchDigit2 == 253 /* colon */)
+                    {
+                        Assert(pszSrc[-1] == ':');
+                        fPrevColon = true;
+                    }
+                    else
+                    {
+                        fPrevColon = false;
+                        uchDigit = uchDigit2;
+                        break;
+                    }
+                }
+                else
+                {
+                    if (pcbReturned)
+                        *pcbReturned = pbDst - (uint8_t *)pv;
+                    if (ppszNext)
+                        *ppszNext = (const char *)pszSrc - 2;
+                    return VERR_UNEVEN_INPUT;
+                }
+            }
         }
 
-        ch = *pszSrc++;
-        uchDigit2 = g_auchDigits[(unsigned char)ch];
-        if (uchDigit2 >= 16)
-            return VERR_UNEVEN_INPUT;
-
-        /* Add the byte to the output buffer. */
-        if (!cbDst)
-            return VERR_BUFFER_OVERFLOW;
-        cbDst--;
-        *pbDst++ = (uchDigit1 << 4) | uchDigit2;
+        /* Trailing colon means trailing zero byte: */
+        if (fPrevColon)
+        {
+            if (cbDst > 0)
+            {
+                *pbDst++ = 0;
+                cbDst--;
+            }
+            else
+            {
+                if (pcbReturned)
+                    *pcbReturned = pbDst - (uint8_t *)pv;
+                if (ppszNext)
+                    *ppszNext = (const char *)pszSrc - 1;
+                return VERR_BUFFER_OVERFLOW;
+            }
+        }
     }
+    else
+    {
+        /*
+         * No separators.
+         */
+        for (;;)
+        {
+            /* Pick the next two digit from the string. */
+            uchDigit = g_auchDigits[*pszSrc++];
+            if (uchDigit < 16)
+            {
+                unsigned char const uchDigit2 = g_auchDigits[*pszSrc++];
+                if (uchDigit2 < 16)
+                {
+                    /* Add the byte to the output buffer. */
+                    if (cbDst)
+                    {
+                        cbDst--;
+                        *pbDst++ = (uchDigit << 4) | uchDigit2;
+                    }
+                    else
+                    {
+                        if (pcbReturned)
+                            *pcbReturned = pbDst - (uint8_t *)pv;
+                        if (ppszNext)
+                            *ppszNext = (const char *)pszSrc - 2;
+                        return VERR_BUFFER_OVERFLOW;
+                    }
+                }
+                else
+                {
+                    if (pcbReturned)
+                        *pcbReturned = pbDst - (uint8_t *)pv;
+                    if (ppszNext)
+                        *ppszNext = (const char *)pszSrc - 2;
+                    return VERR_UNEVEN_INPUT;
+                }
+            }
+            else
+                break;
+        }
+    }
+
+    /*
+     * End of hex bytes, look what comes next and figure out what to return.
+     */
+    if (pcbReturned)
+        *pcbReturned = pbDst - (uint8_t *)pv;
+    if (ppszNext)
+        *ppszNext = (const char *)pszSrc - 1;
+
+    if (uchDigit == 254)
+    {
+        Assert(pszSrc[-1] == '\0');
+        if (cbDst == 0)
+            return VINF_SUCCESS;
+        return pcbReturned ? VINF_BUFFER_UNDERFLOW : VERR_BUFFER_UNDERFLOW;
+    }
+    Assert(pszSrc[-1] != '\0');
+
+    if (cbDst != 0 && !pcbReturned)
+        return VERR_BUFFER_UNDERFLOW;
+
+    while (uchDigit == 252)
+    {
+        Assert(pszSrc[-1] == ' ' || pszSrc[-1] == '\t');
+        uchDigit = g_auchDigits[*pszSrc++];
+    }
+
+    Assert(pszSrc[-1] == '\0' ? uchDigit == 254 : uchDigit != 254);
+    return uchDigit == 254 ? VWRN_TRAILING_CHARS : VWRN_TRAILING_SPACES;
+
+}
+RT_EXPORT_SYMBOL(RTStrConvertHexBytesEx);
+
+
+RTDECL(int) RTStrConvertHexBytes(char const *pszHex, void *pv, size_t cb, uint32_t fFlags)
+{
+    return RTStrConvertHexBytesEx(pszHex, pv, cb, fFlags, NULL /*ppszNext*/, NULL /*pcbReturned*/);
+
 }
 RT_EXPORT_SYMBOL(RTStrConvertHexBytes);
 

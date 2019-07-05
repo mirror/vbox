@@ -3142,9 +3142,42 @@ RTDECL(int) RTStrPrintHexBytes(char *pszBuf, size_t cbBuf, void const *pv, size_
  * @param   pszHex      The string containing the hex bytes.
  * @param   pv          Output buffer.
  * @param   cb          The size of the output buffer.
- * @param   fFlags      Must be zero, reserved for future use.
+ * @param   fFlags      RTSTRCONVERTHEXBYTES_F_XXX.
  */
 RTDECL(int) RTStrConvertHexBytes(char const *pszHex, void *pv, size_t cb, uint32_t fFlags);
+
+/** @name RTSTRCONVERTHEXBYTES_F_XXX - Flags for RTStrConvertHexBytes() and RTStrConvertHexBytesEx().
+ * @{  */
+/** Accept colon as a byte separator. */
+#define RTSTRCONVERTHEXBYTES_F_SEP_COLON  RT_BIT(0)
+/** @} */
+
+/**
+ * Converts a string of hex bytes back into binary data, extended version.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_INVALID_POINTER if any of the pointers are wrong.
+ * @retval  VERR_BUFFER_OVERFLOW if the string contains too many hex bytes.
+ * @retval  VERR_BUFFER_UNDERFLOW if there aren't enough hex bytes to fill up
+ *          the output buffer and *pcbReturned is NULL.
+ * @retval  VINF_BUFFER_UNDERFLOW if there aren't enough hex bytes to fill up
+ *          the output buffer and *pcbReturned is not NULL, *pcbReturned holds
+ *          the actual number of bytes.
+ * @retval  VERR_UNEVEN_INPUT if the input contains a half byte.
+ * @retval  VERR_NO_DIGITS
+ * @retval  VWRN_TRAILING_CHARS
+ * @retval  VWRN_TRAILING_SPACES
+ *
+ * @param   pszHex      The string containing the hex bytes.
+ * @param   pv          Output buffer.
+ * @param   cb          The size of the output buffer.
+ * @param   fFlags      RTSTRCONVERTHEXBYTES_F_XXX.
+ * @param   ppszNext    Set to point at where we stopped decoding hex bytes.
+ *                      Optional.
+ * @param   pcbReturned Where to return the number of bytes found.  Optional.
+ */
+RTDECL(int) RTStrConvertHexBytesEx(char const *pszHex, void *pv, size_t cb, uint32_t fFlags,
+                                   const char **ppszNext, size_t *pcbReturned);
 
 /** @} */
 

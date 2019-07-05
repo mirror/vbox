@@ -2063,6 +2063,7 @@
 # define RTStrCatPEx                                    RT_MANGLER(RTStrCatPEx)
 # define RTStrCmp                                       RT_MANGLER(RTStrCmp)
 # define RTStrConvertHexBytes                           RT_MANGLER(RTStrConvertHexBytes)
+# define RTStrConvertHexBytesEx                         RT_MANGLER(RTStrConvertHexBytesEx)
 # define RTStrCopy                                      RT_MANGLER(RTStrCopy)
 # define RTStrCopyEx                                    RT_MANGLER(RTStrCopyEx)
 # define RTStrCopyP                                     RT_MANGLER(RTStrCopyP)

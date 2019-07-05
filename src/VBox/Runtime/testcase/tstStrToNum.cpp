@@ -24,7 +24,11 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#include <iprt/initterm.h>
+
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
+#include <iprt/test.h>
 #include <iprt/string.h>
 #include <iprt/stream.h>
 #include <iprt/err.h>
@@ -68,15 +72,9 @@ struct TstU32
         Type Result; \
         int rc = Fun(Test.psz, NULL, Test.uBase, &Result); \
         if (Result != Test.Result) \
-        { \
-            RTPrintf("failure: '%s' -> " Fmt " expected " Fmt ". (%s/%u)\n", Test.psz, Result, Test.Result, #Fun, iTest); \
-            cErrors++; \
-        } \
+            RTTestIFailed("'%s' -> " Fmt " expected " Fmt ". (%s/%u)\n", Test.psz, Result, Test.Result, #Fun, iTest); \
         else if (rc != Test.rc) \
-        { \
-            RTPrintf("failure: '%s' -> rc=%Rrc expected %Rrc. (%s/%u)\n", Test.psz, rc, Test.rc, #Fun, iTest); \
-            cErrors++; \
-        } \
+            RTTestIFailed("'%s' -> rc=%Rrc expected %Rrc. (%s/%u)\n", Test.psz, rc, Test.rc, #Fun, iTest); \
     } while (0)
 
 
@@ -91,9 +89,11 @@ struct TstU32
 
 int main()
 {
-    RTR3InitExeNoArguments(0);
+    RTTEST     hTest;
+    RTEXITCODE rcExit = RTTestInitAndCreate("tstRTStrToNum", &hTest);
+    if (rcExit != RTEXITCODE_SUCCESS)
+        return rcExit;
 
-    int cErrors = 0;
     static const struct TstU64 aTstU64[] =
     {
         { "0",                      0,  VINF_SUCCESS,           0 },
@@ -156,7 +156,6 @@ int main()
         { "0x111111111",            0,  VINF_SUCCESS,           0x111111111ULL },
     };
     RUN_TESTS(aTstI64, int64_t, "%#lld", RTStrToInt64Ex);
-
 
 
     static const struct TstI32 aTstI32[] =
@@ -222,12 +221,58 @@ int main()
     };
     RUN_TESTS(aTstU32, uint32_t, "%#x", RTStrToUInt32Ex);
 
+
+    /*
+     * Test the some hex stuff too.
+     */
+    static const struct
+    {
+        const char *pszHex;
+        size_t      cbOut;
+        size_t      offNext;
+        uint8_t     bLast;
+        bool        fColon;
+        int         rc;
+    } s_aConvertHexTests[] =
+    {
+        { "00",          1,  2, 0x00,  true, VINF_SUCCESS },
+        { "00",          1,  2, 0x00, false, VINF_SUCCESS },
+        { "000102",      3,  6, 0x02,  true, VINF_SUCCESS },
+        { "00019",       2,  4, 0x01, false, VERR_UNEVEN_INPUT },
+        { "00019",       2,  4, 0x01,  true, VERR_UNEVEN_INPUT },
+        { "0001:9",      3,  6, 0x09,  true, VINF_SUCCESS},
+        { "000102",      3,  6, 0x02, false, VINF_SUCCESS },
+        { "0:1",         2,  3, 0x01,  true, VINF_SUCCESS },
+        { ":",           2,  1, 0x00,  true, VINF_SUCCESS },
+        { "0:01",        2,  4, 0x01,  true, VINF_SUCCESS },
+        { "00:01",       2,  5, 0x01,  true, VINF_SUCCESS },
+        { ":1:2:3:4:5",  6, 10, 0x05,  true, VINF_SUCCESS },
+        { ":1:2:3::5",   6,  9, 0x05,  true, VINF_SUCCESS },
+        { ":1:2:3:4:",   6,  9, 0x00,  true, VINF_SUCCESS },
+    };
+    for (unsigned i = 0; i < RT_ELEMENTS(s_aConvertHexTests); i++)
+    {
+        uint8_t abBuf[1024];
+        memset(abBuf, 0xf6, sizeof(abBuf));
+        const char *pszExpectNext = &s_aConvertHexTests[i].pszHex[s_aConvertHexTests[i].offNext];
+        const char *pszNext       = "";
+        size_t      cbReturned    = 77777;
+        int rc = RTStrConvertHexBytesEx(s_aConvertHexTests[i].pszHex, abBuf, s_aConvertHexTests[i].cbOut,
+                                        s_aConvertHexTests[i].fColon ? RTSTRCONVERTHEXBYTES_F_SEP_COLON : 0,
+                                        &pszNext, &cbReturned);
+        if (   rc      != s_aConvertHexTests[i].rc
+            || pszNext != pszExpectNext
+            || abBuf[s_aConvertHexTests[i].cbOut - 1] != s_aConvertHexTests[i].bLast
+            )
+            RTTestFailed(hTest, "RTStrConvertHexBytesEx/#%u %s -> %Rrc %p %#zx %#02x, expected %Rrc %p %#zx %#02x\n",
+                         i, s_aConvertHexTests[i].pszHex,
+                         rc, pszNext, cbReturned, abBuf[s_aConvertHexTests[i].cbOut - 1],
+                         s_aConvertHexTests[i].rc, pszExpectNext, s_aConvertHexTests[i].cbOut, s_aConvertHexTests[i].bLast);
+    }
+
+
     /*
      * Summary.
      */
-    if (!cErrors)
-        RTPrintf("tstStrToNum: SUCCESS\n");
-    else
-        RTPrintf("tstStrToNum: FAILURE - %d errors\n", cErrors);
-    return !!cErrors;
+    return RTTestSummaryAndDestroy(hTest);
 }
