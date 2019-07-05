@@ -158,6 +158,9 @@ public:
             m_fLocked = false;
         }
     }
+
+private:
+    RTCLock &operator=(const RTCLock &); /**< Shuts up warning C4626 (incorrect warning?). */
 };
 
 
