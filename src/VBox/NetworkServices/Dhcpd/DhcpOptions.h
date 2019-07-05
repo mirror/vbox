@@ -607,8 +607,8 @@ class RawOption
 
 
 
-/*
- * Define the DHCP options we want to use.
+/** @name The DHCP options types.
+ * @{
  */
 typedef OptValue<1, RTNETADDRIPV4>      OptSubnetMask;
 typedef OptValue<2, uint32_t>           OptTimeOffset;
@@ -635,6 +635,8 @@ typedef OptList<60, uint8_t>            OptVendorClassId;
 typedef OptList<61, uint8_t>            OptClientId;
 typedef OptString<66>                   OptTFTPServer;   /* when overloaded */
 typedef OptString<67>                   OptBootFileName; /* when overloaded */
+typedef OptList<77, uint8_t>            OptUserClassId;
 typedef OptNoValue<80>                  OptRapidCommit;  /* RFC4039 */
+/** @} */
 
 #endif /* !VBOX_INCLUDED_SRC_Dhcpd_DhcpOptions_h */

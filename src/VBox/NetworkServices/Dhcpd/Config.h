@@ -29,82 +29,101 @@
 
 #include <VBox/intnet.h>
 
-
 #include "DhcpOptions.h"
 #include "ClientId.h"
 
 
+/**
+ * DHCP server configuration.
+ */
 class Config
 {
-    /** XXX: TODO: also store fixed address assignments, etc? */
+    /** @todo XXX: also store fixed address assignments, etc? */
     typedef std::map<RTMAC, optmap_t> vmmap_t;
 
-    RTCString m_strHome;   /* path of ~/.VirtualBox or equivalent */
+    RTCString       m_strHome;          /**< path of ~/.VirtualBox or equivalent, */
 
-    RTCString m_strNetwork;
-    RTCString m_strBaseName; /* m_strNetwork sanitized to be usable in a path component */
+    RTCString       m_strNetwork;       /**< The name of the internal network the DHCP server is connected to. */
+    RTCString       m_strBaseName;      /**< m_strNetwork sanitized to be usable in a path component. */
 
-    RTCString m_strTrunk;
-    INTNETTRUNKTYPE m_enmTrunkType;
+    RTCString       m_strTrunk;         /**< The trunk name of the internal network. */
+    INTNETTRUNKTYPE m_enmTrunkType;     /**< The trunk type of the internal network. */
 
-    RTMAC m_MacAddress;
+    RTMAC           m_MacAddress;       /**< The MAC address for the DHCP server. */
 
-    RTNETADDRIPV4 m_IPv4Address;
-    RTNETADDRIPV4 m_IPv4Netmask;
+    RTNETADDRIPV4   m_IPv4Address;      /**< The IPv4 address of the DHCP server. */
+    RTNETADDRIPV4   m_IPv4Netmask;      /**< The IPv4 netmask for the DHCP server. */
 
-    RTNETADDRIPV4 m_IPv4PoolFirst;
-    RTNETADDRIPV4 m_IPv4PoolLast;
+    RTNETADDRIPV4   m_IPv4PoolFirst;    /**< The first IPv4 address in the pool. */
+    RTNETADDRIPV4   m_IPv4PoolLast;     /**< The last IPV4 address in the pool (inclusive like all other 'last' variables). */
 
-    optmap_t m_GlobalOptions;
-    vmmap_t m_VMMap;
+
+    optmap_t        m_GlobalOptions;    /**< Global DHCP option. */
+    vmmap_t         m_VMMap;            /**< Per MAC address (VM) DHCP options. */
+    /** @todo r=bird: optmap_t is too narrow for adding configuration options such
+     *        as max-lease-time, min-lease-time, default-lease-time and such like
+     *        that does not translate directly to any specific DHCP option. */
+    /** @todo r=bird: Additionally, I'd like to have a more generic option groups
+     *        that fits inbetween m_VMMap (mac based) and m_GlobalOptions.
+     *        Pattern/wildcard matching on MAC address, possibly also client ID,
+     *        vendor class and user class, including simple lists of these. */
 
 private:
     Config();
 
-    int init();
-    int homeInit();
-    int logInit();
-    int complete();
-
-public: /* factory methods */
-    static Config *hardcoded();                   /* for testing */
-    static Config *create(int argc, char **argv); /* --config */
-    static Config *compat(int argc, char **argv); /* old VBoxNetDHCP flags */
-
-public: /* accessors */
-    const RTCString &getHome() const { return m_strHome; }
-
-    const RTCString &getNetwork() const { return m_strNetwork; }
-    void setNetwork(const RTCString &aStrNetwork);
-
-    const RTCString &getBaseName() const { return m_strBaseName; }
-    const RTCString &getTrunk() const { return m_strTrunk; }
-    INTNETTRUNKTYPE getTrunkType() const { return m_enmTrunkType; }
-
-    const RTMAC &getMacAddress() const { return m_MacAddress; }
-
-    RTNETADDRIPV4 getIPv4Address() const { return m_IPv4Address; }
-    RTNETADDRIPV4 getIPv4Netmask() const { return m_IPv4Netmask; }
-
-    RTNETADDRIPV4 getIPv4PoolFirst() const { return m_IPv4PoolFirst; }
-    RTNETADDRIPV4 getIPv4PoolLast() const { return m_IPv4PoolLast; }
+    int                 i_init();
+    int                 i_homeInit();
+    static Config      *i_createInstanceAndCallInit();
+    int                 i_logInit();
+    int                 i_complete();
 
 public:
-    optmap_t getOptions(const OptParameterRequest &reqOpts, const ClientId &id,
-                        const OptVendorClassId &vendor = OptVendorClassId()) const;
+    /** @name Factory methods
+     * @{ */
+    static Config      *hardcoded();                   /**< For testing. */
+    static Config      *create(int argc, char **argv); /**< --config */
+    static Config      *compat(int argc, char **argv); /**< Old VBoxNetDHCP command line parsing. */
+    /** @} */
+
+    /** @name Accessors
+     * @{ */
+    const RTCString    &getHome() const             { return m_strHome; }
+
+    const RTCString    &getNetwork() const          { return m_strNetwork; }
+
+    const RTCString    &getBaseName() const         { return m_strBaseName; }
+    const RTCString    &getTrunk() const            { return m_strTrunk; }
+    INTNETTRUNKTYPE     getTrunkType() const        { return m_enmTrunkType; }
+
+    const RTMAC        &getMacAddress() const       { return m_MacAddress; }
+
+    RTNETADDRIPV4       getIPv4Address() const      { return m_IPv4Address; }
+    RTNETADDRIPV4       getIPv4Netmask() const      { return m_IPv4Netmask; }
+
+    RTNETADDRIPV4       getIPv4PoolFirst() const    { return m_IPv4PoolFirst; }
+    RTNETADDRIPV4       getIPv4PoolLast() const     { return m_IPv4PoolLast; }
+    /** @} */
+
+    optmap_t           &getOptions(optmap_t &a_rRetOpts, const OptParameterRequest &reqOpts, const ClientId &id,
+                                   const OptVendorClassId &idVendorClass = OptVendorClassId(),
+                                   const OptUserClassId &idUserClass = OptUserClassId()) const;
 
 private:
-    static Config *read(const char *pszFileName);
-    void parseConfig(const xml::ElementNode *root);
-    void parseServer(const xml::ElementNode *server);
-    void parseGlobalOptions(const xml::ElementNode *options);
-    void parseVMConfig(const xml::ElementNode *config);
-    void parseOption(const xml::ElementNode *option, optmap_t &optmap);
+    /** @name Configuration file reading and parsing
+     * @{ */
+    static Config      *i_read(const char *pszFileName);
+    void                i_parseConfig(const xml::ElementNode *root);
+    void                i_parseServer(const xml::ElementNode *server);
+    void                i_parseGlobalOptions(const xml::ElementNode *options);
+    void                i_parseVMConfig(const xml::ElementNode *config);
+    void                i_parseOption(const xml::ElementNode *option, optmap_t &optmap);
 
-    int parseMACAddress(RTMAC &aMac, const RTCString &aStr);
-    int parseClientId(OptClientId &aId, const RTCString &aStr);
+    static void         i_getIPv4AddrAttribute(const xml::ElementNode *pElm, const char *pcszAttrName, PRTNETADDRIPV4 pAddr);
+    static void         i_getMacAddressAttribute(const xml::ElementNode *pElm, const char *pszAttrName, PRTMAC pMacAddr);
+    /** @} */
 
-    void sanitizeBaseName();
+    void                i_setNetwork(const RTCString &aStrNetwork);
+    void                i_sanitizeBaseName();
 };
 
 #endif /* !VBOX_INCLUDED_SRC_Dhcpd_Config_h */

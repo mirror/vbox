@@ -15,8 +15,11 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
 #include "DhcpdInternal.h"
-#include "Config.h"
 
 #include <iprt/ctype.h>
 #include <iprt/net.h>           /* NB: must come before getopt.h */
@@ -26,83 +29,173 @@
 #include <iprt/string.h>
 #include <iprt/uuid.h>
 
-#include <VBox/com/com.h>
+#include <VBox/com/com.h>       /* For log initialization. */
 
-#include <iostream>
+#include "Config.h"
 
+
+/**
+ * Configuration file exception.
+ */
 class ConfigFileError
-  : public RTCError
+    : public RTCError
 {
 public:
-    ConfigFileError(const char *pszMessage)
-      : RTCError(pszMessage) {}
+#if 0 /* This just confuses the compiler. */
+    ConfigFileError(const char *a_pszMessage)
+        : RTCError(a_pszMessage)
+    {}
+#endif
+
+    ConfigFileError(const char *a_pszMsgFmt, ...)
+        : RTCError((char *)NULL)
+    {
+        va_list va;
+        va_start(va, a_pszMsgFmt);
+        m_strMsg.printfV(a_pszMsgFmt, va);
+        va_end(va);
+    }
 
     ConfigFileError(const RTCString &a_rstrMessage)
-      : RTCError(a_rstrMessage) {}
+        : RTCError(a_rstrMessage)
+    {}
 };
 
 
+/**
+ * Private default constructor, external users use factor methods.
+ */
 Config::Config()
-  : m_strHome(),
-    m_strNetwork(),
-    m_strBaseName(),
-    m_strTrunk(),
-    m_enmTrunkType(kIntNetTrunkType_Invalid),
-    m_MacAddress(),
-    m_IPv4Address(),
-    m_IPv4Netmask(),
-    m_IPv4PoolFirst(),
-    m_IPv4PoolLast(),
-    m_GlobalOptions(),
-    m_VMMap()
+    : m_strHome()
+    , m_strNetwork()
+    , m_strBaseName()
+    , m_strTrunk()
+    , m_enmTrunkType(kIntNetTrunkType_Invalid)
+    , m_MacAddress()
+    , m_IPv4Address()
+    , m_IPv4Netmask()
+    , m_IPv4PoolFirst()
+    , m_IPv4PoolLast()
+    , m_GlobalOptions()
+    , m_VMMap()
 {
-    return;
 }
 
 
-int Config::init()
+/**
+ * Initializes the object.
+ *
+ * @returns IPRT status code.
+ */
+int Config::i_init()
 {
-    int rc;
-
-    rc = homeInit();
-    if (RT_FAILURE(rc))
-        return rc;
-
-    return VINF_SUCCESS;
+    return i_homeInit();
 }
 
 
-int Config::homeInit()
+/**
+ * Initializes the m_strHome member with the path to ~/.VirtualBox or equivalent.
+ *
+ * @returns IPRT status code.
+ * @todo Too many init functions?
+ */
+int Config::i_homeInit()
 {
-    /* pathname of ~/.VirtualBox or equivalent */
     char szHome[RTPATH_MAX];
     int rc = com::GetVBoxUserHomeDirectory(szHome, sizeof(szHome), false);
-    if (RT_FAILURE(rc))
+    if (RT_SUCCESS(rc))
+        rc = m_strHome.assignNoThrow(szHome);
+    else
     {
-        LogDHCP(("unable to find VirtualBox home directory: %Rrs", rc));
-        return rc;
+        LogFunc(("unable to locate the VirtualBox home directory: %Rrc", rc)); /* no release log at this point. */
+        RTMsgError("unable to locate the VirtualBox home directory: %Rrs", rc);
     }
-
-    m_strHome.assign(szHome);
-    return VINF_SUCCESS;
+    return rc;
 }
 
 
-void Config::setNetwork(const RTCString &aStrNetwork)
+/**
+ * Internal worker for the public factory methods that creates an instance and
+ * calls i_init() on it.
+ *
+ * @returns Config instance on success, NULL on failure.
+ */
+/*static*/ Config *Config::i_createInstanceAndCallInit()
+{
+    Config *pConfig;
+    try
+    {
+        pConfig = new Config();
+    }
+    catch (std::bad_alloc &)
+    {
+        return NULL;
+    }
+
+    int rc = pConfig->i_init();
+    if (RT_SUCCESS(rc))
+        return pConfig;
+    delete pConfig;
+    return NULL;
+}
+
+
+/**
+ * Internal network name (m_strNetwork) setter.
+ *
+ * Can only be called once.  Will also invoke i_sanitizeBaseName to update
+ * m_strBaseName.
+ *
+ * @throws std::bad_alloc
+ */
+void Config::i_setNetwork(const RTCString &aStrNetwork)
 {
     AssertReturnVoid(m_strNetwork.isEmpty());
 
     m_strNetwork = aStrNetwork;
-    sanitizeBaseName();
+    i_sanitizeBaseName();
 }
 
 
-/*
+/**
+ * Interal worker for i_setNetwork() that sets m_strBaseName to sanitized the
+ * version of m_strNetwork suitable for use as a path component.
+ */
+void Config::i_sanitizeBaseName()
+{
+    if (m_strNetwork.isNotEmpty())
+    {
+        m_strBaseName = m_strNetwork;
+
+/** @todo make IPRT function for this.   */
+        char ch;
+#if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
+        static const char s_szIllegals[] = "/\\\"*:<>?|\t\v\n\r\f\a\b"; /** @todo all control chars... */
+        for (char *psz = m_strBaseName.mutableRaw(); (ch = *psz) != '\0'; ++psz)
+            if (strchr(s_szIllegals, ch))
+                *psz = '_';
+#else
+        for (char *psz = m_strBaseName.mutableRaw(); (ch = *psz) != '\0'; ++psz)
+            if (RTPATH_IS_SEP(ch))
+                *psz = '_';
+#endif
+        m_strBaseName.jolt(); /* Not really necessary, but it's protocol. */
+    }
+    else
+        m_strBaseName.setNull();
+}
+
+
+/**
+ * Worker for i_complete() that initializes the release log of the process.
+ *
  * Requires network name to be known as the log file name depends on
  * it.  Alternatively, consider passing the log file name via the
  * command line?
+ *
+ * @todo make the log file directly configurable?
  */
-int Config::logInit()
+int Config::i_logInit()
 {
     if (m_strHome.isEmpty() || m_strBaseName.isEmpty())
         return VERR_PATH_ZERO_LENGTH;
@@ -124,7 +217,6 @@ int Config::logInit()
         if (*p != '_' && !RT_C_IS_ALNUM(*p))
             *p = '_';
 
-
     int rc = com::VBoxLogRelCreate("DHCP Server",
                                    szLogFile,
                                    RTLOGFLAGS_PREFIX_TIME_PROG,
@@ -145,17 +237,18 @@ int Config::logInit()
 }
 
 
-int Config::complete()
+/**
+ * Post process and validate the configuration after it has been loaded.
+ */
+int Config::i_complete()
 {
-    int rc;
-
     if (m_strNetwork.isEmpty())
     {
         LogDHCP(("network name is not specified\n"));
         return false;
     }
 
-    logInit();
+    i_logInit();
 
     bool fMACGenerated = false;
     if (   m_MacAddress.au16[0] == 0
@@ -163,7 +256,8 @@ int Config::complete()
         && m_MacAddress.au16[2] == 0)
     {
         RTUUID Uuid;
-        RTUuidCreate(&Uuid);
+        int rc = RTUuidCreate(&Uuid);
+        AssertReturn(rc, rc);
 
         m_MacAddress.au8[0] = 0x08;
         m_MacAddress.au8[1] = 0x00;
@@ -192,7 +286,7 @@ int Config::complete()
 
     /* valid netmask */
     int cPrefixBits;
-    rc = RTNetMaskToPrefixIPv4(&m_IPv4Netmask, &cPrefixBits);
+    int rc = RTNetMaskToPrefixIPv4(&m_IPv4Netmask, &cPrefixBits);
     if (RT_FAILURE(rc) || cPrefixBits == 0)
     {
         LogDHCP(("IP mask is not valid: %RTnaipv4\n", m_IPv4Netmask.u));
@@ -225,7 +319,7 @@ int Config::complete()
 
     /* our own address is not inside the pool */
     if (   RT_N2H_U32(m_IPv4PoolFirst.u) <= RT_N2H_U32(m_IPv4Address.u)
-        && RT_N2H_U32(m_IPv4Address.u)  <= RT_N2H_U32(m_IPv4PoolLast.u))
+        && RT_N2H_U32(m_IPv4Address.u)   <= RT_N2H_U32(m_IPv4PoolLast.u))
     {
         LogDHCP(("server address inside the pool range %RTnaipv4 - %RTnaipv4: %RTnaipv4\n",
                  m_IPv4PoolFirst.u, m_IPv4PoolLast.u, m_IPv4Address.u));
@@ -241,17 +335,19 @@ int Config::complete()
 }
 
 
-Config *Config::hardcoded()
+/*static*/ Config *Config::hardcoded()
 {
-    int rc;
-
-    std::unique_ptr<Config> config(new Config());
-    rc = config->init();
-    if (RT_FAILURE(rc))
+    std::unique_ptr<Config> config(i_createInstanceAndCallInit());
+    AssertReturn(config.get() != NULL, NULL);
+    try
+    {
+        config->i_setNetwork("HostInterfaceNetworking-vboxnet0");
+        config->m_strTrunk.assign("vboxnet0");
+    }
+    catch (std::bad_alloc &)
+    {
         return NULL;
-
-    config->setNetwork("HostInterfaceNetworking-vboxnet0");
-    config->m_strTrunk.assign("vboxnet0");
+    }
     config->m_enmTrunkType = kIntNetTrunkType_NetFlt;
 
     config->m_MacAddress.au8[0] = 0x08;
@@ -262,60 +358,53 @@ Config *Config::hardcoded()
     config->m_MacAddress.au8[5] = 0xef;
 
 
-    config->m_IPv4Address.u = RT_H2N_U32_C(0xc0a838fe); /* 192.168.56.254 */
-    config->m_IPv4Netmask.u = RT_H2N_U32_C(0xffffff00); /* 255.255.255.0 */
+    config->m_IPv4Address.u     = RT_H2N_U32_C(0xc0a838fe); /* 192.168.56.254 */
+    config->m_IPv4Netmask.u     = RT_H2N_U32_C(0xffffff00); /* 255.255.255.0 */
 
     /* flip to test naks */
 #if 1
-    config->m_IPv4PoolFirst.u = RT_H2N_U32_C(0xc0a8385a); /* 192.168.56.90 */
-    config->m_IPv4PoolLast.u = RT_H2N_U32_C(0xc0a83863); /* 192.168.56.99 */
+    config->m_IPv4PoolFirst.u   = RT_H2N_U32_C(0xc0a8385a); /* 192.168.56.90 */
+    config->m_IPv4PoolLast.u    = RT_H2N_U32_C(0xc0a83863); /* 192.168.56.99 */
 #else
-    config->m_IPv4PoolFirst.u = RT_H2N_U32_C(0xc0a838c9); /* 192.168.56.201 */
-    config->m_IPv4PoolLast.u = RT_H2N_U32_C(0xc0a838dc); /* 192.168.56.220 */
+    config->m_IPv4PoolFirst.u   = RT_H2N_U32_C(0xc0a838c9); /* 192.168.56.201 */
+    config->m_IPv4PoolLast.u    = RT_H2N_U32_C(0xc0a838dc); /* 192.168.56.220 */
 #endif
 
-    rc = config->complete();
+    int rc = config->i_complete();
     AssertRCReturn(rc, NULL);
 
     return config.release();
 }
 
 
-/* compatibility with old VBoxNetDHCP */
-static const RTGETOPTDEF g_aCompatOptions[] =
-{
-    { "--ip-address",     'i',   RTGETOPT_REQ_IPV4ADDR },
-    { "--lower-ip",       'l',   RTGETOPT_REQ_IPV4ADDR },
-    { "--mac-address",    'a',   RTGETOPT_REQ_MACADDR },
-    { "--need-main",      'M',   RTGETOPT_REQ_BOOL },
-    { "--netmask",        'm',   RTGETOPT_REQ_IPV4ADDR },
-    { "--network",        'n',   RTGETOPT_REQ_STRING },
-    { "--trunk-name",     't',   RTGETOPT_REQ_STRING },
-    { "--trunk-type",     'T',   RTGETOPT_REQ_STRING },
-    { "--upper-ip",       'u',   RTGETOPT_REQ_IPV4ADDR },
-};
 
-
-Config *Config::compat(int argc, char **argv)
+/*static*/ Config *Config::compat(int argc, char **argv)
 {
+    /* compatibility with old VBoxNetDHCP */
+    static const RTGETOPTDEF s_aCompatOptions[] =
+    {
+        { "--ip-address",     'i',   RTGETOPT_REQ_IPV4ADDR },
+        { "--lower-ip",       'l',   RTGETOPT_REQ_IPV4ADDR },
+        { "--mac-address",    'a',   RTGETOPT_REQ_MACADDR },
+        { "--need-main",      'M',   RTGETOPT_REQ_BOOL },
+        { "--netmask",        'm',   RTGETOPT_REQ_IPV4ADDR },
+        { "--network",        'n',   RTGETOPT_REQ_STRING },
+        { "--trunk-name",     't',   RTGETOPT_REQ_STRING },
+        { "--trunk-type",     'T',   RTGETOPT_REQ_STRING },
+        { "--upper-ip",       'u',   RTGETOPT_REQ_IPV4ADDR },
+    };
+
     RTGETOPTSTATE State;
-    int rc;
-
-    rc = RTGetOptInit(&State, argc, argv,
-                      g_aCompatOptions, RT_ELEMENTS(g_aCompatOptions), 1,
-                      RTGETOPTINIT_FLAGS_NO_STD_OPTS);
+    int rc = RTGetOptInit(&State, argc, argv, s_aCompatOptions, RT_ELEMENTS(s_aCompatOptions), 1, RTGETOPTINIT_FLAGS_NO_STD_OPTS);
     AssertRCReturn(rc, NULL);
 
-    std::unique_ptr<Config> config(new Config());
-    rc = config->init();
-    if (RT_FAILURE(rc))
-        return NULL;
+    std::unique_ptr<Config> config(i_createInstanceAndCallInit());
+    AssertReturn(config.get() != NULL, NULL);
 
     for (;;)
     {
-        RTGETOPTUNION Val;
-
-        rc = RTGetOpt(&State, &Val);
+        RTGETOPTUNION ValueUnion;
+        rc = RTGetOpt(&State, &ValueUnion);
         if (rc == 0)            /* done */
             break;
 
@@ -329,7 +418,7 @@ Config *Config::compat(int argc, char **argv)
                     RTMsgError("Duplicate --mac-address option");
                     return NULL;
                 }
-                config->m_MacAddress = Val.MacAddr;
+                config->m_MacAddress = ValueUnion.MacAddr;
                 break;
 
             case 'i': /* --ip-address */
@@ -338,7 +427,7 @@ Config *Config::compat(int argc, char **argv)
                     RTMsgError("Duplicate --ip-address option");
                     return NULL;
                 }
-                config->m_IPv4Address = Val.IPv4Addr;
+                config->m_IPv4Address = ValueUnion.IPv4Addr;
                 break;
 
             case 'l': /* --lower-ip */
@@ -347,7 +436,7 @@ Config *Config::compat(int argc, char **argv)
                     RTMsgError("Duplicate --lower-ip option");
                     return NULL;
                 }
-                config->m_IPv4PoolFirst = Val.IPv4Addr;
+                config->m_IPv4PoolFirst = ValueUnion.IPv4Addr;
                 break;
 
             case 'M': /* --need-main */
@@ -360,7 +449,7 @@ Config *Config::compat(int argc, char **argv)
                     RTMsgError("Duplicate --netmask option");
                     return NULL;
                 }
-                config->m_IPv4Netmask = Val.IPv4Addr;
+                config->m_IPv4Netmask = ValueUnion.IPv4Addr;
                 break;
 
             case 'n': /* --network */
@@ -369,7 +458,7 @@ Config *Config::compat(int argc, char **argv)
                     RTMsgError("Duplicate --network option");
                     return NULL;
                 }
-                config->setNetwork(Val.psz);
+                config->i_setNetwork(ValueUnion.psz);
                 break;
 
             case 't': /* --trunk-name */
@@ -378,7 +467,7 @@ Config *Config::compat(int argc, char **argv)
                     RTMsgError("Duplicate --trunk-name option");
                     return NULL;
                 }
-                config->m_strTrunk.assign(Val.psz);
+                config->m_strTrunk.assign(ValueUnion.psz);
                 break;
 
             case 'T': /* --trunk-type */
@@ -387,17 +476,17 @@ Config *Config::compat(int argc, char **argv)
                     RTMsgError("Duplicate --trunk-type option");
                     return NULL;
                 }
-                else if (strcmp(Val.psz, "none") == 0)
+                else if (strcmp(ValueUnion.psz, "none") == 0)
                     config->m_enmTrunkType = kIntNetTrunkType_None;
-                else if (strcmp(Val.psz, "whatever") == 0)
+                else if (strcmp(ValueUnion.psz, "whatever") == 0)
                     config->m_enmTrunkType = kIntNetTrunkType_WhateverNone;
-                else if (strcmp(Val.psz, "netflt") == 0)
+                else if (strcmp(ValueUnion.psz, "netflt") == 0)
                     config->m_enmTrunkType = kIntNetTrunkType_NetFlt;
-                else if (strcmp(Val.psz, "netadp") == 0)
+                else if (strcmp(ValueUnion.psz, "netadp") == 0)
                     config->m_enmTrunkType = kIntNetTrunkType_NetAdp;
                 else
                 {
-                    RTMsgError("Unknown trunk type '%s'", Val.psz);
+                    RTMsgError("Unknown trunk type '%s'", ValueUnion.psz);
                     return NULL;
                 }
                 break;
@@ -408,20 +497,20 @@ Config *Config::compat(int argc, char **argv)
                     RTMsgError("Duplicate --upper-ip option");
                     return NULL;
                 }
-                config->m_IPv4PoolLast = Val.IPv4Addr;
+                config->m_IPv4PoolLast = ValueUnion.IPv4Addr;
                 break;
 
             case VINF_GETOPT_NOT_OPTION:
-                RTMsgError("%s: Unexpected command line argument", Val.psz);
+                RTMsgError("%s: Unexpected command line argument", ValueUnion.psz);
                 return NULL;
 
             default:
-                RTGetOptPrintError(rc, &Val);
+                RTGetOptPrintError(rc, &ValueUnion);
                 return NULL;
         }
     }
 
-    rc = config->complete();
+    rc = config->i_complete();
     if (RT_FAILURE(rc))
         return NULL;
 
@@ -429,30 +518,25 @@ Config *Config::compat(int argc, char **argv)
 }
 
 
-#define DHCPD_GETOPT_COMMENT 256 /* No short option for --comment */
-static const RTGETOPTDEF g_aOptions[] =
-{
-    { "--config",       'c',                  RTGETOPT_REQ_STRING },
-    { "--comment",      DHCPD_GETOPT_COMMENT, RTGETOPT_REQ_STRING }
-};
-
-
 Config *Config::create(int argc, char **argv)
 {
-    RTGETOPTSTATE State;
-    int rc;
+#define DHCPD_GETOPT_COMMENT 256 /* No short option for --comment */
+    static const RTGETOPTDEF s_aOptions[] =
+    {
+        { "--config",       'c',                  RTGETOPT_REQ_STRING },
+        { "--comment",      DHCPD_GETOPT_COMMENT, RTGETOPT_REQ_STRING }
+    };
 
-    rc = RTGetOptInit(&State, argc, argv,
-                      g_aOptions, RT_ELEMENTS(g_aOptions), 1,
-                      RTGETOPTINIT_FLAGS_NO_STD_OPTS);
+    RTGETOPTSTATE State;
+    int rc = RTGetOptInit(&State, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, RTGETOPTINIT_FLAGS_NO_STD_OPTS);
     AssertRCReturn(rc, NULL);
 
     std::unique_ptr<Config> config;
+
     for (;;)
     {
-        RTGETOPTUNION Val;
-
-        rc = RTGetOpt(&State, &Val);
+        RTGETOPTUNION ValueUnion;
+        rc = RTGetOpt(&State, &ValueUnion);
         if (rc == 0)            /* done */
             break;
 
@@ -461,15 +545,14 @@ Config *Config::create(int argc, char **argv)
             case 'c': /* --config */
                 if (config.get() != NULL)
                 {
-                    printf("Duplicate option: --config '%s'\n", Val.psz);
+                    RTMsgError("Duplicate option: --config '%s'\n", ValueUnion.psz);
                     return NULL;
                 }
 
-                printf("reading config from %s\n", Val.psz);
-                config.reset(Config::read(Val.psz));
+                RTMsgInfo("reading config from '%s'...\n", ValueUnion.psz);
+                config.reset(Config::i_read(ValueUnion.psz));
                 if (config.get() == NULL)
                     return NULL;
-
                 break;
 
             case DHCPD_GETOPT_COMMENT: /* --comment */
@@ -480,32 +563,38 @@ Config *Config::create(int argc, char **argv)
                 continue;
 
             case VINF_GETOPT_NOT_OPTION:
-                RTMsgError("Unexpected command line argument: '%s'", Val.psz);
+                RTMsgError("Unexpected command line argument: '%s'", ValueUnion.psz);
                 return NULL;
 
             default:
-                RTGetOptPrintError(rc, &Val);
+                RTGetOptPrintError(rc, &ValueUnion);
                 return NULL;
         }
     }
 
-    if (config.get() == NULL)
-        return NULL;
-
-    rc = config->complete();
-    if (RT_FAILURE(rc))
-        return NULL;
-
-    return config.release();
+    if (config.get() != NULL)
+    {
+        rc = config->i_complete();
+        if (RT_SUCCESS(rc))
+            return config.release();
+    }
+    else
+        RTMsgError("No configuration file specified (--config file)!\n");
+    return NULL;
 }
 
 
-Config *Config::read(const char *pszFileName)
+/**
+ *
+ * @note The release log has is not operational when this method is called.
+ */
+Config *Config::i_read(const char *pszFileName)
 {
-    int rc;
-
     if (pszFileName == NULL || pszFileName[0] == '\0')
+    {
+        RTMsgError("Empty configuration filename");
         return NULL;
+    }
 
     xml::Document doc;
     try
@@ -515,38 +604,40 @@ Config *Config::read(const char *pszFileName)
     }
     catch (const xml::EIPRTFailure &e)
     {
-        LogDHCP(("%s\n", e.what()));
+        LogFunc(("%s\n", e.what()));
+        RTMsgError("%s\n", e.what());
         return NULL;
     }
     catch (const RTCError &e)
     {
-        LogDHCP(("%s\n", e.what()));
+        LogFunc(("%s\n", e.what()));
+        RTMsgError("%s\n", e.what());
         return NULL;
     }
     catch (...)
     {
-        LogDHCP(("Unknown exception while reading and parsing '%s'\n",
-                 pszFileName));
+        LogFunc(("Unknown exception while reading and parsing '%s'\n", pszFileName));
+        RTMsgError("Unknown exception while reading and parsing '%s'\n", pszFileName);
         return NULL;
     }
 
-    std::unique_ptr<Config> config(new Config());
-    rc = config->init();
-    if (RT_FAILURE(rc))
-        return NULL;
+    std::unique_ptr<Config> config(i_createInstanceAndCallInit());
+    AssertReturn(config.get() != NULL, NULL);
 
     try
     {
-        config->parseConfig(doc.getRootElement());
+        config->i_parseConfig(doc.getRootElement());
     }
     catch (const RTCError &e)
     {
-        LogDHCP(("%s\n", e.what()));
+        LogFunc(("%s\n", e.what()));
+        RTMsgError("%s\n", e.what());
         return NULL;
     }
     catch (...)
     {
-        LogDHCP(("Unexpected exception\n"));
+        LogFunc(("Unexpected exception\n"));
+        RTMsgError("Unexpected exception\n");
         return NULL;
     }
 
@@ -554,23 +645,28 @@ Config *Config::read(const char *pszFileName)
 }
 
 
-void Config::parseConfig(const xml::ElementNode *root)
+/**
+ * Internal worker for i_read() that parses the root element and everything
+ * below it.
+ *
+ * @throws stuff.
+ */
+void Config::i_parseConfig(const xml::ElementNode *pElmRoot)
 {
-    if (root == NULL)
+    /*
+     * Check the root element and call i_parseServer to do real work.
+     */
+    if (pElmRoot == NULL)
         throw ConfigFileError("Empty config file");
 
-    /*
-     * XXX: NAMESPACE API IS COMPLETELY BROKEN, SO IGNORE IT FOR NOW
-     */
-    if (!root->nameEquals("DHCPServer"))
-    {
-        const char *name = root->getName();
-        throw ConfigFileError(RTCStringFmt("Unexpected root element \"%s\"",
-                                           name ? name : "(null)"));
-    }
+    /** @todo XXX: NAMESPACE API IS COMPLETELY BROKEN, SO IGNORE IT FOR NOW */
 
-    parseServer(root);
+    if (!pElmRoot->nameEquals("DHCPServer"))
+        throw ConfigFileError("Unexpected root element '%s'", pElmRoot->getName());
 
+    i_parseServer(pElmRoot);
+
+#if 0 /** @todo convert to LogRel2 stuff */
     // XXX: debug
     for (optmap_t::const_iterator it = m_GlobalOptions.begin(); it != m_GlobalOptions.end(); ++it) {
         std::shared_ptr<DhcpOption> opt(it->second);
@@ -589,289 +685,289 @@ void Config::parseConfig(const xml::ElementNode *root)
         }
         std::cout << std::endl;
     }
+#endif
 }
 
 
-static void getIPv4AddrAttribute(const xml::ElementNode *pNode, const char *pcszAttrName,
-                                 RTNETADDRIPV4 *pAddr)
-{
-    RTCString strAddr;
-    bool fHasAttr = pNode->getAttributeValue(pcszAttrName, &strAddr);
-    if (!fHasAttr)
-        throw ConfigFileError(RTCStringFmt("%s attribute missing",
-                                           pcszAttrName));
-
-    int rc = RTNetStrToIPv4Addr(strAddr.c_str(), pAddr);
-    if (RT_FAILURE(rc))
-        throw ConfigFileError(RTCStringFmt("%s attribute invalid",
-                                           pcszAttrName));
-}
-
-
-void Config::parseServer(const xml::ElementNode *server)
+/**
+ * Internal worker for parsing the elements under /DHCPServer/.
+ *
+ * @param   pElmServer          The DHCPServer element.
+ * @throws  ConfigFileError
+ */
+void Config::i_parseServer(const xml::ElementNode *pElmServer)
 {
     /*
-     * DHCPServer attributes
+     * <DHCPServer> attributes
      */
-    RTCString strNetworkName;
-    bool fHasNetworkName = server->getAttributeValue("networkName", &strNetworkName);
-    if (!fHasNetworkName)
+    const char *pszNetworkName;
+    if (pElmServer->getAttributeValue("networkName", &pszNetworkName))
+        i_setNetwork(pszNetworkName);
+    else
         throw ConfigFileError("DHCPServer/@networkName missing");
+    /** @todo log file override.  */
+    /** @todo log level (dhcpd group flags).  */
+    /** @todo log flags.  */
+    /** @todo control logging to stderr/out.  */
+    /** @todo if we like we could open the release log now.   */
 
-    setNetwork(strNetworkName);
-
-    RTCString strTrunkType;
-    if (!server->getAttributeValue("trunkType", &strTrunkType))
+    const char *pszTrunkType;
+    if (!pElmServer->getAttributeValue("trunkType", &pszTrunkType))
         throw ConfigFileError("DHCPServer/@trunkType missing");
-    if (strTrunkType == "none")
+    if (strcmp(pszTrunkType, "none") == 0)
         m_enmTrunkType = kIntNetTrunkType_None;
-    else if (strTrunkType == "whatever")
+    else if (strcmp(pszTrunkType, "whatever") == 0)
         m_enmTrunkType = kIntNetTrunkType_WhateverNone;
-    else if (strTrunkType == "netflt")
+    else if (strcmp(pszTrunkType, "netflt") == 0)
         m_enmTrunkType = kIntNetTrunkType_NetFlt;
-    else if (strTrunkType == "netadp")
+    else if (strcmp(pszTrunkType, "netadp") == 0)
         m_enmTrunkType = kIntNetTrunkType_NetAdp;
     else
-        throw ConfigFileError(RTCStringFmt("Invalid DHCPServer/@trunkType value: %s", strTrunkType.c_str()));
+        throw ConfigFileError("Invalid DHCPServer/@trunkType value: %s", pszTrunkType);
 
     if (   m_enmTrunkType == kIntNetTrunkType_NetFlt
         || m_enmTrunkType == kIntNetTrunkType_NetAdp)
     {
-        RTCString strTrunk;
-        if (!server->getAttributeValue("trunkName", &strTrunk))
+        if (!pElmServer->getAttributeValue("trunkName", &m_strTrunk))
             throw ConfigFileError("DHCPServer/@trunkName missing");
-        m_strTrunk = strTrunk;
     }
     else
         m_strTrunk = "";
 
-    getIPv4AddrAttribute(server, "IPAddress", &m_IPv4Address);
-    getIPv4AddrAttribute(server, "networkMask", &m_IPv4Netmask);
-    getIPv4AddrAttribute(server, "lowerIP", &m_IPv4PoolFirst);
-    getIPv4AddrAttribute(server, "upperIP", &m_IPv4PoolLast);
+    i_getIPv4AddrAttribute(pElmServer, "IPAddress", &m_IPv4Address);
+    i_getIPv4AddrAttribute(pElmServer, "networkMask", &m_IPv4Netmask);
+    i_getIPv4AddrAttribute(pElmServer, "lowerIP", &m_IPv4PoolFirst);
+    i_getIPv4AddrAttribute(pElmServer, "upperIP", &m_IPv4PoolLast);
 
     /*
-     * DHCPServer children
+     * <DHCPServer> children
      */
-    xml::NodesLoop it(*server);
-    const xml::ElementNode *node;
-    while ((node = it.forAllNodes()) != NULL)
+    xml::NodesLoop it(*pElmServer);
+    const xml::ElementNode *pElmChild;
+    while ((pElmChild = it.forAllNodes()) != NULL)
     {
         /*
          * Global options
          */
-        if (node->nameEquals("Options"))
-        {
-            parseGlobalOptions(node);
-        }
-
+        if (pElmChild->nameEquals("Options"))
+            i_parseGlobalOptions(pElmChild);
         /*
          * Per-VM configuration
          */
-        else if (node->nameEquals("Config"))
-        {
-            parseVMConfig(node);
-        }
-    }
-}
-
-
-void Config::parseGlobalOptions(const xml::ElementNode *options)
-{
-    xml::NodesLoop it(*options);
-    const xml::ElementNode *node;
-    while ((node = it.forAllNodes()) != NULL)
-    {
-        if (node->nameEquals("Option"))
-        {
-            parseOption(node, m_GlobalOptions);
-        }
+        else if (pElmChild->nameEquals("Config"))
+            i_parseVMConfig(pElmChild);
         else
-        {
-            throw ConfigFileError(RTCStringFmt("Unexpected element \"%s\"",
-                                               node->getName()));
-        }
+            LogDHCP(("Ignoring unexpected DHCPServer child: %s\n", pElmChild->getName()));
     }
 }
 
 
 /**
+ * Internal worker for parsing the elements under /DHCPServer/Options/.
+ *
+ * @param   pElmServer          The <Options> element.
+ * @throws  ConfigFileError
+ */
+void Config::i_parseGlobalOptions(const xml::ElementNode *options)
+{
+    xml::NodesLoop it(*options);
+    const xml::ElementNode *pElmChild;
+    while ((pElmChild = it.forAllNodes()) != NULL)
+    {
+        if (pElmChild->nameEquals("Option"))
+            i_parseOption(pElmChild, m_GlobalOptions);
+        else
+            throw ConfigFileError("Unexpected element <%s>", pElmChild->getName());
+    }
+}
+
+
+/**
+ * Internal worker for parsing the elements under /DHCPServer/Config/.
+ *
  * VM Config entries are generated automatically from VirtualBox.xml
  * with the MAC fetched from the VM config.  The client id is nowhere
  * in the picture there, so VM config is indexed with plain RTMAC, not
  * ClientId (also see getOptions below).
+ *
+ * @param   pElmServer          The <Config> element.
+ * @throws  ConfigFileError
  */
-void Config::parseVMConfig(const xml::ElementNode *config)
+void Config::i_parseVMConfig(const xml::ElementNode *pElmConfig)
 {
-    RTMAC mac;
-    int rc;
+    /*
+     * Attributes:
+     */
+    /* The MAC address: */
+    RTMAC MacAddr;
+    i_getMacAddressAttribute(pElmConfig, "MACAddress", &MacAddr);
 
-    RTCString strMac;
-    bool fHasMac = config->getAttributeValue("MACAddress", &strMac);
-    if (!fHasMac)
-        throw ConfigFileError(RTCStringFmt("Config missing MACAddress attribute"));
-
-    rc = parseMACAddress(mac, strMac);
-    if (RT_FAILURE(rc))
-    {
-        throw ConfigFileError(RTCStringFmt("Malformed MACAddress attribute \"%s\"",
-                                           strMac.c_str()));
-    }
-
-    vmmap_t::iterator vmit( m_VMMap.find(mac) );
+    vmmap_t::iterator vmit( m_VMMap.find(MacAddr) );
     if (vmit != m_VMMap.end())
+        throw ConfigFileError("Duplicate Config for MACAddress %RTmac", &MacAddr);
+
+    optmap_t &vmopts = m_VMMap[MacAddr];
+
+    /* Name - optional: */
+    const char *pszName = NULL;
+    if (pElmConfig->getAttributeValue("name", &pszName))
     {
-        throw ConfigFileError(RTCStringFmt("Duplicate Config for MACAddress \"%s\"",
-                                           strMac.c_str()));
+        /** @todo */
     }
 
-    optmap_t &vmopts = m_VMMap[mac];
+    /* Fixed IP address assignment - optional: */
+    if (pElmConfig->findAttribute("FixedIPAddress") != NULL)
+    {
+        /** @todo */
+    }
 
-    xml::NodesLoop it(*config);
-    const xml::ElementNode *node;
-    while ((node = it.forAllNodes()) != NULL)
-        if (node->nameEquals("Option"))
-            parseOption(node, vmopts);
+    /*
+     * Process the children.
+     */
+    xml::NodesLoop it(*pElmConfig);
+    const xml::ElementNode *pElmChild;
+    while ((pElmChild = it.forAllNodes()) != NULL)
+        if (pElmChild->nameEquals("Option"))
+            i_parseOption(pElmChild, vmopts);
         else
-            throw ConfigFileError(RTCStringFmt("Unexpected element \"%s\"",
-                                               node->getName()));
-}
-
-
-int Config::parseMACAddress(RTMAC &aMac, const RTCString &aStr)
-{
-    RTMAC mac;
-    int rc;
-
-    rc = RTNetStrToMacAddr(aStr.c_str(), &mac);
-    if (RT_FAILURE(rc))
-        return rc;
-    if (rc == VWRN_TRAILING_CHARS)
-        return VERR_INVALID_PARAMETER;
-
-    aMac = mac;
-    return VINF_SUCCESS;
-}
-
-
-int Config::parseClientId(OptClientId &aId, const RTCString &aStr)
-{
-    RT_NOREF(aId, aStr);
-    return VERR_GENERAL_FAILURE;
+            throw ConfigFileError("Unexpected element '%s' under '%s'", pElmChild->getName(), pElmConfig->getName());
 }
 
 
 /**
- * Parse <Option/> element and add the option to the specified optmap.
+ * Internal worker for parsing <Option> elements found under
+ * /DHCPServer/Options/ and /DHCPServer/Config/
+ *
+ * @param   pElmServer          The <Option> element.
+ * @param   optmap              The option map to add the option to.
+ * @throws  ConfigFileError
  */
-void Config::parseOption(const xml::ElementNode *option, optmap_t &optmap)
+void Config::i_parseOption(const xml::ElementNode *pElmOption, optmap_t &optmap)
 {
-    int rc;
-
-    uint8_t u8Opt;
-    RTCString strName;
-    bool fHasName = option->getAttributeValue("name", &strName);
-    if (fHasName)
-    {
-        const char *pcszName = strName.c_str();
-
-        rc = RTStrToUInt8Full(pcszName, 10, &u8Opt);
-        if (rc != VINF_SUCCESS) /* no warnings either */
-            throw ConfigFileError(RTCStringFmt("Bad option \"%s\"", pcszName));
-
-    }
-    else
+    /* The 'name' attribute: */
+    const char *pszName;
+    if (!pElmOption->getAttributeValue("name", &pszName))
         throw ConfigFileError("missing option name");
 
+    uint8_t u8Opt;
+    int rc = RTStrToUInt8Full(pszName, 10, &u8Opt);
+    if (rc != VINF_SUCCESS) /* no warnings either */
+        throw ConfigFileError("Bad option name '%s'", pszName);
 
+    /* The opional 'encoding' attribute: */
     uint32_t u32Enc = 0;        /* XXX: DhcpOptEncoding_Legacy */
-    RTCString strEncoding;
-    bool fHasEncoding = option->getAttributeValue("encoding", &strEncoding);
-    if (fHasEncoding)
+    const char *pszEncoding;
+    if (pElmOption->getAttributeValue("encoding", &pszEncoding))
     {
-        const char *pcszEnc = strEncoding.c_str();
-
-        rc = RTStrToUInt32Full(pcszEnc, 10, &u32Enc);
+        rc = RTStrToUInt32Full(pszEncoding, 10, &u32Enc);
         if (rc != VINF_SUCCESS) /* no warnings either */
-            throw ConfigFileError(RTCStringFmt("Bad encoding \"%s\"", pcszEnc));
+            throw ConfigFileError("Bad option encoding '%s'", pszEncoding);
 
         switch (u32Enc)
         {
-        case 0:                 /* XXX: DhcpOptEncoding_Legacy */
-        case 1:                 /* XXX: DhcpOptEncoding_Hex */
-            break;
-        default:
-            throw ConfigFileError(RTCStringFmt("Unknown encoding \"%s\"", pcszEnc));
+            case 0:                 /* XXX: DhcpOptEncoding_Legacy */
+            case 1:                 /* XXX: DhcpOptEncoding_Hex */
+                break;
+            default:
+                throw ConfigFileError("Unknown encoding '%s'", pszEncoding);
         }
     }
 
+    /* The 'value' attribute. May be omitted for OptNoValue options like rapid commit. */
+    const char *pszValue;
+    if (!pElmOption->getAttributeValue("value", &pszValue))
+        pszValue = "";
 
-    /* value may be omitted for OptNoValue options like rapid commit */
-    RTCString strValue;
-    option->getAttributeValue("value", &strValue);
-
-    /* XXX: TODO: encoding, handle hex */
-    DhcpOption *opt = DhcpOption::parse(u8Opt, u32Enc, strValue.c_str());
+    /** @todo XXX: TODO: encoding, handle hex */
+    DhcpOption *opt = DhcpOption::parse(u8Opt, u32Enc, pszValue);
     if (opt == NULL)
-        throw ConfigFileError(RTCStringFmt("Bad option \"%s\"", strName.c_str()));
+        throw ConfigFileError("Bad option '%s' (encoding %u): '%s' ", pszName, u32Enc, pszValue ? pszValue : "");
 
+    /* Add it to the map: */
     optmap << opt;
 }
 
 
 /**
- * Set m_strBaseName to sanitized version of m_strNetwork that can be
- * used in a path component.
+ * Helper for retrieving a IPv4 attribute.
+ *
+ * @param   pElm            The element to get the attribute from.
+ * @param   pszAttrName     The name of the attribute
+ * @param   pAddr           Where to return the address.
+ * @throws  ConfigFileError
  */
-void Config::sanitizeBaseName()
+/*static*/ void Config::i_getIPv4AddrAttribute(const xml::ElementNode *pElm, const char *pszAttrName, PRTNETADDRIPV4 pAddr)
 {
-    if (m_strNetwork.isNotEmpty())
+    const char *pszAttrValue;
+    if (pElm->getAttributeValue(pszAttrName, &pszAttrValue))
     {
-        m_strBaseName = m_strNetwork;
-
-        char ch;
-#if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
-        static const char s_szIllegals[] = "/\\\"*:<>?|\t\v\n\r\f\a\b"; /** @todo all control chars... */
-        for (char *psz = m_strBaseName.mutableRaw(); (ch = *psz) != '\0'; ++psz)
-            if (strchr(s_szIllegals, ch))
-                *psz = '_';
-#else
-        for (char *psz = m_strBaseName.mutableRaw(); (ch = *psz) != '\0'; ++psz)
-            if (RTPATH_IS_SEP(ch))
-                *psz = '_';
-#endif
-        m_strBaseName.jolt(); /* Not really necessary, but it's protocol. */
+        int rc = RTNetStrToIPv4Addr(pszAttrValue, pAddr);
+        if (RT_SUCCESS(rc))
+            return;
+        throw ConfigFileError("%s attribute %s is not a valid IPv4 address: '%s' -> %Rrc",
+                              pElm->getName(), pszAttrName, pszAttrValue, rc);
     }
     else
-        m_strBaseName.setNull();
+        throw ConfigFileError("Required %s attribute missing on element %s", pszAttrName, pElm->getName());
 }
 
 
-optmap_t Config::getOptions(const OptParameterRequest &reqOpts,
-                            const ClientId &id,
-                            const OptVendorClassId &vendor) const
+/**
+ * Helper for retrieving a MAC address attribute.
+ *
+ * @param   pElm            The element to get the attribute from.
+ * @param   pszAttrName     The name of the attribute
+ * @param   pMacAddr        Where to return the MAC address.
+ * @throws  ConfigFileError
+ */
+/*static*/ void Config::i_getMacAddressAttribute(const xml::ElementNode *pElm, const char *pszAttrName, PRTMAC pMacAddr)
 {
-    optmap_t optmap;
+    const char *pszAttrValue;
+    if (pElm->getAttributeValue(pszAttrName, &pszAttrValue))
+    {
+        int rc = RTNetStrToMacAddr(pszAttrValue, pMacAddr);
+        if (RT_SUCCESS(rc) && rc != VWRN_TRAILING_CHARS)
+            return;
+        throw ConfigFileError("%s attribute %s is not a valid MAC address: '%s' -> %Rrc",
+                              pElm->getName(), pszAttrName, pszAttrValue, rc);
+    }
+    else
+        throw ConfigFileError("Required %s attribute missing on element %s", pszAttrName, pElm->getName());
+}
 
+
+/**
+ * Method used by DHCPD to assemble a list of options for the client.
+ *
+ * @returns a_rRetOpts for convenience
+ * @param   a_rRetOpts      Where to put the requested options.
+ * @param   reqOpts         The requested options.
+ * @param   id              The client ID.
+ * @param   idVendorClass   The vendor class ID.
+ * @param   idUserClass     The user class ID.
+ */
+optmap_t &Config::getOptions(optmap_t &a_rRetOpts, const OptParameterRequest &reqOpts, const ClientId &id,
+                             const OptVendorClassId &idVendorClass /*= OptVendorClassId()*/,
+                             const OptUserClassId &idUserClass /*= OptUserClassId()*/) const
+{
     const optmap_t *vmopts = NULL;
     vmmap_t::const_iterator vmit( m_VMMap.find(id.mac()) );
     if (vmit != m_VMMap.end())
         vmopts = &vmit->second;
 
-    RT_NOREF(vendor); /* not yet */
+    RT_NOREF(idVendorClass, idUserClass); /* not yet */
 
-
-    optmap << new OptSubnetMask(m_IPv4Netmask);
+    a_rRetOpts << new OptSubnetMask(m_IPv4Netmask);
 
     const OptParameterRequest::value_t& reqValue = reqOpts.value();
     for (octets_t::const_iterator itOptReq = reqValue.begin(); itOptReq != reqValue.end(); ++itOptReq)
     {
         uint8_t optreq = *itOptReq;
-        std::cout << ">>> requested option " << (int)optreq << std::endl;
+        LogRel2((">>> requested option %d (%#x)\n", optreq, optreq));
 
         if (optreq == OptSubnetMask::optcode)
         {
-            std::cout << "... always supplied" << std::endl;
+            LogRel2(("... always supplied\n"));
             continue;
         }
 
@@ -880,8 +976,8 @@ optmap_t Config::getOptions(const OptParameterRequest &reqOpts,
             optmap_t::const_iterator it( vmopts->find(optreq) );
             if (it != vmopts->end())
             {
-                optmap << it->second;
-                std::cout << "... found in VM options" << std::endl;
+                a_rRetOpts << it->second;
+                LogRel2(("... found in VM options\n"));
                 continue;
             }
         }
@@ -889,36 +985,40 @@ optmap_t Config::getOptions(const OptParameterRequest &reqOpts,
         optmap_t::const_iterator it( m_GlobalOptions.find(optreq) );
         if (it != m_GlobalOptions.end())
         {
-            optmap << it->second;
-            std::cout << "... found in global options" << std::endl;
+            a_rRetOpts << it->second;
+            LogRel2(("... found in global options\n"));
             continue;
         }
 
-        // std::cout << "... not found" << std::endl;
+        LogRel3(("... not found\n"));
     }
 
 
-    /* XXX: testing ... */
+#if 0 /* bird disabled this as it looks dubious and testing only. */
+    /** @todo XXX: testing ... */
     if (vmopts != NULL)
     {
-        for (optmap_t::const_iterator it = vmopts->begin(); it != vmopts->end(); ++it) {
+        for (optmap_t::const_iterator it = vmopts->begin(); it != vmopts->end(); ++it)
+        {
             std::shared_ptr<DhcpOption> opt(it->second);
-            if (optmap.count(opt->optcode()) == 0 && opt->optcode() > 127)
+            if (a_rRetOpts.count(opt->optcode()) == 0 && opt->optcode() > 127)
             {
-                optmap << opt;
-                std::cout << "... forcing VM option " << (int)opt->optcode() << std::endl;
+                a_rRetOpts << opt;
+                LogRel2(("... forcing VM option %d (%#x)\n", opt->optcode(), opt->optcode()));
             }
         }
     }
 
-    for (optmap_t::const_iterator it = m_GlobalOptions.begin(); it != m_GlobalOptions.end(); ++it) {
+    for (optmap_t::const_iterator it = m_GlobalOptions.begin(); it != m_GlobalOptions.end(); ++it)
+    {
         std::shared_ptr<DhcpOption> opt(it->second);
-        if (optmap.count(opt->optcode()) == 0 && opt->optcode() > 127)
+        if (a_rRetOpts.count(opt->optcode()) == 0 && opt->optcode() > 127)
         {
-            optmap << opt;
-            std::cout << "... forcing global option " << (int)opt->optcode() << std::endl;
+            a_rRetOpts << opt;
+            LogRel2(("... forcing global option %d (%#x)", opt->optcode(), opt->optcode()));
         }
     }
+#endif
 
-    return optmap;
+    return a_rRetOpts;
 }

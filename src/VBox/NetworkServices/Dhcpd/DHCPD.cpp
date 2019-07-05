@@ -35,6 +35,10 @@ int DHCPD::init(const Config *pConfig)
     if (m_pConfig != NULL)
         return VERR_INVALID_STATE;
 
+    /** @todo r=bird: This must be configurable so main can read the database and
+     * fish assignments out of it.  (That's the most efficient and accurate way of
+     * figuring  out the IP address of a VM.) */
+
     /* leases file name */
     m_strLeasesFileName = pConfig->getHome();
     m_strLeasesFileName += RTPATH_DELIMITER;
@@ -170,7 +174,8 @@ DhcpServerMessage *DHCPD::doDiscover(DhcpClientMessage &req)
 
 
     OptParameterRequest optlist(req);
-    reply->addOptions(m_pConfig->getOptions(optlist, req.clientId()));
+    optmap_t replyOptions;
+    reply->addOptions(m_pConfig->getOptions(replyOptions, optlist, req.clientId()));
 
     // reply->maybeUnicast(req); /* XXX: we reject ciaddr != 0 above */
     return reply.release();
@@ -208,7 +213,8 @@ DhcpServerMessage *DHCPD::doRequest(DhcpClientMessage &req)
     ack->addOption(OptLeaseTime(b->leaseTime()));
 
     OptParameterRequest optlist(req);
-    ack->addOptions(m_pConfig->getOptions(optlist, req.clientId()));
+    optmap_t replyOptions;
+    ack->addOptions(m_pConfig->getOptions(replyOptions, optlist, req.clientId()));
 
     ack->addOption(OptMessage("Ok, ok, here it is"));
 
@@ -235,7 +241,8 @@ DhcpServerMessage *DHCPD::doInform(DhcpClientMessage &req)
     if (!params.present())
         return NULL;
 
-    optmap_t info(m_pConfig->getOptions(params, req.clientId()));
+    optmap_t info;
+    m_pConfig->getOptions(info, params, req.clientId());
     if (info.empty())
         return NULL;
 
