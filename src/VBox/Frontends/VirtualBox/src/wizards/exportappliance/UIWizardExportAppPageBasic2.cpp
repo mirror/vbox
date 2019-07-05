@@ -21,12 +21,7 @@
 #include <QDir>
 #include <QGridLayout>
 #include <QHeaderView>
-#include <QJsonArray>
-#include <QJsonDocument>
-#include <QJsonObject>
-#include <QJsonValue>
 #include <QLabel>
-#include <QLineEdit>
 #include <QStackedWidget>
 #include <QTableWidget>
 #include <QVBoxLayout>
