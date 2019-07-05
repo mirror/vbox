@@ -14420,6 +14420,7 @@ static VBOXSTRICTRC hmR0VmxExitXcptBP(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 static VBOXSTRICTRC hmR0VmxExitXcptAC(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_XCPT_HANDLER_PARAMS(pVCpu, pVmxTransient);
+    STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestAC);
 
     /*
      * Re-inject it. We'll detect any nesting before getting here.
