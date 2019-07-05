@@ -3604,9 +3604,8 @@ DECLINLINE(int) hmR0VmxSetupVmcsAutoLoadStoreMsrAddrs(PVMCPU pVCpu, PVMXVMCSINFO
  *
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   pVmcsInfo       The VMCS info. object.
- * @param   fIsNstGstVmcs   Whether this is a nested-guest VMCS.
  */
-static void hmR0VmxSetupVmcsMsrPermissions(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo, bool fIsNstGstVmcs)
+static void hmR0VmxSetupVmcsMsrPermissions(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo)
 {
     Assert(pVmcsInfo->u32ProcCtls & VMX_PROC_CTLS_USE_MSR_BITMAPS);
 
@@ -3615,11 +3614,11 @@ static void hmR0VmxSetupVmcsMsrPermissions(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo,
      * VM-exits; they are loaded/stored automatically using fields in the VMCS.
      */
     PVM pVM = pVCpu->CTX_SUFF(pVM);
-    hmR0VmxSetMsrPermission(pVCpu, pVmcsInfo, fIsNstGstVmcs, MSR_IA32_SYSENTER_CS,  VMXMSRPM_ALLOW_RD_WR);
-    hmR0VmxSetMsrPermission(pVCpu, pVmcsInfo, fIsNstGstVmcs, MSR_IA32_SYSENTER_ESP, VMXMSRPM_ALLOW_RD_WR);
-    hmR0VmxSetMsrPermission(pVCpu, pVmcsInfo, fIsNstGstVmcs, MSR_IA32_SYSENTER_EIP, VMXMSRPM_ALLOW_RD_WR);
-    hmR0VmxSetMsrPermission(pVCpu, pVmcsInfo, fIsNstGstVmcs, MSR_K8_GS_BASE,        VMXMSRPM_ALLOW_RD_WR);
-    hmR0VmxSetMsrPermission(pVCpu, pVmcsInfo, fIsNstGstVmcs, MSR_K8_FS_BASE,        VMXMSRPM_ALLOW_RD_WR);
+    hmR0VmxSetMsrPermission(pVCpu, pVmcsInfo, false, MSR_IA32_SYSENTER_CS,  VMXMSRPM_ALLOW_RD_WR);
+    hmR0VmxSetMsrPermission(pVCpu, pVmcsInfo, false, MSR_IA32_SYSENTER_ESP, VMXMSRPM_ALLOW_RD_WR);
+    hmR0VmxSetMsrPermission(pVCpu, pVmcsInfo, false, MSR_IA32_SYSENTER_EIP, VMXMSRPM_ALLOW_RD_WR);
+    hmR0VmxSetMsrPermission(pVCpu, pVmcsInfo, false, MSR_K8_GS_BASE,        VMXMSRPM_ALLOW_RD_WR);
+    hmR0VmxSetMsrPermission(pVCpu, pVmcsInfo, false, MSR_K8_FS_BASE,        VMXMSRPM_ALLOW_RD_WR);
 
     /*
      * The IA32_PRED_CMD and IA32_FLUSH_CMD MSRs are write-only and has no state
@@ -3631,11 +3630,11 @@ static void hmR0VmxSetupVmcsMsrPermissions(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo,
      * auto-load/store MSR area.
      */
     if (pVM->cpum.ro.GuestFeatures.fIbpb)
-        hmR0VmxSetMsrPermission(pVCpu, pVmcsInfo, fIsNstGstVmcs, MSR_IA32_PRED_CMD,  VMXMSRPM_ALLOW_RD_WR);
+        hmR0VmxSetMsrPermission(pVCpu, pVmcsInfo, false, MSR_IA32_PRED_CMD,  VMXMSRPM_ALLOW_RD_WR);
     if (pVM->cpum.ro.GuestFeatures.fFlushCmd)
-        hmR0VmxSetMsrPermission(pVCpu, pVmcsInfo, fIsNstGstVmcs, MSR_IA32_FLUSH_CMD, VMXMSRPM_ALLOW_RD_WR);
+        hmR0VmxSetMsrPermission(pVCpu, pVmcsInfo, false, MSR_IA32_FLUSH_CMD, VMXMSRPM_ALLOW_RD_WR);
     if (pVM->cpum.ro.GuestFeatures.fIbrs)
-        hmR0VmxSetMsrPermission(pVCpu, pVmcsInfo, fIsNstGstVmcs, MSR_IA32_SPEC_CTRL, VMXMSRPM_ALLOW_RD_WR);
+        hmR0VmxSetMsrPermission(pVCpu, pVmcsInfo, false, MSR_IA32_SPEC_CTRL, VMXMSRPM_ALLOW_RD_WR);
 
 #if HC_ARCH_BITS == 64
     /*
@@ -3644,10 +3643,10 @@ static void hmR0VmxSetupVmcsMsrPermissions(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo,
      */
     if (pVM->hm.s.fAllow64BitGuests)
     {
-        hmR0VmxSetMsrPermission(pVCpu, pVmcsInfo, fIsNstGstVmcs, MSR_K8_LSTAR,          VMXMSRPM_ALLOW_RD_WR);
-        hmR0VmxSetMsrPermission(pVCpu, pVmcsInfo, fIsNstGstVmcs, MSR_K6_STAR,           VMXMSRPM_ALLOW_RD_WR);
-        hmR0VmxSetMsrPermission(pVCpu, pVmcsInfo, fIsNstGstVmcs, MSR_K8_SF_MASK,        VMXMSRPM_ALLOW_RD_WR);
-        hmR0VmxSetMsrPermission(pVCpu, pVmcsInfo, fIsNstGstVmcs, MSR_K8_KERNEL_GS_BASE, VMXMSRPM_ALLOW_RD_WR);
+        hmR0VmxSetMsrPermission(pVCpu, pVmcsInfo, false, MSR_K8_LSTAR,          VMXMSRPM_ALLOW_RD_WR);
+        hmR0VmxSetMsrPermission(pVCpu, pVmcsInfo, false, MSR_K6_STAR,           VMXMSRPM_ALLOW_RD_WR);
+        hmR0VmxSetMsrPermission(pVCpu, pVmcsInfo, false, MSR_K8_SF_MASK,        VMXMSRPM_ALLOW_RD_WR);
+        hmR0VmxSetMsrPermission(pVCpu, pVmcsInfo, false, MSR_K8_KERNEL_GS_BASE, VMXMSRPM_ALLOW_RD_WR);
     }
 #endif
 
@@ -3897,7 +3896,7 @@ static int hmR0VmxSetupVmcsProcCtls(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo)
 
     /* Set up MSR permissions that don't change through the lifetime of the VM. */
     if (pVmcsInfo->u32ProcCtls & VMX_PROC_CTLS_USE_MSR_BITMAPS)
-        hmR0VmxSetupVmcsMsrPermissions(pVCpu, pVmcsInfo, false /* fIsNstGstVmcs */);
+        hmR0VmxSetupVmcsMsrPermissions(pVCpu, pVmcsInfo);
 
     /* Set up secondary processor-based VM-execution controls if the CPU supports it. */
     if (pVmcsInfo->u32ProcCtls & VMX_PROC_CTLS_USE_SECONDARY_CTLS)
