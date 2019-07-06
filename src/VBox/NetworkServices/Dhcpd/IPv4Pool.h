@@ -39,43 +39,43 @@ struct IPv4Range
     IPV4HADDR FirstAddr;       /**< Lowest address. */
     IPV4HADDR LastAddr;        /**< Higest address (inclusive). */
 
-    IPv4Range()
+    IPv4Range() RT_NOEXCEPT
         : FirstAddr(0), LastAddr(0)
     {}
 
-    explicit IPv4Range(IPV4HADDR aSingleAddr)
+    explicit IPv4Range(IPV4HADDR aSingleAddr) RT_NOEXCEPT
         : FirstAddr(aSingleAddr), LastAddr(aSingleAddr)
     {}
 
-    IPv4Range(IPV4HADDR aFirstAddr, IPV4HADDR aLastAddr)
+    IPv4Range(IPV4HADDR aFirstAddr, IPV4HADDR aLastAddr) RT_NOEXCEPT
         : FirstAddr(aFirstAddr), LastAddr(aLastAddr)
     {}
 
-    explicit IPv4Range(RTNETADDRIPV4 aSingleAddr)
+    explicit IPv4Range(RTNETADDRIPV4 aSingleAddr) RT_NOEXCEPT
         : FirstAddr(RT_N2H_U32(aSingleAddr.u)), LastAddr(RT_N2H_U32(aSingleAddr.u))
     {}
 
-    IPv4Range(RTNETADDRIPV4 aFirstAddr, RTNETADDRIPV4 aLastAddr)
+    IPv4Range(RTNETADDRIPV4 aFirstAddr, RTNETADDRIPV4 aLastAddr) RT_NOEXCEPT
         : FirstAddr(RT_N2H_U32(aFirstAddr.u)), LastAddr(RT_N2H_U32(aLastAddr.u))
     {}
 
-    bool isValid() const
+    bool isValid() const RT_NOEXCEPT
     {
         return FirstAddr <= LastAddr;
     }
 
-    bool contains(IPV4HADDR addr) const
+    bool contains(IPV4HADDR addr) const RT_NOEXCEPT
     {
         return FirstAddr <= addr && addr <= LastAddr;
     }
 
-    bool contains(RTNETADDRIPV4 addr) const
+    bool contains(RTNETADDRIPV4 addr) const RT_NOEXCEPT
     {
         return contains(RT_N2H_U32(addr.u));
     }
 
     /** Checks if this range includes the @a a_rRange. */
-    bool contains(const IPv4Range &a_rRange) const
+    bool contains(const IPv4Range &a_rRange) const RT_NOEXCEPT
     {
         return a_rRange.isValid()
             && FirstAddr <= a_rRange.FirstAddr
@@ -84,13 +84,13 @@ struct IPv4Range
 };
 
 
-inline bool operator==(const IPv4Range &l, const IPv4Range &r)
+inline bool operator==(const IPv4Range &l, const IPv4Range &r) RT_NOEXCEPT
 {
     return l.FirstAddr == r.FirstAddr && l.LastAddr == r.LastAddr;
 }
 
 
-inline bool operator<(const IPv4Range &l, const IPv4Range &r)
+inline bool operator<(const IPv4Range &l, const IPv4Range &r)  RT_NOEXCEPT
 {
     return l.LastAddr < r.FirstAddr;
 }
@@ -117,8 +117,8 @@ public:
     IPv4Pool()
     {}
 
-    int init(const IPv4Range &aRange);
-    int init(RTNETADDRIPV4 aFirstAddr, RTNETADDRIPV4 aLastAddr);
+    int init(const IPv4Range &aRange) RT_NOEXCEPT;
+    int init(RTNETADDRIPV4 aFirstAddr, RTNETADDRIPV4 aLastAddr) RT_NOEXCEPT;
 
     RTNETADDRIPV4 allocate();
     bool          allocate(RTNETADDRIPV4);
@@ -126,19 +126,19 @@ public:
     /**
      * Checks if the pool range includes @a addr (allocation status not considered).
      */
-    bool contains(RTNETADDRIPV4 addr) const
+    bool contains(RTNETADDRIPV4 addr) const RT_NOEXCEPT
     {
         return m_range.contains(addr);
     }
 
 private:
-    int i_insert(const IPv4Range &range);
+    int i_insert(const IPv4Range &range) RT_NOEXCEPT;
 #if 0
-    int i_insert(IPV4HADDR single)                            { return i_insert(IPv4Range(single)); }
+    int i_insert(IPV4HADDR single) RT_NOEXCEPT                          { return i_insert(IPv4Range(single)); }
 #endif
-    int i_insert(IPV4HADDR first, IPV4HADDR last)             { return i_insert(IPv4Range(first, last)); }
-    int i_insert(RTNETADDRIPV4 single)                        { return i_insert(IPv4Range(single)); }
-    int i_insert(RTNETADDRIPV4 first, RTNETADDRIPV4 last)     { return i_insert(IPv4Range(first, last)); }
+    int i_insert(IPV4HADDR first, IPV4HADDR last) RT_NOEXCEPT           { return i_insert(IPv4Range(first, last)); }
+    int i_insert(RTNETADDRIPV4 single) RT_NOEXCEPT                      { return i_insert(IPv4Range(single)); }
+    int i_insert(RTNETADDRIPV4 first, RTNETADDRIPV4 last) RT_NOEXCEPT   { return i_insert(IPv4Range(first, last)); }
 };
 
 #endif /* !VBOX_INCLUDED_SRC_Dhcpd_IPv4Pool_h */

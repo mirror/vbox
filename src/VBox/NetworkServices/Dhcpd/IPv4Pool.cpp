@@ -25,17 +25,24 @@
 #include "IPv4Pool.h"
 
 
-int IPv4Pool::init(const IPv4Range &aRange)
+int IPv4Pool::init(const IPv4Range &aRange) RT_NOEXCEPT
 {
     AssertReturn(aRange.isValid(), VERR_INVALID_PARAMETER);
 
     m_range = aRange;
-    m_pool.insert(m_range);
+    try
+    {
+        m_pool.insert(m_range);
+    }
+    catch (std::bad_alloc &)
+    {
+        return VERR_NO_MEMORY;
+    }
     return VINF_SUCCESS;
 }
 
 
-int IPv4Pool::init(RTNETADDRIPV4 aFirstAddr, RTNETADDRIPV4 aLastAddr)
+int IPv4Pool::init(RTNETADDRIPV4 aFirstAddr, RTNETADDRIPV4 aLastAddr) RT_NOEXCEPT
 {
     return init(IPv4Range(aFirstAddr, aLastAddr));
 }
@@ -47,7 +54,7 @@ int IPv4Pool::init(RTNETADDRIPV4 aFirstAddr, RTNETADDRIPV4 aLastAddr)
  * @returns IPRT status code (asserted).
  * @param   a_Range         The range to insert.
  */
-int IPv4Pool::i_insert(const IPv4Range &a_Range)
+int IPv4Pool::i_insert(const IPv4Range &a_Range) RT_NOEXCEPT
 {
     /*
      * Check preconditions. Asserting because nobody checks the return code.
@@ -85,7 +92,14 @@ int IPv4Pool::i_insert(const IPv4Range &a_Range)
     /*
      * No overlaps, insert it.
      */
-    m_pool.insert(itHint, a_Range);
+    try
+    {
+        m_pool.insert(itHint, a_Range);
+    }
+    catch (std::bad_alloc &)
+    {
+        return VERR_NO_MEMORY;
+    }
     return VINF_SUCCESS;
 }
 
@@ -113,7 +127,23 @@ RTNETADDRIPV4 IPv4Pool::allocate()
             IPv4Range trimmed = *itBeg;
             trimmed.FirstAddr += 1;
             m_pool.erase(itBeg);
-            m_pool.insert(trimmed);
+            try
+            {
+                m_pool.insert(trimmed);
+            }
+            catch (std::bad_alloc &)
+            {
+                /** @todo r=bird: Theortically the insert could fail with a bad_alloc and we'd
+                 * drop a range of IP address.  It would be nice if we could safely modify itBit
+                 * without having to re-insert it.  The author of this code (not bird) didn't
+                 * seem to think this safe?
+                 *
+                 * If we want to play safe and all that, just use a AVLRU32TREE (or AVLRU64TREE
+                 * if lazy) AVL tree from IPRT.  Since we know exactly how it's implemented and
+                 * works, there will be no uncertanties like this when using it (both here
+                 * and in the i_insert validation logic). */
+                LogRelFunc(("Caught bad_alloc! We're truely buggered now!\n"));
+            }
         }
     }
     else

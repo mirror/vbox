@@ -87,7 +87,7 @@ Config::Config()
  *
  * @returns IPRT status code.
  */
-int Config::i_init()
+int Config::i_init() RT_NOEXCEPT
 {
     return i_homeInit();
 }
@@ -99,7 +99,7 @@ int Config::i_init()
  * @returns IPRT status code.
  * @todo Too many init functions?
  */
-int Config::i_homeInit()
+int Config::i_homeInit() RT_NOEXCEPT
 {
     char szHome[RTPATH_MAX];
     int rc = com::GetVBoxUserHomeDirectory(szHome, sizeof(szHome), false);
@@ -120,7 +120,7 @@ int Config::i_homeInit()
  *
  * @returns Config instance on success, NULL on failure.
  */
-/*static*/ Config *Config::i_createInstanceAndCallInit()
+/*static*/ Config *Config::i_createInstanceAndCallInit() RT_NOEXCEPT
 {
     Config *pConfig;
     try
@@ -160,6 +160,8 @@ void Config::i_setNetwork(const RTCString &aStrNetwork)
 /**
  * Interal worker for i_setNetwork() that sets m_strBaseName to sanitized the
  * version of m_strNetwork suitable for use as a path component.
+ *
+ * @throws std::bad_alloc
  */
 void Config::i_sanitizeBaseName()
 {
@@ -195,7 +197,7 @@ void Config::i_sanitizeBaseName()
  *
  * @todo make the log file directly configurable?
  */
-int Config::i_logInit()
+int Config::i_logInit() RT_NOEXCEPT
 {
     if (m_strHome.isEmpty() || m_strBaseName.isEmpty())
         return VERR_PATH_ZERO_LENGTH;
@@ -240,7 +242,7 @@ int Config::i_logInit()
 /**
  * Post process and validate the configuration after it has been loaded.
  */
-int Config::i_complete()
+int Config::i_complete() RT_NOEXCEPT
 {
     if (m_strNetwork.isEmpty())
     {
@@ -335,7 +337,7 @@ int Config::i_complete()
 }
 
 
-/*static*/ Config *Config::hardcoded()
+/*static*/ Config *Config::hardcoded() RT_NOEXCEPT
 {
     std::unique_ptr<Config> config(i_createInstanceAndCallInit());
     AssertReturn(config.get() != NULL, NULL);
@@ -377,7 +379,11 @@ int Config::i_complete()
 }
 
 
-
+/**
+ * Old VBoxNetDHCP style command line parsing.
+ *
+ * @throws std::bad_alloc
+ */
 /*static*/ Config *Config::compat(int argc, char **argv)
 {
     /* compatibility with old VBoxNetDHCP */
@@ -518,13 +524,12 @@ int Config::i_complete()
 }
 
 
-Config *Config::create(int argc, char **argv)
+Config *Config::create(int argc, char **argv) RT_NOEXCEPT
 {
-#define DHCPD_GETOPT_COMMENT 256 /* No short option for --comment */
     static const RTGETOPTDEF s_aOptions[] =
     {
-        { "--config",       'c',                  RTGETOPT_REQ_STRING },
-        { "--comment",      DHCPD_GETOPT_COMMENT, RTGETOPT_REQ_STRING }
+        { "--config",       'c', RTGETOPT_REQ_STRING },
+        { "--comment",      '#', RTGETOPT_REQ_STRING }
     };
 
     RTGETOPTSTATE State;
@@ -555,7 +560,7 @@ Config *Config::create(int argc, char **argv)
                     return NULL;
                 break;
 
-            case DHCPD_GETOPT_COMMENT: /* --comment */
+            case '#': /* --comment */
                 /* The sole purpose of this option is to allow identification of DHCP
                  * server instances in the process list. We ignore the required string
                  * argument of this option.
@@ -588,7 +593,7 @@ Config *Config::create(int argc, char **argv)
  *
  * @note The release log has is not operational when this method is called.
  */
-Config *Config::i_read(const char *pszFileName)
+Config *Config::i_read(const char *pszFileName) RT_NOEXCEPT
 {
     if (pszFileName == NULL || pszFileName[0] == '\0')
     {
@@ -634,6 +639,12 @@ Config *Config::i_read(const char *pszFileName)
         RTMsgError("%s\n", e.what());
         return NULL;
     }
+    catch (std::bad_alloc &)
+    {
+        LogFunc(("std::bad_alloc\n"));
+        RTMsgError("std::bad_alloc reading config\n");
+        return NULL;
+    }
     catch (...)
     {
         LogFunc(("Unexpected exception\n"));
@@ -649,7 +660,8 @@ Config *Config::i_read(const char *pszFileName)
  * Internal worker for i_read() that parses the root element and everything
  * below it.
  *
- * @throws stuff.
+ * @param   pElmRoot    The root element.
+ * @throws  std::bad_alloc, ConfigFileError
  */
 void Config::i_parseConfig(const xml::ElementNode *pElmRoot)
 {
@@ -693,7 +705,7 @@ void Config::i_parseConfig(const xml::ElementNode *pElmRoot)
  * Internal worker for parsing the elements under /DHCPServer/.
  *
  * @param   pElmServer          The DHCPServer element.
- * @throws  ConfigFileError
+ * @throws  std::bad_alloc, ConfigFileError
  */
 void Config::i_parseServer(const xml::ElementNode *pElmServer)
 {
@@ -766,7 +778,7 @@ void Config::i_parseServer(const xml::ElementNode *pElmServer)
  * Internal worker for parsing the elements under /DHCPServer/Options/.
  *
  * @param   pElmServer          The <Options> element.
- * @throws  ConfigFileError
+ * @throws  std::bad_alloc, ConfigFileError
  */
 void Config::i_parseGlobalOptions(const xml::ElementNode *options)
 {
@@ -791,7 +803,7 @@ void Config::i_parseGlobalOptions(const xml::ElementNode *options)
  * ClientId (also see getOptions below).
  *
  * @param   pElmServer          The <Config> element.
- * @throws  ConfigFileError
+ * @throws  std::bad_alloc, ConfigFileError
  */
 void Config::i_parseVMConfig(const xml::ElementNode *pElmConfig)
 {
@@ -840,7 +852,7 @@ void Config::i_parseVMConfig(const xml::ElementNode *pElmConfig)
  *
  * @param   pElmServer          The <Option> element.
  * @param   optmap              The option map to add the option to.
- * @throws  ConfigFileError
+ * @throws  std::bad_alloc, ConfigFileError
  */
 void Config::i_parseOption(const xml::ElementNode *pElmOption, optmap_t &optmap)
 {
@@ -945,6 +957,8 @@ void Config::i_parseOption(const xml::ElementNode *pElmOption, optmap_t &optmap)
  * @param   id              The client ID.
  * @param   idVendorClass   The vendor class ID.
  * @param   idUserClass     The user class ID.
+ *
+ * @throws  std::bad_alloc
  */
 optmap_t &Config::getOptions(optmap_t &a_rRetOpts, const OptParameterRequest &reqOpts, const ClientId &id,
                              const OptVendorClassId &idVendorClass /*= OptVendorClassId()*/,

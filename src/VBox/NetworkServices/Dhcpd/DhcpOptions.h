@@ -54,8 +54,8 @@ class DhcpOption
     static DhcpOption *parse(uint8_t aOptCode, int aEnc, const char *pcszValue);
 
   public:
-    uint8_t optcode() const { return m_OptCode; }
-    bool present() const { return m_fPresent; }
+    uint8_t optcode() const RT_NOEXCEPT { return m_OptCode; }
+    bool    present() const RT_NOEXCEPT { return m_fPresent; }
 
   public:
     int encode(octets_t &dst) const;

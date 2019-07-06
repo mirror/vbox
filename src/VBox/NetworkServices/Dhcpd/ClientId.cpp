@@ -33,7 +33,7 @@ bool ClientId::g_fFormatRegistered = false;
 /**
  * Registers the ClientId format type callback ("%R[id]").
  */
-void ClientId::registerFormat()
+void ClientId::registerFormat() RT_NOEXCEPT
 {
     if (!g_fFormatRegistered)
     {
@@ -81,7 +81,7 @@ ClientId::rtStrFormat(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
 }
 
 
-bool operator==(const ClientId &l, const ClientId &r)
+bool operator==(const ClientId &l, const ClientId &r) RT_NOEXCEPT
 {
     if (l.m_id.present())
     {
@@ -98,7 +98,7 @@ bool operator==(const ClientId &l, const ClientId &r)
 }
 
 
-bool operator<(const ClientId &l, const ClientId &r)
+bool operator<(const ClientId &l, const ClientId &r) RT_NOEXCEPT
 {
     if (l.m_id.present())
     {

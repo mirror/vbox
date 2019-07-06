@@ -68,7 +68,7 @@ public:
     void setSiaddr(RTNETADDRIPV4 addr) { m_siaddr = addr; }
     void setGiaddr(RTNETADDRIPV4 addr) { m_giaddr = addr; }
 
-    uint8_t messageType() const
+    uint8_t messageType() const RT_NOEXCEPT
     {
         Assert(m_optMessageType.present());
         return m_optMessageType.value();

@@ -71,37 +71,37 @@ class Config
 private:
     Config();
 
-    int                 i_init();
-    int                 i_homeInit();
-    static Config      *i_createInstanceAndCallInit();
-    int                 i_logInit();
-    int                 i_complete();
+    int                 i_init() RT_NOEXCEPT;
+    int                 i_homeInit() RT_NOEXCEPT;
+    static Config      *i_createInstanceAndCallInit() RT_NOEXCEPT;
+    int                 i_logInit() RT_NOEXCEPT;
+    int                 i_complete() RT_NOEXCEPT;
 
 public:
     /** @name Factory methods
      * @{ */
-    static Config      *hardcoded();                   /**< For testing. */
-    static Config      *create(int argc, char **argv); /**< --config */
-    static Config      *compat(int argc, char **argv); /**< Old VBoxNetDHCP command line parsing. */
+    static Config      *hardcoded() RT_NOEXCEPT;                    /**< For testing. */
+    static Config      *create(int argc, char **argv) RT_NOEXCEPT;  /**< --config */
+    static Config      *compat(int argc, char **argv);
     /** @} */
 
     /** @name Accessors
      * @{ */
-    const RTCString    &getHome() const             { return m_strHome; }
+    const RTCString    &getHome() const RT_NOEXCEPT             { return m_strHome; }
 
-    const RTCString    &getNetwork() const          { return m_strNetwork; }
+    const RTCString    &getNetwork() const RT_NOEXCEPT          { return m_strNetwork; }
 
-    const RTCString    &getBaseName() const         { return m_strBaseName; }
-    const RTCString    &getTrunk() const            { return m_strTrunk; }
-    INTNETTRUNKTYPE     getTrunkType() const        { return m_enmTrunkType; }
+    const RTCString    &getBaseName() const RT_NOEXCEPT         { return m_strBaseName; }
+    const RTCString    &getTrunk() const RT_NOEXCEPT            { return m_strTrunk; }
+    INTNETTRUNKTYPE     getTrunkType() const RT_NOEXCEPT        { return m_enmTrunkType; }
 
-    const RTMAC        &getMacAddress() const       { return m_MacAddress; }
+    const RTMAC        &getMacAddress() const RT_NOEXCEPT       { return m_MacAddress; }
 
-    RTNETADDRIPV4       getIPv4Address() const      { return m_IPv4Address; }
-    RTNETADDRIPV4       getIPv4Netmask() const      { return m_IPv4Netmask; }
+    RTNETADDRIPV4       getIPv4Address() const RT_NOEXCEPT      { return m_IPv4Address; }
+    RTNETADDRIPV4       getIPv4Netmask() const RT_NOEXCEPT      { return m_IPv4Netmask; }
 
-    RTNETADDRIPV4       getIPv4PoolFirst() const    { return m_IPv4PoolFirst; }
-    RTNETADDRIPV4       getIPv4PoolLast() const     { return m_IPv4PoolLast; }
+    RTNETADDRIPV4       getIPv4PoolFirst() const RT_NOEXCEPT    { return m_IPv4PoolFirst; }
+    RTNETADDRIPV4       getIPv4PoolLast() const RT_NOEXCEPT     { return m_IPv4PoolLast; }
     /** @} */
 
     optmap_t           &getOptions(optmap_t &a_rRetOpts, const OptParameterRequest &reqOpts, const ClientId &id,
@@ -111,7 +111,7 @@ public:
 private:
     /** @name Configuration file reading and parsing
      * @{ */
-    static Config      *i_read(const char *pszFileName);
+    static Config      *i_read(const char *pszFileName) RT_NOEXCEPT;
     void                i_parseConfig(const xml::ElementNode *root);
     void                i_parseServer(const xml::ElementNode *server);
     void                i_parseGlobalOptions(const xml::ElementNode *options);

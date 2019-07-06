@@ -35,7 +35,7 @@ bool Binding::g_fFormatRegistered = false;
 /**
  * Registers the ClientId format type callback ("%R[binding]").
  */
-void Binding::registerFormat()
+void Binding::registerFormat() RT_NOEXCEPT
 {
     if (!g_fFormatRegistered)
     {
@@ -86,7 +86,7 @@ Binding::rtStrFormat(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
     return cb;
 }
 
-const char *Binding::stateName() const
+const char *Binding::stateName() const RT_NOEXCEPT
 {
     switch (m_state)
     {
@@ -107,7 +107,7 @@ const char *Binding::stateName() const
 }
 
 
-Binding &Binding::setState(const char *pszStateName)
+Binding &Binding::setState(const char *pszStateName) RT_NOEXCEPT
 {
     if (strcmp(pszStateName, "free") == 0)
         m_state = Binding::FREE;
@@ -136,7 +136,7 @@ Binding &Binding::setState(const char *pszStateName)
  *          does not indicate whether action was taken or not).
  * @param   tsDeadline          The expiry deadline to use.
  */
-bool Binding::expire(Timestamp tsDeadline)
+bool Binding::expire(Timestamp tsDeadline) RT_NOEXCEPT
 {
     if (m_state <= Binding::EXPIRED)
         return false;
@@ -231,17 +231,25 @@ Binding *Binding::fromXML(const xml::ElementNode *pElmLease)
     {
         /*
          * Decode from "de:ad:be:ef".
-         * XXX: RTStrConvertHexBytes() doesn't grok colons
          */
-        size_t cbBytes = strId.length() / 2;
-        uint8_t *pBytes = new uint8_t[cbBytes];
-        rc = RTStrConvertHexBytes(strId.c_str(), pBytes, cbBytes, 0);
+        /** @todo RTStrConvertHexBytes() doesn't grok colons */
+        size_t   cbBytes = strId.length() / 2;
+        uint8_t *pbBytes = new uint8_t[cbBytes];
+        rc = RTStrConvertHexBytes(strId.c_str(), pbBytes, cbBytes, 0);
         if (RT_SUCCESS(rc))
         {
-            std::vector<uint8_t> rawopt(pBytes, pBytes + cbBytes);
-            id = OptClientId(rawopt);
+            try
+            {
+                std::vector<uint8_t> rawopt(pbBytes, pbBytes + cbBytes);
+                id = OptClientId(rawopt);
+            }
+            catch (std::bad_alloc &)
+            {
+                delete[] pbBytes;
+                throw;
+            }
         }
-        delete[] pBytes;
+        delete[] pbBytes;
     }
 
     /*
@@ -304,7 +312,7 @@ Binding *Binding::fromXML(const xml::ElementNode *pElmLease)
         b->setState(strState.c_str());
     }
     else
-    {   /* XXX: old code wrote timestamps instead of absolute time. */
+    {   /** @todo XXX: old code wrote timestamps instead of absolute time. */
         /* pretend that lease has just ended */
         Timestamp fakeIssued = Timestamp::now();
         fakeIssued.subSeconds(duration);
@@ -340,17 +348,14 @@ int Db::init(const Config *pConfig)
 
     m_pConfig = pConfig;
 
-    m_pool.init(pConfig->getIPv4PoolFirst(),
-                pConfig->getIPv4PoolLast());
-
-    return VINF_SUCCESS;
+    return m_pool.init(pConfig->getIPv4PoolFirst(), pConfig->getIPv4PoolLast());
 }
 
 
 /**
  * Expire old binding (leases).
  */
-void Db::expire()
+void Db::expire() RT_NOEXCEPT
 {
     const Timestamp now = Timestamp::now();
     for (bindings_t::iterator it = m_bindings.begin(); it != m_bindings.end(); ++it)
@@ -608,7 +613,7 @@ Binding *Db::allocateBinding(const DhcpClientMessage &req)
  * @returns IPRT status code.
  * @param   pNewBinding     The new binding to add.
  */
-int Db::i_addBinding(Binding *pNewBinding)
+int Db::i_addBinding(Binding *pNewBinding) RT_NOEXCEPT
 {
     /*
      * Validate the binding against the range and existing bindings.
@@ -661,7 +666,7 @@ int Db::i_addBinding(Binding *pNewBinding)
  *
  * @param   req                 The DHCP request.
  */
-void Db::cancelOffer(const DhcpClientMessage &req)
+void Db::cancelOffer(const DhcpClientMessage &req) RT_NOEXCEPT
 {
     const OptRequestedAddress reqAddr(req);
     if (!reqAddr.present())
@@ -696,8 +701,9 @@ void Db::cancelOffer(const DhcpClientMessage &req)
  *
  * @param   req                 The DHCP request.
  * @returns true if found and released, otherwise false.
+ * @throws  nothing
  */
-bool Db::releaseBinding(const DhcpClientMessage &req)
+bool Db::releaseBinding(const DhcpClientMessage &req) RT_NOEXCEPT
 {
     const RTNETADDRIPV4 addr = req.ciaddr();
     const ClientId     &id(req.clientId());
@@ -725,9 +731,16 @@ bool Db::releaseBinding(const DhcpClientMessage &req)
  * @returns IPRT status code.
  * @param   strFilename         The file to write it to.
  */
-int Db::writeLeases(const RTCString &strFilename) const
+int Db::writeLeases(const RTCString &strFilename) const RT_NOEXCEPT
 {
     LogDHCP(("writing leases to %s\n", strFilename.c_str()));
+
+    /** @todo This could easily be written directly to the file w/o going thru
+     *        a xml::Document, xml::XmlFileWriter, hammering the heap and being
+     *        required to catch a lot of different exceptions at various points.
+     *        (RTStrmOpen, bunch of RTStrmPrintf using \%RMas and \%RMes.,
+     *        RTStrmClose closely followed by a couple of renames.)
+     */
 
     /*
      * Create the document and root element.
@@ -788,8 +801,9 @@ int Db::writeLeases(const RTCString &strFilename) const
  *
  * @returns IPRT status code.
  * @param   strFilename         The file to load it from.
+ * @throws  nothing
  */
-int Db::loadLeases(const RTCString &strFilename)
+int Db::loadLeases(const RTCString &strFilename) RT_NOEXCEPT
 {
     LogDHCP(("loading leases from %s\n", strFilename.c_str()));
 
@@ -862,7 +876,7 @@ int Db::loadLeases(const RTCString &strFilename)
  * @param   pElmLease           The 'Lease' element to handle.
  * @return  IPRT status code.
  */
-int Db::i_loadLease(const xml::ElementNode *pElmLease)
+int Db::i_loadLease(const xml::ElementNode *pElmLease) RT_NOEXCEPT
 {
     Binding *pBinding = NULL;
     try
@@ -877,7 +891,7 @@ int Db::i_loadLease(const xml::ElementNode *pElmLease)
     {
         bool fExpired = pBinding->expire();
         if (!fExpired)
-            LogDHCP(("> LOAD: lease %R[binding]\n", pBinding));
+            LogDHCP(("> LOAD:         lease %R[binding]\n", pBinding));
         else
             LogDHCP(("> LOAD: EXPIRED lease %R[binding]\n", pBinding));
 

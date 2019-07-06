@@ -28,39 +28,53 @@
 #include "Db.h"
 
 
+/**
+ * The core of the DHCP server.
+ *
+ * This class is feed DhcpClientMessages that VBoxNetDhcpd has picked up from
+ * the network.  After processing a message it returns the appropriate response
+ * (if any) which VBoxNetDhcpd sends out.
+ */
 class DHCPD
 {
-    const Config *m_pConfig;
-    RTCString m_strLeasesFileName;
-    Db m_db;
+    /** The DHCP configuration. */
+    const Config   *m_pConfig;
+    /** The lease database filename. */
+    RTCString       m_strLeasesFilename;
+    /** The lease database. */
+    Db              m_db;
 
 public:
     DHCPD();
 
-    int init(const Config *);
+    int init(const Config *) RT_NOEXCEPT;
 
-    DhcpServerMessage *process(const std::unique_ptr<DhcpClientMessage> &req)
+    DhcpServerMessage *process(const std::unique_ptr<DhcpClientMessage> &req) RT_NOEXCEPT
     {
-        if (req.get() == NULL)
-            return NULL;
-
-        return process(*req.get());
+        if (req.get() != NULL)
+            return process(*req.get());
+        return NULL;
     }
 
-    DhcpServerMessage *process(DhcpClientMessage &req);
+    DhcpServerMessage *process(DhcpClientMessage &req) RT_NOEXCEPT;
 
 private:
-    DhcpServerMessage *doDiscover(DhcpClientMessage &req);
-    DhcpServerMessage *doRequest(DhcpClientMessage &req);
-    DhcpServerMessage *doInform(DhcpClientMessage &req);
+    /** @name DHCP message processing methods
+     * @{ */
+    DhcpServerMessage *i_doDiscover(DhcpClientMessage &req);
+    DhcpServerMessage *i_doRequest(DhcpClientMessage &req);
+    DhcpServerMessage *i_doInform(DhcpClientMessage &req);
+    DhcpServerMessage *i_doDecline(const DhcpClientMessage &req) RT_NOEXCEPT;
+    DhcpServerMessage *i_doRelease(const DhcpClientMessage &req) RT_NOEXCEPT;
 
-    DhcpServerMessage *doDecline(DhcpClientMessage &req);
-    DhcpServerMessage *doRelease(DhcpClientMessage &req);
+    DhcpServerMessage *i_createMessage(int type, DhcpClientMessage &req);
+    /** @} */
 
-    DhcpServerMessage *createMessage(int type, DhcpClientMessage &req);
-
-    void loadLeases();
-    void saveLeases();
+    /** @name Lease database handling
+     * @{ */
+    int                i_loadLeases() RT_NOEXCEPT;
+    void               i_saveLeases() RT_NOEXCEPT;
+    /** @} */
 };
 
 #endif /* !VBOX_INCLUDED_SRC_Dhcpd_DHCPD_h */

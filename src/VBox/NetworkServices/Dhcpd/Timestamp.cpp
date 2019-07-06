@@ -23,7 +23,7 @@
 #include "Timestamp.h"
 
 
-size_t Timestamp::strFormatHelper(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput) const
+size_t Timestamp::strFormatHelper(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput) const RT_NOEXCEPT
 {
     RTTIMESPEC TimeSpec;
     RTTIME     Time;

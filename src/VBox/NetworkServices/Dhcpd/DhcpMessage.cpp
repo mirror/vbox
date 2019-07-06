@@ -288,8 +288,7 @@ void DhcpClientMessage::dump() const
     }
 
     bool fHeader = true;
-    for (rawopts_t::const_iterator it = m_rawopts.begin();
-         it != m_rawopts.end(); ++it)
+    for (rawopts_t::const_iterator it = m_rawopts.begin(); it != m_rawopts.end(); ++it)
     {
         const uint8_t optcode = (*it).first;
         switch (optcode) {

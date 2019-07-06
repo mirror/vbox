@@ -37,7 +37,9 @@
 
 
 /**
- * Address binding in the lease database.
+ * An address binding in the lease database.
+ *
+ * This is how an allocated IPv4 address is mananged.
  */
 class Binding
 {
@@ -68,17 +70,17 @@ public:
 
     /** @name Attribute accessors
      * @{ */
-    RTNETADDRIPV4   addr() const        { return m_addr; }
+    RTNETADDRIPV4   addr() const RT_NOEXCEPT        { return m_addr; }
 
-    const ClientId &id() const          { return m_id; }
+    const ClientId &id() const RT_NOEXCEPT          { return m_id; }
 
-    uint32_t        leaseTime() const   { return m_secLease; }
-    Timestamp       issued() const      { return m_issued; }
+    uint32_t        leaseTime() const RT_NOEXCEPT   { return m_secLease; }
+    Timestamp       issued() const RT_NOEXCEPT      { return m_issued; }
 
-    State           state() const       { return m_state; }
-    const char     *stateName() const;
-    Binding        &setState(const char *pszStateName);
-    Binding        &setState(State stateParam)
+    State           state() const RT_NOEXCEPT       { return m_state; }
+    const char     *stateName() const RT_NOEXCEPT;
+    Binding        &setState(const char *pszStateName) RT_NOEXCEPT;
+    Binding        &setState(State stateParam) RT_NOEXCEPT
     {
         m_state = stateParam;
         return *this;
@@ -86,7 +88,7 @@ public:
     /** @} */
 
 
-    Binding &setLeaseTime(uint32_t secLease)
+    Binding &setLeaseTime(uint32_t secLease) RT_NOEXCEPT
     {
         m_issued = Timestamp::now();
         m_secLease = secLease;
@@ -94,7 +96,7 @@ public:
     }
 
     /** Reassigns the binding to the given client.   */
-    Binding &giveTo(const ClientId &a_id)
+    Binding &giveTo(const ClientId &a_id) RT_NOEXCEPT
     {
         m_id = a_id;
         m_state = FREE;
@@ -107,8 +109,11 @@ public:
         m_state = FREE;
     }
 
-    bool expire(Timestamp tsDeadline);
-    bool expire() { return expire(Timestamp::now()); }
+    bool expire(Timestamp tsDeadline) RT_NOEXCEPT;
+    bool expire() RT_NOEXCEPT
+    {
+        return expire(Timestamp::now());
+    }
 
     /** @name Serialization
      * @{ */
@@ -118,17 +123,25 @@ public:
 
     /** @name String formatting of %R[binding].
      * @{ */
-    static void registerFormat();
+    static void registerFormat() RT_NOEXCEPT;
 private:
     static DECLCALLBACK(size_t) rtStrFormat(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, const char *pszType,
                                             void const *pvValue, int cchWidth, int cchPrecision, unsigned fFlags, void *pvUser);
     static bool g_fFormatRegistered;
     /** @} */
+
+    Binding &operator=(const Binding &); /**< Shuts up warning C4626 (incorrect warning?). */
 };
 
 
 /**
  * The lease database.
+ *
+ * There is currently just one instance of this class in a running DHCP server
+ * residing in Dhcpd::m_db.  It covers one single range of IPv4 addresses, which
+ * currently unbound addressed are managed by m_pool.  The allocated addresses
+ * are kept in the m_bindings list.  Once an address has been allocated, it will
+ * stay in the m_bindings list even after released or expired.
  */
 class Db
 {
@@ -150,22 +163,22 @@ public:
     int      init(const Config *pConfig);
 
     /** Check if @a addr belonges to this lease database. */
-    bool     addressBelongs(RTNETADDRIPV4 addr) const { return m_pool.contains(addr); }
+    bool     addressBelongs(RTNETADDRIPV4 addr) const RT_NOEXCEPT { return m_pool.contains(addr); }
 
     Binding *allocateBinding(const DhcpClientMessage &req);
-    bool     releaseBinding(const DhcpClientMessage &req);
+    bool     releaseBinding(const DhcpClientMessage &req) RT_NOEXCEPT;
 
-    void     cancelOffer(const DhcpClientMessage &req);
+    void     cancelOffer(const DhcpClientMessage &req) RT_NOEXCEPT;
 
-    void     expire();
+    void     expire() RT_NOEXCEPT;
 
     /** @name Database serialization methods
      * @{ */
-    int      loadLeases(const RTCString &strFilename);
+    int      loadLeases(const RTCString &strFilename) RT_NOEXCEPT;
 private:
-    int      i_loadLease(const xml::ElementNode *pElmLease);
+    int      i_loadLease(const xml::ElementNode *pElmLease) RT_NOEXCEPT;
 public:
-    int      writeLeases(const RTCString &strFilename) const;
+    int      writeLeases(const RTCString &strFilename) const RT_NOEXCEPT;
     /** @} */
 
 private:
@@ -175,7 +188,7 @@ private:
     Binding *i_allocateAddress(const ClientId &id, RTNETADDRIPV4 addr);
 
     /* add binding e.g. from the leases file */
-    int      i_addBinding(Binding *pNewBinding);
+    int      i_addBinding(Binding *pNewBinding) RT_NOEXCEPT;
 };
 
 #endif /* !VBOX_INCLUDED_SRC_Dhcpd_Db_h */

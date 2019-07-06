@@ -371,19 +371,18 @@ void VBoxNetDhcpd::ifPump()
     for (;;)
     {
         int rc = ifWait();
-
-        if (RT_UNLIKELY(rc == VERR_INTERRUPTED))
-            continue;
-
+        if (   rc != VERR_INTERRUPTED
 #if 0 /* we wait indefinitely */
-        if (rc == VERR_TIMEOUT)
-            ...;
+            && rc != VERR_TIMEOUT
 #endif
-
-        if (RT_FAILURE(rc))
+            )
+            ifProcessInput();
+        else
+        {
+            LogRel(("ifWait failed: %Rrc\n", rc));
+            RTMsgError("ifWait failed: %Rrc", rc);
             return;
-
-        ifProcessInput();
+        }
     }
 }
 
@@ -612,38 +611,65 @@ int VBoxNetDhcpd::ifClose()
 
 int VBoxNetDhcpd::main(int argc, char **argv)
 {
-    int rc;
-
+    /*
+     * Register string format types.
+     */
     ClientId::registerFormat();
+    Binding::registerFormat();
 
-    /* XXX: We no longer need hardcoded and compat methods. We should remove them soon. */
+    /*
+     * Parse the command line into a configuration object.
+     */
+    /** @todo XXX: We no longer need hardcoded and compat methods. We should remove them soon. */
     if (argc < 2)
         m_Config = Config::hardcoded();
     else if (   strcmp(argv[1], "--config") == 0
              || strcmp(argv[1], "--comment") == 0)
         m_Config = Config::create(argc, argv);
     else
-        m_Config = Config::compat(argc, argv);
-
+    {
+        try
+        {
+            m_Config = Config::compat(argc, argv);
+        }
+        catch (std::bad_alloc &)
+        {
+            m_Config = NULL;
+            RTMsgError("Out of memory");
+            return VERR_NO_MEMORY;
+        }
+    }
     if (m_Config == NULL)
         return VERR_GENERAL_FAILURE;
 
-    rc = m_server.init(m_Config);
-
-    /* connect to the intnet */
-    rc = ifInit(m_Config->getNetwork(),
-                m_Config->getTrunk(),
-                m_Config->getTrunkType());
-    if (RT_FAILURE(rc))
-        return rc;
-
-    /* setup lwip */
-    rc = vboxLwipCoreInitialize(lwipInitCB, this);
-    if (RT_FAILURE(rc))
-        return rc;
-
-    ifPump();
-    return VINF_SUCCESS;
+    /*
+     * Initialize the server.
+     */
+    int rc = m_server.init(m_Config);
+    if (RT_SUCCESS(rc))
+    {
+        /* connect to the intnet */
+        rc = ifInit(m_Config->getNetwork(), m_Config->getTrunk(), m_Config->getTrunkType());
+        if (RT_SUCCESS(rc))
+        {
+            /* setup lwip */
+            rc = vboxLwipCoreInitialize(lwipInitCB, this);
+            if (RT_SUCCESS(rc))
+            {
+                /*
+                 * Pump packets more or less for ever.
+                 */
+                ifPump();
+            }
+            else
+                RTMsgError("Terminating - vboxLwipCoreInitialize failed: %Rrc", rc);
+        }
+        else
+            RTMsgError("Terminating - ifInit failed: %Rrc", rc);
+    }
+    else
+        RTMsgError("Terminating - Dhcpd::init failed: %Rrc", rc);
+    return rc;
 }
 
 
@@ -706,9 +732,6 @@ err_t VBoxNetDhcpd::netifInit(netif *pNetif)
 void VBoxNetDhcpd::dhcp4Recv(struct udp_pcb *pcb, struct pbuf *p,
                              ip_addr_t *addr, u16_t port)
 {
-    err_t error;
-    int rc;
-
     RT_NOREF(pcb, addr, port);
 
     if (RT_UNLIKELY(p->next != NULL))
@@ -734,7 +757,7 @@ void VBoxNetDhcpd::dhcp4Recv(struct udp_pcb *pcb, struct pbuf *p,
         ip_addr_copy(dst, ip_addr_broadcast);
 
     octets_t data;
-    rc = msgOut->encode(data);
+    int rc = msgOut->encode(data);
     if (RT_FAILURE(rc))
         return;
 
@@ -742,7 +765,7 @@ void VBoxNetDhcpd::dhcp4Recv(struct udp_pcb *pcb, struct pbuf *p,
     if (!q)
         return;
 
-    error = pbuf_take(q.get(), &data.front(), (u16_t)data.size());
+    err_t error = pbuf_take(q.get(), &data.front(), (u16_t)data.size());
     if (error != ERR_OK)
         return;
 
