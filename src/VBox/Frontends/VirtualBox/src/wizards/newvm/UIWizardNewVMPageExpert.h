@@ -51,7 +51,7 @@ public:
 protected:
 
     /* Wrapper to access 'wizard' from base part: */
-    UIWizard* wizardImp() { return wizard(); }
+    UIWizard *wizardImp() const { return wizard(); }
     /* Wrapper to access 'this' from base part: */
     UIWizardPage* thisImp() { return this; }
     /* Wrapper to access 'wizard-field' from base part: */

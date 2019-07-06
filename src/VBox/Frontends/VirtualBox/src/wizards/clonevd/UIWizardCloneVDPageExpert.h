@@ -52,7 +52,7 @@ public:
 protected:
 
     /** Allows to access 'wizard()' from base part. */
-    UIWizard* wizardImp() { return wizard(); }
+    UIWizard *wizardImp() const { return wizard(); }
     /** Allows to access 'this' from base part. */
     UIWizardPage* thisImp() { return this; }
     /** Allows to access 'field()' from base part. */

@@ -269,7 +269,7 @@ protected:
     virtual bool event(QEvent *pEvent) /* override */;
 
     /** Allows access wizard from base part. */
-    UIWizard *wizardImp() { return UIWizardPage::wizard(); }
+    UIWizard *wizardImp() const { return UIWizardPage::wizard(); }
     /** Allows access wizard-field from base part. */
     QVariant fieldImp(const QString &strFieldName) const { return UIWizardPage::field(strFieldName); }
 

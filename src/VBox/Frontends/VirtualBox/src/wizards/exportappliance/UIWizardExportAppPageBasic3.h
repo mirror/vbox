@@ -80,7 +80,7 @@ public:
 protected:
 
     /** Allows access wizard from base part. */
-    UIWizard* wizardImp() { return UIWizardPage::wizard(); }
+    UIWizard *wizardImp() const { return UIWizardPage::wizard(); }
     /** Allows access page from base part. */
     UIWizardPage* thisImp() { return this; }
     /** Allows access wizard-field from base part. */

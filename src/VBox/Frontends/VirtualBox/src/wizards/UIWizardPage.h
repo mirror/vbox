@@ -46,7 +46,7 @@ public:
 protected:
 
     /** Returns wizard this page-base belongs to. */
-    virtual UIWizard *wizardImp();
+    virtual UIWizard *wizardImp() const;
 
     /** Returns wizard page this page-base belongs to. */
     virtual UIWizardPage *thisImp();

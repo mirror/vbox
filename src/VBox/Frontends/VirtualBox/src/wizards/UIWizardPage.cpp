@@ -28,7 +28,7 @@
 *   Class UIWizardPageBase implementation.                                                                                       *
 *********************************************************************************************************************************/
 
-UIWizard *UIWizardPageBase::wizardImp()
+UIWizard *UIWizardPageBase::wizardImp() const
 {
     /* Should be reimplemented in sub-class to enable access to wizard! */
     AssertMsgFailed(("UIWizardPageBase::wizardImp() should be reimplemented!"));
