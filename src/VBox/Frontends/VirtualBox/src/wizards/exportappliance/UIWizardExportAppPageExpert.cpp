@@ -422,6 +422,7 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
     registerField("includeISOsSelected", this, "includeISOsSelected");
     registerField("providerShortName", this, "providerShortName");
     registerField("appliance", this, "appliance");
+    registerField("vsd", this, "vsd");
     registerField("vsdExportForm", this, "vsdExportForm");
     registerField("applianceWidget", this, "applianceWidget");
 }
@@ -565,6 +566,7 @@ bool UIWizardExportAppPageExpert::isComplete() const
                   || (   fCSP
                       && m_comCloudProfile.isNotNull()
                       && m_comAppliance.isNotNull()
+                      && m_comVSD.isNotNull()
                       && m_comVSDExportForm.isNotNull());
     }
 
