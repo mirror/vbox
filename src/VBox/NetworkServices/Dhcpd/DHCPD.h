@@ -61,13 +61,13 @@ public:
 private:
     /** @name DHCP message processing methods
      * @{ */
-    DhcpServerMessage *i_doDiscover(DhcpClientMessage &req);
-    DhcpServerMessage *i_doRequest(DhcpClientMessage &req);
-    DhcpServerMessage *i_doInform(DhcpClientMessage &req);
+    DhcpServerMessage *i_doDiscover(const DhcpClientMessage &req);
+    DhcpServerMessage *i_doRequest(const DhcpClientMessage &req);
+    DhcpServerMessage *i_doInform(const DhcpClientMessage &req);
     DhcpServerMessage *i_doDecline(const DhcpClientMessage &req) RT_NOEXCEPT;
     DhcpServerMessage *i_doRelease(const DhcpClientMessage &req) RT_NOEXCEPT;
 
-    DhcpServerMessage *i_createMessage(int type, DhcpClientMessage &req);
+    DhcpServerMessage *i_createMessage(int type, const DhcpClientMessage &req);
     /** @} */
 
     /** @name Lease database handling

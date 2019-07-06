@@ -740,38 +740,45 @@ void VBoxNetDhcpd::dhcp4Recv(struct udp_pcb *pcb, struct pbuf *p,
     bool broadcasted = ip_addr_cmp(ip_current_dest_addr(), &ip_addr_broadcast)
                     || ip_addr_cmp(ip_current_dest_addr(), &ip_addr_any);
 
-    DhcpClientMessage *msgIn = DhcpClientMessage::parse(broadcasted, p->payload, p->len);
-    if (msgIn == NULL)
-        return;
+    try
+    {
+        DhcpClientMessage *msgIn = DhcpClientMessage::parse(broadcasted, p->payload, p->len);
+        if (msgIn == NULL)
+            return;
 
-    std::unique_ptr<DhcpClientMessage> autoFreeMsgIn(msgIn);
+        std::unique_ptr<DhcpClientMessage> autoFreeMsgIn(msgIn);
 
-    DhcpServerMessage *msgOut = m_server.process(*msgIn);
-    if (msgOut == NULL)
-        return;
+        DhcpServerMessage *msgOut = m_server.process(*msgIn);
+        if (msgOut == NULL)
+            return;
 
-    std::unique_ptr<DhcpServerMessage> autoFreeMsgOut(msgOut);
+        std::unique_ptr<DhcpServerMessage> autoFreeMsgOut(msgOut);
 
-    ip_addr_t dst = { msgOut->dst().u };
-    if (ip_addr_cmp(&dst, &ip_addr_any))
-        ip_addr_copy(dst, ip_addr_broadcast);
+        ip_addr_t dst = { msgOut->dst().u };
+        if (ip_addr_cmp(&dst, &ip_addr_any))
+            ip_addr_copy(dst, ip_addr_broadcast);
 
-    octets_t data;
-    int rc = msgOut->encode(data);
-    if (RT_FAILURE(rc))
-        return;
+        octets_t data;
+        int rc = msgOut->encode(data);
+        if (RT_FAILURE(rc))
+            return;
 
-    unique_ptr_pbuf q ( pbuf_alloc(PBUF_RAW, (u16_t)data.size(), PBUF_RAM) );
-    if (!q)
-        return;
+        unique_ptr_pbuf q ( pbuf_alloc(PBUF_RAW, (u16_t)data.size(), PBUF_RAM) );
+        if (!q)
+            return;
 
-    err_t error = pbuf_take(q.get(), &data.front(), (u16_t)data.size());
-    if (error != ERR_OK)
-        return;
+        err_t error = pbuf_take(q.get(), &data.front(), (u16_t)data.size());
+        if (error != ERR_OK)
+            return;
 
-    error = udp_sendto(pcb, q.get(), &dst, RTNETIPV4_PORT_BOOTPC);
-    if (error != ERR_OK)
-        return;
+        error = udp_sendto(pcb, q.get(), &dst, RTNETIPV4_PORT_BOOTPC);
+        if (error != ERR_OK)
+            return;
+    }
+    catch (std::bad_alloc &)
+    {
+        LogRel(("VBoxNetDhcpd::dhcp4Recv: Caught std::bad_alloc!\n"));
+    }
 }
 
 

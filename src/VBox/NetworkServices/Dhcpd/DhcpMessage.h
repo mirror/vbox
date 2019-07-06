@@ -28,106 +28,121 @@
 #include "DhcpOptions.h"
 
 
-
+/**
+ * Base class for internal DHCP client and server message representations.
+ */
 class DhcpMessage
 {
 protected:
-    uint32_t m_xid;
-    uint16_t m_flags;
+    uint32_t        m_xid;
+    uint16_t        m_flags;
 
-    RTMAC m_mac;
+    RTMAC           m_mac;
 
     RTNETADDRIPV4   m_ciaddr;
     RTNETADDRIPV4   m_yiaddr;
     RTNETADDRIPV4   m_siaddr;
     RTNETADDRIPV4   m_giaddr;
 
-    RTCString m_sname;
-    RTCString m_file;
+#if 0 /* not currently unused, so avoid wasting time on them for now.  */
+    RTCString       m_sname;  /**< @note Not necessarily UTF-8 clean. */
+    RTCString       m_file;   /**< @note Not necessarily UTF-8 clean. */
+#endif
 
-    OptMessageType m_optMessageType;
+    OptMessageType  m_optMessageType;
 
-public:
+protected:
     DhcpMessage();
 
+public:
+    /** @name Accessors
+     * @{ */
+    uint32_t        xid() const RT_NOEXCEPT                     { return m_xid; }
 
-    uint32_t xid() const { return m_xid; }
+    uint16_t        flags() const RT_NOEXCEPT                   { return m_flags; }
+    bool            broadcast() const RT_NOEXCEPT               { return (m_flags & RTNET_DHCP_FLAG_BROADCAST) != 0; }
 
-    uint16_t flags() const { return m_flags; }
-    bool broadcast() const { return (m_flags & RTNET_DHCP_FLAG_BROADCAST) != 0; }
+    const RTMAC     &mac() const RT_NOEXCEPT                    { return m_mac; }
 
-    const RTMAC &mac() const { return m_mac; }
+    RTNETADDRIPV4   ciaddr() const RT_NOEXCEPT                  { return m_ciaddr; }
+    RTNETADDRIPV4   yiaddr() const RT_NOEXCEPT                  { return m_yiaddr; }
+    RTNETADDRIPV4   siaddr() const RT_NOEXCEPT                  { return m_siaddr; }
+    RTNETADDRIPV4   giaddr() const RT_NOEXCEPT                  { return m_giaddr; }
 
-    RTNETADDRIPV4 ciaddr() const { return m_ciaddr; }
-    RTNETADDRIPV4 yiaddr() const { return m_yiaddr; }
-    RTNETADDRIPV4 siaddr() const { return m_siaddr; }
-    RTNETADDRIPV4 giaddr() const { return m_giaddr; }
+    void            setCiaddr(RTNETADDRIPV4 addr) RT_NOEXCEPT   { m_ciaddr = addr; }
+    void            setYiaddr(RTNETADDRIPV4 addr) RT_NOEXCEPT   { m_yiaddr = addr; }
+    void            setSiaddr(RTNETADDRIPV4 addr) RT_NOEXCEPT   { m_siaddr = addr; }
+    void            setGiaddr(RTNETADDRIPV4 addr) RT_NOEXCEPT   { m_giaddr = addr; }
 
-    void setCiaddr(RTNETADDRIPV4 addr) { m_ciaddr = addr; }
-    void setYiaddr(RTNETADDRIPV4 addr) { m_yiaddr = addr; }
-    void setSiaddr(RTNETADDRIPV4 addr) { m_siaddr = addr; }
-    void setGiaddr(RTNETADDRIPV4 addr) { m_giaddr = addr; }
-
-    uint8_t messageType() const RT_NOEXCEPT
+    uint8_t         messageType() const RT_NOEXCEPT
     {
         Assert(m_optMessageType.present());
         return m_optMessageType.value();
     }
+    /** @} */
 };
 
 
+/**
+ * Decoded DHCP client message.
+ *
+ * This is the internal decoded representation of a DHCP message picked up from
+ * the wire.
+ */
 class DhcpClientMessage
-  : public DhcpMessage
+    : public DhcpMessage
 {
 protected:
-    rawopts_t m_rawopts;
-    ClientId m_id;
-    bool m_broadcasted;
+    rawopts_t       m_rawopts;
+    ClientId        m_id;
+    bool            m_broadcasted;
 
 public:
     static DhcpClientMessage *parse(bool broadcasted, const void *buf, size_t buflen);
 
-    bool broadcasted() const { return m_broadcasted; }
+    /** @name Getters
+     * @{ */
+    bool            broadcasted() const RT_NOEXCEPT             { return m_broadcasted; }
+    const rawopts_t &rawopts() const RT_NOEXCEPT                { return m_rawopts; }
+    const ClientId &clientId() const RT_NOEXCEPT                { return m_id; }
+    /** @} */
 
-    const rawopts_t &rawopts() const { return m_rawopts; }
-    const ClientId &clientId() const { return m_id; }
-
-    void dump() const;
+    void            dump() const RT_NOEXCEPT;
 
 protected:
-    int parseOptions(const void *buf, size_t buflen);
+    int             i_parseOptions(const uint8_t *pbBuf, size_t cbBuf) RT_NOEXCEPT;
 };
 
 
 
+/**
+ * DHCP server message for encoding.
+ */
 class DhcpServerMessage
-  : public DhcpMessage
+    : public DhcpMessage
 {
 protected:
-    RTNETADDRIPV4 m_dst;
-
-    OptServerId m_optServerId;
-
-    optmap_t m_optmap;
+    RTNETADDRIPV4   m_dst;
+    OptServerId     m_optServerId;
+    optmap_t        m_optmap;
 
 public:
-    DhcpServerMessage(const DhcpClientMessage &req,
-                      uint8_t messageType, RTNETADDRIPV4 serverAddr);
+    DhcpServerMessage(const DhcpClientMessage &req, uint8_t messageType, RTNETADDRIPV4 serverAddr);
 
-    RTNETADDRIPV4 dst() const { return m_dst; }
-    void setDst(RTNETADDRIPV4 aDst) { m_dst = aDst; }
+    /** @name Accessors
+     * @{ */
+    RTNETADDRIPV4   dst() const RT_NOEXCEPT                     { return m_dst; }
+    void            setDst(RTNETADDRIPV4 aDst) RT_NOEXCEPT      { m_dst = aDst; }
 
-    void maybeUnicast(const DhcpClientMessage &req);
+    void            maybeUnicast(const DhcpClientMessage &req) RT_NOEXCEPT;
 
-    void addOption(DhcpOption *opt);
-    void addOption(const DhcpOption &opt)
-    {
-        addOption(opt.clone());
-    }
+    void            addOption(DhcpOption *opt);
+    void            addOption(const DhcpOption &opt)            { addOption(opt.clone()); }
 
-    void addOptions(const optmap_t &optmap);
+    void            addOptions(const optmap_t &optmap);
+    /** @} */
 
-    int encode(octets_t &data);
+    int             encode(octets_t &data);
 };
 
 #endif /* !VBOX_INCLUDED_SRC_Dhcpd_DhcpMessage_h */

@@ -246,7 +246,7 @@ int Config::i_complete() RT_NOEXCEPT
 {
     if (m_strNetwork.isEmpty())
     {
-        LogDHCP(("network name is not specified\n"));
+        LogRel(("network name is not specified\n"));
         return false;
     }
 
@@ -268,21 +268,21 @@ int Config::i_complete() RT_NOEXCEPT
         m_MacAddress.au8[4] = Uuid.Gen.au8Node[4];
         m_MacAddress.au8[5] = Uuid.Gen.au8Node[5];
 
-        LogDHCP(("MAC address is not specified: will use generated MAC %RTmac\n", &m_MacAddress));
+        LogRel(("MAC address is not specified: will use generated MAC %RTmac\n", &m_MacAddress));
         fMACGenerated = true;
     }
 
     /* unicast MAC address */
     if (m_MacAddress.au8[0] & 0x01)
     {
-        LogDHCP(("MAC address is not unicast: %RTmac\n", &m_MacAddress));
+        LogRel(("MAC address is not unicast: %RTmac\n", &m_MacAddress));
         return VERR_GENERAL_FAILURE;
     }
 
     /* unicast IP address */
     if ((m_IPv4Address.au8[0] & 0xe0) == 0xe0)
     {
-        LogDHCP(("IP address is not unicast: %RTnaipv4\n", m_IPv4Address.u));
+        LogRel(("IP address is not unicast: %RTnaipv4\n", m_IPv4Address.u));
         return VERR_GENERAL_FAILURE;
     }
 
@@ -291,14 +291,14 @@ int Config::i_complete() RT_NOEXCEPT
     int rc = RTNetMaskToPrefixIPv4(&m_IPv4Netmask, &cPrefixBits);
     if (RT_FAILURE(rc) || cPrefixBits == 0)
     {
-        LogDHCP(("IP mask is not valid: %RTnaipv4\n", m_IPv4Netmask.u));
+        LogRel(("IP mask is not valid: %RTnaipv4\n", m_IPv4Netmask.u));
         return VERR_GENERAL_FAILURE;
     }
 
     /* first IP is from the same network */
     if ((m_IPv4PoolFirst.u & m_IPv4Netmask.u) != (m_IPv4Address.u & m_IPv4Netmask.u))
     {
-        LogDHCP(("first pool address is outside the network %RTnaipv4/%d: %RTnaipv4\n",
+        LogRel(("first pool address is outside the network %RTnaipv4/%d: %RTnaipv4\n",
                  (m_IPv4Address.u & m_IPv4Netmask.u), cPrefixBits, m_IPv4PoolFirst.u));
         return VERR_GENERAL_FAILURE;
     }
@@ -306,7 +306,7 @@ int Config::i_complete() RT_NOEXCEPT
     /* last IP is from the same network */
     if ((m_IPv4PoolLast.u & m_IPv4Netmask.u) != (m_IPv4Address.u & m_IPv4Netmask.u))
     {
-        LogDHCP(("last pool address is outside the network %RTnaipv4/%d: %RTnaipv4\n",
+        LogRel(("last pool address is outside the network %RTnaipv4/%d: %RTnaipv4\n",
                  (m_IPv4Address.u & m_IPv4Netmask.u), cPrefixBits, m_IPv4PoolLast.u));
         return VERR_GENERAL_FAILURE;
     }
@@ -314,7 +314,7 @@ int Config::i_complete() RT_NOEXCEPT
     /* the pool is valid */
     if (RT_N2H_U32(m_IPv4PoolLast.u) < RT_N2H_U32(m_IPv4PoolFirst.u))
     {
-        LogDHCP(("pool range is invalid: %RTnaipv4 - %RTnaipv4\n",
+        LogRel(("pool range is invalid: %RTnaipv4 - %RTnaipv4\n",
                  m_IPv4PoolFirst.u, m_IPv4PoolLast.u));
         return VERR_GENERAL_FAILURE;
     }
@@ -323,15 +323,15 @@ int Config::i_complete() RT_NOEXCEPT
     if (   RT_N2H_U32(m_IPv4PoolFirst.u) <= RT_N2H_U32(m_IPv4Address.u)
         && RT_N2H_U32(m_IPv4Address.u)   <= RT_N2H_U32(m_IPv4PoolLast.u))
     {
-        LogDHCP(("server address inside the pool range %RTnaipv4 - %RTnaipv4: %RTnaipv4\n",
+        LogRel(("server address inside the pool range %RTnaipv4 - %RTnaipv4: %RTnaipv4\n",
                  m_IPv4PoolFirst.u, m_IPv4PoolLast.u, m_IPv4Address.u));
         return VERR_GENERAL_FAILURE;
     }
 
     if (!fMACGenerated)
-        LogDHCP(("MAC address %RTmac\n", &m_MacAddress));
-    LogDHCP(("IP address %RTnaipv4/%d\n", m_IPv4Address.u, cPrefixBits));
-    LogDHCP(("address pool %RTnaipv4 - %RTnaipv4\n", m_IPv4PoolFirst.u, m_IPv4PoolLast.u));
+        LogRel(("MAC address %RTmac\n", &m_MacAddress));
+    LogRel(("IP address %RTnaipv4/%d\n", m_IPv4Address.u, cPrefixBits));
+    LogRel(("address pool %RTnaipv4 - %RTnaipv4\n", m_IPv4PoolFirst.u, m_IPv4PoolLast.u));
 
     return VINF_SUCCESS;
 }
@@ -769,7 +769,7 @@ void Config::i_parseServer(const xml::ElementNode *pElmServer)
         else if (pElmChild->nameEquals("Config"))
             i_parseVMConfig(pElmChild);
         else
-            LogDHCP(("Ignoring unexpected DHCPServer child: %s\n", pElmChild->getName()));
+            LogRel(("Ignoring unexpected DHCPServer child: %s\n", pElmChild->getName()));
     }
 }
 

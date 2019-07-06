@@ -158,7 +158,8 @@ bool Binding::expire(Timestamp tsDeadline) RT_NOEXCEPT
 /**
  * Serializes the binding to XML for the lease database.
  *
- * @throw  std::bad_alloc
+ * @throw   std::bad_alloc
+ * @note    DHCPServerImpl.cpp contains a reader, keep it in sync.
  */
 void Binding::toXML(xml::ElementNode *pElmParent) const
 {
@@ -203,123 +204,111 @@ void Binding::toXML(xml::ElementNode *pElmParent) const
 /**
  * Deserializes the binding from the XML lease database.
  *
- * @param   pElmLease   The "Lease" element.
+ * @param   pElmLease   The "Lease" element to serialize into.
  * @return  Pointer to the resulting binding, NULL on failure.
  * @throw   std::bad_alloc
+ * @note    DHCPServerImpl.cpp contains a similar reader, keep it in sync.
  */
 Binding *Binding::fromXML(const xml::ElementNode *pElmLease)
 {
-    /* Lease/@network seems to always have bogus value, ignore it. */
+    /* Note! Lease/@network seems to always have bogus value, ignore it. */
+    /* Note! We parse the mandatory attributes and elements first, then
+             the optional ones.  This means things appear a little jumbled. */
 
     /*
-     * Lease/@mac
+     * Lease/@mac - mandatory.
      */
-    RTCString strMac;
-    bool fHasMac = pElmLease->getAttributeValue("mac", &strMac);
-    if (!fHasMac)
-        return NULL;
+    const char *pszMacAddress = pElmLease->findAttributeValue("mac");
+    if (!pszMacAddress)
+        DHCP_LOG_RET_NULL(("Binding::fromXML: <Lease> element without 'mac' attribute! Skipping lease.\n"));
 
     RTMAC mac;
-    int rc = RTNetStrToMacAddr(strMac.c_str(), &mac);
+    int rc = RTNetStrToMacAddr(pszMacAddress, &mac);
     if (RT_FAILURE(rc))
-        return NULL;
-
-    OptClientId id;
-    RTCString strId;
-    bool fHasId = pElmLease->getAttributeValue("id", &strId);
-    if (fHasId)
-    {
-        /*
-         * Decode from "de:ad:be:ef".
-         */
-        /** @todo RTStrConvertHexBytes() doesn't grok colons */
-        size_t   cbBytes = strId.length() / 2;
-        uint8_t *pbBytes = new uint8_t[cbBytes];
-        rc = RTStrConvertHexBytes(strId.c_str(), pbBytes, cbBytes, 0);
-        if (RT_SUCCESS(rc))
-        {
-            try
-            {
-                std::vector<uint8_t> rawopt(pbBytes, pbBytes + cbBytes);
-                id = OptClientId(rawopt);
-            }
-            catch (std::bad_alloc &)
-            {
-                delete[] pbBytes;
-                throw;
-            }
-        }
-        delete[] pbBytes;
-    }
+        DHCP_LOG_RET_NULL(("Binding::fromXML: Malformed mac address attribute value '%s': %Rrc - Skipping lease.\n",
+                           pszMacAddress, rc));
 
     /*
-     * Lease/@state - not present in old leases file.  We will try to
-     * infer from lease time below.
+     * Lease/Address/@value - mandatory.
      */
-    RTCString strState;
-    bool fHasState = pElmLease->getAttributeValue("state", &strState);
-
-    /*
-     * Lease/Address
-     */
-    const xml::ElementNode *ndAddress = pElmLease->findChildElement("Address");
-    if (ndAddress == NULL)
-        return NULL;
-
-    /*
-     * Lease/Address/@value
-     */
-    RTCString strAddress;
-    bool fHasValue = ndAddress->getAttributeValue("value", &strAddress);
-    if (!fHasValue)
-        return NULL;
+    const char *pszAddress = pElmLease->findChildElementAttributeValue("Address", "value");
+    if (!pszAddress)
+        DHCP_LOG_RET_NULL(("Binding::fromXML: Could not find <Address> with a 'value' attribute! Skipping lease.\n"));
 
     RTNETADDRIPV4 addr;
-    rc = RTNetStrToIPv4Addr(strAddress.c_str(), &addr);
+    rc = RTNetStrToIPv4Addr(pszAddress, &addr);
     if (RT_FAILURE(rc))
-        return NULL;
+        DHCP_LOG_RET_NULL(("Binding::fromXML: Malformed IPv4 address value '%s': %Rrc - Skipping lease.\n", pszAddress, rc));
 
     /*
-     * Lease/Time
+     * Lease/Time - mandatory.
      */
-    const xml::ElementNode *ndTime = pElmLease->findChildElement("Time");
-    if (ndTime == NULL)
-        return NULL;
+    const xml::ElementNode *pElmTime = pElmLease->findChildElement("Time");
+    if (pElmTime == NULL)
+        DHCP_LOG_RET_NULL(("Binding::fromXML: No <Time> element under <Lease mac=%RTmac>! Skipping lease.\n", &mac));
 
     /*
-     * Lease/Time/@issued
+     * Lease/Time/@issued - mandatory.
      */
-    int64_t issued;
-    bool fHasIssued = ndTime->getAttributeValue("issued", &issued);
-    if (!fHasIssued)
-        return NULL;
+    int64_t secIssued;
+    if (!pElmTime->getAttributeValue("issued", &secIssued))
+        DHCP_LOG_RET_NULL(("Binding::fromXML: <Time> element for %RTmac has no valid 'issued' attribute! Skipping lease.\n", &mac));
 
     /*
-     * Lease/Time/@expiration
+     * Lease/Time/@expiration - mandatory.
      */
-    uint32_t duration;
-    bool fHasExpiration = ndTime->getAttributeValue("expiration", &duration);
-    if (!fHasExpiration)
-        return NULL;
+    uint32_t cSecToLive;
+    if (!pElmTime->getAttributeValue("expiration", &cSecToLive))
+        DHCP_LOG_RET_NULL(("Binding::fromXML: <Time> element for %RTmac has no valid 'expiration' attribute! Skipping lease.\n", &mac));
 
     std::unique_ptr<Binding> b(new Binding(addr));
-    b->m_id = ClientId(mac, id);
 
-    if (fHasState)
+    /*
+     * Lease/@state - mandatory but not present in old leases file, so pretent
+     *                we're loading an expired one if absent.
+     */
+    const char *pszState = pElmLease->findAttributeValue("state");
+    if (pszState)
     {
-        b->m_issued = Timestamp::absSeconds(issued);
-        b->m_secLease = duration;
-        b->setState(strState.c_str());
+        b->m_issued = Timestamp::absSeconds(secIssued);
+        b->setState(pszState);
     }
     else
     {   /** @todo XXX: old code wrote timestamps instead of absolute time. */
         /* pretend that lease has just ended */
-        Timestamp fakeIssued = Timestamp::now();
-        fakeIssued.subSeconds(duration);
-        b->m_issued = fakeIssued;
-        b->m_secLease = duration;
-        b->m_state = Binding::EXPIRED;
+        LogRel(("Binding::fromXML: No 'state' attribute for <Lease mac=%RTmac> (ts=%RI64 ttl=%RU32)! Assuming EXPIRED.\n",
+                &mac, secIssued, cSecToLive));
+        b->m_issued = Timestamp::now().subSeconds(cSecToLive);
+        b->m_state  = Binding::EXPIRED;
     }
+    b->m_secLease   = cSecToLive;
+
+
+    /*
+     * Lease/@id - optional, ignore if bad.
+     * Value format: "deadbeef..." or "de:ad:be:ef...".
+     */
+    const char *pszClientId = pElmLease->findAttributeValue("id");
+    if (pszClientId)
+    {
+        uint8_t abBytes[255];
+        size_t  cbActual;
+        rc = RTStrConvertHexBytesEx(pszClientId, abBytes, sizeof(abBytes), RTSTRCONVERTHEXBYTES_F_SEP_COLON, NULL, &cbActual);
+        if (RT_SUCCESS(rc))
+        {
+            b->m_id = ClientId(mac, OptClientId(std::vector<uint8_t>(&abBytes[0], &abBytes[cbActual]))); /* throws bad_alloc */
+            if (rc != VINF_BUFFER_UNDERFLOW && rc != VINF_SUCCESS)
+                LogRel(("Binding::fromXML: imperfect 'id' attribute: rc=%Rrc, cbActual=%u, '%s'\n", rc, cbActual, pszClientId));
+        }
+        else
+        {
+            LogRel(("Binding::fromXML: ignoring malformed 'id' attribute: rc=%Rrc, cbActual=%u, '%s'\n",
+                    rc, cbActual, pszClientId));
+            b->m_id = ClientId(mac, OptClientId());
+        }
+    }
+    else
+        b->m_id = ClientId(mac, OptClientId());
 
     return b.release();
 }
@@ -432,9 +421,9 @@ Binding *Db::i_allocateAddress(const ClientId &id, RTNETADDRIPV4 addr)
     Assert(addr.u == 0 || addressBelongs(addr));
 
     if (addr.u != 0)
-        LogDHCP(("> allocateAddress %RTnaipv4 to client %R[id]\n", addr.u, &id));
+        LogRel(("> allocateAddress %RTnaipv4 to client %R[id]\n", addr.u, &id));
     else
-        LogDHCP(("> allocateAddress to client %R[id]\n", &id));
+        LogRel(("> allocateAddress to client %R[id]\n", &id));
 
     /*
      * Allocate existing address if client has one.  Ignore requested
@@ -455,7 +444,7 @@ Binding *Db::i_allocateAddress(const ClientId &id, RTNETADDRIPV4 addr)
          */
         if (b->m_id == id)
         {
-            LogDHCP(("> ... found existing binding %R[binding]\n", b));
+            LogRel(("> ... found existing binding %R[binding]\n", b));
             return b;
         }
 
@@ -463,7 +452,7 @@ Binding *Db::i_allocateAddress(const ClientId &id, RTNETADDRIPV4 addr)
         {
             Assert(addrBinding == NULL);
             addrBinding = b;
-            LogDHCP(("> .... noted existing binding %R[binding]\n", addrBinding));
+            LogRel(("> .... noted existing binding %R[binding]\n", addrBinding));
         }
 
         /* if we haven't found a free binding yet, keep looking */
@@ -472,7 +461,7 @@ Binding *Db::i_allocateAddress(const ClientId &id, RTNETADDRIPV4 addr)
             if (b->m_state == Binding::FREE)
             {
                 freeBinding = b;
-                LogDHCP(("> .... noted free binding %R[binding]\n", freeBinding));
+                LogRel(("> .... noted free binding %R[binding]\n", freeBinding));
                 continue;
             }
 
@@ -484,7 +473,7 @@ Binding *Db::i_allocateAddress(const ClientId &id, RTNETADDRIPV4 addr)
                     || reuseBinding->m_state == Binding::EXPIRED)
                 {
                     reuseBinding = b;
-                    LogDHCP(("> .... noted released binding %R[binding]\n", reuseBinding));
+                    LogRel(("> .... noted released binding %R[binding]\n", reuseBinding));
                 }
             }
             else if (b->m_state == Binding::EXPIRED)
@@ -494,7 +483,7 @@ Binding *Db::i_allocateAddress(const ClientId &id, RTNETADDRIPV4 addr)
                     /* || (reuseBinding->m_state == Binding::EXPIRED && b->olderThan(reuseBinding)) */)
                 {
                     reuseBinding = b;
-                    LogDHCP(("> .... noted expired binding %R[binding]\n", reuseBinding));
+                    LogRel(("> .... noted expired binding %R[binding]\n", reuseBinding));
                 }
             }
         }
@@ -509,17 +498,17 @@ Binding *Db::i_allocateAddress(const ClientId &id, RTNETADDRIPV4 addr)
         {
             addrBinding = i_createBinding(addr, id);
             Assert(addrBinding != NULL);
-            LogDHCP(("> .... creating new binding for this address %R[binding]\n", addrBinding));
+            LogRel(("> .... creating new binding for this address %R[binding]\n", addrBinding));
             return addrBinding;
         }
 
         if (addrBinding->m_state <= Binding::EXPIRED) /* not in use */
         {
-            LogDHCP(("> .... reusing %s binding for this address\n", addrBinding->stateName()));
+            LogRel(("> .... reusing %s binding for this address\n", addrBinding->stateName()));
             addrBinding->giveTo(id);
             return addrBinding;
         }
-        LogDHCP(("> .... cannot reuse %s binding for this address\n", addrBinding->stateName()));
+        LogRel(("> .... cannot reuse %s binding for this address\n", addrBinding->stateName()));
     }
 
     /*
@@ -529,28 +518,25 @@ Binding *Db::i_allocateAddress(const ClientId &id, RTNETADDRIPV4 addr)
     if (freeBinding != NULL)
     {
         idBinding = freeBinding;
-        LogDHCP(("> .... reusing free binding\n"));
+        LogRel(("> .... reusing free binding\n"));
     }
     else
     {
         idBinding = i_createBinding();
         if (idBinding != NULL)
-            LogDHCP(("> .... creating new binding\n"));
+            LogRel(("> .... creating new binding\n"));
         else
         {
             idBinding = reuseBinding;
             if (idBinding != NULL)
-                LogDHCP(("> .... reusing %s binding %R[binding]\n", reuseBinding->stateName(), reuseBinding));
+                LogRel(("> .... reusing %s binding %R[binding]\n", reuseBinding->stateName(), reuseBinding));
             else
-            {
-                LogDHCP(("> .... failed to allocate binding\n"));
-                return NULL;
-            }
+                DHCP_LOG_RET_NULL(("> .... failed to allocate binding\n"));
         }
     }
 
     idBinding->giveTo(id);
-    LogDHCP(("> .... allocated %R[binding]\n", idBinding));
+    LogRel(("> .... allocated %R[binding]\n", idBinding));
 
     return idBinding;
 }
@@ -575,14 +561,11 @@ Binding *Db::allocateBinding(const DhcpClientMessage &req)
     {
         if (req.messageType() == RTNET_DHCP_MT_DISCOVER)
         {
-            LogDHCP(("DISCOVER: ignoring invalid requested address\n"));
+            LogRel(("DISCOVER: ignoring invalid requested address\n"));
             reqAddr = OptRequestedAddress();
         }
         else
-        {
-            LogDHCP(("rejecting invalid requested address\n"));
-            return NULL;
-        }
+            DHCP_LOG_RET_NULL(("rejecting invalid requested address\n"));
     }
 
     /*
@@ -620,7 +603,7 @@ int Db::i_addBinding(Binding *pNewBinding) RT_NOEXCEPT
      */
     if (!addressBelongs(pNewBinding->m_addr))
     {
-        LogDHCP(("Binding for out of range address %RTnaipv4 ignored\n", pNewBinding->m_addr.u));
+        LogRel(("Binding for out of range address %RTnaipv4 ignored\n", pNewBinding->m_addr.u));
         return VERR_OUT_OF_RANGE;
     }
 
@@ -630,15 +613,15 @@ int Db::i_addBinding(Binding *pNewBinding) RT_NOEXCEPT
 
         if (pNewBinding->m_addr.u == b->m_addr.u)
         {
-            LogDHCP(("> ADD: %R[binding]\n", pNewBinding));
-            LogDHCP(("> .... duplicate ip: %R[binding]\n", b));
+            LogRel(("> ADD: %R[binding]\n", pNewBinding));
+            LogRel(("> .... duplicate ip: %R[binding]\n", b));
             return VERR_DUPLICATE;
         }
 
         if (pNewBinding->m_id == b->m_id)
         {
-            LogDHCP(("> ADD: %R[binding]\n", pNewBinding));
-            LogDHCP(("> .... duplicate id: %R[binding]\n", b));
+            LogRel(("> ADD: %R[binding]\n", pNewBinding));
+            LogRel(("> .... duplicate id: %R[binding]\n", b));
             return VERR_DUPLICATE;
         }
     }
@@ -733,7 +716,7 @@ bool Db::releaseBinding(const DhcpClientMessage &req) RT_NOEXCEPT
  */
 int Db::writeLeases(const RTCString &strFilename) const RT_NOEXCEPT
 {
-    LogDHCP(("writing leases to %s\n", strFilename.c_str()));
+    LogRel(("writing leases to %s\n", strFilename.c_str()));
 
     /** @todo This could easily be written directly to the file w/o going thru
      *        a xml::Document, xml::XmlFileWriter, hammering the heap and being
@@ -776,17 +759,17 @@ int Db::writeLeases(const RTCString &strFilename) const RT_NOEXCEPT
     }
     catch (const xml::EIPRTFailure &e)
     {
-        LogDHCP(("%s\n", e.what()));
+        LogRel(("%s\n", e.what()));
         return e.rc();
     }
     catch (const RTCError &e)
     {
-        LogDHCP(("%s\n", e.what()));
+        LogRel(("%s\n", e.what()));
         return VERR_GENERAL_FAILURE;
     }
     catch (...)
     {
-        LogDHCP(("Unknown exception while writing '%s'\n", strFilename.c_str()));
+        LogRel(("Unknown exception while writing '%s'\n", strFilename.c_str()));
         return VERR_UNEXPECTED_EXCEPTION;
     }
 
@@ -805,7 +788,7 @@ int Db::writeLeases(const RTCString &strFilename) const RT_NOEXCEPT
  */
 int Db::loadLeases(const RTCString &strFilename) RT_NOEXCEPT
 {
-    LogDHCP(("loading leases from %s\n", strFilename.c_str()));
+    LogRel(("loading leases from %s\n", strFilename.c_str()));
 
     /*
      * Load the file into an XML document.
@@ -818,17 +801,17 @@ int Db::loadLeases(const RTCString &strFilename) RT_NOEXCEPT
     }
     catch (const xml::EIPRTFailure &e)
     {
-        LogDHCP(("%s\n", e.what()));
+        LogRel(("%s\n", e.what()));
         return e.rc();
     }
     catch (const RTCError &e)
     {
-        LogDHCP(("%s\n", e.what()));
+        LogRel(("%s\n", e.what()));
         return VERR_GENERAL_FAILURE;
     }
     catch (...)
     {
-        LogDHCP(("Unknown exception while reading and parsing '%s'\n", strFilename.c_str()));
+        LogRel(("Unknown exception while reading and parsing '%s'\n", strFilename.c_str()));
         return VERR_UNEXPECTED_EXCEPTION;
     }
 
@@ -838,12 +821,12 @@ int Db::loadLeases(const RTCString &strFilename) RT_NOEXCEPT
     xml::ElementNode *pElmRoot = doc.getRootElement();
     if (!pElmRoot)
     {
-        LogDHCP(("No root element in '%s'\n", strFilename.c_str()));
+        LogRel(("No root element in '%s'\n", strFilename.c_str()));
         return VERR_NOT_FOUND;
     }
     if (!pElmRoot->nameEquals("Leases"))
     {
-        LogDHCP(("No root element is not 'Leases' in '%s', but '%s'\n", strFilename.c_str(), pElmRoot->getName()));
+        LogRel(("No root element is not 'Leases' in '%s', but '%s'\n", strFilename.c_str(), pElmRoot->getName()));
         return VERR_NOT_FOUND;
     }
 
@@ -863,7 +846,7 @@ int Db::loadLeases(const RTCString &strFilename) RT_NOEXCEPT
                 rc = -rc2;
         }
         else
-            LogDHCP(("Ignoring unexpected element '%s' under 'Leases'...\n", pElmLease->getName()));
+            LogRel(("Ignoring unexpected element '%s' under 'Leases'...\n", pElmLease->getName()));
     }
 
     return rc;
@@ -891,15 +874,15 @@ int Db::i_loadLease(const xml::ElementNode *pElmLease) RT_NOEXCEPT
     {
         bool fExpired = pBinding->expire();
         if (!fExpired)
-            LogDHCP(("> LOAD:         lease %R[binding]\n", pBinding));
+            LogRel(("> LOAD:         lease %R[binding]\n", pBinding));
         else
-            LogDHCP(("> LOAD: EXPIRED lease %R[binding]\n", pBinding));
+            LogRel(("> LOAD: EXPIRED lease %R[binding]\n", pBinding));
 
         int rc = i_addBinding(pBinding);
         if (RT_FAILURE(rc))
             delete pBinding;
         return rc;
     }
-    LogDHCP(("> LOAD: failed to load lease!\n"));
+    LogRel(("> LOAD: failed to load lease!\n"));
     return VERR_PARSE_ERROR;
 }

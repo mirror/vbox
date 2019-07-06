@@ -75,7 +75,7 @@ int IPv4Pool::i_insert(const IPv4Range &a_Range) RT_NOEXCEPT
         --prev;
         if (a_Range.FirstAddr <= prev->LastAddr)
         {
-            LogDHCP(("%08x-%08x conflicts with %08x-%08x\n",
+            LogRel(("%08x-%08x conflicts with %08x-%08x\n",
                      a_Range.FirstAddr, a_Range.LastAddr,
                      prev->FirstAddr, prev->LastAddr));
             return VERR_INVALID_PARAMETER;
@@ -126,6 +126,7 @@ RTNETADDRIPV4 IPv4Pool::allocate()
             /* Trim the entry (re-inserting it): */
             IPv4Range trimmed = *itBeg;
             trimmed.FirstAddr += 1;
+            Assert(trimmed.FirstAddr <= trimmed.LastAddr);
             m_pool.erase(itBeg);
             try
             {

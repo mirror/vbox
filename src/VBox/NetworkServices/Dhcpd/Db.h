@@ -50,10 +50,10 @@ public:
 
 private:
     const RTNETADDRIPV4 m_addr;
-    State m_state;
-    ClientId m_id;
-    Timestamp m_issued;
-    uint32_t m_secLease;
+    State               m_state;
+    ClientId            m_id;
+    Timestamp           m_issued;
+    uint32_t            m_secLease;
 
 public:
     Binding();

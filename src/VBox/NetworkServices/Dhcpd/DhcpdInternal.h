@@ -62,13 +62,19 @@ DECLINLINE(bool) operator<(const RTMAC &l, const RTMAC &r)
 }
 
 
-/** @def LogDHCP
- * Wrapper around LogRel.  */
-#if 1
-# define LogDHCP LogRel
-#else
-# include <iprt/stream.h>
-# define LogDHCP(args) RTPrintf args
-#endif
+/** @name LogXRel + return NULL helpers
+ * @{ */
+#define DHCP_LOG_RET_NULL(a_MsgArgs)        do { LogRel(a_MsgArgs);     return NULL; } while (0)
+#define DHCP_LOG2_RET_NULL(a_MsgArgs)       do { LogRel2(a_MsgArgs);    return NULL; } while (0)
+#define DHCP_LOG3_RET_NULL(a_MsgArgs)       do { LogRel3(a_MsgArgs);    return NULL; } while (0)
+/** @} */
+
+
+/** @name LogXRel + return a_rcRet helpers
+ * @{ */
+#define DHCP_LOG_RET(a_rcRet, a_MsgArgs)    do { LogRel(a_MsgArgs);     return (a_rcRet); } while (0)
+#define DHCP_LOG2_RET(a_rcRet, a_MsgArgs)   do { LogRel2(a_MsgArgs);    return (a_rcRet); } while (0)
+#define DHCP_LOG3_RET(a_rcRet, a_MsgArgs)   do { LogRel3(a_MsgArgs);    return (a_rcRet); } while (0)
+/** @} */
 
 #endif /* !VBOX_INCLUDED_SRC_Dhcpd_DhcpdInternal_h */

@@ -220,7 +220,7 @@ DhcpServerMessage *DHCPD::process(DhcpClientMessage &req) RT_NOEXCEPT
  *
  * @throws  std::bad_alloc
  */
-DhcpServerMessage *DHCPD::i_createMessage(int type, DhcpClientMessage &req)
+DhcpServerMessage *DHCPD::i_createMessage(int type, const DhcpClientMessage &req)
 {
     return new DhcpServerMessage(req, type, m_pConfig->getIPv4Address());
 }
@@ -250,7 +250,7 @@ DhcpServerMessage *DHCPD::i_createMessage(int type, DhcpClientMessage &req)
  *
  * @throws  std::bad_alloc
  */
-DhcpServerMessage *DHCPD::i_doDiscover(DhcpClientMessage &req)
+DhcpServerMessage *DHCPD::i_doDiscover(const DhcpClientMessage &req)
 {
     /** @todo
      * XXX: TODO: Windows iSCSI initiator sends DHCPDISCOVER first and
@@ -316,7 +316,7 @@ DhcpServerMessage *DHCPD::i_doDiscover(DhcpClientMessage &req)
  *
  * @throws  std::bad_alloc
  */
-DhcpServerMessage *DHCPD::i_doRequest(DhcpClientMessage &req)
+DhcpServerMessage *DHCPD::i_doRequest(const DhcpClientMessage &req)
 {
     OptRequestedAddress reqAddr(req);
     if (req.ciaddr().u != 0 && reqAddr.present() && reqAddr.value().u != req.ciaddr().u)
@@ -366,7 +366,7 @@ DhcpServerMessage *DHCPD::i_doRequest(DhcpClientMessage &req)
  *
  * @throws  std::bad_alloc
  */
-DhcpServerMessage *DHCPD::i_doInform(DhcpClientMessage &req)
+DhcpServerMessage *DHCPD::i_doInform(const DhcpClientMessage &req)
 {
     if (req.ciaddr().u == 0)
         return NULL;
