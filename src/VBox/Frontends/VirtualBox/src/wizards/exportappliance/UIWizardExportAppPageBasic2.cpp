@@ -41,7 +41,6 @@
 #include "UIWizardExportAppPageBasic2.h"
 
 /* COM includes: */
-#include "CCloudClient.h"
 #include "CMachine.h"
 
 
@@ -293,6 +292,8 @@ void UIWizardExportAppPage2::populateFormProperties()
 {
     /* Clear appliance: */
     m_comAppliance = CAppliance();
+    /* Clear cloud client: */
+    m_comClient = CCloudClient();
     /* Clear description: */
     m_comVSD = CVirtualSystemDescription();
     /* Clear description form: */
@@ -341,19 +342,22 @@ void UIWizardExportAppPage2::populateFormProperties()
             m_comVSD = comVSD;
 
             /* Create Cloud Client: */
-            CCloudClient comCloudClient = m_comCloudProfile.CreateCloudClient();
+            CCloudClient comClient = m_comCloudProfile.CreateCloudClient();
             if (!m_comCloudProfile.isOk())
             {
                 msgCenter().cannotCreateCloudClient(m_comCloudProfile);
                 break;
             }
 
+            /* Remember client: */
+            m_comClient = comClient;
+
             /* Read Cloud Client Export description form: */
             CVirtualSystemDescriptionForm comExportForm;
-            CProgress comExportDescriptionFormProgress = comCloudClient.GetExportLaunchDescriptionForm(m_comVSD, comExportForm);
-            if (!comCloudClient.isOk())
+            CProgress comExportDescriptionFormProgress = m_comClient.GetExportLaunchDescriptionForm(m_comVSD, comExportForm);
+            if (!m_comClient.isOk())
             {
-                msgCenter().cannotAcquireCloudClientParameter(comCloudClient);
+                msgCenter().cannotAcquireCloudClientParameter(m_comClient);
                 break;
             }
 
@@ -614,6 +618,11 @@ QString UIWizardExportAppPage2::profileName() const
 CAppliance UIWizardExportAppPage2::appliance() const
 {
     return m_comAppliance;
+}
+
+CCloudClient UIWizardExportAppPage2::client() const
+{
+    return m_comClient;
 }
 
 CVirtualSystemDescription UIWizardExportAppPage2::vsd() const
@@ -948,6 +957,7 @@ UIWizardExportAppPageBasic2::UIWizardExportAppPageBasic2(bool fExportToOCIByDefa
     registerField("includeISOsSelected", this, "includeISOsSelected");
     registerField("providerShortName", this, "providerShortName");
     registerField("appliance", this, "appliance");
+    registerField("client", this, "client");
     registerField("vsd", this, "vsd");
     registerField("vsdExportForm", this, "vsdExportForm");
 }
@@ -1116,6 +1126,7 @@ bool UIWizardExportAppPageBasic2::validatePage()
         populateFormProperties();
         /* Which are required to continue to the next page: */
         fResult =    field("appliance").value<CAppliance>().isNotNull()
+                  && field("client").value<CCloudClient>().isNotNull()
                   && field("vsd").value<CVirtualSystemDescription>().isNotNull()
                   && field("vsdExportForm").value<CVirtualSystemDescriptionForm>().isNotNull();
     }

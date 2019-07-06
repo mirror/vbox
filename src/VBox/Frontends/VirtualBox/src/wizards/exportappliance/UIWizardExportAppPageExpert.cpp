@@ -422,6 +422,7 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
     registerField("includeISOsSelected", this, "includeISOsSelected");
     registerField("providerShortName", this, "providerShortName");
     registerField("appliance", this, "appliance");
+    registerField("client", this, "client");
     registerField("vsd", this, "vsd");
     registerField("vsdExportForm", this, "vsdExportForm");
     registerField("applianceWidget", this, "applianceWidget");
@@ -564,10 +565,10 @@ bool UIWizardExportAppPageExpert::isComplete() const
         fResult =    (   fOVF
                       && UICommon::hasAllowedExtension(path().toLower(), OVFFileExts))
                   || (   fCSP
-                      && m_comCloudProfile.isNotNull()
-                      && m_comAppliance.isNotNull()
-                      && m_comVSD.isNotNull()
-                      && m_comVSDExportForm.isNotNull());
+                      && field("appliance").value<CAppliance>().isNotNull()
+                      && field("client").value<CCloudClient>().isNotNull()
+                      && field("vsd").value<CVirtualSystemDescription>().isNotNull()
+                      && field("vsdExportForm").value<CVirtualSystemDescriptionForm>().isNotNull());
     }
 
     return fResult;
