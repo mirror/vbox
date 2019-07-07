@@ -407,9 +407,12 @@ void UIWizardNewCloudVMPage1::populateFormProperties()
 void UIWizardNewCloudVMPage1::updateDestinationComboToolTip()
 {
     const int iCurrentIndex = m_pDestinationComboBox->currentIndex();
-    const QString strCurrentToolTip = m_pDestinationComboBox->itemData(iCurrentIndex, Qt::ToolTipRole).toString();
-    AssertMsg(!strCurrentToolTip.isEmpty(), ("Data not found!"));
-    m_pDestinationComboBox->setToolTip(strCurrentToolTip);
+    if (iCurrentIndex != -1)
+    {
+        const QString strCurrentToolTip = m_pDestinationComboBox->itemData(iCurrentIndex, Qt::ToolTipRole).toString();
+        AssertMsg(!strCurrentToolTip.isEmpty(), ("Data not found!"));
+        m_pDestinationComboBox->setToolTip(strCurrentToolTip);
+    }
 }
 
 void UIWizardNewCloudVMPage1::updateAccountPropertyTableToolTips()
@@ -660,9 +663,6 @@ UIWizardNewCloudVMPageBasic1::UIWizardNewCloudVMPageBasic1()
         }
     }
 
-    /* Populate destinations: */
-    populateDestinations();
-
     /* Setup connections: */
     if (gpManager)
         connect(gpManager, &UIVirtualBoxManager::sigCloudProfileManagerChange,
@@ -747,6 +747,9 @@ void UIWizardNewCloudVMPageBasic1::initializePage()
     /* If wasn't polished yet: */
     if (!m_fPolished)
     {
+        /* Populate destinations: */
+        populateDestinations();
+        /* Choose one of them, asynchronously: */
         QMetaObject::invokeMethod(this, "sltHandleDestinationChange", Qt::QueuedConnection);
         m_fPolished = true;
     }

@@ -160,9 +160,6 @@ UIWizardNewCloudVMPageExpert::UIWizardNewCloudVMPageExpert()
         }
     }
 
-    /* Populate destinations: */
-    populateDestinations();
-
     /* Setup connections: */
     if (gpManager)
         connect(gpManager, &UIVirtualBoxManager::sigCloudProfileManagerChange,
@@ -223,6 +220,9 @@ void UIWizardNewCloudVMPageExpert::initializePage()
     /* If wasn't polished yet: */
     if (!m_fPolished)
     {
+        /* Populate destinations: */
+        populateDestinations();
+        /* Choose one of them, asynchronously: */
         QMetaObject::invokeMethod(this, "sltHandleDestinationChange", Qt::QueuedConnection);
         m_fPolished = true;
     }
