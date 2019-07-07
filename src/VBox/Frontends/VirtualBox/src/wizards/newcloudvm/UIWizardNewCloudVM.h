@@ -50,7 +50,7 @@ public:
     /** Prepares all. */
     virtual void prepare() /* override */;
 
-    /** Create cloud VM. */
+    /** Create New Cloud VM. */
     bool createCloudVM();
 
 protected:

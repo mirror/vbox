@@ -66,33 +66,43 @@ void UIWizardNewCloudVM::prepare()
 
 bool UIWizardNewCloudVM::createCloudVM()
 {
-    /* Acquire prepared client and description: */
-    CCloudClient comCloudClient = field("client").value<CCloudClient>();
-    CVirtualSystemDescription comDescription = field("vsd").value<CVirtualSystemDescription>();
-    AssertReturn(comCloudClient.isNotNull() && comDescription.isNotNull(), false);
+    /* Prepare result: */
+    bool fResult = false;
 
-    /* Initiate cloud VM creation porocedure: */
-    CProgress comProgress = comCloudClient.LaunchVM(comDescription);
-
-    /* Show error message if necessary: */
-    if (!comCloudClient.isOk())
-        msgCenter().cannotCreateCloudMachine(comCloudClient, this);
-    else
+    /* Main API request sequence, can be interrupted after any step: */
+    do
     {
-        /* Show "Create Cloud Machine" progress: */
-        msgCenter().showModalProgressDialog(comProgress, tr("Create Cloud Machine ..."), ":/progress_new_cloud_vm_90px.png", this, 0);
-        if (!comProgress.GetCanceled())
-        {
-            /* Show error message if necessary: */
-            if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-                msgCenter().cannotCreateCloudMachine(comProgress, this);
-            else
-                return true;
-        }
-    }
+        /* Acquire prepared client and description: */
+        CCloudClient comClient = field("client").value<CCloudClient>();
+        CVirtualSystemDescription comDescription = field("vsd").value<CVirtualSystemDescription>();
+        AssertReturn(comClient.isNotNull() && comDescription.isNotNull(), false);
 
-    /* Failure by default: */
-    return false;
+        /* Initiate cloud VM creation procedure: */
+        CProgress comProgress = comClient.LaunchVM(comDescription);
+        if (!comClient.isOk())
+        {
+            msgCenter().cannotCreateCloudMachine(comClient, this);
+            break;
+        }
+
+        /* Show "Create Cloud Machine" progress: */
+        msgCenter().showModalProgressDialog(comProgress, tr("Create Cloud Machine ..."),
+                                            ":/progress_new_cloud_vm_90px.png", this, 0);
+        if (comProgress.GetCanceled())
+            break;
+        if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
+        {
+            msgCenter().cannotCreateCloudMachine(comProgress, this);
+            break;
+        }
+
+        /* Finally, success: */
+        fResult = true;
+    }
+    while (0);
+
+    /* Return result: */
+    return fResult;
 }
 
 void UIWizardNewCloudVM::retranslateUi()
