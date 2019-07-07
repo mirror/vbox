@@ -1438,7 +1438,8 @@ typedef enum
 /** @name VMX abort reasons.
  * In accordance with the VT-x spec.
  * See Intel spec. "27.7 VMX Aborts".
- * Update HMGetVmxAbortDesc() if new reasons are added. @{
+ * Update HMGetVmxAbortDesc() if new reasons are added.
+ * @{
  */
 typedef enum
 {
@@ -4249,6 +4250,7 @@ typedef enum
     kVmxVDiag_Vmexit_MsrStorePtrWritePhys,
     kVmxVDiag_Vmexit_MsrStoreRing3,
     kVmxVDiag_Vmexit_MsrStoreRsvd,
+    kVmxVDiag_Vmexit_VirtApicPagePtrWritePhys,
     /* Last member for determining array index limit. */
     kVmxVDiag_End
 } VMXVDIAG;
