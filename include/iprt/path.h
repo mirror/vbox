@@ -455,6 +455,18 @@ RTDECL(char *) RTPathChangeToDosSlashes(char *pszPath, bool fForce);
 RTDECL(char *) RTPathChangeToUnixSlashes(char *pszPath, bool fForce);
 
 /**
+ * Purges a string so it can be used as a file according to fFlags.
+ *
+ * Illegal filename characters are replaced by '_'.
+ *
+ * @returns pszString
+ * @param   pszString   The string to purge.
+ * @param   fFlags      One of the RTPATH_STR_F_STYLE_XXX flags.  Most users
+ *                      will pass RTPATH_STR_F_STYLE_HOST (0).
+ */
+RTDECL(char *) RTPathPurgeFilename(char *pszString, uint32_t fFlags);
+
+/**
  * Simple parsing of the a path.
  *
  * It figures the length of the directory component, the offset of

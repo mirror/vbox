@@ -1643,6 +1643,7 @@
 # define RTPathParse                                    RT_MANGLER(RTPathParse)
 # define RTPathParsedReassemble                         RT_MANGLER(RTPathParsedReassemble)
 # define RTPathParseSimple                              RT_MANGLER(RTPathParseSimple)
+# define RTPathPurgeFilename                            RT_MANGLER(RTPathPurgeFilename)
 # define RTPathQueryInfo                                RT_MANGLER(RTPathQueryInfo)
 # define RTPathQueryInfoEx                              RT_MANGLER(RTPathQueryInfoEx)
 # define RTPathReal                                     RT_MANGLER(RTPathReal)

@@ -532,6 +532,7 @@ RuntimeR3_SOURCES       = \
 	common/path/RTPathParse.cpp \
 	common/path/RTPathParsedReassemble.cpp \
 	common/path/RTPathParseSimple.cpp \
+	common/path/RTPathPurgeFilename.cpp \
 	common/path/RTPathRealDup.cpp \
 	common/path/RTPathRmCmd.cpp \
 	common/path/RTPathSkipRootSpec.cpp \
