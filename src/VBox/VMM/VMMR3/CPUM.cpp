@@ -1139,6 +1139,11 @@ static void cpumR3FreeVmxHwVirtState(PVM pVM)
             SUPR3ContFree(pCtx->hwvirt.vmx.pShadowVmcsR3, VMX_V_VMCS_PAGES);
             pCtx->hwvirt.vmx.pShadowVmcsR3 = NULL;
         }
+        if (pCtx->hwvirt.vmx.pvVirtApicPageR3)
+        {
+            SUPR3ContFree(pCtx->hwvirt.vmx.pvVirtApicPageR3, VMX_V_VIRT_APIC_PAGES);
+            pCtx->hwvirt.vmx.pvVirtApicPageR3 = NULL;
+        }
         if (pCtx->hwvirt.vmx.pvVmreadBitmapR3)
         {
             SUPR3ContFree(pCtx->hwvirt.vmx.pvVmreadBitmapR3, VMX_V_VMREAD_VMWRITE_BITMAP_PAGES);
@@ -1226,6 +1231,21 @@ static int cpumR3AllocVmxHwVirtState(PVM pVM)
         else
         {
             LogRel(("CPUM%u: Failed to alloc %u pages for the nested-guest's shadow VMCS\n", pVCpu->idCpu, VMX_V_VMCS_PAGES));
+            break;
+        }
+
+        /*
+         * Allocate the virtual-APIC page.
+         */
+        pCtx->hwvirt.vmx.pvVirtApicPageR3 = SUPR3ContAlloc(VMX_V_VIRT_APIC_PAGES,
+                                                           &pCtx->hwvirt.vmx.pvVirtApicPageR0,
+                                                           &pCtx->hwvirt.vmx.HCPhysVirtApicPage);
+        if (pCtx->hwvirt.vmx.pvVirtApicPageR3)
+        { /* likely */ }
+        else
+        {
+            LogRel(("CPUM%u: Failed to alloc %u pages for the nested-guest's virtual-APIC page\n", pVCpu->idCpu,
+                    VMX_V_VIRT_APIC_PAGES));
             break;
         }
 
@@ -1339,6 +1359,7 @@ static int cpumR3AllocVmxHwVirtState(PVM pVM)
          */
         memset(pCtx->hwvirt.vmx.CTX_SUFF(pVmcs),               0, VMX_V_VMCS_SIZE);
         memset(pCtx->hwvirt.vmx.CTX_SUFF(pShadowVmcs),         0, VMX_V_SHADOW_VMCS_SIZE);
+        memset(pCtx->hwvirt.vmx.CTX_SUFF(pvVirtApicPage),      0, VMX_V_VIRT_APIC_SIZE);
         memset(pCtx->hwvirt.vmx.CTX_SUFF(pvVmreadBitmap),      0, VMX_V_VMREAD_VMWRITE_BITMAP_SIZE);
         memset(pCtx->hwvirt.vmx.CTX_SUFF(pvVmwriteBitmap),     0, VMX_V_VMREAD_VMWRITE_BITMAP_SIZE);
         memset(pCtx->hwvirt.vmx.CTX_SUFF(pEntryMsrLoadArea),   0, VMX_V_AUTOMSR_AREA_SIZE);
@@ -2626,6 +2647,7 @@ static DECLCALLBACK(int) cpumR3SaveExec(PVM pVM, PSSMHANDLE pSSM)
             SSMR3PutU64(pSSM,      pGstCtx->hwvirt.vmx.uEntryTick);
             SSMR3PutU16(pSSM,      pGstCtx->hwvirt.vmx.offVirtApicWrite);
             SSMR3PutBool(pSSM,     pGstCtx->hwvirt.vmx.fVirtNmiBlocking);
+            SSMR3PutBool(pSSM,     pGstCtx->hwvirt.vmx.fVirtApicPageDirty);
             SSMR3PutU64(pSSM,      pGstCtx->hwvirt.vmx.Msrs.u64FeatCtrl);
             SSMR3PutU64(pSSM,      pGstCtx->hwvirt.vmx.Msrs.u64Basic);
             SSMR3PutU64(pSSM,      pGstCtx->hwvirt.vmx.Msrs.PinCtls.u);
@@ -2917,6 +2939,7 @@ static DECLCALLBACK(int) cpumR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVers
                         SSMR3GetU64(pSSM,      &pGstCtx->hwvirt.vmx.uEntryTick);
                         SSMR3GetU16(pSSM,      &pGstCtx->hwvirt.vmx.offVirtApicWrite);
                         SSMR3GetBool(pSSM,     &pGstCtx->hwvirt.vmx.fVirtNmiBlocking);
+                        SSMR3GetBool(pSSM,     &pGstCtx->hwvirt.vmx.fVirtApicPageDirty);
                         SSMR3GetU64(pSSM,      &pGstCtx->hwvirt.vmx.Msrs.u64FeatCtrl);
                         SSMR3GetU64(pSSM,      &pGstCtx->hwvirt.vmx.Msrs.u64Basic);
                         SSMR3GetU64(pSSM,      &pGstCtx->hwvirt.vmx.Msrs.PinCtls.u);
@@ -4108,6 +4131,7 @@ static DECLCALLBACK(void) cpumR3InfoGuestHwvirt(PVM pVM, PCDBGFINFOHLP pHlp, con
         pHlp->pfnPrintf(pHlp, "  uEntryTick                 = %RX64\n",     pCtx->hwvirt.vmx.uEntryTick);
         pHlp->pfnPrintf(pHlp, "  offVirtApicWrite           = %#RX16\n",    pCtx->hwvirt.vmx.offVirtApicWrite);
         pHlp->pfnPrintf(pHlp, "  fVirtNmiBlocking           = %RTbool\n",   pCtx->hwvirt.vmx.fVirtNmiBlocking);
+        pHlp->pfnPrintf(pHlp, "  fVirtApicPageDirty         = %RTbool\n",   pCtx->hwvirt.vmx.fVirtApicPageDirty);
         pHlp->pfnPrintf(pHlp, "  VMCS cache:\n");
         cpumR3InfoVmxVmcs(pHlp, pCtx->hwvirt.vmx.pVmcsR3, "  " /* pszPrefix */);
     }

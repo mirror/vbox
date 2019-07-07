@@ -600,15 +600,15 @@ typedef struct CPUMCTX
 #if HC_ARCH_BITS == 32
                 uint32_t                uShadowVmcsR3Padding;
 #endif
-                /** 0x328 - Reserved - R0 ptr. */
-                R0PTRTYPE(void *)       pvRsvdR0;
+                /** 0x328 - The virtual-APIC page - R0 ptr. */
+                R0PTRTYPE(void *)       pvVirtApicPageR0;
 #if HC_ARCH_BITS == 32
-                uint32_t                uRsvdR0Padding0;
+                uint32_t                uVirtApicPageR0Padding;
 #endif
-                /** 0x330 - Reserved - R3 ptr. */
-                R3PTRTYPE(void *)       pvRsvdR3;
+                /** 0x330 - The virtual-APIC page - R3 ptr. */
+                R3PTRTYPE(void *)       pvVirtApicPageR3;
 #if HC_ARCH_BITS == 32
-                uint32_t                uRsvdR3Padding0;
+                uint32_t                uVirtApicPageR3Padding;
 #endif
                 /** 0x338 - The VMREAD bitmap - R0 ptr. */
                 R0PTRTYPE(void *)       pvVmreadBitmapR0;
@@ -691,8 +691,11 @@ typedef struct CPUMCTX
                 uint16_t                offVirtApicWrite;
                 /** 0x3c2 - Whether virtual-NMI blocking is in effect. */
                 bool                    fVirtNmiBlocking;
-                /** 0x3c3 - Padding. */
-                uint8_t                 abPadding0[5];
+                /** 0x3c3 - Whether the virtual-APIC may have been modified in VMX non-root
+                 *  operation and we should write to it before VM-exit. */
+                bool                    fVirtApicPageDirty;
+                /** 0x3c4 - Padding. */
+                uint8_t                 abPadding0[4];
                 /** 0x3c8 - Guest VMX MSRs. */
                 VMXMSRS                 Msrs;
                 /** 0x4a8 - Host physical address of the VMCS. */
@@ -700,7 +703,7 @@ typedef struct CPUMCTX
                 /** 0x4b0 - Host physical address of the shadow VMCS. */
                 RTHCPHYS                HCPhysShadowVmcs;
                 /** 0x4b8 - Host physical address of the virtual-APIC page. */
-                RTHCPHYS                HCPhysRsvd0;
+                RTHCPHYS                HCPhysVirtApicPage;
                 /** 0x4c0 - Host physical address of the VMREAD bitmap. */
                 RTHCPHYS                HCPhysVmreadBitmap;
                 /** 0x4c8 - Host physical address of the VMWRITE bitmap. */
@@ -813,6 +816,8 @@ AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pVmcsR0,        
 AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pVmcsR3,                     0x310);
 AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pShadowVmcsR0,               0x318);
 AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pShadowVmcsR3,               0x320);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pvVirtApicPageR0,            0x328);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pvVirtApicPageR3,            0x330);
 AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pvVmreadBitmapR0,            0x338);
 AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pvVmreadBitmapR3,            0x340);
 AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pvVmwriteBitmapR0,           0x348);
@@ -832,9 +837,11 @@ AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.uPrevPauseTick, 
 AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.uEntryTick,                  0x3b8);
 AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.offVirtApicWrite,            0x3c0);
 AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.fVirtNmiBlocking,            0x3c2);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.fVirtApicPageDirty,          0x3c3);
 AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.Msrs,                        0x3c8);
 AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.HCPhysVmcs,                  0x4a8);
 AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.HCPhysShadowVmcs,            0x4b0);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.HCPhysVirtApicPage,          0x4b8);
 AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.HCPhysVmreadBitmap,          0x4c0);
 AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.HCPhysVmwriteBitmap,         0x4c8);
 AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.HCPhysEntryMsrLoadArea,      0x4d0);
