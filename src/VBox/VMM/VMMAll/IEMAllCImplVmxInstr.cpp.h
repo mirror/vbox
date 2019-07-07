@@ -2560,6 +2560,20 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexit(PVMCPU pVCpu, uint32_t uExitReason, uint64_
         else
             return iemVmxAbort(pVCpu, VMXABORT_SAVE_GUEST_MSRS);
 
+        /*
+         * Write the contents of the virtual-APIC page back into guest memory (shouldn't really fail).
+         */
+        if (pVCpu->cpum.GstCtx.hwvirt.vmx.fVirtApicPageDirty)
+        {
+            Assert(pVmcs->u32ProcCtls & VMX_PROC_CTLS_USE_TPR_SHADOW);
+            int rc2 = PGMPhysSimpleWriteGCPhys(pVCpu->CTX_SUFF(pVM), pVmcs->u64AddrVirtApic.u,
+                                               pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvVirtApicPage), VMX_V_VIRT_APIC_SIZE);
+            AssertRCReturn(rc2, rc2);
+
+            /* Clear the virtual-APIC page dirty bit now that it's written back to guest memory. */
+            pVCpu->cpum.GstCtx.hwvirt.vmx.fVirtApicPageDirty = false;
+        }
+
         /* Clear any saved NMI-blocking state so we don't assert on next VM-entry (if it was in effect on the previous one). */
         pVCpu->cpum.GstCtx.hwvirt.fLocalForcedActions &= ~VMCPU_FF_BLOCK_NMIS;
     }
@@ -3911,17 +3925,10 @@ IEM_STATIC uint32_t iemVmxVirtApicReadRaw32(PVMCPU pVCpu, uint16_t offReg)
 {
     PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
     Assert(pVmcs);
-
-    uint32_t uReg;
-    Assert(offReg <= VMX_V_VIRT_APIC_SIZE - sizeof(uReg));
-    RTGCPHYS const GCPhysVirtApic = pVmcs->u64AddrVirtApic.u;
-    int rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), &uReg, GCPhysVirtApic + offReg, sizeof(uReg));
-    if (RT_FAILURE(rc))
-    {
-        AssertMsgFailed(("Failed to read %u bytes at offset %#x of the virtual-APIC page at %#RGp\n", sizeof(uReg), offReg,
-                         GCPhysVirtApic));
-        uReg = 0;
-    }
+    Assert(offReg <= VMX_V_VIRT_APIC_SIZE - sizeof(uint32_t));
+    uint32_t const *pbVirtApicPage = (uint32_t const *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvVirtApicPage);
+    pbVirtApicPage += offReg;
+    uint32_t const uReg = *pbVirtApicPage;
     return uReg;
 }
 
@@ -3937,17 +3944,10 @@ IEM_STATIC uint64_t iemVmxVirtApicReadRaw64(PVMCPU pVCpu, uint16_t offReg)
 {
     PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
     Assert(pVmcs);
-
-    uint64_t uReg;
-    Assert(offReg <= VMX_V_VIRT_APIC_SIZE - sizeof(uReg));
-    RTGCPHYS const GCPhysVirtApic = pVmcs->u64AddrVirtApic.u;
-    int rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), &uReg, GCPhysVirtApic + offReg, sizeof(uReg));
-    if (RT_FAILURE(rc))
-    {
-        AssertMsgFailed(("Failed to read %u bytes at offset %#x of the virtual-APIC page at %#RGp\n", sizeof(uReg), offReg,
-                         GCPhysVirtApic));
-        uReg = 0;
-    }
+    Assert(offReg <= VMX_V_VIRT_APIC_SIZE - sizeof(uint64_t));
+    uint64_t const *pbVirtApicPage = (uint64_t const *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvVirtApicPage);
+    pbVirtApicPage += offReg;
+    uint64_t const uReg = *pbVirtApicPage;
     return uReg;
 }
 
@@ -3963,14 +3963,11 @@ IEM_STATIC void iemVmxVirtApicWriteRaw32(PVMCPU pVCpu, uint16_t offReg, uint32_t
 {
     PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
     Assert(pVmcs);
-    Assert(offReg <= VMX_V_VIRT_APIC_SIZE - sizeof(uReg));
-    RTGCPHYS const GCPhysVirtApic = pVmcs->u64AddrVirtApic.u;
-    int rc = PGMPhysSimpleWriteGCPhys(pVCpu->CTX_SUFF(pVM), GCPhysVirtApic + offReg, &uReg, sizeof(uReg));
-    if (RT_FAILURE(rc))
-    {
-        AssertMsgFailed(("Failed to write %u bytes at offset %#x of the virtual-APIC page at %#RGp\n", sizeof(uReg), offReg,
-                         GCPhysVirtApic));
-    }
+    Assert(offReg <= VMX_V_VIRT_APIC_SIZE - sizeof(uint32_t));
+    uint32_t *pbVirtApicPage = (uint32_t *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvVirtApicPage);
+    pbVirtApicPage += offReg;
+    *pbVirtApicPage = uReg;
+    pVCpu->cpum.GstCtx.hwvirt.vmx.fVirtApicPageDirty = true;
 }
 
 
@@ -3985,14 +3982,11 @@ IEM_STATIC void iemVmxVirtApicWriteRaw64(PVMCPU pVCpu, uint16_t offReg, uint64_t
 {
     PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
     Assert(pVmcs);
-    Assert(offReg <= VMX_V_VIRT_APIC_SIZE - sizeof(uReg));
-    RTGCPHYS const GCPhysVirtApic = pVmcs->u64AddrVirtApic.u;
-    int rc = PGMPhysSimpleWriteGCPhys(pVCpu->CTX_SUFF(pVM), GCPhysVirtApic + offReg, &uReg, sizeof(uReg));
-    if (RT_FAILURE(rc))
-    {
-        AssertMsgFailed(("Failed to write %u bytes at offset %#x of the virtual-APIC page at %#RGp\n", sizeof(uReg), offReg,
-                         GCPhysVirtApic));
-    }
+    Assert(offReg <= VMX_V_VIRT_APIC_SIZE - sizeof(uint64_t));
+    uint64_t *pbVirtApicPage = (uint64_t *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvVirtApicPage);
+    pbVirtApicPage += offReg;
+    *pbVirtApicPage = uReg;
+    pVCpu->cpum.GstCtx.hwvirt.vmx.fVirtApicPageDirty = true;
 }
 
 
@@ -4009,26 +4003,26 @@ IEM_STATIC void iemVmxVirtApicSetVectorInReg(PVMCPU pVCpu, uint16_t offReg, uint
 {
     PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
     Assert(pVmcs);
-    uint32_t uReg;
-    uint16_t const offVector      = (uVector & UINT32_C(0xe0)) >> 1;
-    RTGCPHYS const GCPhysVirtApic = pVmcs->u64AddrVirtApic.u;
-    int rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), &uReg, GCPhysVirtApic + offReg + offVector, sizeof(uReg));
-    if (RT_SUCCESS(rc))
-    {
-        uint16_t const idxVectorBit = uVector & UINT32_C(0x1f);
-        uReg |= RT_BIT(idxVectorBit);
-        rc = PGMPhysSimpleWriteGCPhys(pVCpu->CTX_SUFF(pVM), GCPhysVirtApic + offReg + offVector, &uReg, sizeof(uReg));
-        if (RT_FAILURE(rc))
-        {
-            AssertMsgFailed(("Failed to set vector %#x in 256-bit register at %#x of the virtual-APIC page at %#RGp\n",
-                             uVector, offReg, GCPhysVirtApic));
-        }
-    }
-    else
-    {
-        AssertMsgFailed(("Failed to get vector %#x in 256-bit register at %#x of the virtual-APIC page at %#RGp\n",
-                         uVector, offReg, GCPhysVirtApic));
-    }
+
+    /* Determine the vector offset within the chunk. */
+    uint32_t       uReg;
+    uint32_t       *pbVirtApicPage = (uint32_t *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvVirtApicPage);
+    uint16_t const offVector       = (uVector & UINT32_C(0xe0)) >> 1;
+
+    /* Read the chunk at the offset. */
+    pbVirtApicPage += offReg + offVector;
+    uReg = *pbVirtApicPage;
+
+    /* Set the vector bit in the chunk. */
+    uint16_t const idxVectorBit = uVector & UINT32_C(0x1f);
+    uReg |= RT_BIT(idxVectorBit);
+
+    /* Write back the chunk at the offset. */
+    pbVirtApicPage += offReg + offVector;
+    *pbVirtApicPage = uReg;
+
+    /* Mark the page dirty. */
+    pVCpu->cpum.GstCtx.hwvirt.vmx.fVirtApicPageDirty = true;
 }
 
 
@@ -4045,26 +4039,26 @@ IEM_STATIC void iemVmxVirtApicClearVectorInReg(PVMCPU pVCpu, uint16_t offReg, ui
 {
     PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
     Assert(pVmcs);
-    uint32_t uReg;
+
+    /* Determine the vector offset within the chunk. */
+    uint32_t       uReg;
+    uint32_t      *pbVirtApicPage = (uint32_t *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvVirtApicPage);
     uint16_t const offVector      = (uVector & UINT32_C(0xe0)) >> 1;
-    RTGCPHYS const GCPhysVirtApic = pVmcs->u64AddrVirtApic.u;
-    int rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), &uReg, GCPhysVirtApic + offReg + offVector, sizeof(uReg));
-    if (RT_SUCCESS(rc))
-    {
-        uint16_t const idxVectorBit = uVector & UINT32_C(0x1f);
-        uReg &= ~RT_BIT(idxVectorBit);
-        rc = PGMPhysSimpleWriteGCPhys(pVCpu->CTX_SUFF(pVM), GCPhysVirtApic + offReg + offVector, &uReg, sizeof(uReg));
-        if (RT_FAILURE(rc))
-        {
-            AssertMsgFailed(("Failed to clear vector %#x in 256-bit register at %#x of the virtual-APIC page at %#RGp\n",
-                             uVector, offReg, GCPhysVirtApic));
-        }
-    }
-    else
-    {
-        AssertMsgFailed(("Failed to get vector %#x in 256-bit register at %#x of the virtual-APIC page at %#RGp\n",
-                         uVector, offReg, GCPhysVirtApic));
-    }
+
+    /* Read the chunk at the offset. */
+    pbVirtApicPage += offReg + offVector;
+    uReg = *pbVirtApicPage;
+
+    /* Clear the vector bit in the chunk. */
+    uint16_t const idxVectorBit = uVector & UINT32_C(0x1f);
+    uReg &= ~RT_BIT(idxVectorBit);
+
+    /* Write back the chunk at the offset. */
+    pbVirtApicPage += offReg + offVector;
+    *pbVirtApicPage = uReg;
+
+    /* Mark the page dirty. */
+    pVCpu->cpum.GstCtx.hwvirt.vmx.fVirtApicPageDirty = true;
 }
 
 
@@ -6314,22 +6308,29 @@ IEM_STATIC int iemVmxVmentryCheckExecCtls(PVMCPU pVCpu, const char *pszInstr)
         else
             IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_AddrVirtApicPage);
 
-        /* TPR threshold without virtual-interrupt delivery. */
-        if (   !(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_INT_DELIVERY)
-            &&  (pVmcs->u32TprThreshold & ~VMX_TPR_THRESHOLD_MASK))
+        /* Read the virtual-APIC page. */
+        int rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvVirtApicPage),
+                                         GCPhysVirtApic, VMX_V_VIRT_APIC_SIZE);
+        if (RT_SUCCESS(rc))
+        { /* likely */ }
+        else
+            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_VirtApicPagePtrReadPhys);
+
+        /* TPR threshold bits 31:4 MBZ without virtual-interrupt delivery. */
+        if (   !(pVmcs->u32TprThreshold & ~VMX_TPR_THRESHOLD_MASK)
+            ||  (pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_INT_DELIVERY))
+        { /* likely */ }
+        else
             IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_TprThresholdRsvd);
 
-        /* TPR threshold and VTPR. */
+        /* Verify TPR threshold and VTPR when both virtualize-APIC accesses and virtual-interrupt delivery aren't used. */
         if (   !(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_APIC_ACCESS)
             && !(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_INT_DELIVERY))
         {
             /* Read the VTPR from the virtual-APIC page. */
-            uint8_t u8VTpr;
-            int rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), &u8VTpr, GCPhysVirtApic + XAPIC_OFF_TPR, sizeof(u8VTpr));
-            if (RT_SUCCESS(rc))
-            { /* likely */ }
-            else
-                IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_VirtApicPagePtrReadPhys);
+            uint8_t const *pbVirtApicPage = (uint8_t const *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvVirtApicPage);
+            pbVirtApicPage += XAPIC_OFF_TPR;
+            uint8_t const u8VTpr = *pbVirtApicPage;
 
             /* Bits 3:0 of the TPR-threshold must not be greater than bits 7:4 of VTPR. */
             if ((uint8_t)RT_BF_GET(pVmcs->u32TprThreshold, VMX_BF_TPR_THRESHOLD_TPR) <= (u8VTpr & 0xf0))
@@ -7385,6 +7386,9 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPU pVCpu, uint8_t cbInstr, VM
                                     Log3(("%s: iemVmxWorldSwitch failed! rc=%Rrc\n", pszInstr, VBOXSTRICTRC_VAL(rcStrict)));
                                     return rcStrict;
                                 }
+
+                                /* Clear virtual-APIC page dirty bit to ensure it's not stale due to prior, failed VM-exits. */
+                                pVCpu->cpum.GstCtx.hwvirt.vmx.fVirtApicPageDirty = false;
 
                                 /* We've now entered nested-guest execution. */
                                 pVCpu->cpum.GstCtx.hwvirt.vmx.fInVmxNonRootMode = true;
