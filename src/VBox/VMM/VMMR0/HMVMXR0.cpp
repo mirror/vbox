@@ -17095,13 +17095,13 @@ HMVMX_EXIT_DECL hmR0VmxExitVmreadVmwriteNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxT
 
     uint8_t const iGReg = pVmxTransient->ExitInstrInfo.VmreadVmwrite.iReg2;
     Assert(iGReg < RT_ELEMENTS(pVCpu->cpum.GstCtx.aGRegs));
-    uint64_t u64FieldEnc = pVCpu->cpum.GstCtx.aGRegs[iGReg].u64;
+    uint64_t u64VmcsField = pVCpu->cpum.GstCtx.aGRegs[iGReg].u64;
 
     HMVMX_CPUMCTX_ASSERT(pVCpu, CPUMCTX_EXTRN_EFER);
     if (!CPUMIsGuestInLongModeEx(&pVCpu->cpum.GstCtx))
-        u64FieldEnc &= UINT64_C(0xffffffff);
+        u64VmcsField &= UINT64_C(0xffffffff);
 
-    if (CPUMIsGuestVmxVmreadVmwriteInterceptSet(pVCpu, pVmxTransient->uExitReason, u64FieldEnc))
+    if (CPUMIsGuestVmxVmreadVmwriteInterceptSet(pVCpu, pVmxTransient->uExitReason, u64VmcsField))
     {
         rc |= hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
         rc |= hmR0VmxReadExitQualVmcs(pVCpu, pVmxTransient);
