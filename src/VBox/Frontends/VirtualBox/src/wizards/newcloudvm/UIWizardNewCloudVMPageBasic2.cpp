@@ -25,10 +25,6 @@
 #include "UIWizardNewCloudVM.h"
 #include "UIWizardNewCloudVMPageBasic2.h"
 
-/* COM includes: */
-#include "CVirtualSystemDescription.h"
-#include "CVirtualSystemDescriptionForm.h"
-
 
 /*********************************************************************************************************************************
 *   Class UIWizardNewCloudVMPage2 implementation.                                                                                *
@@ -41,10 +37,15 @@ UIWizardNewCloudVMPage2::UIWizardNewCloudVMPage2()
 void UIWizardNewCloudVMPage2::refreshFormPropertiesTable()
 {
     /* Acquire VSD form: */
-    CVirtualSystemDescriptionForm comForm = fieldImp("vsdForm").value<CVirtualSystemDescriptionForm>();
+    CVirtualSystemDescriptionForm comForm = vsdForm();
     /* Make sure the properties table get the new description form: */
     if (comForm.isNotNull())
         m_pFormEditor->setVirtualSystemDescriptionForm(comForm);
+}
+
+CVirtualSystemDescriptionForm UIWizardNewCloudVMPage2::vsdForm() const
+{
+    return qobject_cast<UIWizardNewCloudVM*>(wizardImp())->vsdForm();
 }
 
 
@@ -106,7 +107,7 @@ bool UIWizardNewCloudVMPageBasic2::validatePage()
     startProcessing();
 
     /* Check whether we have proper VSD form: */
-    CVirtualSystemDescriptionForm comForm = fieldImp("vsdForm").value<CVirtualSystemDescriptionForm>();
+    CVirtualSystemDescriptionForm comForm = vsdForm();
     fResult = comForm.isNotNull();
     Assert(fResult);
 

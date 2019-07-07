@@ -64,6 +64,49 @@ void UIWizardNewCloudVM::prepare()
     UIWizard::prepare();
 }
 
+bool UIWizardNewCloudVM::createVSDForm()
+{
+    /* Prepare result: */
+    bool fResult = false;
+
+    /* Main API request sequence, can be interrupted after any step: */
+    do
+    {
+        /* Acquire prepared client and description: */
+        CCloudClient comClient = client();
+        CVirtualSystemDescription comDescription = vsd();
+        AssertReturn(comClient.isNotNull() && comDescription.isNotNull(), false);
+
+        /* Read Cloud Client description form: */
+        CVirtualSystemDescriptionForm comForm;
+        CProgress comProgress = comClient.GetLaunchDescriptionForm(comDescription, comForm);
+        if (!comClient.isOk())
+        {
+            msgCenter().cannotAcquireCloudClientParameter(comClient);
+            break;
+        }
+
+        /* Show "Acquire launch form" progress: */
+        msgCenter().showModalProgressDialog(comProgress, tr("Acquire launch form..."),
+                                            ":/progress_refresh_90px.png", 0, 0);
+        if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
+        {
+            msgCenter().cannotAcquireCloudClientParameter(comProgress);
+            break;
+        }
+
+        /* Remember Virtual System Description Form: */
+        setVSDForm(comForm);
+
+        /* Finally, success: */
+        fResult = true;
+    }
+    while (0);
+
+    /* Return result: */
+    return fResult;
+}
+
 bool UIWizardNewCloudVM::createCloudVM()
 {
     /* Prepare result: */
@@ -73,8 +116,8 @@ bool UIWizardNewCloudVM::createCloudVM()
     do
     {
         /* Acquire prepared client and description: */
-        CCloudClient comClient = field("client").value<CCloudClient>();
-        CVirtualSystemDescription comDescription = field("vsd").value<CVirtualSystemDescription>();
+        CCloudClient comClient = client();
+        CVirtualSystemDescription comDescription = vsd();
         AssertReturn(comClient.isNotNull() && comDescription.isNotNull(), false);
 
         /* Initiate cloud VM creation procedure: */

@@ -39,6 +39,9 @@ protected:
     /** Refreshes form properties table. */
     void refreshFormPropertiesTable();
 
+    /** Returns Virtual System Description Form object. */
+    CVirtualSystemDescriptionForm vsdForm() const;
+
     /** Holds the Form Editor widget instance. */
     UIFormEditorWidgetPointer  m_pFormEditor;
 };
@@ -55,8 +58,8 @@ public:
 
 protected:
 
-    /** Allows to access 'field()' from base part. */
-    virtual QVariant fieldImp(const QString &strFieldName) const /* override */ { return UIWizardPage::field(strFieldName); }
+    /** Allows access wizard from base part. */
+    virtual UIWizard *wizardImp() const /* override */ { return UIWizardPage::wizard(); }
 
     /** Handles translation event. */
     virtual void retranslateUi() /* override */;

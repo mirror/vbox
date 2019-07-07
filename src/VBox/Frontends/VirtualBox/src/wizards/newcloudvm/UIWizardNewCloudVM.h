@@ -24,6 +24,12 @@
 /* GUI includes: */
 #include "UIWizard.h"
 
+/* COM includes: */
+#include "COMEnums.h"
+#include "CCloudClient.h"
+#include "CVirtualSystemDescription.h"
+#include "CVirtualSystemDescriptionForm.h"
+
 /** New Cloud VM wizard. */
 class UIWizardNewCloudVM : public UIWizard
 {
@@ -50,13 +56,40 @@ public:
     /** Prepares all. */
     virtual void prepare() /* override */;
 
-    /** Create New Cloud VM. */
+    /** Defines Cloud @a comClient object. */
+    void setClient(const CCloudClient &comClient) { m_comClient = comClient; }
+    /** Returns Cloud Client object. */
+    CCloudClient client() const { return m_comClient; }
+
+    /** Defines Virtual System @a comDescription object. */
+    void setVSD(const CVirtualSystemDescription &comDescription) { m_comVSD = comDescription; }
+    /** Returns Virtual System Description object. */
+    CVirtualSystemDescription vsd() const { return m_comVSD; }
+
+    /** Defines Virtual System Description @a comForm object. */
+    void setVSDForm(const CVirtualSystemDescriptionForm &comForm) { m_comVSDForm = comForm; }
+    /** Returns Virtual System Description Form object. */
+    CVirtualSystemDescriptionForm vsdForm() const { return m_comVSDForm; }
+
+    /** Creates VSD Form. */
+    bool createVSDForm();
+
+    /** Creates New Cloud VM. */
     bool createCloudVM();
 
 protected:
 
     /** Handles translation event. */
     virtual void retranslateUi() /* override */;
+
+private:
+
+    /** Holds the Cloud Client object reference. */
+    CCloudClient                   m_comClient;
+    /** Holds the Virtual System Description object reference. */
+    CVirtualSystemDescription      m_comVSD;
+    /** Holds the Virtual System Description Form object reference. */
+    CVirtualSystemDescriptionForm  m_comVSDForm;
 };
 
 /** Safe pointer to new cloud vm wizard. */

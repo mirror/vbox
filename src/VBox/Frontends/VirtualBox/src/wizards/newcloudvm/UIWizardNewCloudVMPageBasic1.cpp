@@ -276,7 +276,7 @@ void UIWizardNewCloudVMPage1::populateAccountImages()
     /* Clear list initially: */
     m_pAccountImageList->clear();
     /* Clear Cloud Client: */
-    m_comCloudClient = CCloudClient();
+    setClient(CCloudClient());
 
     /* If profile chosen: */
     if (m_comCloudProfile.isNotNull())
@@ -285,12 +285,15 @@ void UIWizardNewCloudVMPage1::populateAccountImages()
         do
         {
             /* Acquire Cloud Client: */
-            m_comCloudClient = m_comCloudProfile.CreateCloudClient();
+            CCloudClient comCloudClient = m_comCloudProfile.CreateCloudClient();
             if (!m_comCloudProfile.isOk())
             {
                 msgCenter().cannotCreateCloudClient(m_comCloudProfile);
                 break;
             }
+
+            /* Remember Cloud Client: */
+            setClient(comCloudClient);
 
             /* Gather image names, ids and states.
              * Currently we are interested in Available images only. */
@@ -300,10 +303,10 @@ void UIWizardNewCloudVMPage1::populateAccountImages()
                                                              << KCloudImageState_Available;
 
             /* Ask for cloud custom images: */
-            CProgress comProgress = m_comCloudClient.ListImages(cloudImageStates, comNames, comIDs);
-            if (!m_comCloudClient.isOk())
+            CProgress comProgress = comCloudClient.ListImages(cloudImageStates, comNames, comIDs);
+            if (!comCloudClient.isOk())
             {
-                msgCenter().cannotAcquireCloudClientParameter(m_comCloudClient);
+                msgCenter().cannotAcquireCloudClientParameter(comCloudClient);
                 break;
             }
 
@@ -344,11 +347,12 @@ void UIWizardNewCloudVMPage1::populateAccountImages()
 void UIWizardNewCloudVMPage1::populateFormProperties()
 {
     /* Clear description & form properties: */
-    m_comVSD = CVirtualSystemDescription();
-    m_comVSDForm = CVirtualSystemDescriptionForm();
+    setVSD(CVirtualSystemDescription());
+    setVSDForm(CVirtualSystemDescriptionForm());
 
     /* If client created: */
-    if (m_comCloudClient.isNotNull())
+    CCloudClient comCloudClient = client();
+    if (comCloudClient.isNotNull())
     {
         /* Main API request sequence, can be interrupted after any step: */
         do
@@ -380,36 +384,21 @@ void UIWizardNewCloudVMPage1::populateFormProperties()
 
             /* Make sure there is at least one virtual system description created: */
             AssertReturnVoid(!descriptions.isEmpty());
-            m_comVSD = descriptions.at(0);
+            CVirtualSystemDescription comVSD = descriptions.at(0);
+
+            /* Remember Virtual System Description: */
+            setVSD(comVSD);
 
             /* Add image id to virtual system description: */
-            m_comVSD.AddDescription(KVirtualSystemDescriptionType_CloudImageId, imageId(), QString());
-            if (!m_comVSD.isOk())
+            comVSD.AddDescription(KVirtualSystemDescriptionType_CloudImageId, imageId(), QString());
+            if (!comVSD.isOk())
             {
-                msgCenter().cannotAddVirtualSystemDescriptionValue(m_comVSD);
+                msgCenter().cannotAddVirtualSystemDescriptionValue(comVSD);
                 break;
             }
 
-            /* Read Cloud Client description form: */
-            CVirtualSystemDescriptionForm comForm;
-            CProgress comLaunchDescriptionFormProgress = m_comCloudClient.GetLaunchDescriptionForm(m_comVSD, comForm);
-            if (!m_comCloudClient.isOk())
-            {
-                msgCenter().cannotAcquireCloudClientParameter(m_comCloudClient);
-                break;
-            }
-
-            /* Show "Acquire launch form" progress: */
-            msgCenter().showModalProgressDialog(comLaunchDescriptionFormProgress, UIWizardNewCloudVM::tr("Acquire launch form..."),
-                                                ":/progress_refresh_90px.png", 0, 0);
-            if (!comLaunchDescriptionFormProgress.isOk() || comLaunchDescriptionFormProgress.GetResultCode() != 0)
-            {
-                msgCenter().cannotAcquireCloudClientParameter(comLaunchDescriptionFormProgress);
-                break;
-            }
-
-            /* Remember form: */
-            m_comVSDForm = comForm;
+            /* Create Virtual System Description Form: */
+            qobject_cast<UIWizardNewCloudVM*>(wizardImp())->createVSDForm();
         }
         while (0);
     }
@@ -486,19 +475,34 @@ QString UIWizardNewCloudVMPage1::imageId() const
     return pItem ? pItem->data(Qt::UserRole).toString() : QString();
 }
 
+void UIWizardNewCloudVMPage1::setClient(const CCloudClient &comClient)
+{
+    qobject_cast<UIWizardNewCloudVM*>(wizardImp())->setClient(comClient);
+}
+
 CCloudClient UIWizardNewCloudVMPage1::client() const
 {
-    return m_comCloudClient;
+    return qobject_cast<UIWizardNewCloudVM*>(wizardImp())->client();
+}
+
+void UIWizardNewCloudVMPage1::setVSD(const CVirtualSystemDescription &comDescription)
+{
+    qobject_cast<UIWizardNewCloudVM*>(wizardImp())->setVSD(comDescription);
 }
 
 CVirtualSystemDescription UIWizardNewCloudVMPage1::vsd() const
 {
-    return m_comVSD;
+    return qobject_cast<UIWizardNewCloudVM*>(wizardImp())->vsd();
+}
+
+void UIWizardNewCloudVMPage1::setVSDForm(const CVirtualSystemDescriptionForm &comForm)
+{
+    qobject_cast<UIWizardNewCloudVM*>(wizardImp())->setVSDForm(comForm);
 }
 
 CVirtualSystemDescriptionForm UIWizardNewCloudVMPage1::vsdForm() const
 {
-    return m_comVSDForm;
+    return qobject_cast<UIWizardNewCloudVM*>(wizardImp())->vsdForm();
 }
 
 
@@ -671,11 +675,6 @@ UIWizardNewCloudVMPageBasic1::UIWizardNewCloudVMPageBasic1()
             this, &UIWizardNewCloudVMPageBasic1::sltHandleAccountButtonClick);
     connect(m_pAccountImageList, &QListWidget::currentRowChanged,
             this, &UIWizardNewCloudVMPageBasic1::completeChanged);
-
-    /* Register fields: */
-    registerField("client", this, "client");
-    registerField("vsd", this, "vsd");
-    registerField("vsdForm", this, "vsdForm");
 }
 
 bool UIWizardNewCloudVMPageBasic1::event(QEvent *pEvent)
