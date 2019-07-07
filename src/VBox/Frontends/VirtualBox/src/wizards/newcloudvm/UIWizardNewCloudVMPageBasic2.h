@@ -34,13 +34,18 @@ class UIWizardNewCloudVMPage2 : public UIWizardPageBase
 protected:
 
     /** Constructs 2nd page base. */
-    UIWizardNewCloudVMPage2();
+    UIWizardNewCloudVMPage2(bool fFullWizard);
 
     /** Refreshes form properties table. */
     void refreshFormPropertiesTable();
 
     /** Returns Virtual System Description Form object. */
     CVirtualSystemDescriptionForm vsdForm() const;
+
+    /** Holds whether wizard should be in full form. */
+    bool  m_fFullWizard;
+    /** Holds whether starting page was polished. */
+    bool  m_fPolished;
 
     /** Holds the Form Editor widget instance. */
     UIFormEditorWidgetPointer  m_pFormEditor;
@@ -54,7 +59,7 @@ class UIWizardNewCloudVMPageBasic2 : public UIWizardPage, public UIWizardNewClou
 public:
 
     /** Constructs 2nd basic page. */
-    UIWizardNewCloudVMPageBasic2();
+    UIWizardNewCloudVMPageBasic2(bool fFullWizard);
 
 protected:
 
@@ -69,6 +74,11 @@ protected:
 
     /** Performs page validation. */
     virtual bool validatePage() /* override */;
+
+private slots:
+
+    /** Initializes short wizard form. */
+    void sltInitShortWizardForm();
 
 private:
 

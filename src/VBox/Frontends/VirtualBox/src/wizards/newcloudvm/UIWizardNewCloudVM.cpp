@@ -26,8 +26,13 @@
 #include "CProgress.h"
 
 
-UIWizardNewCloudVM::UIWizardNewCloudVM(QWidget *pParent)
+UIWizardNewCloudVM::UIWizardNewCloudVM(QWidget *pParent,
+                                       const CCloudClient &comClient /* = CCloudClient() */,
+                                       const CVirtualSystemDescription &comDescription /* = CVirtualSystemDescription() */)
     : UIWizard(pParent, WizardType_NewCloudVM)
+    , m_comClient(comClient)
+    , m_comVSD(comDescription)
+    , m_fFullWizard(m_comClient.isNull() || m_comVSD.isNull())
 {
 #ifndef VBOX_WS_MAC
     /* Assign watermark: */
@@ -45,13 +50,14 @@ void UIWizardNewCloudVM::prepare()
     {
         case WizardMode_Basic:
         {
-            setPage(Page1, new UIWizardNewCloudVMPageBasic1);
-            setPage(Page2, new UIWizardNewCloudVMPageBasic2);
+            if (m_fFullWizard)
+                setPage(Page1, new UIWizardNewCloudVMPageBasic1);
+            setPage(Page2, new UIWizardNewCloudVMPageBasic2(m_fFullWizard));
             break;
         }
         case WizardMode_Expert:
         {
-            setPage(PageExpert, new UIWizardNewCloudVMPageExpert);
+            setPage(PageExpert, new UIWizardNewCloudVMPageExpert(m_fFullWizard));
             break;
         }
         default:

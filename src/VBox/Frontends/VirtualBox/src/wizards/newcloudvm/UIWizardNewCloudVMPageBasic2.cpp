@@ -30,7 +30,9 @@
 *   Class UIWizardNewCloudVMPage2 implementation.                                                                                *
 *********************************************************************************************************************************/
 
-UIWizardNewCloudVMPage2::UIWizardNewCloudVMPage2()
+UIWizardNewCloudVMPage2::UIWizardNewCloudVMPage2(bool fFullWizard)
+    : m_fFullWizard(fFullWizard)
+    , m_fPolished(false)
 {
 }
 
@@ -53,7 +55,8 @@ CVirtualSystemDescriptionForm UIWizardNewCloudVMPage2::vsdForm() const
 *   Class UIWizardNewCloudVMPageBasic2 implementation.                                                                           *
 *********************************************************************************************************************************/
 
-UIWizardNewCloudVMPageBasic2::UIWizardNewCloudVMPageBasic2()
+UIWizardNewCloudVMPageBasic2::UIWizardNewCloudVMPageBasic2(bool fFullWizard)
+    : UIWizardNewCloudVMPage2(fFullWizard)
 {
     /* Create main layout: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
@@ -91,6 +94,17 @@ void UIWizardNewCloudVMPageBasic2::retranslateUi()
 
 void UIWizardNewCloudVMPageBasic2::initializePage()
 {
+    /* If wasn't polished yet: */
+    if (!m_fPolished)
+    {
+        if (!m_fFullWizard)
+        {
+            /* Generate VSD form, asynchronously: */
+            QMetaObject::invokeMethod(this, "sltInitShortWizardForm", Qt::QueuedConnection);
+        }
+        m_fPolished = true;
+    }
+
     /* Refresh form properties: */
     refreshFormPropertiesTable();
 
@@ -129,4 +143,13 @@ bool UIWizardNewCloudVMPageBasic2::validatePage()
 
     /* Return result: */
     return fResult;
+}
+
+void UIWizardNewCloudVMPageBasic2::sltInitShortWizardForm()
+{
+    /* Create Virtual System Description Form: */
+    qobject_cast<UIWizardNewCloudVM*>(wizardImp())->createVSDForm();
+
+    /* Refresh form properties table: */
+    refreshFormPropertiesTable();
 }

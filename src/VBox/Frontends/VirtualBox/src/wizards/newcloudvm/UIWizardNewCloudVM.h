@@ -50,8 +50,12 @@ public:
         PageExpert
     };
 
-    /** Constructs new cloud vm wizard passing @a pParent to the base-class. */
-    UIWizardNewCloudVM(QWidget *pParent);
+    /** Constructs New Cloud VM wizard passing @a pParent to the base-class.
+      * @param  comClient       Brings the Cloud Client object to work with.
+      * @param  comDescription  Brings the Virtual System Description object to use. */
+    UIWizardNewCloudVM(QWidget *pParent,
+                       const CCloudClient &comClient = CCloudClient(),
+                       const CVirtualSystemDescription &comDescription = CVirtualSystemDescription());
 
     /** Prepares all. */
     virtual void prepare() /* override */;
@@ -90,6 +94,9 @@ private:
     CVirtualSystemDescription      m_comVSD;
     /** Holds the Virtual System Description Form object reference. */
     CVirtualSystemDescriptionForm  m_comVSDForm;
+
+    /** Holds whether we want full wizard form or short one. */
+    bool  m_fFullWizard;
 };
 
 /** Safe pointer to new cloud vm wizard. */

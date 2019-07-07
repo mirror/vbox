@@ -32,8 +32,9 @@
 #include "UIWizardNewCloudVMPageExpert.h"
 
 
-UIWizardNewCloudVMPageExpert::UIWizardNewCloudVMPageExpert()
-    : m_pCntDestination(0)
+UIWizardNewCloudVMPageExpert::UIWizardNewCloudVMPageExpert(bool fFullWizard)
+    : UIWizardNewCloudVMPage2(fFullWizard)
+    , m_pCntDestination(0)
     , m_pSettingsCnt(0)
 {
     /* Create main layout: */
@@ -44,6 +45,10 @@ UIWizardNewCloudVMPageExpert::UIWizardNewCloudVMPageExpert()
         m_pCntDestination = new QGroupBox(this);
         if (m_pCntDestination)
         {
+            /* There is no destination table in short wizard form: */
+            if (!m_fFullWizard)
+                m_pCntDestination->setVisible(false);
+
             /* Create destination layout: */
             m_pDestinationLayout = new QGridLayout(m_pCntDestination);
             if (m_pDestinationLayout)
@@ -218,13 +223,22 @@ void UIWizardNewCloudVMPageExpert::retranslateUi()
 void UIWizardNewCloudVMPageExpert::initializePage()
 {
     /* If wasn't polished yet: */
-    if (!m_fPolished)
+    if (!UIWizardNewCloudVMPage1::m_fPolished || !UIWizardNewCloudVMPage2::m_fPolished)
     {
-        /* Populate destinations: */
-        populateDestinations();
-        /* Choose one of them, asynchronously: */
-        QMetaObject::invokeMethod(this, "sltHandleDestinationChange", Qt::QueuedConnection);
-        m_fPolished = true;
+        if (m_fFullWizard)
+        {
+            /* Populate destinations: */
+            populateDestinations();
+            /* Choose one of them, asynchronously: */
+            QMetaObject::invokeMethod(this, "sltHandleDestinationChange", Qt::QueuedConnection);
+        }
+        else
+        {
+            /* Generate VSD form, asynchronously: */
+            QMetaObject::invokeMethod(this, "sltInitShortWizardForm", Qt::QueuedConnection);
+        }
+        UIWizardNewCloudVMPage1::m_fPolished = true;
+        UIWizardNewCloudVMPage2::m_fPolished = true;
     }
 
     /* Translate page: */
@@ -319,4 +333,13 @@ void UIWizardNewCloudVMPageExpert::sltHandleInstanceListChange()
     populateFormProperties();
     refreshFormPropertiesTable();
     emit completeChanged();
+}
+
+void UIWizardNewCloudVMPageExpert::sltInitShortWizardForm()
+{
+    /* Create Virtual System Description Form: */
+    qobject_cast<UIWizardNewCloudVM*>(wizardImp())->createVSDForm();
+
+    /* Refresh form properties table: */
+    refreshFormPropertiesTable();
 }
