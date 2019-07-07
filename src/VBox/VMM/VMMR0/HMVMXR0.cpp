@@ -1777,9 +1777,14 @@ static int hmR0VmxAllocVmcsInfo(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo, bool fIsNs
             Assert(pVmcsInfo->HCPhysShadowVmcs == NIL_RTHCPHYS);
             Assert(!pVmcsInfo->pvShadowVmcs);
 
-            /* The host-physical address of the virtual-APIC page in guest memory is taken directly. */
-            Assert(pVmcsInfo->HCPhysVirtApic == NIL_RTHCPHYS);
-            Assert(!pVmcsInfo->pbVirtApic);
+            /* Get the allocated virtual-APIC page from CPUM. */
+            if (pVM->hm.s.vmx.Msrs.ProcCtls.n.allowed1 & VMX_PROC_CTLS_USE_TPR_SHADOW)
+            {
+                pVmcsInfo->pbVirtApic = (uint8_t *)CPUMGetGuestVmxVirtApicPage(pVCpu, &pVCpu->cpum.GstCtx,
+                                                                               &pVmcsInfo->HCPhysVirtApic);
+                Assert(pVmcsInfo->pbVirtApic);
+                Assert(pVmcsInfo->HCPhysVirtApic && pVmcsInfo->HCPhysVirtApic != NIL_RTHCPHYS);
+            }
         }
 
         if (RT_SUCCESS(rc))
@@ -10938,34 +10943,23 @@ static int hmR0VmxMergeVmcsNested(PVMCPU pVCpu)
     /*
      * Virtual-APIC page and TPR threshold.
      *
-     * We shall use the host-physical address of the virtual-APIC page in guest memory
-     * directly. For this reason, we can access the virtual-APIC page of the nested-guest only
-     * using PGM physical handlers as we must not assume a kernel virtual-address mapping
-     * exists and requesting PGM for a mapping could be expensive/resource intensive (PGM
-     * mapping cache).
+     * The virtual-APIC page has already been allocated (by CPUM during VM startup) and cached
+     * from guest memory as part of VMLAUNCH/VMRESUME instruction emulation. The host physical
+     * address has also been updated in the nested-guest VMCS.
      */
-    RTHCPHYS       HCPhysVirtApic  = NIL_RTHCPHYS;
-    uint32_t const u32TprThreshold = pVmcsNstGst->u32TprThreshold;
+    PVMXVMCSINFO pVmcsInfoNstGst = &pVCpu->hm.s.vmx.VmcsInfoNstGst;
+    RTHCPHYS HCPhysVirtApic;
+    uint32_t u32TprThreshold;
     if (u32ProcCtls & VMX_PROC_CTLS_USE_TPR_SHADOW)
     {
-        int rc = PGMPhysGCPhys2HCPhys(pVM, pVmcsNstGst->u64AddrVirtApic.u, &HCPhysVirtApic);
-
-        /*
-         * If the guest hypervisor has loaded crap into the virtual-APIC page field
-         * we would fail to obtain a valid host-physical address for its guest-physical
-         * address.
-         *
-         * We currently do not support this scenario. Maybe in the future if there is a
-         * pressing need we can explore making this particular set of conditions work.
-         * Right now we just cause a VM-entry failure.
-         *
-         * This has already been checked by VMLAUNCH/VMRESUME instruction emulation,
-         * so should not really failure at the moment.
-         */
-        AssertLogRelMsgRCReturn(rc, ("rc=%Rrc\n", rc), rc);
+        HCPhysVirtApic  = pVmcsInfoNstGst->HCPhysVirtApic;
+        u32TprThreshold = pVmcsNstGst->u32TprThreshold;
     }
     else
     {
+        HCPhysVirtApic  = 0;
+        u32TprThreshold = 0;
+
         /*
          * We must make sure CR8 reads/write must cause VM-exits when TPR shadowing is not
          * used by the guest hypervisor. Preventing MMIO accesses to the physical APIC will
@@ -10981,7 +10975,6 @@ static int hmR0VmxMergeVmcsNested(PVMCPU pVCpu)
     /*
      * Validate basic assumptions.
      */
-    PVMXVMCSINFO pVmcsInfoNstGst = &pVCpu->hm.s.vmx.VmcsInfoNstGst;
     Assert(pVM->hm.s.vmx.fAllowUnrestricted);
     Assert(pVM->hm.s.vmx.Msrs.ProcCtls.n.allowed1 & VMX_PROC_CTLS_USE_SECONDARY_CTLS);
     Assert(hmGetVmxActiveVmcsInfo(pVCpu) == pVmcsInfoNstGst);
@@ -11013,11 +11006,8 @@ static int hmR0VmxMergeVmcsNested(PVMCPU pVCpu)
         rc |= VMXWriteVmcs32(VMX_VMCS32_CTRL_PLE_GAP, cPleGapTicks);
         rc |= VMXWriteVmcs32(VMX_VMCS32_CTRL_PLE_WINDOW, cPleWindowTicks);
     }
-    if (u32ProcCtls & VMX_PROC_CTLS_USE_TPR_SHADOW)
-    {
-        rc |= VMXWriteVmcs32(VMX_VMCS32_CTRL_TPR_THRESHOLD, u32TprThreshold);
-        rc |= VMXWriteVmcs64(VMX_VMCS64_CTRL_VIRT_APIC_PAGEADDR_FULL, HCPhysVirtApic);
-    }
+    rc |= VMXWriteVmcs32(VMX_VMCS32_CTRL_TPR_THRESHOLD, u32TprThreshold);
+    rc |= VMXWriteVmcs64(VMX_VMCS64_CTRL_VIRT_APIC_PAGEADDR_FULL, pVmcsInfoNstGst->HCPhysVirtApic);
     AssertRCReturn(rc, rc);
 
     /*
@@ -11582,17 +11572,24 @@ static void hmR0VmxPostRunGuest(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient, int r
 
             /*
              * Sync the TPR shadow with our APIC state.
+             *
+             * With nested-guests, mark the virtual-APIC page as dirty so it can be synced
+             * when performing the nested-guest VM-exit.
              */
-            if (   !pVmxTransient->fIsNestedGuest
-                && (pVmcsInfo->u32ProcCtls & VMX_PROC_CTLS_USE_TPR_SHADOW))
+            if (pVmcsInfo->u32ProcCtls & VMX_PROC_CTLS_USE_TPR_SHADOW)
             {
-                Assert(pVmcsInfo->pbVirtApic);
-                if (pVmxTransient->u8GuestTpr != pVmcsInfo->pbVirtApic[XAPIC_OFF_TPR])
+                if (!pVmxTransient->fIsNestedGuest)
                 {
-                    rc = APICSetTpr(pVCpu, pVmcsInfo->pbVirtApic[XAPIC_OFF_TPR]);
-                    AssertRC(rc);
-                    ASMAtomicOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_APIC_TPR);
+                    Assert(pVmcsInfo->pbVirtApic);
+                    if (pVmxTransient->u8GuestTpr != pVmcsInfo->pbVirtApic[XAPIC_OFF_TPR])
+                    {
+                        rc = APICSetTpr(pVCpu, pVmcsInfo->pbVirtApic[XAPIC_OFF_TPR]);
+                        AssertRC(rc);
+                        ASMAtomicOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_APIC_TPR);
+                    }
                 }
+                else
+                    pVCpu->cpum.GstCtx.hwvirt.vmx.fVirtApicPageDirty = true;
             }
 
             Assert(VMMRZCallRing3IsEnabled(pVCpu));
@@ -11601,22 +11598,7 @@ static void hmR0VmxPostRunGuest(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient, int r
     }
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
     else if (pVmxTransient->fIsNestedGuest)
-    {
-# if 0
-        /*
-         * Copy the VM-instruction error field to the guest VMCS.
-         */
-        /** @todo NSTVMX: Verify we're using the fast path. */
-        uint32_t u32RoVmInstrError;
-        rc = VMXReadVmcs32(VMX_VMCS32_RO_VM_INSTR_ERROR, &u32RoVmInstrError);
-        AssertRCReturn(rc, rc);
-        PVMXVVMCS pGstVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
-        pGstVmcs->u32RoVmInstrError = u32RoVmInstrError;
-        /** @todo NSTVMX: Advance guest RIP and other fast path related restoration.  */
-# else
         AssertMsgFailed(("VMLAUNCH/VMRESUME failed but shouldn't happen when VMLAUNCH/VMRESUME was emulated in IEM!\n"));
-# endif
-    }
 #endif
     else
         Log4Func(("VM-entry failure: rcVMRun=%Rrc fVMEntryFailed=%RTbool\n", rcVMRun, pVmxTransient->fVMEntryFailed));
