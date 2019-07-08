@@ -358,7 +358,7 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
                                 const int iFontWidth = fm.width('x');
                                 const int iTotalWidth = 50 * iFontWidth;
                                 const int iFontHeight = fm.height();
-                                const int iTotalHeight = 4 * iFontHeight;
+                                const int iTotalHeight = 8 * iFontHeight;
                                 m_pAccountPropertyTable->setMinimumSize(QSize(iTotalWidth, iTotalHeight));
                                 m_pAccountPropertyTable->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
                                 m_pAccountPropertyTable->setAlternatingRowColors(true);
@@ -368,6 +368,41 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
 
                                 /* Add into layout: */
                                 m_pSettingsLayout2->addWidget(m_pAccountPropertyTable, 1, 1);
+                            }
+
+                            /* Create account label: */
+                            m_pMachineLabel = new QLabel;
+                            if (m_pMachineLabel)
+                            {
+                                m_pMachineLabel->setAlignment(Qt::AlignRight | Qt::AlignTrailing | Qt::AlignVCenter);
+
+                                /* Add into layout: */
+                                m_pSettingsLayout2->addWidget(m_pMachineLabel, 2, 0);
+                            }
+                            /* Create Export Then Ask button: */
+                            m_pRadioExportThenAsk = new QRadioButton;
+                            if (m_pRadioExportThenAsk)
+                            {
+                                m_pRadioExportThenAsk->setEnabled(false);
+
+                                /* Add into layout: */
+                                m_pSettingsLayout2->addWidget(m_pRadioExportThenAsk, 2, 1);
+                            }
+                            /* Create Ask Then Export button: */
+                            m_pRadioAskThenExport = new QRadioButton;
+                            if (m_pRadioAskThenExport)
+                            {
+                                /* Add into layout: */
+                                m_pSettingsLayout2->addWidget(m_pRadioAskThenExport, 3, 1);
+                            }
+                            /* Create Do Not Ask button: */
+                            m_pRadioDoNotAsk = new QRadioButton;
+                            if (m_pRadioDoNotAsk)
+                            {
+                                m_pRadioDoNotAsk->setEnabled(false);
+
+                                /* Add into layout: */
+                                m_pSettingsLayout2->addWidget(m_pRadioDoNotAsk, 4, 1);
                             }
                         }
 
@@ -506,6 +541,12 @@ void UIWizardExportAppPageExpert::retranslateUi()
     /* Translate Account label: */
     m_pAccountLabel->setText(UIWizardExportApp::tr("&Account:"));
 
+    /* Translate option label: */
+    m_pMachineLabel->setText(UIWizardExportApp::tr("Machine Creation:"));
+    m_pRadioExportThenAsk->setText(UIWizardExportApp::tr("Ask me about it &after exporting disk as custom image"));
+    m_pRadioAskThenExport->setText(UIWizardExportApp::tr("Ask me about it &before exporting disk as custom image"));
+    m_pRadioDoNotAsk->setText(UIWizardExportApp::tr("Do &not ask me about it, leave custom image for future usage"));
+
     /* Adjust label widths: */
     QList<QWidget*> labels;
     labels << m_pFormatComboBoxLabel;
@@ -513,6 +554,7 @@ void UIWizardExportAppPageExpert::retranslateUi()
     labels << m_pMACComboBoxLabel;
     labels << m_pAdditionalLabel;
     labels << m_pAccountLabel;
+    labels << m_pMachineLabel;
     int iMaxWidth = 0;
     foreach (QWidget *pLabel, labels)
         iMaxWidth = qMax(iMaxWidth, pLabel->minimumSizeHint().width());
@@ -539,6 +581,9 @@ void UIWizardExportAppPageExpert::initializePage()
 
     /* Translate page: */
     retranslateUi();
+
+    /* Choose default cloud export option: */
+    m_pRadioAskThenExport->setChecked(true);
 }
 
 void UIWizardExportAppPageExpert::cleanupPage()

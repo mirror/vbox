@@ -888,13 +888,6 @@ UIWizardExportAppPageBasic2::UIWizardExportAppPageBasic2(bool fExportToOCIByDefa
                         /* Add into layout: */
                         m_pSettingsLayout2->addWidget(m_pMachineLabel, 2, 0);
                     }
-                    /* Create Ask Then Export button: */
-                    m_pRadioAskThenExport = new QRadioButton;
-                    if (m_pRadioAskThenExport)
-                    {
-                        /* Add into layout: */
-                        m_pSettingsLayout2->addWidget(m_pRadioAskThenExport, 3, 1);
-                    }
                     /* Create Export Then Ask button: */
                     m_pRadioExportThenAsk = new QRadioButton;
                     if (m_pRadioExportThenAsk)
@@ -903,6 +896,13 @@ UIWizardExportAppPageBasic2::UIWizardExportAppPageBasic2(bool fExportToOCIByDefa
 
                         /* Add into layout: */
                         m_pSettingsLayout2->addWidget(m_pRadioExportThenAsk, 2, 1);
+                    }
+                    /* Create Ask Then Export button: */
+                    m_pRadioAskThenExport = new QRadioButton;
+                    if (m_pRadioAskThenExport)
+                    {
+                        /* Add into layout: */
+                        m_pSettingsLayout2->addWidget(m_pRadioAskThenExport, 3, 1);
                     }
                     /* Create Do Not Ask button: */
                     m_pRadioDoNotAsk = new QRadioButton;

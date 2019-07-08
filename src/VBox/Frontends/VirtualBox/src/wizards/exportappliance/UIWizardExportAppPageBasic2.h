@@ -233,10 +233,10 @@ protected:
 
     /** Holds the machine label instance. */
     QLabel       *m_pMachineLabel;
-    /** Holds the ask then export radio button instance. */
-    QRadioButton *m_pRadioAskThenExport;
     /** Holds the export then ask radio button instance. */
     QRadioButton *m_pRadioExportThenAsk;
+    /** Holds the ask then export radio button instance. */
+    QRadioButton *m_pRadioAskThenExport;
     /** Holds the don't ask radio button instance. */
     QRadioButton *m_pRadioDoNotAsk;
 };
