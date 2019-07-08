@@ -15,16 +15,26 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
 #include <map>
 #include <string>
 #include "NetworkServiceRunner.h"
+
 #include <iprt/process.h>
+#include <iprt/path.h>
 #include <iprt/param.h>
 #include <iprt/env.h>
 #include <iprt/log.h>
 #include <iprt/thread.h>
 
 
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
+/** @todo Convert to C strings as this is wastefull:    */
 const std::string NetworkServiceRunner::kNsrKeyName      = "--name";
 const std::string NetworkServiceRunner::kNsrKeyNetwork   = "--network";
 const std::string NetworkServiceRunner::kNsrKeyTrunkType = "--trunk-type";
@@ -34,6 +44,10 @@ const std::string NetworkServiceRunner::kNsrIpAddress    = "--ip-address";
 const std::string NetworkServiceRunner::kNsrIpNetmask    = "--netmask";
 const std::string NetworkServiceRunner::kNsrKeyNeedMain  = "--need-main";
 
+
+/*********************************************************************************************************************************
+*   Structures and Typedefs                                                                                                      *
+*********************************************************************************************************************************/
 struct NetworkServiceRunner::Data
 {
     Data(const char* aProcName)
@@ -43,9 +57,12 @@ struct NetworkServiceRunner::Data
     {}
     const char *mProcName;
     RTPROCESS mProcess;
-    std::map<std::string, std::string> mOptions;
+    std::map<std::string, std::string> mOptions; /**< @todo r=bird: A map for command line option/value pairs? really?
+                                                  * Wouldn't a simple argument list have done it much much more efficiently? */
     bool mKillProcOnStop;
 };
+
+
 
 NetworkServiceRunner::NetworkServiceRunner(const char *aProcName)
 {
@@ -85,41 +102,43 @@ int NetworkServiceRunner::start(bool aKillProcOnStop)
     if (isRunning())
         return VINF_ALREADY_INITIALIZED;
 
-    const char * args[10*2];
+    /*
+     * Construct the path to the executable.  ASSUME it is relative to the
+     * directory that holds VBoxSVC.
+     */
+    char szExePath[RTPATH_MAX];
+    AssertReturn(RTProcGetExecutablePath(szExePath, RTPATH_MAX), VERR_FILENAME_TOO_LONG);
+    RTPathStripFilename(szExePath);
+    int vrc = RTPathAppend(szExePath, sizeof(szExePath), m->mProcName);
+    AssertLogRelRCReturn(vrc, vrc);
 
-    AssertReturn(m->mOptions.size() < 10, VERR_INTERNAL_ERROR);
+    /*
+     * Allocate the argument array and construct the argument vector.
+     */
+    size_t const cArgs     = 1 + m->mOptions.size() * 2 + 1;
+    char const **papszArgs = (char const **)RTMemTmpAllocZ(sizeof(papszArgs[0]) * cArgs);
+    AssertReturn(papszArgs, VERR_NO_TMP_MEMORY);
 
-    /* get the path to the executable */
-    char exePathBuf[RTPATH_MAX];
-    const char *exePath = RTProcGetExecutablePath(exePathBuf, RTPATH_MAX);
-    char *substrSl = strrchr(exePathBuf, '/');
-    char *substrBs = strrchr(exePathBuf, '\\');
-    char *suffix = substrSl ? substrSl : substrBs;
-
-    if (suffix)
+    size_t iArg = 0;
+    papszArgs[iArg++] = szExePath;
+    for (std::map<std::string, std::string>::const_iterator it = m->mOptions.begin(); it != m->mOptions.end(); ++it)
     {
-        suffix++;
-        strcpy(suffix, m->mProcName);
+        papszArgs[iArg++] = it->first.c_str();
+        papszArgs[iArg++] = it->second.c_str();
     }
+    Assert(iArg + 1 == cArgs);
+    Assert(papszArgs[iArg] == NULL);
 
-    int index = 0;
-
-    args[index++] = exePath;
-
-    std::map<std::string, std::string>::const_iterator it;
-    for(it = m->mOptions.begin(); it != m->mOptions.end(); ++it)
-    {
-        args[index++] = it->first.c_str();
-        args[index++] = it->second.c_str();
-    }
-
-    args[index++] = NULL;
-
-    int rc = RTProcCreate(suffix ? exePath : m->mProcName, args, RTENV_DEFAULT, 0, &m->mProcess);
+    /*
+     * Start the process:
+     */
+    int rc = RTProcCreate(szExePath, papszArgs, RTENV_DEFAULT, 0, &m->mProcess);
     if (RT_FAILURE(rc))
         m->mProcess = NIL_RTPROCESS;
 
     m->mKillProcOnStop = aKillProcOnStop;
+
+    RTMemTmpFree(papszArgs);
     return rc;
 }
 

@@ -25,6 +25,7 @@
 #include <iprt/file.h>
 #include <iprt/net.h>
 #include <iprt/path.h>
+#include <iprt/cpp/path.h>
 #include <iprt/cpp/utils.h>
 #include <iprt/cpp/xml.h>
 
@@ -35,6 +36,7 @@
 
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
+/** @todo Convert to C strings as this is wastefull:    */
 const std::string DHCPServerRunner::kDsrKeyGateway = "--gateway";
 const std::string DHCPServerRunner::kDsrKeyLowerIp = "--lower-ip";
 const std::string DHCPServerRunner::kDsrKeyUpperIp = "--upper-ip";
@@ -63,6 +65,7 @@ struct DHCPServer::Data
     settings::VmSlot2OptionsMap VmSlot2Options;
 
     char tempConfigFileName[RTPATH_MAX];
+    com::Utf8Str strLeaseFilename;
     com::Utf8Str networkName;
     com::Utf8Str trunkName;
     com::Utf8Str trunkType;
@@ -664,11 +667,12 @@ DECLINLINE(void) addOptionChild(xml::ElementNode *pParent, uint32_t OptCode, con
 HRESULT DHCPServer::restart()
 {
     if (!m->dhcp.isRunning())
-        return E_FAIL;
+        return setErrorBoth(E_FAIL, VERR_PROCESS_NOT_FOUND, tr("not running"));
+
     /*
-        * Disabled servers will be brought down, but won't be restarted.
-        * (see DHCPServer::start)
-        */
+     * Disabled servers will be brought down, but won't be restarted.
+     * (see DHCPServer::start)
+     */
     HRESULT hrc = stop();
     if (SUCCEEDED(hrc))
         hrc = start(m->networkName, m->trunkName, m->trunkType);
@@ -684,58 +688,63 @@ HRESULT DHCPServer::start(const com::Utf8Str &aNetworkName,
     if (!m->enabled)
         return S_OK;
 
-    /*
+    /**
      * @todo: the existing code cannot handle concurrent attempts to start DHCP server.
      * Note that technically it may receive different parameters from different callers.
      */
     m->networkName = aNetworkName;
-    m->trunkName = aTrunkName;
-    m->trunkType = aTrunkType;
+    m->trunkName   = aTrunkName;
+    m->trunkType   = aTrunkType;
+    HRESULT hrc = i_calcLeaseFilename(aNetworkName);
+    if (FAILED(hrc))
+        return hrc;
 
-    m->dhcp.clearOptions();
+    m->dhcp.clearOptions(); /* (Not DHCP options, but command line options for the service) */
+
 #ifdef VBOX_WITH_DHCPD
+
+    /*
+     * Create configuration file path.
+     */
+    /** @todo put this next to the leases file.   */
     int rc = RTPathTemp(m->tempConfigFileName, sizeof(m->tempConfigFileName));
-    if (RT_FAILURE(rc))
-        return E_FAIL;
-    rc = RTPathAppend(m->tempConfigFileName, sizeof(m->tempConfigFileName), "dhcp-config-XXXXX.xml");
-    if (RT_FAILURE(rc))
-    {
-        m->tempConfigFileName[0] = '\0';
-        return E_FAIL;
-    }
-    rc = RTFileCreateTemp(m->tempConfigFileName, 0600);
+    if (RT_SUCCESS(rc))
+        rc = RTPathAppend(m->tempConfigFileName, sizeof(m->tempConfigFileName), "dhcp-config-XXXXX.xml");
+    if (RT_SUCCESS(rc))
+        rc = RTFileCreateTemp(m->tempConfigFileName, 0600);
     if (RT_FAILURE(rc))
     {
         m->tempConfigFileName[0] = '\0';
         return E_FAIL;
     }
 
+    /*
+     * Produce the DHCP server configuration.
+     */
     xml::Document doc;
     xml::ElementNode *pElmRoot = doc.createRootElement("DHCPServer");
-    pElmRoot->setAttribute("networkName", m->networkName.c_str());
-    if (!m->trunkName.isEmpty())
-        pElmRoot->setAttribute("trunkName", m->trunkName.c_str());
-    pElmRoot->setAttribute("trunkType", m->trunkType.c_str());
-    pElmRoot->setAttribute("IPAddress",  Utf8Str(m->IPAddress).c_str());
-    pElmRoot->setAttribute("networkMask", Utf8Str(m->GlobalDhcpOptions[DhcpOpt_SubnetMask].text).c_str());
-    pElmRoot->setAttribute("lowerIP", Utf8Str(m->lowerIP).c_str());
-    pElmRoot->setAttribute("upperIP", Utf8Str(m->upperIP).c_str());
+    pElmRoot->setAttribute("networkName", m->networkName);
+    if (m->trunkName.isNotEmpty())
+        pElmRoot->setAttribute("trunkName", m->trunkName);
+    pElmRoot->setAttribute("trunkType", m->trunkType);
+    pElmRoot->setAttribute("IPAddress",  m->IPAddress);
+    pElmRoot->setAttribute("networkMask", m->GlobalDhcpOptions[DhcpOpt_SubnetMask].text);
+    pElmRoot->setAttribute("lowerIP", m->lowerIP);
+    pElmRoot->setAttribute("upperIP", m->upperIP);
+    pElmRoot->setAttribute("leaseFilename", m->strLeaseFilename);
 
     /* Process global options */
     xml::ElementNode *pOptions = pElmRoot->createChild("Options");
-    // settings::DhcpOptionMap::const_iterator itGlobal;
-    for (settings::DhcpOptionMap::const_iterator it = m->GlobalDhcpOptions.begin();
-         it != m->GlobalDhcpOptions.end();
-         ++it)
+    for (settings::DhcpOptionMap::const_iterator it = m->GlobalDhcpOptions.begin(); it != m->GlobalDhcpOptions.end(); ++it)
         addOptionChild(pOptions, (*it).first, (*it).second);
 
     /* Process network-adapter-specific options */
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-    HRESULT hrc = S_OK;
+    hrc = S_OK;
     ComPtr<IMachine> machine;
     ComPtr<INetworkAdapter> nic;
     settings::VmSlot2OptionsIterator it;
-    for(it = m->VmSlot2Options.begin(); it != m->VmSlot2Options.end(); ++it)
+    for (it = m->VmSlot2Options.begin(); it != m->VmSlot2Options.end(); ++it)
     {
         alock.release();
         hrc = mVirtualBox->FindMachine(Bstr(it->first.VmName).raw(), machine.asOutParam());
@@ -781,10 +790,11 @@ HRESULT DHCPServer::start(const com::Utf8Str &aNetworkName,
     }
 
     xml::XmlFileWriter writer(doc);
-    writer.write(m->tempConfigFileName, true);
+    writer.write(m->tempConfigFileName, false);
 
-    m->dhcp.setOption(DHCPServerRunner::kDsrKeyConfig, m->tempConfigFileName);
+    m->dhcp.setOption(DHCPServerRunner::kDsrKeyConfig, m->tempConfigFileName);    /* command line options, not dhcp ones. */
     m->dhcp.setOption(DHCPServerRunner::kDsrKeyComment, m->networkName.c_str());
+
 #else /* !VBOX_WITH_DHCPD */
     /* Main is needed for NATNetwork */
     if (m->router)
@@ -832,8 +842,175 @@ HRESULT DHCPServer::stop (void)
 }
 
 
+HRESULT DHCPServer::findLeaseByMAC(const com::Utf8Str &aMac, LONG aType,
+                                    com::Utf8Str &aAddress, com::Utf8Str &aState, LONG64 *aIssued, LONG64 *aExpire)
+{
+    /* Reset output before we start */
+    *aIssued = 0;
+    *aExpire = 0;
+    aAddress.setNull();
+    aState.setNull();
+
+    /*
+     * Convert and check input.
+     */
+    RTMAC MacAddress;
+    int vrc = RTStrConvertHexBytes(aMac.c_str(), &MacAddress, sizeof(MacAddress), RTSTRCONVERTHEXBYTES_F_SEP_COLON);
+    if (vrc != VINF_SUCCESS)
+        return setErrorBoth(E_INVALIDARG, vrc, tr("Invalid MAC address '%s': %Rrc"), aMac.c_str(), vrc);
+    if (aType != 0)
+        return setError(E_INVALIDARG, tr("flags must be zero (not %#x)"), aType);
+
+    /*
+     * Make sure we've got a lease filename to work with.
+     */
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    if (m->strLeaseFilename.isEmpty())
+    {
+        HRESULT hrc = i_calcLeaseFilename(m->networkName.isEmpty() ? mName : m->networkName);
+        if (FAILED(hrc))
+            return hrc;
+    }
+
+    /*
+     * Try at least twice to read the lease database, more if busy.
+     */
+    uint64_t const nsStart = RTTimeNanoTS();
+    for (uint32_t uReadAttempt = 0; ; uReadAttempt++)
+    {
+        /*
+         * Try read the file.
+         */
+        xml::Document doc;
+        try
+        {
+            xml::XmlFileParser parser;
+            parser.read(m->strLeaseFilename.c_str(), doc);
+        }
+        catch (const xml::EIPRTFailure &e)
+        {
+            vrc = e.rc();
+            LogThisFunc(("caught xml::EIPRTFailure: rc=%Rrc (attempt %u, msg=%s)\n", vrc, uReadAttempt, e.what()));
+            if (   (   vrc == VERR_FILE_NOT_FOUND
+                    || vrc == VERR_OPEN_FAILED
+                    || vrc == VERR_ACCESS_DENIED
+                    || vrc == VERR_SHARING_VIOLATION
+                    || vrc == VERR_READ_ERROR /*?*/)
+                && (   uReadAttempt == 0
+                    || (   uReadAttempt < 64
+                        && RTTimeNanoTS() - nsStart < RT_NS_1SEC / 4)) )
+            {
+                alock.release();
+
+                if (uReadAttempt > 0)
+                    RTThreadYield();
+                RTThreadSleep(8/*ms*/);
+
+                alock.acquire();
+                LogThisFunc(("Retrying...\n"));
+                continue;
+            }
+            return setErrorBoth(VBOX_E_FILE_ERROR, vrc, "Reading '%s' failed: %Rrc - %s",
+                                m->strLeaseFilename.c_str(), vrc, e.what());
+        }
+        catch (const RTCError &e)
+        {
+            if (e.what())
+                return setError(VBOX_E_FILE_ERROR, "Reading '%s' failed: %s", m->strLeaseFilename.c_str(), e.what());
+            return setError(VBOX_E_FILE_ERROR, "Reading '%s' failed: RTCError", m->strLeaseFilename.c_str());
+        }
+        catch (std::bad_alloc &)
+        {
+            return E_OUTOFMEMORY;
+        }
+        catch (...)
+        {
+            AssertFailed();
+            return setError(VBOX_E_FILE_ERROR, tr("Reading '%s' failed: Unexpected exception"), m->strLeaseFilename.c_str());
+        }
+
+        /*
+         * Look for that mac address.
+         */
+        xml::ElementNode *pElmRoot = doc.getRootElement();
+        if (pElmRoot && pElmRoot->nameEquals("Leases"))
+        {
+            xml::NodesLoop          it(*pElmRoot);
+            const xml::ElementNode *pElmLease;
+            while ((pElmLease = it.forAllNodes()) != NULL)
+                if (pElmLease->nameEquals("Lease"))
+                {
+                    const char *pszCurMacAddress = pElmLease->findAttributeValue("mac");
+                    RTMAC       CurMacAddress;
+                    if (   pszCurMacAddress
+                        && RT_SUCCESS(RTNetStrToMacAddr(pszCurMacAddress, &CurMacAddress))
+                        && memcmp(&CurMacAddress, &MacAddress, sizeof(MacAddress)) == 0)
+                    {
+                        /*
+                         * Found it!
+                         */
+                        xml::ElementNode const *pElmTime    = pElmLease->findChildElement("Time");
+                        int64_t                 secIssued   = 0;
+                        uint32_t                cSecsToLive = 0;
+                        if (pElmTime)
+                        {
+                            pElmTime->getAttributeValue("issued", &secIssued);
+                            pElmTime->getAttributeValue("expiration", &cSecsToLive);
+                            *aIssued = secIssued;
+                            *aExpire = secIssued + cSecsToLive;
+                        }
+                        try
+                        {
+                            aAddress = pElmLease->findChildElementAttributeValue("Address", "value");
+                            aState   = pElmLease->findAttributeValue("state");
+                        }
+                        catch (std::bad_alloc &)
+                        {
+                            return E_OUTOFMEMORY;
+                        }
+
+                        /* Check if the lease has expired in the mean time. */
+                        HRESULT hrc = S_OK;
+                        RTTIMESPEC Now;
+                        if (   (aState.equals("acked") || aState.equals("offered") || aState.isEmpty())
+                            && secIssued + cSecsToLive < RTTimeSpecGetSeconds(RTTimeNow(&Now)))
+                            hrc = aState.assignNoThrow("expired");
+                        return hrc;
+                    }
+                }
+        }
+        break;
+    }
+
+    return setError(VBOX_E_OBJECT_NOT_FOUND, tr("Could not find a lease for %RTmac"), &MacAddress);
+}
+
+
+/**
+ * Calculates and updates the value of strLeaseFilename given @a aNetwork.
+ */
+HRESULT DHCPServer::i_calcLeaseFilename(const com::Utf8Str &aNetwork)
+{
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    /* The lease file must be the same as we used the last time, so careful when changing this code. */
+    int vrc = m->strLeaseFilename.assignNoThrow(mVirtualBox->i_homeDir());
+    if (RT_SUCCESS(vrc))
+        vrc = RTPathAppendCxx(m->strLeaseFilename, aNetwork);
+    if (RT_SUCCESS(vrc))
+        vrc = m->strLeaseFilename.appendNoThrow("-Dhcpd.leases");
+    if (RT_SUCCESS(vrc))
+    {
+        RTPathPurgeFilename(RTPathFilename(m->strLeaseFilename.mutableRaw()), RTPATH_STR_F_STYLE_HOST);
+        m->strLeaseFilename.jolt();
+        return S_OK;
+    }
+    return setErrorBoth(E_FAIL, vrc, tr("Failed to construct lease filename: %Rrc"), vrc);
+}
+
 settings::DhcpOptionMap &DHCPServer::i_findOptMapByVmNameSlot(const com::Utf8Str &aVmName,
                                                               LONG aSlot)
 {
     return m->VmSlot2Options[settings::VmNameSlotKey(aVmName, aSlot)];
 }
+

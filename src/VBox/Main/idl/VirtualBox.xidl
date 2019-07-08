@@ -1833,7 +1833,7 @@
     name="IDHCPServer" extends="$unknown"
     uuid="ea2d467f-b6c2-4b9a-8eb5-6e2f275dd72e"
     wsmap="managed"
-    reservedMethods="2" reservedAttributes="6"
+    reservedMethods="1" reservedAttributes="6"
     >
     <desc>
       The IDHCPServer interface represents the VirtualBox DHCP server configuration.
@@ -2042,6 +2042,45 @@
         </result>
       </desc>
     </method>
+
+    <method name="findLeaseByMAC">
+      <desc>
+        Queries the persistent lease database by MAC address.
+
+        This is handy if the host wants to connect to a server running inside
+        a VM on a host only network.
+
+        <result name="VBOX_E_OBJECT_NOT_FOUND">If MAC address not in the database.</result>
+        <result name="VBOX_E_FILE_ERROR">If not able to read the lease database file.</result>
+      </desc>
+      <param name="mac" type="wstring" dir="in">
+        <desc>The MAC address to look up.</desc>
+      </param>
+      <param name="type" type="long" dir="in">
+        <desc>Reserved, MBZ.</desc>
+      </param>
+      <param name="address" type="wstring" dir="out">
+        <desc>The assigned address.</desc>
+      </param>
+      <param name="state" type="wstring" dir="out">
+        <desc>The lease state.</desc>
+      </param>
+      <param name="issued" type="long long" dir="out">
+        <desc>Timestamp of when the lease was issued, in seconds since 1970-01-01 UTC.</desc>
+      </param>
+      <param name="expire" type="long long" dir="out">
+        <desc>Timestamp of when the lease expires/expired, in seconds since 1970-01-01 UTC.</desc>
+      </param>
+    </method>
+
+    <!-- @todo Add variant of queryLeaseByMac that goes by VM name and optionally slot. -->
+    <!-- @todo Add min/default/max lease time settings -->
+    <!-- @todo Add lease database attribute (readonly) -->
+    <!-- @todo Add methods for complex group operations, that includes lists of mac address,
+               client ids, vendor/user class ids as selection criteria -->
+    <!-- @todo Add fake DHCP option for assigning fixed IP addresses.  Figure out a way to
+               do it for the host only trunk interface too (possible special group operation). -->
+
   </interface>
 
   <interface
