@@ -44,16 +44,18 @@ int DHCPD::init(const Config *pConfig) RT_NOEXCEPT
     Assert(pConfig);
     AssertReturn(!m_pConfig, VERR_INVALID_STATE);
 
-    /** @todo r=bird: This must be configurable so main can read the database and
-     * fish assignments out of it.  (That's the most efficient and accurate way of
-     * figuring  out the IP address of a VM.) */
-
     /* leases filename */
-    int rc = m_strLeasesFilename.assignNoThrow(pConfig->getHome());
-    if (RT_SUCCESS(rc))
-        rc = RTPathAppendCxx(m_strLeasesFilename, pConfig->getBaseName());
-    if (RT_SUCCESS(rc))
-        rc = m_strLeasesFilename.appendNoThrow("-Dhcpd.leases");
+    int rc;
+    if (pConfig->getLeaseFilename().isEmpty())
+        rc = m_strLeasesFilename.assignNoThrow(pConfig->getLeaseFilename());
+    else
+    {
+        rc = m_strLeasesFilename.assignNoThrow(pConfig->getHome());
+        if (RT_SUCCESS(rc))
+            rc = RTPathAppendCxx(m_strLeasesFilename, pConfig->getBaseName());
+        if (RT_SUCCESS(rc))
+            rc = m_strLeasesFilename.appendNoThrow("-Dhcpd.leases");
+    }
     if (RT_SUCCESS(rc))
     {
         /* Load the lease database, ignoring most issues except being out of memory: */
@@ -321,9 +323,7 @@ DhcpServerMessage *DHCPD::i_doRequest(const DhcpClientMessage &req)
     OptRequestedAddress reqAddr(req);
     if (req.ciaddr().u != 0 && reqAddr.present() && reqAddr.value().u != req.ciaddr().u)
     {
-        std::unique_ptr<DhcpServerMessage> nak (
-            i_createMessage(RTNET_DHCP_MT_NAC, req)
-        );
+        std::unique_ptr<DhcpServerMessage> nak(i_createMessage(RTNET_DHCP_MT_NAC, req));
         nak->addOption(OptMessage("Requested address does not match ciaddr"));
         return nak.release();
     }
@@ -348,6 +348,7 @@ DhcpServerMessage *DHCPD::i_doRequest(const DhcpClientMessage &req)
     optmap_t replyOptions;
     ack->addOptions(m_pConfig->getOptions(replyOptions, optlist, req.clientId()));
 
+    /** @todo r=bird: Sec 9.9 in rfc-2132 indicates the server only sends this in NACKs. Test code? */
     ack->addOption(OptMessage("Ok, ok, here it is"));
 
     ack->maybeUnicast(req);

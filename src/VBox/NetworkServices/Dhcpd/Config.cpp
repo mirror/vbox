@@ -168,20 +168,8 @@ void Config::i_sanitizeBaseName()
     if (m_strNetwork.isNotEmpty())
     {
         m_strBaseName = m_strNetwork;
-
-/** @todo make IPRT function for this.   */
-        char ch;
-#if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
-        static const char s_szIllegals[] = "/\\\"*:<>?|\t\v\n\r\f\a\b"; /** @todo all control chars... */
-        for (char *psz = m_strBaseName.mutableRaw(); (ch = *psz) != '\0'; ++psz)
-            if (strchr(s_szIllegals, ch))
-                *psz = '_';
-#else
-        for (char *psz = m_strBaseName.mutableRaw(); (ch = *psz) != '\0'; ++psz)
-            if (RTPATH_IS_SEP(ch))
-                *psz = '_';
-#endif
-        m_strBaseName.jolt(); /* Not really necessary, but it's protocol. */
+        RTPathPurgeFilename(m_strBaseName.mutableRaw(), RTPATH_STR_F_STYLE_HOST);
+        m_strBaseName.jolt();
     }
     else
         m_strBaseName.setNull();
@@ -259,7 +247,7 @@ int Config::i_complete() RT_NOEXCEPT
     {
         RTUUID Uuid;
         int rc = RTUuidCreate(&Uuid);
-        AssertReturn(rc, rc);
+        AssertRCReturn(rc, rc);
 
         m_MacAddress.au8[0] = 0x08;
         m_MacAddress.au8[1] = 0x00;
@@ -745,6 +733,8 @@ void Config::i_parseServer(const xml::ElementNode *pElmServer)
     }
     else
         m_strTrunk = "";
+
+    m_strLeaseFilename = pElmServer->findAttributeValue("leaseFilename"); /* optional */
 
     i_getIPv4AddrAttribute(pElmServer, "IPAddress", &m_IPv4Address);
     i_getIPv4AddrAttribute(pElmServer, "networkMask", &m_IPv4Netmask);
