@@ -396,7 +396,8 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
     kdStorageCfgs = {
         # Testbox configs
         'testboxstor1.de.oracle.com': storagecfg.DiskCfg('solaris', storagecfg.g_ksDiskCfgRegExp, r'c[3-9]t\dd0\Z'),
-        'testboxstor2.de.oracle.com': storagecfg.DiskCfg('win',     storagecfg.g_ksDiskCfgStatic, 'D:\\StorageTest'),
+        # Windows testbox doesn't return testboxstor2.de.oracle.com from socket.getfqdn()
+        'testboxstor2':               storagecfg.DiskCfg('win',     storagecfg.g_ksDiskCfgStatic, 'D:\\StorageTest'),
 
         # Local test configs for the testcase developer
         'adaris':                     storagecfg.DiskCfg('linux',   storagecfg.g_ksDiskCfgList,   [ '/dev/sda' ]),
