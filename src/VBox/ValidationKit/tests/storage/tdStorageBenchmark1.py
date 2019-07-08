@@ -397,7 +397,8 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
         'testboxstor1.de.oracle.com': storagecfg.DiskCfg('solaris', storagecfg.g_ksDiskCfgRegExp, r'c[3-9]t\dd0\Z'),
         'testboxstor2.de.oracle.com': storagecfg.DiskCfg('win',     storagecfg.g_ksDiskCfgStatic, 'D:'),
         'adaris':                     storagecfg.DiskCfg('linux',   storagecfg.g_ksDiskCfgList,   [ '/dev/sda' ]),
-        'daedalus':                   storagecfg.DiskCfg('darwin',  storagecfg.g_ksDiskCfgStatic, '/Volumes/VirtualBox/Testsuite/StorageScratch'),
+        'daedalus':                   storagecfg.DiskCfg('darwin',  storagecfg.g_ksDiskCfgStatic, \
+                                                         '/Volumes/VirtualBox/Testsuite/StorageScratch')
     };
 
     # Available test sets.
@@ -1163,7 +1164,8 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
                     # Prepare the storage on the guest
                     lstBinaryPaths = ['/bin', '/sbin', '/usr/bin', '/usr/sbin' ];
                     oExecVm = remoteexecutor.RemoteExecutor(oTxsSession, lstBinaryPaths, '${SCRATCH}');
-                    oGstDiskCfg = storagecfg.DiskCfg('linux', storagecfg.g_ksDiskCfgList, self.getGuestDisk(oSession, oTxsSession, eStorageController));
+                    oGstDiskCfg = storagecfg.DiskCfg('linux', storagecfg.g_ksDiskCfgList, \
+                                                     self.getGuestDisk(oSession, oTxsSession, eStorageController));
                     oStorCfgVm = storagecfg.StorageCfg(oExecVm, oGstDiskCfg);
 
                     iTry = 0;

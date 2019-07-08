@@ -286,3 +286,4 @@ class RemoteExecutor(object):
             fRc = self.execBinaryNoStdOut('rm', ('-rf', sDir));
 
         return fRc;
+
