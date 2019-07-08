@@ -26010,7 +26010,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   -->
   <interface
     name="ICloudClient" extends="$unknown"
-    uuid="361276ab-3be4-4a1a-abf2-2993048766c4"
+    uuid="7ec55937-3152-4e06-8192-c3828aadc7ab"
     wsmap="managed" reservedMethods="16" reservedAttributes="8"
     >
 
@@ -26156,13 +26156,11 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <method name="importInstance">
       <desc>
-        Import an existing instance with passed id to the local host.
+        Import an existing cloud instance to the local host.
+        All needed parameters are passed in the description (VSD).
       </desc>
       <param name="description" type="IVirtualSystemDescription" dir="in">
         <desc>VirtualSystemDescription object which is describing a machine and all required parameters.</desc>
-      </param>
-      <param name="uid" type="wstring" dir="in">
-        <desc>the id of instance imported from the Cloud.</desc>
       </param>
       <param name="virtualBox" type="IVirtualBox" dir="in">
         <desc>Reference to the server-side API root object.</desc>
@@ -26280,6 +26278,21 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <param name="image" type="IMedium" dir="in">
         <desc>Reference to the existing VBox image.</desc>
       </param>
+      <param name="virtualBox" type="IVirtualBox" dir="in">
+        <desc>Reference to the server-side API root object.</desc>
+      </param>
+      <param name="parameters" type="wstring" dir="in" safearray="yes">
+        <desc>Each parameter in the array must be in the form "name=value".</desc>
+      </param>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>Progress object to track the operation completion.</desc>
+      </param>
+    </method>
+
+    <method name="importImage">
+      <desc>
+        Import an existing image in the Cloud into the VirtualBox.
+      </desc>
       <param name="virtualBox" type="IVirtualBox" dir="in">
         <desc>Reference to the server-side API root object.</desc>
       </param>

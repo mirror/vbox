@@ -981,16 +981,16 @@ static RTEXITCODE importCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
 
     static const RTGETOPTDEF s_aOptions[] =
     {
-        { "--compartment-id", 'c', RTGETOPT_REQ_STRING },
+        { "--image-id",       'i', RTGETOPT_REQ_STRING },
         { "--bucket-name",    'b', RTGETOPT_REQ_STRING },
-        { "--object-name",    'o', RTGETOPT_REQ_STRING },
-        { "--display-name",   'd', RTGETOPT_REQ_STRING }
+        { "--object-name",    'o', RTGETOPT_REQ_STRING }
     };
     RTGETOPTSTATE GetState;
     RTGETOPTUNION ValueUnion;
     int vrc = RTGetOptInit(&GetState, a->argc, a->argv, s_aOptions, RT_ELEMENTS(s_aOptions), iFirst, 0);
     AssertRCReturn(vrc, RTEXITCODE_FAILURE);
 
+    Utf8Str strImageId;
     Utf8Str strCompartmentId;
     Utf8Str strBucketName;
     Utf8Str strObjectName;
@@ -1002,9 +1002,9 @@ static RTEXITCODE importCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
     {
         switch (c)
         {
-            case 'c':
-                strCompartmentId=ValueUnion.psz;
-                Bstr(Utf8Str("compartment-id=").append(ValueUnion.psz)).detachTo(parameters.appendedRaw());
+            case 'i':
+                strImageId=ValueUnion.psz;
+                Bstr(Utf8Str("image-id=").append(ValueUnion.psz)).detachTo(parameters.appendedRaw());
                 break;
             case 'b':
                 strBucketName=ValueUnion.psz;
@@ -1013,10 +1013,6 @@ static RTEXITCODE importCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
             case 'o':
                 strObjectName=ValueUnion.psz;
                 Bstr(Utf8Str("object-name=").append(ValueUnion.psz)).detachTo(parameters.appendedRaw());
-                break;
-            case 'd':
-                strDisplayName=ValueUnion.psz;
-                Bstr(Utf8Str("display-name=").append(ValueUnion.psz)).detachTo(parameters.appendedRaw());
                 break;
             case VINF_GETOPT_NOT_OPTION:
                 return errorUnknownSubcommand(ValueUnion.psz);
@@ -1029,21 +1025,27 @@ static RTEXITCODE importCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
     ComPtr<ICloudProfile> pCloudProfile = pCommonOpts->profile.pCloudProfile;
     pCloudProfile->COMGETTER(Name)(bstrProfileName.asOutParam());
 
+    ComPtr<IVirtualBox> pVirtualBox = a->virtualBox;
+    Bstr bstrImageId;
     ComObjPtr<ICloudClient> oCloudClient;
     CHECK_ERROR2_RET(hrc, pCloudProfile,
                      CreateCloudClient(oCloudClient.asOutParam()),
                      RTEXITCODE_FAILURE);
-    RTPrintf("Creating cloud image \'%s\' from an object \'%s\'...\n", strDisplayName.c_str(), strObjectName.c_str());
+    RTPrintf("Creating an object \'%s\' from the cloud image \'%s\'...\n", strObjectName.c_str(), strImageId.c_str());
 
     ComPtr<IProgress> progress;
     CHECK_ERROR2_RET(hrc, oCloudClient,
-                     CreateImage(ComSafeArrayAsInParam(parameters), progress.asOutParam()),
+                     ImportImage(pVirtualBox, ComSafeArrayAsInParam(parameters), progress.asOutParam()),
                      RTEXITCODE_FAILURE);
     hrc = showProgress(progress);
-    CHECK_PROGRESS_ERROR_RET(progress, ("Cloud image creation failed"), RTEXITCODE_FAILURE);
+    CHECK_PROGRESS_ERROR_RET(progress, ("Cloud image import failed"), RTEXITCODE_FAILURE);
 
     if (SUCCEEDED(hrc))
-        RTPrintf("Cloud image was created successfully\n");
+    {
+        RTPrintf("Cloud image was imported successfully. Find the downloaded object with the name %s "
+                 "in the system temp folder (find the possible environment variables like TEMP, TMP and etc.)\n",
+                 strObjectName.c_str());
+    }
 
     return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
