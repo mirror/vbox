@@ -2307,7 +2307,7 @@ HRESULT Appliance::i_exportCloudImpl(TaskCloud *pTask)
     if (m->virtualSystemDescriptions.size() == 1)
     {
         ComPtr<IVirtualBox> VBox(mVirtualBox);
-        hrc = cloudClient->ExportLaunchVM(m->virtualSystemDescriptions.front(), pTask->pProgress, VBox);
+        hrc = cloudClient->ExportVM(m->virtualSystemDescriptions.front(), pTask->pProgress, VBox);
     }
     else
         hrc = setErrorVrc(VERR_MISMATCH, tr("Export to Cloud isn't supported for more than one VM instance."));
