@@ -153,6 +153,14 @@
                                                               ("fExtrn=%#RX64 fExtrnMbz=%#RX64\n", \
                                                               (a_pVCpu)->cpum.GstCtx.fExtrn, (a_fExtrnMbz)))
 
+/** Log the VM-exit reason with an easily visible marker to identify it in a
+ *  potential sea of logging data. */
+#define HMVMX_LOG_EXIT(a_pVCpu, a_uExitReason) \
+    do { \
+        Log4(("VM-exit: vcpu[%RU32] reason=%#x -v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v\n", \
+             (a_pVCpu)->idCpu, (a_uExitReason))); \
+    } while (0) \
+
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
@@ -5389,7 +5397,7 @@ static int hmR0VmxExportGuestRflags(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
          *        nested-guest VMCS. */
 
         ASMAtomicUoAndU64(&pVCpu->hm.s.fCtxChanged, ~HM_CHANGED_GUEST_RFLAGS);
-        Log4Func(("EFlags=%#RX32\n", fEFlags.u32));
+        Log4Func(("eflags=%#RX32\n", fEFlags.u32));
     }
     return VINF_SUCCESS;
 }
@@ -9416,6 +9424,12 @@ static VBOXSTRICTRC hmR0VmxInjectEventVmcs(PVMCPU pVCpu, PVMXTRANSIENT pVmxTrans
                  */
                 pVCpu->hm.s.Event.fPending = false;
 
+                /*
+                 * If we eventually support nested-guest execution without unrestricted guest execution,
+                 * we should clear fInterceptEvents here.
+                 */
+                Assert(!pVmxTransient->fIsNestedGuest);
+
                 /* If we're stepping and we've changed cs:rip above, bail out of the VMX R0 execution loop. */
                 if (fStepping)
                     rcStrict = VINF_EM_DBG_STEPPED;
@@ -9637,13 +9651,6 @@ static VBOXSTRICTRC hmR0VmxInjectPendingEvent(PVMCPU pVCpu, PVMXTRANSIENT pVmxTr
          */
         rcStrict = hmR0VmxInjectEventVmcs(pVCpu, pVmxTransient, &pVCpu->hm.s.Event, fStepping, &fIntrState);
         AssertRCReturn(VBOXSTRICTRC_VAL(rcStrict), rcStrict);
-
-        /*
-         * If we are executing a nested-guest make sure that we should intercept subsequent
-         * events. The one we are injecting might be part of VM-entry.
-         */
-        if (pVmxTransient->fIsNestedGuest)
-            pVCpu->cpum.GstCtx.hwvirt.vmx.fInterceptEvents = true;
 
         if (uIntType == VMX_ENTRY_INT_INFO_TYPE_EXT_INT)
             STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectInterrupt);
@@ -11252,6 +11259,15 @@ static VBOXSTRICTRC hmR0VmxPreRunGuest(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient
         {
             pVCpu->hm.s.Event.fPending = false;
 
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+            /*
+             * If we are executing a nested-guest make sure that we should intercept subsequent
+             * events. The one we are injecting might be part of VM-entry.
+             */
+            if (pVmxTransient->fIsNestedGuest)
+                pVCpu->cpum.GstCtx.hwvirt.vmx.fInterceptEvents = true;
+#endif
+
             /*
              * We've injected any pending events. This is really the point of no return (to ring-3).
              *
@@ -11507,6 +11523,12 @@ static void hmR0VmxPostRunGuest(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient, int r
     AssertRC(rc);
     pVmxTransient->uExitReason    = VMX_EXIT_REASON_BASIC(uExitReason);
     pVmxTransient->fVMEntryFailed = VMX_EXIT_REASON_HAS_ENTRY_FAILED(uExitReason);
+
+    /*
+     * Log the VM-exit before logging anything else as otherwise it might be a
+     * tad confusing what happens before and after the world-switch.
+     */
+    HMVMX_LOG_EXIT(pVCpu, uExitReason);
 
     /*
      * Remove the TSC_AUX MSR from the auto-load/store MSR area and reset any MSR
@@ -13522,7 +13544,7 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExitNested(PVMCPU pVCpu, PVMXTRANSIENT pVm
         Assert(ASMIntAreEnabled()); \
         HMVMX_ASSERT_PREEMPT_SAFE(a_pVCpu); \
         HMVMX_ASSERT_PREEMPT_CPUID_VAR(); \
-        Log4Func(("vcpu[%RU32] -v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v\n", (a_pVCpu)->idCpu)); \
+        Log4Func(("vcpu[%RU32]\n", (a_pVCpu)->idCpu)); \
         HMVMX_ASSERT_PREEMPT_SAFE(a_pVCpu); \
         if (VMMR0IsLogFlushDisabled((a_pVCpu))) \
             HMVMX_ASSERT_PREEMPT_CPUID(); \
@@ -16337,8 +16359,10 @@ HMVMX_EXIT_DECL hmR0VmxExitEptMisconfig(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransien
     VBOXSTRICTRC rcStrict1 = hmR0VmxCheckExitDueToEventDelivery(pVCpu, pVmxTransient);
     if (RT_LIKELY(rcStrict1 == VINF_SUCCESS))
     {
-        /* If event delivery causes an EPT misconfig (MMIO), go back to instruction emulation as otherwise
-           injecting the original pending event would most likely cause the same EPT misconfig VM-exit. */
+        /*
+         * If event delivery causes an EPT misconfig (MMIO), go back to instruction emulation. Otherwise,
+         * injecting the original event would most likely cause the same EPT misconfig VM-exit again.
+         */
         if (RT_UNLIKELY(pVCpu->hm.s.Event.fPending))
         {
             STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectPendingInterpret);
@@ -17209,9 +17233,9 @@ HMVMX_EXIT_DECL hmR0VmxExitMovCRxNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransien
             if (   iCrReg == 3
                 || iCrReg == 8)
             {
-                static const uint32_t s_aCrXReadIntercepts[] = { 0, 0, 0, VMX_PROC_CTLS_CR3_STORE_EXIT, 0,
-                                                                 0, 0, 0, VMX_PROC_CTLS_CR8_STORE_EXIT };
-                uint32_t const uIntercept = s_aCrXReadIntercepts[iCrReg];
+                static const uint32_t s_auCrXReadIntercepts[] = { 0, 0, 0, VMX_PROC_CTLS_CR3_STORE_EXIT, 0,
+                                                                  0, 0, 0, VMX_PROC_CTLS_CR8_STORE_EXIT };
+                uint32_t const uIntercept = s_auCrXReadIntercepts[iCrReg];
                 if (CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, uIntercept))
                 {
                     VMXVEXITINFO ExitInfo;
