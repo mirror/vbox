@@ -25,6 +25,12 @@
 #include "UIFormEditorWidget.h"
 #include "UIWizardPage.h"
 
+/* COM includes: */
+#include "COMEnums.h"
+#include "CCloudClient.h"
+#include "CVirtualSystemDescription.h"
+#include "CVirtualSystemDescriptionForm.h"
+
 /* Forward declarations: */
 class QIRichTextLabel;
 
@@ -39,6 +45,10 @@ protected:
     /** Refreshes form properties table. */
     void refreshFormPropertiesTable();
 
+    /** Returns Cloud Client object. */
+    CCloudClient client() const;
+    /** Returns Virtual System Description object. */
+    CVirtualSystemDescription vsd() const;
     /** Returns Virtual System Description Form object. */
     CVirtualSystemDescriptionForm vsdForm() const;
 
@@ -71,6 +81,9 @@ protected:
 
     /** Performs page initialization. */
     virtual void initializePage() /* override */;
+
+    /** Returns whether page is complete. */
+    virtual bool isComplete() const /* override */;
 
     /** Performs page validation. */
     virtual bool validatePage() /* override */;

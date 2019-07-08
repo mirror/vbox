@@ -251,9 +251,8 @@ bool UIWizardNewCloudVMPageExpert::isComplete() const
     bool fResult = true;
 
     /* Check cloud settings: */
-    fResult =    client().isNotNull()
-              && !imageId().isNull()
-              && vsd().isNotNull()
+    fResult =    UIWizardNewCloudVMPage1::client().isNotNull()
+              && UIWizardNewCloudVMPage1::vsd().isNotNull()
               && UIWizardNewCloudVMPage1::vsdForm().isNotNull();
 
     /* Return result: */

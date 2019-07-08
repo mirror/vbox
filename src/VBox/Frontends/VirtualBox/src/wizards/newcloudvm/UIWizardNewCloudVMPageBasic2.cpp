@@ -45,6 +45,16 @@ void UIWizardNewCloudVMPage2::refreshFormPropertiesTable()
         m_pFormEditor->setVirtualSystemDescriptionForm(comForm);
 }
 
+CCloudClient UIWizardNewCloudVMPage2::client() const
+{
+    return qobject_cast<UIWizardNewCloudVM*>(wizardImp())->client();
+}
+
+CVirtualSystemDescription UIWizardNewCloudVMPage2::vsd() const
+{
+    return qobject_cast<UIWizardNewCloudVM*>(wizardImp())->vsd();
+}
+
 CVirtualSystemDescriptionForm UIWizardNewCloudVMPage2::vsdForm() const
 {
     return qobject_cast<UIWizardNewCloudVM*>(wizardImp())->vsdForm();
@@ -110,6 +120,20 @@ void UIWizardNewCloudVMPageBasic2::initializePage()
 
     /* Translate page: */
     retranslateUi();
+}
+
+bool UIWizardNewCloudVMPageBasic2::isComplete() const
+{
+    /* Initial result: */
+    bool fResult = true;
+
+    /* Check cloud settings: */
+    fResult =    client().isNotNull()
+              && vsd().isNotNull()
+              && vsdForm().isNotNull();
+
+    /* Return result: */
+    return fResult;
 }
 
 bool UIWizardNewCloudVMPageBasic2::validatePage()
