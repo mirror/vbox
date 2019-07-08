@@ -14088,10 +14088,11 @@ DECLINLINE(VBOXSTRICTRC) iemExecOneInner(PVMCPU pVCpu, bool fExecuteInhibit, con
          * See Intel spec. 26.7.6 "NMI-Window Exiting".
          * See Intel spec. 26.7.5 "Interrupt-Window Exiting and Virtual-Interrupt Delivery".
          */
-        if (    fCheckRemainingIntercepts
-            &&  pVCpu->cpum.GstCtx.hwvirt.vmx.fInterceptEvents
+        if (   fCheckRemainingIntercepts
+            && !TRPMHasTrap(pVCpu)
             && !VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
         {
+            Assert(pVCpu->cpum.GstCtx.hwvirt.vmx.fInterceptEvents);
             if (   VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_NMI_WINDOW)
                 && CPUMIsGuestVmxVirtNmiBlocking(pVCpu, &pVCpu->cpum.GstCtx))
             {
