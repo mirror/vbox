@@ -283,7 +283,10 @@ class RemoteExecutor(object):
         if self.oTxsSession is not None:
             fRc = self.oTxsSession.syncRmTree(sDir, cMsTimeout);
         else:
-            fRc = self.execBinaryNoStdOut('rm', ('-rf', sDir));
+            try:
+                shutil.rmtree(sDir, ignore_errors=True);
+            except:
+                fRc = False;
 
         return fRc;
 

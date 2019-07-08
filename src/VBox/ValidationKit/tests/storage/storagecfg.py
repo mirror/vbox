@@ -460,7 +460,7 @@ class StorageCfg(object):
             oStorOs = StorageConfigOsSolaris();
         elif oDiskCfg.getTargetOs() == 'linux':
             oStorOs = StorageConfigOsLinux(); # pylint: disable=redefined-variable-type
-        elif not oDiskCfg.isCfgStaticDir(): # For unknown hosts we only a static testing directory we don't care about setting up.
+        elif not oDiskCfg.isCfgStaticDir(): # For unknown hosts we only allow a static testing directory we don't care about setting up.
             fRc = False;
 
         if fRc:
@@ -471,9 +471,13 @@ class StorageCfg(object):
                 # Assume a list of of disks and add.
                 for sDisk in oDiskCfg.getDisks():
                     self.lstDisks.append(StorageDisk(sDisk));
+            elif oDiskCfg.isCfgStaticDir():
+            	if not os.path.exists(oDiskCfg.getDisks()):
+            		self.oExec.mkDir(oDiskCfg.getDisks(), 0o700);
 
     def __del__(self):
         self.cleanup();
+        self.oDiskCfg = None;
 
     def cleanup(self):
         """
@@ -491,7 +495,6 @@ class StorageCfg(object):
 
         self.dVols.clear();
         self.dPools.clear();
-        self.oDiskCfg = None;
         self.iPoolId  = 0;
         self.iVolId   = 0;
 
@@ -653,7 +656,8 @@ class StorageCfg(object):
             return self.oStorOs.cleanupPoolsAndVolumes(self.oExec, 'pool', 'vol');
 
         fRc = True;
-        for sEntry in os.listdir(self.oDiskCfg.getDisks()):
-            fRc = fRc and self.oExec.rmTree(os.path.join(self.oDiskCfg.getDisks(), sEntry));
+        if os.path.exists(self.oDiskCfg.getDisks()):
+            for sEntry in os.listdir(self.oDiskCfg.getDisks()):
+                fRc = fRc and self.oExec.rmTree(os.path.join(self.oDiskCfg.getDisks(), sEntry));
 
         return fRc;

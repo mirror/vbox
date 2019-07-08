@@ -394,11 +394,16 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
 
     # Global storage configs for the testbox
     kdStorageCfgs = {
+        # Testbox configs
         'testboxstor1.de.oracle.com': storagecfg.DiskCfg('solaris', storagecfg.g_ksDiskCfgRegExp, r'c[3-9]t\dd0\Z'),
-        'testboxstor2.de.oracle.com': storagecfg.DiskCfg('win',     storagecfg.g_ksDiskCfgStatic, 'D:'),
+        'testboxstor2.de.oracle.com': storagecfg.DiskCfg('win',     storagecfg.g_ksDiskCfgStatic, 'D:\\StorageTest'),
+
+        # Local test configs for the testcase developer
         'adaris':                     storagecfg.DiskCfg('linux',   storagecfg.g_ksDiskCfgList,   [ '/dev/sda' ]),
         'daedalus':                   storagecfg.DiskCfg('darwin',  storagecfg.g_ksDiskCfgStatic, \
-                                                         '/Volumes/VirtualBox/Testsuite/StorageScratch')
+                                                         '/Volumes/VirtualBox/Testsuite/StorageScratch'),
+        'windows10':                  storagecfg.DiskCfg('win',  storagecfg.g_ksDiskCfgStatic, \
+                                                         'L:\\Testsuite\\StorageTest'),
     };
 
     # Available test sets.
