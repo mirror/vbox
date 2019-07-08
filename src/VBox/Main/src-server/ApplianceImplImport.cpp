@@ -1476,9 +1476,44 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
         return hrc;
     }
 
+
+    HRESULT original_hrc = hrc;//save the original result
+
+    /* In any case we delete the cloud leavings which may exist after the first phase (cloud phase).
+     * Should they be deleted in the OCICloudClient::importInstance()?
+     * Because deleting them here is not easy as it in the importInstance(). */
+    {
+        GET_VSD_DESCRIPTION_BY_TYPE(VirtualSystemDescriptionType_CloudInstanceId)//aVBoxValues is set in this #define
+        if (aVBoxValues.size() == 0)
+            hrc = setErrorVrc(VERR_NOT_FOUND, tr("%s: Cloud cleanup action - the instance wasn't found", __FUNCTION__));
+        else
+        {
+            vsdData = aVBoxValues[0];
+
+            /** @todo
+             *  future function which will eliminate the temporary objects created during the first phase.
+             *  hrc = cloud.EliminateImportLeavings(aVBoxValues[0], pProgress); */
+            if (FAILED(hrc))
+            {
+                hrc = setErrorVrc(VERR_INVALID_STATE, tr("Some leavings may exist in the Cloud."));
+                LogRel(("%s: Cleanup action - the leavings in the %s after import the "
+                        "instance %s may not have been deleted\n",
+                        __FUNCTION__, strProviderName.c_str(), vsdData.c_str()));
+            }
+            else
+                LogRel(("%s: Cleanup action - the leavings in the %s after import the "
+                        "instance %s have been deleted\n",
+                        __FUNCTION__, strProviderName.c_str(), vsdData.c_str()));
+        }
+
+        /* Because during the cleanup phase the hrc may have the good result
+         * Thus we restore the original error in the case when the cleanup phase was successful
+         * Otherwise we return not the original error but the last error in the cleanup phase */
+         hrc = original_hrc;
+    }
+
     if (FAILED(hrc))
     {
-        HRESULT temp_hrc = hrc;//save the original result
         Utf8Str generalRollBackErrorMessage("Rollback action for Import Cloud operation failed."
                                             "Some leavings may exist on the local disk or in the Cloud.");
         /*
@@ -1489,9 +1524,6 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
          * 3. More than 1 VirtualSystemDescription is presented in the list m->virtualSystemDescriptions.
          * Maximum what we have there are:
          * 1. The downloaded object, so just check the presence and delete it if one exists
-         * 2. Some leftovers in the Cloud. Also delete them too if it's possible.
-         *    Should they be deleted in the OCICloudClient::importInstance()?
-         *    Because deleting them here is not easy as it in the importInstance().
          */
 
         {
@@ -1522,36 +1554,10 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
             }
         }
 
-        {
-            GET_VSD_DESCRIPTION_BY_TYPE(VirtualSystemDescriptionType_CloudInstanceId)//aVBoxValues is set in this #define
-            if (aVBoxValues.size() == 0)
-                hrc = setErrorVrc(VERR_NOT_FOUND, generalRollBackErrorMessage.c_str());
-            else
-            {
-                vsdData = aVBoxValues[0];
-
-                /** @todo
-                 *  future function which will eliminate the temporary objects created during the first phase.
-                 *  hrc = cloud.EliminateImportLeavings(aVBoxValues[0], pProgress); */
-                if (FAILED(hrc))
-                {
-                    hrc = setErrorVrc(VERR_INVALID_STATE, generalRollBackErrorMessage.c_str());
-                    LogRel(("%s: Rollback action - the leavings in the %s after import the "
-                            "instance %s may not have been deleted\n",
-                            __FUNCTION__, strProviderName.c_str(), vsdData.c_str()));
-                }
-                else
-                    LogRel(("%s: Rollback action - the leavings in the %s after import the "
-                            "instance %s have been deleted\n",
-                            __FUNCTION__, strProviderName.c_str(), vsdData.c_str()));
-            }
-        }
-
         /* Because during the rollback phase the hrc may have the good result
          * Thus we restore the original error in the case when the rollback phase was successful
          * Otherwise we return not the original error but the last error in the rollback phase */
-        if (SUCCEEDED(hrc))
-            hrc = setError(temp_hrc, strLastActualErrorDesc.c_str());//restore the original result
+         hrc = original_hrc;
     }
     else
     {
@@ -2035,6 +2041,7 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
             }
         }
 
+        hrc = E_FAIL;
         if (FAILED(hrc))
         {
             /* What to do here?
