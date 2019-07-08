@@ -70,12 +70,6 @@ const int iMessageTimeout = 3000;
 const int iCapsLockPosition = 30;
 const int iNumLockPosition = 90;
 const int iScrollLockPosition = 125;
-const int iLeftShiftPosition = 44;
-const int iRightShiftPosition = 57;
-const int iLeftCtrlPosition = 58;
-const int iRightCtrlPosition = 64;
-const int iAltPosition = 60;
-const int iAltGrPosition = 62;
 
 
 const QString strSubDirectorName("keyboardLayouts");
