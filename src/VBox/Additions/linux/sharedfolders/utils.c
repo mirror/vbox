@@ -806,7 +806,7 @@ int vbsf_inode_setattr(struct dentry *dentry, struct iattr *iattr)
      * from futimes() when asked to preserve times, see ticketref:18569.
      */
     iattr->ia_valid |= ATTR_FORCE;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0)
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 39) && LINUX_VERSION_CODE < KERNEL_VERSION(3, 17, 0)) || LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0)
     rc = setattr_prepare(dentry, iattr);
 #else
     rc = inode_change_ok(pInode, iattr);
