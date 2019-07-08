@@ -275,3 +275,14 @@ class RemoteExecutor(object):
 
         return fRc;
 
+    def rmTree(self, sDir, cMsTimeout = 30000):
+        """
+        Recursively removes all files and sub directories including the given directory.
+        """
+        fRc = True;
+        if self.oTxsSession is not None:
+            fRc = self.oTxsSession.syncRmTree(sDir, cMsTimeout);
+        else:
+            fRc = self.execBinaryNoStdOut('rm', ('-rf', sDir));
+
+        return fRc;

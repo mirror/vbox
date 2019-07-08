@@ -408,35 +408,71 @@ class StorageConfigOsLinux(StorageConfigOs):
         """
         return oExec.execBinaryNoStdOut('zramctl', ('-r', oDisk.getPath()));
 
+## @name Host disk config types.
+## @{
+g_ksDiskCfgStatic = 'StaticDir';
+g_ksDiskCfgRegExp = 'RegExp';
+g_ksDiskCfgList   = 'DiskList';
+## @}
+
+class DiskCfg(object):
+    """
+    Host disk configuration.
+    """
+
+    def __init__(self, sTargetOs, sCfgType, oDisks):
+        self.sTargetOs = sTargetOs;
+        self.sCfgType  = sCfgType;
+        self.oDisks    = oDisks;
+
+    def getTargetOs(self):
+        return self.sTargetOs;
+
+    def getCfgType(self):
+        return self.sCfgType;
+
+    def isCfgStaticDir(self):
+        return self.sCfgType == g_ksDiskCfgStatic;
+
+    def isCfgRegExp(self):
+        return self.sCfgType == g_ksDiskCfgRegExp;
+
+    def isCfgList(self):
+        return self.sCfgType == g_ksDiskCfgList;
+
+    def getDisks(self):
+        return self.oDisks;
+
 class StorageCfg(object):
     """
     Storage configuration helper class taking care of the different host OS.
     """
 
-    def __init__(self, oExec, sTargetOs, oDiskCfg):
+    def __init__(self, oExec, oDiskCfg):
         self.oExec    = oExec;
         self.lstDisks = [ ]; # List of disks present in the system.
         self.dPools   = { }; # Dictionary of storage pools.
         self.dVols    = { }; # Dictionary of volumes.
         self.iPoolId  = 0;
         self.iVolId   = 0;
+        self.oDiskCfg = oDiskCfg;
 
         fRc = True;
         oStorOs = None;
-        if sTargetOs == 'solaris':
+        if oDiskCfg.getTargetOs() == 'solaris':
             oStorOs = StorageConfigOsSolaris();
-        elif sTargetOs == 'linux':
+        elif oDiskCfg.getTargetOs() == 'linux':
             oStorOs = StorageConfigOsLinux(); # pylint: disable=redefined-variable-type
-        else:
+        elif not oDiskCfg.isCfgStaticDir(): # For unknown hosts we only a static testing directory we don't care about setting up.
             fRc = False;
 
         if fRc:
             self.oStorOs = oStorOs;
-            if utils.isString(oDiskCfg):
-                self.lstDisks = oStorOs.getDisksMatchingRegExp(oDiskCfg);
-            else:
+            if oDiskCfg.isCfgRegExp():
+                self.lstDisks = oStorOs.getDisksMatchingRegExp(oDiskCfg.getDisks());
+            elif oDiskCfg.isCfgList():
                 # Assume a list of of disks and add.
-                for sDisk in oDiskCfg:
+                for sDisk in oDiskCfg.getDisks():
                     self.lstDisks.append(StorageDisk(sDisk));
 
     def __del__(self):
@@ -447,23 +483,26 @@ class StorageCfg(object):
         Cleans up any created storage configs.
         """
 
-        # Destroy all volumes first.
-        for sMountPoint in self.dVols.keys(): # pylint: disable=consider-iterating-dictionary
-            self.destroyVolume(sMountPoint);
+        if not self.oDiskCfg.isCfgStaticDir():
+            # Destroy all volumes first.
+            for sMountPoint in self.dVols.keys(): # pylint: disable=consider-iterating-dictionary
+                self.destroyVolume(sMountPoint);
 
-        # Destroy all pools.
-        for sPool in self.dPools.keys(): # pylint: disable=consider-iterating-dictionary
-            self.destroyStoragePool(sPool);
+            # Destroy all pools.
+            for sPool in self.dPools.keys(): # pylint: disable=consider-iterating-dictionary
+                self.destroyStoragePool(sPool);
 
         self.dVols.clear();
         self.dPools.clear();
-        self.iPoolId = 0;
-        self.iVolId  = 0;
+        self.oDiskCfg = None;
+        self.iPoolId  = 0;
+        self.iVolId   = 0;
 
     def getRawDisk(self):
         """
         Returns a raw disk device from the list of free devices for use.
         """
+
         for oDisk in self.lstDisks:
             if oDisk.isUsed() is False:
                 oDisk.setUsed(True);
@@ -492,47 +531,50 @@ class StorageCfg(object):
         fRc = True;
         sPool = None;
 
-        if fRamDisk:
-            oDisk = self.oStorOs.createRamDisk(self.oExec, cbPool);
-            if oDisk is not None:
-                lstDisks.append(oDisk);
-                cDisks = 1;
-        else:
-            if cDisks == 0:
-                cDisks = self.getUnusedDiskCount();
-
-            for oDisk in self.lstDisks:
-                if not oDisk.isUsed():
-                    oDisk.setUsed(True);
+        if not self.oDiskCfg.isCfgStaticDir():
+            if fRamDisk:
+                oDisk = self.oStorOs.createRamDisk(self.oExec, cbPool);
+                if oDisk is not None:
                     lstDisks.append(oDisk);
-                    if len(lstDisks) == cDisks:
-                        break;
-
-        # Enough drives to satisfy the request?
-        if len(lstDisks) == cDisks:
-            # Create a list of all device paths
-            lstDiskPaths = [ ];
-            for oDisk in lstDisks:
-                lstDiskPaths.append(oDisk.getPath());
-
-            # Find a name for the pool
-            sPool = 'pool' + str(self.iPoolId);
-            self.iPoolId += 1;
-
-            fRc = self.oStorOs.createStoragePool(self.oExec, sPool, lstDiskPaths, sRaidLvl);
-            if fRc:
-                self.dPools[sPool] = lstDisks;
+                    cDisks = 1;
             else:
-                self.iPoolId -= 1;
-        else:
-            fRc = False;
+                if cDisks == 0:
+                    cDisks = self.getUnusedDiskCount();
 
-        # Cleanup in case of error.
-        if not fRc:
-            for oDisk in lstDisks:
-                oDisk.setUsed(False);
-                if oDisk.isRamDisk():
-                    self.oStorOs.destroyRamDisk(self.oExec, oDisk);
+                for oDisk in self.lstDisks:
+                    if not oDisk.isUsed():
+                        oDisk.setUsed(True);
+                        lstDisks.append(oDisk);
+                        if len(lstDisks) == cDisks:
+                            break;
+
+            # Enough drives to satisfy the request?
+            if len(lstDisks) == cDisks:
+                # Create a list of all device paths
+                lstDiskPaths = [ ];
+                for oDisk in lstDisks:
+                    lstDiskPaths.append(oDisk.getPath());
+
+                # Find a name for the pool
+                sPool = 'pool' + str(self.iPoolId);
+                self.iPoolId += 1;
+
+                fRc = self.oStorOs.createStoragePool(self.oExec, sPool, lstDiskPaths, sRaidLvl);
+                if fRc:
+                    self.dPools[sPool] = lstDisks;
+                else:
+                    self.iPoolId -= 1;
+            else:
+                fRc = False;
+
+            # Cleanup in case of error.
+            if not fRc:
+                for oDisk in lstDisks:
+                    oDisk.setUsed(False);
+                    if oDisk.isRamDisk():
+                        self.oStorOs.destroyRamDisk(self.oExec, oDisk);
+        else:
+            sPool = 'StaticDummy';
 
         return fRc, sPool;
 
@@ -541,18 +583,21 @@ class StorageCfg(object):
         Destroys the storage pool with the given ID.
         """
 
-        lstDisks = self.dPools.get(sPool);
-        if lstDisks is not None:
-            fRc = self.oStorOs.destroyPool(self.oExec, sPool);
-            if fRc:
-                # Mark disks as unused
-                self.dPools.pop(sPool);
-                for oDisk in lstDisks:
-                    oDisk.setUsed(False);
-                    if oDisk.isRamDisk():
-                        self.oStorOs.destroyRamDisk(self.oExec, oDisk);
-        else:
-            fRc = False;
+        fRc = True;
+
+        if not self.oDiskCfg.isCfgStaticDir():
+            lstDisks = self.dPools.get(sPool);
+            if lstDisks is not None:
+                fRc = self.oStorOs.destroyPool(self.oExec, sPool);
+                if fRc:
+                    # Mark disks as unused
+                    self.dPools.pop(sPool);
+                    for oDisk in lstDisks:
+                        oDisk.setUsed(False);
+                        if oDisk.isRamDisk():
+                            self.oStorOs.destroyRamDisk(self.oExec, oDisk);
+            else:
+                fRc = False;
 
         return fRc;
 
@@ -563,17 +608,20 @@ class StorageCfg(object):
 
         fRc = True;
         sMountPoint = None;
-        if sPool in self.dPools:
-            sVol = 'vol' + str(self.iVolId);
-            sMountPoint = self.oStorOs.getMntBase() + '/' + sVol;
-            self.iVolId += 1;
-            fRc = self.oStorOs.createVolume(self.oExec, sPool, sVol, sMountPoint, cbVol);
-            if fRc:
-                self.dVols[sMountPoint] = (sVol, sPool);
+        if not self.oDiskCfg.isCfgStaticDir():
+            if sPool in self.dPools:
+                sVol = 'vol' + str(self.iVolId);
+                sMountPoint = self.oStorOs.getMntBase() + '/' + sVol;
+                self.iVolId += 1;
+                fRc = self.oStorOs.createVolume(self.oExec, sPool, sVol, sMountPoint, cbVol);
+                if fRc:
+                    self.dVols[sMountPoint] = (sVol, sPool);
+                else:
+                    self.iVolId -= 1;
             else:
-                self.iVolId -= 1;
+                fRc = False;
         else:
-            fRc = False;
+            sMountPoint = self.oDiskCfg.getDisks();
 
         return fRc, sMountPoint;
 
@@ -582,14 +630,15 @@ class StorageCfg(object):
         Destroy the volume at the given mount point.
         """
 
-        sVol, sPool = self.dVols.get(sMountPoint);
         fRc = True;
-        if sVol is not None:
-            fRc = self.oStorOs.destroyVolume(self.oExec, sPool, sVol);
-            if fRc:
-                self.dVols.pop(sMountPoint);
-        else:
-            fRc = False;
+        if not self.oDiskCfg.isCfgStaticDir():
+            sVol, sPool = self.dVols.get(sMountPoint);
+            if sVol is not None:
+                fRc = self.oStorOs.destroyVolume(self.oExec, sPool, sVol);
+                if fRc:
+                    self.dVols.pop(sMountPoint);
+            else:
+                fRc = False;
 
         return fRc;
 
@@ -603,5 +652,11 @@ class StorageCfg(object):
         """
         Tries to cleanup any leftover pools and volumes from a failed previous run.
         """
-        return self.oStorOs.cleanupPoolsAndVolumes(self.oExec, 'pool', 'vol');
+        if not self.oDiskCfg.isCfgStaticDir():
+            return self.oStorOs.cleanupPoolsAndVolumes(self.oExec, 'pool', 'vol');
+        else:
+            fRc = True;
+            for sEntry in os.listdir(self.oDiskCfg.getDisks()):
+                fRc = fRc and self.oExec.rmTree(os.path.join(self.oDiskCfg.getDisks(), sEntry));
 
+            return fRc;
