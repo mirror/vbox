@@ -1275,6 +1275,8 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
 
         fRc = True;
         oDiskCfg = self.kdStorageCfgs.get(socket.getfqdn().lower());
+        if oDiskCfg is None:
+            oDiskCfg = self.kdStorageCfgs.get(socket.gethostname().lower());
 
         # Test the host first if requested
         if oDiskCfg is not None or self.fUseScratch:
@@ -1332,6 +1334,7 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
                 if not self.fRecreateStorCfg and not self.fUseScratch:
                     self.cleanupStorage(self.oStorCfg);
         else:
+            reporter.testFailure('Could not get disk configuration for host: %s' % (socket.getfqdn().lower()));
             fRc = False;
 
         return fRc;
