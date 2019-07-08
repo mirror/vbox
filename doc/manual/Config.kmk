@@ -38,6 +38,7 @@ VBOX_MANUAL_XML_REFENTRY_FILES := \
 	man_VBoxManage-snapshot.xml \
 	man_VBoxManage-clonevm.xml \
 	man_VBoxManage-mediumio.xml \
+	man_VBoxManage-dhcpserver.xml \
 	man_VBoxManage-debugvm.xml \
 	man_VBoxManage-extpack.xml \
 	man_VBoxManage-unattended.xml \

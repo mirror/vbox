@@ -91,7 +91,6 @@ typedef enum
     USAGE_IMPORTAPPLIANCE,
     USAGE_EXPORTAPPLIANCE,
     USAGE_HOSTONLYIFS,
-    USAGE_DHCPSERVER,
     USAGE_I_DUMPHDINFO,
     USAGE_STORAGEATTACH,
     USAGE_STORAGECONTROLLER,
@@ -208,6 +207,7 @@ RTEXITCODE  errorNoSubcommand(void);
 RTEXITCODE  errorUnknownSubcommand(const char *pszSubCmd);
 RTEXITCODE  errorTooManyParameters(char **papszArgs);
 RTEXITCODE  errorGetOpt(int rcGetOpt, union RTGETOPTUNION const *pValueUnion);
+RTEXITCODE  errorFetchValue(int iValueNo, const char *pszOption, int rcGetOptFetchValue, union RTGETOPTUNION const *pValueUnion);
 RTEXITCODE  errorSyntax(const char *pszFormat, ...);
 
 HRESULT showProgress(ComPtr<IProgress> progress);

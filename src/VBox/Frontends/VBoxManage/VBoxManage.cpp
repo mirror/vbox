@@ -149,7 +149,7 @@ static const VBMGCMD g_aCommands[] =
 #ifdef VBOX_WITH_NETFLT
     { "hostonlyif",         USAGE_HOSTONLYIFS,      VBMG_CMD_TODO, handleHostonlyIf,           0 },
 #endif
-    { "dhcpserver",         USAGE_DHCPSERVER,       VBMG_CMD_TODO, handleDHCPServer,           0 },
+    { "dhcpserver",         USAGE_S_NEWCMD,   HELP_CMD_DHCPSERVER, handleDHCPServer,           0 },
 #ifdef VBOX_WITH_NAT_SERVICE
     { "natnetwork",         USAGE_NATNETWORK,       VBMG_CMD_TODO, handleNATNetwork,           0 },
 #endif

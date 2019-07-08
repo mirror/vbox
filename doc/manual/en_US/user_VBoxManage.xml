@@ -8789,141 +8789,6 @@ VBoxManage sharedfolder     remove &lt;uuid|vmname&gt;
 
   </sect1>
 
-  <sect1 id="vboxmanage-dhcpserver">
-
-    <title>VBoxManage dhcpserver</title>
-
-    <para>
-      The <command>dhcpserver</command> commands enable you to control
-      the DHCP server that is built into &product-name;. You may find
-      this useful when using internal or host-only networking.
-      Theoretically, you can also enable it for a bridged network, but
-      that may cause conflicts with other DHCP servers in your physical
-      network.
-    </para>
-
-    <para>
-      Use the following command line options:
-    </para>
-
-    <itemizedlist>
-
-      <listitem>
-        <para>
-          If you use internal networking for a virtual network adapter
-          of a virtual machine, use <computeroutput>VBoxManage
-          dhcpserver add --netname
-          &lt;network_name&gt;</computeroutput>, where
-          <computeroutput>&lt;network_name&gt;</computeroutput> is the
-          same network name you used with <computeroutput>VBoxManage
-          modifyvm &lt;vmname&gt; --intnet&lt;X&gt;
-          &lt;network_name&gt;</computeroutput>.
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          If you use host-only networking for a virtual network adapter
-          of a virtual machine, use <computeroutput>VBoxManage
-          dhcpserver add --ifname
-          &lt;hostonly_if_name&gt;</computeroutput> instead, where
-          <computeroutput>&lt;hostonly_if_name&gt;</computeroutput> is
-          the same host-only interface name you used with
-          <computeroutput>VBoxManage modifyvm &lt;vmname&gt;
-          --hostonlyadapter&lt;X&gt;
-          &lt;hostonly_if_name&gt;</computeroutput>.
-        </para>
-
-        <para>
-          Alternatively, you can also use the <option>--netname</option>
-          option as with internal networks if you know the host-only
-          network's name. You can see the names with <command>VBoxManage
-          list hostonlyifs</command>. See
-          <xref linkend="vboxmanage-list" />.
-        </para>
-      </listitem>
-
-    </itemizedlist>
-
-    <para>
-      The following additional parameters are required when first adding
-      a DHCP server:
-    </para>
-
-    <itemizedlist>
-
-      <listitem>
-        <para>
-          With <computeroutput>--ip</computeroutput>, specify the IP
-          address of the DHCP server.
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          With <computeroutput>--netmask</computeroutput>, specify the
-          netmask of the network.
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          With <computeroutput>--lowerip</computeroutput> and
-          <computeroutput>--upperip</computeroutput>, you can specify
-          the lowest and highest IP address that the DHCP server will
-          assign to clients.
-        </para>
-      </listitem>
-
-    </itemizedlist>
-
-    <para>
-      You can specify additional DHCP options with the
-      <computeroutput>--options</computeroutput> command option. Use
-      <computeroutput>--id</computeroutput> and
-      <computeroutput>--value</computeroutput> to configure a number and
-      string pair corresponding to the DHCP option. Use
-      <computeroutput>--remove</computeroutput> to remove a DHCP option.
-    </para>
-
-    <para>
-      The <computeroutput>--vm</computeroutput> and
-      <computeroutput>--nic</computeroutput> settings enable you to
-      configure DHCP options for a specific network adapter used by the
-      named VM.
-    </para>
-
-    <para>
-      Finally, you must specify
-      <computeroutput>--enable</computeroutput> or the DHCP server will
-      be created in the disabled state and will not be running.
-    </para>
-
-    <para>
-      After this, &product-name; will automatically start the DHCP
-      server for the specified internal network or host-only network as
-      soon as the first virtual machine which uses that network is
-      started.
-    </para>
-
-    <para>
-      Use <command>VBoxManage dhcpserver remove</command> with the given
-      <computeroutput>--netname &lt;network_name&gt;</computeroutput> or
-      <computeroutput>--ifname &lt;hostonly_if_name&gt;</computeroutput>
-      to remove the DHCP server for the specified internal network or
-      host-only network.
-    </para>
-
-    <para>
-      To modify the settings of a DHCP server created using
-      <command>VBoxManage dhcpserver add</command>, you can use
-      <command>VBoxManage dhcpserver modify</command> for a given
-      network or host-only interface name. This has the same parameters
-      as <command>VBoxManage dhcpserver add</command>.
-    </para>
-
-  </sect1>
-
   <sect1 id="vboxmanage-usbdevsource">
 
     <title>VBoxManage usbdevsource</title>
@@ -9007,6 +8872,7 @@ VBoxManage sharedfolder     remove &lt;uuid|vmname&gt;
   <xi:include href="user_man_VBoxManage-snapshot.xml"       xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
   <xi:include href="user_man_VBoxManage-clonevm.xml"        xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
   <xi:include href="user_man_VBoxManage-extpack.xml"        xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
+  <xi:include href="user_man_VBoxManage-dhcpserver.xml"     xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
   <xi:include href="user_man_VBoxManage-cloudprofile.xml"   xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
   <xi:include href="user_man_VBoxManage-cloudlist.xml"      xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
   <xi:include href="user_man_VBoxManage-debugvm.xml"        xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
