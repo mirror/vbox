@@ -341,4 +341,5 @@ void UIWizardNewCloudVMPageExpert::sltInitShortWizardForm()
 
     /* Refresh form properties table: */
     refreshFormPropertiesTable();
+    emit completeChanged();
 }
