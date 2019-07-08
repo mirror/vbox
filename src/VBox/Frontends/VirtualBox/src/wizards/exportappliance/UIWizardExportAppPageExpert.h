@@ -49,6 +49,7 @@ class UIWizardExportAppPageExpert : public UIWizardPage,
     Q_PROPERTY(CCloudClient client READ client);
     Q_PROPERTY(CVirtualSystemDescription vsd READ vsd);
     Q_PROPERTY(CVirtualSystemDescriptionForm vsdExportForm READ vsdExportForm);
+    Q_PROPERTY(CloudExportMode cloudExportMode READ cloudExportMode);
     Q_PROPERTY(ExportAppliancePointer applianceWidget READ applianceWidget);
 
 public:

@@ -23,12 +23,14 @@
 /* GUI includes: */
 #include "UIAddDiskEncryptionPasswordDialog.h"
 #include "UIMessageCenter.h"
+#include "UIModalWindowManager.h"
 #include "UIWizardExportApp.h"
 #include "UIWizardExportAppDefs.h"
 #include "UIWizardExportAppPageBasic1.h"
 #include "UIWizardExportAppPageBasic2.h"
 #include "UIWizardExportAppPageBasic3.h"
 #include "UIWizardExportAppPageExpert.h"
+#include "UIWizardNewCloudVM.h"
 
 /* COM includes: */
 #include "CAppliance.h"
@@ -317,6 +319,22 @@ bool UIWizardExportApp::exportVMs(CAppliance &comAppliance)
             return false;
         if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
             return msgCenter().cannotExportAppliance(comProgress, comAppliance.GetPath(), this);
+
+        /* For Export-then-ask mode we should popup the New Cloud VM wizard in short mode now: */
+        if (   field("isFormatCloudOne").toBool()
+            && field("cloudExportMode").value<CloudExportMode>() == CloudExportMode_ExportThenAsk)
+        {
+            /* Get the required parameters to init short wizard mode: */
+            CCloudClient comClient = field("client").value<CCloudClient>();
+            CVirtualSystemDescription comDescription = field("vsd").value<CVirtualSystemDescription>();
+            /* Create and run wizard as modal dialog: */
+            QWidget *pWizardParent = windowManager().realParentWindow(this);
+            UISafePointerWizardNewCloudVM pWizard = new UIWizardNewCloudVM(pWizardParent, comClient, comDescription);
+            windowManager().registerNewParent(pWizard, pWizardParent);
+            pWizard->prepare();
+            pWizard->exec();
+            delete pWizard;
+        }
     }
     else
         return msgCenter().cannotExportAppliance(comAppliance, this);

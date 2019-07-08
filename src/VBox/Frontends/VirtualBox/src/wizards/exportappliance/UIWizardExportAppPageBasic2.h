@@ -77,6 +77,16 @@ enum
     AccountData_ProfileName = Qt::UserRole + 1
 };
 
+/** Cloud export option modes. */
+enum CloudExportMode
+{
+    CloudExportMode_Invalid,
+    CloudExportMode_AskThenExport,
+    CloudExportMode_ExportThenAsk,
+    CloudExportMode_DoNotAsk
+};
+Q_DECLARE_METATYPE(CloudExportMode);
+
 
 /** UIWizardPageBase extension for 2nd page of the Export Appliance wizard. */
 class UIWizardExportAppPage2 : public UIWizardPageBase
@@ -163,6 +173,8 @@ protected:
     CVirtualSystemDescription vsd() const;
     /** Returns Virtual System Description Export Form object. */
     CVirtualSystemDescriptionForm vsdExportForm() const;
+    /** Returns cloud export mode. */
+    CloudExportMode cloudExportMode() const;
 
     /** Holds whether default format should be Export to OCI. */
     bool  m_fExportToOCIByDefault;
@@ -257,6 +269,7 @@ class UIWizardExportAppPageBasic2 : public UIWizardPage, public UIWizardExportAp
     Q_PROPERTY(CCloudClient client READ client);
     Q_PROPERTY(CVirtualSystemDescription vsd READ vsd);
     Q_PROPERTY(CVirtualSystemDescriptionForm vsdExportForm READ vsdExportForm);
+    Q_PROPERTY(CloudExportMode cloudExportMode READ cloudExportMode);
 
 public:
 

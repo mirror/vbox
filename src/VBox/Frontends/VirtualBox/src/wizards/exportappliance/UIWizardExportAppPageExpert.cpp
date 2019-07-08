@@ -383,8 +383,6 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
                             m_pRadioExportThenAsk = new QRadioButton;
                             if (m_pRadioExportThenAsk)
                             {
-                                m_pRadioExportThenAsk->setEnabled(false);
-
                                 /* Add into layout: */
                                 m_pSettingsLayout2->addWidget(m_pRadioExportThenAsk, 2, 1);
                             }
@@ -392,6 +390,8 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
                             m_pRadioAskThenExport = new QRadioButton;
                             if (m_pRadioAskThenExport)
                             {
+                                m_pRadioAskThenExport->setEnabled(false);
+
                                 /* Add into layout: */
                                 m_pSettingsLayout2->addWidget(m_pRadioAskThenExport, 3, 1);
                             }
@@ -399,8 +399,6 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
                             m_pRadioDoNotAsk = new QRadioButton;
                             if (m_pRadioDoNotAsk)
                             {
-                                m_pRadioDoNotAsk->setEnabled(false);
-
                                 /* Add into layout: */
                                 m_pSettingsLayout2->addWidget(m_pRadioDoNotAsk, 4, 1);
                             }
@@ -460,6 +458,7 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
     registerField("client", this, "client");
     registerField("vsd", this, "vsd");
     registerField("vsdExportForm", this, "vsdExportForm");
+    registerField("cloudExportMode", this, "cloudExportMode");
     registerField("applianceWidget", this, "applianceWidget");
 }
 
@@ -583,7 +582,7 @@ void UIWizardExportAppPageExpert::initializePage()
     retranslateUi();
 
     /* Choose default cloud export option: */
-    m_pRadioAskThenExport->setChecked(true);
+    m_pRadioExportThenAsk->setChecked(true);
 }
 
 void UIWizardExportAppPageExpert::cleanupPage()
