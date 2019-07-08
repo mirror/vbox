@@ -66,30 +66,37 @@ class UISoftKeyboardRow;
 class UISoftKeyboardWidget;
 
 const int iMessageTimeout = 3000;
-/** Lock key position are used to identify respective keys. */
+/** Key position are used to identify respective keys. */
 const int iCapsLockPosition = 30;
 const int iNumLockPosition = 90;
 const int iScrollLockPosition = 125;
+const int iLeftShiftPosition = 44;
+const int iRightShiftPosition = 57;
+const int iLeftCtrlPosition = 58;
+const int iRightCtrlPosition = 64;
+const int iAltPosition = 60;
+const int iAltGrPosition = 62;
+
 
 const QString strSubDirectorName("keyboardLayouts");
 
-enum UIKeyState
+enum KeyState
 {
-    UIKeyState_NotPressed,
-    UIKeyState_Pressed,
-    UIKeyState_Locked,
-    UIKeyState_Max
+    KeyState_NotPressed,
+    KeyState_Pressed,
+    KeyState_Locked,
+    KeyState_Max
 };
 
-enum UIKeyType
+enum KeyType
 {
-    /** Can be in UIKeyState_NotPressed and UIKeyState_Pressed states. */
-    UIKeyType_Ordinary,
-    /** e.g. CapsLock, NumLock. Can be only in UIKeyState_NotPressed, UIKeyState_Locked */
-    UIKeyType_Lock,
+    /** Can be in KeyState_NotPressed and KeyState_Pressed states. */
+    KeyType_Ordinary,
+    /** e.g. CapsLock, NumLock. Can be only in KeyState_NotPressed, KeyState_Locked */
+    KeyType_Lock,
     /** e.g. Shift Can be in all 3 states*/
-    UIKeyType_Modifier,
-    UIKeyType_Max
+    KeyType_Modifier,
+    KeyType_Max
 };
 
 struct KeyCaptions
@@ -330,8 +337,8 @@ public:
     void setPosition(int iPosition);
     int position() const;
 
-    void setType(UIKeyType enmType);
-    UIKeyType type() const;
+    void setType(KeyType enmType);
+    KeyType type() const;
 
     void setIsNumPadKey(bool fIsNumPadKey);
     bool isNumPadKey() const;
@@ -342,7 +349,7 @@ public:
     void setCutout(int iCorner, int iWidth, int iHeight);
 
     void setParentWidget(UISoftKeyboardWidget* pParent);
-    UIKeyState state() const;
+    KeyState state() const;
     QVector<LONG> scanCodeWithPrefix() const;
 
     void release();
@@ -366,8 +373,8 @@ private:
     QRect      m_keyGeometry;
     /** Stores the key polygon in local coordinates. */
     QPolygon   m_polygon;
-    UIKeyType  m_enmType;
-    UIKeyState m_enmState;
+    KeyType  m_enmType;
+    KeyState m_enmState;
     /** Key width as it is read from the xml file. */
     int        m_iWidth;
     /** Key height as it is read from the xml file. */
@@ -534,10 +541,10 @@ public:
     void copyCurentLayout();
     float layoutAspectRatio();
 
-    bool showOSMenuKeys();
+    bool showOSMenuKeys() const;
     void setShowOSMenuKeys(bool fShow);
 
-    bool showNumPad();
+    bool showNumPad() const;
     void setShowNumPad(bool fShow);
 
     const QColor color(KeyboardColorType enmColorType) const;
@@ -1386,8 +1393,8 @@ int UISoftKeyboardRow::spaceHeightAfter() const
 *********************************************************************************************************************************/
 
 UISoftKeyboardKey::UISoftKeyboardKey()
-    : m_enmType(UIKeyType_Ordinary)
-    , m_enmState(UIKeyState_NotPressed)
+    : m_enmType(KeyType_Ordinary)
+    , m_enmState(KeyState_NotPressed)
     , m_iWidth(0)
     , m_iHeight(0)
     , m_iSpaceWidthAfter(0)
@@ -1475,12 +1482,12 @@ int UISoftKeyboardKey::position() const
     return m_iPosition;
 }
 
-void UISoftKeyboardKey::setType(UIKeyType enmType)
+void UISoftKeyboardKey::setType(KeyType enmType)
 {
     m_enmType = enmType;
 }
 
-UIKeyType UISoftKeyboardKey::type() const
+KeyType UISoftKeyboardKey::type() const
 {
     return m_enmType;
 }
@@ -1512,7 +1519,7 @@ void UISoftKeyboardKey::setCutout(int iCorner, int iWidth, int iHeight)
     m_iCutoutHeight = iHeight;
 }
 
-UIKeyState UISoftKeyboardKey::state() const
+KeyState UISoftKeyboardKey::state() const
 {
     return m_enmState;
 }
@@ -1525,14 +1532,14 @@ void UISoftKeyboardKey::setParentWidget(UISoftKeyboardWidget* pParent)
 void UISoftKeyboardKey::release()
 {
     /* Lock key states are controlled by the event signals we get from the guest OS. See updateLockKeyState function: */
-    if (m_enmType != UIKeyType_Lock)
+    if (m_enmType != KeyType_Lock)
         updateState(false);
 }
 
 void UISoftKeyboardKey::press()
 {
     /* Lock key states are controlled by the event signals we get from the guest OS. See updateLockKeyState function: */
-    if (m_enmType != UIKeyType_Lock)
+    if (m_enmType != KeyType_Lock)
         updateState(true);
 }
 
@@ -1570,41 +1577,34 @@ int UISoftKeyboardKey::cutoutHeight() const
 
 void UISoftKeyboardKey::updateState(bool fPressed)
 {
-    UIKeyState enmPreviousState = state();
-    if (m_enmType == UIKeyType_Modifier)
+    KeyState enmPreviousState = state();
+    if (m_enmType == KeyType_Modifier)
     {
         if (fPressed)
         {
-            if (m_enmState == UIKeyState_NotPressed)
-                m_enmState = UIKeyState_Pressed;
-            else if(m_enmState == UIKeyState_Pressed)
-                m_enmState = UIKeyState_Locked;
+            if (m_enmState == KeyState_NotPressed)
+                m_enmState = KeyState_Pressed;
+            else if(m_enmState == KeyState_Pressed)
+                m_enmState = KeyState_Locked;
             else
-                m_enmState = UIKeyState_NotPressed;
+                m_enmState = KeyState_NotPressed;
         }
         else
         {
-            if(m_enmState == UIKeyState_Pressed)
-                m_enmState = UIKeyState_NotPressed;
+            if(m_enmState == KeyState_Pressed)
+                m_enmState = KeyState_NotPressed;
         }
     }
-    else if (m_enmType == UIKeyType_Lock)
+    else if (m_enmType == KeyType_Lock)
     {
-        m_enmState = fPressed ? UIKeyState_Locked : UIKeyState_NotPressed;
-        // if (fPressed)
-        // {
-        //     if (m_enmState == UIKeyState_NotPressed)
-        //          m_enmState = UIKeyState_Locked;
-        //     else
-        //         m_enmState = UIKeyState_NotPressed;
-        // }
+        m_enmState = fPressed ? KeyState_Locked : KeyState_NotPressed;
     }
-    else if (m_enmType == UIKeyType_Ordinary)
+    else if (m_enmType == KeyType_Ordinary)
     {
-        if (m_enmState == UIKeyState_NotPressed)
-            m_enmState = UIKeyState_Pressed;
+        if (m_enmState == KeyState_NotPressed)
+            m_enmState = KeyState_Pressed;
         else
-            m_enmState = UIKeyState_NotPressed;
+            m_enmState = KeyState_NotPressed;
     }
     if (enmPreviousState != state() && m_pParentWidget)
         m_pParentWidget->keyStateChange(this);
@@ -1612,11 +1612,11 @@ void UISoftKeyboardKey::updateState(bool fPressed)
 
 void UISoftKeyboardKey::updateLockState(bool fLocked)
 {
-    if (m_enmType != UIKeyType_Lock)
+    if (m_enmType != KeyType_Lock)
         return;
-    if (fLocked && m_enmState == UIKeyState_Locked)
+    if (fLocked && m_enmState == KeyState_Locked)
         return;
-    if (!fLocked && m_enmState == UIKeyState_NotPressed)
+    if (!fLocked && m_enmState == KeyState_NotPressed)
         return;
     updateState(fLocked);
 }
@@ -1867,12 +1867,11 @@ void UISoftKeyboardLayout::drawTextInRect(int iKeyPosition, const QRect &keyGeom
                    keyGeometry.width() - 2 * iMargin,
                    keyGeometry.height() - 2 * iMargin);
 
-
     painter.drawText(textRect, Qt::AlignLeft | Qt::AlignTop, strTopleftString);
     painter.drawText(textRect, Qt::AlignLeft | Qt::AlignBottom, strBottomleftString);
-
     painter.drawText(textRect, Qt::AlignRight | Qt::AlignTop, strShiftAltGrCaption);
     painter.drawText(textRect, Qt::AlignRight | Qt::AlignBottom, strAltGrCaption);
+
 #endif
 }
 
@@ -2070,12 +2069,12 @@ void UISoftKeyboardWidget::paintEvent(QPaintEvent *pEvent) /* override */
             //m_pCurrentKeyboardLayout->drawText(key.position(), key.keyGeometry(), painter);
             m_pCurrentKeyboardLayout->drawTextInRect(key.position(), key.keyGeometry(), painter);
 
-            if (key.type() != UIKeyType_Ordinary)
+            if (key.type() != KeyType_Ordinary)
             {
                 QColor ledColor;
-                if (key.state() == UIKeyState_NotPressed)
+                if (key.state() == KeyState_NotPressed)
                     ledColor = color(KeyboardColorType_Font);
-                else if (key.state() == UIKeyState_Pressed)
+                else if (key.state() == KeyState_Pressed)
                     ledColor = QColor(0, 191, 204);
                 else
                     ledColor = QColor(255, 50, 50);
@@ -2248,7 +2247,7 @@ float UISoftKeyboardWidget::layoutAspectRatio()
     return  m_iInitialHeight / (float) m_iInitialWidth;
 }
 
-bool UISoftKeyboardWidget::showOSMenuKeys()
+bool UISoftKeyboardWidget::showOSMenuKeys() const
 {
     return m_fShowOSMenuKeys;
 }
@@ -2261,7 +2260,7 @@ void UISoftKeyboardWidget::setShowOSMenuKeys(bool fShow)
     update();
 }
 
-bool UISoftKeyboardWidget::showNumPad()
+bool UISoftKeyboardWidget::showNumPad() const
 {
     return m_fShowNumPad;
 }
@@ -2296,10 +2295,8 @@ void UISoftKeyboardWidget::colorsFromStringList(const QStringList &colorStringLi
 
 void UISoftKeyboardWidget::updateLockKeyStates(bool fCapsLockState, bool fNumLockState, bool fScrollLockState)
 {
-    UISoftKeyboardPhysicalLayout *pPhysicalLayout = findPhysicalLayout(m_pCurrentKeyboardLayout->physicalLayoutUuid());
-    if (!pPhysicalLayout)
-        return;
-    pPhysicalLayout->updateLockKeyStates(fCapsLockState, fNumLockState, fScrollLockState);
+    for (int i = 0; i < m_physicalLayouts.size(); ++i)
+        m_physicalLayouts[i].updateLockKeyStates(fCapsLockState, fNumLockState, fScrollLockState);
     update();
 }
 
@@ -2427,10 +2424,10 @@ void UISoftKeyboardWidget::handleKeyRelease(UISoftKeyboardKey *pKey)
 {
     if (!pKey)
         return;
-    if (pKey->type() == UIKeyType_Ordinary)
+    if (pKey->type() == KeyType_Ordinary)
         pKey->release();
     /* We only send the scan codes of Ordinary keys: */
-    if (pKey->type() == UIKeyType_Modifier)
+    if (pKey->type() == KeyType_Modifier)
         return;
 
     QVector<LONG> sequence;
@@ -2457,7 +2454,7 @@ void UISoftKeyboardWidget::handleKeyPress(UISoftKeyboardKey *pKey)
         return;
     pKey->press();
 
-    if (pKey->type() == UIKeyType_Modifier)
+    if (pKey->type() == KeyType_Modifier)
         return;
 
     QVector<LONG> sequence;
@@ -2480,9 +2477,9 @@ void UISoftKeyboardWidget::keyStateChange(UISoftKeyboardKey* pKey)
 {
     if (!pKey)
         return;
-    if (pKey->type() == UIKeyType_Modifier)
+    if (pKey->type() == KeyType_Modifier)
     {
-        if (pKey->state() == UIKeyState_NotPressed)
+        if (pKey->state() == KeyState_NotPressed)
             m_pressedModifiers.removeOne(pKey);
         else
             if (!m_pressedModifiers.contains(pKey))
@@ -2915,9 +2912,9 @@ void UIPhysicalLayoutReader::parseKey(UISoftKeyboardRow &row)
         {
             QString strType = m_xmlReader.readElementText();
             if (strType == "modifier")
-                key.setType(UIKeyType_Modifier);
+                key.setType(KeyType_Modifier);
             else if (strType == "lock")
-                key.setType(UIKeyType_Lock);
+                key.setType(KeyType_Lock);
         }
         else if (m_xmlReader.name() == "osmenukey")
         {
@@ -3297,7 +3294,7 @@ void UISoftKeyboardSettingsWidget::prepareObjects()
 
     QSpacerItem *pSpacer = new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Expanding);
     if (pSpacer)
-        pSettingsLayout->addItem(pSpacer, 5, 0);
+        pSettingsLayout->addItem(pSpacer, 6, 0);
 
     setLayout(pSettingsLayout);
     retranslateUi();
@@ -3645,7 +3642,7 @@ void UISoftKeyboard::loadSettings()
 
 void UISoftKeyboard::configure()
 {
-    setWindowIcon(UIIconPool::iconSetFull(":/vm_show_logs_32px.png", ":/vm_show_logs_16px.png"));
+    setWindowIcon(UIIconPool::iconSet(":/keyboard_24px.png"));
     if (m_pKeyboardWidget && m_pSettingsWidget)
     {
         m_pSettingsWidget->setShowOSMenuKeys(m_pKeyboardWidget->showOSMenuKeys());
@@ -3660,7 +3657,10 @@ void UISoftKeyboard::configure()
     }
     updateLayoutSelectorList();
     if (m_pKeyboardWidget && m_pKeyboardWidget->currentLayout() && m_pLayoutSelector)
+    {
         m_pLayoutSelector->setCurrentLayout(m_pKeyboardWidget->currentLayout()->uid());
+        m_pLayoutSelector->setCurrentLayoutIsEditable(m_pKeyboardWidget->currentLayout()->editable());
+    }
 }
 
 void UISoftKeyboard::updateStatusBarMessage(const QString &strName)
