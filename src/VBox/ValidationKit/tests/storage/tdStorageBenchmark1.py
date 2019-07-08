@@ -1274,7 +1274,7 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
         """
 
         fRc = True;
-        oDiskCfg = self.kdStorageCfgs.get(socket.gethostname().lower());
+        oDiskCfg = self.kdStorageCfgs.get(socket.getfqdn().lower());
 
         # Test the host first if requested
         if oDiskCfg is not None or self.fUseScratch:
