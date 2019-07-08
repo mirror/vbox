@@ -26010,7 +26010,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   -->
   <interface
     name="ICloudClient" extends="$unknown"
-    uuid="1c757554-9768-11e9-9319-ab248c01ad59"
+    uuid="361276ab-3be4-4a1a-abf2-2993048766c4"
     wsmap="managed" reservedMethods="16" reservedAttributes="8"
     >
 
@@ -26154,6 +26154,24 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
     </method>
 
+    <method name="importInstance">
+      <desc>
+        Import an existing instance with passed id to the local host.
+      </desc>
+      <param name="description" type="IVirtualSystemDescription" dir="in">
+        <desc>VirtualSystemDescription object which is describing a machine and all required parameters.</desc>
+      </param>
+      <param name="uid" type="wstring" dir="in">
+        <desc>the UUID of instance imported from the Cloud.</desc>
+      </param>
+      <param name="virtualBox" type="IVirtualBox" dir="in">
+        <desc>Reference to the server-side API root object.</desc>
+      </param>
+      <param name="progress" type="IProgress" dir="in">
+        <desc>Progress object to track the operation completion.</desc>
+      </param>
+    </method>
+
     <method name="listInstances" const="yes">
       <desc>
         Returns the list of the instances in the Cloud.
@@ -26204,24 +26222,6 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         <desc>
           Progress object to track the operation completion.
         </desc>
-      </param>
-    </method>
-
-    <method name="importInstance">
-      <desc>
-        Import an existing instance with passed id to the local host.
-      </desc>
-      <param name="description" type="IVirtualSystemDescription" dir="in">
-        <desc>VirtualSystemDescription object which is describing a machine and all required parameters.</desc>
-      </param>
-      <param name="uid" type="wstring" dir="in">
-        <desc>the UUID of instance imported from the Cloud.</desc>
-      </param>
-      <param name="virtualBox" type="IVirtualBox" dir="in">
-        <desc>Reference to the server-side API root object.</desc>
-      </param>
-      <param name="progress" type="IProgress" dir="in">
-        <desc>Progress object to track the operation completion.</desc>
       </param>
     </method>
 
@@ -26277,8 +26277,11 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <desc>
         Export an existing image with passed id somewhere in the Cloud.
       </desc>
-      <param name="uid" type="wstring" dir="in">
-        <desc>the UUID of image in the Cloud.</desc>
+      <param name="image" type="IMedium" dir="in">
+        <desc>Reference to the existing VBox image.</desc>
+      </param>
+      <param name="virtualBox" type="IVirtualBox" dir="in">
+        <desc>Reference to the server-side API root object.</desc>
       </param>
       <param name="parameters" type="wstring" dir="in" safearray="yes">
         <desc>Each parameter in the array must be in the form "name=value".</desc>

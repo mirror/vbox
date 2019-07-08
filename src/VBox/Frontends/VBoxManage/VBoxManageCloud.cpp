@@ -812,9 +812,9 @@ static RTEXITCODE createCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
     int vrc = RTGetOptInit(&GetState, a->argc, a->argv, s_aOptions, RT_ELEMENTS(s_aOptions), iFirst, 0);
     AssertRCReturn(vrc, RTEXITCODE_FAILURE);
 
-    Utf8Str strCompartmentId("compartment-id");
-    Utf8Str strInstanceId("instance-id");
-    Utf8Str strDisplayName("display-name");
+    Utf8Str strCompartmentId;
+    Utf8Str strInstanceId;
+    Utf8Str strDisplayName;
     com::SafeArray<BSTR>  parameters;
 
     int c;
@@ -823,16 +823,16 @@ static RTEXITCODE createCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
         switch (c)
         {
             case 'c':
-                strCompartmentId.append("=").append(ValueUnion.psz);
-                Bstr(strCompartmentId).detachTo(parameters.appendedRaw());
+                strCompartmentId=ValueUnion.psz;
+                Bstr(Utf8Str("compartment-id=").append(ValueUnion.psz)).detachTo(parameters.appendedRaw());
                 break;
             case 'i':
-                strInstanceId.append("=").append(ValueUnion.psz);
-                Bstr(strInstanceId).detachTo(parameters.appendedRaw());
+                strInstanceId=ValueUnion.psz;
+                Bstr(Utf8Str("instance-id=").append(ValueUnion.psz)).detachTo(parameters.appendedRaw());
                 break;
             case 'd':
-                strDisplayName.append("=").append(ValueUnion.psz);
-                Bstr(strDisplayName).detachTo(parameters.appendedRaw());
+                strDisplayName=ValueUnion.psz;
+                Bstr(Utf8Str("display-name=").append(ValueUnion.psz)).detachTo(parameters.appendedRaw());
                 break;
             case VINF_GETOPT_NOT_OPTION:
                 return errorUnknownSubcommand(ValueUnion.psz);
@@ -884,8 +884,8 @@ static RTEXITCODE exportCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
     int vrc = RTGetOptInit(&GetState, a->argc, a->argv, s_aOptions, RT_ELEMENTS(s_aOptions), iFirst, 0);
     AssertRCReturn(vrc, RTEXITCODE_FAILURE);
 
-    Utf8Str strBucketName("bucket-name");
-    Utf8Str strObjectName("object-name");
+    Utf8Str strBucketName;
+    Utf8Str strObjectName;
     Utf8Str strImageId;
     com::SafeArray<BSTR>  parameters;
 
@@ -895,16 +895,16 @@ static RTEXITCODE exportCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
         switch (c)
         {
             case 'b':
-                strBucketName.append("=").append(ValueUnion.psz);
-                Bstr(strBucketName).detachTo(parameters.appendedRaw());
+                strBucketName=ValueUnion.psz;
+                Bstr(Utf8Str("bucket-name=").append(ValueUnion.psz)).detachTo(parameters.appendedRaw());
                 break;
             case 'o':
-                strObjectName.append("=").append(ValueUnion.psz);
-                Bstr(strObjectName).detachTo(parameters.appendedRaw());
+                strObjectName=ValueUnion.psz;
+                Bstr(Utf8Str("object-name=").append(ValueUnion.psz)).detachTo(parameters.appendedRaw());
                 break;
             case 'i':
-                strImageId = ValueUnion.psz;
-                Bstr(strImageId).detachTo(parameters.appendedRaw());
+                strImageId=ValueUnion.psz;
+                Bstr(Utf8Str("image-id=").append(ValueUnion.psz)).detachTo(parameters.appendedRaw());
                 break;
             case VINF_GETOPT_NOT_OPTION:
                 return errorUnknownSubcommand(ValueUnion.psz);
@@ -921,17 +921,53 @@ static RTEXITCODE exportCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
     CHECK_ERROR2_RET(hrc, pCloudProfile,
                      CreateCloudClient(oCloudClient.asOutParam()),
                      RTEXITCODE_FAILURE);
-    RTPrintf("Exporting cloud image \'%s\' to the object \'%s\'...\n", strImageId.c_str(), strObjectName.c_str());
+    RTPrintf("Exporting image \'%s\' to the Cloud with name \'%s\'...\n", strImageId.c_str(), strObjectName.c_str());
+
+    ComPtr<IVirtualBox> pVirtualBox = a->virtualBox;
+    SafeIfaceArray<IMedium> aImageList;
+    CHECK_ERROR2_RET(hrc, pVirtualBox,
+                     COMGETTER(HardDisks)(ComSafeArrayAsOutParam(aImageList)),
+                     RTEXITCODE_FAILURE);
+
+    ComPtr<IMedium> pImage;
+    size_t cImages = aImageList.size();
+    bool fFound = false;
+    for (size_t i = 0; i < cImages; ++i)
+    {
+        pImage = aImageList[i];
+        Bstr bstrImageId;
+        hrc = pImage->COMGETTER(Id)(bstrImageId.asOutParam());
+        if (FAILED(hrc))
+            continue;
+
+        com::Guid imageId(bstrImageId);
+
+        if (!imageId.isValid() || imageId.isZero())
+            continue;
+
+        if (!strImageId.compare(imageId.toString()))
+        {
+            fFound = true;
+            RTPrintf("Image %s was found\n", strImageId.c_str());
+            break;
+        }
+    }
+
+    if (!fFound)
+    {
+        RTPrintf("Process of exporting the image to the Cloud was interrupted. The image wasn't found.\n");
+        return RTEXITCODE_FAILURE;
+    }
 
     ComPtr<IProgress> progress;
     CHECK_ERROR2_RET(hrc, oCloudClient,
-                     ExportImage(Bstr(strImageId).raw(), ComSafeArrayAsInParam(parameters), progress.asOutParam()),
+                     ExportImage(pImage, pVirtualBox, ComSafeArrayAsInParam(parameters), progress.asOutParam()),
                      RTEXITCODE_FAILURE);
     hrc = showProgress(progress);
-    CHECK_PROGRESS_ERROR_RET(progress, ("Cloud image export failed"), RTEXITCODE_FAILURE);
+    CHECK_PROGRESS_ERROR_RET(progress, ("Export the image to the Cloud failed"), RTEXITCODE_FAILURE);
 
     if (SUCCEEDED(hrc))
-        RTPrintf("Cloud image was exported successfully\n");
+        RTPrintf("Export the image to the Cloud was successfull\n");
 
     return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
@@ -955,10 +991,10 @@ static RTEXITCODE importCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
     int vrc = RTGetOptInit(&GetState, a->argc, a->argv, s_aOptions, RT_ELEMENTS(s_aOptions), iFirst, 0);
     AssertRCReturn(vrc, RTEXITCODE_FAILURE);
 
-    Utf8Str strCompartmentId("compartment-id");
-    Utf8Str strBucketName("bucket-name");
-    Utf8Str strObjectName("object-name");
-    Utf8Str strDisplayName("display-name");
+    Utf8Str strCompartmentId;
+    Utf8Str strBucketName;
+    Utf8Str strObjectName;
+    Utf8Str strDisplayName;
     com::SafeArray<BSTR>  parameters;
 
     int c;
@@ -967,20 +1003,20 @@ static RTEXITCODE importCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
         switch (c)
         {
             case 'c':
-                strCompartmentId.append("=").append(ValueUnion.psz);
-                Bstr(strCompartmentId).detachTo(parameters.appendedRaw());
+                strCompartmentId=ValueUnion.psz;
+                Bstr(Utf8Str("compartment-id=").append(ValueUnion.psz)).detachTo(parameters.appendedRaw());
                 break;
             case 'b':
-                strBucketName.append("=").append(ValueUnion.psz);
-                Bstr(strBucketName).detachTo(parameters.appendedRaw());
+                strBucketName=ValueUnion.psz;
+                Bstr(Utf8Str("bucket-name=").append(ValueUnion.psz)).detachTo(parameters.appendedRaw());
                 break;
             case 'o':
-                strObjectName.append("=").append(ValueUnion.psz);
-                Bstr(strObjectName).detachTo(parameters.appendedRaw());
+                strObjectName=ValueUnion.psz;
+                Bstr(Utf8Str("object-name=").append(ValueUnion.psz)).detachTo(parameters.appendedRaw());
                 break;
             case 'd':
-                strDisplayName.append("=").append(ValueUnion.psz);
-                Bstr(strDisplayName).detachTo(parameters.appendedRaw());
+                strDisplayName=ValueUnion.psz;
+                Bstr(Utf8Str("display-name=").append(ValueUnion.psz)).detachTo(parameters.appendedRaw());
                 break;
             case VINF_GETOPT_NOT_OPTION:
                 return errorUnknownSubcommand(ValueUnion.psz);
