@@ -893,7 +893,7 @@
     <xsl:if test="not(ancestor::cmdsynopsis)">
       <xsl:message terminate="yes">sbr only supported inside cmdsynopsis (because of hangindent)</xsl:message>
     </xsl:if>
-    <xsl:text>\linebreak</xsl:text>
+    <xsl:text>\newline</xsl:text>
   </xsl:template>
 
   <xsl:template match="refentry|refnamediv|refentryinfo|refmeta|refsect3|refsect4|refsect5|synopfragment|synopfragmentref|cmdsynopsis/info">
@@ -958,7 +958,7 @@
     </xsl:choose>
   </xsl:template>
 
-  <!-- duplicated in docbook2latex.xsl -->
+  <!-- duplicated in docbook-refentry-to-C-help.xsl -->
   <xsl:template match="arg|group">
     <!-- separator char if we're not the first child -->
     <xsl:if test="position() > 1">
@@ -968,14 +968,18 @@
         <xsl:otherwise><xsl:text> </xsl:text></xsl:otherwise>
       </xsl:choose>
     </xsl:if>
+
     <!-- open wrapping -->
-    <xsl:choose>
-      <xsl:when test="not(@choice) or @choice = ''">  <xsl:value-of select="$arg.choice.def.open.str"/></xsl:when>
-      <xsl:when test="@choice = 'opt'">               <xsl:value-of select="$arg.choice.opt.open.str"/></xsl:when>
-      <xsl:when test="@choice = 'req'">               <xsl:value-of select="$arg.choice.req.open.str"/></xsl:when>
-      <xsl:when test="@choice = 'plain'"/>
-      <xsl:otherwise><xsl:message terminate="yes">Invalid arg choice: "<xsl:value-of select="@choice"/>"</xsl:message></xsl:otherwise>
-    </xsl:choose>
+    <xsl:variable name="fWrappers" select="not(ancestor::group)"/>
+    <xsl:if test="$fWrappers">
+      <xsl:choose>
+        <xsl:when test="not(@choice) or @choice = ''">  <xsl:value-of select="$arg.choice.def.open.str"/></xsl:when>
+        <xsl:when test="@choice = 'opt'">               <xsl:value-of select="$arg.choice.opt.open.str"/></xsl:when>
+        <xsl:when test="@choice = 'req'">               <xsl:value-of select="$arg.choice.req.open.str"/></xsl:when>
+        <xsl:when test="@choice = 'plain'"/>
+        <xsl:otherwise><xsl:message terminate="yes"><xsl:call-template name="error-prefix"/>Invalid arg choice: "<xsl:value-of select="@choice"/>"</xsl:message></xsl:otherwise>
+      </xsl:choose>
+    </xsl:if>
 
     <!-- render the arg (TODO: may need to do more work here) -->
     <xsl:apply-templates />
@@ -984,14 +988,21 @@
     <xsl:choose>
       <xsl:when test="@rep = 'norepeat' or not(@rep) or @rep = ''"/>
       <xsl:when test="@rep = 'repeat'">               <xsl:value-of select="$arg.rep.repeat.str"/></xsl:when>
-      <xsl:otherwise><xsl:message terminate="yes">Invalid rep choice: "<xsl:value-of select="@rep"/>"</xsl:message></xsl:otherwise>
+      <xsl:otherwise><xsl:message terminate="yes"><xsl:call-template name="error-prefix"/>Invalid rep choice: "<xsl:value-of select="@rep"/>"</xsl:message></xsl:otherwise>
     </xsl:choose>
+
     <!-- close wrapping -->
-    <xsl:choose>
-      <xsl:when test="not(@choice) or @choice = ''">  <xsl:value-of select="$arg.choice.def.close.str"/></xsl:when>
-      <xsl:when test="@choice = 'opt'">               <xsl:value-of select="$arg.choice.opt.close.str"/></xsl:when>
-      <xsl:when test="@choice = 'req'">               <xsl:value-of select="$arg.choice.req.close.str"/></xsl:when>
-    </xsl:choose>
+    <xsl:if test="$fWrappers">
+      <xsl:choose>
+        <xsl:when test="not(@choice) or @choice = ''">  <xsl:value-of select="$arg.choice.def.close.str"/></xsl:when>
+        <xsl:when test="@choice = 'opt'">               <xsl:value-of select="$arg.choice.opt.close.str"/></xsl:when>
+        <xsl:when test="@choice = 'req'">               <xsl:value-of select="$arg.choice.req.close.str"/></xsl:when>
+      </xsl:choose>
+      <!-- Add a space padding if we're the last element in a repeating arg or group -->
+      <xsl:if test="(parent::arg or parent::group) and not(following-sibiling)">
+        <xsl:text> </xsl:text>
+      </xsl:if>
+    </xsl:if>
   </xsl:template>
 
   <xsl:template match="replaceable">

@@ -44,7 +44,11 @@
 
       <arg rep="repeat">--group=<replaceable>group</replaceable>,</arg>
 
-      <arg>--mode=<group choice='plain'><arg choice='plain'>machine</arg><arg choice='plain'>machinechildren</arg><arg choice='plain'>all</arg></group></arg>
+      <group choice='opt'>
+        <arg choice='plain'>--mode=machine</arg>
+        <arg choice='plain'>--mode=machinechildren</arg>
+        <arg choice='plain'>--mode=all</arg>
+      </group>
 
       <arg>--name=<replaceable>name</replaceable></arg>
 

@@ -245,17 +245,9 @@ static const RTMSGREFENTRY </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl
     <xsl:if test="position() > 1">
       <xsl:choose>
         <xsl:when test="parent::group"><xsl:value-of select="$arg.or.sep"/></xsl:when>
-        <xsl:when test="parent::arg and self::group"></xsl:when>
         <xsl:when test="ancestor-or-self::*/@sepchar"><xsl:value-of select="ancestor-or-self::*/@sepchar"/></xsl:when>
         <xsl:otherwise><xsl:text> </xsl:text></xsl:otherwise>
       </xsl:choose>
-    </xsl:if>
-
-    <!-- Make sure group choice and arg choice matches. -->
-    <xsl:if test="self::arg and ancestor::group">
-      <xsl:if test="@choice != ancestor::group/@choice and (@choice = 'opt' or @choice = '' or ancestor::group/@choice = 'opt' or ancestor::group/@choice = '')">
-        <xsl:message terminate="yes"><xsl:call-template name="error-prefix"/>Mismatching group and arg choice: "<xsl:value-of select="@choice"/>" (arg) vs "<xsl:value-of select="ancestor::group/@choice"/>" (group)</xsl:message>
-      </xsl:if>
     </xsl:if>
 
     <!-- open wrapping -->
@@ -276,7 +268,7 @@ static const RTMSGREFENTRY </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl
     <!-- repeat wrapping -->
     <xsl:choose>
       <xsl:when test="@rep = 'norepeat' or not(@rep) or @rep = ''"/>
-      <xsl:when test="@rep = 'repeat'">               <xsl:value-of select="$arg.rep.repeat.str"/></xsl:when>
+      <xsl:when test="@rep = 'repeat'">                 <xsl:value-of select="$arg.rep.repeat.str"/></xsl:when>
       <xsl:otherwise><xsl:message terminate="yes"><xsl:call-template name="error-prefix"/>Invalid rep choice: "<xsl:value-of select="@rep"/>"</xsl:message></xsl:otherwise>
     </xsl:choose>
 
@@ -287,6 +279,10 @@ static const RTMSGREFENTRY </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl
         <xsl:when test="@choice = 'opt'">               <xsl:value-of select="$arg.choice.opt.close.str"/></xsl:when>
         <xsl:when test="@choice = 'req'">               <xsl:value-of select="$arg.choice.req.close.str"/></xsl:when>
       </xsl:choose>
+      <!-- Add a space padding if we're the last element in a repeating arg or group -->
+      <xsl:if test="(parent::arg or parent::group) and not(following-sibiling)">
+        <xsl:text> </xsl:text>
+      </xsl:if>
     </xsl:if>
   </xsl:template>
 
