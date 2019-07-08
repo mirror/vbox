@@ -32,9 +32,6 @@ __version__ = "$Revision$"
 import os;
 import re;
 
-# Validation Kit imports.
-from common import utils;
-
 
 class StorageDisk(object):
     """
@@ -654,9 +651,9 @@ class StorageCfg(object):
         """
         if not self.oDiskCfg.isCfgStaticDir():
             return self.oStorOs.cleanupPoolsAndVolumes(self.oExec, 'pool', 'vol');
-        else:
-            fRc = True;
-            for sEntry in os.listdir(self.oDiskCfg.getDisks()):
-                fRc = fRc and self.oExec.rmTree(os.path.join(self.oDiskCfg.getDisks(), sEntry));
 
-            return fRc;
+        fRc = True;
+        for sEntry in os.listdir(self.oDiskCfg.getDisks()):
+            fRc = fRc and self.oExec.rmTree(os.path.join(self.oDiskCfg.getDisks(), sEntry));
+
+        return fRc;
