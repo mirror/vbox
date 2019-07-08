@@ -57,7 +57,7 @@ using namespace com;
         { "--network",              DHCPD_CMD_COMMON_OPT_NETWORK,       RTGETOPT_REQ_STRING  }, \
         { "--netname",              DHCPD_CMD_COMMON_OPT_NETWORK,       RTGETOPT_REQ_STRING  }, /* legacy */ \
         { "--interface",            DHCPD_CMD_COMMON_OPT_INTERFACE,     RTGETOPT_REQ_STRING  }, \
-        { "--ifname",               DHCPD_CMD_COMMON_OPT_INTERFACE,     RTGETOPT_REQ_STRING  }  /* legacy
+        { "--ifname",               DHCPD_CMD_COMMON_OPT_INTERFACE,     RTGETOPT_REQ_STRING  }  /* legacy */
 
 /** Handles common options in the typical option parsing switch. */
 #define DHCPD_CMD_COMMON_OPTION_CASES(a_pCtx, a_ch, a_pValueUnion) \
