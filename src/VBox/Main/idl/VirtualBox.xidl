@@ -26162,7 +26162,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         <desc>VirtualSystemDescription object which is describing a machine and all required parameters.</desc>
       </param>
       <param name="uid" type="wstring" dir="in">
-        <desc>the UUID of instance imported from the Cloud.</desc>
+        <desc>the id of instance imported from the Cloud.</desc>
       </param>
       <param name="virtualBox" type="IVirtualBox" dir="in">
         <desc>Reference to the server-side API root object.</desc>
@@ -26230,7 +26230,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         Start an existing instance with passed id.
       </desc>
       <param name="uid" type="wstring" dir="in">
-        <desc>the UUID of instance in the Cloud.</desc>
+        <desc>the id of instance in the Cloud.</desc>
       </param>
       <param name="progress" type="IProgress" dir="return">
         <desc>Progress object to track the operation completion.</desc>
@@ -26242,7 +26242,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         Pause an existing instance with passed id.
       </desc>
       <param name="uid" type="wstring" dir="in">
-        <desc>the UUID of instance in the Cloud.</desc>
+        <desc>the id of instance in the Cloud.</desc>
       </param>
       <param name="progress" type="IProgress" dir="return">
         <desc>Progress object to track the operation completion.</desc>
@@ -26254,7 +26254,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         Terminate an existing instance with passed id.
       </desc>
       <param name="uid" type="wstring" dir="in">
-        <desc>the UUID of instance in the Cloud.</desc>
+        <desc>the id of instance in the Cloud.</desc>
       </param>
       <param name="progress" type="IProgress" dir="return">
         <desc>Progress object to track the operation completion.</desc>
@@ -26275,7 +26275,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <method name="exportImage">
       <desc>
-        Export an existing image with passed id somewhere in the Cloud.
+        Export an existing VBox image in the Cloud.
       </desc>
       <param name="image" type="IMedium" dir="in">
         <desc>Reference to the existing VBox image.</desc>
@@ -26296,7 +26296,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         Delete an existing image with passed id from the Cloud.
       </desc>
       <param name="uid" type="wstring" dir="in">
-        <desc>the UUID of image in the Cloud.</desc>
+        <desc>the id of image in the Cloud.</desc>
       </param>
       <param name="progress" type="IProgress" dir="return">
         <desc>Progress object to track the operation completion.</desc>
