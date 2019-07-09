@@ -77,4 +77,7 @@ DECLINLINE(bool) operator<(const RTMAC &l, const RTMAC &r)
 #define DHCP_LOG3_RET(a_rcRet, a_MsgArgs)   do { LogRel3(a_MsgArgs);    return (a_rcRet); } while (0)
 /** @} */
 
+/** LogRel + RTMsgError helper. */
+#define DHCP_LOG_MSG_ERROR(a_MsgArgs)       do { LogRel(a_MsgArgs);     RTMsgError a_MsgArgs; } while (0)
+
 #endif /* !VBOX_INCLUDED_SRC_Dhcpd_DhcpdInternal_h */

@@ -52,11 +52,8 @@ int DHCPD::init(const Config *pConfig) RT_NOEXCEPT
         if (rc != VERR_NO_MEMORY)
             return VINF_SUCCESS;
 
-        /** @todo macro for this: */
-        LogRel((   "Ran out of memory loading leases from '%s'.  Try rename or delete the file.\n",
-                   pConfig->getLeasesFilename().c_str()));
-        RTMsgError("Ran out of memory loading leases from '%s'.  Try rename or delete the file.\n",
-                   pConfig->getLeasesFilename().c_str());
+        DHCP_LOG_MSG_ERROR(("Ran out of memory loading leases from '%s'.  Try rename or delete the file.\n",
+                            pConfig->getLeasesFilename().c_str()));
     }
     return rc;
 }

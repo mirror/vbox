@@ -107,10 +107,7 @@ int Config::i_homeInit() RT_NOEXCEPT
     if (RT_SUCCESS(rc))
         rc = m_strHome.assignNoThrow(szHome);
     else
-    {
-        LogFunc(("unable to locate the VirtualBox home directory: %Rrc", rc)); /* no release log at this point. */
-        RTMsgError("unable to locate the VirtualBox home directory: %Rrs", rc);
-    }
+        DHCP_LOG_MSG_ERROR(("unable to locate the VirtualBox home directory: %Rrc\n", rc));
     return rc;
 }
 
@@ -586,7 +583,7 @@ Config *Config::i_read(const char *pszFileName) RT_NOEXCEPT
 {
     if (pszFileName == NULL || pszFileName[0] == '\0')
     {
-        RTMsgError("Empty configuration filename");
+        DHCP_LOG_MSG_ERROR(("Config::i_read: Empty configuration filename\n"));
         return NULL;
     }
 
@@ -598,20 +595,17 @@ Config *Config::i_read(const char *pszFileName) RT_NOEXCEPT
     }
     catch (const xml::EIPRTFailure &e)
     {
-        LogFunc(("%s\n", e.what()));
-        RTMsgError("%s\n", e.what());
+        DHCP_LOG_MSG_ERROR(("Config::i_read: %s\n", e.what()));
         return NULL;
     }
     catch (const RTCError &e)
     {
-        LogFunc(("%s\n", e.what()));
-        RTMsgError("%s\n", e.what());
+        DHCP_LOG_MSG_ERROR(("Config::i_read: %s\n", e.what()));
         return NULL;
     }
     catch (...)
     {
-        LogFunc(("Unknown exception while reading and parsing '%s'\n", pszFileName));
-        RTMsgError("Unknown exception while reading and parsing '%s'\n", pszFileName);
+        DHCP_LOG_MSG_ERROR(("Config::i_read: Unknown exception while reading and parsing '%s'\n", pszFileName));
         return NULL;
     }
 
@@ -624,20 +618,17 @@ Config *Config::i_read(const char *pszFileName) RT_NOEXCEPT
     }
     catch (const RTCError &e)
     {
-        LogFunc(("%s\n", e.what()));
-        RTMsgError("%s\n", e.what());
+        DHCP_LOG_MSG_ERROR(("Config::i_read: %s\n", e.what()));
         return NULL;
     }
     catch (std::bad_alloc &)
     {
-        LogFunc(("std::bad_alloc\n"));
-        RTMsgError("std::bad_alloc reading config\n");
+        DHCP_LOG_MSG_ERROR(("Config::i_read: std::bad_alloc\n"));
         return NULL;
     }
     catch (...)
     {
-        LogFunc(("Unexpected exception\n"));
-        RTMsgError("Unexpected exception\n");
+        DHCP_LOG_MSG_ERROR(("Config::i_read: Unexpected exception\n"));
         return NULL;
     }
 
