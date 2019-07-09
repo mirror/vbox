@@ -376,6 +376,8 @@ static uint32_t             g_fSupAdversaries = 0;
 #define SUPHARDNT_ADVERSARY_BEYONDTRUST             RT_BIT_32(16)
 /** Avecto / Defendpoint / Privilege Guard (details from support guy, hoping to get sample copy). */
 #define SUPHARDNT_ADVERSARY_AVECTO                  RT_BIT_32(17)
+/** Sophos Endpoint Defense. */
+#define SUPHARDNT_ADVERSARY_SOPHOS                  RT_BIT_32(18)
 /** Unknown adversary detected while waiting on child. */
 #define SUPHARDNT_ADVERSARY_UNKNOWN                 RT_BIT_32(31)
 /** @} */
@@ -5805,9 +5807,12 @@ static uint32_t supR3HardenedWinFindAdversaries(void)
 
         { SUPHARDNT_ADVERSARY_CYLANCE,              "cyprotectdrv" }, /* Not verified. */
 
-        { SUPHARDNT_ADVERSARY_BEYONDTRUST,          "privman" }, /* Not verified. */
+        { SUPHARDNT_ADVERSARY_BEYONDTRUST,          "privman" },   /* Not verified. */
+        { SUPHARDNT_ADVERSARY_BEYONDTRUST,          "privmanfi" }, /* Not verified. */
 
         { SUPHARDNT_ADVERSARY_AVECTO,               "PGDriver" },
+
+        { SUPHARDNT_ADVERSARY_SOPHOS,               "SophosED" }, /* Not verified. */
     };
 
     static const struct
@@ -5927,10 +5932,13 @@ static uint32_t supR3HardenedWinFindAdversaries(void)
         { SUPHARDNT_ADVERSARY_CYLANCE, L"\\SystemRoot\\System32\\drivers\\cyprotectdrv64.sys" },
 
         { SUPHARDNT_ADVERSARY_BEYONDTRUST, L"\\SystemRoot\\System32\\drivers\\privman.sys" },
+        { SUPHARDNT_ADVERSARY_BEYONDTRUST, L"\\SystemRoot\\System32\\drivers\\privmanfi.sys" },
         { SUPHARDNT_ADVERSARY_BEYONDTRUST, L"\\SystemRoot\\System32\\privman64.dll" },
         { SUPHARDNT_ADVERSARY_BEYONDTRUST, L"\\SystemRoot\\System32\\privman32.dll" },
 
         { SUPHARDNT_ADVERSARY_AVECTO, L"\\SystemRoot\\System32\\drivers\\PGDriver.sys" },
+
+        { SUPHARDNT_ADVERSARY_SOPHOS, L"\\SystemRoot\\System32\\drivers\\SophosED.sys" }, // not verified
     };
 
     uint32_t fFound = 0;
