@@ -6998,52 +6998,18 @@ IEM_STATIC int iemVmxVmentryInjectTrpmEvent(PVMCPU pVCpu, uint32_t uEntryIntInfo
 {
     Assert(VMX_ENTRY_INT_INFO_IS_VALID(uEntryIntInfo));
 
-    uint8_t const uType         = VMX_ENTRY_INT_INFO_TYPE(uEntryIntInfo);
-    uint8_t const uVector       = VMX_ENTRY_INT_INFO_VECTOR(uEntryIntInfo);
-    bool const    fErrCodeValid = VMX_ENTRY_INT_INFO_IS_ERROR_CODE_VALID(uEntryIntInfo);
+    uint8_t const   uVector      = VMX_ENTRY_INT_INFO_VECTOR(uEntryIntInfo);
+    TRPMEVENT const enmTrpmEvent = HMVmxEventTypeToTrpmEventType(uEntryIntInfo);
 
-    TRPMEVENT enmTrapType;
-    switch (uType)
-    {
-        case VMX_ENTRY_INT_INFO_TYPE_EXT_INT:
-           enmTrapType = TRPM_HARDWARE_INT;
-           break;
-
-        case VMX_ENTRY_INT_INFO_TYPE_NMI:
-        case VMX_ENTRY_INT_INFO_TYPE_HW_XCPT:
-            enmTrapType = TRPM_TRAP;
-            break;
-
-        case VMX_ENTRY_INT_INFO_TYPE_SW_INT:
-            enmTrapType = TRPM_SOFTWARE_INT;
-            break;
-
-        case VMX_ENTRY_INT_INFO_TYPE_SW_XCPT:       /* #BP and #OF */
-            Assert(uVector == X86_XCPT_BP || uVector == X86_XCPT_OF);
-            enmTrapType = TRPM_SOFTWARE_INT;
-            break;
-
-        case VMX_ENTRY_INT_INFO_TYPE_PRIV_SW_XCPT:  /* #DB (INT1/ICEBP). */
-            Assert(uVector == X86_XCPT_DB);
-            enmTrapType = TRPM_SOFTWARE_INT;
-            break;
-
-        default:
-            /* Shouldn't really happen. */
-            AssertMsgFailedReturn(("Invalid trap type %#x\n", uType), VERR_VMX_IPE_4);
-            break;
-    }
-
-    int rc = TRPMAssertTrap(pVCpu, uVector, enmTrapType);
+    int rc = TRPMAssertTrap(pVCpu, uVector, enmTrpmEvent);
     if (RT_SUCCESS(rc))
     {
-        if (fErrCodeValid)
+        if (VMX_ENTRY_INT_INFO_IS_ERROR_CODE_VALID(uEntryIntInfo))
             TRPMSetErrorCode(pVCpu, uErrCode);
 
-        if (   enmTrapType == TRPM_TRAP
-            && uVector     == X86_XCPT_PF)
+        if (VMX_ENTRY_INT_INFO_IS_XCPT_PF(uEntryIntInfo))
             TRPMSetFaultAddress(pVCpu, GCPtrFaultAddress);
-        else if (enmTrapType == TRPM_SOFTWARE_INT)
+        else if (VMX_ENTRY_INT_INFO_TYPE(uEntryIntInfo) == VMX_ENTRY_INT_INFO_TYPE_SW_INT)
             TRPMSetInstrLength(pVCpu, cbInstr);
     }
 
