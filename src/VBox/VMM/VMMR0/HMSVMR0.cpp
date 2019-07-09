@@ -7217,7 +7217,10 @@ HMSVM_EXIT_DECL hmR0SvmExitNestedPF(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
          * injecting the original pending event would most likely cause the same MMIO #NPF.
          */
         if (pVCpu->hm.s.Event.fPending)
+        {
+            STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectPendingInterpret);
             return VINF_EM_RAW_INJECT_TRPM_EVENT;
+        }
 
         HMSVM_CPUMCTX_IMPORT_STATE(pVCpu, CPUMCTX_EXTRN_CS | CPUMCTX_EXTRN_RIP);
         VBOXSTRICTRC rcStrict;
@@ -7269,6 +7272,9 @@ HMSVM_EXIT_DECL hmR0SvmExitNestedPF(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
         return VBOXSTRICTRC_TODO(rcStrict);
     }
 
+    /*
+     * Nested page-fault.
+     */
     TRPMAssertXcptPF(pVCpu, GCPhysFaultAddr, u32ErrCode);
     int rc = PGMR0Trap0eHandlerNestedPaging(pVM, pVCpu, enmNestedPagingMode, u32ErrCode, CPUMCTX2CORE(pCtx), GCPhysFaultAddr);
     TRPMResetTrap(pVCpu);
@@ -7286,6 +7292,13 @@ HMSVM_EXIT_DECL hmR0SvmExitNestedPF(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
         STAM_COUNTER_INC(&pVCpu->hm.s.StatExitShadowPF);
         rc = VINF_SUCCESS;
     }
+
+    /*
+     * If delivering an event causes an #NPF (and not MMIO), we shall resolve the fault and
+     * re-inject the original event.
+     */
+    if (pVCpu->hm.s.Event.fPending)
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectPendingNPF);
 
     return rc;
 }
