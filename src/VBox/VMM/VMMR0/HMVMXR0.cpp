@@ -14803,7 +14803,10 @@ HMVMX_EXIT_DECL hmR0VmxExitXcptOrNmi(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
     else
     {
         if (rcStrict == VINF_HM_DOUBLE_FAULT)
+        {
+            Assert(pVCpu->hm.s.Event.fPending);
             rcStrict = VINF_SUCCESS;
+        }
         STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExitXcptNmi, y3);
         return rcStrict;
     }
@@ -16197,7 +16200,10 @@ HMVMX_EXIT_DECL hmR0VmxExitApicAccess(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
     else
     {
         if (rcStrict1 == VINF_HM_DOUBLE_FAULT)
+        {
+            Assert(pVCpu->hm.s.Event.fPending);
             rcStrict1 = VINF_SUCCESS;
+        }
         return rcStrict1;
     }
 
@@ -16360,8 +16366,9 @@ HMVMX_EXIT_DECL hmR0VmxExitEptMisconfig(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransien
     if (RT_LIKELY(rcStrict1 == VINF_SUCCESS))
     {
         /*
-         * If event delivery causes an EPT misconfig (MMIO), go back to instruction emulation. Otherwise,
-         * injecting the original event would most likely cause the same EPT misconfig VM-exit again.
+         * In the unlikely case where delivering an event causes an EPT misconfig (MMIO), go back to
+         * instruction emulation to inject the original event. Otherwise, injecting the original event
+         * using hardware-assisted VMX would would trigger the same EPT misconfig VM-exit again.
          */
         if (RT_UNLIKELY(pVCpu->hm.s.Event.fPending))
         {
@@ -16447,14 +16454,20 @@ HMVMX_EXIT_DECL hmR0VmxExitEptViolation(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransien
     VBOXSTRICTRC rcStrict1 = hmR0VmxCheckExitDueToEventDelivery(pVCpu, pVmxTransient);
     if (RT_LIKELY(rcStrict1 == VINF_SUCCESS))
     {
-        /* In the unlikely case that the EPT violation happened as a result of delivering an event, log it. */
-        if (RT_UNLIKELY(pVCpu->hm.s.Event.fPending))
-            Log4Func(("EPT violation with an event pending u64IntInfo=%#RX64\n", pVCpu->hm.s.Event.u64IntInfo));
+        /*
+         * If delivery of an event causes an EPT violation (true nested #PF and not MMIO),
+         * we shall resolve the nested #PF and re-inject the original event.
+         */
+        if (pVCpu->hm.s.Event.fPending)
+            STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectPendingNPF);
     }
     else
     {
         if (rcStrict1 == VINF_HM_DOUBLE_FAULT)
+        {
+            Assert(pVCpu->hm.s.Event.fPending);
             rcStrict1 = VINF_SUCCESS;
+        }
         return rcStrict1;
     }
 
