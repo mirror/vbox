@@ -149,10 +149,7 @@ typedef struct _VBOXCLIPBOARDCLIENT
     PVBOXCLIPBOARDCLIENTDATA pData;
     /** Optional protocol version the client uses. Set to 0 by default. */
     uint32_t                 uProtocolVer;
-    /** Flag indicating whether this client currently is deferred mode,
-     *  meaning that it did not return to the caller yet. */
-    bool                     fDeferred;
-    /** Structure for keeping the client's deferred state.
+    /** Structure for keeping the client's pending (deferred return) state.
      *  A client is in a deferred state when it asks for the next HGCM message,
      *  but the service can't provide it yet. That way a client will block (on the guest side, does not return)
      *  until the service can complete the call. */
@@ -160,13 +157,14 @@ typedef struct _VBOXCLIPBOARDCLIENT
     {
         /** The client's HGCM call handle. Needed for completing a deferred call. */
         VBOXHGCMCALLHANDLE hHandle;
-        /** Message type (function number) to use when completing the deferred call. */
+        /** Message type (function number) to use when completing the deferred call.
+         *  A non-0 value means the client is in pending mode. */
         uint32_t           uType;
         /** Parameter count to use when completing the deferred call. */
         uint32_t           cParms;
         /** Parameters to use when completing the deferred call. */
         PVBOXHGCMSVCPARM   paParms;
-    } Deferred;
+    } Pending;
 } VBOXCLIPBOARDCLIENT, *PVBOXCLIPBOARDCLIENT;
 
 /** Map holding pointers to drag and drop clients. Key is the (unique) HGCM client ID. */
@@ -183,19 +181,15 @@ uint32_t vboxSvcClipboardGetMode(void);
 int vboxSvcClipboardReportMsg(PVBOXCLIPBOARDCLIENTDATA pClientData, uint32_t uMsg, uint32_t uFormats);
 int vboxSvcClipboardSetSource(PVBOXCLIPBOARDCLIENTDATA pClientData, SHAREDCLIPBOARDSOURCE enmSource);
 
-int vboxSvcClipboardClientDefer(PVBOXCLIPBOARDCLIENT pClient,
-                                VBOXHGCMCALLHANDLE hHandle, uint32_t u32Function, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
-int vboxSvcClipboardClientComplete(PVBOXCLIPBOARDCLIENT pClient, VBOXHGCMCALLHANDLE hHandle, int rc);
-int vboxSvcClipboardClientDeferredComplete(PVBOXCLIPBOARDCLIENT pClient, int rc);
-int vboxSvcClipboardClientDeferredSetMsgInfo(PVBOXCLIPBOARDCLIENT pClient, uint32_t uMsg, uint32_t cParms);
-
 void vboxSvcClipboardMsgQueueReset(PVBOXCLIPBOARDCLIENTDATA pClientData);
 PVBOXCLIPBOARDCLIENTMSG vboxSvcClipboardMsgAlloc(uint32_t uMsg, uint32_t cParms);
 void vboxSvcClipboardMsgFree(PVBOXCLIPBOARDCLIENTMSG pMsg);
+void vboxSvcClipboardMsgSetPeekReturn(PVBOXCLIPBOARDCLIENTMSG pMsg, PVBOXHGCMSVCPARM paDstParms, uint32_t cDstParms);
 int vboxSvcClipboardMsgAdd(PVBOXCLIPBOARDCLIENTDATA pClientData, PVBOXCLIPBOARDCLIENTMSG pMsg, bool fAppend);
-int vboxSvcClipboardMsgGetNextInfo(PVBOXCLIPBOARDCLIENTDATA pClientData, uint32_t *puType, uint32_t *pcParms);
-int vboxSvcClipboardMsgGetNext(PVBOXCLIPBOARDCLIENTDATA pClientData,
-                               uint32_t uMsg, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
+int vboxSvcClipboardMsgPeek(PVBOXCLIPBOARDCLIENT pClient, VBOXHGCMCALLHANDLE hCall, uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool fWait);
+int vboxSvcClipboardMsgGet(PVBOXCLIPBOARDCLIENT pClient, VBOXHGCMCALLHANDLE hCall, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
+
+int vboxSvcClipboardClientWakeup(PVBOXCLIPBOARDCLIENT pClient);
 
 # ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
 bool vboxSvcClipboardURIMsgIsAllowed(uint32_t uMode, uint32_t uMsg);
@@ -225,15 +219,15 @@ int vboxSvcClipboardURITransferOpen(PSHAREDCLIPBOARDPROVIDERCTX pCtx);
 int vboxSvcClipboardURITransferClose(PSHAREDCLIPBOARDPROVIDERCTX pCtx);
 
 int vboxSvcClipboardURIListOpen(PSHAREDCLIPBOARDPROVIDERCTX pCtx,
-                                PVBOXCLIPBOARDLISTHDR pListHdr, PVBOXCLIPBOARDLISTHANDLE phList);
-int vboxSvcClipboardURIListClose(PSHAREDCLIPBOARDPROVIDERCTX pCtx, VBOXCLIPBOARDLISTHANDLE hList);
-int vboxSvcClipboardURIListHdrRead(PSHAREDCLIPBOARDPROVIDERCTX pCtx, VBOXCLIPBOARDLISTHANDLE hList,
+                                PVBOXCLIPBOARDLISTHDR pListHdr, PSHAREDCLIPBOARDLISTHANDLE phList);
+int vboxSvcClipboardURIListClose(PSHAREDCLIPBOARDPROVIDERCTX pCtx, SHAREDCLIPBOARDLISTHANDLE hList);
+int vboxSvcClipboardURIListHdrRead(PSHAREDCLIPBOARDPROVIDERCTX pCtx, SHAREDCLIPBOARDLISTHANDLE hList,
                                    PVBOXCLIPBOARDLISTHDR pListHdr);
-int vboxSvcClipboardURIListHdrWrite(PSHAREDCLIPBOARDPROVIDERCTX pCtx, VBOXCLIPBOARDLISTHANDLE hList,
+int vboxSvcClipboardURIListHdrWrite(PSHAREDCLIPBOARDPROVIDERCTX pCtx, SHAREDCLIPBOARDLISTHANDLE hList,
                                     PVBOXCLIPBOARDLISTHDR pListHdr);
-int vboxSvcClipboardURIListEntryRead(PSHAREDCLIPBOARDPROVIDERCTX pCtx, VBOXCLIPBOARDLISTHANDLE hList,
+int vboxSvcClipboardURIListEntryRead(PSHAREDCLIPBOARDPROVIDERCTX pCtx, SHAREDCLIPBOARDLISTHANDLE hList,
                                      PVBOXCLIPBOARDLISTENTRY pListEntry);
-int vboxSvcClipboardURIListEntryWrite(PSHAREDCLIPBOARDPROVIDERCTX pCtx, VBOXCLIPBOARDLISTHANDLE hList,
+int vboxSvcClipboardURIListEntryWrite(PSHAREDCLIPBOARDPROVIDERCTX pCtx, SHAREDCLIPBOARDLISTHANDLE hList,
                                       PVBOXCLIPBOARDLISTENTRY pListEntry);
 
 int vboxSvcClipboardURIObjOpen(PSHAREDCLIPBOARDPROVIDERCTX pCtx, const char *pszPath,

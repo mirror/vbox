@@ -59,40 +59,6 @@ typedef VBOXCLIPBOARDFORMATS *PVBOXCLIPBOARDFORMATS;
 #endif
 
 /**
- * The host messages for the guest.
- */
-#define VBOX_SHARED_CLIPBOARD_HOST_MSG_QUIT                   1
-#define VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA              2
-#define VBOX_SHARED_CLIPBOARD_HOST_MSG_REPORT_FORMATS         3
-
-/** Initiates a new transfer (read / write) on the guest side. */
-#define VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_TRANSFER_START     4
-/** Open an URI list on the guest side. */
-#define VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_LIST_OPEN          5
-/** Closes a formerly opened URI list on the guest side. */
-#define VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_LIST_CLOSE         6
-/** Reads a list header from the guest. */
-#define VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_LIST_HDR_READ      7
-/** Writes a list header to the guest. */
-#define VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_LIST_HDR_WRITE     8
-/** Reads a list entry from the guest. */
-#define VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_LIST_ENTRY_READ    9
-/** Writes a list entry to the guest. */
-#define VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_LIST_ENTRY_WRITE   10
-/** Open an URI object on the guest side. */
-#define VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_OBJ_OPEN           11
-/** Closes a formerly opened URI object on the guest side. */
-#define VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_OBJ_CLOSE          12
-/** Reads from an object on the guest side. */
-#define VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_OBJ_READ           13
-/** Writes to an object on the guest side. */
-#define VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_OBJ_WRITE          14
-/** Indicates that the host has canceled a transfer. */
-#define VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_CANCEL             15
-/** Indicates that the an unrecoverable error on the host occurred . */
-#define VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_ERROR              16
-
-/**
  * Enumeration to specify the Shared Clipboard URI source type.
  */
 typedef enum SHAREDCLIPBOARDSOURCE

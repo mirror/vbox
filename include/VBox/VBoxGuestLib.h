@@ -623,10 +623,18 @@ VBGLR3DECL(int)     VbglR3ClipboardEventGetNext(HGCMCLIENTID idClient, PSHAREDCL
                                                 PVBGLR3CLIPBOARDEVENT *ppEvent);
 VBGLR3DECL(void)    VbglR3ClipboardEventFree(PVBGLR3CLIPBOARDEVENT pEvent);
 
-VBGLR3DECL(int)     VbglR3ClipboardListHdrRead(HGCMCLIENTID idClient, PVBOXCLIPBOARDLISTHDR pListHdr);
-VBGLR3DECL(int)     VbglR3ClipboardSendListHdrWrite(HGCMCLIENTID idClient, VBOXCLIPBOARDLISTHANDLE hList, PVBOXCLIPBOARDLISTHDR pListHdr);
-VBGLR3DECL(int)     VbglR3ClipboardListEntryRead(HGCMCLIENTID idClient, PVBOXCLIPBOARDLISTENTRY pListEntry);
-VBGLR3DECL(int)     VbglR3ClipboardSendListEntryWrite(HGCMCLIENTID idClient, VBOXCLIPBOARDLISTHANDLE hList, PVBOXCLIPBOARDLISTENTRY pListEntry);
+VBGLR3DECL(int)     VbglR3ClipboardTransferSendStatus(HGCMCLIENTID idClient, SHAREDCLIPBOARDURITRANSFERSTATUS uStatus);
+
+VBGLR3DECL(int)     VbglR3ClipboardListOpenSend(HGCMCLIENTID idClient, PVBOXCLIPBOARDLISTOPENPARMS pOpenParms, PSHAREDCLIPBOARDLISTHANDLE phList);
+VBGLR3DECL(int)     VbglR3ClipboardListOpenRecv(HGCMCLIENTID idClient, PVBOXCLIPBOARDLISTOPENPARMS pOpenParms);
+VBGLR3DECL(int)     VbglR3ClipboardListOpenReply(HGCMCLIENTID idClient, int rcReply, SHAREDCLIPBOARDLISTHANDLE hList);
+
+VBGLR3DECL(int)     VbglR3ClipboardListCloseSend(HGCMCLIENTID idClient, SHAREDCLIPBOARDLISTHANDLE hList);
+VBGLR3DECL(int)     VbglR3ClipboardListCloseRecv(HGCMCLIENTID idClient, PSHAREDCLIPBOARDLISTHANDLE phList);
+
+VBGLR3DECL(int)     VbglR3ClipboardListHdrWrite(HGCMCLIENTID idClient, SHAREDCLIPBOARDLISTHANDLE hList, PVBOXCLIPBOARDLISTHDR pListHdr);
+
+VBGLR3DECL(int)     VbglR3ClipboardListEntryWrite(HGCMCLIENTID idClient, SHAREDCLIPBOARDLISTHANDLE hList, PVBOXCLIPBOARDLISTENTRY pListEntry);
 
 VBGLR3DECL(int)     VbglR3ClipboardObjOpen(HGCMCLIENTID idClient,
                                            const char *pszPath, PVBOXCLIPBOARDCREATEPARMS pCreateParms,

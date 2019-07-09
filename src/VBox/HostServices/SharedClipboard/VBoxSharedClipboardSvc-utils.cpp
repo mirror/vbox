@@ -67,17 +67,13 @@ bool vboxSvcClipboardURIMsgIsAllowed(uint32_t uMode, uint32_t uMsg)
             fAllowed = fHostToGuest;
             break;
 
-        case VBOX_SHARED_CLIPBOARD_GUEST_FN_LIST_HDR_WRITE:
+        case VBOX_SHARED_CLIPBOARD_GUEST_FN_MSG_PEEK_WAIT:
             RT_FALL_THROUGH();
-        case VBOX_SHARED_CLIPBOARD_GUEST_FN_LIST_ENTRY_WRITE:
+        case VBOX_SHARED_CLIPBOARD_GUEST_FN_MSG_PEEK_NOWAIT:
             RT_FALL_THROUGH();
-        case VBOX_SHARED_CLIPBOARD_GUEST_FN_OBJ_WRITE:
-            fAllowed = fGuestToHost;
-            break;
-
-        case VBOX_SHARED_CLIPBOARD_GUEST_FN_TRANSFER_REPORT:
+        case VBOX_SHARED_CLIPBOARD_GUEST_FN_MSG_GET:
             RT_FALL_THROUGH();
-        case VBOX_SHARED_CLIPBOARD_GUEST_FN_GET_HOST_MSG:
+        case VBOX_SHARED_CLIPBOARD_GUEST_FN_STATUS:
             RT_FALL_THROUGH();
         case VBOX_SHARED_CLIPBOARD_GUEST_FN_CANCEL:
             RT_FALL_THROUGH();
@@ -88,6 +84,8 @@ bool vboxSvcClipboardURIMsgIsAllowed(uint32_t uMode, uint32_t uMsg)
         default:
             break;
     }
+
+    fAllowed = true; /** @todo FIX !!!! */
 
     LogFlowFunc(("uMsg=%RU32, uMode=%RU32 -> fAllowed=%RTbool\n", uMsg, uMode, fAllowed));
     return fAllowed;

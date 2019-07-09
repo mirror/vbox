@@ -286,7 +286,7 @@ class VBoxClipboardWinStreamImpl : public IStream
 public:
 
     VBoxClipboardWinStreamImpl(VBoxClipboardWinDataObject *pParent,
-                               PSHAREDCLIPBOARDURITRANSFER pTransfer, uint64_t uObjIdx);
+                               PSHAREDCLIPBOARDURITRANSFER pTransfer, SHAREDCLIPBOARDOBJHANDLE hObj);
     virtual ~VBoxClipboardWinStreamImpl(void);
 
 public: /* IUnknown methods. */
@@ -317,13 +317,13 @@ public: /* Own methods. */
 private:
 
     /** Pointer to the parent data object. */
-    VBoxClipboardWinDataObject *m_pParent;
+    VBoxClipboardWinDataObject    *m_pParent;
     /** The stream object's current reference count. */
-    LONG                        m_lRefCount;
-    /** Pointer to the associated URI transfer object. */
-    PSHAREDCLIPBOARDURITRANSFER m_pURITransfer;
-    /** Index of the object to handle within the associated URI transfer object. */
-    uint64_t                    m_uObjIdx;
+    LONG                           m_lRefCount;
+    /** Pointer to the associated URI transfer. */
+    PSHAREDCLIPBOARDURITRANSFER    m_pURITransfer;
+    /** Handle to the associated URI object. */
+    SHAREDCLIPBOARDOBJHANDLE       m_hObj;
 };
 
 /**

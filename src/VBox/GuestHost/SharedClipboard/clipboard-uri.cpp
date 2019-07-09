@@ -18,6 +18,8 @@
 #define LOG_GROUP LOG_GROUP_SHARED_CLIPBOARD
 #include <VBox/log.h>
 
+#include <iprt/dir.h>
+#include <iprt/file.h>
 #include <iprt/path.h>
 #include <iprt/semaphore.h>
 
@@ -89,12 +91,6 @@ PVBOXCLIPBOARDLISTHDR SharedClipboardURIListHdrDup(PVBOXCLIPBOARDLISTHDR pListHd
     if (pListHdrDup)
     {
         *pListHdrDup = *pListHdr;
-
-        if (pListHdr->pszFilter)
-        {
-            pListHdrDup->pszFilter = RTStrDup(pListHdr->pszFilter);
-            pListHdrDup->cbFilter  = (uint32_t)strlen(pListHdrDup->pszFilter);
-        }
     }
 
     return pListHdrDup;
@@ -109,6 +105,8 @@ PVBOXCLIPBOARDLISTHDR SharedClipboardURIListHdrDup(PVBOXCLIPBOARDLISTHDR pListHd
 int SharedClipboardURIListHdrInit(PVBOXCLIPBOARDLISTHDR pListHdr)
 {
     AssertPtrReturn(pListHdr, VERR_INVALID_POINTER);
+
+    LogFlowFuncEnter();
 
     SharedClipboardURIListHdrReset(pListHdr);
 
@@ -126,15 +124,6 @@ void SharedClipboardURIListHdrDestroy(PVBOXCLIPBOARDLISTHDR pListHdr)
         return;
 
     LogFlowFuncEnter();
-
-    if (pListHdr->pszFilter)
-    {
-        Assert(pListHdr->cbFilter);
-
-        RTStrFree(pListHdr->pszFilter);
-        pListHdr->pszFilter = NULL;
-        pListHdr->cbFilter = 0;
-    }
 }
 
 /**
@@ -164,10 +153,96 @@ bool SharedClipboardURIListHdrIsValid(PVBOXCLIPBOARDLISTHDR pListHdr)
     return true; /** @todo Implement this. */
 }
 
+int SharedClipboardURIListOpenParmsCopy(PVBOXCLIPBOARDLISTOPENPARMS pDst, PVBOXCLIPBOARDLISTOPENPARMS pSrc)
+{
+    AssertPtrReturn(pDst, VERR_INVALID_POINTER);
+    AssertPtrReturn(pSrc, VERR_INVALID_POINTER);
+
+    int rc = VINF_SUCCESS;
+
+    if (pSrc->pszFilter)
+    {
+        pDst->pszFilter = RTStrDup(pSrc->pszFilter);
+        if (!pDst->pszFilter)
+            rc = VERR_NO_MEMORY;
+    }
+
+    if (   RT_SUCCESS(rc)
+        && pSrc->pszPath)
+    {
+        pDst->pszPath = RTStrDup(pSrc->pszPath);
+        if (!pDst->pszPath)
+            rc = VERR_NO_MEMORY;
+    }
+
+    if (RT_SUCCESS(rc))
+    {
+        pDst->fList    = pDst->fList;
+        pDst->cbFilter = pSrc->cbFilter;
+        pDst->cbPath   = pSrc->cbPath;
+    }
+
+    return rc;
+}
+
+PVBOXCLIPBOARDLISTOPENPARMS SharedClipboardURIListOpenParmsDup(PVBOXCLIPBOARDLISTOPENPARMS pParms)
+{
+    AssertPtrReturn(pParms, NULL);
+
+    PVBOXCLIPBOARDLISTOPENPARMS pParmsDup = (PVBOXCLIPBOARDLISTOPENPARMS)RTMemAllocZ(sizeof(VBOXCLIPBOARDLISTOPENPARMS));
+    if (!pParmsDup)
+        return NULL;
+
+    int rc = SharedClipboardURIListOpenParmsCopy(pParmsDup, pParms);
+    if (RT_FAILURE(rc))
+    {
+        SharedClipboardURIListOpenParmsDestroy(pParmsDup);
+
+        RTMemFree(pParmsDup);
+        pParmsDup = NULL;
+    }
+
+    return pParmsDup;
+}
+
+int SharedClipboardURIListOpenParmsInit(PVBOXCLIPBOARDLISTOPENPARMS pParms)
+{
+    AssertPtrReturn(pParms, VERR_INVALID_POINTER);
+
+    RT_BZERO(pParms, sizeof(VBOXCLIPBOARDLISTOPENPARMS));
+
+    pParms->cbFilter  = 64;
+    pParms->pszFilter = RTStrAlloc(pParms->cbFilter);
+
+    pParms->cbPath    = RTPATH_MAX;
+    pParms->pszPath   = RTStrAlloc(pParms->cbPath);
+
+    LogFlowFuncLeave();
+    return VINF_SUCCESS;
+}
+
+void SharedClipboardURIListOpenParmsDestroy(PVBOXCLIPBOARDLISTOPENPARMS pParms)
+{
+    if (!pParms)
+        return;
+
+    if (pParms->pszFilter)
+    {
+        RTStrFree(pParms->pszFilter);
+        pParms->pszFilter = NULL;
+    }
+
+    if (pParms->pszPath)
+    {
+        RTStrFree(pParms->pszPath);
+        pParms->pszPath = NULL;
+    }
+}
+
 /**
- * Creates (allocates) and initializes a VBOXCLIPBOARDListEntry structure.
+ * Creates (allocates) and initializes a clipboard list entry structure.
  *
- * @param   ppDirData           Where to return the created VBOXCLIPBOARDListEntry structure on success.
+ * @param   ppDirData           Where to return the created clipboard list entry structure on success.
  */
 int SharedClipboardURIListEntryAlloc(PVBOXCLIPBOARDLISTENTRY *ppListEntry)
 {
@@ -183,9 +258,9 @@ int SharedClipboardURIListEntryAlloc(PVBOXCLIPBOARDLISTENTRY *ppListEntry)
 }
 
 /**
- * Frees a VBOXCLIPBOARDListEntry structure.
+ * Frees a clipboard list entry structure.
  *
- * @param   pListEntry         VBOXCLIPBOARDListEntry structure to free.
+ * @param   pListEntry         Clipboard list entry structure to free.
  */
 void SharedClipboardURIListEntryFree(PVBOXCLIPBOARDLISTENTRY pListEntry)
 {
@@ -197,34 +272,75 @@ void SharedClipboardURIListEntryFree(PVBOXCLIPBOARDLISTENTRY pListEntry)
 }
 
 /**
- * Duplicates (allocates) a VBOXCLIPBOARDListEntry structure.
+ * (Deep) Copies a clipboard list entry structure.
  *
- * @returns Duplicated VBOXCLIPBOARDListEntry structure on success.
- * @param   pListEntry          VBOXCLIPBOARDListEntry to duplicate.
+ * @returns VBox status code.
+ * @param   pListEntry          Clipboard list entry to copy.
+ */
+int SharedClipboardURIListEntryCopy(PVBOXCLIPBOARDLISTENTRY pDst, PVBOXCLIPBOARDLISTENTRY pSrc)
+{
+    AssertPtrReturn(pDst, VERR_INVALID_POINTER);
+    AssertPtrReturn(pSrc, VERR_INVALID_POINTER);
+
+    int rc = VINF_SUCCESS;
+
+    *pDst = *pSrc;
+
+    if (pSrc->pvInfo)
+    {
+        pDst->pvInfo = RTMemDup(pSrc->pvInfo, pSrc->cbInfo);
+        if (pDst->pvInfo)
+        {
+            pDst->cbInfo = pSrc->cbInfo;
+        }
+        else
+            rc = VERR_NO_MEMORY;
+    }
+
+    if (RT_FAILURE(rc))
+    {
+        if (pDst->pvInfo)
+        {
+            RTMemFree(pDst->pvInfo);
+            pDst->pvInfo = NULL;
+            pDst->cbInfo = 0;
+        }
+    }
+
+    return rc;
+}
+
+/**
+ * Duplicates (allocates) a clipboard list entry structure.
+ *
+ * @returns Duplicated clipboard list entry structure on success.
+ * @param   pListEntry          Clipboard list entry to duplicate.
  */
 PVBOXCLIPBOARDLISTENTRY SharedClipboardURIListEntryDup(PVBOXCLIPBOARDLISTENTRY pListEntry)
 {
     AssertPtrReturn(pListEntry, NULL);
 
-    PVBOXCLIPBOARDLISTENTRY pListEntryDup = (PVBOXCLIPBOARDLISTENTRY)RTMemAlloc(sizeof(VBOXCLIPBOARDLISTENTRY));
-    if (pListEntryDup)
-    {
-        *pListEntryDup = *pListEntry;
+    int rc = VINF_SUCCESS;
 
-        if (pListEntry->pvInfo)
-        {
-            pListEntryDup->pvInfo= RTMemDup(pListEntry->pvInfo, pListEntry->cbInfo);
-            pListEntryDup->cbInfo = pListEntry->cbInfo;
-        }
+    PVBOXCLIPBOARDLISTENTRY pListEntryDup = (PVBOXCLIPBOARDLISTENTRY)RTMemAllocZ(sizeof(VBOXCLIPBOARDLISTENTRY));
+    if (pListEntryDup)
+        rc = SharedClipboardURIListEntryCopy(pListEntryDup, pListEntry);
+
+    if (RT_FAILURE(rc))
+    {
+        SharedClipboardURIListEntryDestroy(pListEntryDup);
+
+        RTMemFree(pListEntryDup);
+        pListEntryDup = NULL;
     }
 
     return pListEntryDup;
 }
 
 /**
- * Initializes a VBOXCLIPBOARDListEntry structure.
+ * Initializes a clipboard list entry structure.
  *
- * @param   pListEntry          VBOXCLIPBOARDListEntry structure to initialize.
+ * @param   pListEntry          clipboard list entry structure to initialize.
  */
 int SharedClipboardURIListEntryInit(PVBOXCLIPBOARDLISTENTRY pListEntry)
 {
@@ -234,12 +350,15 @@ int SharedClipboardURIListEntryInit(PVBOXCLIPBOARDLISTENTRY pListEntry)
 }
 
 /**
- * Initializes a VBOXCLIPBOARDListEntry structure.
+ * Initializes a clipboard list entry structure.
  *
- * @param   pListEntry          VBOXCLIPBOARDListEntry structure to destroy.
+ * @param   pListEntry          clipboard list entry structure to destroy.
  */
 void SharedClipboardURIListEntryDestroy(PVBOXCLIPBOARDLISTENTRY pListEntry)
 {
+    if (!pListEntry)
+        return;
+
     if (pListEntry->pvInfo)
     {
         RTMemFree(pListEntry->pvInfo);
@@ -542,7 +661,6 @@ int SharedClipboardURIObjCtxInit(PSHAREDCLIPBOARDCLIENTURIOBJCTX pObjCtx)
     LogFlowFuncEnter();
 
     pObjCtx->uHandle  = SHAREDCLIPBOARDOBJHANDLE_INVALID;
-    pObjCtx->pObjInfo = NULL;
 
     return VINF_SUCCESS;
 }
@@ -557,8 +675,6 @@ void SharedClipboardURIObjCtxDestroy(PSHAREDCLIPBOARDCLIENTURIOBJCTX pObjCtx)
     AssertPtrReturnVoid(pObjCtx);
 
     LogFlowFuncEnter();
-
-    pObjCtx->pObjInfo = NULL;
 }
 
 /**
@@ -570,8 +686,7 @@ void SharedClipboardURIObjCtxDestroy(PSHAREDCLIPBOARDCLIENTURIOBJCTX pObjCtx)
 bool SharedClipboardURIObjCtxIsValid(PSHAREDCLIPBOARDCLIENTURIOBJCTX pObjCtx)
 {
     return (   pObjCtx
-            && pObjCtx->uHandle != SHAREDCLIPBOARDOBJHANDLE_INVALID
-            && pObjCtx->pObjInfo);
+            && pObjCtx->uHandle != SHAREDCLIPBOARDOBJHANDLE_INVALID);
 }
 
 /**
@@ -614,20 +729,14 @@ int SharedClipboardURITransferCreate(SHAREDCLIPBOARDURITRANSFERDIR enmDir, SHARE
 
     RT_ZERO(pTransfer->Callbacks);
 
-    pTransfer->pURIList = new SharedClipboardURIList();
-    if (pTransfer->pURIList)
+    pTransfer->pMapEvents = new SharedClipboardURITransferEventMap();
+    if (pTransfer->pMapEvents)
     {
-        pTransfer->Events.pMap = new SharedClipboardURITransferEventMap();
-        if (pTransfer->Events.pMap)
+        pTransfer->pMapLists = new SharedClipboardURIListMap();
+        if (pTransfer->pMapLists)
         {
-            rc = SharedClipboardURIObjCtxInit(&pTransfer->State.ObjCtx);
-            if (RT_SUCCESS(rc))
-            {
-                *ppTransfer = pTransfer;
-            }
+            *ppTransfer = pTransfer;
         }
-        else
-            rc = VERR_NO_MEMORY;
     }
     else
         rc = VERR_NO_MEMORY;
@@ -658,19 +767,17 @@ int SharedClipboardURITransferDestroy(PSHAREDCLIPBOARDURITRANSFER pTransfer)
     if (RT_FAILURE(rc))
         return rc;
 
-    if (pTransfer->pURIList)
+    if (pTransfer->pMapEvents)
     {
-        delete pTransfer->pURIList;
-        pTransfer->pURIList = NULL;
+        delete pTransfer->pMapEvents;
+        pTransfer->pMapEvents = NULL;
     }
 
-    if (pTransfer->Events.pMap)
+    if (pTransfer->pMapLists)
     {
-        delete pTransfer->Events.pMap;
-        pTransfer->Events.pMap = NULL;
+        delete pTransfer->pMapLists;
+        pTransfer->pMapLists = NULL;
     }
-
-    SharedClipboardURIObjCtxDestroy(&pTransfer->State.ObjCtx);
 
     LogFlowFuncLeave();
     return VINF_SUCCESS;
@@ -698,85 +805,509 @@ int SharedClipboardURITransferClose(PSHAREDCLIPBOARDURITRANSFER pTransfer)
     return rc;
 }
 
-int SharedClipboardURITransferListOpen(PSHAREDCLIPBOARDURITRANSFER pTransfer, PVBOXCLIPBOARDLISTHDR pListHdr,
-                                       PVBOXCLIPBOARDLISTHANDLE phList)
+static SHAREDCLIPBOARDLISTHANDLE sharedClipboardURITransferListHandleNew(PSHAREDCLIPBOARDURITRANSFER pTransfer)
+{
+    RT_NOREF(pTransfer);
+
+    return 42; /** @todo FIX !!!!! */
+}
+
+int SharedClipboardURITransferListOpen(PSHAREDCLIPBOARDURITRANSFER pTransfer, PVBOXCLIPBOARDLISTOPENPARMS pOpenParms,
+                                       PSHAREDCLIPBOARDLISTHANDLE phList)
+{
+    AssertPtrReturn(pTransfer,  VERR_INVALID_POINTER);
+    AssertPtrReturn(pOpenParms, VERR_INVALID_POINTER);
+    AssertPtrReturn(phList,     VERR_INVALID_POINTER);
+
+    int rc;
+
+    SHAREDCLIPBOARDLISTHANDLE hList = SHAREDCLIPBOARDLISTHANDLE_INVALID;
+
+    if (pTransfer->State.enmSource == SHAREDCLIPBOARDSOURCE_LOCAL)
+    {
+        PSHAREDCLIPBOARDURILISTHANDLEINFO pInfo
+            = (PSHAREDCLIPBOARDURILISTHANDLEINFO)RTMemAlloc(sizeof(SHAREDCLIPBOARDURILISTHANDLEINFO));
+        if (pInfo)
+        {
+            if (   !pOpenParms->pszPath
+                || !strlen(pOpenParms->pszPath))
+                RTStrAPrintf(&pOpenParms->pszPath, "C:\\Temp"); /** @todo FIX !!!! */
+
+            RTFSOBJINFO objInfo;
+            rc = RTPathQueryInfo(pOpenParms->pszPath, &objInfo, RTFSOBJATTRADD_NOTHING);
+            if (RTFS_IS_DIRECTORY(objInfo.Attr.fMode))
+            {
+                rc = RTDirOpen(&pInfo->u.Local.hDirRoot, pOpenParms->pszPath);
+            }
+            else if (RTFS_IS_FILE(objInfo.Attr.fMode))
+            {
+                rc = RTFileOpen(&pInfo->u.Local.hFile, pOpenParms->pszPath, RTFILE_O_READ | RTFILE_O_DENY_WRITE);
+            }
+            else if (RTFS_IS_SYMLINK(objInfo.Attr.fMode))
+            {
+                rc = VERR_NOT_IMPLEMENTED; /** @todo */
+            }
+            else
+                AssertFailedStmt(rc = VERR_NOT_SUPPORTED);
+
+            if (RT_SUCCESS(rc))
+                rc = SharedClipboardURIListOpenParmsCopy(&pInfo->OpenParms, pOpenParms);
+
+            if (RT_SUCCESS(rc))
+            {
+                pInfo->fMode = objInfo.Attr.fMode;
+
+                hList = sharedClipboardURITransferListHandleNew(pTransfer);
+
+                pTransfer->pMapLists->insert(
+                    std::pair<SHAREDCLIPBOARDLISTHANDLE, PSHAREDCLIPBOARDURILISTHANDLEINFO>(hList, pInfo));
+            }
+            else
+            {
+                if (RTFS_IS_DIRECTORY(objInfo.Attr.fMode))
+                {
+                    if (RTDirIsValid(pInfo->u.Local.hDirRoot))
+                        RTDirClose(pInfo->u.Local.hDirRoot);
+                }
+                else if (RTFS_IS_FILE(objInfo.Attr.fMode))
+                {
+                    if (RTFileIsValid(pInfo->u.Local.hFile))
+                        RTFileClose(pInfo->u.Local.hFile);
+                }
+
+                RTMemFree(pInfo);
+                pInfo = NULL;
+            }
+        }
+        else
+            rc = VERR_NO_MEMORY;
+    }
+    else if (pTransfer->State.enmSource == SHAREDCLIPBOARDSOURCE_REMOTE)
+    {
+        if (pTransfer->ProviderIface.pfnListOpen)
+        {
+            rc = pTransfer->ProviderIface.pfnListOpen(&pTransfer->ProviderCtx, pOpenParms, &hList);
+        }
+        else
+            rc = VERR_NOT_SUPPORTED;
+    }
+    else
+        AssertFailedStmt(rc = VERR_NOT_IMPLEMENTED);
+
+    if (RT_SUCCESS(rc))
+        *phList = hList;
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+int SharedClipboardURITransferListClose(PSHAREDCLIPBOARDURITRANSFER pTransfer, SHAREDCLIPBOARDLISTHANDLE hList)
 {
     AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
-    AssertPtrReturn(pListHdr,  VERR_INVALID_POINTER);
-    /* phList is optional. */
+
+    if (hList == SHAREDCLIPBOARDLISTHANDLE_INVALID)
+        return VINF_SUCCESS;
 
     int rc = VINF_SUCCESS;
 
-    VBOXCLIPBOARDLISTHANDLE hList = SHAREDCLIPBOARDLISTHANDLE_INVALID;
-
-    if (pTransfer->ProviderIface.pfnListOpen)
-        rc = pTransfer->ProviderIface.pfnListOpen(&pTransfer->ProviderCtx, pListHdr, &hList);
-
-    if (RT_SUCCESS(rc))
+    if (pTransfer->State.enmSource == SHAREDCLIPBOARDSOURCE_LOCAL)
     {
-        AssertPtr(pTransfer->ProviderIface.pfnListHdrRead);
-        rc = pTransfer->ProviderIface.pfnListHdrRead(&pTransfer->ProviderCtx, hList, pListHdr);
+        SharedClipboardURIListMap::iterator itList = pTransfer->pMapLists->find(hList);
+        if (itList != pTransfer->pMapLists->end())
+        {
+            PSHAREDCLIPBOARDURILISTHANDLEINFO pInfo = itList->second;
+            AssertPtr(pInfo);
+
+            if (RTDirIsValid(pInfo->u.Local.hDirRoot))
+                RTDirClose(pInfo->u.Local.hDirRoot);
+
+            RTMemFree(pInfo);
+
+            pTransfer->pMapLists->erase(itList);
+        }
+        else
+            rc = VERR_NOT_FOUND;
     }
-
-    if (RT_SUCCESS(rc))
+    else if (pTransfer->State.enmSource == SHAREDCLIPBOARDSOURCE_REMOTE)
     {
-        if (phList)
-            *phList = hList;
-    }
-    else if (pTransfer->ProviderIface.pfnListClose)
-    {
-        int rc2 = pTransfer->ProviderIface.pfnListClose(&pTransfer->ProviderCtx, hList);
-        AssertRC(rc2);
+        if (pTransfer->ProviderIface.pfnListClose)
+        {
+            rc = pTransfer->ProviderIface.pfnListClose(&pTransfer->ProviderCtx, hList);
+        }
+        else
+            rc = VERR_NOT_SUPPORTED;
     }
 
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
-int SharedClipboardURITransferListClose(PSHAREDCLIPBOARDURITRANSFER pTransfer, VBOXCLIPBOARDLISTHANDLE hList)
+static int sharedClipboardURITransferListHdrAddFile(PVBOXCLIPBOARDLISTHDR pHdr, const char *pszPath)
 {
-    AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
-
-    int rc = VINF_SUCCESS;
-
-    if (pTransfer->ProviderIface.pfnListClose)
-        rc = pTransfer->ProviderIface.pfnListClose(&pTransfer->ProviderCtx, hList);
+    uint64_t cbSize = 0;
+    int rc = RTFileQuerySize(pszPath, &cbSize);
+    if (RT_SUCCESS(rc))
+    {
+        pHdr->cbTotalSize  += cbSize;
+        pHdr->cTotalObjects++;
+    }
 
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
-int SharedClipboardURITransferListRead(PSHAREDCLIPBOARDURITRANSFER pTransfer, VBOXCLIPBOARDLISTHANDLE hList,
+static int sharedClipboardURITransferListHdrFromDir(PVBOXCLIPBOARDLISTHDR pHdr,
+                                                    const char *pcszSrcPath, const char *pcszDstPath,
+                                                    const char *pcszDstBase, size_t cchDstBase)
+{
+    AssertPtrReturn(pcszSrcPath, VERR_INVALID_POINTER);
+    AssertPtrReturn(pcszDstBase, VERR_INVALID_POINTER);
+    AssertPtrReturn(pcszDstPath, VERR_INVALID_POINTER);
+
+    LogFlowFunc(("pcszSrcPath=%s, pcszDstPath=%s, pcszDstBase=%s, cchDstBase=%zu\n",
+                 pcszSrcPath, pcszDstPath, pcszDstBase, cchDstBase));
+
+    RTFSOBJINFO objInfo;
+    int rc = RTPathQueryInfo(pcszSrcPath, &objInfo, RTFSOBJATTRADD_NOTHING);
+    if (RT_SUCCESS(rc))
+    {
+        if (RTFS_IS_DIRECTORY(objInfo.Attr.fMode))
+        {
+            pHdr->cTotalObjects++; /* Add directory itself. */
+
+            if (RT_SUCCESS(rc))
+            {
+                RTDIR hDir;
+                rc = RTDirOpen(&hDir, pcszSrcPath);
+                if (RT_SUCCESS(rc))
+                {
+                    size_t        cbDirEntry = 0;
+                    PRTDIRENTRYEX pDirEntry  = NULL;
+                    do
+                    {
+                        /* Retrieve the next directory entry. */
+                        rc = RTDirReadExA(hDir, &pDirEntry, &cbDirEntry, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK);
+                        if (RT_FAILURE(rc))
+                        {
+                            if (rc == VERR_NO_MORE_FILES)
+                                rc = VINF_SUCCESS;
+                            break;
+                        }
+
+                        switch (pDirEntry->Info.Attr.fMode & RTFS_TYPE_MASK)
+                        {
+                            case RTFS_TYPE_DIRECTORY:
+                            {
+                                /* Skip "." and ".." entries. */
+                                if (RTDirEntryExIsStdDotLink(pDirEntry))
+                                    break;
+
+                                char *pszSrc = RTPathJoinA(pcszSrcPath, pDirEntry->szName);
+                                if (pszSrc)
+                                {
+                                    char *pszDst = RTPathJoinA(pcszDstPath, pDirEntry->szName);
+                                    if (pszDst)
+                                    {
+                                        rc = sharedClipboardURITransferListHdrFromDir(pHdr, pszSrc, pszDst,
+                                                                                      pcszDstBase, cchDstBase);
+                                        RTStrFree(pszDst);
+                                    }
+                                    else
+                                        rc = VERR_NO_MEMORY;
+
+                                    RTStrFree(pszSrc);
+                                }
+                                else
+                                    rc = VERR_NO_MEMORY;
+                                break;
+                            }
+
+                            case RTFS_TYPE_FILE:
+                            {
+                                char *pszSrc = RTPathJoinA(pcszSrcPath, pDirEntry->szName);
+                                if (pszSrc)
+                                {
+                                    rc = sharedClipboardURITransferListHdrAddFile(pHdr, pszSrc);
+                                    RTStrFree(pszSrc);
+                                }
+                                else
+                                    rc = VERR_NO_MEMORY;
+                                break;
+                            }
+                            case RTFS_TYPE_SYMLINK:
+                            {
+                                /** @todo Not implemented yet. */
+                            }
+
+                            default:
+                                break;
+                        }
+
+                    } while (RT_SUCCESS(rc));
+
+                    RTDirReadExAFree(&pDirEntry, &cbDirEntry);
+                    RTDirClose(hDir);
+                }
+            }
+        }
+        else if (RTFS_IS_FILE(objInfo.Attr.fMode))
+        {
+            rc = sharedClipboardURITransferListHdrAddFile(pHdr, pcszSrcPath);
+        }
+        else if (RTFS_IS_SYMLINK(objInfo.Attr.fMode))
+        {
+            /** @todo Not implemented yet. */
+        }
+        else
+            rc = VERR_NOT_SUPPORTED;
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+int SharedClipboardURITransferListGetHeader(PSHAREDCLIPBOARDURITRANSFER pTransfer, SHAREDCLIPBOARDLISTHANDLE hList,
+                                            PVBOXCLIPBOARDLISTHDR pHdr)
+{
+    AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
+    AssertPtrReturn(pHdr,      VERR_INVALID_POINTER);
+
+    int rc;
+
+    LogFlowFunc(("hList=%RU64\n", hList));
+
+    if (pTransfer->State.enmSource == SHAREDCLIPBOARDSOURCE_LOCAL)
+    {
+        SharedClipboardURIListMap::iterator itList = pTransfer->pMapLists->find(hList);
+        if (itList != pTransfer->pMapLists->end())
+        {
+            rc = SharedClipboardURIListHdrInit(pHdr);
+            if (RT_SUCCESS(rc))
+            {
+                PSHAREDCLIPBOARDURILISTHANDLEINFO pInfo = itList->second;
+                AssertPtr(pInfo);
+
+                if (RTFS_IS_DIRECTORY(pInfo->fMode))
+                {
+                    char *pszSrcPath = RTStrDup(pInfo->OpenParms.pszPath);
+                    if (pszSrcPath)
+                    {
+                        size_t cbSrcPathLen = RTPathStripTrailingSlash(pszSrcPath);
+                        if (cbSrcPathLen)
+                        {
+                            char *pszFileName = RTPathFilename(pszSrcPath);
+                            if (pszFileName)
+                            {
+                                Assert(pszFileName >= pszSrcPath);
+                                size_t cchDstBase = pszFileName - pszSrcPath;
+                                char *pszDstPath  = &pszSrcPath[cchDstBase];
+
+                                LogFlowFunc(("pszSrcPath=%s, pszFileName=%s, pszDstPath=%s\n", pszSrcPath, pszFileName, pszDstPath));
+                                rc = sharedClipboardURITransferListHdrFromDir(pHdr,
+                                                                              pszSrcPath, pszSrcPath, pszSrcPath, cchDstBase);
+                            }
+                            else
+                                rc = VERR_PATH_NOT_FOUND;
+                        }
+                        else
+                            rc = VERR_INVALID_PARAMETER;
+
+                        RTStrFree(pszSrcPath);
+                    }
+                    else
+                        rc = VERR_NO_MEMORY;
+                }
+                else if (RTFS_IS_FILE(pInfo->fMode))
+                {
+                    pHdr->cTotalObjects = 1;
+
+                    RTFSOBJINFO objInfo;
+                    rc = RTFileQueryInfo(pInfo->u.Local.hFile, &objInfo, RTFSOBJATTRADD_NOTHING);
+                    if (RT_SUCCESS(rc))
+                    {
+                        pHdr->cbTotalSize = objInfo.cbObject;
+                    }
+                }
+                else if (RTFS_IS_SYMLINK(pInfo->fMode))
+                {
+                    rc = VERR_NOT_IMPLEMENTED; /** @todo */
+                }
+                else
+                    AssertFailedStmt(rc = VERR_NOT_SUPPORTED);
+            }
+        }
+        else
+            rc = VERR_NOT_FOUND;
+    }
+    else if (pTransfer->State.enmSource == SHAREDCLIPBOARDSOURCE_REMOTE)
+    {
+        if (pTransfer->ProviderIface.pfnListHdrRead)
+        {
+            rc = pTransfer->ProviderIface.pfnListHdrRead(&pTransfer->ProviderCtx, hList, pHdr);
+        }
+        else
+            rc = VERR_NOT_SUPPORTED;
+    }
+    else
+        AssertFailedStmt(rc = VERR_NOT_IMPLEMENTED);
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+/**
+ * Returns the current URI object for a clipboard URI transfer list.
+ *
+ * @returns Pointer to URI object.
+ * @param   pTransfer           URI clipboard transfer to return URI object for.
+ */
+PSHAREDCLIPBOARDURITRANSFEROBJ SharedClipboardURITransferListGetObj(PSHAREDCLIPBOARDURITRANSFER pTransfer,
+                                                                    SHAREDCLIPBOARDLISTHANDLE hList, uint64_t uIdx)
+{
+    AssertPtrReturn(pTransfer, NULL);
+
+    RT_NOREF(hList, uIdx);
+
+    LogFlowFunc(("hList=%RU64\n", hList));
+
+    return NULL;
+}
+
+int SharedClipboardURITransferListRead(PSHAREDCLIPBOARDURITRANSFER pTransfer, SHAREDCLIPBOARDLISTHANDLE hList,
                                        PVBOXCLIPBOARDLISTENTRY pEntry)
 {
     AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
+    AssertPtrReturn(pEntry,    VERR_INVALID_POINTER);
 
     int rc = VINF_SUCCESS;
 
-    if (pTransfer->ProviderIface.pfnListEntryRead)
-        rc = pTransfer->ProviderIface.pfnListEntryRead(&pTransfer->ProviderCtx, hList, pEntry);
+    LogFlowFunc(("hList=%RU64\n", hList));
+
+    if (pTransfer->State.enmSource == SHAREDCLIPBOARDSOURCE_LOCAL)
+    {
+        SharedClipboardURIListMap::iterator itList = pTransfer->pMapLists->find(hList);
+        if (itList != pTransfer->pMapLists->end())
+        {
+            PSHAREDCLIPBOARDURILISTHANDLEINFO pInfo = itList->second;
+            AssertPtr(pInfo);
+
+            if (RTFS_IS_DIRECTORY(pInfo->fMode))
+            {
+                size_t        cbDirEntry = 0;
+                PRTDIRENTRYEX pDirEntry  = NULL;
+                rc = RTDirReadExA(pInfo->u.Local.hDirRoot, &pDirEntry, &cbDirEntry, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK);
+                if (RT_SUCCESS(rc))
+                {
+                    switch (pDirEntry->Info.Attr.fMode & RTFS_TYPE_MASK)
+                    {
+                        case RTFS_TYPE_DIRECTORY:
+                        {
+                            /* Skip "." and ".." entries. */
+                            if (RTDirEntryExIsStdDotLink(pDirEntry))
+                                break;
+
+                            RT_FALL_THROUGH();
+                        }
+
+                        case RTFS_TYPE_FILE:
+                        {
+                            pEntry->pvInfo = (PSHAREDCLIPBOARDFSOBJINFO)RTMemAlloc(sizeof(SHAREDCLIPBOARDFSOBJINFO));
+                            if (pEntry->pvInfo)
+                            {
+                                SharedClipboardFsObjFromIPRT(PSHAREDCLIPBOARDFSOBJINFO(pEntry->pvInfo), &pDirEntry->Info);
+
+                                pEntry->cbInfo = sizeof(SHAREDCLIPBOARDFSOBJINFO);
+                                pEntry->fInfo  = 0; /** @todo Implement. */
+                            }
+                            else
+                                rc = VERR_NO_MEMORY;
+                            break;
+                        }
+
+                        case RTFS_TYPE_SYMLINK:
+                        {
+                            /** @todo Not implemented yet. */
+                            break;
+                        }
+
+                        default:
+                            break;
+                    }
+
+                    RTDirReadExAFree(&pDirEntry, &cbDirEntry);
+                }
+            }
+            else if (RTFS_IS_FILE(pInfo->fMode))
+            {
+                RTFSOBJINFO objInfo;
+                rc = RTFileQueryInfo(pInfo->u.Local.hFile, &objInfo, RTFSOBJATTRADD_NOTHING);
+                if (RT_SUCCESS(rc))
+                {
+                    pEntry->pvInfo = (PSHAREDCLIPBOARDFSOBJINFO)RTMemAlloc(sizeof(SHAREDCLIPBOARDFSOBJINFO));
+                    if (pEntry->pvInfo)
+                    {
+                        SharedClipboardFsObjFromIPRT(PSHAREDCLIPBOARDFSOBJINFO(pEntry->pvInfo), &objInfo);
+
+                        pEntry->cbInfo = sizeof(SHAREDCLIPBOARDFSOBJINFO);
+                        pEntry->fInfo  = 0; /** @todo Implement. */
+                    }
+                    else
+                        rc = VERR_NO_MEMORY;
+                }
+            }
+            else if (RTFS_IS_SYMLINK(pInfo->fMode))
+            {
+                rc = VERR_NOT_IMPLEMENTED;
+            }
+            else
+                AssertFailedStmt(rc = VERR_NOT_SUPPORTED);
+        }
+        else
+            rc = VERR_NOT_FOUND;
+    }
+    else if (pTransfer->State.enmSource == SHAREDCLIPBOARDSOURCE_REMOTE)
+    {
+        if (pTransfer->ProviderIface.pfnListEntryRead)
+            rc = pTransfer->ProviderIface.pfnListEntryRead(&pTransfer->ProviderCtx, hList, pEntry);
+        else
+            rc = VERR_NOT_SUPPORTED;
+    }
 
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
-int SharedClipboardURITransferListWrite(PSHAREDCLIPBOARDURITRANSFER pTransfer, VBOXCLIPBOARDLISTHANDLE hList,
+int SharedClipboardURITransferListWrite(PSHAREDCLIPBOARDURITRANSFER pTransfer, SHAREDCLIPBOARDLISTHANDLE hList,
                                         PVBOXCLIPBOARDLISTENTRY pEntry)
 {
+    RT_NOREF(pTransfer, hList, pEntry);
+
     int rc = VINF_SUCCESS;
 
+#if 0
     if (pTransfer->ProviderIface.pfnListEntryWrite)
         rc = pTransfer->ProviderIface.pfnListEntryWrite(&pTransfer->ProviderCtx, hList, pEntry);
+#endif
 
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
-bool SharedClipboardURITransferListHandleIsValid(PSHAREDCLIPBOARDURITRANSFER pTransfer, VBOXCLIPBOARDLISTHANDLE hList)
+bool SharedClipboardURITransferListHandleIsValid(PSHAREDCLIPBOARDURITRANSFER pTransfer, SHAREDCLIPBOARDLISTHANDLE hList)
 {
-    RT_NOREF(pTransfer, hList);
+    bool fIsValid = false;
 
-    return true; /** @todo Implement this. */
+    if (pTransfer->State.enmSource == SHAREDCLIPBOARDSOURCE_LOCAL)
+    {
+        SharedClipboardURIListMap::iterator itList = pTransfer->pMapLists->find(hList);
+        fIsValid = itList != pTransfer->pMapLists->end();
+    }
+    else if (pTransfer->State.enmSource == SHAREDCLIPBOARDSOURCE_REMOTE)
+    {
+        AssertFailed(); /** @todo Implement. */
+    }
+
+    return fIsValid;
 }
 
 /**
@@ -816,14 +1347,14 @@ int SharedClipboardURITransferPrepare(PSHAREDCLIPBOARDURITRANSFER pTransfer)
 }
 
 /**
- * Creates an URI provider for a given transfer.
+ * Sets the URI provider interface for a given transfer.
  *
  * @returns VBox status code.
  * @param   pTransfer           Transfer to create URI provider for.
  * @param   pCreationCtx        Provider creation context to use for provider creation.
  */
-int SharedClipboardURITransferProviderCreate(PSHAREDCLIPBOARDURITRANSFER pTransfer,
-                                             PSHAREDCLIPBOARDPROVIDERCREATIONCTX pCreationCtx)
+int SharedClipboardURITransferSetInterface(PSHAREDCLIPBOARDURITRANSFER pTransfer,
+                                           PSHAREDCLIPBOARDPROVIDERCREATIONCTX pCreationCtx)
 {
     AssertPtrReturn(pTransfer,    VERR_INVALID_POINTER);
     AssertPtrReturn(pCreationCtx, VERR_INVALID_POINTER);
@@ -853,11 +1384,6 @@ void SharedClipboardURITransferReset(PSHAREDCLIPBOARDURITRANSFER pTransfer)
     LogFlowFuncEnter();
 
     /** @todo Anything else to do here? */
-
-    if (pTransfer->pURIList)
-        pTransfer->pURIList->Clear();
-
-    SharedClipboardURIObjCtxDestroy(&pTransfer->State.ObjCtx);
 }
 
 /**
@@ -871,63 +1397,6 @@ SharedClipboardArea *SharedClipboardURITransferGetArea(PSHAREDCLIPBOARDURITRANSF
     AssertPtrReturn(pTransfer, NULL);
 
     return pTransfer->pArea;
-}
-
-/**
- * Returns the current object context of a clipboard URI transfer.
- *
- * @returns Current object context, or NULL if none.
- * @param   pTransfer           URI clipboard transfer to return object context for.
- */
-PSHAREDCLIPBOARDCLIENTURIOBJCTX SharedClipboardURITransferGetCurrentObjCtx(PSHAREDCLIPBOARDURITRANSFER pTransfer)
-{
-    /* At the moment we only have one object context per transfer at a time. */
-    return &pTransfer->State.ObjCtx;
-}
-
-/**
- * Returns the current URI object for a clipboard URI transfer.
- *
- * @returns Current URI object, or NULL if none.
- * @param   pTransfer           URI clipboard transfer to return current URI object for.
- */
-const SharedClipboardURIObject *SharedClipboardURITransferGetCurrentObject(PSHAREDCLIPBOARDURITRANSFER pTransfer)
-{
-    AssertPtrReturn(pTransfer, NULL);
-
-    if (pTransfer->pURIList)
-        return pTransfer->pURIList->First();
-
-    return NULL;
-}
-
-/**
- * Returns the URI list for a clipboard URI transfer.
- *
- * @returns Pointer to URI list.
- * @param   pTransfer           URI clipboard transfer to return URI list for.
- */
-SharedClipboardURIList *SharedClipboardURITransferGetList(PSHAREDCLIPBOARDURITRANSFER pTransfer)
-{
-    AssertPtrReturn(pTransfer, NULL);
-
-    return pTransfer->pURIList;
-}
-
-/**
- * Returns the current URI object for a clipboard URI transfer.
- *
- * @returns Pointer to URI object.
- * @param   pTransfer           URI clipboard transfer to return URI object for.
- */
-SharedClipboardURIObject *SharedClipboardURITransferGetObject(PSHAREDCLIPBOARDURITRANSFER pTransfer, uint64_t uIdx)
-{
-    AssertPtrReturn(pTransfer, NULL);
-
-    if (!pTransfer->pURIList)
-        return NULL;
-
-    return pTransfer->pURIList->At(uIdx);
 }
 
 SHAREDCLIPBOARDSOURCE SharedClipboardURITransferGetSource(PSHAREDCLIPBOARDURITRANSFER pTransfer)
@@ -1050,8 +1519,8 @@ int SharedClipboardURITransferEventRegister(PSHAREDCLIPBOARDURITRANSFER pTransfe
 {
     int rc;
 
-    SharedClipboardURITransferEventMap::iterator itEvent = pTransfer->Events.pMap->find(uID);
-    if (itEvent == pTransfer->Events.pMap->end())
+    SharedClipboardURITransferEventMap::iterator itEvent = pTransfer->pMapEvents->find(uID);
+    if (itEvent == pTransfer->pMapEvents->end())
     {
         PSHAREDCLIPBOARDURITRANSFEREVENT pEvent
             = (PSHAREDCLIPBOARDURITRANSFEREVENT)RTMemAllocZ(sizeof(SHAREDCLIPBOARDURITRANSFEREVENT));
@@ -1060,7 +1529,7 @@ int SharedClipboardURITransferEventRegister(PSHAREDCLIPBOARDURITRANSFER pTransfe
             rc = RTSemEventCreate(&pEvent->hEventSem);
             if (RT_SUCCESS(rc))
             {
-                pTransfer->Events.pMap->insert(std::pair<uint32_t, PSHAREDCLIPBOARDURITRANSFEREVENT>(uID, pEvent)); /** @todo Can this throw? */
+                pTransfer->pMapEvents->insert(std::pair<uint32_t, PSHAREDCLIPBOARDURITRANSFEREVENT>(uID, pEvent)); /** @todo Can this throw? */
             }
         }
         else
@@ -1077,8 +1546,8 @@ int SharedClipboardURITransferEventUnregister(PSHAREDCLIPBOARDURITRANSFER pTrans
 {
     int rc;
 
-    SharedClipboardURITransferEventMap::const_iterator itEvent = pTransfer->Events.pMap->find(uID);
-    if (itEvent != pTransfer->Events.pMap->end())
+    SharedClipboardURITransferEventMap::const_iterator itEvent = pTransfer->pMapEvents->find(uID);
+    if (itEvent != pTransfer->pMapEvents->end())
     {
         SharedClipboardURITransferPayloadFree(itEvent->second->pPayload);
 
@@ -1086,7 +1555,7 @@ int SharedClipboardURITransferEventUnregister(PSHAREDCLIPBOARDURITRANSFER pTrans
 
         RTMemFree(itEvent->second);
 
-        pTransfer->Events.pMap->erase(itEvent);
+        pTransfer->pMapEvents->erase(itEvent);
 
         rc = VINF_SUCCESS;
     }
@@ -1104,8 +1573,8 @@ int SharedClipboardURITransferEventWait(PSHAREDCLIPBOARDURITRANSFER pTransfer, u
 
     int rc;
 
-    SharedClipboardURITransferEventMap::const_iterator itEvent = pTransfer->Events.pMap->find(uID);
-    if (itEvent != pTransfer->Events.pMap->end())
+    SharedClipboardURITransferEventMap::const_iterator itEvent = pTransfer->pMapEvents->find(uID);
+    if (itEvent != pTransfer->pMapEvents->end())
     {
         rc = RTSemEventWait(itEvent->second->hEventSem, uTimeoutMs);
         if (RT_SUCCESS(rc))
@@ -1127,8 +1596,8 @@ int SharedClipboardURITransferEventSignal(PSHAREDCLIPBOARDURITRANSFER pTransfer,
 {
     int rc;
 
-    SharedClipboardURITransferEventMap::const_iterator itEvent = pTransfer->Events.pMap->find(uID);
-    if (itEvent != pTransfer->Events.pMap->end())
+    SharedClipboardURITransferEventMap::const_iterator itEvent = pTransfer->pMapEvents->find(uID);
+    if (itEvent != pTransfer->pMapEvents->end())
     {
         Assert(itEvent->second->pPayload == NULL);
 

@@ -248,52 +248,58 @@ DECLCALLBACK(int) VBoxClipboardWinDataObject::readThread(RTTHREAD ThreadSelf, vo
     int rc = SharedClipboardURITransferOpen(pTransfer);
     if (RT_SUCCESS(rc))
     {
-        VBOXCLIPBOARDLISTHDR Hdr;
-        rc = SharedClipboardURIListHdrInit(&Hdr);
+        VBOXCLIPBOARDLISTOPENPARMS openParmsList;
+        rc = SharedClipboardURIListOpenParmsInit(&openParmsList);
         if (RT_SUCCESS(rc))
         {
-            VBOXCLIPBOARDLISTHANDLE hList;
-            rc = SharedClipboardURITransferListOpen(pTransfer, &Hdr, &hList);
+            SHAREDCLIPBOARDLISTHANDLE hList;
+            rc = SharedClipboardURITransferListOpen(pTransfer, &openParmsList, &hList);
             if (RT_SUCCESS(rc))
             {
-                LogFlowFunc(("hList=%RU64, cTotalObjects=%RU64, cbTotalSize=%RU64\n\n",
-                             hList, Hdr.cTotalObjects, Hdr.cbTotalSize));
+                LogFlowFunc(("hList=%RU64\n", hList));
 
-                for (uint64_t i = 0; i < Hdr.cTotalObjects; i++)
-                {
-                    VBOXCLIPBOARDLISTENTRY Entry;
-                    rc = SharedClipboardURITransferListRead(pTransfer, hList, &Entry);
-                    if (RT_SUCCESS(rc))
-                    {
-
-                    }
-                    else
-                        break;
-
-                    if (pTransfer->Thread.fStop)
-                        break;
-                }
-
+                VBOXCLIPBOARDLISTHDR hdrList;
+                rc = SharedClipboardURITransferListGetHeader(pTransfer, hList, &hdrList);
                 if (RT_SUCCESS(rc))
                 {
-                    /*
-                     * Signal the "list complete" event so that this data object can return (valid) data via ::GetData().
-                     * This in turn then will create IStream instances (by the OS) for each file system object to handle.
-                     */
-                    int rc2 = RTSemEventSignal(pThis->m_EventListComplete);
-                    AssertRC(rc2);
+                    LogFlowFunc(("cTotalObjects=%RU64, cbTotalSize=%RU64\n\n",
+                                 hdrList.cTotalObjects, hdrList.cbTotalSize));
 
-                    LogFlowFunc(("Waiting for transfer to complete ...\n"));
+                    for (uint64_t i = 0; i < hdrList.cTotalObjects; i++)
+                    {
+                        VBOXCLIPBOARDLISTENTRY entryList;
+                        rc = SharedClipboardURITransferListRead(pTransfer, hList, &entryList);
+                        if (RT_SUCCESS(rc))
+                        {
+                        }
+                        else
+                            break;
 
-                    /* Transferring stuff can take a while, so don't use any timeout here. */
-                    rc2 = RTSemEventWait(pThis->m_EventTransferComplete, RT_INDEFINITE_WAIT);
-                    AssertRC(rc2);
+                        if (pTransfer->Thread.fStop)
+                            break;
+                    }
+
+                    if (RT_SUCCESS(rc))
+                    {
+                        /*
+                         * Signal the "list complete" event so that this data object can return (valid) data via ::GetData().
+                         * This in turn then will create IStream instances (by the OS) for each file system object to handle.
+                         */
+                        int rc2 = RTSemEventSignal(pThis->m_EventListComplete);
+                        AssertRC(rc2);
+
+                        LogFlowFunc(("Waiting for transfer to complete ...\n"));
+
+                        /* Transferring stuff can take a while, so don't use any timeout here. */
+                        rc2 = RTSemEventWait(pThis->m_EventTransferComplete, RT_INDEFINITE_WAIT);
+                        AssertRC(rc2);
+                    }
                 }
 
                 SharedClipboardURITransferListClose(pTransfer, hList);
             }
 
-            SharedClipboardURIListHdrDestroy(&Hdr);
+            SharedClipboardURIListOpenParmsDestroy(&openParmsList);
         }
 
         SharedClipboardURITransferClose(pTransfer);
@@ -496,8 +502,9 @@ STDMETHODIMP VBoxClipboardWinDataObject::GetData(LPFORMATETC pFormatEtc, LPSTGME
                     rc = SharedClipboardURITransferRun(m_pTransfer, &VBoxClipboardWinDataObject::readThread, this);
                     if (RT_SUCCESS(rc))
                     {
+                        /* Don't block for too long here, as this also will screw other apps running on the OS. */
                         LogFunc(("Waiting for listing to arrive ...\n"));
-                        rc = RTSemEventWait(m_EventListComplete, 5 * 60 * 1000 /* 5 min timeout */);
+                        rc = RTSemEventWait(m_EventListComplete, 10 * 1000 /* 10s timeout */);
                         if (RT_SUCCESS(rc))
                         {
                             LogFunc(("Listing complete\n"));
@@ -529,8 +536,10 @@ STDMETHODIMP VBoxClipboardWinDataObject::GetData(LPFORMATETC pFormatEtc, LPSTGME
         {
             LogFlowFunc(("FormatIndex_FileContents: m_uObjIdx=%u\n", m_uObjIdx));
 
+            SHAREDCLIPBOARDOBJHANDLE hObj = 0; /** @todo */
+
             /* Hand-in the provider so that our IStream implementation can continue working with it. */
-            hr = VBoxClipboardWinStreamImpl::Create(this /* pParent */, m_pTransfer, m_uObjIdx, &m_pStream);
+            hr = VBoxClipboardWinStreamImpl::Create(this /* pParent */, m_pTransfer, hObj, &m_pStream);
             if (SUCCEEDED(hr))
             {
                 /* Hand over the stream to the caller. */

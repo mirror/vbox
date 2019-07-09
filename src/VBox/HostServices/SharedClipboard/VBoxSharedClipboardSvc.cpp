@@ -126,6 +126,24 @@
  * data is being read / written in the current context (host / guest), while
  * the rest of the code stays the same.
  *
+ * @section sec_uri_protocol            URI protocol.
+ *
+ * The host service issues commands which the guest has to respond with an own
+ * message to. The protocol itself is designed so that it has primitives to list
+ * directories and open/close/read/write file system objects.
+ *
+ * The protocol does not rely on the old ReportMsg() / ReturnMsg() mechanism anymore
+ * and uses a (per-client) message queue instead (see VBOX_SHARED_CLIPBOARD_GUEST_FN_GET_HOST_MSG_OLD
+ * vs. VBOX_SHARED_CLIPBOARD_GUEST_FN_GET_HOST_MSG).
+ *
+ * Note that this is different from the DnD approach, as Shared Clipboard transfers
+ * need to be deeper integrated within the host / guest OS (i.e. for progress UI),
+ * and this might require non-monolithic / random access APIs to achieve.
+ *
+ * One transfer always is handled by an own (HGCM) client, so for multiple transfers
+ * at the same time, multiple clients (client IDs) are being used. How this transfer
+ * is implemented on the guest (and / or host) side depends upon the actual implementation,
+ * e.g. via an own thread per transfer.
  */
 
 
@@ -135,6 +153,7 @@
 #define LOG_GROUP LOG_GROUP_SHARED_CLIPBOARD
 #include <VBox/log.h>
 
+#include <VBox/AssertGuest.h>
 #include <VBox/HostServices/Service.h>
 #include <VBox/HostServices/VBoxClipboardSvc.h>
 #include <VBox/HostServices/VBoxClipboardExt.h>
@@ -166,7 +185,7 @@ static void vboxSvcClipboardClientStateReset(PVBOXCLIPBOARDCLIENTDATA pClientDat
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
-static PVBOXHGCMSVCHELPERS g_pHelpers;
+PVBOXHGCMSVCHELPERS g_pHelpers;
 
 static RTCRITSECT g_CritSect;
 static uint32_t g_uMode;
@@ -182,22 +201,13 @@ static uint32_t g_u32DelayedFormats = 0;
 /** Is the clipboard running in headless mode? */
 static bool g_fHeadless = false;
 
-/** Map of all connected clients. */
+/** Global map of all connected clients. */
 ClipboardClientMap g_mapClients;
 
-/** List of all clients which are queued up (deferred return) and ready
+/** Global list of all clients which are queued up (deferred return) and ready
  *  to process new commands. The key is the (unique) client ID. */
 ClipboardClientQueue g_listClientsDeferred;
 
-
-#if 0
-static void VBoxHGCMParmPtrSet (VBOXHGCMSVCPARM *pParm, void *pv, uint32_t cb)
-{
-    pParm->type             = VBOX_HGCM_SVC_PARM_PTR;
-    pParm->u.pointer.size   = cb;
-    pParm->u.pointer.addr   = pv;
-}
-#endif
 
 static int VBoxHGCMParmPtrGet(VBOXHGCMSVCPARM *pParm, void **ppv, uint32_t *pcb)
 {
@@ -322,6 +332,32 @@ void vboxSvcClipboardMsgFree(PVBOXCLIPBOARDCLIENTMSG pMsg)
 }
 
 /**
+ * Sets the GUEST_MSG_PEEK_WAIT GUEST_MSG_PEEK_NOWAIT return parameters.
+ *
+ * @param   paDstParms  The peek parameter vector.
+ * @param   cDstParms   The number of peek parameters (at least two).
+ * @remarks ASSUMES the parameters has been cleared by clientMsgPeek.
+ */
+void vboxSvcClipboardMsgSetPeekReturn(PVBOXCLIPBOARDCLIENTMSG pMsg, PVBOXHGCMSVCPARM paDstParms, uint32_t cDstParms)
+{
+    Assert(cDstParms >= 2);
+    if (paDstParms[0].type == VBOX_HGCM_SVC_PARM_32BIT)
+        paDstParms[0].u.uint32 = pMsg->m_uMsg;
+    else
+        paDstParms[0].u.uint64 = pMsg->m_uMsg;
+    paDstParms[1].u.uint32 = pMsg->m_cParms;
+
+    uint32_t i = RT_MIN(cDstParms, pMsg->m_cParms + 2);
+    while (i-- > 2)
+        switch (pMsg->m_paParms[i - 2].type)
+        {
+            case VBOX_HGCM_SVC_PARM_32BIT: paDstParms[i].u.uint32 = ~(uint32_t)sizeof(uint32_t); break;
+            case VBOX_HGCM_SVC_PARM_64BIT: paDstParms[i].u.uint32 = ~(uint32_t)sizeof(uint64_t); break;
+            case VBOX_HGCM_SVC_PARM_PTR:   paDstParms[i].u.uint32 = pMsg->m_paParms[i - 2].u.pointer.size; break;
+        }
+}
+
+/**
  * Adds a new message to a client'S message queue.
  *
  * @returns IPRT status code.
@@ -346,91 +382,256 @@ int vboxSvcClipboardMsgAdd(PVBOXCLIPBOARDCLIENTDATA pClientData, PVBOXCLIPBOARDC
 }
 
 /**
- * Retrieves information about the next message in the queue.
+ * Implements VBOX_SHARED_CLIPBOARD_GUEST_FN_MSG_PEEK_WAIT and VBOX_SHARED_CLIPBOARD_GUEST_FN_MSG_PEEK_NOWAIT.
  *
- * @returns IPRT status code. VERR_NO_DATA if no next message is available.
- * @param   pClientData         Pointer to the client data structure to get message info for.
- * @param   puType              Where to store the message type.
- * @param   pcParms             Where to store the message parameter count.
+ * @returns VBox status code.
+ * @retval  VINF_SUCCESS if a message was pending and is being returned.
+ * @retval  VERR_TRY_AGAIN if no message pending and not blocking.
+ * @retval  VERR_RESOURCE_BUSY if another read already made a waiting call.
+ * @retval  VINF_HGCM_ASYNC_EXECUTE if message wait is pending.
+ *
+ * @param   pClient     The client state.
+ * @param   hCall       The client's call handle.
+ * @param   cParms      Number of parameters.
+ * @param   paParms     Array of parameters.
+ * @param   fWait       Set if we should wait for a message, clear if to return
+ *                      immediately.
  */
-int vboxSvcClipboardMsgGetNextInfo(PVBOXCLIPBOARDCLIENTDATA pClientData, uint32_t *puType, uint32_t *pcParms)
+int vboxSvcClipboardMsgPeek(PVBOXCLIPBOARDCLIENT pClient, VBOXHGCMCALLHANDLE hCall, uint32_t cParms, VBOXHGCMSVCPARM paParms[],
+                            bool fWait)
 {
-    AssertPtrReturn(puType, VERR_INVALID_POINTER);
-    AssertPtrReturn(pcParms, VERR_INVALID_POINTER);
+    /*
+     * Validate the request.
+     */
+    ASSERT_GUEST_MSG_RETURN(cParms >= 2, ("cParms=%u!\n", cParms), VERR_WRONG_PARAMETER_COUNT);
 
-    int rc;
-
-    if (pClientData->queueMsg.isEmpty())
+    uint64_t idRestoreCheck = 0;
+    uint32_t i              = 0;
+    if (paParms[i].type == VBOX_HGCM_SVC_PARM_64BIT)
     {
-        rc = VERR_NO_DATA;
+        idRestoreCheck = paParms[0].u.uint64;
+        paParms[0].u.uint64 = 0;
+        i++;
     }
-    else
+    for (; i < cParms; i++)
     {
-        PVBOXCLIPBOARDCLIENTMSG pMsg = pClientData->queueMsg.first();
-        AssertPtr(pMsg);
-
-        *puType  = pMsg->m_uMsg;
-        *pcParms = pMsg->m_cParms;
-
-        rc = VINF_SUCCESS;
+        ASSERT_GUEST_MSG_RETURN(paParms[i].type == VBOX_HGCM_SVC_PARM_32BIT, ("#%u type=%u\n", i, paParms[i].type),
+                                VERR_WRONG_PARAMETER_TYPE);
+        paParms[i].u.uint32 = 0;
     }
 
-    LogFlowFunc(("Returning puMsg=%RU32, pcParms=%RU32, rc=%Rrc\n", *puType, *pcParms, rc));
-    return rc;
+    /*
+     * Check restore session ID.
+     */
+    if (idRestoreCheck != 0)
+    {
+        uint64_t idRestore = g_pHelpers->pfnGetVMMDevSessionId(g_pHelpers);
+        if (idRestoreCheck != idRestore)
+        {
+            paParms[0].u.uint64 = idRestore;
+            LogFlowFunc(("[Client %RU32] VBOX_SHARED_CLIPBOARD_GUEST_FN_MSG_PEEK_XXX -> VERR_VM_RESTORED (%#RX64 -> %#RX64)\n",
+                         pClient->uClientID, idRestoreCheck, idRestore));
+            return VERR_VM_RESTORED;
+        }
+        Assert(!g_pHelpers->pfnIsCallRestored(hCall));
+    }
+
+    /*
+     * Return information about the first message if one is pending in the list.
+     */
+    if (!pClient->pData->queueMsg.isEmpty())
+    {
+        PVBOXCLIPBOARDCLIENTMSG pFirstMsg = pClient->pData->queueMsg.first();
+        if (pFirstMsg)
+        {
+            vboxSvcClipboardMsgSetPeekReturn(pFirstMsg, paParms, cParms);
+            LogFlowFunc(("[Client %RU32] VBOX_SHARED_CLIPBOARD_GUEST_FN_MSG_PEEK_XXX -> VINF_SUCCESS (idMsg=%u (%s), cParms=%u)\n",
+                         pClient->uClientID, pFirstMsg->m_uMsg, VBoxSvcClipboardHostMsgToStr(pFirstMsg->m_uMsg),
+                         pFirstMsg->m_cParms));
+            return VINF_SUCCESS;
+        }
+    }
+
+    /*
+     * If we cannot wait, fail the call.
+     */
+    if (!fWait)
+    {
+        LogFlowFunc(("[Client %RU32] GUEST_MSG_PEEK_NOWAIT -> VERR_TRY_AGAIN\n", pClient->uClientID));
+        return VERR_TRY_AGAIN;
+    }
+
+    /*
+     * Wait for the host to queue a message for this client.
+     */
+    ASSERT_GUEST_MSG_RETURN(pClient->Pending.uType == 0, ("Already pending! (idClient=%RU32)\n",
+                                                           pClient->uClientID), VERR_RESOURCE_BUSY);
+    pClient->Pending.hHandle = hCall;
+    pClient->Pending.cParms  = cParms;
+    pClient->Pending.paParms = paParms;
+    pClient->Pending.uType   = VBOX_SHARED_CLIPBOARD_GUEST_FN_MSG_PEEK_WAIT;
+    LogFlowFunc(("[Client %RU32] Is now in pending mode...\n", pClient->uClientID));
+    return VINF_HGCM_ASYNC_EXECUTE;
 }
 
 /**
- * Retrieves the next queued up message and removes it from the queue on success.
- * Will return VERR_NO_DATA if no next message is available.
+ * Implements VBOX_SHARED_CLIPBOARD_GUEST_FN_MSG_GET.
  *
- * @returns IPRT status code.
- * @param   pClientData         Pointer to the client data structure to get message for.
- * @param   uMsg                Message type to retrieve.
- * @param   cParms              Number of parameters the \@a paParms array can store.
- * @param   paParms             Where to store the message parameters.
+ * @returns VBox status code.
+ * @retval  VINF_SUCCESS if message retrieved and removed from the pending queue.
+ * @retval  VERR_TRY_AGAIN if no message pending.
+ * @retval  VERR_BUFFER_OVERFLOW if a parmeter buffer is too small.  The buffer
+ *          size was updated to reflect the required size, though this isn't yet
+ *          forwarded to the guest.  (The guest is better of using peek with
+ *          parameter count + 2 parameters to get the sizes.)
+ * @retval  VERR_MISMATCH if the incoming message ID does not match the pending.
+ * @retval  VINF_HGCM_ASYNC_EXECUTE if message was completed already.
+ *
+ * @param   pClient      The client state.
+ * @param   hCall        The client's call handle.
+ * @param   cParms       Number of parameters.
+ * @param   paParms      Array of parameters.
  */
-int vboxSvcClipboardMsgGetNext(PVBOXCLIPBOARDCLIENTDATA pClientData,
-                               uint32_t uMsg, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
+int vboxSvcClipboardMsgGet(PVBOXCLIPBOARDCLIENT pClient, VBOXHGCMCALLHANDLE hCall, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
-    LogFlowFunc(("uMsg=%RU32, cParms=%RU32\n", uMsg, cParms));
+    /*
+     * Validate the request.
+     */
+    uint32_t const idMsgExpected = cParms > 0 && paParms[0].type == VBOX_HGCM_SVC_PARM_32BIT ? paParms[0].u.uint32
+                                 : cParms > 0 && paParms[0].type == VBOX_HGCM_SVC_PARM_64BIT ? paParms[0].u.uint64
+                                 : UINT32_MAX;
 
-    /* Check for pending messages in our queue. */
-    if (pClientData->queueMsg.isEmpty())
-        return VERR_NO_DATA;
-
-    /* Get the current message. */
-    PVBOXCLIPBOARDCLIENTMSG pMsg = pClientData->queueMsg.first();
-    AssertPtr(pMsg);
-
-    int rc = VINF_SUCCESS;
-
-    /* Fetch the current message info. */
-    if (pMsg->m_uMsg != uMsg)
+    /*
+     * Return information about the first message if one is pending in the list.
+     */
+    PVBOXCLIPBOARDCLIENTMSG pFirstMsg = pClient->pData->queueMsg.first();
+    if (pFirstMsg)
     {
-        LogFunc(("Stored message type (%RU32) does not match request (%RU32)\n", pMsg->m_uMsg, uMsg));
-        rc = VERR_INVALID_PARAMETER;
-    }
-    else if (pMsg->m_cParms > cParms)
-    {
-        LogFunc(("Stored parameter count (%RU32) exceeds request buffer (%RU32)\n", pMsg->m_cParms, cParms));
-        rc = VERR_INVALID_PARAMETER;
+        LogFlowFunc(("First message is: %RU32 %s (%RU32 parms)\n",
+                     pFirstMsg->m_uMsg, VBoxSvcClipboardHostMsgToStr(pFirstMsg->m_uMsg), pFirstMsg->m_cParms));
+
+        ASSERT_GUEST_MSG_RETURN(pFirstMsg->m_uMsg == idMsgExpected || idMsgExpected == UINT32_MAX,
+                                ("idMsg=%u (%s) cParms=%u, caller expected %u (%s) and %u\n",
+                                 pFirstMsg->m_uMsg, VBoxSvcClipboardHostMsgToStr(pFirstMsg->m_uMsg), pFirstMsg->m_uMsg,
+                                 idMsgExpected, VBoxSvcClipboardHostMsgToStr(idMsgExpected), cParms),
+                                VERR_MISMATCH);
+        ASSERT_GUEST_MSG_RETURN(pFirstMsg->m_cParms == cParms,
+                                ("idMsg=%u (%s) cParms=%u, caller expected %u (%s) and %u\n",
+                                 pFirstMsg->m_uMsg, VBoxSvcClipboardHostMsgToStr(pFirstMsg->m_uMsg), pFirstMsg->m_cParms,
+                                 idMsgExpected, VBoxSvcClipboardHostMsgToStr(idMsgExpected), cParms),
+                                VERR_WRONG_PARAMETER_COUNT);
+
+        /* Check the parameter types. */
+        for (uint32_t i = 0; i < cParms; i++)
+            ASSERT_GUEST_MSG_RETURN(pFirstMsg->m_paParms[i].type == paParms[i].type,
+                                    ("param #%u: type %u, caller expected %u (idMsg=%u %s)\n", i, pFirstMsg->m_paParms[i].type,
+                                     paParms[i].type, pFirstMsg->m_uMsg, VBoxSvcClipboardHostMsgToStr(pFirstMsg->m_uMsg)),
+                                    VERR_WRONG_PARAMETER_TYPE);
+        /*
+         * Copy out the parameters.
+         *
+         * No assertions on buffer overflows, and keep going till the end so we can
+         * communicate all the required buffer sizes.
+         */
+        int rc = VINF_SUCCESS;
+        for (uint32_t i = 0; i < cParms; i++)
+            switch (pFirstMsg->m_paParms[i].type)
+            {
+                case VBOX_HGCM_SVC_PARM_32BIT:
+                    paParms[i].u.uint32 = pFirstMsg->m_paParms[i].u.uint32;
+                    break;
+
+                case VBOX_HGCM_SVC_PARM_64BIT:
+                    paParms[i].u.uint64 = pFirstMsg->m_paParms[i].u.uint64;
+                    break;
+
+                case VBOX_HGCM_SVC_PARM_PTR:
+                {
+                    uint32_t const cbSrc = pFirstMsg->m_paParms[i].u.pointer.size;
+                    uint32_t const cbDst = paParms[i].u.pointer.size;
+                    paParms[i].u.pointer.size = cbSrc; /** @todo Check if this is safe in other layers...
+                                                        * Update: Safe, yes, but VMMDevHGCM doesn't pass it along. */
+                    if (cbSrc <= cbDst)
+                        memcpy(paParms[i].u.pointer.addr, pFirstMsg->m_paParms[i].u.pointer.addr, cbSrc);
+                    else
+                        rc = VERR_BUFFER_OVERFLOW;
+                    break;
+                }
+
+                default:
+                    AssertMsgFailed(("#%u: %u\n", i, pFirstMsg->m_paParms[i].type));
+                    rc = VERR_INTERNAL_ERROR;
+                    break;
+            }
+        if (RT_SUCCESS(rc))
+        {
+            /*
+             * Complete the message and remove the pending message unless the
+             * guest raced us and cancelled this call in the meantime.
+             */
+            AssertPtr(g_pHelpers);
+            rc = g_pHelpers->pfnCallComplete(hCall, rc);
+
+            LogFlowFunc(("[Client %RU32] pfnCallComplete -> %Rrc\n", pClient->uClientID, rc));
+
+            if (rc != VERR_CANCELLED)
+            {
+                pClient->pData->queueMsg.removeFirst();
+                vboxSvcClipboardMsgFree(pFirstMsg);
+            }
+
+            return VINF_HGCM_ASYNC_EXECUTE; /* The caller must not complete it. */
+        }
+
+        LogFlowFunc(("[Client %RU32] Returning %Rrc\n", pClient->uClientID, rc));
+        return rc;
     }
 
-    if (RT_SUCCESS(rc))
-    {
-        rc = Message::CopyParms(paParms, cParms, pMsg->m_paParms, pMsg->m_cParms, true /* fDeepCopy */);
+    paParms[0].u.uint32 = 0;
+    paParms[1].u.uint32 = 0;
+    LogFlowFunc(("[Client %RU32] -> VERR_TRY_AGAIN\n", pClient->uClientID));
+    return VERR_TRY_AGAIN;
+}
 
-        /** @todo Only remove on success? */
-        pClientData->queueMsg.removeFirst(); /* Remove the current message from the queue. */
-    }
-    else
+int vboxSvcClipboardClientWakeup(PVBOXCLIPBOARDCLIENT pClient)
+{
+    int rc = VINF_NO_CHANGE;
+
+    if (pClient->Pending.uType)
     {
-        vboxSvcClipboardMsgQueueReset(pClientData);
-        /** @todo Cleanup, send notification to guest. */
+        LogFlowFunc(("[Client %RU32] Waking up ...\n", pClient->uClientID));
+
+        rc = VINF_SUCCESS;
+
+        if (!pClient->pData->queueMsg.isEmpty())
+        {
+            PVBOXCLIPBOARDCLIENTMSG pFirstMsg = pClient->pData->queueMsg.first();
+            if (pFirstMsg)
+            {
+                LogFlowFunc(("[Client %RU32] Current host message is %RU32 (cParms=%RU32)\n",
+                             pClient->uClientID, pFirstMsg->m_uMsg, pFirstMsg->m_cParms));
+
+                if (pClient->Pending.uType == VBOX_SHARED_CLIPBOARD_GUEST_FN_MSG_PEEK_WAIT)
+                {
+                    vboxSvcClipboardMsgSetPeekReturn(pFirstMsg, pClient->Pending.paParms, pClient->Pending.cParms);
+                    rc = g_pHelpers->pfnCallComplete(pClient->Pending.hHandle, VINF_SUCCESS);
+
+                    pClient->Pending.hHandle = NULL;
+                    pClient->Pending.paParms = NULL;
+                    pClient->Pending.cParms  = 0;
+                    pClient->Pending.uType   = false;
+                }
+            }
+            else
+                AssertFailed();
+        }
+        else
+            AssertMsgFailed(("Waking up client ID=%RU32 with no host message in queue is a bad idea\n", pClient->uClientID));
+
+        return rc;
     }
 
-    LogFlowFunc(("Message processed with rc=%Rrc\n", rc));
-    return rc;
+    return VINF_NO_CHANGE;
 }
 
 /* Set the HGCM parameters according to pending messages.
@@ -918,7 +1119,7 @@ static DECLCALLBACK(void) svcCall(void *,
 
                                         SharedClipboardURITransferSetCallbacks(pTransfer, &Callbacks);
 
-                                        rc = SharedClipboardURITransferProviderCreate(pTransfer, &creationCtx);
+                                        rc = SharedClipboardURITransferSetInterface(pTransfer, &creationCtx);
                                         if (RT_SUCCESS(rc))
                                             rc = SharedClipboardURICtxTransferAdd(&pClientData->URI, pTransfer);
                                     }
@@ -1035,7 +1236,7 @@ static DECLCALLBACK(void) svcCall(void *,
 
                                     creationCtx.pvUser = pClientData;
 
-                                    rc = SharedClipboardURITransferProviderCreate(pTransfer, &creationCtx);
+                                    rc = SharedClipboardURITransferSetInterface(pTransfer, &creationCtx);
                                     if (RT_SUCCESS(rc))
                                         rc = SharedClipboardURICtxTransferAdd(&pClientData->URI, pTransfer);
                                 }
@@ -1229,116 +1430,6 @@ int vboxSvcClipboardCompleteReadData(PVBOXCLIPBOARDCLIENTDATA pClientData, int r
     }
 
     return VINF_SUCCESS;
-}
-
-/**
- * Defers a client from returning back to the caller (guest side).
- *
- * @returns VBox status code.
- * @param   pClient             Client to defer.
- * @param   hHandle             The call handle to defer.
- * @param   u32Function         Function ID to save.
- * @param   cParms              Number of parameters to save.
- * @param   paParms             Parameter arrray to save.
- */
-int vboxSvcClipboardClientDefer(PVBOXCLIPBOARDCLIENT pClient,
-                                VBOXHGCMCALLHANDLE hHandle, uint32_t u32Function, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
-{
-    LogFlowFunc(("uClient=%RU32\n", pClient->uClientID));
-
-    AssertMsgReturn(pClient->fDeferred == false, ("Client already in deferred mode\n"),
-                    VERR_WRONG_ORDER);
-
-    pClient->fDeferred = true;
-
-    pClient->Deferred.hHandle = hHandle;
-    pClient->Deferred.uType   = u32Function;
-    pClient->Deferred.cParms  = cParms;
-    pClient->Deferred.paParms = paParms;
-
-    return false;
-}
-
-/**
- * Completes a call of a client, which in turn will return the result to the caller on
- * the guest side.
- *
- * @returns VBox status code.
- * @param   pClient             Client to complete.
- * @param   hHandle             Call handle to complete.
- * @param   rc                  Return code to set for the client.
- */
-int vboxSvcClipboardClientComplete(PVBOXCLIPBOARDCLIENT pClient, VBOXHGCMCALLHANDLE hHandle, int rc)
-{
-    RT_NOREF(pClient);
-
-    LogFlowFunc(("uClient=%RU32, rc=%Rrc\n", pClient->uClientID, rc));
-
-    g_pHelpers->pfnCallComplete(hHandle, rc);
-
-    return VINF_SUCCESS;
-}
-
-/**
- * Completes a deferred client.
- *
- * @returns VBox status code.
- * @param   pClient             Client to complete.
- * @param   rcComplete          Return code to set for the client.
- */
-int vboxSvcClipboardClientDeferredComplete(PVBOXCLIPBOARDCLIENT pClient, int rcComplete)
-{
-    LogFlowFunc(("uClient=%RU32, fDeferred=%RTbool\n", pClient->uClientID, pClient->fDeferred));
-
-    int rc = VINF_SUCCESS;
-
-    if (pClient->fDeferred) /* Not deferred? Bail out early. */
-    {
-        LogFlowFunc(("Completing call\n"));
-
-        rc = vboxSvcClipboardClientComplete(pClient, pClient->Deferred.hHandle, rcComplete);
-
-        pClient->fDeferred = false;
-        RT_ZERO(pClient->Deferred);
-    }
-
-    return rc;
-}
-
-/**
- * Sets a deferred client's next message info -- when returning to the client, it then
- * can retrieve the actual message sent by the host.
- *
- * @returns VBox status code.
- * @param   pClient             Client to set the next message information for.
- * @param   uMsg                Message ID to set.
- * @param   cParms              Number of parameters of message required.
- */
-int vboxSvcClipboardClientDeferredSetMsgInfo(PVBOXCLIPBOARDCLIENT pClient, uint32_t uMsg, uint32_t cParms)
-{
-    int rc;
-
-    LogFlowFunc(("uClient=%RU32\n", pClient->uClientID));
-
-    if (pClient->fDeferred)
-    {
-        if (pClient->Deferred.cParms >= 2)
-        {
-            AssertPtrReturn(pClient->Deferred.paParms, VERR_BUFFER_OVERFLOW);
-
-            HGCMSvcSetU32(&pClient->Deferred.paParms[0], uMsg);
-            HGCMSvcSetU32(&pClient->Deferred.paParms[1], cParms);
-
-            rc = VINF_SUCCESS;
-        }
-        else
-            rc = VERR_INVALID_PARAMETER;
-    }
-    else
-        rc = VERR_INVALID_STATE;
-
-    LogFlowFuncLeaveRC(rc);
-    return rc;
 }
 
 /**
