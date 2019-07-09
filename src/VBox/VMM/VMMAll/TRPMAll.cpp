@@ -317,6 +317,7 @@ VMMDECL(void) TRPMSetFaultAddress(PVMCPU pVCpu, RTGCUINTPTR uCR2)
 {
     Log2(("TRPMSetFaultAddress: uCR2=%RGv\n", uCR2));
     AssertMsg(pVCpu->trpm.s.uActiveVector != ~0U, ("No active trap!\n"));
+    AssertMsg(pVCpu->trpm.s.enmActiveType == TRPM_TRAP, ("Not hardware exception!\n"));
     AssertMsg(pVCpu->trpm.s.uActiveVector == X86_XCPT_PF, ("Not trap 0e!\n"));
     pVCpu->trpm.s.uActiveCR2 = uCR2;
 }
