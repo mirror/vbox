@@ -203,7 +203,7 @@ static ComPtr<IDHCPServer> dhcpdFindServer(PDHCPDCMDCTX pCtx)
 /**
  * Handles the 'add' and 'modify' subcommands.
  */
-static RTEXITCODE dhcpdHandleAddAndModify(PDHCPDCMDCTX pCtx, int argc, char **argv)
+static DECLCALLBACK(RTEXITCODE) dhcpdHandleAddAndModify(PDHCPDCMDCTX pCtx, int argc, char **argv)
 {
     /*
      * Parse options.
@@ -508,7 +508,7 @@ static RTEXITCODE dhcpdHandleAddAndModify(PDHCPDCMDCTX pCtx, int argc, char **ar
 /**
  * Handles the 'remove' subcommand.
  */
-static RTEXITCODE dhcpdHandleRemove(PDHCPDCMDCTX pCtx, int argc, char **argv)
+static DECLCALLBACK(RTEXITCODE) dhcpdHandleRemove(PDHCPDCMDCTX pCtx, int argc, char **argv)
 {
     /*
      * Parse the command line.
@@ -552,7 +552,7 @@ static RTEXITCODE dhcpdHandleRemove(PDHCPDCMDCTX pCtx, int argc, char **argv)
 /**
  * Handles the 'restart' subcommand.
  */
-static RTEXITCODE dhcpdHandleRestart(PDHCPDCMDCTX pCtx, int argc, char **argv)
+static DECLCALLBACK(RTEXITCODE) dhcpdHandleRestart(PDHCPDCMDCTX pCtx, int argc, char **argv)
 {
     /*
      * Parse the command line.
@@ -596,7 +596,7 @@ static RTEXITCODE dhcpdHandleRestart(PDHCPDCMDCTX pCtx, int argc, char **argv)
 /**
  * Handles the 'findlease' subcommand.
  */
-static RTEXITCODE dhcpdHandleFindLease(PDHCPDCMDCTX pCtx, int argc, char **argv)
+static DECLCALLBACK(RTEXITCODE) dhcpdHandleFindLease(PDHCPDCMDCTX pCtx, int argc, char **argv)
 {
     /*
      * Parse the command line.
