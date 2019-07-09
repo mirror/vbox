@@ -2717,7 +2717,7 @@ typedef uint32_t VMXINSTRID;
 
 /** Construct an IDT-vectoring information field from an VM-entry interruption
  *  information field (same except that bit 12 is reserved). */
-#define VMX_EXIT_IDT_INFO_FROM_ENTRY_INT_INFO(a)                ((a) & ~RT_BIT(12))
+#define VMX_IDT_INFO_FROM_ENTRY_INT_INFO(a)                     ((a) & ~RT_BIT(12))
 
 /** Bit fields for IDT-vectoring information. */
 /** The IDT-vectoring info vector. */
