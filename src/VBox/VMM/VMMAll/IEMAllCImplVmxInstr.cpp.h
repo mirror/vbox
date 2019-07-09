@@ -6997,6 +6997,7 @@ IEM_STATIC int iemVmxVmentryInjectTrpmEvent(PVMCPU pVCpu, uint32_t uEntryIntInfo
                                             RTGCUINTPTR GCPtrFaultAddress)
 {
     Assert(VMX_ENTRY_INT_INFO_IS_VALID(uEntryIntInfo));
+    Assert(VMX_ENTRY_INT_INFO_TYPE(uEntryIntInfo) != VMX_ENTRY_INT_INFO_TYPE_OTHER_EVENT);
 
     uint8_t const   uVector      = VMX_ENTRY_INT_INFO_VECTOR(uEntryIntInfo);
     TRPMEVENT const enmTrpmEvent = HMVmxEventTypeToTrpmEventType(uEntryIntInfo);
