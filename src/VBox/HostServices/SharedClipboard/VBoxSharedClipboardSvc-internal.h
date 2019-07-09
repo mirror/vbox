@@ -41,15 +41,6 @@
 using namespace HGCM;
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
-/**
- * Structure for handling a single URI object context.
- */
-typedef struct _VBOXCLIPBOARDCLIENTURIOBJCTX
-{
-    /** Pointer to current object being processed. */
-    SharedClipboardURIObject      *pObj;
-} VBOXCLIPBOARDCLIENTURIOBJCTX, *PVBOXCLIPBOARDCLIENTURIOBJCTX;
-
 struct VBOXCLIPBOARDCLIENTSTATE;
 #endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
 

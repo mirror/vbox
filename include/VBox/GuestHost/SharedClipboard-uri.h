@@ -342,208 +342,6 @@ typedef struct _VBOXCLIPBOARDCREATEPARMS
 } VBOXCLIPBOARDCREATEPARMS, *PVBOXCLIPBOARDCREATEPARMS;
 #pragma pack()
 
-/** Clipboard area ID. A valid area is >= 1.
- *  If 0 is specified, the last (most recent) area is meant.
- *  Set to UINT32_MAX if not initialized. */
-typedef uint32_t SHAREDCLIPBOARDAREAID;
-
-/** Defines a non-initialized (nil) clipboard area. */
-#define NIL_SHAREDCLIPBOARDAREAID       UINT32_MAX
-
-/** SharedClipboardArea open flags. */
-typedef uint32_t SHAREDCLIPBOARDAREAOPENFLAGS;
-
-/** No clipboard area open flags specified. */
-#define SHAREDCLIPBOARDAREA_OPEN_FLAGS_NONE               0
-/** The clipboard area must not exist yet. */
-#define SHAREDCLIPBOARDAREA_OPEN_FLAGS_MUST_NOT_EXIST     RT_BIT(0)
-/** Mask of all valid clipboard area open flags.  */
-#define SHAREDCLIPBOARDAREA_OPEN_FLAGS_VALID_MASK         0x1
-
-/** SharedClipboardURIObject flags. */
-typedef uint32_t SHAREDCLIPBOARDURIOBJECTFLAGS;
-
-/** No flags specified. */
-#define SHAREDCLIPBOARDURIOBJECT_FLAGS_NONE                   0
-
-/** Mask of all valid Shared Clipboard URI object flags. */
-#define SHAREDCLIPBOARDURIOBJECT_FLAGS_VALID_MASK             UINT32_C(0x0)
-
-/**
- * Class for handling Shared Clipboard URI objects.
- * This class abstracts the access and handling objects when performing Shared Clipboard actions.
- */
-class SharedClipboardURIObject
-{
-public:
-
-    /**
-     * Enumeration for specifying an URI object type.
-     */
-    enum Type
-    {
-        /** Unknown type, do not use. */
-        Type_Unknown = 0,
-        /** Object is a file. */
-        Type_File,
-        /** Object is a directory. */
-        Type_Directory,
-        /** The usual 32-bit hack. */
-        Type_32Bit_Hack = 0x7fffffff
-    };
-
-    enum Storage
-    {
-        Storage_Unknown = 0,
-        Storage_Local,
-        Storage_Temporary,
-        /** The usual 32-bit hack. */
-        Storage_32Bit_Hack = 0x7fffffff
-    };
-
-    /**
-     * Enumeration for specifying an URI object view
-     * for representing its data accordingly.
-     */
-    enum View
-    {
-        /** Unknown view, do not use. */
-        View_Unknown = 0,
-        /** Handle data from the source point of view. */
-        View_Source,
-        /** Handle data from the destination point of view. */
-        View_Target,
-        /** The usual 32-bit hack. */
-        View_Dest_32Bit_Hack = 0x7fffffff
-    };
-
-    SharedClipboardURIObject(void);
-    SharedClipboardURIObject(Type type, const RTCString &strSrcPathAbs = "", const RTCString &strDstPathAbs = "");
-    virtual ~SharedClipboardURIObject(void);
-
-public:
-
-    /**
-     * Returns the given absolute source path of the object.
-     *
-     * @return  Absolute source path of the object.
-     */
-    const RTCString &GetSourcePathAbs(void) const { return m_strSrcPathAbs; }
-
-    /**
-     * Returns the given, absolute destination path of the object.
-     *
-     * @return  Absolute destination path of the object.
-     */
-    const RTCString &GetDestPathAbs(void) const { return m_strTgtPathAbs; }
-
-    RTFMODE GetMode(void) const;
-
-    uint64_t GetProcessed(void) const;
-
-    uint64_t GetSize(void) const;
-
-    /**
-     * Returns the object's type.
-     *
-     * @return  The object's type.
-     */
-    Type GetType(void) const { return m_enmType; }
-
-    /**
-     * Returns the object's view.
-     *
-     * @return  The object's view.
-     */
-    View GetView(void) const { return m_enmView; }
-
-public:
-
-    int SetSize(uint64_t cbSize);
-
-public:
-
-    void Close(void);
-    bool IsComplete(void) const;
-    bool IsOpen(void) const;
-    int OpenDirectory(View enmView, uint32_t fCreate = 0, RTFMODE fMode = 0);
-    int OpenDirectoryEx(const RTCString &strPathAbs, View enmView,
-                        uint32_t fCreate = 0, RTFMODE fMode = 0,
-                        SHAREDCLIPBOARDURIOBJECTFLAGS fFlags = SHAREDCLIPBOARDURIOBJECT_FLAGS_NONE);
-    int OpenFile(View enmView, uint64_t fOpen = 0, RTFMODE fMode = 0);
-    int OpenFileEx(const RTCString &strPathAbs, View enmView,
-                   uint64_t fOpen = 0, RTFMODE fMode = 0,
-                   SHAREDCLIPBOARDURIOBJECTFLAGS fFlags  = SHAREDCLIPBOARDURIOBJECT_FLAGS_NONE);
-    int QueryInfo(View enmView);
-    int Read(void *pvBuf, size_t cbBuf, uint32_t *pcbRead);
-    void Reset(void);
-    int SetDirectoryData(const RTCString &strPathAbs, View enmView, uint32_t fOpen = 0, RTFMODE fMode = 0,
-                         SHAREDCLIPBOARDURIOBJECTFLAGS fFlags = SHAREDCLIPBOARDURIOBJECT_FLAGS_NONE);
-    int SetFileData(const RTCString &strPathAbs, View enmView, uint64_t fOpen = 0, RTFMODE fMode = 0,
-                    SHAREDCLIPBOARDURIOBJECTFLAGS fFlags = SHAREDCLIPBOARDURIOBJECT_FLAGS_NONE);
-    int Write(const void *pvBuf, size_t cbBuf, uint32_t *pcbWritten);
-
-public:
-
-    static int RebaseURIPath(RTCString &strPath, const RTCString &strBaseOld = "", const RTCString &strBaseNew = "");
-
-protected:
-
-    void closeInternal(void);
-    int setDirectoryDataInternal(const RTCString &strPathAbs, View enmView, uint32_t fCreate = 0, RTFMODE fMode = 0,
-                                 SHAREDCLIPBOARDURIOBJECTFLAGS fFlags = SHAREDCLIPBOARDURIOBJECT_FLAGS_NONE);
-    int setFileDataInternal(const RTCString &strPathAbs, View enmView, uint64_t fOpen = 0, RTFMODE fMode = 0,
-                            SHAREDCLIPBOARDURIOBJECTFLAGS fFlags = SHAREDCLIPBOARDURIOBJECT_FLAGS_NONE);
-    int queryInfoInternal(View enmView);
-
-protected:
-
-    /** The object's type. */
-    Type      m_enmType;
-    /** The object's view. */
-    View      m_enmView;
-    /** Where the object is being stored to. */
-    Storage   m_enmStorage;
-    /** Absolute path (base) for the source. */
-    RTCString m_strSrcPathAbs;
-    /** Absolute path (base) for the target. */
-    RTCString m_strTgtPathAbs;
-    /** Saved SHAREDCLIPBOARDURIOBJECT_FLAGS. */
-    uint32_t  m_fFlags;
-    /** Requested file mode.
-     *  Note: The actual file mode of an opened file will be in objInfo. */
-    RTFMODE   m_fModeRequested;
-
-    /** Union containing data depending on the object's type. */
-    union
-    {
-        /** Structure containing members for objects that
-         *  are files. */
-        struct
-        {
-            /** File handle. */
-            RTFILE      hFile;
-            /** File system object information of this file. */
-            RTFSOBJINFO objInfo;
-            /** Requested file open flags. */
-            uint32_t    fOpenRequested;
-            /** Bytes to proces for reading/writing. */
-            uint64_t    cbToProcess;
-            /** Bytes processed reading/writing. */
-            uint64_t    cbProcessed;
-        } File;
-        struct
-        {
-            /** Directory handle. */
-            RTDIR       hDir;
-            /** File system object information of this directory. */
-            RTFSOBJINFO objInfo;
-            /** Requested directory creation flags. */
-            uint32_t    fCreateRequested;
-        } Dir;
-    } u;
-};
-
 /**
  * Structure for keeping a reply message.
  */
@@ -643,6 +441,24 @@ typedef enum _SHAREDCLIPBOARDAREAOBJTYPE
     SHAREDCLIPBOARDAREAOBJTYPE_32Bit_Hack = 0x7fffffff
 } SHAREDCLIPBOARDAREAOBJTYPE;
 
+/** Clipboard area ID. A valid area is >= 1.
+ *  If 0 is specified, the last (most recent) area is meant.
+ *  Set to UINT32_MAX if not initialized. */
+typedef uint32_t SHAREDCLIPBOARDAREAID;
+
+/** Defines a non-initialized (nil) clipboard area. */
+#define NIL_SHAREDCLIPBOARDAREAID       UINT32_MAX
+
+/** SharedClipboardArea open flags. */
+typedef uint32_t SHAREDCLIPBOARDAREAOPENFLAGS;
+
+/** No clipboard area open flags specified. */
+#define SHAREDCLIPBOARDAREA_OPEN_FLAGS_NONE               0
+/** The clipboard area must not exist yet. */
+#define SHAREDCLIPBOARDAREA_OPEN_FLAGS_MUST_NOT_EXIST     RT_BIT(0)
+/** Mask of all valid clipboard area open flags.  */
+#define SHAREDCLIPBOARDAREA_OPEN_FLAGS_VALID_MASK         0x1
+
 /** Defines a clipboard area object state. */
 typedef uint32_t SHAREDCLIPBOARDAREAOBJSTATE;
 
@@ -738,79 +554,6 @@ protected:
 
 int SharedClipboardPathSanitizeFilename(char *pszPath, size_t cbPath);
 int SharedClipboardPathSanitize(char *pszPath, size_t cbPath);
-
-/** SharedClipboardURIList flags. */
-typedef uint32_t SHAREDCLIPBOARDURILISTFLAGS;
-
-/** No flags specified. */
-#define SHAREDCLIPBOARDURILIST_FLAGS_NONE                   0
-/** Keep the original paths, don't convert paths to relative ones. */
-#define SHAREDCLIPBOARDURILIST_FLAGS_ABSOLUTE_PATHS         RT_BIT(0)
-/** Resolve all symlinks. */
-#define SHAREDCLIPBOARDURILIST_FLAGS_RESOLVE_SYMLINKS       RT_BIT(1)
-/** Keep the files + directory entries open while
- *  being in this list. */
-#define SHAREDCLIPBOARDURILIST_FLAGS_KEEP_OPEN              RT_BIT(2)
-/** Lazy loading: Only enumerate sub directories when needed.
- ** @todo Implement lazy loading.  */
-#define SHAREDCLIPBOARDURILIST_FLAGS_LAZY                   RT_BIT(3)
-
-/** Mask of all valid Shared Clipboard URI list flags. */
-#define SHAREDCLIPBOARDURILIST_FLAGS_VALID_MASK             UINT32_C(0xF)
-
-class SharedClipboardURIList
-{
-public:
-
-    SharedClipboardURIList(void);
-    virtual ~SharedClipboardURIList(void);
-
-public:
-
-    int AppendNativePath(const char *pszPath, SHAREDCLIPBOARDURILISTFLAGS fFlags);
-    int AppendNativePathsFromList(const char *pszNativePaths, size_t cbNativePaths, SHAREDCLIPBOARDURILISTFLAGS fFlags);
-    int AppendNativePathsFromList(const RTCList<RTCString> &lstNativePaths, SHAREDCLIPBOARDURILISTFLAGS fFlags);
-    int AppendURIObject(SharedClipboardURIObject *pObject);
-    int AppendURIPath(const char *pszURI, SHAREDCLIPBOARDURILISTFLAGS fFlags);
-    int AppendURIPathsFromList(const char *pszURIPaths, size_t cbURIPaths, SHAREDCLIPBOARDURILISTFLAGS fFlags);
-    int AppendURIPathsFromList(const RTCList<RTCString> &lstURI, SHAREDCLIPBOARDURILISTFLAGS fFlags);
-
-    void Clear(void);
-    SharedClipboardURIObject *At(size_t i) const { return m_lstTree.at(i); }
-    SharedClipboardURIObject *First(void) const { return m_lstTree.first(); }
-    bool IsEmpty(void) const { return m_lstTree.isEmpty(); }
-    void RemoveFirst(void);
-    int SetFromURIData(const void *pvData, size_t cbData, SHAREDCLIPBOARDURILISTFLAGS fFlags);
-
-    RTCString GetRootEntries(const RTCString &strPathBase = "", const RTCString &strSeparator = "\r\n") const;
-    uint64_t GetRootCount(void) const { return m_lstRoot.size(); }
-    uint64_t GetTotalCount(void) const { return m_cTotal; }
-    uint64_t GetTotalBytes(void) const { return m_cbTotal; }
-
-protected:
-
-    int appendEntry(const char *pcszSource, const char *pcszTarget, SHAREDCLIPBOARDURILISTFLAGS fFlags);
-    int appendObject(SharedClipboardURIObject *pObject);
-    int appendPathRecursive(const char *pcszSrcPath, const char *pcszDstPath, const char *pcszDstBase, size_t cchDstBase, SHAREDCLIPBOARDURILISTFLAGS fFlags);
-
-protected:
-
-    /** List of all top-level file/directory entries.
-     *  Note: All paths are kept internally as UNIX paths for
-     *        easier conversion/handling!  */
-    RTCList<RTCString>                  m_lstRoot;
-    /** List of all URI objects added. The list's content
-     *  might vary depending on how the objects are being
-     *  added (lazy or not). */
-    RTCList<SharedClipboardURIObject *> m_lstTree;
-    /** Total number of all URI objects. */
-    uint64_t                            m_cTotal;
-    /** Total size of all URI objects, that is, the file
-     *  size of all objects (in bytes).
-     *  Note: Do *not* size_t here, as we also want to support large files
-     *        on 32-bit guests. */
-    uint64_t                            m_cbTotal;
-};
 
 int SharedClipboardURIListHdrAlloc(PVBOXCLIPBOARDLISTHDR *ppListHdr);
 void SharedClipboardURIListHdrFree(PVBOXCLIPBOARDLISTHDR pListHdr);
