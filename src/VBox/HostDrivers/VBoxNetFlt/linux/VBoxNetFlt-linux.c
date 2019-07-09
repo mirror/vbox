@@ -2185,9 +2185,9 @@ static int vboxNetFltLinuxNotifierIPv4Callback(struct notifier_block *self, unsi
     pEventDev = ifa->ifa_dev->dev;
     fMyDev = (pDev == pEventDev);
     Log(("VBoxNetFlt: %s: IPv4 event %s(0x%lx) %s: addr %RTnaipv4 mask %RTnaipv4\n",
-         pDev ? VBOX_NETDEV_NAME(pDev) : "<???>",
+         pDev ? VBOX_NETDEV_NAME(pDev) : "<unknown>",
          vboxNetFltLinuxGetNetDevEventName(ulEventType), ulEventType,
-         pEventDev ? VBOX_NETDEV_NAME(pEventDev) : "<???>",
+         pEventDev ? VBOX_NETDEV_NAME(pEventDev) : "<unknown>",
          ifa->ifa_address, ifa->ifa_mask));
 
     if (pDev != NULL)
@@ -2230,9 +2230,9 @@ static int vboxNetFltLinuxNotifierIPv6Callback(struct notifier_block *self, unsi
     pEventDev = ifa->idev->dev;
     fMyDev = (pDev == pEventDev);
     Log(("VBoxNetFlt: %s: IPv6 event %s(0x%lx) %s: %RTnaipv6\n",
-         pDev ? VBOX_NETDEV_NAME(pDev) : "<???>",
+         pDev ? VBOX_NETDEV_NAME(pDev) : "<unknown>",
          vboxNetFltLinuxGetNetDevEventName(ulEventType), ulEventType,
-         pEventDev ? VBOX_NETDEV_NAME(pEventDev) : "<???>",
+         pEventDev ? VBOX_NETDEV_NAME(pEventDev) : "<unknown>",
          &ifa->addr));
 
     if (pDev != NULL)
