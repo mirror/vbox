@@ -2711,13 +2711,25 @@ typedef uint32_t VMXINSTRID;
  * @{
  */
 #define VMX_IDT_VECTORING_INFO_VECTOR(a)                        ((a) & 0xff)
+#define VMX_IDT_VECTORING_INFO_TYPE_SHIFT                       8
 #define VMX_IDT_VECTORING_INFO_TYPE(a)                          (((a) >> 8) & 7)
+#define VMX_IDT_VECTORING_INFO_ERROR_CODE_VALID                 RT_BIT(11)
 #define VMX_IDT_VECTORING_INFO_IS_ERROR_CODE_VALID(a)           (((a) >> 11) & 1)
 #define VMX_IDT_VECTORING_INFO_IS_VALID(a)                      (((a) >> 31) & 1)
+#define VMX_IDT_VECTORING_INFO_VALID                            RT_BIT(31)
 
 /** Construct an IDT-vectoring information field from an VM-entry interruption
  *  information field (same except that bit 12 is reserved). */
-#define VMX_IDT_INFO_FROM_ENTRY_INT_INFO(a)                     ((a) & ~RT_BIT(12))
+#define VMX_IDT_VECTORING_INFO_FROM_ENTRY_INT_INFO(a)           ((a) & ~RT_BIT(12))
+
+/** If the IDT-vectoring information field indicates a page-fault (does not check
+ *  the valid bit!). */
+#define VMX_IDT_VECTORING_INFO_IS_XCPT_PF(a)                    (((a) & (  VMX_BF_IDT_VECTORING_INFO_VALID_MASK   \
+                                                                         | VMX_BF_IDT_VECTORING_INFO_TYPE_MASK     \
+                                                                         | VMX_BF_IDT_VECTORING_INFO_VECTOR_MASK)) \
+                                                                     == (  RT_BF_MAKE(VMX_BF_IDT_VECTORING_INFO_VALID,  1) \
+                                                                         | RT_BF_MAKE(VMX_BF_IDT_VECTORING_INFO_TYPE,   VMX_IDT_VECTORING_INFO_TYPE_HW_XCPT) \
+                                                                         | RT_BF_MAKE(VMX_BF_IDT_VECTORING_INFO_VECTOR, X86_XCPT_PF)))
 
 /** Bit fields for IDT-vectoring information. */
 /** The IDT-vectoring info vector. */
