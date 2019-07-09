@@ -15,6 +15,10 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_MAIN_DHCPSERVER
 #include "NetworkServiceRunner.h"
 #include "DHCPServerImpl.h"
@@ -22,6 +26,7 @@
 #include "LoggingNew.h"
 
 #include <iprt/asm.h>
+#include <iprt/err.h>
 #include <iprt/file.h>
 #include <iprt/net.h>
 #include <iprt/path.h>
@@ -34,23 +39,54 @@
 
 #include "VirtualBoxImpl.h"
 
-// constructor / destructor
-/////////////////////////////////////////////////////////////////////////////
-/** @todo Convert to C strings as this is wastefull:    */
-const std::string DHCPServerRunner::kDsrKeyGateway = "--gateway";
-const std::string DHCPServerRunner::kDsrKeyLowerIp = "--lower-ip";
-const std::string DHCPServerRunner::kDsrKeyUpperIp = "--upper-ip";
-const std::string DHCPServerRunner::kDsrKeyConfig  = "--config";
-const std::string DHCPServerRunner::kDsrKeyComment = "--comment";
+
+/*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
+#if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
+# define DHCP_EXECUTABLE_NAME "VBoxNetDHCP.exe"
+#else
+# define DHCP_EXECUTABLE_NAME "VBoxNetDHCP"
+#endif
 
 
+/**
+ * DHCP server specialization of NetworkServiceRunner.
+ *
+ * Just defines the executable name and adds option constants.
+ */
+class DHCPServerRunner : public NetworkServiceRunner
+{
+public:
+    DHCPServerRunner() : NetworkServiceRunner(DHCP_EXECUTABLE_NAME)
+    {}
+    virtual ~DHCPServerRunner()
+    {}
+
+    static const char * const kDsrKeyGateway;
+    static const char * const kDsrKeyLowerIp;
+    static const char * const kDsrKeyUpperIp;
+    static const char * const kDsrKeyConfig;
+    static const char * const kDsrKeyComment;
+};
+
+/*static*/ const char * const DHCPServerRunner::kDsrKeyGateway = "--gateway";
+/*static*/ const char * const DHCPServerRunner::kDsrKeyLowerIp = "--lower-ip";
+/*static*/ const char * const DHCPServerRunner::kDsrKeyUpperIp = "--upper-ip";
+/*static*/ const char * const DHCPServerRunner::kDsrKeyConfig  = "--config";
+/*static*/ const char * const DHCPServerRunner::kDsrKeyComment = "--comment";
+
+
+/**
+ * Hidden private data of the DHCPServer class.
+ */
 struct DHCPServer::Data
 {
     Data()
         : enabled(FALSE)
         , router(false)
     {
-        tempConfigFileName[0] = '\0';
+        szTempConfigFileName[0] = '\0';
     }
 
     Utf8Str IPAddress;
@@ -64,7 +100,7 @@ struct DHCPServer::Data
     settings::DhcpOptionMap GlobalDhcpOptions;
     settings::VmSlot2OptionsMap VmSlot2Options;
 
-    char tempConfigFileName[RTPATH_MAX];
+    char szTempConfigFileName[RTPATH_MAX];
     com::Utf8Str strLeasesFilename;
     com::Utf8Str networkName;
     com::Utf8Str trunkName;
@@ -72,9 +108,13 @@ struct DHCPServer::Data
 };
 
 
+// constructor / destructor
+/////////////////////////////////////////////////////////////////////////////
+
+
 DHCPServer::DHCPServer()
-  : m(NULL)
-  , mVirtualBox(NULL)
+    : m(NULL)
+    , mVirtualBox(NULL)
 {
     m = new DHCPServer::Data();
 }
@@ -143,8 +183,7 @@ HRESULT DHCPServer::init(VirtualBox *aVirtualBox, const Utf8Str &aName)
 }
 
 
-HRESULT DHCPServer::init(VirtualBox *aVirtualBox,
-                         const settings::DHCPServer &data)
+HRESULT DHCPServer::init(VirtualBox *aVirtualBox, const settings::DHCPServer &data)
 {
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan(this);
@@ -160,12 +199,10 @@ HRESULT DHCPServer::init(VirtualBox *aVirtualBox,
     m->upperIP = data.strIPUpper;
 
     m->GlobalDhcpOptions.clear();
-    m->GlobalDhcpOptions.insert(data.GlobalDhcpOptions.begin(),
-                               data.GlobalDhcpOptions.end());
+    m->GlobalDhcpOptions.insert(data.GlobalDhcpOptions.begin(), data.GlobalDhcpOptions.end());
 
     m->VmSlot2Options.clear();
-    m->VmSlot2Options.insert(data.VmSlot2OptionsM.begin(),
-                            data.VmSlot2OptionsM.end());
+    m->VmSlot2Options.insert(data.VmSlot2OptionsM.begin(), data.VmSlot2OptionsM.end());
 
     autoInitSpan.setSucceeded();
 
@@ -699,7 +736,7 @@ HRESULT DHCPServer::start(const com::Utf8Str &aNetworkName,
     if (FAILED(hrc))
         return hrc;
 
-    m->dhcp.clearOptions(); /* (Not DHCP options, but command line options for the service) */
+    m->dhcp.resetArguments();
 
 #ifdef VBOX_WITH_DHCPD
 
@@ -707,14 +744,14 @@ HRESULT DHCPServer::start(const com::Utf8Str &aNetworkName,
      * Create configuration file path.
      */
     /** @todo put this next to the leases file.   */
-    int rc = RTPathTemp(m->tempConfigFileName, sizeof(m->tempConfigFileName));
+    int rc = RTPathTemp(m->szTempConfigFileName, sizeof(m->szTempConfigFileName));
     if (RT_SUCCESS(rc))
-        rc = RTPathAppend(m->tempConfigFileName, sizeof(m->tempConfigFileName), "dhcp-config-XXXXX.xml");
+        rc = RTPathAppend(m->szTempConfigFileName, sizeof(m->szTempConfigFileName), "dhcp-config-XXXXX.xml");
     if (RT_SUCCESS(rc))
-        rc = RTFileCreateTemp(m->tempConfigFileName, 0600);
+        rc = RTFileCreateTemp(m->szTempConfigFileName, 0600);
     if (RT_FAILURE(rc))
     {
-        m->tempConfigFileName[0] = '\0';
+        m->szTempConfigFileName[0] = '\0';
         return E_FAIL;
     }
 
@@ -790,37 +827,33 @@ HRESULT DHCPServer::start(const com::Utf8Str &aNetworkName,
     }
 
     xml::XmlFileWriter writer(doc);
-    writer.write(m->tempConfigFileName, false);
+    writer.write(m->szTempConfigFileName, false);
 
-    m->dhcp.setOption(DHCPServerRunner::kDsrKeyConfig, m->tempConfigFileName);    /* command line options, not dhcp ones. */
-    m->dhcp.setOption(DHCPServerRunner::kDsrKeyComment, m->networkName.c_str());
+    m->dhcp.addArgPair(DHCPServerRunner::kDsrKeyConfig, m->szTempConfigFileName);
+    m->dhcp.addArgPair(DHCPServerRunner::kDsrKeyComment, m->networkName.c_str());
 
 #else /* !VBOX_WITH_DHCPD */
     /* Main is needed for NATNetwork */
     if (m->router)
-        m->dhcp.setOption(NetworkServiceRunner::kNsrKeyNeedMain, "on");
+        m->dhcp.addArgPair(NetworkServiceRunner::kpszKeyNeedMain, "on");
 
     /* Commmon Network Settings */
-    m->dhcp.setOption(NetworkServiceRunner::kNsrKeyNetwork, aNetworkName.c_str());
-
+    m->dhcp.addArgPair(NetworkServiceRunner::kpszKeyNetwork, aNetworkName.c_str());
     if (!aTrunkName.isEmpty())
-        m->dhcp.setOption(NetworkServiceRunner::kNsrTrunkName, aTrunkName.c_str());
-
-    m->dhcp.setOption(NetworkServiceRunner::kNsrKeyTrunkType, aTrunkType.c_str());
+        m->dhcp.addArgPair(NetworkServiceRunner::kpszTrunkName, aTrunkName.c_str());
+    m->dhcp.addArgPair(NetworkServiceRunner::kpszKeyTrunkType, aTrunkType.c_str());
 
     /* XXX: should this MAC default initialization moved to NetworkServiceRunner? */
     char strMAC[32];
     Guid guid;
     guid.create();
     RTStrPrintf (strMAC, sizeof(strMAC), "08:00:27:%02X:%02X:%02X",
-                 guid.raw()->au8[0],
-                 guid.raw()->au8[1],
-                 guid.raw()->au8[2]);
-    m->dhcp.setOption(NetworkServiceRunner::kNsrMacAddress, strMAC);
-    m->dhcp.setOption(NetworkServiceRunner::kNsrIpAddress,  Utf8Str(m->IPAddress).c_str());
-    m->dhcp.setOption(NetworkServiceRunner::kNsrIpNetmask, Utf8Str(m->GlobalDhcpOptions[DhcpOpt_SubnetMask].text).c_str());
-    m->dhcp.setOption(DHCPServerRunner::kDsrKeyLowerIp, Utf8Str(m->lowerIP).c_str());
-    m->dhcp.setOption(DHCPServerRunner::kDsrKeyUpperIp, Utf8Str(m->upperIP).c_str());
+                 guid.raw()->au8[0], guid.raw()->au8[1], guid.raw()->au8[2]);
+    m->dhcp.addArgPair(NetworkServiceRunner::kpszMacAddress, strMAC);
+    m->dhcp.addArgPair(NetworkServiceRunner::kpszIpAddress, m->IPAddress.c_str());
+    m->dhcp.addArgPair(NetworkServiceRunner::kpszIpNetmask, m->GlobalDhcpOptions[DhcpOpt_SubnetMask].text.c_str());
+    m->dhcp.addArgPair(DHCPServerRunner::kDsrKeyLowerIp, m->lowerIP.c_str());
+    m->dhcp.addArgPair(DHCPServerRunner::kDsrKeyUpperIp, m->upperIP.c_str());
 #endif /* !VBOX_WITH_DHCPD */
 
     /* XXX: This parameters Dhcp Server will fetch via API */
@@ -829,13 +862,13 @@ HRESULT DHCPServer::start(const com::Utf8Str &aNetworkName,
 }
 
 
-HRESULT DHCPServer::stop (void)
+HRESULT DHCPServer::stop(void)
 {
 #ifdef VBOX_WITH_DHCPD
-    if (m->tempConfigFileName[0])
+    if (m->szTempConfigFileName[0])
     {
-        RTFileDelete(m->tempConfigFileName);
-        m->tempConfigFileName[0] = 0;
+        RTFileDelete(m->szTempConfigFileName);
+        m->szTempConfigFileName[0] = 0;
     }
 #endif /* VBOX_WITH_DHCPD */
     return RT_FAILURE(m->dhcp.stop()) ? E_FAIL : S_OK;

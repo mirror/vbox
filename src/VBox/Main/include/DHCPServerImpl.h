@@ -22,6 +22,7 @@
 #endif
 
 #include "DHCPServerWrap.h"
+#include <map>
 
 namespace settings
 {
@@ -30,29 +31,6 @@ namespace settings
     typedef std::map<DhcpOpt_T, DhcpOptValue> DhcpOptionMap;
 }
 
-
-#ifdef VBOX_WITH_HOSTNETIF_API
-struct NETIFINFO;
-#endif
-
-#if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
-# define DHCP_EXECUTABLE_NAME "VBoxNetDHCP.exe"
-#else
-# define DHCP_EXECUTABLE_NAME "VBoxNetDHCP"
-#endif
-
-class DHCPServerRunner : public NetworkServiceRunner
-{
-public:
-    DHCPServerRunner() : NetworkServiceRunner(DHCP_EXECUTABLE_NAME) {}
-    virtual ~DHCPServerRunner() {};
-
-    static const std::string kDsrKeyGateway;
-    static const std::string kDsrKeyLowerIp;
-    static const std::string kDsrKeyUpperIp;
-    static const std::string kDsrKeyConfig;
-    static const std::string kDsrKeyComment;
-};
 
 /**
  *  for server configuration needs, it's perhaps better to use (VM,slot) pair
@@ -66,7 +44,6 @@ public:
  *  XML: serialization of dependecy (DHCP options) - (VM,slot) shouldn't be done via MAC in
  *  the middle.
  */
-
 class ATL_NO_VTABLE DHCPServer
     : public DHCPServerWrap
 {
@@ -85,14 +62,11 @@ public:
 
     // Public internal methids.
     HRESULT i_saveSettings(settings::DHCPServer &data);
-    settings::DhcpOptionMap &i_findOptMapByVmNameSlot(const com::Utf8Str &aVmName,
-                                                      LONG Slot);
+    settings::DhcpOptionMap &i_findOptMapByVmNameSlot(const com::Utf8Str &aVmName, LONG Slot);
 
 private:
-    HRESULT encodeOption(com::Utf8Str &aEncoded,
-                         uint32_t aOptCode, const settings::DhcpOptValue &aOptValue);
-    int addOption(settings::DhcpOptionMap &aMap,
-                  DhcpOpt_T aOption, const com::Utf8Str &aValue);
+    HRESULT encodeOption(com::Utf8Str &aEncoded, uint32_t aOptCode, const settings::DhcpOptValue &aOptValue);
+    int addOption(settings::DhcpOptionMap &aMap, DhcpOpt_T aOption, const com::Utf8Str &aValue);
 
     // wrapped IDHCPServer properties
     HRESULT getEventSource(ComPtr<IEventSource> &aEventSource);
