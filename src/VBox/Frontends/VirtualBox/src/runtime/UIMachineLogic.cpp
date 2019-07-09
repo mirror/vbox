@@ -1608,7 +1608,8 @@ void UIMachineLogic::sltShowSoftKeyboard()
         m_pSoftKeyboardDialog->raise();
         return;
     }
-    m_pSoftKeyboardDialog = new UISoftKeyboard(0, uisession(), machine().GetName());
+    QWidget *pCenterWidget = windowManager().realParentWindow(activeMachineWindow());
+    m_pSoftKeyboardDialog = new UISoftKeyboard(0, uisession(), pCenterWidget, machine().GetName());
     if (m_pSoftKeyboardDialog)
     {
         connect(m_pSoftKeyboardDialog, &QMainWindow::destroyed, this, &UIMachineLogic::sltSoftKeyboardClosed);

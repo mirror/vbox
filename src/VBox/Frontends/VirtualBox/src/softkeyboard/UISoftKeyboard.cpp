@@ -71,6 +71,8 @@ const int iCapsLockPosition = 30;
 const int iNumLockPosition = 90;
 const int iScrollLockPosition = 125;
 
+/** Set a generous file size limit. */
+const qint64 iFileSizeLimit = _256K;
 
 const QString strSubDirectorName("keyboardLayouts");
 
@@ -2315,7 +2317,7 @@ void UISoftKeyboardWidget::deleteCurrentLayout()
     if (fFileExists)
     {
         if (!msgCenter().questionBinary(this, MessageType_Question,
-                                        QString(UISoftKeyboard::tr("This will delete the keyboard layout file as well, Proceed?")),
+                                        QString(UISoftKeyboard::tr("This will delete the keyboard layout file as well. Proceed?")),
                                         0 /* auto-confirm id */,
                                         QString("Delete") /* ok button text */,
                                         QString() /* cancel button text */,
@@ -2813,6 +2815,9 @@ bool UIPhysicalLayoutReader::parseXMLFile(const QString &strFileName, UISoftKeyb
     if (!xmlFile.exists())
         return false;
 
+    if (xmlFile.size() >= iFileSizeLimit)
+        return false;
+
     if (!xmlFile.open(QIODevice::ReadOnly))
         return false;
 
@@ -3037,6 +3042,9 @@ bool UIKeyboardLayoutReader::parseFile(const QString &strFileName, UISoftKeyboar
 {
     QFile xmlFile(strFileName);
     if (!xmlFile.exists())
+        return false;
+
+    if (xmlFile.size() >= iFileSizeLimit)
         return false;
 
     if (!xmlFile.open(QIODevice::ReadOnly))
@@ -3322,9 +3330,10 @@ void UISoftKeyboardSettingsWidget::sltColorCellClicked(int row, int column)
 *********************************************************************************************************************************/
 
 UISoftKeyboard::UISoftKeyboard(QWidget *pParent,
-                               UISession *pSession, QString strMachineName /* = QString()*/)
+                               UISession *pSession, QWidget *pCenterWidget, QString strMachineName /* = QString()*/)
     :QIWithRetranslateUI<QMainWindow>(pParent)
     , m_pSession(pSession)
+    , m_pCenterWidget(pCenterWidget)
     , m_pMainLayout(0)
     , m_pKeyboardWidget(0)
     , m_strMachineName(strMachineName)
@@ -3631,10 +3640,9 @@ void UISoftKeyboard::loadSettings()
     int iDefaultHeight = iDefaultWidth * fKeyboardAspectRatio;//desktopRect.height() * 3 / 4;
     QRect defaultGeometry(0, 0, iDefaultWidth, iDefaultHeight);
 
-    QWidget *pParentWidget = qobject_cast<QWidget*>(parent());
-    if (pParentWidget)
-        defaultGeometry.moveCenter(pParentWidget->geometry().center());
 
+    if (m_pCenterWidget)
+        defaultGeometry.moveCenter(m_pCenterWidget->geometry().center());
     /* Load geometry from extradata: */
     QRect geometry = gEDataManager->softKeyboardDialogGeometry(this, defaultGeometry);
 

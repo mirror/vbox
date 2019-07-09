@@ -54,7 +54,7 @@ class UISoftKeyboard : public QIWithRetranslateUI<QMainWindow>
 
 public:
 
-    UISoftKeyboard(QWidget *pParent, UISession *pSession,
+    UISoftKeyboard(QWidget *pParent, UISession *pSession, QWidget *pCenterWidget,
                    QString strMachineName = QString());
     ~UISoftKeyboard();
 
@@ -101,6 +101,7 @@ private:
     CKeyboard& keyboard() const;
 
     UISession     *m_pSession;
+    QWidget       *m_pCenterWidget;
     QHBoxLayout   *m_pMainLayout;
     UISoftKeyboardWidget       *m_pKeyboardWidget;
     QString           m_strMachineName;
