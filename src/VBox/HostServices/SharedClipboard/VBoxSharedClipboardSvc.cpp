@@ -332,8 +332,10 @@ void vboxSvcClipboardMsgFree(PVBOXCLIPBOARDCLIENTMSG pMsg)
 }
 
 /**
- * Sets the GUEST_MSG_PEEK_WAIT GUEST_MSG_PEEK_NOWAIT return parameters.
+ * Sets the VBOX_SHARED_CLIPBOARD_GUEST_FN_MSG_PEEK_WAIT and VBOX_SHARED_CLIPBOARD_GUEST_FN_MSG_PEEK_NOWAIT
+ * return parameters.
  *
+ * @param   pMsg        Message to set return parameters to.
  * @param   paDstParms  The peek parameter vector.
  * @param   cDstParms   The number of peek parameters (at least two).
  * @remarks ASSUMES the parameters has been cleared by clientMsgPeek.
