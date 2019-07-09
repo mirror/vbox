@@ -3747,6 +3747,8 @@
     <const name="CloudImageId" value="38" />
     <const name="CloudInstanceState" value="39" />
     <const name="CloudImageState" value="40" />
+    <const name="CloudInstanceDisplayName" value="41" />
+    <const name="CloudImageDisplayName" value="42" />
   </enum>
 
   <enum
