@@ -521,7 +521,7 @@ static RTEXITCODE dhcpdHandleFindLease(PDHCPDCMDCTX pCtx, int argc, char **argv)
     };
 
     bool            fHaveMacAddress   = false;
-    RTMAC           MacAddress        = { 0, 0, 0, 0, 0, 0 };
+    RTMAC           MacAddress        = { { 0, 0, 0,  0, 0, 0 } };
 
     RTGETOPTSTATE   GetState;
     int vrc = RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, 0);
