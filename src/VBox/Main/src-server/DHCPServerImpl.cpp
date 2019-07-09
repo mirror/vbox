@@ -989,7 +989,7 @@ HRESULT DHCPServer::findLeaseByMAC(const com::Utf8Str &aMac, LONG aType,
 /**
  * Calculates and updates the value of strLeasesFilename given @a aNetwork.
  */
-HRESULT DHCPServer::i_calcLeasesFilename(const com::Utf8Str &aNetwork)
+HRESULT DHCPServer::i_calcLeasesFilename(const com::Utf8Str &aNetwork) RT_NOEXCEPT
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
