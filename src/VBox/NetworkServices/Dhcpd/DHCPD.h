@@ -39,8 +39,6 @@ class DHCPD
 {
     /** The DHCP configuration. */
     const Config   *m_pConfig;
-    /** The lease database filename. */
-    RTCString       m_strLeasesFilename;
     /** The lease database. */
     Db              m_db;
 

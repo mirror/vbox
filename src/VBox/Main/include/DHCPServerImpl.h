@@ -138,7 +138,7 @@ private:
 
     /** @name Helpers
      * @{  */
-    HRESULT i_calcLeaseFilename(const com::Utf8Str &aNetwork) RT_NOEXCEPT;
+    HRESULT i_calcLeasesFilename(const com::Utf8Str &aNetwork) RT_NOEXCEPT;
     /** @} */
 
     struct Data;

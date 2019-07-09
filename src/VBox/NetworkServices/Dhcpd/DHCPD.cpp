@@ -24,7 +24,6 @@
 #include "DhcpOptions.h"
 
 #include <iprt/message.h>
-#include <iprt/cpp/path.h>
 
 
 DHCPD::DHCPD()
@@ -43,55 +42,37 @@ int DHCPD::init(const Config *pConfig) RT_NOEXCEPT
 {
     Assert(pConfig);
     AssertReturn(!m_pConfig, VERR_INVALID_STATE);
+    m_pConfig = pConfig;
 
-    /* leases filename */
-    int rc;
-    if (pConfig->getLeaseFilename().isEmpty())
-        rc = m_strLeasesFilename.assignNoThrow(pConfig->getLeaseFilename());
-    else
-    {
-        rc = m_strLeasesFilename.assignNoThrow(pConfig->getHome());
-        if (RT_SUCCESS(rc))
-            rc = RTPathAppendCxx(m_strLeasesFilename, pConfig->getBaseName());
-        if (RT_SUCCESS(rc))
-            rc = m_strLeasesFilename.appendNoThrow("-Dhcpd.leases");
-    }
+    /* Load the lease database, ignoring most issues except being out of memory: */
+    int rc = m_db.init(pConfig);
     if (RT_SUCCESS(rc))
     {
-        /* Load the lease database, ignoring most issues except being out of memory: */
-        rc = m_db.init(pConfig);
-        if (RT_SUCCESS(rc))
-        {
-            rc = i_loadLeases();
-            if (rc != VERR_NO_MEMORY)
-            {
-                m_pConfig = pConfig;
-                rc = VINF_SUCCESS;
-            }
-            else
-            {
-                LogRel(("Ran out of memory loading leases from '%s'.  Try rename or delete the file.\n",
-                        m_strLeasesFilename.c_str()));
-                RTMsgError("Ran out of memory loading leases from '%s'.  Try rename or delete the file.\n",
-                           m_strLeasesFilename.c_str());
-            }
-        }
+        rc = i_loadLeases();
+        if (rc != VERR_NO_MEMORY)
+            return VINF_SUCCESS;
+
+        /** @todo macro for this: */
+        LogRel((   "Ran out of memory loading leases from '%s'.  Try rename or delete the file.\n",
+                   pConfig->getLeasesFilename().c_str()));
+        RTMsgError("Ran out of memory loading leases from '%s'.  Try rename or delete the file.\n",
+                   pConfig->getLeasesFilename().c_str());
     }
     return rc;
 }
 
 
 /**
- * Load leases from m_strLeasesFilename.
+ * Load leases from pConfig->getLeasesFilename().
  */
 int DHCPD::i_loadLeases() RT_NOEXCEPT
 {
-    return m_db.loadLeases(m_strLeasesFilename);
+    return m_db.loadLeases(m_pConfig->getLeasesFilename());
 }
 
 
 /**
- * Save the current leases to m_strLeasesFilename, doing expiry first.
+ * Save the current leases to pConfig->getLeasesFilename(), doing expiry first.
  *
  * This is called after m_db is updated during a client request, so the on disk
  * database is always up-to-date.   This means it doesn't matter if we're
@@ -103,7 +84,7 @@ int DHCPD::i_loadLeases() RT_NOEXCEPT
 void DHCPD::i_saveLeases() RT_NOEXCEPT
 {
     m_db.expire();
-    m_db.writeLeases(m_strLeasesFilename);
+    m_db.writeLeases(m_pConfig->getLeasesFilename());
 }
 
 

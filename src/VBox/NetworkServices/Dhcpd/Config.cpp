@@ -28,6 +28,7 @@
 #include <iprt/message.h>
 #include <iprt/string.h>
 #include <iprt/uuid.h>
+#include <iprt/cpp/path.h>
 
 #include <VBox/com/com.h>       /* For log initialization. */
 
@@ -734,7 +735,17 @@ void Config::i_parseServer(const xml::ElementNode *pElmServer)
     else
         m_strTrunk = "";
 
-    m_strLeaseFilename = pElmServer->findAttributeValue("leaseFilename"); /* optional */
+    m_strLeasesFilename = pElmServer->findAttributeValue("leasesFilename"); /* optional */
+    if (m_strLeasesFilename.isEmpty())
+    {
+        int rc = m_strLeasesFilename.assignNoThrow(getHome());
+        if (RT_SUCCESS(rc))
+            rc = RTPathAppendCxx(m_strLeasesFilename, getBaseName());
+        if (RT_SUCCESS(rc))
+            rc = m_strLeasesFilename.appendNoThrow("-Dhcpd.leases");
+        if (RT_FAILURE(rc))
+            throw ConfigFileError("Unexpected error constructing default m_strLeasesFilename value: %Rrc", rc);
+    }
 
     i_getIPv4AddrAttribute(pElmServer, "IPAddress", &m_IPv4Address);
     i_getIPv4AddrAttribute(pElmServer, "networkMask", &m_IPv4Netmask);

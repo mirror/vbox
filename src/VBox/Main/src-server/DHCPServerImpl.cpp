@@ -65,7 +65,7 @@ struct DHCPServer::Data
     settings::VmSlot2OptionsMap VmSlot2Options;
 
     char tempConfigFileName[RTPATH_MAX];
-    com::Utf8Str strLeaseFilename;
+    com::Utf8Str strLeasesFilename;
     com::Utf8Str networkName;
     com::Utf8Str trunkName;
     com::Utf8Str trunkType;
@@ -695,7 +695,7 @@ HRESULT DHCPServer::start(const com::Utf8Str &aNetworkName,
     m->networkName = aNetworkName;
     m->trunkName   = aTrunkName;
     m->trunkType   = aTrunkType;
-    HRESULT hrc = i_calcLeaseFilename(aNetworkName);
+    HRESULT hrc = i_calcLeasesFilename(aNetworkName);
     if (FAILED(hrc))
         return hrc;
 
@@ -731,7 +731,7 @@ HRESULT DHCPServer::start(const com::Utf8Str &aNetworkName,
     pElmRoot->setAttribute("networkMask", m->GlobalDhcpOptions[DhcpOpt_SubnetMask].text);
     pElmRoot->setAttribute("lowerIP", m->lowerIP);
     pElmRoot->setAttribute("upperIP", m->upperIP);
-    pElmRoot->setAttribute("leaseFilename", m->strLeaseFilename);
+    pElmRoot->setAttribute("leasesFilename", m->strLeasesFilename);
 
     /* Process global options */
     xml::ElementNode *pOptions = pElmRoot->createChild("Options");
@@ -865,9 +865,9 @@ HRESULT DHCPServer::findLeaseByMAC(const com::Utf8Str &aMac, LONG aType,
      * Make sure we've got a lease filename to work with.
      */
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-    if (m->strLeaseFilename.isEmpty())
+    if (m->strLeasesFilename.isEmpty())
     {
-        HRESULT hrc = i_calcLeaseFilename(m->networkName.isEmpty() ? mName : m->networkName);
+        HRESULT hrc = i_calcLeasesFilename(m->networkName.isEmpty() ? mName : m->networkName);
         if (FAILED(hrc))
             return hrc;
     }
@@ -885,7 +885,7 @@ HRESULT DHCPServer::findLeaseByMAC(const com::Utf8Str &aMac, LONG aType,
         try
         {
             xml::XmlFileParser parser;
-            parser.read(m->strLeaseFilename.c_str(), doc);
+            parser.read(m->strLeasesFilename.c_str(), doc);
         }
         catch (const xml::EIPRTFailure &e)
         {
@@ -911,13 +911,13 @@ HRESULT DHCPServer::findLeaseByMAC(const com::Utf8Str &aMac, LONG aType,
                 continue;
             }
             return setErrorBoth(VBOX_E_FILE_ERROR, vrc, "Reading '%s' failed: %Rrc - %s",
-                                m->strLeaseFilename.c_str(), vrc, e.what());
+                                m->strLeasesFilename.c_str(), vrc, e.what());
         }
         catch (const RTCError &e)
         {
             if (e.what())
-                return setError(VBOX_E_FILE_ERROR, "Reading '%s' failed: %s", m->strLeaseFilename.c_str(), e.what());
-            return setError(VBOX_E_FILE_ERROR, "Reading '%s' failed: RTCError", m->strLeaseFilename.c_str());
+                return setError(VBOX_E_FILE_ERROR, "Reading '%s' failed: %s", m->strLeasesFilename.c_str(), e.what());
+            return setError(VBOX_E_FILE_ERROR, "Reading '%s' failed: RTCError", m->strLeasesFilename.c_str());
         }
         catch (std::bad_alloc &)
         {
@@ -926,7 +926,7 @@ HRESULT DHCPServer::findLeaseByMAC(const com::Utf8Str &aMac, LONG aType,
         catch (...)
         {
             AssertFailed();
-            return setError(VBOX_E_FILE_ERROR, tr("Reading '%s' failed: Unexpected exception"), m->strLeaseFilename.c_str());
+            return setError(VBOX_E_FILE_ERROR, tr("Reading '%s' failed: Unexpected exception"), m->strLeasesFilename.c_str());
         }
 
         /*
@@ -987,22 +987,22 @@ HRESULT DHCPServer::findLeaseByMAC(const com::Utf8Str &aMac, LONG aType,
 
 
 /**
- * Calculates and updates the value of strLeaseFilename given @a aNetwork.
+ * Calculates and updates the value of strLeasesFilename given @a aNetwork.
  */
-HRESULT DHCPServer::i_calcLeaseFilename(const com::Utf8Str &aNetwork)
+HRESULT DHCPServer::i_calcLeasesFilename(const com::Utf8Str &aNetwork)
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /* The lease file must be the same as we used the last time, so careful when changing this code. */
-    int vrc = m->strLeaseFilename.assignNoThrow(mVirtualBox->i_homeDir());
+    int vrc = m->strLeasesFilename.assignNoThrow(mVirtualBox->i_homeDir());
     if (RT_SUCCESS(vrc))
-        vrc = RTPathAppendCxx(m->strLeaseFilename, aNetwork);
+        vrc = RTPathAppendCxx(m->strLeasesFilename, aNetwork);
     if (RT_SUCCESS(vrc))
-        vrc = m->strLeaseFilename.appendNoThrow("-Dhcpd.leases");
+        vrc = m->strLeasesFilename.appendNoThrow("-Dhcpd.leases");
     if (RT_SUCCESS(vrc))
     {
-        RTPathPurgeFilename(RTPathFilename(m->strLeaseFilename.mutableRaw()), RTPATH_STR_F_STYLE_HOST);
-        m->strLeaseFilename.jolt();
+        RTPathPurgeFilename(RTPathFilename(m->strLeasesFilename.mutableRaw()), RTPATH_STR_F_STYLE_HOST);
+        m->strLeasesFilename.jolt();
         return S_OK;
     }
     return setErrorBoth(E_FAIL, vrc, tr("Failed to construct lease filename: %Rrc"), vrc);
