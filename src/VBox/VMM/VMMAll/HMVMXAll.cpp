@@ -1184,38 +1184,39 @@ VMM_INT_DECL(PVMXVMCSINFO) hmGetVmxActiveVmcsInfo(PVMCPU pVCpu)
  * @returns TRPM event.
  * @param   uIntInfo    The VMX event.
  */
-VMM_INT_DECL(TRPMEVENT) HMVmxEventToTrpmEventType(uint32_t uIntInfo)
+VMM_INT_DECL(TRPMEVENT) HMVmxEventTypeToTrpmEventType(uint32_t uIntInfo)
 {
+    Assert(VMX_IDT_VECTORING_INFO_IS_VALID(uIntInfo));
+
     TRPMEVENT enmTrapType;
-    uint8_t const uType   = VMX_ENTRY_INT_INFO_TYPE(uIntInfo);
-    uint8_t const uVector = VMX_ENTRY_INT_INFO_VECTOR(uIntInfo);
+    uint8_t const uType   = VMX_IDT_VECTORING_INFO_TYPE(uIntInfo);
+    uint8_t const uVector = VMX_IDT_VECTORING_INFO_VECTOR(uIntInfo);
 
     switch (uType)
     {
-        case VMX_ENTRY_INT_INFO_TYPE_EXT_INT:
+        case VMX_IDT_VECTORING_INFO_TYPE_EXT_INT:
            enmTrapType = TRPM_HARDWARE_INT;
            break;
 
-        case VMX_ENTRY_INT_INFO_TYPE_NMI:
-        case VMX_ENTRY_INT_INFO_TYPE_HW_XCPT:
+        case VMX_IDT_VECTORING_INFO_TYPE_NMI:
+        case VMX_IDT_VECTORING_INFO_TYPE_HW_XCPT:
             enmTrapType = TRPM_TRAP;
             break;
 
-        case VMX_ENTRY_INT_INFO_TYPE_PRIV_SW_XCPT:  /* INT1 (ICEBP). */
+        case VMX_IDT_VECTORING_INFO_TYPE_PRIV_SW_XCPT:  /* INT1 (ICEBP). */
             Assert(uVector == X86_XCPT_DB); NOREF(uVector);
             enmTrapType = TRPM_SOFTWARE_INT;
             break;
 
-        case VMX_ENTRY_INT_INFO_TYPE_SW_XCPT:       /* INT3 (#BP) and INTO (#OF) */
+        case VMX_IDT_VECTORING_INFO_TYPE_SW_XCPT:       /* INT3 (#BP) and INTO (#OF) */
             Assert(uVector == X86_XCPT_BP || uVector == X86_XCPT_OF); NOREF(uVector);
             enmTrapType = TRPM_SOFTWARE_INT;
             break;
 
-        case VMX_ENTRY_INT_INFO_TYPE_SW_INT:
+        case VMX_IDT_VECTORING_INFO_TYPE_SW_INT:
             enmTrapType = TRPM_SOFTWARE_INT;
             break;
 
-        case VMX_ENTRY_INT_INFO_TYPE_OTHER_EVENT:   /* Shouldn't really happen. */
         default:
             AssertMsgFailed(("Invalid trap type %#x\n", uType));
             enmTrapType = TRPM_32BIT_HACK;
@@ -1223,6 +1224,68 @@ VMM_INT_DECL(TRPMEVENT) HMVmxEventToTrpmEventType(uint32_t uIntInfo)
     }
 
     return enmTrapType;
+}
+
+
+/**
+ * Converts a TRPM event type into an appropriate VMX event type.
+ *
+ * @returns VMX event type mask.
+ * @param   uVector         The event vector.
+ * @param   enmTrpmEvent    The TRPM event.
+ */
+VMM_INT_DECL(uint32_t) HMTrpmEventTypeToVmxEventType(uint8_t uVector, TRPMEVENT enmTrpmEvent)
+{
+    uint32_t uIntInfoType = 0;
+    if (enmTrpmEvent == TRPM_TRAP)
+    {
+        /** @todo r=ramshankar: TRPM currently offers no way to determine a \#DB that was
+         *        generated using INT1 (ICEBP). */
+        switch (uVector)
+        {
+            case X86_XCPT_NMI:
+                uIntInfoType |= (VMX_IDT_VECTORING_INFO_TYPE_NMI << VMX_IDT_VECTORING_INFO_TYPE_SHIFT);
+                break;
+
+            case X86_XCPT_BP:
+            case X86_XCPT_OF:
+                uIntInfoType |= (VMX_IDT_VECTORING_INFO_TYPE_SW_XCPT << VMX_IDT_VECTORING_INFO_TYPE_SHIFT);
+                break;
+
+            case X86_XCPT_PF:
+            case X86_XCPT_DF:
+            case X86_XCPT_TS:
+            case X86_XCPT_NP:
+            case X86_XCPT_SS:
+            case X86_XCPT_GP:
+            case X86_XCPT_AC:
+                uIntInfoType |= VMX_IDT_VECTORING_INFO_ERROR_CODE_VALID;
+                RT_FALL_THRU();
+            default:
+                uIntInfoType |= (VMX_IDT_VECTORING_INFO_TYPE_HW_XCPT << VMX_IDT_VECTORING_INFO_TYPE_SHIFT);
+                break;
+        }
+    }
+    else if (enmTrpmEvent == TRPM_HARDWARE_INT)
+        uIntInfoType |= (VMX_IDT_VECTORING_INFO_TYPE_EXT_INT << VMX_IDT_VECTORING_INFO_TYPE_SHIFT);
+    else if (enmTrpmEvent == TRPM_SOFTWARE_INT)
+    {
+        switch (uVector)
+        {
+            case X86_XCPT_BP:
+            case X86_XCPT_OF:
+                uIntInfoType |= (VMX_IDT_VECTORING_INFO_TYPE_SW_XCPT << VMX_IDT_VECTORING_INFO_TYPE_SHIFT);
+                break;
+
+            default:
+                Assert(uVector == X86_XCPT_DB);
+                uIntInfoType |= (VMX_IDT_VECTORING_INFO_TYPE_SW_INT << VMX_IDT_VECTORING_INFO_TYPE_SHIFT);
+                break;
+        }
+    }
+    else
+        AssertMsgFailed(("Invalid TRPM event type %d\n", enmTrpmEvent));
+    return uIntInfoType;
 }
 
 

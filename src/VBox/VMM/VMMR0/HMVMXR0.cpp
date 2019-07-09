@@ -8608,56 +8608,9 @@ static void hmR0VmxTrpmTrapToPendingEvent(PVMCPU pVCpu)
     int rc = TRPMQueryTrapAll(pVCpu, &uVector, &enmTrpmEvent, &uErrCode, &GCPtrFaultAddress, &cbInstr);
     AssertRC(rc);
 
-    /* Refer Intel spec. 24.8.3 "VM-entry Controls for Event Injection" for the format of u32IntInfo. */
-    uint32_t u32IntInfo = uVector | VMX_EXIT_INT_INFO_VALID;
-    if (enmTrpmEvent == TRPM_TRAP)
-    {
-        /** @todo r=ramshankar: TRPM currently offers no way to determine a \#DB that was
-         *        generated using INT1 (ICEBP). */
-        switch (uVector)
-        {
-            case X86_XCPT_NMI:
-                u32IntInfo |= (VMX_EXIT_INT_INFO_TYPE_NMI << VMX_EXIT_INT_INFO_TYPE_SHIFT);
-                break;
-
-            case X86_XCPT_BP:
-            case X86_XCPT_OF:
-                u32IntInfo |= (VMX_EXIT_INT_INFO_TYPE_SW_XCPT << VMX_EXIT_INT_INFO_TYPE_SHIFT);
-                break;
-
-            case X86_XCPT_PF:
-            case X86_XCPT_DF:
-            case X86_XCPT_TS:
-            case X86_XCPT_NP:
-            case X86_XCPT_SS:
-            case X86_XCPT_GP:
-            case X86_XCPT_AC:
-                u32IntInfo |= VMX_EXIT_INT_INFO_ERROR_CODE_VALID;
-                RT_FALL_THRU();
-            default:
-                u32IntInfo |= (VMX_EXIT_INT_INFO_TYPE_HW_XCPT << VMX_EXIT_INT_INFO_TYPE_SHIFT);
-                break;
-        }
-    }
-    else if (enmTrpmEvent == TRPM_HARDWARE_INT)
-        u32IntInfo |= (VMX_EXIT_INT_INFO_TYPE_EXT_INT << VMX_EXIT_INT_INFO_TYPE_SHIFT);
-    else if (enmTrpmEvent == TRPM_SOFTWARE_INT)
-    {
-        switch (uVector)
-        {
-            case X86_XCPT_BP:
-            case X86_XCPT_OF:
-                u32IntInfo |= (VMX_EXIT_INT_INFO_TYPE_SW_XCPT << VMX_EXIT_INT_INFO_TYPE_SHIFT);
-                break;
-
-            default:
-                Assert(uVector == X86_XCPT_DB);
-                u32IntInfo |= (VMX_EXIT_INT_INFO_TYPE_SW_INT << VMX_EXIT_INT_INFO_TYPE_SHIFT);
-                break;
-        }
-    }
-    else
-        AssertMsgFailed(("Invalid TRPM event type %d\n", enmTrpmEvent));
+    uint32_t u32IntInfo;
+    u32IntInfo  = uVector | VMX_IDT_VECTORING_INFO_VALID;
+    u32IntInfo |= HMTrpmEventTypeToVmxEventType(uVector, enmTrpmEvent);
 
     rc = TRPMResetTrap(pVCpu);
     AssertRC(rc);
@@ -8677,59 +8630,24 @@ static void hmR0VmxPendingEventToTrpmTrap(PVMCPU pVCpu)
 {
     Assert(pVCpu->hm.s.Event.fPending);
 
-    uint32_t uVectorType     = VMX_IDT_VECTORING_INFO_TYPE(pVCpu->hm.s.Event.u64IntInfo);
-    uint32_t uVector         = VMX_IDT_VECTORING_INFO_VECTOR(pVCpu->hm.s.Event.u64IntInfo);
-    bool     fErrorCodeValid = VMX_IDT_VECTORING_INFO_IS_ERROR_CODE_VALID(pVCpu->hm.s.Event.u64IntInfo);
-    uint32_t uErrorCode      = pVCpu->hm.s.Event.u32ErrCode;
-
     /* If a trap was already pending, we did something wrong! */
     Assert(TRPMQueryTrap(pVCpu, NULL /* pu8TrapNo */, NULL /* pEnmType */) == VERR_TRPM_NO_ACTIVE_TRAP);
 
-    /** @todo Use HMVmxEventToTrpmEventType() later. */
-    TRPMEVENT enmTrapType;
-    switch (uVectorType)
-    {
-        case VMX_IDT_VECTORING_INFO_TYPE_EXT_INT:
-           enmTrapType = TRPM_HARDWARE_INT;
-           break;
-
-        case VMX_IDT_VECTORING_INFO_TYPE_NMI:
-        case VMX_IDT_VECTORING_INFO_TYPE_HW_XCPT:
-            enmTrapType = TRPM_TRAP;
-            break;
-
-        case VMX_IDT_VECTORING_INFO_TYPE_PRIV_SW_XCPT:  /* #DB (INT1/ICEBP). */
-            Assert(uVector == X86_XCPT_DB);
-            enmTrapType = TRPM_SOFTWARE_INT;
-            break;
-
-        case VMX_IDT_VECTORING_INFO_TYPE_SW_XCPT:       /* #BP (INT3) and #OF (INTO) */
-            Assert(uVector == X86_XCPT_BP || uVector == X86_XCPT_OF);
-            enmTrapType = TRPM_SOFTWARE_INT;
-            break;
-
-        case VMX_IDT_VECTORING_INFO_TYPE_SW_INT:
-            enmTrapType = TRPM_SOFTWARE_INT;
-            break;
-
-        default:
-            AssertMsgFailed(("Invalid trap type %#x\n", uVectorType));
-            enmTrapType = TRPM_32BIT_HACK;
-            break;
-    }
+    uint32_t const  u32IntInfo  = pVCpu->hm.s.Event.u64IntInfo;
+    uint32_t const  uVector     = VMX_IDT_VECTORING_INFO_VECTOR(u32IntInfo);
+    TRPMEVENT const enmTrapType = HMVmxEventTypeToTrpmEventType(u32IntInfo);
 
     Log4(("HM event->TRPM: uVector=%#x enmTrapType=%d\n", uVector, enmTrapType));
 
     int rc = TRPMAssertTrap(pVCpu, uVector, enmTrapType);
     AssertRC(rc);
 
-    if (fErrorCodeValid)
-        TRPMSetErrorCode(pVCpu, uErrorCode);
+    if (VMX_IDT_VECTORING_INFO_IS_ERROR_CODE_VALID(u32IntInfo))
+        TRPMSetErrorCode(pVCpu, pVCpu->hm.s.Event.u32ErrCode);
 
-    if (   uVectorType == VMX_IDT_VECTORING_INFO_TYPE_HW_XCPT
-        && uVector == X86_XCPT_PF)
+    if (VMX_IDT_VECTORING_INFO_IS_XCPT_PF(u32IntInfo))
         TRPMSetFaultAddress(pVCpu, pVCpu->hm.s.Event.GCPtrFaultAddress);
-    else if (enmTrapType == TRPM_SOFTWARE_INT)
+    else if (VMX_IDT_VECTORING_INFO_TYPE(u32IntInfo) == VMX_IDT_VECTORING_INFO_TYPE_SW_INT)
         TRPMSetInstrLength(pVCpu, pVCpu->hm.s.Event.cbInstr);
 
     /* We're now done converting the pending event. */
