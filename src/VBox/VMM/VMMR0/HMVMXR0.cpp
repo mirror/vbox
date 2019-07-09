@@ -13784,7 +13784,7 @@ static VBOXSTRICTRC hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PVMXTRANSIE
                     u32ErrCode = 0;
 
                 /* If uExitVector is #PF, CR2 value will be updated from the VMCS if it's a guest #PF, see hmR0VmxExitXcptPF(). */
-                STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectPendingReflect);
+                STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectReflect);
                 hmR0VmxSetPendingEvent(pVCpu, VMX_ENTRY_INT_INFO_FROM_EXIT_IDT_INFO(pVmxTransient->uIdtVectoringInfo),
                                        0 /* cbInstr */, u32ErrCode, pVCpu->cpum.GstCtx.cr2);
 
@@ -13813,7 +13813,7 @@ static VBOXSTRICTRC hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PVMXTRANSIE
                 }
                 else
                 {
-                    STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectPendingReflect);
+                    STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectConvertDF);
                     hmR0VmxSetPendingXcptDF(pVCpu);
                     Log4Func(("IDT: Pending vectoring #DF %#RX64 uIdtVector=%#x uExitVector=%#x\n", pVCpu->hm.s.Event.u64IntInfo,
                               uIdtVector, uExitVector));
@@ -16193,7 +16193,7 @@ HMVMX_EXIT_DECL hmR0VmxExitApicAccess(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
         /* For some crazy guest, if an event delivery causes an APIC-access VM-exit, go to instruction emulation. */
         if (RT_UNLIKELY(pVCpu->hm.s.Event.fPending))
         {
-            STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectPendingInterpret);
+            STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectInterpret);
             return VINF_EM_RAW_INJECT_TRPM_EVENT;
         }
     }
@@ -16372,7 +16372,7 @@ HMVMX_EXIT_DECL hmR0VmxExitEptMisconfig(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransien
          */
         if (RT_UNLIKELY(pVCpu->hm.s.Event.fPending))
         {
-            STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectPendingInterpret);
+            STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectInterpret);
             return VINF_EM_RAW_INJECT_TRPM_EVENT;
         }
     }
@@ -16459,7 +16459,7 @@ HMVMX_EXIT_DECL hmR0VmxExitEptViolation(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransien
          * we shall resolve the nested #PF and re-inject the original event.
          */
         if (pVCpu->hm.s.Event.fPending)
-            STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectPendingNPF);
+            STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectReflectNPF);
     }
     else
     {

@@ -5972,7 +5972,7 @@ static int hmR0SvmCheckExitDueToEventDelivery(PVMCPU pVCpu, PSVMTRANSIENT pSvmTr
                      * exit info. fields, if it's a guest #PF, see hmR0SvmExitXcptPF().
                      */
                     Assert(pVmcb->ctrl.ExitIntInfo.n.u3Type != SVM_EVENT_SOFTWARE_INT);
-                    STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectPendingReflect);
+                    STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectReflect);
                     hmR0SvmSetPendingEvent(pVCpu, &pVmcb->ctrl.ExitIntInfo, GCPtrFaultAddress);
 
                     Log4Func(("IDT: Pending vectoring event %#RX64 ErrValid=%RTbool Err=%#RX32 GCPtrFaultAddress=%#RX64\n",
@@ -6003,7 +6003,7 @@ static int hmR0SvmCheckExitDueToEventDelivery(PVMCPU pVCpu, PSVMTRANSIENT pSvmTr
                 }
                 else
                 {
-                    STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectPendingReflect);
+                    STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectConvertDF);
                     hmR0SvmSetPendingXcptDF(pVCpu);
                     rc = VINF_HM_DOUBLE_FAULT;
                 }
@@ -7218,7 +7218,7 @@ HMSVM_EXIT_DECL hmR0SvmExitNestedPF(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
          */
         if (pVCpu->hm.s.Event.fPending)
         {
-            STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectPendingInterpret);
+            STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectInterpret);
             return VINF_EM_RAW_INJECT_TRPM_EVENT;
         }
 
@@ -7298,7 +7298,7 @@ HMSVM_EXIT_DECL hmR0SvmExitNestedPF(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
      * re-inject the original event.
      */
     if (pVCpu->hm.s.Event.fPending)
-        STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectPendingNPF);
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectReflectNPF);
 
     return rc;
 }
@@ -7720,7 +7720,7 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptDB(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
 
     if (RT_UNLIKELY(pVCpu->hm.s.Event.fPending))
     {
-        STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectPendingInterpret);
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectInterpret);
         return VINF_EM_RAW_INJECT_TRPM_EVENT;
     }
 
@@ -8232,7 +8232,7 @@ HMSVM_EXIT_DECL hmR0SvmNestedExitXcptDB(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransien
 
     if (pVCpu->hm.s.Event.fPending)
     {
-        STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectPendingInterpret);
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectInterpret);
         return VINF_EM_RAW_INJECT_TRPM_EVENT;
     }
 

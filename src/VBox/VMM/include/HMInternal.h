@@ -1120,9 +1120,10 @@ typedef struct HMCPU
 
     STAMCOUNTER             StatInjectInterrupt;
     STAMCOUNTER             StatInjectXcpt;
-    STAMCOUNTER             StatInjectPendingReflect;
-    STAMCOUNTER             StatInjectPendingInterpret;
-    STAMCOUNTER             StatInjectPendingNPF;
+    STAMCOUNTER             StatInjectReflect;
+    STAMCOUNTER             StatInjectConvertDF;
+    STAMCOUNTER             StatInjectInterpret;
+    STAMCOUNTER             StatInjectReflectNPF;
 
     STAMCOUNTER             StatExitAll;
     STAMCOUNTER             StatNestedExitAll;
