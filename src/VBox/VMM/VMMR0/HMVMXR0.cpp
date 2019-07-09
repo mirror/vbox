@@ -16362,8 +16362,8 @@ HMVMX_EXIT_DECL hmR0VmxExitEptMisconfig(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransien
     Assert(pVCpu->CTX_SUFF(pVM)->hm.s.fNestedPaging);
 
     /* If this VM-exit occurred while delivering an event through the guest IDT, handle it accordingly. */
-    VBOXSTRICTRC rcStrict1 = hmR0VmxCheckExitDueToEventDelivery(pVCpu, pVmxTransient);
-    if (RT_LIKELY(rcStrict1 == VINF_SUCCESS))
+    VBOXSTRICTRC rcStrict = hmR0VmxCheckExitDueToEventDelivery(pVCpu, pVmxTransient);
+    if (RT_LIKELY(rcStrict == VINF_SUCCESS))
     {
         /*
          * In the unlikely case where delivering an event causes an EPT misconfig (MMIO), go back to
@@ -16378,9 +16378,9 @@ HMVMX_EXIT_DECL hmR0VmxExitEptMisconfig(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransien
     }
     else
     {
-        if (rcStrict1 == VINF_HM_DOUBLE_FAULT)
-            rcStrict1 = VINF_SUCCESS;
-        return rcStrict1;
+        if (rcStrict == VINF_HM_DOUBLE_FAULT)
+            rcStrict = VINF_SUCCESS;
+        return rcStrict;
     }
 
     /*
@@ -16392,7 +16392,6 @@ HMVMX_EXIT_DECL hmR0VmxExitEptMisconfig(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransien
     rc    |= hmR0VmxImportGuestState(pVCpu, pVmcsInfo, IEM_CPUMCTX_EXTRN_MUST_MASK);
     AssertRCReturn(rc, rc);
 
-    VBOXSTRICTRC rcStrict;
     PCEMEXITREC pExitRec = EMHistoryUpdateFlagsAndTypeAndPC(pVCpu,
                                                             EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM | EMEXIT_F_HM, EMEXITTYPE_MMIO),
                                                             pVCpu->cpum.GstCtx.rip + pVCpu->cpum.GstCtx.cs.u64Base);
@@ -16422,11 +16421,8 @@ HMVMX_EXIT_DECL hmR0VmxExitEptMisconfig(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransien
     else
     {
         /*
-         * Frequent exit or something needing probing.  Get state and call EMHistoryExec.
+         * Frequent exit or something needing probing. Call EMHistoryExec.
          */
-        int rc2 = hmR0VmxImportGuestState(pVCpu, pVmcsInfo, IEM_CPUMCTX_EXTRN_MUST_MASK);
-        AssertRCReturn(rc2, rc2);
-
         Log4(("EptMisscfgExit/%u: %04x:%08RX64: %RGp -> EMHistoryExec\n",
               pVCpu->idCpu, pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, GCPhys));
 
@@ -16451,8 +16447,8 @@ HMVMX_EXIT_DECL hmR0VmxExitEptViolation(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransien
     Assert(pVCpu->CTX_SUFF(pVM)->hm.s.fNestedPaging);
 
     /* If this VM-exit occurred while delivering an event through the guest IDT, handle it accordingly. */
-    VBOXSTRICTRC rcStrict1 = hmR0VmxCheckExitDueToEventDelivery(pVCpu, pVmxTransient);
-    if (RT_LIKELY(rcStrict1 == VINF_SUCCESS))
+    VBOXSTRICTRC rcStrict = hmR0VmxCheckExitDueToEventDelivery(pVCpu, pVmxTransient);
+    if (RT_LIKELY(rcStrict == VINF_SUCCESS))
     {
         /*
          * If delivery of an event causes an EPT violation (true nested #PF and not MMIO),
@@ -16463,12 +16459,12 @@ HMVMX_EXIT_DECL hmR0VmxExitEptViolation(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransien
     }
     else
     {
-        if (rcStrict1 == VINF_HM_DOUBLE_FAULT)
+        if (rcStrict == VINF_HM_DOUBLE_FAULT)
         {
             Assert(pVCpu->hm.s.Event.fPending);
-            rcStrict1 = VINF_SUCCESS;
+            rcStrict = VINF_SUCCESS;
         }
-        return rcStrict1;
+        return rcStrict;
     }
 
     RTGCPHYS GCPhys;
@@ -16499,13 +16495,13 @@ HMVMX_EXIT_DECL hmR0VmxExitEptViolation(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransien
     Log4Func(("EPT violation %#x at %#RX64 ErrorCode %#x cs:rip=%#04x:%#RX64\n", pVmxTransient->uExitQual, GCPhys, uErrorCode,
               pCtx->cs.Sel, pCtx->rip));
 
-    VBOXSTRICTRC rcStrict2 = PGMR0Trap0eHandlerNestedPaging(pVM, pVCpu, PGMMODE_EPT, uErrorCode, CPUMCTX2CORE(pCtx), GCPhys);
+    rcStrict = PGMR0Trap0eHandlerNestedPaging(pVM, pVCpu, PGMMODE_EPT, uErrorCode, CPUMCTX2CORE(pCtx), GCPhys);
     TRPMResetTrap(pVCpu);
 
     /* Same case as PGMR0Trap0eHandlerNPMisconfig(). See comment above, @bugref{6043}. */
-    if (   rcStrict2 == VINF_SUCCESS
-        || rcStrict2 == VERR_PAGE_TABLE_NOT_PRESENT
-        || rcStrict2 == VERR_PAGE_NOT_PRESENT)
+    if (   rcStrict == VINF_SUCCESS
+        || rcStrict == VERR_PAGE_TABLE_NOT_PRESENT
+        || rcStrict == VERR_PAGE_NOT_PRESENT)
     {
         /* Successfully synced our nested page tables. */
         STAM_COUNTER_INC(&pVCpu->hm.s.StatExitReasonNpf);
@@ -16513,8 +16509,8 @@ HMVMX_EXIT_DECL hmR0VmxExitEptViolation(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransien
         return VINF_SUCCESS;
     }
 
-    Log4Func(("EPT return to ring-3 rcStrict2=%Rrc\n", VBOXSTRICTRC_VAL(rcStrict2)));
-    return rcStrict2;
+    Log4Func(("EPT return to ring-3 rcStrict2=%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
+    return rcStrict;
 }
 
 
