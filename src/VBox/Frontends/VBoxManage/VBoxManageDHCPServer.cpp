@@ -38,7 +38,6 @@
 
 #include "VBoxManage.h"
 
-#include <string>
 #include <vector>
 #include <map>
 
@@ -74,6 +73,9 @@ using namespace com;
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
+/** Pointer to a dhcpserver command context. */
+typedef struct DHCPDCMDCTX *PDHCPDCMDCTX;
+
 /**
  * Definition of a dhcpserver command, with handler and various flags.
  */
@@ -87,7 +89,7 @@ typedef struct DHCPDCMDDEF
      *
      * @param   pCtx            Pointer to command context to use.
      */
-    DECLR3CALLBACKMEMBER(RTEXITCODE, pfnHandler, (struct DHCPDCMDCTX *pCtx, int argc, char **argv));
+    DECLR3CALLBACKMEMBER(RTEXITCODE, pfnHandler, (PDHCPDCMDCTX pCtx, int argc, char **argv));
 
     /** The sub-command scope flags. */
     uint64_t    fSubcommandScope;
@@ -109,10 +111,8 @@ typedef struct DHCPDCMDCTX
     /** The (trunk) interface name. */
     const char     *pszInterface;
 } DHCPDCMDCTX;
-/** Pointer to a dhcpserver command context. */
-typedef DHCPDCMDCTX *PDHCPDCMDCTX;
 
-typedef std::pair<DhcpOpt_T, std::string> DhcpOptSpec;
+typedef std::pair<DhcpOpt_T, Utf8Str> DhcpOptSpec;
 typedef std::vector<DhcpOptSpec> DhcpOpts;
 typedef DhcpOpts::iterator DhcpOptIterator;
 
@@ -121,10 +121,10 @@ typedef DhcpOptIds::iterator DhcpOptIdIterator;
 
 struct VmNameSlotKey
 {
-    const std::string VmName;
+    const Utf8Str VmName;
     uint8_t u8Slot;
 
-    VmNameSlotKey(const std::string &aVmName, uint8_t aSlot)
+    VmNameSlotKey(const Utf8Str &aVmName, uint8_t aSlot)
         : VmName(aVmName)
         , u8Slot(aSlot)
     {}
@@ -318,7 +318,7 @@ static RTEXITCODE dhcpdHandleAddAndModify(PDHCPDCMDCTX pCtx, int argc, char **ar
                 vrc = RTGetOptFetchValue(&GetState, &ValueUnion, RTGETOPT_REQ_STRING);
                 if (RT_FAILURE(vrc))
                     return errorFetchValue(1, "--add-opt", vrc, &ValueUnion);
-                pScopeOptions->push_back(DhcpOptSpec((DhcpOpt_T)idAddOpt, std::string(ValueUnion.psz)));
+                pScopeOptions->push_back(DhcpOptSpec((DhcpOpt_T)idAddOpt, Utf8Str(ValueUnion.psz)));
                 break;
             }
 
@@ -345,7 +345,7 @@ static RTEXITCODE dhcpdHandleAddAndModify(PDHCPDCMDCTX pCtx, int argc, char **ar
             case 'p':   // --value
                 if (!fNeedValueOrRemove)
                     return errorSyntax("--value without --id=dhcp-opt-no");
-                pScopeOptions->push_back(DhcpOptSpec((DhcpOpt_T)u8OptId, std::string(ValueUnion.psz)));
+                pScopeOptions->push_back(DhcpOptSpec((DhcpOpt_T)u8OptId, Utf8Str(ValueUnion.psz)));
                 fNeedValueOrRemove = false;
                 break;
 
@@ -437,43 +437,65 @@ static RTEXITCODE dhcpdHandleAddAndModify(PDHCPDCMDCTX pCtx, int argc, char **ar
         Bstr bstrUpperIp(pszUpperIp);
 
         if (!pszDhcpdIp)
+        {
             CHECK_ERROR2_RET(hrc, svr, COMGETTER(IPAddress)(bstrDhcpdIp.asOutParam()), RTEXITCODE_FAILURE);
+        }
         if (!pszNetmask)
+        {
             CHECK_ERROR2_RET(hrc, svr, COMGETTER(NetworkMask)(bstrNetmask.asOutParam()), RTEXITCODE_FAILURE);
+        }
         if (!pszLowerIp)
+        {
             CHECK_ERROR2_RET(hrc, svr, COMGETTER(LowerIP)(bstrNetmask.asOutParam()), RTEXITCODE_FAILURE);
+        }
         if (!pszUpperIp)
+        {
             CHECK_ERROR2_RET(hrc, svr, COMGETTER(UpperIP)(bstrNetmask.asOutParam()), RTEXITCODE_FAILURE);
+        }
 
         CHECK_ERROR2_STMT(hrc, svr, SetConfiguration(bstrDhcpdIp.raw(), bstrNetmask.raw(), bstrLowerIp.raw(), bstrUpperIp.raw()),
                           rcExit = errorArgument("Failed to set configuration"));
     }
 
     if (fEnabled >= 0)
+    {
         CHECK_ERROR2_STMT(hrc, svr, COMSETTER(Enabled)((BOOL)fEnabled), rcExit = RTEXITCODE_FAILURE);
+    }
 
     /* Remove options: */
     for (DhcpOptIdIterator itOptId = GlobalDhcpOptions2Delete.begin(); itOptId != GlobalDhcpOptions2Delete.end(); ++itOptId)
+    {
         CHECK_ERROR2_STMT(hrc, svr, RemoveGlobalOption(*itOptId), rcExit = RTEXITCODE_FAILURE);
+    }
 
     for (VmSlot2OptionIdsIterator itIdVector = VmSlot2Options2Delete.begin();
          itIdVector != VmSlot2Options2Delete.end(); ++itIdVector)
+    {
         for (DhcpOptIdIterator itOptId = itIdVector->second.begin(); itOptId != itIdVector->second.end(); ++itOptId)
+        {
             CHECK_ERROR2_STMT(hrc, svr, RemoveVmSlotOption(Bstr(itIdVector->first.VmName.c_str()).raw(),
                                                            itIdVector->first.u8Slot, *itOptId),
                               rcExit = RTEXITCODE_FAILURE);
+        }
+    }
 
     /* Global Options */
     for (DhcpOptIterator itOpt = GlobalDhcpOptions.begin(); itOpt != GlobalDhcpOptions.end(); ++itOpt)
+    {
         CHECK_ERROR2_STMT(hrc, svr, AddGlobalOption(itOpt->first, com::Bstr(itOpt->second.c_str()).raw()),
                           rcExit = RTEXITCODE_FAILURE);
+    }
 
     /* VM slot options. */
     for (VmSlot2OptionsIterator it = VmSlot2Options.begin(); it != VmSlot2Options.end(); ++it)
+    {
         for (DhcpOptIterator itOpt = it->second.begin(); itOpt != it->second.end(); ++itOpt)
+        {
             CHECK_ERROR2_STMT(hrc, svr, AddVmSlotOption(Bstr(it->first.VmName.c_str()).raw(), it->first.u8Slot, itOpt->first,
                                                         com::Bstr(itOpt->second.c_str()).raw()),
                               rcExit = RTEXITCODE_FAILURE);
+        }
+    }
 
     return rcExit;
 }
