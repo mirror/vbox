@@ -1062,6 +1062,8 @@ RTEXITCODE handleImportAppliance(HandlerArg *arg)
                         case VirtualSystemDescriptionType_CloudInstanceState:
                         case VirtualSystemDescriptionType_CloudImageState:
                         case VirtualSystemDescriptionType_Miscellaneous:
+                        case VirtualSystemDescriptionType_CloudInstanceDisplayName:
+                        case VirtualSystemDescriptionType_CloudImageDisplayName:
                             /** @todo  VirtualSystemDescriptionType_Miscellaneous? */
                             break;
 
