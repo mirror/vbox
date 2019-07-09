@@ -211,12 +211,15 @@ static RTEXITCODE dhcpdHandleAddAndModify(PDHCPDCMDCTX pCtx, int argc, char **ar
     static const RTGETOPTDEF s_aOptions[] =
     {
         DHCPD_CMD_COMMON_OPTION_DEFS(),
-        { "--ip",               'a', RTGETOPT_REQ_STRING  },
+        { "--server-ip",        'a', RTGETOPT_REQ_STRING  },
+        { "--ip",               'a', RTGETOPT_REQ_STRING  },    // deprecated
         { "-ip",                'a', RTGETOPT_REQ_STRING  },    // deprecated
         { "--netmask",          'm', RTGETOPT_REQ_STRING  },
         { "-netmask",           'm', RTGETOPT_REQ_STRING  },    // deprecated
+        { "--lower-ip",         'l', RTGETOPT_REQ_STRING  },
         { "--lowerip",          'l', RTGETOPT_REQ_STRING  },
         { "-lowerip",           'l', RTGETOPT_REQ_STRING  },    // deprecated
+        { "--upper-ip",         'u', RTGETOPT_REQ_STRING  },
         { "--upperip",          'u', RTGETOPT_REQ_STRING  },
         { "-upperip",           'u', RTGETOPT_REQ_STRING  },    // deprecated
         { "--enable",           'e', RTGETOPT_REQ_NOTHING },
@@ -235,11 +238,11 @@ static RTEXITCODE dhcpdHandleAddAndModify(PDHCPDCMDCTX pCtx, int argc, char **ar
 
     };
 
-    const char       *pszDhcpdIp = NULL;
-    const char       *pszNetmask = NULL;
-    const char       *pszLowerIp = NULL;
-    const char       *pszUpperIp = NULL;
-    int               fEnabled   = -1;
+    const char       *pszServerIp           = NULL;
+    const char       *pszNetmask            = NULL;
+    const char       *pszLowerIp            = NULL;
+    const char       *pszUpperIp            = NULL;
+    int               fEnabled              = -1;
 
     DhcpOpts          GlobalDhcpOptions;
     DhcpOptIds        GlobalDhcpOptions2Delete;
@@ -264,16 +267,16 @@ static RTEXITCODE dhcpdHandleAddAndModify(PDHCPDCMDCTX pCtx, int argc, char **ar
         switch (vrc)
         {
             DHCPD_CMD_COMMON_OPTION_CASES(pCtx, vrc, &ValueUnion);
-            case 'a':   // -ip
-                pszDhcpdIp = ValueUnion.psz;
+            case 'a':   // --server-ip
+                pszServerIp = ValueUnion.psz;
                 break;
             case 'm':   // --netmask
                 pszNetmask = ValueUnion.psz;
                 break;
-            case 'l':   // --lowerip
+            case 'l':   // --lower-ip
                 pszLowerIp = ValueUnion.psz;
                 break;
-            case 'u':   // --upperip
+            case 'u':   // --upper-ip
                 pszUpperIp = ValueUnion.psz;
                 break;
             case 'e':   // --enable
@@ -374,7 +377,7 @@ static RTEXITCODE dhcpdHandleAddAndModify(PDHCPDCMDCTX pCtx, int argc, char **ar
     if (pCtx->pCmdDef->fSubcommandScope == HELP_SCOPE_DHCPSERVER_ADD)
     {
         RTEXITCODE rcExit = RTEXITCODE_SUCCESS;
-        if (!pszDhcpdIp)
+        if (!pszServerIp)
             rcExit = errorSyntax("Missing required option: --ip");
         if (!pszNetmask)
             rcExit = errorSyntax("Missing required option: --netmask");
@@ -429,16 +432,16 @@ static RTEXITCODE dhcpdHandleAddAndModify(PDHCPDCMDCTX pCtx, int argc, char **ar
      */
     HRESULT hrc;
     RTEXITCODE rcExit = RTEXITCODE_SUCCESS;
-    if (pszDhcpdIp || pszNetmask || pszLowerIp || pszUpperIp)
+    if (pszServerIp || pszNetmask || pszLowerIp || pszUpperIp)
     {
-        Bstr bstrDhcpdIp(pszDhcpdIp);
+        Bstr bstrServerIp(pszServerIp);
         Bstr bstrNetmask(pszNetmask);
         Bstr bstrLowerIp(pszLowerIp);
         Bstr bstrUpperIp(pszUpperIp);
 
-        if (!pszDhcpdIp)
+        if (!pszServerIp)
         {
-            CHECK_ERROR2_RET(hrc, svr, COMGETTER(IPAddress)(bstrDhcpdIp.asOutParam()), RTEXITCODE_FAILURE);
+            CHECK_ERROR2_RET(hrc, svr, COMGETTER(IPAddress)(bstrServerIp.asOutParam()), RTEXITCODE_FAILURE);
         }
         if (!pszNetmask)
         {
@@ -446,15 +449,16 @@ static RTEXITCODE dhcpdHandleAddAndModify(PDHCPDCMDCTX pCtx, int argc, char **ar
         }
         if (!pszLowerIp)
         {
-            CHECK_ERROR2_RET(hrc, svr, COMGETTER(LowerIP)(bstrNetmask.asOutParam()), RTEXITCODE_FAILURE);
+            CHECK_ERROR2_RET(hrc, svr, COMGETTER(LowerIP)(bstrLowerIp.asOutParam()), RTEXITCODE_FAILURE);
         }
         if (!pszUpperIp)
         {
-            CHECK_ERROR2_RET(hrc, svr, COMGETTER(UpperIP)(bstrNetmask.asOutParam()), RTEXITCODE_FAILURE);
+            CHECK_ERROR2_RET(hrc, svr, COMGETTER(UpperIP)(bstrUpperIp.asOutParam()), RTEXITCODE_FAILURE);
         }
 
-        CHECK_ERROR2_STMT(hrc, svr, SetConfiguration(bstrDhcpdIp.raw(), bstrNetmask.raw(), bstrLowerIp.raw(), bstrUpperIp.raw()),
-                          rcExit = errorArgument("Failed to set configuration"));
+        CHECK_ERROR2_STMT(hrc, svr, SetConfiguration(bstrServerIp.raw(), bstrNetmask.raw(), bstrLowerIp.raw(), bstrUpperIp.raw()),
+                          rcExit = errorArgument("Failed to set configuration (%ls, %ls, %ls, %ls)", bstrServerIp.raw(),
+                                                 bstrNetmask.raw(), bstrLowerIp.raw(), bstrUpperIp.raw()));
     }
 
     if (fEnabled >= 0)

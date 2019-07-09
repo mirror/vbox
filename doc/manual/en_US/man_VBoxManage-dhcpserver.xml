@@ -38,7 +38,7 @@
         <arg choice="plain">--network=<replaceable>netname</replaceable></arg>
         <arg choice="plain">--interface=<replaceable>ifname</replaceable></arg>
       </group>
-      <arg choice="req">--ip=<replaceable>dhcpd-address</replaceable></arg>
+      <arg choice="req">--server-ip=<replaceable>address</replaceable></arg>
       <arg choice="req">--netmask=<replaceable>mask</replaceable></arg>
       <arg choice="req">--lower-ip=<replaceable>address</replaceable></arg>
       <arg choice="req">--upper-ip=<replaceable>address</replaceable></arg>
@@ -64,10 +64,10 @@
         <arg choice="plain">--network=<replaceable>netname</replaceable></arg>
         <arg choice="plain">--interface=<replaceable>ifname</replaceable></arg>
       </group>
-      <arg choice="opt">--ip=<replaceable>dhcpd-address</replaceable></arg>
-      <arg choice="opt">--netmask=<replaceable>mask</replaceable></arg>
+      <arg choice="opt">--server-ip=<replaceable>address</replaceable></arg>
       <arg choice="opt">--lower-ip=<replaceable>address</replaceable></arg>
       <arg choice="opt">--upper-ip=<replaceable>address</replaceable></arg>
+      <arg choice="opt">--netmask=<replaceable>mask</replaceable></arg>
       <group choice="opt">
         <arg choice="plain">--enable</arg>
         <arg choice="plain">--disable</arg>
@@ -158,19 +158,19 @@
       </para>
       <variablelist>
         <varlistentry>
-          <term><option>--ip=<replaceable>dhcpd-address</replaceable></option></term>
+          <term><option>--server-ip=<replaceable>address</replaceable></option></term>
           <listitem><para>The IP address the DHCP server should use.</para></listitem>
-        </varlistentry>
-        <varlistentry>
-          <term><option>--netmask=<replaceable>mask</replaceable></option></term>
-          <listitem><para>The network mask.  Typically 255.255.255.0.</para></listitem>
         </varlistentry>
         <varlistentry>
           <term><option>--lower-ip=<replaceable>address</replaceable></option>, <option>--upper-ip=<replaceable>address</replaceable></option></term>
           <listitem><para>The IP address range for the DHCP server to manage.  This
             should not include the address of the DHCP server itself, but it must be
-            in the same network as it is.  The boundraries are inclusive, so both the
+            in the same network as it.  The boundraries are inclusive, so both the
             lower and upper addresses will be handed out to clients.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--netmask=<replaceable>mask</replaceable></option></term>
+          <listitem><para>The network mask.  Typically 255.255.255.0.</para></listitem>
         </varlistentry>
         <varlistentry>
           <term><option>--enable</option>, --disable</term>
