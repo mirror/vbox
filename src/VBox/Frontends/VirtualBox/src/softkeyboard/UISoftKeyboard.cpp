@@ -1038,10 +1038,10 @@ void UILayoutEditor::prepareObjects()
     m_pGoBackButton->setAutoRaise(true);
     m_pEditorLayout->addWidget(m_pGoBackButton, 0, 0, 1, 1);
     connect(m_pGoBackButton, &QToolButton::clicked, this, &UILayoutEditor::sigGoBackButton);
-    pTitleLayout->addWidget(m_pGoBackButton);
-    pTitleLayout->addStretch(2);
     m_pTitleLabel = new QLabel;
     pTitleLayout->addWidget(m_pTitleLabel);
+    pTitleLayout->addStretch(2);
+    pTitleLayout->addWidget(m_pGoBackButton);
     m_pEditorLayout->addLayout(pTitleLayout, 0, 0, 1, 2);
 
     m_pLayoutNativeNameLabel = new QLabel;
@@ -1284,10 +1284,10 @@ void UILayoutSelector::prepareObjects()
     //m_pCloseButton->setStyleSheet("QToolButton { border: 0px none black; margin: 0px 0px 0px 0px; } QToolButton::menu-indicator {image: none;}");
     m_pCloseButton->setAutoRaise(true);
     connect(m_pCloseButton, &QToolButton::clicked, this, &UILayoutSelector::sigCloseLayoutList);
-    pTitleLayout->addWidget(m_pCloseButton);
-    pTitleLayout->addStretch(2);
     m_pTitleLabel = new QLabel;
     pTitleLayout->addWidget(m_pTitleLabel);
+    pTitleLayout->addStretch(2);
+    pTitleLayout->addWidget(m_pCloseButton);
     pLayout->addLayout(pTitleLayout);
 
     m_pLayoutListWidget = new QListWidget;
@@ -2633,6 +2633,18 @@ bool UISoftKeyboardWidget::loadKeyboardLayout(const QString &strLayoutFileName)
         m_layouts.removeLast();
         return false;
     }
+    /* Make sure we have unique layout UUIDs: */
+    int iCount = 0;
+    foreach (const UISoftKeyboardLayout &layout, m_layouts)
+    {
+        if (layout.uid() == newLayout.uid())
+            ++iCount;
+    }
+    if (iCount > 1)
+    {
+        m_layouts.removeLast();
+        return false;
+    }
     newLayout.setSourceFilePath(strLayoutFileName);
     return true;
 }
@@ -3117,6 +3129,9 @@ void UISoftKeyboardStatusBarWidget::prepareObjects()
     pLayout->setContentsMargins(0, 0, 0, 0);
     setLayout(pLayout);
 
+    m_pMessageLabel = new QLabel;
+    pLayout->addWidget(m_pMessageLabel);
+
     m_pLayoutListButton = new QToolButton;
     if (m_pLayoutListButton)
     {
@@ -3141,8 +3156,6 @@ void UISoftKeyboardStatusBarWidget::prepareObjects()
         pLayout->addWidget(m_pSettingsButton);
     }
 
-    m_pMessageLabel = new QLabel;
-    pLayout->addWidget(m_pMessageLabel);
     retranslateUi();
 }
 
@@ -3242,10 +3255,10 @@ void UISoftKeyboardSettingsWidget::prepareObjects()
     m_pCloseButton->setIcon(UIIconPool::defaultIcon(UIIconPool::UIDefaultIconType_DialogCancel));
     m_pCloseButton->setAutoRaise(true);
     connect(m_pCloseButton, &QToolButton::clicked, this, &UISoftKeyboardSettingsWidget::sigCloseSettingsWidget);
-    pTitleLayout->addWidget(m_pCloseButton);
-    pTitleLayout->addStretch(2);
     m_pTitleLabel = new QLabel;
     pTitleLayout->addWidget(m_pTitleLabel);
+    pTitleLayout->addStretch(2);
+    pTitleLayout->addWidget(m_pCloseButton);
     pSettingsLayout->addLayout(pTitleLayout, 0, 0, 1, 2);
 
     m_pShowNumPadCheckBox = new QCheckBox;
