@@ -49,13 +49,13 @@
       <sbr/>
       <arg choice="opt" rep="repeat">
         <arg choice="opt">--global</arg>
-        <arg choice="opt" rep="repeat">--add-opt=<replaceable>dhcp-opt-no hex-string</replaceable></arg>
+        <arg choice="opt" rep="repeat">--add-opt=<replaceable>dhcp-opt-no value</replaceable></arg>
       </arg>
       <sbr/>
       <arg choice="opt" rep="repeat">
         <arg choice="req">--vm=<replaceable>name|uuid</replaceable></arg>
         <arg choice="opt">--nic=<replaceable>1-N</replaceable></arg>
-        <arg choice="opt" rep="repeat">--add-opt=<replaceable>dhcp-opt-no hex-string</replaceable></arg>
+        <arg choice="opt" rep="repeat">--add-opt=<replaceable>dhcp-opt-no value</replaceable></arg>
       </arg>
     </cmdsynopsis>
     <cmdsynopsis id="synopsis-vboxmanage-dhcpserver-modify">
@@ -76,14 +76,14 @@
       <arg choice="opt" rep="repeat">
         <arg choice="opt">--global</arg>
         <arg choice="plain">--del-opt=<replaceable>dhcp-opt-no</replaceable></arg>
-        <arg choice="plain">--add-opt=<replaceable>dhcp-opt-no hex-string</replaceable></arg>
+        <arg choice="plain">--add-opt=<replaceable>dhcp-opt-no value</replaceable></arg>
       </arg>
       <sbr/>
       <arg choice="opt" rep="repeat">
         <arg choice="req">--vm=<replaceable>name|uuid</replaceable></arg>
         <arg choice="opt">--nic=<replaceable>1-N</replaceable></arg>
         <arg choice="opt" rep="repeat">--del-opt=<replaceable>dhcp-opt-no</replaceable></arg>
-        <arg choice="opt" rep="repeat">--add-opt=<replaceable>dhcp-opt-no hex-string</replaceable></arg>
+        <arg choice="opt" rep="repeat">--add-opt=<replaceable>dhcp-opt-no value</replaceable></arg>
       </arg>
     </cmdsynopsis>
     <cmdsynopsis id="synopsis-vboxmanage-dhcpserver-remove">
@@ -194,9 +194,10 @@
             the in <option>--vm</option>.</para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--add-opt=<replaceable>dhcp-opt-no hex-string</replaceable></option></term>
+          <term><option>--add-opt=<replaceable>dhcp-opt-no value</replaceable></option></term>
           <listitem><para>Adds the specified DHCP option number (0-255) and value.  The scope of
             the option is decided by the <option>--vm</option> and <option>global</option> options.
+            The value format is option specific.
           </para></listitem>
         </varlistentry>
       </variablelist>
