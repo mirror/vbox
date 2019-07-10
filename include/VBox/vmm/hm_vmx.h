@@ -2558,15 +2558,26 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EXIT_REASON_, UINT32_C(0), UINT32_MAX,
 /** Construct a VM-entry interruption information field from an IDT-vectoring
  *  information field (same except that bit 12 is reserved). */
 #define VMX_ENTRY_INT_INFO_FROM_EXIT_IDT_INFO(a)                ((a) & ~RT_BIT(12))
-
 /** If the VM-entry interruption information field indicates a page-fault. */
-#define VMX_ENTRY_INT_INFO_IS_XCPT_PF(a)                        (((a) & (  VMX_BF_ENTRY_INT_INFO_VALID_MASK   \
-                                                                         | VMX_BF_ENTRY_INT_INFO_TYPE_MASK     \
+#define VMX_ENTRY_INT_INFO_IS_XCPT_PF(a)                        (((a) & (  VMX_BF_ENTRY_INT_INFO_VALID_MASK \
+                                                                         | VMX_BF_ENTRY_INT_INFO_TYPE_MASK \
                                                                          | VMX_BF_ENTRY_INT_INFO_VECTOR_MASK)) \
                                                                      == (  RT_BF_MAKE(VMX_BF_ENTRY_INT_INFO_VALID,  1) \
                                                                          | RT_BF_MAKE(VMX_BF_ENTRY_INT_INFO_TYPE,   VMX_ENTRY_INT_INFO_TYPE_HW_XCPT) \
                                                                          | RT_BF_MAKE(VMX_BF_ENTRY_INT_INFO_VECTOR, X86_XCPT_PF)))
-
+/** If the VM-entry interruption information field indicates an external
+ *  interrupt. */
+#define VMX_ENTRY_INT_INFO_IS_EXT_INT(a)                        (((a) & (  VMX_BF_ENTRY_INT_INFO_VALID_MASK \
+                                                                         | VMX_BF_ENTRY_INT_INFO_TYPE_MASK)) \
+                                                                     == (  RT_BF_MAKE(VMX_BF_ENTRY_INT_INFO_VALID, 1) \
+                                                                         | RT_BF_MAKE(VMX_BF_ENTRY_INT_INFO_TYPE,  VMX_ENTRY_INT_INFO_TYPE_EXT_INT)))
+/** If the VM-entry interruption information field indicates an NMI. */
+#define VMX_ENTRY_INT_INFO_IS_XCPT_NMI(a)                       (((a) & (  VMX_BF_ENTRY_INT_INFO_VALID_MASK \
+                                                                         | VMX_BF_ENTRY_INT_INFO_TYPE_MASK \
+                                                                         | VMX_BF_ENTRY_INT_INFO_VECTOR_MASK)) \
+                                                                     == (  RT_BF_MAKE(VMX_BF_ENTRY_INT_INFO_VALID,  1) \
+                                                                         | RT_BF_MAKE(VMX_BF_ENTRY_INT_INFO_TYPE,   VMX_ENTRY_INT_INFO_TYPE_NMI) \
+                                                                         | RT_BF_MAKE(VMX_BF_ENTRY_INT_INFO_VECTOR, X86_XCPT_NMI)))
 
 /** Bit fields for VM-entry interruption information. */
 /** The VM-entry interruption vector. */
@@ -2730,10 +2741,9 @@ typedef uint32_t VMXINSTRID;
 /** Construct an IDT-vectoring information field from an VM-entry interruption
  *  information field (same except that bit 12 is reserved). */
 #define VMX_IDT_VECTORING_INFO_FROM_ENTRY_INT_INFO(a)           ((a) & ~RT_BIT(12))
-
 /** If the IDT-vectoring information field indicates a page-fault. */
-#define VMX_IDT_VECTORING_INFO_IS_XCPT_PF(a)                    (((a) & (  VMX_BF_IDT_VECTORING_INFO_VALID_MASK   \
-                                                                         | VMX_BF_IDT_VECTORING_INFO_TYPE_MASK     \
+#define VMX_IDT_VECTORING_INFO_IS_XCPT_PF(a)                    (((a) & (  VMX_BF_IDT_VECTORING_INFO_VALID_MASK \
+                                                                         | VMX_BF_IDT_VECTORING_INFO_TYPE_MASK \
                                                                          | VMX_BF_IDT_VECTORING_INFO_VECTOR_MASK)) \
                                                                      == (  RT_BF_MAKE(VMX_BF_IDT_VECTORING_INFO_VALID,  1) \
                                                                          | RT_BF_MAKE(VMX_BF_IDT_VECTORING_INFO_TYPE,   VMX_IDT_VECTORING_INFO_TYPE_HW_XCPT) \
