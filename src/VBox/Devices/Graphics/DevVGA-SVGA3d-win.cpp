@@ -1241,14 +1241,31 @@ static PVMSVGA3DSHAREDSURFACE vmsvga3dSurfaceGetSharedCopy(PVMSVGA3DSTATE pState
                                                       &pSharedSurface->u.pCubeTexture,
                                                       &pSurface->hSharedObject);
         else if (pSurface->enmD3DResType == VMSVGA3D_D3DRESTYPE_TEXTURE)
-            hr = pContext->pDevice->CreateTexture(cWidth,
-                                                  cHeight,
-                                                  numMipLevels,
-                                                  pSurface->fUsageD3D | D3DUSAGE_RENDERTARGET,
-                                                  pSurface->formatD3D,
-                                                  D3DPOOL_DEFAULT,
-                                                  &pSharedSurface->u.pTexture,
-                                                  &pSurface->hSharedObject);
+        {
+            if (pSurface->fStencilAsTexture)
+            {
+                /* Use the INTZ format for a depth/stencil surface that will be used as a texture */
+                hr = pContext->pDevice->CreateTexture(cWidth,
+                                                      cHeight,
+                                                      1, /* mip levels */
+                                                      D3DUSAGE_DEPTHSTENCIL,
+                                                      FOURCC_INTZ,
+                                                      D3DPOOL_DEFAULT,
+                                                      &pSharedSurface->u.pTexture,
+                                                      &pSurface->hSharedObject);
+            }
+            else
+            {
+                hr = pContext->pDevice->CreateTexture(cWidth,
+                                                      cHeight,
+                                                      numMipLevels,
+                                                      pSurface->fUsageD3D | D3DUSAGE_RENDERTARGET,
+                                                      pSurface->formatD3D,
+                                                      D3DPOOL_DEFAULT,
+                                                      &pSharedSurface->u.pTexture,
+                                                      &pSurface->hSharedObject);
+            }
+        }
         else
             hr = E_FAIL;
 
@@ -1890,6 +1907,23 @@ int vmsvga3dBackCreateTexture(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext, 
                                               D3DPOOL_DEFAULT,
                                               &pSurface->u.pTexture,
                                               &pSurface->hSharedObject /* might result in poor performance */);
+        if (   hr == D3D_OK
+            && (   pSurface->formatD3D == D3DFMT_D24S8
+                || pSurface->formatD3D == D3DFMT_D24X8))
+        {
+            /* Create another texture object to serve as a bounce buffer as the
+             * D3DFMT_D24S8 and D3DFMT_D24X8 surface can't be locked apparently (from testing).
+             */
+            hr = pContext->pDevice->CreateTexture(cWidth,
+                                                  cHeight,
+                                                  1, /* mip levels */
+                                                  D3DUSAGE_DYNAMIC /* Lockable */,
+                                                  FOURCC_INTZ,
+                                                  D3DPOOL_SYSTEMMEM,
+                                                  &pSurface->bounce.pTexture,
+                                                  NULL);
+            AssertMsgReturn(hr == D3D_OK, ("CreateTexture (systemmem) failed with %x\n", hr), VERR_INTERNAL_ERROR);
+        }
         AssertMsgReturn(hr == D3D_OK, ("CreateTexture INTZ failed with %x\n", hr), VERR_INTERNAL_ERROR);
 
         pSurface->fStencilAsTexture = true;
@@ -4047,7 +4081,6 @@ int vmsvga3dSetRenderTarget(PVGASTATE pThis, uint32_t cid, SVGA3dRenderTargetTyp
             }
 #endif
         }
-        Assert(pRenderTarget->idAssociatedContext == cid);
 
         /** @todo Assert(!pRenderTarget->fDirty); */
 
@@ -4060,8 +4093,8 @@ int vmsvga3dSetRenderTarget(PVGASTATE pThis, uint32_t cid, SVGA3dRenderTargetTyp
         {
             IDirect3DSurface9 *pStencilSurface;
 
-            hr = pRenderTarget->u.pTexture->GetSurfaceLevel(0, &pStencilSurface);
-            AssertMsgReturn(hr == D3D_OK, ("GetSurfaceLevel failed with %x\n", hr), VERR_INTERNAL_ERROR);
+            rc = vmsvga3dGetD3DSurface(pState, pContext, pRenderTarget, target.face, target.mipmap, /*fLockable=*/ false, &pStencilSurface);
+            AssertRCReturn(rc, rc);
 
             hr = pContext->pDevice->SetDepthStencilSurface(pStencilSurface);
             D3D_RELEASE(pStencilSurface);
@@ -4069,6 +4102,7 @@ int vmsvga3dSetRenderTarget(PVGASTATE pThis, uint32_t cid, SVGA3dRenderTargetTyp
         }
         else
         {
+            Assert(pRenderTarget->idAssociatedContext == cid);
             hr = pContext->pDevice->SetDepthStencilSurface(pRenderTarget->u.pSurface);
             AssertMsgReturn(hr == D3D_OK, ("SetDepthStencilSurface failed with %x\n", hr), VERR_INTERNAL_ERROR);
         }
