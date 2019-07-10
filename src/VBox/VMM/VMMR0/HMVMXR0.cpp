@@ -10632,7 +10632,7 @@ static int hmR0VmxExitHostNmi(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo)
      *   - We would need to perform VMREADs with interrupts disabled and is orders of
      *     magnitude worse with nested virtualization.
      *
-     *   - It affects the common VM-exit scenario and keep interrupts disabled for a
+     *   - It affects the common VM-exit scenario and keeps interrupts disabled for a
      *     longer period of time just for handling an edge case like host NMIs.
      *
      * Let's cover the most likely scenario first. Check if we are on the target CPU
