@@ -205,7 +205,7 @@ static DECLCALLBACK(void *)  drvKbdQueueQueryInterface(PPDMIBASE pInterface, con
 
 
 /**
- * Queues a keyboard event.
+ * Queues a scancode-based keyboard event.
  * Because of the event queueing the EMT context requirement is lifted.
  *
  * @returns VBox status code.
@@ -258,6 +258,36 @@ static DECLCALLBACK(int) drvKbdQueuePutEventScan(PPDMIKEYBOARDPORT pInterface, u
     }
     else
         return VINF_SUCCESS;
+}
+
+
+/**
+ * Queues a HID-usage-based keyboard event.
+ * Because of the event queueing the EMT context requirement is lifted.
+ *
+ * @returns VBox status code.
+ * @param   pInterface          Pointer to this interface structure.
+ * @param   u32UsageCode        The HID usage code to queue.
+ * @thread  Any thread.
+ */
+static DECLCALLBACK(int) drvKbdQueuePutEventHid(PPDMIKEYBOARDPORT pInterface, uint32_t u32UsageCode)
+{
+    PDRVKBDQUEUE pDrv = IKEYBOARDPORT_2_DRVKBDQUEUE(pInterface);
+    /* Ignore any attempt to send events if queue is inactive. */
+    if (pDrv->fInactive)
+        return VINF_SUCCESS;
+
+    PDRVKBDQUEUEITEM pItem = (PDRVKBDQUEUEITEM)PDMQueueAlloc(pDrv->pQueue);
+    if (pItem)
+    {
+        pItem->u32UsageCode = u32UsageCode;
+        PDMQueueInsert(pDrv->pQueue, &pItem->Core);
+
+        return VINF_SUCCESS;
+    }
+    if (!pDrv->fSuspended)
+        AssertMsgFailed(("drvKbdQueuePutEventHid: Queue is full!!!!\n"));
+    return VERR_PDM_NO_QUEUE_ITEMS;
 }
 
 
@@ -424,6 +454,7 @@ static DECLCALLBACK(int) drvKbdQueueConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     pDrv->IConnector.pfnFlushQueue          = drvKbdFlushQueue;
     /* IKeyboardPort. */
     pDrv->IPort.pfnPutEventScan             = drvKbdQueuePutEventScan;
+    pDrv->IPort.pfnPutEventHid              = drvKbdQueuePutEventHid;
 
     /*
      * Get the IKeyboardPort interface of the above driver/device.
