@@ -25,6 +25,7 @@
 #include <iprt/asm-amd64-x86.h>
 #include <iprt/thread.h>
 #include <iprt/mem.h>
+#include <iprt/mp.h>
 
 #include <VBox/vmm/pdmapi.h>
 #include <VBox/vmm/dbgf.h>
@@ -10597,16 +10598,68 @@ static int hmR0VmxMapHCApicAccessPage(PVMCPU pVCpu)
 
 
 /**
- * Wrapper for dispatching host NMIs.
+ * Worker function passed to RTMpOnSpecific() that is to be called on the target
+ * CPU.
+ *
+ * @param   idCpu       The ID for the CPU the function is called on.
+ * @param   pvUser1     Null, not used.
+ * @param   pvUser2     Null, not used.
+ */
+static DECLCALLBACK(void) hmR0DispatchHostNmi(RTCPUID idCpu, void *pvUser1, void *pvUser2)
+{
+    RT_NOREF2(pvUser1, pvUser2);
+    VMXDispatchHostNmi();
+}
+
+
+/**
+ * Dispatching a host NMI on the host CPU that received the NMI.
  *
  * @returns VBox status code.
- * @param   pVCpu   The cross context virtual CPU structure.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pVmcsInfo   The VMCS info. object corresponding to the VMCS that was
+ *                      executing when receiving the host NMI.
  */
-static int hmR0VmxExitHostNmi(PVMCPU pVCpu)
+static int hmR0VmxExitHostNmi(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo)
 {
-    VMXDispatchHostNmi();
-    STAM_REL_COUNTER_INC(&pVCpu->hm.s.StatExitHostNmiInGC);
-    return VINF_SUCCESS;
+    RTCPUID const idCpu = pVmcsInfo->idHostCpu;
+
+    /*
+     * We don't want to delay dispatching the NMI any more than we have to. However,
+     * we have already chosen -not- to dispatch NMIs when interrupts were still disabled
+     * after executing guest or nested-guest code for the following reasons:
+     *
+     *   - We would need to perform VMREADs with interrupts disabled and is orders of
+     *     magnitude worse with nested virtualization.
+     *
+     *   - It affects the common VM-exit scenario and keep interrupts disabled for a
+     *     longer period of time just for handling an edge case like host NMIs.
+     *
+     * Let's cover the most likely scenario first. Check if we are on the target CPU
+     * and dispatch the NMI right away. This should be much faster than calling into
+     * RTMpOnSpecific() machinery.
+     */
+    bool fDispatched = false;
+    RTCCUINTREG const fEFlags = ASMIntDisableFlags();
+    if (idCpu == RTMpCpuId())
+    {
+        VMXDispatchHostNmi();
+        fDispatched = true;
+    }
+    ASMSetFlags(fEFlags);
+    if (fDispatched)
+    {
+        STAM_REL_COUNTER_INC(&pVCpu->hm.s.StatExitHostNmiInGC);
+        return VINF_SUCCESS;
+    }
+
+    /*
+     * RTMpOnSpecific() waits until the worker function has run on the target CPU. So
+     * there should be no race or recursion even if we are unlucky enough to be preempted
+     * (to the target CPU) without dispatching the host NMI above.
+     */
+    STAM_REL_COUNTER_INC(&pVCpu->hm.s.StatExitHostNmiInGCIpi);
+    return RTMpOnSpecific(idCpu, &hmR0DispatchHostNmi, NULL /* pvUser1 */,  NULL /* pvUser2 */);
 }
 
 
@@ -12655,7 +12708,7 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxRunDebugHandleExit(PVMCPU pVCpu, PVMXTRANSIENT p
         AssertRCReturn(rc2, rc2);
         uint32_t const uIntType = VMX_EXIT_INT_INFO_TYPE(pVmxTransient->uExitIntInfo);
         if (uIntType == VMX_EXIT_INT_INFO_TYPE_NMI)
-            return hmR0VmxExitHostNmi(pVCpu);
+            return hmR0VmxExitHostNmi(pVCpu, pVmxTransient->pVmcsInfo);
     }
 
     /*
@@ -14665,7 +14718,7 @@ HMVMX_EXIT_DECL hmR0VmxExitXcptOrNmi(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
          * [2] -- See Intel spec. 27.5.5 "Updating Non-Register State".
          */
         STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExitXcptNmi, y3);
-        return hmR0VmxExitHostNmi(pVCpu);
+        return hmR0VmxExitHostNmi(pVCpu, pVmcsInfo);
     }
 
     /* If this VM-exit occurred while delivering an event through the guest IDT, handle it accordingly. */
@@ -16781,7 +16834,7 @@ HMVMX_EXIT_DECL hmR0VmxExitXcptOrNmiNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTrans
          *    We shouldn't direct host physical NMIs to the nested-guest. Dispatch it to the host.
          */
         case VMX_EXIT_INT_INFO_TYPE_NMI:
-            return hmR0VmxExitHostNmi(pVCpu);
+            return hmR0VmxExitHostNmi(pVCpu, pVmxTransient->pVmcsInfo);
 
         /*
          * Hardware exceptions,
