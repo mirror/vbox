@@ -324,8 +324,8 @@ public:
     void setScanCode(LONG scanCode);
     LONG scanCode() const;
 
-    void setScanCodePrefix(LONG scanCode);
-    LONG scanCodePrefix() const;
+    void addScanCodePrefix(LONG scanCode);
+    const QVector<LONG> &scanCodePrefix() const;
 
     void setSpaceWidthAfter(int iSpace);
     int spaceWidthAfter() const;
@@ -377,7 +377,7 @@ private:
     int        m_iHeight;
     int        m_iSpaceWidthAfter;
     LONG       m_scanCode;
-    LONG       m_scanCodePrefix;
+    QVector<LONG> m_scanCodePrefix;
 
     /** @name Cutouts are used to create non-rectangle keys polygons.
       * @{ */
@@ -1395,7 +1395,6 @@ UISoftKeyboardKey::UISoftKeyboardKey()
     , m_iHeight(0)
     , m_iSpaceWidthAfter(0)
     , m_scanCode(0)
-    , m_scanCodePrefix(0)
     , m_iCutoutWidth(0)
     , m_iCutoutHeight(0)
     , m_iCutoutCorner(-1)
@@ -1448,12 +1447,12 @@ LONG UISoftKeyboardKey::scanCode() const
     return m_scanCode;
 }
 
-void UISoftKeyboardKey::setScanCodePrefix(LONG scanCodePrefix)
+void UISoftKeyboardKey::addScanCodePrefix(LONG scanCodePrefix)
 {
-    m_scanCodePrefix = scanCodePrefix;
+    m_scanCodePrefix << scanCodePrefix;
 }
 
-LONG UISoftKeyboardKey::scanCodePrefix() const
+const QVector<LONG> &UISoftKeyboardKey::scanCodePrefix() const
 {
     return m_scanCodePrefix;
 }
@@ -2427,7 +2426,7 @@ void UISoftKeyboardWidget::handleKeyRelease(UISoftKeyboardKey *pKey)
         return;
 
     QVector<LONG> sequence;
-    if (pKey->scanCodePrefix() != 0)
+    if (!pKey->scanCodePrefix().isEmpty())
         sequence <<  pKey->scanCodePrefix();
     sequence << (pKey->scanCode() | 0x80);
 
@@ -2435,7 +2434,7 @@ void UISoftKeyboardWidget::handleKeyRelease(UISoftKeyboardKey *pKey)
     for (int i = m_pressedModifiers.size() - 1; i >= 0; --i)
     {
         UISoftKeyboardKey *pModifier = m_pressedModifiers[i];
-        if (pModifier->scanCodePrefix() != 0)
+        if (!pModifier->scanCodePrefix().isEmpty())
             sequence << pModifier->scanCodePrefix();
         sequence << (pModifier->scanCode() | 0x80);
         /* Release the pressed modifiers (if there are not locked): */
@@ -2458,12 +2457,12 @@ void UISoftKeyboardWidget::handleKeyPress(UISoftKeyboardKey *pKey)
     for (int i = 0; i < m_pressedModifiers.size(); ++i)
     {
         UISoftKeyboardKey *pModifier = m_pressedModifiers[i];
-        if (pModifier->scanCodePrefix() != 0)
+        if (!pModifier->scanCodePrefix().isEmpty())
             sequence << pModifier->scanCodePrefix();
         sequence << pModifier->scanCode();
     }
 
-    if (pKey->scanCodePrefix() != 0)
+    if (!pKey->scanCodePrefix().isEmpty())
         sequence << pKey->scanCodePrefix();
     sequence << pKey->scanCode();
     emit sigPutKeyboardSequence(sequence);
@@ -2914,8 +2913,15 @@ void UIPhysicalLayoutReader::parseKey(UISoftKeyboardRow &row)
         else if (m_xmlReader.name() == "scancodeprefix")
         {
             QString strCode = m_xmlReader.readElementText();
-            bool fOk = false;
-            key.setScanCodePrefix(strCode.toInt(&fOk, 16));
+            QStringList strList;
+            strList << strCode.split('-', QString::SkipEmptyParts);
+            foreach (const QString &strPrefix, strList)
+            {
+                bool fOk = false;
+                LONG iCode = strPrefix.toInt(&fOk, 16);
+                if (fOk)
+                    key.addScanCodePrefix(iCode);
+            }
         }
         else if (m_xmlReader.name() == "cutout")
             parseCutout(key);

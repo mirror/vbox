@@ -81,6 +81,7 @@
             <position>126</position>
             <scancodeprefix>0xe1-0x1d</scancodeprefix>
             <scancode>0x45</scancode>
+            0xe1-0x1d-0x45-0xe1-0x9d-0xc5
         </key>
     </row>
     <space>
