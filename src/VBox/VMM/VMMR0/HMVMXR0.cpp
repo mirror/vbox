@@ -923,96 +923,69 @@ static bool hmR0VmxIsPinCtlsSet(PVMCPU pVCpu, PCVMXTRANSIENT pVmxTransient, uint
 }
 
 
-#if 0
 /**
- * Checks whether one of the given Processor-based VM-execution controls are set.
+ * Sets the given Processor-based VM-execution controls.
  *
- * @returns @c true if set, @c false otherwise.
- * @param   pVCpu           The cross context virtual CPU structure.
  * @param   pVmxTransient   The VMX-transient structure.
- * @param   uProcCtls       The Processor-based VM-execution controls to check.
- *
- * @remarks This will not check merged controls when executing a nested-guest
- *          but the original control specified by the guest hypervisor.
+ * @param   uProcCtls       The Processor-based VM-execution controls to set.
  */
-static bool hmR0VmxIsProcCtlsSet(PVMCPU pVCpu, PCVMXTRANSIENT pVmxTransient, uint32_t uProcCtls)
+static void hmR0VmxSetProcCtlsVmcs(PVMXTRANSIENT pVmxTransient, uint32_t uProcCtls)
 {
-    if (!pVmxTransient->fIsNestedGuest)
+    PVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
+    if ((pVmcsInfo->u32ProcCtls & uProcCtls) != uProcCtls)
     {
-        PCVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
-        return RT_BOOL(pVmcsInfo->u32ProcCtls & uProcCtls);
+        pVmcsInfo->u32ProcCtls |= uProcCtls;
+        int rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, pVmcsInfo->u32ProcCtls);
+        AssertRC(rc);
     }
-    return CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, uProcCtls);
 }
 
 
 /**
- * Checks whether one of the given Secondary Processor-based VM-execution controls
- * are set.
+ * Removes the given Processor-based VM-execution controls.
  *
- * @returns @c true if set, @c false otherwise.
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   pVmxTransient   The VMX-transient structure.
- * @param   uProcCtls2      The Secondary Processor-based VM-execution controls to
- *                          check.
+ * @param   uProcCtls       The Processor-based VM-execution controls to remove.
  *
- * @remarks This will not check merged controls when executing a nested-guest
- *          but the original control specified by the guest hypervisor.
+ * @remarks When executing a nested-guest, this will not remove any of the specified
+ *          controls if the guest hypervisor has set any one of them.
  */
-static bool hmR0VmxIsProcCtls2Set(PVMCPU pVCpu, PCVMXTRANSIENT pVmxTransient, uint32_t uProcCtls2)
+static void hmR0VmxRemoveProcCtlsVmcs(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient, uint32_t uProcCtls)
 {
-    if (!pVmxTransient->fIsNestedGuest)
-    {
-        PCVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
-        return RT_BOOL(pVmcsInfo->u32ProcCtls2 & uProcCtls2);
-    }
-    return CPUMIsGuestVmxProcCtls2Set(pVCpu, &pVCpu->cpum.GstCtx, uProcCtls2);
-}
-
-
-/**
- * Checks whether one of the given VM-entry controls are set.
- *
- * @returns @c true if set, @c false otherwise.
- * @param   pVCpu           The cross context virtual CPU structure.
- * @param   pVmxTransient   The VMX-transient structure.
- * @param   uEntryCtls      The VM-entry controls to check.
- *
- * @remarks This will not check merged controls when executing a nested-guest
- *          but the original control specified by the guest hypervisor.
- */
-static bool hmR0VmxIsEntryCtlsSet(PVMCPU pVCpu, PCVMXTRANSIENT pVmxTransient, uint32_t uEntryCtls)
-{
-    if (!pVmxTransient->fIsNestedGuest)
-    {
-        PCVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
-        return RT_BOOL(pVmcsInfo->u32EntryCtls & uEntryCtls);
-    }
-    return CPUMIsGuestVmxEntryCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, uEntryCtls);
-}
-
-
-/**
- * Checks whether one of the given VM-exit controls are set.
- *
- * @returns @c true if set, @c false otherwise.
- * @param   pVCpu           The cross context virtual CPU structure.
- * @param   pVmxTransient   The VMX-transient structure.
- * @param   uExitCtls       The VM-exit controls to check.
- *
- * @remarks This will not check merged controls when executing a nested-guest
- *          but the original control specified by the guest hypervisor.
- */
-static bool hmR0VmxIsExitCtlsSet(PVMCPU pVCpu, PCVMXTRANSIENT pVmxTransient, uint32_t uExitCtls)
-{
-    if (!pVmxTransient->fIsNestedGuest)
-    {
-        PCVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
-        return RT_BOOL(pVmcsInfo->u32ExitCtls & uExitCtls);
-    }
-    return CPUMIsGuestVmxExitCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, uExitCtls);
-}
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+    bool const fRemoveCtls = !pVmxTransient->fIsNestedGuest
+                           ? true
+                           : !CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS_RDTSC_EXIT);
+#else
+    bool const fRemoveCtls = true;
 #endif
+    PVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
+    if (   fRemoveCtls
+        && (pVmcsInfo->u32ProcCtls & uProcCtls))
+    {
+        pVmcsInfo->u32ProcCtls &= ~uProcCtls;
+        int rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, pVmcsInfo->u32ProcCtls);
+        AssertRC(rc);
+    }
+}
+
+
+/**
+ * Sets the TSC offset for the current VMCS.
+ *
+ * @param   uTscOffset  The TSC offset to set.
+ * @param   pVmcsInfo   The VMCS info. object.
+ */
+static void hmR0VmxSetTscOffsetVmcs(PVMXVMCSINFO pVmcsInfo, uint64_t uTscOffset)
+{
+    if (pVmcsInfo->u64TscOffset != uTscOffset)
+    {
+        int rc = VMXWriteVmcs64(VMX_VMCS64_CTRL_TSC_OFFSET_FULL, uTscOffset);
+        AssertRC(rc);
+        pVmcsInfo->u64TscOffset = uTscOffset;
+    }
+}
 
 
 /**
@@ -7523,39 +7496,18 @@ static void hmR0VmxUpdateTscOffsettingAndPreemptTimer(PVMCPU pVCpu, PVMXTRANSIEN
         STAM_COUNTER_INC(&pVCpu->hm.s.StatTscParavirt);
     }
 
-    uint32_t uProcCtls = pVmcsInfo->u32ProcCtls;
     if (   fOffsettedTsc
         && RT_LIKELY(!pVCpu->hm.s.fDebugWantRdTscExit))
     {
         if (pVmxTransient->fIsNestedGuest)
             uTscOffset = CPUMApplyNestedGuestTscOffset(pVCpu, uTscOffset);
-        if (pVmcsInfo->u64TscOffset != uTscOffset)
-        {
-            int rc = VMXWriteVmcs64(VMX_VMCS64_CTRL_TSC_OFFSET_FULL, uTscOffset);
-            AssertRC(rc);
-            pVmcsInfo->u64TscOffset = uTscOffset;
-        }
-
-        if (uProcCtls & VMX_PROC_CTLS_RDTSC_EXIT)
-        {
-            uProcCtls &= ~VMX_PROC_CTLS_RDTSC_EXIT;
-            int rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, uProcCtls);
-            AssertRC(rc);
-            pVmcsInfo->u32ProcCtls = uProcCtls;
-        }
-        STAM_COUNTER_INC(&pVCpu->hm.s.StatTscOffset);
+        hmR0VmxSetTscOffsetVmcs(pVmcsInfo, uTscOffset);
+        hmR0VmxRemoveProcCtlsVmcs(pVCpu, pVmxTransient, VMX_PROC_CTLS_RDTSC_EXIT);
     }
     else
     {
         /* We can't use TSC-offsetting (non-fixed TSC, warp drive active etc.), VM-exit on RDTSC(P). */
-        if (!(uProcCtls & VMX_PROC_CTLS_RDTSC_EXIT))
-        {
-            uProcCtls |= VMX_PROC_CTLS_RDTSC_EXIT;
-            int rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, uProcCtls);
-            AssertRC(rc);
-            pVmcsInfo->u32ProcCtls = uProcCtls;
-        }
-        STAM_COUNTER_INC(&pVCpu->hm.s.StatTscIntercept);
+        hmR0VmxSetProcCtlsVmcs(pVmxTransient, VMX_PROC_CTLS_RDTSC_EXIT);
     }
 }
 
@@ -9344,7 +9296,7 @@ static VBOXSTRICTRC hmR0VmxInjectEventVmcs(PVMCPU pVCpu, PVMXTRANSIENT pVmxTrans
 
                 /*
                  * If we eventually support nested-guest execution without unrestricted guest execution,
-                 * we should clear fInterceptEvents here.
+                 * we should set fInterceptEvents here.
                  */
                 Assert(!pVmxTransient->fIsNestedGuest);
 
@@ -9376,8 +9328,7 @@ static VBOXSTRICTRC hmR0VmxInjectEventVmcs(PVMCPU pVCpu, PVMXTRANSIENT pVmxTrans
     /*
      * Update guest CR2 if this is a page-fault.
      */
-    if (   VMX_ENTRY_INT_INFO_TYPE(u32IntInfo) == VMX_EXIT_INT_INFO_TYPE_HW_XCPT
-        && uVector == X86_XCPT_PF)
+    if (VMX_ENTRY_INT_INFO_IS_XCPT_PF(u32IntInfo))
         pCtx->cr2 = GCPtrFault;
 
     Log4(("Injecting u32IntInfo=%#x u32ErrCode=%#x cbInstr=%#x CR2=%#RX64\n", u32IntInfo, u32ErrCode, cbInstr, pCtx->cr2));
@@ -10022,10 +9973,9 @@ static VBOXSTRICTRC hmR0VmxExportGuestStateOptimal(PVMCPU pVCpu, PVMXTRANSIENT p
 static uint32_t hmR0VmxCheckGuestState(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo)
 {
 #define HMVMX_ERROR_BREAK(err)              { uError = (err); break; }
-#define HMVMX_CHECK_BREAK(expr, err)        if (!(expr)) { \
-                                                uError = (err); \
-                                                break; \
-                                            } else do { } while (0)
+#define HMVMX_CHECK_BREAK(expr, err)        do { \
+                                                if (!(expr)) { uError = (err); break; } \
+                                            } while (0)
 
     int        rc;
     PVM        pVM    = pVCpu->CTX_SUFF(pVM);
@@ -10134,11 +10084,8 @@ static uint32_t hmR0VmxCheckGuestState(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo)
         uint32_t u32EntryInfo;
         rc = VMXReadVmcs32(VMX_VMCS32_CTRL_ENTRY_INTERRUPTION_INFO, &u32EntryInfo);
         AssertRCBreak(rc);
-        if (   VMX_ENTRY_INT_INFO_IS_VALID(u32EntryInfo)
-            && VMX_ENTRY_INT_INFO_TYPE(u32EntryInfo) == VMX_EXIT_INT_INFO_TYPE_EXT_INT)
-        {
+        if (VMX_ENTRY_INT_INFO_IS_EXT_INT(u32EntryInfo))
             HMVMX_CHECK_BREAK(u32Eflags & X86_EFL_IF, VMX_IGS_RFLAGS_IF_INVALID);
-        }
 
         /*
          * 64-bit checks.
@@ -10499,21 +10446,18 @@ static uint32_t hmR0VmxCheckGuestState(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo)
         HMVMX_CHECK_BREAK(   (u32Eflags & X86_EFL_IF)
                           || !(u32IntrState & VMX_VMCS_GUEST_INT_STATE_BLOCK_STI),
                           VMX_IGS_INTERRUPTIBILITY_STATE_STI_EFL_INVALID);
-        if (VMX_ENTRY_INT_INFO_IS_VALID(u32EntryInfo))
+        if (VMX_ENTRY_INT_INFO_IS_EXT_INT(u32EntryInfo))
         {
-            if (VMX_ENTRY_INT_INFO_TYPE(u32EntryInfo) == VMX_EXIT_INT_INFO_TYPE_EXT_INT)
-            {
-                HMVMX_CHECK_BREAK(   !(u32IntrState & VMX_VMCS_GUEST_INT_STATE_BLOCK_STI)
-                                  && !(u32IntrState & VMX_VMCS_GUEST_INT_STATE_BLOCK_MOVSS),
-                                  VMX_IGS_INTERRUPTIBILITY_STATE_EXT_INT_INVALID);
-            }
-            else if (VMX_ENTRY_INT_INFO_TYPE(u32EntryInfo) == VMX_EXIT_INT_INFO_TYPE_NMI)
-            {
-                HMVMX_CHECK_BREAK(!(u32IntrState & VMX_VMCS_GUEST_INT_STATE_BLOCK_MOVSS),
-                                  VMX_IGS_INTERRUPTIBILITY_STATE_MOVSS_INVALID);
-                HMVMX_CHECK_BREAK(!(u32IntrState & VMX_VMCS_GUEST_INT_STATE_BLOCK_STI),
-                                  VMX_IGS_INTERRUPTIBILITY_STATE_STI_INVALID);
-            }
+            HMVMX_CHECK_BREAK(   !(u32IntrState & VMX_VMCS_GUEST_INT_STATE_BLOCK_STI)
+                              && !(u32IntrState & VMX_VMCS_GUEST_INT_STATE_BLOCK_MOVSS),
+                              VMX_IGS_INTERRUPTIBILITY_STATE_EXT_INT_INVALID);
+        }
+        else if (VMX_ENTRY_INT_INFO_IS_XCPT_NMI(u32EntryInfo))
+        {
+            HMVMX_CHECK_BREAK(!(u32IntrState & VMX_VMCS_GUEST_INT_STATE_BLOCK_MOVSS),
+                              VMX_IGS_INTERRUPTIBILITY_STATE_MOVSS_INVALID);
+            HMVMX_CHECK_BREAK(!(u32IntrState & VMX_VMCS_GUEST_INT_STATE_BLOCK_STI),
+                              VMX_IGS_INTERRUPTIBILITY_STATE_STI_INVALID);
         }
         /** @todo Assumes the processor is not in SMM. */
         HMVMX_CHECK_BREAK(!(u32IntrState & VMX_VMCS_GUEST_INT_STATE_BLOCK_SMI),
@@ -10522,8 +10466,7 @@ static uint32_t hmR0VmxCheckGuestState(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo)
                           || (u32IntrState & VMX_VMCS_GUEST_INT_STATE_BLOCK_SMI),
                              VMX_IGS_INTERRUPTIBILITY_STATE_SMI_SMM_INVALID);
         if (   (pVmcsInfo->u32PinCtls & VMX_PIN_CTLS_VIRT_NMI)
-            && VMX_ENTRY_INT_INFO_IS_VALID(u32EntryInfo)
-            && VMX_ENTRY_INT_INFO_TYPE(u32EntryInfo) == VMX_EXIT_INT_INFO_TYPE_NMI)
+            && VMX_ENTRY_INT_INFO_IS_XCPT_NMI(u32EntryInfo))
         {
             HMVMX_CHECK_BREAK(!(u32IntrState & VMX_VMCS_GUEST_INT_STATE_BLOCK_NMI),
                               VMX_IGS_INTERRUPTIBILITY_STATE_NMI_INVALID);
@@ -11323,6 +11266,13 @@ static void hmR0VmxPreRunGuestCommitted(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransien
         pVmxTransient->fUpdatedTscOffsettingAndPreemptTimer = true;
     }
 
+    /* Record statistics of how often we use TSC offsetting as opposed to intercepting RDTSC/P. */
+    bool const fIsRdtscIntercepted = RT_BOOL(pVmcsInfo->u32ProcCtls & VMX_PROC_CTLS_RDTSC_EXIT);
+    if (!fIsRdtscIntercepted)
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatTscOffset);
+    else
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatTscIntercept);
+
     ASMAtomicWriteBool(&pVCpu->hm.s.fCheckedTLBFlush, true);    /* Used for TLB flushing, set this across the world switch. */
     hmR0VmxFlushTaggedTlb(pHostCpu, pVCpu, pVmcsInfo);          /* Invalidate the appropriate guest entries from the TLB. */
     Assert(idCurrentCpu == pVCpu->hm.s.idLastCpu);
@@ -11342,7 +11292,7 @@ static void hmR0VmxPreRunGuestCommitted(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransien
      * host CPU ticks till the next virtual sync deadline (for the dynamic case).
      */
     if (    (pVmcsInfo->u32ProcCtls2 & VMX_PROC_CTLS2_RDTSCP)
-        && !(pVmcsInfo->u32ProcCtls & VMX_PROC_CTLS_RDTSC_EXIT))
+        && !fIsRdtscIntercepted)
     {
         hmR0VmxImportGuestState(pVCpu, pVmcsInfo, CPUMCTX_EXTRN_TSC_AUX);
 
