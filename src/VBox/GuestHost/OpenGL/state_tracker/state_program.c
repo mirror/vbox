@@ -399,6 +399,13 @@ void STATE_APIENTRY crStateLoadProgramNV(PCRStateTracker pState, GLenum target, 
         return;
     }
 
+    if (len > _1M)
+    {
+        crStateError(pState, __LINE__, __FILE__, GL_INVALID_VALUE,
+                                 "glLoadProgramNV(len > 1MB)");
+        return;
+    }
+
     prog = GetProgram(p, target, id);
 
     if (!prog) {
@@ -424,6 +431,7 @@ void STATE_APIENTRY crStateLoadProgramNV(PCRStateTracker pState, GLenum target, 
      && crStrncmp((const char *) program,"!!VSP1.0", 8) != 0) {
             crStateError(pState, __LINE__, __FILE__, GL_INVALID_VALUE, "glLoadProgramNV");
             crDebug("program = (%s)\n",program);
+            crFree(progCopy);
             return;
     }
     crMemcpy(progCopy, program, len);
