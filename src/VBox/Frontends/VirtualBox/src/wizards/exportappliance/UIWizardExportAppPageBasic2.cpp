@@ -341,6 +341,23 @@ void UIWizardExportAppPage2::populateFormProperties()
             /* Remember description: */
             m_comVSD = comVSD;
 
+            /* Add Launch Instance flag to virtual system description: */
+            switch (cloudExportMode())
+            {
+                case CloudExportMode_AskThenExport:
+                case CloudExportMode_ExportThenAsk:
+                    m_comVSD.AddDescription(KVirtualSystemDescriptionType_CloudLaunchInstance, "true", QString());
+                    break;
+                default:
+                    m_comVSD.AddDescription(KVirtualSystemDescriptionType_CloudLaunchInstance, "false", QString());
+                    break;
+            }
+            if (!m_comVSD.isOk())
+            {
+                msgCenter().cannotAddVirtualSystemDescriptionValue(m_comVSD);
+                break;
+            }
+
             /* Create Cloud Client: */
             CCloudClient comClient = m_comCloudProfile.CreateCloudClient();
             if (!m_comCloudProfile.isOk())
