@@ -3344,11 +3344,7 @@ static void hmR0SvmUpdateTscOffsetting(PVMCPU pVCpu, PSVMVMCB pVmcb)
         /* Update the TSC offset in the VMCB and the relevant clean bits. */
         pVmcb->ctrl.u64TSCOffset = uTscOffset;
         pVmcb->ctrl.u32VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_INTERCEPTS;
-
-        STAM_COUNTER_INC(&pVCpu->hm.s.StatTscOffset);
     }
-    else
-        STAM_COUNTER_INC(&pVCpu->hm.s.StatTscIntercept);
 
     /* Currently neither Hyper-V nor KVM need to update their paravirt. TSC
        information before every VM-entry, hence we have nothing to do here at the moment. */
@@ -4568,6 +4564,12 @@ static void hmR0SvmPreRunGuestCommitted(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransien
         hmR0SvmUpdateTscOffsetting(pVCpu, pVmcb);
         pSvmTransient->fUpdateTscOffsetting = false;
     }
+
+    /* Record statistics of how often we use TSC offsetting as opposed to intercepting RDTSC/P. */
+    if (!(pVmcb->ctrl.u64InterceptCtrl & (SVM_CTRL_INTERCEPT_RDTSC | SVM_CTRL_INTERCEPT_RDTSCP)))
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatTscOffset);
+    else
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatTscIntercept);
 
     /* If we've migrating CPUs, mark the VMCB Clean bits as dirty. */
     if (fMigratedHostCpu)
