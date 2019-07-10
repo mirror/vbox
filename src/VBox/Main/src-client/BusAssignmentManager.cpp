@@ -79,7 +79,12 @@ static const DeviceAssignmentRule aGenericRules[] =
     {"usb-xhci",      0, 12,  0, 0},
 
     /* ACPI controller */
+#if 0
+    // It really should be this for 440FX chipset (part of PIIX4 actually)
+    {"acpi",          0,  1,  3, 0},
+#else
     {"acpi",          0,  7,  0, 0},
+#endif
 
     /* Network controllers */
     /* the first network card gets the PCI ID 3, the next 3 gets 8..10,
