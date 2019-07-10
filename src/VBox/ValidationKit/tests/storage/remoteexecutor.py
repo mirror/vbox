@@ -63,11 +63,13 @@ class StdInOutBuffer(object):
         """
         if isinstance(sText, array.array):
             try:
-                return sText.tostring();
+                return str(sText.tostring()); # tostring() returns bytes with python3.
             except:
                 pass;
-        else:
-            return sText;
+        elif isinstance(sText, bytes):
+            return sText.decode('utf-8');
+
+        return sText;
 
     def read(self, cb):
         """file.read"""

@@ -487,11 +487,11 @@ class StorageCfg(object):
 
         if not self.oDiskCfg.isCfgStaticDir():
             # Destroy all volumes first.
-            for sMountPoint in self.dVols.keys(): # pylint: disable=consider-iterating-dictionary
+            for sMountPoint in list(self.dVols.keys()): # pylint: disable=consider-iterating-dictionary
                 self.destroyVolume(sMountPoint);
 
             # Destroy all pools.
-            for sPool in self.dPools.keys(): # pylint: disable=consider-iterating-dictionary
+            for sPool in list(self.dPools.keys()): # pylint: disable=consider-iterating-dictionary
                 self.destroyStoragePool(sPool);
 
         self.dVols.clear();
