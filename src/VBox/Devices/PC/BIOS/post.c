@@ -69,6 +69,10 @@ static inline uint8_t rom_checksum(uint8_t __far *rom, uint8_t blocks)
     return sum;
 }
 
+/* The ROM init routine might trash register. Give the compiler a heads-up. */
+typedef void (rom_init_rtn)(void);
+#pragma aux rom_init_rtn modify [ax bx cx dx si di es] loadds;
+
 /* Scan for ROMs in the given range and execute their POST code. */
 void rom_scan(uint16_t start_seg, uint16_t end_seg)
 {
@@ -83,7 +87,7 @@ void rom_scan(uint16_t start_seg, uint16_t end_seg)
         if (rom->signature == 0xAA55) {
             DPRINT("Found ROM at segment %04X\n", start_seg);
             if (!rom_checksum((void __far *)rom, rom->num_blks)) {
-                void (__far * rom_init)(void);
+                rom_init_rtn    __far *rom_init;
 
                 /* Checksum good, initialize ROM. */
                 rom_init = (void __far *)&rom->code;
