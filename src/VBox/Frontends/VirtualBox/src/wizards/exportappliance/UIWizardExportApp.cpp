@@ -320,20 +320,28 @@ bool UIWizardExportApp::exportVMs(CAppliance &comAppliance)
         if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
             return msgCenter().cannotExportAppliance(comProgress, comAppliance.GetPath(), this);
 
-        /* For Export-then-ask mode we should popup the New Cloud VM wizard in short mode now: */
-        if (   field("isFormatCloudOne").toBool()
-            && field("cloudExportMode").value<CloudExportMode>() == CloudExportMode_ExportThenAsk)
+        /* Is this VM being exported to cloud? */
+        if (field("isFormatCloudOne").toBool())
         {
-            /* Get the required parameters to init short wizard mode: */
-            CCloudClient comClient = field("client").value<CCloudClient>();
-            CVirtualSystemDescription comDescription = field("vsd").value<CVirtualSystemDescription>();
-            /* Create and run wizard as modal dialog: */
-            QWidget *pWizardParent = windowManager().realParentWindow(this);
-            UISafePointerWizardNewCloudVM pWizard = new UIWizardNewCloudVM(pWizardParent, comClient, comDescription);
-            windowManager().registerNewParent(pWizard, pWizardParent);
-            pWizard->prepare();
-            pWizard->exec();
-            delete pWizard;
+            switch (field("cloudExportMode").value<CloudExportMode>())
+            {
+                case CloudExportMode_ExportThenAsk:
+                {
+                    /* Get the required parameters to init short wizard mode: */
+                    CCloudClient comClient = field("client").value<CCloudClient>();
+                    CVirtualSystemDescription comDescription = field("vsd").value<CVirtualSystemDescription>();
+                    /* Create and run short wizard mode as modal dialog: */
+                    QWidget *pWizardParent = windowManager().realParentWindow(this);
+                    UISafePointerWizardNewCloudVM pWizard = new UIWizardNewCloudVM(pWizardParent, comClient, comDescription);
+                    windowManager().registerNewParent(pWizard, pWizardParent);
+                    pWizard->prepare();
+                    pWizard->exec();
+                    delete pWizard;
+                    break;
+                }
+                default:
+                    break;
+            }
         }
     }
     else
