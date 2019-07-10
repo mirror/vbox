@@ -17581,7 +17581,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IKeyboard" extends="$unknown"
-    uuid="a7c88b82-2330-44e3-b247-1421a018f9c1"
+    uuid="755e6bdf-1640-41f9-bd74-3ef5fd653250"
     wsmap="managed"
     reservedMethods="4" reservedAttributes="4"
     >
@@ -17644,6 +17644,20 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         </result>
 
       </desc>
+    </method>
+
+    <method name="putUsageCode">
+      <desc>Sends a USB HID usage code and page to the keyboard. The
+        keyRelease flag is set when the key is being released.
+
+        <result name="VBOX_E_IPRT_ERROR">
+          Could not send usage code to virtual keyboard.
+        </result>
+
+      </desc>
+      <param name="usageCode" type="long" dir="in"/>
+      <param name="usagePage" type="long" dir="in"/>
+      <param name="keyRelease" type="boolean" dir="in"/>
     </method>
 
     <attribute name="eventSource" type="IEventSource" readonly="yes">

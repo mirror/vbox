@@ -76,6 +76,7 @@ private:
                          ULONG *aCodesStored);
     HRESULT putCAD();
     HRESULT releaseKeys();
+    HRESULT putUsageCode(LONG aUsageCode, LONG aUsagePage, BOOL fKeyRelease);
 
     static DECLCALLBACK(void)   i_keyboardLedStatusChange(PPDMIKEYBOARDCONNECTOR pInterface, PDMKEYBLEDS enmLeds);
     static DECLCALLBACK(void)   i_keyboardSetActive(PPDMIKEYBOARDCONNECTOR pInterface, bool fActive);
