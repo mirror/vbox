@@ -769,11 +769,11 @@ class Session(TdTaskBase):
                         rc = None;
                         break;
                     if sInput:
-                        oStdIn.uTxsClientCrc32 = zlib.crc32(sInput, oStdIn.uTxsClientCrc32);
                         # Convert to a byte array before handing it of to sendMsg or the string
                         # will get some zero termination added breaking the CRC (and injecting
                         # unwanted bytes).
-                        abInput = array.array('B', sInput);
+                        abInput = array.array('B', sInput.encode('utf-8'));
+                        oStdIn.uTxsClientCrc32 = zlib.crc32(abInput, oStdIn.uTxsClientCrc32);
                         rc = self.sendMsg('STDIN', (long(oStdIn.uTxsClientCrc32 & 0xffffffff), abInput));
                         if rc is not True:
                             sFailure = 'sendMsg failure';
