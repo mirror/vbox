@@ -80,7 +80,7 @@
         </key>
         <key>
             <position>126</position>
-            <scancodeprefix>0xe0-0x1d</scancodeprefix>
+            <scancodeprefix>0xe1-0x1d</scancodeprefix>
             <scancode>0x45</scancode>
         </key>
     </row>
