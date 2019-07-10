@@ -10607,7 +10607,7 @@ static int hmR0VmxMapHCApicAccessPage(PVMCPU pVCpu)
  */
 static DECLCALLBACK(void) hmR0DispatchHostNmi(RTCPUID idCpu, void *pvUser1, void *pvUser2)
 {
-    RT_NOREF2(pvUser1, pvUser2);
+    RT_NOREF3(idCpu, pvUser1, pvUser2);
     VMXDispatchHostNmi();
 }
 
