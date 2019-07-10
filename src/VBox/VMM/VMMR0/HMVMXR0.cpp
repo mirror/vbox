@@ -958,6 +958,7 @@ static void hmR0VmxRemoveProcCtlsVmcs(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient,
                            ? true
                            : !CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS_RDTSC_EXIT);
 #else
+    NOREF(pVCpu);
     bool const fRemoveCtls = true;
 #endif
     PVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
