@@ -49,6 +49,7 @@
 /* COM includes: */
 #include "CSystemProperties.h"
 
+const ULONG uAllowedLogSize = _256M;
 UIVMLogViewerWidget::UIVMLogViewerWidget(EmbedTo enmEmbedding,
                                          UIActionPool *pActionPool,
                                          bool fShowToolbar /* = true */,
@@ -816,6 +817,12 @@ bool UIVMLogViewerWidget::createLogViewerPages()
                     break;
                 strText.append(QString::fromUtf8((char*)data.data(), data.size()));
                 uOffset += data.size();
+                /* Don't read futher if we have reached the allowed size limit: */
+                if (uOffset >= uAllowedLogSize)
+                {
+                    strText.append("\n=========Log file has been truncate as it is too large.======");
+                    break;
+                }
             }
             /* Anything read at all? */
             if (uOffset > 0)
