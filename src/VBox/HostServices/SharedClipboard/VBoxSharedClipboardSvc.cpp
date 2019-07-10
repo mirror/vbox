@@ -506,87 +506,93 @@ int vboxSvcClipboardMsgGet(PVBOXCLIPBOARDCLIENT pClient, VBOXHGCMCALLHANDLE hCal
     /*
      * Return information about the first message if one is pending in the list.
      */
-    PVBOXCLIPBOARDCLIENTMSG pFirstMsg = pClient->pData->queueMsg.first();
-    if (pFirstMsg)
+    if (!pClient->pData->queueMsg.isEmpty())
     {
-        LogFlowFunc(("First message is: %RU32 %s (%RU32 parms)\n",
-                     pFirstMsg->m_uMsg, VBoxSvcClipboardHostMsgToStr(pFirstMsg->m_uMsg), pFirstMsg->m_cParms));
+        PVBOXCLIPBOARDCLIENTMSG pFirstMsg = pClient->pData->queueMsg.first();
+        if (pFirstMsg)
+        {
+            LogFlowFunc(("First message is: %RU32 %s (%RU32 parms)\n",
+                         pFirstMsg->m_uMsg, VBoxSvcClipboardHostMsgToStr(pFirstMsg->m_uMsg), pFirstMsg->m_cParms));
 
-        ASSERT_GUEST_MSG_RETURN(pFirstMsg->m_uMsg == idMsgExpected || idMsgExpected == UINT32_MAX,
-                                ("idMsg=%u (%s) cParms=%u, caller expected %u (%s) and %u\n",
-                                 pFirstMsg->m_uMsg, VBoxSvcClipboardHostMsgToStr(pFirstMsg->m_uMsg), pFirstMsg->m_uMsg,
-                                 idMsgExpected, VBoxSvcClipboardHostMsgToStr(idMsgExpected), cParms),
-                                VERR_MISMATCH);
-        ASSERT_GUEST_MSG_RETURN(pFirstMsg->m_cParms == cParms,
-                                ("idMsg=%u (%s) cParms=%u, caller expected %u (%s) and %u\n",
-                                 pFirstMsg->m_uMsg, VBoxSvcClipboardHostMsgToStr(pFirstMsg->m_uMsg), pFirstMsg->m_cParms,
-                                 idMsgExpected, VBoxSvcClipboardHostMsgToStr(idMsgExpected), cParms),
-                                VERR_WRONG_PARAMETER_COUNT);
+            ASSERT_GUEST_MSG_RETURN(pFirstMsg->m_uMsg == idMsgExpected || idMsgExpected == UINT32_MAX,
+                                    ("idMsg=%u (%s) cParms=%u, caller expected %u (%s) and %u\n",
+                                     pFirstMsg->m_uMsg, VBoxSvcClipboardHostMsgToStr(pFirstMsg->m_uMsg), pFirstMsg->m_cParms,
+                                     idMsgExpected, VBoxSvcClipboardHostMsgToStr(idMsgExpected), cParms),
+                                    VERR_MISMATCH);
+            ASSERT_GUEST_MSG_RETURN(pFirstMsg->m_cParms == cParms,
+                                    ("idMsg=%u (%s) cParms=%u, caller expected %u (%s) and %u\n",
+                                     pFirstMsg->m_uMsg, VBoxSvcClipboardHostMsgToStr(pFirstMsg->m_uMsg), pFirstMsg->m_cParms,
+                                     idMsgExpected, VBoxSvcClipboardHostMsgToStr(idMsgExpected), cParms),
+                                    VERR_WRONG_PARAMETER_COUNT);
 
-        /* Check the parameter types. */
-        for (uint32_t i = 0; i < cParms; i++)
-            ASSERT_GUEST_MSG_RETURN(pFirstMsg->m_paParms[i].type == paParms[i].type,
-                                    ("param #%u: type %u, caller expected %u (idMsg=%u %s)\n", i, pFirstMsg->m_paParms[i].type,
-                                     paParms[i].type, pFirstMsg->m_uMsg, VBoxSvcClipboardHostMsgToStr(pFirstMsg->m_uMsg)),
-                                    VERR_WRONG_PARAMETER_TYPE);
-        /*
-         * Copy out the parameters.
-         *
-         * No assertions on buffer overflows, and keep going till the end so we can
-         * communicate all the required buffer sizes.
-         */
-        int rc = VINF_SUCCESS;
-        for (uint32_t i = 0; i < cParms; i++)
-            switch (pFirstMsg->m_paParms[i].type)
-            {
-                case VBOX_HGCM_SVC_PARM_32BIT:
-                    paParms[i].u.uint32 = pFirstMsg->m_paParms[i].u.uint32;
-                    break;
-
-                case VBOX_HGCM_SVC_PARM_64BIT:
-                    paParms[i].u.uint64 = pFirstMsg->m_paParms[i].u.uint64;
-                    break;
-
-                case VBOX_HGCM_SVC_PARM_PTR:
+            /* Check the parameter types. */
+            for (uint32_t i = 0; i < cParms; i++)
+                ASSERT_GUEST_MSG_RETURN(pFirstMsg->m_paParms[i].type == paParms[i].type,
+                                        ("param #%u: type %u, caller expected %u (idMsg=%u %s)\n", i, pFirstMsg->m_paParms[i].type,
+                                         paParms[i].type, pFirstMsg->m_uMsg, VBoxSvcClipboardHostMsgToStr(pFirstMsg->m_uMsg)),
+                                        VERR_WRONG_PARAMETER_TYPE);
+            /*
+             * Copy out the parameters.
+             *
+             * No assertions on buffer overflows, and keep going till the end so we can
+             * communicate all the required buffer sizes.
+             */
+            int rc = VINF_SUCCESS;
+            for (uint32_t i = 0; i < cParms; i++)
+                switch (pFirstMsg->m_paParms[i].type)
                 {
-                    uint32_t const cbSrc = pFirstMsg->m_paParms[i].u.pointer.size;
-                    uint32_t const cbDst = paParms[i].u.pointer.size;
-                    paParms[i].u.pointer.size = cbSrc; /** @todo Check if this is safe in other layers...
-                                                        * Update: Safe, yes, but VMMDevHGCM doesn't pass it along. */
-                    if (cbSrc <= cbDst)
-                        memcpy(paParms[i].u.pointer.addr, pFirstMsg->m_paParms[i].u.pointer.addr, cbSrc);
-                    else
-                        rc = VERR_BUFFER_OVERFLOW;
-                    break;
+                    case VBOX_HGCM_SVC_PARM_32BIT:
+                        paParms[i].u.uint32 = pFirstMsg->m_paParms[i].u.uint32;
+                        break;
+
+                    case VBOX_HGCM_SVC_PARM_64BIT:
+                        paParms[i].u.uint64 = pFirstMsg->m_paParms[i].u.uint64;
+                        break;
+
+                    case VBOX_HGCM_SVC_PARM_PTR:
+                    {
+                        uint32_t const cbSrc = pFirstMsg->m_paParms[i].u.pointer.size;
+                        uint32_t const cbDst = paParms[i].u.pointer.size;
+                        paParms[i].u.pointer.size = cbSrc; /** @todo Check if this is safe in other layers...
+                                                            * Update: Safe, yes, but VMMDevHGCM doesn't pass it along. */
+                        if (cbSrc <= cbDst)
+                            memcpy(paParms[i].u.pointer.addr, pFirstMsg->m_paParms[i].u.pointer.addr, cbSrc);
+                        else
+                        {
+                            AssertMsgFailed(("#%u: cbSrc=%RU32 is bigger than cbDst=%RU32\n", i, cbSrc, cbDst));
+                            rc = VERR_BUFFER_OVERFLOW;
+                        }
+                        break;
+                    }
+
+                    default:
+                        AssertMsgFailed(("#%u: %u\n", i, pFirstMsg->m_paParms[i].type));
+                        rc = VERR_INTERNAL_ERROR;
+                        break;
+                }
+            if (RT_SUCCESS(rc))
+            {
+                /*
+                 * Complete the message and remove the pending message unless the
+                 * guest raced us and cancelled this call in the meantime.
+                 */
+                AssertPtr(g_pHelpers);
+                rc = g_pHelpers->pfnCallComplete(hCall, rc);
+
+                LogFlowFunc(("[Client %RU32] pfnCallComplete -> %Rrc\n", pClient->uClientID, rc));
+
+                if (rc != VERR_CANCELLED)
+                {
+                    pClient->pData->queueMsg.removeFirst();
+                    vboxSvcClipboardMsgFree(pFirstMsg);
                 }
 
-                default:
-                    AssertMsgFailed(("#%u: %u\n", i, pFirstMsg->m_paParms[i].type));
-                    rc = VERR_INTERNAL_ERROR;
-                    break;
-            }
-        if (RT_SUCCESS(rc))
-        {
-            /*
-             * Complete the message and remove the pending message unless the
-             * guest raced us and cancelled this call in the meantime.
-             */
-            AssertPtr(g_pHelpers);
-            rc = g_pHelpers->pfnCallComplete(hCall, rc);
-
-            LogFlowFunc(("[Client %RU32] pfnCallComplete -> %Rrc\n", pClient->uClientID, rc));
-
-            if (rc != VERR_CANCELLED)
-            {
-                pClient->pData->queueMsg.removeFirst();
-                vboxSvcClipboardMsgFree(pFirstMsg);
+                return VINF_HGCM_ASYNC_EXECUTE; /* The caller must not complete it. */
             }
 
-            return VINF_HGCM_ASYNC_EXECUTE; /* The caller must not complete it. */
+            LogFlowFunc(("[Client %RU32] Returning %Rrc\n", pClient->uClientID, rc));
+            return rc;
         }
-
-        LogFlowFunc(("[Client %RU32] Returning %Rrc\n", pClient->uClientID, rc));
-        return rc;
     }
 
     paParms[0].u.uint32 = 0;
@@ -1390,11 +1396,9 @@ static DECLCALLBACK(void) svcCall(void *,
         {
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
             rc = vboxSvcClipboardURIHandler(pClient, callHandle, u32Function, cParms, paParms, tsArrival);
-            if (RT_SUCCESS(rc))
-            {
-                /* The URI handler does deferring on its own. */
-                fDefer = true;
-            }
+
+            /* The URI handler does deferring on its own, so never do any call completion here. */
+            fDefer = true;
 #else
             rc = VERR_NOT_IMPLEMENTED;
 #endif

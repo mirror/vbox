@@ -625,6 +625,9 @@ VBGLR3DECL(void)    VbglR3ClipboardEventFree(PVBGLR3CLIPBOARDEVENT pEvent);
 
 VBGLR3DECL(int)     VbglR3ClipboardTransferSendStatus(HGCMCLIENTID idClient, SHAREDCLIPBOARDURITRANSFERSTATUS uStatus);
 
+VBGLR3DECL(int)     VbglR3ClipboardRootsRecv(HGCMCLIENTID idClient, uint32_t *pfRoots);
+VBGLR3DECL(int)     VbglR3ClipboardRootsWrite(HGCMCLIENTID idClient, uint32_t cRoots, const char *papszList, uint32_t cbList);
+
 VBGLR3DECL(int)     VbglR3ClipboardListOpenSend(HGCMCLIENTID idClient, PVBOXCLIPBOARDLISTOPENPARMS pOpenParms, PSHAREDCLIPBOARDLISTHANDLE phList);
 VBGLR3DECL(int)     VbglR3ClipboardListOpenRecv(HGCMCLIENTID idClient, PVBOXCLIPBOARDLISTOPENPARMS pOpenParms);
 VBGLR3DECL(int)     VbglR3ClipboardListOpenReply(HGCMCLIENTID idClient, int rcReply, SHAREDCLIPBOARDLISTHANDLE hList);

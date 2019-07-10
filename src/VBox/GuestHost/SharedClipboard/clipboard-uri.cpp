@@ -36,6 +36,63 @@ static PSHAREDCLIPBOARDURITRANSFER sharedClipboardURICtxGetTransferInternal(PSHA
 #endif
 
 
+int SharedClipboardURIRootsInit(PVBOXCLIPBOARDROOTS pRoots)
+{
+    AssertPtrReturn(pRoots, VERR_INVALID_POINTER);
+
+    RT_BZERO(pRoots, sizeof(VBOXCLIPBOARDROOTS));
+
+    const uint32_t cbRoots = _64K;
+
+    pRoots->pszRoots = RTStrAlloc(cbRoots);
+    if (!pRoots->pszRoots)
+        return VERR_NO_MEMORY;
+
+    pRoots->cbRoots = cbRoots;
+
+    return VINF_SUCCESS;
+}
+
+void SharedClipboardURIRootsDestroy(PVBOXCLIPBOARDROOTS pRoots)
+{
+    if (!pRoots)
+        return;
+
+    if (pRoots->pszRoots)
+        RTStrFree(pRoots->pszRoots);
+}
+
+PVBOXCLIPBOARDROOTS SharedClipboardURIRootsDup(PVBOXCLIPBOARDROOTS pRoots)
+{
+    AssertPtrReturn(pRoots, NULL);
+
+    int rc = VINF_SUCCESS;
+
+    PVBOXCLIPBOARDROOTS pRootsDup = (PVBOXCLIPBOARDROOTS)RTMemAlloc(sizeof(VBOXCLIPBOARDROOTS));
+    if (pRootsDup)
+    {
+        *pRootsDup = *pRoots;
+
+        if (pRoots->pszRoots)
+        {
+            pRootsDup->pszRoots = RTStrDup(pRoots->pszRoots);
+            if (!pRootsDup->pszRoots)
+                rc = VERR_NO_MEMORY;
+        }
+    }
+
+    if (RT_FAILURE(rc))
+    {
+        if (pRootsDup->pszRoots)
+            RTStrFree(pRootsDup->pszRoots);
+
+        RTMemFree(pRootsDup);
+        pRootsDup = NULL;
+    }
+
+    return pRootsDup;
+}
+
 /**
  * Allocates a VBOXCLIPBOARDListHdr structure.
  *
@@ -286,7 +343,15 @@ int SharedClipboardURIListEntryCopy(PVBOXCLIPBOARDLISTENTRY pDst, PVBOXCLIPBOARD
 
     *pDst = *pSrc;
 
-    if (pSrc->pvInfo)
+    if (pSrc->pszName)
+    {
+        pDst->pszName = RTStrDup(pSrc->pszName);
+        if (!pDst->pszName)
+            rc = VERR_NO_MEMORY;
+    }
+
+    if (   RT_SUCCESS(rc)
+        && pSrc->pvInfo)
     {
         pDst->pvInfo = RTMemDup(pSrc->pvInfo, pSrc->cbInfo);
         if (pDst->pvInfo)
@@ -340,11 +405,18 @@ PVBOXCLIPBOARDLISTENTRY SharedClipboardURIListEntryDup(PVBOXCLIPBOARDLISTENTRY p
 /**
  * Initializes a clipboard list entry structure.
  *
- * @param   pListEntry          clipboard list entry structure to initialize.
+ * @returns VBox status code.
+ * @param   pListEntry          Clipboard list entry structure to initialize.
  */
 int SharedClipboardURIListEntryInit(PVBOXCLIPBOARDLISTENTRY pListEntry)
 {
     RT_BZERO(pListEntry, sizeof(VBOXCLIPBOARDLISTENTRY));
+
+    pListEntry->pszName = RTStrAlloc(VBOXCLIPBOARDLISTENTRY_MAX_NAME);
+    if (!pListEntry->pszName)
+        return VERR_NO_MEMORY;
+
+    pListEntry->cbName = VBOXCLIPBOARDLISTENTRY_MAX_NAME;
 
     return VINF_SUCCESS;
 }
@@ -352,12 +424,20 @@ int SharedClipboardURIListEntryInit(PVBOXCLIPBOARDLISTENTRY pListEntry)
 /**
  * Initializes a clipboard list entry structure.
  *
- * @param   pListEntry          clipboard list entry structure to destroy.
+ * @param   pListEntry          Clipboard list entry structure to destroy.
  */
 void SharedClipboardURIListEntryDestroy(PVBOXCLIPBOARDLISTENTRY pListEntry)
 {
     if (!pListEntry)
         return;
+
+    if (pListEntry->pszName)
+    {
+        RTStrFree(pListEntry->pszName);
+
+        pListEntry->pszName = NULL;
+        pListEntry->cbName  = 0;
+    }
 
     if (pListEntry->pvInfo)
     {
@@ -381,272 +461,6 @@ bool SharedClipboardURIListEntryIsValid(PVBOXCLIPBOARDLISTENTRY pListEntry)
 
     return true; /** @todo Implement this. */
 }
-
-#if 0
-/**
- * Creates (allocates) and initializes a VBOXCLIPBOARDDIRDATA structure.
- *
- * @param   ppDirData           Where to return the created VBOXCLIPBOARDDIRDATA structure on success.
- */
-int SharedClipboardURIDirDataAlloc(PVBOXCLIPBOARDDIRDATA *ppDirData)
-{
-    PVBOXCLIPBOARDDIRDATA pDirData = (PVBOXCLIPBOARDDIRDATA)RTMemAlloc(sizeof(VBOXCLIPBOARDDIRDATA));
-    if (!pDirData)
-        return VERR_NO_MEMORY;
-
-    int rc = SharedClipboardURIDirDataInit(pDirData);
-    if (RT_SUCCESS(rc))
-        *ppDirData = pDirData;
-
-    return rc;
-}
-
-/**
- * Frees a VBOXCLIPBOARDDIRDATA structure.
- *
- * @param   pDirData           Where to return the created VBOXCLIPBOARDDIRDATA structure on success.
- */
-void SharedClipboardURIDirDataFree(PVBOXCLIPBOARDDIRDATA pDirData)
-{
-    if (!pDirData)
-        return;
-
-    SharedClipboardURIDirDataDestroy(pDirData);
-    RTMemFree(pDirData);
-}
-
-/**
- * Initializes a VBOXCLIPBOARDDIRDATA structure.
- *
- * @param   pDirData            VBOXCLIPBOARDDIRDATA structure to initialize.
- */
-int SharedClipboardURIDirDataInit(PVBOXCLIPBOARDDIRDATA pDirData)
-{
-    RT_BZERO(pDirData, sizeof(VBOXCLIPBOARDDIRDATA));
-
-    return VINF_SUCCESS;
-}
-
-/**
- * Destroys a VBOXCLIPBOARDDIRDATA structure.
- *
- * @param   pDirData            VBOXCLIPBOARDDIRDATA structure to destroy.
- */
-void SharedClipboardURIDirDataDestroy(PVBOXCLIPBOARDDIRDATA pDirData)
-{
-    if (!pDirData)
-        return;
-
-    if (pDirData->pszPath)
-    {
-        Assert(pDirData->cbPath);
-        RTStrFree(pDirData->pszPath);
-        pDirData->pszPath = NULL;
-    }
-}
-
-/**
- * Duplicates (allocates) a VBOXCLIPBOARDDIRDATA structure.
- *
- * @returns Duplicated VBOXCLIPBOARDDIRDATA structure on success.
- * @param   pDirData            VBOXCLIPBOARDDIRDATA to duplicate.
- */
-PVBOXCLIPBOARDDIRDATA SharedClipboardURIDirDataDup(PVBOXCLIPBOARDDIRDATA pDirData)
-{
-    AssertPtrReturn(pDirData, NULL);
-
-    PVBOXCLIPBOARDDIRDATA pDirDataDup = (PVBOXCLIPBOARDDIRDATA)RTMemAllocZ(sizeof(VBOXCLIPBOARDDIRDATA));
-    if (pDirDataDup)
-    {
-        *pDirDataDup = *pDirData;
-
-        if (pDirData->pszPath)
-        {
-            pDirDataDup->pszPath = RTStrDup(pDirData->pszPath);
-            if (pDirDataDup->pszPath)
-                pDirDataDup->cbPath = pDirData->cbPath;
-        }
-    }
-
-    return pDirDataDup;
-}
-
-/**
- * Returns whether given clipboard directory data is valid or not.
- *
- * @returns \c true if valid, \c false if not.
- * @param   pDirData            Clipboard directory data to validate.
- */
-bool SharedClipboardURIDirDataIsValid(PVBOXCLIPBOARDDIRDATA pDirData)
-{
-    if (   !pDirData->cbPath
-        || pDirData->cbPath > RTPATH_MAX)
-        return false;
-
-    if (!RTStrIsValidEncoding(pDirData->pszPath))
-        return false;
-
-    return true;
-}
-
-/**
- * Initializes a VBOXCLIPBOARDFILEHDR structure.
- *
- * @param   pDirData            VBOXCLIPBOARDFILEHDR structure to initialize.
- */
-int SharedClipboardURIFileHdrInit(PVBOXCLIPBOARDFILEHDR pFileHdr)
-{
-    RT_BZERO(pFileHdr, sizeof(VBOXCLIPBOARDFILEHDR));
-
-    return VINF_SUCCESS;
-}
-
-/**
- * Destroys a VBOXCLIPBOARDFILEHDR structure.
- *
- * @param   pFileHdr            VBOXCLIPBOARDFILEHDR structure to destroy.
- */
-void SharedClipboardURIFileHdrDestroy(PVBOXCLIPBOARDFILEHDR pFileHdr)
-{
-    if (!pFileHdr)
-        return;
-
-    if (pFileHdr->pszFilePath)
-    {
-        Assert(pFileHdr->pszFilePath);
-        RTStrFree(pFileHdr->pszFilePath);
-        pFileHdr->pszFilePath = NULL;
-    }
-}
-
-/**
- * Frees a VBOXCLIPBOARDFILEHDR structure.
- *
- * @param   pFileHdr            VBOXCLIPBOARDFILEHDR structure to free.
- */
-void SharedClipboardURIFileHdrFree(PVBOXCLIPBOARDFILEHDR pFileHdr)
-{
-    if (!pFileHdr)
-        return;
-
-    SharedClipboardURIFileHdrDestroy(pFileHdr);
-
-    RTMemFree(pFileHdr);
-    pFileHdr = NULL;
-}
-
-/**
- * Duplicates (allocates) a VBOXCLIPBOARDFILEHDR structure.
- *
- * @returns Duplicated VBOXCLIPBOARDFILEHDR structure on success.
- * @param   pFileHdr            VBOXCLIPBOARDFILEHDR to duplicate.
- */
-PVBOXCLIPBOARDFILEHDR SharedClipboardURIFileHdrDup(PVBOXCLIPBOARDFILEHDR pFileHdr)
-{
-    AssertPtrReturn(pFileHdr, NULL);
-
-    PVBOXCLIPBOARDFILEHDR pFileHdrDup = (PVBOXCLIPBOARDFILEHDR)RTMemAllocZ(sizeof(VBOXCLIPBOARDFILEHDR));
-    if (pFileHdrDup)
-    {
-        *pFileHdrDup = *pFileHdr;
-
-        if (pFileHdr->pszFilePath)
-        {
-            pFileHdrDup->pszFilePath = RTStrDup(pFileHdr->pszFilePath);
-            if (pFileHdrDup->pszFilePath)
-                pFileHdrDup->cbFilePath = pFileHdrDup->cbFilePath;
-        }
-    }
-
-    return pFileHdrDup;
-}
-
-/**
- * Returns whether a given clipboard file header is valid or not.
- *
- * @returns \c true if valid, \c false if not.
- * @param   pFileHdr            Clipboard file header to validate.
- * @param   pListHdr            Data header to use for validation.
- */
-bool SharedClipboardURIFileHdrIsValid(PVBOXCLIPBOARDFILEHDR pFileHdr, PVBOXCLIPBOARDLISTHDR pListHdr)
-{
-    if (   !pFileHdr->cbFilePath
-        || pFileHdr->cbFilePath > RTPATH_MAX)
-        return false;
-
-    if (!RTStrIsValidEncoding(pFileHdr->pszFilePath))
-        return false;
-
-    if (pFileHdr->cbSize > pListHdr->cbTotalSize)
-        return false;
-
-    return true;
-}
-
-/**
- * Destroys a VBOXCLIPBOARDFILEDATA structure.
- *
- * @param   pFileData           VBOXCLIPBOARDFILEDATA structure to destroy.
- */
-void SharedClipboardURIFileDataDestroy(PVBOXCLIPBOARDFILEDATA pFileData)
-{
-    if (!pFileData)
-        return;
-
-    if (pFileData->pvData)
-    {
-        Assert(pFileData->cbData);
-        RTMemFree(pFileData->pvData);
-        pFileData->pvData = NULL;
-    }
-}
-
-/**
- * Duplicates (allocates) a VBOXCLIPBOARDFILEDATA structure.
- *
- * @returns Duplicated VBOXCLIPBOARDFILEDATA structure on success.
- * @param   pFileData           VBOXCLIPBOARDFILEDATA to duplicate.
- */
-PVBOXCLIPBOARDFILEDATA SharedClipboardURIFileDataDup(PVBOXCLIPBOARDFILEDATA pFileData)
-{
-    AssertPtrReturn(pFileData, NULL);
-
-    PVBOXCLIPBOARDFILEDATA pFileDataDup = (PVBOXCLIPBOARDFILEDATA)RTMemAllocZ(sizeof(VBOXCLIPBOARDFILEDATA));
-    if (pFileDataDup)
-    {
-        *pFileDataDup = *pFileData;
-
-        if (pFileData->pvData)
-        {
-            pFileDataDup->pvData = RTMemDup(pFileData->pvData, pFileData->cbData);
-            if (pFileDataDup->pvData)
-                pFileDataDup->cbData = pFileDataDup->cbData;
-        }
-
-        if (pFileData->pvChecksum)
-        {
-            pFileDataDup->pvChecksum = RTMemDup(pFileData->pvChecksum, pFileData->cbChecksum);
-            if (pFileDataDup->pvChecksum)
-                pFileDataDup->cbChecksum = pFileData->cbChecksum;
-        }
-    }
-
-    return pFileDataDup;
-}
-
-/**
- * Returns whether given clipboard file data is valid or not.
- *
- * @returns \c true if valid, \c false if not.
- * @param   pFileData           Clipboard file data to validate.
- * @param   pListHdr            Data header to use for validation.
- */
-bool SharedClipboardURIFileDataIsValid(PVBOXCLIPBOARDFILEDATA pFileData, PVBOXCLIPBOARDLISTHDR pListHdr)
-{
-    RT_NOREF(pFileData, pListHdr);
-    return true;
-}
-#endif
 
 /**
  * Initializes an URI object context.
@@ -805,6 +619,12 @@ int SharedClipboardURITransferClose(PSHAREDCLIPBOARDURITRANSFER pTransfer)
     return rc;
 }
 
+/**
+ * Creates a new list handle (local only).
+ *
+ * @returns New List handle on success, or SHAREDCLIPBOARDLISTHANDLE_INVALID on error.
+ * @param   pTransfer           URI clipboard transfer to create new list handle for.
+ */
 static SHAREDCLIPBOARDLISTHANDLE sharedClipboardURITransferListHandleNew(PSHAREDCLIPBOARDURITRANSFER pTransfer)
 {
     RT_NOREF(pTransfer);
@@ -812,6 +632,14 @@ static SHAREDCLIPBOARDLISTHANDLE sharedClipboardURITransferListHandleNew(PSHARED
     return 42; /** @todo FIX !!!!! */
 }
 
+/**
+ * Opens a list.
+ *
+ * @returns VBox status code.
+ * @param   pTransfer           URI clipboard transfer to handle.
+ * @param   pOpenParms          List open parameters to use for opening.
+ * @param   phList              Where to store the List handle of opened list on success.
+ */
 int SharedClipboardURITransferListOpen(PSHAREDCLIPBOARDURITRANSFER pTransfer, PVBOXCLIPBOARDLISTOPENPARMS pOpenParms,
                                        PSHAREDCLIPBOARDLISTHANDLE phList)
 {
@@ -829,10 +657,6 @@ int SharedClipboardURITransferListOpen(PSHAREDCLIPBOARDURITRANSFER pTransfer, PV
             = (PSHAREDCLIPBOARDURILISTHANDLEINFO)RTMemAlloc(sizeof(SHAREDCLIPBOARDURILISTHANDLEINFO));
         if (pInfo)
         {
-            if (   !pOpenParms->pszPath
-                || !strlen(pOpenParms->pszPath))
-                RTStrAPrintf(&pOpenParms->pszPath, "C:\\Temp"); /** @todo FIX !!!! */
-
             RTFSOBJINFO objInfo;
             rc = RTPathQueryInfo(pOpenParms->pszPath, &objInfo, RTFSOBJATTRADD_NOTHING);
             if (RTFS_IS_DIRECTORY(objInfo.Attr.fMode))
@@ -841,7 +665,8 @@ int SharedClipboardURITransferListOpen(PSHAREDCLIPBOARDURITRANSFER pTransfer, PV
             }
             else if (RTFS_IS_FILE(objInfo.Attr.fMode))
             {
-                rc = RTFileOpen(&pInfo->u.Local.hFile, pOpenParms->pszPath, RTFILE_O_READ | RTFILE_O_DENY_WRITE);
+                rc = RTFileOpen(&pInfo->u.Local.hFile, pOpenParms->pszPath,
+                                RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE);
             }
             else if (RTFS_IS_SYMLINK(objInfo.Attr.fMode))
             {
@@ -901,6 +726,13 @@ int SharedClipboardURITransferListOpen(PSHAREDCLIPBOARDURITRANSFER pTransfer, PV
     return rc;
 }
 
+/**
+ * Closes a list.
+ *
+ * @returns VBox status code.
+ * @param   pTransfer           URI clipboard transfer to handle.
+ * @param   hList               Handle of list to close.
+ */
 int SharedClipboardURITransferListClose(PSHAREDCLIPBOARDURITRANSFER pTransfer, SHAREDCLIPBOARDLISTHANDLE hList)
 {
     AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
@@ -942,6 +774,13 @@ int SharedClipboardURITransferListClose(PSHAREDCLIPBOARDURITRANSFER pTransfer, S
     return rc;
 }
 
+/**
+ * Adds a file to a list heaer.
+ *
+ * @returns VBox status code.
+ * @param   pHdr                List header to add file to.
+ * @param   pszPath             Path of file to add.
+ */
 static int sharedClipboardURITransferListHdrAddFile(PVBOXCLIPBOARDLISTHDR pHdr, const char *pszPath)
 {
     uint64_t cbSize = 0;
@@ -956,6 +795,16 @@ static int sharedClipboardURITransferListHdrAddFile(PVBOXCLIPBOARDLISTHDR pHdr, 
     return rc;
 }
 
+/**
+ * Builds a list header, internal version.
+ *
+ * @returns VBox status code.
+ * @param   pHdr                Where to store the build list header.
+ * @param   pcszSrcPath         Source path of list.
+ * @param   pcszDstPath         Destination path of list.
+ * @param   pcszDstBase         Destination base path.
+ * @param   cchDstBase          Number of charaters of destination base path.
+ */
 static int sharedClipboardURITransferListHdrFromDir(PVBOXCLIPBOARDLISTHDR pHdr,
                                                     const char *pcszSrcPath, const char *pcszDstPath,
                                                     const char *pcszDstBase, size_t cchDstBase)
@@ -1066,6 +915,14 @@ static int sharedClipboardURITransferListHdrFromDir(PVBOXCLIPBOARDLISTHDR pHdr,
     return rc;
 }
 
+/**
+ * Retrieves the header of a Shared Clipboard list.
+ *
+ * @returns VBox status code.
+ * @param   pTransfer           URI clipboard transfer to handle.
+ * @param   hList               Handle of list to get header for.
+ * @param   pHdr                Where to store the returned list header information.
+ */
 int SharedClipboardURITransferListGetHeader(PSHAREDCLIPBOARDURITRANSFER pTransfer, SHAREDCLIPBOARDLISTHANDLE hList,
                                             PVBOXCLIPBOARDLISTHDR pHdr)
 {
@@ -1173,6 +1030,14 @@ PSHAREDCLIPBOARDURITRANSFEROBJ SharedClipboardURITransferListGetObj(PSHAREDCLIPB
     return NULL;
 }
 
+/**
+ * Reads a single Shared Clipboard list entry.
+ *
+ * @returns VBox status code.
+ * @param   pTransfer           URI clipboard transfer to handle.
+ * @param   hList               List handle of list to read from.
+ * @param   pEntry              Where to store the read information.
+ */
 int SharedClipboardURITransferListRead(PSHAREDCLIPBOARDURITRANSFER pTransfer, SHAREDCLIPBOARDLISTHANDLE hList,
                                        PVBOXCLIPBOARDLISTENTRY pEntry)
 {
@@ -1191,54 +1056,77 @@ int SharedClipboardURITransferListRead(PSHAREDCLIPBOARDURITRANSFER pTransfer, SH
             PSHAREDCLIPBOARDURILISTHANDLEINFO pInfo = itList->second;
             AssertPtr(pInfo);
 
+            LogFlowFunc(("\tfMode=%RU32, pszPath=%s\n", pInfo->fMode, pInfo->OpenParms.pszPath));
+
             if (RTFS_IS_DIRECTORY(pInfo->fMode))
             {
-                size_t        cbDirEntry = 0;
-                PRTDIRENTRYEX pDirEntry  = NULL;
-                rc = RTDirReadExA(pInfo->u.Local.hDirRoot, &pDirEntry, &cbDirEntry, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK);
-                if (RT_SUCCESS(rc))
+                for (;;)
                 {
-                    switch (pDirEntry->Info.Attr.fMode & RTFS_TYPE_MASK)
+                    bool fSkipEntry = false; /* Whether to skip an entry in the enumeration. */
+
+                    size_t        cbDirEntry = 0;
+                    PRTDIRENTRYEX pDirEntry  = NULL;
+                    rc = RTDirReadExA(pInfo->u.Local.hDirRoot, &pDirEntry, &cbDirEntry, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK);
+                    if (RT_SUCCESS(rc))
                     {
-                        case RTFS_TYPE_DIRECTORY:
+                        switch (pDirEntry->Info.Attr.fMode & RTFS_TYPE_MASK)
                         {
-                            /* Skip "." and ".." entries. */
-                            if (RTDirEntryExIsStdDotLink(pDirEntry))
-                                break;
-
-                            RT_FALL_THROUGH();
-                        }
-
-                        case RTFS_TYPE_FILE:
-                        {
-                            pEntry->pvInfo = (PSHAREDCLIPBOARDFSOBJINFO)RTMemAlloc(sizeof(SHAREDCLIPBOARDFSOBJINFO));
-                            if (pEntry->pvInfo)
+                            case RTFS_TYPE_DIRECTORY:
                             {
-                                SharedClipboardFsObjFromIPRT(PSHAREDCLIPBOARDFSOBJINFO(pEntry->pvInfo), &pDirEntry->Info);
+                                LogFlowFunc(("Directory: %s\n", pDirEntry->szName));
 
-                                pEntry->cbInfo = sizeof(SHAREDCLIPBOARDFSOBJINFO);
-                                pEntry->fInfo  = 0; /** @todo Implement. */
+                                /* Skip "." and ".." entries. */
+                                if (RTDirEntryExIsStdDotLink(pDirEntry))
+                                    fSkipEntry = true;
+
+                                RT_FALL_THROUGH();
                             }
-                            else
-                                rc = VERR_NO_MEMORY;
-                            break;
+
+                            case RTFS_TYPE_FILE:
+                            {
+                                LogFlowFunc(("File: %s\n", pDirEntry->szName));
+
+                                pEntry->pvInfo = (PSHAREDCLIPBOARDFSOBJINFO)RTMemAlloc(sizeof(SHAREDCLIPBOARDFSOBJINFO));
+                                if (pEntry->pvInfo)
+                                {
+                                    rc = RTStrCopy(pEntry->pszName, pEntry->cbName, pDirEntry->szName);
+                                    if (RT_SUCCESS(rc))
+                                    {
+                                        SharedClipboardFsObjFromIPRT(PSHAREDCLIPBOARDFSOBJINFO(pEntry->pvInfo), &pDirEntry->Info);
+
+                                        pEntry->cbInfo = sizeof(SHAREDCLIPBOARDFSOBJINFO);
+                                        pEntry->fInfo  = VBOX_SHAREDCLIPBOARD_INFO_FLAG_FSOBJINFO;
+                                    }
+                                }
+                                else
+                                    rc = VERR_NO_MEMORY;
+                                break;
+                            }
+
+                            case RTFS_TYPE_SYMLINK:
+                            {
+                                /** @todo Not implemented yet. */
+                                break;
+                            }
+
+                            default:
+                                break;
                         }
 
-                        case RTFS_TYPE_SYMLINK:
-                        {
-                            /** @todo Not implemented yet. */
-                            break;
-                        }
-
-                        default:
-                            break;
+                        RTDirReadExAFree(&pDirEntry, &cbDirEntry);
                     }
 
-                    RTDirReadExAFree(&pDirEntry, &cbDirEntry);
+                    if (   !fSkipEntry /* Do we have a valid entry? Bail out. */
+                        || RT_FAILURE(rc))
+                    {
+                        break;
+                    }
                 }
             }
             else if (RTFS_IS_FILE(pInfo->fMode))
             {
+                LogFlowFunc(("\tSingle file: %s\n", pInfo->OpenParms.pszPath));
+
                 RTFSOBJINFO objInfo;
                 rc = RTFileQueryInfo(pInfo->u.Local.hFile, &objInfo, RTFSOBJATTRADD_NOTHING);
                 if (RT_SUCCESS(rc))
@@ -1246,10 +1134,14 @@ int SharedClipboardURITransferListRead(PSHAREDCLIPBOARDURITRANSFER pTransfer, SH
                     pEntry->pvInfo = (PSHAREDCLIPBOARDFSOBJINFO)RTMemAlloc(sizeof(SHAREDCLIPBOARDFSOBJINFO));
                     if (pEntry->pvInfo)
                     {
-                        SharedClipboardFsObjFromIPRT(PSHAREDCLIPBOARDFSOBJINFO(pEntry->pvInfo), &objInfo);
+                        rc = RTStrCopy(pEntry->pszName, pEntry->cbName, pInfo->OpenParms.pszPath);
+                        if (RT_SUCCESS(rc))
+                        {
+                            SharedClipboardFsObjFromIPRT(PSHAREDCLIPBOARDFSOBJINFO(pEntry->pvInfo), &objInfo);
 
-                        pEntry->cbInfo = sizeof(SHAREDCLIPBOARDFSOBJINFO);
-                        pEntry->fInfo  = 0; /** @todo Implement. */
+                            pEntry->cbInfo = sizeof(SHAREDCLIPBOARDFSOBJINFO);
+                            pEntry->fInfo  = VBOX_SHAREDCLIPBOARD_INFO_FLAG_FSOBJINFO;
+                        }
                     }
                     else
                         rc = VERR_NO_MEMORY;
@@ -1293,6 +1185,13 @@ int SharedClipboardURITransferListWrite(PSHAREDCLIPBOARDURITRANSFER pTransfer, S
     return rc;
 }
 
+/**
+ * Returns whether a given list handle is valid or not.
+ *
+ * @returns \c true if list handle is valid, \c false if not.
+ * @param   pTransfer           URI clipboard transfer to handle.
+ * @param   hList               List handle to check.
+ */
 bool SharedClipboardURITransferListHandleIsValid(PSHAREDCLIPBOARDURITRANSFER pTransfer, SHAREDCLIPBOARDLISTHANDLE hList)
 {
     bool fIsValid = false;
@@ -1372,6 +1271,27 @@ int SharedClipboardURITransferSetInterface(PSHAREDCLIPBOARDURITRANSFER pTransfer
     return rc;
 }
 
+int SharedClipboardURILTransferSetRoots(PSHAREDCLIPBOARDURITRANSFER pTransfer, const char *pszRoots, size_t cbRoots)
+{
+    AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
+    AssertPtrReturn(pszRoots,  VERR_INVALID_POINTER);
+    AssertReturn(cbRoots,      VERR_INVALID_PARAMETER);
+
+    if (!RTStrIsValidEncoding(pszRoots))
+        return VERR_INVALID_PARAMETER;
+
+    int rc = VINF_SUCCESS;
+
+    pTransfer->lstRootEntries.clear();
+
+    pTransfer->lstRootEntries = RTCString(pszRoots, cbRoots - 1).split("\r\n");
+
+    LogFlowFunc(("cRoots=%RU32\n", pTransfer->lstRootEntries.size()));
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
 /**
  * Resets an clipboard URI transfer.
  *
@@ -1397,6 +1317,53 @@ SharedClipboardArea *SharedClipboardURITransferGetArea(PSHAREDCLIPBOARDURITRANSF
     AssertPtrReturn(pTransfer, NULL);
 
     return pTransfer->pArea;
+}
+
+int SharedClipboardURILTransferGetRoots(PSHAREDCLIPBOARDURITRANSFER pTransfer, char **ppszRoots, uint32_t *pcRoots)
+{
+    AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
+    AssertPtrReturn(ppszRoots, VERR_INVALID_POINTER);
+
+    int rc = VINF_SUCCESS;
+
+    if (pTransfer->State.enmSource == SHAREDCLIPBOARDSOURCE_LOCAL)
+    {
+        char *pszRoots = NULL;
+
+        for (size_t i = 0; i < pTransfer->lstRootEntries.size(); ++i)
+        {
+            if (pszRoots)
+                rc = RTStrAAppend(&pszRoots, "\r\n");
+            if (RT_SUCCESS(rc))
+                rc = RTStrAAppend(&pszRoots, pTransfer->lstRootEntries.at(i).c_str());
+
+            if (RT_FAILURE(rc))
+                break;
+        }
+
+        if (RT_SUCCESS(rc))
+        {
+            LogFlowFunc(("Roots (%RU32):\n%s\n", pTransfer->lstRootEntries.size(), pszRoots));
+
+            *ppszRoots = pszRoots;
+            *pcRoots     = (uint32_t)pTransfer->lstRootEntries.size();
+        }
+        else
+        {
+            if (pszRoots)
+                RTStrFree(pszRoots);
+        }
+    }
+    else if (pTransfer->State.enmSource == SHAREDCLIPBOARDSOURCE_REMOTE)
+    {
+        if (pTransfer->ProviderIface.pfnGetRoots)
+            rc = pTransfer->ProviderIface.pfnGetRoots(&pTransfer->ProviderCtx, ppszRoots, pcRoots);
+        else
+            rc = VERR_NOT_SUPPORTED;
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
 }
 
 SHAREDCLIPBOARDSOURCE SharedClipboardURITransferGetSource(PSHAREDCLIPBOARDURITRANSFER pTransfer)
@@ -1536,7 +1503,7 @@ int SharedClipboardURITransferEventRegister(PSHAREDCLIPBOARDURITRANSFER pTransfe
             rc = VERR_NO_MEMORY;
     }
     else
-        rc = VERR_ALREADY_EXISTS;
+        rc = VINF_SUCCESS;
 
     LogFlowFuncLeaveRC(rc);
     return rc;

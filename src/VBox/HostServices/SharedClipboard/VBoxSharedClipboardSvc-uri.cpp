@@ -72,6 +72,116 @@ DECLCALLBACK(int) vboxSvcClipboardURITransferClose(PSHAREDCLIPBOARDPROVIDERCTX p
     return VINF_SUCCESS;
 }
 
+DECLCALLBACK(int) vboxSvcClipboardURIGetRoots(PSHAREDCLIPBOARDPROVIDERCTX pCtx,
+                                              char **ppapszRoots, uint32_t *pcRoots)
+{
+    LogFlowFuncEnter();
+
+    PVBOXCLIPBOARDCLIENT pClient = (PVBOXCLIPBOARDCLIENT)pCtx->pvUser;
+    AssertPtr(pClient);
+
+    int rc;
+
+    size_t   cbRootsRecv = 0;
+
+    char    *pszRoots = NULL;
+    uint32_t cRoots   = 0;
+
+    /* There might be more than one message needed for retrieving all root items. */
+    for (;;)
+    {
+        PVBOXCLIPBOARDCLIENTMSG pMsg = vboxSvcClipboardMsgAlloc(VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_ROOTS,
+                                                                VBOX_SHARED_CLIPBOARD_CPARMS_ROOTS);
+        if (pMsg)
+        {
+            HGCMSvcSetU32(&pMsg->m_paParms[0], 0 /* uContextID */);
+            HGCMSvcSetU32(&pMsg->m_paParms[1], 0 /* fRoots */);
+            HGCMSvcSetU32(&pMsg->m_paParms[2], 0 /* fMore */);
+            HGCMSvcSetU32(&pMsg->m_paParms[3], 0 /* cRoots */);
+
+            uint32_t  cbData = _64K;
+            void     *pvData = RTMemAlloc(cbData);
+            AssertPtrBreakStmt(pvData, rc = VERR_NO_MEMORY);
+
+            HGCMSvcSetU32(&pMsg->m_paParms[4], cbData);
+            HGCMSvcSetPv (&pMsg->m_paParms[5], pvData, cbData);
+
+            rc = vboxSvcClipboardMsgAdd(pClient->pData, pMsg, true /* fAppend */);
+            if (RT_SUCCESS(rc))
+            {
+                int rc2 = SharedClipboardURITransferEventRegister(pCtx->pTransfer,
+                                                                  SHAREDCLIPBOARDURITRANSFEREVENTTYPE_GET_ROOTS);
+                AssertRC(rc2);
+
+                vboxSvcClipboardClientWakeup(pClient);
+            }
+        }
+        else
+            rc = VERR_NO_MEMORY;
+
+        if (RT_SUCCESS(rc))
+        {
+            PSHAREDCLIPBOARDURITRANSFERPAYLOAD pPayload;
+            rc = SharedClipboardURITransferEventWait(pCtx->pTransfer, SHAREDCLIPBOARDURITRANSFEREVENTTYPE_GET_ROOTS,
+                                                     30 * 1000 /* Timeout in ms */, &pPayload);
+            if (RT_SUCCESS(rc))
+            {
+                PVBOXCLIPBOARDROOTS pRoots = (PVBOXCLIPBOARDROOTS)pPayload->pvData;
+                Assert(pPayload->cbData == sizeof(VBOXCLIPBOARDROOTS));
+
+                LogFlowFunc(("cbRoots=%RU32, fRoots=%RU32, fMore=%RTbool\n", pRoots->cbRoots, pRoots->fRoots, pRoots->fMore));
+
+                if (!pRoots->cbRoots)
+                    break;
+                AssertPtr(pRoots->pszRoots);
+
+                if (pszRoots == NULL)
+                    pszRoots = (char *)RTMemDup((void *)pRoots->pszRoots, pRoots->cbRoots);
+                else
+                    pszRoots = (char *)RTMemRealloc(pszRoots, cbRootsRecv + pRoots->cbRoots);
+
+                AssertPtrBreakStmt(pszRoots, rc = VERR_NO_MEMORY);
+
+                cbRootsRecv += pRoots->cbRoots;
+
+                if (cbRootsRecv > _32M) /* Don't allow more than 32MB root entries for now. */
+                {
+                    rc = VERR_ALLOCATION_TOO_BIG; /** @todo Find a better rc. */
+                    break;
+                }
+
+                cRoots += pRoots->cRoots;
+
+                const bool fDone = !RT_BOOL(pRoots->fMore); /* More root entries to be retrieved? Otherwise bail out. */
+
+                SharedClipboardURITransferPayloadFree(pPayload);
+
+                if (fDone)
+                    break;
+            }
+        }
+
+        if (RT_FAILURE(rc))
+            break;
+    }
+
+    if (RT_SUCCESS(rc))
+    {
+        LogFlowFunc(("cRoots=%RU32\n", cRoots));
+
+        *ppapszRoots = pszRoots;
+        *pcRoots     = cRoots;
+    }
+    else
+    {
+        RTMemFree(pszRoots);
+        pszRoots = NULL;
+    }
+
+    LogFlowFuncLeave();
+    return rc;
+}
+
 DECLCALLBACK(int) vboxSvcClipboardURIListOpen(PSHAREDCLIPBOARDPROVIDERCTX pCtx,
                                               PVBOXCLIPBOARDLISTOPENPARMS pOpenParms, PSHAREDCLIPBOARDLISTHANDLE phList)
 {
@@ -411,6 +521,41 @@ int VBoxSvcClipboardURIGetReply(uint32_t cParms, VBOXHGCMSVCPARM paParms[],
     return rc;
 }
 
+int VBoxSvcClipboardURIGetRoots(uint32_t cParms, VBOXHGCMSVCPARM paParms[],
+                                PVBOXCLIPBOARDROOTS pRoots)
+{
+    int rc;
+
+    if (cParms == VBOX_SHARED_CLIPBOARD_CPARMS_ROOTS)
+    {
+        /* Note: Context ID (paParms[0]) not used yet. */
+        rc = HGCMSvcGetU32(&paParms[1], &pRoots->fRoots);
+        if (RT_SUCCESS(rc))
+        {
+            uint32_t fMore;
+            rc = HGCMSvcGetU32(&paParms[2], &fMore);
+            if (RT_SUCCESS(rc))
+                pRoots->fMore = RT_BOOL(fMore);
+        }
+        if (RT_SUCCESS(rc))
+            rc = HGCMSvcGetU32(&paParms[3], &pRoots->cRoots);
+        if (RT_SUCCESS(rc))
+        {
+            uint32_t cbRoots;
+            rc = HGCMSvcGetU32(&paParms[4], &cbRoots);
+            if (RT_SUCCESS(rc))
+                rc = HGCMSvcGetPv(&paParms[5], (void **)&pRoots->pszRoots, &pRoots->cbRoots);
+
+            AssertReturn(cbRoots == pRoots->cbRoots, VERR_INVALID_PARAMETER);
+        }
+    }
+    else
+        rc = VERR_INVALID_PARAMETER;
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
 /**
  * Gets an URI list open request from HGCM service parameters.
  *
@@ -581,9 +726,17 @@ int VBoxSvcClipboardURIGetListEntry(uint32_t cParms, VBOXHGCMSVCPARM paParms[],
         if (RT_SUCCESS(rc))
             rc = HGCMSvcGetU32(&paParms[2], &pListEntry->fInfo);
         if (RT_SUCCESS(rc))
-            rc = HGCMSvcGetU32(&paParms[3], &pListEntry->cbInfo);
+            rc = HGCMSvcGetPv(&paParms[3], (void **)&pListEntry->pszName, &pListEntry->cbName);
         if (RT_SUCCESS(rc))
-            rc = HGCMSvcGetPv(&paParms[4], &pListEntry->pvInfo, &pListEntry->cbInfo);
+        {
+            uint32_t cbInfo;
+            rc = HGCMSvcGetU32(&paParms[4], &cbInfo);
+            if (RT_SUCCESS(rc))
+            {
+                rc = HGCMSvcGetPv(&paParms[5], &pListEntry->pvInfo, &pListEntry->cbInfo);
+                AssertReturn(cbInfo == pListEntry->cbInfo, VERR_INVALID_PARAMETER);
+            }
+        }
 
         if (RT_SUCCESS(rc))
         {
@@ -845,6 +998,7 @@ int vboxSvcClipboardURIHandler(PVBOXCLIPBOARDCLIENT pClient,
 
                         if (enmDir == SHAREDCLIPBOARDURITRANSFERDIR_READ)
                         {
+                            creationCtx.Interface.pfnGetRoots      = vboxSvcClipboardURIGetRoots;
                             creationCtx.Interface.pfnListHdrRead   = vboxSvcClipboardURIListHdrRead;
                             creationCtx.Interface.pfnListEntryRead = vboxSvcClipboardURIListEntryRead;
                             creationCtx.Interface.pfnObjRead       = vboxSvcClipboardURIObjRead;
@@ -920,6 +1074,25 @@ int vboxSvcClipboardURIHandler(PVBOXCLIPBOARDCLIENT pClient,
         case VBOX_SHARED_CLIPBOARD_GUEST_FN_REPLY:
         {
             rc = VBoxSvcClipboardURITransferHandleReply(pClient, pTransfer, cParms, paParms);
+            break;
+        }
+
+        case VBOX_SHARED_CLIPBOARD_GUEST_FN_ROOTS:
+        {
+            VBOXCLIPBOARDROOTS Roots;
+            rc = VBoxSvcClipboardURIGetRoots(cParms, paParms, &Roots);
+            if (RT_SUCCESS(rc))
+            {
+                void    *pvData = SharedClipboardURIRootsDup(&Roots);
+                uint32_t cbData = sizeof(VBOXCLIPBOARDROOTS);
+
+                PSHAREDCLIPBOARDURITRANSFERPAYLOAD pPayload;
+                rc = SharedClipboardURITransferPayloadAlloc(SHAREDCLIPBOARDURITRANSFEREVENTTYPE_GET_ROOTS,
+                                                            pvData, cbData, &pPayload);
+                if (RT_SUCCESS(rc))
+                    rc = SharedClipboardURITransferEventSignal(pTransfer, SHAREDCLIPBOARDURITRANSFEREVENTTYPE_GET_ROOTS,
+                                                               pPayload);
+            }
             break;
         }
 

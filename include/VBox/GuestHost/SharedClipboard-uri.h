@@ -369,6 +369,23 @@ typedef struct _VBOXCLIPBOARDREPLY
 } VBOXCLIPBOARDREPLY, *PVBOXCLIPBOARDREPLY;
 
 /**
+ * Structure for keeping Shared Clipboard list root entries.
+ */
+typedef struct _VBOXCLIPBOARDROOTS
+{
+    /** Roots listing flags; unused at the moment. */
+    uint32_t fRoots;
+    /** Boolean indicating that more root items are following. */
+    bool     fMore;
+    /** Number of root items in this message. */
+    uint32_t cRoots;
+    /** Size (in bytes) of string list. */
+    uint32_t cbRoots;
+    /** String list (separated with \r\n) containing the root items. */
+    char    *pszRoots;
+} VBOXCLIPBOARDROOTS, *PVBOXCLIPBOARDROOTS;
+
+/**
  * Structure for maintaining Shared Clipboard list open paramters.
  */
 typedef struct _VBOXCLIPBOARDLISTOPENPARMS
@@ -407,6 +424,10 @@ typedef struct _VBOXCLIPBOARDLISTHDR
  */
 typedef struct _VBOXCLIPBOARDLISTENTRY
 {
+    /** Entry name. */
+    char    *pszName;
+    /** Size (in bytes) of entry name. */
+    uint32_t cbName;
     /** Information flag(s). */
     uint32_t fInfo;
     /** Size (in bytes) of the actual list entry. */
@@ -414,6 +435,8 @@ typedef struct _VBOXCLIPBOARDLISTENTRY
     /** Data of the actual list entry. */
     void    *pvInfo;
 } VBOXCLIPBOARDLISTENTRY, *PVBOXCLIPBOARDLISTENTRY;
+
+#define VBOXCLIPBOARDLISTENTRY_MAX_NAME     RTPATH_MAX
 
 /**
  * Structure for a Shared Clipboard object header.
@@ -555,6 +578,10 @@ protected:
 int SharedClipboardPathSanitizeFilename(char *pszPath, size_t cbPath);
 int SharedClipboardPathSanitize(char *pszPath, size_t cbPath);
 
+PVBOXCLIPBOARDROOTS SharedClipboardURIRootsDup(PVBOXCLIPBOARDROOTS pRoots);
+int SharedClipboardURIRootsInit(PVBOXCLIPBOARDROOTS pRoots);
+void SharedClipboardURIRootsDestroy(PVBOXCLIPBOARDROOTS pRoots);
+
 int SharedClipboardURIListHdrAlloc(PVBOXCLIPBOARDLISTHDR *ppListHdr);
 void SharedClipboardURIListHdrFree(PVBOXCLIPBOARDLISTHDR pListHdr);
 PVBOXCLIPBOARDLISTHDR SharedClipboardURIListHdrDup(PVBOXCLIPBOARDLISTHDR pListHdr);
@@ -664,6 +691,7 @@ typedef struct _SHAREDCLIPBOARDURITRANSFEREVENT
 typedef enum _SHAREDCLIPBOARDURITRANSFEREVENTTYPE
 {
     SHAREDCLIPBOARDURITRANSFEREVENTTYPE_UNKNOWN,
+    SHAREDCLIPBOARDURITRANSFEREVENTTYPE_GET_ROOTS,
     SHAREDCLIPBOARDURITRANSFEREVENTTYPE_LIST_OPEN,
     SHAREDCLIPBOARDURITRANSFEREVENTTYPE_LIST_CLOSE,
     SHAREDCLIPBOARDURITRANSFEREVENTTYPE_LIST_HDR_READ,
@@ -688,7 +716,7 @@ typedef std::map<uint32_t, SHAREDCLIPBOARDURITRANSFEREVENT *> SharedClipboardURI
 typedef struct _SHAREDCLIPBOARDURILISTHANDLEINFO
 {
     VBOXCLIPBOARDLISTOPENPARMS OpenParms;
-    RTFMODE                     fMode;
+    RTFMODE                    fMode;
     union
     {
         struct
@@ -717,7 +745,12 @@ typedef struct _SHAREDCLIPBOARDOBJHANDLEINFO
  *  The key specifies the list handle. */
 typedef std::map<SHAREDCLIPBOARDLISTHANDLE, SHAREDCLIPBOARDURILISTHANDLEINFO *> SharedClipboardURIListMap;
 
+/** Map of URI object handles.
+ *  The key specifies the object handle. */
 typedef std::map<SHAREDCLIPBOARDOBJHANDLE, SHAREDCLIPBOARDURILISTHANDLEINFO *> SharedClipboardURIObjMap;
+
+/** List of URI list root entries. */
+typedef RTCList<RTCString> SharedClipboardURIListRootEntries;
 
 /**
  * Structure for maintaining an URI transfer state.
@@ -769,6 +802,7 @@ typedef struct _SHAREDCLIPBOARDPROVIDERCTX
 
 SHAREDCLIPBOARDPROVIDERFUNCDECLVOID(TRANSFEROPEN)
 SHAREDCLIPBOARDPROVIDERFUNCDECLVOID(TRANSFERCLOSE)
+SHAREDCLIPBOARDPROVIDERFUNCDECL(GETROOTS, char **ppapszRoots, uint32_t *pcRoots)
 SHAREDCLIPBOARDPROVIDERFUNCDECL(LISTOPEN, PVBOXCLIPBOARDLISTOPENPARMS pOpenParms, PSHAREDCLIPBOARDLISTHANDLE phList)
 SHAREDCLIPBOARDPROVIDERFUNCDECL(LISTCLOSE, SHAREDCLIPBOARDLISTHANDLE hList);
 SHAREDCLIPBOARDPROVIDERFUNCDECL(LISTHDRREAD, SHAREDCLIPBOARDLISTHANDLE hList, PVBOXCLIPBOARDLISTHDR pListHdr)
@@ -790,6 +824,7 @@ typedef struct _SHAREDCLIPBOARDPROVIDERINTERFACE
 {
     SHAREDCLIPBOARDPROVIDERFUNCMEMBER(TRANSFEROPEN, pfnTransferOpen);
     SHAREDCLIPBOARDPROVIDERFUNCMEMBER(TRANSFERCLOSE, pfnTransferClose);
+    SHAREDCLIPBOARDPROVIDERFUNCMEMBER(GETROOTS, pfnGetRoots);
     SHAREDCLIPBOARDPROVIDERFUNCMEMBER(LISTOPEN, pfnListOpen);
     SHAREDCLIPBOARDPROVIDERFUNCMEMBER(LISTCLOSE, pfnListClose);
     SHAREDCLIPBOARDPROVIDERFUNCMEMBER(LISTHDRREAD, pfnListHdrRead);
@@ -906,7 +941,11 @@ typedef struct _SHAREDCLIPBOARDURITRANSFER
     SHAREDCLIPBOARDURITRANSFERSTATE     State;
     /** Events related to this transfer. */
     SharedClipboardURITransferEventMap *pMapEvents;
+    /** Map of all lists related to this transfer. */
     SharedClipboardURIListMap          *pMapLists;
+    /** List of root entries of this transfer. */
+    SharedClipboardURIListRootEntries   lstRootEntries;
+    /** Map of all objects related to this transfer. */
     SharedClipboardURIObjMap           *pMapObj;
     /** The transfer's own (local) area, if any (can be NULL if not needed).
      *  The area itself has a clipboard area ID assigned.
@@ -969,10 +1008,13 @@ int SharedClipboardURITransferListWrite(PSHAREDCLIPBOARDURITRANSFER pTransfer, S
 bool SharedClipboardURITransferListHandleIsValid(PSHAREDCLIPBOARDURITRANSFER pTransfer, SHAREDCLIPBOARDLISTHANDLE hList);
 
 int SharedClipboardURITransferPrepare(PSHAREDCLIPBOARDURITRANSFER pTransfer);
+int SharedClipboardURITransferSetData(PSHAREDCLIPBOARDURITRANSFER pTransfer, SharedClipboardURIListRootEntries *pEntries);
 int SharedClipboardURITransferSetInterface(PSHAREDCLIPBOARDURITRANSFER pTransfer,
                                            PSHAREDCLIPBOARDPROVIDERCREATIONCTX pCreationCtx);
+int SharedClipboardURILTransferSetRoots(PSHAREDCLIPBOARDURITRANSFER pTransfer, const char *papszRoots, size_t cbRoots);
 void SharedClipboardURITransferReset(PSHAREDCLIPBOARDURITRANSFER pTransfer);
 SharedClipboardArea *SharedClipboardURITransferGetArea(PSHAREDCLIPBOARDURITRANSFER pTransfer);
+int SharedClipboardURILTransferGetRoots(PSHAREDCLIPBOARDURITRANSFER pTransfer, char **ppapszRoots, uint32_t *pcRoots);
 SHAREDCLIPBOARDSOURCE SharedClipboardURITransferGetSource(PSHAREDCLIPBOARDURITRANSFER pTransfer);
 SHAREDCLIPBOARDURITRANSFERSTATUS SharedClipboardURITransferGetStatus(PSHAREDCLIPBOARDURITRANSFER pTransfer);
 int SharedClipboardURITransferHandleReply(PSHAREDCLIPBOARDURITRANSFER pTransfer, PVBOXCLIPBOARDREPLY pReply);

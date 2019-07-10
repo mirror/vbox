@@ -245,61 +245,94 @@ DECLCALLBACK(int) VBoxClipboardWinDataObject::readThread(RTTHREAD ThreadSelf, vo
 
     RTThreadUserSignal(RTThreadSelf());
 
+    LogRel2(("Shared Clipboard: Calculating transfer ....\n"));
+
     int rc = SharedClipboardURITransferOpen(pTransfer);
     if (RT_SUCCESS(rc))
     {
-        VBOXCLIPBOARDLISTOPENPARMS openParmsList;
-        rc = SharedClipboardURIListOpenParmsInit(&openParmsList);
+        uint32_t cRoots;
+        char    *pszRoots;
+        rc = SharedClipboardURILTransferGetRoots(pTransfer, &pszRoots, &cRoots);
         if (RT_SUCCESS(rc))
         {
-            SHAREDCLIPBOARDLISTHANDLE hList;
-            rc = SharedClipboardURITransferListOpen(pTransfer, &openParmsList, &hList);
-            if (RT_SUCCESS(rc))
-            {
-                LogFlowFunc(("hList=%RU64\n", hList));
+            SharedClipboardURIListRootEntries lstRoots = RTCString(pszRoots, strlen(pszRoots)).split("\r\n");
+            Assert(lstRoots.size() == cRoots);
 
-                VBOXCLIPBOARDLISTHDR hdrList;
-                rc = SharedClipboardURITransferListGetHeader(pTransfer, hList, &hdrList);
+            LogFlowFunc(("cRoots=%zu\n", lstRoots.size()));
+
+            for (uint32_t i = 0; i < lstRoots.size(); i++)
+            {
+                VBOXCLIPBOARDLISTOPENPARMS openParmsList;
+                rc = SharedClipboardURIListOpenParmsInit(&openParmsList);
                 if (RT_SUCCESS(rc))
                 {
-                    LogFlowFunc(("cTotalObjects=%RU64, cbTotalSize=%RU64\n\n",
-                                 hdrList.cTotalObjects, hdrList.cbTotalSize));
+                    LogFlowFunc(("pszRoot=%s\n", lstRoots[i].c_str()));
 
-                    for (uint64_t i = 0; i < hdrList.cTotalObjects; i++)
-                    {
-                        VBOXCLIPBOARDLISTENTRY entryList;
-                        rc = SharedClipboardURITransferListRead(pTransfer, hList, &entryList);
-                        if (RT_SUCCESS(rc))
-                        {
-                        }
-                        else
-                            break;
+                    rc = RTStrCopy(openParmsList.pszPath, openParmsList.cbPath, lstRoots[i].c_str());
+                    if (RT_FAILURE(rc))
+                        break;
 
-                        if (pTransfer->Thread.fStop)
-                            break;
-                    }
-
+                    SHAREDCLIPBOARDLISTHANDLE hList;
+                    rc = SharedClipboardURITransferListOpen(pTransfer, &openParmsList, &hList);
                     if (RT_SUCCESS(rc))
                     {
-                        /*
-                         * Signal the "list complete" event so that this data object can return (valid) data via ::GetData().
-                         * This in turn then will create IStream instances (by the OS) for each file system object to handle.
-                         */
-                        int rc2 = RTSemEventSignal(pThis->m_EventListComplete);
-                        AssertRC(rc2);
+                        LogFlowFunc(("hList=%RU64\n", hList));
 
-                        LogFlowFunc(("Waiting for transfer to complete ...\n"));
+                        VBOXCLIPBOARDLISTHDR hdrList;
+                        rc = SharedClipboardURITransferListGetHeader(pTransfer, hList, &hdrList);
+                        if (RT_SUCCESS(rc))
+                        {
+                            LogFlowFunc(("cTotalObjects=%RU64, cbTotalSize=%RU64\n\n",
+                                         hdrList.cTotalObjects, hdrList.cbTotalSize));
 
-                        /* Transferring stuff can take a while, so don't use any timeout here. */
-                        rc2 = RTSemEventWait(pThis->m_EventTransferComplete, RT_INDEFINITE_WAIT);
-                        AssertRC(rc2);
+                            for (uint64_t i = 0; i < hdrList.cTotalObjects; i++)
+                            {
+                                VBOXCLIPBOARDLISTENTRY entryList;
+                                rc = SharedClipboardURITransferListRead(pTransfer, hList, &entryList);
+                                if (RT_SUCCESS(rc))
+                                {
+                                    PSHAREDCLIPBOARDFSOBJINFO pObjInfo = (PSHAREDCLIPBOARDFSOBJINFO)entryList.pvInfo;
+                                    Assert(entryList.cbInfo == sizeof(SHAREDCLIPBOARDFSOBJINFO));
+
+                                    LogFlowFunc(("\t%s (%RU64 bytes)\n", entryList.pszName, pObjInfo->cbObject));
+                                }
+                                else
+                                    break;
+
+                                if (pTransfer->Thread.fStop)
+                                    break;
+                            }
+                        }
+
+                        SharedClipboardURITransferListClose(pTransfer, hList);
                     }
+
+                    SharedClipboardURIListOpenParmsDestroy(&openParmsList);
                 }
 
-                SharedClipboardURITransferListClose(pTransfer, hList);
+                if (RT_FAILURE(rc))
+                    break;
             }
 
-            SharedClipboardURIListOpenParmsDestroy(&openParmsList);
+            if (RT_SUCCESS(rc))
+            {
+                LogRel2(("Shared Clipboard: Calculation complete, starting transfer ...\n"));
+
+                /*
+                 * Signal the "list complete" event so that this data object can return (valid) data via ::GetData().
+                 * This in turn then will create IStream instances (by the OS) for each file system object to handle.
+                 */
+                int rc2 = RTSemEventSignal(pThis->m_EventListComplete);
+                AssertRC(rc2);
+
+                LogFlowFunc(("Waiting for transfer to complete ...\n"));
+
+                /* Transferring stuff can take a while, so don't use any timeout here. */
+                rc2 = RTSemEventWait(pThis->m_EventTransferComplete, RT_INDEFINITE_WAIT);
+                AssertRC(rc2);
+            }
+
+            RTStrFree(pszRoots);
         }
 
         SharedClipboardURITransferClose(pTransfer);

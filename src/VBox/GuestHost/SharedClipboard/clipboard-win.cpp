@@ -1029,22 +1029,8 @@ int VBoxClipboardWinDropFilesToStringList(DROPFILES *pDropFiles, char **papszLis
 
             LogRel(("Shared Clipboard: Adding guest file '%s'\n", pszFileUtf8));
 
-        #if 0
-            char    *pszFileURI;
-            uint32_t cchFileURI;
-            rc = SharedClipboardMetaDataConvertToFormat(pszFileUtf8, strlen(pszFileUtf8), SHAREDCLIPBOARDMETADATAFMT_URI_LIST,
-                                                        (void **)&pszFileURI, &cchFileURI);
-            if (RT_SUCCESS(rc))
-            {
-                LogFlowFunc(("\tURI is: %s (%RU32)\n", pszFileURI, cchFileURI));
-
-                rc = RTStrAAppendExN(&pszFiles, 1 /* cPairs */, pszFileURI, cchFileURI);
-                if (RT_SUCCESS(rc))
-                    cchFiles += cchFileURI;
-
-                RTStrFree(pszFileURI);
-            }
-        #endif
+            rc = RTStrAAppendExN(&pszFiles, 1 /* cPairs */, pszFileUtf8, strlen(pszFileUtf8));
+            cchFiles += (uint32_t)strlen(pszFileUtf8);
         }
 
         if (pszFileUtf8)

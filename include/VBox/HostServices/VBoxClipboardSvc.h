@@ -74,30 +74,32 @@
 
 /** Initiates a new transfer (read / write) on the guest side. */
 #define VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_TRANSFER_START     50
+/** Requests reading the root entries from the guest. */
+#define VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_ROOTS              51
 /** Open an URI list on the guest side. */
-#define VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_LIST_OPEN          51
+#define VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_LIST_OPEN          52
 /** Closes a formerly opened URI list on the guest side. */
-#define VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_LIST_CLOSE         52
+#define VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_LIST_CLOSE         53
 /** Reads a list header from the guest. */
-#define VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_LIST_HDR_READ      53
+#define VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_LIST_HDR_READ      54
 /** Writes a list header to the guest. */
-#define VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_LIST_HDR_WRITE     54
+#define VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_LIST_HDR_WRITE     55
 /** Reads a list entry from the guest. */
-#define VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_LIST_ENTRY_READ    55
+#define VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_LIST_ENTRY_READ    56
 /** Writes a list entry to the guest. */
-#define VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_LIST_ENTRY_WRITE   56
+#define VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_LIST_ENTRY_WRITE   57
 /** Open an URI object on the guest side. */
-#define VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_OBJ_OPEN           57
+#define VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_OBJ_OPEN           58
 /** Closes a formerly opened URI object on the guest side. */
-#define VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_OBJ_CLOSE          58
+#define VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_OBJ_CLOSE          59
 /** Reads from an object on the guest side. */
-#define VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_OBJ_READ           59
+#define VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_OBJ_READ           60
 /** Writes to an object on the guest side. */
-#define VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_OBJ_WRITE          60
+#define VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_OBJ_WRITE          61
 /** Indicates that the host has canceled a transfer. */
-#define VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_CANCEL             61
+#define VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_CANCEL             62
 /** Indicates that the an unrecoverable error on the host occurred . */
-#define VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_ERROR              62
+#define VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_ERROR              63
 
 /*
  * The service functions which are called by guest.
@@ -128,36 +130,39 @@
 /** Replies to a function from the host.
  *  New since URI handling was implemented. */
 #define VBOX_SHARED_CLIPBOARD_GUEST_FN_REPLY             9
+/** Reports the available root entries of a transfer.
+  *  New since URI handling was implemented. */
+#define VBOX_SHARED_CLIPBOARD_GUEST_FN_ROOTS             10
 /** Opens / gets a list handle from the host.
  *  New since URI handling was implemented. */
-#define VBOX_SHARED_CLIPBOARD_GUEST_FN_LIST_OPEN         10
+#define VBOX_SHARED_CLIPBOARD_GUEST_FN_LIST_OPEN         11
 /** Closes a list handle from the host.
  *  New since URI handling was implemented. */
-#define VBOX_SHARED_CLIPBOARD_GUEST_FN_LIST_CLOSE        11
+#define VBOX_SHARED_CLIPBOARD_GUEST_FN_LIST_CLOSE        12
 /** Reads a list header from the host.
  *  New since URI handling was implemented. */
-#define VBOX_SHARED_CLIPBOARD_GUEST_FN_LIST_HDR_READ     12
+#define VBOX_SHARED_CLIPBOARD_GUEST_FN_LIST_HDR_READ     13
 /** Writes a list header to the host.
  *  New since URI handling was implemented. */
-#define VBOX_SHARED_CLIPBOARD_GUEST_FN_LIST_HDR_WRITE    13
+#define VBOX_SHARED_CLIPBOARD_GUEST_FN_LIST_HDR_WRITE    14
 /** New since URI handling was implemented. */
-#define VBOX_SHARED_CLIPBOARD_GUEST_FN_LIST_ENTRY_READ   14
+#define VBOX_SHARED_CLIPBOARD_GUEST_FN_LIST_ENTRY_READ   15
 /** New since URI handling was implemented. */
-#define VBOX_SHARED_CLIPBOARD_GUEST_FN_LIST_ENTRY_WRITE  15
+#define VBOX_SHARED_CLIPBOARD_GUEST_FN_LIST_ENTRY_WRITE  16
 /** New since URI handling was implemented. */
-#define VBOX_SHARED_CLIPBOARD_GUEST_FN_OBJ_OPEN          16
+#define VBOX_SHARED_CLIPBOARD_GUEST_FN_OBJ_OPEN          17
 /** New since URI handling was implemented. */
-#define VBOX_SHARED_CLIPBOARD_GUEST_FN_OBJ_CLOSE         17
+#define VBOX_SHARED_CLIPBOARD_GUEST_FN_OBJ_CLOSE         18
 /** New since URI handling was implemented. */
-#define VBOX_SHARED_CLIPBOARD_GUEST_FN_OBJ_READ          18
+#define VBOX_SHARED_CLIPBOARD_GUEST_FN_OBJ_READ          19
 /**  New since URI handling was implemented. */
-#define VBOX_SHARED_CLIPBOARD_GUEST_FN_OBJ_WRITE         19
+#define VBOX_SHARED_CLIPBOARD_GUEST_FN_OBJ_WRITE         20
 /** Reports cancellation of the current operation to the host.
  *  New since URI handling was implemented. */
-#define VBOX_SHARED_CLIPBOARD_GUEST_FN_CANCEL            20
+#define VBOX_SHARED_CLIPBOARD_GUEST_FN_CANCEL            21
 /** Reports an error to the host.
  *  New since URI handling was implemented. */
-#define VBOX_SHARED_CLIPBOARD_GUEST_FN_ERROR             21
+#define VBOX_SHARED_CLIPBOARD_GUEST_FN_ERROR             22
 
 /**
  * Translates a Shared Clipboard host message enum to a string.
@@ -173,6 +178,7 @@ DECLINLINE(const char *) VBoxSvcClipboardHostMsgToStr(uint32_t uMsg)
         RT_CASE_RET_STR(VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA);
         RT_CASE_RET_STR(VBOX_SHARED_CLIPBOARD_HOST_MSG_REPORT_FORMATS);
         RT_CASE_RET_STR(VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_TRANSFER_START);
+        RT_CASE_RET_STR(VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_ROOTS);
         RT_CASE_RET_STR(VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_LIST_OPEN);
         RT_CASE_RET_STR(VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_LIST_CLOSE);
         RT_CASE_RET_STR(VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_LIST_HDR_READ);
@@ -207,6 +213,7 @@ DECLINLINE(const char *) VBoxSvcClipboardGuestMsgToStr(uint32_t uMsg)
         RT_CASE_RET_STR(VBOX_SHARED_CLIPBOARD_GUEST_FN_MSG_GET);
         RT_CASE_RET_STR(VBOX_SHARED_CLIPBOARD_GUEST_FN_STATUS);
         RT_CASE_RET_STR(VBOX_SHARED_CLIPBOARD_GUEST_FN_REPLY);
+        RT_CASE_RET_STR(VBOX_SHARED_CLIPBOARD_GUEST_FN_ROOTS);
         RT_CASE_RET_STR(VBOX_SHARED_CLIPBOARD_GUEST_FN_LIST_OPEN);
         RT_CASE_RET_STR(VBOX_SHARED_CLIPBOARD_GUEST_FN_LIST_CLOSE);
         RT_CASE_RET_STR(VBOX_SHARED_CLIPBOARD_GUEST_FN_LIST_HDR_READ);
@@ -327,6 +334,7 @@ typedef struct _VBoxClipboardGetHostMsg
 
 #define VBOX_SHAREDCLIPBOARD_LISTHDR_FLAG_NONE       0
 
+/** No additional information provided. */
 #define VBOX_SHAREDCLIPBOARD_INFO_FLAG_NONE          0
 /** Get object information of type SHAREDCLIPBOARDFSOBJINFO. */
 #define VBOX_SHAREDCLIPBOARD_INFO_FLAG_FSOBJINFO     RT_BIT(0)
@@ -361,15 +369,15 @@ typedef struct _VBoxClipboardReplyMsg
 {
     VBGLIOCHGCMCALL hdr;
 
-    /** uint32_t, in: Context ID. Unused at the moment. */
+    /** uint32_t, out: Context ID. Unused at the moment. */
     HGCMFunctionParameter uContext;
-    /** uint32_t, in: Message type of type VBOX_SHAREDCLIPBOARD_REPLYMSGTYPE_XXX. */
+    /** uint32_t, out: Message type of type VBOX_SHAREDCLIPBOARD_REPLYMSGTYPE_XXX. */
     HGCMFunctionParameter enmType;
-    /** uint32_t, in: IPRT result of overall operation. */
+    /** uint32_t, out: IPRT result of overall operation. */
     HGCMFunctionParameter rc;
-    /** uint32_t, in: Size of optional payload of this reply, based on the message type. */
+    /** uint32_t, out: Size of optional payload of this reply, based on the message type. */
     HGCMFunctionParameter cbPayload;
-    /** pointer, in: Optional payload of this reply, based on the message type. */
+    /** pointer, out: Optional payload of this reply, based on the message type. */
     HGCMFunctionParameter pvPayload;
     union
     {
@@ -385,6 +393,30 @@ typedef struct _VBoxClipboardReplyMsg
 } VBoxClipboardReplyMsg;
 
 #define VBOX_SHARED_CLIPBOARD_CPARMS_REPLY_MIN 5
+
+/**
+ * Reads / Writes the roots list.
+ */
+typedef struct _VBoxClipboardRootsMsg
+{
+    VBGLIOCHGCMCALL hdr;
+
+    /** uint32_t, in: Context ID. Unused at the moment. */
+    HGCMFunctionParameter uContext;
+    /** uint32_t, in: Roots listing flags; unused at the moment. */
+    HGCMFunctionParameter fRoots;
+    /** uint32_t, out: Boolean indicating that more root items are following
+     *                 (via another message). */
+    HGCMFunctionParameter fMore;
+    /** uint32_t, out: Number of root items in this message. */
+    HGCMFunctionParameter cRoots;
+    /** uin32_t, out: Size (in bytes) of string list. */
+    HGCMFunctionParameter cbRoots;
+    /** pointer, out: string list (separated with \r\n) containing the root items. */
+    HGCMFunctionParameter pvRoots;
+} VBoxClipboardRootsMsg;
+
+#define VBOX_SHARED_CLIPBOARD_CPARMS_ROOTS 6
 
 /**
  * Opens a list.
@@ -499,16 +531,18 @@ typedef struct _VBoxClipboardListEntryMsg
 {
     VBGLIOCHGCMCALL hdr;
 
-    /** in: Request parameters. */
+    /** in/out: Request parameters. */
     VBoxClipboardListEntryReqParms ReqParms;
+    /** pointer, in/out: Entry name. */
+    HGCMFunctionParameter          szName;
     /** uint32_t, out: Bytes to be used for information/How many bytes were used.  */
     HGCMFunctionParameter          cbInfo;
-    /** pointer, out: Information to be set/get (SHAREDCLIPBOARDFSOBJINFO only currently).
+    /** pointer, in/out: Information to be set/get (SHAREDCLIPBOARDFSOBJINFO only currently).
      * Do not forget to set the SHAREDCLIPBOARDFSOBJINFO::Attr::enmAdditional for Get operation as well.  */
     HGCMFunctionParameter          pvInfo;
 } VBoxClipboardListEntryMsg;
 
-#define VBOX_SHARED_CLIPBOARD_CPARMS_LIST_ENTRY 5
+#define VBOX_SHARED_CLIPBOARD_CPARMS_LIST_ENTRY 6
 
 typedef struct _VBoxClipboardObjOpenMsg
 {
