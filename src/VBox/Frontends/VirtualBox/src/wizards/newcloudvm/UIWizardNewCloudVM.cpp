@@ -15,6 +15,9 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+/* Qt includes: */
+#include <QAbstractButton>
+
 /* GUI includes: */
 #include "UIMessageCenter.h"
 #include "UIWizardNewCloudVM.h"
@@ -162,6 +165,11 @@ bool UIWizardNewCloudVM::createCloudVM()
     return fResult;
 }
 
+void UIWizardNewCloudVM::scheduleAutoFinish()
+{
+    QMetaObject::invokeMethod(this, "sltTriggerFinishButton", Qt::QueuedConnection);
+}
+
 void UIWizardNewCloudVM::retranslateUi()
 {
     /* Call to base-class: */
@@ -170,4 +178,9 @@ void UIWizardNewCloudVM::retranslateUi()
     /* Translate wizard: */
     setWindowTitle(tr("Create Cloud Virtual Machine"));
     setButtonText(QWizard::FinishButton, tr("Create"));
+}
+
+void UIWizardNewCloudVM::sltTriggerFinishButton()
+{
+    button(QWizard::FinishButton)->click();
 }

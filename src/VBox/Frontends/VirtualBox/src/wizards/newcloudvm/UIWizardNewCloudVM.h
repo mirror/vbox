@@ -84,10 +84,19 @@ public:
     /** Creates New Cloud VM. */
     bool createCloudVM();
 
+    /** Schedules Finish button trigger for
+      * the next event-loop cicle. */
+    void scheduleAutoFinish();
+
 protected:
 
     /** Handles translation event. */
     virtual void retranslateUi() /* override */;
+
+private slots:
+
+    /** Triggers Finish button. */
+    void sltTriggerFinishButton();
 
 private:
 
