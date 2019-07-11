@@ -16198,12 +16198,8 @@ HMVMX_EXIT_DECL hmR0VmxExitTaskSwitch(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
         AssertRCReturn(rc, rc);
         if (VMX_IDT_VECTORING_INFO_IS_VALID(pVmxTransient->uIdtVectoringInfo))
         {
-            uint32_t       uErrCode;
-            RTGCUINTPTR    GCPtrFaultAddress;
-            uint32_t const uIntType        = VMX_IDT_VECTORING_INFO_TYPE(pVmxTransient->uIdtVectoringInfo);
-            uint8_t const  uVector         = VMX_IDT_VECTORING_INFO_VECTOR(pVmxTransient->uIdtVectoringInfo);
-            bool const     fErrorCodeValid = VMX_IDT_VECTORING_INFO_IS_ERROR_CODE_VALID(pVmxTransient->uIdtVectoringInfo);
-            if (fErrorCodeValid)
+            uint32_t uErrCode;
+            if (VMX_IDT_VECTORING_INFO_IS_ERROR_CODE_VALID(pVmxTransient->uIdtVectoringInfo))
             {
                 rc = hmR0VmxReadIdtVectoringErrorCodeVmcs(pVmxTransient);
                 AssertRCReturn(rc, rc);
@@ -16212,6 +16208,7 @@ HMVMX_EXIT_DECL hmR0VmxExitTaskSwitch(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
             else
                 uErrCode = 0;
 
+            RTGCUINTPTR GCPtrFaultAddress;
             if (VMX_IDT_VECTORING_INFO_IS_XCPT_PF(pVmxTransient->uIdtVectoringInfo))
                 GCPtrFaultAddress = pVCpu->cpum.GstCtx.cr2;
             else
@@ -16223,7 +16220,8 @@ HMVMX_EXIT_DECL hmR0VmxExitTaskSwitch(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
             hmR0VmxSetPendingEvent(pVCpu, VMX_ENTRY_INT_INFO_FROM_EXIT_IDT_INFO(pVmxTransient->uIdtVectoringInfo),
                                    pVmxTransient->cbInstr, uErrCode, GCPtrFaultAddress);
 
-            Log4Func(("Pending event. uIntType=%#x uVector=%#x\n", uIntType, uVector));
+            Log4Func(("Pending event. uIntType=%#x uVector=%#x\n", VMX_IDT_VECTORING_INFO_TYPE(pVmxTransient->uIdtVectoringInfo),
+                      VMX_IDT_VECTORING_INFO_VECTOR(pVmxTransient->uIdtVectoringInfo)));
             STAM_COUNTER_INC(&pVCpu->hm.s.StatExitTaskSwitch);
             return VINF_EM_RAW_INJECT_TRPM_EVENT;
         }
