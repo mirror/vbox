@@ -9127,7 +9127,7 @@ static VBOXSTRICTRC hmR0VmxInjectEventVmcs(PVMCPU pVCpu, PVMXTRANSIENT pVmxTrans
     uint32_t const    u32ErrCode = pEvent->u32ErrCode;
     uint32_t const    cbInstr    = pEvent->cbInstr;
     RTGCUINTPTR const GCPtrFault = pEvent->GCPtrFaultAddress;
-    uint32_t const    uVector    = VMX_ENTRY_INT_INFO_VECTOR(u32IntInfo);
+    uint8_t const     uVector    = VMX_ENTRY_INT_INFO_VECTOR(u32IntInfo);
     uint32_t const    uIntType   = VMX_ENTRY_INT_INFO_TYPE(u32IntInfo);
 
 #ifdef VBOX_STRICT
@@ -14803,8 +14803,7 @@ static VBOXSTRICTRC hmR0VmxExitXcptGeneric(PVMCPU pVCpu, PVMXTRANSIENT pVmxTrans
 #endif
 
     /* We should never call this function for a page-fault, we'd need to pass on the fault address below otherwise. */
-    Assert(   uVector != X86_XCPT_PF
-           || VMX_EXIT_INT_INFO_TYPE(pVmxTransient->uExitIntInfo) != VMX_EXIT_INT_INFO_TYPE_HW_XCPT);
+    Assert(!VMX_EXIT_INT_INFO_IS_XCPT_PF(pVmxTransient->uExitIntInfo));
     NOREF(uVector);
 
     /* Re-inject the original exception into the guest. */
@@ -16202,7 +16201,7 @@ HMVMX_EXIT_DECL hmR0VmxExitTaskSwitch(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
             uint32_t       uErrCode;
             RTGCUINTPTR    GCPtrFaultAddress;
             uint32_t const uIntType        = VMX_IDT_VECTORING_INFO_TYPE(pVmxTransient->uIdtVectoringInfo);
-            uint32_t const uVector         = VMX_IDT_VECTORING_INFO_VECTOR(pVmxTransient->uIdtVectoringInfo);
+            uint8_t const  uVector         = VMX_IDT_VECTORING_INFO_VECTOR(pVmxTransient->uIdtVectoringInfo);
             bool const     fErrorCodeValid = VMX_IDT_VECTORING_INFO_IS_ERROR_CODE_VALID(pVmxTransient->uIdtVectoringInfo);
             if (fErrorCodeValid)
             {
@@ -16213,8 +16212,7 @@ HMVMX_EXIT_DECL hmR0VmxExitTaskSwitch(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
             else
                 uErrCode = 0;
 
-            if (   uIntType == VMX_IDT_VECTORING_INFO_TYPE_HW_XCPT
-                && uVector == X86_XCPT_PF)
+            if (VMX_IDT_VECTORING_INFO_IS_XCPT_PF(pVmxTransient->uIdtVectoringInfo))
                 GCPtrFaultAddress = pVCpu->cpum.GstCtx.cr2;
             else
                 GCPtrFaultAddress = 0;
