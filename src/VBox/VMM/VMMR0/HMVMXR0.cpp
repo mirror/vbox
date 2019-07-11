@@ -10632,10 +10632,12 @@ static int hmR0VmxExitHostNmi(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo)
      * after executing guest or nested-guest code for the following reasons:
      *
      *   - We would need to perform VMREADs with interrupts disabled and is orders of
-     *     magnitude worse with nested virtualization.
+     *     magnitude worse when we run as a guest hypervisor without VMCS shadowing
+     *     supported by the host hypervisor.
      *
      *   - It affects the common VM-exit scenario and keeps interrupts disabled for a
-     *     longer period of time just for handling an edge case like host NMIs.
+     *     longer period of time just for handling an edge case like host NMIs which do
+     *     not occur nearly as frequently as other VM-exits.
      *
      * Let's cover the most likely scenario first. Check if we are on the target CPU
      * and dispatch the NMI right away. This should be much faster than calling into
@@ -10819,7 +10821,7 @@ static int hmR0VmxMergeVmcsNested(PVMCPU pVCpu)
      * normally intercept #PFs, it might intercept them for debugging purposes.
      *
      * If the outer guest is not intercepting #PFs, we can use the nested-guest #PF filters.
-     * If the outer guest is intercepting #PFs we must intercept all #PFs.
+     * If the outer guest is intercepting #PFs, we must intercept all #PFs.
      */
     uint32_t u32XcptPFMask;
     uint32_t u32XcptPFMatch;
