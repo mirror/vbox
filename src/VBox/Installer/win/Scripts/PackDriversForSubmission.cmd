@@ -251,6 +251,7 @@ rem
 rem EV sign the cabient file.
 rem
 if not exist "sign-ev.cmd" goto end
+echo info: Now signing the created CAB file. Can take a few minutes...
 call sign-ev.cmd "%_MY_OPT_OUTPUT%" || goto end_failed
 
 goto end
