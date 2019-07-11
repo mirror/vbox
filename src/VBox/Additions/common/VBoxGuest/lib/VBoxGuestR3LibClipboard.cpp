@@ -422,6 +422,28 @@ VBGLR3DECL(int) VbglR3ClipboardListOpenReply(HGCMCLIENTID idClient, int rcReply,
     return rc;
 }
 
+VBGLR3DECL(int) VbglR3ClipboardListCloseReply(HGCMCLIENTID idClient, int rcReply, SHAREDCLIPBOARDLISTHANDLE hList)
+{
+    VBoxClipboardReplyMsg Msg;
+    RT_ZERO(Msg);
+
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient,
+                       VBOX_SHARED_CLIPBOARD_GUEST_FN_REPLY, 6);
+
+    Msg.uContext.SetUInt32(0); /** @todo Context ID not used yet. */
+    Msg.enmType.SetUInt32(VBOX_SHAREDCLIPBOARD_REPLYMSGTYPE_LIST_CLOSE);
+    Msg.rc.SetUInt32((uint32_t)rcReply); /** int vs. uint32_t */
+    Msg.cbPayload.SetUInt32(0);
+    Msg.pvPayload.SetPtr(0, NULL);
+
+    Msg.u.ListOpen.uHandle.SetUInt64(hList);
+
+    int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
 VBGLR3DECL(int) VbglR3ClipboardListCloseSend(HGCMCLIENTID idClient, SHAREDCLIPBOARDLISTHANDLE hList)
 {
     VBoxClipboardListCloseMsg Msg;
@@ -670,7 +692,7 @@ VBGLR3DECL(int) VbglR3ClipboardEventGetNext(HGCMCLIENTID idClient, PSHAREDCLIPBO
                     rc = VbglR3ClipboardRootsRecv(idClient, &Roots);
                     if (RT_SUCCESS(rc))
                     {
-                        /** @todo Handle fFlags. */
+                        /** @todo Handle Roots.fRoots flags. */
 
                         char    *pszRoots = NULL;
                         uint32_t cRoots   = 0;
@@ -679,8 +701,11 @@ VBGLR3DECL(int) VbglR3ClipboardEventGetNext(HGCMCLIENTID idClient, PSHAREDCLIPBO
                         {
                             /** @todo Split up transfers in _64K each. */
 
-                            rc = VbglR3ClipboardRootsWrite(idClient, cRoots,
-                                                           pszRoots, pszRoots ? (uint32_t)strlen(pszRoots) : NULL);
+                            const uint32_t cbRoots = pszRoots
+                                                   ? (uint32_t)strlen(pszRoots) + 1 /* Include termination. */
+                                                   : 0;
+
+                            rc = VbglR3ClipboardRootsWrite(idClient, cRoots, pszRoots, cbRoots);
                         }
                     }
                 }
@@ -724,6 +749,10 @@ VBGLR3DECL(int) VbglR3ClipboardEventGetNext(HGCMCLIENTID idClient, PSHAREDCLIPBO
                 if (RT_SUCCESS(rc))
                 {
                     rc = SharedClipboardURITransferListClose(pTransfer, hList);
+
+                    /* Reply in any case. */
+                    int rc2 = VbglR3ClipboardListCloseReply(idClient, rc, hList);
+                    AssertRC(rc2);
                 }
 
                 break;

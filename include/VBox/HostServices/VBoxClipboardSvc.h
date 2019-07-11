@@ -360,7 +360,9 @@ typedef struct _VBoxClipboardStatusMsg
 
 #define VBOX_SHAREDCLIPBOARD_REPLYMSGTYPE_INVALID           0
 #define VBOX_SHAREDCLIPBOARD_REPLYMSGTYPE_LIST_OPEN         1
-#define VBOX_SHAREDCLIPBOARD_REPLYMSGTYPE_OBJ_OPEN          2
+#define VBOX_SHAREDCLIPBOARD_REPLYMSGTYPE_LIST_CLOSE        2
+#define VBOX_SHAREDCLIPBOARD_REPLYMSGTYPE_OBJ_OPEN          3
+#define VBOX_SHAREDCLIPBOARD_REPLYMSGTYPE_OBJ_CLOSE         4
 
 /**
  * Generic reply message.
@@ -412,7 +414,7 @@ typedef struct _VBoxClipboardRootsMsg
     HGCMFunctionParameter cRoots;
     /** uin32_t, out: Size (in bytes) of string list. */
     HGCMFunctionParameter cbRoots;
-    /** pointer, out: string list (separated with CRLF) containing the root items. */
+    /** pointer, out: string list (separated with \r\n) containing the root items. */
     HGCMFunctionParameter pvRoots;
 } VBoxClipboardRootsMsg;
 
@@ -649,3 +651,4 @@ int VBoxSvcClipboardURISetFileData(uint32_t cParms, VBOXHGCMSVCPARM paParms[], P
 #endif
 
 #endif /* !VBOX_INCLUDED_HostServices_VBoxClipboardSvc_h */
+

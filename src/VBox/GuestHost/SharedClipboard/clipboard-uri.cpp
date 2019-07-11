@@ -657,51 +657,56 @@ int SharedClipboardURITransferListOpen(PSHAREDCLIPBOARDURITRANSFER pTransfer, PV
             = (PSHAREDCLIPBOARDURILISTHANDLEINFO)RTMemAlloc(sizeof(SHAREDCLIPBOARDURILISTHANDLEINFO));
         if (pInfo)
         {
+            LogFlowFunc(("pszPath=%RU32\n", pOpenParms->pszPath));
+
             RTFSOBJINFO objInfo;
             rc = RTPathQueryInfo(pOpenParms->pszPath, &objInfo, RTFSOBJATTRADD_NOTHING);
-            if (RTFS_IS_DIRECTORY(objInfo.Attr.fMode))
-            {
-                rc = RTDirOpen(&pInfo->u.Local.hDirRoot, pOpenParms->pszPath);
-            }
-            else if (RTFS_IS_FILE(objInfo.Attr.fMode))
-            {
-                rc = RTFileOpen(&pInfo->u.Local.hFile, pOpenParms->pszPath,
-                                RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE);
-            }
-            else if (RTFS_IS_SYMLINK(objInfo.Attr.fMode))
-            {
-                rc = VERR_NOT_IMPLEMENTED; /** @todo */
-            }
-            else
-                AssertFailedStmt(rc = VERR_NOT_SUPPORTED);
-
             if (RT_SUCCESS(rc))
-                rc = SharedClipboardURIListOpenParmsCopy(&pInfo->OpenParms, pOpenParms);
-
-            if (RT_SUCCESS(rc))
-            {
-                pInfo->fMode = objInfo.Attr.fMode;
-
-                hList = sharedClipboardURITransferListHandleNew(pTransfer);
-
-                pTransfer->pMapLists->insert(
-                    std::pair<SHAREDCLIPBOARDLISTHANDLE, PSHAREDCLIPBOARDURILISTHANDLEINFO>(hList, pInfo));
-            }
-            else
             {
                 if (RTFS_IS_DIRECTORY(objInfo.Attr.fMode))
                 {
-                    if (RTDirIsValid(pInfo->u.Local.hDirRoot))
-                        RTDirClose(pInfo->u.Local.hDirRoot);
+                    rc = RTDirOpen(&pInfo->u.Local.hDirRoot, pOpenParms->pszPath);
                 }
                 else if (RTFS_IS_FILE(objInfo.Attr.fMode))
                 {
-                    if (RTFileIsValid(pInfo->u.Local.hFile))
-                        RTFileClose(pInfo->u.Local.hFile);
+                    rc = RTFileOpen(&pInfo->u.Local.hFile, pOpenParms->pszPath,
+                                    RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE);
                 }
+                else if (RTFS_IS_SYMLINK(objInfo.Attr.fMode))
+                {
+                    rc = VERR_NOT_IMPLEMENTED; /** @todo */
+                }
+                else
+                    AssertFailedStmt(rc = VERR_NOT_SUPPORTED);
 
-                RTMemFree(pInfo);
-                pInfo = NULL;
+                if (RT_SUCCESS(rc))
+                    rc = SharedClipboardURIListOpenParmsCopy(&pInfo->OpenParms, pOpenParms);
+
+                if (RT_SUCCESS(rc))
+                {
+                    pInfo->fMode = objInfo.Attr.fMode;
+
+                    hList = sharedClipboardURITransferListHandleNew(pTransfer);
+
+                    pTransfer->pMapLists->insert(
+                        std::pair<SHAREDCLIPBOARDLISTHANDLE, PSHAREDCLIPBOARDURILISTHANDLEINFO>(hList, pInfo));
+                }
+                else
+                {
+                    if (RTFS_IS_DIRECTORY(objInfo.Attr.fMode))
+                    {
+                        if (RTDirIsValid(pInfo->u.Local.hDirRoot))
+                            RTDirClose(pInfo->u.Local.hDirRoot);
+                    }
+                    else if (RTFS_IS_FILE(objInfo.Attr.fMode))
+                    {
+                        if (RTFileIsValid(pInfo->u.Local.hFile))
+                            RTFileClose(pInfo->u.Local.hFile);
+                    }
+
+                    RTMemFree(pInfo);
+                    pInfo = NULL;
+                }
             }
         }
         else
@@ -1332,10 +1337,12 @@ int SharedClipboardURILTransferGetRoots(PSHAREDCLIPBOARDURITRANSFER pTransfer, c
 
         for (size_t i = 0; i < pTransfer->lstRootEntries.size(); ++i)
         {
-            if (pszRoots)
-                rc = RTStrAAppend(&pszRoots, "\r\n");
+            rc = RTStrAAppend(&pszRoots, pTransfer->lstRootEntries.at(i).c_str());
+
+            /* Add separation between paths.
+             * Note: Also do this for the last element of the list. */
             if (RT_SUCCESS(rc))
-                rc = RTStrAAppend(&pszRoots, pTransfer->lstRootEntries.at(i).c_str());
+                rc = RTStrAAppendExN(&pszRoots, 1 /* cPairs */, "\r\n", 2 /* Bytes */);
 
             if (RT_FAILURE(rc))
                 break;
@@ -1346,7 +1353,7 @@ int SharedClipboardURILTransferGetRoots(PSHAREDCLIPBOARDURITRANSFER pTransfer, c
             LogFlowFunc(("Roots (%RU32):\n%s\n", pTransfer->lstRootEntries.size(), pszRoots));
 
             *ppszRoots = pszRoots;
-            *pcRoots     = (uint32_t)pTransfer->lstRootEntries.size();
+            *pcRoots   = (uint32_t)pTransfer->lstRootEntries.size();
         }
         else
         {

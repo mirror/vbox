@@ -800,7 +800,8 @@ static LRESULT vboxClipboardWinProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd,
 
                                if (RT_SUCCESS(rc))
                                {
-                                   rc = SharedClipboardURILTransferSetRoots(pTransfer, papszList, cbList);
+                                   rc = SharedClipboardURILTransferSetRoots(pTransfer,
+                                                                            papszList, cbList + 1 /* Include termination */);
                                    if (RT_SUCCESS(rc))
                                    {
                                        PVBOXCLIPBOARDURIWRITETHREADCTX pThreadCtx

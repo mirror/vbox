@@ -35,12 +35,17 @@
 #include <VBox/GuestHost/SharedClipboard.h>
 
 # ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+#  include <vector>
+
 #  include <iprt/cpp/ministring.h> /* For RTCString. */
-#  include <iprt/win/shlobj.h> /* For DROPFILES and friends. */
+#  include <iprt/win/shlobj.h>     /* For DROPFILES and friends. */
+#  include <VBox/com/string.h>     /* For Utf8Str. */
 #  include <oleidl.h>
 
 # include <VBox/GuestHost/SharedClipboard-uri.h>
-# endif
+
+using namespace com;
+# endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
 
 #ifndef WM_CLIPBOARDUPDATE
 # define WM_CLIPBOARDUPDATE 0x031D
@@ -162,16 +167,6 @@ public:
         Initialized
     };
 
-    enum FormatIndex
-    {
-        /** File descriptor, ANSI version. */
-        FormatIndex_FileDescriptorA = 0,
-        /** File descriptor, Unicode version. */
-        FormatIndex_FileDescriptorW,
-        /** File contents. */
-        FormatIndex_FileContents
-    };
-
 public:
 
     VBoxClipboardWinDataObject(PSHAREDCLIPBOARDURITRANSFER pTransfer,
@@ -231,6 +226,20 @@ protected:
                         LONG lindex = -1, DWORD dwAspect = DVASPECT_CONTENT, DVTARGETDEVICE *pTargetDevice = NULL);
 protected:
 
+    /**
+     * Structure for keeping a single file system object entry.
+     */
+    struct FSOBJENTRY
+    {
+        /** Relative path of the object. */
+        Utf8Str                  strPath;
+        /** Related (cached) object information. */
+        SHAREDCLIPBOARDFSOBJINFO objInfo;
+    };
+
+    /** Vector containing file system objects with its (cached) objection information. */
+    typedef std::vector<FSOBJENTRY> FsObjEntryList;
+
     Status                      m_enmStatus;
     LONG                        m_lRefCount;
     ULONG                       m_cFormats;
@@ -239,9 +248,15 @@ protected:
     PSHAREDCLIPBOARDURITRANSFER m_pTransfer;
     IStream                    *m_pStream;
     ULONG                       m_uObjIdx;
-    /** Event being triggered when reading the transfer list been completed.*/
+    /** List of (cached) file system root objects. */
+    FsObjEntryList              m_lstRootEntries;
+    /** Event being triggered when reading the transfer list been completed. */
     RTSEMEVENT                  m_EventListComplete;
+    /** Event being triggered when the transfer has been completed. */
     RTSEMEVENT                  m_EventTransferComplete;
+    UINT                        m_cfFileDescriptorA;
+    UINT                        m_cfFileDescriptorW;
+    UINT                        m_cfFileContents;
 };
 
 class VBoxClipboardWinEnumFormatEtc : public IEnumFORMATETC
@@ -285,8 +300,8 @@ class VBoxClipboardWinStreamImpl : public IStream
 {
 public:
 
-    VBoxClipboardWinStreamImpl(VBoxClipboardWinDataObject *pParent,
-                               PSHAREDCLIPBOARDURITRANSFER pTransfer, SHAREDCLIPBOARDOBJHANDLE hObj);
+    VBoxClipboardWinStreamImpl(VBoxClipboardWinDataObject *pParent, PSHAREDCLIPBOARDURITRANSFER pTransfer,
+                               const Utf8Str &strPath, PSHAREDCLIPBOARDFSOBJINFO pObjInfo);
     virtual ~VBoxClipboardWinStreamImpl(void);
 
 public: /* IUnknown methods. */
@@ -311,9 +326,8 @@ public: /* IStream methods. */
 
 public: /* Own methods. */
 
-    static HRESULT Create(VBoxClipboardWinDataObject *pParent,
-                          PSHAREDCLIPBOARDURITRANSFER pTransfer, uint64_t uObjIdx, IStream **ppStream);
-
+    static HRESULT Create(VBoxClipboardWinDataObject *pParent, PSHAREDCLIPBOARDURITRANSFER pTransfer, const Utf8Str &strPath,
+                          PSHAREDCLIPBOARDFSOBJINFO pObjInfo, IStream **ppStream);
 private:
 
     /** Pointer to the parent data object. */
@@ -322,8 +336,16 @@ private:
     LONG                           m_lRefCount;
     /** Pointer to the associated URI transfer. */
     PSHAREDCLIPBOARDURITRANSFER    m_pURITransfer;
-    /** Handle to the associated URI object. */
+    /** The object handle to use. */
     SHAREDCLIPBOARDOBJHANDLE       m_hObj;
+    /** Object path. */
+    Utf8Str                        m_strPath;
+    /** (Cached) object information. */
+    SHAREDCLIPBOARDFSOBJINFO       m_objInfo;
+    /** Number of bytes already processed. */
+    uint64_t                       m_cbProcessed;
+    /** Whether we already notified the parent of completion or not. */
+    bool                           m_fNotifiedComplete;
 };
 
 /**
