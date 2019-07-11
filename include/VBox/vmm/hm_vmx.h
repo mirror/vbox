@@ -2645,6 +2645,13 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_ENTRY_INT_INFO_, UINT32_C(0), UINT32_MAX,
 #define VMX_EXIT_INT_INFO_VALID                                 RT_BIT(31)
 #define VMX_EXIT_INT_INFO_IS_VALID(a)                           (((a) >> 31) & 1)
 
+/** If the VM-exit interruption information field indicates an page-fault. */
+#define VMX_EXIT_INT_INFO_IS_XCPT_PF(a)                         (((a) & (  VMX_BF_EXIT_INT_INFO_VALID_MASK \
+                                                                         | VMX_BF_EXIT_INT_INFO_TYPE_MASK \
+                                                                         | VMX_BF_EXIT_INT_INFO_VECTOR_MASK)) \
+                                                                     == (  RT_BF_MAKE(VMX_BF_EXIT_INT_INFO_VALID,  1) \
+                                                                         | RT_BF_MAKE(VMX_BF_EXIT_INT_INFO_TYPE,   VMX_EXIT_INT_INFO_TYPE_HW_XCPT) \
+                                                                         | RT_BF_MAKE(VMX_BF_EXIT_INT_INFO_VECTOR, X86_XCPT_PF)))
 /** If the VM-exit interruption information field indicates an NMI. */
 #define VMX_EXIT_INT_INFO_IS_XCPT_NMI(a)                        (((a) & (  VMX_BF_EXIT_INT_INFO_VALID_MASK \
                                                                          | VMX_BF_EXIT_INT_INFO_TYPE_MASK \
