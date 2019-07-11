@@ -381,7 +381,7 @@ typedef struct _VBOXCLIPBOARDROOTS
     uint32_t cRoots;
     /** Size (in bytes) of string list. */
     uint32_t cbRoots;
-    /** String list (separated with \r\n) containing the root items. */
+    /** String list (separated with CRLF) containing the root items. */
     char    *pszRoots;
 } VBOXCLIPBOARDROOTS, *PVBOXCLIPBOARDROOTS;
 
