@@ -3573,7 +3573,7 @@ ifdef VBOX_SIGNING_MODE
   # @param 1  The file to sign.
   ifndef VBOX_SIGN_EV_FILE_FN
    if $(intersects win_ev all 1,$(VBOX_WITH_CORP_CODE_SIGNING))
-    VBOX_SIGN_EV_FILE_FN  = $(call VBOX_CCS_SIGN_CMD,microsoftev,$1,$(dir $1))d$ \
+    VBOX_SIGN_EV_FILE_FN  = $(call VBOX_CCS_SIGN_CMD,microsoftev,$1,$(dir $1))
    else ifdef VBOX_CERTIFICATE_EV_SUBJECT_NAME
     VBOX_SIGN_EV_FILE_FN  = $(VBOX_SIGNTOOL) \
     	sign /as /fd sha256 \
