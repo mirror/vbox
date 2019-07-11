@@ -250,79 +250,97 @@ void UIWizardExportApp::prepare()
 
 bool UIWizardExportApp::exportVMs(CAppliance &comAppliance)
 {
-    /* Get the map of the password IDs: */
-    EncryptedMediumMap encryptedMedia;
-    foreach (const QString &strPasswordId, comAppliance.GetPasswordIds())
-        foreach (const QUuid &uMediumId, comAppliance.GetMediumIdsForPasswordId(strPasswordId))
-            encryptedMedia.insert(strPasswordId, uMediumId);
+    /* Prepare result: */
+    bool fResult = false;
 
-    /* Ask for the disk encryption passwords if necessary: */
-    if (!encryptedMedia.isEmpty())
+    /* New Cloud VM wizard can be created
+     * in certain cases and should be cleaned up
+     * afterwards, thus this is a global variable: */
+    UISafePointerWizardNewCloudVM pNewCloudVMWizard;
+
+    /* Main API request sequence, can be interrupted after any step: */
+    do
     {
-        /* Modal dialog can be destroyed in own event-loop as a part of application
-         * termination procedure. We have to make sure that the dialog pointer is
-         * always up to date. So we are wrapping created dialog with QPointer. */
-        QPointer<UIAddDiskEncryptionPasswordDialog> pDlg =
-             new UIAddDiskEncryptionPasswordDialog(this,
-                                                   window()->windowTitle(),
-                                                   encryptedMedia);
+        /* Get the map of the password IDs: */
+        EncryptedMediumMap encryptedMedia;
+        foreach (const QString &strPasswordId, comAppliance.GetPasswordIds())
+            foreach (const QUuid &uMediumId, comAppliance.GetMediumIdsForPasswordId(strPasswordId))
+                encryptedMedia.insert(strPasswordId, uMediumId);
 
-        /* Execute the dialog: */
-        if (pDlg->exec() == QDialog::Accepted)
+        /* Ask for the disk encryption passwords if necessary: */
+        if (!encryptedMedia.isEmpty())
         {
+            /* Modal dialog can be destroyed in own event-loop as a part of application
+             * termination procedure. We have to make sure that the dialog pointer is
+             * always up to date. So we are wrapping created dialog with QPointer. */
+            QPointer<UIAddDiskEncryptionPasswordDialog> pDlg =
+                new UIAddDiskEncryptionPasswordDialog(this,
+                                                      window()->windowTitle(),
+                                                      encryptedMedia);
+
+            /* Execute the dialog: */
+            if (pDlg->exec() != QDialog::Accepted)
+            {
+                /* Delete the dialog: */
+                delete pDlg;
+                break;
+            }
+
             /* Acquire the passwords provided: */
             const EncryptionPasswordMap encryptionPasswords = pDlg->encryptionPasswords();
 
             /* Delete the dialog: */
             delete pDlg;
 
-            /* Make sure the passwords were really provided: */
-            AssertReturn(!encryptionPasswords.isEmpty(), false);
-
             /* Provide appliance with passwords if possible: */
             comAppliance.AddPasswords(encryptionPasswords.keys().toVector(),
                                       encryptionPasswords.values().toVector());
             if (!comAppliance.isOk())
-                return msgCenter().cannotAddDiskEncryptionPassword(comAppliance);
+            {
+                msgCenter().cannotAddDiskEncryptionPassword(comAppliance);
+                break;
+            }
         }
-        else
-        {
-            /* Delete the dialog: */
-            delete pDlg;
-            return false;
-        }
-    }
 
-    /* Write the appliance: */
-    QVector<KExportOptions> options;
-    switch (field("macAddressPolicy").value<MACAddressPolicy>())
-    {
-        case MACAddressPolicy_StripAllNonNATMACs:
-            options.append(KExportOptions_StripAllNonNATMACs);
+        /* Prepare export options: */
+        QVector<KExportOptions> options;
+        switch (field("macAddressPolicy").value<MACAddressPolicy>())
+        {
+            case MACAddressPolicy_StripAllNonNATMACs: options.append(KExportOptions_StripAllNonNATMACs); break;
+            case MACAddressPolicy_StripAllMACs: options.append(KExportOptions_StripAllMACs); break;
+            default: break;
+        }
+        if (field("manifestSelected").toBool())
+            options.append(KExportOptions_CreateManifest);
+        if (field("includeISOsSelected").toBool())
+            options.append(KExportOptions_ExportDVDImages);
+
+        /* Prepare Export VM progress: */
+        CProgress comProgress = comAppliance.Write(field("format").toString(), options, uri());
+        if (!comAppliance.isOk())
+        {
+            msgCenter().cannotExportAppliance(comAppliance, this);
             break;
-        case MACAddressPolicy_StripAllMACs:
-            options.append(KExportOptions_StripAllMACs);
-            break;
-        default:
-            break;
-    }
-    if (field("manifestSelected").toBool())
-        options.append(KExportOptions_CreateManifest);
-    if (field("includeISOsSelected").toBool())
-        options.append(KExportOptions_ExportDVDImages);
-    CProgress comProgress = comAppliance.Write(field("format").toString(), options, uri());
-    if (comAppliance.isOk() && comProgress.isNotNull())
-    {
+        }
+
+        /* Show Export VM progress: */
         msgCenter().showModalProgressDialog(comProgress, QApplication::translate("UIWizardExportApp", "Exporting Appliance ..."),
                                             ":/progress_export_90px.png", this);
         if (comProgress.GetCanceled())
-            return false;
+            break;
         if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-            return msgCenter().cannotExportAppliance(comProgress, comAppliance.GetPath(), this);
+        {
+            msgCenter().cannotExportAppliance(comProgress, comAppliance.GetPath(), this);
+            break;
+        }
 
         /* Is this VM being exported to cloud? */
         if (field("isFormatCloudOne").toBool())
         {
+            /* We can have wizard and it's result
+             * should be distinguishable: */
+            int iWizardResult = -1;
+
             switch (field("cloudExportMode").value<CloudExportMode>())
             {
                 case CloudExportMode_ExportThenAsk:
@@ -332,21 +350,30 @@ bool UIWizardExportApp::exportVMs(CAppliance &comAppliance)
                     CVirtualSystemDescription comDescription = field("vsd").value<CVirtualSystemDescription>();
                     /* Create and run short wizard mode as modal dialog: */
                     QWidget *pWizardParent = windowManager().realParentWindow(this);
-                    UISafePointerWizardNewCloudVM pWizard = new UIWizardNewCloudVM(pWizardParent, comClient, comDescription);
-                    windowManager().registerNewParent(pWizard, pWizardParent);
-                    pWizard->prepare();
-                    pWizard->exec();
-                    delete pWizard;
+                    pNewCloudVMWizard = new UIWizardNewCloudVM(pWizardParent, comClient, comDescription);
+                    windowManager().registerNewParent(pNewCloudVMWizard, pWizardParent);
+                    pNewCloudVMWizard->prepare();
+                    iWizardResult = pNewCloudVMWizard->exec();
                     break;
                 }
                 default:
                     break;
             }
-        }
-    }
-    else
-        return msgCenter().cannotExportAppliance(comAppliance, this);
 
-    /* True finally: */
-    return true;
+            /* We should stop everything only if
+             * there was wizard and it was rejected: */
+            if (iWizardResult == QDialog::Rejected)
+                break;
+        }
+
+        /* Success finally: */
+        fResult = true;
+    }
+    while (0);
+
+    /* Cleanup New Cloud VM wizard if any: */
+    delete pNewCloudVMWizard;
+
+    /* Return result: */
+    return fResult;
 }
