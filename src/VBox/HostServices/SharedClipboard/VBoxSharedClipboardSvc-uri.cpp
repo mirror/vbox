@@ -495,6 +495,7 @@ DECLCALLBACK(void) VBoxSvcClipboardURITransferErrorCallback(PSHAREDCLIPBOARDURIT
     LogRel(("Shared Clipboard: Transfer failed with %Rrc\n", rc));
 }
 
+
 /*********************************************************************************************************************************
 *   HGCM getters / setters                                                                                                       *
 *********************************************************************************************************************************/
