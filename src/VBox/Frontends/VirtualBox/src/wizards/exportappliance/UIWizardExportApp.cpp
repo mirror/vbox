@@ -315,6 +315,37 @@ bool UIWizardExportApp::exportVMs(CAppliance &comAppliance)
         if (field("includeISOsSelected").toBool())
             options.append(KExportOptions_ExportDVDImages);
 
+        /* Is this VM being exported to cloud? */
+        if (field("isFormatCloudOne").toBool())
+        {
+            /* We can have wizard and it's result
+             * should be distinguishable: */
+            int iWizardResult = -1;
+
+            switch (field("cloudExportMode").value<CloudExportMode>())
+            {
+                case CloudExportMode_AskThenExport:
+                {
+                    /* Get the required parameters to init short wizard mode: */
+                    CCloudClient comClient = field("client").value<CCloudClient>();
+                    CVirtualSystemDescription comDescription = field("vsd").value<CVirtualSystemDescription>();
+                    /* Create and run wizard as modal dialog, but prevent final step: */
+                    pNewCloudVMWizard = new UIWizardNewCloudVM(this, comClient, comDescription);
+                    pNewCloudVMWizard->setFinalStepPrevented(true);
+                    pNewCloudVMWizard->prepare();
+                    iWizardResult = pNewCloudVMWizard->exec();
+                    break;
+                }
+                default:
+                    break;
+            }
+
+            /* We should stop everything only if
+             * there was wizard and it was rejected: */
+            if (iWizardResult == QDialog::Rejected)
+                break;
+        }
+
         /* Prepare Export VM progress: */
         CProgress comProgress = comAppliance.Write(field("format").toString(), options, uri());
         if (!comAppliance.isOk())
@@ -343,6 +374,16 @@ bool UIWizardExportApp::exportVMs(CAppliance &comAppliance)
 
             switch (field("cloudExportMode").value<CloudExportMode>())
             {
+                case CloudExportMode_AskThenExport:
+                {
+                    /* Run the wizard as modal dialog again,
+                     * moreover in auto-finish mode and
+                     * do not prevent final step. */
+                    pNewCloudVMWizard->setFinalStepPrevented(false);
+                    pNewCloudVMWizard->scheduleAutoFinish();
+                    iWizardResult = pNewCloudVMWizard->exec();
+                    break;
+                }
                 case CloudExportMode_ExportThenAsk:
                 {
                     /* Get the required parameters to init short wizard mode: */

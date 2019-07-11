@@ -925,8 +925,6 @@ UIWizardExportAppPageBasic2::UIWizardExportAppPageBasic2(bool fExportToOCIByDefa
                     m_pRadioAskThenExport = new QRadioButton;
                     if (m_pRadioAskThenExport)
                     {
-                        m_pRadioAskThenExport->setEnabled(false);
-
                         /* Add into layout: */
                         m_pSettingsLayout2->addWidget(m_pRadioAskThenExport, 3, 1);
                     }
