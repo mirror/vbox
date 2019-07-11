@@ -1112,7 +1112,7 @@ $$(RePackScripts_0_OUTDIR)/sign-ev.cmd: | $$(dir $$@)
 		'if ".%KBUILD_BIN_PATH%" == "." (echo KBUILD_BIN_PATH is not set & exit /b 1)' \
 		'if ".%1" == "." (echo No .cab file specified & exit /b 1)' \
 		$(subst $(KBUILD_BIN_PATH),%KBUILD_BIN_PATH%,$(subst $(KBUILD_DEVTOOLS),%KBUILD_DEVTOOLS%, \
-		'( $(call VBOX_SIGN_EV_FILE_FN,%1,%~dp1\\) ) || exit /b1' \
+		'( $(call VBOX_SIGN_EV_FILE_FN,%1,%~dp1\) ) || exit /b1' \
 		) )
 
 $$(RePackScripts_0_OUTDIR)/VMMR0.inf: $(PATH_SUB_CURRENT)/Scripts/VMMR0.inf $(MAKEFILE_CURRENT) | $$(dir $$@)
