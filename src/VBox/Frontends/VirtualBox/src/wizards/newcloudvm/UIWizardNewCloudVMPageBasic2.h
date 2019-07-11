@@ -49,6 +49,9 @@ protected:
     CCloudClient client() const;
     /** Returns Virtual System Description object. */
     CVirtualSystemDescription vsd() const;
+
+    /** Defines Virtual System Description @a comForm object. */
+    void setVSDForm(const CVirtualSystemDescriptionForm &comForm);
     /** Returns Virtual System Description Form object. */
     CVirtualSystemDescriptionForm vsdForm() const;
 

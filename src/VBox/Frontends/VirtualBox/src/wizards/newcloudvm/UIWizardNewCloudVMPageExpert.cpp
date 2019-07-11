@@ -252,8 +252,7 @@ bool UIWizardNewCloudVMPageExpert::isComplete() const
 
     /* Check cloud settings: */
     fResult =    UIWizardNewCloudVMPage1::client().isNotNull()
-              && UIWizardNewCloudVMPage1::vsd().isNotNull()
-              && UIWizardNewCloudVMPage1::vsdForm().isNotNull();
+              && UIWizardNewCloudVMPage1::vsd().isNotNull();
 
     /* Return result: */
     return fResult;
@@ -269,16 +268,14 @@ bool UIWizardNewCloudVMPageExpert::validatePage()
 
     /* Check whether we have proper VSD form: */
     CVirtualSystemDescriptionForm comForm = UIWizardNewCloudVMPage1::vsdForm();
-    fResult = comForm.isNotNull();
-    Assert(fResult);
-
     /* Give changed VSD back: */
-    if (fResult)
+    if (comForm.isNotNull())
     {
         comForm.GetVirtualSystemDescription();
         fResult = comForm.isOk();
         if (!fResult)
             msgCenter().cannotAcquireVirtualSystemDescriptionFormProperty(comForm);
+        UIWizardNewCloudVMPage1::setVSDForm(CVirtualSystemDescriptionForm());
     }
 
     /* Try to create cloud VM: */
