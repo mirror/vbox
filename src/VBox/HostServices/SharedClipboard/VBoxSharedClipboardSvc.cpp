@@ -78,7 +78,17 @@
  * service to act as a proxy and cache, as we don't allow direct VM-to-VM
  * communication. Copying from / to the host also is taken into account.
  *
- * Support for VRDE (VRDP) is not implemented yet (see #9498).
+ * At the moment a transfer is a all-or-nothing operation, e.g. it either
+ * completes orfails completely. There might be callbacks in the future
+ * to e.g. skip failing entries.
+ *
+ * Known limitations:
+ *
+ * - Support for VRDE (VRDP) is not implemented yet (see #9498).
+ * - Unicode support on Windows hosts / guests is not enabled (yet).
+ * - Symbolic links are not yet handled.
+ * - No support for ACLs yet.
+ * - No (maybe never) support for NT4.
  *
  * @section sec_uri_areas               Clipboard areas.
  *
@@ -116,7 +126,11 @@
  *
  * An URI transfer can maintain its own clipboard area; for the host service such
  * a clipboard area is coupled to a clipboard area registered or attached with
- * VBoxSVC.
+ * VBoxSVC. This is needed because multiple transfers from multiple VMs (n:n) can
+ * rely on the same clipboard area, so there needs a master keeping tracking of
+ * a clipboard area. To minimize IPC traffic only the minimum de/attaching is done
+ * at the moment. A clipboard area gets cleaned up (i.e. physically deleted) if
+ * no references are held to it  anymore, or if VBoxSVC goes down.
  *
  * @section sec_uri_providers           URI providers.
  *
@@ -142,8 +156,16 @@
  *
  * One transfer always is handled by an own (HGCM) client, so for multiple transfers
  * at the same time, multiple clients (client IDs) are being used. How this transfer
- * is implemented on the guest (and / or host) side depends upon the actual implementation,
- * e.g. via an own thread per transfer.
+ * is implemented on the guest (and / or host) side depends upon the actual
+ * implementation, e.g. via an own thread per transfer (see ClipboardStreamImpl-win.cpp
+ * for example).
+ *
+ * As there can be multiple file system objects (fs objects) selected for transfer,
+ * a transfer can be queried for its root entries, which then contains the top-level
+ * elements. Based on these elements, (a) (recursive) listing(s) can be performed
+ * to (partially) walk down into directories and query fs object information. The
+ * provider provides appropriate interface for this, even if not all implementations
+ * might need this mechanism.
  */
 
 
