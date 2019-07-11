@@ -412,7 +412,7 @@ typedef struct _VBoxClipboardRootsMsg
     HGCMFunctionParameter cRoots;
     /** uin32_t, out: Size (in bytes) of string list. */
     HGCMFunctionParameter cbRoots;
-    /** pointer, out: string list (separated with \r\n) containing the root items. */
+    /** pointer, out: string list (separated with CRLF) containing the root items. */
     HGCMFunctionParameter pvRoots;
 } VBoxClipboardRootsMsg;
 
@@ -649,4 +649,3 @@ int VBoxSvcClipboardURISetFileData(uint32_t cParms, VBOXHGCMSVCPARM paParms[], P
 #endif
 
 #endif /* !VBOX_INCLUDED_HostServices_VBoxClipboardSvc_h */
-
