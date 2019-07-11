@@ -2757,6 +2757,14 @@ typedef uint32_t VMXINSTRID;
                                                                      == (  RT_BF_MAKE(VMX_BF_IDT_VECTORING_INFO_VALID,  1) \
                                                                          | RT_BF_MAKE(VMX_BF_IDT_VECTORING_INFO_TYPE,   VMX_IDT_VECTORING_INFO_TYPE_HW_XCPT) \
                                                                          | RT_BF_MAKE(VMX_BF_IDT_VECTORING_INFO_VECTOR, X86_XCPT_PF)))
+/** If the IDT-vectoring information field indicates an NMI. */
+#define VMX_IDT_VECTORING_INFO_IS_XCPT_NMI(a)                   (((a) & (  VMX_BF_IDT_VECTORING_INFO_VALID_MASK \
+                                                                         | VMX_BF_IDT_VECTORING_INFO_TYPE_MASK \
+                                                                         | VMX_BF_IDT_VECTORING_INFO_VECTOR_MASK)) \
+                                                                     == (  RT_BF_MAKE(VMX_BF_IDT_VECTORING_INFO_VALID,  1) \
+                                                                         | RT_BF_MAKE(VMX_BF_IDT_VECTORING_INFO_TYPE,   VMX_IDT_VECTORING_INFO_TYPE_NMI) \
+                                                                         | RT_BF_MAKE(VMX_BF_IDT_VECTORING_INFO_VECTOR, X86_XCPT_NMI)))
+
 
 /** Bit fields for IDT-vectoring information. */
 /** The IDT-vectoring info vector. */
