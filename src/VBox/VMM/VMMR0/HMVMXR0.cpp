@@ -11175,12 +11175,11 @@ static VBOXSTRICTRC hmR0VmxPreRunGuest(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient
     {
         if (!RTThreadPreemptIsPending(NIL_RTTHREAD))
         {
-            pVCpu->hm.s.Event.fPending = false;
-
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
             /*
              * If we are executing a nested-guest make sure that we should intercept subsequent
-             * events. The one we are injecting might be part of VM-entry.
+             * events. The one we are injecting might be part of VM-entry. This is mainly to keep
+             * the VM-exit instruction emulation happy.
              */
             if (pVmxTransient->fIsNestedGuest)
                 pVCpu->cpum.GstCtx.hwvirt.vmx.fInterceptEvents = true;
@@ -11190,8 +11189,9 @@ static VBOXSTRICTRC hmR0VmxPreRunGuest(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient
              * We've injected any pending events. This is really the point of no return (to ring-3).
              *
              * Note! The caller expects to continue with interrupts & longjmps disabled on successful
-             * returns from this function, so don't enable them here.
+             *       returns from this function, so do -not- enable them here.
              */
+            pVCpu->hm.s.Event.fPending = false;
             return VINF_SUCCESS;
         }
 
@@ -13586,9 +13586,130 @@ static int hmR0VmxAdvanceGuestRip(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 }
 
 
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
 /**
- * Handle a condition that occurred while delivering an event through the guest
- * IDT.
+ * Handle a condition that occurred while delivering an event through the
+ * nested-guest IDT.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   pVmxTransient   The VMX-transient structure.
+ *
+ * @remarks No-long-jump zone!!!
+ */
+static int hmR0VmxCheckExitDueToEventDeliveryNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
+{
+    Assert(pVmxTransient->fIsNestedGuest);
+    Assert(!pVCpu->hm.s.Event.fPending);
+
+    /*
+     * Construct a pending event from IDT vectoring information.
+     *
+     * This event could have originated from an event that we or the guest hypervisor injected
+     * during nested-guest VM-entry or could arise from hardware-assisted VMX execution of the
+     * nested-guest (for e.g. a #GP fault causing a #PF VM-exit).
+     *
+     * If the VM-exit is caused indirectly due to delivery of:
+     *   - #PF: the CPU would have updated CR2.
+     *   - NMI: NMI/virtual-NMI blocking is in effect.
+     *
+     * The main differences between this function and its non-nested version are as follows:
+     *
+     *   - Here we record software interrupts, software exceptions and privileged software
+     *     exceptions as pending for re-injection when necessary along with gathering the
+     *     instruction length. The non-nested version would fix-up the VM-exit that occurred
+     *     during delivery of such an event and restart execution of the guest without
+     *     re-injecting the event and does not record the instruction length.
+     *
+     *   - Here we record #PF as pending for re-injection while the non-nested version would
+     *     handle it via the page-fault VM-exit handler which isn't required when nested paging
+     *     is a requirement for hardware-assisted VMX execution of nested-guests.
+     *
+     * See Intel spec. 27.1 "Architectural State Before A VM Exit".
+     */
+    int rc = hmR0VmxReadIdtVectoringInfoVmcs(pVmxTransient);
+    AssertRCReturn(rc, rc);
+
+    uint32_t const uIdtVectorInfo = pVmxTransient->uIdtVectoringInfo;
+    if (VMX_IDT_VECTORING_INFO_IS_VALID(uIdtVectorInfo))
+    {
+        uint32_t const uIdtVectorType = VMX_IDT_VECTORING_INFO_TYPE(uIdtVectorInfo);
+        uint8_t const  uIdtVector     = VMX_IDT_VECTORING_INFO_VECTOR(uIdtVectorInfo);
+
+        /*
+         * Get the nasty stuff out of the way.
+         */
+        {
+            int rc = hmR0VmxReadExitIntInfoVmcs(pVmxTransient);
+            AssertRCReturn(rc, rc);
+
+            uint32_t const uExitIntInfo = pVmxTransient->uExitIntInfo;
+            if (VMX_EXIT_INT_INFO_IS_VALID(uExitIntInfo))
+            {
+                uint8_t const  uExitVector      = VMX_EXIT_INT_INFO_VECTOR(uExitIntInfo);
+                uint32_t const uExitVectorType  = VMX_EXIT_INT_INFO_TYPE(uExitIntInfo);
+                Assert(uExitVectorType == VMX_EXIT_INT_INFO_TYPE_HW_XCPT);
+
+                uint32_t const fIdtVectorFlags  = hmR0VmxGetIemXcptFlags(uIdtVector, uIdtVectorType);
+                uint32_t const fExitVectorFlags = hmR0VmxGetIemXcptFlags(uExitVector, uExitVectorType);
+
+                IEMXCPTRAISEINFO   fRaiseInfo;
+                IEMXCPTRAISE const enmRaise = IEMEvaluateRecursiveXcpt(pVCpu, fIdtVectorFlags, uIdtVector, fExitVectorFlags,
+                                                                       uExitVector, &fRaiseInfo);
+                if (enmRaise == IEMXCPTRAISE_CPU_HANG)
+                {
+                    Log4Func(("IDT: Bad guest! Entering CPU hang. fRaiseInfo=%#x\n", fRaiseInfo));
+                    return VERR_EM_GUEST_CPU_HANG;
+                }
+            }
+        }
+
+        /*
+         * Things look legit, continue...
+         */
+        uint32_t   u32ErrCode;
+        bool const fErrCodeValid = VMX_IDT_VECTORING_INFO_IS_ERROR_CODE_VALID(uIdtVectorInfo);
+        if (fErrCodeValid)
+        {
+            rc = hmR0VmxReadIdtVectoringErrorCodeVmcs(pVmxTransient);
+            AssertRCReturn(rc, rc);
+            u32ErrCode = pVmxTransient->uIdtVectoringErrorCode;
+        }
+        else
+            u32ErrCode = 0;
+
+        uint32_t cbInstr;
+        if (   uIdtVectorType == VMX_IDT_VECTORING_INFO_TYPE_SW_INT
+            || uIdtVectorType == VMX_IDT_VECTORING_INFO_TYPE_PRIV_SW_XCPT
+            || uIdtVectorType == VMX_IDT_VECTORING_INFO_TYPE_SW_XCPT)
+        {
+            rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
+            AssertRCReturn(rc, rc);
+            cbInstr = pVmxTransient->cbInstr;
+        }
+        else
+            cbInstr = 0;
+
+        RTGCUINTPTR GCPtrFaultAddress;
+        if (VMX_IDT_VECTORING_INFO_IS_XCPT_PF(uIdtVectorInfo))
+            GCPtrFaultAddress = pVCpu->cpum.GstCtx.cr2;
+        else
+            GCPtrFaultAddress = 0;
+
+        if (VMX_IDT_VECTORING_INFO_IS_XCPT_NMI(uIdtVectorInfo))
+            CPUMSetGuestNmiBlocking(pVCpu, true);
+
+        hmR0VmxSetPendingEvent(pVCpu, uIdtVectorInfo, cbInstr, u32ErrCode, GCPtrFaultAddress);
+    }
+
+    return VINF_SUCCESS;
+}
+#endif
+
+
+/**
+ * Handle a condition that occurred while delivering an event through the guest or
+ * nested-guest IDT.
  *
  * @returns Strict VBox status code (i.e. informational status codes too).
  * @retval  VINF_SUCCESS if we should continue handling the VM-exit.
@@ -13604,6 +13725,14 @@ static int hmR0VmxAdvanceGuestRip(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
  */
 static VBOXSTRICTRC hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+    if (pVmxTransient->fIsNestedGuest)
+        return hmR0VmxCheckExitDueToEventDeliveryNested(pVCpu, pVmxTransient);
+#endif
+
+    Assert(!pVmxTransient->fIsNestedGuest);
+    VBOXSTRICTRC rcStrict = VINF_SUCCESS;
+
     /* Read the IDT vectoring info. and VM-exit interruption info. */
     {
         int rc = hmR0VmxReadIdtVectoringInfoVmcs(pVmxTransient);
@@ -13611,12 +13740,13 @@ static VBOXSTRICTRC hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PVMXTRANSIE
         AssertRCReturn(rc, rc);
     }
 
-    VBOXSTRICTRC   rcStrict    = VINF_SUCCESS;
-    uint32_t const uExitVector = VMX_EXIT_INT_INFO_VECTOR(pVmxTransient->uExitIntInfo);
-    if (VMX_IDT_VECTORING_INFO_IS_VALID(pVmxTransient->uIdtVectoringInfo))
+    uint32_t const uExitIntInfo   = pVmxTransient->uExitIntInfo;
+    uint8_t const  uExitVector    = VMX_EXIT_INT_INFO_VECTOR(pVmxTransient->uExitIntInfo);
+    uint32_t const uIdtVectorInfo = pVmxTransient->uIdtVectoringInfo;
+    if (VMX_IDT_VECTORING_INFO_IS_VALID(uIdtVectorInfo))
     {
-        uint32_t const uIdtVectorType = VMX_IDT_VECTORING_INFO_TYPE(pVmxTransient->uIdtVectoringInfo);
-        uint32_t const uIdtVector     = VMX_IDT_VECTORING_INFO_VECTOR(pVmxTransient->uIdtVectoringInfo);
+        uint32_t const uIdtVector     = VMX_IDT_VECTORING_INFO_VECTOR(uIdtVectorInfo);
+        uint32_t const uIdtVectorType = VMX_IDT_VECTORING_INFO_TYPE(uIdtVectorInfo);
 
         /*
          * If the event was a software interrupt (generated with INT n) or a software exception
@@ -13636,15 +13766,13 @@ static VBOXSTRICTRC hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PVMXTRANSIE
             enmRaise   = IEMXCPTRAISE_REEXEC_INSTR;
             fRaiseInfo = IEMXCPTRAISEINFO_NONE;
         }
-        else if (VMX_EXIT_INT_INFO_IS_VALID(pVmxTransient->uExitIntInfo))
+        else if (VMX_EXIT_INT_INFO_IS_VALID(uExitIntInfo))
         {
-            uint32_t const uExitVectorType  = VMX_EXIT_INT_INFO_TYPE(pVmxTransient->uExitIntInfo);
+            uint32_t const uExitVectorType  = VMX_EXIT_INT_INFO_TYPE(uExitIntInfo);
+            Assert(uExitVectorType == VMX_EXIT_INT_INFO_TYPE_HW_XCPT);
+
             uint32_t const fIdtVectorFlags  = hmR0VmxGetIemXcptFlags(uIdtVector, uIdtVectorType);
             uint32_t const fExitVectorFlags = hmR0VmxGetIemXcptFlags(uExitVector, uExitVectorType);
-
-            /** @todo Make AssertMsgReturn as just AssertMsg later. */
-            AssertMsgReturn(uExitVectorType == VMX_EXIT_INT_INFO_TYPE_HW_XCPT,
-                            ("Unexpected VM-exit interruption vector type %#x!\n", uExitVectorType), VERR_VMX_IPE_5);
 
             enmRaise = IEMEvaluateRecursiveXcpt(pVCpu, fIdtVectorFlags, uIdtVector, fExitVectorFlags, uExitVector, &fRaiseInfo);
 
@@ -13690,8 +13818,8 @@ static VBOXSTRICTRC hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PVMXTRANSIE
         {
             case IEMXCPTRAISE_CURRENT_XCPT:
             {
-                Log4Func(("IDT: Pending secondary Xcpt: uIdtVectoringInfo=%#RX64 uExitIntInfo=%#RX64\n",
-                          pVmxTransient->uIdtVectoringInfo, pVmxTransient->uExitIntInfo));
+                Log4Func(("IDT: Pending secondary Xcpt: uIdtVectoringInfo=%#RX64 uExitIntInfo=%#RX64\n", uIdtVectorInfo,
+                          uExitIntInfo));
                 Assert(rcStrict == VINF_SUCCESS);
                 break;
             }
@@ -13699,7 +13827,7 @@ static VBOXSTRICTRC hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PVMXTRANSIE
             case IEMXCPTRAISE_PREV_EVENT:
             {
                 uint32_t u32ErrCode;
-                if (VMX_IDT_VECTORING_INFO_IS_ERROR_CODE_VALID(pVmxTransient->uIdtVectoringInfo))
+                if (VMX_IDT_VECTORING_INFO_IS_ERROR_CODE_VALID(uIdtVectorInfo))
                 {
                     int rc = hmR0VmxReadIdtVectoringErrorCodeVmcs(pVmxTransient);
                     AssertRCReturn(rc, rc);
@@ -13710,8 +13838,8 @@ static VBOXSTRICTRC hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PVMXTRANSIE
 
                 /* If uExitVector is #PF, CR2 value will be updated from the VMCS if it's a guest #PF, see hmR0VmxExitXcptPF(). */
                 STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectReflect);
-                hmR0VmxSetPendingEvent(pVCpu, VMX_ENTRY_INT_INFO_FROM_EXIT_IDT_INFO(pVmxTransient->uIdtVectoringInfo),
-                                       0 /* cbInstr */, u32ErrCode, pVCpu->cpum.GstCtx.cr2);
+                hmR0VmxSetPendingEvent(pVCpu, VMX_ENTRY_INT_INFO_FROM_EXIT_IDT_INFO(uIdtVectorInfo), 0 /* cbInstr */,
+                                       u32ErrCode, pVCpu->cpum.GstCtx.cr2);
 
                 Log4Func(("IDT: Pending vectoring event %#RX64 Err=%#RX32\n", pVCpu->hm.s.Event.u64IntInfo,
                           pVCpu->hm.s.Event.u32ErrCode));
@@ -13769,12 +13897,12 @@ static VBOXSTRICTRC hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PVMXTRANSIE
             }
         }
     }
-    else if (   VMX_EXIT_INT_INFO_IS_VALID(pVmxTransient->uExitIntInfo)
-             && VMX_EXIT_INT_INFO_IS_NMI_UNBLOCK_IRET(pVmxTransient->uExitIntInfo)
+    else if (   VMX_EXIT_INT_INFO_IS_VALID(uExitIntInfo)
+             && VMX_EXIT_INT_INFO_IS_NMI_UNBLOCK_IRET(uExitIntInfo)
              && uExitVector != X86_XCPT_DF
              && hmR0VmxIsPinCtlsSet(pVCpu, pVmxTransient, VMX_PIN_CTLS_VIRT_NMI))
     {
-        Assert(!VMX_IDT_VECTORING_INFO_IS_VALID(pVmxTransient->uIdtVectoringInfo));
+        Assert(!VMX_IDT_VECTORING_INFO_IS_VALID(uIdtVectorInfo));
 
         /*
          * Execution of IRET caused this fault when NMI blocking was in effect (i.e we're in the guest NMI handler).
@@ -16296,9 +16424,16 @@ HMVMX_EXIT_DECL hmR0VmxExitEptMisconfig(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransien
          * instruction emulation to inject the original event. Otherwise, injecting the original event
          * using hardware-assisted VMX would would trigger the same EPT misconfig VM-exit again.
          */
-        if (RT_UNLIKELY(pVCpu->hm.s.Event.fPending))
+        if (!pVCpu->hm.s.Event.fPending)
+        { /* likely */ }
+        else
         {
             STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectInterpret);
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+            /** @todo NSTVMX: Think about how this should be handled. */
+            if (pVmxTransient->fIsNestedGuest)
+                return VERR_VMX_IPE_3;
+#endif
             return VINF_EM_RAW_INJECT_TRPM_EVENT;
         }
     }
@@ -16412,7 +16547,6 @@ HMVMX_EXIT_DECL hmR0VmxExitEptViolation(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransien
         uErrorCode |= X86_TRAP_PF_P;
 
     TRPMAssertXcptPF(pVCpu, GCPhys, uErrorCode);
-
 
     /* Handle the pagefault trap for the nested shadow table. */
     PVM      pVM  = pVCpu->CTX_SUFF(pVM);
@@ -16814,25 +16948,21 @@ HMVMX_EXIT_DECL hmR0VmxExitXcptOrNmiNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTrans
 {
     HMVMX_VALIDATE_NESTED_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
 
-    int rc = hmR0VmxReadExitIntInfoVmcs(pVmxTransient);
+    int rc = hmR0VmxCheckExitDueToEventDeliveryNested(pVCpu, pVmxTransient);
+    AssertRCReturn(rc, rc);
+
+    rc = hmR0VmxReadExitIntInfoVmcs(pVmxTransient);
     AssertRCReturn(rc, rc);
 
     uint64_t const uExitIntInfo = pVmxTransient->uExitIntInfo;
-    uint32_t const uExtIntType  = VMX_EXIT_INT_INFO_TYPE(uExitIntInfo);
+    uint32_t const uExitIntType = VMX_EXIT_INT_INFO_TYPE(uExitIntInfo);
     Assert(VMX_EXIT_INT_INFO_IS_VALID(uExitIntInfo));
 
-    /*
-     * Make sure not to use stale/previous VM-exit instruction length since we read the
-     * instruction length from the VMCS below only for software exceptions and privileged
-     * software exceptions but we pass it for all exception VM-exits below.
-     */
-    pVmxTransient->cbInstr = 0;
-
-    switch (uExtIntType)
+    switch (uExitIntType)
     {
         /*
          * Physical NMIs:
-         *    We shouldn't direct host physical NMIs to the nested-guest. Dispatch it to the host.
+         *   We shouldn't direct host physical NMIs to the nested-guest. Dispatch it to the host.
          */
         case VMX_EXIT_INT_INFO_TYPE_NMI:
             return hmR0VmxExitHostNmi(pVCpu, pVmxTransient->pVmcsInfo);
@@ -16841,23 +16971,24 @@ HMVMX_EXIT_DECL hmR0VmxExitXcptOrNmiNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTrans
          * Hardware exceptions,
          * Software exceptions,
          * Privileged software exceptions:
-         *    Figure out if the exception must be delivered to the guest or the nested-guest.
+         *   Figure out if the exception must be delivered to the guest or the nested-guest.
          *
-         *    For VM-exits due to software exceptions (those generated by INT3 or INTO) and privileged
-         *    software exceptions (those generated by INT1/ICEBP) we need to supply the VM-exit instruction
-         *    length.
+         *   For VM-exits due to software exceptions (those generated by INT3 or INTO) and privileged
+         *   software exceptions (those generated by INT1/ICEBP) we need to supply the VM-exit instruction
+         *   length. However, if delivery of a software interrupt, software exception or privileged
+         *   software exception causes a VM-exit, that too provides the VM-exit instruction length.
+         *   Hence, we read it for all exception types below to keep it simple.
          */
         case VMX_EXIT_INT_INFO_TYPE_SW_XCPT:
         case VMX_EXIT_INT_INFO_TYPE_PRIV_SW_XCPT:
-        {
-            rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
-            AssertRCReturn(rc, rc);
-            RT_FALL_THRU();
-        }
         case VMX_EXIT_INT_INFO_TYPE_HW_XCPT:
         {
-            rc = hmR0VmxReadExitIntErrorCodeVmcs(pVmxTransient);
+            rc  = hmR0VmxReadExitIntErrorCodeVmcs(pVmxTransient);
+            rc |= hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
             AssertRCReturn(rc, rc);
+
+            /* Nested paging is currently a requirement, otherwise we would need to handle shadow #PFs. */
+            Assert(pVCpu->CTX_SUFF(pVM)->hm.s.fNestedPaging);
 
             uint8_t const uVector    = VMX_EXIT_INT_INFO_VECTOR(uExitIntInfo);
             bool const    fIntercept = CPUMIsGuestVmxXcptInterceptSet(pVCpu, &pVCpu->cpum.GstCtx, uVector,
@@ -16881,16 +17012,28 @@ HMVMX_EXIT_DECL hmR0VmxExitXcptOrNmiNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTrans
                 ExitEventInfo.uExitIntErrCode      = pVmxTransient->uExitIntErrorCode;
                 ExitEventInfo.uIdtVectoringInfo    = pVmxTransient->uIdtVectoringInfo;
                 ExitEventInfo.uIdtVectoringErrCode = pVmxTransient->uIdtVectoringErrorCode;
-
+                if (pVCpu->hm.s.Event.fPending)
+                {
+                    Assert(ExitEventInfo.uIdtVectoringInfo    == pVCpu->hm.s.Event.u64IntInfo);
+                    Assert(ExitEventInfo.uIdtVectoringErrCode == pVCpu->hm.s.Event.u32ErrCode);
+                    pVCpu->hm.s.Event.fPending = false;
+                }
                 return IEMExecVmxVmexitXcpt(pVCpu, &ExitInfo, &ExitEventInfo);
             }
 
             /* Nested paging is currently a requirement, otherwise we would need to handle shadow #PFs. */
             Assert(pVCpu->CTX_SUFF(pVM)->hm.s.fNestedPaging);
 
-            /* If the guest hypervisor is not intercepting the exception, forward it to the guest. */
-            hmR0VmxSetPendingEvent(pVCpu, VMX_ENTRY_INT_INFO_FROM_EXIT_INT_INFO(uExitIntInfo), pVmxTransient->cbInstr,
-                                   pVmxTransient->uExitIntErrorCode, pVmxTransient->uExitQual);
+            /*
+             * If the guest hypervisor is not intercepting an exception that caused a VM-exit directly,
+             * forward it to the guest (for e.g, an instruction raises a #GP that causes a VM-exit but
+             * the guest hypervisor is not intercept #GPs, inject #GP into the guest).
+             */
+            if (!pVCpu->hm.s.Event.fPending)
+            {
+                hmR0VmxSetPendingEvent(pVCpu, VMX_ENTRY_INT_INFO_FROM_EXIT_INT_INFO(uExitIntInfo), pVmxTransient->cbInstr,
+                                       pVmxTransient->uExitIntErrorCode, pVmxTransient->uExitQual);
+            }
             return VINF_SUCCESS;
         }
 
@@ -17485,11 +17628,14 @@ HMVMX_EXIT_DECL hmR0VmxExitApicAccessNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTran
 {
     HMVMX_VALIDATE_NESTED_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
 
+    int rc = hmR0VmxCheckExitDueToEventDeliveryNested(pVCpu, pVmxTransient);
+    AssertRCReturn(rc, rc);
+
     Assert(CPUMIsGuestVmxProcCtls2Set(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS2_VIRT_APIC_ACCESS));
-    int rc = hmR0VmxReadExitQualVmcs(pVCpu, pVmxTransient);
-    rc    |= hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
-    rc    |= hmR0VmxReadIdtVectoringInfoVmcs(pVmxTransient);
-    rc    |= hmR0VmxReadIdtVectoringErrorCodeVmcs(pVmxTransient);
+    rc  = hmR0VmxReadExitQualVmcs(pVCpu, pVmxTransient);
+    rc |= hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
+    rc |= hmR0VmxReadIdtVectoringInfoVmcs(pVmxTransient);
+    rc |= hmR0VmxReadIdtVectoringErrorCodeVmcs(pVmxTransient);
     AssertRCReturn(rc, rc);
 
     VMXVEXITINFO ExitInfo;
@@ -17502,6 +17648,12 @@ HMVMX_EXIT_DECL hmR0VmxExitApicAccessNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTran
     RT_ZERO(ExitEventInfo);
     ExitEventInfo.uIdtVectoringInfo    = pVmxTransient->uIdtVectoringInfo;
     ExitEventInfo.uIdtVectoringErrCode = pVmxTransient->uIdtVectoringErrorCode;
+    if (pVCpu->hm.s.Event.fPending)
+    {
+        Assert(ExitEventInfo.uIdtVectoringInfo    == pVCpu->hm.s.Event.u64IntInfo);
+        Assert(ExitEventInfo.uIdtVectoringErrCode == pVCpu->hm.s.Event.u32ErrCode);
+        pVCpu->hm.s.Event.fPending = false;
+    }
     return IEMExecVmxVmexitApicAccess(pVCpu, &ExitInfo, &ExitEventInfo);
 }
 
