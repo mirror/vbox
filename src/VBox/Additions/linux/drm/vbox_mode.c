@@ -282,6 +282,45 @@ static int vbox_crtc_mode_set(struct drm_crtc *crtc,
 	return ret;
 }
 
+static int vbox_crtc_page_flip(struct drm_crtc *crtc,
+			       struct drm_framebuffer *fb,
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 12, 0) || defined(RHEL_75)
+			       struct drm_pending_vblank_event *event,
+			       uint32_t page_flip_flags,
+			       struct drm_modeset_acquire_ctx *ctx)
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(3, 12, 0) || defined(RHEL_70)
+			       struct drm_pending_vblank_event *event,
+			       uint32_t page_flip_flags)
+#else
+			       struct drm_pending_vblank_event *event)
+#endif
+{
+	struct vbox_private *vbox = crtc->dev->dev_private;
+	struct drm_device *drm = vbox->dev;
+	unsigned long flags;
+	int rc;
+
+	rc = vbox_crtc_set_base(crtc, CRTC_FB(crtc), fb, 0, 0);
+	if (rc)
+		return rc;
+
+	vbox_do_modeset(crtc, &crtc->mode);
+	mutex_unlock(&vbox->hw_mutex);
+
+	spin_lock_irqsave(&drm->event_lock, flags);
+
+	if (event)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 19, 0) || defined(RHEL_72)
+		drm_crtc_send_vblank_event(crtc, event);
+#else
+		drm_send_vblank_event(drm, -1, event);
+#endif
+
+	spin_unlock_irqrestore(&drm->event_lock, flags);
+
+	return 0;
+}
+
 static void vbox_crtc_disable(struct drm_crtc *crtc)
 {
 }
@@ -319,6 +358,7 @@ static const struct drm_crtc_funcs vbox_crtc_funcs = {
 	.reset = vbox_crtc_reset,
 	.set_config = drm_crtc_helper_set_config,
 	/* .gamma_set = vbox_crtc_gamma_set, */
+	.page_flip = vbox_crtc_page_flip,
 	.destroy = vbox_crtc_destroy,
 };
 
