@@ -23,7 +23,7 @@
 #include "DHCPConfigImpl.h"
 #include "LoggingNew.h"
 
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/net.h>
 #include <iprt/cpp/utils.h>
 #include <iprt/cpp/xml.h>

@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef MAIN_INCLUDED_DHCPServerConfig_h
-#define MAIN_INCLUDED_DHCPServerConfig_h
+#ifndef MAIN_INCLUDED_DHCPConfigImpl_h
+#define MAIN_INCLUDED_DHCPConfigImpl_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -314,5 +314,5 @@ protected:
     /** @} */
 };
 
-#endif /* !MAIN_INCLUDED_DHCPServerImpl_h */
+#endif /* !MAIN_INCLUDED_DHCPConfigImpl_h */
 
