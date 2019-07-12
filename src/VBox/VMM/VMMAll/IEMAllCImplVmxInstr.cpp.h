@@ -158,7 +158,8 @@
     { \
         Log(("VM-exit failed! uExitReason=%u enmDiag=%u (%s) -> %s\n", (a_uExitReason), (a_VmxDiag), \
             HMGetVmxDiagDesc(a_VmxDiag), (a_pszFailure))); \
-        (a_pVCpu)->cpum.GstCtx.hwvirt.vmx.enmDiag = (a_VmxDiag); \
+        (a_pVCpu)->cpum.GstCtx.hwvirt.vmx.enmDiag  = (a_VmxDiag); \
+        (a_pVCpu)->cpum.GstCtx.hwvirt.vmx.uDiagAux = (a_uExitReason); \
         return VERR_VMX_VMEXIT_FAILED; \
     } while (0)
 
@@ -7539,7 +7540,8 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmreadCommon(PVMCPU pVCpu, uint8_t cbInstr, uint64
     else
     {
         Log(("vmread: VMCS field %#RX64 invalid -> VMFail\n", u64VmcsField));
-        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmread_FieldInvalid;
+        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag  = kVmxVDiag_Vmread_FieldInvalid;
+        pVCpu->cpum.GstCtx.hwvirt.vmx.uDiagAux = u64VmcsField;
         iemVmxVmFail(pVCpu, VMXINSTRERR_VMREAD_INVALID_COMPONENT);
         iemRegAddToRipAndClearRF(pVCpu, cbInstr);
         return VINF_SUCCESS;
@@ -7646,7 +7648,8 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmreadMem(PVMCPU pVCpu, uint8_t cbInstr, uint8_t i
         }
 
         Log(("vmread/mem: Failed to write to memory operand at %#RGv, rc=%Rrc\n", GCPtrDst, VBOXSTRICTRC_VAL(rcStrict)));
-        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmread_PtrMap;
+        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag  = kVmxVDiag_Vmread_PtrMap;
+        pVCpu->cpum.GstCtx.hwvirt.vmx.uDiagAux = GCPtrDst;
         return rcStrict;
     }
 
@@ -7781,7 +7784,8 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmwrite(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
         if (RT_UNLIKELY(rcStrict != VINF_SUCCESS))
         {
             Log(("vmwrite: Failed to read value from memory operand at %#RGv, rc=%Rrc\n", GCPtrVal, VBOXSTRICTRC_VAL(rcStrict)));
-            pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmwrite_PtrMap;
+            pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag  = kVmxVDiag_Vmwrite_PtrMap;
+            pVCpu->cpum.GstCtx.hwvirt.vmx.uDiagAux = GCPtrVal;
             return rcStrict;
         }
     }
@@ -7794,7 +7798,8 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmwrite(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
     else
     {
         Log(("vmwrite: VMCS field %#RX64 invalid -> VMFail\n", u64VmcsField));
-        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmwrite_FieldInvalid;
+        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag  = kVmxVDiag_Vmwrite_FieldInvalid;
+        pVCpu->cpum.GstCtx.hwvirt.vmx.uDiagAux = u64VmcsField;
         iemVmxVmFail(pVCpu, VMXINSTRERR_VMWRITE_INVALID_COMPONENT);
         iemRegAddToRipAndClearRF(pVCpu, cbInstr);
         return VINF_SUCCESS;
@@ -7808,7 +7813,8 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmwrite(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
     else
     {
         Log(("vmwrite: Write to read-only VMCS component %#RX64 -> VMFail\n", u64VmcsField));
-        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmwrite_FieldRo;
+        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag  = kVmxVDiag_Vmwrite_FieldRo;
+        pVCpu->cpum.GstCtx.hwvirt.vmx.uDiagAux = u64VmcsField;
         iemVmxVmFail(pVCpu, VMXINSTRERR_VMWRITE_RO_COMPONENT);
         iemRegAddToRipAndClearRF(pVCpu, cbInstr);
         return VINF_SUCCESS;
@@ -7878,7 +7884,8 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmclear(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
     else
     {
         Log(("vmclear: Failed to read VMCS physaddr from %#RGv, rc=%Rrc\n", GCPtrVmcs, VBOXSTRICTRC_VAL(rcStrict)));
-        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmclear_PtrMap;
+        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag  = kVmxVDiag_Vmclear_PtrMap;
+        pVCpu->cpum.GstCtx.hwvirt.vmx.uDiagAux = GCPtrVmcs;
         return rcStrict;
     }
 
@@ -7888,7 +7895,8 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmclear(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
     else
     {
         Log(("vmclear: VMCS pointer not page-aligned -> VMFail()\n"));
-        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmclear_PtrAlign;
+        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag  = kVmxVDiag_Vmclear_PtrAlign;
+        pVCpu->cpum.GstCtx.hwvirt.vmx.uDiagAux = GCPhysVmcs;
         iemVmxVmFail(pVCpu, VMXINSTRERR_VMCLEAR_INVALID_PHYSADDR);
         iemRegAddToRipAndClearRF(pVCpu, cbInstr);
         return VINF_SUCCESS;
@@ -7900,7 +7908,8 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmclear(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
     else
     {
         Log(("vmclear: VMCS pointer extends beyond physical-address width -> VMFail()\n"));
-        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmclear_PtrWidth;
+        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag  = kVmxVDiag_Vmclear_PtrWidth;
+        pVCpu->cpum.GstCtx.hwvirt.vmx.uDiagAux = GCPhysVmcs;
         iemVmxVmFail(pVCpu, VMXINSTRERR_VMCLEAR_INVALID_PHYSADDR);
         iemRegAddToRipAndClearRF(pVCpu, cbInstr);
         return VINF_SUCCESS;
@@ -7912,7 +7921,8 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmclear(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
     else
     {
         Log(("vmclear: VMCS pointer cannot be identical to VMXON region pointer -> VMFail()\n"));
-        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmclear_PtrVmxon;
+        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag  = kVmxVDiag_Vmclear_PtrVmxon;
+        pVCpu->cpum.GstCtx.hwvirt.vmx.uDiagAux = GCPhysVmcs;
         iemVmxVmFail(pVCpu, VMXINSTRERR_VMCLEAR_VMXON_PTR);
         iemRegAddToRipAndClearRF(pVCpu, cbInstr);
         return VINF_SUCCESS;
@@ -7925,7 +7935,8 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmclear(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
     else
     {
         Log(("vmclear: VMCS not normal memory -> VMFail()\n"));
-        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmclear_PtrAbnormal;
+        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag  = kVmxVDiag_Vmclear_PtrAbnormal;
+        pVCpu->cpum.GstCtx.hwvirt.vmx.uDiagAux = GCPhysVmcs;
         iemVmxVmFail(pVCpu, VMXINSTRERR_VMCLEAR_INVALID_PHYSADDR);
         iemRegAddToRipAndClearRF(pVCpu, cbInstr);
         return VINF_SUCCESS;
@@ -8009,7 +8020,8 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmptrst(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
     }
 
     Log(("vmptrst: Failed to store VMCS pointer to memory at destination operand %#Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
-    pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmptrst_PtrMap;
+    pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag  = kVmxVDiag_Vmptrst_PtrMap;
+    pVCpu->cpum.GstCtx.hwvirt.vmx.uDiagAux = GCPtrVmcs;
     return rcStrict;
 }
 
@@ -8057,7 +8069,8 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmptrld(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
     else
     {
         Log(("vmptrld: Failed to read VMCS physaddr from %#RGv, rc=%Rrc\n", GCPtrVmcs, VBOXSTRICTRC_VAL(rcStrict)));
-        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmptrld_PtrMap;
+        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag  = kVmxVDiag_Vmptrld_PtrMap;
+        pVCpu->cpum.GstCtx.hwvirt.vmx.uDiagAux = GCPtrVmcs;
         return rcStrict;
     }
 
@@ -8067,7 +8080,8 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmptrld(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
     else
     {
         Log(("vmptrld: VMCS pointer not page-aligned -> VMFail()\n"));
-        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmptrld_PtrAlign;
+        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag  = kVmxVDiag_Vmptrld_PtrAlign;
+        pVCpu->cpum.GstCtx.hwvirt.vmx.uDiagAux = GCPhysVmcs;
         iemVmxVmFail(pVCpu, VMXINSTRERR_VMPTRLD_INVALID_PHYSADDR);
         iemRegAddToRipAndClearRF(pVCpu, cbInstr);
         return VINF_SUCCESS;
@@ -8079,7 +8093,8 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmptrld(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
     else
     {
         Log(("vmptrld: VMCS pointer extends beyond physical-address width -> VMFail()\n"));
-        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmptrld_PtrWidth;
+        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag  = kVmxVDiag_Vmptrld_PtrWidth;
+        pVCpu->cpum.GstCtx.hwvirt.vmx.uDiagAux = GCPhysVmcs;
         iemVmxVmFail(pVCpu, VMXINSTRERR_VMPTRLD_INVALID_PHYSADDR);
         iemRegAddToRipAndClearRF(pVCpu, cbInstr);
         return VINF_SUCCESS;
@@ -8091,7 +8106,8 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmptrld(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
     else
     {
         Log(("vmptrld: VMCS pointer cannot be identical to VMXON region pointer -> VMFail()\n"));
-        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmptrld_PtrVmxon;
+        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag  = kVmxVDiag_Vmptrld_PtrVmxon;
+        pVCpu->cpum.GstCtx.hwvirt.vmx.uDiagAux = GCPhysVmcs;
         iemVmxVmFail(pVCpu, VMXINSTRERR_VMPTRLD_VMXON_PTR);
         iemRegAddToRipAndClearRF(pVCpu, cbInstr);
         return VINF_SUCCESS;
@@ -8104,7 +8120,8 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmptrld(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
     else
     {
         Log(("vmptrld: VMCS not normal memory -> VMFail()\n"));
-        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmptrld_PtrAbnormal;
+        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag  = kVmxVDiag_Vmptrld_PtrAbnormal;
+        pVCpu->cpum.GstCtx.hwvirt.vmx.uDiagAux = GCPhysVmcs;
         iemVmxVmFail(pVCpu, VMXINSTRERR_VMPTRLD_INVALID_PHYSADDR);
         iemRegAddToRipAndClearRF(pVCpu, cbInstr);
         return VINF_SUCCESS;
@@ -8118,7 +8135,8 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmptrld(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
     else
     {
         Log(("vmptrld: Failed to read revision identifier from VMCS at %#RGp, rc=%Rrc\n", GCPhysVmcs, rc));
-        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmptrld_RevPtrReadPhys;
+        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag  = kVmxVDiag_Vmptrld_RevPtrReadPhys;
+        pVCpu->cpum.GstCtx.hwvirt.vmx.uDiagAux = GCPhysVmcs;
         return rc;
     }
 
@@ -8173,7 +8191,8 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmptrld(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
         else
         {
             Log(("vmptrld: Failed to read VMCS at %#RGp, rc=%Rrc\n", GCPhysVmcs, rc));
-            pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmptrld_PtrReadPhys;
+            pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag  = kVmxVDiag_Vmptrld_PtrReadPhys;
+            pVCpu->cpum.GstCtx.hwvirt.vmx.uDiagAux = GCPhysVmcs;
             return rc;
         }
     }
@@ -8245,7 +8264,8 @@ IEM_STATIC VBOXSTRICTRC iemVmxInvvpid(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
     else
     {
         Log(("invvpid: invalid/unsupported invvpid type %#x -> VMFail\n", u64InvvpidType));
-        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Invvpid_TypeInvalid;
+        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag  = kVmxVDiag_Invvpid_TypeInvalid;
+        pVCpu->cpum.GstCtx.hwvirt.vmx.uDiagAux = u64InvvpidType;
         iemVmxVmFail(pVCpu, VMXINSTRERR_INVEPT_INVVPID_INVALID_OPERAND);
         iemRegAddToRipAndClearRF(pVCpu, cbInstr);
         return VINF_SUCCESS;
@@ -8264,7 +8284,8 @@ IEM_STATIC VBOXSTRICTRC iemVmxInvvpid(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
         if (uDesc.s.Lo > 0xfff)
         {
             Log(("invvpid: reserved bits set in invvpid descriptor %#RX64 -> #GP(0)\n", uDesc.s.Lo));
-            pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Invvpid_DescRsvd;
+            pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag  = kVmxVDiag_Invvpid_DescRsvd;
+            pVCpu->cpum.GstCtx.hwvirt.vmx.uDiagAux = uDesc.s.Lo;
             iemVmxVmFail(pVCpu, VMXINSTRERR_INVEPT_INVVPID_INVALID_OPERAND);
             iemRegAddToRipAndClearRF(pVCpu, cbInstr);
             return VINF_SUCCESS;
@@ -8290,14 +8311,16 @@ IEM_STATIC VBOXSTRICTRC iemVmxInvvpid(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
                     else
                     {
                         Log(("invvpid: invalidation address %#RGP is not canonical -> VMFail\n", GCPtrInvAddr));
-                        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Invvpid_Type0InvalidAddr;
+                        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag  = kVmxVDiag_Invvpid_Type0InvalidAddr;
+                        pVCpu->cpum.GstCtx.hwvirt.vmx.uDiagAux = GCPtrInvAddr;
                         iemVmxVmFail(pVCpu, VMXINSTRERR_INVEPT_INVVPID_INVALID_OPERAND);
                     }
                 }
                 else
                 {
                     Log(("invvpid: invalid VPID %#x for invalidation type %u -> VMFail\n", uVpid, u64InvvpidType));
-                    pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Invvpid_Type0InvalidVpid;
+                    pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag  = kVmxVDiag_Invvpid_Type0InvalidVpid;
+                    pVCpu->cpum.GstCtx.hwvirt.vmx.uDiagAux = u64InvvpidType;
                     iemVmxVmFail(pVCpu, VMXINSTRERR_INVEPT_INVVPID_INVALID_OPERAND);
                 }
                 break;
@@ -8315,7 +8338,8 @@ IEM_STATIC VBOXSTRICTRC iemVmxInvvpid(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
                 else
                 {
                     Log(("invvpid: invalid VPID %#x for invalidation type %u -> VMFail\n", uVpid, u64InvvpidType));
-                    pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Invvpid_Type1InvalidVpid;
+                    pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag  = kVmxVDiag_Invvpid_Type1InvalidVpid;
+                    pVCpu->cpum.GstCtx.hwvirt.vmx.uDiagAux = u64InvvpidType;
                     iemVmxVmFail(pVCpu, VMXINSTRERR_INVEPT_INVVPID_INVALID_OPERAND);
                 }
                 break;
@@ -8342,7 +8366,8 @@ IEM_STATIC VBOXSTRICTRC iemVmxInvvpid(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
                 else
                 {
                     Log(("invvpid: invalid VPID %#x for invalidation type %u -> VMFail\n", uVpid, u64InvvpidType));
-                    pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Invvpid_Type3InvalidVpid;
+                    pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag  = kVmxVDiag_Invvpid_Type3InvalidVpid;
+                    pVCpu->cpum.GstCtx.hwvirt.vmx.uDiagAux = uVpid;
                     iemVmxVmFail(pVCpu, VMXINSTRERR_INVEPT_INVVPID_INVALID_OPERAND);
                 }
                 break;
@@ -8464,7 +8489,8 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmxon(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEffS
         else
         {
             Log(("vmxon: Failed to read VMXON region physaddr from %#RGv, rc=%Rrc\n", GCPtrVmxon, VBOXSTRICTRC_VAL(rcStrict)));
-            pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmxon_PtrMap;
+            pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag  = kVmxVDiag_Vmxon_PtrMap;
+            pVCpu->cpum.GstCtx.hwvirt.vmx.uDiagAux = GCPtrVmxon;
             return rcStrict;
         }
 
@@ -8474,7 +8500,8 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmxon(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEffS
         else
         {
             Log(("vmxon: VMXON region pointer not page-aligned -> VMFailInvalid\n"));
-            pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmxon_PtrAlign;
+            pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag  = kVmxVDiag_Vmxon_PtrAlign;
+            pVCpu->cpum.GstCtx.hwvirt.vmx.uDiagAux = GCPhysVmxon;
             iemVmxVmFailInvalid(pVCpu);
             iemRegAddToRipAndClearRF(pVCpu, cbInstr);
             return VINF_SUCCESS;
@@ -8486,7 +8513,8 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmxon(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEffS
         else
         {
             Log(("vmxon: VMXON region pointer extends beyond physical-address width -> VMFailInvalid\n"));
-            pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmxon_PtrWidth;
+            pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag  = kVmxVDiag_Vmxon_PtrWidth;
+            pVCpu->cpum.GstCtx.hwvirt.vmx.uDiagAux = GCPhysVmxon;
             iemVmxVmFailInvalid(pVCpu);
             iemRegAddToRipAndClearRF(pVCpu, cbInstr);
             return VINF_SUCCESS;
@@ -8499,7 +8527,8 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmxon(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEffS
         else
         {
             Log(("vmxon: VMXON region not normal memory -> VMFailInvalid\n"));
-            pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmxon_PtrAbnormal;
+            pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag  = kVmxVDiag_Vmxon_PtrAbnormal;
+            pVCpu->cpum.GstCtx.hwvirt.vmx.uDiagAux = GCPhysVmxon;
             iemVmxVmFailInvalid(pVCpu);
             iemRegAddToRipAndClearRF(pVCpu, cbInstr);
             return VINF_SUCCESS;
