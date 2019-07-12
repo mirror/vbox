@@ -58,7 +58,7 @@ HRESULT DHCPConfig::i_initWithSettings(VirtualBox *a_pVirtualBox, DHCPServer *a_
     m_secDefaultLeaseTime = rConfig.secDefaultLeaseTime;
     m_secMaxLeaseTime     = rConfig.secMaxLeaseTime;
 
-    for (settings::DhcpOptionMap::const_iterator it = rConfig.OptionMap.begin(); it != rConfig.OptionMap.end(); ++it)
+    for (settings::DhcpOptionMap::const_iterator it = rConfig.mapOptions.begin(); it != rConfig.mapOptions.end(); ++it)
     {
         try
         {
@@ -84,7 +84,7 @@ HRESULT DHCPConfig::i_saveSettings(settings::DHCPConfig &a_rDst)
     /* Options: */
     try
     {
-        a_rDst.OptionMap = m_OptionMap;
+        a_rDst.mapOptions = m_OptionMap;
     }
     catch (std::bad_alloc &)
     {
@@ -222,7 +222,7 @@ HRESULT DHCPConfig::i_getAllOptions(std::vector<DhcpOpt_T> &aOptions, std::vecto
         aEncodings.resize(m_OptionMap.size());
         aValues.resize(m_OptionMap.size());
         size_t i = 0;
-        for (settings::DhcpOptionMap::iterator it = m_OptionMap.begin(); it != m_OptionMap.end(); ++it)
+        for (settings::DhcpOptionMap::iterator it = m_OptionMap.begin(); it != m_OptionMap.end(); ++it, i++)
         {
             aOptions[i]   = it->first;
             aEncodings[i] = it->second.enmEncoding;
@@ -243,6 +243,7 @@ HRESULT DHCPConfig::i_getAllOptions(std::vector<DhcpOpt_T> &aOptions, std::vecto
  * @returns COM status code.
  *
  * @note    Must hold no locks when this is called!
+ * @note    Public because DHCPGroupCondition needs to call it too.
  */
 HRESULT DHCPConfig::i_doWriteConfig()
 {
@@ -326,6 +327,8 @@ void DHCPGlobalConfig::uninit()
 
 HRESULT DHCPGlobalConfig::i_saveSettings(settings::DHCPConfig &a_rDst)
 {
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
     return DHCPConfig::i_saveSettings(a_rDst);
 }
 
@@ -410,6 +413,310 @@ HRESULT DHCPGlobalConfig::i_removeAllOptions()
     }
 
     return i_doWriteConfig();
+}
+
+
+
+/*********************************************************************************************************************************
+*   DHCPGroupCondition Implementation                                                                                            *
+*********************************************************************************************************************************/
+#undef  LOG_GROUP
+#define LOG_GROUP LOG_GROUP_MAIN_DHCPGROUPCONDITION
+
+HRESULT DHCPGroupCondition::initWithDefaults(DHCPGroupConfig *a_pParent, bool a_fInclusive, DHCPGroupConditionType_T a_enmType,
+                                             const com::Utf8Str a_strValue)
+{
+    AutoInitSpan autoInitSpan(this);
+    AssertReturn(autoInitSpan.isOk(), E_FAIL);
+
+    m_pParent    = a_pParent;
+    m_fInclusive = a_fInclusive;
+    m_enmType    = a_enmType;
+    HRESULT hrc = m_strValue.assignEx(a_strValue);
+
+    if (SUCCEEDED(hrc))
+        autoInitSpan.setSucceeded();
+    else
+        autoInitSpan.setFailed(hrc);
+    return hrc;
+}
+
+
+HRESULT DHCPGroupCondition::initWithSettings(DHCPGroupConfig *a_pParent, const settings::DHCPGroupCondition &a_rSrc)
+{
+    return initWithDefaults(a_pParent, a_rSrc.fInclusive, a_rSrc.enmType, a_rSrc.strValue);
+}
+
+
+void DHCPGroupCondition::uninit()
+{
+    AutoUninitSpan autoUninitSpan(this);
+    if (!autoUninitSpan.uninitDone())
+        autoUninitSpan.setSucceeded();
+}
+
+
+HRESULT DHCPGroupCondition::i_saveSettings(settings::DHCPGroupCondition &a_rDst)
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    a_rDst.fInclusive = m_fInclusive;
+    a_rDst.enmType    = m_enmType;
+    return a_rDst.strValue.assignEx(m_strValue);
+}
+
+
+HRESULT DHCPGroupCondition::getInclusive(BOOL *aInclusive)
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    *aInclusive = m_fInclusive;
+    return S_OK;
+}
+
+
+HRESULT DHCPGroupCondition::setInclusive(BOOL aInclusive)
+{
+    {
+        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+        if ((aInclusive != FALSE) == m_fInclusive)
+            return S_OK;
+        m_fInclusive = aInclusive != FALSE;
+    }
+    return m_pParent->i_doWriteConfig();
+}
+
+
+HRESULT DHCPGroupCondition::getType(DHCPGroupConditionType_T *aType)
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    *aType = m_enmType;
+    return S_OK;
+}
+
+
+HRESULT DHCPGroupCondition::setType(DHCPGroupConditionType_T aType)
+{
+    {
+        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+        if (aType == m_enmType)
+            return S_OK;
+        m_enmType = aType;
+    }
+    return m_pParent->i_doWriteConfig();
+}
+
+
+HRESULT DHCPGroupCondition::getValue(com::Utf8Str &aValue)
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    return aValue.assignEx(m_strValue);
+}
+
+
+HRESULT DHCPGroupCondition::setValue(const com::Utf8Str &aValue)
+{
+    {
+        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+        if (aValue == m_strValue)
+            return S_OK;
+        HRESULT hrc = m_strValue.assignEx(aValue);
+        if (FAILED(hrc))
+            return hrc;
+    }
+    return m_pParent->i_doWriteConfig();
+}
+
+
+HRESULT DHCPGroupCondition::remove()
+{
+    return m_pParent->i_removeCondition(this);
+}
+
+
+
+/*********************************************************************************************************************************
+*   DHCPGroupConfig Implementation                                                                                               *
+*********************************************************************************************************************************/
+#undef  LOG_GROUP
+#define LOG_GROUP LOG_GROUP_MAIN_DHCPGROUPCONFIG
+
+
+HRESULT DHCPGroupConfig::initWithDefaults(VirtualBox *a_pVirtualBox, DHCPServer *a_pParent, const com::Utf8Str &a_rName)
+{
+    AutoInitSpan autoInitSpan(this);
+    AssertReturn(autoInitSpan.isOk(), E_FAIL);
+
+    Assert(m_Conditions.size() == 0);
+    HRESULT hrc = DHCPConfig::i_initWithDefaults(a_pVirtualBox, a_pParent);
+    if (SUCCEEDED(hrc))
+        hrc = m_strName.assignEx(a_rName);
+
+    if (SUCCEEDED(hrc))
+        autoInitSpan.setSucceeded();
+    else
+        autoInitSpan.setFailed(hrc);
+    return hrc;
+}
+
+
+HRESULT DHCPGroupConfig::initWithSettings(VirtualBox *a_pVirtualBox, DHCPServer *a_pParent, const settings::DHCPGroupConfig &a_rSrc)
+{
+    AutoInitSpan autoInitSpan(this);
+    AssertReturn(autoInitSpan.isOk(), E_FAIL);
+
+    Assert(m_Conditions.size() == 0);
+    HRESULT hrc = DHCPConfig::i_initWithSettings(a_pVirtualBox, a_pParent, a_rSrc);
+    if (SUCCEEDED(hrc))
+        hrc = m_strName.assignEx(a_rSrc.strName);
+
+    for (settings::DHCPGroupConditionVec::const_iterator it = a_rSrc.vecConditions.begin();
+         it != a_rSrc.vecConditions.end() && SUCCEEDED(hrc); ++it)
+    {
+        ComObjPtr<DHCPGroupCondition> ptrCondition;
+        hrc = ptrCondition.createObject();
+        if (SUCCEEDED(hrc))
+        {
+            hrc = ptrCondition->initWithSettings(this, *it);
+            if (SUCCEEDED(hrc))
+            {
+                try
+                {
+                    m_Conditions.push_back(ptrCondition);
+                }
+                catch (std::bad_alloc &)
+                {
+                    hrc = E_OUTOFMEMORY;
+                }
+            }
+        }
+    }
+
+    if (SUCCEEDED(hrc))
+        autoInitSpan.setSucceeded();
+    else
+        autoInitSpan.setFailed(hrc);
+    return hrc;
+}
+
+
+void    DHCPGroupConfig::uninit()
+{
+    AutoUninitSpan autoUninitSpan(this);
+    if (!autoUninitSpan.uninitDone())
+        autoUninitSpan.setSucceeded();
+}
+
+
+HRESULT DHCPGroupConfig::i_saveSettings(settings::DHCPGroupConfig &a_rDst)
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    HRESULT hrc = DHCPConfig::i_saveSettings(a_rDst);
+    if (SUCCEEDED(hrc))
+        hrc = a_rDst.strName.assignEx(m_strName);
+    if (SUCCEEDED(hrc))
+    {
+        size_t const cConditions = m_Conditions.size();
+        try
+        {
+            a_rDst.vecConditions.resize(cConditions);
+        }
+        catch (std::bad_alloc &)
+        {
+            hrc = E_OUTOFMEMORY;
+        }
+
+        for (size_t i = 0; i < cConditions && SUCCEEDED(hrc); i++)
+            hrc = m_Conditions[i]->i_saveSettings(a_rDst.vecConditions[i]);
+    }
+    return hrc;
+}
+
+
+HRESULT DHCPGroupConfig::i_removeCondition(DHCPGroupCondition *a_pCondition)
+{
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    for (ConditionsIterator it = m_Conditions.begin(); it != m_Conditions.end();)
+    {
+        DHCPGroupCondition *pCurCondition = *it;
+        if (pCurCondition == a_pCondition)
+            it = m_Conditions.erase(it);
+        else
+            ++it;
+    }
+
+    /* Never mind if already delete, right? */
+    return S_OK;
+}
+
+
+HRESULT DHCPGroupConfig::getName(com::Utf8Str &aName)
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    return aName.assignEx(m_strName);
+}
+
+
+HRESULT DHCPGroupConfig::setName(const com::Utf8Str &aName)
+{
+    {
+        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+        if (aName == m_strName)
+            return S_OK;
+        HRESULT hrc = m_strName.assignEx(aName);
+        if (FAILED(hrc))
+            return hrc;
+    }
+    return i_doWriteConfig();
+}
+
+
+HRESULT DHCPGroupConfig::getConditions(std::vector<ComPtr<IDHCPGroupCondition> > &aConditions)
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    size_t const cConditions = m_Conditions.size();
+    try
+    {
+        aConditions.resize(cConditions);
+    }
+    catch (std::bad_alloc &)
+    {
+        return E_OUTOFMEMORY;
+    }
+    HRESULT hrc = S_OK;
+    for (size_t i = 0; i < cConditions && SUCCEEDED(hrc); i++)
+        hrc = m_Conditions[i].queryInterfaceTo(aConditions[i].asOutParam());
+    return hrc;
+}
+
+
+HRESULT DHCPGroupConfig::addCondition(BOOL aInclusive, DHCPGroupConditionType_T aType, const com::Utf8Str &aValue,
+                                      ComPtr<IDHCPGroupCondition> &aCondition)
+{
+    ComObjPtr<DHCPGroupCondition> ptrCondition;
+    HRESULT hrc = ptrCondition.createObject();
+    if (SUCCEEDED(hrc))
+        hrc = ptrCondition->initWithDefaults(this, aInclusive != FALSE, aType, aValue);
+    if (SUCCEEDED(hrc))
+    {
+        hrc = ptrCondition.queryInterfaceTo(aCondition.asOutParam());
+        if (SUCCEEDED(hrc))
+        {
+            AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+            try
+            {
+                m_Conditions.push_back(ptrCondition);
+            }
+            catch (std::bad_alloc &)
+            {
+                aCondition.setNull();
+                return E_OUTOFMEMORY;
+            }
+        }
+    }
+
+    return hrc;
 }
 
 
@@ -509,6 +816,8 @@ void    DHCPIndividualConfig::uninit()
 
 HRESULT DHCPIndividualConfig::i_saveSettings(settings::DHCPIndividualConfig &a_rDst)
 {
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
     a_rDst.uSlot = m_uSlot;
     int vrc = a_rDst.strMACAddress.printfNoThrow("%RTmac", &m_MACAddress);
     if (m_idMachine.isValid() && !m_idMachine.isZero() && RT_SUCCESS(vrc))
@@ -535,7 +844,7 @@ HRESULT DHCPIndividualConfig::getMACAddress(com::Utf8Str &aMACAddress)
     }
 
     /* Format the return string: */
-    int vrc = aMACAddress.printfNoThrow("%RTmac", &m_MACAddress);
+    int vrc = aMACAddress.printfNoThrow("%RTmac", &MACAddress);
     return RT_SUCCESS(vrc) ? S_OK : E_OUTOFMEMORY;
 }
 
@@ -618,7 +927,8 @@ HRESULT DHCPIndividualConfig::i_getMachineMAC(PRTMAC pMACAddress)
                 if (RT_SUCCESS(vrc))
                     hrc = S_OK;
                 else
-                    hrc = setError(hrc, tr("INetworkAdapter returned bogus MAC address '%ls'"), bstrMACAddress.raw());
+                    hrc = setErrorBoth(E_FAIL, vrc, tr("INetworkAdapter returned bogus MAC address '%ls': %Rrc"),
+                                       bstrMACAddress.raw(), vrc);
             }
         }
     }

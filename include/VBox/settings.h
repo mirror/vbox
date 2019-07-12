@@ -348,15 +348,35 @@ typedef DhcpOptionMap::value_type DhcpOptValuePair;
 typedef DhcpOptionMap::iterator DhcpOptIterator;
 typedef DhcpOptionMap::const_iterator DhcpOptConstIterator;
 
+struct DHCPGroupCondition
+{
+    DHCPGroupCondition();
+
+    bool                    fInclusive;
+    DHCPGroupConditionType_T enmType;
+    com::Utf8Str            strValue;
+};
+typedef std::vector<DHCPGroupCondition> DHCPGroupConditionVec;
+
+
 struct DHCPConfig
 {
     DHCPConfig();
 
-    DhcpOptionMap           OptionMap;
+    DhcpOptionMap           mapOptions;
     uint32_t                secMinLeaseTime;
     uint32_t                secDefaultLeaseTime;
     uint32_t                secMaxLeaseTime;
 };
+
+struct DHCPGroupConfig : DHCPConfig
+{
+    DHCPGroupConfig();
+
+    com::Utf8Str            strName;
+    DHCPGroupConditionVec   vecConditions;
+};
+typedef std::vector<DHCPGroupConfig> DHCPGroupConfigVec;
 
 struct DHCPIndividualConfig : DHCPConfig
 {
@@ -364,10 +384,9 @@ struct DHCPIndividualConfig : DHCPConfig
 
     com::Utf8Str            strMACAddress;
     com::Utf8Str            strVMName;
-    ULONG                   uSlot;
+    uint32_t                uSlot;
     com::Utf8Str            strFixedAddress;
 };
-
 typedef std::map<com::Utf8Str, DHCPIndividualConfig> DHCPIndividualConfigMap;
 
 struct DHCPServer
@@ -379,10 +398,10 @@ struct DHCPServer
     com::Utf8Str            strIPLower;
     com::Utf8Str            strIPUpper;
     bool                    fEnabled;
-    DHCPConfig              GlobalConfig;
-    DHCPIndividualConfigMap IndividualConfigs;
+    DHCPConfig              globalConfig;
+    DHCPGroupConfigVec      vecGroupConfigs;
+    DHCPIndividualConfigMap mapIndividualConfigs;
 };
-
 typedef std::list<DHCPServer> DHCPServersList;
 
 

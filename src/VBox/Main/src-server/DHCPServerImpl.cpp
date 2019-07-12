@@ -65,16 +65,10 @@ public:
     virtual ~DHCPServerRunner()
     {}
 
-    static const char * const kDsrKeyGateway;
-    static const char * const kDsrKeyLowerIp;
-    static const char * const kDsrKeyUpperIp;
     static const char * const kDsrKeyConfig;
     static const char * const kDsrKeyComment;
 };
 
-/*static*/ const char * const DHCPServerRunner::kDsrKeyGateway = "--gateway";
-/*static*/ const char * const DHCPServerRunner::kDsrKeyLowerIp = "--lower-ip";
-/*static*/ const char * const DHCPServerRunner::kDsrKeyUpperIp = "--upper-ip";
 /*static*/ const char * const DHCPServerRunner::kDsrKeyConfig  = "--config";
 /*static*/ const char * const DHCPServerRunner::kDsrKeyComment = "--comment";
 
@@ -88,7 +82,6 @@ struct DHCPServer::Data
         : pVirtualBox(NULL)
         , strName()
         , enabled(FALSE)
-//        , router(false)
         , uIndividualMACAddressVersion(1)
     {
         szTempConfigFileName[0] = '\0';
@@ -105,15 +98,6 @@ struct DHCPServer::Data
     Utf8Str upperIP;
 
     BOOL enabled;
-#if 0
-    /** Don't quit get WTF this is about, but the old addOption method contained the
-     * following hint: "Indirect way to understand that we're on NAT network."
-     *
-     * Apparently this is a busted with the new dhcpd implementation, so we don't
-     * maintain it with the API overhaul in 6.0.12.
-     */
-    bool router;
-#endif
     DHCPServerRunner dhcp;
 
     char szTempConfigFileName[RTPATH_MAX];
@@ -125,10 +109,10 @@ struct DHCPServer::Data
     /** Global configuration. */
     ComObjPtr<DHCPGlobalConfig> globalConfig;
 
-//    /** Group configuration indexed by name. */
-//    std::map<com::Utf8Str, ComObjPtr<DHCPGroupConfig>> groupConfigs;
-//    /** Iterator for groupConfigs. */
-//    typedef std::map<com::Utf8Str, ComObjPtr<DHCPGroupConfig>>::iterator GroupConfigIterator;
+    /** Group configuration indexed by name. */
+    std::map<com::Utf8Str, ComObjPtr<DHCPGroupConfig>> groupConfigs;
+    /** Iterator for groupConfigs. */
+    typedef std::map<com::Utf8Str, ComObjPtr<DHCPGroupConfig>>::iterator GroupConfigIterator;
 
     /** Individual (host) configuration indexed by MAC address or VM UUID. */
     std::map<com::Utf8Str, ComObjPtr<DHCPIndividualConfig> > individualConfigs;
@@ -210,6 +194,9 @@ HRESULT DHCPServer::init(VirtualBox *aVirtualBox, const Utf8Str &aName)
     if (SUCCEEDED(hrc))
         hrc = m->globalConfig->initWithDefaults(aVirtualBox, this);
 
+    Assert(m->groupConfigs.size() == 0);
+    Assert(m->individualConfigs.size() == 0);
+
     /* Confirm a successful initialization or not: */
     if (SUCCEEDED(hrc))
         autoInitSpan.setSucceeded();
@@ -239,65 +226,82 @@ HRESULT DHCPServer::init(VirtualBox *aVirtualBox, const settings::DHCPServer &rD
      */
     HRESULT hrc = m->globalConfig.createObject();
     if (SUCCEEDED(hrc))
-        hrc = m->globalConfig->initWithSettings(aVirtualBox, this, rData.GlobalConfig);
+        hrc = m->globalConfig->initWithSettings(aVirtualBox, this, rData.globalConfig);
 
     /*
      * Group configurations:
      */
+    Assert(m->groupConfigs.size() == 0);
+    for (settings::DHCPGroupConfigVec::const_iterator it = rData.vecGroupConfigs.begin();
+         it != rData.vecGroupConfigs.end() && SUCCEEDED(hrc); ++it)
+    {
+        ComObjPtr<DHCPGroupConfig> ptrGroupConfig;
+        hrc = ptrGroupConfig.createObject();
+        if (SUCCEEDED(hrc))
+            hrc = ptrGroupConfig->initWithSettings(aVirtualBox, this, *it);
+        if (SUCCEEDED(hrc))
+        {
+            try
+            {
+                m->groupConfigs[it->strName] = ptrGroupConfig;
+            }
+            catch (std::bad_alloc &)
+            {
+                return E_OUTOFMEMORY;
+            }
+        }
+    }
 
     /*
      * Individual configuration:
      */
     Assert(m->individualConfigs.size() == 0);
-    if (SUCCEEDED(hrc))
+    for (settings::DHCPIndividualConfigMap::const_iterator it = rData.mapIndividualConfigs.begin();
+         it != rData.mapIndividualConfigs.end() && SUCCEEDED(hrc); ++it)
     {
-        for (settings::DHCPIndividualConfigMap::const_iterator it = rData.IndividualConfigs.begin();
-             it != rData.IndividualConfigs.end() && SUCCEEDED(hrc); ++it)
+        ComObjPtr<DHCPIndividualConfig> ptrIndiCfg;
+        com::Utf8Str                    strKey;
+        if (!it->second.strVMName.isNotEmpty())
         {
-            ComObjPtr<DHCPIndividualConfig> ptrIndiCfg;
-            com::Utf8Str                    strKey;
-            if (!it->second.strVMName.isNotEmpty())
+            RTMAC MACAddress;
+            int vrc = RTNetStrToMacAddr(it->second.strMACAddress.c_str(), &MACAddress);
+            if (RT_FAILURE(vrc))
             {
-                RTMAC MACAddress;
-                int vrc = RTNetStrToMacAddr(it->second.strMACAddress.c_str(), &MACAddress);
-                if (RT_FAILURE(vrc))
-                {
-                    LogRel(("Ignoring invalid MAC address for individual DHCP config: '%s' - %Rrc\n", it->second.strMACAddress.c_str(), vrc));
-                    continue;
-                }
-
-                vrc = strKey.printfNoThrow("%RTmac", &MACAddress);
-                AssertRCReturn(vrc, E_OUTOFMEMORY);
-
-                hrc = ptrIndiCfg.createObject();
-                if (SUCCEEDED(hrc))
-                    hrc = ptrIndiCfg->initWithSettingsAndMACAddress(aVirtualBox, this, it->second, &MACAddress);
+                LogRel(("Ignoring invalid MAC address for individual DHCP config: '%s' - %Rrc\n", it->second.strMACAddress.c_str(), vrc));
+                continue;
             }
-            else
-            {
-                /* This ASSUMES that we're being called after the machines have been
-                   loaded so we can resolve VM names into UUID for old settings. */
-                com::Guid idMachine;
-                hrc = i_vmNameToIdAndValidateSlot(it->second.strVMName, it->second.uSlot, idMachine);
-                if (SUCCEEDED(hrc))
-                {
-                    hrc = ptrIndiCfg.createObject();
-                    if (SUCCEEDED(hrc))
-                        hrc = ptrIndiCfg->initWithSettingsAndMachineIdAndSlot(aVirtualBox, this, it->second,
-                                                                              idMachine, it->second.uSlot,
-                                                                              m->uIndividualMACAddressVersion - UINT32_MAX / 4);
-                }
-            }
+
+            vrc = strKey.printfNoThrow("%RTmac", &MACAddress);
+            AssertRCReturn(vrc, E_OUTOFMEMORY);
+
+            hrc = ptrIndiCfg.createObject();
+            if (SUCCEEDED(hrc))
+                hrc = ptrIndiCfg->initWithSettingsAndMACAddress(aVirtualBox, this, it->second, &MACAddress);
+        }
+        else
+        {
+            /* This ASSUMES that we're being called after the machines have been
+               loaded so we can resolve VM names into UUID for old settings. */
+            com::Guid idMachine;
+            hrc = i_vmNameToIdAndValidateSlot(it->second.strVMName, it->second.uSlot, idMachine);
             if (SUCCEEDED(hrc))
             {
-                try
-                {
-                    m->individualConfigs[strKey] = ptrIndiCfg;
-                }
-                catch (std::bad_alloc &)
-                {
-                    return E_OUTOFMEMORY;
-                }
+                hrc = ptrIndiCfg.createObject();
+                if (SUCCEEDED(hrc))
+                    hrc = ptrIndiCfg->initWithSettingsAndMachineIdAndSlot(aVirtualBox, this, it->second,
+                                                                          idMachine, it->second.uSlot,
+                                                                          m->uIndividualMACAddressVersion - UINT32_MAX / 4);
+            }
+        }
+        if (SUCCEEDED(hrc))
+        {
+            try
+            {
+                m->individualConfigs[strKey] = ptrIndiCfg;
+            }
+            catch (std::bad_alloc &)
+            {
+                return E_OUTOFMEMORY;
             }
         }
     }
@@ -325,9 +329,31 @@ HRESULT DHCPServer::i_saveSettings(settings::DHCPServer &rData)
     rData.strIPUpper     = m->upperIP;
 
     /* Global configuration: */
-    HRESULT hrc = m->globalConfig->i_saveSettings(rData.GlobalConfig);
+    HRESULT hrc = m->globalConfig->i_saveSettings(rData.globalConfig);
 
     /* Group configuration: */
+    size_t const cGroupConfigs = m->groupConfigs.size();
+    try
+    {
+        rData.vecGroupConfigs.resize(cGroupConfigs);
+    }
+    catch (std::bad_alloc &)
+    {
+        return E_OUTOFMEMORY;
+    }
+    size_t i = 0;
+    for (Data::GroupConfigIterator it = m->groupConfigs.begin(); it != m->groupConfigs.end() && SUCCEEDED(hrc); ++it, i++)
+    {
+        try
+        {
+            rData.vecGroupConfigs[i] = settings::DHCPGroupConfig();
+        }
+        catch (std::bad_alloc &)
+        {
+            return E_OUTOFMEMORY;
+        }
+        hrc = it->second->i_saveSettings(rData.vecGroupConfigs[i]);
+    }
 
     /* Individual configuration: */
     for (Data::IndividualConfigIterator it = m->individualConfigs.begin();
@@ -335,13 +361,13 @@ HRESULT DHCPServer::i_saveSettings(settings::DHCPServer &rData)
     {
         try
         {
-            rData.IndividualConfigs[it->first] = settings::DHCPIndividualConfig();
+            rData.mapIndividualConfigs[it->first] = settings::DHCPIndividualConfig();
         }
         catch (std::bad_alloc &)
         {
             return E_OUTOFMEMORY;
         }
-        hrc = it->second->i_saveSettings(rData.IndividualConfigs[it->first]);
+        hrc = it->second->i_saveSettings(rData.mapIndividualConfigs[it->first]);
     }
 
     return hrc;
@@ -680,6 +706,17 @@ HRESULT DHCPServer::getVmConfigs(std::vector<com::Utf8Str> &aValues)
 }
 
 
+/**
+ * Validates the VM name and slot, returning the machine ID.
+ *
+ * If a machine ID is given instead of a name, we won't check whether it
+ * actually exists...
+ *
+ * @returns COM status code.
+ * @param   aVmName             The VM name or UUID.
+ * @param   aSlot               The slot.
+ * @param   idMachine           Where to return the VM UUID.
+ */
 HRESULT DHCPServer::i_vmNameToIdAndValidateSlot(const com::Utf8Str &aVmName, LONG aSlot, com::Guid &idMachine)
 {
     if ((ULONG)aSlot <= 32)
@@ -691,7 +728,7 @@ HRESULT DHCPServer::i_vmNameToIdAndValidateSlot(const com::Utf8Str &aVmName, LON
 
         /* No, find the VM and get it's UUID. */
         ComObjPtr<Machine> ptrMachine;
-        HRESULT hrc = m->pVirtualBox->i_findMachine(aVmName, false /*fPermitInaccessible*/, true /*aSetError*/, &ptrMachine);
+        HRESULT hrc = m->pVirtualBox->i_findMachineByName(aVmName, true /*aSetError*/, &ptrMachine);
         if (SUCCEEDED(hrc))
             idMachine = ptrMachine->i_getId();
         return hrc;
@@ -855,11 +892,11 @@ HRESULT DHCPServer::getGlobalConfig(ComPtr<IDHCPGlobalConfig> &aGlobalConfig)
 HRESULT DHCPServer::getGroupConfigs(std::vector<ComPtr<IDHCPGroupConfig> > &aGroupConfigs)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-#if 0 /** @todo implement group configs   */
 
+    size_t const cGroupConfigs = m->groupConfigs.size();
     try
     {
-        aGroupConfigs.resize(m->groupConfigs.size());
+        aGroupConfigs.resize(cGroupConfigs);
     }
     catch (std::bad_alloc &)
     {
@@ -867,16 +904,14 @@ HRESULT DHCPServer::getGroupConfigs(std::vector<ComPtr<IDHCPGroupConfig> > &aGro
     }
 
     size_t i = 0;
-    for (Data::GroupConfigIterator it = m->groupConfigs.begin(); it != m->groupConfigs.end(); ++it)
+    for (Data::GroupConfigIterator it = m->groupConfigs.begin(); it != m->groupConfigs.end(); ++it, i++)
     {
+        Assert(i < cGroupConfigs);
         HRESULT hrc = it->second.queryInterfaceTo(aGroupConfigs[i].asOutParam());
         if (FAILED(hrc))
             return hrc;
     }
 
-#else
-    aGroupConfigs.resize(0);
-#endif
     return S_OK;
 }
 
@@ -885,9 +920,10 @@ HRESULT DHCPServer::getIndividualConfigs(std::vector<ComPtr<IDHCPIndividualConfi
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
+    size_t const cIndividualConfigs = m->individualConfigs.size();
     try
     {
-        aIndividualConfigs.resize(m->individualConfigs.size());
+        aIndividualConfigs.resize(cIndividualConfigs);
     }
     catch (std::bad_alloc &)
     {
@@ -895,8 +931,9 @@ HRESULT DHCPServer::getIndividualConfigs(std::vector<ComPtr<IDHCPIndividualConfi
     }
 
     size_t i = 0;
-    for (Data::IndividualConfigIterator it = m->individualConfigs.begin(); it != m->individualConfigs.end(); ++it)
+    for (Data::IndividualConfigIterator it = m->individualConfigs.begin(); it != m->individualConfigs.end(); ++it, i++)
     {
+        Assert(i < cIndividualConfigs);
         HRESULT hrc = it->second.queryInterfaceTo(aIndividualConfigs[i].asOutParam());
         if (FAILED(hrc))
             return hrc;
@@ -956,8 +993,8 @@ HRESULT DHCPServer::i_writeDhcpdConfig(const char *pszFilename, uint32_t uMACAdd
         /*
          * Groups.
          */
-        //for (Data::GroupConfigIterator it = m->groupConfigs.begin(); it != m->groupConfigs.end(); ++it)
-        //    it->second->i_writeDhcpdConfig(pElmRoot->createChild("Config"));
+        for (Data::GroupConfigIterator it = m->groupConfigs.begin(); it != m->groupConfigs.end(); ++it)
+            it->second->i_writeDhcpdConfig(pElmRoot->createChild("Group"));
 
         /*
          * Individual NIC configurations.
@@ -1266,11 +1303,53 @@ HRESULT DHCPServer::getConfig(DHCPConfigScope_T aScope, const com::Utf8Str &aNam
         case DHCPConfigScope_Global:
             if (aName.isNotEmpty())
                 return setError(E_INVALIDARG, tr("The name must be empty or NULL for the Global scope!"));
+
             /* No locking required here. */
             return m->globalConfig.queryInterfaceTo(aConfig.asOutParam());
 
         case DHCPConfigScope_Group:
-            return setError(E_NOTIMPL, tr("Groups are not yet implemented, sorry."));
+        {
+            if (aName.isEmpty())
+                return setError(E_INVALIDARG, tr("A group must have a name!"));
+            if (aName.length() > _1K)
+                return setError(E_INVALIDARG, tr("Name too long! %zu bytes"), aName.length());
+
+            /* Look up the group: */
+            {
+                AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+                Data::GroupConfigIterator it = m->groupConfigs.find(aName);
+                if (it != m->groupConfigs.end())
+                    return it->second.queryInterfaceTo(aConfig.asOutParam());
+            }
+            /* Create a new group if we can. */
+            if (!aMayAdd)
+                return setError(VBOX_E_OBJECT_NOT_FOUND, tr("Found no configuration for group %s"), aName.c_str());
+            ComObjPtr<DHCPGroupConfig> ptrGroupConfig;
+            HRESULT hrc = ptrGroupConfig.createObject();
+            if (SUCCEEDED(hrc))
+                hrc = ptrGroupConfig->initWithDefaults(m->pVirtualBox, this, aName);
+            if (SUCCEEDED(hrc))
+            {
+                AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+                /* Check for insertion race: */
+                Data::GroupConfigIterator it = m->groupConfigs.find(aName);
+                if (it != m->groupConfigs.end())
+                    return it->second.queryInterfaceTo(aConfig.asOutParam()); /* creation race*/
+
+                /* Try insert it: */
+                try
+                {
+                    m->groupConfigs[aName] = ptrGroupConfig;
+                }
+                catch (std::bad_alloc &)
+                {
+                    return E_OUTOFMEMORY;
+                }
+                return ptrGroupConfig.queryInterfaceTo(aConfig.asOutParam());
+            }
+            return hrc;
+        }
 
         case DHCPConfigScope_MachineNIC:
         {

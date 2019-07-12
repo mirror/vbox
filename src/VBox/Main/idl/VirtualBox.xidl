@@ -1641,7 +1641,7 @@
   </interface>
 
   <!--
-  // IVirtualBox
+  // INATNetwork
   /////////////////////////////////////////////////////////////////////////
   -->
 
@@ -1754,6 +1754,12 @@
     <method name="stop"/>
   </interface>
 
+
+  <!--
+  // IDHCPServer and associates
+  /////////////////////////////////////////////////////////////////////////
+  -->
+
   <enum
       name="DhcpOpt"
       uuid="40d99bd3-3ece-44d2-a07e-1085fe9c4f0b">
@@ -1831,16 +1837,16 @@
 
   <enum
       name="DHCPConfigScope"
-      uuid="151df7cd-e596-42dd-235a-b164a781c099">
+      uuid="469c42e4-b9ec-43f2-bdcb-9e9d1eb434ae">
     <const name="Global"      value="0"><desc><link to="IDHCPServer::globalConfig"/></desc></const>
-    <const name="MachineNIC"  value="1"><desc><link to="IDHCPServer::individualConfigs"/></desc></const>
-    <const name="MAC"         value="2"><desc><link to="IDHCPServer::individualConfigs"/></desc></const>
-    <const name="Group"       value="3"><desc><link to="IDHCPServer::groupConfigs"/></desc></const>
+    <const name="Group"       value="1"><desc><link to="IDHCPServer::groupConfigs"/></desc></const>
+    <const name="MachineNIC"  value="2"><desc><link to="IDHCPServer::individualConfigs"/></desc></const>
+    <const name="MAC"         value="3"><desc><link to="IDHCPServer::individualConfigs"/></desc></const>
   </enum>
 
   <enum
-    name="DHCPGroupFilterType"
-    uuid="0639cd66-94b7-41ef-18ac-485636e46d97"
+    name="DHCPGroupConditionType"
+    uuid="2cb9280f-ada2-4194-dee8-bfb8ad77119d"
     >
     <const name="MAC"                     value="0"><desc>MAC address</desc></const>
     <const name="MACWildcard"             value="1"><desc>MAC address wildcard pattern.</desc></const>
@@ -2240,7 +2246,7 @@
     <attribute name="inclusive" type="boolean" readonly="no">
       <desc>Whether this is an inclusive or exclusive group membership condition</desc>
     </attribute>
-    <attribute name="type" type="DHCPGroupFilterType" readonly="no">
+    <attribute name="type" type="DHCPGroupConditionType" readonly="no">
       <desc>Defines how the <link to="IDHCPGroupCondition::value"/> is interpreted.</desc>
     </attribute>
     <attribute name="value" type="wstring" readonly="no">
@@ -2276,8 +2282,9 @@
 
     <method name="addCondition">
       <param name="inclusive"  dir="in" type="boolean"/>
-      <param name="type"       dir="in" type="DHCPGroupFilterType"/>
+      <param name="type"       dir="in" type="DHCPGroupConditionType"/>
       <param name="value"      dir="in" type="wstring"/>
+      <param name="condition"  dir="return" type="IDHCPGroupCondition"/>
     </method>
 
   </interface>

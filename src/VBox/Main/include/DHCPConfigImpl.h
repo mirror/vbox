@@ -22,12 +22,14 @@
 #endif
 
 #include "DHCPGlobalConfigWrap.h"
+#include "DHCPGroupConditionWrap.h"
 #include "DHCPGroupConfigWrap.h"
 #include "DHCPIndividualConfigWrap.h"
 #include <VBox/settings.h>
 
 
 class DHCPServer;
+class DHCPGroupConfig;
 
 
 /**
@@ -98,10 +100,9 @@ public:
                                     std::vector<com::Utf8Str> &aValues);
     /** @} */
 
-protected:
-    HRESULT             i_doWriteConfig();
 
 public:
+    HRESULT             i_doWriteConfig();
     HRESULT             i_saveSettings(settings::DHCPConfig &a_rDst);
     DHCPConfigScope_T   i_getScope() const RT_NOEXCEPT { return m_enmScope; }
     virtual void        i_writeDhcpdConfig(xml::ElementNode *pElm);
@@ -186,11 +187,151 @@ public:
 
 
 /**
+ * DHCP Group inclusion/exclusion condition.
+ */
+class DHCPGroupCondition : public DHCPGroupConditionWrap
+{
+private:
+    /** Inclusive or exclusive condition. */
+    bool                        m_fInclusive;
+    /** The condition type (or how m_strValue should be interpreted). */
+    DHCPGroupConditionType_T    m_enmType;
+    /** The value.  Interpreted according to m_enmType. */
+    com::Utf8Str                m_strValue;
+    /** Pointer to the parent (weak). */
+    DHCPGroupConfig            *m_pParent;
+
+public:
+    /** @name Constructors and destructors.
+     * @{ */
+    DHCPGroupCondition()
+        : m_enmType(DHCPGroupConditionType_MAC)
+        , m_pParent(NULL)
+    {}
+    HRESULT FinalConstruct()
+    {
+        return BaseFinalConstruct();
+    }
+    void    FinalRelease()
+    {
+        uninit();
+        BaseFinalRelease();
+    }
+    HRESULT initWithDefaults(DHCPGroupConfig *a_pParent, bool a_fInclusive, DHCPGroupConditionType_T a_enmType,
+                             const com::Utf8Str a_strValue);
+    HRESULT initWithSettings(DHCPGroupConfig *a_pParent, const settings::DHCPGroupCondition &a_rSrc);
+    void    uninit();
+    /** @} */
+
+    HRESULT i_saveSettings(settings::DHCPGroupCondition &a_rDst);
+
+protected:
+    /** @name Wrapped IDHCPGroupCondition properties
+     * @{ */
+    HRESULT getInclusive(BOOL *aInclusive) RT_OVERRIDE;
+    HRESULT setInclusive(BOOL aInclusive) RT_OVERRIDE;
+    HRESULT getType(DHCPGroupConditionType_T *aType) RT_OVERRIDE;
+    HRESULT setType(DHCPGroupConditionType_T aType) RT_OVERRIDE;
+    HRESULT getValue(com::Utf8Str &aValue) RT_OVERRIDE;
+    HRESULT setValue(const com::Utf8Str &aValue) RT_OVERRIDE;
+    /** @} */
+
+    /** @name Wrapped IDHCPGroupCondition methods
+     * @{ */
+    HRESULT remove() RT_OVERRIDE;
+    /** @} */
+};
+
+
+/**
  * Group configuration.
  */
-class DHCPGroupConfig : public VirtualBoxBase, public DHCPConfig
+class DHCPGroupConfig : public DHCPGroupConfigWrap, public DHCPConfig
 {
-    /** @todo later */
+private:
+    /** Group name. */
+    com::Utf8Str                                m_strName;
+    /** Group membership conditions.   */
+    std::vector<ComObjPtr<DHCPGroupCondition> > m_Conditions;
+    /** Iterator for m_Conditions. */
+    typedef std::vector<ComObjPtr<DHCPGroupCondition> >::iterator ConditionsIterator;
+
+public:
+    /** @name Constructors and destructors.
+     * @{ */
+    DHCPGroupConfig()
+        : DHCPConfig(DHCPConfigScope_Group, this)
+    { }
+    HRESULT FinalConstruct()
+    {
+        return BaseFinalConstruct();
+    }
+    void    FinalRelease()
+    {
+        uninit();
+        BaseFinalRelease();
+    }
+    HRESULT initWithDefaults(VirtualBox *a_pVirtualBox, DHCPServer *a_pParent, const com::Utf8Str &a_rName);
+    HRESULT initWithSettings(VirtualBox *a_pVirtualBox, DHCPServer *a_pParent, const settings::DHCPGroupConfig &a_rSrc);
+    void    uninit();
+    /** @} */
+
+    HRESULT i_saveSettings(settings::DHCPGroupConfig &a_rDst);
+    HRESULT i_removeCondition(DHCPGroupCondition *a_pCondition);
+
+protected:
+    /** @name Wrapped IDHCPConfig properties
+     * @{ */
+    HRESULT getScope(DHCPConfigScope_T *aScope) RT_OVERRIDE             { return i_getScope(aScope); }
+    HRESULT getMinLeaseTime(ULONG *aMinLeaseTime) RT_OVERRIDE           { return i_getMinLeaseTime(aMinLeaseTime); }
+    HRESULT setMinLeaseTime(ULONG aMinLeaseTime) RT_OVERRIDE            { return i_setMinLeaseTime(aMinLeaseTime); }
+    HRESULT getDefaultLeaseTime(ULONG *aDefaultLeaseTime) RT_OVERRIDE   { return i_getDefaultLeaseTime(aDefaultLeaseTime); }
+    HRESULT setDefaultLeaseTime(ULONG aDefaultLeaseTime) RT_OVERRIDE    { return i_setDefaultLeaseTime(aDefaultLeaseTime); }
+    HRESULT getMaxLeaseTime(ULONG *aMaxLeaseTime) RT_OVERRIDE           { return i_getMaxLeaseTime(aMaxLeaseTime); }
+    HRESULT setMaxLeaseTime(ULONG aMaxLeaseTime) RT_OVERRIDE            { return i_setMaxLeaseTime(aMaxLeaseTime); }
+    /** @} */
+
+    /** @name Wrapped IDHCPGroupConfig properties
+     * @{ */
+    HRESULT getName(com::Utf8Str &aName) RT_OVERRIDE;
+    HRESULT setName(const com::Utf8Str &aName) RT_OVERRIDE;
+    HRESULT getConditions(std::vector<ComPtr<IDHCPGroupCondition> > &aConditions) RT_OVERRIDE;
+    /** @} */
+
+    /** @name Wrapped IDHCPConfig methods
+     * @{ */
+    HRESULT setOption(DhcpOpt_T aOption, DHCPOptionEncoding_T aEncoding, const com::Utf8Str &aValue) RT_OVERRIDE
+    {
+        return i_setOption(aOption, aEncoding, aValue);
+    }
+
+    HRESULT removeOption(DhcpOpt_T aOption) RT_OVERRIDE
+    {
+        return i_removeOption(aOption);
+    }
+
+    HRESULT removeAllOptions() RT_OVERRIDE
+    {
+        return i_removeAllOptions();
+    }
+
+    HRESULT getOption(DhcpOpt_T aOption, DHCPOptionEncoding_T *aEncoding, com::Utf8Str &aValue) RT_OVERRIDE
+    {
+        return i_getOption(aOption, aEncoding, aValue);
+    }
+
+    HRESULT getAllOptions(std::vector<DhcpOpt_T> &aOptions, std::vector<DHCPOptionEncoding_T> &aEncodings,
+                          std::vector<com::Utf8Str> &aValues) RT_OVERRIDE
+    {
+        return i_getAllOptions(aOptions, aEncodings, aValues);
+    }
+    /** @} */
+
+    /** @name Wrapped IDHCPGroupConfig methods
+     * @{ */
+    HRESULT addCondition(BOOL aInclusive, DHCPGroupConditionType_T aType, const com::Utf8Str &aValue,
+                         ComPtr<IDHCPGroupCondition> &aCondition) RT_OVERRIDE;
+    /** @} */
 };
 
 
