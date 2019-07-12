@@ -110,9 +110,9 @@ struct DHCPServer::Data
     ComObjPtr<DHCPGlobalConfig> globalConfig;
 
     /** Group configuration indexed by name. */
-    std::map<com::Utf8Str, ComObjPtr<DHCPGroupConfig>> groupConfigs;
+    std::map<com::Utf8Str, ComObjPtr<DHCPGroupConfig> > groupConfigs;
     /** Iterator for groupConfigs. */
-    typedef std::map<com::Utf8Str, ComObjPtr<DHCPGroupConfig>>::iterator GroupConfigIterator;
+    typedef std::map<com::Utf8Str, ComObjPtr<DHCPGroupConfig> >::iterator GroupConfigIterator;
 
     /** Individual (host) configuration indexed by MAC address or VM UUID. */
     std::map<com::Utf8Str, ComObjPtr<DHCPIndividualConfig> > individualConfigs;
