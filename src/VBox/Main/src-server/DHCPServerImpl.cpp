@@ -925,7 +925,7 @@ HRESULT DHCPServer::restart()
 /**
  * @throws std::bad_alloc
  */
-HRESULT DHCPServer::i_writeDhcpdConfig(const char *pszFilename, uint32_t uMACAddressVersion)
+HRESULT DHCPServer::i_writeDhcpdConfig(const char *pszFilename, uint32_t uMACAddressVersion) RT_NOEXCEPT
 {
     /*
      * Produce the DHCP server configuration.
