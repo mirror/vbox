@@ -370,6 +370,16 @@ typedef enum VBOXLOGGROUP
     LOG_GROUP_MAIN_DATAMODEL,
     /** Main group, IDataStream. */
     LOG_GROUP_MAIN_DATASTREAM,
+    /** Main group, IDHCPConfig. */
+    LOG_GROUP_MAIN_DHCPCONFIG,
+    /** Main group, IDHCPGlobalConfig. */
+    LOG_GROUP_MAIN_DHCPGLOBALCONFIG,
+    /** Main group, IDHCPGroupCondition. */
+    LOG_GROUP_MAIN_DHCPGROUPCONDITION,
+    /** Main group, IDHCPGroupConfig. */
+    LOG_GROUP_MAIN_DHCPGROUPCONFIG,
+    /** Main group, IDHCPIndividualConfig. */
+    LOG_GROUP_MAIN_DHCPINDIVIDUALCONFIG,
     /** Main group, IDHCPServer. */
     LOG_GROUP_MAIN_DHCPSERVER,
     /** Main group, IDirectory. */
@@ -891,6 +901,11 @@ typedef enum VBOXLOGGROUP
     "MAIN_CONSOLE", \
     "MAIN_DATAMODEL", \
     "MAIN_DATASTREAM", \
+    "MAIN_DHCPCONFIG", \
+    "MAIN_DHCPGLOBALCONFIG", \
+    "MAIN_DHCPGROUPCONDITION", \
+    "MAIN_DHCPGROUPCONFIG", \
+    "MAIN_DHCPINDIVIDUALCONFIG", \
     "MAIN_DHCPSERVER", \
     "MAIN_DIRECTORY", \
     "MAIN_DISPLAY", \

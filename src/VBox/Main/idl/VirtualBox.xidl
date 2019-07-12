@@ -1823,17 +1823,38 @@
   </enum>
 
   <enum
-      name="DhcpOptEncoding"
-      uuid="88ea6d70-8648-4871-ba30-1f49c61cfaa2">
+      name="DHCPOptionEncoding"
+      uuid="84b6d460-2838-4682-c0d6-ef5b573ef28a">
     <const name="Legacy" value="0"/>
-    <const name="Hex" value="1"/>
+    <const name="Hex"    value="1"/>
+  </enum>
+
+  <enum
+      name="DHCPConfigScope"
+      uuid="151df7cd-e596-42dd-235a-b164a781c099">
+    <const name="Global"      value="0"><desc><link to="IDHCPServer::globalConfig"/></desc></const>
+    <const name="MachineNIC"  value="1"><desc><link to="IDHCPServer::individualConfigs"/></desc></const>
+    <const name="MAC"         value="2"><desc><link to="IDHCPServer::individualConfigs"/></desc></const>
+    <const name="Group"       value="3"><desc><link to="IDHCPServer::groupConfigs"/></desc></const>
+  </enum>
+
+  <enum
+    name="DHCPGroupFilterType"
+    uuid="0639cd66-94b7-41ef-18ac-485636e46d97"
+    >
+    <const name="MAC"                     value="0"><desc>MAC address</desc></const>
+    <const name="MACWildcard"             value="1"><desc>MAC address wildcard pattern.</desc></const>
+    <const name="vendorClassID"           value="2"><desc>Vendor class ID</desc></const>
+    <const name="vendorClassIDWildcard"   value="3"><desc>Vendor class ID wildcard pattern.</desc></const>
+    <const name="userClassID"             value="4"><desc>User class ID</desc></const>
+    <const name="userClassIDWildcard"     value="5"><desc>User class ID wildcard pattern.</desc></const>
   </enum>
 
   <interface
     name="IDHCPServer" extends="$unknown"
     uuid="ea2d467f-b6c2-4b9a-8eb5-6e2f275dd72e"
     wsmap="managed"
-    reservedMethods="1" reservedAttributes="6"
+    reservedMethods="0" reservedAttributes="3"
     >
     <desc>
       The IDHCPServer interface represents the VirtualBox DHCP server configuration.
@@ -1880,34 +1901,41 @@
     </attribute>
 
     <method name="addGlobalOption">
+      <desc>6.0 legacy, will be removed in 6.1.</desc>
       <param name="option" type="DhcpOpt" dir="in"/>
       <param name="value" type="wstring" dir="in" />
     </method>
 
     <method name="removeGlobalOption">
-      <desc>
-        removes the specified option
-        <result name="E_INVALIDARG">
-          invalid option id supplied
-        </result>
-      </desc>
+      <desc>6.0 legacy, will be removed in 6.1.</desc>
       <param name="option" type="DhcpOpt" dir="in"/>
     </method>
 
     <method name="removeGlobalOptions">
-      <desc>
-        removes all global options
-        <result name="E_FAIL">
-          failed to remove global options
-        </result>
-      </desc>
+      <desc>Legacy interface, will be removed in 6.1.</desc>
     </method>
 
     <!-- string in format: "option_id:value" -->
-    <attribute name="globalOptions" type="wstring" safearray="yes" readonly="yes"/>
+    <attribute name="globalOptions" type="wstring" safearray="yes" readonly="yes">
+      <desc>Legacy interface, will be removed in 6.1.</desc>
+    </attribute>
 
     <!-- string in format: "[vm name]:slot" -->
-    <attribute name="vmConfigs" type="wstring" safearray="yes" readonly="yes"/>
+    <attribute name="vmConfigs" type="wstring" safearray="yes" readonly="yes">
+      <desc>Legacy interface, will be removed in 6.1.</desc>
+    </attribute>
+
+    <attribute name="globalConfig" type="IDHCPGlobalConfig" readonly="yes">
+      <desc>Global configuration that applies to all clients.</desc>
+    </attribute>
+
+    <attribute name="groupConfigs" type="IDHCPGroupConfig" safearray="yes" readonly="yes">
+      <desc>Configuration groups that applies to selected clients, selection is flexible.</desc>
+    </attribute>
+
+    <attribute name="individualConfigs" type="IDHCPIndividualConfig" safearray="yes" readonly="yes">
+      <desc>Individual NIC configurations either by MAC address or VM + NIC number.</desc>
+    </attribute>
 
     <!-- VM-slot settings
          It's corresponds to dhcpd.conf entries, like:
@@ -1930,6 +1958,7 @@
          NATNetwork.
     -->
     <method name="addVmSlotOption">
+      <desc>6.0 legacy, will be removed in 6.1.</desc>
       <param name="vmname" type="wstring" dir="in"/>
       <param name="slot" type="long" dir="in"/>
       <param name="option" type="DhcpOpt" dir="in"/>
@@ -1937,30 +1966,21 @@
     </method>
 
     <method name="removeVmSlotOption">
-      <desc>
-        removes the specified option
-        <result name="E_INVALIDARG">
-          invalid VM, slot, or option id supplied
-        </result>
-      </desc>
+      <desc>6.0 legacy, will be removed in 6.1.</desc>
       <param name="vmname" type="wstring" dir="in"/>
       <param name="slot" type="long" dir="in"/>
       <param name="option" type="DhcpOpt" dir="in"/>
     </method>
 
     <method name="removeVmSlotOptions">
-      <desc>
-        removes all option for the specified adapter
-        <result name="E_INVALIDARG">
-          invalid VM or slot supplied
-        </result>
-      </desc>
+      <desc>6.0 legacy, will be removed in 6.1.</desc>
       <param name="vmname" type="wstring" dir="in"/>
       <param name="slot" type="long" dir="in"/>
     </method>
 
     <!-- returns array of strings in format: "option_id:value" for a given pair (vm, slot) -->
     <method name="getVmSlotOptions">
+      <desc>6.0 legacy, will be removed in 6.1.</desc>
       <param name="vmname" type="wstring" dir="in"/>
       <param name="slot" type="long" dir="in"/>
       <param name="option" type="wstring" safearray="yes" dir="return"/>
@@ -1968,6 +1988,7 @@
 
     <!-- Returns options by MAC address -->
     <method name="getMacOptions">
+      <desc>6.0 legacy, will be removed in 6.1.</desc>
       <param name="mac" type="wstring" dir="in"/>
       <param name="option" type="wstring" safearray="yes" dir="return"/>
     </method>
@@ -2073,13 +2094,226 @@
       </param>
     </method>
 
+    <method name="getConfig">
+      <desc>
+        Gets or adds a configuration.
+      </desc>
+      <param name="scope"  dir="in" type="DHCPConfigScope">
+        <desc>The kind of configuration being sought or added.</desc>
+      </param>
+      <param name="name"   dir="in" type="wstring">
+        <desc>
+          Meaning depends on the @a scope:
+            - Ignored when the @a scope is <link to="DHCPConfigScope::Global"/>.
+            - A VM name or UUID for <link to="DHCPConfigScope::MachineNIC"/>.
+            - A MAC address for <link to="DHCPConfigScope::MAC"/>.
+            - A group name for <link to="DHCPConfigScope::Group"/>.
+        </desc>
+      </param>
+      <param name="slot"   dir="in" type="unsigned long">
+        <desc>The NIC slot when @a scope is set to <link to="DHCPConfigScope::MachineNIC"/>,
+          must be zero for all other scope values.
+        </desc>
+      </param>
+      <param name="mayAdd" dir="in" type="boolean">
+        <desc>
+          Set to @c TRUE if the configuration should be added if not found.
+          If set to @c FALSE the method will fail with VBOX_E_OBJECT_NOT_FOUND.
+        </desc>
+      </param>
+      <param name="config" dir="return" type="IDHCPConfig">
+        <desc>The requested configuration.</desc>
+      </param>
+    </method>
+
     <!-- @todo Add variant of queryLeaseByMac that goes by VM name and optionally slot. -->
-    <!-- @todo Add min/default/max lease time settings -->
     <!-- @todo Add lease database attribute (readonly) -->
-    <!-- @todo Add methods for complex group operations, that includes lists of mac address,
-               client ids, vendor/user class ids as selection criteria -->
-    <!-- @todo Add fake DHCP option for assigning fixed IP addresses.  Figure out a way to
-               do it for the host only trunk interface too (possible special group operation). -->
+
+  </interface>
+
+  <interface
+    name="IDHCPConfig" extends="$unknown"
+    uuid="38fdb664-f65e-4905-ee56-a8a912871bbf"
+    wsmap="managed"
+    reservedMethods="8" reservedAttributes="16"
+    >
+    <desc>
+      The DHCP server has several configuration levels: global, group and
+      individual MAC.  This interface implements the settings common to
+      each level.
+    </desc>
+
+    <attribute name="scope" type="DHCPConfigScope" readonly="yes">
+      <desc>
+        Indicates the kind of config this is (mostly for IDHCPIndividualConfig).
+      </desc>
+    </attribute>
+
+    <attribute name="minLeaseTime" type="unsigned long" readonly="no">
+      <desc>The minimum lease time in seconds, ignored if zero.</desc>
+    </attribute>
+    <attribute name="defaultLeaseTime" type="unsigned long" readonly="no">
+      <desc>The default lease time in seconds, ignored if zero.</desc>
+    </attribute>
+    <attribute name="maxLeaseTime" type="unsigned long" readonly="no">
+      <desc>The maximum lease time in seconds, ignored if zero.</desc>
+    </attribute>
+
+    <method name="setOption">
+      <desc>
+        Sets a DHCP option.
+      </desc>
+      <param name="option"    dir="in" type="DhcpOpt">
+        <desc>The DHCP option.</desc>
+      </param>
+      <param name="encoding"  dir="in" type="DHCPOptionEncoding">
+        <desc>The value encoding.</desc>
+      </param>
+      <param name="value"     dir="in" type="wstring">
+        <desc>The DHCP option value.  The exact format depends on the DHCP
+          option and should be documented in <link to="DhcpOpt"/>.
+        </desc>
+      </param>
+    </method>
+
+    <method name="removeOption">
+      <desc>Removes the given DHCP option.</desc>
+      <param name="option"    dir="in" type="DhcpOpt"/>
+    </method>
+
+    <method name="removeAllOptions">
+      <desc>
+        Removes all the options.
+
+        One exception here is the DhcpOpt_SubnetMask option in the global scope
+        that is linked to the <link to="IDHCPServer::networkMask"/> attribute
+        and therefore cannot be removed.
+      </desc>
+    </method>
+
+    <method name="getOption">
+      <desc>Gets the value of a single DHCP option.</desc>
+      <param name="option"    dir="in" type="DhcpOpt">
+        <desc>The DHCP option being sought.</desc>
+      </param>
+      <param name="encoding"  dir="out" type="DHCPOptionEncoding">
+        <desc>The value encoding.</desc>
+      </param>
+      <param name="value"     dir="return" type="wstring">
+        <desc>The value of the requested DHCP option.</desc>
+      </param>
+    </method>
+
+    <method name="getAllOptions">
+      <desc>Gets all DHCP options and their values</desc>
+      <param name="options"   dir="out" type="DhcpOpt" safearray="yes">
+        <desc>Array containing the DHCP option numbers.</desc>
+      </param>
+      <param name="encodings" dir="out" type="DHCPOptionEncoding" safearray="yes">
+        <desc>Array of value encodings that runs parallel to @a options.</desc>
+      </param>
+      <param name="values"    dir="return" type="wstring" safearray="yes">
+        <desc>Array of values that runs parallel to @a options and @a encodings.</desc>
+      </param>
+    </method>
+  </interface>
+
+  <interface
+    name="IDHCPGlobalConfig" extends="IDHCPConfig"
+    uuid="5d7bb1ea-27ed-4e01-3859-4302dd55f796"
+    wsmap="managed"
+    reservedMethods="4" reservedAttributes="4"
+    >
+    <desc>
+      The global DHCP server configuration, see <link to="IDHCPServer::globalConfig"/>.
+    </desc>
+
+    <attribute name="midlDoesNotLikeEmptyInterfaces" readonly="yes" type="boolean"/>
+  </interface>
+
+  <interface
+    name="IDHCPGroupCondition" extends="$unknown"
+    uuid="5ca9e537-5a1d-43f1-6f27-6a0db298a9a8"
+    wsmap="managed"
+    reservedMethods="3" reservedAttributes="3"
+    >
+    <attribute name="inclusive" type="boolean" readonly="no">
+      <desc>Whether this is an inclusive or exclusive group membership condition</desc>
+    </attribute>
+    <attribute name="type" type="DHCPGroupFilterType" readonly="no">
+      <desc>Defines how the <link to="IDHCPGroupCondition::value"/> is interpreted.</desc>
+    </attribute>
+    <attribute name="value" type="wstring" readonly="no">
+      <desc>The condition value.</desc>
+    </attribute>
+    <method name="remove">
+      <desc>Remove this condition from the group.</desc>
+    </method>
+  </interface>
+
+  <interface
+    name="IDHCPGroupConfig" extends="IDHCPConfig"
+    uuid="406a5eca-d032-4f65-a882-6bb626a424a5"
+    wsmap="managed"
+    reservedMethods="8" reservedAttributes="8"
+    >
+    <desc>
+      A configuration that applies to a group of NICs.
+    </desc>
+
+    <attribute name="name" type="wstring" readonly="no">
+      <desc>The group name.</desc>
+    </attribute>
+
+    <attribute name="conditions" type="IDHCPGroupCondition" safearray="yes" readonly="yes">
+      <desc>
+        Group membership conditions.
+
+        Add new conditions by calling <link to="IDHCPGroupConfig::addCondition"/>
+        and use <link to="IDHCPGroupCondition::remove"/> to remove.
+      </desc>
+    </attribute>
+
+    <method name="addCondition">
+      <param name="inclusive"  dir="in" type="boolean"/>
+      <param name="type"       dir="in" type="DHCPGroupFilterType"/>
+      <param name="value"      dir="in" type="wstring"/>
+    </method>
+
+  </interface>
+
+  <interface
+    name="IDHCPIndividualConfig" extends="IDHCPConfig"
+    uuid="c40c2b86-73a5-46cc-8227-93fe57d006a6"
+    wsmap="managed"
+    reservedMethods="8" reservedAttributes="8"
+    >
+    <desc>
+      Configuration for a single NIC, either given directly by MAC address or by
+      VM + adaptor slot number.
+    </desc>
+
+    <attribute name="MACAddress" type="wstring" readonly="yes">
+      <desc>
+        The MAC address.  If a <link to="DHCPConfigScope::MachineNIC"/> config, this
+        will be queried via the VM ID.
+      </desc>
+    </attribute>
+
+    <attribute name="machineId" type="uuid" mod="string" readonly="yes">
+      <desc>
+        The virtual machine ID if a <link to="DHCPConfigScope::MachineNIC"/> config,
+        null UUID for <link to="DHCPConfigScope::MAC"/>.
+      </desc>
+    </attribute>
+
+    <attribute name="slot" type="unsigned long" readonly="yes">
+      <desc>The NIC slot number of the VM if a <link to="DHCPConfigScope::MachineNIC"/> config.</desc>
+    </attribute>
+
+    <attribute name="fixedAddress" type="wstring" readonly="no">
+      <desc>Fixed IPv4 address assignment, dynamic if empty.</desc>
+    </attribute>
 
   </interface>
 

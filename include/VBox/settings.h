@@ -337,10 +337,10 @@ typedef std::list<MachineRegistryEntry> MachinesRegistry;
 struct DhcpOptValue
 {
     DhcpOptValue();
-    DhcpOptValue(const com::Utf8Str &aText, DhcpOptEncoding_T aEncoding = DhcpOptEncoding_Legacy);
+    DhcpOptValue(const com::Utf8Str &aText, DHCPOptionEncoding_T aEncoding = DHCPOptionEncoding_Legacy);
 
-    com::Utf8Str text;
-    DhcpOptEncoding_T encoding;
+    com::Utf8Str            strValue;
+    DHCPOptionEncoding_T    enmEncoding;
 };
 
 typedef std::map<DhcpOpt_T, DhcpOptValue> DhcpOptionMap;
@@ -348,32 +348,39 @@ typedef DhcpOptionMap::value_type DhcpOptValuePair;
 typedef DhcpOptionMap::iterator DhcpOptIterator;
 typedef DhcpOptionMap::const_iterator DhcpOptConstIterator;
 
-typedef struct VmNameSlotKey
+struct DHCPConfig
 {
-    VmNameSlotKey(const com::Utf8Str& aVmName, LONG aSlot);
+    DHCPConfig();
 
-    bool operator<(const VmNameSlotKey& that) const;
+    DhcpOptionMap           OptionMap;
+    uint32_t                secMinLeaseTime;
+    uint32_t                secDefaultLeaseTime;
+    uint32_t                secMaxLeaseTime;
+};
 
-    const com::Utf8Str VmName;
-    LONG      Slot;
-} VmNameSlotKey;
+struct DHCPIndividualConfig : DHCPConfig
+{
+    DHCPIndividualConfig();
 
-typedef std::map<VmNameSlotKey, DhcpOptionMap> VmSlot2OptionsMap;
-typedef VmSlot2OptionsMap::value_type VmSlot2OptionsPair;
-typedef VmSlot2OptionsMap::iterator VmSlot2OptionsIterator;
-typedef VmSlot2OptionsMap::const_iterator VmSlot2OptionsConstIterator;
+    com::Utf8Str            strMACAddress;
+    com::Utf8Str            strVMName;
+    ULONG                   uSlot;
+    com::Utf8Str            strFixedAddress;
+};
+
+typedef std::map<com::Utf8Str, DHCPIndividualConfig> DHCPIndividualConfigMap;
 
 struct DHCPServer
 {
     DHCPServer();
 
-    com::Utf8Str    strNetworkName,
-                    strIPAddress,
-                    strIPLower,
-                    strIPUpper;
-    bool            fEnabled;
-    DhcpOptionMap   GlobalDhcpOptions;
-    VmSlot2OptionsMap VmSlot2OptionsM;
+    com::Utf8Str            strNetworkName;
+    com::Utf8Str            strIPAddress;
+    com::Utf8Str            strIPLower;
+    com::Utf8Str            strIPUpper;
+    bool                    fEnabled;
+    DHCPConfig              GlobalConfig;
+    DHCPIndividualConfigMap IndividualConfigs;
 };
 
 typedef std::list<DHCPServer> DHCPServersList;
@@ -408,8 +415,6 @@ public:
     MainConfigFile(const com::Utf8Str *pstrFilename);
 
     void readMachineRegistry(const xml::ElementNode &elmMachineRegistry);
-    void readDHCPServers(const xml::ElementNode &elmDHCPServers);
-    void readDhcpOptions(DhcpOptionMap& map, const xml::ElementNode& options);
     void readNATNetworks(const xml::ElementNode &elmNATNetworks);
 
     void write(const com::Utf8Str strFilename);
@@ -426,6 +431,10 @@ private:
     void bumpSettingsVersionIfNeeded();
     void buildUSBDeviceSources(xml::ElementNode &elmParent, const USBDeviceSourcesList &ll);
     void readUSBDeviceSources(const xml::ElementNode &elmDeviceSources, USBDeviceSourcesList &ll);
+    void buildDHCPServers(xml::ElementNode &elmDHCPServers, DHCPServersList const &ll);
+    void buildDHCPOptions(xml::ElementNode &elmOptions, DHCPConfig const &rConfig, bool fIgnoreSubnetMask);
+    void readDHCPServers(const xml::ElementNode &elmDHCPServers);
+    void readDHCPOptions(DHCPConfig &rConfig, const xml::ElementNode &elmOptions, bool fIgnoreSubnetMask);
     bool convertGuiProxySettings(const com::Utf8Str &strUIProxySettings);
 };
 

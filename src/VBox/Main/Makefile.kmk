@@ -549,6 +549,7 @@ VBoxSVC_SOURCES = \
 	src-server/CloudProviderManagerImpl.cpp \
 	src-server/DataStreamImpl.cpp \
 	src-server/DHCPServerImpl.cpp \
+	src-server/DHCPConfigImpl.cpp \
 	src-server/NetworkServiceRunner.cpp \
 	src-server/NATNetworkImpl.cpp \
 	src-server/GuestOSTypeImpl.cpp \
