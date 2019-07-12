@@ -43,7 +43,7 @@ static const char *vdiAllocationBlockSize = "1048576";
 
 static const VDCONFIGINFO vdiConfigInfo[] =
 {
-    { "AllocationBlockSize",            vdiAllocationBlockSize,           VDCFGVALUETYPE_INTEGER,      0 },
+    { "AllocationBlockSize",            vdiAllocationBlockSize,           VDCFGVALUETYPE_INTEGER,      VD_CFGKEY_CREATEONLY },
     { NULL,                             NULL,                             VDCFGVALUETYPE_INTEGER,      0 }
 };
 
@@ -540,7 +540,8 @@ static void vdiSetupImageDesc(PVDIIMAGEDESC pImage)
     pImage->uBlockMask         = getImageBlockSize(&pImage->Header) - 1;
     pImage->uShiftOffset2Index = getPowerOfTwo(getImageBlockSize(&pImage->Header));
     pImage->offStartBlockData  = getImageExtraBlockSize(&pImage->Header);
-    pImage->cbTotalBlockData   =   pImage->offStartBlockData
+    pImage->cbAllocationBlock  = getImageBlockSize(&pImage->Header);
+    pImage->cbTotalBlockData   = pImage->offStartBlockData
                                  + getImageBlockSize(&pImage->Header);
 }
 
@@ -705,7 +706,6 @@ static int vdiCreateImage(PVDIIMAGEDESC pImage, uint64_t cbSize,
 {
     int rc = VINF_SUCCESS;
     uint32_t cbDataAlign = VDI_DATA_ALIGN;
-    uint32_t cbAllocationBlock = VDI_IMAGE_DEFAULT_BLOCK_SIZE;
     AssertPtr(pPCHSGeometry);
     AssertPtr(pLCHSGeometry);
 
@@ -722,7 +722,8 @@ static int vdiCreateImage(PVDIIMAGEDESC pImage, uint64_t cbSize,
     PVDINTERFACECONFIG pImgCfg = VDIfConfigGet(pImage->pVDIfsImage);
     if (pImgCfg)
     {
-        rc = VDCFGQueryU32Def(pImgCfg, "AllocationBlockSize", &cbAllocationBlock, VDI_IMAGE_DEFAULT_BLOCK_SIZE);
+        rc = VDCFGQueryU32Def(pImgCfg, "AllocationBlockSize",
+                &pImage->cbAllocationBlock, VDI_IMAGE_DEFAULT_BLOCK_SIZE);
         if (RT_FAILURE(rc))
             rc = vdIfError(pImage->pIfError, rc, RT_SRC_POS,
                            N_("VDI: Getting AllocationBlockSize for '%s' failed (%Rrc)"), pImage->pszFilename, rc);
@@ -740,7 +741,8 @@ static int vdiCreateImage(PVDIIMAGEDESC pImage, uint64_t cbSize,
     {
 
         rc = vdiSetupImageState(pImage, uImageFlags, pszComment, cbSize,
-                cbAllocationBlock, cbDataAlign, pPCHSGeometry, pLCHSGeometry);
+                pImage->cbAllocationBlock, cbDataAlign, pPCHSGeometry, pLCHSGeometry);
+
         if (RT_SUCCESS(rc))
         {
             /* Use specified image uuid */
@@ -1012,6 +1014,16 @@ static int vdiOpenImage(PVDIIMAGEDESC pImage, unsigned uOpenFlags)
         pRegion->cbData               = 512;
         pRegion->cbMetadata           = 0;
         pRegion->cRegionBlocksOrBytes = getImageDiskSize(&pImage->Header);
+        if (uOpenFlags & VD_OPEN_FLAGS_INFO)
+        {
+            PVDINTERFACECONFIG pImgCfg = VDIfConfigGet(pImage->pVDIfsImage);
+            if (pImgCfg)
+            {
+                rc = VDCFGUpdateU64(pImgCfg, true, "AllocationBlockSize", pImage->cbAllocationBlock);
+                if (RT_FAILURE(rc))
+                    return rc;
+            }
+        }
     }
     else
         vdiFreeImage(pImage, false);

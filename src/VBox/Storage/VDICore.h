@@ -553,6 +553,8 @@ typedef struct VDIIMAGEDESC
     unsigned                offStartBlockData;
     /** Total size of image block (including the extra data). */
     unsigned                cbTotalBlockData;
+    /** Allocation Block Size */
+    unsigned                cbAllocationBlock;
     /** Container filename. (UTF-8) */
     const char             *pszFilename;
     /** Physical geometry of this image (never actually stored). */

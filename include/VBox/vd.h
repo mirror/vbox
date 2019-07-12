@@ -353,6 +353,9 @@ DECLINLINE(uint32_t) VDOpenFlagsToFileOpenFlags(unsigned fOpenFlags, bool fCreat
 /** Expert config key. Not showing it by default in the GUI is is probably
  * a good idea, as the average user won't understand it easily. */
 #define VD_CFGKEY_EXPERT            RT_BIT(1)
+/** Key only need at media creation, not to be retained in registry.
+ *  Should not be exposed in the GUI */
+#define VD_CFGKEY_CREATEONLY        RT_BIT(2)
 /** @}*/
 
 

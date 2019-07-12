@@ -828,6 +828,19 @@ typedef struct VDINTERFACECONFIG
      */
     DECLR3CALLBACKMEMBER(int, pfnQueryBytes, (void *pvUser, const char *pszName, void *ppvData, size_t cbData));
 
+    /**
+     * Set a named property to a specified string value, optionally creating if it doesn't exist.
+     *
+     * @return  VBox status code.
+     *          VERR_CFGM_VALUE_NOT_FOUND means that the key is not known and fCreate flag was not set.
+     * @param   pvUser          The opaque user data associated with this interface.
+     * @param   fCreate         Create property if it doesn't exist (if property exists, it is not an error)
+     * @param   pszName         Name of the key to query.
+     * @param   pszValue        String value to set the name property to.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnUpdate, (void *pvUser, bool fCreate,
+            const char *pszName, const char *pszValue));
+
 } VDINTERFACECONFIG, *PVDINTERFACECONFIG;
 
 /**
@@ -1110,6 +1123,42 @@ DECLINLINE(int) VDCFGQueryBytesAlloc(PVDINTERFACECONFIG pCfgIf,
     }
     return rc;
 }
+
+/**
+ * Set property value to string (optionally create if non-existent).
+ *
+ * @return  VBox status code.
+ * @param   pCfgIf      Pointer to configuration callback table.
+ * @param   fCreate     Create the property if it doesn't exist
+ * @param   pszName     Name of property
+ * @param   pszValue    String value to assign to property
+ */
+DECLINLINE(int) VDCFGUpdate(PVDINTERFACECONFIG pCfgIf, bool fCreate, const char *pszName, const char *pszValue)
+{
+    int rc = pCfgIf->pfnUpdate(pCfgIf->Core.pvUser, fCreate, pszName, pszValue);
+    return rc;
+}
+
+/**
+ * Set property value to Unsigned Int 64-bit (optionally create if non-existent).
+ *
+ * @return  VBox status code.
+ * @param   pCfgIf      Pointer to configuration callback table.
+ * @param   fCreate     Create the property if it doesn't exist
+ * @param   pszName     Name of property
+ * @param   pszValue    String value to assign to property
+ */
+
+DECLINLINE(int) VDCFGUpdateU64(PVDINTERFACECONFIG pCfgIf, bool fCreate, const char *pszName, uint64_t u64)
+{
+     char *pszValue;
+     RTStrAPrintf(&pszValue, "%ul", u64);
+     int rc = VDCFGUpdate(pCfgIf, fCreate, pszName, pszValue);
+     RTMemFree(pszValue);
+     return rc;
+}
+
+
 
 /** Forward declaration of a VD socket. */
 typedef struct VDSOCKETINT *VDSOCKET;

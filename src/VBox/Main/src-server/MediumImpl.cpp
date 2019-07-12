@@ -846,6 +846,7 @@ HRESULT Medium::FinalConstruct()
     m->vdIfConfig.pfnAreKeysValid = i_vdConfigAreKeysValid;
     m->vdIfConfig.pfnQuerySize = i_vdConfigQuerySize;
     m->vdIfConfig.pfnQuery = i_vdConfigQuery;
+    m->vdIfConfig.pfnUpdate = i_vdConfigUpdate;
     m->vdIfConfig.pfnQueryBytes = NULL;
 
     /* Initialize the per-disk interface chain (could be done more globally,
@@ -4673,11 +4674,23 @@ void Medium::i_saveSettingsOne(settings::Medium &data, const Utf8Str &strHardDis
         {
             const Utf8Str &name = it->first;
             const Utf8Str &value = it->second;
-            /* do NOT store the plain InitiatorSecret */
-            if (   !fHaveInitiatorSecretEncrypted
-                || !name.equals("InitiatorSecret"))
-                data.properties[name] = value;
-        }
+            bool fCreateOnly = false;
+            for (MediumFormat::PropertyArray::const_iterator itf = m->formatObj->i_getProperties().begin();
+                 itf != m->formatObj->i_getProperties().end();
+                 ++itf)
+             {
+                if (itf->strName.equals(name) &&
+                    (itf->flags & VD_CFGKEY_CREATEONLY))
+                {
+                        fCreateOnly = true;
+                        break;
+                }
+            }
+            if (!fCreateOnly)
+                /* do NOT store the plain InitiatorSecret */
+                if (   !fHaveInitiatorSecretEncrypted
+                    || !name.equals("InitiatorSecret"))
+                            data.properties[name] = value;        }
     }
     if (fHaveInitiatorSecretEncrypted)
         data.properties["InitiatorSecretEncrypted"] = strCiphertext;
@@ -8017,6 +8030,24 @@ DECLCALLBACK(int) Medium::i_vdCryptoConfigQuery(void *pvUser, const char *pszNam
 
     memcpy(pszValue, psz, cch + 1);
     return VINF_SUCCESS;
+}
+
+DECLCALLBACK(int) Medium::i_vdConfigUpdate(void *pvUser,
+                                                bool fCreate,
+                                                const char *pszName,
+                                                const char *pszValue)
+{
+    int rv = VINF_SUCCESS;
+    Utf8Str pName = Utf8Str(pszName);
+    Medium *that = (Medium *)pvUser;
+    AutoWriteLock mlock(that COMMA_LOCKVAL_SRC_POS);
+    settings::StringsMap::const_iterator it = that->m->mapProperties.find(pName);
+    if (it == that->m->mapProperties.end() && !fCreate)
+        rv = VERR_CFGM_VALUE_NOT_FOUND;
+    else
+        that->m->mapProperties[pName] = Utf8Str(pszValue);
+    mlock.release();
+    return rv;
 }
 
 DECLCALLBACK(int) Medium::i_vdCryptoKeyRetain(void *pvUser, const char *pszId,
