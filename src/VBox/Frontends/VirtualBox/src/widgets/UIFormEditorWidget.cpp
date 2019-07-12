@@ -24,13 +24,13 @@
 #include <QPushButton>
 #include <QSortFilterProxyModel>
 #include <QSpinBox>
-#include <QStyledItemDelegate>
 #include <QTextEdit>
 #include <QVBoxLayout>
 
 /* GUI includes: */
 #include "QIDialog.h"
 #include "QIDialogButtonBox.h"
+#include "QIStyledItemDelegate.h"
 #include "QITableView.h"
 #include "QIWithRetranslateUI.h"
 #include "UIFormEditorWidget.h"
@@ -201,6 +201,11 @@ class TextEditor : public QIWithRetranslateUI<QWidget>
     Q_OBJECT;
     Q_PROPERTY(TextData text READ text WRITE setText USER true);
 
+signals:
+
+    /** Notifies listener about data should be committed. */
+    void sigCommitData(QWidget *pThis);
+
 public:
 
     /** Constructs TextData editor passing @a pParent to the base-class. */
@@ -241,10 +246,20 @@ class ChoiceEditor : public QComboBox
     Q_OBJECT;
     Q_PROPERTY(ChoiceData choice READ choice WRITE setChoice USER true);
 
+signals:
+
+    /** Notifies listener about data should be committed. */
+    void sigCommitData(QWidget *pThis);
+
 public:
 
     /** Constructs ChoiceData editor passing @a pParent to the base-class. */
     ChoiceEditor(QWidget *pParent = 0);
+
+private slots:
+
+    /** Handles current index change. */
+    void sltCurrentIndexChanged();
 
 private:
 
@@ -260,6 +275,11 @@ class RangedIntegerEditor : public QSpinBox
 {
     Q_OBJECT;
     Q_PROPERTY(RangedIntegerData rangedInteger READ rangedInteger WRITE setRangedInteger USER true);
+
+signals:
+
+    /** Notifies listener about data should be committed. */
+    void sigCommitData(QWidget *pThis);
 
 public:
 
@@ -583,10 +603,18 @@ TextData TextEditor::text() const
 ChoiceEditor::ChoiceEditor(QWidget *pParent /* = 0 */)
     : QComboBox(pParent)
 {
+    connect(this, static_cast<void(ChoiceEditor::*)(int)>(&ChoiceEditor::currentIndexChanged),
+            this, &ChoiceEditor::sltCurrentIndexChanged);
+}
+
+void ChoiceEditor::sltCurrentIndexChanged()
+{
+    emit sigCommitData(this);
 }
 
 void ChoiceEditor::setChoice(const ChoiceData &choice)
 {
+    clear();
     addItems(choice.values().toList());
     setCurrentIndex(choice.selectedIndex());
 }
@@ -1436,9 +1464,12 @@ void UIFormEditorWidget::prepare()
             if (pAbstractItemDelegate)
             {
                 /* But is this also styled item delegate? */
-                QStyledItemDelegate *pStyledItemDelegate = qobject_cast<QStyledItemDelegate*>(pAbstractItemDelegate);
+                QIStyledItemDelegate *pStyledItemDelegate = qobject_cast<QIStyledItemDelegate*>(pAbstractItemDelegate);
                 if (pStyledItemDelegate)
                 {
+                    /* Configure item delegate: */
+                    pStyledItemDelegate->setWatchForEditorDataCommits(true);
+
                     /* Create new item editor factory: */
                     QItemEditorFactory *pNewItemEditorFactory = new QItemEditorFactory;
                     if (pNewItemEditorFactory)
