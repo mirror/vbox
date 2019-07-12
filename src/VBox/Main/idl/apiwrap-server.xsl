@@ -79,8 +79,8 @@ templates for file headers/footers
  * Generator: src/VBox/Main/idl/apiwrap-server.xsl
  */
 
-/**
- * Copyright (C) 2010-2016 Oracle Corporation
+/*
+ * Copyright (C) 2010-2019 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -119,20 +119,14 @@ templates for file headers/footers
 #include "Wrapper.h"
 
 </xsl:text>
-    <xsl:value-of select="concat('class ATL_NO_VTABLE ', substring(@name, 2), 'Wrap:')"/>
+    <xsl:value-of select="concat('class ATL_NO_VTABLE ', substring(@name, 2), 'Wrap')"/>
     <xsl:text>
-    public VirtualBoxBase,
+    : public VirtualBoxBase
 </xsl:text>
-    <xsl:value-of select="concat('    VBOX_SCRIPTABLE_IMPL(', @name, ')')"/>
-    <xsl:if test="count(exsl:node-set($addinterfaces)/token) > 0">
-        <xsl:text>,</xsl:text>
-    </xsl:if>
+    <xsl:value-of select="concat('    , VBOX_SCRIPTABLE_IMPL(', @name, ')')"/>
     <xsl:value-of select="$G_sNewLine"/>
     <xsl:for-each select="exsl:node-set($addinterfaces)/token">
-        <xsl:value-of select="concat('    VBOX_SCRIPTABLE_IMPL(', text(), ')')"/>
-        <xsl:if test="not(position()=last())">
-            <xsl:text>,</xsl:text>
-        </xsl:if>
+        <xsl:value-of select="concat('    , VBOX_SCRIPTABLE_IMPL(', text(), ')')"/>
         <xsl:value-of select="$G_sNewLine"/>
     </xsl:for-each>
     <xsl:text>{
@@ -1562,7 +1556,9 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
 </xsl:text>
         </xsl:when>
         <xsl:when test="$pmode != 'dtrace-probes'">
-            <xsl:value-of select="concat($G_sNewLine, '    // ', $pmode, ' ', $name, ' properties', $G_sNewLine)"/>
+            <xsl:value-of select="concat($G_sNewLine, '    /** @name ', translate(substring($pmode, 1, 1), $G_lowerCase, $G_upperCase), substring($pmode,2), ' ', $name, ' properties', $G_sNewLine)"/>
+            <xsl:text>     * @{ */
+</xsl:text>
         </xsl:when>
     </xsl:choose>
     <xsl:choose>
@@ -1614,6 +1610,12 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
         </xsl:when>
         <xsl:otherwise><xsl:message terminate="yes">Otherwise oops in emitAttributes</xsl:message></xsl:otherwise>
     </xsl:choose>
+
+    <!-- close doxygen @name -->
+    <xsl:if test="($pmode != 'code') and ($pmode != 'dtrace-probes')" >
+            <xsl:text>    /** @} */
+</xsl:text>
+    </xsl:if>
 </xsl:template>
 
 <xsl:template name="emitTargetBegin">
@@ -2195,7 +2197,9 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
         </xsl:when>
         <xsl:when test="$pmode='dtrace-probes'"/>
         <xsl:otherwise>
-            <xsl:value-of select="concat($G_sNewLine, '    // ', $pmode, ' ', $name, ' methods', $G_sNewLine)"/>
+            <xsl:value-of select="concat($G_sNewLine, '    /** @name ', translate(substring($pmode, 1, 1), $G_lowerCase, $G_upperCase), substring($pmode,2), ' ', $name, ' methods', $G_sNewLine)"/>
+            <xsl:text>     * @{ */
+</xsl:text>
         </xsl:otherwise>
     </xsl:choose>
     <xsl:choose>
@@ -2246,6 +2250,12 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
         </xsl:when>
         <xsl:otherwise/>
     </xsl:choose>
+
+    <!-- close doxygen @name -->
+    <xsl:if test="($pmode != 'code') and ($pmode != 'dtrace-probes')" >
+            <xsl:text>    /** @} */
+</xsl:text>
+    </xsl:if>
 </xsl:template>
 
 <!-- - - - - - - - - - - - - - - - - - - - - - -
