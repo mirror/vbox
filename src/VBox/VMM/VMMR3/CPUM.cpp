@@ -2627,6 +2627,7 @@ static DECLCALLBACK(int) cpumR3SaveExec(PVM pVM, PSSMHANDLE pSSM)
             SSMR3PutGCPhys(pSSM,   pGstCtx->hwvirt.vmx.GCPhysVmcs);
             SSMR3PutGCPhys(pSSM,   pGstCtx->hwvirt.vmx.GCPhysShadowVmcs);
             SSMR3PutU32(pSSM,      (uint32_t)pGstCtx->hwvirt.vmx.enmDiag);
+            SSMR3PutU32(pSSM,      (uint32_t)pGstCtx->hwvirt.vmx.uDiagAux);
             SSMR3PutU32(pSSM,      (uint32_t)pGstCtx->hwvirt.vmx.enmAbort);
             SSMR3PutU32(pSSM,      pGstCtx->hwvirt.vmx.uAbortAux);
             SSMR3PutBool(pSSM,     pGstCtx->hwvirt.vmx.fInVmxRootMode);
@@ -2919,6 +2920,7 @@ static DECLCALLBACK(int) cpumR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVers
                         SSMR3GetGCPhys(pSSM,   &pGstCtx->hwvirt.vmx.GCPhysVmcs);
                         SSMR3GetGCPhys(pSSM,   &pGstCtx->hwvirt.vmx.GCPhysShadowVmcs);
                         SSMR3GetU32(pSSM,       (uint32_t *)&pGstCtx->hwvirt.vmx.enmDiag);
+                        SSMR3GetU32(pSSM,       (uint32_t *)&pGstCtx->hwvirt.vmx.uDiagAux);
                         SSMR3GetU32(pSSM,       (uint32_t *)&pGstCtx->hwvirt.vmx.enmAbort);
                         SSMR3GetU32(pSSM,      &pGstCtx->hwvirt.vmx.uAbortAux);
                         SSMR3GetBool(pSSM,     &pGstCtx->hwvirt.vmx.fInVmxRootMode);
@@ -4120,6 +4122,7 @@ static DECLCALLBACK(void) cpumR3InfoGuestHwvirt(PVM pVM, PCDBGFINFOHLP pHlp, con
         pHlp->pfnPrintf(pHlp, "  GCPhysVmcs                 = %#RGp\n",     pCtx->hwvirt.vmx.GCPhysVmcs);
         pHlp->pfnPrintf(pHlp, "  GCPhysShadowVmcs           = %#RGp\n",     pCtx->hwvirt.vmx.GCPhysShadowVmcs);
         pHlp->pfnPrintf(pHlp, "  enmDiag                    = %u (%s)\n",   pCtx->hwvirt.vmx.enmDiag, HMGetVmxDiagDesc(pCtx->hwvirt.vmx.enmDiag));
+        pHlp->pfnPrintf(pHlp, "  uDiagAux                   = %#RX64\n",    pCtx->hwvirt.vmx.uDiagAux);
         pHlp->pfnPrintf(pHlp, "  enmAbort                   = %u (%s)\n",   pCtx->hwvirt.vmx.enmAbort, HMGetVmxAbortDesc(pCtx->hwvirt.vmx.enmAbort));
         pHlp->pfnPrintf(pHlp, "  uAbortAux                  = %u (%#x)\n",  pCtx->hwvirt.vmx.uAbortAux, pCtx->hwvirt.vmx.uAbortAux);
         pHlp->pfnPrintf(pHlp, "  fInVmxRootMode             = %RTbool\n",   pCtx->hwvirt.vmx.fInVmxRootMode);
