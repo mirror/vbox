@@ -3997,7 +3997,7 @@ static void  cpumR3InfoVmxVmcs(PCDBGFINFOHLP pHlp, PCVMXVVMCS pVmcs, const char 
             pHlp->pfnPrintf(pHlp, "    %sError-code valid           = %RTbool\n", pszPrefix, VMX_IDT_VECTORING_INFO_IS_ERROR_CODE_VALID(fInfo));
         }
         pHlp->pfnPrintf(pHlp, "  %sIDT-vectoring error-code   = %#RX32\n",   pszPrefix, pVmcs->u32RoIdtVectoringErrCode);
-        pHlp->pfnPrintf(pHlp, "  %sVM-exit instruction length = %u bytes\n", pszPrefix, pVmcs->u32RoExitInstrLen);
+        pHlp->pfnPrintf(pHlp, "  %sVM-exit instruction length = %u byte(s)\n", pszPrefix, pVmcs->u32RoExitInstrLen);
         pHlp->pfnPrintf(pHlp, "  %sVM-exit instruction info   = %#RX64\n",   pszPrefix, pVmcs->u32RoExitInstrInfo);
 
         /* 64-bit. */
