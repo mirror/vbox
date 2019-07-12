@@ -66,6 +66,9 @@ private slots:
 
     void sltKeyboardLedsChange();
     void sltPutKeyboardSequence(QVector<LONG> sequence);
+    void sltPutUsageCodesPress(QVector<QPair<LONG, LONG> > sequence);
+    void sltPutUsageCodesRelease(QVector<QPair<LONG, LONG> > sequence);
+
     void sltStatusBarContextMenuRequest(const QPoint &point);
     /** Handles the signal we get from the layout selector widget.
       * Selection changed is forwarded to the keyboard widget. */

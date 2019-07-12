@@ -95,14 +95,6 @@ enum KeyType
     KeyType_Max
 };
 
-struct KeyCaptions
-{
-    QString m_strBase;
-    QString m_strShift;
-    QString m_strAltGr;
-    QString m_strShiftAltGr;
-};
-
 enum KeyboardColorType
 {
     KeyboardColorType_Background = 0,
@@ -111,6 +103,21 @@ enum KeyboardColorType
     KeyboardColorType_Edit,
     KeyboardColorType_Pressed,
     KeyboardColorType_Max
+};
+
+struct KeyCaptions
+{
+    QString m_strBase;
+    QString m_strShift;
+    QString m_strAltGr;
+    QString m_strShiftAltGr;
+};
+
+struct UsageCode
+{
+    LONG usageId;
+    LONG usagePage;
+    bool fRelease;
 };
 
 
@@ -327,6 +334,10 @@ public:
     void addScanCodePrefix(LONG scanCode);
     const QVector<LONG> &scanCodePrefix() const;
 
+    void setUsageId(LONG usageId);
+    void setUsagePage(LONG usagePage);
+    QPair<LONG, LONG> usagePageIdPair() const;
+
     void setSpaceWidthAfter(int iSpace);
     int spaceWidthAfter() const;
 
@@ -390,6 +401,10 @@ private:
     /** Key's position in the layout. */
     int        m_iPosition;
     UISoftKeyboardWidget  *m_pParentWidget;
+
+    LONG m_iUsageId;
+    LONG m_iUsagePage;
+
     bool m_fIsNumPadKey;
     bool m_fIsOSMenuKey;
 };
@@ -508,6 +523,11 @@ signals:
 
     void sigStatusBarMessage(const QString &strMessage);
     void sigPutKeyboardSequence(QVector<LONG> sequence);
+
+    void sigPutUsageCodesPress(QVector<QPair<LONG, LONG> > sequence);
+    void sigPutUsageCodesRelease(QVector<QPair<LONG, LONG> > sequence);
+
+
     void sigCurrentLayoutChange();
     void sigKeyToEdit(UISoftKeyboardKey* pKey);
 
@@ -1460,6 +1480,21 @@ const QVector<LONG> &UISoftKeyboardKey::scanCodePrefix() const
 void UISoftKeyboardKey::setSpaceWidthAfter(int iSpace)
 {
     m_iSpaceWidthAfter = iSpace;
+}
+
+void UISoftKeyboardKey::setUsageId(LONG usageId)
+{
+    m_iUsageId = usageId;
+}
+
+void UISoftKeyboardKey::setUsagePage(LONG usagePage)
+{
+    m_iUsagePage = usagePage;
+}
+
+QPair<LONG, LONG> UISoftKeyboardKey::usagePageIdPair() const
+{
+    return QPair<LONG, LONG>(m_iUsageId, m_iUsagePage);
 }
 
 int UISoftKeyboardKey::spaceWidthAfter() const
@@ -2425,6 +2460,8 @@ void UISoftKeyboardWidget::handleKeyRelease(UISoftKeyboardKey *pKey)
     if (pKey->type() == KeyType_Modifier)
         return;
 
+#if 0
+
     QVector<LONG> sequence;
     if (!pKey->scanCodePrefix().isEmpty())
         sequence <<  pKey->scanCodePrefix();
@@ -2441,6 +2478,22 @@ void UISoftKeyboardWidget::handleKeyRelease(UISoftKeyboardKey *pKey)
         pModifier->release();
     }
     emit sigPutKeyboardSequence(sequence);
+
+#else
+
+    QVector<QPair<LONG, LONG> > sequence;
+    sequence << QPair<LONG, LONG>(pKey->usagePageIdPair());
+    /* Add the pressed modifiers in the reverse order: */
+    for (int i = m_pressedModifiers.size() - 1; i >= 0; --i)
+    {
+        UISoftKeyboardKey *pModifier = m_pressedModifiers[i];
+        sequence << pModifier->usagePageIdPair();
+        /* Release the pressed modifiers (if there are not locked): */
+        pModifier->release();
+    }
+    emit sigPutUsageCodesRelease(sequence);
+
+#endif
 }
 
 void UISoftKeyboardWidget::handleKeyPress(UISoftKeyboardKey *pKey)
@@ -2452,6 +2505,7 @@ void UISoftKeyboardWidget::handleKeyPress(UISoftKeyboardKey *pKey)
     if (pKey->type() == KeyType_Modifier)
         return;
 
+#if 0
     QVector<LONG> sequence;
      /* Add the pressed modifiers first: */
     for (int i = 0; i < m_pressedModifiers.size(); ++i)
@@ -2466,6 +2520,22 @@ void UISoftKeyboardWidget::handleKeyPress(UISoftKeyboardKey *pKey)
         sequence << pKey->scanCodePrefix();
     sequence << pKey->scanCode();
     emit sigPutKeyboardSequence(sequence);
+
+#else
+
+    QVector<QPair<LONG, LONG> > sequence;
+
+     /* Add the pressed modifiers first: */
+    for (int i = 0; i < m_pressedModifiers.size(); ++i)
+    {
+        UISoftKeyboardKey *pModifier = m_pressedModifiers[i];
+        sequence << pModifier->usagePageIdPair();
+    }
+
+    sequence << pKey->usagePageIdPair();
+    emit sigPutUsageCodesPress(sequence);
+
+#endif
 }
 
 void UISoftKeyboardWidget::keyStateChange(UISoftKeyboardKey* pKey)
@@ -2922,6 +2992,18 @@ void UIPhysicalLayoutReader::parseKey(UISoftKeyboardRow &row)
                 if (fOk)
                     key.addScanCodePrefix(iCode);
             }
+        }
+        else if (m_xmlReader.name() == "usageid")
+        {
+            QString strCode = m_xmlReader.readElementText();
+            bool fOk = false;
+            key.setUsageId(strCode.toInt(&fOk, 16));
+        }
+        else if (m_xmlReader.name() == "usagepage")
+        {
+            QString strCode = m_xmlReader.readElementText();
+            bool fOk = false;
+            key.setUsagePage(strCode.toInt(&fOk, 16));
         }
         else if (m_xmlReader.name() == "cutout")
             parseCutout(key);
@@ -3390,6 +3472,18 @@ void UISoftKeyboard::sltPutKeyboardSequence(QVector<LONG> sequence)
     keyboard().PutScancodes(sequence);
 }
 
+void UISoftKeyboard::sltPutUsageCodesPress(QVector<QPair<LONG, LONG> > sequence)
+{
+    for (int i = 0; i < sequence.size(); ++i)
+        keyboard().PutUsageCode(sequence[i].first, sequence[i].second, false);
+}
+
+void UISoftKeyboard::sltPutUsageCodesRelease(QVector<QPair<LONG, LONG> > sequence)
+{
+    for (int i = 0; i < sequence.size(); ++i)
+        keyboard().PutUsageCode(sequence[i].first, sequence[i].second, true);
+}
+
 void UISoftKeyboard::sltStatusBarContextMenuRequest(const QPoint &point)
 {
     if (m_pKeyboardWidget)
@@ -3591,6 +3685,9 @@ void UISoftKeyboard::prepareConnections()
 {
     connect(m_pSession, &UISession::sigKeyboardLedsChange, this, &UISoftKeyboard::sltKeyboardLedsChange);
     connect(m_pKeyboardWidget, &UISoftKeyboardWidget::sigPutKeyboardSequence, this, &UISoftKeyboard::sltPutKeyboardSequence);
+    connect(m_pKeyboardWidget, &UISoftKeyboardWidget::sigPutUsageCodesPress, this, &UISoftKeyboard::sltPutUsageCodesPress);
+    connect(m_pKeyboardWidget, &UISoftKeyboardWidget::sigPutUsageCodesRelease, this, &UISoftKeyboard::sltPutUsageCodesRelease);
+
     connect(m_pKeyboardWidget, &UISoftKeyboardWidget::sigCurrentLayoutChange, this, &UISoftKeyboard::sltCurentLayoutChanged);
     connect(m_pKeyboardWidget, &UISoftKeyboardWidget::sigKeyToEdit, this, &UISoftKeyboard::sltKeyToEditChanged);
     connect(m_pKeyboardWidget, &UISoftKeyboardWidget::sigStatusBarMessage, this, &UISoftKeyboard::sltStatusBarMessage);
