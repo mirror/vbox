@@ -1726,7 +1726,7 @@ void MainConfigFile::buildDHCPServers(xml::ElementNode &elmDHCPServers, DHCPServ
         pElmThis->setAttribute("enabled", (srv.fEnabled) ? 1 : 0);        // too bad we chose 1 vs. 0 here
 
         /* We don't want duplicate validation check of networkMask here*/
-        if (srv.GlobalConfig.OptionMap.size() > (itOpt != srv.GlobalConfig.OptionMap.end() ? 1 : 0))
+        if (srv.GlobalConfig.OptionMap.size() > (itOpt != srv.GlobalConfig.OptionMap.end() ? 1U : 0U))
         {
             xml::ElementNode *pElmOptions = pElmThis->createChild("Options");
             buildDHCPOptions(*pElmOptions, srv.GlobalConfig, true);
@@ -1802,7 +1802,7 @@ void MainConfigFile::readDHCPServers(const xml::ElementNode &elmDHCPServers)
                 /* Global options: */
                 const xml::ElementNode *pElmOptions;
                 xml::NodesLoop          nlOptions(*pelmServer, "Options");
-                while ((pElmOptions = nlOptions.forAllNodes()) != NULL) /** @todo this loop makes no sense, there can only be one <Options> child. */
+                while ((pElmOptions = nlOptions.forAllNodes()) != NULL) /** @todo this loop makes no sense, there can only be one \<Options\> child. */
                     readDHCPOptions(srv.GlobalConfig, *pElmOptions, true /*fIgnoreSubnetMask*/);
 
                 /* host specific configuration: */
