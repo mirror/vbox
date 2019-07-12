@@ -4449,8 +4449,7 @@ DxgkDdiSetPointerPosition(
         pPointerAttributes->Enable |= VBOX_MOUSE_POINTER_VISIBLE;
         if (!fScreenVisState)
         {
-            fVisStateChanged = !!pGlobalPointerInfo->cVisible;
-            ++pGlobalPointerInfo->cVisible;
+            fVisStateChanged = TRUE;
         }
     }
     else
@@ -4458,8 +4457,7 @@ DxgkDdiSetPointerPosition(
         pPointerAttributes->Enable &= ~VBOX_MOUSE_POINTER_VISIBLE;
         if (fScreenVisState)
         {
-            --pGlobalPointerInfo->cVisible;
-            fVisStateChanged = !!pGlobalPointerInfo->cVisible;
+            fVisStateChanged = TRUE;
         }
     }
 
