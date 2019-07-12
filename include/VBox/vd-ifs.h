@@ -1147,14 +1147,15 @@ DECLINLINE(int) VDCFGUpdate(PVDINTERFACECONFIG pCfgIf, bool fCreate, const char 
  * @param   fCreate     Create the property if it doesn't exist
  * @param   pszName     Name of property
  * @param   pszValue    String value to assign to property
+ * @param   u64Value    64-bit unsigned value to save with property.
  */
 
-DECLINLINE(int) VDCFGUpdateU64(PVDINTERFACECONFIG pCfgIf, bool fCreate, const char *pszName, uint64_t u64)
+DECLINLINE(int) VDCFGUpdateU64(PVDINTERFACECONFIG pCfgIf, bool fCreate, const char *pszName, uint64_t u64Value)
 {
-     char *pszValue;
-     RTStrAPrintf(&pszValue, "%ul", u64);
-     int rc = VDCFGUpdate(pCfgIf, fCreate, pszName, pszValue);
-     RTMemFree(pszValue);
+     int rc = 0;
+     char pszValue[11];
+     (void) RTStrPrintf(pszValue, sizeof(pszValue), "%ul", u64Value);
+     rc = VDCFGUpdate(pCfgIf, fCreate, pszName, pszValue);
      return rc;
 }
 
