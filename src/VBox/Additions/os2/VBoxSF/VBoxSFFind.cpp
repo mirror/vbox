@@ -624,11 +624,12 @@ FS32_FINDFIRST(PCDFSI pCdFsi, PVBOXSFCD pCdFsd, PCSZ pszPath, LONG offCurDirEnd,
                                 pDataBuf->cEntriesLeft  = 0;
                                 pDataBuf->pEntry        = NULL;
                                 pDataBuf->pFilter       = pFilter;
-                                pDataBuf->fMustHaveAttribs   = (uint8_t)((fAttribs >> 8) & (RTFS_DOS_MASK_OS2 >> RTFS_DOS_SHIFT));
-                                pDataBuf->fExcludedAttribs   = (uint8_t)(~fAttribs
-                                                                         & (  (RTFS_DOS_MASK_OS2 & ~(RTFS_DOS_ARCHIVED | RTFS_DOS_READONLY)
-                                                                            >> RTFS_DOS_SHIFT)));
+                                pDataBuf->fMustHaveAttribs   = (uint8_t)(  (fAttribs >> 8)
+                                                                         & (FILE_READONLY | FILE_HIDDEN | FILE_SYSTEM | FILE_DIRECTORY | FILE_ARCHIVED));
+                                pDataBuf->fExcludedAttribs   = (uint8_t)(~fAttribs & (FILE_HIDDEN | FILE_SYSTEM | FILE_DIRECTORY));
                                 pDataBuf->fLongFilenames     = RT_BOOL(fAttribs & FF_ATTR_LONG_FILENAME);
+                                LogFlow(("FS32_FINDFIRST: fMustHaveAttribs=%#x fExcludedAttribs=%#x fLongFilenames=%d (fAttribs=%#x)\n",
+                                         pDataBuf->fMustHaveAttribs, pDataBuf->fExcludedAttribs, pDataBuf->fLongFilenames, fAttribs));
                                 pDataBuf->cMinLocalTimeDelta = vboxSfOs2GetLocalTimeDelta();
 
                                 rc = vboxSfOs2ReadDirEntries(pFolder, pFsFsd, pDataBuf, uLevel, fFlags,
@@ -723,15 +724,12 @@ FS32_FINDFROMNAME(PFSFSI pFsFsi, PVBOXSFFS pFsFsd, PBYTE pbData, ULONG cbData, P
         case FI_LVL_STANDARD_64:
         case FI_LVL_STANDARD_EASIZE:
         case FI_LVL_STANDARD_EASIZE_64:
-            break;
-
         case FI_LVL_EAS_FROM_LIST:
         case FI_LVL_EAS_FROM_LIST_64:
-            Log(("FS32_FINDFIRST: FI_LVL_EAS_FROM_LIST[_64] -> ERROR_EAS_NOT_SUPPORTED\n"));
-            return ERROR_EAS_NOT_SUPPORTED;
+            break;
 
         default:
-            LogRel(("FS32_FINDFIRST: Unsupported info level %u!\n", uLevel));
+            LogRel(("FS32_FINDFROMNAME: Unsupported info level %u!\n", uLevel));
             return ERROR_INVALID_LEVEL;
     }
 
@@ -781,15 +779,12 @@ FS32_FINDNEXT(PFSFSI pFsFsi, PVBOXSFFS pFsFsd, PBYTE pbData, ULONG cbData, PUSHO
         case FI_LVL_STANDARD_64:
         case FI_LVL_STANDARD_EASIZE:
         case FI_LVL_STANDARD_EASIZE_64:
-            break;
-
         case FI_LVL_EAS_FROM_LIST:
         case FI_LVL_EAS_FROM_LIST_64:
-            Log(("FS32_FINDFIRST: FI_LVL_EAS_FROM_LIST[_64] -> ERROR_EAS_NOT_SUPPORTED\n"));
-            return ERROR_EAS_NOT_SUPPORTED;
+            break;
 
         default:
-            LogRel(("FS32_FINDFIRST: Unsupported info level %u!\n", uLevel));
+            LogRel(("FS32_FINDNEXT: Unsupported info level %u!\n", uLevel));
             return ERROR_INVALID_LEVEL;
     }
 

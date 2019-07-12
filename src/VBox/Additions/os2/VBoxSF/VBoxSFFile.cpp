@@ -308,6 +308,14 @@ FS32_OPENCREATE(PCDFSI pCdFsi, PVBOXSFCD pCdFsd, PCSZ pszName, LONG offCurDirEnd
                     rc = ERROR_OPEN_FAILED; //ERROR_FILE_EXISTS;
                     break;
                 }
+                if (RTFS_IS_DIRECTORY(pReq->CreateParms.Info.Attr.fMode))
+                {
+                    LogFlow(("FS32_OPENCREATE: directory, closing and returning ERROR_ACCESS_DENIED!\n"));
+                    AssertCompile(RTASSERT_OFFSET_OF(VBOXSFCREATEREQ, CreateParms.Handle) > sizeof(VBOXSFCLOSEREQ)); /* no aliasing issues */
+                    VbglR0SfHostReqClose(pFolder->idHostRoot, (VBOXSFCLOSEREQ *)pReq, pReq->CreateParms.Handle);
+                    rc = ERROR_ACCESS_DENIED;
+                    break;
+                }
                 RT_FALL_THRU();
             case SHFL_FILE_CREATED:
             case SHFL_FILE_REPLACED:
