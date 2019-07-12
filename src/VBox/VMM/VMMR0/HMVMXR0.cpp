@@ -16987,7 +16987,7 @@ HMVMX_EXIT_DECL hmR0VmxExitXcptOrNmiNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTrans
          */
         case VMX_EXIT_INT_INFO_TYPE_NMI:
         {
-            Assert(!pVCpu->hm.s.Event.fPending);  /* NMIs cannot be caused during delivery on another event. */
+            Assert(!pVCpu->hm.s.Event.fPending);  /* An NMI cannot be caused by the delivery on another event. */
             return hmR0VmxExitHostNmi(pVCpu, pVmxTransient->pVmcsInfo);
         }
 
@@ -17038,7 +17038,7 @@ HMVMX_EXIT_DECL hmR0VmxExitXcptOrNmiNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTrans
                 ExitEventInfo.uIdtVectoringErrCode = pVmxTransient->uIdtVectoringErrorCode;
                 if (pVCpu->hm.s.Event.fPending)
                 {
-                    Assert(ExitEventInfo.uIdtVectoringInfo    == pVCpu->hm.s.Event.u64IntInfo);
+                    Assert(ExitEventInfo.uIdtVectoringInfo == pVCpu->hm.s.Event.u64IntInfo);
                     if (VMX_IDT_VECTORING_INFO_IS_ERROR_CODE_VALID(ExitEventInfo.uIdtVectoringInfo))
                         Assert(ExitEventInfo.uIdtVectoringErrCode == pVCpu->hm.s.Event.u32ErrCode);
                     if (   VMX_IDT_VECTORING_INFO_TYPE(ExitEventInfo.uIdtVectoringInfo) == VMX_IDT_VECTORING_INFO_TYPE_SW_INT
@@ -17056,14 +17056,17 @@ HMVMX_EXIT_DECL hmR0VmxExitXcptOrNmiNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTrans
 
             /*
              * If the guest hypervisor is not intercepting an exception that caused a VM-exit directly,
-             * forward it to the guest (for e.g, an instruction raises a #GP that causes a VM-exit but
-             * the guest hypervisor is not intercept #GPs, inject #GP into the guest).
+             * forward it to the guest (for e.g, an instruction raises a #GP that causes this VM-exit
+             * despite the guest hypervisor not intercept #GPs, inject #GP into the nested-guest).
+             *
+             * If the guest hypervisor is not intercepting an exception that caused a VM-exit indirectly,
+             * inject the secondary exception into the nested-guest (for e.g, an instruction raises a #GP,
+             * delivery of which causes an #AC. We get a #AC VM-exit but the guest-hypervisor is not
+             * intercepting #AC, then inject the #AC into the nested-guest rather than the original #GP).
              */
-            if (!pVCpu->hm.s.Event.fPending)
-            {
-                hmR0VmxSetPendingEvent(pVCpu, VMX_ENTRY_INT_INFO_FROM_EXIT_INT_INFO(uExitIntInfo), pVmxTransient->cbInstr,
-                                       pVmxTransient->uExitIntErrorCode, pVmxTransient->uExitQual);
-            }
+            pVCpu->hm.s.Event.fPending = false;
+            hmR0VmxSetPendingEvent(pVCpu, VMX_ENTRY_INT_INFO_FROM_EXIT_INT_INFO(uExitIntInfo), pVmxTransient->cbInstr,
+                                   pVmxTransient->uExitIntErrorCode, pVmxTransient->uExitQual);
             return VINF_SUCCESS;
         }
 
