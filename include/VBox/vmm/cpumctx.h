@@ -569,7 +569,7 @@ typedef struct CPUMCTX
                 VMXVDIAG                enmDiag;
                 /** 0x2fc - VMX abort reason. */
                 VMXABORT                enmAbort;
-                /** 0x300 - Emulated VMX instruction/VM-exit diagnostic auxiliary info. (mainly
+                /** 0x300 - Last emulated VMX instruction/VM-exit diagnostic auxiliary info. (mainly
                  *  used for info. that's not part of the VMCS). */
                 uint64_t                uDiagAux;
                 /** 0x308 - VMX abort auxiliary info. */
