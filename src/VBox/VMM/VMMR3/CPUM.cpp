@@ -350,7 +350,7 @@ static const SSMFIELD g_aVmxHwvirtVmcs[] =
     SSMFIELD_ENTRY(       VMXVVMCS, GuestTr),
     SSMFIELD_ENTRY(       VMXVVMCS, u16GuestIntStatus),
     SSMFIELD_ENTRY(       VMXVVMCS, u16PmlIndex),
-    SSMFIELD_ENTRY_IGNORE(VMXVVMCS, au16Reserved1[8]),
+    SSMFIELD_ENTRY_IGNORE(VMXVVMCS, au16Reserved1),
 
     SSMFIELD_ENTRY(       VMXVVMCS, HostEs),
     SSMFIELD_ENTRY(       VMXVVMCS, HostCs),
@@ -476,7 +476,7 @@ static const SSMFIELD g_aVmxHwvirtVmcs[] =
     SSMFIELD_ENTRY(       VMXVVMCS, u64Cr3Target1),
     SSMFIELD_ENTRY(       VMXVVMCS, u64Cr3Target2),
     SSMFIELD_ENTRY(       VMXVVMCS, u64Cr3Target3),
-    SSMFIELD_ENTRY(       VMXVVMCS, au64Reserved4),
+    SSMFIELD_ENTRY_IGNORE(VMXVVMCS, au64Reserved4),
 
     SSMFIELD_ENTRY(       VMXVVMCS, u64RoExitQual),
     SSMFIELD_ENTRY(       VMXVVMCS, u64RoIoRcx),
@@ -484,7 +484,7 @@ static const SSMFIELD g_aVmxHwvirtVmcs[] =
     SSMFIELD_ENTRY(       VMXVVMCS, u64RoIoRdi),
     SSMFIELD_ENTRY(       VMXVVMCS, u64RoIoRip),
     SSMFIELD_ENTRY(       VMXVVMCS, u64RoGuestLinearAddr),
-    SSMFIELD_ENTRY(       VMXVVMCS, au64Reserved5),
+    SSMFIELD_ENTRY_IGNORE(VMXVVMCS, au64Reserved5),
 
     SSMFIELD_ENTRY(       VMXVVMCS, u64GuestCr0),
     SSMFIELD_ENTRY(       VMXVVMCS, u64GuestCr3),
@@ -506,7 +506,7 @@ static const SSMFIELD g_aVmxHwvirtVmcs[] =
     SSMFIELD_ENTRY(       VMXVVMCS, u64GuestPendingDbgXcpt),
     SSMFIELD_ENTRY(       VMXVVMCS, u64GuestSysenterEsp),
     SSMFIELD_ENTRY(       VMXVVMCS, u64GuestSysenterEip),
-    SSMFIELD_ENTRY(       VMXVVMCS, au64Reserved6),
+    SSMFIELD_ENTRY_IGNORE(VMXVVMCS, au64Reserved6),
 
     SSMFIELD_ENTRY(       VMXVVMCS, u64HostCr0),
     SSMFIELD_ENTRY(       VMXVVMCS, u64HostCr3),
@@ -520,7 +520,7 @@ static const SSMFIELD g_aVmxHwvirtVmcs[] =
     SSMFIELD_ENTRY(       VMXVVMCS, u64HostSysenterEip),
     SSMFIELD_ENTRY(       VMXVVMCS, u64HostRsp),
     SSMFIELD_ENTRY(       VMXVVMCS, u64HostRip),
-    SSMFIELD_ENTRY(       VMXVVMCS, au64Reserved7),
+    SSMFIELD_ENTRY_IGNORE(VMXVVMCS, au64Reserved7),
     SSMFIELD_ENTRY_TERM()
 };
 
