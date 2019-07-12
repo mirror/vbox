@@ -567,11 +567,11 @@ typedef struct CPUMCTX
                 RTGCPHYS                GCPhysShadowVmcs;
                 /** 0x2f8 - Last emulated VMX instruction/VM-exit diagnostic. */
                 VMXVDIAG                enmDiag;
-                /** 0x2fc - Last emulated VMX instruction/VM-exit diagnostic auxiliary
+                /** 0x2fc - VMX abort reason. */
+                VMXABORT                enmAbort;
+                /** 0x300 - Last emulated VMX instruction/VM-exit diagnostic auxiliary
                  *  information field. */
                 uint64_t                uDiagAux;
-                /** 0x304 - VMX abort reason. */
-                VMXABORT                enmAbort;
                 /** 0x308 - VMX abort auxiliary information field. */
                 uint32_t                uAbortAux;
                 /** 0x30c - Whether the guest is in VMX root mode. */
@@ -809,8 +809,8 @@ AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.GCPhysVmxon,    
 AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.GCPhysVmcs,                  0x2e8);
 AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.GCPhysShadowVmcs,            0x2f0);
 AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.enmDiag,                     0x2f8);
-AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.uDiagAux,                    0x2fc);
-AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.enmAbort,                    0x304);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.enmAbort,                    0x2fc);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.uDiagAux,                    0x300);
 AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.uAbortAux,                   0x308);
 AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.fInVmxRootMode,              0x30c);
 AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.fInVmxNonRootMode,           0x30d);
