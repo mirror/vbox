@@ -6373,13 +6373,16 @@ IEM_STATIC int iemVmxVmentryCheckExecCtls(PVMCPU pVCpu, const char *pszInstr)
          *
          * See Intel spec. 24.11.4 "Software Access to Related Structures".
          */
-        int rc = PGMHandlerPhysicalRegister(pVCpu->CTX_SUFF(pVM), GCPhysApicAccess, GCPhysApicAccess,
-                                            pVCpu->iem.s.hVmxApicAccessPage, NIL_RTR3PTR /* pvUserR3 */,
-                                            NIL_RTR0PTR /* pvUserR0 */,  NIL_RTRCPTR /* pvUserRC */, NULL /* pszDesc */);
-        if (RT_SUCCESS(rc))
-        { /* likely */ }
-        else
-            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_AddrApicAccessHandlerReg);
+        if (!PGMHandlerPhysicalIsRegistered(pVCpu->CTX_SUFF(pVM), GCPhysApicAccess))
+        {
+            int rc = PGMHandlerPhysicalRegister(pVCpu->CTX_SUFF(pVM), GCPhysApicAccess, GCPhysApicAccess + X86_PAGE_4K_SIZE - 1,
+                                                pVCpu->iem.s.hVmxApicAccessPage, NIL_RTR3PTR /* pvUserR3 */,
+                                                NIL_RTR0PTR /* pvUserR0 */,  NIL_RTRCPTR /* pvUserRC */, NULL /* pszDesc */);
+            if (RT_SUCCESS(rc))
+            { /* likely */ }
+            else
+                IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_AddrApicAccessHandlerReg);
+        }
     }
 
     /* Virtualize-x2APIC mode is mutually exclusive with virtualize-APIC accesses. */
