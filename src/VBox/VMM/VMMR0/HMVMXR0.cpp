@@ -13662,7 +13662,7 @@ static int hmR0VmxCheckExitDueToEventDeliveryNested(PVMCPU pVCpu, PVMXTRANSIENT 
          * Get the nasty stuff out of the way.
          */
         {
-            int rc = hmR0VmxReadExitIntInfoVmcs(pVmxTransient);
+            rc = hmR0VmxReadExitIntInfoVmcs(pVmxTransient);
             AssertRCReturn(rc, rc);
 
             uint32_t const uExitIntInfo = pVmxTransient->uExitIntInfo;
@@ -15447,8 +15447,11 @@ HMVMX_EXIT_NSRC_DECL hmR0VmxExitErrInvalidGuestState(PVMCPU pVCpu, PVMXTRANSIENT
     Log4(("VMX_VMCS_CTRL_CR4_MASK                     %#RHr\n", uHCReg));
     rc = VMXReadVmcsHstN(VMX_VMCS_CTRL_CR4_READ_SHADOW, &uHCReg);           AssertRC(rc);
     Log4(("VMX_VMCS_CTRL_CR4_READ_SHADOW              %#RHr\n", uHCReg));
-    rc = VMXReadVmcs64(VMX_VMCS64_CTRL_EPTP_FULL, &u64Val);                 AssertRC(rc);
-    Log4(("VMX_VMCS64_CTRL_EPTP_FULL                  %#RX64\n", u64Val));
+    if (pVCpu->CTX_SUFF(pVM)->hm.s.fNestedPaging)
+    {
+        rc = VMXReadVmcs64(VMX_VMCS64_CTRL_EPTP_FULL, &u64Val);             AssertRC(rc);
+        Log4(("VMX_VMCS64_CTRL_EPTP_FULL                  %#RX64\n", u64Val));
+    }
 
     hmR0DumpRegs(pVCpu);
 #endif
@@ -16983,7 +16986,10 @@ HMVMX_EXIT_DECL hmR0VmxExitXcptOrNmiNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTrans
          *   We shouldn't direct host physical NMIs to the nested-guest. Dispatch it to the host.
          */
         case VMX_EXIT_INT_INFO_TYPE_NMI:
+        {
+            Assert(!pVCpu->hm.s.Event.fPending);  /* NMIs cannot be caused during delivery on another event. */
             return hmR0VmxExitHostNmi(pVCpu, pVmxTransient->pVmcsInfo);
+        }
 
         /*
          * Hardware exceptions,
@@ -17034,6 +17040,13 @@ HMVMX_EXIT_DECL hmR0VmxExitXcptOrNmiNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTrans
                 {
                     Assert(ExitEventInfo.uIdtVectoringInfo    == pVCpu->hm.s.Event.u64IntInfo);
                     Assert(ExitEventInfo.uIdtVectoringErrCode == pVCpu->hm.s.Event.u32ErrCode);
+                    if (   VMX_IDT_VECTORING_INFO_TYPE(ExitEventInfo.uIdtVectoringInfo) == VMX_IDT_VECTORING_INFO_TYPE_SW_INT
+                        || VMX_IDT_VECTORING_INFO_TYPE(ExitEventInfo.uIdtVectoringInfo) == VMX_IDT_VECTORING_INFO_TYPE_PRIV_SW_XCPT
+                        || VMX_IDT_VECTORING_INFO_TYPE(ExitEventInfo.uIdtVectoringInfo) == VMX_IDT_VECTORING_INFO_TYPE_SW_XCPT)
+                    {
+                        Assert(ExitInfo.cbInstr == pVCpu->hm.s.Event.cbInstr);
+                    }
+
                     pVCpu->hm.s.Event.fPending = false;
                 }
                 return IEMExecVmxVmexitXcpt(pVCpu, &ExitInfo, &ExitEventInfo);
