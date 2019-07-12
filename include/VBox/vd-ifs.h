@@ -1146,7 +1146,6 @@ DECLINLINE(int) VDCFGUpdate(PVDINTERFACECONFIG pCfgIf, bool fCreate, const char 
  * @param   pCfgIf      Pointer to configuration callback table.
  * @param   fCreate     Create the property if it doesn't exist
  * @param   pszName     Name of property
- * @param   pszValue    String value to assign to property
  * @param   u64Value    64-bit unsigned value to save with property.
  */
 
