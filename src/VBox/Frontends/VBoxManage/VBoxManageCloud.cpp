@@ -137,15 +137,15 @@ static RTEXITCODE listCloudInstances(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT 
         }
     }
 
-    com::SafeArray<CloudMachineState_T> machimeStates;
+    com::SafeArray<CloudMachineState_T> machineStates;
     if (strState.isNotEmpty())
     {
         if (strState.equals("running"))
-            machimeStates.push_back(CloudMachineState_Running);
+            machineStates.push_back(CloudMachineState_Running);
         else if (strState.equals("paused"))
-            machimeStates.push_back(CloudMachineState_Stopped);
+            machineStates.push_back(CloudMachineState_Stopped);
         else if (strState.equals("terminated"))
-            machimeStates.push_back(CloudMachineState_Terminated);
+            machineStates.push_back(CloudMachineState_Terminated);
     }
 
     HRESULT hrc = S_OK;
@@ -203,7 +203,7 @@ static RTEXITCODE listCloudInstances(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT 
     RTPrintf("Reply is in the form \'instance name\' = \'instance id\'\n");
 
     CHECK_ERROR2_RET(hrc, oCloudClient,
-                     ListInstances(ComSafeArrayAsInParam(machimeStates),
+                     ListInstances(ComSafeArrayAsInParam(machineStates),
                                    pVMNamesHolder.asOutParam(),
                                    pVMIdsHolder.asOutParam(),
                                    pProgress.asOutParam()),
@@ -283,6 +283,10 @@ static RTEXITCODE listCloudImages(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pCo
             imageStates.push_back(CloudImageState_Disabled);
         else if (strState.equals("deleted"))
             imageStates.push_back(CloudImageState_Deleted);
+        else if (strState.equals("exporting"))
+            imageStates.push_back(CloudImageState_Exporting);
+        else if (strState.equals("importing"))
+            imageStates.push_back(CloudImageState_Importing);
     }
 
     HRESULT hrc = S_OK;
@@ -877,7 +881,7 @@ static RTEXITCODE exportCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
     {
         { "--bucket-name",    'b', RTGETOPT_REQ_STRING },
         { "--object-name",    'o', RTGETOPT_REQ_STRING },
-        { "--image-id",       'i', RTGETOPT_REQ_STRING }
+        { "--id",             'i', RTGETOPT_REQ_STRING }
     };
     RTGETOPTSTATE GetState;
     RTGETOPTUNION ValueUnion;
@@ -981,7 +985,7 @@ static RTEXITCODE importCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
 
     static const RTGETOPTDEF s_aOptions[] =
     {
-        { "--image-id",       'i', RTGETOPT_REQ_STRING },
+        { "--id",             'i', RTGETOPT_REQ_STRING },
         { "--bucket-name",    'b', RTGETOPT_REQ_STRING },
         { "--object-name",    'o', RTGETOPT_REQ_STRING }
     };
@@ -1004,7 +1008,6 @@ static RTEXITCODE importCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
         {
             case 'i':
                 strImageId=ValueUnion.psz;
-                Bstr(Utf8Str("image-id=").append(ValueUnion.psz)).detachTo(parameters.appendedRaw());
                 break;
             case 'b':
                 strBucketName=ValueUnion.psz;
@@ -1026,7 +1029,6 @@ static RTEXITCODE importCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
     pCloudProfile->COMGETTER(Name)(bstrProfileName.asOutParam());
 
     ComPtr<IVirtualBox> pVirtualBox = a->virtualBox;
-    Bstr bstrImageId;
     ComObjPtr<ICloudClient> oCloudClient;
     CHECK_ERROR2_RET(hrc, pCloudProfile,
                      CreateCloudClient(oCloudClient.asOutParam()),
@@ -1035,7 +1037,7 @@ static RTEXITCODE importCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
 
     ComPtr<IProgress> progress;
     CHECK_ERROR2_RET(hrc, oCloudClient,
-                     ImportImage(pVirtualBox, ComSafeArrayAsInParam(parameters), progress.asOutParam()),
+                     ImportImage(Bstr(strImageId.c_str()).raw(), pVirtualBox, ComSafeArrayAsInParam(parameters), progress.asOutParam()),
                      RTEXITCODE_FAILURE);
     hrc = showProgress(progress);
     CHECK_PROGRESS_ERROR_RET(progress, ("Cloud image import failed"), RTEXITCODE_FAILURE);
@@ -1059,7 +1061,7 @@ static RTEXITCODE showCloudImageInfo(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT 
 
     static const RTGETOPTDEF s_aOptions[] =
     {
-        { "--image-id", 'i', RTGETOPT_REQ_STRING }
+        { "--id", 'i', RTGETOPT_REQ_STRING }
     };
     RTGETOPTSTATE GetState;
     RTGETOPTUNION ValueUnion;
@@ -1093,7 +1095,6 @@ static RTEXITCODE showCloudImageInfo(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT 
                      RTEXITCODE_FAILURE);
     RTPrintf("Getting information about the cloud image with id \'%s\'...\n", strImageId.c_str());
 
-    com::SafeArray<BSTR> parameters;
     ComPtr<IStringArray> infoArray;
     com::SafeArray<BSTR> pStrInfoArray;
     ComPtr<IProgress> pProgress;
@@ -1101,7 +1102,6 @@ static RTEXITCODE showCloudImageInfo(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT 
     RTPrintf("Reply is in the form \'image property\' = \'value\'\n");
     CHECK_ERROR2_RET(hrc, oCloudClient,
                      GetImageInfo(Bstr(strImageId.c_str()).raw(),
-                                  ComSafeArrayAsInParam(parameters),
                                   infoArray.asOutParam(),
                                   pProgress.asOutParam()),
                      RTEXITCODE_FAILURE);

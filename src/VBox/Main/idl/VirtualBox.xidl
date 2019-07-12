@@ -26065,7 +26065,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   -->
   <interface
     name="ICloudClient" extends="$unknown"
-    uuid="7ec55937-3152-4e06-8192-c3828aadc7ab"
+    uuid="949f8c85-c689-40fa-a6b2-14425ccdfc0d"
     wsmap="managed" reservedMethods="16" reservedAttributes="8"
     >
 
@@ -26265,8 +26265,8 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <desc>
         Returns the information about an instance in the Cloud.
       </desc>
-      <param name="instanceId" type="wstring" dir="in">
-        <desc>What to search for. This is the instance ID.</desc>
+      <param name="uid" type="wstring" dir="in">
+        <desc>The id of instance in the Cloud.</desc>
       </param>
       <param name="description" type="IVirtualSystemDescription" dir="in">
         <desc>VirtualSystemDescription object which is describing a machine</desc>
@@ -26283,7 +26283,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         Start an existing instance with passed id.
       </desc>
       <param name="uid" type="wstring" dir="in">
-        <desc>the id of instance in the Cloud.</desc>
+        <desc>The id of instance in the Cloud.</desc>
       </param>
       <param name="progress" type="IProgress" dir="return">
         <desc>Progress object to track the operation completion.</desc>
@@ -26295,7 +26295,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         Pause an existing instance with passed id.
       </desc>
       <param name="uid" type="wstring" dir="in">
-        <desc>the id of instance in the Cloud.</desc>
+        <desc>The id of instance in the Cloud.</desc>
       </param>
       <param name="progress" type="IProgress" dir="return">
         <desc>Progress object to track the operation completion.</desc>
@@ -26346,8 +26346,11 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <method name="importImage">
       <desc>
-        Import an existing image in the Cloud into the VirtualBox.
+        Import an existing image in the Cloud to the local host.
       </desc>
+      <param name="uid" type="wstring" dir="in">
+        <desc>the id of image in the Cloud.</desc>
+      </param>
       <param name="virtualBox" type="IVirtualBox" dir="in">
         <desc>Reference to the server-side API root object.</desc>
       </param>
@@ -26364,7 +26367,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         Delete an existing image with passed id from the Cloud.
       </desc>
       <param name="uid" type="wstring" dir="in">
-        <desc>the id of image in the Cloud.</desc>
+        <desc>The id of image in the Cloud.</desc>
       </param>
       <param name="progress" type="IProgress" dir="return">
         <desc>Progress object to track the operation completion.</desc>
@@ -26375,14 +26378,14 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <desc>
         Returns the information about an image in the Cloud.
       </desc>
-      <param name="imageId" type="wstring" dir="in">
-        <desc>What to search for. This is the image ID.</desc>
-      </param>
-      <param name="parameters" type="wstring" dir="in" safearray="yes">
-        <desc>Each parameter in the array must be in the form "name=value".</desc>
+      <param name="uid" type="wstring" dir="in">
+        <desc>The id of image in the Cloud.</desc>
       </param>
       <param name="infoArray" type="IStringArray" dir="out">
-        <desc>Each parameter in the array must be in the form "name=value".</desc>
+        <desc>
+          An array where the image settings or properties is returned.
+          Each parameter in the array must be in the form "name=value".
+        </desc>
       </param>
       <param name="progress" type="IProgress" dir="return">
         <desc>
