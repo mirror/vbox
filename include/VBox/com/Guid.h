@@ -290,6 +290,19 @@ public:
         return Bstr(buf);
     }
 
+    /**
+     * Convert the GUID to a C string.
+     *
+     * @returns See RTUuidToStr.
+     * @param   pszUuid The output buffer
+     * @param   cbUuid  The size of the output buffer.  Should be at least
+     *                  RTUUID_STR_LENGTH in length.
+     */
+    int toString(char *pszUuid, size_t cbUuid) const
+    {
+        return ::RTUuidToStr(mGuidState != GUID_INVALID ? &mUuid : &Empty.mUuid, pszUuid, cbUuid);
+    }
+
     bool isValid() const
     {
         return mGuidState != GUID_INVALID;
