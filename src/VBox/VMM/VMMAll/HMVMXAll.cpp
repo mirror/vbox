@@ -914,6 +914,7 @@ VMM_INT_DECL(void) HMDumpHwvirtVmxState(PVMCPU pVCpu)
     LogRel(("GCPhysVmcs                 = %#RGp\n",     pCtx->hwvirt.vmx.GCPhysVmcs));
     LogRel(("GCPhysShadowVmcs           = %#RGp\n",     pCtx->hwvirt.vmx.GCPhysShadowVmcs));
     LogRel(("enmDiag                    = %u (%s)\n",   pCtx->hwvirt.vmx.enmDiag, HMGetVmxDiagDesc(pCtx->hwvirt.vmx.enmDiag)));
+    LogRel(("uDiagAux                   = %#RX64\n",    pCtx->hwvirt.vmx.uDiagAux));
     LogRel(("enmAbort                   = %u (%s)\n",   pCtx->hwvirt.vmx.enmAbort, HMGetVmxAbortDesc(pCtx->hwvirt.vmx.enmAbort)));
     LogRel(("uAbortAux                  = %u (%#x)\n",  pCtx->hwvirt.vmx.uAbortAux, pCtx->hwvirt.vmx.uAbortAux));
     LogRel(("fInVmxRootMode             = %RTbool\n",   pCtx->hwvirt.vmx.fInVmxRootMode));
