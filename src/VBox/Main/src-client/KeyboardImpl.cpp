@@ -255,7 +255,7 @@ HRESULT Keyboard::putUsageCode(LONG aUsageCode, LONG aUsagePage, BOOL fKeyReleas
 
     int vrc = VINF_SUCCESS;
     uint32_t u32Usage;
-    u32Usage = (uint8_t)aUsageCode | ((uint32_t)(uint8_t)aUsagePage << 16) | fKeyRelease ? 0x80000000 : 0;
+    u32Usage = (uint8_t)aUsageCode | ((uint32_t)(uint8_t)aUsagePage << 16) | (fKeyRelease ? 0x80000000 : 0);
     vrc = pUpPort->pfnPutEventHid(pUpPort, u32Usage);
     if (RT_FAILURE(vrc))
         return setErrorBoth(VBOX_E_IPRT_ERROR, vrc,
