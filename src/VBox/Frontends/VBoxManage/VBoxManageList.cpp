@@ -157,9 +157,9 @@ static HRESULT listNetworkInterfaces(const ComPtr<IVirtualBox> pVirtualBox,
         Bstr interfaceGuid;
         networkInterface->COMGETTER(Id)(interfaceGuid.asOutParam());
         RTPrintf("GUID:            %ls\n", interfaceGuid.raw());
-        BOOL bDHCPEnabled;
-        networkInterface->COMGETTER(DHCPEnabled)(&bDHCPEnabled);
-        RTPrintf("DHCP:            %s\n", bDHCPEnabled ? "Enabled" : "Disabled");
+        BOOL fDHCPEnabled = FALSE;
+        networkInterface->COMGETTER(DHCPEnabled)(&fDHCPEnabled);
+        RTPrintf("DHCP:            %s\n", fDHCPEnabled ? "Enabled" : "Disabled");
 
         Bstr IPAddress;
         networkInterface->COMGETTER(IPAddress)(IPAddress.asOutParam());
@@ -179,7 +179,7 @@ static HRESULT listNetworkInterfaces(const ComPtr<IVirtualBox> pVirtualBox,
         HostNetworkInterfaceMediumType_T Type;
         networkInterface->COMGETTER(MediumType)(&Type);
         RTPrintf("MediumType:      %s\n", getHostIfMediumTypeText(Type));
-        BOOL fWireless;
+        BOOL fWireless = FALSE;
         networkInterface->COMGETTER(Wireless)(&fWireless);
         RTPrintf("Wireless:        %s\n", fWireless ? "Yes" : "No");
         HostNetworkInterfaceStatus_T Status;
@@ -785,27 +785,65 @@ static HRESULT listSystemProperties(const ComPtr<IVirtualBox> &pVirtualBox)
 
 
 /**
- * Helper function for querying and displaying DHCP option for an adapter.
- *
- * @returns See produceList.
- * @param   pSrv                Smart pointer to IDHCPServer.
- * @param   vmSlot              String identifying the adapter, like '[vmname]:slot'
+ * Helper for listDhcpServers() that shows a DHCP configuration.
  */
-static HRESULT listVmSlotDhcpOptions(const ComPtr<IDHCPServer> pSrv, const Utf8Str& vmSlot)
+static HRESULT showDhcpConfig(ComPtr<IDHCPConfig> ptrConfig)
 {
-    RTCList<RTCString> lstParts = vmSlot.split(":");
-    if (lstParts.size() < 2)
-        return E_INVALIDARG;
-    if (lstParts[0].length() < 2 || !lstParts[0].startsWith("[") || !lstParts[0].endsWith("]"))
-        return E_INVALIDARG;
-    Bstr vmName(lstParts[0].substr(1, lstParts[0].length()-2));
-    ULONG uSlot = lstParts[1].toUInt32();
-    com::SafeArray<BSTR> options;
-    CHECK_ERROR2I_RET(pSrv, GetVmSlotOptions(vmName.raw(), uSlot, ComSafeArrayAsOutParam(options)), hrcCheck);
-    if (options.size())
-        RTPrintf("Options for NIC %d of '%ls':\n", uSlot + 1, vmName.raw());
-    for (size_t i = 0; i < options.size(); ++i)
-        RTPrintf("   %ls\n", options[i]);
+    HRESULT hrcRet = S_OK;
+
+    ULONG   secs = 0;
+    CHECK_ERROR2I_STMT(ptrConfig, COMGETTER(MinLeaseTime)(&secs), hrcRet = hrcCheck);
+    if (secs == 0)
+        RTPrintf("    minLeaseTime:     default\n");
+    else
+        RTPrintf("    minLeaseTime:     %u sec\n", secs);
+
+    secs = 0;
+    CHECK_ERROR2I_STMT(ptrConfig, COMGETTER(DefaultLeaseTime)(&secs), hrcRet = hrcCheck);
+    if (secs == 0)
+        RTPrintf("    defaultLeaseTime: default\n");
+    else
+        RTPrintf("    defaultLeaseTime: %u sec\n", secs);
+
+    secs = 0;
+    CHECK_ERROR2I_STMT(ptrConfig, COMGETTER(MaxLeaseTime)(&secs), hrcRet = hrcCheck);
+    if (secs == 0)
+        RTPrintf("    maxLeaseTime:     default\n");
+    else
+        RTPrintf("    maxLeaseTime:     %u sec\n", secs);
+
+    com::SafeArray<DhcpOpt_T>            Options;
+    com::SafeArray<DHCPOptionEncoding_T> Encodings;
+    com::SafeArray<BSTR>                 Values;
+    HRESULT hrc;
+    CHECK_ERROR2_STMT(hrc, ptrConfig, GetAllOptions(ComSafeArrayAsOutParam(Options),
+                                                    ComSafeArrayAsOutParam(Encodings),
+                                                    ComSafeArrayAsOutParam(Values)), hrcRet = hrc);
+    if (FAILED(hrc))
+        RTPrintf("    DHCP options:     %Rhrc\n", hrc);
+    else if (Options.size() != Encodings.size() || Options.size() != Values.size())
+    {
+        RTPrintf("    DHCP options:     Return count mismatch: %zu, %zu, %zu\n", Options.size(), Encodings.size(), Values.size());
+        hrcRet = E_FAIL;
+    }
+    else if (Options.size() == 0)
+        RTPrintf("    DHCP options:     None\n");
+    else
+        for (size_t i = 0; i < Options.size(); i++)
+        {
+            switch (Encodings[i])
+            {
+                case DHCPOptionEncoding_Legacy:
+                    RTPrintf("      %3d/legacy: %ls\n", Options[i], Values[i]);
+                    break;
+                case DHCPOptionEncoding_Hex:
+                    RTPrintf("      %3d/hex:    %ls\n", Options[i], Values[i]);
+                    break;
+                default:
+                    RTPrintf("      %3d/%u?: %ls\n", Options[i], Encodings[i], Values[i]);
+                    break;
+            }
+        }
 
     return S_OK;
 }
@@ -819,50 +857,115 @@ static HRESULT listVmSlotDhcpOptions(const ComPtr<IDHCPServer> pSrv, const Utf8S
  */
 static HRESULT listDhcpServers(const ComPtr<IVirtualBox> &pVirtualBox)
 {
-    HRESULT rc = S_OK;
+    HRESULT hrcRet = S_OK;
     com::SafeIfaceArray<IDHCPServer> svrs;
-    CHECK_ERROR_RET(pVirtualBox, COMGETTER(DHCPServers)(ComSafeArrayAsOutParam(svrs)), rc);
+    CHECK_ERROR2I_RET(pVirtualBox, COMGETTER(DHCPServers)(ComSafeArrayAsOutParam(svrs)), hrcCheck);
     for (size_t i = 0; i < svrs.size(); ++i)
     {
+        if (i > 0)
+            RTPrintf("\n");
+
         ComPtr<IDHCPServer> svr = svrs[i];
-        Bstr netName;
-        svr->COMGETTER(NetworkName)(netName.asOutParam());
-        RTPrintf("NetworkName:    %ls\n", netName.raw());
-        Bstr ip;
-        svr->COMGETTER(IPAddress)(ip.asOutParam());
-        RTPrintf("IP:             %ls\n", ip.raw());
-        Bstr netmask;
-        svr->COMGETTER(NetworkMask)(netmask.asOutParam());
-        RTPrintf("NetworkMask:    %ls\n", netmask.raw());
-        Bstr lowerIp;
-        svr->COMGETTER(LowerIP)(lowerIp.asOutParam());
-        RTPrintf("lowerIPAddress: %ls\n", lowerIp.raw());
-        Bstr upperIp;
-        svr->COMGETTER(UpperIP)(upperIp.asOutParam());
-        RTPrintf("upperIPAddress: %ls\n", upperIp.raw());
-        BOOL fEnabled;
-        svr->COMGETTER(Enabled)(&fEnabled);
+        Bstr bstr;
+        CHECK_ERROR2I_STMT(svr, COMGETTER(NetworkName)(bstr.asOutParam()), hrcRet = hrcCheck);
+        RTPrintf("NetworkName:    %ls\n", bstr.raw());
+
+        CHECK_ERROR2I_STMT(svr, COMGETTER(IPAddress)(bstr.asOutParam()), hrcRet = hrcCheck);
+        RTPrintf("Dhcpd IP:       %ls\n", bstr.raw());
+
+        CHECK_ERROR2I_STMT(svr, COMGETTER(LowerIP)(bstr.asOutParam()), hrcRet = hrcCheck);
+        RTPrintf("LowerIPAddress: %ls\n", bstr.raw());
+
+        CHECK_ERROR2I_STMT(svr, COMGETTER(UpperIP)(bstr.asOutParam()), hrcRet = hrcCheck);
+        RTPrintf("UpperIPAddress: %ls\n", bstr.raw());
+
+        CHECK_ERROR2I_STMT(svr, COMGETTER(NetworkMask)(bstr.asOutParam()), hrcRet = hrcCheck);
+        RTPrintf("NetworkMask:    %ls\n", bstr.raw());
+
+        BOOL fEnabled = FALSE;
+        CHECK_ERROR2I_STMT(svr, COMGETTER(Enabled)(&fEnabled), hrcRet = hrcCheck);
         RTPrintf("Enabled:        %s\n", fEnabled ? "Yes" : "No");
-        com::SafeArray<BSTR> globalOptions;
-        CHECK_ERROR_BREAK(svr, COMGETTER(GlobalOptions)(ComSafeArrayAsOutParam(globalOptions)));
-        if (globalOptions.size())
+
+        /* Global configuration: */
+        RTPrintf("Global Configuration:\n");
+        HRESULT hrc;
+        ComPtr<IDHCPGlobalConfig> ptrGlobal;
+        CHECK_ERROR2_STMT(hrc, svr, COMGETTER(GlobalConfig)(ptrGlobal.asOutParam()), hrcRet = hrc);
+        if (SUCCEEDED(hrc))
         {
-            RTPrintf("Global options:\n");
-            for (size_t j = 0; j < globalOptions.size(); ++j)
-                RTPrintf("   %ls\n", globalOptions[j]);
+            hrc = showDhcpConfig(ptrGlobal);
+            if (FAILED(hrc))
+                hrcRet = hrc;
         }
-        com::SafeArray<BSTR> vmConfigs;
-        CHECK_ERROR_BREAK(svr, COMGETTER(VmConfigs)(ComSafeArrayAsOutParam(vmConfigs)));
-        for (size_t j = 0; j < vmConfigs.size(); ++j)
+
+        /* Group configurations: */
+        com::SafeIfaceArray<IDHCPGroupConfig> Groups;
+        CHECK_ERROR2_STMT(hrc, svr, COMGETTER(GroupConfigs)(ComSafeArrayAsOutParam(Groups)), hrcRet = hrc);
+        if (FAILED(hrc))
+            RTPrintf("Groups:               %Rrc\n", hrc);
+        else if (Groups.size() == 0)
+            RTPrintf("Groups:               None\n");
+        else
         {
-            rc = listVmSlotDhcpOptions(svr, vmConfigs[j]);
-            if (FAILED(rc))
-                break;
+            for (size_t iGrp = 0; iGrp < Groups.size(); iGrp++)
+            {
+                CHECK_ERROR2I_STMT(Groups[iGrp], COMGETTER(Name)(bstr.asOutParam()), hrcRet = hrcCheck);
+                RTPrintf("Group:                %ls\n", bstr.raw());
+
+                hrc = showDhcpConfig(Groups[iGrp]);
+                if (FAILED(hrc))
+                    hrcRet = hrc;
+            }
+            Groups.setNull();
         }
-        RTPrintf("\n");
+
+        /* Individual host / NIC configurations: */
+        com::SafeIfaceArray<IDHCPIndividualConfig> Hosts;
+        CHECK_ERROR2_STMT(hrc, svr, COMGETTER(IndividualConfigs)(ComSafeArrayAsOutParam(Hosts)), hrcRet = hrc);
+        if (FAILED(hrc))
+            RTPrintf("Individual Configs:   %Rrc\n", hrc);
+        else if (Hosts.size() == 0)
+            RTPrintf("Individual Configs:   None\n");
+        else
+        {
+            for (size_t iHost = 0; iHost < Hosts.size(); iHost++)
+            {
+                DHCPConfigScope_T enmScope = DHCPConfigScope_MAC;
+                CHECK_ERROR2I_STMT(Hosts[iHost], COMGETTER(Scope)(&enmScope), hrcRet = hrcCheck);
+
+                if (enmScope == DHCPConfigScope_MAC)
+                {
+                    CHECK_ERROR2I_STMT(Hosts[i], COMGETTER(MACAddress)(bstr.asOutParam()), hrcRet = hrcCheck);
+                    RTPrintf("Individual Config:    MAC %ls\n", bstr.raw());
+                }
+                else
+                {
+                    ULONG uSlot = 0;
+                    CHECK_ERROR2I_STMT(Hosts[i], COMGETTER(Slot)(&uSlot), hrcRet = hrcCheck);
+                    CHECK_ERROR2I_STMT(Hosts[i], COMGETTER(MachineId)(bstr.asOutParam()), hrcRet = hrcCheck);
+                    Bstr bstrMACAddress;
+                    hrc = Hosts[i]->COMGETTER(MACAddress)(bstrMACAddress.asOutParam()); /* No CHECK_ERROR2 stuff! */
+                    if (SUCCEEDED(hrc))
+                        RTPrintf("Individual Config:    VM NIC: %ls slot %u, MAC %ls\n", bstr.raw(), uSlot, bstrMACAddress.raw());
+                    else
+                        RTPrintf("Individual Config:    VM NIC: %ls slot %u, MAC %Rhrc\n", bstr.raw(), uSlot, hrc);
+                }
+
+                CHECK_ERROR2I_STMT(Hosts[i], COMGETTER(FixedAddress)(bstr.asOutParam()), hrcRet = hrcCheck);
+                if (bstr.isNotEmpty())
+                    RTPrintf("    Fixed Address:    %ls\n", bstr.raw());
+                else
+                    RTPrintf("    Fixed Address:    dynamic\n");
+
+                hrc = showDhcpConfig(Hosts[i]);
+                if (FAILED(hrc))
+                    hrcRet = hrc;
+            }
+            Hosts.setNull();
+        }
     }
 
-    return rc;
+    return hrcRet;
 }
 
 /**
