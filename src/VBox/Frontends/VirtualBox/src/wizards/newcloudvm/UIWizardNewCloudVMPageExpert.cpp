@@ -280,7 +280,14 @@ bool UIWizardNewCloudVMPageExpert::validatePage()
 
     /* Try to create cloud VM: */
     if (fResult)
+    {
         fResult = qobject_cast<UIWizardNewCloudVM*>(wizard())->createCloudVM();
+
+        /* If the final step failed we could try
+         * sugest user more valid form this time: */
+        if (!fResult)
+            sltInitShortWizardForm();
+    }
 
     /* Unlock finish button: */
     endProcessing();
