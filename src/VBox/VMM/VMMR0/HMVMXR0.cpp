@@ -70,7 +70,7 @@
 #define HMVMX_FLUSH_TAGGED_TLB_VPID                 2
 #define HMVMX_FLUSH_TAGGED_TLB_NONE                 3
 
-/** @name HMVMX_READ_XXX
+/**
  * Flags to skip redundant reads of some common VMCS fields that are not part of
  * the guest-CPU or VCPU state but are needed while handling VM-exits.
  */
@@ -82,14 +82,25 @@
 #define HMVMX_READ_EXIT_INTERRUPTION_ERROR_CODE     RT_BIT_32(5)
 #define HMVMX_READ_EXIT_INSTR_INFO                  RT_BIT_32(6)
 #define HMVMX_READ_GUEST_LINEAR_ADDR                RT_BIT_32(7)
-/** @} */
 
-/** All the VMCS fields required for our processing of exception/NMI VM-exits. */
-#define HMVMX_READ_XCPT_INFO                        (  HMVMX_READ_EXIT_INTERRUPTION_INFO        \
-                                                     | HMVMX_READ_EXIT_INTERRUPTION_ERROR_CODE  \
-                                                     | HMVMX_READ_EXIT_INSTR_LEN                \
-                                                     | HMVMX_READ_IDT_VECTORING_INFO            \
-                                                     | HMVMX_READ_IDT_VECTORING_ERROR_CODE)
+/** All the VMCS fields required for processing of exception/NMI VM-exits. */
+#define HMVMX_READ_XCPT_INFO         (  HMVMX_READ_EXIT_INTERRUPTION_INFO        \
+                                      | HMVMX_READ_EXIT_INTERRUPTION_ERROR_CODE  \
+                                      | HMVMX_READ_EXIT_INSTR_LEN                \
+                                      | HMVMX_READ_IDT_VECTORING_INFO            \
+                                      | HMVMX_READ_IDT_VECTORING_ERROR_CODE)
+
+/** Assert that all the given fields have been read from the VMCS. */
+#ifdef VBOX_STRICT
+# define HMVMX_ASSERT_READ(a_pVmxTransient, a_fReadFields) \
+        do { \
+            uint32_t const fVmcsFieldRead = ASMAtomicUoReadU32(&pVmxTransient->fVmcsFieldsRead); \
+            RT_UNTRUSTED_NONVOLATILE_COPY_FENCE(); \
+            Assert((fVmcsFieldRead & (a_fReadFields)) == (a_fReadFields)); \
+        } while (0)
+#else
+# define HMVMX_ASSERT_READ(a_pVmxTransient, a_fReadFields)          do { } while (0)
+#endif
 
 /**
  * Subset of the guest-CPU state that is kept by VMX R0 code while executing the
@@ -13629,17 +13640,9 @@ static int hmR0VmxAdvanceGuestRip(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
  */
 static int hmR0VmxCheckExitDueToEventDeliveryNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
-    Assert(pVmxTransient->fIsNestedGuest);
     Assert(!pVCpu->hm.s.Event.fPending);
-
-#ifdef VBOX_STRICT
-    /*
-     * Validate we have read the required fields from the VMCS.
-     */
-    uint32_t const fVmcsFieldRead = ASMAtomicUoReadU32(&pVmxTransient->fVmcsFieldsRead);
-    RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
-    Assert((fVmcsFieldRead & HMVMX_READ_XCPT_INFO) == HMVMX_READ_XCPT_INFO);
-#endif
+    Assert(pVmxTransient->fIsNestedGuest);
+    HMVMX_ASSERT_READ(pVmxTransient, HMVMX_READ_XCPT_INFO);
 
     /*
      * Construct a pending event from IDT vectoring information.
@@ -13773,20 +13776,11 @@ static VBOXSTRICTRC hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PVMXTRANSIE
         return hmR0VmxCheckExitDueToEventDeliveryNested(pVCpu, pVmxTransient);
 #endif
 
+    Assert(!pVCpu->hm.s.Event.fPending);
     Assert(!pVmxTransient->fIsNestedGuest);
-    VBOXSTRICTRC rcStrict = VINF_SUCCESS;
+    HMVMX_ASSERT_READ(pVmxTransient, HMVMX_READ_XCPT_INFO);
 
-#ifdef VBOX_STRICT
-    /*
-     * Validate we have read the required fields from the VMCS.
-     */
-    {
-        uint32_t const fVmcsFieldRead = ASMAtomicUoReadU32(&pVmxTransient->fVmcsFieldsRead);
-        RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
-        Assert((fVmcsFieldRead & HMVMX_READ_XCPT_INFO) == HMVMX_READ_XCPT_INFO);
-    }
-#endif
-
+    VBOXSTRICTRC   rcStrict       = VINF_SUCCESS;
     uint32_t const uExitIntInfo   = pVmxTransient->uExitIntInfo;
     uint8_t const  uExitVector    = VMX_EXIT_INT_INFO_VECTOR(pVmxTransient->uExitIntInfo);
     uint32_t const uIdtVectorInfo = pVmxTransient->uIdtVectoringInfo;
@@ -13960,14 +13954,6 @@ static VBOXSTRICTRC hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PVMXTRANSIE
                  || pVmxTransient->uExitReason == VMX_EXIT_PML_FULL
                  || pVmxTransient->uExitReason == VMX_EXIT_SPP_EVENT)
         {
-#ifdef VBOX_STRICT
-            /*
-             * Validate we have read the Exit qualification from the VMCS.
-             */
-            uint32_t const fVmcsFieldRead = ASMAtomicUoReadU32(&pVmxTransient->fVmcsFieldsRead);
-            RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
-            Assert(fVmcsFieldRead & HMVMX_READ_EXIT_QUALIFICATION);
-#endif
             /*
              * Execution of IRET caused an EPT violation, page-modification log-full event or
              * SPP-related event VM-exit when NMI blocking was in effect (i.e. we're in the
@@ -13976,6 +13962,7 @@ static VBOXSTRICTRC hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PVMXTRANSIE
              *
              * See Intel spec. 27.2.3 "Information about NMI unblocking due to IRET"
              */
+            HMVMX_ASSERT_READ(pVmxTransient, HMVMX_READ_EXIT_QUALIFICATION);
             if (VMX_EXIT_QUAL_EPT_IS_NMI_UNBLOCK_IRET(pVmxTransient->uExitQual))
             {
                 CPUMSetGuestNmiBlocking(pVCpu, true);
@@ -14873,15 +14860,7 @@ static VBOXSTRICTRC hmR0VmxExitXcptOthers(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransi
  */
 DECL_FORCE_INLINE(VBOXSTRICTRC) hmR0VmxExitXcptAll(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient, uint8_t uVector)
 {
-    /*
-     * Validate we have read the required fields from the VMCS.
-     */
-#ifdef VBOX_STRICT
-    uint32_t const fVmcsFieldRead = ASMAtomicUoReadU32(&pVmxTransient->fVmcsFieldsRead);
-    RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
-    Assert((fVmcsFieldRead & HMVMX_READ_XCPT_INFO) == HMVMX_READ_XCPT_INFO);
-#endif
-
+    HMVMX_ASSERT_READ(pVmxTransient, HMVMX_READ_XCPT_INFO);
     switch (uVector)
     {
         case X86_XCPT_PF: return hmR0VmxExitXcptPF(pVCpu, pVmxTransient);
