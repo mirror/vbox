@@ -14359,7 +14359,7 @@ static VBOXSTRICTRC hmR0VmxExitXcptPF(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
         Assert(pVmxTransient->fIsNestedGuest || pVCpu->hm.s.fUsingDebugLoop);
 #endif
         pVCpu->hm.s.Event.fPending = false;                  /* In case it's a contributory or vectoring #PF. */
-        if (RT_LIKELY(!pVmxTransient->fVectoringDoublePF))
+        if (!pVmxTransient->fVectoringDoublePF)
         {
             hmR0VmxSetPendingEvent(pVCpu, VMX_ENTRY_INT_INFO_FROM_EXIT_INT_INFO(pVmxTransient->uExitIntInfo), 0 /* cbInstr */,
                                    pVmxTransient->uExitIntErrorCode, pVmxTransient->uExitQual);
@@ -14367,12 +14367,15 @@ static VBOXSTRICTRC hmR0VmxExitXcptPF(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
         else
         {
             /* A guest page-fault occurred during delivery of a page-fault. Inject #DF. */
+            Assert(!pVmxTransient->fIsNestedGuest);
             hmR0VmxSetPendingXcptDF(pVCpu);
             Log4Func(("Pending #DF due to vectoring #PF w/ NestedPaging\n"));
         }
         STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestPF);
         return rc;
     }
+
+    Assert(!pVmxTransient->fIsNestedGuest);
 
     /* If it's a vectoring #PF, emulate injecting the original event injection as PGMTrap0eHandler() is incapable
        of differentiating between instruction emulation and event injection that caused a #PF. See @bugref{6607}. */
@@ -14459,6 +14462,11 @@ static VBOXSTRICTRC hmR0VmxExitXcptMF(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
         return rc;
     }
 
+    rc  = hmR0VmxReadExitIntInfoVmcs(pVmxTransient);
+    rc |= hmR0VmxReadExitIntErrorCodeVmcs(pVmxTransient);
+    rc |= hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
+    AssertRCReturn(rc, rc);
+
     hmR0VmxSetPendingEvent(pVCpu, VMX_ENTRY_INT_INFO_FROM_EXIT_INT_INFO(pVmxTransient->uExitIntInfo), pVmxTransient->cbInstr,
                            pVmxTransient->uExitIntErrorCode, 0 /* GCPtrFaultAddress */);
     return rc;
@@ -14477,7 +14485,10 @@ static VBOXSTRICTRC hmR0VmxExitXcptBP(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
     AssertRCReturn(rc, rc);
 
     PCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
-    rc = DBGFRZTrap03Handler(pVCpu->CTX_SUFF(pVM), pVCpu, CPUMCTX2CORE(pCtx));
+    if (!pVmxTransient->fIsNestedGuest)
+        rc = DBGFRZTrap03Handler(pVCpu->CTX_SUFF(pVM), pVCpu, CPUMCTX2CORE(pCtx));
+    else
+        rc = VINF_EM_RAW_GUEST_TRAP;
     if (rc == VINF_EM_RAW_GUEST_TRAP)
     {
         rc  = hmR0VmxReadExitIntInfoVmcs(pVmxTransient);
@@ -14495,7 +14506,7 @@ static VBOXSTRICTRC hmR0VmxExitXcptBP(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 
 
 /**
- * VM-exit exception handler for \#AC (alignment check exception).
+ * VM-exit exception handler for \#AC (Alignment-check exception).
  */
 static VBOXSTRICTRC hmR0VmxExitXcptAC(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
@@ -14535,7 +14546,10 @@ static VBOXSTRICTRC hmR0VmxExitXcptDB(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
                                                        | X86_DR6_BD | X86_DR6_BS));
 
     PCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
-    rc = DBGFRZTrap01Handler(pVCpu->CTX_SUFF(pVM), pVCpu, CPUMCTX2CORE(pCtx), uDR6, pVCpu->hm.s.fSingleInstruction);
+    if (!pVmxTransient->fIsNestedGuest)
+        rc = DBGFRZTrap01Handler(pVCpu->CTX_SUFF(pVM), pVCpu, CPUMCTX2CORE(pCtx), uDR6, pVCpu->hm.s.fSingleInstruction);
+    else
+        rc = VINF_EM_RAW_GUEST_TRAP;
     Log6Func(("rc=%Rrc\n", rc));
     if (rc == VINF_EM_RAW_GUEST_TRAP)
     {
@@ -14666,10 +14680,9 @@ DECLINLINE(bool) hmR0VmxIsMesaDrvGp(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient, P
     return true;
 }
 
+
 /**
  * VM-exit exception handler for \#GP (General-protection exception).
- *
- * @remarks Requires pVmxTransient->uExitIntInfo to be up-to-date.
  */
 static VBOXSTRICTRC hmR0VmxExitXcptGP(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
@@ -14685,7 +14698,10 @@ static VBOXSTRICTRC hmR0VmxExitXcptGP(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 #ifndef HMVMX_ALWAYS_TRAP_ALL_XCPTS
         Assert(pVCpu->hm.s.fUsingDebugLoop || pVCpu->hm.s.fTrapXcptGpForLovelyMesaDrv || pVmxTransient->fIsNestedGuest);
 #endif
-        /* If the guest is not in real-mode or we have unrestricted guest execution support, reflect #GP to the guest. */
+        /*
+         * If the guest is not in real-mode or we have unrestricted guest execution support, or if we are
+         * executing a nested-guest, reflect #GP to the guest or nested-guest.
+         */
         int rc  = hmR0VmxReadExitIntInfoVmcs(pVmxTransient);
         rc     |= hmR0VmxReadExitIntErrorCodeVmcs(pVmxTransient);
         rc     |= hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
@@ -14745,12 +14761,13 @@ static VBOXSTRICTRC hmR0VmxExitXcptGP(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 
 
 /**
- * VM-exit exception handler wrapper for generic exceptions.
+ * VM-exit exception handler wrapper for all other exceptions that are not handled
+ * by a specific handler.
  *
  * This simply re-injects the exception back into the VM without any special
  * processing.
  */
-static VBOXSTRICTRC hmR0VmxExitXcptGeneric(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
+static VBOXSTRICTRC hmR0VmxExitXcptOthers(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_XCPT_HANDLER_PARAMS(pVCpu, pVmxTransient);
 
@@ -14812,6 +14829,29 @@ static VBOXSTRICTRC hmR0VmxExitXcptGeneric(PVMCPU pVCpu, PVMXTRANSIENT pVmxTrans
     hmR0VmxSetPendingEvent(pVCpu, VMX_ENTRY_INT_INFO_FROM_EXIT_INT_INFO(pVmxTransient->uExitIntInfo), pVmxTransient->cbInstr,
                            pVmxTransient->uExitIntErrorCode, 0 /* GCPtrFaultAddress */);
     return VINF_SUCCESS;
+}
+
+
+/**
+ * VM-exit exception handler for all exceptions.
+ *
+ * @remarks This may be called for both guests and nested-guests. Take care to not
+ *          make assumptions and avoid doing anything that is not relevant when
+ *          executing a nested-guest (e.g., Mesa driver hacks).
+ */
+DECL_FORCE_INLINE(VBOXSTRICTRC) hmR0VmxExitXcptAll(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient, uint8_t uVector)
+{
+    switch (uVector)
+    {
+        case X86_XCPT_PF: return hmR0VmxExitXcptPF(pVCpu, pVmxTransient);
+        case X86_XCPT_GP: return hmR0VmxExitXcptGP(pVCpu, pVmxTransient);
+        case X86_XCPT_MF: return hmR0VmxExitXcptMF(pVCpu, pVmxTransient);
+        case X86_XCPT_DB: return hmR0VmxExitXcptDB(pVCpu, pVmxTransient);
+        case X86_XCPT_BP: return hmR0VmxExitXcptBP(pVCpu, pVmxTransient);
+        case X86_XCPT_AC: return hmR0VmxExitXcptAC(pVCpu, pVmxTransient);
+        default:
+            return hmR0VmxExitXcptOthers(pVCpu, pVmxTransient);
+    }
 }
 /** @} */
 
@@ -14911,19 +14951,7 @@ HMVMX_EXIT_DECL hmR0VmxExitXcptOrNmi(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
                 rcStrict = VINF_SUCCESS;
                 break;
             }
-
-            switch (uVector)
-            {
-                case X86_XCPT_PF: rcStrict = hmR0VmxExitXcptPF(pVCpu, pVmxTransient);   break;
-                case X86_XCPT_GP: rcStrict = hmR0VmxExitXcptGP(pVCpu, pVmxTransient);   break;
-                case X86_XCPT_MF: rcStrict = hmR0VmxExitXcptMF(pVCpu, pVmxTransient);   break;
-                case X86_XCPT_DB: rcStrict = hmR0VmxExitXcptDB(pVCpu, pVmxTransient);   break;
-                case X86_XCPT_BP: rcStrict = hmR0VmxExitXcptBP(pVCpu, pVmxTransient);   break;
-                case X86_XCPT_AC: rcStrict = hmR0VmxExitXcptAC(pVCpu, pVmxTransient);   break;
-                default:
-                    rcStrict = hmR0VmxExitXcptGeneric(pVCpu, pVmxTransient);
-                    break;
-            }
+            rcStrict = hmR0VmxExitXcptAll(pVCpu, pVmxTransient, uVector);
             break;
         }
 
@@ -17065,9 +17093,7 @@ HMVMX_EXIT_DECL hmR0VmxExitXcptOrNmiNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTrans
              * intercepting #AC, then inject the #AC into the nested-guest rather than the original #GP).
              */
             pVCpu->hm.s.Event.fPending = false;
-            hmR0VmxSetPendingEvent(pVCpu, VMX_ENTRY_INT_INFO_FROM_EXIT_INT_INFO(uExitIntInfo), pVmxTransient->cbInstr,
-                                   pVmxTransient->uExitIntErrorCode, pVmxTransient->uExitQual);
-            return VINF_SUCCESS;
+            return hmR0VmxExitXcptAll(pVCpu, pVmxTransient, uVector);
         }
 
         /*
