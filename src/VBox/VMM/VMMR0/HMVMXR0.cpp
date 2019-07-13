@@ -99,7 +99,7 @@
             Assert((fVmcsFieldRead & (a_fReadFields)) == (a_fReadFields)); \
         } while (0)
 #else
-# define HMVMX_ASSERT_READ(a_pVmxTransient, a_fReadFields)          do { } while (0)
+# define HMVMX_ASSERT_READ(a_pVmxTransient, a_fReadFields) do { } while (0)
 #endif
 
 /**
