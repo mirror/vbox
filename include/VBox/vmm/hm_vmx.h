@@ -3037,6 +3037,8 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EXIT_QUAL_TASK_SWITCH_, UINT64_C(0), UINT64_M
  *  0 - violation caused by page walk or access/dirty bit updates
  */
 #define VMX_EXIT_QUAL_EPT_TRANSLATED_ACCESS                     RT_BIT(8)
+/** NMI unblocking due to IRET. */
+#define VMX_EXIT_QUAL_EPT_IS_NMI_UNBLOCK_IRET(a)                (((a) >> 12) & 1)
 /** @} */
 
 
