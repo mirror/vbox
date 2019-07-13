@@ -2494,14 +2494,27 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexit(PVMCPU pVCpu, uint32_t uExitReason, uint64_
         bool const fInEventDelivery = IEMGetCurrentXcpt(pVCpu, &uVector, &fFlags,  &uErrCode, NULL /* uCr2 */);
         if (fInEventDelivery)
         {
-            uint8_t  const uIdtVectoringType = iemVmxGetEventType(uVector, fFlags);
-            uint8_t  const fErrCodeValid     = RT_BOOL(fFlags & IEM_XCPT_FLAGS_ERR);
-            uint32_t const uIdtVectoringInfo = RT_BF_MAKE(VMX_BF_IDT_VECTORING_INFO_VECTOR,         uVector)
-                                             | RT_BF_MAKE(VMX_BF_IDT_VECTORING_INFO_TYPE,           uIdtVectoringType)
-                                             | RT_BF_MAKE(VMX_BF_IDT_VECTORING_INFO_ERR_CODE_VALID, fErrCodeValid)
-                                             | RT_BF_MAKE(VMX_BF_IDT_VECTORING_INFO_VALID,          1);
-            iemVmxVmcsSetIdtVectoringInfo(pVCpu, uIdtVectoringInfo);
-            iemVmxVmcsSetIdtVectoringErrCode(pVCpu, uErrCode);
+            /*
+             * A VM-exit is not considered to occur during event delivery when the VM-exit is
+             * caused by a triple-fault or the original event results in a double-fault that
+             * causes the VM exit directly (exception bitmap). Therefore, we must not set the
+             * original event information into the IDT-vectoring information fields.
+             *
+             * See Intel spec. 27.2.4 Information for VM Exits During Event Delivery
+             */
+            if (   uExitReason != VMX_EXIT_TRIPLE_FAULT
+                && (   uExitReason != VMX_EXIT_XCPT_OR_NMI
+                    || !VMX_EXIT_INT_INFO_IS_XCPT_DF(pVmcs->u32RoExitIntInfo)))
+            {
+                uint8_t  const uIdtVectoringType = iemVmxGetEventType(uVector, fFlags);
+                uint8_t  const fErrCodeValid     = RT_BOOL(fFlags & IEM_XCPT_FLAGS_ERR);
+                uint32_t const uIdtVectoringInfo = RT_BF_MAKE(VMX_BF_IDT_VECTORING_INFO_VECTOR,         uVector)
+                                                 | RT_BF_MAKE(VMX_BF_IDT_VECTORING_INFO_TYPE,           uIdtVectoringType)
+                                                 | RT_BF_MAKE(VMX_BF_IDT_VECTORING_INFO_ERR_CODE_VALID, fErrCodeValid)
+                                                 | RT_BF_MAKE(VMX_BF_IDT_VECTORING_INFO_VALID,          1);
+                iemVmxVmcsSetIdtVectoringInfo(pVCpu, uIdtVectoringInfo);
+                iemVmxVmcsSetIdtVectoringErrCode(pVCpu, uErrCode);
+            }
         }
     }
 
@@ -3560,28 +3573,16 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitEventDoubleFault(PVMCPU pVCpu)
     uint32_t const fXcptBitmap = pVmcs->u32XcptBitmap;
     if (fXcptBitmap & RT_BIT(X86_XCPT_DF))
     {
-        uint8_t  const fNmiUnblocking = pVCpu->cpum.GstCtx.hwvirt.vmx.fNmiUnblockingIret;
+        /*
+         * The NMI-unblocking due to IRET field need not be set for double faults.
+         * See Intel spec. 31.7.1.2 "Resuming Guest Software After Handling An Exception".
+         */
         uint32_t const uExitIntInfo   = RT_BF_MAKE(VMX_BF_EXIT_INT_INFO_VECTOR,           X86_XCPT_DF)
                                       | RT_BF_MAKE(VMX_BF_EXIT_INT_INFO_TYPE,             VMX_EXIT_INT_INFO_TYPE_HW_XCPT)
                                       | RT_BF_MAKE(VMX_BF_EXIT_INT_INFO_ERR_CODE_VALID,   1)
-                                      | RT_BF_MAKE(VMX_BF_EXIT_INT_INFO_NMI_UNBLOCK_IRET, fNmiUnblocking)
+                                      | RT_BF_MAKE(VMX_BF_EXIT_INT_INFO_NMI_UNBLOCK_IRET, 0)
                                       | RT_BF_MAKE(VMX_BF_EXIT_INT_INFO_VALID,            1);
         iemVmxVmcsSetExitIntInfo(pVCpu, uExitIntInfo);
-        iemVmxVmcsSetExitIntErrCode(pVCpu, 0);
-        iemVmxVmcsSetExitInstrLen(pVCpu, 0);
-
-        /*
-         * A VM-exit is not considered to occur during event delivery when the original
-         * event results in a double-fault that causes a VM-exit directly (i.e. intercepted
-         * using the exception bitmap).
-         *
-         * Therefore, we must clear the original event from the IDT-vectoring fields which
-         * would've been recorded before causing the VM-exit.
-         *
-         * 27.2.3 "Information for VM Exits During Event Delivery"
-         */
-        iemVmxVmcsSetIdtVectoringInfo(pVCpu, 0);
-        iemVmxVmcsSetIdtVectoringErrCode(pVCpu, 0);
         return iemVmxVmexit(pVCpu, VMX_EXIT_XCPT_OR_NMI, 0 /* u64ExitQual */);
     }
 
@@ -3737,30 +3738,6 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitEvent(PVMCPU pVCpu, uint8_t uVector, uint32_
     }
 
     return VINF_VMX_INTERCEPT_NOT_ACTIVE;
-}
-
-
-/**
- * VMX VM-exit handler for VM-exits due to a triple fault.
- *
- * @returns VBox strict status code.
- * @param   pVCpu   The cross context virtual CPU structure.
- */
-IEM_STATIC VBOXSTRICTRC iemVmxVmexitTripleFault(PVMCPU pVCpu)
-{
-    /*
-     * A VM-exit is not considered to occur during event delivery when the original
-     * event results in a triple-fault.
-     *
-     * Therefore, we must clear the original event from the IDT-vectoring fields which
-     * would've been recorded before causing the VM-exit.
-     *
-     * 27.2.3 "Information for VM Exits During Event Delivery"
-     */
-    iemVmxVmcsSetIdtVectoringInfo(pVCpu, 0);
-    iemVmxVmcsSetIdtVectoringErrCode(pVCpu, 0);
-
-    return iemVmxVmexit(pVCpu, VMX_EXIT_TRIPLE_FAULT, 0 /* u64ExitQual */);
 }
 
 

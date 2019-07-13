@@ -444,10 +444,10 @@ typedef enum IEMXCPTCLASS
     do { return iemVmxVmexitInstrMwait((a_pVCpu), (a_fMonitorArmed), (a_cbInstr)); } while (0)
 
 /**
- * Invokes the VMX VM-exit handle for triple faults.
+ * Invokes the VMX VM-exit handler.
  */
-# define IEM_VMX_VMEXIT_TRIPLE_FAULT_RET(a_pVCpu) \
-    do { return iemVmxVmexitTripleFault(a_pVCpu); } while (0)
+# define IEM_VMX_VMEXIT_TRIPLE_FAULT_RET(a_pVCpu, a_uExitReason, a_uExitQual) \
+    do { return iemVmxVmexit((a_pVCpu), (a_uExitReason), (a_uExitQual)); } while (0)
 
 #else
 # define IEM_VMX_IS_ROOT_MODE(a_pVCpu)                                          (false)
@@ -459,7 +459,7 @@ typedef enum IEMXCPTCLASS
 # define IEM_VMX_VMEXIT_INSTR_NEEDS_INFO_RET(a_pVCpu, a_uExitReason, a_uInstrId, a_cbInstr)  do { return VERR_VMX_IPE_1; } while (0)
 # define IEM_VMX_VMEXIT_TASK_SWITCH_RET(a_pVCpu, a_enmTaskSwitch, a_SelNewTss, a_cbInstr)    do { return VERR_VMX_IPE_1; } while (0)
 # define IEM_VMX_VMEXIT_MWAIT_RET(a_pVCpu, a_fMonitorArmed, a_cbInstr)          do { return VERR_VMX_IPE_1; } while (0)
-# define IEM_VMX_VMEXIT_TRIPLE_FAULT_RET(a_pVCpu)                               do { return VERR_VMX_IPE_1; } while (0)
+# define IEM_VMX_VMEXIT_TRIPLE_FAULT_RET(a_pVCpu, a_uExitReason, a_uExitQual)   do { return VERR_VMX_IPE_1; } while (0)
 
 #endif
 
@@ -977,12 +977,11 @@ IEM_STATIC uint16_t         iemSRegFetchU16(PVMCPU pVCpu, uint8_t iSegReg);
 IEM_STATIC uint64_t         iemSRegBaseFetchU64(PVMCPU pVCpu, uint8_t iSegReg);
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+IEM_STATIC VBOXSTRICTRC     iemVmxVmexit(PVMCPU pVCpu, uint32_t uExitReason, uint64_t u64ExitQual);
 IEM_STATIC VBOXSTRICTRC     iemVmxVmexitTaskSwitch(PVMCPU pVCpu, IEMTASKSWITCH enmTaskSwitch, RTSEL SelNewTss, uint8_t cbInstr);
 IEM_STATIC VBOXSTRICTRC     iemVmxVmexitEvent(PVMCPU pVCpu, uint8_t uVector, uint32_t fFlags, uint32_t uErrCode, uint64_t uCr2, uint8_t cbInstr);
 IEM_STATIC VBOXSTRICTRC     iemVmxVmexitEventDoubleFault(PVMCPU pVCpu);
-IEM_STATIC VBOXSTRICTRC     iemVmxVmexitTripleFault(PVMCPU pVCpu);
 IEM_STATIC VBOXSTRICTRC     iemVmxVirtApicAccessMem(PVMCPU pVCpu, uint16_t offAccess, size_t cbAccess, void *pvData, uint32_t fAccess);
-IEM_STATIC VBOXSTRICTRC     iemVmxVmexitApicAccess(PVMCPU pVCpu, uint16_t offAccess, uint32_t fAccess);
 IEM_STATIC VBOXSTRICTRC     iemVmxVirtApicAccessMsrRead(PVMCPU pVCpu, uint32_t idMsr, uint64_t *pu64Value);
 IEM_STATIC VBOXSTRICTRC     iemVmxVirtApicAccessMsrWrite(PVMCPU pVCpu, uint32_t idMsr, uint64_t u64Value);
 #endif
@@ -3481,7 +3480,7 @@ VMM_INT_DECL(IEMXCPTRAISE) IEMEvaluateRecursiveXcpt(PVMCPU pVCpu, uint32_t fPrev
 IEM_STATIC VBOXSTRICTRC iemInitiateCpuShutdown(PVMCPU pVCpu)
 {
     if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
-        IEM_VMX_VMEXIT_TRIPLE_FAULT_RET(pVCpu);
+        IEM_VMX_VMEXIT_TRIPLE_FAULT_RET(pVCpu, VMX_EXIT_TRIPLE_FAULT, 0 /* u64ExitQual */);
 
     if (IEM_SVM_IS_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_SHUTDOWN))
     {
@@ -15985,7 +15984,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVmexitXcptNmi(PVMCPU pVCpu)
  */
 VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVmexitTripleFault(PVMCPU pVCpu)
 {
-    VBOXSTRICTRC rcStrict = iemVmxVmexitTripleFault(pVCpu);
+    VBOXSTRICTRC rcStrict = iemVmxVmexit(pVCpu, VMX_EXIT_TRIPLE_FAULT, 0 /* u64ExitQual */);
     Assert(!pVCpu->iem.s.cActiveMappings);
     return iemExecStatusCodeFiddling(pVCpu, rcStrict);
 }
