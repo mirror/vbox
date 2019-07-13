@@ -13624,6 +13624,7 @@ static int hmR0VmxAdvanceGuestRip(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   pVmxTransient   The VMX-transient structure.
  *
+ * @remarks Requires all fields in HMVMX_READ_XCPT_INFO to be read from the VMCS.
  * @remarks No-long-jump zone!!!
  */
 static int hmR0VmxCheckExitDueToEventDeliveryNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
@@ -13758,6 +13759,10 @@ static int hmR0VmxCheckExitDueToEventDeliveryNested(PVMCPU pVCpu, PVMXTRANSIENT 
  *
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   pVmxTransient   The VMX-transient structure.
+ *
+ * @remarks Requires all fields in HMVMX_READ_XCPT_INFO to be read from the VMCS.
+ *          Additionally, HMVMX_READ_EXIT_QUALIFICATION is required if the VM-exit
+ *          is due to an EPT violation, PML-full and SPP-related event.
  *
  * @remarks No-long-jump zone!!!
  */
@@ -13933,20 +13938,48 @@ static VBOXSTRICTRC hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PVMXTRANSIE
             }
         }
     }
-    else if (   VMX_EXIT_INT_INFO_IS_VALID(uExitIntInfo)
-             && VMX_EXIT_INT_INFO_IS_NMI_UNBLOCK_IRET(uExitIntInfo)
-             && uExitVector != X86_XCPT_DF
-             && hmR0VmxIsPinCtlsSet(pVCpu, pVmxTransient, VMX_PIN_CTLS_VIRT_NMI))
+    else if (hmR0VmxIsPinCtlsSet(pVCpu, pVmxTransient, VMX_PIN_CTLS_VIRT_NMI))
     {
-        Assert(!VMX_IDT_VECTORING_INFO_IS_VALID(uIdtVectorInfo));
-
-        /*
-         * Execution of IRET caused this fault when NMI blocking was in effect (i.e we're in the guest NMI handler).
-         * We need to set the block-by-NMI field so that NMIs remain blocked until the IRET execution is restarted.
-         * See Intel spec. 30.7.1.2 "Resuming guest software after handling an exception".
-         */
-        CPUMSetGuestNmiBlocking(pVCpu, true);
-        Log4Func(("Set NMI blocking. uExitReason=%u\n", pVmxTransient->uExitReason));
+        if (    VMX_EXIT_INT_INFO_IS_VALID(uExitIntInfo)
+             && VMX_EXIT_INT_INFO_VECTOR(uExitIntInfo) != X86_XCPT_DF
+             && VMX_EXIT_INT_INFO_IS_NMI_UNBLOCK_IRET(uExitIntInfo))
+        {
+            /*
+             * Execution of IRET caused a fault when NMI blocking was in effect (i.e we're in
+             * the guest or nested-guest NMI handler). We need to set the block-by-NMI field so
+             * that NMIs remain blocked until the IRET execution is completed.
+             *
+             * See Intel spec. 31.7.1.2 "Resuming Guest Software After Handling An Exception".
+             */
+            CPUMSetGuestNmiBlocking(pVCpu, true);
+            Log4Func(("Set NMI blocking. uExitReason=%u\n", pVmxTransient->uExitReason));
+        }
+        else if (   pVmxTransient->uExitReason == VMX_EXIT_EPT_VIOLATION
+                 || pVmxTransient->uExitReason == VMX_EXIT_PML_FULL
+                 || pVmxTransient->uExitReason == VMX_EXIT_SPP_EVENT)
+        {
+#ifdef VBOX_STRICT
+            /*
+             * Validate we have read the Exit qualification from the VMCS.
+             */
+            uint32_t const fVmcsFieldRead = ASMAtomicUoReadU32(&pVmxTransient->fVmcsFieldsRead);
+            RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
+            Assert(fVmcsFieldRead & HMVMX_READ_EXIT_QUALIFICATION);
+#endif
+            /*
+             * Execution of IRET caused an EPT violation, page-modification log-full event or
+             * SPP-related event VM-exit when NMI blocking was in effect (i.e. we're in the
+             * guest or nested-guest NMI handler). We need to set the block-by-NMI field so
+             * that NMIs remain blocked until the IRET execution is completed.
+             *
+             * See Intel spec. 27.2.3 "Information about NMI unblocking due to IRET"
+             */
+            if (VMX_EXIT_QUAL_EPT_IS_NMI_UNBLOCK_IRET(pVmxTransient->uExitQual))
+            {
+                CPUMSetGuestNmiBlocking(pVCpu, true);
+                Log4Func(("Set NMI blocking. uExitReason=%u\n", pVmxTransient->uExitReason));
+            }
+        }
     }
 
     Assert(   rcStrict == VINF_SUCCESS  || rcStrict == VINF_HM_DOUBLE_FAULT
@@ -16582,7 +16615,8 @@ HMVMX_EXIT_DECL hmR0VmxExitEptViolation(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransien
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
     Assert(pVCpu->CTX_SUFF(pVM)->hm.s.fNestedPaging);
 
-    int rc  = hmR0VmxReadExitIntInfoVmcs(pVmxTransient);
+    int rc  = hmR0VmxReadExitQualVmcs(pVCpu, pVmxTransient);
+    rc     |= hmR0VmxReadExitIntInfoVmcs(pVmxTransient);
     rc     |= hmR0VmxReadExitIntErrorCodeVmcs(pVmxTransient);
     rc     |= hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
     rc     |= hmR0VmxReadIdtVectoringInfoVmcs(pVmxTransient);
@@ -16611,7 +16645,6 @@ HMVMX_EXIT_DECL hmR0VmxExitEptViolation(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransien
     RTGCPHYS GCPhys;
     PVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
     rc  = VMXReadVmcs64(VMX_VMCS64_RO_GUEST_PHYS_ADDR_FULL, &GCPhys);
-    rc |= hmR0VmxReadExitQualVmcs(pVCpu, pVmxTransient);
     rc |= hmR0VmxImportGuestState(pVCpu, pVmcsInfo, IEM_CPUMCTX_EXTRN_MUST_MASK);
     AssertRCReturn(rc, rc);
 
