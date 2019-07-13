@@ -14951,10 +14951,10 @@ HMVMX_EXIT_DECL hmR0VmxExitXcptOrNmi(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
             if (rcStrict == VINF_SUCCESS)
             {
                 /*
-                 * If an exception caused a VM-exit due to delivery of an event, the secondary
-                 * exception may be made pending for re-injection. We shall reinject it and
-                 * continue guest execution. However, the page-fault case is a complicated case
-                 * and needs additional processing done in hmR0VmxExitXcptPF.
+                 * If an exception caused a VM-exit due to delivery of an event, the original
+                 * event may have to be re-injected into the guest. We shall reinject it and
+                 * continue guest execution. However, page-fault is a complicated case and
+                 * needs additional processing done in hmR0VmxExitXcptPF().
                  */
                 if (   !pVCpu->hm.s.Event.fPending
                     || uVector == X86_XCPT_PF)
