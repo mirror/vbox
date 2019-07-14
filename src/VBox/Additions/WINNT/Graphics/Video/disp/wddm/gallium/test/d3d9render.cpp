@@ -1148,6 +1148,51 @@ HRESULT D3D9RenderShared::DoRender(D3D9DeviceProvider *pDP)
 
 
 /*
+ * Use ColorFill to clear a part of the backbuffer.
+ */
+
+class D3D9RenderColorFill: public D3D9Render
+{
+public:
+    D3D9RenderColorFill() {}
+    virtual ~D3D9RenderColorFill() {}
+    virtual HRESULT InitRender(D3D9DeviceProvider *pDP);
+    virtual HRESULT DoRender(D3D9DeviceProvider *pDP);
+};
+
+HRESULT D3D9RenderColorFill::InitRender(D3D9DeviceProvider *pDP)
+{
+    (void)pDP;
+    return S_OK;
+}
+
+HRESULT D3D9RenderColorFill::DoRender(D3D9DeviceProvider *pDP)
+{
+    HRESULT hr = S_OK;
+
+    IDirect3DDevice9 *pDevice = pDP->Device(0);
+
+    pDevice->Clear(0, 0, D3DCLEAR_TARGET, 0xff0000ff, 0.0f, 0);
+
+    IDirect3DSurface9 *pBackBuffer = NULL;
+    HTEST(pDevice->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &pBackBuffer));
+
+    RECT rDst;
+    rDst.left = 50;
+    rDst.top = 10;
+    rDst.right = 250;
+    rDst.bottom = 250;
+
+    HTEST(pDevice->ColorFill(pBackBuffer, &rDst, D3DCOLOR_XRGB(0, 255, 0)));
+
+    D3D_RELEASE(pBackBuffer);
+
+    HTEST(pDevice->Present(0, 0, 0, 0));
+    return S_OK;
+}
+
+
+/*
  * "Public" interface.
  */
 
@@ -1155,6 +1200,8 @@ D3D9Render *CreateRender(int iRenderId)
 {
     switch (iRenderId)
     {
+        case 8:
+            return new D3D9RenderColorFill();
         case 7:
             return new D3D9RenderShared();
         case 6:
