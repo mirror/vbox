@@ -608,20 +608,6 @@ try_blit(struct svga_context *svga, const struct pipe_blit_info *blit_info)
 
    svga_toggle_render_condition(svga, blit.render_condition_enable, FALSE);
 
-#ifdef VBOX_WITH_MESA3D_SVGA_HALFZ
-   if (svga->curr.rast && svga->curr.rast->templ.clip_halfz)
-   {
-       /* Flip Y because the state tracker uses D3D texture coords:
-        * top,left=0,0; bottom,right = 1,1.
-        * While the blit draws a quad using the source as texture and sets
-        * texcoords for destination vertices using OpenGL coordinates:
-        * bottom,left = 0,0; top,right = 1,1.
-        */
-       blit.dst.box.y = dst->height0 - blit.dst.box.y;
-       blit.dst.box.height = -blit.dst.box.height;
-   }
-#endif
-
    util_blitter_blit(svga->blitter, &blit);
 
    svga_toggle_render_condition(svga, blit.render_condition_enable, TRUE);
