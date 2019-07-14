@@ -387,8 +387,8 @@ HRESULT DHCPServer::i_removeConfig(DHCPConfig *pConfig, DHCPConfigScope_T enmSco
                     DHCPConfig *pCurConfig = it->second;
                     if (pCurConfig == pConfig)
                     {
+                        m->groupConfigs.erase(it++); /* Post increment returns copy of original that is then erased. */
                         fFound = true;
-                        it = m->groupConfigs.erase(it);
                     }
                     else
                         ++it;
@@ -404,8 +404,8 @@ HRESULT DHCPServer::i_removeConfig(DHCPConfig *pConfig, DHCPConfigScope_T enmSco
                     DHCPConfig *pCurConfig = it->second;
                     if (pCurConfig == pConfig)
                     {
+                        m->individualConfigs.erase(it++); /* Post increment returns copy of original that is then erased. */
                         fFound = true;
-                        it = m->individualConfigs.erase(it);
                     }
                     else
                         ++it;
