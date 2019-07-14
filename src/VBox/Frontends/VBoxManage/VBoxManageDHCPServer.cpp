@@ -263,8 +263,10 @@ public:
     ComPtr<IDHCPConfig> &getConfig(ComPtr<IDHCPServer> const &ptrDHCPServer)
     {
         if (m_ptrConfig.isNull())
+        {
             CHECK_ERROR2I_STMT(ptrDHCPServer, GetConfig(m_enmScope, Bstr(m_pszName).raw(), m_uSlot, TRUE /*mayAdd*/,
                                                         m_ptrConfig.asOutParam()), m_ptrConfig.setNull());
+        }
         return m_ptrConfig;
     }
 
@@ -648,7 +650,7 @@ static DECLCALLBACK(RTEXITCODE) dhcpdHandleAddAndModify(PDHCPDCMDCTX pCtx, int a
                     if (iPass != 1)
                         break;
 
-                    DHCPGroupConditionType enmType;
+                    DHCPGroupConditionType_T enmType;
                     switch (vrc)
                     {
                         case DHCP_ADDMOD_INCL_MAC: case DHCP_ADDMOD_EXCL_MAC: case DHCP_ADDMOD_DEL_MAC:
@@ -816,7 +818,6 @@ static DECLCALLBACK(RTEXITCODE) dhcpdHandleAddAndModify(PDHCPDCMDCTX pCtx, int a
 
         if (pCtx->pCmdDef->fSubcommandScope == HELP_SCOPE_DHCPSERVER_ADD)
         {
-            RTEXITCODE rcExit = RTEXITCODE_SUCCESS;
             if (!pszServerIp)
                 rcExit = errorSyntax("Missing required option: --ip");
             if (!pszNetmask)
@@ -870,7 +871,6 @@ static DECLCALLBACK(RTEXITCODE) dhcpdHandleAddAndModify(PDHCPDCMDCTX pCtx, int a
          * Apply IDHCPServer settings:
          */
         HRESULT hrc;
-        RTEXITCODE rcExit = RTEXITCODE_SUCCESS;
         if (pszServerIp || pszNetmask || pszLowerIp || pszUpperIp)
         {
             Bstr bstrServerIp(pszServerIp);
