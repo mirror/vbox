@@ -973,21 +973,23 @@ static void hmR0VmxSetProcCtlsVmcs(PVMXTRANSIENT pVmxTransient, uint32_t uProcCt
  */
 static void hmR0VmxRemoveProcCtlsVmcs(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient, uint32_t uProcCtls)
 {
-#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-    bool const fRemoveCtls = !pVmxTransient->fIsNestedGuest
-                           ? true
-                           : !CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS_RDTSC_EXIT);
-#else
-    NOREF(pVCpu);
-    bool const fRemoveCtls = true;
-#endif
     PVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
-    if (   fRemoveCtls
-        && (pVmcsInfo->u32ProcCtls & uProcCtls))
+    if (pVmcsInfo->u32ProcCtls & uProcCtls)
     {
-        pVmcsInfo->u32ProcCtls &= ~uProcCtls;
-        int rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, pVmcsInfo->u32ProcCtls);
-        AssertRC(rc);
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+        bool const fRemoveCtls = !pVmxTransient->fIsNestedGuest
+                               ? true
+                               : !CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, uProcCtls);
+#else
+        NOREF(pVCpu);
+        bool const fRemoveCtls = true;
+#endif
+        if (fRemoveCtls)
+        {
+            pVmcsInfo->u32ProcCtls &= ~uProcCtls;
+            int rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, pVmcsInfo->u32ProcCtls);
+            AssertRC(rc);
+        }
     }
 }
 
@@ -7727,6 +7729,13 @@ DECLINLINE(void) hmR0VmxSetPendingXcptSS(PVMCPU pVCpu, uint32_t u32ErrCode)
 #endif /* VBOX_WITH_NESTED_HWVIRT_VMX */
 
 
+/**
+ * Fixes up attributes for the specified segment register.
+ *
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pSelReg     The segment register that needs fixing.
+ * @param   idxSel      The VMCS field for the corresponding segment register.
+ */
 static void hmR0VmxFixUnusableSegRegAttr(PVMCPU pVCpu, PCPUMSELREG pSelReg, uint32_t idxSel)
 {
     Assert(pSelReg->Attr.u & X86DESCATTR_UNUSABLE);
