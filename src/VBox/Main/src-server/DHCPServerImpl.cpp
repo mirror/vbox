@@ -381,6 +381,7 @@ HRESULT DHCPServer::i_removeConfig(DHCPConfig *pConfig, DHCPConfigScope_T enmSco
         switch (enmScope)
         {
             case DHCPConfigScope_Group:
+            {
                 for (Data::GroupConfigIterator it = m->groupConfigs.begin(); it != m->groupConfigs.end();)
                 {
                     DHCPConfig *pCurConfig = it->second;
@@ -393,9 +394,11 @@ HRESULT DHCPServer::i_removeConfig(DHCPConfig *pConfig, DHCPConfigScope_T enmSco
                         ++it;
                 }
                 break;
+            }
 
             case DHCPConfigScope_MAC:
             case DHCPConfigScope_MachineNIC:
+            {
                 for (Data::IndividualConfigIterator it = m->individualConfigs.begin(); it != m->individualConfigs.end();)
                 {
                     DHCPConfig *pCurConfig = it->second;
@@ -408,6 +411,7 @@ HRESULT DHCPServer::i_removeConfig(DHCPConfig *pConfig, DHCPConfigScope_T enmSco
                         ++it;
                 }
                 break;
+            }
 
             default:
                 AssertFailedReturn(E_FAIL);
