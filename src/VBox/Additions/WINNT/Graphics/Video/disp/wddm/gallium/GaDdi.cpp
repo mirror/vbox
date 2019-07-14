@@ -1892,26 +1892,23 @@ HRESULT APIENTRY GaDdiCreateResource(HANDLE hDevice, D3DDDIARG_CREATERESOURCE *p
 
                 if (bSetHostID)
                 {
-                    IDirect3DSurface9 *pSurfIf = NULL;
-                    hr = VBoxD3DIfSurfGet(pRc, i, &pSurfIf);
-                    if (SUCCEEDED(hr))
+                    if (pGaD3DDevice9Ex)
                     {
-                        Assert(pGaD3DDevice9Ex);
                         hr = pGaD3DDevice9Ex->GaSurfaceId(pAllocation->pD3DIf, &pWddmAllocInfo->hostID);
-                        if (SUCCEEDED(hr))
-                        {
-                            Assert(pWddmAllocInfo->hostID);
-                        }
-                        else
-                        {
-                            WARN(("pfnVBoxWineExD3DSurf9GetHostId failed, hr 0x%x", hr));
-                            break;
-                        }
-                        pSurfIf->Release();
                     }
                     else
                     {
-                        WARN(("VBoxD3DIfSurfGet failed, hr 0x%x", hr));
+                        AssertFailed();
+                        hr = E_FAIL;
+                    }
+
+                    if (SUCCEEDED(hr))
+                    {
+                        Assert(pWddmAllocInfo->hostID);
+                    }
+                    else
+                    {
+                        WARN(("pGaD3DDevice9Ex->GaSurfaceId failed, hr 0x%x", hr));
                         break;
                     }
                 }
