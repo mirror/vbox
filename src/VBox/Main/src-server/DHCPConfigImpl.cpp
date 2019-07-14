@@ -35,6 +35,8 @@
 #include "MachineImpl.h"
 #include "VirtualBoxImpl.h"
 
+#include "../../NetworkServices/Dhcpd/DhcpOptions.h"
+
 
 
 /*********************************************************************************************************************************
@@ -158,20 +160,51 @@ HRESULT DHCPConfig::i_setMaxLeaseTime(ULONG aMaxLeaseTime)
 
 HRESULT DHCPConfig::i_setOption(DhcpOpt_T aOption, DHCPOptionEncoding_T aEncoding, const com::Utf8Str &aValue)
 {
-    /** @todo validate option value format. */
+    /*
+     * Validate the option as there is no point in allowing the user to set
+     * something that the DHCP server does not grok.  It will only lead to
+     * startup failures an no DHCP.  We share this code with the server.
+     */
+    DhcpOption *pParsed = NULL;
+    int         rc      = VINF_SUCCESS;
+    try
     {
-        AutoWriteLock alock(m_pHack COMMA_LOCKVAL_SRC_POS);
-        try
-        {
-            m_OptionMap[aOption] = settings::DhcpOptValue(aValue, aEncoding);
-        }
-        catch (std::bad_alloc &)
-        {
-            return E_OUTOFMEMORY;
-        }
+        pParsed = DhcpOption::parse((uint8_t)aOption, aEncoding, aValue.c_str(), &rc);
     }
-    i_doWriteConfig();
-    return S_OK;
+    catch (std::bad_alloc &)
+    {
+        return E_OUTOFMEMORY;
+    }
+    if (pParsed)
+    {
+        delete pParsed;
+
+        /*
+         * Add/change it.
+         */
+        {
+            AutoWriteLock alock(m_pHack COMMA_LOCKVAL_SRC_POS);
+            try
+            {
+                m_OptionMap[aOption] = settings::DhcpOptValue(aValue, aEncoding);
+            }
+            catch (std::bad_alloc &)
+            {
+                return E_OUTOFMEMORY;
+            }
+        }
+        i_doWriteConfig();
+        return S_OK;
+    }
+
+    if (rc == VERR_WRONG_TYPE)
+        return m_pHack->setError(E_INVALIDARG, m_pHack->tr("Unsupported encoding %d (option %d, value %s)"),
+                                 (int)aEncoding, (int)aOption, aValue.c_str());
+    if (rc == VERR_NOT_SUPPORTED)
+        return m_pHack->setError(E_INVALIDARG, m_pHack->tr("Unsupported option %d (encoding %d, value %s)"),
+                                 (int)aOption, (int)aEncoding, aValue.c_str());
+    return m_pHack->setError(E_INVALIDARG, m_pHack->tr("Malformed option %d value '%s' (encoding %d, rc=%Rrc)"),
+                             (int)aOption, aValue.c_str(), (int)aEncoding, rc);
 }
 
 

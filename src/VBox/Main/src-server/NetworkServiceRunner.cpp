@@ -285,3 +285,13 @@ bool NetworkServiceRunner::isRunning()
     }
     return false;
 }
+
+
+/**
+ * Gets the process ID of a running service, NIL_PROCESS if not running.
+ */
+RTPROCESS NetworkServiceRunner::getPid() const
+{
+    return m->Process;
+}
+

@@ -21,7 +21,11 @@
 # pragma once
 #endif
 
-#define LOG_GROUP LOG_GROUP_NET_DHCPD
+#ifndef IN_VBOXSVC
+# define LOG_GROUP LOG_GROUP_NET_DHCPD
+#elif !defined(LOG_GROUP)
+# define LOG_GROUP LOG_GROUP_MAIN_DHCPCONFIG
+#endif
 #include <iprt/stdint.h>
 #include <iprt/string.h>
 #include <VBox/log.h>

@@ -52,8 +52,10 @@ public:
 
     int  start(bool aKillProcessOnStop);
     int  stop();
-    bool isRunning();
     void detachFromServer();
+    bool isRunning();
+
+    RTPROCESS getPid() const;
 
     /** @name Common options
      * @{ */

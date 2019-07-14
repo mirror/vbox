@@ -443,6 +443,7 @@ endif
 ## r=bird: If you really think you might need VBOX_WITH_RECORDING and VBOX_WITH_AUDIO_RECORDING both here and for
 ##         VBoxC, you shall obviously put them in VBOX_MAIN_DEFS!  So, one way or the other they they disappear from here...
 VBoxSVC_DEFS = \
+       IN_VBOXSVC \
 	VBOX_MAIN_SETTINGS_ADDONS \
 	IN_VMM_STATIC \
 	$(VBOX_MAIN_DEFS) \
@@ -550,6 +551,7 @@ VBoxSVC_SOURCES = \
 	src-server/DataStreamImpl.cpp \
 	src-server/DHCPServerImpl.cpp \
 	src-server/DHCPConfigImpl.cpp \
+	../NetworkServices/Dhcpd/DhcpOptions.cpp \
 	src-server/NetworkServiceRunner.cpp \
 	src-server/NATNetworkImpl.cpp \
 	src-server/GuestOSTypeImpl.cpp \

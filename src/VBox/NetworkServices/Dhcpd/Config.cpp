@@ -35,6 +35,12 @@
 #include "Config.h"
 
 
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
+/*static*/ bool Config::g_fInitializedLog = false;
+
+
 /**
  * Configuration file exception.
  */
@@ -69,7 +75,6 @@ public:
 Config::Config()
     : m_strHome()
     , m_strNetwork()
-    , m_strBaseName()
     , m_strTrunk()
     , m_enmTrunkType(kIntNetTrunkType_Invalid)
     , m_MacAddress()
@@ -139,89 +144,67 @@ int Config::i_homeInit() RT_NOEXCEPT
 
 
 /**
- * Internal network name (m_strNetwork) setter.
- *
- * Can only be called once.  Will also invoke i_sanitizeBaseName to update
- * m_strBaseName.
- *
- * @throws std::bad_alloc
- */
-void Config::i_setNetwork(const RTCString &aStrNetwork)
-{
-    AssertReturnVoid(m_strNetwork.isEmpty());
-
-    m_strNetwork = aStrNetwork;
-    i_sanitizeBaseName();
-}
-
-
-/**
- * Interal worker for i_setNetwork() that sets m_strBaseName to sanitized the
- * version of m_strNetwork suitable for use as a path component.
- *
- * @throws std::bad_alloc
- */
-void Config::i_sanitizeBaseName()
-{
-    if (m_strNetwork.isNotEmpty())
-    {
-        m_strBaseName = m_strNetwork;
-        RTPathPurgeFilename(m_strBaseName.mutableRaw(), RTPATH_STR_F_STYLE_HOST);
-        m_strBaseName.jolt();
-    }
-    else
-        m_strBaseName.setNull();
-}
-
-
-/**
  * Worker for i_complete() that initializes the release log of the process.
  *
  * Requires network name to be known as the log file name depends on
  * it.  Alternatively, consider passing the log file name via the
  * command line?
  *
- * @todo make the log file directly configurable?
+ * @note This is only used when no --log parameter was given.
  */
 int Config::i_logInit() RT_NOEXCEPT
 {
-    if (m_strHome.isEmpty() || m_strBaseName.isEmpty())
+    if (g_fInitializedLog)
+        return VINF_SUCCESS;
+
+    if (m_strHome.isEmpty() || m_strNetwork.isEmpty())
         return VERR_PATH_ZERO_LENGTH;
 
     /* default log file name */
     char szLogFile[RTPATH_MAX];
     ssize_t cch = RTStrPrintf2(szLogFile, sizeof(szLogFile),
                                "%s%c%s-Dhcpd.log",
-                               m_strHome.c_str(), RTPATH_DELIMITER, m_strBaseName.c_str());
-    if (cch <= 0)
-        return VERR_BUFFER_OVERFLOW;
+                               m_strHome.c_str(), RTPATH_DELIMITER, m_strNetwork.c_str());
+    if (cch > 0)
+    {
+        RTPathPurgeFilename(RTPathFilename(szLogFile), RTPATH_STR_F_STYLE_HOST);
+        return i_logInitWithFilename(szLogFile);
+    }
+    return VERR_BUFFER_OVERFLOW;
+}
 
-    /* Sanitize base name some more to be usable in an environment variable name: */
-    char szEnvVarBase[128];
-    cch = RTStrPrintf(szEnvVarBase, sizeof(szEnvVarBase), "VBOXDHCP_%s_RELEASE_LOG", m_strBaseName.c_str());
-    if (cch <= 0)
-        return VERR_BUFFER_OVERFLOW;
-    for (char *p = szEnvVarBase; *p != '\0'; ++p)
-        if (*p != '_' && !RT_C_IS_ALNUM(*p))
-            *p = '_';
+
+/**
+ * Worker for i_logInit and for handling --log on the command line.
+ *
+ * @returns IPRT status code.
+ * @param   pszFilename         The log filename.
+ */
+/*static*/ int Config::i_logInitWithFilename(const char *pszFilename) RT_NOEXCEPT
+{
+    AssertReturn(!g_fInitializedLog, VERR_WRONG_ORDER);
 
     int rc = com::VBoxLogRelCreate("DHCP Server",
-                                   szLogFile,
+                                   pszFilename,
                                    RTLOGFLAGS_PREFIX_TIME_PROG,
-                                   "all all.restrict -default.restrict",
-                                   szEnvVarBase,
+                                   "all net_dhcpd.e.l",
+                                   "VBOXDHCP_RELEASE_LOG",
                                    RTLOGDEST_FILE
 #ifdef DEBUG
                                    | RTLOGDEST_STDERR
 #endif
                                    ,
                                    32768 /* cMaxEntriesPerGroup */,
-                                   0 /* cHistory */,
-                                   0 /* uHistoryFileTime */,
-                                   0 /* uHistoryFileSize */,
+                                   5 /* cHistory */,
+                                   RT_SEC_1DAY /* uHistoryFileTime */,
+                                   _32M /* uHistoryFileSize */,
                                    NULL /* pErrInfo */);
-
+    if (RT_SUCCESS(rc))
+        g_fInitializedLog = true;
+    else
+        RTMsgError("Log initialization failed: %Rrc, log file '%s'", rc, pszFilename);
     return rc;
+
 }
 
 
@@ -323,206 +306,38 @@ int Config::i_complete() RT_NOEXCEPT
 }
 
 
-/*static*/ Config *Config::hardcoded() RT_NOEXCEPT
-{
-    std::unique_ptr<Config> config(i_createInstanceAndCallInit());
-    AssertReturn(config.get() != NULL, NULL);
-    try
-    {
-        config->i_setNetwork("HostInterfaceNetworking-vboxnet0");
-        config->m_strTrunk.assign("vboxnet0");
-    }
-    catch (std::bad_alloc &)
-    {
-        return NULL;
-    }
-    config->m_enmTrunkType = kIntNetTrunkType_NetFlt;
-
-    config->m_MacAddress.au8[0] = 0x08;
-    config->m_MacAddress.au8[1] = 0x00;
-    config->m_MacAddress.au8[2] = 0x27;
-    config->m_MacAddress.au8[3] = 0xa9;
-    config->m_MacAddress.au8[4] = 0xcf;
-    config->m_MacAddress.au8[5] = 0xef;
-
-
-    config->m_IPv4Address.u     = RT_H2N_U32_C(0xc0a838fe); /* 192.168.56.254 */
-    config->m_IPv4Netmask.u     = RT_H2N_U32_C(0xffffff00); /* 255.255.255.0 */
-
-    /* flip to test naks */
-#if 1
-    config->m_IPv4PoolFirst.u   = RT_H2N_U32_C(0xc0a8385a); /* 192.168.56.90 */
-    config->m_IPv4PoolLast.u    = RT_H2N_U32_C(0xc0a83863); /* 192.168.56.99 */
-#else
-    config->m_IPv4PoolFirst.u   = RT_H2N_U32_C(0xc0a838c9); /* 192.168.56.201 */
-    config->m_IPv4PoolLast.u    = RT_H2N_U32_C(0xc0a838dc); /* 192.168.56.220 */
-#endif
-
-    int rc = config->i_complete();
-    AssertRCReturn(rc, NULL);
-
-    return config.release();
-}
-
-
 /**
- * Old VBoxNetDHCP style command line parsing.
+ * Parses the command line and loads the configuration.
  *
- * @throws std::bad_alloc
+ * @returns The configuration, NULL if we ran into some fatal problem.
+ * @param   argc    The argc from main().
+ * @param   argv    The argv from main().
  */
-/*static*/ Config *Config::compat(int argc, char **argv)
-{
-    /* compatibility with old VBoxNetDHCP */
-    static const RTGETOPTDEF s_aCompatOptions[] =
-    {
-        { "--ip-address",     'i',   RTGETOPT_REQ_IPV4ADDR },
-        { "--lower-ip",       'l',   RTGETOPT_REQ_IPV4ADDR },
-        { "--mac-address",    'a',   RTGETOPT_REQ_MACADDR },
-        { "--need-main",      'M',   RTGETOPT_REQ_BOOL },
-        { "--netmask",        'm',   RTGETOPT_REQ_IPV4ADDR },
-        { "--network",        'n',   RTGETOPT_REQ_STRING },
-        { "--trunk-name",     't',   RTGETOPT_REQ_STRING },
-        { "--trunk-type",     'T',   RTGETOPT_REQ_STRING },
-        { "--upper-ip",       'u',   RTGETOPT_REQ_IPV4ADDR },
-    };
-
-    RTGETOPTSTATE State;
-    int rc = RTGetOptInit(&State, argc, argv, s_aCompatOptions, RT_ELEMENTS(s_aCompatOptions), 1, RTGETOPTINIT_FLAGS_NO_STD_OPTS);
-    AssertRCReturn(rc, NULL);
-
-    std::unique_ptr<Config> config(i_createInstanceAndCallInit());
-    AssertReturn(config.get() != NULL, NULL);
-
-    for (;;)
-    {
-        RTGETOPTUNION ValueUnion;
-        rc = RTGetOpt(&State, &ValueUnion);
-        if (rc == 0)            /* done */
-            break;
-
-        switch (rc)
-        {
-            case 'a': /* --mac-address */
-                if (   config->m_MacAddress.au16[0] != 0
-                    || config->m_MacAddress.au16[1] != 0
-                    || config->m_MacAddress.au16[2] != 0)
-                {
-                    RTMsgError("Duplicate --mac-address option");
-                    return NULL;
-                }
-                config->m_MacAddress = ValueUnion.MacAddr;
-                break;
-
-            case 'i': /* --ip-address */
-                if (config->m_IPv4Address.u != 0)
-                {
-                    RTMsgError("Duplicate --ip-address option");
-                    return NULL;
-                }
-                config->m_IPv4Address = ValueUnion.IPv4Addr;
-                break;
-
-            case 'l': /* --lower-ip */
-                if (config->m_IPv4PoolFirst.u != 0)
-                {
-                    RTMsgError("Duplicate --lower-ip option");
-                    return NULL;
-                }
-                config->m_IPv4PoolFirst = ValueUnion.IPv4Addr;
-                break;
-
-            case 'M': /* --need-main */
-                /* for backward compatibility, ignored */
-                break;
-
-            case 'm': /* --netmask */
-                if (config->m_IPv4Netmask.u != 0)
-                {
-                    RTMsgError("Duplicate --netmask option");
-                    return NULL;
-                }
-                config->m_IPv4Netmask = ValueUnion.IPv4Addr;
-                break;
-
-            case 'n': /* --network */
-                if (!config->m_strNetwork.isEmpty())
-                {
-                    RTMsgError("Duplicate --network option");
-                    return NULL;
-                }
-                config->i_setNetwork(ValueUnion.psz);
-                break;
-
-            case 't': /* --trunk-name */
-                if (!config->m_strTrunk.isEmpty())
-                {
-                    RTMsgError("Duplicate --trunk-name option");
-                    return NULL;
-                }
-                config->m_strTrunk.assign(ValueUnion.psz);
-                break;
-
-            case 'T': /* --trunk-type */
-                if (config->m_enmTrunkType != kIntNetTrunkType_Invalid)
-                {
-                    RTMsgError("Duplicate --trunk-type option");
-                    return NULL;
-                }
-                else if (strcmp(ValueUnion.psz, "none") == 0)
-                    config->m_enmTrunkType = kIntNetTrunkType_None;
-                else if (strcmp(ValueUnion.psz, "whatever") == 0)
-                    config->m_enmTrunkType = kIntNetTrunkType_WhateverNone;
-                else if (strcmp(ValueUnion.psz, "netflt") == 0)
-                    config->m_enmTrunkType = kIntNetTrunkType_NetFlt;
-                else if (strcmp(ValueUnion.psz, "netadp") == 0)
-                    config->m_enmTrunkType = kIntNetTrunkType_NetAdp;
-                else
-                {
-                    RTMsgError("Unknown trunk type '%s'", ValueUnion.psz);
-                    return NULL;
-                }
-                break;
-
-            case 'u': /* --upper-ip */
-                if (config->m_IPv4PoolLast.u != 0)
-                {
-                    RTMsgError("Duplicate --upper-ip option");
-                    return NULL;
-                }
-                config->m_IPv4PoolLast = ValueUnion.IPv4Addr;
-                break;
-
-            case VINF_GETOPT_NOT_OPTION:
-                RTMsgError("%s: Unexpected command line argument", ValueUnion.psz);
-                return NULL;
-
-            default:
-                RTGetOptPrintError(rc, &ValueUnion);
-                return NULL;
-        }
-    }
-
-    rc = config->i_complete();
-    if (RT_FAILURE(rc))
-        return NULL;
-
-    return config.release();
-}
-
-
 Config *Config::create(int argc, char **argv) RT_NOEXCEPT
 {
+    /*
+     * Parse the command line.
+     */
     static const RTGETOPTDEF s_aOptions[] =
     {
-        { "--config",       'c', RTGETOPT_REQ_STRING },
-        { "--comment",      '#', RTGETOPT_REQ_STRING }
+        { "--comment",              '#', RTGETOPT_REQ_STRING },
+        { "--config",               'c', RTGETOPT_REQ_STRING },
+        { "--log",                  'l', RTGETOPT_REQ_STRING },
+        { "--log-destinations",     'd', RTGETOPT_REQ_STRING },
+        { "--log-flags",            'f', RTGETOPT_REQ_STRING },
+        { "--log-group-settings",   'g', RTGETOPT_REQ_STRING },
     };
 
     RTGETOPTSTATE State;
     int rc = RTGetOptInit(&State, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, RTGETOPTINIT_FLAGS_NO_STD_OPTS);
     AssertRCReturn(rc, NULL);
 
-    std::unique_ptr<Config> config;
+    const char *pszLogFile          = NULL;
+    const char *pszLogGroupSettings = NULL;
+    const char *pszLogDestinations  = NULL;
+    const char *pszLogFlags         = NULL;
+    const char *pszConfig           = NULL;
+    const char *pszComment          = NULL;
 
     for (;;)
     {
@@ -534,24 +349,31 @@ Config *Config::create(int argc, char **argv) RT_NOEXCEPT
         switch (rc)
         {
             case 'c': /* --config */
-                if (config.get() != NULL)
-                {
-                    RTMsgError("Duplicate option: --config '%s'\n", ValueUnion.psz);
-                    return NULL;
-                }
+                pszConfig = ValueUnion.psz;
+                break;
 
-                RTMsgInfo("reading config from '%s'...\n", ValueUnion.psz);
-                config.reset(Config::i_read(ValueUnion.psz));
-                if (config.get() == NULL)
-                    return NULL;
+            case 'l':
+                pszLogFile = ValueUnion.psz;
+                break;
+
+            case 'd':
+                pszLogDestinations = ValueUnion.psz;
+                break;
+
+            case 'f':
+                pszLogFlags = ValueUnion.psz;
+                break;
+
+            case 'g':
+                pszLogGroupSettings = ValueUnion.psz;
                 break;
 
             case '#': /* --comment */
                 /* The sole purpose of this option is to allow identification of DHCP
                  * server instances in the process list. We ignore the required string
-                 * argument of this option.
-                 */
-                continue;
+                 * argument of this option. */
+                pszComment = ValueUnion.psz;
+                break;
 
             case VINF_GETOPT_NOT_OPTION:
                 RTMsgError("Unexpected command line argument: '%s'", ValueUnion.psz);
@@ -563,14 +385,45 @@ Config *Config::create(int argc, char **argv) RT_NOEXCEPT
         }
     }
 
-    if (config.get() != NULL)
+    if (!pszConfig)
     {
-        rc = config->i_complete();
-        if (RT_SUCCESS(rc))
-            return config.release();
-    }
-    else
         RTMsgError("No configuration file specified (--config file)!\n");
+        return NULL;
+    }
+
+    /*
+     * Init the log if a log file was specified.
+     */
+    if (pszLogFile)
+    {
+        rc = i_logInitWithFilename(pszLogFile);
+        if (RT_FAILURE(rc))
+            RTMsgError("Failed to initialize log file '%s': %Rrc", pszLogFile, rc);
+
+        if (pszLogDestinations)
+            RTLogDestinations(RTLogRelGetDefaultInstance(), pszLogDestinations);
+        if (pszLogFlags)
+            RTLogFlags(RTLogRelGetDefaultInstance(), pszLogFlags);
+        if (pszLogGroupSettings)
+            RTLogGroupSettings(RTLogRelGetDefaultInstance(), pszLogGroupSettings);
+
+        LogRel(("--config:  %s\n", pszComment));
+        if (pszComment)
+            LogRel(("--comment: %s\n", pszComment));
+    }
+
+    /*
+     * Read the log file.
+     */
+    RTMsgInfo("reading config from '%s'...\n", pszConfig);
+    std::unique_ptr<Config> ptrConfig;
+    ptrConfig.reset(Config::i_read(pszConfig));
+    if (ptrConfig.get() != NULL)
+    {
+        rc = ptrConfig->i_complete();
+        if (RT_SUCCESS(rc))
+            return ptrConfig.release();
+    }
     return NULL;
 }
 
@@ -692,16 +545,10 @@ void Config::i_parseServer(const xml::ElementNode *pElmServer)
     /*
      * <DHCPServer> attributes
      */
-    const char *pszNetworkName;
-    if (pElmServer->getAttributeValue("networkName", &pszNetworkName))
-        i_setNetwork(pszNetworkName);
-    else
+    if (!pElmServer->getAttributeValue("networkName", m_strNetwork))
         throw ConfigFileError("DHCPServer/@networkName missing");
-    /** @todo log file override.  */
-    /** @todo log level (dhcpd group flags).  */
-    /** @todo log flags.  */
-    /** @todo control logging to stderr/out.  */
-    /** @todo if we like we could open the release log now.   */
+    if (m_strNetwork.isEmpty())
+        throw ConfigFileError("DHCPServer/@networkName is empty");
 
     const char *pszTrunkType;
     if (!pElmServer->getAttributeValue("trunkType", &pszTrunkType))
@@ -731,11 +578,13 @@ void Config::i_parseServer(const xml::ElementNode *pElmServer)
     {
         int rc = m_strLeasesFilename.assignNoThrow(getHome());
         if (RT_SUCCESS(rc))
-            rc = RTPathAppendCxx(m_strLeasesFilename, getBaseName());
+            rc = RTPathAppendCxx(m_strLeasesFilename, m_strNetwork);
         if (RT_SUCCESS(rc))
             rc = m_strLeasesFilename.appendNoThrow("-Dhcpd.leases");
         if (RT_FAILURE(rc))
             throw ConfigFileError("Unexpected error constructing default m_strLeasesFilename value: %Rrc", rc);
+        RTPathPurgeFilename(RTPathFilename(m_strLeasesFilename.mutableRaw()), RTPATH_STR_F_STYLE_HOST);
+        m_strLeasesFilename.jolt();
     }
 
     i_getIPv4AddrAttribute(pElmServer, "IPAddress", &m_IPv4Address);
@@ -856,16 +705,16 @@ void Config::i_parseOption(const xml::ElementNode *pElmOption, optmap_t &optmap)
     uint8_t u8Opt;
     int rc = RTStrToUInt8Full(pszName, 10, &u8Opt);
     if (rc != VINF_SUCCESS) /* no warnings either */
-        throw ConfigFileError("Bad option name '%s'", pszName);
+        throw ConfigFileError("Bad option name '%s': %Rrc", pszName, rc);
 
     /* The opional 'encoding' attribute: */
-    uint32_t u32Enc = 0;        /* XXX: DhcpOptEncoding_Legacy */
+    uint32_t u32Enc = 0;            /* XXX: DhcpOptEncoding_Legacy */
     const char *pszEncoding;
     if (pElmOption->getAttributeValue("encoding", &pszEncoding))
     {
         rc = RTStrToUInt32Full(pszEncoding, 10, &u32Enc);
         if (rc != VINF_SUCCESS) /* no warnings either */
-            throw ConfigFileError("Bad option encoding '%s'", pszEncoding);
+            throw ConfigFileError("Bad option encoding '%s': %Rrc", pszEncoding, rc);
 
         switch (u32Enc)
         {

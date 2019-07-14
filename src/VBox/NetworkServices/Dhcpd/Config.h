@@ -44,7 +44,6 @@ class Config
     RTCString       m_strHome;          /**< path of ~/.VirtualBox or equivalent, */
 
     RTCString       m_strNetwork;       /**< The name of the internal network the DHCP server is connected to. */
-    RTCString       m_strBaseName;      /**< m_strNetwork sanitized to be usable in a path component. */
     RTCString       m_strLeasesFilename;/**< The lease DB filename. */
 
     RTCString       m_strTrunk;         /**< The trunk name of the internal network. */
@@ -69,6 +68,9 @@ class Config
      *        Pattern/wildcard matching on MAC address, possibly also client ID,
      *        vendor class and user class, including simple lists of these. */
 
+    /** Set if we've initialized the log already (via command line). */
+    static bool     g_fInitializedLog;
+
 private:
     Config();
 
@@ -76,6 +78,7 @@ private:
     int                 i_homeInit() RT_NOEXCEPT;
     static Config      *i_createInstanceAndCallInit() RT_NOEXCEPT;
     int                 i_logInit() RT_NOEXCEPT;
+    static int          i_logInitWithFilename(const char *pszFilename) RT_NOEXCEPT;
     int                 i_complete() RT_NOEXCEPT;
 
 public:
@@ -91,7 +94,6 @@ public:
     const RTCString    &getHome() const RT_NOEXCEPT             { return m_strHome; }
 
     const RTCString    &getNetwork() const RT_NOEXCEPT          { return m_strNetwork; }
-    const RTCString    &getBaseName() const RT_NOEXCEPT         { return m_strBaseName; }
     const RTCString    &getLeasesFilename() const RT_NOEXCEPT   { return m_strLeasesFilename; }
 
     const RTCString    &getTrunk() const RT_NOEXCEPT            { return m_strTrunk; }
@@ -123,9 +125,6 @@ private:
     static void         i_getIPv4AddrAttribute(const xml::ElementNode *pElm, const char *pcszAttrName, PRTNETADDRIPV4 pAddr);
     static void         i_getMacAddressAttribute(const xml::ElementNode *pElm, const char *pszAttrName, PRTMAC pMacAddr);
     /** @} */
-
-    void                i_setNetwork(const RTCString &aStrNetwork);
-    void                i_sanitizeBaseName();
 };
 
 #endif /* !VBOX_INCLUDED_SRC_Dhcpd_Config_h */

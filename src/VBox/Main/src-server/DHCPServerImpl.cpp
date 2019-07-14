@@ -64,13 +64,7 @@ public:
     {}
     virtual ~DHCPServerRunner()
     {}
-
-    static const char * const kDsrKeyConfig;
-    static const char * const kDsrKeyComment;
 };
-
-/*static*/ const char * const DHCPServerRunner::kDsrKeyConfig  = "--config";
-/*static*/ const char * const DHCPServerRunner::kDsrKeyComment = "--comment";
 
 
 /**
@@ -84,7 +78,6 @@ struct DHCPServer::Data
         , enabled(FALSE)
         , uIndividualMACAddressVersion(1)
     {
-        szTempConfigFileName[0] = '\0';
     }
 
     /** weak VirtualBox parent */
@@ -100,8 +93,10 @@ struct DHCPServer::Data
     BOOL enabled;
     DHCPServerRunner dhcp;
 
-    char szTempConfigFileName[RTPATH_MAX];
     com::Utf8Str strLeasesFilename;
+    com::Utf8Str strConfigFilename;
+    com::Utf8Str strLogFilename;
+
     com::Utf8Str networkName;
     com::Utf8Str trunkName;
     com::Utf8Str trunkType;
@@ -1078,7 +1073,7 @@ HRESULT DHCPServer::start(const com::Utf8Str &aNetworkName, const com::Utf8Str &
      */
     if (m->dhcp.isRunning())
         return setErrorBoth(VBOX_E_OBJECT_IN_USE, VERR_PROCESS_RUNNING,
-                            tr("Cannot start DHCP server because it is already running"));
+                            tr("Cannot start DHCP server because it is already running (pid %RTproc)"), m->dhcp.getPid());
 
     /*
      * Copy the startup parameters.
@@ -1086,45 +1081,37 @@ HRESULT DHCPServer::start(const com::Utf8Str &aNetworkName, const com::Utf8Str &
     m->networkName = aNetworkName;
     m->trunkName   = aTrunkName;
     m->trunkType   = aTrunkType;
-    HRESULT hrc = i_calcLeasesFilename(aNetworkName);
+    HRESULT hrc = i_calcLeasesConfigAndLogFilenames(aNetworkName);
     if (SUCCEEDED(hrc))
     {
         /*
          * Create configuration file path and write out the configuration.
          */
-        /** @todo put this next to the leases file.   */
-        int vrc = RTPathTemp(m->szTempConfigFileName, sizeof(m->szTempConfigFileName));
-        if (RT_SUCCESS(vrc))
-            vrc = RTPathAppend(m->szTempConfigFileName, sizeof(m->szTempConfigFileName), "dhcp-config-XXXXX.xml");
-        if (RT_SUCCESS(vrc))
-            vrc = RTFileCreateTemp(m->szTempConfigFileName, 0600);
-        if (RT_SUCCESS(vrc))
+        hrc = i_writeDhcpdConfig(m->strConfigFilename.c_str(), uMACAddressVersion);
+        if (SUCCEEDED(hrc))
         {
-            hrc = i_writeDhcpdConfig(m->szTempConfigFileName, uMACAddressVersion);
-            if (SUCCEEDED(hrc))
+            /*
+             * Setup the arguments and start the DHCP server.
+             */
+            m->dhcp.resetArguments();
+            int vrc = m->dhcp.addArgPair("--comment", m->networkName.c_str());
+            if (RT_SUCCESS(vrc))
+                vrc = m->dhcp.addArgPair("--config", m->strConfigFilename.c_str());
+            if (RT_SUCCESS(vrc))
+                vrc = m->dhcp.addArgPair("--log", m->networkName.c_str());
+            /** @todo Add --log-flags, --log-group-settings, and --log-destinations with
+             *        associated IDHCPServer attributes.  (Not doing it now because that'll
+             *        exhaust all reserved attribute slot in 6.0.) */
+            if (RT_SUCCESS(vrc))
             {
-                /*
-                 * Setup the arguments and start the DHCP server.
-                 */
-                m->dhcp.resetArguments();
-                vrc = m->dhcp.addArgPair(DHCPServerRunner::kDsrKeyConfig, m->szTempConfigFileName);
-                if (RT_SUCCESS(vrc))
-                    vrc = m->dhcp.addArgPair(DHCPServerRunner::kDsrKeyComment, m->networkName.c_str());
-                if (RT_SUCCESS(vrc))
-                    vrc = m->dhcp.start(true /*aKillProcessOnStop*/);
+                /* Start it: */
+                vrc = m->dhcp.start(true /*aKillProcessOnStop*/);
                 if (RT_FAILURE(vrc))
                     hrc = setErrorVrc(vrc, tr("Failed to start DHCP server for '%s': %Rrc"), m->strName.c_str(), vrc);
             }
-            if (FAILED(hrc))
-            {
-                RTFileDelete(m->szTempConfigFileName);
-                m->szTempConfigFileName[0] = '\0';
-            }
-        }
-        else
-        {
-            m->szTempConfigFileName[0] = '\0';
-            hrc = setErrorVrc(vrc);
+            else
+                hrc = setErrorVrc(vrc, tr("Failed to assemble the command line for DHCP server '%s': %Rrc"),
+                                  m->strName.c_str(), vrc);
         }
     }
     return hrc;
@@ -1134,12 +1121,6 @@ HRESULT DHCPServer::start(const com::Utf8Str &aNetworkName, const com::Utf8Str &
 HRESULT DHCPServer::stop(void)
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    if (m->szTempConfigFileName[0])
-    {
-        RTFileDelete(m->szTempConfigFileName);
-        m->szTempConfigFileName[0] = '\0';
-    }
 
     int vrc = m->dhcp.stop();
     if (RT_SUCCESS(vrc))
@@ -1173,7 +1154,7 @@ HRESULT DHCPServer::findLeaseByMAC(const com::Utf8Str &aMac, LONG aType,
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     if (m->strLeasesFilename.isEmpty())
     {
-        HRESULT hrc = i_calcLeasesFilename(m->networkName.isEmpty() ? m->strName : m->networkName);
+        HRESULT hrc = i_calcLeasesConfigAndLogFilenames(m->networkName.isEmpty() ? m->strName : m->networkName);
         if (FAILED(hrc))
             return hrc;
     }
@@ -1423,7 +1404,7 @@ HRESULT DHCPServer::getConfig(DHCPConfigScope_T aScope, const com::Utf8Str &aNam
 /**
  * Calculates and updates the value of strLeasesFilename given @a aNetwork.
  */
-HRESULT DHCPServer::i_calcLeasesFilename(const com::Utf8Str &aNetwork) RT_NOEXCEPT
+HRESULT DHCPServer::i_calcLeasesConfigAndLogFilenames(const com::Utf8Str &aNetwork) RT_NOEXCEPT
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -1432,13 +1413,35 @@ HRESULT DHCPServer::i_calcLeasesFilename(const com::Utf8Str &aNetwork) RT_NOEXCE
     if (RT_SUCCESS(vrc))
         vrc = RTPathAppendCxx(m->strLeasesFilename, aNetwork);
     if (RT_SUCCESS(vrc))
-        vrc = m->strLeasesFilename.appendNoThrow("-Dhcpd.leases");
-    if (RT_SUCCESS(vrc))
     {
         RTPathPurgeFilename(RTPathFilename(m->strLeasesFilename.mutableRaw()), RTPATH_STR_F_STYLE_HOST);
-        m->strLeasesFilename.jolt();
-        return S_OK;
+
+        /* The configuration file: */
+        vrc = m->strConfigFilename.assignNoThrow(m->strLeasesFilename);
+        if (RT_SUCCESS(vrc))
+            vrc = m->strConfigFilename.appendNoThrow("-Dhcpd.config");
+
+
+        /* The log file: */
+        if (RT_SUCCESS(vrc))
+        {
+            vrc = m->strLogFilename.assignNoThrow(m->strLeasesFilename);
+            if (RT_SUCCESS(vrc))
+                vrc = m->strLogFilename.appendNoThrow("-Dhcpd.log");
+
+            /* Finally, complete the leases file: */
+            if (RT_SUCCESS(vrc))
+            {
+                vrc = m->strLeasesFilename.appendNoThrow("-Dhcpd.leases");
+                if (RT_SUCCESS(vrc))
+                {
+                    RTPathPurgeFilename(RTPathFilename(m->strLeasesFilename.mutableRaw()), RTPATH_STR_F_STYLE_HOST);
+                    m->strLeasesFilename.jolt();
+                    return S_OK;
+                }
+            }
+        }
     }
-    return setErrorBoth(E_FAIL, vrc, tr("Failed to construct lease filename: %Rrc"), vrc);
+    return setErrorBoth(E_FAIL, vrc, tr("Failed to construct leases, config and log filenames: %Rrc"), vrc);
 }
 

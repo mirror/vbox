@@ -229,8 +229,8 @@ static DECLCALLBACK(RTEXITCODE) dhcpdHandleAddAndModify(PDHCPDCMDCTX pCtx, int a
         { "--global",           'g', RTGETOPT_REQ_NOTHING },
         { "--vm",               'M', RTGETOPT_REQ_STRING  },
         { "--nic",              'n', RTGETOPT_REQ_UINT8   },
-        { "--add-opt",          'A', RTGETOPT_REQ_STRING  },
-        { "--del-opt",          'D', RTGETOPT_REQ_STRING  },
+        { "--add-opt",          'A', RTGETOPT_REQ_UINT8   },
+        { "--del-opt",          'D', RTGETOPT_REQ_UINT8   },
         { "--id",               'i', RTGETOPT_REQ_UINT8   },    // obsolete, backwards compatibility only.
         { "--value",            'p', RTGETOPT_REQ_STRING  },    // obsolete, backwards compatibility only.
         { "--remove",           'r', RTGETOPT_REQ_NOTHING },    // obsolete, backwards compatibility only.
@@ -496,7 +496,7 @@ static DECLCALLBACK(RTEXITCODE) dhcpdHandleAddAndModify(PDHCPDCMDCTX pCtx, int a
         for (DhcpOptIterator itOpt = it->second.begin(); itOpt != it->second.end(); ++itOpt)
         {
             CHECK_ERROR2_STMT(hrc, svr, AddVmSlotOption(Bstr(it->first.VmName.c_str()).raw(), it->first.u8Slot, itOpt->first,
-                                                        com::Bstr(itOpt->second.c_str()).raw()),
+                                                        com::Bstr(itOpt->second).raw()),
                               rcExit = RTEXITCODE_FAILURE);
         }
     }
