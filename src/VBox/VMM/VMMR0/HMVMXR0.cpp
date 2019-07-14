@@ -13673,6 +13673,7 @@ static int hmR0VmxCheckExitDueToEventDeliveryNested(PVMCPU pVCpu, PVMXTRANSIENT 
         else
             GCPtrFaultAddress = 0;
 
+        /** @todo NSTVMX: Verify the docs on this one again please. */
         if (VMX_IDT_VECTORING_INFO_IS_XCPT_NMI(uIdtVectorInfo))
             CPUMSetGuestNmiBlocking(pVCpu, true);
 
