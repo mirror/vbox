@@ -71,7 +71,7 @@ int DhcpOption::encode(octets_t &dst) const
         return VERR_INVALID_PARAMETER;
     }
 
-    dst[cbOrig+1] = cbValue;
+    dst[cbOrig+1] = (uint8_t)cbValue;
     return VINF_SUCCESS;
 }
 
@@ -181,7 +181,7 @@ int DhcpOption::parse1(DhcpIpv4AddrAndMask &aValue, const char *pcszValue)
 
 
 template <typename a_Type>
-static int DhcpOption::parseList(std::vector<a_Type> &aList, const char *pcszValue)
+/*static*/ int DhcpOption::parseList(std::vector<a_Type> &aList, const char *pcszValue)
 {
     std::vector<a_Type> vecTmp;
 
@@ -230,7 +230,7 @@ static int DhcpOption::parseList(std::vector<a_Type> &aList, const char *pcszVal
 
 /** ASSUME that uint8_t means hex byte strings. */
 template <>
-static int DhcpOption::parseList(std::vector<uint8_t> &aList, const char *pcszValue)
+/*static*/ int DhcpOption::parseList(std::vector<uint8_t> &aList, const char *pcszValue)
 {
     uint8_t     abBuf[256];
     const char *pszNext = NULL;
