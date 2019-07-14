@@ -8340,65 +8340,6 @@ static int hmR0VmxImportGuestState(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo, uint64_
                     rc = hmR0VmxCopyShadowToNstGstVmcs(pVCpu, pVmcsInfo);
                     VMXLOCAL_BREAK_RC(rc);
                 }
-
-# if 0
-                /** @todo NSTVMX: We handle most of these fields individually by passing it to IEM
-                 *        VM-exit handlers as parameters. We would handle it differently when using
-                 *        the fast path. */
-                /*
-                 * The hardware virtualization state currently consists of VMCS fields that may be
-                 * modified by execution of the nested-guest (that are not part of the general
-                 * guest state) and is visible to guest software. Hence, it is technically part of
-                 * the guest-CPU state when executing a nested-guest.
-                 */
-                if (CPUMIsGuestInVmxNonRootMode(pCtx))
-                {
-                    PVMXVVMCS pGstVmcs = pCtx->hwvirt.vmx.CTX_SUFF(pVmcs);
-                    rc  = VMXReadVmcs32(VMX_VMCS32_RO_EXIT_REASON,        &pGstVmcs->u32RoExitReason);
-                    rc |= VMXReadVmcsGstN(VMX_VMCS_RO_EXIT_QUALIFICATION, &pGstVmcs->u64RoExitQual.u);
-                    VMXLOCAL_BREAK_RC(rc);
-
-                    /*
-                     * VM-entry can fail due to invalid-guest state, machine-check events and
-                     * MSR loading failures. Other than VM-exit reason and Exit qualification
-                     * all other VMCS fields are left unmodified on VM-entry failure.
-                     *
-                     * See Intel spec. 26.7 "VM-entry Failures During Or After Loading Guest State".
-                     */
-                    bool const fEntryFailed = VMX_EXIT_REASON_HAS_ENTRY_FAILED(pGstVmcs->u32RoExitReason);
-                    if (!fEntryFailed)
-                    {
-                        /*
-                         * Some notes on VMCS fields that may need importing when the fast path
-                         * is implemented. Currently we fully emulate VMLAUNCH/VMRESUME in IEM.
-                         *
-                         * Requires fixing up when using hardware-assisted VMX:
-                         *   - VM-exit interruption info: Shouldn't reflect host interrupts/NMIs.
-                         *   - VM-exit interruption error code: Cleared to 0 when not appropriate.
-                         *   - IDT-vectoring info: Think about this.
-                         *   - IDT-vectoring error code: Think about this.
-                         *
-                         * Emulated:
-                         *   - Guest-interruptiblity state: Derived from FFs and RIP.
-                         *   - Guest pending debug exceptions: Derived from DR6.
-                         *   - Guest activity state: Emulated from EM state.
-                         *   - Guest PDPTEs: Currently all 0s since we don't support nested EPT.
-                         *   - Entry-interrupt info: Emulated, cleared to 0.
-                         */
-                        rc |= VMXReadVmcs32(VMX_VMCS32_RO_EXIT_INTERRUPTION_INFO,       &pGstVmcs->u32RoExitIntInfo);
-                        rc |= VMXReadVmcs32(VMX_VMCS32_RO_EXIT_INTERRUPTION_ERROR_CODE, &pGstVmcs->u32RoExitIntErrCode);
-                        rc |= VMXReadVmcs32(VMX_VMCS32_RO_IDT_VECTORING_INFO,           &pGstVmcs->u32RoIdtVectoringInfo);
-                        rc |= VMXReadVmcs32(VMX_VMCS32_RO_IDT_VECTORING_ERROR_CODE,     &pGstVmcs->u32RoIdtVectoringErrCode);
-                        rc |= VMXReadVmcs32(VMX_VMCS32_RO_EXIT_INSTR_LENGTH,            &pGstVmcs->u32RoExitInstrLen);
-                        rc |= VMXReadVmcs32(VMX_VMCS32_RO_EXIT_INSTR_INFO,              &pGstVmcs->u32RoExitIntInfo);
-                        rc |= VMXReadVmcs64(VMX_VMCS64_RO_GUEST_PHYS_ADDR_FULL,         &pGstVmcs->u64RoGuestPhysAddr.u);
-                        rc |= VMXReadVmcsGstN(VMX_VMCS_RO_GUEST_LINEAR_ADDR,            &pGstVmcs->u64RoGuestLinearAddr.u);
-                        /** @todo NSTVMX: Save and adjust preemption timer value. */
-                    }
-
-                    VMXLOCAL_BREAK_RC(rc);
-                }
-# endif
             }
 #endif
         } while (0);
@@ -13678,9 +13619,6 @@ static int hmR0VmxCheckExitDueToEventDeliveryNested(PVMCPU pVCpu, PVMXTRANSIENT 
      *
      * See Intel spec. 27.1 "Architectural State Before A VM Exit".
      */
-    int rc = hmR0VmxReadIdtVectoringInfoVmcs(pVmxTransient);
-    AssertRCReturn(rc, rc);
-
     uint32_t const uIdtVectorInfo = pVmxTransient->uIdtVectoringInfo;
     if (VMX_IDT_VECTORING_INFO_IS_VALID(uIdtVectorInfo))
     {
@@ -13691,9 +13629,6 @@ static int hmR0VmxCheckExitDueToEventDeliveryNested(PVMCPU pVCpu, PVMXTRANSIENT 
          * Get the nasty stuff out of the way.
          */
         {
-            rc = hmR0VmxReadExitIntInfoVmcs(pVmxTransient);
-            AssertRCReturn(rc, rc);
-
             uint32_t const uExitIntInfo = pVmxTransient->uExitIntInfo;
             if (VMX_EXIT_INT_INFO_IS_VALID(uExitIntInfo))
             {
@@ -13718,14 +13653,9 @@ static int hmR0VmxCheckExitDueToEventDeliveryNested(PVMCPU pVCpu, PVMXTRANSIENT 
         /*
          * Things look legit, continue...
          */
-        uint32_t   u32ErrCode;
-        bool const fErrCodeValid = VMX_IDT_VECTORING_INFO_IS_ERROR_CODE_VALID(uIdtVectorInfo);
-        if (fErrCodeValid)
-        {
-            rc = hmR0VmxReadIdtVectoringErrorCodeVmcs(pVmxTransient);
-            AssertRCReturn(rc, rc);
+        uint32_t u32ErrCode;
+        if (VMX_IDT_VECTORING_INFO_IS_ERROR_CODE_VALID(uIdtVectorInfo))
             u32ErrCode = pVmxTransient->uIdtVectoringErrorCode;
-        }
         else
             u32ErrCode = 0;
 
@@ -13733,11 +13663,7 @@ static int hmR0VmxCheckExitDueToEventDeliveryNested(PVMCPU pVCpu, PVMXTRANSIENT 
         if (   uIdtVectorType == VMX_IDT_VECTORING_INFO_TYPE_SW_INT
             || uIdtVectorType == VMX_IDT_VECTORING_INFO_TYPE_PRIV_SW_XCPT
             || uIdtVectorType == VMX_IDT_VECTORING_INFO_TYPE_SW_XCPT)
-        {
-            rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
-            AssertRCReturn(rc, rc);
             cbInstr = pVmxTransient->cbInstr;
-        }
         else
             cbInstr = 0;
 
