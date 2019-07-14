@@ -21,10 +21,14 @@
 *********************************************************************************************************************************/
 #include "DhcpdInternal.h"
 #include "DhcpOptions.h"
-#include "DhcpMessage.h"
+#ifndef IN_VBOXSVC
+# include "DhcpMessage.h"
+#endif
 
 #include <iprt/cidr.h>
 
+
+#ifndef IN_VBOXSVC
 
 optmap_t &operator<<(optmap_t &optmap, DhcpOption *option)
 {
@@ -52,6 +56,8 @@ optmap_t &operator<<(optmap_t &optmap, const std::shared_ptr<DhcpOption> &option
 
     return optmap;
 }
+
+#endif /* !IN_VBOXSVC */
 
 
 int DhcpOption::encode(octets_t &dst) const
@@ -101,10 +107,12 @@ int DhcpOption::decode(const rawopts_t &map)
 }
 
 
+#ifndef IN_VBOXSVC
 int DhcpOption::decode(const DhcpClientMessage &req)
 {
     return decode(req.rawopts());
 }
+#endif
 
 
 int DhcpOption::parse1(bool &aValue, const char *pcszValue)

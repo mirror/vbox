@@ -210,8 +210,10 @@ inline octets_t &operator<<(octets_t &dst, const DhcpOption &option)
 }
 
 
+#ifndef IN_VBOXSVC
 optmap_t &operator<<(optmap_t &optmap, DhcpOption *option);
 optmap_t &operator<<(optmap_t &optmap, const std::shared_ptr<DhcpOption> &option);
+#endif
 
 
 
