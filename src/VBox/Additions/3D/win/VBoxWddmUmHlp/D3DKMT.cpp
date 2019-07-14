@@ -219,9 +219,12 @@ static NTSTATUS vboxDispKmtOpenAdapterFromLuid(D3DKMT_HANDLE *phAdapter, LUID *p
 
 NTSTATUS vboxDispKmtOpenAdapter2(D3DKMT_HANDLE *phAdapter, LUID *pLuid)
 {
-    NTSTATUS Status = vboxDispKmtOpenAdapterFromHdc(phAdapter, pLuid);
+    NTSTATUS Status = vboxDispKmtOpenAdapterFromLuid(phAdapter, pLuid);
     if (Status != STATUS_SUCCESS)
-        Status = vboxDispKmtOpenAdapterFromLuid(phAdapter, pLuid);
+    {
+        /* Fallback for pre-Windows8 */
+        Status = vboxDispKmtOpenAdapterFromHdc(phAdapter, pLuid);
+    }
 
     return Status;
 }
