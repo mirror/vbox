@@ -33,26 +33,27 @@
 #include <map>
 #include <vector>
 
-#if __cplusplus >= 199711
+#ifndef IN_VBOXSVC
+
+# if __cplusplus >= 199711
 #include <memory>
 using std::shared_ptr;
-#else
-# include <tr1/memory>
+# else
+#  include <tr1/memory>
 using std::tr1::shared_ptr;
-#endif
+# endif
 
+class DhcpOption;
+/** DHCP option map (keyed by option number, DhcpOption value). */
+typedef std::map<uint8_t, std::shared_ptr<DhcpOption> > optmap_t;
+
+#endif /* !IN_VBOXSVC */
 
 /** Byte vector. */
 typedef std::vector<uint8_t> octets_t;
 
 /** Raw DHCP option map (keyed by option number, byte vector value). */
 typedef std::map<uint8_t, octets_t> rawopts_t;
-
-#ifndef IN_VBOXSVC
-class DhcpOption;
-/** DHCP option map (keyed by option number, DhcpOption value). */
-typedef std::map<uint8_t, std::shared_ptr<DhcpOption> > optmap_t;
-#endif
 
 
 /** Equal compare operator for mac address. */
