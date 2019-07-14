@@ -98,6 +98,7 @@ public:
     HRESULT         i_getOption(DhcpOpt_T aOption, DHCPOptionEncoding_T *aEncoding, com::Utf8Str &aValue);
     HRESULT         i_getAllOptions(std::vector<DhcpOpt_T> &aOptions, std::vector<DHCPOptionEncoding_T> &aEncodings,
                                     std::vector<com::Utf8Str> &aValues);
+    virtual HRESULT i_remove();
     /** @} */
 
 
@@ -177,12 +178,18 @@ protected:
     {
         return i_getAllOptions(aOptions, aEncodings, aValues);
     }
+
+    HRESULT remove() RT_OVERRIDE
+    {
+        return i_remove();
+    }
     /** @} */
 
 public:
     HRESULT i_setOption(DhcpOpt_T aOption, DHCPOptionEncoding_T aEncoding, const com::Utf8Str &aValue) RT_OVERRIDE;
     HRESULT i_removeOption(DhcpOpt_T aOption) RT_OVERRIDE;
     HRESULT i_removeAllOptions() RT_OVERRIDE;
+    HRESULT i_remove() RT_OVERRIDE;
 };
 
 
@@ -224,6 +231,8 @@ public:
     /** @} */
 
     HRESULT i_saveSettings(settings::DHCPGroupCondition &a_rDst);
+    static HRESULT i_validateTypeAndValue(DHCPGroupConditionType_T enmType, com::Utf8Str const &strValue,
+                                          VirtualBoxBase *pErrorDst);
 
 protected:
     /** @name Wrapped IDHCPGroupCondition properties
@@ -325,12 +334,18 @@ protected:
     {
         return i_getAllOptions(aOptions, aEncodings, aValues);
     }
+
+    HRESULT remove() RT_OVERRIDE
+    {
+        return i_remove();
+    }
     /** @} */
 
     /** @name Wrapped IDHCPGroupConfig methods
      * @{ */
     HRESULT addCondition(BOOL aInclusive, DHCPGroupConditionType_T aType, const com::Utf8Str &aValue,
                          ComPtr<IDHCPGroupCondition> &aCondition) RT_OVERRIDE;
+    HRESULT removeAllConditions() RT_OVERRIDE;
     /** @} */
 };
 
@@ -442,6 +457,11 @@ protected:
                           std::vector<com::Utf8Str> &aValues) RT_OVERRIDE
     {
         return i_getAllOptions(aOptions, aEncodings, aValues);
+    }
+
+    HRESULT remove() RT_OVERRIDE
+    {
+        return i_remove();
     }
     /** @} */
 

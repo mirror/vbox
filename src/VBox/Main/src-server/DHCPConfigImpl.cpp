@@ -23,6 +23,7 @@
 #include "DHCPConfigImpl.h"
 #include "LoggingNew.h"
 
+#include <iprt/ctype.h>
 #include <iprt/errcore.h>
 #include <iprt/net.h>
 #include <iprt/cpp/utils.h>
@@ -32,6 +33,7 @@
 #include <VBox/settings.h>
 
 #include "AutoCaller.h"
+#include "DHCPServerImpl.h"
 #include "MachineImpl.h"
 #include "VirtualBoxImpl.h"
 
@@ -270,6 +272,13 @@ HRESULT DHCPConfig::i_getAllOptions(std::vector<DhcpOpt_T> &aOptions, std::vecto
 }
 
 
+HRESULT DHCPConfig::i_remove()
+{
+    return m_pParent->i_removeConfig(this, m_enmScope);
+}
+
+
+
 /**
  * Causes the global VirtualBox configuration file to be written
  *
@@ -449,6 +458,15 @@ HRESULT DHCPGlobalConfig::i_removeAllOptions()
 }
 
 
+/**
+ * Overriden to prevent removal.
+ */
+HRESULT DHCPGlobalConfig::i_remove()
+{
+    return setError(E_ACCESSDENIED, tr("Cannot delete the global config"));
+}
+
+
 
 /*********************************************************************************************************************************
 *   DHCPGroupCondition Implementation                                                                                            *
@@ -499,6 +517,162 @@ HRESULT DHCPGroupCondition::i_saveSettings(settings::DHCPGroupCondition &a_rDst)
 }
 
 
+/**
+ * Worker for validating the condition value according to the given type.
+ *
+ * @returns COM status code.
+ * @param   enmType             The condition type.
+ * @param   strValue            The condition value.
+ * @param   pErrorDst           The object to use for reporting errors.
+ */
+/*static*/ HRESULT DHCPGroupCondition::i_validateTypeAndValue(DHCPGroupConditionType_T enmType, com::Utf8Str const &strValue,
+                                                              VirtualBoxBase *pErrorDst)
+{
+    switch (enmType)
+    {
+        case DHCPGroupConditionType_MAC:
+        {
+            RTMAC MACAddress;
+            int vrc = RTNetStrToMacAddr(strValue.c_str(), &MACAddress);
+            if (RT_SUCCESS(vrc))
+                return S_OK;
+            return pErrorDst->setError(E_INVALIDARG, pErrorDst->tr("Not a valid MAC address: %s"), strValue.c_str());
+        }
+
+        case DHCPGroupConditionType_MACWildcard:
+        {
+            /* This must be colon separated double xdigit bytes.  Single bytes
+               shorthand or raw hexstrings won't match anything.  For reasons of
+               simplicity, '?' can only be used to match xdigits, '*' must match 1+
+               chars. */
+            /** @todo test this properly...   */
+            const char *psz           = strValue.c_str();
+            size_t      off           = 0;
+            unsigned    cPairsLeft    = 6;
+            bool        fSeenAsterisk = false;
+            for (;;)
+            {
+                char ch = psz[off++];
+                if (RT_C_IS_XDIGIT(ch) || ch == '?')
+                {
+                    ch = psz[off++];
+                    if (RT_C_IS_XDIGIT(ch) || ch == '?')
+                    {
+                        ch = psz[off++];
+                        cPairsLeft -= 1;
+                        if (cPairsLeft == 0)
+                        {
+                            if (!ch)
+                                return S_OK;
+                            return pErrorDst->setError(E_INVALIDARG,
+                                                       pErrorDst->tr("Trailing chars in MAC wildcard address: %s (offset %zu)"),
+                                                       psz, off - 1);
+                        }
+                        if (ch == ':' || ch == '*')
+                            continue;
+                        if (ch == '\0' && fSeenAsterisk)
+                            return S_OK;
+                        return pErrorDst->setError(E_INVALIDARG,
+                                                   pErrorDst->tr("Malformed MAC wildcard address: %s (offset %zu)"),
+                                                   psz, off - 1);
+                    }
+
+                    if (ch == '*')
+                    {
+                        fSeenAsterisk = true;
+                        do
+                            ch = psz[off++];
+                        while (ch == '*');
+                        if (ch == '\0')
+                            return S_OK;
+                        cPairsLeft -= 1;
+                        if (cPairsLeft == 0)
+                            return pErrorDst->setError(E_INVALIDARG,
+                                                       pErrorDst->tr("Trailing chars in MAC wildcard address: %s (offset %zu)"),
+                                                       psz, off - 1);
+                        if (ch == ':')
+                            continue;
+                    }
+                    else
+                        return pErrorDst->setError(E_INVALIDARG, pErrorDst->tr("Malformed MAC wildcard address: %s (offset %zu)"),
+                                                   psz, off - 1);
+                }
+                else if (ch == '*')
+                {
+                    fSeenAsterisk = true;
+                    do
+                        ch = psz[off++];
+                    while (ch == '*');
+                    if (ch == '\0')
+                        return S_OK;
+                    if (ch == ':')
+                    {
+                        cPairsLeft -= 1;
+                        if (cPairsLeft == 0)
+                            return pErrorDst->setError(E_INVALIDARG,
+                                                       pErrorDst->tr("Trailing chars in MAC wildcard address: %s (offset %zu)"),
+                                                       psz, off - 1);
+                        continue;
+                    }
+
+                }
+                else
+                    return pErrorDst->setError(E_INVALIDARG, pErrorDst->tr("Malformed MAC wildcard address: %s (offset %zu)"),
+                                               psz, off - 1);
+
+                /* Pick up after '*' in the two cases above: ch is not ':' or '\0'. */
+                Assert(ch != ':' && ch != '\0');
+                if (RT_C_IS_XDIGIT(ch) || ch == '?')
+                {
+                    ch = psz[off++];
+                    if (RT_C_IS_XDIGIT(ch) || ch == '?' || ch == '*')
+                    {
+                        off -= 2;
+                        continue;
+                    }
+                    if (ch == ':')
+                    {
+                        ch = psz[off++];
+                        if (ch == '\0')
+                            return S_OK;
+                        cPairsLeft -= 1;
+                        if (cPairsLeft == 0)
+                            return pErrorDst->setError(E_INVALIDARG,
+                                                       pErrorDst->tr("Trailing chars in MAC wildcard address: %s (offset %zu)"),
+                                                       psz, off - 1);
+                        continue;
+                    }
+                    if (ch == '\0')
+                        return S_OK;
+                    return pErrorDst->setError(E_INVALIDARG,
+                                               pErrorDst->tr("Trailing chars in MAC wildcard address: %s (offset %zu)"),
+                                               psz, off - 1);
+                }
+                return pErrorDst->setError(E_INVALIDARG,
+                                           pErrorDst->tr("Malformed MAC wildcard address: %s (offset %zu)"),
+                                           psz, off - 1);
+            }
+            break;
+        }
+
+        case DHCPGroupConditionType_vendorClassID:
+        case DHCPGroupConditionType_vendorClassIDWildcard:
+        case DHCPGroupConditionType_userClassID:
+        case DHCPGroupConditionType_userClassIDWildcard:
+            if (strValue.length() == 0)
+                return pErrorDst->setError(E_INVALIDARG, pErrorDst->tr("Value cannot be empty"));
+            if (strValue.length() < 255)
+                return pErrorDst->setError(E_INVALIDARG, pErrorDst->tr("Value is too long: %zu bytes"), strValue.length());
+            break;
+
+        default:
+            return pErrorDst->setError(E_INVALIDARG, pErrorDst->tr("Invalid condition type: %d"), enmType);
+    }
+
+    return S_OK;
+}
+
+
 HRESULT DHCPGroupCondition::getInclusive(BOOL *aInclusive)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -533,6 +707,9 @@ HRESULT DHCPGroupCondition::setType(DHCPGroupConditionType_T aType)
         AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
         if (aType == m_enmType)
             return S_OK;
+        HRESULT hrc = i_validateTypeAndValue(aType, m_strValue, this);
+        if (FAILED(hrc))
+            return hrc;
         m_enmType = aType;
     }
     return m_pParent->i_doWriteConfig();
@@ -552,7 +729,10 @@ HRESULT DHCPGroupCondition::setValue(const com::Utf8Str &aValue)
         AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
         if (aValue == m_strValue)
             return S_OK;
-        HRESULT hrc = m_strValue.assignEx(aValue);
+        HRESULT hrc = i_validateTypeAndValue(m_enmType, aValue, this);
+        if (FAILED(hrc))
+            return hrc;
+        hrc = m_strValue.assignEx(aValue);
         if (FAILED(hrc))
             return hrc;
     }
@@ -727,29 +907,60 @@ HRESULT DHCPGroupConfig::getConditions(std::vector<ComPtr<IDHCPGroupCondition> >
 HRESULT DHCPGroupConfig::addCondition(BOOL aInclusive, DHCPGroupConditionType_T aType, const com::Utf8Str &aValue,
                                       ComPtr<IDHCPGroupCondition> &aCondition)
 {
-    ComObjPtr<DHCPGroupCondition> ptrCondition;
-    HRESULT hrc = ptrCondition.createObject();
-    if (SUCCEEDED(hrc))
-        hrc = ptrCondition->initWithDefaults(this, aInclusive != FALSE, aType, aValue);
+    /*
+     * Valdiate it.
+     */
+    HRESULT hrc = DHCPGroupCondition::i_validateTypeAndValue(aType, aValue, this);
     if (SUCCEEDED(hrc))
     {
-        hrc = ptrCondition.queryInterfaceTo(aCondition.asOutParam());
+        /*
+         * Add it.
+         */
+        ComObjPtr<DHCPGroupCondition> ptrCondition;
+        hrc = ptrCondition.createObject();
+        if (SUCCEEDED(hrc))
+            hrc = ptrCondition->initWithDefaults(this, aInclusive != FALSE, aType, aValue);
         if (SUCCEEDED(hrc))
         {
-            AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-            try
+            hrc = ptrCondition.queryInterfaceTo(aCondition.asOutParam());
+            if (SUCCEEDED(hrc))
             {
-                m_Conditions.push_back(ptrCondition);
-            }
-            catch (std::bad_alloc &)
-            {
-                aCondition.setNull();
-                return E_OUTOFMEMORY;
+                {
+                    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+                    try
+                    {
+                        m_Conditions.push_back(ptrCondition);
+                    }
+                    catch (std::bad_alloc &)
+                    {
+                        aCondition.setNull();
+                        return E_OUTOFMEMORY;
+                    }
+                }
+
+                hrc = i_doWriteConfig();
+                if (FAILED(hrc))
+                    aCondition.setNull();
             }
         }
     }
 
     return hrc;
+}
+
+
+HRESULT DHCPGroupConfig::removeAllConditions()
+{
+    {
+        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+        if (m_Conditions.size() == 0)
+            return S_OK;
+
+        /** @todo sever the weak parent link for each entry...  */
+        m_Conditions.erase(m_Conditions.begin(), m_Conditions.end());
+    }
+
+    return i_doWriteConfig();
 }
 
 

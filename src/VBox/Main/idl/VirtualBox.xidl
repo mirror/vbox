@@ -2139,7 +2139,7 @@
 
   <interface
     name="IDHCPConfig" extends="$unknown"
-    uuid="38fdb664-f65e-4905-ee56-a8a912871bbf"
+    uuid="39cdde66-cfc3-4eec-7427-faf5b16469ae"
     wsmap="managed"
     reservedMethods="8" reservedAttributes="16"
     >
@@ -2222,6 +2222,14 @@
         <desc>Array of values that runs parallel to @a options and @a encodings.</desc>
       </param>
     </method>
+
+    <method name="remove">
+      <desc>
+        Remove this group or individual configuration.
+        Will of course not work on global configurations.
+      </desc>
+    </method>
+
   </interface>
 
   <interface
@@ -2259,7 +2267,7 @@
 
   <interface
     name="IDHCPGroupConfig" extends="IDHCPConfig"
-    uuid="406a5eca-d032-4f65-a882-6bb626a424a5"
+    uuid="537707f7-ebf9-4d5c-7aea-877bfc4256ba"
     wsmap="managed"
     reservedMethods="8" reservedAttributes="8"
     >
@@ -2281,10 +2289,15 @@
     </attribute>
 
     <method name="addCondition">
+      <desc>Adds a new condition.</desc>
       <param name="inclusive"  dir="in" type="boolean"/>
       <param name="type"       dir="in" type="DHCPGroupConditionType"/>
       <param name="value"      dir="in" type="wstring"/>
       <param name="condition"  dir="return" type="IDHCPGroupCondition"/>
+    </method>
+
+    <method name="removeAllConditions">
+      <desc>Removes all conditions.</desc>
     </method>
 
   </interface>

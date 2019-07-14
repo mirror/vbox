@@ -201,36 +201,198 @@ static ComPtr<IDHCPServer> dhcpdFindServer(PDHCPDCMDCTX pCtx)
 
 
 /**
+ * Helper class for dhcpdHandleAddAndModify
+ */
+class DHCPCmdScope
+{
+    DHCPConfigScope_T               m_enmScope;
+    const char                     *m_pszName;
+    uint8_t                         m_uSlot;
+    ComPtr<IDHCPConfig>             m_ptrConfig;
+    ComPtr<IDHCPGlobalConfig>       m_ptrGlobalConfig;
+    ComPtr<IDHCPGroupConfig>        m_ptrGroupConfig;
+    ComPtr<IDHCPIndividualConfig>   m_ptrIndividualConfig;
+
+public:
+    DHCPCmdScope()
+        : m_enmScope(DHCPConfigScope_Global)
+        , m_pszName(NULL)
+        , m_uSlot(0)
+    {
+    }
+
+    void setGlobal()
+    {
+        m_enmScope = DHCPConfigScope_Global;
+        m_pszName  = NULL;
+        m_uSlot    = 0;
+        resetPointers();
+    }
+
+    void setGroup(const char *pszGroup)
+    {
+        m_enmScope = DHCPConfigScope_Group;
+        m_pszName  = pszGroup;
+        m_uSlot    = 0;
+        resetPointers();
+    }
+
+    void setMachineNIC(const char *pszMachine)
+    {
+        m_enmScope = DHCPConfigScope_MachineNIC;
+        m_pszName  = pszMachine;
+        m_uSlot    = 0;
+        resetPointers();
+    }
+
+    void setMachineSlot(uint8_t uSlot)
+    {
+        Assert(m_enmScope == DHCPConfigScope_MachineNIC);
+        m_uSlot    = uSlot;
+        resetPointers();
+    }
+
+    void setMACAddress(const char *pszMACAddress)
+    {
+        m_enmScope = DHCPConfigScope_MAC;
+        m_pszName  = pszMACAddress;
+        m_uSlot    = 0;
+        resetPointers();
+    }
+
+    ComPtr<IDHCPConfig> &getConfig(ComPtr<IDHCPServer> const &ptrDHCPServer)
+    {
+        if (m_ptrConfig.isNull())
+            CHECK_ERROR2I_STMT(ptrDHCPServer, GetConfig(m_enmScope, Bstr(m_pszName).raw(), m_uSlot, TRUE /*mayAdd*/,
+                                                        m_ptrConfig.asOutParam()), m_ptrConfig.setNull());
+        return m_ptrConfig;
+    }
+
+    ComPtr<IDHCPIndividualConfig> &getIndividual(ComPtr<IDHCPServer> const &ptrDHCPServer)
+    {
+        getConfig(ptrDHCPServer);
+        if (m_ptrIndividualConfig.isNull() && m_ptrConfig.isNotNull())
+        {
+            HRESULT hrc = m_ptrConfig.queryInterfaceTo(m_ptrIndividualConfig.asOutParam());
+            if (FAILED(hrc))
+            {
+                com::GlueHandleComError(m_ptrConfig, "queryInterface", hrc, __FILE__, __LINE__);
+                m_ptrIndividualConfig.setNull();
+            }
+        }
+        return m_ptrIndividualConfig;
+    }
+
+    ComPtr<IDHCPGroupConfig> &getGroup(ComPtr<IDHCPServer> const &ptrDHCPServer)
+    {
+        getConfig(ptrDHCPServer);
+        if (m_ptrGroupConfig.isNull() && m_ptrConfig.isNotNull())
+        {
+            HRESULT hrc = m_ptrConfig.queryInterfaceTo(m_ptrGroupConfig.asOutParam());
+            if (FAILED(hrc))
+            {
+                com::GlueHandleComError(m_ptrConfig, "queryInterface", hrc, __FILE__, __LINE__);
+                m_ptrGroupConfig.setNull();
+            }
+        }
+        return m_ptrGroupConfig;
+    }
+
+    DHCPConfigScope_T getScope() const { return m_enmScope; }
+
+private:
+    void resetPointers()
+    {
+        m_ptrConfig.setNull();
+        m_ptrGlobalConfig.setNull();
+        m_ptrIndividualConfig.setNull();
+        m_ptrGroupConfig.setNull();
+    }
+};
+
+enum
+{
+    DHCP_ADDMOD = 1000,
+    DHCP_ADDMOD_ZAP_OPTIONS,
+    DHCP_ADDMOD_INCL_MAC,
+    DHCP_ADDMOD_EXCL_MAC,
+    DHCP_ADDMOD_DEL_MAC,
+    DHCP_ADDMOD_INCL_MAC_WILD,
+    DHCP_ADDMOD_EXCL_MAC_WILD,
+    DHCP_ADDMOD_DEL_MAC_WILD,
+    DHCP_ADDMOD_INCL_VENDOR,
+    DHCP_ADDMOD_EXCL_VENDOR,
+    DHCP_ADDMOD_DEL_VENDOR,
+    DHCP_ADDMOD_INCL_VENDOR_WILD,
+    DHCP_ADDMOD_EXCL_VENDOR_WILD,
+    DHCP_ADDMOD_DEL_VENDOR_WILD,
+    DHCP_ADDMOD_INCL_USER,
+    DHCP_ADDMOD_EXCL_USER,
+    DHCP_ADDMOD_DEL_USER,
+    DHCP_ADDMOD_INCL_USER_WILD,
+    DHCP_ADDMOD_EXCL_USER_WILD,
+    DHCP_ADDMOD_DEL_USER_WILD,
+    DHCP_ADDMOD_ZAP_CONDITIONS
+};
+
+/**
  * Handles the 'add' and 'modify' subcommands.
  */
 static DECLCALLBACK(RTEXITCODE) dhcpdHandleAddAndModify(PDHCPDCMDCTX pCtx, int argc, char **argv)
 {
-    /*
-     * Parse options.
-     */
     static const RTGETOPTDEF s_aOptions[] =
     {
         DHCPD_CMD_COMMON_OPTION_DEFS(),
-        { "--server-ip",        'a', RTGETOPT_REQ_STRING  },
-        { "--ip",               'a', RTGETOPT_REQ_STRING  },    // deprecated
-        { "-ip",                'a', RTGETOPT_REQ_STRING  },    // deprecated
-        { "--netmask",          'm', RTGETOPT_REQ_STRING  },
-        { "-netmask",           'm', RTGETOPT_REQ_STRING  },    // deprecated
-        { "--lower-ip",         'l', RTGETOPT_REQ_STRING  },
-        { "--lowerip",          'l', RTGETOPT_REQ_STRING  },
-        { "-lowerip",           'l', RTGETOPT_REQ_STRING  },    // deprecated
-        { "--upper-ip",         'u', RTGETOPT_REQ_STRING  },
-        { "--upperip",          'u', RTGETOPT_REQ_STRING  },
-        { "-upperip",           'u', RTGETOPT_REQ_STRING  },    // deprecated
-        { "--enable",           'e', RTGETOPT_REQ_NOTHING },
-        { "-enable",            'e', RTGETOPT_REQ_NOTHING },    // deprecated
-        { "--disable",          'd', RTGETOPT_REQ_NOTHING },
-        { "-disable",           'd', RTGETOPT_REQ_NOTHING },    // deprecated
-        { "--global",           'g', RTGETOPT_REQ_NOTHING },
-        { "--vm",               'M', RTGETOPT_REQ_STRING  },
-        { "--nic",              'n', RTGETOPT_REQ_UINT8   },
-        { "--add-opt",          'A', RTGETOPT_REQ_UINT8   },
-        { "--del-opt",          'D', RTGETOPT_REQ_UINT8   },
+        { "--server-ip",        'a',                            RTGETOPT_REQ_STRING  },
+        { "--ip",               'a',                            RTGETOPT_REQ_STRING  },    // deprecated
+        { "-ip",                'a',                            RTGETOPT_REQ_STRING  },    // deprecated
+        { "--netmask",          'm',                            RTGETOPT_REQ_STRING  },
+        { "-netmask",           'm',                            RTGETOPT_REQ_STRING  },    // deprecated
+        { "--lower-ip",         'l',                            RTGETOPT_REQ_STRING  },
+        { "--lowerip",          'l',                            RTGETOPT_REQ_STRING  },
+        { "-lowerip",           'l',                            RTGETOPT_REQ_STRING  },    // deprecated
+        { "--upper-ip",         'u',                            RTGETOPT_REQ_STRING  },
+        { "--upperip",          'u',                            RTGETOPT_REQ_STRING  },
+        { "-upperip",           'u',                            RTGETOPT_REQ_STRING  },    // deprecated
+        { "--enable",           'e',                            RTGETOPT_REQ_NOTHING },
+        { "-enable",            'e',                            RTGETOPT_REQ_NOTHING },    // deprecated
+        { "--disable",          'd',                            RTGETOPT_REQ_NOTHING },
+        { "-disable",           'd',                            RTGETOPT_REQ_NOTHING },    // deprecated
+        { "--global",           'g',                            RTGETOPT_REQ_NOTHING },
+        { "--group",            'G',                            RTGETOPT_REQ_STRING  },
+        { "--mac-address",      'E',                            RTGETOPT_REQ_MACADDR },
+        { "--vm",               'M',                            RTGETOPT_REQ_STRING  },
+        { "--nic",              'n',                            RTGETOPT_REQ_UINT8   },
+        { "--set-opt",          's',                            RTGETOPT_REQ_UINT8   },
+        { "--set-opt-hex",      'x',                            RTGETOPT_REQ_UINT8   },
+        { "--del-opt",          'D',                            RTGETOPT_REQ_UINT8   },
+        { "--zap-options",      DHCP_ADDMOD_ZAP_OPTIONS,        RTGETOPT_REQ_NOTHING },
+        { "--min-lease-time",   'q' ,                           RTGETOPT_REQ_UINT32  },
+        { "--default-lease-time", 'L' ,                         RTGETOPT_REQ_UINT32  },
+        { "--max-lease-time",   'Q' ,                           RTGETOPT_REQ_UINT32  },
+        { "--remove-config",    'R',                            RTGETOPT_REQ_NOTHING },
+        { "--fixed-address",    'f',                            RTGETOPT_REQ_STRING  },
+        /* group conditions: */
+        { "--incl-mac",         DHCP_ADDMOD_INCL_MAC,           RTGETOPT_REQ_STRING  },
+        { "--excl-mac",         DHCP_ADDMOD_EXCL_MAC,           RTGETOPT_REQ_STRING  },
+        { "--del-mac",          DHCP_ADDMOD_DEL_MAC,            RTGETOPT_REQ_STRING  },
+        { "--incl-mac-wild",    DHCP_ADDMOD_INCL_MAC_WILD,      RTGETOPT_REQ_STRING  },
+        { "--excl-mac-wild",    DHCP_ADDMOD_EXCL_MAC_WILD,      RTGETOPT_REQ_STRING  },
+        { "--del-mac-wild",     DHCP_ADDMOD_DEL_MAC_WILD,       RTGETOPT_REQ_STRING  },
+        { "--incl-vendor",      DHCP_ADDMOD_INCL_VENDOR,        RTGETOPT_REQ_STRING  },
+        { "--excl-vendor",      DHCP_ADDMOD_EXCL_VENDOR,        RTGETOPT_REQ_STRING  },
+        { "--del-vendor",       DHCP_ADDMOD_DEL_VENDOR,         RTGETOPT_REQ_STRING  },
+        { "--incl-vendor-wild", DHCP_ADDMOD_INCL_VENDOR_WILD,   RTGETOPT_REQ_STRING  },
+        { "--excl-vendor-wild", DHCP_ADDMOD_EXCL_VENDOR_WILD,   RTGETOPT_REQ_STRING  },
+        { "--del-vendor-wild",  DHCP_ADDMOD_DEL_VENDOR_WILD,    RTGETOPT_REQ_STRING  },
+        { "--incl-user",        DHCP_ADDMOD_INCL_USER,          RTGETOPT_REQ_STRING  },
+        { "--excl-user",        DHCP_ADDMOD_EXCL_USER,          RTGETOPT_REQ_STRING  },
+        { "--del-user",         DHCP_ADDMOD_DEL_USER,           RTGETOPT_REQ_STRING  },
+        { "--incl-user-wild",   DHCP_ADDMOD_INCL_USER_WILD,     RTGETOPT_REQ_STRING  },
+        { "--excl-user-wild",   DHCP_ADDMOD_EXCL_USER_WILD,     RTGETOPT_REQ_STRING  },
+        { "--del-user-wild",    DHCP_ADDMOD_DEL_USER_WILD,      RTGETOPT_REQ_STRING  },
+        { "--zap-conditions",   DHCP_ADDMOD_ZAP_CONDITIONS,     RTGETOPT_REQ_NOTHING },
+        /* obsolete, to be removed: */
         { "--id",               'i', RTGETOPT_REQ_UINT8   },    // obsolete, backwards compatibility only.
         { "--value",            'p', RTGETOPT_REQ_STRING  },    // obsolete, backwards compatibility only.
         { "--remove",           'r', RTGETOPT_REQ_NOTHING },    // obsolete, backwards compatibility only.
@@ -238,266 +400,510 @@ static DECLCALLBACK(RTEXITCODE) dhcpdHandleAddAndModify(PDHCPDCMDCTX pCtx, int a
 
     };
 
-    const char       *pszServerIp           = NULL;
-    const char       *pszNetmask            = NULL;
-    const char       *pszLowerIp            = NULL;
-    const char       *pszUpperIp            = NULL;
-    int               fEnabled              = -1;
-
-    DhcpOpts          GlobalDhcpOptions;
-    DhcpOptIds        GlobalDhcpOptions2Delete;
-    VmSlot2OptionsM   VmSlot2Options;
-    VmSlot2OptionIdsM VmSlot2Options2Delete;
-
-    const char       *pszVmName             = NULL;
-    uint8_t           u8Slot                = 0;
-    DhcpOpts         *pScopeOptions         = &GlobalDhcpOptions;
-    DhcpOptIds       *pScopeOptions2Delete  = &GlobalDhcpOptions2Delete;
-
-    bool              fNeedValueOrRemove    = false; /* Only used with --id; remove in 6.1+ */
-    uint8_t           u8OptId               = 0;     /* Only used too keep --id for following --value/--remove. remove in 6.1+ */
-
-    RTGETOPTSTATE GetState;
-    int vrc = RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, 0);
-    AssertRCReturn(vrc, RTEXITCODE_FAILURE);
-
-    RTGETOPTUNION ValueUnion;
-    while ((vrc = RTGetOpt(&GetState, &ValueUnion)))
+    /*
+     * Parse the arguments in two passes:
+     *
+     *  1. Validate the command line and establish the IDHCPServer settings.
+     *  2. Execute the various IDHCPConfig settings changes.
+     *
+     * This is considered simpler than duplicating the command line instructions
+     * into elaborate structures and executing these.
+     */
+    RTEXITCODE          rcExit = RTEXITCODE_SUCCESS;
+    ComPtr<IDHCPServer> ptrDHCPServer;
+    for (size_t iPass = 0; iPass < 2; iPass++)
     {
-        switch (vrc)
+        const char         *pszServerIp         = NULL;
+        const char         *pszNetmask          = NULL;
+        const char         *pszLowerIp          = NULL;
+        const char         *pszUpperIp          = NULL;
+        int                 fEnabled            = -1;
+
+        DHCPCmdScope        Scope;
+        char                szMACAddress[32];
+
+        bool                fNeedValueOrRemove  = false; /* Only used with --id; remove in 6.1+ */
+        uint8_t             u8OptId             = 0;     /* Only used too keep --id for following --value/--remove. remove in 6.1+ */
+
+        RTGETOPTSTATE GetState;
+        int vrc = RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, 0);
+        AssertRCReturn(vrc, RTEXITCODE_FAILURE);
+
+        RTGETOPTUNION ValueUnion;
+        while ((vrc = RTGetOpt(&GetState, &ValueUnion)))
         {
-            DHCPD_CMD_COMMON_OPTION_CASES(pCtx, vrc, &ValueUnion);
-            case 'a':   // --server-ip
-                pszServerIp = ValueUnion.psz;
-                break;
-            case 'm':   // --netmask
-                pszNetmask = ValueUnion.psz;
-                break;
-            case 'l':   // --lower-ip
-                pszLowerIp = ValueUnion.psz;
-                break;
-            case 'u':   // --upper-ip
-                pszUpperIp = ValueUnion.psz;
-                break;
-            case 'e':   // --enable
-                fEnabled = 1;
-                break;
-            case 'd':   // --disable
-                fEnabled = 0;
-                break;
-
-            case 'g':   // --global     Sets the option scope to 'global'.
-                if (fNeedValueOrRemove)
-                    return errorSyntax("Incomplete option sequence preseeding '--global'");
-                pScopeOptions         = &GlobalDhcpOptions;
-                pScopeOptions2Delete  = &GlobalDhcpOptions2Delete;
-                break;
-
-            case 'M':   // --vm         Sets the option scope to ValueUnion.psz + 0.
-                if (fNeedValueOrRemove)
-                    return errorSyntax("Incomplete option sequence preseeding '--vm'");
-                pszVmName = ValueUnion.psz;
-                u8Slot    = 0;
-                pScopeOptions        = &VmSlot2Options[VmNameSlotKey(pszVmName, u8Slot)];
-                pScopeOptions2Delete = &VmSlot2Options2Delete[VmNameSlotKey(pszVmName, u8Slot)];
-                break;
-
-            case 'n':   // --nic        Sets the option scope to pszVmName + (ValueUnion.u8 - 1).
-                if (!pszVmName)
-                    return errorSyntax("--nic option requires a --vm preceeding selecting the VM it should apply to");
-                if (fNeedValueOrRemove)
-                    return errorSyntax("Incomplete option sequence preseeding '--nic=%u", ValueUnion.u8);
-                u8Slot = ValueUnion.u8;
-                if (u8Slot < 1)
-                    return errorSyntax("invalid NIC number: %u", u8Slot);
-                --u8Slot;
-                pScopeOptions        = &VmSlot2Options[VmNameSlotKey(pszVmName, u8Slot)];
-                pScopeOptions2Delete = &VmSlot2Options2Delete[VmNameSlotKey(pszVmName, u8Slot)];
-                break;
-
-            case 'A':   // --add-opt num hexvalue
+            switch (vrc)
             {
-                uint8_t const idAddOpt = ValueUnion.u8;
-                vrc = RTGetOptFetchValue(&GetState, &ValueUnion, RTGETOPT_REQ_STRING);
-                if (RT_FAILURE(vrc))
-                    return errorFetchValue(1, "--add-opt", vrc, &ValueUnion);
-                pScopeOptions->push_back(DhcpOptSpec((DhcpOpt_T)idAddOpt, Utf8Str(ValueUnion.psz)));
-                break;
+                DHCPD_CMD_COMMON_OPTION_CASES(pCtx, vrc, &ValueUnion);
+                case 'a':   // --server-ip
+                    pszServerIp = ValueUnion.psz;
+                    break;
+                case 'm':   // --netmask
+                    pszNetmask = ValueUnion.psz;
+                    break;
+                case 'l':   // --lower-ip
+                    pszLowerIp = ValueUnion.psz;
+                    break;
+                case 'u':   // --upper-ip
+                    pszUpperIp = ValueUnion.psz;
+                    break;
+                case 'e':   // --enable
+                    fEnabled = 1;
+                    break;
+                case 'd':   // --disable
+                    fEnabled = 0;
+                    break;
+
+                /*
+                 * Configuration selection:
+                 */
+                case 'g':   // --global     Sets the option scope to 'global'.
+                    if (fNeedValueOrRemove)
+                        return errorSyntax("Incomplete option sequence preseeding '--global'");
+                    Scope.setGlobal();
+                    break;
+
+                case 'G':   // --group
+                    if (fNeedValueOrRemove)
+                        return errorSyntax("Incomplete option sequence preseeding '--group'");
+                    if (!*ValueUnion.psz)
+                        return errorSyntax("Group name cannot be empty");
+                    Scope.setGroup(ValueUnion.psz);
+                    break;
+
+                case 'E':   // --mac-address
+                    if (fNeedValueOrRemove)
+                        return errorSyntax("Incomplete option sequence preseeding '--mac-address'");
+                    RTStrPrintf(szMACAddress, sizeof(szMACAddress), "%RTmac", &ValueUnion.MacAddr);
+                    Scope.setMACAddress(szMACAddress);
+                    break;
+
+                case 'M':   // --vm         Sets the option scope to ValueUnion.psz + 0.
+                    if (fNeedValueOrRemove)
+                        return errorSyntax("Incomplete option sequence preseeding '--vm'");
+                    Scope.setMachineNIC(ValueUnion.psz);
+                    break;
+
+                case 'n':   // --nic        Sets the option scope to pszVmName + (ValueUnion.u8 - 1).
+                    if (Scope.getScope() != DHCPConfigScope_MachineNIC)
+                        return errorSyntax("--nic option requires a --vm preceeding selecting the VM it should apply to");
+                    if (fNeedValueOrRemove)
+                        return errorSyntax("Incomplete option sequence preseeding '--nic=%u", ValueUnion.u8);
+                    if (ValueUnion.u8 < 1)
+                        return errorSyntax("invalid NIC number: %u", ValueUnion.u8);
+                    Scope.setMachineSlot(ValueUnion.u8 - 1);
+                    break;
+
+                /*
+                 * Modify configuration:
+                 */
+                case 's':   // --set-opt num stringvalue
+                {
+                    uint8_t const idAddOpt = ValueUnion.u8;
+                    vrc = RTGetOptFetchValue(&GetState, &ValueUnion, RTGETOPT_REQ_STRING);
+                    if (RT_FAILURE(vrc))
+                        return errorFetchValue(1, "--set-opt", vrc, &ValueUnion);
+                    if (iPass == 1)
+                    {
+                        ComPtr<IDHCPConfig> &ptrConfig = Scope.getConfig(ptrDHCPServer);
+                        if (ptrConfig.isNull())
+                            return RTEXITCODE_FAILURE;
+                        CHECK_ERROR2I_STMT(ptrConfig, SetOption((DhcpOpt_T)idAddOpt, DHCPOptionEncoding_Legacy,
+                                                                Bstr(ValueUnion.psz).raw()), rcExit = RTEXITCODE_FAILURE);
+                    }
+                    break;
+                }
+
+                case 'x':   // --set-opt-hex num hex-string
+                {
+                    uint8_t const idAddOpt = ValueUnion.u8;
+                    vrc = RTGetOptFetchValue(&GetState, &ValueUnion, RTGETOPT_REQ_STRING);
+                    if (RT_FAILURE(vrc))
+                        return errorFetchValue(1, "--set-opt-hex", vrc, &ValueUnion);
+                    uint8_t abBuf[256];
+                    size_t cbRet;
+                    vrc = RTStrConvertHexBytesEx(ValueUnion.psz, abBuf, sizeof(abBuf), RTSTRCONVERTHEXBYTES_F_SEP_COLON,
+                                                 NULL, &cbRet);
+                    if (RT_FAILURE(vrc))
+                        return errorArgument("Malformed hex string given to --set-opt-hex %u: %s\n", idAddOpt, ValueUnion.psz);
+                    if (iPass == 1)
+                    {
+                        ComPtr<IDHCPConfig> &ptrConfig = Scope.getConfig(ptrDHCPServer);
+                        if (ptrConfig.isNull())
+                            return RTEXITCODE_FAILURE;
+                        CHECK_ERROR2I_STMT(ptrConfig, SetOption((DhcpOpt_T)idAddOpt, DHCPOptionEncoding_Hex,
+                                                                Bstr(ValueUnion.psz).raw()), rcExit = RTEXITCODE_FAILURE);
+                    }
+                    break;
+                }
+
+                case 'D':   // --del-opt num
+                    if (pCtx->pCmdDef->fSubcommandScope == HELP_SCOPE_DHCPSERVER_ADD)
+                        return errorSyntax("--del-opt does not apply to the 'add' subcommand");
+                    if (iPass == 1)
+                    {
+                        ComPtr<IDHCPConfig> &ptrConfig = Scope.getConfig(ptrDHCPServer);
+                        if (ptrConfig.isNull())
+                            return RTEXITCODE_FAILURE;
+                        CHECK_ERROR2I_STMT(ptrConfig, RemoveOption((DhcpOpt_T)ValueUnion.u8), rcExit = RTEXITCODE_FAILURE);
+                    }
+                    break;
+
+                case DHCP_ADDMOD_ZAP_OPTIONS:
+                    if (pCtx->pCmdDef->fSubcommandScope == HELP_SCOPE_DHCPSERVER_ADD)
+                        return errorSyntax("--zap-options does not apply to the 'add' subcommand");
+                    if (iPass == 1)
+                    {
+                        ComPtr<IDHCPConfig> &ptrConfig = Scope.getConfig(ptrDHCPServer);
+                        if (ptrConfig.isNull())
+                            return RTEXITCODE_FAILURE;
+                        CHECK_ERROR2I_STMT(ptrConfig, RemoveAllOptions(), rcExit = RTEXITCODE_FAILURE);
+                    }
+                    break;
+
+                case 'q':   // --min-lease-time
+                    if (iPass == 1)
+                    {
+                        ComPtr<IDHCPConfig> &ptrConfig = Scope.getConfig(ptrDHCPServer);
+                        if (ptrConfig.isNull())
+                            return RTEXITCODE_FAILURE;
+                        CHECK_ERROR2I_STMT(ptrConfig, COMSETTER(MinLeaseTime)(ValueUnion.u32), rcExit = RTEXITCODE_FAILURE);
+                    }
+                    break;
+
+                case 'L':   // --default-lease-time
+                    if (iPass == 1)
+                    {
+                        ComPtr<IDHCPConfig> &ptrConfig = Scope.getConfig(ptrDHCPServer);
+                        if (ptrConfig.isNull())
+                            return RTEXITCODE_FAILURE;
+                        CHECK_ERROR2I_STMT(ptrConfig, COMSETTER(DefaultLeaseTime)(ValueUnion.u32), rcExit = RTEXITCODE_FAILURE);
+                    }
+                    break;
+
+                case 'Q':   // --max-lease-time
+                    if (iPass == 1)
+                    {
+                        ComPtr<IDHCPConfig> &ptrConfig = Scope.getConfig(ptrDHCPServer);
+                        if (ptrConfig.isNull())
+                            return RTEXITCODE_FAILURE;
+                        CHECK_ERROR2I_STMT(ptrConfig, COMSETTER(MaxLeaseTime)(ValueUnion.u32), rcExit = RTEXITCODE_FAILURE);
+                    }
+                    break;
+
+                case 'R':   // --remove-config
+                    if (pCtx->pCmdDef->fSubcommandScope == HELP_SCOPE_DHCPSERVER_ADD)
+                        return errorSyntax("--remove-config does not apply to the 'add' subcommand");
+                    if (Scope.getScope() == DHCPConfigScope_Global)
+                        return errorSyntax("--remove-config cannot be applied to the global config");
+                    if (iPass == 1)
+                    {
+                        ComPtr<IDHCPConfig> &ptrConfig = Scope.getConfig(ptrDHCPServer);
+                        if (ptrConfig.isNull())
+                            return RTEXITCODE_FAILURE;
+                        CHECK_ERROR2I_STMT(ptrConfig, Remove(), rcExit = RTEXITCODE_FAILURE);
+                    }
+                    Scope.setGlobal();
+                    break;
+
+                case 'f':   // --fixed-address
+                    if (Scope.getScope() != DHCPConfigScope_MachineNIC && Scope.getScope() != DHCPConfigScope_MAC)
+                        return errorSyntax("--fixed-address can only be applied to a VM NIC or an MAC address");
+                    if (iPass == 1)
+                    {
+                        ComPtr<IDHCPIndividualConfig> &ptrIndividualConfig = Scope.getIndividual(ptrDHCPServer);
+                        if (ptrIndividualConfig.isNull())
+                            return RTEXITCODE_FAILURE;
+                        CHECK_ERROR2I_STMT(ptrIndividualConfig, COMSETTER(FixedAddress)(Bstr(ValueUnion.psz).raw()),
+                                           rcExit = RTEXITCODE_FAILURE);
+                    }
+                    break;
+
+                /*
+                 * Group conditions:
+                 */
+                case DHCP_ADDMOD_INCL_MAC:
+                case DHCP_ADDMOD_EXCL_MAC:
+                case DHCP_ADDMOD_DEL_MAC:
+                case DHCP_ADDMOD_INCL_MAC_WILD:
+                case DHCP_ADDMOD_EXCL_MAC_WILD:
+                case DHCP_ADDMOD_DEL_MAC_WILD:
+                case DHCP_ADDMOD_INCL_VENDOR:
+                case DHCP_ADDMOD_EXCL_VENDOR:
+                case DHCP_ADDMOD_DEL_VENDOR:
+                case DHCP_ADDMOD_INCL_VENDOR_WILD:
+                case DHCP_ADDMOD_EXCL_VENDOR_WILD:
+                case DHCP_ADDMOD_DEL_VENDOR_WILD:
+                case DHCP_ADDMOD_INCL_USER:
+                case DHCP_ADDMOD_EXCL_USER:
+                case DHCP_ADDMOD_DEL_USER:
+                case DHCP_ADDMOD_INCL_USER_WILD:
+                case DHCP_ADDMOD_EXCL_USER_WILD:
+                case DHCP_ADDMOD_DEL_USER_WILD:
+                {
+                    if (Scope.getScope() != DHCPConfigScope_Group)
+                        return errorSyntax("A group must be selected to perform condition alterations.");
+                    if (!*ValueUnion.psz)
+                        return errorSyntax("Condition value cannot be empty"); /* or can it? */
+                    if (iPass != 1)
+                        break;
+
+                    DHCPGroupConditionType enmType;
+                    switch (vrc)
+                    {
+                        case DHCP_ADDMOD_INCL_MAC: case DHCP_ADDMOD_EXCL_MAC: case DHCP_ADDMOD_DEL_MAC:
+                            enmType = DHCPGroupConditionType_MAC;
+                            break;
+                        case DHCP_ADDMOD_INCL_MAC_WILD: case DHCP_ADDMOD_EXCL_MAC_WILD: case DHCP_ADDMOD_DEL_MAC_WILD:
+                            enmType = DHCPGroupConditionType_MACWildcard;
+                            break;
+                        case DHCP_ADDMOD_INCL_VENDOR: case DHCP_ADDMOD_EXCL_VENDOR: case DHCP_ADDMOD_DEL_VENDOR:
+                            enmType = DHCPGroupConditionType_vendorClassID;
+                            break;
+                        case DHCP_ADDMOD_INCL_VENDOR_WILD: case DHCP_ADDMOD_EXCL_VENDOR_WILD: case DHCP_ADDMOD_DEL_VENDOR_WILD:
+                            enmType = DHCPGroupConditionType_vendorClassIDWildcard;
+                            break;
+                        case DHCP_ADDMOD_INCL_USER: case DHCP_ADDMOD_EXCL_USER: case DHCP_ADDMOD_DEL_USER:
+                            enmType = DHCPGroupConditionType_userClassID;
+                            break;
+                        case DHCP_ADDMOD_INCL_USER_WILD: case DHCP_ADDMOD_EXCL_USER_WILD: case DHCP_ADDMOD_DEL_USER_WILD:
+                            enmType = DHCPGroupConditionType_userClassIDWildcard;
+                            break;
+                        default:
+                            AssertFailedReturn(RTEXITCODE_FAILURE);
+                    }
+
+                    int fInclusive;
+                    switch (vrc)
+                    {
+                        case DHCP_ADDMOD_DEL_MAC:
+                        case DHCP_ADDMOD_DEL_MAC_WILD:
+                        case DHCP_ADDMOD_DEL_USER:
+                        case DHCP_ADDMOD_DEL_USER_WILD:
+                        case DHCP_ADDMOD_DEL_VENDOR:
+                        case DHCP_ADDMOD_DEL_VENDOR_WILD:
+                            fInclusive = -1;
+                            break;
+                        case DHCP_ADDMOD_EXCL_MAC:
+                        case DHCP_ADDMOD_EXCL_MAC_WILD:
+                        case DHCP_ADDMOD_EXCL_USER:
+                        case DHCP_ADDMOD_EXCL_USER_WILD:
+                        case DHCP_ADDMOD_EXCL_VENDOR:
+                        case DHCP_ADDMOD_EXCL_VENDOR_WILD:
+                            fInclusive = 0;
+                            break;
+                        case DHCP_ADDMOD_INCL_MAC:
+                        case DHCP_ADDMOD_INCL_MAC_WILD:
+                        case DHCP_ADDMOD_INCL_USER:
+                        case DHCP_ADDMOD_INCL_USER_WILD:
+                        case DHCP_ADDMOD_INCL_VENDOR:
+                        case DHCP_ADDMOD_INCL_VENDOR_WILD:
+                            fInclusive = 1;
+                            break;
+                        default:
+                            AssertFailedReturn(RTEXITCODE_FAILURE);
+                    }
+
+                    ComPtr<IDHCPGroupConfig> &ptrGroupConfig = Scope.getGroup(ptrDHCPServer);
+                    if (ptrGroupConfig.isNull())
+                        return RTEXITCODE_FAILURE;
+                    if (fInclusive >= 0)
+                    {
+                        ComPtr<IDHCPGroupCondition> ptrCondition;
+                        CHECK_ERROR2I_STMT(ptrGroupConfig, AddCondition((BOOL)fInclusive, enmType, Bstr(ValueUnion.psz).raw(),
+                                                                        ptrCondition.asOutParam()), rcExit = RTEXITCODE_FAILURE);
+                    }
+                    else
+                    {
+                        com::SafeIfaceArray<IDHCPGroupCondition> Conditions;
+                        CHECK_ERROR2I_STMT(ptrGroupConfig, COMGETTER(Conditions)(ComSafeArrayAsOutParam(Conditions)),
+                                           rcExit = RTEXITCODE_FAILURE; break);
+                        bool fFound = false;
+                        for (size_t iCond = 0; iCond < Conditions.size(); iCond++)
+                            {
+                                DHCPGroupConditionType_T enmCurType = DHCPGroupConditionType_MAC;
+                                CHECK_ERROR2I_STMT(Conditions[iCond], COMGETTER(Type)(&enmCurType),
+                                                   rcExit = RTEXITCODE_FAILURE; continue);
+                                if (enmCurType == enmType)
+                                {
+                                    Bstr bstrValue;
+                                    CHECK_ERROR2I_STMT(Conditions[iCond], COMGETTER(Value)(bstrValue.asOutParam()),
+                                                      rcExit = RTEXITCODE_FAILURE; continue);
+                                    if (RTUtf16CmpUtf8(bstrValue.raw(), ValueUnion.psz) == 0)
+                                    {
+                                        CHECK_ERROR2I_STMT(Conditions[iCond], Remove(), rcExit = RTEXITCODE_FAILURE);
+                                        fFound = true;
+                                    }
+                                }
+                            }
+                        if (!fFound)
+                            rcExit = RTMsgErrorExitFailure("Could not find any condition of type %d with value '%s' to delete",
+                                                           enmType, ValueUnion.psz);
+                    }
+                    break;
+                }
+
+                case DHCP_ADDMOD_ZAP_CONDITIONS:
+                    if (Scope.getScope() != DHCPConfigScope_Group)
+                        return errorSyntax("--zap-conditions can only be with a group selected");
+                    if (iPass == 1)
+                    {
+                        ComPtr<IDHCPGroupConfig> &ptrGroupConfig = Scope.getGroup(ptrDHCPServer);
+                        if (ptrGroupConfig.isNull())
+                            return RTEXITCODE_FAILURE;
+                        CHECK_ERROR2I_STMT(ptrGroupConfig, RemoveAllConditions(), rcExit = RTEXITCODE_FAILURE);
+                    }
+                    break;
+
+                /*
+                 * For backwards compatibility. Remove in 6.1 or later.
+                 */
+
+                case 'o':   // --options - obsolete, ignored.
+                    break;
+
+                case 'i':   // --id
+                    if (fNeedValueOrRemove)
+                        return errorSyntax("Incomplete option sequence preseeding '--id=%u", ValueUnion.u8);
+                    u8OptId = ValueUnion.u8;
+                    fNeedValueOrRemove = true;
+                    break;
+
+                case 'p':   // --value
+                    if (!fNeedValueOrRemove)
+                        return errorSyntax("--value without --id=dhcp-opt-no");
+                    if (iPass == 1)
+                    {
+                        ComPtr<IDHCPConfig> &ptrConfig = Scope.getConfig(ptrDHCPServer);
+                        if (ptrConfig.isNull())
+                            return RTEXITCODE_FAILURE;
+                        CHECK_ERROR2I_STMT(ptrConfig, SetOption((DhcpOpt_T)u8OptId, DHCPOptionEncoding_Legacy,
+                                                                Bstr(ValueUnion.psz).raw()), rcExit = RTEXITCODE_FAILURE);
+                    }
+                    fNeedValueOrRemove = false;
+                    break;
+
+                case 'r':   // --remove
+                    if (pCtx->pCmdDef->fSubcommandScope == HELP_SCOPE_DHCPSERVER_ADD)
+                        return errorSyntax("--remove does not apply to the 'add' subcommand");
+                    if (!fNeedValueOrRemove)
+                        return errorSyntax("--remove without --id=dhcp-opt-no");
+
+                    if (iPass == 1)
+                    {
+                        ComPtr<IDHCPConfig> &ptrConfig = Scope.getConfig(ptrDHCPServer);
+                        if (ptrConfig.isNull())
+                            return RTEXITCODE_FAILURE;
+                        CHECK_ERROR2I_STMT(ptrConfig, RemoveOption((DhcpOpt_T)u8OptId), rcExit = RTEXITCODE_FAILURE);
+                    }
+                    fNeedValueOrRemove = false;
+                    break;
+
+                default:
+                    return errorGetOpt(vrc, &ValueUnion);
+            }
+        }
+
+        if (iPass != 0)
+            break;
+
+        /*
+         * Ensure we've got mandatory options and supply defaults
+         * where needed (modify case)
+         */
+        if (!pCtx->pszNetwork && !pCtx->pszInterface)
+            return errorSyntax("You need to specify either --network or --interface to identify the DHCP server");
+
+        if (pCtx->pCmdDef->fSubcommandScope == HELP_SCOPE_DHCPSERVER_ADD)
+        {
+            RTEXITCODE rcExit = RTEXITCODE_SUCCESS;
+            if (!pszServerIp)
+                rcExit = errorSyntax("Missing required option: --ip");
+            if (!pszNetmask)
+                rcExit = errorSyntax("Missing required option: --netmask");
+            if (!pszLowerIp)
+                rcExit = errorSyntax("Missing required option: --lowerip");
+            if (!pszUpperIp)
+                rcExit = errorSyntax("Missing required option: --upperip");
+            if (rcExit != RTEXITCODE_SUCCESS)
+                return rcExit;
+        }
+
+        /*
+         * Find or create the server.
+         */
+        HRESULT rc;
+        Bstr NetName;
+        if (!pCtx->pszNetwork)
+        {
+            ComPtr<IHost> host;
+            CHECK_ERROR(pCtx->pArg->virtualBox, COMGETTER(Host)(host.asOutParam()));
+
+            ComPtr<IHostNetworkInterface> hif;
+            CHECK_ERROR(host, FindHostNetworkInterfaceByName(Bstr(pCtx->pszInterface).mutableRaw(), hif.asOutParam()));
+            if (FAILED(rc))
+                return errorArgument("Could not find interface '%s'", pCtx->pszInterface);
+
+            CHECK_ERROR(hif, COMGETTER(NetworkName) (NetName.asOutParam()));
+            if (FAILED(rc))
+                return errorArgument("Could not get network name for the interface '%s'", pCtx->pszInterface);
+        }
+        else
+        {
+            NetName = Bstr(pCtx->pszNetwork);
+        }
+
+        rc = pCtx->pArg->virtualBox->FindDHCPServerByNetworkName(NetName.mutableRaw(), ptrDHCPServer.asOutParam());
+        if (pCtx->pCmdDef->fSubcommandScope == HELP_SCOPE_DHCPSERVER_ADD)
+        {
+            if (SUCCEEDED(rc))
+                return errorArgument("DHCP server already exists");
+
+            CHECK_ERROR(pCtx->pArg->virtualBox, CreateDHCPServer(NetName.mutableRaw(), ptrDHCPServer.asOutParam()));
+            if (FAILED(rc))
+                return errorArgument("Failed to create the DHCP server");
+        }
+        else if (FAILED(rc))
+            return errorArgument("DHCP server does not exist");
+
+        /*
+         * Apply IDHCPServer settings:
+         */
+        HRESULT hrc;
+        RTEXITCODE rcExit = RTEXITCODE_SUCCESS;
+        if (pszServerIp || pszNetmask || pszLowerIp || pszUpperIp)
+        {
+            Bstr bstrServerIp(pszServerIp);
+            Bstr bstrNetmask(pszNetmask);
+            Bstr bstrLowerIp(pszLowerIp);
+            Bstr bstrUpperIp(pszUpperIp);
+
+            if (!pszServerIp)
+            {
+                CHECK_ERROR2_RET(hrc, ptrDHCPServer, COMGETTER(IPAddress)(bstrServerIp.asOutParam()), RTEXITCODE_FAILURE);
+            }
+            if (!pszNetmask)
+            {
+                CHECK_ERROR2_RET(hrc, ptrDHCPServer, COMGETTER(NetworkMask)(bstrNetmask.asOutParam()), RTEXITCODE_FAILURE);
+            }
+            if (!pszLowerIp)
+            {
+                CHECK_ERROR2_RET(hrc, ptrDHCPServer, COMGETTER(LowerIP)(bstrLowerIp.asOutParam()), RTEXITCODE_FAILURE);
+            }
+            if (!pszUpperIp)
+            {
+                CHECK_ERROR2_RET(hrc, ptrDHCPServer, COMGETTER(UpperIP)(bstrUpperIp.asOutParam()), RTEXITCODE_FAILURE);
             }
 
-            case 'D':   // --del-opt num
-                if (pCtx->pCmdDef->fSubcommandScope == HELP_SCOPE_DHCPSERVER_ADD)
-                    return errorSyntax("--del-opt does not apply to the 'add' subcommand");
-                pScopeOptions2Delete->push_back((DhcpOpt_T)ValueUnion.u8);
-                break;
-
-            /*
-             * For backwards compatibility. Remove in 6.1 or later.
-             */
-
-            case 'o':   // --options - obsolete, ignored.
-                break;
-
-            case 'i':   // --id
-                if (fNeedValueOrRemove)
-                    return errorSyntax("Incomplete option sequence preseeding '--id=%u", ValueUnion.u8);
-                u8OptId = ValueUnion.u8;
-                fNeedValueOrRemove = true;
-                break;
-
-            case 'p':   // --value
-                if (!fNeedValueOrRemove)
-                    return errorSyntax("--value without --id=dhcp-opt-no");
-                pScopeOptions->push_back(DhcpOptSpec((DhcpOpt_T)u8OptId, Utf8Str(ValueUnion.psz)));
-                fNeedValueOrRemove = false;
-                break;
-
-            case 'r':   // --remove
-                if (pCtx->pCmdDef->fSubcommandScope == HELP_SCOPE_DHCPSERVER_ADD)
-                    return errorSyntax("--remove does not apply to the 'add' subcommand");
-                if (!fNeedValueOrRemove)
-                    return errorSyntax("--remove without --id=dhcp-opt-no");
-                pScopeOptions2Delete->push_back((DhcpOpt_T)u8OptId);
-                /** @todo remove from pScopeOptions */
-                fNeedValueOrRemove = false;
-                break;
-
-            default:
-                return errorGetOpt(vrc, &ValueUnion);
-        }
-    }
-
-    /*
-     * Ensure we've got mandatory options and supply defaults
-     * where needed (modify case)
-     */
-    if (!pCtx->pszNetwork && !pCtx->pszInterface)
-        return errorSyntax("You need to specify either --network or --interface to identify the DHCP server");
-
-    if (pCtx->pCmdDef->fSubcommandScope == HELP_SCOPE_DHCPSERVER_ADD)
-    {
-        RTEXITCODE rcExit = RTEXITCODE_SUCCESS;
-        if (!pszServerIp)
-            rcExit = errorSyntax("Missing required option: --ip");
-        if (!pszNetmask)
-            rcExit = errorSyntax("Missing required option: --netmask");
-        if (!pszLowerIp)
-            rcExit = errorSyntax("Missing required option: --lowerip");
-        if (!pszUpperIp)
-            rcExit = errorSyntax("Missing required option: --upperip");
-        if (rcExit != RTEXITCODE_SUCCESS)
-            return rcExit;
-    }
-
-    /*
-     * Find or create the server.
-     */
-    HRESULT rc;
-    Bstr NetName;
-    if (!pCtx->pszNetwork)
-    {
-        ComPtr<IHost> host;
-        CHECK_ERROR(pCtx->pArg->virtualBox, COMGETTER(Host)(host.asOutParam()));
-
-        ComPtr<IHostNetworkInterface> hif;
-        CHECK_ERROR(host, FindHostNetworkInterfaceByName(Bstr(pCtx->pszInterface).mutableRaw(), hif.asOutParam()));
-        if (FAILED(rc))
-            return errorArgument("Could not find interface '%s'", pCtx->pszInterface);
-
-        CHECK_ERROR(hif, COMGETTER(NetworkName) (NetName.asOutParam()));
-        if (FAILED(rc))
-            return errorArgument("Could not get network name for the interface '%s'", pCtx->pszInterface);
-    }
-    else
-    {
-        NetName = Bstr(pCtx->pszNetwork);
-    }
-
-    ComPtr<IDHCPServer> svr;
-    rc = pCtx->pArg->virtualBox->FindDHCPServerByNetworkName(NetName.mutableRaw(), svr.asOutParam());
-    if (pCtx->pCmdDef->fSubcommandScope == HELP_SCOPE_DHCPSERVER_ADD)
-    {
-        if (SUCCEEDED(rc))
-            return errorArgument("DHCP server already exists");
-
-        CHECK_ERROR(pCtx->pArg->virtualBox, CreateDHCPServer(NetName.mutableRaw(), svr.asOutParam()));
-        if (FAILED(rc))
-            return errorArgument("Failed to create the DHCP server");
-    }
-    else if (FAILED(rc))
-        return errorArgument("DHCP server does not exist");
-
-    /*
-     * Apply settings.
-     */
-    HRESULT hrc;
-    RTEXITCODE rcExit = RTEXITCODE_SUCCESS;
-    if (pszServerIp || pszNetmask || pszLowerIp || pszUpperIp)
-    {
-        Bstr bstrServerIp(pszServerIp);
-        Bstr bstrNetmask(pszNetmask);
-        Bstr bstrLowerIp(pszLowerIp);
-        Bstr bstrUpperIp(pszUpperIp);
-
-        if (!pszServerIp)
-        {
-            CHECK_ERROR2_RET(hrc, svr, COMGETTER(IPAddress)(bstrServerIp.asOutParam()), RTEXITCODE_FAILURE);
-        }
-        if (!pszNetmask)
-        {
-            CHECK_ERROR2_RET(hrc, svr, COMGETTER(NetworkMask)(bstrNetmask.asOutParam()), RTEXITCODE_FAILURE);
-        }
-        if (!pszLowerIp)
-        {
-            CHECK_ERROR2_RET(hrc, svr, COMGETTER(LowerIP)(bstrLowerIp.asOutParam()), RTEXITCODE_FAILURE);
-        }
-        if (!pszUpperIp)
-        {
-            CHECK_ERROR2_RET(hrc, svr, COMGETTER(UpperIP)(bstrUpperIp.asOutParam()), RTEXITCODE_FAILURE);
+            CHECK_ERROR2_STMT(hrc, ptrDHCPServer, SetConfiguration(bstrServerIp.raw(), bstrNetmask.raw(),
+                                                                   bstrLowerIp.raw(), bstrUpperIp.raw()),
+                              rcExit = errorArgument("Failed to set configuration (%ls, %ls, %ls, %ls)", bstrServerIp.raw(),
+                                                     bstrNetmask.raw(), bstrLowerIp.raw(), bstrUpperIp.raw()));
         }
 
-        CHECK_ERROR2_STMT(hrc, svr, SetConfiguration(bstrServerIp.raw(), bstrNetmask.raw(), bstrLowerIp.raw(), bstrUpperIp.raw()),
-                          rcExit = errorArgument("Failed to set configuration (%ls, %ls, %ls, %ls)", bstrServerIp.raw(),
-                                                 bstrNetmask.raw(), bstrLowerIp.raw(), bstrUpperIp.raw()));
-    }
-
-    if (fEnabled >= 0)
-    {
-        CHECK_ERROR2_STMT(hrc, svr, COMSETTER(Enabled)((BOOL)fEnabled), rcExit = RTEXITCODE_FAILURE);
-    }
-
-    /* Remove options: */
-    for (DhcpOptIdIterator itOptId = GlobalDhcpOptions2Delete.begin(); itOptId != GlobalDhcpOptions2Delete.end(); ++itOptId)
-    {
-        CHECK_ERROR2_STMT(hrc, svr, RemoveGlobalOption(*itOptId), rcExit = RTEXITCODE_FAILURE);
-    }
-
-    for (VmSlot2OptionIdsIterator itIdVector = VmSlot2Options2Delete.begin();
-         itIdVector != VmSlot2Options2Delete.end(); ++itIdVector)
-    {
-        for (DhcpOptIdIterator itOptId = itIdVector->second.begin(); itOptId != itIdVector->second.end(); ++itOptId)
+        if (fEnabled >= 0)
         {
-            CHECK_ERROR2_STMT(hrc, svr, RemoveVmSlotOption(Bstr(itIdVector->first.VmName.c_str()).raw(),
-                                                           itIdVector->first.u8Slot, *itOptId),
-                              rcExit = RTEXITCODE_FAILURE);
-        }
-    }
-
-    /* Global Options */
-    for (DhcpOptIterator itOpt = GlobalDhcpOptions.begin(); itOpt != GlobalDhcpOptions.end(); ++itOpt)
-    {
-        CHECK_ERROR2_STMT(hrc, svr, AddGlobalOption(itOpt->first, com::Bstr(itOpt->second.c_str()).raw()),
-                          rcExit = RTEXITCODE_FAILURE);
-    }
-
-    /* VM slot options. */
-    for (VmSlot2OptionsIterator it = VmSlot2Options.begin(); it != VmSlot2Options.end(); ++it)
-    {
-        for (DhcpOptIterator itOpt = it->second.begin(); itOpt != it->second.end(); ++itOpt)
-        {
-            CHECK_ERROR2_STMT(hrc, svr, AddVmSlotOption(Bstr(it->first.VmName.c_str()).raw(), it->first.u8Slot, itOpt->first,
-                                                        com::Bstr(itOpt->second).raw()),
-                              rcExit = RTEXITCODE_FAILURE);
+            CHECK_ERROR2_STMT(hrc, ptrDHCPServer, COMSETTER(Enabled)((BOOL)fEnabled), rcExit = RTEXITCODE_FAILURE);
         }
     }
 

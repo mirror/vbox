@@ -310,6 +310,9 @@ HRESULT DHCPServer::init(VirtualBox *aVirtualBox, const settings::DHCPServer &rD
 }
 
 
+/**
+ * Called by VirtualBox to save our settings.
+ */
 HRESULT DHCPServer::i_saveSettings(settings::DHCPServer &rData)
 {
     AutoCaller autoCaller(this);
@@ -366,6 +369,56 @@ HRESULT DHCPServer::i_saveSettings(settings::DHCPServer &rData)
     }
 
     return hrc;
+}
+
+
+HRESULT DHCPServer::i_removeConfig(DHCPConfig *pConfig, DHCPConfigScope_T enmScope)
+{
+    {
+        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+        bool fFound = false;
+        switch (enmScope)
+        {
+            case DHCPConfigScope_Group:
+                for (Data::GroupConfigIterator it = m->groupConfigs.begin(); it != m->groupConfigs.end();)
+                {
+                    DHCPConfig *pCurConfig = it->second;
+                    if (pCurConfig == pConfig)
+                    {
+                        fFound = true;
+                        it = m->groupConfigs.erase(it);
+                    }
+                    else
+                        ++it;
+                }
+                break;
+
+            case DHCPConfigScope_MAC:
+            case DHCPConfigScope_MachineNIC:
+                for (Data::IndividualConfigIterator it = m->individualConfigs.begin(); it != m->individualConfigs.end();)
+                {
+                    DHCPConfig *pCurConfig = it->second;
+                    if (pCurConfig == pConfig)
+                    {
+                        fFound = true;
+                        it = m->individualConfigs.erase(it);
+                    }
+                    else
+                        ++it;
+                }
+                break;
+
+            default:
+                AssertFailedReturn(E_FAIL);
+        }
+
+        /* Don't complain if already removed, right? */
+        if (!fFound)
+            return S_OK;
+    }
+
+    return i_doSaveSettings();
 }
 
 

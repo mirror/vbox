@@ -68,6 +68,7 @@ public:
     /** @name Public internal methods.
      * @{ */
     HRESULT i_saveSettings(settings::DHCPServer &data);
+    HRESULT i_removeConfig(DHCPConfig *pConfig, DHCPConfigScope_T enmScope);
     /** @} */
 
 private:
