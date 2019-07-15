@@ -699,6 +699,7 @@ signals:
 
     void sigShowHideSidePanel();
     void sigShowSettingWidget();
+    void sigResetKeyboard();
 
 public:
 
@@ -717,6 +718,7 @@ private:
     void prepareObjects();
     QToolButton  *m_pLayoutListButton;
     QToolButton  *m_pSettingsButton;
+    QToolButton  *m_pResetButton;
     QLabel       *m_pMessageLabel;
 };
 
@@ -3249,6 +3251,7 @@ UISoftKeyboardStatusBarWidget::UISoftKeyboardStatusBarWidget(QWidget *pParent /*
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_pLayoutListButton(0)
     , m_pSettingsButton(0)
+    , m_pResetButton(0)
     , m_pMessageLabel(0)
 {
     prepareObjects();
@@ -3260,6 +3263,8 @@ void UISoftKeyboardStatusBarWidget::retranslateUi()
         m_pLayoutListButton->setToolTip(UISoftKeyboard::tr("Layout List"));
     if (m_pSettingsButton)
         m_pSettingsButton->setToolTip(UISoftKeyboard::tr("Settings"));
+    if (m_pResetButton)
+        m_pResetButton->setToolTip(UISoftKeyboard::tr("Reset the keyboard and release all keys"));
 }
 
 void UISoftKeyboardStatusBarWidget::prepareObjects()
@@ -3295,6 +3300,18 @@ void UISoftKeyboardStatusBarWidget::prepareObjects()
         m_pSettingsButton->setStyleSheet("QToolButton { border: 0px none black; margin: 0px 0px 0px 0px; } QToolButton::menu-indicator {image: none;}");
         connect(m_pSettingsButton, &QToolButton::clicked, this, &UISoftKeyboardStatusBarWidget::sigShowSettingWidget);
         pLayout->addWidget(m_pSettingsButton);
+    }
+
+    m_pResetButton = new QToolButton;
+    if (m_pResetButton)
+    {
+        m_pResetButton->setIcon(UIIconPool::iconSet(":/hd_release_16px.png"));
+        m_pResetButton->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+        const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
+        m_pResetButton->resize(QSize(iIconMetric, iIconMetric));
+        m_pResetButton->setStyleSheet("QToolButton { border: 0px none black; margin: 0px 0px 0px 0px; } QToolButton::menu-indicator {image: none;}");
+        connect(m_pResetButton, &QToolButton::clicked, this, &UISoftKeyboardStatusBarWidget::sigResetKeyboard);
+        pLayout->addWidget(m_pResetButton);
     }
 
     retranslateUi();
@@ -3674,6 +3691,16 @@ void UISoftKeyboard::sltHandleColorCellClick(int iColorRow)
     m_pSettingsWidget->setTableItemColor(static_cast<KeyboardColorType>(iColorRow), newColor);
 }
 
+void UISoftKeyboard::sltResetKeyboard()
+{
+    if (m_pKeyboardWidget)
+        m_pKeyboardWidget->reset();
+    if (m_pLayoutEditor)
+        m_pLayoutEditor->reset();
+    keyboard().ReleaseKeys();
+    update();
+}
+
 void UISoftKeyboard::prepareObjects()
 {
     m_pSplitter = new QSplitter;
@@ -3744,6 +3771,7 @@ void UISoftKeyboard::prepareConnections()
 
     connect(m_pStatusBarWidget, &UISoftKeyboardStatusBarWidget::sigShowHideSidePanel, this, &UISoftKeyboard::sltShowHideSidePanel);
     connect(m_pStatusBarWidget, &UISoftKeyboardStatusBarWidget::sigShowSettingWidget, this, &UISoftKeyboard::sltShowHideSettingsWidget);
+    connect(m_pStatusBarWidget, &UISoftKeyboardStatusBarWidget::sigResetKeyboard, this, &UISoftKeyboard::sltResetKeyboard);
 
     connect(m_pSettingsWidget, &UISoftKeyboardSettingsWidget::sigShowOSMenuKeys, this, &UISoftKeyboard::sltShowHideOSMenuKeys);
     connect(m_pSettingsWidget, &UISoftKeyboardSettingsWidget::sigShowNumPad, this, &UISoftKeyboard::sltShowHideNumPad);
@@ -3863,15 +3891,6 @@ void UISoftKeyboard::setDialogGeometry(const QRect &geometry)
     /* Maximize (if necessary): */
     if (gEDataManager->softKeyboardDialogShouldBeMaximized())
         showMaximized();
-}
-
-void UISoftKeyboard::reset()
-{
-    if (m_pKeyboardWidget)
-        m_pKeyboardWidget->reset();
-    if (m_pLayoutEditor)
-        m_pLayoutEditor->reset();
-    keyboard().ReleaseKeys();
 }
 
 #include "UISoftKeyboard.moc"

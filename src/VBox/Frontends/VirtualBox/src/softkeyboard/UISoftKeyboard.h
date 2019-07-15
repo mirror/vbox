@@ -89,6 +89,7 @@ private slots:
     void sltShowHideOSMenuKeys(bool fShow);
     void sltShowHideNumPad(bool fShow);
     void sltHandleColorCellClick(int iColorRow);
+    void sltResetKeyboard();
 
 private:
 
@@ -100,7 +101,6 @@ private:
     void updateStatusBarMessage(const QString &strLayoutName);
     void updateLayoutSelectorList();
     void setDialogGeometry(const QRect &geometry);
-    void reset();
     CKeyboard& keyboard() const;
 
     UISession     *m_pSession;
