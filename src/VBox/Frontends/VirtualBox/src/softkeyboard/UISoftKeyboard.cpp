@@ -539,7 +539,6 @@ public:
     virtual QSize sizeHint() const  /* override */;
     void keyStateChange(UISoftKeyboardKey* pKey);
     void loadLayouts();
-    void showContextMenu(const QPoint &globalPoint);
 
     void setCurrentLayout(const QString &strLayoutName);
     void setCurrentLayout(const QUuid &layoutUid);
@@ -583,7 +582,6 @@ protected:
 
 private slots:
 
-    void sltContextMenuRequest(const QPoint &point);
     void sltPhysicalLayoutForLayoutChanged(int iIndex);
 
 private:
@@ -596,6 +594,9 @@ private:
     UISoftKeyboardKey *keyUnderMouse(const QPoint &point);
     void               handleKeyPress(UISoftKeyboardKey *pKey);
     void               handleKeyRelease(UISoftKeyboardKey *pKey);
+    /** Sends usage id/page to API when a modifier key is right clicked. useful for testing and things like
+      * Window key press for start menu opening. This works orthogonal to left clicks.*/
+    void               modifierKeyPressRelease(UISoftKeyboardKey *pKey, bool fRelease);
     bool               loadPhysicalLayout(const QString &strLayoutFileName, bool isNumPad = false);
     bool               loadKeyboardLayout(const QString &strLayoutName);
     void               reset();
@@ -633,7 +634,6 @@ private:
     int   m_iRightMargin;
     int   m_iBottomMargin;
 
-    QMenu   *m_pContextMenu;
     Mode     m_enmMode;
 
     bool m_fShowOSMenuKeys;
@@ -2019,7 +2019,6 @@ UISoftKeyboardWidget::UISoftKeyboardWidget(QWidget *pParent /* = 0 */)
     , m_iTopMargin(10)
     , m_iRightMargin(10)
     , m_iBottomMargin(10)
-    , m_pContextMenu(0)
     , m_enmMode(Mode_Keyboard)
     , m_fShowOSMenuKeys(true)
     , m_fShowNumPad(true)
@@ -2124,30 +2123,45 @@ void UISoftKeyboardWidget::paintEvent(QPaintEvent *pEvent) /* override */
 void UISoftKeyboardWidget::mousePressEvent(QMouseEvent *pEvent)
 {
     QWidget::mousePressEvent(pEvent);
-    if (pEvent->button() != Qt::LeftButton)
+    if (pEvent->button() != Qt::RightButton && pEvent->button() != Qt::LeftButton)
         return;
-    m_pKeyPressed = keyUnderMouse(pEvent);
 
-    if (m_enmMode == Mode_Keyboard)
-        handleKeyPress(m_pKeyPressed);
-    else if (m_enmMode == Mode_LayoutEdit)
-        setKeyBeingEdited(m_pKeyUnderMouse);
+    m_pKeyPressed = keyUnderMouse(pEvent);
+    if (!m_pKeyPressed)
+        return;
+
+    /* Handling the right button press: */
+    if (pEvent->button() == Qt::RightButton)
+        modifierKeyPressRelease(m_pKeyPressed, false);
+    else
+    {
+        /* Handling the left button press: */
+        if (m_enmMode == Mode_Keyboard)
+            handleKeyPress(m_pKeyPressed);
+        else if (m_enmMode == Mode_LayoutEdit)
+            setKeyBeingEdited(m_pKeyUnderMouse);
+    }
     update();
 }
 
 void UISoftKeyboardWidget::mouseReleaseEvent(QMouseEvent *pEvent)
 {
     QWidget::mouseReleaseEvent(pEvent);
-    if (pEvent->button() != Qt::LeftButton)
+
+    if (pEvent->button() != Qt::RightButton && pEvent->button() != Qt::LeftButton)
         return;
+
     if (!m_pKeyPressed)
         return;
-
-    if (m_enmMode == Mode_Keyboard)
-        handleKeyRelease(m_pKeyPressed);
-
-    update();
+    if (pEvent->button() == Qt::RightButton)
+        modifierKeyPressRelease(m_pKeyPressed, true);
+    else
+    {
+        if (m_enmMode == Mode_Keyboard)
+            handleKeyRelease(m_pKeyPressed);
+    }
     m_pKeyPressed = 0;
+    update();
 }
 
 void UISoftKeyboardWidget::mouseMoveEvent(QMouseEvent *pEvent)
@@ -2158,11 +2172,6 @@ void UISoftKeyboardWidget::mouseMoveEvent(QMouseEvent *pEvent)
 
 void UISoftKeyboardWidget::retranslateUi()
 {
-}
-
-void UISoftKeyboardWidget::sltContextMenuRequest(const QPoint &point)
-{
-    showContextMenu(mapToGlobal(point));
 }
 
 void UISoftKeyboardWidget::saveCurentLayoutToFile()
@@ -2538,6 +2547,20 @@ void UISoftKeyboardWidget::handleKeyPress(UISoftKeyboardKey *pKey)
 #endif
 }
 
+void UISoftKeyboardWidget::modifierKeyPressRelease(UISoftKeyboardKey *pKey, bool fRelease)
+{
+    if (!pKey || pKey->type() != KeyType_Modifier)
+        return;
+    if (pKey->state() != KeyState_NotPressed)
+        return;
+    QVector<QPair<LONG, LONG> > sequence;
+    sequence << pKey->usagePageIdPair();
+    if (fRelease)
+        emit sigPutUsageCodesPress(sequence);
+    else
+        emit sigPutUsageCodesRelease(sequence);
+}
+
 void UISoftKeyboardWidget::keyStateChange(UISoftKeyboardKey* pKey)
 {
     if (!pKey)
@@ -2550,12 +2573,6 @@ void UISoftKeyboardWidget::keyStateChange(UISoftKeyboardKey* pKey)
             if (!m_pressedModifiers.contains(pKey))
                 m_pressedModifiers.append(pKey);
     }
-}
-
-void UISoftKeyboardWidget::showContextMenu(const QPoint &globalPoint)
-{
-    m_pContextMenu->exec(globalPoint);
-    update();
 }
 
 void UISoftKeyboardWidget::setCurrentLayout(const QString &strLayoutName)
@@ -2782,12 +2799,7 @@ void UISoftKeyboardWidget::loadLayouts()
 
 void UISoftKeyboardWidget::prepareObjects()
 {
-    m_pContextMenu = new QMenu(this);
-
     setMouseTracking(true);
-    setContextMenuPolicy(Qt::CustomContextMenu);
-    connect(this, &UISoftKeyboardWidget::customContextMenuRequested,
-            this, &UISoftKeyboardWidget::sltContextMenuRequest);
 }
 
 void UISoftKeyboardWidget::setKeyBeingEdited(UISoftKeyboardKey* pKey)
@@ -3482,12 +3494,6 @@ void UISoftKeyboard::sltPutUsageCodesRelease(QVector<QPair<LONG, LONG> > sequenc
 {
     for (int i = 0; i < sequence.size(); ++i)
         keyboard().PutUsageCode(sequence[i].first, sequence[i].second, true);
-}
-
-void UISoftKeyboard::sltStatusBarContextMenuRequest(const QPoint &point)
-{
-    if (m_pKeyboardWidget)
-        m_pKeyboardWidget->showContextMenu(statusBar()->mapToGlobal(point));
 }
 
 void UISoftKeyboard::sltLayoutSelectionChanged(const QUuid &layoutUid)

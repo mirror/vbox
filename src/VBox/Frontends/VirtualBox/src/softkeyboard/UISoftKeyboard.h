@@ -69,7 +69,6 @@ private slots:
     void sltPutUsageCodesPress(QVector<QPair<LONG, LONG> > sequence);
     void sltPutUsageCodesRelease(QVector<QPair<LONG, LONG> > sequence);
 
-    void sltStatusBarContextMenuRequest(const QPoint &point);
     /** Handles the signal we get from the layout selector widget.
       * Selection changed is forwarded to the keyboard widget. */
     void sltLayoutSelectionChanged(const QUuid &layoutUid);
