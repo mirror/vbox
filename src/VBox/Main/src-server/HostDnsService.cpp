@@ -82,6 +82,8 @@ struct HostDnsServiceBase::Data
     Data(bool aThreaded)
         : pProxy(NULL)
         , fThreaded(aThreaded)
+        , hMonitorThreadEvent(NIL_RTSEMEVENT)
+        , hMonitorThread(NIL_RTTHREAD)
     {}
 
     /** Weak pointer to parent proxy object. */
@@ -197,6 +199,12 @@ void HostDnsServiceBase::uninit(void)
         int rc = RTThreadWait(m->hMonitorThread, uTimeoutMs, NULL);
         if (RT_FAILURE(rc))
             LogRel(("HostDnsMonitor: waiting for thread failed with rc=%Rrc\n", rc));
+
+        if (m->hMonitorThreadEvent != NIL_RTSEMEVENT)
+        {
+            RTSemEventDestroy(m->hMonitorThreadEvent);
+            m->hMonitorThreadEvent = NIL_RTSEMEVENT;
+        }
     }
 
     LogRel(("HostDnsMonitor: shut down\n"));
