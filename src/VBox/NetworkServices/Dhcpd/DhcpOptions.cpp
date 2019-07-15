@@ -240,22 +240,20 @@ template <typename a_Type>
 template <>
 /*static*/ int DhcpOption::parseList(std::vector<uint8_t> &aList, const char *pcszValue)
 {
-    uint8_t     abBuf[256];
-    const char *pszNext = NULL;
-    size_t      cbReturned = 0;
+    uint8_t abBuf[255];
+    size_t  cbReturned = 0;
     int rc = RTStrConvertHexBytesEx(RTStrStripL(pcszValue), abBuf, sizeof(abBuf), RTSTRCONVERTHEXBYTES_F_SEP_COLON,
-                                    &pszNext, &cbReturned);
+                                    NULL, &cbReturned);
     if (RT_SUCCESS(rc))
     {
-        if (pszNext)
-            pszNext = RTStrStripL(pszNext);
-        if (*pszNext)
+        if (rc != VWRN_TRAILING_CHARS)
         {
             for (size_t i = 0; i < cbReturned; i++)
                 aList.push_back(abBuf[i]);
-            return VINF_SUCCESS;
+            rc = VINF_SUCCESS;
         }
-        rc = VERR_TRAILING_CHARS;
+        else
+            rc = VERR_TRAILING_CHARS;
     }
     return rc;
 }
@@ -267,34 +265,22 @@ template <>
  */
 int DhcpOption::parseHex(octets_t &aRawValue, const char *pcszValue)
 {
-    octets_t data;
-    char *pszNext;
-    int rc;
-
-    if (pcszValue == NULL || *pcszValue == '\0')
-        return VERR_INVALID_PARAMETER;
-
-    while (*pcszValue != '\0')
+    uint8_t abBuf[255];
+    size_t  cbReturned = 0;
+    int rc = RTStrConvertHexBytesEx(RTStrStripL(pcszValue), abBuf, sizeof(abBuf), RTSTRCONVERTHEXBYTES_F_SEP_COLON,
+                                    NULL, &cbReturned);
+    if (RT_SUCCESS(rc))
     {
-        if (data.size() > UINT8_MAX)
-            return VERR_INVALID_PARAMETER;
-
-        uint8_t u8Byte;
-        rc = RTStrToUInt8Ex(pcszValue, &pszNext, 16, &u8Byte);
-        if (!RT_SUCCESS(rc))
-            return rc;
-
-        if (*pszNext == ':')
-            ++pszNext;
-        else if (*pszNext != '\0')
-            return VERR_PARSE_ERROR;
-
-        data.push_back(u8Byte);
-        pcszValue = pszNext;
+        if (rc != VWRN_TRAILING_CHARS)
+        {
+            for (size_t i = 0; i < cbReturned; i++)
+                aRawValue.push_back(abBuf[i]);
+            rc = VINF_SUCCESS;
+        }
+        else
+            rc = VERR_TRAILING_CHARS;
     }
-
-    aRawValue.swap(data);
-    return VINF_SUCCESS;
+    return rc;
 }
 
 
