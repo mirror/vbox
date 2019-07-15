@@ -145,6 +145,7 @@ public:
     void setLockKey(int iKeyPosition, UISoftKeyboardKey *pKey);
     UISoftKeyboardKey *lockKey(int iKeyPosition) const;
     void updateLockKeyStates(bool fCapsLockState, bool fNumLockState, bool fScrollLockState);
+    void reset();
 
 private:
 
@@ -176,6 +177,7 @@ public:
     void setKey(UISoftKeyboardKey *pKey);
     void setLayoutToEdit(UISoftKeyboardLayout *pLayout);
     void setPhysicalLayoutList(const QVector<UISoftKeyboardPhysicalLayout> &physicalLayouts);
+    void reset();
 
 protected:
 
@@ -196,7 +198,6 @@ private:
     void prepareObjects();
     void prepareConnections();
     QWidget *prepareKeyCaptionEditWidgets();
-    void reset();
     void resetKeyWidgets();
     QGridLayout *m_pEditorLayout;
     QToolButton *m_pGoBackButton;
@@ -355,8 +356,10 @@ public:
 
     void setCutout(int iCorner, int iWidth, int iHeight);
 
-    void setParentWidget(UISoftKeyboardWidget* pParent);
     KeyState state() const;
+    void setState(KeyState state);
+
+    void setParentWidget(UISoftKeyboardWidget* pParent);
     QVector<LONG> scanCodeWithPrefix() const;
 
     void release();
@@ -372,6 +375,7 @@ public:
     int cutoutHeight() const;
 
     void updateLockState(bool fLocked);
+    void reset();
 
 private:
 
@@ -571,6 +575,7 @@ public:
     /** Unlike modifier and ordinary keys we update the state of the Lock keys thru event singals we receieve
       * from the guest OS. Parameter fXXXState is true if the corresponding key is locked. */
     void updateLockKeyStates(bool fCapsLockState, bool fNumLockState, bool fScrollLockState);
+    void reset();
 
 protected:
 
@@ -599,7 +604,6 @@ private:
     void               modifierKeyPressRelease(UISoftKeyboardKey *pKey, bool fRelease);
     bool               loadPhysicalLayout(const QString &strLayoutFileName, bool isNumPad = false);
     bool               loadKeyboardLayout(const QString &strLayoutName);
-    void               reset();
     void               prepareObjects();
     UISoftKeyboardPhysicalLayout *findPhysicalLayout(const QUuid &uuid);
     /** Sets m_pKeyBeingEdited. */
@@ -819,6 +823,17 @@ void UISoftKeyboardPhysicalLayout::updateLockKeyStates(bool fCapsLockState, bool
     updateLockKeyState(fCapsLockState, m_lockKeys.value(iCapsLockPosition, 0));
     updateLockKeyState(fNumLockState, m_lockKeys.value(iNumLockPosition, 0));
     updateLockKeyState(fScrollLockState, m_lockKeys.value(iScrollLockPosition, 0));
+}
+
+void UISoftKeyboardPhysicalLayout::reset()
+{
+    for (int i = 0; i < m_rows.size(); ++i)
+    {
+        for (int j = 0; j < m_rows[i].keys().size(); ++j)
+        {
+            m_rows[i].keys()[j].reset();
+        }
+    }
 }
 
 void UISoftKeyboardPhysicalLayout::updateLockKeyState(bool fLockState, UISoftKeyboardKey *pKey)
@@ -1554,6 +1569,11 @@ KeyState UISoftKeyboardKey::state() const
     return m_enmState;
 }
 
+void UISoftKeyboardKey::setState(KeyState state)
+{
+    m_enmState = state;
+}
+
 void UISoftKeyboardKey::setParentWidget(UISoftKeyboardWidget* pParent)
 {
     m_pParentWidget = pParent;
@@ -1649,6 +1669,11 @@ void UISoftKeyboardKey::updateLockState(bool fLocked)
     if (!fLocked && m_enmState == KeyState_NotPressed)
         return;
     updateState(fLocked);
+}
+
+void UISoftKeyboardKey::reset()
+{
+    m_enmState = KeyState_NotPressed;
 }
 
 
@@ -2551,14 +2576,15 @@ void UISoftKeyboardWidget::modifierKeyPressRelease(UISoftKeyboardKey *pKey, bool
 {
     if (!pKey || pKey->type() != KeyType_Modifier)
         return;
-    if (pKey->state() != KeyState_NotPressed)
-        return;
+
+    pKey->setState(KeyState_NotPressed);
+
     QVector<QPair<LONG, LONG> > sequence;
     sequence << pKey->usagePageIdPair();
     if (fRelease)
-        emit sigPutUsageCodesPress(sequence);
-    else
         emit sigPutUsageCodesRelease(sequence);
+    else
+        emit sigPutUsageCodesPress(sequence);
 }
 
 void UISoftKeyboardWidget::keyStateChange(UISoftKeyboardKey* pKey)
@@ -2750,6 +2776,13 @@ UISoftKeyboardPhysicalLayout *UISoftKeyboardWidget::findPhysicalLayout(const QUu
 void UISoftKeyboardWidget::reset()
 {
     m_pressedModifiers.clear();
+    m_pKeyUnderMouse = 0;
+    m_pKeyBeingEdited = 0;
+    m_pKeyPressed = 0;
+    m_enmMode = Mode_Keyboard;
+
+    for (int i = 0; i < m_physicalLayouts.size(); ++i)
+        m_physicalLayouts[i].reset();
 }
 
 void UISoftKeyboardWidget::loadLayouts()
@@ -3464,6 +3497,7 @@ UISoftKeyboard::UISoftKeyboard(QWidget *pParent,
 UISoftKeyboard::~UISoftKeyboard()
 {
     saveSettings();
+    keyboard().ReleaseKeys();
 }
 
 void UISoftKeyboard::retranslateUi()
@@ -3829,6 +3863,15 @@ void UISoftKeyboard::setDialogGeometry(const QRect &geometry)
     /* Maximize (if necessary): */
     if (gEDataManager->softKeyboardDialogShouldBeMaximized())
         showMaximized();
+}
+
+void UISoftKeyboard::reset()
+{
+    if (m_pKeyboardWidget)
+        m_pKeyboardWidget->reset();
+    if (m_pLayoutEditor)
+        m_pLayoutEditor->reset();
+    keyboard().ReleaseKeys();
 }
 
 #include "UISoftKeyboard.moc"
