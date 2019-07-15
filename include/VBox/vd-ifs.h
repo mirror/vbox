@@ -1152,8 +1152,8 @@ DECLINLINE(int) VDCFGUpdate(PVDINTERFACECONFIG pCfgIf, bool fCreate, const char 
 DECLINLINE(int) VDCFGUpdateU64(PVDINTERFACECONFIG pCfgIf, bool fCreate, const char *pszName, uint64_t u64Value)
 {
      int rc = 0;
-     char pszValue[11];
-     (void) RTStrPrintf(pszValue, sizeof(pszValue), "%ul", u64Value);
+     char pszValue[21];
+     (void) RTStrPrintf(pszValue, sizeof(pszValue), "%RU64", u64Value);
      rc = VDCFGUpdate(pCfgIf, fCreate, pszName, pszValue);
      return rc;
 }
