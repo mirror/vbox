@@ -254,8 +254,9 @@ static RTEXITCODE listCloudImages(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pCo
     int vrc = RTGetOptInit(&GetState, a->argc, a->argv, s_aOptions, RT_ELEMENTS(s_aOptions), iFirst, 0);
     AssertRCReturn(vrc, RTEXITCODE_FAILURE);
 
+    com::SafeArray<CloudImageState_T> imageStates;
+
     Utf8Str strCompartmentId;
-    Utf8Str strState;
     int c;
     while ((c = RTGetOpt(&GetState, &ValueUnion)) != 0)
     {
@@ -264,47 +265,55 @@ static RTEXITCODE listCloudImages(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pCo
             case 'c':
                 strCompartmentId = ValueUnion.psz;
                 break;
+
             case 's':
-                strState = ValueUnion.psz;
+            {
+                const char * const pszState = ValueUnion.psz;
+
+                if (RTStrICmp(pszState, "available") == 0)
+                    imageStates.push_back(CloudImageState_Available);
+                else if (RTStrICmp(pszState, "deleted") == 0)
+                    imageStates.push_back(CloudImageState_Deleted);
+                else if (RTStrICmp(pszState, "disabled") == 0)
+                    imageStates.push_back(CloudImageState_Disabled);
+                else if (RTStrICmp(pszState, "exporting") == 0)
+                    imageStates.push_back(CloudImageState_Exporting);
+                else if (RTStrICmp(pszState, "importing") == 0)
+                    imageStates.push_back(CloudImageState_Importing);
+                else if (RTStrICmp(pszState, "provisioning") == 0)
+                    imageStates.push_back(CloudImageState_Provisioning);
+                else
+                    return errorArgument("Unknown cloud image state \"%s\"", pszState);
                 break;
+            }
+
             case VINF_GETOPT_NOT_OPTION:
                 return errorUnknownSubcommand(ValueUnion.psz);
+
             default:
                 return errorGetOpt(c, &ValueUnion);
         }
     }
 
-    com::SafeArray<CloudImageState_T> imageStates;
-    if (strState.isNotEmpty())
-    {
-        if (strState.equals("available"))
-            imageStates.push_back(CloudImageState_Available);
-        else if (strState.equals("disabled"))
-            imageStates.push_back(CloudImageState_Disabled);
-        else if (strState.equals("deleted"))
-            imageStates.push_back(CloudImageState_Deleted);
-        else if (strState.equals("exporting"))
-            imageStates.push_back(CloudImageState_Exporting);
-        else if (strState.equals("importing"))
-            imageStates.push_back(CloudImageState_Importing);
-    }
 
     HRESULT hrc = S_OK;
     ComPtr<IVirtualBox> pVirtualBox = a->virtualBox;
+
     ComPtr<ICloudProviderManager> pCloudProviderManager;
     CHECK_ERROR2_RET(hrc, pVirtualBox,
                      COMGETTER(CloudProviderManager)(pCloudProviderManager.asOutParam()),
                      RTEXITCODE_FAILURE);
-    ComPtr<ICloudProvider> pCloudProvider;
 
+    ComPtr<ICloudProvider> pCloudProvider;
     CHECK_ERROR2_RET(hrc, pCloudProviderManager,
                      GetProviderByShortName(Bstr(pCommonOpts->provider.pszProviderName).raw(), pCloudProvider.asOutParam()),
                      RTEXITCODE_FAILURE);
-    ComPtr<ICloudProfile> pCloudProfile;
 
+    ComPtr<ICloudProfile> pCloudProfile;
     CHECK_ERROR2_RET(hrc, pCloudProvider,
                      GetProfileByName(Bstr(pCommonOpts->profile.pszProfileName).raw(), pCloudProfile.asOutParam()),
                      RTEXITCODE_FAILURE);
+
     if (strCompartmentId.isNotEmpty())
     {
         CHECK_ERROR2_RET(hrc, pCloudProfile,
