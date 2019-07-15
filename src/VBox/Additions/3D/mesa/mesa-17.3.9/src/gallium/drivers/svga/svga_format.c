@@ -528,6 +528,10 @@ svga_translate_format(const struct svga_screen *ss,
       return SVGA3D_LUMINANCE16;
    case PIPE_FORMAT_L8A8_UNORM:
        return SVGA3D_LUMINANCE8_ALPHA8;
+   case PIPE_FORMAT_UYVY:
+       return SVGA3D_UYVY;
+   case PIPE_FORMAT_YUYV:
+       return SVGA3D_YUY2;
 #endif
 
    case PIPE_FORMAT_Z32_UNORM:
