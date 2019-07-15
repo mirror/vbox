@@ -3837,11 +3837,7 @@ static bool rtLockValidatorRecSharedMakeRoom(PRTLOCKVALRECSHRD pShared)
                 /*
                  * Ok, still not enough space.  Reallocate the table.
                  */
-#if 0  /** @todo enable this after making sure growing works flawlessly. */
                 uint32_t                cInc = RT_ALIGN_32(pShared->cEntries - cAllocated, 16);
-#else
-                uint32_t                cInc = RT_ALIGN_32(pShared->cEntries - cAllocated, 1);
-#endif
                 PRTLOCKVALRECSHRDOWN   *papOwners;
                 papOwners = (PRTLOCKVALRECSHRDOWN *)RTMemRealloc((void *)pShared->papOwners,
                                                                  (cAllocated + cInc) * sizeof(void *));
