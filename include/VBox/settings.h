@@ -337,7 +337,7 @@ typedef std::list<MachineRegistryEntry> MachinesRegistry;
 struct DhcpOptValue
 {
     DhcpOptValue();
-    DhcpOptValue(const com::Utf8Str &aText, DHCPOptionEncoding_T aEncoding = DHCPOptionEncoding_Legacy);
+    DhcpOptValue(const com::Utf8Str &aText, DHCPOptionEncoding_T aEncoding = DHCPOptionEncoding_Normal);
 
     com::Utf8Str            strValue;
     DHCPOptionEncoding_T    enmEncoding;

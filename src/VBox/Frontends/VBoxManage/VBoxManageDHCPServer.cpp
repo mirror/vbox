@@ -510,7 +510,7 @@ static DECLCALLBACK(RTEXITCODE) dhcpdHandleAddAndModify(PDHCPDCMDCTX pCtx, int a
                         ComPtr<IDHCPConfig> &ptrConfig = Scope.getConfig(ptrDHCPServer);
                         if (ptrConfig.isNull())
                             return RTEXITCODE_FAILURE;
-                        CHECK_ERROR2I_STMT(ptrConfig, SetOption((DhcpOpt_T)idAddOpt, DHCPOptionEncoding_Legacy,
+                        CHECK_ERROR2I_STMT(ptrConfig, SetOption((DhcpOpt_T)idAddOpt, DHCPOptionEncoding_Normal,
                                                                 Bstr(ValueUnion.psz).raw()), rcExit = RTEXITCODE_FAILURE);
                     }
                     break;
@@ -779,7 +779,7 @@ static DECLCALLBACK(RTEXITCODE) dhcpdHandleAddAndModify(PDHCPDCMDCTX pCtx, int a
                         ComPtr<IDHCPConfig> &ptrConfig = Scope.getConfig(ptrDHCPServer);
                         if (ptrConfig.isNull())
                             return RTEXITCODE_FAILURE;
-                        CHECK_ERROR2I_STMT(ptrConfig, SetOption((DhcpOpt_T)u8OptId, DHCPOptionEncoding_Legacy,
+                        CHECK_ERROR2I_STMT(ptrConfig, SetOption((DhcpOpt_T)u8OptId, DHCPOptionEncoding_Normal,
                                                                 Bstr(ValueUnion.psz).raw()), rcExit = RTEXITCODE_FAILURE);
                     }
                     fNeedValueOrRemove = false;

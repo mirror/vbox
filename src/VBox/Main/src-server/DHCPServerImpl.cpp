@@ -590,7 +590,7 @@ HRESULT DHCPServer::i_encode60Option(com::Utf8Str &strEncoded, DhcpOpt_T enmOpti
     int vrc;
     switch (enmEncoding)
     {
-        case DHCPOptionEncoding_Legacy:
+        case DHCPOptionEncoding_Normal:
         {
             /*
              * This is original encoding which assumed that for each
@@ -662,7 +662,7 @@ HRESULT DHCPServer::i_getAllOptions60(DHCPConfig &aSourceConfig, std::vector<com
 HRESULT DHCPServer::i_add60Option(DHCPConfig &aTargetConfig, DhcpOpt_T aOption, const com::Utf8Str &aValue)
 {
     if (aOption != 0)
-        return aTargetConfig.i_setOption(aOption, DHCPOptionEncoding_Legacy, aValue);
+        return aTargetConfig.i_setOption(aOption, DHCPOptionEncoding_Normal, aValue);
 
     /*
      * This is a kludge to sneak in option encoding information
@@ -681,7 +681,7 @@ HRESULT DHCPServer::i_add60Option(DHCPConfig &aTargetConfig, DhcpOpt_T aOption, 
     {
         case ':':           /* support legacy format too */
         {
-            enmEncoding = DHCPOptionEncoding_Legacy;
+            enmEncoding = DHCPOptionEncoding_Normal;
             break;
         }
 

@@ -1615,7 +1615,7 @@ SystemProperties::SystemProperties()
  */
 DhcpOptValue::DhcpOptValue()
     : strValue()
-    , enmEncoding(DHCPOptionEncoding_Legacy)
+    , enmEncoding(DHCPOptionEncoding_Normal)
 {
 }
 
@@ -1809,7 +1809,7 @@ void MainConfigFile::buildDHCPOptions(xml::ElementNode &elmOptions, DHCPConfig c
             xml::ElementNode *pElmOption = elmOptions.createChild("Option");
             pElmOption->setAttribute("name", it->first);
             pElmOption->setAttribute("value", it->second.strValue);
-            if (it->second.enmEncoding != DHCPOptionEncoding_Legacy)
+            if (it->second.enmEncoding != DHCPOptionEncoding_Normal)
                 pElmOption->setAttribute("encoding", (int32_t)it->second.enmEncoding);
         }
 }
@@ -1944,7 +1944,7 @@ void MainConfigFile::readDHCPOptions(DHCPConfig &rConfig, const xml::ElementNode
 
         int32_t iOptEnc;
         if (!pElmOption->getAttributeValue("encoding", iOptEnc))
-            iOptEnc = DHCPOptionEncoding_Legacy;
+            iOptEnc = DHCPOptionEncoding_Normal;
 
         rConfig.mapOptions[OptName] = DhcpOptValue(strValue, (DHCPOptionEncoding_T)iOptEnc);
     } /* end of forall("Option") */

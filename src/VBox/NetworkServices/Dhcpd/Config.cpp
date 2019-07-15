@@ -708,7 +708,7 @@ void Config::i_parseOption(const xml::ElementNode *pElmOption, optmap_t &optmap)
         throw ConfigFileError("Bad option name '%s': %Rrc", pszName, rc);
 
     /* The opional 'encoding' attribute: */
-    uint32_t u32Enc = 0;            /* XXX: DhcpOptEncoding_Legacy */
+    uint32_t u32Enc = 0;            /* XXX: DHCPOptionEncoding_Normal */
     const char *pszEncoding;
     if (pElmOption->getAttributeValue("encoding", &pszEncoding))
     {
@@ -718,8 +718,8 @@ void Config::i_parseOption(const xml::ElementNode *pElmOption, optmap_t &optmap)
 
         switch (u32Enc)
         {
-            case 0:                 /* XXX: DhcpOptEncoding_Legacy */
-            case 1:                 /* XXX: DhcpOptEncoding_Hex */
+            case 0:                 /* XXX: DHCPOptionEncoding_Normal */
+            case 1:                 /* XXX: DHCPOptionEncoding_Hex */
                 break;
             default:
                 throw ConfigFileError("Unknown encoding '%s'", pszEncoding);

@@ -292,7 +292,7 @@ DhcpOption *DhcpOption::parse(uint8_t aOptCode, int aEnc, const char *pcszValue,
 
     switch (aEnc)
     {
-        case 0: /* DhcpOptEncoding_Legacy */
+        case 0: /* DHCPOptionEncoding_Normal */
             switch (aOptCode)
             {
 #define HANDLE(a_OptClass)  \

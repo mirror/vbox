@@ -337,7 +337,7 @@ HRESULT DHCPGlobalConfig::initWithDefaults(VirtualBox *a_pVirtualBox, DHCPServer
 
     HRESULT hrc = DHCPConfig::i_initWithDefaults(a_pVirtualBox, a_pParent);
     if (SUCCEEDED(hrc))
-        hrc = i_setOption(DhcpOpt_SubnetMask, DHCPOptionEncoding_Legacy, "0.0.0.0");
+        hrc = i_setOption(DhcpOpt_SubnetMask, DHCPOptionEncoding_Normal, "0.0.0.0");
 
     if (SUCCEEDED(hrc))
         autoInitSpan.setSucceeded();
@@ -388,7 +388,7 @@ HRESULT DHCPGlobalConfig::i_getNetworkMask(com::Utf8Str &a_rDst)
     settings::DhcpOptionMap::const_iterator it = m_OptionMap.find(DhcpOpt_SubnetMask);
     if (it != m_OptionMap.end())
     {
-        if (it->second.enmEncoding == DHCPOptionEncoding_Legacy)
+        if (it->second.enmEncoding == DHCPOptionEncoding_Normal)
             return a_rDst.assignEx(it->second.strValue);
         return setError(VBOX_E_OBJECT_NOT_FOUND, tr("DHCP option DhcpOpt_SubnetMask is not in a legacy encoding"));
     }
@@ -411,7 +411,7 @@ HRESULT DHCPGlobalConfig::i_setNetworkMask(const com::Utf8Str &a_rSrc)
     if (RT_FAILURE(vrc))
         return setErrorBoth(E_INVALIDARG, vrc, tr("Invalid IPv4 netmask '%s': %Rrc"), a_rSrc.c_str(), vrc);
 
-    return i_setOption(DhcpOpt_SubnetMask, DHCPOptionEncoding_Legacy, a_rSrc);
+    return i_setOption(DhcpOpt_SubnetMask, DHCPOptionEncoding_Normal, a_rSrc);
 }
 
 
@@ -420,9 +420,9 @@ HRESULT DHCPGlobalConfig::i_setNetworkMask(const com::Utf8Str &a_rSrc)
  */
 HRESULT DHCPGlobalConfig::i_setOption(DhcpOpt_T aOption, DHCPOptionEncoding_T aEncoding, const com::Utf8Str &aValue)
 {
-    if (aOption != DhcpOpt_SubnetMask || aEncoding == DHCPOptionEncoding_Legacy)
+    if (aOption != DhcpOpt_SubnetMask || aEncoding == DHCPOptionEncoding_Normal)
         return DHCPConfig::i_setOption(aOption, aEncoding, aValue);
-    return setError(E_FAIL, tr("DhcpOpt_SubnetMask must use DHCPOptionEncoding_Legacy as it is reflected by IDHCPServer::networkMask"));
+    return setError(E_FAIL, tr("DhcpOpt_SubnetMask must use DHCPOptionEncoding_Normal as it is reflected by IDHCPServer::networkMask"));
 }
 
 

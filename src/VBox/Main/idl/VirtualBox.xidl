@@ -1831,7 +1831,7 @@
   <enum
       name="DHCPOptionEncoding"
       uuid="84b6d460-2838-4682-c0d6-ef5b573ef28a">
-    <const name="Legacy" value="0"/>
+    <const name="Normal" value="0"/>
     <const name="Hex"    value="1"/>
   </enum>
 

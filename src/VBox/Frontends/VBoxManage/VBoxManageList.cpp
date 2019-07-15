@@ -833,7 +833,7 @@ static HRESULT showDhcpConfig(ComPtr<IDHCPConfig> ptrConfig)
         {
             switch (Encodings[i])
             {
-                case DHCPOptionEncoding_Legacy:
+                case DHCPOptionEncoding_Normal:
                     RTPrintf("      %3d/legacy: %ls\n", Options[i], Values[i]);
                     break;
                 case DHCPOptionEncoding_Hex:
