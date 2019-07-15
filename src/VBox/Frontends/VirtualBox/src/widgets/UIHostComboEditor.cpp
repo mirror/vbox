@@ -472,6 +472,8 @@ void UIHostComboEditor::sltCommitData()
 
 void UIHostComboEditor::prepare()
 {
+    /* Make sure QIStyledDelegate aware of us: */
+    setProperty("has_sigCommitData", true);
     /* Configure self: */
     setAutoFillBackground(true);
     /* Create layout: */

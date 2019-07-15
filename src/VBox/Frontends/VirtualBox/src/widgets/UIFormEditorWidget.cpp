@@ -201,11 +201,6 @@ class TextEditor : public QIWithRetranslateUI<QWidget>
     Q_OBJECT;
     Q_PROPERTY(TextData text READ text WRITE setText USER true);
 
-signals:
-
-    /** Notifies listener about data should be committed. */
-    void sigCommitData(QWidget *pThis);
-
 public:
 
     /** Constructs TextData editor passing @a pParent to the base-class. */
@@ -275,11 +270,6 @@ class RangedIntegerEditor : public QSpinBox
 {
     Q_OBJECT;
     Q_PROPERTY(RangedIntegerData rangedInteger READ rangedInteger WRITE setRangedInteger USER true);
-
-signals:
-
-    /** Notifies listener about data should be committed. */
-    void sigCommitData(QWidget *pThis);
 
 public:
 
@@ -603,6 +593,9 @@ TextData TextEditor::text() const
 ChoiceEditor::ChoiceEditor(QWidget *pParent /* = 0 */)
     : QComboBox(pParent)
 {
+    /* Make sure QIStyledDelegate aware of us: */
+    setProperty("has_sigCommitData", true);
+    /* Configure connections: */
     connect(this, static_cast<void(ChoiceEditor::*)(int)>(&ChoiceEditor::currentIndexChanged),
             this, &ChoiceEditor::sltCurrentIndexChanged);
 }

@@ -126,6 +126,8 @@ UIHotKeyEditor::UIHotKeyEditor(QWidget *pParent)
     , m_iTakenKey(-1)
     , m_fSequenceTaken(false)
 {
+    /* Make sure QIStyledDelegate aware of us: */
+    setProperty("has_sigCommitData", true);
     /* Configure self: */
     setAutoFillBackground(true);
     setFocusProxy(m_pLineEdit);

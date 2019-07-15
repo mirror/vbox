@@ -214,6 +214,9 @@ void UIPasswordEditor::keyPressEvent(QKeyEvent *pEvent)
 
 void UIPasswordEditor::prepare()
 {
+    /* Make sure QIStyledDelegate aware of us: */
+    setProperty("has_sigCommitData", true);
+    setProperty("has_sigEnterKeyTriggered", true);
     /* Set echo mode: */
     setEchoMode(QLineEdit::Password);
     /* Listen for the text changes: */
