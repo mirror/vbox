@@ -8033,20 +8033,26 @@ DECLCALLBACK(int) Medium::i_vdCryptoConfigQuery(void *pvUser, const char *pszNam
 }
 
 DECLCALLBACK(int) Medium::i_vdConfigUpdate(void *pvUser,
-                                                bool fCreate,
-                                                const char *pszName,
-                                                const char *pszValue)
+                                           bool fCreate,
+                                           const char *pszName,
+                                           const char *pszValue)
 {
-    int rv = VINF_SUCCESS;
-    Utf8Str pName = Utf8Str(pszName);
     Medium *that = (Medium *)pvUser;
-    AutoWriteLock mlock(that COMMA_LOCKVAL_SRC_POS);
-    settings::StringsMap::const_iterator it = that->m->mapProperties.find(pName);
+
+    // Detect if this runs inside i_queryInfo() on the current thread.
+    // Skip if not. Check does not need synchronization.
+    if (!that->m || !that->m->queryInfoRunning || !that->m->queryInfoSem.isWriteLockOnCurrentThread())
+        return VINF_SUCCESS;
+
+    // It's guaranteed that this code is executing inside Medium::i_queryInfo,
+    // can assume it took care of synchronization.
+    int rv = VINF_SUCCESS;
+    Utf8Str strName(pszName);
+    settings::StringsMap::const_iterator it = that->m->mapProperties.find(strName);
     if (it == that->m->mapProperties.end() && !fCreate)
         rv = VERR_CFGM_VALUE_NOT_FOUND;
     else
-        that->m->mapProperties[pName] = Utf8Str(pszValue);
-    mlock.release();
+        that->m->mapProperties[strName] = Utf8Str(pszValue);
     return rv;
 }
 
