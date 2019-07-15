@@ -2904,7 +2904,9 @@ static void rcLockValidatorDoDeadlockComplaining(PRTLOCKVALDDSTACK pStack, PRTLO
 static int rtLockValidatorDeadlockDetection(PRTLOCKVALRECUNION pRec, PRTTHREADINT pThreadSelf, PCRTLOCKVALSRCPOS pSrcPos)
 {
     RTLOCKVALDDSTACK Stack;
+    rtLockValidatorSerializeDetectionEnter();
     int rc = rtLockValidatorDdDoDetection(&Stack, pRec, pThreadSelf);
+    rtLockValidatorSerializeDetectionLeave();
     if (RT_SUCCESS(rc))
         return VINF_SUCCESS;
 
@@ -2912,7 +2914,9 @@ static int rtLockValidatorDeadlockDetection(PRTLOCKVALRECUNION pRec, PRTTHREADIN
     {
         for (uint32_t iLoop = 0; ; iLoop++)
         {
+            rtLockValidatorSerializeDetectionEnter();
             rc = rtLockValidatorDdDoDetection(&Stack, pRec, pThreadSelf);
+            rtLockValidatorSerializeDetectionLeave();
             if (RT_SUCCESS_NP(rc))
                 return VINF_SUCCESS;
             if (rc != VERR_TRY_AGAIN)
@@ -3372,13 +3376,8 @@ RTDECL(int) RTLockValidatorRecExclCheckBlocking(PRTLOCKVALRECEXCL pRec, RTTHREAD
              && (   pRecU->Excl.hClass->cMsMinDeadlock > cMillies
                  || pRecU->Excl.hClass->cMsMinDeadlock > RT_INDEFINITE_WAIT))
         rc = VINF_SUCCESS;
-    else
-    {
-        rtLockValidatorSerializeDetectionEnter();
-        if (!rtLockValidatorIsSimpleNoDeadlockCase(pRecU))
-            rc = rtLockValidatorDeadlockDetection(pRecU, pThreadSelf, pSrcPos);
-        rtLockValidatorSerializeDetectionLeave();
-    }
+    else if (!rtLockValidatorIsSimpleNoDeadlockCase(pRecU))
+        rc = rtLockValidatorDeadlockDetection(pRecU, pThreadSelf, pSrcPos);
 
     if (RT_SUCCESS(rc))
         ASMAtomicWriteBool(&pThreadSelf->fReallySleeping, fReallySleeping);
@@ -3679,13 +3678,8 @@ RTDECL(int) RTLockValidatorRecSharedCheckBlocking(PRTLOCKVALRECSHRD pRec, RTTHRE
              && (   pRec->hClass->cMsMinDeadlock == RT_INDEFINITE_WAIT
                  || pRec->hClass->cMsMinDeadlock > cMillies))
         rc = VINF_SUCCESS;
-    else
-    {
-        rtLockValidatorSerializeDetectionEnter();
-        if (!rtLockValidatorIsSimpleNoDeadlockCase(pRecU))
-            rc = rtLockValidatorDeadlockDetection(pRecU, pThreadSelf, pSrcPos);
-        rtLockValidatorSerializeDetectionLeave();
-    }
+    else if (!rtLockValidatorIsSimpleNoDeadlockCase(pRecU))
+        rc = rtLockValidatorDeadlockDetection(pRecU, pThreadSelf, pSrcPos);
 
     if (RT_SUCCESS(rc))
         ASMAtomicWriteBool(&pThreadSelf->fReallySleeping, fReallySleeping);
