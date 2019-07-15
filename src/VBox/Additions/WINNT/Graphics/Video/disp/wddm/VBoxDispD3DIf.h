@@ -76,8 +76,8 @@ typedef struct VBOXDISPD3D
 
 typedef struct VBOXWDDMDISP_FORMATS
 {
-    uint32_t cFormstOps;
-    const struct _FORMATOP* paFormstOps;
+    uint32_t cFormatOps;
+    const struct _FORMATOP* paFormatOps;
     uint32_t cSurfDescs;
     struct _DDSURFACEDESC *paSurfDescs;
 } VBOXWDDMDISP_FORMATS, *PVBOXWDDMDISP_FORMATS;

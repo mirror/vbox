@@ -2060,11 +2060,11 @@ static HRESULT APIENTRY vboxWddmDispGetCaps (HANDLE hAdapter, CONST D3DDDIARG_GE
             break;
         }
         case D3DDDICAPS_GETFORMATCOUNT:
-            *((uint32_t*)pData->pData) = pAdapter->Formats.cFormstOps;
+            *((uint32_t*)pData->pData) = pAdapter->Formats.cFormatOps;
             break;
         case D3DDDICAPS_GETFORMATDATA:
-            Assert(pData->DataSize == pAdapter->Formats.cFormstOps * sizeof (FORMATOP));
-            memcpy(pData->pData, pAdapter->Formats.paFormstOps, pAdapter->Formats.cFormstOps * sizeof (FORMATOP));
+            Assert(pData->DataSize == pAdapter->Formats.cFormatOps * sizeof (FORMATOP));
+            memcpy(pData->pData, pAdapter->Formats.paFormatOps, pAdapter->Formats.cFormatOps * sizeof (FORMATOP));
             break;
         case D3DDDICAPS_GETD3DQUERYCOUNT:
 #if 1
@@ -6457,7 +6457,7 @@ static HRESULT APIENTRY vboxWddmDispCloseAdapter (IN HANDLE hAdapter)
         && (((uintptr_t)(_pfn)) < (((uintptr_t)(_pvModule)) + ((DWORD)(_cbModule)))) \
         )
 
-static BOOL vboxDispIsDDraw(__inout D3DDDIARG_OPENADAPTER*  pOpenData)
+static BOOL vboxDispIsDDraw(D3DDDIARG_OPENADAPTER const *pOpenData)
 {
     /*if we are loaded by ddraw module, the Interface version should be 7
      * and pAdapterCallbacks should be ddraw-supplied, i.e. reside in ddraw module */
@@ -6535,6 +6535,7 @@ static HRESULT vboxDispAdapterInit(D3DDDIARG_OPENADAPTER const *pOpenData, VBOXW
     if (pAdapter->enmHwType == VBOXVIDEO_HWTYPE_VBOX)
         pAdapter->u32VBox3DCaps = pAdapterInfo->u.vbox.u32VBox3DCaps;
     pAdapter->AdapterInfo = *pAdapterInfo;
+    pAdapter->f3D         = !vboxDispIsDDraw(pOpenData);
 #ifdef VBOX_WITH_VIDEOHWACCEL
     pAdapter->cHeads      = pAdapterInfo->cInfos;
     for (uint32_t i = 0; i < pAdapter->cHeads; ++i)
@@ -6563,7 +6564,7 @@ HRESULT APIENTRY OpenAdapter(__inout D3DDDIARG_OPENADAPTER *pOpenData)
         hr = vboxDispAdapterInit(pOpenData, pAdapterInfo, &pAdapter);
         if (SUCCEEDED(hr))
         {
-            if (!vboxDispIsDDraw(pOpenData))
+            if (pAdapter->f3D)
             {
                 /* 3D adapter. */
                 VBOXDISPCRHGSMI_SCOPE_SET_GLOBAL();
@@ -6573,9 +6574,6 @@ HRESULT APIENTRY OpenAdapter(__inout D3DDDIARG_OPENADAPTER *pOpenData)
                 if (hr == S_OK)
                 {
                     LOG(("SUCCESS 3D Enabled, pAdapter (0x%p)", pAdapter));
-
-                    /* Flag indicating that the adapter instance is running in 3D mode. */
-                    pAdapter->f3D = true;
                 }
                 else
                     WARN(("VBoxDispD3DOpen failed, hr (%d)", hr));

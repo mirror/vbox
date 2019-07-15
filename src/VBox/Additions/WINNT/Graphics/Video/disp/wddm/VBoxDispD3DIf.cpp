@@ -903,9 +903,9 @@ HRESULT VBoxDispD3DGlobal2DFormatsInit(PVBOXWDDMDISP_ADAPTER pAdapter)
     uint8_t* pvBuf = (uint8_t*)RTMemAllocZ(cbBuf);
     if (pvBuf)
     {
-        pAdapter->Formats.paFormstOps = (FORMATOP*)pvBuf;
-        memcpy ((void*)pAdapter->Formats.paFormstOps , gVBoxFormatOpsBase, sizeof (gVBoxFormatOpsBase));
-        pAdapter->Formats.cFormstOps = RT_ELEMENTS(gVBoxFormatOpsBase);
+        pAdapter->Formats.paFormatOps = (FORMATOP*)pvBuf;
+        memcpy ((void*)pAdapter->Formats.paFormatOps , gVBoxFormatOpsBase, sizeof (gVBoxFormatOpsBase));
+        pAdapter->Formats.cFormatOps = RT_ELEMENTS(gVBoxFormatOpsBase);
 
         FORMATOP fo = {D3DDDIFMT_UNKNOWN, 0, 0, 0, 0};
         for (uint32_t i = 0; i < pAdapter->cHeads; ++i)
@@ -917,7 +917,7 @@ HRESULT VBoxDispD3DGlobal2DFormatsInit(PVBOXWDDMDISP_ADAPTER pAdapter)
                 {
                     fo.Format = pVhwa->Settings.aFormats[j];
                     fo.Operations = FORMATOP_OVERLAY;
-                    hr = vboxFormatOpsMerge((FORMATOP *)pAdapter->Formats.paFormstOps, &pAdapter->Formats.cFormstOps, cFormats, &fo);
+                    hr = vboxFormatOpsMerge((FORMATOP *)pAdapter->Formats.paFormatOps, &pAdapter->Formats.cFormatOps, cFormats, &fo);
                     if (FAILED(hr))
                     {
                         WARN(("vboxFormatOpsMerge failed, hr 0x%x", hr));
@@ -962,8 +962,11 @@ HRESULT VBoxDispD3DGlobal2DFormatsInit(PVBOXWDDMDISP_ADAPTER pAdapter)
 
 void VBoxDispD3DGlobal2DFormatsTerm(PVBOXWDDMDISP_ADAPTER pAdapter)
 {
-    if (pAdapter->Formats.paFormstOps)
-        RTMemFree((void *)pAdapter->Formats.paFormstOps);
+    if (pAdapter->Formats.paFormatOps)
+    {
+        RTMemFree((void *)pAdapter->Formats.paFormatOps);
+        pAdapter->Formats.paFormatOps = NULL;
+    }
 }
 
 #endif
@@ -997,8 +1000,8 @@ void VBoxDispD3DGlobalTerm()
 static void vboxDispD3DGlobalD3DFormatsInit(PVBOXWDDMDISP_FORMATS pFormats)
 {
     memset(pFormats, 0, sizeof (*pFormats));
-    pFormats->paFormstOps = gVBoxFormatOps3D;
-    pFormats->cFormstOps = RT_ELEMENTS(gVBoxFormatOps3D);
+    pFormats->paFormatOps = gVBoxFormatOps3D;
+    pFormats->cFormatOps = RT_ELEMENTS(gVBoxFormatOps3D);
 }
 
 #ifndef D3DCAPS2_CANRENDERWINDOWED
@@ -1257,19 +1260,22 @@ static HRESULT vboxDispD3DGlobalDoOpenWine(PVBOXWDDMDISP_D3D pD3D)
 }
 
 #ifdef VBOX_WITH_MESA3D
-HRESULT GaWddmD3DBackendOpen(PVBOXWDDMDISP_D3D pD3D, VBOXWDDM_QAI const *pAdapterInfo);
+HRESULT GaWddmD3DBackendOpen(PVBOXWDDMDISP_D3D pD3D, VBOXWDDM_QAI const *pAdapterInfo, PVBOXWDDMDISP_FORMATS pFormats);
 #endif
 
-static HRESULT vboxDispD3DGlobalDoOpen(PVBOXWDDMDISP_D3D pD3D, VBOXWDDM_QAI const *pAdapterInfo)
+static HRESULT vboxDispD3DGlobalDoOpen(PVBOXWDDMDISP_D3D pD3D, VBOXWDDM_QAI const *pAdapterInfo, PVBOXWDDMDISP_FORMATS pFormats)
 {
     memset(pD3D, 0, sizeof (*pD3D));
 
     HRESULT hr;
     if (pAdapterInfo->enmHwType == VBOXVIDEO_HWTYPE_VBOX)
+    {
+        vboxDispD3DGlobalD3DFormatsInit(pFormats);
         hr = vboxDispD3DGlobalDoOpenWine(pD3D);
+    }
 #ifdef VBOX_WITH_MESA3D
     else if (pAdapterInfo->enmHwType == VBOXVIDEO_HWTYPE_VMSVGA)
-        hr = GaWddmD3DBackendOpen(pD3D, pAdapterInfo);
+        hr = GaWddmD3DBackendOpen(pD3D, pAdapterInfo, pFormats);
 #endif
     else
         hr = E_FAIL;
@@ -1292,15 +1298,13 @@ HRESULT VBoxDispD3DGlobalOpen(PVBOXWDDMDISP_D3D pD3D, PVBOXWDDMDISP_FORMATS pFor
     vboxDispD3DGlobalLock();
     if (!g_cVBoxDispD3DGlobalOpens)
     {
-        HRESULT hr = vboxDispD3DGlobalDoOpen(&g_VBoxDispD3DGlobalD3D, pAdapterInfo);
+        HRESULT hr = vboxDispD3DGlobalDoOpen(&g_VBoxDispD3DGlobalD3D, pAdapterInfo, &g_VBoxDispD3DGlobalD3DFormats);
         if (!SUCCEEDED(hr))
         {
             vboxDispD3DGlobalUnlock();
             WARN(("vboxDispD3DGlobalDoOpen failed hr = 0x%x", hr));
             return hr;
         }
-
-        vboxDispD3DGlobalD3DFormatsInit(&g_VBoxDispD3DGlobalD3DFormats);
     }
     ++g_cVBoxDispD3DGlobalOpens;
     vboxDispD3DGlobalUnlock();
