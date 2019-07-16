@@ -31,8 +31,9 @@
 
 UIWizardNewCloudVM::UIWizardNewCloudVM(QWidget *pParent,
                                        const CCloudClient &comClient /* = CCloudClient() */,
-                                       const CVirtualSystemDescription &comDescription /* = CVirtualSystemDescription() */)
-    : UIWizard(pParent, WizardType_NewCloudVM)
+                                       const CVirtualSystemDescription &comDescription /* = CVirtualSystemDescription() */,
+                                       WizardMode enmMode /* = WizardMode_Auto */)
+    : UIWizard(pParent, WizardType_NewCloudVM, enmMode)
     , m_comClient(comClient)
     , m_comVSD(comDescription)
     , m_fFullWizard(m_comClient.isNull() || m_comVSD.isNull())

@@ -55,7 +55,8 @@ public:
       * @param  comDescription  Brings the Virtual System Description object to use. */
     UIWizardNewCloudVM(QWidget *pParent,
                        const CCloudClient &comClient = CCloudClient(),
-                       const CVirtualSystemDescription &comDescription = CVirtualSystemDescription());
+                       const CVirtualSystemDescription &comDescription = CVirtualSystemDescription(),
+                       WizardMode enmMode = WizardMode_Auto);
 
     /** Prepares all. */
     virtual void prepare() /* override */;
