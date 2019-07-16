@@ -143,7 +143,7 @@ private:
 public:
     int  initCondition(const char *a_pszValue, bool a_fInclusive) RT_OVERRIDE;
     bool match(const ClientId &a_ridClient, const OptVendorClassId &a_ridVendorClass,
-               const OptUserClassId &a_ridUserClass) const RT_OVERRIDE;
+               const OptUserClassId &a_ridUserClass) const RT_NOEXCEPT RT_OVERRIDE;
 };
 
 /** MAC wildcard condition. */
@@ -151,7 +151,7 @@ class GroupConditionMACWildcard : public GroupCondition
 {
 public:
     bool match(const ClientId &a_ridClient, const OptVendorClassId &a_ridVendorClass,
-               const OptUserClassId &a_ridUserClass) const RT_OVERRIDE;
+               const OptUserClassId &a_ridUserClass) const RT_NOEXCEPT RT_OVERRIDE;
 };
 
 /** Vendor class ID condition. */
@@ -159,7 +159,7 @@ class GroupConditionVendorClassID : public GroupCondition
 {
 public:
     bool match(const ClientId &a_ridClient, const OptVendorClassId &a_ridVendorClass,
-               const OptUserClassId &a_ridUserClass) const RT_OVERRIDE;
+               const OptUserClassId &a_ridUserClass) const RT_NOEXCEPT RT_OVERRIDE;
 };
 
 /** Vendor class ID wildcard condition. */
@@ -167,7 +167,7 @@ class GroupConditionVendorClassIDWildcard : public GroupCondition
 {
 public:
     bool match(const ClientId &a_ridClient, const OptVendorClassId &a_ridVendorClass,
-               const OptUserClassId &a_ridUserClass) const RT_OVERRIDE;
+               const OptUserClassId &a_ridUserClass) const RT_NOEXCEPT RT_OVERRIDE;
 };
 
 /** User class ID condition. */
@@ -175,7 +175,7 @@ class GroupConditionUserClassID : public GroupCondition
 {
 public:
     bool match(const ClientId &a_ridClient, const OptVendorClassId &a_ridVendorClass,
-               const OptUserClassId &a_ridUserClass) const RT_OVERRIDE;
+               const OptUserClassId &a_ridUserClass) const RT_NOEXCEPT RT_OVERRIDE;
 };
 
 /** User class ID wildcard condition. */
@@ -183,7 +183,7 @@ class GroupConditionUserClassIDWildcard : public GroupCondition
 {
 public:
     bool match(const ClientId &a_ridClient, const OptVendorClassId &a_ridVendorClass,
-               const OptUserClassId &a_ridUserClass) const RT_OVERRIDE;
+               const OptUserClassId &a_ridUserClass) const RT_NOEXCEPT RT_OVERRIDE;
 };
 
 

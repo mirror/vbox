@@ -1263,7 +1263,7 @@ int GroupConditionMAC::initCondition(const char *a_pszValue, bool a_fInclusive)
 
 
 bool GroupConditionMAC::match(const ClientId &a_ridClient, const OptVendorClassId &a_ridVendorClass,
-                              const OptUserClassId &a_ridUserClass) const
+                              const OptUserClassId &a_ridUserClass) const RT_NOEXCEPT
 {
     RT_NOREF(a_ridVendorClass, a_ridUserClass);
     return a_ridClient.mac() == m_MACAddress;
@@ -1271,7 +1271,7 @@ bool GroupConditionMAC::match(const ClientId &a_ridClient, const OptVendorClassI
 
 
 bool GroupConditionMACWildcard::match(const ClientId &a_ridClient, const OptVendorClassId &a_ridVendorClass,
-                                      const OptUserClassId &a_ridUserClass) const
+                                      const OptUserClassId &a_ridUserClass) const RT_NOEXCEPT
 {
     RT_NOREF(a_ridVendorClass, a_ridUserClass);
     char szTmp[32];
@@ -1281,7 +1281,7 @@ bool GroupConditionMACWildcard::match(const ClientId &a_ridClient, const OptVend
 
 
 bool GroupConditionVendorClassID::match(const ClientId &a_ridClient, const OptVendorClassId &a_ridVendorClass,
-                                        const OptUserClassId &a_ridUserClass) const
+                                        const OptUserClassId &a_ridUserClass) const RT_NOEXCEPT
 {
     RT_NOREF(a_ridClient, a_ridUserClass);
     return matchClassId(a_ridVendorClass.present(), a_ridVendorClass.value());
@@ -1289,7 +1289,7 @@ bool GroupConditionVendorClassID::match(const ClientId &a_ridClient, const OptVe
 
 
 bool GroupConditionVendorClassIDWildcard::match(const ClientId &a_ridClient, const OptVendorClassId &a_ridVendorClass,
-                                                const OptUserClassId &a_ridUserClass) const
+                                                const OptUserClassId &a_ridUserClass) const RT_NOEXCEPT
 {
     RT_NOREF(a_ridClient, a_ridUserClass);
     return matchClassId(a_ridVendorClass.present(), a_ridVendorClass.value(), true /*fWildcard*/);
@@ -1297,7 +1297,7 @@ bool GroupConditionVendorClassIDWildcard::match(const ClientId &a_ridClient, con
 
 
 bool GroupConditionUserClassID::match(const ClientId &a_ridClient, const OptVendorClassId &a_ridVendorClass,
-                                      const OptUserClassId &a_ridUserClass) const
+                                      const OptUserClassId &a_ridUserClass) const RT_NOEXCEPT
 {
     RT_NOREF(a_ridClient, a_ridVendorClass);
     return matchClassId(a_ridVendorClass.present(), a_ridUserClass.value());
@@ -1305,7 +1305,7 @@ bool GroupConditionUserClassID::match(const ClientId &a_ridClient, const OptVend
 
 
 bool GroupConditionUserClassIDWildcard::match(const ClientId &a_ridClient, const OptVendorClassId &a_ridVendorClass,
-                                              const OptUserClassId &a_ridUserClass) const
+                                              const OptUserClassId &a_ridUserClass) const RT_NOEXCEPT
 {
     RT_NOREF(a_ridClient, a_ridVendorClass);
     return matchClassId(a_ridVendorClass.present(), a_ridUserClass.value(), true /*fWildcard*/);
