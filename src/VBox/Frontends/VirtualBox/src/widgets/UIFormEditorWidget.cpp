@@ -1389,6 +1389,18 @@ UIFormEditorWidget::UIFormEditorWidget(QWidget *pParent /* = 0 */)
     prepare();
 }
 
+QHeaderView *UIFormEditorWidget::horizontalHeader() const
+{
+    AssertPtrReturn(m_pTableView, 0);
+    return m_pTableView->horizontalHeader();
+}
+
+QHeaderView *UIFormEditorWidget::verticalHeader() const
+{
+    AssertPtrReturn(m_pTableView, 0);
+    return m_pTableView->verticalHeader();
+}
+
 void UIFormEditorWidget::setVirtualSystemDescriptionForm(const CVirtualSystemDescriptionForm &comForm)
 {
     AssertPtrReturnVoid(m_pTableModel);
