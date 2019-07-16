@@ -10820,13 +10820,14 @@ static int hmR0VmxMergeVmcsNested(PVMCPU pVCpu)
      *
      * The virtual-APIC page has already been allocated (by CPUM during VM startup) and cached
      * from guest memory as part of VMLAUNCH/VMRESUME instruction emulation. The host physical
-     * address has also been updated in the nested-guest VMCS.
+     * address has also been updated in the nested-guest VMCS object during allocation.
      */
     PVMXVMCSINFO pVmcsInfoNstGst = &pVCpu->hm.s.vmx.VmcsInfoNstGst;
     RTHCPHYS HCPhysVirtApic;
     uint32_t u32TprThreshold;
     if (u32ProcCtls & VMX_PROC_CTLS_USE_TPR_SHADOW)
     {
+        Assert(pVM->hm.s.vmx.Msrs.ProcCtls.n.allowed1 & VMX_PROC_CTLS_USE_TPR_SHADOW);
         HCPhysVirtApic  = pVmcsInfoNstGst->HCPhysVirtApic;
         u32TprThreshold = pVmcsNstGst->u32TprThreshold;
     }
@@ -10881,8 +10882,11 @@ static int hmR0VmxMergeVmcsNested(PVMCPU pVCpu)
         rc |= VMXWriteVmcs32(VMX_VMCS32_CTRL_PLE_GAP, cPleGapTicks);
         rc |= VMXWriteVmcs32(VMX_VMCS32_CTRL_PLE_WINDOW, cPleWindowTicks);
     }
-    rc |= VMXWriteVmcs32(VMX_VMCS32_CTRL_TPR_THRESHOLD, u32TprThreshold);
-    rc |= VMXWriteVmcs64(VMX_VMCS64_CTRL_VIRT_APIC_PAGEADDR_FULL, pVmcsInfoNstGst->HCPhysVirtApic);
+    if (u32ProcCtls & VMX_PROC_CTLS_USE_TPR_SHADOW)
+    {
+        rc |= VMXWriteVmcs32(VMX_VMCS32_CTRL_TPR_THRESHOLD, u32TprThreshold);
+        rc |= VMXWriteVmcs64(VMX_VMCS64_CTRL_VIRT_APIC_PAGEADDR_FULL, pVmcsInfoNstGst->HCPhysVirtApic);
+    }
     AssertRCReturn(rc, rc);
 
     /*
@@ -14695,6 +14699,7 @@ static VBOXSTRICTRC hmR0VmxExitXcpt(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
                     return hmR0VmxExitXcptOthers(pVCpu, pVmxTransient);
             }
         }
+        /* else: inject pending event before resuming guest execution. */
     }
     else if (rcStrict == VINF_HM_DOUBLE_FAULT)
     {
@@ -17508,9 +17513,7 @@ HMVMX_EXIT_DECL hmR0VmxExitApicAccessNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTran
 {
     HMVMX_VALIDATE_NESTED_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
 
-    int rc  = hmR0VmxReadExitIntInfoVmcs(pVmxTransient);
-    rc     |= hmR0VmxReadExitIntErrorCodeVmcs(pVmxTransient);
-    rc     |= hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
+    int rc  = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
     rc     |= hmR0VmxReadIdtVectoringInfoVmcs(pVmxTransient);
     rc     |= hmR0VmxReadIdtVectoringErrorCodeVmcs(pVmxTransient);
     AssertRCReturn(rc, rc);
