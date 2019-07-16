@@ -863,7 +863,7 @@ void GlobalConfig::initFromXml(const xml::ElementNode *pElmOptions, bool fStrict
 
     /*
      * Resolve defaults here in the global config so we don't have to do this
-     * in Db::allocate() for every lease request.
+     * in Db::allocateBinding() for every lease request.
      */
     if (m_secMaxLeaseTime == 0 && m_secDefaultLeaseTime == 0 && m_secMinLeaseTime == 0)
     {
