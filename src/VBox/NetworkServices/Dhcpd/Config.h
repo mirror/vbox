@@ -45,6 +45,7 @@ class ConfigLevelBase
 private:
     /** DHCP options. */
     optmap_t        m_Options;
+protected:
     /** Minimum lease time, zero means try next level up. */
     uint32_t        m_secMinLeaseTime;
     /** Default lease time, zero means try next level up. */
@@ -76,6 +77,13 @@ public:
         a_rItRet = m_Options.find(bOpt);
         return a_rItRet != m_Options.end();
     }
+
+    /** @name Accessors
+     * @{ */
+    uint32_t        getMinLeaseTime()     const RT_NOEXCEPT { return m_secMinLeaseTime; }
+    uint32_t        getDefaultLeaseTime() const RT_NOEXCEPT { return m_secDefaultLeaseTime; }
+    uint32_t        getMaxLeaseTime()     const RT_NOEXCEPT { return m_secMaxLeaseTime; }
+    /** @} */
 
 protected:
     void            i_parseOption(const xml::ElementNode *pElmOption);

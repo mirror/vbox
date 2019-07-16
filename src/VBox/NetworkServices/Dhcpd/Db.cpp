@@ -648,8 +648,10 @@ Binding *Db::i_allocateAddress(const ClientId &id, RTNETADDRIPV4 addr)
  *
  * @returns Pointer to the binding, NULL on failure.
  * @param   req                 The DHCP request being served.
+ * @param   rConfigVec          The configurations that applies to the client.
+ *                              Used for lease time calculation.
  */
-Binding *Db::allocateBinding(const DhcpClientMessage &req)
+Binding *Db::allocateBinding(const DhcpClientMessage &req, Config::ConfigVec const &rConfigVec)
 {
     const ClientId &id(req.clientId());
 
@@ -693,13 +695,47 @@ Binding *Db::allocateBinding(const DhcpClientMessage &req)
     {
         Assert(b->id() == id);
 
-        /** @todo
-         * XXX: handle requests for specific lease time!
-         * XXX: old lease might not have expired yet?
-         * Make lease time configurable.
+        /*
+         * Figure out the lease time.
          */
-        // OptLeaseTime reqLeaseTime(req);
-        b->setLeaseTime(1200);
+        uint32_t secMin = 0;
+        uint32_t secDfl = 0;
+        uint32_t secMax = 0;
+        for (Config::ConfigVec::const_iterator it = rConfigVec.begin(); it != rConfigVec.end(); ++it)
+        {
+            ConfigLevelBase const *pConfig = *it;
+            if (secMin == 0)
+                secMin = pConfig->getMinLeaseTime();
+            if (secDfl == 0)
+                secDfl = pConfig->getDefaultLeaseTime();
+            if (secMax == 0)
+                secMax = pConfig->getMaxLeaseTime();
+        }
+        Assert(secMin); Assert(secMax); Assert(secDfl); /* global config always have non-defaults set */
+        if (secMin > secMax)
+            secMin = secMax;
+
+        OptLeaseTime reqLeaseTime(req);
+        if (!reqLeaseTime.present())
+        {
+            b->setLeaseTime(secDfl);
+            LogRel2(("Lease time %u secs (default)\n", b->leaseTime()));
+        }
+        else if (reqLeaseTime.value() < secMin)
+        {
+            b->setLeaseTime(secMin);
+            LogRel2(("Lease time %u secs (min)\n", b->leaseTime()));
+        }
+        else if (reqLeaseTime.value() > secMax)
+        {
+            b->setLeaseTime(secMax);
+            LogRel2(("Lease time %u secs (max)\n", b->leaseTime()));
+        }
+        else
+        {
+            b->setLeaseTime(reqLeaseTime.value());
+            LogRel2(("Lease time %u secs (requested)\n", b->leaseTime()));
+        }
     }
     return b;
 }

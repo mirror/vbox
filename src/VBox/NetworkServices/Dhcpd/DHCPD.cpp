@@ -244,7 +244,7 @@ DhcpServerMessage *DHCPD::i_doDiscover(const DhcpClientMessage &req)
     Config::ConfigVec vecConfigs;
     m_pConfig->getConfigsForClient(vecConfigs, req.clientId(), OptVendorClassId(req), OptUserClassId(req));
 
-    Binding *b = m_db.allocateBinding(req);
+    Binding *b = m_db.allocateBinding(req, vecConfigs);
     if (b == NULL)
         return NULL;
 
@@ -312,7 +312,7 @@ DhcpServerMessage *DHCPD::i_doRequest(const DhcpClientMessage &req)
     Config::ConfigVec vecConfigs;
     m_pConfig->getConfigsForClient(vecConfigs, req.clientId(), OptVendorClassId(req), OptUserClassId(req));
 
-    Binding *b = m_db.allocateBinding(req);
+    Binding *b = m_db.allocateBinding(req, vecConfigs);
     if (b == NULL)
     {
         return i_createMessage(RTNET_DHCP_MT_NAC, req);

@@ -829,6 +829,15 @@ void ConfigLevelBase::initFromXml(const xml::ElementNode *pElmConfig, bool fStri
     if (!pElmConfig->getAttributeValue("secMaxLeaseTime", &m_secMaxLeaseTime))
         m_secMaxLeaseTime = 0;
 
+    /* Swap min and max if max is smaller: */
+    if (m_secMaxLeaseTime < m_secMinLeaseTime && m_secMinLeaseTime && m_secMaxLeaseTime)
+    {
+        LogRel(("Swapping min/max lease times: %u <-> %u\n", m_secMinLeaseTime, m_secMaxLeaseTime));
+        uint32_t uTmp = m_secMaxLeaseTime;
+        m_secMaxLeaseTime = m_secMinLeaseTime;
+        m_secMinLeaseTime = uTmp;
+    }
+
     /*
      * Parse children.
      */
@@ -851,6 +860,35 @@ void ConfigLevelBase::initFromXml(const xml::ElementNode *pElmConfig, bool fStri
 void GlobalConfig::initFromXml(const xml::ElementNode *pElmOptions, bool fStrict, Config const *pConfig)
 {
     ConfigLevelBase::initFromXml(pElmOptions, fStrict, pConfig);
+
+    /*
+     * Resolve defaults here in the global config so we don't have to do this
+     * in Db::allocate() for every lease request.
+     */
+    if (m_secMaxLeaseTime == 0 && m_secDefaultLeaseTime == 0 && m_secMinLeaseTime == 0)
+    {
+        m_secMinLeaseTime     = 300;                /*  5 min */
+        m_secDefaultLeaseTime = 600;                /* 10 min */
+        m_secMaxLeaseTime     = 12 * RT_SEC_1HOUR;  /* 12 hours */
+    }
+    else
+    {
+        if (m_secDefaultLeaseTime == 0)
+        {
+            if (m_secMaxLeaseTime != 0)
+                m_secDefaultLeaseTime = RT_MIN(RT_MAX(m_secMinLeaseTime, 600), m_secMaxLeaseTime);
+            else
+            {
+                m_secDefaultLeaseTime = RT_MAX(m_secMinLeaseTime, 600);
+                m_secMaxLeaseTime = RT_MAX(m_secDefaultLeaseTime, 12 * RT_SEC_1HOUR);
+            }
+        }
+        if (m_secMaxLeaseTime == 0)
+            m_secMaxLeaseTime = RT_MAX(RT_MAX(m_secMinLeaseTime, m_secDefaultLeaseTime), 12 * RT_SEC_1HOUR);
+        if (m_secMinLeaseTime == 0)
+            m_secMinLeaseTime = RT_MIN(300, m_secDefaultLeaseTime);
+    }
+
 }
 
 
