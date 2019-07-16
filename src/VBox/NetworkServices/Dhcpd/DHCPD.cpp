@@ -331,9 +331,6 @@ DhcpServerMessage *DHCPD::i_doRequest(const DhcpClientMessage &req)
     optmap_t replyOptions;
     ack->addOptions(m_pConfig->getOptionsForClient(replyOptions, optlist, vecConfigs));
 
-    /** @todo r=bird: Sec 9.9 in rfc-2132 indicates the server only sends this in NACKs. Test code? */
-    ack->addOption(OptMessage("Ok, ok, here it is"));
-
     ack->maybeUnicast(req);
     return ack.release();
 }
