@@ -4561,7 +4561,7 @@ int cpumR3InitCpuIdAndMsrs(PVM pVM, PCCPUMMSRS pHostMsrs)
 
         /*
          * Some more configuration that we're applying at the end of everything
-         * via the CPUMSetGuestCpuIdFeature API.
+         * via the CPUMR3SetGuestCpuIdFeature API.
          */
 
         /* Check if PAE was explicitely enabled by the user. */
