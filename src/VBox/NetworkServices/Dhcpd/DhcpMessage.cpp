@@ -358,7 +358,7 @@ void DhcpServerMessage::addOption(DhcpOption *opt)
  */
 void DhcpServerMessage::addOptions(const optmap_t &optmap)
 {
-    for (optmap_t::const_iterator it( optmap.begin() ); it != optmap.end(); ++it)
+    for (optmap_t::const_iterator it = optmap.begin(); it != optmap.end(); ++it)
         m_optmap << it->second;
 }
 
@@ -397,8 +397,7 @@ int DhcpServerMessage::encode(octets_t &data)
     data << m_optServerId
          << m_optMessageType;
 
-    for (optmap_t::const_iterator it ( m_optmap.begin() );
-         it != m_optmap.end(); ++it)
+    for (optmap_t::const_iterator it = m_optmap.begin(); it != m_optmap.end(); ++it)
     {
         LogRel3(("encoding option %d\n", it->first));
         DhcpOption &opt = *it->second;
@@ -408,7 +407,7 @@ int DhcpServerMessage::encode(octets_t &data)
     data << OptEnd();
 
     AssertCompile(RTNET_DHCP_NORMAL_SIZE == 548);
-    if (data.size() < RTNET_DHCP_NORMAL_SIZE)      /* XXX */
+    if (data.size() < RTNET_DHCP_NORMAL_SIZE)
         data.resize(RTNET_DHCP_NORMAL_SIZE);
 
     return VINF_SUCCESS;

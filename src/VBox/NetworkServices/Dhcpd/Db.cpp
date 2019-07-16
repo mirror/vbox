@@ -69,6 +69,8 @@ Binding::rtStrFormat(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
     size_t cb = RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "%RTnaipv4", b->m_addr.u);
     if (b->m_state == Binding::FREE)
         cb += pfnOutput(pvArgOutput, RT_STR_TUPLE(" free"));
+    else if (b->m_fFixed)
+        cb += pfnOutput(pvArgOutput, RT_STR_TUPLE(" fixed"));
     else
     {
         cb += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, " to %R[id], %s, valid from ", &b->m_id, b->stateName());
@@ -86,6 +88,26 @@ Binding::rtStrFormat(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
     return cb;
 }
 
+
+/**
+ * Used to update the client ID of a fixed address assignment.
+ *
+ * We only have the MAC address when prepraring the binding, so the full client
+ * ID must be supplied when the client requests it.
+ *
+ * @param   a_ridClient         The client ID.
+ * @throws  std::bad_alloc
+ */
+void Binding::idUpdate(const ClientId &a_ridClient)
+{
+    AssertReturnVoid(isFixed());
+    m_id = a_ridClient;
+}
+
+
+/**
+ * Get the state as a string for the XML lease database.
+ */
 const char *Binding::stateName() const RT_NOEXCEPT
 {
     switch (m_state)
@@ -107,6 +129,9 @@ const char *Binding::stateName() const RT_NOEXCEPT
 }
 
 
+/**
+ * Sets the state by name (reverse of Binding::stateName()).
+ */
 Binding &Binding::setState(const char *pszStateName) RT_NOEXCEPT
 {
     if (strcmp(pszStateName, "free") == 0)
@@ -138,7 +163,7 @@ Binding &Binding::setState(const char *pszStateName) RT_NOEXCEPT
  */
 bool Binding::expire(Timestamp tsDeadline) RT_NOEXCEPT
 {
-    if (m_state <= Binding::EXPIRED)
+    if (m_state <= Binding::EXPIRED || m_fFixed)
         return false;
 
     Timestamp tsExpire = m_issued;
@@ -337,7 +362,71 @@ int Db::init(const Config *pConfig)
 
     m_pConfig = pConfig;
 
-    return m_pool.init(pConfig->getIPv4PoolFirst(), pConfig->getIPv4PoolLast());
+    int rc = m_pool.init(pConfig->getIPv4PoolFirst(), pConfig->getIPv4PoolLast());
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * If the server IP is in the dynamic range, preallocate it like a fixed assignment.
+         */
+        rc = i_enterFixedAddressAssignment(pConfig->getIPv4Address(), pConfig->getMacAddress());
+        if (RT_SUCCESS(rc))
+        {
+            /*
+             * Preallocate any fixed address assignments:
+             */
+            Config::HostConfigVec vecHostConfigs;
+            rc = pConfig->getFixedAddressConfigs(vecHostConfigs);
+            for (Config::HostConfigVec::const_iterator it = vecHostConfigs.begin();
+                 it != vecHostConfigs.end() && RT_SUCCESS(rc); ++it)
+                rc = i_enterFixedAddressAssignment((*it)->getFixedAddress(), (*it)->getMACAddress());
+        }
+    }
+
+    return rc;
+}
+
+
+/**
+ * Used by Db::init() to register a fixed address assignment.
+ *
+ * @returns IPRT status code.
+ * @param   a_rAddress      The IPv4 address assignment.
+ * @param   a_rMACAddress   The MAC address.
+ */
+int Db::i_enterFixedAddressAssignment(RTNETADDRIPV4 const &a_rAddress, RTMAC const &a_rMACAddress) RT_NOEXCEPT
+{
+    LogRelFunc(("%RTmac: %RTnaipv4\n", &a_rMACAddress, a_rAddress));
+    Assert(m_pConfig->isInIPv4Network(a_rAddress)); /* should've been checked elsewhere already */
+
+    /*
+     * If the address is part of the pool, we have to allocate it to
+     * prevent it from being used again.
+     */
+    if (m_pool.contains(a_rAddress))
+    {
+        if (!m_pool.allocate(a_rAddress))
+        {
+            LogRelFunc(("%RTnaipv4 already allocated?\n", a_rAddress));
+            return VERR_ADDRESS_CONFLICT;
+        }
+    }
+
+    /*
+     * Create the binding.
+     */
+    Binding *pBinding = NULL;
+    try
+    {
+        pBinding = new Binding(a_rAddress, a_rMACAddress, true /*fFixed*/);
+        m_bindings.push_front(pBinding);
+    }
+    catch (std::bad_alloc &)
+    {
+        if (pBinding)
+            delete pBinding;
+        return VERR_NO_MEMORY;
+    }
+    return VINF_SUCCESS;
 }
 
 
@@ -441,10 +530,21 @@ Binding *Db::i_allocateAddress(const ClientId &id, RTNETADDRIPV4 addr)
 
         /*
          * We've already seen this client, give it its old binding.
+         *
+         * If the client's MAC address is configured with a fixed
+         * address, give its preconfigured binding.  Fixed bindings
+         * are always at the head of the m_bindings list, so we
+         * won't be confused by any old leases of the client.
          */
         if (b->m_id == id)
         {
             LogRel(("> ... found existing binding %R[binding]\n", b));
+            return b;
+        }
+        if (b->isFixed() && b->id().mac() == id.mac())
+        {
+            b->idUpdate(id);
+            LogRel(("> ... found fixed binding %R[binding]\n", b));
             return b;
         }
 
@@ -551,15 +651,32 @@ Binding *Db::i_allocateAddress(const ClientId &id, RTNETADDRIPV4 addr)
  */
 Binding *Db::allocateBinding(const DhcpClientMessage &req)
 {
-    /** @todo XXX: handle fixed address assignments */
+    const ClientId &id(req.clientId());
 
     /*
      * Get and validate the requested address (if present).
+     *
+     * Fixed assignments are often outside the dynamic range, so we much detect
+     * those to make sure they aren't rejected based on IP range.  ASSUMES fixed
+     * assignments are at the head of the binding list.
      */
     OptRequestedAddress reqAddr(req);
     if (reqAddr.present() && !addressBelongs(reqAddr.value()))
     {
-        if (req.messageType() == RTNET_DHCP_MT_DISCOVER)
+        bool fIsFixed = false;
+        for (bindings_t::iterator it = m_bindings.begin(); it != m_bindings.end() && (*it)->isFixed(); ++it)
+            if (reqAddr.value().u == (*it)->addr().u)
+            {
+                if (   (*it)->id() == id
+                    || (*it)->id().mac() == id.mac())
+                {
+                    fIsFixed = true;
+                    break;
+                }
+            }
+        if (fIsFixed)
+            reqAddr = OptRequestedAddress();
+        else if (req.messageType() == RTNET_DHCP_MT_DISCOVER)
         {
             LogRel(("DISCOVER: ignoring invalid requested address\n"));
             reqAddr = OptRequestedAddress();
@@ -571,8 +688,6 @@ Binding *Db::allocateBinding(const DhcpClientMessage &req)
     /*
      * Allocate the address.
      */
-    const ClientId &id(req.clientId());
-
     Binding *b = i_allocateAddress(id, reqAddr.value());
     if (b != NULL)
     {
@@ -667,8 +782,13 @@ void Db::cancelOffer(const DhcpClientMessage &req) RT_NOEXCEPT
             if (b->state() == Binding::OFFERED)
             {
                 LogRel2(("Db::cancelOffer: cancelling %R[binding]\n", b));
-                b->setLeaseTime(0);
-                b->setState(Binding::RELEASED);
+                if (!b->isFixed())
+                {
+                    b->setLeaseTime(0);
+                    b->setState(Binding::RELEASED);
+                }
+                else
+                    b->setState(Binding::ACKED);
             }
             else
                 LogRel2(("Db::cancelOffer: not offered state: %R[binding]\n", b));
@@ -698,8 +818,13 @@ bool Db::releaseBinding(const DhcpClientMessage &req) RT_NOEXCEPT
         if (b->addr().u == addr.u && b->id() == id)
         {
             LogRel2(("Db::releaseBinding: releasing %R[binding]\n", b));
-            b->setState(Binding::RELEASED);
-            return true;
+            if (!b->isFixed())
+            {
+                b->setState(Binding::RELEASED);
+                return true;
+            }
+            b->setState(Binding::ACKED);
+            return false;
         }
     }
 
@@ -740,7 +865,8 @@ int Db::writeLeases(const RTCString &strFilename) const RT_NOEXCEPT
         for (bindings_t::const_iterator it = m_bindings.begin(); it != m_bindings.end(); ++it)
         {
             const Binding *b = *it;
-            b->toXML(pElmRoot);
+            if (!b->isFixed())
+                b->toXML(pElmRoot);
         }
     }
     catch (std::bad_alloc &)

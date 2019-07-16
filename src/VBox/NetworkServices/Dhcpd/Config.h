@@ -33,6 +33,8 @@
 #include "ClientId.h"
 
 
+class Config;
+
 /**
  * Base configuration
  *
@@ -61,7 +63,7 @@ public:
     virtual ~ConfigLevelBase()
     { }
 
-    virtual void        initFromXml(xml::ElementNode const *pElm, bool fStrict);
+    virtual void        initFromXml(xml::ElementNode const *pElm, bool fStrict, Config const *pConfig);
     virtual const char *getType() const RT_NOEXCEPT = 0;
     virtual const char *getName() const RT_NOEXCEPT = 0;
 
@@ -77,7 +79,7 @@ public:
 
 protected:
     void            i_parseOption(const xml::ElementNode *pElmOption);
-    virtual void    i_parseChild(const xml::ElementNode *pElmChild, bool fStrict);
+    virtual void    i_parseChild(const xml::ElementNode *pElmChild, bool fStrict, Config const *pConfig);
 };
 
 
@@ -90,7 +92,7 @@ public:
     GlobalConfig()
         : ConfigLevelBase()
     { }
-    void initFromXml(xml::ElementNode const *pElm, bool fStrict) RT_OVERRIDE;
+    void initFromXml(xml::ElementNode const *pElm, bool fStrict, Config const *pConfig) RT_OVERRIDE;
     const char *getType() const RT_NOEXCEPT RT_OVERRIDE { return "global"; }
     const char *getName() const RT_NOEXCEPT RT_OVERRIDE { return "GlobalConfig"; }
 };
@@ -198,7 +200,7 @@ public:
     {
     }
 
-    void initFromXml(xml::ElementNode const *pElm, bool fStrict) RT_OVERRIDE;
+    void initFromXml(xml::ElementNode const *pElm, bool fStrict, Config const *pConfig) RT_OVERRIDE;
     bool match(const ClientId &a_ridClient, const OptVendorClassId &a_ridVendorClass, const OptUserClassId &a_ridUserClass) const;
 
     /** @name Accessors
@@ -209,7 +211,7 @@ public:
     /** @} */
 
 protected:
-    void                i_parseChild(const xml::ElementNode *pElmChild, bool fStrict) RT_OVERRIDE;
+    void                i_parseChild(const xml::ElementNode *pElmChild, bool fStrict, Config const *pConfig) RT_OVERRIDE;
     /** Used to name unnamed groups. */
     static uint32_t     s_uGroupNo;
 };
@@ -239,13 +241,15 @@ public:
         RT_ZERO(m_FixedAddress);
     }
 
-    void initFromXml(xml::ElementNode const *pElm, bool fStrict) RT_OVERRIDE;
+    void initFromXml(xml::ElementNode const *pElm, bool fStrict, Config const *pConfig) RT_OVERRIDE;
     const char *getType() const RT_NOEXCEPT RT_OVERRIDE { return "host"; }
     const char *getName() const RT_NOEXCEPT RT_OVERRIDE { return m_strName.c_str(); }
 
     /** @name Accessors
      * @{ */
-    RTMAC const        &getMACAddress() const RT_NOEXCEPT       { return m_MACAddress; }
+    RTMAC const            &getMACAddress() const RT_NOEXCEPT       { return m_MACAddress; }
+    bool                    haveFixedAddress() const RT_NOEXCEPT    { return m_fHaveFixedAddress; }
+    RTNETADDRIPV4 const &   getFixedAddress() const RT_NOEXCEPT     { return m_FixedAddress; }
     /** @} */
 };
 
@@ -256,9 +260,9 @@ public:
 class Config
 {
     /** Group configuration map. */
-    typedef std::map<RTCString, GroupConfig * > GroupConfigMap;
+    typedef std::map<RTCString, GroupConfig const * > GroupConfigMap;
     /** Host configuration map. */
-    typedef std::map<RTMAC,     HostConfig *  > HostConfigMap;
+    typedef std::map<RTMAC,     HostConfig const * > HostConfigMap;
 
 
     RTCString       m_strHome;          /**< path of ~/.VirtualBox or equivalent, */
@@ -320,10 +324,26 @@ public:
 
     RTNETADDRIPV4       getIPv4Address() const RT_NOEXCEPT      { return m_IPv4Address; }
     RTNETADDRIPV4       getIPv4Netmask() const RT_NOEXCEPT      { return m_IPv4Netmask; }
-
     RTNETADDRIPV4       getIPv4PoolFirst() const RT_NOEXCEPT    { return m_IPv4PoolFirst; }
     RTNETADDRIPV4       getIPv4PoolLast() const RT_NOEXCEPT     { return m_IPv4PoolLast; }
     /** @} */
+
+    /** Gets the network (IP masked by network mask). */
+    RTNETADDRIPV4       getIPv4Network() const RT_NOEXCEPT
+    {
+        RTNETADDRIPV4 Network;
+        Network.u = m_IPv4Netmask.u & m_IPv4Address.u;
+        return Network;
+    }
+    /** Checks if the given IPv4 address is in the DHCP server network. */
+    bool                isInIPv4Network(RTNETADDRIPV4 a_rAddress) const RT_NOEXCEPT
+    {
+        return (a_rAddress.u & getIPv4Netmask().u) == getIPv4Network().u;
+    }
+
+    /** Host configuration vector. */
+    typedef std::vector<HostConfig const *> HostConfigVec;
+    int                 getFixedAddressConfigs(HostConfigVec &a_rRetConfigs) const;
 
     /** Configuration vector. */
     typedef std::vector<ConfigLevelBase const *> ConfigVec;

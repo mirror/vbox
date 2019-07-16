@@ -263,6 +263,7 @@ int Config::i_complete() RT_NOEXCEPT
 
     i_logInit();
 
+    /** @todo the MAC address is always generated, no XML config option for it ... */
     bool fMACGenerated = false;
     if (   m_MacAddress.au16[0] == 0
         && m_MacAddress.au16[1] == 0
@@ -290,59 +291,8 @@ int Config::i_complete() RT_NOEXCEPT
         return VERR_GENERAL_FAILURE;
     }
 
-    /* unicast IP address */
-    if ((m_IPv4Address.au8[0] & 0xe0) == 0xe0)
-    {
-        LogRel(("IP address is not unicast: %RTnaipv4\n", m_IPv4Address.u));
-        return VERR_GENERAL_FAILURE;
-    }
-
-    /* valid netmask */
-    int cPrefixBits;
-    int rc = RTNetMaskToPrefixIPv4(&m_IPv4Netmask, &cPrefixBits);
-    if (RT_FAILURE(rc) || cPrefixBits == 0)
-    {
-        LogRel(("IP mask is not valid: %RTnaipv4\n", m_IPv4Netmask.u));
-        return VERR_GENERAL_FAILURE;
-    }
-
-    /* first IP is from the same network */
-    if ((m_IPv4PoolFirst.u & m_IPv4Netmask.u) != (m_IPv4Address.u & m_IPv4Netmask.u))
-    {
-        LogRel(("first pool address is outside the network %RTnaipv4/%d: %RTnaipv4\n",
-                 (m_IPv4Address.u & m_IPv4Netmask.u), cPrefixBits, m_IPv4PoolFirst.u));
-        return VERR_GENERAL_FAILURE;
-    }
-
-    /* last IP is from the same network */
-    if ((m_IPv4PoolLast.u & m_IPv4Netmask.u) != (m_IPv4Address.u & m_IPv4Netmask.u))
-    {
-        LogRel(("last pool address is outside the network %RTnaipv4/%d: %RTnaipv4\n",
-                 (m_IPv4Address.u & m_IPv4Netmask.u), cPrefixBits, m_IPv4PoolLast.u));
-        return VERR_GENERAL_FAILURE;
-    }
-
-    /* the pool is valid */
-    if (RT_N2H_U32(m_IPv4PoolLast.u) < RT_N2H_U32(m_IPv4PoolFirst.u))
-    {
-        LogRel(("pool range is invalid: %RTnaipv4 - %RTnaipv4\n",
-                 m_IPv4PoolFirst.u, m_IPv4PoolLast.u));
-        return VERR_GENERAL_FAILURE;
-    }
-
-    /* our own address is not inside the pool */
-    if (   RT_N2H_U32(m_IPv4PoolFirst.u) <= RT_N2H_U32(m_IPv4Address.u)
-        && RT_N2H_U32(m_IPv4Address.u)   <= RT_N2H_U32(m_IPv4PoolLast.u))
-    {
-        LogRel(("server address inside the pool range %RTnaipv4 - %RTnaipv4: %RTnaipv4\n",
-                 m_IPv4PoolFirst.u, m_IPv4PoolLast.u, m_IPv4Address.u));
-        return VERR_GENERAL_FAILURE;
-    }
-
     if (!fMACGenerated)
         LogRel(("MAC address %RTmac\n", &m_MacAddress));
-    LogRel(("IP address %RTnaipv4/%d\n", m_IPv4Address.u, cPrefixBits));
-    LogRel(("address pool %RTnaipv4 - %RTnaipv4\n", m_IPv4PoolFirst.u, m_IPv4PoolLast.u));
 
     return VINF_SUCCESS;
 }
@@ -684,10 +634,39 @@ void Config::i_parseServer(const xml::ElementNode *pElmServer, bool fStrict)
         m_strLeasesFilename.jolt();
     }
 
+    /*
+     * Addresses and mask.
+     */
     ::getIPv4AddrAttribute(pElmServer, "IPAddress", &m_IPv4Address);
     ::getIPv4AddrAttribute(pElmServer, "networkMask", &m_IPv4Netmask);
     ::getIPv4AddrAttribute(pElmServer, "lowerIP", &m_IPv4PoolFirst);
     ::getIPv4AddrAttribute(pElmServer, "upperIP", &m_IPv4PoolLast);
+
+    /* unicast IP address */
+    if ((m_IPv4Address.au8[0] & 0xe0) == 0xe0)
+        throw ConfigFileError("DHCP server IP address is not unicast: %RTnaipv4", m_IPv4Address.u);
+
+    /* valid netmask */
+    int cPrefixBits;
+    int rc = RTNetMaskToPrefixIPv4(&m_IPv4Netmask, &cPrefixBits);
+    if (RT_FAILURE(rc) || cPrefixBits == 0)
+        throw ConfigFileError("IP mask is not valid: %RTnaipv4", m_IPv4Netmask.u);
+
+    /* first IP is from the same network */
+    if ((m_IPv4PoolFirst.u & m_IPv4Netmask.u) != (m_IPv4Address.u & m_IPv4Netmask.u))
+        throw ConfigFileError("first pool address is outside the network %RTnaipv4/%d: %RTnaipv4",
+                              (m_IPv4Address.u & m_IPv4Netmask.u), cPrefixBits, m_IPv4PoolFirst.u);
+
+    /* last IP is from the same network */
+    if ((m_IPv4PoolLast.u & m_IPv4Netmask.u) != (m_IPv4Address.u & m_IPv4Netmask.u))
+        throw ConfigFileError("last pool address is outside the network %RTnaipv4/%d: %RTnaipv4\n",
+                              (m_IPv4Address.u & m_IPv4Netmask.u), cPrefixBits, m_IPv4PoolLast.u);
+
+    /* the pool is valid */
+    if (RT_N2H_U32(m_IPv4PoolLast.u) < RT_N2H_U32(m_IPv4PoolFirst.u))
+        throw ConfigFileError("pool range is invalid: %RTnaipv4 - %RTnaipv4", m_IPv4PoolFirst.u, m_IPv4PoolLast.u);
+    LogRel(("IP address:   %RTnaipv4/%d\n", m_IPv4Address.u, cPrefixBits));
+    LogRel(("Address pool: %RTnaipv4 - %RTnaipv4\n", m_IPv4PoolFirst.u, m_IPv4PoolLast.u));
 
     /*
      * <DHCPServer> children
@@ -698,12 +677,12 @@ void Config::i_parseServer(const xml::ElementNode *pElmServer, bool fStrict)
     {
         /* Global options: */
         if (pElmChild->nameEquals("Options"))
-            m_GlobalConfig.initFromXml(pElmChild, fStrict);
+            m_GlobalConfig.initFromXml(pElmChild, fStrict, this);
         /* Group w/ options: */
         else if (pElmChild->nameEquals("Group"))
         {
             std::unique_ptr<GroupConfig> ptrGroup(new GroupConfig());
-            ptrGroup->initFromXml(pElmChild, fStrict);
+            ptrGroup->initFromXml(pElmChild, fStrict, this);
             if (m_GroupConfigs.find(ptrGroup->getGroupName()) == m_GroupConfigs.end())
             {
                 m_GroupConfigs[ptrGroup->getGroupName()] = ptrGroup.get();
@@ -720,7 +699,7 @@ void Config::i_parseServer(const xml::ElementNode *pElmServer, bool fStrict)
         else if (pElmChild->nameEquals("Config"))
         {
             std::unique_ptr<HostConfig> ptrHost(new HostConfig());
-            ptrHost->initFromXml(pElmChild, fStrict);
+            ptrHost->initFromXml(pElmChild, fStrict, this);
             if (m_HostConfigs.find(ptrHost->getMACAddress()) == m_HostConfigs.end())
             {
                 m_HostConfigs[ptrHost->getMACAddress()] = ptrHost.get();
@@ -798,9 +777,10 @@ void ConfigLevelBase::i_parseOption(const xml::ElementNode *pElmOption)
  * @param   pElmChild           The child element to handle.
  * @param   fStrict             Set if we're in strict mode, clear if we just
  *                              want to get on with it if we can.
+ * @param   pConfig             The configuration object.
  * @throws  std::bad_alloc, ConfigFileError
  */
-void ConfigLevelBase::i_parseChild(const xml::ElementNode *pElmChild, bool fStrict)
+void ConfigLevelBase::i_parseChild(const xml::ElementNode *pElmChild, bool fStrict, Config const *pConfig)
 {
     if (pElmChild->nameEquals("Option"))
     {
@@ -822,6 +802,7 @@ void ConfigLevelBase::i_parseChild(const xml::ElementNode *pElmChild, bool fStri
     }
     else
         throw ConfigFileError(pElmChild->getParent(), "Unexpected child '%s'", pElmChild->getName());
+    RT_NOREF(pConfig);
 }
 
 
@@ -833,9 +814,10 @@ void ConfigLevelBase::i_parseChild(const xml::ElementNode *pElmChild, bool fStri
  * @param   pElmConfig          The configuration element to parse.
  * @param   fStrict             Set if we're in strict mode, clear if we just
  *                              want to get on with it if we can.
+ * @param   pConfig             The configuration object.
  * @throws  std::bad_alloc, ConfigFileError
  */
-void ConfigLevelBase::initFromXml(const xml::ElementNode *pElmConfig, bool fStrict)
+void ConfigLevelBase::initFromXml(const xml::ElementNode *pElmConfig, bool fStrict, Config const *pConfig)
 {
     /*
      * Common attributes:
@@ -853,7 +835,7 @@ void ConfigLevelBase::initFromXml(const xml::ElementNode *pElmConfig, bool fStri
     xml::NodesLoop it(*pElmConfig);
     const xml::ElementNode *pElmChild;
     while ((pElmChild = it.forAllNodes()) != NULL)
-        i_parseChild(pElmChild, fStrict);
+        i_parseChild(pElmChild, fStrict, pConfig);
 }
 
 
@@ -863,11 +845,12 @@ void ConfigLevelBase::initFromXml(const xml::ElementNode *pElmConfig, bool fStri
  * @param   pElmOptions         The <Options> element.
  * @param   fStrict             Set if we're in strict mode, clear if we just
  *                              want to get on with it if we can.
+ * @param   pConfig             The configuration object.
  * @throws  std::bad_alloc, ConfigFileError
  */
-void GlobalConfig::initFromXml(const xml::ElementNode *pElmOptions, bool fStrict)
+void GlobalConfig::initFromXml(const xml::ElementNode *pElmOptions, bool fStrict, Config const *pConfig)
 {
-    ConfigLevelBase::initFromXml(pElmOptions, fStrict);
+    ConfigLevelBase::initFromXml(pElmOptions, fStrict, pConfig);
 }
 
 
@@ -877,9 +860,10 @@ void GlobalConfig::initFromXml(const xml::ElementNode *pElmOptions, bool fStrict
  * @param   pElmChild           The child element.
  * @param   fStrict             Set if we're in strict mode, clear if we just
  *                              want to get on with it if we can.
+ * @param   pConfig             The configuration object.
  * @throws  std::bad_alloc, ConfigFileError
  */
-void GroupConfig::i_parseChild(const xml::ElementNode *pElmChild, bool fStrict)
+void GroupConfig::i_parseChild(const xml::ElementNode *pElmChild, bool fStrict, Config const *pConfig)
 {
     /*
      * Match the condition
@@ -902,7 +886,7 @@ void GroupConfig::i_parseChild(const xml::ElementNode *pElmChild, bool fStrict)
         /*
          * Not a condition, pass it on to the base class.
          */
-        ConfigLevelBase::i_parseChild(pElmChild, fStrict);
+        ConfigLevelBase::i_parseChild(pElmChild, fStrict, pConfig);
         return;
     }
 
@@ -938,10 +922,9 @@ void GroupConfig::i_parseChild(const xml::ElementNode *pElmChild, bool fStrict)
     else
     {
         ConfigFileError Xcpt(pElmChild, "condition value is empty or missing (inclusive=%RTbool)", fInclusive);
-        if (!fStrict)
-            LogRelFunc(("%s, ignoring condition\n", Xcpt.what()));
-        else
+        if (fStrict)
             throw Xcpt;
+        LogRelFunc(("%s, ignoring condition\n", Xcpt.what()));
     }
 }
 
@@ -952,9 +935,10 @@ void GroupConfig::i_parseChild(const xml::ElementNode *pElmChild, bool fStrict)
  * @param   pElmGroup           The \<Group\> element.
  * @param   fStrict             Set if we're in strict mode, clear if we just
  *                              want to get on with it if we can.
+ * @param   pConfig             The configuration object.
  * @throws  std::bad_alloc, ConfigFileError
  */
-void GroupConfig::initFromXml(const xml::ElementNode *pElmGroup, bool fStrict)
+void GroupConfig::initFromXml(const xml::ElementNode *pElmGroup, bool fStrict, Config const *pConfig)
 {
     /*
      * Attributes:
@@ -969,7 +953,7 @@ void GroupConfig::initFromXml(const xml::ElementNode *pElmGroup, bool fStrict)
     /*
      * Do common initialization (including children).
      */
-    ConfigLevelBase::initFromXml(pElmGroup, fStrict);
+    ConfigLevelBase::initFromXml(pElmGroup, fStrict, pConfig);
 }
 
 
@@ -984,9 +968,10 @@ void GroupConfig::initFromXml(const xml::ElementNode *pElmGroup, bool fStrict)
  * @param   pElmConfig          The \<Config\> element.
  * @param   fStrict             Set if we're in strict mode, clear if we just
  *                              want to get on with it if we can.
+ * @param   pConfig             The configuration object (for netmask).
  * @throws  std::bad_alloc, ConfigFileError
  */
-void HostConfig::initFromXml(const xml::ElementNode *pElmConfig, bool fStrict)
+void HostConfig::initFromXml(const xml::ElementNode *pElmConfig, bool fStrict, Config const *pConfig)
 {
     /*
      * Attributes:
@@ -999,19 +984,53 @@ void HostConfig::initFromXml(const xml::ElementNode *pElmConfig, bool fStrict)
         m_strName.printf("MAC:%RTmac", m_MACAddress);
 
     /* Fixed IP address assignment - optional: */
-    const char *pszFixedAddress = pElmConfig->findAttributeValue("FixedIPAddress");
+    const char *pszFixedAddress = pElmConfig->findAttributeValue("fixedAddress");
     if (!pszFixedAddress || *RTStrStripL(pszFixedAddress) == '\0')
         m_fHaveFixedAddress = false;
     else
     {
-        m_fHaveFixedAddress = false;
-        ::getIPv4AddrAttribute(pElmConfig, "FixedIPAddress", &m_FixedAddress);
+        ::getIPv4AddrAttribute(pElmConfig, "fixedAddress", &m_FixedAddress);
+        if (pConfig->isInIPv4Network(m_FixedAddress))
+            m_fHaveFixedAddress = true;
+        else
+        {
+            ConfigFileError Xcpt(pElmConfig, "fixedAddress '%s' is not the DHCP network", pszFixedAddress);
+            if (fStrict)
+                throw Xcpt;
+            LogRelFunc(("%s - ignoring the fixed address assignment\n", Xcpt.what()));
+            m_fHaveFixedAddress = false;
+        }
     }
 
     /*
      * Do common initialization.
      */
-    ConfigLevelBase::initFromXml(pElmConfig, fStrict);
+    ConfigLevelBase::initFromXml(pElmConfig, fStrict, pConfig);
+}
+
+
+/**
+ * Assembles a list of hosts with fixed address assignments.
+ *
+ * @returns IPRT status code.
+ * @param   a_rRetConfigs       Where to return the configurations.
+ */
+int Config::getFixedAddressConfigs(HostConfigVec &a_rRetConfigs) const
+{
+    for (HostConfigMap::const_iterator it = m_HostConfigs.begin(); it != m_HostConfigs.end(); ++it)
+    {
+        HostConfig const *pHostConfig = it->second;
+        if (pHostConfig->haveFixedAddress())
+            try
+            {
+                a_rRetConfigs.push_back(pHostConfig);
+            }
+            catch (std::bad_alloc &)
+            {
+                return VERR_NO_MEMORY;
+            }
+    }
+    return VINF_SUCCESS;
 }
 
 

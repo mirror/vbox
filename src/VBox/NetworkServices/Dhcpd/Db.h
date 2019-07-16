@@ -54,17 +54,28 @@ private:
     ClientId            m_id;
     Timestamp           m_issued;
     uint32_t            m_secLease;
+    /** Set if this is a fixed assignment. */
+    bool                m_fFixed;
 
 public:
     Binding();
     Binding(const Binding &);
 
     explicit Binding(RTNETADDRIPV4 a_Addr)
-        : m_addr(a_Addr), m_state(FREE), m_issued(), m_secLease()
+        : m_addr(a_Addr), m_state(FREE), m_issued(), m_secLease(0), m_fFixed(false)
     {}
 
     Binding(RTNETADDRIPV4 a_Addr, const ClientId &a_id)
-        : m_addr(a_Addr), m_state(FREE), m_id(a_id), m_issued(), m_secLease()
+        : m_addr(a_Addr), m_state(FREE), m_id(a_id), m_issued(), m_secLease(0), m_fFixed(false)
+    {}
+
+    Binding(RTNETADDRIPV4 a_Addr, const RTMAC &a_MACAddress, bool a_fFixed)
+        : m_addr(a_Addr)
+        , m_state(ACKED)
+        , m_id(ClientId(a_MACAddress, OptClientId()))
+        , m_issued(Timestamp::now())
+        , m_secLease(UINT32_MAX - 1)
+        , m_fFixed(a_fFixed)
     {}
 
 
@@ -73,6 +84,7 @@ public:
     RTNETADDRIPV4   addr() const RT_NOEXCEPT        { return m_addr; }
 
     const ClientId &id() const RT_NOEXCEPT          { return m_id; }
+    void            idUpdate(const ClientId &a_ridClient);
 
     uint32_t        leaseTime() const RT_NOEXCEPT   { return m_secLease; }
     Timestamp       issued() const RT_NOEXCEPT      { return m_issued; }
@@ -85,6 +97,8 @@ public:
         m_state = stateParam;
         return *this;
     }
+
+    bool            isFixed() const RT_NOEXCEPT     { return m_fFixed; }
     /** @} */
 
 
@@ -151,7 +165,9 @@ private:
     /** Configuration (set at init).
      * @note Currently not used.  */
     const Config   *m_pConfig;
-    /** The lease database. */
+    /** The lease database.
+     * @note Since fixed assignments are added during initialization, they will
+     *       always be first.  The allocateBinding() code depends on this.  */
     bindings_t      m_bindings;
     /** Address allocation pool. */
     IPv4Pool        m_pool;
@@ -182,6 +198,7 @@ public:
     /** @} */
 
 private:
+    int      i_enterFixedAddressAssignment(RTNETADDRIPV4 const &a_rAddress, RTMAC const &a_rMACAddress) RT_NOEXCEPT;
     Binding *i_createBinding(const ClientId &id = ClientId());
     Binding *i_createBinding(RTNETADDRIPV4 addr, const ClientId &id = ClientId());
 
