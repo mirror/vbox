@@ -503,7 +503,8 @@ protected:
     const char *m_pcszName;            ///< element or attribute name, points either into pLibNode or pLibAttr;
                                        ///< NULL if this is a content node
 
-    /** Child list entry of this node. (List head m_pParent->m_children.) */
+    /** Child list entry of this node. (List head m_pParent->m_children or
+     *  m_pParent->m_attribute depending on the type.) */
     RTLISTNODE      m_listEntry;
     /** Pointer to the parent list anchor.
      * This allows us to use m_listEntry both for children and attributes. */
@@ -774,6 +775,24 @@ public:
     const ElementNode *findNextSibilingElement(const char *pcszName, const char *pcszNamespace = NULL) const;
     /** @} */
 
+    /** @name Attribute enumeration
+     * @{ */
+
+    /** Get the first attribute node.
+     * @returns Pointer to the first child node, NULL if no attributes. */
+    const AttributeNode *getFirstAttribute() const
+    {
+        return RTListGetFirstCpp(&m_attributes, const AttributeNode, m_listEntry);
+    }
+
+    /** Get the last attribute node.
+     * @returns Pointer to the last child node, NULL if no attributes. */
+    const AttributeNode *getLastAttribute() const
+    {
+        return RTListGetLastCpp(&m_attributes, const AttributeNode, m_listEntry);
+    }
+
+    /** @} */
 
     const AttributeNode *findAttribute(const char *pcszMatch, const char *pcszNamespace = NULL) const;
     /** Find the first attribute with the given name, returning its value string.
