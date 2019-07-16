@@ -442,7 +442,7 @@ public:
      * @returns true / false  */
     bool isAttribute() const
     {
-        return m_Type == IsElement;
+        return m_Type == IsAttribute;
     }
 
     int getLineNumber() const;
