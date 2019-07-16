@@ -16917,7 +16917,7 @@ HMVMX_EXIT_DECL hmR0VmxExitXcptOrNmiNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTrans
                 return IEMExecVmxVmexitXcpt(pVCpu, &ExitInfo, &ExitEventInfo);
             }
 
-            /* Nested paging is currently a requirement, otherwise we would need to handle shadow #PFs. */
+            /* Nested paging is currently a requirement, otherwise we would need to handle shadow #PFs in hmR0VmxExitXcptPF. */
             Assert(pVCpu->CTX_SUFF(pVM)->hm.s.fNestedPaging);
             return hmR0VmxExitXcpt(pVCpu, pVmxTransient);
         }
