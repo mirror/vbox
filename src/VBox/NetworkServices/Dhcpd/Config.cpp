@@ -1120,6 +1120,13 @@ optmap_t &Config::getOptionsForClient(optmap_t &a_rRetOpts, const OptParameterRe
      */
     a_rRetOpts << new OptSubnetMask(m_IPv4Netmask);
 
+    /** @todo If a_rReqOpts is not present, provide the sum of all options in
+     *        a_rConfigs like ics says it does. */
+    /** @todo Look thru a_rConfigs for forced options, maybe we do it by using
+     *        DHCP option 55, and merging these into a_rReqOpts. */
+    /** @todo Have a way to mute options, i.e. break out of the inner search
+     *        loop below. Maybe using 'Suppress' encoding? */
+
     /*
      * Try provide the requested options:
      */
