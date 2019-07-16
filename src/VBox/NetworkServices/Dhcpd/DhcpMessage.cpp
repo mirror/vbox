@@ -23,6 +23,7 @@
 #include "DhcpMessage.h"
 #include "DhcpOptions.h"
 
+#include <iprt/ctype.h>
 #include <iprt/string.h>
 
 
@@ -278,7 +279,6 @@ void DhcpClientMessage::dump() const RT_NOEXCEPT
         LogRel(("bad_alloc during dumping\n"));
     }
 
-    bool fHeader = true;
     for (rawopts_t::const_iterator it = m_rawopts.begin(); it != m_rawopts.end(); ++it)
     {
         const uint8_t optcode = (*it).first;
@@ -293,17 +293,23 @@ void DhcpClientMessage::dump() const RT_NOEXCEPT
                 break;
 
             default:
-                if (fHeader)
-                {
-                    LogRel((" other options:"));
-                    fHeader = false;
-                }
-                LogRel((" %d", optcode));
-                break;
+            {
+                size_t const   cbBytes = it->second.size();
+                uint8_t const *pbBytes = &it->second.front();
+                bool fAllPrintable = true;
+                for (size_t off = 0; off < cbBytes; off++)
+                    if (!RT_C_IS_PRINT((char )pbBytes[off]))
+                    {
+                        fAllPrintable = false;
+                        break;
+                    }
+                if (fAllPrintable)
+                    LogRel(("  %2d: '%.*s'\n", optcode, cbBytes, pbBytes));
+                else
+                    LogRel(("  %2d: %.*Rhxs\n", optcode, cbBytes, pbBytes));
+            }
         }
     }
-    if (!fHeader)
-        LogRel(("\n"));
 }
 
 

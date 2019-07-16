@@ -96,20 +96,85 @@ public:
 };
 
 
-#if 0 /* later */
 /**
  * Group membership condition.
  */
-class GroupConditionBase
+class GroupCondition
 {
 protected:
     /** The value. */
     RTCString   m_strValue;
+    /** Inclusive (true) or exclusive (false), latter takes precedency. */
+    bool        m_fInclusive;
 
 public:
+    virtual ~GroupCondition()
+    {}
 
+    virtual int  initCondition(const char *a_pszValue, bool a_fInclusive);
+    virtual bool match(const ClientId &a_ridClient, const OptVendorClassId &a_ridVendorClass,
+                       const OptUserClassId &a_ridUserClass) const RT_NOEXCEPT = 0;
+
+    /** @name accessors
+     * @{  */
+    RTCString const    &getValue()     const RT_NOEXCEPT { return m_strValue; }
+    bool                getInclusive() const RT_NOEXCEPT { return m_fInclusive; }
+    /** @} */
+
+protected:
+    bool matchClassId(bool a_fPresent, std::vector<uint8_t> const &a_rBytes, bool fWildcard = false) const RT_NOEXCEPT;
 };
-#endif
+
+/** MAC condition. */
+class GroupConditionMAC : public GroupCondition
+{
+private:
+    RTMAC   m_MACAddress;
+public:
+    int  initCondition(const char *a_pszValue, bool a_fInclusive) RT_OVERRIDE;
+    bool match(const ClientId &a_ridClient, const OptVendorClassId &a_ridVendorClass,
+               const OptUserClassId &a_ridUserClass) const RT_OVERRIDE;
+};
+
+/** MAC wildcard condition. */
+class GroupConditionMACWildcard : public GroupCondition
+{
+public:
+    bool match(const ClientId &a_ridClient, const OptVendorClassId &a_ridVendorClass,
+               const OptUserClassId &a_ridUserClass) const RT_OVERRIDE;
+};
+
+/** Vendor class ID condition. */
+class GroupConditionVendorClassID : public GroupCondition
+{
+public:
+    bool match(const ClientId &a_ridClient, const OptVendorClassId &a_ridVendorClass,
+               const OptUserClassId &a_ridUserClass) const RT_OVERRIDE;
+};
+
+/** Vendor class ID wildcard condition. */
+class GroupConditionVendorClassIDWildcard : public GroupCondition
+{
+public:
+    bool match(const ClientId &a_ridClient, const OptVendorClassId &a_ridVendorClass,
+               const OptUserClassId &a_ridUserClass) const RT_OVERRIDE;
+};
+
+/** User class ID condition. */
+class GroupConditionUserClassID : public GroupCondition
+{
+public:
+    bool match(const ClientId &a_ridClient, const OptVendorClassId &a_ridVendorClass,
+               const OptUserClassId &a_ridUserClass) const RT_OVERRIDE;
+};
+
+/** User class ID wildcard condition. */
+class GroupConditionUserClassIDWildcard : public GroupCondition
+{
+public:
+    bool match(const ClientId &a_ridClient, const OptVendorClassId &a_ridVendorClass,
+               const OptUserClassId &a_ridUserClass) const RT_OVERRIDE;
+};
 
 
 /**
@@ -117,9 +182,15 @@ public:
  */
 class GroupConfig : public ConfigLevelBase
 {
-public:
+private:
+    typedef std::vector<GroupCondition *> GroupConditionVec;
+
     /** The group name. */
-    RTCString       m_strName;
+    RTCString           m_strName;
+    /** Vector containing the inclusive membership conditions (must match one). */
+    GroupConditionVec   m_Inclusive;
+    /** Vector containing the exclusive membership conditions (must match none). */
+    GroupConditionVec   m_Exclusive;
 
 public:
     GroupConfig()
@@ -128,11 +199,12 @@ public:
     }
 
     void initFromXml(xml::ElementNode const *pElm, bool fStrict) RT_OVERRIDE;
-    const char *getType() const RT_NOEXCEPT RT_OVERRIDE { return "group"; }
-    const char *getName() const RT_NOEXCEPT RT_OVERRIDE { return m_strName.c_str(); }
+    bool match(const ClientId &a_ridClient, const OptVendorClassId &a_ridVendorClass, const OptUserClassId &a_ridUserClass) const;
 
     /** @name Accessors
      * @{ */
+    const char         *getType() const RT_NOEXCEPT RT_OVERRIDE { return "group"; }
+    const char         *getName() const RT_NOEXCEPT RT_OVERRIDE { return m_strName.c_str(); }
     RTCString const    &getGroupName() const RT_NOEXCEPT        { return m_strName; }
     /** @} */
 

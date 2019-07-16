@@ -64,7 +64,7 @@ public:
 
         va_list va;
         va_start(va, a_pszMsgFmt);
-        m_strMsg.appendPrintf(a_pszMsgFmt, va);
+        m_strMsg.appendPrintfV(a_pszMsgFmt, va);
         va_end(va);
     }
 
@@ -90,17 +90,17 @@ private:
             i_buildPath(pNode->getParent());
             m_strMsg.append('/');
             m_strMsg.append(pNode->getName());
-            if (pNode->isElement())
+            if (pNode->isElement() && pNode->getParent())
             {
                 xml::ElementNode const *pElm = (xml::ElementNode const *)pNode;
-                for (xml::Node const *pNodeChild = pElm->getFirstChild(); pNodeChild != NULL;
-                    pNodeChild = pNodeChild->getNextSibiling())
-                    if (pNodeChild->isAttribute())
+                for (xml::Node const *pAttrib = pElm->getFirstAttribute(); pAttrib != NULL;
+                      pAttrib = pAttrib->getNextSibiling())
+                    if (pAttrib->isAttribute())
                     {
                         m_strMsg.append("[@");
-                        m_strMsg.append(pNodeChild->getName());
+                        m_strMsg.append(pAttrib->getName());
                         m_strMsg.append('=');
-                        m_strMsg.append(pNodeChild->getValue());
+                        m_strMsg.append(pAttrib->getValue());
                         m_strMsg.append(']');
                     }
             }
@@ -881,22 +881,67 @@ void GlobalConfig::initFromXml(const xml::ElementNode *pElmOptions, bool fStrict
  */
 void GroupConfig::i_parseChild(const xml::ElementNode *pElmChild, bool fStrict)
 {
+    /*
+     * Match the condition
+     */
+    std::unique_ptr<GroupCondition> ptrCondition;
     if (pElmChild->nameEquals("ConditionMAC"))
-    { }
+        ptrCondition.reset(new GroupConditionMAC());
     else if (pElmChild->nameEquals("ConditionMACWildcard"))
-    { }
+        ptrCondition.reset(new GroupConditionMACWildcard());
     else if (pElmChild->nameEquals("ConditionVendorClassID"))
-    { }
+        ptrCondition.reset(new GroupConditionVendorClassID());
     else if (pElmChild->nameEquals("ConditionVendorClassIDWildcard"))
-    { }
+        ptrCondition.reset(new GroupConditionVendorClassIDWildcard());
     else if (pElmChild->nameEquals("ConditionUserClassID"))
-    { }
+        ptrCondition.reset(new GroupConditionUserClassID());
     else if (pElmChild->nameEquals("ConditionUserClassIDWildcard"))
-    { }
+        ptrCondition.reset(new GroupConditionUserClassIDWildcard());
     else
     {
+        /*
+         * Not a condition, pass it on to the base class.
+         */
         ConfigLevelBase::i_parseChild(pElmChild, fStrict);
         return;
+    }
+
+    /*
+     * Get the attributes and initialize the condition.
+     */
+    bool fInclusive;
+    if (!pElmChild->getAttributeValue("inclusive", fInclusive))
+        fInclusive = true;
+    const char *pszValue = pElmChild->findAttributeValue("value");
+    if (pszValue && *pszValue)
+    {
+        int rc = ptrCondition->initCondition(pszValue, fInclusive);
+        if (RT_SUCCESS(rc))
+        {
+            /*
+             * Add it to the appropriate vector.
+             */
+            if (fInclusive)
+                m_Inclusive.push_back(ptrCondition.release());
+            else
+                m_Exclusive.push_back(ptrCondition.release());
+        }
+        else
+        {
+            ConfigFileError Xcpt(pElmChild, "initCondition failed with %Rrc for '%s' and %RTbool", rc, pszValue, fInclusive);
+            if (!fStrict)
+                LogRelFunc(("%s, ignoring condition\n", Xcpt.what()));
+            else
+                throw ConfigFileError(Xcpt);
+        }
+    }
+    else
+    {
+        ConfigFileError Xcpt(pElmChild, "condition value is empty or missing (inclusive=%RTbool)", fInclusive);
+        if (!fStrict)
+            LogRelFunc(("%s, ignoring condition\n", Xcpt.what()));
+        else
+            throw Xcpt;
     }
 }
 
@@ -989,7 +1034,9 @@ Config::ConfigVec &Config::getConfigsForClient(Config::ConfigVec &a_rRetConfigs,
         a_rRetConfigs.push_back(itHost->second);
 
     /* Groups: */
-    RT_NOREF(a_ridVendorClass, a_ridUserClass); /* not yet */
+    for (GroupConfigMap::const_iterator itGrp = m_GroupConfigs.begin(); itGrp != m_GroupConfigs.end(); ++itGrp)
+        if (itGrp->second->match(a_ridClient, a_ridVendorClass, a_ridUserClass))
+            a_rRetConfigs.push_back(itGrp->second);
 
     /* Global: */
     a_rRetConfigs.push_back(&m_GlobalConfig);
@@ -1075,3 +1122,128 @@ optmap_t &Config::getOptionsForClient(optmap_t &a_rRetOpts, const OptParameterRe
 
     return a_rRetOpts;
 }
+
+
+
+/*********************************************************************************************************************************
+*   Group Condition Matching                                                                                                     *
+*********************************************************************************************************************************/
+
+bool GroupConfig::match(const ClientId &a_ridClient, const OptVendorClassId &a_ridVendorClass,
+                        const OptUserClassId &a_ridUserClass) const
+{
+    /*
+     * Check the inclusive ones first, only one need to match.
+     */
+    for (GroupConditionVec::const_iterator itIncl = m_Inclusive.begin(); itIncl != m_Inclusive.end(); ++itIncl)
+        if ((*itIncl)->match(a_ridClient, a_ridVendorClass, a_ridUserClass))
+        {
+            /*
+             * Now make sure it isn't excluded by any of the exclusion condition.
+             */
+            for (GroupConditionVec::const_iterator itExcl = m_Exclusive.begin(); itExcl != m_Exclusive.end(); ++itExcl)
+                if ((*itIncl)->match(a_ridClient, a_ridVendorClass, a_ridUserClass))
+                    return false;
+            return true;
+        }
+
+    return false;
+}
+
+
+int GroupCondition::initCondition(const char *a_pszValue, bool a_fInclusive)
+{
+    m_fInclusive = a_fInclusive;
+    return m_strValue.assignNoThrow(a_pszValue);
+}
+
+
+bool GroupCondition::matchClassId(bool a_fPresent, const std::vector<uint8_t> &a_rBytes, bool fWildcard) const RT_NOEXCEPT
+{
+    if (a_fPresent)
+    {
+        size_t const cbBytes = a_rBytes.size();
+        if (cbBytes > 0)
+        {
+            if (a_rBytes[cbBytes - 1] == '\0')
+            {
+                uint8_t const *pb = &a_rBytes.front();
+                if (!fWildcard)
+                    return m_strValue.equals((const char *)pb);
+                return RTStrSimplePatternMatch(m_strValue.c_str(), (const char *)pb);
+            }
+
+            if (cbBytes <= 255)
+            {
+                char szTmp[256];
+                memcpy(szTmp, &a_rBytes.front(), cbBytes);
+                szTmp[cbBytes] = '\0';
+                if (!fWildcard)
+                    return m_strValue.equals(szTmp);
+                return RTStrSimplePatternMatch(m_strValue.c_str(), szTmp);
+            }
+        }
+    }
+    return false;
+
+}
+
+
+int GroupConditionMAC::initCondition(const char *a_pszValue, bool a_fInclusive)
+{
+    int vrc = RTNetStrToMacAddr(a_pszValue, &m_MACAddress);
+    if (RT_SUCCESS(vrc))
+        return GroupCondition::initCondition(a_pszValue, a_fInclusive);
+    return vrc;
+}
+
+
+bool GroupConditionMAC::match(const ClientId &a_ridClient, const OptVendorClassId &a_ridVendorClass,
+                              const OptUserClassId &a_ridUserClass) const
+{
+    RT_NOREF(a_ridVendorClass, a_ridUserClass);
+    return a_ridClient.mac() == m_MACAddress;
+}
+
+
+bool GroupConditionMACWildcard::match(const ClientId &a_ridClient, const OptVendorClassId &a_ridVendorClass,
+                                      const OptUserClassId &a_ridUserClass) const
+{
+    RT_NOREF(a_ridVendorClass, a_ridUserClass);
+    char szTmp[32];
+    RTStrPrintf(szTmp, sizeof(szTmp), "%RTmac", &a_ridClient.mac());
+    return RTStrSimplePatternMatch(m_strValue.c_str(), szTmp);
+}
+
+
+bool GroupConditionVendorClassID::match(const ClientId &a_ridClient, const OptVendorClassId &a_ridVendorClass,
+                                        const OptUserClassId &a_ridUserClass) const
+{
+    RT_NOREF(a_ridClient, a_ridUserClass);
+    return matchClassId(a_ridVendorClass.present(), a_ridVendorClass.value());
+}
+
+
+bool GroupConditionVendorClassIDWildcard::match(const ClientId &a_ridClient, const OptVendorClassId &a_ridVendorClass,
+                                                const OptUserClassId &a_ridUserClass) const
+{
+    RT_NOREF(a_ridClient, a_ridUserClass);
+    return matchClassId(a_ridVendorClass.present(), a_ridVendorClass.value(), true /*fWildcard*/);
+}
+
+
+bool GroupConditionUserClassID::match(const ClientId &a_ridClient, const OptVendorClassId &a_ridVendorClass,
+                                      const OptUserClassId &a_ridUserClass) const
+{
+    RT_NOREF(a_ridClient, a_ridVendorClass);
+    return matchClassId(a_ridVendorClass.present(), a_ridUserClass.value());
+}
+
+
+bool GroupConditionUserClassIDWildcard::match(const ClientId &a_ridClient, const OptVendorClassId &a_ridVendorClass,
+                                              const OptUserClassId &a_ridUserClass) const
+{
+    RT_NOREF(a_ridClient, a_ridVendorClass);
+    return matchClassId(a_ridVendorClass.present(), a_ridUserClass.value(), true /*fWildcard*/);
+}
+
