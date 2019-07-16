@@ -386,7 +386,7 @@ public:
     DHCPIndividualConfig()
         : DHCPConfig(DHCPConfigScope_MAC, this)
         , m_uSlot(~(ULONG)0)
-        , m_uMACAddressResolvedVersion(false)
+        , m_uMACAddressResolvedVersion(0)
     {
         RT_ZERO(m_MACAddress);
     }

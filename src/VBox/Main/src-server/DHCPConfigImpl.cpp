@@ -1238,7 +1238,7 @@ HRESULT DHCPIndividualConfig::i_resolveMACAddress(uint32_t uVersion)
         if (SUCCEEDED(hrc))
         {
             AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-            if ((int32_t)(m_uMACAddressResolvedVersion - uVersion) >= 0)
+            if ((int32_t)(uVersion - m_uMACAddressResolvedVersion) >= 0)
             {
                 m_uMACAddressResolvedVersion = uVersion;
                 m_MACAddress                 = MACAddress;
