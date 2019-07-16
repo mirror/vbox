@@ -234,6 +234,13 @@ public:
     static HRESULT i_validateTypeAndValue(DHCPGroupConditionType_T enmType, com::Utf8Str const &strValue,
                                           VirtualBoxBase *pErrorDst);
 
+    /** @name Internal accessors
+     * @{ */
+    bool                        i_getInclusive() const RT_NOEXCEPT  { return m_fInclusive; }
+    DHCPGroupConditionType_T    i_getType() const RT_NOEXCEPT       { return m_enmType; }
+    com::Utf8Str const         &i_getValue() const RT_NOEXCEPT      { return m_strValue; }
+    /** @} */
+
 protected:
     /** @name Wrapped IDHCPGroupCondition properties
      * @{ */
@@ -287,6 +294,7 @@ public:
 
     HRESULT i_saveSettings(settings::DHCPGroupConfig &a_rDst);
     HRESULT i_removeCondition(DHCPGroupCondition *a_pCondition);
+    void    i_writeDhcpdConfig(xml::ElementNode *a_pElmGroup) RT_OVERRIDE;
 
 protected:
     /** @name Wrapped IDHCPConfig properties

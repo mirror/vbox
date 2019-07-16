@@ -241,6 +241,9 @@ DhcpServerMessage *DHCPD::i_doDiscover(const DhcpClientMessage &req)
     if (req.ciaddr().u != 0)
         return NULL;
 
+    Config::ConfigVec vecConfigs;
+    m_pConfig->getConfigsForClient(vecConfigs, req.clientId(), OptVendorClassId(req), OptUserClassId(req));
+
     Binding *b = m_db.allocateBinding(req);
     if (b == NULL)
         return NULL;
@@ -269,10 +272,9 @@ DhcpServerMessage *DHCPD::i_doDiscover(const DhcpClientMessage &req)
     reply->setYiaddr(b->addr());
     reply->addOption(OptLeaseTime(b->leaseTime()));
 
-
     OptParameterRequest optlist(req);
     optmap_t replyOptions;
-    reply->addOptions(m_pConfig->getOptions(replyOptions, optlist, req.clientId()));
+    reply->addOptions(m_pConfig->getOptionsForClient(replyOptions, optlist, vecConfigs));
 
     // reply->maybeUnicast(req); /** @todo XXX: we reject ciaddr != 0 above */
     return reply.release();
@@ -306,13 +308,14 @@ DhcpServerMessage *DHCPD::i_doRequest(const DhcpClientMessage &req)
         return nak.release();
     }
 
+    Config::ConfigVec vecConfigs;
+    m_pConfig->getConfigsForClient(vecConfigs, req.clientId(), OptVendorClassId(req), OptUserClassId(req));
 
     Binding *b = m_db.allocateBinding(req);
     if (b == NULL)
     {
         return i_createMessage(RTNET_DHCP_MT_NAC, req);
     }
-
 
     std::unique_ptr<DhcpServerMessage> ack(i_createMessage(RTNET_DHCP_MT_ACK, req));
 
@@ -324,7 +327,7 @@ DhcpServerMessage *DHCPD::i_doRequest(const DhcpClientMessage &req)
 
     OptParameterRequest optlist(req);
     optmap_t replyOptions;
-    ack->addOptions(m_pConfig->getOptions(replyOptions, optlist, req.clientId()));
+    ack->addOptions(m_pConfig->getOptionsForClient(replyOptions, optlist, vecConfigs));
 
     /** @todo r=bird: Sec 9.9 in rfc-2132 indicates the server only sends this in NACKs. Test code? */
     ack->addOption(OptMessage("Ok, ok, here it is"));
@@ -350,12 +353,14 @@ DhcpServerMessage *DHCPD::i_doInform(const DhcpClientMessage &req)
     if (req.ciaddr().u == 0)
         return NULL;
 
-    const OptParameterRequest params(req);
-    if (!params.present())
+    OptParameterRequest optlist(req);
+    if (!optlist.present())
         return NULL;
 
+    Config::ConfigVec vecConfigs;
     optmap_t info;
-    m_pConfig->getOptions(info, params, req.clientId());
+    m_pConfig->getOptionsForClient(info, optlist, m_pConfig->getConfigsForClient(vecConfigs, req.clientId(),
+                                                                                 OptVendorClassId(req), OptUserClassId(req)));
     if (info.empty())
         return NULL;
 

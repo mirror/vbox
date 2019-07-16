@@ -34,12 +34,160 @@
 
 
 /**
+ * Base configuration
+ *
+ * @author bird (2019-07-15)
+ */
+class ConfigLevelBase
+{
+private:
+    /** DHCP options. */
+    optmap_t        m_Options;
+    /** Minimum lease time, zero means try next level up. */
+    uint32_t        m_secMinLeaseTime;
+    /** Default lease time, zero means try next level up. */
+    uint32_t        m_secDefaultLeaseTime;
+    /** Maximum lease time, zero means try next level up. */
+    uint32_t        m_secMaxLeaseTime;
+
+public:
+    ConfigLevelBase()
+        : m_Options()
+        , m_secMinLeaseTime(0)
+        , m_secDefaultLeaseTime(0)
+        , m_secMaxLeaseTime(0)
+    { }
+
+    virtual ~ConfigLevelBase()
+    { }
+
+    virtual void        initFromXml(xml::ElementNode const *pElm, bool fStrict);
+    virtual const char *getType() const RT_NOEXCEPT = 0;
+    virtual const char *getName() const RT_NOEXCEPT = 0;
+
+    /**
+     * Tries to find DHCP option @a bOpt, returning an success indicator and
+     * iterator to the result.
+     */
+    bool            findOption(uint8_t bOpt, optmap_t::const_iterator &a_rItRet) const RT_NOEXCEPT
+    {
+        a_rItRet = m_Options.find(bOpt);
+        return a_rItRet != m_Options.end();
+    }
+
+protected:
+    void            i_parseOption(const xml::ElementNode *pElmOption);
+    virtual void    i_parseChild(const xml::ElementNode *pElmChild, bool fStrict);
+};
+
+
+/**
+ * Global config
+ */
+class GlobalConfig : public ConfigLevelBase
+{
+public:
+    GlobalConfig()
+        : ConfigLevelBase()
+    { }
+    void initFromXml(xml::ElementNode const *pElm, bool fStrict) RT_OVERRIDE;
+    const char *getType() const RT_NOEXCEPT RT_OVERRIDE { return "global"; }
+    const char *getName() const RT_NOEXCEPT RT_OVERRIDE { return "GlobalConfig"; }
+};
+
+
+#if 0 /* later */
+/**
+ * Group membership condition.
+ */
+class GroupConditionBase
+{
+protected:
+    /** The value. */
+    RTCString   m_strValue;
+
+public:
+
+};
+#endif
+
+
+/**
+ * Group config
+ */
+class GroupConfig : public ConfigLevelBase
+{
+public:
+    /** The group name. */
+    RTCString       m_strName;
+
+public:
+    GroupConfig()
+        : ConfigLevelBase()
+    {
+    }
+
+    void initFromXml(xml::ElementNode const *pElm, bool fStrict) RT_OVERRIDE;
+    const char *getType() const RT_NOEXCEPT RT_OVERRIDE { return "group"; }
+    const char *getName() const RT_NOEXCEPT RT_OVERRIDE { return m_strName.c_str(); }
+
+    /** @name Accessors
+     * @{ */
+    RTCString const    &getGroupName() const RT_NOEXCEPT        { return m_strName; }
+    /** @} */
+
+protected:
+    void                i_parseChild(const xml::ElementNode *pElmChild, bool fStrict) RT_OVERRIDE;
+    /** Used to name unnamed groups. */
+    static uint32_t     s_uGroupNo;
+};
+
+
+/**
+ * Host (MAC address) specific configuration.
+ */
+class HostConfig : public ConfigLevelBase
+{
+protected:
+    /** The MAC address. */
+    RTMAC           m_MACAddress;
+    /** Name annotating the entry. */
+    RTCString       m_strName;
+    /** Fixed address assignment when m_fHaveFixedAddress is true. */
+    RTNETADDRIPV4   m_FixedAddress;
+    /** Set if we have a fixed address asignment. */
+    bool            m_fHaveFixedAddress;
+
+public:
+    HostConfig()
+        : ConfigLevelBase()
+        , m_fHaveFixedAddress(false)
+    {
+        RT_ZERO(m_MACAddress);
+        RT_ZERO(m_FixedAddress);
+    }
+
+    void initFromXml(xml::ElementNode const *pElm, bool fStrict) RT_OVERRIDE;
+    const char *getType() const RT_NOEXCEPT RT_OVERRIDE { return "host"; }
+    const char *getName() const RT_NOEXCEPT RT_OVERRIDE { return m_strName.c_str(); }
+
+    /** @name Accessors
+     * @{ */
+    RTMAC const        &getMACAddress() const RT_NOEXCEPT       { return m_MACAddress; }
+    /** @} */
+};
+
+
+/**
  * DHCP server configuration.
  */
 class Config
 {
-    /** @todo XXX: also store fixed address assignments, etc? */
-    typedef std::map<RTMAC, optmap_t> vmmap_t;
+    /** Group configuration map. */
+    typedef std::map<RTCString, GroupConfig * > GroupConfigMap;
+    /** Host configuration map. */
+    typedef std::map<RTMAC,     HostConfig *  > HostConfigMap;
+
 
     RTCString       m_strHome;          /**< path of ~/.VirtualBox or equivalent, */
 
@@ -58,15 +206,12 @@ class Config
     RTNETADDRIPV4   m_IPv4PoolLast;     /**< The last IPV4 address in the pool (inclusive like all other 'last' variables). */
 
 
-    optmap_t        m_GlobalOptions;    /**< Global DHCP option. */
-    vmmap_t         m_VMMap;            /**< Per MAC address (VM) DHCP options. */
-    /** @todo r=bird: optmap_t is too narrow for adding configuration options such
-     *        as max-lease-time, min-lease-time, default-lease-time and such like
-     *        that does not translate directly to any specific DHCP option. */
-    /** @todo r=bird: Additionally, I'd like to have a more generic option groups
-     *        that fits inbetween m_VMMap (mac based) and m_GlobalOptions.
-     *        Pattern/wildcard matching on MAC address, possibly also client ID,
-     *        vendor class and user class, including simple lists of these. */
+    /** The global configuration. */
+    GlobalConfig    m_GlobalConfig;
+    /** The group configurations, indexed by group name. */
+    GroupConfigMap  m_GroupConfigs;
+    /** The host configurations, indexed by MAC address. */
+    HostConfigMap   m_HostConfigs;
 
     /** Set if we've initialized the log already (via command line). */
     static bool     g_fInitializedLog;
@@ -108,22 +253,20 @@ public:
     RTNETADDRIPV4       getIPv4PoolLast() const RT_NOEXCEPT     { return m_IPv4PoolLast; }
     /** @} */
 
-    optmap_t           &getOptions(optmap_t &a_rRetOpts, const OptParameterRequest &reqOpts, const ClientId &id,
-                                   const OptVendorClassId &idVendorClass = OptVendorClassId(),
-                                   const OptUserClassId &idUserClass = OptUserClassId()) const;
+    /** Configuration vector. */
+    typedef std::vector<ConfigLevelBase const *> ConfigVec;
+    ConfigVec          &getConfigsForClient(ConfigVec &a_rRetConfigs, const ClientId &a_ridClient,
+                                            const OptVendorClassId &a_ridVendorClass,
+                                            const OptUserClassId &a_ridUserClass) const;
+    optmap_t           &getOptionsForClient(optmap_t &a_rRetOpts, const OptParameterRequest &a_rReqOpts,
+                                            ConfigVec &a_rConfigs) const;
 
 private:
     /** @name Configuration file reading and parsing
      * @{ */
-    static Config      *i_read(const char *pszFileName) RT_NOEXCEPT;
-    void                i_parseConfig(const xml::ElementNode *root);
-    void                i_parseServer(const xml::ElementNode *server);
-    void                i_parseGlobalOptions(const xml::ElementNode *options);
-    void                i_parseVMConfig(const xml::ElementNode *config);
-    void                i_parseOption(const xml::ElementNode *option, optmap_t &optmap);
-
-    static void         i_getIPv4AddrAttribute(const xml::ElementNode *pElm, const char *pcszAttrName, PRTNETADDRIPV4 pAddr);
-    static void         i_getMacAddressAttribute(const xml::ElementNode *pElm, const char *pszAttrName, PRTMAC pMacAddr);
+    static Config      *i_read(const char *pszFilename, bool fStrict) RT_NOEXCEPT;
+    void                i_parseConfig(const xml::ElementNode *pElmRoot, bool fStrict);
+    void                i_parseServer(const xml::ElementNode *pElmServer, bool fStrict);
     /** @} */
 };
 
