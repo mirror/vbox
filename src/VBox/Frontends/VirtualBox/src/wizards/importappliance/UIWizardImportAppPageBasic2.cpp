@@ -285,6 +285,9 @@ bool UIWizardImportAppPageBasic2::validatePage()
     const bool fIsSourceCloudOne = fieldImp("isSourceCloudOne").toBool();
     if (fIsSourceCloudOne)
     {
+        /* Make sure table has own data committed: */
+        m_pFormEditor->makeSureEditorDataCommitted();
+
         /* Check whether we have proper VSD form: */
         CVirtualSystemDescriptionForm comForm = fieldImp("vsdForm").value<CVirtualSystemDescriptionForm>();
         fResult = comForm.isNotNull();

@@ -628,6 +628,9 @@ bool UIWizardExportAppPageExpert::validatePage()
     const bool fIsFormatCloudOne = fieldImp("isFormatCloudOne").toBool();
     if (fIsFormatCloudOne)
     {
+        /* Make sure table has own data committed: */
+        m_pFormEditor->makeSureEditorDataCommitted();
+
         /* Check whether we have proper VSD form: */
         CVirtualSystemDescriptionForm comForm = fieldImp("vsdExportForm").value<CVirtualSystemDescriptionForm>();
         fResult = comForm.isNotNull();

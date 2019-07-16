@@ -148,6 +148,9 @@ bool UIWizardNewCloudVMPageBasic2::validatePage()
     /* Lock finish button: */
     startProcessing();
 
+    /* Make sure table has own data committed: */
+    m_pFormEditor->makeSureEditorDataCommitted();
+
     /* Check whether we have proper VSD form: */
     CVirtualSystemDescriptionForm comForm = vsdForm();
     /* Give changed VSD back: */

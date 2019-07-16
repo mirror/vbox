@@ -43,6 +43,9 @@ public:
     /** Defines virtual system description @a comForm to be edited. */
     void setVirtualSystemDescriptionForm(const CVirtualSystemDescriptionForm &comForm);
 
+    /** Makes sure current editor data committed. */
+    void makeSureEditorDataCommitted();
+
 protected:
 
     /** Preprocesses any Qt @a pEvent for passed @a pObject. */

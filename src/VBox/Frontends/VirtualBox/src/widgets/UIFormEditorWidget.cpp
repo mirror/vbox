@@ -1397,6 +1397,11 @@ void UIFormEditorWidget::setVirtualSystemDescriptionForm(const CVirtualSystemDes
     adjustTable();
 }
 
+void UIFormEditorWidget::makeSureEditorDataCommitted()
+{
+    m_pTableView->makeSureEditorDataCommitted();
+}
+
 bool UIFormEditorWidget::eventFilter(QObject *pObject, QEvent *pEvent)
 {
     /* Process events for table only: */
