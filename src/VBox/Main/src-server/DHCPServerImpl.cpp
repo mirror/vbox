@@ -550,15 +550,10 @@ HRESULT DHCPServer::setConfiguration(const com::Utf8Str &aIPAddress,
         || ((UpperIP.u & ~NetworkMask.u) | NetworkMask.u) == UINT32_C(0xffffffff))
         return setError(E_INVALIDARG, tr("Invalid range upper address"), aUpperIP.c_str(), aNetworkMask.c_str());
 
-    /* The range should be valid ... */
+    /* The range should be valid. (It's okay to overlap the server IP.) */
     if (LowerIP.u > UpperIP.u)
         return setError(E_INVALIDARG, tr("Lower bound must be less or eqaul than the upper: %s vs %s"),
                         aLowerIP.c_str(), aUpperIP.c_str());
-
-    /* ... and shouldn't contain the server's address */
-    if (LowerIP.u <= IPAddress.u && IPAddress.u <= UpperIP.u)
-        return setError(E_INVALIDARG, tr("Server address within range bounds: %s in %s - %s"),
-                        aIPAddress.c_str(), aLowerIP.c_str(), aUpperIP.c_str());
 
     /*
      * Input is valid, effect the changes.
