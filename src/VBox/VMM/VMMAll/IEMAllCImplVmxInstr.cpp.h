@@ -3786,8 +3786,10 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitApicAccessWithInfo(PVMCPU pVCpu, PCVMXVEXITI
 {
     /* VM-exit interruption information should not be valid for APIC-access VM-exits. */
     Assert(!VMX_EXIT_INT_INFO_IS_VALID(pExitEventInfo->uExitIntInfo));
+    Assert(pExitInfo->uReason == VMX_EXIT_APIC_ACCESS);
     iemVmxVmcsSetExitIntInfo(pVCpu, 0);
     iemVmxVmcsSetExitIntErrCode(pVCpu, 0);
+    iemVmxVmcsSetExitInstrLen(pVCpu, pExitInfo->cbInstr);
     iemVmxVmcsSetIdtVectoringInfo(pVCpu, pExitEventInfo->uIdtVectoringInfo);
     iemVmxVmcsSetIdtVectoringErrCode(pVCpu, pExitEventInfo->uIdtVectoringErrCode);
     return iemVmxVmexit(pVCpu, VMX_EXIT_APIC_ACCESS, pExitInfo->u64Qual);
