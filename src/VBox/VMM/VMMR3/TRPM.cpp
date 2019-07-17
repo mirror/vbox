@@ -1498,8 +1498,8 @@ VMMR3DECL(bool) TRPMR3IsGateHandler(PVM pVM, RTRCPTR GCPtr)
  */
 VMMR3DECL(int) TRPMR3InjectEvent(PVM pVM, PVMCPU pVCpu, TRPMEVENT enmEvent, bool *pfInjected)
 {
-#ifdef VBOX_WITH_RAW_MODE
     PCPUMCTX pCtx = CPUMQueryGuestCtxPtr(pVCpu);
+#ifdef VBOX_WITH_RAW_MODE
     Assert(!PATMIsPatchGCAddr(pVM, pCtx->eip));
 #endif
     Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS));
@@ -1516,7 +1516,8 @@ VMMR3DECL(int) TRPMR3InjectEvent(PVM pVM, PVMCPU pVCpu, TRPMEVENT enmEvent, bool
     DBGFR3_DISAS_INSTR_CUR_LOG(pVCpu, "TRPMInject");
 # endif
 
-    Assert(!CPUMIsGuestInNestedHwvirtMode(pCtx));
+    Assert(  !CPUMIsGuestInNestedHwvirtMode(pCtx)
+           || CPUMIsGuestVmxExitCtlsSet(pVCpu, pCtx, VMX_EXIT_CTLS_ACK_EXT_INT));
     uint8_t u8Interrupt = 0;
     int rc = PDMGetInterrupt(pVCpu, &u8Interrupt);
     Log(("TRPMR3InjectEvent: CPU%d u8Interrupt=%d (%#x) rc=%Rrc\n", pVCpu->idCpu, u8Interrupt, u8Interrupt, rc));
@@ -1585,7 +1586,7 @@ VMMR3DECL(int) TRPMR3InjectEvent(PVM pVM, PVMCPU pVCpu, TRPMEVENT enmEvent, bool
     return VINF_EM_RESCHEDULE_REM; /* (Heed the halted state if this is changed!) */
 
 #else  /* !TRPM_FORWARD_TRAPS_IN_GC */
-    RT_NOREF(pVM, enmEvent);
+    RT_NOREF3(pVM, enmEvent, pCtx);
     uint8_t u8Interrupt = 0;
     int rc = PDMGetInterrupt(pVCpu, &u8Interrupt);
     Log(("TRPMR3InjectEvent: u8Interrupt=%d (%#x) rc=%Rrc\n", u8Interrupt, u8Interrupt, rc));
