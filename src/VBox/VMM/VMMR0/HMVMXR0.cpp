@@ -178,7 +178,7 @@
 #define HMVMX_LOG_EXIT(a_pVCpu, a_uExitReason) \
     do { \
         Log4(("VM-exit: vcpu[%RU32] %85s -v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-\n", (a_pVCpu)->idCpu, \
-             HMGetVmxExitName((a_uExitReason))); \
+             HMGetVmxExitName(a_uExitReason))); \
     } while (0) \
 
 
