@@ -1703,15 +1703,6 @@ UUID="457af700-bc0a-4258-aa3c-13b03da171f2"
 
             <listitem>
               <para>
-                <computeroutput>uarttype &lt;1-N&gt;
-                16450|16550A|16750</computeroutput>: Confgures the UART
-                type for a virtual serial port. The default UART type is
-                16550A.
-              </para>
-            </listitem>
-
-            <listitem>
-              <para>
                 <computeroutput>file &lt;file&gt;</computeroutput>:
                 Redirects the serial port output to a raw file
                 &lt;file&gt; specified by its absolute path on the host
@@ -1735,6 +1726,15 @@ UUID="457af700-bc0a-4258-aa3c-13b03da171f2"
             </listitem>
 
           </itemizedlist>
+        </listitem>
+
+        <listitem>
+          <para>
+            <computeroutput>uarttype &lt;1-N&gt;
+            16450|16550A|16750</computeroutput>: Confgures the UART
+            type for a virtual serial port. The default UART type is
+            16550A.
+          </para>
         </listitem>
 
         <listitem>
