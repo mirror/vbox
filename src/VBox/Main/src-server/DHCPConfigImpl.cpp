@@ -601,9 +601,9 @@ HRESULT DHCPGlobalConfig::i_getNetworkMask(com::Utf8Str &a_rDst)
     {
         if (it->second.enmEncoding == DHCPOptionEncoding_Normal)
             return a_rDst.assignEx(it->second.strValue);
-        return setError(VBOX_E_OBJECT_NOT_FOUND, tr("DHCP option DhcpOpt_SubnetMask is not in a legacy encoding"));
+        return setError(VBOX_E_OBJECT_NOT_FOUND, tr("DHCP option DHCPOption_SubnetMask is not in a legacy encoding"));
     }
-    return setError(VBOX_E_OBJECT_NOT_FOUND, tr("DHCP option DhcpOpt_SubnetMask was not found"));
+    return setError(VBOX_E_OBJECT_NOT_FOUND, tr("DHCP option DHCPOption_SubnetMask was not found"));
 }
 
 
@@ -627,29 +627,29 @@ HRESULT DHCPGlobalConfig::i_setNetworkMask(const com::Utf8Str &a_rSrc)
 
 
 /**
- * Overriden to ensure the sanity of the DhcpOpt_SubnetMask option.
+ * Overriden to ensure the sanity of the DHCPOption_SubnetMask option.
  */
 HRESULT DHCPGlobalConfig::i_setOption(DHCPOption_T aOption, DHCPOptionEncoding_T aEncoding, const com::Utf8Str &aValue)
 {
-    if (aOption != DhcpOpt_SubnetMask || aEncoding == DHCPOptionEncoding_Normal)
+    if (aOption != DHCPOption_SubnetMask || aEncoding == DHCPOptionEncoding_Normal)
         return DHCPConfig::i_setOption(aOption, aEncoding, aValue);
-    return setError(E_FAIL, tr("DhcpOpt_SubnetMask must use DHCPOptionEncoding_Normal as it is reflected by IDHCPServer::networkMask"));
+    return setError(E_FAIL, tr("DHCPOption_SubnetMask must use DHCPOptionEncoding_Normal as it is reflected by IDHCPServer::networkMask"));
 }
 
 
 /**
- * Overriden to ensure the sanity of the DhcpOpt_SubnetMask option.
+ * Overriden to ensure the sanity of the DHCPOption_SubnetMask option.
  */
 HRESULT DHCPGlobalConfig::i_removeOption(DHCPOption_T aOption)
 {
-    if (aOption != DhcpOpt_SubnetMask)
+    if (aOption != DHCPOption_SubnetMask)
         return DHCPConfig::i_removeOption(aOption);
-    return setError(E_FAIL, tr("DhcpOpt_SubnetMask cannot be removed as it reflects IDHCPServer::networkMask"));
+    return setError(E_FAIL, tr("DHCPOption_SubnetMask cannot be removed as it reflects IDHCPServer::networkMask"));
 }
 
 
 /**
- * Overriden to preserve the DhcpOpt_SubnetMask option.
+ * Overriden to preserve the DHCPOption_SubnetMask option.
  */
 HRESULT DHCPGlobalConfig::i_removeAllOptions()
 {
