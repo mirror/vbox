@@ -170,6 +170,8 @@ typedef struct RTHTTPINTERNAL
     bool                fUseSystemProxySettings;
     /** Set if we've detected no proxy necessary. */
     bool                fNoProxy;
+    /** Set if we've reset proxy info in cURL and need to reapply it.  */
+    bool                fReapplyProxyInfo;
     /** Proxy host name (RTStrFree). */
     char               *pszProxyHost;
     /** Proxy port number (UINT32_MAX if not specified). */
@@ -432,6 +434,10 @@ RTR3DECL(int) RTHttpReset(RTHTTP hHttp, uint32_t fFlags)
     pThis->offUploadContent         = 0;
     pThis->rcOutput                 = VINF_SUCCESS;
 
+    /* Tell the proxy configuration code to reapply settings even if they
+       didn't change as cURL has forgotten them: */
+    pThis->fReapplyProxyInfo        = true;
+
     return VINF_SUCCESS;
 }
 
@@ -585,7 +591,8 @@ static int rtHttpUpdateProxyConfig(PRTHTTPINTERNAL pThis, curl_proxytype enmProx
     }
 #endif
 
-    if (enmProxyType != pThis->enmProxyType)
+    if (   pThis->fReapplyProxyInfo
+        || enmProxyType != pThis->enmProxyType)
     {
         rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_PROXYTYPE, (long)enmProxyType);
         AssertMsgReturn(rcCurl == CURLE_OK, ("CURLOPT_PROXYTYPE=%d: %d (%#x)\n", enmProxyType, rcCurl, rcCurl),
@@ -593,7 +600,8 @@ static int rtHttpUpdateProxyConfig(PRTHTTPINTERNAL pThis, curl_proxytype enmProx
         pThis->enmProxyType = enmProxyType;
     }
 
-    if (uPort != pThis->uProxyPort)
+    if (   pThis->fReapplyProxyInfo
+        || uPort != pThis->uProxyPort)
     {
         rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_PROXYPORT, (long)uPort);
         AssertMsgReturn(rcCurl == CURLE_OK, ("CURLOPT_PROXYPORT=%d: %d (%#x)\n", uPort, rcCurl, rcCurl),
@@ -601,7 +609,8 @@ static int rtHttpUpdateProxyConfig(PRTHTTPINTERNAL pThis, curl_proxytype enmProx
         pThis->uProxyPort = uPort;
     }
 
-    if (   pszUsername != pThis->pszProxyUsername
+    if (   pThis->fReapplyProxyInfo
+        || pszUsername != pThis->pszProxyUsername
         || RTStrCmp(pszUsername, pThis->pszProxyUsername))
     {
         rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_PROXYUSERNAME, pszUsername);
@@ -619,7 +628,8 @@ static int rtHttpUpdateProxyConfig(PRTHTTPINTERNAL pThis, curl_proxytype enmProx
         }
     }
 
-    if (   pszPassword != pThis->pszProxyPassword
+    if (   pThis->fReapplyProxyInfo
+        || pszPassword != pThis->pszProxyPassword
         || RTStrCmp(pszPassword, pThis->pszProxyPassword))
     {
         rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_PROXYPASSWORD, pszPassword);
@@ -638,7 +648,8 @@ static int rtHttpUpdateProxyConfig(PRTHTTPINTERNAL pThis, curl_proxytype enmProx
         }
     }
 
-    if (   pszHost != pThis->pszProxyHost
+    if (   pThis->fReapplyProxyInfo
+        || pszHost != pThis->pszProxyHost
         || RTStrCmp(pszHost, pThis->pszProxyHost))
     {
         rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_PROXY, pszHost);
@@ -656,6 +667,7 @@ static int rtHttpUpdateProxyConfig(PRTHTTPINTERNAL pThis, curl_proxytype enmProx
         }
     }
 
+    pThis->fReapplyProxyInfo = false;
     return VINF_SUCCESS;
 }
 
