@@ -152,7 +152,7 @@ int RTCRestClientRequestBase::doQueryParameters(RTCString *a_pStrQuery, QUERYPAR
                 int rc = a_papQueryParamObjs[i]->toString(&strTmpVal, a_paQueryParams[i].fFlags);
                 AssertRCReturn(rc, rc);
 
-                rc = a_pStrQuery->appendPrintfNoThrow("%c%RMpq=%RMpq", chSep, a_paQueryParams[i].pszName, strTmpVal.c_str());
+                rc = a_pStrQuery->appendPrintfNoThrow("%c%RMpf=%RMpf", chSep, a_paQueryParams[i].pszName, strTmpVal.c_str());
                 AssertRCReturn(rc, rc);
 
                 chSep = '&';
@@ -171,7 +171,7 @@ int RTCRestClientRequestBase::doQueryParameters(RTCString *a_pStrQuery, QUERYPAR
                     int rc = pObj->toString(&strTmpVal, a_paQueryParams[i].fFlags & ~RTCRestObjectBase::kCollectionFormat_Mask);
                     AssertRCReturn(rc, rc);
 
-                    rc = a_pStrQuery->appendPrintfNoThrow("%c%RMpq=%RMpq", chSep, a_paQueryParams[i].pszName, strTmpVal.c_str());
+                    rc = a_pStrQuery->appendPrintfNoThrow("%c%RMpf=%RMpf", chSep, a_paQueryParams[i].pszName, strTmpVal.c_str());
                     AssertRCReturn(rc, rc);
 
                     chSep = '&';
