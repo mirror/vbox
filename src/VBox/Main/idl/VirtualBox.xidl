@@ -26319,48 +26319,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   -->
   <interface
     name="ICloudClient" extends="$unknown"
-    uuid="949f8c85-c689-40fa-a6b2-14425ccdfc0d"
+    uuid="52a6bbf0-a80d-11e9-8df6-a3cb09336ce8"
     wsmap="managed" reservedMethods="16" reservedAttributes="8"
     >
-
-    <method name="getExportLaunchDescriptionForm">
-      <desc>
-        Returns a form for editing the virtual system description.
-        Since the data for the form are fetched from the cloud a
-        progress object is also returned to indicate if/when the form
-        is ready to be used.
-      </desc>
-      <param name="description" type="IVirtualSystemDescription" dir="in">
-        <desc>
-          Virtual system description to be edited.
-        </desc>
-      </param>
-      <param name="form" type="IVirtualSystemDescriptionForm" dir="out">
-        <desc>
-          An IForm instance for editing the virtual system description.
-        </desc>
-      </param>
-      <param name="progress" type="IProgress" dir="return">
-        <desc>
-          Progress object to track the operation completion.
-        </desc>
-      </param>
-    </method>
-
-    <method name="exportLaunchVM">
-      <desc>
-        Exports and optionally launch a VM described in description parameter
-      </desc>
-      <param name="description" type="IVirtualSystemDescription" dir="in">
-        <desc>VirtualSystemDescription object which is describing a machine and all required parameters.</desc>
-      </param>
-      <param name="progress" type="IProgress" dir="in">
-        <desc>Progress object to track the operation completion.</desc>
-      </param>
-      <param name="virtualBox" type="IVirtualBox" dir="in">
-        <desc>Reference to the server-side API root object.</desc>
-      </param>
-    </method>
 
     <method name="getExportDescriptionForm">
       <desc>
