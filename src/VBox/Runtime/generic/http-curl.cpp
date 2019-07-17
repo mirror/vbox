@@ -3550,7 +3550,7 @@ RTR3DECL(int) RTHttpPerform(RTHTTP hHttp, const char *pszUrl, RTHTTPMETHOD enmMe
     AssertPtrReturn(pszUrl, VERR_INVALID_POINTER);
 
 #ifdef LOG_ENABLED
-    if (LogIs6Enabled() && pThis->pHeaders)
+    if (LogIs4Enabled() && pThis->pHeaders)
     {
         Log4(("RTHttpPerform: headers:\n"));
         for (struct curl_slist const *pCur = pThis->pHeaders; pCur; pCur = pCur->next)
