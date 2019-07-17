@@ -25,6 +25,7 @@
 #include "UIDetailsItem.h"
 
 /* Forward declarations: */
+class QGraphicsLinearLayout;
 class QGraphicsScene;
 class UIVirtualMachineItem;
 
@@ -150,6 +151,11 @@ private:
 
     /** @name Children stuff.
       * @{ */
+        /** Holds the children container instance. */
+        QIGraphicsWidget      *m_pContainer;
+        /** Holds the children layout instance. */
+        QGraphicsLinearLayout *m_pLayout;
+
         /** Holds the cached machine item list. */
         QList<UIVirtualMachineItem*> m_machineItems;
 

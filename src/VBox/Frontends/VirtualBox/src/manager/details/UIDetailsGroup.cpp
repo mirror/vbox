@@ -16,6 +16,7 @@
  */
 
 /* Qt include: */
+#include <QGraphicsLinearLayout>
 #include <QGraphicsScene>
 #include <QPainter>
 #include <QStyle>
@@ -25,6 +26,7 @@
 #include "UIDetailsGroup.h"
 #include "UIDetailsModel.h"
 #include "UIDetailsSet.h"
+#include "UIDetailsView.h"
 #include "UIExtraDataManager.h"
 #include "UIVirtualMachineItem.h"
 #include "UICommon.h"
@@ -33,9 +35,24 @@
 UIDetailsGroup::UIDetailsGroup(QGraphicsScene *pParent)
     : UIDetailsItem(0)
     , m_pBuildStep(0)
+    , m_pContainer(0)
+    , m_pLayout(0)
     , m_iPreviousMinimumWidthHint(0)
     , m_iPreviousMinimumHeightHint(0)
 {
+    /* Prepare container: */
+    m_pContainer = new QIGraphicsWidget(this);
+    if (m_pContainer)
+    {
+        /* Prepare layout: */
+        m_pLayout = new QGraphicsLinearLayout(Qt::Vertical, m_pContainer);
+        if (m_pLayout)
+        {
+            m_pLayout->setContentsMargins(0, 0, 0, 0);
+            m_pLayout->setSpacing(0);
+        }
+    }
+
     /* Add group to the parent scene: */
     pParent->addItem(this);
 
@@ -97,72 +114,26 @@ QList<UIDetailsItem*> UIDetailsGroup::items(UIDetailsItemType enmType /* = UIDet
 
 void UIDetailsGroup::updateLayout()
 {
-    /* Prepare variables: */
-    const int iMaximumWidth = geometry().size().toSize().width();
-    int iVerticalIndent = 0;
+    /* Acquire view: */
+    UIDetailsView *pView = model()->view();
+
+    /* Adjust children container geometry: */
+    m_pContainer->resize(pView->viewport()->size());
+    m_pContainer->setPos(0, 0);
 
     /* Layout all the sets: */
     foreach (UIDetailsItem *pItem, items())
-    {
-        /* Ignore sets with no details: */
-        if (UIDetailsSet *pSetItem = pItem->toSet())
-            if (!pSetItem->hasDetails())
-                continue;
-        /* Move set: */
-        pItem->setPos(0, iVerticalIndent);
-        /* Resize set: */
-        pItem->resize(iMaximumWidth, pItem->minimumHeightHint());
-        /* Layout set content: */
         pItem->updateLayout();
-        /* Advance indent: */
-        iVerticalIndent += pItem->minimumHeightHint();
-    }
 }
 
 int UIDetailsGroup::minimumWidthHint() const
 {
-    /* Prepare variables: */
-    int iMinimumWidthHint = 0;
-
-    /* For each the set we have: */
-    bool fHasItems = false;
-    foreach (UIDetailsItem *pItem, items())
-    {
-        /* Ignore which are with no details: */
-        if (UIDetailsSet *pSetItem = pItem->toSet())
-            if (!pSetItem->hasDetails())
-                continue;
-        /* And take into account all the others: */
-        iMinimumWidthHint = qMax(iMinimumWidthHint, pItem->minimumWidthHint());
-        if (!fHasItems)
-            fHasItems = true;
-    }
-
-    /* Return result: */
-    return iMinimumWidthHint;
+    return m_pContainer->minimumSizeHint().width();
 }
 
 int UIDetailsGroup::minimumHeightHint() const
 {
-    /* Prepare variables: */
-    int iMinimumHeightHint = 0;
-    bool fHasItems = false;
-
-    /* For each the set we have: */
-    foreach (UIDetailsItem *pItem, items())
-    {
-        /* Ignore which are with no details: */
-        if (UIDetailsSet *pSetItem = pItem->toSet())
-            if (!pSetItem->hasDetails())
-                continue;
-        /* And take into account all the others: */
-        iMinimumHeightHint += pItem->minimumHeightHint();
-        if (!fHasItems)
-            fHasItems = true;
-    }
-
-    /* Return result: */
-    return iMinimumHeightHint;
+    return m_pContainer->minimumSizeHint().height();
 }
 
 void UIDetailsGroup::sltBuildStep(const QUuid &uStepId, int iStepNumber)
@@ -209,8 +180,17 @@ void UIDetailsGroup::addItem(UIDetailsItem *pItem)
 {
     switch (pItem->type())
     {
-        case UIDetailsItemType_Set: m_items.append(pItem); break;
-        default: AssertMsgFailed(("Invalid item type!")); break;
+        case UIDetailsItemType_Set:
+        {
+            m_pLayout->addItem(pItem);
+            m_items.append(pItem);
+            break;
+        }
+        default:
+        {
+            AssertMsgFailed(("Invalid item type!"));
+            break;
+        }
     }
 }
 
@@ -246,6 +226,10 @@ void UIDetailsGroup::clearItems(UIDetailsItemType enmType /* = UIDetailsItemType
 
 void UIDetailsGroup::updateGeometry()
 {
+    /* Update/activate children layout: */
+    m_pLayout->updateGeometry();
+    m_pLayout->activate();
+
     /* Call to base class: */
     UIDetailsItem::updateGeometry();
 
