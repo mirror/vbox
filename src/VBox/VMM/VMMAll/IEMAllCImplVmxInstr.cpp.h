@@ -159,7 +159,6 @@
         Log(("VM-exit failed! uExitReason=%u enmDiag=%u (%s) -> %s\n", (a_uExitReason), (a_VmxDiag), \
             HMGetVmxDiagDesc(a_VmxDiag), (a_pszFailure))); \
         (a_pVCpu)->cpum.GstCtx.hwvirt.vmx.enmDiag  = (a_VmxDiag); \
-        (a_pVCpu)->cpum.GstCtx.hwvirt.vmx.uDiagAux = (a_uExitReason); \
         return VERR_VMX_VMEXIT_FAILED; \
     } while (0)
 
@@ -5344,7 +5343,8 @@ IEM_STATIC int iemVmxVmentryCheckGuestRipRFlags(PVMCPU pVCpu, const char *pszIns
     /* RIP. */
     if (IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fLongMode)
     {
-        X86DESCATTR AttrCs; AttrCs.u = pVmcs->u32GuestCsAttr;
+        X86DESCATTR AttrCs;
+        AttrCs.u = pVmcs->u32GuestCsAttr;
         if (   !fGstInLongMode
             || !AttrCs.n.u1Long)
         {
