@@ -45,6 +45,7 @@ class UIDetailsElement;
 class UIDetailsElementAnimationCallback;
 class UIDetailsGroup;
 class UIDetailsItem;
+class UIDetailsView;
 
 
 /** QObject sub-class used as graphics details model. */
@@ -75,6 +76,8 @@ public:
 
     /** Returns graphics scene this model belongs to. */
     QGraphicsScene *scene() const;
+    /** Returns the reference of the first view of the scene(). */
+    UIDetailsView *view() const;
     /** Returns paint device this model belongs to. */
     QGraphicsView *paintDevice() const;
 

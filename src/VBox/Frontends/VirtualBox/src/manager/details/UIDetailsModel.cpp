@@ -30,6 +30,7 @@
 #include "UIDetailsModel.h"
 #include "UIDetailsGroup.h"
 #include "UIDetailsElement.h"
+#include "UIDetailsView.h"
 #include "UIExtraDataManager.h"
 #include "UICommon.h"
 
@@ -59,11 +60,14 @@ QGraphicsScene *UIDetailsModel::scene() const
     return m_pScene;
 }
 
+UIDetailsView *UIDetailsModel::view() const
+{
+    return scene() && !scene()->views().isEmpty() ? qobject_cast<UIDetailsView*>(scene()->views().first()) : 0;
+}
+
 QGraphicsView *UIDetailsModel::paintDevice() const
 {
-    if (m_pScene && !m_pScene->views().isEmpty())
-        return m_pScene->views().first();
-    return 0;
+    return scene() && !scene()->views().isEmpty() ? scene()->views().first() : 0;
 }
 
 QGraphicsItem *UIDetailsModel::itemAt(const QPointF &position) const
