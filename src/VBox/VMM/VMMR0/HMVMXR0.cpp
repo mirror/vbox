@@ -177,8 +177,8 @@
  *  potential sea of logging data. */
 #define HMVMX_LOG_EXIT(a_pVCpu, a_uExitReason) \
     do { \
-        Log4(("VM-exit: vcpu[%RU32] reason=%#x -v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v\n", \
-             (a_pVCpu)->idCpu, (a_uExitReason))); \
+        const char * const pszExit = HMGetVmxExitName((a_uExitReason)); \
+        Log4(("VM-exit: vcpu[%RU32] %85s -v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-\n", (a_pVCpu)->idCpu, pszExit)); \
     } while (0) \
 
 
@@ -2202,7 +2202,7 @@ static int hmR0VmxAddAutoLoadStoreMsr(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient,
             && (pVmcsInfo->u32ProcCtls & VMX_PROC_CTLS_USE_MSR_BITMAPS))
             hmR0VmxSetMsrPermission(pVCpu, pVmcsInfo, fIsNstGstVmcs, idMsr, VMXMSRPM_ALLOW_RD_WR);
 
-        LogFlowFunc(("MSR added, cMsrs now %u\n", cMsrs));
+        Log4Func(("Added MSR %#RX32, cMsrs=%u\n", idMsr, cMsrs));
         fAdded = true;
     }
 
@@ -9359,10 +9359,11 @@ static VBOXSTRICTRC hmR0VmxEvaluatePendingEvent(PVMCPU pVCpu, PVMXTRANSIENT pVmx
             && !fBlockMovSS)
         {
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-            if (   fIsNestedGuest
-                && CPUMIsGuestVmxPinCtlsSet(pVCpu, pCtx, VMX_PIN_CTLS_EXT_INT_EXIT))
+            if (    fIsNestedGuest
+                &&  CPUMIsGuestVmxPinCtlsSet(pVCpu, pCtx, VMX_PIN_CTLS_EXT_INT_EXIT)
+                && !CPUMIsGuestVmxExitCtlsSet(pVCpu, pCtx, VMX_EXIT_CTLS_ACK_EXT_INT))
             {
-                VBOXSTRICTRC rcStrict = IEMExecVmxVmexitExtInt(pVCpu, 0/* uVector */, true /* fIntPending */);
+                VBOXSTRICTRC rcStrict = IEMExecVmxVmexitExtInt(pVCpu, 0 /* uVector */, true /* fIntPending */);
                 if (rcStrict != VINF_VMX_INTERCEPT_NOT_ACTIVE)
                     return rcStrict;
             }
@@ -14668,6 +14669,8 @@ static VBOXSTRICTRC hmR0VmxExitXcptOthers(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransi
  */
 static VBOXSTRICTRC hmR0VmxExitXcpt(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
+    HMVMX_ASSERT_READ(pVmxTransient, HMVMX_READ_XCPT_INFO);
+
     /*
      * If this VM-exit occurred while delivering an event through the guest IDT, take
      * action based on the return code and additional hints (e.g. for page-faults)
@@ -16914,6 +16917,16 @@ HMVMX_EXIT_DECL hmR0VmxExitXcptOrNmiNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTrans
                 ExitEventInfo.uExitIntErrCode      = pVmxTransient->uExitIntErrorCode;
                 ExitEventInfo.uIdtVectoringInfo    = pVmxTransient->uIdtVectoringInfo;
                 ExitEventInfo.uIdtVectoringErrCode = pVmxTransient->uIdtVectoringErrorCode;
+
+#ifdef DEBUG_ramshankar
+                hmR0VmxImportGuestState(pVCpu, pVmxTransient->pVmcsInfo, CPUMCTX_EXTRN_CS | CPUMCTX_EXTRN_RIP);
+                Log4Func(("cs:rip=%#04x:%#RX64 %s err_code=%#x exit_qual=%#RX64\n", pCtx->cs.Sel, pCtx->rip,
+                          VMX_EXIT_INT_INFO_IS_XCPT_PF(pVmxTransient->uExitIntInfo) ? "#PF" : "Unk",
+                          pVmxTransient->uExitIntErrorCode, pVmxTransient->uExitQual));
+                Log4Func(("idt_info=%#RX64 (%s) idt_errcode=%#RX32\n", pVmxTransient->uIdtVectoringInfo,
+                          VMX_IDT_VECTORING_INFO_IS_VALID(pVmxTransient->uIdtVectoringInfo) ? "Valid" : "Invalid",
+                          pVmxTransient->uIdtVectoringErrorCode));
+#endif
                 return IEMExecVmxVmexitXcpt(pVCpu, &ExitInfo, &ExitEventInfo);
             }
 
