@@ -3740,26 +3740,41 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
      *        ECX - Reserved.
      *        EDX - SVM Feature identification.
      */
-    pExtFeatureLeaf = cpumR3CpuIdGetExactLeaf(pCpum, UINT32_C(0x80000001), 0);
-    if (   pExtFeatureLeaf
-        && (pExtFeatureLeaf->uEcx & X86_CPUID_AMD_FEATURE_ECX_SVM)
-        && pCpum->GuestFeatures.enmCpuVendor == CPUMCPUVENDOR_AMD)
+    if (pCpum->GuestFeatures.enmCpuVendor == CPUMCPUVENDOR_AMD)
     {
-        PCPUMCPUIDLEAF pSvmFeatureLeaf = cpumR3CpuIdGetExactLeaf(pCpum, 0x8000000a, 0);
-        if (pSvmFeatureLeaf)
+        pExtFeatureLeaf = cpumR3CpuIdGetExactLeaf(pCpum, UINT32_C(0x80000001), 0);
+        if (   pExtFeatureLeaf
+            && (pExtFeatureLeaf->uEcx & X86_CPUID_AMD_FEATURE_ECX_SVM))
         {
-            pSvmFeatureLeaf->uEax  = 0x1;
-            pSvmFeatureLeaf->uEbx  = 0x8000;                                        /** @todo figure out virtual NASID. */
-            pSvmFeatureLeaf->uEcx  = 0;
-            pSvmFeatureLeaf->uEdx &= (  X86_CPUID_SVM_FEATURE_EDX_NRIP_SAVE         /** @todo Support other SVM features */
-                                      | X86_CPUID_SVM_FEATURE_EDX_FLUSH_BY_ASID
-                                      | X86_CPUID_SVM_FEATURE_EDX_DECODE_ASSISTS);
+            PCPUMCPUIDLEAF pSvmFeatureLeaf = cpumR3CpuIdGetExactLeaf(pCpum, 0x8000000a, 0);
+            if (pSvmFeatureLeaf)
+            {
+                pSvmFeatureLeaf->uEax  = 0x1;
+                pSvmFeatureLeaf->uEbx  = 0x8000;                                        /** @todo figure out virtual NASID. */
+                pSvmFeatureLeaf->uEcx  = 0;
+                pSvmFeatureLeaf->uEdx &= (  X86_CPUID_SVM_FEATURE_EDX_NRIP_SAVE         /** @todo Support other SVM features */
+                                          | X86_CPUID_SVM_FEATURE_EDX_FLUSH_BY_ASID
+                                          | X86_CPUID_SVM_FEATURE_EDX_DECODE_ASSISTS);
+            }
+            else
+            {
+                /* Should never happen. */
+                LogRel(("CPUM: Warning! Expected CPUID leaf 0x8000000a not present! SVM features not exposed to the guest\n"));
+                cpumR3CpuIdZeroLeaf(pCpum, UINT32_C(0x8000000a));
+            }
         }
         else
         {
-            LogRel(("CPUM: Warning! Expected CPUID leaf 0x8000000a not present! SVM features not exposed to the guest\n"));
+            /* If SVM is not supported, this is reserved, zero out. */
             cpumR3CpuIdZeroLeaf(pCpum, UINT32_C(0x8000000a));
         }
+    }
+    else
+    {
+        /* Cpuid 0x8000000a: Reserved on Intel.
+         * We zero this since we don't know what it may have been used for.
+         */
+        cpumR3CpuIdZeroLeaf(pCpum, UINT32_C(0x8000000a));
     }
 
     /* Cpuid 0x8000000b thru 0x80000018: Reserved
