@@ -44,6 +44,35 @@ static HRESULT d3dCopyToIndexBuffer(IDirect3DIndexBuffer9 *pIB, const void *pvSr
     return hr;
 }
 
+static void drawTexture(IDirect3DDevice9 *pDevice, IDirect3DTexture9 *pTexture, int x, int y, int w, int h)
+{
+    HRESULT hr = S_OK;
+
+    HTEST(pDevice->Clear(0, 0, D3DCLEAR_TARGET, 0xffafaf00, 0.0f, 0));
+
+    HTEST(pDevice->BeginScene());
+
+    IDirect3DSurface9 *pSurface;
+    HTEST(pTexture->GetSurfaceLevel(0, &pSurface));
+
+    /* Copy the texture to the backbuffer. */
+    IDirect3DSurface9 *pBackBuffer;
+    HTEST(pDevice->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &pBackBuffer));
+
+    RECT rDst;
+    rDst.left = x;
+    rDst.top = y;
+    rDst.right = x + w;
+    rDst.bottom = y + h;
+
+    HTEST(pDevice->StretchRect(pSurface, NULL, pBackBuffer, &rDst, D3DTEXF_POINT));
+
+    HTEST(pDevice->EndScene());
+
+    D3D_RELEASE(pBackBuffer);
+    D3D_RELEASE(pSurface);
+}
+
 
 /*
  * Clear the backbuffer and display it.
@@ -937,7 +966,6 @@ private:
     static D3DVERTEXELEMENT9 VertexElements[];
 
     void renderToTexture(IDirect3DDevice9 *pDevice, IDirect3DTexture9 *pTexture);
-    void drawTexture(IDirect3DDevice9 *pDevice, IDirect3DTexture9 *pTexture);
 };
 
 D3DVERTEXELEMENT9 D3D9RenderShared::VertexElements[] =
@@ -1062,37 +1090,6 @@ void D3D9RenderShared::renderToTexture(IDirect3DDevice9 *pDevice, IDirect3DTextu
     D3D_RELEASE(pSurface);
 }
 
-void D3D9RenderShared::drawTexture(IDirect3DDevice9 *pDevice, IDirect3DTexture9 *pTexture)
-{
-    HRESULT hr = S_OK;
-
-    HTEST(pDevice->Clear(0, 0, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, 0xffafaf00, 1.0f, 0));
-
-    HTEST(pDevice->BeginScene());
-
-    IDirect3DSurface9 *pSurface;
-    HTEST(pTexture->GetSurfaceLevel(0, &pSurface));
-
-    /* Copy the texture to the backbuffer. */
-    IDirect3DSurface9 *pBackBuffer;
-    HTEST(pDevice->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &pBackBuffer));
-
-    RECT rDst;
-    rDst.left = 50;
-    rDst.top = 50;
-    rDst.right = 250;
-    rDst.bottom = 250;
-
-    HTEST(pDevice->StretchRect(pSurface, NULL, pBackBuffer, &rDst, D3DTEXF_NONE));
-
-    HTEST(pDevice->EndScene());
-
-    D3D_RELEASE(pBackBuffer);
-    D3D_RELEASE(pSurface);
-
-    HTEST(pDevice->Present(0, 0, 0, 0));
-}
-
 static void issueQuery(IDirect3DDevice9 *pDevice)
 {
     HRESULT hr;
@@ -1136,12 +1133,14 @@ HRESULT D3D9RenderShared::DoRender(D3D9DeviceProvider *pDP)
                                       &mpTexShared,
                                       &mhRtShared));
 
-        drawTexture(pDevice2, mpTexShared);
+        drawTexture(pDevice2, mpTexShared, 50, 50, 200, 200);
     }
     else
     {
-        drawTexture(pDevice, mpRT);
+        drawTexture(pDevice, mpRT, 50, 50, 200, 200);
     }
+
+    HTEST(pDevice->Present(0, 0, 0, 0));
 
     return S_OK;
 }
@@ -1193,6 +1192,251 @@ HRESULT D3D9RenderColorFill::DoRender(D3D9DeviceProvider *pDP)
 
 
 /*
+ * Render a texture to texture.
+ */
+
+class D3D9RenderTexture: public D3D9Render
+{
+public:
+    D3D9RenderTexture();
+    virtual ~D3D9RenderTexture();
+    virtual HRESULT InitRender(D3D9DeviceProvider *pDP);
+    virtual HRESULT DoRender(D3D9DeviceProvider *pDP);
+private:
+    IDirect3DVertexBuffer9      *mpVB;
+    IDirect3DVertexDeclaration9 *mpVertexDecl;
+    IDirect3DVertexShader9      *mpVS;
+    IDirect3DPixelShader9       *mpPS;
+    IDirect3DTexture9           *mpTexDst;
+    IDirect3DTexture9           *mpTexSrc;
+
+    static const int cxTexture = 8;
+    static const int cyTexture = 8;
+
+    struct Vertex
+    {
+        D3DVECTOR position;
+        float     x, y;
+    };
+    static D3DVERTEXELEMENT9 VertexElements[];
+
+    void renderToTexture(IDirect3DDevice9 *pDevice, IDirect3DTexture9 *pTexture, IDirect3DTexture9 *pTexSrc);
+};
+
+D3DVERTEXELEMENT9 D3D9RenderTexture::VertexElements[] =
+{
+    {0,  0, D3DDECLTYPE_FLOAT3,   D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_POSITION, 0},
+    {0, 12, D3DDECLTYPE_FLOAT2,   D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TEXCOORD, 0},
+    D3DDECL_END()
+};
+
+
+D3D9RenderTexture::D3D9RenderTexture()
+    :
+    mpVB(0),
+    mpVertexDecl(0),
+    mpVS(0),
+    mpPS(0),
+    mpTexDst(0),
+    mpTexSrc(0)
+{
+}
+
+D3D9RenderTexture::~D3D9RenderTexture()
+{
+    D3D_RELEASE(mpVS);
+    D3D_RELEASE(mpPS);
+    D3D_RELEASE(mpVB);
+    D3D_RELEASE(mpVertexDecl);
+    D3D_RELEASE(mpTexSrc);
+    D3D_RELEASE(mpTexDst);
+}
+
+HRESULT D3D9RenderTexture::InitRender(D3D9DeviceProvider *pDP)
+{
+    IDirect3DDevice9 *pDevice = pDP->Device(0);
+
+    static DWORD aVSCode[] =
+    {
+        0xFFFE0200,                                     // vs_2_0
+        0x05000051, 0xa00f0000, 0x3f800000, 0x00000000, 0x00000000, 0x00000000, // def c0, 1, 0, 0, 0
+        0x0200001f, 0x80000000, 0x900f0000,             // dcl_position v0
+        0x0200001f, 0x80000005, 0x900f0001,             // dcl_texcoord v1
+        0x02000001, 0xc0070000, 0x90e40000,             // mov oPos.xyz, v0
+        0x02000001, 0xc0080000, 0xa0000000,             // mov oPos.w, c0.x
+        0x02000001, 0xe0030000, 0x90e40001,             // mov oT0.xy, v1
+        0x0000FFFF
+    };
+
+    static DWORD aVSCodeMad[] =
+    {
+        0xFFFE0200,                                                             // vs_2_0
+        0x05000051, 0xa00f0000, 0x3f800000, 0x00000000, 0x00000000, 0x00000000, // def c0, 1, 0, 0, 0
+        0x0200001f, 0x80000000, 0x900f0000,                                     // dcl_position v0
+        0x0200001f, 0x80000005, 0x900f0001,                                     // dcl_texcoord v1
+        0x04000004, 0xc00f0000, 0x90240000, 0xa0400000, 0xa0150000,             // mad oPos, v0.xyzx, c0.xxxy, c0.yyyx
+        0x02000001, 0xe0030000, 0x90e40001,                                     // mov oT0.xy, v1
+        0x0000FFFF
+    };
+
+    static DWORD aPSCodeSwap[] =
+    {
+        0xffff0200,                                     // ps_2_0
+        0x0200001f, 0x80000000, 0xb0030000,             // dcl t0.xy
+        0x0200001f, 0x90000000, 0xa00f0800,             // dcl_2d s0
+        0x03000042, 0x800f0000, 0xb0e40000, 0xa0e40800, // texld r0, t0, s0
+        0x02000001, 0x80090001, 0x80d20000,             // mov r1.xw, r0.zxyw
+        0x02000001, 0x80040001, 0x80000000,             // mov r1.z, r0.x
+        0x02000001, 0x80020001, 0x80550000,             // mov r1.y, r0.y
+        0x02000001, 0x800f0800, 0x80e40001,             // mov oC0, r1
+        0x0000ffff
+    };
+
+    static DWORD aPSCodePass[] =
+    {
+        0xffff0200,                                     // ps_2_0
+        0x0200001f, 0x80000000, 0xb0030000,             // dcl t0.xy
+        0x0200001f, 0x90000000, 0xa00f0800,             // dcl_2d s0
+        0x03000042, 0x800f0000, 0xb0e40000, 0xa0e40800, // texld r0, t0, s0
+        0x02000001, 0x800f0800, 0x80e40000,             // mov oC0, r0
+        0x0000ffff
+    };
+
+    static DWORD aPSCodeCoord[] =
+    {
+        0xffff0200,                                     // ps_2_0
+        0x0200001f, 0x80000000, 0xb0010000,             // dcl t0.x
+        0x02000001, 0x800f0000, 0xb0000000,             // mov r0, t0.x
+        0x02000001, 0x800f0800, 0x80e40000,             // mov oC0, r0
+        0x0000ffff
+    };
+
+    static Vertex aVertices[] =
+    {
+        { -1.0f, -1.0f, 0.0f, 0.0f, 1.0f},
+        {  1.0f, -1.0f, 0.0f, 1.0f, 1.0f},
+        { -1.0f,  1.0f, 0.0f, 0.0f, 0.0f},
+
+        { -1.0f,  1.0f, 0.0f, 0.0f, 0.0f},
+        {  1.0f, -1.0f, 0.0f, 1.0f, 1.0f},
+        {  1.0f,  1.0f, 0.0f, 1.0f, 0.0f},
+    };
+
+    HRESULT hr = S_OK;
+
+    HTEST(pDevice->CreateVertexDeclaration(VertexElements, &mpVertexDecl));
+    HTEST(pDevice->CreateVertexBuffer(sizeof(aVertices),
+                                      0, /* D3DUSAGE_* */
+                                      0, /* FVF */
+                                      D3DPOOL_DEFAULT,
+                                      &mpVB,
+                                      0));
+    HTEST(pDevice->CreateVertexShader(aVSCodeMad, &mpVS));
+    HTEST(pDevice->CreatePixelShader(aPSCodeSwap, &mpPS));
+
+    HTEST(d3dCopyToVertexBuffer(mpVB, aVertices, sizeof(aVertices)));
+
+    HTEST(pDevice->CreateTexture(cxTexture,
+                                 cyTexture,
+                                 1,
+                                 D3DUSAGE_RENDERTARGET,
+                                 D3DFMT_A8R8G8B8,
+                                 D3DPOOL_DEFAULT,
+                                 &mpTexDst,
+                                 NULL));
+
+    HTEST(pDevice->CreateTexture(cxTexture,
+                                 cyTexture,
+                                 1,
+                                 D3DUSAGE_DYNAMIC,
+                                 D3DFMT_A8R8G8B8,
+                                 D3DPOOL_DEFAULT,
+                                 &mpTexSrc,
+                                 NULL));
+
+    D3DLOCKED_RECT LockedRect;
+    HTEST(mpTexSrc->LockRect(0, &LockedRect, NULL /* entire texture */, 0));
+
+    unsigned char *pScanline = (unsigned char *)LockedRect.pBits;
+    for (UINT y = 0; y < cxTexture; ++y)
+    {
+        for (UINT x = 0; x < cxTexture; ++x)
+        {
+            if (x < y)
+            {
+                pScanline[x * 4 + 0] = 0xff;
+                pScanline[x * 4 + 1] = 0x00;
+                pScanline[x * 4 + 2] = 0x00;
+                pScanline[x * 4 + 3] = 0x00;
+            }
+            else
+            {
+                pScanline[x * 4 + 0] = 0x00;
+                pScanline[x * 4 + 1] = 0x00;
+                pScanline[x * 4 + 2] = 0xff;
+                pScanline[x * 4 + 3] = 0x00;
+            }
+        }
+
+        pScanline += LockedRect.Pitch;
+    }
+
+    HTEST(mpTexSrc->UnlockRect(0));
+
+    return hr;
+}
+
+void D3D9RenderTexture::renderToTexture(IDirect3DDevice9 *pDevice, IDirect3DTexture9 *pTexture, IDirect3DTexture9 *pTexSrc)
+{
+    HRESULT hr = S_OK;
+
+    /*
+     * Render to texture.
+     */
+    IDirect3DSurface9 *pSavedRT = NULL;
+    HTEST(pDevice->GetRenderTarget(0, &pSavedRT));
+
+    IDirect3DSurface9 *pSurface = NULL;
+    HTEST(pTexture->GetSurfaceLevel(0, &pSurface));
+    HTEST(pDevice->SetRenderTarget(0, pSurface));
+
+    HTEST(pDevice->BeginScene());
+
+    HTEST(pDevice->SetStreamSource(0, mpVB, 0, sizeof(Vertex)));
+    HTEST(pDevice->SetVertexDeclaration(mpVertexDecl));
+    HTEST(pDevice->SetVertexShader(mpVS));
+    HTEST(pDevice->SetPixelShader(mpPS));
+    HTEST(pDevice->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE));
+    HTEST(pDevice->SetRenderState(D3DRS_ZENABLE, D3DZB_FALSE));
+
+    HTEST(pDevice->SetTexture(0, pTexSrc));
+
+    HTEST(pDevice->DrawPrimitive(D3DPT_TRIANGLELIST, 0, 2));
+
+    HTEST(pDevice->EndScene());
+
+    HTEST(pDevice->SetRenderTarget(0, pSavedRT));
+
+    D3D_RELEASE(pSurface);
+}
+
+HRESULT D3D9RenderTexture::DoRender(D3D9DeviceProvider *pDP)
+{
+    HRESULT hr = S_OK;
+
+    IDirect3DDevice9 *pDevice = pDP->Device(0);
+
+    renderToTexture(pDevice, mpTexDst, mpTexSrc);
+
+    drawTexture(pDevice, mpTexDst, 50, 50, 200, 200);
+
+    HTEST(pDevice->Present(0, 0, 0, 0));
+
+    return S_OK;
+}
+
+
+/*
  * "Public" interface.
  */
 
@@ -1200,6 +1444,8 @@ D3D9Render *CreateRender(int iRenderId)
 {
     switch (iRenderId)
     {
+        case 9:
+            return new D3D9RenderTexture();
         case 8:
             return new D3D9RenderColorFill();
         case 7:
