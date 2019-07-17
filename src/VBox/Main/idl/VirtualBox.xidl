@@ -1876,16 +1876,16 @@
     <const name="NISDomain"               value="40"><desc>The NIS (Sun Network Information Services) domain name (string).</desc></const>
     <const name="NISServers"              value="41"><desc>Space separated list of IPv4 NIS server addresses.</desc></const>
     <const name="NTPServers"              value="42"><desc>Space separated list of IPv4 NTP (RFC1035) server addresses.</desc></const>
-    <const name="VendorSpecificInfo"      value="43"><desc>Vendor specific information. Only <link to="DHCPOptionEncodin::Hex"/></desc></const>
+    <const name="VendorSpecificInfo"      value="43"><desc>Vendor specific information. Only <link to="DHCPOptionEncoding::Hex"/></desc></const>
     <const name="NetBIOSNameServers"      value="44"><desc>Space separated list of IPv4 NetBIOS name server (NBNS) addresses ((RFC1001,RFC1002).</desc></const>
     <const name="NetBIOSDatagramServers"  value="45"><desc>Space separated list of IPv4 NetBIOS datagram distribution server (NBDD) addresses (RFC1001,RFC1002).</desc></const>
     <const name="NetBIOSNodeType"         value="46"><desc>NetBIOS node type (RFC1001,RFC1002): 1=B-node, 2=P-node, 4=M-node, and 8=H-node (8-bit decimal value).</desc></const>
-    <const name="NetBIOSScope"            value="47"><desc>NetBIOS scope (RFC1001,RFC1002). Only <link to="DHCPOptionEncodin::Hex"/></desc></const>
+    <const name="NetBIOSScope"            value="47"><desc>NetBIOS scope (RFC1001,RFC1002). Only <link to="DHCPOptionEncoding::Hex"/></desc></const>
     <const name="XWindowsFontServers"     value="48"><desc>Space separated list of IPv4 X windows font server addresses.</desc></const>
     <const name="XWindowsDisplayManager"  value="49"><desc>Space separated list of IPv4 X windows display manager addresses.</desc></const>
     <!-- Options 50 thru 59 are considered DHCP internal and currently not settable. -->
     <const name="NetWareIPDomainName"     value="62"><desc>Netware IP domain name (RFC2242) (string).</desc></const>
-    <const name="NetWareIPInformation"    value="63"><desc>Netware IP information (RFC2242). Only <link to="DHCPOptionEncodin::Hex"/></desc></const>
+    <const name="NetWareIPInformation"    value="63"><desc>Netware IP information (RFC2242). Only <link to="DHCPOptionEncoding::Hex"/></desc></const>
     <const name="NISPlusDomain"           value="64"><desc>The NIS+ domain name (string).</desc></const>
     <const name="NISPlusServers"          value="65"><desc>Space separated list of IPv4 NIS+ server addresses.</desc></const>
     <const name="TFTPServerName"          value="66"><desc>TFTP server name (string).</desc></const>
@@ -1900,10 +1900,10 @@
     <const name="StreetTalkServers"       value="75"><desc>Space separated list of IPv4 StreetTalk server addresses.</desc></const>
     <const name="STDAServers"             value="76"><desc>Space separated list of IPv4 StreetTalk directory assistance (STDA) server addresses.</desc></const>
     <!-- 77 is client only -->
-    <const name="SLPDirectoryAgent"       value="78"><desc>Addresses of one or more service location protocol (SLP) directory agent, and an indicator of whether their use is mandatory. Only <link to="DHCPOptionEncodin::Hex"/>.</desc></const>
-    <const name="SLPServiceScope"         value="79"><desc>List of service scopes for the service location protocol (SLP) and whether using the list is mandator. Only <link to="DHCPOptionEncodin::Hex"/>.</desc></const>
+    <const name="SLPDirectoryAgent"       value="78"><desc>Addresses of one or more service location protocol (SLP) directory agent, and an indicator of whether their use is mandatory. Only <link to="DHCPOptionEncoding::Hex"/>.</desc></const>
+    <const name="SLPServiceScope"         value="79"><desc>List of service scopes for the service location protocol (SLP) and whether using the list is mandator. Only <link to="DHCPOptionEncoding::Hex"/>.</desc></const>
     <!-- 80 is client only -->
-    <const name="DomainSearch"            value="119"><desc>Domain search list, see RFC3397 and section 4.1.4 in RFC1035 for encoding.  Only <link to="DHCPOptionEncodin::Hex"/>.</desc></const>
+    <const name="DomainSearch"            value="119"><desc>Domain search list, see RFC3397 and section 4.1.4 in RFC1035 for encoding.  Only <link to="DHCPOptionEncoding::Hex"/>.</desc></const>
   </enum>
 
   <enum
