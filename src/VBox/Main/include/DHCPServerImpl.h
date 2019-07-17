@@ -28,7 +28,7 @@ namespace settings
 {
     struct DHCPServer;
     struct DhcpOptValue;
-    typedef std::map<DhcpOpt_T, DhcpOptValue> DhcpOptionMap;
+    typedef std::map<DHCPOption_T, DhcpOptValue> DhcpOptionMap;
 }
 
 class DHCPConfig;
@@ -120,7 +120,7 @@ private:
     HRESULT i_vmNameAndSlotToConfig(const com::Utf8Str &a_strVmName, LONG a_uSlot, bool a_fCreateIfNeeded,
                                     ComObjPtr<DHCPIndividualConfig> &a_rPtrConfig);
 
-    HRESULT i_encode60Option(com::Utf8Str &strEncoded, DhcpOpt_T enmOption,
+    HRESULT i_encode60Option(com::Utf8Str &strEncoded, DHCPOption_T enmOption,
                              DHCPOptionEncoding_T enmEncoding, const com::Utf8Str &strValue);
     HRESULT i_getAllOptions60(DHCPConfig &aSourceConfig, std::vector<com::Utf8Str> &aValues);
     HRESULT i_add60Option(DHCPConfig &aTargetConfig, DhcpOpt_T aOption, const com::Utf8Str &aValue);

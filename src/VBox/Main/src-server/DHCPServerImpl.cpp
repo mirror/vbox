@@ -579,7 +579,7 @@ HRESULT DHCPServer::setConfiguration(const com::Utf8Str &aIPAddress,
  * New interfaces have the option number and option encoding separate from the
  * value.
  */
-HRESULT DHCPServer::i_encode60Option(com::Utf8Str &strEncoded, DhcpOpt_T enmOption,
+HRESULT DHCPServer::i_encode60Option(com::Utf8Str &strEncoded, DHCPOption_T enmOption,
                                      DHCPOptionEncoding_T enmEncoding, const com::Utf8Str &strValue)
 {
     int vrc;
@@ -633,7 +633,7 @@ HRESULT DHCPServer::i_encode60Option(com::Utf8Str &strEncoded, DhcpOpt_T enmOpti
 HRESULT DHCPServer::i_getAllOptions60(DHCPConfig &aSourceConfig, std::vector<com::Utf8Str> &aValues)
 {
     /* Get the values using the new getter: */
-    std::vector<DhcpOpt_T>              Options;
+    std::vector<DHCPOption_T>           Options;
     std::vector<DHCPOptionEncoding_T>   Encodings;
     std::vector<com::Utf8Str>           Values;
     HRESULT hrc = aSourceConfig.i_getAllOptions(Options, Encodings, Values);
@@ -657,7 +657,7 @@ HRESULT DHCPServer::i_getAllOptions60(DHCPConfig &aSourceConfig, std::vector<com
 HRESULT DHCPServer::i_add60Option(DHCPConfig &aTargetConfig, DhcpOpt_T aOption, const com::Utf8Str &aValue)
 {
     if (aOption != 0)
-        return aTargetConfig.i_setOption(aOption, DHCPOptionEncoding_Normal, aValue);
+        return aTargetConfig.i_setOption((DHCPOption_T)aOption, DHCPOptionEncoding_Normal, aValue);
 
     /*
      * This is a kludge to sneak in option encoding information
@@ -702,7 +702,7 @@ HRESULT DHCPServer::i_add60Option(DHCPConfig &aTargetConfig, DhcpOpt_T aOption, 
             return VERR_PARSE_ERROR;
     }
 
-    return aTargetConfig.i_setOption(aOption, enmEncoding, com::Utf8Str(pszNext + 1));
+    return aTargetConfig.i_setOption((DHCPOption_T)aOption, enmEncoding, com::Utf8Str(pszNext + 1));
 }
 
 
@@ -714,7 +714,7 @@ HRESULT DHCPServer::addGlobalOption(DhcpOpt_T aOption, const com::Utf8Str &aValu
 
 HRESULT DHCPServer::removeGlobalOption(DhcpOpt_T aOption)
 {
-    return m->globalConfig->i_removeOption(aOption);
+    return m->globalConfig->i_removeOption((DHCPOption_T)aOption);
 }
 
 
@@ -884,7 +884,7 @@ HRESULT DHCPServer::removeVmSlotOption(const com::Utf8Str &aVmName, LONG aSlot, 
     ComObjPtr<DHCPIndividualConfig> ptrConfig;
     HRESULT hrc = i_vmNameAndSlotToConfig(aVmName, aSlot, false, ptrConfig);
     if (SUCCEEDED(hrc))
-        hrc = ptrConfig->i_removeOption(aOption);
+        hrc = ptrConfig->i_removeOption((DHCPOption_T)aOption);
     return hrc;
 }
 

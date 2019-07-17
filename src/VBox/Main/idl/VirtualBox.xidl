@@ -1763,6 +1763,7 @@
   <enum
       name="DhcpOpt"
       uuid="40d99bd3-3ece-44d2-a07e-1085fe9c4f0b">
+    <desc>Deprecated enum, will be removed in 6.1.</desc>
     <const name="SubnetMask" value="1"/>
     <const name="TimeOffset" value="2"/>
     <const name="Router" value="3"/>
@@ -1826,6 +1827,83 @@
     <const name="Option_74" value="74"/>
     <const name="Option_75" value="75"/>
     <const name="Option_119" value="119"/>
+  </enum>
+
+  <enum
+      name="DHCPOption"
+      uuid="00f5b10f-0021-4513-00f7-5bf4000982bf">
+    <!-- Names should exactly match those given in DhcpOptions.h. -->
+    <!-- Note! we use the descriptions here in the VBoxManage man page / manual. Everything must be propertly described. -->
+    <const name="SubnetMask"              value="1"><desc>IPv4 netmask. Set to <link to="IDHCPServer::networkMask"/> by default.</desc></const>
+    <const name="TimeOffset"              value="2"><desc>UTC offset in seconds (32-bit decimal value).</desc></const>
+    <const name="Routers"                 value="3"><desc>Space separated list of IPv4 router addresses.</desc></const>
+    <const name="TimeServers"             value="4"><desc>Space separated list of IPv4 time server (RFC 868) addresses.</desc></const>
+    <const name="NameServers"             value="5"><desc>Space separated list of IPv4 name server (IEN 116) addresses.</desc></const>
+    <const name="DomainNameServers"       value="6"><desc>Space separated list of IPv4 DNS addresses.</desc></const>
+    <const name="LogServers"              value="7"><desc>Space separated list of IPv4 log server addresses.</desc></const>
+    <const name="CookieServers"           value="8"><desc>Space separated list of IPv4 cookie server (RFC 865) addresses.</desc></const>
+    <const name="LPRServers"              value="9"><desc>Space separated list of IPv4 line printer server (RFC 1179) addresses.</desc></const>
+    <const name="ImpressServers"          value="10"><desc>Space separated list of IPv4 imagen impress server addresses.</desc></const>
+    <const name="ResourseLocationServers" value="11"><desc>Space separated list of IPv4 resource location (RFC 887) addresses.</desc></const>
+    <const name="HostName"                value="12"><desc>The client name. See RFC 1035 for character limits. </desc></const>
+    <const name="BootFileSize"            value="13"><desc>Number of 512 byte blocks making up the boot file (16-bit decimal value).</desc></const>
+    <const name="MeritDumpFile"           value="14"><desc>Client core file.</desc></const>
+    <const name="DomainName"              value="15"><desc>Domain name for the client.</desc></const>
+    <const name="SwapServer"              value="16"><desc>IPv4 address of the swap server that the client should use.</desc></const>
+    <const name="RootPath"                value="17"><desc>The path to the root disk the client should use.</desc></const>
+    <const name="ExtensionPath"           value="18"><desc>Path to a file containing additional DHCP options (RFC2123).</desc></const>
+    <const name="IPForwarding"            value="19"><desc>Whether IP forwarding should be enabled by the client (boolean).</desc></const>
+    <const name="OptNonLocalSourceRouting" value="20"><desc>Whether non-local datagrams should be forwarded by the client (boolean)</desc></const>
+    <const name="PolicyFilter"            value="21"><desc>List of IPv4 addresses and masks paris controlling non-local source routing.</desc></const>
+    <const name="MaxDgramReassemblySize"  value="22"><desc>The maximum datagram size the client should reassemble (16-bit decimal value).</desc></const>
+    <const name="DefaultIPTTL"            value="23"><desc>The default time-to-leave on outgoing (IP) datagrams (8-bit decimal value).</desc></const>
+    <const name="PathMTUAgingTimeout"     value="24"><desc>RFC1191 path MTU discovery timeout value in seconds (32-bit decimal value).</desc></const>
+    <const name="PathMTUPlateauTable"     value="25"><desc>RFC1191 path MTU discovery size table, sorted in ascending order (list of 16-bit decimal values).</desc></const>
+    <const name="InterfaceMTU"            value="26"><desc>The MTU size for the interface (16-bit decimal value).</desc></const>
+    <const name="AllSubnetsAreLocal"      value="27"><desc>Indicates whether the MTU size is the same for all subnets (boolean).</desc></const>
+    <const name="BroadcastAddress"        value="28"><desc>Broadcast address (RFC1122) for the client to use (IPv4 address).</desc></const>
+    <const name="PerformMaskDiscovery"    value="29"><desc>Whether to perform subnet mask discovery via ICMP (boolean).</desc></const>
+    <const name="MaskSupplier"            value="30"><desc>Whether to respond to subnet mask requests via ICMP (boolean).</desc></const>
+    <const name="PerformRouterDiscovery"  value="31"><desc>Whether to perform router discovery (RFC1256) (boolean).</desc></const>
+    <const name="RouterSolicitationAddress" value="32"><desc>Where to send router solicitation requests (RFC1256) (IPv4 address).</desc></const>
+    <const name="StaticRoute"             value="33"><desc>List of network and router address pairs addresses.</desc></const>
+    <const name="TrailerEncapsulation"    value="34"><desc>Whether to negotiate the use of trailers for ARP (RTF893) (boolean).</desc></const>
+    <const name="ARPCacheTimeout"         value="35"><desc>The timeout in seconds for ARP cache entries (32-bit decimal value).</desc></const>
+    <const name="EthernetEncapsulation"   value="36"><desc>Whether to use IEEE 802.3 (RTF1042) rather than of v2 (RFC894) ethernet encapsulation (boolean).</desc></const>
+    <const name="TCPDefaultTTL"           value="37"><desc>Default time-to-live for TCP sends (non-zero 8-bit decimal value).</desc></const>
+    <const name="TCPKeepaliveInterval"    value="38"><desc>The interface in seconds between TCP keepalive messages (32-bit decimal value).</desc></const>
+    <const name="TCPKeepaliveGarbage"     value="39"><desc>Whether to include a byte of garbage in TCP keepalive messages for backward compatibility (boolean).</desc></const>
+    <const name="NISDomain"               value="40"><desc>The NIS (Sun Network Information Services) domain name (string).</desc></const>
+    <const name="NISServers"              value="41"><desc>Space separated list of IPv4 NIS server addresses.</desc></const>
+    <const name="NTPServers"              value="42"><desc>Space separated list of IPv4 NTP (RFC1035) server addresses.</desc></const>
+    <const name="VendorSpecificInfo"      value="43"><desc>Vendor specific information. Only <link to="DHCPOptionEncoding_hex"/></desc></const>
+    <const name="NetBIOSNameServers"      value="44"><desc>Space separated list of IPv4 NetBIOS name server (NBNS) addresses ((RFC1001,RFC1002).</desc></const>
+    <const name="NetBIOSDatagramServers"  value="45"><desc>Space separated list of IPv4 NetBIOS datagram distribution server (NBDD) addresses (RFC1001,RFC1002).</desc></const>
+    <const name="NetBIOSNodeType"         value="46"><desc>NetBIOS node type (RFC1001,RFC1002): 1=B-node, 2=P-node, 4=M-node, and 8=H-node (8-bit decimal value).</desc></const>
+    <const name="NetBIOSScope"            value="47"><desc>NetBIOS scope (RFC1001,RFC1002). Only <link to="DHCPOptionEncoding_hex"/></desc></const>
+    <const name="XWindowsFontServers"     value="48"><desc>Space separated list of IPv4 X windows font server addresses.</desc></const>
+    <const name="XWindowsDisplayManager"  value="49"><desc>Space separated list of IPv4 X windows display manager addresses.</desc></const>
+    <!-- Options 50 thru 59 are considered DHCP internal and currently not settable. -->
+    <const name="NetWareIPDomainName"     value="62"><desc>Netware IP domain name (RFC2242) (string).</desc></const>
+    <const name="NetWareIPInformation"    value="63"><desc>Netware IP information (RFC2242). Only <link to="DHCPOptionEncoding_hex"/></desc></const>
+    <const name="NISPlusDomain"           value="64"><desc>The NIS+ domain name (string).</desc></const>
+    <const name="NISPlusServers"          value="65"><desc>Space separated list of IPv4 NIS+ server addresses.</desc></const>
+    <const name="TFTPServerName"          value="66"><desc>TFTP server name (string).</desc></const>
+    <const name="BootfileName"            value="67"><desc>Bootfile name (string).</desc></const>
+    <const name="MobileIPHomeAgents"      value="68"><desc>Space separated list of IPv4 mobile IP agent addresses.</desc></const>
+    <const name="SMTPServers"             value="69"><desc>Space separated list of IPv4 simple mail transport protocol (SMPT) server addresses.</desc></const>
+    <const name="POP3Servers"             value="70"><desc>Space separated list of IPv4 post office protocol 3 (POP3) server addresses.</desc></const>
+    <const name="NNTPServers"             value="71"><desc>Space separated list of IPv4 network news transport protocol (NTTP) server addresses.</desc></const>
+    <const name="WWWServers"              value="72"><desc>Space separated list of default IPv4 world wide web (WWW) server addresses.</desc></const>
+    <const name="FingerServers"           value="73"><desc>Space separated list of default IPv4 finger server addresses.</desc></const>
+    <const name="IRCServers"              value="74"><desc>Space separated list of default IPv4 internet relay chat (IRC) server  addresses.</desc></const>
+    <const name="StreetTalkServers"       value="75"><desc>Space separated list of IPv4 StreetTalk server addresses.</desc></const>
+    <const name="STDAServers"             value="76"><desc>Space separated list of IPv4 StreetTalk directory assistance (STDA) server addresses.</desc></const>
+    <!-- 77 is client only -->
+    <const name="SLPDirectoryAgent"       value="78"><desc>Addresses of one or more service location protocol (SLP) directory agent, and an indicator of whether their use is mandatory. Only <link to="DHCPOptionEncoding_hex"/>.</desc></const>
+    <const name="SLPServiceScope"         value="79"><desc>List of service scopes for the service location protocol (SLP) and whether using the list is mandator. Only <link to="DHCPOptionEncoding_hex"/>.</desc></const>
+    <!-- 80 is client only -->
+    <const name="DomainSearch"            value="119"><desc>Domain search list, see RFC3397 and section 4.1.4 in RFC1035 for encoding.  Only <link to="DHCPOptionEncoding_hex"/>.</desc></const>
   </enum>
 
   <enum
@@ -2139,7 +2217,7 @@
 
   <interface
     name="IDHCPConfig" extends="$unknown"
-    uuid="39cdde66-cfc3-4eec-7427-faf5b16469ae"
+    uuid="00f4a8dc-0002-4b81-0077-1dcb004571ba"
     wsmap="managed"
     reservedMethods="8" reservedAttributes="16"
     >
@@ -2165,11 +2243,23 @@
       <desc>The maximum lease time in seconds, ignored if zero.</desc>
     </attribute>
 
+    <attribute name="forcedOptions" type="DHCPOption" safearray="yes" readonly="no">
+      <desc>List of DHCP options which should be forced upon the clients in this
+       config scope when they are available, whether the clients asks for them
+       or not.</desc>
+    </attribute>
+
+    <attribute name="suppressedOptions" type="DHCPOption" safearray="yes" readonly="no">
+      <desc>List of DHCP options which should not be sent to the clients in
+        this config scope.  This is intended for cases where one client or a
+        group of clients shouldn't see one or more (typically global) options.</desc>
+    </attribute>
+
     <method name="setOption">
       <desc>
         Sets a DHCP option.
       </desc>
-      <param name="option"    dir="in" type="DhcpOpt">
+      <param name="option"    dir="in" type="DHCPOption">
         <desc>The DHCP option.</desc>
       </param>
       <param name="encoding"  dir="in" type="DHCPOptionEncoding">
@@ -2177,14 +2267,15 @@
       </param>
       <param name="value"     dir="in" type="wstring">
         <desc>The DHCP option value.  The exact format depends on the DHCP
-          option and should be documented in <link to="DhcpOpt"/>.
-        </desc>
+          @a option value and @a encoding, see see <link to="DHCPOption"/>
+          for the <link to="DHCPOptionEncoding::Normal"/> format.
+         </desc>
       </param>
     </method>
 
     <method name="removeOption">
       <desc>Removes the given DHCP option.</desc>
-      <param name="option"    dir="in" type="DhcpOpt"/>
+      <param name="option"    dir="in" type="DHCPOption"/>
     </method>
 
     <method name="removeAllOptions">
@@ -2199,27 +2290,32 @@
 
     <method name="getOption">
       <desc>Gets the value of a single DHCP option.</desc>
-      <param name="option"    dir="in" type="DhcpOpt">
+      <param name="option"    dir="in" type="DHCPOption">
         <desc>The DHCP option being sought.</desc>
       </param>
       <param name="encoding"  dir="out" type="DHCPOptionEncoding">
         <desc>The value encoding.</desc>
       </param>
       <param name="value"     dir="return" type="wstring">
-        <desc>The value of the requested DHCP option.</desc>
+        <desc>The value of the requested DHCP option. The exact format depends on
+          the DHCP @a option value and the @a encoding, see <link to="DHCPOption"/>
+          for the <link to="DHCPOptionEncoding::Normal"/> format.
+        </desc>
       </param>
     </method>
 
     <method name="getAllOptions">
       <desc>Gets all DHCP options and their values</desc>
-      <param name="options"   dir="out" type="DhcpOpt" safearray="yes">
+      <param name="options"   dir="out" type="DHCPOption" safearray="yes">
         <desc>Array containing the DHCP option numbers.</desc>
       </param>
       <param name="encodings" dir="out" type="DHCPOptionEncoding" safearray="yes">
         <desc>Array of value encodings that runs parallel to @a options.</desc>
       </param>
       <param name="values"    dir="return" type="wstring" safearray="yes">
-        <desc>Array of values that runs parallel to @a options and @a encodings.</desc>
+        <desc>Array of values that runs parallel to @a options and @a encodings.  The
+          format depends on both of those.
+        </desc>
       </param>
     </method>
 

@@ -343,7 +343,7 @@ struct DhcpOptValue
     DHCPOptionEncoding_T    enmEncoding;
 };
 
-typedef std::map<DhcpOpt_T, DhcpOptValue> DhcpOptionMap;
+typedef std::map<DHCPOption_T, DhcpOptValue> DhcpOptionMap;
 typedef DhcpOptionMap::value_type DhcpOptValuePair;
 typedef DhcpOptionMap::iterator DhcpOptIterator;
 typedef DhcpOptionMap::const_iterator DhcpOptConstIterator;
@@ -367,6 +367,8 @@ struct DHCPConfig
     uint32_t                secMinLeaseTime;
     uint32_t                secDefaultLeaseTime;
     uint32_t                secMaxLeaseTime;
+    com::Utf8Str            strForcedOptions;
+    com::Utf8Str            strSuppressedOptions;
 };
 
 struct DHCPGroupConfig : DHCPConfig

@@ -62,6 +62,51 @@ HRESULT DHCPConfig::i_initWithSettings(VirtualBox *a_pVirtualBox, DHCPServer *a_
     m_secDefaultLeaseTime = rConfig.secDefaultLeaseTime;
     m_secMaxLeaseTime     = rConfig.secMaxLeaseTime;
 
+    /*
+     * The two option list:
+     */
+    struct
+    {
+        const char                *psz;
+        std::vector<DHCPOption_T> *pDst;
+    } aStr2Vec[] =
+    {
+        { rConfig.strForcedOptions.c_str(),     &m_vecForcedOptions },
+        { rConfig.strSuppressedOptions.c_str(), &m_vecSuppressedOptions },
+    };
+    for (size_t i = 0; i < RT_ELEMENTS(aStr2Vec); i++)
+    {
+        Assert(aStr2Vec[i].pDst->size() == 0);
+        const char *psz = RTStrStripL(aStr2Vec[i].psz);
+        while (*psz != '\0')
+        {
+            uint8_t  bOpt;
+            char    *pszNext;
+            int vrc = RTStrToUInt8Ex(psz, &pszNext, 10, &bOpt);
+            if (vrc == VINF_SUCCESS || vrc == VWRN_TRAILING_SPACES)
+            {
+                try
+                {
+                    aStr2Vec[i].pDst->push_back((DHCPOption_T)bOpt);
+                }
+                catch (std::bad_alloc &)
+                {
+                    return E_OUTOFMEMORY;
+                }
+            }
+            else
+            {
+                LogRelFunc(("Trouble at offset %#zu converting '%s' to a DHCPOption_T vector (vrc=%Rrc)!  Ignornig the remainder.\n",
+                            psz - aStr2Vec[i].psz, aStr2Vec[i].psz, vrc));
+                break;
+            }
+            psz = RTStrStripL(pszNext);
+        }
+    }
+
+    /*
+     * The option map:
+     */
     for (settings::DhcpOptionMap::const_iterator it = rConfig.mapOptions.begin(); it != rConfig.mapOptions.end(); ++it)
     {
         try
@@ -84,6 +129,23 @@ HRESULT DHCPConfig::i_saveSettings(settings::DHCPConfig &a_rDst)
     a_rDst.secMinLeaseTime     = m_secMinLeaseTime;
     a_rDst.secDefaultLeaseTime = m_secDefaultLeaseTime;
     a_rDst.secMaxLeaseTime     = m_secMaxLeaseTime;
+
+    /* Forced and suppressed vectors: */
+    try
+    {
+        a_rDst.strForcedOptions.setNull();
+        for (size_t i = 0; i < m_vecForcedOptions.size(); i++)
+            a_rDst.strForcedOptions.appendPrintf(i ? " %d" : "%d", m_vecForcedOptions[i]);
+
+        a_rDst.strSuppressedOptions.setNull();
+        for (size_t i = 0; i < m_vecSuppressedOptions.size(); i++)
+            a_rDst.strSuppressedOptions.appendPrintf(i ? " %d" : "%d", m_vecSuppressedOptions[i]);
+    }
+    catch (std::bad_alloc &)
+    {
+        return E_OUTOFMEMORY;
+    }
+
 
     /* Options: */
     try
@@ -160,7 +222,156 @@ HRESULT DHCPConfig::i_setMaxLeaseTime(ULONG aMaxLeaseTime)
 }
 
 
-HRESULT DHCPConfig::i_setOption(DhcpOpt_T aOption, DHCPOptionEncoding_T aEncoding, const com::Utf8Str &aValue)
+HRESULT DHCPConfig::i_getForcedOptions(std::vector<DHCPOption_T> &aOptions)
+{
+    AutoReadLock alock(m_pHack COMMA_LOCKVAL_SRC_POS);
+    try
+    {
+        aOptions = m_vecForcedOptions;
+    }
+    catch (std::bad_alloc &)
+    {
+        return E_OUTOFMEMORY;
+    }
+    return S_OK;
+}
+
+
+HRESULT DHCPConfig::i_setForcedOptions(const std::vector<DHCPOption_T> &aOptions)
+{
+    /*
+     * Validate the options.
+     */
+    try
+    {
+        std::map<DHCPOption_T, bool> mapDuplicates;
+        for (size_t i = 0; i < aOptions.size(); i++)
+        {
+            DHCPOption_T enmOpt = aOptions[i];
+            if ((int)enmOpt > 0 && (int)enmOpt < 255)
+            {
+                if (mapDuplicates.find(enmOpt) == mapDuplicates.end())
+                    mapDuplicates[enmOpt] = true;
+                else
+                    return m_pHack->setError(E_INVALIDARG, m_pHack->tr("Duplicate option value: %d"), (int)enmOpt);
+            }
+            else
+                return m_pHack->setError(E_INVALIDARG, m_pHack->tr("Invalid option value: %d"), (int)enmOpt);
+        }
+    }
+    catch (std::bad_alloc &)
+    {
+        return E_OUTOFMEMORY;
+    }
+
+    /*
+     * Do the updating.
+     */
+    {
+        AutoWriteLock alock(m_pHack COMMA_LOCKVAL_SRC_POS);
+
+        /* Actually changed? */
+        if (m_vecForcedOptions.size() == aOptions.size())
+        {
+            ssize_t i = m_vecForcedOptions.size();
+            while (i-- > 0)
+                if (m_vecForcedOptions[i] != aOptions[i])
+                    break;
+            if (i < 0)
+                return S_OK;
+        }
+
+        /* Copy over the changes: */
+        try
+        {
+            m_vecForcedOptions = aOptions;
+        }
+        catch (std::bad_alloc &)
+        {
+            return E_OUTOFMEMORY;
+        }
+    }
+
+    return i_doWriteConfig();
+}
+
+
+HRESULT DHCPConfig::i_getSuppressedOptions(std::vector<DHCPOption_T> &aOptions)
+{
+    AutoReadLock alock(m_pHack COMMA_LOCKVAL_SRC_POS);
+    try
+    {
+        aOptions = m_vecSuppressedOptions;
+    }
+    catch (std::bad_alloc &)
+    {
+        return E_OUTOFMEMORY;
+    }
+    return S_OK;
+}
+
+
+HRESULT DHCPConfig::i_setSuppressedOptions(const std::vector<DHCPOption_T> &aOptions)
+{
+    /*
+     * Validate and normalize it.
+     */
+    std::map<DHCPOption_T, bool> mapNormalized;
+    try
+    {
+        for (size_t i = 0; i < aOptions.size(); i++)
+        {
+            DHCPOption_T enmOpt = aOptions[i];
+            if ((int)enmOpt > 0 && (int)enmOpt < 255)
+                mapNormalized[enmOpt] = true;
+            else
+                return m_pHack->setError(E_INVALIDARG, m_pHack->tr("Invalid option value: %d"), (int)enmOpt);
+        }
+    }
+    catch (std::bad_alloc &)
+    {
+        return E_OUTOFMEMORY;
+    }
+
+    /*
+     * Do the updating.
+     */
+    {
+        AutoWriteLock alock(m_pHack COMMA_LOCKVAL_SRC_POS);
+
+        /* Actually changed? */
+        if (m_vecSuppressedOptions.size() == mapNormalized.size())
+        {
+            size_t i = 0;
+            for (std::map<DHCPOption_T, bool>::const_iterator itMap = mapNormalized.begin();; ++itMap, i++)
+            {
+                if (itMap == mapNormalized.end())
+                    return S_OK; /* no change */
+                if (itMap->first != m_vecSuppressedOptions[i])
+                    break;
+            }
+        }
+
+        /* Copy over the changes: */
+        try
+        {
+            m_vecSuppressedOptions.resize(mapNormalized.size());
+            size_t i = 0;
+            for (std::map<DHCPOption_T, bool>::const_iterator itMap = mapNormalized.begin();
+                 itMap != mapNormalized.end(); ++itMap, i++)
+                m_vecSuppressedOptions[i] = itMap->first;
+        }
+        catch (std::bad_alloc &)
+        {
+            return E_OUTOFMEMORY;
+        }
+    }
+
+    return i_doWriteConfig();
+}
+
+
+HRESULT DHCPConfig::i_setOption(DHCPOption_T aOption, DHCPOptionEncoding_T aEncoding, const com::Utf8Str &aValue)
 {
     /*
      * Validate the option as there is no point in allowing the user to set
@@ -210,7 +421,7 @@ HRESULT DHCPConfig::i_setOption(DhcpOpt_T aOption, DHCPOptionEncoding_T aEncodin
 }
 
 
-HRESULT DHCPConfig::i_removeOption(DhcpOpt_T aOption)
+HRESULT DHCPConfig::i_removeOption(DHCPOption_T aOption)
 {
     {
         AutoWriteLock alock(m_pHack COMMA_LOCKVAL_SRC_POS);
@@ -234,7 +445,7 @@ HRESULT DHCPConfig::i_removeAllOptions()
 }
 
 
-HRESULT DHCPConfig::i_getOption(DhcpOpt_T aOption, DHCPOptionEncoding_T *aEncoding, com::Utf8Str &aValue)
+HRESULT DHCPConfig::i_getOption(DHCPOption_T aOption, DHCPOptionEncoding_T *aEncoding, com::Utf8Str &aValue)
 {
     AutoReadLock alock(m_pHack COMMA_LOCKVAL_SRC_POS);
     settings::DhcpOptionMap::const_iterator it = m_OptionMap.find(aOption);
@@ -247,7 +458,7 @@ HRESULT DHCPConfig::i_getOption(DhcpOpt_T aOption, DHCPOptionEncoding_T *aEncodi
 }
 
 
-HRESULT DHCPConfig::i_getAllOptions(std::vector<DhcpOpt_T> &aOptions, std::vector<DHCPOptionEncoding_T> &aEncodings,
+HRESULT DHCPConfig::i_getAllOptions(std::vector<DHCPOption_T> &aOptions, std::vector<DHCPOptionEncoding_T> &aEncodings,
                                     std::vector<com::Utf8Str> &aValues)
 {
     AutoReadLock alock(m_pHack COMMA_LOCKVAL_SRC_POS);
@@ -337,7 +548,7 @@ HRESULT DHCPGlobalConfig::initWithDefaults(VirtualBox *a_pVirtualBox, DHCPServer
 
     HRESULT hrc = DHCPConfig::i_initWithDefaults(a_pVirtualBox, a_pParent);
     if (SUCCEEDED(hrc))
-        hrc = i_setOption(DhcpOpt_SubnetMask, DHCPOptionEncoding_Normal, "0.0.0.0");
+        hrc = i_setOption(DHCPOption_SubnetMask, DHCPOptionEncoding_Normal, "0.0.0.0");
 
     if (SUCCEEDED(hrc))
         autoInitSpan.setSucceeded();
@@ -385,7 +596,7 @@ HRESULT DHCPGlobalConfig::i_saveSettings(settings::DHCPConfig &a_rDst)
 HRESULT DHCPGlobalConfig::i_getNetworkMask(com::Utf8Str &a_rDst)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-    settings::DhcpOptionMap::const_iterator it = m_OptionMap.find(DhcpOpt_SubnetMask);
+    settings::DhcpOptionMap::const_iterator it = m_OptionMap.find(DHCPOption_SubnetMask);
     if (it != m_OptionMap.end())
     {
         if (it->second.enmEncoding == DHCPOptionEncoding_Normal)
@@ -411,14 +622,14 @@ HRESULT DHCPGlobalConfig::i_setNetworkMask(const com::Utf8Str &a_rSrc)
     if (RT_FAILURE(vrc))
         return setErrorBoth(E_INVALIDARG, vrc, tr("Invalid IPv4 netmask '%s': %Rrc"), a_rSrc.c_str(), vrc);
 
-    return i_setOption(DhcpOpt_SubnetMask, DHCPOptionEncoding_Normal, a_rSrc);
+    return i_setOption(DHCPOption_SubnetMask, DHCPOptionEncoding_Normal, a_rSrc);
 }
 
 
 /**
  * Overriden to ensure the sanity of the DhcpOpt_SubnetMask option.
  */
-HRESULT DHCPGlobalConfig::i_setOption(DhcpOpt_T aOption, DHCPOptionEncoding_T aEncoding, const com::Utf8Str &aValue)
+HRESULT DHCPGlobalConfig::i_setOption(DHCPOption_T aOption, DHCPOptionEncoding_T aEncoding, const com::Utf8Str &aValue)
 {
     if (aOption != DhcpOpt_SubnetMask || aEncoding == DHCPOptionEncoding_Normal)
         return DHCPConfig::i_setOption(aOption, aEncoding, aValue);
@@ -429,7 +640,7 @@ HRESULT DHCPGlobalConfig::i_setOption(DhcpOpt_T aOption, DHCPOptionEncoding_T aE
 /**
  * Overriden to ensure the sanity of the DhcpOpt_SubnetMask option.
  */
-HRESULT DHCPGlobalConfig::i_removeOption(DhcpOpt_T aOption)
+HRESULT DHCPGlobalConfig::i_removeOption(DHCPOption_T aOption)
 {
     if (aOption != DhcpOpt_SubnetMask)
         return DHCPConfig::i_removeOption(aOption);
@@ -444,7 +655,7 @@ HRESULT DHCPGlobalConfig::i_removeAllOptions()
 {
     {
         AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-        settings::DhcpOptionMap::iterator it = m_OptionMap.find(DhcpOpt_SubnetMask);
+        settings::DhcpOptionMap::iterator it = m_OptionMap.find(DHCPOption_SubnetMask);
         m_OptionMap.erase(m_OptionMap.begin(), it);
         if (it != m_OptionMap.end())
         {

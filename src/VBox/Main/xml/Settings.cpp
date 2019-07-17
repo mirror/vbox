@@ -1737,7 +1737,7 @@ void MainConfigFile::buildDHCPServers(xml::ElementNode &elmDHCPServers, DHCPServ
 
         pElmThis->setAttribute("networkName", srv.strNetworkName);
         pElmThis->setAttribute("IPAddress", srv.strIPAddress);
-        DhcpOptConstIterator itOpt = srv.globalConfig.mapOptions.find(DhcpOpt_SubnetMask);
+        DhcpOptConstIterator itOpt = srv.globalConfig.mapOptions.find(DHCPOption_SubnetMask);
         if (itOpt != srv.globalConfig.mapOptions.end())
             pElmThis->setAttribute("networkMask", itOpt->second.strValue);
         pElmThis->setAttribute("lowerIP", srv.strIPLower);
@@ -1801,10 +1801,14 @@ void MainConfigFile::buildDHCPOptions(xml::ElementNode &elmOptions, DHCPConfig c
         elmOptions.setAttribute("secDefaultLeaseTime", rConfig.secDefaultLeaseTime);
     if (rConfig.secMaxLeaseTime > 0)
         elmOptions.setAttribute("secMaxLeaseTime", rConfig.secMaxLeaseTime);
+    if (rConfig.strForcedOptions.isNotEmpty())
+        elmOptions.setAttribute("forcedOptions", rConfig.strForcedOptions);
+    if (rConfig.strSuppressedOptions.isNotEmpty())
+        elmOptions.setAttribute("suppressedOptions", rConfig.strSuppressedOptions);
 
     /* The DHCP options are <Option> child elements: */
     for (DhcpOptConstIterator it = rConfig.mapOptions.begin(); it != rConfig.mapOptions.end(); ++it)
-        if (it->first != DhcpOpt_SubnetMask || !fSkipSubnetMask)
+        if (it->first != DHCPOption_SubnetMask || !fSkipSubnetMask)
         {
             xml::ElementNode *pElmOption = elmOptions.createChild("Option");
             pElmOption->setAttribute("name", it->first);
@@ -1829,7 +1833,7 @@ void MainConfigFile::readDHCPServers(const xml::ElementNode &elmDHCPServers)
             DHCPServer srv;
             if (   pelmServer->getAttributeValue("networkName", srv.strNetworkName)
                 && pelmServer->getAttributeValue("IPAddress", srv.strIPAddress)
-                && pelmServer->getAttributeValue("networkMask", srv.globalConfig.mapOptions[DhcpOpt_SubnetMask].strValue)
+                && pelmServer->getAttributeValue("networkMask", srv.globalConfig.mapOptions[DHCPOption_SubnetMask].strValue)
                 && pelmServer->getAttributeValue("lowerIP", srv.strIPLower)
                 && pelmServer->getAttributeValue("upperIP", srv.strIPUpper)
                 && pelmServer->getAttributeValue("enabled", srv.fEnabled) )
@@ -1926,6 +1930,10 @@ void MainConfigFile::readDHCPOptions(DHCPConfig &rConfig, const xml::ElementNode
         rConfig.secDefaultLeaseTime = 0;
     if (!elmConfig.getAttributeValue("secMaxLeaseTime", rConfig.secMaxLeaseTime))
         rConfig.secMaxLeaseTime = 0;
+    if (!elmConfig.getAttributeValue("forcedOptions", rConfig.strForcedOptions))
+        rConfig.strSuppressedOptions.setNull();
+    if (!elmConfig.getAttributeValue("suppressedOptions", rConfig.strSuppressedOptions))
+        rConfig.strSuppressedOptions.setNull();
 
     /* The DHCP options are <Option> child elements: */
     xml::NodesLoop          nl2(elmConfig, "Option");
@@ -1935,8 +1943,8 @@ void MainConfigFile::readDHCPOptions(DHCPConfig &rConfig, const xml::ElementNode
         int32_t iOptName;
         if (!pElmOption->getAttributeValue("name", iOptName))
             continue;
-        DhcpOpt_T OptName = (DhcpOpt_T)iOptName;
-        if (OptName == DhcpOpt_SubnetMask && fIgnoreSubnetMask)
+        DHCPOption_T OptName = (DHCPOption_T)iOptName;
+        if (OptName == DHCPOption_SubnetMask && fIgnoreSubnetMask)
             continue;
 
         com::Utf8Str strValue;
@@ -2257,7 +2265,7 @@ MainConfigFile::MainConfigFile(const Utf8Str *pstrFilename)
         srv.strNetworkName = "HostInterfaceNetworking-vboxnet0";
 #endif
         srv.strIPAddress = "192.168.56.100";
-        srv.globalConfig.mapOptions[DhcpOpt_SubnetMask] = DhcpOptValue("255.255.255.0");
+        srv.globalConfig.mapOptions[DHCPOption_SubnetMask] = DhcpOptValue("255.255.255.0");
         srv.strIPLower = "192.168.56.101";
         srv.strIPUpper = "192.168.56.254";
         srv.fEnabled = true;

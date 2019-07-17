@@ -755,9 +755,9 @@ typedef OptString<18>                   OptExtensionPath;
 typedef OptValue<19, bool>              OptIPForwarding;
 typedef OptValue<20, bool>              OptNonLocalSourceRouting;
 typedef OptList<21, DhcpIpv4AddrAndMask> OptPolicyFilter;
-typedef OptValue<22, uint16_t>          OptMaxDatagramReassemblySize;
+typedef OptValue<22, uint16_t>          OptMaxDgramReassemblySize;
 typedef OptValue<23, uint16_t>          OptDefaultIPTTL;
-typedef OptValue<24, uint32_t>          OptDefaultPathMTUAgingTimeout;
+typedef OptValue<24, uint32_t>          OptPathMTUAgingTimeout;
 typedef OptList<25, uint16_t>           OptPathMTUPlateauTable;
 typedef OptValue<26, uint16_t>          OptInterfaceMTU;
 typedef OptValue<27, bool>              OptAllSubnetsAreLocal;
@@ -800,8 +800,8 @@ typedef OptString<62>                   OptNetWareIPDomainName;     /**< RFC2242
 typedef OptList<63, uint8_t>            OptNetWareIPInformation;    /**< complicated, so just byte list for now. RFC2242 */
 typedef OptString<64>                   OptNISPlusDomain;
 typedef OptString<65>                   OptNISPlusServers;
-typedef OptString<66>                   OptTFTPServer;              /**< when overloaded */
-typedef OptString<67>                   OptBootFileName;            /**< when overloaded */
+typedef OptString<66>                   OptTFTPServerName;          /**< when overloaded */
+typedef OptString<67>                   OptBootfileName;            /**< when overloaded */
 typedef OptList<68, RTNETADDRIPV4>      OptMobileIPHomeAgents;
 typedef OptList<69, RTNETADDRIPV4>      OptSMTPServers;
 typedef OptList<70, RTNETADDRIPV4>      OptPOP3Servers;
@@ -815,6 +815,7 @@ typedef OptList<77, uint8_t>            OptUserClassId;
 typedef OptList<78, uint8_t>            OptSLPDirectoryAgent;       /**< complicated, so just byte list for now. RFC2610 */
 typedef OptList<79, uint8_t>            OptSLPServiceScope;         /**< complicated, so just byte list for now. RFC2610 */
 typedef OptNoValue<80>                  OptRapidCommit;             /**< RFC4039 */
+typedef OptList<119, uint8_t>           OptDomainSearch;            /**< RFC3397 */
 /** @} */
 
 #endif /* !VBOX_INCLUDED_SRC_Dhcpd_DhcpOptions_h */

@@ -320,9 +320,9 @@ DhcpOption *DhcpOption::parse(uint8_t aOptCode, int aEnc, const char *pcszValue,
                 HANDLE(OptIPForwarding);                // 19
                 HANDLE(OptNonLocalSourceRouting);       // 20
                 HANDLE(OptPolicyFilter);                // 21
-                HANDLE(OptMaxDatagramReassemblySize);   // 22
+                HANDLE(OptMaxDgramReassemblySize);      // 22
                 HANDLE(OptDefaultIPTTL);                // 23
-                HANDLE(OptDefaultPathMTUAgingTimeout);  // 24
+                HANDLE(OptPathMTUAgingTimeout);         // 24
                 HANDLE(OptPathMTUPlateauTable);         // 25
                 HANDLE(OptInterfaceMTU);                // 26
                 HANDLE(OptAllSubnetsAreLocal);          // 27
@@ -341,11 +341,11 @@ DhcpOption *DhcpOption::parse(uint8_t aOptCode, int aEnc, const char *pcszValue,
                 HANDLE(OptNISDomain);                   // 40
                 HANDLE(OptNISServers);                  // 41
                 HANDLE(OptNTPServers);                  // 42
-                HANDLE(OptVendorSpecificInfo);          // 43
+                //HANDLE(OptVendorSpecificInfo);          // 43 - Only DHCPOptionEncoding_hex
                 HANDLE(OptNetBIOSNameServers);          // 44
                 HANDLE(OptNetBIOSDatagramServers);      // 45
                 HANDLE(OptNetBIOSNodeType);             // 46
-                HANDLE(OptNetBIOSScope);                // 47
+                //HANDLE(OptNetBIOSScope);                // 47 - Only DHCPOptionEncoding_hex
                 HANDLE(OptXWindowsFontServers);         // 48
                 HANDLE(OptXWindowsDisplayManager);      // 49
 #ifndef IN_VBOXSVC /* Don't allow these in new configs */
@@ -363,11 +363,11 @@ DhcpOption *DhcpOption::parse(uint8_t aOptCode, int aEnc, const char *pcszValue,
                 // OptClientId (61) is client only and not configurable.
 #endif
                 HANDLE(OptNetWareIPDomainName);         // 62
-                HANDLE(OptNetWareIPInformation);        // 63
+                //HANDLE(OptNetWareIPInformation);        // 63 - Only DHCPOptionEncoding_hex
                 HANDLE(OptNISPlusDomain);               // 64
                 HANDLE(OptNISPlusServers);              // 65
-                HANDLE(OptTFTPServer);                  // 66 - perhaps we should use an alternative way to configure these.
-                HANDLE(OptBootFileName);                // 67 - perhaps we should use an alternative way to configure these.
+                HANDLE(OptTFTPServerName);              // 66 - perhaps we should use an alternative way to configure these.
+                HANDLE(OptBootfileName);                // 67 - perhaps we should use an alternative way to configure these.
                 HANDLE(OptMobileIPHomeAgents);          // 68
                 HANDLE(OptSMTPServers);                 // 69
                 HANDLE(OptPOP3Servers);                 // 70
@@ -378,9 +378,11 @@ DhcpOption *DhcpOption::parse(uint8_t aOptCode, int aEnc, const char *pcszValue,
                 HANDLE(OptStreetTalkServers);           // 75
                 HANDLE(OptSTDAServers);                 // 76
                 // OptUserClassId (77) is client only and not configurable.
-                HANDLE(OptSLPDirectoryAgent);           // 78
-                HANDLE(OptSLPServiceScope);             // 79
+                //HANDLE(OptSLPDirectoryAgent);           // 78 - Only DHCPOptionEncoding_hex
+                //HANDLE(OptSLPServiceScope);             // 79 - Only DHCPOptionEncoding_hex
                 // OptRapidCommit (80) is not configurable.
+
+                //HANDLE(OptDomainSearch);                // 119 - Only DHCPOptionEncoding_hex
 
 #undef HANDLE
                 default:

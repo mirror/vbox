@@ -44,22 +44,28 @@ class DHCPConfig
 {
 protected:
     /** Config scope (global, group, vm+nic, mac).  */
-    DHCPConfigScope_T const m_enmScope;
+    DHCPConfigScope_T const     m_enmScope;
     /** Minimum lease time. */
-    ULONG                   m_secMinLeaseTime;
+    ULONG                       m_secMinLeaseTime;
     /** Default lease time. */
-    ULONG                   m_secDefaultLeaseTime;
+    ULONG                       m_secDefaultLeaseTime;
     /** Maximum lease time. */
-    ULONG                   m_secMaxLeaseTime;
+    ULONG                       m_secMaxLeaseTime;
+    /** List of options which are forced upon the client when available, whether
+     * requested by it or not.  */
+    std::vector<DHCPOption_T>   m_vecForcedOptions;
+    /** List of options which should be suppressed and not returned the the client
+     * when available and requested. */
+    std::vector<DHCPOption_T>   m_vecSuppressedOptions;
     /** DHCP option map. */
-    settings::DhcpOptionMap m_OptionMap;
+    settings::DhcpOptionMap     m_OptionMap;
     /** The DHCP server parent (weak).   */
-    DHCPServer * const      m_pParent;
+    DHCPServer * const          m_pParent;
     /** The DHCP server parent (weak).   */
-    VirtualBox * const      m_pVirtualBox;
+    VirtualBox * const          m_pVirtualBox;
 private:
     /** For setError and such. */
-    VirtualBoxBase * const  m_pHack;
+    VirtualBoxBase * const      m_pHack;
 
 protected:
     /** @name Constructors and destructors.
@@ -84,6 +90,10 @@ protected:
     HRESULT i_setDefaultLeaseTime(ULONG aDefaultLeaseTime);
     HRESULT i_getMaxLeaseTime(ULONG *aMaxLeaseTime);
     HRESULT i_setMaxLeaseTime(ULONG aMaxLeaseTime);
+    HRESULT i_getForcedOptions(std::vector<DHCPOption_T> &aOptions);
+    HRESULT i_setForcedOptions(const std::vector<DHCPOption_T> &aOptions);
+    HRESULT i_getSuppressedOptions(std::vector<DHCPOption_T> &aOptions);
+    HRESULT i_setSuppressedOptions(const std::vector<DHCPOption_T> &aOptions);
     /** @} */
 
 public:
@@ -91,12 +101,12 @@ public:
      * @note public because the DHCPServer needs them for 6.0 interfaces.
      * @todo Make protected again when IDHCPServer is cleaned up.
      * @{ */
-    virtual HRESULT i_setOption(DhcpOpt_T aOption, DHCPOptionEncoding_T aEncoding, const com::Utf8Str &aValue);
+    virtual HRESULT i_setOption(DHCPOption_T aOption, DHCPOptionEncoding_T aEncoding, const com::Utf8Str &aValue);
 
-    virtual HRESULT i_removeOption(DhcpOpt_T aOption);
+    virtual HRESULT i_removeOption(DHCPOption_T aOption);
     virtual HRESULT i_removeAllOptions();
-    HRESULT         i_getOption(DhcpOpt_T aOption, DHCPOptionEncoding_T *aEncoding, com::Utf8Str &aValue);
-    HRESULT         i_getAllOptions(std::vector<DhcpOpt_T> &aOptions, std::vector<DHCPOptionEncoding_T> &aEncodings,
+    HRESULT         i_getOption(DHCPOption_T aOption, DHCPOptionEncoding_T *aEncoding, com::Utf8Str &aValue);
+    HRESULT         i_getAllOptions(std::vector<DHCPOption_T> &aOptions, std::vector<DHCPOptionEncoding_T> &aEncodings,
                                     std::vector<com::Utf8Str> &aValues);
     virtual HRESULT i_remove();
     /** @} */
@@ -149,16 +159,20 @@ protected:
     HRESULT setDefaultLeaseTime(ULONG aDefaultLeaseTime) RT_OVERRIDE    { return i_setDefaultLeaseTime(aDefaultLeaseTime); }
     HRESULT getMaxLeaseTime(ULONG *aMaxLeaseTime) RT_OVERRIDE           { return i_getMaxLeaseTime(aMaxLeaseTime); }
     HRESULT setMaxLeaseTime(ULONG aMaxLeaseTime) RT_OVERRIDE            { return i_setMaxLeaseTime(aMaxLeaseTime); }
+    HRESULT getForcedOptions(std::vector<DHCPOption_T> &aOptions) RT_OVERRIDE       { return i_getForcedOptions(aOptions); }
+    HRESULT setForcedOptions(const std::vector<DHCPOption_T> &aOptions) RT_OVERRIDE { return i_setForcedOptions(aOptions); }
+    HRESULT getSuppressedOptions(std::vector<DHCPOption_T> &aOptions) RT_OVERRIDE   { return i_getSuppressedOptions(aOptions); }
+    HRESULT setSuppressedOptions(const std::vector<DHCPOption_T> &aOptions) RT_OVERRIDE  { return i_setSuppressedOptions(aOptions); }
     /** @} */
 
     /** @name wrapped IDHCPConfig methods
      * @{ */
-    HRESULT setOption(DhcpOpt_T aOption, DHCPOptionEncoding_T aEncoding, const com::Utf8Str &aValue) RT_OVERRIDE
+    HRESULT setOption(DHCPOption_T aOption, DHCPOptionEncoding_T aEncoding, const com::Utf8Str &aValue) RT_OVERRIDE
     {
         return i_setOption(aOption, aEncoding, aValue);
     }
 
-    HRESULT removeOption(DhcpOpt_T aOption) RT_OVERRIDE
+    HRESULT removeOption(DHCPOption_T aOption) RT_OVERRIDE
     {
         return i_removeOption(aOption);
     }
@@ -168,12 +182,12 @@ protected:
         return i_removeAllOptions();
     }
 
-    HRESULT getOption(DhcpOpt_T aOption, DHCPOptionEncoding_T *aEncoding, com::Utf8Str &aValue) RT_OVERRIDE
+    HRESULT getOption(DHCPOption_T aOption, DHCPOptionEncoding_T *aEncoding, com::Utf8Str &aValue) RT_OVERRIDE
     {
         return i_getOption(aOption, aEncoding, aValue);
     }
 
-    HRESULT getAllOptions(std::vector<DhcpOpt_T> &aOptions, std::vector<DHCPOptionEncoding_T> &aEncodings,
+    HRESULT getAllOptions(std::vector<DHCPOption_T> &aOptions, std::vector<DHCPOptionEncoding_T> &aEncodings,
                           std::vector<com::Utf8Str> &aValues) RT_OVERRIDE
     {
         return i_getAllOptions(aOptions, aEncodings, aValues);
@@ -186,8 +200,8 @@ protected:
     /** @} */
 
 public:
-    HRESULT i_setOption(DhcpOpt_T aOption, DHCPOptionEncoding_T aEncoding, const com::Utf8Str &aValue) RT_OVERRIDE;
-    HRESULT i_removeOption(DhcpOpt_T aOption) RT_OVERRIDE;
+    HRESULT i_setOption(DHCPOption_T aOption, DHCPOptionEncoding_T aEncoding, const com::Utf8Str &aValue) RT_OVERRIDE;
+    HRESULT i_removeOption(DHCPOption_T aOption) RT_OVERRIDE;
     HRESULT i_removeAllOptions() RT_OVERRIDE;
     HRESULT i_remove() RT_OVERRIDE;
 };
@@ -306,6 +320,10 @@ protected:
     HRESULT setDefaultLeaseTime(ULONG aDefaultLeaseTime) RT_OVERRIDE    { return i_setDefaultLeaseTime(aDefaultLeaseTime); }
     HRESULT getMaxLeaseTime(ULONG *aMaxLeaseTime) RT_OVERRIDE           { return i_getMaxLeaseTime(aMaxLeaseTime); }
     HRESULT setMaxLeaseTime(ULONG aMaxLeaseTime) RT_OVERRIDE            { return i_setMaxLeaseTime(aMaxLeaseTime); }
+    HRESULT getForcedOptions(std::vector<DHCPOption_T> &aOptions) RT_OVERRIDE       { return i_getForcedOptions(aOptions); }
+    HRESULT setForcedOptions(const std::vector<DHCPOption_T> &aOptions) RT_OVERRIDE { return i_setForcedOptions(aOptions); }
+    HRESULT getSuppressedOptions(std::vector<DHCPOption_T> &aOptions) RT_OVERRIDE   { return i_getSuppressedOptions(aOptions); }
+    HRESULT setSuppressedOptions(const std::vector<DHCPOption_T> &aOptions) RT_OVERRIDE  { return i_setSuppressedOptions(aOptions); }
     /** @} */
 
     /** @name Wrapped IDHCPGroupConfig properties
@@ -317,12 +335,12 @@ protected:
 
     /** @name Wrapped IDHCPConfig methods
      * @{ */
-    HRESULT setOption(DhcpOpt_T aOption, DHCPOptionEncoding_T aEncoding, const com::Utf8Str &aValue) RT_OVERRIDE
+    HRESULT setOption(DHCPOption_T aOption, DHCPOptionEncoding_T aEncoding, const com::Utf8Str &aValue) RT_OVERRIDE
     {
         return i_setOption(aOption, aEncoding, aValue);
     }
 
-    HRESULT removeOption(DhcpOpt_T aOption) RT_OVERRIDE
+    HRESULT removeOption(DHCPOption_T aOption) RT_OVERRIDE
     {
         return i_removeOption(aOption);
     }
@@ -332,12 +350,12 @@ protected:
         return i_removeAllOptions();
     }
 
-    HRESULT getOption(DhcpOpt_T aOption, DHCPOptionEncoding_T *aEncoding, com::Utf8Str &aValue) RT_OVERRIDE
+    HRESULT getOption(DHCPOption_T aOption, DHCPOptionEncoding_T *aEncoding, com::Utf8Str &aValue) RT_OVERRIDE
     {
         return i_getOption(aOption, aEncoding, aValue);
     }
 
-    HRESULT getAllOptions(std::vector<DhcpOpt_T> &aOptions, std::vector<DHCPOptionEncoding_T> &aEncodings,
+    HRESULT getAllOptions(std::vector<DHCPOption_T> &aOptions, std::vector<DHCPOptionEncoding_T> &aEncodings,
                           std::vector<com::Utf8Str> &aValues) RT_OVERRIDE
     {
         return i_getAllOptions(aOptions, aEncodings, aValues);
@@ -437,16 +455,20 @@ protected:
     HRESULT setDefaultLeaseTime(ULONG aDefaultLeaseTime) RT_OVERRIDE    { return i_setDefaultLeaseTime(aDefaultLeaseTime); }
     HRESULT getMaxLeaseTime(ULONG *aMaxLeaseTime) RT_OVERRIDE           { return i_getMaxLeaseTime(aMaxLeaseTime); }
     HRESULT setMaxLeaseTime(ULONG aMaxLeaseTime) RT_OVERRIDE            { return i_setMaxLeaseTime(aMaxLeaseTime); }
+    HRESULT getForcedOptions(std::vector<DHCPOption_T> &aOptions) RT_OVERRIDE       { return i_getForcedOptions(aOptions); }
+    HRESULT setForcedOptions(const std::vector<DHCPOption_T> &aOptions) RT_OVERRIDE { return i_setForcedOptions(aOptions); }
+    HRESULT getSuppressedOptions(std::vector<DHCPOption_T> &aOptions) RT_OVERRIDE   { return i_getSuppressedOptions(aOptions); }
+    HRESULT setSuppressedOptions(const std::vector<DHCPOption_T> &aOptions) RT_OVERRIDE  { return i_setSuppressedOptions(aOptions); }
     /** @} */
 
     /** @name wrapped IDHCPConfig methods
      * @{ */
-    HRESULT setOption(DhcpOpt_T aOption, DHCPOptionEncoding_T aEncoding, const com::Utf8Str &aValue) RT_OVERRIDE
+    HRESULT setOption(DHCPOption_T aOption, DHCPOptionEncoding_T aEncoding, const com::Utf8Str &aValue) RT_OVERRIDE
     {
         return i_setOption(aOption, aEncoding, aValue);
     }
 
-    HRESULT removeOption(DhcpOpt_T aOption) RT_OVERRIDE
+    HRESULT removeOption(DHCPOption_T aOption) RT_OVERRIDE
     {
         return i_removeOption(aOption);
     }
@@ -456,12 +478,12 @@ protected:
         return i_removeAllOptions();
     }
 
-    HRESULT getOption(DhcpOpt_T aOption, DHCPOptionEncoding_T *aEncoding, com::Utf8Str &aValue) RT_OVERRIDE
+    HRESULT getOption(DHCPOption_T aOption, DHCPOptionEncoding_T *aEncoding, com::Utf8Str &aValue) RT_OVERRIDE
     {
         return i_getOption(aOption, aEncoding, aValue);
     }
 
-    HRESULT getAllOptions(std::vector<DhcpOpt_T> &aOptions, std::vector<DHCPOptionEncoding_T> &aEncodings,
+    HRESULT getAllOptions(std::vector<DHCPOption_T> &aOptions, std::vector<DHCPOptionEncoding_T> &aEncodings,
                           std::vector<com::Utf8Str> &aValues) RT_OVERRIDE
     {
         return i_getAllOptions(aOptions, aEncodings, aValues);

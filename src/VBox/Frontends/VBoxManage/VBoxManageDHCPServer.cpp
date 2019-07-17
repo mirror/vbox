@@ -112,11 +112,11 @@ typedef struct DHCPDCMDCTX
     const char     *pszInterface;
 } DHCPDCMDCTX;
 
-typedef std::pair<DhcpOpt_T, Utf8Str> DhcpOptSpec;
+typedef std::pair<DHCPOption_T, Utf8Str> DhcpOptSpec;
 typedef std::vector<DhcpOptSpec> DhcpOpts;
 typedef DhcpOpts::iterator DhcpOptIterator;
 
-typedef std::vector<DhcpOpt_T> DhcpOptIds;
+typedef std::vector<DHCPOption_T> DhcpOptIds;
 typedef DhcpOptIds::iterator DhcpOptIdIterator;
 
 struct VmNameSlotKey
@@ -510,7 +510,7 @@ static DECLCALLBACK(RTEXITCODE) dhcpdHandleAddAndModify(PDHCPDCMDCTX pCtx, int a
                         ComPtr<IDHCPConfig> &ptrConfig = Scope.getConfig(ptrDHCPServer);
                         if (ptrConfig.isNull())
                             return RTEXITCODE_FAILURE;
-                        CHECK_ERROR2I_STMT(ptrConfig, SetOption((DhcpOpt_T)idAddOpt, DHCPOptionEncoding_Normal,
+                        CHECK_ERROR2I_STMT(ptrConfig, SetOption((DHCPOption_T)idAddOpt, DHCPOptionEncoding_Normal,
                                                                 Bstr(ValueUnion.psz).raw()), rcExit = RTEXITCODE_FAILURE);
                     }
                     break;
@@ -533,7 +533,7 @@ static DECLCALLBACK(RTEXITCODE) dhcpdHandleAddAndModify(PDHCPDCMDCTX pCtx, int a
                         ComPtr<IDHCPConfig> &ptrConfig = Scope.getConfig(ptrDHCPServer);
                         if (ptrConfig.isNull())
                             return RTEXITCODE_FAILURE;
-                        CHECK_ERROR2I_STMT(ptrConfig, SetOption((DhcpOpt_T)idAddOpt, DHCPOptionEncoding_Hex,
+                        CHECK_ERROR2I_STMT(ptrConfig, SetOption((DHCPOption_T)idAddOpt, DHCPOptionEncoding_Hex,
                                                                 Bstr(ValueUnion.psz).raw()), rcExit = RTEXITCODE_FAILURE);
                     }
                     break;
@@ -547,7 +547,7 @@ static DECLCALLBACK(RTEXITCODE) dhcpdHandleAddAndModify(PDHCPDCMDCTX pCtx, int a
                         ComPtr<IDHCPConfig> &ptrConfig = Scope.getConfig(ptrDHCPServer);
                         if (ptrConfig.isNull())
                             return RTEXITCODE_FAILURE;
-                        CHECK_ERROR2I_STMT(ptrConfig, RemoveOption((DhcpOpt_T)ValueUnion.u8), rcExit = RTEXITCODE_FAILURE);
+                        CHECK_ERROR2I_STMT(ptrConfig, RemoveOption((DHCPOption_T)ValueUnion.u8), rcExit = RTEXITCODE_FAILURE);
                     }
                     break;
 
@@ -779,7 +779,7 @@ static DECLCALLBACK(RTEXITCODE) dhcpdHandleAddAndModify(PDHCPDCMDCTX pCtx, int a
                         ComPtr<IDHCPConfig> &ptrConfig = Scope.getConfig(ptrDHCPServer);
                         if (ptrConfig.isNull())
                             return RTEXITCODE_FAILURE;
-                        CHECK_ERROR2I_STMT(ptrConfig, SetOption((DhcpOpt_T)u8OptId, DHCPOptionEncoding_Normal,
+                        CHECK_ERROR2I_STMT(ptrConfig, SetOption((DHCPOption_T)u8OptId, DHCPOptionEncoding_Normal,
                                                                 Bstr(ValueUnion.psz).raw()), rcExit = RTEXITCODE_FAILURE);
                     }
                     fNeedValueOrRemove = false;
@@ -796,7 +796,7 @@ static DECLCALLBACK(RTEXITCODE) dhcpdHandleAddAndModify(PDHCPDCMDCTX pCtx, int a
                         ComPtr<IDHCPConfig> &ptrConfig = Scope.getConfig(ptrDHCPServer);
                         if (ptrConfig.isNull())
                             return RTEXITCODE_FAILURE;
-                        CHECK_ERROR2I_STMT(ptrConfig, RemoveOption((DhcpOpt_T)u8OptId), rcExit = RTEXITCODE_FAILURE);
+                        CHECK_ERROR2I_STMT(ptrConfig, RemoveOption((DHCPOption_T)u8OptId), rcExit = RTEXITCODE_FAILURE);
                     }
                     fNeedValueOrRemove = false;
                     break;
