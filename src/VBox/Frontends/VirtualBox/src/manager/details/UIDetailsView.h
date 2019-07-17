@@ -51,7 +51,6 @@ public slots:
 
     /* Handlers: Size-hint stuff: */
     void sltMinimumWidthHintChanged(int iMinimumWidthHint);
-    void sltMinimumHeightHintChanged(int iMinimumHeightHint);
 
 private:
 
@@ -69,7 +68,6 @@ private:
 
     /* Variables: */
     int m_iMinimumWidthHint;
-    int m_iMinimumHeightHint;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_manager_details_UIDetailsView_h */

@@ -55,6 +55,13 @@ UIDetailsModel::~UIDetailsModel()
     cleanup();
 }
 
+void UIDetailsModel::init()
+{
+    /* Install root as event-filter for scene view,
+     * we need QEvent::Scroll events from it: */
+    root()->installEventFilterHelper(view());
+}
+
 QGraphicsScene *UIDetailsModel::scene() const
 {
     return m_pScene;

@@ -23,6 +23,7 @@
 #include <QStyleOptionGraphicsItem>
 
 /* GUI includes: */
+#include "UIGraphicsScrollArea.h"
 #include "UIDetailsGroup.h"
 #include "UIDetailsModel.h"
 #include "UIDetailsSet.h"
@@ -35,21 +36,29 @@
 UIDetailsGroup::UIDetailsGroup(QGraphicsScene *pParent)
     : UIDetailsItem(0)
     , m_pBuildStep(0)
+    , m_pScrollArea(0)
     , m_pContainer(0)
     , m_pLayout(0)
     , m_iPreviousMinimumWidthHint(0)
-    , m_iPreviousMinimumHeightHint(0)
 {
-    /* Prepare container: */
-    m_pContainer = new QIGraphicsWidget(this);
-    if (m_pContainer)
+    /* Prepare scroll-area: */
+    m_pScrollArea = new UIGraphicsScrollArea(Qt::Vertical, this);
+    if (m_pScrollArea)
     {
-        /* Prepare layout: */
-        m_pLayout = new QGraphicsLinearLayout(Qt::Vertical, m_pContainer);
-        if (m_pLayout)
+        /* Prepare container: */
+        m_pContainer = new QIGraphicsWidget;
+        if (m_pContainer)
         {
-            m_pLayout->setContentsMargins(0, 0, 0, 0);
-            m_pLayout->setSpacing(0);
+            /* Prepare layout: */
+            m_pLayout = new QGraphicsLinearLayout(Qt::Vertical, m_pContainer);
+            if (m_pLayout)
+            {
+                m_pLayout->setContentsMargins(0, 0, 0, 0);
+                m_pLayout->setSpacing(0);
+            }
+
+            /* Assign to scroll-area: */
+            m_pScrollArea->setViewport(m_pContainer);
         }
     }
 
@@ -101,6 +110,12 @@ void UIDetailsGroup::stopBuildingGroup()
     m_uGroupId = QUuid::createUuid();
 }
 
+void UIDetailsGroup::installEventFilterHelper(QObject *pSource)
+{
+    /* The only object which need's that filter for now is scroll-area: */
+    pSource->installEventFilter(m_pScrollArea);
+}
+
 QList<UIDetailsItem*> UIDetailsGroup::items(UIDetailsItemType enmType /* = UIDetailsItemType_Set */) const
 {
     switch (enmType)
@@ -117,9 +132,9 @@ void UIDetailsGroup::updateLayout()
     /* Acquire view: */
     UIDetailsView *pView = model()->view();
 
-    /* Adjust children container geometry: */
-    m_pContainer->resize(pView->viewport()->size());
-    m_pContainer->setPos(0, 0);
+    /* Adjust children scroll-area: */
+    m_pScrollArea->resize(pView->size());
+    m_pScrollArea->setPos(0, 0);
 
     /* Layout all the sets: */
     foreach (UIDetailsItem *pItem, items())
@@ -241,14 +256,6 @@ void UIDetailsGroup::updateGeometry()
         m_iPreviousMinimumWidthHint = iMinimumWidthHint;
         emit sigMinimumWidthHintChanged(m_iPreviousMinimumWidthHint);
     }
-    /* Group-item should notify details-view if minimum-height-hint was changed: */
-    int iMinimumHeightHint = minimumHeightHint();
-    if (m_iPreviousMinimumHeightHint != iMinimumHeightHint)
-    {
-        /* Save new minimum-height-hint, notify listener: */
-        m_iPreviousMinimumHeightHint = iMinimumHeightHint;
-        emit sigMinimumHeightHintChanged(m_iPreviousMinimumHeightHint);
-    }
 }
 
 void UIDetailsGroup::prepareConnections()
@@ -256,8 +263,6 @@ void UIDetailsGroup::prepareConnections()
     /* Prepare group-item connections: */
     connect(this, SIGNAL(sigMinimumWidthHintChanged(int)),
             model(), SIGNAL(sigRootItemMinimumWidthHintChanged(int)));
-    connect(this, SIGNAL(sigMinimumHeightHintChanged(int)),
-            model(), SIGNAL(sigRootItemMinimumHeightHintChanged(int)));
 }
 
 void UIDetailsGroup::paintBackground(QPainter *pPainter, const QStyleOptionGraphicsItem *pOptions) const

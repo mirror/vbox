@@ -88,6 +88,10 @@ public:
 
         /** Returns the description of the item. */
         virtual QString description() const = 0;
+
+        /** Installs event-filter for @a pSource object.
+          * @note  Base-class implementation does nothing. */
+        virtual void installEventFilterHelper(QObject *pSource) { Q_UNUSED(pSource); }
     /** @} */
 
     /** @name Children stuff.

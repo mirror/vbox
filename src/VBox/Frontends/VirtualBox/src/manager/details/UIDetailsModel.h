@@ -57,8 +57,6 @@ signals:
 
     /** Notifies listeners about model root item @a iMinimumWidthHint changed. */
     void sigRootItemMinimumWidthHintChanged(int iMinimumWidthHint);
-    /** Notifies listeners about model root item @a iMinimumHeightHint changed. */
-    void sigRootItemMinimumHeightHintChanged(int iMinimumHeightHint);
 
     /** Notifies listeners about element link clicked.
       * @param  strCategory  Brings details element category.
@@ -73,6 +71,9 @@ public:
     UIDetailsModel(UIDetails *pParent);
     /** Destructs a details model. */
     virtual ~UIDetailsModel() /* override */;
+
+    /** Inits model. */
+    void init();
 
     /** Returns graphics scene this model belongs to. */
     QGraphicsScene *scene() const;
