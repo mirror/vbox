@@ -812,7 +812,7 @@ static HRESULT showDhcpConfig(ComPtr<IDHCPConfig> ptrConfig)
     else
         RTPrintf("    maxLeaseTime:     %u sec\n", secs);
 
-    com::SafeArray<DhcpOpt_T>            Options;
+    com::SafeArray<DHCPOption_T>         Options;
     com::SafeArray<DHCPOptionEncoding_T> Encodings;
     com::SafeArray<BSTR>                 Values;
     HRESULT hrc;
