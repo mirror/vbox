@@ -94,6 +94,7 @@ static HRESULT checkAndSetCommonOptions(HandlerArg *a, PCLOUDCOMMONOPT pCommonOp
     return hrc;
 }
 
+
 /**
  * List all available cloud instances for the specified cloud provider.
  * Available cloud instance is one which state whether "running" or "stopped".
@@ -117,7 +118,7 @@ static RTEXITCODE listCloudInstances(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT 
     AssertRCReturn(vrc, RTEXITCODE_FAILURE);
 
     Utf8Str strCompartmentId;
-    Utf8Str strState;
+    com::SafeArray<CloudMachineState_T> machineStates;
 
     int c;
     while ((c = RTGetOpt(&GetState, &ValueUnion)) != 0)
@@ -127,40 +128,56 @@ static RTEXITCODE listCloudInstances(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT 
             case 'c':
                 strCompartmentId = ValueUnion.psz;
                 break;
+
             case 's':
-                strState = ValueUnion.psz;
+            {
+                const char * const pszState = ValueUnion.psz;
+
+                if (RTStrICmp(pszState, "creatingimage") == 0)
+                    machineStates.push_back(CloudMachineState_CreatingImage);
+                else if (RTStrICmp(pszState, "paused") == 0) /* XXX */
+                    machineStates.push_back(CloudMachineState_Stopped);
+                else if (RTStrICmp(pszState, "provisioning") == 0)
+                    machineStates.push_back(CloudMachineState_Provisioning);
+                else if (RTStrICmp(pszState, "running") == 0)
+                    machineStates.push_back(CloudMachineState_Running);
+                else if (RTStrICmp(pszState, "starting") == 0)
+                    machineStates.push_back(CloudMachineState_Starting);
+                else if (RTStrICmp(pszState, "stopped") == 0)
+                    machineStates.push_back(CloudMachineState_Stopped);
+                else if (RTStrICmp(pszState, "stopping") == 0)
+                    machineStates.push_back(CloudMachineState_Stopping);
+                else if (RTStrICmp(pszState, "terminated") == 0)
+                    machineStates.push_back(CloudMachineState_Terminated);
+                else if (RTStrICmp(pszState, "terminating") == 0)
+                    machineStates.push_back(CloudMachineState_Terminating);
+                else
+                    return errorArgument("Unknown cloud instance state \"%s\"", pszState);
                 break;
+            }
+
             case VINF_GETOPT_NOT_OPTION:
                 return errorUnknownSubcommand(ValueUnion.psz);
+
             default:
                 return errorGetOpt(c, &ValueUnion);
         }
     }
 
-    com::SafeArray<CloudMachineState_T> machineStates;
-    if (strState.isNotEmpty())
-    {
-        if (strState.equals("running"))
-            machineStates.push_back(CloudMachineState_Running);
-        else if (strState.equals("paused"))
-            machineStates.push_back(CloudMachineState_Stopped);
-        else if (strState.equals("terminated"))
-            machineStates.push_back(CloudMachineState_Terminated);
-    }
-
     HRESULT hrc = S_OK;
     ComPtr<IVirtualBox> pVirtualBox = a->virtualBox;
+
     ComPtr<ICloudProviderManager> pCloudProviderManager;
     CHECK_ERROR2_RET(hrc, pVirtualBox,
                      COMGETTER(CloudProviderManager)(pCloudProviderManager.asOutParam()),
                      RTEXITCODE_FAILURE);
-    ComPtr<ICloudProvider> pCloudProvider;
 
+    ComPtr<ICloudProvider> pCloudProvider;
     CHECK_ERROR2_RET(hrc, pCloudProviderManager,
                      GetProviderByShortName(Bstr(pCommonOpts->provider.pszProviderName).raw(), pCloudProvider.asOutParam()),
                      RTEXITCODE_FAILURE);
-    ComPtr<ICloudProfile> pCloudProfile;
 
+    ComPtr<ICloudProfile> pCloudProfile;
     CHECK_ERROR2_RET(hrc, pCloudProvider,
                      GetProfileByName(Bstr(pCommonOpts->profile.pszProfileName).raw(), pCloudProfile.asOutParam()),
                      RTEXITCODE_FAILURE);
@@ -233,6 +250,7 @@ static RTEXITCODE listCloudInstances(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT 
     return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
+
 /**
  * List all available cloud images for the specified cloud provider.
  *
@@ -254,9 +272,9 @@ static RTEXITCODE listCloudImages(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pCo
     int vrc = RTGetOptInit(&GetState, a->argc, a->argv, s_aOptions, RT_ELEMENTS(s_aOptions), iFirst, 0);
     AssertRCReturn(vrc, RTEXITCODE_FAILURE);
 
+    Utf8Str strCompartmentId;
     com::SafeArray<CloudImageState_T> imageStates;
 
-    Utf8Str strCompartmentId;
     int c;
     while ((c = RTGetOpt(&GetState, &ValueUnion)) != 0)
     {
