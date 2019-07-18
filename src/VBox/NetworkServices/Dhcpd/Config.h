@@ -71,7 +71,7 @@ public:
     virtual ~ConfigLevelBase()
     { }
 
-    virtual void        initFromXml(xml::ElementNode const *pElm, bool fStrict, Config const *pConfig);
+    virtual void        initFromXml(xml::ElementNode const *pElmConfig, bool fStrict, Config const *pConfig);
     virtual const char *getType() const RT_NOEXCEPT = 0;
     virtual const char *getName() const RT_NOEXCEPT = 0;
 
@@ -118,7 +118,7 @@ public:
     GlobalConfig()
         : ConfigLevelBase()
     { }
-    void initFromXml(xml::ElementNode const *pElm, bool fStrict, Config const *pConfig) RT_OVERRIDE;
+    void initFromXml(xml::ElementNode const *pElmOptions, bool fStrict, Config const *pConfig) RT_OVERRIDE;
     const char *getType() const RT_NOEXCEPT RT_OVERRIDE { return "global"; }
     const char *getName() const RT_NOEXCEPT RT_OVERRIDE { return "GlobalConfig"; }
 };
@@ -226,7 +226,7 @@ public:
     {
     }
 
-    void initFromXml(xml::ElementNode const *pElm, bool fStrict, Config const *pConfig) RT_OVERRIDE;
+    void initFromXml(xml::ElementNode const *pElmGroup, bool fStrict, Config const *pConfig) RT_OVERRIDE;
     bool match(const ClientId &a_ridClient, const OptVendorClassId &a_ridVendorClass, const OptUserClassId &a_ridUserClass) const;
 
     /** @name Accessors
@@ -267,7 +267,7 @@ public:
         RT_ZERO(m_FixedAddress);
     }
 
-    void initFromXml(xml::ElementNode const *pElm, bool fStrict, Config const *pConfig) RT_OVERRIDE;
+    void initFromXml(xml::ElementNode const *pElmConfig, bool fStrict, Config const *pConfig) RT_OVERRIDE;
     const char *getType() const RT_NOEXCEPT RT_OVERRIDE { return "host"; }
     const char *getName() const RT_NOEXCEPT RT_OVERRIDE { return m_strName.c_str(); }
 

@@ -895,7 +895,7 @@ void ConfigLevelBase::initFromXml(const xml::ElementNode *pElmConfig, bool fStri
 /**
  * Internal worker for parsing the elements under /DHCPServer/Options/.
  *
- * @param   pElmOptions         The <Options> element.
+ * @param   pElmOptions         The \<Options\> element.
  * @param   fStrict             Set if we're in strict mode, clear if we just
  *                              want to get on with it if we can.
  * @param   pConfig             The configuration object.
