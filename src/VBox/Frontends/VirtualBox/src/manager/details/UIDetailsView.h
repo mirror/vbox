@@ -35,7 +35,7 @@ class UIDetailsView : public QIWithRetranslateUI<QIGraphicsView>
 
 signals:
 
-    /* Notifier: Resize stuff: */
+    /** Notifies listeners about resize. */
     void sigResized();
 
 public:
@@ -49,26 +49,30 @@ public:
 
 public slots:
 
-    /* Handlers: Size-hint stuff: */
-    void sltMinimumWidthHintChanged(int iMinimumWidthHint);
+    /** Handles minimum width @a iHint change. */
+    void sltMinimumWidthHintChanged(int iHint);
 
-private:
+protected:
 
     /** Handles translation event. */
     virtual void retranslateUi() /* override */;
 
-    /* Handler: Resize-event stuff: */
-    void resizeEvent(QResizeEvent *pEvent);
+    /** Handles resize @a pEvent. */
+    virtual void resizeEvent(QResizeEvent *pEvent) /* override */;
 
-    /* Helper: Update stuff: */
+private:
+
+    /** Prepares all. */
+    void prepare();
+
+    /** Updates scene rectangle. */
     void updateSceneRect();
 
     /** Holds the details reference. */
     UIDetails *m_pDetails;
 
-    /* Variables: */
+    /** Updates scene rectangle. */
     int m_iMinimumWidthHint;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_manager_details_UIDetailsView_h */
-

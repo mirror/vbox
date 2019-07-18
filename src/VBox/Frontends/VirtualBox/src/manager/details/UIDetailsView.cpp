@@ -17,7 +17,6 @@
 
 /* Qt includes: */
 #include <QAccessibleWidget>
-#include <QApplication>
 #include <QScrollBar>
 
 /* GUI includes: */
@@ -110,38 +109,22 @@ UIDetailsView::UIDetailsView(UIDetails *pParent)
     , m_pDetails(pParent)
     , m_iMinimumWidthHint(0)
 {
-    /* Install Details-view accessibility interface factory: */
-    QAccessible::installFactory(UIAccessibilityInterfaceForUIDetailsView::pFactory);
-
-    /* Setup frame: */
-    setFrameShape(QFrame::NoFrame);
-    setFrameShadow(QFrame::Plain);
-    setAlignment(Qt::AlignLeft | Qt::AlignTop);
-
-    /* Setup scroll-bars policy: */
-    setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-
-    /* Update scene-rect: */
-    updateSceneRect();
-
-    /* Translate finally: */
-    retranslateUi();
+    prepare();
 }
 
-void UIDetailsView::sltMinimumWidthHintChanged(int iMinimumWidthHint)
+void UIDetailsView::sltMinimumWidthHintChanged(int iHint)
 {
     /* Is there something changed? */
-    if (m_iMinimumWidthHint == iMinimumWidthHint)
+    if (m_iMinimumWidthHint == iHint)
         return;
 
     /* Remember new value: */
-    m_iMinimumWidthHint = iMinimumWidthHint;
+    m_iMinimumWidthHint = iHint;
     if (m_iMinimumWidthHint <= 0)
         m_iMinimumWidthHint = 1;
 
     /* Set minimum view width according passed width-hint: */
-    setMinimumWidth(2 * frameWidth() + iMinimumWidthHint + verticalScrollBar()->sizeHint().width());
+    setMinimumWidth(2 * frameWidth() + m_iMinimumWidthHint + verticalScrollBar()->sizeHint().width());
 
     /* Update scene-rect: */
     updateSceneRect();
@@ -166,8 +149,28 @@ void UIDetailsView::resizeEvent(QResizeEvent *pEvent)
     updateSceneRect();
 }
 
+void UIDetailsView::prepare()
+{
+    /* Install Details-view accessibility interface factory: */
+    QAccessible::installFactory(UIAccessibilityInterfaceForUIDetailsView::pFactory);
+
+    /* Setup frame: */
+    setFrameShape(QFrame::NoFrame);
+    setFrameShadow(QFrame::Plain);
+    setAlignment(Qt::AlignLeft | Qt::AlignTop);
+
+    /* Setup scroll-bars policy: */
+    setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+
+    /* Update scene-rect: */
+    updateSceneRect();
+
+    /* Translate finally: */
+    retranslateUi();
+}
+
 void UIDetailsView::updateSceneRect()
 {
     setSceneRect(0, 0, m_iMinimumWidthHint, height());
 }
-
