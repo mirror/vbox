@@ -20196,7 +20196,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         Reset VM statistics.
       </desc>
       <param name="pattern" type="wstring" dir="in">
-        <desc>The selection pattern. A bit similar to filename globbing.</desc>
+        <desc>The selection pattern. A bit similar to filename globbing.
+          Wildchars are '*' and '?', where the asterisk matches zero or
+          more characters and question mark matches exactly one character.
+          Multiple pattern can be joined by putting '|' between them.</desc>
       </param>
     </method>
 
@@ -20205,7 +20208,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         Dumps VM statistics.
       </desc>
       <param name="pattern" type="wstring" dir="in">
-        <desc>The selection pattern. A bit similar to filename globbing.</desc>
+        <desc>The selection pattern. A bit similar to filename globbing.
+          Wildchars are '*' and '?', where the asterisk matches zero or
+          more characters and question mark matches exactly one character.
+          Multiple pattern can be joined by putting '|' between them.</desc>
       </param>
     </method>
 
@@ -20214,7 +20220,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         Get the VM statistics in a XMLish format.
       </desc>
       <param name="pattern" type="wstring" dir="in">
-        <desc>The selection pattern. A bit similar to filename globbing.</desc>
+        <desc>The selection pattern. A bit similar to filename globbing.
+          Wildchars are '*' and '?', where the asterisk matches zero or
+          more characters and question mark matches exactly one character.
+          Multiple pattern can be joined by putting '|' between them.</desc>
       </param>
       <param name="withDescriptions" type="boolean" dir="in">
         <desc>Whether to include the descriptions.</desc>
