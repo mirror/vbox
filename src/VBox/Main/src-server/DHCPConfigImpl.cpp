@@ -83,7 +83,9 @@ HRESULT DHCPConfig::i_initWithSettings(VirtualBox *a_pVirtualBox, DHCPServer *a_
             uint8_t  bOpt;
             char    *pszNext;
             int vrc = RTStrToUInt8Ex(psz, &pszNext, 10, &bOpt);
-            if (vrc == VINF_SUCCESS || vrc == VWRN_TRAILING_SPACES)
+            if (   vrc == VINF_SUCCESS
+                || vrc == VWRN_TRAILING_SPACES
+                || vrc == VWRN_TRAILING_CHARS)
             {
                 try
                 {
@@ -524,12 +526,24 @@ void DHCPConfig::i_writeDhcpdConfig(xml::ElementNode *pElmConfig)
     if (m_secMaxLeaseTime > 0 )
         pElmConfig->setAttribute("secMaxLeaseTime", (uint32_t)m_secMaxLeaseTime);
 
+    struct
+    {
+        const char                *pszElement;
+        std::vector<DHCPOption_T> *pVec;
+    } aVec2Elm[] =  { { "ForcedOption", &m_vecForcedOptions }, { "SuppressedOption", &m_vecSuppressedOptions }, };
+    for (size_t i = 0; i < RT_ELEMENTS(aVec2Elm); i++)
+        for (std::vector<DHCPOption_T>::const_iterator it = aVec2Elm[i].pVec->begin(); it != aVec2Elm[i].pVec->end(); ++it)
+        {
+            xml::ElementNode *pElmChild = pElmConfig->createChild(aVec2Elm[i].pszElement);
+            pElmChild->setAttribute("name", (int)*it);
+        }
+
     for (settings::DhcpOptionMap::const_iterator it = m_OptionMap.begin(); it != m_OptionMap.end(); ++it)
     {
-        xml::ElementNode *pOption = pElmConfig->createChild("Option");
-        pOption->setAttribute("name", (int)it->first);
-        pOption->setAttribute("encoding", it->second.enmEncoding);
-        pOption->setAttribute("value", it->second.strValue);
+        xml::ElementNode *pElmOption = pElmConfig->createChild("Option");
+        pElmOption->setAttribute("name", (int)it->first);
+        pElmOption->setAttribute("encoding", it->second.enmEncoding);
+        pElmOption->setAttribute("value", it->second.strValue);
     }
 }
 

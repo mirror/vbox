@@ -256,7 +256,7 @@ HRESULT DHCPServer::init(VirtualBox *aVirtualBox, const settings::DHCPServer &rD
     {
         ComObjPtr<DHCPIndividualConfig> ptrIndiCfg;
         com::Utf8Str                    strKey;
-        if (!it->second.strVMName.isNotEmpty())
+        if (it->second.strVMName.isEmpty())
         {
             RTMAC MACAddress;
             int vrc = RTNetStrToMacAddr(it->second.strMACAddress.c_str(), &MACAddress);
@@ -281,6 +281,9 @@ HRESULT DHCPServer::init(VirtualBox *aVirtualBox, const settings::DHCPServer &rD
             hrc = i_vmNameToIdAndValidateSlot(it->second.strVMName, it->second.uSlot, idMachine);
             if (SUCCEEDED(hrc))
             {
+                int vrc = strKey.printfNoThrow("%RTuuid/%u", idMachine.raw(), it->second.uSlot);
+                AssertRCReturn(vrc, E_OUTOFMEMORY);
+
                 hrc = ptrIndiCfg.createObject();
                 if (SUCCEEDED(hrc))
                     hrc = ptrIndiCfg->initWithSettingsAndMachineIdAndSlot(aVirtualBox, this, it->second,
@@ -850,7 +853,10 @@ HRESULT DHCPServer::i_vmNameAndSlotToConfig(const com::Utf8Str &a_strVmName, LON
                     try
                     {
                         m->individualConfigs[strKey] = a_rPtrConfig;
-                        return S_OK;
+
+                        /* Save settings. */
+                        alock.release();
+                        return i_doSaveSettings();
                     }
                     catch (std::bad_alloc &)
                     {
@@ -1150,7 +1156,7 @@ HRESULT DHCPServer::start(const com::Utf8Str &aNetworkName, const com::Utf8Str &
             if (RT_SUCCESS(vrc))
                 vrc = m->dhcp.addArgPair("--config", m->strConfigFilename.c_str());
             if (RT_SUCCESS(vrc))
-                vrc = m->dhcp.addArgPair("--log", m->networkName.c_str());
+                vrc = m->dhcp.addArgPair("--log", m->strLogFilename.c_str());
             /** @todo Add --log-flags, --log-group-settings, and --log-destinations with
              *        associated IDHCPServer attributes.  (Not doing it now because that'll
              *        exhaust all reserved attribute slot in 6.0.) */
