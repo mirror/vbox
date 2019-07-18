@@ -31,8 +31,8 @@
 
 /* COM includes: */
 #include "COMEnums.h"
-#include "CSession.h"
 #include "CMachine.h"
+#include "CSession.h"
 
 /* Forward declarations: */
 class QAction;
@@ -41,37 +41,86 @@ class QPixmap;
 class QMenu;
 class QTimer;
 
-/* Preview window class: */
+/** QIGraphicsWidget sub-class used as VM Preview widget inside Details pane. */
 class UIMachinePreview : public QIWithRetranslateUI4<QIGraphicsWidget>
 {
     Q_OBJECT;
 
 signals:
 
-    /** Notifies about size-hint changes. */
-    void sigSizeHintChanged();
+    /** @name Layout stuff.
+      * @{ */
+        /** Notifies about size-hint changes. */
+        void sigSizeHintChanged();
+    /** @} */
 
 public:
 
-    /* Graphics-item type: */
+    /** RTTI item type. */
     enum { Type = UIDetailsItemType_Preview };
-    int type() const { return Type; }
 
-    /* Constructor/destructor: */
+    /** Constructs preview element, passing pParent to the base-class. */
     UIMachinePreview(QIGraphicsWidget *pParent);
-    ~UIMachinePreview();
+    /** Destructs preview element. */
+    virtual ~UIMachinePreview() /* override */;
 
-    /* API: Machine stuff: */
-    void setMachine(const CMachine& machine);
-    CMachine machine() const;
+    /** @name Item stuff.
+      * @{ */
+        /** Defines @a comMachine to make preview for. */
+        void setMachine(const CMachine &comMachine);
+        /** Retuirns machine we do preview for. */
+        CMachine machine() const;
+    /** @} */
+
+protected:
+
+    /** @name Event-handling stuff.
+      * @{ */
+        /** Handles translation event. */
+        virtual void retranslateUi() /* override */;
+
+        /** Handles resize @a pEvent. */
+        virtual void resizeEvent(QGraphicsSceneResizeEvent *pEvent) /* override */;
+
+        /** Handles show @a pEvent. */
+        virtual void showEvent(QShowEvent *pEvent) /* override */;
+        /** Handles hide @a pEvent. */
+        virtual void hideEvent(QHideEvent *pEvent) /* override */;
+
+        /** Handles context-menu @a pEvent. */
+        virtual void contextMenuEvent(QGraphicsSceneContextMenuEvent *pEvent) /* override */;
+
+        /** Performs painting using passed @a pPainter, @a pOptions and optionally specified @a pWidget. */
+        virtual void paint(QPainter *pPainter, const QStyleOptionGraphicsItem *pOptions, QWidget *pWidget = 0) /* override */;
+    /** @} */
+
+    /** @name Item stuff.
+      * @{ */
+        /** Returns RTTI item type. */
+        virtual int type() const /* override */ { return Type; }
+    /** @} */
+
+    /** @name Layout stuff.
+      * @{ */
+        /** Returns size-hint.
+          * @param  enmWhich    Brings size-hint type.
+          * @param  constraint  Brings size constraint. */
+        virtual QSizeF sizeHint(Qt::SizeHint enmWhich, const QSizeF &constraint = QSizeF()) const /* override */;
+    /** @} */
 
 private slots:
 
-    /* Handler: Global-event listener stuff: */
-    void sltMachineStateChange(const QUuid &uId);
+    /** @name Event-handling stuff.
+      * @{ */
+        /** Handles machine-state change for item with @a uId. */
+        void sltMachineStateChange(const QUuid &uId);
+    /** @} */
 
-    /* Handler: Preview recreator: */
-    void sltRecreatePreview();
+    /** @name Item stuff.
+      * @{ */
+        /** Handles request to recreate preview. */
+        void sltRecreatePreview();
+    /** @} */
 
 private:
 
@@ -83,49 +132,77 @@ private:
         AspectRatioPreset_4x3,
     };
 
-    /* Helpers: Event handlers: */
-    void resizeEvent(QGraphicsSceneResizeEvent *pEvent);
-    void showEvent(QShowEvent *pEvent);
-    void hideEvent(QHideEvent *pEvent);
-    void contextMenuEvent(QGraphicsSceneContextMenuEvent *pEvent);
+    /** @name Prepare/cleanup cascade.
+      * @{ */
+        /** Prepares all. */
+        void prepare();
 
-    /* Helpers: Translate stuff; */
-    void retranslateUi();
+        /** Cleanups all. */
+        void cleanup();
+    /** @} */
 
-    /* Helpers: Layout stuff: */
-    QSizeF sizeHint(Qt::SizeHint which, const QSizeF &constraint = QSizeF()) const;
+    /** @name Item stuff.
+      * @{ */
+        /** Define update @a enmInterval, @a fSave it if requested. */
+        void setUpdateInterval(PreviewUpdateIntervalType enmInterval, bool fSave);
 
-    /* Helpers: Paint stuff: */
-    void paint(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption, QWidget *pWidget = 0);
+        /** Recalculates preview rectangle. */
+        void recalculatePreviewRectangle();
 
-    /* Helpers: Update stuff: */
-    void setUpdateInterval(PreviewUpdateIntervalType interval, bool fSave);
-    void recalculatePreviewRectangle();
-    void restart();
-    void stop();
+        /** Restarts preview uppdate routine. */
+        void restart();
+        /** Stops preview uppdate routine. */
+        void stop();
+    /** @} */
 
     /** Looks for the best aspect-ratio preset for the passed @a dAspectRatio among all the passed @a ratios. */
     static AspectRatioPreset bestAspectRatioPreset(const double dAspectRatio, const QMap<AspectRatioPreset, double> &ratios);
     /** Calculates image size suitable to passed @a hostSize and @a guestSize. */
     static QSize imageAspectRatioSize(const QSize &hostSize, const QSize &guestSize);
 
-    /* Variables: */
-    CSession m_session;
-    CMachine m_machine;
-    QTimer *m_pUpdateTimer;
-    QMenu *m_pUpdateTimerMenu;
-    QHash<PreviewUpdateIntervalType, QAction*> m_actions;
-    double m_dRatio;
-    const int m_iMargin;
-    QRect m_vRect;
-    AspectRatioPreset m_preset;
-    QMap<AspectRatioPreset, QSize> m_sizes;
-    QMap<AspectRatioPreset, double> m_ratios;
-    QMap<AspectRatioPreset, QPixmap*> m_emptyPixmaps;
-    QMap<AspectRatioPreset, QPixmap*> m_fullPixmaps;
-    QImage *m_pPreviewImg;
-    QString m_strPreviewName;
+    /** @name Item stuff.
+      * @{ */
+        /** Holds the session reference. */
+        CSession  m_comSession;
+        /** Holds the machine reference. */
+        CMachine  m_comMachine;
+
+        /** Holds the update timer instance. */
+        QTimer                                     *m_pUpdateTimer;
+        /** Holds the update timer menu instance. */
+        QMenu                                      *m_pUpdateTimerMenu;
+        /** Holds the update timer menu action list. */
+        QHash<PreviewUpdateIntervalType, QAction*>  m_actions;
+    /** @} */
+
+    /** @name Layout stuff.
+      * @{ */
+        /** Holds the aspect-ratio of the preview. */
+        double     m_dRatio;
+        /** Holds the layout margin. */
+        const int  m_iMargin;
+        /** Holds the viewport rectangle. */
+        QRect      m_vRect;
+
+        /** Holds the current aspect-ratio preset. */
+        AspectRatioPreset                  m_enmPreset;
+        /** Holds the aspect-ratio preset sizes. */
+        QMap<AspectRatioPreset, QSize>     m_sizes;
+        /** Holds the aspect-ratio preset ratios. */
+        QMap<AspectRatioPreset, double>    m_ratios;
+        /** Holds the aspect-ratio preset empty pixmaps. */
+        QMap<AspectRatioPreset, QPixmap*>  m_emptyPixmaps;
+        /** Holds the aspect-ratio preset filled pixmaps. */
+        QMap<AspectRatioPreset, QPixmap*>  m_fullPixmaps;
+    /** @} */
+
+    /** @name Painting stuff.
+      * @{ */
+        /** Holds the preview image instance. */
+        QImage  *m_pPreviewImg;
+        /** Holds the preview name. */
+        QString  m_strPreviewName;
+    /** @} */
 };
 
 #endif /* !FEQT_INCLUDED_SRC_manager_details_UIMachinePreview_h */
-
