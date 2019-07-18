@@ -1388,13 +1388,13 @@ void VGDrvCommonProcessOption(PVBOXGUESTDEVEXT pDevExt, const char *pszName, con
     else if (   RTStrNICmpAscii(pszName, RT_STR_TUPLE("log")) == 0
              || RTStrNICmpAscii(pszName, RT_STR_TUPLE("dbg_log")) == 0)
     {
-        bool const  fLogRel    = *pszName == 'd' || *pszName == 'D';
-        const char *pszSubName = &pszName[fLogRel ? 4 + 3 : 3];
+        bool const  fDbgRel    = *pszName == 'd' || *pszName == 'D';
+        const char *pszSubName = &pszName[fDbgRel ? 4 + 3 : 3];
         if (   !*pszSubName
             || RTStrICmpAscii(pszSubName, "_flags") == 0
             || RTStrICmpAscii(pszSubName, "_dest") == 0)
         {
-            PRTLOGGER pLogger = fLogRel ? RTLogRelGetDefaultInstance() : RTLogDefaultInstance();
+            PRTLOGGER pLogger = !fDbgRel ? RTLogRelGetDefaultInstance() : RTLogDefaultInstance();
             if (pLogger)
             {
                 if (!*pszSubName)
