@@ -877,6 +877,12 @@ validate-manpages:: $(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/,$(VBOX_MANUAL
 man-experiment:: $(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(foreach file,$(VBOX_MANUAL_XML_REFENTRY_FILES) \
 			,$$(VBOX_PATH_MANUAL_OUTBASE)/$(lang)/$(patsubst man_%,%.1,$(basename $(file)))))
 
+#
+# Manually updating the DHCP option list taken from VirtualBox.xidl
+#
+dhcpoptions: $(PATH_ROOT)/doc/manual/en_US/man_VBoxManage-dhcpserver-dhcpoptions.xsl \
+		$(PATH_ROOT)/src/VBox/Main/idl/VirtualBox.xidl
+	$(call VBOX_XSLTPROC) --output "$(PATH_ROOT)/doc/manual/en_US/man_VBoxManage-dhcpserver-dhcpoptions.xml" $+
 
 
 include $(FILE_KBUILD_SUB_FOOTER)
