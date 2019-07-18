@@ -61,6 +61,7 @@ public:
 
 public:
     static DhcpOption *parse(uint8_t aOptCode, int aEnc, const char *pcszValue, int *prc = NULL);
+    static const char *name(uint8_t bOptcode);
 
 public:
     uint8_t optcode() const RT_NOEXCEPT { return m_OptCode; }

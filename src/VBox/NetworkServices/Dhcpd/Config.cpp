@@ -772,37 +772,70 @@ void ConfigLevelBase::i_parseOption(const xml::ElementNode *pElmOption)
 
 
 /**
+ * Internal worker for parsing \<ForcedOption\> and \<SupressedOption\> elements
+ * found under /DHCPServer/Options/, /DHCPServer/Group/ and /DHCPServer/Config/.
+ *
+ * @param   pElmOption          The element.
+ * @param   fForced             Whether it's a ForcedOption (true) or
+ *                              SuppressedOption element.
+ * @throws  std::bad_alloc, ConfigFileError
+ */
+void ConfigLevelBase::i_parseForcedOrSuppressedOption(const xml::ElementNode *pElmOption, bool fForced)
+{
+    /* Only a name attribute: */
+    const char *pszName;
+    if (!pElmOption->getAttributeValue("name", &pszName))
+        throw ConfigFileError(pElmOption, "missing option name");
+
+    uint8_t u8Opt;
+    int rc = RTStrToUInt8Full(pszName, 10, &u8Opt);
+    if (rc != VINF_SUCCESS) /* no warnings either */
+        throw ConfigFileError(pElmOption, "Bad option name '%s': %Rrc", pszName, rc);
+
+    if (fForced)
+        m_vecForcedOptions.push_back(u8Opt);
+    else
+        m_vecSuppressedOptions.push_back(u8Opt);
+}
+
+
+/**
  * Final children parser, handling only \<Option\> and barfing at anything else.
  *
  * @param   pElmChild           The child element to handle.
  * @param   fStrict             Set if we're in strict mode, clear if we just
- *                              want to get on with it if we can.
+ *                              want to get on with it if we can.  That said,
+ *                              the caller will catch ConfigFileError exceptions
+ *                              and ignore them if @a fStrict is @c false.
  * @param   pConfig             The configuration object.
  * @throws  std::bad_alloc, ConfigFileError
  */
 void ConfigLevelBase::i_parseChild(const xml::ElementNode *pElmChild, bool fStrict, Config const *pConfig)
 {
+    /*
+     * Options.
+     */
     if (pElmChild->nameEquals("Option"))
     {
-        try
-        {
-            i_parseOption(pElmChild);
-        }
-        catch (ConfigFileError &rXcpt)
-        {
-            if (fStrict)
-                throw rXcpt;
-            LogRelFunc(("Ignoring option: %s\n", rXcpt.what()));
-        }
+        i_parseOption(pElmChild);
+        return;
     }
-    else if (!fStrict)
+
+    /*
+     * Forced and supressed options.
+     */
+    bool const fForced = pElmChild->nameEquals("ForcedOption");
+    if (fForced || pElmChild->nameEquals("SuppressedOption"))
     {
-        ConfigFileError Dummy(pElmChild->getParent(), "Unexpected child '%s'", pElmChild->getName());
-        LogRelFunc(("%s\n", Dummy.what()));
+        i_parseForcedOrSuppressedOption(pElmChild, fForced);
+        return;
     }
-    else
-        throw ConfigFileError(pElmChild->getParent(), "Unexpected child '%s'", pElmChild->getName());
-    RT_NOREF(pConfig);
+
+    /*
+     * What's this?
+     */
+    throw ConfigFileError(pElmChild->getParent(), "Unexpected child '%s'", pElmChild->getName());
+    RT_NOREF(fStrict, pConfig);
 }
 
 
@@ -844,7 +877,18 @@ void ConfigLevelBase::initFromXml(const xml::ElementNode *pElmConfig, bool fStri
     xml::NodesLoop it(*pElmConfig);
     const xml::ElementNode *pElmChild;
     while ((pElmChild = it.forAllNodes()) != NULL)
-        i_parseChild(pElmChild, fStrict, pConfig);
+    {
+        try
+        {
+            i_parseChild(pElmChild, fStrict, pConfig);
+        }
+        catch (ConfigFileError &rXcpt)
+        {
+            if (fStrict)
+                throw rXcpt;
+            LogRelFunc(("Ignoring: %s\n", rXcpt.what()));
+        }
+    }
 }
 
 
@@ -1116,36 +1160,89 @@ Config::ConfigVec &Config::getConfigsForClient(Config::ConfigVec &a_rRetConfigs,
 optmap_t &Config::getOptionsForClient(optmap_t &a_rRetOpts, const OptParameterRequest &a_rReqOpts, ConfigVec &a_rConfigs) const
 {
     /*
+     * The client typcially requests a list of options.  The list is subject to
+     * forced and supressed lists on each configuration level in a_rConfig.  To
+     * efficiently manage it without resorting to maps, the current code
+     * assembles a C-style array of options on the stack that should be returned
+     * to the client.
+     */
+    uint8_t abOptions[256];
+    size_t  cOptions = 0;
+    size_t  iFirstForced = 255;
+#define IS_OPTION_PRESENT(a_bOption)         (memchr(abOptions, (a_bOption), cOptions) != NULL)
+#define APPEND_NOT_PRESENT_OPTION(a_bOption) do { \
+            AssertLogRelMsgBreak(cOptions < sizeof(abOptions), \
+                                 ("a_bOption=%#x abOptions=%.*Rhxs\n", (a_bOption), sizeof(abOptions), &abOptions[0])); \
+            abOptions[cOptions++] = (a_bOption); \
+        } while (0)
+
+    const OptParameterRequest::value_t &reqValue = a_rReqOpts.value();
+    if (reqValue.size() != 0)
+    {
+        /* Copy the requested list and append any forced options from the configs: */
+        for (octets_t::const_iterator itOptReq = reqValue.begin(); itOptReq != reqValue.end(); ++itOptReq)
+            if (!IS_OPTION_PRESENT(*itOptReq))
+                APPEND_NOT_PRESENT_OPTION(*itOptReq);
+        iFirstForced = cOptions;
+        for (Config::ConfigVec::const_iterator itCfg = a_rConfigs.begin(); itCfg != a_rConfigs.end(); ++itCfg)
+        {
+            octets_t const &rForced = (*itCfg)->getForcedOptions();
+            for (octets_t::const_iterator itOpt = rForced.begin(); itOpt != rForced.end(); ++itOpt)
+                if (!IS_OPTION_PRESENT(*itOpt))
+                {
+                    LogRel3((">>> Forcing option %d (%s)\n", *itOpt, DhcpOption::name(*itOpt)));
+                    APPEND_NOT_PRESENT_OPTION(*itOpt);
+                }
+        }
+    }
+    else
+    {
+        /* No options requests, feed the client all available options: */
+        for (Config::ConfigVec::const_iterator itCfg = a_rConfigs.begin(); itCfg != a_rConfigs.end(); ++itCfg)
+        {
+            optmap_t const &rOptions = (*itCfg)->getOptions();
+            for (optmap_t::const_iterator itOpt = rOptions.begin(); itOpt != rOptions.end(); ++itOpt)
+                if (!IS_OPTION_PRESENT(itOpt->first))
+                    APPEND_NOT_PRESENT_OPTION(itOpt->first);
+
+        }
+    }
+
+    /*
      * Always supply the subnet:
      */
     a_rRetOpts << new OptSubnetMask(m_IPv4Netmask);
 
-    /** @todo If a_rReqOpts is not present, provide the sum of all options in
-     *        a_rConfigs like ics says it does. */
-    /** @todo Look thru a_rConfigs for forced options, maybe we do it by using
-     *        DHCP option 55, and merging these into a_rReqOpts. */
-    /** @todo Have a way to mute options, i.e. break out of the inner search
-     *        loop below. Maybe using 'Suppress' encoding? */
-
     /*
-     * Try provide the requested options:
+     * Try provide the options we've decided to return.
      */
-    const OptParameterRequest::value_t &reqValue = a_rReqOpts.value();
-    for (octets_t::const_iterator itOptReq = reqValue.begin(); itOptReq != reqValue.end(); ++itOptReq)
+    for (size_t iOpt = 0; iOpt < cOptions; iOpt++)
     {
-        uint8_t bOptReq = *itOptReq;
-        LogRel2((">>> requested option %d (%#x)\n", bOptReq, bOptReq));
+        uint8_t const bOptReq = abOptions[iOpt];
+        if (iOpt < iFirstForced)
+            LogRel2((">>> requested option %d (%s)\n", bOptReq, DhcpOption::name(bOptReq)));
+        else
+            LogRel2((">>> forced option %d (%s)\n", bOptReq, DhcpOption::name(bOptReq)));
 
         if (bOptReq != OptSubnetMask::optcode)
         {
             bool fFound = false;
             for (size_t i = 0; i < a_rConfigs.size(); i++)
             {
-                optmap_t::const_iterator itFound;
-                if (a_rConfigs[i]->findOption(bOptReq, itFound)) /* crap interface */
+                if (!a_rConfigs[i]->isOptionSuppressed(bOptReq))
                 {
-                    LogRel2(("... found in %s (type %s)\n", a_rConfigs[i]->getName(), a_rConfigs[i]->getType()));
-                    a_rRetOpts << itFound->second;
+                    optmap_t::const_iterator itFound;
+                    if (a_rConfigs[i]->findOption(bOptReq, itFound)) /* crap interface */
+                    {
+                        LogRel2(("... found in %s (type %s)\n", a_rConfigs[i]->getName(), a_rConfigs[i]->getType()));
+                        a_rRetOpts << itFound->second;
+                        fFound = true;
+                        break;
+                    }
+                }
+                else
+                {
+                    LogRel2(("... suppressed by %s (type %s)\n", a_rConfigs[i]->getName(), a_rConfigs[i]->getType()));
                     fFound = true;
                     break;
                 }
@@ -1157,6 +1254,8 @@ optmap_t &Config::getOptionsForClient(optmap_t &a_rRetOpts, const OptParameterRe
             LogRel2(("... always supplied\n"));
     }
 
+#undef IS_OPTION_PRESENT
+#undef APPEND_NOT_PRESENT_OPTION
     return a_rRetOpts;
 }
 

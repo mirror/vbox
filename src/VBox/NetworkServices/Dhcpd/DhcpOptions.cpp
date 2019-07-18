@@ -284,7 +284,7 @@ int DhcpOption::parseHex(octets_t &aRawValue, const char *pcszValue)
 }
 
 
-DhcpOption *DhcpOption::parse(uint8_t aOptCode, int aEnc, const char *pcszValue, int *prc /*= NULL*/)
+/*static*/ DhcpOption *DhcpOption::parse(uint8_t aOptCode, int aEnc, const char *pcszValue, int *prc /*= NULL*/)
 {
     int rcIgn;
     if (!prc)
@@ -401,3 +401,105 @@ DhcpOption *DhcpOption::parse(uint8_t aOptCode, int aEnc, const char *pcszValue,
             return NULL;
     }
 }
+
+
+/**
+ * Gets the option name (simply "unknown" if not known) for logging purposes.
+ */
+/*static*/ const char *DhcpOption::name(uint8_t aOptCode)
+{
+    switch (aOptCode)
+    {
+#define HANDLE(a_OptClass) \
+        case a_OptClass::optcode: \
+            return &#a_OptClass[3]
+
+        HANDLE(OptSubnetMask);                  // 1
+        HANDLE(OptTimeOffset);                  // 2
+        HANDLE(OptRouters);                     // 3
+        HANDLE(OptTimeServers);                 // 4
+        HANDLE(OptNameServers);                 // 5
+        HANDLE(OptDNSes);                       // 6
+        HANDLE(OptLogServers);                  // 7
+        HANDLE(OptCookieServers);               // 8
+        HANDLE(OptLPRServers);                  // 9
+        HANDLE(OptImpressServers);              // 10
+        HANDLE(OptResourceLocationServers);     // 11
+        HANDLE(OptHostName);                    // 12
+        HANDLE(OptBootFileSize);                // 13
+        HANDLE(OptMeritDumpFile);               // 14
+        HANDLE(OptDomainName);                  // 15
+        HANDLE(OptSwapServer);                  // 16
+        HANDLE(OptRootPath);                    // 17
+        HANDLE(OptExtensionPath);               // 18
+        HANDLE(OptIPForwarding);                // 19
+        HANDLE(OptNonLocalSourceRouting);       // 20
+        HANDLE(OptPolicyFilter);                // 21
+        HANDLE(OptMaxDgramReassemblySize);      // 22
+        HANDLE(OptDefaultIPTTL);                // 23
+        HANDLE(OptPathMTUAgingTimeout);         // 24
+        HANDLE(OptPathMTUPlateauTable);         // 25
+        HANDLE(OptInterfaceMTU);                // 26
+        HANDLE(OptAllSubnetsAreLocal);          // 27
+        HANDLE(OptBroadcastAddress);            // 28
+        HANDLE(OptPerformMaskDiscovery);        // 29
+        HANDLE(OptMaskSupplier);                // 30
+        HANDLE(OptPerformRouterDiscovery);      // 31
+        HANDLE(OptRouterSolicitationAddress);   // 32
+        HANDLE(OptStaticRoute);                 // 33
+        HANDLE(OptTrailerEncapsulation);        // 34
+        HANDLE(OptARPCacheTimeout);             // 35
+        HANDLE(OptEthernetEncapsulation);       // 36
+        HANDLE(OptTCPDefaultTTL);               // 37
+        HANDLE(OptTCPKeepaliveInterval);        // 38
+        HANDLE(OptTCPKeepaliveGarbage);         // 39
+        HANDLE(OptNISDomain);                   // 40
+        HANDLE(OptNISServers);                  // 41
+        HANDLE(OptNTPServers);                  // 42
+        HANDLE(OptVendorSpecificInfo);          // 43
+        HANDLE(OptNetBIOSNameServers);          // 44
+        HANDLE(OptNetBIOSDatagramServers);      // 45
+        HANDLE(OptNetBIOSNodeType);             // 46
+        HANDLE(OptNetBIOSScope);                // 47
+        HANDLE(OptXWindowsFontServers);         // 48
+        HANDLE(OptXWindowsDisplayManager);      // 49
+        HANDLE(OptRequestedAddress);            // 50
+        HANDLE(OptLeaseTime);                   // 51
+        //HANDLE(OptOptionOverload);              // 52
+        HANDLE(OptMessageType);                 // 53
+        HANDLE(OptServerId);                    // 54
+        HANDLE(OptParameterRequest);            // 55
+        HANDLE(OptMessage);                     // 56
+        HANDLE(OptMaxDHCPMessageSize);          // 57
+        HANDLE(OptRenewalTime);                 // 58
+        HANDLE(OptRebindingTime);               // 59
+        HANDLE(OptVendorClassId);               // 60
+        HANDLE(OptClientId);                    // 61
+        HANDLE(OptNetWareIPDomainName);         // 62
+        HANDLE(OptNetWareIPInformation);        // 63
+        HANDLE(OptNISPlusDomain);               // 64
+        HANDLE(OptNISPlusServers);              // 65
+        HANDLE(OptTFTPServerName);              // 66
+        HANDLE(OptBootfileName);                // 67
+        HANDLE(OptMobileIPHomeAgents);          // 68
+        HANDLE(OptSMTPServers);                 // 69
+        HANDLE(OptPOP3Servers);                 // 70
+        HANDLE(OptNNTPServers);                 // 71
+        HANDLE(OptWWWServers);                  // 72
+        HANDLE(OptFingerServers);               // 73
+        HANDLE(OptIRCServers);                  // 74
+        HANDLE(OptStreetTalkServers);           // 75
+        HANDLE(OptSTDAServers);                 // 76
+        HANDLE(OptUserClassId);                 // 77
+        HANDLE(OptSLPDirectoryAgent);           // 78 - Only DHCPOptionEncoding_hex
+        HANDLE(OptSLPServiceScope);             // 79 - Only DHCPOptionEncoding_hex
+        HANDLE(OptRapidCommit);                 // 80
+
+        HANDLE(OptDomainSearch);                // 119 - Only DHCPOptionEncoding_hex
+
+#undef HANDLE
+        default:
+            return "unknown";
+    }
+}
+

@@ -53,12 +53,19 @@ protected:
     /** Maximum lease time, zero means try next level up. */
     uint32_t        m_secMaxLeaseTime;
 
+    /** Options forced unsolicited upon the client. */
+    octets_t        m_vecForcedOptions;
+    /** Options (typcially from higher up) that should be hidden from the client. */
+    octets_t        m_vecSuppressedOptions;
+
 public:
     ConfigLevelBase()
         : m_Options()
         , m_secMinLeaseTime(0)
         , m_secDefaultLeaseTime(0)
         , m_secMaxLeaseTime(0)
+        , m_vecForcedOptions()
+        , m_vecSuppressedOptions()
     { }
 
     virtual ~ConfigLevelBase()
@@ -78,15 +85,26 @@ public:
         return a_rItRet != m_Options.end();
     }
 
+    /** Checks if @a bOpt is suppressed or not. */
+    bool            isOptionSuppressed(uint8_t bOpt) const RT_NOEXCEPT
+    {
+        return m_vecSuppressedOptions.size() > 0
+            && memchr(&m_vecSuppressedOptions.front(), bOpt, m_vecSuppressedOptions.size()) != NULL;
+    }
+
     /** @name Accessors
      * @{ */
-    uint32_t        getMinLeaseTime()     const RT_NOEXCEPT { return m_secMinLeaseTime; }
-    uint32_t        getDefaultLeaseTime() const RT_NOEXCEPT { return m_secDefaultLeaseTime; }
-    uint32_t        getMaxLeaseTime()     const RT_NOEXCEPT { return m_secMaxLeaseTime; }
+    uint32_t        getMinLeaseTime()       const RT_NOEXCEPT { return m_secMinLeaseTime; }
+    uint32_t        getDefaultLeaseTime()   const RT_NOEXCEPT { return m_secDefaultLeaseTime; }
+    uint32_t        getMaxLeaseTime()       const RT_NOEXCEPT { return m_secMaxLeaseTime; }
+    octets_t const &getForcedOptions()      const RT_NOEXCEPT { return m_vecForcedOptions; }
+    octets_t const &getSuppressedOptions()  const RT_NOEXCEPT { return m_vecSuppressedOptions; }
+    optmap_t const &getOptions()            const RT_NOEXCEPT { return m_Options; }
     /** @} */
 
 protected:
     void            i_parseOption(const xml::ElementNode *pElmOption);
+    void            i_parseForcedOrSuppressedOption(const xml::ElementNode *pElmOption, bool fForced);
     virtual void    i_parseChild(const xml::ElementNode *pElmChild, bool fStrict, Config const *pConfig);
 };
 
