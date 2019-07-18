@@ -315,6 +315,10 @@ private:
 enum
 {
     DHCP_ADDMOD = 1000,
+    DHCP_ADDMOD_FORCE_OPTION,
+    DHCP_ADDMOD_UNFORCE_OPTION,
+    DHCP_ADDMOD_SUPPRESS_OPTION,
+    DHCP_ADDMOD_UNSUPPRESS_OPTION,
     DHCP_ADDMOD_ZAP_OPTIONS,
     DHCP_ADDMOD_INCL_MAC,
     DHCP_ADDMOD_EXCL_MAC,
@@ -368,6 +372,10 @@ static DECLCALLBACK(RTEXITCODE) dhcpdHandleAddAndModify(PDHCPDCMDCTX pCtx, int a
         { "--set-opt",          's',                            RTGETOPT_REQ_UINT8   },
         { "--set-opt-hex",      'x',                            RTGETOPT_REQ_UINT8   },
         { "--del-opt",          'D',                            RTGETOPT_REQ_UINT8   },
+        { "--force-opt",        DHCP_ADDMOD_FORCE_OPTION,       RTGETOPT_REQ_UINT8   },
+        { "--unforce-opt",      DHCP_ADDMOD_UNFORCE_OPTION,     RTGETOPT_REQ_UINT8   },
+        { "--suppress-opt",     DHCP_ADDMOD_SUPPRESS_OPTION,    RTGETOPT_REQ_UINT8   },
+        { "--unsuppress-opt",   DHCP_ADDMOD_UNSUPPRESS_OPTION,  RTGETOPT_REQ_UINT8   },
         { "--zap-options",      DHCP_ADDMOD_ZAP_OPTIONS,        RTGETOPT_REQ_NOTHING },
         { "--min-lease-time",   'q' ,                           RTGETOPT_REQ_UINT32  },
         { "--default-lease-time", 'L' ,                         RTGETOPT_REQ_UINT32  },
@@ -548,6 +556,66 @@ static DECLCALLBACK(RTEXITCODE) dhcpdHandleAddAndModify(PDHCPDCMDCTX pCtx, int a
                         if (ptrConfig.isNull())
                             return RTEXITCODE_FAILURE;
                         CHECK_ERROR2I_STMT(ptrConfig, RemoveOption((DHCPOption_T)ValueUnion.u8), rcExit = RTEXITCODE_FAILURE);
+                    }
+                    break;
+
+                case DHCP_ADDMOD_UNFORCE_OPTION:    // --unforce-opt
+                    if (pCtx->pCmdDef->fSubcommandScope == HELP_SCOPE_DHCPSERVER_ADD)
+                        return errorSyntax("--unforce-opt does not apply to the 'add' subcommand");
+                case DHCP_ADDMOD_UNSUPPRESS_OPTION: // --unsupress-opt
+                    if (pCtx->pCmdDef->fSubcommandScope == HELP_SCOPE_DHCPSERVER_ADD)
+                        return errorSyntax("--unsuppress-opt does not apply to the 'add' subcommand");
+                case DHCP_ADDMOD_FORCE_OPTION:      // --force-opt
+                case DHCP_ADDMOD_SUPPRESS_OPTION:   // --suppress-opt
+                    if (iPass == 1)
+                    {
+                        DHCPOption_T const enmOption = (DHCPOption_T)ValueUnion.u8;
+                        bool const fForced = vrc == DHCP_ADDMOD_FORCE_OPTION || vrc == DHCP_ADDMOD_UNFORCE_OPTION;
+
+                        /* Get the current option list: */
+                        ComPtr<IDHCPConfig> &ptrConfig = Scope.getConfig(ptrDHCPServer);
+                        if (ptrConfig.isNull())
+                            return RTEXITCODE_FAILURE;
+                        com::SafeArray<DHCPOption_T> Options;
+                        if (fForced)
+                            CHECK_ERROR2I_STMT(ptrConfig, COMGETTER(ForcedOptions)(ComSafeArrayAsOutParam(Options)),
+                                               rcExit = RTEXITCODE_FAILURE; break);
+                        else
+                            CHECK_ERROR2I_STMT(ptrConfig, COMGETTER(SuppressedOptions)(ComSafeArrayAsOutParam(Options)),
+                                               rcExit = RTEXITCODE_FAILURE; break);
+                        if (vrc == DHCP_ADDMOD_FORCE_OPTION || vrc == DHCP_ADDMOD_SUPPRESS_OPTION)
+                        {
+                            /* Add if not present. */
+                            size_t iSrc;
+                            for (iSrc = 0; iSrc < Options.size(); iSrc++)
+                                if (Options[iSrc] == enmOption)
+                                    break;
+                            if (iSrc < Options.size())
+                                break; /* already present */
+                            Options.push_back(enmOption);
+                        }
+                        else
+                        {
+                            /* Remove */
+                            size_t iDst = 0;
+                            for (size_t iSrc = 0; iSrc < Options.size(); iSrc++)
+                            {
+                                DHCPOption_T enmCurOpt = Options[iSrc];
+                                if (enmCurOpt != enmOption)
+                                    Options[iDst++] = enmCurOpt;
+                            }
+                            if (iDst == Options.size())
+                                break; /* Not found. */
+                            Options.resize(iDst);
+                        }
+
+                        /* Update the option list: */
+                        if (fForced)
+                            CHECK_ERROR2I_STMT(ptrConfig, COMSETTER(ForcedOptions)(ComSafeArrayAsInParam(Options)),
+                                               rcExit = RTEXITCODE_FAILURE);
+                        else
+                            CHECK_ERROR2I_STMT(ptrConfig, COMSETTER(SuppressedOptions)(ComSafeArrayAsInParam(Options)),
+                                               rcExit = RTEXITCODE_FAILURE);
                     }
                     break;
 

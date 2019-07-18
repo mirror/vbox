@@ -813,9 +813,35 @@ static HRESULT showDhcpConfig(ComPtr<IDHCPConfig> ptrConfig)
         RTPrintf("    maxLeaseTime:     %u sec\n", secs);
 
     com::SafeArray<DHCPOption_T>         Options;
+    HRESULT hrc;
+    CHECK_ERROR2_STMT(hrc, ptrConfig, COMGETTER(ForcedOptions(ComSafeArrayAsOutParam(Options))), hrcRet = hrc);
+    if (FAILED(hrc))
+        RTPrintf("    Forced options:   %Rhrc\n", hrc);
+    else if (Options.size() == 0)
+        RTPrintf("    Forced options:   None\n");
+    else
+    {
+        RTPrintf("    Forced options:   ");
+        for (size_t i = 0; i < Options.size(); i++)
+            RTPrintf(i ? ", %u" : "%u", Options[i]);
+        RTPrintf("\n");
+    }
+
+    CHECK_ERROR2_STMT(hrc, ptrConfig, COMGETTER(SuppressedOptions(ComSafeArrayAsOutParam(Options))), hrcRet = hrc);
+    if (FAILED(hrc))
+        RTPrintf("    Suppressed opt.s: %Rhrc\n", hrc);
+    else if (Options.size() == 0)
+        RTPrintf("    Suppressed opts.: None\n");
+    else
+    {
+        RTPrintf("    Suppressed opts.: ");
+        for (size_t i = 0; i < Options.size(); i++)
+            RTPrintf(i ? ", %u" : "%u", Options[i]);
+        RTPrintf("\n");
+    }
+
     com::SafeArray<DHCPOptionEncoding_T> Encodings;
     com::SafeArray<BSTR>                 Values;
-    HRESULT hrc;
     CHECK_ERROR2_STMT(hrc, ptrConfig, GetAllOptions(ComSafeArrayAsOutParam(Options),
                                                     ComSafeArrayAsOutParam(Encodings),
                                                     ComSafeArrayAsOutParam(Values)), hrcRet = hrc);

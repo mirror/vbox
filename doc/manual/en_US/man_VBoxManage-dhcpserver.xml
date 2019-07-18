@@ -51,6 +51,8 @@
         <arg choice="opt">--global</arg>
         <arg choice="opt" rep="repeat">--set-opt=<replaceable>dhcp-opt-no value</replaceable></arg>
         <arg choice="opt" rep="repeat">--set-opt-hex=<replaceable>dhcp-opt-no hexstring</replaceable></arg>
+        <arg choice="opt" rep="repeat">--force-opt=<replaceable>dhcp-opt-no</replaceable></arg>
+        <arg choice="opt" rep="repeat">--supress-opt=<replaceable>dhcp-opt-no</replaceable></arg>
         <arg choice="opt">--min-lease-time=<replaceable>seconds</replaceable></arg>
         <arg choice="opt">--default-lease-time=<replaceable>seconds</replaceable></arg>
         <arg choice="opt">--max-lease-time=<replaceable>seconds</replaceable></arg>
@@ -60,6 +62,8 @@
         <arg choice="req">--group=<replaceable>name</replaceable></arg>
         <arg choice="opt" rep="repeat">--set-opt=<replaceable>dhcp-opt-no value</replaceable></arg>
         <arg choice="opt" rep="repeat">--set-opt-hex=<replaceable>dhcp-opt-no hexstring</replaceable></arg>
+        <arg choice="opt" rep="repeat">--force-opt=<replaceable>dhcp-opt-no</replaceable></arg>
+        <arg choice="opt" rep="repeat">--supress-opt=<replaceable>dhcp-opt-no</replaceable></arg>
         <arg choice="opt" rep="repeat">--incl-mac=<replaceable>address</replaceable></arg>
         <arg choice="opt" rep="repeat">--excl-mac=<replaceable>address</replaceable></arg>
         <arg choice="opt" rep="repeat">--incl-mac-wild=<replaceable>pattern</replaceable></arg>
@@ -82,6 +86,8 @@
         <arg choice="opt">--nic=<replaceable>1-N</replaceable></arg>
         <arg choice="opt" rep="repeat">--set-opt=<replaceable>dhcp-opt-no value</replaceable></arg>
         <arg choice="opt" rep="repeat">--set-opt-hex=<replaceable>dhcp-opt-no hexstring</replaceable></arg>
+        <arg choice="opt" rep="repeat">--force-opt=<replaceable>dhcp-opt-no</replaceable></arg>
+        <arg choice="opt" rep="repeat">--supress-opt=<replaceable>dhcp-opt-no</replaceable></arg>
         <arg choice="opt">--min-lease-time=<replaceable>seconds</replaceable></arg>
         <arg choice="opt">--default-lease-time=<replaceable>seconds</replaceable></arg>
         <arg choice="opt">--max-lease-time=<replaceable>seconds</replaceable></arg>
@@ -92,6 +98,8 @@
         <arg choice="req">--mac-address=<replaceable>address</replaceable></arg>
         <arg choice="opt" rep="repeat">--set-opt=<replaceable>dhcp-opt-no value</replaceable></arg>
         <arg choice="opt" rep="repeat">--set-opt-hex=<replaceable>dhcp-opt-no hexstring</replaceable></arg>
+        <arg choice="opt" rep="repeat">--force-opt=<replaceable>dhcp-opt-no</replaceable></arg>
+        <arg choice="opt" rep="repeat">--supress-opt=<replaceable>dhcp-opt-no</replaceable></arg>
         <arg choice="opt">--min-lease-time=<replaceable>seconds</replaceable></arg>
         <arg choice="opt">--default-lease-time=<replaceable>seconds</replaceable></arg>
         <arg choice="opt">--max-lease-time=<replaceable>seconds</replaceable></arg>
@@ -114,9 +122,28 @@
       </group>
       <sbr/>
       <arg choice="opt" rep="repeat">
+        <arg choice="opt">--global</arg>
+        <arg choice="opt" rep="repeat">--del-opt=<replaceable>dhcp-opt-no</replaceable></arg>
+        <arg choice="opt" rep="repeat">--set-opt=<replaceable>dhcp-opt-no value</replaceable></arg>
+        <arg choice="opt" rep="repeat">--set-opt-hex=<replaceable>dhcp-opt-no hexstring</replaceable></arg>
+        <arg choice="opt" rep="repeat">--force-opt=<replaceable>dhcp-opt-no</replaceable></arg>
+        <arg choice="opt" rep="repeat">--unforce-opt=<replaceable>dhcp-opt-no</replaceable></arg>
+        <arg choice="opt" rep="repeat">--supress-opt=<replaceable>dhcp-opt-no</replaceable></arg>
+        <arg choice="opt" rep="repeat">--unsupress-opt=<replaceable>dhcp-opt-no</replaceable></arg>
+        <arg choice="opt">--min-lease-time=<replaceable>seconds</replaceable></arg>
+        <arg choice="opt">--default-lease-time=<replaceable>seconds</replaceable></arg>
+        <arg choice="opt">--max-lease-time=<replaceable>seconds</replaceable></arg>
+        <arg choice="opt">--remove-config</arg>
+      </arg>
+      <sbr/>
+      <arg choice="opt" rep="repeat">
         <arg choice="req">--group=<replaceable>name</replaceable></arg>
         <arg choice="opt" rep="repeat">--set-opt=<replaceable>dhcp-opt-no value</replaceable></arg>
         <arg choice="opt" rep="repeat">--set-opt-hex=<replaceable>dhcp-opt-no hexstring</replaceable></arg>
+        <arg choice="opt" rep="repeat">--force-opt=<replaceable>dhcp-opt-no</replaceable></arg>
+        <arg choice="opt" rep="repeat">--unforce-opt=<replaceable>dhcp-opt-no</replaceable></arg>
+        <arg choice="opt" rep="repeat">--supress-opt=<replaceable>dhcp-opt-no</replaceable></arg>
+        <arg choice="opt" rep="repeat">--unsupress-opt=<replaceable>dhcp-opt-no</replaceable></arg>
         <arg choice="opt" rep="repeat">--del-mac=<replaceable>address</replaceable></arg>
         <arg choice="opt" rep="repeat">--incl-mac=<replaceable>address</replaceable></arg>
         <arg choice="opt" rep="repeat">--excl-mac=<replaceable>address</replaceable></arg>
@@ -143,22 +170,15 @@
       </arg>
       <sbr/>
       <arg choice="opt" rep="repeat">
-        <arg choice="opt">--global</arg>
-        <arg choice="opt" rep="repeat">--del-opt=<replaceable>dhcp-opt-no</replaceable></arg>
-        <arg choice="opt" rep="repeat">--set-opt=<replaceable>dhcp-opt-no value</replaceable></arg>
-        <arg choice="opt" rep="repeat">--set-opt-hex=<replaceable>dhcp-opt-no hexstring</replaceable></arg>
-        <arg choice="opt">--min-lease-time=<replaceable>seconds</replaceable></arg>
-        <arg choice="opt">--default-lease-time=<replaceable>seconds</replaceable></arg>
-        <arg choice="opt">--max-lease-time=<replaceable>seconds</replaceable></arg>
-        <arg choice="opt">--remove-config</arg>
-      </arg>
-      <sbr/>
-      <arg choice="opt" rep="repeat">
         <arg choice="req">--vm=<replaceable>name|uuid</replaceable></arg>
         <arg choice="opt">--nic=<replaceable>1-N</replaceable></arg>
         <arg choice="opt" rep="repeat">--del-opt=<replaceable>dhcp-opt-no</replaceable></arg>
         <arg choice="opt" rep="repeat">--set-opt=<replaceable>dhcp-opt-no value</replaceable></arg>
         <arg choice="opt" rep="repeat">--set-opt-hex=<replaceable>dhcp-opt-no hexstring</replaceable></arg>
+        <arg choice="opt" rep="repeat">--force-opt=<replaceable>dhcp-opt-no</replaceable></arg>
+        <arg choice="opt" rep="repeat">--unforce-opt=<replaceable>dhcp-opt-no</replaceable></arg>
+        <arg choice="opt" rep="repeat">--supress-opt=<replaceable>dhcp-opt-no</replaceable></arg>
+        <arg choice="opt" rep="repeat">--unsupress-opt=<replaceable>dhcp-opt-no</replaceable></arg>
         <arg choice="opt">--min-lease-time=<replaceable>seconds</replaceable></arg>
         <arg choice="opt">--default-lease-time=<replaceable>seconds</replaceable></arg>
         <arg choice="opt">--max-lease-time=<replaceable>seconds</replaceable></arg>
@@ -171,6 +191,10 @@
         <arg choice="opt" rep="repeat">--del-opt=<replaceable>dhcp-opt-no</replaceable></arg>
         <arg choice="opt" rep="repeat">--set-opt=<replaceable>dhcp-opt-no value</replaceable></arg>
         <arg choice="opt" rep="repeat">--set-opt-hex=<replaceable>dhcp-opt-no hexstring</replaceable></arg>
+        <arg choice="opt" rep="repeat">--force-opt=<replaceable>dhcp-opt-no</replaceable></arg>
+        <arg choice="opt" rep="repeat">--unforce-opt=<replaceable>dhcp-opt-no</replaceable></arg>
+        <arg choice="opt" rep="repeat">--supress-opt=<replaceable>dhcp-opt-no</replaceable></arg>
+        <arg choice="opt" rep="repeat">--unsupress-opt=<replaceable>dhcp-opt-no</replaceable></arg>
         <arg choice="opt">--min-lease-time=<replaceable>seconds</replaceable></arg>
         <arg choice="opt">--default-lease-time=<replaceable>seconds</replaceable></arg>
         <arg choice="opt">--max-lease-time=<replaceable>seconds</replaceable></arg>
@@ -323,6 +347,19 @@
           </para></listitem>
         </varlistentry>
         <varlistentry>
+          <term><option>--force-opt=<replaceable>dhcp-opt-no</replaceable></option></term>
+          <listitem><para>Forces the specified DHCP option number (0-255) onto to be
+            sent to the client whether it requested it or not (provided the option is
+            configured with a value at some level).
+          </para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--suppress-opt=<replaceable>dhcp-opt-no</replaceable></option></term>
+          <listitem><para>Prevents the specified DHCP option number (0-255) from being
+            sent to the client when present in this or a high configuration scope.
+          </para></listitem>
+        </varlistentry>
+        <varlistentry>
           <term><option>--min-lease-time=<replaceable>seconds</replaceable></option></term>
           <listitem><para>Sets the minimum lease time for the current scope in seconds.
             Zero means taking the value from a higher option level or use default.
@@ -417,6 +454,24 @@
           <term><option>--del-opt=<replaceable>dhcp-opt-no</replaceable></option></term>
           <listitem><para>Counterpart to <option>--set-opt</option> that will cause the specified
             DHCP option number (0-255) to be deleted from the server settings.  Like with
+            <option>--set-opt</option> the scope of the deletion is governed by the
+            <option>--global</option>, <option>--vm</option>, <option>--mac-address</option>
+            and <option>--group</option> options.
+          </para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--unforce-opt=<replaceable>dhcp-opt-no</replaceable></option></term>
+          <listitem><para>Removes the specified DHCP option number (0-255) from the forced
+            option list (i.e. the reverse of <option>--force-opt</option>).  Like with
+            <option>--set-opt</option> the scope of the deletion is governed by the
+            <option>--global</option>, <option>--vm</option>, <option>--mac-address</option>
+            and <option>--group</option> options.
+          </para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--unsuppress-opt=<replaceable>dhcp-opt-no</replaceable></option></term>
+          <listitem><para>Removes the specified DHCP option number (0-255) from the supressed
+            option list (i.e. the reverse of <option>--suppress-opt</option>). Like with
             <option>--set-opt</option> the scope of the deletion is governed by the
             <option>--global</option>, <option>--vm</option>, <option>--mac-address</option>
             and <option>--group</option> options.
