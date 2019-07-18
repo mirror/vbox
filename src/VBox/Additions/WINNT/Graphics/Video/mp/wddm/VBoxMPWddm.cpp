@@ -4473,11 +4473,9 @@ DxgkDdiSetPointerPosition(
                 vboxWddmHostPointerEnable(pDevExt, FALSE);
             }
         }
-        else
-        {
-            // tell the host to use the guest's pointer
-            vboxWddmHostPointerEnable(pDevExt, pSetPointerPosition->Flags.Visible);
-        }
+
+        // Always update the visibility as requested. Tell the host to use the guest's pointer.
+        vboxWddmHostPointerEnable(pDevExt, pSetPointerPosition->Flags.Visible);
     }
 
 //    LOGF(("LEAVE, hAdapter(0x%x)", hAdapter));
