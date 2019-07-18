@@ -704,7 +704,7 @@ VBOX_CORE_DOXYFILE_INPUT_DIRS = \
 	src/VBox/Additions/x11/vboxmouse/xorg71 \
 	src/VBox/Additions/x11/vboxvideo \
 	src/VBox/NetworkServices \
-	src/VBox/NetworkServices/DHCP \
+	src/VBox/NetworkServices/Dhcpd \
 	src/VBox/NetworkServices/NAT \
 	src/VBox/NetworkServices/NetLib \
 	src/VBox/Storage \
