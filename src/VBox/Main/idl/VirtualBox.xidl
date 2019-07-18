@@ -1914,17 +1914,22 @@
   <enum
       name="DHCPOptionEncoding"
       uuid="84b6d460-2838-4682-c0d6-ef5b573ef28a">
-    <const name="Normal" value="0"/>
-    <const name="Hex"    value="1"/>
+    <const name="Normal"                 value="0">
+      <desc>Value format is specific to the option and generally user friendly.</desc>
+    </const>
+    <const name="Hex"                    value="1">
+      <desc>Value format is a series of hex bytes (09314f3200fe), optionally colons
+        as byte separators (9:31:4f:32::fe).</desc>
+    </const>
   </enum>
 
   <enum
       name="DHCPConfigScope"
       uuid="469c42e4-b9ec-43f2-bdcb-9e9d1eb434ae">
-    <const name="Global"      value="0"><desc><link to="IDHCPServer::globalConfig"/></desc></const>
-    <const name="Group"       value="1"><desc><link to="IDHCPServer::groupConfigs"/></desc></const>
-    <const name="MachineNIC"  value="2"><desc><link to="IDHCPServer::individualConfigs"/></desc></const>
-    <const name="MAC"         value="3"><desc><link to="IDHCPServer::individualConfigs"/></desc></const>
+    <const name="Global"                 value="0"><desc><link to="IDHCPServer::globalConfig"/></desc></const>
+    <const name="Group"                  value="1"><desc><link to="IDHCPServer::groupConfigs"/></desc></const>
+    <const name="MachineNIC"             value="2"><desc><link to="IDHCPServer::individualConfigs"/></desc></const>
+    <const name="MAC"                    value="3"><desc><link to="IDHCPServer::individualConfigs"/></desc></const>
   </enum>
 
   <enum
