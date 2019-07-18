@@ -181,6 +181,11 @@ bool UIChooserSearchWidget::eventFilter(QObject *pWatched, QEvent *pEvent)
 
 void UIChooserSearchWidget::sltHandleSearchTermChange(const QString &strSearchTerm)
 {
+    if (strSearchTerm.isEmpty())
+    {
+        emit sigToggleVisibility(false);
+        return;
+    }
     emit sigRedoSearch(strSearchTerm, UIChooserItemSearchFlag_Machine);
 }
 
