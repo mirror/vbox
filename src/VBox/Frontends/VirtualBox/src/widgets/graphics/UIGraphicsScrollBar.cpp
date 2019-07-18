@@ -173,7 +173,7 @@ void UIGraphicsScrollBarToken::paint(QPainter *pPainter, const QStyleOptionGraph
 #else
 
     /* Draw background: */
-    QColor backgroundColor = pal.color(QPalette::Active, QPalette::Window);
+    QColor backgroundColor = pal.color(QPalette::Active, QPalette::Mid);
     pPainter->fillRect(pOptions->rect, backgroundColor);
 
 #endif
@@ -1029,19 +1029,18 @@ void UIGraphicsScrollBar::paintBackground(QPainter *pPainter, const QRect &recta
 #else
 
     /* Draw background: */
-    QColor backgroundColor = pal.color(QPalette::Active, QPalette::Mid);
-    backgroundColor.setAlpha(200);
+    QColor backgroundColor = pal.color(QPalette::Active, QPalette::Midlight);
+    backgroundColor.setAlpha(50 + (double)m_iHoveringValue / 100 * 150);
     QRect actualRectangle = rectangle;
-    actualRectangle.setLeft(actualRectangle.left() + .9 * actualRectangle.width() * ((double)100 - m_iHoveringValue) / 100);
+    actualRectangle.setLeft(actualRectangle.left() + .85 * actualRectangle.width() * ((double)100 - m_iHoveringValue) / 100);
     pPainter->fillRect(actualRectangle, backgroundColor);
 
     /* Emulate token when necessary: */
     if (m_iHoveringValue < 100)
     {
-        QColor tokenColor = pal.color(QPalette::Active, QPalette::Window);
-        tokenColor.setAlpha(200);
+        QColor tokenColor = pal.color(QPalette::Active, QPalette::Dark);
         QRect tokenRectangle = QRect(actualTokenPosition(), QSize(m_iExtent, m_iExtent));
-        tokenRectangle.setLeft(tokenRectangle.left() + .9 * tokenRectangle.width() * ((double)100 - m_iHoveringValue) / 100);
+        tokenRectangle.setLeft(tokenRectangle.left() + .85 * tokenRectangle.width() * ((double)100 - m_iHoveringValue) / 100);
         pPainter->fillRect(tokenRectangle, tokenColor);
     }
 
