@@ -562,9 +562,11 @@ static DECLCALLBACK(RTEXITCODE) dhcpdHandleAddAndModify(PDHCPDCMDCTX pCtx, int a
                 case DHCP_ADDMOD_UNFORCE_OPTION:    // --unforce-opt
                     if (pCtx->pCmdDef->fSubcommandScope == HELP_SCOPE_DHCPSERVER_ADD)
                         return errorSyntax("--unforce-opt does not apply to the 'add' subcommand");
+                    RT_FALL_THROUGH();
                 case DHCP_ADDMOD_UNSUPPRESS_OPTION: // --unsupress-opt
                     if (pCtx->pCmdDef->fSubcommandScope == HELP_SCOPE_DHCPSERVER_ADD)
                         return errorSyntax("--unsuppress-opt does not apply to the 'add' subcommand");
+                    RT_FALL_THROUGH();
                 case DHCP_ADDMOD_FORCE_OPTION:      // --force-opt
                 case DHCP_ADDMOD_SUPPRESS_OPTION:   // --suppress-opt
                     if (iPass == 1)
