@@ -2047,7 +2047,7 @@ public:
         RTCString strPath;
         RTTESTI_CHECK_RC(doPathParameters(&strPath, RT_STR_TUPLE("my/{integer}/{string}/array:{array}/path"),
                                           s_aParams, aState, RT_ELEMENTS(aState)), VINF_SUCCESS);
-        RTTESTI_CHECK_MSG(strPath.equals(a_pszExpected), ("actual: '%s'\nexpect: '%s'\n", strPath.c_str(), a_pszExpected));
+        RTTESTI_CHECK_MSG(strPath.equals(a_pszExpected), ("actual: %s\nexpect: %s\n", strPath.c_str(), a_pszExpected));
     }
 
     void testQuery(const char *a_pszCsv,
@@ -2066,32 +2066,32 @@ public:
         RTCRestObjectBase const *apObjects[] =  { &m_strValue,  &m_iValue, &m_Array };
         RTCString strQuery;
         RTTESTI_CHECK_RC(doQueryParameters(&strQuery, aParams, apObjects, RT_ELEMENTS(apObjects)), VINF_SUCCESS);
-        RTTESTI_CHECK_MSG(strQuery.equals(a_pszCsv), ("actual: '%s'\nexpect: %s\n", strQuery.c_str(), a_pszCsv));
+        RTTESTI_CHECK_MSG(strQuery.equals(a_pszCsv), ("actual: %s\nexpect: %s\n", strQuery.c_str(), a_pszCsv));
 
         strQuery.setNull();
         aParams[2].fFlags = RTCRestObjectBase::kCollectionFormat_csv;
         RTTESTI_CHECK_RC(doQueryParameters(&strQuery, aParams, apObjects, RT_ELEMENTS(apObjects)), VINF_SUCCESS);
-        RTTESTI_CHECK_MSG(strQuery.equals(a_pszCsv), ("actual: '%s'\nexpect: %s\n", strQuery.c_str(), a_pszCsv));
+        RTTESTI_CHECK_MSG(strQuery.equals(a_pszCsv), ("actual: %s\nexpect: %s\n", strQuery.c_str(), a_pszCsv));
 
         strQuery.setNull();
         aParams[2].fFlags = RTCRestObjectBase::kCollectionFormat_ssv;
         RTTESTI_CHECK_RC(doQueryParameters(&strQuery, aParams, apObjects, RT_ELEMENTS(apObjects)), VINF_SUCCESS);
-        RTTESTI_CHECK_MSG(strQuery.equals(a_pszSsv), ("actual: '%s'\nexpect: %s\n", strQuery.c_str(), a_pszSsv));
+        RTTESTI_CHECK_MSG(strQuery.equals(a_pszSsv), ("actual: %s\nexpect: %s\n", strQuery.c_str(), a_pszSsv));
 
         strQuery.setNull();
         aParams[2].fFlags = RTCRestObjectBase::kCollectionFormat_tsv;
         RTTESTI_CHECK_RC(doQueryParameters(&strQuery, aParams, apObjects, RT_ELEMENTS(apObjects)), VINF_SUCCESS);
-        RTTESTI_CHECK_MSG(strQuery.equals(a_pszTsv), ("actual: '%s'\nexpect: %s\n", strQuery.c_str(), a_pszTsv));
+        RTTESTI_CHECK_MSG(strQuery.equals(a_pszTsv), ("actual: %s\nexpect: %s\n", strQuery.c_str(), a_pszTsv));
 
         strQuery.setNull();
         aParams[2].fFlags = RTCRestObjectBase::kCollectionFormat_pipes;
         RTTESTI_CHECK_RC(doQueryParameters(&strQuery, aParams, apObjects, RT_ELEMENTS(apObjects)), VINF_SUCCESS);
-        RTTESTI_CHECK_MSG(strQuery.equals(a_pszPipes), ("actual: '%s'\nexpect: %s\n", strQuery.c_str(), a_pszPipes));
+        RTTESTI_CHECK_MSG(strQuery.equals(a_pszPipes), ("actual: %s\nexpect: %s\n", strQuery.c_str(), a_pszPipes));
 
         strQuery.setNull();
         aParams[2].fFlags = RTCRestObjectBase::kCollectionFormat_multi;
         RTTESTI_CHECK_RC(doQueryParameters(&strQuery, aParams, apObjects, RT_ELEMENTS(apObjects)), VINF_SUCCESS);
-        RTTESTI_CHECK_MSG(strQuery.equals(a_pszMulti), ("actual: '%s'\nexpect: %s\n", strQuery.c_str(), a_pszMulti));
+        RTTESTI_CHECK_MSG(strQuery.equals(a_pszMulti), ("actual: %s\nexpect: %s\n", strQuery.c_str(), a_pszMulti));
     }
 
     void testHeader(unsigned a_cHeaders, ...)
