@@ -792,6 +792,7 @@ UICommon_QT_MOCHDRS = \
 	src/extensions/QIComboBox.h \
 	src/extensions/QIDialog.h \
 	src/extensions/QIDialogButtonBox.h \
+	src/extensions/QIDialogContainer.h \
 	src/extensions/QIFileDialog.h \
 	src/extensions/QIFlowLayout.h \
 	src/extensions/QIInputDialog.h \
@@ -1267,6 +1268,7 @@ UICommon_SOURCES = \
 	src/extensions/QIComboBox.cpp \
 	src/extensions/QIDialog.cpp \
 	src/extensions/QIDialogButtonBox.cpp \
+	src/extensions/QIDialogContainer.cpp \
 	src/extensions/QIFileDialog.cpp \
 	src/extensions/QIFlowLayout.cpp \
 	src/extensions/QIInputDialog.cpp \
