@@ -37,6 +37,14 @@
 #include "UICommon.h"
 
 
+/** Known anchor roles. */
+enum AnchorRole
+{
+    AnchorRole_Invalid,
+    AnchorRole_Storage,
+};
+
+
 UIDetailsElement::UIDetailsElement(UIDetailsSet *pParent, DetailsElementType enmType, bool fOpened)
     : UIDetailsItem(pParent)
     , m_pSet(pParent)
@@ -409,12 +417,6 @@ void UIDetailsElement::sltElementToggleFinish(bool fToggled)
 
 void UIDetailsElement::sltHandleAnchorClicked(const QString &strAnchor)
 {
-    /* Enumerate known anchor roles: */
-    enum AnchorRole
-    {
-        AnchorRole_Invalid,
-        AnchorRole_Storage,
-    };
     /* Compose a map of known anchor roles: */
     QMap<QString, AnchorRole> roles;
     roles["#mount"] = AnchorRole_Storage;
