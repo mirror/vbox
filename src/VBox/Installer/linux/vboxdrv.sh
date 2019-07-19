@@ -277,7 +277,6 @@ start()
   $MODULE_LIST
 See the documenatation for your Linux distribution." console
         fi
-        return 0
     fi
     if ! running vboxdrv; then
         if ! rm -f $DEVICE; then
