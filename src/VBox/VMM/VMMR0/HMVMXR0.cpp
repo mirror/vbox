@@ -47,6 +47,7 @@
 
 #ifdef DEBUG_ramshankar
 # define HMVMX_ALWAYS_SAVE_GUEST_RFLAGS
+# define HMVMX_ALWAYS_SAVE_RO_GUEST_STATE
 # define HMVMX_ALWAYS_SAVE_FULL_GUEST_STATE
 # define HMVMX_ALWAYS_SYNC_FULL_GUEST_STATE
 # define HMVMX_ALWAYS_CLEAN_TRANSIENT
@@ -1567,6 +1568,40 @@ DECLINLINE(int) hmR0VmxReadIdtVectoringErrorCodeVmcs(PVMXTRANSIENT pVmxTransient
     return VINF_SUCCESS;
 }
 
+#ifdef HMVMX_ALWAYS_SAVE_RO_GUEST_STATE
+/**
+ * Reads all relevant read-only VMCS fields into the VMX transient structure.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu           The cross context virtual CPU structure of the
+ *                          calling EMT. (Required for the VMCS cache case.)
+ * @param   pVmxTransient   The VMX-transient structure.
+ */
+static int hmR0VmxReadAllRoFieldsVmcs(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
+{
+    NOREF(pVCpu); /* Used implicitly by VMXReadVmcsGstN on 32-bit hosts. */
+    int rc = VMXReadVmcsGstN(VMX_VMCS_RO_EXIT_QUALIFICATION,           &pVmxTransient->uExitQual);
+    rc    |= VMXReadVmcs32(VMX_VMCS32_RO_EXIT_INSTR_LENGTH,            &pVmxTransient->cbInstr);
+    rc    |= VMXReadVmcs32(VMX_VMCS32_RO_EXIT_INSTR_INFO,              &pVmxTransient->ExitInstrInfo.u);
+    rc    |= VMXReadVmcs32(VMX_VMCS32_RO_IDT_VECTORING_INFO,           &pVmxTransient->uIdtVectoringInfo);
+    rc    |= VMXReadVmcs32(VMX_VMCS32_RO_IDT_VECTORING_ERROR_CODE,     &pVmxTransient->uIdtVectoringErrorCode);
+    rc    |= VMXReadVmcs32(VMX_VMCS32_RO_EXIT_INTERRUPTION_INFO,       &pVmxTransient->uExitIntInfo);
+    rc    |= VMXReadVmcs32(VMX_VMCS32_RO_EXIT_INTERRUPTION_ERROR_CODE, &pVmxTransient->uExitIntErrorCode);
+    rc    |= VMXReadVmcsGstN(VMX_VMCS_RO_GUEST_LINEAR_ADDR,            &pVmxTransient->uGuestLinearAddr);
+    rc    |= VMXReadVmcsGstN(VMX_VMCS64_RO_GUEST_PHYS_ADDR_FULL,       &pVmxTransient->uGuestPhysicalAddr);
+    AssertRCReturn(rc, rc);
+    pVmxTransient->fVmcsFieldsRead |= HMVMX_READ_EXIT_QUALIFICATION
+                                   |  HMVMX_READ_EXIT_INSTR_LEN
+                                   |  HMVMX_READ_EXIT_INSTR_INFO
+                                   |  HMVMX_READ_IDT_VECTORING_INFO
+                                   |  HMVMX_READ_IDT_VECTORING_ERROR_CODE
+                                   |  HMVMX_READ_EXIT_INTERRUPTION_INFO
+                                   |  HMVMX_READ_EXIT_INTERRUPTION_ERROR_CODE
+                                   |  HMVMX_READ_GUEST_LINEAR_ADDR
+                                   |  HMVMX_READ_GUEST_PHYSICAL_ADDR;
+    return VINF_SUCCESS;
+}
+#endif
 
 /**
  * Enters VMX root mode operation on the current CPU.
@@ -11493,6 +11528,10 @@ static void hmR0VmxPostRunGuest(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient, int r
             Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_HM_UPDATE_CR3));
             Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_HM_UPDATE_PAE_PDPES));
 
+#ifdef HMVMX_ALWAYS_SAVE_RO_GUEST_STATE
+            rc = hmR0VmxReadAllRoFieldsVmcs(pVCpu, pVmxTransient);
+            AssertRC(rc);
+#endif
 #if defined(HMVMX_ALWAYS_SYNC_FULL_GUEST_STATE) || defined(HMVMX_ALWAYS_SAVE_FULL_GUEST_STATE)
             rc = hmR0VmxImportGuestState(pVCpu, pVmcsInfo, HMVMX_CPUMCTX_EXTRN_ALL);
             AssertRC(rc);
