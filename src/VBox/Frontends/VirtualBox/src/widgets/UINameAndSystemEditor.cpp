@@ -43,18 +43,24 @@ UINameAndSystemEditor::UINameAndSystemEditor(QWidget *pParent, bool fChooseLocat
     , m_fChooseLocation(fChooseLocation)
     , m_fSupportsHWVirtEx(false)
     , m_fSupportsLongMode(false)
+    , m_pNameLabel(0)
+    , m_pPathLabel(0)
     , m_pLabelFamily(0)
     , m_pLabelType(0)
     , m_pIconType(0)
-    , m_pNameLabel(0)
-    , m_pPathLabel(0)
     , m_pNameLineEdit(0)
     , m_pPathSelector(0)
     , m_pComboFamily(0)
     , m_pComboType(0)
 {
-    /* Prepare: */
     prepare();
+}
+
+void UINameAndSystemEditor::setName(const QString &strName)
+{
+    if (!m_pNameLineEdit)
+        return;
+    m_pNameLineEdit->setText(strName);
 }
 
 QString UINameAndSystemEditor::name() const
@@ -69,13 +75,6 @@ QString UINameAndSystemEditor::path() const
     if (!m_pPathSelector)
         return uiCommon().virtualBox().GetSystemProperties().GetDefaultMachineFolder();
     return m_pPathSelector->path();
-}
-
-void UINameAndSystemEditor::setName(const QString &strName)
-{
-    if (!m_pNameLineEdit)
-        return;
-    m_pNameLineEdit->setText(strName);
 }
 
 void UINameAndSystemEditor::setTypeId(QString strTypeId, QString strFamilyId /* = QString() */)
@@ -174,11 +173,6 @@ QString UINameAndSystemEditor::familyId() const
     return m_strFamilyId;
 }
 
-CGuestOSType UINameAndSystemEditor::type() const
-{
-    return uiCommon().vmGuestOSType(typeId(), familyId());
-}
-
 void UINameAndSystemEditor::setType(const CGuestOSType &enmType)
 {
     // WORKAROUND:
@@ -190,6 +184,18 @@ void UINameAndSystemEditor::setType(const CGuestOSType &enmType)
 
     /* Pass to function above: */
     setTypeId(enmType.GetId(), enmType.GetFamilyId());
+}
+
+CGuestOSType UINameAndSystemEditor::type() const
+{
+    return uiCommon().vmGuestOSType(typeId(), familyId());
+}
+
+void UINameAndSystemEditor::setNameFieldValidator(const QString &strValidator)
+{
+    if (!m_pNameLineEdit)
+        return;
+    m_pNameLineEdit->setValidator(new QRegExpValidator(QRegExp(strValidator), this));
 }
 
 void UINameAndSystemEditor::retranslateUi()
@@ -283,22 +289,18 @@ void UINameAndSystemEditor::sltTypeChanged(int iIndex)
 
 void UINameAndSystemEditor::prepare()
 {
-    /* Prepare this: */
     prepareThis();
-    /* Prepare widgets: */
     prepareWidgets();
-    /* Prepare connections: */
     prepareConnections();
-    /* Apply language settings: */
     retranslateUi();
 }
 
 void UINameAndSystemEditor::prepareThis()
 {
     /* Check if host supports (AMD-V or VT-x) and long mode: */
-    CHost host = uiCommon().host();
-    m_fSupportsHWVirtEx = host.GetProcessorFeature(KProcessorFeature_HWVirtEx);
-    m_fSupportsLongMode = host.GetProcessorFeature(KProcessorFeature_LongMode);
+    CHost comHost = uiCommon().host();
+    m_fSupportsHWVirtEx = comHost.GetProcessorFeature(KProcessorFeature_HWVirtEx);
+    m_fSupportsLongMode = comHost.GetProcessorFeature(KProcessorFeature_LongMode);
 }
 
 void UINameAndSystemEditor::prepareWidgets()
@@ -478,11 +480,4 @@ void UINameAndSystemEditor::prepareConnections()
             this, &UINameAndSystemEditor::sltFamilyChanged);
     connect(m_pComboType, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
             this, &UINameAndSystemEditor::sltTypeChanged);
-}
-
-void UINameAndSystemEditor::setNameFieldValidator(const QString &strValidator)
-{
-    if (!m_pNameLineEdit)
-        return;
-    m_pNameLineEdit->setValidator(new QRegExpValidator(QRegExp(strValidator), this));
 }

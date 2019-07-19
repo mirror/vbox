@@ -69,13 +69,13 @@ public:
      * @param  fChooseFullPath  Controls whether we should propose to choose location. */
     UINameAndSystemEditor(QWidget *pParent, bool fChooseLocation = false);
 
-    /** Returns the VM name. */
-    QString name() const;
-    /** Returns path string selected by the user. */
-    QString path() const;
-
     /** Defines the VM @a strName. */
     void setName(const QString &strName);
+    /** Returns the VM name. */
+    QString name() const;
+
+    /** Returns path string selected by the user. */
+    QString path() const;
 
     /** Defines the VM OS @a strTypeId and @a strFamilyId if passed. */
     void setTypeId(QString strTypeId, QString strFamilyId = QString());
@@ -84,10 +84,10 @@ public:
     /** Returns the VM OS family ID. */
     QString familyId() const;
 
-    /** Returns the VM OS type. */
-    CGuestOSType type() const;
     /** Defines the VM OS @a enmType. */
     void setType(const CGuestOSType &enmType);
+    /** Returns the VM OS type. */
+    CGuestOSType type() const;
 
     /** Defines the name-field @a strValidator. */
     void setNameFieldValidator(const QString &strValidator);
@@ -101,7 +101,6 @@ private slots:
 
     /** Handles VM OS family @a iIndex change. */
     void sltFamilyChanged(int iIndex);
-
     /** Handles VM OS type @a iIndex change. */
     void sltTypeChanged(int iIndex);
 
@@ -134,29 +133,33 @@ private:
 
     /** Holds the currently chosen OS type IDs on per-family basis. */
     QMap<QString, QString>  m_currentIds;
+
     /** Holds whether we should propose to choose a full path. */
-    bool                    m_fChooseLocation;
+    bool  m_fChooseLocation;
     /** Holds whether host supports hardware virtualization. */
-    bool                    m_fSupportsHWVirtEx;
+    bool  m_fSupportsHWVirtEx;
     /** Holds whether host supports long mode. */
-    bool                    m_fSupportsLongMode;
+    bool  m_fSupportsLongMode;
 
+    /** Holds the VM name label instance. */
+    QLabel *m_pNameLabel;
+    /** Holds the VM path label instance. */
+    QLabel *m_pPathLabel;
     /** Holds the VM OS family label instance. */
-    QLabel                 *m_pLabelFamily;
+    QLabel *m_pLabelFamily;
     /** Holds the VM OS type label instance. */
-    QLabel                 *m_pLabelType;
+    QLabel *m_pLabelType;
     /** Holds the VM OS type icon instance. */
-    QLabel                 *m_pIconType;
+    QLabel *m_pIconType;
 
-    QLabel                 *m_pNameLabel;
-    QLabel                 *m_pPathLabel;
-    QILineEdit             *m_pNameLineEdit;
-    UIFilePathSelector     *m_pPathSelector;
+    /** Holds the VM name editor instance. */
+    QILineEdit         *m_pNameLineEdit;
+    /** Holds the VM path editor instance. */
+    UIFilePathSelector *m_pPathSelector;
     /** Holds the VM OS family combo instance. */
-    QComboBox              *m_pComboFamily;
+    QComboBox          *m_pComboFamily;
     /** Holds the VM OS type combo instance. */
-    QComboBox              *m_pComboType;
-    QString                 m_strGroupName;
+    QComboBox          *m_pComboType;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_widgets_UINameAndSystemEditor_h */
