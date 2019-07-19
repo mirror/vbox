@@ -298,7 +298,7 @@ VBOX_PACKAGE_DIST ?= GENERIC
 VBOX_PACKAGE_STRING = $(VBOX_PACKAGE_OS)_$(VBOX_PACKAGE_ARCH)_$(VBOX_PACKAGE_DIST)
 
 # Supported VirtualBox host architectures.
-VBOX_SUPPORTED_HOST_ARCHS := x86 amd64
+VBOX_SUPPORTED_HOST_ARCHS := amd64
 
 #
 # The VirtualBox Configuration Defaults.
