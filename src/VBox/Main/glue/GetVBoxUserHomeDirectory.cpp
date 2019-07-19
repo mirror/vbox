@@ -20,7 +20,7 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_MAIN
-#include <VBox/com/com.h>
+#include <VBox/com/utils.h>
 
 #include <iprt/env.h>
 #include <iprt/dir.h>
