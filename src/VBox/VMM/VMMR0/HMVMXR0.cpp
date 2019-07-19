@@ -82,6 +82,7 @@
 #define HMVMX_READ_EXIT_INTERRUPTION_ERROR_CODE     RT_BIT_32(5)
 #define HMVMX_READ_EXIT_INSTR_INFO                  RT_BIT_32(6)
 #define HMVMX_READ_GUEST_LINEAR_ADDR                RT_BIT_32(7)
+#define HMVMX_READ_GUEST_PHYSICAL_ADDR              RT_BIT_32(8)
 
 /** All the VMCS fields required for processing of exception/NMI VM-exits. */
 #define HMVMX_READ_XCPT_INFO         (  HMVMX_READ_EXIT_INTERRUPTION_INFO        \
@@ -213,6 +214,8 @@ typedef struct VMXTRANSIENT
     uint64_t            uExitQual;
     /** The Guest-linear address. */
     uint64_t            uGuestLinearAddr;
+    /** The Guest-physical address. */
+    uint64_t            uGuestPhysicalAddr;
 
     /** The VM-exit interruption-information field. */
     uint32_t            uExitIntInfo;
@@ -1500,6 +1503,26 @@ DECLINLINE(int) hmR0VmxReadGuestLinearAddrVmcs(PVMCPU pVCpu, PVMXTRANSIENT pVmxT
         int rc = VMXReadVmcsGstN(VMX_VMCS_RO_GUEST_LINEAR_ADDR, &pVmxTransient->uGuestLinearAddr); NOREF(pVCpu);
         AssertRCReturn(rc, rc);
         pVmxTransient->fVmcsFieldsRead |= HMVMX_READ_GUEST_LINEAR_ADDR;
+    }
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Reads the Guest-physical address from the VMCS into the VMX transient structure.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu           The cross context virtual CPU structure of the
+ *                          calling EMT. (Required for the VMCS cache case.)
+ * @param   pVmxTransient   The VMX-transient structure.
+ */
+DECLINLINE(int) hmR0VmxReadGuestPhysicalAddrVmcs(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
+{
+    if (!(pVmxTransient->fVmcsFieldsRead & HMVMX_READ_GUEST_PHYSICAL_ADDR))
+    {
+        int rc = VMXReadVmcs64(VMX_VMCS64_RO_GUEST_PHYS_ADDR_FULL, &pVmxTransient->uGuestPhysicalAddr); NOREF(pVCpu);
+        AssertRCReturn(rc, rc);
+        pVmxTransient->fVmcsFieldsRead |= HMVMX_READ_GUEST_PHYSICAL_ADDR;
     }
     return VINF_SUCCESS;
 }
@@ -16352,12 +16375,12 @@ HMVMX_EXIT_DECL hmR0VmxExitEptMisconfig(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransien
     /*
      * Get sufficent state and update the exit history entry.
      */
-    RTGCPHYS GCPhys;
     PVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
-    rc  = VMXReadVmcs64(VMX_VMCS64_RO_GUEST_PHYS_ADDR_FULL, &GCPhys);
+    rc  = hmR0VmxReadGuestPhysicalAddrVmcs(pVCpu, pVmxTransient);
     rc |= hmR0VmxImportGuestState(pVCpu, pVmcsInfo, IEM_CPUMCTX_EXTRN_MUST_MASK);
     AssertRCReturn(rc, rc);
 
+    RTGCPHYS const GCPhys = pVmxTransient->uGuestPhysicalAddr;
     PCEMEXITREC pExitRec = EMHistoryUpdateFlagsAndTypeAndPC(pVCpu,
                                                             EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM | EMEXIT_F_HM, EMEXITTYPE_MMIO),
                                                             pVCpu->cpum.GstCtx.rip + pVCpu->cpum.GstCtx.cs.u64Base);
@@ -16439,12 +16462,12 @@ HMVMX_EXIT_DECL hmR0VmxExitEptViolation(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransien
         return rcStrict;
     }
 
-    RTGCPHYS GCPhys;
     PVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
-    rc  = VMXReadVmcs64(VMX_VMCS64_RO_GUEST_PHYS_ADDR_FULL, &GCPhys);
+    rc  = hmR0VmxReadGuestPhysicalAddrVmcs(pVCpu, pVmxTransient);
     rc |= hmR0VmxImportGuestState(pVCpu, pVmcsInfo, IEM_CPUMCTX_EXTRN_MUST_MASK);
     AssertRCReturn(rc, rc);
 
+    RTGCPHYS const GCPhys    = pVmxTransient->uGuestPhysicalAddr;
     uint64_t const uExitQual = pVmxTransient->uExitQual;
     AssertMsg(((pVmxTransient->uExitQual >> 7) & 3) != 2, ("%#RX64", uExitQual));
 
