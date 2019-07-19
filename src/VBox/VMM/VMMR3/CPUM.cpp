@@ -1819,8 +1819,9 @@ static bool cpumR3AreVmxCpuFeaturesCompatible(PVM pVM, PCCPUMFEATURES pBase, PCC
 
         if ((fBase | fGst) != fBase)
         {
-            LogRel(("CPUM: Host VMX features are incompatible with those from the saved state. fBase=%#RX64 fGst=%#RX64\n",
-                    fBase, fGst));
+            uint64_t const fDiff = fBase ^ fGst;
+            LogRel(("CPUM: VMX features now exposed to the guest are incompatible with those from the saved state. fBase=%#RX64 fGst=%#RX64 fDiff=%#RX64\n",
+                    fBase, fGst, fDiff));
             return false;
         }
         return true;
