@@ -26,7 +26,7 @@
 
   <refnamediv>
     <refname>VBoxManage-cloudinstance</refname>
-    <refpurpose>manage the cloud instance</refpurpose>
+    <refpurpose>Manage the cloud instances</refpurpose>
     <refclass>Oracle VM VirtualBox</refclass>
   </refnamediv>
 
@@ -37,7 +37,7 @@
       <arg choice="req" rep="norepeat">--profile=<replaceable>name</replaceable></arg>
       <arg choice="plain" rep="norepeat">instance</arg>
       <arg choice="plain" rep="norepeat">info</arg>
-      <arg choice="req" rep="norepeat">--id=<replaceable>uuid</replaceable></arg>
+      <arg choice="req" rep="norepeat">--id=<replaceable>unique id</replaceable></arg>
     </cmdsynopsis>
     <cmdsynopsis id="synopsis-vboxmanage-cloudinstance-terminate" sepchar=" ">
       <command moreinfo="none">VBoxManage cloud</command>
@@ -45,7 +45,7 @@
       <arg choice="req" rep="norepeat">--profile=<replaceable>name</replaceable></arg>
       <arg choice="plain" rep="norepeat">instance</arg>
       <arg choice="plain" rep="norepeat">terminate</arg>
-      <arg choice="req" rep="norepeat">--id=<replaceable>uuid</replaceable></arg>
+      <arg choice="req" rep="norepeat">--id=<replaceable>unique id</replaceable></arg>
     </cmdsynopsis>
     <cmdsynopsis id="synopsis-vboxmanage-cloudinstance-start" sepchar=" ">
       <command moreinfo="none">VBoxManage cloud</command>
@@ -53,7 +53,7 @@
       <arg choice="req" rep="norepeat">--profile=<replaceable>name</replaceable></arg>
       <arg choice="plain" rep="norepeat">instance</arg>
       <arg choice="plain" rep="norepeat">start</arg>
-      <arg choice="req" rep="norepeat">--id=<replaceable>uuid</replaceable></arg>
+      <arg choice="req" rep="norepeat">--id=<replaceable>unique id</replaceable></arg>
     </cmdsynopsis>
     <cmdsynopsis id="synopsis-vboxmanage-cloudinstance-pause" sepchar=" ">
       <command moreinfo="none">VBoxManage cloud</command>
@@ -61,20 +61,38 @@
       <arg choice="req" rep="norepeat">--profile=<replaceable>name</replaceable></arg>
       <arg choice="plain" rep="norepeat">instance</arg>
       <arg choice="plain" rep="norepeat">pause</arg>
-      <arg choice="req" rep="norepeat">--id=<replaceable>uuid</replaceable></arg>
+      <arg choice="req" rep="norepeat">--id=<replaceable>unique id</replaceable></arg>
     </cmdsynopsis>
   </refsynopsisdiv>
 
   <refsect1>
     <title>Description</title>
+
+    <refsect2 id="vboxmanage-cloudinstance-common-options">
+      <title>Common options</title>
+      <remark role="help-scope" condition="GLOBAL"/>
+      <para>The subcommands of <command>cloudinstance</command> implement the standard operations for a cloud instance
+        like start/pause/show/terminate. The next common options must be placed between the "cloud" and  the following sub-commands:</para>
+      <variablelist>
+        <varlistentry>
+          <term>--provider=<replaceable>name</replaceable></term>
+          <listitem><para>Short cloud provider name.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term>--profile=<replaceable>name</replaceable></term>
+          <listitem><para>Cloud profile name. </para></listitem>
+        </varlistentry>
+      </variablelist>
+    </refsect2>
+
     <refsect2 id="vboxmanage-cloudinstance-info">
       <title>cloud instance info</title>
       <para>
-        Display information about a cloud instance with a specified id
+        Display information about a cloud instance with a specified id.
       </para>
       <variablelist>
         <varlistentry>
-          <term><option>--id</option></term><listitem><para>The unique identifier which fully identify the instance</para></listitem>
+          <term><option>--id</option></term><listitem><para>Unique identifier which fully identify the instance in the Cloud.</para></listitem>
         </varlistentry>
       </variablelist>
     </refsect2>
@@ -82,11 +100,11 @@
     <refsect2 id="vboxmanage-cloudinstance-terminate">
       <title>cloud instance termination</title>
       <para>
-        Delete a cloud instance with a specified id
+        Delete a cloud instance with a specified id.
       </para>
       <variablelist>
         <varlistentry>
-          <term><option>--id</option></term><listitem><para>The unique identifier which fully identify the instance</para></listitem>
+          <term><option>--id</option></term><listitem><para>Unique identifier which fully identify the instance in the Cloud.</para></listitem>
         </varlistentry>
       </variablelist>
     </refsect2>
@@ -94,11 +112,11 @@
     <refsect2 id="vboxmanage-cloudinstance-start">
       <title>cloud instance start</title>
       <para>
-        Start a cloud instance with a specified id
+        Start a cloud instance with a specified id.
       </para>
       <variablelist>
         <varlistentry>
-          <term><option>--id</option></term><listitem><para>The unique identifier which fully identify the instance</para></listitem>
+          <term><option>--id</option></term><listitem><para>Unique identifier which fully identify the instance in the Cloud.</para></listitem>
         </varlistentry>
       </variablelist>
     </refsect2>
@@ -106,11 +124,11 @@
     <refsect2 id="vboxmanage-cloudinstance-pause">
       <title>cloud instance pause</title>
       <para>
-        Pause a cloud instance with a specified id
+        Pause a cloud instance with a specified id.
       </para>
       <variablelist>
         <varlistentry>
-          <term><option>--id</option></term><listitem><para>The unique identifier which fully identify the instance</para></listitem>
+          <term><option>--id</option></term><listitem><para>Unique identifier which fully identify the instance in the Cloud.</para></listitem>
         </varlistentry>
       </variablelist>
     </refsect2>

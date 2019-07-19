@@ -29,8 +29,8 @@
 
   <refnamediv>
     <refname>VBoxManage-cloudlist</refname>
-    <refpurpose>The cloud list command gives information about some standard entities existed in the every Cloud
-    and which can be represented by the list like the list of instances/disk images/networks and etc.</refpurpose>
+    <refpurpose>The cloud list command gives information about some standard entities in the every Cloud
+    and which can be represented by the list like the list of instances/disk images/networks and etc</refpurpose>
     <refclass>Oracle VM VirtualBox</refclass>
   </refnamediv>
 
@@ -82,7 +82,7 @@
       </para>
       <variablelist>
         <varlistentry>
-          <term>--state=<replaceable>"running/paused/terminated"</replaceable></term>
+          <term>--state<replaceable>"running/paused/terminated"</replaceable></term>
           <listitem>
             <para>The state of cloud instance. The possible states are "running/paused/terminated" at moment.
             If the state isn't provided the list of instances with all possible states is returned.
@@ -108,7 +108,7 @@
       </para>
       <variablelist>
         <varlistentry>
-          <term>--state=<replaceable>"available/disabled/deleted"</replaceable></term>
+          <term>--state<replaceable>"available/disabled/deleted"</replaceable></term>
           <listitem>
             <para>The state of cloud image. The possible states are "available/disabled/deleted" at moment.
             If the state isn't provided the list of images with all possible states is returned.

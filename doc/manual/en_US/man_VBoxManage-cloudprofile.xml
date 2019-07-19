@@ -27,7 +27,7 @@
 
   <refnamediv>
     <refname>VBoxManage-cloudprofile</refname>
-    <refpurpose>manage the cloud profiles</refpurpose>
+    <refpurpose>Manage the cloud profiles</refpurpose>
     <refclass>Oracle VM VirtualBox</refclass>
   </refnamediv>
 
@@ -37,12 +37,12 @@
         <arg choice="req">--provider=<replaceable>name</replaceable></arg>
         <arg choice="req">--profile=<replaceable>name</replaceable></arg>
         <arg choice="plain">add</arg>
-        <arg>--clouduser=<replaceable>uuid</replaceable></arg>
+        <arg>--clouduser=<replaceable>unique id</replaceable></arg>
         <arg>--fingerprint=<replaceable>MD5 string</replaceable></arg>
         <arg>--keyfile=<replaceable>path</replaceable></arg>
         <arg>--passphrase=<replaceable>string</replaceable></arg>
-        <arg>--tenancy=<replaceable>uuid</replaceable></arg>
-        <arg>--compartment=<replaceable>uuid</replaceable></arg>
+        <arg>--tenancy=<replaceable>unique id</replaceable></arg>
+        <arg>--compartment=<replaceable>unique id</replaceable></arg>
         <arg>--region=<replaceable>string</replaceable></arg>
     </cmdsynopsis>
     <cmdsynopsis id="synopsis-vboxmanage-cloudprofile-update">
@@ -50,12 +50,12 @@
       <arg choice="req">--provider=<replaceable>name</replaceable></arg>
       <arg choice="req">--profile=<replaceable>name</replaceable></arg>
       <arg choice="plain">update</arg>
-      <arg>--clouduser=<replaceable>uuid</replaceable></arg>
+      <arg>--clouduser=<replaceable>unique id</replaceable></arg>
       <arg>--fingerprint=<replaceable>MD5 string</replaceable></arg>
       <arg>--keyfile=<replaceable>path</replaceable></arg>
       <arg>--passphrase=<replaceable>string</replaceable></arg>
-      <arg>--tenancy=<replaceable>uuid</replaceable></arg>
-      <arg>--compartment=<replaceable>uuid</replaceable></arg>
+      <arg>--tenancy=<replaceable>unique id</replaceable></arg>
+      <arg>--compartment=<replaceable>unique id</replaceable></arg>
       <arg>--region=<replaceable>string</replaceable></arg>
     </cmdsynopsis>
     <cmdsynopsis id="synopsis-vboxmanage-cloudprofile-delete">
@@ -78,8 +78,8 @@
     <refsect2 id="vboxmanage-cloudprofile-common-options">
       <title>Common options</title>
       <remark role="help-scope" condition="GLOBAL"/>
-      <para>The subcommands of <command>cloudprofile</command> realize the standard CRUD operations for a cloud profile.
-        The following common options can be placed before the sub-command:</para>
+      <para>The subcommands of <command>cloudprofile</command> implement the standard CRUD operations for a cloud profile.
+        The next common options must be placed between the "cloud" and  the following sub-commands:</para>
       <variablelist>
         <varlistentry>
           <term>--provider=<replaceable>name</replaceable></term>
@@ -100,7 +100,7 @@
       </para>
       <variablelist>
         <varlistentry>
-          <term><option>--clouduser</option></term><listitem><para>The name which fully identify the user in the specified cloud provider</para></listitem>
+          <term><option>--clouduser</option></term><listitem><para>The name which fully identifies the user in the specified cloud provider.</para></listitem>
         </varlistentry>
         <varlistentry>
           <term><option>--fingerprint</option></term><listitem><para>Fingerprint for the key pair being used.</para></listitem>
@@ -139,7 +139,7 @@
       </para>
       <variablelist>
         <varlistentry>
-          <term><option>--clouduser</option></term><listitem><para>The name which fully identify the user in the specified cloud provider</para></listitem>
+          <term><option>--clouduser</option></term><listitem><para>The name which fully identifies the user in the specified cloud provider.</para></listitem>
         </varlistentry>
         <varlistentry>
           <term><option>--fingerprint</option></term><listitem><para>Fingerprint for the key pair being used.</para></listitem>
