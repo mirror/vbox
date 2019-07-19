@@ -5154,8 +5154,6 @@ static int hmR0VmxExportGuestApicTpr(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
                      * are no interrupts pending, set threshold to 0 to not cause any
                      * TPR-below-threshold VM-exits.
                      */
-                    Assert(pVmcsInfo->pbVirtApic);
-                    pVmcsInfo->pbVirtApic[XAPIC_OFF_TPR] = u8Tpr;
                     uint32_t u32TprThreshold = 0;
                     if (fPendingIntr)
                     {
