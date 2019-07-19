@@ -6148,6 +6148,11 @@ static int hmR0VmxExportSharedDebugState(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransie
     {
         int rc = VMXWriteVmcs32(VMX_VMCS_GUEST_DR7, CPUMGetGuestDR7(pVCpu));
         AssertRCReturn(rc, rc);
+
+        /* Always intercept Mov DRx accesses for the nested-guest for now. */
+        pVmcsInfo->u32ProcCtls |= VMX_PROC_CTLS_MOV_DR_EXIT;
+        rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, pVmcsInfo->u32ProcCtls);
+        AssertRCReturn(rc, rc);
         return VINF_SUCCESS;
     }
 
@@ -10910,8 +10915,8 @@ static int hmR0VmxMergeVmcsNested(PVMCPU pVCpu)
      * address has also been updated in the nested-guest VMCS object during allocation.
      */
     PVMXVMCSINFO pVmcsInfoNstGst = &pVCpu->hm.s.vmx.VmcsInfoNstGst;
-    RTHCPHYS HCPhysVirtApic;
-    uint32_t u32TprThreshold;
+    RTHCPHYS     HCPhysVirtApic;
+    uint32_t     u32TprThreshold;
     if (u32ProcCtls & VMX_PROC_CTLS_USE_TPR_SHADOW)
     {
         Assert(pVM->hm.s.vmx.Msrs.ProcCtls.n.allowed1 & VMX_PROC_CTLS_USE_TPR_SHADOW);
@@ -16319,47 +16324,51 @@ HMVMX_EXIT_DECL hmR0VmxExitApicAccess(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 HMVMX_EXIT_DECL hmR0VmxExitMovDRx(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
-
-    /* We should -not- get this VM-exit if the guest's debug registers were active. */
-    if (pVmxTransient->fWasGuestDebugStateActive)
-    {
-        AssertMsgFailed(("Unexpected MOV DRx exit\n"));
-        HMVMX_UNEXPECTED_EXIT_RET(pVCpu, pVmxTransient->uExitReason);
-    }
-
     PVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
-    if (   !pVCpu->hm.s.fSingleInstruction
-        && !pVmxTransient->fWasHyperDebugStateActive)
+
+    /* We might get this VM-exit if the nested-guest is not intercepting MOV DRx accesses. */
+    if (!pVmxTransient->fIsNestedGuest)
     {
-        Assert(!DBGFIsStepping(pVCpu));
-        Assert(pVmcsInfo->u32XcptBitmap & RT_BIT(X86_XCPT_DB));
+        /* We should -not- get this VM-exit if the guest's debug registers were active. */
+        if (pVmxTransient->fWasGuestDebugStateActive)
+        {
+            AssertMsgFailed(("Unexpected MOV DRx exit\n"));
+            HMVMX_UNEXPECTED_EXIT_RET(pVCpu, pVmxTransient->uExitReason);
+        }
 
-        /* Don't intercept MOV DRx any more. */
-        pVmcsInfo->u32ProcCtls &= ~VMX_PROC_CTLS_MOV_DR_EXIT;
-        int rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, pVmcsInfo->u32ProcCtls);
-        AssertRCReturn(rc, rc);
+        if (   !pVCpu->hm.s.fSingleInstruction
+            && !pVmxTransient->fWasHyperDebugStateActive)
+        {
+            Assert(!DBGFIsStepping(pVCpu));
+            Assert(pVmcsInfo->u32XcptBitmap & RT_BIT(X86_XCPT_DB));
 
-        /* We're playing with the host CPU state here, make sure we can't preempt or longjmp. */
-        VMMRZCallRing3Disable(pVCpu);
-        HM_DISABLE_PREEMPT(pVCpu);
+            /* Don't intercept MOV DRx any more. */
+            pVmcsInfo->u32ProcCtls &= ~VMX_PROC_CTLS_MOV_DR_EXIT;
+            int rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, pVmcsInfo->u32ProcCtls);
+            AssertRCReturn(rc, rc);
 
-        /* Save the host & load the guest debug state, restart execution of the MOV DRx instruction. */
-        CPUMR0LoadGuestDebugState(pVCpu, true /* include DR6 */);
-        Assert(CPUMIsGuestDebugStateActive(pVCpu) || HC_ARCH_BITS == 32);
+            /* We're playing with the host CPU state here, make sure we can't preempt or longjmp. */
+            VMMRZCallRing3Disable(pVCpu);
+            HM_DISABLE_PREEMPT(pVCpu);
 
-        HM_RESTORE_PREEMPT();
-        VMMRZCallRing3Enable(pVCpu);
+            /* Save the host & load the guest debug state, restart execution of the MOV DRx instruction. */
+            CPUMR0LoadGuestDebugState(pVCpu, true /* include DR6 */);
+            Assert(CPUMIsGuestDebugStateActive(pVCpu) || HC_ARCH_BITS == 32);
+
+            HM_RESTORE_PREEMPT();
+            VMMRZCallRing3Enable(pVCpu);
 
 #ifdef VBOX_WITH_STATISTICS
-        rc = hmR0VmxReadExitQualVmcs(pVCpu, pVmxTransient);
-        AssertRCReturn(rc, rc);
-        if (VMX_EXIT_QUAL_DRX_DIRECTION(pVmxTransient->uExitQual) == VMX_EXIT_QUAL_DRX_DIRECTION_WRITE)
-            STAM_COUNTER_INC(&pVCpu->hm.s.StatExitDRxWrite);
-        else
-            STAM_COUNTER_INC(&pVCpu->hm.s.StatExitDRxRead);
+            rc = hmR0VmxReadExitQualVmcs(pVCpu, pVmxTransient);
+            AssertRCReturn(rc, rc);
+            if (VMX_EXIT_QUAL_DRX_DIRECTION(pVmxTransient->uExitQual) == VMX_EXIT_QUAL_DRX_DIRECTION_WRITE)
+                STAM_COUNTER_INC(&pVCpu->hm.s.StatExitDRxWrite);
+            else
+                STAM_COUNTER_INC(&pVCpu->hm.s.StatExitDRxRead);
 #endif
-        STAM_COUNTER_INC(&pVCpu->hm.s.StatDRxContextSwitch);
-        return VINF_SUCCESS;
+            STAM_COUNTER_INC(&pVCpu->hm.s.StatDRxContextSwitch);
+            return VINF_SUCCESS;
+        }
     }
 
     /*
