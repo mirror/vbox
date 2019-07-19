@@ -1225,6 +1225,14 @@ bool UIMessageCenter::confirmCancelingPortForwardingDialog(QWidget *pParent /* =
                           false /* ok button by default? */);
 }
 
+void UIMessageCenter::cannotChangeMachineAttribute(const CMachine &comMachine, QWidget *pParent /* = 0 */) const
+{
+    error(pParent, MessageType_Error,
+          tr("Failed to change the attribute of the virtual machine <b>%1</b>.")
+             .arg(comMachine.GetName()),
+          UIErrorString::formatErrorInfo(comMachine));
+}
+
 void UIMessageCenter::cannotSaveMachineSettings(const CMachine &machine, QWidget *pParent /* = 0*/) const
 {
     error(pParent, MessageType_Error,

@@ -24,7 +24,9 @@
 #include <QStyleOptionGraphicsItem>
 
 /* GUI includes: */
+#include "QIDialogContainer.h"
 #include "UIActionPool.h"
+#include "UICommon.h"
 #include "UIConverter.h"
 #include "UIDetailsElement.h"
 #include "UIDetailsSet.h"
@@ -33,14 +35,15 @@
 #include "UIGraphicsRotatorButton.h"
 #include "UIGraphicsTextPane.h"
 #include "UIIconPool.h"
+#include "UINameAndSystemEditor.h"
 #include "UIVirtualBoxManager.h"
-#include "UICommon.h"
 
 
 /** Known anchor roles. */
 enum AnchorRole
 {
     AnchorRole_Invalid,
+    AnchorRole_MachineName,
     AnchorRole_Storage,
 };
 
@@ -140,6 +143,7 @@ void UIDetailsElement::updateAppearance()
 
     /* Update anchor role restrictions: */
     ConfigurationAccessLevel cal = m_pSet->configurationAccessLevel();
+    m_pTextPane->setAnchorRoleRestricted("#machine_name", cal != ConfigurationAccessLevel_Full);
     m_pTextPane->setAnchorRoleRestricted("#mount", cal == ConfigurationAccessLevel_Null);
     m_pTextPane->setAnchorRoleRestricted("#attach", cal != ConfigurationAccessLevel_Full);
 }
@@ -419,6 +423,7 @@ void UIDetailsElement::sltHandleAnchorClicked(const QString &strAnchor)
 {
     /* Compose a map of known anchor roles: */
     QMap<QString, AnchorRole> roles;
+    roles["#machine_name"] = AnchorRole_MachineName;
     roles["#mount"] = AnchorRole_Storage;
     roles["#attach"] = AnchorRole_Storage;
 
@@ -429,6 +434,35 @@ void UIDetailsElement::sltHandleAnchorClicked(const QString &strAnchor)
     /* Handle known anchor roles: */
     switch (roles.value(strRole, AnchorRole_Invalid))
     {
+        case AnchorRole_MachineName:
+        {
+            /* Prepare popup: */
+            QPointer<QIDialogContainer> pPopup = new QIDialogContainer(0, Qt::Popup);
+            if (pPopup)
+            {
+                /* Prepare name editor: */
+                UINameAndSystemEditor *pEditor = new UINameAndSystemEditor(pPopup, true, false, false);
+                if (pEditor)
+                {
+                    pEditor->setName(strData.section(',', 0, 0));
+
+                    /* Add to container: */
+                    pPopup->setWidget(pEditor);
+                }
+
+                /* Adjust dialog geometry: */
+                pPopup->move(QCursor::pos());
+                pPopup->adjustSize();
+
+                /* Execute the dialog: */
+                if (pPopup->exec() == QDialog::Accepted)
+                    uiCommon().setMachineName(machine(), pEditor->name());
+
+                /* Delete popup: */
+                delete pPopup;
+            }
+            break;
+        }
         case AnchorRole_Storage:
         {
             /* Prepare storage-menu: */

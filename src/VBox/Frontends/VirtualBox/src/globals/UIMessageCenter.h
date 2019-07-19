@@ -328,6 +328,7 @@ public:
     bool warnAboutNameShouldBeUnique(QWidget *pParent = 0) const;
     bool warnAboutRulesConflict(QWidget *pParent = 0) const;
     bool confirmCancelingPortForwardingDialog(QWidget *pParent = 0) const;
+    void cannotChangeMachineAttribute(const CMachine &comMachine, QWidget *pParent = 0) const;
     void cannotSaveMachineSettings(const CMachine &machine, QWidget *pParent = 0) const;
 
     /* API: Virtual Medium Manager warnings: */

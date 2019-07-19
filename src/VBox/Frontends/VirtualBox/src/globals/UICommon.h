@@ -475,6 +475,9 @@ public:
           * if yes, new session of required type will be opened and machine will be updated,
           * otherwise, no session will be created and machine will be left unchanged. */
         CSession tryToOpenSessionFor(CMachine &comMachine);
+
+        /** Changes @a comMachine @a strName. */
+        void setMachineName(const CMachine &comMachine, const QString &strName);
     /** @} */
 
     /** @name COM: Virtual Media stuff.

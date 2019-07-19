@@ -58,7 +58,13 @@ UITextTable UIDetailsGenerator::generateMachineInformationGeneral(CMachine &comM
 
     /* Name: */
     if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral_Name)
-        table << UITextTableLine(QApplication::translate("UIDetails", "Name", "details (general)"), comMachine.GetName());
+    {
+        /* Configure hovering anchor: */
+        const QString strAnchorType = QString("machine_name");
+        const QString strName = comMachine.GetName();
+        table << UITextTableLine(QApplication::translate("UIDetails", "Name", "details (general)"),
+                                 QString("<a href=#%1,%2>%2</a>").arg(strAnchorType, strName));
+    }
 
     /* Operating system: */
     if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral_OS)
