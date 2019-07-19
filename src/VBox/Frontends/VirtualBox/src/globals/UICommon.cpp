@@ -2492,6 +2492,34 @@ CSession UICommon::openSession(const QUuid &uId, KLockType lockType /* = KLockTy
     return comSession;
 }
 
+CSession UICommon::tryToOpenSessionFor(CMachine &comMachine)
+{
+    /* Prepare session: */
+    CSession comSession;
+
+    /* Session state unlocked? */
+    if (comMachine.GetSessionState() == KSessionState_Unlocked)
+    {
+        /* Open own 'write' session: */
+        comSession = openSession(comMachine.GetId());
+        AssertReturn(!comSession.isNull(), CSession());
+        comMachine = comSession.GetMachine();
+    }
+    /* Is this a Selector UI call? */
+    else if (uiType() == UIType_SelectorUI)
+    {
+        /* Open existing 'shared' session: */
+        comSession = openExistingSession(comMachine.GetId());
+        AssertReturn(!comSession.isNull(), CSession());
+        comMachine = comSession.GetMachine();
+    }
+    /* Else this is Runtime UI call
+     * which has session locked for itself. */
+
+    /* Return session: */
+    return comSession;
+}
+
 void UICommon::startMediumEnumeration(const CMediumVector &comMedia /* = CMediumVector() */)
 {
     /* Make sure UICommon is already valid: */
@@ -3243,28 +3271,9 @@ void UICommon::updateMachineStorage(const CMachine &comConstMachine, const UIMed
     if (target.mediumType == UIMediumDeviceType_HardDisk && !fMount)
         return;
 
-    /* Get editable machine: */
-    CSession comSession;
+    /* Get editable machine & session: */
     CMachine comMachine = comConstMachine;
-    KSessionState enmSessionState = comMachine.GetSessionState();
-    /* Session state unlocked? */
-    if (enmSessionState == KSessionState_Unlocked)
-    {
-        /* Open own 'write' session: */
-        comSession = openSession(comMachine.GetId());
-        AssertReturnVoid(!comSession.isNull());
-        comMachine = comSession.GetMachine();
-    }
-    /* Is this a Selector UI call? */
-    else if (uiType() == UIType_SelectorUI)
-    {
-        /* Open existing 'shared' session: */
-        comSession = openExistingSession(comMachine.GetId());
-        AssertReturnVoid(!comSession.isNull());
-        comMachine = comSession.GetMachine();
-    }
-    /* Else this is Runtime UI call
-     * which has session locked for itself. */
+    CSession comSession = tryToOpenSessionFor(comMachine);
 
     /* Remount medium to the predefined port/device: */
     bool fWasMounted = false;
