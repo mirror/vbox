@@ -333,6 +333,8 @@ void UINameAndSystemEditor::prepareWidgets()
     if (pMainLayout)
     {
         pMainLayout->setContentsMargins(0, 0, 0, 0);
+        pMainLayout->setColumnStretch(0, 0);
+        pMainLayout->setColumnStretch(1, 1);
 
         int iRow = 0;
 
