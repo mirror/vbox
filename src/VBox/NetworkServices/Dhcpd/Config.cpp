@@ -30,7 +30,7 @@
 #include <iprt/uuid.h>
 #include <iprt/cpp/path.h>
 
-#include <VBox/com/com.h>       /* For log initialization. */
+#include <VBox/com/utils.h>     /* For log initialization. */
 
 #include "Config.h"
 

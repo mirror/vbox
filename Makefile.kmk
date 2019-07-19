@@ -831,7 +831,8 @@ VBOX_CORE_DOXYFILE_INPUT_FIRST =\
 	$(PATH_ROOT)/include/VBox/param.h \
 	$(PATH_ROOT)/include/VBox/version.h \
        \
-	$(PATH_ROOT)/include/VBox/com/com.h
+	$(PATH_ROOT)/include/VBox/com/com.h \
+	$(PATH_ROOT)/include/VBox/com/utils.h
 
 VBOX_CORE_DOXYFILE_INPUT := \
 	$(filter-out %.cpp.h, $(sort $(wildcard $(addsuffix /*.h, $(VBOX_CORE_DOXYFILE_INPUT_DIRS)))) ) \
