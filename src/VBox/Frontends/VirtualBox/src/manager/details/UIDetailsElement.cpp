@@ -409,30 +409,45 @@ void UIDetailsElement::sltElementToggleFinish(bool fToggled)
 
 void UIDetailsElement::sltHandleAnchorClicked(const QString &strAnchor)
 {
+    /* Enumerate known anchor roles: */
+    enum AnchorRole
+    {
+        AnchorRole_Invalid,
+        AnchorRole_Storage,
+    };
+    /* Compose a map of known anchor roles: */
+    QMap<QString, AnchorRole> roles;
+    roles["#mount"] = AnchorRole_Storage;
+    roles["#attach"] = AnchorRole_Storage;
+
     /* Current anchor role: */
     const QString strRole = strAnchor.section(',', 0, 0);
     const QString strData = strAnchor.section(',', 1);
 
     /* Handle known anchor roles: */
-    if (   strRole == "#mount"  // Optical and floppy attachments..
-        || strRole == "#attach" // Hard-drive attachments..
-        )
+    switch (roles.value(strRole, AnchorRole_Invalid))
     {
-        /* Prepare storage-menu: */
-        UIMenu menu;
-        menu.setShowToolTip(true);
+        case AnchorRole_Storage:
+        {
+            /* Prepare storage-menu: */
+            UIMenu menu;
+            menu.setShowToolTip(true);
 
-        /* Storage-controller name: */
-        QString strControllerName = strData.section(',', 0, 0);
-        /* Storage-slot: */
-        StorageSlot storageSlot = gpConverter->fromString<StorageSlot>(strData.section(',', 1));
+            /* Storage-controller name: */
+            QString strControllerName = strData.section(',', 0, 0);
+            /* Storage-slot: */
+            StorageSlot storageSlot = gpConverter->fromString<StorageSlot>(strData.section(',', 1));
 
-        /* Fill storage-menu: */
-        uiCommon().prepareStorageMenu(menu, this, SLOT(sltMountStorageMedium()),
-                                        machine(), strControllerName, storageSlot);
+            /* Fill storage-menu: */
+            uiCommon().prepareStorageMenu(menu, this, SLOT(sltMountStorageMedium()),
+                                          machine(), strControllerName, storageSlot);
 
-        /* Exec menu: */
-        menu.exec(QCursor::pos());
+            /* Exec menu: */
+            menu.exec(QCursor::pos());
+            break;
+        }
+        default:
+            break;
     }
 }
 
