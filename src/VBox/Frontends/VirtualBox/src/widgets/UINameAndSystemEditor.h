@@ -66,8 +66,13 @@ signals:
 public:
 
     /** Constructs VM parameters editor passing @a pParent to the base-class.
-     * @param  fChooseFullPath  Controls whether we should propose to choose location. */
-    UINameAndSystemEditor(QWidget *pParent, bool fChooseLocation = false);
+     * @param  fChooseName  Controls whether we should propose to choose name.
+     * @param  fChoosePath  Controls whether we should propose to choose path.
+     * @param  fChooseType  Controls whether we should propose to choose type. */
+    UINameAndSystemEditor(QWidget *pParent,
+                          bool fChooseName = true,
+                          bool fChoosePath = false,
+                          bool fChooseType = true);
 
     /** Defines the VM @a strName. */
     void setName(const QString &strName);
@@ -134,8 +139,12 @@ private:
     /** Holds the currently chosen OS type IDs on per-family basis. */
     QMap<QString, QString>  m_currentIds;
 
-    /** Holds whether we should propose to choose a full path. */
-    bool  m_fChooseLocation;
+    /** Holds whether we should propose to choose a name. */
+    bool  m_fChooseName;
+    /** Holds whether we should propose to choose a path. */
+    bool  m_fChoosePath;
+    /** Holds whether we should propose to choose a type. */
+    bool  m_fChooseType;
     /** Holds whether host supports hardware virtualization. */
     bool  m_fSupportsHWVirtEx;
     /** Holds whether host supports long mode. */

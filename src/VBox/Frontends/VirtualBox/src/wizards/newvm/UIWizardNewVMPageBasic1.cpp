@@ -325,7 +325,7 @@ UIWizardNewVMPageBasic1::UIWizardNewVMPageBasic1(const QString &strGroup)
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     {
         m_pLabel = new QIRichTextLabel(this);
-        m_pNameAndSystemEditor = new UINameAndSystemEditor(this, true);
+        m_pNameAndSystemEditor = new UINameAndSystemEditor(this, true, true, true);
         pMainLayout->addWidget(m_pLabel);
         pMainLayout->addWidget(m_pNameAndSystemEditor);
         pMainLayout->addStretch();
