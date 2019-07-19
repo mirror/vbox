@@ -44,7 +44,8 @@ VBOX_MANUAL_XML_REFENTRY_FILES := \
 	man_VBoxManage-unattended.xml \
 	man_VBoxManage-cloudprofile.xml \
 	man_VBoxManage-cloudlist.xml \
-	man_VBoxManage-cloudinstance.xml
+	man_VBoxManage-cloudinstance.xml \
+	man_VBoxManage-cloudimage.xml
 
 ## List of user manual XML files.
 VBOX_MANUAL_XML_FILES = \
