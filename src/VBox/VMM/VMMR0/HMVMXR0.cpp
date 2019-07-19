@@ -3033,6 +3033,20 @@ static void hmR0VmxFlushTaggedTlbBoth(PHMPHYSCPU pHostCpu, PVMCPU pVCpu, PCVMXVM
         STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushTlb);
         HMVMX_SET_TAGGED_TLB_FLUSHED();
     }
+    else if (pVCpu->hm.s.vmx.fSwitchedNstGstFlushTlb)
+    {
+        /*
+         * The nested-guest specifies its own guest-physical address to use as the APIC-access
+         * address which requires flushing the TLB of EPT cached structures.
+         *
+         * See Intel spec. 28.3.3.4 "Guidelines for Use of the INVEPT Instruction".
+         */
+        hmR0VmxFlushEpt(pVCpu, pVmcsInfo, pVM->hm.s.vmx.enmTlbFlushEpt);
+        pVCpu->hm.s.vmx.fSwitchedNstGstFlushTlb = false;
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushTlbNstGst);
+        HMVMX_SET_TAGGED_TLB_FLUSHED();
+    }
+
 
     pVCpu->hm.s.fForceTLBFlush = false;
     HMVMX_UPDATE_FLUSH_SKIPPED_STAT();
@@ -3090,6 +3104,14 @@ static void hmR0VmxFlushTaggedTlbEpt(PHMPHYSCPU pHostCpu, PVMCPU pVCpu, PCVMXVMC
         STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushTlb);
     }
 
+    /* Check for TLB flushes while switching to/from a nested-guest. */
+    if (pVCpu->hm.s.vmx.fSwitchedNstGstFlushTlb)
+    {
+        pVCpu->hm.s.fForceTLBFlush = true;
+        pVCpu->hm.s.vmx.fSwitchedNstGstFlushTlb = false;
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushTlbNstGst);
+    }
+
     pVCpu->hm.s.idLastCpu   = pHostCpu->idCpu;
     pVCpu->hm.s.cTlbFlushes = pHostCpu->cTlbFlushes;
 
@@ -3141,6 +3163,14 @@ static void hmR0VmxFlushTaggedTlbVpid(PHMPHYSCPU pHostCpu, PVMCPU pVCpu)
          */
         pVCpu->hm.s.fForceTLBFlush = true;
         STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushTlb);
+    }
+
+    /* Check for TLB flushes while switching to/from a nested-guest. */
+    if (pVCpu->hm.s.vmx.fSwitchedNstGstFlushTlb)
+    {
+        pVCpu->hm.s.fForceTLBFlush = true;
+        pVCpu->hm.s.vmx.fSwitchedNstGstFlushTlb = false;
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushTlbNstGst);
     }
 
     PVM pVM = pVCpu->CTX_SUFF(pVM);
@@ -10958,6 +10988,13 @@ static int hmR0VmxMergeVmcsNested(PVMCPU pVCpu)
     pVmcsInfoNstGst->u32XcptPFMask  = u32XcptPFMask;
     pVmcsInfoNstGst->u32XcptPFMatch = u32XcptPFMatch;
     pVmcsInfoNstGst->HCPhysVirtApic = HCPhysVirtApic;
+
+    /*
+     * We need to flush the TLB if we are switching the API-access page address.
+     * See Intel spec. 28.3.3.4 "Guidelines for Use of the INVEPT Instruction".
+     */
+    if (u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_APIC_ACCESS)
+        pVCpu->hm.s.vmx.fSwitchedNstGstFlushTlb = true;
 
     /*
      * MSR bitmap.

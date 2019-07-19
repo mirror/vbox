@@ -993,8 +993,11 @@ typedef struct HMCPU
             bool                        fMergedNstGstCtls;
             /** Whether the nested-guest VMCS has been copied to the shadow VMCS. */
             bool                        fCopiedNstGstToShadowVmcs;
+            /** Whether flushing the TLB is required due to switching to/from the
+             *  nested-geust. */
+            bool                        fSwitchedNstGstFlushTlb;
             /** Alignment. */
-            bool                        afAlignment0[5];
+            bool                        afAlignment0[4];
             /** Cached guest APIC-base MSR for identifying when to map the APIC-access page. */
             uint64_t                    u64GstMsrApicBase;
             /** VMCS cache for batched vmread/vmwrites. */
