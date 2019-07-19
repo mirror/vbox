@@ -16993,6 +16993,7 @@ HMVMX_EXIT_DECL hmR0VmxExitXcptOrNmiNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTrans
                                                                    pVmxTransient->uExitIntErrorCode);
             if (fIntercept)
             {
+                /* Exit qualification is required for debug and page-fault exceptions. */
                 rc = hmR0VmxReadExitQualVmcs(pVCpu, pVmxTransient);
                 AssertRCReturn(rc, rc);
 
