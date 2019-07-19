@@ -478,6 +478,8 @@ else  # !VBOX_ONLY_DOCS
 #
  ifdef VBOX_WITH_ALL_DOXYGEN_TARGETS
 docs: docs.Core
+ else
+docs:
  endif
 endif # !VBOX_ONLY_DOCS
 
