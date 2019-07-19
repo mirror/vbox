@@ -64,22 +64,26 @@ else ifdef VBOX_ONLY_VALIDATIONKIT
  include $(PATH_SUB_CURRENT)/ValidationKit/Makefile.kmk
 
 else
- ifdef VBOX_WITH_MAIN
+ if defined(VBOX_WITH_MAIN) && "$(intersects $(KBUILD_TARGET_ARCH),$(VBOX_SUPPORTED_HOST_ARCHS))" != ""
   include $(PATH_SUB_CURRENT)/Main/Makefile.kmk 			# Do this one first because of soap.
  endif
  include $(PATH_SUB_CURRENT)/Runtime/Makefile.kmk
  include $(PATH_SUB_CURRENT)/Disassembler/Makefile.kmk
  include $(PATH_SUB_CURRENT)/Storage/Makefile.kmk
- if1of ($(KBUILD_TARGET_ARCH), amd64 x86)
+ if1of ($(KBUILD_TARGET_ARCH), $(VBOX_SUPPORTED_HOST_ARCHS))
   include $(PATH_SUB_CURRENT)/VMM/Makefile.kmk
-  include $(PATH_SUB_CURRENT)/Devices/Makefile.kmk
+ endif
+ include $(PATH_SUB_CURRENT)/Devices/Makefile.kmk
+ if1of ($(KBUILD_TARGET_ARCH), $(VBOX_SUPPORTED_HOST_ARCHS) x86) # x86: For now include SUPR3.
   include $(PATH_SUB_CURRENT)/HostDrivers/Makefile.kmk
+ endif
+ if1of ($(KBUILD_TARGET_ARCH), $(VBOX_SUPPORTED_HOST_ARCHS))
   include $(PATH_SUB_CURRENT)/HostServices/Makefile.kmk
+  ifdef VBOX_WITH_DEBUGGER
+   include $(PATH_SUB_CURRENT)/Debugger/Makefile.kmk
+  endif
+  include $(PATH_SUB_CURRENT)/Frontends/Makefile.kmk
  endif
- ifdef VBOX_WITH_DEBUGGER
-  include $(PATH_SUB_CURRENT)/Debugger/Makefile.kmk
- endif
- include $(PATH_SUB_CURRENT)/Frontends/Makefile.kmk
  ifdef VBOX_WITH_VRDP
   include $(PATH_SUB_CURRENT)/RDP/Makefile.kmk
  else ifdef VBOX_WITH_VRDP_RDESKTOP
@@ -94,14 +98,12 @@ else
  ifdef VBOX_WITH_VALIDATIONKIT
   include $(PATH_SUB_CURRENT)/ValidationKit/Makefile.kmk
  endif
- ifdef VBOX_WITH_MAIN
-  if1of ($(KBUILD_TARGET_ARCH), amd64 x86)
-   include $(PATH_SUB_CURRENT)/NetworkServices/Makefile.kmk
-  endif
+ include $(PATH_SUB_CURRENT)/NetworkServices/Makefile.kmk
+ if1of ($(KBUILD_TARGET_ARCH), $(VBOX_SUPPORTED_HOST_ARCHS))
+  include $(PATH_SUB_CURRENT)/ExtPacks/Makefile.kmk
  endif
- include $(PATH_SUB_CURRENT)/ExtPacks/Makefile.kmk
  include $(PATH_SUB_CURRENT)/ImageMounter/Makefile.kmk
- ifdef VBOX_WITH_INSTALLER
+ if defined(VBOX_WITH_INSTALLER) && "$(intersects $(KBUILD_TARGET_ARCH),$(VBOX_SUPPORTED_HOST_ARCHS))" != ""
   include $(PATH_SUB_CURRENT)/Installer/Makefile.kmk 		        # Keep this last.
  endif
 endif # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_DOCS

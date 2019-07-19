@@ -67,7 +67,8 @@ endif
 # Main related things - XPCOM and XSLT.
 if defined(VBOX_WITH_MAIN) \
  && !defined(VBOX_ONLY_ADDITIONS) \
- && !defined(VBOX_ONLY_VALIDATIONKIT)
+ && !defined(VBOX_ONLY_VALIDATIONKIT) \
+ && "$(intersects $(KBUILD_TARGET_ARCH),$(VBOX_SUPPORTED_HOST_ARCHS))" != ""
 
  if defined(VBOX_WITH_XPCOM) && !defined(VBOX_ONLY_DOCS)
   include $(PATH_SUB_CURRENT)/xpcom18a4/Makefile.kmk

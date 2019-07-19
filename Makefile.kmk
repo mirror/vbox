@@ -23,7 +23,8 @@ include $(KBUILD_PATH)/subheader.kmk
 #
 ifndef VBOX_ONLY_ROOT_MAKEFILE
  if  (defined(VBOX_WITH_DOCS) || defined(VBOX_WITH_MAIN)) \
-  && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DOCS) || defined(VBOX_ONLY_SDK))
+  && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DOCS) || defined(VBOX_ONLY_SDK)) \
+  && "$(intersects $(KBUILD_TARGET_ARCH),$(VBOX_SUPPORTED_HOST_ARCHS))" != ""
   include $(PATH_SUB_CURRENT)/doc/manual/Makefile.kmk
  endif
  include $(PATH_SUB_CURRENT)/src/Makefile.kmk

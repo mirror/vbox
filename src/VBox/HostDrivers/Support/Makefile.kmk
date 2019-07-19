@@ -32,7 +32,8 @@ include $(KBUILD_PATH)/subheader.kmk
 #
 LIBRARIES += SUPR3 SUPR3Static
 if   defined(VBOX_WITH_HARDENING) \
- && !defined(VBOX_ONLY_VALIDATIONKIT)
+ && !defined(VBOX_ONLY_VALIDATIONKIT) \
+ && "$(intersects $(KBUILD_TARGET_ARCH),$(VBOX_SUPPORTED_HOST_ARCHS))" != ""
  LIBRARIES += SUPR3HardenedStatic
 endif
 DLLS.win += VBoxSupLib
@@ -49,7 +50,8 @@ if !defined(VBOX_ONLY_BUILD) && defined(VBOX_WITH_RAW_MODE)
 endif
 if  !defined(VBOX_ONLY_DOCS) \
  && !defined(VBOX_ONLY_EXTPACKS) \
- && !defined(VBOX_ONLY_VALIDATIONKIT)
+ && !defined(VBOX_ONLY_VALIDATIONKIT) \
+ && "$(intersects $(KBUILD_TARGET_ARCH),$(VBOX_SUPPORTED_HOST_ARCHS))" != ""
  ifdef VBOX_WITH_SUPSVC
   PROGRAMS += VBoxSupSvc
  endif

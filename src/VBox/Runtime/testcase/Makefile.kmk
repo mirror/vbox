@@ -207,20 +207,23 @@ if1of ($(KBUILD_TARGET_ARCH), amd64 x86)
   	tstRTR0ThreadPreemptionDriver \
   	tstRTR0ThreadDriver
  endif
+ if1of ($(KBUILD_TARGET_ARCH), $(VBOX_SUPPORTED_HOST_ARCHS))
+  SYSMODS += \
+  	tstLdrObjR0
+  ifdef VBOX_WITH_RAW_MODE
+   SYSMODS += tstLdrObj
+  endif
+ endif
  SYSMODS += \
- 	tstLdrObjR0 \
  	tstRTR0MemUserKernel \
  	tstRTR0SemMutex \
  	tstRTR0Timer \
  	tstRTR0ThreadPreemption \
  	tstRTR0Thread
- ifdef VBOX_WITH_RAW_MODE
-  SYSMODS += tstLdrObj
- endif
  if1of ($(KBUILD_TARGET), solaris darwin)
   PROGRAMS += tstRTR0DbgKrnlInfoDriver
   SYSMODS += tstRTR0DbgKrnlInfo
- endif
+ endif # VBOX_SUPPORTED_HOST_ARCHS only
 
 endif
 if1of ($(VBOX_LDR_FMT)), lx pe)

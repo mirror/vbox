@@ -28,11 +28,8 @@ endif
 #
 include $(PATH_SUB_CURRENT)/InstallHelper/Makefile.kmk
 
-ifeq ($(KBUILD_TARGET_ARCH),x86)
- include $(PATH_SUB_CURRENT)/Stub/Makefile.kmk
- include $(PATH_SUB_CURRENT)/StubBld/Makefile.kmk
-endif
-
+include $(PATH_SUB_CURRENT)/Stub/Makefile.kmk
+include $(PATH_SUB_CURRENT)/StubBld/Makefile.kmk
 include $(PATH_SUB_CURRENT)/Resources/Makefile.kmk
 ifdef VBOX_WITH_MSI_HACK
  include $(PATH_SUB_CURRENT)/MsiHack/Makefile.kmk
@@ -156,7 +153,9 @@ ifdef VBOX_WITH_COMBINED_PACKAGE
   PACKING += $(PATH_STAGE_BIN)/$(PACKAGE_NAME_MULTIARCH_FINAL)
  endif
 else
- PACKING += $(PACKAGE_NAME_FINAL)
+ PACKAGE_NAME_MULTIARCH             := $(PACKAGE_NAME_LANG)-MultiArch
+ PACKAGE_NAME_MULTIARCH_FINAL       := $(PACKAGE_NAME_MULTIARCH).exe
+ PACKING += $(PACKAGE_NAME_FINAL) $(PATH_STAGE_BIN)/$(PACKAGE_NAME_MULTIARCH_FINAL)
 endif
 BLDDIRS += \
 	$(VBOX_WIN_INST_OUT_DIR) \
@@ -197,12 +196,12 @@ OTHER_CLEAN += \
 	$(VBOX_WIN_INST_OUT_DIR)/Files_License.wxi \
 	$(VBOX_WIN_INST_OUT_DIR)/Shortcuts_StartMenu.wxi \
 	$(VBOX_WIN_INST_OUT_DIR)/$(PACKAGE_NAME_LANG).msi \
-	$(VBOX_WIN_INST_REPACK_DIR)/3-multilingual-$(PACKAGE_NAME_LANG).cmd
+	$(VBOX_WIN_INST_REPACK_DIR)/3-multilingual-$(PACKAGE_NAME_LANG).cmd \
+	$(PATH_STAGE_BIN)/$(PACKAGE_NAME_MULTIARCH_FINAL)
 
 ifdef VBOX_WITH_COMBINED_PACKAGE
  ifeq ($(KBUILD_TARGET_ARCH),x86)
   OTHER_CLEAN += \
-  	$(PATH_STAGE_BIN)/$(PACKAGE_NAME_MULTIARCH_FINAL) \
   	$(VBOX_WIN_INST_REPACK_DIR)/4-multiarch-$(@F).cmd \
   	$(PATH_MULTIARCH_TEMP)/$(PACKAGE_NAME_MULTIARCH.x86)
  endif
@@ -1041,6 +1040,41 @@ $(PATH_STAGE_BIN)/$(PACKAGE_NAME_MULTIARCH_FINAL) \
 		'  -target-amd64 ../../../win.amd64/$(KBUILD_TYPE)/repack/$(PACKAGE_NAME_MULTIARCH.amd64) ^' \
 		$(if-expr defined(VBOX_WITH_MSM_INSTALL),\
 		,'  -target-all ../../../win.amd64/$(KBUILD_TYPE)/repack/$(notdir $(PACKAGE_NAME_MULTIARCH_COMMONCAB)) ^' ) \
+		'  -stub ../bin/VBoxStub.exe || exit /b1' \
+		'$(VBOX_VCC_EDITBIN) /IntegrityCheck:NO $(@F) || exit /b1' \
+		'call sign-dual.cmd $(@F) || exit /b1' \
+		) ) \
+		'@echo Create multiarch EXE: $(@F)'
+else
+#
+# We still do the installer stub thing even if we only ship 64-bit, because we've
+# gotten used to having it around to install the certificate and such.
+#
+$(PATH_STAGE_BIN)/$(PACKAGE_NAME_MULTIARCH_FINAL) \
++ $(VBOX_WIN_INST_REPACK_DIR)/4-multiarch-$(PACKAGE_NAME_MULTIARCH_FINAL).cmd: \
+		$(PACKAGE_NAME_FINAL) \
+		$(PATH_STAGE_BIN)/VBoxStub.exe \
+		$$(VBoxStubBld_1_TARGET)
+	$(call MSG_L1,Building Windows package w/ installer stub)
+	$(QUIET)$(RM) -f -- $(wildcard $(subst r$(VBOX_SVN_REV),r*, \
+		$@ \
+		$(VBOX_WIN_INST_REPACK_DIR)/4-multiarch-$(PACKAGE_NAME_MULTIARCH_FINAL).cmd ) )
+	$(REDIRECT) -C $(@D) -- \
+		$(VBoxStubBld_1_TARGET) -out $@ \
+			-target-$(KBUILD_TARGET_ARCH) $(PACKAGE_NAME_FINAL) \
+			-stub $(PATH_STAGE_BIN)/VBoxStub.exe
+	$(VBOX_VCC_EDITBIN) /IntegrityCheck:NO $@
+	$(call VBOX_SIGN_FILE_FN,$@)
+# Create repack script for this step.
+	$(APPEND) -nt "$(VBOX_WIN_INST_REPACK_DIR)/4-multiarch-$(@F).cmd" \
+		'if ".%KBUILD_DEVTOOLS%" == "." (echo KBUILD_DEVTOOLS is not set & exit /b1)' \
+		'if ".%KBUILD_BIN_PATH%" == "." (echo KBUILD_BIN_PATH is not set & exit /b1)' \
+		$(subst $(KBUILD_BIN_PATH),%KBUILD_BIN_PATH%,$(subst $(KBUILD_DEVTOOLS),%KBUILD_DEVTOOLS%, \
+		$(if-expr defined(VBOX_WITH_MSM_INSTALL), \
+		,'call sign-dual.cmd ../../../win.amd64/$(KBUILD_TYPE)/repack/$(notdir $(PACKAGE_NAME_MULTIARCH_COMMONCAB)) || exit /b1') \
+		'..\bin\VBoxStubBld.exe ^' \
+		'  -out $(@F) ^' \
+		'  -target-$(KBUILD_TARGET_ARCH) $(PACKAGE_NAME_FINAL) ^' \
 		'  -stub ../bin/VBoxStub.exe || exit /b1' \
 		'$(VBOX_VCC_EDITBIN) /IntegrityCheck:NO $(@F) || exit /b1' \
 		'call sign-dual.cmd $(@F) || exit /b1' \

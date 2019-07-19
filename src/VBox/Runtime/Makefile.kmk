@@ -83,6 +83,7 @@ else # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_VALIDATIONKIT && !VBOX_ONLY_DOCS
  LIBRARIES += RuntimeR3 RuntimeBldProg RuntimeR0 RuntimeEFCPP RuntimeR3NoCRTGCC
  LIBRARIES.solaris += RuntimeR0Stub
  LIBRARIES.win += RuntimeR0Stub
+ LIBRARIES.win.amd64 += RuntimeR3-x86
  ifdef VBOX_WITH_RAW_MODE
   LIBRARIES += RuntimeRC
   LIBRARIES.win += RuntimeRCStub
@@ -1554,6 +1555,13 @@ ifn1of ($(KBUILD_TARGET), os2) # breaks validationkit, figure out later.
 
 endif
 
+
+#
+# RuntimeR3-x86 - 32-bit version of RuntimeR3 for windows hosts.
+#
+RuntimeR3-x86_EXTENDS         := RuntimeR3
+RuntimeR3-x86_BLD_TRG_ARCH    := x86
+RuntimeR3-x86_DEFS            := $(filter-out IN_SUP_R3 IN_SUP, $(RuntimeR3_DEFS)) IPRT_WITHOUT_LDR_VERIFY RT_NO_GIP
 
 
 #

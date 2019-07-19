@@ -24,32 +24,40 @@ ifndef VBOX_DEVICES_CONFIG_KMK_INCLUDED
 endif
 
 # Include sub-makefiles.
-include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
-include $(PATH_SUB_CURRENT)/Audio/testcase/Makefile.kmk
-include $(PATH_SUB_CURRENT)/Input/testcase/Makefile.kmk
-ifdef VBOX_WITH_TESTCASES
- include $(PATH_SUB_CURRENT)/Samples/Makefile.kmk
-endif
-if defined(VBOX_WITH_INTEL_PXE) || defined(VBOX_ONLY_EXTPACKS)
- include $(PATH_SUB_CURRENT)/PC/PXE/Makefile.kmk
-else if defined(VBOX_WITH_PXE_ROM)
- if !defined(VBOX_WITHOUT_IPXE)
-  include $(PATH_SUB_CURRENT)/PC/ipxe/Makefile.kmk
+if1of ($(KBUILD_TARGET_ARCH), $(VBOX_SUPPORTED_HOST_ARCHS))
+ include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
+ include $(PATH_SUB_CURRENT)/Audio/testcase/Makefile.kmk
+ include $(PATH_SUB_CURRENT)/Input/testcase/Makefile.kmk
+ ifdef VBOX_WITH_TESTCASES
+  include $(PATH_SUB_CURRENT)/Samples/Makefile.kmk
+ endif
+ if defined(VBOX_WITH_INTEL_PXE) || defined(VBOX_ONLY_EXTPACKS)
+  include $(PATH_SUB_CURRENT)/PC/PXE/Makefile.kmk
+ else if defined(VBOX_WITH_PXE_ROM)
+  if !defined(VBOX_WITHOUT_IPXE)
+   include $(PATH_SUB_CURRENT)/PC/ipxe/Makefile.kmk
+  endif
  endif
 endif
-if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
- include $(PATH_SUB_CURRENT)/BiosCommonCode/Makefile.kmk
- include $(PATH_SUB_CURRENT)/PC/BIOS/Makefile.kmk
- include $(PATH_SUB_CURRENT)/Graphics/BIOS/Makefile.kmk
+if !defined(VBOX_ONLY_EXTPACKS)
+ if1of ($(KBUILD_TARGET_ARCH), $(VBOX_SUPPORTED_HOST_ARCHS))
+  include $(PATH_SUB_CURRENT)/BiosCommonCode/Makefile.kmk
+  include $(PATH_SUB_CURRENT)/PC/BIOS/Makefile.kmk
+  include $(PATH_SUB_CURRENT)/Graphics/BIOS/Makefile.kmk
+ endif
 
  #
  # Main targets.
  #
- LIBRARIES += ServicesR0
- DLLS      += VBoxDDU VBoxDD VBoxDD2
- SYSMODS   += VBoxDDR0
- ifdef VBOX_WITH_RAW_MODE
-  SYSMODS   += VBoxDDRC
+ if1of ($(KBUILD_TARGET_ARCH), $(VBOX_SUPPORTED_HOST_ARCHS))
+  LIBRARIES += ServicesR0
+  DLLS      += VBoxDDU VBoxDD VBoxDD2
+  SYSMODS   += VBoxDDR0
+  ifdef VBOX_WITH_RAW_MODE
+   SYSMODS   += VBoxDDRC
+  endif
+ else
+  DLLS      += VBoxDDU
  endif
 
 
@@ -60,10 +68,10 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  VBoxDDU_NAME             = $(basename $(notdir $(LIB_DDU)))
  VBoxDDU_INST.darwin      = $(INST_DLL) $(INST_TESTCASE)
  VBoxDDU_DEFS             = IN_VBOXDDU
- ifdef VBOX_WITH_VUSB
+ if defined(VBOX_WITH_VUSB) && "$(intersects $(KBUILD_TARGET_ARCH),$(VBOX_SUPPORTED_HOST_ARCHS))" != ""
   VBoxDDU_DEFS           += VBOX_WITH_VUSB
  endif
- ifdef VBOX_WITH_USB
+ if defined(VBOX_WITH_USB) && "$(intersects $(KBUILD_TARGET_ARCH),$(VBOX_SUPPORTED_HOST_ARCHS))" != ""
   VBoxDDU_DEFS           += VBOX_WITH_USB IN_USBLIB
   VBoxDDU_SDKS.win        = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK)
   if defined(VBOX_WITH_EHCI_IMPL) && !defined(VBOX_WITH_EXTPACK_PUEL)
@@ -89,14 +97,10 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
   VBoxDDU_SOURCES        += Storage/VSCSI/VSCSILunSsc.cpp
   VBoxDDU_DEFS		 += VBOX_WITH_VSCSI_SSC
  endif
- ifdef VBOX_WITH_USB
-  VBoxDDU_INCS.os2       += \
- 	$(PATH_ROOT)/src/VBox/HostDrivers/VBoxUSB/os2
- endif
  VBoxDDU_LIBS             = \
  	$(LIB_RUNTIME) \
  	$(PATH_STAGE_LIB)/StorageLib$(VBOX_SUFF_LIB)
- ifdef VBOX_WITH_USB
+ if defined(VBOX_WITH_USB) && "$(intersects $(KBUILD_TARGET_ARCH),$(VBOX_SUPPORTED_HOST_ARCHS))" != ""
   VBoxDDU_LIBS           += \
  	$(PATH_STAGE_LIB)/USBLib$(VBOX_SUFF_LIB)
   VBoxDDU_LIBS.win       += \
@@ -104,12 +108,17 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  	$(PATH_SDK_$(VBOX_WINDDK)_LIB)/Newdev.lib
  endif
  VBoxDDU_LDFLAGS.darwin   = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxDDU.dylib
- ifdef VBOX_WITH_USB
+ if defined(VBOX_WITH_USB) && "$(intersects $(KBUILD_TARGET_ARCH),$(VBOX_SUPPORTED_HOST_ARCHS))" != ""
   VBoxDDU_LDFLAGS.darwin += -framework IOKit
  endif
 
  VBoxDDU_LDFLAGS.linux    = $(VBOX_GCC_NO_UNDEFINED)
  $(call VBOX_SET_VER_INFO_DLL,VBoxDDU,VirtualBox VMM Devices and Drivers Utilities)
+
+
+endif # VBOX_ONLY_EXTPACKS
+if !defined(VBOX_ONLY_EXTPACKS) && "$(intersects $(KBUILD_TARGET_ARCH),$(VBOX_SUPPORTED_HOST_ARCHS))" != ""  # Goes on almost to the end of the file.
+
 
  #
  # VBoxDD (shared object)
@@ -1326,10 +1335,10 @@ VBOX_WITH_VMSVGA3D_DYNAMIC_LOAD = 1
  	testcase/tstDeviceSUP.cpp
  endif
 
-endif # !VBOX_ONLY_EXTPACKS
+endif # !VBOX_ONLY_EXTPACKS && "$(intersects $(KBUILD_TARGET_ARCH),$(VBOX_SUPPORTED_HOST_ARCHS))" != ""
 
 
-if defined(VBOX_WITH_EXTPACK_PUEL) && defined(VBOX_WITH_EXTPACK_PUEL_BUILD)
+if defined(VBOX_WITH_EXTPACK_PUEL) && defined(VBOX_WITH_EXTPACK_PUEL_BUILD) && "$(intersects $(KBUILD_TARGET_ARCH),$(VBOX_SUPPORTED_HOST_ARCHS))" != ""
  #
  # The EHCI (USB 2.0) Extension Pack Modules.
  #
@@ -1429,10 +1438,10 @@ if defined(VBOX_WITH_EXTPACK_PUEL) && defined(VBOX_WITH_EXTPACK_PUEL_BUILD)
  else
   VBoxExtPackPuelInsRoms_SOURCES = PC/PXE/PXE-Intel.rom=>PXE-Intel.rom
  endif
-endif # VBOX_WITH_EXTPACK_PUEL
+endif # VBOX_WITH_EXTPACK_PUEL && "$(intersects $(KBUILD_TARGET_ARCH),$(VBOX_SUPPORTED_HOST_ARCHS))" != ""
 
 
-if defined(VBOX_WITH_VMSVGA3D) && !defined(VBOX_ONLY_EXTPACKS)
+if defined(VBOX_WITH_VMSVGA3D) && !defined(VBOX_ONLY_EXTPACKS) && "$(intersects $(KBUILD_TARGET_ARCH),$(VBOX_SUPPORTED_HOST_ARCHS))" != ""
  #
  # Template used for VBoxSVGA3D.  (Strips away compiler options.)
  #
@@ -1554,7 +1563,7 @@ if defined(VBOX_WITH_VMSVGA3D) && !defined(VBOX_ONLY_EXTPACKS)
  endif
 
 
-endif # defined(VBOX_WITH_VMSVGA3D) && !defined(VBOX_ONLY_EXTPACKS)
+endif # defined(VBOX_WITH_VMSVGA3D) && !defined(VBOX_ONLY_EXTPACKS) && "$(intersects $(KBUILD_TARGET_ARCH),$(VBOX_SUPPORTED_HOST_ARCHS))" != ""
 
 include $(FILE_KBUILD_SUB_FOOTER)
 

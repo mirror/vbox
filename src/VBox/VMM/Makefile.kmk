@@ -33,9 +33,11 @@ include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
 # Fail on unsupported hosts.
 ifeq ($(KBUILD_TARGET_ARCH),x86)
  ifeq ($(KBUILD_TARGET),darwin)
-$(error 32-bit darwin is no longer a supported VirtualBox host. Go back to 4.3 or older for 32-bit support.)
+$(error 32-bit darwin is no longer a supported VirtualBox host. Go back to 4.3 or older for 32-bit host support.)
  else ifeq ($(KBUILD_TARGET),solaris)
-$(error 32-bit solaris is no longer a supported VirtualBox host. Go back to 4.2 or older for 32-bit support.)
+$(error 32-bit solaris is no longer a supported VirtualBox host. Go back to 4.2 or older for 32-bit host support.)
+ else ifn1of ($(KBUILD_TARGET_ARCH), $(VBOX_SUPPORTED_HOST_ARCHS))
+$(error 32-bit builds of the VirtualBox host are no longer supported. Go back to 6.0 or older for 32-bit host support.)
  endif
 endif
 

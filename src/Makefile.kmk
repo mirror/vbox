@@ -26,7 +26,7 @@ if defined(VBOX_ONLY_EXTPACKS) && !defined(VBOX_ONLY_EXTPACKS_USE_IMPLIBS) && de
 
 else if !defined(VBOX_ONLY_BUILD)
  # Normal build.
- if1of ($(KBUILD_TARGET_ARCH), x86 amd64)
+ if1of ($(KBUILD_TARGET_ARCH), $(VBOX_SUPPORTED_HOST_ARCHS))
   ifdef VBOX_WITH_REM
    include $(PATH_SUB_CURRENT)/recompiler/Makefile.kmk
   endif
