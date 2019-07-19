@@ -937,7 +937,7 @@ const char *UIInformationDataStorageStatistics::storCtrlType2Str(const KStorageC
     switch (enmCtrlType)
     {
         case KStorageControllerType_LsiLogic:
-            pszCtrl = "LSILOGIC";
+            pszCtrl = "LSILOGICSCSI";
             break;
         case KStorageControllerType_BusLogic:
             pszCtrl = "BUSLOGIC";
@@ -983,7 +983,6 @@ void UIInformationDataStorageStatistics::sltProcessStatistics()
         strInfo = dbg.GetStats(it.key(), true);
         m_values[it.key()] = parseStatistics(strInfo);
     }
-
     QModelIndex index = m_pModel->index(1,0);
     m_pModel->updateData(index);
 }
