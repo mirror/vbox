@@ -18,14 +18,16 @@
 SUB_DEPTH = ../..
 include $(KBUILD_PATH)/subheader.kmk
 
-ifdef VBOX_WITH_KCHMVIEWER
- ifneq ($(wildcard $(PATH_SUB_CURRENT)/kchmviewer-4.3),)
-  include $(PATH_SUB_CURRENT)/kchmviewer-4.3/Makefile.kmk
+if1of ($(KBUILD_TARGET_ARCH), $(VBOX_SUPPORTED_HOST_ARCHS))
+ ifdef VBOX_WITH_KCHMVIEWER
+  ifneq ($(wildcard $(PATH_SUB_CURRENT)/kchmviewer-4.3),)
+   include $(PATH_SUB_CURRENT)/kchmviewer-4.3/Makefile.kmk
+  endif
  endif
-endif
-ifeq ($(KBUILD_TARGET),linux)
- ifneq ($(wildcard $(PATH_SUB_CURRENT)/tunctl),)
-  include $(PATH_SUB_CURRENT)/tunctl/Makefile.kmk
+ ifeq ($(KBUILD_TARGET),linux)
+  ifneq ($(wildcard $(PATH_SUB_CURRENT)/tunctl),)
+   include $(PATH_SUB_CURRENT)/tunctl/Makefile.kmk
+  endif
  endif
 endif
 
