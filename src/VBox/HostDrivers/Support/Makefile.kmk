@@ -32,8 +32,7 @@ include $(KBUILD_PATH)/subheader.kmk
 #
 LIBRARIES += SUPR3 SUPR3Static
 if   defined(VBOX_WITH_HARDENING) \
- && !defined(VBOX_ONLY_VALIDATIONKIT) \
- && "$(intersects $(KBUILD_TARGET_ARCH),$(VBOX_SUPPORTED_HOST_ARCHS))" != ""
+ && !defined(VBOX_ONLY_VALIDATIONKIT)
  LIBRARIES += SUPR3HardenedStatic
 endif
 DLLS.win += VBoxSupLib
