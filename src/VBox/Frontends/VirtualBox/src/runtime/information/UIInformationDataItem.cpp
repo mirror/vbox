@@ -982,6 +982,8 @@ void UIInformationDataStorageStatistics::sltProcessStatistics()
     {
         strInfo = dbg.GetStats(it.key(), true);
         m_values[it.key()] = parseStatistics(strInfo);
+        if (m_values[it.key()].isEmpty())
+            m_values[it.key()] = "0";
     }
     QModelIndex index = m_pModel->index(1,0);
     m_pModel->updateData(index);
