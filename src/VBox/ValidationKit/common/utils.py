@@ -1351,7 +1351,6 @@ def _winFloatTime():
             return float(uCurValue.value) / g_fpWinPerfCounterFreq;
     return time.time();
 
-
 def timestampNano():
     """
     Gets a nanosecond timestamp.
@@ -1375,6 +1374,13 @@ def timestampSecond():
     if g_fWinUseWinPerfCounter is True:
         return long(_winFloatTime());
     return long(time.time());
+
+def secondsSinceUnixEpoch():
+    """
+    Returns unix time, floating point second count since 1970-01-01T00:00:00Z
+    """
+    ## ASSUMES This returns unix epoch time on all systems we care about...
+    return time.time();
 
 def getTimePrefix():
     """

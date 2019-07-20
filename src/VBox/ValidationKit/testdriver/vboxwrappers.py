@@ -2957,7 +2957,7 @@ class SessionWrapper(TdTaskBase):
     # Test eXecution Service methods.
     #
 
-    def txsConnectViaTcp(self, cMsTimeout = 10*60000, sIpAddr = None, sMacAddr = None, fNatForwardingForTxs = False):
+    def txsConnectViaTcp(self, cMsTimeout = 10*60000, sIpAddr = None, fNatForwardingForTxs = False):
         """
         Connects to the TXS using TCP/IP as transport.  If no IP or MAC is
         addresses are specified, we'll get the IP from the guest additions.
@@ -2967,21 +2967,32 @@ class SessionWrapper(TdTaskBase):
         # If the VM is configured with a NAT interface, connect to local host.
         fReversedSetup = False;
         fUseNatForTxs  = False;
+        sMacAddr       = None;
+        oIDhcpServer   = None;
         if sIpAddr is None:
             try:
-                oNic = self.oVM.getNetworkAdapter(0);
-                if oNic.attachmentType == vboxcon.NetworkAttachmentType_NAT:
+                oNic              = self.oVM.getNetworkAdapter(0);
+                enmAttachmentType = oNic.attachmentType;
+                if enmAttachmentType == vboxcon.NetworkAttachmentType_NAT:
                     fUseNatForTxs = True;
+                elif enmAttachmentType == vboxcon.NetworkAttachmentType_HostOnly and not sIpAddr:
+                    # Get the MAC address and find the DHCP server.
+                    sMacAddr      = oNic.MACAddress;
+                    sHostOnlyNIC  = oNic.hostOnlyInterface;
+                    oIHostOnlyIf  = self.oVBox.host.findHostNetworkInterfaceByName(sHostOnlyNIC);
+                    sHostOnlyNet  = oIHostOnlyIf.networkName;
+                    oIDhcpServer  = self.oVBox.findDHCPServerByNetworkName(sHostOnlyNet);
             except:
                 reporter.errorXcpt();
                 return None;
+
         if fUseNatForTxs:
             fReversedSetup = not fNatForwardingForTxs;
             sIpAddr = '127.0.0.1';
 
         # Kick off the task.
         try:
-            oTask = TxsConnectTask(self, cMsTimeout, sIpAddr, sMacAddr, fReversedSetup,
+            oTask = TxsConnectTask(self, cMsTimeout, sIpAddr, sMacAddr, oIDhcpServer, fReversedSetup,
                                    fnProcessEvents = self.oTstDrv.processPendingEvents);
         except:
             reporter.errorXcpt();
@@ -3051,20 +3062,24 @@ class TxsConnectTask(TdTaskBase):
                     oParentTask._setIp(sValue);                                # pylint: disable=protected-access
 
 
-    def __init__(self, oSession, cMsTimeout, sIpAddr, sMacAddr, fReversedSetup, fnProcessEvents = None):
-        TdTaskBase.__init__(self, utils.getCallerName());
+    def __init__(self, oSession, cMsTimeout, sIpAddr, sMacAddr, oIDhcpServer, fReversedSetup, fnProcessEvents = None):
+        TdTaskBase.__init__(self, utils.getCallerName(), fnProcessEvents = fnProcessEvents);
         self.cMsTimeout         = cMsTimeout;
         self.fnProcessEvents    = fnProcessEvents;
         self.sIpAddr            = None;
         self.sNextIpAddr        = None;
         self.sMacAddr           = sMacAddr;
+        self.oIDhcpServer       = oIDhcpServer;
         self.fReversedSetup     = fReversedSetup;
         self.oVBoxEventHandler  = None;
         self.oTxsSession        = None;
 
-        # Skip things we don't implement.
-        if sMacAddr is not None:
-            reporter.error('TxsConnectTask does not implement sMacAddr yet');
+        # Check that the input makes sense:
+        if   (sMacAddr is None) != (oIDhcpServer is None)  \
+          or (sMacAddr and fReversedSetup) \
+          or (sMacAddr and sIpAddr):
+            reporter.error('TxsConnectTask sMacAddr=%s oIDhcpServer=%s sIpAddr=%s fReversedSetup=%s'
+                           % (sMacAddr, oIDhcpServer, sIpAddr, fReversedSetup,));
             raise base.GenError();
 
         reporter.log2('TxsConnectTask: sIpAddr=%s fReversedSetup=%s' % (sIpAddr, fReversedSetup))
@@ -3099,6 +3114,16 @@ class TxsConnectTask(TdTaskBase):
             else:
                 if sIpAddr is not None:
                     self._setIp(sIpAddr);
+
+            #
+            # If the network adapter of the VM is host-only we can talk poll IDHCPServer
+            # for the guest IP, allowing us to detect it for VMs without guest additions.
+            # This will when we're polled.
+            #
+            if sMacAddr is not None:
+                assert self.oIDhcpServer is not None;
+
+
         # end __init__
 
     def __del__(self):
@@ -3202,6 +3227,45 @@ class TxsConnectTask(TdTaskBase):
         if fDeregister:
             self._deregisterEventHandler();
         return True;
+
+    def _pollDhcpServer(self):
+        """
+        Polls the DHCP server by MAC address in host-only setups.
+        """
+
+        if self.sIpAddr:
+            return False;
+
+        if self.oIDhcpServer is None or not self.sMacAddr:
+            return False;
+
+        try:
+            (sIpAddr, sState, secIssued, secExpire) = self.oIDhcpServer.findLeaseByMAC(self.sMacAddr, 0);
+        except:
+            reporter.log2Xcpt('sMacAddr=%s' % (self.sMacAddr,));
+            return False;
+
+        secNow = utils.secondsSinceUnixEpoch();
+        reporter.log2('dhcp poll: secNow=%s secExpire=%s secIssued=%s sState=%s sIpAddr=%s'
+                      % (secNow, secExpire, secIssued, sState, sIpAddr,));
+        if secNow > secExpire or sState != 'acked' or not sIpAddr:
+            return False;
+
+        reporter.log('dhcp poll: sIpAddr=%s secExpire=%s (%s TTL) secIssued=%s (%s ago)'
+                     % (sIpAddr, secExpire, secExpire - secNow, secIssued, secNow - secIssued,));
+        self._setIp(sIpAddr);
+        return True;
+
+    #
+    # Task methods
+    #
+
+    def pollTask(self, fLocked = False):
+        """
+        Overridden pollTask method.
+        """
+        self._pollDhcpServer();
+        return TdTaskBase.pollTask(self, fLocked);
 
     #
     # Public methods
