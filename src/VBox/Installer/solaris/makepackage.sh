@@ -132,7 +132,7 @@ create_hardlink VBoxHeadless
 
 # Exclude directories to not cause install-time conflicts with existing system directories
 cd "$PKG_BASE_DIR"
-find . ! -type d | $VBOX_GGREP -v -E 'prototype|makepackage.sh|vbox.pkginfo|postinstall.sh|checkinstall.sh|preremove.sh|ReadMe.txt|vbox.space|vbox.depend|vbox.copyright|VirtualBoxKern' | pkgproto >> prototype
+find . ! -type d | $VBOX_GGREP -v -wE 'prototype|makepackage.sh|vbox.pkginfo|postinstall.sh|checkinstall.sh|preremove.sh|ReadMe.txt|vbox.space|vbox.depend|vbox.copyright|VirtualBoxKern' | pkgproto >> prototype
 
 # Include opt/VirtualBox and subdirectories as we want uninstall to clean up directory structure.
 # Include var/svc for manifest class action script does not create them.
