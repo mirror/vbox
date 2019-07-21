@@ -3314,7 +3314,7 @@ void fsPerfRm(void)
 #if defined(RT_OS_WINDOWS)
     RTTESTI_CHECK_RC(RTFileDelete(InDir(RT_STR_TUPLE("known-file" RTPATH_SLASH_STR ))), VERR_INVALID_NAME);
 #else
-    RTTESTI_CHECK_RC(RTFileDelete(InDir(RT_STR_TUPLE("known-file" RTPATH_SLASH_STR))), VERR_NOT_A_FILE); //??
+    RTTESTI_CHECK_RC(RTFileDelete(InDir(RT_STR_TUPLE("known-file" RTPATH_SLASH_STR))), VERR_PATH_NOT_FOUND);
 #endif
 
     /* Directories: */
