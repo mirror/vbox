@@ -1452,9 +1452,10 @@ class SessionWrapper(TdTaskBase):
                 reporter.errorXcpt();
             if sRetName == '':
                 # Create a new host-only interface.
+                reporter.log("Creating host only NIC ...");
                 try:
-                    (oIHostOnly, oIProgress) = self.oVBox.host.createHostOnlyNetworkInterface();
-                    oProgress = ProgressWrapper(oIProgress, self.oVBoxMgr, self.oTstDrv, 'Create host only interface');
+                    (oIProgress, oIHostOnly) = self.oVBox.host.createHostOnlyNetworkInterface();
+                    oProgress = ProgressWrapper(oIProgress, self.oVBoxMgr, self.oTstDrv, 'Create host only NIC');
                     oProgress.wait();
                     if oProgress.logResult() is False:
                         return '';
@@ -1462,6 +1463,7 @@ class SessionWrapper(TdTaskBase):
                 except:
                     reporter.errorXcpt();
                     return '';
+                reporter.log("Created host only NIC: '%s'" % (sRetName,));
 
         elif eAttachmentType == vboxcon.NetworkAttachmentType_Internal:
             sRetName = 'VBoxTest';
