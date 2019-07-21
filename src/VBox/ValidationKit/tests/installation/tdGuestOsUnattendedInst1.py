@@ -398,24 +398,37 @@ class tdGuestOsInstTest1(vbox.TestDriver):
         oSet = vboxtestvms.TestVmSet(self.oTestVmManager, fIgnoreSkippedVm = True);
         oSet.aoTestVms.extend([
             # Windows7 RTM:
-            UnattendedVm(oSet, 'tst-w7-32', 'Windows7',     '6.0/uaisos/en_windows_7_enterprise_x86_dvd_x15-70745.iso'), # ~5.7GiB
+            UnattendedVm(oSet, 'tst-w7-32', 'Windows7',     '6.0/uaisos/en_windows_7_enterprise_x86_dvd_x15-70745.iso'), # ~6GiB
             UnattendedVm(oSet, 'tst-w7-64', 'Windows7_64',  '6.0/uaisos/en_windows_7_enterprise_x64_dvd_x15-70749.iso'), # ~10GiB
             ## @todo 15.10 fails with grub install error.
             #UnattendedVm(oSet, 'tst-ubuntu-15.10-64', 'Ubuntu_64', '6.0/uaisos/ubuntu-15.10-desktop-amd64.iso'),
-            UnattendedVm(oSet, 'tst-ubuntu-16.04-64', 'Ubuntu_64', '6.0/uaisos/ubuntu-16.04-desktop-amd64.iso',  # ~4.8GiB
+            UnattendedVm(oSet, 'tst-ubuntu-16.04-64', 'Ubuntu_64', '6.0/uaisos/ubuntu-16.04-desktop-amd64.iso',      # ~5GiB
                          UnattendedVm.kfUbuntuAvx2Crash),
-            UnattendedVm(oSet, 'tst-ubuntu-16.10-64', 'Ubuntu_64', '6.0/uaisos/ubuntu-16.10-desktop-amd64.iso'), # ~5.1GiB
-            UnattendedVm(oSet, 'tst-ubuntu-17.04-64', 'Ubuntu_64', '6.0/uaisos/ubuntu-17.04-desktop-amd64.iso'), # ~4.6GiB
+            UnattendedVm(oSet, 'tst-ubuntu-16.04-32', 'Ubuntu',    '6.0/uaisos/ubuntu-16.04-desktop-i386.iso'),      # ~4.5GiB
+            UnattendedVm(oSet, 'tst-ubuntu-16.04.1-64', 'Ubuntu_64', '6.0/uaisos/ubuntu-16.04.1-desktop-amd64.iso'), # ~5GiB
+            UnattendedVm(oSet, 'tst-ubuntu-16.04.1-32', 'Ubuntu',    '6.0/uaisos/ubuntu-16.04.1-desktop-i386.iso'),  # ~4.5GiB
+            UnattendedVm(oSet, 'tst-ubuntu-16.04.2-64', 'Ubuntu_64', '6.0/uaisos/ubuntu-16.04.2-desktop-amd64.iso'), # ~5GiB
+            UnattendedVm(oSet, 'tst-ubuntu-16.04.2-32', 'Ubuntu',    '6.0/uaisos/ubuntu-16.04.2-desktop-i386.iso'),  # ~4.5GiB
+            UnattendedVm(oSet, 'tst-ubuntu-16.04.3-64', 'Ubuntu_64', '6.0/uaisos/ubuntu-16.04.3-desktop-amd64.iso'), # ~5GiB
+            UnattendedVm(oSet, 'tst-ubuntu-16.04.3-32', 'Ubuntu',    '6.0/uaisos/ubuntu-16.04.3-desktop-i386.iso'),  # ~4.5GiB
+            UnattendedVm(oSet, 'tst-ubuntu-16.04.4-64', 'Ubuntu_64', '6.0/uaisos/ubuntu-16.04.4-desktop-amd64.iso'), # ~5GiB
+            UnattendedVm(oSet, 'tst-ubuntu-16.04.4-32', 'Ubuntu',    '6.0/uaisos/ubuntu-16.04.4-desktop-i386.iso'),  # ~4.5GiB
+            UnattendedVm(oSet, 'tst-ubuntu-16.04.5-64', 'Ubuntu_64', '6.0/uaisos/ubuntu-16.04.5-desktop-amd64.iso'), # ~5GiB
+            UnattendedVm(oSet, 'tst-ubuntu-16.04.5-32', 'Ubuntu',    '6.0/uaisos/ubuntu-16.04.5-desktop-i386.iso'),  # ~4.5GiB
+            UnattendedVm(oSet, 'tst-ubuntu-16.04.6-64', 'Ubuntu_64', '6.0/uaisos/ubuntu-16.04.6-desktop-amd64.iso'), # ~5GiB
+            UnattendedVm(oSet, 'tst-ubuntu-16.04.6-32', 'Ubuntu',    '6.0/uaisos/ubuntu-16.04.6-desktop-i386.iso'),  # ~4.5GiB
+            UnattendedVm(oSet, 'tst-ubuntu-16.10-64', 'Ubuntu_64', '6.0/uaisos/ubuntu-16.10-desktop-amd64.iso'),     # ~5.5GiB
+            UnattendedVm(oSet, 'tst-ubuntu-17.04-64', 'Ubuntu_64', '6.0/uaisos/ubuntu-17.04-desktop-amd64.iso'),     # ~5GiB
             ## @todo ubuntu 17.10, 18.04 & 18.10 do not work.  They misses all the the build tools (make, gcc, perl, ++)
             ##       and has signed kmods:
-            UnattendedVm(oSet, 'tst-ubuntu-17.10-64', 'Ubuntu_64', '6.0/uaisos/ubuntu-17.10-desktop-amd64.iso', # >4.0Gib
+            UnattendedVm(oSet, 'tst-ubuntu-17.10-64', 'Ubuntu_64', '6.0/uaisos/ubuntu-17.10-desktop-amd64.iso', # >4Gib
                          UnattendedVm.kfNoGAs),
-            UnattendedVm(oSet, 'tst-ubuntu-18.04-64', 'Ubuntu_64', '6.0/uaisos/ubuntu-18.04-desktop-amd64.iso', # >5.7GiB
+            UnattendedVm(oSet, 'tst-ubuntu-18.04-64', 'Ubuntu_64', '6.0/uaisos/ubuntu-18.04-desktop-amd64.iso', # >6GiB
                          UnattendedVm.kfNoGAs),
             # 18.10 hangs reading install DVD during "starting partitioner..."
             #UnattendedVm(oSet, 'tst-ubuntu-18.10-64', 'Ubuntu_64', '6.0/uaisos/ubuntu-18.10-desktop-amd64.iso',
             #             UnattendedVm.kfNoGAs),
-            UnattendedVm(oSet, 'tst-ubuntu-19.04-64', 'Ubuntu_64', '6.0/uaisos/ubuntu-19.04-desktop-amd64.iso', # >5.6GiB
+            UnattendedVm(oSet, 'tst-ubuntu-19.04-64', 'Ubuntu_64', '6.0/uaisos/ubuntu-19.04-desktop-amd64.iso', # >6GiB
                          UnattendedVm.kfNoGAs),
         ]);
         self.oTestVmSet = oSet;
