@@ -1043,7 +1043,8 @@ HRESULT Unattended::prepare()
         if (mStrTimeZone.isEmpty())
         {
             int vrc = RTTimeZoneGetCurrent(szTmp, sizeof(szTmp));
-            if (RT_SUCCESS(vrc))
+            if (   RT_SUCCESS(vrc)
+                && strcmp(szTmp, "localtime") != 0 /* Typcial solaris TZ that isn't very helpful. */)
                 mStrTimeZone = szTmp;
             else
                 mStrTimeZone = "Etc/UTC";
