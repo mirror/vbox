@@ -396,44 +396,64 @@ class tdGuestOsInstTest1(vbox.TestDriver):
         # Our install test VM set.
         #
         oSet = vboxtestvms.TestVmSet(self.oTestVmManager, fIgnoreSkippedVm = True);
+        # pylint: disable=line-too-long
         oSet.aoTestVms.extend([
             # Windows7 RTM:
             UnattendedVm(oSet, 'tst-w7-32', 'Windows7',     '6.0/uaisos/en_windows_7_enterprise_x86_dvd_x15-70745.iso'), # ~6GiB
             UnattendedVm(oSet, 'tst-w7-64', 'Windows7_64',  '6.0/uaisos/en_windows_7_enterprise_x64_dvd_x15-70749.iso'), # ~10GiB
+
+            ## @todo couldn't find licence terms.
+            #UnattendedVm(oSet, 'tst-w10-1507-32', 'Windows10',     '6.0/uaisos/en_windows_10_enterprise_x86_dvd_6851156.iso'),
+            #UnattendedVm(oSet, 'tst-w10-1507-64', 'Windows10_64',  '6.0/uaisos/en_windows_10_enterprise_x64_dvd_6851151.iso'),
+            UnattendedVm(oSet, 'tst-w10-1511-32', 'Windows10',     '6.0/uaisos/en_windows_10_enterprise_version_1511_updated_feb_2016_x86_dvd_8378870.iso'),    # >=7GiB # not on testrsrc
+            #UnattendedVm(oSet, 'tst-w10-1511-64', 'Windows10_64',  '6.0/uaisos/'),
+            UnattendedVm(oSet, 'tst-w10-1607-32', 'Windows10',     '6.0/uaisos/en_windows_10_enterprise_version_1607_updated_jul_2016_x86_dvd_9060097.iso'),    # >=7GiB
+            UnattendedVm(oSet, 'tst-w10-1607-64', 'Windows10_64',  '6.0/uaisos/en_windows_10_enterprise_version_1607_updated_jul_2016_x64_dvd_9054264.iso'),    # >=9GiB
+            UnattendedVm(oSet, 'tst-w10-1703-32', 'Windows10',     '6.0/uaisos/en_windows_10_enterprise_version_1703_updated_march_2017_x86_dvd_10188981.iso'), # >=7GiB
+            UnattendedVm(oSet, 'tst-w10-1703-64', 'Windows10_64',  '6.0/uaisos/en_windows_10_enterprise_version_1703_updated_march_2017_x64_dvd_10189290.iso'), # >=10GiB
+            UnattendedVm(oSet, 'tst-w10-1709-32', 'Windows10',     '6.0/uaisos/en_windows_10_multi-edition_vl_version_1709_updated_sept_2017_x86_dvd_100090759.iso'),  # >=7GiB # not on testrsrc
+            UnattendedVm(oSet, 'tst-w10-1709-64', 'Windows10_64',  '6.0/uaisos/en_windows_10_multi-edition_vl_version_1709_updated_sept_2017_x64_dvd_100090741.iso'),  # >=10GiB # not on testrsrc
+            UnattendedVm(oSet, 'tst-w10-1803-32', 'Windows10',     '6.0/uaisos/en_windows_10_business_editions_version_1803_updated_march_2018_x86_dvd_12063341.iso'), # >=7GiB
+            UnattendedVm(oSet, 'tst-w10-1803-64', 'Windows10_64',  '6.0/uaisos/en_windows_10_business_editions_version_1803_updated_march_2018_x64_dvd_12063333.iso'), # >=10GiB
+            UnattendedVm(oSet, 'tst-w10-1809-32', 'Windows10',     '6.0/uaisos/en_windows_10_business_edition_version_1809_updated_sept_2018_x86_dvd_2f92403b.iso'),   # >=7GiB
+            UnattendedVm(oSet, 'tst-w10-1809-64', 'Windows10_64',  '6.0/uaisos/en_windows_10_business_edition_version_1809_updated_sept_2018_x64_dvd_f0b7dc68.iso'),   # >=10GiB
+            UnattendedVm(oSet, 'tst-w10-1903-32', 'Windows10',     '6.0/uaisos/en_windows_10_business_editions_version_1903_x86_dvd_ca4f0f49.iso'), # >=7GiB
+            UnattendedVm(oSet, 'tst-w10-1903-64', 'Windows10_64',  '6.0/uaisos/en_windows_10_business_editions_version_1903_x64_dvd_37200948.iso'), # >=10GiB
             ## @todo 15.10 fails with grub install error.
             #UnattendedVm(oSet, 'tst-ubuntu-15.10-64', 'Ubuntu_64', '6.0/uaisos/ubuntu-15.10-desktop-amd64.iso'),
             UnattendedVm(oSet, 'tst-ubuntu-16.04-64', 'Ubuntu_64', '6.0/uaisos/ubuntu-16.04-desktop-amd64.iso',      # ~5GiB
                          UnattendedVm.kfUbuntuAvx2Crash),
-            UnattendedVm(oSet, 'tst-ubuntu-16.04-32', 'Ubuntu',    '6.0/uaisos/ubuntu-16.04-desktop-i386.iso'),      # ~4.5GiB
-            UnattendedVm(oSet, 'tst-ubuntu-16.04.1-64', 'Ubuntu_64', '6.0/uaisos/ubuntu-16.04.1-desktop-amd64.iso'), # ~5GiB
-            UnattendedVm(oSet, 'tst-ubuntu-16.04.1-32', 'Ubuntu',    '6.0/uaisos/ubuntu-16.04.1-desktop-i386.iso'),  # ~4.5GiB
-            UnattendedVm(oSet, 'tst-ubuntu-16.04.2-64', 'Ubuntu_64', '6.0/uaisos/ubuntu-16.04.2-desktop-amd64.iso'), # ~5GiB
-            UnattendedVm(oSet, 'tst-ubuntu-16.04.2-32', 'Ubuntu',    '6.0/uaisos/ubuntu-16.04.2-desktop-i386.iso'),  # ~4.5GiB
-            UnattendedVm(oSet, 'tst-ubuntu-16.04.3-64', 'Ubuntu_64', '6.0/uaisos/ubuntu-16.04.3-desktop-amd64.iso'), # ~5GiB
-            UnattendedVm(oSet, 'tst-ubuntu-16.04.3-32', 'Ubuntu',    '6.0/uaisos/ubuntu-16.04.3-desktop-i386.iso'),  # ~4.5GiB
-            UnattendedVm(oSet, 'tst-ubuntu-16.04.4-64', 'Ubuntu_64', '6.0/uaisos/ubuntu-16.04.4-desktop-amd64.iso'), # ~5GiB
-            UnattendedVm(oSet, 'tst-ubuntu-16.04.4-32', 'Ubuntu',    '6.0/uaisos/ubuntu-16.04.4-desktop-i386.iso'),  # ~4.5GiB
-            UnattendedVm(oSet, 'tst-ubuntu-16.04.5-64', 'Ubuntu_64', '6.0/uaisos/ubuntu-16.04.5-desktop-amd64.iso'), # ~5GiB
-            UnattendedVm(oSet, 'tst-ubuntu-16.04.5-32', 'Ubuntu',    '6.0/uaisos/ubuntu-16.04.5-desktop-i386.iso'),  # ~4.5GiB
-            UnattendedVm(oSet, 'tst-ubuntu-16.04.6-64', 'Ubuntu_64', '6.0/uaisos/ubuntu-16.04.6-desktop-amd64.iso'), # ~5GiB
-            UnattendedVm(oSet, 'tst-ubuntu-16.04.6-32', 'Ubuntu',    '6.0/uaisos/ubuntu-16.04.6-desktop-i386.iso'),  # ~4.5GiB
-            UnattendedVm(oSet, 'tst-ubuntu-16.10-64', 'Ubuntu_64', '6.0/uaisos/ubuntu-16.10-desktop-amd64.iso'),     # ~5.5GiB
+            UnattendedVm(oSet, 'tst-ubuntu-16.04-32', 'Ubuntu',    '6.0/uaisos/ubuntu-16.04-desktop-i386.iso'),      # >=4.5GiB
+            UnattendedVm(oSet, 'tst-ubuntu-16.04.1-64', 'Ubuntu_64', '6.0/uaisos/ubuntu-16.04.1-desktop-amd64.iso'), # >=5GiB
+            UnattendedVm(oSet, 'tst-ubuntu-16.04.1-32', 'Ubuntu',    '6.0/uaisos/ubuntu-16.04.1-desktop-i386.iso'),  # >=4.5GiB
+            UnattendedVm(oSet, 'tst-ubuntu-16.04.2-64', 'Ubuntu_64', '6.0/uaisos/ubuntu-16.04.2-desktop-amd64.iso'), # >=5GiB
+            UnattendedVm(oSet, 'tst-ubuntu-16.04.2-32', 'Ubuntu',    '6.0/uaisos/ubuntu-16.04.2-desktop-i386.iso'),  # >=4.5GiB
+            UnattendedVm(oSet, 'tst-ubuntu-16.04.3-64', 'Ubuntu_64', '6.0/uaisos/ubuntu-16.04.3-desktop-amd64.iso'), # >=5GiB
+            UnattendedVm(oSet, 'tst-ubuntu-16.04.3-32', 'Ubuntu',    '6.0/uaisos/ubuntu-16.04.3-desktop-i386.iso'),  # >=4.5GiB
+            UnattendedVm(oSet, 'tst-ubuntu-16.04.4-64', 'Ubuntu_64', '6.0/uaisos/ubuntu-16.04.4-desktop-amd64.iso'), # >=5GiB
+            UnattendedVm(oSet, 'tst-ubuntu-16.04.4-32', 'Ubuntu',    '6.0/uaisos/ubuntu-16.04.4-desktop-i386.iso'),  # >=4.5GiB
+            UnattendedVm(oSet, 'tst-ubuntu-16.04.5-64', 'Ubuntu_64', '6.0/uaisos/ubuntu-16.04.5-desktop-amd64.iso'), # >=5GiB
+            UnattendedVm(oSet, 'tst-ubuntu-16.04.5-32', 'Ubuntu',    '6.0/uaisos/ubuntu-16.04.5-desktop-i386.iso'),  # >=4.5GiB
+            UnattendedVm(oSet, 'tst-ubuntu-16.04.6-64', 'Ubuntu_64', '6.0/uaisos/ubuntu-16.04.6-desktop-amd64.iso'), # >=5GiB
+            UnattendedVm(oSet, 'tst-ubuntu-16.04.6-32', 'Ubuntu',    '6.0/uaisos/ubuntu-16.04.6-desktop-i386.iso'),  # >=4.5GiB
+            UnattendedVm(oSet, 'tst-ubuntu-16.10-64', 'Ubuntu_64', '6.0/uaisos/ubuntu-16.10-desktop-amd64.iso'),     # >=5.5GiB
             ## @todo 16.10-32 doesn't ask for an IP, so it always fails.
-            #UnattendedVm(oSet, 'tst-ubuntu-16.10-32', 'Ubuntu',    '6.0/uaisos/ubuntu-16.10-desktop-i386.iso'),      # ~5.5GiB?
-            UnattendedVm(oSet, 'tst-ubuntu-17.04-64', 'Ubuntu_64', '6.0/uaisos/ubuntu-17.04-desktop-amd64.iso'),     # ~5GiB
-            UnattendedVm(oSet, 'tst-ubuntu-17.04-32', 'Ubuntu',    '6.0/uaisos/ubuntu-17.04-desktop-i386.iso'),      # ~4.5GiB
+            #UnattendedVm(oSet, 'tst-ubuntu-16.10-32', 'Ubuntu',    '6.0/uaisos/ubuntu-16.10-desktop-i386.iso'),      # >=5.5GiB?
+            UnattendedVm(oSet, 'tst-ubuntu-17.04-64', 'Ubuntu_64', '6.0/uaisos/ubuntu-17.04-desktop-amd64.iso'),     # >=5GiB
+            UnattendedVm(oSet, 'tst-ubuntu-17.04-32', 'Ubuntu',    '6.0/uaisos/ubuntu-17.04-desktop-i386.iso'),      # >=4.5GiB
             ## @todo ubuntu 17.10, 18.04 & 18.10 do not work.  They misses all the the build tools (make, gcc, perl, ++)
             ##       and has signed kmods:
-            UnattendedVm(oSet, 'tst-ubuntu-17.10-64', 'Ubuntu_64', '6.0/uaisos/ubuntu-17.10-desktop-amd64.iso', # >4Gib
+            UnattendedVm(oSet, 'tst-ubuntu-17.10-64', 'Ubuntu_64', '6.0/uaisos/ubuntu-17.10-desktop-amd64.iso', # >=4Gib
                          UnattendedVm.kfNoGAs),
-            UnattendedVm(oSet, 'tst-ubuntu-18.04-64', 'Ubuntu_64', '6.0/uaisos/ubuntu-18.04-desktop-amd64.iso', # >6GiB
+            UnattendedVm(oSet, 'tst-ubuntu-18.04-64', 'Ubuntu_64', '6.0/uaisos/ubuntu-18.04-desktop-amd64.iso', # >=6GiB
                          UnattendedVm.kfNoGAs),
             # 18.10 hangs reading install DVD during "starting partitioner..."
             #UnattendedVm(oSet, 'tst-ubuntu-18.10-64', 'Ubuntu_64', '6.0/uaisos/ubuntu-18.10-desktop-amd64.iso',
             #             UnattendedVm.kfNoGAs),
-            UnattendedVm(oSet, 'tst-ubuntu-19.04-64', 'Ubuntu_64', '6.0/uaisos/ubuntu-19.04-desktop-amd64.iso', # >6GiB
+            UnattendedVm(oSet, 'tst-ubuntu-19.04-64', 'Ubuntu_64', '6.0/uaisos/ubuntu-19.04-desktop-amd64.iso', # >=6GiB
                          UnattendedVm.kfNoGAs),
         ]);
+        # pylint: enable=line-too-long
         self.oTestVmSet = oSet;
 
         # For option parsing:
