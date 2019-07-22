@@ -39,6 +39,7 @@ void UIMachineAttributeSetter::setMachineAttribute(const CMachine &comConstMachi
         switch (enmType)
         {
             case MachineAttribute_Name: comMachine.SetName(guiAttribute.toString()); break;
+            case MachineAttribute_OSType: comMachine.SetOSTypeId(guiAttribute.toString()); break;
             default: break;
         }
         /* Change machine name: */
