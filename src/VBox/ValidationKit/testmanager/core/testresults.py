@@ -707,10 +707,10 @@ class TestResultFilter(ModelFilterBase):
         (  6, 'hw', ),
         (  7, 'np', ),
         (  8, 'Install', ),
-        ( 19, 'UInstall', ), # NB. out of order.
+        ( 20, 'UInstall', ),    # NB. out of order.
         (  9, 'Benchmark', ),
-        ( 18, 'smoke', ),   # NB. out of order.
-        ( 19, 'unit', ),    # NB. out of order.
+        ( 18, 'smoke', ),       # NB. out of order.
+        ( 19, 'unit', ),        # NB. out of order.
         ( 10, 'USB', ),
         ( 11, 'Debian', ),
         ( 12, 'Fedora', ),
