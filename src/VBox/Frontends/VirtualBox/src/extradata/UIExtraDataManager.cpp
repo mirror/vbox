@@ -4307,6 +4307,32 @@ bool UIExtraDataManager::softKeyboardDialogShouldBeMaximized()
     return data.size() == 5 && data[4] == GUI_Geometry_State_Max;
 }
 
+void UIExtraDataManager::setSoftKeyboardOptions(bool fHideNumPad, bool fHideOSMenuKeys)
+{
+    QStringList data;
+
+    if (fHideNumPad)
+        data << GUI_SoftKeyboard_HideNumPad;
+    if (fHideOSMenuKeys)
+        data << GUI_SoftKeyboard_HideOSMenuKeys;
+
+    setExtraDataStringList(GUI_SoftKeyboard_Options, data);
+}
+
+void UIExtraDataManager::softKeyboardOptions(bool &fOutHideNumPad, bool &fOutHideOSMenuKeys)
+{
+    fOutHideNumPad = false;
+    fOutHideOSMenuKeys = false;
+    const QStringList data = extraDataStringList(GUI_SoftKeyboard_Options);
+    for (int i = 0; i < data.size(); ++i)
+    {
+        if (data[i] == GUI_SoftKeyboard_HideNumPad)
+            fOutHideNumPad = true;
+        if (data[i] == GUI_SoftKeyboard_HideOSMenuKeys)
+            fOutHideOSMenuKeys = true;
+    }
+}
+
 void UIExtraDataManager::setSoftKeyboardColorTheme(const QStringList &colorStringList)
 {
     setExtraDataStringList(GUI_SoftKeyboard_ColorTheme, colorStringList);

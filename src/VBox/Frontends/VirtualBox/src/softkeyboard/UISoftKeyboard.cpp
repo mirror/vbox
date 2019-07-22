@@ -560,11 +560,11 @@ public:
     void copyCurentLayout();
     float layoutAspectRatio();
 
-    bool showOSMenuKeys() const;
-    void setShowOSMenuKeys(bool fShow);
+    bool hideOSMenuKeys() const;
+    void setHideOSMenuKeys(bool fHide);
 
-    bool showNumPad() const;
-    void setShowNumPad(bool fShow);
+    bool hideNumPad() const;
+    void setHideNumPad(bool fHide);
 
     const QColor color(KeyboardColorType enmColorType) const;
     void setColor(KeyboardColorType ennmColorType, const QColor &color);
@@ -640,8 +640,8 @@ private:
 
     Mode     m_enmMode;
 
-    bool m_fShowOSMenuKeys;
-    bool m_fShowNumPad;
+    bool m_fHideOSMenuKeys;
+    bool m_fHideNumPad;
 };
 
 /*********************************************************************************************************************************
@@ -733,16 +733,16 @@ class UISoftKeyboardSettingsWidget : public QIWithRetranslateUI<QWidget>
 
 signals:
 
-    void sigShowNumPad(bool fShow);
-    void sigShowOSMenuKeys(bool fShow);
+    void sigHideNumPad(bool fHide);
+    void sigHideOSMenuKeys(bool fHide);
     void sigColorCellClicked(int iColorRow);
     void sigCloseSettingsWidget();
 
 public:
 
     UISoftKeyboardSettingsWidget(QWidget *pParent = 0);
-    void setShowOSMenuKeys(bool fShow);
-    void setShowNumPad(bool fShow);
+    void setHideOSMenuKeys(bool fHide);
+    void setHideNumPad(bool fHide);
     void setTableItemColor(KeyboardColorType tableRow, const QColor &color);
 
 protected:
@@ -757,7 +757,7 @@ private:
 
     void prepareObjects();
 
-    QCheckBox    *m_pShowNumPadCheckBox;
+    QCheckBox    *m_pHideNumPadCheckBox;
     QCheckBox    *m_pShowOsMenuButtonsCheckBox;
     QGroupBox    *m_pColorTableGroupBox;
     QTableWidget *m_pColorSelectionTable;
@@ -2047,8 +2047,8 @@ UISoftKeyboardWidget::UISoftKeyboardWidget(QWidget *pParent /* = 0 */)
     , m_iRightMargin(10)
     , m_iBottomMargin(10)
     , m_enmMode(Mode_Keyboard)
-    , m_fShowOSMenuKeys(true)
-    , m_fShowNumPad(true)
+    , m_fHideOSMenuKeys(false)
+    , m_fHideNumPad(false)
 {
     prepareObjects();
 }
@@ -2071,7 +2071,7 @@ void UISoftKeyboardWidget::paintEvent(QPaintEvent *pEvent) /* override */
     if (!m_pCurrentKeyboardLayout || m_iInitialWidth == 0 || m_iInitialWidthNoNumPad == 0 || m_iInitialHeight == 0)
         return;
 
-    if (m_fShowNumPad)
+    if (!m_fHideNumPad)
         m_fScaleFactorX = width() / (float) m_iInitialWidth;
     else
         m_fScaleFactorX = width() / (float) m_iInitialWidthNoNumPad;
@@ -2100,10 +2100,10 @@ void UISoftKeyboardWidget::paintEvent(QPaintEvent *pEvent) /* override */
         for (int j = 0; j < keys.size(); ++j)
         {
             UISoftKeyboardKey &key = keys[j];
-            if (!m_fShowOSMenuKeys && key.isOSMenuKey())
+            if (m_fHideOSMenuKeys && key.isOSMenuKey())
                 continue;
 
-            if (!m_fShowNumPad &&key.isNumPadKey())
+            if (m_fHideNumPad &&key.isNumPadKey())
                 continue;
 
             painter.translate(key.keyGeometry().x(), key.keyGeometry().y());
@@ -2313,29 +2313,29 @@ float UISoftKeyboardWidget::layoutAspectRatio()
     return  m_iInitialHeight / (float) m_iInitialWidth;
 }
 
-bool UISoftKeyboardWidget::showOSMenuKeys() const
+bool UISoftKeyboardWidget::hideOSMenuKeys() const
 {
-    return m_fShowOSMenuKeys;
+    return m_fHideOSMenuKeys;
 }
 
-void UISoftKeyboardWidget::setShowOSMenuKeys(bool fShow)
+void UISoftKeyboardWidget::setHideOSMenuKeys(bool fHide)
 {
-    if (m_fShowOSMenuKeys == fShow)
+    if (m_fHideOSMenuKeys == fHide)
         return;
-    m_fShowOSMenuKeys = fShow;
+    m_fHideOSMenuKeys = fHide;
     update();
 }
 
-bool UISoftKeyboardWidget::showNumPad() const
+bool UISoftKeyboardWidget::hideNumPad() const
 {
-    return m_fShowNumPad;
+    return m_fHideNumPad;
 }
 
-void UISoftKeyboardWidget::setShowNumPad(bool fShow)
+void UISoftKeyboardWidget::setHideNumPad(bool fHide)
 {
-    if (m_fShowNumPad == fShow)
+    if (m_fHideNumPad == fHide)
         return;
-    m_fShowNumPad = fShow;
+    m_fHideNumPad = fHide;
     update();
 }
 
@@ -3331,7 +3331,7 @@ void UISoftKeyboardStatusBarWidget::updateLayoutNameInStatusBar(const QString &s
 
 UISoftKeyboardSettingsWidget::UISoftKeyboardSettingsWidget(QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QWidget>(pParent)
-    , m_pShowNumPadCheckBox(0)
+    , m_pHideNumPadCheckBox(0)
     , m_pShowOsMenuButtonsCheckBox(0)
     , m_pColorTableGroupBox(0)
     , m_pColorSelectionTable(0)
@@ -3342,16 +3342,16 @@ UISoftKeyboardSettingsWidget::UISoftKeyboardSettingsWidget(QWidget *pParent /* =
     prepareObjects();
 }
 
-void UISoftKeyboardSettingsWidget::setShowOSMenuKeys(bool fShow)
+void UISoftKeyboardSettingsWidget::setHideOSMenuKeys(bool fHide)
 {
     if (m_pShowOsMenuButtonsCheckBox)
-        m_pShowOsMenuButtonsCheckBox->setChecked(fShow);
+        m_pShowOsMenuButtonsCheckBox->setChecked(fHide);
 }
 
-void UISoftKeyboardSettingsWidget::setShowNumPad(bool fShow)
+void UISoftKeyboardSettingsWidget::setHideNumPad(bool fHide)
 {
-    if (m_pShowNumPadCheckBox)
-        m_pShowNumPadCheckBox->setChecked(fShow);
+    if (m_pHideNumPadCheckBox)
+        m_pHideNumPadCheckBox->setChecked(fHide);
 }
 
 void UISoftKeyboardSettingsWidget::setTableItemColor(KeyboardColorType tableRow, const QColor &color)
@@ -3374,10 +3374,10 @@ void UISoftKeyboardSettingsWidget::retranslateUi()
         m_pCloseButton->setToolTip(UISoftKeyboard::tr("Close the layout list"));
         m_pCloseButton->setText("Close");
     }
-    if (m_pShowNumPadCheckBox)
-        m_pShowNumPadCheckBox->setText(UISoftKeyboard::tr("Show NumPad"));
+    if (m_pHideNumPadCheckBox)
+        m_pHideNumPadCheckBox->setText(UISoftKeyboard::tr("Hide NumPad"));
     if (m_pShowOsMenuButtonsCheckBox)
-        m_pShowOsMenuButtonsCheckBox->setText(UISoftKeyboard::tr("Show OS/Menu Keys"));
+        m_pShowOsMenuButtonsCheckBox->setText(UISoftKeyboard::tr("Hide OS/Menu Keys"));
     if (m_pColorTableGroupBox)
         m_pColorTableGroupBox->setTitle(UISoftKeyboard::tr("Button Colors"));
     if (m_pColorSelectionTable)
@@ -3419,12 +3419,12 @@ void UISoftKeyboardSettingsWidget::prepareObjects()
     pTitleLayout->addWidget(m_pCloseButton);
     pSettingsLayout->addLayout(pTitleLayout, 0, 0, 1, 2);
 
-    m_pShowNumPadCheckBox = new QCheckBox;
+    m_pHideNumPadCheckBox = new QCheckBox;
     m_pShowOsMenuButtonsCheckBox = new QCheckBox;
-    pSettingsLayout->addWidget(m_pShowNumPadCheckBox, 1, 0, 1, 1);
+    pSettingsLayout->addWidget(m_pHideNumPadCheckBox, 1, 0, 1, 1);
     pSettingsLayout->addWidget(m_pShowOsMenuButtonsCheckBox, 2, 0, 1, 1);
-    connect(m_pShowNumPadCheckBox, &QCheckBox::toggled, this, &UISoftKeyboardSettingsWidget::sigShowNumPad);
-    connect(m_pShowOsMenuButtonsCheckBox, &QCheckBox::toggled, this, &UISoftKeyboardSettingsWidget::sigShowOSMenuKeys);
+    connect(m_pHideNumPadCheckBox, &QCheckBox::toggled, this, &UISoftKeyboardSettingsWidget::sigHideNumPad);
+    connect(m_pShowOsMenuButtonsCheckBox, &QCheckBox::toggled, this, &UISoftKeyboardSettingsWidget::sigHideOSMenuKeys);
 
     /* A groupbox to host the color table widget: */
     m_pColorTableGroupBox = new QGroupBox;
@@ -3663,16 +3663,16 @@ void UISoftKeyboard::sltStatusBarMessage(const QString &strMessage)
     statusBar()->showMessage(strMessage, iMessageTimeout);
 }
 
-void UISoftKeyboard::sltShowHideOSMenuKeys(bool fShow)
+void UISoftKeyboard::sltShowHideOSMenuKeys(bool fHide)
 {
     if (m_pKeyboardWidget)
-        m_pKeyboardWidget->setShowOSMenuKeys(fShow);
+        m_pKeyboardWidget->setHideOSMenuKeys(fHide);
 }
 
-void UISoftKeyboard::sltShowHideNumPad(bool fShow)
+void UISoftKeyboard::sltShowHideNumPad(bool fHide)
 {
     if (m_pKeyboardWidget)
-        m_pKeyboardWidget->setShowNumPad(fShow);
+        m_pKeyboardWidget->setHideNumPad(fHide);
 }
 
 void UISoftKeyboard::sltHandleColorCellClick(int iColorRow)
@@ -3773,8 +3773,8 @@ void UISoftKeyboard::prepareConnections()
     connect(m_pStatusBarWidget, &UISoftKeyboardStatusBarWidget::sigShowSettingWidget, this, &UISoftKeyboard::sltShowHideSettingsWidget);
     connect(m_pStatusBarWidget, &UISoftKeyboardStatusBarWidget::sigResetKeyboard, this, &UISoftKeyboard::sltResetKeyboard);
 
-    connect(m_pSettingsWidget, &UISoftKeyboardSettingsWidget::sigShowOSMenuKeys, this, &UISoftKeyboard::sltShowHideOSMenuKeys);
-    connect(m_pSettingsWidget, &UISoftKeyboardSettingsWidget::sigShowNumPad, this, &UISoftKeyboard::sltShowHideNumPad);
+    connect(m_pSettingsWidget, &UISoftKeyboardSettingsWidget::sigHideOSMenuKeys, this, &UISoftKeyboard::sltShowHideOSMenuKeys);
+    connect(m_pSettingsWidget, &UISoftKeyboardSettingsWidget::sigHideNumPad, this, &UISoftKeyboard::sltShowHideNumPad);
     connect(m_pSettingsWidget, &UISoftKeyboardSettingsWidget::sigColorCellClicked, this, &UISoftKeyboard::sltHandleColorCellClick);
     connect(m_pSettingsWidget, &UISoftKeyboardSettingsWidget::sigCloseSettingsWidget, this, &UISoftKeyboard::sltShowHideSettingsWidget);
 }
@@ -3795,6 +3795,9 @@ void UISoftKeyboard::saveSettings()
     if (m_pKeyboardWidget)
     {
         gEDataManager->setSoftKeyboardColorTheme(m_pKeyboardWidget->colorsToStringList());
+
+        gEDataManager->setSoftKeyboardOptions(m_pKeyboardWidget->hideNumPad(),
+                                              m_pKeyboardWidget->hideOSMenuKeys());
         if (m_pKeyboardWidget->currentLayout())
             gEDataManager->setSoftKeyboardSelectedLayout(m_pKeyboardWidget->currentLayout()->uid());
     }
@@ -3825,6 +3828,12 @@ void UISoftKeyboard::loadSettings()
     {
         m_pKeyboardWidget->colorsFromStringList(gEDataManager->softKeyboardColorTheme());
         m_pKeyboardWidget->setCurrentLayout(gEDataManager->softKeyboardSelectedLayout());
+        /* Load other options from exra data: */
+        bool fHideNumPad = false;
+        bool fHideOSMenuKeys = false;
+        gEDataManager->softKeyboardOptions(fHideNumPad, fHideOSMenuKeys);
+        m_pKeyboardWidget->setHideNumPad(fHideNumPad);
+        m_pKeyboardWidget->setHideOSMenuKeys(fHideOSMenuKeys);
     }
 }
 
@@ -3833,8 +3842,8 @@ void UISoftKeyboard::configure()
     setWindowIcon(UIIconPool::iconSet(":/keyboard_24px.png"));
     if (m_pKeyboardWidget && m_pSettingsWidget)
     {
-        m_pSettingsWidget->setShowOSMenuKeys(m_pKeyboardWidget->showOSMenuKeys());
-        m_pSettingsWidget->setShowNumPad(m_pKeyboardWidget->showNumPad());
+        m_pSettingsWidget->setHideOSMenuKeys(m_pKeyboardWidget->hideOSMenuKeys());
+        m_pSettingsWidget->setHideNumPad(m_pKeyboardWidget->hideNumPad());
 
         for (int i = (int)KeyboardColorType_Background;
              i < (int)KeyboardColorType_Max; ++i)
