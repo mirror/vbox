@@ -382,6 +382,7 @@ HRESULT Unattended::i_innerDetectIsoOSWindows(RTVFS hVfsIso, DETECTBUFFER *pBuf,
      * it contains easily decodable branch names, after that things goes weird.
      */
     const char *pszVersion = NULL;
+    const char *pszProduct = NULL;
     RTVFSFILE hVfsFile;
     int vrc = RTVfsFileOpen(hVfsIso, "sources/idwbinfo.txt", RTFILE_O_READ | RTFILE_O_DENY_NONE | RTFILE_O_OPEN, &hVfsFile);
     if (RT_SUCCESS(vrc))
@@ -496,8 +497,184 @@ HRESULT Unattended::i_innerDetectIsoOSWindows(RTVFS hVfsIso, DETECTBUFFER *pBuf,
             RTIniFileRelease(hIniFile);
         }
     }
+    bool fClarifyProd = false;
+    if (RT_FAILURE(vrc))
+    {
+        /*
+         * Check a INF file with a DriverVer that is updated with each service pack.
+         *      DriverVer=10/01/2002,5.2.3790.3959
+         */
+        vrc = RTVfsFileOpen(hVfsIso, "AMD64/HIVESYS.INF", RTFILE_O_READ | RTFILE_O_DENY_NONE | RTFILE_O_OPEN, &hVfsFile);
+        if (RT_SUCCESS(vrc))
+            *penmOsType = VBOXOSTYPE_WinNT_x64;
+        else
+        {
+            vrc = RTVfsFileOpen(hVfsIso, "I386/HIVESYS.INF", RTFILE_O_READ | RTFILE_O_DENY_NONE | RTFILE_O_OPEN, &hVfsFile);
+            if (RT_SUCCESS(vrc))
+                *penmOsType = VBOXOSTYPE_WinNT;
+        }
+        if (RT_SUCCESS(vrc))
+        {
+            RTINIFILE hIniFile;
+            vrc = RTIniFileCreateFromVfsFile(&hIniFile, hVfsFile, RTINIFILE_F_READONLY);
+            RTVfsFileRelease(hVfsFile);
+            if (RT_SUCCESS(vrc))
+            {
+                vrc = RTIniFileQueryValue(hIniFile, "Version", "DriverVer", pBuf->sz, sizeof(*pBuf), NULL);
+                if (RT_SUCCESS(vrc))
+                {
+                    LogRelFlow(("Unattended: HIVESYS.INF: DriverVer=%s\n", pBuf->sz));
+                    const char *psz = strchr(pBuf->sz, ',');
+                    psz = psz ? psz + 1 : pBuf->sz;
+                    if (RTStrVersionCompare(psz, "6.0.0") >= 0)
+                        LogRel(("Unattended: HIVESYS.INF: unknown: DriverVer=%s\n", psz));
+                    else if (RTStrVersionCompare(psz, "5.2.0") >= 0) /* W2K3, XP64 */
+                    {
+                        fClarifyProd = true;
+                        *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win2k3);
+                        if (RTStrVersionCompare(psz, "5.2.3790.3959") >= 0)
+                            pszVersion = "sp2";
+                        else if (RTStrVersionCompare(psz, "5.2.3790.1830") >= 0)
+                            pszVersion = "sp1";
+                    }
+                    else if (RTStrVersionCompare(psz, "5.1.0") >= 0) /* XP */
+                    {
+                        *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_WinXP);
+                        if (RTStrVersionCompare(psz, "5.1.2600.5512") >= 0)
+                            pszVersion = "sp3";
+                        else if (RTStrVersionCompare(psz, "5.1.2600.2180") >= 0)
+                            pszVersion = "sp2";
+                        else if (RTStrVersionCompare(psz, "5.1.2600.1105") >= 0)
+                            pszVersion = "sp1";
+                    }
+                    else if (RTStrVersionCompare(psz, "5.0.0") >= 0)
+                    {
+                        *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win2k);
+                        if (RTStrVersionCompare(psz, "5.0.2195.6717") >= 0)
+                            pszVersion = "sp4";
+                        else if (RTStrVersionCompare(psz, "5.0.2195.5438") >= 0)
+                            pszVersion = "sp3";
+                        else if (RTStrVersionCompare(psz, "5.0.2195.1620") >= 0)
+                            pszVersion = "sp1";
+                    }
+                    else
+                        LogRel(("Unattended: HIVESYS.INF: unknown: DriverVer=%s\n", psz));
+                }
+                RTIniFileRelease(hIniFile);
+            }
+        }
+    }
+    if (RT_FAILURE(vrc) || fClarifyProd)
+    {
+        /*
+         * NT 4 and older does not have DriverVer entries, we consult the PRODSPEC.INI, which
+         * works for NT4 & W2K. It does usually not reflect the service pack.
+         */
+        vrc = RTVfsFileOpen(hVfsIso, "AMD64/PRODSPEC.INI", RTFILE_O_READ | RTFILE_O_DENY_NONE | RTFILE_O_OPEN, &hVfsFile);
+        if (RT_SUCCESS(vrc))
+            *penmOsType = VBOXOSTYPE_WinNT_x64;
+        else
+        {
+            vrc = RTVfsFileOpen(hVfsIso, "I386/PRODSPEC.INI", RTFILE_O_READ | RTFILE_O_DENY_NONE | RTFILE_O_OPEN, &hVfsFile);
+            if (RT_SUCCESS(vrc))
+                *penmOsType = VBOXOSTYPE_WinNT;
+        }
+        if (RT_SUCCESS(vrc))
+        {
+
+            RTINIFILE hIniFile;
+            vrc = RTIniFileCreateFromVfsFile(&hIniFile, hVfsFile, RTINIFILE_F_READONLY);
+            RTVfsFileRelease(hVfsFile);
+            if (RT_SUCCESS(vrc))
+            {
+                vrc = RTIniFileQueryValue(hIniFile, "Product Specification", "Version", pBuf->sz, sizeof(*pBuf), NULL);
+                if (RT_SUCCESS(vrc))
+                {
+                    LogRelFlow(("Unattended: PRODSPEC.INI: Version=%s\n", pBuf->sz));
+                    if (RTStrVersionCompare(pBuf->sz, "5.1") >= 0) /* Shipped with XP + W2K3, but version stuck at 5.0. */
+                        LogRel(("Unattended: PRODSPEC.INI: unknown: DriverVer=%s\n", pBuf->sz));
+                    else if (RTStrVersionCompare(pBuf->sz, "5.0") >= 0) /* 2000 */
+                    {
+                        vrc = RTIniFileQueryValue(hIniFile, "Product Specification", "Product", pBuf->sz, sizeof(*pBuf), NULL);
+                        if (RT_SUCCESS(vrc) && RTStrNICmp(pBuf->sz, RT_STR_TUPLE("Windows XP")) == 0)
+                            *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_WinXP);
+                        else if (RT_SUCCESS(vrc) && RTStrNICmp(pBuf->sz, RT_STR_TUPLE("Windows Server 2003")) == 0)
+                            *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win2k3);
+                        else
+                            *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win2k);
+
+                        if (RT_SUCCESS(vrc) && (strstr(pBuf->sz, "Server") || strstr(pBuf->sz, "server")))
+                            pszProduct = "Server";
+                    }
+                    else if (RTStrVersionCompare(pBuf->sz, "4.0") >= 0) /* NT4 */
+                        *penmOsType = VBOXOSTYPE_WinNT4;
+                    else
+                        LogRel(("Unattended: PRODSPEC.INI: unknown: DriverVer=%s\n", pBuf->sz));
+
+                    vrc = RTIniFileQueryValue(hIniFile, "Product Specification", "ProductType", pBuf->sz, sizeof(*pBuf), NULL);
+                    if (RT_SUCCESS(vrc))
+                        pszProduct = strcmp(pBuf->sz, "0") == 0 ? "Workstation" : /* simplification: */ "Server";
+                }
+                RTIniFileRelease(hIniFile);
+            }
+        }
+        if (fClarifyProd)
+            vrc = VINF_SUCCESS;
+    }
+    if (RT_FAILURE(vrc))
+    {
+        /*
+         * NT 3.x we look at the LoadIdentifier (boot manager) string in TXTSETUP.SIF/TXT.
+         */
+        vrc = RTVfsFileOpen(hVfsIso, "I386/TXTSETUP.SIF", RTFILE_O_READ | RTFILE_O_DENY_NONE | RTFILE_O_OPEN, &hVfsFile);
+        if (RT_FAILURE(vrc))
+            vrc = RTVfsFileOpen(hVfsIso, "I386/TXTSETUP.INF", RTFILE_O_READ | RTFILE_O_DENY_NONE | RTFILE_O_OPEN, &hVfsFile);
+        if (RT_SUCCESS(vrc))
+        {
+            *penmOsType = VBOXOSTYPE_WinNT;
+
+            RTINIFILE hIniFile;
+            vrc = RTIniFileCreateFromVfsFile(&hIniFile, hVfsFile, RTINIFILE_F_READONLY);
+            RTVfsFileRelease(hVfsFile);
+            if (RT_SUCCESS(vrc))
+            {
+                vrc = RTIniFileQueryValue(hIniFile, "SetupData", "ProductType", pBuf->sz, sizeof(*pBuf), NULL);
+                if (RT_SUCCESS(vrc))
+                    pszProduct = strcmp(pBuf->sz, "0") == 0 ? "Workstation" : /* simplification: */ "Server";
+
+                vrc = RTIniFileQueryValue(hIniFile, "SetupData", "LoadIdentifier", pBuf->sz, sizeof(*pBuf), NULL);
+                if (RT_SUCCESS(vrc))
+                {
+                    LogRelFlow(("Unattended: TXTSETUP.SIF: LoadIdentifier=%s\n", pBuf->sz));
+                    char *psz = pBuf->sz;
+                    while (!RT_C_IS_DIGIT(*psz) && *psz)
+                        psz++;
+                    char *psz2 = psz;
+                    while (RT_C_IS_DIGIT(*psz2) || *psz2 == '.')
+                        psz2++;
+                    *psz2 = '\0';
+                    if (RTStrVersionCompare(psz, "6.0") >= 0)
+                        LogRel(("Unattended: TXTSETUP.SIF: unknown: LoadIdentifier=%s\n", pBuf->sz));
+                    else if (RTStrVersionCompare(psz, "4.0") >= 0)
+                        *penmOsType = VBOXOSTYPE_WinNT4;
+                    else if (RTStrVersionCompare(psz, "3.1") >= 0)
+                    {
+                        *penmOsType = VBOXOSTYPE_WinNT3x;
+                        pszVersion = psz;
+                    }
+                    else
+                        LogRel(("Unattended: TXTSETUP.SIF: unknown: LoadIdentifier=%s\n", pBuf->sz));
+                }
+                RTIniFileRelease(hIniFile);
+            }
+        }
+    }
+
     if (pszVersion)
         try { mStrDetectedOSVersion = pszVersion; }
+        catch (std::bad_alloc &) { return E_OUTOFMEMORY; }
+    if (pszProduct)
+        try { mStrDetectedOSFlavor = pszProduct; }
         catch (std::bad_alloc &) { return E_OUTOFMEMORY; }
 
     /*
