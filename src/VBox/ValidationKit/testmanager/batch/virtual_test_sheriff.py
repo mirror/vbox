@@ -158,6 +158,11 @@ class VirtualTestSheriffCaseFile(object):
         return self.isVBoxTest() \
            and self.oTestCase.sName.lower().startswith('install:');
 
+    def isVBoxUnattendedInstallTest(self):
+        """ Test case classification: VirtualBox Guest installation test. """
+        return self.isVBoxTest() \
+           and self.oTestCase.sName.lower().startswith('uinstall:');
+
     def isVBoxUSBTest(self):
         """ Test case classification: VirtualBox USB test. """
         return self.isVBoxTest() \
@@ -1487,7 +1492,7 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
                 self.dprint(u'investigateVBoxUnitTest is taking over %s.' % (oCaseFile.sLongName,));
                 fRc = self.investigateVBoxUnitTest(oCaseFile);
 
-            elif oCaseFile.isVBoxInstallTest():
+            elif oCaseFile.isVBoxInstallTest() or oCaseFile.isVBoxUnattendedInstallTest():
                 self.dprint(u'investigateVBoxVMTest is taking over %s.' % (oCaseFile.sLongName,));
                 fRc = self.investigateVBoxVMTest(oCaseFile, fSingleVM = True);
 
