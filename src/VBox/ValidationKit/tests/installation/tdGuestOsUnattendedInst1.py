@@ -399,9 +399,14 @@ class tdGuestOsInstTest1(vbox.TestDriver):
         # pylint: disable=line-too-long
         oSet.aoTestVms.extend([
             # Windows7 RTM:
-            UnattendedVm(oSet, 'tst-w7-32', 'Windows7',     '6.0/uaisos/en_windows_7_enterprise_x86_dvd_x15-70745.iso'), # ~6GiB
-            UnattendedVm(oSet, 'tst-w7-64', 'Windows7_64',  '6.0/uaisos/en_windows_7_enterprise_x64_dvd_x15-70749.iso'), # ~10GiB
-
+            UnattendedVm(oSet, 'tst-w7-32',    'Windows7',    '6.0/uaisos/en_windows_7_enterprise_x86_dvd_x15-70745.iso'),         # >=6GiB
+            UnattendedVm(oSet, 'tst-w7-64',    'Windows7_64', '6.0/uaisos/en_windows_7_enterprise_x64_dvd_x15-70749.iso'),         # >=10GiB
+            UnattendedVm(oSet, 'tst-w7sp1-32', 'Windows7',    '6.0/uaisos/en_windows_7_enterprise_with_sp1_x86_dvd_u_677710.iso'), # >=6GiB
+            UnattendedVm(oSet, 'tst-w7sp1-64', 'Windows7_64', '6.0/uaisos/en_windows_7_enterprise_with_sp1_x64_dvd_u_677651.iso'), # >=8GiB
+            UnattendedVm(oSet, 'tst-w8-32',    'Windows8',    '6.0/uaisos/en_windows_8_enterprise_x86_dvd_917587.iso'),            # >=6GiB
+            UnattendedVm(oSet, 'tst-w8-64',    'Windows8_64', '6.0/uaisos/en_windows_8_enterprise_x64_dvd_917522.iso'),            # >=9GiB
+            UnattendedVm(oSet, 'tst-w81-32',   'Windows81',   '6.0/uaisos/en_windows_8_1_enterprise_x86_dvd_2791510.iso'),         # >=5GiB
+            UnattendedVm(oSet, 'tst-w81-64',   'Windows81_64','6.0/uaisos/en_windows_8_1_enterprise_x64_dvd_2791088.iso'),         # >=8GiB
             ## @todo couldn't find licence terms.
             #UnattendedVm(oSet, 'tst-w10-1507-32', 'Windows10',     '6.0/uaisos/en_windows_10_enterprise_x86_dvd_6851156.iso'),
             #UnattendedVm(oSet, 'tst-w10-1507-64', 'Windows10_64',  '6.0/uaisos/en_windows_10_enterprise_x64_dvd_6851151.iso'),
