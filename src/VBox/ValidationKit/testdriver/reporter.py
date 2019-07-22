@@ -1383,6 +1383,78 @@ def log2Xcpt(sText=None, cFrames=1):
     """
     return logXcptWorker(2, False, "", sText, cFrames);
 
+def log3(sText):
+    """Log level 3: Writes the specfied text to the log."""
+    g_oLock.acquire();
+    try:
+        rc = g_oReporter.log(3, sText, utils.getCallerName(), utils.getTimePrefix());
+    except:
+        rc = -1;
+    finally:
+        g_oLock.release();
+    return rc;
+
+def log3Xcpt(sText=None, cFrames=1):
+    """
+    Log level 3: Log an exception, optionally with a preceeding message and
+    more than one call frame.
+    """
+    return logXcptWorker(3, False, "", sText, cFrames);
+
+def log4(sText):
+    """Log level 4: Writes the specfied text to the log."""
+    g_oLock.acquire();
+    try:
+        rc = g_oReporter.log(4, sText, utils.getCallerName(), utils.getTimePrefix());
+    except:
+        rc = -1;
+    finally:
+        g_oLock.release();
+    return rc;
+
+def log4Xcpt(sText=None, cFrames=1):
+    """
+    Log level 4: Log an exception, optionally with a preceeding message and
+    more than one call frame.
+    """
+    return logXcptWorker(4, False, "", sText, cFrames);
+
+def log5(sText):
+    """Log level 2: Writes the specfied text to the log."""
+    g_oLock.acquire();
+    try:
+        rc = g_oReporter.log(5, sText, utils.getCallerName(), utils.getTimePrefix());
+    except:
+        rc = -1;
+    finally:
+        g_oLock.release();
+    return rc;
+
+def log5Xcpt(sText=None, cFrames=1):
+    """
+    Log level 5: Log an exception, optionally with a preceeding message and
+    more than one call frame.
+    """
+    return logXcptWorker(5, False, "", sText, cFrames);
+
+def log6(sText):
+    """Log level 6: Writes the specfied text to the log."""
+    g_oLock.acquire();
+    try:
+        rc = g_oReporter.log(6, sText, utils.getCallerName(), utils.getTimePrefix());
+    except:
+        rc = -1;
+    finally:
+        g_oLock.release();
+    return rc;
+
+def log6Xcpt(sText=None, cFrames=1):
+    """
+    Log level 6: Log an exception, optionally with a preceeding message and
+    more than one call frame.
+    """
+    return logXcptWorker(6, False, "", sText, cFrames);
+
 def maybeErr(fIsError, sText):
     """ Maybe error or maybe normal log entry. """
     if fIsError is True:
