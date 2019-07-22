@@ -381,6 +381,7 @@ HRESULT Unattended::i_innerDetectIsoOSWindows(RTVFS hVfsIso, DETECTBUFFER *pBuf,
      * This file appeared with Vista beta 2 from what we can tell.  Before windows 10
      * it contains easily decodable branch names, after that things goes weird.
      */
+    const char *pszVersion = NULL;
     RTVFSFILE hVfsFile;
     int vrc = RTVfsFileOpen(hVfsIso, "sources/idwbinfo.txt", RTFILE_O_READ | RTFILE_O_DENY_NONE | RTFILE_O_OPEN, &hVfsFile);
     if (RT_SUCCESS(vrc))
@@ -424,12 +425,80 @@ HRESULT Unattended::i_innerDetectIsoOSWindows(RTVFS hVfsIso, DETECTBUFFER *pBuf,
                 else if (   RTStrNICmp(pBuf->sz, RT_STR_TUPLE("win8")) == 0
                          || RTStrNICmp(pBuf->sz, RT_STR_TUPLE("winmain_win8")) == 0 )
                     *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win8);
+                else if (RTStrNICmp(pBuf->sz, RT_STR_TUPLE("th1")) == 0)
+                {
+                    pszVersion = "1507";    // aka. GA, retroactively 1507
+                    *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win10);
+                }
+                else if (RTStrNICmp(pBuf->sz, RT_STR_TUPLE("th2")) == 0)
+                {
+                    pszVersion = "1511";    // aka. threshold 2
+                    *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win10);
+                }
+                else if (RTStrNICmp(pBuf->sz, RT_STR_TUPLE("rs1_release")) == 0)
+                {
+                    pszVersion = "1607";    // aka. anniversay update; rs=redstone
+                    *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win10);
+                }
+                else if (RTStrNICmp(pBuf->sz, RT_STR_TUPLE("rs2_release")) == 0)
+                {
+                    pszVersion = "1703";    // aka. creators update
+                    *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win10);
+                }
+                else if (RTStrNICmp(pBuf->sz, RT_STR_TUPLE("rs3_release")) == 0)
+                {
+                    pszVersion = "1709";    // aka. fall creators update
+                    *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win10);
+                }
+                else if (RTStrNICmp(pBuf->sz, RT_STR_TUPLE("rs4_release")) == 0)
+                {
+                    pszVersion = "1803";
+                    *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win10);
+                }
+                else if (RTStrNICmp(pBuf->sz, RT_STR_TUPLE("rs5_release")) == 0)
+                {
+                    pszVersion = "1809";
+                    *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win10);
+                }
+                else if (RTStrNICmp(pBuf->sz, RT_STR_TUPLE("19h1_release")) == 0)
+                {
+                    pszVersion = "1903";
+                    *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win10);
+                }
+                else if (RTStrNICmp(pBuf->sz, RT_STR_TUPLE("19h2_release")) == 0)
+                {
+                    pszVersion = "1909";    // ??
+                    *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win10);
+                }
+                else if (RTStrNICmp(pBuf->sz, RT_STR_TUPLE("20h1_release")) == 0)
+                {
+                    pszVersion = "2003";    // ??
+                    *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win10);
+                }
+                else if (RTStrNICmp(pBuf->sz, RT_STR_TUPLE("20h2_release")) == 0)
+                {
+                    pszVersion = "2009";    // ??
+                    *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win10);
+                }
+                else if (RTStrNICmp(pBuf->sz, RT_STR_TUPLE("21h1_release")) == 0)
+                {
+                    pszVersion = "2103";    // ??
+                    *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win10);
+                }
+                else if (RTStrNICmp(pBuf->sz, RT_STR_TUPLE("21h2_release")) == 0)
+                {
+                    pszVersion = "2109";    // ??
+                    *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win10);
+                }
                 else
                     LogRel(("Unattended: sources/idwbinfo.txt: Unknown: BuildBranch=%s\n", pBuf->sz));
             }
             RTIniFileRelease(hIniFile);
         }
     }
+    if (pszVersion)
+        try { mStrDetectedOSVersion = pszVersion; }
+        catch (std::bad_alloc &) { return E_OUTOFMEMORY; }
 
     /*
      * Look for sources/lang.ini and try parse it to get the languages out of it.
