@@ -35,6 +35,7 @@
 #include "UIGraphicsRotatorButton.h"
 #include "UIGraphicsTextPane.h"
 #include "UIIconPool.h"
+#include "UIMachineAttributeSetter.h"
 #include "UINameAndSystemEditor.h"
 #include "UIVirtualBoxManager.h"
 
@@ -432,7 +433,8 @@ void UIDetailsElement::sltHandleAnchorClicked(const QString &strAnchor)
     const QString strData = strAnchor.section(',', 1);
 
     /* Handle known anchor roles: */
-    switch (roles.value(strRole, AnchorRole_Invalid))
+    const AnchorRole enmRole = roles.value(strRole, AnchorRole_Invalid);
+    switch (enmRole)
     {
         case AnchorRole_MachineName:
         {
@@ -441,10 +443,18 @@ void UIDetailsElement::sltHandleAnchorClicked(const QString &strAnchor)
             if (pPopup)
             {
                 /* Prepare editor: */
-                UINameAndSystemEditor *pEditor = new UINameAndSystemEditor(pPopup, true, false, false);
+                UINameAndSystemEditor *pEditor =
+                    new UINameAndSystemEditor(pPopup,
+                                              enmRole == AnchorRole_MachineName /* choose name? */,
+                                              false /* choose path? */,
+                                              false /* choose type? */);
                 if (pEditor)
                 {
-                    pEditor->setName(strData.section(',', 0, 0));
+                    switch (enmRole)
+                    {
+                        case AnchorRole_MachineName: pEditor->setName(strData.section(',', 0, 0)); break;
+                        default: break;
+                    }
 
                     /* Add to popup: */
                     pPopup->setWidget(pEditor);
@@ -456,7 +466,13 @@ void UIDetailsElement::sltHandleAnchorClicked(const QString &strAnchor)
 
                 /* Execute popup, change machine name if confirmed: */
                 if (pPopup->exec() == QDialog::Accepted)
-                    uiCommon().setMachineName(machine(), pEditor->name());
+                {
+                    switch (enmRole)
+                    {
+                        case AnchorRole_MachineName: setMachineAttribute(machine(), MachineAttribute_Name, QVariant::fromValue(pEditor->name())); break;
+                        default: break;
+                    }
+                }
 
                 /* Delete popup: */
                 delete pPopup;

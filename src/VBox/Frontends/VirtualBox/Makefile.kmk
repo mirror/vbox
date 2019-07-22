@@ -1313,6 +1313,7 @@ UICommon_SOURCES = \
 	src/globals/UIErrorString.cpp \
 	src/globals/UIIconPool.cpp \
 	src/globals/UIImageTools.cpp \
+	src/globals/UIMachineAttributeSetter.cpp \
 	src/globals/UIMainEventListener.cpp \
 	src/globals/UIMessageCenter.cpp \
 	src/globals/UIModalWindowManager.cpp \

@@ -2520,38 +2520,6 @@ CSession UICommon::tryToOpenSessionFor(CMachine &comMachine)
     return comSession;
 }
 
-void UICommon::setMachineName(const CMachine &comConstMachine, const QString &strName)
-{
-    /* Get editable machine & session: */
-    CMachine comMachine = comConstMachine;
-    CSession comSession = tryToOpenSessionFor(comMachine);
-
-    /* Main API block: */
-    do
-    {
-        /* Change machine name: */
-        comMachine.SetName(strName);
-        if (!comMachine.isOk())
-        {
-            msgCenter().cannotChangeMachineAttribute(comMachine);
-            break;
-        }
-
-        /* Save machine settings: */
-        comMachine.SaveSettings();
-        if (!comMachine.isOk())
-        {
-            msgCenter().cannotSaveMachineSettings(comMachine);
-            break;
-        }
-    }
-    while (0);
-
-    /* Close session to editable comMachine if necessary: */
-    if (!comSession.isNull())
-        comSession.UnlockMachine();
-}
-
 void UICommon::startMediumEnumeration(const CMediumVector &comMedia /* = CMediumVector() */)
 {
     /* Make sure UICommon is already valid: */
