@@ -45,6 +45,7 @@ enum AnchorRole
 {
     AnchorRole_Invalid,
     AnchorRole_MachineName,
+    AnchorRole_MachineLocation,
     AnchorRole_OSType,
     AnchorRole_Storage,
 };
@@ -146,6 +147,7 @@ void UIDetailsElement::updateAppearance()
     /* Update anchor role restrictions: */
     ConfigurationAccessLevel cal = m_pSet->configurationAccessLevel();
     m_pTextPane->setAnchorRoleRestricted("#machine_name", cal != ConfigurationAccessLevel_Full);
+    m_pTextPane->setAnchorRoleRestricted("#machine_location", cal != ConfigurationAccessLevel_Full);
     m_pTextPane->setAnchorRoleRestricted("#os_type", cal != ConfigurationAccessLevel_Full);
     m_pTextPane->setAnchorRoleRestricted("#mount", cal == ConfigurationAccessLevel_Null);
     m_pTextPane->setAnchorRoleRestricted("#attach", cal != ConfigurationAccessLevel_Full);
@@ -427,6 +429,7 @@ void UIDetailsElement::sltHandleAnchorClicked(const QString &strAnchor)
     /* Compose a map of known anchor roles: */
     QMap<QString, AnchorRole> roles;
     roles["#machine_name"] = AnchorRole_MachineName;
+    roles["#machine_location"] = AnchorRole_MachineLocation;
     roles["#os_type"] = AnchorRole_OSType;
     roles["#mount"] = AnchorRole_Storage;
     roles["#attach"] = AnchorRole_Storage;
@@ -440,6 +443,7 @@ void UIDetailsElement::sltHandleAnchorClicked(const QString &strAnchor)
     switch (enmRole)
     {
         case AnchorRole_MachineName:
+        case AnchorRole_MachineLocation:
         case AnchorRole_OSType:
         {
             /* Prepare popup: */
@@ -450,13 +454,14 @@ void UIDetailsElement::sltHandleAnchorClicked(const QString &strAnchor)
                 UINameAndSystemEditor *pEditor =
                     new UINameAndSystemEditor(pPopup,
                                               enmRole == AnchorRole_MachineName /* choose name? */,
-                                              false /* choose path? */,
+                                              enmRole == AnchorRole_MachineLocation /* choose path? */,
                                               enmRole == AnchorRole_OSType /* choose type? */);
                 if (pEditor)
                 {
                     switch (enmRole)
                     {
                         case AnchorRole_MachineName: pEditor->setName(strData.section(',', 0, 0)); break;
+                        case AnchorRole_MachineLocation: pEditor->setPath(strData.section(',', 0, 0)); break;
                         case AnchorRole_OSType: pEditor->setTypeId(strData.section(',', 0, 0)); break;
                         default: break;
                     }
@@ -480,6 +485,7 @@ void UIDetailsElement::sltHandleAnchorClicked(const QString &strAnchor)
                     switch (enmRole)
                     {
                         case AnchorRole_MachineName: setMachineAttribute(machine(), MachineAttribute_Name, QVariant::fromValue(pEditor->name())); break;
+                        case AnchorRole_MachineLocation: setMachineAttribute(machine(), MachineAttribute_Location, QVariant::fromValue(pEditor->path())); break;
                         case AnchorRole_OSType: setMachineAttribute(machine(), MachineAttribute_OSType, QVariant::fromValue(pEditor->typeId())); break;
                         default: break;
                     }

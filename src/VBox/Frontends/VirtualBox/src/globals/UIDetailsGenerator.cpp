@@ -80,8 +80,15 @@ UITextTable UIDetailsGenerator::generateMachineInformationGeneral(CMachine &comM
 
     /* Settings file location: */
     if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral_Location)
+    {
+        /* Configure hovering anchor: */
+        const QString strAnchorType = QString("machine_location");
+        const QString strMachineLocation = comMachine.GetSettingsFilePath();
         table << UITextTableLine(QApplication::translate("UIDetails", "Settings File Location", "details (general)"),
-                                 QDir::toNativeSeparators(QFileInfo(comMachine.GetSettingsFilePath()).absolutePath()));
+                                 QString("<a href=#%1,%2>%3</a>").arg(strAnchorType,
+                                                                      strMachineLocation,
+                                                                      QDir::toNativeSeparators(QFileInfo(strMachineLocation).absolutePath())));
+    }
 
     /* Groups: */
     if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral_Groups)

@@ -31,6 +31,7 @@ enum MachineAttribute
     MachineAttribute_Invalid,
     MachineAttribute_Name,
     MachineAttribute_OSType,
+    MachineAttribute_Location,
 };
 
 /** Namespace used to assign CMachine attributes on more convenient basis. */

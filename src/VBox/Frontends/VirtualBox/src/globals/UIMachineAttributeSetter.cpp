@@ -54,6 +54,28 @@ void UIMachineAttributeSetter::setMachineAttribute(const CMachine &comConstMachi
                 }
                 break;
             }
+            case MachineAttribute_Location:
+            {
+                /* Do not save machine settings: */
+                fSaveSettings = false;
+                /* Prepare machine move progress: */
+                CProgress comProgress = comMachine.MoveTo(guiAttribute.toString(), "basic");
+                if (!comMachine.isOk())
+                {
+                    msgCenter().cannotMoveMachine(comMachine);
+                    fErrorHappened = true;
+                    break;
+                }
+                /* Show machine move progress: */
+                msgCenter().showModalProgressDialog(comProgress, comMachine.GetName(), ":/progress_clone_90px.png");
+                if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
+                {
+                    msgCenter().cannotMoveMachine(comProgress, comMachine.GetName());
+                    fErrorHappened = true;
+                    break;
+                }
+                break;
+            }
             case MachineAttribute_OSType:
             {
                 /* Change machine OS type: */
