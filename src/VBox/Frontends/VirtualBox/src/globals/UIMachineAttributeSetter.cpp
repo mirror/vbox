@@ -35,19 +35,46 @@ void UIMachineAttributeSetter::setMachineAttribute(const CMachine &comConstMachi
     /* Main API block: */
     do
     {
+        /* Save machine settings? */
+        bool fSaveSettings = true;
+        /* Error happened? */
+        bool fErrorHappened = false;
+
         /* Assign attribute depending on passed type: */
         switch (enmType)
         {
-            case MachineAttribute_Name: comMachine.SetName(guiAttribute.toString()); break;
-            case MachineAttribute_OSType: comMachine.SetOSTypeId(guiAttribute.toString()); break;
-            default: break;
+            case MachineAttribute_Name:
+            {
+                /* Change machine name: */
+                comMachine.SetName(guiAttribute.toString());
+                if (!comMachine.isOk())
+                {
+                    msgCenter().cannotChangeMachineAttribute(comMachine);
+                    fErrorHappened = true;
+                }
+                break;
+            }
+            case MachineAttribute_OSType:
+            {
+                /* Change machine OS type: */
+                comMachine.SetOSTypeId(guiAttribute.toString());
+                if (!comMachine.isOk())
+                {
+                    msgCenter().cannotChangeMachineAttribute(comMachine);
+                    fErrorHappened = true;
+                }
+                break;
+            }
+            default:
+                break;
         }
-        /* Change machine name: */
-        if (!comMachine.isOk())
-        {
-            msgCenter().cannotChangeMachineAttribute(comMachine);
+
+        /* Error happened? */
+        if (fErrorHappened)
             break;
-        }
+        /* Save machine settings? */
+        if (!fSaveSettings)
+            break;
 
         /* Save machine settings: */
         comMachine.SaveSettings();
