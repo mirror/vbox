@@ -79,6 +79,8 @@ public:
     /** Returns the VM name. */
     QString name() const;
 
+    /** Defines the VM @a strPath. */
+    void setPath(const QString &strPath);
     /** Returns path string selected by the user. */
     QString path() const;
 

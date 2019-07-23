@@ -75,6 +75,13 @@ QString UINameAndSystemEditor::name() const
     return m_pNameLineEdit->text();
 }
 
+void UINameAndSystemEditor::setPath(const QString &strPath)
+{
+    if (!m_pPathSelector)
+        return;
+    m_pPathSelector->setPath(strPath);
+}
+
 QString UINameAndSystemEditor::path() const
 {
     if (!m_pPathSelector)
