@@ -508,9 +508,7 @@ static RTEXITCODE showCloudInstanceInfo(HandlerArg *a, int iFirst, PCLOUDCOMMONO
         }
     }
 
-    Bstr bstrProfileName;
     ComPtr<ICloudProfile> pCloudProfile = pCommonOpts->profile.pCloudProfile;
-    pCloudProfile->COMGETTER(Name)(bstrProfileName.asOutParam());
 
     ComObjPtr<ICloudClient> oCloudClient;
     CHECK_ERROR2_RET(hrc, pCloudProfile,
@@ -625,9 +623,7 @@ static RTEXITCODE startCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT 
         }
     }
 
-    Bstr bstrProfileName;
     ComPtr<ICloudProfile> pCloudProfile = pCommonOpts->profile.pCloudProfile;
-    pCloudProfile->COMGETTER(Name)(bstrProfileName.asOutParam());
 
     ComObjPtr<ICloudClient> oCloudClient;
     CHECK_ERROR2_RET(hrc, pCloudProfile,
@@ -684,9 +680,7 @@ static RTEXITCODE pauseCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT 
         }
     }
 
-    Bstr bstrProfileName;
     ComPtr<ICloudProfile> pCloudProfile = pCommonOpts->profile.pCloudProfile;
-    pCloudProfile->COMGETTER(Name)(bstrProfileName.asOutParam());
 
     ComObjPtr<ICloudClient> oCloudClient;
     CHECK_ERROR2_RET(hrc, pCloudProfile,
@@ -743,9 +737,7 @@ static RTEXITCODE terminateCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMON
         }
     }
 
-    Bstr bstrProfileName;
     ComPtr<ICloudProfile> pCloudProfile = pCommonOpts->profile.pCloudProfile;
-    pCloudProfile->COMGETTER(Name)(bstrProfileName.asOutParam());
 
     ComObjPtr<ICloudClient> oCloudClient;
     CHECK_ERROR2_RET(hrc, pCloudProfile,
@@ -872,9 +864,7 @@ static RTEXITCODE createCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
         }
     }
 
-    Bstr bstrProfileName;
     ComPtr<ICloudProfile> pCloudProfile = pCommonOpts->profile.pCloudProfile;
-    pCloudProfile->COMGETTER(Name)(bstrProfileName.asOutParam());
 
     ComObjPtr<ICloudClient> oCloudClient;
     CHECK_ERROR2_RET(hrc, pCloudProfile,
@@ -984,9 +974,7 @@ static RTEXITCODE exportCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
         return errorArgument("Missing parameter: --id");
 
 
-    Bstr bstrProfileName;
     ComPtr<ICloudProfile> pCloudProfile = pCommonOpts->profile.pCloudProfile;
-    pCloudProfile->COMGETTER(Name)(bstrProfileName.asOutParam());
 
     ComObjPtr<ICloudClient> oCloudClient;
     CHECK_ERROR2_RET(hrc, pCloudProfile,
@@ -1097,9 +1085,7 @@ static RTEXITCODE importCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
         }
     }
 
-    Bstr bstrProfileName;
     ComPtr<ICloudProfile> pCloudProfile = pCommonOpts->profile.pCloudProfile;
-    pCloudProfile->COMGETTER(Name)(bstrProfileName.asOutParam());
 
     ComPtr<IVirtualBox> pVirtualBox = a->virtualBox;
     ComObjPtr<ICloudClient> oCloudClient;
@@ -1158,9 +1144,7 @@ static RTEXITCODE showCloudImageInfo(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT 
         }
     }
 
-    Bstr bstrProfileName;
     ComPtr<ICloudProfile> pCloudProfile = pCommonOpts->profile.pCloudProfile;
-    pCloudProfile->COMGETTER(Name)(bstrProfileName.asOutParam());
 
     ComObjPtr<ICloudClient> oCloudClient;
     CHECK_ERROR2_RET(hrc, pCloudProfile,
@@ -1248,9 +1232,7 @@ static RTEXITCODE deleteCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
         }
     }
 
-    Bstr bstrProfileName;
     ComPtr<ICloudProfile> pCloudProfile = pCommonOpts->profile.pCloudProfile;
-    pCloudProfile->COMGETTER(Name)(bstrProfileName.asOutParam());
 
     ComObjPtr<ICloudClient> oCloudClient;
     CHECK_ERROR2_RET(hrc, pCloudProfile,
