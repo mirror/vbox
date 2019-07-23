@@ -398,37 +398,42 @@ class tdGuestOsInstTest1(vbox.TestDriver):
         oSet = vboxtestvms.TestVmSet(self.oTestVmManager, fIgnoreSkippedVm = True);
         # pylint: disable=line-too-long
         oSet.aoTestVms.extend([
-            UnattendedVm(oSet, 'tst-vista-32',    'WindowsVista',    '6.0/uaisos/en_windows_vista_ee_x86_dvd_vl_x13-17271.iso'),         # >=6GiB
-            UnattendedVm(oSet, 'tst-vista-64',    'WindowsVista_64', '6.0/uaisos/en_windows_vista_enterprise_x64_dvd_vl_x13-17316.iso'), # >=9GiB
+            #
+            # Windows
+            #
+            UnattendedVm(oSet, 'tst-vista-32',    'WindowsVista',    '6.0/uaisos/en_windows_vista_ee_x86_dvd_vl_x13-17271.iso'),          # >=6GiB
+            UnattendedVm(oSet, 'tst-vista-64',    'WindowsVista_64', '6.0/uaisos/en_windows_vista_enterprise_x64_dvd_vl_x13-17316.iso'),  # >=8GiB
             UnattendedVm(oSet, 'tst-vistasp1-32', 'WindowsVista',    '6.0/uaisos/en_windows_vista_enterprise_with_service_pack_1_x86_dvd_x14-55954.iso'), # >=6GiB
             UnattendedVm(oSet, 'tst-vistasp1-64', 'WindowsVista_64', '6.0/uaisos/en_windows_vista_enterprise_with_service_pack_1_x64_dvd_x14-55934.iso'), # >=9GiB
-            UnattendedVm(oSet, 'tst-vistasp2-32', 'WindowsVista',    '6.0/uaisos/en_windows_vista_enterprise_sp2_x86_dvd_342329.iso'), # >=7GiB
-            UnattendedVm(oSet, 'tst-vistasp2-64', 'WindowsVista_64', '6.0/uaisos/en_windows_vista_enterprise_sp2_x64_dvd_342332.iso'), # >=10GiB
-            UnattendedVm(oSet, 'tst-w7-32',    'Windows7',    '6.0/uaisos/en_windows_7_enterprise_x86_dvd_x15-70745.iso'),         # >=6GiB
-            UnattendedVm(oSet, 'tst-w7-64',    'Windows7_64', '6.0/uaisos/en_windows_7_enterprise_x64_dvd_x15-70749.iso'),         # >=10GiB
-            UnattendedVm(oSet, 'tst-w7sp1-32', 'Windows7',    '6.0/uaisos/en_windows_7_enterprise_with_sp1_x86_dvd_u_677710.iso'), # >=6GiB
-            UnattendedVm(oSet, 'tst-w7sp1-64', 'Windows7_64', '6.0/uaisos/en_windows_7_enterprise_with_sp1_x64_dvd_u_677651.iso'), # >=8GiB
-            UnattendedVm(oSet, 'tst-w8-32',    'Windows8',    '6.0/uaisos/en_windows_8_enterprise_x86_dvd_917587.iso'),            # >=6GiB
-            UnattendedVm(oSet, 'tst-w8-64',    'Windows8_64', '6.0/uaisos/en_windows_8_enterprise_x64_dvd_917522.iso'),            # >=9GiB
-            UnattendedVm(oSet, 'tst-w81-32',   'Windows81',   '6.0/uaisos/en_windows_8_1_enterprise_x86_dvd_2791510.iso'),         # >=5GiB
-            UnattendedVm(oSet, 'tst-w81-64',   'Windows81_64','6.0/uaisos/en_windows_8_1_enterprise_x64_dvd_2791088.iso'),         # >=8GiB
-            ## @todo couldn't find licence terms.
-            #UnattendedVm(oSet, 'tst-w10-1507-32', 'Windows10',     '6.0/uaisos/en_windows_10_enterprise_x86_dvd_6851156.iso'),
-            #UnattendedVm(oSet, 'tst-w10-1507-64', 'Windows10_64',  '6.0/uaisos/en_windows_10_enterprise_x64_dvd_6851151.iso'),
-            UnattendedVm(oSet, 'tst-w10-1511-32', 'Windows10',     '6.0/uaisos/en_windows_10_enterprise_version_1511_updated_feb_2016_x86_dvd_8378870.iso'),    # >=7GiB # not on testrsrc
-            UnattendedVm(oSet, 'tst-w10-1511-64', 'Windows10_64',  '6.0/uaisos/en_windows_10_enterprise_version_1511_x64_dvd_7224901.iso'),
-            UnattendedVm(oSet, 'tst-w10-1607-32', 'Windows10',     '6.0/uaisos/en_windows_10_enterprise_version_1607_updated_jul_2016_x86_dvd_9060097.iso'),    # >=7GiB
-            UnattendedVm(oSet, 'tst-w10-1607-64', 'Windows10_64',  '6.0/uaisos/en_windows_10_enterprise_version_1607_updated_jul_2016_x64_dvd_9054264.iso'),    # >=9GiB
-            UnattendedVm(oSet, 'tst-w10-1703-32', 'Windows10',     '6.0/uaisos/en_windows_10_enterprise_version_1703_updated_march_2017_x86_dvd_10188981.iso'), # >=7GiB
-            UnattendedVm(oSet, 'tst-w10-1703-64', 'Windows10_64',  '6.0/uaisos/en_windows_10_enterprise_version_1703_updated_march_2017_x64_dvd_10189290.iso'), # >=10GiB
-            UnattendedVm(oSet, 'tst-w10-1709-32', 'Windows10',     '6.0/uaisos/en_windows_10_multi-edition_vl_version_1709_updated_sept_2017_x86_dvd_100090759.iso'),  # >=7GiB
-            UnattendedVm(oSet, 'tst-w10-1709-64', 'Windows10_64',  '6.0/uaisos/en_windows_10_multi-edition_vl_version_1709_updated_sept_2017_x64_dvd_100090741.iso'),  # >=10GiB
-            UnattendedVm(oSet, 'tst-w10-1803-32', 'Windows10',     '6.0/uaisos/en_windows_10_business_editions_version_1803_updated_march_2018_x86_dvd_12063341.iso'), # >=7GiB
-            UnattendedVm(oSet, 'tst-w10-1803-64', 'Windows10_64',  '6.0/uaisos/en_windows_10_business_editions_version_1803_updated_march_2018_x64_dvd_12063333.iso'), # >=10GiB
-            UnattendedVm(oSet, 'tst-w10-1809-32', 'Windows10',     '6.0/uaisos/en_windows_10_business_edition_version_1809_updated_sept_2018_x86_dvd_2f92403b.iso'),   # >=7GiB
-            UnattendedVm(oSet, 'tst-w10-1809-64', 'Windows10_64',  '6.0/uaisos/en_windows_10_business_edition_version_1809_updated_sept_2018_x64_dvd_f0b7dc68.iso'),   # >=10GiB
-            UnattendedVm(oSet, 'tst-w10-1903-32', 'Windows10',     '6.0/uaisos/en_windows_10_business_editions_version_1903_x86_dvd_ca4f0f49.iso'), # >=7GiB
-            UnattendedVm(oSet, 'tst-w10-1903-64', 'Windows10_64',  '6.0/uaisos/en_windows_10_business_editions_version_1903_x64_dvd_37200948.iso'), # >=10GiB
+            UnattendedVm(oSet, 'tst-vistasp2-32', 'WindowsVista',    '6.0/uaisos/en_windows_vista_enterprise_sp2_x86_dvd_342329.iso'),    # >=7GiB
+            UnattendedVm(oSet, 'tst-vistasp2-64', 'WindowsVista_64', '6.0/uaisos/en_windows_vista_enterprise_sp2_x64_dvd_342332.iso'),    # >=10GiB
+            UnattendedVm(oSet, 'tst-w7-32',       'Windows7',        '6.0/uaisos/en_windows_7_enterprise_x86_dvd_x15-70745.iso'),         # >=6GiB
+            UnattendedVm(oSet, 'tst-w7-64',       'Windows7_64',     '6.0/uaisos/en_windows_7_enterprise_x64_dvd_x15-70749.iso'),         # >=10GiB
+            UnattendedVm(oSet, 'tst-w7sp1-32',    'Windows7',        '6.0/uaisos/en_windows_7_enterprise_with_sp1_x86_dvd_u_677710.iso'), # >=6GiB
+            UnattendedVm(oSet, 'tst-w7sp1-64',    'Windows7_64',     '6.0/uaisos/en_windows_7_enterprise_with_sp1_x64_dvd_u_677651.iso'), # >=8GiB
+            UnattendedVm(oSet, 'tst-w8-32',       'Windows8',        '6.0/uaisos/en_windows_8_enterprise_x86_dvd_917587.iso'),            # >=6GiB
+            UnattendedVm(oSet, 'tst-w8-64',       'Windows8_64',     '6.0/uaisos/en_windows_8_enterprise_x64_dvd_917522.iso'),            # >=9GiB
+            UnattendedVm(oSet, 'tst-w81-32',      'Windows81',       '6.0/uaisos/en_windows_8_1_enterprise_x86_dvd_2791510.iso'),         # >=5GiB
+            UnattendedVm(oSet, 'tst-w81-64',      'Windows81_64',    '6.0/uaisos/en_windows_8_1_enterprise_x64_dvd_2791088.iso'),         # >=8GiB
+            UnattendedVm(oSet, 'tst-w10-1507-32', 'Windows10',       '6.0/uaisos/en_windows_10_pro_10240_x86_dvd.iso'),                   # >=6GiB
+            UnattendedVm(oSet, 'tst-w10-1507-64', 'Windows10_64',    '6.0/uaisos/en_windows_10_pro_10240_x64_dvd.iso'),                   # >=9GiB
+            UnattendedVm(oSet, 'tst-w10-1511-32', 'Windows10',       '6.0/uaisos/en_windows_10_enterprise_version_1511_updated_feb_2016_x86_dvd_8378870.iso'),    # >=7GiB
+            UnattendedVm(oSet, 'tst-w10-1511-64', 'Windows10_64',    '6.0/uaisos/en_windows_10_enterprise_version_1511_x64_dvd_7224901.iso'),                     # >=9GiB
+            UnattendedVm(oSet, 'tst-w10-1607-32', 'Windows10',       '6.0/uaisos/en_windows_10_enterprise_version_1607_updated_jul_2016_x86_dvd_9060097.iso'),    # >=7GiB
+            UnattendedVm(oSet, 'tst-w10-1607-64', 'Windows10_64',    '6.0/uaisos/en_windows_10_enterprise_version_1607_updated_jul_2016_x64_dvd_9054264.iso'),    # >=9GiB
+            UnattendedVm(oSet, 'tst-w10-1703-32', 'Windows10',       '6.0/uaisos/en_windows_10_enterprise_version_1703_updated_march_2017_x86_dvd_10188981.iso'), # >=7GiB
+            UnattendedVm(oSet, 'tst-w10-1703-64', 'Windows10_64',    '6.0/uaisos/en_windows_10_enterprise_version_1703_updated_march_2017_x64_dvd_10189290.iso'), # >=10GiB
+            UnattendedVm(oSet, 'tst-w10-1709-32', 'Windows10',       '6.0/uaisos/en_windows_10_multi-edition_vl_version_1709_updated_sept_2017_x86_dvd_100090759.iso'),  # >=7GiB
+            UnattendedVm(oSet, 'tst-w10-1709-64', 'Windows10_64',    '6.0/uaisos/en_windows_10_multi-edition_vl_version_1709_updated_sept_2017_x64_dvd_100090741.iso'),  # >=10GiB
+            UnattendedVm(oSet, 'tst-w10-1803-32', 'Windows10',       '6.0/uaisos/en_windows_10_business_editions_version_1803_updated_march_2018_x86_dvd_12063341.iso'), # >=7GiB
+            UnattendedVm(oSet, 'tst-w10-1803-64', 'Windows10_64',    '6.0/uaisos/en_windows_10_business_editions_version_1803_updated_march_2018_x64_dvd_12063333.iso'), # >=10GiB
+            UnattendedVm(oSet, 'tst-w10-1809-32', 'Windows10',       '6.0/uaisos/en_windows_10_business_edition_version_1809_updated_sept_2018_x86_dvd_2f92403b.iso'),   # >=7GiB
+            UnattendedVm(oSet, 'tst-w10-1809-64', 'Windows10_64',    '6.0/uaisos/en_windows_10_business_edition_version_1809_updated_sept_2018_x64_dvd_f0b7dc68.iso'),   # >=10GiB
+            UnattendedVm(oSet, 'tst-w10-1903-32', 'Windows10',       '6.0/uaisos/en_windows_10_business_editions_version_1903_x86_dvd_ca4f0f49.iso'), # >=7GiB
+            UnattendedVm(oSet, 'tst-w10-1903-64', 'Windows10_64',    '6.0/uaisos/en_windows_10_business_editions_version_1903_x64_dvd_37200948.iso'), # >=10GiB
+            #
+            # Ubuntu
+            #
             ## @todo 15.10 fails with grub install error.
             #UnattendedVm(oSet, 'tst-ubuntu-15.10-64', 'Ubuntu_64', '6.0/uaisos/ubuntu-15.10-desktop-amd64.iso'),
             UnattendedVm(oSet, 'tst-ubuntu-16.04-64',   'Ubuntu_64', '6.0/uaisos/ubuntu-16.04-desktop-amd64.iso',    # ~5GiB
@@ -448,19 +453,19 @@ class tdGuestOsInstTest1(vbox.TestDriver):
             UnattendedVm(oSet, 'tst-ubuntu-16.04.6-32', 'Ubuntu',    '6.0/uaisos/ubuntu-16.04.6-desktop-i386.iso'),  # >=4.5GiB
             UnattendedVm(oSet, 'tst-ubuntu-16.10-64',   'Ubuntu_64', '6.0/uaisos/ubuntu-16.10-desktop-amd64.iso'),   # >=5.5GiB
             ## @todo 16.10-32 doesn't ask for an IP, so it always fails.
-            #UnattendedVm(oSet, 'tst-ubuntu-16.10-32', 'Ubuntu',    '6.0/uaisos/ubuntu-16.10-desktop-i386.iso'),      # >=5.5GiB?
-            UnattendedVm(oSet, 'tst-ubuntu-17.04-64', 'Ubuntu_64', '6.0/uaisos/ubuntu-17.04-desktop-amd64.iso'),     # >=5GiB
-            UnattendedVm(oSet, 'tst-ubuntu-17.04-32', 'Ubuntu',    '6.0/uaisos/ubuntu-17.04-desktop-i386.iso'),      # >=4.5GiB
+            #UnattendedVm(oSet, 'tst-ubuntu-16.10-32',   'Ubuntu',    '6.0/uaisos/ubuntu-16.10-desktop-i386.iso'),   # >=5.5GiB?
+            UnattendedVm(oSet, 'tst-ubuntu-17.04-64',   'Ubuntu_64', '6.0/uaisos/ubuntu-17.04-desktop-amd64.iso'),   # >=5GiB
+            UnattendedVm(oSet, 'tst-ubuntu-17.04-32',   'Ubuntu',    '6.0/uaisos/ubuntu-17.04-desktop-i386.iso'),    # >=4.5GiB
             ## @todo ubuntu 17.10, 18.04 & 18.10 do not work.  They misses all the the build tools (make, gcc, perl, ++)
             ##       and has signed kmods:
-            UnattendedVm(oSet, 'tst-ubuntu-17.10-64', 'Ubuntu_64', '6.0/uaisos/ubuntu-17.10-desktop-amd64.iso', # >=4Gib
+            UnattendedVm(oSet, 'tst-ubuntu-17.10-64',   'Ubuntu_64', '6.0/uaisos/ubuntu-17.10-desktop-amd64.iso',    # >=4Gib
                          UnattendedVm.kfNoGAs),
-            UnattendedVm(oSet, 'tst-ubuntu-18.04-64', 'Ubuntu_64', '6.0/uaisos/ubuntu-18.04-desktop-amd64.iso', # >=6GiB
+            UnattendedVm(oSet, 'tst-ubuntu-18.04-64',   'Ubuntu_64', '6.0/uaisos/ubuntu-18.04-desktop-amd64.iso',    # >=6GiB
                          UnattendedVm.kfNoGAs),
             # 18.10 hangs reading install DVD during "starting partitioner..."
-            #UnattendedVm(oSet, 'tst-ubuntu-18.10-64', 'Ubuntu_64', '6.0/uaisos/ubuntu-18.10-desktop-amd64.iso',
+            #UnattendedVm(oSet, 'tst-ubuntu-18.10-64',   'Ubuntu_64', '6.0/uaisos/ubuntu-18.10-desktop-amd64.iso',
             #             UnattendedVm.kfNoGAs),
-            UnattendedVm(oSet, 'tst-ubuntu-19.04-64', 'Ubuntu_64', '6.0/uaisos/ubuntu-19.04-desktop-amd64.iso', # >=6GiB
+            UnattendedVm(oSet, 'tst-ubuntu-19.04-64',   'Ubuntu_64', '6.0/uaisos/ubuntu-19.04-desktop-amd64.iso',    # >=6GiB
                          UnattendedVm.kfNoGAs),
         ]);
         # pylint: enable=line-too-long
