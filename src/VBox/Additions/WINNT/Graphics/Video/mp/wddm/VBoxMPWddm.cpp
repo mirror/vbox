@@ -7886,7 +7886,7 @@ DriverEntry(
     int irc = RTR0Init(0);
     if (RT_FAILURE(irc))
     {
-        RTLogBackdoorPrintf("VBoxGuest: RTR0Init failed: %Rrc!\n", irc);
+        RTLogBackdoorPrintf("VBoxWddm: RTR0Init failed: %Rrc!\n", irc);
         return STATUS_UNSUCCESSFUL;
     }
 
