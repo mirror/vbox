@@ -918,7 +918,7 @@ static RTEXITCODE exportCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
     Utf8Str strBucketName;
     Utf8Str strObjectName;
     Utf8Str strImageId;
-    com::SafeArray<BSTR>  parameters;
+    com::SafeArray<BSTR> parameters;
 
     int c;
     while ((c = RTGetOpt(&GetState, &ValueUnion)) != 0)
@@ -926,23 +926,63 @@ static RTEXITCODE exportCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
         switch (c)
         {
             case 'b':
-                strBucketName=ValueUnion.psz;
-                Bstr(Utf8Str("bucket-name=").append(ValueUnion.psz)).detachTo(parameters.appendedRaw());
+            {
+                if (strBucketName.isNotEmpty())
+                    return errorArgument("Duplicate parameter: --bucket-name");
+
+                strBucketName = ValueUnion.psz;
+                if (strBucketName.isEmpty())
+                    return errorArgument("Empty parameter: --bucket-name");
+
                 break;
+            }
+
             case 'o':
-                strObjectName=ValueUnion.psz;
-                Bstr(Utf8Str("object-name=").append(ValueUnion.psz)).detachTo(parameters.appendedRaw());
+            {
+                if (strObjectName.isNotEmpty())
+                    return errorArgument("Duplicate parameter: --object-name");
+
+                strObjectName = ValueUnion.psz;
+                if (strObjectName.isEmpty())
+                    return errorArgument("Empty parameter: --object-name");
+
                 break;
+            }
+
             case 'i':
-                strImageId=ValueUnion.psz;
-                Bstr(Utf8Str("image-id=").append(ValueUnion.psz)).detachTo(parameters.appendedRaw());
+            {
+                if (strImageId.isNotEmpty())
+                    return errorArgument("Duplicate parameter: --id");
+
+                strImageId = ValueUnion.psz;
+                if (strImageId.isEmpty())
+                    return errorArgument("Empty parameter: --id");
+
                 break;
+            }
+
             case VINF_GETOPT_NOT_OPTION:
                 return errorUnknownSubcommand(ValueUnion.psz);
+
             default:
                 return errorGetOpt(c, &ValueUnion);
         }
     }
+
+    if (strBucketName.isNotEmpty())
+        BstrFmt("bucket-name=%s", strBucketName.c_str()).detachTo(parameters.appendedRaw());
+    else
+        return errorArgument("Missing parameter: --bucket-name");
+
+    /* API will use display name as object name if not specified */
+    if (strObjectName.isNotEmpty())
+        BstrFmt("object-name=%s", strObjectName.c_str()).detachTo(parameters.appendedRaw());
+
+    if (strImageId.isNotEmpty())
+        BstrFmt("image-id=%s", strImageId.c_str()).detachTo(parameters.appendedRaw());
+    else
+        return errorArgument("Missing parameter: --id");
+
 
     Bstr bstrProfileName;
     ComPtr<ICloudProfile> pCloudProfile = pCommonOpts->profile.pCloudProfile;
@@ -952,7 +992,13 @@ static RTEXITCODE exportCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
     CHECK_ERROR2_RET(hrc, pCloudProfile,
                      CreateCloudClient(oCloudClient.asOutParam()),
                      RTEXITCODE_FAILURE);
-    RTPrintf("Exporting image \'%s\' to the Cloud with name \'%s\'...\n", strImageId.c_str(), strObjectName.c_str());
+
+    if (strObjectName.isNotEmpty())
+        RTPrintf("Exporting image \'%s\' to the Cloud with name \'%s\'...\n",
+                 strImageId.c_str(), strObjectName.c_str());
+    else
+        RTPrintf("Exporting image \'%s\' to the Cloud with default name\n",
+                 strImageId.c_str());
 
     ComPtr<IVirtualBox> pVirtualBox = a->virtualBox;
     SafeIfaceArray<IMedium> aImageList;
