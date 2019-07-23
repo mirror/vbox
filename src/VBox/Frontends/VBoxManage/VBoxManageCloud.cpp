@@ -534,7 +534,7 @@ static RTEXITCODE showCloudInstanceInfo(HandlerArg *a, int iFirst, PCLOUDCOMMONO
 
     ComPtr<IProgress> progress;
     CHECK_ERROR2_RET(hrc, oCloudClient,
-                     GetInstanceInfo(Bstr(strInstanceId.c_str()).raw(), instanceDescription, progress.asOutParam()),
+                     GetInstanceInfo(Bstr(strInstanceId).raw(), instanceDescription, progress.asOutParam()),
                      RTEXITCODE_FAILURE);
 
     hrc = showProgress(progress);
@@ -637,7 +637,7 @@ static RTEXITCODE startCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT 
 
     ComPtr<IProgress> progress;
     CHECK_ERROR2_RET(hrc, oCloudClient,
-                     StartInstance(Bstr(strInstanceId.c_str()).raw(), progress.asOutParam()),
+                     StartInstance(Bstr(strInstanceId).raw(), progress.asOutParam()),
                      RTEXITCODE_FAILURE);
     hrc = showProgress(progress);
     CHECK_PROGRESS_ERROR_RET(progress, ("Starting the cloud instance failed"), RTEXITCODE_FAILURE);
@@ -696,7 +696,7 @@ static RTEXITCODE pauseCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT 
 
     ComPtr<IProgress> progress;
     CHECK_ERROR2_RET(hrc, oCloudClient,
-                     PauseInstance(Bstr(strInstanceId.c_str()).raw(), progress.asOutParam()),
+                     PauseInstance(Bstr(strInstanceId).raw(), progress.asOutParam()),
                      RTEXITCODE_FAILURE);
     hrc = showProgress(progress);
     CHECK_PROGRESS_ERROR_RET(progress, ("Pause the cloud instance failed"), RTEXITCODE_FAILURE);
@@ -755,7 +755,7 @@ static RTEXITCODE terminateCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMON
 
     ComPtr<IProgress> progress;
     CHECK_ERROR2_RET(hrc, oCloudClient,
-                     TerminateInstance(Bstr(strInstanceId.c_str()).raw(), progress.asOutParam()),
+                     TerminateInstance(Bstr(strInstanceId).raw(), progress.asOutParam()),
                      RTEXITCODE_FAILURE);
     hrc = showProgress(progress);
     CHECK_PROGRESS_ERROR_RET(progress, ("Termination the cloud instance failed"), RTEXITCODE_FAILURE);
@@ -1110,7 +1110,7 @@ static RTEXITCODE importCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
 
     ComPtr<IProgress> progress;
     CHECK_ERROR2_RET(hrc, oCloudClient,
-                     ImportImage(Bstr(strImageId.c_str()).raw(), pVirtualBox, ComSafeArrayAsInParam(parameters), progress.asOutParam()),
+                     ImportImage(Bstr(strImageId).raw(), pVirtualBox, ComSafeArrayAsInParam(parameters), progress.asOutParam()),
                      RTEXITCODE_FAILURE);
     hrc = showProgress(progress);
     CHECK_PROGRESS_ERROR_RET(progress, ("Cloud image import failed"), RTEXITCODE_FAILURE);
@@ -1174,7 +1174,7 @@ static RTEXITCODE showCloudImageInfo(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT 
 
     RTPrintf("Reply is in the form \'image property\' = \'value\'\n");
     CHECK_ERROR2_RET(hrc, oCloudClient,
-                     GetImageInfo(Bstr(strImageId.c_str()).raw(),
+                     GetImageInfo(Bstr(strImageId).raw(),
                                   infoArray.asOutParam(),
                                   pProgress.asOutParam()),
                      RTEXITCODE_FAILURE);
@@ -1260,7 +1260,7 @@ static RTEXITCODE deleteCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
 
     ComPtr<IProgress> progress;
     CHECK_ERROR2_RET(hrc, oCloudClient,
-                     DeleteImage(Bstr(strImageId.c_str()).raw(), progress.asOutParam()),
+                     DeleteImage(Bstr(strImageId).raw(), progress.asOutParam()),
                      RTEXITCODE_FAILURE);
     hrc = showProgress(progress);
     CHECK_PROGRESS_ERROR_RET(progress, ("Deleting cloud image failed"), RTEXITCODE_FAILURE);
