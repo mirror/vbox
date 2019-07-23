@@ -2412,6 +2412,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                     ULONG cPorts = 0;
                     hrc = ctrls[i]->COMGETTER(PortCount)(&cPorts);                          H();
                     InsertConfigInteger(pCfg, "NumTargets", cPorts);
+                    InsertConfigInteger(pCfg, "Bootable",   fBootable);
 
                     /* Attach the status driver */
                     AssertRelease(cPorts <= cLedSata);
