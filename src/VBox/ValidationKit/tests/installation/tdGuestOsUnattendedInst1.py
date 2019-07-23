@@ -411,13 +411,13 @@ class tdGuestOsInstTest1(vbox.TestDriver):
             #UnattendedVm(oSet, 'tst-w10-1507-32', 'Windows10',     '6.0/uaisos/en_windows_10_enterprise_x86_dvd_6851156.iso'),
             #UnattendedVm(oSet, 'tst-w10-1507-64', 'Windows10_64',  '6.0/uaisos/en_windows_10_enterprise_x64_dvd_6851151.iso'),
             UnattendedVm(oSet, 'tst-w10-1511-32', 'Windows10',     '6.0/uaisos/en_windows_10_enterprise_version_1511_updated_feb_2016_x86_dvd_8378870.iso'),    # >=7GiB # not on testrsrc
-            #UnattendedVm(oSet, 'tst-w10-1511-64', 'Windows10_64',  '6.0/uaisos/'),
+            UnattendedVm(oSet, 'tst-w10-1511-64', 'Windows10_64',  '6.0/uaisos/en_windows_10_enterprise_version_1511_x64_dvd_7224901.iso'),
             UnattendedVm(oSet, 'tst-w10-1607-32', 'Windows10',     '6.0/uaisos/en_windows_10_enterprise_version_1607_updated_jul_2016_x86_dvd_9060097.iso'),    # >=7GiB
             UnattendedVm(oSet, 'tst-w10-1607-64', 'Windows10_64',  '6.0/uaisos/en_windows_10_enterprise_version_1607_updated_jul_2016_x64_dvd_9054264.iso'),    # >=9GiB
             UnattendedVm(oSet, 'tst-w10-1703-32', 'Windows10',     '6.0/uaisos/en_windows_10_enterprise_version_1703_updated_march_2017_x86_dvd_10188981.iso'), # >=7GiB
             UnattendedVm(oSet, 'tst-w10-1703-64', 'Windows10_64',  '6.0/uaisos/en_windows_10_enterprise_version_1703_updated_march_2017_x64_dvd_10189290.iso'), # >=10GiB
-            UnattendedVm(oSet, 'tst-w10-1709-32', 'Windows10',     '6.0/uaisos/en_windows_10_multi-edition_vl_version_1709_updated_sept_2017_x86_dvd_100090759.iso'),  # >=7GiB # not on testrsrc
-            UnattendedVm(oSet, 'tst-w10-1709-64', 'Windows10_64',  '6.0/uaisos/en_windows_10_multi-edition_vl_version_1709_updated_sept_2017_x64_dvd_100090741.iso'),  # >=10GiB # not on testrsrc
+            UnattendedVm(oSet, 'tst-w10-1709-32', 'Windows10',     '6.0/uaisos/en_windows_10_multi-edition_vl_version_1709_updated_sept_2017_x86_dvd_100090759.iso'),  # >=7GiB
+            UnattendedVm(oSet, 'tst-w10-1709-64', 'Windows10_64',  '6.0/uaisos/en_windows_10_multi-edition_vl_version_1709_updated_sept_2017_x64_dvd_100090741.iso'),  # >=10GiB
             UnattendedVm(oSet, 'tst-w10-1803-32', 'Windows10',     '6.0/uaisos/en_windows_10_business_editions_version_1803_updated_march_2018_x86_dvd_12063341.iso'), # >=7GiB
             UnattendedVm(oSet, 'tst-w10-1803-64', 'Windows10_64',  '6.0/uaisos/en_windows_10_business_editions_version_1803_updated_march_2018_x64_dvd_12063333.iso'), # >=10GiB
             UnattendedVm(oSet, 'tst-w10-1809-32', 'Windows10',     '6.0/uaisos/en_windows_10_business_edition_version_1809_updated_sept_2018_x86_dvd_2f92403b.iso'),   # >=7GiB
