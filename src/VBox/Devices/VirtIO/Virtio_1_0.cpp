@@ -756,35 +756,34 @@ int   virtioConstruct(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirtio, int iInstance,
 #if 0 && defined(VBOX_WITH_MSI_DEVICES)  /* T.B.D. */
         fMsiSupport = true;
 #endif
-    uint8_t uCfgCapOffset = 0;
-    PVIRTIOPCICAP pCfgCap = (PVIRTIOPCICAP)0x40; /* First VirtIO vendor-specific cap PCI cfg space addr */
-    PVIRTIOPCICAP pCommonCfg  = (PVIRTIOPCICAP)&pVirtio->dev.abConfig[uCfgCapOffset];
+    uint8_t uCfgCapOffset = 0x40;
+    PVIRTIOPCICAP pCommonCfg = (PVIRTIOPCICAP)&pVirtio->dev.abConfig[uCfgCapOffset];
     pCommonCfg->uCapVndr = VIRTIO_PCI_CAP_ID_VENDOR;
-    pCommonCfg->uCapNext = (uint8_t)((uint64_t)pCfgCap++ & 0xff);
+    pCommonCfg->uCapNext = uCfgCapOffset += sizeof(VIRTIOPCICAP);
     pCommonCfg->uCfgType = VIRTIO_PCI_CAP_COMMON_CFG;
     pCommonCfg->uBar     = uVirtioRegion;
     pCommonCfg->uOffset  = 0;
     pCommonCfg->uLength  = sizeof(VIRTIOPCICAP);
 
-    PVIRTIOPCICAP pNotifyCfg  = (PVIRTIOPCICAP)&pVirtio->dev.abConfig[uCfgCapOffset];
+    PVIRTIOPCICAP pNotifyCfg = (PVIRTIOPCICAP)&pVirtio->dev.abConfig[uCfgCapOffset];
     pNotifyCfg->uCapVndr = VIRTIO_PCI_CAP_ID_VENDOR;
-    pNotifyCfg->uCapNext =  (uint8_t)((uint64_t)pCfgCap++ & 0xff);
+    pNotifyCfg->uCapNext = uCfgCapOffset += sizeof(VIRTIOPCICAP);
     pNotifyCfg->uCfgType = VIRTIO_PCI_CAP_NOTIFY_CFG;
     pNotifyCfg->uBar     = uVirtioRegion;
     pNotifyCfg->uOffset  = pVirtio->pCommonCfg->uOffset + sizeof(VIRTIOCOMMONCFG);
     pNotifyCfg->uLength  = sizeof(VIRTIOPCICAP);
 
-    PVIRTIOPCICAP pISRConfig  = (PVIRTIOPCICAP)&pVirtio->dev.abConfig[uCfgCapOffset];
+    PVIRTIOPCICAP pISRConfig = (PVIRTIOPCICAP)&pVirtio->dev.abConfig[uCfgCapOffset];
     pISRConfig->uCapVndr = VIRTIO_PCI_CAP_ID_VENDOR;
-    pISRConfig->uCapNext =  (uint8_t)((uint64_t)pCfgCap++ & 0xff);
+    pISRConfig->uCapNext = uCfgCapOffset += sizeof(VIRTIOPCICAP);
     pISRConfig->uCfgType = VIRTIO_PCI_CAP_ISR_CFG;
     pISRConfig->uBar     = uVirtioRegion;
     pISRConfig->uOffset  = pVirtio->pNotifyCfg->uOffset + sizeof(VIRTIONOTIFYCFG);
     pISRConfig->uLength  = sizeof(VIRTIOPCICAP);
 
-    PVIRTIOPCICAP pPCIConfig  = (PVIRTIOPCICAP)&pVirtio->dev.abConfig[uCfgCapOffset];
+    PVIRTIOPCICAP pPCIConfig = (PVIRTIOPCICAP)&pVirtio->dev.abConfig[uCfgCapOffset];
     pPCIConfig->uCapVndr = VIRTIO_PCI_CAP_ID_VENDOR;
-    pPCIConfig->uCapNext =  (uint8_t)(fMsiSupport || cbDevSpecificCap ? ((uint64_t)pCfgCap++ & 0xff): 0);
+    pPCIConfig->uCapNext = (uint8_t)(fMsiSupport || cbDevSpecificCap ? (uCfgCapOffset += sizeof(VIRTIOPCICAP)): 0);
     pPCIConfig->uCfgType = VIRTIO_PCI_CAP_PCI_CFG;
     pPCIConfig->uBar     = uVirtioRegion;
     pPCIConfig->uOffset  = pVirtio->pISRConfig->uOffset + sizeof(VIRTIOISRCFG);
@@ -797,14 +796,14 @@ int   virtioConstruct(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirtio, int iInstance,
 
     if (cbDevSpecificCap)
     {
-        PVIRTIOPCICAP pDeviceCfg  = (PVIRTIOPCICAP)&pVirtio->dev.abConfig[uCfgCapOffset];
+        PVIRTIOPCICAP pDeviceCfg = (PVIRTIOPCICAP)&pVirtio->dev.abConfig[uCfgCapOffset];
         pDeviceCfg->uCapVndr = VIRTIO_PCI_CAP_ID_VENDOR;
-        pDeviceCfg->uCapNext = (uint8_t)(fMsiSupport ? ((uint64_t)pCfgCap++ & 0xff) : 0);
+        pDeviceCfg->uCapNext = (uint8_t)(fMsiSupport ? (uCfgCapOffset += sizeof(VIRTIOPCICAP)) : 0);
         pDeviceCfg->uCfgType = VIRTIO_PCI_CAP_DEVICE_CFG;
         pDeviceCfg->uBar     = uVirtioRegion;
         pDeviceCfg->uOffset  = pVirtio->pPCIConfig->uOffset + sizeof(VIRTIOCAPCFG);
         pDeviceCfg->uLength  = sizeof(VIRTIOPCICAP);
-        pVirtio->pDeviceCfg = pDeviceCfg;
+        pVirtio->pDeviceCfg  = pDeviceCfg;
     }
 
     /* Set offset to first capability and enable PCI dev capabilities */
