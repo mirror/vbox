@@ -45,6 +45,11 @@ public:
     /** Defines containing @a pWidget. */
     void setWidget(QWidget *pWidget);
 
+public slots:
+
+    /** Activates window. */
+    void sltActivateWindow() { activateWindow(); }
+
 private:
 
     /** Prepares all. */

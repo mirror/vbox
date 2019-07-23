@@ -443,7 +443,7 @@ void UIDetailsElement::sltHandleAnchorClicked(const QString &strAnchor)
         case AnchorRole_OSType:
         {
             /* Prepare popup: */
-            QPointer<QIDialogContainer> pPopup = new QIDialogContainer(0, Qt::Popup);
+            QPointer<QIDialogContainer> pPopup = new QIDialogContainer(0, Qt::Tool);
             if (pPopup)
             {
                 /* Prepare editor: */
@@ -451,7 +451,7 @@ void UIDetailsElement::sltHandleAnchorClicked(const QString &strAnchor)
                     new UINameAndSystemEditor(pPopup,
                                               enmRole == AnchorRole_MachineName /* choose name? */,
                                               false /* choose path? */,
-                                              enmRole == AnchorRole_OSType  /* choose type? */);
+                                              enmRole == AnchorRole_OSType /* choose type? */);
                 if (pEditor)
                 {
                     switch (enmRole)
@@ -469,6 +469,11 @@ void UIDetailsElement::sltHandleAnchorClicked(const QString &strAnchor)
                 pPopup->move(QCursor::pos());
                 pPopup->adjustSize();
 
+                // WORKAROUND:
+                // On Windows, Tool dialogs aren't activated by default by some reason.
+                // So we have created sltActivateWindow wrapping actual activateWindow
+                // to fix that annoying issue.
+                QMetaObject::invokeMethod(pPopup, "sltActivateWindow", Qt::QueuedConnection);
                 /* Execute popup, change machine name if confirmed: */
                 if (pPopup->exec() == QDialog::Accepted)
                 {
