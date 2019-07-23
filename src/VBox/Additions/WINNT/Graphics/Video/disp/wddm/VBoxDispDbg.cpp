@@ -110,17 +110,6 @@ PVBOXWDDMDISP_RESOURCE g_VBoxVDbgInternalRc = NULL;
 
 DWORD g_VBoxVDbgCfgCreateSwapchainOnDdiOnce = 0;
 
-void vboxDispLogDbgPrintF(char * szString, ...)
-{
-    char szBuffer[4096] = {0};
-    va_list pArgList;
-    va_start(pArgList, szString);
-    vboxDispLogDbgFormatStringV(szBuffer, sizeof (szBuffer), szString, pArgList);
-    va_end(pArgList);
-
-    OutputDebugStringA(szBuffer);
-}
-
 VOID vboxVDbgDoPrintDmlCmd(const char* pszDesc, const char* pszCmd)
 {
     vboxVDbgPrint(("<?dml?><exec cmd=\"%s\">%s</exec>, ( %s )\n", pszCmd, pszDesc, pszCmd));
@@ -803,5 +792,16 @@ void vboxDispLogDrvF(char * szString, ...)
     va_end(pArgList);
 
     VBoxDispMpLoggerLog(szBuffer);
+}
+
+void vboxDispLogDbgPrintF(char * szString, ...)
+{
+    char szBuffer[4096] = { 0 };
+    va_list pArgList;
+    va_start(pArgList, szString);
+    vboxDispLogDbgFormatStringV(szBuffer, sizeof(szBuffer), szString, pArgList);
+    va_end(pArgList);
+
+    OutputDebugStringA(szBuffer);
 }
 #endif

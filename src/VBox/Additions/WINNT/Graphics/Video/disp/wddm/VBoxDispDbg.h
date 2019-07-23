@@ -37,20 +37,19 @@
 
 /* generic debugging facilities & extra data checks */
 # define VBOXWDDMDISP_DEBUG
-# if defined(DEBUG_misha) || defined(DEBUG_leo)
 /* for some reason when debugging with VirtualKD, user-mode DbgPrint's are discarded
  * the workaround so far is to pass the log info to the kernel driver and DbgPrint'ed from there,
  * which is enabled by this define */
 //#  define VBOXWDDMDISP_DEBUG_PRINTDRV
-/* use OutputDebugString */
-//#  define VBOXWDDMDISP_DEBUG_PRINT
+
+/* Uncomment to use OutputDebugString */
+//#define VBOXWDDMDISP_DEBUG_PRINT
+
 /* disable shared resource creation with wine */
 //#  define VBOXWDDMDISP_DEBUG_NOSHARED
 
 //#  define VBOXWDDMDISP_DEBUG_PRINT_SHARED_CREATE
-
 //#  define VBOXWDDMDISP_DEBUG_TIMER
-# endif
 
 # ifndef IN_VBOXCRHGSMI
 /* debug config vars */
