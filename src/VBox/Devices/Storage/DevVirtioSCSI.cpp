@@ -712,7 +712,7 @@ static DECLCALLBACK(int) virtioScsiR3DevCapRead(PPDMDEVINS pDevIns, RTGCPHYS GCP
  * @param   pDevIns     The device instance.
  * @param   GCPhysAddr  Guest driver physical address to write
  * @param   pvBuf       Buffer in which to save read data
- * @param   cbRead      Number of bytes to write
+ * @param   cbWrite     Number of bytes to write
  */
 static DECLCALLBACK(int) virtioScsiR3DevCapWrite(PPDMDEVINS pDevIns, RTGCPHYS GCPhysAddr, const void *pvBuf, size_t cbWrite)
 {
