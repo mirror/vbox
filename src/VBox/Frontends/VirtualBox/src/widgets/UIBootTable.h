@@ -32,6 +32,32 @@
 #include "COMEnums.h"
 
 
+/** Boot item data structure. */
+struct UIBootItemData
+{
+    /** Constructs boot item data. */
+    UIBootItemData()
+        : m_enmType(KDeviceType_Null)
+        , m_fEnabled(false)
+    {}
+
+    /** Returns whether @a another passed data is equal to this one. */
+    bool operator==(const UIBootItemData &another) const
+    {
+        return true
+               && (m_enmType == another.m_enmType)
+               && (m_fEnabled == another.m_fEnabled)
+               ;
+    }
+
+    /** Holds the boot device type. */
+    KDeviceType  m_enmType;
+    /** Holds whether the boot device enabled. */
+    bool         m_fEnabled;
+};
+typedef QList<UIBootItemData> UIBootItemDataList;
+
+
 /** QListWidgetItem extension for our UIBootTable. */
 class SHARED_LIBRARY_STUFF UIBootTableItem : public QListWidgetItem
 {

@@ -33,31 +33,6 @@
 #include <iprt/cdefs.h>
 
 
-/** Machine settings: System Boot data structure. */
-struct UIBootItemData
-{
-    /** Constructs data. */
-    UIBootItemData()
-        : m_type(KDeviceType_Null)
-        , m_fEnabled(false)
-    {}
-
-    /** Returns whether the @a other passed data is equal to this one. */
-    bool operator==(const UIBootItemData &other) const
-    {
-        return true
-               && (m_type == other.m_type)
-               && (m_fEnabled == other.m_fEnabled)
-               ;
-    }
-
-    /** Holds the boot device type. */
-    KDeviceType m_type;
-    /** Holds whether the boot device enabled. */
-    bool m_fEnabled;
-};
-
-
 /** Machine settings: System page data structure. */
 struct UIDataSettingsMachineSystem
 {
@@ -70,7 +45,7 @@ struct UIDataSettingsMachineSystem
         , m_fSupportedNestedPaging(false)
         /* Motherboard data: */
         , m_iMemorySize(-1)
-        , m_bootItems(QList<UIBootItemData>())
+        , m_bootItems(UIBootItemDataList())
         , m_chipsetType(KChipsetType_Null)
         , m_pointingHIDType(KPointingHIDType_None)
         , m_fEnabledIoApic(false)
@@ -133,7 +108,7 @@ struct UIDataSettingsMachineSystem
     /** Holds the RAM size. */
     int                    m_iMemorySize;
     /** Holds the boot items. */
-    QList<UIBootItemData>  m_bootItems;
+    UIBootItemDataList     m_bootItems;
     /** Holds the chipset type. */
     KChipsetType           m_chipsetType;
     /** Holds the pointing HID type. */
@@ -273,7 +248,7 @@ void UIMachineSettingsSystem::loadToCacheFrom(QVariant &data)
         {
             usedBootItems << type;
             UIBootItemData data;
-            data.m_type = type;
+            data.m_enmType = type;
             data.m_fEnabled = true;
             oldSystemData.m_bootItems << data;
         }
@@ -285,7 +260,7 @@ void UIMachineSettingsSystem::loadToCacheFrom(QVariant &data)
         if (!usedBootItems.contains(type))
         {
             UIBootItemData data;
-            data.m_type = type;
+            data.m_enmType = type;
             data.m_fEnabled = false;
             oldSystemData.m_bootItems << data;
         }
@@ -335,7 +310,7 @@ void UIMachineSettingsSystem::getFromCache()
     for (int i = 0; i < oldSystemData.m_bootItems.size(); ++i)
     {
         const UIBootItemData data = oldSystemData.m_bootItems[i];
-        QListWidgetItem *pItem = new UIBootTableItem(data.m_type);
+        QListWidgetItem *pItem = new UIBootTableItem(data.m_enmType);
         pItem->setCheckState(data.m_fEnabled ? Qt::Checked : Qt::Unchecked);
         mTwBootOrder->addItem(pItem);
     }
@@ -384,7 +359,7 @@ void UIMachineSettingsSystem::putToCache()
     {
         QListWidgetItem *pItem = mTwBootOrder->item(i);
         UIBootItemData bootData;
-        bootData.m_type = static_cast<UIBootTableItem*>(pItem)->type();
+        bootData.m_enmType = static_cast<UIBootTableItem*>(pItem)->type();
         bootData.m_fEnabled = pItem->checkState() == Qt::Checked;
         newSystemData.m_bootItems << bootData;
     }
@@ -1271,7 +1246,7 @@ bool UIMachineSettingsSystem::saveMotherboardData()
             {
                 if (newSystemData.m_bootItems.at(i).m_fEnabled)
                 {
-                    m_machine.SetBootOrder(++iBootIndex, newSystemData.m_bootItems.at(i).m_type);
+                    m_machine.SetBootOrder(++iBootIndex, newSystemData.m_bootItems.at(i).m_enmType);
                     fSuccess = m_machine.isOk();
                 }
             }
