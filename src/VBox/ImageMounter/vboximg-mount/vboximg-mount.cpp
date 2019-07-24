@@ -1371,8 +1371,8 @@ main(int argc, char **argv)
    /*
      * Create HDD container to open base image and differencing images into
      */
-    rc = VDGetFormat(NULL /* pVDIIfsDisk */, NULL /* pVDIIfsImage*/, VDTYPE_INVALID,
-            CSTR(pVDiskBaseImagePath), &pszFormat, &enmType);
+    rc = VDGetFormat(NULL /* pVDIIfsDisk */, NULL /* pVDIIfsImage*/,
+                     CSTR(pVDiskBaseImagePath), VDTYPE_INVALID, &pszFormat, &enmType);
 
     if (RT_FAILURE(rc))
         return RTMsgErrorExitFailure("VDGetFormat(,,%s,,) "
