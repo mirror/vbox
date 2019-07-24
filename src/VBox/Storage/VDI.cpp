@@ -727,7 +727,8 @@ static int vdiCreateImage(PVDIIMAGEDESC pImage, uint64_t cbSize,
         if (RT_FAILURE(rc))
             rc = vdIfError(pImage->pIfError, rc, RT_SRC_POS,
                            N_("VDI: Getting AllocationBlockSize for '%s' failed (%Rrc)"), pImage->pszFilename, rc);
-    }
+    } else
+        pImage->cbAllocationBlock = VDI_IMAGE_DEFAULT_BLOCK_SIZE;
 
     if (pIfCfg)
     {
