@@ -887,6 +887,7 @@ UICommon_QT_MOCHDRS = \
 	src/settings/machine/UIMachineSettingsUSB.h \
 	src/settings/machine/UIMachineSettingsUSBFilterDetails.h \
 	src/widgets/UIAddDiskEncryptionPasswordDialog.h \
+	src/widgets/UIBaseMemoryEditor.h \
 	src/widgets/UIBaseMemorySlider.h \
 	src/widgets/UIBootTable.h \
 	src/widgets/UIFilePathSelector.h \
@@ -1377,6 +1378,7 @@ UICommon_SOURCES = \
 	src/settings/machine/UIMachineSettingsUSB.cpp \
 	src/settings/machine/UIMachineSettingsUSBFilterDetails.cpp \
 	src/widgets/UIAddDiskEncryptionPasswordDialog.cpp \
+	src/widgets/UIBaseMemoryEditor.cpp \
 	src/widgets/UIBaseMemorySlider.cpp \
 	src/widgets/UIBootTable.cpp \
 	src/widgets/UIFilePathSelector.cpp \

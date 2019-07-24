@@ -87,6 +87,17 @@ void UIMachineAttributeSetter::setMachineAttribute(const CMachine &comConstMachi
                 }
                 break;
             }
+            case MachineAttribute_BaseMemory:
+            {
+                /* Change machine base memory (RAM): */
+                comMachine.SetMemorySize(guiAttribute.toInt());
+                if (!comMachine.isOk())
+                {
+                    msgCenter().cannotChangeMachineAttribute(comMachine);
+                    fErrorHappened = true;
+                }
+                break;
+            }
             default:
                 break;
         }

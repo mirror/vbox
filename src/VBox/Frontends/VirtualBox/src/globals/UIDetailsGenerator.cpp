@@ -131,8 +131,14 @@ UITextTable UIDetailsGenerator::generateMachineInformationSystem(CMachine &comMa
 
     /* Base memory: */
     if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_RAM)
+    {
+        /* Configure hovering anchor: */
+        const QString strAnchorType = QString("base_memory");
+        const int iBaseMemory = comMachine.GetMemorySize();
         table << UITextTableLine(QApplication::translate("UIDetails", "Base Memory", "details (system)"),
-                                 QApplication::translate("UIDetails", "%1 MB", "details").arg(comMachine.GetMemorySize()));
+                                 QApplication::translate("UIDetails", "<a href=#%1,%2>%2 MB</a>", "details")
+                                    .arg(strAnchorType).arg(iBaseMemory));
+    }
 
     /* Processors: */
     if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_CPUCount)
