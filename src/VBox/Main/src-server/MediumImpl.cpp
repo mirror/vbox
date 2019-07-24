@@ -2991,33 +2991,42 @@ HRESULT Medium::moveTo(AutoCaller &autoCaller, const com::Utf8Str &aLocation, Co
                      */
                     destPath = sourcePath.stripFilename().append(RTPATH_SLASH).append(destFName);
                 }
-                suffix = i_getFormat();
-                if (suffix.compare("RAW", Utf8Str::CaseInsensitive) == 0)
-                {
-                    DeviceType_T devType = i_getDeviceType();
-                    switch (devType)
-                    {
-                        case DeviceType_DVD:
-                            suffix = "iso";
-                            break;
-                        case DeviceType_Floppy:
-                            suffix = "img";
-                            break;
-                        default:
-                            rc = setError(VERR_NOT_A_FILE,
-                                   tr("Medium '%s' has RAW type. \"Move\" operation isn't supported for this type."),
-                                   i_getLocationFull().c_str());
-                            throw rc;
-                    }
-                }
-                else if (suffix.compare("Parallels", Utf8Str::CaseInsensitive) == 0)
-                {
-                    suffix = "hdd";
-                }
 
-                /* Set the target extension like on the source. Any conversions are prohibited */
-                suffix.toLower();
-                destPath.stripSuffix().append('.').append(suffix);
+                suffix = RTPathSuffix(sourceFName.c_str());
+
+                /* Suffix is empty and one is deduced from the medium format */
+                if (suffix.isEmpty())
+                {
+                    suffix = i_getFormat();
+                    if (suffix.compare("RAW", Utf8Str::CaseInsensitive) == 0)
+                    {
+                        DeviceType_T devType = i_getDeviceType();
+                        switch (devType)
+                        {
+                            case DeviceType_DVD:
+                                suffix = "iso";
+                                break;
+                            case DeviceType_Floppy:
+                                suffix = "img";
+                                break;
+                            default:
+                                rc = setError(VERR_NOT_A_FILE,
+                                       tr("Medium '%s' has RAW type. \"Move\" operation isn't supported for this type."),
+                                       i_getLocationFull().c_str());
+                                throw rc;
+                        }
+                    }
+                    else if (suffix.compare("Parallels", Utf8Str::CaseInsensitive) == 0)
+                    {
+                        suffix = "hdd";
+                    }
+
+                    /* Set the target extension like on the source. Any conversions are prohibited */
+                    suffix.toLower();
+                    destPath.stripSuffix().append('.').append(suffix);
+                }
+                else
+                    destPath.stripSuffix().append(suffix);
             }
 
             /* Simple check for existence */
