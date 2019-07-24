@@ -64,6 +64,39 @@ UIBootTable::UIBootTable(QWidget *pParent /* = 0 */)
     prepare();
 }
 
+void UIBootTable::setBootItems(const UIBootItemDataList &bootItems)
+{
+    /* Clear initially: */
+    clear();
+
+    /* Apply internal variables data to QWidget(s): */
+    foreach (const UIBootItemData &data, bootItems)
+    {
+        UIBootTableItem *pItem = new UIBootTableItem(data.m_enmType);
+        pItem->setCheckState(data.m_fEnabled ? Qt::Checked : Qt::Unchecked);
+        addItem(pItem);
+    }
+}
+
+UIBootItemDataList UIBootTable::bootItems() const
+{
+    /* Prepare boot items: */
+    UIBootItemDataList bootItems;
+
+    /* Enumerate all the items we have: */
+    for (int i = 0; i < count(); ++i)
+    {
+        QListWidgetItem *pItem = item(i);
+        UIBootItemData bootData;
+        bootData.m_enmType = static_cast<UIBootTableItem*>(pItem)->type();
+        bootData.m_fEnabled = pItem->checkState() == Qt::Checked;
+        bootItems << bootData;
+    }
+
+    /* Return boot items: */
+    return bootItems;
+}
+
 void UIBootTable::adjustSizeToFitContent()
 {
     const int iH = 2 * frameWidth();

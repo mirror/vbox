@@ -76,7 +76,6 @@ private:
 
     /** Holds the item type. */
     KDeviceType m_enmType;
-
 };
 
 
@@ -95,6 +94,11 @@ public:
 
     /** Constructs boot-table passing @a pParent to the base-class. */
     UIBootTable(QWidget *pParent = 0);
+
+    /** Defines @a bootItems list. */
+    void setBootItems(const UIBootItemDataList &bootItems);
+    /** Returns boot item list. */
+    UIBootItemDataList bootItems() const;
 
     /** Adjusts table size to fit contents. */
     void adjustSizeToFitContent();

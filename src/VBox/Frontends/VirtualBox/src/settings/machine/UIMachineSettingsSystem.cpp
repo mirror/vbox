@@ -271,6 +271,7 @@ void UIMachineSettingsSystem::getFromCache()
 
     /* Load old 'Motherboard' data from the cache: */
     m_pSliderMemorySize->setValue(oldSystemData.m_iMemorySize);
+    mTwBootOrder->setBootItems(oldSystemData.m_bootItems);
     const int iChipsetTypePosition = m_pComboChipsetType->findData(oldSystemData.m_chipsetType);
     m_pComboChipsetType->setCurrentIndex(iChipsetTypePosition == -1 ? 0 : iChipsetTypePosition);
     const int iHIDTypePosition = m_pComboPointingHIDType->findData(oldSystemData.m_pointingHIDType);
@@ -278,17 +279,6 @@ void UIMachineSettingsSystem::getFromCache()
     m_pCheckBoxApic->setChecked(oldSystemData.m_fEnabledIoApic);
     m_pCheckBoxEFI->setChecked(oldSystemData.m_fEnabledEFI);
     m_pCheckBoxUseUTC->setChecked(oldSystemData.m_fEnabledUTC);
-    /* Remove any old data in the boot view: */
-    QAbstractItemView *pItemView = qobject_cast<QAbstractItemView*>(mTwBootOrder);
-    pItemView->model()->removeRows(0, pItemView->model()->rowCount());
-    /* Apply internal variables data to QWidget(s): */
-    for (int i = 0; i < oldSystemData.m_bootItems.size(); ++i)
-    {
-        const UIBootItemData data = oldSystemData.m_bootItems[i];
-        QListWidgetItem *pItem = new UIBootTableItem(data.m_enmType);
-        pItem->setCheckState(data.m_fEnabled ? Qt::Checked : Qt::Unchecked);
-        mTwBootOrder->addItem(pItem);
-    }
 
     /* Load old 'Processor' data from the cache: */
     m_pSliderCPUCount->setValue(oldSystemData.m_cCPUCount);
@@ -322,22 +312,13 @@ void UIMachineSettingsSystem::putToCache()
 
     /* Gather 'Motherboard' data: */
     newSystemData.m_iMemorySize = m_pSliderMemorySize->value();
+    newSystemData.m_bootItems = mTwBootOrder->bootItems();
     newSystemData.m_chipsetType = (KChipsetType)m_pComboChipsetType->itemData(m_pComboChipsetType->currentIndex()).toInt();
     newSystemData.m_pointingHIDType = (KPointingHIDType)m_pComboPointingHIDType->itemData(m_pComboPointingHIDType->currentIndex()).toInt();
     newSystemData.m_fEnabledIoApic = m_pCheckBoxApic->isChecked() || m_pSliderCPUCount->value() > 1 ||
                                   (KChipsetType)m_pComboChipsetType->itemData(m_pComboChipsetType->currentIndex()).toInt() == KChipsetType_ICH9;
     newSystemData.m_fEnabledEFI = m_pCheckBoxEFI->isChecked();
     newSystemData.m_fEnabledUTC = m_pCheckBoxUseUTC->isChecked();
-    /* Gather boot-table data: */
-    newSystemData.m_bootItems.clear();
-    for (int i = 0; i < mTwBootOrder->count(); ++i)
-    {
-        QListWidgetItem *pItem = mTwBootOrder->item(i);
-        UIBootItemData bootData;
-        bootData.m_enmType = static_cast<UIBootTableItem*>(pItem)->type();
-        bootData.m_fEnabled = pItem->checkState() == Qt::Checked;
-        newSystemData.m_bootItems << bootData;
-    }
 
     /* Gather 'Processor' data: */
     newSystemData.m_cCPUCount = m_pSliderCPUCount->value();
