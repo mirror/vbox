@@ -28,6 +28,7 @@
 /* Forward declarations: */
 struct UIDataSettingsMachineSystem;
 typedef UISettingsCache<UIDataSettingsMachineSystem> UISettingsCacheMachineSystem;
+class CMachine;
 
 /** Machine settings: System page. */
 class SHARED_LIBRARY_STUFF UIMachineSettingsSystem : public UISettingsPageMachine,
@@ -149,6 +150,10 @@ private:
 
     /** Adjusts boot-order tree-widget size. */
     void adjustBootOrderTWSize();
+    /** Loads boot item list for passed @a comMachine. */
+    UIBootItemDataList loadBootItems(const CMachine &comMachine);
+    /** Saves @a bootItems list to passed @a comMachine. */
+    void saveBootItems(const UIBootItemDataList &bootItems, CMachine &comMachine);
 
     /** Saves existing system data from the cache. */
     bool saveSystemData();

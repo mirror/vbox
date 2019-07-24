@@ -106,19 +106,19 @@ struct UIDataSettingsMachineSystem
     bool  m_fSupportedNestedPaging;
 
     /** Holds the RAM size. */
-    int                    m_iMemorySize;
+    int                 m_iMemorySize;
     /** Holds the boot items. */
-    UIBootItemDataList     m_bootItems;
+    UIBootItemDataList  m_bootItems;
     /** Holds the chipset type. */
-    KChipsetType           m_chipsetType;
+    KChipsetType        m_chipsetType;
     /** Holds the pointing HID type. */
-    KPointingHIDType       m_pointingHIDType;
+    KPointingHIDType    m_pointingHIDType;
     /** Holds whether the IO APIC is enabled. */
-    bool                   m_fEnabledIoApic;
+    bool                m_fEnabledIoApic;
     /** Holds whether the EFI is enabled. */
-    bool                   m_fEnabledEFI;
+    bool                m_fEnabledEFI;
     /** Holds whether the UTC is enabled. */
-    bool                   m_fEnabledUTC;
+    bool                m_fEnabledUTC;
 
     /** Holds the CPU count. */
     int   m_cCPUCount;
@@ -234,37 +234,12 @@ void UIMachineSettingsSystem::loadToCacheFrom(QVariant &data)
 
     /* Gather old 'Motherboard' data: */
     oldSystemData.m_iMemorySize = m_machine.GetMemorySize();
+    oldSystemData.m_bootItems = loadBootItems(m_machine);
     oldSystemData.m_chipsetType = m_machine.GetChipsetType();
     oldSystemData.m_pointingHIDType = m_machine.GetPointingHIDType();
     oldSystemData.m_fEnabledIoApic = m_machine.GetBIOSSettings().GetIOAPICEnabled();
     oldSystemData.m_fEnabledEFI = m_machine.GetFirmwareType() >= KFirmwareType_EFI && m_machine.GetFirmwareType() <= KFirmwareType_EFIDUAL;
     oldSystemData.m_fEnabledUTC = m_machine.GetRTCUseUTC();
-    /* Gather boot-items of current VM: */
-    QList<KDeviceType> usedBootItems;
-    for (int i = 1; i <= m_possibleBootItems.size(); ++i)
-    {
-        KDeviceType type = m_machine.GetBootOrder(i);
-        if (type != KDeviceType_Null)
-        {
-            usedBootItems << type;
-            UIBootItemData data;
-            data.m_enmType = type;
-            data.m_fEnabled = true;
-            oldSystemData.m_bootItems << data;
-        }
-    }
-    /* Gather other unique boot-items: */
-    for (int i = 0; i < m_possibleBootItems.size(); ++i)
-    {
-        KDeviceType type = m_possibleBootItems[i];
-        if (!usedBootItems.contains(type))
-        {
-            UIBootItemData data;
-            data.m_enmType = type;
-            data.m_fEnabled = false;
-            oldSystemData.m_bootItems << data;
-        }
-    }
 
     /* Gather old 'Processor' data: */
     oldSystemData.m_cCPUCount = oldSystemData.m_fSupportedHwVirtEx ? m_machine.GetCPUCount() : 1;
@@ -1169,6 +1144,64 @@ void UIMachineSettingsSystem::adjustBootOrderTWSize()
     }
 }
 
+UIBootItemDataList UIMachineSettingsSystem::loadBootItems(const CMachine &comMachine)
+{
+    /* Prepare boot items: */
+    UIBootItemDataList bootItems;
+
+    /* Gather boot-items of current VM: */
+    QList<KDeviceType> usedBootItems;
+    for (int i = 1; i <= m_possibleBootItems.size(); ++i)
+    {
+        const KDeviceType enmType = comMachine.GetBootOrder(i);
+        if (enmType != KDeviceType_Null)
+        {
+            usedBootItems << enmType;
+            UIBootItemData data;
+            data.m_enmType = enmType;
+            data.m_fEnabled = true;
+            bootItems << data;
+        }
+    }
+    /* Gather other unique boot-items: */
+    for (int i = 0; i < m_possibleBootItems.size(); ++i)
+    {
+        const KDeviceType enmType = m_possibleBootItems[i];
+        if (!usedBootItems.contains(enmType))
+        {
+            UIBootItemData data;
+            data.m_enmType = enmType;
+            data.m_fEnabled = false;
+            bootItems << data;
+        }
+    }
+
+    /* Return boot items: */
+    return bootItems;
+}
+
+void UIMachineSettingsSystem::saveBootItems(const UIBootItemDataList &bootItems, CMachine &comMachine)
+{
+    bool fSuccess = true;
+    int iBootIndex = 0;
+    for (int i = 0; fSuccess && i < bootItems.size(); ++i)
+    {
+        if (bootItems.at(i).m_fEnabled)
+        {
+            comMachine.SetBootOrder(++iBootIndex, bootItems.at(i).m_enmType);
+            fSuccess = comMachine.isOk();
+        }
+    }
+    for (int i = 0; fSuccess && i < bootItems.size(); ++i)
+    {
+        if (!bootItems.at(i).m_fEnabled)
+        {
+            comMachine.SetBootOrder(++iBootIndex, KDeviceType_Null);
+            fSuccess = comMachine.isOk();
+        }
+    }
+}
+
 bool UIMachineSettingsSystem::saveSystemData()
 {
     /* Prepare result: */
@@ -1208,6 +1241,12 @@ bool UIMachineSettingsSystem::saveMotherboardData()
             m_machine.SetMemorySize(newSystemData.m_iMemorySize);
             fSuccess = m_machine.isOk();
         }
+        /* Save boot items: */
+        if (fSuccess && isMachineOffline() && newSystemData.m_bootItems != oldSystemData.m_bootItems)
+        {
+            saveBootItems(newSystemData.m_bootItems, m_machine);
+            fSuccess = m_machine.isOk();
+        }
         /* Save chipset type: */
         if (fSuccess && isMachineOffline() && newSystemData.m_chipsetType != oldSystemData.m_chipsetType)
         {
@@ -1237,27 +1276,6 @@ bool UIMachineSettingsSystem::saveMotherboardData()
         {
             m_machine.SetRTCUseUTC(newSystemData.m_fEnabledUTC);
             fSuccess = m_machine.isOk();
-        }
-        /* Save boot items: */
-        if (fSuccess && isMachineOffline() && newSystemData.m_bootItems != oldSystemData.m_bootItems)
-        {
-            int iBootIndex = 0;
-            for (int i = 0; fSuccess && i < newSystemData.m_bootItems.size(); ++i)
-            {
-                if (newSystemData.m_bootItems.at(i).m_fEnabled)
-                {
-                    m_machine.SetBootOrder(++iBootIndex, newSystemData.m_bootItems.at(i).m_enmType);
-                    fSuccess = m_machine.isOk();
-                }
-            }
-            for (int i = 0; fSuccess && i < newSystemData.m_bootItems.size(); ++i)
-            {
-                if (!newSystemData.m_bootItems.at(i).m_fEnabled)
-                {
-                    m_machine.SetBootOrder(++iBootIndex, KDeviceType_Null);
-                    fSuccess = m_machine.isOk();
-                }
-            }
         }
 
         /* Show error message if necessary: */
