@@ -512,7 +512,7 @@ void UIDetailsElement::sltHandleAnchorClicked(const QString &strAnchor)
                 {
                     pEditor->setValue(strData.section(',', 0, 0).toInt());
                     connect(pEditor, &UIBaseMemoryEditor::sigValidChanged,
-                            pPopup, &QIDialogContainer::setOkButtonEnabled);
+                            pPopup.data(), &QIDialogContainer::setOkButtonEnabled);
                     pPopup->setWidget(pEditor);
                 }
 
