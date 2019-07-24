@@ -141,8 +141,8 @@ RTDECL(int) RTIoQueueCreate(PRTIOQUEUE phIoQueue, PCRTIOQUEUEPROVVTABLE pProvVTa
     {
         pThis->pVTbl          = pProvVTable;
         pThis->hIoQueueProv   = (RTIOQUEUEPROV)&pThis->abInst[0];
-        pThis->cSqEntries     = cSqEntries;
-        pThis->cCqEntries     = cCqEntries;
+        pThis->cSqEntries     = (uint32_t)cSqEntries;
+        pThis->cCqEntries     = (uint32_t)cCqEntries;
         pThis->cReqsCommitted = 0;
         pThis->cReqsPrepared  = 0;
 
