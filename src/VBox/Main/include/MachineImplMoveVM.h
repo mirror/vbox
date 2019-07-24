@@ -86,7 +86,6 @@ class MachineMoveVM : public ThreadTask
     std::map<Utf8Str, MEDIUMTASKMOVE>       m_finalMediumsMap;
     std::map<Utf8Str, SAVESTATETASKMOVE>    m_finalSaveStateFilesMap;
     std::map<VBoxFolder_t, Utf8Str>         m_vmFolders;
-    std::list<ErrorInfoItem>                m_errorsList;
 
     ComObjPtr<Machine>  m_pMachine;
     ComObjPtr<Progress> m_pProgress;
@@ -125,7 +124,6 @@ public:
         i_MoveVMThreadTask(this);
     }
 
-    /* MachineCloneVM::start helper: */
     HRESULT createMachineList(const ComPtr<ISnapshot> &pSnapshot, std::vector< ComObjPtr<Machine> > &aMachineList) const;
     inline HRESULT queryBaseName(const ComPtr<IMedium> &pMedium, Utf8Str &strBaseName) const;
     HRESULT queryMediasForAllStates(const std::vector<ComObjPtr<Machine> > &aMachineList);
@@ -139,7 +137,7 @@ public:
                                     const Utf8Str& sourcePath, const Utf8Str& targetPath);
     HRESULT moveAllDisks(const std::map<Utf8Str, MEDIUMTASKMOVE>& listOfDisks, const Utf8Str* strTargetFolder = NULL);
     HRESULT restoreAllDisks(const std::map<Utf8Str, MEDIUMTASKMOVE>& listOfDisks);
-    bool isMediumTypeSupportedForMovingThrowsHresult(const ComPtr<IMedium> &pMedium);
+    HRESULT isMediumTypeSupportedForMoving(const ComPtr<IMedium> &pMedium);
 };
 
 #endif /* !MAIN_INCLUDED_MachineImplMoveVM_h */

@@ -7168,18 +7168,9 @@ HRESULT Machine::moveTo(const com::Utf8Str &aTargetPath,
         {
             return E_OUTOFMEMORY;
         }
-        /** @todo r=bird: Turned out the init() function throws stuff of type int
-         *        without telling anyone.  Probably unintentionally.  The catching
-         *        here is only temporary until someone can be bothered to fix it
-         *        properly. */
-        try
-        {
-            hrc = pTask->init();
-        }
-        catch (...)
-        {
-            hrc = setError(E_FAIL, tr("Unknown exception thrown by MachineMoveVM::init"));
-        }
+
+        hrc = pTask->init();//no exceptions are thrown
+
         if (SUCCEEDED(hrc))
         {
             hrc = pTask->createThread();
