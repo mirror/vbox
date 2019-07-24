@@ -2950,15 +2950,11 @@ HRESULT Medium::moveTo(AutoCaller &autoCaller, const com::Utf8Str &aLocation, Co
             Utf8Str destFName(destPath);
             destFName.stripPath();
 
-            Utf8Str suffix(destFName);
-            suffix.stripSuffix();
-
-            if (suffix.equals(destFName) && !destFName.isEmpty())
+            if (destFName.isNotEmpty() && !RTPathHasSuffix(destFName.c_str()))
             {
                 /*
                  * The target path has no filename: Either "/path/to/new/location" or
-                 * just "newname" (no trailing backslash or there is no filename with
-                 * extension(suffix)).
+                 * just "newname" (no trailing backslash or there is no filename extension).
                  */
                 if (destPath.equals(destFName))
                 {
@@ -2992,41 +2988,41 @@ HRESULT Medium::moveTo(AutoCaller &autoCaller, const com::Utf8Str &aLocation, Co
                     destPath = sourcePath.stripFilename().append(RTPATH_SLASH).append(destFName);
                 }
 
-                suffix = RTPathSuffix(sourceFName.c_str());
+                const char *pszSuffix = RTPathSuffix(sourceFName.c_str());
 
                 /* Suffix is empty and one is deduced from the medium format */
-                if (suffix.isEmpty())
+                if (pszSuffix == NULL)
                 {
-                    suffix = i_getFormat();
-                    if (suffix.compare("RAW", Utf8Str::CaseInsensitive) == 0)
+                    Utf8Str strExt = i_getFormat();
+                    if (strExt.compare("RAW", Utf8Str::CaseInsensitive) == 0)
                     {
                         DeviceType_T devType = i_getDeviceType();
                         switch (devType)
                         {
                             case DeviceType_DVD:
-                                suffix = "iso";
+                                strExt = "iso";
                                 break;
                             case DeviceType_Floppy:
-                                suffix = "img";
+                                strExt = "img";
                                 break;
                             default:
-                                rc = setError(VERR_NOT_A_FILE,
+                                rc = setError(VERR_NOT_A_FILE, /** @todo r=bird: Mixing status codes again. */
                                        tr("Medium '%s' has RAW type. \"Move\" operation isn't supported for this type."),
                                        i_getLocationFull().c_str());
                                 throw rc;
                         }
                     }
-                    else if (suffix.compare("Parallels", Utf8Str::CaseInsensitive) == 0)
+                    else if (strExt.compare("Parallels", Utf8Str::CaseInsensitive) == 0)
                     {
-                        suffix = "hdd";
+                        strExt = "hdd";
                     }
 
                     /* Set the target extension like on the source. Any conversions are prohibited */
-                    suffix.toLower();
-                    destPath.stripSuffix().append('.').append(suffix);
+                    strExt.toLower();
+                    destPath.stripSuffix().append('.').append(strExt);
                 }
                 else
-                    destPath.stripSuffix().append(suffix);
+                    destPath.stripSuffix().append(pszSuffix);
             }
 
             /* Simple check for existence */
