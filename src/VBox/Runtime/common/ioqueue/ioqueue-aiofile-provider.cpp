@@ -95,7 +95,7 @@ static DECLCALLBACK(int) rtIoQueueAioFileProv_QueueInit(RTIOQUEUEPROV hIoQueuePr
     int rc = VINF_SUCCESS;
 
     pThis->cReqsToCommitMax = cSqEntries;
-    pThis->cReqsFreeMax     = cSqEntries;
+    pThis->cReqsFreeMax     = (uint32_t)cSqEntries;
     pThis->cReqsFree        = 0;
 
     pThis->pahReqsToCommit = (PRTFILEAIOREQ)RTMemAllocZ(cSqEntries * sizeof(PRTFILEAIOREQ));
@@ -104,7 +104,7 @@ static DECLCALLBACK(int) rtIoQueueAioFileProv_QueueInit(RTIOQUEUEPROV hIoQueuePr
         pThis->pahReqsFree = (PRTFILEAIOREQ)RTMemAllocZ(cSqEntries * sizeof(PRTFILEAIOREQ));
         if (RT_LIKELY(pThis->pahReqsFree))
         {
-            rc = RTFileAioCtxCreate(&pThis->hAioCtx, cSqEntries, RTFILEAIOCTX_FLAGS_WAIT_WITHOUT_PENDING_REQUESTS);
+            rc = RTFileAioCtxCreate(&pThis->hAioCtx, (uint32_t)cSqEntries, RTFILEAIOCTX_FLAGS_WAIT_WITHOUT_PENDING_REQUESTS);
             if (RT_SUCCESS(rc))
                 return VINF_SUCCESS;
 
