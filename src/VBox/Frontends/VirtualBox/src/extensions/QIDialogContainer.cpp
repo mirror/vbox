@@ -23,6 +23,10 @@
 #include "QIDialogButtonBox.h"
 #include "QIDialogContainer.h"
 
+/* Other VBox includes: */
+#include "iprt/assert.h"
+
+
 QIDialogContainer::QIDialogContainer(QWidget *pParent /* = 0 */, Qt::WindowFlags enmFlags /* = Qt::WindowFlags() */)
     : QDialog(pParent, enmFlags)
     , m_pLayout(0)
@@ -42,6 +46,8 @@ void QIDialogContainer::setWidget(QWidget *pWidget)
 
 void QIDialogContainer::setOkButtonEnabled(bool fEnabled)
 {
+    AssertPtrReturnVoid(m_pButtonBox);
+    AssertPtrReturnVoid(m_pButtonBox->button(QDialogButtonBox::Ok));
     m_pButtonBox->button(QDialogButtonBox::Ok)->setEnabled(fEnabled);
 }
 
@@ -60,7 +66,6 @@ void QIDialogContainer::prepare()
                     this, &QDialog::accept);
             connect(m_pButtonBox, &QIDialogButtonBox::rejected,
                     this, &QDialog::reject);
-
             m_pLayout->addWidget(m_pButtonBox, 1, 0);
         }
     }
