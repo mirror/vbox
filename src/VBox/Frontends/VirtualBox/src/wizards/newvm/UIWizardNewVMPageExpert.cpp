@@ -28,7 +28,7 @@
 
 /* GUI includes: */
 #include "QIToolButton.h"
-#include "UIGuestRAMSlider.h"
+#include "UIBaseMemorySlider.h"
 #include "UIIconPool.h"
 #include "UIMediaComboBox.h"
 #include "UIMedium.h"
@@ -57,7 +57,7 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert(const QString &strGroup)
             m_pMemoryCnt->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
             QGridLayout *pMemoryCntLayout = new QGridLayout(m_pMemoryCnt);
             {
-                m_pRamSlider = new UIGuestRAMSlider(m_pMemoryCnt);
+                m_pRamSlider = new UIBaseMemorySlider(m_pMemoryCnt);
                 {
                     m_pRamSlider->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
                     m_pRamSlider->setOrientation(Qt::Horizontal);
@@ -134,7 +134,7 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert(const QString &strGroup)
             this, &UIWizardNewVMPageExpert::sltPathChanged);
     connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigOsTypeChanged,
             this, &UIWizardNewVMPageExpert::sltOsTypeChanged);
-    connect(m_pRamSlider, &UIGuestRAMSlider::valueChanged,
+    connect(m_pRamSlider, &UIBaseMemorySlider::valueChanged,
             this, &UIWizardNewVMPageExpert::sltRamSliderValueChanged);
     connect(m_pRamEditor, static_cast<void(QSpinBox::*)(int)>(&QSpinBox::valueChanged),
             this, &UIWizardNewVMPageExpert::sltRamEditorValueChanged);

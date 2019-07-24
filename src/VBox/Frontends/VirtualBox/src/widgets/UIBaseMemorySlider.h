@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIGuestRAMSlider class declaration.
+ * VBox Qt GUI - UIBaseMemorySlider class declaration.
  */
 
 /*
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef FEQT_INCLUDED_SRC_widgets_UIGuestRAMSlider_h
-#define FEQT_INCLUDED_SRC_widgets_UIGuestRAMSlider_h
+#ifndef FEQT_INCLUDED_SRC_widgets_UIBaseMemorySlider_h
+#define FEQT_INCLUDED_SRC_widgets_UIBaseMemorySlider_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -25,17 +25,17 @@
 #include "QIAdvancedSlider.h"
 #include "UILibraryDefs.h"
 
-/** QIAdvancedSlider subclass used as a guest RAM slider. */
-class SHARED_LIBRARY_STUFF UIGuestRAMSlider : public QIAdvancedSlider
+/** QIAdvancedSlider subclass used as a base memory slider. */
+class SHARED_LIBRARY_STUFF UIBaseMemorySlider : public QIAdvancedSlider
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs guest RAM slider passing @a pParent to the base-class. */
-    UIGuestRAMSlider(QWidget *pParent = 0);
+    UIBaseMemorySlider(QWidget *pParent = 0);
     /** Constructs guest RAM slider passing @a pParent and @a enmOrientation to the base-class. */
-    UIGuestRAMSlider(Qt::Orientation enmOrientation, QWidget *pParent = 0);
+    UIBaseMemorySlider(Qt::Orientation enmOrientation, QWidget *pParent = 0);
 
     /** Returns the minimum RAM. */
     uint minRAM() const;
@@ -64,4 +64,4 @@ private:
     uint m_uMaxRAM;
 };
 
-#endif /* !FEQT_INCLUDED_SRC_widgets_UIGuestRAMSlider_h */
+#endif /* !FEQT_INCLUDED_SRC_widgets_UIBaseMemorySlider_h */

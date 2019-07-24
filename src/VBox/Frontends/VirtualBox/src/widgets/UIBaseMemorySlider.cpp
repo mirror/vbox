@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIGuestRAMSlider class implementation.
+ * VBox Qt GUI - UIBaseMemorySlider class implementation.
  */
 
 /*
@@ -17,13 +17,13 @@
 
 /* GUI includes: */
 #include "UICommon.h"
-#include "UIGuestRAMSlider.h"
+#include "UIBaseMemorySlider.h"
 
 /* COM includes: */
 #include "CSystemProperties.h"
 
 
-UIGuestRAMSlider::UIGuestRAMSlider(QWidget *pParent /* = 0 */)
+UIBaseMemorySlider::UIBaseMemorySlider(QWidget *pParent /* = 0 */)
   : QIAdvancedSlider(pParent)
   , m_uMinRAM(0)
   , m_uMaxRAMOpt(0)
@@ -34,7 +34,7 @@ UIGuestRAMSlider::UIGuestRAMSlider(QWidget *pParent /* = 0 */)
     prepare();
 }
 
-UIGuestRAMSlider::UIGuestRAMSlider(Qt::Orientation enmOrientation, QWidget *pParent /* = 0 */)
+UIBaseMemorySlider::UIBaseMemorySlider(Qt::Orientation enmOrientation, QWidget *pParent /* = 0 */)
   : QIAdvancedSlider(enmOrientation, pParent)
   , m_uMinRAM(0)
   , m_uMaxRAMOpt(0)
@@ -45,27 +45,27 @@ UIGuestRAMSlider::UIGuestRAMSlider(Qt::Orientation enmOrientation, QWidget *pPar
     prepare();
 }
 
-uint UIGuestRAMSlider::minRAM() const
+uint UIBaseMemorySlider::minRAM() const
 {
     return m_uMinRAM;
 }
 
-uint UIGuestRAMSlider::maxRAMOpt() const
+uint UIBaseMemorySlider::maxRAMOpt() const
 {
     return m_uMaxRAMOpt;
 }
 
-uint UIGuestRAMSlider::maxRAMAlw() const
+uint UIBaseMemorySlider::maxRAMAlw() const
 {
     return m_uMaxRAMAlw;
 }
 
-uint UIGuestRAMSlider::maxRAM() const
+uint UIBaseMemorySlider::maxRAM() const
 {
     return m_uMaxRAM;
 }
 
-void UIGuestRAMSlider::prepare()
+void UIBaseMemorySlider::prepare()
 {
     ulong uFullSize = uiCommon().host().GetMemorySize();
     CSystemProperties sys = uiCommon().virtualBox().GetSystemProperties();
@@ -163,7 +163,7 @@ void UIGuestRAMSlider::prepare()
     setErrorHint(m_uMaxRAMAlw, m_uMaxRAM);
 }
 
-int UIGuestRAMSlider::calcPageStep(int iMaximum) const
+int UIBaseMemorySlider::calcPageStep(int iMaximum) const
 {
     /* Calculate a suitable page step size for the given max value.
      * The returned size is so that there will be no more than 32

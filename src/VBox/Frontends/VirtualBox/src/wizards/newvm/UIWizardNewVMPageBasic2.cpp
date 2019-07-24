@@ -27,7 +27,7 @@
 #include "UIWizardNewVMPageBasic2.h"
 #include "UIWizardNewVM.h"
 #include "UICommon.h"
-#include "UIGuestRAMSlider.h"
+#include "UIBaseMemorySlider.h"
 #include "QIRichTextLabel.h"
 
 
@@ -59,7 +59,7 @@ UIWizardNewVMPageBasic2::UIWizardNewVMPageBasic2()
         m_pLabel = new QIRichTextLabel(this);
         QGridLayout *pMemoryLayout = new QGridLayout;
         {
-            m_pRamSlider = new UIGuestRAMSlider(this);
+            m_pRamSlider = new UIBaseMemorySlider(this);
             {
                 m_pRamSlider->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
                 m_pRamSlider->setOrientation(Qt::Horizontal);
@@ -95,7 +95,7 @@ UIWizardNewVMPageBasic2::UIWizardNewVMPageBasic2()
     }
 
     /* Setup connections: */
-    connect(m_pRamSlider, &UIGuestRAMSlider::valueChanged,
+    connect(m_pRamSlider, &UIBaseMemorySlider::valueChanged,
             this, &UIWizardNewVMPageBasic2::sltRamSliderValueChanged);
     connect(m_pRamEditor, static_cast<void(QSpinBox::*)(int)>(&QSpinBox::valueChanged),
             this, &UIWizardNewVMPageBasic2::sltRamEditorValueChanged);
