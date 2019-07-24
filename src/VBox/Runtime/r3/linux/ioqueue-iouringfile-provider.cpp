@@ -532,7 +532,7 @@ static DECLCALLBACK(bool) rtIoQueueLnxIoURingFileProv_IsSupported(void)
     int rc = rtIoQueueLnxIoURingSetup(16, &Params, &iFdIoCtx);
     if (RT_SUCCESS(rc))
     {
-        int rcLnx = close(iFdIoCtx); Assert(!rcLnx);
+        int rcLnx = close(iFdIoCtx); Assert(!rcLnx); RT_NOREF(rcLnx);
         return true;
     }
 
