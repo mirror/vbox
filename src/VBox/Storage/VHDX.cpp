@@ -1769,9 +1769,9 @@ static int vhdxOpenImage(PVHDXIMAGE pImage, unsigned uOpenFlags)
 
 /** @copydoc VDIMAGEBACKEND::pfnProbe */
 static DECLCALLBACK(int) vhdxProbe(const char *pszFilename, PVDINTERFACE pVDIfsDisk,
-                                   PVDINTERFACE pVDIfsImage, VDTYPE *penmType)
+                                   PVDINTERFACE pVDIfsImage, VDTYPE enmDesiredType, VDTYPE *penmType)
 {
-    RT_NOREF1(pVDIfsDisk);
+    RT_NOREF(pVDIfsDisk, enmDesiredType);
     LogFlowFunc(("pszFilename=\"%s\" pVDIfsDisk=%#p pVDIfsImage=%#p\n", pszFilename, pVDIfsDisk, pVDIfsImage));
     PVDIOSTORAGE pStorage = NULL;
     uint64_t cbFile;

@@ -713,7 +713,7 @@ static DECLCALLBACK(int) vdVfsChain_Instantiate(PCRTVFSCHAINELEMENTREG pProvider
     /* Determin the format. */
     char  *pszFormat = NULL;
     VDTYPE enmType   = VDTYPE_INVALID;
-    int rc = VDGetFormat(NULL, NULL, pElement->paArgs[0].psz, &pszFormat, &enmType);
+    int rc = VDGetFormat(NULL, NULL, pElement->paArgs[0].psz, VDTYPE_INVALID, &pszFormat, &enmType);
     if (RT_SUCCESS(rc))
     {
         PVDISK pDisk = NULL;

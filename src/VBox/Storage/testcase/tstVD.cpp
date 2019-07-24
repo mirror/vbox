@@ -543,7 +543,7 @@ static int tstVDOpenCreateWriteMerge(const char *pszBackend,
     {
         RTFileClose(File);
         rc = VDGetFormat(NULL /* pVDIfsDisk */, NULL /* pVDIfsImage */,
-                         pszBaseFilename, &pszFormat, &enmType);
+                         pszBaseFilename, VDTYPE_INVALID, &pszFormat, &enmType);
         RTPrintf("VDGetFormat() pszFormat=%s rc=%Rrc\n", pszFormat, rc);
         if (RT_SUCCESS(rc) && strcmp(pszFormat, pszBackend))
         {

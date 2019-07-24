@@ -1295,9 +1295,9 @@ static int vhdCreateImage(PVHDIMAGE pImage, uint64_t cbSize,
 
 /** @interface_method_impl{VDIMAGEBACKEND,pfnProbe} */
 static DECLCALLBACK(int) vhdProbe(const char *pszFilename, PVDINTERFACE pVDIfsDisk,
-                                  PVDINTERFACE pVDIfsImage, VDTYPE *penmType)
+                                  PVDINTERFACE pVDIfsImage, VDTYPE enmDesiredType, VDTYPE *penmType)
 {
-    RT_NOREF1(pVDIfsDisk);
+    RT_NOREF(pVDIfsDisk, enmDesiredType);
     LogFlowFunc(("pszFilename=\"%s\" pVDIfsDisk=%#p pVDIfsImage=%#p\n", pszFilename, pVDIfsDisk, pVDIfsImage));
     PVDIOSTORAGE pStorage;
     PVDINTERFACEIOINT pIfIo = VDIfIoIntGet(pVDIfsImage);

@@ -282,7 +282,7 @@ static int handleSetUUID(HandlerArg *a)
     {
         /* Don't pass error interface, as that would triggers error messages
          * because some backends fail to open the image. */
-        rc = VDGetFormat(NULL, NULL, pszFilename, &pszFormat, &enmType);
+        rc = VDGetFormat(NULL, NULL, pszFilename, VDTYPE_INVALID, &pszFormat, &enmType);
         if (RT_FAILURE(rc))
             return errorRuntime("Format autodetect failed: %Rrc\n", rc);
     }
@@ -418,7 +418,7 @@ static int handleGeometry(HandlerArg *a)
     {
         /* Don't pass error interface, as that would triggers error messages
          * because some backends fail to open the image. */
-        rc = VDGetFormat(NULL, NULL, pszFilename, &pszFormat, &enmType);
+        rc = VDGetFormat(NULL, NULL, pszFilename, VDTYPE_INVALID, &pszFormat, &enmType);
         if (RT_FAILURE(rc))
             return errorRuntime("Format autodetect failed: %Rrc\n", rc);
     }
@@ -1214,7 +1214,7 @@ static int handleConvert(HandlerArg *a)
         {
             char *pszFormat = NULL;
             VDTYPE enmType = VDTYPE_INVALID;
-            rc = VDGetFormat(NULL, NULL, pszSrcFilename, &pszFormat, &enmType);
+            rc = VDGetFormat(NULL, NULL, pszSrcFilename, VDTYPE_INVALID, &pszFormat, &enmType);
             if (RT_FAILURE(rc))
             {
                 errorSyntax("No file format specified, please specify format: %Rrc\n", rc);
@@ -1310,7 +1310,7 @@ static int handleInfo(HandlerArg *a)
     /* just try it */
     char *pszFormat = NULL;
     VDTYPE enmType = VDTYPE_INVALID;
-    rc = VDGetFormat(NULL, NULL, pszFilename, &pszFormat, &enmType);
+    rc = VDGetFormat(NULL, NULL, pszFilename, VDTYPE_INVALID, &pszFormat, &enmType);
     if (RT_FAILURE(rc))
         return errorSyntax("Format autodetect failed: %Rrc\n", rc);
 
@@ -1406,7 +1406,7 @@ static int handleCompact(HandlerArg *a)
     /* just try it */
     char *pszFormat = NULL;
     VDTYPE enmType = VDTYPE_INVALID;
-    int rc = VDGetFormat(NULL, NULL, pszFilename, &pszFormat, &enmType);
+    int rc = VDGetFormat(NULL, NULL, pszFilename, VDTYPE_INVALID, &pszFormat, &enmType);
     if (RT_FAILURE(rc))
         return errorSyntax("Format autodetect failed: %Rrc\n", rc);
 
@@ -1811,7 +1811,7 @@ static int handleRepair(HandlerArg *a)
     /* just try it */
     if (!pszFormat)
     {
-        rc = VDGetFormat(NULL, NULL, pszFilename, &pszBackend, &enmType);
+        rc = VDGetFormat(NULL, NULL, pszFilename, VDTYPE_INVALID, &pszBackend, &enmType);
         if (RT_FAILURE(rc))
             return errorSyntax("Format autodetect failed: %Rrc\n", rc);
         pszFormat = pszBackend;
@@ -1864,7 +1864,7 @@ static int handleClearComment(HandlerArg *a)
     /* just try it */
     char *pszFormat = NULL;
     VDTYPE enmType = VDTYPE_INVALID;
-    rc = VDGetFormat(NULL, NULL, pszFilename, &pszFormat, &enmType);
+    rc = VDGetFormat(NULL, NULL, pszFilename, VDTYPE_INVALID, &pszFormat, &enmType);
     if (RT_FAILURE(rc))
         return errorSyntax("Format autodetect failed: %Rrc\n", rc);
 
@@ -2021,7 +2021,7 @@ static int handleClearResize(HandlerArg *a)
     /* just try it */
     char *pszFormat = NULL;
     VDTYPE enmType = VDTYPE_INVALID;
-    rc = VDGetFormat(NULL, NULL, pszFilename, &pszFormat, &enmType);
+    rc = VDGetFormat(NULL, NULL, pszFilename, VDTYPE_INVALID, &pszFormat, &enmType);
     if (RT_FAILURE(rc))
         return errorSyntax("Format autodetect failed: %Rrc\n", rc);
 

@@ -655,7 +655,7 @@ static RTEXITCODE CmdSetHDUUID(int argc, char **argv, ComPtr<IVirtualBox> aVirtu
     char *pszFormat = NULL;
     VDTYPE enmType = VDTYPE_INVALID;
     int rc = VDGetFormat(NULL /* pVDIfsDisk */, NULL /* pVDIfsImage */,
-                         argv[1], &pszFormat, &enmType);
+                         argv[1], VDTYPE_INVALID, &pszFormat, &enmType);
     if (RT_FAILURE(rc))
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "Format autodetect failed: %Rrc", rc);
 
@@ -708,7 +708,7 @@ static RTEXITCODE CmdDumpHDInfo(int argc, char **argv, ComPtr<IVirtualBox> aVirt
     char *pszFormat = NULL;
     VDTYPE enmType = VDTYPE_INVALID;
     int rc = VDGetFormat(NULL /* pVDIfsDisk */, NULL /* pVDIfsImage */,
-                         argv[0], &pszFormat, &enmType);
+                         argv[0], VDTYPE_INVALID, &pszFormat, &enmType);
     if (RT_FAILURE(rc))
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "Format autodetect failed: %Rrc", rc);
 
@@ -2015,7 +2015,7 @@ static RTEXITCODE CmdConvertToRaw(int argc, char **argv, ComPtr<IVirtualBox> aVi
         char *pszFormat = NULL;
         VDTYPE enmType = VDTYPE_INVALID;
         vrc = VDGetFormat(NULL /* pVDIfsDisk */, NULL /* pVDIfsImage */,
-                          src.c_str(), &pszFormat, &enmType);
+                          src.c_str(), VDTYPE_INVALID, &pszFormat, &enmType);
         if (RT_FAILURE(vrc) || enmType != VDTYPE_HDD)
         {
             VDCloseAll(pDisk);
@@ -2163,7 +2163,7 @@ static RTEXITCODE CmdConvertHardDisk(int argc, char **argv, ComPtr<IVirtualBox> 
         {
             char *pszFormat = NULL;
             vrc = VDGetFormat(NULL /* pVDIfsDisk */, NULL /* pVDIfsImage */,
-                              src.c_str(), &pszFormat, &enmSrcType);
+                              src.c_str(), VDTYPE_HDD, &pszFormat, &enmSrcType);
             if (RT_FAILURE(vrc))
             {
                 RTMsgError("No file format specified and autodetect failed - please specify format: %Rrc", vrc);
@@ -2281,7 +2281,7 @@ static RTEXITCODE CmdRepairHardDisk(int argc, char **argv, ComPtr<IVirtualBox> a
             VDTYPE enmSrcType = VDTYPE_INVALID;
 
             vrc = VDGetFormat(NULL /* pVDIfsDisk */, NULL /* pVDIfsImage */,
-                              image.c_str(), &pszFormat, &enmSrcType);
+                              image.c_str(), VDTYPE_HDD, &pszFormat, &enmSrcType);
             if (RT_FAILURE(vrc) && (vrc != VERR_VD_IMAGE_CORRUPTED))
             {
                 RTMsgError("No file format specified and autodetect failed - please specify format: %Rrc", vrc);

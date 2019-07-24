@@ -375,9 +375,9 @@ static int parallelsCreateImage(PPARALLELSIMAGE pImage, uint64_t cbSize,
 
 /** @copydoc VDIMAGEBACKEND::pfnProbe */
 static DECLCALLBACK(int) parallelsProbe(const char *pszFilename, PVDINTERFACE pVDIfsDisk,
-                                        PVDINTERFACE pVDIfsImage, VDTYPE *penmType)
+                                        PVDINTERFACE pVDIfsImage, VDTYPE enmDesiredType, VDTYPE *penmType)
 {
-    RT_NOREF1(pVDIfsDisk);
+    RT_NOREF(pVDIfsDisk, enmDesiredType);
     int rc;
     PVDIOSTORAGE pStorage;
     ParallelsHeader parallelsHeader;

@@ -5232,8 +5232,9 @@ static char *vmdkStrReplace(const char *pszWhere, const char *pszWhat,
 
 /** @copydoc VDIMAGEBACKEND::pfnProbe */
 static DECLCALLBACK(int) vmdkProbe(const char *pszFilename, PVDINTERFACE pVDIfsDisk,
-                                   PVDINTERFACE pVDIfsImage, VDTYPE *penmType)
+                                   PVDINTERFACE pVDIfsImage, VDTYPE enmDesiredType, VDTYPE *penmType)
 {
+    RT_NOREF(enmDesiredType);
     LogFlowFunc(("pszFilename=\"%s\" pVDIfsDisk=%#p pVDIfsImage=%#p penmType=%#p\n",
                  pszFilename, pVDIfsDisk, pVDIfsImage, penmType));
 

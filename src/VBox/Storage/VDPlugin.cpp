@@ -76,7 +76,13 @@ static PCVDIMAGEBACKEND *g_apBackends = NULL;
 /** Array of handles to the corresponding plugin. */
 static RTLDRMOD *g_ahBackendPlugins = NULL;
 #endif
-/** Builtin image backends. */
+/**
+ * Builtin image backends.
+ *
+ * @note As long as the pfnProb() calls aren't scored, the ordering influences
+ *       which backend take precedence.  In particular, the RAW backend should
+ *       be thowards the end of the list.
+ */
 static PCVDIMAGEBACKEND aStaticBackends[] =
 {
     &g_VmdkBackend,
@@ -87,9 +93,9 @@ static PCVDIMAGEBACKEND aStaticBackends[] =
     &g_QedBackend,
     &g_QCowBackend,
     &g_VhdxBackend,
-    &g_RawBackend,
     &g_CueBackend,
     &g_VBoxIsoMakerBackend,
+    &g_RawBackend,
     &g_ISCSIBackend
 };
 

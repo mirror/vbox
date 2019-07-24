@@ -520,7 +520,7 @@ static int vboxfuseFlatImageCreate(const char *pszPath, const char *pszImage, PV
      */
     char *pszFormat;
     VDTYPE enmType;
-    rc = VDGetFormat(NULL /* pVDIIfsDisk */, NULL /* pVDIIfsImage*/, pszImage, &pszFormat, &enmType);
+    rc = VDGetFormat(NULL /* pVDIIfsDisk */, NULL /* pVDIIfsImage*/, pszImage,  VDTYPE_INVALID,&pszFormat, &enmType);
     if (RT_FAILURE(rc))
     {
         LogRel(("VDGetFormat(%s,) failed, rc=%Rrc\n", pszImage, rc));

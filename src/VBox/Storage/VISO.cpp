@@ -208,7 +208,8 @@ static int visoProbeWorker(const char *pszFilename, PVDINTERFACEIOINT pIfIo, PRT
 /**
  * @interface_method_impl{VDIMAGEBACKEND,pfnProbe}
  */
-static DECLCALLBACK(int) visoProbe(const char *pszFilename, PVDINTERFACE pVDIfsDisk, PVDINTERFACE pVDIfsImage, VDTYPE *penmType)
+static DECLCALLBACK(int) visoProbe(const char *pszFilename, PVDINTERFACE pVDIfsDisk, PVDINTERFACE pVDIfsImage,
+                                   VDTYPE enmDesiredType, VDTYPE *penmType)
 {
     /*
      * Validate input.
@@ -223,6 +224,12 @@ static DECLCALLBACK(int) visoProbe(const char *pszFilename, PVDINTERFACE pVDIfsD
     AssertPtrReturn(pIfIo, VERR_INVALID_PARAMETER);
 
     RT_NOREF(pVDIfsDisk);
+
+    /*
+     * We can only fake DVD stuff, so fail if the desired type doesn't match up
+     */
+    if (enmDesiredType != VDTYPE_OPTICAL_DISC && enmDesiredType != VDTYPE_INVALID)
+        return VERR_VD_GEN_INVALID_HEADER; /* Caller has strict, though undocument, status code expectations. */
 
     /*
      * Share worker with visoOpen and visoSetFlags.

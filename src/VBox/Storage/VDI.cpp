@@ -1409,8 +1409,9 @@ static DECLCALLBACK(int) vdiBlockAllocUpdate(void *pBackendData, PVDIOCTX pIoCtx
 
 /** @copydoc VDIMAGEBACKEND::pfnProbe */
 static DECLCALLBACK(int) vdiProbe(const char *pszFilename, PVDINTERFACE pVDIfsDisk,
-                                  PVDINTERFACE pVDIfsImage, VDTYPE *penmType)
+                                  PVDINTERFACE pVDIfsImage, VDTYPE enmDesiredType, VDTYPE *penmType)
 {
+    RT_NOREF(enmDesiredType);
     LogFlowFunc(("pszFilename=\"%s\"\n", pszFilename));
     int rc = VINF_SUCCESS;
 

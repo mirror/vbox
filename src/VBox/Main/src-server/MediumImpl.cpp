@@ -7618,6 +7618,9 @@ HRESULT Medium::i_setLocation(const Utf8Str &aLocation,
         /* detect the backend from the storage unit if importing */
         if (isImport)
         {
+            VDTYPE const enmDesiredType = m->devType == DeviceType_Floppy   ? VDTYPE_FLOPPY
+                                        : m->devType == DeviceType_DVD      ? VDTYPE_OPTICAL_DISC
+                                        : m->devType == DeviceType_HardDisk ? VDTYPE_HDD : VDTYPE_INVALID;
             VDTYPE enmType = VDTYPE_INVALID;
             char *backendName = NULL;
 
@@ -7633,7 +7636,7 @@ HRESULT Medium::i_setLocation(const Utf8Str &aLocation,
             if (RT_SUCCESS(vrc))
             {
                 vrc = VDGetFormat(NULL /* pVDIfsDisk */, NULL /* pVDIfsImage */,
-                                  locationFull.c_str(), &backendName, &enmType);
+                                  locationFull.c_str(), enmDesiredType, &backendName, &enmType);
             }
             else if (   vrc != VERR_FILE_NOT_FOUND
                      && vrc != VERR_PATH_NOT_FOUND
@@ -7643,7 +7646,7 @@ HRESULT Medium::i_setLocation(const Utf8Str &aLocation,
                 /* assume it's not a file, restore the original location */
                 locationFull = aLocation;
                 vrc = VDGetFormat(NULL /* pVDIfsDisk */, NULL /* pVDIfsImage */,
-                                  locationFull.c_str(), &backendName, &enmType);
+                                  locationFull.c_str(), enmDesiredType, &backendName, &enmType);
             }
 
             if (RT_FAILURE(vrc))

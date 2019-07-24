@@ -5407,11 +5407,14 @@ VBOXDDU_DECL(int) VDDestroy(PVDISK pDisk)
  * @param   pVDIfsDisk      Pointer to the per-disk VD interface list.
  * @param   pVDIfsImage     Pointer to the per-image VD interface list.
  * @param   pszFilename     Name of the image file for which the backend is queried.
+ * @param   enmDesiredType  The desired image type, VDTYPE_INVALID if anything goes.
  * @param   ppszFormat      Receives pointer of the UTF-8 string which contains the format name.
  *                          The returned pointer must be freed using RTStrFree().
+ * @param   penmType        Where to store the type of the image.
  */
 VBOXDDU_DECL(int) VDGetFormat(PVDINTERFACE pVDIfsDisk, PVDINTERFACE pVDIfsImage,
-                              const char *pszFilename, char **ppszFormat, VDTYPE *penmType)
+                              const char *pszFilename, VDTYPE enmDesiredType,
+                              char **ppszFormat, VDTYPE *penmType)
 {
     int rc = VERR_NOT_SUPPORTED;
     VDINTERFACEIOINT VDIfIoInt;
@@ -5429,6 +5432,7 @@ VBOXDDU_DECL(int) VDGetFormat(PVDINTERFACE pVDIfsDisk, PVDINTERFACE pVDIfsImage,
     AssertMsgReturn(VALID_PTR(penmType),
                     ("penmType=%#p\n", penmType),
                     VERR_INVALID_PARAMETER);
+    AssertReturn(enmDesiredType >= VDTYPE_INVALID && enmDesiredType <= VDTYPE_FLOPPY, VERR_INVALID_PARAMETER);
 
     if (!vdPluginIsInitialized())
         VDInit();
@@ -5463,6 +5467,13 @@ VBOXDDU_DECL(int) VDGetFormat(PVDINTERFACE pVDIfsDisk, PVDINTERFACE pVDIfsImage,
                         pInterfaceIo, sizeof(VDINTERFACEIOINT), &pVDIfsImage);
     AssertRC(rc);
 
+    /** @todo r=bird: Would be better to do a scoring approach here, where the
+     * backend that scores the highest is choosen.  That way we don't have to depend
+     * on registration order and filename suffixes to figure out what RAW should
+     * handle and not.   Besides, the registration order won't cut it for plug-ins
+     * anyway, as they end up after the builtin ones.
+     */
+
     /* Find the backend supporting this file format. */
     for (unsigned i = 0; i < vdGetImageBackendCount(); i++)
     {
@@ -5472,7 +5483,7 @@ VBOXDDU_DECL(int) VDGetFormat(PVDINTERFACE pVDIfsDisk, PVDINTERFACE pVDIfsImage,
 
         if (pBackend->pfnProbe)
         {
-            rc = pBackend->pfnProbe(pszFilename, pVDIfsDisk, pVDIfsImage, penmType);
+            rc = pBackend->pfnProbe(pszFilename, pVDIfsDisk, pVDIfsImage, enmDesiredType, penmType);
             if (    RT_SUCCESS(rc)
                 /* The correct backend has been found, but there is a small
                  * incompatibility so that the file cannot be used. Stop here

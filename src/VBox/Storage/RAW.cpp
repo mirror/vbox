@@ -27,6 +27,8 @@
 #include <iprt/assert.h>
 #include <iprt/alloc.h>
 #include <iprt/path.h>
+#include <iprt/formats/iso9660.h>
+#include <iprt/formats/udf.h>
 
 #include "VDBackends.h"
 #include "VDBackendsInline.h"
@@ -319,12 +321,205 @@ static int rawCreateImage(PRAWIMAGE pImage, uint64_t cbSize,
     return rc;
 }
 
+/**
+ * Worker for rawProbe that checks if the file looks like it contains an ISO
+ * 9660 or UDF descriptor sequence at the expected offset.
+ *
+ * Caller already checked if the size is suitable for ISOs.
+ *
+ * @returns IPRT status code.  Success if detected ISO 9660 or UDF, failure if
+ *          not.
+ *
+ * @note Code is a modified version of rtFsIsoVolTryInit() IPRT (isovfs.cpp).
+ */
+static int rawProbeIsIso9660OrUdf(PVDINTERFACEIOINT pIfIo, PVDIOSTORAGE pStorage)
+{
+    PRTERRINFO                  pErrInfo = NULL;
+    const uint32_t              cbSector = _2K;
+
+    union
+    {
+        uint8_t                 ab[_2K];
+        ISO9660VOLDESCHDR       VolDescHdr;
+    } Buf;
+    Assert(cbSector <= sizeof(Buf));
+    RT_ZERO(Buf);
+
+    uint8_t         uUdfLevel               = 0;
+    uint64_t        offUdfBootVolDesc       = UINT64_MAX;
+
+    uint32_t        cPrimaryVolDescs        = 0;
+    uint32_t        cSupplementaryVolDescs  = 0;
+    uint32_t        cBootRecordVolDescs     = 0;
+    uint32_t        offVolDesc              = 16 * cbSector;
+    enum
+    {
+        kStateStart = 0,
+        kStateNoSeq,
+        kStateCdSeq,
+        kStateUdfSeq
+    }               enmState = kStateStart;
+    for (uint32_t iVolDesc = 0; ; iVolDesc++, offVolDesc += cbSector)
+    {
+        if (iVolDesc > 32)
+            return RTERRINFO_LOG_SET(pErrInfo, VERR_VFS_BOGUS_FORMAT, "More than 32 volume descriptors, doesn't seem right...");
+
+        /* Read the next one and check the signature. */
+        int rc = vdIfIoIntFileReadSync(pIfIo, pStorage, offVolDesc, &Buf, cbSector);
+        if (RT_FAILURE(rc))
+            return RTERRINFO_LOG_SET_F(pErrInfo, rc, "Unable to read volume descriptor #%u", iVolDesc);
+
+#define MATCH_STD_ID(a_achStdId1, a_szStdId2) \
+            (   (a_achStdId1)[0] == (a_szStdId2)[0] \
+             && (a_achStdId1)[1] == (a_szStdId2)[1] \
+             && (a_achStdId1)[2] == (a_szStdId2)[2] \
+             && (a_achStdId1)[3] == (a_szStdId2)[3] \
+             && (a_achStdId1)[4] == (a_szStdId2)[4] )
+#define MATCH_HDR(a_pStd, a_bType2, a_szStdId2, a_bVer2) \
+            (    MATCH_STD_ID((a_pStd)->achStdId, a_szStdId2) \
+             && (a_pStd)->bDescType    == (a_bType2) \
+             && (a_pStd)->bDescVersion == (a_bVer2) )
+
+        /*
+         * ISO 9660 ("CD001").
+         */
+        if (   (   enmState == kStateStart
+                || enmState == kStateCdSeq
+                || enmState == kStateNoSeq)
+            && MATCH_STD_ID(Buf.VolDescHdr.achStdId, ISO9660VOLDESC_STD_ID) )
+        {
+            enmState = kStateCdSeq;
+
+            /* Do type specific handling. */
+            Log(("RAW/ISO9660: volume desc #%u: type=%#x\n", iVolDesc, Buf.VolDescHdr.bDescType));
+            if (Buf.VolDescHdr.bDescType == ISO9660VOLDESC_TYPE_PRIMARY)
+            {
+                cPrimaryVolDescs++;
+                if (Buf.VolDescHdr.bDescVersion != ISO9660PRIMARYVOLDESC_VERSION)
+                    return RTERRINFO_LOG_SET_F(pErrInfo, VERR_VFS_UNSUPPORTED_FORMAT,
+                                               "Unsupported primary volume descriptor version: %#x", Buf.VolDescHdr.bDescVersion);
+                if (cPrimaryVolDescs == 1)
+                { /*rc = rtFsIsoVolHandlePrimaryVolDesc(pThis, &Buf.PrimaryVolDesc, offVolDesc, &RootDir, &offRootDirRec, pErrInfo);*/ }
+                else if (cPrimaryVolDescs == 2)
+                    Log(("RAW/ISO9660: ignoring 2nd primary descriptor\n")); /* so we can read the w2k3 ifs kit */
+                else
+                    return RTERRINFO_LOG_SET(pErrInfo, VERR_VFS_UNSUPPORTED_FORMAT, "More than one primary volume descriptor");
+            }
+            else if (Buf.VolDescHdr.bDescType == ISO9660VOLDESC_TYPE_SUPPLEMENTARY)
+            {
+                cSupplementaryVolDescs++;
+                if (Buf.VolDescHdr.bDescVersion != ISO9660SUPVOLDESC_VERSION)
+                    return RTERRINFO_LOG_SET_F(pErrInfo, VERR_VFS_UNSUPPORTED_FORMAT,
+                                               "Unsupported supplemental volume descriptor version: %#x", Buf.VolDescHdr.bDescVersion);
+                /*rc = rtFsIsoVolHandleSupplementaryVolDesc(pThis, &Buf.SupVolDesc, offVolDesc, &bJolietUcs2Level, &JolietRootDir,
+                                                          &offJolietRootDirRec, pErrInfo);*/
+            }
+            else if (Buf.VolDescHdr.bDescType == ISO9660VOLDESC_TYPE_BOOT_RECORD)
+            {
+                cBootRecordVolDescs++;
+            }
+            else if (Buf.VolDescHdr.bDescType == ISO9660VOLDESC_TYPE_TERMINATOR)
+            {
+                if (!cPrimaryVolDescs)
+                    return RTERRINFO_LOG_SET(pErrInfo, VERR_VFS_BOGUS_FORMAT, "No primary volume descriptor");
+                enmState = kStateNoSeq;
+            }
+            else
+                return RTERRINFO_LOG_SET_F(pErrInfo, VERR_VFS_UNSUPPORTED_FORMAT,
+                                           "Unknown volume descriptor: %#x", Buf.VolDescHdr.bDescType);
+        }
+        /*
+         * UDF volume recognition sequence (VRS).
+         */
+        else if (   (   enmState == kStateNoSeq
+                     || enmState == kStateStart)
+                 && MATCH_HDR(&Buf.VolDescHdr, UDF_EXT_VOL_DESC_TYPE, UDF_EXT_VOL_DESC_STD_ID_BEGIN, UDF_EXT_VOL_DESC_VERSION) )
+        {
+            if (uUdfLevel == 0)
+                enmState = kStateUdfSeq;
+            else
+                return RTERRINFO_LOG_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT, "Only one BEA01 sequence is supported");
+        }
+        else if (   enmState == kStateUdfSeq
+                 && MATCH_HDR(&Buf.VolDescHdr, UDF_EXT_VOL_DESC_TYPE, UDF_EXT_VOL_DESC_STD_ID_NSR_02, UDF_EXT_VOL_DESC_VERSION) )
+            uUdfLevel = 2;
+        else if (   enmState == kStateUdfSeq
+                 && MATCH_HDR(&Buf.VolDescHdr, UDF_EXT_VOL_DESC_TYPE, UDF_EXT_VOL_DESC_STD_ID_NSR_03, UDF_EXT_VOL_DESC_VERSION) )
+            uUdfLevel = 3;
+        else if (   enmState == kStateUdfSeq
+                 && MATCH_HDR(&Buf.VolDescHdr, UDF_EXT_VOL_DESC_TYPE, UDF_EXT_VOL_DESC_STD_ID_BOOT, UDF_EXT_VOL_DESC_VERSION) )
+        {
+            if (offUdfBootVolDesc == UINT64_MAX)
+                offUdfBootVolDesc = iVolDesc * cbSector;
+            else
+                return RTERRINFO_LOG_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT, "Only one BOOT2 descriptor is supported");
+        }
+        else if (   enmState == kStateUdfSeq
+                 && MATCH_HDR(&Buf.VolDescHdr, UDF_EXT_VOL_DESC_TYPE, UDF_EXT_VOL_DESC_STD_ID_TERM, UDF_EXT_VOL_DESC_VERSION) )
+        {
+            if (uUdfLevel != 0)
+                enmState = kStateNoSeq;
+            else
+                return RTERRINFO_LOG_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT, "Found BEA01 & TEA01, but no NSR02 or NSR03 descriptors");
+        }
+        /*
+         * Unknown, probably the end.
+         */
+        else if (enmState == kStateNoSeq)
+            break;
+        else if (enmState == kStateStart)
+                return RTERRINFO_LOG_SET_F(pErrInfo, VERR_VFS_UNKNOWN_FORMAT,
+                                           "Not ISO? Unable to recognize volume descriptor signature: %.5Rhxs", Buf.VolDescHdr.achStdId);
+        else if (enmState == kStateCdSeq)
+            return RTERRINFO_LOG_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT,
+                                       "Missing ISO 9660 terminator volume descriptor? (Found %.5Rhxs)", Buf.VolDescHdr.achStdId);
+        else if (enmState == kStateUdfSeq)
+            return RTERRINFO_LOG_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT,
+                                       "Missing UDF terminator volume descriptor? (Found %.5Rhxs)", Buf.VolDescHdr.achStdId);
+        else
+            return RTERRINFO_LOG_SET_F(pErrInfo, VERR_VFS_UNKNOWN_FORMAT,
+                                       "Unknown volume descriptor signature found at sector %u: %.5Rhxs",
+                                       16 + iVolDesc, Buf.VolDescHdr.achStdId);
+    }
+
+    return VINF_SUCCESS;
+}
+
+/**
+ * Checks the given extension array for the given suffix and type.
+ *
+ * @returns true if found in the list, false if not.
+ * @param   paExtensions        The extension array to check against.
+ * @param   pszSuffix           The suffix to look for.  Can be NULL.
+ * @param   enmType             The image type to look for.
+ */
+static bool rawProbeContainsExtension(const VDFILEEXTENSION *paExtensions, const char *pszSuffix, VDTYPE enmType)
+{
+    if (pszSuffix)
+    {
+        if (*pszSuffix == '.')
+            pszSuffix++;
+        if (*pszSuffix != '\0')
+        {
+            for (size_t i = 0;; i++)
+            {
+                if (!paExtensions[i].pszExtension)
+                    break;
+                if (   paExtensions[i].enmType == enmType
+                    && RTStrICmpAscii(paExtensions[i].pszExtension, pszSuffix) == 0)
+                    return true;
+            }
+        }
+    }
+    return false;
+}
+
 
 /** @copydoc VDIMAGEBACKEND::pfnProbe */
 static DECLCALLBACK(int) rawProbe(const char *pszFilename, PVDINTERFACE pVDIfsDisk,
-                                  PVDINTERFACE pVDIfsImage, VDTYPE *penmType)
+                                  PVDINTERFACE pVDIfsImage, VDTYPE enmDesiredType, VDTYPE *penmType)
 {
-    RT_NOREF1(pVDIfsDisk);
+    RT_NOREF(pVDIfsDisk, enmDesiredType);
     LogFlowFunc(("pszFilename=\"%s\" pVDIfsDisk=%#p pVDIfsImage=%#p\n", pszFilename, pVDIfsDisk, pVDIfsImage));
     PVDIOSTORAGE pStorage = NULL;
     PVDINTERFACEIOINT pIfIo = VDIfIoIntGet(pVDIfsImage);
@@ -342,49 +537,120 @@ static DECLCALLBACK(int) rawProbe(const char *pszFilename, PVDINTERFACE pVDIfsDi
     if (RT_SUCCESS(rc))
     {
         uint64_t cbFile;
-        const char *pszSuffix = RTPathSuffix(pszFilename);
         rc = vdIfIoIntFileGetSize(pIfIo, pStorage, &cbFile);
-
-        /* Try to guess the image type based on the extension. */
-        if (   RT_SUCCESS(rc)
-            && pszSuffix)
+        if (RT_SUCCESS(rc))
         {
-            if (   !RTStrICmp(pszSuffix, ".iso")
-                || !RTStrICmp(pszSuffix, ".cdr")) /* DVD images. */
+            /*
+             * Detecting raw ISO and floppy images and keeping them apart isn't all
+             * that simple.
+             *
+             * - Both must be a multiple of their sector sizes, though
+             *   that means that any ISO can also be a floppy, since 2048 is 512 * 4.
+             * - The ISO images must be 32KB and floppies are generally not larger
+             *   than 2.88MB, but that leaves quite a bit of size overlap,
+             *
+             * So, the size cannot conclusively say whether something is one or the other.
+             *
+             * - The content of a normal ISO image is detectable, but not all ISO
+             *   images need to follow that spec to work in a DVD ROM drive.
+             * - It is common for ISO images to start like a floppy with a boot sector
+             *   at the very start of the image.
+             * - Floppies doesn't need to contain a DOS-style boot sector, it depends
+             *   on the system it is formatted and/or intended for.
+             *
+             * So, the content cannot conclusively determine the type either.
+             *
+             * However, there are a number of cases, especially for ISOs, where we can
+             * say we a deal of confidence that something is an ISO image.
+             */
+            const char * const pszSuffix = RTPathSuffix(pszFilename);
+
+            /*
+             * Start by checking for sure signs of an ISO 9660 / UDF image.
+             */
+            rc = VERR_VD_RAW_INVALID_HEADER;
+            if (   (enmDesiredType == VDTYPE_INVALID || enmDesiredType == VDTYPE_OPTICAL_DISC)
+                && (cbFile % 2048) == 0
+                &&  cbFile > 32768)
             {
-                /* Note that there are ISO images smaller than 1 MB; it is impossible to distinguish
-                 * between raw floppy and CD images based on their size (and cannot be reliably done
-                 * based on contents, either).
-                 * bird: Not sure what this comment is mumbling about, the test below is 32KB not 1MB.
-                 */
-                if (cbFile % 2048)
-                    rc = VERR_VD_RAW_SIZE_MODULO_2048;
-                else if (cbFile <= 32768)
-                    rc = VERR_VD_RAW_SIZE_OPTICAL_TOO_SMALL;
-                else
+                int rc2 = rawProbeIsIso9660OrUdf(pIfIo, pStorage);
+                if (RT_SUCCESS(rc2))
                 {
+                    /* *puScore = VDPROBE_SCORE_HIGH; */
+                    *penmType = VDTYPE_OPTICAL_DISC;
+                    rc = VINF_SUCCESS;
+                }
+                /* If that didn't work out, check by extension (the old way): */
+                else if (rawProbeContainsExtension(s_aRawFileExtensions, pszSuffix, VDTYPE_OPTICAL_DISC))
+                {
+                    /* *puScore = VDPROBE_SCORE_LOW; */
                     *penmType = VDTYPE_OPTICAL_DISC;
                     rc = VINF_SUCCESS;
                 }
             }
-            else if (   !RTStrICmp(pszSuffix, ".img")
-                     || !RTStrICmp(pszSuffix, ".ima")
-                     || !RTStrICmp(pszSuffix, ".dsk")
-                     || !RTStrICmp(pszSuffix, ".flp")
-                     || !RTStrICmp(pszSuffix, ".vfd")) /* Floppy images */
+
+            /*
+             * We could do something similar for floppies, i.e. check for a
+             * DOS'ish boot sector and thereby get a good match on most of the
+             * relevant floppy images out there.
+             */
+            if (   RT_FAILURE(rc)
+                && (enmDesiredType == VDTYPE_INVALID || enmDesiredType == VDTYPE_FLOPPY)
+                && (cbFile % 512) == 0
+                && cbFile > 512
+                && cbFile <= RAW_MAX_FLOPPY_IMG_SIZE)
             {
-                if (cbFile % 512)
-                    rc = VERR_VD_RAW_SIZE_MODULO_512;
-                else if (cbFile > RAW_MAX_FLOPPY_IMG_SIZE)
-                    rc = VERR_VD_RAW_SIZE_FLOPPY_TOO_BIG;
-                else
+                /** @todo check if the content is DOSish.  */
+                if (false)
                 {
+                    /* *puScore = VDPROBE_SCORE_HIGH; */
+                    *penmType = VDTYPE_FLOPPY;
+                    rc = VINF_SUCCESS;
+                }
+                else if (rawProbeContainsExtension(s_aRawFileExtensions, pszSuffix, VDTYPE_FLOPPY))
+                {
+                    /* *puScore = VDPROBE_SCORE_LOW; */
                     *penmType = VDTYPE_FLOPPY;
                     rc = VINF_SUCCESS;
                 }
             }
-            else
-                rc = VERR_VD_RAW_INVALID_HEADER;
+
+            /*
+             * No luck?  Go exclusively by extension like we've done since
+             * for ever and complain about the size if it doesn't fit expectations.
+             * We can get here if the desired type doesn't match the extension and such.
+             */
+            if (RT_FAILURE(rc))
+            {
+                if (rawProbeContainsExtension(s_aRawFileExtensions, pszSuffix, VDTYPE_OPTICAL_DISC))
+                {
+                    if (cbFile % 2048)
+                        rc = VERR_VD_RAW_SIZE_MODULO_2048;
+                    else if (cbFile <= 32768)
+                        rc = VERR_VD_RAW_SIZE_OPTICAL_TOO_SMALL;
+                    else
+                    {
+                        Assert(enmDesiredType != VDTYPE_OPTICAL_DISC);
+                        *penmType = VDTYPE_OPTICAL_DISC;
+                        rc = VINF_SUCCESS;
+                    }
+                }
+                else if (rawProbeContainsExtension(s_aRawFileExtensions, pszSuffix, VDTYPE_FLOPPY))
+                {
+                    if (cbFile % 512)
+                        rc = VERR_VD_RAW_SIZE_MODULO_512;
+                    else if (cbFile > RAW_MAX_FLOPPY_IMG_SIZE)
+                        rc = VERR_VD_RAW_SIZE_FLOPPY_TOO_BIG;
+                    else
+                    {
+                        Assert(cbFile == 0 || enmDesiredType != VDTYPE_FLOPPY);
+                        *penmType = VDTYPE_FLOPPY;
+                        rc = VINF_SUCCESS;
+                    }
+                }
+                else
+                    rc = VERR_VD_RAW_INVALID_HEADER;
+            }
         }
         else
             rc = VERR_VD_RAW_INVALID_HEADER;

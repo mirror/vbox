@@ -591,12 +591,14 @@ VBOXDDU_DECL(int) VDDestroy(PVDISK pDisk);
  * @param   pVDIfsDisk      Pointer to the per-disk VD interface list.
  * @param   pVDIfsImage     Pointer to the per-image VD interface list.
  * @param   pszFilename     Name of the image file for which the backend is queried.
+ * @param   enmDesiredType  The desired image type, VDTYPE_INVALID if anything goes.
  * @param   ppszFormat      Receives pointer of the UTF-8 string which contains the format name.
  *                          The returned pointer must be freed using RTStrFree().
  * @param   penmType        Where to store the type of the image.
  */
 VBOXDDU_DECL(int) VDGetFormat(PVDINTERFACE pVDIfsDisk, PVDINTERFACE pVDIfsImage,
-                              const char *pszFilename, char **ppszFormat, VDTYPE *penmType);
+                              const char *pszFilename, VDTYPE enmDesiredType,
+                              char **ppszFormat, VDTYPE *penmType);
 
 /**
  * Opens an image file.
