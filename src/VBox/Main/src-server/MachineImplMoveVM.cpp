@@ -1009,6 +1009,7 @@ void MachineMoveVM::i_MoveVMThreadTask(MachineMoveVM* task)
         }
         catch(HRESULT aRc)
         {
+            hrc = aRc;
             Log2(("Rollback scenario: restoration the original mediums were failed. Machine can be corrupted.\n"));
         }
         catch (...)
