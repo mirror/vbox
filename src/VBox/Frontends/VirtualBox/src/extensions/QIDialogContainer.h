@@ -30,6 +30,7 @@
 /* Forward declarations: */
 class QGridLayout;
 class QWidget;
+class QIDialogButtonBox;
 
 /** QDialog sub-class used as executable input container for passed widget.
   * Should be used as popup or modal dialog wrapping functionality of the passed widget. */
@@ -50,15 +51,20 @@ public slots:
     /** Activates window. */
     void sltActivateWindow() { activateWindow(); }
 
+    /** Sets Ok button to be @a fEnabled. */
+    void setOkButtonEnabled(bool fEnabled);
+
 private:
 
     /** Prepares all. */
     void prepare();
 
     /** Holds the layout instance. */
-    QGridLayout *m_pLayout;
+    QGridLayout       *m_pLayout;
     /** Holds the widget reference. */
-    QWidget     *m_pWidget;
+    QWidget           *m_pWidget;
+    /** Holds the button-box instance. */
+    QIDialogButtonBox *m_pButtonBox;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_extensions_QIDialogContainer_h */
