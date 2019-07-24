@@ -599,6 +599,7 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
     ktReason_Host_NetworkMisconfiguration              = ( 'Host',              'Network misconfiguration' );
     ktReason_Host_TSTInfo_Accuracy_OOR                 = ( 'Host',              'TSTInfo accuracy out of range' );
     ktReason_Networking_Nonexistent_host_nic           = ( 'Networking',        'Nonexistent host networking interface' );
+    ktReason_Networking_VERR_INTNET_FLT_IF_NOT_FOUND   = ( 'Networking',        'VERR_INTNET_FLT_IF_NOT_FOUND' );
     ktReason_OSInstall_GRUB_hang                       = ( 'O/S Install',       'GRUB hang' );
     ktReason_OSInstall_Udev_hang                       = ( 'O/S Install',       'udev hang' );
     ktReason_OSInstall_Sata_no_BM                      = ( 'O/S Install',       'SATA busmaster bit not set' );
@@ -1000,6 +1001,8 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
         ( True,  ktReason_Guru_VINF_EM_TRIPLE_FAULT,                'VINF_EM_TRIPLE_FAULT' ),
         ( True,  ktReason_Networking_Nonexistent_host_nic,
           'rc=E_FAIL text="Nonexistent host networking interface, name \'eth0\' (VERR_INTERNAL_ERROR)"' ),
+        ( True,  ktReason_Networking_VERR_INTNET_FLT_IF_NOT_FOUND,
+          'Failed to attach the network LUN (VERR_INTNET_FLT_IF_NOT_FOUND)' ),
         ( True,  ktReason_Host_Reboot_OSX_Watchdog_Timeout,         ': "OSX Watchdog Timeout: ' ),
         ( False, ktReason_XPCOM_NS_ERROR_CALL_FAILED,
           'Exception: 0x800706be (Call to remote object failed (NS_ERROR_CALL_FAILED))' ),
