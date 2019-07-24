@@ -201,7 +201,7 @@ static DECLCALLBACK(int) rtIoQueueAioFileProv_ReqPrepare(RTIOQUEUEPROV hIoQueueP
         else
         {
             int rc2 = RTFileAioReqDestroy(hReq);
-            Assert(rc2);
+            Assert(rc2); RT_NOREF(rc2);
         }
     }
 
