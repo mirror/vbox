@@ -1142,6 +1142,17 @@
 # define RTIniFileRelease                               RT_MANGLER(RTIniFileRelease)
 # define RTIniFileQueryPair                             RT_MANGLER(RTIniFileQueryPair)
 # define RTIniFileQueryValue                            RT_MANGLER(RTIniFileQueryValue)
+# define RTIoQueueCommit                                RT_MANGLER(RTIoQueueCommit)
+# define RTIoQueueCreate                                RT_MANGLER(RTIoQueueCreate)
+# define RTIoQueueDestroy                               RT_MANGLER(RTIoQueueDestroy)
+# define RTIoQueueEvtWait                               RT_MANGLER(RTIoQueueEvtWait)
+# define RTIoQueueEvtWaitWakeup                         RT_MANGLER(RTIoQueueEvtWaitWakeup)
+# define RTIoQueueHandleDeregister                      RT_MANGLER(RTIoQueueHandleDeregister)
+# define RTIoQueueHandleRegister                        RT_MANGLER(RTIoQueueHandleRegister)
+# define RTIoQueueProviderGetBestForHndType             RT_MANGLER(RTIoQueueProviderGetBestForHndType)
+# define RTIoQueueProviderGetById                       RT_MANGLER(RTIoQueueProviderGetById)
+# define RTIoQueueRequestPrepare                        RT_MANGLER(RTIoQueueRequestPrepare)
+# define RTIoQueueRequestPrepareSg                      RT_MANGLER(RTIoQueueRequestPrepareSg)
 # define RTJsonIteratorBegin                            RT_MANGLER(RTJsonIteratorBegin)
 # define RTJsonIteratorBeginArray                       RT_MANGLER(RTJsonIteratorBeginArray)
 # define RTJsonIteratorBeginObject                      RT_MANGLER(RTJsonIteratorBeginObject)
@@ -3946,6 +3957,9 @@
 # define g_aRTCrKeyAllMarkers                           RT_MANGLER(g_aRTCrKeyAllMarkers)
 # define g_cRTCrKeyAllMarkers                           RT_MANGLER(g_cRTCrKeyAllMarkers)
 # define g_acRTThreadTypeStats                          RT_MANGLER(g_acRTThreadTypeStats) /* internal */
+# define g_RTIoQueueStdFileProv                         RT_MANGLER(g_RTIoQueueStdFileProv) /* internal */
+# define g_RTIoQueueAioFileProv                         RT_MANGLER(g_RTIoQueueAioFileProv) /* internal */
+# define g_RTIoQueueLnxIoURingProv                      RT_MANGLER(g_RTIoQueueLnxIoURingProv) /* internal */
 
 #if 0 /* Disabled for now as I'm not sure the assmbler supports mangling yet. */
 # define g_abRTZeroPage                                 RT_MANGLER(g_abRTZeroPage)

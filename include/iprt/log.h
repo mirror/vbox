@@ -62,6 +62,7 @@ typedef enum RTLOGGROUP
     RTLOGGROUP_FILE,
     RTLOGGROUP_FS,
     RTLOGGROUP_HTTP,
+    RTLOGGROUP_IOQUEUE,
     RTLOGGROUP_LDR,
     RTLOGGROUP_LOCALIPC,
     RTLOGGROUP_PATH,
@@ -98,6 +99,7 @@ typedef enum RTLOGGROUP
     "RT_FILE", \
     "RT_FS", \
     "RT_HTTP", \
+    "RT_IOQUEUE", \
     "RT_LDR", \
     "RT_LOCALIPC", \
     "RT_PATH", \
@@ -108,7 +110,6 @@ typedef enum RTLOGGROUP
     "RT_TIME", \
     "RT_TIMER", \
     "RT_VFS", \
-    "RT_18", \
     "RT_19", \
     "RT_20", \
     "RT_21", \

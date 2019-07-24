@@ -2686,6 +2686,19 @@
 #define VERR_SHMEM_MAXIMUM_MAPPINGS_REACHED                     (-26000)
 /** @} */
 
+
+/** @name RTIoQueue status codes
+ * @{ */
+/** The handle was not registered for use with the I/O queue. */
+#define VERR_IOQUEUE_HANDLE_NOT_REGISTERED                      (-26200)
+/** The I/O queue is full and can't accept more requests. */
+#define VERR_IOQUEUE_FULL                                       (-26201)
+/** The I/O queue doesn't contain any prepared requests to commit or wait for completion. */
+#define VERR_IOQUEUE_EMPTY                                      (-26202)
+/** The I/O queue has requests pending which need complete first. */
+#define VERR_IOQUEUE_BUSY                                       (-26203)
+/** @} */
+
 /* SED-END */
 
 /** @} */

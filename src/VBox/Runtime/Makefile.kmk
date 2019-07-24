@@ -446,6 +446,9 @@ RuntimeR3_SOURCES       = \
 	common/fs/isomakerimport.cpp \
 	common/fs/ntfsvfs.cpp \
 	common/fs/RTFsCmdLs.cpp \
+	common/ioqueue/ioqueuebase.cpp \
+	common/ioqueue/ioqueue-aiofile-provider.cpp \
+	common/ioqueue/ioqueue-stdfile-provider.cpp \
 	common/ldr/ldr.cpp \
 	common/ldr/ldrELF.cpp \
 	common/ldr/ldrEx.cpp \
@@ -2170,7 +2173,8 @@ VBoxRT_SOURCES.win            += \
 	r3/win/fileaio-win.cpp \
 	$(VBoxRT_0_OUTDIR)/VBoxRT.def
 VBoxRT_SOURCES.linux          += \
-	r3/linux/fileaio-linux.cpp
+	r3/linux/fileaio-linux.cpp \
+	r3/linux/ioqueue-iouringfile-provider.cpp
 VBoxRT_SOURCES.solaris        += \
 	r3/solaris/fileaio-solaris.cpp
 VBoxRT_SOURCES.darwin         += \
