@@ -31,6 +31,10 @@
 /* COM includes: */
 #include "COMEnums.h"
 
+/* Forward declarations: */
+class QLabel;
+class UIToolBar;
+
 
 /** Boot item data structure. */
 struct UIBootItemData
@@ -100,9 +104,6 @@ public:
     /** Returns boot item list. */
     UIBootItemDataList bootItems() const;
 
-    /** Adjusts table size to fit contents. */
-    void adjustSizeToFitContent();
-
 public slots:
 
     /** Moves current item up. */
@@ -128,8 +129,64 @@ private:
     /** Prepares all. */
     void prepare();
 
+    /** Adjusts table size to fit contents. */
+    void adjustSizeToFitContent();
+
     /** Moves item with passed @a index to specified @a iRow. */
     QModelIndex moveItemTo(const QModelIndex &index, int iRow);
+};
+
+
+/** QWidget subclass used as boot order editor. */
+class SHARED_LIBRARY_STUFF UIBootOrderEditor : public QIWithRetranslateUI<QWidget>
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs boot order editor passing @a pParent to the base-class.
+      * @param  fWithLabel  Brings whether we should add label ourselves. */
+    UIBootOrderEditor(QWidget *pParent = 0, bool fWithLabel = false);
+
+    /** Defines editor @a guiValue. */
+    void setValue(const UIBootItemDataList &guiValue);
+    /** Returns editor value. */
+    UIBootItemDataList value() const;
+
+protected:
+
+    /** Preprocesses Qt @a pEvent for passed @a pObject. */
+    virtual bool eventFilter(QObject *pObject, QEvent *pEvent) /* override */;
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */;
+
+private slots:
+
+    /** Handles current boot item change. */
+    void sltHandleCurrentBootItemChange();
+
+private:
+
+    /** Prepares all. */
+    void prepare();
+
+    /** Updates action availability: */
+    void updateActionAvailability();
+
+    /** Holds whether descriptive label should be created. */
+    bool  m_fWithLabel;
+
+    /** Holds the label instance. */
+    QLabel           *m_pLabel;
+    /** Holds the table instance. */
+    UIBootListWidget *m_pTable;
+    /** Holds the toolbar instance. */
+    UIToolBar        *m_pToolbar;
+    /** Holds the move up action. */
+    QAction          *m_pMoveUp;
+    /** Holds the move down action. */
+    QAction          *m_pMoveDown;
 };
 
 

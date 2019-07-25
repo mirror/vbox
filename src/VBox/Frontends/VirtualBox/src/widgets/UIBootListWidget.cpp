@@ -16,12 +16,15 @@
  */
 
 /* Qt includes: */
+#include <QGridLayout>
+#include <QLabel>
 #include <QScrollBar>
 
 /* GUI includes: */
 #include "UIBootListWidget.h"
 #include "UIConverter.h"
 #include "UIIconPool.h"
+#include "UIToolBar.h"
 
 
 /*********************************************************************************************************************************
@@ -76,6 +79,9 @@ void UIBootListWidget::setBootItems(const UIBootItemDataList &bootItems)
         pItem->setCheckState(data.m_fEnabled ? Qt::Checked : Qt::Unchecked);
         addItem(pItem);
     }
+
+    /* Adjust table size after change: */
+    adjustSizeToFitContent();
 }
 
 UIBootItemDataList UIBootListWidget::bootItems() const
@@ -95,14 +101,6 @@ UIBootItemDataList UIBootListWidget::bootItems() const
 
     /* Return boot items: */
     return bootItems;
-}
-
-void UIBootListWidget::adjustSizeToFitContent()
-{
-    const int iH = 2 * frameWidth();
-    const int iW = iH;
-    setFixedSize(sizeHintForColumn(0) + iW,
-                 sizeHintForRow(0) * count() + iH);
 }
 
 void UIBootListWidget::sltMoveItemUp()
@@ -180,6 +178,14 @@ void UIBootListWidget::prepare()
             this, &UIBootListWidget::sigRowChanged);
 }
 
+void UIBootListWidget::adjustSizeToFitContent()
+{
+    const int iH = 2 * frameWidth();
+    const int iW = iH;
+    setFixedSize(sizeHintForColumn(0) + iW,
+                 sizeHintForRow(0) * count() + iH);
+}
+
 QModelIndex UIBootListWidget::moveItemTo(const QModelIndex &index, int row)
 {
     /* Check validity: */
@@ -197,4 +203,150 @@ QModelIndex UIBootListWidget::moveItemTo(const QModelIndex &index, int row)
     delete takeItem(oldIndex.row());
     setCurrentRow(newIndex.row());
     return QModelIndex(newIndex);
+}
+
+
+/*********************************************************************************************************************************
+*   Class UIBootOrderEditor implementation.                                                                                           *
+*********************************************************************************************************************************/
+
+UIBootOrderEditor::UIBootOrderEditor(QWidget *pParent /* = 0 */, bool fWithLabel /* = false */)
+    : QIWithRetranslateUI<QWidget>(pParent)
+    , m_fWithLabel(fWithLabel)
+    , m_pLabel(0)
+    , m_pTable(0)
+    , m_pToolbar(0)
+    , m_pMoveUp(0)
+    , m_pMoveDown(0)
+{
+    prepare();
+}
+
+void UIBootOrderEditor::setValue(const UIBootItemDataList &guiValue)
+{
+    if (m_pTable)
+        m_pTable->setBootItems(guiValue);
+}
+
+UIBootItemDataList UIBootOrderEditor::value() const
+{
+    return m_pTable ? m_pTable->bootItems() : UIBootItemDataList();
+}
+
+bool UIBootOrderEditor::eventFilter(QObject *pObject, QEvent *pEvent)
+{
+    /* Skip events sent to unrelated objects: */
+    if (m_pTable && pObject != m_pTable)
+        return QIWithRetranslateUI<QWidget>::eventFilter(pObject, pEvent);
+
+    /* Handle only required event types: */
+    switch (pEvent->type())
+    {
+        case QEvent::FocusIn:
+        case QEvent::FocusOut:
+        {
+            /* On focus in/out events we'd like
+             * to update actions availability: */
+            updateActionAvailability();
+            break;
+        }
+        default:
+            break;
+    }
+
+    /* Call to base-class: */
+    return QIWithRetranslateUI<QWidget>::eventFilter(pObject, pEvent);
+}
+
+void UIBootOrderEditor::retranslateUi()
+{
+    if (m_pLabel)
+        m_pLabel->setText(tr("&Boot Order:"));
+    if (m_pMoveUp)
+        m_pMoveUp->setText(tr("Move Up"));
+    if (m_pMoveDown)
+        m_pMoveDown->setText(tr("Move Down"));
+}
+
+void UIBootOrderEditor::sltHandleCurrentBootItemChange()
+{
+    /* On current item change signals we'd like
+     * to update actions availability: */
+    updateActionAvailability();
+}
+
+void UIBootOrderEditor::prepare()
+{
+    /* Create main layout: */
+    QGridLayout *pMainLayout = new QGridLayout(this);
+    if (pMainLayout)
+    {
+        pMainLayout->setContentsMargins(0, 0, 0, 0);
+        int iRow = 0;
+
+        /* Create label: */
+        if (m_fWithLabel)
+            m_pLabel = new QLabel(this);
+        if (m_pLabel)
+            pMainLayout->addWidget(m_pLabel, 0, iRow++, 1, 1);
+
+        /* Create table layout: */
+        QHBoxLayout *pTableLayout = new QHBoxLayout;
+        if (pTableLayout)
+        {
+            pTableLayout->setContentsMargins(0, 0, 0, 0);
+            pTableLayout->setSpacing(1);
+
+            /* Create table: */
+            m_pTable = new UIBootListWidget(this);
+            if (m_pTable)
+            {
+                if (m_pLabel)
+                    m_pLabel->setBuddy(m_pTable);
+                m_pTable->setAlternatingRowColors(true);
+                m_pTable->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+                m_pTable->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+                connect(m_pTable, &UIBootListWidget::sigRowChanged,
+                        this, &UIBootOrderEditor::sltHandleCurrentBootItemChange);
+                pTableLayout->addWidget(m_pTable);
+            }
+
+            /* Create tool-bar: */
+            m_pToolbar = new UIToolBar(this);
+            if (m_pToolbar)
+            {
+                m_pToolbar->setIconSize(QSize(16, 16));
+                m_pToolbar->setOrientation(Qt::Vertical);
+
+                /* Create Up action: */
+                m_pMoveUp = m_pToolbar->addAction(UIIconPool::iconSet(":/list_moveup_16px.png",
+                                                                      ":/list_moveup_disabled_16px.png"),
+                                                  QString(), m_pTable, &UIBootListWidget::sltMoveItemUp);
+                /* Create Down action: */
+                m_pMoveDown = m_pToolbar->addAction(UIIconPool::iconSet(":/list_movedown_16px.png",
+                                                                        ":/list_movedown_disabled_16px.png"),
+                                                    QString(), m_pTable, &UIBootListWidget::sltMoveItemDown);
+
+                /* Add tool-bar into table layout: */
+                pTableLayout->addWidget(m_pToolbar);
+            }
+
+            /* Add table layout to main layout: */
+            pMainLayout->addLayout(pTableLayout, 0, iRow++, 2, 1);
+        }
+    }
+
+    /* Update initial action availability: */
+    updateActionAvailability();
+    /* Apply language settings: */
+    retranslateUi();
+}
+
+void UIBootOrderEditor::updateActionAvailability()
+{
+    /* Update move up/down actions: */
+    if (m_pTable && m_pMoveUp)
+        m_pMoveUp->setEnabled(m_pTable->hasFocus() && m_pTable->currentRow() > 0);
+    if (m_pTable && m_pMoveDown)
+        m_pMoveDown->setEnabled(m_pTable->hasFocus() && m_pTable->currentRow() < m_pTable->count() - 1);
 }

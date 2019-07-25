@@ -102,7 +102,7 @@
           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
          </property>
          <property name="buddy">
-          <cstring>mTwBootOrder</cstring>
+          <cstring>m_pBootOrderEditor</cstring>
          </property>
         </widget>
        </item>
@@ -112,7 +112,7 @@
           <number>1</number>
          </property>
          <item>
-          <widget class="UIBootListWidget" name="mTwBootOrder">
+          <widget class="UIBootOrderEditor" name="m_pBootOrderEditor">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
              <horstretch>0</horstretch>
@@ -122,75 +122,7 @@
            <property name="whatsThis">
             <string>Defines the boot device order. Use the checkboxes on the left to enable or disable individual boot devices. Move items up and down to change the device order.</string>
            </property>
-           <property name="verticalScrollBarPolicy">
-            <enum>Qt::ScrollBarAlwaysOff</enum>
-           </property>
-           <property name="horizontalScrollBarPolicy">
-            <enum>Qt::ScrollBarAlwaysOff</enum>
-           </property>
-           <property name="alternatingRowColors">
-            <bool>true</bool>
-           </property>
-           <column>
-            <property name="text">
-             <string/>
-            </property>
-           </column>
           </widget>
-         </item>
-         <item>
-          <layout class="QVBoxLayout" name="mLtBootOrderButtons">
-           <property name="spacing">
-            <number>0</number>
-           </property>
-           <item>
-            <widget class="QIToolButton" name="mTbBootItemUp">
-             <property name="focusPolicy">
-              <enum>Qt::StrongFocus</enum>
-             </property>
-             <property name="whatsThis">
-              <string>Moves the selected boot device up.</string>
-             </property>
-             <property name="text">
-              <string/>
-             </property>
-             <property name="icon">
-              <iconset>
-               <normaloff>../images/list_moveup_16px.png</normaloff>../images/list_moveup_16px.png</iconset>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QIToolButton" name="mTbBootItemDown">
-             <property name="focusPolicy">
-              <enum>Qt::StrongFocus</enum>
-             </property>
-             <property name="whatsThis">
-              <string>Moves the selected boot device down.</string>
-             </property>
-             <property name="text">
-              <string/>
-             </property>
-             <property name="icon">
-              <iconset>
-               <normaloff>../images/list_movedown_16px.png</normaloff>../images/list_movedown_16px.png</iconset>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <spacer name="m_pSpacerVertical1">
-             <property name="orientation">
-              <enum>Qt::Vertical</enum>
-             </property>
-             <property name="sizeHint" stdset="0">
-              <size>
-               <width>0</width>
-               <height>0</height>
-              </size>
-             </property>
-            </spacer>
-           </item>
-          </layout>
          </item>
          <item>
           <spacer name="m_pSpacerHorizontal2">
@@ -657,8 +589,8 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>UIBootListWidget</class>
-   <extends>QListWidget</extends>
+   <class>UIBootOrderEditor</class>
+   <extends>QWidget</extends>
    <header>UIBootListWidget.h</header>
   </customwidget>
   <customwidget>

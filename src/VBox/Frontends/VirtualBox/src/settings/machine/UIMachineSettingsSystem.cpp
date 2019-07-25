@@ -271,7 +271,7 @@ void UIMachineSettingsSystem::getFromCache()
 
     /* Load old 'Motherboard' data from the cache: */
     m_pSliderMemorySize->setValue(oldSystemData.m_iMemorySize);
-    mTwBootOrder->setBootItems(oldSystemData.m_bootItems);
+    m_pBootOrderEditor->setValue(oldSystemData.m_bootItems);
     const int iChipsetTypePosition = m_pComboChipsetType->findData(oldSystemData.m_chipsetType);
     m_pComboChipsetType->setCurrentIndex(iChipsetTypePosition == -1 ? 0 : iChipsetTypePosition);
     const int iHIDTypePosition = m_pComboPointingHIDType->findData(oldSystemData.m_pointingHIDType);
@@ -312,7 +312,7 @@ void UIMachineSettingsSystem::putToCache()
 
     /* Gather 'Motherboard' data: */
     newSystemData.m_iMemorySize = m_pSliderMemorySize->value();
-    newSystemData.m_bootItems = mTwBootOrder->bootItems();
+    newSystemData.m_bootItems = m_pBootOrderEditor->value();
     newSystemData.m_chipsetType = (KChipsetType)m_pComboChipsetType->itemData(m_pComboChipsetType->currentIndex()).toInt();
     newSystemData.m_pointingHIDType = (KPointingHIDType)m_pComboPointingHIDType->itemData(m_pComboPointingHIDType->currentIndex()).toInt();
     newSystemData.m_fEnabledIoApic = m_pCheckBoxApic->isChecked() || m_pSliderCPUCount->value() > 1 ||
@@ -549,10 +549,8 @@ void UIMachineSettingsSystem::setOrderAfter(QWidget *pWidget)
     setTabOrder(pWidget, m_pTabWidgetSystem->focusProxy());
     setTabOrder(m_pTabWidgetSystem->focusProxy(), m_pSliderMemorySize);
     setTabOrder(m_pSliderMemorySize, m_pEditorMemorySize);
-    setTabOrder(m_pEditorMemorySize, mTwBootOrder);
-    setTabOrder(mTwBootOrder, mTbBootItemUp);
-    setTabOrder(mTbBootItemUp, mTbBootItemDown);
-    setTabOrder(mTbBootItemDown, m_pComboChipsetType);
+    setTabOrder(m_pEditorMemorySize, m_pBootOrderEditor);
+    setTabOrder(m_pBootOrderEditor, m_pComboChipsetType);
     setTabOrder(m_pComboChipsetType, m_pComboPointingHIDType);
     setTabOrder(m_pComboPointingHIDType, m_pCheckBoxApic);
     setTabOrder(m_pCheckBoxApic, m_pCheckBoxEFI);
@@ -576,9 +574,6 @@ void UIMachineSettingsSystem::retranslateUi()
 {
     /* Translate uic generated strings: */
     Ui::UIMachineSettingsSystem::retranslateUi(this);
-
-    /* Readjust the tree widget items size: */
-    adjustBootOrderTWSize();
 
     /* Retranslate the memory slider legend: */
     m_pEditorMemorySize->setSuffix(QString(" %1").arg(tr("MB")));
@@ -611,9 +606,7 @@ void UIMachineSettingsSystem::polishPage()
     m_pSliderMemorySize->setEnabled(isMachineOffline());
     m_pEditorMemorySize->setEnabled(isMachineOffline());
     m_pLabelBootOrder->setEnabled(isMachineOffline());
-    mTwBootOrder->setEnabled(isMachineOffline());
-    mTbBootItemUp->setEnabled(isMachineOffline() && mTwBootOrder->hasFocus() && mTwBootOrder->currentRow() > 0);
-    mTbBootItemDown->setEnabled(isMachineOffline() && mTwBootOrder->hasFocus() && (mTwBootOrder->currentRow() < mTwBootOrder->count() - 1));
+    m_pBootOrderEditor->setEnabled(isMachineOffline());
     m_pLabelChipsetType->setEnabled(isMachineOffline());
     m_pComboChipsetType->setEnabled(isMachineOffline());
     m_pLabelPointingHIDType->setEnabled(isMachineOffline());
@@ -650,47 +643,6 @@ void UIMachineSettingsSystem::polishPage()
     m_pLabelVirtualization->setEnabled(isMachineOffline());
 }
 
-bool UIMachineSettingsSystem::eventFilter(QObject *pObject, QEvent *pEvent)
-{
-    if (!pObject->isWidgetType())
-        return QWidget::eventFilter(pObject, pEvent);
-
-    QWidget *pWidget = static_cast<QWidget*>(pObject);
-    if (pWidget->window() != window())
-        return QWidget::eventFilter(pObject, pEvent);
-
-    switch (pEvent->type())
-    {
-        case QEvent::FocusIn:
-        {
-            /* Boot Table: */
-            if (pWidget == mTwBootOrder)
-            {
-                if (!mTwBootOrder->currentItem())
-                    mTwBootOrder->setCurrentItem(mTwBootOrder->item(0));
-                else
-                    sltHandleCurrentBootItemChange(mTwBootOrder->currentRow());
-                mTwBootOrder->currentItem()->setSelected(true);
-            }
-            else if (pWidget != mTbBootItemUp && pWidget != mTbBootItemDown)
-            {
-                if (mTwBootOrder->currentItem())
-                {
-                    mTwBootOrder->currentItem()->setSelected(false);
-                    mTbBootItemUp->setEnabled(false);
-                    mTbBootItemDown->setEnabled(false);
-                }
-            }
-            break;
-        }
-        default:
-            break;
-    }
-
-    /* Call to base-class: */
-    return QWidget::eventFilter(pObject, pEvent);
-}
-
 void UIMachineSettingsSystem::sltHandleMemorySizeSliderChange()
 {
     /* Apply new memory-size value: */
@@ -711,18 +663,6 @@ void UIMachineSettingsSystem::sltHandleMemorySizeEditorChange()
 
     /* Revalidate: */
     revalidate();
-}
-
-void UIMachineSettingsSystem::sltHandleCurrentBootItemChange(int iCurrentItem)
-{
-    /* Update boot-order tool-buttons: */
-    const bool fEnabledUP = iCurrentItem > 0;
-    const bool fEnabledDOWN = iCurrentItem < mTwBootOrder->count() - 1;
-    if ((mTbBootItemUp->hasFocus() && !fEnabledUP) ||
-        (mTbBootItemDown->hasFocus() && !fEnabledDOWN))
-        mTwBootOrder->setFocus();
-    mTbBootItemUp->setEnabled(fEnabledUP);
-    mTbBootItemDown->setEnabled(fEnabledDOWN);
 }
 
 void UIMachineSettingsSystem::sltHandleCPUCountSliderChange()
@@ -832,13 +772,8 @@ void UIMachineSettingsSystem::prepareTabMotherboard()
 #endif
 
             /* Boot-order tree-widget created in the .ui file. */
-            AssertPtrReturnVoid(mTwBootOrder);
+            AssertPtrReturnVoid(m_pBootOrderEditor);
             {
-                /* Install global event filter to handle
-                 * boot-table focus in/out events: */
-                /// @todo Get rid of that *crap*!
-                qApp->installEventFilter(this);
-
                 /* Populate possible boot items list.
                  * Currently, it seems, we are supporting only 4 possible boot device types:
                  * 1. Floppy, 2. DVD-ROM, 3. Hard Disk, 4. Network.
@@ -861,26 +796,6 @@ void UIMachineSettingsSystem::prepareTabMotherboard()
                         default: break;
                     }
                 }
-                /* Add all available devices types, so we could initially calculate the right size: */
-                for (int i = 0; i < m_possibleBootItems.size(); ++i)
-                {
-                    QListWidgetItem *pItem = new UIBootListWidgetItem(m_possibleBootItems[i]);
-                    mTwBootOrder->addItem(pItem);
-                }
-            }
-
-            /* Boot-order Button-up created in the .ui file. */
-            AssertPtrReturnVoid(mTbBootItemUp);
-            {
-                /* Configure button: */
-                mTbBootItemUp->setIcon(UIIconPool::iconSet(":/list_moveup_16px.png", ":/list_moveup_disabled_16px.png"));
-            }
-
-            /* Boot-order Button-down created in the .ui file. */
-            AssertPtrReturnVoid(mTbBootItemUp);
-            {
-                /* Configure button: */
-                mTbBootItemDown->setIcon(UIIconPool::iconSet(":/list_movedown_16px.png", ":/list_movedown_disabled_16px.png"));
             }
         }
 
@@ -998,9 +913,6 @@ void UIMachineSettingsSystem::prepareConnections()
     connect(m_pComboPointingHIDType, SIGNAL(currentIndexChanged(int)), this, SLOT(revalidate()));
     connect(m_pSliderMemorySize, SIGNAL(valueChanged(int)), this, SLOT(sltHandleMemorySizeSliderChange()));
     connect(m_pEditorMemorySize, SIGNAL(valueChanged(int)), this, SLOT(sltHandleMemorySizeEditorChange()));
-    connect(mTbBootItemUp, SIGNAL(clicked()), mTwBootOrder, SLOT(sltMoveItemUp()));
-    connect(mTbBootItemDown, SIGNAL(clicked()), mTwBootOrder, SLOT(sltMoveItemDown()));
-    connect(mTwBootOrder, SIGNAL(sigRowChanged(int)), this, SLOT(sltHandleCurrentBootItemChange(int)));
     connect(m_pCheckBoxApic, SIGNAL(stateChanged(int)), this, SLOT(revalidate()));
 
     /* Configure 'Processor' connections: */
@@ -1110,18 +1022,6 @@ void UIMachineSettingsSystem::retranslateComboParavirtProvider()
         /* Re-translate if corresponding item was found: */
         if (iCorrespondingIndex != -1)
             m_pComboParavirtProvider->setItemText(iCorrespondingIndex, gpConverter->toString(enmType));
-    }
-}
-
-void UIMachineSettingsSystem::adjustBootOrderTWSize()
-{
-    /* Adjust boot-table size: */
-    mTwBootOrder->adjustSizeToFitContent();
-    /* Update the layout system */
-    if (m_pTabMotherboard->layout())
-    {
-        m_pTabMotherboard->layout()->activate();
-        m_pTabMotherboard->layout()->update();
     }
 }
 
