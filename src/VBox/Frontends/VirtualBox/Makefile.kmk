@@ -1015,6 +1015,7 @@ UICommon_QT_MOCSRCS = \
 	src/settings/machine/UIMachineSettingsStorage.cpp \
 	src/settings/machine/UIMachineSettingsUSB.cpp \
 	src/widgets/UIAddDiskEncryptionPasswordDialog.cpp \
+	src/widgets/UIBootOrderEditor.cpp \
 	src/widgets/UIFilmContainer.cpp \
 	src/widgets/UIHotKeyEditor.cpp \
 	src/widgets/UIPortForwardingTable.cpp \

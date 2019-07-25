@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef FEQT_INCLUDED_SRC_widgets_UIBootListWidget_h
-#define FEQT_INCLUDED_SRC_widgets_UIBootListWidget_h
+#ifndef FEQT_INCLUDED_SRC_widgets_UIBootOrderEditor_h
+#define FEQT_INCLUDED_SRC_widgets_UIBootOrderEditor_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -34,6 +34,7 @@
 /* Forward declarations: */
 class QLabel;
 class UIToolBar;
+class UIBootListWidget;
 
 
 /** Boot item data structure. */
@@ -60,81 +61,6 @@ struct UIBootItemData
     bool         m_fEnabled;
 };
 typedef QList<UIBootItemData> UIBootItemDataList;
-
-
-/** QListWidgetItem extension for our UIBootListWidget. */
-class SHARED_LIBRARY_STUFF UIBootListWidgetItem : public QListWidgetItem
-{
-public:
-
-    /** Constructs boot-table item of passed @a enmType. */
-    UIBootListWidgetItem(KDeviceType enmType);
-
-    /** Returns the item type. */
-    KDeviceType type() const;
-
-    /** Performs item translation. */
-    void retranslateUi();
-
-private:
-
-    /** Holds the item type. */
-    KDeviceType m_enmType;
-};
-
-
-/** QListWidget subclass used as system settings boot-table. */
-class SHARED_LIBRARY_STUFF UIBootListWidget : public QIWithRetranslateUI<QListWidget>
-{
-    Q_OBJECT;
-
-signals:
-
-    /** Notifies listeners about current table row changed.
-      * @note  Same as base-class currentRowChanged but in wider cases. */
-    void sigRowChanged(int iRow);
-
-public:
-
-    /** Constructs boot-table passing @a pParent to the base-class. */
-    UIBootListWidget(QWidget *pParent = 0);
-
-    /** Defines @a bootItems list. */
-    void setBootItems(const UIBootItemDataList &bootItems);
-    /** Returns boot item list. */
-    UIBootItemDataList bootItems() const;
-
-public slots:
-
-    /** Moves current item up. */
-    void sltMoveItemUp();
-    /** Moves current item down. */
-    void sltMoveItemDown();
-
-protected:
-
-    /** Handles translation event. */
-    virtual void retranslateUi() /* override */;
-
-    /** Handles drop @a pEvent. */
-    virtual void dropEvent(QDropEvent *pEvent) /* override */;
-
-    /** Returns a QModelIndex object pointing to the next object in the view,
-      * based on the given @a cursorAction and keyboard @a fModifiers. */
-    virtual QModelIndex moveCursor(QAbstractItemView::CursorAction cursorAction,
-                                   Qt::KeyboardModifiers fModifiers) /* override */;
-
-private:
-
-    /** Prepares all. */
-    void prepare();
-
-    /** Adjusts table size to fit contents. */
-    void adjustSizeToFitContent();
-
-    /** Moves item with passed @a index to specified @a iRow. */
-    QModelIndex moveItemTo(const QModelIndex &index, int iRow);
-};
 
 
 /** QWidget subclass used as boot order editor. */
@@ -190,4 +116,4 @@ private:
 };
 
 
-#endif /* !FEQT_INCLUDED_SRC_widgets_UIBootListWidget_h */
+#endif /* !FEQT_INCLUDED_SRC_widgets_UIBootOrderEditor_h */
