@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIBootTable class implementation.
+ * VBox Qt GUI - UIBootListWidget class implementation.
  */
 
 /*
@@ -19,16 +19,16 @@
 #include <QScrollBar>
 
 /* GUI includes: */
-#include "UIBootTable.h"
+#include "UIBootListWidget.h"
 #include "UIConverter.h"
 #include "UIIconPool.h"
 
 
 /*********************************************************************************************************************************
-*   Class UIBootTableItem implementation.                                                                                        *
+*   Class UIBootListWidgetItem implementation.                                                                                   *
 *********************************************************************************************************************************/
 
-UIBootTableItem::UIBootTableItem(KDeviceType enmType)
+UIBootListWidgetItem::UIBootListWidgetItem(KDeviceType enmType)
     : m_enmType(enmType)
 {
     setCheckState(Qt::Unchecked);
@@ -43,28 +43,28 @@ UIBootTableItem::UIBootTableItem(KDeviceType enmType)
     retranslateUi();
 }
 
-KDeviceType UIBootTableItem::type() const
+KDeviceType UIBootListWidgetItem::type() const
 {
     return m_enmType;
 }
 
-void UIBootTableItem::retranslateUi()
+void UIBootListWidgetItem::retranslateUi()
 {
     setText(gpConverter->toString(m_enmType));
 }
 
 
 /*********************************************************************************************************************************
-*   Class UIBootTable implementation.                                                                                            *
+*   Class UIBootListWidget implementation.                                                                                       *
 *********************************************************************************************************************************/
 
-UIBootTable::UIBootTable(QWidget *pParent /* = 0 */)
+UIBootListWidget::UIBootListWidget(QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QListWidget>(pParent)
 {
     prepare();
 }
 
-void UIBootTable::setBootItems(const UIBootItemDataList &bootItems)
+void UIBootListWidget::setBootItems(const UIBootItemDataList &bootItems)
 {
     /* Clear initially: */
     clear();
@@ -72,13 +72,13 @@ void UIBootTable::setBootItems(const UIBootItemDataList &bootItems)
     /* Apply internal variables data to QWidget(s): */
     foreach (const UIBootItemData &data, bootItems)
     {
-        UIBootTableItem *pItem = new UIBootTableItem(data.m_enmType);
+        UIBootListWidgetItem *pItem = new UIBootListWidgetItem(data.m_enmType);
         pItem->setCheckState(data.m_fEnabled ? Qt::Checked : Qt::Unchecked);
         addItem(pItem);
     }
 }
 
-UIBootItemDataList UIBootTable::bootItems() const
+UIBootItemDataList UIBootListWidget::bootItems() const
 {
     /* Prepare boot items: */
     UIBootItemDataList bootItems;
@@ -88,7 +88,7 @@ UIBootItemDataList UIBootTable::bootItems() const
     {
         QListWidgetItem *pItem = item(i);
         UIBootItemData bootData;
-        bootData.m_enmType = static_cast<UIBootTableItem*>(pItem)->type();
+        bootData.m_enmType = static_cast<UIBootListWidgetItem*>(pItem)->type();
         bootData.m_fEnabled = pItem->checkState() == Qt::Checked;
         bootItems << bootData;
     }
@@ -97,7 +97,7 @@ UIBootItemDataList UIBootTable::bootItems() const
     return bootItems;
 }
 
-void UIBootTable::adjustSizeToFitContent()
+void UIBootListWidget::adjustSizeToFitContent()
 {
     const int iH = 2 * frameWidth();
     const int iW = iH;
@@ -105,27 +105,27 @@ void UIBootTable::adjustSizeToFitContent()
                  sizeHintForRow(0) * count() + iH);
 }
 
-void UIBootTable::sltMoveItemUp()
+void UIBootListWidget::sltMoveItemUp()
 {
     QModelIndex index = currentIndex();
     moveItemTo(index, index.row() - 1);
 }
 
-void UIBootTable::sltMoveItemDown()
+void UIBootListWidget::sltMoveItemDown()
 {
     QModelIndex index = currentIndex();
     moveItemTo(index, index.row() + 2);
 }
 
-void UIBootTable::retranslateUi()
+void UIBootListWidget::retranslateUi()
 {
     for (int i = 0; i < count(); ++i)
-        static_cast<UIBootTableItem*>(item(i))->retranslateUi();
+        static_cast<UIBootListWidgetItem*>(item(i))->retranslateUi();
 
     adjustSizeToFitContent();
 }
 
-void UIBootTable::dropEvent(QDropEvent *pEvent)
+void UIBootListWidget::dropEvent(QDropEvent *pEvent)
 {
     /* Call to base-class: */
     QListWidget::dropEvent(pEvent);
@@ -133,7 +133,7 @@ void UIBootTable::dropEvent(QDropEvent *pEvent)
     emit sigRowChanged(currentRow());
 }
 
-QModelIndex UIBootTable::moveCursor(QAbstractItemView::CursorAction cursorAction, Qt::KeyboardModifiers fModifiers)
+QModelIndex UIBootListWidget::moveCursor(QAbstractItemView::CursorAction cursorAction, Qt::KeyboardModifiers fModifiers)
 {
     if (fModifiers.testFlag(Qt::ControlModifier))
     {
@@ -170,17 +170,17 @@ QModelIndex UIBootTable::moveCursor(QAbstractItemView::CursorAction cursorAction
     return QListWidget::moveCursor(cursorAction, fModifiers);
 }
 
-void UIBootTable::prepare()
+void UIBootListWidget::prepare()
 {
     setDragDropMode(QAbstractItemView::InternalMove);
     setSelectionMode(QAbstractItemView::SingleSelection);
     setDropIndicatorShown(true);
     setUniformItemSizes(true);
-    connect(this, &UIBootTable::currentRowChanged,
-            this, &UIBootTable::sigRowChanged);
+    connect(this, &UIBootListWidget::currentRowChanged,
+            this, &UIBootListWidget::sigRowChanged);
 }
 
-QModelIndex UIBootTable::moveItemTo(const QModelIndex &index, int row)
+QModelIndex UIBootListWidget::moveItemTo(const QModelIndex &index, int row)
 {
     /* Check validity: */
     if (!index.isValid())
@@ -191,8 +191,8 @@ QModelIndex UIBootTable::moveItemTo(const QModelIndex &index, int row)
         return QModelIndex();
 
     QPersistentModelIndex oldIndex(index);
-    UIBootTableItem *pItem = static_cast<UIBootTableItem*>(itemFromIndex(oldIndex));
-    insertItem(row, new UIBootTableItem(*pItem));
+    UIBootListWidgetItem *pItem = static_cast<UIBootListWidgetItem*>(itemFromIndex(oldIndex));
+    insertItem(row, new UIBootListWidgetItem(*pItem));
     QPersistentModelIndex newIndex = model()->index(row, 0);
     delete takeItem(oldIndex.row());
     setCurrentRow(newIndex.row());

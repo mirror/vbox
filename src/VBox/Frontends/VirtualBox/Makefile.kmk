@@ -889,7 +889,7 @@ UICommon_QT_MOCHDRS = \
 	src/widgets/UIAddDiskEncryptionPasswordDialog.h \
 	src/widgets/UIBaseMemoryEditor.h \
 	src/widgets/UIBaseMemorySlider.h \
-	src/widgets/UIBootTable.h \
+	src/widgets/UIBootListWidget.h \
 	src/widgets/UIFilePathSelector.h \
 	src/widgets/UIFilmContainer.h \
 	src/widgets/UIHostComboEditor.h \
@@ -1380,7 +1380,7 @@ UICommon_SOURCES = \
 	src/widgets/UIAddDiskEncryptionPasswordDialog.cpp \
 	src/widgets/UIBaseMemoryEditor.cpp \
 	src/widgets/UIBaseMemorySlider.cpp \
-	src/widgets/UIBootTable.cpp \
+	src/widgets/UIBootListWidget.cpp \
 	src/widgets/UIFilePathSelector.cpp \
 	src/widgets/UIFilmContainer.cpp \
 	src/widgets/UIHostComboEditor.cpp \

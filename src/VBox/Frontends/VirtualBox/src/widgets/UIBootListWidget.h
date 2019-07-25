@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIBootTable class declaration.
+ * VBox Qt GUI - UIBootListWidget class declaration.
  */
 
 /*
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef FEQT_INCLUDED_SRC_widgets_UIBootTable_h
-#define FEQT_INCLUDED_SRC_widgets_UIBootTable_h
+#ifndef FEQT_INCLUDED_SRC_widgets_UIBootListWidget_h
+#define FEQT_INCLUDED_SRC_widgets_UIBootListWidget_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -58,13 +58,13 @@ struct UIBootItemData
 typedef QList<UIBootItemData> UIBootItemDataList;
 
 
-/** QListWidgetItem extension for our UIBootTable. */
-class SHARED_LIBRARY_STUFF UIBootTableItem : public QListWidgetItem
+/** QListWidgetItem extension for our UIBootListWidget. */
+class SHARED_LIBRARY_STUFF UIBootListWidgetItem : public QListWidgetItem
 {
 public:
 
     /** Constructs boot-table item of passed @a enmType. */
-    UIBootTableItem(KDeviceType enmType);
+    UIBootListWidgetItem(KDeviceType enmType);
 
     /** Returns the item type. */
     KDeviceType type() const;
@@ -80,7 +80,7 @@ private:
 
 
 /** QListWidget subclass used as system settings boot-table. */
-class SHARED_LIBRARY_STUFF UIBootTable : public QIWithRetranslateUI<QListWidget>
+class SHARED_LIBRARY_STUFF UIBootListWidget : public QIWithRetranslateUI<QListWidget>
 {
     Q_OBJECT;
 
@@ -93,7 +93,7 @@ signals:
 public:
 
     /** Constructs boot-table passing @a pParent to the base-class. */
-    UIBootTable(QWidget *pParent = 0);
+    UIBootListWidget(QWidget *pParent = 0);
 
     /** Defines @a bootItems list. */
     void setBootItems(const UIBootItemDataList &bootItems);
@@ -133,4 +133,4 @@ private:
 };
 
 
-#endif /* !FEQT_INCLUDED_SRC_widgets_UIBootTable_h */
+#endif /* !FEQT_INCLUDED_SRC_widgets_UIBootListWidget_h */
