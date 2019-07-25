@@ -87,7 +87,7 @@ static DECLCALLBACK(bool) rtIoQueueAioFileProv_IsSupported(void)
 
 /** @interface_method_impl{RTIOQUEUEPROVVTABLE,pfnQueueInit} */
 static DECLCALLBACK(int) rtIoQueueAioFileProv_QueueInit(RTIOQUEUEPROV hIoQueueProv, uint32_t fFlags,
-                                                        size_t cSqEntries, size_t cCqEntries)
+                                                        uint32_t cSqEntries, uint32_t cCqEntries)
 {
     RT_NOREF(fFlags, cCqEntries);
 
@@ -95,7 +95,7 @@ static DECLCALLBACK(int) rtIoQueueAioFileProv_QueueInit(RTIOQUEUEPROV hIoQueuePr
     int rc = VINF_SUCCESS;
 
     pThis->cReqsToCommitMax = cSqEntries;
-    pThis->cReqsFreeMax     = (uint32_t)cSqEntries;
+    pThis->cReqsFreeMax     = cSqEntries;
     pThis->cReqsFree        = 0;
 
     pThis->pahReqsToCommit = (PRTFILEAIOREQ)RTMemAllocZ(cSqEntries * sizeof(PRTFILEAIOREQ));
@@ -104,7 +104,7 @@ static DECLCALLBACK(int) rtIoQueueAioFileProv_QueueInit(RTIOQUEUEPROV hIoQueuePr
         pThis->pahReqsFree = (PRTFILEAIOREQ)RTMemAllocZ(cSqEntries * sizeof(PRTFILEAIOREQ));
         if (RT_LIKELY(pThis->pahReqsFree))
         {
-            rc = RTFileAioCtxCreate(&pThis->hAioCtx, (uint32_t)cSqEntries, RTFILEAIOCTX_FLAGS_WAIT_WITHOUT_PENDING_REQUESTS);
+            rc = RTFileAioCtxCreate(&pThis->hAioCtx, cSqEntries, RTFILEAIOCTX_FLAGS_WAIT_WITHOUT_PENDING_REQUESTS);
             if (RT_SUCCESS(rc))
                 return VINF_SUCCESS;
 
@@ -250,8 +250,8 @@ static DECLCALLBACK(int) rtIoQueueAioFileProv_EvtWait(RTIOQUEUEPROV hIoQueueProv
             {
                 RTFILEAIOREQ hReq = ahReqs[i];
 
-                paCEvt[idxCEvt].rcReq = RTFileAioReqGetRC(hReq, NULL);
-                paCEvt[idxCEvt].pvUser = RTFileAioReqGetUser(hReq);
+                paCEvt[idxCEvt].rcReq    = RTFileAioReqGetRC(hReq, &paCEvt[idxCEvt].cbXfered);
+                paCEvt[idxCEvt].pvUser   = RTFileAioReqGetUser(hReq);
                 idxCEvt++;
 
                 /* Try to insert the free request into the cache. */

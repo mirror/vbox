@@ -82,6 +82,8 @@ typedef struct RTIOQUEUECEVT
     void                        *pvUser;
     /** The IPRT status code for this request. */
     int                         rcReq;
+    /** Transferred data size if applicaple by the request. */
+    size_t                      cbXfered;
 } RTIOQUEUECEVT;
 /** Pointer to a I/O queue completion event. */
 typedef RTIOQUEUECEVT *PRTIOQUEUECEVT;
@@ -122,7 +124,7 @@ typedef struct RTIOQUEUEPROVVTABLE
      * @param   cCqEntries      Number of entries for the completion queue.
      */
     DECLCALLBACKMEMBER(int, pfnQueueInit) (RTIOQUEUEPROV hIoQueueProv, uint32_t fFlags,
-                                           size_t cSqEntries, size_t cCqEntries);
+                                           uint32_t cSqEntries, uint32_t cCqEntries);
 
     /**
      * Destroys the provider specific parts of the I/O queue and frees all
@@ -277,7 +279,7 @@ RTDECL(PCRTIOQUEUEPROVVTABLE) RTIoQueueProviderGetById(const char *pszId);
  *       size.
  */
 RTDECL(int) RTIoQueueCreate(PRTIOQUEUE phIoQueue, PCRTIOQUEUEPROVVTABLE pProvVTable,
-                            uint32_t fFlags, size_t cSqEntries, size_t cCqEntries);
+                            uint32_t fFlags, uint32_t cSqEntries, uint32_t cCqEntries);
 
 
 /**

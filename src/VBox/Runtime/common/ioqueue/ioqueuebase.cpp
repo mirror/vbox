@@ -127,7 +127,7 @@ RTDECL(PCRTIOQUEUEPROVVTABLE) RTIoQueueProviderGetById(const char *pszId)
 
 
 RTDECL(int) RTIoQueueCreate(PRTIOQUEUE phIoQueue, PCRTIOQUEUEPROVVTABLE pProvVTable,
-                            uint32_t fFlags, size_t cSqEntries, size_t cCqEntries)
+                            uint32_t fFlags, uint32_t cSqEntries, uint32_t cCqEntries)
 {
     AssertPtrReturn(phIoQueue, VERR_INVALID_POINTER);
     AssertPtrReturn(pProvVTable, VERR_INVALID_POINTER);
@@ -141,8 +141,8 @@ RTDECL(int) RTIoQueueCreate(PRTIOQUEUE phIoQueue, PCRTIOQUEUEPROVVTABLE pProvVTa
     {
         pThis->pVTbl          = pProvVTable;
         pThis->hIoQueueProv   = (RTIOQUEUEPROV)&pThis->abInst[0];
-        pThis->cSqEntries     = (uint32_t)cSqEntries;
-        pThis->cCqEntries     = (uint32_t)cCqEntries;
+        pThis->cSqEntries     = cSqEntries;
+        pThis->cCqEntries     = cCqEntries;
         pThis->cReqsCommitted = 0;
         pThis->cReqsPrepared  = 0;
 

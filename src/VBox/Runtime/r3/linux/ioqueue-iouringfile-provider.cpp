@@ -67,11 +67,12 @@
 #include <iprt/mem.h>
 #include <iprt/string.h>
 
-#include <sys/mman.h>
-#include <unistd.h>
-#include <sys/syscall.h>
 #include <errno.h>
+#include <unistd.h>
 #include <signal.h>
+#include <sys/mman.h>
+#include <sys/syscall.h>
+#include <sys/uio.h>
 
 #include "internal/ioqueue.h"
 
@@ -86,7 +87,8 @@
 #define LNX_IOURING_SYSCALL_ENTER     426
 /** The syscall number of io_uring_register(). */
 #define LNX_IOURING_SYSCALL_REGISTER  427
-
+/** eventfd2() syscall not associated with io_uring but used for kicking waiters. */
+#define LNX_SYSCALL_EVENTFD2           19
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
@@ -408,12 +410,20 @@ typedef struct RTIOQUEUEPROVINT
 {
     /** The io_uring file descriptor. */
     int                         iFdIoCtx;
+    /** The eventfd file descriptor registered with the ring. */
+    int                         iFdEvt;
     /** The submission queue. */
     RTIOQUEUESQ                 Sq;
+    /** The currently uncommitted tail for the SQ. */
+    uint32_t                    idxSqTail;
+    /** Numbere of uncommitted SQEs. */
+    uint32_t                    cSqesToCommit;
     /** The completion queue. */
     RTIOQUEUECQ                 Cq;
     /** Pointer to the mapped SQES entries. */
     PLNXIOURINGSQE              paSqes;
+    /** Pointer to the iovec structure used for non S/G requests. */
+    struct iovec                *paIoVecs;
     /** Pointer returned by mmap() for the SQ ring, used for unmapping. */
     void                        *pvMMapSqRing;
     /** Pointer returned by mmap() for the CQ ring, used for unmapping. */
@@ -426,6 +436,8 @@ typedef struct RTIOQUEUEPROVINT
     size_t                      cbMMapCqRing;
     /** Size of the mapped SQ entries array, used for unmapping. */
     size_t                      cbMMapSqes;
+    /** Flag whether the waiter was woken up externally. */
+    volatile bool               fExtIntr;
 } RTIOQUEUEPROVINT;
 /** Pointer to the internal I/O queue provider instance data. */
 typedef RTIOQUEUEPROVINT *PRTIOQUEUEPROVINT;
@@ -518,6 +530,75 @@ DECLINLINE(int) rtIoQueueLnxIoURingMmap(int iFdIoCtx, off_t offMmap, size_t cbMm
 }
 
 
+/**
+ * eventfd2() syscall wrapper.
+ *
+ * @returns IPRT status code.
+ * @param   uValInit            The initial value of the maintained counter.
+ * @param   fFlags              Flags controlling the eventfd behavior.
+ * @param   piFdEvt             Where to store the file descriptor of the eventfd object on success.
+ */
+DECLINLINE(int) rtIoQueueLnxEventfd2(uint32_t uValInit, uint32_t fFlags, int *piFdEvt)
+{
+    int rcLnx = syscall(LNX_SYSCALL_EVENTFD2, uValInit, fFlags);
+    if (RT_UNLIKELY(rcLnx == -1))
+        return RTErrConvertFromErrno(errno);
+
+    *piFdEvt = rcLnx;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Checks the completion event queue for pending events.
+ *
+ * @returns nothing.
+ * @param   pThis               The provider instance.
+ * @param   paCEvt              Pointer to the array of completion events.
+ * @param   cCEvt               Maximum number of completion events the array can hold.
+ * @param   pcCEvtSeen          Where to store the number of completion events processed.
+ */
+static void rtIoQueueLnxIoURingFileProvCqCheck(PRTIOQUEUEPROVINT pThis, PRTIOQUEUECEVT paCEvt,
+                                               uint32_t cCEvt, uint32_t *pcCEvtSeen)
+{
+    /* The fencing and atomic accesses are kind of overkill and probably not required (dev paranoia). */
+    ASMReadFence();
+    uint32_t idxCqHead = ASMAtomicReadU32(pThis->Cq.pidxHead);
+    uint32_t idxCqTail = ASMAtomicReadU32(pThis->Cq.pidxTail);
+    ASMReadFence();
+
+    uint32_t cCEvtSeen = 0;
+
+    while (   idxCqTail != idxCqHead
+           && cCEvtSeen < cCEvt)
+    {
+        /* Get the index. */
+        uint32_t idxCqe = idxCqHead & pThis->Cq.fRingMask;
+        volatile LNXIOURINGCQE *pCqe = &pThis->Cq.paCqes[idxCqe];
+
+        paCEvt->pvUser = (void *)(uintptr_t)pCqe->u64User;
+        if (pCqe->rcLnx >= 0)
+        {
+            paCEvt->rcReq    = VINF_SUCCESS;
+            paCEvt->cbXfered = (size_t)pCqe->rcLnx;
+        }
+        else
+            paCEvt->rcReq = RTErrConvertFromErrno(-pCqe->rcLnx);
+
+        paCEvt++;
+        cCEvtSeen++;
+        idxCqHead++;
+    }
+
+    *pcCEvtSeen = cCEvtSeen;
+
+    /* Paranoia strikes again. */
+    ASMWriteFence();
+    ASMAtomicWriteU32(pThis->Cq.pidxHead, idxCqHead);
+    ASMWriteFence();
+}
+
+
 /** @interface_method_impl{RTIOQUEUEPROVVTABLE,pfnIsSupported} */
 static DECLCALLBACK(bool) rtIoQueueLnxIoURingFileProv_IsSupported(void)
 {
@@ -526,29 +607,47 @@ static DECLCALLBACK(bool) rtIoQueueLnxIoURingFileProv_IsSupported(void)
      * The common code/public API already checked for the proper handle type.
      */
     int iFdIoCtx = 0;
+    bool fSupp = false;
     LNXIOURINGPARAMS Params;
     RT_ZERO(Params);
 
     int rc = rtIoQueueLnxIoURingSetup(16, &Params, &iFdIoCtx);
     if (RT_SUCCESS(rc))
     {
+        /*
+         * Check that we can register an eventfd descriptor to get notified about
+         * completion events while being able to kick the waiter externally out of the wait.
+         */
+        int iFdEvt = 0;
+        rc = rtIoQueueLnxEventfd2(0 /*uValInit*/, 0 /*fFlags*/, &iFdEvt);
+        if (RT_SUCCESS(rc))
+        {
+            rc = rtIoQueueLnxIoURingRegister(iFdIoCtx, LNX_IOURING_REGISTER_OPC_EVENTFD_REGISTER,
+                                             &iFdEvt, 1 /*cArgs*/);
+            if (RT_SUCCESS(rc))
+                fSupp = true;
+
+            int rcLnx = close(iFdEvt); Assert(!rcLnx); RT_NOREF(rcLnx);
+        }
         int rcLnx = close(iFdIoCtx); Assert(!rcLnx); RT_NOREF(rcLnx);
-        return true;
     }
 
-    return false;
+    return fSupp;
 }
 
 
 /** @interface_method_impl{RTIOQUEUEPROVVTABLE,pfnQueueInit} */
 static DECLCALLBACK(int) rtIoQueueLnxIoURingFileProv_QueueInit(RTIOQUEUEPROV hIoQueueProv, uint32_t fFlags,
-                                                               size_t cSqEntries, size_t cCqEntries)
+                                                               uint32_t cSqEntries, uint32_t cCqEntries)
 {
     RT_NOREF(fFlags, cCqEntries);
 
     PRTIOQUEUEPROVINT pThis = hIoQueueProv;
     LNXIOURINGPARAMS Params;
     RT_ZERO(Params);
+
+    pThis->cSqesToCommit = 0;
+    pThis->fExtIntr      = false;
 
     int rc = rtIoQueueLnxIoURingSetup(cSqEntries, &Params, &pThis->iFdIoCtx);
     if (RT_SUCCESS(rc))
@@ -558,41 +657,63 @@ static DECLCALLBACK(int) rtIoQueueLnxIoURingFileProv_QueueInit(RTIOQUEUEPROV hIo
         pThis->cbMMapCqRing = Params.CqOffsets.u32OffCqes + Params.u32CqEntriesCnt * sizeof(LNXIOURINGCQE);
         pThis->cbMMapSqes   = Params.u32SqEntriesCnt * sizeof(LNXIOURINGSQE);
 
-        rc = rtIoQueueLnxIoURingMmap(pThis->iFdIoCtx, LNX_IOURING_MMAP_OFF_SQ, pThis->cbMMapSqRing, &pThis->pvMMapSqRing);
-        if (RT_SUCCESS(rc))
+        pThis->paIoVecs = (struct iovec *)RTMemAllocZ(Params.u32SqEntriesCnt * sizeof(struct iovec));
+        if (RT_LIKELY(pThis->paIoVecs))
         {
-            rc = rtIoQueueLnxIoURingMmap(pThis->iFdIoCtx, LNX_IOURING_MMAP_OFF_CQ, pThis->cbMMapCqRing, &pThis->pvMMapCqRing);
+            rc = rtIoQueueLnxEventfd2(0 /*uValInit*/, 0 /*fFlags*/, &pThis->iFdEvt);
             if (RT_SUCCESS(rc))
             {
-                rc = rtIoQueueLnxIoURingMmap(pThis->iFdIoCtx, LNX_IOURING_MMAP_OFF_SQES, pThis->cbMMapSqes, &pThis->pvMMapSqes);
+                rc = rtIoQueueLnxIoURingRegister(pThis->iFdIoCtx, LNX_IOURING_REGISTER_OPC_EVENTFD_REGISTER, &pThis->iFdEvt, 1 /*cArgs*/);
                 if (RT_SUCCESS(rc))
                 {
-                    uint8_t *pbTmp = (uint8_t *)pThis->pvMMapSqRing;
+                    rc = rtIoQueueLnxIoURingMmap(pThis->iFdIoCtx, LNX_IOURING_MMAP_OFF_SQ, pThis->cbMMapSqRing, &pThis->pvMMapSqRing);
+                    if (RT_SUCCESS(rc))
+                    {
+                        rc = rtIoQueueLnxIoURingMmap(pThis->iFdIoCtx, LNX_IOURING_MMAP_OFF_CQ, pThis->cbMMapCqRing, &pThis->pvMMapCqRing);
+                        if (RT_SUCCESS(rc))
+                        {
+                            rc = rtIoQueueLnxIoURingMmap(pThis->iFdIoCtx, LNX_IOURING_MMAP_OFF_SQES, pThis->cbMMapSqes, &pThis->pvMMapSqes);
+                            if (RT_SUCCESS(rc))
+                            {
+                                uint8_t *pbTmp = (uint8_t *)pThis->pvMMapSqRing;
 
-                    pThis->Sq.pidxHead  = (uint32_t *)(pbTmp + Params.SqOffsets.u32OffHead);
-                    pThis->Sq.pidxTail  = (uint32_t *)(pbTmp + Params.SqOffsets.u32OffTail);
-                    pThis->Sq.fRingMask = *(uint32_t *)(pbTmp + Params.SqOffsets.u32OffRingMask);
-                    pThis->Sq.cEntries  = *(uint32_t *)(pbTmp + Params.SqOffsets.u32OffRingEntries);
-                    pThis->Sq.pfFlags   = (uint32_t *)(pbTmp + Params.SqOffsets.u32OffFlags);
-                    pThis->Sq.paidxSqes = (uint32_t *)(pbTmp + Params.SqOffsets.u32OffArray);
+                                pThis->Sq.pidxHead  = (uint32_t *)(pbTmp + Params.SqOffsets.u32OffHead);
+                                pThis->Sq.pidxTail  = (uint32_t *)(pbTmp + Params.SqOffsets.u32OffTail);
+                                pThis->Sq.fRingMask = *(uint32_t *)(pbTmp + Params.SqOffsets.u32OffRingMask);
+                                pThis->Sq.cEntries  = *(uint32_t *)(pbTmp + Params.SqOffsets.u32OffRingEntries);
+                                pThis->Sq.pfFlags   = (uint32_t *)(pbTmp + Params.SqOffsets.u32OffFlags);
+                                pThis->Sq.paidxSqes = (uint32_t *)(pbTmp + Params.SqOffsets.u32OffArray);
+                                pThis->idxSqTail    = *pThis->Sq.pidxTail;
 
-                    pThis->paSqes       = (PLNXIOURINGSQE)pThis->pvMMapSqes;
+                                pThis->paSqes       = (PLNXIOURINGSQE)pThis->pvMMapSqes;
 
-                    pbTmp = (uint8_t *)pThis->pvMMapCqRing;
+                                pbTmp = (uint8_t *)pThis->pvMMapCqRing;
 
-                    pThis->Cq.pidxHead  = (uint32_t *)(pbTmp + Params.CqOffsets.u32OffHead);
-                    pThis->Cq.pidxTail  = (uint32_t *)(pbTmp + Params.CqOffsets.u32OffTail);
-                    pThis->Cq.fRingMask = *(uint32_t *)(pbTmp + Params.CqOffsets.u32OffRingMask);
-                    pThis->Cq.cEntries  = *(uint32_t *)(pbTmp + Params.CqOffsets.u32OffRingEntries);
-                    pThis->Cq.paCqes    = (PLNXIOURINGCQE)(pbTmp + Params.CqOffsets.u32OffCqes);
-                    return VINF_SUCCESS;
+                                pThis->Cq.pidxHead  = (uint32_t *)(pbTmp + Params.CqOffsets.u32OffHead);
+                                pThis->Cq.pidxTail  = (uint32_t *)(pbTmp + Params.CqOffsets.u32OffTail);
+                                pThis->Cq.fRingMask = *(uint32_t *)(pbTmp + Params.CqOffsets.u32OffRingMask);
+                                pThis->Cq.cEntries  = *(uint32_t *)(pbTmp + Params.CqOffsets.u32OffRingEntries);
+                                pThis->Cq.paCqes    = (PLNXIOURINGCQE)(pbTmp + Params.CqOffsets.u32OffCqes);
+                                return VINF_SUCCESS;
+                            }
+
+                            munmap(pThis->pvMMapCqRing, pThis->cbMMapCqRing);
+                        }
+
+                        munmap(pThis->pvMMapSqRing, pThis->cbMMapSqRing);
+                    }
+
+                    rc = rtIoQueueLnxIoURingRegister(pThis->iFdIoCtx, LNX_IOURING_REGISTER_OPC_EVENTFD_UNREGISTER, NULL, 0);
+                    AssertRC(rc);
                 }
 
-                munmap(pThis->pvMMapCqRing, pThis->cbMMapCqRing);
+                close(pThis->iFdEvt);
             }
 
-            munmap(pThis->pvMMapSqRing, pThis->cbMMapSqRing);
+            RTMemFree(pThis->paIoVecs);
         }
+
+        int rcLnx = close(pThis->iFdIoCtx); Assert(!rcLnx); RT_NOREF(rcLnx);
     }
 
     return rc;
@@ -607,7 +728,13 @@ static DECLCALLBACK(void) rtIoQueueLnxIoURingFileProv_QueueDestroy(RTIOQUEUEPROV
     int rcLnx = munmap(pThis->pvMMapSqRing, pThis->cbMMapSqRing); Assert(!rcLnx); RT_NOREF(rcLnx);
     rcLnx = munmap(pThis->pvMMapCqRing, pThis->cbMMapCqRing); Assert(!rcLnx); RT_NOREF(rcLnx);
     rcLnx = munmap(pThis->pvMMapSqes, pThis->cbMMapSqes); Assert(!rcLnx); RT_NOREF(rcLnx);
+
+    int rc = rtIoQueueLnxIoURingRegister(pThis->iFdIoCtx, LNX_IOURING_REGISTER_OPC_EVENTFD_UNREGISTER, NULL, 0);
+    AssertRC(rc);
+
+    close(pThis->iFdEvt);
     close(pThis->iFdIoCtx);
+    RTMemFree(pThis->paIoVecs);
 
     RT_ZERO(pThis);
 }
@@ -637,9 +764,44 @@ static DECLCALLBACK(int) rtIoQueueLnxIoURingFileProv_ReqPrepare(RTIOQUEUEPROV hI
                                                                 void *pvUser)
 {
     PRTIOQUEUEPROVINT pThis = hIoQueueProv;
-    RT_NOREF(pThis, pHandle, enmOp, off, pvBuf, cbBuf, fReqFlags, pvUser);
+    RT_NOREF(fReqFlags);
 
-    return VERR_NOT_IMPLEMENTED;
+    uint32_t idx = pThis->idxSqTail & pThis->Sq.fRingMask;
+    PLNXIOURINGSQE pSqe = &pThis->paSqes[idx];
+    struct iovec *pIoVec = &pThis->paIoVecs[idx];
+
+    pIoVec->iov_base = pvBuf;
+    pIoVec->iov_len  = cbBuf;
+
+    pSqe->u8Flags         = 0;
+    pSqe->u16IoPrio       = 0;
+    pSqe->i32Fd           = (int32_t)RTFileToNative(pHandle->u.hFile);
+    pSqe->u64OffStart     = off;
+    pSqe->u64AddrBufIoVec = (uint64_t)(uintptr_t)pIoVec;
+    pSqe->u64User         = (uint64_t)(uintptr_t)pvUser;
+
+    switch (enmOp)
+    {
+        case RTIOQUEUEOP_READ:
+            pSqe->u8Opc               = LNX_IOURING_OPC_READV;
+            pSqe->uOpc.u32KrnlRwFlags = 0;
+            break;
+        case RTIOQUEUEOP_WRITE:
+            pSqe->u8Opc               = LNX_IOURING_OPC_WRITEV;
+            pSqe->uOpc.u32KrnlRwFlags = 0;
+            break;
+        case RTIOQUEUEOP_SYNC:
+            pSqe->u8Opc              = LNX_IOURING_OPC_FSYNC;
+            pSqe->uOpc.u32FsyncFlags = 0;
+            break;
+        default:
+            AssertMsgFailedReturn(("Invalid I/O queue operation: %d\n", enmOp),
+                                  VERR_INVALID_PARAMETER);
+    }
+
+    pThis->idxSqTail++;
+    pThis->cSqesToCommit++;
+    return VINF_SUCCESS;
 }
 
 
@@ -649,7 +811,18 @@ static DECLCALLBACK(int) rtIoQueueLnxIoURingFileProv_Commit(RTIOQUEUEPROV hIoQue
     PRTIOQUEUEPROVINT pThis = hIoQueueProv;
     RT_NOREF(pThis, pcReqsCommitted);
 
-    return VERR_NOT_IMPLEMENTED;
+    ASMWriteFence();
+    ASMAtomicWriteU32(pThis->Sq.pidxTail, pThis->idxSqTail);
+    ASMWriteFence();
+
+    int rc = rtIoQueueLnxIoURingEnter(pThis->iFdIoCtx, pThis->cSqesToCommit, 0, 0 /*fFlags*/);
+    if (RT_SUCCESS(rc))
+    {
+        *pcReqsCommitted = pThis->cSqesToCommit;
+        pThis->cSqesToCommit = 0;
+    }
+
+    return rc;
 }
 
 
@@ -658,9 +831,44 @@ static DECLCALLBACK(int) rtIoQueueLnxIoURingFileProv_EvtWait(RTIOQUEUEPROV hIoQu
                                                              uint32_t cMinWait, uint32_t *pcCEvt, uint32_t fFlags)
 {
     PRTIOQUEUEPROVINT pThis = hIoQueueProv;
-    RT_NOREF(pThis, paCEvt, cCEvt, cMinWait, pcCEvt, fFlags);
+    int rc = VINF_SUCCESS;
+    uint32_t cCEvtSeen = 0;
 
-    return VERR_NOT_IMPLEMENTED;;
+    RT_NOREF(fFlags);
+
+    /*
+     * Check the completion queue first for any completed events which might save us a
+     * context switch later on.
+     */
+    rtIoQueueLnxIoURingFileProvCqCheck(pThis, paCEvt, cCEvt, &cCEvtSeen);
+
+    while (   cCEvtSeen < cMinWait
+           && RT_SUCCESS(rc))
+    {
+        /*
+         * We can employ a blocking read on the event file descriptor, it will return
+         * either when woken up externally or when there are completion events pending.
+         */
+        uint64_t uCnt = 0; /**< The counter value returned upon a successful read(). */
+        ssize_t rcLnx = read(pThis->iFdEvt, &uCnt, sizeof(uCnt));
+        if (rcLnx == sizeof(uCnt))
+        {
+            uint32_t cCEvtThisSeen = 0;
+            rtIoQueueLnxIoURingFileProvCqCheck(pThis, &paCEvt[cCEvtSeen], cCEvt - cCEvtSeen, &cCEvtThisSeen);
+            cCEvtSeen += cCEvtThisSeen;
+
+            /* Whether we got woken up externally. */
+            if (ASMAtomicXchgBool(&pThis->fExtIntr, false))
+                rc = VERR_INTERRUPTED;
+        }
+        else if (rcLnx == -1)
+            rc = RTErrConvertFromErrno(errno);
+        else
+            AssertMsgFailed(("Unexpected read() -> 0\n"));
+    }
+
+    *pcCEvt = cCEvtSeen;
+    return rc;
 }
 
 
@@ -668,9 +876,19 @@ static DECLCALLBACK(int) rtIoQueueLnxIoURingFileProv_EvtWait(RTIOQUEUEPROV hIoQu
 static DECLCALLBACK(int) rtIoQueueLnxIoURingFileProv_EvtWaitWakeup(RTIOQUEUEPROV hIoQueueProv)
 {
     PRTIOQUEUEPROVINT pThis = hIoQueueProv;
-    RT_NOREF(pThis);
+    int rc = VINF_SUCCESS;
 
-    return VERR_NOT_IMPLEMENTED;
+    if (!ASMAtomicXchgBool(&pThis->fExtIntr, true))
+    {
+        const uint64_t uValAdd = 1;
+        ssize_t rcLnx = write(pThis->iFdEvt, &uValAdd, sizeof(uValAdd));
+
+        Assert(rcLnx == -1 || rcLnx == sizeof(uValAdd));
+        if (rcLnx == -1)
+            rc = RTErrConvertFromErrno(errno);
+    }
+
+    return rc;
 }
 
 
