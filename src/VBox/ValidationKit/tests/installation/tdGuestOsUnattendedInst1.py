@@ -48,6 +48,7 @@ from testdriver import base;
 from testdriver import reporter;
 from testdriver import vboxcon;
 from testdriver import vboxtestvms;
+from common     import utils;
 
 # Sub-test driver imports.
 sys.path.append(os.path.join(g_ksValidationKitDir, 'tests', 'additions'));
@@ -62,6 +63,9 @@ class UnattendedVm(vboxtestvms.BaseTestVm):
     ## @{
     kfUbuntuAvx2Crash       = 0x0001; ##< Disables AVX2 as ubuntu 16.04 think it means AVX512 is available and compiz crashes.
     kfNoGAs                 = 0x0002; ##< No guest additions installation possible.
+    kfKeyFile               = 0x0004; ##< ISO requires a .key file containing the product key.
+    kfNeedCom1              = 0x0008; ##< Need serial port, typically for satifying the windows kernel debugger.
+
     kfIdeIrqDelay           = 0x1000;
     kfUbuntuNewAmdBug       = 0x2000;
     kfNoWin81Paravirt       = 0x4000;
@@ -89,6 +93,8 @@ class UnattendedVm(vboxtestvms.BaseTestVm):
             self.asOptExtraData    += self.kasUbuntuAvx2Crash;
         if fFlags & self.kfIdeIrqDelay:
             self.asOptExtraData    += self.kasIdeIrqDelay;
+        if fFlags & self.kfNeedCom1:
+            self.fCom1RawFile       = True;
 
     def _unattendedConfigure(self, oIUnattended, oTestDrv): # type: (Any, vbox.TestDriver) -> bool
         """
@@ -121,6 +127,28 @@ class UnattendedVm(vboxtestvms.BaseTestVm):
                 oTestDrv.processPendingEvents();
             else:
                 reporter.log("Warning! Ignoring request to install Guest Additions as kfNoGAs is set!");
+
+        #
+        # Product key?
+        #
+        if self.fInstVmFlags & UnattendedVm.kfKeyFile:
+            sKeyFile = '';
+            sKey     = '';
+            try:
+                sKeyFile = oIUnattended.isoPath + '.key';
+                oFile = utils.openNoInherit(sKeyFile);
+                for sLine in oFile:
+                    sLine = sLine.strip();
+                    if sLine and not sLine.startswith(';') and not sLine.startswith('#') and not sLine.startswith('//'):
+                        sKey = sLine;
+                        break;
+                oFile.close();
+            except:
+                return reporter.errorXcpt('sKeyFile=%s' % (sKeyFile,));
+            if not sKey:
+                return reporter.error('No key in keyfile (%s)!' % (sKeyFile,));
+            try:    oIUnattended.productKey = sKey;
+            except: return reporter.errorXcpt();
 
         return True;
 
@@ -191,9 +219,12 @@ class UnattendedVm(vboxtestvms.BaseTestVm):
     #
 
     def getResourceSet(self):
+        asRet = [];
         if not os.path.isabs(self.sInstallIso):
-            return [self.sInstallIso,];
-        return [];
+            asRet.append(self.sInstallIso);
+            if self.fInstVmFlags & UnattendedVm.kfKeyFile:
+                asRet.append(self.sInstallIso + '.key');
+        return asRet;
 
     def _createVmDoIt(self, oTestDrv, eNic0AttachType, sDvdImage):
         #
@@ -201,11 +232,15 @@ class UnattendedVm(vboxtestvms.BaseTestVm):
         # downloading updates and doing database updates during installation.
         # We want predicable results.
         #
-        if     eNic0AttachType is None \
-          and self.isLinux() \
-           and (   'ubuntu' in self.sKind.lower()
-                or 'debian' in self.sKind.lower() ):
-            eNic0AttachType = vboxcon.NetworkAttachmentType_HostOnly;
+        if eNic0AttachType is None:
+            if self.isLinux() \
+               and (   'ubuntu' in self.sKind.lower()
+                    or 'debian' in self.sKind.lower()):
+                eNic0AttachType = vboxcon.NetworkAttachmentType_HostOnly;
+
+            # Also use it for windows xp to prevent it from ever going online.
+            if self.sKind in ('WindowsXP','WindowsXP_64',):
+                eNic0AttachType = vboxcon.NetworkAttachmentType_HostOnly;
 
         return vboxtestvms.BaseTestVm._createVmDoIt(self, oTestDrv, eNic0AttachType, sDvdImage);
 
@@ -399,8 +434,16 @@ class tdGuestOsInstTest1(vbox.TestDriver):
         # pylint: disable=line-too-long
         oSet.aoTestVms.extend([
             #
-            # Windows
+            # Windows.  The older windows ISOs requires a keyfile (for xp sp3
+            # pick a key from the PID.INF file on the ISO).
             #
+            UnattendedVm(oSet, 'tst-xp-32',       'WindowsXP',       '6.0/uaisos/en_winxp_pro_x86_build2600_iso.img', UnattendedVm.kfKeyFile), # >=2GiB
+            UnattendedVm(oSet, 'tst-xpsp2-32',    'WindowsXP',       '6.0/uaisos/en_winxp_pro_with_sp2.iso', UnattendedVm.kfKeyFile),          # >=2GiB
+            UnattendedVm(oSet, 'tst-xpsp3-32',    'WindowsXP',       '6.0/uaisos/en_windows_xp_professional_with_service_pack_3_x86_cd_x14-80428.iso', UnattendedVm.kfKeyFile), # >=2GiB
+            UnattendedVm(oSet, 'tst-xp-64',       'WindowsXP_64',    '6.0/uaisos/en_win_xp_pro_x64_vl.iso', UnattendedVm.kfKeyFile), # >=3GiB
+            UnattendedVm(oSet, 'tst-xpsp2-64',    'WindowsXP_64',    '6.0/uaisos/en_win_xp_pro_x64_with_sp2_vl_x13-41611.iso', UnattendedVm.kfKeyFile), # >=3GiB
+            #fixme: UnattendedVm(oSet, 'tst-xpchk-64',    'WindowsXP_64',    '6.0/uaisos/en_windows_xp_professional_x64_chk.iso', UnattendedVm.kfKeyFile | UnattendedVm.kfNeedCom1), # >=3GiB
+            # No key files needed:
             UnattendedVm(oSet, 'tst-vista-32',    'WindowsVista',    '6.0/uaisos/en_windows_vista_ee_x86_dvd_vl_x13-17271.iso'),          # >=6GiB
             UnattendedVm(oSet, 'tst-vista-64',    'WindowsVista_64', '6.0/uaisos/en_windows_vista_enterprise_x64_dvd_vl_x13-17316.iso'),  # >=8GiB
             UnattendedVm(oSet, 'tst-vistasp1-32', 'WindowsVista',    '6.0/uaisos/en_windows_vista_enterprise_with_service_pack_1_x86_dvd_x14-55954.iso'), # >=6GiB
