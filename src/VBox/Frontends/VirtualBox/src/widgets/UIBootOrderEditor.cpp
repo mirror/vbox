@@ -21,7 +21,7 @@
 #include <QScrollBar>
 
 /* GUI includes: */
-#include "UIBootListWidget.h"
+#include "UIBootOrderEditor.h"
 #include "UIConverter.h"
 #include "UIIconPool.h"
 #include "UIToolBar.h"
