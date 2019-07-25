@@ -1331,6 +1331,12 @@ VMM_INT_DECL(void) HMNotifyVmxNstGstVmexit(PVMCPU pVCpu)
      * the future).
      */
     pVCpu->hm.s.vmx.fSwitchedNstGstFlushTlb = true;
+
+    if (pVCpu->hm.s.vmx.fVirtApicPageLocked)
+    {
+        PGMPhysReleasePageMappingLock(pVCpu->CTX_SUFF(pVM), &pVCpu->hm.s.vmx.PgMapLockVirtApic);
+        pVCpu->hm.s.vmx.fVirtApicPageLocked = false;
+    }
 }
 
 

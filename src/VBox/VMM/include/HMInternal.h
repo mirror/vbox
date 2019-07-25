@@ -996,12 +996,15 @@ typedef struct HMCPU
             /** Whether flushing the TLB is required due to switching to/from the
              *  nested-geust. */
             bool                        fSwitchedNstGstFlushTlb;
+
+            bool                        fVirtApicPageLocked;
             /** Alignment. */
-            bool                        afAlignment0[4];
+            bool                        afAlignment0[3];
             /** Cached guest APIC-base MSR for identifying when to map the APIC-access page. */
             uint64_t                    u64GstMsrApicBase;
             /** VMCS cache for batched vmread/vmwrites. */
             VMXVMCSCACHE                VmcsCache;
+            PGMPAGEMAPLOCK              PgMapLockVirtApic;
             /** @} */
 
             /** @name Host information.

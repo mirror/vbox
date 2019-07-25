@@ -1822,6 +1822,8 @@ static int hmR0VmxAllocVmcsInfo(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo, bool fIsNs
             /* Get the allocated virtual-APIC page from CPUM. */
             if (pVM->hm.s.vmx.Msrs.ProcCtls.n.allowed1 & VMX_PROC_CTLS_USE_TPR_SHADOW)
             {
+                /** @todo NSTVMX: Get rid of this. There is no need to allocate a separate HC
+                 *        page for this. Use the one provided by the nested-guest directly. */
                 pVmcsInfo->pbVirtApic = (uint8_t *)CPUMGetGuestVmxVirtApicPage(pVCpu, &pVCpu->cpum.GstCtx,
                                                                                &pVmcsInfo->HCPhysVirtApic);
                 Assert(pVmcsInfo->pbVirtApic);
@@ -4012,16 +4014,8 @@ static int hmR0VmxSetupVmcsCtlsNested(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo)
             if (pVM->hm.s.vmx.Msrs.ProcCtls.n.allowed1 & VMX_PROC_CTLS_USE_MSR_BITMAPS)
                 rc = hmR0VmxSetupVmcsMsrBitmapAddr(pVCpu, pVmcsInfo);
             if (RT_SUCCESS(rc))
-            {
-                if (pVM->hm.s.vmx.Msrs.ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_VIRT_APIC_ACCESS)
-                    rc = hmR0VmxSetupVmcsApicAccessAddr(pVCpu);
-                if (RT_SUCCESS(rc))
-                    return VINF_SUCCESS;
-
-                LogRelFunc(("Failed to set up the APIC-access address in the nested-guest VMCS. rc=%Rrc\n", rc));
-            }
-            else
-                LogRelFunc(("Failed to set up the MSR-bitmap address in the nested-guest VMCS. rc=%Rrc\n", rc));
+                return VINF_SUCCESS;
+            LogRelFunc(("Failed to set up the MSR-bitmap address in the nested-guest VMCS. rc=%Rrc\n", rc));
         }
         else
             LogRelFunc(("Failed to set up the VMCS link pointer in the nested-guest VMCS. rc=%Rrc\n", rc));
@@ -10919,20 +10913,41 @@ static int hmR0VmxMergeVmcsNested(PVMCPU pVCpu)
 
     /*
      * APIC-access page.
-     *
-     * The APIC-access page address has already been initialized while setting up the
-     * nested-guest VMCS. In theory, even if the guest-physical address is invalid, it should
-     * not be of any consequence to the host or to the guest for that matter, but we only
-     * accept valid addresses verified by the VMLAUNCH/VMRESUME instruction emulation to keep
-     * it simple.
      */
+    RTHCPHYS HCPhysApicAccess;
+    if (u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_APIC_ACCESS)
+    {
+        Assert(pVM->hm.s.vmx.Msrs.ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_VIRT_APIC_ACCESS);
+        RTGCPHYS const GCPhysApicAccess = pVmcsNstGst->u64AddrApicAccess.u;
+
+        /** @todo NSTVMX: This is not really correct but currently is required to make
+         *        things work. We need to re-register the page handler when we fallback to
+         *        IEM execution of the nested-guest! */
+        PGMHandlerPhysicalDeregister(pVM, GCPhysApicAccess);
+
+        void *pvPage;
+        PGMPAGEMAPLOCK PgMapLockApicAccess;
+        int rc = PGMPhysGCPhys2CCPtr(pVM, GCPhysApicAccess, &pvPage, &PgMapLockApicAccess);
+        if (RT_SUCCESS(rc))
+        {
+            rc = PGMPhysGCPhys2HCPhys(pVM, GCPhysApicAccess, &HCPhysApicAccess);
+            AssertMsgRCReturn(rc, ("Failed to get host-physical address for APIC-access page at %#RGp\n", GCPhysApicAccess), rc);
+
+            /*
+             * We can release the page lock here because the APIC-access page is never read or
+             * written to but merely serves as a placeholder in the shadow/nested page tables
+             * to cause VM-exits or re-direct the access to the virtual-APIC page.
+             */
+            PGMPhysReleasePageMappingLock(pVCpu->CTX_SUFF(pVM), &PgMapLockApicAccess);
+        }
+        else
+            return rc;
+    }
+    else
+        HCPhysApicAccess = 0;
 
     /*
      * Virtual-APIC page and TPR threshold.
-     *
-     * The virtual-APIC page has already been allocated (by CPUM during VM startup) and cached
-     * from guest memory as part of VMLAUNCH/VMRESUME instruction emulation. The host physical
-     * address has also been updated in the nested-guest VMCS object during allocation.
      */
     PVMXVMCSINFO pVmcsInfoNstGst = &pVCpu->hm.s.vmx.VmcsInfoNstGst;
     RTHCPHYS     HCPhysVirtApic;
@@ -10940,7 +10955,19 @@ static int hmR0VmxMergeVmcsNested(PVMCPU pVCpu)
     if (u32ProcCtls & VMX_PROC_CTLS_USE_TPR_SHADOW)
     {
         Assert(pVM->hm.s.vmx.Msrs.ProcCtls.n.allowed1 & VMX_PROC_CTLS_USE_TPR_SHADOW);
-        HCPhysVirtApic  = pVmcsInfoNstGst->HCPhysVirtApic;
+
+        void *pvPage;
+        RTGCPHYS const GCPhysVirtApic = pVmcsNstGst->u64AddrVirtApic.u;
+        int rc = PGMPhysGCPhys2CCPtr(pVM, GCPhysVirtApic, &pvPage, &pVCpu->hm.s.vmx.PgMapLockVirtApic);
+        AssertRCReturn(rc, rc);
+        if (RT_SUCCESS(rc))
+        {
+            rc = PGMPhysGCPhys2HCPhys(pVM, GCPhysVirtApic, &HCPhysVirtApic);
+            AssertMsgRCReturn(rc, ("Failed to get host-physical address for virtual-APIC page at %#RGp\n", GCPhysVirtApic), rc);
+            pVCpu->hm.s.vmx.fVirtApicPageLocked = true;
+        }
+        else
+            return rc;
         u32TprThreshold = pVmcsNstGst->u32TprThreshold;
     }
     else
@@ -10997,8 +11024,10 @@ static int hmR0VmxMergeVmcsNested(PVMCPU pVCpu)
     if (u32ProcCtls & VMX_PROC_CTLS_USE_TPR_SHADOW)
     {
         rc |= VMXWriteVmcs32(VMX_VMCS32_CTRL_TPR_THRESHOLD, u32TprThreshold);
-        rc |= VMXWriteVmcs64(VMX_VMCS64_CTRL_VIRT_APIC_PAGEADDR_FULL, pVmcsInfoNstGst->HCPhysVirtApic);
+        rc |= VMXWriteVmcs64(VMX_VMCS64_CTRL_VIRT_APIC_PAGEADDR_FULL, HCPhysVirtApic);
     }
+    if (u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_APIC_ACCESS)
+        rc |= VMXWriteVmcs64(VMX_VMCS64_CTRL_APIC_ACCESSADDR_FULL, HCPhysApicAccess);
     AssertRCReturn(rc, rc);
 
     /*
@@ -11015,7 +11044,7 @@ static int hmR0VmxMergeVmcsNested(PVMCPU pVCpu)
     pVmcsInfoNstGst->HCPhysVirtApic = HCPhysVirtApic;
 
     /*
-     * We need to flush the TLB if we are switching the API-access page address.
+     * We need to flush the TLB if we are switching the APIC-access page address.
      * See Intel spec. 28.3.3.4 "Guidelines for Use of the INVEPT Instruction".
      */
     if (u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_APIC_ACCESS)
