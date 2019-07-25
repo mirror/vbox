@@ -207,7 +207,7 @@ QModelIndex UIBootListWidget::moveItemTo(const QModelIndex &index, int row)
 
 
 /*********************************************************************************************************************************
-*   Class UIBootOrderEditor implementation.                                                                                           *
+*   Class UIBootOrderEditor implementation.                                                                                      *
 *********************************************************************************************************************************/
 
 UIBootOrderEditor::UIBootOrderEditor(QWidget *pParent /* = 0 */, bool fWithLabel /* = false */)
