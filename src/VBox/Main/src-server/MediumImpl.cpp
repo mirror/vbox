@@ -826,6 +826,45 @@ private:
 };
 
 
+
+/**
+ * Converts the Medium device type to the VD type.
+ */
+static const char *getVDTypeName(VDTYPE enmType)
+{
+    switch (enmType)
+    {
+        case VDTYPE_HDD:                return "HDD";
+        case VDTYPE_OPTICAL_DISC:       return "DVD";
+        case VDTYPE_FLOPPY:             return "floppy";
+        case VDTYPE_INVALID:            return "invalid";
+        default:
+            AssertFailedReturn("unknown");
+    }
+}
+
+/**
+ * Converts the Medium device type to the VD type.
+ */
+static const char *getDeviceTypeName(DeviceType_T enmType)
+{
+    switch (enmType)
+    {
+        case DeviceType_HardDisk:       return "HDD";
+        case DeviceType_DVD:            return "DVD";
+        case DeviceType_Floppy:         return "floppy";
+        case DeviceType_Null:           return "null";
+        case DeviceType_Network:        return "network";
+        case DeviceType_USB:            return "USB";
+        case DeviceType_SharedFolder:   return "shared folder";
+        case DeviceType_Graphics3D:     return "graphics 3d";
+        default:
+            AssertFailedReturn("unknown");
+    }
+}
+
+
+
 ////////////////////////////////////////////////////////////////////////////////
 //
 // Medium constructor / destructor
@@ -7618,23 +7657,16 @@ HRESULT Medium::i_setLocation(const Utf8Str &aLocation,
         /* detect the backend from the storage unit if importing */
         if (isImport)
         {
-            VDTYPE const enmDesiredType = m->devType == DeviceType_Floppy   ? VDTYPE_FLOPPY
-                                        : m->devType == DeviceType_DVD      ? VDTYPE_OPTICAL_DISC
-                                        : m->devType == DeviceType_HardDisk ? VDTYPE_HDD : VDTYPE_INVALID;
+            VDTYPE const enmDesiredType = i_convertDeviceType();
             VDTYPE enmType = VDTYPE_INVALID;
             char *backendName = NULL;
 
-            int vrc = VINF_SUCCESS;
-
             /* is it a file? */
-            {
-                RTFILE file;
-                vrc = RTFileOpen(&file, locationFull.c_str(), RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
-                if (RT_SUCCESS(vrc))
-                    RTFileClose(file);
-            }
+            RTFILE hFile;
+            int vrc = RTFileOpen(&hFile, locationFull.c_str(), RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
             if (RT_SUCCESS(vrc))
             {
+                RTFileClose(hFile);
                 vrc = VDGetFormat(NULL /* pVDIfsDisk */, NULL /* pVDIfsImage */,
                                   locationFull.c_str(), enmDesiredType, &backendName, &enmType);
             }
@@ -7655,21 +7687,18 @@ HRESULT Medium::i_setLocation(const Utf8Str &aLocation,
                     return setErrorBoth(VBOX_E_FILE_ERROR, vrc,
                                         tr("Permission problem accessing the file for the medium '%s' (%Rrc)"),
                                         locationFull.c_str(), vrc);
-                else if (vrc == VERR_FILE_NOT_FOUND || vrc == VERR_PATH_NOT_FOUND)
+                if (vrc == VERR_FILE_NOT_FOUND || vrc == VERR_PATH_NOT_FOUND)
                     return setErrorBoth(VBOX_E_FILE_ERROR, vrc,
                                         tr("Could not find file for the medium '%s' (%Rrc)"),
                                         locationFull.c_str(), vrc);
-                else if (aFormat.isEmpty())
+                if (aFormat.isEmpty())
                     return setErrorBoth(VBOX_E_IPRT_ERROR, vrc,
                                         tr("Could not get the storage format of the medium '%s' (%Rrc)"),
                                         locationFull.c_str(), vrc);
-                else
-                {
-                    HRESULT rc = i_setFormat(aFormat);
-                    /* setFormat() must not fail since we've just used the backend so
-                     * the format object must be there */
-                    AssertComRCReturnRC(rc);
-                }
+                HRESULT rc = i_setFormat(aFormat);
+                /* setFormat() must not fail since we've just used the backend so
+                         * the format object must be there */
+                AssertComRCReturnRC(rc);
             }
             else if (   enmType == VDTYPE_INVALID
                      || m->devType != i_convertToDeviceType(enmType))
@@ -7678,9 +7707,10 @@ HRESULT Medium::i_setLocation(const Utf8Str &aLocation,
                  * The user tried to use a image as a device which is not supported
                  * by the backend.
                  */
+                RTStrFree(backendName);
                 return setError(E_FAIL,
-                                tr("The medium '%s' can't be used as the requested device type"),
-                                locationFull.c_str());
+                                tr("The medium '%s' can't be used as the requested device type (%s, detected %s)"),
+                                locationFull.c_str(), getDeviceTypeName(m->devType), getVDTypeName(enmType));
             }
             else
             {
