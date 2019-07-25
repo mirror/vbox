@@ -3258,7 +3258,7 @@ class TxsConnectTask(TdTaskBase):
         try:
             (sIpAddr, sState, secIssued, secExpire) = self.oIDhcpServer.findLeaseByMAC(self.sMacAddr, 0);
         except:
-            reporter.log2Xcpt('sMacAddr=%s' % (self.sMacAddr,));
+            reporter.log4Xcpt('sMacAddr=%s' % (self.sMacAddr,));
             return False;
 
         secNow = utils.secondsSinceUnixEpoch();
