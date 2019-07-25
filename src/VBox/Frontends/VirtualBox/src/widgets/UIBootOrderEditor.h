@@ -35,6 +35,7 @@
 class QLabel;
 class UIToolBar;
 class UIBootListWidget;
+class CMachine;
 
 
 /** Boot item data structure. */
@@ -61,6 +62,17 @@ struct UIBootItemData
     bool         m_fEnabled;
 };
 typedef QList<UIBootItemData> UIBootItemDataList;
+
+
+/** Boot data tools namespace. */
+namespace UIBootDataTools
+{
+    /** Loads boot item list for passed @a comMachine. */
+    SHARED_LIBRARY_STUFF UIBootItemDataList loadBootItems(const CMachine &comMachine);
+    /** Saves @a bootItems list to passed @a comMachine. */
+    SHARED_LIBRARY_STUFF void saveBootItems(const UIBootItemDataList &bootItems, CMachine &comMachine);
+}
+using namespace UIBootDataTools;
 
 
 /** QWidget subclass used as boot order editor. */

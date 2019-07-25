@@ -22,9 +22,15 @@
 
 /* GUI includes: */
 #include "UIBootOrderEditor.h"
+#include "UICommon.h"
 #include "UIConverter.h"
 #include "UIIconPool.h"
 #include "UIToolBar.h"
+
+/* COM includes: */
+#include "COMEnums.h"
+#include "CMachine.h"
+#include "CSystemProperties.h"
 
 
 /** QListWidgetItem extension for our UIBootListWidget. */
@@ -278,6 +284,86 @@ QModelIndex UIBootListWidget::moveItemTo(const QModelIndex &index, int row)
     delete takeItem(oldIndex.row());
     setCurrentRow(newIndex.row());
     return QModelIndex(newIndex);
+}
+
+
+/*********************************************************************************************************************************
+*   Class UIBootDataTools implementation.                                                                                        *
+*********************************************************************************************************************************/
+
+UIBootItemDataList UIBootDataTools::loadBootItems(const CMachine &comMachine)
+{
+    /* Gather a list of all possible boot items.
+     * Currently, it seems, we are supporting only 4 possible boot device types:
+     * 1. Floppy, 2. DVD-ROM, 3. Hard Disk, 4. Network.
+     * But maximum boot devices count supported by machine should be retrieved
+     * through the ISystemProperties getter.  Moreover, possible boot device
+     * types are not listed in some separate Main vector, so we should get them
+     * (randomely?) from the list of all device types.  Until there will be a
+     * separate Main getter for list of supported boot device types, this list
+     * will be hard-coded here... */
+    QVector<KDeviceType> possibleBootItems = QVector<KDeviceType>() << KDeviceType_Floppy
+                                                                    << KDeviceType_DVD
+                                                                    << KDeviceType_HardDisk
+                                                                    << KDeviceType_Network;
+    const CSystemProperties comProperties = uiCommon().virtualBox().GetSystemProperties();
+    const int iPossibleBootListSize = qMin((ULONG)4, comProperties.GetMaxBootPosition());
+    possibleBootItems.resize(iPossibleBootListSize);
+
+    /* Prepare boot items: */
+    UIBootItemDataList bootItems;
+
+    /* Gather boot-items of current VM: */
+    QList<KDeviceType> usedBootItems;
+    for (int i = 1; i <= possibleBootItems.size(); ++i)
+    {
+        const KDeviceType enmType = comMachine.GetBootOrder(i);
+        if (enmType != KDeviceType_Null)
+        {
+            usedBootItems << enmType;
+            UIBootItemData data;
+            data.m_enmType = enmType;
+            data.m_fEnabled = true;
+            bootItems << data;
+        }
+    }
+    /* Gather other unique boot-items: */
+    for (int i = 0; i < possibleBootItems.size(); ++i)
+    {
+        const KDeviceType enmType = possibleBootItems.at(i);
+        if (!usedBootItems.contains(enmType))
+        {
+            UIBootItemData data;
+            data.m_enmType = enmType;
+            data.m_fEnabled = false;
+            bootItems << data;
+        }
+    }
+
+    /* Return boot items: */
+    return bootItems;
+}
+
+void UIBootDataTools::saveBootItems(const UIBootItemDataList &bootItems, CMachine &comMachine)
+{
+    bool fSuccess = true;
+    int iBootIndex = 0;
+    for (int i = 0; fSuccess && i < bootItems.size(); ++i)
+    {
+        if (bootItems.at(i).m_fEnabled)
+        {
+            comMachine.SetBootOrder(++iBootIndex, bootItems.at(i).m_enmType);
+            fSuccess = comMachine.isOk();
+        }
+    }
+    for (int i = 0; fSuccess && i < bootItems.size(); ++i)
+    {
+        if (!bootItems.at(i).m_fEnabled)
+        {
+            comMachine.SetBootOrder(++iBootIndex, KDeviceType_Null);
+            fSuccess = comMachine.isOk();
+        }
+    }
 }
 
 

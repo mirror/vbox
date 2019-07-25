@@ -770,33 +770,6 @@ void UIMachineSettingsSystem::prepareTabMotherboard()
 #else
             m_pLayoutBootOrder->setSpacing(qApp->style()->pixelMetric(QStyle::PM_LayoutHorizontalSpacing) / 3);
 #endif
-
-            /* Boot-order tree-widget created in the .ui file. */
-            AssertPtrReturnVoid(m_pBootOrderEditor);
-            {
-                /* Populate possible boot items list.
-                 * Currently, it seems, we are supporting only 4 possible boot device types:
-                 * 1. Floppy, 2. DVD-ROM, 3. Hard Disk, 4. Network.
-                 * But maximum boot devices count supported by machine
-                 * should be retrieved through the ISystemProperties getter.
-                 * Moreover, possible boot device types are not listed in some separate Main vector,
-                 * so we should get them (randomely?) from the list of all device types.
-                 * Until there will be separate Main getter for list of supported boot device types,
-                 * this list will be hard-coded here... */
-                const CSystemProperties properties = uiCommon().virtualBox().GetSystemProperties();
-                const int iPossibleBootListSize = qMin((ULONG)4, properties.GetMaxBootPosition());
-                for (int iBootPosition = 1; iBootPosition <= iPossibleBootListSize; ++iBootPosition)
-                {
-                    switch (iBootPosition)
-                    {
-                        case 1: m_possibleBootItems << KDeviceType_Floppy; break;
-                        case 2: m_possibleBootItems << KDeviceType_DVD; break;
-                        case 3: m_possibleBootItems << KDeviceType_HardDisk; break;
-                        case 4: m_possibleBootItems << KDeviceType_Network; break;
-                        default: break;
-                    }
-                }
-            }
         }
 
         /* Chipset Type combo-box created in the .ui file. */
@@ -1022,64 +995,6 @@ void UIMachineSettingsSystem::retranslateComboParavirtProvider()
         /* Re-translate if corresponding item was found: */
         if (iCorrespondingIndex != -1)
             m_pComboParavirtProvider->setItemText(iCorrespondingIndex, gpConverter->toString(enmType));
-    }
-}
-
-UIBootItemDataList UIMachineSettingsSystem::loadBootItems(const CMachine &comMachine)
-{
-    /* Prepare boot items: */
-    UIBootItemDataList bootItems;
-
-    /* Gather boot-items of current VM: */
-    QList<KDeviceType> usedBootItems;
-    for (int i = 1; i <= m_possibleBootItems.size(); ++i)
-    {
-        const KDeviceType enmType = comMachine.GetBootOrder(i);
-        if (enmType != KDeviceType_Null)
-        {
-            usedBootItems << enmType;
-            UIBootItemData data;
-            data.m_enmType = enmType;
-            data.m_fEnabled = true;
-            bootItems << data;
-        }
-    }
-    /* Gather other unique boot-items: */
-    for (int i = 0; i < m_possibleBootItems.size(); ++i)
-    {
-        const KDeviceType enmType = m_possibleBootItems[i];
-        if (!usedBootItems.contains(enmType))
-        {
-            UIBootItemData data;
-            data.m_enmType = enmType;
-            data.m_fEnabled = false;
-            bootItems << data;
-        }
-    }
-
-    /* Return boot items: */
-    return bootItems;
-}
-
-void UIMachineSettingsSystem::saveBootItems(const UIBootItemDataList &bootItems, CMachine &comMachine)
-{
-    bool fSuccess = true;
-    int iBootIndex = 0;
-    for (int i = 0; fSuccess && i < bootItems.size(); ++i)
-    {
-        if (bootItems.at(i).m_fEnabled)
-        {
-            comMachine.SetBootOrder(++iBootIndex, bootItems.at(i).m_enmType);
-            fSuccess = comMachine.isOk();
-        }
-    }
-    for (int i = 0; fSuccess && i < bootItems.size(); ++i)
-    {
-        if (!bootItems.at(i).m_fEnabled)
-        {
-            comMachine.SetBootOrder(++iBootIndex, KDeviceType_Null);
-            fSuccess = comMachine.isOk();
-        }
     }
 }
 
