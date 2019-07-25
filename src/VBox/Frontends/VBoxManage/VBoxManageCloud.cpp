@@ -493,20 +493,35 @@ static RTEXITCODE showCloudInstanceInfo(HandlerArg *a, int iFirst, PCLOUDCOMMONO
     AssertRCReturn(vrc, RTEXITCODE_FAILURE);
 
     Utf8Str strInstanceId;
+
     int c;
     while ((c = RTGetOpt(&GetState, &ValueUnion)) != 0)
     {
         switch (c)
         {
             case 'i':
-                    strInstanceId = ValueUnion.psz;
+            {
+                if (strInstanceId.isNotEmpty())
+                    return errorArgument("Duplicate parameter: --id");
+
+                strInstanceId = ValueUnion.psz;
+                if (strInstanceId.isEmpty())
+                    return errorArgument("Empty parameter: --id");
+
                 break;
+            }
+
             case VINF_GETOPT_NOT_OPTION:
                 return errorUnknownSubcommand(ValueUnion.psz);
+
             default:
                 return errorGetOpt(c, &ValueUnion);
         }
     }
+
+    if (strInstanceId.isEmpty())
+        return errorArgument("Missing parameter: --id");
+
 
     ComPtr<ICloudProfile> pCloudProfile = pCommonOpts->profile.pCloudProfile;
 
@@ -608,20 +623,35 @@ static RTEXITCODE startCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT 
     AssertRCReturn(vrc, RTEXITCODE_FAILURE);
 
     Utf8Str strInstanceId;
+
     int c;
     while ((c = RTGetOpt(&GetState, &ValueUnion)) != 0)
     {
         switch (c)
         {
             case 'i':
-                    strInstanceId = ValueUnion.psz;
+            {
+                if (strInstanceId.isNotEmpty())
+                    return errorArgument("Duplicate parameter: --id");
+
+                strInstanceId = ValueUnion.psz;
+                if (strInstanceId.isEmpty())
+                    return errorArgument("Empty parameter: --id");
+
                 break;
+            }
+
             case VINF_GETOPT_NOT_OPTION:
                 return errorUnknownSubcommand(ValueUnion.psz);
+
             default:
                 return errorGetOpt(c, &ValueUnion);
         }
     }
+
+    if (strInstanceId.isEmpty())
+        return errorArgument("Missing parameter: --id");
+
 
     ComPtr<ICloudProfile> pCloudProfile = pCommonOpts->profile.pCloudProfile;
 
@@ -665,20 +695,35 @@ static RTEXITCODE pauseCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT 
     AssertRCReturn(vrc, RTEXITCODE_FAILURE);
 
     Utf8Str strInstanceId;
+
     int c;
     while ((c = RTGetOpt(&GetState, &ValueUnion)) != 0)
     {
         switch (c)
         {
             case 'i':
-                    strInstanceId = ValueUnion.psz;
+            {
+                if (strInstanceId.isNotEmpty())
+                    return errorArgument("Duplicate parameter: --id");
+
+                strInstanceId = ValueUnion.psz;
+                if (strInstanceId.isEmpty())
+                    return errorArgument("Empty parameter: --id");
+
                 break;
+            }
+
             case VINF_GETOPT_NOT_OPTION:
                 return errorUnknownSubcommand(ValueUnion.psz);
+
             default:
                 return errorGetOpt(c, &ValueUnion);
         }
     }
+
+    if (strInstanceId.isEmpty())
+        return errorArgument("Missing parameter: --id");
+
 
     ComPtr<ICloudProfile> pCloudProfile = pCommonOpts->profile.pCloudProfile;
 
@@ -722,20 +767,35 @@ static RTEXITCODE terminateCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMON
     AssertRCReturn(vrc, RTEXITCODE_FAILURE);
 
     Utf8Str strInstanceId;
+
     int c;
     while ((c = RTGetOpt(&GetState, &ValueUnion)) != 0)
     {
         switch (c)
         {
             case 'i':
-                    strInstanceId = ValueUnion.psz;
+            {
+                if (strInstanceId.isNotEmpty())
+                    return errorArgument("Duplicate parameter: --id");
+
+                strInstanceId = ValueUnion.psz;
+                if (strInstanceId.isEmpty())
+                    return errorArgument("Empty parameter: --id");
+
                 break;
+            }
+
             case VINF_GETOPT_NOT_OPTION:
                 return errorUnknownSubcommand(ValueUnion.psz);
+
             default:
                 return errorGetOpt(c, &ValueUnion);
         }
     }
+
+    if (strInstanceId.isEmpty())
+        return errorArgument("Missing parameter: --id");
+
 
     ComPtr<ICloudProfile> pCloudProfile = pCommonOpts->profile.pCloudProfile;
 
@@ -1231,6 +1291,10 @@ static RTEXITCODE deleteCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
                 return errorGetOpt(c, &ValueUnion);
         }
     }
+
+    if (strImageId.isEmpty())
+        return errorArgument("Missing parameter: --id");
+
 
     ComPtr<ICloudProfile> pCloudProfile = pCommonOpts->profile.pCloudProfile;
 
