@@ -80,7 +80,8 @@
  *        This applies to enum values too.
  *
  *   <li> Typedefs are all uppercase and contain no underscores to distinguish
- *        them from defines.
+ *        them from defines.  Alternatively, all uppercase, separate words with
+ *        underscores and ending with '_T'.  The latter is not allowed in IPRT.
  *
  *   <li> Pointer typedefs start with 'P'. If pointer to const then 'PC'.
  *
