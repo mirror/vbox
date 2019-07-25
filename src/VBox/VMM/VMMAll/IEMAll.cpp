@@ -1124,6 +1124,24 @@ DECLINLINE(void) iemInitExec(PVMCPU pVCpu, bool fBypassHandlers)
     if (!pVCpu->iem.s.fInPatchCode)
         CPUMRawLeave(pVCpu, VINF_SUCCESS);
 #endif
+#if 0
+#if defined(VBOX_WITH_NESTED_HWVIRT_VMX) && !defined(IN_RC)
+    if (    CPUMIsGuestInVmxNonRootMode(&pVCpu->cpum.GstCtx)
+        &&  CPUMIsGuestVmxProcCtls2Set(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS2_VIRT_APIC_ACCESS))
+    {
+        PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+        Assert(pVmcs);
+        RTGCPHYS const GCPhysApicAccess = pVmcs->u64AddrApicAccess.u;
+        if (!PGMHandlerPhysicalIsRegistered(pVCpu->CTX_SUFF(pVM), GCPhysApicAccess))
+        {
+           int rc = PGMHandlerPhysicalRegister(pVCpu->CTX_SUFF(pVM), GCPhysApicAccess, GCPhysApicAccess + X86_PAGE_4K_SIZE - 1,
+                                               pVCpu->iem.s.hVmxApicAccessPage, NIL_RTR3PTR /* pvUserR3 */,
+                                               NIL_RTR0PTR /* pvUserR0 */,  NIL_RTRCPTR /* pvUserRC */, NULL /* pszDesc */);
+           AssertRC(rc);
+        }
+    }
+#endif
+#endif
 }
 
 #if defined(VBOX_WITH_NESTED_HWVIRT_SVM) || defined(VBOX_WITH_NESTED_HWVIRT_VMX)
