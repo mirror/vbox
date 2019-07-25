@@ -27,6 +27,7 @@
 #include "QIDialogContainer.h"
 #include "UIActionPool.h"
 #include "UIBaseMemoryEditor.h"
+#include "UIBootOrderEditor.h"
 #include "UICommon.h"
 #include "UIConverter.h"
 #include "UIDetailsElement.h"
@@ -49,6 +50,7 @@ enum AnchorRole
     AnchorRole_MachineLocation,
     AnchorRole_OSType,
     AnchorRole_BaseMemory,
+    AnchorRole_BootOrder,
     AnchorRole_Storage,
 };
 
@@ -152,6 +154,7 @@ void UIDetailsElement::updateAppearance()
     m_pTextPane->setAnchorRoleRestricted("#machine_location", cal != ConfigurationAccessLevel_Full);
     m_pTextPane->setAnchorRoleRestricted("#os_type", cal != ConfigurationAccessLevel_Full);
     m_pTextPane->setAnchorRoleRestricted("#base_memory", cal != ConfigurationAccessLevel_Full);
+    m_pTextPane->setAnchorRoleRestricted("#boot_order", cal != ConfigurationAccessLevel_Full);
     m_pTextPane->setAnchorRoleRestricted("#mount", cal == ConfigurationAccessLevel_Null);
     m_pTextPane->setAnchorRoleRestricted("#attach", cal != ConfigurationAccessLevel_Full);
 }
@@ -435,6 +438,7 @@ void UIDetailsElement::sltHandleAnchorClicked(const QString &strAnchor)
     roles["#machine_location"] = AnchorRole_MachineLocation;
     roles["#os_type"] = AnchorRole_OSType;
     roles["#base_memory"] = AnchorRole_BaseMemory;
+    roles["#boot_order"] = AnchorRole_BootOrder;
     roles["#mount"] = AnchorRole_Storage;
     roles["#attach"] = AnchorRole_Storage;
 
@@ -528,6 +532,38 @@ void UIDetailsElement::sltHandleAnchorClicked(const QString &strAnchor)
                 /* Execute popup, change machine name if confirmed: */
                 if (pPopup->exec() == QDialog::Accepted)
                     setMachineAttribute(machine(), MachineAttribute_BaseMemory, QVariant::fromValue(pEditor->value()));
+
+                /* Delete popup: */
+                delete pPopup;
+            }
+            break;
+        }
+        case AnchorRole_BootOrder:
+        {
+            /* Prepare popup: */
+            QPointer<QIDialogContainer> pPopup = new QIDialogContainer(0, Qt::Tool);
+            if (pPopup)
+            {
+                /* Prepare editor: */
+                UIBootOrderEditor *pEditor = new UIBootOrderEditor(pPopup, true /* with label */);
+                if (pEditor)
+                {
+                    pEditor->setValue(bootItemsFromSerializedString(strData.section(',', 0, 0)));
+                    pPopup->setWidget(pEditor);
+                }
+
+                /* Adjust popup geometry: */
+                pPopup->move(QCursor::pos());
+                pPopup->adjustSize();
+
+                // WORKAROUND:
+                // On Windows, Tool dialogs aren't activated by default by some reason.
+                // So we have created sltActivateWindow wrapping actual activateWindow
+                // to fix that annoying issue.
+                QMetaObject::invokeMethod(pPopup, "sltActivateWindow", Qt::QueuedConnection);
+                /* Execute popup, change machine name if confirmed: */
+                if (pPopup->exec() == QDialog::Accepted)
+                    setMachineAttribute(machine(), MachineAttribute_BootOrder, QVariant::fromValue(pEditor->value()));
 
                 /* Delete popup: */
                 delete pPopup;

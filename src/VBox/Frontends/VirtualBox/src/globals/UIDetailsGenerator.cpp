@@ -20,6 +20,7 @@
 #include <QDir>
 
 /* GUI includes: */
+#include "UIBootOrderEditor.h"
 #include "UIConverter.h"
 #include "UIDetailsGenerator.h"
 #include "UIErrorString.h"
@@ -161,17 +162,14 @@ UITextTable UIDetailsGenerator::generateMachineInformationSystem(CMachine &comMa
     /* Boot order: */
     if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_BootOrder)
     {
-        QStringList bootOrder;
-        for (ulong i = 1; i <= uiCommon().virtualBox().GetSystemProperties().GetMaxBootPosition(); ++i)
-        {
-            const KDeviceType enmDeviceType = comMachine.GetBootOrder(i);
-            if (enmDeviceType == KDeviceType_Null)
-                continue;
-            bootOrder << gpConverter->toString(enmDeviceType);
-        }
-        if (bootOrder.isEmpty())
-            bootOrder << gpConverter->toString(KDeviceType_Null);
-        table << UITextTableLine(QApplication::translate("UIDetails", "Boot Order", "details (system)"), bootOrder.join(", "));
+        /* Configure hovering anchor: */
+        const QString strAnchorType = QString("boot_order");
+        const UIBootItemDataList bootItems = loadBootItems(comMachine);
+        table << UITextTableLine(QApplication::translate("UIDetails", "Boot Order", "details (system)"),
+                                 QApplication::translate("UIDetails", "<a href=#%1,%2>%3</a>", "details")
+                                    .arg(strAnchorType,
+                                         bootItemsToSerializedString(bootItems),
+                                         bootItemsToReadableString(bootItems)));
     }
 
     /* Chipset type: */
