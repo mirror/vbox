@@ -21,7 +21,9 @@
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_DEV_VIRTIO
 
+#include <VBox/log.h>
 #include <iprt/param.h>
+#include <iprt/assert.h>
 #include <iprt/uuid.h>
 #include <VBox/vmm/pdmdev.h>
 #include "Virtio_1_0.h"
@@ -716,7 +718,6 @@ int   virtioConstruct(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirtio, int iInstance,
                     PFNVIRTIODEVCAPREAD devCapReadCallback, PFNVIRTIODEVCAPWRITE devCapWriteCallback,
                     uint16_t cbDevSpecificCap)
 {
-
     RT_NOREF(nQueues);
 
     /* Init handles and log related stuff. */
@@ -730,13 +731,6 @@ int   virtioConstruct(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirtio, int iInstance,
     pVirtio->pfnVirtioDevCapRead     = devCapReadCallback;
     pVirtio->pfnVirtioDevCapWrite    = devCapWriteCallback;
 
-    int rc = VINF_SUCCESS;
-    rc = PDMDevHlpPCIIORegionRegister(pDevIns, uVirtioRegion, 32, PCI_ADDRESS_SPACE_MEM, virtioR3Map);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-            N_("virtio: cannot register PCI Capabilities address space")); /* can we put params in this error? */
-
-
     /* Set PCI config registers (assume 32-bit mode) */
     PCIDevSetRevisionId        (&pVirtio->dev, DEVICE_PCI_REVISION_ID_VIRTIO);
     PCIDevSetVendorId          (&pVirtio->dev, DEVICE_PCI_VENDOR_ID_VIRTIO);
@@ -749,6 +743,20 @@ int   virtioConstruct(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirtio, int iInstance,
     PCIDevSetInterruptLine     (&pVirtio->dev, pPciParams->uInterruptLine);
     PCIDevSetInterruptPin      (&pVirtio->dev, pPciParams->uInterruptPin);
 
+    int rc = VINF_SUCCESS;
+    /* Register PCI device */
+    rc = PDMDevHlpPCIRegister(pDevIns, &pVirtio->dev);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+            N_("virtio: cannot register PCI Device")); /* can we put params in this error? */
+
+    pVirtio->IBase = pDevIns->IBase;
+
+    rc = PDMDevHlpPCIIORegionRegister(pDevIns, uVirtioRegion, 32, PCI_ADDRESS_SPACE_MEM, virtioR3Map);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+            N_("virtio: cannot register PCI Capabilities address space")); /* can we put params in this error? */
+
     /** Build PCI vendor-specific capabilities list for exchanging
      *  VirtIO device capabilities with driver */
 
@@ -757,63 +765,57 @@ int   virtioConstruct(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirtio, int iInstance,
         fMsiSupport = true;
 #endif
     uint8_t uCfgCapOffset = 0x40;
-    PVIRTIOPCICAP pCommonCfg = (PVIRTIOPCICAP)&pVirtio->dev.abConfig[uCfgCapOffset];
-    pCommonCfg->uCapVndr = VIRTIO_PCI_CAP_ID_VENDOR;
-    pCommonCfg->uCapNext = uCfgCapOffset += sizeof(VIRTIOPCICAP);
-    pCommonCfg->uCfgType = VIRTIO_PCI_CAP_COMMON_CFG;
-    pCommonCfg->uBar     = uVirtioRegion;
-    pCommonCfg->uOffset  = 0;
-    pCommonCfg->uLength  = sizeof(VIRTIOPCICAP);
+    /* Capability will be mapped via VirtIO 1.0: struct virtio_pci_common_cfg (VIRTIOCOMMONCFG)*/
+    PVIRTIOPCICAP pCfg = pVirtio->pCommonCfg = (PVIRTIOPCICAP)&pVirtio->dev.abConfig[uCfgCapOffset];
+    pCfg->uCapVndr = VIRTIO_PCI_CAP_ID_VENDOR;
+    pCfg->uCapNext = uCfgCapOffset += sizeof(VIRTIOPCICAP);
+    pCfg->uCfgType = VIRTIO_PCI_CAP_COMMON_CFG;
+    pCfg->uBar     = uVirtioRegion;
+    pCfg->uOffset  = 0;
+    pCfg->uLength  = sizeof(VIRTIOPCICAP);
 
-    PVIRTIOPCICAP pNotifyCfg = (PVIRTIOPCICAP)&pVirtio->dev.abConfig[uCfgCapOffset];
-    pNotifyCfg->uCapVndr = VIRTIO_PCI_CAP_ID_VENDOR;
-    pNotifyCfg->uCapNext = uCfgCapOffset += sizeof(VIRTIOPCICAP);
-    pNotifyCfg->uCfgType = VIRTIO_PCI_CAP_NOTIFY_CFG;
-    pNotifyCfg->uBar     = uVirtioRegion;
-    pNotifyCfg->uOffset  = pVirtio->pCommonCfg->uOffset + sizeof(VIRTIOCOMMONCFG);
-    pNotifyCfg->uLength  = sizeof(VIRTIOPCICAP);
+    /* Capability will be mapped via VirtIO 1.0: struct virtio_pci_notify_cap (VIRTIONOTIFYCAP)*/
+    pCfg = pVirtio->pNotifyCap = (PVIRTIOPCICAP)&pVirtio->dev.abConfig[uCfgCapOffset];
+    pCfg->uCapVndr = VIRTIO_PCI_CAP_ID_VENDOR;
+    pCfg->uCapNext = uCfgCapOffset += sizeof(VIRTIOPCICAP);
+    pCfg->uCfgType = VIRTIO_PCI_CAP_NOTIFY_CFG;
+    pCfg->uBar     = uVirtioRegion;
+    pCfg->uOffset  = pVirtio->pCommonCfg->uOffset + sizeof(VIRTIOCOMMONCFG);
+    pCfg->uLength  = sizeof(VIRTIOPCICAP);
 
-    PVIRTIOPCICAP pISRConfig = (PVIRTIOPCICAP)&pVirtio->dev.abConfig[uCfgCapOffset];
-    pISRConfig->uCapVndr = VIRTIO_PCI_CAP_ID_VENDOR;
-    pISRConfig->uCapNext = uCfgCapOffset += sizeof(VIRTIOPCICAP);
-    pISRConfig->uCfgType = VIRTIO_PCI_CAP_ISR_CFG;
-    pISRConfig->uBar     = uVirtioRegion;
-    pISRConfig->uOffset  = pVirtio->pNotifyCfg->uOffset + sizeof(VIRTIONOTIFYCFG);
-    pISRConfig->uLength  = sizeof(VIRTIOPCICAP);
+    /* Capability will be mapped via VirtIO 1.0: uint8_t (VIRTIOISRCAP)  */
+    pCfg = pVirtio->pISRCap = (PVIRTIOPCICAP)&pVirtio->dev.abConfig[uCfgCapOffset];
+    pCfg->uCapVndr = VIRTIO_PCI_CAP_ID_VENDOR;
+    pCfg->uCapNext = uCfgCapOffset += sizeof(VIRTIOPCICAP);
+    pCfg->uCfgType = VIRTIO_PCI_CAP_ISR_CFG;
+    pCfg->uBar     = uVirtioRegion;
+    pCfg->uOffset  = pVirtio->pNotifyCap->uOffset + sizeof(VIRTIONOTIFYCAP);
+    pCfg->uLength  = sizeof(VIRTIOPCICAP);
 
-    PVIRTIOPCICAP pPCIConfig = (PVIRTIOPCICAP)&pVirtio->dev.abConfig[uCfgCapOffset];
-    pPCIConfig->uCapVndr = VIRTIO_PCI_CAP_ID_VENDOR;
-    pPCIConfig->uCapNext = (uint8_t)(fMsiSupport || cbDevSpecificCap ? (uCfgCapOffset += sizeof(VIRTIOPCICAP)): 0);
-    pPCIConfig->uCfgType = VIRTIO_PCI_CAP_PCI_CFG;
-    pPCIConfig->uBar     = uVirtioRegion;
-    pPCIConfig->uOffset  = pVirtio->pISRConfig->uOffset + sizeof(VIRTIOISRCFG);
-    pPCIConfig->uLength  = sizeof(VIRTIOPCICAP);
-
-    pVirtio->pCommonCfg = pCommonCfg;
-    pVirtio->pNotifyCfg = pNotifyCfg;
-    pVirtio->pISRConfig = pISRConfig;
-    pVirtio->pPCIConfig = pPCIConfig;
+    /* Capability will be mapped via VirtIO 1.0: struct virtio_pci_cfg_cap (VIRTIOPCICAP) */
+    pCfg = pVirtio->pPCICfgCap = (PVIRTIOPCICAP)&pVirtio->dev.abConfig[uCfgCapOffset];
+    pCfg->uCapVndr = VIRTIO_PCI_CAP_ID_VENDOR;
+    pCfg->uCapNext = (uint8_t)(fMsiSupport || cbDevSpecificCap ? (uCfgCapOffset += sizeof(VIRTIOPCICAP)): 0);
+    pCfg->uCfgType = VIRTIO_PCI_CAP_PCI_CFG;
+    pCfg->uBar     = uVirtioRegion;
+    pCfg->uOffset  = pVirtio->pISRCap->uOffset + sizeof(VIRTIOISRCAP);
+    pCfg->uLength  = sizeof(VIRTIOPCICAP);
 
     if (cbDevSpecificCap)
     {
-        PVIRTIOPCICAP pDeviceCfg = (PVIRTIOPCICAP)&pVirtio->dev.abConfig[uCfgCapOffset];
-        pDeviceCfg->uCapVndr = VIRTIO_PCI_CAP_ID_VENDOR;
-        pDeviceCfg->uCapNext = (uint8_t)(fMsiSupport ? (uCfgCapOffset += sizeof(VIRTIOPCICAP)) : 0);
-        pDeviceCfg->uCfgType = VIRTIO_PCI_CAP_DEVICE_CFG;
-        pDeviceCfg->uBar     = uVirtioRegion;
-        pDeviceCfg->uOffset  = pVirtio->pPCIConfig->uOffset + sizeof(VIRTIOCAPCFG);
-        pDeviceCfg->uLength  = sizeof(VIRTIOPCICAP);
-        pVirtio->pDeviceCfg  = pDeviceCfg;
+     /* Capability will be mapped via VirtIO 1.0: struct virtio_pci_dev_cap (VIRTIODEVCAP)*/
+        pCfg = pVirtio->pDeviceCap = (PVIRTIOPCICAP)&pVirtio->dev.abConfig[uCfgCapOffset];
+        pCfg->uCapVndr = VIRTIO_PCI_CAP_ID_VENDOR;
+        pCfg->uCapNext = (uint8_t)(fMsiSupport ? (uCfgCapOffset += sizeof(VIRTIOPCICAP)) : 0);
+        pCfg->uCfgType = VIRTIO_PCI_CAP_DEVICE_CFG;
+        pCfg->uBar     = uVirtioRegion;
+        pCfg->uOffset  = pVirtio->pPCICfgCap->uOffset + sizeof(VIRTIOPCICAP);
+        pCfg->uLength  = sizeof(VIRTIOPCICAP);
     }
 
     /* Set offset to first capability and enable PCI dev capabilities */
     PCIDevSetCapabilityList    (&pVirtio->dev, 0x40);
     PCIDevSetStatus            (&pVirtio->dev, VBOX_PCI_STATUS_CAP_LIST);
-
-    /* Register PCI device */
-    rc = PDMDevHlpPCIRegister(pDevIns, &pVirtio->dev);
-    if (RT_FAILURE(rc))
-        return rc;
 
     if (fMsiSupport)
     {
@@ -833,11 +835,12 @@ int   virtioConstruct(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirtio, int iInstance,
     }
 
     /* Status driver */
-    PPDMIBASE pBase;
-    rc = PDMDevHlpDriverAttach(pDevIns, PDM_STATUS_LUN, &pVirtio->IBase, &pBase, "Status Port");
+    PPDMIBASE pUpstreamBase;
+
+    rc = PDMDevHlpDriverAttach(pDevIns, PDM_STATUS_LUN, &pVirtio->IBase, &pUpstreamBase, "Status Port");
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("Failed to attach the status LUN"));
-    pVirtio->pLedsConnector = PDMIBASE_QUERY_INTERFACE(pBase, PDMILEDCONNECTORS);
+    pVirtio->pLedsConnector = PDMIBASE_QUERY_INTERFACE(&pVirtio->IBase, PDMILEDCONNECTORS);
 
     return rc;
 }

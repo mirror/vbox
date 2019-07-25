@@ -54,13 +54,11 @@
  */
 typedef struct VIRTIOSCSITARGET
 {
-
-
-    /** Pointer to the owning virtioScsi device instance. - R3 pointer */
+    /** Pointer to PCI device that owns this target instance. - R3 /pointer */
     R3PTRTYPE(struct VIRTIOSCSI *)  pVirtioScsiR3;
-    /** Pointer to the owning virtioScsi device instance. - R0 pointer */
+    /** Pointer to PCI device that owns this target instance. - R0 pointer */
     R3PTRTYPE(struct VIRTIOSCSI *)  pVirtioScsiR0;
-    /** Pointer to the owning virtioScsi device instance. - RC pointer */
+    /** Pointer to PCI device that owns this target instance. - RC pointer */
     R3PTRTYPE(struct VIRTIOSCSI *)  pVirtioScsiRC;
 
     /** Pointer to attached driver's base interface. */
@@ -107,19 +105,15 @@ typedef struct VIRTIOSCSITARGET
  */
 typedef struct VIRTIOSCSI
 {
-
-    PPDMDEVINSR3           pDevInsR3;              /**< Device instance - R3. */
-    PPDMDEVINSR0           pDevInsR0;              /**< Device instance - R0. */
-    PPDMDEVINSRC           pDevInsRC;              /**< Device instance - RC. */
-
     /* virtioState must be first member */
     VIRTIOSTATE                     virtioState;
 
     /* SCSI target instances data */
     VIRTIOSCSITARGET                aTargetInstances[VIRTIOSCSI_MAX_TARGETS];
 
-    /** Base address of the I/O ports. */
-    RTIOPORT                        IOPortBase;
+    PPDMDEVINSR3           pDevInsR3;              /**< Device instance - R3. */
+    PPDMDEVINSR0           pDevInsR0;              /**< Device instance - R0. */
+    PPDMDEVINSRC           pDevInsRC;              /**< Device instance - RC. */
 
     /** Base address of the memory mapping. */
     RTGCPHYS                        GCPhysMMIOBase;
@@ -765,6 +759,10 @@ static DECLCALLBACK(void *) virtioScsiR3DeviceQueryInterface(PPDMIBASE pInterfac
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pDevIns->IBase);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMEDIAPORT, &pTarget->IMediaPort);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMEDIAEXPORT, &pTarget->IMediaExPort);
+
+    /* This call back is necessary to get Status / LED support */
+    return virtioQueryInterface(pInterface, pszIID);
+
     return NULL;
 }
 
@@ -866,15 +864,16 @@ static DECLCALLBACK(int) virtioScsiConstruct(PPDMDEVINS pDevIns, int iInstance, 
     pVirtioPciParams->uInterruptLine = 0x00;
     pVirtioPciParams->uInterruptPin  = 0x01;
 
+    PVIRTIOSTATE pVirtio = &(pThis->virtioState);
+    pDevIns->IBase.pfnQueryInterface = virtioScsiR3DeviceQueryInterface;
 
-    PVIRTIOSTATE pVirtioScsi = &(pThis->virtioState);
-    rc = virtioConstruct(pDevIns, pVirtioScsi, iInstance, pVirtioPciParams,
+    rc = virtioConstruct(pDevIns, pVirtio, iInstance, pVirtioPciParams,
                          VIRTIO_SCSI_NAME_FMT, VIRTIO_SCSI_N_QUEUES, VIRTIO_SCSI_REGION_PCI_CAP,
-                         virtioScsiR3DevCapRead, virtioScsiR3DevCapWrite, sizeof(VIRTIODEVCFG));
+                         virtioScsiR3DevCapRead, virtioScsiR3DevCapWrite, sizeof(VIRTIODEVCAP));
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("virtio-scsi: failed to initialize VirtIO"));
 
-    rc = PDMDevHlpPCIIORegionRegister(pDevIns, VIRTIO_SCSI_REGION_PORT_IO, 32,
+    rc = PDMDevHlpPCIIORegionRegister(pDevIns, VIRTIO_SCSI_REGION_MEM_IO, 32,
                                       PCI_ADDRESS_SPACE_MEM, virtioScsiR3Map);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("virtio-scsi: cannot register PCI mmio address space"));
@@ -903,7 +902,7 @@ static DECLCALLBACK(int) virtioScsiConstruct(PPDMDEVINS pDevIns, int iInstance, 
     {
         PVIRTIOSCSITARGET pTarget = &pThis->aTargetInstances[iLUN];
 
-        if (RTStrAPrintf(&pTarget->pszLunName, "VSCSI%u", iLUN) < 0)
+        if (RTStrAPrintf(&pTarget->pszLunName, "VIRTIOSCSI%u", iLUN) < 0)
             AssertLogRelFailedReturn(VERR_NO_MEMORY);
 
         /* Initialize static parts of the device. */
@@ -918,7 +917,6 @@ static DECLCALLBACK(int) virtioScsiConstruct(PPDMDEVINS pDevIns, int iInstance, 
         pTarget->IMediaExPort.pfnMediumEjected           = virtioScsiR3MediumEjected;
         pTarget->IMediaExPort.pfnIoReqQueryBuf           = NULL;
         pTarget->IMediaExPort.pfnIoReqQueryDiscardRanges = NULL;
-        pDevIns->IBase.pfnQueryInterface                 = virtioScsiR3DeviceQueryInterface;
 
         LogFunc(("Attaching LUN: %s\n", pTarget->pszLunName));
 
@@ -985,11 +983,11 @@ const PDMDEVREG g_DeviceVirtioSCSI =
     /* szName */
     "virtio-scsi",
     /* szRCMod */
-    "",
+    "VBoxDDRC.rc",
     /* szR0Mod */
-    "",
+    "VBoxDDR0.r0",
     /* pszDescription */
-    "Virtio SCSI.\n",
+    "Virtio Host SCSI.\n",
     /* fFlags */
 #ifdef VIRTIOSCSI_GC_SUPPORT
     PDM_DEVREG_FLAGS_DEFAULT_BITS | PDM_DEVREG_FLAGS_RC | PDM_DEVREG_FLAGS_R0,

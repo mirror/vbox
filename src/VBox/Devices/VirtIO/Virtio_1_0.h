@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Virtio_1_0.h - Virtio Declarations
+ * Virtio_1_0p .h - Virtio Declarations
  */
 
 /*
@@ -174,9 +174,9 @@ typedef struct virtio_pci_notify_cap
 {
         struct virtio_pci_cap cap;
         uint32_t uNotifyOffMultiplier; /* notify_off_multiplier                        */
-} VIRTIONOTIFYCFG, *PVIRTIONOTIFYCFG;
+} VIRTIONOTIFYCAP, *PVIRTIONOTIFYCAP;
 
-typedef uint32_t VIRTIOISRCFG, *PVIRTIOISRCFG;
+typedef uint8_t VIRTIOISRCAP, *PVIRTIOISRCAP;
 
 /* Device-specific configuration (if any) ... T.B.D. (if and when neeed), provide an
  * interface/callback that lets the client of this code manage it, if and when needed.
@@ -184,12 +184,12 @@ typedef uint32_t VIRTIOISRCFG, *PVIRTIOISRCFG;
  * region handler */
 typedef struct virtio_pci_dev_cfg
 {
-} VIRTIODEVCFG, *PVIRTIODEVCFG;
+} VIRTIODEVCAP, *PVIRTIODEVCAP;
 
 typedef struct virtio_pci_cfg_cap {
         struct virtio_pci_cap cap;
         uint8_t pci_cfg_data[4]; /* Data for BAR access. */
-} VIRTIOCAPCFG, *PVIRTIOCAPCFG;
+} VIRTIOPCICFGCAP, *PVIRTIOPCICFGCAP;
 
 typedef struct virtq_desc  /* VirtIO 1.0 specification formal name of this struct     */
 {
@@ -318,10 +318,10 @@ typedef struct VIRTIOSTATE
     RTGCPHYS               GCPhysPciCapBase;
 
     VIRTIOCOMMONCFG        pGcPhysVirtioCommonCfg;
-    VIRTIONOTIFYCFG        pGcPhysVirtioNotifyCfg;
-    VIRTIOISRCFG           pGcPhysVirtioIsrCfg;
-    VIRTIOCAPCFG           pGcPhysVirtioCapCfg;
-    VIRTIODEVCFG           pGcPhysVirtioDevCfg;
+    VIRTIONOTIFYCAP        pGcPhysVirtioNotifyCap;
+    VIRTIOISRCAP           pGcPhysVirtioIsrCap;
+    VIRTIODEVCAP           pGcPhysVirtioDevCap;
+    VIRTIOPCICFGCAP        pGcPhysVirtioPciCap;
 
     /** Callbacks when guest driver reads or writes VirtIO device-specific capabilities(s) */
 
@@ -352,10 +352,10 @@ typedef struct VIRTIOSTATE
     VQUEUE                 Queues[VIRTIO_MAX_NQUEUES];
 
     PVIRTIOPCICAP pCommonCfg;
-    PVIRTIOPCICAP pNotifyCfg;
-    PVIRTIOPCICAP pISRConfig;
-    PVIRTIOPCICAP pPCIConfig;
-    PVIRTIOPCICAP pDeviceCfg;
+    PVIRTIOPCICAP pNotifyCap;
+    PVIRTIOPCICAP pISRCap;
+    PVIRTIOPCICAP pPCICfgCap;
+    PVIRTIOPCICAP pDeviceCap;
 } VIRTIOSTATE, *PVIRTIOSTATE;
 
 void    virtioRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta);
