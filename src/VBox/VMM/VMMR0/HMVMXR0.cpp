@@ -11644,24 +11644,17 @@ static void hmR0VmxPostRunGuest(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient, int r
 
             /*
              * Sync the TPR shadow with our APIC state.
-             *
-             * With nested-guests, mark the virtual-APIC page as dirty so it can be synced
-             * when performing the nested-guest VM-exit.
              */
-            if (pVmcsInfo->u32ProcCtls & VMX_PROC_CTLS_USE_TPR_SHADOW)
+            if (   !pVmxTransient->fIsNestedGuest
+                && (pVmcsInfo->u32ProcCtls & VMX_PROC_CTLS_USE_TPR_SHADOW))
             {
-                if (!pVmxTransient->fIsNestedGuest)
+                Assert(pVmcsInfo->pbVirtApic);
+                if (pVmxTransient->u8GuestTpr != pVmcsInfo->pbVirtApic[XAPIC_OFF_TPR])
                 {
-                    Assert(pVmcsInfo->pbVirtApic);
-                    if (pVmxTransient->u8GuestTpr != pVmcsInfo->pbVirtApic[XAPIC_OFF_TPR])
-                    {
-                        rc = APICSetTpr(pVCpu, pVmcsInfo->pbVirtApic[XAPIC_OFF_TPR]);
-                        AssertRC(rc);
-                        ASMAtomicOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_APIC_TPR);
-                    }
+                    rc = APICSetTpr(pVCpu, pVmcsInfo->pbVirtApic[XAPIC_OFF_TPR]);
+                    AssertRC(rc);
+                    ASMAtomicOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_APIC_TPR);
                 }
-                else
-                    pVCpu->cpum.GstCtx.hwvirt.vmx.fVirtApicPageDirty = true;
             }
 
             Assert(VMMRZCallRing3IsEnabled(pVCpu));
