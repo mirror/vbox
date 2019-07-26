@@ -511,7 +511,7 @@ void UIDetailsElement::sltHandleAnchorClicked(const QString &strAnchor)
             if (pPopup)
             {
                 /* Prepare editor: */
-                UIBaseMemoryEditor *pEditor = new UIBaseMemoryEditor(pPopup);
+                UIBaseMemoryEditor *pEditor = new UIBaseMemoryEditor(pPopup, true /* with label */);
                 if (pEditor)
                 {
                     pEditor->setValue(strData.section(',', 0, 0).toInt());
