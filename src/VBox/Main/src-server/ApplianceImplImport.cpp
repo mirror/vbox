@@ -1208,7 +1208,7 @@ HRESULT Appliance::i_gettingCloudData(TaskCloud *pTask)
         ComPtr<ICloudProviderManager> cpm;
         hrc = mVirtualBox->COMGETTER(CloudProviderManager)(cpm.asOutParam());
         if (FAILED(hrc))
-            return setErrorVrc(VERR_COM_OBJECT_NOT_FOUND, tr("%s: Cloud provider manager object wasn't found", __FUNCTION__));
+            return setErrorVrc(VERR_COM_OBJECT_NOT_FOUND, tr("%s: Cloud provider manager object wasn't found"), __FUNCTION__);
 
         Utf8Str strProviderName = pTask->locInfo.strProvider;
         ComPtr<ICloudProvider> cloudProvider;
@@ -1216,20 +1216,20 @@ HRESULT Appliance::i_gettingCloudData(TaskCloud *pTask)
         hrc = cpm->GetProviderByShortName(Bstr(strProviderName.c_str()).raw(), cloudProvider.asOutParam());
 
         if (FAILED(hrc))
-            return setErrorVrc(VERR_COM_OBJECT_NOT_FOUND, tr("%s: Cloud provider object wasn't found", __FUNCTION__));
+            return setErrorVrc(VERR_COM_OBJECT_NOT_FOUND, tr("%s: Cloud provider object wasn't found"), __FUNCTION__);
 
         Utf8Str profileName(parts.at(0));//profile
         if (profileName.isEmpty())
-            return setErrorVrc(VBOX_E_OBJECT_NOT_FOUND, tr("%s: Cloud user profile name wasn't found", __FUNCTION__));
+            return setErrorVrc(VBOX_E_OBJECT_NOT_FOUND, tr("%s: Cloud user profile name wasn't found"), __FUNCTION__);
 
         hrc = cloudProvider->GetProfileByName(Bstr(parts.at(0)).raw(), cloudProfile.asOutParam());
         if (FAILED(hrc))
-            return setErrorVrc(VERR_COM_OBJECT_NOT_FOUND, tr("%s: Cloud profile object wasn't found", __FUNCTION__));
+            return setErrorVrc(VERR_COM_OBJECT_NOT_FOUND, tr("%s: Cloud profile object wasn't found"), __FUNCTION__);
 
         ComObjPtr<ICloudClient> cloudClient;
         hrc = cloudProfile->CreateCloudClient(cloudClient.asOutParam());
         if (FAILED(hrc))
-            return setErrorVrc(VERR_COM_OBJECT_NOT_FOUND, tr("%s: Cloud client object wasn't found", __FUNCTION__));
+            return setErrorVrc(VERR_COM_OBJECT_NOT_FOUND, tr("%s: Cloud client object wasn't found"), __FUNCTION__);
 
         m->virtualSystemDescriptions.clear();//clear all for assurance before creating new
         std::vector<ComPtr<IVirtualSystemDescription> > vsdArray;
@@ -1238,7 +1238,7 @@ HRESULT Appliance::i_gettingCloudData(TaskCloud *pTask)
         hrc = createVirtualSystemDescriptions(requestedVSDnums, &newVSDnums);
         if (FAILED(hrc)) throw hrc;
         if (requestedVSDnums != newVSDnums)
-            throw setErrorVrc(VERR_MISMATCH, tr("%s: Requested and created numbers of VSD are differ.", __FUNCTION__));
+            throw setErrorVrc(VERR_MISMATCH, tr("%s: Requested and created numbers of VSD are differ."), __FUNCTION__);
 
         hrc = getVirtualSystemDescriptions(vsdArray);
         if (FAILED(hrc)) throw hrc;
@@ -1305,7 +1305,7 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
     ComPtr<ICloudProviderManager> cpm;
     hrc = mVirtualBox->COMGETTER(CloudProviderManager)(cpm.asOutParam());
     if (FAILED(hrc))
-        return setErrorVrc(VERR_COM_OBJECT_NOT_FOUND, tr("%s: Cloud provider manager object wasn't found", __FUNCTION__));
+        return setErrorVrc(VERR_COM_OBJECT_NOT_FOUND, tr("%s: Cloud provider manager object wasn't found"), __FUNCTION__);
 
     Utf8Str strProviderName = pTask->locInfo.strProvider;
     ComPtr<ICloudProvider> cloudProvider;
@@ -1313,7 +1313,7 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
     hrc = cpm->GetProviderByShortName(Bstr(strProviderName.c_str()).raw(), cloudProvider.asOutParam());
 
     if (FAILED(hrc))
-        return setErrorVrc(VERR_COM_OBJECT_NOT_FOUND, tr("%s: Cloud provider object wasn't found", __FUNCTION__));
+        return setErrorVrc(VERR_COM_OBJECT_NOT_FOUND, tr("%s: Cloud provider object wasn't found"), __FUNCTION__);
 
     /* Get the actual VSD, only one VSD object can be there for now so just call the function front() */
     ComPtr<IVirtualSystemDescription> vsd = m->virtualSystemDescriptions.front();
@@ -1346,20 +1346,20 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
 
     GET_VSD_DESCRIPTION_BY_TYPE(VirtualSystemDescriptionType_CloudProfileName)
     if (aVBoxValues.size() == 0)
-        return setErrorVrc(VERR_NOT_FOUND, tr("%s: Cloud user profile name wasn't found", __FUNCTION__));
+        return setErrorVrc(VERR_NOT_FOUND, tr("%s: Cloud user profile name wasn't found"), __FUNCTION__);
 
     Utf8Str profileName(aVBoxValues[0]);
     if (profileName.isEmpty())
-        return setErrorVrc(VERR_INVALID_STATE, tr("%s: Cloud user profile name is empty", __FUNCTION__));
+        return setErrorVrc(VERR_INVALID_STATE, tr("%s: Cloud user profile name is empty"), __FUNCTION__);
 
     hrc = cloudProvider->GetProfileByName(aVBoxValues[0], cloudProfile.asOutParam());
     if (FAILED(hrc))
-        return setErrorVrc(VERR_COM_OBJECT_NOT_FOUND, tr("%s: Cloud profile object wasn't found", __FUNCTION__));
+        return setErrorVrc(VERR_COM_OBJECT_NOT_FOUND, tr("%s: Cloud profile object wasn't found"), __FUNCTION__);
 
     ComObjPtr<ICloudClient> cloudClient;
     hrc = cloudProfile->CreateCloudClient(cloudClient.asOutParam());
     if (FAILED(hrc))
-        return setErrorVrc(VERR_COM_OBJECT_NOT_FOUND, tr("%s: Cloud client object wasn't found", __FUNCTION__));
+        return setErrorVrc(VERR_COM_OBJECT_NOT_FOUND, tr("%s: Cloud client object wasn't found"), __FUNCTION__);
 
     ComPtr<IProgress> pProgress;
     hrc = pTask->pProgress.queryInterfaceTo(pProgress.asOutParam());
@@ -1484,7 +1484,7 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
     {
         GET_VSD_DESCRIPTION_BY_TYPE(VirtualSystemDescriptionType_CloudInstanceId)//aVBoxValues is set in this #define
         if (aVBoxValues.size() == 0)
-            hrc = setErrorVrc(VERR_NOT_FOUND, tr("%s: Cloud cleanup action - the instance wasn't found", __FUNCTION__));
+            hrc = setErrorVrc(VERR_NOT_FOUND, tr("%s: Cloud cleanup action - the instance wasn't found"), __FUNCTION__);
         else
         {
             vsdData = aVBoxValues[0];
@@ -1975,7 +1975,7 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
 
             if (SUCCEEDED(hrc))
             {
-                pTask->pProgress->SetNextOperation(BstrFmt(tr("Creating new VM '%s'", strVMName.c_str())).raw(), 50);
+                pTask->pProgress->SetNextOperation(BstrFmt(tr("Creating new VM '%s'"), strVMName.c_str()).raw(), 50);
                 /* Create the import stack to comply OVF logic.
                  * Before we filled some other data structures which are needed by OVF logic too.*/
                 ImportStack stack(pTask->locInfo, m->pReader->m_mapDisks, pTask->pProgress, NIL_RTVFSFSSTREAM);
