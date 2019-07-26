@@ -28,7 +28,6 @@
  * VMM is made up of these components:
  *  - @subpage pg_cfgm
  *  - @subpage pg_cpum
- *  - @subpage pg_csam
  *  - @subpage pg_dbgf
  *  - @subpage pg_em
  *  - @subpage pg_gim
@@ -38,7 +37,6 @@
  *  - @subpage pg_iem
  *  - @subpage pg_iom
  *  - @subpage pg_mm
- *  - @subpage pg_patm
  *  - @subpage pg_pdm
  *  - @subpage pg_pgm
  *  - @subpage pg_rem
