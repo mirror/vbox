@@ -121,8 +121,6 @@
 #include <VBox/vmm/em.h>
 #include <VBox/sup.h>
 #include <VBox/vmm/dbgf.h>
-#include <VBox/vmm/csam.h>
-#include <VBox/vmm/patm.h>
 #include <VBox/vmm/apic.h>
 #ifdef VBOX_WITH_REM
 # include <VBox/vmm/rem.h>
@@ -882,6 +880,7 @@ VMMR3_INT_DECL(int) VMMR3Term(PVM pVM)
 VMMR3_INT_DECL(void) VMMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
 {
     LogFlow(("VMMR3Relocate: offDelta=%RGv\n", offDelta));
+    RT_NOREF(offDelta);
 
     /*
      * Update the logger.
