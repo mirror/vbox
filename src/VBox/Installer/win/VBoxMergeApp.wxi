@@ -302,10 +302,12 @@
         <File Id="file_VBoxRes.dll" Name="VBoxRes.dll"
               Source="$(env.PATH_OUT)\bin\VBoxRes.dll" />
 
+<?if $(env.VBOX_WITH_RAW_MODE) = "yes" ?>
         <File Id="file_VMMRC.rc" Name="VMMRC.rc"
               Source="$(env.PATH_OUT)\bin\VMMRC.rc" />
         <File Id="file_VBoxDDRC.rc" Name="VBoxDDRC.rc"
               Source="$(env.PATH_OUT)\bin\VBoxDDRC.rc" />
+<?endif ?>
 
         <File Id="file_VMMR0.r0" Name="VMMR0.r0"
               Source="$(env.PATH_OUT)\bin\VMMR0.r0" />
