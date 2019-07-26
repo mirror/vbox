@@ -175,21 +175,6 @@ void vmmTermFormatTypes(void)
 
 
 /**
- * Gets the bottom of the hypervisor stack - RC Ptr.
- *
- * (The returned address is not actually writable, only after it's decremented
- * by a push/ret/whatever does it become writable.)
- *
- * @returns bottom of the stack.
- * @param   pVCpu       The cross context virtual CPU structure.
- */
-VMM_INT_DECL(RTRCPTR) VMMGetStackRC(PVMCPU pVCpu)
-{
-    return (RTRCPTR)pVCpu->vmm.s.pbEMTStackBottomRC;
-}
-
-
-/**
  * Gets the ID of the virtual CPU associated with the calling thread.
  *
  * @returns The CPU ID. NIL_VMCPUID if the thread isn't an EMT.
@@ -407,18 +392,6 @@ VMMDECL(PVMCPU) VMMGetCpuById(PVM pVM, RTCPUID idCpu)
 VMM_INT_DECL(uint32_t) VMMGetSvnRev(void)
 {
     return VBOX_SVN_REV;
-}
-
-
-/**
- * Queries the current switcher
- *
- * @returns active switcher
- * @param   pVM             The cross context VM structure.
- */
-VMM_INT_DECL(VMMSWITCHER) VMMGetSwitcher(PVM pVM)
-{
-    return pVM->vmm.s.enmSwitcher;
 }
 
 

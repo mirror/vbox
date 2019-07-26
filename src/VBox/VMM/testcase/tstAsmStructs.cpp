@@ -24,7 +24,6 @@
 #include <VBox/vmm/trpm.h>
 #include "TRPMInternal.h"
 #include "HMInternal.h"
-#include "VMMSwitcher.h"
 #include "VMMInternal.h"
 #include <VBox/vmm/vm.h>
 #include <VBox/vmm/hm_vmx.h>

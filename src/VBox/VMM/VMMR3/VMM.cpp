@@ -131,7 +131,6 @@
 #include <VBox/vmm/ftm.h>
 #include <VBox/vmm/tm.h>
 #include "VMMInternal.h"
-#include "VMMSwitcher.h"
 #include <VBox/vmm/vm.h>
 #include <VBox/vmm/uvm.h>
 
@@ -198,14 +197,12 @@ VMMR3_INT_DECL(int) VMMR3Init(PVM pVM)
     /*
      * Assert alignment, sizes and order.
      */
-    AssertMsg(pVM->vmm.s.offVM == 0, ("Already initialized!\n"));
     AssertCompile(sizeof(pVM->vmm.s) <= sizeof(pVM->vmm.padding));
-    AssertCompile(sizeof(pVM->aCpus[0].vmm.s) <= sizeof(pVM->aCpus[0].vmm.padding));
+    AssertCompile(RT_SIZEOFMEMB(VMCPU, vmm.s) <= RT_SIZEOFMEMB(VMCPU, vmm.padding));
 
     /*
      * Init basic VM VMM members.
      */
-    pVM->vmm.s.offVM = RT_UOFFSETOF(VM, vmm);
     pVM->vmm.s.pahEvtRendezvousEnterOrdered     = NULL;
     pVM->vmm.s.hEvtRendezvousEnterOneByOne      = NIL_RTSEMEVENT;
     pVM->vmm.s.hEvtMulRendezvousEnterAllAtOnce  = NIL_RTSEMEVENTMULTI;
@@ -286,45 +283,34 @@ VMMR3_INT_DECL(int) VMMR3Init(PVM pVM)
     /*
      * Init various sub-components.
      */
-    rc = vmmR3SwitcherInit(pVM);
+    rc = vmmR3InitStacks(pVM);
     if (RT_SUCCESS(rc))
     {
-        rc = vmmR3InitStacks(pVM);
-        if (RT_SUCCESS(rc))
-        {
-            rc = vmmR3InitLoggers(pVM);
+        rc = vmmR3InitLoggers(pVM);
 
 #ifdef VBOX_WITH_NMI
-            /*
-             * Allocate mapping for the host APIC.
-             */
-            if (RT_SUCCESS(rc))
-            {
-                rc = MMR3HyperReserve(pVM, PAGE_SIZE, "Host APIC", &pVM->vmm.s.GCPtrApicBase);
-                AssertRC(rc);
-            }
-#endif
-            if (RT_SUCCESS(rc))
-            {
-                /*
-                 * Debug info and statistics.
-                 */
-                DBGFR3InfoRegisterInternal(pVM, "fflags", "Displays the current Forced actions Flags.", vmmR3InfoFF);
-                vmmR3InitRegisterStats(pVM);
-                vmmInitFormatTypes();
-
-                return VINF_SUCCESS;
-            }
+        /*
+         * Allocate mapping for the host APIC.
+         */
+        if (RT_SUCCESS(rc))
+        {
+            rc = MMR3HyperReserve(pVM, PAGE_SIZE, "Host APIC", &pVM->vmm.s.GCPtrApicBase);
+            AssertRC(rc);
         }
-        /** @todo Need failure cleanup. */
+#endif
+        if (RT_SUCCESS(rc))
+        {
+            /*
+             * Debug info and statistics.
+             */
+            DBGFR3InfoRegisterInternal(pVM, "fflags", "Displays the current Forced actions Flags.", vmmR3InfoFF);
+            vmmR3InitRegisterStats(pVM);
+            vmmInitFormatTypes();
 
-        //more todo in here?
-        //if (RT_SUCCESS(rc))
-        //{
-        //}
-        //int rc2 = vmmR3TermCoreCode(pVM);
-        //AssertRC(rc2));
+            return VINF_SUCCESS;
+        }
     }
+    /** @todo Need failure cleanup? */
 
     return rc;
 }
@@ -372,11 +358,7 @@ static int vmmR3InitStacks(PVM pVM)
             else
 #endif
                 pVCpu->vmm.s.CallRing3JmpBufR0.pvSavedStack = MMHyperR3ToR0(pVM, pVCpu->vmm.s.pbEMTStackR3);
-            pVCpu->vmm.s.pbEMTStackRC       = MMHyperR3ToRC(pVM, pVCpu->vmm.s.pbEMTStackR3);
-            pVCpu->vmm.s.pbEMTStackBottomRC = pVCpu->vmm.s.pbEMTStackRC + VMM_STACK_SIZE;
-            AssertRelease(pVCpu->vmm.s.pbEMTStackRC);
 
-            CPUMSetHyperESP(pVCpu, pVCpu->vmm.s.pbEMTStackBottomRC);
         }
     }
 
@@ -396,22 +378,12 @@ static int vmmR3InitLoggers(PVM pVM)
 #define RTLogCalcSizeForR0(cGroups, fFlags) (RT_UOFFSETOF_DYN(VMMR0LOGGER, Logger.afGroups[cGroups]) + PAGE_SIZE)
 
     /*
-     * Allocate RC & R0 Logger instances (they are finalized in the relocator).
+     * Allocate R0 Logger instance (finalized in the relocator).
      */
-#ifdef LOG_ENABLED
+#if defined(LOG_ENABLED) && defined(VBOX_WITH_R0_LOGGING)
     PRTLOGGER pLogger = RTLogDefaultInstance();
     if (pLogger)
     {
-        if (VM_IS_RAW_MODE_ENABLED(pVM))
-        {
-            pVM->vmm.s.cbRCLogger = RT_UOFFSETOF_DYN(RTLOGGERRC, afGroups[pLogger->cGroups]);
-            rc = MMR3HyperAllocOnceNoRel(pVM, pVM->vmm.s.cbRCLogger, 0, MM_TAG_VMM, (void **)&pVM->vmm.s.pRCLoggerR3);
-            if (RT_FAILURE(rc))
-                return rc;
-            pVM->vmm.s.pRCLoggerRC = MMHyperR3ToRC(pVM, pVM->vmm.s.pRCLoggerR3);
-        }
-
-# ifdef VBOX_WITH_R0_LOGGING
         size_t const cbLogger = RTLogCalcSizeForR0(pLogger->cGroups, 0);
         for (VMCPUID i = 0; i < pVM->cCpus; i++)
         {
@@ -425,9 +397,8 @@ static int vmmR3InitLoggers(PVM pVM)
             pVCpu->vmm.s.pR0LoggerR3->cbLogger   = (uint32_t)cbLogger;
             pVCpu->vmm.s.pR0LoggerR0 = MMHyperR3ToR0(pVM, pVCpu->vmm.s.pR0LoggerR3);
         }
-# endif
     }
-#endif /* LOG_ENABLED */
+#endif /* LOG_ENABLED && VBOX_WITH_R0_LOGGING */
 
     /*
      * Release logging.
@@ -435,20 +406,6 @@ static int vmmR3InitLoggers(PVM pVM)
     PRTLOGGER pRelLogger = RTLogRelGetDefaultInstance();
     if (pRelLogger)
     {
-#ifdef VBOX_WITH_RC_RELEASE_LOGGING
-        /*
-         * Allocate RC release logger instances (finalized in the relocator).
-         */
-        if (VM_IS_RAW_MODE_ENABLED(pVM))
-        {
-            pVM->vmm.s.cbRCRelLogger = RT_UOFFSETOF_DYN(RTLOGGERRC, afGroups[pRelLogger->cGroups]);
-            rc = MMR3HyperAllocOnceNoRel(pVM, pVM->vmm.s.cbRCRelLogger, 0, MM_TAG_VMM, (void **)&pVM->vmm.s.pRCRelLoggerR3);
-            if (RT_FAILURE(rc))
-                return rc;
-            pVM->vmm.s.pRCRelLoggerRC = MMHyperR3ToRC(pVM, pVM->vmm.s.pRCRelLoggerR3);
-        }
-#endif
-
         /*
          * Ring-0 release logger.
          */
@@ -798,16 +755,6 @@ VMMR3_INT_DECL(int) VMMR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
         case VMINITCOMPLETED_RING3:
         {
             /*
-             * Set page attributes to r/w for stack pages.
-             */
-            for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
-            {
-                rc = PGMMapSetPage(pVM, pVM->aCpus[idCpu].vmm.s.pbEMTStackRC, VMM_STACK_SIZE,
-                                   X86_PTE_P | X86_PTE_A | X86_PTE_D | X86_PTE_RW);
-                AssertRCReturn(rc, rc);
-            }
-
-            /*
              * Create the EMT yield timer.
              */
             rc = TMR3TimerCreateInternal(pVM, TMCLOCK_REAL, vmmR3YieldEMT, NULL, "EMT Yielder", &pVM->vmm.s.pYieldTimer);
@@ -815,33 +762,6 @@ VMMR3_INT_DECL(int) VMMR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
 
             rc = TMTimerSetMillies(pVM->vmm.s.pYieldTimer, pVM->vmm.s.cYieldEveryMillies);
             AssertRCReturn(rc, rc);
-
-#ifdef VBOX_WITH_NMI
-            /*
-             * Map the host APIC into GC - This is AMD/Intel + Host OS specific!
-             */
-            rc = PGMMap(pVM, pVM->vmm.s.GCPtrApicBase, 0xfee00000, PAGE_SIZE,
-                        X86_PTE_P | X86_PTE_RW | X86_PTE_PWT | X86_PTE_PCD | X86_PTE_A | X86_PTE_D);
-            AssertRCReturn(rc, rc);
-#endif
-
-#ifdef VBOX_STRICT_VMM_STACK
-            /*
-             * Setup the stack guard pages: Two inaccessible pages at each sides of the
-             * stack to catch over/under-flows.
-             */
-            for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
-            {
-                uint8_t *pbEMTStackR3 = pVM->aCpus[idCpu].vmm.s.pbEMTStackR3;
-
-                memset(pbEMTStackR3 - PAGE_SIZE, 0xcc, PAGE_SIZE);
-                MMR3HyperSetGuard(pVM, pbEMTStackR3 - PAGE_SIZE, PAGE_SIZE, true /*fSet*/);
-
-                memset(pbEMTStackR3 + VMM_STACK_SIZE, 0xcc, PAGE_SIZE);
-                MMR3HyperSetGuard(pVM, pbEMTStackR3 + VMM_STACK_SIZE, PAGE_SIZE, true /*fSet*/);
-            }
-            pVM->vmm.s.fStackGuardsStationed = true;
-#endif
             break;
         }
 
@@ -944,22 +864,6 @@ VMMR3_INT_DECL(int) VMMR3Term(PVM pVM)
     RTSemEventDestroy(pVM->vmm.s.hEvtRendezvousRecursionPopCaller);
     pVM->vmm.s.hEvtRendezvousRecursionPopCaller = NIL_RTSEMEVENT;
 
-#ifdef VBOX_STRICT_VMM_STACK
-    /*
-     * Make the two stack guard pages present again.
-     */
-    if (pVM->vmm.s.fStackGuardsStationed)
-    {
-        for (VMCPUID i = 0; i < pVM->cCpus; i++)
-        {
-            uint8_t *pbEMTStackR3 = pVM->aCpus[i].vmm.s.pbEMTStackR3;
-            MMR3HyperSetGuard(pVM, pbEMTStackR3 - PAGE_SIZE,      PAGE_SIZE, false /*fSet*/);
-            MMR3HyperSetGuard(pVM, pbEMTStackR3 + VMM_STACK_SIZE, PAGE_SIZE, false /*fSet*/);
-        }
-        pVM->vmm.s.fStackGuardsStationed = false;
-    }
-#endif
-
     vmmTermFormatTypes();
     return rc;
 }
@@ -980,43 +884,6 @@ VMMR3_INT_DECL(void) VMMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
     LogFlow(("VMMR3Relocate: offDelta=%RGv\n", offDelta));
 
     /*
-     * Recalc the RC address.
-     */
-#ifdef VBOX_WITH_RAW_MODE
-    pVM->vmm.s.pvCoreCodeRC = MMHyperR3ToRC(pVM, pVM->vmm.s.pvCoreCodeR3);
-#endif
-
-    /*
-     * The stack.
-     */
-    for (VMCPUID i = 0; i < pVM->cCpus; i++)
-    {
-        PVMCPU pVCpu = &pVM->aCpus[i];
-
-        CPUMSetHyperESP(pVCpu, CPUMGetHyperESP(pVCpu) + offDelta);
-
-        pVCpu->vmm.s.pbEMTStackRC       = MMHyperR3ToRC(pVM, pVCpu->vmm.s.pbEMTStackR3);
-        pVCpu->vmm.s.pbEMTStackBottomRC = pVCpu->vmm.s.pbEMTStackRC + VMM_STACK_SIZE;
-    }
-
-    /*
-     * All the switchers.
-     */
-    vmmR3SwitcherRelocate(pVM, offDelta);
-
-    /*
-     * Get other RC entry points.
-     */
-    if (VM_IS_RAW_MODE_ENABLED(pVM))
-    {
-        int rc = PDMR3LdrGetSymbolRC(pVM, VMMRC_MAIN_MODULE_NAME, "CPUMGCResumeGuest", &pVM->vmm.s.pfnCPUMRCResumeGuest);
-        AssertReleaseMsgRC(rc, ("CPUMGCResumeGuest not found! rc=%Rra\n", rc));
-
-        rc = PDMR3LdrGetSymbolRC(pVM, VMMRC_MAIN_MODULE_NAME, "CPUMGCResumeGuestV86", &pVM->vmm.s.pfnCPUMRCResumeGuestV86);
-        AssertReleaseMsgRC(rc, ("CPUMGCResumeGuestV86 not found! rc=%Rra\n", rc));
-    }
-
-    /*
      * Update the logger.
      */
     VMMR3UpdateLoggers(pVM);
@@ -1031,50 +898,7 @@ VMMR3_INT_DECL(void) VMMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
  */
 VMMR3_INT_DECL(int) VMMR3UpdateLoggers(PVM pVM)
 {
-    /*
-     * Simply clone the logger instance (for RC).
-     */
     int rc = VINF_SUCCESS;
-    RTRCPTR RCPtrLoggerFlush = 0;
-
-    if (   pVM->vmm.s.pRCLoggerR3
-#ifdef VBOX_WITH_RC_RELEASE_LOGGING
-        || pVM->vmm.s.pRCRelLoggerR3
-#endif
-       )
-    {
-        Assert(VM_IS_RAW_MODE_ENABLED(pVM));
-        rc = PDMR3LdrGetSymbolRC(pVM, VMMRC_MAIN_MODULE_NAME, "vmmGCLoggerFlush", &RCPtrLoggerFlush);
-        AssertReleaseMsgRC(rc, ("vmmGCLoggerFlush not found! rc=%Rra\n", rc));
-    }
-
-    if (pVM->vmm.s.pRCLoggerR3)
-    {
-        Assert(VM_IS_RAW_MODE_ENABLED(pVM));
-        RTRCPTR RCPtrLoggerWrapper = 0;
-        rc = PDMR3LdrGetSymbolRC(pVM, VMMRC_MAIN_MODULE_NAME, "vmmGCLoggerWrapper", &RCPtrLoggerWrapper);
-        AssertReleaseMsgRC(rc, ("vmmGCLoggerWrapper not found! rc=%Rra\n", rc));
-
-        pVM->vmm.s.pRCLoggerRC = MMHyperR3ToRC(pVM, pVM->vmm.s.pRCLoggerR3);
-        rc = RTLogCloneRC(NULL /* default */, pVM->vmm.s.pRCLoggerR3, pVM->vmm.s.cbRCLogger,
-                          RCPtrLoggerWrapper, RCPtrLoggerFlush, RTLOGFLAGS_BUFFERED);
-        AssertReleaseMsgRC(rc, ("RTLogCloneRC failed! rc=%Rra\n", rc));
-    }
-
-#ifdef VBOX_WITH_RC_RELEASE_LOGGING
-    if (pVM->vmm.s.pRCRelLoggerR3)
-    {
-        Assert(VM_IS_RAW_MODE_ENABLED(pVM));
-        RTRCPTR RCPtrLoggerWrapper = 0;
-        rc = PDMR3LdrGetSymbolRC(pVM, VMMRC_MAIN_MODULE_NAME, "vmmGCRelLoggerWrapper", &RCPtrLoggerWrapper);
-        AssertReleaseMsgRC(rc, ("vmmGCRelLoggerWrapper not found! rc=%Rra\n", rc));
-
-        pVM->vmm.s.pRCRelLoggerRC = MMHyperR3ToRC(pVM, pVM->vmm.s.pRCRelLoggerR3);
-        rc = RTLogCloneRC(RTLogRelGetDefaultInstance(), pVM->vmm.s.pRCRelLoggerR3, pVM->vmm.s.cbRCRelLogger,
-                          RCPtrLoggerWrapper, RCPtrLoggerFlush, RTLOGFLAGS_BUFFERED);
-        AssertReleaseMsgRC(rc, ("RTLogCloneRC failed! rc=%Rra\n", rc));
-    }
-#endif /* VBOX_WITH_RC_RELEASE_LOGGING */
 
 #ifdef LOG_ENABLED
     /*
@@ -1117,6 +941,7 @@ VMMR3_INT_DECL(int) VMMR3UpdateLoggers(PVM pVM)
         }
     }
 #endif
+
     return rc;
 }
 

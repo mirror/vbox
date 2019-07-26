@@ -157,7 +157,6 @@ VBoxVMM_SOURCES  = \
 	VMMR3/VMReq.cpp \
 	VMMR3/VMM.cpp \
 	VMMR3/VMMGuruMeditation.cpp \
-	VMMR3/VMMSwitcher.cpp \
 	VMMR3/VMMTests.cpp \
 	VMMR3/HM.cpp \
 	$(if-expr defined(VBOX_WITH_RAW_MODE), \
@@ -233,22 +232,6 @@ ifdef VBOX_WITH_REM
 VBoxVMM_SOURCES += \
 	VMMAll/REMAll.cpp
 endif
-ifdef VBOX_WITH_RAW_MODE
-VBoxVMM_SOURCES.x86 += \
-	VMMSwitcher/32BitTo32Bit.asm \
-	VMMSwitcher/32BitToPAE.asm \
-	VMMSwitcher/PAETo32Bit.asm \
-	VMMSwitcher/PAEToPAE.asm
-VBoxVMM_SOURCES.amd64 = \
-	VMMSwitcher/AMD64To32Bit.asm \
-	VMMSwitcher/AMD64ToPAE.asm
-endif
-VBoxVMM_SOURCES.x86 += \
-	VMMSwitcher/32BitToAMD64.asm \
-	VMMSwitcher/PAEToAMD64.asm \
-	VMMSwitcher/X86Stub.asm
-VBoxVMM_SOURCES.amd64 += \
-	VMMSwitcher/AMD64Stub.asm
 
 ifdef VBOX_WITH_NATIVE_NEM
 VBoxVMM_SOURCES.win.amd64 += VMMR3/NEMR3Native-win.cpp
@@ -394,54 +377,6 @@ VBoxVMMPdbTypeHack_INTERMEDIATES  = $(VBoxVMM_INTERMEDIATES)
 endif
 
 
-if defined(VBOX_WITH_RAW_MODE) && $(intersects $(VBOX_LDR_FMT32), pe lx)
-
-#
-# VMMRCBuiltin.lib
-#
-LIBRARIES += VMMRCBuiltin
-VMMRCBuiltin_TEMPLATE = VBoxRc
- ifeq ($(VBOX_LDR_FMT32),pe)
-VMMRCBuiltin_SOURCES = VMMRC/VMMRCBuiltin.def
- endif
- ifeq ($(VBOX_LDR_FMT32),lx)
-VMMRCBuiltin_SOURCES = $(VMMRCBuiltin_0_OUTDIR)/VMMRCBuiltin.def
-$$(VMMRCBuiltin_0_OUTDIR)/VMMRCBuiltin.def: $(PATH_SUB_CURRENT)/VMMRC/VMMRCBuiltin.def | $$(dir $$@)
-	$(SED) -e '/not-os2/d' -e 's/^[ \t][ \t]*\([a-zA-Z]\)/    _\1/' -e 's/[ \t]DATA[ \t]*/ /' --output $@ $<
- endif
-
-
-#
-# VMMRCImp.lib
-#
-LIBRARIES += VMMRCImp
-VMMRCImp_TEMPLATE = VBoxRc
-VMMRCImp_SOURCES = $(VMMRCImp_0_OUTDIR)/VMMRC.def
-VMMRCImp_CLEAN   = $(VMMRCImp_0_OUTDIR)/VMMRC.def
-$(call KB_FN_DO_PASS0_ON_TARGET,VMMRCImp)
-
-$(call KB_FN_AUTO_CMD_DEPS,$(VMMRCImp_0_OUTDIR)/VMMRC.def)
-$(VMMRCImp_0_OUTDIR)/VMMRC.def: $(VMMRCImp_DEFPATH)/VMMRC/VMMRC.def | $$(dir $$@)
-	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS)
- ifeq ($(VBOX_LDR_FMT32),lx)
-	$(SED) \
-		-e '/not-os2/d' \
-		-e 's/^[ \t][ \t]*\([a-zA-Z]\)/    _\1/' \
-		-e 's/[ \t]DATA[ \t]*/ /' \
-		--output $@ \
-		$(VMMRCImp_DEFPATH)/VMMRC/VMMRC.def
-	$(APPEND) "$@" ""
-	$(APPEND) "$@" "    ___ehInit"
- else
-	$(SED) \
-		-e '/not-win/d' \
-		-e '/not-$(KBUILD_TARGET_ARCH)/d' \
-		--output $@ $(VMMRCImp_DEFPATH)/VMMRC/VMMRC.def
- endif
-
-endif # RC && (pe || lx)
-
-
 if1of ($(VBOX_LDR_FMT), pe lx)
 #
 # VMMR0Imp.lib
@@ -498,152 +433,6 @@ $(VMMR3LazyImp_0_OUTDIR)/VMMR3LazyLoad.asm: $(VMMR3LazyImp_DEFPATH)/VMMR3/VMMR3.
 	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS)
 	$(VBOX_DEF_2_LAZY_LOAD) --output $@ --library VBoxVMM $(VMMR3LazyImp_DEFPATH)/VMMR3/VMMR3.def
 endif
-
-
-if defined(VBOX_WITH_RAW_MODE) && !defined(VBOX_ONLY_EXTPACKS)
-#
-# VMMRC.rc
-#
-SYSMODS += VMMRC
-VMMRC_TEMPLATE  = VBoxRc
-VMMRC_NAME      = VMMRC
-
-VMMRC_DEFS      = IN_VMM_RC IN_RT_RC IN_DIS DIS_CORE_ONLY VBOX_WITH_RAW_MODE VBOX_WITH_RAW_MODE_NOT_R0 IN_SUP_RC \
-	$(VMM_COMMON_DEFS)
-VMMRC_DEFS     := $(filter-out VBOX_WITH_NESTED_HWVIRT_SVM VBOX_WITH_NESTED_HWVIRT_VMX,$(VMMRC_DEFS))
- ifdef VBOX_WITH_VMM_R0_SWITCH_STACK
-VMMRC_DEFS     += VMM_R0_SWITCH_STACK
- endif
-
-VMMRC_INCS      = \
-	include \
-	VMMRC \
-	$(if-expr defined(VBOX_WITH_RAW_MODE),PATM,) \
-	$(VBoxVMM_0_OUTDIR)/CommonGenIncs
-
-VMMRC_LIBS      = \
-	$(PATH_STAGE_LIB)/DisasmRC$(VBOX_SUFF_LIB) \
-	$(PATH_STAGE_LIB)/RuntimeRC$(VBOX_SUFF_LIB) \
-	$(PATH_STAGE_LIB)/SUPRC$(VBOX_SUFF_LIB)
- ifneq ($(filter pe lx,$(VBOX_LDR_FMT32)),)
-VMMRC_LIBS     += \
-	$(PATH_STAGE_LIB)/VMMRCBuiltin$(VBOX_SUFF_LIB)
- endif
-
-VMMRC_SOURCES   = \
-	VBoxVMM.d \
-	VMMRC/VMMRC0.asm \
-	VMMRC/VMMRCDeps.cpp \
-	VMMRC/CPUMRC.cpp \
-	VMMRC/CPUMRCA.asm \
-	VMMRC/CPUMRCPatchHlp.asm \
-	VMMRC/EMRCA.asm \
-	VMMRC/IOMRC.cpp \
-	VMMRC/MMRamRC.cpp \
-	VMMRC/MMRamRCA.asm \
-	VMMRC/PDMRCDevice.cpp \
-	VMMRC/PGMRC.cpp \
-	VMMRC/SELMRC.cpp \
-	VMMRC/TRPMRC.cpp \
-	VMMRC/TRPMRCHandlers.cpp \
-	VMMRC/TRPMRCHandlersA.asm \
-	VMMRC/VMMRC.cpp \
-	VMMRC/VMMRCA.asm \
-	$(if-expr defined(VBOX_WITH_RAW_MODE), \
-	VMMRC/CSAMRC.cpp \
-	VMMRC/PATMRC.cpp \
-	,) \
-	VMMRZ/CPUMRZ.cpp \
-	VMMRZ/CPUMRZA.asm \
-	VMMRZ/DBGFRZ.cpp \
-	VMMRZ/PGMRZDynMap.cpp \
-	VMMRZ/VMMRZ.cpp \
-	VMMAll/APICAll.cpp \
-	VMMAll/CPUMAllRegs.cpp \
-	VMMAll/CPUMAllMsrs.cpp \
-	VMMAll/DBGFAll.cpp \
-	VMMAll/IEMAll.cpp \
-	VMMAll/IEMAllAImpl.asm \
-	VMMAll/IEMAllAImplC.cpp \
-	VMMAll/IOMAll.cpp \
-	VMMAll/IOMAllMMIO.cpp \
-	VMMAll/EMAll.cpp \
-	VMMAll/FTMAll.cpp \
-	VMMAll/GIMAll.cpp \
-	VMMAll/GIMAllHv.cpp \
-	VMMAll/GIMAllKvm.cpp \
-	VMMAll/HMAll.cpp \
-	VMMAll/HMSVMAll.cpp \
-	VMMAll/HMVMXAll.cpp \
-	VMMAll/MMAll.cpp \
-	VMMAll/MMAllHyper.cpp \
-	VMMAll/PDMAll.cpp \
-	VMMAll/PDMAllCritSect.cpp \
-	VMMAll/PDMAllCritSectRw.cpp \
-	VMMAll/PDMAllCritSectBoth.cpp \
-	VMMAll/PDMAllQueue.cpp \
-	VMMAll/PGMAll.cpp \
-	VMMAll/PGMAllHandler.cpp \
-	VMMAll/PGMAllMap.cpp \
-	VMMAll/PGMAllPhys.cpp \
-	VMMAll/PGMAllPool.cpp \
-	VMMAll/SELMAll.cpp \
-	VMMAll/TMAll.cpp \
-	VMMAll/TMAllCpu.cpp \
-	VMMAll/TMAllReal.cpp \
-	VMMAll/TMAllVirtual.cpp \
-	VMMAll/TRPMAll.cpp \
-	VMMAll/VMAll.cpp \
-	VMMAll/VMMAll.cpp \
-	VMMAll/VMMAllA.asm \
-	$(if-expr defined(VBOX_WITH_RAW_MODE), \
-	VMMAll/CSAMAll.cpp \
-	VMMAll/PATMAll.cpp \
-	,)
- ifeq ($(VBOX_LDR_FMT32),pe)
-VMMRC_SOURCES += VMMRC/VMMRC.def
- endif
- ifeq ($(VBOX_LDR_FMT32),lx)
-VMMRC_SOURCES += $(VMMRCImp_0_OUTDIR)/VMMRC.def
- endif
- ifdef VBOX_WITH_REM
-VMMRC_SOURCES += \
-	VMMAll/REMAll.cpp
- endif
-
-# The very last one.
-VMMRC_SOURCES += \
-	VMMRC/VMMRC99.asm
-
-VMMRC/VMMRCDeps.cpp_CXXFLAGS.win = -Oi- -TC ## @todo rename VMMRCDeps.cpp to .c
-
-$(call VBOX_SET_VER_INFO_RC,VMMRC,VirtualBox VMM - raw-mode context parts) # Version info / description.
-
- if "$(USERNAME)" == "bird" && "$(KBUILD_TARGET)" == "win"
-VMMRC_VMMAll/IEMAll.cpp_CXXFLAGS = /FAcs /Fa$(subst /,\\,$(outbase).cod)
-VMMRC_VMMAll/IEMAllAImplC.cpp_CXXFLAGS = /FAcs /Fa$(subst /,\\,$(outbase).cod)
-VMMRC_VMMAll/PGMAll.cpp_CXXFLAGS = /FAcs /Fa$(subst /,\\,$(outbase).cod)
- endif
-
-VMMRC_INTERMEDIATES += $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMInstructionStatisticsTmpl.h
-
- if "$(KBUILD_TARGET)" == "win"
-# Debug type info hack for VMCPU, VM and similar.  See VBoxVMM for details.
-VMMRC_LIBS    += $(VMMRCPdbTypeHack_1_TARGET)
-VMMRC_LDFLAGS += /Export:PdbTypeHack
-
-LIBRARIES += VMMRCPdbTypeHack
-VMMRCPdbTypeHack_TEMPLATE       = $(VMMRC_TEMPLATE)
-VMMRCPdbTypeHack_SOURCES        = VMMAll/AllPdbTypeHack.cpp
-VMMRCPdbTypeHack_DEFS           = $(VMMRC_DEFS)
-VMMRCPdbTypeHack_DEFS.win       = $(VMMRC_DEFS.win)
-VMMRCPdbTypeHack_DEFS.win.x86   = $(VMMRC_DEFS.win.x86)
-VMMRCPdbTypeHack_DEFS.win.amd64 = $(VMMRC_DEFS.win.amd64)
-VMMRCPdbTypeHack_INCS           = $(VMMRC_INCS)
-VMMRCPdbTypeHack_INTERMEDIATES  = $(VMMRC_INTERMEDIATES)
- endif
-
-endif # VBOX_WITH_RAW_MODE && !VBOX_ONLY_EXTPACKS
 
 
 ifndef VBOX_ONLY_EXTPACKS
@@ -954,42 +743,6 @@ endef # def_vbox_vmm_py_check
 $(foreach py, $(addprefix $(PATH_SUB_CURRENT)/VMMAll/, IEMAllInstructionsPython.py ) , $(eval $(def_vbox_vmm_py_check)))
 
 
-#
-# Test for undefined symbols.
-#
-if1of ($(SYSMODS),VMMRC)
-test-undef-rc:: $(PATH_TARGET)/undef-rc.run
-OTHERS      += $(PATH_TARGET)/undef-rc.run
-CLEANS      += $(PATH_TARGET)/undef-rc.run
-$(call KB_FN_AUTO_CMD_DEPS,$(PATH_TARGET)/undef-rc.run)
-$(PATH_TARGET)/undef-rc.run: $$(VMMRC_1_TARGET)
-	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS)
- ifn1of ($(KBUILD_TARGET), linux solaris)
- else
-	$(call MSG_L1,VMM: Testing for undefined symbols in VMMRC using nm...)
-	$(QUIET)$(VBOX_NM) $(VMMRC_1_TARGET)  2> /dev/null \
-		| $(SED) -n \
-			-e '/^ *U .*/!d' \
-			-e 's/ *U //' \
-			\
-			-e '/^g_VM\>/d'\
-			-e '/^g_VCpu0\>/d'\
-			-e '/^g_CPUM\>/d'\
-			-e '/^g_Logger\>/d'\
-			-e '/^g_RelLogger\>/d'\
-			-e '/^g_TRPM\>/d'\
-			-e '/^g_TRPMCPU\>/d'\
-			-e '/^g_pSUPGlobalInfoPage\>/d'\
-			-e '/^g_trpmHyperCtxCore\>/d' \
-			-e '/^g_trpmGuestCtxCore\>/d' \
-			\
-			-e 's/\(.*\)$(DOLLAR)/  Undefined symbol: \1/' \
-			-e 'p' \
-			-e 'q 1'
- endif
-	$(QUIET)$(APPEND) -t $@
-endif
-
 include $(FILE_KBUILD_SUB_FOOTER)
 
 
@@ -1024,9 +777,4 @@ IEMAllCImplVmxInstr.cpp.o          IEMAllCImplVmxInstr.cpp.obj: IEMAll.o
 
 # Alias the NEM template to the objects where it is used:
 NEMAllNativeTemplate-win.cpp.o:    NEMR3Native-win.o NEMR0Native-win.o
-
-# Alias the switcher templates.
-PAEand32Bit.o PAEand32Bit.obj:                 PAETo32Bit.o   PAEToPAE.o   32BitTo32Bit.o PAETo32Bit.o
-LegacyandAMD64.o LegacyandAMD64.obj:           32BitToAMD64.o PAEToAMD64.o
-AMD64andLegacy.o AMD64andLegacy.obj:           AMD64To32Bit.o AMD64ToPAE.o
 

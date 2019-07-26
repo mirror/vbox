@@ -66,34 +66,6 @@
 
 
 /**
- * Converts a VMM pointer into a VM pointer.
- * @returns Pointer to the VM structure the VMM is part of.
- * @param   pVMM   Pointer to VMM instance data.
- */
-#define VMM2VM(pVMM)  ( (PVM)((char*)pVMM - pVMM->offVM) )
-
-
-/**
- * Switcher function, HC to RC.
- *
- * @param   pVM         The cross context VM structure.
- * @returns Return code indicating the action to take.
- */
-typedef DECLASMTYPE(int) FNVMMSWITCHERHC(PVM pVM);
-/** Pointer to switcher function. */
-typedef FNVMMSWITCHERHC *PFNVMMSWITCHERHC;
-
-/**
- * Switcher function, RC to HC.
- *
- * @param   rc          VBox status code.
- */
-typedef DECLASMTYPE(void) FNVMMSWITCHERRC(int rc);
-/** Pointer to switcher function. */
-typedef FNVMMSWITCHERRC *PFNVMMSWITCHERRC;
-
-
-/**
  * The ring-0 logger instance wrapper.
  *
  * We need to be able to find the VM handle from the logger instance, so we wrap
@@ -214,77 +186,10 @@ typedef VMMR0JMPBUF *PVMMR0JMPBUF;
  */
 typedef struct VMM
 {
-    /** Offset to the VM structure.
-     * See VMM2VM(). */
-    RTINT                       offVM;
-
-    /** @name World Switcher and Related
-     * @{
-     */
-    /** Size of the core code. */
-    RTUINT                      cbCoreCode;
-    /** Physical address of core code. */
-    RTHCPHYS                    HCPhysCoreCode;
-    /** Pointer to core code ring-3 mapping - contiguous memory.
-     * At present this only means the context switcher code. */
-    RTR3PTR                     pvCoreCodeR3;
-    /** Pointer to core code ring-0 mapping - contiguous memory.
-     * At present this only means the context switcher code. */
-    RTR0PTR                     pvCoreCodeR0;
-    /** Pointer to core code guest context mapping. */
-    RTRCPTR                     pvCoreCodeRC;
-    RTRCPTR                     pRCPadding0; /**< Alignment padding. */
-#ifdef VBOX_WITH_NMI
-    /** The guest context address of the APIC (host) mapping. */
-    RTRCPTR                     GCPtrApicBase;
-    RTRCPTR                     pRCPadding1; /**< Alignment padding. */
-#endif
-    /** The current switcher.
-     * This will be set before the VMM is fully initialized. */
-    VMMSWITCHER                 enmSwitcher;
-    /** Array of offsets to the different switchers within the core code. */
-    uint32_t                    aoffSwitchers[VMMSWITCHER_MAX];
-    uint32_t                    u32Padding2; /**< Alignment padding. */
-
-    /** Resume Guest Execution. See CPUMGCResumeGuest(). */
-    RTRCPTR                     pfnCPUMRCResumeGuest;
-    /** Resume Guest Execution in V86 mode. See CPUMGCResumeGuestV86(). */
-    RTRCPTR                     pfnCPUMRCResumeGuestV86;
-    /** Call Trampoline. See vmmGCCallTrampoline(). */
-    RTRCPTR                     pfnCallTrampolineRC;
-    /** Guest to host switcher entry point. */
-    RCPTRTYPE(PFNVMMSWITCHERRC) pfnRCToHost;
-    /** Host to guest switcher entry point. */
-    R0PTRTYPE(PFNVMMSWITCHERHC) pfnR0ToRawMode;
-    /** @}  */
-
-    /** @name Logging
-     * @{
-     */
-    /** Size of the allocated logger instance (pRCLoggerRC/pRCLoggerR3). */
-    uint32_t                    cbRCLogger;
-    /** Pointer to the RC logger instance - RC Ptr.
-     * This is NULL if logging is disabled. */
-    RCPTRTYPE(PRTLOGGERRC)      pRCLoggerRC;
-    /** Pointer to the GC logger instance - R3 Ptr.
-     * This is NULL if logging is disabled. */
-    R3PTRTYPE(PRTLOGGERRC)      pRCLoggerR3;
-    /** Pointer to the GC release logger instance - R3 Ptr. */
-    R3PTRTYPE(PRTLOGGERRC)      pRCRelLoggerR3;
-    /** Pointer to the GC release logger instance - RC Ptr. */
-    RCPTRTYPE(PRTLOGGERRC)      pRCRelLoggerRC;
-    /** Size of the allocated release logger instance (pRCRelLoggerRC/pRCRelLoggerR3).
-     * This may differ from cbRCLogger. */
-    uint32_t                    cbRCRelLogger;
-    /** Whether log flushing has been disabled or not. */
-    bool                        fRCLoggerFlushingDisabled;
-    bool                        afAlignment1[5]; /**< Alignment padding. */
-    /** @} */
-
-    /** Whether the stack guard pages have been stationed or not. */
-    bool                        fStackGuardsStationed;
     /** Whether we should use the periodic preemption timers. */
     bool                        fUsePeriodicPreemptionTimers;
+    /** Alignment padding. */
+    bool                        afPadding0[7];
 
     /** The EMT yield timer. */
     PTMTIMERR3                  pYieldTimer;
@@ -352,7 +257,7 @@ typedef struct VMM
      * release logging purposes.  */
     bool                        fIsPreemptPossible : 1;
 
-    bool                        afAlignment2[HC_ARCH_BITS == 32 ? 6 : 2]; /**< Alignment padding. */
+    bool                        afAlignment2[2]; /**< Alignment padding. */
 
     /** Buffer for storing the standard assertion message for a ring-0 assertion.
      * Used for saving the assertion message text for the release log and guru
@@ -361,7 +266,7 @@ typedef struct VMM
     /** Buffer for storing the custom message for a ring-0 assertion. */
     char                        szRing0AssertMsg2[256];
 
-    /** Number of VMMR0_DO_RUN_GC calls. */
+    /** Number of VMMR0_DO_HM_RUN calls. */
     STAMCOUNTER                 StatRunRC;
 
     /** Statistics for each of the RC/R0 return codes.
@@ -440,21 +345,15 @@ typedef VMM *PVMM;
  */
 typedef struct VMMCPU
 {
-    /** Offset to the VMCPU structure.
-     * See VMM2VMCPU(). */
-    int32_t                     offVMCPU;
-
     /** The last RC/R0 return code. */
     int32_t                     iLastGZRc;
+    /** Alignment padding. */
+    uint32_t                    u32Padding0;
 
     /** VMM stack, pointer to the top of the stack in R3.
      * Stack is allocated from the hypervisor heap and is page aligned
      * and always writable in RC. */
     R3PTRTYPE(uint8_t *)        pbEMTStackR3;
-    /** Pointer to the bottom of the stack - needed for doing relocations. */
-    RCPTRTYPE(uint8_t *)        pbEMTStackRC;
-    /** Pointer to the bottom of the stack - needed for doing relocations. */
-    RCPTRTYPE(uint8_t *)        pbEMTStackBottomRC;
 
     /** Pointer to the R0 logger instance - R3 Ptr.
      * This is NULL if logging is disabled. */
@@ -478,7 +377,7 @@ typedef struct VMMCPU
     /** Whether the EMT is executing a rendezvous right now. For detecting
      *  attempts at recursive rendezvous. */
     bool volatile               fInRendezvous;
-    bool                        afPadding[HC_ARCH_BITS == 32 ? 2 : 6+4];
+    bool                        afPadding1[10];
     /** @} */
 
     /** Whether we can HLT in VMMR0 rather than having to return to EM.
@@ -497,15 +396,15 @@ typedef struct VMMCPU
     /** Number of ring-0 halts failing (VINF_EM_HALT) recently. */
     uint32_t                    cR0HaltsToRing3;
     /** Padding   */
-    uint32_t                    u32Padding0;
+    uint32_t                    u32Padding2;
 
     /** @name Raw-mode context tracing data.
      * @{ */
     SUPDRVTRACERUSRCTX          TracerCtx;
     /** @} */
 
-    /** Alignment padding, making sure u64CallRing3Arg is nicely aligned. */
-    uint32_t                    au32Padding1[3];
+    /** Alignment padding, making sure u64CallRing3Arg and CallRing3JmpBufR0 are nicely aligned. */
+    uint32_t                    au32Padding3[1];
 
     /** @name Call Ring-3
      * Formerly known as host calls.

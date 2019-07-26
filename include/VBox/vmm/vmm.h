@@ -278,14 +278,12 @@ typedef struct VMM2USERMETHODS
 #endif
 
 
-VMM_INT_DECL(RTRCPTR)       VMMGetStackRC(PVMCPU pVCpu);
 VMMDECL(VMCPUID)            VMMGetCpuId(PVM pVM);
 VMMDECL(PVMCPU)             VMMGetCpu(PVM pVM);
 VMMDECL(PVMCPU)             VMMGetCpu0(PVM pVM);
 VMMDECL(PVMCPU)             VMMGetCpuById(PVM pVM, VMCPUID idCpu);
 VMMR3DECL(PVMCPU)           VMMR3GetCpuByIdU(PUVM pVM, VMCPUID idCpu);
 VMM_INT_DECL(uint32_t)      VMMGetSvnRev(void);
-VMM_INT_DECL(VMMSWITCHER)   VMMGetSwitcher(PVM pVM);
 VMM_INT_DECL(bool)          VMMIsInRing3Call(PVMCPU pVCpu);
 VMM_INT_DECL(void)          VMMTrashVolatileXMMRegs(void);
 
@@ -299,8 +297,6 @@ VMM_INT_DECL(void)          VMMTrashVolatileXMMRegs(void);
  */
 typedef enum VMMR0OPERATION
 {
-    /** Run guest context. */
-    VMMR0_DO_RAW_RUN = SUP_VMMR0_DO_RAW_RUN,
     /** Run guest code using the available hardware acceleration technology. */
     VMMR0_DO_HM_RUN = SUP_VMMR0_DO_HM_RUN,
     /** Official NOP that we use for profiling. */
@@ -393,13 +389,6 @@ typedef enum VMMR0OPERATION
     VMMR0_DO_PDM_DRIVER_CALL_REQ_HANDLER = 320,
     /** Call PDMR0DeviceCallReqHandler. */
     VMMR0_DO_PDM_DEVICE_CALL_REQ_HANDLER,
-
-    /** Calls function in the hypervisor.
-     * The caller must setup the hypervisor context so the call will be performed.
-     * The difference between VMMR0_DO_RUN_GC and this one is the handling of
-     * the return GC code. The return code will not be interpreted by this operation.
-     */
-    VMMR0_DO_CALL_HYPERVISOR = 384,
 
     /** Set a GVMM or GMM configuration value. */
     VMMR0_DO_GCFGM_SET_VALUE = 400,

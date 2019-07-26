@@ -576,7 +576,6 @@ $(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructsAsm.o: \
 		$(VBOX_PATH_VMM_SRC)/include/CPUMInternal.mac \
 		$(VBOX_PATH_VMM_SRC)/include/HMInternal.mac \
 		$(VBOX_PATH_VMM_SRC)/include/VMMInternal.mac \
-		$(VBOX_PATH_VMM_SRC)/include/VMMSwitcher.mac \
 		$(VBOX_PATH_VMM_SRC)/testcase/Makefile.kmk \
 		$$(if $$(eq $$(tstAsmStructsAsmDep_STUFF),$$(MY_ASA_ASM_STUFF)),,FORCE) \
 		| $$(dir $$@)
@@ -613,14 +612,7 @@ $(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructsHC.h: $(VBOX_VMM_TESTCASE_OUT_DIR)/tst
 	$(QUIET)$(MV) -f $@.tmp $@
 	$(QUIET)$(RM) -f $@.dump
 
-ifdef VBOX_WITH_RAW_MODE
-# 3. transform the HC header into a RC one by omitting some HC only structures.
-$(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructsRC.h: $(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructsHC.h
-	$(call MSG_GENERATE,tstVMStructSize,$@,$<)
-	$(QUIET)$(SED) -e '/VMMSWITCHERDEF/d' --output $@ $^
-endif
-
-# 4. run it.
+# 3. run it.
 $(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructs.run: \
 		$$(tstAsmStructs_1_STAGE_TARGET) \
 		$(if-expr defined(VBOX_WITH_RAW_MODE),$$(tstAsmStructsRC_1_STAGE_TARGET),)

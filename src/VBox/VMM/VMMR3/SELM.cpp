@@ -514,7 +514,7 @@ VMMR3DECL(void) SELMR3Relocate(PVM pVM)
         /* Current TSS */
         pVM->selm.s.Tss.cr3     = PGMGetHyperCR3(pVCpu);
         pVM->selm.s.Tss.ss0     = pVM->selm.s.aHyperSel[SELM_HYPER_SEL_DS];
-        pVM->selm.s.Tss.esp0    = VMMGetStackRC(pVCpu);
+        pVM->selm.s.Tss.esp0    = 0;//VMMGetStackRC(pVCpu);
         pVM->selm.s.Tss.cs      = pVM->selm.s.aHyperSel[SELM_HYPER_SEL_CS];
         pVM->selm.s.Tss.ds      = pVM->selm.s.aHyperSel[SELM_HYPER_SEL_DS];
         pVM->selm.s.Tss.es      = pVM->selm.s.aHyperSel[SELM_HYPER_SEL_DS];
@@ -524,7 +524,7 @@ VMMR3DECL(void) SELMR3Relocate(PVM pVM)
         pVM->selm.s.TssTrap08.cr3    = PGMGetInterRCCR3(pVM, pVCpu);                   /* this should give use better survival chances. */
         pVM->selm.s.TssTrap08.ss0    = pVM->selm.s.aHyperSel[SELM_HYPER_SEL_DS];
         pVM->selm.s.TssTrap08.ss     = pVM->selm.s.aHyperSel[SELM_HYPER_SEL_DS];
-        pVM->selm.s.TssTrap08.esp0   = VMMGetStackRC(pVCpu) - PAGE_SIZE / 2;  /* upper half can be analysed this way. */
+        pVM->selm.s.TssTrap08.esp0   = 0;//VMMGetStackRC(pVCpu) - PAGE_SIZE / 2;  /* upper half can be analysed this way. */
         pVM->selm.s.TssTrap08.esp    = pVM->selm.s.TssTrap08.esp0;
         pVM->selm.s.TssTrap08.ebp    = pVM->selm.s.TssTrap08.esp0;
         pVM->selm.s.TssTrap08.cs     = pVM->selm.s.aHyperSel[SELM_HYPER_SEL_CS];

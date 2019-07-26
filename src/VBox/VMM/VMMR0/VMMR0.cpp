@@ -760,13 +760,7 @@ static int vmmR0DoHalt(PGVM pGVM, PVM pVM, PGVMCPU pGVCpu, PVMCPU pVCpu)
     uint64_t const fCpuFFs = VMCPU_FF_TIMER                   | VMCPU_FF_PDM_CRITSECT         | VMCPU_FF_IEM
                            | VMCPU_FF_REQUEST                 | VMCPU_FF_DBGF                 | VMCPU_FF_HM_UPDATE_CR3
                            | VMCPU_FF_HM_UPDATE_PAE_PDPES     | VMCPU_FF_PGM_SYNC_CR3         | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL
-                           | VMCPU_FF_TO_R3                   | VMCPU_FF_IOM
-#ifdef VBOX_WITH_RAW_MODE
-                           | VMCPU_FF_TRPM_SYNC_IDT           | VMCPU_FF_SELM_SYNC_TSS        | VMCPU_FF_SELM_SYNC_GDT
-                           | VMCPU_FF_SELM_SYNC_LDT           | VMCPU_FF_CSAM_SCAN_PAGE       | VMCPU_FF_CSAM_PENDING_ACTION
-                           | VMCPU_FF_CPUM
-#endif
-                           ;
+                           | VMCPU_FF_TO_R3                   | VMCPU_FF_IOM;
 
     /*
      * Check preconditions.
@@ -1343,141 +1337,6 @@ VMMR0DECL(void) VMMR0EntryFast(PGVM pGVM, PVM pVM, VMCPUID idCpu, VMMR0OPERATION
     switch (enmOperation)
     {
         /*
-         * Switch to GC and run guest raw mode code.
-         * Disable interrupts before doing the world switch.
-         */
-        case VMMR0_DO_RAW_RUN:
-        {
-#ifdef VBOX_WITH_RAW_MODE
-# ifndef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-            /* Some safety precautions first. */
-            if (RT_UNLIKELY(!PGMGetHyperCR3(pVCpu)))
-            {
-                pVCpu->vmm.s.iLastGZRc = VERR_PGM_NO_CR3_SHADOW_ROOT;
-                break;
-            }
-# endif
-            if (RT_SUCCESS(g_rcRawModeUsability))
-            { /* likely */ }
-            else
-            {
-                pVCpu->vmm.s.iLastGZRc = g_rcRawModeUsability;
-                break;
-            }
-
-            /*
-             * Disable preemption.
-             */
-            RTTHREADPREEMPTSTATE PreemptState = RTTHREADPREEMPTSTATE_INITIALIZER;
-            RTThreadPreemptDisable(&PreemptState);
-
-            /*
-             * Get the host CPU identifiers, make sure they are valid and that
-             * we've got a TSC delta for the CPU.
-             */
-            RTCPUID  idHostCpu;
-            uint32_t iHostCpuSet = RTMpCurSetIndexAndId(&idHostCpu);
-            if (RT_LIKELY(   iHostCpuSet < RTCPUSET_MAX_CPUS
-                          && SUPIsTscDeltaAvailableForCpuSetIndex(iHostCpuSet)))
-            {
-                /*
-                 * Commit the CPU identifiers and update the periodict preemption timer if it's active.
-                 */
-# ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
-                CPUMR0SetLApic(pVCpu, iHostCpuSet);
-# endif
-                pVCpu->iHostCpuSet = iHostCpuSet;
-                ASMAtomicWriteU32(&pVCpu->idHostCpu, idHostCpu);
-
-                if (pVM->vmm.s.fUsePeriodicPreemptionTimers)
-                    GVMMR0SchedUpdatePeriodicPreemptionTimer(pVM, pVCpu->idHostCpu, TMCalcHostTimerFrequency(pVM, pVCpu));
-
-                /*
-                 * We might need to disable VT-x if the active switcher turns off paging.
-                  */
-                bool fVTxDisabled;
-                int rc = HMR0EnterSwitcher(pVM, pVM->vmm.s.enmSwitcher, &fVTxDisabled);
-                if (RT_SUCCESS(rc))
-                {
-                    /*
-                     * Disable interrupts and run raw-mode code.  The loop is for efficiently
-                     * dispatching tracepoints that fired in raw-mode context.
-                     */
-                    RTCCUINTREG uFlags = ASMIntDisableFlags();
-
-                    for (;;)
-                    {
-                        VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC);
-                        TMNotifyStartOfExecution(pVCpu);
-
-                        rc = pVM->vmm.s.pfnR0ToRawMode(pVM);
-                        pVCpu->vmm.s.iLastGZRc = rc;
-
-                        TMNotifyEndOfExecution(pVCpu);
-                        VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED);
-
-                        if (rc != VINF_VMM_CALL_TRACER)
-                            break;
-                        SUPR0TracerUmodProbeFire(pVM->pSession, &pVCpu->vmm.s.TracerCtx);
-                    }
-
-                    /*
-                     * Re-enable VT-x before we dispatch any pending host interrupts and
-                     * re-enables interrupts.
-                     */
-                    HMR0LeaveSwitcher(pVM, fVTxDisabled);
-
-                    if (    rc == VINF_EM_RAW_INTERRUPT
-                        ||  rc == VINF_EM_RAW_INTERRUPT_HYPER)
-                        TRPMR0DispatchHostInterrupt(pVM);
-
-                    ASMSetFlags(uFlags);
-
-                    /* Fire dtrace probe and collect statistics. */
-                    VBOXVMM_R0_VMM_RETURN_TO_RING3_RC(pVCpu, CPUMQueryGuestCtxPtr(pVCpu), rc);
-# ifdef VBOX_WITH_STATISTICS
-                    STAM_COUNTER_INC(&pVM->vmm.s.StatRunRC);
-                    vmmR0RecordRC(pVM, pVCpu, rc);
-# endif
-                }
-                else
-                    pVCpu->vmm.s.iLastGZRc = rc;
-
-                /*
-                 * Invalidate the host CPU identifiers as we restore preemption.
-                 */
-                pVCpu->iHostCpuSet = UINT32_MAX;
-                ASMAtomicWriteU32(&pVCpu->idHostCpu, NIL_RTCPUID);
-
-                RTThreadPreemptRestore(&PreemptState);
-            }
-            /*
-             * Invalid CPU set index or TSC delta in need of measuring.
-             */
-            else
-            {
-                RTThreadPreemptRestore(&PreemptState);
-                if (iHostCpuSet < RTCPUSET_MAX_CPUS)
-                {
-                    int rc = SUPR0TscDeltaMeasureBySetIndex(pVM->pSession, iHostCpuSet, 0 /*fFlags*/,
-                                                            2 /*cMsWaitRetry*/, 5*RT_MS_1SEC /*cMsWaitThread*/,
-                                                            0 /*default cTries*/);
-                    if (RT_SUCCESS(rc) || rc == VERR_CPU_OFFLINE)
-                        pVCpu->vmm.s.iLastGZRc = VINF_EM_RAW_TO_R3;
-                    else
-                        pVCpu->vmm.s.iLastGZRc = rc;
-                }
-                else
-                    pVCpu->vmm.s.iLastGZRc = VERR_INVALID_CPU_INDEX;
-            }
-
-#else  /* !VBOX_WITH_RAW_MODE */
-            pVCpu->vmm.s.iLastGZRc = VERR_RAW_MODE_NOT_SUPPORTED;
-#endif
-            break;
-        }
-
-        /*
          * Run guest code using the available hardware acceleration technology.
          */
         case VMMR0_DO_HM_RUN:
@@ -1693,7 +1552,6 @@ VMMR0DECL(void) VMMR0EntryFast(PGVM pGVM, PVM pVM, VMCPUID idCpu, VMMR0OPERATION
         }
 # endif
 #endif
-
 
         /*
          * For profiling.
@@ -1955,105 +1813,6 @@ static int vmmR0EntryExWorker(PGVM pGVM, PVM pVM, VMCPUID idCpu, VMMR0OPERATION 
             rc = HMR0SetupVM(pVM);
             VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
             break;
-
-        /*
-         * Switch to RC to execute Hypervisor function.
-         */
-        case VMMR0_DO_CALL_HYPERVISOR:
-        {
-#ifdef VBOX_WITH_RAW_MODE
-            /*
-             * Validate input / context.
-             */
-            if (RT_UNLIKELY(idCpu != 0))
-                return VERR_INVALID_CPU_ID;
-            if (RT_UNLIKELY(pVM->cCpus != 1))
-                return VERR_INVALID_PARAMETER;
-# ifdef VBOX_BUGREF_9217
-            PVMCPU pVCpu = &pGVM->aCpus[idCpu];
-# else
-            PVMCPU pVCpu = &pVM->aCpus[idCpu];
-# endif
-# ifndef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-            if (RT_UNLIKELY(!PGMGetHyperCR3(pVCpu)))
-                return VERR_PGM_NO_CR3_SHADOW_ROOT;
-# endif
-            if (RT_FAILURE(g_rcRawModeUsability))
-                return g_rcRawModeUsability;
-
-            /*
-             * Disable interrupts.
-             */
-            RTCCUINTREG fFlags = ASMIntDisableFlags();
-
-            /*
-             * Get the host CPU identifiers, make sure they are valid and that
-             * we've got a TSC delta for the CPU.
-             */
-            RTCPUID  idHostCpu;
-            uint32_t iHostCpuSet = RTMpCurSetIndexAndId(&idHostCpu);
-            if (RT_UNLIKELY(iHostCpuSet >= RTCPUSET_MAX_CPUS))
-            {
-                ASMSetFlags(fFlags);
-                return VERR_INVALID_CPU_INDEX;
-            }
-            if (RT_UNLIKELY(!SUPIsTscDeltaAvailableForCpuSetIndex(iHostCpuSet)))
-            {
-                ASMSetFlags(fFlags);
-                rc = SUPR0TscDeltaMeasureBySetIndex(pVM->pSession, iHostCpuSet, 0 /*fFlags*/,
-                                                    2 /*cMsWaitRetry*/, 5*RT_MS_1SEC /*cMsWaitThread*/,
-                                                    0 /*default cTries*/);
-                if (RT_FAILURE(rc) && rc != VERR_CPU_OFFLINE)
-                {
-                    VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
-                    return rc;
-                }
-            }
-
-            /*
-             * Commit the CPU identifiers.
-             */
-# ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
-            CPUMR0SetLApic(pVCpu, iHostCpuSet);
-# endif
-            pVCpu->iHostCpuSet = iHostCpuSet;
-            ASMAtomicWriteU32(&pVCpu->idHostCpu, idHostCpu);
-
-            /*
-             * We might need to disable VT-x if the active switcher turns off paging.
-             */
-            bool fVTxDisabled;
-            rc = HMR0EnterSwitcher(pVM, pVM->vmm.s.enmSwitcher, &fVTxDisabled);
-            if (RT_SUCCESS(rc))
-            {
-                /*
-                 * Go through the wormhole...
-                 */
-                rc = pVM->vmm.s.pfnR0ToRawMode(pVM);
-
-                /*
-                 * Re-enable VT-x before we dispatch any pending host interrupts.
-                 */
-                HMR0LeaveSwitcher(pVM, fVTxDisabled);
-
-                if (   rc == VINF_EM_RAW_INTERRUPT
-                    || rc == VINF_EM_RAW_INTERRUPT_HYPER)
-                    TRPMR0DispatchHostInterrupt(pVM);
-            }
-
-            /*
-             * Invalidate the host CPU identifiers as we restore interrupts.
-             */
-            pVCpu->iHostCpuSet = UINT32_MAX;
-            ASMAtomicWriteU32(&pVCpu->idHostCpu, NIL_RTCPUID);
-            ASMSetFlags(fFlags);
-
-#else  /* !VBOX_WITH_RAW_MODE */
-            rc = VERR_RAW_MODE_NOT_SUPPORTED;
-#endif
-            VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
-            break;
-        }
 
         /*
          * PGM wrappers.

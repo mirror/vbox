@@ -299,7 +299,6 @@ int main()
     CHECK_MEMBER_ALIGNMENT(VMCPU, vmm.s.CallRing3JmpBufR0.xmm6, 16);
 #endif
     CHECK_MEMBER_ALIGNMENT(VM, vmm.s.u64LastYield, 8);
-    CHECK_MEMBER_ALIGNMENT(VM, vmm.s.StatRunRC, 8);
 #ifdef VBOX_WITH_REM
     CHECK_MEMBER_ALIGNMENT(VM, rem.s.uPendingExcptCR2, 8);
     CHECK_MEMBER_ALIGNMENT(VM, rem.s.StatsInQEMU, 8);

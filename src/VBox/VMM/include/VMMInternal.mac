@@ -105,11 +105,9 @@ endstruc
 
 struc VMMCPU
 
-        .offVMCPU               resd 1
         .iLastGZRc              resd 1
+        alignb 8
         .pbEMTStackR3           RTR3PTR_RES 1
-        .pbEMTStackRC           RTRCPTR_RES 1
-        .pbEMTStackBottomRC     RTRCPTR_RES 1
 
         .pR0LoggerR3            RTR3PTR_RES 1
         .pR0LoggerR0            RTR0PTR_RES 1
@@ -119,11 +117,7 @@ struc VMMCPU
         .hCtxHook               RTR0PTR_RES 1
 
         .fInRendezvous          resb 1
-%if HC_ARCH_BITS == 32
-        .afPadding              resb 2
-%else
-        .afPadding              resb 6+4
-%endif
+        .afPadding1             resb 10
         .fMayHaltInRing0        resb 1
         .cNsSpinBlockThreshold  resd 1
         .cR0Halts               resd 1
@@ -133,11 +127,12 @@ struc VMMCPU
         alignb 8
         .TracerCtx              resb SUPDRVTRACERUSRCTX64_size
 
-        .au32Padding1           resd 3
+        .au32Padding3           resd 1
 
         .cCallRing3Disabled     resd 1
         .enmCallRing3Operation  resd 1
         .rcCallRing3            resd 1
+        alignb 8
         .u64CallRing3Arg        resq 1
         .pfnCallRing3CallbackR0         RTR0PTR_RES 1
         .pvCallRing3CallbackUserR0      RTR0PTR_RES 1
