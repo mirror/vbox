@@ -67,7 +67,7 @@ else ifdef VBOX_ONLY_EXTPACKS_USE_IMPLIBS
  LIBRARIES += RuntimeBldProg RuntimeR0
  LIBRARIES.solaris += RuntimeR0Stub
  LIBRARIES.win += RuntimeR0Stub
- ifdef VBOX_WITH_ADDITIONS
+ ifdef VBOX_WITH_RAW_MODE
   LIBRARIES.win += RuntimeRCStub
  endif
  include $(PATH_SUB_CURRENT)/tools/Makefile.kmk
