@@ -146,28 +146,16 @@ typedef EMEXITENTRY const *PCEMEXITENTRY;
 
 
 /**
- * Converts a EM pointer into a VM pointer.
- * @returns Pointer to the VM structure the EM is part of.
- * @param   pEM   Pointer to EM instance data.
- */
-#define EM2VM(pEM)  ( (PVM)((char*)pEM - pEM->offVM) )
-
-/**
  * EM VM Instance data.
- * Changes to this must checked against the padding of the cfgm union in VM!
  */
 typedef struct EM
 {
-    /** Offset to the VM structure.
-     * See EM2VM(). */
-    RTUINT                  offVM;
-
     /** Whether IEM executes everything. */
     bool                    fIemExecutesAll;
     /** Whether a triple fault triggers a guru. */
     bool                    fGuruOnTripleFault;
     /** Alignment padding. */
-    bool                    afPadding[6];
+    bool                    afPadding[2];
 
     /** Id of the VCPU that last executed code in the recompiler. */
     VMCPUID                 idLastRemCpu;
@@ -194,18 +182,13 @@ typedef struct EMCPU
     /** The state prior to the suspending of the VM. */
     EMSTATE                 enmPrevState;
 
-    /** Force raw-mode execution.
-     * This is used to prevent REM from trying to execute patch code.
-     * The flag is cleared upon entering emR3RawExecute() and updated in certain return paths. */
-    bool                    fForceRAW;
-
     /** Set if hypercall instruction VMMCALL (AMD) & VMCALL (Intel) are enabled.
      * GIM sets this and the execution managers queries it.  Not saved, as GIM
      * takes care of that bit too.  */
     bool                    fHypercallEnabled;
 
     /** Explicit padding. */
-    uint8_t                 abPadding[2];
+    uint8_t                 abPadding[3];
 
     /** The number of instructions we've executed in IEM since switching to the
      *  EMSTATE_IEM_THEN_REM state. */
@@ -213,17 +196,6 @@ typedef struct EMCPU
 
     /** Inhibit interrupts for this instruction. Valid only when VM_FF_INHIBIT_INTERRUPTS is set. */
     RTGCUINTPTR             GCPtrInhibitInterrupts;
-
-#ifdef VBOX_WITH_RAW_MODE
-    /** Pointer to the PATM status structure. (R3 Ptr) */
-    R3PTRTYPE(PPATMGCSTATE) pPatmGCState;
-#else
-    RTR3PTR                 R3PtrPaddingNoRaw;
-#endif
-    RTR3PTR                 R3PtrNullPadding; /**< Used to be pCtx. */
-#if GC_ARCH_BITS == 64
-    RTGCPTR                 aPadding1;
-#endif
 
     /** Start of the current time slice in ms. */
     uint64_t                u64TimeSliceStart;
@@ -304,18 +276,12 @@ typedef struct EMCPU
     R3PTRTYPE(PEMSTATS)     pStatsR3;
     /** More statistics (R0). */
     R0PTRTYPE(PEMSTATS)     pStatsR0;
-    /** More statistics (RC). */
-    RCPTRTYPE(PEMSTATS)     pStatsRC;
-#if HC_ARCH_BITS == 64
-    RTRCPTR                 padding0;
-#endif
 
     /** Tree for keeping track of cli occurrences (debug only). */
     R3PTRTYPE(PAVLGCPTRNODECORE) pCliStatTree;
     STAMCOUNTER             StatTotalClis;
-#if HC_ARCH_BITS == 32
-    uint64_t                padding1;
-#endif
+    /** Put the history at a 32-byte boundrary. */
+    uint64_t                au64Padding[3];
 
     /** Exit history table (6KB). */
     EMEXITENTRY             aExitHistory[256];

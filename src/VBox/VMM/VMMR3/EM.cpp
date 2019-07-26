@@ -101,12 +101,12 @@ VMMR3_INT_DECL(int) EMR3Init(PVM pVM)
      */
     AssertCompileMemberAlignment(VM, em.s, 32);
     AssertCompile(sizeof(pVM->em.s) <= sizeof(pVM->em.padding));
-    AssertCompile(sizeof(pVM->aCpus[0].em.s.u.FatalLongJump) <= sizeof(pVM->aCpus[0].em.s.u.achPaddingFatalLongJump));
+    AssertCompile(RT_SIZEOFMEMB(VMCPU, em.s.u.FatalLongJump) <= RT_SIZEOFMEMB(VMCPU, em.s.u.achPaddingFatalLongJump));
+    AssertCompile(RT_SIZEOFMEMB(VMCPU, em.s) <= RT_SIZEOFMEMB(VMCPU, em.padding));
 
     /*
      * Init the structure.
      */
-    pVM->em.s.offVM = RT_UOFFSETOF(VM, em.s);
     PCFGMNODE pCfgRoot = CFGMR3GetRoot(pVM);
     PCFGMNODE pCfgEM = CFGMR3GetChild(pCfgRoot, "EM");
 
@@ -233,17 +233,8 @@ VMMR3_INT_DECL(int) EMR3Init(PVM pVM)
 
         pVCpu->em.s.enmState            = i == 0 ? EMSTATE_NONE : EMSTATE_WAIT_SIPI;
         pVCpu->em.s.enmPrevState        = EMSTATE_NONE;
-        pVCpu->em.s.fForceRAW           = false;
         pVCpu->em.s.u64TimeSliceStart   = 0; /* paranoia */
         pVCpu->em.s.idxContinueExitRec  = UINT16_MAX;
-
-#ifdef VBOX_WITH_RAW_MODE
-        if (VM_IS_RAW_MODE_ENABLED(pVM))
-        {
-            pVCpu->em.s.pPatmGCState = PATMR3QueryGCStateHC(pVM);
-            AssertMsg(pVCpu->em.s.pPatmGCState, ("PATMR3QueryGCStateHC failed!\n"));
-        }
-#endif
 
 # define EM_REG_COUNTER(a, b, c) \
         rc = STAMR3RegisterF(pVM, a, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, c, b, i); \
@@ -272,7 +263,6 @@ VMMR3_INT_DECL(int) EMR3Init(PVM pVM)
 
         pVCpu->em.s.pStatsR3 = pStats;
         pVCpu->em.s.pStatsR0 = MMHyperR3ToR0(pVM, pStats);
-        pVCpu->em.s.pStatsRC = MMHyperR3ToRC(pVM, pStats);
 
 # if 1 /* rawmode only? */
         EM_REG_COUNTER_USED(&pStats->StatIoRestarted,            "/EM/CPU%d/R3/PrivInst/IoRestarted",        "I/O instructions restarted in ring-3.");
@@ -401,12 +391,7 @@ VMMR3_INT_DECL(int) EMR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
 VMMR3_INT_DECL(void) EMR3Relocate(PVM pVM)
 {
     LogFlow(("EMR3Relocate\n"));
-    for (VMCPUID i = 0; i < pVM->cCpus; i++)
-    {
-        PVMCPU pVCpu = &pVM->aCpus[i];
-        if (pVCpu->em.s.pStatsR3)
-            pVCpu->em.s.pStatsRC = MMHyperR3ToRC(pVM, pVCpu->em.s.pStatsR3);
-    }
+    RT_NOREF(pVM);
 }
 
 
@@ -420,7 +405,6 @@ VMMR3_INT_DECL(void) EMR3Relocate(PVM pVM)
 VMMR3_INT_DECL(void) EMR3ResetCpu(PVMCPU pVCpu)
 {
     /* Reset scheduling state. */
-    pVCpu->em.s.fForceRAW = false;
     VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_UNHALT);
 
     /* VMR3ResetFF may return VINF_EM_RESET or VINF_EM_SUSPEND, so transition
@@ -458,8 +442,6 @@ VMMR3_INT_DECL(void) EMR3Reset(PVM pVM)
  */
 VMMR3_INT_DECL(int) EMR3Term(PVM pVM)
 {
-    AssertMsg(pVM->em.s.offVM, ("bad init order!\n"));
-
 #ifdef VBOX_WITH_REM
     PDMR3CritSectDelete(&pVM->em.s.CritSectREM);
 #else
@@ -482,7 +464,7 @@ static DECLCALLBACK(int) emR3Save(PVM pVM, PSSMHANDLE pSSM)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
 
-        SSMR3PutBool(pSSM, pVCpu->em.s.fForceRAW);
+        SSMR3PutBool(pSSM, false /*fForceRAW*/);
 
         Assert(pVCpu->em.s.enmState     == EMSTATE_SUSPENDED);
         Assert(pVCpu->em.s.enmPrevState != EMSTATE_SUSPENDED);
@@ -530,9 +512,8 @@ static DECLCALLBACK(int) emR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, u
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
 
-        int rc = SSMR3GetBool(pSSM, &pVCpu->em.s.fForceRAW);
-        if (RT_FAILURE(rc))
-            pVCpu->em.s.fForceRAW = false;
+        bool fForceRAWIgnored;
+        int rc = SSMR3GetBool(pSSM, &fForceRAWIgnored);
         AssertRCReturn(rc, rc);
 
         if (uVersion > EM_SAVED_STATE_VERSION_PRE_SMP)
@@ -871,13 +852,8 @@ static VBOXSTRICTRC emR3Debug(PVM pVM, PVMCPU pVCpu, VBOXSTRICTRC rc)
              */
             case VINF_EM_DBG_STEP:
                 if (   pVCpu->em.s.enmState == EMSTATE_DEBUG_GUEST_RAW
-                    || pVCpu->em.s.enmState == EMSTATE_DEBUG_HYPER
-                    || pVCpu->em.s.fForceRAW /* paranoia */)
-#ifdef VBOX_WITH_RAW_MODE
-                    rc = emR3RawStep(pVM, pVCpu);
-#else
+                    || pVCpu->em.s.enmState == EMSTATE_DEBUG_HYPER)
                     AssertLogRelMsgFailedStmt(("Bad EM state."), VERR_EM_INTERNAL_ERROR);
-#endif
                 else if (pVCpu->em.s.enmState == EMSTATE_DEBUG_GUEST_HM)
                     rc = EMR3HmSingleInstruction(pVM, pVCpu, 0 /*fFlags*/);
                 else if (pVCpu->em.s.enmState == EMSTATE_DEBUG_GUEST_NEM)
@@ -978,15 +954,7 @@ static VBOXSTRICTRC emR3Debug(PVM pVM, PVMCPU pVCpu, VBOXSTRICTRC rc)
             case VINF_EM_RESCHEDULE_REM:
             case VINF_EM_HALT:
                 if (pVCpu->em.s.enmState == EMSTATE_DEBUG_HYPER)
-                {
-#ifdef VBOX_WITH_RAW_MODE
-                    rc = emR3RawResumeHyper(pVM, pVCpu);
-                    if (rc != VINF_SUCCESS && RT_SUCCESS(rc))
-                        continue;
-#else
                     AssertLogRelMsgFailedReturn(("Not implemented\n"), VERR_EM_INTERNAL_ERROR);
-#endif
-                }
                 if (rc == VINF_SUCCESS)
                     rc = VINF_EM_RESCHEDULE;
                 return rc;
@@ -1421,12 +1389,6 @@ static VBOXSTRICTRC emR3ExecuteIemThenRem(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
 EMSTATE emR3Reschedule(PVM pVM, PVMCPU pVCpu)
 {
     /*
-     * When forcing raw-mode execution, things are simple.
-     */
-    if (pVCpu->em.s.fForceRAW)
-        return EMSTATE_RAW;
-
-    /*
      * We stay in the wait for SIPI state unless explicitly told otherwise.
      */
     if (pVCpu->em.s.enmState == EMSTATE_WAIT_SIPI)
@@ -1557,17 +1519,6 @@ EMSTATE emR3Reschedule(PVM pVM, PVMCPU pVCpu)
             return EMSTATE_REM;
         }
 
-# ifdef VBOX_WITH_RAW_MODE
-        if (PATMShouldUseRawMode(pVM, (RTGCPTR)pVCpu->cpum.GstCtx.eip))
-        {
-            Log2(("raw r0 mode forced: patch code\n"));
-#  ifdef VBOX_WITH_SAFE_STR
-            Assert(pVCpu->cpum.GstCtx.tr.Sel);
-#  endif
-            return EMSTATE_RAW;
-        }
-# endif /* VBOX_WITH_RAW_MODE */
-
 # if !defined(VBOX_ALLOW_IF0) && !defined(VBOX_RUN_INTERRUPT_GATE_HANDLERS)
         if (!(EFlags.u32 & X86_EFL_IF))
         {
@@ -1692,11 +1643,6 @@ VBOXSTRICTRC emR3HighPriorityPostForcedActions(PVM pVM, PVMCPU pVCpu, VBOXSTRICT
         else
             pVCpu->em.s.idxContinueExitRec = UINT16_MAX;
     }
-
-#ifdef VBOX_WITH_RAW_MODE
-    if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_CSAM_PENDING_ACTION))
-        CSAMR3DoPendingAction(pVM, pVCpu);
-#endif
 
     if (VM_FF_IS_SET(pVM, VM_FF_PGM_NO_MEMORY))
     {
@@ -1909,21 +1855,6 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
             rc2 = VBOXSTRICTRC_TODO(VMR3ResetFF(pVM));
             UPDATE_RC();
         }
-
-#ifdef VBOX_WITH_RAW_MODE
-        /*
-         * CSAM page scanning.
-         */
-        if (    !VM_FF_IS_SET(pVM, VM_FF_PGM_NO_MEMORY)
-            &&  VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_CSAM_SCAN_PAGE))
-        {
-            /** @todo check for 16 or 32 bits code! (D bit in the code selector) */
-            Log(("Forced action VMCPU_FF_CSAM_SCAN_PAGE\n"));
-            CPUM_IMPORT_EXTRN_RCSTRICT(pVCpu, ~CPUMCTX_EXTRN_KEEPER_MASK, rc);
-            CSAMR3CheckCodeEx(pVM, &pVCpu->cpum.GstCtx, pVCpu->cpum.GstCtx.eip);
-            VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_CSAM_SCAN_PAGE);
-        }
-#endif
 
         /*
          * Out of memory? Putting this after CSAM as it may in theory cause us to run out of memory.
@@ -2175,9 +2106,6 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
             }
 
             bool fGif = CPUMGetGuestGif(&pVCpu->cpum.GstCtx);
-#ifdef VBOX_WITH_RAW_MODE
-            fGif &= !PATMIsPatchGCAddr(pVM, pVCpu->cpum.GstCtx.eip);
-#endif
             if (fGif)
             {
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
@@ -2506,12 +2434,11 @@ bool emR3IsExecutionAllowed(PVM pVM, PVMCPU pVCpu)
  */
 VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
 {
-    Log(("EMR3ExecuteVM: pVM=%p enmVMState=%d (%s)  enmState=%d (%s) enmPrevState=%d (%s) fForceRAW=%RTbool\n",
+    Log(("EMR3ExecuteVM: pVM=%p enmVMState=%d (%s)  enmState=%d (%s) enmPrevState=%d (%s)\n",
          pVM,
          pVM->enmVMState,          VMR3GetStateName(pVM->enmVMState),
          pVCpu->em.s.enmState,     emR3GetStateName(pVCpu->em.s.enmState),
-         pVCpu->em.s.enmPrevState, emR3GetStateName(pVCpu->em.s.enmPrevState),
-         pVCpu->em.s.fForceRAW));
+         pVCpu->em.s.enmPrevState, emR3GetStateName(pVCpu->em.s.enmPrevState) ));
     VM_ASSERT_EMT(pVM);
     AssertMsg(   pVCpu->em.s.enmState == EMSTATE_NONE
               || pVCpu->em.s.enmState == EMSTATE_WAIT_SIPI
@@ -2565,9 +2492,8 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
             {
                 rc = emR3ForcedActions(pVM, pVCpu, rc);
                 VBOXVMM_EM_FF_ALL_RET(pVCpu, rc);
-                if (   (   rc == VINF_EM_RESCHEDULE_REM
-                        || rc == VINF_EM_RESCHEDULE_HM)
-                    && pVCpu->em.s.fForceRAW)
+                if (   rc == VINF_EM_RESCHEDULE_REM
+                    || rc == VINF_EM_RESCHEDULE_HM)
                     rc = VINF_EM_RESCHEDULE_RAW;
             }
             else if (fFFDone)
@@ -2609,7 +2535,6 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                  */
                 case VINF_EM_RESCHEDULE_HM:
                     Assert(!pVM->em.s.fIemExecutesAll || pVCpu->em.s.enmState != EMSTATE_IEM);
-                    Assert(!pVCpu->em.s.fForceRAW);
                     if (VM_IS_HM_ENABLED(pVM))
                     {
                         Log2(("EMR3ExecuteVM: VINF_EM_RESCHEDULE_HM: %d -> %d (EMSTATE_HM)\n", enmOldState, EMSTATE_HM));
@@ -2905,12 +2830,8 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                  * Execute raw.
                  */
                 case EMSTATE_RAW:
-#ifdef VBOX_WITH_RAW_MODE
-                    rc = emR3RawExecute(pVM, pVCpu, &fFFDone);
-#else
                     AssertLogRelMsgFailed(("%Rrc\n", rc));
                     rc = VERR_EM_INTERNAL_ERROR;
-#endif
                     break;
 
                 /*

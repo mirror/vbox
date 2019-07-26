@@ -308,10 +308,6 @@ static int emR3HmForcedActions(PVM pVM, PVMCPU pVCpu)
         if (RT_FAILURE(rc))
             return rc;
 
-#ifdef VBOX_WITH_RAW_MODE
-        Assert(!VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_SELM_SYNC_GDT | VMCPU_FF_SELM_SYNC_LDT));
-#endif
-
         /* Prefetch pages for EIP and ESP. */
         /** @todo This is rather expensive. Should investigate if it really helps at all. */
         /** @todo this should be skipped! */
@@ -331,9 +327,6 @@ static int emR3HmForcedActions(PVM pVM, PVMCPU pVCpu)
                 return rc;
         }
         /** @todo maybe prefetch the supervisor stack page as well */
-#ifdef VBOX_WITH_RAW_MODE
-        Assert(!VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_SELM_SYNC_GDT | VMCPU_FF_SELM_SYNC_LDT));
-#endif
     }
 
     /*
@@ -400,9 +393,6 @@ int emR3HmExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
         /*
          * Process high priority pre-execution raw-mode FFs.
          */
-#ifdef VBOX_WITH_RAW_MODE
-        Assert(!VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_SELM_SYNC_TSS | VMCPU_FF_SELM_SYNC_GDT | VMCPU_FF_SELM_SYNC_LDT));
-#endif
         if (    VM_FF_IS_ANY_SET(pVM, VM_FF_HIGH_PRIORITY_PRE_RAW_MASK)
             ||  VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_HIGH_PRIORITY_PRE_RAW_MASK))
         {

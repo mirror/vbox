@@ -299,10 +299,6 @@ static int emR3NemExecuteIOInstruction(PVM pVM, PVMCPU pVCpu)
  */
 static int emR3NemForcedActions(PVM pVM, PVMCPU pVCpu)
 {
-#ifdef VBOX_WITH_RAW_MODE
-    Assert(!VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_SELM_SYNC_TSS | VMCPU_FF_SELM_SYNC_GDT | VMCPU_FF_SELM_SYNC_LDT));
-#endif
-
     /*
      * Sync page directory should not happen in NEM mode.
      */

@@ -318,7 +318,6 @@
     GEN_CHECK_SIZE(EM);
     GEN_CHECK_OFF(EM, offVM);
     GEN_CHECK_OFF(EMCPU, enmState);
-    GEN_CHECK_OFF(EMCPU, fForceRAW);
     GEN_CHECK_OFF_DOT(EMCPU, u.achPaddingFatalLongJump);
     GEN_CHECK_OFF(EMCPU, DisState);
     GEN_CHECK_OFF(EMCPU, StatForcedActions);

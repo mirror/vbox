@@ -39,9 +39,7 @@
  * @param   pVCpu   The cross context virtual CPU structure.
  * @param   rc      The return code.
  */
-#ifdef EMHANDLERC_WITH_PATM
-int emR3RawHandleRC(PVM pVM, PVMCPU pVCpu, int rc)
-#elif defined(EMHANDLERC_WITH_HM) || defined(DOXYGEN_RUNNING)
+#if defined(EMHANDLERC_WITH_HM) || defined(DOXYGEN_RUNNING)
 int emR3HmHandleRC(PVM pVM, PVMCPU pVCpu, int rc)
 #elif defined(EMHANDLERC_WITH_NEM)
 int emR3NemHandleRC(PVM pVM, PVMCPU pVCpu, int rc)
@@ -62,73 +60,6 @@ int emR3NemHandleRC(PVM pVM, PVMCPU pVCpu, int rc)
         case VINF_EM_PENDING_REQUEST:
             rc = VINF_SUCCESS;
             break;
-
-#ifdef EMHANDLERC_WITH_PATM
-        /*
-         * Privileged instruction.
-         */
-        case VINF_EM_RAW_EXCEPTION_PRIVILEGED:
-        case VINF_PATM_PATCH_TRAP_GP:
-            rc = emR3RawPrivileged(pVM, pVCpu);
-            break;
-
-        case VINF_EM_RAW_GUEST_TRAP:
-            /*
-             * Got a trap which needs dispatching.
-             */
-            if (PATMR3IsInsidePatchJump(pVM, pVCpu->cpum.GstCtx.eip, NULL))
-            {
-                AssertReleaseMsgFailed(("FATAL ERROR: executing random instruction inside generated patch jump %08X\n", CPUMGetGuestEIP(pVCpu)));
-                rc = VERR_EM_RAW_PATCH_CONFLICT;
-                break;
-            }
-            rc = emR3RawGuestTrap(pVM, pVCpu);
-            break;
-
-        /*
-         * Trap in patch code.
-         */
-        case VINF_PATM_PATCH_TRAP_PF:
-        case VINF_PATM_PATCH_INT3:
-            rc = emR3RawPatchTrap(pVM, pVCpu, rc);
-            break;
-
-        case VINF_PATM_DUPLICATE_FUNCTION:
-            Assert(PATMIsPatchGCAddr(pVM, pVCpu->cpum.GstCtx.eip));
-            rc = PATMR3DuplicateFunctionRequest(pVM, &pVCpu->cpum.GstCtx);
-            AssertRC(rc);
-            rc = VINF_SUCCESS;
-            break;
-
-        case VINF_PATM_CHECK_PATCH_PAGE:
-            rc = PATMR3HandleMonitoredPage(pVM);
-            AssertRC(rc);
-            rc = VINF_SUCCESS;
-            break;
-
-        /*
-         * Patch manager.
-         */
-        case VERR_EM_RAW_PATCH_CONFLICT:
-            AssertReleaseMsgFailed(("%Rrc handling is not yet implemented\n", rc));
-            break;
-
-        /*
-         * Memory mapped I/O access - attempt to patch the instruction
-         */
-        case VINF_PATM_HC_MMIO_PATCH_READ:
-            rc = PATMR3InstallPatch(pVM, SELMToFlat(pVM, DISSELREG_CS, CPUMCTX2CORE(&pVCpu->cpum.GstCtx), pVCpu->cpum.GstCtx.eip),
-                                      PATMFL_MMIO_ACCESS
-                                    | (CPUMGetGuestCodeBits(pVCpu) == 32 ? PATMFL_CODE32 : 0));
-            if (RT_FAILURE(rc))
-                rc = emR3ExecuteInstruction(pVM, pVCpu, "MMIO");
-            break;
-
-        case VINF_PATM_HC_MMIO_PATCH_WRITE:
-            AssertFailed(); /* not yet implemented. */
-            rc = emR3ExecuteInstruction(pVM, pVCpu, "MMIO");
-            break;
-#endif /* EMHANDLERC_WITH_PATM */
 
 #ifndef EMHANDLERC_WITH_NEM
         /*
@@ -172,44 +103,6 @@ int emR3NemHandleRC(PVM pVM, PVMCPU pVCpu, int rc)
             AssertMsg(RT_FAILURE(rc) || (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST), ("%Rrc\n", rc));
             break;
 #endif /* !EMHANDLERC_WITH_NEM */
-
-#ifdef EMHANDLERC_WITH_PATM
-        /*
-         * CSAM wants to perform a task in ring-3. It has set an FF action flag.
-         */
-        case VINF_CSAM_PENDING_ACTION:
-            rc = VINF_SUCCESS;
-            break;
-
-        /*
-         * Invoked Interrupt gate - must directly (!) go to the recompiler.
-         */
-        case VINF_EM_RAW_INTERRUPT_PENDING:
-        case VINF_EM_RAW_RING_SWITCH_INT:
-            Assert(TRPMHasTrap(pVCpu));
-            Assert(!PATMIsPatchGCAddr(pVM, pVCpu->cpum.GstCtx.eip));
-
-            if (TRPMHasTrap(pVCpu))
-            {
-                /* If the guest gate is marked unpatched, then we will check again if we can patch it. */
-                uint8_t u8Interrupt = TRPMGetTrapNo(pVCpu);
-                if (TRPMR3GetGuestTrapHandler(pVM, u8Interrupt) == TRPM_INVALID_HANDLER)
-                {
-                    CSAMR3CheckGates(pVM, u8Interrupt, 1);
-                    Log(("emR3RawHandleRC: recheck gate %x -> valid=%d\n", u8Interrupt, TRPMR3GetGuestTrapHandler(pVM, u8Interrupt) != TRPM_INVALID_HANDLER));
-                    /* Note: If it was successful, then we could go back to raw mode, but let's keep things simple for now. */
-                }
-            }
-            rc = VINF_EM_RESCHEDULE_REM;
-            break;
-
-        /*
-         * Other ring switch types.
-         */
-        case VINF_EM_RAW_RING_SWITCH:
-            rc = emR3RawRingSwitch(pVM, pVCpu);
-            break;
-#endif  /* EMHANDLERC_WITH_PATM */
 
         /*
          * I/O Port access - emulate the instruction.
@@ -260,31 +153,7 @@ int emR3NemHandleRC(PVM pVM, PVMCPU pVCpu, int rc)
             break;
 #endif
 
-#ifdef EMHANDLERC_WITH_PATM
-        /*
-         * Execute instruction.
-         */
-        case VINF_EM_RAW_EMULATE_INSTR_LDT_FAULT:
-            rc = emR3ExecuteInstruction(pVM, pVCpu, "LDT FAULT: ");
-            break;
-        case VINF_EM_RAW_EMULATE_INSTR_GDT_FAULT:
-            rc = emR3ExecuteInstruction(pVM, pVCpu, "GDT FAULT: ");
-            break;
-        case VINF_EM_RAW_EMULATE_INSTR_IDT_FAULT:
-            rc = emR3ExecuteInstruction(pVM, pVCpu, "IDT FAULT: ");
-            break;
-        case VINF_EM_RAW_EMULATE_INSTR_TSS_FAULT:
-            rc = emR3ExecuteInstruction(pVM, pVCpu, "TSS FAULT: ");
-            break;
-
-        case VINF_PATM_PENDING_IRQ_AFTER_IRET:
-            rc = emR3ExecuteInstruction(pVM, pVCpu, "EMUL: ", VINF_PATM_PENDING_IRQ_AFTER_IRET);
-            break;
-
-        case VINF_PATCH_EMULATE_INSTR:
-#else
         case VINF_EM_RAW_GUEST_TRAP:
-#endif
         case VINF_EM_RAW_EMULATE_INSTR:
             rc = emR3ExecuteInstruction(pVM, pVCpu, "EMUL: ");
             break;
@@ -297,31 +166,6 @@ int emR3NemHandleRC(PVM pVM, PVMCPU pVCpu, int rc)
                 rc = emR3ExecuteInstruction(pVM, pVCpu, "EVENT: ");
             break;
 
-
-#ifdef EMHANDLERC_WITH_PATM
-        /*
-         * Stale selector and iret traps => REM.
-         */
-        case VINF_EM_RAW_STALE_SELECTOR:
-        case VINF_EM_RAW_IRET_TRAP:
-            /* We will not go to the recompiler if EIP points to patch code. */
-            if (PATMIsPatchGCAddr(pVM, pVCpu->cpum.GstCtx.eip))
-            {
-                pVCpu->cpum.GstCtx.eip = PATMR3PatchToGCPtr(pVM, (RTGCPTR)pVCpu->cpum.GstCtx.eip, 0);
-            }
-            LogFlow(("emR3RawHandleRC: %Rrc -> %Rrc\n", rc, VINF_EM_RESCHEDULE_REM));
-            rc = VINF_EM_RESCHEDULE_REM;
-            break;
-
-        /*
-         * Conflict in GDT, resync and continue.
-         */
-        case VINF_SELM_SYNC_GDT:
-            AssertMsg(VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_SELM_SYNC_GDT | VMCPU_FF_SELM_SYNC_LDT | VMCPU_FF_SELM_SYNC_TSS),
-                      ("VINF_SELM_SYNC_GDT without VMCPU_FF_SELM_SYNC_GDT/LDT/TSS!\n"));
-            rc = VINF_SUCCESS;
-            break;
-#endif
 
         /*
          * Up a level.

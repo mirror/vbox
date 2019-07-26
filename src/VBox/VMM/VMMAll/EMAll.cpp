@@ -1005,11 +1005,7 @@ VMM_INT_DECL(int) EMRemTryLock(PVM pVM)
 static DECLCALLBACK(int) emReadBytes(PDISCPUSTATE pDis, uint8_t offInstr, uint8_t cbMinRead, uint8_t cbMaxRead)
 {
     PVMCPU      pVCpu    = (PVMCPU)pDis->pvUser;
-#if defined(VBOX_WITH_RAW_MODE) && (defined(IN_RC) || defined(IN_RING3))
-    PVM         pVM      = pVCpu->CTX_SUFF(pVM);
-#endif
     RTUINTPTR   uSrcAddr = pDis->uInstrAddr + offInstr;
-    int         rc;
 
     /*
      * Figure how much we can or must read.
@@ -1020,62 +1016,29 @@ static DECLCALLBACK(int) emReadBytes(PDISCPUSTATE pDis, uint8_t offInstr, uint8_
     else if (cbToRead < cbMinRead)
         cbToRead = cbMinRead;
 
-#if defined(VBOX_WITH_RAW_MODE) && (defined(IN_RC) || defined(IN_RING3))
-    /*
-     * We might be called upon to interpret an instruction in a patch.
-     */
-    if (PATMIsPatchGCAddr(pVM, uSrcAddr))
+    int rc = PGMPhysSimpleReadGCPtr(pVCpu, &pDis->abInstr[offInstr], uSrcAddr, cbToRead);
+    if (RT_FAILURE(rc))
     {
-# ifdef IN_RC
-        memcpy(&pDis->abInstr[offInstr], (void *)(uintptr_t)uSrcAddr, cbToRead);
-# else
-        memcpy(&pDis->abInstr[offInstr], PATMR3GCPtrToHCPtr(pVM, uSrcAddr), cbToRead);
-# endif
-        rc = VINF_SUCCESS;
-    }
-    else
-#endif
-    {
-# ifdef IN_RC
-        /*
-         * Try access it thru the shadow page tables first. Fall back on the
-         * slower PGM method if it fails because the TLB or page table was
-         * modified recently.
-         */
-        rc = MMGCRamRead(pVCpu->pVMRC, &pDis->abInstr[offInstr], (void *)(uintptr_t)uSrcAddr, cbToRead);
-        if (rc == VERR_ACCESS_DENIED && cbToRead > cbMinRead)
+        if (cbToRead > cbMinRead)
         {
             cbToRead = cbMinRead;
-            rc = MMGCRamRead(pVCpu->pVMRC, &pDis->abInstr[offInstr], (void *)(uintptr_t)uSrcAddr, cbToRead);
-        }
-        if (rc == VERR_ACCESS_DENIED)
-#endif
-        {
             rc = PGMPhysSimpleReadGCPtr(pVCpu, &pDis->abInstr[offInstr], uSrcAddr, cbToRead);
-            if (RT_FAILURE(rc))
-            {
-                if (cbToRead > cbMinRead)
-                {
-                    cbToRead = cbMinRead;
-                    rc = PGMPhysSimpleReadGCPtr(pVCpu, &pDis->abInstr[offInstr], uSrcAddr, cbToRead);
-                }
-                if (RT_FAILURE(rc))
-                {
+        }
+        if (RT_FAILURE(rc))
+        {
 #ifndef IN_RC
-                    /*
-                     * If we fail to find the page via the guest's page tables
-                     * we invalidate the page in the host TLB (pertaining to
-                     * the guest in the NestedPaging case). See @bugref{6043}.
-                     */
-                    if (rc == VERR_PAGE_TABLE_NOT_PRESENT || rc == VERR_PAGE_NOT_PRESENT)
-                    {
-                        HMInvalidatePage(pVCpu, uSrcAddr);
-                        if (((uSrcAddr + cbToRead - 1) >> PAGE_SHIFT) !=  (uSrcAddr >> PAGE_SHIFT))
-                            HMInvalidatePage(pVCpu, uSrcAddr + cbToRead - 1);
-                    }
-#endif
-                }
+            /*
+             * If we fail to find the page via the guest's page tables
+             * we invalidate the page in the host TLB (pertaining to
+             * the guest in the NestedPaging case). See @bugref{6043}.
+             */
+            if (rc == VERR_PAGE_TABLE_NOT_PRESENT || rc == VERR_PAGE_NOT_PRESENT)
+            {
+                HMInvalidatePage(pVCpu, uSrcAddr);
+                if (((uSrcAddr + cbToRead - 1) >> PAGE_SHIFT) !=  (uSrcAddr >> PAGE_SHIFT))
+                    HMInvalidatePage(pVCpu, uSrcAddr + cbToRead - 1);
             }
+#endif
         }
     }
 
