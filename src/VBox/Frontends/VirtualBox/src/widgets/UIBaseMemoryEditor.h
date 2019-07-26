@@ -45,13 +45,19 @@ signals:
 
 public:
 
-    /** Constructs base-memory editor passing @a pParent to the base-class. */
-    UIBaseMemoryEditor(QWidget *pParent = 0);
+    /** Constructs base-memory editor passing @a pParent to the base-class.
+      * @param  fWithLabel  Brings whether we should add label ourselves. */
+    UIBaseMemoryEditor(QWidget *pParent = 0, bool fWithLabel = false);
 
     /** Defines editor @a iValue. */
     void setValue(int iValue);
     /** Returns editor value. */
     int value() const;
+
+    /** Returns the maximum optimal RAM. */
+    uint maxRAMOpt() const;
+    /** Returns the maximum allowed RAM. */
+    uint maxRAMAlw() const;
 
 protected:
 
@@ -72,6 +78,9 @@ private:
 
     /** Revalidates and emits validity change signal. */
     void revalidate();
+
+    /** Holds whether descriptive label should be created. */
+    bool  m_fWithLabel;
 
     /** Holds the memory label instance. */
     QLabel             *m_pLabelMemory;
