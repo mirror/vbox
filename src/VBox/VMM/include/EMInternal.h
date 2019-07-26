@@ -188,7 +188,7 @@ typedef struct EMCPU
     bool                    fHypercallEnabled;
 
     /** Explicit padding. */
-    uint8_t                 abPadding[3];
+    uint8_t                 abPadding0[3];
 
     /** The number of instructions we've executed in IEM since switching to the
      *  EMSTATE_IEM_THEN_REM state. */
@@ -225,6 +225,8 @@ typedef struct EMCPU
         RTGCPTR             uMonitorRDX;    /**< Monitor hint. */
     } MWait;
 
+    /** Make sure the jmp_buf is at a 32-byte boundrary. */
+    uint64_t                au64Padding1[3];
     union
     {
         /** Padding used in the other rings.
@@ -280,8 +282,8 @@ typedef struct EMCPU
     /** Tree for keeping track of cli occurrences (debug only). */
     R3PTRTYPE(PAVLGCPTRNODECORE) pCliStatTree;
     STAMCOUNTER             StatTotalClis;
-    /** Put the history at a 32-byte boundrary. */
-    uint64_t                au64Padding[3];
+    /** Align the next member at a 16-byte boundrary. */
+    uint64_t                au64Padding2[1];
 
     /** Exit history table (6KB). */
     EMEXITENTRY             aExitHistory[256];
