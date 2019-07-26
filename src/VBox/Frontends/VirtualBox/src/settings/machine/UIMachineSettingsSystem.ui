@@ -33,25 +33,16 @@
         </widget>
        </item>
        <item row="0" column="1" rowspan="2" colspan="3">
-        <widget class="QWidget">
+        <widget class="UIBaseMemoryEditor" name="m_pBaseMemoryEditor">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
            <horstretch>1</horstretch>
            <verstretch>0</verstretch>
           </sizepolicy>
          </property>
-         <layout class="QVBoxLayout">
-          <property name="spacing">
-           <number>0</number>
-          </property>
-          <item>
-           <widget class="UIBaseMemoryEditor" name="m_pBaseMemoryEditor">
-            <property name="whatsThis">
-             <string>Controls the amount of memory provided to the virtual machine. If you assign too much, the machine might not start.</string>
-            </property>
-           </widget>
-          </item>
-         </layout>
+         <property name="whatsThis">
+          <string>Controls the amount of memory provided to the virtual machine. If you assign too much, the machine might not start.</string>
+         </property>
         </widget>
        </item>
        <item row="2" column="0">
