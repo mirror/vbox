@@ -74,7 +74,8 @@ typedef const DBGFSELINFO *PCDBGFSELINFO;
 #define DBGFSELINFO_FLAGS_PROT_MODE     RT_BIT_32(1)
 /** The CPU is in long mode. */
 #define DBGFSELINFO_FLAGS_LONG_MODE     RT_BIT_32(2)
-/** The selector is a hyper selector. */
+/** The selector is a hyper selector.
+ * @todo remove me!  */
 #define DBGFSELINFO_FLAGS_HYPER         RT_BIT_32(3)
 /** The selector is a gate selector. */
 #define DBGFSELINFO_FLAGS_GATE          RT_BIT_32(4)

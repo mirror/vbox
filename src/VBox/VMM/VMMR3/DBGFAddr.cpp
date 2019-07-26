@@ -36,27 +36,6 @@
 
 
 /**
- * Checks if an address is in the HMA or not.
- *
- * @retval  true if it's inside the HMA.
- * @retval  flase if it's not inside the HMA.
- *
- * @param   pUVM            The user mode VM handle.
- * @param   FlatPtr         The address in question.
- */
-DECLINLINE(bool) dbgfR3IsHMA(PUVM pUVM, RTGCUINTPTR FlatPtr)
-{
-#ifdef VBOX_WITH_RAW_MODE
-    return VM_IS_RAW_MODE_ENABLED(pUVM->pVM)
-        && MMHyperIsInsideArea(pUVM->pVM, FlatPtr);
-#else
-    RT_NOREF(pUVM, FlatPtr);
-    return false;
-#endif
-}
-
-
-/**
  * Common worker for DBGFR3AddrFromSelOff and DBGFR3AddrFromSelInfoOff.
  */
 static int dbgfR3AddrFromSelInfoOffWorker(PDBGFADDRESS pAddress, PCDBGFSELINFO pSelInfo, RTUINTPTR off)
@@ -119,23 +98,16 @@ VMMR3DECL(int) DBGFR3AddrFromSelOff(PUVM pUVM, VMCPUID idCpu, PDBGFADDRESS pAddr
     {
         DBGFSELINFO SelInfo;
         int rc = DBGFR3SelQueryInfo(pUVM, idCpu, Sel, DBGFSELQI_FLAGS_DT_GUEST | DBGFSELQI_FLAGS_DT_ADJ_64BIT_MODE, &SelInfo);
-        if (RT_FAILURE(rc) && VM_IS_RAW_MODE_ENABLED(pUVM->pVM))
-            rc = DBGFR3SelQueryInfo(pUVM, idCpu, Sel, DBGFSELQI_FLAGS_DT_SHADOW, &SelInfo);
         if (RT_FAILURE(rc))
             return rc;
         rc = dbgfR3AddrFromSelInfoOffWorker(pAddress, &SelInfo, off);
         if (RT_FAILURE(rc))
             return rc;
-        if (   (SelInfo.fFlags & DBGFSELINFO_FLAGS_HYPER)
-            || dbgfR3IsHMA(pUVM, pAddress->FlatPtr))
-            pAddress->fFlags |= DBGFADDRESS_FLAGS_HMA;
     }
     else
     {
         pAddress->FlatPtr = off;
         pAddress->fFlags = DBGFADDRESS_FLAGS_FLAT;
-        if (dbgfR3IsHMA(pUVM, pAddress->FlatPtr))
-            pAddress->fFlags |= DBGFADDRESS_FLAGS_HMA;
     }
     pAddress->fFlags |= DBGFADDRESS_FLAGS_VALID;
 
@@ -165,8 +137,6 @@ VMMR3DECL(int) DBGFR3AddrFromSelInfoOff(PUVM pUVM, PDBGFADDRESS pAddress, PCDBGF
         return rc;
 
     pAddress->fFlags |= DBGFADDRESS_FLAGS_VALID;
-    if (dbgfR3IsHMA(pUVM, pAddress->FlatPtr))
-        pAddress->fFlags |= DBGFADDRESS_FLAGS_HMA;
 
     return VINF_SUCCESS;
 }
@@ -188,8 +158,6 @@ VMMR3DECL(PDBGFADDRESS) DBGFR3AddrFromFlat(PUVM pUVM, PDBGFADDRESS pAddress, RTG
     pAddress->off     = FlatPtr;
     pAddress->FlatPtr = FlatPtr;
     pAddress->fFlags  = DBGFADDRESS_FLAGS_FLAT | DBGFADDRESS_FLAGS_VALID;
-    if (dbgfR3IsHMA(pUVM, pAddress->FlatPtr))
-        pAddress->fFlags |= DBGFADDRESS_FLAGS_HMA;
     return pAddress;
 }
 
@@ -304,9 +272,7 @@ VMMR3DECL(int)  DBGFR3AddrToPhys(PUVM pUVM, VMCPUID idCpu, PCDBGFADDRESS pAddres
      * Convert by address type.
      */
     int rc;
-    if (pAddress->fFlags & DBGFADDRESS_FLAGS_HMA)
-        rc = VERR_NOT_SUPPORTED;
-    else if (pAddress->fFlags & DBGFADDRESS_FLAGS_PHYS)
+    if (pAddress->fFlags & DBGFADDRESS_FLAGS_PHYS)
     {
         *pGCPhys = pAddress->FlatPtr;
         rc = VINF_SUCCESS;
@@ -361,18 +327,12 @@ VMMR3DECL(int)  DBGFR3AddrToHostPhys(PUVM pUVM, VMCPUID idCpu, PDBGFADDRESS pAdd
     AssertReturn(idCpu < pUVM->cCpus, VERR_INVALID_PARAMETER);
 
     /*
-     * Convert it if we can.
+     * Convert it.
      */
-    int rc;
-    if (pAddress->fFlags & DBGFADDRESS_FLAGS_HMA)
-        rc = VERR_NOT_SUPPORTED; /** @todo implement this */
-    else
-    {
-        RTGCPHYS GCPhys;
-        rc = DBGFR3AddrToPhys(pUVM, idCpu, pAddress, &GCPhys);
-        if (RT_SUCCESS(rc))
-            rc = PGMPhysGCPhys2HCPhys(pVM, pAddress->FlatPtr, pHCPhys);
-    }
+    RTGCPHYS GCPhys;
+    int rc = DBGFR3AddrToPhys(pUVM, idCpu, pAddress, &GCPhys);
+    if (RT_SUCCESS(rc))
+        rc = PGMPhysGCPhys2HCPhys(pVM, pAddress->FlatPtr, pHCPhys);
     return rc;
 }
 
@@ -395,46 +355,28 @@ static DECLCALLBACK(int) dbgfR3AddrToVolatileR3PtrOnVCpu(PUVM pUVM, VMCPUID idCp
     VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
     Assert(idCpu == VMMGetCpuId(pVM));
 
+    /*
+     * This is a tad ugly, but it gets the job done.
+     */
     int rc;
-    if (pAddress->fFlags & DBGFADDRESS_FLAGS_HMA)
+    PGMPAGEMAPLOCK Lock;
+    if (pAddress->fFlags & DBGFADDRESS_FLAGS_PHYS)
     {
-        rc = VERR_NOT_SUPPORTED; /** @todo create some dedicated errors for this stuff. */
-        /** @todo this may assert, create a debug version of this which doesn't. */
-        if (   VM_IS_RAW_MODE_ENABLED(pVM)
-            && MMHyperIsInsideArea(pVM, pAddress->FlatPtr))
-        {
-            void *pv = MMHyperRCToCC(pVM, (RTRCPTR)pAddress->FlatPtr);
-            if (pv)
-            {
-                *ppvR3Ptr = pv;
-                rc = VINF_SUCCESS;
-            }
-        }
+        if (fReadOnly)
+            rc = PGMPhysGCPhys2CCPtrReadOnly(pVM, pAddress->FlatPtr, (void const **)ppvR3Ptr, &Lock);
+        else
+            rc = PGMPhysGCPhys2CCPtr(pVM, pAddress->FlatPtr, ppvR3Ptr, &Lock);
     }
     else
     {
-        /*
-         * This is a tad ugly, but it gets the job done.
-         */
-        PGMPAGEMAPLOCK Lock;
-        if (pAddress->fFlags & DBGFADDRESS_FLAGS_PHYS)
-        {
-            if (fReadOnly)
-                rc = PGMPhysGCPhys2CCPtrReadOnly(pVM, pAddress->FlatPtr, (void const **)ppvR3Ptr, &Lock);
-            else
-                rc = PGMPhysGCPhys2CCPtr(pVM, pAddress->FlatPtr, ppvR3Ptr, &Lock);
-        }
+        PVMCPU pVCpu = VMMGetCpuById(pVM, idCpu);
+        if (fReadOnly)
+            rc = PGMPhysGCPtr2CCPtrReadOnly(pVCpu, pAddress->FlatPtr, (void const **)ppvR3Ptr, &Lock);
         else
-        {
-            PVMCPU pVCpu = VMMGetCpuById(pVM, idCpu);
-            if (fReadOnly)
-                rc = PGMPhysGCPtr2CCPtrReadOnly(pVCpu, pAddress->FlatPtr, (void const **)ppvR3Ptr, &Lock);
-            else
-                rc = PGMPhysGCPtr2CCPtr(pVCpu, pAddress->FlatPtr, ppvR3Ptr, &Lock);
-        }
-        if (RT_SUCCESS(rc))
-            PGMPhysReleasePageMappingLock(pVM, &Lock);
+            rc = PGMPhysGCPtr2CCPtr(pVCpu, pAddress->FlatPtr, ppvR3Ptr, &Lock);
     }
+    if (RT_SUCCESS(rc))
+        PGMPhysReleasePageMappingLock(pVM, &Lock);
     return rc;
 }
 

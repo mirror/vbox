@@ -4858,7 +4858,6 @@ PGM_BTH_DECL(int, MapCR3)(PVMCPU pVCpu, RTGCPHYS GCPhysCR3)
 
     /* Set the current hypervisor CR3. */
     CPUMSetHyperCR3(pVCpu, PGMGetHyperCR3(pVCpu));
-    SELMShadowCR3Changed(pVM, pVCpu);
 
 #  ifdef IN_RC
     /* NOTE: The state is consistent again. */

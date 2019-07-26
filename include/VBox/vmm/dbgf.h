@@ -97,10 +97,6 @@ typedef const DBGFADDRESS *PCDBGFADDRESS;
 /** Set if the address is valid. */
 #define DBGFADDRESS_FLAGS_VALID         RT_BIT(3)
 
-/** The address is within the hypervisor memoary area (HMA).
- * If not set, the address can be assumed to be a guest address. */
-#define DBGFADDRESS_FLAGS_HMA           RT_BIT(4)
-
 /** Checks if the mixed address is flat or not. */
 #define DBGFADDRESS_IS_FLAT(pAddress)    ( ((pAddress)->fFlags & DBGFADDRESS_FLAGS_TYPE_MASK) == DBGFADDRESS_FLAGS_FLAT )
 /** Checks if the mixed address is flat or not. */
@@ -119,8 +115,6 @@ typedef const DBGFADDRESS *PCDBGFADDRESS;
 #define DBGFADDRESS_IS_VIRT_GC(pAddress) ( ((pAddress)->fFlags & DBGFADDRESS_FLAGS_TYPE_MASK) <= DBGFADDRESS_FLAGS_FLAT )
 /** Checks if the mixed address is valid. */
 #define DBGFADDRESS_IS_VALID(pAddress)   RT_BOOL((pAddress)->fFlags & DBGFADDRESS_FLAGS_VALID)
-/** Checks if the address is flagged as within the HMA. */
-#define DBGFADDRESS_IS_HMA(pAddress)     RT_BOOL((pAddress)->fFlags & DBGFADDRESS_FLAGS_HMA)
 /** @} */
 
 VMMR3DECL(int)          DBGFR3AddrFromSelOff(PUVM pUVM, VMCPUID idCpu, PDBGFADDRESS pAddress, RTSEL Sel, RTUINTPTR off);
@@ -176,6 +170,7 @@ typedef enum DBGFEVENTTYPE
     /** Breakpoint Hit in the Hypervisor.
      * This notifies that a breakpoint installed by the debugger was hit. The
      * identifier of the breakpoint can be found in the DBGFEVENT::u::Bp::iBp member.
+     * @todo raw-mode: remove this
      */
     DBGFEVENT_BREAKPOINT_HYPER,
     /** Assertion in the Hypervisor (breakpoint instruction).
@@ -1349,8 +1344,6 @@ VMMR3DECL(void)             DBGFR3StackWalkEnd(PCDBGFSTACKFRAME pFirstFrame);
  * @{ */
 /** Disassemble the current guest instruction, with annotations. */
 #define DBGF_DISAS_FLAGS_CURRENT_GUEST      RT_BIT(0)
-/** Disassemble the current hypervisor instruction, with annotations. */
-#define DBGF_DISAS_FLAGS_CURRENT_HYPER      RT_BIT(1)
 /** No annotations for current context. */
 #define DBGF_DISAS_FLAGS_NO_ANNOTATION      RT_BIT(2)
 /** No symbol lookup. */
@@ -1359,8 +1352,6 @@ VMMR3DECL(void)             DBGFR3StackWalkEnd(PCDBGFSTACKFRAME pFirstFrame);
 #define DBGF_DISAS_FLAGS_NO_BYTES           RT_BIT(4)
 /** No address in the output. */
 #define DBGF_DISAS_FLAGS_NO_ADDRESS         RT_BIT(5)
-/** Probably a hypervisor instruction. */
-#define DBGF_DISAS_FLAGS_HYPER              RT_BIT(6)
 /** Disassemble original unpatched bytes (PATM). */
 #define DBGF_DISAS_FLAGS_UNPATCHED_BYTES    RT_BIT(7)
 /** Annotate patched instructions. */
@@ -1478,11 +1469,9 @@ VMMDECL(int) DBGFR3PagingDumpEx(PUVM pUVM, VMCPUID idCpu, uint32_t fFlags, uint6
 
 /** @name DBGFR3SelQueryInfo flags.
  * @{ */
-/** Get the info from the guest descriptor table. */
+/** Get the info from the guest descriptor table.
+ * @note This is more or less a given now when raw-mode was kicked out. */
 #define DBGFSELQI_FLAGS_DT_GUEST            UINT32_C(0)
-/** Get the info from the shadow descriptor table.
- * Only works in raw-mode.  */
-#define DBGFSELQI_FLAGS_DT_SHADOW           UINT32_C(1)
 /** If currently executing in in 64-bit mode, blow up data selectors. */
 #define DBGFSELQI_FLAGS_DT_ADJ_64BIT_MODE   UINT32_C(2)
 /** @} */

@@ -42,19 +42,9 @@ RT_C_DECLS_BEGIN
  * @{
  */
 
-VMMDECL(RTSEL)          SELMGetTrap8Selector(PVM pVM);
-VMMDECL(void)           SELMSetTrap8EIP(PVM pVM, uint32_t u32EIP);
-VMMDECL(int)            SELMGetRing1Stack(PVM pVM, uint32_t *pSS, PRTGCPTR32 pEsp);
-VMMDECL(RTSEL)          SELMGetHyperCS(PVM pVM);
-VMMDECL(RTSEL)          SELMGetHyperCS64(PVM pVM);
-VMMDECL(RTSEL)          SELMGetHyperDS(PVM pVM);
-VMMDECL(RTSEL)          SELMGetHyperTSS(PVM pVM);
-VMMDECL(RTSEL)          SELMGetHyperTSSTrap08(PVM pVM);
-VMMDECL(RTRCPTR)        SELMGetHyperGDT(PVM pVM);
 VMMDECL(int)            SELMGetTSSInfo(PVM pVM, PVMCPU pVCpu, PRTGCUINTPTR pGCPtrTss, PRTGCUINTPTR pcbTss, bool *pfCanHaveIOBitmap);
 VMMDECL(RTGCPTR)        SELMToFlat(PVM pVM, DISSELREG SelReg, PCPUMCTXCORE pCtxCore, RTGCPTR Addr);
 VMMDECL(RTGCPTR)        SELMToFlatBySel(PVM pVM, RTSEL Sel, RTGCPTR Addr);
-VMMDECL(void)           SELMShadowCR3Changed(PVM pVM, PVMCPU pVCpu);
 
 /** Flags for SELMToFlatEx().
  * @{ */
@@ -72,14 +62,11 @@ VMMDECL(void)           SELMShadowCR3Changed(PVM pVM, PVMCPU pVCpu);
 #define SELMTOFLAT_FLAGS_CPL0       0
 /** Get the CPL from the flags. */
 #define SELMTOFLAT_FLAGS_CPL(fFlags)    ((fFlags) & X86_SEL_RPL)
-/** Allow converting using Hypervisor GDT entries. */
 #define SELMTOFLAT_FLAGS_HYPER      RT_BIT(10)
 /** @} */
 
 VMMDECL(int)            SELMToFlatEx(PVMCPU pVCpu, DISSELREG SelReg, PCPUMCTXCORE pCtxCore, RTGCPTR Addr, uint32_t fFlags,
                                      PRTGCPTR ppvGC);
-VMMDECL(int)            SELMToFlatBySelEx(PVMCPU pVCpu, X86EFLAGS eflags, RTSEL Sel, RTGCPTR Addr, uint32_t fFlags,
-                                          PRTGCPTR ppvGC, uint32_t *pcb);
 VMMDECL(int)            SELMValidateAndConvertCSAddr(PVMCPU pVCpu, X86EFLAGS eflags, RTSEL SelCPL, RTSEL SelCS,
                                                      PCPUMSELREG pSRegCS, RTGCPTR Addr, PRTGCPTR ppvFlat);
 #ifdef VBOX_WITH_RAW_MODE
@@ -92,26 +79,13 @@ VMM_INT_DECL(void)      SELMLoadHiddenSelectorReg(PVMCPU pVCpu, PCCPUMCTX pCtx, 
  * @{
  */
 VMMR3DECL(int)          SELMR3Init(PVM pVM);
-VMMR3DECL(int)          SELMR3InitFinalize(PVM pVM);
 VMMR3DECL(void)         SELMR3Relocate(PVM pVM);
 VMMR3DECL(int)          SELMR3Term(PVM pVM);
 VMMR3DECL(void)         SELMR3Reset(PVM pVM);
-# ifdef VBOX_WITH_RAW_MODE
-VMMR3DECL(VBOXSTRICTRC) SELMR3UpdateFromCPUM(PVM pVM, PVMCPU pVCpu);
-VMMR3DECL(int)          SELMR3SyncTSS(PVM pVM, PVMCPU pVCpu);
-# endif
-VMMR3DECL(int)          SELMR3GetSelectorInfo(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PDBGFSELINFO pSelInfo);
-VMMR3DECL(int)          SELMR3GetShadowSelectorInfo(PVM pVM, RTSEL Sel, PDBGFSELINFO pSelInfo);
+VMMR3DECL(int)          SELMR3GetSelectorInfo(PVMCPU pVCpu, RTSEL Sel, PDBGFSELINFO pSelInfo);
 VMMR3DECL(void)         SELMR3DumpDescriptor(X86DESC  Desc, RTSEL Sel, const char *pszMsg);
-VMMR3DECL(void)         SELMR3DumpHyperGDT(PVM pVM);
-VMMR3DECL(void)         SELMR3DumpHyperLDT(PVM pVM);
 VMMR3DECL(void)         SELMR3DumpGuestGDT(PVM pVM);
 VMMR3DECL(void)         SELMR3DumpGuestLDT(PVM pVM);
-VMMR3DECL(bool)         SELMR3CheckTSS(PVM pVM);
-VMMR3DECL(int)          SELMR3DebugCheck(PVM pVM);
-# ifdef VBOX_WITH_SAFE_STR
-VMMR3DECL(bool)         SELMR3CheckShadowTR(PVM pVM);
-# endif
 
 /** @def SELMR3_DEBUG_CHECK
  * Invokes SELMR3DebugCheck in stricts builds. */

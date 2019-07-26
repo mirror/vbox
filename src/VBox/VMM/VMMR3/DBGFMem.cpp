@@ -62,8 +62,6 @@ static DECLCALLBACK(int) dbgfR3MemScan(PUVM pUVM, VMCPUID idCpu, PCDBGFADDRESS p
         return VERR_INVALID_POINTER;
     if (!VALID_PTR(pHitAddress))
         return VERR_INVALID_POINTER;
-    if (DBGFADDRESS_IS_HMA(pAddress))
-        return VERR_INVALID_POINTER;
 
     /*
      * Select DBGF worker by addressing mode.
@@ -160,38 +158,25 @@ static DECLCALLBACK(int) dbgfR3MemRead(PUVM pUVM, VMCPUID idCpu, PCDBGFADDRESS p
         return VERR_INVALID_POINTER;
 
     /*
-     * HMA is special.
+     * Select PGM worker by addressing mode.
      */
     int rc;
-    if (DBGFADDRESS_IS_HMA(pAddress))
-    {
-        if (DBGFADDRESS_IS_PHYS(pAddress))
-            rc = VERR_INVALID_POINTER;
-        else
-            rc = MMR3HyperReadGCVirt(pVM, pvBuf, pAddress->FlatPtr, cbRead);
-    }
+    PVMCPU  pVCpu   = VMMGetCpuById(pVM, idCpu);
+    PGMMODE enmMode = PGMGetGuestMode(pVCpu);
+    if (    enmMode == PGMMODE_REAL
+        ||  enmMode == PGMMODE_PROTECTED
+        ||  DBGFADDRESS_IS_PHYS(pAddress) )
+        rc = PGMPhysSimpleReadGCPhys(pVM, pvBuf, pAddress->FlatPtr, cbRead);
     else
     {
-        /*
-         * Select PGM worker by addressing mode.
-         */
-        PVMCPU  pVCpu   = VMMGetCpuById(pVM, idCpu);
-        PGMMODE enmMode = PGMGetGuestMode(pVCpu);
-        if (    enmMode == PGMMODE_REAL
-            ||  enmMode == PGMMODE_PROTECTED
-            ||  DBGFADDRESS_IS_PHYS(pAddress) )
-            rc = PGMPhysSimpleReadGCPhys(pVM, pvBuf, pAddress->FlatPtr, cbRead);
-        else
-        {
 #if GC_ARCH_BITS > 32
-            if (    (   pAddress->FlatPtr >= _4G
-                     || pAddress->FlatPtr + cbRead > _4G)
-                &&  enmMode != PGMMODE_AMD64
-                &&  enmMode != PGMMODE_AMD64_NX)
-                return VERR_PAGE_TABLE_NOT_PRESENT;
+        if (    (   pAddress->FlatPtr >= _4G
+                 || pAddress->FlatPtr + cbRead > _4G)
+            &&  enmMode != PGMMODE_AMD64
+            &&  enmMode != PGMMODE_AMD64_NX)
+            return VERR_PAGE_TABLE_NOT_PRESENT;
 #endif
-            rc = PGMPhysSimpleReadGCPtr(pVCpu, pvBuf, pAddress->FlatPtr, cbRead);
-        }
+        rc = PGMPhysSimpleReadGCPtr(pVCpu, pvBuf, pAddress->FlatPtr, cbRead);
     }
     return rc;
 }
@@ -326,36 +311,25 @@ static DECLCALLBACK(int) dbgfR3MemWrite(PUVM pUVM, VMCPUID idCpu, PCDBGFADDRESS 
     VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
 
     /*
-     * HMA is always special.
+     * Select PGM function by addressing mode.
      */
     int rc;
-    if (DBGFADDRESS_IS_HMA(pAddress))
-    {
-        /** @todo write to HMA. */
-        rc = VERR_ACCESS_DENIED;
-    }
+    PVMCPU  pVCpu   = VMMGetCpuById(pVM, idCpu);
+    PGMMODE enmMode = PGMGetGuestMode(pVCpu);
+    if (    enmMode == PGMMODE_REAL
+        ||  enmMode == PGMMODE_PROTECTED
+        ||  DBGFADDRESS_IS_PHYS(pAddress) )
+        rc = PGMPhysSimpleWriteGCPhys(pVM, pAddress->FlatPtr, pvBuf, cbWrite);
     else
     {
-        /*
-         * Select PGM function by addressing mode.
-         */
-        PVMCPU  pVCpu   = VMMGetCpuById(pVM, idCpu);
-        PGMMODE enmMode = PGMGetGuestMode(pVCpu);
-        if (    enmMode == PGMMODE_REAL
-            ||  enmMode == PGMMODE_PROTECTED
-            ||  DBGFADDRESS_IS_PHYS(pAddress) )
-            rc = PGMPhysSimpleWriteGCPhys(pVM, pAddress->FlatPtr, pvBuf, cbWrite);
-        else
-        {
 #if GC_ARCH_BITS > 32
-            if (    (   pAddress->FlatPtr >= _4G
-                     || pAddress->FlatPtr + cbWrite > _4G)
-                &&  enmMode != PGMMODE_AMD64
-                &&  enmMode != PGMMODE_AMD64_NX)
-                return VERR_PAGE_TABLE_NOT_PRESENT;
+        if (    (   pAddress->FlatPtr >= _4G
+                 || pAddress->FlatPtr + cbWrite > _4G)
+            &&  enmMode != PGMMODE_AMD64
+            &&  enmMode != PGMMODE_AMD64_NX)
+            return VERR_PAGE_TABLE_NOT_PRESENT;
 #endif
-            rc = PGMPhysSimpleWriteGCPtr(pVCpu, pAddress->FlatPtr, pvBuf, cbWrite);
-        }
+        rc = PGMPhysSimpleWriteGCPtr(pVCpu, pAddress->FlatPtr, pvBuf, cbWrite);
     }
     return rc;
 }
@@ -391,52 +365,41 @@ static DECLCALLBACK(int) dbgfR3SelQueryInfo(PUVM pUVM, VMCPUID idCpu, RTSEL Sel,
     /*
      * Make the query.
      */
-    int rc;
-    if (!(fFlags & DBGFSELQI_FLAGS_DT_SHADOW))
-    {
-        PVMCPU pVCpu = VMMGetCpuById(pVM, idCpu);
-        VMCPU_ASSERT_EMT(pVCpu);
-        rc = SELMR3GetSelectorInfo(pVM, pVCpu, Sel, pSelInfo);
+    PVMCPU pVCpu = VMMGetCpuById(pVM, idCpu);
+    VMCPU_ASSERT_EMT(pVCpu);
+    int rc = SELMR3GetSelectorInfo(pVCpu, Sel, pSelInfo);
 
-        /*
-         * 64-bit mode HACKS for making data and stack selectors wide open when
-         * queried. This is voodoo magic.
-         */
-        if (fFlags & DBGFSELQI_FLAGS_DT_ADJ_64BIT_MODE)
-        {
-            /* Expand 64-bit data and stack selectors. The check is a bit bogus... */
-            if (    RT_SUCCESS(rc)
-                &&  (pSelInfo->fFlags & (  DBGFSELINFO_FLAGS_LONG_MODE | DBGFSELINFO_FLAGS_REAL_MODE | DBGFSELINFO_FLAGS_PROT_MODE
-                                         | DBGFSELINFO_FLAGS_GATE      | DBGFSELINFO_FLAGS_HYPER
-                                         | DBGFSELINFO_FLAGS_INVALID   | DBGFSELINFO_FLAGS_NOT_PRESENT))
-                     == DBGFSELINFO_FLAGS_LONG_MODE
-                &&  pSelInfo->cbLimit != ~(RTGCPTR)0
-                &&  CPUMIsGuestIn64BitCode(pVCpu) )
-            {
-                pSelInfo->GCPtrBase = 0;
-                pSelInfo->cbLimit   = ~(RTGCPTR)0;
-            }
-            else if (   Sel == 0
-                     && CPUMIsGuestIn64BitCode(pVCpu))
-            {
-                pSelInfo->GCPtrBase = 0;
-                pSelInfo->cbLimit   = ~(RTGCPTR)0;
-                pSelInfo->Sel       = 0;
-                pSelInfo->SelGate   = 0;
-                pSelInfo->fFlags    = DBGFSELINFO_FLAGS_LONG_MODE;
-                pSelInfo->u.Raw64.Gen.u1Present  = 1;
-                pSelInfo->u.Raw64.Gen.u1Long     = 1;
-                pSelInfo->u.Raw64.Gen.u1DescType = 1;
-                rc = VINF_SUCCESS;
-            }
-        }
-    }
-    else
+    /*
+     * 64-bit mode HACKS for making data and stack selectors wide open when
+     * queried. This is voodoo magic.
+     */
+    if (fFlags & DBGFSELQI_FLAGS_DT_ADJ_64BIT_MODE)
     {
-        if (!VM_IS_RAW_MODE_ENABLED(pVM))
-            rc = VERR_INVALID_STATE;
-        else
-            rc = SELMR3GetShadowSelectorInfo(pVM, Sel, pSelInfo);
+        /* Expand 64-bit data and stack selectors. The check is a bit bogus... */
+        if (    RT_SUCCESS(rc)
+            &&  (pSelInfo->fFlags & (  DBGFSELINFO_FLAGS_LONG_MODE | DBGFSELINFO_FLAGS_REAL_MODE | DBGFSELINFO_FLAGS_PROT_MODE
+                                     | DBGFSELINFO_FLAGS_GATE      | DBGFSELINFO_FLAGS_HYPER
+                                     | DBGFSELINFO_FLAGS_INVALID   | DBGFSELINFO_FLAGS_NOT_PRESENT))
+                 == DBGFSELINFO_FLAGS_LONG_MODE
+            &&  pSelInfo->cbLimit != ~(RTGCPTR)0
+            &&  CPUMIsGuestIn64BitCode(pVCpu) )
+        {
+            pSelInfo->GCPtrBase = 0;
+            pSelInfo->cbLimit   = ~(RTGCPTR)0;
+        }
+        else if (   Sel == 0
+                 && CPUMIsGuestIn64BitCode(pVCpu))
+        {
+            pSelInfo->GCPtrBase = 0;
+            pSelInfo->cbLimit   = ~(RTGCPTR)0;
+            pSelInfo->Sel       = 0;
+            pSelInfo->SelGate   = 0;
+            pSelInfo->fFlags    = DBGFSELINFO_FLAGS_LONG_MODE;
+            pSelInfo->u.Raw64.Gen.u1Present  = 1;
+            pSelInfo->u.Raw64.Gen.u1Long     = 1;
+            pSelInfo->u.Raw64.Gen.u1DescType = 1;
+            rc = VINF_SUCCESS;
+        }
     }
     return rc;
 }
@@ -472,9 +435,7 @@ VMMR3DECL(int) DBGFR3SelQueryInfo(PUVM pUVM, VMCPUID idCpu, RTSEL Sel, uint32_t 
 {
     UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
     AssertReturn(idCpu < pUVM->cCpus, VERR_INVALID_CPU_ID);
-    AssertReturn(!(fFlags & ~(DBGFSELQI_FLAGS_DT_GUEST | DBGFSELQI_FLAGS_DT_SHADOW | DBGFSELQI_FLAGS_DT_ADJ_64BIT_MODE)), VERR_INVALID_PARAMETER);
-    AssertReturn(    (fFlags & (DBGFSELQI_FLAGS_DT_SHADOW | DBGFSELQI_FLAGS_DT_ADJ_64BIT_MODE))
-                  !=           (DBGFSELQI_FLAGS_DT_SHADOW | DBGFSELQI_FLAGS_DT_ADJ_64BIT_MODE), VERR_INVALID_PARAMETER);
+    AssertReturn(!(fFlags & ~(DBGFSELQI_FLAGS_DT_GUEST | DBGFSELQI_FLAGS_DT_ADJ_64BIT_MODE)), VERR_INVALID_PARAMETER);
 
     /* Clear the return data here on this thread. */
     memset(pSelInfo, 0, sizeof(*pSelInfo));

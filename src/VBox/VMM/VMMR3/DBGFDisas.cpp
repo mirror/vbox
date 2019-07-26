@@ -432,13 +432,6 @@ dbgfR3DisasInstrExOnVCpu(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PRTGCPTR pGCPtr, uint
         pSRegCS    = &pCtxCore->cs;
         GCPtr      = pCtxCore->rip;
     }
-    else if (fFlags & DBGF_DISAS_FLAGS_CURRENT_HYPER)
-    {
-        fFlags    |= DBGF_DISAS_FLAGS_HYPER;
-        pCtxCore   = CPUMGetHyperCtxCore(pVCpu);
-        Sel        = pCtxCore->cs.Sel;
-        GCPtr      = pCtxCore->rip;
-    }
     /*
      * Check if the selector matches the guest CS, use the hidden
      * registers from that if they are valid. Saves time and effort.
@@ -525,12 +518,9 @@ dbgfR3DisasInstrExOnVCpu(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PRTGCPTR pGCPtr, uint
             SelInfo.u.Raw.Gen.u4Type        = X86_SEL_TYPE_EO;
         }
     }
-    else if (   !(fFlags & DBGF_DISAS_FLAGS_HYPER)
-             && (   (pCtxCore && pCtxCore->eflags.Bits.u1VM)
-                 || enmMode == PGMMODE_REAL
-                 || (fFlags & DBGF_DISAS_FLAGS_MODE_MASK) == DBGF_DISAS_FLAGS_16BIT_REAL_MODE
-                )
-            )
+    else if (   (pCtxCore && pCtxCore->eflags.Bits.u1VM)
+             || enmMode == PGMMODE_REAL
+             || (fFlags & DBGF_DISAS_FLAGS_MODE_MASK) == DBGF_DISAS_FLAGS_16BIT_REAL_MODE)
     {   /* V86 mode or real mode - real mode addressing */
         SelInfo.Sel                     = Sel;
         SelInfo.SelGate                 = 0;
@@ -550,10 +540,7 @@ dbgfR3DisasInstrExOnVCpu(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PRTGCPTR pGCPtr, uint
     }
     else
     {
-        if (!(fFlags & DBGF_DISAS_FLAGS_HYPER))
-            rc = SELMR3GetSelectorInfo(pVM, pVCpu, Sel, &SelInfo);
-        else
-            rc = SELMR3GetShadowSelectorInfo(pVM, Sel, &SelInfo);
+        rc = SELMR3GetSelectorInfo(pVCpu, Sel, &SelInfo);
         if (RT_FAILURE(rc))
         {
             RTStrPrintf(pszOutput, cbOutput, "Sel=%04x -> %Rrc\n", Sel, rc);

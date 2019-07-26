@@ -55,10 +55,6 @@
 #include "NEMInternal.h"
 #include "../VMMR0/GMMR0Internal.h"
 #include "../VMMR0/GVMMR0Internal.h"
-#ifdef VBOX_WITH_RAW_MODE
-# include "CSAMInternal.h"
-# include "PATMInternal.h"
-#endif
 #include <VBox/vmm/vm.h>
 #include <VBox/vmm/uvm.h>
 #include <VBox/vmm/gvm.h>
@@ -221,10 +217,6 @@ int main()
     CHECK_PADDING_VM(64, pdm);
     PRINT_OFFSET(VM, pdm.s.CritSect);
     CHECK_PADDING_VM(64, iom);
-#ifdef VBOX_WITH_RAW_MODE
-    CHECK_PADDING_VM(64, patm);
-    CHECK_PADDING_VM(64, csam);
-#endif
     CHECK_PADDING_VM(64, em);
     /*CHECK_PADDING_VM(64, iem);*/
     CHECK_PADDING_VM(64, nem);
@@ -261,22 +253,7 @@ int main()
     PRINT_OFFSET(VMCPU, pgm.s.pStatTrap0eAttributionRC);
 #endif
 
-    CHECK_MEMBER_ALIGNMENT(VM, selm.s.Tss, 16);
-    PRINT_OFFSET(VM, selm.s.Tss);
     PVM pVM = NULL; NOREF(pVM);
-    if ((RT_UOFFSETOF(VM, selm.s.Tss) & PAGE_OFFSET_MASK) > PAGE_SIZE - sizeof(pVM->selm.s.Tss))
-    {
-        printf("error! SELM:Tss is crossing a page!\n");
-        rc++;
-    }
-    PRINT_OFFSET(VM, selm.s.TssTrap08);
-#if 0 // irrelevant now, remove later.
-    if ((RT_UOFFSETOF(VM, selm.s.TssTrap08) & PAGE_OFFSET_MASK) > PAGE_SIZE - sizeof(pVM->selm.s.TssTrap08))
-    {
-        printf("error! SELM:TssTrap08 is crossing a page!\n");
-        rc++;
-    }
-#endif
     CHECK_MEMBER_ALIGNMENT(VM, trpm.s.aIdt, 16);
     CHECK_MEMBER_ALIGNMENT(VM, aCpus[0], PAGE_SIZE);
     CHECK_MEMBER_ALIGNMENT(VM, aCpus[1], PAGE_SIZE);
@@ -372,7 +349,7 @@ int main()
     CHECK_PADDING2(PDMCRITSECTRW);
 
     /* pgm */
-#if defined(VBOX_WITH_2X_4GB_ADDR_SPACE)  || defined(VBOX_WITH_RAW_MODE)
+#if defined(VBOX_WITH_2X_4GB_ADDR_SPACE)
     CHECK_MEMBER_ALIGNMENT(PGMCPU, AutoSet, 8);
 #endif
     CHECK_MEMBER_ALIGNMENT(PGMCPU, GCPhysCR3, sizeof(RTGCPHYS));
@@ -401,9 +378,6 @@ int main()
     /* misc */
     CHECK_PADDING3(EMCPU, u.FatalLongJump, u.achPaddingFatalLongJump);
     CHECK_SIZE_ALIGNMENT(VMMR0JMPBUF, 8);
-#ifdef VBOX_WITH_RAW_MODE
-    CHECK_SIZE_ALIGNMENT(PATCHINFO, 8);
-#endif
 #if 0
     PRINT_OFFSET(VM, fForcedActions);
     PRINT_OFFSET(VM, StatQemuToGC);
@@ -457,14 +431,6 @@ int main()
 
     printf("info: struct UVMCPU: %d bytes\n", (int)sizeof(UVMCPU));
     CHECK_PADDING_UVMCPU(32, vm);
-
-#ifdef VBOX_WITH_RAW_MODE
-    /*
-     * Compare HC and RC.
-     */
-    printf("tstVMStructSize: Comparing HC and RC...\n");
-# include "tstVMStructRC.h"
-#endif /* VBOX_WITH_RAW_MODE */
 
     CHECK_PADDING_GVM(4, gvmm);
     CHECK_PADDING_GVM(4, gmm);

@@ -72,7 +72,6 @@ static FNDBGCCMD dbgcCmdListSymbols;
 static FNDBGCCMD dbgcCmdMemoryInfo;
 static FNDBGCCMD dbgcCmdReg;
 static FNDBGCCMD dbgcCmdRegGuest;
-static FNDBGCCMD dbgcCmdRegHyper;
 static FNDBGCCMD dbgcCmdRegTerse;
 static FNDBGCCMD dbgcCmdSearchMem;
 static FNDBGCCMD dbgcCmdSearchMemType;
@@ -447,7 +446,6 @@ const DBGCCMD    g_aCmdsCodeView[] =
     { "rg",         0,        3,        &g_aArgReg[0],      RT_ELEMENTS(g_aArgReg),         0,       dbgcCmdRegGuest,    "[reg [[=] newval]]",   "Show or set register(s) - guest reg set." },
     { "rg32",       0,        0,        NULL,               0,                              0,       dbgcCmdRegGuest,    "",                     "Show 32-bit guest registers." },
     { "rg64",       0,        0,        NULL,               0,                              0,       dbgcCmdRegGuest,    "",                     "Show 64-bit guest registers." },
-    { "rh",         0,        3,        &g_aArgReg[0],      RT_ELEMENTS(g_aArgReg),         0,       dbgcCmdRegHyper,    "[reg [[=] newval]]",   "Show or set register(s) - hypervisor reg set." },
     { "rt",         0,        0,        NULL,               0,                              0,       dbgcCmdRegTerse,    "",                     "Toggles terse / verbose register info." },
     { "s",          0,       ~0U,       &g_aArgSearchMem[0], RT_ELEMENTS(g_aArgSearchMem),  0,       dbgcCmdSearchMem,   "[options] <range> <pattern>",  "Continue last search." },
     { "sa",         2,       ~0U,       &g_aArgSearchMemType[0], RT_ELEMENTS(g_aArgSearchMemType),0, dbgcCmdSearchMemType, "<range> <pattern>",  "Search memory for an ascii string." },
@@ -1271,8 +1269,7 @@ static DECLCALLBACK(int) dbgcCmdUnassemble(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
         {
             /** @todo Batch query CS, RIP, CPU mode and flags. */
             PVMCPU pVCpu = VMMR3GetCpuByIdU(pUVM, pDbgc->idCpu);
-            if (    pDbgc->fRegCtxGuest
-                &&  CPUMIsGuestIn64BitCode(pVCpu))
+            if (CPUMIsGuestIn64BitCode(pVCpu))
             {
                 pDbgc->DisasmPos.enmType    = DBGCVAR_TYPE_GC_FLAT;
                 pDbgc->SourcePos.u.GCFlat   = CPUMGetGuestRIP(pVCpu);
@@ -1280,10 +1277,9 @@ static DECLCALLBACK(int) dbgcCmdUnassemble(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
             else
             {
                 pDbgc->DisasmPos.enmType     = DBGCVAR_TYPE_GC_FAR;
-                pDbgc->SourcePos.u.GCFar.off = pDbgc->fRegCtxGuest ? CPUMGetGuestEIP(pVCpu) : CPUMGetHyperEIP(pVCpu);
-                pDbgc->SourcePos.u.GCFar.sel = pDbgc->fRegCtxGuest ? CPUMGetGuestCS(pVCpu)  : CPUMGetHyperCS(pVCpu);
+                pDbgc->SourcePos.u.GCFar.off = CPUMGetGuestEIP(pVCpu);
+                pDbgc->SourcePos.u.GCFar.sel = CPUMGetGuestCS(pVCpu);
                 if (   (fFlags & DBGF_DISAS_FLAGS_MODE_MASK) == DBGF_DISAS_FLAGS_DEFAULT_MODE
-                    && pDbgc->fRegCtxGuest
                     && (CPUMGetGuestEFlags(pVCpu) & X86_EFL_VM))
                 {
                     fFlags &= ~DBGF_DISAS_FLAGS_MODE_MASK;
@@ -1291,15 +1287,12 @@ static DECLCALLBACK(int) dbgcCmdUnassemble(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
                 }
             }
 
-            if (pDbgc->fRegCtxGuest)
-                fFlags |= DBGF_DISAS_FLAGS_CURRENT_GUEST;
-            else
-                fFlags |= DBGF_DISAS_FLAGS_CURRENT_HYPER | DBGF_DISAS_FLAGS_HYPER;
+            fFlags |= DBGF_DISAS_FLAGS_CURRENT_GUEST;
         }
         else if ((fFlags & DBGF_DISAS_FLAGS_MODE_MASK) == DBGF_DISAS_FLAGS_DEFAULT_MODE && pDbgc->fDisasm)
         {
             fFlags &= ~DBGF_DISAS_FLAGS_MODE_MASK;
-            fFlags |= pDbgc->fDisasm & (DBGF_DISAS_FLAGS_MODE_MASK | DBGF_DISAS_FLAGS_HYPER);
+            fFlags |= pDbgc->fDisasm & DBGF_DISAS_FLAGS_MODE_MASK;
         }
         pDbgc->DisasmPos.enmRangeType = DBGCVAR_RANGE_NONE;
     }
@@ -1368,8 +1361,6 @@ static DECLCALLBACK(int) dbgcCmdUnassemble(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
             return DBGCCmdHlpFailRc(pCmdHlp, pCmd, rc, "DBGCCmdHlpVarToDbgfAddr failed on '%Dv'", &pDbgc->DisasmPos);
     }
 
-    if (CurAddr.fFlags & DBGFADDRESS_FLAGS_HMA)
-        fFlags |= DBGF_DISAS_FLAGS_HYPER; /* This crap is due to not using DBGFADDRESS as DBGFR3Disas* input. */
     pDbgc->fDisasm = fFlags;
 
     /*
@@ -1429,7 +1420,7 @@ static DECLCALLBACK(int) dbgcCmdUnassemble(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
             return DBGCCmdHlpFailRc(pCmdHlp, pCmd, rc, "DBGCCmdHlpEval(,,'(%Dv) + %x')", &pDbgc->DisasmPos, cbInstr);
         if (iRangeLeft <= 0)
             break;
-        fFlags &= ~(DBGF_DISAS_FLAGS_CURRENT_GUEST | DBGF_DISAS_FLAGS_CURRENT_HYPER);
+        fFlags &= ~DBGF_DISAS_FLAGS_CURRENT_GUEST;
 
         /* Print next symbol? */
         if (cbCheckSymbol <= cbInstr)
@@ -2043,8 +2034,7 @@ static DECLCALLBACK(int) dbgcCmdUnassembleCfg(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHl
         {
             /** @todo Batch query CS, RIP, CPU mode and flags. */
             PVMCPU pVCpu = VMMR3GetCpuByIdU(pUVM, pDbgc->idCpu);
-            if (    pDbgc->fRegCtxGuest
-                &&  CPUMIsGuestIn64BitCode(pVCpu))
+            if (CPUMIsGuestIn64BitCode(pVCpu))
             {
                 pDbgc->DisasmPos.enmType    = DBGCVAR_TYPE_GC_FLAT;
                 pDbgc->SourcePos.u.GCFlat   = CPUMGetGuestRIP(pVCpu);
@@ -2052,10 +2042,9 @@ static DECLCALLBACK(int) dbgcCmdUnassembleCfg(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHl
             else
             {
                 pDbgc->DisasmPos.enmType     = DBGCVAR_TYPE_GC_FAR;
-                pDbgc->SourcePos.u.GCFar.off = pDbgc->fRegCtxGuest ? CPUMGetGuestEIP(pVCpu) : CPUMGetHyperEIP(pVCpu);
-                pDbgc->SourcePos.u.GCFar.sel = pDbgc->fRegCtxGuest ? CPUMGetGuestCS(pVCpu)  : CPUMGetHyperCS(pVCpu);
+                pDbgc->SourcePos.u.GCFar.off = CPUMGetGuestEIP(pVCpu);
+                pDbgc->SourcePos.u.GCFar.sel = CPUMGetGuestCS(pVCpu);
                 if (   (fFlags & DBGF_DISAS_FLAGS_MODE_MASK) == DBGF_DISAS_FLAGS_DEFAULT_MODE
-                    && pDbgc->fRegCtxGuest
                     && (CPUMGetGuestEFlags(pVCpu) & X86_EFL_VM))
                 {
                     fFlags &= ~DBGF_DISAS_FLAGS_MODE_MASK;
@@ -2063,15 +2052,12 @@ static DECLCALLBACK(int) dbgcCmdUnassembleCfg(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHl
                 }
             }
 
-            if (pDbgc->fRegCtxGuest)
-                fFlags |= DBGF_DISAS_FLAGS_CURRENT_GUEST;
-            else
-                fFlags |= DBGF_DISAS_FLAGS_CURRENT_HYPER | DBGF_DISAS_FLAGS_HYPER;
+            fFlags |= DBGF_DISAS_FLAGS_CURRENT_GUEST;
         }
         else if ((fFlags & DBGF_DISAS_FLAGS_MODE_MASK) == DBGF_DISAS_FLAGS_DEFAULT_MODE && pDbgc->fDisasm)
         {
             fFlags &= ~DBGF_DISAS_FLAGS_MODE_MASK;
-            fFlags |= pDbgc->fDisasm & (DBGF_DISAS_FLAGS_MODE_MASK | DBGF_DISAS_FLAGS_HYPER);
+            fFlags |= pDbgc->fDisasm & DBGF_DISAS_FLAGS_MODE_MASK;
         }
         pDbgc->DisasmPos.enmRangeType = DBGCVAR_RANGE_NONE;
     }
@@ -2184,8 +2170,8 @@ static DECLCALLBACK(int) dbgcCmdListSource(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
         {
             PVMCPU pVCpu = VMMR3GetCpuByIdU(pUVM, pDbgc->idCpu);
             pDbgc->SourcePos.enmType     = DBGCVAR_TYPE_GC_FAR;
-            pDbgc->SourcePos.u.GCFar.off = pDbgc->fRegCtxGuest ? CPUMGetGuestEIP(pVCpu) : CPUMGetHyperEIP(pVCpu);
-            pDbgc->SourcePos.u.GCFar.sel = pDbgc->fRegCtxGuest ? CPUMGetGuestCS(pVCpu)  : CPUMGetHyperCS(pVCpu);
+            pDbgc->SourcePos.u.GCFar.off = CPUMGetGuestEIP(pVCpu);
+            pDbgc->SourcePos.u.GCFar.sel = CPUMGetGuestCS(pVCpu);
         }
         pDbgc->SourcePos.enmRangeType = DBGCVAR_RANGE_NONE;
     }
@@ -2351,9 +2337,6 @@ static DECLCALLBACK(int) dbgcCmdListSource(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
  */
 static DECLCALLBACK(int) dbgcCmdReg(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
-    PDBGC pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
-    if (!pDbgc->fRegCtxGuest)
-        return dbgcCmdRegHyper(pCmd, pCmdHlp, pUVM, paArgs, cArgs);
     return dbgcCmdRegGuest(pCmd, pCmdHlp, pUVM, paArgs, cArgs);
 }
 
@@ -2568,56 +2551,6 @@ static DECLCALLBACK(int) dbgcCmdRegGuest(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PU
 
 
 /**
- * @callback_method_impl{FNDBGCCMD, The 'rh' command.}
- */
-static DECLCALLBACK(int) dbgcCmdRegHyper(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
-{
-    /*
-     * Show all registers our selves.
-     */
-    if (cArgs == 0)
-    {
-        PDBGC   pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
-        char    szDisAndRegs[8192];
-        int     rc;
-
-        if (pDbgc->fRegTerse)
-            rc = DBGFR3RegPrintf(pUVM, pDbgc->idCpu | DBGFREG_HYPER_VMCPUID, szDisAndRegs, sizeof(szDisAndRegs),
-                                 "u %VR{cs}:%VR{eip} L 0\n"
-                                 ".eax=%08VR{eax} .ebx=%08VR{ebx} .ecx=%08VR{ecx} .edx=%08VR{edx} .esi=%08VR{esi} .edi=%08VR{edi}\n"
-                                 ".eip=%08VR{eip} .esp=%08VR{esp} .ebp=%08VR{ebp} .%VRF{eflags}\n"
-                                 ".cs=%04VR{cs} .ds=%04VR{ds} .es=%04VR{es} .fs=%04VR{fs} .gs=%04VR{gs} .ss=%04VR{ss}              .eflags=%08VR{eflags}\n");
-        else
-            rc = DBGFR3RegPrintf(pUVM, pDbgc->idCpu | DBGFREG_HYPER_VMCPUID, szDisAndRegs, sizeof(szDisAndRegs),
-                                 "u %04VR{cs}:%08VR{eip} L 0\n"
-                                 ".eax=%08VR{eax} .ebx=%08VR{ebx} .ecx=%08VR{ecx} .edx=%08VR{edx} .esi=%08VR{esi} .edi=%08VR{edi}\n"
-                                 ".eip=%08VR{eip} .esp=%08VR{esp} .ebp=%08VR{ebp} .%VRF{eflags}\n"
-                                 ".cs={%04VR{cs} base=%08VR{cs_base} limit=%08VR{cs_lim} flags=%04VR{cs_attr}} .dr0=%08VR{dr0} .dr1=%08VR{dr1}\n"
-                                 ".ds={%04VR{ds} base=%08VR{ds_base} limit=%08VR{ds_lim} flags=%04VR{ds_attr}} .dr2=%08VR{dr2} .dr3=%08VR{dr3}\n"
-                                 ".es={%04VR{es} base=%08VR{es_base} limit=%08VR{es_lim} flags=%04VR{es_attr}} .dr6=%08VR{dr6} .dr6=%08VR{dr6}\n"
-                                 ".fs={%04VR{fs} base=%08VR{fs_base} limit=%08VR{fs_lim} flags=%04VR{fs_attr}} .cr3=%016VR{cr3}\n"
-                                 ".gs={%04VR{gs} base=%08VR{gs_base} limit=%08VR{gs_lim} flags=%04VR{gs_attr}}\n"
-                                 ".ss={%04VR{ss} base=%08VR{ss_base} limit=%08VR{ss_lim} flags=%04VR{ss_attr}}\n"
-                                 ".gdtr=%08VR{gdtr_base}:%04VR{gdtr_lim}  .idtr=%08VR{idtr_base}:%04VR{idtr_lim}  .eflags=%08VR{eflags}\n"
-                                 ".ldtr={%04VR{ldtr} base=%08VR{ldtr_base} limit=%08VR{ldtr_lim} flags=%04VR{ldtr_attr}}\n"
-                                 ".tr  ={%04VR{tr} base=%08VR{tr_base} limit=%08VR{tr_lim} flags=%04VR{tr_attr}}\n"
-                                 );
-        if (RT_FAILURE(rc))
-            return DBGCCmdHlpVBoxError(pCmdHlp, rc, "DBGFR3RegPrintf failed");
-        char *pszRegs = strchr(szDisAndRegs, '\n');
-        *pszRegs++ = '\0';
-        rc = DBGCCmdHlpPrintf(pCmdHlp, "%s", pszRegs);
-
-        /*
-         * Disassemble one instruction at cs:[r|e]ip.
-         */
-        return pCmdHlp->pfnExec(pCmdHlp, "%s", szDisAndRegs);
-    }
-    return dbgcCmdRegCommon(pCmd, pCmdHlp, pUVM, paArgs, cArgs, ".");
-}
-
-
-/**
  * @callback_method_impl{FNDBGCCMD, The 'rt' command.}
  */
 static DECLCALLBACK(int) dbgcCmdRegTerse(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
@@ -2770,8 +2703,7 @@ static DECLCALLBACK(int) dbgcCmdStack(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM 
      */
     int                 rc;
     PCDBGFSTACKFRAME    pFirstFrame;
-    bool const          fGuest = pCmd->pszCmd[1] == 'g'
-                              || (pCmd->pszCmd[1] != 'h' && pDbgc->fRegCtxGuest);
+    bool const          fGuest = true;
     bool const          fVerbose = pCmd->pszCmd[1] == 'v'
                                 || (pCmd->pszCmd[1] != '\0' && pCmd->pszCmd[2] == 'v');
     rc = DBGFR3StackWalkBegin(pUVM, pDbgc->idCpu, fGuest ? DBGFCODETYPE_GUEST : DBGFCODETYPE_HYPER, &pFirstFrame);
@@ -3848,9 +3780,7 @@ static DECLCALLBACK(int) dbgcCmdDumpPageDir(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp,
      */
     bool fGuest = pCmd->pszCmd[3] != 'h';
     if (!pCmd->pszCmd[3] || pCmd->pszCmd[3] == 'a')
-        fGuest = paArgs[0].enmType == DBGCVAR_TYPE_NUMBER
-               ? pDbgc->fRegCtxGuest
-               : DBGCVAR_ISGCPOINTER(paArgs[0].enmType);
+        fGuest = paArgs[0].enmType == DBGCVAR_TYPE_NUMBER ? true : DBGCVAR_ISGCPOINTER(paArgs[0].enmType);
 
     bool fPAE, fLME, fPSE, fPGE, fNXE;
     uint64_t cr3 = fGuest
@@ -4108,7 +4038,7 @@ static DECLCALLBACK(int) dbgcCmdDumpPageHierarchy(PCDBGCCMD pCmd, PDBGCCMDHLP pC
     if (pCmd->pszCmd[0] == 'm')
         fFlags |= DBGFPGDMP_FLAGS_GUEST | DBGFPGDMP_FLAGS_SHADOW;
     else if (pCmd->pszCmd[3] == '\0')
-        fFlags |= pDbgc->fRegCtxGuest ? DBGFPGDMP_FLAGS_GUEST : DBGFPGDMP_FLAGS_SHADOW;
+        fFlags |= DBGFPGDMP_FLAGS_GUEST;
     else if (pCmd->pszCmd[3] == 'g')
         fFlags |= DBGFPGDMP_FLAGS_GUEST;
     else if (pCmd->pszCmd[3] == 'h')
@@ -4232,9 +4162,7 @@ static DECLCALLBACK(int) dbgcCmdDumpPageTable(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHl
      */
     bool fGuest = pCmd->pszCmd[3] != 'h';
     if (!pCmd->pszCmd[3] || pCmd->pszCmd[3] == 'a')
-        fGuest = paArgs[0].enmType == DBGCVAR_TYPE_NUMBER
-               ? pDbgc->fRegCtxGuest
-               : DBGCVAR_ISGCPOINTER(paArgs[0].enmType);
+        fGuest = paArgs[0].enmType == DBGCVAR_TYPE_NUMBER ? true : DBGCVAR_ISGCPOINTER(paArgs[0].enmType);
 
     bool fPAE, fLME, fPSE, fPGE, fNXE;
     uint64_t cr3 = fGuest
@@ -6085,14 +6013,13 @@ static int dbgcDoListNear(PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR pArg)
  */
 static DECLCALLBACK(int) dbgcCmdListNear(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
-    PDBGC pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
     if (!cArgs)
     {
         /*
          * Current cs:eip symbol.
          */
         DBGCVAR AddrVar;
-        const char *pszFmtExpr = pDbgc->fRegCtxGuest ? "%%(cs:eip)" : "%%(.cs:.eip)";
+        const char *pszFmtExpr = "%%(cs:eip)";
         int rc = DBGCCmdHlpEval(pCmdHlp, &AddrVar, pszFmtExpr);
         if (RT_FAILURE(rc))
             return pCmdHlp->pfnVBoxError(pCmdHlp, rc, "%s\n", pszFmtExpr + 1);

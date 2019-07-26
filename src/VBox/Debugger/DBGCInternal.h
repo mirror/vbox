@@ -137,8 +137,6 @@ typedef struct DBGC
     /** Log indicator. (If set we're writing the log to the console.) */
     bool                fLog;
 
-    /** Indicates whether we're in guest (true) or hypervisor (false) register context. */
-    bool                fRegCtxGuest;
     /** Indicates whether the register are terse or sparse. */
     bool                fRegTerse;
     /** Whether to display registers when tracing. */
