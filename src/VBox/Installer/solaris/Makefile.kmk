@@ -382,10 +382,13 @@ SOLARIS_STRIP_OBJS.MODE    := 0644
 SOLARIS_STRIP_OBJS.SRC     := $(PATH_STAGE_BIN)
 SOLARIS_STRIP_OBJS.DST     := $(VBOX_PATH_SI_SCRATCH_PKG)/opt/VirtualBox/$(VBOX_SI_ARCH)
 SOLARIS_STRIP_OBJS = \
-	VBoxDDRC.rc \
 	VBoxDDR0.r0 \
-	VMMRC.rc \
 	VMMR0.r0
+ifdef VBOX_WITH_RAWMODE
+SOLARIS_STRIP_OBJS += \
+	VBoxDDRC.rc \
+	VMMRC.rc
+endif
 
 ## @def SOLARIS_NO_STRIP
 # List of data files that should be copied from INST_BIN to /opt/VirtualBox/$(VBOX_SI_ARCH)/.
