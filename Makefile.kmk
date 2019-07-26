@@ -762,7 +762,6 @@ VBOX_CORE_DOXYFILE_INPUT_FIRST =\
 	$(PATH_ROOT)/include/VBox/vmm/pgm.h \
 	$(PATH_ROOT)/include/VBox/vmm/selm.h \
 	$(PATH_ROOT)/include/VBox/vmm/trpm.h \
-	$(PATH_ROOT)/include/VBox/vmm/patm.h \
 	$(PATH_ROOT)/include/VBox/vmm/dbgf.h \
 	$(PATH_ROOT)/include/VBox/vmm/stam.h \
 	$(PATH_ROOT)/include/VBox/vmm/em.h \
@@ -782,7 +781,6 @@ VBOX_CORE_DOXYFILE_INPUT_FIRST =\
 	$(PATH_ROOT)/include/VBox/vmm/cfgm.h \
 	$(PATH_ROOT)/include/VBox/vmm/gim.h \
 	$(PATH_ROOT)/include/VBox/vmm/tm.h \
-	$(PATH_ROOT)/include/VBox/vmm/csam.h \
 	$(PATH_ROOT)/include/VBox/vmm/ssm.h \
 	\
 	$(PATH_ROOT)/src/VBox/VMM/include/CFGMInternal.h \
@@ -797,8 +795,6 @@ VBOX_CORE_DOXYFILE_INPUT_FIRST =\
 	$(PATH_ROOT)/src/VBox/VMM/include/PDMInternal.h \
 	$(PATH_ROOT)/src/VBox/VMM/include/PGMInternal.h \
 	$(PATH_ROOT)/src/VBox/VMM/include/GIMInternal.h \
-	$(PATH_ROOT)/src/VBox/VMM/include/CSAMInternal.h \
-	$(PATH_ROOT)/src/VBox/VMM/include/PATMInternal.h \
 	$(PATH_ROOT)/src/VBox/VMM/include/REMInternal.h \
 	$(PATH_ROOT)/src/VBox/VMM/include/SELMInternal.h \
 	$(PATH_ROOT)/src/VBox/VMM/include/SSMInternal.h \
