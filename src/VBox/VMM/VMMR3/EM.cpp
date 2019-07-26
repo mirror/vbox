@@ -2492,9 +2492,6 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
             {
                 rc = emR3ForcedActions(pVM, pVCpu, rc);
                 VBOXVMM_EM_FF_ALL_RET(pVCpu, rc);
-                if (   rc == VINF_EM_RESCHEDULE_REM
-                    || rc == VINF_EM_RESCHEDULE_HM)
-                    rc = VINF_EM_RESCHEDULE_RAW;
             }
             else if (fFFDone)
                 fFFDone = false;
