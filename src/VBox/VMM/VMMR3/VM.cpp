@@ -974,8 +974,6 @@ static int vmR3InitRing3(PVM pVM, PUVM pUVM)
                                                                             if (RT_SUCCESS(rc))
                                                                                 rc = PGMR3InitFinalize(pVM);
                                                                             if (RT_SUCCESS(rc))
-                                                                                rc = SELMR3InitFinalize(pVM);
-                                                                            if (RT_SUCCESS(rc))
                                                                                 rc = TMR3InitFinalize(pVM);
 #ifdef VBOX_WITH_REM
                                                                             if (RT_SUCCESS(rc))
@@ -1143,12 +1141,6 @@ static int vmR3InitDoCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
         rc = EMR3InitCompleted(pVM, enmWhat);
     if (enmWhat == VMINITCOMPLETED_RING3)
     {
-#ifndef VBOX_WITH_RAW_MODE
-        if (RT_SUCCESS(rc))
-            rc = SSMR3RegisterStub(pVM, "CSAM", 0);
-        if (RT_SUCCESS(rc))
-            rc = SSMR3RegisterStub(pVM, "PATM", 0);
-#endif
 #ifndef VBOX_WITH_REM
         if (RT_SUCCESS(rc))
             rc = SSMR3RegisterStub(pVM, "rem", 1);
