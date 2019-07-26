@@ -28,8 +28,6 @@
 #include <VBox/sup.h>
 #include <VBox/vmm/mm.h>
 #include <VBox/vmm/stam.h>
-#include <VBox/vmm/csam.h>
-#include <VBox/vmm/patm.h>
 #include <VBox/vmm/trpm.h>
 #ifdef VBOX_WITH_REM
 # include <VBox/vmm/rem.h>

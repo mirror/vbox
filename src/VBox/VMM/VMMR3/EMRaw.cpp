@@ -23,8 +23,6 @@
 #define VMCPU_INCL_CPUM_GST_CTX
 #include <VBox/vmm/em.h>
 #include <VBox/vmm/vmm.h>
-#include <VBox/vmm/patm.h>
-#include <VBox/vmm/csam.h>
 #include <VBox/vmm/selm.h>
 #include <VBox/vmm/trpm.h>
 #include <VBox/vmm/iem.h>

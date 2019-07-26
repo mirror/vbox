@@ -107,12 +107,6 @@
 #include <VBox/vmm/tm.h>
 #include <VBox/vmm/dbgf.h>
 #include <VBox/vmm/dbgftrace.h>
-#ifdef VBOX_WITH_RAW_MODE_NOT_R0
-# include <VBox/vmm/patm.h>
-# if defined(VBOX_WITH_CALL_RECORD) || defined(REM_MONITOR_CODE_PAGES)
-#  include <VBox/vmm/csam.h>
-# endif
-#endif
 #include "IEMInternal.h"
 #include <VBox/vmm/vm.h>
 #include <VBox/log.h>

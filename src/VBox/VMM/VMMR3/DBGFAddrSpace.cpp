@@ -42,9 +42,6 @@
 #include <VBox/vmm/hm.h>
 #include <VBox/vmm/pdmapi.h>
 #include <VBox/vmm/mm.h>
-#ifdef VBOX_WITH_RAW_MODE
-# include <VBox/vmm/patm.h>
-#endif
 #include "DBGFInternal.h"
 #include <VBox/vmm/uvm.h>
 #include <VBox/vmm/vm.h>

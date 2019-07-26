@@ -28,7 +28,6 @@
 #include <VBox/vmm/mm.h>
 #include <VBox/vmm/em.h>
 #include <VBox/vmm/stam.h>
-#include <VBox/vmm/csam.h>
 #ifdef VBOX_WITH_REM
 # include <VBox/vmm/rem.h>
 #endif

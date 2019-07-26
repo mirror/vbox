@@ -23,7 +23,6 @@
 #include <VBox/vmm/em.h>
 #include <VBox/vmm/mm.h>
 #include <VBox/vmm/selm.h>
-#include <VBox/vmm/patm.h>
 #include <VBox/vmm/pgm.h>
 #include <VBox/vmm/iem.h>
 #include <VBox/vmm/iom.h>

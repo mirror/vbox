@@ -84,8 +84,6 @@
 #include <VBox/vmm/dbgf.h>
 #include <VBox/vmm/mm.h>
 #include <VBox/vmm/stam.h>
-#include <VBox/vmm/csam.h>
-#include <VBox/vmm/patm.h>
 #include <VBox/vmm/iem.h>
 #include "TRPMInternal.h"
 #include <VBox/vmm/vm.h>

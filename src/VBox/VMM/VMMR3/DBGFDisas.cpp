@@ -26,9 +26,6 @@
 #include <VBox/vmm/hm.h>
 #include <VBox/vmm/pgm.h>
 #include <VBox/vmm/cpum.h>
-#ifdef VBOX_WITH_RAW_MODE
-# include <VBox/vmm/patm.h>
-#endif
 #include "DBGFInternal.h"
 #include <VBox/dis.h>
 #include <VBox/err.h>

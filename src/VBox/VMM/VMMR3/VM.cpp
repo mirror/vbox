@@ -64,8 +64,6 @@
 #include <VBox/vmm/apic.h>
 #include <VBox/vmm/tm.h>
 #include <VBox/vmm/stam.h>
-#include <VBox/vmm/patm.h>
-#include <VBox/vmm/csam.h>
 #include <VBox/vmm/iom.h>
 #include <VBox/vmm/ssm.h>
 #include <VBox/vmm/ftm.h>
@@ -940,14 +938,12 @@ static int vmR3InitRing3(PVM pVM, PUVM pUVM)
                                         rc = TRPMR3Init(pVM);
                                         if (RT_SUCCESS(rc))
                                         {
-#ifdef VBOX_WITH_RAW_MODE
-                                            rc = CSAMR3Init(pVM);
+                                            rc = SSMR3RegisterStub(pVM, "CSAM", 0);
                                             if (RT_SUCCESS(rc))
                                             {
-                                                rc = PATMR3Init(pVM);
+                                                rc = SSMR3RegisterStub(pVM, "PATM", 0);
                                                 if (RT_SUCCESS(rc))
                                                 {
-#endif
                                                     rc = IOMR3Init(pVM);
                                                     if (RT_SUCCESS(rc))
                                                     {
@@ -1016,14 +1012,8 @@ static int vmR3InitRing3(PVM pVM, PUVM pUVM)
                                                         int rc2 = IOMR3Term(pVM);
                                                         AssertRC(rc2);
                                                     }
-#ifdef VBOX_WITH_RAW_MODE
-                                                    int rc2 = PATMR3Term(pVM);
-                                                    AssertRC(rc2);
                                                 }
-                                                int rc2 = CSAMR3Term(pVM);
-                                                AssertRC(rc2);
                                             }
-#endif
                                             int rc2 = TRPMR3Term(pVM);
                                             AssertRC(rc2);
                                         }

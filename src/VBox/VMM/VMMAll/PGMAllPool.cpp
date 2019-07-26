@@ -24,9 +24,6 @@
 #include <VBox/vmm/mm.h>
 #include <VBox/vmm/em.h>
 #include <VBox/vmm/cpum.h>
-#ifdef IN_RC
-# include <VBox/vmm/patm.h>
-#endif
 #include "PGMInternal.h"
 #include <VBox/vmm/vm.h>
 #include "PGMInline.h"

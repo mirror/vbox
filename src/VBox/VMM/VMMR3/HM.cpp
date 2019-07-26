@@ -50,8 +50,6 @@
 #include <VBox/vmm/dbgf.h>
 #include <VBox/vmm/iom.h>
 #include <VBox/vmm/iem.h>
-#include <VBox/vmm/patm.h>
-#include <VBox/vmm/csam.h>
 #include <VBox/vmm/selm.h>
 #include <VBox/vmm/nem.h>
 #ifdef VBOX_WITH_REM

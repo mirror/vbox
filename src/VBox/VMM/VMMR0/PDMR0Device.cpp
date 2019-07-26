@@ -28,7 +28,6 @@
 #include <VBox/vmm/vm.h>
 #include <VBox/vmm/gvm.h>
 #include <VBox/vmm/vmm.h>
-#include <VBox/vmm/patm.h>
 #include <VBox/vmm/hm.h>
 #include <VBox/vmm/apic.h>
 

@@ -53,8 +53,6 @@
 #include <VBox/dbg.h>
 #include <VBox/vmm/apic.h>
 #include <VBox/vmm/hm.h>
-#include <VBox/vmm/patm.h>
-#include <VBox/vmm/csam.h>
 #include "REMInternal.h"
 #include <VBox/vmm/vm.h>
 #include <VBox/vmm/uvm.h>

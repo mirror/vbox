@@ -116,7 +116,6 @@
 #include <VBox/vmm/iem.h>
 #include <VBox/vmm/selm.h>
 #include <VBox/vmm/dbgf.h>
-#include <VBox/vmm/patm.h>
 #include <VBox/vmm/hm.h>
 #include <VBox/vmm/ssm.h>
 #include "CPUMInternal.h"
