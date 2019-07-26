@@ -399,7 +399,7 @@ endif
 ## @name VMM related settings.
 ## @{
 # Enable the tradition raw-mode virtualization (being removed in 6.1).
-ifn1of ($(KBUILD_TARGET), darwin linux solaris)
+ifn1of ($(KBUILD_TARGET), darwin linux solaris win)
  VBOX_WITH_RAW_MODE = 1
 else ifdef VBOX_ONLY_EXTPACKS
  VBOX_WITH_RAW_MODE = 1
