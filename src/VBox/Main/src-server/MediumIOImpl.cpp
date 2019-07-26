@@ -159,7 +159,7 @@ public:
 protected:
     HRESULT         mRC;
 
-    DataStream      *m_pDataStream;
+    ComObjPtr<DataStream> m_pDataStream;
     MediumVariant_T m_fMediumVariant;
     Utf8Str         m_strFormat;
 
