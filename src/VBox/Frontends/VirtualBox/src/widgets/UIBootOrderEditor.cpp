@@ -507,6 +507,7 @@ void UIBootOrderEditor::prepare()
             m_pTable = new UIBootListWidget(this);
             if (m_pTable)
             {
+                setFocusProxy(m_pTable);
                 if (m_pLabel)
                     m_pLabel->setBuddy(m_pTable);
                 m_pTable->setAlternatingRowColors(true);
@@ -538,7 +539,7 @@ void UIBootOrderEditor::prepare()
             }
 
             /* Add table layout to main layout: */
-            pMainLayout->addLayout(pTableLayout, 0, iRow++, 2, 1);
+            pMainLayout->addLayout(pTableLayout, 0, iRow++, 3, 1);
         }
     }
 

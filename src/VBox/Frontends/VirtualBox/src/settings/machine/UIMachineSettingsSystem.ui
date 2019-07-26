@@ -55,7 +55,7 @@
         </widget>
        </item>
        <item row="2" column="0">
-        <widget class="QLabel" name="m_pLabelBootOrder">
+        <widget class="QLabel" name="m_pBootOrderLabel">
          <property name="text">
           <string>&amp;Boot Order:</string>
          </property>
@@ -67,40 +67,20 @@
          </property>
         </widget>
        </item>
-       <item row="2" column="1" rowspan="2" colspan="2">
-        <layout class="QHBoxLayout" name="m_pLayoutBootOrder">
-         <property name="spacing">
-          <number>1</number>
+       <item row="2" column="1" rowspan="3" colspan="3">
+        <widget class="UIBootOrderEditor" name="m_pBootOrderEditor">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
          </property>
-         <item>
-          <widget class="UIBootOrderEditor" name="m_pBootOrderEditor">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="whatsThis">
-            <string>Defines the boot device order. Use the checkboxes on the left to enable or disable individual boot devices. Move items up and down to change the device order.</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <spacer name="m_pSpacerHorizontal2">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>0</width>
-             <height>0</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-        </layout>
+         <property name="whatsThis">
+          <string>Defines the boot device order. Use the checkboxes on the left to enable or disable individual boot devices. Move items up and down to change the device order.</string>
+         </property>
+        </widget>
        </item>
-       <item row="4" column="0">
+       <item row="5" column="0">
         <widget class="QLabel" name="m_pLabelChipsetType">
          <property name="text">
           <string>&amp;Chipset:</string>
@@ -113,7 +93,7 @@
          </property>
         </widget>
        </item>
-       <item row="4" column="1" colspan="3">
+       <item row="5" column="1" colspan="3">
         <layout class="QHBoxLayout">
          <item>
           <widget class="QComboBox" name="m_pComboChipsetType">
@@ -143,7 +123,7 @@
          </item>
         </layout>
        </item>
-       <item row="5" column="0">
+       <item row="6" column="0">
         <widget class="QLabel" name="m_pLabelPointingHIDType">
          <property name="text">
           <string>&amp;Pointing Device:</string>
@@ -156,7 +136,7 @@
          </property>
         </widget>
        </item>
-       <item row="5" column="1" colspan="3">
+       <item row="6" column="1" colspan="3">
         <layout class="QHBoxLayout">
          <item>
           <widget class="QComboBox" name="m_pComboPointingHIDType" >
@@ -186,7 +166,7 @@
          </item>
         </layout>
        </item>
-       <item row="6" column="0">
+       <item row="7" column="0">
         <widget class="QLabel" name="m_pLabelMotherboardExtended">
          <property name="text">
           <string>Extended Features:</string>
@@ -196,7 +176,7 @@
          </property>
         </widget>
        </item>
-       <item row="6" column="1" colspan="3">
+       <item row="7" column="1" colspan="3">
         <widget class="QCheckBox" name="m_pCheckBoxApic">
          <property name="whatsThis">
           <string>When checked, the virtual machine will support the Input Output APIC (I/O APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don't disable this feature after having installed a Windows guest operating system!</string>
@@ -206,7 +186,7 @@
          </property>
         </widget>
        </item>
-       <item row="7" column="1" colspan="3">
+       <item row="8" column="1" colspan="3">
         <widget class="QCheckBox" name="m_pCheckBoxEFI">
          <property name="whatsThis">
           <string>When checked, the guest will support the Extended Firmware Interface (EFI), which is required to boot certain guest OSes. Non-EFI aware OSes will not be able to boot if this option is activated.</string>
@@ -216,7 +196,7 @@
          </property>
         </widget>
        </item>
-       <item row="8" column="1" colspan="3">
+       <item row="9" column="1" colspan="3">
         <widget class="QCheckBox" name="m_pCheckBoxUseUTC" >
          <property name="whatsThis" >
           <string>When checked, the RTC device will report the time in UTC, otherwise in local (host) time. Unix usually expects the hardware clock to be set to UTC.</string>
@@ -226,7 +206,7 @@
          </property>
         </widget>
        </item>
-       <item row="9" column="0" colspan="4">
+       <item row="10" column="0" colspan="4">
         <spacer name="m_pSpacerVertical2">
          <property name="orientation">
           <enum>Qt::Vertical</enum>

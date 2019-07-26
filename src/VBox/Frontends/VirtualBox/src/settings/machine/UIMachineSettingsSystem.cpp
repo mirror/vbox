@@ -596,7 +596,7 @@ void UIMachineSettingsSystem::polishPage()
     /* Polish 'Motherboard' availability: */
     m_pBaseMemoryLabel->setEnabled(isMachineOffline());
     m_pBaseMemoryEditor->setEnabled(isMachineOffline());
-    m_pLabelBootOrder->setEnabled(isMachineOffline());
+    m_pBootOrderLabel->setEnabled(isMachineOffline());
     m_pBootOrderEditor->setEnabled(isMachineOffline());
     m_pLabelChipsetType->setEnabled(isMachineOffline());
     m_pComboChipsetType->setEnabled(isMachineOffline());
@@ -727,17 +727,12 @@ void UIMachineSettingsSystem::prepareTabMotherboard()
             m_pBaseMemoryLabel->setBuddy(m_pBaseMemoryEditor->focusProxy());
         }
 
-        /* Boot-order layout created in the .ui file. */
-        AssertPtrReturnVoid(m_pLayoutBootOrder);
+        /* Boot-order label and editor created in the .ui file. */
+        AssertPtrReturnVoid(m_pBootOrderLabel);
+        AssertPtrReturnVoid(m_pBootOrderEditor);
         {
-            /* Configure layout: */
-#ifdef VBOX_WS_MAC
-            /* We need a little space for the focus rect: */
-            m_pLayoutBootOrder->setContentsMargins(3, 3, 3, 3);
-            m_pLayoutBootOrder->setSpacing(3);
-#else
-            m_pLayoutBootOrder->setSpacing(qApp->style()->pixelMetric(QStyle::PM_LayoutHorizontalSpacing) / 3);
-#endif
+            /* Configure label & editor: */
+            m_pBootOrderLabel->setBuddy(m_pBootOrderEditor->focusProxy());
         }
 
         /* Chipset Type combo-box created in the .ui file. */
