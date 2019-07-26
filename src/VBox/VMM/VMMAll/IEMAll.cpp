@@ -15889,7 +15889,6 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVmexitApicAccess(PVMCPU pVCpu, PCVMXVEXITIN
 {
     Assert(pExitInfo);
     Assert(pExitEventInfo);
-    Assert(pExitInfo->uReason == VMX_EXIT_APIC_ACCESS);
     VBOXSTRICTRC rcStrict = iemVmxVmexitApicAccessWithInfo(pVCpu, pExitInfo, pExitEventInfo);
     Assert(!pVCpu->iem.s.cActiveMappings);
     return iemExecStatusCodeFiddling(pVCpu, rcStrict);
