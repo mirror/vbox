@@ -940,6 +940,8 @@ VMMR3_INT_DECL(int) VMMR3UpdateLoggers(PVM pVM)
             AssertRC(rc);
         }
     }
+#else
+    RT_NOREF(pVM);
 #endif
 
     return rc;
