@@ -33,7 +33,7 @@
 #include <VBox/vmm/selm.h>
 #include "VMMInternal.h"
 #include <VBox/vmm/vm.h>
-#include <VBox/err.h>
+#include <iprt/errcore.h>
 #include <VBox/param.h>
 
 #include <iprt/assert.h>
