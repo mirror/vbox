@@ -31,8 +31,8 @@
 #if !defined(IN_VMM_R3) && !defined(IN_VMM_R0) && !defined(IN_VMM_RC)
 # error "Not in VMM! This is an internal header!"
 #endif
-#if defined(RT_OS_DARWIN) && HC_ARCH_BITS == 32
-# error "32-bit darwin is no longer supported. Go back to 4.3 or earlier!"
+#if HC_ARCH_BITS == 32
+# error "32-bit hosts are no longer supported. Go back to 6.0 or earlier!"
 #endif
 
 
@@ -266,8 +266,8 @@ typedef struct VMM
     /** Buffer for storing the custom message for a ring-0 assertion. */
     char                        szRing0AssertMsg2[256];
 
-    /** Number of VMMR0_DO_HM_RUN calls. */
-    STAMCOUNTER                 StatRunRC;
+    /** Number of VMMR0_DO_HM_RUN or VMMR0_DO_NEM_RUN calls. */
+    STAMCOUNTER                 StatRunGC;
 
     /** Statistics for each of the RC/R0 return codes.
      * @{ */
@@ -441,78 +441,6 @@ AssertCompileMemberAlignment(VMMCPU, TracerCtx, 8);
 typedef VMMCPU *PVMMCPU;
 
 
-/**
- * The VMMRCEntry() codes.
- */
-typedef enum VMMRCOPERATION
-{
-    /** Do GC module init. */
-    VMMRC_DO_VMMRC_INIT = 1,
-
-    /** The first Trap testcase. */
-    VMMRC_DO_TESTCASE_TRAP_FIRST = 0x0dead000,
-    /** Trap 0 testcases, uArg selects the variation. */
-    VMMRC_DO_TESTCASE_TRAP_0 = VMMRC_DO_TESTCASE_TRAP_FIRST,
-    /** Trap 1 testcases, uArg selects the variation. */
-    VMMRC_DO_TESTCASE_TRAP_1,
-    /** Trap 2 testcases, uArg selects the variation. */
-    VMMRC_DO_TESTCASE_TRAP_2,
-    /** Trap 3 testcases, uArg selects the variation. */
-    VMMRC_DO_TESTCASE_TRAP_3,
-    /** Trap 4 testcases, uArg selects the variation. */
-    VMMRC_DO_TESTCASE_TRAP_4,
-    /** Trap 5 testcases, uArg selects the variation. */
-    VMMRC_DO_TESTCASE_TRAP_5,
-    /** Trap 6 testcases, uArg selects the variation. */
-    VMMRC_DO_TESTCASE_TRAP_6,
-    /** Trap 7 testcases, uArg selects the variation. */
-    VMMRC_DO_TESTCASE_TRAP_7,
-    /** Trap 8 testcases, uArg selects the variation. */
-    VMMRC_DO_TESTCASE_TRAP_8,
-    /** Trap 9 testcases, uArg selects the variation. */
-    VMMRC_DO_TESTCASE_TRAP_9,
-    /** Trap 0a testcases, uArg selects the variation. */
-    VMMRC_DO_TESTCASE_TRAP_0A,
-    /** Trap 0b testcases, uArg selects the variation. */
-    VMMRC_DO_TESTCASE_TRAP_0B,
-    /** Trap 0c testcases, uArg selects the variation. */
-    VMMRC_DO_TESTCASE_TRAP_0C,
-    /** Trap 0d testcases, uArg selects the variation. */
-    VMMRC_DO_TESTCASE_TRAP_0D,
-    /** Trap 0e testcases, uArg selects the variation. */
-    VMMRC_DO_TESTCASE_TRAP_0E,
-    /** The last trap testcase (exclusive). */
-    VMMRC_DO_TESTCASE_TRAP_LAST,
-    /** Testcase for checking interrupt forwarding. */
-    VMMRC_DO_TESTCASE_HYPER_INTERRUPT,
-    /** Switching testing and profiling stub. */
-    VMMRC_DO_TESTCASE_NOP,
-    /** Testcase for checking interrupt masking. */
-    VMMRC_DO_TESTCASE_INTERRUPT_MASKING,
-    /** Switching testing and profiling stub. */
-    VMMRC_DO_TESTCASE_HM_NOP,
-
-    /** The usual 32-bit hack. */
-    VMMRC_DO_32_BIT_HACK = 0x7fffffff
-} VMMRCOPERATION;
-
-
-
-/**
- * MSR test result entry.
- */
-typedef struct VMMTESTMSRENTRY
-{
-    /** The MSR number, including padding.
-     * Set to UINT64_MAX if invalid MSR. */
-    uint64_t    uMsr;
-    /** The register value. */
-    uint64_t    uValue;
-} VMMTESTMSRENTRY;
-/** Pointer to an MSR test result entry. */
-typedef VMMTESTMSRENTRY *PVMMTESTMSRENTRY;
-
-
 
 RT_C_DECLS_BEGIN
 
@@ -526,6 +454,7 @@ void vmmR3SwitcherRelocate(PVM pVM, RTGCINTPTR offDelta);
 #endif /* IN_RING3 */
 
 #ifdef IN_RING0
+
 /**
  * World switcher assembly routine.
  * It will call VMMRCEntry().
@@ -647,40 +576,6 @@ void vmmR0TripleFaultHackTerm(void);
 # endif
 
 #endif /* IN_RING0 */
-#ifdef IN_RC
-
-/**
- * Internal GC logger worker: Logger wrapper.
- */
-VMMRCDECL(void) vmmGCLoggerWrapper(const char *pszFormat, ...);
-
-/**
- * Internal GC release logger worker: Logger wrapper.
- */
-VMMRCDECL(void) vmmGCRelLoggerWrapper(const char *pszFormat, ...);
-
-/**
- * Internal GC logger worker: Flush logger.
- *
- * @returns VINF_SUCCESS.
- * @param   pLogger     The logger instance to flush.
- * @remark  This function must be exported!
- */
-VMMRCDECL(int)  vmmGCLoggerFlush(PRTLOGGERRC pLogger);
-
-/** @name Trap testcases and related labels.
- * @{ */
-DECLASM(void)   vmmGCEnableWP(void);
-DECLASM(void)   vmmGCDisableWP(void);
-DECLASM(int)    vmmGCTestTrap3(void);
-DECLASM(int)    vmmGCTestTrap8(void);
-DECLASM(int)    vmmGCTestTrap0d(void);
-DECLASM(int)    vmmGCTestTrap0e(void);
-DECLASM(int)    vmmGCTestTrap0e_FaultEIP(void); /**< a label */
-DECLASM(int)    vmmGCTestTrap0e_ResumeEIP(void); /**< a label */
-/** @} */
-
-#endif /* IN_RC */
 
 RT_C_DECLS_END
 

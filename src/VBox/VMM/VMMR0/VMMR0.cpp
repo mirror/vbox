@@ -1438,7 +1438,7 @@ VMMR0DECL(void) VMMR0EntryFast(PGVM pGVM, PVM pVM, VMCPUID idCpu, VMMR0OPERATION
 
                             VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED);
                         }
-                        STAM_COUNTER_INC(&pVM->vmm.s.StatRunRC);
+                        STAM_COUNTER_INC(&pVM->vmm.s.StatRunGC);
 
                         /*
                          * Invalidate the host CPU identifiers before we disable the context
@@ -1537,7 +1537,7 @@ VMMR0DECL(void) VMMR0EntryFast(PGVM pGVM, PVM pVM, VMCPUID idCpu, VMMR0OPERATION
             VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
             int rc = vmmR0CallRing3SetJmp2(&pVCpu->vmm.s.CallRing3JmpBufR0, NEMR0RunGuestCode, pGVM, idCpu);
             VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
-            STAM_COUNTER_INC(&pVM->vmm.s.StatRunRC);
+            STAM_COUNTER_INC(&pVM->vmm.s.StatRunGC);
 
             pVCpu->vmm.s.iLastGZRc = rc;
 

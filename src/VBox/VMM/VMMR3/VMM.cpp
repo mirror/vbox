@@ -464,7 +464,7 @@ static void vmmR3InitRegisterStats(PVM pVM)
     /*
      * Statistics.
      */
-    STAM_REG(pVM, &pVM->vmm.s.StatRunRC,                    STAMTYPE_COUNTER, "/VMM/RunRC",                     STAMUNIT_OCCURENCES, "Number of context switches.");
+    STAM_REG(pVM, &pVM->vmm.s.StatRunGC,                    STAMTYPE_COUNTER, "/VMM/RunGC",                     STAMUNIT_OCCURENCES, "Number of context switches.");
     STAM_REG(pVM, &pVM->vmm.s.StatRZRetNormal,              STAMTYPE_COUNTER, "/VMM/RZRet/Normal",              STAMUNIT_OCCURENCES, "Number of VINF_SUCCESS returns.");
     STAM_REG(pVM, &pVM->vmm.s.StatRZRetInterrupt,           STAMTYPE_COUNTER, "/VMM/RZRet/Interrupt",           STAMUNIT_OCCURENCES, "Number of VINF_EM_RAW_INTERRUPT returns.");
     STAM_REG(pVM, &pVM->vmm.s.StatRZRetInterruptHyper,      STAMTYPE_COUNTER, "/VMM/RZRet/InterruptHyper",      STAMUNIT_OCCURENCES, "Number of VINF_EM_RAW_INTERRUPT_HYPER returns.");
@@ -649,90 +649,6 @@ VMMR3_INT_DECL(int) VMMR3InitR0(PVM pVM)
 
     return rc;
 }
-
-
-#ifdef VBOX_WITH_RAW_MODE
-/**
- * Initializes the RC VMM.
- *
- * @returns VBox status code.
- * @param   pVM         The cross context VM structure.
- */
-VMMR3_INT_DECL(int) VMMR3InitRC(PVM pVM)
-{
-    PVMCPU pVCpu = VMMGetCpu(pVM);
-    Assert(pVCpu && pVCpu->idCpu == 0);
-
-    /* In VMX mode, there's no need to init RC. */
-    if (!VM_IS_RAW_MODE_ENABLED(pVM))
-        return VINF_SUCCESS;
-
-    AssertReturn(pVM->cCpus == 1, VERR_RAW_MODE_INVALID_SMP);
-
-    /*
-     * Call VMMRCInit():
-     *      -# resolve the address.
-     *      -# setup stackframe and EIP to use the trampoline.
-     *      -# do a generic hypervisor call.
-     */
-    RTRCPTR RCPtrEP;
-    int rc = PDMR3LdrGetSymbolRC(pVM, VMMRC_MAIN_MODULE_NAME, "VMMRCEntry", &RCPtrEP);
-    if (RT_SUCCESS(rc))
-    {
-        CPUMSetHyperESP(pVCpu, pVCpu->vmm.s.pbEMTStackBottomRC); /* Clear the stack. */
-        uint64_t u64TS = RTTimeProgramStartNanoTS();
-        CPUMPushHyper(pVCpu, RT_HI_U32(u64TS));           /* Param 4: The program startup TS - Hi. */
-        CPUMPushHyper(pVCpu, RT_LO_U32(u64TS));           /* Param 4: The program startup TS - Lo. */
-        CPUMPushHyper(pVCpu, vmmGetBuildType());          /* Param 3: Version argument. */
-        CPUMPushHyper(pVCpu, VMMGetSvnRev());             /* Param 2: Version argument. */
-        CPUMPushHyper(pVCpu, VMMRC_DO_VMMRC_INIT);        /* Param 1: Operation. */
-        CPUMPushHyper(pVCpu, pVM->pVMRC);                 /* Param 0: pVM */
-        CPUMPushHyper(pVCpu, 6 * sizeof(RTRCPTR));        /* trampoline param: stacksize.  */
-        CPUMPushHyper(pVCpu, RCPtrEP);                    /* Call EIP. */
-        CPUMSetHyperEIP(pVCpu, pVM->vmm.s.pfnCallTrampolineRC);
-        Assert(CPUMGetHyperCR3(pVCpu) && CPUMGetHyperCR3(pVCpu) == PGMGetHyperCR3(pVCpu));
-
-        for (;;)
-        {
-#ifdef NO_SUPCALLR0VMM
-            //rc = VERR_GENERAL_FAILURE;
-            rc = VINF_SUCCESS;
-#else
-            rc = SUPR3CallVMMR0(pVM->pVMR0, 0 /* VCPU 0 */, VMMR0_DO_CALL_HYPERVISOR, NULL);
-#endif
-#ifdef LOG_ENABLED
-            PRTLOGGERRC pLogger = pVM->vmm.s.pRCLoggerR3;
-            if (    pLogger
-                &&  pLogger->offScratch > 0)
-                RTLogFlushRC(NULL, pLogger);
-#endif
-#ifdef VBOX_WITH_RC_RELEASE_LOGGING
-            PRTLOGGERRC pRelLogger = pVM->vmm.s.pRCRelLoggerR3;
-            if (RT_UNLIKELY(pRelLogger && pRelLogger->offScratch > 0))
-                RTLogFlushRC(RTLogRelGetDefaultInstance(), pRelLogger);
-#endif
-            if (rc != VINF_VMM_CALL_HOST)
-                break;
-            rc = vmmR3ServiceCallRing3Request(pVM, pVCpu);
-            if (RT_FAILURE(rc) || (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST))
-                break;
-        }
-
-        /* Don't trigger assertions or guru if raw-mode is unavailable. */
-        if (rc != VERR_SUPDRV_NO_RAW_MODE_HYPER_V_ROOT)
-        {
-            if (RT_FAILURE(rc) || (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST))
-            {
-                VMMR3FatalDump(pVM, pVCpu, rc);
-                if (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST)
-                    rc = VERR_IPE_UNEXPECTED_INFO_STATUS;
-            }
-            AssertRC(rc);
-        }
-    }
-    return rc;
-}
-#endif /* VBOX_WITH_RAW_MODE */
 
 
 /**
@@ -1096,44 +1012,6 @@ static DECLCALLBACK(int) vmmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, 
 }
 
 
-#ifdef VBOX_WITH_RAW_MODE
-/**
- * Resolve a builtin RC symbol.
- *
- * Called by PDM when loading or relocating RC modules.
- *
- * @returns VBox status
- * @param   pVM             The cross context VM structure.
- * @param   pszSymbol       Symbol to resolve.
- * @param   pRCPtrValue     Where to store the symbol value.
- *
- * @remark  This has to work before VMMR3Relocate() is called.
- */
-VMMR3_INT_DECL(int) VMMR3GetImportRC(PVM pVM, const char *pszSymbol, PRTRCPTR pRCPtrValue)
-{
-    if (!strcmp(pszSymbol, "g_Logger"))
-    {
-        if (pVM->vmm.s.pRCLoggerR3)
-            pVM->vmm.s.pRCLoggerRC = MMHyperR3ToRC(pVM, pVM->vmm.s.pRCLoggerR3);
-        *pRCPtrValue = pVM->vmm.s.pRCLoggerRC;
-    }
-    else if (!strcmp(pszSymbol, "g_RelLogger"))
-    {
-# ifdef VBOX_WITH_RC_RELEASE_LOGGING
-        if (pVM->vmm.s.pRCRelLoggerR3)
-            pVM->vmm.s.pRCRelLoggerRC = MMHyperR3ToRC(pVM, pVM->vmm.s.pRCRelLoggerR3);
-        *pRCPtrValue = pVM->vmm.s.pRCRelLoggerRC;
-# else
-        *pRCPtrValue = NIL_RTRCPTR;
-# endif
-    }
-    else
-        return VERR_SYMBOL_NOT_FOUND;
-    return VINF_SUCCESS;
-}
-#endif /* VBOX_WITH_RAW_MODE */
-
-
 /**
  * Suspends the CPU yielder.
  *
@@ -1225,84 +1103,6 @@ static DECLCALLBACK(void) vmmR3YieldEMT(PVM pVM, PTMTIMER pTimer, void *pvUser)
     }
     TMTimerSetMillies(pTimer, pVM->vmm.s.cYieldEveryMillies);
 }
-
-
-#ifdef VBOX_WITH_RAW_MODE
-/**
- * Executes guest code in the raw-mode context.
- *
- * @param   pVM         The cross context VM structure.
- * @param   pVCpu       The cross context virtual CPU structure.
- */
-VMMR3_INT_DECL(int) VMMR3RawRunGC(PVM pVM, PVMCPU pVCpu)
-{
-    Log2(("VMMR3RawRunGC: (cs:eip=%04x:%08x)\n", CPUMGetGuestCS(pVCpu), CPUMGetGuestEIP(pVCpu)));
-
-    AssertReturn(pVM->cCpus == 1, VERR_RAW_MODE_INVALID_SMP);
-
-    /*
-     * Set the hypervisor to resume executing a CPUM resume function
-     * in CPUMRCA.asm.
-     */
-    CPUMSetHyperState(pVCpu,
-                        CPUMGetGuestEFlags(pVCpu) & X86_EFL_VM
-                      ? pVM->vmm.s.pfnCPUMRCResumeGuestV86
-                      : pVM->vmm.s.pfnCPUMRCResumeGuest,  /* eip */
-                      pVCpu->vmm.s.pbEMTStackBottomRC,    /* esp */
-                      0,                                  /* eax */
-                      VM_RC_ADDR(pVM, &pVCpu->cpum)       /* edx */);
-
-    /*
-     * We hide log flushes (outer) and hypervisor interrupts (inner).
-     */
-    for (;;)
-    {
-#ifdef VBOX_STRICT
-        if (RT_UNLIKELY(!CPUMGetHyperCR3(pVCpu) || CPUMGetHyperCR3(pVCpu) != PGMGetHyperCR3(pVCpu)))
-            EMR3FatalError(pVCpu, VERR_VMM_HYPER_CR3_MISMATCH);
-        PGMMapCheck(pVM);
-# ifdef VBOX_WITH_SAFE_STR
-        SELMR3CheckShadowTR(pVM);
-# endif
-#endif
-        int rc;
-        do
-        {
-#ifdef NO_SUPCALLR0VMM
-            rc = VERR_GENERAL_FAILURE;
-#else
-            rc = SUPR3CallVMMR0Fast(pVM->pVMR0, VMMR0_DO_RAW_RUN, 0);
-            if (RT_LIKELY(rc == VINF_SUCCESS))
-                rc = pVCpu->vmm.s.iLastGZRc;
-#endif
-        } while (rc == VINF_EM_RAW_INTERRUPT_HYPER);
-
-        /*
-         * Flush the logs.
-         */
-#ifdef LOG_ENABLED
-        PRTLOGGERRC pLogger = pVM->vmm.s.pRCLoggerR3;
-        if (    pLogger
-            &&  pLogger->offScratch > 0)
-            RTLogFlushRC(NULL, pLogger);
-#endif
-#ifdef VBOX_WITH_RC_RELEASE_LOGGING
-        PRTLOGGERRC pRelLogger = pVM->vmm.s.pRCRelLoggerR3;
-        if (RT_UNLIKELY(pRelLogger && pRelLogger->offScratch > 0))
-            RTLogFlushRC(RTLogRelGetDefaultInstance(), pRelLogger);
-#endif
-        if (rc != VINF_VMM_CALL_HOST)
-        {
-            Log2(("VMMR3RawRunGC: returns %Rrc (cs:eip=%04x:%08x)\n", rc, CPUMGetGuestCS(pVCpu), CPUMGetGuestEIP(pVCpu)));
-            return rc;
-        }
-        rc = vmmR3ServiceCallRing3Request(pVM, pVCpu);
-        if (RT_FAILURE(rc))
-            return rc;
-        /* Resume GC */
-    }
-}
-#endif /* VBOX_WITH_RAW_MODE */
 
 
 /**
@@ -2493,109 +2293,6 @@ VMMR3_INT_DECL(void) VMMR3InitR0StackUnwindState(PUVM pUVM, VMCPUID idCpu, struc
     pState->u.x86.auRegs[X86_GREG_xSP] = pVCpu->vmm.s.CallRing3JmpBufR0.SpResume;
 }
 
-#ifdef VBOX_WITH_RAW_MODE
-
-/**
- * Calls a RC function.
- *
- * @param   pVM         The cross context VM structure.
- * @param   RCPtrEntry  The address of the RC function.
- * @param   cArgs       The number of arguments in the ....
- * @param   ...         Arguments to the function.
- */
-VMMR3DECL(int) VMMR3CallRC(PVM pVM, RTRCPTR RCPtrEntry, unsigned cArgs, ...)
-{
-    va_list args;
-    va_start(args, cArgs);
-    int rc = VMMR3CallRCV(pVM, RCPtrEntry, cArgs, args);
-    va_end(args);
-    return rc;
-}
-
-
-/**
- * Calls a RC function.
- *
- * @param   pVM         The cross context VM structure.
- * @param   RCPtrEntry  The address of the RC function.
- * @param   cArgs       The number of arguments in the ....
- * @param   args        Arguments to the function.
- */
-VMMR3DECL(int) VMMR3CallRCV(PVM pVM, RTRCPTR RCPtrEntry, unsigned cArgs, va_list args)
-{
-    /* Raw mode implies 1 VCPU. */
-    AssertReturn(pVM->cCpus == 1, VERR_RAW_MODE_INVALID_SMP);
-    PVMCPU pVCpu = &pVM->aCpus[0];
-
-    Log2(("VMMR3CallGCV: RCPtrEntry=%RRv cArgs=%d\n", RCPtrEntry, cArgs));
-
-    /*
-     * Setup the call frame using the trampoline.
-     */
-    CPUMSetHyperState(pVCpu,
-                      pVM->vmm.s.pfnCallTrampolineRC, /* eip */
-                      pVCpu->vmm.s.pbEMTStackBottomRC - cArgs * sizeof(RTGCUINTPTR32),  /* esp */
-                      RCPtrEntry,  /* eax */
-                      cArgs        /* edx */
-                      );
-
-#if 0
-    memset(pVCpu->vmm.s.pbEMTStackR3, 0xaa, VMM_STACK_SIZE); /* Clear the stack. */
-#endif
-    PRTGCUINTPTR32 pFrame = (PRTGCUINTPTR32)(pVCpu->vmm.s.pbEMTStackR3 + VMM_STACK_SIZE) - cArgs;
-    int i = cArgs;
-    while (i-- > 0)
-        *pFrame++ = va_arg(args, RTGCUINTPTR32);
-
-    CPUMPushHyper(pVCpu, cArgs * sizeof(RTGCUINTPTR32));                          /* stack frame size */
-    CPUMPushHyper(pVCpu, RCPtrEntry);                                             /* what to call */
-
-    /*
-     * We hide log flushes (outer) and hypervisor interrupts (inner).
-     */
-    for (;;)
-    {
-        int rc;
-        Assert(CPUMGetHyperCR3(pVCpu) && CPUMGetHyperCR3(pVCpu) == PGMGetHyperCR3(pVCpu));
-        do
-        {
-#ifdef NO_SUPCALLR0VMM
-            rc = VERR_GENERAL_FAILURE;
-#else
-            rc = SUPR3CallVMMR0Fast(pVM->pVMR0, VMMR0_DO_RAW_RUN, 0);
-            if (RT_LIKELY(rc == VINF_SUCCESS))
-                rc = pVCpu->vmm.s.iLastGZRc;
-#endif
-        } while (rc == VINF_EM_RAW_INTERRUPT_HYPER);
-
-        /*
-         * Flush the loggers.
-         */
-#ifdef LOG_ENABLED
-        PRTLOGGERRC pLogger = pVM->vmm.s.pRCLoggerR3;
-        if (    pLogger
-            &&  pLogger->offScratch > 0)
-            RTLogFlushRC(NULL, pLogger);
-#endif
-#ifdef VBOX_WITH_RC_RELEASE_LOGGING
-        PRTLOGGERRC pRelLogger = pVM->vmm.s.pRCRelLoggerR3;
-        if (RT_UNLIKELY(pRelLogger && pRelLogger->offScratch > 0))
-            RTLogFlushRC(RTLogRelGetDefaultInstance(), pRelLogger);
-#endif
-        if (rc == VERR_TRPM_PANIC || rc == VERR_TRPM_DONT_PANIC)
-            VMMR3FatalDump(pVM, pVCpu, rc);
-        if (rc != VINF_VMM_CALL_HOST)
-        {
-            Log2(("VMMR3CallGCV: returns %Rrc (cs:eip=%04x:%08x)\n", rc, CPUMGetGuestCS(pVCpu), CPUMGetGuestEIP(pVCpu)));
-            return rc;
-        }
-        rc = vmmR3ServiceCallRing3Request(pVM, pVCpu);
-        if (RT_FAILURE(rc))
-            return rc;
-    }
-}
-
-#endif /* VBOX_WITH_RAW_MODE */
 
 /**
  * Wrapper for SUPR3CallVMMR0Ex which will deal with VINF_VMM_CALL_HOST returns.
@@ -2656,67 +2353,6 @@ VMMR3_INT_DECL(int) VMMR3CallR0Emt(PVM pVM, PVMCPU pVCpu, VMMR0OPERATION enmOper
                           VERR_IPE_UNEXPECTED_INFO_STATUS);
     return rc;
 }
-
-
-#ifdef VBOX_WITH_RAW_MODE
-/**
- * Resumes executing hypervisor code when interrupted by a queue flush or a
- * debug event.
- *
- * @returns VBox status code.
- * @param   pVM         The cross context VM structure.
- * @param   pVCpu       The cross context virtual CPU structure.
- */
-VMMR3DECL(int) VMMR3ResumeHyper(PVM pVM, PVMCPU pVCpu)
-{
-    Log(("VMMR3ResumeHyper: eip=%RRv esp=%RRv\n", CPUMGetHyperEIP(pVCpu), CPUMGetHyperESP(pVCpu)));
-    AssertReturn(pVM->cCpus == 1, VERR_RAW_MODE_INVALID_SMP);
-
-    /*
-     * We hide log flushes (outer) and hypervisor interrupts (inner).
-     */
-    for (;;)
-    {
-        int rc;
-        Assert(CPUMGetHyperCR3(pVCpu) && CPUMGetHyperCR3(pVCpu) == PGMGetHyperCR3(pVCpu));
-        do
-        {
-# ifdef NO_SUPCALLR0VMM
-            rc = VERR_GENERAL_FAILURE;
-# else
-            rc = SUPR3CallVMMR0Fast(pVM->pVMR0, VMMR0_DO_RAW_RUN, 0);
-            if (RT_LIKELY(rc == VINF_SUCCESS))
-                rc = pVCpu->vmm.s.iLastGZRc;
-# endif
-        } while (rc == VINF_EM_RAW_INTERRUPT_HYPER);
-
-        /*
-         * Flush the loggers.
-         */
-# ifdef LOG_ENABLED
-        PRTLOGGERRC pLogger = pVM->vmm.s.pRCLoggerR3;
-        if (    pLogger
-            &&  pLogger->offScratch > 0)
-            RTLogFlushRC(NULL, pLogger);
-# endif
-# ifdef VBOX_WITH_RC_RELEASE_LOGGING
-        PRTLOGGERRC pRelLogger = pVM->vmm.s.pRCRelLoggerR3;
-        if (RT_UNLIKELY(pRelLogger && pRelLogger->offScratch > 0))
-            RTLogFlushRC(RTLogRelGetDefaultInstance(), pRelLogger);
-# endif
-        if (rc == VERR_TRPM_PANIC || rc == VERR_TRPM_DONT_PANIC)
-            VMMR3FatalDump(pVM, pVCpu, rc);
-        if (rc != VINF_VMM_CALL_HOST)
-        {
-            Log(("VMMR3ResumeHyper: returns %Rrc\n", rc));
-            return rc;
-        }
-        rc = vmmR3ServiceCallRing3Request(pVM, pVCpu);
-        if (RT_FAILURE(rc))
-            return rc;
-    }
-}
-#endif /* VBOX_WITH_RAW_MODE */
 
 
 /**
@@ -3017,15 +2653,6 @@ static DECLCALLBACK(void) vmmR3InfoFF(PVM pVM, PCDBGFINFOHLP pHlp, const char *p
         PRINT_FLAG(VMCPU_FF_,BLOCK_NMIS);
         PRINT_FLAG(VMCPU_FF_,TO_R3);
         PRINT_FLAG(VMCPU_FF_,IOM);
-#ifdef VBOX_WITH_RAW_MODE
-        PRINT_FLAG(VMCPU_FF_,TRPM_SYNC_IDT);
-        PRINT_FLAG(VMCPU_FF_,SELM_SYNC_TSS);
-        PRINT_FLAG(VMCPU_FF_,SELM_SYNC_GDT);
-        PRINT_FLAG(VMCPU_FF_,SELM_SYNC_LDT);
-        PRINT_FLAG(VMCPU_FF_,CSAM_SCAN_PAGE);
-        PRINT_FLAG(VMCPU_FF_,CSAM_PENDING_ACTION);
-        PRINT_FLAG(VMCPU_FF_,CPUM);
-#endif
         if (f)
             pHlp->pfnPrintf(pHlp, "%s\n    Unknown bits: %#RX64\n", c ? "," : "", f);
         else

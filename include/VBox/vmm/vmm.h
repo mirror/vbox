@@ -507,9 +507,6 @@ VMMR0_INT_DECL(bool) VMMR0IsLogFlushDisabled(PVMCPU pVCpu);
  */
 VMMR3_INT_DECL(int)     VMMR3Init(PVM pVM);
 VMMR3_INT_DECL(int)     VMMR3InitR0(PVM pVM);
-# ifdef VBOX_WITH_RAW_MODE
-VMMR3_INT_DECL(int)     VMMR3InitRC(PVM pVM);
-# endif
 VMMR3_INT_DECL(int)     VMMR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat);
 VMMR3_INT_DECL(int)     VMMR3Term(PVM pVM);
 VMMR3_INT_DECL(void)    VMMR3Relocate(PVM pVM, RTGCINTPTR offDelta);
@@ -519,13 +516,6 @@ VMMR3DECL(const char *) VMMR3GetRZAssertMsg2(PVM pVM);
 VMMR3_INT_DECL(int)     VMMR3SelectSwitcher(PVM pVM, VMMSWITCHER enmSwitcher);
 VMMR3_INT_DECL(RTR0PTR) VMMR3GetHostToGuestSwitcher(PVM pVM, VMMSWITCHER enmSwitcher);
 VMMR3_INT_DECL(int)     VMMR3HmRunGC(PVM pVM, PVMCPU pVCpu);
-# ifdef VBOX_WITH_RAW_MODE
-VMMR3_INT_DECL(int)     VMMR3RawRunGC(PVM pVM, PVMCPU pVCpu);
-VMMR3DECL(int)          VMMR3ResumeHyper(PVM pVM, PVMCPU pVCpu);
-VMMR3_INT_DECL(int)     VMMR3GetImportRC(PVM pVM, const char *pszSymbol, PRTRCPTR pRCPtrValue);
-VMMR3DECL(int)          VMMR3CallRC(PVM pVM, RTRCPTR RCPtrEntry, unsigned cArgs, ...);
-VMMR3DECL(int)          VMMR3CallRCV(PVM pVM, RTRCPTR RCPtrEntry, unsigned cArgs, va_list args);
-# endif
 VMMR3DECL(int)          VMMR3CallR0(PVM pVM, uint32_t uOperation, uint64_t u64Arg, PSUPVMMR0REQHDR pReqHdr);
 VMMR3_INT_DECL(int)     VMMR3CallR0Emt(PVM pVM, PVMCPU pVCpu, VMMR0OPERATION enmOperation, uint64_t u64Arg, PSUPVMMR0REQHDR pReqHdr);
 VMMR3_INT_DECL(VBOXSTRICTRC) VMMR3CallR0EmtFast(PVM pVM, PVMCPU pVCpu, VMMR0OPERATION enmOperation);
@@ -575,16 +565,6 @@ VMMR3_INT_DECL(void)    VMMR3InitR0StackUnwindState(PUVM pUVM, VMCPUID idCpu, PR
 /** @} */
 #endif /* IN_RING3 */
 
-
-#if defined(IN_RC) || defined(DOXYGEN_RUNNING)
-/** @defgroup grp_vmm_api_rc    The VMM Raw-Mode Context API
- * @{
- */
-VMMRCDECL(int)      VMMRCEntry(PVM pVM, unsigned uOperation, unsigned uArg, ...);
-VMMRCDECL(void)     VMMRCGuestToHost(PVM pVM, int rc);
-VMMRCDECL(void)     VMMRCLogFlushIfFull(PVM pVM);
-/** @} */
-#endif /* IN_RC */
 
 #if defined(IN_RC) || defined(IN_RING0) || defined(DOXYGEN_RUNNING)
 /** @defgroup grp_vmm_api_rz    The VMM Raw-Mode and Ring-0 Context API
