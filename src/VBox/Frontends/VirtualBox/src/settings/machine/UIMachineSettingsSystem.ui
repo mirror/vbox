@@ -23,19 +23,16 @@
       </attribute>
       <layout class="QGridLayout">
        <item row="0" column="0">
-        <widget class="QLabel" name="m_pLabelMemorySize">
+        <widget class="QLabel" name="m_pBaseMemoryLabel">
          <property name="text">
           <string>Base &amp;Memory:</string>
          </property>
          <property name="alignment">
           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
          </property>
-         <property name="buddy">
-          <cstring>m_pEditorMemorySize</cstring>
-         </property>
         </widget>
        </item>
-       <item row="0" column="1" rowspan="2" colspan="2">
+       <item row="0" column="1" rowspan="2" colspan="3">
         <widget class="QWidget">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
@@ -48,49 +45,13 @@
            <number>0</number>
           </property>
           <item>
-           <widget class="UIBaseMemorySlider" name="m_pSliderMemorySize">
+           <widget class="UIBaseMemoryEditor" name="m_pBaseMemoryEditor">
             <property name="whatsThis">
              <string>Controls the amount of memory provided to the virtual machine. If you assign too much, the machine might not start.</string>
             </property>
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
            </widget>
           </item>
-          <item>
-           <layout class="QHBoxLayout">
-            <property name="spacing">
-             <number>0</number>
-            </property>
-            <item>
-             <widget class="QLabel" name="m_pLabelMemoryMin"/>
-            </item>
-            <item>
-             <spacer name="m_pSpacerHorizontal1">
-              <property name="orientation">
-               <enum>Qt::Horizontal</enum>
-              </property>
-              <property name="sizeHint" stdset="0">
-               <size>
-                <width>0</width>
-                <height>0</height>
-               </size>
-              </property>
-             </spacer>
-            </item>
-            <item>
-             <widget class="QLabel" name="m_pLabelMemoryMax"/>
-            </item>
-           </layout>
-          </item>
          </layout>
-        </widget>
-       </item>
-       <item row="0" column="3">
-        <widget class="QSpinBox" name="m_pEditorMemorySize">
-         <property name="whatsThis">
-          <string>Controls the amount of memory provided to the virtual machine. If you assign too much, the machine might not start.</string>
-         </property>
         </widget>
        </item>
        <item row="2" column="0">
@@ -599,9 +560,9 @@
    <header>QIAdvancedSlider.h</header>
   </customwidget>
   <customwidget>
-   <class>UIBaseMemorySlider</class>
-   <extends>QIAdvancedSlider</extends>
-   <header>UIBaseMemorySlider.h</header>
+   <class>UIBaseMemoryEditor</class>
+   <extends>QWidget</extends>
+   <header>UIBaseMemoryEditor.h</header>
   </customwidget>
   <customwidget>
    <class>QIToolButton</class>

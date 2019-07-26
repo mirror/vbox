@@ -270,7 +270,7 @@ void UIMachineSettingsSystem::getFromCache()
     repopulateComboPointingHIDType();
 
     /* Load old 'Motherboard' data from the cache: */
-    m_pSliderMemorySize->setValue(oldSystemData.m_iMemorySize);
+    m_pBaseMemoryEditor->setValue(oldSystemData.m_iMemorySize);
     m_pBootOrderEditor->setValue(oldSystemData.m_bootItems);
     const int iChipsetTypePosition = m_pComboChipsetType->findData(oldSystemData.m_chipsetType);
     m_pComboChipsetType->setCurrentIndex(iChipsetTypePosition == -1 ? 0 : iChipsetTypePosition);
@@ -311,7 +311,7 @@ void UIMachineSettingsSystem::putToCache()
     newSystemData.m_fSupportedNestedPaging = isNestedPagingSupported();
 
     /* Gather 'Motherboard' data: */
-    newSystemData.m_iMemorySize = m_pSliderMemorySize->value();
+    newSystemData.m_iMemorySize = m_pBaseMemoryEditor->value();
     newSystemData.m_bootItems = m_pBootOrderEditor->value();
     newSystemData.m_chipsetType = (KChipsetType)m_pComboChipsetType->itemData(m_pComboChipsetType->currentIndex()).toInt();
     newSystemData.m_pointingHIDType = (KPointingHIDType)m_pComboPointingHIDType->itemData(m_pComboPointingHIDType->currentIndex()).toInt();
@@ -370,21 +370,21 @@ bool UIMachineSettingsSystem::validate(QList<UIValidationMessage> &messages)
 
         /* RAM amount test: */
         const ulong uFullSize = uiCommon().host().GetMemorySize();
-        if (m_pSliderMemorySize->value() > (int)m_pSliderMemorySize->maxRAMAlw())
+        if (m_pBaseMemoryEditor->value() > (int)m_pBaseMemoryEditor->maxRAMAlw())
         {
             message.second << tr(
                 "More than <b>%1%</b> of the host computer's memory (<b>%2</b>) is assigned to the virtual machine. "
                 "Not enough memory is left for the host operating system. Please select a smaller amount.")
-                .arg((unsigned)qRound((double)m_pSliderMemorySize->maxRAMAlw() / uFullSize * 100.0))
+                .arg((unsigned)qRound((double)m_pBaseMemoryEditor->maxRAMAlw() / uFullSize * 100.0))
                 .arg(uiCommon().formatSize((uint64_t)uFullSize * _1M));
             fPass = false;
         }
-        else if (m_pSliderMemorySize->value() > (int)m_pSliderMemorySize->maxRAMOpt())
+        else if (m_pBaseMemoryEditor->value() > (int)m_pBaseMemoryEditor->maxRAMOpt())
         {
             message.second << tr(
                 "More than <b>%1%</b> of the host computer's memory (<b>%2</b>) is assigned to the virtual machine. "
                 "There might not be enough memory left for the host operating system. Please consider selecting a smaller amount.")
-                .arg((unsigned)qRound((double)m_pSliderMemorySize->maxRAMOpt() / uFullSize * 100.0))
+                .arg((unsigned)qRound((double)m_pBaseMemoryEditor->maxRAMOpt() / uFullSize * 100.0))
                 .arg(uiCommon().formatSize((uint64_t)uFullSize * _1M));
         }
 
@@ -547,9 +547,8 @@ void UIMachineSettingsSystem::setOrderAfter(QWidget *pWidget)
 {
     /* Configure navigation for 'motherboard' tab: */
     setTabOrder(pWidget, m_pTabWidgetSystem->focusProxy());
-    setTabOrder(m_pTabWidgetSystem->focusProxy(), m_pSliderMemorySize);
-    setTabOrder(m_pSliderMemorySize, m_pEditorMemorySize);
-    setTabOrder(m_pEditorMemorySize, m_pBootOrderEditor);
+    setTabOrder(m_pTabWidgetSystem->focusProxy(), m_pBaseMemoryEditor);
+    setTabOrder(m_pBaseMemoryEditor, m_pBootOrderEditor);
     setTabOrder(m_pBootOrderEditor, m_pComboChipsetType);
     setTabOrder(m_pComboChipsetType, m_pComboPointingHIDType);
     setTabOrder(m_pComboPointingHIDType, m_pCheckBoxApic);
@@ -575,11 +574,6 @@ void UIMachineSettingsSystem::retranslateUi()
     /* Translate uic generated strings: */
     Ui::UIMachineSettingsSystem::retranslateUi(this);
 
-    /* Retranslate the memory slider legend: */
-    m_pEditorMemorySize->setSuffix(QString(" %1").arg(tr("MB")));
-    m_pLabelMemoryMin->setText(tr("%1 MB").arg(m_pSliderMemorySize->minRAM()));
-    m_pLabelMemoryMax->setText(tr("%1 MB").arg(m_pSliderMemorySize->maxRAM()));
-
     /* Retranslate the cpu slider legend: */
     m_pLabelCPUMin->setText(tr("%1 CPU", "%1 is 1 for now").arg(m_uMinGuestCPU));
     m_pLabelCPUMax->setText(tr("%1 CPUs", "%1 is host cpu count * 2 for now").arg(m_uMaxGuestCPU));
@@ -600,11 +594,8 @@ void UIMachineSettingsSystem::polishPage()
     const UIDataSettingsMachineSystem &systemData = m_pCache->base();
 
     /* Polish 'Motherboard' availability: */
-    m_pLabelMemorySize->setEnabled(isMachineOffline());
-    m_pLabelMemoryMin->setEnabled(isMachineOffline());
-    m_pLabelMemoryMax->setEnabled(isMachineOffline());
-    m_pSliderMemorySize->setEnabled(isMachineOffline());
-    m_pEditorMemorySize->setEnabled(isMachineOffline());
+    m_pBaseMemoryLabel->setEnabled(isMachineOffline());
+    m_pBaseMemoryEditor->setEnabled(isMachineOffline());
     m_pLabelBootOrder->setEnabled(isMachineOffline());
     m_pBootOrderEditor->setEnabled(isMachineOffline());
     m_pLabelChipsetType->setEnabled(isMachineOffline());
@@ -641,28 +632,6 @@ void UIMachineSettingsSystem::polishPage()
     m_pLabelParavirtProvider->setEnabled(isMachineOffline());
     m_pComboParavirtProvider->setEnabled(isMachineOffline());
     m_pLabelVirtualization->setEnabled(isMachineOffline());
-}
-
-void UIMachineSettingsSystem::sltHandleMemorySizeSliderChange()
-{
-    /* Apply new memory-size value: */
-    m_pEditorMemorySize->blockSignals(true);
-    m_pEditorMemorySize->setValue(m_pSliderMemorySize->value());
-    m_pEditorMemorySize->blockSignals(false);
-
-    /* Revalidate: */
-    revalidate();
-}
-
-void UIMachineSettingsSystem::sltHandleMemorySizeEditorChange()
-{
-    /* Apply new memory-size value: */
-    m_pSliderMemorySize->blockSignals(true);
-    m_pSliderMemorySize->setValue(m_pEditorMemorySize->value());
-    m_pSliderMemorySize->blockSignals(false);
-
-    /* Revalidate: */
-    revalidate();
 }
 
 void UIMachineSettingsSystem::sltHandleCPUCountSliderChange()
@@ -750,13 +719,12 @@ void UIMachineSettingsSystem::prepareTabMotherboard()
 {
     /* Tab and it's layout created in the .ui file. */
     {
-        /* Memory Size editor created in the .ui file. */
-        AssertPtrReturnVoid(m_pEditorMemorySize);
+        /* Base-memory label and editor created in the .ui file. */
+        AssertPtrReturnVoid(m_pBaseMemoryLabel);
+        AssertPtrReturnVoid(m_pBaseMemoryEditor);
         {
-            /* Configure editor: */
-            m_pEditorMemorySize->setMinimum(m_pSliderMemorySize->minRAM());
-            m_pEditorMemorySize->setMaximum(m_pSliderMemorySize->maxRAM());
-            uiCommon().setMinimumWidthAccordingSymbolCount(m_pEditorMemorySize, 5);
+            /* Configure label & editor: */
+            m_pBaseMemoryLabel->setBuddy(m_pBaseMemoryEditor->focusProxy());
         }
 
         /* Boot-order layout created in the .ui file. */
@@ -884,8 +852,7 @@ void UIMachineSettingsSystem::prepareConnections()
     /* Configure 'Motherboard' connections: */
     connect(m_pComboChipsetType, SIGNAL(currentIndexChanged(int)), this, SLOT(revalidate()));
     connect(m_pComboPointingHIDType, SIGNAL(currentIndexChanged(int)), this, SLOT(revalidate()));
-    connect(m_pSliderMemorySize, SIGNAL(valueChanged(int)), this, SLOT(sltHandleMemorySizeSliderChange()));
-    connect(m_pEditorMemorySize, SIGNAL(valueChanged(int)), this, SLOT(sltHandleMemorySizeEditorChange()));
+    connect(m_pBaseMemoryEditor, &UIBaseMemoryEditor::sigValidChanged, this, &UIMachineSettingsSystem::revalidate);
     connect(m_pCheckBoxApic, SIGNAL(stateChanged(int)), this, SLOT(revalidate()));
 
     /* Configure 'Processor' connections: */

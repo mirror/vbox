@@ -100,11 +100,6 @@ protected:
 
 private slots:
 
-    /** Handles memory size slider change. */
-    void sltHandleMemorySizeSliderChange();
-    /** Handles memory size editor change. */
-    void sltHandleMemorySizeEditorChange();
-
     /** Handles CPU count slider change. */
     void sltHandleCPUCountSliderChange();
     /** Handles CPU count editor change. */
