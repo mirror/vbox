@@ -607,10 +607,6 @@ VMM_INT_DECL(PCPUMCTXMSRS) CPUMQueryGuestCtxMsrsPtr(PVMCPU pVCpu)
 
 VMMDECL(int) CPUMSetGuestGDTR(PVMCPU pVCpu, uint64_t GCPtrBase, uint16_t cbLimit)
 {
-#ifdef VBOX_WITH_RAW_MODE_NOT_R0
-    if (VM_IS_RAW_MODE_ENABLED(pVCpu->CTX_SUFF(pVM)))
-        VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_GDT);
-#endif
     pVCpu->cpum.s.Guest.gdtr.cbGdt = cbLimit;
     pVCpu->cpum.s.Guest.gdtr.pGdt  = GCPtrBase;
     pVCpu->cpum.s.Guest.fExtrn &= ~CPUMCTX_EXTRN_GDTR;
@@ -621,10 +617,6 @@ VMMDECL(int) CPUMSetGuestGDTR(PVMCPU pVCpu, uint64_t GCPtrBase, uint16_t cbLimit
 
 VMMDECL(int) CPUMSetGuestIDTR(PVMCPU pVCpu, uint64_t GCPtrBase, uint16_t cbLimit)
 {
-#ifdef VBOX_WITH_RAW_MODE_NOT_R0
-    if (VM_IS_RAW_MODE_ENABLED(pVCpu->CTX_SUFF(pVM)))
-        VMCPU_FF_SET(pVCpu, VMCPU_FF_TRPM_SYNC_IDT);
-#endif
     pVCpu->cpum.s.Guest.idtr.cbIdt = cbLimit;
     pVCpu->cpum.s.Guest.idtr.pIdt  = GCPtrBase;
     pVCpu->cpum.s.Guest.fExtrn &= ~CPUMCTX_EXTRN_IDTR;
@@ -635,10 +627,6 @@ VMMDECL(int) CPUMSetGuestIDTR(PVMCPU pVCpu, uint64_t GCPtrBase, uint16_t cbLimit
 
 VMMDECL(int) CPUMSetGuestTR(PVMCPU pVCpu, uint16_t tr)
 {
-#ifdef VBOX_WITH_RAW_MODE_NOT_R0
-    if (VM_IS_RAW_MODE_ENABLED(pVCpu->CTX_SUFF(pVM)))
-        VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_TSS);
-#endif
     pVCpu->cpum.s.Guest.tr.Sel  = tr;
     pVCpu->cpum.s.fChanged |= CPUM_CHANGED_TR;
     return VINF_SUCCESS; /* formality, consider it void. */
@@ -647,12 +635,6 @@ VMMDECL(int) CPUMSetGuestTR(PVMCPU pVCpu, uint16_t tr)
 
 VMMDECL(int) CPUMSetGuestLDTR(PVMCPU pVCpu, uint16_t ldtr)
 {
-#ifdef VBOX_WITH_RAW_MODE_NOT_R0
-    if (   (   ldtr != 0
-            || pVCpu->cpum.s.Guest.ldtr.Sel != 0)
-        && VM_IS_RAW_MODE_ENABLED(pVCpu->CTX_SUFF(pVM)))
-        VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_LDT);
-#endif
     pVCpu->cpum.s.Guest.ldtr.Sel      = ldtr;
     /* The caller will set more hidden bits if it has them. */
     pVCpu->cpum.s.Guest.ldtr.ValidSel = 0;

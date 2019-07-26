@@ -34,9 +34,7 @@ BEGINCODE
 ;;
 ; Saves the host FPU/SSE/AVX state.
 ;
-; Will return with CR0.EM and CR0.TS cleared!  This is the normal state in
-; ring-0, whereas in raw-mode the caller will probably set VMCPU_FF_CPUM to
-; re-evaluate the situation before executing more guest code.
+; Will return with CR0.EM and CR0.TS cleared!  This is the normal state in ring-0.
 ;
 ; @returns  VINF_SUCCESS (0) or VINF_CPUM_HOST_CR0_MODIFIED. (EAX)
 ; @param    pCpumCpu  x86:[ebp+8] gcc:rdi msc:rcx     CPUMCPU pointer

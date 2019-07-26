@@ -48,20 +48,13 @@ VMMRZ_INT_DECL(void)    CPUMRZFpuStatePrepareHostCpuForUse(PVMCPU pVCpu)
     switch (pVCpu->cpum.s.fUseFlags & (CPUM_USED_FPU_GUEST | CPUM_USED_FPU_HOST))
     {
         case 0:
-#ifdef IN_RC
-            cpumRZSaveHostFPUState(&pVCpu->cpum.s);
-            VMCPU_FF_SET(pVCpu, VMCPU_FF_CPUM);     /* Must recalc CR0 before executing more code! */
-#else
             if (cpumRZSaveHostFPUState(&pVCpu->cpum.s) == VINF_CPUM_HOST_CR0_MODIFIED)
                 HMR0NotifyCpumModifiedHostCr0(pVCpu);
-#endif
             Log6(("CPUMRZFpuStatePrepareHostCpuForUse: #0 - %#x\n", ASMGetCR0()));
             break;
 
         case CPUM_USED_FPU_HOST:
-#ifdef IN_RC
-            VMCPU_FF_SET(pVCpu, VMCPU_FF_CPUM);     /* (should be set already) */
-#elif defined(IN_RING0) && ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS)
+#if defined(IN_RING0) && ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS)
             if (pVCpu->cpum.s.fUseFlags | CPUM_SYNC_FPU_STATE)
             {
                 pVCpu->cpum.s.fUseFlags &= ~CPUM_SYNC_FPU_STATE;
@@ -81,8 +74,6 @@ VMMRZ_INT_DECL(void)    CPUMRZFpuStatePrepareHostCpuForUse(PVMCPU pVCpu)
                 cpumRZSaveGuestFpuState(&pVCpu->cpum.s, true /*fLeaveFpuAccessible*/);
 #ifdef IN_RING0
             HMR0NotifyCpumUnloadedGuestFpuState(pVCpu);
-#else
-            VMCPU_FF_SET(pVCpu, VMCPU_FF_CPUM);     /* Must recalc CR0 before executing more code! */
 #endif
             Log6(("CPUMRZFpuStatePrepareHostCpuForUse: #2 - %#x\n", ASMGetCR0()));
             break;

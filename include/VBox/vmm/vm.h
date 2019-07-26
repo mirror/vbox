@@ -350,15 +350,6 @@ AssertCompileSizeAlignment(VMCPU, 4096);
 /** The name of the ring-0 context VMM Core module. */
 #define VMMR0_MAIN_MODULE_NAME          "VMMR0.r0"
 
-/**
- * Wrapper macro for avoiding too much \#ifdef VBOX_WITH_RAW_MODE.
- */
-#ifdef VBOX_WITH_RAW_MODE
-# define VM_WHEN_RAW_MODE(a_WithExpr, a_WithoutExpr)    a_WithExpr
-#else
-# define VM_WHEN_RAW_MODE(a_WithExpr, a_WithoutExpr)    a_WithoutExpr
-#endif
-
 
 /** VM Forced Action Flags.
  *
@@ -505,34 +496,16 @@ AssertCompileSizeAlignment(VMCPU, 4096);
 #define VMCPU_FF_TLB_FLUSH                  RT_BIT_64(VMCPU_FF_TLB_FLUSH_BIT)
 /** The bit number for VMCPU_FF_TLB_FLUSH. */
 #define VMCPU_FF_TLB_FLUSH_BIT              19
-#ifdef VBOX_WITH_RAW_MODE
-/** Check the interrupt and trap gates */
-# define VMCPU_FF_TRPM_SYNC_IDT             RT_BIT_64(VMCPU_FF_TRPM_SYNC_IDT_BIT)
-# define VMCPU_FF_TRPM_SYNC_IDT_BIT         20
-/** Check Guest's TSS ring 0 stack */
-# define VMCPU_FF_SELM_SYNC_TSS             RT_BIT_64(VMCPU_FF_SELM_SYNC_TSS_BIT)
-# define VMCPU_FF_SELM_SYNC_TSS_BIT         21
-/** Check Guest's GDT table */
-# define VMCPU_FF_SELM_SYNC_GDT             RT_BIT_64(VMCPU_FF_SELM_SYNC_GDT_BIT)
-# define VMCPU_FF_SELM_SYNC_GDT_BIT         22
-/** Check Guest's LDT table */
-# define VMCPU_FF_SELM_SYNC_LDT             RT_BIT_64(VMCPU_FF_SELM_SYNC_LDT_BIT)
-# define VMCPU_FF_SELM_SYNC_LDT_BIT         23
-#endif /* VBOX_WITH_RAW_MODE */
+/* 20 used to be VMCPU_FF_TRPM_SYNC_IDT (raw-mode only). */
+/* 21 used to be VMCPU_FF_SELM_SYNC_TSS (raw-mode only). */
+/* 22 used to be VMCPU_FF_SELM_SYNC_GDT (raw-mode only). */
+/* 23 used to be VMCPU_FF_SELM_SYNC_LDT (raw-mode only). */
 /** Inhibit interrupts pending. See EMGetInhibitInterruptsPC(). */
 #define VMCPU_FF_INHIBIT_INTERRUPTS         RT_BIT_64(VMCPU_FF_INHIBIT_INTERRUPTS_BIT)
 #define VMCPU_FF_INHIBIT_INTERRUPTS_BIT     24
 /** Block injection of non-maskable interrupts to the guest. */
 #define VMCPU_FF_BLOCK_NMIS                 RT_BIT_64(VMCPU_FF_BLOCK_NMIS_BIT)
 #define VMCPU_FF_BLOCK_NMIS_BIT             25
-#ifdef VBOX_WITH_RAW_MODE
-/** CSAM needs to scan the page that's being executed */
-# define VMCPU_FF_CSAM_SCAN_PAGE            RT_BIT_64(VMCPU_FF_CSAM_SCAN_PAGE_BIT)
-# define VMCPU_FF_CSAM_SCAN_PAGE_BIT        26
-/** CSAM needs to do some homework. */
-# define VMCPU_FF_CSAM_PENDING_ACTION       RT_BIT_64(VMCPU_FF_CSAM_PENDING_ACTION_BIT)
-# define VMCPU_FF_CSAM_PENDING_ACTION_BIT   27
-#endif /* VBOX_WITH_RAW_MODE */
 /** Force return to Ring-3. */
 #define VMCPU_FF_TO_R3                      RT_BIT_64(VMCPU_FF_TO_R3_BIT)
 #define VMCPU_FF_TO_R3_BIT                  28
@@ -542,12 +515,7 @@ AssertCompileSizeAlignment(VMCPU, 4096);
  * status codes to be propagated at the same time without loss. */
 #define VMCPU_FF_IOM                        RT_BIT_64(VMCPU_FF_IOM_BIT)
 #define VMCPU_FF_IOM_BIT                    29
-#ifdef VBOX_WITH_RAW_MODE
-/** CPUM need to adjust CR0.TS/EM before executing raw-mode code again.  */
-# define VMCPU_FF_CPUM                      RT_BIT_64(VMCPU_FF_CPUM_BIT)
-/** The bit number for VMCPU_FF_CPUM. */
-# define VMCPU_FF_CPUM_BIT                  30
-#endif /* VBOX_WITH_RAW_MODE */
+/* 30 used to be VMCPU_FF_CPUM */
 /** VMX-preemption timer in effect. */
 #define VMCPU_FF_VMX_PREEMPT_TIMER          RT_BIT_64(VMCPU_FF_VMX_PREEMPT_TIMER_BIT)
 #define VMCPU_FF_VMX_PREEMPT_TIMER_BIT      31
@@ -588,22 +556,18 @@ AssertCompileSizeAlignment(VMCPU, 4096);
                                                  | VMCPU_FF_UPDATE_APIC  | VMCPU_FF_INHIBIT_INTERRUPTS | VMCPU_FF_DBGF \
                                                  | VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL \
                                                  | VMCPU_FF_INTERRUPT_NESTED_GUEST | VMCPU_FF_VMX_MTF  | VMCPU_FF_VMX_APIC_WRITE \
-                                                 | VMCPU_FF_VMX_PREEMPT_TIMER | VMCPU_FF_VMX_NMI_WINDOW | VMCPU_FF_VMX_INT_WINDOW \
-                                                 | VM_WHEN_RAW_MODE(  VMCPU_FF_SELM_SYNC_TSS | VMCPU_FF_TRPM_SYNC_IDT \
-                                                                    | VMCPU_FF_SELM_SYNC_GDT | VMCPU_FF_SELM_SYNC_LDT, 0 ) )
+                                                 | VMCPU_FF_VMX_PREEMPT_TIMER | VMCPU_FF_VMX_NMI_WINDOW | VMCPU_FF_VMX_INT_WINDOW )
 
 /** High priority VM pre raw-mode execution mask. */
 #define VM_FF_HIGH_PRIORITY_PRE_RAW_MASK        (  VM_FF_PGM_NEED_HANDY_PAGES | VM_FF_PGM_NO_MEMORY )
 /** High priority VMCPU pre raw-mode execution mask. */
 #define VMCPU_FF_HIGH_PRIORITY_PRE_RAW_MASK     (  VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL \
-                                                 | VMCPU_FF_INHIBIT_INTERRUPTS \
-                                                 | VM_WHEN_RAW_MODE(  VMCPU_FF_SELM_SYNC_TSS | VMCPU_FF_TRPM_SYNC_IDT \
-                                                                    | VMCPU_FF_SELM_SYNC_GDT | VMCPU_FF_SELM_SYNC_LDT, 0) )
+                                                 | VMCPU_FF_INHIBIT_INTERRUPTS )
 
 /** High priority post-execution actions. */
 #define VM_FF_HIGH_PRIORITY_POST_MASK           (  VM_FF_PGM_NO_MEMORY )
 /** High priority post-execution actions. */
-#define VMCPU_FF_HIGH_PRIORITY_POST_MASK        (  VMCPU_FF_PDM_CRITSECT   | VM_WHEN_RAW_MODE(VMCPU_FF_CSAM_PENDING_ACTION, 0) \
+#define VMCPU_FF_HIGH_PRIORITY_POST_MASK        (  VMCPU_FF_PDM_CRITSECT \
                                                  | VMCPU_FF_HM_UPDATE_CR3  | VMCPU_FF_HM_UPDATE_PAE_PDPES \
                                                  | VMCPU_FF_IEM | VMCPU_FF_IOM )
 
@@ -611,7 +575,7 @@ AssertCompileSizeAlignment(VMCPU, 4096);
 #define VM_FF_NORMAL_PRIORITY_POST_MASK         (  VM_FF_CHECK_VM_STATE | VM_FF_DBGF | VM_FF_RESET \
                                                  | VM_FF_PGM_NO_MEMORY  | VM_FF_EMT_RENDEZVOUS)
 /** Normal priority VMCPU post-execution actions. */
-#define VMCPU_FF_NORMAL_PRIORITY_POST_MASK      ( VM_WHEN_RAW_MODE(VMCPU_FF_CSAM_SCAN_PAGE, 0) | VMCPU_FF_DBGF )
+#define VMCPU_FF_NORMAL_PRIORITY_POST_MASK      ( VMCPU_FF_DBGF )
 
 /** Normal priority VM actions. */
 #define VM_FF_NORMAL_PRIORITY_MASK              (  VM_FF_REQUEST            | VM_FF_PDM_QUEUES | VM_FF_PDM_DMA \
@@ -680,8 +644,7 @@ AssertCompileSizeAlignment(VMCPU, 4096);
 #define VM_FF_ALL_REM_MASK                      (~(VM_FF_HIGH_PRIORITY_PRE_RAW_MASK) | VM_FF_PGM_NEED_HANDY_PAGES | VM_FF_PGM_NO_MEMORY)
 /** All the forced VMCPU flags except those related to raw-mode and hardware
  * assisted execution. */
-#define VMCPU_FF_ALL_REM_MASK                   (~(  VMCPU_FF_HIGH_PRIORITY_PRE_RAW_MASK | VMCPU_FF_PDM_CRITSECT \
-                                                   | VMCPU_FF_TLB_FLUSH | VM_WHEN_RAW_MODE(VMCPU_FF_CSAM_PENDING_ACTION, 0) ))
+#define VMCPU_FF_ALL_REM_MASK                   (~(VMCPU_FF_HIGH_PRIORITY_PRE_RAW_MASK | VMCPU_FF_PDM_CRITSECT | VMCPU_FF_TLB_FLUSH))
 /** @} */
 
 /** @def VM_FF_SET
