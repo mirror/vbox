@@ -30,8 +30,6 @@
 #include "AutoCaller.h"
 
 #include <VBox/vmm/em.h>
-#include <VBox/vmm/patm.h>
-#include <VBox/vmm/csam.h>
 #include <VBox/vmm/uvm.h>
 #include <VBox/vmm/tm.h>
 #include <VBox/vmm/hm.h>
@@ -298,16 +296,7 @@ HRESULT MachineDebugger::setExecuteAllInIEM(BOOL aExecuteAllInIEM)
  */
 HRESULT MachineDebugger::getPATMEnabled(BOOL *aPATMEnabled)
 {
-#ifdef VBOX_WITH_RAW_MODE
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    Console::SafeVMPtrQuiet ptrVM(mParent);
-    if (ptrVM.isOk())
-        *aPATMEnabled = PATMR3IsEnabled(ptrVM.rawUVM());
-    else
-#endif
-        *aPATMEnabled = false;
-
+    *aPATMEnabled = false;
     return S_OK;
 }
 
@@ -321,28 +310,8 @@ HRESULT MachineDebugger::setPATMEnabled(BOOL aPATMEnabled)
 {
     LogFlowThisFunc(("enable=%d\n", aPATMEnabled));
 
-#ifdef VBOX_WITH_RAW_MODE
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    if (i_queueSettings())
-    {
-        // queue the request
-        mPatmEnabledQueued = aPATMEnabled;
-        return S_OK;
-    }
-
-    Console::SafeVMPtr ptrVM(mParent);
-    if (FAILED(ptrVM.rc()))
-        return ptrVM.rc();
-
-    int vrc = PATMR3AllowPatching(ptrVM.rawUVM(), RT_BOOL(aPATMEnabled));
-    if (RT_FAILURE(vrc))
-        return setErrorBoth(VBOX_E_VM_ERROR, vrc, tr("PATMR3AllowPatching returned %Rrc"), vrc);
-
-#else  /* !VBOX_WITH_RAW_MODE */
     if (aPATMEnabled)
         return setErrorBoth(VBOX_E_VM_ERROR, VERR_RAW_MODE_NOT_SUPPORTED, tr("PATM not present"), VERR_NOT_SUPPORTED);
-#endif /* !VBOX_WITH_RAW_MODE */
     return S_OK;
 }
 
@@ -354,17 +323,7 @@ HRESULT MachineDebugger::setPATMEnabled(BOOL aPATMEnabled)
  */
 HRESULT MachineDebugger::getCSAMEnabled(BOOL *aCSAMEnabled)
 {
-#ifdef VBOX_WITH_RAW_MODE
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    Console::SafeVMPtrQuiet ptrVM(mParent);
-
-    if (ptrVM.isOk())
-        *aCSAMEnabled = CSAMR3IsEnabled(ptrVM.rawUVM());
-    else
-#endif /* VBOX_WITH_RAW_MODE */
-        *aCSAMEnabled = false;
-
+    *aCSAMEnabled = false;
     return S_OK;
 }
 
@@ -378,28 +337,8 @@ HRESULT MachineDebugger::setCSAMEnabled(BOOL aCSAMEnabled)
 {
     LogFlowThisFunc(("enable=%d\n", aCSAMEnabled));
 
-#ifdef VBOX_WITH_RAW_MODE
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    if (i_queueSettings())
-    {
-        // queue the request
-        mCsamEnabledQueued = aCSAMEnabled;
-        return S_OK;
-    }
-
-    Console::SafeVMPtr ptrVM(mParent);
-    if (FAILED(ptrVM.rc()))
-        return ptrVM.rc();
-
-    int vrc = CSAMR3SetScanningEnabled(ptrVM.rawUVM(), aCSAMEnabled != FALSE);
-    if (RT_FAILURE(vrc))
-        return setErrorBoth(VBOX_E_VM_ERROR, vrc, tr("CSAMR3SetScanningEnabled returned %Rrc"), vrc);
-
-#else  /* !VBOX_WITH_RAW_MODE */
     if (aCSAMEnabled)
         return setErrorBoth(VBOX_E_VM_ERROR, VERR_RAW_MODE_NOT_SUPPORTED, tr("CASM not present"));
-#endif /* !VBOX_WITH_RAW_MODE */
     return S_OK;
 }
 
