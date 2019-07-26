@@ -254,7 +254,6 @@ int main()
 #endif
 
     PVM pVM = NULL; NOREF(pVM);
-    CHECK_MEMBER_ALIGNMENT(VM, trpm.s.aIdt, 16);
     CHECK_MEMBER_ALIGNMENT(VM, aCpus[0], PAGE_SIZE);
     CHECK_MEMBER_ALIGNMENT(VM, aCpus[1], PAGE_SIZE);
     CHECK_MEMBER_ALIGNMENT(VM, aCpus[0].cpum.s.Host, 64);

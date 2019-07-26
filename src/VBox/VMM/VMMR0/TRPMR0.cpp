@@ -30,8 +30,8 @@
 #include <iprt/asm-amd64-x86.h>
 
 
-#if defined(RT_OS_DARWIN) && ARCH_BITS == 32
-# error "32-bit darwin is no longer supported. Go back to 4.3 or earlier!"
+#if ARCH_BITS == 32
+# error "32-bit is no longer supported. Go back to 6.0 or earlier!"
 #endif
 
 

@@ -36,20 +36,6 @@ RT_C_DECLS_BEGIN
  * @{
  */
 
-
-#ifdef VBOX_WITH_RAW_MODE
-/** Enable or disable tracking of Guest's IDT. */
-# define TRPM_TRACK_GUEST_IDT_CHANGES
-/** Enable or disable tracking of Shadow IDT. */
-# define TRPM_TRACK_SHADOW_IDT_CHANGES
-#endif
-
-
-/** Enable to allow trap forwarding in GC. */
-#ifdef VBOX_WITH_RAW_MODE
-# define TRPM_FORWARD_TRAPS_IN_GC
-#endif
-
 /** First interrupt handler. Used for validating input. */
 #define TRPM_HANDLER_INT_BASE  0x20
 
@@ -74,129 +60,23 @@ RT_C_DECLS_BEGIN
 /** @} */
 
 
-#if 0 /* not used */
-/**
- * Converts a TRPM pointer into a VM pointer.
- * @returns Pointer to the VM structure the TRPM is part of.
- * @param   pTRPM       Pointer to TRPM instance data.
- */
-#define TRPM_2_VM(pTRPM)            ( (PVM)((uint8_t *)(pTRPM) - (pTRPM)->offVM) )
-#endif
-
-/**
- * Converts a TRPM pointer into a TRPMCPU pointer.
- * @returns Pointer to the VM structure the TRPMCPU is part of.
- * @param   pTrpmCpu    Pointer to TRPMCPU instance data.
- * @remarks Raw-mode only, not SMP safe.
- */
-#define TRPM_2_TRPMCPU(pTrpmCpu)     ( (PTRPMCPU)((uint8_t *)(pTrpmCpu) + (pTrpmCpu)->offTRPMCPU) )
-
-
 /**
  * TRPM Data (part of VM)
  *
- * IMPORTANT! Keep the nasm version of this struct up-to-date.
+ * @note This used to be a big deal when we had raw-mode, now it's a dud. :-)
  */
 typedef struct TRPM
 {
-    /** Offset to the VM structure.
-     * See TRPM_2_VM(). */
-    RTINT                   offVM;
-    /** Offset to the TRPMCPU structure.
-     * See TRPM2TRPMCPU(). */
-    RTINT                   offTRPMCPU;
-
-    /** Whether monitoring of the guest IDT is enabled or not.
-     *
-     * This configuration option is provided for speeding up guest like Solaris
-     * that put the IDT on the same page as a whole lot of other data that is
-     * frequently updated. The updates will cause \#PFs and have to be interpreted
-     * by PGMInterpretInstruction which is slow compared to raw execution.
-     *
-     * If the guest is well behaved and doesn't change the IDT after loading it,
-     * there is no problem with dropping the IDT monitoring.
-     *
-     * @cfgm{/TRPM/SafeToDropGuestIDTMonitoring, boolean, defaults to false.}
-     */
-    bool                    fSafeToDropGuestIDTMonitoring;
-
-    /** Padding to get the IDTs at a 16 byte alignment. */
-    uint8_t                 abPadding1[7];
-    /** IDTs. Aligned at 16 byte offset for speed. */
-    VBOXIDTE                aIdt[256];
-
-    /** Bitmap for IDTEs that contain PATM handlers. (needed for relocation) */
-    uint32_t                au32IdtPatched[8];
-
-    /** Temporary Hypervisor trap handlers.
-     * NULL means default action. */
-    RCPTRTYPE(void *)       aTmpTrapHandlers[256];
-
-    /** RC Pointer to the IDT shadow area (aIdt) in HMA. */
-    RCPTRTYPE(void *)       pvMonShwIdtRC;
-    /** padding. */
-    uint8_t                 au8Padding[2];
-    /** Current (last) Guest's IDTR. */
-    VBOXIDTR                GuestIdtr;
-    /** Shadow IDT virtual write access handler type. */
-    PGMVIRTHANDLERTYPE      hShadowIdtWriteHandlerType;
-    /** Guest IDT virtual write access handler type. */
-    PGMVIRTHANDLERTYPE      hGuestIdtWriteHandlerType;
-
-    /** Checked trap & interrupt handler array */
-    RCPTRTYPE(void *)       aGuestTrapHandler[256];
-
-    /** RC: The number of times writes to the Guest IDT were detected. */
-    STAMCOUNTER             StatRCWriteGuestIDTFault;
-    STAMCOUNTER             StatRCWriteGuestIDTHandled;
-
-    /** HC: Profiling of the TRPMR3SyncIDT() method. */
-    STAMPROFILE             StatSyncIDT;
-    /** GC: Statistics for the trap handlers. */
-    STAMPROFILEADV          aStatGCTraps[0x14];
-
-    STAMPROFILEADV          StatForwardProfR3;
-    STAMPROFILEADV          StatForwardProfRZ;
-    STAMCOUNTER             StatForwardFailNoHandler;
-    STAMCOUNTER             StatForwardFailPatchAddr;
-    STAMCOUNTER             StatForwardFailR3;
-    STAMCOUNTER             StatForwardFailRZ;
-
-    STAMPROFILE             StatTrap0dDisasm;
-    STAMCOUNTER             StatTrap0dRdTsc;    /**< Number of RDTSC \#GPs. */
-
 #ifdef VBOX_WITH_STATISTICS
     /** Statistics for interrupt handlers (allocated on the hypervisor heap) - R3
      * pointer. */
     R3PTRTYPE(PSTAMCOUNTER) paStatForwardedIRQR3;
-    /** Statistics for interrupt handlers - RC pointer. */
-    RCPTRTYPE(PSTAMCOUNTER) paStatForwardedIRQRC;
-
-    /** Host interrupt statistics (allocated on the hypervisor heap) - RC ptr. */
-    RCPTRTYPE(PSTAMCOUNTER) paStatHostIrqRC;
-    /** Host interrupt statistics (allocated on the hypervisor heap) - R3 ptr. */
-    R3PTRTYPE(PSTAMCOUNTER) paStatHostIrqR3;
 #endif
+    uint64_t                u64Dummy;
 } TRPM;
-AssertCompileMemberAlignment(TRPM, GuestIdtr.pIdt, 8);
 
 /** Pointer to TRPM Data. */
 typedef TRPM *PTRPM;
-
-
-/**
- * Converts a TRPMCPU pointer into a VM pointer.
- * @returns Pointer to the VM structure the TRPMCPU is part of.
- * @param   pTrpmCpu    Pointer to TRPMCPU instance data.
- */
-#define TRPMCPU_2_VM(pTrpmCpu)      ( (PVM)((uint8_t *)(pTrpmCpu) - (pTrpmCpu)->offVM) )
-
-/**
- * Converts a TRPMCPU pointer into a VMCPU pointer.
- * @returns Pointer to the VMCPU structure the TRPMCPU is part of.
- * @param   pTrpmCpu    Pointer to TRPMCPU instance data.
- */
-#define TRPMCPU_2_VMCPU(pTrpmCpu)   ( (PVMCPU)((uint8_t *)(pTrpmCpu) - (pTrpmCpu)->offVMCpu) )
 
 
 /**
@@ -204,13 +84,6 @@ typedef TRPM *PTRPM;
  */
 typedef struct TRPMCPU
 {
-    /** Offset into the VM structure.
-     * See TRPMCPU_2_VM(). */
-    uint32_t                offVM;
-    /** Offset into the VMCPU structure.
-     * See TRPMCPU_2_VMCPU().  */
-    uint32_t                offVMCpu;
-
     /** Active Interrupt or trap vector number.
      * If not UINT32_MAX this indicates that we're currently processing a
      * interrupt, trap, fault, abort, whatever which have arrived at that
@@ -255,25 +128,6 @@ typedef struct TRPMCPU
 
 /** Pointer to TRPMCPU Data. */
 typedef TRPMCPU *PTRPMCPU;
-
-
-PGM_ALL_CB2_PROTO(FNPGMVIRTHANDLER) trpmGuestIDTWriteHandler;
-DECLEXPORT(FNPGMRCVIRTPFHANDLER)    trpmRCGuestIDTWritePfHandler;
-DECLEXPORT(FNPGMRCVIRTPFHANDLER)    trpmRCShadowIDTWritePfHandler;
-
-/**
- * Clear guest trap/interrupt gate handler
- *
- * @returns VBox status code.
- * @param   pVM         The cross context VM structure.
- * @param   iTrap       Interrupt/trap number.
- */
-VMMDECL(int) trpmClearGuestTrapHandler(PVM pVM, unsigned iTrap);
-
-
-#ifdef IN_RING3
-int trpmR3ClearPassThroughHandler(PVM pVM, unsigned iTrap);
-#endif
 
 
 #ifdef IN_RING0

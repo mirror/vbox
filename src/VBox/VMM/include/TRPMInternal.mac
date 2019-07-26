@@ -27,49 +27,13 @@
 %define TRPM_TRAP_IN_V86        RT_BIT(30)
 
 struc TRPM
-    .offVM              resd 1
-    .offTRPMCPU         resd 1
-    .fSafeToDropGuestIDTMonitoring resb 1
-    .abPadding1         resb 7
-    .aIdt               resd 512
-    .au32IdtPatched     resd 8
-    .aTmpTrapHandlers   RTRCPTR_RES 256
-
-    .pvMonShwIdtRC                  RTRCPTR_RES 1
-    .au8Padding                     resb 2
-    .GuestIdtr                      resb 10
-    .hShadowIdtWriteHandlerType     resd 1
-    .hGuestIdtWriteHandlerType      resd 1
-
-    .aGuestTrapHandler  RTRCPTR_RES 256
-
-    alignb 8
-    .StatRCWriteGuestIDTFault  resb STAMCOUNTER_size
-    .StatRCWriteGuestIDTHandled  resb STAMCOUNTER_size
-    .StatSyncIDT        resb STAMPROFILE_size
-    .aStatGCTraps       resb STAMPROFILEADV_size * 0x14
-
-    .StatForwardProfR3        resb STAMPROFILEADV_size
-    .StatForwardProfRZ        resb STAMPROFILEADV_size
-    .StatForwardFailNoHandler resb STAMCOUNTER_size
-    .StatForwardFailPatchAddr resb STAMCOUNTER_size
-    .StatForwardFailR3        resb STAMCOUNTER_size
-    .StatForwardFailRZ        resb STAMCOUNTER_size
-
-    .StatTrap0dDisasm         resb STAMPROFILE_size
-    .StatTrap0dRdTsc          resb STAMCOUNTER_size
-
 %ifdef VBOX_WITH_STATISTICS
     .paStatForwardedIRQR3    RTR3PTR_RES 1
-    .paStatForwardedIRQRC    RTRCPTR_RES 1
-    .paStatHostIrqRC         RTRCPTR_RES 1
-    .paStatHostIrqR3         RTR3PTR_RES 1
 %endif
+    .u64Dummy           resq 1
 endstruc
 
 struc TRPMCPU
-    .offVM              resd 1
-    .offVMCpu           resd 1
     .uActiveVector      resd 1
     .enmActiveType      resd 1
     .uActiveErrorCode   RTGCPTR_RES 1

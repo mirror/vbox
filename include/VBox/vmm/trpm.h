@@ -88,7 +88,6 @@ VMMDECL(bool)       TRPMHasTrap(PVMCPU pVCpu);
 VMMDECL(int)        TRPMQueryTrapAll(PVMCPU pVCpu, uint8_t *pu8TrapNo, PTRPMEVENT pEnmType, PRTGCUINT puErrorCode, PRTGCUINTPTR puCR2, uint8_t *pcbInstr);
 VMMDECL(void)       TRPMSaveTrap(PVMCPU pVCpu);
 VMMDECL(void)       TRPMRestoreTrap(PVMCPU pVCpu);
-VMMDECL(int)        TRPMForwardTrap(PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t iGate, uint32_t cbInstr, TRPMERRORCODE enmError, TRPMEVENT enmType, int32_t iOrgTrap);
 VMMDECL(int)        TRPMRaiseXcpt(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, X86XCPT enmXcpt);
 VMMDECL(int)        TRPMRaiseXcptErr(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, X86XCPT enmXcpt, uint32_t uErr);
 VMMDECL(int)        TRPMRaiseXcptErrCR2(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, X86XCPT enmXcpt, uint32_t uErr, RTGCUINTPTR uCR2);
@@ -104,38 +103,6 @@ VMMR3DECL(void)     TRPMR3ResetCpu(PVMCPU pVCpu);
 VMMR3DECL(void)     TRPMR3Reset(PVM pVM);
 VMMR3DECL(int)      TRPMR3Term(PVM pVM);
 VMMR3DECL(int)      TRPMR3InjectEvent(PVM pVM, PVMCPU pVCpu, TRPMEVENT enmEvent, bool *pfInjected);
-# ifdef VBOX_WITH_RAW_MODE
-VMMR3_INT_DECL(int) TRPMR3GetImportRC(PVM pVM, const char *pszSymbol, PRTRCPTR pRCPtrValue);
-VMMR3DECL(int)      TRPMR3SyncIDT(PVM pVM, PVMCPU pVCpu);
-VMMR3DECL(bool)     TRPMR3IsGateHandler(PVM pVM, RTRCPTR GCPtr);
-VMMR3DECL(uint32_t) TRPMR3QueryGateByHandler(PVM pVM, RTRCPTR GCPtr);
-VMMR3DECL(int)      TRPMR3EnableGuestTrapHandler(PVM pVM, unsigned iTrap);
-VMMR3DECL(int)      TRPMR3SetGuestTrapHandler(PVM pVM, unsigned iTrap, RTRCPTR pHandler);
-VMMR3DECL(RTRCPTR)  TRPMR3GetGuestTrapHandler(PVM pVM, unsigned iTrap);
-# endif
-/** @} */
-#endif
-
-
-#ifdef IN_RC
-/** @defgroup grp_trpm_rc    The TRPM Raw-mode Context API
- * @{
- */
-
-/**
- * Guest Context temporary trap handler
- *
- * @returns VBox status code (appropriate for GC return).
- *          In this context VINF_SUCCESS means to restart the instruction.
- * @param   pVM         The cross context VM structure.
- * @param   pRegFrame   Trap register frame.
- */
-typedef DECLCALLBACK(int) FNTRPMGCTRAPHANDLER(PVM pVM, PCPUMCTXCORE pRegFrame);
-/** Pointer to a TRPMGCTRAPHANDLER() function. */
-typedef FNTRPMGCTRAPHANDLER *PFNTRPMGCTRAPHANDLER;
-
-VMMRCDECL(int)      TRPMGCSetTempHandler(PVM pVM, unsigned iTrap, PFNTRPMGCTRAPHANDLER pfnHandler);
-VMMRCDECL(void)     TRPMGCHyperReturnToHost(PVM pVM, int rc);
 /** @} */
 #endif
 
