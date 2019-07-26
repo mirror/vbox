@@ -270,11 +270,13 @@ int main()
         rc++;
     }
     PRINT_OFFSET(VM, selm.s.TssTrap08);
+#if 0 // irrelevant now, remove later.
     if ((RT_UOFFSETOF(VM, selm.s.TssTrap08) & PAGE_OFFSET_MASK) > PAGE_SIZE - sizeof(pVM->selm.s.TssTrap08))
     {
         printf("error! SELM:TssTrap08 is crossing a page!\n");
         rc++;
     }
+#endif
     CHECK_MEMBER_ALIGNMENT(VM, trpm.s.aIdt, 16);
     CHECK_MEMBER_ALIGNMENT(VM, aCpus[0], PAGE_SIZE);
     CHECK_MEMBER_ALIGNMENT(VM, aCpus[1], PAGE_SIZE);
@@ -298,7 +300,6 @@ int main()
 #endif
     CHECK_MEMBER_ALIGNMENT(VM, vmm.s.u64LastYield, 8);
     CHECK_MEMBER_ALIGNMENT(VM, vmm.s.StatRunRC, 8);
-    CHECK_MEMBER_ALIGNMENT(VM, StatTotalQemuToGC, 8);
 #ifdef VBOX_WITH_REM
     CHECK_MEMBER_ALIGNMENT(VM, rem.s.uPendingExcptCR2, 8);
     CHECK_MEMBER_ALIGNMENT(VM, rem.s.StatsInQEMU, 8);

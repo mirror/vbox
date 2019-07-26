@@ -127,7 +127,6 @@ static int dbgfR3TraceEnable(PVM pVM, uint32_t cbEntry, uint32_t cEntries)
 
     pVM->hTraceBufR3 = hTraceBuf;
     pVM->hTraceBufR0 = MMHyperCCToR0(pVM, hTraceBuf);
-    pVM->hTraceBufRC = MMHyperCCToRC(pVM, hTraceBuf);
     return VINF_SUCCESS;
 }
 
@@ -145,7 +144,6 @@ int dbgfR3TraceInit(PVM pVM)
      */
     Assert(NIL_RTTRACEBUF == (RTTRACEBUF)NULL);
     pVM->hTraceBufR3 = NIL_RTTRACEBUF;
-    pVM->hTraceBufRC = NIL_RTRCPTR;
     pVM->hTraceBufR0 = NIL_RTR0PTR;
 
     /*
@@ -217,8 +215,7 @@ void dbgfR3TraceTerm(PVM pVM)
  */
 void dbgfR3TraceRelocate(PVM pVM)
 {
-    if (pVM->hTraceBufR3 != NIL_RTTRACEBUF)
-        pVM->hTraceBufRC = MMHyperCCToRC(pVM, pVM->hTraceBufR3);
+    RT_NOREF(pVM);
 }
 
 

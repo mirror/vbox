@@ -1200,52 +1200,18 @@ typedef struct VM
     uint32_t                    uCpuExecutionCap;
 
 #ifdef VBOX_BUGREF_9217
-    /** Structure version number (TBD). */
-    uint32_t                    uStructVersion;
     /** Size of the VM structure. */
     uint32_t                    cbSelf;
     /** Size of the VMCPU structure. */
     uint32_t                    cbVCpu;
+    /** Structure version number (TBD). */
+    uint32_t                    uStructVersion;
 #else
     /** Size of the VM structure including the VMCPU array. */
     uint32_t                    cbSelf;
+    uint32_t                    uUnused0;
+    uint32_t                    uUnused1;
 #endif
-
-#ifdef VBOX_WITH_RAW_MODE
-    /** Offset to the VMCPU array starting from beginning of this structure,
-     * for raw-mode assembly code. */
-    uint32_t                    offVMCPU;
-#else
-    uint32_t                    u32Unused;
-#endif
-
-    /**
-     * VMMSwitcher assembly entry point returning to host context.
-     *
-     * Depending on how the host handles the rc status given in @a eax, this may
-     * return and let the caller resume whatever it was doing prior to the call.
-     *
-     * @param   eax         The return code, register.
-     * @remark  Assume interrupts disabled.
-     * @remark  This method pointer lives here because TRPM needs it.
-     */
-    RTRCPTR                     pfnVMMRCToHostAsm/*(int32_t eax)*/;
-
-    /**
-     * VMMSwitcher assembly entry point returning to host context without saving the
-     * raw-mode context (hyper) registers.
-     *
-     * Unlike pfnVMMRC2HCAsm, this will not return to the caller.  Instead it
-     * expects the caller to save a RC context in CPUM where one might return if the
-     * return code indicate that this is possible.
-     *
-     * This method pointer lives here because TRPM needs it.
-     *
-     * @param   eax         The return code, register.
-     * @remark  Assume interrupts disabled.
-     * @remark  This method pointer lives here because TRPM needs it.
-     */
-    RTRCPTR                     pfnVMMRCToHostAsmNoReturn/*(int32_t eax)*/;
 
     /** @name Various items that are frequently accessed.
      * @{ */
@@ -1297,53 +1263,14 @@ typedef struct VM
 
     /** @name Debugging
      * @{ */
-    /** Raw-mode Context VM Pointer. */
-    RCPTRTYPE(RTTRACEBUF)       hTraceBufRC;
     /** Ring-3 Host Context VM Pointer. */
     R3PTRTYPE(RTTRACEBUF)       hTraceBufR3;
     /** Ring-0 Host Context VM Pointer. */
     R0PTRTYPE(RTTRACEBUF)       hTraceBufR0;
     /** @} */
 
-#if HC_ARCH_BITS == 32
-    /** Alignment padding. */
-    uint32_t                    uPadding2;
-#endif
-
-    /** @name Switcher statistics (remove)
-     * @{ */
-    /** Profiling the total time from Qemu to GC. */
-    STAMPROFILEADV              StatTotalQemuToGC;
-    /** Profiling the total time from GC to Qemu. */
-    STAMPROFILEADV              StatTotalGCToQemu;
-    /** Profiling the total time spent in GC. */
-    STAMPROFILEADV              StatTotalInGC;
-    /** Profiling the total time spent not in Qemu. */
-    STAMPROFILEADV              StatTotalInQemu;
-    /** Profiling the VMMSwitcher code for going to GC. */
-    STAMPROFILEADV              StatSwitcherToGC;
-    /** Profiling the VMMSwitcher code for going to HC. */
-    STAMPROFILEADV              StatSwitcherToHC;
-    STAMPROFILEADV              StatSwitcherSaveRegs;
-    STAMPROFILEADV              StatSwitcherSysEnter;
-    STAMPROFILEADV              StatSwitcherDebug;
-    STAMPROFILEADV              StatSwitcherCR0;
-    STAMPROFILEADV              StatSwitcherCR4;
-    STAMPROFILEADV              StatSwitcherJmpCR3;
-    STAMPROFILEADV              StatSwitcherRstrRegs;
-    STAMPROFILEADV              StatSwitcherLgdt;
-    STAMPROFILEADV              StatSwitcherLidt;
-    STAMPROFILEADV              StatSwitcherLldt;
-    STAMPROFILEADV              StatSwitcherTSS;
-    /** @} */
-
-    /** Padding - the unions must be aligned on a 64 bytes boundary and the unions
-     *  must start at the same offset on both 64-bit and 32-bit hosts. */
-#ifdef VBOX_BUGREF_9217
-    uint8_t                     abAlignment3[(HC_ARCH_BITS == 32 ? 24 : 0) + 32];
-#else
-    uint8_t                     abAlignment3[(HC_ARCH_BITS == 32 ? 24 : 0) + 40];
-#endif
+    /** Padding - the unions must be aligned on a 64 bytes boundary. */
+    uint8_t                     abAlignment3[24];
 
     /** CPUM part. */
     union
@@ -1519,26 +1446,6 @@ typedef struct VM
         uint8_t     padding[512];       /* multiple of 64 */
     } ftm;
 
-#ifdef VBOX_WITH_RAW_MODE
-    /** PATM part. */
-    union
-    {
-# ifdef VMM_INCLUDED_SRC_include_PATMInternal_h
-        struct PATM s;
-# endif
-        uint8_t     padding[768];       /* multiple of 64 */
-    } patm;
-
-    /** CSAM part. */
-    union
-    {
-# ifdef VMM_INCLUDED_SRC_include_CSAMInternal_h
-        struct CSAM s;
-# endif
-        uint8_t     padding[1088];      /* multiple of 64 */
-    } csam;
-#endif
-
 #ifdef VBOX_WITH_REM
     /** REM part. */
     union
@@ -1588,25 +1495,17 @@ typedef struct VM
 
 #ifdef VBOX_BUGREF_9217
     /** Padding for aligning the structure size on a page boundrary. */
-# if defined(VBOX_WITH_REM) && defined(VBOX_WITH_RAW_MODE)
-    uint8_t         abAlignment2[3670 - sizeof(PVMCPUR3) * VMM_MAX_CPU_COUNT];
-# elif defined(VBOX_WITH_REM) && !defined(VBOX_WITH_RAW_MODE)
-    uint8_t         abAlignment2[1430 - sizeof(PVMCPUR3) * VMM_MAX_CPU_COUNT];
-# elif !defined(VBOX_WITH_REM) && defined(VBOX_WITH_RAW_MODE)
-    uint8_t         abAlignment2[3926 - sizeof(PVMCPUR3) * VMM_MAX_CPU_COUNT];
+# ifdef VBOX_WITH_REM
+    uint8_t         abAlignment2[2134 - sizeof(PVMCPUR3) * VMM_MAX_CPU_COUNT];
 # else
-    uint8_t         abAlignment2[1686 - sizeof(PVMCPUR3) * VMM_MAX_CPU_COUNT];
+    uint8_t         abAlignment2[2390 - sizeof(PVMCPUR3) * VMM_MAX_CPU_COUNT];
 # endif
 #else
     /** Padding for aligning the cpu array on a page boundary. */
-# if defined(VBOX_WITH_REM) && defined(VBOX_WITH_RAW_MODE)
-    uint8_t         abAlignment2[3670];
-# elif defined(VBOX_WITH_REM) && !defined(VBOX_WITH_RAW_MODE)
-    uint8_t         abAlignment2[1430];
-# elif !defined(VBOX_WITH_REM) && defined(VBOX_WITH_RAW_MODE)
-    uint8_t         abAlignment2[3926];
+# ifdef VBOX_WITH_REM
+    uint8_t         abAlignment2[2134];
 # else
-    uint8_t         abAlignment2[1686];
+    uint8_t         abAlignment2[2390];
 # endif
 #endif
 

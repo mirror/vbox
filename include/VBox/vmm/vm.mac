@@ -100,13 +100,13 @@ struc VM
     .cCpus                  resd 1
     .uCpuExecutionCap       resd 1
     .cbSelf                 resd 1
-%ifdef VBOX_WITH_RAW_MODE
-    .offVMCPU               resd 1
+%ifdef VBOX_BUGREF_9217
+    .cbVCpu                 resd 1
+    .uStructVersion         resd 1
 %else
-    .u32Unused              resd 1
+    .uUnused0               resd 1
+    .uUnused1               resd 1
 %endif
-    .pfnVMMRCToHostAsm      resd 1
-    .pfnVMMRCToHostAsmNoReturn resd 1
     .bMainExecutionEngine   resb 1
     .fRecompileUser         resb 1
     .fRecompileSupervisor   resb 1
@@ -120,38 +120,8 @@ struc VM
 
     .uPadding1              resb 2
 
-    .hTraceBufRC            RTRCPTR_RES 1
     .hTraceBufR3            RTR3PTR_RES 1
     .hTraceBufR0            RTR0PTR_RES 1
-
-    alignb 8
-
-    .StatTotalQemuToGC      resb STAMPROFILEADV_size
-    .StatTotalGCToQemu      resb STAMPROFILEADV_size
-    .StatTotalInGC          resb STAMPROFILEADV_size
-    .StatTotalInQemu        resb STAMPROFILEADV_size
-    .StatSwitcherToGC       resb STAMPROFILEADV_size
-    .StatSwitcherToHC       resb STAMPROFILEADV_size
-    .StatSwitcherSaveRegs   resb STAMPROFILEADV_size
-    .StatSwitcherSysEnter   resb STAMPROFILEADV_size
-    .StatSwitcherDebug      resb STAMPROFILEADV_size
-    .StatSwitcherCR0        resb STAMPROFILEADV_size
-    .StatSwitcherCR4        resb STAMPROFILEADV_size
-    .StatSwitcherJmpCR3     resb STAMPROFILEADV_size
-    .StatSwitcherRstrRegs   resb STAMPROFILEADV_size
-    .StatSwitcherLgdt       resb STAMPROFILEADV_size
-    .StatSwitcherLidt       resb STAMPROFILEADV_size
-    .StatSwitcherLldt       resb STAMPROFILEADV_size
-    .StatSwitcherTSS        resb STAMPROFILEADV_size
-
-%ifndef HC_ARCH_BITS
- %error "Missing HC_ARCH_BITS"
-%endif
-%if HC_ARCH_BITS == 32
-    .abAlignment3           resb 16
-%else
-;    .abAlignment3           resb 16
-%endif
 
     alignb 64
     .cpum                   resb 1536
@@ -169,10 +139,6 @@ struc VM
     .dbgf                   resb 2432
     .ssm                    resb 128
     .ftm                    resb 512
-%ifdef VBOX_WITH_RAW_MODE
-    .patm                   resb 768
-    .csam                   resb 1088
-%endif
 %ifdef VBOX_WITH_REM
     .rem                    resb 0x11100
 %endif
