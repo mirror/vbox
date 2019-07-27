@@ -10959,15 +10959,12 @@ static int hmR0VmxMergeVmcsNested(PVMCPU pVCpu)
         void *pvPage;
         RTGCPHYS const GCPhysVirtApic = pVmcsNstGst->u64AddrVirtApic.u;
         int rc = PGMPhysGCPhys2CCPtr(pVM, GCPhysVirtApic, &pvPage, &pVCpu->hm.s.vmx.PgMapLockVirtApic);
-        AssertRCReturn(rc, rc);
-        if (RT_SUCCESS(rc))
-        {
-            rc = PGMPhysGCPhys2HCPhys(pVM, GCPhysVirtApic, &HCPhysVirtApic);
-            AssertMsgRCReturn(rc, ("Failed to get host-physical address for virtual-APIC page at %#RGp\n", GCPhysVirtApic), rc);
-            pVCpu->hm.s.vmx.fVirtApicPageLocked = true;
-        }
-        else
-            return rc;
+        AssertMsgRCReturn(rc, ("Failed to get current-context pointer for virtual-APIC page at %#RGp\n", GCPhysVirtApic), rc);
+
+        rc = PGMPhysGCPhys2HCPhys(pVM, GCPhysVirtApic, &HCPhysVirtApic);
+        AssertMsgRCReturn(rc, ("Failed to get host-physical address for virtual-APIC page at %#RGp\n", GCPhysVirtApic), rc);
+        pVCpu->hm.s.vmx.fVirtApicPageLocked = true;
+
         u32TprThreshold = pVmcsNstGst->u32TprThreshold;
     }
     else
