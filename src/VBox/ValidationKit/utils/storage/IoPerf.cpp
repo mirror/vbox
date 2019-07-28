@@ -236,7 +236,7 @@ static uint64_t     g_cbTestSet    = _2G;
 /** Block size for each request. */
 static size_t       g_cbIoBlock    = _4K;
 /** Maximum number of concurrent requests for each job. */
-static size_t       g_cReqsMax     = 16;
+static uint32_t     g_cReqsMax     = 16;
 
 
 /** @name Configured tests, this must match the IOPERFTEST order.
