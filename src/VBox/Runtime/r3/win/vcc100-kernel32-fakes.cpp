@@ -100,9 +100,9 @@ DECL_KERNEL32(HANDLE) Fake_CreateIoCompletionPort(HANDLE hFile, HANDLE hExisting
 
 
 DECL_KERNEL32(BOOL) Fake_GetQueuedCompletionStatus(HANDLE hCompletionPort, PDWORD_PTR pcbTransfered, PULONG_PTR puCompletionKey,
-                                                   LPOVERLAPPED pOverlapped, DWORD cMs)
+                                                   LPOVERLAPPED *ppOverlapped, DWORD cMs)
 {
-    RT_NOREF(hCompletionPort, pcbTransfered, puCompletionKey, pOverlapped, cMs);
+    RT_NOREF(hCompletionPort, pcbTransfered, puCompletionKey, ppOverlapped, cMs);
     SetLastError(ERROR_NOT_SUPPORTED);
     return FALSE;
 }
