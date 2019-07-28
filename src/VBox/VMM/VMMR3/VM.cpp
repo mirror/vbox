@@ -861,14 +861,8 @@ static int vmR3InitRing3(PVM pVM, PUVM pUVM)
     if (RT_SUCCESS(rc))
     {
         ASMCompilerBarrier(); /* HMR3Init will have modified bMainExecutionEngine */
-#ifdef VBOX_WITH_RAW_MODE
-        Assert(   pVM->bMainExecutionEngine == VM_EXEC_ENGINE_HW_VIRT
-               || pVM->bMainExecutionEngine == VM_EXEC_ENGINE_RAW_MODE
-               || pVM->bMainExecutionEngine == VM_EXEC_ENGINE_NATIVE_API);
-#else
         Assert(   pVM->bMainExecutionEngine == VM_EXEC_ENGINE_HW_VIRT
                || pVM->bMainExecutionEngine == VM_EXEC_ENGINE_NATIVE_API);
-#endif
         rc = MMR3Init(pVM);
         if (RT_SUCCESS(rc))
         {
@@ -931,10 +925,6 @@ static int vmR3InitRing3(PVM pVM, PUVM pUVM)
                                                                             rc = PGMR3InitDynMap(pVM);
                                                                             if (RT_SUCCESS(rc))
                                                                                 rc = MMR3HyperInitFinalize(pVM);
-#ifdef VBOX_WITH_RAW_MODE
-                                                                            if (RT_SUCCESS(rc))
-                                                                                rc = PATMR3InitFinalize(pVM);
-#endif
                                                                             if (RT_SUCCESS(rc))
                                                                                 rc = PGMR3InitFinalize(pVM);
                                                                             if (RT_SUCCESS(rc))
@@ -1049,40 +1039,6 @@ static int vmR3InitRing0(PVM pVM)
 }
 
 
-#ifdef VBOX_WITH_RAW_MODE
-/**
- * Initializes all RC components of the VM
- */
-static int vmR3InitRC(PVM pVM)
-{
-    LogFlow(("vmR3InitRC:\n"));
-
-    /*
-     * Check for FAKE suplib mode.
-     */
-    int rc = VINF_SUCCESS;
-    const char *psz = RTEnvGet("VBOX_SUPLIB_FAKE");
-    if (!psz || strcmp(psz, "fake"))
-    {
-        /*
-         * Call the VMMR0 component and let it do the init.
-         */
-        rc = VMMR3InitRC(pVM);
-    }
-    else
-        Log(("vmR3InitRC: skipping because of VBOX_SUPLIB_FAKE=fake\n"));
-
-    /*
-     * Do notifications and return.
-     */
-    if (RT_SUCCESS(rc))
-        rc = vmR3InitDoCompleted(pVM, VMINITCOMPLETED_RC);
-    LogFlow(("vmR3InitRC: returns %Rrc\n", rc));
-    return rc;
-}
-#endif /* VBOX_WITH_RAW_MODE */
-
-
 /**
  * Do init completed notifications.
  *
@@ -1143,10 +1099,6 @@ VMMR3_INT_DECL(void) VMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
     VMMR3Relocate(pVM, offDelta);
     SELMR3Relocate(pVM);                /* !hack! fix stack! */
     TRPMR3Relocate(pVM, offDelta);
-#ifdef VBOX_WITH_RAW_MODE
-    PATMR3Relocate(pVM, (RTRCINTPTR)offDelta);
-    CSAMR3Relocate(pVM, offDelta);
-#endif
     IOMR3Relocate(pVM, offDelta);
     EMR3Relocate(pVM);
     TMR3Relocate(pVM, offDelta);
@@ -2391,12 +2343,6 @@ DECLCALLBACK(int) vmR3Destroy(PVM pVM)
         AssertRC(rc);
         rc = IOMR3Term(pVM);
         AssertRC(rc);
-#ifdef VBOX_WITH_RAW_MODE
-        rc = CSAMR3Term(pVM);
-        AssertRC(rc);
-        rc = PATMR3Term(pVM);
-        AssertRC(rc);
-#endif
         rc = TRPMR3Term(pVM);
         AssertRC(rc);
         rc = SELMR3Term(pVM);
@@ -2785,10 +2731,6 @@ static DECLCALLBACK(VBOXSTRICTRC) vmR3HardReset(PVM pVM, PVMCPU pVCpu, void *pvU
      */
     if (pVCpu->idCpu == 0)
     {
-#ifdef VBOX_WITH_RAW_MODE
-        PATMR3Reset(pVM);
-        CSAMR3Reset(pVM);
-#endif
         GIMR3Reset(pVM);                /* This must come *before* PDM and TM. */
         PDMR3Reset(pVM);
         PGMR3Reset(pVM);

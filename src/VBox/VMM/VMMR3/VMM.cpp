@@ -347,13 +347,7 @@ static int vmmR3InitStacks(PVM pVM)
 #ifdef VBOX_STRICT_VMM_STACK
             pVCpu->vmm.s.pbEMTStackR3 += PAGE_SIZE;
 #endif
-#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
-            /* MMHyperR3ToR0 returns R3 when not doing hardware assisted virtualization. */
-            if (VM_IS_RAW_MODE_ENABLED(pVM))
-                pVCpu->vmm.s.CallRing3JmpBufR0.pvSavedStack = NIL_RTR0PTR;
-            else
-#endif
-                pVCpu->vmm.s.CallRing3JmpBufR0.pvSavedStack = MMHyperR3ToR0(pVM, pVCpu->vmm.s.pbEMTStackR3);
+            pVCpu->vmm.s.CallRing3JmpBufR0.pvSavedStack = MMHyperR3ToR0(pVM, pVCpu->vmm.s.pbEMTStackR3);
 
         }
     }
@@ -869,15 +863,7 @@ VMMR3_INT_DECL(int) VMMR3UpdateLoggers(PVM pVM)
  */
 VMMR3DECL(const char *) VMMR3GetRZAssertMsg1(PVM pVM)
 {
-    if (!VM_IS_RAW_MODE_ENABLED(pVM))
-        return pVM->vmm.s.szRing0AssertMsg1;
-
-    RTRCPTR RCPtr;
-    int rc = PDMR3LdrGetSymbolRC(pVM, NULL, "g_szRTAssertMsg1", &RCPtr);
-    if (RT_SUCCESS(rc))
-        return (const char *)MMHyperRCToR3(pVM, RCPtr);
-
-    return NULL;
+    return pVM->vmm.s.szRing0AssertMsg1;
 }
 
 
@@ -906,15 +892,7 @@ VMMR3DECL(PVMCPU) VMMR3GetCpuByIdU(PUVM pUVM, RTCPUID idCpu)
  */
 VMMR3DECL(const char *) VMMR3GetRZAssertMsg2(PVM pVM)
 {
-    if (!VM_IS_RAW_MODE_ENABLED(pVM))
-        return pVM->vmm.s.szRing0AssertMsg2;
-
-    RTRCPTR RCPtr;
-    int rc = PDMR3LdrGetSymbolRC(pVM, NULL, "g_szRTAssertMsg2", &RCPtr);
-    if (RT_SUCCESS(rc))
-        return (const char *)MMHyperRCToR3(pVM, RCPtr);
-
-    return NULL;
+    return pVM->vmm.s.szRing0AssertMsg2;
 }
 
 
