@@ -90,6 +90,33 @@ DECL_KERNEL32(BOOL) Fake_InitializeCriticalSectionAndSpinCount(LPCRITICAL_SECTIO
 }
 
 
+DECL_KERNEL32(HANDLE) Fake_CreateIoCompletionPort(HANDLE hFile, HANDLE hExistingCompletionPort, ULONG_PTR uCompletionKey,
+                                                  DWORD cConcurrentThreads)
+{
+    RT_NOREF(hFile, hExistingCompletionPort, uCompletionKey, cConcurrentThreads);
+    SetLastError(ERROR_NOT_SUPPORTED);
+    return NULL;
+}
+
+
+DECL_KERNEL32(BOOL) Fake_GetQueuedCompletionStatus(HANDLE hCompletionPort, PDWORD_PTR pcbTransfered, PULONG_PTR puCompletionKey,
+                                                   LPOVERLAPPED pOverlapped, DWORD cMs)
+{
+    RT_NOREF(hCompletionPort, pcbTransfered, puCompletionKey, pOverlapped, cMs);
+    SetLastError(ERROR_NOT_SUPPORTED);
+    return FALSE;
+}
+
+
+DECL_KERNEL32(BOOL) Fake_PostQueuedCompletionStatus(HANDLE hCompletionPort, DWORD cbTransfered, ULONG_PTR uCompletionKey,
+                                                    LPOVERLAPPED pOverlapped)
+{
+    RT_NOREF(hCompletionPort, cbTransfered, uCompletionKey, pOverlapped);
+    SetLastError(ERROR_NOT_SUPPORTED);
+    return FALSE;
+}
+
+
 DECL_KERNEL32(BOOL) Fake_HeapSetInformation(HANDLE hHeap, HEAP_INFORMATION_CLASS enmInfoClass, PVOID pvBuf, SIZE_T cbBuf)
 {
     RT_NOREF(hHeap);
