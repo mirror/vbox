@@ -36,6 +36,7 @@ include $(PATH_SUB_CURRENT)/fs/Makefile.kmk
 include $(PATH_SUB_CURRENT)/misc/Makefile.kmk
 include $(PATH_SUB_CURRENT)/network/Makefile.kmk
 include $(PATH_SUB_CURRENT)/serial/Makefile.kmk
+include $(PATH_SUB_CURRENT)/storage/Makefile.kmk
 ifeq ($(KBUILD_TARGET),win)
  include $(PATH_SUB_CURRENT)/nt/Makefile.kmk
 endif
