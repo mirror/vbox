@@ -280,11 +280,7 @@ HRESULT SystemProperties::getMaxBootPosition(ULONG *aMaxBootPosition)
 
 HRESULT SystemProperties::getRawModeSupported(BOOL *aRawModeSupported)
 {
-#ifdef VBOX_WITH_RAW_MODE
-    *aRawModeSupported = TRUE;
-#else
     *aRawModeSupported = FALSE;
-#endif
     return S_OK;
 }
 

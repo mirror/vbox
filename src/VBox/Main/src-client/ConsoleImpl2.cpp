@@ -854,21 +854,6 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
         InsertConfigInteger(pRoot, "NumCPUs",              cCpus);
         InsertConfigInteger(pRoot, "CpuExecutionCap",      ulCpuExecutionCap);
         InsertConfigInteger(pRoot, "TimerMillies",         10);
-#ifdef VBOX_WITH_RAW_MODE
-        InsertConfigInteger(pRoot, "RawR3Enabled",         1);     /* boolean */
-        InsertConfigInteger(pRoot, "RawR0Enabled",         1);     /* boolean */
-        /** @todo Config: RawR0, PATMEnabled and CSAMEnabled needs attention later. */
-        InsertConfigInteger(pRoot, "PATMEnabled",          1);     /* boolean */
-        InsertConfigInteger(pRoot, "CSAMEnabled",          1);     /* boolean */
-#endif
-
-#ifdef VBOX_WITH_RAW_RING1
-        if (osTypeId == "QNX")
-        {
-            /* QNX needs special treatment in raw mode due to its use of ring-1. */
-            InsertConfigInteger(pRoot, "RawR1Enabled",     1);     /* boolean */
-        }
-#endif
 
         BOOL fPageFusion = FALSE;
         hrc = pMachine->COMGETTER(PageFusionEnabled)(&fPageFusion);                         H();
@@ -1081,34 +1066,8 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
         }
 
         BOOL fHMForced;
-#ifdef VBOX_WITH_RAW_MODE
-        /* - With more than 4GB PGM will use different RAMRANGE sizes for raw
-             mode and hv mode to optimize lookup times.
-           - With more than one virtual CPU, raw-mode isn't a fallback option.
-           - With a 64-bit guest, raw-mode isn't a fallback option either. */
-        fHMForced = fHMEnabled
-                 && (   cbRam + cbRamHole > _4G
-                     || cCpus > 1
-                     || fIsGuest64Bit);
-# ifdef RT_OS_DARWIN
-        fHMForced = fHMEnabled;
-# endif
-        if (fHMForced)
-        {
-            if (cbRam + cbRamHole > _4G)
-                LogRel(("fHMForced=true - Lots of RAM\n"));
-            if (cCpus > 1)
-                LogRel(("fHMForced=true - SMP\n"));
-            if (fIsGuest64Bit)
-                LogRel(("fHMForced=true - 64-bit guest\n"));
-# ifdef RT_OS_DARWIN
-            LogRel(("fHMForced=true - Darwin host\n"));
-# endif
-        }
-#else  /* !VBOX_WITH_RAW_MODE */
         fHMEnabled = fHMForced = TRUE;
         LogRel(("fHMForced=true - No raw-mode support in this build!\n"));
-#endif /* !VBOX_WITH_RAW_MODE */
         if (!fHMForced) /* No need to query if already forced above. */
         {
             hrc = pMachine->GetHWVirtExProperty(HWVirtExPropertyType_Force, &fHMForced); H();
