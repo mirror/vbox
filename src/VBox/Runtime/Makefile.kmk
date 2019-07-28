@@ -879,6 +879,7 @@ RuntimeR3_SOURCES.win = \
 	r3/win/dir-win.cpp \
 	$(if-expr defined(VBOX_WITH_NT_DIRENUM),r3/nt/direnum-r3-nt.cpp,r3/win/direnum-win.cpp generic/RTDirQueryInfo-generic.cpp) \
 	r3/win/errvars-win.cpp \
+	r3/win/fileaio-win.cpp \
 	r3/win/fileio-win.cpp \
 	r3/win/init-win.cpp \
 	r3/win/krnlmod-win.cpp \
@@ -944,6 +945,8 @@ RuntimeR3_SOURCES.linux = \
 	r3/generic/dirrel-r3-generic.cpp \
 	r3/posix/allocex-r3-posix.cpp \
 	r3/linux/RTThreadGetNativeState-linux.cpp \
+	r3/linux/fileaio-linux.cpp \
+	r3/linux/ioqueue-iouringfile-provider.cpp \
 	r3/linux/krnlmod-linux.cpp \
 	r3/linux/mp-linux.cpp \
 	r3/linux/rtProcInitExePath-linux.cpp \
@@ -1160,6 +1163,7 @@ RuntimeR3_SOURCES.darwin = \
 	r3/posix/dir-posix.cpp \
 	r3/posix/env-posix.cpp \
 	r3/posix/errvars-posix.cpp \
+	r3/posix/fileaio-posix.cpp \
 	r3/posix/fileio-posix.cpp \
 	r3/posix/fileio2-posix.cpp \
 	r3/posix/fileio-at-posix.cpp \
@@ -1223,6 +1227,7 @@ RuntimeR3_SOURCES.freebsd = \
 	generic/RTProcDaemonize-generic.cpp \
 	generic/RTProcIsRunningByName-generic.cpp \
 	generic/RTThreadGetNativeState-generic.cpp \
+	r3/freebsd/fileaio-freebsd.cpp \
 	r3/freebsd/mp-freebsd.cpp \
 	r3/freebsd/systemmem-freebsd.cpp \
 	r3/freebsd/rtProcInitExePath-freebsd.cpp \
@@ -1431,6 +1436,7 @@ RuntimeR3_SOURCES.solaris = \
 	r3/posix/timer-posix.cpp \
 	r3/posix/tls-posix.cpp \
 	r3/posix/utf8-posix.cpp \
+	r3/solaris/fileaio-solaris.cpp \
 	r3/solaris/krnlmod-solaris.cpp \
 	r3/solaris/systemmem-solaris.cpp \
 	r3/solaris/mp-solaris.cpp \
@@ -2173,17 +2179,7 @@ VBoxRT_SOURCES.x86   := $(RuntimeR3_SOURCES.x86)
 VBoxRT_SOURCES.amd64 := $(RuntimeR3_SOURCES.amd64)
 VBoxRT_SOURCES.win            += \
 	r3/win/dllmain-win.cpp \
-	r3/win/fileaio-win.cpp \
 	$(VBoxRT_0_OUTDIR)/VBoxRT.def
-VBoxRT_SOURCES.linux          += \
-	r3/linux/fileaio-linux.cpp \
-	r3/linux/ioqueue-iouringfile-provider.cpp
-VBoxRT_SOURCES.solaris        += \
-	r3/solaris/fileaio-solaris.cpp
-VBoxRT_SOURCES.darwin         += \
-	r3/posix/fileaio-posix.cpp
-VBoxRT_SOURCES.freebsd        += \
-	r3/freebsd/fileaio-freebsd.cpp
 VBoxRT_INCS                   := $(RuntimeR3_INCS)
 VBoxRT_INCS.$(KBUILD_TARGET)  := $(RuntimeR3_INCS.$(KBUILD_TARGET))
 VBoxRT_INCS.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH) := $(RuntimeR3_INCS.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH))
