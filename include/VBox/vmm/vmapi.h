@@ -334,7 +334,6 @@ typedef VMREQ *PVMREQ;
 
 #ifdef IN_RING3
 /** @defgroup grp_vmm_apis_r3  VM Host Context Ring 3 API
- * This interface is a _draft_!
  * @ingroup grp_vm
  * @{ */
 
@@ -350,9 +349,7 @@ typedef enum VMINITCOMPLETED
     /** The hardware accelerated virtualization init is completed.
      * Used to make decisision depending on HM* bits being completely
      * initialized. */
-    VMINITCOMPLETED_HM,
-    /** The RC init is completed. */
-    VMINITCOMPLETED_RC
+    VMINITCOMPLETED_HM
 } VMINITCOMPLETED;
 
 
@@ -518,15 +515,6 @@ VMMR3DECL(int)              VMR3SetCpuExecutionCap(PUVM pUVM, uint32_t uCpuExecu
 VMMR3DECL(int)              VMR3SetPowerOffInsteadOfReset(PUVM pUVM, bool fPowerOffInsteadOfReset);
 /** @} */
 #endif /* IN_RING3 */
-
-
-#ifdef IN_RC
-/** @defgroup grp_vmm_apis_gc  VM Guest Context APIs
- * @ingroup grp_vm
- * @{ */
-
-/** @} */
-#endif
 
 RT_C_DECLS_END
 
