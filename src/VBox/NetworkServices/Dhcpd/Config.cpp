@@ -229,7 +229,7 @@ int Config::i_logInit() RT_NOEXCEPT
     int rc = com::VBoxLogRelCreate("DHCP Server",
                                    pszFilename,
                                    RTLOGFLAGS_PREFIX_TIME_PROG,
-                                   "all net_dhcpd.e.l",
+                                   "all net_dhcpd.e.l.f.l3.l4.l5.l6",
                                    "VBOXDHCP_RELEASE_LOG",
                                    RTLOGDEST_FILE
 #ifdef DEBUG

@@ -80,6 +80,8 @@ public:
         return m_optMessageType.value();
     }
     /** @} */
+
+    void            dump() const RT_NOEXCEPT;
 };
 
 
@@ -143,6 +145,7 @@ public:
     /** @} */
 
     int             encode(octets_t &data);
+    void            dump() const RT_NOEXCEPT;
 };
 
 #endif /* !VBOX_INCLUDED_SRC_Dhcpd_DhcpMessage_h */

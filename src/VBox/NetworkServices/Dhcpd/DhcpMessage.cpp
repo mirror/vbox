@@ -44,6 +44,42 @@ DhcpMessage::DhcpMessage()
 }
 
 
+/**
+ * Does common message dumping.
+ */
+void DhcpMessage::dump() const RT_NOEXCEPT
+{
+    switch (m_optMessageType.value())
+    {
+        case RTNET_DHCP_MT_DISCOVER: LogRel(("DISCOVER")); break;
+        case RTNET_DHCP_MT_OFFER:    LogRel(("OFFER")); break;
+        case RTNET_DHCP_MT_REQUEST:  LogRel(("REQUEST")); break;
+        case RTNET_DHCP_MT_DECLINE:  LogRel(("DECLINE")); break;
+        case RTNET_DHCP_MT_ACK:      LogRel(("ACK")); break;
+        case RTNET_DHCP_MT_NAC:      LogRel(("NAC")); break;
+        case RTNET_DHCP_MT_RELEASE:  LogRel(("RELEASE")); break;
+        case RTNET_DHCP_MT_INFORM:   LogRel(("INFORM")); break;
+        default:
+            LogRel(("<Unknown Mesage Type %d>", m_optMessageType.value()));
+            break;
+    }
+
+    LogRel((" xid 0x%08x", m_xid));
+    LogRel((" chaddr %RTmac\n", &m_mac));
+    LogRel((" ciaddr %RTnaipv4", m_ciaddr.u));
+    if (m_yiaddr.u != 0)
+        LogRel((" yiaddr %RTnaipv4", m_yiaddr.u));
+    if (m_siaddr.u != 0)
+        LogRel((" siaddr %RTnaipv4", m_siaddr.u));
+    if (m_giaddr.u != 0)
+        LogRel((" giaddr %RTnaipv4", m_giaddr.u));
+    if (broadcast())
+        LogRel((" broadcast\n"));
+    else
+        LogRel(("\n"));
+}
+
+
 /*********************************************************************************************************************************
 *   DhcpClientMessage Implementation                                                                                             *
 *********************************************************************************************************************************/
@@ -196,34 +232,12 @@ int DhcpClientMessage::i_parseOptions(const uint8_t *pbBuf, size_t cbBuf) RT_NOE
 }
 
 
+/**
+ * Dumps the message.
+ */
 void DhcpClientMessage::dump() const RT_NOEXCEPT
 {
-    switch (m_optMessageType.value())
-    {
-        case RTNET_DHCP_MT_DISCOVER:
-            LogRel(("DISCOVER"));
-            break;
-
-        case RTNET_DHCP_MT_REQUEST:
-            LogRel(("REQUEST"));
-            break;
-
-        case RTNET_DHCP_MT_INFORM:
-            LogRel(("INFORM"));
-            break;
-
-        case RTNET_DHCP_MT_DECLINE:
-            LogRel(("DECLINE"));
-            break;
-
-        case RTNET_DHCP_MT_RELEASE:
-            LogRel(("RELEASE"));
-            break;
-
-        default:
-            LogRel(("<Unknown Mesage Type %d>", m_optMessageType.value()));
-            break;
-    }
+    DhcpMessage::dump();
 
     if (OptRapidCommit(*this).present())
         LogRel((" (rapid commit)"));
@@ -234,26 +248,14 @@ void DhcpClientMessage::dump() const RT_NOEXCEPT
         if (sid.present())
             LogRel((" for server %RTnaipv4", sid.value().u));
 
-        LogRel((" xid 0x%08x", m_xid));
-        LogRel((" chaddr %RTmac\n", &m_mac));
-
         const OptClientId cid(*this);
-        if (cid.present()) {
+        if (cid.present())
+        {
             if (cid.value().size() > 0)
                 LogRel((" client id: %.*Rhxs\n", cid.value().size(), &cid.value().front()));
             else
                 LogRel((" client id: <empty>\n"));
         }
-
-        LogRel((" ciaddr %RTnaipv4", m_ciaddr.u));
-        if (m_yiaddr.u != 0)
-            LogRel((" yiaddr %RTnaipv4", m_yiaddr.u));
-        if (m_siaddr.u != 0)
-            LogRel((" siaddr %RTnaipv4", m_siaddr.u));
-        if (m_giaddr.u != 0)
-            LogRel((" giaddr %RTnaipv4", m_giaddr.u));
-        LogRel(("%s\n", broadcast() ? "broadcast" : ""));
-
 
         const OptRequestedAddress reqAddr(*this);
         if (reqAddr.present())
@@ -414,6 +416,22 @@ int DhcpServerMessage::encode(octets_t &data)
         data.resize(RTNET_DHCP_NORMAL_SIZE);
 
     /** @todo dump it */
+    if ((LogRelIs4Enabled() && LogRelIsEnabled()) || LogIsEnabled())
+        dump();
+    if ((LogRelIs5Enabled() && LogRelIsEnabled()) || LogIs5Enabled())
+        LogRel5(("encoded message: %u bytes\n%.*Rhxd\n", data.size(), data.size(), &data.front()));
 
     return VINF_SUCCESS;
 }
+
+
+/**
+ * Dumps a server message to the log.
+ */
+void DhcpServerMessage::dump() const RT_NOEXCEPT
+{
+    DhcpMessage::dump();
+
+    /** @todo dump option details. */
+}
+
