@@ -1182,26 +1182,6 @@ typedef struct VM
      * This is set early during vmR3InitRing3 by HM or NEM.  */
     uint8_t const               bMainExecutionEngine;
 
-    /** Whether to recompile user mode code or run it raw/hm/nem.
-     * In non-raw-mode both fRecompileUser and fRecompileSupervisor must be set
-     * to recompiler stuff. */
-    bool                        fRecompileUser;
-    /** Whether to recompile supervisor mode code or run it raw/hm/nem.
-     * In non-raw-mode both fRecompileUser and fRecompileSupervisor must be set
-     * to recompiler stuff. */
-    bool                        fRecompileSupervisor;
-    /** Whether raw mode supports ring-1 code or not.
-     * This will be cleared when not in raw-mode.  */
-    bool                        fRawRing1Enabled;
-    /** PATM enabled flag.
-     * This is placed here for performance reasons.
-     * This will be cleared when not in raw-mode. */
-    bool                        fPATMEnabled;
-    /** CSAM enabled flag.
-     * This is placed here for performance reasons.
-     * This will be cleared when not in raw-mode. */
-    bool                        fCSAMEnabled;
-
     /** Hardware VM support is available and enabled.
      * Determined very early during init.
      * This is placed here for performance reasons.
@@ -1222,7 +1202,7 @@ typedef struct VM
     /** @} */
 
     /** Alignment padding. */
-    uint8_t                     uPadding1[2];
+    uint8_t                     uPadding1[7];
 
     /** @name Debugging
      * @{ */

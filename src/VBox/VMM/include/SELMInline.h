@@ -206,16 +206,6 @@ DECL_FORCE_INLINE(void) selmGuestToShadowDesc(PVM pVM, PX86DESC pDesc)
             pDesc->Gen.u2Dpl       = 1;
             pDesc->Gen.u1Available = 1;
         }
-# ifdef VBOX_WITH_RAW_RING1
-        else if (    pDesc->Gen.u2Dpl == 1
-                 &&  EMIsRawRing1Enabled(pVM)
-                 &&      (pDesc->Gen.u4Type & (X86_SEL_TYPE_CODE | X86_SEL_TYPE_CONF))
-                     !=  (X86_SEL_TYPE_CODE | X86_SEL_TYPE_CONF) )
-        {
-            pDesc->Gen.u2Dpl       = 2;
-            pDesc->Gen.u1Available = 1;
-        }
-# endif
         else
             pDesc->Gen.u1Available = 0;
     }

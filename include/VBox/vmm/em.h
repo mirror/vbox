@@ -127,57 +127,6 @@ typedef DECLCALLBACK(int)       FNEMULATELOCKPARAM3(void *pvParam1, uint64_t val
 typedef FNEMULATELOCKPARAM3    *PFNEMULATELOCKPARAM3;
 /** @}  */
 
-
-/**
- * Checks if raw ring-3 execute mode is enabled.
- *
- * @returns true if enabled.
- * @returns false if disabled.
- * @param   pVM         The cross context VM structure.
- */
-#define EMIsRawRing3Enabled(pVM)            (!(pVM)->fRecompileUser)
-
-/**
- * Checks if raw ring-0 execute mode is enabled.
- *
- * @returns true if enabled.
- * @returns false if disabled.
- * @param   pVM         The cross context VM structure.
- */
-#define EMIsRawRing0Enabled(pVM)            (!(pVM)->fRecompileSupervisor)
-
-#ifdef VBOX_WITH_RAW_RING1
-/**
- * Checks if raw ring-1 execute mode is enabled.
- *
- * @returns true if enabled.
- * @returns false if disabled.
- * @param   pVM         The cross context VM structure.
- */
-# define EMIsRawRing1Enabled(pVM)           ((pVM)->fRawRing1Enabled)
-#else
-# define EMIsRawRing1Enabled(pVM)           false
-#endif
-
-/**
- * Checks if execution with hardware assisted virtualization is enabled.
- *
- * @returns true if enabled.
- * @returns false if disabled.
- * @param   pVM         The cross context VM structure.
- */
-#define EMIsHwVirtExecutionEnabled(pVM)     (!(pVM)->fRecompileSupervisor && !(pVM)->fRecompileUser)
-
-/**
- * Checks if execution of supervisor code should be done in the
- * recompiler or not.
- *
- * @returns true if enabled.
- * @returns false if disabled.
- * @param   pVM         The cross context VM structure.
- */
-#define EMIsSupervisorCodeRecompiled(pVM) ((pVM)->fRecompileSupervisor)
-
 VMMDECL(void)                   EMSetInhibitInterruptsPC(PVMCPU pVCpu, RTGCUINTPTR PC);
 VMMDECL(RTGCUINTPTR)            EMGetInhibitInterruptsPC(PVMCPU pVCpu);
 VMMDECL(bool)                   EMIsInhibitInterruptsActive(PVMCPU pVCpu);

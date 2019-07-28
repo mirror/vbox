@@ -768,8 +768,7 @@ VMMDECL(bool) PGMMapHasConflicts(PVM pVM)
             unsigned iPDE = pCur->GCPtr >> X86_PD_SHIFT;
             unsigned iPT = pCur->cPTs;
             while (iPT-- > 0)
-                if (    pPD->a[iPDE + iPT].n.u1Present /** @todo PGMGstGetPDE. */
-                    &&  (EMIsRawRing0Enabled(pVM) || pPD->a[iPDE + iPT].n.u1User))
+                if (pPD->a[iPDE + iPT].n.u1Present /** @todo PGMGstGetPDE. */)
                 {
                     STAM_COUNTER_INC(&pVM->pgm.s.CTX_SUFF(pStats)->StatR3DetectedConflicts);
 
@@ -800,8 +799,7 @@ VMMDECL(bool) PGMMapHasConflicts(PVM pVM)
             {
                 X86PDEPAE Pde = pgmGstGetPaePDE(pVCpu, GCPtr);
 
-                if (   Pde.n.u1Present
-                    && (EMIsRawRing0Enabled(pVM) || Pde.n.u1User))
+                if (Pde.n.u1Present)
                 {
                     STAM_COUNTER_INC(&pVM->pgm.s.CTX_SUFF(pStats)->StatR3DetectedConflicts);
 # ifdef IN_RING3
@@ -862,9 +860,7 @@ int pgmMapResolveConflicts(PVM pVM)
             unsigned    iPT   = pCur->cPTs;
             while (iPT-- > 0)
             {
-                if (    pPD->a[iPDE + iPT].n.u1Present /** @todo PGMGstGetPDE. */
-                    &&  (   EMIsRawRing0Enabled(pVM)
-                         || pPD->a[iPDE + iPT].n.u1User))
+                if (pPD->a[iPDE + iPT].n.u1Present /** @todo PGMGstGetPDE. */)
                 {
                     STAM_COUNTER_INC(&pVM->pgm.s.CTX_SUFF(pStats)->StatR3DetectedConflicts);
 
@@ -903,8 +899,7 @@ int pgmMapResolveConflicts(PVM pVM)
             {
                 X86PDEPAE Pde = pgmGstGetPaePDE(pVCpu, GCPtr);
 
-                if (   Pde.n.u1Present
-                    && (EMIsRawRing0Enabled(pVM) || Pde.n.u1User))
+                if (Pde.n.u1Present)
                 {
                     STAM_COUNTER_INC(&pVM->pgm.s.CTX_SUFF(pStats)->StatR3DetectedConflicts);
 #ifdef IN_RING3

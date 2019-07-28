@@ -3240,36 +3240,6 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_prot, IEMMODE, enmEffOpSize)
         return iemRaiseGeneralProtectionFaultBySelector(pVCpu, uNewCs);
     }
 
-#ifdef VBOX_WITH_RAW_MODE_NOT_R0
-    /* Raw ring-0 and ring-1 compression adjustments for PATM performance tricks and other CS leaks. */
-    PVM pVM = pVCpu->CTX_SUFF(pVM);
-    if (EMIsRawRing0Enabled(pVM) && VM_IS_RAW_MODE_ENABLED(pVM))
-    {
-        if ((uNewCs & X86_SEL_RPL) == 1)
-        {
-            if (   pVCpu->iem.s.uCpl == 0
-                && (   !EMIsRawRing1Enabled(pVM)
-                    || pVCpu->cpum.GstCtx.cs.Sel == (uNewCs & X86_SEL_MASK_OFF_RPL)) )
-            {
-                Log(("iret: Ring-0 compression fix: uNewCS=%#x -> %#x\n", uNewCs, uNewCs & X86_SEL_MASK_OFF_RPL));
-                uNewCs &= X86_SEL_MASK_OFF_RPL;
-            }
-# ifdef LOG_ENABLED
-            else if (pVCpu->iem.s.uCpl <= 1 && EMIsRawRing1Enabled(pVM))
-                Log(("iret: uNewCs=%#x genuine return to ring-1.\n", uNewCs));
-# endif
-        }
-        else if (   (uNewCs & X86_SEL_RPL) == 2
-                 && EMIsRawRing1Enabled(pVM)
-                 && pVCpu->iem.s.uCpl <= 1)
-        {
-            Log(("iret: Ring-1 compression fix: uNewCS=%#x -> %#x\n", uNewCs, (uNewCs & X86_SEL_MASK_OFF_RPL) | 1));
-            uNewCs = (uNewCs & X86_SEL_MASK_OFF_RPL) | 2;
-        }
-    }
-#endif /* VBOX_WITH_RAW_MODE_NOT_R0 */
-
-
     /* Privilege checks. */
     if (!(DescCS.Legacy.Gen.u4Type & X86_SEL_TYPE_CONF))
     {

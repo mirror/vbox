@@ -3232,27 +3232,6 @@ static inline void helper_ret_protected(int shift, int is_iret, int addend)
             if (new_eflags & VM_MASK)
                 goto return_to_vm86;
         }
-#ifdef VBOX
-        if ((new_cs & 0x3) == 1 && (env->state & CPU_RAW_RING0))
-        {
-            if (   !EMIsRawRing1Enabled(env->pVM)
-                ||  env->segs[R_CS].selector == (new_cs & 0xfffc))
-            {
-                Log(("RPL 1 -> new_cs %04X -> %04X\n", new_cs, new_cs & 0xfffc));
-                new_cs = new_cs & 0xfffc;
-            }
-            else
-            {
-                /* Ugly assumption: assume a genuine switch to ring-1. */
-                Log(("Genuine switch to ring-1 (iret)\n"));
-            }
-        }
-        else if ((new_cs & 0x3) == 2 && (env->state & CPU_RAW_RING0) && EMIsRawRing1Enabled(env->pVM))
-        {
-            Log(("RPL 2 -> new_cs %04X -> %04X\n", new_cs, (new_cs & 0xfffc) | 1));
-            new_cs = (new_cs & 0xfffc) | 1;
-        }
-#endif
     } else {
         /* 16 bits */
         POPW(ssp, sp, sp_mask, new_eip);

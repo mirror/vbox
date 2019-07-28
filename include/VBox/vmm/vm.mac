@@ -108,17 +108,12 @@ struc VM
     .uUnused1               resd 1
 %endif
     .bMainExecutionEngine   resb 1
-    .fRecompileUser         resb 1
-    .fRecompileSupervisor   resb 1
-    .fRawRing1Enabled       resb 1
-    .fPATMEnabled           resb 1
-    .fCSAMEnabled           resb 1
     .fHMEnabled             resb 1
     .fHMNeedRawModeCtx      resb 1
     .fFaultTolerantMaster   resb 1
     .fUseLargePages         resb 1
 
-    .uPadding1              resb 2
+    .uPadding1              resb 7
 
     .hTraceBufR3            RTR3PTR_RES 1
     .hTraceBufR0            RTR0PTR_RES 1

@@ -2115,20 +2115,9 @@ VMM_INT_DECL(int) CPUMRawEnter(PVMCPU pVCpu)
     }
     else
     {
-# ifdef VBOX_WITH_RAW_RING1
-        if (    EMIsRawRing1Enabled(pVM)
-            &&  !pCtx->eflags.Bits.u1VM
-            &&  (pCtx->ss.Sel & X86_SEL_RPL) == 1)
-        {
-            /* Set CPL to Ring-2. */
-            pCtx->ss.Sel = (pCtx->ss.Sel & ~X86_SEL_RPL) | 2;
-            if (pCtx->cs.Sel && (pCtx->cs.Sel & X86_SEL_RPL) == 1)
-                pCtx->cs.Sel = (pCtx->cs.Sel & ~X86_SEL_RPL) | 2;
-        }
-# else
         AssertMsg((pCtx->ss.Sel & X86_SEL_RPL) >= 2 || pCtx->eflags.Bits.u1VM,
                   ("ring-1 code not supported\n"));
-# endif
+
         /*
          * PATM takes care of IOPL and IF flags for Ring-3 and Ring-2 code as well.
          */
@@ -2213,43 +2202,15 @@ VMM_INT_DECL(int) CPUMRawLeave(PVMCPU pVCpu, int rc)
         PATMRawLeave(pVM, pCtx, rc);
         if (!pCtx->eflags.Bits.u1VM)
         {
-# ifdef VBOX_WITH_RAW_RING1
-            if (    EMIsRawRing1Enabled(pVM)
-                &&  (pCtx->ss.Sel & X86_SEL_RPL) == 2)
-            {
-                /* Not quite sure if this is really required, but shouldn't harm (too much anyways). */
-                /** @todo See what happens if we remove this. */
-                if ((pCtx->ds.Sel & X86_SEL_RPL) == 2)
-                    pCtx->ds.Sel = (pCtx->ds.Sel & ~X86_SEL_RPL) | 1;
-                if ((pCtx->es.Sel & X86_SEL_RPL) == 2)
-                    pCtx->es.Sel = (pCtx->es.Sel & ~X86_SEL_RPL) | 1;
-                if ((pCtx->fs.Sel & X86_SEL_RPL) == 2)
-                    pCtx->fs.Sel = (pCtx->fs.Sel & ~X86_SEL_RPL) | 1;
-                if ((pCtx->gs.Sel & X86_SEL_RPL) == 2)
-                    pCtx->gs.Sel = (pCtx->gs.Sel & ~X86_SEL_RPL) | 1;
-
-                /*
-                 * Ring-2 selector => Ring-1.
-                 */
-                pCtx->ss.Sel = (pCtx->ss.Sel & ~X86_SEL_RPL) | 1;
-                if ((pCtx->cs.Sel & X86_SEL_RPL) == 2)
-                    pCtx->cs.Sel = (pCtx->cs.Sel & ~X86_SEL_RPL) | 1;
-            }
-            else
-            {
-# endif
-                /** @todo See what happens if we remove this. */
-                if ((pCtx->ds.Sel & X86_SEL_RPL) == 1)
-                    pCtx->ds.Sel &= ~X86_SEL_RPL;
-                if ((pCtx->es.Sel & X86_SEL_RPL) == 1)
-                    pCtx->es.Sel &= ~X86_SEL_RPL;
-                if ((pCtx->fs.Sel & X86_SEL_RPL) == 1)
-                    pCtx->fs.Sel &= ~X86_SEL_RPL;
-                if ((pCtx->gs.Sel & X86_SEL_RPL) == 1)
-                    pCtx->gs.Sel &= ~X86_SEL_RPL;
-# ifdef VBOX_WITH_RAW_RING1
-            }
-# endif
+            /** @todo See what happens if we remove this. */
+            if ((pCtx->ds.Sel & X86_SEL_RPL) == 1)
+                pCtx->ds.Sel &= ~X86_SEL_RPL;
+            if ((pCtx->es.Sel & X86_SEL_RPL) == 1)
+                pCtx->es.Sel &= ~X86_SEL_RPL;
+            if ((pCtx->fs.Sel & X86_SEL_RPL) == 1)
+                pCtx->fs.Sel &= ~X86_SEL_RPL;
+            if ((pCtx->gs.Sel & X86_SEL_RPL) == 1)
+                pCtx->gs.Sel &= ~X86_SEL_RPL;
         }
     }
 
@@ -2511,10 +2472,7 @@ VMMDECL(uint32_t) CPUMGetGuestCPL(PVMCPU pVCpu)
 # ifdef VBOX_WITH_RAW_RING1
                 if (pVCpu->cpum.s.fRawEntered)
                 {
-                    if (   uCpl == 2
-                        && EMIsRawRing1Enabled(pVCpu->CTX_SUFF(pVM)))
-                        uCpl = 1;
-                    else if (uCpl == 1)
+                    if (uCpl == 1)
                         uCpl = 0;
                 }
                 Assert(uCpl != 2);  /* ring 2 support not allowed anymore. */

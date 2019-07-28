@@ -1429,12 +1429,6 @@ bool remR3CanExecuteRaw(CPUX86State *env, RTGCPTR eip, unsigned fFlags, int *piE
         env->state |= CPU_RAW_HM;
 
         /*
-         * The simple check first...
-         */
-        if (!EMIsHwVirtExecutionEnabled(env->pVM))
-            return false;
-
-        /*
          * Create partial context for HMCanExecuteGuest.
          */
         pCtx->cr0            = env->cr[0];
@@ -1590,9 +1584,6 @@ bool remR3CanExecuteRaw(CPUX86State *env, RTGCPTR eip, unsigned fFlags, int *piE
 
     if (((fFlags >> HF_CPL_SHIFT) & 3) == 3)
     {
-        if (!EMIsRawRing3Enabled(env->pVM))
-            return false;
-
         if (!(env->eflags & IF_MASK))
         {
             STAM_COUNTER_INC(&gStatRefuseIF0);
@@ -1600,7 +1591,7 @@ bool remR3CanExecuteRaw(CPUX86State *env, RTGCPTR eip, unsigned fFlags, int *piE
             return false;
         }
 
-        if (!(u32CR0 & CR0_WP_MASK) && EMIsRawRing0Enabled(env->pVM))
+        if (!(u32CR0 & CR0_WP_MASK))
         {
             STAM_COUNTER_INC(&gStatRefuseWP0);
             Log2(("raw mode refused: CR0.WP + RawR0\n"));
@@ -1609,9 +1600,6 @@ bool remR3CanExecuteRaw(CPUX86State *env, RTGCPTR eip, unsigned fFlags, int *piE
     }
     else
     {
-        if (!EMIsRawRing0Enabled(env->pVM))
-            return false;
-
         // Let's start with pure 32 bits ring 0 code first
         if ((fFlags & (HF_SS32_MASK | HF_CS32_MASK)) != (HF_SS32_MASK | HF_CS32_MASK))
         {
@@ -1620,17 +1608,8 @@ bool remR3CanExecuteRaw(CPUX86State *env, RTGCPTR eip, unsigned fFlags, int *piE
             return false;
         }
 
-        if (EMIsRawRing1Enabled(env->pVM))
-        {
-            /* Only ring 0 and 1 supervisor code. */
-            if (((fFlags >> HF_CPL_SHIFT) & 3) == 2) /* ring 1 code is moved into ring 2, so we can't support ring-2 in that case. */
-            {
-                Log2(("raw r0 mode refused: CPL %d\n", (fFlags >> HF_CPL_SHIFT) & 3));
-                return false;
-            }
-        }
         /* Only R0. */
-        else if (((fFlags >> HF_CPL_SHIFT) & 3) != 0)
+        if (((fFlags >> HF_CPL_SHIFT) & 3) != 0)
         {
             STAM_COUNTER_INC(&gStatRefuseRing1or2);
             Log2(("raw r0 mode refused: CPL %d\n", ((fFlags >> HF_CPL_SHIFT) & 3) ));

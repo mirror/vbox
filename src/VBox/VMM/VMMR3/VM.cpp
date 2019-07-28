@@ -100,9 +100,6 @@ static int                  vmR3CreateU(PUVM pUVM, uint32_t cCpus, PFNCFGMCONSTR
 static int                  vmR3ReadBaseConfig(PVM pVM, PUVM pUVM, uint32_t cCpus);
 static int                  vmR3InitRing3(PVM pVM, PUVM pUVM);
 static int                  vmR3InitRing0(PVM pVM);
-#ifdef VBOX_WITH_RAW_MODE
-static int                  vmR3InitRC(PVM pVM);
-#endif
 static int                  vmR3InitDoCompleted(PVM pVM, VMINITCOMPLETED enmWhat);
 static void                 vmR3DestroyUVM(PUVM pUVM, uint32_t cMilliesEMTWait);
 static bool                 vmR3ValidateStateTransition(VMSTATE enmStateOld, VMSTATE enmStateNew);
@@ -590,9 +587,6 @@ static int vmR3CreateU(PUVM pUVM, uint32_t cCpus, PFNCFGMCONSTRUCTOR pfnCFGMCons
         AssertRelease(pVM->pSession == pUVM->vm.s.pSession);
         AssertRelease(pVM->cCpus == cCpus);
         AssertRelease(pVM->uCpuExecutionCap == 100);
-#ifdef VBOX_WITH_RAW_MODE
-        AssertRelease(pVM->offVMCPU == RT_UOFFSETOF(VM, aCpus));
-#endif
         AssertCompileMemberAlignment(VM, cpum, 64);
         AssertCompileMemberAlignment(VM, tm, 64);
         AssertCompileMemberAlignment(VM, aCpus, PAGE_SIZE);
@@ -661,25 +655,16 @@ static int vmR3CreateU(PUVM pUVM, uint32_t cCpus, PFNCFGMCONSTRUCTOR pfnCFGMCons
                                 pUVM->vm.s.pvDBGC = pvUser;
 #endif
                                 /*
-                                 * Init the Raw-Mode Context components.
+                                 * Now we can safely set the VM halt method to default.
                                  */
-#ifdef VBOX_WITH_RAW_MODE
-                                rc = vmR3InitRC(pVM);
+                                rc = vmR3SetHaltMethodU(pUVM, VMHALTMETHOD_DEFAULT);
                                 if (RT_SUCCESS(rc))
-#endif
                                 {
                                     /*
-                                     * Now we can safely set the VM halt method to default.
+                                     * Set the state and we're done.
                                      */
-                                    rc = vmR3SetHaltMethodU(pUVM, VMHALTMETHOD_DEFAULT);
-                                    if (RT_SUCCESS(rc))
-                                    {
-                                        /*
-                                         * Set the state and we're done.
-                                         */
-                                        vmR3SetState(pVM, VMSTATE_CREATED, VMSTATE_CREATING);
-                                        return VINF_SUCCESS;
-                                    }
+                                    vmR3SetState(pVM, VMSTATE_CREATED, VMSTATE_CREATING);
+                                    return VINF_SUCCESS;
                                 }
 #ifdef VBOX_WITH_DEBUGGER
                                 DBGCTcpTerminate(pUVM, pUVM->vm.s.pvDBGC);
@@ -766,28 +751,7 @@ static int vmR3ReadBaseConfig(PVM pVM, PUVM pUVM, uint32_t cCpus)
     /*
      * Base EM and HM config properties.
      */
-    /** @todo We don't need to read any of this here.  The relevant modules reads
-     *        them again and will be in a better position to set them correctly. */
-    Assert(pVM->fRecompileUser == false); /* ASSUMES all zeros at this point */
-    bool        fEnabled;
-    rc = CFGMR3QueryBoolDef(pRoot, "RawR3Enabled", &fEnabled, false); AssertRCReturn(rc, rc);
-    pVM->fRecompileUser       = !fEnabled;
-    rc = CFGMR3QueryBoolDef(pRoot, "RawR0Enabled", &fEnabled, false); AssertRCReturn(rc, rc);
-    pVM->fRecompileSupervisor = !fEnabled;
-#ifdef VBOX_WITH_RAW_MODE
-# ifdef VBOX_WITH_RAW_RING1
-    rc = CFGMR3QueryBoolDef(pRoot, "RawR1Enabled", &pVM->fRawRing1Enabled, false);
-# endif
-    rc = CFGMR3QueryBoolDef(pRoot, "PATMEnabled",  &pVM->fPATMEnabled, true);   AssertRCReturn(rc, rc);
-    rc = CFGMR3QueryBoolDef(pRoot, "CSAMEnabled",  &pVM->fCSAMEnabled, true);   AssertRCReturn(rc, rc);
-    rc = CFGMR3QueryBoolDef(pRoot, "HMEnabled",    &pVM->fHMEnabled, true);     AssertRCReturn(rc, rc);
-#else
     pVM->fHMEnabled = true;
-#endif
-    LogRel(("VM: fHMEnabled=%RTbool (configured) fRecompileUser=%RTbool fRecompileSupervisor=%RTbool\n"
-            "VM: fRawRing1Enabled=%RTbool CSAM=%RTbool PATM=%RTbool\n",
-            pVM->fHMEnabled, pVM->fRecompileUser, pVM->fRecompileSupervisor,
-            pVM->fRawRing1Enabled, pVM->fCSAMEnabled, pVM->fPATMEnabled));
 
     /*
      * Make sure the CPU count in the config data matches.

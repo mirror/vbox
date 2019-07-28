@@ -110,25 +110,10 @@ VMMR3_INT_DECL(int) EMR3Init(PVM pVM)
     PCFGMNODE pCfgRoot = CFGMR3GetRoot(pVM);
     PCFGMNODE pCfgEM = CFGMR3GetChild(pCfgRoot, "EM");
 
+    int rc = CFGMR3QueryBoolDef(pCfgEM, "IemExecutesAll", &pVM->em.s.fIemExecutesAll, false);
+    AssertLogRelRCReturn(rc, rc);
+
     bool fEnabled;
-    int rc = CFGMR3QueryBoolDef(pCfgRoot, "RawR3Enabled", &fEnabled, true);
-    AssertLogRelRCReturn(rc, rc);
-    pVM->fRecompileUser       = !fEnabled;
-
-    rc = CFGMR3QueryBoolDef(pCfgRoot, "RawR0Enabled", &fEnabled, true);
-    AssertLogRelRCReturn(rc, rc);
-    pVM->fRecompileSupervisor = !fEnabled;
-
-#ifdef VBOX_WITH_RAW_RING1
-    rc = CFGMR3QueryBoolDef(pCfgRoot, "RawR1Enabled", &pVM->fRawRing1Enabled, false);
-    AssertLogRelRCReturn(rc, rc);
-#else
-    pVM->fRawRing1Enabled = false;      /* Disabled by default. */
-#endif
-
-    rc = CFGMR3QueryBoolDef(pCfgEM, "IemExecutesAll", &pVM->em.s.fIemExecutesAll, false);
-    AssertLogRelRCReturn(rc, rc);
-
     rc = CFGMR3QueryBoolDef(pCfgEM, "TripleFaultReset", &fEnabled, false);
     AssertLogRelRCReturn(rc, rc);
     pVM->em.s.fGuruOnTripleFault = !fEnabled;
@@ -138,8 +123,7 @@ VMMR3_INT_DECL(int) EMR3Init(PVM pVM)
         pVM->em.s.fGuruOnTripleFault = true;
     }
 
-    LogRel(("EMR3Init: fRecompileUser=%RTbool fRecompileSupervisor=%RTbool fRawRing1Enabled=%RTbool fIemExecutesAll=%RTbool fGuruOnTripleFault=%RTbool\n",
-            pVM->fRecompileUser, pVM->fRecompileSupervisor, pVM->fRawRing1Enabled, pVM->em.s.fIemExecutesAll, pVM->em.s.fGuruOnTripleFault));
+    LogRel(("EMR3Init: fIemExecutesAll=%RTbool fGuruOnTripleFault=%RTbool\n", pVM->em.s.fIemExecutesAll, pVM->em.s.fGuruOnTripleFault));
 
     /** @cfgm{/EM/ExitOptimizationEnabled, bool, true}
      * Whether to try correlate exit history in any context, detect hot spots and
@@ -572,10 +556,7 @@ static DECLCALLBACK(VBOXSTRICTRC) emR3SetExecutionPolicy(PVM pVM, PVMCPU pVCpu, 
         switch (pArgs->enmPolicy)
         {
             case EMEXECPOLICY_RECOMPILE_RING0:
-                pVM->fRecompileSupervisor = pArgs->fEnforce;
-                break;
             case EMEXECPOLICY_RECOMPILE_RING3:
-                pVM->fRecompileUser       = pArgs->fEnforce;
                 break;
             case EMEXECPOLICY_IEM_ALL:
                 pVM->em.s.fIemExecutesAll = pArgs->fEnforce;
@@ -583,8 +564,7 @@ static DECLCALLBACK(VBOXSTRICTRC) emR3SetExecutionPolicy(PVM pVM, PVMCPU pVCpu, 
             default:
                 AssertFailedReturn(VERR_INVALID_PARAMETER);
         }
-        Log(("EM: Set execution policy (fRecompileUser=%RTbool fRecompileSupervisor=%RTbool fIemExecutesAll=%RTbool)\n",
-             pVM->fRecompileUser, pVM->fRecompileSupervisor, pVM->em.s.fIemExecutesAll));
+        Log(("EM: Set execution policy (fIemExecutesAll=%RTbool)\n", pVM->em.s.fIemExecutesAll));
     }
 
     /*
@@ -646,10 +626,8 @@ VMMR3DECL(int) EMR3QueryExecutionPolicy(PUVM pUVM, EMEXECPOLICY enmPolicy, bool 
     switch (enmPolicy)
     {
         case EMEXECPOLICY_RECOMPILE_RING0:
-            *pfEnforced = pVM->fRecompileSupervisor;
-            break;
         case EMEXECPOLICY_RECOMPILE_RING3:
-            *pfEnforced = pVM->fRecompileUser;
+            *pfEnforced = false;
             break;
         case EMEXECPOLICY_IEM_ALL:
             *pfEnforced = pVM->em.s.fIemExecutesAll;
@@ -1405,22 +1383,19 @@ EMSTATE emR3Reschedule(PVM pVM, PVMCPU pVCpu)
     X86EFLAGS EFlags = pVCpu->cpum.GstCtx.eflags;
     if (!VM_IS_RAW_MODE_ENABLED(pVM))
     {
-        if (EMIsHwVirtExecutionEnabled(pVM))
+        if (VM_IS_HM_ENABLED(pVM))
         {
-            if (VM_IS_HM_ENABLED(pVM))
-            {
-                if (HMCanExecuteGuest(pVCpu, &pVCpu->cpum.GstCtx))
-                    return EMSTATE_HM;
-            }
-            else if (NEMR3CanExecuteGuest(pVM, pVCpu))
-                return EMSTATE_NEM;
-
-            /*
-             * Note! Raw mode and hw accelerated mode are incompatible. The latter
-             *       turns off monitoring features essential for raw mode!
-             */
-            return EMSTATE_IEM_THEN_REM;
+            if (HMCanExecuteGuest(pVCpu, &pVCpu->cpum.GstCtx))
+                return EMSTATE_HM;
         }
+        else if (NEMR3CanExecuteGuest(pVM, pVCpu))
+            return EMSTATE_NEM;
+
+        /*
+         * Note! Raw mode and hw accelerated mode are incompatible. The latter
+         *       turns off monitoring features essential for raw mode!
+         */
+        return EMSTATE_IEM_THEN_REM;
     }
 
     /*
@@ -1465,16 +1440,13 @@ EMSTATE emR3Reschedule(PVM pVM, PVMCPU pVCpu)
     if (    pVCpu->cpum.GstCtx.eflags.Bits.u1VM
         ||  (uSS & X86_SEL_RPL) == 3)
     {
-        if (!EMIsRawRing3Enabled(pVM))
-            return EMSTATE_REM;
-
         if (!(EFlags.u32 & X86_EFL_IF))
         {
             Log2(("raw mode refused: IF (RawR3)\n"));
             return EMSTATE_REM;
         }
 
-        if (!(u32CR0 & X86_CR0_WP) && EMIsRawRing0Enabled(pVM))
+        if (!(u32CR0 & X86_CR0_WP))
         {
             Log2(("raw mode refused: CR0.WP + RawR0\n"));
             return EMSTATE_REM;
@@ -1482,20 +1454,8 @@ EMSTATE emR3Reschedule(PVM pVM, PVMCPU pVCpu)
     }
     else
     {
-        if (!EMIsRawRing0Enabled(pVM))
-            return EMSTATE_REM;
-
-        if (EMIsRawRing1Enabled(pVM))
-        {
-            /* Only ring 0 and 1 supervisor code. */
-            if ((uSS & X86_SEL_RPL) == 2)   /* ring 1 code is moved into ring 2, so we can't support ring-2 in that case. */
-            {
-                Log2(("raw r0 mode refused: CPL %d\n", uSS & X86_SEL_RPL));
-                return EMSTATE_REM;
-            }
-        }
         /* Only ring 0 supervisor code. */
-        else if ((uSS & X86_SEL_RPL) != 0)
+        if ((uSS & X86_SEL_RPL) != 0)
         {
             Log2(("raw r0 mode refused: CPL %d\n", uSS & X86_SEL_RPL));
             return EMSTATE_REM;
