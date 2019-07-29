@@ -87,11 +87,6 @@ AssertCompile2MemberOffsets(VM, cpum.s.GuestFeatures, cpum.ro.GuestFeatures);
 VMMDECL(void) CPUMSetHyperCR3(PVMCPU pVCpu, uint32_t cr3)
 {
     pVCpu->cpum.s.Hyper.cr3 = cr3;
-
-#ifdef IN_RC
-    /* Update the current CR3. */
-    ASMSetCR3(cr3);
-#endif
 }
 
 VMMDECL(uint32_t) CPUMGetHyperCR3(PVMCPU pVCpu)
@@ -100,44 +95,11 @@ VMMDECL(uint32_t) CPUMGetHyperCR3(PVMCPU pVCpu)
 }
 
 
-VMMDECL(void) CPUMSetHyperESP(PVMCPU pVCpu, uint32_t u32ESP)
-{
-    pVCpu->cpum.s.Hyper.esp = u32ESP;
-}
-
-
-VMMDECL(void) CPUMSetHyperEIP(PVMCPU pVCpu, uint32_t u32EIP)
-{
-    pVCpu->cpum.s.Hyper.eip = u32EIP;
-}
-
-
 /** @def MAYBE_LOAD_DRx
  * Macro for updating DRx values in raw-mode and ring-0 contexts.
  */
 #ifdef IN_RING0
-# if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS)
-#  define MAYBE_LOAD_DRx(a_pVCpu, a_fnLoad, a_uValue) \
-    do { \
-        if (!CPUMIsGuestInLongModeEx(&(a_pVCpu)->cpum.s.Guest)) \
-            a_fnLoad(a_uValue); \
-        else \
-            (a_pVCpu)->cpum.s.fUseFlags |= CPUM_SYNC_DEBUG_REGS_HYPER; \
-    } while (0)
-# else
-#  define MAYBE_LOAD_DRx(a_pVCpu, a_fnLoad, a_uValue) \
-    do { \
-        a_fnLoad(a_uValue); \
-    } while (0)
-# endif
-
-#elif defined(IN_RC)
-# define MAYBE_LOAD_DRx(a_pVCpu, a_fnLoad, a_uValue) \
-    do { \
-        if ((a_pVCpu)->cpum.s.fUseFlags & CPUM_USED_DEBUG_REGS_HYPER) \
-        { a_fnLoad(a_uValue); } \
-    } while (0)
-
+# define MAYBE_LOAD_DRx(a_pVCpu, a_fnLoad, a_uValue) do { a_fnLoad(a_uValue); } while (0)
 #else
 # define MAYBE_LOAD_DRx(a_pVCpu, a_fnLoad, a_uValue) do { } while (0)
 #endif
@@ -179,9 +141,6 @@ VMMDECL(void) CPUMSetHyperDR6(PVMCPU pVCpu, RTGCUINTREG uDr6)
 VMMDECL(void) CPUMSetHyperDR7(PVMCPU pVCpu, RTGCUINTREG uDr7)
 {
     pVCpu->cpum.s.Hyper.dr[7] = uDr7;
-#ifdef IN_RC
-    MAYBE_LOAD_DRx(pVCpu, ASMSetDR7, uDr7);
-#endif
 }
 
 
