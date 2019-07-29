@@ -298,6 +298,10 @@
     <xsl:text>#define __C</xsl:text>
     <xsl:value-of select="substring(@name,2)"/>
     <xsl:text>_h__&#x0A;&#x0A;</xsl:text>
+    <xsl:if test="@name='IVirtualBox' or @name='IMachine'">
+        <xsl:text>/* Qt includes: */&#x0A;</xsl:text>
+        <xsl:text>#include &lt;QRect&gt;&#x0A;&#x0A;</xsl:text>
+    </xsl:if>
     <xsl:text>/* GUI includes: */&#x0A;</xsl:text>
     <xsl:text>#include "COMDefs.h"&#x0A;</xsl:text>
     <xsl:text>#include "UILibraryDefs.h"&#x0A;&#x0A;</xsl:text>

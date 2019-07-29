@@ -23,6 +23,7 @@
 
 /* Qt includes: */
 #include <QObject>
+#include <QRect>
 
 /* COM includes: */
 #include "COMEnums.h"

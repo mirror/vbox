@@ -24,6 +24,7 @@
 /* Qt includes: */
 #include <QList>
 #include <QObject>
+#include <QRect>
 
 /* GUI includes: */
 #include "UILibraryDefs.h"
@@ -43,7 +44,6 @@
 
 /* Forward declarations: */
 class QPoint;
-class QSize;
 class QString;
 class UIMainEventListeningThread;
 class CEventListener;

@@ -73,17 +73,13 @@
 
 #include <VBox/com/com.h>
 #include <VBox/com/array.h>
-#include <VBox/com/assert.h>
 
 #undef ASSERT
 
 /* Qt includes */
 #include <QString>
-#include <QRect>
 #include <QUuid>
 #include <QVector>
-#include <QStringList>
-#include <QMetaType>
 
 /* GUI includes: */
 #include "UILibraryDefs.h"
