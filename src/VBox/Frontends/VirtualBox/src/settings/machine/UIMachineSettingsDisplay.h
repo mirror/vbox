@@ -171,13 +171,13 @@ private:
     int           m_iMaxVRAMVisible;
     /** Holds the initial VRAM value when the dialog is opened. */
     int           m_iInitialVRAM;
-#ifdef VBOX_WITH_VIDEOHWACCEL
-    /** Holds whether the guest OS supports 2D Video Acceleration. */
-    bool          m_f2DVideoAccelerationSupported;
-#endif
 #ifdef VBOX_WITH_CRHGSMI
     /** Holds whether the guest OS supports WDDM. */
     bool          m_fWddmModeSupported;
+#endif
+#ifdef VBOX_WITH_VIDEOHWACCEL
+    /** Holds whether the guest OS supports 2D Video Acceleration. */
+    bool          m_f2DVideoAccelerationSupported;
 #endif
 
     /** Holds the page data cache instance. */
