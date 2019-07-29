@@ -51,7 +51,7 @@
  * mode. While in ImPS/2 or PS/2 mode, three consecutive Set Sampling Rate
  * commands with arguments 200, 200, 80 switch to ImEx mode. The Read ID (0F2h)
  * command will report the currently selected protocol.
- * 
+ *
  * There is an extended ImEx mode with support for horizontal scrolling. It is
  * entered from ImEx mode with a 200, 80, 40 sequence of Set Sampling Rate
  * commands. It does not change the reported protocol (it remains 4, or ImEx)
@@ -94,7 +94,7 @@
  * +--------+--------+--------+--------+--------+--------+--------+--------+--------+
  * | Byte 4 |   0    |   0    | Btn 5  | Btn 4  |  Z mov't delta (two's complement) |
  * +--------+--------+--------+--------+--------+--------+--------+--------+--------+
- * 
+ *
  *   - The Z delta values are in practice only -1/+1; some mice (A4tech?) report
  *     horizontal scrolling as -2/+2.
  *
@@ -105,39 +105,39 @@
  * +--------+--------+--------+--------+--------+--------+--------+--------+--------+
  * | Byte 4 |   V    |   H    |      Z or W movement delta (two's complement)       |
  * +--------+--------+--------+--------+--------+--------+--------+--------+--------+
- * 
+ *
  *   - Buttons 4 and 5 are reported as with the regular ImEx protocol, but not when
  *     scrolling. This is a departure from the usual logic because when the mouse
  *     sends scroll events, the state of buttons 4/5 is not reported and the last
  *     reported state should be assumed.
- * 
+ *
  *   - When the V bit (bit 7) is set, vertical scroll (Z axis) is being reported.
  *     When the H bit (bit 6) is set, horizontal scroll (W axis) is being reported.
  *     The H and V bits are never set at the same time (also see below). When
  *     the H and V bits are both clear, button 4/5 state is being reported.
- * 
+ *
  *   - The Z/W delta is extended to 6 bits. Z (vertical) values are not restricted
  *     to -1/+1, although W (horizontal) values are. Z values of at least -20/+20
  *     can be seen in practice.
- * 
+ *
  *   - Horizontal and vertical scroll is mutually exclusive. When the button is
  *     tilted, no vertical scrolling is reported, i.e. horizontal scrolling
  *     has priority over vertical.
- * 
+ *
  *   - Positive values indicate down/right direction, negative values up/left.
- * 
+ *
  *   - When the scroll button is tilted to engage horizontal scrolling, the mouse
  *     keeps sending events at a rate of 4 or 5 per second as long as the button
  *     is tilted.
- * 
+ *
  * All report formats were verified with a real Microsoft IntelliMouse Explorer 4.0
  * mouse attached through a PS/2 port.
- * 
+ *
  * The button "accumulator" is necessary to avoid missing brief button presses.
  * Without it, a very fast mouse button press + release might be lost if it
  * happened between sending reports. The accumulator latches button presses to
  * prevent that.
- * 
+ *
  */
 
 
@@ -633,8 +633,8 @@ static void ps2mReportAccumulatedEvents(PPS2M pThis, GeneriQ *pQueue, bool fAccu
             if (pThis->iAccumZ || pThis->iAccumW)
             {
                /* ImEx + horizontal reporting Horizontal scroll has
-                * precedence over vertical. Buttons cannot be reported 
-                * this way. 
+                * precedence over vertical. Buttons cannot be reported
+                * this way.
                 */
                if (pThis->iAccumW)
                {
@@ -1016,7 +1016,7 @@ static DECLCALLBACK(void) ps2mInfoState(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, 
                     pThis->u8State & AUX_STATE_REMOTE  ? "remote"  : "stream",
                     pThis->u8State & AUX_STATE_ENABLED ? "enabled" : "disabled");
     pHlp->pfnPrintf(pHlp, "Protocol: %s, scaling %u:1\n",
-                    pcszProtocols[pThis->enmProtocol], 
+                    pcszProtocols[pThis->enmProtocol],
                     pThis->u8State & AUX_STATE_SCALING ? 2 : 1);
     pHlp->pfnPrintf(pHlp, "Active command %02X\n", pThis->u8CurrCmd);
     pHlp->pfnPrintf(pHlp, "Sampling rate %u reports/sec, resolution %u counts/mm\n",
@@ -1068,8 +1068,8 @@ static int ps2mPutEventWorker(PPS2M pThis, int32_t dx, int32_t dy,
     pThis->fAccumB |= pThis->fCurrB;
 
     /* Ditch accumulated data that can't be reported by the current protocol.
-     * This avoids sending phantom empty reports when un-reportable events 
-     * are received. 
+     * This avoids sending phantom empty reports when un-reportable events
+     * are received.
      */
     if (pThis->enmProtocol < PS2M_PROTO_IMEX_HORZ)
        pThis->iAccumW = 0; /* No horizontal scroll. */
