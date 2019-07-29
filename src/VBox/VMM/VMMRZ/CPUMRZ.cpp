@@ -65,13 +65,7 @@ VMMRZ_INT_DECL(void)    CPUMRZFpuStatePrepareHostCpuForUse(PVMCPU pVCpu)
             break;
 
         case CPUM_USED_FPU_GUEST | CPUM_USED_FPU_HOST:
-#if defined(IN_RING0) && ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS)
-            Assert(!(pVCpu->cpum.s.fUseFlags & CPUM_SYNC_FPU_STATE));
-            if (CPUMIsGuestInLongModeEx(&pVCpu->cpum.s.Guest))
-                HMR0SaveFPUState(pVCpu->CTX_SUFF(pVM), pVCpu, &pVCpu->cpum.s.Guest);
-            else
-#endif
-                cpumRZSaveGuestFpuState(&pVCpu->cpum.s, true /*fLeaveFpuAccessible*/);
+            cpumRZSaveGuestFpuState(&pVCpu->cpum.s, true /*fLeaveFpuAccessible*/);
 #ifdef IN_RING0
             HMR0NotifyCpumUnloadedGuestFpuState(pVCpu);
 #endif
@@ -110,13 +104,7 @@ VMMRZ_INT_DECL(void)    CPUMRZFpuStateActualizeForRead(PVMCPU pVCpu)
 {
     if (pVCpu->cpum.s.fUseFlags & CPUM_USED_FPU_GUEST)
     {
-#if defined(IN_RING0) && ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS)
-        Assert(!(pVCpu->cpum.s.fUseFlags & CPUM_SYNC_FPU_STATE));
-        if (CPUMIsGuestInLongModeEx(&pVCpu->cpum.s.Guest))
-            HMR0SaveFPUState(pVCpu->CTX_SUFF(pVM), pVCpu, &pVCpu->cpum.s.Guest);
-        else
-#endif
-            cpumRZSaveGuestFpuState(&pVCpu->cpum.s, false /*fLeaveFpuAccessible*/);
+        cpumRZSaveGuestFpuState(&pVCpu->cpum.s, false /*fLeaveFpuAccessible*/);
         pVCpu->cpum.s.fUseFlags |= CPUM_USED_FPU_GUEST;
         Log7(("CPUMRZFpuStateActualizeForRead\n"));
     }
@@ -137,16 +125,7 @@ VMMRZ_INT_DECL(void)    CPUMRZFpuStateActualizeSseForRead(PVMCPU pVCpu)
 #else
     if (pVCpu->cpum.s.fUseFlags & CPUM_USED_FPU_GUEST)
     {
-# if defined(IN_RING0) && ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS)
-        if (CPUMIsGuestInLongModeEx(&pVCpu->cpum.s.Guest))
-        {
-            Assert(!(pVCpu->cpum.s.fUseFlags & CPUM_SYNC_FPU_STATE));
-            HMR0SaveFPUState(pVCpu->CTX_SUFF(pVM), pVCpu, &pVCpu->cpum.s.Guest);
-            pVCpu->cpum.s.fUseFlags |= CPUM_USED_FPU_GUEST;
-        }
-        else
-# endif
-            cpumRZSaveGuestSseRegisters(&pVCpu->cpum.s);
+        cpumRZSaveGuestSseRegisters(&pVCpu->cpum.s);
         Log7(("CPUMRZFpuStateActualizeSseForRead\n"));
     }
 #endif
@@ -164,16 +143,7 @@ VMMRZ_INT_DECL(void)    CPUMRZFpuStateActualizeAvxForRead(PVMCPU pVCpu)
 {
     if (pVCpu->cpum.s.fUseFlags & CPUM_USED_FPU_GUEST)
     {
-#if defined(IN_RING0) && ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS)
-        if (CPUMIsGuestInLongModeEx(&pVCpu->cpum.s.Guest))
-        {
-            Assert(!(pVCpu->cpum.s.fUseFlags & CPUM_SYNC_FPU_STATE));
-            HMR0SaveFPUState(pVCpu->CTX_SUFF(pVM), pVCpu, &pVCpu->cpum.s.Guest);
-            pVCpu->cpum.s.fUseFlags |= CPUM_USED_FPU_GUEST;
-        }
-        else
-#endif
-            cpumRZSaveGuestAvxRegisters(&pVCpu->cpum.s);
+        cpumRZSaveGuestAvxRegisters(&pVCpu->cpum.s);
         Log7(("CPUMRZFpuStateActualizeAvxForRead\n"));
     }
 }

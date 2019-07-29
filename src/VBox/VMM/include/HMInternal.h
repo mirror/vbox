@@ -852,7 +852,7 @@ typedef struct VMXVMCSINFO
     /** Set if guest was executing in real mode (extra checks). */
     bool                        fWasInRealMode;
     /** Set if the guest switched to 64-bit mode on a 32-bit host. */
-    bool                        fSwitchedTo64on32;
+    bool                        fSwitchedTo64on32Obsolete;
     /** Padding. */
     bool                        afPadding0[6];
     /** The host CPU for which we have currently exported the host state. */

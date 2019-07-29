@@ -1545,68 +1545,6 @@ VMMR0_INT_DECL(void) HMR0NotifyCpumModifiedHostCr0(PVMCPU pVCpu)
 }
 
 
-#if HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS)
-
-/**
- * Save guest FPU/XMM state (64 bits guest mode & 32 bits host only)
- *
- * @returns VBox status code.
- * @param   pVM         The cross context VM structure.
- * @param   pVCpu       The cross context virtual CPU structure.
- * @param   pCtx        Pointer to the guest CPU context.
- */
-VMMR0_INT_DECL(int) HMR0SaveFPUState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
-{
-    RT_NOREF(pCtx);
-    STAM_COUNTER_INC(&pVCpu->hm.s.StatFpu64SwitchBack);
-    if (pVM->hm.s.vmx.fSupported)
-        return VMXR0Execute64BitsHandler(pVCpu, HM64ON32OP_HMRCSaveGuestFPU64, 0, NULL);
-    return SVMR0Execute64BitsHandler(pVCpu, HM64ON32OP_HMRCSaveGuestFPU64, 0, NULL);
-}
-
-
-/**
- * Save guest debug state (64 bits guest mode & 32 bits host only)
- *
- * @returns VBox status code.
- * @param   pVM         The cross context VM structure.
- * @param   pVCpu       The cross context virtual CPU structure.
- * @param   pCtx        Pointer to the guest CPU context.
- */
-VMMR0_INT_DECL(int) HMR0SaveDebugState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
-{
-    RT_NOREF(pCtx);
-    STAM_COUNTER_INC(&pVCpu->hm.s.StatDebug64SwitchBack);
-    if (pVM->hm.s.vmx.fSupported)
-        return VMXR0Execute64BitsHandler(pVCpu, HM64ON32OP_HMRCSaveGuestDebug64, 0, NULL);
-    return SVMR0Execute64BitsHandler(pVCpu, HM64ON32OP_HMRCSaveGuestDebug64, 0, NULL);
-}
-
-
-/**
- * Test the 32->64 bits switcher.
- *
- * @returns VBox status code.
- * @param   pVM         The cross context VM structure.
- */
-VMMR0_INT_DECL(int) HMR0TestSwitcher3264(PVM pVM)
-{
-    PVMCPU   pVCpu     = &pVM->aCpus[0];
-    uint32_t aParam[5] = { 0, 1, 2, 3, 4 };
-    int      rc;
-
-    STAM_PROFILE_ADV_START(&pVCpu->hm.s.StatWorldSwitch3264, z);
-    if (pVM->hm.s.vmx.fSupported)
-        rc = VMXR0Execute64BitsHandler(pVCpu, HM64ON32OP_HMRCTestSwitcher64, 5, &aParam[0]);
-    else
-        rc = SVMR0Execute64BitsHandler(pVCpu, HM64ON32OP_HMRCTestSwitcher64, 5, &aParam[0]);
-    STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatWorldSwitch3264, z);
-
-    return rc;
-}
-
-#endif /* HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS) */
-
 /**
  * Returns suspend status of the host.
  *

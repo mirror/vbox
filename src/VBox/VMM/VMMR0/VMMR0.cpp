@@ -2209,15 +2209,6 @@ static int vmmR0EntryExWorker(PGVM pGVM, PVM pVM, VMCPUID idCpu, VMMR0OPERATION 
             /** @todo make new test */
             return VINF_SUCCESS;
 
-
-#if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS)
-        case VMMR0_DO_TEST_SWITCHER3264:
-            if (idCpu == NIL_VMCPUID)
-                return VERR_INVALID_CPU_ID;
-            rc = HMR0TestSwitcher3264(pVM);
-            VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
-            break;
-#endif
         default:
             /*
              * We're returning VERR_NOT_SUPPORT here so we've got something else

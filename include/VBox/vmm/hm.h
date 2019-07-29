@@ -106,26 +106,6 @@ RT_C_DECLS_BEGIN
 # define HMIsInHwVirtNoLongJmpCtx(a_pVCpu)  (false)
 #endif
 
-/**
- * 64-bit raw-mode (intermediate memory context) operations.
- *
- * These are special hypervisor eip values used when running 64-bit guests on
- * 32-bit hosts. Each operation corresponds to a routine.
- *
- * @note Duplicated in the assembly code!
- */
-typedef enum HM64ON32OP
-{
-    HM64ON32OP_INVALID = 0,
-    HM64ON32OP_VMXRCStartVM64,
-    HM64ON32OP_SVMRCVMRun64,
-    HM64ON32OP_HMRCSaveGuestFPU64,
-    HM64ON32OP_HMRCSaveGuestDebug64,
-    HM64ON32OP_HMRCTestSwitcher64,
-    HM64ON32OP_END,
-    HM64ON32OP_32BIT_HACK = 0x7fffffff
-} HM64ON32OP;
-
 /** @name All-context HM API.
  * @{ */
 VMMDECL(bool)                   HMIsEnabledNotMacro(PVM pVM);
@@ -246,12 +226,6 @@ VMMR0_INT_DECL(void)            HMR0NotifyCpumModifiedHostCr0(PVMCPU VCpu);
 VMMR0_INT_DECL(bool)            HMR0SuspendPending(void);
 VMMR0_INT_DECL(int)             HMR0InvalidatePage(PVMCPU pVCpu, RTGCPTR GCVirt);
 VMMR0_INT_DECL(int)             HMR0ImportStateOnDemand(PVMCPU pVCpu, uint64_t fWhat);
-
-# if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS)
-VMMR0_INT_DECL(int)             HMR0SaveFPUState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
-VMMR0_INT_DECL(int)             HMR0SaveDebugState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
-VMMR0_INT_DECL(int)             HMR0TestSwitcher3264(PVM pVM);
-# endif
 
 /** @} */
 #endif /* IN_RING0 */

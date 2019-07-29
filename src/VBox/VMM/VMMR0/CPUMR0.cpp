@@ -506,40 +506,24 @@ VMMR0_INT_DECL(bool) CPUMR0FpuStateMaybeSaveGuestAndRestoreHost(PVMCPU pVCpu)
     if (pVCpu->cpum.s.fUseFlags & (CPUM_USED_FPU_GUEST | CPUM_USED_FPU_HOST))
     {
         fSavedGuest = RT_BOOL(pVCpu->cpum.s.fUseFlags & CPUM_USED_FPU_GUEST);
-#if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS)
-        if (CPUMIsGuestInLongModeEx(&pVCpu->cpum.s.Guest))
-        {
-            if (pVCpu->cpum.s.fUseFlags & CPUM_USED_FPU_GUEST)
-            {
-                Assert(!(pVCpu->cpum.s.fUseFlags & CPUM_SYNC_FPU_STATE));
-                HMR0SaveFPUState(pVCpu->CTX_SUFF(pVM), pVCpu, &pVCpu->cpum.s.Guest);
-            }
-            else
-                pVCpu->cpum.s.fUseFlags &= ~CPUM_SYNC_FPU_STATE;
-            cpumR0RestoreHostFPUState(&pVCpu->cpum.s);
-        }
+        if (!(pVCpu->cpum.s.fUseFlags & CPUM_USED_MANUAL_XMM_RESTORE))
+            cpumR0SaveGuestRestoreHostFPUState(&pVCpu->cpum.s);
         else
-#endif
         {
-            if (!(pVCpu->cpum.s.fUseFlags & CPUM_USED_MANUAL_XMM_RESTORE))
-                cpumR0SaveGuestRestoreHostFPUState(&pVCpu->cpum.s);
-            else
+            /* Temporarily clear MSR_K6_EFER_FFXSR or else we'll be unable to
+               save/restore the XMM state with fxsave/fxrstor. */
+            uint64_t uHostEfer = ASMRdMsr(MSR_K6_EFER);
+            if (uHostEfer & MSR_K6_EFER_FFXSR)
             {
-                /* Temporarily clear MSR_K6_EFER_FFXSR or else we'll be unable to
-                   save/restore the XMM state with fxsave/fxrstor. */
-                uint64_t uHostEfer = ASMRdMsr(MSR_K6_EFER);
-                if (uHostEfer & MSR_K6_EFER_FFXSR)
-                {
-                    RTCCUINTREG const uSavedFlags = ASMIntDisableFlags();
-                    ASMWrMsr(MSR_K6_EFER, uHostEfer & ~MSR_K6_EFER_FFXSR);
-                    cpumR0SaveGuestRestoreHostFPUState(&pVCpu->cpum.s);
-                    ASMWrMsr(MSR_K6_EFER, uHostEfer | MSR_K6_EFER_FFXSR);
-                    ASMSetFlags(uSavedFlags);
-                }
-                else
-                    cpumR0SaveGuestRestoreHostFPUState(&pVCpu->cpum.s);
-                pVCpu->cpum.s.fUseFlags &= ~CPUM_USED_MANUAL_XMM_RESTORE;
+                RTCCUINTREG const uSavedFlags = ASMIntDisableFlags();
+                ASMWrMsr(MSR_K6_EFER, uHostEfer & ~MSR_K6_EFER_FFXSR);
+                cpumR0SaveGuestRestoreHostFPUState(&pVCpu->cpum.s);
+                ASMWrMsr(MSR_K6_EFER, uHostEfer | MSR_K6_EFER_FFXSR);
+                ASMSetFlags(uSavedFlags);
             }
+            else
+                cpumR0SaveGuestRestoreHostFPUState(&pVCpu->cpum.s);
+            pVCpu->cpum.s.fUseFlags &= ~CPUM_USED_MANUAL_XMM_RESTORE;
         }
     }
     else
@@ -609,24 +593,12 @@ VMMR0_INT_DECL(bool) CPUMR0DebugStateMaybeSaveGuestAndRestoreHost(PVMCPU pVCpu, 
      */
     if (pVCpu->cpum.s.fUseFlags & CPUM_USED_DEBUG_REGS_GUEST)
     {
-#if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS)
-        if (CPUMIsGuestInLongModeEx(&pVCpu->cpum.s.Guest))
-        {
-            uint64_t uDr6 = pVCpu->cpum.s.Guest.dr[6];
-            HMR0SaveDebugState(pVCpu->CTX_SUFF(pVM), pVCpu, &pVCpu->cpum.s.Guest);
-            if (!fDr6)
-                pVCpu->cpum.s.Guest.dr[6] = uDr6;
-        }
-        else
-#endif
-        {
-            pVCpu->cpum.s.Guest.dr[0] = ASMGetDR0();
-            pVCpu->cpum.s.Guest.dr[1] = ASMGetDR1();
-            pVCpu->cpum.s.Guest.dr[2] = ASMGetDR2();
-            pVCpu->cpum.s.Guest.dr[3] = ASMGetDR3();
-            if (fDr6)
-                pVCpu->cpum.s.Guest.dr[6] = ASMGetDR6();
-        }
+        pVCpu->cpum.s.Guest.dr[0] = ASMGetDR0();
+        pVCpu->cpum.s.Guest.dr[1] = ASMGetDR1();
+        pVCpu->cpum.s.Guest.dr[2] = ASMGetDR2();
+        pVCpu->cpum.s.Guest.dr[3] = ASMGetDR3();
+        if (fDr6)
+            pVCpu->cpum.s.Guest.dr[6] = ASMGetDR6();
     }
     ASMAtomicAndU32(&pVCpu->cpum.s.fUseFlags, ~(  CPUM_USED_DEBUG_REGS_GUEST | CPUM_USED_DEBUG_REGS_HYPER
                                                 | CPUM_SYNC_DEBUG_REGS_GUEST | CPUM_SYNC_DEBUG_REGS_HYPER));
@@ -677,24 +649,12 @@ VMMR0_INT_DECL(bool) CPUMR0DebugStateMaybeSaveGuest(PVMCPU pVCpu, bool fDr6)
      */
     if (pVCpu->cpum.s.fUseFlags & CPUM_USED_DEBUG_REGS_GUEST)
     {
-#if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS)
-        if (CPUMIsGuestInLongModeEx(&pVCpu->cpum.s.Guest))
-        {
-            uint64_t uDr6 = pVCpu->cpum.s.Guest.dr[6];
-            HMR0SaveDebugState(pVCpu->CTX_SUFF(pVM), pVCpu, &pVCpu->cpum.s.Guest);
-            if (!fDr6)
-                pVCpu->cpum.s.Guest.dr[6] = uDr6;
-        }
-        else
-#endif
-        {
-            pVCpu->cpum.s.Guest.dr[0] = ASMGetDR0();
-            pVCpu->cpum.s.Guest.dr[1] = ASMGetDR1();
-            pVCpu->cpum.s.Guest.dr[2] = ASMGetDR2();
-            pVCpu->cpum.s.Guest.dr[3] = ASMGetDR3();
-            if (fDr6)
-                pVCpu->cpum.s.Guest.dr[6] = ASMGetDR6();
-        }
+        pVCpu->cpum.s.Guest.dr[0] = ASMGetDR0();
+        pVCpu->cpum.s.Guest.dr[1] = ASMGetDR1();
+        pVCpu->cpum.s.Guest.dr[2] = ASMGetDR2();
+        pVCpu->cpum.s.Guest.dr[3] = ASMGetDR3();
+        if (fDr6)
+            pVCpu->cpum.s.Guest.dr[6] = ASMGetDR6();
         return true;
     }
     return false;

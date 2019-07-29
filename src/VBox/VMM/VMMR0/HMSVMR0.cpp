@@ -1323,83 +1323,6 @@ static void hmR0SvmFlushTaggedTlb(PHMPHYSCPU pHostCpu, PVMCPU pVCpu, PSVMVMCB pV
 }
 
 
-/** @name 64-bit guest on 32-bit host OS helper functions.
- *
- * The host CPU is still 64-bit capable but the host OS is running in 32-bit
- * mode (code segment, paging). These wrappers/helpers perform the necessary
- * bits for the 32->64 switcher.
- *
- * @{ */
-#if HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS)
-/**
- * Prepares for and executes VMRUN (64-bit guests on a 32-bit host).
- *
- * @returns VBox status code.
- * @param   HCPhysVmcbHost  Physical address of host VMCB.
- * @param   HCPhysVmcb      Physical address of the VMCB.
- * @param   pCtx            Pointer to the guest-CPU context.
- * @param   pVM             The cross context VM structure.
- * @param   pVCpu           The cross context virtual CPU structure.
- */
-DECLASM(int) SVMR0VMSwitcherRun64(RTHCPHYS HCPhysVmcbHost, RTHCPHYS HCPhysVmcb, PCPUMCTX pCtx, PVM pVM, PVMCPU pVCpu)
-{
-    RT_NOREF2(pVM, pCtx);
-    uint32_t aParam[8];
-    aParam[0] = RT_LO_U32(HCPhysVmcbHost);              /* Param 1: HCPhysVmcbHost - Lo. */
-    aParam[1] = RT_HI_U32(HCPhysVmcbHost);              /* Param 1: HCPhysVmcbHost - Hi. */
-    aParam[2] = RT_LO_U32(HCPhysVmcb);                  /* Param 2: HCPhysVmcb - Lo. */
-    aParam[3] = RT_HI_U32(HCPhysVmcb);                  /* Param 2: HCPhysVmcb - Hi. */
-    aParam[4] = VM_RC_ADDR(pVM, pVM);
-    aParam[5] = 0;
-    aParam[6] = VM_RC_ADDR(pVM, pVCpu);
-    aParam[7] = 0;
-
-    return SVMR0Execute64BitsHandler(pVCpu, HM64ON32OP_SVMRCVMRun64, RT_ELEMENTS(aParam), &aParam[0]);
-}
-
-
-/**
- * Executes the specified VMRUN handler in 64-bit mode.
- *
- * @returns VBox status code.
- * @param   pVCpu       The cross context virtual CPU structure.
- * @param   enmOp       The operation to perform.
- * @param   cParams     Number of parameters.
- * @param   paParam     Array of 32-bit parameters.
- */
-VMMR0DECL(int) SVMR0Execute64BitsHandler(PVMCPU pVCpu, HM64ON32OP enmOp, uint32_t cParams, uint32_t *paParam)
-{
-    PVM pVM = pVCpu->CTX_SUFF(pVM);
-    AssertReturn(pVM->hm.s.pfnHost32ToGuest64R0, VERR_HM_NO_32_TO_64_SWITCHER);
-    Assert(enmOp > HM64ON32OP_INVALID && enmOp < HM64ON32OP_END);
-
-    /* Disable interrupts. */
-    RTHCUINTREG const fEFlags = ASMIntDisableFlags();
-
-#ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
-    RTCPUID idHostCpu = RTMpCpuId();
-    CPUMR0SetLApic(pVCpu, idHostCpu);
-#endif
-
-    CPUMSetHyperESP(pVCpu, VMMGetStackRC(pVCpu));
-    CPUMSetHyperEIP(pVCpu, enmOp);
-    for (int i = (int)cParams - 1; i >= 0; i--)
-        CPUMPushHyper(pVCpu, paParam[i]);
-
-    /* Call the switcher. */
-    STAM_PROFILE_ADV_START(&pVCpu->hm.s.StatWorldSwitch3264, z);
-    int rc = pVM->hm.s.pfnHost32ToGuest64R0(pVM, RT_UOFFSETOF_DYN(VM, aCpus[pVCpu->idCpu].cpum) - RT_UOFFSETOF(VM, cpum));
-    STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatWorldSwitch3264, z);
-
-    /* Restore interrupts. */
-    ASMSetFlags(fEFlags);
-    return rc;
-}
-
-#endif /* HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS) */
-/** @} */
-
-
 /**
  * Sets an exception intercept in the specified VMCB.
  *
@@ -2295,13 +2218,12 @@ static int hmR0SvmSelectVMRunHandler(PVMCPU pVCpu)
     {
 #ifndef VBOX_ENABLE_64_BITS_GUESTS
         return VERR_PGM_UNSUPPORTED_SHADOW_PAGING_MODE;
-#endif
-        Assert(pVCpu->CTX_SUFF(pVM)->hm.s.fAllow64BitGuests);    /* Guaranteed by hmR3InitFinalizeR0(). */
-#if HC_ARCH_BITS == 32
-        /* 32-bit host. We need to switch to 64-bit before running the 64-bit guest. */
-        pVCpu->hm.s.svm.pfnVMRun = SVMR0VMSwitcherRun64;
 #else
-        /* 64-bit host or hybrid host. */
+# if HC_ARCH_BITS != 64 || ARCH_BITS != 64
+#  error "Only 64-bit hosts are supported!"
+# endif
+        Assert(pVCpu->CTX_SUFF(pVM)->hm.s.fAllow64BitGuests);    /* Guaranteed by hmR3InitFinalizeR0(). */
+        /* Guest in long mode, use 64-bit handler (host is 64-bit). */
         pVCpu->hm.s.svm.pfnVMRun = SVMR0VMRun64;
 #endif
     }

@@ -4385,238 +4385,6 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
 }
 
 
-#if HC_ARCH_BITS == 32
-# ifdef VBOX_ENABLE_64_BITS_GUESTS
-/**
- * Check if guest state allows safe use of 32-bit switcher again.
- *
- * Segment bases and protected mode structures must be 32-bit addressable
- * because the  32-bit switcher will ignore high dword when writing these VMCS
- * fields.  See @bugref{8432} for details.
- *
- * @returns true if safe, false if must continue to use the 64-bit switcher.
- * @param   pCtx   Pointer to the guest-CPU context.
- *
- * @remarks No-long-jump zone!!!
- */
-static bool hmR0VmxIs32BitSwitcherSafe(PCCPUMCTX pCtx)
-{
-    if (pCtx->gdtr.pGdt    & UINT64_C(0xffffffff00000000))     return false;
-    if (pCtx->idtr.pIdt    & UINT64_C(0xffffffff00000000))     return false;
-    if (pCtx->ldtr.u64Base & UINT64_C(0xffffffff00000000))     return false;
-    if (pCtx->tr.u64Base   & UINT64_C(0xffffffff00000000))     return false;
-    if (pCtx->es.u64Base   & UINT64_C(0xffffffff00000000))     return false;
-    if (pCtx->cs.u64Base   & UINT64_C(0xffffffff00000000))     return false;
-    if (pCtx->ss.u64Base   & UINT64_C(0xffffffff00000000))     return false;
-    if (pCtx->ds.u64Base   & UINT64_C(0xffffffff00000000))     return false;
-    if (pCtx->fs.u64Base   & UINT64_C(0xffffffff00000000))     return false;
-    if (pCtx->gs.u64Base   & UINT64_C(0xffffffff00000000))     return false;
-
-    /* All good, bases are 32-bit. */
-    return true;
-}
-# endif /* VBOX_ENABLE_64_BITS_GUESTS */
-
-# ifdef VBOX_STRICT
-static bool hmR0VmxIsValidWriteFieldInCache(uint32_t idxField)
-{
-    switch (idxField)
-    {
-        case VMX_VMCS_GUEST_RIP:
-        case VMX_VMCS_GUEST_RSP:
-        case VMX_VMCS_GUEST_SYSENTER_EIP:
-        case VMX_VMCS_GUEST_SYSENTER_ESP:
-        case VMX_VMCS_GUEST_GDTR_BASE:
-        case VMX_VMCS_GUEST_IDTR_BASE:
-        case VMX_VMCS_GUEST_CS_BASE:
-        case VMX_VMCS_GUEST_DS_BASE:
-        case VMX_VMCS_GUEST_ES_BASE:
-        case VMX_VMCS_GUEST_FS_BASE:
-        case VMX_VMCS_GUEST_GS_BASE:
-        case VMX_VMCS_GUEST_SS_BASE:
-        case VMX_VMCS_GUEST_LDTR_BASE:
-        case VMX_VMCS_GUEST_TR_BASE:
-        case VMX_VMCS_GUEST_CR3:
-            return true;
-    }
-    return false;
-}
-
-static bool hmR0VmxIsValidReadFieldInCache(uint32_t idxField)
-{
-    switch (idxField)
-    {
-        /* Read-only fields. */
-        case VMX_VMCS_RO_EXIT_QUALIFICATION:
-            return true;
-    }
-    /* Remaining readable fields should also be writable. */
-    return hmR0VmxIsValidWriteFieldInCache(idxField);
-}
-# endif /* VBOX_STRICT */
-
-
-/**
- * Executes the specified handler in 64-bit mode.
- *
- * @returns VBox status code (no informational status codes).
- * @param   pVCpu       The cross context virtual CPU structure.
- * @param   enmOp       The operation to perform.
- * @param   cParams     Number of parameters.
- * @param   paParam     Array of 32-bit parameters.
- */
-VMMR0DECL(int) VMXR0Execute64BitsHandler(PVMCPU pVCpu, HM64ON32OP enmOp, uint32_t cParams, uint32_t *paParam)
-{
-    AssertPtr(pVCpu);
-    PVM pVM = pVCpu->CTX_SUFF(pVM);
-    AssertReturn(pVM->hm.s.pfnHost32ToGuest64R0, VERR_HM_NO_32_TO_64_SWITCHER);
-    Assert(enmOp > HM64ON32OP_INVALID && enmOp < HM64ON32OP_END);
-    Assert(pVCpu->hm.s.vmx.VmcsCache.Write.cValidEntries <= RT_ELEMENTS(pVCpu->hm.s.vmx.VmcsCache.Write.aField));
-    Assert(pVCpu->hm.s.vmx.VmcsCache.Read.cValidEntries <= RT_ELEMENTS(pVCpu->hm.s.vmx.VmcsCache.Read.aField));
-
-#ifdef VBOX_STRICT
-    for (uint32_t i = 0; i < pVCpu->hm.s.vmx.VmcsCache.Write.cValidEntries; i++)
-        Assert(hmR0VmxIsValidWriteFieldInCache(pVCpu->hm.s.vmx.VmcsCache.Write.aField[i]));
-
-    for (uint32_t i = 0; i <pVCpu->hm.s.vmx.VmcsCache.Read.cValidEntries; i++)
-        Assert(hmR0VmxIsValidReadFieldInCache(pVCpu->hm.s.vmx.VmcsCache.Read.aField[i]));
-#endif
-
-    /* Disable interrupts. */
-    RTCCUINTREG fOldEFlags = ASMIntDisableFlags();
-
-#ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
-    RTCPUID idHostCpu = RTMpCpuId();
-    CPUMR0SetLApic(pVCpu, idHostCpu);
-#endif
-
-    /** @todo replace with hmR0VmxEnterRootMode() and hmR0VmxLeaveRootMode(). */
-
-    PCHMPHYSCPU    pHostCpu      = hmR0GetCurrentCpu();
-    RTHCPHYS const HCPhysCpuPage = pHostCpu->HCPhysMemObj;
-
-    /* Clear VMCS. Marking it inactive, clearing implementation-specific data and writing VMCS data back to memory. */
-    PVMXVMCSINFO pVmcsInfo = hmGetVmxActiveVmcsInfo(pVCpu);
-    hmR0VmxClearVmcs(pVmcsInfo);
-
-    /* Leave VMX root mode and disable VMX. */
-    VMXDisable();
-    SUPR0ChangeCR4(0, ~X86_CR4_VMXE);
-
-    CPUMSetHyperESP(pVCpu, VMMGetStackRC(pVCpu));
-    CPUMSetHyperEIP(pVCpu, enmOp);
-    for (int i = (int)cParams - 1; i >= 0; i--)
-        CPUMPushHyper(pVCpu, paParam[i]);
-
-    STAM_PROFILE_ADV_START(&pVCpu->hm.s.StatWorldSwitch3264, z);
-
-    /* Call the switcher. */
-    int rc = pVM->hm.s.pfnHost32ToGuest64R0(pVM, RT_UOFFSETOF_DYN(VM, aCpus[pVCpu->idCpu].cpum) - RT_UOFFSETOF(VM, cpum));
-    STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatWorldSwitch3264, z);
-
-    /* Re-enable VMX to make sure the VMX instructions don't cause #UD faults. */
-    SUPR0ChangeCR4(X86_CR4_VMXE, RTCCUINTREG_MAX);
-
-    /* Re-enter VMX root mode. */
-    int rc2 = VMXEnable(HCPhysCpuPage);
-    if (RT_FAILURE(rc2))
-    {
-        SUPR0ChangeCR4(0, ~X86_CR4_VMXE);
-        ASMSetFlags(fOldEFlags);
-        pVM->hm.s.vmx.HCPhysVmxEnableError = HCPhysCpuPage;
-        return rc2;
-    }
-
-    /* Restore the VMCS as the current VMCS. */
-    rc2 = hmR0VmxLoadVmcs(pVmcsInfo);
-    AssertRC(rc2);
-    Assert(!(ASMGetFlags() & X86_EFL_IF));
-    ASMSetFlags(fOldEFlags);
-    return rc;
-}
-
-
-/**
- * Prepares for and executes VMLAUNCH (64-bit guests) for 32-bit hosts
- * supporting 64-bit guests.
- *
- * @returns VBox status code.
- * @param   fResume     Whether to VMLAUNCH or VMRESUME.
- * @param   pCtx        Pointer to the guest-CPU context.
- * @param   pCache      Pointer to the VMCS batch cache.
- * @param   pVM         The cross context VM structure.
- * @param   pVCpu       The cross context virtual CPU structure.
- */
-DECLASM(int) VMXR0SwitcherStartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVMXVMCSCACHE pCache, PVM pVM, PVMCPU pVCpu)
-{
-    NOREF(fResume);
-
-    PVMXVMCSINFO   pVmcsInfo     = hmGetVmxActiveVmcsInfo(pVCpu);
-    PCHMPHYSCPU    pHostCpu      = hmR0GetCurrentCpu();
-    RTHCPHYS const HCPhysCpuPage = pHostCpu->HCPhysMemObj;
-
-#ifdef VBOX_WITH_CRASHDUMP_MAGIC
-    pCache->uPos = 1;
-    pCache->interPD = PGMGetInterPaeCR3(pVM);
-    pCache->pSwitcher = (uint64_t)pVM->hm.s.pfnHost32ToGuest64R0;
-#endif
-
-#if defined(DEBUG) && defined(VMX_USE_CACHED_VMCS_ACCESSES)
-    pCache->TestIn.HCPhysCpuPage = 0;
-    pCache->TestIn.HCPhysVmcs    = 0;
-    pCache->TestIn.pCache        = 0;
-    pCache->TestOut.HCPhysVmcs   = 0;
-    pCache->TestOut.pCache       = 0;
-    pCache->TestOut.pCtx         = 0;
-    pCache->TestOut.eflags       = 0;
-#else
-    NOREF(pCache);
-#endif
-
-    uint32_t aParam[10];
-    aParam[0] = RT_LO_U32(HCPhysCpuPage);                               /* Param 1: VMXON physical address - Lo. */
-    aParam[1] = RT_HI_U32(HCPhysCpuPage);                               /* Param 1: VMXON physical address - Hi. */
-    aParam[2] = RT_LO_U32(pVmcsInfo->HCPhysVmcs);                       /* Param 2: VMCS physical address - Lo. */
-    aParam[3] = RT_HI_U32(pVmcsInfo->HCPhysVmcs);                       /* Param 2: VMCS physical address - Hi. */
-    aParam[4] = VM_RC_ADDR(pVM, &pVM->aCpus[pVCpu->idCpu].hm.s.vmx.VmcsCache);
-    aParam[5] = 0;
-    aParam[6] = VM_RC_ADDR(pVM, pVM);
-    aParam[7] = 0;
-    aParam[8] = VM_RC_ADDR(pVM, pVCpu);
-    aParam[9] = 0;
-
-#ifdef VBOX_WITH_CRASHDUMP_MAGIC
-    pCtx->dr[4] = pVM->hm.s.vmx.pScratchPhys + 16 + 8;
-    *(uint32_t *)(pVM->hm.s.vmx.pScratch + 16 + 8) = 1;
-#endif
-    int rc = VMXR0Execute64BitsHandler(pVCpu, HM64ON32OP_VMXRCStartVM64, RT_ELEMENTS(aParam), &aParam[0]);
-
-#ifdef VBOX_WITH_CRASHDUMP_MAGIC
-    Assert(*(uint32_t *)(pVM->hm.s.vmx.pScratch + 16 + 8) == 5);
-    Assert(pCtx->dr[4] == 10);
-    *(uint32_t *)(pVM->hm.s.vmx.pScratch + 16 + 8) = 0xff;
-#endif
-
-#if defined(DEBUG) && defined(VMX_USE_CACHED_VMCS_ACCESSES)
-    AssertMsg(pCache->TestIn.HCPhysCpuPage == HCPhysCpuPage, ("%RHp vs %RHp\n", pCache->TestIn.HCPhysCpuPage, HCPhysCpuPage));
-    AssertMsg(pCache->TestIn.HCPhysVmcs == pVmcsInfo->HCPhysVmcs,      ("%RHp vs %RHp\n", pCache->TestIn.HCPhysVmcs,
-                                                                        pVmcsInfo->HCPhysVmcs));
-    AssertMsg(pCache->TestIn.HCPhysVmcs == pCache->TestOut.HCPhysVmcs, ("%RHp vs %RHp\n", pCache->TestIn.HCPhysVmcs,
-                                                                        pCache->TestOut.HCPhysVmcs));
-    AssertMsg(pCache->TestIn.pCache     == pCache->TestOut.pCache,     ("%RGv vs %RGv\n", pCache->TestIn.pCache,
-                                                                        pCache->TestOut.pCache));
-    AssertMsg(pCache->TestIn.pCache     == VM_RC_ADDR(pVM, &pVM->aCpus[pVCpu->idCpu].hm.s.vmx.VmcsCache),
-              ("%RGv vs %RGv\n", pCache->TestIn.pCache, VM_RC_ADDR(pVM, &pVM->aCpus[pVCpu->idCpu].hm.s.vmx.VmcsCache)));
-    AssertMsg(pCache->TestIn.pCtx       == pCache->TestOut.pCtx,       ("%RGv vs %RGv\n", pCache->TestIn.pCtx,
-                                                                        pCache->TestOut.pCtx));
-    Assert(!(pCache->TestOut.eflags & X86_EFL_IF));
-#endif
-    NOREF(pCtx);
-    return rc;
-}
-#endif
-
-
 /**
  * Saves the host control registers (CR0, CR3, CR4) into the host-state area in
  * the VMCS.
@@ -5111,21 +4879,7 @@ static int hmR0VmxExportGuestEntryExitCtls(PVMCPU pVCpu, PVMXTRANSIENT pVmxTrans
              * For nested-guests, we always set this bit as we do not support 32-bit
              * hosts.
              */
-#if HC_ARCH_BITS == 64
             fVal |= VMX_EXIT_CTLS_HOST_ADDR_SPACE_SIZE;
-#else
-            Assert(!pVmxTransient->fIsNestedGuest);
-            Assert(   pVmcsInfo->pfnStartVM == VMXR0SwitcherStartVM64
-                   || pVmcsInfo->pfnStartVM == VMXR0StartVM32);
-            /* Set the host address-space size based on the switcher, not guest state. See @bugref{8432}. */
-            if (pVmcsInfo->pfnStartVM == VMXR0SwitcherStartVM64)
-            {
-                /* The switcher returns to long mode, the EFER MSR is managed by the switcher. */
-                fVal |= VMX_EXIT_CTLS_HOST_ADDR_SPACE_SIZE;
-            }
-            else
-                Assert(!(fVal & VMX_EXIT_CTLS_HOST_ADDR_SPACE_SIZE));
-#endif
 
             /*
              * If the VMCS EFER MSR fields are supported by the hardware, we use it.
@@ -6968,82 +6722,13 @@ static int hmR0VmxSelectVMRunHandler(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
         return VERR_PGM_UNSUPPORTED_SHADOW_PAGING_MODE;
 #endif
         Assert(pVCpu->CTX_SUFF(pVM)->hm.s.fAllow64BitGuests);    /* Guaranteed by hmR3InitFinalizeR0(). */
-#if HC_ARCH_BITS == 32
-        /* 32-bit host. We need to switch to 64-bit before running the 64-bit guest. */
-        if (pVmcsInfo->pfnStartVM != VMXR0SwitcherStartVM64)
-        {
-#ifdef VBOX_STRICT
-            if (pVmcsInfo->pfnStartVM != NULL) /* Very first VM-entry would have saved host-state already, ignore it. */
-            {
-                /* Currently, all mode changes sends us back to ring-3, so these should be set. See @bugref{6944}. */
-                uint64_t const fCtxChanged = ASMAtomicUoReadU64(&pVCpu->hm.s.fCtxChanged);
-                RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
-                AssertMsg(fCtxChanged & (HM_CHANGED_VMX_ENTRY_EXIT_CTLS | HM_CHANGED_GUEST_EFER_MSR),
-                          ("fCtxChanged=%#RX64\n", fCtxChanged));
-            }
-#endif
-            pVmcsInfo->pfnStartVM = VMXR0SwitcherStartVM64;
-
-            /* Mark that we've switched to 64-bit handler, we can't safely switch back to 32-bit for
-               the rest of the VM run (until VM reset). See @bugref{8432#c7}. */
-            pVmcsInfo->fSwitchedTo64on32 = true;
-            Log4Func(("Selected 64-bit switcher\n"));
-        }
-#else
-        /* 64-bit host. */
+        /* Guest is in long mode, use the 64-bit handler (host is 64-bit). */
         pVmcsInfo->pfnStartVM = VMXR0StartVM64;
-#endif
     }
     else
     {
         /* Guest is not in long mode, use the 32-bit handler. */
-#if HC_ARCH_BITS == 32
-        if (    pVmcsInfo->pfnStartVM != VMXR0StartVM32
-            && !pVmcsInfo->fSwitchedTo64on32      /* If set, guest mode change does not imply switcher change. */
-            &&  pVmcsInfo->pfnStartVM != NULL)    /* Very first VM-entry would have saved host-state already, ignore it. */
-        {
-# ifdef VBOX_STRICT
-            /* Currently, all mode changes sends us back to ring-3, so these should be set. See @bugref{6944}. */
-            uint64_t const fCtxChanged = ASMAtomicUoReadU64(&pVCpu->hm.s.fCtxChanged);
-            RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
-            AssertMsg(fCtxChanged & (HM_CHANGED_VMX_ENTRY_EXIT_CTLS | HM_CHANGED_GUEST_EFER_MSR),
-                      ("fCtxChanged=%#RX64\n", fCtxChanged));
-# endif
-        }
-# ifdef VBOX_ENABLE_64_BITS_GUESTS
-        /*
-         * Keep using the 64-bit switcher even though we're in 32-bit because of bad Intel
-         * design, see @bugref{8432#c7}. If real-on-v86 mode is active, clear the 64-bit
-         * switcher flag now because we know the guest is in a sane state where it's safe
-         * to use the 32-bit switcher. Otherwise, check the guest state if it's safe to use
-         * the much faster 32-bit switcher again.
-         */
-        if (!pVmcsInfo->fSwitchedTo64on32)
-        {
-            if (pVmcsInfo->pfnStartVM != VMXR0StartVM32)
-                Log4Func(("Selected 32-bit switcher\n"));
-            pVmcsInfo->pfnStartVM = VMXR0StartVM32;
-        }
-        else
-        {
-            Assert(pVmcsInfo->pfnStartVM == VMXR0SwitcherStartVM64);
-            if (   pVmcsInfo->RealMode.fRealOnV86Active
-                || hmR0VmxIs32BitSwitcherSafe(pCtx))
-            {
-                pVmcsInfo->fSwitchedTo64on32 = false;
-                pVmcsInfo->pfnStartVM = VMXR0StartVM32;
-                ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_EFER_MSR
-                                                         | HM_CHANGED_VMX_ENTRY_EXIT_CTLS
-                                                         | HM_CHANGED_HOST_CONTEXT);
-                Log4Func(("Selected 32-bit switcher (safe)\n"));
-            }
-        }
-# else
         pVmcsInfo->pfnStartVM = VMXR0StartVM32;
-# endif
-#else
-        pVmcsInfo->pfnStartVM = VMXR0StartVM32;
-#endif
     }
     Assert(pVmcsInfo->pfnStartVM);
     return VINF_SUCCESS;
@@ -11520,17 +11205,8 @@ static void hmR0VmxPostRunGuest(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient, int r
     TMNotifyEndOfExecution(pVCpu);                                      /* Notify TM that the guest is no longer running. */
     VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_HM);
 
-#if HC_ARCH_BITS == 64
     pVCpu->hm.s.vmx.fRestoreHostFlags |= VMX_RESTORE_HOST_REQUIRED;     /* Some host state messed up by VMX needs restoring. */
-#endif
-#if HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS)
-    /* The 64-on-32 switcher maintains VMCS-launch state on its own
-       and we need to leave it alone here. */
-    if (pVmcsInfo->pfnStartVM != VMXR0SwitcherStartVM64)
-        pVmcsInfo->fVmcsState |= VMX_V_VMCS_LAUNCH_STATE_LAUNCHED;      /* Use VMRESUME instead of VMLAUNCH in the next run. */
-#else
     pVmcsInfo->fVmcsState |= VMX_V_VMCS_LAUNCH_STATE_LAUNCHED;          /* Use VMRESUME instead of VMLAUNCH in the next run. */
-#endif
 #ifdef VBOX_STRICT
     hmR0VmxCheckHostEferMsr(pVCpu, pVmcsInfo);                          /* Verify that the host EFER MSR wasn't modified. */
 #endif
