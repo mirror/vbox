@@ -2644,7 +2644,6 @@ static DECLCALLBACK(int) cpumR3SaveExec(PVM pVM, PSSMHANDLE pSSM)
             SSMR3PutU64(pSSM,      pGstCtx->hwvirt.vmx.uEntryTick);
             SSMR3PutU16(pSSM,      pGstCtx->hwvirt.vmx.offVirtApicWrite);
             SSMR3PutBool(pSSM,     pGstCtx->hwvirt.vmx.fVirtNmiBlocking);
-            SSMR3PutBool(pSSM,     pGstCtx->hwvirt.vmx.fVirtApicPageDirty);
             SSMR3PutU64(pSSM,      pGstCtx->hwvirt.vmx.Msrs.u64FeatCtrl);
             SSMR3PutU64(pSSM,      pGstCtx->hwvirt.vmx.Msrs.u64Basic);
             SSMR3PutU64(pSSM,      pGstCtx->hwvirt.vmx.Msrs.PinCtls.u);
@@ -2933,7 +2932,6 @@ static DECLCALLBACK(int) cpumR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVers
                         SSMR3GetU64(pSSM,      &pGstCtx->hwvirt.vmx.uEntryTick);
                         SSMR3GetU16(pSSM,      &pGstCtx->hwvirt.vmx.offVirtApicWrite);
                         SSMR3GetBool(pSSM,     &pGstCtx->hwvirt.vmx.fVirtNmiBlocking);
-                        SSMR3GetBool(pSSM,     &pGstCtx->hwvirt.vmx.fVirtApicPageDirty);
                         SSMR3GetU64(pSSM,      &pGstCtx->hwvirt.vmx.Msrs.u64FeatCtrl);
                         SSMR3GetU64(pSSM,      &pGstCtx->hwvirt.vmx.Msrs.u64Basic);
                         SSMR3GetU64(pSSM,      &pGstCtx->hwvirt.vmx.Msrs.PinCtls.u);
@@ -4126,7 +4124,6 @@ static DECLCALLBACK(void) cpumR3InfoGuestHwvirt(PVM pVM, PCDBGFINFOHLP pHlp, con
         pHlp->pfnPrintf(pHlp, "  uEntryTick                 = %RX64\n",     pCtx->hwvirt.vmx.uEntryTick);
         pHlp->pfnPrintf(pHlp, "  offVirtApicWrite           = %#RX16\n",    pCtx->hwvirt.vmx.offVirtApicWrite);
         pHlp->pfnPrintf(pHlp, "  fVirtNmiBlocking           = %RTbool\n",   pCtx->hwvirt.vmx.fVirtNmiBlocking);
-        pHlp->pfnPrintf(pHlp, "  fVirtApicPageDirty         = %RTbool\n",   pCtx->hwvirt.vmx.fVirtApicPageDirty);
         pHlp->pfnPrintf(pHlp, "  VMCS cache:\n");
         cpumR3InfoVmxVmcs(pHlp, pCtx->hwvirt.vmx.pVmcsR3, "  " /* pszPrefix */);
     }

@@ -180,7 +180,6 @@
     GEN_CHECK_OFF(CPUMCTX, hwvirt.vmx.uEntryTick);
     GEN_CHECK_OFF(CPUMCTX, hwvirt.vmx.offVirtApicWrite);
     GEN_CHECK_OFF(CPUMCTX, hwvirt.vmx.fVirtNmiBlocking);
-    GEN_CHECK_OFF(CPUMCTX, hwvirt.vmx.fVirtApicPageDirty);
     GEN_CHECK_OFF(CPUMCTX, hwvirt.vmx.Msrs);
     GEN_CHECK_OFF(CPUMCTX, hwvirt.vmx.HCPhysVmcs);
     GEN_CHECK_OFF(CPUMCTX, hwvirt.vmx.HCPhysShadowVmcs);

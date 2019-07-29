@@ -926,7 +926,6 @@ VMM_INT_DECL(void) HMDumpHwvirtVmxState(PVMCPU pVCpu)
     LogRel(("uEntryTick                 = %RX64\n",     pCtx->hwvirt.vmx.uEntryTick));
     LogRel(("offVirtApicWrite           = %#RX16\n",    pCtx->hwvirt.vmx.offVirtApicWrite));
     LogRel(("fVirtNmiBlocking           = %RTbool\n",   pCtx->hwvirt.vmx.fVirtNmiBlocking));
-    LogRel(("fVirtApicPageDirty         = %RTbool\n",   pCtx->hwvirt.vmx.fVirtApicPageDirty));
     LogRel(("VMCS cache:\n"));
 
     const char *pszPrefix = "  ";

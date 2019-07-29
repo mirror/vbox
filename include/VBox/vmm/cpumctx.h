@@ -694,11 +694,8 @@ typedef struct CPUMCTX
                 uint16_t                offVirtApicWrite;
                 /** 0x3ca - Whether virtual-NMI blocking is in effect. */
                 bool                    fVirtNmiBlocking;
-                /** 0x3cb - Whether the virtual-APIC may have been modified in VMX non-root
-                 *  operation and we should write to it before VM-exit. */
-                bool                    fVirtApicPageDirty;
                 /** 0x3cc - Padding. */
-                uint8_t                 abPadding0[4];
+                uint8_t                 abPadding0[5];
                 /** 0x3d0 - Guest VMX MSRs. */
                 VMXMSRS                 Msrs;
                 /** 0x4b0 - Host physical address of the VMCS. */
@@ -841,7 +838,6 @@ AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.uPrevPauseTick, 
 AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.uEntryTick,                  0x3c0);
 AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.offVirtApicWrite,            0x3c8);
 AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.fVirtNmiBlocking,            0x3ca);
-AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.fVirtApicPageDirty,          0x3cb);
 AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.Msrs,                        0x3d0);
 AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.HCPhysVmcs,                  0x4b0);
 AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.HCPhysShadowVmcs,            0x4b8);
