@@ -643,16 +643,6 @@ VMMDECL(CPUMMODE) CPUMGetGuestMode(PVMCPU pVCpu)
     return CPUMMODE_INVALID;
 }
 
-VMMDECL(RTSEL) CPUMGetHyperCS(PVMCPU pVCpu)
-{
-    return 0xfff8;
-}
-
-VMMDECL(uint32_t) CPUMGetHyperEIP(PVMCPU pVCpu)
-{
-    return 0;
-}
-
 VMMDECL(PCPUMCTX) CPUMQueryGuestCtxPtr(PVMCPU pVCpu)
 {
     return NULL;

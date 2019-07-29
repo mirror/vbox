@@ -70,17 +70,8 @@ AssertCompile2MemberOffsets(VM, cpum.s.GuestFeatures, cpum.ro.GuestFeatures);
 /**
  * Lazily loads the hidden parts of a selector register when using raw-mode.
  */
-#if defined(VBOX_WITH_RAW_MODE) && !defined(IN_RING0)
-# define CPUMSELREG_LAZY_LOAD_HIDDEN_PARTS(a_pVCpu, a_pSReg) \
-    do \
-    { \
-        if (!CPUMSELREG_ARE_HIDDEN_PARTS_VALID(a_pVCpu, a_pSReg)) \
-            cpumGuestLazyLoadHiddenSelectorReg(a_pVCpu, a_pSReg); \
-    } while (0)
-#else
-# define CPUMSELREG_LAZY_LOAD_HIDDEN_PARTS(a_pVCpu, a_pSReg) \
-    Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(a_pVCpu, a_pSReg));
-#endif
+#define CPUMSELREG_LAZY_LOAD_HIDDEN_PARTS(a_pVCpu, a_pSReg) \
+    Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(a_pVCpu, a_pSReg))
 
 /** @def CPUM_INT_ASSERT_NOT_EXTRN
  * Macro for asserting that @a a_fNotExtrn are present.
@@ -91,129 +82,6 @@ AssertCompile2MemberOffsets(VM, cpum.s.GuestFeatures, cpum.ro.GuestFeatures);
 #define CPUM_INT_ASSERT_NOT_EXTRN(a_pVCpu, a_fNotExtrn) \
     AssertMsg(!((a_pVCpu)->cpum.s.Guest.fExtrn & (a_fNotExtrn)), \
               ("%#RX64; a_fNotExtrn=%#RX64\n", (a_pVCpu)->cpum.s.Guest.fExtrn, (a_fNotExtrn)))
-
-
-
-
-#ifdef VBOX_WITH_RAW_MODE_NOT_R0
-
-/**
- * Does the lazy hidden selector register loading.
- *
- * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
- * @param   pSReg       The selector register to lazily load hidden parts of.
- */
-static void cpumGuestLazyLoadHiddenSelectorReg(PVMCPU pVCpu, PCPUMSELREG pSReg)
-{
-    Assert(!CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, pSReg));
-    Assert(VM_IS_RAW_MODE_ENABLED(pVCpu->CTX_SUFF(pVM)));
-    Assert((uintptr_t)(pSReg - &pVCpu->cpum.s.Guest.es) < X86_SREG_COUNT);
-
-    if (pVCpu->cpum.s.Guest.eflags.Bits.u1VM)
-    {
-        /* V8086 mode - Tightly controlled environment, no question about the limit or flags. */
-        pSReg->Attr.u               = 0;
-        pSReg->Attr.n.u4Type        = pSReg == &pVCpu->cpum.s.Guest.cs ? X86_SEL_TYPE_ER_ACC : X86_SEL_TYPE_RW_ACC;
-        pSReg->Attr.n.u1DescType    = 1; /* code/data segment */
-        pSReg->Attr.n.u2Dpl         = 3;
-        pSReg->Attr.n.u1Present     = 1;
-        pSReg->u32Limit             = 0x0000ffff;
-        pSReg->u64Base              = (uint32_t)pSReg->Sel << 4;
-        pSReg->ValidSel             = pSReg->Sel;
-        pSReg->fFlags               = CPUMSELREG_FLAGS_VALID;
-        /** @todo Check what the accessed bit should be (VT-x and AMD-V). */
-    }
-    else if (!(pVCpu->cpum.s.Guest.cr0 & X86_CR0_PE))
-    {
-        /* Real mode - leave the limit and flags alone here, at least for now. */
-        pSReg->u64Base              = (uint32_t)pSReg->Sel << 4;
-        pSReg->ValidSel             = pSReg->Sel;
-        pSReg->fFlags               = CPUMSELREG_FLAGS_VALID;
-    }
-    else
-    {
-        /* Protected mode - get it from the selector descriptor tables. */
-        if (!(pSReg->Sel & X86_SEL_MASK_OFF_RPL))
-        {
-            Assert(!CPUMIsGuestInLongMode(pVCpu));
-            pSReg->Sel              = 0;
-            pSReg->u64Base          = 0;
-            pSReg->u32Limit         = 0;
-            pSReg->Attr.u           = 0;
-            pSReg->ValidSel         = 0;
-            pSReg->fFlags           = CPUMSELREG_FLAGS_VALID;
-            /** @todo see todo in iemHlpLoadNullDataSelectorProt. */
-        }
-        else
-            SELMLoadHiddenSelectorReg(pVCpu, &pVCpu->cpum.s.Guest, pSReg);
-    }
-}
-
-
-/**
- * Makes sure the hidden CS and SS selector registers are valid, loading them if
- * necessary.
- *
- * @param   pVCpu               The cross context virtual CPU structure of the calling EMT.
- */
-VMM_INT_DECL(void) CPUMGuestLazyLoadHiddenCsAndSs(PVMCPU pVCpu)
-{
-    CPUMSELREG_LAZY_LOAD_HIDDEN_PARTS(pVCpu, &pVCpu->cpum.s.Guest.cs);
-    CPUMSELREG_LAZY_LOAD_HIDDEN_PARTS(pVCpu, &pVCpu->cpum.s.Guest.ss);
-}
-
-
-/**
- * Loads a the hidden parts of a selector register.
- *
- * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
- * @param   pSReg       The selector register to lazily load hidden parts of.
- */
-VMM_INT_DECL(void) CPUMGuestLazyLoadHiddenSelectorReg(PVMCPU pVCpu, PCPUMSELREG pSReg)
-{
-    CPUMSELREG_LAZY_LOAD_HIDDEN_PARTS(pVCpu, pSReg);
-}
-
-#endif /* VBOX_WITH_RAW_MODE_NOT_R0 */
-
-
-/**
- * Obsolete.
- *
- * We don't support nested hypervisor context interrupts or traps.  Life is much
- * simpler when we don't.  It's also slightly faster at times.
- *
- * @param   pVCpu       The cross context virtual CPU structure.
- */
-VMMDECL(PCCPUMCTXCORE) CPUMGetHyperCtxCore(PVMCPU pVCpu)
-{
-    return CPUMCTX2CORE(&pVCpu->cpum.s.Hyper);
-}
-
-
-/**
- * Gets the pointer to the hypervisor CPU context structure of a virtual CPU.
- *
- * @param   pVCpu       The cross context virtual CPU structure.
- */
-VMMDECL(PCPUMCTX) CPUMGetHyperCtxPtr(PVMCPU pVCpu)
-{
-    return &pVCpu->cpum.s.Hyper;
-}
-
-
-VMMDECL(void) CPUMSetHyperGDTR(PVMCPU pVCpu, uint32_t addr, uint16_t limit)
-{
-    pVCpu->cpum.s.Hyper.gdtr.cbGdt = limit;
-    pVCpu->cpum.s.Hyper.gdtr.pGdt  = addr;
-}
-
-
-VMMDECL(void) CPUMSetHyperIDTR(PVMCPU pVCpu, uint32_t addr, uint16_t limit)
-{
-    pVCpu->cpum.s.Hyper.idtr.cbIdt = limit;
-    pVCpu->cpum.s.Hyper.idtr.pIdt  = addr;
-}
 
 
 VMMDECL(void) CPUMSetHyperCR3(PVMCPU pVCpu, uint32_t cr3)
@@ -232,105 +100,15 @@ VMMDECL(uint32_t) CPUMGetHyperCR3(PVMCPU pVCpu)
 }
 
 
-VMMDECL(void) CPUMSetHyperCS(PVMCPU pVCpu, RTSEL SelCS)
-{
-    pVCpu->cpum.s.Hyper.cs.Sel = SelCS;
-}
-
-
-VMMDECL(void) CPUMSetHyperDS(PVMCPU pVCpu, RTSEL SelDS)
-{
-    pVCpu->cpum.s.Hyper.ds.Sel = SelDS;
-}
-
-
-VMMDECL(void) CPUMSetHyperES(PVMCPU pVCpu, RTSEL SelES)
-{
-    pVCpu->cpum.s.Hyper.es.Sel = SelES;
-}
-
-
-VMMDECL(void) CPUMSetHyperFS(PVMCPU pVCpu, RTSEL SelFS)
-{
-    pVCpu->cpum.s.Hyper.fs.Sel = SelFS;
-}
-
-
-VMMDECL(void) CPUMSetHyperGS(PVMCPU pVCpu, RTSEL SelGS)
-{
-    pVCpu->cpum.s.Hyper.gs.Sel = SelGS;
-}
-
-
-VMMDECL(void) CPUMSetHyperSS(PVMCPU pVCpu, RTSEL SelSS)
-{
-    pVCpu->cpum.s.Hyper.ss.Sel = SelSS;
-}
-
-
 VMMDECL(void) CPUMSetHyperESP(PVMCPU pVCpu, uint32_t u32ESP)
 {
     pVCpu->cpum.s.Hyper.esp = u32ESP;
 }
 
 
-VMMDECL(void) CPUMSetHyperEDX(PVMCPU pVCpu, uint32_t u32ESP)
-{
-    pVCpu->cpum.s.Hyper.esp = u32ESP;
-}
-
-
-VMMDECL(int) CPUMSetHyperEFlags(PVMCPU pVCpu, uint32_t Efl)
-{
-    pVCpu->cpum.s.Hyper.eflags.u32 = Efl;
-    return VINF_SUCCESS;
-}
-
-
 VMMDECL(void) CPUMSetHyperEIP(PVMCPU pVCpu, uint32_t u32EIP)
 {
     pVCpu->cpum.s.Hyper.eip = u32EIP;
-}
-
-
-/**
- * Used by VMMR3RawRunGC to reinitialize the general raw-mode context registers,
- * EFLAGS and EIP prior to resuming guest execution.
- *
- * All general register not given as a parameter will be set to 0.  The EFLAGS
- * register will be set to sane values for C/C++ code execution with interrupts
- * disabled and IOPL 0.
- *
- * @param   pVCpu               The cross context virtual CPU structure of the calling EMT.
- * @param   u32EIP              The EIP value.
- * @param   u32ESP              The ESP value.
- * @param   u32EAX              The EAX value.
- * @param   u32EDX              The EDX value.
- */
-VMM_INT_DECL(void) CPUMSetHyperState(PVMCPU pVCpu, uint32_t u32EIP, uint32_t u32ESP, uint32_t u32EAX, uint32_t u32EDX)
-{
-    pVCpu->cpum.s.Hyper.eip      = u32EIP;
-    pVCpu->cpum.s.Hyper.esp      = u32ESP;
-    pVCpu->cpum.s.Hyper.eax      = u32EAX;
-    pVCpu->cpum.s.Hyper.edx      = u32EDX;
-    pVCpu->cpum.s.Hyper.ecx      = 0;
-    pVCpu->cpum.s.Hyper.ebx      = 0;
-    pVCpu->cpum.s.Hyper.ebp      = 0;
-    pVCpu->cpum.s.Hyper.esi      = 0;
-    pVCpu->cpum.s.Hyper.edi      = 0;
-    pVCpu->cpum.s.Hyper.eflags.u = X86_EFL_1;
-}
-
-
-VMMDECL(void) CPUMSetHyperTR(PVMCPU pVCpu, RTSEL SelTR)
-{
-    pVCpu->cpum.s.Hyper.tr.Sel = SelTR;
-}
-
-
-VMMDECL(void) CPUMSetHyperLDTR(PVMCPU pVCpu, RTSEL SelLDTR)
-{
-    pVCpu->cpum.s.Hyper.ldtr.Sel = SelLDTR;
 }
 
 
@@ -404,130 +182,6 @@ VMMDECL(void) CPUMSetHyperDR7(PVMCPU pVCpu, RTGCUINTREG uDr7)
 #ifdef IN_RC
     MAYBE_LOAD_DRx(pVCpu, ASMSetDR7, uDr7);
 #endif
-}
-
-
-VMMDECL(RTSEL) CPUMGetHyperCS(PVMCPU pVCpu)
-{
-    return pVCpu->cpum.s.Hyper.cs.Sel;
-}
-
-
-VMMDECL(RTSEL) CPUMGetHyperDS(PVMCPU pVCpu)
-{
-    return pVCpu->cpum.s.Hyper.ds.Sel;
-}
-
-
-VMMDECL(RTSEL) CPUMGetHyperES(PVMCPU pVCpu)
-{
-    return pVCpu->cpum.s.Hyper.es.Sel;
-}
-
-
-VMMDECL(RTSEL) CPUMGetHyperFS(PVMCPU pVCpu)
-{
-    return pVCpu->cpum.s.Hyper.fs.Sel;
-}
-
-
-VMMDECL(RTSEL) CPUMGetHyperGS(PVMCPU pVCpu)
-{
-    return pVCpu->cpum.s.Hyper.gs.Sel;
-}
-
-
-VMMDECL(RTSEL) CPUMGetHyperSS(PVMCPU pVCpu)
-{
-    return pVCpu->cpum.s.Hyper.ss.Sel;
-}
-
-
-VMMDECL(uint32_t) CPUMGetHyperEAX(PVMCPU pVCpu)
-{
-    return pVCpu->cpum.s.Hyper.eax;
-}
-
-
-VMMDECL(uint32_t) CPUMGetHyperEBX(PVMCPU pVCpu)
-{
-    return pVCpu->cpum.s.Hyper.ebx;
-}
-
-
-VMMDECL(uint32_t) CPUMGetHyperECX(PVMCPU pVCpu)
-{
-    return pVCpu->cpum.s.Hyper.ecx;
-}
-
-
-VMMDECL(uint32_t) CPUMGetHyperEDX(PVMCPU pVCpu)
-{
-    return pVCpu->cpum.s.Hyper.edx;
-}
-
-
-VMMDECL(uint32_t) CPUMGetHyperESI(PVMCPU pVCpu)
-{
-    return pVCpu->cpum.s.Hyper.esi;
-}
-
-
-VMMDECL(uint32_t) CPUMGetHyperEDI(PVMCPU pVCpu)
-{
-    return pVCpu->cpum.s.Hyper.edi;
-}
-
-
-VMMDECL(uint32_t) CPUMGetHyperEBP(PVMCPU pVCpu)
-{
-    return pVCpu->cpum.s.Hyper.ebp;
-}
-
-
-VMMDECL(uint32_t) CPUMGetHyperESP(PVMCPU pVCpu)
-{
-    return pVCpu->cpum.s.Hyper.esp;
-}
-
-
-VMMDECL(uint32_t) CPUMGetHyperEFlags(PVMCPU pVCpu)
-{
-    return pVCpu->cpum.s.Hyper.eflags.u32;
-}
-
-
-VMMDECL(uint32_t) CPUMGetHyperEIP(PVMCPU pVCpu)
-{
-    return pVCpu->cpum.s.Hyper.eip;
-}
-
-
-VMMDECL(uint64_t) CPUMGetHyperRIP(PVMCPU pVCpu)
-{
-    return pVCpu->cpum.s.Hyper.rip;
-}
-
-
-VMMDECL(uint32_t) CPUMGetHyperIDTR(PVMCPU pVCpu, uint16_t *pcbLimit)
-{
-    if (pcbLimit)
-        *pcbLimit = pVCpu->cpum.s.Hyper.idtr.cbIdt;
-    return pVCpu->cpum.s.Hyper.idtr.pIdt;
-}
-
-
-VMMDECL(uint32_t) CPUMGetHyperGDTR(PVMCPU pVCpu, uint16_t *pcbLimit)
-{
-    if (pcbLimit)
-        *pcbLimit = pVCpu->cpum.s.Hyper.gdtr.cbGdt;
-    return pVCpu->cpum.s.Hyper.gdtr.pGdt;
-}
-
-
-VMMDECL(RTSEL) CPUMGetHyperLDTR(PVMCPU pVCpu)
-{
-    return pVCpu->cpum.s.Hyper.ldtr.Sel;
 }
 
 
@@ -657,57 +311,6 @@ VMMDECL(int) CPUMSetGuestLDTR(PVMCPU pVCpu, uint16_t ldtr)
  */
 VMMDECL(int) CPUMSetGuestCR0(PVMCPU pVCpu, uint64_t cr0)
 {
-#ifdef IN_RC
-    /*
-     * Check if we need to change hypervisor CR0 because
-     * of math stuff.
-     */
-    if (    (cr0                     & (X86_CR0_TS | X86_CR0_EM | X86_CR0_MP))
-        !=  (pVCpu->cpum.s.Guest.cr0 & (X86_CR0_TS | X86_CR0_EM | X86_CR0_MP)))
-    {
-        if (!(pVCpu->cpum.s.fUseFlags & CPUM_USED_FPU_GUEST))
-        {
-            /*
-             * We haven't loaded the guest FPU state yet, so TS and MT are both set
-             * and EM should be reflecting the guest EM (it always does this).
-             */
-            if ((cr0 & X86_CR0_EM) != (pVCpu->cpum.s.Guest.cr0 & X86_CR0_EM))
-            {
-                uint32_t HyperCR0 = ASMGetCR0();
-                AssertMsg((HyperCR0 & (X86_CR0_TS | X86_CR0_MP)) == (X86_CR0_TS | X86_CR0_MP), ("%#x\n", HyperCR0));
-                AssertMsg((HyperCR0 & X86_CR0_EM) == (pVCpu->cpum.s.Guest.cr0 & X86_CR0_EM), ("%#x\n", HyperCR0));
-                HyperCR0 &= ~X86_CR0_EM;
-                HyperCR0 |= cr0 & X86_CR0_EM;
-                Log(("CPUM: New HyperCR0=%#x\n", HyperCR0));
-                ASMSetCR0(HyperCR0);
-            }
-# ifdef VBOX_STRICT
-            else
-            {
-                uint32_t HyperCR0 = ASMGetCR0();
-                AssertMsg((HyperCR0 & (X86_CR0_TS | X86_CR0_MP)) == (X86_CR0_TS | X86_CR0_MP), ("%#x\n", HyperCR0));
-                AssertMsg((HyperCR0 & X86_CR0_EM) == (pVCpu->cpum.s.Guest.cr0 & X86_CR0_EM), ("%#x\n", HyperCR0));
-            }
-# endif
-        }
-        else
-        {
-            /*
-             * Already loaded the guest FPU state, so we're just mirroring
-             * the guest flags.
-             */
-            uint32_t HyperCR0 = ASMGetCR0();
-            AssertMsg(     (HyperCR0                 & (X86_CR0_TS | X86_CR0_EM | X86_CR0_MP))
-                      ==   (pVCpu->cpum.s.Guest.cr0  & (X86_CR0_TS | X86_CR0_EM | X86_CR0_MP)),
-                      ("%#x %#x\n", HyperCR0, pVCpu->cpum.s.Guest.cr0));
-            HyperCR0 &= ~(X86_CR0_TS | X86_CR0_EM | X86_CR0_MP);
-            HyperCR0 |= cr0 & (X86_CR0_TS | X86_CR0_EM | X86_CR0_MP);
-            Log(("CPUM: New HyperCR0=%#x\n", HyperCR0));
-            ASMSetCR0(HyperCR0);
-        }
-    }
-#endif /* IN_RC */
-
     /*
      * Check for changes causing TLB flushes (for REM).
      * The caller is responsible for calling PGM when appropriate.
@@ -1631,19 +1234,14 @@ VMMDECL(int) CPUMRecalcHyperDRx(PVMCPU pVCpu, uint8_t iGstReg, bool fForceHyper)
 
     const RTGCUINTREG uDbgfDr7 = DBGFBpGetDR7(pVM);
 
+    /** @todo r=bird: I'm totally confused by fForceHyper! */
 #ifdef IN_RING0
     if (!fForceHyper && (pVCpu->cpum.s.fUseFlags & CPUM_USED_DEBUG_REGS_HYPER))
         fForceHyper = true;
 #endif
-    if (  (!VM_IS_RAW_MODE_ENABLED(pVCpu->CTX_SUFF(pVM)) && !fForceHyper ? uDbgfDr7 : (uGstDr7 | uDbgfDr7))
-        & X86_DR7_ENABLED_MASK)
+    if ((!fForceHyper ? uDbgfDr7 : (uGstDr7 | uDbgfDr7)) & X86_DR7_ENABLED_MASK)
     {
         Assert(!CPUMIsGuestDebugStateActive(pVCpu));
-#ifdef IN_RC
-        bool const fRawModeEnabled = true;
-#elif defined(IN_RING3)
-        bool const fRawModeEnabled = VM_IS_RAW_MODE_ENABLED(pVM);
-#endif
 
         /*
          * Ok, something is enabled.  Recalc each of the breakpoints, taking
@@ -1662,12 +1260,7 @@ VMMDECL(int) CPUMRecalcHyperDRx(PVMCPU pVCpu, uint8_t iGstReg, bool fForceHyper)
         else if (uGstDr7 & (X86_DR7_L0 | X86_DR7_G0))
         {
             uNewDr0 = CPUMGetGuestDR0(pVCpu);
-#ifndef IN_RING0
-            if (fRawModeEnabled && MMHyperIsInsideArea(pVM, uNewDr0))
-                uNewDr0 = 0;
-            else
-#endif
-                uNewDr7 |= uGstDr7 & (X86_DR7_L0 | X86_DR7_G0 | X86_DR7_RW0_MASK | X86_DR7_LEN0_MASK);
+            uNewDr7 |= uGstDr7 & (X86_DR7_L0 | X86_DR7_G0 | X86_DR7_RW0_MASK | X86_DR7_LEN0_MASK);
         }
         else
             uNewDr0 = 0;
@@ -1682,12 +1275,7 @@ VMMDECL(int) CPUMRecalcHyperDRx(PVMCPU pVCpu, uint8_t iGstReg, bool fForceHyper)
         else if (uGstDr7 & (X86_DR7_L1 | X86_DR7_G1))
         {
             uNewDr1 = CPUMGetGuestDR1(pVCpu);
-#ifndef IN_RING0
-            if (fRawModeEnabled && MMHyperIsInsideArea(pVM, uNewDr1))
-                uNewDr1 = 0;
-            else
-#endif
-                uNewDr7 |= uGstDr7 & (X86_DR7_L1 | X86_DR7_G1 | X86_DR7_RW1_MASK | X86_DR7_LEN1_MASK);
+            uNewDr7 |= uGstDr7 & (X86_DR7_L1 | X86_DR7_G1 | X86_DR7_RW1_MASK | X86_DR7_LEN1_MASK);
         }
         else
             uNewDr1 = 0;
@@ -1702,12 +1290,7 @@ VMMDECL(int) CPUMRecalcHyperDRx(PVMCPU pVCpu, uint8_t iGstReg, bool fForceHyper)
         else if (uGstDr7 & (X86_DR7_L2 | X86_DR7_G2))
         {
             uNewDr2 = CPUMGetGuestDR2(pVCpu);
-#ifndef IN_RING0
-            if (fRawModeEnabled && MMHyperIsInsideArea(pVM, uNewDr2))
-                uNewDr2 = 0;
-            else
-#endif
-                uNewDr7 |= uGstDr7 & (X86_DR7_L2 | X86_DR7_G2 | X86_DR7_RW2_MASK | X86_DR7_LEN2_MASK);
+            uNewDr7 |= uGstDr7 & (X86_DR7_L2 | X86_DR7_G2 | X86_DR7_RW2_MASK | X86_DR7_LEN2_MASK);
         }
         else
             uNewDr2 = 0;
@@ -1722,12 +1305,7 @@ VMMDECL(int) CPUMRecalcHyperDRx(PVMCPU pVCpu, uint8_t iGstReg, bool fForceHyper)
         else if (uGstDr7 & (X86_DR7_L3 | X86_DR7_G3))
         {
             uNewDr3 = CPUMGetGuestDR3(pVCpu);
-#ifndef IN_RING0
-            if (fRawModeEnabled && MMHyperIsInsideArea(pVM, uNewDr3))
-                uNewDr3 = 0;
-            else
-#endif
-                uNewDr7 |= uGstDr7 & (X86_DR7_L3 | X86_DR7_G3 | X86_DR7_RW3_MASK | X86_DR7_LEN3_MASK);
+            uNewDr7 |= uGstDr7 & (X86_DR7_L3 | X86_DR7_G3 | X86_DR7_RW3_MASK | X86_DR7_LEN3_MASK);
         }
         else
             uNewDr3 = 0;
@@ -1735,49 +1313,17 @@ VMMDECL(int) CPUMRecalcHyperDRx(PVMCPU pVCpu, uint8_t iGstReg, bool fForceHyper)
         /*
          * Apply the updates.
          */
-#ifdef IN_RC
-        /* Make sure to save host registers first. */
-        if (!(pVCpu->cpum.s.fUseFlags & CPUM_USED_DEBUG_REGS_HOST))
-        {
-            if (!(pVCpu->cpum.s.fUseFlags & CPUM_USE_DEBUG_REGS_HOST))
-            {
-                pVCpu->cpum.s.Host.dr6 = ASMGetDR6();
-                pVCpu->cpum.s.Host.dr7 = ASMGetDR7();
-            }
-            pVCpu->cpum.s.Host.dr0 = ASMGetDR0();
-            pVCpu->cpum.s.Host.dr1 = ASMGetDR1();
-            pVCpu->cpum.s.Host.dr2 = ASMGetDR2();
-            pVCpu->cpum.s.Host.dr3 = ASMGetDR3();
-            pVCpu->cpum.s.fUseFlags |= CPUM_USED_DEBUG_REGS_HOST | CPUM_USE_DEBUG_REGS_HYPER | CPUM_USED_DEBUG_REGS_HYPER;
-
-            /* We haven't loaded any hyper DRxes yet, so we'll have to load them all now. */
-            pVCpu->cpum.s.Hyper.dr[0] = uNewDr0;
-            ASMSetDR0(uNewDr0);
-            pVCpu->cpum.s.Hyper.dr[1] = uNewDr1;
-            ASMSetDR1(uNewDr1);
-            pVCpu->cpum.s.Hyper.dr[2] = uNewDr2;
-            ASMSetDR2(uNewDr2);
-            pVCpu->cpum.s.Hyper.dr[3] = uNewDr3;
-            ASMSetDR3(uNewDr3);
-            ASMSetDR6(X86_DR6_INIT_VAL);
-            pVCpu->cpum.s.Hyper.dr[7] = uNewDr7;
-            ASMSetDR7(uNewDr7);
-        }
-        else
-#endif
-        {
-            pVCpu->cpum.s.fUseFlags |= CPUM_USE_DEBUG_REGS_HYPER;
-            if (uNewDr3 != pVCpu->cpum.s.Hyper.dr[3])
-                CPUMSetHyperDR3(pVCpu, uNewDr3);
-            if (uNewDr2 != pVCpu->cpum.s.Hyper.dr[2])
-                CPUMSetHyperDR2(pVCpu, uNewDr2);
-            if (uNewDr1 != pVCpu->cpum.s.Hyper.dr[1])
-                CPUMSetHyperDR1(pVCpu, uNewDr1);
-            if (uNewDr0 != pVCpu->cpum.s.Hyper.dr[0])
-                CPUMSetHyperDR0(pVCpu, uNewDr0);
-            if (uNewDr7 != pVCpu->cpum.s.Hyper.dr[7])
-                CPUMSetHyperDR7(pVCpu, uNewDr7);
-        }
+        pVCpu->cpum.s.fUseFlags |= CPUM_USE_DEBUG_REGS_HYPER;
+        if (uNewDr3 != pVCpu->cpum.s.Hyper.dr[3])
+            CPUMSetHyperDR3(pVCpu, uNewDr3);
+        if (uNewDr2 != pVCpu->cpum.s.Hyper.dr[2])
+            CPUMSetHyperDR2(pVCpu, uNewDr2);
+        if (uNewDr1 != pVCpu->cpum.s.Hyper.dr[1])
+            CPUMSetHyperDR1(pVCpu, uNewDr1);
+        if (uNewDr0 != pVCpu->cpum.s.Hyper.dr[0])
+            CPUMSetHyperDR0(pVCpu, uNewDr0);
+        if (uNewDr7 != pVCpu->cpum.s.Hyper.dr[7])
+            CPUMSetHyperDR7(pVCpu, uNewDr7);
     }
 #ifdef IN_RING0
     else if (CPUMIsGuestDebugStateActive(pVCpu))

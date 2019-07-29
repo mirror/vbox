@@ -675,47 +675,6 @@ static DECLCALLBACK(int) cpumR3RegGstSet_stN(void *pvUser, PCDBGFREGDESC pDesc, 
 /**
  * @interface_method_impl{DBGFREGDESC,pfnGet}
  */
-static DECLCALLBACK(int) cpumR3RegHyperGet_crX(void *pvUser, PCDBGFREGDESC pDesc, PDBGFREGVAL pValue)
-{
-    PVMCPU pVCpu = (PVMCPU)pvUser;
-    VMCPU_ASSERT_EMT(pVCpu);
-
-    uint64_t u64Value;
-    switch (pDesc->offRegister)
-    {
-        case 0: u64Value = UINT64_MAX; break;
-        case 2: u64Value = UINT64_MAX; break;
-        case 3: u64Value = CPUMGetHyperCR3(pVCpu); break;
-        case 4: u64Value = UINT64_MAX; break;
-        case 8: u64Value = UINT64_MAX; break;
-        default:
-            AssertFailedReturn(VERR_IPE_NOT_REACHED_DEFAULT_CASE);
-    }
-    switch (pDesc->enmType)
-    {
-        case DBGFREGVALTYPE_U64:    pValue->u64 = u64Value; break;
-        case DBGFREGVALTYPE_U32:    pValue->u32 = (uint32_t)u64Value; break;
-        default:
-            AssertFailedReturn(VERR_IPE_NOT_REACHED_DEFAULT_CASE);
-    }
-    return VINF_SUCCESS;
-}
-
-
-/**
- * @interface_method_impl{DBGFREGDESC,pfnGet}
- */
-static DECLCALLBACK(int) cpumR3RegHyperSet_crX(void *pvUser, PCDBGFREGDESC pDesc, PCDBGFREGVAL pValue, PCDBGFREGVAL pfMask)
-{
-    /* Not settable, prevents killing your host. */
-    NOREF(pvUser); NOREF(pDesc); NOREF(pValue); NOREF(pfMask);
-    return VERR_ACCESS_DENIED;
-}
-
-
-/**
- * @interface_method_impl{DBGFREGDESC,pfnGet}
- */
 static DECLCALLBACK(int) cpumR3RegHyperGet_drX(void *pvUser, PCDBGFREGDESC pDesc, PDBGFREGVAL pValue)
 {
     PVMCPU pVCpu = (PVMCPU)pvUser;
@@ -750,38 +709,6 @@ static DECLCALLBACK(int) cpumR3RegHyperGet_drX(void *pvUser, PCDBGFREGDESC pDesc
 static DECLCALLBACK(int) cpumR3RegHyperSet_drX(void *pvUser, PCDBGFREGDESC pDesc, PCDBGFREGVAL pValue, PCDBGFREGVAL pfMask)
 {
     /* Not settable, prevents killing your host. */
-    NOREF(pvUser); NOREF(pDesc); NOREF(pValue); NOREF(pfMask);
-    return VERR_ACCESS_DENIED;
-}
-
-
-/**
- * @interface_method_impl{DBGFREGDESC,pfnGet}
- */
-static DECLCALLBACK(int) cpumR3RegHyperGet_msr(void *pvUser, PCDBGFREGDESC pDesc, PDBGFREGVAL pValue)
-{
-    NOREF(pvUser);
-
-    /* Not availble at present, return all FFs to keep things quiet */
-    uint64_t u64Value = UINT64_MAX;
-    switch (pDesc->enmType)
-    {
-        case DBGFREGVALTYPE_U64:    pValue->u64 = u64Value; break;
-        case DBGFREGVALTYPE_U32:    pValue->u32 = (uint32_t)u64Value; break;
-        case DBGFREGVALTYPE_U16:    pValue->u16 = (uint16_t)u64Value; break;
-        default:
-            AssertFailedReturn(VERR_IPE_NOT_REACHED_DEFAULT_CASE);
-    }
-    return VINF_SUCCESS;
-}
-
-
-/**
- * @interface_method_impl{DBGFREGDESC,pfnGet}
- */
-static DECLCALLBACK(int) cpumR3RegHyperSet_msr(void *pvUser, PCDBGFREGDESC pDesc, PCDBGFREGVAL pValue, PCDBGFREGVAL pfMask)
-{
-    /* Not settable, return failure. */
     NOREF(pvUser); NOREF(pDesc); NOREF(pValue); NOREF(pfMask);
     return VERR_ACCESS_DENIED;
 }
@@ -1363,141 +1290,13 @@ static DBGFREGDESC const g_aCpumRegGstDescs[] =
  */
 static DBGFREGDESC const g_aCpumRegHyperDescs[] =
 {
-#define CPU_REG_RW_AS(a_szName, a_RegSuff, a_TypeSuff, a_CpumCtxMemb, a_pfnGet, a_pfnSet, a_paAliases, a_paSubFields) \
-    { a_szName, DBGFREG_##a_RegSuff, DBGFREGVALTYPE_##a_TypeSuff, 0 /*fFlags*/,            RT_OFFSETOF(CPUMCPU, Hyper.a_CpumCtxMemb), a_pfnGet, a_pfnSet, a_paAliases, a_paSubFields }
-#define CPU_REG_RO_AS(a_szName, a_RegSuff, a_TypeSuff, a_CpumCtxMemb, a_pfnGet, a_pfnSet, a_paAliases, a_paSubFields) \
-    { a_szName, DBGFREG_##a_RegSuff, DBGFREGVALTYPE_##a_TypeSuff, DBGFREG_FLAGS_READ_ONLY, RT_OFFSETOF(CPUMCPU, Hyper.a_CpumCtxMemb), a_pfnGet, a_pfnSet, a_paAliases, a_paSubFields }
-#define CPU_REG_DUMMY(a_szName, a_RegSuff, a_TypeSuff) \
-    { a_szName, DBGFREG_##a_RegSuff, DBGFREGVALTYPE_##a_TypeSuff, DBGFREG_FLAGS_READ_ONLY, 0, cpumR3RegGet_Dummy, cpumR3RegSet_Dummy, NULL, NULL}
-#define CPU_REG_MSR(a_szName, UName, a_TypeSuff, a_paSubFields) \
-    CPU_REG_EX_AS(a_szName,         MSR_##UName,    a_TypeSuff, MSR_##UName,    cpumR3RegHyperGet_msr,  cpumR3RegHyperSet_msr,  NULL,                       a_paSubFields)
-
-    CPU_REG_REG(RAX, rax),
-    CPU_REG_REG(RCX, rcx),
-    CPU_REG_REG(RDX, rdx),
-    CPU_REG_REG(RBX, rbx),
-    CPU_REG_REG(RSP, rsp),
-    CPU_REG_REG(RBP, rbp),
-    CPU_REG_REG(RSI, rsi),
-    CPU_REG_REG(RDI, rdi),
-    CPU_REG_REG(R8,   r8),
-    CPU_REG_REG(R9,   r9),
-    CPU_REG_REG(R10, r10),
-    CPU_REG_REG(R11, r11),
-    CPU_REG_REG(R12, r12),
-    CPU_REG_REG(R13, r13),
-    CPU_REG_REG(R14, r14),
-    CPU_REG_REG(R15, r15),
-    CPU_REG_SEG(CS, cs),
-    CPU_REG_SEG(DS, ds),
-    CPU_REG_SEG(ES, es),
-    CPU_REG_SEG(FS, fs),
-    CPU_REG_SEG(GS, gs),
-    CPU_REG_SEG(SS, ss),
-    CPU_REG_REG(RIP, rip),
-    CPU_REG_RW_AS("rflags",         RFLAGS,         U64, rflags,                cpumR3RegGet_Generic,   cpumR3RegSet_Generic,   g_aCpumRegAliases_rflags,   g_aCpumRegFields_rflags ),
-    CPU_REG_DUMMY("fcw",            FCW,            U16),
-    CPU_REG_DUMMY("fsw",            FSW,            U16),
-    CPU_REG_DUMMY("ftw",            FTW,            U16),
-    CPU_REG_DUMMY("fop",            FOP,            U16),
-    CPU_REG_DUMMY("fpuip",          FPUIP,          U32),
-    CPU_REG_DUMMY("fpucs",          FPUCS,          U16),
-    CPU_REG_DUMMY("fpudp",          FPUDP,          U32),
-    CPU_REG_DUMMY("fpuds",          FPUDS,          U16),
-    CPU_REG_DUMMY("mxcsr",          MXCSR,          U32),
-    CPU_REG_DUMMY("mxcsr_mask",     MXCSR_MASK,     U32),
-    CPU_REG_DUMMY("st0",            ST0,            R80),
-    CPU_REG_DUMMY("st1",            ST1,            R80),
-    CPU_REG_DUMMY("st2",            ST2,            R80),
-    CPU_REG_DUMMY("st3",            ST3,            R80),
-    CPU_REG_DUMMY("st4",            ST4,            R80),
-    CPU_REG_DUMMY("st5",            ST5,            R80),
-    CPU_REG_DUMMY("st6",            ST6,            R80),
-    CPU_REG_DUMMY("st7",            ST7,            R80),
-    CPU_REG_DUMMY("mm0",            MM0,            U64),
-    CPU_REG_DUMMY("mm1",            MM1,            U64),
-    CPU_REG_DUMMY("mm2",            MM2,            U64),
-    CPU_REG_DUMMY("mm3",            MM3,            U64),
-    CPU_REG_DUMMY("mm4",            MM4,            U64),
-    CPU_REG_DUMMY("mm5",            MM5,            U64),
-    CPU_REG_DUMMY("mm6",            MM6,            U64),
-    CPU_REG_DUMMY("mm7",            MM7,            U64),
-    CPU_REG_DUMMY("xmm0",           XMM0,           U128),
-    CPU_REG_DUMMY("xmm1",           XMM1,           U128),
-    CPU_REG_DUMMY("xmm2",           XMM2,           U128),
-    CPU_REG_DUMMY("xmm3",           XMM3,           U128),
-    CPU_REG_DUMMY("xmm4",           XMM4,           U128),
-    CPU_REG_DUMMY("xmm5",           XMM5,           U128),
-    CPU_REG_DUMMY("xmm6",           XMM6,           U128),
-    CPU_REG_DUMMY("xmm7",           XMM7,           U128),
-    CPU_REG_DUMMY("xmm8",           XMM8,           U128),
-    CPU_REG_DUMMY("xmm9",           XMM9,           U128),
-    CPU_REG_DUMMY("xmm10",          XMM10,          U128),
-    CPU_REG_DUMMY("xmm11",          XMM11,          U128),
-    CPU_REG_DUMMY("xmm12",          XMM12,          U128),
-    CPU_REG_DUMMY("xmm13",          XMM13,          U128),
-    CPU_REG_DUMMY("xmm14",          XMM14,          U128),
-    CPU_REG_DUMMY("xmm15",          XMM15,          U128),
-    CPU_REG_DUMMY("ymm0",           YMM0,           U256),
-    CPU_REG_DUMMY("ymm1",           YMM1,           U256),
-    CPU_REG_DUMMY("ymm2",           YMM2,           U256),
-    CPU_REG_DUMMY("ymm3",           YMM3,           U256),
-    CPU_REG_DUMMY("ymm4",           YMM4,           U256),
-    CPU_REG_DUMMY("ymm5",           YMM5,           U256),
-    CPU_REG_DUMMY("ymm6",           YMM6,           U256),
-    CPU_REG_DUMMY("ymm7",           YMM7,           U256),
-    CPU_REG_DUMMY("ymm8",           YMM8,           U256),
-    CPU_REG_DUMMY("ymm9",           YMM9,           U256),
-    CPU_REG_DUMMY("ymm10",          YMM10,          U256),
-    CPU_REG_DUMMY("ymm11",          YMM11,          U256),
-    CPU_REG_DUMMY("ymm12",          YMM12,          U256),
-    CPU_REG_DUMMY("ymm13",          YMM13,          U256),
-    CPU_REG_DUMMY("ymm14",          YMM14,          U256),
-    CPU_REG_DUMMY("ymm15",          YMM15,          U256),
-    CPU_REG_RW_AS("gdtr_base",      GDTR_BASE,      U64, gdtr.pGdt,             cpumR3RegGet_Generic,   cpumR3RegSet_Generic,   NULL,                       NULL                    ),
-    CPU_REG_RW_AS("gdtr_lim",       GDTR_LIMIT,     U16, gdtr.cbGdt,            cpumR3RegGet_Generic,   cpumR3RegSet_Generic,   NULL,                       NULL                    ),
-    CPU_REG_RW_AS("idtr_base",      IDTR_BASE,      U64, idtr.pIdt,             cpumR3RegGet_Generic,   cpumR3RegSet_Generic,   NULL,                       NULL                    ),
-    CPU_REG_RW_AS("idtr_lim",       IDTR_LIMIT,     U16, idtr.cbIdt,            cpumR3RegGet_Generic,   cpumR3RegSet_Generic,   NULL,                       NULL                    ),
-    CPU_REG_SEG(LDTR, ldtr),
-    CPU_REG_SEG(TR, tr),
-    CPU_REG_EX_AS("cr0",            CR0,            U32, 0,                     cpumR3RegHyperGet_crX,  cpumR3RegHyperSet_crX,  g_aCpumRegAliases_cr0,      g_aCpumRegFields_cr0    ),
-    CPU_REG_EX_AS("cr2",            CR2,            U64, 2,                     cpumR3RegHyperGet_crX,  cpumR3RegHyperSet_crX,  NULL,                       NULL                    ),
-    CPU_REG_EX_AS("cr3",            CR3,            U64, 3,                     cpumR3RegHyperGet_crX,  cpumR3RegHyperSet_crX,  NULL,                       g_aCpumRegFields_cr3    ),
-    CPU_REG_EX_AS("cr4",            CR4,            U32, 4,                     cpumR3RegHyperGet_crX,  cpumR3RegHyperSet_crX,  NULL,                       g_aCpumRegFields_cr4    ),
-    CPU_REG_EX_AS("cr8",            CR8,            U32, 8,                     cpumR3RegHyperGet_crX,  cpumR3RegHyperSet_crX,  NULL,                       NULL                    ),
     CPU_REG_EX_AS("dr0",            DR0,            U64, 0,                     cpumR3RegHyperGet_drX,  cpumR3RegHyperSet_drX,  NULL,                       NULL                    ),
     CPU_REG_EX_AS("dr1",            DR1,            U64, 1,                     cpumR3RegHyperGet_drX,  cpumR3RegHyperSet_drX,  NULL,                       NULL                    ),
     CPU_REG_EX_AS("dr2",            DR2,            U64, 2,                     cpumR3RegHyperGet_drX,  cpumR3RegHyperSet_drX,  NULL,                       NULL                    ),
     CPU_REG_EX_AS("dr3",            DR3,            U64, 3,                     cpumR3RegHyperGet_drX,  cpumR3RegHyperSet_drX,  NULL,                       NULL                    ),
     CPU_REG_EX_AS("dr6",            DR6,            U32, 6,                     cpumR3RegHyperGet_drX,  cpumR3RegHyperSet_drX,  NULL,                       g_aCpumRegFields_dr6    ),
     CPU_REG_EX_AS("dr7",            DR7,            U32, 7,                     cpumR3RegHyperGet_drX,  cpumR3RegHyperSet_drX,  NULL,                       g_aCpumRegFields_dr7    ),
-    CPU_REG_MSR("apic_base",     IA32_APICBASE,     U32, g_aCpumRegFields_apic_base  ),
-    CPU_REG_MSR("pat",           IA32_CR_PAT,       U64, g_aCpumRegFields_cr_pat     ),
-    CPU_REG_MSR("perf_status",   IA32_PERF_STATUS,  U64, g_aCpumRegFields_perf_status),
-    CPU_REG_MSR("sysenter_cs",   IA32_SYSENTER_CS,  U16, NULL                        ),
-    CPU_REG_MSR("sysenter_eip",  IA32_SYSENTER_EIP, U32, NULL                        ),
-    CPU_REG_MSR("sysenter_esp",  IA32_SYSENTER_ESP, U32, NULL                        ),
-    CPU_REG_MSR("tsc",           IA32_TSC,          U32, NULL                        ),
-    CPU_REG_MSR("efer",          K6_EFER,           U32, g_aCpumRegFields_efer       ),
-    CPU_REG_MSR("star",          K6_STAR,           U64, g_aCpumRegFields_star       ),
-    CPU_REG_MSR("cstar",         K8_CSTAR,          U64, g_aCpumRegFields_cstar      ),
-    CPU_REG_MSR("msr_fs_base",   K8_FS_BASE,        U64, NULL                        ),
-    CPU_REG_MSR("msr_gs_base",   K8_GS_BASE,        U64, NULL                        ),
-    CPU_REG_MSR("krnl_gs_base",  K8_KERNEL_GS_BASE, U64, NULL                        ),
-    CPU_REG_MSR("lstar",         K8_LSTAR,          U64, g_aCpumRegFields_lstar      ),
-    CPU_REG_MSR("sf_mask",       K8_SF_MASK,        U64, NULL                        ),
-    CPU_REG_MSR("tsc_aux",       K8_TSC_AUX,        U64, NULL                        ),
-    CPU_REG_EX_AS("ah",             AH,             U8,  RT_OFFSETOF(CPUMCPU, Hyper.rax) + 1, cpumR3RegGet_Generic, cpumR3RegSet_Generic, NULL,             NULL                    ),
-    CPU_REG_EX_AS("ch",             CH,             U8,  RT_OFFSETOF(CPUMCPU, Hyper.rcx) + 1, cpumR3RegGet_Generic, cpumR3RegSet_Generic, NULL,             NULL                    ),
-    CPU_REG_EX_AS("dh",             DH,             U8,  RT_OFFSETOF(CPUMCPU, Hyper.rdx) + 1, cpumR3RegGet_Generic, cpumR3RegSet_Generic, NULL,             NULL                    ),
-    CPU_REG_EX_AS("bh",             BH,             U8,  RT_OFFSETOF(CPUMCPU, Hyper.rbx) + 1, cpumR3RegGet_Generic, cpumR3RegSet_Generic, NULL,             NULL                    ),
-    CPU_REG_RW_AS("gdtr",           GDTR,           DTR, gdtr,                  cpumR3RegGet_gdtr,        cpumR3RegSet_gdtr,    NULL,                       NULL                    ),
-    CPU_REG_RW_AS("idtr",           IDTR,           DTR, idtr,                  cpumR3RegGet_idtr,        cpumR3RegSet_idtr,    NULL,                       NULL                    ),
     DBGFREGDESC_TERMINATOR()
-#undef CPU_REG_RW_AS
-#undef CPU_REG_RO_AS
-#undef CPU_REG_MSR
-#undef CPU_REG_ST
 };
 
 

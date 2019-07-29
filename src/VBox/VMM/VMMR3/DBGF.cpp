@@ -1353,11 +1353,9 @@ static DBGFSTEPINSTRTYPE dbgfStepGetCurInstrType(PVM pVM, PVMCPU pVCpu)
     /*
      * Read the instruction.
      */
-    bool     fIsHyper = dbgfR3FigureEventCtx(pVM) == DBGFEVENTCTX_HYPER;
     size_t   cbRead   = 0;
     uint8_t  abOpcode[16] = { 0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0 };
-    int rc = PGMR3DbgReadGCPtr(pVM, abOpcode, !fIsHyper ? CPUMGetGuestFlatPC(pVCpu) : CPUMGetHyperRIP(pVCpu),
-                               sizeof(abOpcode) - 1, 0 /*fFlags*/, &cbRead);
+    int rc = PGMR3DbgReadGCPtr(pVM, abOpcode, CPUMGetGuestFlatPC(pVCpu), sizeof(abOpcode) - 1, 0 /*fFlags*/, &cbRead);
     if (RT_SUCCESS(rc))
     {
         /*
@@ -1406,8 +1404,6 @@ static DBGFSTEPINSTRTYPE dbgfStepGetCurInstrType(PVM pVM, PVMCPU pVCpu)
                 /* Must handle some REX prefixes. So we do all normal prefixes. */
                 case 0x40: case 0x41: case 0x42: case 0x43: case 0x44: case 0x45: case 0x46: case 0x47:
                 case 0x48: case 0x49: case 0x4a: case 0x4b: case 0x4c: case 0x4d: case 0x4e: case 0x4f:
-                    if (fIsHyper) /* ASSUMES 32-bit raw-mode! */
-                        return DBGFSTEPINSTRTYPE_OTHER;
                     if (!CPUMIsGuestIn64BitCode(pVCpu))
                         return DBGFSTEPINSTRTYPE_OTHER;
                     break;
@@ -1463,13 +1459,11 @@ static bool dbgfStepAreWeThereYet(PVM pVM, PVMCPU pVCpu)
                  */
                 if (pVM->dbgf.s.SteppingFilter.fFlags & (DBGF_STEP_F_STOP_ON_ADDRESS | DBGF_STEP_F_STOP_ON_STACK_POP))
                 {
-                    bool fIsHyper = dbgfR3FigureEventCtx(pVM) == DBGFEVENTCTX_HYPER;
                     if (   (pVM->dbgf.s.SteppingFilter.fFlags & DBGF_STEP_F_STOP_ON_ADDRESS)
-                        && pVM->dbgf.s.SteppingFilter.AddrPc == (!fIsHyper ? CPUMGetGuestFlatPC(pVCpu) : CPUMGetHyperRIP(pVCpu)))
+                        && pVM->dbgf.s.SteppingFilter.AddrPc == CPUMGetGuestFlatPC(pVCpu))
                         return true;
                     if (   (pVM->dbgf.s.SteppingFilter.fFlags & DBGF_STEP_F_STOP_ON_STACK_POP)
-                        &&     (!fIsHyper ? CPUMGetGuestFlatSP(pVCpu) : (uint64_t)CPUMGetHyperESP(pVCpu))
-                             - pVM->dbgf.s.SteppingFilter.AddrStackPop
+                        &&   CPUMGetGuestFlatSP(pVCpu) - pVM->dbgf.s.SteppingFilter.AddrStackPop
                            < pVM->dbgf.s.SteppingFilter.cbStackPop)
                         return true;
                 }

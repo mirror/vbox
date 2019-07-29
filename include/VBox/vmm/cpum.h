@@ -1436,8 +1436,6 @@ VMMR3_INT_DECL(void)   CPUMR3ClearGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE en
 VMMR3_INT_DECL(bool)   CPUMR3GetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature);
 VMMDECL(bool)          CPUMSetGuestCpuIdPerCpuApicFeature(PVMCPU pVCpu, bool fVisible);
 VMMDECL(void)          CPUMSetGuestCtx(PVMCPU pVCpu, const PCPUMCTX pCtx);
-VMM_INT_DECL(void)     CPUMGuestLazyLoadHiddenCsAndSs(PVMCPU pVCpu);
-VMM_INT_DECL(void)     CPUMGuestLazyLoadHiddenSelectorReg(PVMCPU pVCpu, PCPUMSELREG pSReg);
 VMM_INT_DECL(void)     CPUMSetGuestTscAux(PVMCPU pVCpu, uint64_t uValue);
 VMM_INT_DECL(uint64_t) CPUMGetGuestTscAux(PVMCPU pVCpu);
 VMM_INT_DECL(void)     CPUMSetGuestSpecCtrl(PVMCPU pVCpu, uint64_t uValue);
@@ -2480,62 +2478,20 @@ DECLINLINE(bool) CPUMIsGuestVmxVirtIntrEnabled(PCVMCPU pVCpu, PCCPUMCTX pCtx)
 
 /** @name Hypervisor Register Getters.
  * @{ */
-VMMDECL(RTSEL)          CPUMGetHyperCS(PVMCPU pVCpu);
-VMMDECL(RTSEL)          CPUMGetHyperDS(PVMCPU pVCpu);
-VMMDECL(RTSEL)          CPUMGetHyperES(PVMCPU pVCpu);
-VMMDECL(RTSEL)          CPUMGetHyperFS(PVMCPU pVCpu);
-VMMDECL(RTSEL)          CPUMGetHyperGS(PVMCPU pVCpu);
-VMMDECL(RTSEL)          CPUMGetHyperSS(PVMCPU pVCpu);
-#if 0 /* these are not correct. */
-VMMDECL(uint32_t)       CPUMGetHyperCR0(PVMCPU pVCpu);
-VMMDECL(uint32_t)       CPUMGetHyperCR2(PVMCPU pVCpu);
-VMMDECL(uint32_t)       CPUMGetHyperCR3(PVMCPU pVCpu);
-VMMDECL(uint32_t)       CPUMGetHyperCR4(PVMCPU pVCpu);
-#endif
-/** This register is only saved on fatal traps. */
-VMMDECL(uint32_t)       CPUMGetHyperEAX(PVMCPU pVCpu);
-VMMDECL(uint32_t)       CPUMGetHyperEBX(PVMCPU pVCpu);
-/** This register is only saved on fatal traps. */
-VMMDECL(uint32_t)       CPUMGetHyperECX(PVMCPU pVCpu);
-/** This register is only saved on fatal traps. */
-VMMDECL(uint32_t)       CPUMGetHyperEDX(PVMCPU pVCpu);
-VMMDECL(uint32_t)       CPUMGetHyperESI(PVMCPU pVCpu);
-VMMDECL(uint32_t)       CPUMGetHyperEDI(PVMCPU pVCpu);
-VMMDECL(uint32_t)       CPUMGetHyperEBP(PVMCPU pVCpu);
-VMMDECL(uint32_t)       CPUMGetHyperESP(PVMCPU pVCpu);
-VMMDECL(uint32_t)       CPUMGetHyperEFlags(PVMCPU pVCpu);
-VMMDECL(uint32_t)       CPUMGetHyperEIP(PVMCPU pVCpu);
-VMMDECL(uint64_t)       CPUMGetHyperRIP(PVMCPU pVCpu);
-VMMDECL(uint32_t)       CPUMGetHyperIDTR(PVMCPU pVCpu, uint16_t *pcbLimit);
-VMMDECL(uint32_t)       CPUMGetHyperGDTR(PVMCPU pVCpu, uint16_t *pcbLimit);
-VMMDECL(RTSEL)          CPUMGetHyperLDTR(PVMCPU pVCpu);
 VMMDECL(RTGCUINTREG)    CPUMGetHyperDR0(PVMCPU pVCpu);
 VMMDECL(RTGCUINTREG)    CPUMGetHyperDR1(PVMCPU pVCpu);
 VMMDECL(RTGCUINTREG)    CPUMGetHyperDR2(PVMCPU pVCpu);
 VMMDECL(RTGCUINTREG)    CPUMGetHyperDR3(PVMCPU pVCpu);
 VMMDECL(RTGCUINTREG)    CPUMGetHyperDR6(PVMCPU pVCpu);
 VMMDECL(RTGCUINTREG)    CPUMGetHyperDR7(PVMCPU pVCpu);
-VMMDECL(void)           CPUMGetHyperCtx(PVMCPU pVCpu, PCPUMCTX pCtx);
 VMMDECL(uint32_t)       CPUMGetHyperCR3(PVMCPU pVCpu);
 /** @} */
 
 /** @name Hypervisor Register Setters.
  * @{ */
-VMMDECL(void)           CPUMSetHyperGDTR(PVMCPU pVCpu, uint32_t addr, uint16_t limit);
-VMMDECL(void)           CPUMSetHyperLDTR(PVMCPU pVCpu, RTSEL SelLDTR);
-VMMDECL(void)           CPUMSetHyperIDTR(PVMCPU pVCpu, uint32_t addr, uint16_t limit);
 VMMDECL(void)           CPUMSetHyperCR3(PVMCPU pVCpu, uint32_t cr3);
-VMMDECL(void)           CPUMSetHyperTR(PVMCPU pVCpu, RTSEL SelTR);
-VMMDECL(void)           CPUMSetHyperCS(PVMCPU pVCpu, RTSEL SelCS);
-VMMDECL(void)           CPUMSetHyperDS(PVMCPU pVCpu, RTSEL SelDS);
-VMMDECL(void)           CPUMSetHyperES(PVMCPU pVCpu, RTSEL SelDS);
-VMMDECL(void)           CPUMSetHyperFS(PVMCPU pVCpu, RTSEL SelDS);
-VMMDECL(void)           CPUMSetHyperGS(PVMCPU pVCpu, RTSEL SelDS);
-VMMDECL(void)           CPUMSetHyperSS(PVMCPU pVCpu, RTSEL SelSS);
 VMMDECL(void)           CPUMSetHyperESP(PVMCPU pVCpu, uint32_t u32ESP);
-VMMDECL(int)            CPUMSetHyperEFlags(PVMCPU pVCpu, uint32_t Efl);
 VMMDECL(void)           CPUMSetHyperEIP(PVMCPU pVCpu, uint32_t u32EIP);
-VMM_INT_DECL(void)      CPUMSetHyperState(PVMCPU pVCpu, uint32_t u32EIP, uint32_t u32ESP, uint32_t u32EAX, uint32_t u32EDX);
 VMMDECL(void)           CPUMSetHyperDR0(PVMCPU pVCpu, RTGCUINTREG uDr0);
 VMMDECL(void)           CPUMSetHyperDR1(PVMCPU pVCpu, RTGCUINTREG uDr1);
 VMMDECL(void)           CPUMSetHyperDR2(PVMCPU pVCpu, RTGCUINTREG uDr2);
@@ -2547,9 +2503,6 @@ VMMDECL(int)            CPUMRecalcHyperDRx(PVMCPU pVCpu, uint8_t iGstReg, bool f
 /** @} */
 
 VMMDECL(void)           CPUMPushHyper(PVMCPU pVCpu, uint32_t u32);
-VMMDECL(int)            CPUMQueryHyperCtxPtr(PVMCPU pVCpu, PCPUMCTX *ppCtx);
-VMMDECL(PCPUMCTX)       CPUMGetHyperCtxPtr(PVMCPU pVCpu);
-VMMDECL(PCCPUMCTXCORE)  CPUMGetHyperCtxCore(PVMCPU pVCpu);
 VMMDECL(PCPUMCTX)       CPUMQueryGuestCtxPtr(PVMCPU pVCpu);
 VMM_INT_DECL(PCPUMCTXMSRS) CPUMQueryGuestCtxMsrsPtr(PVMCPU pVCpu);
 VMMDECL(PCCPUMCTXCORE)  CPUMGetGuestCtxCore(PVMCPU pVCpu);

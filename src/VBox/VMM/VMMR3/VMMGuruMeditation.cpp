@@ -350,7 +350,7 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, PVMCPU pVCpu, int rcErr)
              * Active trap? This is only of partial interest when in hardware
              * assisted virtualization mode, thus the different messages.
              */
-            uint32_t        uEIP       = CPUMGetHyperEIP(pVCpu);
+            uint32_t        uEIP       = 0; //CPUMGetHyperEIP(pVCpu);
             TRPMEVENT       enmType;
             uint8_t         u8TrapNo   =       0xce;
             RTGCUINT        uErrorCode = 0xdeadface;
