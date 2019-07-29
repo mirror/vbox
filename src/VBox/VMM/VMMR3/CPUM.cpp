@@ -2183,7 +2183,7 @@ VMMR3DECL(int) CPUMR3Init(PVM pVM)
     AssertLogRelReturn(cbMaxXState >= sizeof(X86FXSTATE) && cbMaxXState <= _8K, VERR_CPUM_IPE_2);
 
     uint8_t *pbXStates;
-    rc = MMR3HyperAllocOnceNoRelEx(pVM, cbMaxXState * 3 * pVM->cCpus, PAGE_SIZE, MM_TAG_CPUM_CTX,
+    rc = MMR3HyperAllocOnceNoRelEx(pVM, cbMaxXState * 2 * pVM->cCpus, PAGE_SIZE, MM_TAG_CPUM_CTX,
                                    MMHYPER_AONR_FLAGS_KERNEL_MAPPING, (void **)&pbXStates);
     AssertLogRelRCReturn(rc, rc);
 
@@ -2199,11 +2199,6 @@ VMMR3DECL(int) CPUMR3Init(PVM pVM)
         pVCpu->cpum.s.Host.pXStateR3  = (PX86XSAVEAREA)pbXStates;
         pVCpu->cpum.s.Host.pXStateR0  = MMHyperR3ToR0(pVM, pbXStates);
         pVCpu->cpum.s.Host.pXStateRC  = MMHyperR3ToR0(pVM, pbXStates);
-        pbXStates += cbMaxXState;
-
-        pVCpu->cpum.s.Hyper.pXStateR3 = (PX86XSAVEAREA)pbXStates;
-        pVCpu->cpum.s.Hyper.pXStateR0 = MMHyperR3ToR0(pVM, pbXStates);
-        pVCpu->cpum.s.Hyper.pXStateRC = MMHyperR3ToR0(pVM, pbXStates);
         pbXStates += cbMaxXState;
 
         pVCpu->cpum.s.Host.fXStateMask = fXStateHostMask;
@@ -2312,7 +2307,6 @@ VMMR3DECL(void) CPUMR3Relocate(PVM pVM)
         PVMCPU pVCpu = &pVM->aCpus[iCpu];
         pVCpu->cpum.s.Guest.pXStateRC = MMHyperR3ToRC(pVM, pVCpu->cpum.s.Guest.pXStateR3);
         pVCpu->cpum.s.Host.pXStateRC  = MMHyperR3ToRC(pVM, pVCpu->cpum.s.Host.pXStateR3);
-        pVCpu->cpum.s.Hyper.pXStateRC = MMHyperR3ToRC(pVM, pVCpu->cpum.s.Hyper.pXStateR3); /** @todo remove me */
 
         /* Recheck the guest DRx values in raw-mode. */
         CPUMRecalcHyperDRx(pVCpu, UINT8_MAX, false);
@@ -2746,19 +2740,15 @@ static DECLCALLBACK(int) cpumR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVers
          * The hyper state used to preceed the CPU count.  Starting with
          * XSAVE it was moved down till after we've got the count.
          */
+        CPUMCTX HyperCtxIgnored;
         if (uVersion < CPUM_SAVED_STATE_VERSION_XSAVE)
         {
             for (VMCPUID iCpu = 0; iCpu < pVM->cCpus; iCpu++)
             {
-                PVMCPU      pVCpu = &pVM->aCpus[iCpu];
-                X86FXSTATE  Ign;
+                X86FXSTATE Ign;
                 SSMR3GetStructEx(pSSM, &Ign, sizeof(Ign), fLoad | SSMSTRUCT_FLAGS_NO_TAIL_MARKER, paCpumCtx1Fields, NULL);
-                uint64_t    uCR3  = pVCpu->cpum.s.Hyper.cr3;
-                uint64_t    uRSP  = pVCpu->cpum.s.Hyper.rsp; /* see VMMR3Relocate(). */
-                SSMR3GetStructEx(pSSM, &pVCpu->cpum.s.Hyper, sizeof(pVCpu->cpum.s.Hyper),
+                SSMR3GetStructEx(pSSM, &HyperCtxIgnored, sizeof(HyperCtxIgnored),
                                  fLoad | SSMSTRUCT_FLAGS_NO_LEAD_MARKER, paCpumCtx2Fields, NULL);
-                pVCpu->cpum.s.Hyper.cr3 = uCR3;
-                pVCpu->cpum.s.Hyper.rsp = uRSP;
             }
         }
 
@@ -2797,11 +2787,7 @@ static DECLCALLBACK(int) cpumR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVers
                 /*
                  * The XSAVE saved state layout moved the hyper state down here.
                  */
-                uint64_t    uCR3  = pVCpu->cpum.s.Hyper.cr3;
-                uint64_t    uRSP  = pVCpu->cpum.s.Hyper.rsp; /* see VMMR3Relocate(). */
-                rc = SSMR3GetStructEx(pSSM, &pVCpu->cpum.s.Hyper,     sizeof(pVCpu->cpum.s.Hyper),     0, g_aCpumCtxFields, NULL);
-                pVCpu->cpum.s.Hyper.cr3 = uCR3;
-                pVCpu->cpum.s.Hyper.rsp = uRSP;
+                rc = SSMR3GetStructEx(pSSM, &HyperCtxIgnored,         sizeof(HyperCtxIgnored),         0, g_aCpumCtxFields, NULL);
                 AssertRCReturn(rc, rc);
 
                 /*
@@ -4175,7 +4161,12 @@ static DECLCALLBACK(void) cpumR3InfoHyper(PVM pVM, PCDBGFINFOHLP pHlp, const cha
     const char *pszComment;
     cpumR3InfoParseArg(pszArgs, &enmType, &pszComment);
     pHlp->pfnPrintf(pHlp, "Hypervisor CPUM state: %s\n", pszComment);
-    cpumR3InfoOne(pVM, &pVCpu->cpum.s.Hyper, CPUMCTX2CORE(&pVCpu->cpum.s.Hyper), pHlp, enmType, ".");
+
+    pHlp->pfnPrintf(pHlp,
+                    ".dr0=%016RX64 .dr1=%016RX64 .dr2=%016RX64 .dr3=%016RX64\n"
+                    ".dr4=%016RX64 .dr5=%016RX64 .dr6=%016RX64 .dr7=%016RX64\n",
+                    pVCpu->cpum.s.Hyper.dr[0], pVCpu->cpum.s.Hyper.dr[1], pVCpu->cpum.s.Hyper.dr[2], pVCpu->cpum.s.Hyper.dr[3],
+                    pVCpu->cpum.s.Hyper.dr[4], pVCpu->cpum.s.Hyper.dr[5], pVCpu->cpum.s.Hyper.dr[6], pVCpu->cpum.s.Hyper.dr[7]);
     pHlp->pfnPrintf(pHlp, "CR4OrMask=%#x CR4AndMask=%#x\n", pVM->cpum.s.CR4.OrMask, pVM->cpum.s.CR4.AndMask);
 }
 

@@ -381,6 +381,29 @@ typedef CPUMHOSTCTX *PCPUMHOSTCTX;
 
 
 /**
+ * The hypervisor context CPU state (just DRx left now).
+ */
+typedef struct CPUMHYPERCTX
+{
+    /** Debug registers.
+     * @remarks DR4 and DR5 should not be used since they are aliases for
+     *          DR6 and DR7 respectively on both AMD and Intel CPUs.
+     * @remarks DR8-15 are currently not supported by AMD or Intel, so
+     *          neither do we.
+     */
+    uint64_t        dr[8];
+    /** @todo eliminiate the rest.   */
+    uint64_t        cr3;
+    uint64_t        au64Padding[7];
+} CPUMHYPERCTX;
+#ifndef VBOX_FOR_DTRACE_LIB
+AssertCompileSizeAlignment(CPUMHYPERCTX, 64);
+#endif
+/** Pointer to the hypervisor context CPU state. */
+typedef CPUMHYPERCTX *PCPUMHYPERCTX;
+
+
+/**
  * CPUM Data (part of VM)
  */
 typedef struct CPUM
@@ -516,8 +539,9 @@ typedef struct CPUMCPU
     /** Saved host context.  Only valid while inside RC or HM contexts.
      * Must be aligned on a 64-byte boundary. */
     CPUMHOSTCTX             Host;
-    /** Hypervisor context. Must be aligned on a 64-byte boundary. */
-    CPUMCTX                 Hyper;
+    /** Old hypervisor context, only used for combined DRx values now.
+     * Must be aligned on a 64-byte boundary. */
+    CPUMHYPERCTX            Hyper;
 
 #ifdef VBOX_WITH_CRASHDUMP_MAGIC
     uint8_t                 aMagic[56];
