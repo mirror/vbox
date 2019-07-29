@@ -86,7 +86,6 @@ struc HMCPU
     .u32HMError             resd    1
     alignb 8
     .fCtxChanged            resq    1
-    .u64HostTscAux          resq    1
 
     ; incomplete to save unnecessary pain...
 endstruc
