@@ -87,14 +87,20 @@ protected:
 
 private slots:
 
-    /** Handles Video Memory size slider change. */
-    void sltHandleVideoMemorySizeSliderChange();
-    /** Handles Video Memory size editor change. */
-    void sltHandleVideoMemorySizeEditorChange();
     /** Handles Guest Screen count slider change. */
     void sltHandleGuestScreenCountSliderChange();
     /** Handles Guest Screen count editor change. */
     void sltHandleGuestScreenCountEditorChange();
+    /** Handles Graphics Controller combo change. */
+    void sltHandleGraphicsControllerComboChange();
+#ifdef VBOX_WITH_CRHGSMI
+    /** Handles 3D Acceleration check-box change. */
+    void sltHandle3DAccelerationCheckboxChange();
+#endif
+#ifdef VBOX_WITH_VIDEOHWACCEL
+    /** Handles 2D Video Acceleration check-box change. */
+    void sltHandle2DVideoAccelerationCheckboxChange();
+#endif
 
     /** Handles recording toggle. */
     void sltHandleRecordingCheckboxToggle();
@@ -129,12 +135,8 @@ private:
     /** Cleanups all. */
     void cleanup();
 
-    /** Checks the VRAM requirements. */
-    void checkVRAMRequirements();
     /** Returns whether the VRAM requirements are important. */
     bool shouldWeWarnAboutLowVRAM();
-    /** Calculates the reasonably sane slider page step. */
-    static int calculatePageStep(int iMax);
 
     /** Searches for corresponding frame size preset. */
     void lookForCorrespondingFrameSizePreset();
@@ -161,16 +163,6 @@ private:
 
     /** Holds the guest OS type ID. */
     CGuestOSType  m_comGuestOSType;
-    /** Holds the minimum lower limit of VRAM (MiB). */
-    int           m_iMinVRAM;
-    /** Holds the maximum upper limit of VRAM (MiB). */
-    int           m_iMaxVRAM;
-    /** Holds the upper limit of VRAM (MiB) for this dialog.
-      * This value is lower than m_iMaxVRAM to save careless
-      * users from setting useless big values. */
-    int           m_iMaxVRAMVisible;
-    /** Holds the initial VRAM value when the dialog is opened. */
-    int           m_iInitialVRAM;
 #ifdef VBOX_WITH_CRHGSMI
     /** Holds whether the guest OS supports WDDM. */
     bool          m_fWddmModeSupported;

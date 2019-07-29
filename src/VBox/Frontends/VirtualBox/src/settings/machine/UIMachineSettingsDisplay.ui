@@ -34,56 +34,17 @@
         <widget class="QWidget" name="m_pContainerVideo">
          <layout class="QGridLayout" name="m_pLayoutContainerVideo">
           <item row="0" column="0">
-           <widget class="QLabel" name="m_pLabelVideoMemorySize">
+           <widget class="QLabel" name="m_pVideoMemoryLabel">
             <property name="text">
              <string>Video &amp;Memory:</string>
             </property>
             <property name="alignment">
              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
             </property>
-            <property name="buddy">
-             <cstring>m_pEditorVideoMemorySize</cstring>
-            </property>
            </widget>
           </item>
-          <item row="0" column="1" rowspan="2">
-           <layout class="QGridLayout" name="m_pLayoutVideoMemorySizeSlider">
-            <property name="spacing">
-             <number>0</number>
-            </property>
-            <item row="0" column="0" colspan="3">
-             <widget class="QIAdvancedSlider" name="m_pSliderVideoMemorySize">
-              <property name="whatsThis">
-               <string>Controls the amount of video memory provided to the virtual machine.</string>
-              </property>
-              <property name="orientation">
-               <enum>Qt::Horizontal</enum>
-              </property>
-             </widget>
-            </item>
-            <item row="1" column="0">
-             <widget class="QLabel" name="m_pLabelVideoMemorySizeMin"/>
-            </item>
-            <item row="1" column="1">
-             <spacer name="m_pSpacerVideoMemorySize">
-              <property name="orientation">
-               <enum>Qt::Horizontal</enum>
-              </property>
-              <property name="sizeHint" stdset="0">
-               <size>
-                <width>0</width>
-                <height>0</height>
-               </size>
-              </property>
-             </spacer>
-            </item>
-            <item row="1" column="2">
-             <widget class="QLabel" name="m_pLabelVideoMemorySizeMax"/>
-            </item>
-           </layout>
-          </item>
-          <item row="0" column="2">
-           <widget class="QSpinBox" name="m_pEditorVideoMemorySize">
+          <item row="0" column="1" rowspan="2" colspan="2">
+           <widget class="UIVideoMemoryEditor" name="m_pVideoMemoryEditor">
             <property name="whatsThis">
              <string>Controls the amount of video memory provided to the virtual machine.</string>
             </property>
@@ -815,6 +776,11 @@
    <class>UIScaleFactorEditor</class>
    <extends>QWidget</extends>
    <header>UIScaleFactorEditor.h</header>
+  </customwidget>
+  <customwidget>
+   <class>UIVideoMemoryEditor</class>
+   <extends>QWidget</extends>
+   <header>UIVideoMemoryEditor.h</header>
   </customwidget>
  </customwidgets>
  <resources/>
