@@ -450,7 +450,6 @@ RuntimeR3_SOURCES       = \
 	common/fs/ntfsvfs.cpp \
 	common/fs/RTFsCmdLs.cpp \
 	common/ioqueue/ioqueuebase.cpp \
-	common/ioqueue/ioqueue-aiofile-provider.cpp \
 	common/ioqueue/ioqueue-stdfile-provider.cpp \
 	common/ldr/ldr.cpp \
 	common/ldr/ldrELF.cpp \
@@ -825,6 +824,7 @@ endif
 VBOX_WITH_NT_DIRENUM = 1
 RuntimeR3_SOURCES.win = \
 	common/dbg/dbgmoddbghelp.cpp \
+	common/ioqueue/ioqueue-aiofile-provider.cpp \
 	generic/cdrom-generic.cpp \
 	generic/RTDirExists-generic.cpp \
 	generic/RTDirSetMode-generic.cpp \
@@ -920,6 +920,7 @@ RuntimeR3_SOURCES.win.x86   := \
 	common/string/memrchr.asm
 
 RuntimeR3_SOURCES.linux = \
+	common/ioqueue/ioqueue-aiofile-provider.cpp \
 	generic/cdrom-generic.cpp \
 	generic/RTCrStoreCreateSnapshotById-generic.cpp \
 	generic/RTDirQueryInfo-generic.cpp \
@@ -1107,6 +1108,7 @@ RuntimeR3_SOURCES.os2   = \
 	r3/posix/utf8-posix.cpp
 
 RuntimeR3_SOURCES.darwin = \
+	common/ioqueue/ioqueue-aiofile-provider.cpp \
 	darwin/RTErrConvertFromDarwin.cpp \
 	darwin/RTErrConvertFromDarwinCOM.cpp \
 	darwin/RTErrConvertFromDarwinIO.cpp \
@@ -1197,6 +1199,7 @@ RuntimeR3_SOURCES.darwin.amd64 += common/string/memrchr.asm
 
 ## @todo Make BSD sched, implement RTMP*.
 RuntimeR3_SOURCES.freebsd = \
+	common/ioqueue/ioqueue-aiofile-provider.cpp \
 	generic/cdrom-generic.cpp \
 	generic/RTCrStoreCreateSnapshotById-generic.cpp \
 	generic/RTDirQueryInfo-generic.cpp \
@@ -1364,6 +1367,7 @@ RuntimeR3_SOURCES.netbsd = \
 	r3/posix/utf8-posix.cpp
 
 RuntimeR3_SOURCES.solaris = \
+	common/ioqueue/ioqueue-aiofile-provider.cpp \
 	generic/cdrom-generic.cpp \
 	generic/RTCrStoreCreateSnapshotById-generic.cpp \
 	generic/RTDirQueryInfo-generic.cpp \

@@ -88,7 +88,9 @@ static PCRTIOQUEUEPROVVTABLE g_apIoQueueProviders[] =
 #if defined(RT_OS_LINUX)
     &g_RTIoQueueLnxIoURingProv,
 #endif
+#ifndef RT_OS_OS2
     &g_RTIoQueueAioFileProv,
+#endif
     &g_RTIoQueueStdFileProv
 };
 

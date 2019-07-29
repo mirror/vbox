@@ -36,8 +36,10 @@ RT_C_DECLS_BEGIN
 
 /** The standard file I/O queue provider using synchronous file access. */
 extern RTDATADECL(RTIOQUEUEPROVVTABLE const) g_RTIoQueueStdFileProv;
+#ifndef RT_OS_OS2
 /** The file I/O queue provider using the RTFileAio API. */
 extern RTDATADECL(RTIOQUEUEPROVVTABLE const) g_RTIoQueueAioFileProv;
+#endif
 #if defined(RT_OS_LINUX)
 /** The file I/O queue provider using the recently added io_uring interface when
  * available on the host. */
