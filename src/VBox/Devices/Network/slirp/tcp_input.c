@@ -721,7 +721,7 @@ findso:
 /*          sorwakeup(so); */
 
             /*
-             * If this is a short packet, then ACK now - with Nagel
+             * If this is a short packet, then ACK now - with Nagle
              *      congestion avoidance sender won't send more until
              *      he gets an ACK.
              *
