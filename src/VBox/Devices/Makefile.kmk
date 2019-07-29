@@ -1044,9 +1044,8 @@ VBOX_WITH_VMSVGA3D_DYNAMIC_LOAD = 1
   	$(PATH_STAGE_LIB)/VMMRCBuiltin$(VBOX_SUFF_LIB) \
   	$(PATH_STAGE_LIB)/VMMRCImp$(VBOX_SUFF_LIB)
   endif
+  $(call VBOX_SET_VER_INFO_RC,VBoxDDRC,VirtualBox VMM Devices and Drivers$(COMMA) raw-mode) # last!
  endif # VBOX_WITH_RAW_MODE
-
- $(call VBOX_SET_VER_INFO_RC,VBoxDDRC,VirtualBox VMM Devices and Drivers$(COMMA) raw-mode) # last!
 
 
  #
