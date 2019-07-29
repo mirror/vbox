@@ -110,6 +110,17 @@ void UIMachineAttributeSetter::setMachineAttribute(const CMachine &comConstMachi
                 }
                 break;
             }
+            case MachineAttribute_VideoMemory:
+            {
+                /* Change machine video memory (VRAM): */
+                comMachine.SetVRAMSize(guiAttribute.toInt());
+                if (!comMachine.isOk())
+                {
+                    msgCenter().cannotChangeMachineAttribute(comMachine);
+                    fErrorHappened = true;
+                }
+                break;
+            }
             default:
                 break;
         }

@@ -255,8 +255,14 @@ UITextTable UIDetailsGenerator::generateMachineInformationDisplay(CMachine &comM
 
     /* Video memory: */
     if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_VRAM)
+    {
+        /* Configure hovering anchor: */
+        const QString strAnchorType = QString("video_memory");
+        const int iVideoMemory = comMachine.GetVRAMSize();
         table << UITextTableLine(QApplication::translate("UIDetails", "Video Memory", "details (display)"),
-                                 QApplication::translate("UIDetails", "%1 MB", "details").arg(comMachine.GetVRAMSize()));
+                                 QApplication::translate("UIDetails", "<a href=#%1,%2>%2 MB</a>", "details")
+                                    .arg(strAnchorType).arg(iVideoMemory));
+    }
 
     /* Screens: */
     if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_ScreenCount)

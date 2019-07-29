@@ -34,6 +34,7 @@ enum MachineAttribute
     MachineAttribute_Location,
     MachineAttribute_BaseMemory,
     MachineAttribute_BootOrder,
+    MachineAttribute_VideoMemory,
 };
 
 /** Namespace used to assign CMachine attributes on more convenient basis. */
