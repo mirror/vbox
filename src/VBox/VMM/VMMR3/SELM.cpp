@@ -82,8 +82,6 @@
 #include <iprt/thread.h>
 #include <iprt/string.h>
 
-#include "SELMInline.h"
-
 
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *

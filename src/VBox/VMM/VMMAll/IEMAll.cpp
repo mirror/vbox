@@ -1110,14 +1110,6 @@ DECLINLINE(void) iemInitExec(PVMCPU pVCpu, bool fBypassHandlers)
     pVCpu->iem.s.iNextMapping       = 0;
     pVCpu->iem.s.rcPassUp           = VINF_SUCCESS;
     pVCpu->iem.s.fBypassHandlers    = fBypassHandlers;
-#ifdef VBOX_WITH_RAW_MODE_NOT_R0
-    pVCpu->iem.s.fInPatchCode       = pVCpu->iem.s.uCpl == 0
-                               && pVCpu->cpum.GstCtx.cs.u64Base == 0
-                               && pVCpu->cpum.GstCtx.cs.u32Limit == UINT32_MAX
-                               && PATMIsPatchGCAddr(pVCpu->CTX_SUFF(pVM), pVCpu->cpum.GstCtx.eip);
-    if (!pVCpu->iem.s.fInPatchCode)
-        CPUMRawLeave(pVCpu, VINF_SUCCESS);
-#endif
 #if 0
 #if defined(VBOX_WITH_NESTED_HWVIRT_VMX) && !defined(IN_RC)
     if (    CPUMIsGuestInVmxNonRootMode(&pVCpu->cpum.GstCtx)
@@ -1268,14 +1260,6 @@ DECLINLINE(void) iemInitDecoder(PVMCPU pVCpu, bool fBypassHandlers)
     pVCpu->iem.s.iNextMapping       = 0;
     pVCpu->iem.s.rcPassUp           = VINF_SUCCESS;
     pVCpu->iem.s.fBypassHandlers    = fBypassHandlers;
-#ifdef VBOX_WITH_RAW_MODE_NOT_R0
-    pVCpu->iem.s.fInPatchCode       = pVCpu->iem.s.uCpl == 0
-                               && pVCpu->cpum.GstCtx.cs.u64Base == 0
-                               && pVCpu->cpum.GstCtx.cs.u32Limit == UINT32_MAX
-                               && PATMIsPatchGCAddr(pVCpu->CTX_SUFF(pVM), pVCpu->cpum.GstCtx.eip);
-    if (!pVCpu->iem.s.fInPatchCode)
-        CPUMRawLeave(pVCpu, VINF_SUCCESS);
-#endif
 
 #ifdef DBGFTRACE_ENABLED
     switch (enmMode)
@@ -1379,19 +1363,6 @@ DECLINLINE(void) iemReInitDecoder(PVMCPU pVCpu)
     pVCpu->iem.s.iNextMapping       = 0;
     Assert(pVCpu->iem.s.rcPassUp   == VINF_SUCCESS);
     Assert(pVCpu->iem.s.fBypassHandlers == false);
-#ifdef VBOX_WITH_RAW_MODE_NOT_R0
-    if (!pVCpu->iem.s.fInPatchCode)
-    { /* likely */ }
-    else
-    {
-        pVCpu->iem.s.fInPatchCode   = pVCpu->iem.s.uCpl == 0
-                               && pVCpu->cpum.GstCtx.cs.u64Base == 0
-                               && pVCpu->cpum.GstCtx.cs.u32Limit == UINT32_MAX
-                               && PATMIsPatchGCAddr(pVCpu->CTX_SUFF(pVM), pVCpu->cpum.GstCtx.eip);
-        if (!pVCpu->iem.s.fInPatchCode)
-            CPUMRawLeave(pVCpu, VINF_SUCCESS);
-    }
-#endif
 
 #ifdef DBGFTRACE_ENABLED
     switch (enmMode)
@@ -3574,30 +3545,22 @@ IEM_STATIC VBOXSTRICTRC iemMiscValidateNewSS(PVMCPU pVCpu, RTSEL NewSS, uint8_t 
 
 /**
  * Gets the correct EFLAGS regardless of whether PATM stores parts of them or
- * not.
+ * not (kind of obsolete now).
  *
  * @param   a_pVCpu The cross context virtual CPU structure of the calling thread.
  */
-#ifdef VBOX_WITH_RAW_MODE_NOT_R0
-# define IEMMISC_GET_EFL(a_pVCpu)           ( CPUMRawGetEFlags(a_pVCpu) )
-#else
-# define IEMMISC_GET_EFL(a_pVCpu)           ( (a_pVCpu)->cpum.GstCtx.eflags.u  )
-#endif
+#define IEMMISC_GET_EFL(a_pVCpu)            ( (a_pVCpu)->cpum.GstCtx.eflags.u  )
 
 /**
- * Updates the EFLAGS in the correct manner wrt. PATM.
+ * Updates the EFLAGS in the correct manner wrt. PATM (kind of obsolete).
  *
  * @param   a_pVCpu The cross context virtual CPU structure of the calling thread.
  * @param   a_fEfl  The new EFLAGS.
  */
-#ifdef VBOX_WITH_RAW_MODE_NOT_R0
-# define IEMMISC_SET_EFL(a_pVCpu, a_fEfl)   CPUMRawSetEFlags((a_pVCpu), a_fEfl)
-#else
-# define IEMMISC_SET_EFL(a_pVCpu, a_fEfl)   do { (a_pVCpu)->cpum.GstCtx.eflags.u = (a_fEfl); } while (0)
-#endif
+#define IEMMISC_SET_EFL(a_pVCpu, a_fEfl)    do { (a_pVCpu)->cpum.GstCtx.eflags.u = (a_fEfl); } while (0)
 
+/** @} */
 
-/** @}  */
 
 /** @name  Raising Exceptions.
  *
@@ -14172,34 +14135,6 @@ DECLINLINE(VBOXSTRICTRC) iemExecOneInner(PVMCPU pVCpu, bool fExecuteInhibit, con
     Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pVCpu->cpum.GstCtx.ss));
     return rcStrict;
 }
-
-
-#ifdef IN_RC
-/**
- * Re-enters raw-mode or ensure we return to ring-3.
- *
- * @returns rcStrict, maybe modified.
- * @param   pVCpu       The cross context virtual CPU structure of the calling thread.
- * @param   rcStrict    The status code returne by the interpreter.
- */
-DECLINLINE(VBOXSTRICTRC) iemRCRawMaybeReenter(PVMCPU pVCpu, VBOXSTRICTRC rcStrict)
-{
-    if (   !pVCpu->iem.s.fInPatchCode
-        && (   rcStrict == VINF_SUCCESS
-            || rcStrict == VERR_IEM_INSTR_NOT_IMPLEMENTED  /* pgmPoolAccessPfHandlerFlush */
-            || rcStrict == VERR_IEM_ASPECT_NOT_IMPLEMENTED /* ditto */ ) )
-    {
-        if (pVCpu->cpum.GstCtx.eflags.Bits.u1IF || rcStrict != VINF_SUCCESS)
-            CPUMRawEnter(pVCpu);
-        else
-        {
-            Log(("iemRCRawMaybeReenter: VINF_EM_RESCHEDULE\n"));
-            rcStrict = VINF_EM_RESCHEDULE;
-        }
-    }
-    return rcStrict;
-}
-#endif
 
 
 /**

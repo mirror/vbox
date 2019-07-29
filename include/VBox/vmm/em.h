@@ -267,9 +267,6 @@ VMM_INT_DECL(VBOXSTRICTRC)      EMInterpretInstruction(PVMCPU pVCpu, PCPUMCTXCOR
 VMM_INT_DECL(VBOXSTRICTRC)      EMInterpretInstructionEx(PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbWritten);
 VMM_INT_DECL(VBOXSTRICTRC)      EMInterpretInstructionDisasState(PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE pCoreCtx,
                                                                  RTGCPTR pvFault, EMCODETYPE enmCodeType);
-#ifdef IN_RC
-VMM_INT_DECL(int)               EMInterpretIretV86ForPatm(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame);
-#endif
 VMM_INT_DECL(int)               EMInterpretRdpmc(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame);
 VMM_INT_DECL(int)               EMInterpretDRxWrite(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t DestRegDrx, uint32_t SrcRegGen);
 VMM_INT_DECL(int)               EMInterpretDRxRead(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t DestRegGen, uint32_t SrcRegDrx);

@@ -374,8 +374,7 @@ typedef struct IEMCPU
 
     /** Whether to bypass access handlers or not. */
     bool                    fBypassHandlers;                                                                /* 0x06 */
-    /** Indicates that we're interpreting patch code - RC only! */
-    bool                    fInPatchCode;                                                                   /* 0x07 */
+    bool                    fUnusedWasInPatchCode;                                                          /* 0x07 */
 
     /** @name Decoder state.
      * @{ */

@@ -88,23 +88,9 @@ AssertCompileSize(CPUMSELREG, 24);
 /** @} */
 
 /** Checks if the hidden parts of the selector register are valid. */
-#ifdef VBOX_WITH_RAW_MODE_NOT_R0
-# define CPUMSELREG_ARE_HIDDEN_PARTS_VALID(a_pVCpu, a_pSelReg) \
-    (   ((a_pSelReg)->fFlags & CPUMSELREG_FLAGS_VALID) \
-     && (   (a_pSelReg)->ValidSel == (a_pSelReg)->Sel \
-         || (   (a_pVCpu) /*!= NULL*/ \
-             && (a_pSelReg)->ValidSel == ((a_pSelReg)->Sel & X86_SEL_MASK_OFF_RPL) \
-             && ((a_pSelReg)->Sel      & X86_SEL_RPL) == 1 \
-             && ((a_pSelReg)->ValidSel & X86_SEL_RPL) == 0 \
-             && CPUMIsGuestInRawMode(a_pVCpu) \
-            ) \
-        ) \
-    )
-#else
-# define CPUMSELREG_ARE_HIDDEN_PARTS_VALID(a_pVCpu, a_pSelReg) \
+#define CPUMSELREG_ARE_HIDDEN_PARTS_VALID(a_pVCpu, a_pSelReg) \
     (   ((a_pSelReg)->fFlags & CPUMSELREG_FLAGS_VALID) \
      && (a_pSelReg)->ValidSel == (a_pSelReg)->Sel  )
-#endif
 
 /** Old type used for the hidden register part.
  * @deprecated  */

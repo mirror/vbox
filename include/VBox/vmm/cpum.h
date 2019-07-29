@@ -1457,7 +1457,6 @@ VMMDECL(bool)       CPUMIsGuestInProtectedMode(PCVMCPU pVCpu);
 VMMDECL(bool)       CPUMIsGuestInPagedProtectedMode(PCVMCPU pVCpu);
 VMMDECL(bool)       CPUMIsGuestInLongMode(PCVMCPU pVCpu);
 VMMDECL(bool)       CPUMIsGuestInPAEMode(PCVMCPU pVCpu);
-VMM_INT_DECL(bool)  CPUMIsGuestInRawMode(PCVMCPU pVCpu);
 /** @} */
 
 /** @name Nested Hardware-Virtualization Helpers.
@@ -2496,17 +2495,12 @@ VMMDECL(void)           CPUMSetHyperDR2(PVMCPU pVCpu, RTGCUINTREG uDr2);
 VMMDECL(void)           CPUMSetHyperDR3(PVMCPU pVCpu, RTGCUINTREG uDr3);
 VMMDECL(void)           CPUMSetHyperDR6(PVMCPU pVCpu, RTGCUINTREG uDr6);
 VMMDECL(void)           CPUMSetHyperDR7(PVMCPU pVCpu, RTGCUINTREG uDr7);
-VMMDECL(void)           CPUMSetHyperCtx(PVMCPU pVCpu, const PCPUMCTX pCtx);
 VMMDECL(int)            CPUMRecalcHyperDRx(PVMCPU pVCpu, uint8_t iGstReg, bool fForceHyper);
 /** @} */
 
 VMMDECL(PCPUMCTX)       CPUMQueryGuestCtxPtr(PVMCPU pVCpu);
 VMM_INT_DECL(PCPUMCTXMSRS) CPUMQueryGuestCtxMsrsPtr(PVMCPU pVCpu);
 VMMDECL(PCCPUMCTXCORE)  CPUMGetGuestCtxCore(PVMCPU pVCpu);
-VMM_INT_DECL(int)       CPUMRawEnter(PVMCPU pVCpu);
-VMM_INT_DECL(int)       CPUMRawLeave(PVMCPU pVCpu, int rc);
-VMMDECL(uint32_t)       CPUMRawGetEFlags(PVMCPU pVCpu);
-VMMDECL(void)           CPUMRawSetEFlags(PVMCPU pVCpu, uint32_t fEfl);
 
 /** @name Changed flags.
  * These flags are used to keep track of which important register that
