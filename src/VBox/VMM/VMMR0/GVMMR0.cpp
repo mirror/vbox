@@ -898,11 +898,7 @@ GVMMR0DECL(int) GVMMR0CreateVM(PSUPDRVSESSION pSession, uint32_t cCpus, PVM *ppV
                     const uint32_t  cbVM      = RT_UOFFSETOF_DYN(GVM, aCpus[cCpus]);
                     const uint32_t  cPages    = RT_ALIGN_32(cbVM, PAGE_SIZE) >> PAGE_SHIFT;
                     RTR0MEMOBJ      hVMMemObj = NIL_RTR0MEMOBJ;
-# if defined(VBOX_WITH_RAW_MODE) || HC_ARCH_BITS == 32
-                    rc = RTR0MemObjAllocLow(&hVMMemObj, cPages << PAGE_SHIFT, false /* fExecutable */);
-# else
                     rc = RTR0MemObjAllocPage(&hVMMemObj, cPages << PAGE_SHIFT, false /* fExecutable */);
-# endif
                     if (RT_SUCCESS(rc))
                     {
                         PGVM pGVM = (PGVM)RTR0MemObjAddress(hVMMemObj);
@@ -1063,9 +1059,6 @@ GVMMR0DECL(int) GVMMR0CreateVM(PSUPDRVSESSION pSession, uint32_t cCpus, PVM *ppV
                             pVM->cbSelf           = cbVM;
                             pVM->cCpus            = cCpus;
                             pVM->uCpuExecutionCap = 100; /* default is no cap. */
-# ifdef VBOX_WITH_RAW_MODE
-                            pVM->offVMCPU         = RT_UOFFSETOF_DYN(VM, aCpus);
-# endif
                             AssertCompileMemberAlignment(VM, cpum, 64);
                             AssertCompileMemberAlignment(VM, tm, 64);
                             AssertCompileMemberAlignment(VM, aCpus, PAGE_SIZE);
@@ -1236,9 +1229,6 @@ static void gvmmR0InitPerVMData(PGVM pGVM)
     pGVM->uStructVersion   = 1;
     pGVM->cbSelf           = sizeof(VM);
     pGVM->cbVCpu           = sizeof(VMCPU);
-# ifdef VBOX_WITH_RAW_MODE
-    pGVM->offVMCPU         = RT_UOFFSETOF_DYN(GVM, aCpus); /** @todo set this when mapping the VM structure into raw-mode context */
-# endif
 #endif
 
     /* GVMM: */
