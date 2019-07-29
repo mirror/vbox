@@ -1552,7 +1552,7 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleRuntimeShowSoftKeyboard(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/keyboard_settings_16px.png", ":/keyboard_settings_disabled_16px.png", true)
+        : UIActionSimple(pParent, UIIconPool::iconSet(":/soft_keyboard_16px.png"), true)
     {}
 
 protected:

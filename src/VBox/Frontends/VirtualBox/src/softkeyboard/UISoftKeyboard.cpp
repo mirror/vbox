@@ -1338,22 +1338,22 @@ void UILayoutSelector::prepareObjects()
     pLayout->addLayout(pButtonsLayout);
 
     m_pEditLayoutButton = new QToolButton;
-    m_pEditLayoutButton->setIcon(UIIconPool::iconSet(":/keyboard_settings_16px.png"));
+    m_pEditLayoutButton->setIcon(UIIconPool::iconSet(":/soft_keyboard_layout_edit_16px.png", ":/soft_keyboard_layout_edit_disabled_16px.png"));
     pButtonsLayout->addWidget(m_pEditLayoutButton);
     connect(m_pEditLayoutButton, &QToolButton::clicked, this, &UILayoutSelector::sigShowLayoutEditor);
 
     m_pCopyLayoutButton = new QToolButton;
-    m_pCopyLayoutButton->setIcon(UIIconPool::iconSet(":/vm_clone_16px.png"));
+    m_pCopyLayoutButton->setIcon(UIIconPool::iconSet(":/soft_keyboard_layout_copy_16px.png", ":/soft_keyboard_layout_copy_disabled_16px.png"));
     pButtonsLayout->addWidget(m_pCopyLayoutButton);
     connect(m_pCopyLayoutButton, &QToolButton::clicked, this, &UILayoutSelector::sigCopyLayout);
 
     m_pSaveLayoutButton = new QToolButton;
-    m_pSaveLayoutButton->setIcon(UIIconPool::iconSet(":/vm_save_state_16px.png"));
+    m_pSaveLayoutButton->setIcon(UIIconPool::iconSet(":/soft_keyboard_layout_save_16px.png", ":/soft_keyboard_layout_save_disabled_16px.png"));
     pButtonsLayout->addWidget(m_pSaveLayoutButton);
     connect(m_pSaveLayoutButton, &QToolButton::clicked, this, &UILayoutSelector::sigSaveLayout);
 
     m_pDeleteLayoutButton = new QToolButton;
-    m_pDeleteLayoutButton->setIcon(UIIconPool::iconSet(":/file_manager_delete_16px.png"));
+    m_pDeleteLayoutButton->setIcon(UIIconPool::iconSet(":/soft_keyboard_layout_remove_16px.png", ":/soft_keyboard_layout_remove_disabled_16px.png"));
     pButtonsLayout->addWidget(m_pDeleteLayoutButton);
     connect(m_pDeleteLayoutButton, &QToolButton::clicked, this, &UILayoutSelector::sigDeleteLayout);
 
@@ -3281,7 +3281,7 @@ void UISoftKeyboardStatusBarWidget::prepareObjects()
     m_pLayoutListButton = new QToolButton;
     if (m_pLayoutListButton)
     {
-        m_pLayoutListButton->setIcon(UIIconPool::iconSet(":/file_manager_properties_24px.png"));
+        m_pLayoutListButton->setIcon(UIIconPool::iconSet(":/soft_keyboard_layout_list_16px.png", ":/soft_keyboard_layout_list_disabled_16px.png"));
         m_pLayoutListButton->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
         const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
         m_pLayoutListButton->resize(QSize(iIconMetric, iIconMetric));
@@ -3293,7 +3293,7 @@ void UISoftKeyboardStatusBarWidget::prepareObjects()
     m_pSettingsButton = new QToolButton;
     if (m_pSettingsButton)
     {
-        m_pSettingsButton->setIcon(UIIconPool::iconSet(":/vm_settings_16px.png"));
+        m_pSettingsButton->setIcon(UIIconPool::iconSet(":/soft_keyboard_settings_16px.png", ":/soft_keyboard_settings_disabled_16px.png"));
         m_pSettingsButton->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
         const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
         m_pSettingsButton->resize(QSize(iIconMetric, iIconMetric));
@@ -3305,7 +3305,7 @@ void UISoftKeyboardStatusBarWidget::prepareObjects()
     m_pResetButton = new QToolButton;
     if (m_pResetButton)
     {
-        m_pResetButton->setIcon(UIIconPool::iconSet(":/hd_release_16px.png"));
+        m_pResetButton->setIcon(UIIconPool::iconSet(":/soft_keyboard_reset_16px.png"));
         m_pResetButton->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
         const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
         m_pResetButton->resize(QSize(iIconMetric, iIconMetric));
@@ -3839,7 +3839,7 @@ void UISoftKeyboard::loadSettings()
 
 void UISoftKeyboard::configure()
 {
-    setWindowIcon(UIIconPool::iconSet(":/keyboard_24px.png"));
+    setWindowIcon(UIIconPool::iconSet(":/soft_keyboard_16px.png"));
     if (m_pKeyboardWidget && m_pSettingsWidget)
     {
         m_pSettingsWidget->setHideOSMenuKeys(m_pKeyboardWidget->hideOSMenuKeys());

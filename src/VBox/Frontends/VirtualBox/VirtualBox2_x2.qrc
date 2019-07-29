@@ -1,11 +1,5 @@
 <RCC>
     <qresource suffix="/">
-        <file alias="log_viewer_options_16px_x2.png">images/x2/log_viewer_options_16px_x2.png</file>
-        <file alias="log_viewer_options_32px_x2.png">images/x2/log_viewer_options_32px_x2.png</file>
-        <file alias="log_viewer_options_disabled_16px_x2.png">images/x2/log_viewer_options_disabled_16px_x2.png</file>
-        <file alias="log_viewer_options_disabled_32px_x2.png">images/x2/log_viewer_options_disabled_32px_x2.png</file>
-        <file alias="log_viewer_refresh_16px_x2.png">images/x2/log_viewer_refresh_16px_x2.png</file>
-        <file alias="log_viewer_refresh_32px_x2.png">images/x2/log_viewer_refresh_32px_x2.png</file>
         <file alias="log_viewer_refresh_disabled_16px_x2.png">images/x2/log_viewer_refresh_disabled_16px_x2.png</file>
         <file alias="log_viewer_refresh_disabled_32px_x2.png">images/x2/log_viewer_refresh_disabled_32px_x2.png</file>
         <file alias="log_viewer_reset_font_16px_x2.png">images/x2/log_viewer_reset_font_16px_x2.png</file>
@@ -265,6 +259,19 @@
         <file alias="snapshot_take_32px_x2.png">images/x2/snapshot_take_32px_x2.png</file>
         <file alias="snapshot_take_disabled_16px_x2.png">images/x2/snapshot_take_disabled_16px_x2.png</file>
         <file alias="snapshot_take_disabled_32px_x2.png">images/x2/snapshot_take_disabled_32px_x2.png</file>
+        <file alias="soft_keyboard_16px_x2.png">images/x2/soft_keyboard_16px_x2.png</file>
+        <file alias="soft_keyboard_32px_x2.png">images/x2/soft_keyboard_32px_x2.png</file>
+        <file alias="soft_keyboard_layout_copy_16px_x2.png">images/x2/soft_keyboard_layout_copy_16px_x2.png</file>
+        <file alias="soft_keyboard_layout_copy_disabled_16px_x2.png">images/x2/soft_keyboard_layout_copy_disabled_16px_x2.png</file>
+        <file alias="soft_keyboard_layout_edit_16px_x2.png">images/x2/soft_keyboard_layout_edit_16px_x2.png</file>
+        <file alias="soft_keyboard_layout_edit_disabled_16px_x2.png">images/x2/soft_keyboard_layout_edit_disabled_16px_x2.png</file>
+        <file alias="soft_keyboard_layout_list_16px_x2.png">images/x2/soft_keyboard_layout_list_16px_x2.png</file>
+        <file alias="soft_keyboard_layout_remove_16px_x2.png">images/x2/soft_keyboard_layout_remove_16px_x2.png</file>
+        <file alias="soft_keyboard_layout_remove_disabled_16px_x2.png">images/x2/soft_keyboard_layout_remove_disabled_16px_x2.png</file>
+        <file alias="soft_keyboard_layout_save_16px_x2.png">images/x2/soft_keyboard_layout_save_16px_x2.png</file>
+        <file alias="soft_keyboard_layout_save_disabled_16px_x2.png">images/x2/soft_keyboard_layout_save_disabled_16px_x2.png</file>
+        <file alias="soft_keyboard_reset_16px_x2.png">images/x2/soft_keyboard_reset_16px_x2.png</file>
+        <file alias="soft_keyboard_settings_16px_x2.png">images/x2/soft_keyboard_settings_16px_x2.png</file>
         <file alias="sort_16px_x2.png">images/x2/sort_16px_x2.png</file>
         <file alias="sort_disabled_16px_x2.png">images/x2/sort_disabled_16px_x2.png</file>
         <file alias="sound_16px_x2.png">images/x2/sound_16px_x2.png</file>
