@@ -51,6 +51,11 @@
  * mode. While in ImPS/2 or PS/2 mode, three consecutive Set Sampling Rate
  * commands with arguments 200, 200, 80 switch to ImEx mode. The Read ID (0F2h)
  * command will report the currently selected protocol.
+ * 
+ * There is an extended ImEx mode with support for horizontal scrolling. It is
+ * entered from ImEx mode with a 200, 80, 40 sequence of Set Sampling Rate
+ * commands. It does not change the reported protocol (it remains 4, or ImEx)
+ * but changes the meaning of the 4th byte.
  *
  *
  * Standard PS/2 pointing device three-byte report packet format:
@@ -89,7 +94,50 @@
  * +--------+--------+--------+--------+--------+--------+--------+--------+--------+
  * | Byte 4 |   0    |   0    | Btn 5  | Btn 4  |  Z mov't delta (two's complement) |
  * +--------+--------+--------+--------+--------+--------+--------+--------+--------+
+ * 
+ *   - The Z delta values are in practice only -1/+1; some mice (A4tech?) report
+ *     horizontal scrolling as -2/+2.
  *
+ * IntelliMouse Explorer (ImEx) fourth report packet byte when scrolling:
+ *
+ * +--------+--------+--------+--------+--------+--------+--------+--------+--------+
+ * |Bit/byte|  bit 7 |  bit 6 |  bit 5 |  bit 4 |  bit 3 |  bit 2 |  bit 1 |  bit 0 |
+ * +--------+--------+--------+--------+--------+--------+--------+--------+--------+
+ * | Byte 4 |   V    |   H    |      Z or W movement delta (two's complement)       |
+ * +--------+--------+--------+--------+--------+--------+--------+--------+--------+
+ * 
+ *   - Buttons 4 and 5 are reported as with the regular ImEx protocol, but not when
+ *     scrolling. This is a departure from the usual logic because when the mouse
+ *     sends scroll events, the state of buttons 4/5 is not reported and the last
+ *     reported state should be assumed.
+ * 
+ *   - When the V bit (bit 7) is set, vertical scroll (Z axis) is being reported.
+ *     When the H bit (bit 6) is set, horizontal scroll (W axis) is being reported.
+ *     The H and V bits are never set at the same time (also see below). When
+ *     the H and V bits are both clear, button 4/5 state is being reported.
+ * 
+ *   - The Z/W delta is extended to 6 bits. Z (vertical) values are not restricted
+ *     to -1/+1, although W (horizontal) values are. Z values of at least -20/+20
+ *     can be seen in practice.
+ * 
+ *   - Horizontal and vertical scroll is mutually exclusive. When the button is
+ *     tilted, no vertical scrolling is reported, i.e. horizontal scrolling
+ *     has priority over vertical.
+ * 
+ *   - Positive values indicate down/right direction, negative values up/left.
+ * 
+ *   - When the scroll button is tilted to engage horizontal scrolling, the mouse
+ *     keeps sending events at a rate of 4 or 5 per second as long as the button
+ *     is tilted.
+ * 
+ * All report formats were verified with a real Microsoft IntelliMouse Explorer 4.0
+ * mouse attached through a PS/2 port.
+ * 
+ * The button "accumulator" is necessary to avoid missing brief button presses.
+ * Without it, a very fast mouse button press + release might be lost if it
+ * happened between sending reports. The accumulator latches button presses to
+ * prevent that.
+ * 
  */
 
 
@@ -196,9 +244,10 @@ typedef enum {
 
 /* Protocols supported by the PS/2 mouse. */
 typedef enum {
-    PS2M_PROTO_PS2STD = 0,  /* Standard PS/2 mouse protocol. */
-    PS2M_PROTO_IMPS2  = 3,  /* IntelliMouse PS/2 protocol. */
-    PS2M_PROTO_IMEX   = 4   /* IntelliMouse Explorer protocol. */
+    PS2M_PROTO_PS2STD      = 0,  /* Standard PS/2 mouse protocol. */
+    PS2M_PROTO_IMPS2       = 3,  /* IntelliMouse PS/2 protocol. */
+    PS2M_PROTO_IMEX        = 4,  /* IntelliMouse Explorer protocol. */
+    PS2M_PROTO_IMEX_HORZ   = 5   /* IntelliMouse Explorer with horizontal reports. */
 } PS2M_PROTO;
 
 /* Protocol selection 'knock' states. */
@@ -206,7 +255,8 @@ typedef enum {
     PS2M_KNOCK_INITIAL,
     PS2M_KNOCK_1ST,
     PS2M_KNOCK_IMPS2_2ND,
-    PS2M_KNOCK_IMEX_2ND
+    PS2M_KNOCK_IMEX_2ND,
+    PS2M_KNOCK_IMEX_HORZ_2ND
 } PS2M_KNOCK_STATE;
 
 /**
@@ -242,8 +292,10 @@ typedef struct PS2M
     int32_t             iAccumX;
     /** Accumulated vertical movement. */
     int32_t             iAccumY;
-    /** Accumulated Z axis movement. */
+    /** Accumulated Z axis (vertical scroll) movement. */
     int32_t             iAccumZ;
+    /** Accumulated W axis (horizontal scroll) movement. */
+    int32_t             iAccumW;
     /** Accumulated button presses. */
     uint32_t            fAccumB;
     /** Instantaneous button data. */
@@ -475,7 +527,7 @@ static void ps2mSetDefaults(PPS2M pThis)
 
     /* Event queue, eccumulators, and button status bits are cleared. */
     ps2kClearQueue((GeneriQ *)&pThis->evtQ);
-    pThis->iAccumX = pThis->iAccumY = pThis->iAccumZ = pThis->fAccumB;
+    pThis->iAccumX = pThis->iAccumY = pThis->iAccumZ = pThis->iAccumW = pThis->fAccumB = 0;
 }
 
 /* Handle the sampling rate 'knock' sequence which selects protocol. */
@@ -492,6 +544,8 @@ static void ps2mRateProtocolKnock(PPS2M pThis, uint8_t rate)
             pThis->enmKnockState = PS2M_KNOCK_IMPS2_2ND;
         else if (rate == 200)
             pThis->enmKnockState = PS2M_KNOCK_IMEX_2ND;
+        else if (rate == 80)
+            pThis->enmKnockState = PS2M_KNOCK_IMEX_HORZ_2ND;
         else
             pThis->enmKnockState = PS2M_KNOCK_INITIAL;
         break;
@@ -509,6 +563,14 @@ static void ps2mRateProtocolKnock(PPS2M pThis, uint8_t rate)
             pThis->enmProtocol = PS2M_PROTO_IMEX;
             LogRelFlow(("PS2M: Switching mouse to ImEx protocol.\n"));
         }
+        pThis->enmKnockState = PS2M_KNOCK_INITIAL;
+        break;
+    case PS2M_KNOCK_IMEX_HORZ_2ND:
+        if (rate == 40)
+        {
+            pThis->enmProtocol = PS2M_PROTO_IMEX_HORZ;
+            LogRelFlow(("PS2M: Switching mouse ImEx with horizontal scrolling.\n"));
+        }
         RT_FALL_THRU();
     default:
         pThis->enmKnockState = PS2M_KNOCK_INITIAL;
@@ -517,18 +579,19 @@ static void ps2mRateProtocolKnock(PPS2M pThis, uint8_t rate)
 
 /* Three-button event mask. */
 #define PS2M_STD_BTN_MASK   (RT_BIT(0) | RT_BIT(1) | RT_BIT(2))
+/* ImEx button 4/5 event mask. */
+#define PS2M_IMEX_BTN_MASK  (RT_BIT(3) | RT_BIT(4))
 
 /* Report accumulated movement and button presses, then clear the accumulators. */
 static void ps2mReportAccumulatedEvents(PPS2M pThis, GeneriQ *pQueue, bool fAccumBtns)
 {
     uint32_t    fBtnState = fAccumBtns ? pThis->fAccumB : pThis->fCurrB;
     uint8_t     val;
-    int         dX, dY, dZ;
+    int         dX, dY, dZ, dW;
 
     /* Clamp the accumulated delta values to the allowed range. */
     dX = RT_MIN(RT_MAX(pThis->iAccumX, -255), 255);
     dY = RT_MIN(RT_MAX(pThis->iAccumY, -255), 255);
-    dZ = RT_MIN(RT_MAX(pThis->iAccumZ, -8), 7);
 
     /* Start with the sync bit and buttons 1-3. */
     val = RT_BIT(3) | (fBtnState & PS2M_STD_BTN_MASK);
@@ -543,27 +606,66 @@ static void ps2mReportAccumulatedEvents(PPS2M pThis, GeneriQ *pQueue, bool fAccu
     ps2kInsertQueue(pQueue, dX);
     ps2kInsertQueue(pQueue, dY);
 
-    /* Add fourth byte if extended protocol is in use. */
+    /* Add fourth byte if an extended protocol is in use. */
     if (pThis->enmProtocol > PS2M_PROTO_PS2STD)
     {
+        /* Start out with 4-bit dZ range. */
+        dZ = RT_MIN(RT_MAX(pThis->iAccumZ, -8), 7);
+
         if (pThis->enmProtocol == PS2M_PROTO_IMPS2)
+        {
+            /* NB: Only uses 4-bit dZ range, despite using a full byte. */
             ps2kInsertQueue(pQueue, dZ);
+            pThis->iAccumZ -= dZ;
+        }
+        else if (pThis->enmProtocol == PS2M_PROTO_IMEX)
+        {
+           /* Z value uses 4 bits; buttons 4/5 in bits 4 and 5. */
+           val  = (fBtnState & PS2M_IMEX_BTN_MASK) << 1;
+           val |= dZ & 0x0f;
+           pThis->iAccumZ -= dZ;
+           ps2kInsertQueue(pQueue, val);
+        }
         else
         {
-            Assert(pThis->enmProtocol == PS2M_PROTO_IMEX);
-            /* Z value uses 4 bits; buttons 4/5 in bits 4 and 5. */
-            val  = dZ & 0x0f;
-            val |= (fBtnState << 1) & (RT_BIT(4) | RT_BIT(5));
+            Assert((pThis->enmProtocol == PS2M_PROTO_IMEX_HORZ));
+            /* With ImEx + horizontal reporting, prioritize buttons 4/5. */
+            if (pThis->iAccumZ || pThis->iAccumW)
+            {
+               /* ImEx + horizontal reporting Horizontal scroll has
+                * precedence over vertical. Buttons cannot be reported 
+                * this way. 
+                */
+               if (pThis->iAccumW)
+               {
+                  dW = RT_MIN(RT_MAX(pThis->iAccumW, -32), 31);
+                  val = (dW & 0x3F) | 0x40;
+                  pThis->iAccumW -= dW;
+               }
+               else
+               {
+                  Assert(pThis->iAccumZ);
+                  /* We can use 6-bit dZ range. Wow! */
+                  dZ = RT_MIN(RT_MAX(pThis->iAccumZ, -32), 31);
+                  val = (dZ & 0x3F) | 0x80;
+                  pThis->iAccumZ -= dZ;
+               }
+            }
+            else
+            {
+               /* Just Buttons 4/5 in bits 4 and 5. No scrolling. */
+               val = (fBtnState & PS2M_IMEX_BTN_MASK) << 1;
+            }
             ps2kInsertQueue(pQueue, val);
         }
     }
 
     /* Clear the movement accumulators, but not necessarily button state. */
-    pThis->iAccumX = pThis->iAccumY = pThis->iAccumZ = 0;
+    pThis->iAccumX = pThis->iAccumY = 0;
     /* Clear accumulated button state only when it's being used. */
     if (fAccumBtns)
     {
-        pThis->fReportedB = pThis->fAccumB;
+        pThis->fReportedB = pThis->fCurrB | pThis->fAccumB;
         pThis->fAccumB    = 0;
     }
 }
@@ -674,7 +776,9 @@ int PS2MByteToAux(PPS2M pThis, uint8_t cmd)
             break;
         case ACMD_READ_ID:
             ps2kInsertQueue((GeneriQ *)&pThis->cmdQ, ARSP_ACK);
-            ps2kInsertQueue((GeneriQ *)&pThis->cmdQ, pThis->enmProtocol);
+            /* ImEx + horizontal is protocol 4, just like plain ImEx. */
+            u8Val = pThis->enmProtocol == PS2M_PROTO_IMEX_HORZ ? PS2M_PROTO_IMEX : pThis->enmProtocol;
+            ps2kInsertQueue((GeneriQ *)&pThis->cmdQ, u8Val);
             pThis->u8CurrCmd = 0;
             break;
         case ACMD_ENABLE:
@@ -839,8 +943,8 @@ int PS2MByteFromAux(PPS2M pThis, uint8_t *pb)
 /** Is there any state change to send as events to the guest? */
 static uint32_t ps2mHaveEvents(PPS2M pThis)
 {
-    return   pThis->iAccumX | pThis->iAccumY | pThis->iAccumZ
-           | (pThis->fCurrB != pThis->fReportedB) | (pThis->fAccumB != 0);
+    return   pThis->iAccumX || pThis->iAccumY || pThis->iAccumZ || pThis->iAccumW
+           || ((pThis->fCurrB | pThis->fAccumB) != pThis->fReportedB);
 }
 
 /* Event rate throttling timer to emulate the auxiliary device sampling rate.
@@ -901,7 +1005,7 @@ static DECLCALLBACK(void) ps2mDelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, vo
 static DECLCALLBACK(void) ps2mInfoState(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     static const char   *pcszModes[] = { "normal", "reset", "wrap" };
-    static const char   *pcszProtocols[] = { "PS/2", NULL, NULL, "ImPS/2", "ImEx" };
+    static const char   *pcszProtocols[] = { "PS/2", NULL, NULL, "ImPS/2", "ImEx", "ImEx+horizontal" };
     PPS2M   pThis = KBDGetPS2MFromDevIns(pDevIns);
     NOREF(pszArgs);
 
@@ -912,7 +1016,8 @@ static DECLCALLBACK(void) ps2mInfoState(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, 
                     pThis->u8State & AUX_STATE_REMOTE  ? "remote"  : "stream",
                     pThis->u8State & AUX_STATE_ENABLED ? "enabled" : "disabled");
     pHlp->pfnPrintf(pHlp, "Protocol: %s, scaling %u:1\n",
-                    pcszProtocols[pThis->enmProtocol], pThis->u8State & AUX_STATE_SCALING ? 2 : 1);
+                    pcszProtocols[pThis->enmProtocol], 
+                    pThis->u8State & AUX_STATE_SCALING ? 2 : 1);
     pHlp->pfnPrintf(pHlp, "Active command %02X\n", pThis->u8CurrCmd);
     pHlp->pfnPrintf(pHlp, "Sampling rate %u reports/sec, resolution %u counts/mm\n",
                     pThis->u8SampleRate, 1 << pThis->u8Resolution);
@@ -952,18 +1057,34 @@ static DECLCALLBACK(void *) ps2mQueryInterface(PPDMIBASE pInterface, const char 
 static int ps2mPutEventWorker(PPS2M pThis, int32_t dx, int32_t dy,
                               int32_t dz, int32_t dw, uint32_t fButtons)
 {
-    RT_NOREF1(dw);
     int             rc = VINF_SUCCESS;
 
-    /* Update internal accumulators and button state. */
+    /* Update internal accumulators and button state. Ignore any buttons beyond 5. */
     pThis->iAccumX += dx;
     pThis->iAccumY += dy;
     pThis->iAccumZ += dz;
-    pThis->fAccumB |= fButtons;     /// @todo accumulate based on current protocol?
-    pThis->fCurrB   = fButtons;
+    pThis->iAccumW += dw;
+    pThis->fCurrB   = fButtons & (PS2M_STD_BTN_MASK | PS2M_IMEX_BTN_MASK);
+    pThis->fAccumB |= pThis->fCurrB;
 
-    /* Report the event and start the throttle timer unless it's already running. */
-    if (!pThis->fThrottleActive)
+    /* Ditch accumulated data that can't be reported by the current protocol.
+     * This avoids sending phantom empty reports when un-reportable events 
+     * are received. 
+     */
+    if (pThis->enmProtocol < PS2M_PROTO_IMEX_HORZ)
+       pThis->iAccumW = 0; /* No horizontal scroll. */
+
+    if (pThis->enmProtocol < PS2M_PROTO_IMEX)
+    {
+       pThis->fAccumB &= PS2M_STD_BTN_MASK;   /* Only buttons 1-3. */
+       pThis->fCurrB  &= PS2M_STD_BTN_MASK;
+    }
+
+    if (pThis->enmProtocol < PS2M_PROTO_IMPS2)
+       pThis->iAccumZ = 0; /* No vertical scroll. */
+
+    /* Report the event (if any) and start the throttle timer unless it's already running. */
+    if (!pThis->fThrottleActive && ps2mHaveEvents(pThis))
     {
         ps2mReportAccumulatedEvents(pThis, (GeneriQ *)&pThis->evtQ, true);
         KBCUpdateInterrupts(pThis->pParent);
