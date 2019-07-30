@@ -376,8 +376,7 @@ static DECLCALLBACK(int) virtioScsiR3BiosIoPortReadStr(PPDMDEVINS pDevIns, void 
 /**
  * Turns on/off the write status LED.
  *
- * @returns VBox status code.
- * @param   pState          Pointer to the device state structure.
+ * @param   pTarget         Pointer to the target device
  * @param   fOn             New LED state.
  */
 void virtioScsiSetWriteLed(PVIRTIOSCSITARGET pTarget, bool fOn)
@@ -392,8 +391,7 @@ void virtioScsiSetWriteLed(PVIRTIOSCSITARGET pTarget, bool fOn)
 /**
  * Turns on/off the read status LED.
  *
- * @returns VBox status code.
- * @param   pState          Pointer to the device state structure.
+ * @param   pTarget         Pointer to the device state structure.
  * @param   fOn             New LED state.
  */
 void virtioScsiSetReadLed(PVIRTIOSCSITARGET pTarget, bool fOn)
