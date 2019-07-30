@@ -8257,6 +8257,7 @@ static VBOXSTRICTRC hmR0VmxCheckForceFlags(PVMCPU pVCpu, bool fStepping)
         return VINF_EM_RAW_TO_R3;
     }
 
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
     /* Pending nested-guest APIC-write (has highest priority among nested-guest FFs). */
     if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_APIC_WRITE))
     {
@@ -8266,6 +8267,7 @@ static VBOXSTRICTRC hmR0VmxCheckForceFlags(PVMCPU pVCpu, bool fStepping)
         return rcStrict;
     }
     /** @todo VMCPU_FF_VMX_MTF, VMCPU_FF_VMX_PREEMPT_TIMER */
+#endif
 
     return VINF_SUCCESS;
 }
