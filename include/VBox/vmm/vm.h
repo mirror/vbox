@@ -625,7 +625,8 @@ AssertCompileSizeAlignment(VMCPU, 4096);
 #define VM_FF_HP_R0_PRE_HM_MASK                 (VM_FF_HM_TO_R3_MASK | VM_FF_REQUEST | VM_FF_PGM_POOL_FLUSH_PENDING | VM_FF_PDM_DMA)
 /** High priority ring-0 VMCPU pre HM-mode execution mask. */
 #define VMCPU_FF_HP_R0_PRE_HM_MASK              (  VMCPU_FF_HM_TO_R3_MASK | VMCPU_FF_PGM_SYNC_CR3 \
-                                                 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL | VMCPU_FF_REQUEST)
+                                                 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL | VMCPU_FF_REQUEST \
+                                                 | VMCPU_FF_VMX_APIC_WRITE | VMCPU_FF_VMX_MTF | VMCPU_FF_VMX_PREEMPT_TIMER)
 /** High priority ring-0 VM pre HM-mode execution mask, single stepping. */
 #define VM_FF_HP_R0_PRE_HM_STEP_MASK            (VM_FF_HP_R0_PRE_HM_MASK & ~(  VM_FF_TM_VIRTUAL_SYNC | VM_FF_PDM_QUEUES  \
                                                                              | VM_FF_EMT_RENDEZVOUS | VM_FF_REQUEST \

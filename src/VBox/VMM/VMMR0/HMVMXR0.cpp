@@ -8182,6 +8182,9 @@ VMMR0DECL(int) VMXR0ImportStateOnDemand(PVMCPU pVCpu, uint64_t fWhat)
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   fStepping   Whether we are single-stepping the guest using the
  *                      hypervisor debugger.
+ *
+ * @remarks This might cause nested-guest VM-exits, caller must check if the guest
+ *          is no longer in VMX non-root mode.
  */
 static VBOXSTRICTRC hmR0VmxCheckForceFlags(PVMCPU pVCpu, bool fStepping)
 {
@@ -8209,13 +8212,13 @@ static VBOXSTRICTRC hmR0VmxCheckForceFlags(PVMCPU pVCpu, bool fStepping)
     {
         PCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
         Assert(!(ASMAtomicUoReadU64(&pCtx->fExtrn) & (CPUMCTX_EXTRN_CR0 | CPUMCTX_EXTRN_CR3 | CPUMCTX_EXTRN_CR4)));
-        VBOXSTRICTRC rcStrict2 = PGMSyncCR3(pVCpu, pCtx->cr0, pCtx->cr3, pCtx->cr4,
-                                            VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3));
-        if (rcStrict2 != VINF_SUCCESS)
+        VBOXSTRICTRC rcStrict = PGMSyncCR3(pVCpu, pCtx->cr0, pCtx->cr3, pCtx->cr4,
+                                           VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3));
+        if (rcStrict != VINF_SUCCESS)
         {
-            AssertRC(VBOXSTRICTRC_VAL(rcStrict2));
-            Log4Func(("PGMSyncCR3 forcing us back to ring-3. rc2=%d\n", VBOXSTRICTRC_VAL(rcStrict2)));
-            return rcStrict2;
+            AssertRC(VBOXSTRICTRC_VAL(rcStrict));
+            Log4Func(("PGMSyncCR3 forcing us back to ring-3. rc2=%d\n", VBOXSTRICTRC_VAL(rcStrict)));
+            return rcStrict;
         }
     }
 
@@ -8224,9 +8227,9 @@ static VBOXSTRICTRC hmR0VmxCheckForceFlags(PVMCPU pVCpu, bool fStepping)
         || VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_HM_TO_R3_MASK))
     {
         STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchHmToR3FF);
-        int rc2 = RT_LIKELY(!VM_FF_IS_SET(pVM, VM_FF_PGM_NO_MEMORY)) ? VINF_EM_RAW_TO_R3 : VINF_EM_NO_MEMORY;
-        Log4Func(("HM_TO_R3 forcing us back to ring-3. rc=%d\n", rc2));
-        return rc2;
+        int rc = RT_LIKELY(!VM_FF_IS_SET(pVM, VM_FF_PGM_NO_MEMORY)) ? VINF_EM_RAW_TO_R3 : VINF_EM_NO_MEMORY;
+        Log4Func(("HM_TO_R3 forcing us back to ring-3. rc=%d\n", rc));
+        return rc;
     }
 
     /* Pending VM request packets, such as hardware interrupts. */
@@ -8253,6 +8256,16 @@ static VBOXSTRICTRC hmR0VmxCheckForceFlags(PVMCPU pVCpu, bool fStepping)
         Log4Func(("Pending DMA request forcing us back to ring-3\n"));
         return VINF_EM_RAW_TO_R3;
     }
+
+    /* Pending nested-guest APIC-write (has highest priority among nested-guest FFs). */
+    if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_APIC_WRITE))
+    {
+        Log4Func(("Pending nested-guest APIC-write\n"));
+        VBOXSTRICTRC rcStrict = IEMExecVmxVmexitApicWrite(pVCpu);
+        Assert(rcStrict != VINF_VMX_INTERCEPT_NOT_ACTIVE);
+        return rcStrict;
+    }
+    /** @todo VMCPU_FF_VMX_MTF, VMCPU_FF_VMX_PREEMPT_TIMER */
 
     return VINF_SUCCESS;
 }
@@ -10799,7 +10812,17 @@ static VBOXSTRICTRC hmR0VmxPreRunGuest(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient
      */
     VBOXSTRICTRC rcStrict = hmR0VmxCheckForceFlags(pVCpu, fStepping);
     if (rcStrict == VINF_SUCCESS)
-    { /* FFs don't get set all the time. */ }
+    {
+        /* FFs don't get set all the time. */
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+        if (   pVmxTransient->fIsNestedGuest
+            && !CPUMIsGuestInVmxNonRootMode(&pVCpu->cpum.GstCtx))
+        {
+            STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchNstGstVmexit);
+            return VINF_VMX_VMEXIT;
+        }
+#endif
+    }
     else
         return rcStrict;
 
