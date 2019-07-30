@@ -669,54 +669,6 @@ static DECLCALLBACK(int) cpumR3RegGstSet_stN(void *pvUser, PCDBGFREGDESC pDesc, 
 
 
 /*
- *
- * Hypervisor register access functions.
- *
- */
-
-/**
- * @interface_method_impl{DBGFREGDESC,pfnGet}
- */
-static DECLCALLBACK(int) cpumR3RegHyperGet_drX(void *pvUser, PCDBGFREGDESC pDesc, PDBGFREGVAL pValue)
-{
-    PVMCPU pVCpu = (PVMCPU)pvUser;
-    VMCPU_ASSERT_EMT(pVCpu);
-
-    uint64_t    u64Value;
-    switch (pDesc->offRegister)
-    {
-        case 0: u64Value = CPUMGetHyperDR0(pVCpu); break;
-        case 1: u64Value = CPUMGetHyperDR1(pVCpu); break;
-        case 2: u64Value = CPUMGetHyperDR2(pVCpu); break;
-        case 3: u64Value = CPUMGetHyperDR3(pVCpu); break;
-        case 6: u64Value = CPUMGetHyperDR6(pVCpu); break;
-        case 7: u64Value = CPUMGetHyperDR7(pVCpu); break;
-        default:
-            AssertFailedReturn(VERR_IPE_NOT_REACHED_DEFAULT_CASE);
-    }
-    switch (pDesc->enmType)
-    {
-        case DBGFREGVALTYPE_U64:    pValue->u64 = u64Value; break;
-        case DBGFREGVALTYPE_U32:    pValue->u32 = (uint32_t)u64Value; break;
-        default:
-            AssertFailedReturn(VERR_IPE_NOT_REACHED_DEFAULT_CASE);
-    }
-    return VINF_SUCCESS;
-}
-
-
-/**
- * @interface_method_impl{DBGFREGDESC,pfnGet}
- */
-static DECLCALLBACK(int) cpumR3RegHyperSet_drX(void *pvUser, PCDBGFREGDESC pDesc, PCDBGFREGVAL pValue, PCDBGFREGVAL pfMask)
-{
-    /* Not settable, prevents killing your host. */
-    NOREF(pvUser); NOREF(pDesc); NOREF(pValue); NOREF(pfMask);
-    return VERR_ACCESS_DENIED;
-}
-
-
-/*
  * Set up aliases.
  */
 #define CPUMREGALIAS_STD(Name, psz32, psz16, psz8)  \
@@ -1288,21 +1240,6 @@ static DBGFREGDESC const g_aCpumRegGstDescs[] =
 
 
 /**
- * The hypervisor (raw-mode) register descriptors.
- */
-static DBGFREGDESC const g_aCpumRegHyperDescs[] =
-{
-    CPU_REG_EX_AS("dr0",            DR0,            U64, 0,                     cpumR3RegHyperGet_drX,  cpumR3RegHyperSet_drX,  NULL,                       NULL                    ),
-    CPU_REG_EX_AS("dr1",            DR1,            U64, 1,                     cpumR3RegHyperGet_drX,  cpumR3RegHyperSet_drX,  NULL,                       NULL                    ),
-    CPU_REG_EX_AS("dr2",            DR2,            U64, 2,                     cpumR3RegHyperGet_drX,  cpumR3RegHyperSet_drX,  NULL,                       NULL                    ),
-    CPU_REG_EX_AS("dr3",            DR3,            U64, 3,                     cpumR3RegHyperGet_drX,  cpumR3RegHyperSet_drX,  NULL,                       NULL                    ),
-    CPU_REG_EX_AS("dr6",            DR6,            U32, 6,                     cpumR3RegHyperGet_drX,  cpumR3RegHyperSet_drX,  NULL,                       g_aCpumRegFields_dr6    ),
-    CPU_REG_EX_AS("dr7",            DR7,            U32, 7,                     cpumR3RegHyperGet_drX,  cpumR3RegHyperSet_drX,  NULL,                       g_aCpumRegFields_dr7    ),
-    DBGFREGDESC_TERMINATOR()
-};
-
-
-/**
  * Initializes the debugger related sides of the CPUM component.
  *
  * Called by CPUMR3Init.
@@ -1315,8 +1252,6 @@ int cpumR3DbgInit(PVM pVM)
     for (VMCPUID iCpu = 0; iCpu < pVM->cCpus; iCpu++)
     {
         int rc = DBGFR3RegRegisterCpu(pVM, &pVM->aCpus[iCpu], g_aCpumRegGstDescs, true /*fGuestRegs*/);
-        AssertLogRelRCReturn(rc, rc);
-        rc = DBGFR3RegRegisterCpu(pVM, &pVM->aCpus[iCpu], g_aCpumRegHyperDescs, false /*fGuestRegs*/);
         AssertLogRelRCReturn(rc, rc);
     }
 
