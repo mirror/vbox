@@ -43,53 +43,88 @@
 #include "VBoxSCSI.h"
 #include "VBoxDD.h"
 
+#define VIRTIOSCSI_MAX_TARGETS                      1
+#define VIRTIOSCSI_SAVED_STATE_MINOR_VERSION        0x01
+#define REQ_ALLOC_SIZE                              1024    /* TBD */
 
-/*********************************************************************************************************************************
-*   Structures and Typedefs                                                                                                      *
-*********************************************************************************************************************************/
-#define VIRTIOSCSI_MAX_TARGETS  1
+#define PCI_VENDOR_ID_VIRTIO                        0x1AF4
+#define PCI_DEVICE_ID_VIRTIOSCSI_HOST               0x1048
+#define PCI_CLASS_BASE_MASS_STORAGE                 0x01
+#define PCI_CLASS_SUB_SCSI_STORAGE_CONTROLLER       0x00
+#define PCI_CLASS_PROG_UNSPECIFIED                  0x00
+#define VIRTIOSCSI_NAME_FMT                         "VIRTIOSCSI%d" /* "VSCSI" *might* be ambiguous with VBoxSCSI? */
+#define VIRTIOSCSI_PCI_CLASS                        0x01     /* Base class Mass Storage? */
+#define VIRTIOSCSI_N_QUEUES                         3        /* Control, Event, Request */
+#define VIRTIOSCSI_REGION_MEM_IO                    0
+#define VIRTIOSCSI_REGION_PORT_IO                   1
+#define VIRTIOSCSI_REGION_PCI_CAP                   2
 
 /**
- * Device Instance Data.
+ * Definitions that follow are based on the VirtIO 1.0 specification.
+ * Struct names are the same. The field names have been adapted to VirtualBox
+ * data type + camel case annotation, with the original field name from the
+ * VirtIO specification in the field's comment.
+ */
+
+/** @name VirtIO 1.0 SCSI Host feature bits
+ * @{  */
+#define VIRTIOSCSI_F_INOUT                          RT_BIT_64(0)  /** Request is device readable AND writeable */
+#define VIRTIOSCSI_F_HOTPLUG                        RT_BIT_64(1)  /** Host SHOULD allow hotplugging SCSI LUNs & targets */
+#define VIRTIOSCSI_F_CHANGE                         RT_BIT_64(2)  /** Host reports LUN changes via VIRTIOSCSI_T_PARAM_CHANGE event */
+#define VIRTIOSCSI_F_T10_PI                         RT_BIT_64(3)  /** Ext. flds for T10 prot info (DIF/DIX) in SCSI req hdr */
+/** @} */
+
+/**
+ * Features VirtIO 1.0 Host SCSI controller offers guest driver
+ */
+#define VIRTIOSCSI_HOST_SCSI_FEATURES_OFFERED         VIRTIOSCSI_F_INOUT   \
+                                                    | VIRTIOSCSI_F_HOTPLUG \
+                                                    | VIRTIOSCSI_F_CHANGE  \
+                                                    | VIRTIOSCSI_F_T10_PI  \
+
+/**
+ * State of a target attached to the VirtIO SCSI Host
  */
 typedef struct VIRTIOSCSITARGET
 {
-    /** Pointer to PCI device that owns this target instance. - R3 /pointer */
+    /** Pointer to PCI device that owns this target instance. - R3 pointer */
     R3PTRTYPE(struct VIRTIOSCSI *)  pVirtioScsiR3;
-    /** Pointer to PCI device that owns this target instance. - R0 pointer */
-    R3PTRTYPE(struct VIRTIOSCSI *)  pVirtioScsiR0;
-    /** Pointer to PCI device that owns this target instance. - RC pointer */
-    R3PTRTYPE(struct VIRTIOSCSI *)  pVirtioScsiRC;
 
     /** Pointer to attached driver's base interface. */
-    R3PTRTYPE(PPDMIBASE)            pUpstreamDrvBase;
+    R3PTRTYPE(PPDMIBASE)            pDrvBase;
 
-    /** LUN of the device. */
+    /** Target LUN */
     RTUINT                          iLUN;
 
-    /** Our base interface. */
+    /** Target LUN Description */
+    char *                          pszLunName;
+
+    /** Target base interface. */
     PDMIBASE                        IBase;
 
     /** Flag whether device is present. */
     bool                            fPresent;
 
+
     /** Media port interface. */
     PDMIMEDIAPORT                   IMediaPort;
-
-    /** Extended media port interface. */
-    PDMIMEDIAEXPORT                 IMediaExPort;
-
-    /** Number of outstanding tasks on the port. */
-    volatile uint32_t               cOutstandingRequests;
-
-    /** LUN Description */
-    char *                          pszLunName;
-
     /** Pointer to the attached driver's media interface. */
     R3PTRTYPE(PPDMIMEDIA)           pDrvMedia;
 
+
+    /** Extended media port interface. */
+    PDMIMEDIAEXPORT                 IMediaExPort;
      /** Pointer to the attached driver's extended media interface. */
     R3PTRTYPE(PPDMIMEDIAEX)         pDrvMediaEx;
+
+
+    /** Status LED interface */
+    PDMILEDPORTS                    ILed;
+    /** The status LED state for this device. */
+    PDMLED                          led;
+
+    /** Number of outstanding tasks on the port. */
+    volatile uint32_t               cOutstandingRequests;
 
     R3PTRTYPE(PVQUEUE)              pCtlQueue; // ? TBD
     R3PTRTYPE(PVQUEUE)              pEvtQueue; // ? TBD
@@ -99,7 +134,7 @@ typedef struct VIRTIOSCSITARGET
 
 
 /**
- * Main VirtIO SCSI device state.
+ *  PDM instance data (state) for VirtIO Host SCSI device
  *
  * @extends     PDMPCIDEV
  */
@@ -111,9 +146,21 @@ typedef struct VIRTIOSCSI
     /* SCSI target instances data */
     VIRTIOSCSITARGET                aTargetInstances[VIRTIOSCSI_MAX_TARGETS];
 
-    PPDMDEVINSR3           pDevInsR3;              /**< Device instance - R3. */
-    PPDMDEVINSR0           pDevInsR0;              /**< Device instance - R0. */
-    PPDMDEVINSRC           pDevInsRC;              /**< Device instance - RC. */
+    /** Device base interface. */
+    PDMIBASE                        IBase;
+
+    /** Pointer to the device instance. - R3 ptr. */
+    PPDMDEVINSR3                    pDevInsR3;
+    /** Pointer to the device instance. - R0 ptr. */
+    PPDMDEVINSR0                    pDevInsR0;
+    /** Pointer to the device instance. - RC ptr. */
+    PPDMDEVINSRC                    pDevInsRC;
+
+    /** Status LUN: LEDs port interface. */
+    PDMILEDPORTS                    ILeds;
+
+    /** Status LUN: Partner of ILeds. */
+    R3PTRTYPE(PPDMILEDCONNECTORS)   pLedsConnector;
 
     /** Base address of the memory mapping. */
     RTGCPHYS                        GCPhysMMIOBase;
@@ -132,6 +179,8 @@ typedef struct VIRTIOSCSI
 
     /** The event semaphore the processing thread waits on. */
     SUPSEMEVENT                     hEvtProcess;
+
+    PVIRTIOCALLBACKS                pVirtioCallbacks;
 
     /** Number of ports detected */
     uint64_t                        cTargets;
@@ -167,34 +216,6 @@ typedef struct VIRTIOSCSIREQ
 typedef struct VIRTIOSCSIREQ *PVIRTIOSCSIREQ;
 
 
-#define VIRTIOSCSI_SAVED_STATE_MINOR_VERSION        0x01
-
-#define PCI_VENDOR_ID_VIRTIO                        0x1AF4
-#define PCI_DEVICE_ID_VIRTIO_SCSI_HOST              0x1048
-#define PCI_CLASS_BASE_MASS_STORAGE                 0x01
-#define PCI_CLASS_SUB_SCSI_STORAGE_CONTROLLER       0x00
-#define PCI_CLASS_PROG_UNSPECIFIED                  0x00
-#define VIRTIO_SCSI_NAME_FMT                        "VIRTIOSCSI%d" /* "VSCSI" *might* be ambiguous with VBoxSCSI? */
-#define VIRTIO_SCSI_PCI_CLASS                       0x01     /* Base class Mass Storage? */
-#define VIRTIO_SCSI_N_QUEUES                        3        /* Control, Event, Request */
-#define VIRTIO_SCSI_REGION_MEM_IO                   0
-#define VIRTIO_SCSI_REGION_PORT_IO                  1
-#define VIRTIO_SCSI_REGION_PCI_CAP                  2
-
-/**
- * Definitions that follow are based on the VirtIO 1.0 specification.
- * Struct names are the same. The field names have been adapted to VirtualBox
- * data type + camel case annotation, with the original field name from the
- * VirtIO specification in the field's comment.
- */
-
-/** @name VirtIO 1.0 SCSI Host feature bits
- * @{  */
-#define VIRTIO_SCSI_F_INOUT                         0      /** Request is device readable AND writeable */
-#define VIRTIO_SCSI_F_HOTPLUG                       1      /** Host SHOULD allow hotplugging SCSI LUNs & targets */
-#define VIRTIO_SCSI_F_CHANGE                        2      /** Host reports LUN changes via VIRTIO_SCSI_T_PARAM_CHANGE event */
-/** @} */
-
 #define CDB_SIZE                                    1      /* logic tbd */
 #define SENSE_SIZE                                  1      /* logic tbd */
 #define PI_BYTES_OUT                                1      /* logic tbd */
@@ -210,7 +231,7 @@ typedef struct virtio_scsi_req_cmd
     uint8_t  uCrn;                                          /** crn               */
     uint8_t  uCdb[CDB_SIZE];                                /** cdb               */
 
-    /** Following three fields only present if VIRTIO_SCSI_F_T10_PI negotiated */
+    /** Following three fields only present if VIRTIOSCSI_F_T10_PI negotiated */
 
     uint32_t uPiBytesOut;                                   /** pi_bytesout       */
     uint32_t uPiBytesIn;                                    /** pi_bytesin        */
@@ -226,40 +247,40 @@ typedef struct virtio_scsi_req_cmd
     uint8_t  uResponse;                                     /** response          */
     uint8_t  uSense[SENSE_SIZE];                            /** sense             */
 
-    /** Following two fields only present if VIRTIO_SCSI_F_T10_PI negotiated */
+    /** Following two fields only present if VIRTIOSCSI_F_T10_PI negotiated */
     uint8_t  uPiIn[PI_BYTES_IN];                            /** pi_in[]           */
     uint8_t  uDataIn[];                                     /** detain;           */
 } VIRTIOSCSIREQCMD, *PVIRTIOSCSIREQCMD;
 
 /** Command-specific response values */
-#define VIRTIO_SCSI_S_OK                            0       /* control, command   */
-#define VIRTIO_SCSI_S_OVERRUN                       1       /* control */
-#define VIRTIO_SCSI_S_ABORTED                       2       /* control */
-#define VIRTIO_SCSI_S_BAD_TARGET                    3       /* control, command */
-#define VIRTIO_SCSI_S_RESET                         4       /* control */
-#define VIRTIO_SCSI_S_BUSY                          5       /* control, command */
-#define VIRTIO_SCSI_S_TRANSPORT_FAILURE             6       /* control, command */
-#define VIRTIO_SCSI_S_TARGET_FAILURE                7       /* control, command */
-#define VIRTIO_SCSI_S_NEXUS_FAILURE                 8       /* control, command */
-#define VIRTIO_SCSI_S_FAILURE                       9       /* control, command */
-#define VIRTIO_SCSI_S_INCORRECT_LUN                12       /* command */
+#define VIRTIOSCSI_S_OK                            0       /* control, command   */
+#define VIRTIOSCSI_S_OVERRUN                       1       /* control */
+#define VIRTIOSCSI_S_ABORTED                       2       /* control */
+#define VIRTIOSCSI_S_BAD_TARGET                    3       /* control, command */
+#define VIRTIOSCSI_S_RESET                         4       /* control */
+#define VIRTIOSCSI_S_BUSY                          5       /* control, command */
+#define VIRTIOSCSI_S_TRANSPORT_FAILURE             6       /* control, command */
+#define VIRTIOSCSI_S_TARGET_FAILURE                7       /* control, command */
+#define VIRTIOSCSI_S_NEXUS_FAILURE                 8       /* control, command */
+#define VIRTIOSCSI_S_FAILURE                       9       /* control, command */
+#define VIRTIOSCSI_S_INCORRECT_LUN                12       /* command */
 
 
 /** task_attr */
-#define VIRTIO_SCSI_S_SIMPLE                        0
-#define VIRTIO_SCSI_S_ORDERED                       1
-#define VIRTIO_SCSI_S_HEAD                          2
-#define VIRTIO_SCSI_S_ACA                           3
+#define VIRTIOSCSI_S_SIMPLE                        0
+#define VIRTIOSCSI_S_ORDERED                       1
+#define VIRTIOSCSI_S_HEAD                          2
+#define VIRTIOSCSI_S_ACA                           3
 
-#define VIRTIO_SCSI_T_TMF                           0
-#define VIRTIO_SCSI_T_TMF_ABORT_TASK                0
-#define VIRTIO_SCSI_T_TMF_ABORT_TASK_SET            1
-#define VIRTIO_SCSI_T_TMF_CLEAR_ACA                 2
-#define VIRTIO_SCSI_T_TMF_CLEAR_TASK_SET            3
-#define VIRTIO_SCSI_T_TMF_I_T_NEXUS_RESET           4
-#define VIRTIO_SCSI_T_TMF_LOGICAL_UNIT_RESET        5
-#define VIRTIO_SCSI_T_TMF_QUERY_TASK                6
-#define VIRTIO_SCSI_T_TMF_QUERY_TASK_SET            7
+#define VIRTIOSCSI_T_TMF                           0
+#define VIRTIOSCSI_T_TMF_ABORT_TASK                0
+#define VIRTIOSCSI_T_TMF_ABORT_TASK_SET            1
+#define VIRTIOSCSI_T_TMF_CLEAR_ACA                 2
+#define VIRTIOSCSI_T_TMF_CLEAR_TASK_SET            3
+#define VIRTIOSCSI_T_TMF_I_T_NEXUS_RESET           4
+#define VIRTIOSCSI_T_TMF_LOGICAL_UNIT_RESET        5
+#define VIRTIOSCSI_T_TMF_QUERY_TASK                6
+#define VIRTIOSCSI_T_TMF_QUERY_TASK_SET            7
 
 typedef struct virtio_scsi_ctrl_tmf
 {
@@ -274,12 +295,12 @@ typedef struct virtio_scsi_ctrl_tmf
 
 /* command-specific response values */
 
-#define VIRTIO_SCSI_S_FUNCTION_COMPLETE            0
-#define VIRTIO_SCSI_S_FUNCTION_SUCCEEDED           10
-#define VIRTIO_SCSI_S_FUNCTION_REJECTED            11
+#define VIRTIOSCSI_S_FUNCTION_COMPLETE            0
+#define VIRTIOSCSI_S_FUNCTION_SUCCEEDED           10
+#define VIRTIOSCSI_S_FUNCTION_REJECTED            11
 
-#define VIRTIO_SCSI_T_AN_QUERY                     1         /** Asynchronous notification query */
-#define VIRTIO_SCSI_T_AN_SUBSCRIBE                 2         /** Asynchronous notification subscription */
+#define VIRTIOSCSI_T_AN_QUERY                     1         /** Asynchronous notification query */
+#define VIRTIOSCSI_T_AN_SUBSCRIBE                 2         /** Asynchronous notification subscription */
 
 typedef struct virtio_scsi_ctrl_an
 {
@@ -292,12 +313,12 @@ typedef struct virtio_scsi_ctrl_an
     uint8_t   uResponse;                                     /** response        */
 }  VIRTIOSCSICTRLAN, *PVIRTIOSCSICTRLAN;
 
-#define VIRTIO_SCSI_EVT_ASYNC_OPERATIONAL_CHANGE  2
-#define VIRTIO_SCSI_EVT_ASYNC_POWER_MGMT          4
-#define VIRTIO_SCSI_EVT_ASYNC_EXTERNAL_REQUEST    8
-#define VIRTIO_SCSI_EVT_ASYNC_MEDIA_CHANGE        16
-#define VIRTIO_SCSI_EVT_ASYNC_MULTI_HOST          32
-#define VIRTIO_SCSI_EVT_ASYNC_DEVICE_BUSY         64
+#define VIRTIOSCSI_EVT_ASYNC_OPERATIONAL_CHANGE  2
+#define VIRTIOSCSI_EVT_ASYNC_POWER_MGMT          4
+#define VIRTIOSCSI_EVT_ASYNC_EXTERNAL_REQUEST    8
+#define VIRTIOSCSI_EVT_ASYNC_MEDIA_CHANGE        16
+#define VIRTIOSCSI_EVT_ASYNC_MULTI_HOST          32
+#define VIRTIOSCSI_EVT_ASYNC_DEVICE_BUSY         64
 
 /** Device operation: controlq */
 
@@ -307,19 +328,19 @@ typedef struct virtio_scsi_ctrl
     uint8_t  response;                                       /** response        */
 } VIRTIOSCSICTRL, *PVIRTIOSCSICTRL;
 
-#define VIRTIO_SCSI_T_NO_EVENT                   0
+#define VIRTIOSCSI_T_NO_EVENT                   0
 
-#define VIRTIO_SCSI_T_TRANSPORT_RESET            1
-#define VIRTIO_SCSI_T_ASYNC_NOTIFY               2           /** Asynchronous notification */
-#define VIRTIO_SCSI_T_PARAM_CHANGE               3
+#define VIRTIOSCSI_T_TRANSPORT_RESET            1
+#define VIRTIOSCSI_T_ASYNC_NOTIFY               2           /** Asynchronous notification */
+#define VIRTIOSCSI_T_PARAM_CHANGE               3
 
-#define VIRTIO_SCSI_EVT_RESET_HARD               0
-#define VIRTIO_SCSI_EVT_RESET_RESCAN             1
-#define VIRTIO_SCSI_EVT_RESET_REMOVED            2
+#define VIRTIOSCSI_EVT_RESET_HARD               0
+#define VIRTIOSCSI_EVT_RESET_RESCAN             1
+#define VIRTIOSCSI_EVT_RESET_REMOVED            2
 
 /** Device operation: eventq */
 
-#define VIRTIO_SCSI_T_EVENTS_MISSED             0x80000000
+#define VIRTIOSCSI_T_EVENTS_MISSED             0x80000000
 typedef struct virtio_scsi_event {
     // Device-writable part
     uint32_t uEvent;                                         /** event:          */
@@ -351,6 +372,38 @@ static DECLCALLBACK(int) virtioScsiR3BiosIoPortReadStr(PPDMDEVINS pDevIns, void 
 {
 }
 #endif
+
+/**
+ * Turns on/off the write status LED.
+ *
+ * @returns VBox status code.
+ * @param   pState          Pointer to the device state structure.
+ * @param   fOn             New LED state.
+ */
+void virtioScsiSetWriteLed(PVIRTIOSCSITARGET pTarget, bool fOn)
+{
+    LogFlow(("%s virtioSetWriteLed: %s\n", pTarget->pszLunName, fOn ? "on" : "off"));
+    if (fOn)
+        pTarget->led.Asserted.s.fWriting = pTarget->led.Actual.s.fWriting = 1;
+    else
+        pTarget->led.Actual.s.fWriting = fOn;
+}
+
+/**
+ * Turns on/off the read status LED.
+ *
+ * @returns VBox status code.
+ * @param   pState          Pointer to the device state structure.
+ * @param   fOn             New LED state.
+ */
+void virtioScsiSetReadLed(PVIRTIOSCSITARGET pTarget, bool fOn)
+{
+    LogFlow(("%s virtioSetReadLed: %s\n", pTarget->pszLunName, fOn ? "on" : "off"));
+    if (fOn)
+        pTarget->led.Asserted.s.fReading = pTarget->led.Actual.s.fReading = 1;
+    else
+        pTarget->led.Actual.s.fReading = fOn;
+}
 
 /**
  * virtio-scsi debugger info callback.
@@ -417,76 +470,6 @@ static DECLCALLBACK(int) virtioScsiR3LoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSS
     RT_NOREF(pSSM);
     return VINF_SUCCESS;
 }
-
-/**
- * Memory mapped I/O Handler for read operations.
- *
- * @returns VBox status code.
- *
- * @param   pDevIns     The device instance.
- * @param   pvUser      User argument.
- * @param   GCPhysAddr  Physical address (in GC) where the read starts.
- * @param   pv          Where to store the result.
- * @param   cb          Number of bytes read.
- */
-PDMBOTHCBDECL(int) virtioScsiMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
-{
-    RT_NOREF_PV(pDevIns); RT_NOREF_PV(pvUser); RT_NOREF_PV(GCPhysAddr); RT_NOREF_PV(pv); RT_NOREF_PV(cb);
-    LogFunc(("Read from MMIO area\n"));
-    return VINF_SUCCESS;
-}
-
-/**
- * Memory mapped I/O Handler for write operations.
- *
- * @returns VBox status code.
- *
- * @param   pDevIns     The device instance.
- * @param   pvUser      User argument.
- * @param   GCPhysAddr  Physical address (in GC) where the read starts.
- * @param   pv          Where to fetch the result.
- * @param   cb          Number of bytes to write.
- */
-PDMBOTHCBDECL(int) virtioScsiMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void const *pv, unsigned cb)
-{
-    RT_NOREF_PV(pDevIns); RT_NOREF_PV(pvUser); RT_NOREF_PV(GCPhysAddr); RT_NOREF_PV(pv); RT_NOREF_PV(cb);
-    LogFunc(("Write to MMIO area\n"));
-    return VINF_SUCCESS;
-}
-
-/**
- * @callback_method_impl{FNPCIIOREGIONMAP}
- */
-static DECLCALLBACK(int) virtioScsiR3Map(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
-                                           RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
-{
-    RT_NOREF(pPciDev, iRegion);
-    PVIRTIOSCSI  pThis = PDMINS_2_DATA(pDevIns, PVIRTIOSCSI);
-    int rc = VINF_SUCCESS;
-
-    Assert(cb >= 32);
-
-    switch (iRegion)
-    {
-        case 0:
-            LogFunc(("virtio-scsi controller MMIO mapped at GCPhysAddr=%RGp cb=%RGp\n", GCPhysAddress, cb));
-
-            /* We use the assigned size here, because we currently only support page aligned MMIO ranges. */
-            rc = PDMDevHlpMMIORegister(pDevIns, GCPhysAddress, cb, NULL /*pvUser*/,
-                                   IOMMMIO_FLAGS_READ_PASSTHRU | IOMMMIO_FLAGS_WRITE_PASSTHRU,
-                                   virtioScsiMMIOWrite, virtioScsiMMIORead,
-                                   "virtio-scsi MMIO");
-            pThis->GCPhysMMIOBase = RT_SUCCESS(rc) ? GCPhysAddress : 0;
-            return rc;
-        case 1:
-            /* VirtIO 1.0 doesn't uses Port I/O (Virtio 0.95 e.g. "legacy", does) */
-            AssertMsgFailed(("virtio-scsi: Port I/O not supported by this Host SCSI device\n"));
-        default:
-            AssertMsgFailed(("Invalid enmType=%d\n", enmType));
-    }
-    return VERR_GENERAL_FAILURE; /* Should never get here */
-}
-
 
 /**
  * @copydoc FNPDMDEVRESET
@@ -653,9 +636,8 @@ static DECLCALLBACK(void) virtioScsiR3MediumEjected(PPDMIMEDIAEXPORT pInterface)
     PVIRTIOSCSI pThis = pTarget->CTX_SUFF(pVirtioScsi);
 
     if (pThis->pMediaNotify)
-        virtioSetWriteLed(&(pThis->virtioState), false);
+        virtioScsiSetWriteLed(pTarget, false);
 }
-
 
 /**
  * Transmit queue consumer
@@ -679,6 +661,60 @@ static DECLCALLBACK(bool) virtioScsiR3NotifyQueueConsumer(PPDMDEVINS pDevIns, PP
 
 
 /**
+ * Gets the pointer to the status LED of a unit.
+ *
+ * @returns VBox status code.
+ * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+ * @param   iLUN            The unit which status LED we desire.
+ * @param   ppLed           Where to store the LED pointer.
+ */
+static DECLCALLBACK(int) virtioScsiR3TargetQueryStatusLed(PPDMILEDPORTS pInterface, unsigned iLUN, PPDMLED *ppLed)
+{
+    PVIRTIOSCSITARGET pTarget = RT_FROM_MEMBER(pInterface, VIRTIOSCSITARGET, ILed);
+    if (iLUN == 0)
+    {
+        *ppLed = &pTarget->led;
+        Assert((*ppLed)->u32Magic == PDMLED_MAGIC);
+        return VINF_SUCCESS;
+    }
+    return VERR_PDM_LUN_NOT_FOUND;
+  }
+
+
+/**
+ * Gets the pointer to the status LED of a unit.
+ *
+ * @returns VBox status code.
+ * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+ * @param   iLUN            The unit which status LED we desire.
+ * @param   ppLed           Where to store the LED pointer.
+ */
+static DECLCALLBACK(int) virtioScsiR3DeviceQueryStatusLed(PPDMILEDPORTS pInterface, unsigned iLUN, PPDMLED *ppLed)
+{
+    PVIRTIOSCSI pThis = RT_FROM_MEMBER(pInterface, VIRTIOSCSI, ILeds);
+    if (iLUN < pThis->cTargets)
+    {
+        *ppLed = &pThis->aTargetInstances[iLUN].led;
+        Assert((*ppLed)->u32Magic == PDMLED_MAGIC);
+        return VINF_SUCCESS;
+    }
+    return VERR_PDM_LUN_NOT_FOUND;
+}
+
+/**
+ * @interface_method_impl{PDMIBASE,pfnQueryInterface}
+ */
+static DECLCALLBACK(void *) virtioScsiR3TargetQueryInterface(PPDMIBASE pInterface, const char *pszIID)
+{
+     PVIRTIOSCSITARGET pTarget = RT_FROM_MEMBER(pInterface, VIRTIOSCSITARGET, IBase);
+     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE,        &pTarget->IBase);
+     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMEDIAPORT,   &pTarget->IMediaPort);
+     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMEDIAEXPORT, &pTarget->IMediaExPort);
+     PDMIBASE_RETURN_INTERFACE(pszIID, PDMILEDPORTS,    &pTarget->ILed);
+     return NULL;
+}
+
+/**
  * virtio-scsi VirtIO Device-specific capabilities read callback
  * (other VirtIO capabilities and features are handled in VirtIO implementation)
  *
@@ -690,7 +726,7 @@ static DECLCALLBACK(bool) virtioScsiR3NotifyQueueConsumer(PPDMDEVINS pDevIns, PP
 static DECLCALLBACK(int) virtioScsiR3DevCapRead(PPDMDEVINS pDevIns, RTGCPHYS GCPhysAddr, const void *pvBuf, size_t cbRead)
 {
 /*TBD*/
-    LogFlowFunc(("Read from Device-Specific capabilities, callback to VirtIO client\n"));
+    LogFunc(("Read from Device-Specific capabilities\n"));
     RT_NOREF(pDevIns);
     RT_NOREF(GCPhysAddr);
     RT_NOREF(pvBuf);
@@ -711,7 +747,7 @@ static DECLCALLBACK(int) virtioScsiR3DevCapRead(PPDMDEVINS pDevIns, RTGCPHYS GCP
 static DECLCALLBACK(int) virtioScsiR3DevCapWrite(PPDMDEVINS pDevIns, RTGCPHYS GCPhysAddr, const void *pvBuf, size_t cbWrite)
 {
 /*TBD*/
-    LogFlowFunc(("Write to Device-Specific capabilities, callback to VirtIO client\n"));
+    LogFunc(("Write to Device-Specific capabilities\n"));
     RT_NOREF(pDevIns);
     RT_NOREF(GCPhysAddr);
     RT_NOREF(pvBuf);
@@ -719,6 +755,90 @@ static DECLCALLBACK(int) virtioScsiR3DevCapWrite(PPDMDEVINS pDevIns, RTGCPHYS GC
     int rv = VINF_SUCCESS;
     return rv;
 }
+
+
+/**
+ * Memory mapped I/O Handler for read operations.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pDevIns     The device instance.
+ * @param   pvUser      User argument.
+ * @param   GCPhysAddr  Physical address (in GC) where the read starts.
+ * @param   pv          Where to store the result.
+ * @param   cb          Number of bytes read.
+ */
+PDMBOTHCBDECL(int) virtioScsiMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
+{
+    RT_NOREF_PV(pDevIns); RT_NOREF_PV(pvUser); RT_NOREF_PV(GCPhysAddr); RT_NOREF_PV(pv); RT_NOREF_PV(cb);
+    LogFunc(("Read from MMIO area\n"));
+    return VINF_SUCCESS;
+}
+
+/**
+ * Memory mapped I/O Handler for write operations.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pDevIns     The device instance.
+ * @param   pvUser      User argument.
+ * @param   GCPhysAddr  Physical address (in GC) where the read starts.
+ * @param   pv          Where to fetch the result.
+ * @param   cb          Number of bytes to write.
+ */
+PDMBOTHCBDECL(int) virtioScsiMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void const *pv, unsigned cb)
+{
+    RT_NOREF_PV(pDevIns); RT_NOREF_PV(pvUser); RT_NOREF_PV(GCPhysAddr); RT_NOREF_PV(pv); RT_NOREF_PV(cb);
+    LogFunc(("Write to MMIO area\n"));
+    return VINF_SUCCESS;
+}
+
+/**
+ * @callback_method_impl{FNPCIIOREGIONMAP}
+ */
+static DECLCALLBACK(int) virtioScsiR3Map(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
+                                           RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
+{
+    RT_NOREF(pPciDev, iRegion);
+    PVIRTIOSCSI  pThis = PDMINS_2_DATA(pDevIns, PVIRTIOSCSI);
+    int rc = VINF_SUCCESS;
+
+    Assert(cb >= 32);
+
+    switch (iRegion)
+    {
+        case 0:
+            LogFunc(("virtio-scsi MMIO mapped at GCPhysAddr=%RGp cb=%RGp\n", GCPhysAddress, cb));
+
+            /* We use the assigned size here, because we currently only support page aligned MMIO ranges. */
+            rc = PDMDevHlpMMIORegister(pDevIns, GCPhysAddress, cb, NULL /*pvUser*/,
+                                   IOMMMIO_FLAGS_READ_PASSTHRU | IOMMMIO_FLAGS_WRITE_PASSTHRU,
+                                   virtioScsiMMIOWrite, virtioScsiMMIORead,
+                                   "virtio-scsi MMIO");
+            pThis->GCPhysMMIOBase = RT_SUCCESS(rc) ? GCPhysAddress : 0;
+            return rc;
+        case 1:
+            /* VirtIO 1.0 doesn't uses Port I/O (Virtio 0.95 e.g. "legacy", does) */
+            AssertMsgFailed(("virtio-scsi: Port I/O not supported by this Host SCSI device\n"));
+        default:
+            AssertMsgFailed(("Invalid enmType=%d\n", enmType));
+    }
+    return VERR_GENERAL_FAILURE; /* Should never get here */
+}
+
+/**
+ * @interface_method_impl{PDMIBASE,pfnQueryInterface}
+ */
+static DECLCALLBACK(void *) virtioScsiR3DeviceQueryInterface(PPDMIBASE pInterface, const char *pszIID)
+{
+    PVIRTIOSCSI pVirtioScsi = RT_FROM_MEMBER(pInterface, VIRTIOSCSI, IBase);
+
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE,         &pVirtioScsi->IBase);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMILEDPORTS,     &pVirtioScsi->ILeds);
+
+    return NULL;
+}
+
 
 /**
  * Detach notification.
@@ -736,7 +856,7 @@ static DECLCALLBACK(void) virtioScsiR3Detach(PPDMDEVINS pDevIns, unsigned iLUN, 
     PVIRTIOSCSI       pThis = PDMINS_2_DATA(pDevIns, PVIRTIOSCSI);
     PVIRTIOSCSITARGET pTarget = &pThis->aTargetInstances[iLUN];
 
-    Log(("%s:\n", __FUNCTION__));
+    LogFunc((""));
 
     AssertMsg(fFlags & PDM_TACH_FLAGS_NOT_HOT_PLUG,
               ("virtio-scsi: Device does not support hotplugging\n"));
@@ -745,25 +865,7 @@ static DECLCALLBACK(void) virtioScsiR3Detach(PPDMDEVINS pDevIns, unsigned iLUN, 
      * Zero some important members.
      */
     pTarget->fPresent    = false;
-    pTarget->pUpstreamDrvBase    = NULL;
-}
-
-
-/**
- * @interface_method_impl{PDMIBASE,pfnQueryInterface}
- */
-static DECLCALLBACK(void *) virtioScsiR3DeviceQueryInterface(PPDMIBASE pInterface, const char *pszIID)
-{
-    PPDMDRVINS pDevIns = PDMIBASE_2_PDMDRV(pInterface);
-    PVIRTIOSCSITARGET pTarget = RT_FROM_MEMBER(pInterface, VIRTIOSCSITARGET, IBase);
-    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pDevIns->IBase);
-    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMEDIAPORT, &pTarget->IMediaPort);
-    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMEDIAEXPORT, &pTarget->IMediaExPort);
-
-    /* This call back is necessary to get Status / LED support */
-    return virtioQueryInterface(pInterface, pszIID);
-
-    return NULL;
+    pTarget->pDrvBase    = NULL;
 }
 
 /**
@@ -791,7 +893,7 @@ static DECLCALLBACK(int)  virtioScsiR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, 
                     VERR_INVALID_PARAMETER);
 
     /* the usual paranoia */
-    AssertRelease(!pTarget->pUpstreamDrvBase);
+    AssertRelease(!pTarget->pDrvBase);
     Assert(pTarget->iLUN == iLUN);
 
     /*
@@ -799,7 +901,7 @@ static DECLCALLBACK(int)  virtioScsiR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, 
      * required as well as optional.
      */
     rc = PDMDevHlpDriverAttach(pDevIns, pTarget->iLUN, &pDevIns->IBase,
-                               &pTarget->pUpstreamDrvBase, (const char *)&pTarget->pszLunName);
+                               &pTarget->pDrvBase, (const char *)&pTarget->pszLunName);
     if (RT_SUCCESS(rc))
         pTarget->fPresent = true;
     else
@@ -808,7 +910,7 @@ static DECLCALLBACK(int)  virtioScsiR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, 
     if (RT_FAILURE(rc))
     {
         pTarget->fPresent = false;
-        pTarget->pUpstreamDrvBase = NULL;
+        pTarget->pDrvBase = NULL;
     }
     return rc;
 }
@@ -822,13 +924,17 @@ static DECLCALLBACK(int) virtioScsiDestruct(PPDMDEVINS pDevIns)
     return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(int) virtioScsiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
-{
+static DECLCALLBACK(int) virtioScsiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg){
 
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
+
     PVIRTIOSCSI  pThis = PDMINS_2_DATA(pDevIns, PVIRTIOSCSI);
     int  rc = VINF_SUCCESS;
     bool fBootable = true;
+
+    pThis->pDevInsR3 = pDevIns;
+    pThis->pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
+    pThis->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
 
     LogFunc(("PDM device instance: %d\n", iInstance));
 
@@ -856,24 +962,30 @@ static DECLCALLBACK(int) virtioScsiConstruct(PPDMDEVINS pDevIns, int iInstance, 
     LogFunc(("Bootable=%RTbool (unimplemented)\n", fBootable));
 
     VIRTIOPCIPARAMS virtioPciParams, *pVirtioPciParams = &virtioPciParams;
-    pVirtioPciParams->uDeviceId      = PCI_DEVICE_ID_VIRTIO_SCSI_HOST;
+    pVirtioPciParams->uDeviceId      = PCI_DEVICE_ID_VIRTIOSCSI_HOST;
     pVirtioPciParams->uClassBase     = PCI_CLASS_BASE_MASS_STORAGE;
     pVirtioPciParams->uClassSub      = PCI_CLASS_SUB_SCSI_STORAGE_CONTROLLER;
     pVirtioPciParams->uClassProg     = PCI_CLASS_PROG_UNSPECIFIED;
-    pVirtioPciParams->uSubsystemId   = PCI_DEVICE_ID_VIRTIO_SCSI_HOST;  /* Virtio 1.0 spec allows PCI Device ID here */
+    pVirtioPciParams->uSubsystemId   = PCI_DEVICE_ID_VIRTIOSCSI_HOST;  /* Virtio 1.0 spec allows PCI Device ID here */
     pVirtioPciParams->uInterruptLine = 0x00;
     pVirtioPciParams->uInterruptPin  = 0x01;
 
     PVIRTIOSTATE pVirtio = &(pThis->virtioState);
-    pDevIns->IBase.pfnQueryInterface = virtioScsiR3DeviceQueryInterface;
 
-    rc = virtioConstruct(pDevIns, pVirtio, iInstance, pVirtioPciParams,
-                         VIRTIO_SCSI_NAME_FMT, VIRTIO_SCSI_N_QUEUES, VIRTIO_SCSI_REGION_PCI_CAP,
-                         virtioScsiR3DevCapRead, virtioScsiR3DevCapWrite, sizeof(VIRTIODEVCAP));
+    pThis->IBase.pfnQueryInterface = virtioScsiR3DeviceQueryInterface;
+    rc = virtioConstruct(pDevIns, pVirtio, iInstance, pVirtioPciParams, &pThis->pVirtioCallbacks,
+                         VIRTIOSCSI_NAME_FMT, VIRTIOSCSI_N_QUEUES, VIRTIOSCSI_REGION_PCI_CAP,
+                         virtioScsiR3DevCapRead, virtioScsiR3DevCapWrite,
+                        0 /* cbDevSpecificCap */,
+                        0 /* uNotifyOffMultiplier */);
+
+
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("virtio-scsi: failed to initialize VirtIO"));
 
-    rc = PDMDevHlpPCIIORegionRegister(pDevIns, VIRTIO_SCSI_REGION_MEM_IO, 32,
+    pThis->pVirtioCallbacks->pfnSetHostFeatures(pVirtio, VIRTIOSCSI_HOST_SCSI_FEATURES_OFFERED);
+
+    rc = PDMDevHlpPCIIORegionRegister(pDevIns, VIRTIOSCSI_REGION_MEM_IO, 32,
                                       PCI_ADDRESS_SPACE_MEM, virtioScsiR3Map);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("virtio-scsi: cannot register PCI mmio address space"));
@@ -902,12 +1014,15 @@ static DECLCALLBACK(int) virtioScsiConstruct(PPDMDEVINS pDevIns, int iInstance, 
     {
         PVIRTIOSCSITARGET pTarget = &pThis->aTargetInstances[iLUN];
 
-        if (RTStrAPrintf(&pTarget->pszLunName, "VIRTIOSCSI%u", iLUN) < 0)
+        if (RTStrAPrintf(&pTarget->pszLunName, "vSCSI%u", iLUN) < 0)
             AssertLogRelFailedReturn(VERR_NO_MEMORY);
 
         /* Initialize static parts of the device. */
         pTarget->iLUN = iLUN;
         pTarget->pVirtioScsiR3 = pThis;
+
+        pTarget->IBase.pfnQueryInterface                 = virtioScsiR3TargetQueryInterface;
+
         /* IMediaPort and IMediaExPort interfaces provide callbacks for VD media and downstream driver access */
         pTarget->IMediaPort.pfnQueryDeviceLocation       = virtioScsiR3QueryDeviceLocation;
         pTarget->IMediaExPort.pfnIoReqCompleteNotify     = virtioScsiR3IoReqCompleteNotify;
@@ -917,36 +1032,41 @@ static DECLCALLBACK(int) virtioScsiConstruct(PPDMDEVINS pDevIns, int iInstance, 
         pTarget->IMediaExPort.pfnMediumEjected           = virtioScsiR3MediumEjected;
         pTarget->IMediaExPort.pfnIoReqQueryBuf           = NULL;
         pTarget->IMediaExPort.pfnIoReqQueryDiscardRanges = NULL;
+        pTarget->IBase.pfnQueryInterface                 = virtioScsiR3TargetQueryInterface;
+        pTarget->ILed.pfnQueryStatusLed                  = virtioScsiR3TargetQueryStatusLed;
+        pThis->ILeds.pfnQueryStatusLed                   = virtioScsiR3DeviceQueryStatusLed;
+        pTarget->led.u32Magic                            = PDMLED_MAGIC;
 
         LogFunc(("Attaching LUN: %s\n", pTarget->pszLunName));
 
         /* Attach this SCSI driver (upstream driver pre-determined statically outside this module) */
         AssertReturn(iLUN < RT_ELEMENTS(pThis->aTargetInstances), VERR_PDM_NO_SUCH_LUN);
-        rc = PDMDevHlpDriverAttach(pDevIns, iLUN, &pDevIns->IBase, &pTarget->pUpstreamDrvBase, (const char *)&pTarget->pszLunName);
+        rc = PDMDevHlpDriverAttach(pDevIns, iLUN, &pTarget->IBase, &pTarget->pDrvBase, (const char *)&pTarget->pszLunName);
         if (RT_SUCCESS(rc))
         {
             pTarget->fPresent = true;
 
-            pTarget->pDrvMedia = PDMIBASE_QUERY_INTERFACE(pTarget->pUpstreamDrvBase, PDMIMEDIA);
+            pTarget->pDrvMedia = PDMIBASE_QUERY_INTERFACE(pTarget->pDrvBase, PDMIMEDIA);
             AssertMsgReturn(VALID_PTR(pTarget->pDrvMedia),
                          ("virtio-scsi configuration error: LUN#%d missing basic media interface!\n", pTarget->iLUN),
                          VERR_PDM_MISSING_INTERFACE);
 
-             /* Get the extended media interface. */
-             pTarget->pDrvMediaEx = PDMIBASE_QUERY_INTERFACE(pTarget->pUpstreamDrvBase, PDMIMEDIAEX);
-             AssertMsgReturn(VALID_PTR(pTarget->pDrvMediaEx),
+            /* Get the extended media interface. */
+            pTarget->pDrvMediaEx = PDMIBASE_QUERY_INTERFACE(pTarget->pDrvBase, PDMIMEDIAEX);
+            AssertMsgReturn(VALID_PTR(pTarget->pDrvMediaEx),
                          ("virtio-scsi configuration error: LUN#%d missing extended media interface!\n", pTarget->iLUN),
                          VERR_PDM_MISSING_INTERFACE);
 
-// pk: Not sure if this is needed here yet with VirtIO or DrvScsi, will investigate after basic VirtIO working.
-//            rc = pTarget->pDrvMediaEx->pfnIoReqAllocSizeSet(pTarget->pDrvMediaEx, sizeof(BUSLOGICREQ));
-//             AssertMsgRCReturn(rc, ("BusLogic configuration error: LUN#%u: Failed to set I/O request size!", pTarget->iLUN),
+            rc = pTarget->pDrvMediaEx->pfnIoReqAllocSizeSet(pTarget->pDrvMediaEx, REQ_ALLOC_SIZE /*TBD*/);
+            AssertMsgReturn(VALID_PTR(pTarget->pDrvMediaEx),
+                         ("virtio-scsi configuration error: LUN#%u: Failed to set I/O request size!\n", pTarget->iLUN),
+                         rc);
 
         }
         else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
         {
             pTarget->fPresent = false;
-            pTarget->pUpstreamDrvBase = NULL;
+            pTarget->pDrvBase = NULL;
             rc = VINF_SUCCESS;
             Log(("virtio-scsi: no driver attached to device %s\n", pTarget->pszLunName));
         }
@@ -963,6 +1083,13 @@ static DECLCALLBACK(int) virtioScsiConstruct(PPDMDEVINS pDevIns, int iInstance, 
                                 NULL, virtioScsiR3LoadExec, virtioScsiR3LoadDone);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("virtio-scsi cannot register save state handlers"));
+
+    /* Status driver */
+    PPDMIBASE pUpBase;
+    rc = PDMDevHlpDriverAttach(pDevIns, PDM_STATUS_LUN, &pThis->IBase, &pUpBase, "Status Port");
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Failed to attach the status LUN"));
+
     /*
      * Register the debugger info callback.
      */
