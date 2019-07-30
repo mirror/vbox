@@ -65,7 +65,7 @@ static int vbclInitLogger(char *pszLogFileName)
                            pszLogFileName ? 10 : 0 /*cHistory*/,
                            pszLogFileName ? 100 * _1M : 0 /*cbHistoryFileMax*/,
                            pszLogFileName ? RT_SEC_1DAY : 0 /*cSecsHistoryTimeSlot*/,
-                           NULL /*pErrInfo*/, "%s", pszLogFileName);
+                           NULL /*pErrInfo*/, "%s", pszLogFileName ? pszLogFileName : "");
 
     AssertRCReturn(rc, rc);
 
