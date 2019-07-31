@@ -3032,13 +3032,9 @@ DECLINLINE(unsigned) pgmModeToType(PGMMODE pgmMode)
  * @param   enmGuestMode    The guest mode.
  * @param   enmHostMode     The host mode.
  * @param   enmShadowMode   The current shadow mode.
- * @param   penmSwitcher    Where to store the switcher to use.
- *                          VMMSWITCHER_INVALID means no change.
  */
-static PGMMODE pgmCalcShadowMode(PVM pVM, PGMMODE enmGuestMode, SUPPAGINGMODE enmHostMode, PGMMODE enmShadowMode,
-                                 VMMSWITCHER *penmSwitcher)
+static PGMMODE pgmCalcShadowMode(PVM pVM, PGMMODE enmGuestMode, SUPPAGINGMODE enmHostMode, PGMMODE enmShadowMode)
 {
-    VMMSWITCHER enmSwitcher = VMMSWITCHER_INVALID;
     switch (enmGuestMode)
     {
         /*
@@ -3060,7 +3056,6 @@ static PGMMODE pgmCalcShadowMode(PVM pVM, PGMMODE enmGuestMode, SUPPAGINGMODE en
                 case SUPPAGINGMODE_32_BIT:
                 case SUPPAGINGMODE_32_BIT_GLOBAL:
                     enmShadowMode = PGMMODE_32_BIT;
-                    enmSwitcher = VMMSWITCHER_32_TO_32;
                     break;
 
                 case SUPPAGINGMODE_PAE:
@@ -3068,7 +3063,6 @@ static PGMMODE pgmCalcShadowMode(PVM pVM, PGMMODE enmGuestMode, SUPPAGINGMODE en
                 case SUPPAGINGMODE_PAE_GLOBAL:
                 case SUPPAGINGMODE_PAE_GLOBAL_NX:
                     enmShadowMode = PGMMODE_PAE;
-                    enmSwitcher = VMMSWITCHER_PAE_TO_PAE;
                     break;
 
                 case SUPPAGINGMODE_AMD64:
@@ -3076,12 +3070,10 @@ static PGMMODE pgmCalcShadowMode(PVM pVM, PGMMODE enmGuestMode, SUPPAGINGMODE en
                 case SUPPAGINGMODE_AMD64_NX:
                 case SUPPAGINGMODE_AMD64_GLOBAL_NX:
                     enmShadowMode = PGMMODE_PAE;
-                    enmSwitcher = VMMSWITCHER_AMD64_TO_PAE;
                     break;
 
                 default:
-                    AssertLogRelMsgFailedReturnStmt(("enmHostMode=%d\n", enmHostMode),
-                                                    *penmSwitcher = VMMSWITCHER_INVALID, PGMMODE_INVALID);
+                    AssertLogRelMsgFailedReturn(("enmHostMode=%d\n", enmHostMode), PGMMODE_INVALID);
             }
             break;
 
@@ -3091,7 +3083,6 @@ static PGMMODE pgmCalcShadowMode(PVM pVM, PGMMODE enmGuestMode, SUPPAGINGMODE en
                 case SUPPAGINGMODE_32_BIT:
                 case SUPPAGINGMODE_32_BIT_GLOBAL:
                     enmShadowMode = PGMMODE_32_BIT;
-                    enmSwitcher = VMMSWITCHER_32_TO_32;
                     break;
 
                 case SUPPAGINGMODE_PAE:
@@ -3099,7 +3090,6 @@ static PGMMODE pgmCalcShadowMode(PVM pVM, PGMMODE enmGuestMode, SUPPAGINGMODE en
                 case SUPPAGINGMODE_PAE_GLOBAL:
                 case SUPPAGINGMODE_PAE_GLOBAL_NX:
                     enmShadowMode = PGMMODE_PAE;
-                    enmSwitcher = VMMSWITCHER_PAE_TO_PAE;
                     break;
 
                 case SUPPAGINGMODE_AMD64:
@@ -3107,12 +3097,10 @@ static PGMMODE pgmCalcShadowMode(PVM pVM, PGMMODE enmGuestMode, SUPPAGINGMODE en
                 case SUPPAGINGMODE_AMD64_NX:
                 case SUPPAGINGMODE_AMD64_GLOBAL_NX:
                     enmShadowMode = PGMMODE_PAE;
-                    enmSwitcher = VMMSWITCHER_AMD64_TO_PAE;
                     break;
 
                 default:
-                    AssertLogRelMsgFailedReturnStmt(("enmHostMode=%d\n", enmHostMode),
-                                                    *penmSwitcher = VMMSWITCHER_INVALID, PGMMODE_INVALID);
+                    AssertLogRelMsgFailedReturn(("enmHostMode=%d\n", enmHostMode), PGMMODE_INVALID);
             }
             break;
 
@@ -3123,7 +3111,6 @@ static PGMMODE pgmCalcShadowMode(PVM pVM, PGMMODE enmGuestMode, SUPPAGINGMODE en
                 case SUPPAGINGMODE_32_BIT:
                 case SUPPAGINGMODE_32_BIT_GLOBAL:
                     enmShadowMode = PGMMODE_PAE;
-                    enmSwitcher = VMMSWITCHER_32_TO_PAE;
                     break;
 
                 case SUPPAGINGMODE_PAE:
@@ -3131,7 +3118,6 @@ static PGMMODE pgmCalcShadowMode(PVM pVM, PGMMODE enmGuestMode, SUPPAGINGMODE en
                 case SUPPAGINGMODE_PAE_GLOBAL:
                 case SUPPAGINGMODE_PAE_GLOBAL_NX:
                     enmShadowMode = PGMMODE_PAE;
-                    enmSwitcher = VMMSWITCHER_PAE_TO_PAE;
                     break;
 
                 case SUPPAGINGMODE_AMD64:
@@ -3139,12 +3125,10 @@ static PGMMODE pgmCalcShadowMode(PVM pVM, PGMMODE enmGuestMode, SUPPAGINGMODE en
                 case SUPPAGINGMODE_AMD64_NX:
                 case SUPPAGINGMODE_AMD64_GLOBAL_NX:
                     enmShadowMode = PGMMODE_PAE;
-                    enmSwitcher = VMMSWITCHER_AMD64_TO_PAE;
                     break;
 
                 default:
-                    AssertLogRelMsgFailedReturnStmt(("enmHostMode=%d\n", enmHostMode),
-                                                    *penmSwitcher = VMMSWITCHER_INVALID, PGMMODE_INVALID);
+                    AssertLogRelMsgFailedReturn(("enmHostMode=%d\n", enmHostMode), PGMMODE_INVALID);
             }
             break;
 
@@ -3155,7 +3139,6 @@ static PGMMODE pgmCalcShadowMode(PVM pVM, PGMMODE enmGuestMode, SUPPAGINGMODE en
                 case SUPPAGINGMODE_32_BIT:
                 case SUPPAGINGMODE_32_BIT_GLOBAL:
                     enmShadowMode = PGMMODE_AMD64;
-                    enmSwitcher = VMMSWITCHER_32_TO_AMD64;
                     break;
 
                 case SUPPAGINGMODE_PAE:
@@ -3163,7 +3146,6 @@ static PGMMODE pgmCalcShadowMode(PVM pVM, PGMMODE enmGuestMode, SUPPAGINGMODE en
                 case SUPPAGINGMODE_PAE_GLOBAL:
                 case SUPPAGINGMODE_PAE_GLOBAL_NX:
                     enmShadowMode = PGMMODE_AMD64;
-                    enmSwitcher = VMMSWITCHER_PAE_TO_AMD64;
                     break;
 
                 case SUPPAGINGMODE_AMD64:
@@ -3171,18 +3153,15 @@ static PGMMODE pgmCalcShadowMode(PVM pVM, PGMMODE enmGuestMode, SUPPAGINGMODE en
                 case SUPPAGINGMODE_AMD64_NX:
                 case SUPPAGINGMODE_AMD64_GLOBAL_NX:
                     enmShadowMode = PGMMODE_AMD64;
-                    enmSwitcher = VMMSWITCHER_AMD64_TO_AMD64;
                     break;
 
                 default:
-                    AssertLogRelMsgFailedReturnStmt(("enmHostMode=%d\n", enmHostMode),
-                                                    *penmSwitcher = VMMSWITCHER_INVALID, PGMMODE_INVALID);
+                    AssertLogRelMsgFailedReturn(("enmHostMode=%d\n", enmHostMode), PGMMODE_INVALID);
             }
             break;
 
         default:
-            AssertLogRelMsgFailedReturnStmt(("enmGuestMode=%d\n", enmGuestMode),
-                                            *penmSwitcher = VMMSWITCHER_INVALID, PGMMODE_INVALID);
+            AssertLogRelMsgFailedReturn(("enmGuestMode=%d\n", enmGuestMode), PGMMODE_INVALID);
     }
 
     /*
@@ -3232,14 +3211,12 @@ static PGMMODE pgmCalcShadowMode(PVM pVM, PGMMODE enmGuestMode, SUPPAGINGMODE en
                             break;
 #endif
                         default:
-                            AssertLogRelMsgFailedReturnStmt(("enmHostMode=%d\n", pVM->pgm.s.enmHostMode),
-                                                            *penmSwitcher = VMMSWITCHER_INVALID, PGMMODE_INVALID);
+                            AssertLogRelMsgFailedReturn(("enmHostMode=%d\n", pVM->pgm.s.enmHostMode), PGMMODE_INVALID);
                     }
             }
         }
     }
 
-    *penmSwitcher = enmSwitcher;
     return enmShadowMode;
 }
 
@@ -3264,21 +3241,8 @@ VMM_INT_DECL(int) PGMHCChangeMode(PVM pVM, PVMCPU pVCpu, PGMMODE enmGuestMode)
     /*
      * Calc the shadow mode and switcher.
      */
-    VMMSWITCHER enmSwitcher   = VMMSWITCHER_INVALID;
     PGMMODE     enmShadowMode = PGMMODE_INVALID;
-    enmShadowMode = pgmCalcShadowMode(pVM, enmGuestMode, pVM->pgm.s.enmHostMode, pVCpu->pgm.s.enmShadowMode, &enmSwitcher);
-
-#ifdef VBOX_WITH_RAW_MODE_NOT_R0
-    if (   enmSwitcher != VMMSWITCHER_INVALID
-        && VM_IS_RAW_MODE_ENABLED(pVM))
-    {
-        /*
-         * Select new switcher.
-         */
-        int rc = VMMR3SelectSwitcher(pVM, enmSwitcher);
-        AssertLogRelMsgRCReturn(rc,("VMMR3SelectSwitcher(%d) -> %Rrc\n", enmSwitcher, rc), rc);
-    }
-#endif
+    enmShadowMode = pgmCalcShadowMode(pVM, enmGuestMode, pVM->pgm.s.enmHostMode, pVCpu->pgm.s.enmShadowMode);
 
     /*
      * Exit old mode(s).

@@ -337,9 +337,6 @@ DECLINLINE(VBOXSTRICTRC)           hmR0VmxHandleExitNested(PVMCPU pVCpu, PVMXTRA
 #endif
 
 static int  hmR0VmxImportGuestState(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo, uint64_t fWhat);
-#if HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS)
-static void hmR0VmxInitVmcsReadCache(PVMCPU pVCpu);
-#endif
 
 /** @name VM-exit handler prototypes.
  * @{
@@ -2888,17 +2885,6 @@ VMMR0DECL(int) VMXR0InvalidatePage(PVMCPU pVCpu, RTGCPTR GCVirt)
         if (pVM->hm.s.vmx.fVpid)
         {
             bool fVpidFlush = RT_BOOL(pVM->hm.s.vmx.Msrs.u64EptVpidCaps & MSR_IA32_VMX_EPT_VPID_CAP_INVVPID_INDIV_ADDR);
-
-#if HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS)
-            /*
-             * Workaround Erratum BV75, AAJ159 and others that affect several Intel CPUs
-             * where executing INVVPID outside 64-bit mode does not flush translations of
-             * 64-bit linear addresses, see @bugref{6208#c72}.
-             */
-            if (RT_HI_U32(GCVirt))
-                fVpidFlush = false;
-#endif
-
             if (fVpidFlush)
             {
                 hmR0VmxFlushVpid(pVCpu, VMXTLBFLUSHVPID_INDIV_ADDR, GCVirt);
@@ -4704,12 +4690,6 @@ static bool hmR0VmxShouldSwapEferMsr(PCVMCPU pVCpu)
     return true;
 #else
     PCCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
-#if HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS)
-    /* For 32-bit hosts running 64-bit guests, we always swap EFER MSR in the world-switcher. Nothing to do here. */
-    if (CPUMIsGuestInLongModeEx(pCtx))
-        return false;
-#endif
-
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     uint64_t const u64HostEfer  = pVM->hm.s.vmx.u64HostMsrEfer;
     uint64_t const u64GuestEfer = pCtx->msrEFER;
@@ -5820,7 +5800,7 @@ static VBOXSTRICTRC hmR0VmxExportGuestCR3AndCR4(PVMCPU pVCpu, PVMXTRANSIENT pVmx
 
                 case PGMMODE_AMD64:             /* 64-bit AMD paging (long mode). */
                 case PGMMODE_AMD64_NX:          /* 64-bit AMD paging (long mode) with NX enabled. */
-#ifdef VBOX_ENABLE_64_BITS_GUESTS
+#ifdef VBOX_WITH_64_BITS_GUESTS
                     break;
 #endif
                 default:
@@ -6703,12 +6683,13 @@ static int hmR0VmxSelectVMRunHandler(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 
     if (CPUMIsGuestInLongModeEx(pCtx))
     {
-#ifndef VBOX_ENABLE_64_BITS_GUESTS
+#ifndef VBOX_WITH_64_BITS_GUESTS
         return VERR_PGM_UNSUPPORTED_SHADOW_PAGING_MODE;
-#endif
+#else
         Assert(pVCpu->CTX_SUFF(pVM)->hm.s.fAllow64BitGuests);    /* Guaranteed by hmR3InitFinalizeR0(). */
         /* Guest is in long mode, use the 64-bit handler (host is 64-bit). */
         pVmcsInfo->pfnStartVM = VMXR0StartVM64;
+#endif
     }
     else
     {

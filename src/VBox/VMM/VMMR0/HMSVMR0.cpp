@@ -1590,7 +1590,7 @@ static int hmR0SvmExportGuestCR4(PVMCPU pVCpu, PSVMVMCB pVmcb)
 
             case PGMMODE_AMD64:         /* 64-bit AMD paging (long mode). */
             case PGMMODE_AMD64_NX:      /* 64-bit AMD paging (long mode) with NX enabled. */
-#ifdef VBOX_ENABLE_64_BITS_GUESTS
+#ifdef VBOX_WITH_64_BITS_GUESTS
                 break;
 #else
                 return VERR_PGM_UNSUPPORTED_SHADOW_PAGING_MODE;
@@ -2216,7 +2216,7 @@ static int hmR0SvmSelectVMRunHandler(PVMCPU pVCpu)
 {
     if (CPUMIsGuestInLongMode(pVCpu))
     {
-#ifndef VBOX_ENABLE_64_BITS_GUESTS
+#ifndef VBOX_WITH_64_BITS_GUESTS
         return VERR_PGM_UNSUPPORTED_SHADOW_PAGING_MODE;
 #else
 # if HC_ARCH_BITS != 64 || ARCH_BITS != 64

@@ -46,41 +46,6 @@ RT_C_DECLS_BEGIN
  * @{
  */
 
-/**
- * World switcher identifiers.
- */
-typedef enum VMMSWITCHER
-{
-    /** The usual invalid 0. */
-    VMMSWITCHER_INVALID = 0,
-    /** Switcher for 32-bit host to 32-bit shadow paging. */
-    VMMSWITCHER_32_TO_32,
-    /** Switcher for 32-bit host paging to PAE shadow paging. */
-    VMMSWITCHER_32_TO_PAE,
-    /** Switcher for 32-bit host paging to AMD64 shadow paging. */
-    VMMSWITCHER_32_TO_AMD64,
-    /** Switcher for PAE host to 32-bit shadow paging. */
-    VMMSWITCHER_PAE_TO_32,
-    /** Switcher for PAE host to PAE shadow paging. */
-    VMMSWITCHER_PAE_TO_PAE,
-    /** Switcher for PAE host paging to AMD64 shadow paging. */
-    VMMSWITCHER_PAE_TO_AMD64,
-    /** Switcher for AMD64 host paging to 32-bit shadow paging. */
-    VMMSWITCHER_AMD64_TO_32,
-    /** Switcher for AMD64 host paging to PAE shadow paging. */
-    VMMSWITCHER_AMD64_TO_PAE,
-    /** Switcher for AMD64 host paging to AMD64 shadow paging. */
-    VMMSWITCHER_AMD64_TO_AMD64,
-    /** Stub switcher for 32-bit and PAE. */
-    VMMSWITCHER_X86_STUB,
-    /** Stub switcher for AMD64. */
-    VMMSWITCHER_AMD64_STUB,
-    /** Used to make a count for array declarations and suchlike. */
-    VMMSWITCHER_MAX,
-    /** The usual 32-bit paranoia. */
-    VMMSWITCHER_32BIT_HACK = 0x7fffffff
-} VMMSWITCHER;
-
 
 /**
  * VMMRZCallRing3 operations.
@@ -509,8 +474,6 @@ VMMR3_INT_DECL(void)    VMMR3Relocate(PVM pVM, RTGCINTPTR offDelta);
 VMMR3_INT_DECL(int)     VMMR3UpdateLoggers(PVM pVM);
 VMMR3DECL(const char *) VMMR3GetRZAssertMsg1(PVM pVM);
 VMMR3DECL(const char *) VMMR3GetRZAssertMsg2(PVM pVM);
-VMMR3_INT_DECL(int)     VMMR3SelectSwitcher(PVM pVM, VMMSWITCHER enmSwitcher);
-VMMR3_INT_DECL(RTR0PTR) VMMR3GetHostToGuestSwitcher(PVM pVM, VMMSWITCHER enmSwitcher);
 VMMR3_INT_DECL(int)     VMMR3HmRunGC(PVM pVM, PVMCPU pVCpu);
 VMMR3DECL(int)          VMMR3CallR0(PVM pVM, uint32_t uOperation, uint64_t u64Arg, PSUPVMMR0REQHDR pReqHdr);
 VMMR3_INT_DECL(int)     VMMR3CallR0Emt(PVM pVM, PVMCPU pVCpu, VMMR0OPERATION enmOperation, uint64_t u64Arg, PSUPVMMR0REQHDR pReqHdr);

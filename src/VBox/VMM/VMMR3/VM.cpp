@@ -736,18 +736,6 @@ static int vmR3ReadBaseConfig(PVM pVM, PUVM pUVM, uint32_t cCpus)
     PCFGMNODE   pRoot = CFGMR3GetRoot(pVM);
 
     /*
-     * If executing in fake suplib mode disable RR3 and RR0 in the config.
-     */
-    const char *psz = RTEnvGet("VBOX_SUPLIB_FAKE");
-    if (psz && !strcmp(psz, "fake"))
-    {
-        CFGMR3RemoveValue(pRoot, "RawR3Enabled");
-        CFGMR3InsertInteger(pRoot, "RawR3Enabled", 0);
-        CFGMR3RemoveValue(pRoot, "RawR0Enabled");
-        CFGMR3InsertInteger(pRoot, "RawR0Enabled", 0);
-    }
-
-    /*
      * Base EM and HM config properties.
      */
     pVM->fHMEnabled = true;

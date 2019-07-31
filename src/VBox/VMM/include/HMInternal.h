@@ -37,13 +37,8 @@
 #include <iprt/avl.h>
 #include <iprt/string.h>
 
-#if HC_ARCH_BITS == 32 && defined(RT_OS_DARWIN)
-# error "32-bit darwin is no longer supported. Go back to 4.3 or earlier!"
-#endif
-
-#if HC_ARCH_BITS == 64 || defined(VBOX_WITH_64_BITS_GUESTS)
-/* Enable 64 bits guest support. */
-# define VBOX_ENABLE_64_BITS_GUESTS
+#if HC_ARCH_BITS == 32
+# error "32-bit hosts are no longer supported. Go back to 6.0 or earlier!"
 #endif
 
 /** @def HM_PROFILE_EXIT_DISPATCH
@@ -505,12 +500,6 @@ typedef struct HM
     RTGCPTR                     pGuestPatchMem;
     /** Current free pointer inside the patch block. */
     RTGCPTR                     pFreeGuestPatchMem;
-
-#if HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS)
-    /** 32 to 64 bits switcher entrypoint. */
-    R0PTRTYPE(PFNHMSWITCHERHC)  pfnHost32ToGuest64R0;
-    RTR0PTR                     pvR0Alignment0;
-#endif
 
     struct
     {
@@ -1114,9 +1103,6 @@ typedef struct HMCPU
     STAMPROFILEADV          StatExportGuestState;
     STAMPROFILEADV          StatLoadGuestFpuState;
     STAMPROFILEADV          StatInGC;
-#if HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS)
-    STAMPROFILEADV          StatWorldSwitch3264;
-#endif
     STAMPROFILEADV          StatPoke;
     STAMPROFILEADV          StatSpinPoke;
     STAMPROFILEADV          StatSpinPokeFailed;
@@ -1238,10 +1224,6 @@ typedef struct HMCPU
     STAMCOUNTER             StatVmxCheckBadRpl;
     STAMCOUNTER             StatVmxCheckPmOk;
 
-#if HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS)
-    STAMCOUNTER             StatFpu64SwitchBack;
-    STAMCOUNTER             StatDebug64SwitchBack;
-#endif
 #ifdef VBOX_WITH_STATISTICS
     R3PTRTYPE(PSTAMCOUNTER) paStatExitReason;
     R0PTRTYPE(PSTAMCOUNTER) paStatExitReasonR0;

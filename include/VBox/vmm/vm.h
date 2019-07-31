@@ -146,21 +146,24 @@ typedef struct VMCPU
     /** @name Static per-cpu data.
      * (Putting this after IEM, hoping that it's less frequently used than it.)
      * @{ */
-    /** The CPU ID.
-     * This is the index into the VM::aCpu array. */
-    VMCPUID                 idCpu;
-    /** Raw-mode Context VM Pointer. */
-    PVMRC                   pVMRC;
     /** Ring-3 Host Context VM Pointer. */
     PVMR3                   pVMR3;
     /** Ring-0 Host Context VM Pointer. */
     PVMR0                   pVMR0;
+    /** Raw-mode Context VM Pointer. */
+    uint32_t                pVMRC;
+    /** Padding for new raw-mode (long mode).   */
+    uint32_t                pVMRCPadding;
     /** Pointer to the ring-3 UVMCPU structure. */
     PUVMCPU                 pUVCpu;
     /** The native thread handle. */
     RTNATIVETHREAD          hNativeThread;
     /** The native R0 thread handle. (different from the R3 handle!) */
     RTNATIVETHREAD          hNativeThreadR0;
+    /** The CPU ID.
+     * This is the index into the VM::aCpu array. */
+    VMCPUID                 idCpu;
+
     /** Align the structures below bit on a 64-byte boundary and make sure it starts
      * at the same offset in both 64-bit and 32-bit builds.
      *
@@ -169,7 +172,7 @@ typedef struct VMCPU
      *          data could be lumped together at the end with a < 64 byte padding
      *          following it (to grow into and align the struct size).
      */
-    uint8_t                 abAlignment1[64 - 4 - 4 - 5 * (HC_ARCH_BITS == 64 ? 8 : 4)];
+    uint8_t                 abAlignment1[64 - 4 - 6 * 8];
     /** @} */
 
     /** HM part. */
@@ -1152,7 +1155,9 @@ typedef struct VM
     /** Ring-0 Host Context VM Pointer. */
     R0PTRTYPE(struct VM *)      pVMR0;
     /** Raw-mode Context VM Pointer. */
-    RCPTRTYPE(struct VM *)      pVMRC;
+    uint32_t                    pVMRC;
+    /** Padding for new raw-mode (long mode).   */
+    uint32_t                    pVMRCPadding;
 
     /** The GVM VM handle. Only the GVM should modify this field. */
     uint32_t                    hSelf;
@@ -1186,14 +1191,7 @@ typedef struct VM
      * This is placed here for performance reasons.
      * @todo obsoleted by bMainExecutionEngine, eliminate. */
     bool                        fHMEnabled;
-    /** Hardware VM support requires a minimal raw-mode context.
-     * This is never set on 64-bit hosts, only 32-bit hosts requires it. */
-    bool                        fHMNeedRawModeCtx;
 
-    /** Set when this VM is the master FT node.
-     * @todo This doesn't need to be here, FTM should store it in it's own
-     *       structures instead. */
-    bool                        fFaultTolerantMaster;
     /** Large page enabled flag.
      * @todo This doesn't need to be here, PGM should store it in it's own
      *       structures instead. */
@@ -1201,7 +1199,7 @@ typedef struct VM
     /** @} */
 
     /** Alignment padding. */
-    uint8_t                     uPadding1[7];
+    uint8_t                     uPadding1[5];
 
     /** @name Debugging
      * @{ */
@@ -1379,15 +1377,6 @@ typedef struct VM
         uint8_t     padding[128];       /* multiple of 64 */
     } ssm;
 
-    /** FTM part. */
-    union
-    {
-#ifdef VMM_INCLUDED_SRC_include_FTMInternal_h
-        struct FTM  s;
-#endif
-        uint8_t     padding[512];       /* multiple of 64 */
-    } ftm;
-
 #ifdef VBOX_WITH_REM
     /** REM part. */
     union
@@ -1438,16 +1427,16 @@ typedef struct VM
 #ifdef VBOX_BUGREF_9217
     /** Padding for aligning the structure size on a page boundrary. */
 # ifdef VBOX_WITH_REM
-    uint8_t         abAlignment2[2134 - sizeof(PVMCPUR3) * VMM_MAX_CPU_COUNT];
+    uint8_t         abAlignment2[2646 - sizeof(PVMCPUR3) * VMM_MAX_CPU_COUNT];
 # else
-    uint8_t         abAlignment2[2390 - sizeof(PVMCPUR3) * VMM_MAX_CPU_COUNT];
+    uint8_t         abAlignment2[2902 - sizeof(PVMCPUR3) * VMM_MAX_CPU_COUNT];
 # endif
 #else
     /** Padding for aligning the cpu array on a page boundary. */
 # ifdef VBOX_WITH_REM
-    uint8_t         abAlignment2[2134];
+    uint8_t         abAlignment2[2646];
 # else
-    uint8_t         abAlignment2[2390];
+    uint8_t         abAlignment2[2902];
 # endif
 #endif
 

@@ -1428,7 +1428,6 @@
     GEN_CHECK_OFF(VM, cbSelf);
     GEN_CHECK_OFF(VM, bMainExecutionEngine);
     GEN_CHECK_OFF(VM, fHMEnabled);
-    GEN_CHECK_OFF(VM, fFaultTolerantMaster);
     GEN_CHECK_OFF(VM, fUseLargePages);
     GEN_CHECK_OFF(VM, hTraceBufR3);
     GEN_CHECK_OFF(VM, hTraceBufR0);
@@ -1449,7 +1448,6 @@
     GEN_CHECK_OFF(VM, tm);
     GEN_CHECK_OFF(VM, dbgf);
     GEN_CHECK_OFF(VM, ssm);
-    GEN_CHECK_OFF(VM, ftm);
 #ifdef VBOX_WITH_REM
     GEN_CHECK_OFF(VM, rem);
 #endif

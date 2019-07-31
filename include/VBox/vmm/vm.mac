@@ -51,13 +51,13 @@ struc VMCPU
     .iem                    resb 18496
 
     alignb 64
-    .idCpu                  resd 1
-    .pVMRC                  RTRCPTR_RES 1
     .pVMR3                  RTR3PTR_RES 1
     .pVMR0                  RTR0PTR_RES 1
+    .pVMRC                  resq 1
     .pUVCpu                 RTR3PTR_RES 1
     .hNativeThread          RTR0PTR_RES 1
     .hNativeThreadR0        RTR0PTR_RES 1
+    .idCpu                  resd 1
 
     alignb 64
     .hm                     resb 5888
@@ -95,7 +95,7 @@ struc VM
     .pUVM                   RTR3PTR_RES 1
     .pVMR3                  RTR3PTR_RES 1
     .pVMR0                  RTR0PTR_RES 1
-    .pVMRC                  RTRCPTR_RES 1
+    .pVMRC                  resq 1
     .hSelf                  resd 1
     .cCpus                  resd 1
     .uCpuExecutionCap       resd 1
@@ -109,11 +109,9 @@ struc VM
 %endif
     .bMainExecutionEngine   resb 1
     .fHMEnabled             resb 1
-    .fHMNeedRawModeCtx      resb 1
-    .fFaultTolerantMaster   resb 1
     .fUseLargePages         resb 1
 
-    .uPadding1              resb 7
+    .uPadding1              resb 5
 
     .hTraceBufR3            RTR3PTR_RES 1
     .hTraceBufR0            RTR0PTR_RES 1
@@ -133,7 +131,6 @@ struc VM
     .tm                     resb 2496
     .dbgf                   resb 2432
     .ssm                    resb 128
-    .ftm                    resb 512
 %ifdef VBOX_WITH_REM
     .rem                    resb 0x11100
 %endif

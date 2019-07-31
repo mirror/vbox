@@ -218,7 +218,7 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
      * Validate the HM settings.
      */
     rc = CFGMR3ValidateConfig(pCfgHm, "/HM/",
-                              "HMForced"
+                              "HMForced"  /* implied 'true' these days */
                               "|UseNEMInstead"
                               "|FallbackToNEM"
                               "|EnableNestedPaging"
@@ -252,23 +252,8 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
      * Forces hardware virtualization, no falling back on raw-mode. HM must be
      * enabled, i.e. /HMEnabled must be true. */
     bool fHMForced;
-#ifdef VBOX_WITH_RAW_MODE
-    rc = CFGMR3QueryBoolDef(pCfgHm, "HMForced", &fHMForced, false);
-    AssertRCReturn(rc, rc);
-    AssertLogRelMsgReturn(!fHMForced || pVM->fHMEnabled, ("Configuration error: HM forced but not enabled!\n"),
-                          VERR_INVALID_PARAMETER);
-# if defined(RT_OS_DARWIN)
-    if (pVM->fHMEnabled)
-        fHMForced = true;
-# endif
-    AssertLogRelMsgReturn(pVM->cCpus == 1 || pVM->fHMEnabled, ("Configuration error: SMP requires HM to be enabled!\n"),
-                          VERR_INVALID_PARAMETER);
-    if (pVM->cCpus > 1)
-        fHMForced = true;
-#else  /* !VBOX_WITH_RAW_MODE */
     AssertRelease(pVM->fHMEnabled);
     fHMForced = true;
-#endif /* !VBOX_WITH_RAW_MODE */
 
     /** @cfgm{/HM/UseNEMInstead, bool, true}
      * Don't use HM, use NEM instead. */
@@ -317,7 +302,7 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
      * Enables AMD64 cpu features.
      * On 32-bit hosts this isn't default and require host CPU support. 64-bit hosts
      * already have the support. */
-#ifdef VBOX_ENABLE_64_BITS_GUESTS
+#ifdef VBOX_WITH_64_BITS_GUESTS
     rc = CFGMR3QueryBoolDef(pCfgHm, "64bitEnabled", &pVM->hm.s.fAllow64BitGuests, HC_ARCH_BITS == 64);
     AssertLogRelRCReturn(rc, rc);
 #else
@@ -515,26 +500,12 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
                             rc = VINF_SUCCESS;
                     }
                     if (RT_FAILURE(rc))
-                    {
-                        if (fHMForced)
-                            return VMSetError(pVM, rc, RT_SRC_POS, "The host kernel does not support VT-x: %s\n", pszWhy);
-
-                        /* Fall back to raw-mode. */
-                        LogRel(("HM: HMR3Init: Falling back to raw-mode: The host kernel does not support VT-x - %s\n", pszWhy));
-                        VM_SET_MAIN_EXECUTION_ENGINE(pVM, VM_EXEC_ENGINE_RAW_MODE);
-                    }
+                        return VMSetError(pVM, rc, RT_SRC_POS, "The host kernel does not support VT-x: %s\n", pszWhy);
                 }
             }
             else
                 AssertLogRelMsgFailedReturn(("SUPR3QueryVTCaps didn't return either AMD-V or VT-x flag set (%#x)!\n", fCaps),
                                             VERR_INTERNAL_ERROR_5);
-
-            /*
-             * Do we require a little bit or raw-mode for 64-bit guest execution?
-             */
-            pVM->fHMNeedRawModeCtx = HC_ARCH_BITS == 32
-                                  && pVM->fHMEnabled
-                                  && pVM->hm.s.fAllow64BitGuests;
 
             /*
              * Disable nested paging and unrestricted guest execution now if they're
@@ -592,13 +563,7 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
                     rc = VINF_SUCCESS;
             }
             if (RT_FAILURE(rc))
-            {
-                if (fHMForced)
-                    return VM_SET_ERROR(pVM, rc, pszMsg);
-
-                LogRel(("HM: HMR3Init: Falling back to raw-mode: %s\n", pszMsg));
-                VM_SET_MAIN_EXECUTION_ENGINE(pVM, VM_EXEC_ENGINE_RAW_MODE);
-            }
+                return VM_SET_ERROR(pVM, rc, pszMsg);
         }
     }
     else
@@ -606,17 +571,21 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
         /*
          * Disabled HM mean raw-mode, unless NEM is supposed to be used.
          */
-        if (!fUseNEMInstead)
-            VM_SET_MAIN_EXECUTION_ENGINE(pVM, VM_EXEC_ENGINE_RAW_MODE);
-        else
+        if (fUseNEMInstead)
         {
             rc = NEMR3Init(pVM, false /*fFallback*/, true);
             ASMCompilerBarrier(); /* NEMR3Init may have changed bMainExecutionEngine. */
             if (RT_FAILURE(rc))
                 return rc;
         }
+        if (   pVM->bMainExecutionEngine == VM_EXEC_ENGINE_NOT_SET
+            || pVM->bMainExecutionEngine == VM_EXEC_ENGINE_RAW_MODE
+            || pVM->bMainExecutionEngine == VM_EXEC_ENGINE_HW_VIRT /* paranoia */)
+            return VM_SET_ERROR(pVM, rc, "Misconfigured VM: No guest execution engine available!");
     }
 
+    Assert(pVM->bMainExecutionEngine != VM_EXEC_ENGINE_NOT_SET);
+    Assert(pVM->bMainExecutionEngine != VM_EXEC_ENGINE_RAW_MODE);
     return VINF_SUCCESS;
 }
 
@@ -715,13 +684,6 @@ static int hmR3InitFinalizeR3(PVM pVM)
                              "Profiling of execution of guest-code in hardware.",
                              "/PROF/CPU%d/HM/InGC", i);
         AssertRC(rc);
-
-# if HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS)
-        rc = STAMR3RegisterF(pVM, &pVCpu->hm.s.StatWorldSwitch3264, STAMTYPE_PROFILE, STAMVISIBILITY_USED,
-                             STAMUNIT_TICKS_PER_CALL, "Profiling of the 32/64 switcher.",
-                             "/PROF/CPU%d/HM/Switcher3264", i);
-        AssertRC(rc);
-# endif
 
 # ifdef HM_PROFILE_EXIT_DISPATCH
         rc = STAMR3RegisterF(pVM, &pVCpu->hm.s.StatExitDispatch, STAMTYPE_PROFILE_ADV, STAMVISIBILITY_USED,
@@ -855,11 +817,6 @@ static int hmR3InitFinalizeR3(PVM pVM)
         HM_REG_COUNTER(&pVCpu->hm.s.StatVmxCheckBadSel,         "/HM/CPU%d/VMXCheck/Selector", "Could not use VMX due to unsuitable selector.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatVmxCheckBadRpl,         "/HM/CPU%d/VMXCheck/RPL", "Could not use VMX due to unsuitable RPL.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatVmxCheckPmOk,           "/HM/CPU%d/VMXCheck/VMX_PM", "VMX execution in protected mode OK.");
-
-#if HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS)
-        HM_REG_COUNTER(&pVCpu->hm.s.StatFpu64SwitchBack,        "/HM/CPU%d/Switch64/Fpu", "Saving guest FPU/XMM state.");
-        HM_REG_COUNTER(&pVCpu->hm.s.StatDebug64SwitchBack,      "/HM/CPU%d/Switch64/Debug", "Saving guest debug state.");
-#endif
 
 #undef HM_REG_COUNTER
 
@@ -1749,14 +1706,12 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
         if (pVM->hm.s.vmx.fUnrestrictedGuest)
             LogRel(("HM: Enabled unrestricted guest execution\n"));
 
-#if HC_ARCH_BITS == 64
         if (pVM->hm.s.fLargePages)
         {
             /* Use large (2 MB) pages for our EPT PDEs where possible. */
             PGMSetLargePageUsage(pVM, true);
             LogRel(("HM: Enabled large page support\n"));
         }
-#endif
     }
     else
         Assert(!pVM->hm.s.vmx.fUnrestrictedGuest);
@@ -1891,13 +1846,11 @@ static int hmR3InitFinalizeR0Amd(PVM pVM)
         /*
          * Enable large pages (2 MB) if applicable.
          */
-#if HC_ARCH_BITS == 64
         if (pVM->hm.s.fLargePages)
         {
             PGMSetLargePageUsage(pVM, true);
             LogRel(("HM:   Enabled large page support\n"));
         }
-#endif
     }
 
     if (pVM->hm.s.fVirtApicRegs)
@@ -1953,27 +1906,6 @@ VMMR3_INT_DECL(void) HMR3Relocate(PVM pVM)
             pVCpu->hm.s.enmShadowMode = PGMGetShadowMode(pVCpu);
         }
     }
-#if HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS)
-    if (HMIsEnabled(pVM))
-    {
-        switch (PGMGetHostMode(pVM))
-        {
-            case PGMMODE_32_BIT:
-                pVM->hm.s.pfnHost32ToGuest64R0 = VMMR3GetHostToGuestSwitcher(pVM, VMMSWITCHER_32_TO_AMD64);
-                break;
-
-            case PGMMODE_PAE:
-            case PGMMODE_PAE_NX:
-                pVM->hm.s.pfnHost32ToGuest64R0 = VMMR3GetHostToGuestSwitcher(pVM, VMMSWITCHER_PAE_TO_AMD64);
-                break;
-
-            default:
-                AssertFailed();
-                break;
-        }
-    }
-#endif
-    return;
 }
 
 
