@@ -56,6 +56,9 @@
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
 
+/** Size multiplier for the random data buffer to seek around. */
+#define IOPERF_RAND_DATA_BUF_FACTOR 3
+
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
@@ -106,6 +109,32 @@ typedef enum IOPERFTESTSETPREP
 
 
 /**
+ * I/O perf request.
+ */
+typedef struct IOPERFREQ
+{
+    /** Start timestamp. */
+    uint64_t                    tsStart;
+    /** Request operation code. */
+    RTIOQUEUEOP                 enmOp;
+    /** Start offset. */
+    uint64_t                    offXfer;
+    /** Transfer size for the request. */
+    size_t                      cbXfer;
+    /** The buffer used for the transfer. */
+    void                        *pvXfer;
+    /** This is the statically assigned destination buffer for read requests for this request. */
+    void                        *pvXferRead;
+    /** Size of the read buffer. */
+    size_t                      cbXferRead;
+} IOPERFREQ;
+/** Pointer to an I/O perf request. */
+typedef IOPERFREQ *PIOPERFREQ;
+/** Pointer to a constant I/O perf request. */
+typedef const IOPERFREQ *PCIOPERFREQ;
+
+
+/**
  * I/O perf job data.
  */
 typedef struct IOPERFJOB
@@ -132,10 +161,23 @@ typedef struct IOPERFJOB
     size_t                      cbIoBlock;
     /** Maximum number of requests to queue. */
     uint32_t                    cReqsMax;
+    /** Pointer to the array of request specific data. */
+    PIOPERFREQ                  paIoReqs;
+    /** Page aligned chunk of memory assigned as read buffers for the individual requests. */
+    void                        *pvIoReqReadBuf;
+    /** Size of the read memory buffer. */
+    size_t                      cbIoReqReadBuf;
+    /** Random number generator used. */
+    RTRAND                      hRand;
+    /** The random data buffer used for writes. */
+    uint8_t                     *pbRandWrite;
+    /** Size of the random write buffer in 512 byte blocks. */
+    uint32_t                    cRandWriteBlocks512B;
     /** Test dependent data. */
     union
     {
-        uint32_t                uDummy;
+        /** Sequential read write. */
+        uint64_t                offNextSeq;
     } Tst;
 } IOPERFJOB;
 /** Pointer to an I/O Perf job. */
@@ -190,13 +232,12 @@ static const RTGETOPTDEF g_aCmdOptions[] =
 {
     { "--dir",                      'd',                            RTGETOPT_REQ_STRING  },
     { "--relative-dir",             'r',                            RTGETOPT_REQ_NOTHING },
-    { "--enable-all",               'e',                            RTGETOPT_REQ_NOTHING },
-    { "--disable-all",              'z',                            RTGETOPT_REQ_NOTHING },
 
     { "--jobs",                     'j',                            RTGETOPT_REQ_UINT32  },
     { "--io-engine",                'i',                            RTGETOPT_REQ_STRING  },
     { "--test-set-size",            's',                            RTGETOPT_REQ_UINT64  },
     { "--block-size",               'b',                            RTGETOPT_REQ_UINT32  },
+    { "--maximum-requests",         'm',                            RTGETOPT_REQ_UINT32  },
 
     { "--first-write",              kCmdOpt_FirstWrite,             RTGETOPT_REQ_NOTHING },
     { "--no-first-write",           kCmdOpt_NoFirstWrite,           RTGETOPT_REQ_NOTHING },
@@ -279,17 +320,308 @@ static char         g_szDir[RTPATH_BIG_MAX];
  *
  * @return Next test to run.
  */
-static IOPERFTEST ioPerfTestSelectNext()
+static IOPERFTEST ioPerfJobTestSelectNext()
 {
     AssertReturn(g_idxTest < RT_ELEMENTS(g_aenmTests), IOPERFTEST_SHUTDOWN);
 
     while (   g_idxTest < RT_ELEMENTS(g_aenmTests)
-           && g_aenmTests[g_idxTest] != IOPERFTEST_DISABLED)
+           && g_aenmTests[g_idxTest] == IOPERFTEST_DISABLED)
         g_idxTest++;
 
     AssertReturn(g_idxTest < RT_ELEMENTS(g_aenmTests), IOPERFTEST_SHUTDOWN);
 
     return g_aenmTests[g_idxTest];
+}
+
+
+/**
+ * Returns the I/O queue operation for the next request.
+ *
+ * @returns I/O queue operation enum.
+ * @param   pJob                The job data for the current worker.
+ */
+static RTIOQUEUEOP ioPerfJobTestGetIoQOp(PIOPERFJOB pJob)
+{
+    switch (pJob->enmTest)
+    {
+        case IOPERFTEST_FIRST_WRITE:
+        case IOPERFTEST_SEQ_WRITE:
+        case IOPERFTEST_SEQ_READ:
+        case IOPERFTEST_REV_WRITE:
+        case IOPERFTEST_RND_WRITE:
+            return RTIOQUEUEOP_WRITE;
+
+        case IOPERFTEST_RND_READ:
+        case IOPERFTEST_REV_READ:
+            return RTIOQUEUEOP_READ;
+        case IOPERFTEST_SEQ_READWRITE:
+        case IOPERFTEST_RND_READWRITE:
+            AssertMsgFailed(("Not implemented!\n"));
+            break;
+        default:
+            AssertMsgFailed(("Invalid/unknown test selected: %d\n", pJob->enmTest));
+            break;
+    }
+
+    return RTIOQUEUEOP_INVALID;
+}
+
+
+/**
+ * Returns the offset to use for the next request.
+ *
+ * @returns Offset to use.
+ * @param   pJob                The job data for the current worker.
+ */
+static uint64_t ioPerfJobTestGetOffsetNext(PIOPERFJOB pJob)
+{
+    uint64_t offNext = 0;
+
+    switch (pJob->enmTest)
+    {
+        case IOPERFTEST_FIRST_WRITE:
+        case IOPERFTEST_SEQ_WRITE:
+        case IOPERFTEST_SEQ_READ:
+            offNext = pJob->Tst.offNextSeq;
+            pJob->Tst.offNextSeq += pJob->cbIoBlock;
+            break;
+
+        case IOPERFTEST_REV_WRITE:
+        case IOPERFTEST_REV_READ:
+        case IOPERFTEST_RND_WRITE:
+        case IOPERFTEST_RND_READ:
+        case IOPERFTEST_SEQ_READWRITE:
+        case IOPERFTEST_RND_READWRITE:
+            AssertMsgFailed(("Not implemented!\n"));
+            break;
+        default:
+            AssertMsgFailed(("Invalid/unknown test selected: %d\n", pJob->enmTest));
+            break;
+    }
+
+    return offNext;
+}
+
+
+/**
+ * Returns a pointer to the write buffer with random data for the given offset which
+ * is predictable for data verification.
+ *
+ * @returns Pointer to I/O block sized data buffer with random data.
+ * @param   pJob                The job data for the current worker.
+ * @param   off                 The offset to get the buffer for.
+ */
+static void *ioPerfJobTestGetWriteBufForOffset(PIOPERFJOB pJob, uint64_t off)
+{
+    /*
+     * Dividing the file into 512 byte blocks so buffer pointers are at least
+     * 512 byte aligned to work with async I/O on some platforms (Linux and O_DIRECT for example).
+     */
+    uint64_t uBlock = off / 512;
+    uint32_t idxBuf = uBlock % pJob->cRandWriteBlocks512B;
+    return pJob->pbRandWrite + idxBuf * 512;
+}
+
+
+/**
+ * Initialize the given request for submission.
+ *
+ * @returns nothing.
+ * @param   pJob                The job data for the current worker.
+ * @param   pIoReq              The request to initialize.
+ */
+static void ioPerfJobTestReqInit(PIOPERFJOB pJob, PIOPERFREQ pIoReq)
+{
+    pIoReq->enmOp   = ioPerfJobTestGetIoQOp(pJob);
+    pIoReq->offXfer = ioPerfJobTestGetOffsetNext(pJob);
+    pIoReq->cbXfer  = pJob->cbIoBlock;
+    if (pIoReq->enmOp == RTIOQUEUEOP_READ)
+        pIoReq->pvXfer = pIoReq->pvXferRead;
+    else if (pIoReq->enmOp == RTIOQUEUEOP_WRITE)
+        pIoReq->pvXfer = ioPerfJobTestGetWriteBufForOffset(pJob, pIoReq->offXfer);
+    else /* Flush */
+        pIoReq->pvXfer = NULL;
+
+    pIoReq->tsStart = RTTimeNanoTS();
+}
+
+
+/**
+ * Initializes the test state for the current test.
+ *
+ * @returns IPRT status code.
+ * @param   pJob                The job data for the current worker.
+ */
+static int ioPerfJobTestInit(PIOPERFJOB pJob)
+{
+    switch (pJob->enmTest)
+    {
+        case IOPERFTEST_FIRST_WRITE:
+        case IOPERFTEST_SEQ_WRITE:
+        case IOPERFTEST_SEQ_READ:
+            pJob->Tst.offNextSeq = 0;
+            break;
+
+        case IOPERFTEST_REV_WRITE:
+        case IOPERFTEST_REV_READ:
+        case IOPERFTEST_RND_WRITE:
+        case IOPERFTEST_RND_READ:
+        case IOPERFTEST_SEQ_READWRITE:
+        case IOPERFTEST_RND_READWRITE:
+            AssertMsgFailed(("Not implemented!\n"));
+            break;
+        default:
+            AssertMsgFailed(("Invalid/unknown test selected: %d\n", pJob->enmTest));
+            break;
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Frees allocated resources specific for the current test.
+ *
+ * @returns nothing.
+ * @param   pJob                The job data for the current worker.
+ */
+static void ioPerfJobTestFinish(PIOPERFJOB pJob)
+{
+    switch (pJob->enmTest)
+    {
+        case IOPERFTEST_FIRST_WRITE:
+        case IOPERFTEST_SEQ_WRITE:
+        case IOPERFTEST_SEQ_READ:
+            break; /* Nothing to do. */
+
+        case IOPERFTEST_REV_WRITE:
+        case IOPERFTEST_REV_READ:
+        case IOPERFTEST_RND_WRITE:
+        case IOPERFTEST_RND_READ:
+        case IOPERFTEST_SEQ_READWRITE:
+        case IOPERFTEST_RND_READWRITE:
+            AssertMsgFailed(("Not implemented!\n"));
+            break;
+        default:
+            AssertMsgFailed(("Invalid/unknown test selected: %d\n", pJob->enmTest));
+            break;
+    }
+}
+
+
+/**
+ * Returns whether the current test is done with submitting new requests (reached test set size).
+ *
+ * @returns True when the test has submitted all required requests, false if there are still requests required
+ */
+static bool ioPerfJobTestIsDone(PIOPERFJOB pJob)
+{
+    switch (pJob->enmTest)
+    {
+        case IOPERFTEST_FIRST_WRITE:
+        case IOPERFTEST_SEQ_WRITE:
+        case IOPERFTEST_SEQ_READ:
+            return pJob->Tst.offNextSeq == pJob->cbTestSet;
+
+        case IOPERFTEST_REV_WRITE:
+        case IOPERFTEST_REV_READ:
+        case IOPERFTEST_RND_WRITE:
+        case IOPERFTEST_RND_READ:
+        case IOPERFTEST_SEQ_READWRITE:
+        case IOPERFTEST_RND_READWRITE:
+            AssertMsgFailed(("Not implemented!\n"));
+            break;
+        default:
+            AssertMsgFailed(("Invalid/unknown test selected: %d\n", pJob->enmTest));
+            break;
+    }
+
+    return true;
+}
+
+
+/**
+ * The test I/O loop pumping I/O.
+ *
+ * @returns IPRT status code.
+ * @param   pJob                The job data for the current worker.
+ */
+static int ioPerfJobTestIoLoop(PIOPERFJOB pJob)
+{
+    int rc = ioPerfJobTestInit(pJob);
+    if (RT_SUCCESS(rc))
+    {
+        /* Allocate the completion event array. */
+        uint32_t cReqsQueued = 0;
+        PRTIOQUEUECEVT paIoQCEvt = (PRTIOQUEUECEVT)RTMemAllocZ(pJob->cReqsMax * sizeof(RTIOQUEUECEVT));
+        if (RT_LIKELY(paIoQCEvt))
+        {
+            /* Queue requests up to the maximum. */
+            while (   (cReqsQueued < pJob->cReqsMax)
+                   && !ioPerfJobTestIsDone(pJob)
+                   && RT_SUCCESS(rc))
+            {
+                PIOPERFREQ pReq = &pJob->paIoReqs[cReqsQueued];
+                ioPerfJobTestReqInit(pJob, pReq);
+                rc = RTIoQueueRequestPrepare(pJob->hIoQueue, &pJob->Hnd, pReq->enmOp,
+                                             pReq->offXfer, pReq->pvXfer, pReq->cbXfer, 0 /*fReqFlags*/,
+                                             pReq);
+                cReqsQueued++;
+            }
+
+            /* Commit the prepared requests. */
+            if (   RT_SUCCESS(rc)
+                && cReqsQueued)
+                rc = RTIoQueueCommit(pJob->hIoQueue);
+
+            /* Enter wait loop and process completed requests. */
+            while (   RT_SUCCESS(rc)
+                   && cReqsQueued)
+            {
+                uint32_t cCEvtCompleted = 0;
+
+                rc = RTIoQueueEvtWait(pJob->hIoQueue, paIoQCEvt, pJob->cReqsMax, 1 /*cMinWait*/,
+                                      &cCEvtCompleted, 0 /*fFlags*/);
+                if (RT_SUCCESS(rc))
+                {
+                    uint32_t cReqsThisQueued = 0;
+
+                    /* Process any completed event and continue to fill the queue as long as there is stuff to do. */
+                    for (uint32_t i = 0; i < cCEvtCompleted; i++)
+                    {
+                        PIOPERFREQ pReq = (PIOPERFREQ)paIoQCEvt[i].pvUser;
+
+                        if (RT_SUCCESS(paIoQCEvt[i].rcReq))
+                        {
+                            Assert(paIoQCEvt[i].cbXfered == pReq->cbXfer);
+
+                            /** @todo Statistics collection. */
+                            if (!ioPerfJobTestIsDone(pJob))
+                            {
+                                ioPerfJobTestReqInit(pJob, pReq);
+                                rc = RTIoQueueRequestPrepare(pJob->hIoQueue, &pJob->Hnd, pReq->enmOp,
+                                                             pReq->offXfer, pReq->pvXfer, pReq->cbXfer, 0 /*fReqFlags*/,
+                                                             pReq);
+                                cReqsThisQueued++;
+                            }
+                            else
+                                cReqsQueued--;
+                        }
+                    }
+
+                    if (   cReqsThisQueued
+                        && RT_SUCCESS(rc))
+                        rc = RTIoQueueCommit(pJob->hIoQueue);
+                }
+            }
+
+            RTMemFree(paIoQCEvt);
+        }
+
+        ioPerfJobTestFinish(pJob);
+    }
+
+    return rc;
 }
 
 
@@ -303,7 +635,7 @@ static int ioPerfJobSync(PIOPERFJOB pJob)
 {
     if (pJob->pMaster)
     {
-        /* Enter the rendevouzs semaphore. */
+        /* Enter the rendezvous semaphore. */
         int rc = VINF_SUCCESS;
 
         return rc;
@@ -311,21 +643,8 @@ static int ioPerfJobSync(PIOPERFJOB pJob)
 
     /* Single threaded run, collect the results from our current test and select the next test. */
     /** @todo Results and statistics collection. */
-    pJob->enmTest = ioPerfTestSelectNext();
+    pJob->enmTest = ioPerfJobTestSelectNext();
     return VINF_SUCCESS;
-}
-
-
-/**
- * Sequential read test.
- *
- * @returns IPRT status code.
- * @param   pJob                The job data for the current worker.
- */
-static int ioPerfTestSeqRead(PIOPERFJOB pJob)
-{
-    RT_NOREF(pJob);
-    return VERR_NOT_IMPLEMENTED;
 }
 
 
@@ -347,33 +666,7 @@ static int ioPerfJobWorkLoop(PIOPERFJOB pJob)
         if (RT_FAILURE(rc))
             break;
 
-        switch (pJob->enmTest)
-        {
-            case IOPERFTEST_FIRST_WRITE:
-                break;
-            case IOPERFTEST_SEQ_READ:
-                rc = ioPerfTestSeqRead(pJob);
-                break;
-            case IOPERFTEST_SEQ_WRITE:
-                break;
-            case IOPERFTEST_RND_READ:
-                break;
-            case IOPERFTEST_RND_WRITE:
-                break;
-            case IOPERFTEST_REV_READ:
-                break;
-            case IOPERFTEST_REV_WRITE:
-                break;
-            case IOPERFTEST_SEQ_READWRITE:
-                break;
-            case IOPERFTEST_RND_READWRITE:
-                break;
-            case IOPERFTEST_SHUTDOWN:
-                fShutdown = true;
-                break;
-            default:
-                AssertMsgFailed(("Invalid job: %d\n", pJob->enmTest));
-        }
+        rc = ioPerfJobTestIoLoop(pJob);
     } while (   RT_SUCCESS(rc)
              && !fShutdown);
 
@@ -390,6 +683,50 @@ static DECLCALLBACK(int) ioPerfJobThread(RTTHREAD hThrdSelf, void *pvUser)
 
     PIOPERFJOB pJob = (PIOPERFJOB)pvUser;
     return ioPerfJobWorkLoop(pJob);
+}
+
+
+/**
+ * Prepares the test set by laying out the files and filling them with data.
+ *
+ * @returns IPRT status code.
+ * @param   pJob                The job to initialize.
+ */
+static int ioPerfJobTestSetPrep(PIOPERFJOB pJob)
+{
+    int rc = RTRandAdvCreateParkMiller(&pJob->hRand);
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTRandAdvSeed(pJob->hRand, RTTimeNanoTS());
+        if (RT_SUCCESS(rc))
+        {
+            /*
+             * Create a random data buffer for writes, we'll use multiple of the I/O block size to
+             * be able to seek in the buffer quite a bit to make the file content as random as possible
+             * to avoid mechanisms like compression or deduplication for now which can influence storage
+             * benchmarking unpredictably.
+             */
+            pJob->cRandWriteBlocks512B = ((IOPERF_RAND_DATA_BUF_FACTOR - 1) * pJob->cbIoBlock) / 512;
+            pJob->pbRandWrite = (uint8_t *)RTMemPageAllocZ(IOPERF_RAND_DATA_BUF_FACTOR * pJob->cbIoBlock);
+            if (RT_LIKELY(pJob->pbRandWrite))
+            {
+                RTRandAdvBytes(pJob->hRand, pJob->pbRandWrite, IOPERF_RAND_DATA_BUF_FACTOR * pJob->cbIoBlock);
+
+                /* Write the content here if the first write test is disabled. */
+                if (g_aenmTests[IOPERFTEST_FIRST_WRITE] == IOPERFTEST_DISABLED)
+                {
+                    for (uint64_t off = 0; off < pJob->cbTestSet && RT_SUCCESS(rc); off += pJob->cbIoBlock)
+                    {
+                        void *pvWrite = ioPerfJobTestGetWriteBufForOffset(pJob, off);
+                        rc = RTFileWriteAt(pJob->Hnd.u.hFile, off, pvWrite, pJob->cbIoBlock, NULL);
+                    }
+                }
+            }
+        }
+        RTRandAdvDestroy(pJob->hRand);
+    }
+
+    return rc;
 }
 
 
@@ -412,72 +749,102 @@ static int ioPerfJobInit(PIOPERFJOB pJob, PIOPERFMASTER pMaster, uint32_t idJob,
                          IOPERFTESTSETPREP enmPrepMethod,
                          uint64_t cbTestSet, size_t cbIoBlock, uint32_t cReqsMax)
 {
-    pJob->pMaster     = pMaster;
-    pJob->idJob       = idJob;
-    pJob->enmTest     = IOPERFTEST_INVALID;
-    pJob->hThread     = NIL_RTTHREAD;
-    pJob->Hnd.enmType = RTHANDLETYPE_FILE;
-    pJob->cbTestSet   = cbTestSet;
-    pJob->cbIoBlock   = cbIoBlock;
-    pJob->cReqsMax    = cReqsMax;
+    pJob->pMaster        = pMaster;
+    pJob->idJob          = idJob;
+    pJob->enmTest        = IOPERFTEST_INVALID;
+    pJob->hThread        = NIL_RTTHREAD;
+    pJob->Hnd.enmType    = RTHANDLETYPE_FILE;
+    pJob->cbTestSet      = cbTestSet;
+    pJob->cbIoBlock      = cbIoBlock;
+    pJob->cReqsMax       = cReqsMax;
+    pJob->cbIoReqReadBuf = cReqsMax * cbIoBlock;
 
-    /* Create the file. */
     int rc = VINF_SUCCESS;
-    pJob->pszFilename = RTStrAPrintf2("%sioperf-%u.file", pszTestDir, idJob);
-    if (RT_LIKELY(pJob->pszFilename))
+    pJob->paIoReqs = (PIOPERFREQ)RTMemAllocZ(cReqsMax * sizeof(IOPERFREQ));
+    if (RT_LIKELY(pJob->paIoReqs))
     {
-        rc = RTFileOpen(&pJob->Hnd.u.hFile, pJob->pszFilename, RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_NONE | RTFILE_O_READWRITE);
-        if (RT_SUCCESS(rc))
+        pJob->pvIoReqReadBuf = RTMemPageAlloc(pJob->cbIoReqReadBuf);
+        if (RT_LIKELY(pJob->pvIoReqReadBuf))
         {
-            switch (enmPrepMethod)
+            uint8_t *pbReadBuf = (uint8_t *)pJob->pvIoReqReadBuf;
+
+            for (uint32_t i = 0; i < cReqsMax; i++)
             {
-                case IOPERFTESTSETPREP_JUST_CREATE:
-                    break;
-                case IOPERFTESTSETPREP_SET_SZ:
-                    rc = RTFileSetSize(pJob->Hnd.u.hFile, pJob->cbTestSet);
-                    break;
-                case IOPERFTESTSETPREP_SET_ALLOC_SZ:
-                    rc = RTFileSetAllocationSize(pJob->Hnd.u.hFile, pJob->cbTestSet, RTFILE_ALLOC_SIZE_F_DEFAULT);
-                    break;
-                default:
-                    AssertMsgFailed(("Invalid file preparation method: %d\n", enmPrepMethod));
+                pJob->paIoReqs[i].pvXferRead = pbReadBuf;
+                pJob->paIoReqs[i].cbXferRead = cbIoBlock;
+                pbReadBuf += cbIoBlock;
             }
 
-            if (RT_SUCCESS(rc))
+            /* Create the file. */
+            pJob->pszFilename = RTStrAPrintf2("%sioperf-%u.file", pszTestDir, idJob);
+            if (RT_LIKELY(pJob->pszFilename))
             {
-                /* Create I/O queue. */
-                PCRTIOQUEUEPROVVTABLE pIoQProv = NULL;
-                if (pszIoEngine)
-                    pIoQProv = RTIoQueueProviderGetBestForHndType(RTHANDLETYPE_FILE);
-                else
-                    pIoQProv = RTIoQueueProviderGetById(pszIoEngine);
-
-                if (RT_LIKELY(pIoQProv))
+                rc = RTFileOpen(&pJob->Hnd.u.hFile, pJob->pszFilename, RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_NONE | RTFILE_O_READWRITE);
+                if (RT_SUCCESS(rc))
                 {
-                    rc = RTIoQueueCreate(&pJob->hIoQueue, pIoQProv, 0 /*fFlags*/, cReqsMax, cReqsMax);
+                    switch (enmPrepMethod)
+                    {
+                        case IOPERFTESTSETPREP_JUST_CREATE:
+                            break;
+                        case IOPERFTESTSETPREP_SET_SZ:
+                            rc = RTFileSetSize(pJob->Hnd.u.hFile, pJob->cbTestSet);
+                            break;
+                        case IOPERFTESTSETPREP_SET_ALLOC_SZ:
+                            rc = RTFileSetAllocationSize(pJob->Hnd.u.hFile, pJob->cbTestSet, RTFILE_ALLOC_SIZE_F_DEFAULT);
+                            break;
+                        default:
+                            AssertMsgFailed(("Invalid file preparation method: %d\n", enmPrepMethod));
+                    }
+
                     if (RT_SUCCESS(rc))
                     {
-                        /* Spin up the worker thread. */
-                        if (pMaster)
-                            rc = RTThreadCreateF(&pJob->hThread, ioPerfJobThread, pJob, 0,
-                                                 RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "ioperf-%u", idJob);
-
+                        rc = ioPerfJobTestSetPrep(pJob);
                         if (RT_SUCCESS(rc))
-                            return VINF_SUCCESS;
+                        {
+                            /* Create I/O queue. */
+                            PCRTIOQUEUEPROVVTABLE pIoQProv = NULL;
+                            if (!pszIoEngine)
+                                pIoQProv = RTIoQueueProviderGetBestForHndType(RTHANDLETYPE_FILE);
+                            else
+                                pIoQProv = RTIoQueueProviderGetById(pszIoEngine);
+
+                            if (RT_LIKELY(pIoQProv))
+                            {
+                                rc = RTIoQueueCreate(&pJob->hIoQueue, pIoQProv, 0 /*fFlags*/, cReqsMax, cReqsMax);
+                                if (RT_SUCCESS(rc))
+                                {
+                                    rc = RTIoQueueHandleRegister(pJob->hIoQueue, &pJob->Hnd);
+                                    if (RT_SUCCESS(rc))
+                                    {
+                                        /* Spin up the worker thread. */
+                                        if (pMaster)
+                                            rc = RTThreadCreateF(&pJob->hThread, ioPerfJobThread, pJob, 0,
+                                                                 RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "ioperf-%u", idJob);
+
+                                        if (RT_SUCCESS(rc))
+                                            return VINF_SUCCESS;
+                                    }
+                                }
+                            }
+                            else
+                                rc = VERR_NOT_SUPPORTED;
+                        }
+
+                        RTRandAdvDestroy(pJob->hRand);
                     }
+
+                    RTFileClose(pJob->Hnd.u.hFile);
+                    RTFileDelete(pJob->pszFilename);
                 }
-                else
-                    rc = VERR_NOT_SUPPORTED;
+
+                RTStrFree(pJob->pszFilename);
             }
 
-            RTFileClose(pJob->Hnd.u.hFile);
-            RTFileDelete(pJob->pszFilename);
+            RTMemPageFree(pJob->pvIoReqReadBuf, pJob->cbIoReqReadBuf);
         }
-
-        RTStrFree(pJob->pszFilename);
+        else
+            rc = VERR_NO_STR_MEMORY;
     }
-    else
-        rc = VERR_NO_STR_MEMORY;
 
     return rc;
 }
@@ -491,12 +858,21 @@ static int ioPerfJobInit(PIOPERFJOB pJob, PIOPERFMASTER pMaster, uint32_t idJob,
  */
 static int ioPerfJobTeardown(PIOPERFJOB pJob)
 {
-    int rc = RTThreadWait(pJob->hThread, RT_INDEFINITE_WAIT, NULL); AssertRC(rc); RT_NOREF(rc);
+    if (pJob->pMaster)
+    {
+        int rc = RTThreadWait(pJob->hThread, RT_INDEFINITE_WAIT, NULL);
+        AssertRC(rc); RT_NOREF(rc);
+    }
 
+    RTIoQueueHandleDeregister(pJob->hIoQueue, &pJob->Hnd);
     RTIoQueueDestroy(pJob->hIoQueue);
+    RTRandAdvDestroy(pJob->hRand);
+    RTMemPageFree(pJob->pbRandWrite, IOPERF_RAND_DATA_BUF_FACTOR * pJob->cbIoBlock);
     RTFileClose(pJob->Hnd.u.hFile);
     RTFileDelete(pJob->pszFilename);
     RTStrFree(pJob->pszFilename);
+    RTMemPageFree(pJob->pvIoReqReadBuf, pJob->cbIoReqReadBuf);
+    RTMemFree(pJob->paIoReqs);
     return VINF_SUCCESS;
 }
 
@@ -511,7 +887,7 @@ static int ioPerfDoTestSingle(void)
     IOPERFJOB Job;
 
     int rc = ioPerfJobInit(&Job, NULL, 0, g_pszIoEngine,
-                           g_szDir, IOPERFTESTSETPREP_SET_ALLOC_SZ,
+                           g_szDir, IOPERFTESTSETPREP_SET_SZ,
                            g_cbTestSet, g_cbIoBlock, g_cReqsMax);
     if (RT_SUCCESS(rc))
     {
@@ -557,8 +933,6 @@ static void Usage(PRTSTREAM pStrm)
         {
             case 'd':                           pszHelp = "The directory to use for testing.            default: CWD/fstestdir"; break;
             case 'r':                           pszHelp = "Don't abspath test dir (good for deep dirs). default: disabled"; break;
-            case 'e':                           pszHelp = "Enables all tests.                           default: -e"; break;
-            case 'z':                           pszHelp = "Disables all tests.                          default: -e"; break;
             case 'v':                           pszHelp = "More verbose execution."; break;
             case 'q':                           pszHelp = "Quiet execution."; break;
             case 'h':                           pszHelp = "Displays this help and exit"; break;
@@ -617,6 +991,22 @@ int main(int argc, char *argv[])
 
             case 'r':
                 g_fRelativeDir = true;
+                break;
+
+            case 'i':
+                g_pszIoEngine = ValueUnion.psz;
+                break;
+
+            case 's':
+                g_cbTestSet = ValueUnion.u64;
+                break;
+
+            case 'b':
+                g_cbIoBlock = ValueUnion.u32;
+                break;
+
+            case 'm':
+                g_cReqsMax = ValueUnion.u32;
                 break;
 
             case 'q':
