@@ -121,6 +121,17 @@ void UIMachineAttributeSetter::setMachineAttribute(const CMachine &comConstMachi
                 }
                 break;
             }
+            case MachineAttribute_GraphicsControllerType:
+            {
+                /* Change machine graphics controller type: */
+                comMachine.SetGraphicsControllerType(guiAttribute.value<KGraphicsControllerType>());
+                if (!comMachine.isOk())
+                {
+                    msgCenter().cannotChangeMachineAttribute(comMachine);
+                    fErrorHappened = true;
+                }
+                break;
+            }
             default:
                 break;
         }

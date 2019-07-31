@@ -34,6 +34,7 @@
 #include "UIDetailsSet.h"
 #include "UIDetailsModel.h"
 #include "UIExtraDataManager.h"
+#include "UIGraphicsControllerEditor.h"
 #include "UIGraphicsRotatorButton.h"
 #include "UIGraphicsTextPane.h"
 #include "UIIconPool.h"
@@ -53,6 +54,7 @@ enum AnchorRole
     AnchorRole_BaseMemory,
     AnchorRole_BootOrder,
     AnchorRole_VideoMemory,
+    AnchorRole_GraphicsControllerType,
     AnchorRole_Storage,
 };
 
@@ -158,6 +160,7 @@ void UIDetailsElement::updateAppearance()
     m_pTextPane->setAnchorRoleRestricted("#base_memory", cal != ConfigurationAccessLevel_Full);
     m_pTextPane->setAnchorRoleRestricted("#boot_order", cal != ConfigurationAccessLevel_Full);
     m_pTextPane->setAnchorRoleRestricted("#video_memory", cal != ConfigurationAccessLevel_Full);
+    m_pTextPane->setAnchorRoleRestricted("#graphics_controller_type", cal != ConfigurationAccessLevel_Full);
     m_pTextPane->setAnchorRoleRestricted("#mount", cal == ConfigurationAccessLevel_Null);
     m_pTextPane->setAnchorRoleRestricted("#attach", cal != ConfigurationAccessLevel_Full);
 }
@@ -443,6 +446,7 @@ void UIDetailsElement::sltHandleAnchorClicked(const QString &strAnchor)
     roles["#base_memory"] = AnchorRole_BaseMemory;
     roles["#boot_order"] = AnchorRole_BootOrder;
     roles["#video_memory"] = AnchorRole_VideoMemory;
+    roles["#graphics_controller_type"] = AnchorRole_GraphicsControllerType;
     roles["#mount"] = AnchorRole_Storage;
     roles["#attach"] = AnchorRole_Storage;
 
@@ -602,6 +606,38 @@ void UIDetailsElement::sltHandleAnchorClicked(const QString &strAnchor)
                 /* Execute popup, change machine name if confirmed: */
                 if (pPopup->exec() == QDialog::Accepted)
                     setMachineAttribute(machine(), MachineAttribute_VideoMemory, QVariant::fromValue(pEditor->value()));
+
+                /* Delete popup: */
+                delete pPopup;
+            }
+            break;
+        }
+        case AnchorRole_GraphicsControllerType:
+        {
+            /* Prepare popup: */
+            QPointer<QIDialogContainer> pPopup = new QIDialogContainer(0, Qt::Tool);
+            if (pPopup)
+            {
+                /* Prepare editor: */
+                UIGraphicsControllerEditor *pEditor = new UIGraphicsControllerEditor(pPopup, true /* with label */);
+                if (pEditor)
+                {
+                    pEditor->setValue(static_cast<KGraphicsControllerType>(strData.section(',', 0, 0).toInt()));
+                    pPopup->setWidget(pEditor);
+                }
+
+                /* Adjust popup geometry: */
+                pPopup->move(QCursor::pos());
+                pPopup->adjustSize();
+
+                // WORKAROUND:
+                // On Windows, Tool dialogs aren't activated by default by some reason.
+                // So we have created sltActivateWindow wrapping actual activateWindow
+                // to fix that annoying issue.
+                QMetaObject::invokeMethod(pPopup, "sltActivateWindow", Qt::QueuedConnection);
+                /* Execute popup, change machine name if confirmed: */
+                if (pPopup->exec() == QDialog::Accepted)
+                    setMachineAttribute(machine(), MachineAttribute_GraphicsControllerType, QVariant::fromValue(pEditor->value()));
 
                 /* Delete popup: */
                 delete pPopup;

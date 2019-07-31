@@ -293,8 +293,15 @@ UITextTable UIDetailsGenerator::generateMachineInformationDisplay(CMachine &comM
 
     /* Graphics Controller: */
     if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_GraphicsController)
+    {
+        const QString strAnchorType = QString("graphics_controller_type");
+        const KGraphicsControllerType enmType = comMachine.GetGraphicsControllerType();
         table << UITextTableLine(QApplication::translate("UIDetails", "Graphics Controller", "details (display)"),
-                                 gpConverter->toString(comMachine.GetGraphicsControllerType()));
+                                 QApplication::translate("UIDetails", "<a href=#%1,%2>%3</a>", "details")
+                                     .arg(strAnchorType)
+                                     .arg((int)enmType)
+                                     .arg(gpConverter->toString(enmType)));
+    }
 
     /* Acceleration: */
     if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_Acceleration)

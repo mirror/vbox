@@ -35,6 +35,7 @@ enum MachineAttribute
     MachineAttribute_BaseMemory,
     MachineAttribute_BootOrder,
     MachineAttribute_VideoMemory,
+    MachineAttribute_GraphicsControllerType,
 };
 
 /** Namespace used to assign CMachine attributes on more convenient basis. */
