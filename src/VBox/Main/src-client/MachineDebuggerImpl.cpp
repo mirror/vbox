@@ -1377,8 +1377,7 @@ HRESULT MachineDebugger::dumpGuestStack(ULONG aCpuId, com::Utf8Str &aStack)
         {
             VMSTATE enmVmState = VMR3GetStateU(ptrVM.rawUVM());
             if (   enmVmState == VMSTATE_RUNNING
-                || enmVmState == VMSTATE_RUNNING_LS
-                || enmVmState == VMSTATE_RUNNING_FT)
+                || enmVmState == VMSTATE_RUNNING_LS)
             {
                 alock.release();
                 vrc = VMR3Suspend(ptrVM.rawUVM(), VMSUSPENDREASON_USER);

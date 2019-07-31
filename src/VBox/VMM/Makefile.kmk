@@ -113,7 +113,6 @@ VBoxVMM_SOURCES  = \
 	VMMR3/EMR3Dbg.cpp \
 	VMMR3/EMHM.cpp \
 	VMMR3/EMR3Nem.cpp \
-	VMMR3/FTM.cpp \
 	VMMR3/GIM.cpp \
 	VMMR3/GIMHv.cpp \
 	VMMR3/GIMKvm.cpp \
@@ -195,7 +194,6 @@ VBoxVMM_SOURCES  = \
 	VMMAll/PGMAllPool.cpp \
 	VMMAll/SELMAll.cpp \
 	VMMAll/EMAll.cpp \
-	VMMAll/FTMAll.cpp \
 	VMMAll/GIMAll.cpp \
 	VMMAll/GIMAllHv.cpp \
 	VMMAll/GIMAllKvm.cpp \
@@ -501,7 +499,6 @@ VMMR0_SOURCES   = \
 	VMMAll/CPUMAllMsrs.cpp \
 	VMMAll/DBGFAll.cpp \
 	VMMAll/EMAll.cpp \
-	VMMAll/FTMAll.cpp \
 	VMMAll/GIMAll.cpp \
 	VMMAll/GIMAllHv.cpp \
 	VMMAll/GIMAllKvm.cpp \

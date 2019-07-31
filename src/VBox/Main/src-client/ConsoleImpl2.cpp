@@ -4791,8 +4791,7 @@ int Console::i_configMedium(PCFGMNODE pLunL0,
                  *        make DrvVD undo TempReadOnly.  It gets interesting if we fail after
                  *        that. Grumble. */
                 if (   enmType == DeviceType_HardDisk
-                    && (   aMachineState == MachineState_TeleportingIn
-                        || aMachineState == MachineState_FaultTolerantSyncing))
+                    && aMachineState == MachineState_TeleportingIn)
                     InsertConfigInteger(pCfg, "TempReadOnly", 1);
 
                 /* Flag for opening the medium for sharing between VMs. This

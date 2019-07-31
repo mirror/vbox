@@ -78,7 +78,6 @@ template<> QColor toColor(const KMachineState &state)
         case KMachineState_Restoring:              return QColor(Qt::green);
         case KMachineState_TeleportingPausedVM:    return QColor(Qt::blue);
         case KMachineState_TeleportingIn:          return QColor(Qt::blue);
-        // case KMachineState_FaultTolerantSyncing:
         case KMachineState_DeletingSnapshotOnline: return QColor(Qt::green);
         case KMachineState_DeletingSnapshotPaused: return QColor(Qt::darkGreen);
         case KMachineState_RestoringSnapshot:      return QColor(Qt::green);
@@ -115,7 +114,6 @@ template<> QIcon toIcon(const KMachineState &state)
         case KMachineState_Restoring:              return UIIconPool::iconSet(":/state_restoring_16px.png");
         case KMachineState_TeleportingPausedVM:    return UIIconPool::iconSet(":/state_saving_16px.png");
         case KMachineState_TeleportingIn:          return UIIconPool::iconSet(":/state_restoring_16px.png");
-        // case KMachineState_FaultTolerantSyncing:
         case KMachineState_DeletingSnapshotOnline: return UIIconPool::iconSet(":/state_discarding_16px.png");
         case KMachineState_DeletingSnapshotPaused: return UIIconPool::iconSet(":/state_discarding_16px.png");
         case KMachineState_RestoringSnapshot:      return UIIconPool::iconSet(":/state_discarding_16px.png");
@@ -152,7 +150,6 @@ template<> QString toString(const KMachineState &state)
         case KMachineState_Restoring:              return QApplication::translate("UICommon", "Restoring", "MachineState");
         case KMachineState_TeleportingPausedVM:    return QApplication::translate("UICommon", "Teleporting Paused VM", "MachineState");
         case KMachineState_TeleportingIn:          return QApplication::translate("UICommon", "Teleporting", "MachineState");
-        case KMachineState_FaultTolerantSyncing:   return QApplication::translate("UICommon", "Fault Tolerant Syncing", "MachineState");
         case KMachineState_DeletingSnapshotOnline: return QApplication::translate("UICommon", "Deleting Snapshot", "MachineState");
         case KMachineState_DeletingSnapshotPaused: return QApplication::translate("UICommon", "Deleting Snapshot", "MachineState");
         case KMachineState_RestoringSnapshot:      return QApplication::translate("UICommon", "Restoring Snapshot", "MachineState");

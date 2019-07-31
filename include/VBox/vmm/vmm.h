@@ -122,8 +122,6 @@ typedef enum VMMCALLRING3
     /** Ring switch to force preemption.  This is also used by PDMCritSect to
      *  handle VERR_INTERRUPTED in kernel context. */
     VMMCALLRING3_VM_R0_PREEMPT,
-    /** Sync the FTM state with the standby node. */
-    VMMCALLRING3_FTM_SET_CHECKPOINT,
     /** The usual 32-bit hack. */
     VMMCALLRING3_32BIT_HACK = 0x7fffffff
 } VMMCALLRING3;

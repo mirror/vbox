@@ -627,7 +627,7 @@
 
   <enum
     name="MachineState"
-    uuid="87f085c3-ca67-4e45-9225-6057f32e9e8e"
+    uuid="00bc01b5-00a4-48db-000a-9061008357aa"
     >
     <desc>
       Virtual machine execution state.
@@ -864,47 +864,42 @@
         Teleporting the machine state in from another host or process.
       </desc>
     </const>
-    <const name="FaultTolerantSyncing"      value="16">
-      <desc>
-        The machine is being synced with a fault tolerant VM running elsewhere.
-      </desc>
-    </const>
-    <const name="DeletingSnapshotOnline"    value="17">
+    <const name="DeletingSnapshotOnline"    value="16">
       <desc>
         Like @c DeletingSnapshot, but the merging of media is ongoing in
         the background while the machine is running.
       </desc>
     </const>
-    <const name="DeletingSnapshotPaused"    value="18">
+    <const name="DeletingSnapshotPaused"    value="17">
       <desc>
         Like @c DeletingSnapshotOnline, but the machine was paused when the
         merging of differencing media was started.
       </desc>
     </const>
-    <const name="OnlineSnapshotting"        value="19">
+    <const name="OnlineSnapshotting"        value="18">
       <desc>
         Like @c LiveSnapshotting, but the machine was paused when the
         merging of differencing media was started.
       </desc>
     </const>
-    <const name="RestoringSnapshot"         value="20">
+    <const name="RestoringSnapshot"         value="19">
       <desc>
         A machine snapshot is being restored; this typically does not take long.
       </desc>
     </const>
-    <const name="DeletingSnapshot"          value="21">
+    <const name="DeletingSnapshot"          value="20">
       <desc>
         A machine snapshot is being deleted; this can take a long time since this
         may require merging differencing media. This value indicates that the
         machine is not running while the snapshot is being deleted.
       </desc>
     </const>
-    <const name="SettingUp"                 value="22">
+    <const name="SettingUp"                 value="21">
       <desc>
         Lengthy setup operation is in progress.
       </desc>
     </const>
-    <const name="Snapshotting"              value="23">
+    <const name="Snapshotting"              value="22">
       <desc>
         Taking an (offline) snapshot.
       </desc>
@@ -915,7 +910,7 @@
         Pseudo-state: first online state (for use in relational expressions).
       </desc>
     </const>
-    <const name="LastOnline" value="19" wsmap="suppress"> <!-- OnlineSnapshotting -->
+    <const name="LastOnline" value="18" wsmap="suppress"> <!-- OnlineSnapshotting -->
       <desc>
         Pseudo-state: last online state (for use in relational expressions).
       </desc>
@@ -926,7 +921,7 @@
         Pseudo-state: first transient state (for use in relational expressions).
       </desc>
     </const>
-    <const name="LastTransient" value="23" wsmap="suppress"> <!-- Snapshotting -->
+    <const name="LastTransient" value="22" wsmap="suppress"> <!-- Snapshotting -->
       <desc>
         Pseudo-state: last transient state (for use in relational expressions).
       </desc>
@@ -1177,24 +1172,6 @@
     </const>
     <const name="KVM"      value="5">
       <desc>Linux KVM.</desc>
-    </const>
-  </enum>
-
-  <enum
-    name="FaultToleranceState"
-    uuid="5124f7ec-6b67-493c-9dee-ee45a44114e1"
-    >
-    <desc>
-      Used with <link to="IMachine::faultToleranceState" />.
-    </desc>
-    <const name="Inactive" value="1">
-      <desc>No fault tolerance enabled.</desc>
-    </const>
-    <const name="Master" value="2">
-      <desc>Fault tolerant master VM.</desc>
-    </const>
-    <const name="Standby" value="3">
-      <desc>Fault tolerant standby VM.</desc>
     </const>
   </enum>
 
@@ -5850,11 +5827,11 @@
 
   <interface
     name="IMachine" extends="$unknown"
-    uuid="5047460a-265d-4538-b23e-ddba5fb84976"
+    uuid="008d62ad-00dc-4685-00f4-60bf00fc0dbd"
     wsmap="managed"
     wrap-hint-server-addinterfaces="IInternalMachineControl"
     wrap-hint-server="manualaddinterfaces"
-    reservedMethods="8" reservedAttributes="10"
+    reservedMethods="8" reservedAttributes="12"
     >
     <!-- Note! This interface is not compatible between 5.0 and 5.1 as it had too many
                methods/attributes for midl and the reservedAttributes had to be
@@ -6453,41 +6430,6 @@
     <attribute name="paravirtProvider" type="ParavirtProvider">
       <desc>
         The paravirtualized guest interface provider.
-      </desc>
-    </attribute>
-
-    <attribute name="faultToleranceState" type="FaultToleranceState">
-      <desc>
-        Fault tolerance state; disabled, source or target.
-        This property can be changed at any time. If you change it for a running
-        VM, then the fault tolerance address and port must be set beforehand.
-      </desc>
-    </attribute>
-
-    <attribute name="faultTolerancePort" type="unsigned long">
-      <desc>
-        The TCP port the fault tolerance source or target will use for
-        communication.
-      </desc>
-    </attribute>
-
-    <attribute name="faultToleranceAddress" type="wstring">
-      <desc>
-        The address the fault tolerance source or target.
-      </desc>
-    </attribute>
-
-    <attribute name="faultTolerancePassword" type="wstring">
-      <desc>
-        The password to check for on the standby VM. This is just a
-        very basic measure to prevent simple hacks and operators accidentally
-        choosing the wrong standby VM.
-      </desc>
-    </attribute>
-
-    <attribute name="faultToleranceSyncInterval" type="unsigned long">
-      <desc>
-        The interval in ms used for syncing the state between source and target.
       </desc>
     </attribute>
 

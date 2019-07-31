@@ -826,8 +826,8 @@ typedef union PGMPAGE
         /** 3:2   - Paging structure needed to map the page
          * (PGM_PAGE_PDE_TYPE_*). */
         uint64_t    u2PDETypeY          : 2;
-        /** 4     - Indicator of dirty page for fault tolerance tracking. */
-        uint64_t    fFTDirtyY           : 1;
+        /** 4     - Unused (was used by FTE for dirty tracking). */
+        uint64_t    fUnused1            : 1;
         /** 5     - Flag indicating that a write monitored page was written to
          *  when set. */
         uint64_t    fWrittenToY         : 1;
@@ -1167,25 +1167,6 @@ typedef PPGMPAGE *PPPGMPAGE;
  * @param   a_pPage     Pointer to the physical guest page tracking structure.
  */
 #define PGM_PAGE_IS_WRITTEN_TO(a_pPage)         ( (a_pPage)->s.fWrittenToY )
-
-/**
- * Marks the page as dirty for FTM
- * @param   a_pPage     Pointer to the physical guest page tracking structure.
- */
-#define PGM_PAGE_SET_FT_DIRTY(a_pPage)          do { (a_pPage)->s.fFTDirtyY = 1; } while (0)
-
-/**
- * Clears the FTM dirty indicator
- * @param   a_pPage     Pointer to the physical guest page tracking structure.
- */
-#define PGM_PAGE_CLEAR_FT_DIRTY(a_pPage)        do { (a_pPage)->s.fFTDirtyY = 0; } while (0)
-
-/**
- * Checks if the page was marked as dirty for FTM
- * @returns true/false.
- * @param   a_pPage     Pointer to the physical guest page tracking structure.
- */
-#define PGM_PAGE_IS_FT_DIRTY(a_pPage)           ( (a_pPage)->s.fFTDirtyY )
 
 
 /** @name PT usage values (PGMPAGE::u2PDEType).

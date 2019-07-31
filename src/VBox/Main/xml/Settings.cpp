@@ -3565,9 +3565,6 @@ MachineUserData::MachineUserData() :
     fNameSync(true),
     fTeleporterEnabled(false),
     uTeleporterPort(0),
-    enmFaultToleranceState(FaultToleranceState_Inactive),
-    uFaultTolerancePort(0),
-    uFaultToleranceInterval(0),
     fRTCUseUTC(false),
     enmVMPriority(VMProcPriority_Default)
 {
@@ -3593,11 +3590,6 @@ bool MachineUserData::operator==(const MachineUserData &c) const
             && uTeleporterPort            == c.uTeleporterPort
             && strTeleporterAddress       == c.strTeleporterAddress
             && strTeleporterPassword      == c.strTeleporterPassword
-            && enmFaultToleranceState     == c.enmFaultToleranceState
-            && uFaultTolerancePort        == c.uFaultTolerancePort
-            && uFaultToleranceInterval    == c.uFaultToleranceInterval
-            && strFaultToleranceAddress   == c.strFaultToleranceAddress
-            && strFaultTolerancePassword  == c.strFaultTolerancePassword
             && fRTCUseUTC                 == c.fRTCUseUTC
             && ovIcon                     == c.ovIcon
             && enmVMPriority              == c.enmVMPriority);
@@ -5671,24 +5663,6 @@ void MachineConfigFile::readMachine(const xml::ElementNode &elmMachine)
                 machineUserData.strDescription = pelmMachineChild->getValue();
             else if (pelmMachineChild->nameEquals("Teleporter"))
                 readTeleporter(pelmMachineChild, &machineUserData);
-            else if (pelmMachineChild->nameEquals("FaultTolerance"))
-            {
-                Utf8Str strFaultToleranceSate;
-                if (pelmMachineChild->getAttributeValue("state", strFaultToleranceSate))
-                {
-                    if (strFaultToleranceSate == "master")
-                        machineUserData.enmFaultToleranceState = FaultToleranceState_Master;
-                    else
-                    if (strFaultToleranceSate == "standby")
-                        machineUserData.enmFaultToleranceState = FaultToleranceState_Standby;
-                    else
-                        machineUserData.enmFaultToleranceState = FaultToleranceState_Inactive;
-                }
-                pelmMachineChild->getAttributeValue("port", machineUserData.uFaultTolerancePort);
-                pelmMachineChild->getAttributeValue("address", machineUserData.strFaultToleranceAddress);
-                pelmMachineChild->getAttributeValue("interval", machineUserData.uFaultToleranceInterval);
-                pelmMachineChild->getAttributeValue("password", machineUserData.strFaultTolerancePassword);
-            }
             else if (pelmMachineChild->nameEquals("MediaRegistry"))
                 readMediaRegistry(*pelmMachineChild, mediaRegistry);
             else if (pelmMachineChild->nameEquals("Debugging"))
@@ -7354,38 +7328,6 @@ void MachineConfigFile::buildMachineXML(xml::ElementNode &elmMachine,
         pelmTeleporter->setAttribute("password", machineUserData.strTeleporterPassword);
     }
 
-    if (    m->sv >= SettingsVersion_v1_11
-        &&  (   machineUserData.enmFaultToleranceState != FaultToleranceState_Inactive
-            ||  machineUserData.uFaultTolerancePort
-            ||  machineUserData.uFaultToleranceInterval
-            ||  !machineUserData.strFaultToleranceAddress.isEmpty()
-            )
-       )
-    {
-        xml::ElementNode *pelmFaultTolerance = elmMachine.createChild("FaultTolerance");
-        switch (machineUserData.enmFaultToleranceState)
-        {
-            case FaultToleranceState_Inactive:
-                pelmFaultTolerance->setAttribute("state", "inactive");
-                break;
-            case FaultToleranceState_Master:
-                pelmFaultTolerance->setAttribute("state", "master");
-                break;
-            case FaultToleranceState_Standby:
-                pelmFaultTolerance->setAttribute("state", "standby");
-                break;
-#ifdef VBOX_WITH_XPCOM_CPP_ENUM_HACK
-            case FaultToleranceState_32BitHack: /* (compiler warnings) */
-                AssertFailedBreak();
-#endif
-        }
-
-        pelmFaultTolerance->setAttribute("port", machineUserData.uFaultTolerancePort);
-        pelmFaultTolerance->setAttribute("address", machineUserData.strFaultToleranceAddress);
-        pelmFaultTolerance->setAttribute("interval", machineUserData.uFaultToleranceInterval);
-        pelmFaultTolerance->setAttribute("password", machineUserData.strFaultTolerancePassword);
-    }
-
     if (    (fl & BuildMachineXML_MediaRegistry)
          && (m->sv >= SettingsVersion_v1_11)
        )
@@ -7813,15 +7755,11 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
 
     if (m->sv < SettingsVersion_v1_11)
     {
-        // VirtualBox 4.0 adds HD audio, CPU priorities, fault tolerance,
+        // VirtualBox 4.0 adds HD audio, CPU priorities, ~fault tolerance~,
         // per-machine media registries, VRDE, JRockitVE, bandwidth groups,
         // ICH9 chipset
         if (    hardwareMachine.audioAdapter.controllerType == AudioControllerType_HDA
              || hardwareMachine.ulCpuExecutionCap != 100
-             || machineUserData.enmFaultToleranceState != FaultToleranceState_Inactive
-             || machineUserData.uFaultTolerancePort
-             || machineUserData.uFaultToleranceInterval
-             || !machineUserData.strFaultToleranceAddress.isEmpty()
              || mediaRegistry.llHardDisks.size()
              || mediaRegistry.llDvdImages.size()
              || mediaRegistry.llFloppyImages.size()

@@ -124,7 +124,6 @@
 # include <VBox/vmm/rem.h>
 #endif
 #include <VBox/vmm/ssm.h>
-#include <VBox/vmm/ftm.h>
 #include <VBox/vmm/tm.h>
 #include "VMMInternal.h"
 #include <VBox/vmm/vm.h>
@@ -2505,10 +2504,6 @@ static int vmmR3ServiceCallRing3Request(PVM pVM, PVMCPU pVCpu)
          */
         case VMMCALLRING3_VM_R0_PREEMPT:
             pVCpu->vmm.s.rcCallRing3 = VINF_SUCCESS;
-            break;
-
-        case VMMCALLRING3_FTM_SET_CHECKPOINT:
-            pVCpu->vmm.s.rcCallRing3 = FTMR3SetCheckpoint(pVM, (FTMCHECKPOINTTYPE)pVCpu->vmm.s.u64CallRing3Arg);
             break;
 
         default:

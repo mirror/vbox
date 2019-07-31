@@ -84,7 +84,6 @@ static const char *GetStateName(MachineState_T machineState)
         case MachineState_Restoring:           return "Restoring";
         case MachineState_TeleportingPausedVM: return "TeleportingPausedVM";
         case MachineState_TeleportingIn:       return "TeleportingIn";
-        case MachineState_FaultTolerantSyncing: return "FaultTolerantSyncing";
         case MachineState_DeletingSnapshotOnline: return "DeletingSnapshotOnline";
         case MachineState_DeletingSnapshotPaused: return "DeletingSnapshotPaused";
         case MachineState_RestoringSnapshot:   return "RestoringSnapshot";

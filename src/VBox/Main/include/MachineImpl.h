@@ -941,16 +941,6 @@ private:
     HRESULT setParavirtProvider(ParavirtProvider_T aParavirtProvider);
     HRESULT getParavirtDebug(com::Utf8Str &aParavirtDebug);
     HRESULT setParavirtDebug(const com::Utf8Str &aParavirtDebug);
-    HRESULT getFaultToleranceState(FaultToleranceState_T *aFaultToleranceState);
-    HRESULT setFaultToleranceState(FaultToleranceState_T aFaultToleranceState);
-    HRESULT getFaultTolerancePort(ULONG *aFaultTolerancePort);
-    HRESULT setFaultTolerancePort(ULONG aFaultTolerancePort);
-    HRESULT getFaultToleranceAddress(com::Utf8Str &aFaultToleranceAddress);
-    HRESULT setFaultToleranceAddress(const com::Utf8Str &aFaultToleranceAddress);
-    HRESULT getFaultTolerancePassword(com::Utf8Str &aFaultTolerancePassword);
-    HRESULT setFaultTolerancePassword(const com::Utf8Str &aFaultTolerancePassword);
-    HRESULT getFaultToleranceSyncInterval(ULONG *aFaultToleranceSyncInterval);
-    HRESULT setFaultToleranceSyncInterval(ULONG aFaultToleranceSyncInterval);
     HRESULT getRTCUseUTC(BOOL *aRTCUseUTC);
     HRESULT setRTCUseUTC(BOOL aRTCUseUTC);
     HRESULT getIOCacheEnabled(BOOL *aIOCacheEnabled);

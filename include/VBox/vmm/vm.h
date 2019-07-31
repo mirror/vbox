@@ -962,8 +962,7 @@ AssertCompileSizeAlignment(VMCPU, 4096);
  */
 #define VMSTATE_IS_RUNNING(a_enmVMState) \
     (   (enmVMState) == VMSTATE_RUNNING \
-     || (enmVMState) == VMSTATE_RUNNING_LS \
-     || (enmVMState) == VMSTATE_RUNNING_FT )
+     || (enmVMState) == VMSTATE_RUNNING_LS )
 
 /** @def VM_IS_RUNNING_FOR_ASSERTIONS_ONLY
  * Checks if the VM is running.
@@ -972,8 +971,7 @@ AssertCompileSizeAlignment(VMCPU, 4096);
  */
 #define VM_IS_RUNNING_FOR_ASSERTIONS_ONLY(pVM) \
     (   (pVM)->enmVMState == VMSTATE_RUNNING \
-     || (pVM)->enmVMState == VMSTATE_RUNNING_LS \
-     || (pVM)->enmVMState == VMSTATE_RUNNING_FT )
+     || (pVM)->enmVMState == VMSTATE_RUNNING_LS )
 
 /** @def VM_ASSERT_IS_NOT_RUNNING
  * Asserts that the VM is not running.

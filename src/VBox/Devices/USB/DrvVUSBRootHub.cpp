@@ -925,8 +925,7 @@ static DECLCALLBACK(int) vusbRhSetFrameProcessing(PVUSBIROOTHUBCONNECTOR pInterf
 
         VMSTATE enmState = PDMDrvHlpVMState(pThis->pDrvIns);
         if (   enmState == VMSTATE_RUNNING
-            || enmState == VMSTATE_RUNNING_LS
-            || enmState == VMSTATE_RUNNING_FT)
+            || enmState == VMSTATE_RUNNING_LS)
         {
             rc = PDMR3ThreadResume(pThis->hThreadPeriodFrame);
             AssertRCReturn(rc, rc);

@@ -1042,7 +1042,6 @@ DECLINLINE(bool) drvramdiskMediaExIoReqIsVmRunning(PDRVRAMDISK pThis)
     if (   enmVmState == VMSTATE_RESUMING
         || enmVmState == VMSTATE_RUNNING
         || enmVmState == VMSTATE_RUNNING_LS
-        || enmVmState == VMSTATE_RUNNING_FT
         || enmVmState == VMSTATE_RESETTING
         || enmVmState == VMSTATE_RESETTING_LS
         || enmVmState == VMSTATE_SOFT_RESETTING

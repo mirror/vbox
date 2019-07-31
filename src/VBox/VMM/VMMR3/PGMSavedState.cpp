@@ -31,7 +31,6 @@
 
 #include <VBox/param.h>
 #include <VBox/err.h>
-#include <VBox/vmm/ftm.h>
 
 #include <iprt/asm.h>
 #include <iprt/assert.h>
@@ -437,9 +436,6 @@ static void pgmR3ScanRomPages(PVM pVM)
  */
 static int pgmR3SaveRomVirginPages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave)
 {
-    if (FTMIsDeltaLoadSaveActive(pVM))
-        return VINF_SUCCESS;    /* nothing to do as nothing has changed here */
-
     pgmLock(pVM);
     for (PPGMROMRANGE pRom = pVM->pgm.s.pRomRangesR3; pRom; pRom = pRom->pNextR3)
     {
@@ -515,9 +511,6 @@ static int pgmR3SaveRomVirginPages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave)
  */
 static int pgmR3SaveShadowedRomPages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, bool fFinalPass)
 {
-    if (FTMIsDeltaLoadSaveActive(pVM))
-        return VINF_SUCCESS;    /* nothing to do as we deal with those pages separately */
-
     /*
      * The Shadowed ROMs.
      *
@@ -1571,7 +1564,6 @@ static int pgmR3SaveRamPages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, uint32_t 
     RTGCPHYS GCPhysLast = NIL_RTGCPHYS;
     RTGCPHYS GCPhysCur = 0;
     PPGMRAMRANGE pCur;
-    bool fFTMDeltaSaveActive = FTMIsDeltaLoadSaveActive(pVM);
 
     pgmLock(pVM);
     do
@@ -1674,37 +1666,14 @@ static int pgmR3SaveRamPages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, uint32_t 
                         /* Try save some memory when restoring. */
                         if (!ASMMemIsZeroPage(pvPage))
                         {
-                            if (fFTMDeltaSaveActive)
-                            {
-                                if (    PGM_PAGE_IS_WRITTEN_TO(pCurPage)
-                                    ||  PGM_PAGE_IS_FT_DIRTY(pCurPage))
-                                {
-                                    if (GCPhys == GCPhysLast + PAGE_SIZE)
-                                        SSMR3PutU8(pSSM, PGM_STATE_REC_RAM_RAW);
-                                    else
-                                    {
-                                        SSMR3PutU8(pSSM, PGM_STATE_REC_RAM_RAW | PGM_STATE_REC_FLAG_ADDR);
-                                        SSMR3PutGCPhys(pSSM, GCPhys);
-                                    }
-                                    rc = SSMR3PutMem(pSSM, abPage, PAGE_SIZE);
-                                    PGM_PAGE_CLEAR_WRITTEN_TO(pVM, pCurPage);
-                                    PGM_PAGE_CLEAR_FT_DIRTY(pCurPage);
-                                }
-                                /* else nothing changed, so skip it. */
-                                else
-                                    fSkipped = true;
-                            }
+                            if (GCPhys == GCPhysLast + PAGE_SIZE)
+                                SSMR3PutU8(pSSM, PGM_STATE_REC_RAM_RAW);
                             else
                             {
-                                if (GCPhys == GCPhysLast + PAGE_SIZE)
-                                    SSMR3PutU8(pSSM, PGM_STATE_REC_RAM_RAW);
-                                else
-                                {
-                                    SSMR3PutU8(pSSM, PGM_STATE_REC_RAM_RAW | PGM_STATE_REC_FLAG_ADDR);
-                                    SSMR3PutGCPhys(pSSM, GCPhys);
-                                }
-                                rc = SSMR3PutMem(pSSM, abPage, PAGE_SIZE);
+                                SSMR3PutU8(pSSM, PGM_STATE_REC_RAM_RAW | PGM_STATE_REC_FLAG_ADDR);
+                                SSMR3PutGCPhys(pSSM, GCPhys);
                             }
+                            rc = SSMR3PutMem(pSSM, abPage, PAGE_SIZE);
                         }
                         else
                         {

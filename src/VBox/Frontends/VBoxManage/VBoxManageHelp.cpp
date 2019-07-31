@@ -730,13 +730,6 @@ void printUsage(USAGECATEGORY enmCommand, uint64_t fSubcommandScope, PRTSTREAM p
                      "                            [--iocache on|off]\n"
                      "                            [--iocachesize <I/O cache size in MB>]\n"
 #endif
-#if 0
-                     "                            [--faulttolerance master|standby]\n"
-                     "                            [--faulttoleranceaddress <name>]\n"
-                     "                            [--faulttoleranceport <port>]\n"
-                     "                            [--faulttolerancesyncinterval <msec>]\n"
-                     "                            [--faulttolerancepassword <password>]\n"
-#endif
 #ifdef VBOX_WITH_USB_CARDREADER
                      "                            [--usbcardreader on|off]\n"
 #endif

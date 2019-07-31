@@ -1212,11 +1212,6 @@ struct MachineUserData
     uint32_t                uTeleporterPort;
     com::Utf8Str            strTeleporterAddress;
     com::Utf8Str            strTeleporterPassword;
-    FaultToleranceState_T   enmFaultToleranceState;
-    uint32_t                uFaultTolerancePort;
-    com::Utf8Str            strFaultToleranceAddress;
-    com::Utf8Str            strFaultTolerancePassword;
-    uint32_t                uFaultToleranceInterval;
     bool                    fRTCUseUTC;
     IconBlob                ovIcon;
     VMProcPriority_T        enmVMPriority;

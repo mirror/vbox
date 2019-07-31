@@ -178,8 +178,6 @@ const char *machineStateToName(MachineState_T machineState, bool fShort)
             return fShort ? "teleportingpausedvm"  : "teleporting paused vm";
         case MachineState_TeleportingIn:
             return fShort ? "teleportingin"        : "teleporting (incoming)";
-        case MachineState_FaultTolerantSyncing:
-            return fShort ? "faulttolerantsyncing" : "fault tolerant syncing";
         case MachineState_DeletingSnapshotOnline:
             return fShort ? "deletingsnapshotlive" : "deleting snapshot live";
         case MachineState_DeletingSnapshotPaused:

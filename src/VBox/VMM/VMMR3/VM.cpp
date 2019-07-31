@@ -66,7 +66,6 @@
 #include <VBox/vmm/stam.h>
 #include <VBox/vmm/iom.h>
 #include <VBox/vmm/ssm.h>
-#include <VBox/vmm/ftm.h>
 #include <VBox/vmm/hm.h>
 #include <VBox/vmm/gim.h>
 #include "VMInternal.h"
@@ -884,98 +883,92 @@ static int vmR3InitRing3(PVM pVM, PUVM pUVM)
                             rc = TMR3Init(pVM);
                         if (RT_SUCCESS(rc))
                         {
-                            rc = FTMR3Init(pVM);
+                            rc = VMMR3Init(pVM);
                             if (RT_SUCCESS(rc))
                             {
-                                rc = VMMR3Init(pVM);
+                                rc = SELMR3Init(pVM);
                                 if (RT_SUCCESS(rc))
                                 {
-                                    rc = SELMR3Init(pVM);
+                                    rc = TRPMR3Init(pVM);
                                     if (RT_SUCCESS(rc))
                                     {
-                                        rc = TRPMR3Init(pVM);
+                                        rc = SSMR3RegisterStub(pVM, "CSAM", 0);
                                         if (RT_SUCCESS(rc))
                                         {
-                                            rc = SSMR3RegisterStub(pVM, "CSAM", 0);
+                                            rc = SSMR3RegisterStub(pVM, "PATM", 0);
                                             if (RT_SUCCESS(rc))
                                             {
-                                                rc = SSMR3RegisterStub(pVM, "PATM", 0);
+                                                rc = IOMR3Init(pVM);
                                                 if (RT_SUCCESS(rc))
                                                 {
-                                                    rc = IOMR3Init(pVM);
+                                                    rc = EMR3Init(pVM);
                                                     if (RT_SUCCESS(rc))
                                                     {
-                                                        rc = EMR3Init(pVM);
+                                                        rc = IEMR3Init(pVM);
                                                         if (RT_SUCCESS(rc))
                                                         {
-                                                            rc = IEMR3Init(pVM);
+                                                            rc = DBGFR3Init(pVM);
                                                             if (RT_SUCCESS(rc))
                                                             {
-                                                                rc = DBGFR3Init(pVM);
+                                                                /* GIM must be init'd before PDM, gimdevR3Construct()
+                                                                   requires GIM provider to be setup. */
+                                                                rc = GIMR3Init(pVM);
                                                                 if (RT_SUCCESS(rc))
                                                                 {
-                                                                    /* GIM must be init'd before PDM, gimdevR3Construct()
-                                                                       requires GIM provider to be setup. */
-                                                                    rc = GIMR3Init(pVM);
+                                                                    rc = PDMR3Init(pVM);
                                                                     if (RT_SUCCESS(rc))
                                                                     {
-                                                                        rc = PDMR3Init(pVM);
+                                                                        rc = PGMR3InitDynMap(pVM);
+                                                                        if (RT_SUCCESS(rc))
+                                                                            rc = MMR3HyperInitFinalize(pVM);
+                                                                        if (RT_SUCCESS(rc))
+                                                                            rc = PGMR3InitFinalize(pVM);
+                                                                        if (RT_SUCCESS(rc))
+                                                                            rc = TMR3InitFinalize(pVM);
+#ifdef VBOX_WITH_REM
+                                                                        if (RT_SUCCESS(rc))
+                                                                            rc = REMR3InitFinalize(pVM);
+#endif
                                                                         if (RT_SUCCESS(rc))
                                                                         {
-                                                                            rc = PGMR3InitDynMap(pVM);
-                                                                            if (RT_SUCCESS(rc))
-                                                                                rc = MMR3HyperInitFinalize(pVM);
-                                                                            if (RT_SUCCESS(rc))
-                                                                                rc = PGMR3InitFinalize(pVM);
-                                                                            if (RT_SUCCESS(rc))
-                                                                                rc = TMR3InitFinalize(pVM);
-#ifdef VBOX_WITH_REM
-                                                                            if (RT_SUCCESS(rc))
-                                                                                rc = REMR3InitFinalize(pVM);
-#endif
-                                                                            if (RT_SUCCESS(rc))
-                                                                            {
-                                                                                PGMR3MemSetup(pVM, false /*fAtReset*/);
-                                                                                PDMR3MemSetup(pVM, false /*fAtReset*/);
-                                                                            }
-                                                                            if (RT_SUCCESS(rc))
-                                                                                rc = vmR3InitDoCompleted(pVM, VMINITCOMPLETED_RING3);
-                                                                            if (RT_SUCCESS(rc))
-                                                                            {
-                                                                                LogFlow(("vmR3InitRing3: returns %Rrc\n", VINF_SUCCESS));
-                                                                                return VINF_SUCCESS;
-                                                                            }
-
-                                                                            int rc2 = PDMR3Term(pVM);
-                                                                            AssertRC(rc2);
+                                                                            PGMR3MemSetup(pVM, false /*fAtReset*/);
+                                                                            PDMR3MemSetup(pVM, false /*fAtReset*/);
                                                                         }
-                                                                        int rc2 = GIMR3Term(pVM);
+                                                                        if (RT_SUCCESS(rc))
+                                                                            rc = vmR3InitDoCompleted(pVM, VMINITCOMPLETED_RING3);
+                                                                        if (RT_SUCCESS(rc))
+                                                                        {
+                                                                            LogFlow(("vmR3InitRing3: returns %Rrc\n", VINF_SUCCESS));
+                                                                            return VINF_SUCCESS;
+                                                                        }
+
+                                                                        int rc2 = PDMR3Term(pVM);
                                                                         AssertRC(rc2);
                                                                     }
-                                                                    int rc2 = DBGFR3Term(pVM);
+                                                                    int rc2 = GIMR3Term(pVM);
                                                                     AssertRC(rc2);
                                                                 }
-                                                                int rc2 = IEMR3Term(pVM);
+                                                                int rc2 = DBGFR3Term(pVM);
                                                                 AssertRC(rc2);
                                                             }
-                                                            int rc2 = EMR3Term(pVM);
+                                                            int rc2 = IEMR3Term(pVM);
                                                             AssertRC(rc2);
                                                         }
-                                                        int rc2 = IOMR3Term(pVM);
+                                                        int rc2 = EMR3Term(pVM);
                                                         AssertRC(rc2);
                                                     }
+                                                    int rc2 = IOMR3Term(pVM);
+                                                    AssertRC(rc2);
                                                 }
                                             }
-                                            int rc2 = TRPMR3Term(pVM);
-                                            AssertRC(rc2);
                                         }
-                                        int rc2 = SELMR3Term(pVM);
+                                        int rc2 = TRPMR3Term(pVM);
                                         AssertRC(rc2);
                                     }
-                                    int rc2 = VMMR3Term(pVM);
+                                    int rc2 = SELMR3Term(pVM);
                                     AssertRC(rc2);
                                 }
-                                int rc2 = FTMR3Term(pVM);
+                                int rc2 = VMMR3Term(pVM);
                                 AssertRC(rc2);
                             }
                             int rc2 = TMR3Term(pVM);
@@ -1608,13 +1601,11 @@ static DECLCALLBACK(int) vmR3LiveDoStep2(PVM pVM, PSSMHANDLE pSSM)
  * @param   pvProgressUser      User argument for the progress callback.
  * @param   ppSSM               Where to return the saved state handle in case of a
  *                              live snapshot scenario.
- * @param   fSkipStateChanges   Set if we're supposed to skip state changes (FTM delta case)
  *
  * @thread  EMT
  */
 static DECLCALLBACK(int) vmR3Save(PVM pVM, uint32_t cMsMaxDowntime, const char *pszFilename, PCSSMSTRMOPS pStreamOps, void *pvStreamOpsUser,
-                                  SSMAFTER enmAfter, PFNVMPROGRESS pfnProgress, void *pvProgressUser, PSSMHANDLE *ppSSM,
-                                  bool fSkipStateChanges)
+                                  SSMAFTER enmAfter, PFNVMPROGRESS pfnProgress, void *pvProgressUser, PSSMHANDLE *ppSSM)
 {
     int rc = VINF_SUCCESS;
 
@@ -1636,27 +1627,16 @@ static DECLCALLBACK(int) vmR3Save(PVM pVM, uint32_t cMsMaxDowntime, const char *
     /*
      * Change the state and perform/start the saving.
      */
-    if (!fSkipStateChanges)
-    {
-        rc = vmR3TrySetState(pVM, "VMR3Save", 2,
-                             VMSTATE_SAVING,     VMSTATE_SUSPENDED,
-                             VMSTATE_RUNNING_LS, VMSTATE_RUNNING);
-    }
-    else
-    {
-        Assert(enmAfter != SSMAFTER_TELEPORT);
-        rc = 1;
-    }
-
+    rc = vmR3TrySetState(pVM, "VMR3Save", 2,
+                         VMSTATE_SAVING,     VMSTATE_SUSPENDED,
+                         VMSTATE_RUNNING_LS, VMSTATE_RUNNING);
     if (rc == 1 && enmAfter != SSMAFTER_TELEPORT)
     {
         rc = SSMR3Save(pVM, pszFilename, pStreamOps, pvStreamOpsUser, enmAfter, pfnProgress, pvProgressUser);
-        if (!fSkipStateChanges)
-            vmR3SetState(pVM, VMSTATE_SUSPENDED, VMSTATE_SAVING);
+        vmR3SetState(pVM, VMSTATE_SUSPENDED, VMSTATE_SAVING);
     }
     else if (rc == 2 || enmAfter == SSMAFTER_TELEPORT)
     {
-        Assert(!fSkipStateChanges);
         if (enmAfter == SSMAFTER_TELEPORT)
             pVM->vm.s.fTeleportedAndNotFullyResumedYet = true;
         rc = SSMR3LiveSave(pVM, cMsMaxDowntime, pszFilename, pStreamOps, pvStreamOpsUser,
@@ -1683,27 +1663,23 @@ static DECLCALLBACK(int) vmR3Save(PVM pVM, uint32_t cMsMaxDowntime, const char *
  * @param   pfnProgress         Progress callback. Optional.
  * @param   pvProgressUser      User argument for the progress callback.
  * @param   pfSuspended         Set if we suspended the VM.
- * @param   fSkipStateChanges   Set if we're supposed to skip state changes (FTM delta case)
  *
  * @thread  Non-EMT
  */
 static int vmR3SaveTeleport(PVM pVM, uint32_t cMsMaxDowntime,
                             const char *pszFilename, PCSSMSTRMOPS pStreamOps, void *pvStreamOpsUser,
-                            SSMAFTER enmAfter, PFNVMPROGRESS pfnProgress, void *pvProgressUser, bool *pfSuspended,
-                            bool fSkipStateChanges)
+                            SSMAFTER enmAfter, PFNVMPROGRESS pfnProgress, void *pvProgressUser, bool *pfSuspended)
 {
     /*
      * Request the operation in EMT(0).
      */
     PSSMHANDLE pSSM;
     int rc = VMR3ReqCallWait(pVM, 0 /*idDstCpu*/,
-                             (PFNRT)vmR3Save, 10, pVM, cMsMaxDowntime, pszFilename, pStreamOps, pvStreamOpsUser,
-                             enmAfter, pfnProgress, pvProgressUser, &pSSM, fSkipStateChanges);
-    if (    RT_SUCCESS(rc)
-        &&  pSSM)
+                             (PFNRT)vmR3Save, 9, pVM, cMsMaxDowntime, pszFilename, pStreamOps, pvStreamOpsUser,
+                             enmAfter, pfnProgress, pvProgressUser, &pSSM);
+    if (   RT_SUCCESS(rc)
+        && pSSM)
     {
-        Assert(!fSkipStateChanges);
-
         /*
          * Live snapshot.
          *
@@ -1799,52 +1775,8 @@ VMMR3DECL(int) VMR3Save(PUVM pUVM, const char *pszFilename, bool fContinueAfterw
     SSMAFTER enmAfter = fContinueAfterwards ? SSMAFTER_CONTINUE : SSMAFTER_DESTROY;
     int rc = vmR3SaveTeleport(pVM, 250 /*cMsMaxDowntime*/,
                               pszFilename, NULL /* pStreamOps */, NULL /* pvStreamOpsUser */,
-                              enmAfter, pfnProgress, pvUser, pfSuspended,
-                              false /* fSkipStateChanges */);
+                              enmAfter, pfnProgress, pvUser, pfSuspended);
     LogFlow(("VMR3Save: returns %Rrc (*pfSuspended=%RTbool)\n", rc, *pfSuspended));
-    return rc;
-}
-
-/**
- * Save current VM state (used by FTM)
- *
- *
- * @returns VBox status code.
- *
- * @param   pUVM                The user mode VM handle.
- * @param   pStreamOps          The stream methods.
- * @param   pvStreamOpsUser     The user argument to the stream methods.
- * @param   pfSuspended         Set if we suspended the VM.
- * @param   fSkipStateChanges   Set if we're supposed to skip state changes (FTM delta case)
- *
- * @thread      Any
- * @vmstate     Suspended or Running
- * @vmstateto   Saving+Suspended or
- *              RunningLS+SuspendingLS+SuspendedLS+Saving+Suspended.
- */
-VMMR3_INT_DECL(int) VMR3SaveFT(PUVM pUVM, PCSSMSTRMOPS pStreamOps, void *pvStreamOpsUser, bool *pfSuspended, bool fSkipStateChanges)
-{
-    LogFlow(("VMR3SaveFT: pUVM=%p pStreamOps=%p pvSteamOpsUser=%p pfSuspended=%p\n",
-             pUVM, pStreamOps, pvStreamOpsUser, pfSuspended));
-
-    /*
-     * Validate input.
-     */
-    AssertPtr(pfSuspended);
-    *pfSuspended = false;
-    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
-    PVM pVM = pUVM->pVM;
-    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
-    AssertReturn(pStreamOps, VERR_INVALID_PARAMETER);
-
-    /*
-     * Join paths with VMR3Teleport.
-     */
-    int rc = vmR3SaveTeleport(pVM, 250 /*cMsMaxDowntime*/,
-                              NULL, pStreamOps, pvStreamOpsUser,
-                              SSMAFTER_CONTINUE, NULL, NULL, pfSuspended,
-                              fSkipStateChanges);
-    LogFlow(("VMR3SaveFT: returns %Rrc (*pfSuspended=%RTbool)\n", rc, *pfSuspended));
     return rc;
 }
 
@@ -1888,10 +1820,8 @@ VMMR3DECL(int) VMR3Teleport(PUVM pUVM, uint32_t cMsMaxDowntime, PCSSMSTRMOPS pSt
     /*
      * Join paths with VMR3Save.
      */
-    int rc = vmR3SaveTeleport(pVM, cMsMaxDowntime,
-                              NULL /*pszFilename*/, pStreamOps, pvStreamOpsUser,
-                              SSMAFTER_TELEPORT, pfnProgress, pvProgressUser, pfSuspended,
-                              false /* fSkipStateChanges */);
+    int rc = vmR3SaveTeleport(pVM, cMsMaxDowntime, NULL /*pszFilename*/, pStreamOps, pvStreamOpsUser,
+                              SSMAFTER_TELEPORT, pfnProgress, pvProgressUser, pfSuspended);
     LogFlow(("VMR3Teleport: returns %Rrc (*pfSuspended=%RTbool)\n", rc, *pfSuspended));
     return rc;
 }
@@ -1910,16 +1840,12 @@ VMMR3DECL(int) VMR3Teleport(PUVM pUVM, uint32_t cMsMaxDowntime, PCSSMSTRMOPS pSt
  * @param   pfnProgress         Progress callback. Optional.
  * @param   pvProgressUser      User argument for the progress callback.
  * @param   fTeleporting        Indicates whether we're teleporting or not.
- * @param   fSkipStateChanges   Set if we're supposed to skip state changes (FTM delta case)
  *
  * @thread  EMT.
  */
 static DECLCALLBACK(int) vmR3Load(PUVM pUVM, const char *pszFilename, PCSSMSTRMOPS pStreamOps, void *pvStreamOpsUser,
-                                  PFNVMPROGRESS pfnProgress, void *pvProgressUser, bool fTeleporting,
-                                  bool fSkipStateChanges)
+                                  PFNVMPROGRESS pfnProgress, void *pvProgressUser, bool fTeleporting)
 {
-    int rc = VINF_SUCCESS;
-
     LogFlow(("vmR3Load: pUVM=%p pszFilename=%p:{%s} pStreamOps=%p pvStreamOpsUser=%p pfnProgress=%p pvProgressUser=%p fTeleporting=%RTbool\n",
              pUVM, pszFilename, pszFilename, pStreamOps, pvStreamOpsUser, pfnProgress, pvProgressUser, fTeleporting));
 
@@ -1933,20 +1859,18 @@ static DECLCALLBACK(int) vmR3Load(PUVM pUVM, const char *pszFilename, PCSSMSTRMO
     AssertPtrNull(pStreamOps);
     AssertPtrNull(pfnProgress);
 
-    if (!fSkipStateChanges)
-    {
-        /*
-         * Change the state and perform the load.
-         *
-         * Always perform a relocation round afterwards to make sure hypervisor
-         * selectors and such are correct.
-         */
-        rc = vmR3TrySetState(pVM, "VMR3Load", 2,
+    /*
+     * Change the state and perform the load.
+     *
+     * Always perform a relocation round afterwards to make sure hypervisor
+     * selectors and such are correct.
+     */
+    int rc = vmR3TrySetState(pVM, "VMR3Load", 2,
                              VMSTATE_LOADING, VMSTATE_CREATED,
                              VMSTATE_LOADING, VMSTATE_SUSPENDED);
-        if (RT_FAILURE(rc))
-            return rc;
-    }
+    if (RT_FAILURE(rc))
+        return rc;
+
     pVM->vm.s.fTeleportedAndNotFullyResumedYet = fTeleporting;
 
     uint32_t cErrorsPriorToSave = VMR3GetErrorCount(pUVM);
@@ -1954,14 +1878,12 @@ static DECLCALLBACK(int) vmR3Load(PUVM pUVM, const char *pszFilename, PCSSMSTRMO
     if (RT_SUCCESS(rc))
     {
         VMR3Relocate(pVM, 0 /*offDelta*/);
-        if (!fSkipStateChanges)
-            vmR3SetState(pVM, VMSTATE_SUSPENDED, VMSTATE_LOADING);
+        vmR3SetState(pVM, VMSTATE_SUSPENDED, VMSTATE_LOADING);
     }
     else
     {
         pVM->vm.s.fTeleportedAndNotFullyResumedYet = false;
-        if (!fSkipStateChanges)
-            vmR3SetState(pVM, VMSTATE_LOAD_FAILURE, VMSTATE_LOADING);
+        vmR3SetState(pVM, VMSTATE_LOAD_FAILURE, VMSTATE_LOADING);
 
         if (cErrorsPriorToSave == VMR3GetErrorCount(pUVM))
             rc = VMSetError(pVM, rc, RT_SRC_POS,
@@ -2007,9 +1929,9 @@ VMMR3DECL(int) VMR3LoadFromFile(PUVM pUVM, const char *pszFilename, PFNVMPROGRES
      * Forward the request to EMT(0).  No need to setup a rendezvous here
      * since there is no execution taking place when this call is allowed.
      */
-    int rc = VMR3ReqCallWaitU(pUVM, 0 /*idDstCpu*/, (PFNRT)vmR3Load, 8,
-                              pUVM, pszFilename, (uintptr_t)NULL /*pStreamOps*/, (uintptr_t)NULL /*pvStreamOpsUser*/, pfnProgress, pvUser,
-                              false /*fTeleporting*/, false /* fSkipStateChanges */);
+    int rc = VMR3ReqCallWaitU(pUVM, 0 /*idDstCpu*/, (PFNRT)vmR3Load, 7,
+                              pUVM, pszFilename, (uintptr_t)NULL /*pStreamOps*/, (uintptr_t)NULL /*pvStreamOpsUser*/,
+                              pfnProgress, pvUser, false /*fTeleporting*/);
     LogFlow(("VMR3LoadFromFile: returns %Rrc\n", rc));
     return rc;
 }
@@ -2046,47 +1968,13 @@ VMMR3DECL(int) VMR3LoadFromStream(PUVM pUVM, PCSSMSTRMOPS pStreamOps, void *pvSt
      * Forward the request to EMT(0).  No need to setup a rendezvous here
      * since there is no execution taking place when this call is allowed.
      */
-    int rc = VMR3ReqCallWaitU(pUVM, 0 /*idDstCpu*/, (PFNRT)vmR3Load, 8,
-                              pUVM, (uintptr_t)NULL /*pszFilename*/, pStreamOps, pvStreamOpsUser, pfnProgress, pvProgressUser,
-                              true /*fTeleporting*/, false /* fSkipStateChanges */);
+    int rc = VMR3ReqCallWaitU(pUVM, 0 /*idDstCpu*/, (PFNRT)vmR3Load, 7,
+                              pUVM, (uintptr_t)NULL /*pszFilename*/, pStreamOps, pvStreamOpsUser, pfnProgress,
+                              pvProgressUser, true /*fTeleporting*/);
     LogFlow(("VMR3LoadFromStream: returns %Rrc\n", rc));
     return rc;
 }
 
-
-/**
- * Special version for the FT component, it skips state changes.
- *
- * @returns VBox status code.
- *
- * @param   pUVM            The VM handle.
- * @param   pStreamOps      The stream methods.
- * @param   pvStreamOpsUser The user argument to the stream methods.
- *
- * @thread      Any thread.
- * @vmstate     Created, Suspended
- * @vmstateto   Loading+Suspended
- */
-VMMR3_INT_DECL(int) VMR3LoadFromStreamFT(PUVM pUVM, PCSSMSTRMOPS pStreamOps, void *pvStreamOpsUser)
-{
-    LogFlow(("VMR3LoadFromStreamFT: pUVM=%p pStreamOps=%p pvStreamOpsUser=%p\n", pUVM, pStreamOps, pvStreamOpsUser));
-
-    /*
-     * Validate input.
-     */
-    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
-    AssertPtrReturn(pStreamOps, VERR_INVALID_POINTER);
-
-    /*
-     * Forward the request to EMT(0).  No need to setup a rendezvous here
-     * since there is no execution taking place when this call is allowed.
-     */
-    int rc = VMR3ReqCallWaitU(pUVM, 0 /*idDstCpu*/, (PFNRT)vmR3Load, 8,
-                              pUVM, (uintptr_t)NULL /*pszFilename*/, pStreamOps, pvStreamOpsUser, NULL, NULL,
-                              true /*fTeleporting*/, true /* fSkipStateChanges */);
-    LogFlow(("VMR3LoadFromStream: returns %Rrc\n", rc));
-    return rc;
-}
 
 /**
  * EMT rendezvous worker for VMR3PowerOff.
@@ -2328,8 +2216,6 @@ DECLCALLBACK(int) vmR3Destroy(PVM pVM)
         rc = DBGCTcpTerminate(pUVM, pUVM->vm.s.pvDBGC);
         pUVM->vm.s.pvDBGC = NULL;
 #endif
-        AssertRC(rc);
-        rc = FTMR3Term(pVM);
         AssertRC(rc);
         rc = PDMR3Term(pVM);
         AssertRC(rc);
@@ -3080,7 +2966,6 @@ VMMR3DECL(const char *) VMR3GetStateName(VMSTATE enmState)
         case VMSTATE_RESUMING:          return "RESUMING";
         case VMSTATE_RUNNING:           return "RUNNING";
         case VMSTATE_RUNNING_LS:        return "RUNNING_LS";
-        case VMSTATE_RUNNING_FT:        return "RUNNING_FT";
         case VMSTATE_RESETTING:         return "RESETTING";
         case VMSTATE_RESETTING_LS:      return "RESETTING_LS";
         case VMSTATE_SOFT_RESETTING:    return "SOFT_RESETTING";
@@ -3166,7 +3051,6 @@ static bool vmR3ValidateStateTransition(VMSTATE enmStateOld, VMSTATE enmStateNew
                             || enmStateNew == VMSTATE_RESETTING
                             || enmStateNew == VMSTATE_SOFT_RESETTING
                             || enmStateNew == VMSTATE_RUNNING_LS
-                            || enmStateNew == VMSTATE_RUNNING_FT
                             || enmStateNew == VMSTATE_DEBUGGING
                             || enmStateNew == VMSTATE_FATAL_ERROR
                             || enmStateNew == VMSTATE_GURU_MEDITATION
@@ -3183,13 +3067,6 @@ static bool vmR3ValidateStateTransition(VMSTATE enmStateOld, VMSTATE enmStateNew
                             || enmStateNew == VMSTATE_DEBUGGING_LS
                             || enmStateNew == VMSTATE_FATAL_ERROR_LS
                             || enmStateNew == VMSTATE_GURU_MEDITATION_LS
-                            , ("%s -> %s\n", VMR3GetStateName(enmStateOld), VMR3GetStateName(enmStateNew)), false);
-            break;
-
-        case VMSTATE_RUNNING_FT:
-            AssertMsgReturn(   enmStateNew == VMSTATE_POWERING_OFF
-                            || enmStateNew == VMSTATE_FATAL_ERROR
-                            || enmStateNew == VMSTATE_GURU_MEDITATION
                             , ("%s -> %s\n", VMR3GetStateName(enmStateOld), VMR3GetStateName(enmStateNew)), false);
             break;
 

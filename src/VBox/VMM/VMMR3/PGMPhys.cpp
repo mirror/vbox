@@ -1455,11 +1455,7 @@ static DECLCALLBACK(VBOXSTRICTRC) pgmR3PhysWriteProtectRAMRendezvous(PVM pVM, PV
                         /** @todo Optimize this: Don't always re-enable write
                          * monitoring if the page is known to be very busy. */
                         if (PGM_PAGE_IS_WRITTEN_TO(pPage))
-                        {
                             PGM_PAGE_CLEAR_WRITTEN_TO(pVM, pPage);
-                            /* Remember this dirty page for the next (memory) sync. */
-                            PGM_PAGE_SET_FT_DIRTY(pPage);
-                        }
 
                         pgmPhysPageWriteMonitor(pVM, pPage, pRam->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT));
                         break;
@@ -1496,87 +1492,6 @@ VMMR3DECL(int) PGMR3PhysWriteProtectRAM(PVM pVM)
 
     int rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ONCE, pgmR3PhysWriteProtectRAMRendezvous, NULL);
     AssertRC(rc);
-    return rc;
-}
-
-/**
- * Enumerate all dirty FT pages.
- *
- * @returns VBox status code.
- * @param   pVM         The cross context VM structure.
- * @param   pfnEnum     Enumerate callback handler.
- * @param   pvUser      Enumerate callback handler parameter.
- */
-VMMR3DECL(int) PGMR3PhysEnumDirtyFTPages(PVM pVM, PFNPGMENUMDIRTYFTPAGES pfnEnum, void *pvUser)
-{
-    int rc = VINF_SUCCESS;
-
-    pgmLock(pVM);
-    for (PPGMRAMRANGE pRam = pVM->pgm.s.CTX_SUFF(pRamRangesX);
-         pRam;
-         pRam = pRam->CTX_SUFF(pNext))
-    {
-        uint32_t cPages = pRam->cb >> PAGE_SHIFT;
-        for (uint32_t iPage = 0; iPage < cPages; iPage++)
-        {
-            PPGMPAGE    pPage       = &pRam->aPages[iPage];
-            PGMPAGETYPE enmPageType = (PGMPAGETYPE)PGM_PAGE_GET_TYPE(pPage);
-
-            if (    RT_LIKELY(enmPageType == PGMPAGETYPE_RAM)
-                ||  enmPageType == PGMPAGETYPE_MMIO2)
-            {
-                /*
-                 * A RAM page.
-                 */
-                switch (PGM_PAGE_GET_STATE(pPage))
-                {
-                    case PGM_PAGE_STATE_ALLOCATED:
-                    case PGM_PAGE_STATE_WRITE_MONITORED:
-                        if (   !PGM_PAGE_IS_WRITTEN_TO(pPage)  /* not very recently updated? */
-                            && PGM_PAGE_IS_FT_DIRTY(pPage))
-                        {
-                            uint32_t       cbPageRange = PAGE_SIZE;
-                            uint32_t       iPageClean  = iPage + 1;
-                            RTGCPHYS       GCPhysPage  = pRam->GCPhys + iPage * PAGE_SIZE;
-                            uint8_t       *pu8Page     = NULL;
-                            PGMPAGEMAPLOCK Lock;
-
-                            /* Find the next clean page, so we can merge adjacent dirty pages. */
-                            for (; iPageClean < cPages; iPageClean++)
-                            {
-                                PPGMPAGE pPageNext = &pRam->aPages[iPageClean];
-                                if (    RT_UNLIKELY(PGM_PAGE_GET_TYPE(pPageNext) != PGMPAGETYPE_RAM)
-                                    ||  PGM_PAGE_GET_STATE(pPageNext) != PGM_PAGE_STATE_ALLOCATED
-                                    ||  PGM_PAGE_IS_WRITTEN_TO(pPageNext)
-                                    ||  !PGM_PAGE_IS_FT_DIRTY(pPageNext)
-                                    /* Crossing a chunk boundary? */
-                                    ||  (GCPhysPage & GMM_PAGEID_IDX_MASK) != ((GCPhysPage + cbPageRange) & GMM_PAGEID_IDX_MASK)
-                                    )
-                                    break;
-
-                                cbPageRange += PAGE_SIZE;
-                            }
-
-                            rc = PGMPhysGCPhys2CCPtrReadOnly(pVM, GCPhysPage, (const void **)&pu8Page, &Lock);
-                            if (RT_SUCCESS(rc))
-                            {
-                                /** @todo this is risky; the range might be changed, but little choice as the sync
-                                 *  costs a lot of time. */
-                                pgmUnlock(pVM);
-                                pfnEnum(pVM, GCPhysPage, pu8Page, cbPageRange, pvUser);
-                                pgmLock(pVM);
-                                PGMPhysReleasePageMappingLock(pVM, &Lock);
-                            }
-
-                            for (uint32_t iTmp = iPage; iTmp < iPageClean; iTmp++)
-                                PGM_PAGE_CLEAR_FT_DIRTY(&pRam->aPages[iTmp]);
-                        }
-                        break;
-                }
-            }
-        }
-    }
-    pgmUnlock(pVM);
     return rc;
 }
 

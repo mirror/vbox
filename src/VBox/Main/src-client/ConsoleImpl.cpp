@@ -117,7 +117,6 @@
 # include <VBox/vmm/pdmnetshaper.h>
 #endif /* VBOX_WITH_NETSHAPER */
 #include <VBox/vmm/mm.h>
-#include <VBox/vmm/ftm.h>
 #include <VBox/vmm/ssm.h>
 #include <VBox/err.h>
 #include <VBox/param.h>
@@ -230,12 +229,10 @@ class VMPowerUpTask : public VMTask
 public:
     VMPowerUpTask(Console *aConsole,
                   Progress *aProgress)
-        : VMTask(aConsole, aProgress, NULL /* aServerProgress */,
-                 false /* aUsesVMPtr */),
-          mConfigConstructor(NULL),
-          mStartPaused(false),
-          mTeleporterEnabled(FALSE),
-          mEnmFaultToleranceState(FaultToleranceState_Inactive)
+        : VMTask(aConsole, aProgress, NULL /* aServerProgress */, false /* aUsesVMPtr */)
+        , mConfigConstructor(NULL)
+        , mStartPaused(false)
+        , mTeleporterEnabled(FALSE)
     {
         m_strTaskName = "VMPwrUp";
     }
@@ -245,7 +242,6 @@ public:
     Console::SharedFolderDataMap mSharedFolders;
     bool mStartPaused;
     BOOL mTeleporterEnabled;
-    FaultToleranceState_T mEnmFaultToleranceState;
 
     /* array of progress objects for hard disk reset operations */
     typedef std::list<ComPtr<IProgress> > ProgressList;
@@ -2165,16 +2161,6 @@ HRESULT Console::powerDown(ComPtr<IProgress> &aProgress)
                     break;
             }
             return setError(VBOX_E_INVALID_VM_STATE, tr("Cannot power down at this point in a live snapshot"));
-
-        /* Try cancel the FT sync. */
-        case MachineState_FaultTolerantSyncing:
-            if (!mptrCancelableProgress.isNull())
-            {
-                HRESULT hrc = mptrCancelableProgress->Cancel();
-                if (SUCCEEDED(hrc))
-                    break;
-            }
-            return setError(VBOX_E_INVALID_VM_STATE, tr("Cannot power down at this point in a fault tolerant sync"));
 
         /* extra nice error message for a common case */
         case MachineState_Saved:
@@ -7180,7 +7166,6 @@ HRESULT Console::i_getNominalState(MachineState_T &aNominalState)
             break;
         case VMSTATE_RUNNING:
         case VMSTATE_RUNNING_LS:
-        case VMSTATE_RUNNING_FT:
         case VMSTATE_RESETTING:
         case VMSTATE_RESETTING_LS:
         case VMSTATE_SOFT_RESETTING:
@@ -7653,13 +7638,6 @@ HRESULT Console::i_powerUp(IProgress **aProgress, bool aPaused)
         }
 #endif
 
-        /* test the FaultToleranceState property  */
-        FaultToleranceState_T enmFaultToleranceState;
-        rc = mMachine->COMGETTER(FaultToleranceState)(&enmFaultToleranceState);
-        if (FAILED(rc))
-            throw rc;
-        BOOL fFaultToleranceSyncEnabled = (enmFaultToleranceState == FaultToleranceState_Standby);
-
         /* Create a progress object to track progress of this operation. Must
          * be done as early as possible (together with BeginPowerUp()) as this
          * is vital for communicating as much as possible early powerup
@@ -7670,8 +7648,6 @@ HRESULT Console::i_powerUp(IProgress **aProgress, bool aPaused)
             progressDesc = tr("Restoring virtual machine");
         else if (fTeleporterEnabled)
             progressDesc = tr("Teleporting virtual machine");
-        else if (fFaultToleranceSyncEnabled)
-            progressDesc = tr("Fault Tolerance syncing of remote virtual machine");
         else
             progressDesc = tr("Starting virtual machine");
 
@@ -7751,7 +7727,6 @@ HRESULT Console::i_powerUp(IProgress **aProgress, bool aPaused)
             try { task->mSavedStateFile = savedStateFile; }
             catch (std::bad_alloc &) { throw rc = E_OUTOFMEMORY; }
         task->mTeleporterEnabled = fTeleporterEnabled;
-        task->mEnmFaultToleranceState = enmFaultToleranceState;
 
         /* Reset differencing hard disks for which autoReset is true,
          * but only if the machine has no snapshots OR the current snapshot
@@ -7892,7 +7867,7 @@ HRESULT Console::i_powerUp(IProgress **aProgress, bool aPaused)
             AssertComRCReturnRC(rc);
         }
         else if (   mMachineState == MachineState_Saved
-                 || (!fTeleporterEnabled && !fFaultToleranceSyncEnabled))
+                 || !fTeleporterEnabled)
         {
             rc = pPowerupProgress->init(static_cast<IConsole *>(this),
                                         progressDesc.raw(),
@@ -7906,16 +7881,6 @@ HRESULT Console::i_powerUp(IProgress **aProgress, bool aPaused)
                                         3    /* cOperations */,
                                         10   /* ulTotalOperationsWeight */,
                                         Bstr(tr("Teleporting virtual machine")).raw(),
-                                        1    /* ulFirstOperationWeight */);
-        }
-        else if (fFaultToleranceSyncEnabled)
-        {
-            rc = pPowerupProgress->init(static_cast<IConsole *>(this),
-                                        progressDesc.raw(),
-                                        TRUE /* aCancelable */,
-                                        3    /* cOperations */,
-                                        10   /* ulTotalOperationsWeight */,
-                                        Bstr(tr("Fault Tolerance syncing of remote virtual machine")).raw(),
                                         1    /* ulFirstOperationWeight */);
         }
 
@@ -8020,8 +7985,6 @@ HRESULT Console::i_powerUp(IProgress **aProgress, bool aPaused)
             i_setMachineState(MachineState_Restoring);
         else if (fTeleporterEnabled)
             i_setMachineState(MachineState_TeleportingIn);
-        else if (enmFaultToleranceState == FaultToleranceState_Standby)
-            i_setMachineState(MachineState_FaultTolerantSyncing);
         else
             i_setMachineState(MachineState_Starting);
     }
@@ -8120,7 +8083,6 @@ HRESULT Console::i_powerDown(IProgress *aProgress /*= NULL*/)
               || mMachineState == MachineState_Saving
               || mMachineState == MachineState_Restoring
               || mMachineState == MachineState_TeleportingPausedVM
-              || mMachineState == MachineState_FaultTolerantSyncing
               || mMachineState == MachineState_TeleportingIn
               , ("Invalid machine state: %s\n", Global::stringifyMachineState(mMachineState)));
 
@@ -8135,7 +8097,6 @@ HRESULT Console::i_powerDown(IProgress *aProgress /*= NULL*/)
     if (   !mVMPoweredOff
         && (   mMachineState == MachineState_Starting
             || mMachineState == MachineState_Restoring
-            || mMachineState == MachineState_FaultTolerantSyncing
             || mMachineState == MachineState_TeleportingIn)
        )
         mVMPoweredOff = true;
@@ -8154,7 +8115,6 @@ HRESULT Console::i_powerDown(IProgress *aProgress /*= NULL*/)
         && mMachineState != MachineState_Stopping
         && mMachineState != MachineState_TeleportingIn
         && mMachineState != MachineState_TeleportingPausedVM
-        && mMachineState != MachineState_FaultTolerantSyncing
        )
         i_setMachineState(MachineState_Stopping);
 
@@ -8981,7 +8941,6 @@ DECLCALLBACK(void) Console::i_vmstateChangeCallback(PUVM pUVM, VMSTATE enmState,
                 && that->mMachineState != MachineState_Saving
                 && that->mMachineState != MachineState_Restoring
                 && that->mMachineState != MachineState_TeleportingIn
-                && that->mMachineState != MachineState_FaultTolerantSyncing
                 && that->mMachineState != MachineState_TeleportingPausedVM
                 && !that->mVMIsAlreadyPoweringOff
                )
@@ -9107,10 +9066,6 @@ DECLCALLBACK(void) Console::i_vmstateChangeCallback(PUVM pUVM, VMSTATE enmState,
                     /* Successfully teleported the VM. */
                     that->i_setMachineState(MachineState_Teleported);
                     break;
-                case MachineState_FaultTolerantSyncing:
-                    /* Fault tolerant sync failed or was canceled.  Back to powered off. */
-                    that->i_setMachineState(MachineState_PoweredOff);
-                    break;
             }
             break;
         }
@@ -9152,7 +9107,6 @@ DECLCALLBACK(void) Console::i_vmstateChangeCallback(PUVM pUVM, VMSTATE enmState,
                 case MachineState_Restoring:
                 case MachineState_Stopping:
                 case MachineState_TeleportingIn:
-                case MachineState_FaultTolerantSyncing:
                 case MachineState_OnlineSnapshotting:
                     /* The worker thread handles the transition. */
                     break;
@@ -9204,8 +9158,7 @@ DECLCALLBACK(void) Console::i_vmstateChangeCallback(PUVM pUVM, VMSTATE enmState,
         case VMSTATE_RUNNING:
         {
             if (   enmOldState == VMSTATE_POWERING_ON
-                || enmOldState == VMSTATE_RESUMING
-                || enmOldState == VMSTATE_RUNNING_FT)
+                || enmOldState == VMSTATE_RESUMING)
             {
                 AutoWriteLock alock(that COMMA_LOCKVAL_SRC_POS);
 
@@ -9220,9 +9173,7 @@ DECLCALLBACK(void) Console::i_vmstateChangeCallback(PUVM pUVM, VMSTATE enmState,
                                || that->mMachineState == MachineState_Paused
                                || that->mMachineState == MachineState_Saving
                               )
-                           && enmOldState == VMSTATE_RESUMING)
-                       || (   that->mMachineState == MachineState_FaultTolerantSyncing
-                           && enmOldState == VMSTATE_RUNNING_FT));
+                           && enmOldState == VMSTATE_RESUMING));
 
                 that->i_setMachineState(MachineState_Running);
             }
@@ -9233,12 +9184,6 @@ DECLCALLBACK(void) Console::i_vmstateChangeCallback(PUVM pUVM, VMSTATE enmState,
         case VMSTATE_RUNNING_LS:
             AssertMsg(   that->mMachineState == MachineState_LiveSnapshotting
                       || that->mMachineState == MachineState_Teleporting,
-                      ("%s/%s -> %s\n", Global::stringifyMachineState(that->mMachineState),
-                      VMR3GetStateName(enmOldState), VMR3GetStateName(enmState) ));
-            break;
-
-        case VMSTATE_RUNNING_FT:
-            AssertMsg(that->mMachineState == MachineState_FaultTolerantSyncing,
                       ("%s/%s -> %s\n", Global::stringifyMachineState(that->mMachineState),
                       VMR3GetStateName(enmOldState), VMR3GetStateName(enmState) ));
             break;
@@ -10209,16 +10154,6 @@ void Console::i_processRemoteUSBDevices(uint32_t u32ClientId, VRDEUSBDEVICEDESC 
     LogFlowThisFuncLeave();
 }
 
-/**
- * Progress cancelation callback for fault tolerance VM poweron
- */
-static void faultToleranceProgressCancelCallback(void *pvUser)
-{
-    PUVM pUVM = (PUVM)pvUser;
-
-    if (pUVM)
-        FTMR3CancelStandby(pUVM);
-}
 
 /**
  * Worker called by VMPowerUpTask::handler to start the VM (also from saved
@@ -10291,8 +10226,7 @@ void Console::i_powerUpThreadTask(VMPowerUpTask *pTask)
          * Note! The media will be unlocked automatically by
          *       SessionMachine::i_setMachineState() when the VM is powered down.
          */
-        if (    !pTask->mTeleporterEnabled
-            &&  pTask->mEnmFaultToleranceState != FaultToleranceState_Standby)
+        if (!pTask->mTeleporterEnabled)
         {
             rc = pConsole->mControl->LockMedia();
             if (FAILED(rc)) throw rc;
@@ -10515,60 +10449,6 @@ void Console::i_powerUpThreadTask(VMPowerUpTask *pTask)
 #ifdef VBOX_WITH_EXTPACK
                         pConsole->mptrExtPackManager->i_callAllVmPowerOffHooks(pConsole, pVM);
 #endif
-                    }
-                }
-                else if (pTask->mEnmFaultToleranceState != FaultToleranceState_Inactive)
-                {
-                    /*
-                     * Get the config.
-                     */
-                    ULONG uPort;
-                    rc = pMachine->COMGETTER(FaultTolerancePort)(&uPort);
-                    if (SUCCEEDED(rc))
-                    {
-                        ULONG uInterval;
-                        rc = pMachine->COMGETTER(FaultToleranceSyncInterval)(&uInterval);
-                        if (SUCCEEDED(rc))
-                        {
-                            Bstr bstrAddress;
-                            rc = pMachine->COMGETTER(FaultToleranceAddress)(bstrAddress.asOutParam());
-                            if (SUCCEEDED(rc))
-                            {
-                                Bstr bstrPassword;
-                                rc = pMachine->COMGETTER(FaultTolerancePassword)(bstrPassword.asOutParam());
-                                if (SUCCEEDED(rc))
-                                {
-                                    if (pTask->mProgress->i_setCancelCallback(faultToleranceProgressCancelCallback,
-                                                                              pConsole->mpUVM))
-                                    {
-                                        if (SUCCEEDED(rc))
-                                        {
-                                            Utf8Str strAddress(bstrAddress);
-                                            const char *pszAddress = strAddress.isEmpty() ? NULL : strAddress.c_str();
-                                            Utf8Str strPassword(bstrPassword);
-                                            const char *pszPassword = strPassword.isEmpty() ? NULL : strPassword.c_str();
-
-                                            /* Power on the FT enabled VM. */
-#ifdef VBOX_WITH_EXTPACK
-                                            vrc = pConsole->mptrExtPackManager->i_callAllVmPowerOnHooks(pConsole, pVM);
-#endif
-                                            if (RT_SUCCESS(vrc))
-                                                vrc = FTMR3PowerOn(pConsole->mpUVM,
-                                                                   pTask->mEnmFaultToleranceState == FaultToleranceState_Master /* fMaster */,
-                                                                   uInterval,
-                                                                   pszAddress,
-                                                                   uPort,
-                                                                   pszPassword);
-                                            AssertLogRelRC(vrc);
-                                        }
-                                        pTask->mProgress->i_setCancelCallback(NULL, NULL);
-                                    }
-                                    else
-                                        rc = E_FAIL;
-
-                                }
-                            }
-                        }
                     }
                 }
                 else if (pTask->mStartPaused)

@@ -316,20 +316,6 @@ typedef FNPGMR3VIRTINVALIDATE *PFNPGMR3VIRTINVALIDATE;
 
 
 /**
- * PGMR3PhysEnumDirtyFTPages callback for syncing dirty physical pages
- *
- * @param   pVM             The cross context VM structure.
- * @param   GCPhys          GC physical address
- * @param   pRange          HC virtual address of the page(s)
- * @param   cbRange         Size of the dirty range in bytes.
- * @param   pvUser          User argument.
- */
-typedef DECLCALLBACK(int) FNPGMENUMDIRTYFTPAGES(PVM pVM, RTGCPHYS GCPhys, uint8_t *pRange, unsigned cbRange, void *pvUser);
-/** Pointer to PGMR3PhysEnumDirtyFTPages callback. */
-typedef FNPGMENUMDIRTYFTPAGES *PFNPGMENUMDIRTYFTPAGES;
-
-
-/**
  * Paging mode.
  *
  * @note    Part of saved state.  Change with extreme care.
@@ -821,7 +807,6 @@ VMMR3DECL(int)      PGMR3LockCall(PVM pVM);
 VMMR3DECL(int)      PGMR3PhysRegisterRam(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, const char *pszDesc);
 VMMR3DECL(int)      PGMR3PhysChangeMemBalloon(PVM pVM, bool fInflate, unsigned cPages, RTGCPHYS *paPhysPage);
 VMMR3DECL(int)      PGMR3PhysWriteProtectRAM(PVM pVM);
-VMMR3DECL(int)      PGMR3PhysEnumDirtyFTPages(PVM pVM, PFNPGMENUMDIRTYFTPAGES pfnEnum, void *pvUser);
 VMMR3DECL(uint32_t) PGMR3PhysGetRamRangeCount(PVM pVM);
 VMMR3DECL(int)      PGMR3PhysGetRange(PVM pVM, uint32_t iRange, PRTGCPHYS pGCPhysStart, PRTGCPHYS pGCPhysLast,
                                       const char **ppszDesc, bool *pfIsMmio);

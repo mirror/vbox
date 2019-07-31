@@ -1318,22 +1318,6 @@
   <xsd:attribute name="password" type="xsd:string"/>
 </xsd:complexType>
 
-<xsd:complexType name="TFaultTolerance">
-  <xsd:attribute name="state" use="required">
-    <xsd:simpleType>
-      <xsd:restriction base="xsd:token">
-        <xsd:enumeration value="inactive"/>
-        <xsd:enumeration value="master"/>
-        <xsd:enumeration value="standby"/>
-      </xsd:restriction>
-    </xsd:simpleType>
-  </xsd:attribute>
-  <xsd:attribute name="port" type="xsd:unsignedShort"/>
-  <xsd:attribute name="address" type="xsd:string"/>
-  <xsd:attribute name="interval" type="xsd:unsignedInt"/>
-  <xsd:attribute name="password" type="xsd:string"/>
-</xsd:complexType>
-
 <xsd:complexType name="THardware">
   <xsd:all>
     <xsd:element name="CPU" type="TCPU" minOccurs="0"/>
@@ -1429,7 +1413,6 @@
     <xsd:element name="MediaRegistry" type="TMediaRegistry" minOccurs="0"/>
     <xsd:element name="Description" type="xsd:string" minOccurs="0"/>
     <xsd:element name="Teleporter" type="TTeleporter" minOccurs="0"/>
-    <xsd:element name="FaultTolerance" type="TFaultTolerance" minOccurs="0"/>
     <xsd:element name="Hardware" type="THardware"/>
     <xsd:element name="StorageControllers" type="TStorageControllers" minOccurs="0"/>
     <xsd:element name="HardDiskAttachments" type="THardDiskAttachments" minOccurs="0"/> <!-- deprecated -->

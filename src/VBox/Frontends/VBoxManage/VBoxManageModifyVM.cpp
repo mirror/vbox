@@ -201,11 +201,6 @@ enum
     MODIFYVM_HPET,
     MODIFYVM_IOCACHE,
     MODIFYVM_IOCACHESIZE,
-    MODIFYVM_FAULT_TOLERANCE,
-    MODIFYVM_FAULT_TOLERANCE_ADDRESS,
-    MODIFYVM_FAULT_TOLERANCE_PORT,
-    MODIFYVM_FAULT_TOLERANCE_PASSWORD,
-    MODIFYVM_FAULT_TOLERANCE_SYNC_INTERVAL,
     MODIFYVM_CPU_EXECTUION_CAP,
     MODIFYVM_AUTOSTART_ENABLED,
     MODIFYVM_AUTOSTART_DELAY,
@@ -396,11 +391,6 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--hpet",                     MODIFYVM_HPET,                      RTGETOPT_REQ_BOOL_ONOFF },
     { "--iocache",                  MODIFYVM_IOCACHE,                   RTGETOPT_REQ_BOOL_ONOFF },
     { "--iocachesize",              MODIFYVM_IOCACHESIZE,               RTGETOPT_REQ_UINT32 },
-    { "--faulttolerance",           MODIFYVM_FAULT_TOLERANCE,           RTGETOPT_REQ_STRING },
-    { "--faulttoleranceaddress",    MODIFYVM_FAULT_TOLERANCE_ADDRESS,   RTGETOPT_REQ_STRING },
-    { "--faulttoleranceport",       MODIFYVM_FAULT_TOLERANCE_PORT,      RTGETOPT_REQ_UINT32 },
-    { "--faulttolerancepassword",   MODIFYVM_FAULT_TOLERANCE_PASSWORD,  RTGETOPT_REQ_STRING },
-    { "--faulttolerancesyncinterval", MODIFYVM_FAULT_TOLERANCE_SYNC_INTERVAL, RTGETOPT_REQ_UINT32 },
     { "--chipset",                  MODIFYVM_CHIPSET,                   RTGETOPT_REQ_STRING },
 #ifdef VBOX_WITH_RECORDING
     { "--recording",                MODIFYVM_RECORDING,                 RTGETOPT_REQ_BOOL_ONOFF },
@@ -2875,49 +2865,6 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
             case MODIFYVM_TRACING_ALLOW_VM_ACCESS:
             {
                 CHECK_ERROR(sessionMachine, COMSETTER(AllowTracingToAccessVM)(ValueUnion.f));
-                break;
-            }
-
-            case MODIFYVM_FAULT_TOLERANCE:
-            {
-                if (!RTStrICmp(ValueUnion.psz, "master"))
-                {
-                    CHECK_ERROR(sessionMachine, COMSETTER(FaultToleranceState(FaultToleranceState_Master)));
-                }
-                else
-                if (!RTStrICmp(ValueUnion.psz, "standby"))
-                {
-                    CHECK_ERROR(sessionMachine, COMSETTER(FaultToleranceState(FaultToleranceState_Standby)));
-                }
-                else
-                {
-                    errorArgument("Invalid --faulttolerance argument '%s'", ValueUnion.psz);
-                    rc = E_FAIL;
-                }
-                break;
-            }
-
-            case MODIFYVM_FAULT_TOLERANCE_ADDRESS:
-            {
-                CHECK_ERROR(sessionMachine, COMSETTER(FaultToleranceAddress)(Bstr(ValueUnion.psz).raw()));
-                break;
-            }
-
-            case MODIFYVM_FAULT_TOLERANCE_PORT:
-            {
-                CHECK_ERROR(sessionMachine, COMSETTER(FaultTolerancePort)(ValueUnion.u32));
-                break;
-            }
-
-            case MODIFYVM_FAULT_TOLERANCE_PASSWORD:
-            {
-                CHECK_ERROR(sessionMachine, COMSETTER(FaultTolerancePassword)(Bstr(ValueUnion.psz).raw()));
-                break;
-            }
-
-            case MODIFYVM_FAULT_TOLERANCE_SYNC_INTERVAL:
-            {
-                CHECK_ERROR(sessionMachine, COMSETTER(FaultToleranceSyncInterval)(ValueUnion.u32));
                 break;
             }
 
