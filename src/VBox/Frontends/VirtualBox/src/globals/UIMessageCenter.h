@@ -330,6 +330,7 @@ public:
     bool confirmCancelingPortForwardingDialog(QWidget *pParent = 0) const;
     void cannotChangeMachineAttribute(const CMachine &comMachine, QWidget *pParent = 0) const;
     void cannotSaveMachineSettings(const CMachine &machine, QWidget *pParent = 0) const;
+    void cannotChangeAudioAdapterAttribute(const CAudioAdapter &comAdapter, QWidget *pParent = 0) const;
 
     /* API: Virtual Medium Manager warnings: */
     void cannotChangeMediumType(const CMedium &medium, KMediumType oldMediumType, KMediumType newMediumType, QWidget *pParent = 0) const;

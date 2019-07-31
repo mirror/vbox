@@ -24,6 +24,9 @@
 #include "UIMachineAttributeSetter.h"
 #include "UIMessageCenter.h"
 
+/* COM includes: */
+#include "CAudioAdapter.h"
+
 
 void UIMachineAttributeSetter::setMachineAttribute(const CMachine &comConstMachine,
                                                    const MachineAttribute &enmType,
@@ -128,6 +131,44 @@ void UIMachineAttributeSetter::setMachineAttribute(const CMachine &comConstMachi
                 if (!comMachine.isOk())
                 {
                     msgCenter().cannotChangeMachineAttribute(comMachine);
+                    fErrorHappened = true;
+                }
+                break;
+            }
+            case MachineAttribute_AudioHostDriverType:
+            {
+                /* Acquire audio adapter: */
+                CAudioAdapter comAdapter = comMachine.GetAudioAdapter();
+                if (!comMachine.isOk())
+                {
+                    msgCenter().cannotAcquireMachineParameter(comMachine);
+                    fErrorHappened = true;
+                    break;
+                }
+                /* Change audio host driver type: */
+                comAdapter.SetAudioDriver(guiAttribute.value<KAudioDriverType>());
+                if (!comAdapter.isOk())
+                {
+                    msgCenter().cannotChangeAudioAdapterAttribute(comAdapter);
+                    fErrorHappened = true;
+                }
+                break;
+            }
+            case MachineAttribute_AudioControllerType:
+            {
+                /* Acquire audio adapter: */
+                CAudioAdapter comAdapter = comMachine.GetAudioAdapter();
+                if (!comMachine.isOk())
+                {
+                    msgCenter().cannotAcquireMachineParameter(comMachine);
+                    fErrorHappened = true;
+                    break;
+                }
+                /* Change audio controller type: */
+                comAdapter.SetAudioController(guiAttribute.value<KAudioControllerType>());
+                if (!comAdapter.isOk())
+                {
+                    msgCenter().cannotChangeAudioAdapterAttribute(comAdapter);
                     fErrorHappened = true;
                 }
                 break;

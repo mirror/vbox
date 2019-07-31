@@ -52,6 +52,7 @@
 #endif
 
 /* COM includes: */
+#include "CAudioAdapter.h"
 #include "CBooleanFormValue.h"
 #include "CChoiceFormValue.h"
 #include "CCloudClient.h"
@@ -1239,6 +1240,13 @@ void UIMessageCenter::cannotSaveMachineSettings(const CMachine &machine, QWidget
           tr("Failed to save the settings of the virtual machine <b>%1</b> to <b><nobr>%2</nobr></b>.")
              .arg(machine.GetName(), CMachine(machine).GetSettingsFilePath()),
           UIErrorString::formatErrorInfo(machine));
+}
+
+void UIMessageCenter::cannotChangeAudioAdapterAttribute(const CAudioAdapter &comAdapter, QWidget *pParent /* = 0 */) const
+{
+    error(pParent, MessageType_Error,
+          tr("Failed to change audio adapter attribute."),
+          UIErrorString::formatErrorInfo(comAdapter));
 }
 
 void UIMessageCenter::cannotChangeMediumType(const CMedium &medium, KMediumType oldMediumType, KMediumType newMediumType, QWidget *pParent /* = 0*/) const

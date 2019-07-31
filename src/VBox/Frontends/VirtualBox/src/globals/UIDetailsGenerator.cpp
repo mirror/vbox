@@ -478,13 +478,27 @@ UITextTable UIDetailsGenerator::generateMachineInformationAudio(CMachine &comMac
     {
         /* Host driver: */
         if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeAudio_Driver)
+        {
+            const QString strAnchorType = QString("audio_host_driver_type");
+            const KAudioDriverType enmType = comAudio.GetAudioDriver();
             table << UITextTableLine(QApplication::translate("UIDetails", "Host Driver", "details (audio)"),
-                                     gpConverter->toString(comAudio.GetAudioDriver()));
+                                     QApplication::translate("UIDetails", "<a href=#%1,%2>%3</a>", "details")
+                                         .arg(strAnchorType)
+                                         .arg((int)enmType)
+                                         .arg(gpConverter->toString(enmType)));
+        }
 
         /* Controller: */
         if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeAudio_Controller)
+        {
+            const QString strAnchorType = QString("audio_controller_type");
+            const KAudioControllerType enmType = comAudio.GetAudioController();
             table << UITextTableLine(QApplication::translate("UIDetails", "Controller", "details (audio)"),
-                                     gpConverter->toString(comAudio.GetAudioController()));
+                                     QApplication::translate("UIDetails", "<a href=#%1,%2>%3</a>", "details")
+                                         .arg(strAnchorType)
+                                         .arg((int)enmType)
+                                         .arg(gpConverter->toString(enmType)));
+        }
 
 #ifdef VBOX_WITH_AUDIO_INOUT_INFO
         /* Audio I/O: */

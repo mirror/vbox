@@ -36,6 +36,8 @@ enum MachineAttribute
     MachineAttribute_BootOrder,
     MachineAttribute_VideoMemory,
     MachineAttribute_GraphicsControllerType,
+    MachineAttribute_AudioHostDriverType,
+    MachineAttribute_AudioControllerType,
 };
 
 /** Namespace used to assign CMachine attributes on more convenient basis. */
