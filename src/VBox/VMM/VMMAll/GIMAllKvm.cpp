@@ -238,19 +238,9 @@ VMM_INT_DECL(VBOXSTRICTRC) gimKvmWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMS
         case MSR_GIM_KVM_SYSTEM_TIME_OLD:
         {
             bool fEnable = RT_BOOL(uRawValue & MSR_GIM_KVM_SYSTEM_TIME_ENABLE_BIT);
-#ifdef IN_RING0
+#ifndef IN_RING3
             NOREF(fEnable); NOREF(pKvmCpu);
             gimR0KvmUpdateSystemTime(pVM, pVCpu);
-            return VINF_CPUM_R3_MSR_WRITE;
-#elif defined(IN_RC)
-            Assert(pVM->cCpus == 1);
-            if (fEnable)
-            {
-                RTCCUINTREG fEFlags  = ASMIntDisableFlags();
-                pKvmCpu->uTsc        = TMCpuTickGetNoCheck(pVCpu) | UINT64_C(1);
-                pKvmCpu->uVirtNanoTS = TMVirtualGetNoCheck(pVM)   | UINT64_C(1);
-                ASMSetFlags(fEFlags);
-            }
             return VINF_CPUM_R3_MSR_WRITE;
 #else /* IN_RING3 */
             if (!fEnable)
@@ -287,7 +277,7 @@ VMM_INT_DECL(VBOXSTRICTRC) gimKvmWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMS
                 /* We shouldn't throw a #GP(0) here for buggy guests (neither does KVM apparently), see @bugref{8627}. */
             }
             return VINF_SUCCESS;
-#endif
+#endif /* IN_RING3 */
         }
 
         case MSR_GIM_KVM_WALL_CLOCK:
@@ -404,7 +394,6 @@ VMM_INT_DECL(VBOXSTRICTRC) gimKvmHypercallEx(PVMCPU pVCpu, PCPUMCTX pCtx, unsign
             PVM      pVM  = pVCpu->CTX_SUFF(pVM);
             PCGIMKVM pKvm = &pVM->gim.s.u.Kvm;
             if (   uDisOpcode != pKvm->uOpcodeNative
-                && !VM_IS_RAW_MODE_ENABLED(pVM)
                 && cbInstr == sizeof(pKvm->abOpcodeNative) )
             {
                 /** @todo r=ramshankar: we probably should be doing this in an

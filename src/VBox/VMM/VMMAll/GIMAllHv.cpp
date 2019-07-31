@@ -1363,21 +1363,15 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSR
 /**
  * Whether we need to trap \#UD exceptions in the guest.
  *
- * We only need to trap \#UD exceptions for raw-mode guests when hypercalls are
- * enabled. For HM VMs, the hypercall would be handled via the
+ * We only needed to trap \#UD exceptions for the old raw-mode guests when
+ * hypercalls are enabled. For HM VMs, the hypercall would be handled via the
  * VMCALL/VMMCALL VM-exit.
  *
  * @param   pVCpu       The cross context virtual CPU structure.
  */
 VMM_INT_DECL(bool) gimHvShouldTrapXcptUD(PVMCPU pVCpu)
 {
-#ifdef VBOX_WITH_RAW_MODE
-    if (   VM_IS_RAW_MODE_ENABLED(pVCpu->CTX_SUFF(pVM))
-        && gimHvAreHypercallsEnabled(pVCpu))
-        return true;
-#else
     RT_NOREF(pVCpu);
-#endif
     return false;
 }
 
