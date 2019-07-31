@@ -85,6 +85,7 @@ typedef struct IOMMMIORANGE
     /** Description / Name. For easing debugging. */
     R3PTRTYPE(const char *)     pszDesc;
 
+#if 0
     /** Pointer to user argument - RC. */
     RTRCPTR                     pvUserRC;
     /** Pointer to device instance - RC. */
@@ -98,6 +99,7 @@ typedef struct IOMMMIORANGE
 #if HC_ARCH_BITS == 64
     /** Padding structure length to multiple of 8 bytes. */
     RTRCPTR                     RCPtrPadding;
+#endif
 #endif
 } IOMMMIORANGE;
 /** Pointer to a MMIO range descriptor, R3 version. */
@@ -288,8 +290,10 @@ typedef struct IOMTREES
     AVLROIOPORTTREE         IOPortTreeR3;
     /** Tree containing I/O port range descriptors registered for R0 (IOMIOPORTRANGER0). */
     AVLROIOPORTTREE         IOPortTreeR0;
+#if 0
     /** Tree containing I/O port range descriptors registered for RC (IOMIOPORTRANGERC). */
     AVLROIOPORTTREE         IOPortTreeRC;
+#endif
 
     /** Tree containing the MMIO range descriptors (IOMMMIORANGE). */
     AVLROGCPHYSTREE         MMIOTree;
@@ -315,11 +319,6 @@ typedef IOMTREES *PIOMTREES;
  */
 typedef struct IOM
 {
-    /** Offset to the VM structure. */
-    RTINT                           offVM;
-
-    /** Pointer to the trees - RC ptr. */
-    RCPTRTYPE(PIOMTREES)            pTreesRC;
     /** Pointer to the trees - R3 ptr. */
     R3PTRTYPE(PIOMTREES)            pTreesR3;
     /** Pointer to the trees - R0 ptr. */
@@ -446,13 +445,6 @@ typedef struct IOMCPU
     R0PTRTYPE(PIOMIOPORTSTATS)      pStatsLastWriteR0;
     R0PTRTYPE(PIOMMMIORANGE)        pMMIORangeLastR0;
     R0PTRTYPE(PIOMMMIOSTATS)        pMMIOStatsLastR0;
-
-    RCPTRTYPE(PIOMIOPORTRANGERC)    pRangeLastReadRC;
-    RCPTRTYPE(PIOMIOPORTRANGERC)    pRangeLastWriteRC;
-    RCPTRTYPE(PIOMIOPORTSTATS)      pStatsLastReadRC;
-    RCPTRTYPE(PIOMIOPORTSTATS)      pStatsLastWriteRC;
-    RCPTRTYPE(PIOMMMIORANGE)        pMMIORangeLastRC;
-    RCPTRTYPE(PIOMMMIOSTATS)        pMMIOStatsLastRC;
     /** @} */
 } IOMCPU;
 /** Pointer to IOM per virtual CPU instance data. */

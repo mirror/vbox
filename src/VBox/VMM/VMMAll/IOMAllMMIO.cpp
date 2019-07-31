@@ -849,7 +849,7 @@ PGM_ALL_CB2_DECL(VBOXSTRICTRC) iomMmioHandler(PVM pVM, PVMCPU pVCpu, RTGCPHYS GC
 }
 
 
-#ifdef IN_RING3 /* Only used by REM. */
+#if defined(IN_RING3) && defined(VBOX_WITH_REM) /* Only used by REM. */
 
 /**
  * Reads a MMIO register.
@@ -1086,7 +1086,6 @@ VMMDECL(VBOXSTRICTRC) IOMMMIOWrite(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, uint3
 }
 
 #endif /* IN_RING3 - only used by REM. */
-#ifndef IN_RC
 
 /**
  * Mapping an MMIO2 page in place of an MMIO page for direct access.
@@ -1277,6 +1276,4 @@ VMMDECL(int) IOMMMIOResetRegion(PVM pVM, RTGCPHYS GCPhys)
 # endif
     return rc;
 }
-
-#endif /* !IN_RC */
 

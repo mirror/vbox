@@ -308,15 +308,6 @@ VMMDECL(int)            IOMMMIOMapMMIOHCPage(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCP
 VMMDECL(int)            IOMMMIOResetRegion(PVM pVM, RTGCPHYS GCPhys);
 VMMDECL(bool)           IOMIsLockWriteOwner(PVM pVM);
 
-#ifdef IN_RC
-/** @defgroup grp_iom_rc    The IOM Raw-Mode Context API
- * @{
- */
-VMMRCDECL(VBOXSTRICTRC) IOMRCIOPortHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu);
-/** @} */
-#endif /* IN_RC */
-
-
 
 #ifdef IN_RING3
 /** @defgroup grp_iom_r3    The IOM Host Context Ring-3 API
@@ -330,10 +321,12 @@ VMMR3_INT_DECL(int)  IOMR3IOPortRegisterR3(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT
                                            R3PTRTYPE(PFNIOMIOPORTOUT) pfnOutCallback, R3PTRTYPE(PFNIOMIOPORTIN) pfnInCallback,
                                            R3PTRTYPE(PFNIOMIOPORTOUTSTRING) pfnOutStringCallback, R3PTRTYPE(PFNIOMIOPORTINSTRING) pfnInStringCallback,
                                            const char *pszDesc);
+#if 0
 VMMR3_INT_DECL(int)  IOMR3IOPortRegisterRC(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT PortStart, RTUINT cPorts, RTRCPTR pvUser,
                                            RCPTRTYPE(PFNIOMIOPORTOUT) pfnOutCallback, RCPTRTYPE(PFNIOMIOPORTIN) pfnInCallback,
                                            RCPTRTYPE(PFNIOMIOPORTOUTSTRING) pfnOutStrCallback, RCPTRTYPE(PFNIOMIOPORTINSTRING) pfnInStrCallback,
                                            const char *pszDesc);
+#endif
 VMMR3_INT_DECL(int)  IOMR3IOPortRegisterR0(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT PortStart, RTUINT cPorts, RTR0PTR pvUser,
                                            R0PTRTYPE(PFNIOMIOPORTOUT) pfnOutCallback, R0PTRTYPE(PFNIOMIOPORTIN) pfnInCallback,
                                            R0PTRTYPE(PFNIOMIOPORTOUTSTRING) pfnOutStrCallback, R0PTRTYPE(PFNIOMIOPORTINSTRING) pfnInStrCallback,
@@ -349,10 +342,12 @@ VMMR3_INT_DECL(int)  IOMR3MmioRegisterR0(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS G
                                          R0PTRTYPE(PFNIOMMMIOWRITE) pfnWriteCallback,
                                          R0PTRTYPE(PFNIOMMMIOREAD)  pfnReadCallback,
                                          R0PTRTYPE(PFNIOMMMIOFILL)  pfnFillCallback);
+#if 0
 VMMR3_INT_DECL(int)  IOMR3MmioRegisterRC(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTGCPHYS cbRange, RTGCPTR pvUser,
                                          RCPTRTYPE(PFNIOMMMIOWRITE) pfnWriteCallback,
                                          RCPTRTYPE(PFNIOMMMIOREAD)  pfnReadCallback,
                                          RCPTRTYPE(PFNIOMMMIOFILL)  pfnFillCallback);
+#endif
 VMMR3_INT_DECL(int)  IOMR3MmioDeregister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTGCPHYS cbRange);
 VMMR3_INT_DECL(int)  IOMR3MmioExPreRegister(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev, uint32_t iRegion, RTGCPHYS cbRange,
                                             uint32_t fFlags, const char *pszDesc,

@@ -128,14 +128,17 @@ static DECLCALLBACK(int) pdmR3DevHlp_IOPortRegisterRC(PPDMDEVINS pDevIns, RTIOPO
                                                       const char *pszOutStr, const char *pszInStr, const char *pszDesc)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
-    PVM pVM = pDevIns->Internal.s.pVMR3;
-    VM_ASSERT_EMT(pVM);
+    Assert(pDevIns->pReg->szRCMod[0]);
+    Assert(pDevIns->pReg->fFlags & PDM_DEVREG_FLAGS_RC);
     LogFlow(("pdmR3DevHlp_IOPortRegisterRC: caller='%s'/%d: Port=%#x cPorts=%#x pvUser=%p pszOut=%p:{%s} pszIn=%p:{%s} pszOutStr=%p:{%s} pszInStr=%p:{%s} pszDesc=%p:{%s}\n", pDevIns->pReg->szName, pDevIns->iInstance,
              Port, cPorts, pvUser, pszOut, pszOut, pszIn, pszIn, pszOutStr, pszOutStr, pszInStr, pszInStr, pszDesc, pszDesc));
 
+#if 0
     /*
      * Resolve the functions (one of the can be NULL).
      */
+    PVM pVM = pDevIns->Internal.s.pVMR3;
+    VM_ASSERT_EMT(pVM);
     int rc = VINF_SUCCESS;
     if (   pDevIns->pReg->szRCMod[0]
         && (pDevIns->pReg->fFlags & PDM_DEVREG_FLAGS_RC)
@@ -185,6 +188,10 @@ static DECLCALLBACK(int) pdmR3DevHlp_IOPortRegisterRC(PPDMDEVINS pDevIns, RTIOPO
         AssertMsgFailed(("No RC module for this driver!\n"));
         rc = VERR_INVALID_PARAMETER;
     }
+#else
+    RT_NOREF(pDevIns, Port, cPorts, pvUser, pszOut, pszIn, pszOutStr, pszInStr, pszDesc);
+    int rc = VINF_SUCCESS;
+#endif
 
     LogFlow(("pdmR3DevHlp_IOPortRegisterRC: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
     return rc;
@@ -304,12 +311,13 @@ static DECLCALLBACK(int) pdmR3DevHlp_MMIORegisterRC(PPDMDEVINS pDevIns, RTGCPHYS
                                                     const char *pszWrite, const char *pszRead, const char *pszFill)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
-    PVM pVM = pDevIns->Internal.s.pVMR3;
-    VM_ASSERT_EMT(pVM);
+    VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
+    Assert(pDevIns->pReg->szR0Mod[0]);
+    Assert(pDevIns->pReg->fFlags & PDM_DEVREG_FLAGS_R0);
     LogFlow(("pdmR3DevHlp_MMIORegisterRC: caller='%s'/%d: GCPhysStart=%RGp cbRange=%RGp pvUser=%p pszWrite=%p:{%s} pszRead=%p:{%s} pszFill=%p:{%s}\n",
              pDevIns->pReg->szName, pDevIns->iInstance, GCPhysStart, cbRange, pvUser, pszWrite, pszWrite, pszRead, pszRead, pszFill, pszFill));
 
-
+#if 0
     /*
      * Resolve the functions.
      * Not all function have to present, leave it to IOM to enforce this.
@@ -317,7 +325,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_MMIORegisterRC(PPDMDEVINS pDevIns, RTGCPHYS
     int rc = VINF_SUCCESS;
     if (   pDevIns->pReg->szRCMod[0]
         && (pDevIns->pReg->fFlags & PDM_DEVREG_FLAGS_RC)
-        && VM_IS_RAW_MODE_ENABLED(pVM))
+        && VM_IS_RAW_MODE_ENABLED(pDevIns->Internal.s.pVMR3))
     {
         RTRCPTR RCPtrWrite = NIL_RTRCPTR;
         if (pszWrite)
@@ -334,7 +342,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_MMIORegisterRC(PPDMDEVINS pDevIns, RTGCPHYS
             rc3 = pdmR3DevGetSymbolRCLazy(pDevIns, pszFill, &RCPtrFill);
 
         if (RT_SUCCESS(rc) && RT_SUCCESS(rc2) && RT_SUCCESS(rc3))
-            rc = IOMR3MmioRegisterRC(pVM, pDevIns, GCPhysStart, cbRange, pvUser, RCPtrWrite, RCPtrRead, RCPtrFill);
+            rc = IOMR3MmioRegisterRC(pDevIns->Internal.s.pVMR3, pDevIns, GCPhysStart, cbRange, pvUser, RCPtrWrite, RCPtrRead, RCPtrFill);
         else
         {
             AssertMsgRC(rc,  ("Failed to resolve %s.%s (pszWrite)\n", pDevIns->pReg->szRCMod, pszWrite));
@@ -346,11 +354,15 @@ static DECLCALLBACK(int) pdmR3DevHlp_MMIORegisterRC(PPDMDEVINS pDevIns, RTGCPHYS
                 rc = rc3;
         }
     }
-    else if (VM_IS_RAW_MODE_ENABLED(pVM))
+    else if (VM_IS_RAW_MODE_ENABLED(pDevIns->Internal.s.pVMR3))
     {
         AssertMsgFailed(("No RC module for this driver!\n"));
         rc = VERR_INVALID_PARAMETER;
     }
+#else
+    int rc = VINF_SUCCESS;
+    RT_NOREF(pDevIns, GCPhysStart, cbRange, pvUser, pszWrite, pszRead, pszFill);
+#endif
 
     LogFlow(("pdmR3DevHlp_MMIORegisterRC: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
     return rc;
@@ -362,6 +374,8 @@ static DECLCALLBACK(int) pdmR3DevHlp_MMIORegisterR0(PPDMDEVINS pDevIns, RTGCPHYS
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
+    Assert(pDevIns->pReg->szR0Mod[0]);
+    Assert(pDevIns->pReg->fFlags & PDM_DEVREG_FLAGS_R0);
     LogFlow(("pdmR3DevHlp_MMIORegisterHC: caller='%s'/%d: GCPhysStart=%RGp cbRange=%RGp pvUser=%p pszWrite=%p:{%s} pszRead=%p:{%s} pszFill=%p:{%s}\n",
              pDevIns->pReg->szName, pDevIns->iInstance, GCPhysStart, cbRange, pvUser, pszWrite, pszWrite, pszRead, pszRead, pszFill, pszFill));
 
@@ -370,8 +384,8 @@ static DECLCALLBACK(int) pdmR3DevHlp_MMIORegisterR0(PPDMDEVINS pDevIns, RTGCPHYS
      * Not all function have to present, leave it to IOM to enforce this.
      */
     int rc = VINF_SUCCESS;
-    if (    pDevIns->pReg->szR0Mod[0]
-        &&  (pDevIns->pReg->fFlags & PDM_DEVREG_FLAGS_R0))
+    if (   pDevIns->pReg->szR0Mod[0]
+        && (pDevIns->pReg->fFlags & PDM_DEVREG_FLAGS_R0))
     {
         R0PTRTYPE(PFNIOMMMIOWRITE) pfnR0PtrWrite = 0;
         if (pszWrite)
@@ -504,7 +518,7 @@ pdmR3DevHlp_MMIOExPreRegister(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t i
     }
 
     /* Raw-mode */
-    rc = VINF_SUCCESS;
+#if 0
     RCPTRTYPE(PFNIOMMMIOWRITE) pfnWriteRC = 0;
     if (pszWriteRC)
     {
@@ -524,6 +538,13 @@ pdmR3DevHlp_MMIOExPreRegister(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t i
         rc = pdmR3DevGetSymbolRCLazy(pDevIns, pszFillRC, &pfnFillRC);
         AssertLogRelMsgRCReturn(rc, ("pszFillRC=%s rc=%Rrc\n", pszFillRC, rc), rc);
     }
+#else
+    RCPTRTYPE(PFNIOMMMIOWRITE) pfnWriteRC = 0;
+    RCPTRTYPE(PFNIOMMMIOREAD)  pfnReadRC  = 0;
+    RCPTRTYPE(PFNIOMMMIOFILL)  pfnFillRC  = 0;
+    RT_NOREF(pszWriteRC, pszReadRC, pszFillRC);
+#endif
+
 
     /*
      * Call IOM to make the registration.

@@ -165,11 +165,6 @@ VMMR3_INT_DECL(int) IOMR3Init(PVM pVM)
     AssertCompileMemberAlignment(IOM, CritSect, sizeof(uintptr_t));
 
     /*
-     * Setup any fixed pointers and offsets.
-     */
-    pVM->iom.s.offVM = RT_UOFFSETOF(VM, iom);
-
-    /*
      * Initialize the REM critical section.
      */
 #ifdef IOM_WITH_CRIT_SECT_RW
@@ -185,7 +180,6 @@ VMMR3_INT_DECL(int) IOMR3Init(PVM pVM)
     rc = MMHyperAlloc(pVM, sizeof(*pVM->iom.s.pTreesR3), 0, MM_TAG_IOM, (void **)&pVM->iom.s.pTreesR3);
     if (RT_SUCCESS(rc))
     {
-        pVM->iom.s.pTreesRC = MMHyperR3ToRC(pVM, pVM->iom.s.pTreesR3);
         pVM->iom.s.pTreesR0 = MMHyperR3ToR0(pVM, pVM->iom.s.pTreesR3);
 
         /*
@@ -280,13 +274,6 @@ static void iomR3FlushCache(PVM pVM)
         pVCpu->iom.s.pStatsLastWriteR3 = NULL;
         pVCpu->iom.s.pMMIORangeLastR3  = NULL;
         pVCpu->iom.s.pMMIOStatsLastR3  = NULL;
-
-        pVCpu->iom.s.pRangeLastReadRC  = NIL_RTRCPTR;
-        pVCpu->iom.s.pRangeLastWriteRC = NIL_RTRCPTR;
-        pVCpu->iom.s.pStatsLastReadRC  = NIL_RTRCPTR;
-        pVCpu->iom.s.pStatsLastWriteRC = NIL_RTRCPTR;
-        pVCpu->iom.s.pMMIORangeLastRC  = NIL_RTRCPTR;
-        pVCpu->iom.s.pMMIOStatsLastRC  = NIL_RTRCPTR;
     }
 
     IOM_UNLOCK_EXCL(pVM);
@@ -316,6 +303,7 @@ VMMR3_INT_DECL(void) IOMR3Reset(PVM pVM)
  */
 VMMR3_INT_DECL(void) IOMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
 {
+#if 0
     LogFlow(("IOMR3Relocate: offDelta=%d\n", offDelta));
 
     /*
@@ -339,6 +327,9 @@ VMMR3_INT_DECL(void) IOMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
         pVCpu->iom.s.pMMIORangeLastRC  = NIL_RTRCPTR;
         pVCpu->iom.s.pMMIOStatsLastRC  = NIL_RTRCPTR;
     }
+#else
+    RT_NOREF(pVM, offDelta);
+#endif
 }
 
 
@@ -371,6 +362,7 @@ static DECLCALLBACK(int) iomR3RelocateIOPortCallback(PAVLROIOPORTNODECORE pNode,
 }
 
 
+#if 0
 /**
  * Callback function for relocating a MMIO range.
  *
@@ -397,6 +389,7 @@ static DECLCALLBACK(int) iomR3RelocateMMIOCallback(PAVLROGCPHYSNODECORE pNode, v
 
     return 0;
 }
+#endif
 
 
 /**
@@ -631,6 +624,7 @@ VMMR3_INT_DECL(int) IOMR3IOPortRegisterR3(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT 
 }
 
 
+#if 0
 /**
  * Registers a I/O port RC handler.
  *
@@ -744,6 +738,7 @@ VMMR3_INT_DECL(int) IOMR3IOPortRegisterRC(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT 
     IOM_UNLOCK_EXCL(pVM);
     return rc;
 }
+#endif
 
 
 /**
@@ -926,6 +921,7 @@ VMMR3_INT_DECL(int) IOMR3IOPortDeregister(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT 
         Port++;
     }
 
+#if 0
     /*
      * Remove any RC ranges first.
      */
@@ -1008,7 +1004,9 @@ VMMR3_INT_DECL(int) IOMR3IOPortDeregister(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT 
         else /* next port */
             Port++;
     } /* for all ports - RC. */
-
+#else
+    int rc = VINF_SUCCESS;
+#endif
 
     /*
      * Remove any R0 ranges.
@@ -1273,6 +1271,7 @@ static DECLCALLBACK(int) iomR3IOPortInfoOneR3(PAVLROIOPORTNODECORE pNode, void *
 }
 
 
+#if 0
 /**
  * Display a single I/O port GC range.
  *
@@ -1295,6 +1294,7 @@ static DECLCALLBACK(int) iomR3IOPortInfoOneRC(PAVLROIOPORTNODECORE pNode, void *
                     pRange->pszDesc);
     return 0;
 }
+#endif
 
 
 /**
@@ -1327,6 +1327,7 @@ static DECLCALLBACK(void) iomR3IOPortInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
                     sizeof(RTHCPTR) * 2,      "pvUser          ");
     RTAvlroIOPortDoWithAll(&pVM->iom.s.pTreesR3->IOPortTreeR0, true, iomR3IOPortInfoOneR3, (void *)pHlp);
 
+#if 0
     pHlp->pfnPrintf(pHlp,
                     "I/O Port GC ranges (pVM=%p)\n"
                     "Range     %.*s %.*s %.*s %.*s Description\n",
@@ -1336,6 +1337,7 @@ static DECLCALLBACK(void) iomR3IOPortInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
                     sizeof(RTRCPTR) * 2,      "Out             ",
                     sizeof(RTRCPTR) * 2,      "pvUser          ");
     RTAvlroIOPortDoWithAll(&pVM->iom.s.pTreesR3->IOPortTreeRC, true, iomR3IOPortInfoOneRC, (void *)pHlp);
+#endif
 }
 
 
@@ -1442,6 +1444,7 @@ IOMR3MmioRegisterR3(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTGCPHYS 
 }
 
 
+#if 0
 /**
  * Registers a Memory Mapped I/O RC handler range.
  *
@@ -1499,6 +1502,7 @@ IOMR3MmioRegisterRC(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTGCPHYS 
 
     return VINF_SUCCESS;
 }
+#endif
 
 
 /**
@@ -1750,6 +1754,7 @@ VMMR3_INT_DECL(int)  IOMR3MmioExPreRegister(PVM pVM, PPDMDEVINS pDevIns, uint32_
             pRange->pfnFillCallbackR0   = pfnFillCallbackR0;
         }
 
+#if 0
         if (pfnReadCallbackRC || pfnWriteCallbackRC || pfnFillCallbackRC)
         {
             pRange->pvUserRC            = pvUserRC;
@@ -1758,6 +1763,9 @@ VMMR3_INT_DECL(int)  IOMR3MmioExPreRegister(PVM pVM, PPDMDEVINS pDevIns, uint32_
             pRange->pfnWriteCallbackRC  = pfnWriteCallbackRC;
             pRange->pfnFillCallbackRC   = pfnFillCallbackRC;
         }
+#else
+        RT_NOREF(pfnReadCallbackRC, pfnWriteCallbackRC, pfnFillCallbackRC, pvUserRC);
+#endif
 
         /*
          * Try register it with PGM.  PGM will call us back when it's mapped in
@@ -2045,6 +2053,7 @@ static DECLCALLBACK(int) iomR3MMIOInfoOne(PAVLROGCPHYSNODECORE pNode, void *pvUs
                     pRange->pfnWriteCallbackR0,
                     pRange->pfnFillCallbackR0,
                     pRange->pvUserR0);
+#if 0
     pHlp->pfnPrintf(pHlp,
                     "%*s %RRv %RRv %RRv %RRv %RRv\n",
                     sizeof(RTGCPHYS) * 2 * 2 + 1, "RC",
@@ -2053,6 +2062,7 @@ static DECLCALLBACK(int) iomR3MMIOInfoOne(PAVLROGCPHYSNODECORE pNode, void *pvUs
                     pRange->pfnWriteCallbackRC,
                     pRange->pfnFillCallbackRC,
                     pRange->pvUserRC);
+#endif
     return 0;
 }
 
