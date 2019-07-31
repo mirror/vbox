@@ -186,8 +186,7 @@ VMM_INT_DECL(int)           APICSetBaseMsr(PVMCPU pVCpu, uint64_t u64BaseMsr);
 VMM_INT_DECL(int)           APICGetInterrupt(PVMCPU pVCpu, uint8_t *pu8Vector, uint32_t *pu32TagSrc);
 VMM_INT_DECL(int)           APICBusDeliver(PVM pVM, uint8_t uDest, uint8_t uDestMode, uint8_t uDeliveryMode, uint8_t uVector,
                                            uint8_t uPolarity, uint8_t uTriggerMode, uint32_t uTagSrc);
-VMM_INT_DECL(int)           APICGetApicPageForCpu(PCVMCPU pVCpu, PRTHCPHYS pHCPhys, PRTR0PTR pR0Ptr, PRTR3PTR pR3Ptr,
-                                                  PRTRCPTR pRCPtr);
+VMM_INT_DECL(int)           APICGetApicPageForCpu(PCVMCPU pVCpu, PRTHCPHYS pHCPhys, PRTR0PTR pR0Ptr, PRTR3PTR pR3Ptr);
 
 /** @name Hyper-V interface (Ring-3 and all-context API).
  * @{ */

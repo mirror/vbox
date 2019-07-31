@@ -1807,10 +1807,7 @@ static int hmR0VmxAllocVmcsInfo(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo, bool fIsNs
                 /* Get the allocated virtual-APIC page from the virtual APIC device. */
                 if (   PDMHasApic(pVCpu->CTX_SUFF(pVM))
                     && (pVM->hm.s.vmx.Msrs.ProcCtls.n.allowed1 & VMX_PROC_CTLS_USE_TPR_SHADOW))
-                {
-                    rc = APICGetApicPageForCpu(pVCpu, &pVmcsInfo->HCPhysVirtApic, (PRTR0PTR)&pVmcsInfo->pbVirtApic,
-                                               NULL /* pR3Ptr */, NULL /* pRCPtr */);
-                }
+                    rc = APICGetApicPageForCpu(pVCpu, &pVmcsInfo->HCPhysVirtApic, (PRTR0PTR)&pVmcsInfo->pbVirtApic, NULL /*pR3Ptr*/);
             }
         }
         else

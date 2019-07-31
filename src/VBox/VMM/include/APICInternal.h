@@ -1156,16 +1156,8 @@ typedef struct APICDEV
 {
     /** The device instance - R3 Ptr. */
     PPDMDEVINSR3                pDevInsR3;
-    /** Alignment padding. */
-    R3PTRTYPE(void *)           pvAlignment0;
-
     /** The device instance - R0 Ptr. */
     PPDMDEVINSR0                pDevInsR0;
-    /** Alignment padding. */
-    R0PTRTYPE(void *)           pvAlignment1;
-
-    /** The device instance - RC Ptr. */
-    PPDMDEVINSRC                pDevInsRC;
 } APICDEV;
 /** Pointer to an APIC device. */
 typedef APICDEV *PAPICDEV;
@@ -1183,10 +1175,6 @@ typedef struct APIC
     R0PTRTYPE(PAPICDEV)         pApicDevR0;
     /** The APIC device - R3 ptr. */
     R3PTRTYPE(PAPICDEV)         pApicDevR3;
-    /** The APIC device - RC ptr. */
-    RCPTRTYPE(PAPICDEV)         pApicDevRC;
-    /** Alignment padding. */
-    RTRCPTR                     RCPtrAlignment0;
     /** @} */
 
     /** @name The APIC pending-interrupt bitmap (PIB).
@@ -1201,10 +1189,6 @@ typedef struct APIC
     R0PTRTYPE(void *)           pvApicPibR0;
     /** The APIC PIB virtual address - R3 ptr. */
     R3PTRTYPE(void *)           pvApicPibR3;
-    /** The APIC PIB virtual address - RC ptr. */
-    RCPTRTYPE(void *)           pvApicPibRC;
-    /** Alignment padding. */
-    RTRCPTR                     RCPtrAlignment1;
     /** The size of the page in bytes. */
     uint32_t                    cbApicPib;
     /** Alignment padding. */
@@ -1259,10 +1243,6 @@ typedef struct APICCPU
     R0PTRTYPE(void *)           pvApicPageR0;
     /** The APIC page virtual address - R3 ptr. */
     R3PTRTYPE(void *)           pvApicPageR3;
-    /** The APIC page virtual address - RC ptr. */
-    RCPTRTYPE(void *)           pvApicPageRC;
-    /** Alignment padding. */
-    RTRCPTR                     RCPtrAlignment0;
     /** The size of the page in bytes. */
     uint32_t                    cbApicPage;
     /** @} */
@@ -1283,10 +1263,6 @@ typedef struct APICCPU
     R0PTRTYPE(void *)           pvApicPibR0;
     /** The APIC PIB virtual address - R3 ptr. */
     R3PTRTYPE(void *)           pvApicPibR3;
-    /** The APIC PIB virtual address - RC ptr. */
-    RCPTRTYPE(void *)           pvApicPibRC;
-    /** Alignment padding. */
-    RTRCPTR                     RCPtrAlignment1;
     /** The APIC PIB for level-sensitive interrupts. */
     APICPIB                     ApicPibLevel;
     /** @} */
@@ -1309,18 +1285,14 @@ typedef struct APICCPU
     PTMTIMERR0                  pTimerR0;
     /** The timer - R3 ptr. */
     PTMTIMERR3                  pTimerR3;
-    /** The timer - RC ptr. */
-    PTMTIMERRC                  pTimerRC;
-    /** Alignment padding. */
-    RTRCPTR                     RCPtrAlignment3;
-    /** The timer critical sect protecting @a u64TimerInitial  */
-    PDMCRITSECT                 TimerCritSect;
     /** The time stamp when the timer was initialized. */
     uint64_t                    u64TimerInitial;
     /** Cache of timer initial count of the frequency hint to TM. */
     uint32_t                    uHintedTimerInitialCount;
     /** Cache of timer shift of the frequency hint to TM. */
     uint32_t                    uHintedTimerShift;
+    /** The timer critical sect protecting @a u64TimerInitial  */
+    PDMCRITSECT                 TimerCritSect;
     /** The timer description. */
     char                        szTimerDesc[32];
     /** @} */
