@@ -195,9 +195,6 @@ EXPORTS
     EMR3QueryMainExecutionEngine
     EMR3SetExecutionPolicy
 
-    FTMR3CancelStandby
-    FTMR3PowerOn
-
     MMHyperR3ToR0
     MMHyperR3ToRC
 
