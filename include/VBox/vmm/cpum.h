@@ -31,7 +31,9 @@
 
 #include <iprt/x86.h>
 #include <VBox/types.h>
-#include <VBox/vmm/cpumctx.h>
+#ifdef RT_ARCH_AMD64
+# include <VBox/vmm/cpumctx.h>
+#endif
 #include <VBox/vmm/stam.h>
 #include <VBox/vmm/vmapi.h>
 #include <VBox/vmm/hm_svm.h>
@@ -397,6 +399,22 @@ typedef enum CPUMUNKNOWNCPUID
 } CPUMUNKNOWNCPUID;
 /** Pointer to unknown CPUID leaf method. */
 typedef CPUMUNKNOWNCPUID *PCPUMUNKNOWNCPUID;
+
+
+/**
+ * The register set returned by a CPUID operation.
+ */
+typedef struct CPUMCPUID
+{
+    uint32_t uEax;
+    uint32_t uEbx;
+    uint32_t uEcx;
+    uint32_t uEdx;
+} CPUMCPUID;
+/** Pointer to a CPUID leaf. */
+typedef CPUMCPUID *PCPUMCPUID;
+/** Pointer to a const CPUID leaf. */
+typedef const CPUMCPUID *PCCPUMCPUID;
 
 
 /**
@@ -1551,7 +1569,7 @@ VMM_INT_DECL(bool)      CPUMGetVmxIoBitmapPermission(void const *pvIoBitmapA, vo
 VMM_INT_DECL(int) CPUMImportGuestStateOnDemand(PVMCPU pVCpu, uint64_t fExtrnImport);
 /** @} */
 
-#ifndef IPRT_WITHOUT_NAMED_UNIONS_AND_STRUCTS
+#if !defined(IPRT_WITHOUT_NAMED_UNIONS_AND_STRUCTS) && defined(RT_ARCH_AMD64)
 
 /**
  * Gets valid CR0 bits for the guest.
@@ -2470,7 +2488,7 @@ DECLINLINE(bool) CPUMIsGuestVmxVirtIntrEnabled(PCVMCPU pVCpu, PCCPUMCTX pCtx)
 #endif
 }
 
-#endif /* IPRT_WITHOUT_NAMED_UNIONS_AND_STRUCTS */
+#endif /* !IPRT_WITHOUT_NAMED_UNIONS_AND_STRUCTS && RT_ARCH_AMD64 */
 
 /** @} */
 
@@ -2499,7 +2517,9 @@ VMMDECL(int)            CPUMRecalcHyperDRx(PVMCPU pVCpu, uint8_t iGstReg, bool f
 /** @} */
 
 VMMDECL(PCPUMCTX)       CPUMQueryGuestCtxPtr(PVMCPU pVCpu);
+#ifdef VBOX_INCLUDED_vmm_cpumctx_h
 VMM_INT_DECL(PCPUMCTXMSRS) CPUMQueryGuestCtxMsrsPtr(PVMCPU pVCpu);
+#endif
 VMMDECL(PCCPUMCTXCORE)  CPUMGetGuestCtxCore(PVMCPU pVCpu);
 
 /** @name Changed flags.

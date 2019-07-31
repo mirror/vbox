@@ -1110,21 +1110,6 @@ typedef CPUMCTXMSRS *PCPUMCTXMSRS;
 /** Pointer to the const guest MSR state. */
 typedef const CPUMCTXMSRS *PCCPUMCTXMSRS;
 
-/**
- * The register set returned by a CPUID operation.
- */
-typedef struct CPUMCPUID
-{
-    uint32_t uEax;
-    uint32_t uEbx;
-    uint32_t uEcx;
-    uint32_t uEdx;
-} CPUMCPUID;
-/** Pointer to a CPUID leaf. */
-typedef CPUMCPUID *PCPUMCPUID;
-/** Pointer to a const CPUID leaf. */
-typedef const CPUMCPUID *PCCPUMCPUID;
-
 /** @}  */
 
 RT_C_DECLS_END
