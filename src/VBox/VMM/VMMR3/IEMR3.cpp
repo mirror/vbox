@@ -118,7 +118,6 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
         int rc = MMHyperAlloc(pVM, sizeof(IEMINSTRSTATS), sizeof(uint64_t), MM_TAG_IEM, (void **)&pVCpu->iem.s.pStatsCCR3);
         AssertLogRelRCReturn(rc, rc);
         pVCpu->iem.s.pStatsR0 = MMHyperR3ToR0(pVM, pVCpu->iem.s.pStatsCCR3);
-        pVCpu->iem.s.pStatsRC = MMHyperR3ToR0(pVM, pVCpu->iem.s.pStatsCCR3);
 # define IEM_DO_INSTR_STAT(a_Name, a_szDesc) \
             STAMR3RegisterF(pVM, &pVCpu->iem.s.pStatsCCR3->a_Name, STAMTYPE_U32_RESET, STAMVISIBILITY_USED, \
                             STAMUNIT_COUNT, a_szDesc, "/IEM/CPU%u/instr-RZ/" #a_Name, idCpu); \
@@ -207,8 +206,6 @@ VMMR3DECL(int)      IEMR3Term(PVM pVM)
 
 VMMR3DECL(void)     IEMR3Relocate(PVM pVM)
 {
-    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
-        if (pVM->aCpus[idCpu].iem.s.pStatsRC)
-            pVM->aCpus[idCpu].iem.s.pStatsRC = MMHyperR3ToRC(pVM, pVM->aCpus[idCpu].iem.s.pStatsCCR3);
+    RT_NOREF(pVM);
 }
 

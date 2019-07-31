@@ -287,9 +287,8 @@ typedef IEMTLBENTRY *PIEMTLBENTRY;
 #define IEMTLBE_F_PT_NO_USER        RT_BIT_64(2) /**< Page tables: Not user accessible (supervisor only). */
 #define IEMTLBE_F_PG_NO_WRITE       RT_BIT_64(3) /**< Phys page:   Not writable (access handler, ROM, whatever). */
 #define IEMTLBE_F_PG_NO_READ        RT_BIT_64(4) /**< Phys page:   Not readable (MMIO / access handler, ROM) */
-#define IEMTLBE_F_PATCH_CODE        RT_BIT_64(5) /**< Code TLB:    Patch code (PATM). */
-#define IEMTLBE_F_PT_NO_DIRTY       RT_BIT_64(6) /**< Page tables: Not dirty (needs to be made dirty on write). */
-#define IEMTLBE_F_NO_MAPPINGR3      RT_BIT_64(7) /**< TLB entry:   The IEMTLBENTRY::pMappingR3 member is invalid. */
+#define IEMTLBE_F_PT_NO_DIRTY       RT_BIT_64(5) /**< Page tables: Not dirty (needs to be made dirty on write). */
+#define IEMTLBE_F_NO_MAPPINGR3      RT_BIT_64(6) /**< TLB entry:   The IEMTLBENTRY::pMappingR3 member is invalid. */
 #define IEMTLBE_F_PHYS_REV          UINT64_C(0xffffffffffffff00) /**< Physical revision mask. */
 /** @} */
 
@@ -504,9 +503,6 @@ typedef struct IEMCPU
     {
         /** The address of the mapped bytes. */
         void               *pv;
-#if defined(IN_RC) && HC_ARCH_BITS == 64
-        uint32_t            u32Alignment3; /**< Alignment padding. */
-#endif
         /** The access flags (IEM_ACCESS_XXX).
          * IEM_ACCESS_INVALID if the entry is unused. */
         uint32_t            fAccess;
@@ -552,14 +548,12 @@ typedef struct IEMCPU
     R3PTRTYPE(jmp_buf *)    pJmpBufR3;
     /** Pointer set jump buffer - ring-0 context. */
     R0PTRTYPE(jmp_buf *)    pJmpBufR0;
-    /** Pointer set jump buffer - raw-mode context. */
-    RCPTRTYPE(jmp_buf *)    pJmpBufRC;
 
     /** @todo Should move this near @a fCurXcpt later. */
-    /** The error code for the current exception / interrupt. */
-    uint32_t                uCurXcptErr;
     /** The CR2 for the current exception / interrupt. */
     uint64_t                uCurXcptCr2;
+    /** The error code for the current exception / interrupt. */
+    uint32_t                uCurXcptErr;
     /** The VMX APIC-access page handler type. */
     PGMPHYSHANDLERTYPE      hVmxApicAccessPage;
 
@@ -611,7 +605,7 @@ typedef struct IEMCPU
     /** Counts WRMSR \#GP(0) LogRel(). */
     uint8_t                 cLogRelWrMsr;
     /** Alignment padding. */
-    uint8_t                 abAlignment8[HC_ARCH_BITS == 64 ? 46 : 14];
+    uint8_t                 abAlignment8[50];
 
     /** Data TLB.
      * @remarks Must be 64-byte aligned. */
@@ -620,13 +614,9 @@ typedef struct IEMCPU
      * @remarks Must be 64-byte aligned. */
     IEMTLB                  CodeTlb;
 
-    /** Pointer to instruction statistics for raw-mode context (same as R0). */
-    RCPTRTYPE(PIEMINSTRSTATS) pStatsRC;
-    /** Alignment padding. */
-    RTRCPTR                   RCPtrPadding;
-    /** Pointer to instruction statistics for ring-0 context (same as RC). */
+    /** Pointer to instruction statistics for ring-0 context. */
     R0PTRTYPE(PIEMINSTRSTATS) pStatsR0;
-    /** Pointer to instruction statistics for non-ring-3 code. */
+    /** Ring-3 pointer to instruction statistics for non-ring-3 code. */
     R3PTRTYPE(PIEMINSTRSTATS) pStatsCCR3;
     /** Pointer to instruction statistics for ring-3 context. */
     R3PTRTYPE(PIEMINSTRSTATS) pStatsR3;

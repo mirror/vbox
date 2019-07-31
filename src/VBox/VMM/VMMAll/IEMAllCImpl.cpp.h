@@ -212,12 +212,7 @@ static void iemHlpUpdateArithEFlagsU16(PVMCPU pVCpu, uint16_t u16Result, uint32_
  */
 static void iemHlpAdjustSelectorForNewCpl(PVMCPU pVCpu, uint8_t uCpl, PCPUMSELREG pSReg)
 {
-#ifdef VBOX_WITH_RAW_MODE_NOT_R0
-    if (!CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, pSReg))
-        CPUMGuestLazyLoadHiddenSelectorReg(pVCpu, pSReg);
-#else
     Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, pSReg));
-#endif
     IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_SREG_MASK);
 
     if (   uCpl > pSReg->Attr.n.u2Dpl
@@ -838,23 +833,6 @@ IEM_CIMPL_DEF_1(iemCImpl_call_32, uint32_t, uNewPC)
     VBOXSTRICTRC rcStrict = iemMemStackPushU32(pVCpu, uOldPC);
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
-
-#if defined(IN_RING3) && defined(VBOX_WITH_RAW_MODE) && defined(VBOX_WITH_CALL_RECORD)
-    /*
-     * CASM hook for recording interesting indirect calls.
-     */
-    if (   !pVCpu->cpum.GstCtx.eflags.Bits.u1IF
-        && (pVCpu->cpum.GstCtx.cr0 & X86_CR0_PG)
-        && !CSAMIsEnabled(pVCpu->CTX_SUFF(pVM))
-        && pVCpu->iem.s.uCpl == 0)
-    {
-        EMSTATE enmState = EMGetState(pVCpu);
-        if (   enmState == EMSTATE_IEM_THEN_REM
-            || enmState == EMSTATE_IEM
-            || enmState == EMSTATE_REM)
-            CSAMR3RecordCallAddress(pVCpu->CTX_SUFF(pVM), pVCpu->cpum.GstCtx.eip);
-    }
-#endif
 
     pVCpu->cpum.GstCtx.rip = uNewPC;
     pVCpu->cpum.GstCtx.eflags.Bits.u1RF = 0;
@@ -5692,14 +5670,6 @@ IEM_CIMPL_DEF_4(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX, IEMACCESS
                 /* ignore informational status codes */
             }
             rcStrict = PGMChangeMode(pVCpu, pVCpu->cpum.GstCtx.cr0, pVCpu->cpum.GstCtx.cr4, pVCpu->cpum.GstCtx.msrEFER);
-
-#ifdef IN_RC
-            /* Return to ring-3 for rescheduling if WP or AM changes. */
-            if (   rcStrict == VINF_SUCCESS
-                && (   (uNewCrX & (X86_CR0_WP | X86_CR0_AM))
-                    != (uOldCrX & (X86_CR0_WP | X86_CR0_AM))) )
-                rcStrict = VINF_EM_RESCHEDULE;
-#endif
             break;
         }
 

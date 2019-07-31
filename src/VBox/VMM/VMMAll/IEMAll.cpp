@@ -1060,8 +1060,6 @@ DECLINLINE(void) iemInitExec(PVMCPU pVCpu, bool fBypassHandlers)
 {
     IEM_CTX_ASSERT(pVCpu, IEM_CPUMCTX_EXTRN_EXEC_DECODED_NO_MEM_MASK);
     Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_IEM));
-
-#if defined(VBOX_STRICT) && !defined(VBOX_WITH_RAW_MODE_NOT_R0)
     Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pVCpu->cpum.GstCtx.cs));
     Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pVCpu->cpum.GstCtx.ss));
     Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pVCpu->cpum.GstCtx.es));
@@ -1070,11 +1068,7 @@ DECLINLINE(void) iemInitExec(PVMCPU pVCpu, bool fBypassHandlers)
     Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pVCpu->cpum.GstCtx.gs));
     Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pVCpu->cpum.GstCtx.ldtr));
     Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pVCpu->cpum.GstCtx.tr));
-#endif
 
-#ifdef VBOX_WITH_RAW_MODE_NOT_R0
-    CPUMGuestLazyLoadHiddenCsAndSs(pVCpu);
-#endif
     pVCpu->iem.s.uCpl               = CPUMGetGuestCPL(pVCpu);
     pVCpu->iem.s.enmCpuMode         = iemCalcCpuMode(pVCpu);
 #ifdef VBOX_STRICT
@@ -1111,7 +1105,7 @@ DECLINLINE(void) iemInitExec(PVMCPU pVCpu, bool fBypassHandlers)
     pVCpu->iem.s.rcPassUp           = VINF_SUCCESS;
     pVCpu->iem.s.fBypassHandlers    = fBypassHandlers;
 #if 0
-#if defined(VBOX_WITH_NESTED_HWVIRT_VMX) && !defined(IN_RC)
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
     if (    CPUMIsGuestInVmxNonRootMode(&pVCpu->cpum.GstCtx)
         &&  CPUMIsGuestVmxProcCtls2Set(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS2_VIRT_APIC_ACCESS))
     {
@@ -1203,8 +1197,6 @@ DECLINLINE(void) iemInitDecoder(PVMCPU pVCpu, bool fBypassHandlers)
 {
     IEM_CTX_ASSERT(pVCpu, IEM_CPUMCTX_EXTRN_MUST_MASK);
     Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_IEM));
-
-#if defined(VBOX_STRICT) && !defined(VBOX_WITH_RAW_MODE_NOT_R0)
     Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pVCpu->cpum.GstCtx.cs));
     Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pVCpu->cpum.GstCtx.ss));
     Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pVCpu->cpum.GstCtx.es));
@@ -1213,11 +1205,7 @@ DECLINLINE(void) iemInitDecoder(PVMCPU pVCpu, bool fBypassHandlers)
     Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pVCpu->cpum.GstCtx.gs));
     Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pVCpu->cpum.GstCtx.ldtr));
     Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pVCpu->cpum.GstCtx.tr));
-#endif
 
-#ifdef VBOX_WITH_RAW_MODE_NOT_R0
-    CPUMGuestLazyLoadHiddenCsAndSs(pVCpu);
-#endif
     pVCpu->iem.s.uCpl               = CPUMGetGuestCPL(pVCpu);
     IEMMODE enmMode = iemCalcCpuMode(pVCpu);
     pVCpu->iem.s.enmCpuMode         = enmMode;
@@ -1288,8 +1276,6 @@ DECLINLINE(void) iemInitDecoder(PVMCPU pVCpu, bool fBypassHandlers)
 DECLINLINE(void) iemReInitDecoder(PVMCPU pVCpu)
 {
     Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_IEM));
-
-#if defined(VBOX_STRICT) && !defined(VBOX_WITH_RAW_MODE_NOT_R0)
     Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pVCpu->cpum.GstCtx.cs));
     Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pVCpu->cpum.GstCtx.ss));
     Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pVCpu->cpum.GstCtx.es));
@@ -1298,7 +1284,6 @@ DECLINLINE(void) iemReInitDecoder(PVMCPU pVCpu)
     Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pVCpu->cpum.GstCtx.gs));
     Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pVCpu->cpum.GstCtx.ldtr));
     Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pVCpu->cpum.GstCtx.tr));
-#endif
 
     pVCpu->iem.s.uCpl               = CPUMGetGuestCPL(pVCpu);   /** @todo this should be updated during execution! */
     IEMMODE enmMode = iemCalcCpuMode(pVCpu);
@@ -1433,19 +1418,6 @@ IEM_STATIC VBOXSTRICTRC iemInitDecoderAndPrefetchOpcodes(PVMCPU pVCpu, bool fByp
         Assert(GCPtrPC <= UINT32_MAX);
     }
 
-# ifdef VBOX_WITH_RAW_MODE_NOT_R0
-    /* Allow interpretation of patch manager code blocks since they can for
-       instance throw #PFs for perfectly good reasons. */
-    if (pVCpu->iem.s.fInPatchCode)
-    {
-        size_t cbRead = 0;
-        int rc = PATMReadPatchCode(pVCpu->CTX_SUFF(pVM), GCPtrPC, pVCpu->iem.s.abOpcode, sizeof(pVCpu->iem.s.abOpcode), &cbRead);
-        AssertRCReturn(rc, rc);
-        pVCpu->iem.s.cbOpcode = (uint8_t)cbRead; Assert(pVCpu->iem.s.cbOpcode == cbRead); Assert(cbRead > 0);
-        return VINF_SUCCESS;
-    }
-# endif /* VBOX_WITH_RAW_MODE_NOT_R0 */
-
     RTGCPHYS    GCPhys;
     uint64_t    fFlags;
     int rc = PGMGstGetPage(pVCpu, GCPtrPC, &fFlags, &GCPhys);
@@ -1475,59 +1447,45 @@ IEM_STATIC VBOXSTRICTRC iemInitDecoderAndPrefetchOpcodes(PVMCPU pVCpu, bool fByp
     /*
      * Read the bytes at this address.
      */
-    PVM pVM = pVCpu->CTX_SUFF(pVM);
-# if defined(IN_RING3) && defined(VBOX_WITH_RAW_MODE_NOT_R0)
-    size_t cbActual;
-    if (   PATMIsEnabled(pVM)
-        && RT_SUCCESS(PATMR3ReadOrgInstr(pVM, GCPtrPC, pVCpu->iem.s.abOpcode, sizeof(pVCpu->iem.s.abOpcode), &cbActual)))
-    {
-        Log4(("decode - Read %u unpatched bytes at %RGv\n", cbActual, GCPtrPC));
-        Assert(cbActual > 0);
-        pVCpu->iem.s.cbOpcode = (uint8_t)cbActual;
-    }
-    else
-# endif
-    {
-        uint32_t cbLeftOnPage = PAGE_SIZE - (GCPtrPC & PAGE_OFFSET_MASK);
-        if (cbToTryRead > cbLeftOnPage)
-            cbToTryRead = cbLeftOnPage;
-        if (cbToTryRead > sizeof(pVCpu->iem.s.abOpcode))
-            cbToTryRead = sizeof(pVCpu->iem.s.abOpcode);
+    uint32_t cbLeftOnPage = PAGE_SIZE - (GCPtrPC & PAGE_OFFSET_MASK);
+    if (cbToTryRead > cbLeftOnPage)
+        cbToTryRead = cbLeftOnPage;
+    if (cbToTryRead > sizeof(pVCpu->iem.s.abOpcode))
+        cbToTryRead = sizeof(pVCpu->iem.s.abOpcode);
 
-        if (!pVCpu->iem.s.fBypassHandlers)
+    if (!pVCpu->iem.s.fBypassHandlers)
+    {
+        VBOXSTRICTRC rcStrict = PGMPhysRead(pVCpu->CTX_SUFF(pVM), GCPhys, pVCpu->iem.s.abOpcode, cbToTryRead, PGMACCESSORIGIN_IEM);
+        if (RT_LIKELY(rcStrict == VINF_SUCCESS))
+        { /* likely */ }
+        else if (PGM_PHYS_RW_IS_SUCCESS(rcStrict))
         {
-            VBOXSTRICTRC rcStrict = PGMPhysRead(pVM, GCPhys, pVCpu->iem.s.abOpcode, cbToTryRead, PGMACCESSORIGIN_IEM);
-            if (RT_LIKELY(rcStrict == VINF_SUCCESS))
-            { /* likely */ }
-            else if (PGM_PHYS_RW_IS_SUCCESS(rcStrict))
-            {
-                Log(("iemInitDecoderAndPrefetchOpcodes: %RGv/%RGp LB %#x - read status -  rcStrict=%Rrc\n",
-                     GCPtrPC, GCPhys, VBOXSTRICTRC_VAL(rcStrict), cbToTryRead));
-                rcStrict = iemSetPassUpStatus(pVCpu, rcStrict);
-            }
-            else
-            {
-                Log((RT_SUCCESS(rcStrict)
-                     ? "iemInitDecoderAndPrefetchOpcodes: %RGv/%RGp LB %#x - read status - rcStrict=%Rrc\n"
-                     : "iemInitDecoderAndPrefetchOpcodes: %RGv/%RGp LB %#x - read error - rcStrict=%Rrc (!!)\n",
-                     GCPtrPC, GCPhys, VBOXSTRICTRC_VAL(rcStrict), cbToTryRead));
-                return rcStrict;
-            }
+            Log(("iemInitDecoderAndPrefetchOpcodes: %RGv/%RGp LB %#x - read status -  rcStrict=%Rrc\n",
+                 GCPtrPC, GCPhys, VBOXSTRICTRC_VAL(rcStrict), cbToTryRead));
+            rcStrict = iemSetPassUpStatus(pVCpu, rcStrict);
         }
         else
         {
-            rc = PGMPhysSimpleReadGCPhys(pVM, pVCpu->iem.s.abOpcode, GCPhys, cbToTryRead);
-            if (RT_SUCCESS(rc))
-            { /* likely */ }
-            else
-            {
-                Log(("iemInitDecoderAndPrefetchOpcodes: %RGv/%RGp LB %#x - read error - rc=%Rrc (!!)\n",
-                     GCPtrPC, GCPhys, rc, cbToTryRead));
-                return rc;
-            }
+            Log((RT_SUCCESS(rcStrict)
+                 ? "iemInitDecoderAndPrefetchOpcodes: %RGv/%RGp LB %#x - read status - rcStrict=%Rrc\n"
+                 : "iemInitDecoderAndPrefetchOpcodes: %RGv/%RGp LB %#x - read error - rcStrict=%Rrc (!!)\n",
+                 GCPtrPC, GCPhys, VBOXSTRICTRC_VAL(rcStrict), cbToTryRead));
+            return rcStrict;
         }
-        pVCpu->iem.s.cbOpcode = cbToTryRead;
     }
+    else
+    {
+        rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), pVCpu->iem.s.abOpcode, GCPhys, cbToTryRead);
+        if (RT_SUCCESS(rc))
+        { /* likely */ }
+        else
+        {
+            Log(("iemInitDecoderAndPrefetchOpcodes: %RGv/%RGp LB %#x - read error - rc=%Rrc (!!)\n",
+                 GCPtrPC, GCPhys, rc, cbToTryRead));
+            return rc;
+        }
+    }
+    pVCpu->iem.s.cbOpcode = cbToTryRead;
 #endif /* !IEM_WITH_CODE_TLB */
     return VINF_SUCCESS;
 }
@@ -1778,33 +1736,20 @@ IEM_STATIC void iemOpcodeFetchBytesJmp(PVMCPU pVCpu, size_t cbDst, void *pvDst)
         else
         {
             pVCpu->iem.s.CodeTlb.cTlbMisses++;
-# ifdef VBOX_WITH_RAW_MODE_NOT_R0
-            if (PATMIsPatchGCAddr(pVCpu->CTX_SUFF(pVM), pVCpu->cpum.GstCtx.eip))
+            RTGCPHYS    GCPhys;
+            uint64_t    fFlags;
+            int rc = PGMGstGetPage(pVCpu, GCPtrFirst, &fFlags, &GCPhys);
+            if (RT_FAILURE(rc))
             {
-                pTlbe->uTag             = uTag;
-                pTlbe->fFlagsAndPhysRev = IEMTLBE_F_PATCH_CODE  | IEMTLBE_F_PT_NO_WRITE | IEMTLBE_F_PT_NO_USER
-                                        | IEMTLBE_F_PT_NO_WRITE | IEMTLBE_F_PT_NO_DIRTY | IEMTLBE_F_NO_MAPPINGR3;
-                pTlbe->GCPhys           = NIL_RTGCPHYS;
-                pTlbe->pbMappingR3      = NULL;
+                Log(("iemOpcodeFetchMoreBytes: %RGv - rc=%Rrc\n", GCPtrFirst, rc));
+                iemRaisePageFaultJmp(pVCpu, GCPtrFirst, IEM_ACCESS_INSTRUCTION, rc);
             }
-            else
-# endif
-            {
-                RTGCPHYS    GCPhys;
-                uint64_t    fFlags;
-                int rc = PGMGstGetPage(pVCpu, GCPtrFirst, &fFlags, &GCPhys);
-                if (RT_FAILURE(rc))
-                {
-                    Log(("iemOpcodeFetchMoreBytes: %RGv - rc=%Rrc\n", GCPtrFirst, rc));
-                    iemRaisePageFaultJmp(pVCpu, GCPtrFirst, IEM_ACCESS_INSTRUCTION, rc);
-                }
 
-                AssertCompile(IEMTLBE_F_PT_NO_EXEC == 1);
-                pTlbe->uTag             = uTag;
-                pTlbe->fFlagsAndPhysRev = (~fFlags & (X86_PTE_US | X86_PTE_RW | X86_PTE_D)) | (fFlags >> X86_PTE_PAE_BIT_NX);
-                pTlbe->GCPhys           = GCPhys;
-                pTlbe->pbMappingR3      = NULL;
-            }
+            AssertCompile(IEMTLBE_F_PT_NO_EXEC == 1);
+            pTlbe->uTag             = uTag;
+            pTlbe->fFlagsAndPhysRev = (~fFlags & (X86_PTE_US | X86_PTE_RW | X86_PTE_D)) | (fFlags >> X86_PTE_PAE_BIT_NX);
+            pTlbe->GCPhys           = GCPhys;
+            pTlbe->pbMappingR3      = NULL;
         }
 
         /*
@@ -1823,24 +1768,6 @@ IEM_STATIC void iemOpcodeFetchBytesJmp(PVMCPU pVCpu, size_t cbDst, void *pvDst)
                 iemRaisePageFaultJmp(pVCpu, GCPtrFirst, IEM_ACCESS_INSTRUCTION, VERR_ACCESS_DENIED);
             }
         }
-
-# ifdef VBOX_WITH_RAW_MODE_NOT_R0
-        /*
-         * Allow interpretation of patch manager code blocks since they can for
-         * instance throw #PFs for perfectly good reasons.
-         */
-        if (!(pTlbe->fFlagsAndPhysRev & IEMTLBE_F_PATCH_CODE))
-        { /* no unlikely */ }
-        else
-        {
-            /** @todo Could be optimized this a little in ring-3 if we liked. */
-            size_t cbRead = 0;
-            int rc = PATMReadPatchCode(pVCpu->CTX_SUFF(pVM), GCPtrFirst, pvDst, cbDst, &cbRead);
-            AssertRCStmt(rc, longjmp(*CTX_SUFF(pVCpu->iem.s.pJmpBuf), rc));
-            AssertStmt(cbRead == cbDst, longjmp(*CTX_SUFF(pVCpu->iem.s.pJmpBuf), VERR_IEM_IPE_1));
-            return;
-        }
-# endif /* VBOX_WITH_RAW_MODE_NOT_R0 */
 
         /*
          * Look up the physical page info if necessary.
@@ -2025,19 +1952,6 @@ IEM_STATIC VBOXSTRICTRC iemOpcodeFetchMoreBytes(PVMCPU pVCpu, size_t cbMin)
         cbToTryRead = sizeof(pVCpu->iem.s.abOpcode) - pVCpu->iem.s.cbOpcode;
 /** @todo r=bird: Convert assertion into undefined opcode exception? */
     Assert(cbToTryRead >= cbMin - cbLeft); /* ASSUMPTION based on iemInitDecoderAndPrefetchOpcodes. */
-
-# ifdef VBOX_WITH_RAW_MODE_NOT_R0
-    /* Allow interpretation of patch manager code blocks since they can for
-       instance throw #PFs for perfectly good reasons. */
-    if (pVCpu->iem.s.fInPatchCode)
-    {
-        size_t cbRead = 0;
-        int rc = PATMReadPatchCode(pVCpu->CTX_SUFF(pVM), GCPtrNext, pVCpu->iem.s.abOpcode, cbToTryRead, &cbRead);
-        AssertRCReturn(rc, rc);
-        pVCpu->iem.s.cbOpcode = (uint8_t)cbRead; Assert(pVCpu->iem.s.cbOpcode == cbRead); Assert(cbRead > 0);
-        return VINF_SUCCESS;
-    }
-# endif /* VBOX_WITH_RAW_MODE_NOT_R0 */
 
     RTGCPHYS    GCPhys;
     uint64_t    fFlags;
@@ -6258,14 +6172,7 @@ IEM_STATIC PCPUMSELREG iemSRegGetHid(PVMCPU pVCpu, uint8_t iSegReg)
     IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_SREG_FROM_IDX(iSegReg));
     PCPUMSELREG pSReg = &pVCpu->cpum.GstCtx.aSRegs[iSegReg];
 
-#ifdef VBOX_WITH_RAW_MODE_NOT_R0
-    if (RT_LIKELY(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, pSReg)))
-    { /* likely */ }
-    else
-        CPUMGuestLazyLoadHiddenSelectorReg(pVCpu, pSReg);
-#else
     Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, pSReg));
-#endif
     return pSReg;
 }
 
@@ -6279,13 +6186,8 @@ IEM_STATIC PCPUMSELREG iemSRegGetHid(PVMCPU pVCpu, uint8_t iSegReg)
  */
 IEM_STATIC PCPUMSELREG iemSRegUpdateHid(PVMCPU pVCpu, PCPUMSELREG pSReg)
 {
-#ifdef VBOX_WITH_RAW_MODE_NOT_R0
-    if (!CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, pSReg))
-        CPUMGuestLazyLoadHiddenSelectorReg(pVCpu, pSReg);
-#else
     Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, pSReg));
     NOREF(pVCpu);
-#endif
     return pSReg;
 }
 
@@ -8209,7 +8111,7 @@ IEM_STATIC VBOXSTRICTRC
 iemMemPageTranslateAndCheckAccess(PVMCPU pVCpu, RTGCPTR GCPtrMem, uint32_t fAccess, PRTGCPHYS pGCPhysMem)
 {
     /** @todo Need a different PGM interface here.  We're currently using
-     *        generic / REM interfaces. this won't cut it for R0 & RC. */
+     *        generic / REM interfaces. this won't cut it for R0. */
     /** @todo If/when PGM handles paged real-mode, we can remove the hack in
      *        iemSvmHandleWorldSwitch to work around raising a page-fault here. */
     RTGCPHYS    GCPhys;
@@ -14158,9 +14060,6 @@ VMMDECL(VBOXSTRICTRC) IEMExecOne(PVMCPU pVCpu)
     else if (pVCpu->iem.s.cActiveMappings > 0)
         iemMemRollback(pVCpu);
 
-#ifdef IN_RC
-    rcStrict = iemRCRawMaybeReenter(pVCpu, rcStrict);
-#endif
     if (rcStrict != VINF_SUCCESS)
         LogFlow(("IEMExecOne: cs:rip=%04x:%08RX64 ss:rsp=%04x:%08RX64 EFL=%06x - rcStrict=%Rrc\n",
                  pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, pVCpu->cpum.GstCtx.ss.Sel, pVCpu->cpum.GstCtx.rsp, pVCpu->cpum.GstCtx.eflags.u, VBOXSTRICTRC_VAL(rcStrict)));
@@ -14183,9 +14082,6 @@ VMMDECL(VBOXSTRICTRC) IEMExecOneEx(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, uint32_t
     else if (pVCpu->iem.s.cActiveMappings > 0)
         iemMemRollback(pVCpu);
 
-#ifdef IN_RC
-    rcStrict = iemRCRawMaybeReenter(pVCpu, rcStrict);
-#endif
     return rcStrict;
 }
 
@@ -14219,9 +14115,6 @@ VMMDECL(VBOXSTRICTRC) IEMExecOneWithPrefetchedByPC(PVMCPU pVCpu, PCPUMCTXCORE pC
     else if (pVCpu->iem.s.cActiveMappings > 0)
         iemMemRollback(pVCpu);
 
-#ifdef IN_RC
-    rcStrict = iemRCRawMaybeReenter(pVCpu, rcStrict);
-#endif
     return rcStrict;
 }
 
@@ -14241,9 +14134,6 @@ VMMDECL(VBOXSTRICTRC) IEMExecOneBypassEx(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, ui
     else if (pVCpu->iem.s.cActiveMappings > 0)
         iemMemRollback(pVCpu);
 
-#ifdef IN_RC
-    rcStrict = iemRCRawMaybeReenter(pVCpu, rcStrict);
-#endif
     return rcStrict;
 }
 
@@ -14277,9 +14167,6 @@ VMMDECL(VBOXSTRICTRC) IEMExecOneBypassWithPrefetchedByPC(PVMCPU pVCpu, PCPUMCTXC
     else if (pVCpu->iem.s.cActiveMappings > 0)
         iemMemRollback(pVCpu);
 
-#ifdef IN_RC
-    rcStrict = iemRCRawMaybeReenter(pVCpu, rcStrict);
-#endif
     return rcStrict;
 }
 
@@ -14332,9 +14219,6 @@ VMMDECL(VBOXSTRICTRC) IEMExecOneBypassWithPrefetchedByPCWritten(PVMCPU pVCpu, PC
     else if (pVCpu->iem.s.cActiveMappings > 0)
         iemMemRollback(pVCpu);
 
-#ifdef IN_RC
-    rcStrict = iemRCRawMaybeReenter(pVCpu, rcStrict);
-#endif
     return rcStrict;
 }
 
@@ -14498,9 +14382,6 @@ VMMDECL(VBOXSTRICTRC) IEMExecLots(PVMCPU pVCpu, uint32_t cMaxInstructions, uint3
     /*
      * Maybe re-enter raw-mode and log.
      */
-#ifdef IN_RC
-    rcStrict = iemRCRawMaybeReenter(pVCpu, rcStrict);
-#endif
     if (rcStrict != VINF_SUCCESS)
         LogFlow(("IEMExecLots: cs:rip=%04x:%08RX64 ss:rsp=%04x:%08RX64 EFL=%06x - rcStrict=%Rrc\n",
                  pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, pVCpu->cpum.GstCtx.ss.Sel, pVCpu->cpum.GstCtx.rsp, pVCpu->cpum.GstCtx.eflags.u, VBOXSTRICTRC_VAL(rcStrict)));
@@ -14669,9 +14550,6 @@ VMMDECL(VBOXSTRICTRC) IEMExecForExits(PVMCPU pVCpu, uint32_t fWillExit, uint32_t
     /*
      * Maybe re-enter raw-mode and log.
      */
-#ifdef IN_RC
-    rcStrict = iemRCRawMaybeReenter(pVCpu, rcStrict);
-#endif
     if (rcStrict != VINF_SUCCESS)
         LogFlow(("IEMExecForExits: cs:rip=%04x:%08RX64 ss:rsp=%04x:%08RX64 EFL=%06x - rcStrict=%Rrc; ins=%u exits=%u maxdist=%u\n",
                  pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, pVCpu->cpum.GstCtx.ss.Sel, pVCpu->cpum.GstCtx.rsp,
@@ -14855,11 +14733,7 @@ VMM_INT_DECL(int) IEMExecInstr_iret(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore)
 DECLINLINE(VBOXSTRICTRC) iemUninitExecAndFiddleStatusAndMaybeReenter(PVMCPU pVCpu, VBOXSTRICTRC rcStrict)
 {
     iemUninitExec(pVCpu);
-#ifdef IN_RC
-    return iemRCRawMaybeReenter(pVCpu, iemExecStatusCodeFiddling(pVCpu, rcStrict));
-#else
     return iemExecStatusCodeFiddling(pVCpu, rcStrict);
-#endif
 }
 
 
