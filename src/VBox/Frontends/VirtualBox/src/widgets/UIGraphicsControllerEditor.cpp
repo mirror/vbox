@@ -94,6 +94,8 @@ void UIGraphicsControllerEditor::prepare()
             if (m_pCombo)
             {
                 setFocusProxy(m_pCombo->focusProxy());
+                if (m_pLabel)
+                    m_pLabel->setBuddy(m_pCombo->focusProxy());
                 connect(m_pCombo, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::currentIndexChanged),
                         this, &UIGraphicsControllerEditor::sltHandleCurrentIndexChanged);
                 pComboLayout->addWidget(m_pCombo);
