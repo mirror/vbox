@@ -333,6 +333,7 @@ void QIComboBox::prepare()
         AssertPtrReturnVoid(m_pComboBox);
         {
             /* Configure combo-box: */
+            setFocusProxy(m_pComboBox);
             connect(m_pComboBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::activated),
                     this, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::activated));
             connect(m_pComboBox, static_cast<void(QComboBox::*)(const QString &)>(&QComboBox::activated),
