@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIAudioHostDriverEditor class declaration.
+ * VBox Qt GUI - UIAudioControllerEditor class declaration.
  */
 
 /*
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef FEQT_INCLUDED_SRC_widgets_UIAudioHostDriverEditor_h
-#define FEQT_INCLUDED_SRC_widgets_UIAudioHostDriverEditor_h
+#ifndef FEQT_INCLUDED_SRC_widgets_UIAudioControllerEditor_h
+#define FEQT_INCLUDED_SRC_widgets_UIAudioControllerEditor_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -35,26 +35,26 @@
 class QLabel;
 class QIComboBox;
 
-/** QWidget subclass used as an audio host driver editor. */
-class SHARED_LIBRARY_STUFF UIAudioHostDriverEditor : public QIWithRetranslateUI<QWidget>
+/** QWidget subclass used as an audio controller editor. */
+class SHARED_LIBRARY_STUFF UIAudioControllerEditor : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
 
 signals:
 
     /** Notifies listeners about @a enmValue change. */
-    void sigValueChanged(KAudioDriverType enmValue);
+    void sigValueChanged(KAudioControllerType enmValue);
 
 public:
 
-    /** Constructs audio host driver editor passing @a pParent to the base-class.
+    /** Constructs audio controller editor passing @a pParent to the base-class.
       * @param  fWithLabel  Brings whether we should add label ourselves. */
-    UIAudioHostDriverEditor(QWidget *pParent = 0, bool fWithLabel = false);
+    UIAudioControllerEditor(QWidget *pParent = 0, bool fWithLabel = false);
 
     /** Defines editor @a enmValue. */
-    void setValue(KAudioDriverType enmValue);
+    void setValue(KAudioControllerType enmValue);
     /** Returns editor value. */
-    KAudioDriverType value() const;
+    KAudioControllerType value() const;
 
 protected:
 
@@ -82,4 +82,4 @@ private:
     QIComboBox *m_pCombo;
 };
 
-#endif /* !FEQT_INCLUDED_SRC_widgets_UIAudioHostDriverEditor_h */
+#endif /* !FEQT_INCLUDED_SRC_widgets_UIAudioControllerEditor_h */

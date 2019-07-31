@@ -122,7 +122,7 @@ void UIMachineSettingsAudio::getFromCache()
     /* Load old audio data from the cache: */
     m_pCheckBoxAudio->setChecked(oldAudioData.m_fAudioEnabled);
     m_pAudioHostDriverEditor->setValue(oldAudioData.m_audioDriverType);
-    m_pComboAudioController->setCurrentIndex(m_pComboAudioController->findData((int)oldAudioData.m_audioControllerType));
+    m_pAudioControllerEditor->setValue(oldAudioData.m_audioControllerType);
     m_pCheckBoxAudioOutput->setChecked(oldAudioData.m_fAudioOutputEnabled);
     m_pCheckBoxAudioInput->setChecked(oldAudioData.m_fAudioInputEnabled);
 
@@ -138,7 +138,7 @@ void UIMachineSettingsAudio::putToCache()
     /* Gather new audio data: */
     newAudioData.m_fAudioEnabled = m_pCheckBoxAudio->isChecked();
     newAudioData.m_audioDriverType = m_pAudioHostDriverEditor->value();
-    newAudioData.m_audioControllerType = static_cast<KAudioControllerType>(m_pComboAudioController->itemData(m_pComboAudioController->currentIndex()).toInt());
+    newAudioData.m_audioControllerType = m_pAudioControllerEditor->value();
     newAudioData.m_fAudioOutputEnabled = m_pCheckBoxAudioOutput->isChecked();
     newAudioData.m_fAudioInputEnabled = m_pCheckBoxAudioInput->isChecked();
 
@@ -162,13 +162,6 @@ void UIMachineSettingsAudio::retranslateUi()
 {
     /* Translate generated strings: */
     Ui::UIMachineSettingsAudio::retranslateUi(this);
-
-    /* Translate audio-controller combo.
-     * Make sure this order corresponds the same in prepare(): */
-    int iIndex = -1;
-    m_pComboAudioController->setItemText(++iIndex, gpConverter->toString(KAudioControllerType_HDA));
-    m_pComboAudioController->setItemText(++iIndex, gpConverter->toString(KAudioControllerType_AC97));
-    m_pComboAudioController->setItemText(++iIndex, gpConverter->toString(KAudioControllerType_SB16));
 }
 
 void UIMachineSettingsAudio::polishPage()
@@ -177,8 +170,8 @@ void UIMachineSettingsAudio::polishPage()
     m_pCheckBoxAudio->setEnabled(isMachineOffline());
     m_pAudioHostDriverLabel->setEnabled(isMachineOffline());
     m_pAudioHostDriverEditor->setEnabled(isMachineOffline());
-    m_pLabelAudioController->setEnabled(isMachineOffline());
-    m_pComboAudioController->setEnabled(isMachineOffline());
+    m_pAudioControllerLabel->setEnabled(isMachineOffline());
+    m_pAudioControllerEditor->setEnabled(isMachineOffline());
     m_pLabelAudioExtended->setEnabled(isMachineInValidMode());
     m_pCheckBoxAudioOutput->setEnabled(isMachineInValidMode());
     m_pCheckBoxAudioInput->setEnabled(isMachineInValidMode());
@@ -204,15 +197,12 @@ void UIMachineSettingsAudio::prepare()
             m_pAudioHostDriverLabel->setBuddy(m_pAudioHostDriverEditor->focusProxy());
         }
 
-        /* Audio-controller combo-box created in the .ui file. */
-        AssertPtrReturnVoid(m_pComboAudioController);
+        /* Audio controller label & editor created in the .ui file. */
+        AssertPtrReturnVoid(m_pAudioControllerLabel);
+        AssertPtrReturnVoid(m_pAudioControllerEditor);
         {
-            /* Configure combo-box.
-             * Make sure this order corresponds the same in retranslateUi(): */
-            int iIndex = -1;
-            m_pComboAudioController->insertItem(++iIndex, "", KAudioControllerType_HDA);
-            m_pComboAudioController->insertItem(++iIndex, "", KAudioControllerType_AC97);
-            m_pComboAudioController->insertItem(++iIndex, "", KAudioControllerType_SB16);
+            /* Configure label & editor: */
+            m_pAudioControllerLabel->setBuddy(m_pAudioControllerEditor->focusProxy());
         }
     }
 
