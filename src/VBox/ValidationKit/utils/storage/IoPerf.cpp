@@ -706,7 +706,7 @@ static int ioPerfJobTestSetPrep(PIOPERFJOB pJob)
              * to avoid mechanisms like compression or deduplication for now which can influence storage
              * benchmarking unpredictably.
              */
-            pJob->cRandWriteBlocks512B = ((IOPERF_RAND_DATA_BUF_FACTOR - 1) * pJob->cbIoBlock) / 512;
+            pJob->cRandWriteBlocks512B = (uint32_t)(((IOPERF_RAND_DATA_BUF_FACTOR - 1) * pJob->cbIoBlock) / 512);
             pJob->pbRandWrite = (uint8_t *)RTMemPageAllocZ(IOPERF_RAND_DATA_BUF_FACTOR * pJob->cbIoBlock);
             if (RT_LIKELY(pJob->pbRandWrite))
             {
