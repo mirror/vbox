@@ -15,10 +15,6 @@
 ; hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 ;
 
-%if HC_ARCH_BITS == 32
- %define VMX_USE_CACHED_VMCS_ACCESSES
-%endif
-
 ;Maximum number of cached entries.
 %define VMX_VMCS_CACHE_MAX_ENTRY                             128
 

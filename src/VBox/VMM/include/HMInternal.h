@@ -46,10 +46,6 @@
 # define VBOX_ENABLE_64_BITS_GUESTS
 #endif
 
-#if HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS)
-# define VMX_USE_CACHED_VMCS_ACCESSES
-#endif
-
 /** @def HM_PROFILE_EXIT_DISPATCH
  * Enables profiling of the VM exit handler dispatching. */
 #if 0 || defined(DOXYGEN_RUNNING)

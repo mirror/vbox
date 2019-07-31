@@ -1306,28 +1306,6 @@ ENDPROC   hmR0SVMRunWrapXMM
 %%skip_ldt_write32:
     add     xSP, xCB     ; pCtx
 
- %ifdef VMX_USE_CACHED_VMCS_ACCESSES
-    pop     xDX         ; Saved pVmcsCache
-
-    ; Note! If we get here as a result of invalid VMCS pointer, all the following
-    ; vmread's will fail (only eflags.cf=1 will be set) but that shouldn't cause any
-    ; trouble only just less efficient.
-    mov     ecx, [ss:xDX + VMXVMCSCACHE.Read.cValidEntries]
-    cmp     ecx, 0      ; Can't happen
-    je      %%no_cached_read32
-    jmp     %%cached_read32
-
-ALIGN(16)
-%%cached_read32:
-    dec     xCX
-    mov     eax, [ss:xDX + VMXVMCSCACHE.Read.aField + xCX * 4]
-    ; Note! This leaves the high 32 bits of the cache entry unmodified!!
-    vmread  [ss:xDX + VMXVMCSCACHE.Read.aFieldVal + xCX * 8], xAX
-    cmp     xCX, 0
-    jnz     %%cached_read32
-%%no_cached_read32:
- %endif
-
     ; Restore segment registers.
     MYPOPSEGS xAX, ax
 
@@ -1436,29 +1414,6 @@ BEGINPROC VMXR0StartVM32
     ; Note! Trashes rdx & rcx, so we moved it here (amd64 case).
     ;
     MYPUSHSEGS xAX, ax
-
-%ifdef VMX_USE_CACHED_VMCS_ACCESSES
-    mov     ecx, [xBX + VMXVMCSCACHE.Write.cValidEntries]
-    cmp     ecx, 0
-    je      .no_cached_writes
-    mov     edx, ecx
-    mov     ecx, 0
-    jmp     .cached_write
-
-ALIGN(16)
-.cached_write:
-    mov     eax, [xBX + VMXVMCSCACHE.Write.aField + xCX * 4]
-    vmwrite xAX, [xBX + VMXVMCSCACHE.Write.aFieldVal + xCX * 8]
-    inc     xCX
-    cmp     xCX, xDX
-    jl     .cached_write
-
-    mov     dword [xBX + VMXVMCSCACHE.Write.cValidEntries], 0
-.no_cached_writes:
-
-    ; Save the pVmcsCache pointer.
-    push    xBX
-%endif
 
     ; Save the pCtx pointer.
     push    xSI
@@ -1633,27 +1588,6 @@ ENDPROC VMXR0StartVM32
 %%skip_ldt_write64:
     pop     xSI         ; pCtx (needed in rsi by the macros below)
 
- %ifdef VMX_USE_CACHED_VMCS_ACCESSES
-    pop     xDX         ; Saved pVmcsCache
-
-    ; Note! If we get here as a result of invalid VMCS pointer, all the following
-    ; vmread's will fail (only eflags.cf=1 will be set) but that shouldn't cause any
-    ; trouble only just less efficient.
-    mov     ecx, [xDX + VMXVMCSCACHE.Read.cValidEntries]
-    cmp     ecx, 0      ; Can't happen
-    je      %%no_cached_read64
-    jmp     %%cached_read64
-
-ALIGN(16)
-%%cached_read64:
-    dec     xCX
-    mov     eax, [xDX + VMXVMCSCACHE.Read.aField + xCX * 4]
-    vmread  [xDX + VMXVMCSCACHE.Read.aFieldVal + xCX * 8], xAX
-    cmp     xCX, 0
-    jnz     %%cached_read64
-%%no_cached_read64:
- %endif
-
     ; Restore segment registers.
     MYPOPSEGS xAX, ax
 
@@ -1745,29 +1679,6 @@ BEGINPROC VMXR0StartVM64
     ; Note! Trashes rdx & rcx, so we moved it here (amd64 case).
     ;
     MYPUSHSEGS xAX, ax
-
-%ifdef VMX_USE_CACHED_VMCS_ACCESSES
-    mov     ecx, [xBX + VMXVMCSCACHE.Write.cValidEntries]
-    cmp     ecx, 0
-    je      .no_cached_writes
-    mov     edx, ecx
-    mov     ecx, 0
-    jmp     .cached_write
-
-ALIGN(16)
-.cached_write:
-    mov     eax, [xBX + VMXVMCSCACHE.Write.aField + xCX * 4]
-    vmwrite xAX, [xBX + VMXVMCSCACHE.Write.aFieldVal + xCX * 8]
-    inc     xCX
-    cmp     xCX, xDX
-    jl     .cached_write
-
-    mov     dword [xBX + VMXVMCSCACHE.Write.cValidEntries], 0
-.no_cached_writes:
-
-    ; Save the pVmcsCache pointer.
-    push    xBX
-%endif
 
     ; Save the pCtx pointer.
     push    xSI

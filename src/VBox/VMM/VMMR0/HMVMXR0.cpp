@@ -669,18 +669,6 @@ static const uint32_t g_aVmcsFields[] =
 };
 #endif /* VBOX_WITH_NESTED_HWVIRT_VMX */
 
-#ifdef VMX_USE_CACHED_VMCS_ACCESSES
-static const uint32_t g_aVmcsCacheSegBase[] =
-{
-    VMX_VMCS_GUEST_ES_BASE_CACHE_IDX,
-    VMX_VMCS_GUEST_CS_BASE_CACHE_IDX,
-    VMX_VMCS_GUEST_SS_BASE_CACHE_IDX,
-    VMX_VMCS_GUEST_DS_BASE_CACHE_IDX,
-    VMX_VMCS_GUEST_FS_BASE_CACHE_IDX,
-    VMX_VMCS_GUEST_GS_BASE_CACHE_IDX
-};
-AssertCompile(RT_ELEMENTS(g_aVmcsCacheSegBase)  == X86_SREG_COUNT);
-#endif
 static const uint32_t g_aVmcsSegBase[] =
 {
     VMX_VMCS_GUEST_ES_BASE,
@@ -6983,235 +6971,6 @@ static void hmR0VmxReportWorldSwitchError(PVMCPU pVCpu, int rcVMRun, PVMXTRANSIE
 }
 
 
-#if HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS)
-# ifndef VMX_USE_CACHED_VMCS_ACCESSES
-#  error "VMX_USE_CACHED_VMCS_ACCESSES not defined when it should be!"
-# endif
-
-/**
- * Initialize the VMCS-Read cache.
- *
- * The VMCS cache is used for 32-bit hosts running 64-bit guests (except 32-bit
- * Darwin which runs with 64-bit paging in 32-bit mode) for 64-bit fields that
- * cannot be accessed in 32-bit mode. Some 64-bit fields -can- be accessed
- * (those that have a 32-bit FULL & HIGH part).
- *
- * @param   pVCpu   The cross context virtual CPU structure.
- */
-static void hmR0VmxInitVmcsReadCache(PVMCPU pVCpu)
-{
-#define VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, idxField)           \
-    do {                                                           \
-        Assert(pCache->Read.aField[idxField##_CACHE_IDX] == 0);    \
-        pCache->Read.aField[idxField##_CACHE_IDX]    = idxField;   \
-        pCache->Read.aFieldVal[idxField##_CACHE_IDX] = 0;          \
-        ++cReadFields;                                             \
-    } while (0)
-
-    PVMXVMCSCACHE pCache = &pVCpu->hm.s.vmx.VmcsCache;
-    uint32_t cReadFields = 0;
-
-    /*
-     * Don't remove the #if 0'd fields in this code. They're listed here for consistency
-     * and serve to indicate exceptions to the rules.
-     */
-
-    /* Guest-natural selector base fields. */
-#if 0
-    /* These are 32-bit in practice. See Intel spec. 2.5 "Control Registers". */
-    VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS_GUEST_CR0);
-    VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS_GUEST_CR4);
-#endif
-    VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS_GUEST_ES_BASE);
-    VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS_GUEST_CS_BASE);
-    VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS_GUEST_SS_BASE);
-    VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS_GUEST_DS_BASE);
-    VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS_GUEST_FS_BASE);
-    VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS_GUEST_GS_BASE);
-    VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS_GUEST_LDTR_BASE);
-    VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS_GUEST_TR_BASE);
-    VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS_GUEST_GDTR_BASE);
-    VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS_GUEST_IDTR_BASE);
-    VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS_GUEST_RSP);
-    VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS_GUEST_RIP);
-#if 0
-    /* Unused natural width guest-state fields. */
-    VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS_GUEST_PENDING_DEBUG_XCPTS);
-    VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS_GUEST_CR3); /* Handled in nested paging case */
-#endif
-    VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS_GUEST_SYSENTER_ESP);
-    VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS_GUEST_SYSENTER_EIP);
-
-    /* 64-bit guest-state fields; unused as we use two 32-bit VMREADs for
-       these 64-bit fields (using "FULL" and "HIGH" fields). */
-#if 0
-    VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS64_GUEST_VMCS_LINK_PTR_FULL);
-    VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS64_GUEST_DEBUGCTL_FULL);
-    VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS64_GUEST_PAT_FULL);
-    VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS64_GUEST_EFER_FULL);
-    VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS64_GUEST_PERF_GLOBAL_CTRL_FULL);
-    VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS64_GUEST_PDPTE0_FULL);
-    VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS64_GUEST_PDPTE1_FULL);
-    VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS64_GUEST_PDPTE2_FULL);
-    VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS64_GUEST_PDPTE3_FULL);
-#endif
-
-    /* Natural width guest-state fields. */
-    VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS_RO_EXIT_QUALIFICATION);
-    VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS_RO_GUEST_LINEAR_ADDR);
-
-    if (pVCpu->CTX_SUFF(pVM)->hm.s.fNestedPaging)
-    {
-        VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS_GUEST_CR3);
-        AssertMsg(cReadFields == VMX_VMCS_MAX_NESTED_PAGING_CACHE_IDX, ("cReadFields=%u expected %u\n", cReadFields,
-                                                                        VMX_VMCS_MAX_NESTED_PAGING_CACHE_IDX));
-        pCache->Read.cValidEntries = VMX_VMCS_MAX_NESTED_PAGING_CACHE_IDX;
-    }
-    else
-    {
-        AssertMsg(cReadFields == VMX_VMCS_MAX_CACHE_IDX, ("cReadFields=%u expected %u\n", cReadFields, VMX_VMCS_MAX_CACHE_IDX));
-        pCache->Read.cValidEntries = VMX_VMCS_MAX_CACHE_IDX;
-    }
-
-#undef VMXLOCAL_INIT_READ_CACHE_FIELD
-}
-
-
-/**
- * Writes a field into the VMCS. This can either directly invoke a VMWRITE or
- * queue up the VMWRITE by using the VMCS write cache (on 32-bit hosts, except
- * darwin, running 64-bit guests).
- *
- * @returns VBox status code.
- * @param   pVCpu       The cross context virtual CPU structure.
- * @param   idxField    The VMCS field encoding.
- * @param   u64Val      16, 32 or 64-bit value.
- */
-VMMR0DECL(int) VMXWriteVmcs64Ex(PVMCPU pVCpu, uint32_t idxField, uint64_t u64Val)
-{
-    AssertPtr(pVCpu);
-    int rc;
-    switch (idxField)
-    {
-        /*
-         * These fields consists of a "FULL" and a "HIGH" part which can be written to individually.
-         */
-        /* 64-bit Control fields. */
-        case VMX_VMCS64_CTRL_IO_BITMAP_A_FULL:
-        case VMX_VMCS64_CTRL_IO_BITMAP_B_FULL:
-        case VMX_VMCS64_CTRL_MSR_BITMAP_FULL:
-        case VMX_VMCS64_CTRL_EXIT_MSR_STORE_FULL:
-        case VMX_VMCS64_CTRL_EXIT_MSR_LOAD_FULL:
-        case VMX_VMCS64_CTRL_ENTRY_MSR_LOAD_FULL:
-        case VMX_VMCS64_CTRL_EXEC_VMCS_PTR_FULL:
-        case VMX_VMCS64_CTRL_TSC_OFFSET_FULL:
-        case VMX_VMCS64_CTRL_VIRT_APIC_PAGEADDR_FULL:
-        case VMX_VMCS64_CTRL_APIC_ACCESSADDR_FULL:
-        case VMX_VMCS64_CTRL_VMFUNC_CTRLS_FULL:
-        case VMX_VMCS64_CTRL_EPTP_FULL:
-        case VMX_VMCS64_CTRL_EPTP_LIST_FULL:
-        /* 64-bit Guest-state fields. */
-        case VMX_VMCS64_GUEST_VMCS_LINK_PTR_FULL:
-        case VMX_VMCS64_GUEST_DEBUGCTL_FULL:
-        case VMX_VMCS64_GUEST_PAT_FULL:
-        case VMX_VMCS64_GUEST_EFER_FULL:
-        case VMX_VMCS64_GUEST_PERF_GLOBAL_CTRL_FULL:
-        case VMX_VMCS64_GUEST_PDPTE0_FULL:
-        case VMX_VMCS64_GUEST_PDPTE1_FULL:
-        case VMX_VMCS64_GUEST_PDPTE2_FULL:
-        case VMX_VMCS64_GUEST_PDPTE3_FULL:
-        /* 64-bit Host-state fields. */
-        case VMX_VMCS64_HOST_PAT_FULL:
-        case VMX_VMCS64_HOST_EFER_FULL:
-        case VMX_VMCS64_HOST_PERF_GLOBAL_CTRL_FULL:
-        {
-            rc  = VMXWriteVmcs32(idxField,     RT_LO_U32(u64Val));
-            rc |= VMXWriteVmcs32(idxField + 1, RT_HI_U32(u64Val));
-            break;
-        }
-
-        /*
-         * These fields do not have high and low parts. Queue up the VMWRITE by using the VMCS write-cache (for 64-bit
-         * values). When we switch the host to 64-bit mode for running 64-bit guests, these VMWRITEs get executed then.
-         */
-        /* Natural-width Guest-state fields.  */
-        case VMX_VMCS_GUEST_CR3:
-        case VMX_VMCS_GUEST_ES_BASE:
-        case VMX_VMCS_GUEST_CS_BASE:
-        case VMX_VMCS_GUEST_SS_BASE:
-        case VMX_VMCS_GUEST_DS_BASE:
-        case VMX_VMCS_GUEST_FS_BASE:
-        case VMX_VMCS_GUEST_GS_BASE:
-        case VMX_VMCS_GUEST_LDTR_BASE:
-        case VMX_VMCS_GUEST_TR_BASE:
-        case VMX_VMCS_GUEST_GDTR_BASE:
-        case VMX_VMCS_GUEST_IDTR_BASE:
-        case VMX_VMCS_GUEST_RSP:
-        case VMX_VMCS_GUEST_RIP:
-        case VMX_VMCS_GUEST_SYSENTER_ESP:
-        case VMX_VMCS_GUEST_SYSENTER_EIP:
-        {
-            if (!(RT_HI_U32(u64Val)))
-            {
-                /* If this field is 64-bit, VT-x will zero out the top bits. */
-                rc = VMXWriteVmcs32(idxField, RT_LO_U32(u64Val));
-            }
-            else
-            {
-                /* Assert that only the 32->64 switcher case should ever come here. */
-                Assert(pVCpu->CTX_SUFF(pVM)->hm.s.fAllow64BitGuests);
-                rc = VMXWriteCachedVmcsEx(pVCpu, idxField, u64Val);
-            }
-            break;
-        }
-
-        default:
-        {
-            AssertMsgFailed(("VMXWriteVmcs64Ex: Invalid field %#RX32 (pVCpu=%p u64Val=%#RX64)\n", idxField, pVCpu, u64Val));
-            pVCpu->hm.s.u32HMError = idxField;
-            rc = VERR_INVALID_PARAMETER;
-            break;
-        }
-    }
-    AssertRCReturn(rc, rc);
-    return rc;
-}
-
-
-/**
- * Queue up a VMWRITE by using the VMCS write cache.
- * This is only used on 32-bit hosts (except darwin) for 64-bit guests.
- *
- * @param   pVCpu       The cross context virtual CPU structure.
- * @param   idxField    The VMCS field encoding.
- * @param   u64Val      16, 32 or 64-bit value.
- */
-VMMR0DECL(int) VMXWriteCachedVmcsEx(PVMCPU pVCpu, uint32_t idxField, uint64_t u64Val)
-{
-    AssertPtr(pVCpu);
-    PVMXVMCSCACHE pCache = &pVCpu->hm.s.vmx.VmcsCache;
-
-    AssertMsgReturn(pCache->Write.cValidEntries < VMX_VMCS_CACHE_MAX_ENTRY - 1,
-                    ("entries=%u\n", pCache->Write.cValidEntries), VERR_ACCESS_DENIED);
-
-    /* Make sure there are no duplicates. */
-    for (uint32_t i = 0; i < pCache->Write.cValidEntries; i++)
-    {
-        if (pCache->Write.aField[i] == idxField)
-        {
-            pCache->Write.aFieldVal[i] = u64Val;
-            return VINF_SUCCESS;
-        }
-    }
-
-    pCache->Write.aField[pCache->Write.cValidEntries]    = idxField;
-    pCache->Write.aFieldVal[pCache->Write.cValidEntries] = u64Val;
-    pCache->Write.cValidEntries++;
-    return VINF_SUCCESS;
-}
-#endif /* HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS) */
-
-
 /**
  * Sets up the usage of TSC-offsetting and updates the VMCS.
  *
@@ -7541,17 +7300,14 @@ static int hmR0VmxImportGuestSegReg(PVMCPU pVCpu, uint8_t iSegReg)
     uint32_t const idxSel   = g_aVmcsSegSel[iSegReg];
     uint32_t const idxLimit = g_aVmcsSegLimit[iSegReg];
     uint32_t const idxAttr  = g_aVmcsSegAttr[iSegReg];
-#ifdef VMX_USE_CACHED_VMCS_ACCESSES
-    uint32_t const idxBase  = g_aVmcsCacheSegBase[iSegReg];
-#else
     uint32_t const idxBase  = g_aVmcsSegBase[iSegReg];
-#endif
+
     uint64_t u64Base;
     uint32_t u32Sel, u32Limit, u32Attr;
     int rc = VMXReadVmcs32(idxSel,   &u32Sel);
     rc    |= VMXReadVmcs32(idxLimit, &u32Limit);
     rc    |= VMXReadVmcs32(idxAttr,  &u32Attr);
-    rc    |= VMXReadVmcsGstNByIdxVal(idxBase, &u64Base);
+    rc    |= VMXReadVmcsGstN(idxBase, &u64Base);
     if (RT_SUCCESS(rc))
     {
         PCPUMSELREG pSelReg = &pVCpu->cpum.GstCtx.aSRegs[iSegReg];

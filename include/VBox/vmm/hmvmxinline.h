@@ -225,6 +225,7 @@ DECLINLINE(bool) HMVmxIsVmentryVectoring(uint32_t uEntryIntInfo, uint8_t *pEntry
 /** @defgroup grp_hm_vmx_asm    VMX Assembly Helpers
  * @{
  */
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
 
 /**
  * Restores some host-state fields that need not be done on every VM-exit.
@@ -461,7 +462,7 @@ DECLASM(int) VMXGetCurrentVmcs(RTHCPHYS *pHCPhysVmcs);
 
 
 /**
- * Executes VMWRITE.
+ * Executes VMWRITE for a 32-bit field.
  *
  * @returns VBox status code.
  * @retval  VINF_SUCCESS.
@@ -528,8 +529,9 @@ the_end:
 }
 #endif
 
+
 /**
- * Executes VMWRITE.
+ * Executes VMWRITE for a 64-bit field.
  *
  * @returns VBox status code.
  * @retval  VINF_SUCCESS.
@@ -542,10 +544,7 @@ the_end:
  * @remarks The values of the two status codes can be OR'ed together, the result
  *          will be VERR_VMX_INVALID_VMCS_PTR.
  */
-#if !defined(RT_ARCH_X86)
-# if !VMX_USE_MSC_INTRINSICS || ARCH_BITS != 64
-DECLASM(int) VMXWriteVmcs64(uint32_t uFieldEnc, uint64_t u64Val);
-# else  /* VMX_USE_MSC_INTRINSICS */
+#if (defined(RT_ARCH_AMD64) && VMX_USE_MSC_INTRINSICS)
 DECLINLINE(int) VMXWriteVmcs64(uint32_t uFieldEnc, uint64_t u64Val)
 {
     unsigned char rcMsc = __vmx_vmwrite(uFieldEnc, u64Val);
@@ -553,18 +552,17 @@ DECLINLINE(int) VMXWriteVmcs64(uint32_t uFieldEnc, uint64_t u64Val)
         return VINF_SUCCESS;
     return rcMsc == 2 ? VERR_VMX_INVALID_VMCS_PTR : VERR_VMX_INVALID_VMCS_FIELD;
 }
-# endif /* VMX_USE_MSC_INTRINSICS */
 #else
-# define VMXWriteVmcs64(uFieldEnc, u64Val)    VMXWriteVmcs64Ex(pVCpu, uFieldEnc, u64Val) /** @todo dead ugly, picking up pVCpu like this */
-VMMR0DECL(int) VMXWriteVmcs64Ex(PVMCPU pVCpu, uint32_t uFieldEnc, uint64_t u64Val);
+DECLASM(int) VMXWriteVmcs64(uint32_t uFieldEnc, uint64_t u64Val);
 #endif
 
-#if ARCH_BITS == 32
-# define VMXWriteVmcsHstN                       VMXWriteVmcs32
-# define VMXWriteVmcsGstN(uFieldEnc, u64Val)    VMXWriteVmcs64Ex(pVCpu, uFieldEnc, u64Val)
-#else  /* ARCH_BITS == 64 */
-# define VMXWriteVmcsHstN                       VMXWriteVmcs64
-# define VMXWriteVmcsGstN                       VMXWriteVmcs64
+
+#ifdef RT_ARCH_AMD64
+# define VMXWriteVmcsHstN       VMXWriteVmcs64
+# define VMXWriteVmcsGstN       VMXWriteVmcs64
+#else
+# define VMXWriteVmcsHstN       VMXWriteVmcs32
+# define VMXWriteVmcsGstN       VMXWriteVmcs32
 #endif
 
 
@@ -666,6 +664,7 @@ the_end:
 }
 #endif
 
+
 /**
  * Executes VMREAD for a 64-bit field.
  *
@@ -715,27 +714,15 @@ DECLINLINE(int) VMXReadVmcs64(uint32_t uFieldEnc, uint64_t *pData)
 }
 #endif
 
-
-/**
- * Gets the last instruction error value from the current VMCS.
- *
- * @returns VBox status code.
- */
-DECLINLINE(uint32_t) VMXGetLastError(void)
-{
-#if ARCH_BITS == 64
-    uint64_t uLastError = 0;
-    int rc = VMXReadVmcs64(VMX_VMCS32_RO_VM_INSTR_ERROR, &uLastError);
-    AssertRC(rc);
-    return (uint32_t)uLastError;
-
-#else /* 32-bit host: */
-    uint32_t uLastError = 0;
-    int rc = VMXReadVmcs32(VMX_VMCS32_RO_VM_INSTR_ERROR, &uLastError);
-    AssertRC(rc);
-    return uLastError;
+#ifdef RT_ARCH_AMD64
+# define VMXReadVmcsHstN        VMXReadVmcs64
+# define VMXReadVmcsGstN        VMXReadVmcs64
+#else
+# define VMXReadVmcsHstN        VMXReadVmcs32
+# define VMXReadVmcsGstN        VMXReadVmcs32
 #endif
-}
+
+#endif /* RT_ARCH_AMD64 || RT_ARCH_X86 */
 
 /** @} */
 

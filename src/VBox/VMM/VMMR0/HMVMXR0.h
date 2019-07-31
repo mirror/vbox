@@ -30,7 +30,6 @@ RT_C_DECLS_BEGIN
  */
 
 #ifdef IN_RING0
-
 VMMR0DECL(int)          VMXR0Enter(PVMCPU pVCpu);
 VMMR0DECL(void)         VMXR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, PVMCPU pVCpu, bool fGlobalInit);
 VMMR0DECL(int)          VMXR0EnableCpu(PHMPHYSCPU pHostCpu, PVM pVM, void *pvPageCpu, RTHCPHYS pPageCpuPhys,
@@ -47,29 +46,6 @@ VMMR0DECL(int)          VMXR0ImportStateOnDemand(PVMCPU pVCpu, uint64_t fWhat);
 VMMR0DECL(VBOXSTRICTRC) VMXR0RunGuestCode(PVMCPU pVCpu);
 DECLASM(int)            VMXR0StartVM32(RTHCUINT fResume, PCPUMCTX pCtx, PVMXVMCSCACHE pVmcsCache, PVM pVM, PVMCPU pVCpu);
 DECLASM(int)            VMXR0StartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVMXVMCSCACHE pVmcsCache, PVM pVM, PVMCPU pVCpu);
-
-/* Cached VMCS accesses -- defined only for 32-bit hosts (with 64-bit guest support). */
-# ifdef VMX_USE_CACHED_VMCS_ACCESSES
-VMMR0DECL(int) VMXWriteCachedVmcsEx(PVMCPU pVCpu, uint32_t idxField, uint64_t u64Val);
-
-DECLINLINE(int) VMXReadCachedVmcsEx(PVMCPU pVCpu, uint32_t idxCache, RTGCUINTREG *pVal)
-{
-    Assert(idxCache <= VMX_VMCS_MAX_NESTED_PAGING_CACHE_IDX);
-    *pVal = pVCpu->hm.s.vmx.VmcsCache.Read.aFieldVal[idxCache];
-    return VINF_SUCCESS;
-}
-# endif
-
-# if HC_ARCH_BITS == 32
-#  define VMXReadVmcsHstN                                 VMXReadVmcs32
-#  define VMXReadVmcsGstN(idxField, pVal)                 VMXReadCachedVmcsEx(pVCpu, idxField##_CACHE_IDX, pVal)
-#  define VMXReadVmcsGstNByIdxVal(idxField, pVal)         VMXReadCachedVmcsEx(pVCpu, idxField, pVal)
-# else /* HC_ARCH_BITS == 64 */
-#  define VMXReadVmcsHstN                                 VMXReadVmcs64
-#  define VMXReadVmcsGstN                                 VMXReadVmcs64
-#  define VMXReadVmcsGstNByIdxVal                         VMXReadVmcs64
-# endif
-
 #endif /* IN_RING0 */
 
 /** @} */
