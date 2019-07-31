@@ -574,7 +574,7 @@ DECLASM(int) VMXWriteVmcs64(uint32_t uFieldEnc, uint64_t u64Val);
 DECLINLINE(int) VMXWriteVmcs16(uint32_t uVmcsField, uint16_t u16Val)
 {
     Assert(RT_BF_GET(uVmcsField, VMX_BF_VMCSFIELD_WIDTH) == VMXVMCSFIELDWIDTH_16BIT);
-    return VMXWriteVmcs64(uVmcsField, u16Val);
+    return VMXWriteVmcs32(uVmcsField, u16Val);
 }
 
 
@@ -753,9 +753,9 @@ DECLINLINE(int) VMXReadVmcs64(uint32_t uFieldEnc, uint64_t *pData)
 DECLINLINE(int) VMXReadVmcs16(uint32_t uVmcsField, uint16_t *pData)
 {
     AssertMsg(RT_BF_GET(uVmcsField, VMX_BF_VMCSFIELD_WIDTH) == VMXVMCSFIELDWIDTH_16BIT, ("%#RX32\n", uVmcsField));
-    uint64_t u64Tmp;
-    int rc = VMXReadVmcs64(uVmcsField, &u64Tmp);
-    *pData = (uint16_t)u64Tmp;
+    uint32_t u32Tmp;
+    int rc = VMXReadVmcs32(uVmcsField, &u32Tmp);
+    *pData = (uint16_t)u32Tmp;
     return rc;
 }
 
