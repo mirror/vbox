@@ -31,7 +31,6 @@
 
 #include <VBox/vmm/hm_vmx.h>
 #include <VBox/err.h>
-#include <iprt/assert.h>
 
 /* In Visual C++ versions prior to 2012, the vmx intrinsics are only available
    when targeting AMD64. */
@@ -753,7 +752,7 @@ DECLINLINE(int) VMXReadVmcs64(uint32_t uFieldEnc, uint64_t *pData)
  */
 DECLINLINE(int) VMXReadVmcs16(uint32_t uVmcsField, uint16_t *pData)
 {
-    AssertMsg(((uVmcsField >> VMX_BF_VMCSFIELD_WIDTH_SHIFT) & 7) == VMX_VMCSFIELD_WIDTH_16BIT, ("%#RX32\n", uVmcsField));
+    /* AssertMsg(((uVmcsField >> VMX_BF_VMCSFIELD_WIDTH_SHIFT) & 7) == VMX_VMCSFIELD_WIDTH_16BIT, ("%#RX32\n", uVmcsField)); */
     uint32_t u32Tmp;
     int rc = VMXReadVmcs32(uVmcsField, &u32Tmp);
     *pData = (uint16_t)u32Tmp;
