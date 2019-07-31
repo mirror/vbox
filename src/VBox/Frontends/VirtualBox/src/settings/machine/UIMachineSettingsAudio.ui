@@ -51,20 +51,17 @@
           <number>0</number>
          </property>
          <item row="0" column="0">
-          <widget class="QLabel" name="m_pLabelAudioDriver">
+          <widget class="QLabel" name="m_pAudioHostDriverLabel">
            <property name="text">
             <string>Host Audio &amp;Driver:</string>
            </property>
            <property name="alignment">
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
            </property>
-           <property name="buddy">
-            <cstring>m_pComboAudioDriver</cstring>
-           </property>
           </widget>
          </item>
          <item row="0" column="1">
-          <widget class="QComboBox" name="m_pComboAudioDriver">
+          <widget class="UIAudioHostDriverEditor" name="m_pAudioHostDriverEditor">
            <property name="sizePolicy">
             <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
              <horstretch>1</horstretch>
@@ -166,6 +163,13 @@
   </layout>
  </widget>
  <resources/>
+ <customwidgets>
+  <customwidget>
+   <class>UIAudioHostDriverEditor</class>
+   <extends>QWidget</extends>
+   <header>UIAudioHostDriverEditor.h</header>
+  </customwidget>
+ </customwidgets>
  <connections>
   <connection>
    <sender>m_pCheckBoxAudio</sender>
