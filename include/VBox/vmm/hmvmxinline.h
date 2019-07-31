@@ -31,6 +31,7 @@
 
 #include <VBox/vmm/hm_vmx.h>
 #include <VBox/err.h>
+#include <iprt/assert.h>
 
 /* In Visual C++ versions prior to 2012, the vmx intrinsics are only available
    when targeting AMD64. */
