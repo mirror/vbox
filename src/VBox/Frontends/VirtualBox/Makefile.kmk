@@ -892,6 +892,7 @@ UICommon_QT_MOCHDRS = \
 	src/widgets/UIBootOrderEditor.h \
 	src/widgets/UIFilePathSelector.h \
 	src/widgets/UIFilmContainer.h \
+	src/widgets/UIGraphicsControllerEditor.h \
 	src/widgets/UIHostComboEditor.h \
 	src/widgets/UIHotKeyEditor.h \
 	src/widgets/UIMediaComboBox.h \
@@ -1385,6 +1386,7 @@ UICommon_SOURCES = \
 	src/widgets/UIBootOrderEditor.cpp \
 	src/widgets/UIFilePathSelector.cpp \
 	src/widgets/UIFilmContainer.cpp \
+	src/widgets/UIGraphicsControllerEditor.cpp \
 	src/widgets/UIHostComboEditor.cpp \
 	src/widgets/UIHotKeyEditor.cpp \
 	src/widgets/UIMediaComboBox.cpp \

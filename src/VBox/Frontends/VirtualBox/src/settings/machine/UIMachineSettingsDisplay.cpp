@@ -421,7 +421,7 @@ void UIMachineSettingsDisplay::getFromCache()
     m_pEditorVideoScreenCount->setValue(oldDisplayData.m_cGuestScreenCount);
     m_pScaleFactorEditor->setScaleFactors(oldDisplayData.m_scaleFactors);
     m_pScaleFactorEditor->setMonitorCount(oldDisplayData.m_cGuestScreenCount);
-    m_pComboGraphicsControllerType->setCurrentIndex(m_pComboGraphicsControllerType->findText(gpConverter->toString(oldDisplayData.m_graphicsControllerType)));
+    m_pGraphicsControllerEditor->setValue(oldDisplayData.m_graphicsControllerType);
 #ifdef VBOX_WITH_CRHGSMI
     m_pCheckbox3D->setChecked(oldDisplayData.m_f3dAccelerationEnabled);
 #endif
@@ -491,7 +491,7 @@ void UIMachineSettingsDisplay::putToCache()
     newDisplayData.m_iCurrentVRAM = m_pVideoMemoryEditor->value();
     newDisplayData.m_cGuestScreenCount = m_pEditorVideoScreenCount->value();
     newDisplayData.m_scaleFactors = m_pScaleFactorEditor->scaleFactors();
-    newDisplayData.m_graphicsControllerType = gpConverter->fromString<KGraphicsControllerType>(m_pComboGraphicsControllerType->currentText());
+    newDisplayData.m_graphicsControllerType = m_pGraphicsControllerEditor->value();
 #ifdef VBOX_WITH_CRHGSMI
     newDisplayData.m_f3dAccelerationEnabled = m_pCheckbox3D->isChecked();
 #endif
@@ -691,7 +691,7 @@ void UIMachineSettingsDisplay::setOrderAfter(QWidget *pWidget)
     setTabOrder(m_pVideoMemoryEditor, m_pSliderVideoScreenCount);
     setTabOrder(m_pSliderVideoScreenCount, m_pEditorVideoScreenCount);
     setTabOrder(m_pEditorVideoScreenCount, m_pScaleFactorEditor);
-    setTabOrder(m_pScaleFactorEditor, m_pComboGraphicsControllerType);
+    setTabOrder(m_pScaleFactorEditor, m_pGraphicsControllerEditor);
 
     /* Remote Display tab-order: */
     setTabOrder(m_pCheckboxRemoteDisplay, m_pEditorRemoteDisplayPort);
@@ -720,10 +720,6 @@ void UIMachineSettingsDisplay::retranslateUi()
     CSystemProperties sys = uiCommon().virtualBox().GetSystemProperties();
     m_pLabelVideoScreenCountMin->setText(QString::number(1));
     m_pLabelVideoScreenCountMax->setText(QString::number(qMin(sys.GetMaxGuestMonitors(), (ULONG)8)));
-    m_pComboGraphicsControllerType->setItemText(0, gpConverter->toString(KGraphicsControllerType_Null));
-    m_pComboGraphicsControllerType->setItemText(1, gpConverter->toString(KGraphicsControllerType_VBoxVGA));
-    m_pComboGraphicsControllerType->setItemText(2, gpConverter->toString(KGraphicsControllerType_VMSVGA));
-    m_pComboGraphicsControllerType->setItemText(3, gpConverter->toString(KGraphicsControllerType_VBoxSVGA));
 
     /* Remote Display stuff: */
     m_pComboRemoteDisplayAuthMethod->setItemText(0, gpConverter->toString(KAuthType_Null));
@@ -764,6 +760,8 @@ void UIMachineSettingsDisplay::polishPage()
     m_pLabelVideoScreenCountMax->setEnabled(isMachineOffline());
     m_pEditorVideoScreenCount->setEnabled(isMachineOffline());
     m_pScaleFactorEditor->setEnabled(isMachineInValidMode());
+    m_pGraphicsControllerLabel->setEnabled(isMachineOffline());
+    m_pGraphicsControllerEditor->setEnabled(isMachineOffline());
     m_pLabelVideoOptions->setEnabled(isMachineOffline());
 #ifdef VBOX_WITH_CRHGSMI
     m_pCheckbox3D->setEnabled(isMachineOffline());
@@ -775,7 +773,6 @@ void UIMachineSettingsDisplay::polishPage()
 #else
     m_pCheckbox2DVideo->hide();
 #endif
-    m_pComboGraphicsControllerType->setEnabled(isMachineOffline());
 
     /* Polish 'Remote Display' availability: */
     m_pTabWidget->setTabEnabled(1, oldDisplayData.m_fRemoteDisplayServerSupported);
@@ -826,7 +823,7 @@ void UIMachineSettingsDisplay::sltHandleGuestScreenCountEditorChange()
 void UIMachineSettingsDisplay::sltHandleGraphicsControllerComboChange()
 {
     /* Update Video RAM requirements: */
-    m_pVideoMemoryEditor->setGraphicsControllerType(gpConverter->fromString<KGraphicsControllerType>(m_pComboGraphicsControllerType->currentText()));
+    m_pVideoMemoryEditor->setGraphicsControllerType(m_pGraphicsControllerEditor->value());
 
     /* Revalidate: */
     revalidate();
@@ -1017,14 +1014,11 @@ void UIMachineSettingsDisplay::prepareTabScreen()
             m_pEditorVideoScreenCount->setMaximum(cMaxGuestScreens);
         }
 
-        /* Graphics controller combo-box created in the .ui file. */
-        AssertPtrReturnVoid(m_pComboGraphicsControllerType);
+        /* Graphics controller label & editor created in the .ui file. */
+        AssertPtrReturnVoid(m_pGraphicsControllerEditor);
         {
-            /* Configure combo-box: */
-            m_pComboGraphicsControllerType->insertItem(0, ""); /* KGraphicsControllerType_Null */
-            m_pComboGraphicsControllerType->insertItem(1, ""); /* KGraphicsControllerType_VBoxVGA */
-            m_pComboGraphicsControllerType->insertItem(2, ""); /* KGraphicsControllerType_VMSVGA */
-            m_pComboGraphicsControllerType->insertItem(3, ""); /* KGraphicsControllerType_VBoxSVGA */
+            /* Configure label & editor: */
+            m_pGraphicsControllerLabel->setBuddy(m_pGraphicsControllerEditor->focusProxy());
         }
     }
 }
@@ -1197,7 +1191,7 @@ void UIMachineSettingsDisplay::prepareConnections()
     connect(m_pVideoMemoryEditor, &UIVideoMemoryEditor::sigValidChanged, this, &UIMachineSettingsDisplay::revalidate);
     connect(m_pSliderVideoScreenCount, SIGNAL(valueChanged(int)), this, SLOT(sltHandleGuestScreenCountSliderChange()));
     connect(m_pEditorVideoScreenCount, SIGNAL(valueChanged(int)), this, SLOT(sltHandleGuestScreenCountEditorChange()));
-    connect(m_pComboGraphicsControllerType, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
+    connect(m_pGraphicsControllerEditor, &UIGraphicsControllerEditor::sigValueChanged,
             this, &UIMachineSettingsDisplay::sltHandleGraphicsControllerComboChange);
 #ifdef VBOX_WITH_CRHGSMI
     connect(m_pCheckbox3D, &QCheckBox::stateChanged,
