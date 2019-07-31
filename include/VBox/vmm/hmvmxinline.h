@@ -557,6 +557,27 @@ DECLASM(int) VMXWriteVmcs64(uint32_t uFieldEnc, uint64_t u64Val);
 #endif
 
 
+/**
+ * Executes VMWRITE for a 16-bit VMCS field.
+ *
+ * @returns VBox status code.
+ * @retval  VINF_SUCCESS.
+ * @retval  VERR_VMX_INVALID_VMCS_PTR.
+ * @retval  VERR_VMX_INVALID_VMCS_FIELD.
+ *
+ * @param   uVmcsField  The VMCS field.
+ * @param   u16Val      The 16-bit value to set.
+ *
+ * @remarks The values of the two status codes can be OR'ed together, the result
+ *          will be VERR_VMX_INVALID_VMCS_PTR.
+ */
+DECLINLINE(int) VMXWriteVmcs16(uint32_t uVmcsField, uint16_t u16Val)
+{
+    Assert(RT_BF_GET(uVmcsField, VMX_BF_VMCSFIELD_WIDTH) == VMXVMCSFIELDWIDTH_16BIT);
+    return VMXWriteVmcs64(uVmcsField, u16Val);
+}
+
+
 #ifdef RT_ARCH_AMD64
 # define VMXWriteVmcsHstN       VMXWriteVmcs64
 # define VMXWriteVmcsGstN       VMXWriteVmcs64
@@ -713,6 +734,31 @@ DECLINLINE(int) VMXReadVmcs64(uint32_t uFieldEnc, uint64_t *pData)
 # endif
 }
 #endif
+
+
+/**
+ * Executes VMREAD for a 64-bit field.
+ *
+ * @returns VBox status code.
+ * @retval  VINF_SUCCESS.
+ * @retval  VERR_VMX_INVALID_VMCS_PTR.
+ * @retval  VERR_VMX_INVALID_VMCS_FIELD.
+ *
+ * @param   uVmcsField  The VMCS field.
+ * @param   pData       Where to store VMCS field value.
+ *
+ * @remarks The values of the two status codes can be OR'ed together, the result
+ *          will be VERR_VMX_INVALID_VMCS_PTR.
+ */
+DECLINLINE(int) VMXReadVmcs16(uint32_t uVmcsField, uint16_t *pData)
+{
+    AssertMsg(RT_BF_GET(uVmcsField, VMX_BF_VMCSFIELD_WIDTH) == VMXVMCSFIELDWIDTH_16BIT, ("%#RX32\n", uVmcsField));
+    uint64_t u64Tmp;
+    int rc = VMXReadVmcs64(uVmcsField, &u64Tmp);
+    *pData = (uint16_t)u64Tmp;
+    return rc;
+}
+
 
 #ifdef RT_ARCH_AMD64
 # define VMXReadVmcsHstN        VMXReadVmcs64
