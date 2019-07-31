@@ -1463,8 +1463,8 @@ VMMDECL(bool)       CPUMIsGuestInPAEMode(PCVMCPU pVCpu);
  * @{  */
 VMM_INT_DECL(bool)      CPUMIsGuestPhysIntrEnabled(PVMCPU pVCpu);
 VMM_INT_DECL(bool)      CPUMIsGuestVirtIntrEnabled(PVMCPU pVCpu);
-VMM_INT_DECL(uint64_t)  CPUMApplyNestedGuestTscOffset(PCVMCPU pVCpu, uint64_t uTicks);
-VMM_INT_DECL(uint64_t)  CPUMRemoveNestedGuestTscOffset(PCVMCPU pVCpu, uint64_t uTicks);
+VMM_INT_DECL(uint64_t)  CPUMApplyNestedGuestTscOffset(PCVMCPU pVCpu, uint64_t uTscValue);
+VMM_INT_DECL(uint64_t)  CPUMRemoveNestedGuestTscOffset(PCVMCPU pVCpu, uint64_t uTscValue);
 
 /* SVM helpers. */
 VMM_INT_DECL(bool)      CPUMIsGuestSvmPhysIntrEnabled(PCVMCPU pVCpu, PCCPUMCTX pCtx);
@@ -2622,61 +2622,8 @@ VMMR3DECL(uint32_t)         CPUMR3DeterminHostMxCsrMask(void);
 
 VMMR3DECL(int)              CPUMR3MsrRangesInsert(PVM pVM, PCCPUMMSRRANGE pNewRange);
 
-# if defined(VBOX_WITH_RAW_MODE) || defined(DOXYGEN_RUNNING)
-/** @name APIs for the CPUID raw-mode patch (legacy).
- * @{ */
-VMMR3_INT_DECL(RCPTRTYPE(PCCPUMCPUID))     CPUMR3GetGuestCpuIdPatmDefRCPtr(PVM pVM);
-VMMR3_INT_DECL(uint32_t)                   CPUMR3GetGuestCpuIdPatmStdMax(PVM pVM);
-VMMR3_INT_DECL(uint32_t)                   CPUMR3GetGuestCpuIdPatmExtMax(PVM pVM);
-VMMR3_INT_DECL(uint32_t)                   CPUMR3GetGuestCpuIdPatmCentaurMax(PVM pVM);
-VMMR3_INT_DECL(RCPTRTYPE(PCCPUMCPUID))     CPUMR3GetGuestCpuIdPatmStdRCPtr(PVM pVM);
-VMMR3_INT_DECL(RCPTRTYPE(PCCPUMCPUID))     CPUMR3GetGuestCpuIdPatmExtRCPtr(PVM pVM);
-VMMR3_INT_DECL(RCPTRTYPE(PCCPUMCPUID))     CPUMR3GetGuestCpuIdPatmCentaurRCPtr(PVM pVM);
-/** @} */
-# endif
-
 /** @} */
 #endif /* IN_RING3 */
-
-#ifdef IN_RC
-/** @defgroup grp_cpum_rc    The CPUM Raw-mode Context API
- * @{
- */
-
-/**
- * Calls a guest trap/interrupt handler directly
- *
- * Assumes a trap stack frame has already been setup on the guest's stack!
- * This function does not return!
- *
- * @param   pRegFrame   Original trap/interrupt context
- * @param   selCS       Code selector of handler
- * @param   pHandler    GC virtual address of handler
- * @param   eflags      Callee's EFLAGS
- * @param   selSS       Stack selector for handler
- * @param   pEsp        Stack address for handler
- */
-DECLASM(void)           CPUMGCCallGuestTrapHandler(PCPUMCTXCORE pRegFrame, uint32_t selCS, RTRCPTR pHandler,
-                                                   uint32_t eflags, uint32_t selSS, RTRCPTR pEsp);
-
-/**
- * Call guest V86 code directly.
- *
- * This function does not return!
- *
- * @param   pRegFrame   Original trap/interrupt context
- */
-DECLASM(void)           CPUMGCCallV86Code(PCPUMCTXCORE pRegFrame);
-
-VMMDECL(int)            CPUMHandleLazyFPU(PVMCPU pVCpu);
-VMMDECL(uint32_t)       CPUMRCGetGuestCPL(PVMCPU pVCpu, PCPUMCTXCORE pRegFrame);
-#ifdef VBOX_WITH_RAW_RING1
-VMMDECL(void)           CPUMRCRecheckRawState(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore);
-#endif
-VMMRCDECL(void)         CPUMRCProcessForceFlag(PVMCPU pVCpu);
-
-/** @} */
-#endif /* IN_RC */
 
 #ifdef IN_RING0
 /** @defgroup grp_cpum_r0    The CPUM ring-0 API

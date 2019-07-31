@@ -437,56 +437,37 @@ VMMR0_INT_DECL(int) CPUMR0Trap07Handler(PVM pVM, PVMCPU pVCpu)
  */
 VMMR0_INT_DECL(int) CPUMR0LoadGuestFPU(PVM pVM, PVMCPU pVCpu)
 {
-    int rc = VINF_SUCCESS;
+    int rc;
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
     Assert(!(pVCpu->cpum.s.fUseFlags & CPUM_USED_FPU_GUEST));
     Assert(!(pVCpu->cpum.s.fUseFlags & CPUM_SYNC_FPU_STATE));
 
-#if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS)
-    if (CPUMIsGuestInLongModeEx(&pVCpu->cpum.s.Guest))
+    if (!pVM->cpum.s.HostFeatures.fLeakyFxSR)
     {
         Assert(!(pVCpu->cpum.s.fUseFlags & CPUM_USED_MANUAL_XMM_RESTORE));
-
-        /* Save the host state if necessary. */
-        if (!(pVCpu->cpum.s.fUseFlags & CPUM_USED_FPU_HOST))
-            rc = cpumRZSaveHostFPUState(&pVCpu->cpum.s);
-
-        /* Restore the state on entry as we need to be in 64-bit mode to access the full state. */
-        pVCpu->cpum.s.fUseFlags |= CPUM_SYNC_FPU_STATE;
-
-        Assert(   (pVCpu->cpum.s.fUseFlags & (CPUM_USED_FPU_HOST | CPUM_USED_FPU_SINCE_REM))
-               ==                            (CPUM_USED_FPU_HOST | CPUM_USED_FPU_SINCE_REM));
+        rc = cpumR0SaveHostRestoreGuestFPUState(&pVCpu->cpum.s);
     }
     else
-#endif
     {
-        if (!pVM->cpum.s.HostFeatures.fLeakyFxSR)
-        {
-            Assert(!(pVCpu->cpum.s.fUseFlags & CPUM_USED_MANUAL_XMM_RESTORE));
+        Assert(!(pVCpu->cpum.s.fUseFlags & CPUM_USED_MANUAL_XMM_RESTORE) || (pVCpu->cpum.s.fUseFlags & CPUM_USED_FPU_HOST));
+        /** @todo r=ramshankar: Can't we used a cached value here
+         *        instead of reading the MSR? host EFER doesn't usually
+         *        change. */
+        uint64_t uHostEfer = ASMRdMsr(MSR_K6_EFER);
+        if (!(uHostEfer & MSR_K6_EFER_FFXSR))
             rc = cpumR0SaveHostRestoreGuestFPUState(&pVCpu->cpum.s);
-        }
         else
         {
-            Assert(!(pVCpu->cpum.s.fUseFlags & CPUM_USED_MANUAL_XMM_RESTORE) || (pVCpu->cpum.s.fUseFlags & CPUM_USED_FPU_HOST));
-            /** @todo r=ramshankar: Can't we used a cached value here
-             *        instead of reading the MSR? host EFER doesn't usually
-             *        change. */
-            uint64_t uHostEfer = ASMRdMsr(MSR_K6_EFER);
-            if (!(uHostEfer & MSR_K6_EFER_FFXSR))
-                rc = cpumR0SaveHostRestoreGuestFPUState(&pVCpu->cpum.s);
-            else
-            {
-                RTCCUINTREG const uSavedFlags = ASMIntDisableFlags();
-                pVCpu->cpum.s.fUseFlags |= CPUM_USED_MANUAL_XMM_RESTORE;
-                ASMWrMsr(MSR_K6_EFER, uHostEfer & ~MSR_K6_EFER_FFXSR);
-                rc = cpumR0SaveHostRestoreGuestFPUState(&pVCpu->cpum.s);
-                ASMWrMsr(MSR_K6_EFER, uHostEfer | MSR_K6_EFER_FFXSR);
-                ASMSetFlags(uSavedFlags);
-            }
+            RTCCUINTREG const uSavedFlags = ASMIntDisableFlags();
+            pVCpu->cpum.s.fUseFlags |= CPUM_USED_MANUAL_XMM_RESTORE;
+            ASMWrMsr(MSR_K6_EFER, uHostEfer & ~MSR_K6_EFER_FFXSR);
+            rc = cpumR0SaveHostRestoreGuestFPUState(&pVCpu->cpum.s);
+            ASMWrMsr(MSR_K6_EFER, uHostEfer | MSR_K6_EFER_FFXSR);
+            ASMSetFlags(uSavedFlags);
         }
-        Assert(   (pVCpu->cpum.s.fUseFlags & (CPUM_USED_FPU_GUEST | CPUM_USED_FPU_HOST | CPUM_USED_FPU_SINCE_REM))
-               ==                            (CPUM_USED_FPU_GUEST | CPUM_USED_FPU_HOST | CPUM_USED_FPU_SINCE_REM));
     }
+    Assert(   (pVCpu->cpum.s.fUseFlags & (CPUM_USED_FPU_GUEST | CPUM_USED_FPU_HOST | CPUM_USED_FPU_SINCE_REM))
+           ==                            (CPUM_USED_FPU_GUEST | CPUM_USED_FPU_HOST | CPUM_USED_FPU_SINCE_REM));
     return rc;
 }
 
@@ -680,21 +661,14 @@ VMMR0_INT_DECL(void) CPUMR0LoadGuestDebugState(PVMCPU pVCpu, bool fDr6)
      * Activate the guest state DR0-3.
      * DR7 and DR6 (if fDr6 is true) are left to the caller.
      */
-#if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS)
-    if (CPUMIsGuestInLongModeEx(&pVCpu->cpum.s.Guest))
-        ASMAtomicOrU32(&pVCpu->cpum.s.fUseFlags, CPUM_SYNC_DEBUG_REGS_GUEST); /* Postpone it to the world switch. */
-    else
-#endif
-    {
-        ASMSetDR0(pVCpu->cpum.s.Guest.dr[0]);
-        ASMSetDR1(pVCpu->cpum.s.Guest.dr[1]);
-        ASMSetDR2(pVCpu->cpum.s.Guest.dr[2]);
-        ASMSetDR3(pVCpu->cpum.s.Guest.dr[3]);
-        if (fDr6)
-            ASMSetDR6(pVCpu->cpum.s.Guest.dr[6]);
+    ASMSetDR0(pVCpu->cpum.s.Guest.dr[0]);
+    ASMSetDR1(pVCpu->cpum.s.Guest.dr[1]);
+    ASMSetDR2(pVCpu->cpum.s.Guest.dr[2]);
+    ASMSetDR3(pVCpu->cpum.s.Guest.dr[3]);
+    if (fDr6)
+        ASMSetDR6(pVCpu->cpum.s.Guest.dr[6]);
 
-        ASMAtomicOrU32(&pVCpu->cpum.s.fUseFlags, CPUM_USED_DEBUG_REGS_GUEST);
-    }
+    ASMAtomicOrU32(&pVCpu->cpum.s.fUseFlags, CPUM_USED_DEBUG_REGS_GUEST);
 }
 
 
@@ -723,21 +697,14 @@ VMMR0_INT_DECL(void) CPUMR0LoadHyperDebugState(PVMCPU pVCpu, bool fDr6)
      * Activate the guest state DR0-3.
      * DR7 and DR6 (if fDr6 is true) are left to the caller.
      */
-#if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS)
-    if (CPUMIsGuestInLongModeEx(&pVCpu->cpum.s.Guest))
-        ASMAtomicOrU32(&pVCpu->cpum.s.fUseFlags, CPUM_SYNC_DEBUG_REGS_HYPER); /* Postpone it. */
-    else
-#endif
-    {
-        ASMSetDR0(pVCpu->cpum.s.Hyper.dr[0]);
-        ASMSetDR1(pVCpu->cpum.s.Hyper.dr[1]);
-        ASMSetDR2(pVCpu->cpum.s.Hyper.dr[2]);
-        ASMSetDR3(pVCpu->cpum.s.Hyper.dr[3]);
-        if (fDr6)
-            ASMSetDR6(X86_DR6_INIT_VAL);
+    ASMSetDR0(pVCpu->cpum.s.Hyper.dr[0]);
+    ASMSetDR1(pVCpu->cpum.s.Hyper.dr[1]);
+    ASMSetDR2(pVCpu->cpum.s.Hyper.dr[2]);
+    ASMSetDR3(pVCpu->cpum.s.Hyper.dr[3]);
+    if (fDr6)
+        ASMSetDR6(X86_DR6_INIT_VAL);
 
-        ASMAtomicOrU32(&pVCpu->cpum.s.fUseFlags, CPUM_USED_DEBUG_REGS_HYPER);
-    }
+    ASMAtomicOrU32(&pVCpu->cpum.s.fUseFlags, CPUM_USED_DEBUG_REGS_HYPER);
 }
 
 #ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
@@ -830,7 +797,7 @@ static DECLCALLBACK(void) cpumR0MapLocalApicCpuChecker(RTCPUID idCpu, void *pvUs
     {
         g_aLApics[iCpu].uVersion    = uApicVersion;
 
-#if 0 /* enable if you need it. */
+# if 0 /* enable if you need it. */
         if (g_aLApics[iCpu].fX2Apic)
             SUPR0Printf("CPUM: X2APIC %02u - ver %#010x, lint0=%#07x lint1=%#07x pc=%#07x thmr=%#07x cmci=%#07x\n",
                         iCpu, uApicVersion,
@@ -857,7 +824,7 @@ static DECLCALLBACK(void) cpumR0MapLocalApicCpuChecker(RTCPUID idCpu, void *pvUs
                             cEiLvt >= 4 ? ApicRegRead(g_aLApics[iCpu].pv, 0x530) : 0);
             }
         }
-#endif
+# endif
     }
     else
     {
@@ -921,7 +888,7 @@ static int cpumR0MapLocalApics(void)
         return rc;
     }
 
-#ifdef LOG_ENABLED
+# ifdef LOG_ENABLED
     /*
      * Log the result (pretty useless, requires enabling CPUM in VBoxDrv
      * and !VBOX_WITH_R0_LOGGING).
@@ -938,7 +905,7 @@ static int cpumR0MapLocalApics(void)
             }
         Log(("CPUM: %u APICs, %u X2APICs\n", cEnabled, cX2Apics));
     }
-#endif
+# endif
 
     return VINF_SUCCESS;
 }

@@ -465,21 +465,14 @@ typedef struct CPUMCTX
 
     /** Pointer to the FPU/SSE/AVX/XXXX state ring-0 mapping. */
     R0PTRTYPE(PX86XSAVEAREA)    pXStateR0;
-#if HC_ARCH_BITS == 32
-    uint32_t                    uXStateR0Padding;
-#endif
     /** Pointer to the FPU/SSE/AVX/XXXX state ring-3 mapping. */
     R3PTRTYPE(PX86XSAVEAREA)    pXStateR3;
-#if HC_ARCH_BITS == 32
-    uint32_t                    uXStateR3Padding;
-#endif
-    /** Pointer to the FPU/SSE/AVX/XXXX state raw-mode mapping. */
-    RCPTRTYPE(PX86XSAVEAREA)    pXStateRC;
     /** State component offsets into pXState, UINT16_MAX if not present. */
     uint16_t                    aoffXState[64];
 
     /** 0x2d4 - World switcher flags, CPUMCTX_WSF_XXX. */
     uint32_t                    fWorldSwitcher;
+    uint32_t                    fUnused;
     /** 0x2d8 - Externalized state tracker, CPUMCTX_EXTRN_XXX.
      * Currently only used internally in NEM/win.  */
     uint64_t                    fExtrn;
@@ -497,14 +490,8 @@ typedef struct CPUMCTX
                 RTGCPHYS                GCPhysVmcb;
                 /** 0x2f0 - Cache of the nested-guest VMCB - R0 ptr. */
                 R0PTRTYPE(PSVMVMCB)     pVmcbR0;
-#if HC_ARCH_BITS == 32
-                uint32_t                uVmcbR0Padding;
-#endif
                 /** 0x2f8 - Cache of the nested-guest VMCB - R3 ptr. */
                 R3PTRTYPE(PSVMVMCB)     pVmcbR3;
-#if HC_ARCH_BITS == 32
-                uint32_t                uVmcbR3Padding;
-#endif
                 /** 0x300 - Guest's host-state save area. */
                 SVMHOSTSTATE            HostState;
                 /** 0x3b8 - Guest TSC time-stamp of when the previous PAUSE instr. was executed. */
@@ -519,24 +506,12 @@ typedef struct CPUMCTX
                 bool                    afPadding[3];
                 /** 0x3c8 - MSR permission bitmap - R0 ptr. */
                 R0PTRTYPE(void *)       pvMsrBitmapR0;
-#if HC_ARCH_BITS == 32
-                uint32_t                uvMsrBitmapR0Padding;
-#endif
                 /** 0x3d0 - MSR permission bitmap - R3 ptr. */
                 R3PTRTYPE(void *)       pvMsrBitmapR3;
-#if HC_ARCH_BITS == 32
-                uint32_t                uvMsrBitmapR3Padding;
-#endif
                 /** 0x3d8 - IO permission bitmap - R0 ptr. */
                 R0PTRTYPE(void *)       pvIoBitmapR0;
-#if HC_ARCH_BITS == 32
-                uint32_t                uIoBitmapR0Padding;
-#endif
                 /** 0x3e0 - IO permission bitmap - R3 ptr. */
                 R3PTRTYPE(void *)       pvIoBitmapR3;
-#if HC_ARCH_BITS == 32
-                uint32_t                uIoBitmapR3Padding;
-#endif
                 /** 0x3e8 - Host physical address of the nested-guest VMCB.  */
                 RTHCPHYS                HCPhysVmcb;
                 /** 0x3f0 - Padding. */
@@ -571,104 +546,44 @@ typedef struct CPUMCTX
                 bool                    fNmiUnblockingIret;
                 /** 0x310 - The current VMCS - R0 ptr. */
                 R0PTRTYPE(PVMXVVMCS)    pVmcsR0;
-#if HC_ARCH_BITS == 32
-                uint32_t                uVmcsR0Padding;
-#endif
                 /** 0x318 - The curent VMCS - R3 ptr. */
                 R3PTRTYPE(PVMXVVMCS)    pVmcsR3;
-#if HC_ARCH_BITS == 32
-                uint32_t                uVmcsR3Padding;
-#endif
                 /** 0X320 - The shadow VMCS - R0 ptr. */
                 R0PTRTYPE(PVMXVVMCS)    pShadowVmcsR0;
-#if HC_ARCH_BITS == 32
-                uint32_t                uShadowVmcsR0Padding;
-#endif
                 /** 0x328 - The shadow VMCS - R3 ptr. */
                 R3PTRTYPE(PVMXVVMCS)    pShadowVmcsR3;
-#if HC_ARCH_BITS == 32
-                uint32_t                uShadowVmcsR3Padding;
-#endif
                 /** 0x330 - The virtual-APIC page - R0 ptr. */
                 R0PTRTYPE(void *)       pvVirtApicPageR0;
-#if HC_ARCH_BITS == 32
-                uint32_t                uVirtApicPageR0Padding;
-#endif
                 /** 0x338 - The virtual-APIC page - R3 ptr. */
                 R3PTRTYPE(void *)       pvVirtApicPageR3;
-#if HC_ARCH_BITS == 32
-                uint32_t                uVirtApicPageR3Padding;
-#endif
                 /** 0x340 - The VMREAD bitmap - R0 ptr. */
                 R0PTRTYPE(void *)       pvVmreadBitmapR0;
-#if HC_ARCH_BITS == 32
-                uint32_t                uVmreadBitmapR0Padding;
-#endif
                 /** 0x348 - The VMREAD bitmap - R3 ptr. */
                 R3PTRTYPE(void *)       pvVmreadBitmapR3;
-#if HC_ARCH_BITS == 32
-                uint32_t                uVmreadBitmapR3Padding;
-#endif
                 /** 0x350 - The VMWRITE bitmap - R0 ptr. */
                 R0PTRTYPE(void *)       pvVmwriteBitmapR0;
-#if HC_ARCH_BITS == 32
-                uint32_t                uVmwriteBitmapR0Padding;
-#endif
                 /** 0x358 - The VMWRITE bitmap - R3 ptr. */
                 R3PTRTYPE(void *)       pvVmwriteBitmapR3;
-#if HC_ARCH_BITS == 32
-                uint32_t                uVmwriteBitmapR3Padding;
-#endif
                 /** 0x360 - The VM-entry MSR-load area - R0 ptr. */
                 R0PTRTYPE(PVMXAUTOMSR)  pEntryMsrLoadAreaR0;
-#if HC_ARCH_BITS == 32
-                uint32_t                uEntryMsrLoadAreaR0;
-#endif
                 /** 0x368 - The VM-entry MSR-load area - R3 ptr. */
                 R3PTRTYPE(PVMXAUTOMSR)  pEntryMsrLoadAreaR3;
-#if HC_ARCH_BITS == 32
-                uint32_t                uEntryMsrLoadAreaR3;
-#endif
                 /** 0x370 - The VM-exit MSR-store area - R0 ptr. */
                 R0PTRTYPE(PVMXAUTOMSR)  pExitMsrStoreAreaR0;
-#if HC_ARCH_BITS == 32
-                uint32_t                uExitMsrStoreAreaR0;
-#endif
                 /** 0x378 - The VM-exit MSR-store area - R3 ptr. */
                 R3PTRTYPE(PVMXAUTOMSR)  pExitMsrStoreAreaR3;
-#if HC_ARCH_BITS == 32
-                uint32_t                uExitMsrStoreAreaR3;
-#endif
                 /** 0x380 - The VM-exit MSR-load area - R0 ptr. */
                 R0PTRTYPE(PVMXAUTOMSR)  pExitMsrLoadAreaR0;
-#if HC_ARCH_BITS == 32
-                uint32_t                uExitMsrLoadAreaR0;
-#endif
                 /** 0x388 - The VM-exit MSR-load area - R3 ptr. */
                 R3PTRTYPE(PVMXAUTOMSR)  pExitMsrLoadAreaR3;
-#if HC_ARCH_BITS == 32
-                uint32_t                uExitMsrLoadAreaR3;
-#endif
                 /** 0x390 - MSR bitmap - R0 ptr. */
                 R0PTRTYPE(void *)       pvMsrBitmapR0;
-#if HC_ARCH_BITS == 32
-                uint32_t                uMsrBitmapR0;
-#endif
                 /** 0x398 - The MSR bitmap - R3 ptr. */
                 R3PTRTYPE(void *)       pvMsrBitmapR3;
-#if HC_ARCH_BITS == 32
-                uint32_t                uMsrBitmapR3;
-#endif
                 /** 0x3a0 - The I/O bitmap - R0 ptr. */
                 R0PTRTYPE(void *)       pvIoBitmapR0;
-#if HC_ARCH_BITS == 32
-                uint32_t                uIoBitmapR0;
-#endif
                 /** 0x3a8 - The I/O bitmap - R3 ptr. */
                 R3PTRTYPE(void *)       pvIoBitmapR3;
-#if HC_ARCH_BITS == 32
-                uint32_t                uIoBitmapR3;
-#endif
                 /** 0x3b0 - Guest TSC timestamp of the first PAUSE instruction that is considered to
                  *  be the first in a loop. */
                 uint64_t                uFirstPauseLoopTick;
@@ -774,8 +689,7 @@ AssertCompileMemberOffset(CPUMCTX,                       aXcr, 552);
 AssertCompileMemberOffset(CPUMCTX,                fXStateMask, 568);
 AssertCompileMemberOffset(CPUMCTX,                  pXStateR0, 576);
 AssertCompileMemberOffset(CPUMCTX,                  pXStateR3, 584);
-AssertCompileMemberOffset(CPUMCTX,                  pXStateRC, 592);
-AssertCompileMemberOffset(CPUMCTX,                 aoffXState, 596);
+AssertCompileMemberOffset(CPUMCTX,                 aoffXState, 592);
 AssertCompileMemberOffset(CPUMCTX, hwvirt, 0x2e0);
 AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.uMsrHSavePa,                 0x2e0);
 AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.pVmcbR0,                     0x2f0);

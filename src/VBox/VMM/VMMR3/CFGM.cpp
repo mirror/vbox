@@ -975,15 +975,6 @@ VMMR3DECL(int) CFGMR3ConstructDefaultTree(PVM pVM)
     UPDATERC();
     rc = CFGMR3InsertInteger(pRoot, "TimerMillies",         10);
     UPDATERC();
-    rc = CFGMR3InsertInteger(pRoot, "RawR3Enabled",         1);
-    UPDATERC();
-    /** @todo CFGM Defaults: RawR0, PATMEnabled and CASMEnabled needs attention later. */
-    rc = CFGMR3InsertInteger(pRoot, "RawR0Enabled",         1);
-    UPDATERC();
-    rc = CFGMR3InsertInteger(pRoot, "PATMEnabled",          1);
-    UPDATERC();
-    rc = CFGMR3InsertInteger(pRoot, "CSAMEnabled",          1);
-    UPDATERC();
 
     /*
      * PDM.

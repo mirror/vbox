@@ -2170,8 +2170,6 @@ VMMR3DECL(int) CPUMR3Init(PVM pVM)
                             ("%#llx\n", fXStateHostMask), fXStateHostMask = 0);
     }
     pVM->cpum.s.fXStateHostMask = fXStateHostMask;
-    if (VM_IS_RAW_MODE_ENABLED(pVM)) /* For raw-mode, we only use XSAVE/XRSTOR when the guest starts using it (CPUID/CR4 visibility). */
-        fXStateHostMask = 0;
     LogRel(("CPUM: fXStateHostMask=%#llx; initial: %#llx; host XCR0=%#llx\n",
             pVM->cpum.s.fXStateHostMask, fXStateHostMask, fXcr0Host));
 
@@ -2193,12 +2191,10 @@ VMMR3DECL(int) CPUMR3Init(PVM pVM)
 
         pVCpu->cpum.s.Guest.pXStateR3 = (PX86XSAVEAREA)pbXStates;
         pVCpu->cpum.s.Guest.pXStateR0 = MMHyperR3ToR0(pVM, pbXStates);
-        pVCpu->cpum.s.Guest.pXStateRC = MMHyperR3ToR0(pVM, pbXStates);
         pbXStates += cbMaxXState;
 
         pVCpu->cpum.s.Host.pXStateR3  = (PX86XSAVEAREA)pbXStates;
         pVCpu->cpum.s.Host.pXStateR0  = MMHyperR3ToR0(pVM, pbXStates);
-        pVCpu->cpum.s.Host.pXStateRC  = MMHyperR3ToR0(pVM, pbXStates);
         pbXStates += cbMaxXState;
 
         pVCpu->cpum.s.Host.fXStateMask = fXStateHostMask;
@@ -2263,24 +2259,6 @@ VMMR3DECL(int) CPUMR3Init(PVM pVM)
     if (RT_FAILURE(rc))
         return rc;
 
-    /*
-     * Workaround for missing cpuid(0) patches when leaf 4 returns GuestInfo.DefCpuId:
-     * If we miss to patch a cpuid(0).eax then Linux tries to determine the number
-     * of processors from (cpuid(4).eax >> 26) + 1.
-     *
-     * Note: this code is obsolete, but let's keep it here for reference.
-     *       Purpose is valid when we artificially cap the max std id to less than 4.
-     *
-     * Note: This used to be a separate function CPUMR3SetHwVirt that was called
-     *       after VMINITCOMPLETED_HM.
-     */
-    if (VM_IS_RAW_MODE_ENABLED(pVM))
-    {
-        Assert(   (pVM->cpum.s.aGuestCpuIdPatmStd[4].uEax & UINT32_C(0xffffc000)) == 0
-               || pVM->cpum.s.aGuestCpuIdPatmStd[0].uEax < 0x4);
-        pVM->cpum.s.aGuestCpuIdPatmStd[4].uEax &= UINT32_C(0x00003fff);
-    }
-
     CPUMR3Reset(pVM);
     return VINF_SUCCESS;
 }
@@ -2297,20 +2275,7 @@ VMMR3DECL(int) CPUMR3Init(PVM pVM)
  */
 VMMR3DECL(void) CPUMR3Relocate(PVM pVM)
 {
-    LogFlow(("CPUMR3Relocate\n"));
-
-    pVM->cpum.s.GuestInfo.paMsrRangesRC   = MMHyperR3ToRC(pVM, pVM->cpum.s.GuestInfo.paMsrRangesR3);
-    pVM->cpum.s.GuestInfo.paCpuIdLeavesRC = MMHyperR3ToRC(pVM, pVM->cpum.s.GuestInfo.paCpuIdLeavesR3);
-
-    for (VMCPUID iCpu = 0; iCpu < pVM->cCpus; iCpu++)
-    {
-        PVMCPU pVCpu = &pVM->aCpus[iCpu];
-        pVCpu->cpum.s.Guest.pXStateRC = MMHyperR3ToRC(pVM, pVCpu->cpum.s.Guest.pXStateR3);
-        pVCpu->cpum.s.Host.pXStateRC  = MMHyperR3ToRC(pVM, pVCpu->cpum.s.Host.pXStateR3);
-
-        /* Recheck the guest DRx values in raw-mode. */
-        CPUMRecalcHyperDRx(pVCpu, UINT8_MAX, false);
-    }
+    RT_NOREF(pVM);
 }
 
 
@@ -2365,7 +2330,6 @@ VMMR3DECL(void) CPUMR3ResetCpu(PVM pVM, PVMCPU pVCpu)
     uint32_t fUseFlags              =  pVCpu->cpum.s.fUseFlags & ~CPUM_USED_FPU_SINCE_REM;
 
     AssertCompile(RTASSERT_OFFSET_OF(CPUMCTX, pXStateR0) < RTASSERT_OFFSET_OF(CPUMCTX, pXStateR3));
-    AssertCompile(RTASSERT_OFFSET_OF(CPUMCTX, pXStateR0) < RTASSERT_OFFSET_OF(CPUMCTX, pXStateRC));
     memset(pCtx, 0, RT_UOFFSETOF(CPUMCTX, pXStateR0));
 
     pVCpu->cpum.s.fUseFlags         = fUseFlags;
@@ -2717,7 +2681,7 @@ static DECLCALLBACK(int) cpumR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVers
         if (uVersion == CPUM_SAVED_STATE_VERSION_VER1_6)
             SSMR3HandleSetGCPtrSize(pSSM, sizeof(RTGCPTR32));
         else if (uVersion <= CPUM_SAVED_STATE_VERSION_VER3_0)
-            SSMR3HandleSetGCPtrSize(pSSM, HC_ARCH_BITS == 32 ? sizeof(RTGCPTR32) : sizeof(RTGCPTR));
+            SSMR3HandleSetGCPtrSize(pSSM, sizeof(RTGCPTR));
 
         /*
          * Figure x86 and ctx field definitions to use for older states.
@@ -2981,7 +2945,7 @@ static DECLCALLBACK(int) cpumR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVers
             for (VMCPUID iCpu = 0; iCpu < pVM->cCpus; iCpu++)
             {
                 PVMCPU      pVCpu  = &pVM->aCpus[iCpu];
-                bool const  fValid = !VM_IS_RAW_MODE_ENABLED(pVM)
+                bool const  fValid = true /*!VM_IS_RAW_MODE_ENABLED(pVM)*/
                                   || (   uVersion > CPUM_SAVED_STATE_VERSION_VER3_2
                                       && !(pVCpu->cpum.s.fChanged & CPUM_CHANGED_HIDDEN_SEL_REGS_INVALID));
                 PCPUMSELREG paSelReg = CPUMCTX_FIRST_SREG(&pVCpu->cpum.s.Guest);
@@ -4193,34 +4157,13 @@ static DECLCALLBACK(void) cpumR3InfoHost(PVM pVM, PCDBGFINFOHLP pHlp, const char
     /*
      * Format the EFLAGS.
      */
-#if HC_ARCH_BITS == 32
-    uint32_t efl = pCtx->eflags.u32;
-#else
     uint64_t efl = pCtx->rflags;
-#endif
     char szEFlags[80];
     cpumR3InfoFormatFlags(&szEFlags[0], efl);
 
     /*
      * Format the registers.
      */
-#if HC_ARCH_BITS == 32
-    pHlp->pfnPrintf(pHlp,
-        "eax=xxxxxxxx ebx=%08x ecx=xxxxxxxx edx=xxxxxxxx esi=%08x edi=%08x\n"
-        "eip=xxxxxxxx esp=%08x ebp=%08x iopl=%d %31s\n"
-        "cs=%04x ds=%04x es=%04x fs=%04x gs=%04x                       eflags=%08x\n"
-        "cr0=%08RX64 cr2=xxxxxxxx cr3=%08RX64 cr4=%08RX64 gdtr=%08x:%04x ldtr=%04x\n"
-        "dr[0]=%08RX64 dr[1]=%08RX64x dr[2]=%08RX64 dr[3]=%08RX64x dr[6]=%08RX64 dr[7]=%08RX64\n"
-        "SysEnter={cs=%04x eip=%08x esp=%08x}\n"
-        ,
-        /*pCtx->eax,*/ pCtx->ebx, /*pCtx->ecx, pCtx->edx,*/ pCtx->esi, pCtx->edi,
-        /*pCtx->eip,*/ pCtx->esp, pCtx->ebp, X86_EFL_GET_IOPL(efl), szEFlags,
-        pCtx->cs, pCtx->ds, pCtx->es, pCtx->fs, pCtx->gs, efl,
-        pCtx->cr0, /*pCtx->cr2,*/ pCtx->cr3, pCtx->cr4,
-        pCtx->dr0, pCtx->dr1, pCtx->dr2, pCtx->dr3, pCtx->dr6, pCtx->dr7,
-        (uint32_t)pCtx->gdtr.uAddr, pCtx->gdtr.cb, pCtx->ldtr,
-        pCtx->SysEnter.cs, pCtx->SysEnter.eip, pCtx->SysEnter.esp);
-#else
     pHlp->pfnPrintf(pHlp,
         "rax=xxxxxxxxxxxxxxxx rbx=%016RX64 rcx=xxxxxxxxxxxxxxxx\n"
         "rdx=xxxxxxxxxxxxxxxx rsi=%016RX64 rdi=%016RX64\n"
@@ -4253,7 +4196,6 @@ static DECLCALLBACK(void) cpumR3InfoHost(PVM pVM, PCDBGFINFOHLP pHlp, const char
         pCtx->gdtr.uAddr, pCtx->gdtr.cb, pCtx->idtr.uAddr, pCtx->idtr.cb,
         pCtx->SysEnter.cs, pCtx->SysEnter.eip, pCtx->SysEnter.esp,
         pCtx->FSbase, pCtx->GSbase, pCtx->efer);
-#endif
 }
 
 /**
@@ -4303,27 +4245,18 @@ static DECLCALLBACK(int) cpumR3DisasInstrRead(PDISCPUSTATE pDis, uint8_t offInst
         if (   !pState->pvPageR3
             || (GCPtr >> PAGE_SHIFT) != (pState->pvPageGC >> PAGE_SHIFT))
         {
-            int rc = VINF_SUCCESS;
-
             /* translate the address */
             pState->pvPageGC = GCPtr & PAGE_BASE_GC_MASK;
-            if (   VM_IS_RAW_MODE_ENABLED(pState->pVM)
-                && MMHyperIsInsideArea(pState->pVM, pState->pvPageGC))
-            {
-                pState->pvPageR3 = MMHyperRCToR3(pState->pVM, (RTRCPTR)pState->pvPageGC);
-                if (!pState->pvPageR3)
-                    rc = VERR_INVALID_POINTER;
-            }
+
+            /* Release mapping lock previously acquired. */
+            if (pState->fLocked)
+                PGMPhysReleasePageMappingLock(pState->pVM, &pState->PageMapLock);
+            int rc = PGMPhysGCPtr2CCPtrReadOnly(pState->pVCpu, pState->pvPageGC, &pState->pvPageR3, &pState->PageMapLock);
+            if (RT_SUCCESS(rc))
+                pState->fLocked  = true;
             else
             {
-                /* Release mapping lock previously acquired. */
-                if (pState->fLocked)
-                    PGMPhysReleasePageMappingLock(pState->pVM, &pState->PageMapLock);
-                rc = PGMPhysGCPtr2CCPtrReadOnly(pState->pVCpu, pState->pvPageGC, &pState->pvPageR3, &pState->PageMapLock);
-                pState->fLocked = RT_SUCCESS_NP(rc);
-            }
-            if (RT_FAILURE(rc))
-            {
+                pState->fLocked  = false;
                 pState->pvPageR3 = NULL;
                 return rc;
             }
@@ -4399,13 +4332,7 @@ VMMR3DECL(int) CPUMR3DisasmInstrCPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, RTGCPT
         &&   pCtx->eflags.Bits.u1VM == 0)
     {
         if (!CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pCtx->cs))
-        {
-# ifdef VBOX_WITH_RAW_MODE_NOT_R0
-            CPUMGuestLazyLoadHiddenSelectorReg(pVCpu, &pCtx->cs);
-# endif
-            if (!CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pCtx->cs))
-                return VERR_CPUM_HIDDEN_CS_LOAD_ERROR;
-        }
+            return VERR_CPUM_HIDDEN_CS_LOAD_ERROR;
         State.f64Bits         = enmMode >= PGMMODE_AMD64 && pCtx->cs.Attr.n.u1Long;
         State.GCPtrSegBase    = pCtx->cs.u64Base;
         State.GCPtrSegEnd     = pCtx->cs.u32Limit + 1 + (RTGCUINTPTR)pCtx->cs.u64Base;
@@ -4494,7 +4421,6 @@ VMMR3DECL(int) CPUMR3SetCR4Feature(PVM pVM, RTHCUINTREG fOr, RTHCUINTREG fAnd)
  */
 VMMR3DECL(uint32_t) CPUMR3RemEnter(PVMCPU pVCpu, uint32_t *puCpl)
 {
-    Assert(!pVCpu->cpum.s.fRawEntered);
     Assert(!pVCpu->cpum.s.fRemEntered);
 
     /*
@@ -4529,7 +4455,6 @@ VMMR3DECL(uint32_t) CPUMR3RemEnter(PVMCPU pVCpu, uint32_t *puCpl)
  */
 VMMR3DECL(void) CPUMR3RemLeave(PVMCPU pVCpu, bool fNoOutOfSyncSels)
 {
-    Assert(!pVCpu->cpum.s.fRawEntered);
     Assert(pVCpu->cpum.s.fRemEntered);
 
     RT_NOREF_PV(fNoOutOfSyncSels);

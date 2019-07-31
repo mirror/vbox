@@ -48,8 +48,6 @@ struc CPUMINFO
     .paCpuIdLeavesR0        RTR0PTR_RES 1           ; R0PTRTYPE(PCPUMCPUIDLEAF)
     .paMsrRangesR3          RTR3PTR_RES 1           ; R3PTRTYPE(PCPUMMSRRANGE)
     .paCpuIdLeavesR3        RTR3PTR_RES 1           ; R3PTRTYPE(PCPUMCPUIDLEAF)
-    .paMsrRangesRC          RTRCPTR_RES 1           ; RCPTRTYPE(PCPUMMSRRANGE)
-    .paCpuIdLeavesRC        RTRCPTR_RES 1           ; RCPTRTYPE(PCPUMCPUIDLEAF)
 endstruc
 
 
@@ -87,7 +85,6 @@ struc CPUM
     ; CR4 masks
     .CR4.AndMask                resd    1
     .CR4.OrMask                 resd    1
-    ; entered rawmode?
     .u8PortableCpuIdLevel       resb    1
     .fPendingRestore            resb    1
 
@@ -98,7 +95,7 @@ struc CPUM
     alignb 64
     .HostFeatures               resb    48
     .GuestFeatures              resb    48
-    .GuestInfo                  resb    RTHCPTR_CB*4 + RTRCPTR_CB*2 + 4*12
+    .GuestInfo                  resb    RTHCPTR_CB*4 + 4*12
 
     ; Patch manager saved state compatability CPUID leaf arrays
     .aGuestCpuIdPatmStd         resb    16*6
@@ -226,9 +223,9 @@ struc CPUMCPU
     alignb 8
     .Guest.pXStateR3      RTR3PTR_RES 1
     alignb 8
-    .Guest.pXStateRC      RTRCPTR_RES 1
     .Guest.aoffXState         resw    64
     .Guest.fWorldSwitcher     resd    1
+    alignb 8
     .Guest.fExtrn             resq    1
     alignb 8
     .Guest.hwvirt.svm.uMsrHSavePa            resq         1
@@ -278,18 +275,16 @@ struc CPUMCPU
     .abPadding3           resb    (RTR0PTR_CB + 4 + 1)
 %endif
 
-    .fRawEntered          resb    1
     .fRemEntered          resb    1
     .fCpuIdApicFeatureVisible resb 1
 
-    .abPadding2           resb    (64 - 16 - RTR0PTR_CB - 4 - 1 - 3)
+    .abPadding2           resb    (64 - 16 - RTR0PTR_CB - 4 - 1 - 2)
 
     ;
     ; Host context state
     ;
     alignb 64
     .Host                resb    0
-%if HC_ARCH_BITS == 64
     ;.Host.rax            resq    1 - scratch
     .Host.rbx            resq    1
     ;.Host.rcx            resq    1 - scratch
@@ -308,20 +303,6 @@ struc CPUMCPU
     .Host.r15            resq    1
     ;.Host.rip            resd    1 - scratch
     .Host.rflags         resq    1
-%endif
-%if HC_ARCH_BITS == 32
-    ;.Host.eax            resd    1 - scratch
-    .Host.ebx            resd    1
-    ;.Host.edx            resd    1 - scratch
-    ;.Host.ecx            resd    1 - scratch
-    .Host.edi            resd    1
-    .Host.esi            resd    1
-    .Host.ebp            resd    1
-    .Host.eflags         resd    1
-    ;.Host.eip            resd    1 - scratch
-    ; lss pair!
-    .Host.esp            resd    1
-%endif
     .Host.ss             resw    1
     .Host.ssPadding      resw    1
     .Host.gs             resw    1
@@ -334,38 +315,6 @@ struc CPUMCPU
     .Host.dsPadding      resw    1
     .Host.cs             resw    1
     .Host.csPadding      resw    1
-
-%if HC_ARCH_BITS == 32
-    .Host.cr0            resd    1
-    ;.Host.cr2            resd    1 - scratch
-    .Host.cr3            resd    1
-    .Host.cr4            resd    1
-    .Host.cr0Fpu         resd    1
-
-    .Host.dr0            resd    1
-    .Host.dr1            resd    1
-    .Host.dr2            resd    1
-    .Host.dr3            resd    1
-    .Host.dr6            resd    1
-    .Host.dr7            resd    1
-
-    .Host.gdtr           resb    6           ; GDT limit + linear address
-    .Host.gdtrPadding    resw    1
-    .Host.idtr           resb    6           ; IDT limit + linear address
-    .Host.idtrPadding    resw    1
-    .Host.ldtr           resw    1
-    .Host.ldtrPadding    resw    1
-    .Host.tr             resw    1
-    .Host.trPadding      resw    1
-
-    alignb 8
-    .Host.SysEnter.cs    resq    1
-    .Host.SysEnter.eip   resq    1
-    .Host.SysEnter.esp   resq    1
-    .Host.efer           resq    1
-    .Host.auPadding      resb    (20)
-
-%else ; 64-bit
 
     .Host.cr0Fpu:
     .Host.cr0            resq    1
@@ -397,8 +346,6 @@ struc CPUMCPU
     .Host.GSbase         resq    1
     .Host.efer           resq    1
     .Host.auPadding      resb    4
-%endif ; 64-bit
-    .Host.pXStateRC RTRCPTR_RES  1
     alignb RTR0PTR_CB
     .Host.pXStateR0 RTR0PTR_RES  1
     .Host.pXStateR3 RTR3PTR_RES  1
@@ -508,17 +455,8 @@ endstruc
 ; @uses     EFLAGS, CR0, %1, %2
 ;
 %macro CPUMRZ_TOUCH_FPU_CLEAR_CR0_FPU_TRAPS_SET_RC 3
- %ifdef IN_RC
         ;
-        ; raw-mode - always clear it.  We won't be here otherwise.
-        ;
-        mov     %2, cr0
-        and     %2, ~(X86_CR0_TS | X86_CR0_EM)
-        mov     cr0, %2
-
- %else
-        ;
-        ; ring-0 - slightly complicated.
+        ; ring-0 - slightly complicated (than old raw-mode).
         ;
         xor     %1, %1                          ; 0 / VINF_SUCCESS. Wishing for no CR0 changes.
         mov     [%3 + CPUMCPU.Host.cr0Fpu], %1
@@ -527,19 +465,18 @@ endstruc
         test    %2, X86_CR0_TS | X86_CR0_EM ; Make sure its safe to access the FPU state.
         jz      %%no_cr0_change
 
-  %ifdef VMM_R0_TOUCH_FPU
+ %ifdef VMM_R0_TOUCH_FPU
         ; Touch the state and check that the kernel updated CR0 for us.
         movdqa  xmm0, xmm0
         mov     %2, cr0
         test    %2, X86_CR0_TS | X86_CR0_EM
         jz      %%cr0_changed
-  %endif
+ %endif
 
         ; Save CR0 and clear them flags ourselves.
         mov     [%3 + CPUMCPU.Host.cr0Fpu], %2
         and     %2, ~(X86_CR0_TS | X86_CR0_EM)
         mov     cr0, %2
- %endif ; IN_RING0
 
 %%cr0_changed:
         mov     %1,  VINF_CPUM_HOST_CR0_MODIFIED
@@ -573,8 +510,6 @@ endstruc
         ;
  %ifdef IN_RING0
         mov     pXState, [pCpumCpu + CPUMCPU.Host.pXStateR0]
- %elifdef IN_RC
-        mov     pXState, [pCpumCpu + CPUMCPU.Host.pXStateRC]
  %else
   %error "Unsupported context!"
  %endif
@@ -620,8 +555,6 @@ endstruc
         ;
  %ifdef IN_RING0
         mov     pXState, [pCpumCpu + CPUMCPU.Host.pXStateR0]
- %elifdef IN_RC
-        mov     pXState, [pCpumCpu + CPUMCPU.Host.pXStateRC]
  %else
   %error "Unsupported context!"
  %endif
@@ -709,8 +642,6 @@ endstruc
         ;
  %ifdef IN_RING0
         mov     pXState, [pCpumCpu + CPUMCPU.Guest.pXStateR0]
- %elifdef IN_RC
-        mov     pXState, [pCpumCpu + CPUMCPU.Guest.pXStateRC]
  %else
   %error "Unsupported context!"
  %endif
@@ -780,8 +711,6 @@ endstruc
         ;
  %ifdef IN_RING0
         mov     pXState, [pCpumCpu + CPUMCPU.Guest.pXStateR0]
- %elifdef IN_RC
-        mov     pXState, [pCpumCpu + CPUMCPU.Guest.pXStateRC]
  %else
   %error "Unsupported context!"
  %endif

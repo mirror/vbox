@@ -252,10 +252,9 @@ struc CPUMCTX
     .pXStateR0      RTR0PTR_RES 1
     alignb 8
     .pXStateR3      RTR3PTR_RES 1
-    alignb 8
-    .pXStateRC      RTRCPTR_RES 1
     .aoffXState         resw    64
     .fWorldSwitcher     resd    1
+    alignb 8
     .fExtrn             resq    1
     alignb 8
     .hwvirt.svm.uMsrHSavePa            resq          1

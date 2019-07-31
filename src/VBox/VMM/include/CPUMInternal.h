@@ -191,11 +191,6 @@ typedef struct CPUMINFO
     R3PTRTYPE(PCPUMMSRRANGE)    paMsrRangesR3;
     /** Pointer to the CPUID leaves (ring-3 pointer). */
     R3PTRTYPE(PCPUMCPUIDLEAF)   paCpuIdLeavesR3;
-
-    /** Pointer to the MSR ranges (raw-mode context pointer). */
-    RCPTRTYPE(PCPUMMSRRANGE)    paMsrRangesRC;
-    /** Pointer to the CPUID leaves (raw-mode context pointer). */
-    RCPTRTYPE(PCPUMCPUIDLEAF)   paCpuIdLeavesRC;
 } CPUMINFO;
 /** Pointer to a CPU info structure. */
 typedef CPUMINFO *PCPUMINFO;
@@ -210,7 +205,6 @@ typedef struct CPUMHOSTCTX
 {
     /** General purpose register, selectors, flags and more
      * @{ */
-#if HC_ARCH_BITS == 64
     /** General purpose register ++
      * { */
     /*uint64_t        rax; - scratch*/
@@ -231,21 +225,6 @@ typedef struct CPUMHOSTCTX
     uint64_t        r15;
     /*uint64_t        rip; - scratch*/
     uint64_t        rflags;
-#endif
-
-#if HC_ARCH_BITS == 32
-    /*uint32_t        eax; - scratch*/
-    uint32_t        ebx;
-    /*uint32_t        ecx; - scratch*/
-    /*uint32_t        edx; - scratch*/
-    uint32_t        edi;
-    uint32_t        esi;
-    uint32_t        ebp;
-    X86EFLAGS       eflags;
-    /*uint32_t        eip; - scratch*/
-    /* lss pair! */
-    uint32_t        esp;
-#endif
     /** @} */
 
     /** Selector registers
@@ -263,55 +242,6 @@ typedef struct CPUMHOSTCTX
     RTSEL           cs;
     RTSEL           csPadding;
     /** @} */
-
-#if HC_ARCH_BITS == 32
-    /** Control registers.
-     * @{ */
-    uint32_t        cr0;
-    /*uint32_t        cr2; - scratch*/
-    uint32_t        cr3;
-    uint32_t        cr4;
-    /** The CR0 FPU state in HM mode.  Can't use cr0 here because the
-     *  64-bit-on-32-bit-host world switches is using it. */
-    uint32_t        cr0Fpu;
-    /** @} */
-
-    /** Debug registers.
-     * @{ */
-    uint32_t        dr0;
-    uint32_t        dr1;
-    uint32_t        dr2;
-    uint32_t        dr3;
-    uint32_t        dr6;
-    uint32_t        dr7;
-    /** @} */
-
-    /** Global Descriptor Table register. */
-    X86XDTR32       gdtr;
-    uint16_t        gdtrPadding;
-    /** Interrupt Descriptor Table register. */
-    X86XDTR32       idtr;
-    uint16_t        idtrPadding;
-    /** The task register. */
-    RTSEL           ldtr;
-    RTSEL           ldtrPadding;
-    /** The task register. */
-    RTSEL           tr;
-    RTSEL           trPadding;
-
-    /** The sysenter msr registers.
-     * This member is not used by the hypervisor context. */
-    CPUMSYSENTER    SysEnter;
-
-    /** MSRs
-     * @{ */
-    uint64_t        efer;
-    /** @} */
-
-    /* padding to get 64byte aligned size */
-    uint8_t         auPadding[20];
-
-#elif HC_ARCH_BITS == 64
 
     /** Control registers.
      * @{ */
@@ -355,14 +285,12 @@ typedef struct CPUMHOSTCTX
     /** @} */
 
     /* padding to get 64byte aligned size */
-    uint8_t         auPadding[4];
+    uint8_t         auPadding[8];
 
-#else
+#if HC_ARCH_BITS != 64
 # error HC_ARCH_BITS not defined or unsupported
 #endif
 
-    /** Pointer to the FPU/SSE/AVX/XXXX state raw-mode mapping. */
-    RCPTRTYPE(PX86XSAVEAREA)    pXStateRC;
     /** Pointer to the FPU/SSE/AVX/XXXX state ring-0 mapping. */
     R0PTRTYPE(PX86XSAVEAREA)    pXStateR0;
     /** Pointer to the FPU/SSE/AVX/XXXX state ring-3 mapping. */
@@ -524,8 +452,6 @@ typedef struct CPUMCPU
     uint8_t                 abPadding3[(HC_ARCH_BITS == 64 ? 8 : 4) + 4 + 1];
 #endif
 
-    /** Have we entered raw-mode? */
-    bool                    fRawEntered;
     /** Have we entered the recompiler? */
     bool                    fRemEntered;
     /** Whether the X86_CPUID_FEATURE_EDX_APIC and X86_CPUID_AMD_FEATURE_EDX_APIC
@@ -534,7 +460,7 @@ typedef struct CPUMCPU
     bool                    fCpuIdApicFeatureVisible;
 
     /** Align the next member on a 64-byte boundrary. */
-    uint8_t                 abPadding2[64 - 16 - (HC_ARCH_BITS == 64 ? 8 : 4) - 4 - 1 - 3];
+    uint8_t                 abPadding2[64 - 16 - 8 - 4 - 1 - 2];
 
     /** Saved host context.  Only valid while inside RC or HM contexts.
      * Must be aligned on a 64-byte boundary. */
