@@ -31,7 +31,7 @@
 
 #include <VBox/types.h>
 #include <VBox/vmm/cpumctx.h>
-#include <iprt/AssertCompile.h>
+#include <iprt/assertcompile.h>
 
 
 RT_C_DECLS_BEGIN
