@@ -95,9 +95,6 @@ EXPORTS
     CFGMR3GetParent
     CFGMR3GetRootU
 
-    CSAMR3IsEnabled
-    CSAMR3SetScanningEnabled
-
     DBGCCreate
 
     DBGFR3CoreWrite
@@ -208,9 +205,6 @@ EXPORTS
     MMR3HeapAllocU
 
     MMR3HyperAllocOnceNoRel
-
-    PATMR3AllowPatching
-    PATMR3IsEnabled
 
     PDMR3AsyncCompletionBwMgrSetMaxForFile
     PDMR3DeviceAttach
