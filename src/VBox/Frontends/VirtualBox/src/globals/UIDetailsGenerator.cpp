@@ -64,7 +64,9 @@ UITextTable UIDetailsGenerator::generateMachineInformationGeneral(CMachine &comM
         const QString strAnchorType = QString("machine_name");
         const QString strName = comMachine.GetName();
         table << UITextTableLine(QApplication::translate("UIDetails", "Name", "details (general)"),
-                                 QString("<a href=#%1,%2>%2</a>").arg(strAnchorType, strName));
+                                 QString("<a href=#%1,%2>%2</a>")
+                                     .arg(strAnchorType,
+                                          strName));
     }
 
     /* Operating system: */
@@ -74,9 +76,10 @@ UITextTable UIDetailsGenerator::generateMachineInformationGeneral(CMachine &comM
         const QString strAnchorType = QString("os_type");
         const QString strOsTypeId = comMachine.GetOSTypeId();
         table << UITextTableLine(QApplication::translate("UIDetails", "Operating System", "details (general)"),
-                                 QString("<a href=#%1,%2>%3</a>").arg(strAnchorType,
-                                                                      strOsTypeId,
-                                                                      uiCommon().vmGuestOSTypeDescription(strOsTypeId)));
+                                 QString("<a href=#%1,%2>%3</a>")
+                                     .arg(strAnchorType,
+                                          strOsTypeId,
+                                          uiCommon().vmGuestOSTypeDescription(strOsTypeId)));
     }
 
     /* Settings file location: */
@@ -86,9 +89,10 @@ UITextTable UIDetailsGenerator::generateMachineInformationGeneral(CMachine &comM
         const QString strAnchorType = QString("machine_location");
         const QString strMachineLocation = comMachine.GetSettingsFilePath();
         table << UITextTableLine(QApplication::translate("UIDetails", "Settings File Location", "details (general)"),
-                                 QString("<a href=#%1,%2>%3</a>").arg(strAnchorType,
-                                                                      strMachineLocation,
-                                                                      QDir::toNativeSeparators(QFileInfo(strMachineLocation).absolutePath())));
+                                 QString("<a href=#%1,%2>%3</a>")
+                                     .arg(strAnchorType,
+                                          strMachineLocation,
+                                          QDir::toNativeSeparators(QFileInfo(strMachineLocation).absolutePath())));
     }
 
     /* Groups: */
@@ -137,8 +141,10 @@ UITextTable UIDetailsGenerator::generateMachineInformationSystem(CMachine &comMa
         const QString strAnchorType = QString("base_memory");
         const int iBaseMemory = comMachine.GetMemorySize();
         table << UITextTableLine(QApplication::translate("UIDetails", "Base Memory", "details (system)"),
-                                 QApplication::translate("UIDetails", "<a href=#%1,%2>%2 MB</a>", "details")
-                                    .arg(strAnchorType).arg(iBaseMemory));
+                                 QString("<a href=#%1,%2>%3</a>")
+                                     .arg(strAnchorType)
+                                     .arg(iBaseMemory)
+                                     .arg(QApplication::translate("UIDetails", "%1 MB").arg(iBaseMemory)));
     }
 
     /* Processors: */
@@ -166,10 +172,10 @@ UITextTable UIDetailsGenerator::generateMachineInformationSystem(CMachine &comMa
         const QString strAnchorType = QString("boot_order");
         const UIBootItemDataList bootItems = loadBootItems(comMachine);
         table << UITextTableLine(QApplication::translate("UIDetails", "Boot Order", "details (system)"),
-                                 QApplication::translate("UIDetails", "<a href=#%1,%2>%3</a>", "details")
-                                    .arg(strAnchorType,
-                                         bootItemsToSerializedString(bootItems),
-                                         bootItemsToReadableString(bootItems)));
+                                 QString("<a href=#%1,%2>%3</a>")
+                                     .arg(strAnchorType,
+                                          bootItemsToSerializedString(bootItems),
+                                          bootItemsToReadableString(bootItems)));
     }
 
     /* Chipset type: */
@@ -260,8 +266,10 @@ UITextTable UIDetailsGenerator::generateMachineInformationDisplay(CMachine &comM
         const QString strAnchorType = QString("video_memory");
         const int iVideoMemory = comMachine.GetVRAMSize();
         table << UITextTableLine(QApplication::translate("UIDetails", "Video Memory", "details (display)"),
-                                 QApplication::translate("UIDetails", "<a href=#%1,%2>%2 MB</a>", "details")
-                                    .arg(strAnchorType).arg(iVideoMemory));
+                                 QString("<a href=#%1,%2>%3</a>")
+                                     .arg(strAnchorType)
+                                     .arg(iVideoMemory)
+                                     .arg(QApplication::translate("UIDetails", "%1 MB").arg(iVideoMemory)));
     }
 
     /* Screens: */
@@ -297,7 +305,7 @@ UITextTable UIDetailsGenerator::generateMachineInformationDisplay(CMachine &comM
         const QString strAnchorType = QString("graphics_controller_type");
         const KGraphicsControllerType enmType = comMachine.GetGraphicsControllerType();
         table << UITextTableLine(QApplication::translate("UIDetails", "Graphics Controller", "details (display)"),
-                                 QApplication::translate("UIDetails", "<a href=#%1,%2>%3</a>", "details")
+                                 QString("<a href=#%1,%2>%3</a>")
                                      .arg(strAnchorType)
                                      .arg((int)enmType)
                                      .arg(gpConverter->toString(enmType)));
@@ -434,15 +442,15 @@ UITextTable UIDetailsGenerator::generateMachineInformationStorage(CMachine &comM
                 if (fLink)
                     attachmentsMap.insert(attachmentSlot,
                                           QString("<a href=#%1,%2,%3,%4>%5</a>")
-                                          .arg(strAnchorType,
-                                               comController.GetName(),
-                                               gpConverter->toString(attachmentSlot),
-                                               strMediumLocation,
-                                               strDeviceType + strAttachmentInfo));
+                                              .arg(strAnchorType,
+                                                   comController.GetName(),
+                                                   gpConverter->toString(attachmentSlot),
+                                                   strMediumLocation,
+                                                   strDeviceType + strAttachmentInfo));
                 else
                     attachmentsMap.insert(attachmentSlot,
                                           QString("%1")
-                                          .arg(strDeviceType + strAttachmentInfo));
+                                              .arg(strDeviceType + strAttachmentInfo));
             }
         }
 
@@ -457,7 +465,6 @@ UITextTable UIDetailsGenerator::generateMachineInformationStorage(CMachine &comM
 
     return table;
 }
-
 
 UITextTable UIDetailsGenerator::generateMachineInformationAudio(CMachine &comMachine,
                                                                 const UIExtraDataMetaDefs::DetailsElementOptionTypeAudio &fOptions)
@@ -482,7 +489,7 @@ UITextTable UIDetailsGenerator::generateMachineInformationAudio(CMachine &comMac
             const QString strAnchorType = QString("audio_host_driver_type");
             const KAudioDriverType enmType = comAudio.GetAudioDriver();
             table << UITextTableLine(QApplication::translate("UIDetails", "Host Driver", "details (audio)"),
-                                     QApplication::translate("UIDetails", "<a href=#%1,%2>%3</a>", "details")
+                                     QString("<a href=#%1,%2>%3</a>")
                                          .arg(strAnchorType)
                                          .arg((int)enmType)
                                          .arg(gpConverter->toString(enmType)));
@@ -494,7 +501,7 @@ UITextTable UIDetailsGenerator::generateMachineInformationAudio(CMachine &comMac
             const QString strAnchorType = QString("audio_controller_type");
             const KAudioControllerType enmType = comAudio.GetAudioController();
             table << UITextTableLine(QApplication::translate("UIDetails", "Controller", "details (audio)"),
-                                     QApplication::translate("UIDetails", "<a href=#%1,%2>%3</a>", "details")
+                                     QString("<a href=#%1,%2>%3</a>")
                                          .arg(strAnchorType)
                                          .arg((int)enmType)
                                          .arg(gpConverter->toString(enmType)));
@@ -799,13 +806,13 @@ UITextTable UIDetailsGenerator::generateMachineInformationUI(CMachine &comMachin
         const QString strMenubarEnabled = comMachine.GetExtraData(UIExtraDataDefs::GUI_MenuBar_Enabled);
         /* Try to convert loaded data to bool: */
         const bool fEnabled = !(   strMenubarEnabled.compare("false", Qt::CaseInsensitive) == 0
-                                   || strMenubarEnabled.compare("no", Qt::CaseInsensitive) == 0
-                                   || strMenubarEnabled.compare("off", Qt::CaseInsensitive) == 0
-                                   || strMenubarEnabled == "0");
+                                || strMenubarEnabled.compare("no", Qt::CaseInsensitive) == 0
+                                || strMenubarEnabled.compare("off", Qt::CaseInsensitive) == 0
+                                || strMenubarEnabled == "0");
         /* Append information: */
         table << UITextTableLine(QApplication::translate("UIDetails", "Menu-bar", "details (user interface)"),
                                  fEnabled ? QApplication::translate("UIDetails", "Enabled", "details (user interface/menu-bar)")
-                                 : QApplication::translate("UIDetails", "Disabled", "details (user interface/menu-bar)"));
+                                          : QApplication::translate("UIDetails", "Disabled", "details (user interface/menu-bar)"));
     }
 #endif /* !VBOX_WS_MAC */
 
@@ -815,13 +822,13 @@ UITextTable UIDetailsGenerator::generateMachineInformationUI(CMachine &comMachin
         const QString strStatusbarEnabled = comMachine.GetExtraData(UIExtraDataDefs::GUI_StatusBar_Enabled);
         /* Try to convert loaded data to bool: */
         const bool fEnabled = !(   strStatusbarEnabled.compare("false", Qt::CaseInsensitive) == 0
-                                   || strStatusbarEnabled.compare("no", Qt::CaseInsensitive) == 0
-                                   || strStatusbarEnabled.compare("off", Qt::CaseInsensitive) == 0
-                                   || strStatusbarEnabled == "0");
+                                || strStatusbarEnabled.compare("no", Qt::CaseInsensitive) == 0
+                                || strStatusbarEnabled.compare("off", Qt::CaseInsensitive) == 0
+                                || strStatusbarEnabled == "0");
         /* Append information: */
         table << UITextTableLine(QApplication::translate("UIDetails", "Status-bar", "details (user interface)"),
                                  fEnabled ? QApplication::translate("UIDetails", "Enabled", "details (user interface/status-bar)")
-                                 : QApplication::translate("UIDetails", "Disabled", "details (user interface/status-bar)"));
+                                          : QApplication::translate("UIDetails", "Disabled", "details (user interface/status-bar)"));
     }
 
 #ifndef VBOX_WS_MAC
@@ -831,9 +838,9 @@ UITextTable UIDetailsGenerator::generateMachineInformationUI(CMachine &comMachin
         const QString strMiniToolbarEnabled = comMachine.GetExtraData(UIExtraDataDefs::GUI_ShowMiniToolBar);
         /* Try to convert loaded data to bool: */
         const bool fEnabled = !(   strMiniToolbarEnabled.compare("false", Qt::CaseInsensitive) == 0
-                                   || strMiniToolbarEnabled.compare("no", Qt::CaseInsensitive) == 0
-                                   || strMiniToolbarEnabled.compare("off", Qt::CaseInsensitive) == 0
-                                   || strMiniToolbarEnabled == "0");
+                                || strMiniToolbarEnabled.compare("no", Qt::CaseInsensitive) == 0
+                                || strMiniToolbarEnabled.compare("off", Qt::CaseInsensitive) == 0
+                                || strMiniToolbarEnabled == "0");
         /* Append information: */
         if (fEnabled)
         {
