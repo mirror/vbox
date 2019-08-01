@@ -647,7 +647,7 @@ DECLINLINE(int) VMXReadVmcs32(uint32_t uFieldEnc, uint32_t *pData)
 
 # elif VMX_USE_MSC_INTRINSICS
     unsigned char rcMsc;
-#  if ARCH_BITS == 32
+#  ifdef RT_ARCH_X86
     rcMsc = __vmx_vmread(uFieldEnc, pData);
 #  else
     uint64_t u64Tmp;
@@ -707,7 +707,7 @@ DECLINLINE(int) VMXReadVmcs64(uint32_t uFieldEnc, uint64_t *pData)
 {
 # if VMX_USE_MSC_INTRINSICS
     unsigned char rcMsc;
-#  if ARCH_BITS == 32
+#  ifdef RT_ARCH_X86
     size_t        uLow;
     size_t        uHigh;
     rcMsc  = __vmx_vmread(uFieldEnc, &uLow);
@@ -720,7 +720,7 @@ DECLINLINE(int) VMXReadVmcs64(uint32_t uFieldEnc, uint64_t *pData)
         return VINF_SUCCESS;
     return rcMsc == 2 ? VERR_VMX_INVALID_VMCS_PTR : VERR_VMX_INVALID_VMCS_FIELD;
 
-# elif ARCH_BITS == 32
+# elif defined(RT_ARCH_X86)
     int rc;
     uint32_t val_hi, val;
     rc  = VMXReadVmcs32(uFieldEnc, &val);
@@ -752,9 +752,10 @@ DECLINLINE(int) VMXReadVmcs64(uint32_t uFieldEnc, uint64_t *pData)
  */
 DECLINLINE(int) VMXReadVmcs16(uint32_t uVmcsField, uint16_t *pData)
 {
-    /* AssertMsg(((uVmcsField >> VMX_BF_VMCSFIELD_WIDTH_SHIFT) & 7) == VMX_VMCSFIELD_WIDTH_16BIT, ("%#RX32\n", uVmcsField)); */
     uint32_t u32Tmp;
-    int rc = VMXReadVmcs32(uVmcsField, &u32Tmp);
+    int      rc;
+    AssertMsg(((uVmcsField >> VMX_BF_VMCSFIELD_WIDTH_SHIFT) & 7) == VMX_VMCSFIELD_WIDTH_16BIT, ("%#RX32\n", uVmcsField));
+    rc = VMXReadVmcs32(uVmcsField, &u32Tmp);
     *pData = (uint16_t)u32Tmp;
     return rc;
 }
