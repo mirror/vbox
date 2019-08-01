@@ -62,8 +62,8 @@ namespace UIDetailsGenerator
     SHARED_LIBRARY_STUFF UITextTable generateMachineInformationUI(CMachine &comMachine,
                                                                   const UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface &fOptions);
 
-    SHARED_LIBRARY_STUFF UITextTable generateMachineInformationDetails(CMachine &comMachine,
-                                                                       const UIExtraDataMetaDefs::DetailsElementOptionTypeDescription &fOptions);
+    SHARED_LIBRARY_STUFF UITextTable generateMachineInformationDescription(CMachine &comMachine,
+                                                                           const UIExtraDataMetaDefs::DetailsElementOptionTypeDescription &fOptions);
 }
 
 #endif /* !FEQT_INCLUDED_SRC_globals_UIDetailsGenerator_h */

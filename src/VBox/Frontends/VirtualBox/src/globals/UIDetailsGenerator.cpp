@@ -866,8 +866,8 @@ UITextTable UIDetailsGenerator::generateMachineInformationUI(CMachine &comMachin
     return table;
 }
 
-UITextTable UIDetailsGenerator::generateMachineInformationDetails(CMachine &comMachine,
-                                                                  const UIExtraDataMetaDefs::DetailsElementOptionTypeDescription &fOptions)
+UITextTable UIDetailsGenerator::generateMachineInformationDescription(CMachine &comMachine,
+                                                                      const UIExtraDataMetaDefs::DetailsElementOptionTypeDescription &fOptions)
 {
     Q_UNUSED(fOptions);
 

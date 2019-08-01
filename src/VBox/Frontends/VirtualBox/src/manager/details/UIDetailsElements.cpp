@@ -406,7 +406,7 @@ void UIDetailsUpdateTaskDescription::run()
         return;
 
     /* Generate details table: */
-    UITextTable table = UIDetailsGenerator::generateMachineInformationDetails(comMachine, m_fOptions);
+    UITextTable table = UIDetailsGenerator::generateMachineInformationDescription(comMachine, m_fOptions);
     setProperty("table", QVariant::fromValue(table));
 }
 
