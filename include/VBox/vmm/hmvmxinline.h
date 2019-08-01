@@ -578,12 +578,13 @@ DECLINLINE(int) VMXWriteVmcs16(uint32_t uVmcsField, uint16_t u16Val)
 }
 
 
+/**
+ * Executes VMWRITE for a natural-width VMCS field.
+ */
 #ifdef RT_ARCH_AMD64
-# define VMXWriteVmcsHstN       VMXWriteVmcs64
-# define VMXWriteVmcsGstN       VMXWriteVmcs64
+# define VMXWriteVmcsNw         VMXWriteVmcs64
 #else
-# define VMXWriteVmcsHstN       VMXWriteVmcs32
-# define VMXWriteVmcsGstN       VMXWriteVmcs32
+# define VMXWriteVmcsNw         VMXWriteVmcs32
 #endif
 
 
@@ -761,12 +762,13 @@ DECLINLINE(int) VMXReadVmcs16(uint32_t uVmcsField, uint16_t *pData)
 }
 
 
+/**
+ * Executes VMREAD for a natural-width VMCS field.
+ */
 #ifdef RT_ARCH_AMD64
-# define VMXReadVmcsHstN        VMXReadVmcs64
-# define VMXReadVmcsGstN        VMXReadVmcs64
+# define VMXReadVmcsNw          VMXReadVmcs64
 #else
-# define VMXReadVmcsHstN        VMXReadVmcs32
-# define VMXReadVmcsGstN        VMXReadVmcs32
+# define VMXReadVmcsNw          VMXReadVmcs32
 #endif
 
 #endif /* RT_ARCH_AMD64 || RT_ARCH_X86 */
