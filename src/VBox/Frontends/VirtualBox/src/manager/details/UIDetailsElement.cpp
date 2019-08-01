@@ -762,8 +762,8 @@ void UIDetailsElement::sltHandleAnchorClicked(const QString &strAnchor)
             /* Execute menu, look for result: */
             QAction *pTriggeredAction = menu.exec(QCursor::pos());
             if (   pTriggeredAction
-                && (   fEnabled && (pTriggeredAction == pActionDisable)
-                    || !fEnabled && (pTriggeredAction == pActionEnable)))
+                && (   (fEnabled && pTriggeredAction == pActionDisable)
+                    || (!fEnabled && pTriggeredAction == pActionEnable)))
             {
                 switch (enmRole)
                 {
