@@ -60,7 +60,9 @@ enum AnchorRole
     AnchorRole_Storage,
     AnchorRole_AudioHostDriverType,
     AnchorRole_AudioControllerType,
+#ifndef VBOX_WS_MAC
     AnchorRole_MenuBar,
+#endif
     AnchorRole_StatusBar,
 };
 
@@ -171,7 +173,9 @@ void UIDetailsElement::updateAppearance()
     m_pTextPane->setAnchorRoleRestricted("#attach", cal != ConfigurationAccessLevel_Full);
     m_pTextPane->setAnchorRoleRestricted("#audio_host_driver_type", cal != ConfigurationAccessLevel_Full);
     m_pTextPane->setAnchorRoleRestricted("#audio_controller_type", cal != ConfigurationAccessLevel_Full);
+#ifndef VBOX_WS_MAC
     m_pTextPane->setAnchorRoleRestricted("#menu_bar", cal == ConfigurationAccessLevel_Null);
+#endif
     m_pTextPane->setAnchorRoleRestricted("#status_bar", cal == ConfigurationAccessLevel_Null);
 }
 
@@ -461,7 +465,9 @@ void UIDetailsElement::sltHandleAnchorClicked(const QString &strAnchor)
     roles["#attach"] = AnchorRole_Storage;
     roles["#audio_host_driver_type"] = AnchorRole_AudioHostDriverType;
     roles["#audio_controller_type"] = AnchorRole_AudioControllerType;
+#ifndef VBOX_WS_MAC
     roles["#menu_bar"] = AnchorRole_MenuBar;
+#endif
     roles["#status_bar"] = AnchorRole_StatusBar;
 
     /* Current anchor role: */
@@ -741,7 +747,9 @@ void UIDetailsElement::sltHandleAnchorClicked(const QString &strAnchor)
             }
             break;
         }
+#ifndef VBOX_WS_MAC
         case AnchorRole_MenuBar:
+#endif
         case AnchorRole_StatusBar:
         {
             /* Parse whether we have it enabled, true if unable to parse: */
@@ -767,7 +775,9 @@ void UIDetailsElement::sltHandleAnchorClicked(const QString &strAnchor)
             {
                 switch (enmRole)
                 {
+#ifndef VBOX_WS_MAC
                     case AnchorRole_MenuBar: gEDataManager->setMenuBarEnabled(!fEnabled, machine().GetId()); break;
+#endif
                     case AnchorRole_StatusBar: gEDataManager->setStatusBarEnabled(!fEnabled, machine().GetId()); break;
                     default: break;
                 }
