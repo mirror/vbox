@@ -6742,7 +6742,6 @@ static void hmR0VmxReportWorldSwitchError(PVMCPU pVCpu, int rcVMRun, PVMXTRANSIE
 
                     if (fSupported)
                     {
-                        const char *pszName  = s_aVmcsFields[i].pszName;
                         uint8_t const uWidth = RT_BF_GET(uVmcsField, VMX_BF_VMCSFIELD_WIDTH);
                         switch (uWidth)
                         {
@@ -6751,7 +6750,7 @@ static void hmR0VmxReportWorldSwitchError(PVMCPU pVCpu, int rcVMRun, PVMXTRANSIE
                                 uint16_t u16Val;
                                 rc = VMXReadVmcs16(uVmcsField, &u16Val);
                                 AssertRC(rc);
-                                Log4(("%-40s = %#RX16\n", pszName, u16Val));
+                                Log4(("%-40s = %#RX16\n", s_aVmcsFields[i].pszName, u16Val));
 
                                 if (   uVmcsField >= VMX_VMCS16_HOST_ES_SEL
                                     && uVmcsField <= VMX_VMCS16_HOST_TR_SEL)
@@ -6777,7 +6776,7 @@ static void hmR0VmxReportWorldSwitchError(PVMCPU pVCpu, int rcVMRun, PVMXTRANSIE
                                 uint32_t u32Val;
                                 rc = VMXReadVmcs32(uVmcsField, &u32Val);
                                 AssertRC(rc);
-                                Log4(("%-40s = %#RX32\n", pszName, u32Val));
+                                Log4(("%-40s = %#RX32\n", s_aVmcsFields[i].pszName, u32Val));
                                 break;
                             }
 
@@ -6787,7 +6786,7 @@ static void hmR0VmxReportWorldSwitchError(PVMCPU pVCpu, int rcVMRun, PVMXTRANSIE
                                 uint64_t u64Val;
                                 rc = VMXReadVmcs64(uVmcsField, &u64Val);
                                 AssertRC(rc);
-                                Log4(("%-40s = %#RX64\n", pszName, u64Val));
+                                Log4(("%-40s = %#RX64\n", s_aVmcsFields[i].pszName, u64Val));
                                 break;
                             }
                         }
