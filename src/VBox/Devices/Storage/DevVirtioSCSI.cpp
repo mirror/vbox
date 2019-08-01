@@ -82,6 +82,12 @@
                                                     | VIRTIOSCSI_F_CHANGE  \
                                                     | VIRTIOSCSI_F_T10_PI  \
 
+typedef struct VIRTIO_PCI_DEV_CAP_T
+{
+    uint32_t    uTestField1;
+    uint32_t    uTestField2;
+} VIRTIO_PCI_DEV_CAP_T, *PVIRTIO_PCI_DEV_CAP_T;
+
 /**
  * State of a target attached to the VirtIO SCSI Host
  */
@@ -143,6 +149,8 @@ typedef struct VIRTIOSCSI
     /* virtioState must be first member */
     VIRTIOSTATE                     virtioState;
 
+    VIRTIO_PCI_DEV_CAP_T            devSpecificCap;
+
     /* SCSI target instances data */
     VIRTIOSCSITARGET                aTargetInstances[VIRTIOSCSI_MAX_TARGETS];
 
@@ -179,8 +187,6 @@ typedef struct VIRTIOSCSI
 
     /** The event semaphore the processing thread waits on. */
     SUPSEMEVENT                     hEvtProcess;
-
-    PVIRTIOCALLBACKS                pVirtioCallbacks;
 
     /** Number of ports detected */
     uint64_t                        cTargets;
@@ -970,18 +976,20 @@ static DECLCALLBACK(int) virtioScsiConstruct(PPDMDEVINS pDevIns, int iInstance, 
 
     PVIRTIOSTATE pVirtio = &(pThis->virtioState);
 
+    virtioSetHostFeatures(pVirtio, VIRTIOSCSI_HOST_SCSI_FEATURES_OFFERED);
+
     pThis->IBase.pfnQueryInterface = virtioScsiR3DeviceQueryInterface;
-    rc = virtioConstruct(pDevIns, pVirtio, iInstance, pVirtioPciParams, &pThis->pVirtioCallbacks,
+
+    rc = virtioConstruct(pDevIns, pVirtio, iInstance, pVirtioPciParams,
                          VIRTIOSCSI_NAME_FMT, VIRTIOSCSI_N_QUEUES, VIRTIOSCSI_REGION_PCI_CAP,
                          virtioScsiR3DevCapRead, virtioScsiR3DevCapWrite,
-                        0 /* cbDevSpecificCap */,
-                        0 /* uNotifyOffMultiplier */);
+                         sizeof(VIRTIO_PCI_DEV_CAP_T ) /* cbDevSpecificCap */,
+                         false /* fHaveDevSpecificCap */, 0 /* uNotifyOffMultiplier */);
 
 
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("virtio-scsi: failed to initialize VirtIO"));
 
-    pThis->pVirtioCallbacks->pfnSetHostFeatures(pVirtio, VIRTIOSCSI_HOST_SCSI_FEATURES_OFFERED);
 
     rc = PDMDevHlpPCIIORegionRegister(pDevIns, VIRTIOSCSI_REGION_MEM_IO, 32,
                                       PCI_ADDRESS_SPACE_MEM, virtioScsiR3Map);

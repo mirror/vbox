@@ -33,7 +33,6 @@
 #define VIRTIO_SAVEDSTATE_VERSION           2
 /** @} */
 
-
 /** Reserved Feature Bits */
 #define VIRTIO_F_RING_INDIRECT_DESC         RT_BIT_64(28)
 #define VIRTIO_F_RING_IDX                   RT_BIT_64(29)
@@ -61,7 +60,6 @@
 #define VIRTIO_STATUS_FEATURES_OK           0x08    /** Guest says feature negotiation complete  */
 #define VIRTIO_STATUS_FAILED                0x80    /** Fatal: Something wrong, guest gave up    */
 #define VIRTIO_STATUS_DEVICE_NEEDS_RESET    0x40    /** Device experienced unrecoverable error   */
-
 
 #define VIRTIO_MAX_NQUEUES                  256     /** Max queues we allow guest to create      */
 #define VIRTQUEUEDESC_MAX_SIZE              (2 * 1024 * 1024)   /** Legacy only? */
@@ -156,11 +154,21 @@ typedef struct virtio_pci_common_cfg /* VirtIO 1.0 specification name of this st
     uint16_t  uQueueSize;             /** RW (queue size, 0 - 2^n)                    */
     uint16_t  uQueueMsixVector;       /** RW (driver selects MSI-X queue vector)      */
     uint16_t  uQueueEnable;           /** RW (driver controls usability of queue)     */
-    uint16_t  uQueueNotifyOff;        /** RO (offset uto virtqueue; see spec)          */
+    uint16_t  uQueueNotifyOff;        /** RO (offset uto virtqueue; see spec)         */
     uint64_t  uQueueDesc;             /** RW (driver writes desc table phys addr)     */
     uint64_t  uQueueAvail;            /** RW (driver writes avail ring phys addr)     */
     uint64_t  uQueueUsed;             /** RW (driver writes used ring  phys addr)     */
 } VIRTIO_PCI_COMMON_CFG_T, *PVIRTIO_PCI_COMMON_CFG_T;
+
+/* The following two types are opaque here. The device-specific capabilities are handled
+ * through a callback to the consumer host device driver, where the corresponding
+ * struct is declared, since it cannot be defined in the host-generic section of
+ * the VirtIO specification. */
+
+typedef void * PVIRTIO_PCI_DEVICE_CAP_T;
+typedef struct virtio_pci_device_cap
+{
+} VIRTIO_PCI_DEVICE_CAP_T;
 
 typedef struct virtio_pci_notify_cap
 {
@@ -174,10 +182,6 @@ typedef uint8_t VIRTIO_PCI_ISR_CAP_T, *PVIRTIO_PCI_ISR_CAP_T;
  * If the client of this library has any device-specific capabilities, it must define
  * and implement this struct and the macro
  */
-#ifdef HAVE_VIRTIO_DEVICE_SPECIFIC_CAP
-typedef struct virtio_pci_dev_cfg     VIRTIO_PCI_DEVICE_CAP_T, *PVIRTIO_PCI_DEVICE_CAP_T;
-#endif
-
 typedef struct virtio_pci_cfg_cap {
         struct virtio_pci_cap pciCap;
         uint8_t uPciCfgData[4]; /* Data for BAR access. */
@@ -279,6 +283,17 @@ typedef FNVIRTIODEVCAPWRITE *PFNVIRTIODEVCAPWRITE;
 typedef DECLCALLBACK(int)   FNVIRTIODEVCAPREAD(PPDMDEVINS pDevIns, RTGCPHYS GCPhysAddr, const void *pvBuf, size_t cbRead);
 typedef FNVIRTIODEVCAPREAD *PFNVIRTIODEVCAPREAD;
 
+/** @name VirtIO port I/O callbacks.
+ * @{ */
+typedef struct VIRTIOCALLBACKS
+{
+     DECLCALLBACKMEMBER(int,      pfnVirtioDevCapRead)
+                                      (PPDMDEVINS pDevIns, RTGCPHYS GCPhysAddr, const void *pvBuf, size_t cbRead);
+     DECLCALLBACKMEMBER(int,      pfnVirtioDevCapWrite)
+                                      (PPDMDEVINS pDevIns, RTGCPHYS GCPhysAddr, const void *pvBuf, size_t cbWrite);
+} VIRTIOCALLBACKS, *PVIRTALCALLBACKS;
+/** @} */
+
 /**
  * The core (/common) state of the VirtIO PCI device
  *
@@ -286,45 +301,37 @@ typedef FNVIRTIODEVCAPREAD *PFNVIRTIODEVCAPREAD;
  */
 typedef struct VIRTIOSTATE
 {
-    PDMPCIDEV              dev;
-    PDMCRITSECT            cs;                     /**< Critical section - what is it protecting? */
+    PDMPCIDEV                    dev;
+    PDMCRITSECT                  cs;                     /**< Critical section - what is it protecting? */
     /* Read-only part, never changes after initialization. */
-    char                   szInstance[8];          /**< Instance name, e.g. VNet#1. */
+    char                         szInstance[8];          /**< Instance name, e.g. VNet#1. */
 
+    bool                         fHaveDevSpecificCap;
 #if HC_ARCH_BITS != 64
-    uint32_t               padding1;
+    uint32_t                     padding1;
 #endif
 
     /** Status LUN: Base interface. */
-    PDMIBASE               IBase;
+    PDMIBASE                     IBase;
 
     /** Status LUN: LED port interface. */
-    PDMILEDPORTS           ILed;
+    PDMILEDPORTS                 ILed;
 
     /* Read/write part, protected with critical section. */
     /** Status LED. */
-    PDMLED                 led;
+    PDMLED                       led;
 
+    VIRTIOCALLBACKS              virtioCallbacks;
 
     /** Status LUN: LED connector (peer). */
     R3PTRTYPE(PPDMILEDCONNECTORS) pLedsConnector;
 
-    PPDMDEVINSR3                pDevInsR3;              /**< Device instance - R3. */
-    PPDMDEVINSR0                pDevInsR0;              /**< Device instance - R0. */
-    PPDMDEVINSRC                pDevInsRC;              /**< Device instance - RC. */
-
-    /** Base address of PCI capabilities */
-    RTGCPHYS                    GCPhysPciCapBase;
+    PPDMDEVINSR3                 pDevInsR3;              /**< Device instance - R3. */
+    PPDMDEVINSR0                 pDevInsR0;              /**< Device instance - R0. */
+    PPDMDEVINSRC                 pDevInsRC;              /**< Device instance - RC. */
 
 
-    /** Callbacks when guest driver reads or writes VirtIO device-specific capabilities(s) */
-
-    PFNVIRTIODEVCAPWRITE         pfnVirtioDevCapWrite;
-    PFNVIRTIODEVCAPREAD          pfnVirtioDevCapRead;
-    PFNPCICONFIGREAD             pfnPciConfigReadOld;
-    PFNPCICONFIGWRITE            pfnPciConfigWriteOld;
-
-    uint8_t                      uPciConfigDataOffset;
+    uint8_t                      uPciCfgDataOff;
 #if HC_ARCH_BITS == 64
     uint32_t                     padding2;
 #endif
@@ -363,6 +370,16 @@ typedef struct VIRTIOSTATE
     uint64_t                     uQueueAvail[MAX_QUEUES];
     uint64_t                     uQueueUsed[MAX_QUEUES];
 
+    /** Base address of PCI capabilities */
+    RTGCPHYS                     GCPhysPciCapBase;
+
+    uint8_t                      uVirtioCapRegion;      /* Client assigned  Virtio dedicated capabilities region*/
+
+    /** Callbacks when guest driver reads or writes VirtIO device-specific capabilities(s) */
+    PFNPCICONFIGREAD             pfnPciConfigReadOld;
+    PFNPCICONFIGWRITE            pfnPciConfigWriteOld;
+
+
     uint32_t                     uNotifyCapOffset;
     uint32_t                     uIsrCapOffset;
     uint32_t                     uPciCfgCapOffset;
@@ -375,36 +392,20 @@ typedef struct VIRTIOSTATE
     PVIRTIO_PCI_NOTIFY_CAP_T     pGcPhysNotifyCap;      /** Pointer to MMIO mapped struct */
     PVIRTIO_PCI_ISR_CAP_T        pGcPhysIsrCap;         /** Pointer to MMIO mapped struct */
     PVIRTIO_PCI_CFG_CAP_T        pGcPhysPciCfgCap;      /** Pointer to MMIO mapped struct */
-#ifdef HAVE_VIRTIO_DEVICE_SPECIFIC_CAP
     PVIRTIO_PCI_DEVICE_CAP_T     pGcPhysDeviceCap;      /** Pointer to MMIO mapped struct */
-#endif
 
     bool fDeviceConfigInterrupt;
     bool fQueueInterrupt;
 
 } VIRTIOSTATE, *PVIRTIOSTATE;
 
-/** @name VirtIO port I/O callbacks.
- * @{ */
-typedef struct VIRTIOIOCALLBACKS
-{
-     DECLCALLBACKMEMBER(uint64_t, pfnGetHostFeatures)(PVIRTIOSTATE pVirtio);
-     DECLCALLBACKMEMBER(int,      pfnSetHostFeatures)(PVIRTIOSTATE pVirtio, uint64_t uFeaturesOffered);
-     DECLCALLBACKMEMBER(int,      pfnReset)(PVIRTIOSTATE pVirtio);
-/*   DECLCALLBACKMEMBER(uint32_t, pfnGetHostMinimalFeatures)(void *pvState); */
-/*   DECLCALLBACKMEMBER(int,      pfnGetConfig)(void *pvState, uint32_t offCfg, uint32_t cb, void *pvData); */
-/*   DECLCALLBACKMEMBER(int,      pfnSetConfig)(void *pvState, uint32_t offCfg, uint32_t cb, void *pvData); */
-/*   DECLCALLBACKMEMBER(void,     pfnReady)(void *pvState); */
-} VIRTIOCALLBACKS, *PVIRTIOCALLBACKS, **PPVIRTIOCALLBACKS;
-/** @} */
-
 void    virtioRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta);
 void   *virtioQueryInterface(struct PDMIBASE *pInterface, const char *pszIID);
 
 int     virtioConstruct(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirtio, int iInstance, PVIRTIOPCIPARAMS pPciParams,
-                    PPVIRTIOCALLBACKS ppVirtioCallbacks, const char *pcszNameFmt, uint32_t nQueues, uint32_t uVirtioRegion,
+                    const char *pcszNameFmt, uint32_t nQueues, uint32_t uVirtioCapRegion,
                     PFNVIRTIODEVCAPREAD devCapReadCallback, PFNVIRTIODEVCAPWRITE devCapWriteCallback,
-                    uint16_t cbDevSpecificCap, uint32_t uNotifyOffMultiplier);
+                    uint16_t cbDevSpecificCap, bool fHaveDevSpecificCap, uint32_t uNotifyOffMultiplier);
 
 int     virtioDestruct(PVIRTIOSTATE pVirtio);
 int     virtioReset(PVIRTIOSTATE pVirtio);
@@ -414,6 +415,7 @@ void    virtioSetReadLed(PVIRTIOSTATE pVirtio, bool fOn);
 void    virtioSetWriteLed(PVIRTIOSTATE pVirtio, bool fOn);
 int     virtioRaiseInterrupt(PVIRTIOSTATE pVirtio, int rcBusy, uint8_t uint8_tIntCause);
 void    virtioNotify(PVIRTIOSTATE pVirtio);
+void    virtioSetHostFeatures(PVIRTIOSTATE pVirtio, uint64_t uFeaturesOffered);
 
 PVQUEUE virtioAddQueue(PVIRTIOSTATE pVirtio, unsigned uSize, PFNVIRTIOQUEUECALLBACK pfnCallback, const char *pcszName);
 bool    virtQueueSkip(PVIRTIOSTATE pVirtio, PVQUEUE pQueue);
@@ -423,22 +425,22 @@ void    virtQueueNotify(PVIRTIOSTATE pVirtio, PVQUEUE pQueue);
 void    virtQueueSync(PVIRTIOSTATE pVirtio, PVQUEUE pQueue);
 void    vringSetNotification( PVIRTIOSTATE pVirtio, PVIRTQUEUE pVirtQueue, bool fEnabled);
 
-DECLINLINE(void) showDeviceStatus(uint8_t status)
+DECLINLINE(void) logDeviceStatus(uint8_t status)
 {
     if (status & VIRTIO_STATUS_ACKNOWLEDGE)
-        Log(("                        ACKNOWLEDGE\n"));
+        Log(("                         ACKNOWLEDGE\n"));
     if (status & VIRTIO_STATUS_DRIVER)
-        Log(("                        DRIVER\n"));
+        Log(("                         DRIVER\n"));
     if (status & VIRTIO_STATUS_DRIVER_OK)
-        Log(("                        DRIVER_OK\n"));
+        Log(("                         DRIVER_OK\n"));
     if (status & VIRTIO_STATUS_FEATURES_OK)
-        Log(("                        FEATURES_OK\n"));
+        Log(("                         FEATURES_OK\n"));
     if (status & VIRTIO_STATUS_FAILED)
-        Log(("                        FAILED\n"));
+        Log(("                         FAILED\n"));
     if (status & VIRTIO_STATUS_DEVICE_NEEDS_RESET)
-        Log(("                        ACKNOWLEDGE\n"));
+        Log(("                         ACKNOWLEDGE\n"));
     if (status == 0)
-        Log(("                        RESET\n"));
+        Log(("                         RESET\n"));
     Log(("\n"));
 }
 
