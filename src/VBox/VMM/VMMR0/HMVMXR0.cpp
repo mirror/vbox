@@ -4549,8 +4549,8 @@ static int hmR0VmxExportHostSegmentRegs(PVMCPU pVCpu)
      */
     uint64_t const u64FSBase = ASMRdMsr(MSR_K8_FS_BASE);
     uint64_t const u64GSBase = ASMRdMsr(MSR_K8_GS_BASE);
-    rc  = VMXWriteVmcs64(VMX_VMCS_HOST_FS_BASE, u64FSBase);
-    rc |= VMXWriteVmcs64(VMX_VMCS_HOST_GS_BASE, u64GSBase);
+    rc  = VMXWriteVmcsHstN(VMX_VMCS_HOST_FS_BASE, u64FSBase);
+    rc |= VMXWriteVmcsHstN(VMX_VMCS_HOST_GS_BASE, u64GSBase);
     AssertRCReturn(rc, rc);
 
     /* Store the base if we have to restore FS or GS manually as we need to restore the base as well. */
@@ -5090,7 +5090,7 @@ static int hmR0VmxExportGuestRflags(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
             fEFlags.Bits.u2IOPL = 0;                         /* Change IOPL to 0, otherwise certain instructions won't fault. */
         }
 
-        int rc = VMXWriteVmcs32(VMX_VMCS_GUEST_RFLAGS, fEFlags.u32);
+        int rc = VMXWriteVmcsGstN(VMX_VMCS_GUEST_RFLAGS, fEFlags.u32);
         AssertRCReturn(rc, rc);
 
         /*
@@ -5481,7 +5481,7 @@ static int hmR0VmxExportGuestCR0(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
             u64GuestCr0 &= ~(uint64_t)(X86_CR0_CD | X86_CR0_NW);
 
             /* Commit the CR0 and related fields to the guest VMCS. */
-            int rc = VMXWriteVmcs32(VMX_VMCS_GUEST_CR0, u64GuestCr0);   /** @todo Fix to 64-bit when we drop 32-bit. */
+            int rc = VMXWriteVmcsGstN(VMX_VMCS_GUEST_CR0, u64GuestCr0);
             rc    |= VMXWriteVmcsHstN(VMX_VMCS_CTRL_CR0_READ_SHADOW, u64ShadowCr0);
             if (uProcCtls != pVmcsInfo->u32ProcCtls)
                 rc |= VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, uProcCtls);
@@ -5520,8 +5520,7 @@ static int hmR0VmxExportGuestCR0(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
             u64GuestCr0 &= ~(uint64_t)(X86_CR0_CD | X86_CR0_NW);
 
             /* Commit the CR0 and CR0 read-shadow to the nested-guest VMCS. */
-            /** @todo NSTVMX: Fix to 64-bit when we drop 32-bit. */
-            int rc = VMXWriteVmcs32(VMX_VMCS_GUEST_CR0,              u64GuestCr0);
+            int rc = VMXWriteVmcsGstN(VMX_VMCS_GUEST_CR0, u64GuestCr0);
             rc    |= VMXWriteVmcsHstN(VMX_VMCS_CTRL_CR0_READ_SHADOW, u64ShadowCr0);
             AssertRCReturn(rc, rc);
 
@@ -5761,8 +5760,7 @@ static VBOXSTRICTRC hmR0VmxExportGuestCR3AndCR4(PVMCPU pVCpu, PVMXTRANSIENT pVmx
         u64GuestCr4 &= fZapCr4;
 
         /* Commit the CR4 and CR4 read-shadow to the guest VMCS. */
-        /** @todo Fix to 64-bit when we drop 32-bit. */
-        rc  = VMXWriteVmcs32(VMX_VMCS_GUEST_CR4,              u64GuestCr4);
+        rc  = VMXWriteVmcsGstN(VMX_VMCS_GUEST_CR4, u64GuestCr4);
         rc |= VMXWriteVmcsHstN(VMX_VMCS_CTRL_CR4_READ_SHADOW, u64ShadowCr4);
         AssertRCReturn(rc, rc);
 
@@ -5798,7 +5796,7 @@ static int hmR0VmxExportSharedDebugState(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransie
     PVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
     if (pVmxTransient->fIsNestedGuest)
     {
-        int rc = VMXWriteVmcs32(VMX_VMCS_GUEST_DR7, CPUMGetGuestDR7(pVCpu));
+        int rc = VMXWriteVmcsGstN(VMX_VMCS_GUEST_DR7, CPUMGetGuestDR7(pVCpu));
         AssertRCReturn(rc, rc);
 
         /* Always intercept Mov DRx accesses for the nested-guest for now. */
@@ -5839,7 +5837,7 @@ static int hmR0VmxExportSharedDebugState(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransie
         }
     }
 
-    uint32_t u32GuestDr7;
+    uint64_t u64GuestDr7;
     if (   fSteppingDB
         || (CPUMGetHyperDR7(pVCpu) & X86_DR7_ENABLED_MASK))
     {
@@ -5858,7 +5856,7 @@ static int hmR0VmxExportSharedDebugState(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransie
         }
 
         /* Update DR7 with the hypervisor value (other DRx registers are handled by CPUM one way or another). */
-        u32GuestDr7 = (uint32_t)CPUMGetHyperDR7(pVCpu);
+        u64GuestDr7 = CPUMGetHyperDR7(pVCpu);
         pVCpu->hm.s.fUsingHyperDR7 = true;
         fInterceptMovDRx = true;
     }
@@ -5891,7 +5889,7 @@ static int hmR0VmxExportSharedDebugState(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransie
         }
 
         /* Update DR7 with the actual guest value. */
-        u32GuestDr7 = pVCpu->cpum.GstCtx.dr[7];
+        u64GuestDr7 = pVCpu->cpum.GstCtx.dr[7];
         pVCpu->hm.s.fUsingHyperDR7 = false;
     }
 
@@ -5914,7 +5912,7 @@ static int hmR0VmxExportSharedDebugState(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransie
     /*
      * Update guest DR7.
      */
-    int rc = VMXWriteVmcs32(VMX_VMCS_GUEST_DR7, u32GuestDr7);
+    int rc = VMXWriteVmcsGstN(VMX_VMCS_GUEST_DR7, u64GuestDr7);
     AssertRCReturn(rc, rc);
 
     /*
@@ -7298,14 +7296,14 @@ static int hmR0VmxImportGuestRip(PVMCPU pVCpu)
  */
 static int hmR0VmxImportGuestRFlags(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo)
 {
-    uint32_t u32Val;
+    uint64_t u64Val;
     PCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
     if (pCtx->fExtrn & CPUMCTX_EXTRN_RFLAGS)
     {
-        int rc = VMXReadVmcs32(VMX_VMCS_GUEST_RFLAGS, &u32Val);
+        int rc = VMXReadVmcsGstN(VMX_VMCS_GUEST_RFLAGS, &u64Val);
         if (RT_SUCCESS(rc))
         {
-            pCtx->eflags.u32 = u32Val;
+            pCtx->rflags.u64 = u64Val;
 
             /* Restore eflags for real-on-v86-mode hack. */
             if (pVmcsInfo->RealMode.fRealOnV86Active)
@@ -7528,9 +7526,9 @@ static int hmR0VmxImportGuestState(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo, uint64_
                 if (!pVCpu->hm.s.fUsingHyperDR7)
                 {
                     /* Upper 32-bits are always zero. See Intel spec. 2.7.3 "Loading and Storing Debug Registers". */
-                    rc = VMXReadVmcs32(VMX_VMCS_GUEST_DR7, &u32Val);
+                    rc = VMXReadVmcsGstN(VMX_VMCS_GUEST_DR7, &u64Val);
                     VMXLOCAL_BREAK_RC(rc);
-                    pCtx->dr[7] = u32Val;
+                    pCtx->dr[7] = u64Val;
                 }
             }
 
@@ -9394,8 +9392,7 @@ static uint32_t hmR0VmxCheckGuestState(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo)
         /*
          * RIP and RFLAGS.
          */
-        uint32_t u32Eflags;
-        rc = VMXReadVmcs64(VMX_VMCS_GUEST_RIP, &u64Val);
+        rc = VMXReadVmcsGstN(VMX_VMCS_GUEST_RIP, &u64Val);
         AssertRCBreak(rc);
         /* pCtx->rip can be different than the one in the VMCS (e.g. run guest code and VM-exits that don't update it). */
         if (   !fLongModeGuest
@@ -9409,12 +9406,12 @@ static uint32_t hmR0VmxCheckGuestState(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo)
          *        CPU supports 64 linear-address bits. */
 
         /* Flags in pCtx can be different (real-on-v86 for instance). We are only concerned about the VMCS contents here. */
-        rc = VMXReadVmcs64(VMX_VMCS_GUEST_RFLAGS, &u64Val);
+        rc = VMXReadVmcsGstN(VMX_VMCS_GUEST_RFLAGS, &u64Val);
         AssertRCBreak(rc);
         HMVMX_CHECK_BREAK(!(u64Val & UINT64_C(0xffffffffffc08028)),                     /* Bit 63:22, Bit 15, 5, 3 MBZ. */
                           VMX_IGS_RFLAGS_RESERVED);
         HMVMX_CHECK_BREAK((u64Val & X86_EFL_RA1_MASK), VMX_IGS_RFLAGS_RESERVED1);       /* Bit 1 MB1. */
-        u32Eflags = u64Val;
+        uint32_t const u32Eflags = u64Val;
 
         if (   fLongModeGuest
             || (   fUnrestrictedGuest
@@ -9453,11 +9450,11 @@ static uint32_t hmR0VmxCheckGuestState(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo)
             HMVMX_ERROR_BREAK(VMX_IGS_DR7_RESERVED);
         }
 
-        rc = VMXReadVmcs64(VMX_VMCS_HOST_SYSENTER_ESP, &u64Val);
+        rc = VMXReadVmcsHstN(VMX_VMCS_HOST_SYSENTER_ESP, &u64Val);
         AssertRCBreak(rc);
         HMVMX_CHECK_BREAK(X86_IS_CANONICAL(u64Val), VMX_IGS_SYSENTER_ESP_NOT_CANONICAL);
 
-        rc = VMXReadVmcs64(VMX_VMCS_HOST_SYSENTER_EIP, &u64Val);
+        rc = VMXReadVmcsHstN(VMX_VMCS_HOST_SYSENTER_EIP, &u64Val);
         AssertRCBreak(rc);
         HMVMX_CHECK_BREAK(X86_IS_CANONICAL(u64Val), VMX_IGS_SYSENTER_EIP_NOT_CANONICAL);
 
@@ -9727,11 +9724,11 @@ static uint32_t hmR0VmxCheckGuestState(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo)
         /*
          * GDTR and IDTR (64-bit capable checks).
          */
-        rc = VMXReadVmcs64(VMX_VMCS_GUEST_GDTR_BASE, &u64Val);
+        rc = VMXReadVmcsGstN(VMX_VMCS_GUEST_GDTR_BASE, &u64Val);
         AssertRCBreak(rc);
         HMVMX_CHECK_BREAK(X86_IS_CANONICAL(u64Val), VMX_IGS_GDTR_BASE_NOT_CANONICAL);
 
-        rc = VMXReadVmcs64(VMX_VMCS_GUEST_IDTR_BASE, &u64Val);
+        rc = VMXReadVmcsGstN(VMX_VMCS_GUEST_IDTR_BASE, &u64Val);
         AssertRCBreak(rc);
         HMVMX_CHECK_BREAK(X86_IS_CANONICAL(u64Val), VMX_IGS_IDTR_BASE_NOT_CANONICAL);
 
@@ -13808,13 +13805,13 @@ static VBOXSTRICTRC hmR0VmxExitXcptDB(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
         AssertRCReturn(rc, rc);
 
         /* X86_DR7_GD will be cleared if DRx accesses should be trapped inside the guest. */
-        pCtx->dr[7] &= ~X86_DR7_GD;
+        pCtx->dr[7] &= ~(uint64_t)X86_DR7_GD;
 
         /* Paranoia. */
-        pCtx->dr[7] &= ~X86_DR7_RAZ_MASK;
+        pCtx->dr[7] &= ~(uint64_t)X86_DR7_RAZ_MASK;
         pCtx->dr[7] |= X86_DR7_RA1_MASK;
 
-        rc = VMXWriteVmcs32(VMX_VMCS_GUEST_DR7, (uint32_t)pCtx->dr[7]);
+        rc = VMXWriteVmcsGstN(VMX_VMCS_GUEST_DR7, pCtx->dr[7]);
         AssertRCReturn(rc, rc);
 
         /*
