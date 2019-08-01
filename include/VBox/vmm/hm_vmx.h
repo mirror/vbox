@@ -33,26 +33,6 @@
 #include <iprt/x86.h>
 #include <iprt/assertcompile.h>
 
-/* In Visual C++ versions prior to 2012, the vmx intrinsics are only available
-   when targeting AMD64. */
-#if RT_INLINE_ASM_USES_INTRIN >= 16 && defined(RT_ARCH_AMD64)
-# pragma warning(push)
-# pragma warning(disable:4668) /* Several incorrect __cplusplus uses. */
-# pragma warning(disable:4255) /* Incorrect __slwpcb prototype. */
-# include <intrin.h>
-# pragma warning(pop)
-/* We always want them as intrinsics, no functions. */
-# pragma intrinsic(__vmx_on)
-# pragma intrinsic(__vmx_off)
-# pragma intrinsic(__vmx_vmclear)
-# pragma intrinsic(__vmx_vmptrld)
-# pragma intrinsic(__vmx_vmread)
-# pragma intrinsic(__vmx_vmwrite)
-# define VMX_USE_MSC_INTRINSICS 1
-#else
-# define VMX_USE_MSC_INTRINSICS 0
-#endif
-
 
 /** @defgroup grp_hm_vmx    VMX Types and Definitions
  * @ingroup grp_hm
