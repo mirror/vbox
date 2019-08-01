@@ -803,32 +803,36 @@ UITextTable UIDetailsGenerator::generateMachineInformationUI(CMachine &comMachin
     /* Menu-bar: */
     if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface_MenuBar)
     {
+        const QString strAnchorType = QString("menu_bar");
         const QString strMenubarEnabled = comMachine.GetExtraData(UIExtraDataDefs::GUI_MenuBar_Enabled);
-        /* Try to convert loaded data to bool: */
         const bool fEnabled = !(   strMenubarEnabled.compare("false", Qt::CaseInsensitive) == 0
                                 || strMenubarEnabled.compare("no", Qt::CaseInsensitive) == 0
                                 || strMenubarEnabled.compare("off", Qt::CaseInsensitive) == 0
                                 || strMenubarEnabled == "0");
-        /* Append information: */
         table << UITextTableLine(QApplication::translate("UIDetails", "Menu-bar", "details (user interface)"),
-                                 fEnabled ? QApplication::translate("UIDetails", "Enabled", "details (user interface/menu-bar)")
-                                          : QApplication::translate("UIDetails", "Disabled", "details (user interface/menu-bar)"));
+                                 QString("<a href=#%1,%2>%3</a>")
+                                     .arg(strAnchorType)
+                                     .arg((int)fEnabled)
+                                     .arg(fEnabled ? QApplication::translate("UIDetails", "Enabled", "details (user interface/menu-bar)")
+                                                   : QApplication::translate("UIDetails", "Disabled", "details (user interface/menu-bar)")));
     }
 #endif /* !VBOX_WS_MAC */
 
     /* Status-bar: */
     if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface_StatusBar)
     {
+        const QString strAnchorType = QString("status_bar");
         const QString strStatusbarEnabled = comMachine.GetExtraData(UIExtraDataDefs::GUI_StatusBar_Enabled);
-        /* Try to convert loaded data to bool: */
         const bool fEnabled = !(   strStatusbarEnabled.compare("false", Qt::CaseInsensitive) == 0
                                 || strStatusbarEnabled.compare("no", Qt::CaseInsensitive) == 0
                                 || strStatusbarEnabled.compare("off", Qt::CaseInsensitive) == 0
                                 || strStatusbarEnabled == "0");
-        /* Append information: */
         table << UITextTableLine(QApplication::translate("UIDetails", "Status-bar", "details (user interface)"),
-                                 fEnabled ? QApplication::translate("UIDetails", "Enabled", "details (user interface/status-bar)")
-                                          : QApplication::translate("UIDetails", "Disabled", "details (user interface/status-bar)"));
+                                 QString("<a href=#%1,%2>%3</a>")
+                                     .arg(strAnchorType)
+                                     .arg((int)fEnabled)
+                                     .arg(fEnabled ? QApplication::translate("UIDetails", "Enabled", "details (user interface/status-bar)")
+                                                   : QApplication::translate("UIDetails", "Disabled", "details (user interface/status-bar)")));
     }
 
 #ifndef VBOX_WS_MAC

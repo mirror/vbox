@@ -60,6 +60,8 @@ enum AnchorRole
     AnchorRole_Storage,
     AnchorRole_AudioHostDriverType,
     AnchorRole_AudioControllerType,
+    AnchorRole_MenuBar,
+    AnchorRole_StatusBar,
 };
 
 
@@ -165,10 +167,12 @@ void UIDetailsElement::updateAppearance()
     m_pTextPane->setAnchorRoleRestricted("#boot_order", cal != ConfigurationAccessLevel_Full);
     m_pTextPane->setAnchorRoleRestricted("#video_memory", cal != ConfigurationAccessLevel_Full);
     m_pTextPane->setAnchorRoleRestricted("#graphics_controller_type", cal != ConfigurationAccessLevel_Full);
-    m_pTextPane->setAnchorRoleRestricted("#audio_host_driver_type", cal != ConfigurationAccessLevel_Full);
-    m_pTextPane->setAnchorRoleRestricted("#audio_controller_type", cal != ConfigurationAccessLevel_Full);
     m_pTextPane->setAnchorRoleRestricted("#mount", cal == ConfigurationAccessLevel_Null);
     m_pTextPane->setAnchorRoleRestricted("#attach", cal != ConfigurationAccessLevel_Full);
+    m_pTextPane->setAnchorRoleRestricted("#audio_host_driver_type", cal != ConfigurationAccessLevel_Full);
+    m_pTextPane->setAnchorRoleRestricted("#audio_controller_type", cal != ConfigurationAccessLevel_Full);
+    m_pTextPane->setAnchorRoleRestricted("#menu_bar", cal == ConfigurationAccessLevel_Null);
+    m_pTextPane->setAnchorRoleRestricted("#status_bar", cal == ConfigurationAccessLevel_Null);
 }
 
 int UIDetailsElement::minimumWidthHint() const
@@ -453,10 +457,12 @@ void UIDetailsElement::sltHandleAnchorClicked(const QString &strAnchor)
     roles["#boot_order"] = AnchorRole_BootOrder;
     roles["#video_memory"] = AnchorRole_VideoMemory;
     roles["#graphics_controller_type"] = AnchorRole_GraphicsControllerType;
-    roles["#audio_host_driver_type"] = AnchorRole_AudioHostDriverType;
-    roles["#audio_controller_type"] = AnchorRole_AudioControllerType;
     roles["#mount"] = AnchorRole_Storage;
     roles["#attach"] = AnchorRole_Storage;
+    roles["#audio_host_driver_type"] = AnchorRole_AudioHostDriverType;
+    roles["#audio_controller_type"] = AnchorRole_AudioControllerType;
+    roles["#menu_bar"] = AnchorRole_MenuBar;
+    roles["#status_bar"] = AnchorRole_StatusBar;
 
     /* Current anchor role: */
     const QString strRole = strAnchor.section(',', 0, 0);
@@ -732,6 +738,39 @@ void UIDetailsElement::sltHandleAnchorClicked(const QString &strAnchor)
 
                 /* Delete popup: */
                 delete pPopup;
+            }
+            break;
+        }
+        case AnchorRole_MenuBar:
+        case AnchorRole_StatusBar:
+        {
+            /* Parse whether we have it enabled, true if unable to parse: */
+            bool fParsed = false;
+            bool fEnabled = strData.section(',', 0, 0).toInt(&fParsed);
+            if (!fParsed)
+                fEnabled = true;
+
+            /* Fill menu with actions, use menu-bar NLS for both cases for simplicity: */
+            UIMenu menu;
+            QAction *pActionEnable = menu.addAction(QApplication::translate("UIDetails", "Enabled", "details (user interface/menu-bar)"));
+            pActionEnable->setCheckable(true);
+            pActionEnable->setChecked(fEnabled);
+            QAction *pActionDisable = menu.addAction(QApplication::translate("UIDetails", "Disabled", "details (user interface/menu-bar)"));
+            pActionDisable->setCheckable(true);
+            pActionDisable->setChecked(!fEnabled);
+
+            /* Execute menu, look for result: */
+            QAction *pTriggeredAction = menu.exec(QCursor::pos());
+            if (   pTriggeredAction
+                && (   fEnabled && pTriggeredAction == pActionDisable
+                    || !fEnabled && pTriggeredAction == pActionEnable))
+            {
+                switch (enmRole)
+                {
+                    case AnchorRole_MenuBar: gEDataManager->setMenuBarEnabled(!fEnabled, machine().GetId()); break;
+                    case AnchorRole_StatusBar: gEDataManager->setStatusBarEnabled(!fEnabled, machine().GetId()); break;
+                    default: break;
+                }
             }
             break;
         }
