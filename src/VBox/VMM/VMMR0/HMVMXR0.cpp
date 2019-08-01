@@ -1561,7 +1561,7 @@ static int hmR0VmxReadAllRoFieldsVmcs(PVMXTRANSIENT pVmxTransient)
     rc    |= VMXReadVmcs32(VMX_VMCS32_RO_EXIT_INTERRUPTION_INFO,       &pVmxTransient->uExitIntInfo);
     rc    |= VMXReadVmcs32(VMX_VMCS32_RO_EXIT_INTERRUPTION_ERROR_CODE, &pVmxTransient->uExitIntErrorCode);
     rc    |= VMXReadVmcsNw(VMX_VMCS_RO_GUEST_LINEAR_ADDR,              &pVmxTransient->uGuestLinearAddr);
-    rc    |= VMXReadVmcsNw(VMX_VMCS64_RO_GUEST_PHYS_ADDR_FULL,         &pVmxTransient->uGuestPhysicalAddr);
+    rc    |= VMXReadVmcs64(VMX_VMCS64_RO_GUEST_PHYS_ADDR_FULL,         &pVmxTransient->uGuestPhysicalAddr);
     AssertRCReturn(rc, rc);
     pVmxTransient->fVmcsFieldsRead |= HMVMX_READ_EXIT_QUALIFICATION
                                    |  HMVMX_READ_EXIT_INSTR_LEN
