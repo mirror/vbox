@@ -3035,7 +3035,7 @@ static void hmR0VmxFlushTaggedTlbBoth(PHMPHYSCPU pHostCpu, PVMCPU pVCpu, PCVMXVM
               ("Cpu[%u] pVCpu->uCurrentAsid=%u\n", pHostCpu->idCpu, pVCpu->hm.s.uCurrentAsid));
 
     /* Update VMCS with the VPID. */
-    int rc  = VMXWriteVmcs32(VMX_VMCS16_VPID, pVCpu->hm.s.uCurrentAsid);
+    int rc  = VMXWriteVmcs16(VMX_VMCS16_VPID, pVCpu->hm.s.uCurrentAsid);
     AssertRC(rc);
 
 #undef HMVMX_SET_TAGGED_TLB_FLUSHED
@@ -3186,7 +3186,7 @@ static void hmR0VmxFlushTaggedTlbVpid(PHMPHYSCPU pHostCpu, PVMCPU pVCpu)
     AssertMsg(pVCpu->hm.s.uCurrentAsid >= 1 && pVCpu->hm.s.uCurrentAsid < pVM->hm.s.uMaxAsid,
               ("Cpu[%u] pVCpu->uCurrentAsid=%u\n", pHostCpu->idCpu, pVCpu->hm.s.uCurrentAsid));
 
-    int rc  = VMXWriteVmcs32(VMX_VMCS16_VPID, pVCpu->hm.s.uCurrentAsid);
+    int rc  = VMXWriteVmcs16(VMX_VMCS16_VPID, pVCpu->hm.s.uCurrentAsid);
     AssertRC(rc);
 }
 
@@ -4482,20 +4482,20 @@ static int hmR0VmxExportHostSegmentRegs(PVMCPU pVCpu)
     Assert(uSelTR);
 
     /* Write these host selector fields into the host-state area in the VMCS. */
-    int rc  = VMXWriteVmcs32(VMX_VMCS16_HOST_CS_SEL, uSelCS);
-    rc     |= VMXWriteVmcs32(VMX_VMCS16_HOST_SS_SEL, uSelSS);
+    int rc  = VMXWriteVmcs16(VMX_VMCS16_HOST_CS_SEL, uSelCS);
+    rc     |= VMXWriteVmcs16(VMX_VMCS16_HOST_SS_SEL, uSelSS);
 #if HC_ARCH_BITS == 64
-    rc     |= VMXWriteVmcs32(VMX_VMCS16_HOST_DS_SEL, uSelDS);
-    rc     |= VMXWriteVmcs32(VMX_VMCS16_HOST_ES_SEL, uSelES);
-    rc     |= VMXWriteVmcs32(VMX_VMCS16_HOST_FS_SEL, uSelFS);
-    rc     |= VMXWriteVmcs32(VMX_VMCS16_HOST_GS_SEL, uSelGS);
+    rc     |= VMXWriteVmcs16(VMX_VMCS16_HOST_DS_SEL, uSelDS);
+    rc     |= VMXWriteVmcs16(VMX_VMCS16_HOST_ES_SEL, uSelES);
+    rc     |= VMXWriteVmcs16(VMX_VMCS16_HOST_FS_SEL, uSelFS);
+    rc     |= VMXWriteVmcs16(VMX_VMCS16_HOST_GS_SEL, uSelGS);
 #else
     NOREF(uSelDS);
     NOREF(uSelES);
     NOREF(uSelFS);
     NOREF(uSelGS);
 #endif
-    rc     |= VMXWriteVmcs32(VMX_VMCS16_HOST_TR_SEL, uSelTR);
+    rc     |= VMXWriteVmcs16(VMX_VMCS16_HOST_TR_SEL, uSelTR);
     AssertRCReturn(rc, rc);
 
     /*
@@ -6435,7 +6435,7 @@ static int hmR0VmxExportGuestSegRegsXdtr(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransie
         Assert(   !(pCtx->tr.u32Limit & 0xfff00000)
                || (u32AccessRights & RT_BIT(15)));              /* Granularity MB1. */
 
-        rc  = VMXWriteVmcs32(VMX_VMCS16_GUEST_TR_SEL,           u16Sel);
+        rc  = VMXWriteVmcs16(VMX_VMCS16_GUEST_TR_SEL,           u16Sel);
         rc |= VMXWriteVmcs32(VMX_VMCS32_GUEST_TR_LIMIT,         u32Limit);
         rc |= VMXWriteVmcs32(VMX_VMCS32_GUEST_TR_ACCESS_RIGHTS, u32AccessRights);
         rc |= VMXWriteVmcsGstN(VMX_VMCS_GUEST_TR_BASE,          u64Base);
@@ -6478,7 +6478,7 @@ static int hmR0VmxExportGuestSegRegsXdtr(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransie
         else
             u32Access = pCtx->ldtr.Attr.u;
 
-        rc  = VMXWriteVmcs32(VMX_VMCS16_GUEST_LDTR_SEL,           pCtx->ldtr.Sel);
+        rc  = VMXWriteVmcs16(VMX_VMCS16_GUEST_LDTR_SEL,           pCtx->ldtr.Sel);
         rc |= VMXWriteVmcs32(VMX_VMCS32_GUEST_LDTR_LIMIT,         pCtx->ldtr.u32Limit);
         rc |= VMXWriteVmcs32(VMX_VMCS32_GUEST_LDTR_ACCESS_RIGHTS, u32Access);
         rc |= VMXWriteVmcsGstN(VMX_VMCS_GUEST_LDTR_BASE,          pCtx->ldtr.u64Base);
@@ -6783,155 +6783,143 @@ static void hmR0VmxReportWorldSwitchError(PVMCPU pVCpu, int rcVMRun, PVMXTRANSIE
                 Log4(("Entered host CPU   %u\n", pVCpu->hm.s.vmx.LastError.idEnteredCpu));
                 Log4(("Current host CPU   %u\n", pVCpu->hm.s.vmx.LastError.idCurrentCpu));
 
-                /* VMX control bits. */
-                uint32_t        u32Val;
-                uint64_t        u64Val;
-                RTHCUINTREG     uHCReg;
-                rc = VMXReadVmcs32(VMX_VMCS32_CTRL_PIN_EXEC, &u32Val);                  AssertRC(rc);
-                Log4(("VMX_VMCS32_CTRL_PIN_EXEC                %#RX32\n", u32Val));
-                rc = VMXReadVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, &u32Val);                 AssertRC(rc);
-                Log4(("VMX_VMCS32_CTRL_PROC_EXEC               %#RX32\n", u32Val));
-                if (pVmcsInfo->u32ProcCtls & VMX_PROC_CTLS_USE_SECONDARY_CTLS)
+                static struct
                 {
-                    rc = VMXReadVmcs32(VMX_VMCS32_CTRL_PROC_EXEC2, &u32Val);            AssertRC(rc);
-                    Log4(("VMX_VMCS32_CTRL_PROC_EXEC2              %#RX32\n", u32Val));
-                }
-                rc = VMXReadVmcs32(VMX_VMCS32_CTRL_ENTRY, &u32Val);                     AssertRC(rc);
-                Log4(("VMX_VMCS32_CTRL_ENTRY                   %#RX32\n", u32Val));
-                rc = VMXReadVmcs32(VMX_VMCS32_CTRL_EXIT, &u32Val);                      AssertRC(rc);
-                Log4(("VMX_VMCS32_CTRL_EXIT                    %#RX32\n", u32Val));
-                rc = VMXReadVmcs32(VMX_VMCS32_CTRL_CR3_TARGET_COUNT, &u32Val);          AssertRC(rc);
-                Log4(("VMX_VMCS32_CTRL_CR3_TARGET_COUNT        %#RX32\n", u32Val));
-                rc = VMXReadVmcs32(VMX_VMCS32_CTRL_ENTRY_INTERRUPTION_INFO, &u32Val);   AssertRC(rc);
-                Log4(("VMX_VMCS32_CTRL_ENTRY_INTERRUPTION_INFO %#RX32\n", u32Val));
-                rc = VMXReadVmcs32(VMX_VMCS32_CTRL_ENTRY_EXCEPTION_ERRCODE, &u32Val);   AssertRC(rc);
-                Log4(("VMX_VMCS32_CTRL_ENTRY_EXCEPTION_ERRCODE %#RX32\n", u32Val));
-                rc = VMXReadVmcs32(VMX_VMCS32_CTRL_ENTRY_INSTR_LENGTH, &u32Val);        AssertRC(rc);
-                Log4(("VMX_VMCS32_CTRL_ENTRY_INSTR_LENGTH      %u\n", u32Val));
-                rc = VMXReadVmcs32(VMX_VMCS32_CTRL_TPR_THRESHOLD, &u32Val);             AssertRC(rc);
-                Log4(("VMX_VMCS32_CTRL_TPR_THRESHOLD           %u\n", u32Val));
-                rc = VMXReadVmcs32(VMX_VMCS32_CTRL_EXIT_MSR_STORE_COUNT, &u32Val);      AssertRC(rc);
-                Log4(("VMX_VMCS32_CTRL_EXIT_MSR_STORE_COUNT    %u (guest MSRs)\n", u32Val));
-                rc = VMXReadVmcs32(VMX_VMCS32_CTRL_EXIT_MSR_LOAD_COUNT, &u32Val);       AssertRC(rc);
-                Log4(("VMX_VMCS32_CTRL_EXIT_MSR_LOAD_COUNT     %u (host MSRs)\n", u32Val));
-                rc = VMXReadVmcs32(VMX_VMCS32_CTRL_ENTRY_MSR_LOAD_COUNT, &u32Val);      AssertRC(rc);
-                Log4(("VMX_VMCS32_CTRL_ENTRY_MSR_LOAD_COUNT    %u (guest MSRs)\n", u32Val));
-                rc = VMXReadVmcs32(VMX_VMCS32_CTRL_EXCEPTION_BITMAP, &u32Val);          AssertRC(rc);
-                Log4(("VMX_VMCS32_CTRL_EXCEPTION_BITMAP        %#RX32\n", u32Val));
-                rc = VMXReadVmcs32(VMX_VMCS32_CTRL_PAGEFAULT_ERROR_MASK, &u32Val);      AssertRC(rc);
-                Log4(("VMX_VMCS32_CTRL_PAGEFAULT_ERROR_MASK    %#RX32\n", u32Val));
-                rc = VMXReadVmcs32(VMX_VMCS32_CTRL_PAGEFAULT_ERROR_MATCH, &u32Val);     AssertRC(rc);
-                Log4(("VMX_VMCS32_CTRL_PAGEFAULT_ERROR_MATCH   %#RX32\n", u32Val));
-                rc = VMXReadVmcsHstN(VMX_VMCS_CTRL_CR0_MASK, &uHCReg);                  AssertRC(rc);
-                Log4(("VMX_VMCS_CTRL_CR0_MASK                  %#RHr\n", uHCReg));
-                rc = VMXReadVmcsHstN(VMX_VMCS_CTRL_CR0_READ_SHADOW, &uHCReg);           AssertRC(rc);
-                Log4(("VMX_VMCS_CTRL_CR4_READ_SHADOW           %#RHr\n", uHCReg));
-                rc = VMXReadVmcsHstN(VMX_VMCS_CTRL_CR4_MASK, &uHCReg);                  AssertRC(rc);
-                Log4(("VMX_VMCS_CTRL_CR4_MASK                  %#RHr\n", uHCReg));
-                rc = VMXReadVmcsHstN(VMX_VMCS_CTRL_CR4_READ_SHADOW, &uHCReg);           AssertRC(rc);
-                Log4(("VMX_VMCS_CTRL_CR4_READ_SHADOW           %#RHr\n", uHCReg));
-                if (pVCpu->CTX_SUFF(pVM)->hm.s.fNestedPaging)
+                    /** Name of the field to log. */
+                    const char     *pszName;
+                    /** The VMCS field. */
+                    uint32_t        uVmcsField;
+                    /** Whether host support of this field needs to be checked. */
+                    bool            fCheckSupport;
+                } const s_aVmcsFields[] =
                 {
-                    rc = VMXReadVmcs64(VMX_VMCS64_CTRL_EPTP_FULL, &u64Val);             AssertRC(rc);
-                    Log4(("VMX_VMCS64_CTRL_EPTP_FULL               %#RX64\n", u64Val));
-                }
-
-                /* Guest bits. */
-                rc = VMXReadVmcsGstN(VMX_VMCS_GUEST_RIP, &u64Val);          AssertRC(rc);
-                Log4(("Old Guest Rip %#RX64 New %#RX64\n", pVCpu->cpum.GstCtx.rip, u64Val));
-                rc = VMXReadVmcsGstN(VMX_VMCS_GUEST_RSP, &u64Val);          AssertRC(rc);
-                Log4(("Old Guest Rsp %#RX64 New %#RX64\n", pVCpu->cpum.GstCtx.rsp, u64Val));
-                rc = VMXReadVmcs32(VMX_VMCS_GUEST_RFLAGS, &u32Val);         AssertRC(rc);
-                Log4(("Old Guest Rflags %#RX32 New %#RX32\n", pVCpu->cpum.GstCtx.eflags.u32, u32Val));
-                if (pVCpu->CTX_SUFF(pVM)->hm.s.vmx.fVpid)
-                {
-                    rc = VMXReadVmcs32(VMX_VMCS16_VPID, &u32Val);           AssertRC(rc);
-                    Log4(("VMX_VMCS16_VPID  %u\n", u32Val));
-                }
-
-                /* Host bits. */
-                rc = VMXReadVmcsHstN(VMX_VMCS_HOST_CR0, &uHCReg);           AssertRC(rc);
-                Log4(("Host CR0 %#RHr\n", uHCReg));
-                rc = VMXReadVmcsHstN(VMX_VMCS_HOST_CR3, &uHCReg);           AssertRC(rc);
-                Log4(("Host CR3 %#RHr\n", uHCReg));
-                rc = VMXReadVmcsHstN(VMX_VMCS_HOST_CR4, &uHCReg);           AssertRC(rc);
-                Log4(("Host CR4 %#RHr\n", uHCReg));
+                    { "VMX_VMCS32_CTRL_PIN_EXEC",                 VMX_VMCS32_CTRL_PIN_EXEC,                   false,  },
+                    { "VMX_VMCS32_CTRL_PROC_EXEC",                VMX_VMCS32_CTRL_PROC_EXEC,                  false,  },
+                    { "VMX_VMCS32_CTRL_PROC_EXEC2",               VMX_VMCS32_CTRL_PROC_EXEC2,                 true,   },
+                    { "VMX_VMCS32_CTRL_ENTRY",                    VMX_VMCS32_CTRL_ENTRY,                      false,  },
+                    { "VMX_VMCS32_CTRL_EXIT",                     VMX_VMCS32_CTRL_EXIT,                       false,  },
+                    { "VMX_VMCS32_CTRL_CR3_TARGET_COUNT",         VMX_VMCS32_CTRL_CR3_TARGET_COUNT,           false,  },
+                    { "VMX_VMCS32_CTRL_ENTRY_INTERRUPTION_INFO",  VMX_VMCS32_CTRL_ENTRY_INTERRUPTION_INFO,    false,  },
+                    { "VMX_VMCS32_CTRL_ENTRY_EXCEPTION_ERRCODE",  VMX_VMCS32_CTRL_ENTRY_EXCEPTION_ERRCODE,    false,  },
+                    { "VMX_VMCS32_CTRL_ENTRY_INSTR_LENGTH",       VMX_VMCS32_CTRL_ENTRY_INSTR_LENGTH,         false,  },
+                    { "VMX_VMCS32_CTRL_TPR_THRESHOLD",            VMX_VMCS32_CTRL_TPR_THRESHOLD,              false,  },
+                    { "VMX_VMCS32_CTRL_EXIT_MSR_STORE_COUNT",     VMX_VMCS32_CTRL_EXIT_MSR_STORE_COUNT,       false,  },
+                    { "VMX_VMCS32_CTRL_EXIT_MSR_LOAD_COUNT",      VMX_VMCS32_CTRL_EXIT_MSR_LOAD_COUNT,        false,  },
+                    { "VMX_VMCS32_CTRL_ENTRY_MSR_LOAD_COUNT",     VMX_VMCS32_CTRL_ENTRY_MSR_LOAD_COUNT,       false,  },
+                    { "VMX_VMCS32_CTRL_EXCEPTION_BITMAP",         VMX_VMCS32_CTRL_EXCEPTION_BITMAP,           false,  },
+                    { "VMX_VMCS32_CTRL_PAGEFAULT_ERROR_MASK",     VMX_VMCS32_CTRL_PAGEFAULT_ERROR_MASK,       false,  },
+                    { "VMX_VMCS32_CTRL_PAGEFAULT_ERROR_MATCH",    VMX_VMCS32_CTRL_PAGEFAULT_ERROR_MATCH,      false,  },
+                    { "VMX_VMCS_CTRL_CR0_MASK",                   VMX_VMCS_CTRL_CR0_MASK,                     false,  },
+                    { "VMX_VMCS_CTRL_CR0_READ_SHADOW",            VMX_VMCS_CTRL_CR0_READ_SHADOW,              false,  },
+                    { "VMX_VMCS_CTRL_CR4_MASK",                   VMX_VMCS_CTRL_CR4_MASK,                     false,  },
+                    { "VMX_VMCS_CTRL_CR4_READ_SHADOW",            VMX_VMCS_CTRL_CR4_READ_SHADOW,              false,  },
+                    { "VMX_VMCS64_CTRL_EPTP_FULL",                VMX_VMCS64_CTRL_EPTP_FULL,                  true,   },
+                    { "VMX_VMCS_GUEST_RIP",                       VMX_VMCS_GUEST_RIP,                         false,  },
+                    { "VMX_VMCS_GUEST_RSP",                       VMX_VMCS_GUEST_RSP,                         false,  },
+                    { "VMX_VMCS_GUEST_RFLAGS",                    VMX_VMCS_GUEST_RFLAGS,                      false,  },
+                    { "VMX_VMCS16_VPID",                          VMX_VMCS16_VPID,                            true,   },
+                    { "VMX_VMCS_HOST_CR0",                        VMX_VMCS_HOST_CR0,                          false,  },
+                    { "VMX_VMCS_HOST_CR3",                        VMX_VMCS_HOST_CR3,                          false,  },
+                    { "VMX_VMCS_HOST_CR4",                        VMX_VMCS_HOST_CR4,                          false,  },
+                    /* The order of selector fields below are fixed! */
+                    { "VMX_VMCS16_HOST_ES_SEL",                   VMX_VMCS16_HOST_ES_SEL,                     false,  },
+                    { "VMX_VMCS16_HOST_CS_SEL",                   VMX_VMCS16_HOST_CS_SEL,                     false,  },
+                    { "VMX_VMCS16_HOST_SS_SEL",                   VMX_VMCS16_HOST_SS_SEL,                     false,  },
+                    { "VMX_VMCS16_HOST_DS_SEL",                   VMX_VMCS16_HOST_DS_SEL,                     false,  },
+                    { "VMX_VMCS16_HOST_FS_SEL",                   VMX_VMCS16_HOST_FS_SEL,                     false,  },
+                    { "VMX_VMCS16_HOST_GS_SEL",                   VMX_VMCS16_HOST_GS_SEL,                     false,  },
+                    { "VMX_VMCS16_HOST_TR_SEL",                   VMX_VMCS16_HOST_TR_SEL,                     false,  },
+                    /* End of ordered selector fields. */
+                    { "VMX_VMCS_HOST_TR_BASE",                    VMX_VMCS_HOST_TR_BASE,                      false,  },
+                    { "VMX_VMCS_HOST_GDTR_BASE",                  VMX_VMCS_HOST_GDTR_BASE,                    false,  },
+                    { "VMX_VMCS_HOST_IDTR_BASE",                  VMX_VMCS_HOST_IDTR_BASE,                    false,  },
+                    { "VMX_VMCS32_HOST_SYSENTER_CS",              VMX_VMCS32_HOST_SYSENTER_CS,                false,  },
+                    { "VMX_VMCS_HOST_SYSENTER_EIP",               VMX_VMCS_HOST_SYSENTER_EIP,                 false,  },
+                    { "VMX_VMCS_HOST_SYSENTER_ESP",               VMX_VMCS_HOST_SYSENTER_ESP,                 false,  },
+                    { "VMX_VMCS_HOST_RSP",                        VMX_VMCS_HOST_RSP,                          false,  },
+                    { "VMX_VMCS_HOST_RIP",                        VMX_VMCS_HOST_RIP,                          false,  }
+                };
 
                 RTGDTR      HostGdtr;
-                PCX86DESCHC pDesc;
                 ASMGetGDTR(&HostGdtr);
-                rc = VMXReadVmcs32(VMX_VMCS16_HOST_CS_SEL, &u32Val);      AssertRC(rc);
-                Log4(("Host CS %#08x\n", u32Val));
-                if (u32Val < HostGdtr.cbGdt)
+
+                uint32_t const cVmcsFields = RT_ELEMENTS(s_aVmcsFields);
+                for (uint32_t i = 0; i < cVmcsFields; i++)
                 {
-                    pDesc  = (PCX86DESCHC)(HostGdtr.pGdt + (u32Val & X86_SEL_MASK));
-                    hmR0DumpDescriptor(pDesc, u32Val, "CS: ");
+                    uint32_t const uVmcsField = s_aVmcsFields[i].uVmcsField;
+
+                    bool fSupported;
+                    if (!s_aVmcsFields[i].fCheckSupport)
+                        fSupported = true;
+                    else
+                    {
+                        PVM pVM = pVCpu->CTX_SUFF(pVM);
+                        switch (uVmcsField)
+                        {
+                            case VMX_VMCS64_CTRL_EPTP_FULL:  fSupported = pVM->hm.s.fNestedPaging;      break;
+                            case VMX_VMCS16_VPID:            fSupported = pVM->hm.s.vmx.fVpid;          break;
+                            case VMX_VMCS32_CTRL_PROC_EXEC2:
+                                fSupported = RT_BOOL(pVmcsInfo->u32ProcCtls & VMX_PROC_CTLS_USE_SECONDARY_CTLS);
+                                break;
+                            default:
+                                AssertMsgFailedReturnVoid(("Failed to provide VMCS field support for %#RX32\n", uVmcsField));
+                        }
+                    }
+
+                    if (fSupported)
+                    {
+                        const char *pszName  = s_aVmcsFields[i].pszName;
+                        uint8_t const uWidth = RT_BF_GET(uVmcsField, VMX_BF_VMCSFIELD_WIDTH);
+                        switch (uWidth)
+                        {
+                            case VMX_VMCSFIELD_WIDTH_16BIT:
+                            {
+                                uint16_t u16Val;
+                                rc = VMXReadVmcs16(uVmcsField, &u16Val);
+                                AssertRC(rc);
+                                Log4(("%-40s = %#RX16\n", pszName, u16Val));
+
+                                if (   uVmcsField >= VMX_VMCS16_HOST_ES_SEL
+                                    && uVmcsField <= VMX_VMCS16_HOST_TR_SEL)
+                                {
+                                    if (u16Val < HostGdtr.cbGdt)
+                                    {
+                                        /* Order of selectors in s_apszSel is fixed and matches the order in s_aVmcsFields. */
+                                        static const char * const s_apszSel[] = { "Host ES", "Host CS", "Host SS", "Host DS",
+                                                                                  "Host FS", "Host GS", "Host TR" };
+                                        uint8_t const idxSel = RT_BF_GET(uVmcsField, VMX_BF_VMCSFIELD_INDEX);
+                                        Assert(idxSel < RT_ELEMENTS(s_apszSel));
+                                        PCX86DESCHC pDesc = (PCX86DESCHC)(HostGdtr.pGdt + (u16Val & X86_SEL_MASK));
+                                        hmR0DumpDescriptor(pDesc, u16Val, s_apszSel[idxSel]);
+                                    }
+                                    else
+                                        Log4(("  Selector value exceeds GDT limit!\n"));
+                                }
+                                break;
+                            }
+
+                            case VMX_VMCSFIELD_WIDTH_32BIT:
+                            {
+                                uint32_t u32Val;
+                                rc = VMXReadVmcs32(uVmcsField, &u32Val);
+                                AssertRC(rc);
+                                Log4(("%-40s = %#RX32\n", pszName, u32Val));
+                                break;
+                            }
+
+                            case VMX_VMCSFIELD_WIDTH_64BIT:
+                            case VMX_VMCSFIELD_WIDTH_NATURAL:
+                            {
+                                uint64_t u64Val;
+                                rc = VMXReadVmcs64(uVmcsField, &u64Val);
+                                AssertRC(rc);
+                                Log4(("%-40s = %#RX64\n", pszName, u64Val));
+                                break;
+                            }
+                        }
+                    }
                 }
 
-                rc = VMXReadVmcs32(VMX_VMCS16_HOST_DS_SEL, &u32Val);      AssertRC(rc);
-                Log4(("Host DS %#08x\n", u32Val));
-                if (u32Val < HostGdtr.cbGdt)
-                {
-                    pDesc  = (PCX86DESCHC)(HostGdtr.pGdt + (u32Val & X86_SEL_MASK));
-                    hmR0DumpDescriptor(pDesc, u32Val, "DS: ");
-                }
-
-                rc = VMXReadVmcs32(VMX_VMCS16_HOST_ES_SEL, &u32Val);      AssertRC(rc);
-                Log4(("Host ES %#08x\n", u32Val));
-                if (u32Val < HostGdtr.cbGdt)
-                {
-                    pDesc  = (PCX86DESCHC)(HostGdtr.pGdt + (u32Val & X86_SEL_MASK));
-                    hmR0DumpDescriptor(pDesc, u32Val, "ES: ");
-                }
-
-                rc = VMXReadVmcs32(VMX_VMCS16_HOST_FS_SEL, &u32Val);      AssertRC(rc);
-                Log4(("Host FS %#08x\n", u32Val));
-                if (u32Val < HostGdtr.cbGdt)
-                {
-                    pDesc  = (PCX86DESCHC)(HostGdtr.pGdt + (u32Val & X86_SEL_MASK));
-                    hmR0DumpDescriptor(pDesc, u32Val, "FS: ");
-                }
-
-                rc = VMXReadVmcs32(VMX_VMCS16_HOST_GS_SEL, &u32Val);      AssertRC(rc);
-                Log4(("Host GS %#08x\n", u32Val));
-                if (u32Val < HostGdtr.cbGdt)
-                {
-                    pDesc  = (PCX86DESCHC)(HostGdtr.pGdt + (u32Val & X86_SEL_MASK));
-                    hmR0DumpDescriptor(pDesc, u32Val, "GS: ");
-                }
-
-                rc = VMXReadVmcs32(VMX_VMCS16_HOST_SS_SEL, &u32Val);      AssertRC(rc);
-                Log4(("Host SS %#08x\n", u32Val));
-                if (u32Val < HostGdtr.cbGdt)
-                {
-                    pDesc  = (PCX86DESCHC)(HostGdtr.pGdt + (u32Val & X86_SEL_MASK));
-                    hmR0DumpDescriptor(pDesc, u32Val, "SS: ");
-                }
-
-                rc = VMXReadVmcs32(VMX_VMCS16_HOST_TR_SEL,  &u32Val);     AssertRC(rc);
-                Log4(("Host TR %#08x\n", u32Val));
-                if (u32Val < HostGdtr.cbGdt)
-                {
-                    pDesc  = (PCX86DESCHC)(HostGdtr.pGdt + (u32Val & X86_SEL_MASK));
-                    hmR0DumpDescriptor(pDesc, u32Val, "TR: ");
-                }
-
-                rc = VMXReadVmcsHstN(VMX_VMCS_HOST_TR_BASE, &uHCReg);       AssertRC(rc);
-                Log4(("Host TR Base %#RHv\n", uHCReg));
-                rc = VMXReadVmcsHstN(VMX_VMCS_HOST_GDTR_BASE, &uHCReg);     AssertRC(rc);
-                Log4(("Host GDTR Base %#RHv\n", uHCReg));
-                rc = VMXReadVmcsHstN(VMX_VMCS_HOST_IDTR_BASE, &uHCReg);     AssertRC(rc);
-                Log4(("Host IDTR Base %#RHv\n", uHCReg));
-                rc = VMXReadVmcs32(VMX_VMCS32_HOST_SYSENTER_CS, &u32Val);   AssertRC(rc);
-                Log4(("Host SYSENTER CS  %#08x\n", u32Val));
-                rc = VMXReadVmcsHstN(VMX_VMCS_HOST_SYSENTER_EIP, &uHCReg);  AssertRC(rc);
-                Log4(("Host SYSENTER EIP %#RHv\n", uHCReg));
-                rc = VMXReadVmcsHstN(VMX_VMCS_HOST_SYSENTER_ESP, &uHCReg);  AssertRC(rc);
-                Log4(("Host SYSENTER ESP %#RHv\n", uHCReg));
-                rc = VMXReadVmcsHstN(VMX_VMCS_HOST_RSP, &uHCReg);           AssertRC(rc);
-                Log4(("Host RSP %#RHv\n", uHCReg));
-                rc = VMXReadVmcsHstN(VMX_VMCS_HOST_RIP, &uHCReg);           AssertRC(rc);
-                Log4(("Host RIP %#RHv\n", uHCReg));
 # if HC_ARCH_BITS == 64
                 Log4(("MSR_K6_EFER            = %#RX64\n", ASMRdMsr(MSR_K6_EFER)));
                 Log4(("MSR_K8_CSTAR           = %#RX64\n", ASMRdMsr(MSR_K8_CSTAR)));
@@ -7283,17 +7271,18 @@ static int hmR0VmxImportGuestSegReg(PVMCPU pVCpu, uint8_t iSegReg)
     uint32_t const idxAttr  = g_aVmcsSegAttr[iSegReg];
     uint32_t const idxBase  = g_aVmcsSegBase[iSegReg];
 
+    uint16_t u16Sel;
     uint64_t u64Base;
-    uint32_t u32Sel, u32Limit, u32Attr;
-    int rc = VMXReadVmcs32(idxSel,   &u32Sel);
+    uint32_t u32Limit, u32Attr;
+    int rc = VMXReadVmcs16(idxSel,   &u16Sel);
     rc    |= VMXReadVmcs32(idxLimit, &u32Limit);
     rc    |= VMXReadVmcs32(idxAttr,  &u32Attr);
     rc    |= VMXReadVmcsGstN(idxBase, &u64Base);
     if (RT_SUCCESS(rc))
     {
         PCPUMSELREG pSelReg = &pVCpu->cpum.GstCtx.aSRegs[iSegReg];
-        pSelReg->Sel      = u32Sel;
-        pSelReg->ValidSel = u32Sel;
+        pSelReg->Sel      = u16Sel;
+        pSelReg->ValidSel = u16Sel;
         pSelReg->fFlags   = CPUMSELREG_FLAGS_VALID;
         pSelReg->u32Limit = u32Limit;
         pSelReg->u64Base  = u64Base;
@@ -7316,16 +7305,17 @@ static int hmR0VmxImportGuestSegReg(PVMCPU pVCpu, uint8_t iSegReg)
  */
 static int hmR0VmxImportGuestLdtr(PVMCPU pVCpu)
 {
+    uint16_t u16Sel;
     uint64_t u64Base;
-    uint32_t u32Sel, u32Limit, u32Attr;
-    int rc = VMXReadVmcs32(VMX_VMCS16_GUEST_LDTR_SEL,           &u32Sel);
+    uint32_t u32Limit, u32Attr;
+    int rc = VMXReadVmcs16(VMX_VMCS16_GUEST_LDTR_SEL,           &u16Sel);
     rc    |= VMXReadVmcs32(VMX_VMCS32_GUEST_LDTR_LIMIT,         &u32Limit);
     rc    |= VMXReadVmcs32(VMX_VMCS32_GUEST_LDTR_ACCESS_RIGHTS, &u32Attr);
     rc    |= VMXReadVmcsGstN(VMX_VMCS_GUEST_LDTR_BASE,          &u64Base);
     if (RT_SUCCESS(rc))
     {
-        pVCpu->cpum.GstCtx.ldtr.Sel      = u32Sel;
-        pVCpu->cpum.GstCtx.ldtr.ValidSel = u32Sel;
+        pVCpu->cpum.GstCtx.ldtr.Sel      = u16Sel;
+        pVCpu->cpum.GstCtx.ldtr.ValidSel = u16Sel;
         pVCpu->cpum.GstCtx.ldtr.fFlags   = CPUMSELREG_FLAGS_VALID;
         pVCpu->cpum.GstCtx.ldtr.u32Limit = u32Limit;
         pVCpu->cpum.GstCtx.ldtr.u64Base  = u64Base;
@@ -7348,16 +7338,17 @@ static int hmR0VmxImportGuestLdtr(PVMCPU pVCpu)
  */
 static int hmR0VmxImportGuestTr(PVMCPU pVCpu)
 {
-    uint32_t u32Sel, u32Limit, u32Attr;
+    uint16_t u16Sel;
     uint64_t u64Base;
-    int rc = VMXReadVmcs32(VMX_VMCS16_GUEST_TR_SEL,           &u32Sel);
+    uint32_t u32Limit, u32Attr;
+    int rc = VMXReadVmcs16(VMX_VMCS16_GUEST_TR_SEL,           &u16Sel);
     rc    |= VMXReadVmcs32(VMX_VMCS32_GUEST_TR_LIMIT,         &u32Limit);
     rc    |= VMXReadVmcs32(VMX_VMCS32_GUEST_TR_ACCESS_RIGHTS, &u32Attr);
     rc    |= VMXReadVmcsGstN(VMX_VMCS_GUEST_TR_BASE,          &u64Base);
     AssertRCReturn(rc, rc);
 
-    pVCpu->cpum.GstCtx.tr.Sel      = u32Sel;
-    pVCpu->cpum.GstCtx.tr.ValidSel = u32Sel;
+    pVCpu->cpum.GstCtx.tr.Sel      = u16Sel;
+    pVCpu->cpum.GstCtx.tr.ValidSel = u16Sel;
     pVCpu->cpum.GstCtx.tr.fFlags   = CPUMSELREG_FLAGS_VALID;
     pVCpu->cpum.GstCtx.tr.u32Limit = u32Limit;
     pVCpu->cpum.GstCtx.tr.u64Base  = u64Base;

@@ -1606,10 +1606,10 @@ VMMR0_INT_DECL(int) HMR0ImportStateOnDemand(PVMCPU pVCpu, uint64_t fWhat)
  * Dumps a descriptor.
  *
  * @param   pDesc    Descriptor to dump.
- * @param   Sel      Selector number.
- * @param   pszMsg   Message to prepend the log entry with.
+ * @param   Sel      The selector.
+ * @param   pszSel   The name of the selector.
  */
-VMMR0_INT_DECL(void) hmR0DumpDescriptor(PCX86DESCHC pDesc, RTSEL Sel, const char *pszMsg)
+VMMR0_INT_DECL(void) hmR0DumpDescriptor(PCX86DESCHC pDesc, RTSEL Sel, const char *pszSel)
 {
     /*
      * Make variable description string.
@@ -1692,7 +1692,7 @@ VMMR0_INT_DECL(void) hmR0DumpDescriptor(PCX86DESCHC pDesc, RTSEL Sel, const char
     if (pDesc->Gen.u1Long)
         ADD_STR(psz, "64-bit ");
     else
-        ADD_STR(psz, "Comp   ");
+        ADD_STR(psz, "Comp ");
 # else
     if (pDesc->Gen.u1Granularity)
         ADD_STR(psz, "Page ");
@@ -1711,16 +1711,16 @@ VMMR0_INT_DECL(void) hmR0DumpDescriptor(PCX86DESCHC pDesc, RTSEL Sel, const char
     uint32_t u32Limit = X86DESC_LIMIT_G(pDesc);
 
 # if HC_ARCH_BITS == 64
-    uint64_t    u32Base  = X86DESC64_BASE(pDesc);
-    Log(("%s %04x - %RX64 %RX64 - base=%RX64 limit=%08x dpl=%d %s\n", pszMsg,
-         Sel, pDesc->au64[0], pDesc->au64[1], u32Base, u32Limit, pDesc->Gen.u2Dpl, szMsg));
+    uint64_t const u64Base  = X86DESC64_BASE(pDesc);
+    Log(("  %s { %#04x - %#RX64 %#RX64 - base=%#RX64 limit=%#08x dpl=%d } %s\n", pszSel,
+         Sel, pDesc->au64[0], pDesc->au64[1], u64Base, u32Limit, pDesc->Gen.u2Dpl, szMsg));
 # else
-    uint32_t    u32Base  = X86DESC_BASE(pDesc);
-    Log(("%s %04x - %08x %08x - base=%08x limit=%08x dpl=%d %s\n", pszMsg,
+    uint32_t const u32Base  = X86DESC_BASE(pDesc);
+    Log(("  %s { %#04x - %#08x %#08x - base=%#08x limit=%#08x dpl=%d } %s\n", pszSel,
          Sel, pDesc->au32[0], pDesc->au32[1], u32Base, u32Limit, pDesc->Gen.u2Dpl, szMsg));
 # endif
 #else
-    NOREF(Sel); NOREF(pszMsg);
+    NOREF(Sel); NOREF(pszSel);
 #endif
 }
 
