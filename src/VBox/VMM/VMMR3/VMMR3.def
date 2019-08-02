@@ -357,6 +357,7 @@ EXPORTS
     STAMR3DeregisterF
     STAMR3DeregisterV
 
+    TMR3GetCpuLoadPercents
     TMR3TimerSetCritSect
     TMR3TimerLoad
     TMR3TimerSave

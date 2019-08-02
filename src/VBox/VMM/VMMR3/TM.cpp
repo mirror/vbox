@@ -3177,7 +3177,7 @@ VMMR3DECL(uint32_t) TMR3GetWarpDrive(PUVM pUVM)
  * @retval  VINF_SUCCESS on success.
  * @retval  VERR_NOT_IMPLEMENTED if not compiled in.
  * @retval  VERR_INVALID_STATE if the VM handle is bad.
- * @retval  VERR_INVALID_PARAMETER if idCpu is out of range.
+ * @retval  VERR_INVALID_CPU_ID if idCpu is out of range.
  *
  * @param   pVM             The cross context VM structure.
  * @param   idCpu           The ID of the virtual CPU which times to get.
@@ -3196,7 +3196,7 @@ VMMR3DECL(int) TMR3GetCpuLoadTimes(PVM pVM, VMCPUID idCpu, uint64_t *pcNsTotal, 
                                    uint64_t *pcNsHalted, uint64_t *pcNsOther)
 {
     VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_STATE);
-    AssertReturn(idCpu < pVM->cCpus, VERR_INVALID_PARAMETER);
+    AssertReturn(idCpu < pVM->cCpus, VERR_INVALID_CPU_ID);
 
 #ifndef VBOX_WITHOUT_NS_ACCOUNTING
     /*
@@ -3235,6 +3235,63 @@ VMMR3DECL(int) TMR3GetCpuLoadTimes(PVM pVM, VMCPUID idCpu, uint64_t *pcNsTotal, 
     return VINF_SUCCESS;
 
 #else
+    return VERR_NOT_IMPLEMENTED;
+#endif
+}
+
+
+/**
+ * Gets the performance information for one virtual CPU as seen by the VMM in
+ * percents.
+ *
+ * The returned times covers the period where the VM is running and will be
+ * reset when restoring a previous VM state (at least for the time being).
+ *
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_NOT_IMPLEMENTED if not compiled in.
+ * @retval  VERR_INVALID_VM_HANDLE if the VM handle is bad.
+ * @retval  VERR_INVALID_CPU_ID if idCpu is out of range.
+ *
+ * @param   pUVM            The usermode VM structure.
+ * @param   idCpu           The ID of the virtual CPU which times to get.
+ * @param   pcMsInterval    Where to store the interval of the percentages in
+ *                          milliseconds. Optional.
+ * @param   pcPctExecuting  Where to return the percentage of time spent
+ *                          executing guest code.  Optional.
+ * @param   pcPctHalted     Where to return the percentage of time spent halted.
+ *                          Optional
+ * @param   pcPctOther      Where to return the percentage of time spent
+ *                          preempted by the host scheduler, on virtualization
+ *                          overhead and on other tasks.
+ */
+VMMR3DECL(int) TMR3GetCpuLoadPercents(PUVM pUVM, VMCPUID idCpu, uint64_t *pcMsInterval, uint8_t *pcPctExecuting,
+                                      uint8_t *pcPctHalted, uint8_t *pcPctOther)
+{
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
+    PVM pVM = pUVM->pVM;
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
+    AssertReturn(idCpu == VMCPUID_ALL || idCpu < pVM->cCpus, VERR_INVALID_CPU_ID);
+
+#ifndef VBOX_WITHOUT_NS_ACCOUNTING
+    TMCPULOADSTATE volatile *pState;
+    if (idCpu == VMCPUID_ALL)
+        pState = &pVM->tm.s.CpuLoad;
+    else
+        pState = &pVM->aCpus[idCpu].tm.s.CpuLoad;
+
+    if (pcMsInterval)
+        *pcMsInterval   = RT_MS_1SEC;
+    if (pcPctExecuting)
+        *pcPctExecuting = pState->cPctExecuting;
+    if (pcPctHalted)
+        *pcPctHalted    = pState->cPctHalted;
+    if (pcPctOther)
+        *pcPctOther     = pState->cPctOther;
+
+    return VINF_SUCCESS;
+
+#else
+    RT_NOREF(pcMsInterval, pcPctExecuting, pcPctHalted, pcPctOther);
     return VERR_NOT_IMPLEMENTED;
 #endif
 }
