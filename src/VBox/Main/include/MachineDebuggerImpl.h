@@ -132,6 +132,7 @@ private:
     HRESULT getStats(const com::Utf8Str &aPattern,
                      BOOL aWithDescriptions,
                      com::Utf8Str &aStats);
+    HRESULT getCPULoad(ULONG aCpuId, ULONG *aPctExecuting, ULONG *aPctHalted, ULONG *aPctOther, LONG64 *aMsInterval) RT_OVERRIDE;
 
     // private methods
     bool i_queueSettings() const;

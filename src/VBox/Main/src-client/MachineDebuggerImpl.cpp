@@ -1540,7 +1540,6 @@ HRESULT MachineDebugger::dumpStats(const com::Utf8Str &aPattern)
 HRESULT MachineDebugger::getStats(const com::Utf8Str &aPattern, BOOL aWithDescriptions, com::Utf8Str &aStats)
 {
     Console::SafeVMPtrQuiet ptrVM(mParent);
-
     if (!ptrVM.isOk())
         return setError(VBOX_E_INVALID_VM_STATE, "Machine is not running");
 
@@ -1558,6 +1557,36 @@ HRESULT MachineDebugger::getStats(const com::Utf8Str &aPattern, BOOL aWithDescri
     STAMR3SnapshotFree(ptrVM.rawUVM(), pszSnapshot);
 
     return S_OK;
+}
+
+
+/** Wrapper around TMR3GetCpuLoadPercents. */
+HRESULT MachineDebugger::getCPULoad(ULONG aCpuId, ULONG *aPctExecuting, ULONG *aPctHalted, ULONG *aPctOther, LONG64 *aMsInterval)
+{
+    HRESULT hrc;
+    Console::SafeVMPtrQuiet ptrVM(mParent);
+    if (ptrVM.isOk())
+    {
+        uint8_t uPctExecuting = 0;
+        uint8_t uPctHalted    = 0;
+        uint8_t uPctOther     = 0;
+        uint64_t msInterval   = 0;
+        int vrc = TMR3GetCpuLoadPercents(ptrVM.rawUVM(), aCpuId >= UINT32_MAX / 2 ? VMCPUID_ALL : aCpuId,
+                                         &msInterval, &uPctExecuting, &uPctHalted, &uPctOther);
+        if (RT_SUCCESS(vrc))
+        {
+            *aPctExecuting = uPctExecuting;
+            *aPctHalted    = uPctHalted;
+            *aPctOther     = uPctOther;
+            *aMsInterval   = msInterval;
+            hrc = S_OK;
+        }
+        else
+            hrc = setErrorVrc(vrc);
+    }
+    else
+        hrc = setError(VBOX_E_INVALID_VM_STATE, "Machine is not running");
+    return hrc;
 }
 
 

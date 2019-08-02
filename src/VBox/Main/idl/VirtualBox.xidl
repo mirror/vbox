@@ -19806,7 +19806,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IMachineDebugger" extends="$unknown"
-    uuid="e91bb944-f211-4bd5-b44c-8f1d0beafa13"
+    uuid="00ae6af4-00a7-4104-0009-49bc00b2da80"
     wsmap="managed"
     reservedMethods="16" reservedAttributes="16"
     >
@@ -20172,6 +20172,30 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
       <param name="stats" type="wstring" dir="return">
         <desc>The XML document containing the statistics.</desc>
+      </param>
+    </method>
+
+    <method name="getCPULoad">
+      <desc>
+        Get the load percentages (as observed by the VMM) for all virtual CPUs
+        or a specific one.
+      </desc>
+      <param name="cpuId" type="unsigned long" dir="in">
+        <desc>The ID of the virtual CPU to retrieve stats for, pass 0x7fffffff
+          or higher for the average accross all CPUs.</desc>
+      </param>
+      <param name="pctExecuting" type="unsigned long" dir="out">
+        <desc>Percentage of the interval that the CPU(s) spend executing guest code.</desc>
+      </param>
+      <param name="pctHalted" type="unsigned long" dir="out">
+        <desc>Percentage of the interval that the CPU(s) spend halted.</desc>
+      </param>
+      <param name="pctOther" type="unsigned long" dir="out">
+        <desc>Percentage of the interval that the CPU(s) preempted by the host
+        scheduler, on virtualization overhead and on other tasks.</desc>
+      </param>
+      <param name="msInterval" type="long long" dir="return">
+        <desc>The interval the percentage was calculated over in milliseconds</desc>
       </param>
     </method>
 
