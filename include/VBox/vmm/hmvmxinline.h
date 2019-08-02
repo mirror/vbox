@@ -250,6 +250,92 @@ DECLASM(int) VMXDispatchHostNmi(void);
  * @returns VBox status code.
  * @param   HCPhysVmxOn      Physical address of VMXON structure.
  */
+#if RT_INLINE_ASM_EXTERNAL && !VMX_USE_MSC_INTRINSICS
+DECLASM(int) VMXEnable(RTHCPHYS HCPhysVmxOn);
+#else
+DECLINLINE(int) VMXEnable(RTHCPHYS HCPhysVmxOn)
+{
+# if VMX_USE_MSC_INTRINSICS
+    unsigned char rcMsc = __vmx_on(&HCPhysVmxOn);
+    if (RT_LIKELY(rcMsc == 0))
+        return VINF_SUCCESS;
+    return rcMsc == 2 ? VERR_VMX_INVALID_VMXON_PTR : VERR_VMX_VMXON_FAILED;
+
+# elif RT_INLINE_ASM_GNU_STYLE
+#  ifdef RT_ARCH_AMD64
+    int rc;
+    __asm__ __volatile__ (
+       "pushq    %2                                             \n\t"
+       ".byte    0xf3, 0x0f, 0xc7, 0x34, 0x24  # VMXON [esp]    \n\t"
+       "ja       2f                                             \n\t"
+       "je       1f                                             \n\t"
+       "movl     $" RT_XSTR(VERR_VMX_INVALID_VMXON_PTR)", %0    \n\t"
+       "jmp      2f                                             \n\t"
+       "1:                                                      \n\t"
+       "movl     $" RT_XSTR(VERR_VMX_VMXON_FAILED)", %0         \n\t"
+       "2:                                                      \n\t"
+       "add      $8, %%rsp                                      \n\t"
+       :"=rm"(rc)
+       :"0"(VINF_SUCCESS),
+        "ir"(HCPhysVmxOn)                   /* don't allow direct memory reference here, */
+                                            /* this would not work with -fomit-frame-pointer */
+       :"memory"
+       );
+    return rc;
+#  else
+    int rc;
+    __asm__ __volatile__ (
+       "push     %3                                             \n\t"
+       "push     %2                                             \n\t"
+       ".byte    0xf3, 0x0f, 0xc7, 0x34, 0x24  # VMXON [esp]    \n\t"
+       "ja       2f                                             \n\t"
+       "je       1f                                             \n\t"
+       "movl     $" RT_XSTR(VERR_VMX_INVALID_VMXON_PTR)", %0    \n\t"
+       "jmp      2f                                             \n\t"
+       "1:                                                      \n\t"
+       "movl     $" RT_XSTR(VERR_VMX_VMXON_FAILED)", %0         \n\t"
+       "2:                                                      \n\t"
+       "add      $8, %%esp                                      \n\t"
+       :"=rm"(rc)
+       :"0"(VINF_SUCCESS),
+        "ir"((uint32_t)HCPhysVmxOn),        /* don't allow direct memory reference here, */
+        "ir"((uint32_t)(HCPhysVmxOn >> 32)) /* this would not work with -fomit-frame-pointer */
+       :"memory"
+       );
+    return rc;
+#  endif
+
+# elif defined(RT_ARCH_X86)
+    int rc = VINF_SUCCESS;
+    __asm
+    {
+        push    dword ptr [HCPhysVmxOn + 4]
+        push    dword ptr [HCPhysVmxOn]
+        _emit   0xf3
+        _emit   0x0f
+        _emit   0xc7
+        _emit   0x34
+        _emit   0x24     /* VMXON [esp] */
+        jnc     vmxon_good
+        mov     dword ptr [rc], VERR_VMX_INVALID_VMXON_PTR
+        jmp     the_end
+
+vmxon_good:
+        jnz     the_end
+        mov     dword ptr [rc], VERR_VMX_VMXON_FAILED
+the_end:
+        add     esp, 8
+    }
+    return rc;
+
+# else
+#  error "Shouldn't be here..."
+# endif
+}
+#endif
+
+
+#if 0
 #if ((RT_INLINE_ASM_EXTERNAL || !defined(RT_ARCH_X86)) && !VMX_USE_MSC_INTRINSICS)
 DECLASM(int) VMXEnable(RTHCPHYS HCPhysVmxOn);
 #else
@@ -308,11 +394,41 @@ the_end:
 # endif
 }
 #endif
+#endif
 
 
 /**
  * Executes VMXOFF.
  */
+#if RT_INLINE_ASM_EXTERNAL && !VMX_USE_MSC_INTRINSICS
+DECLASM(void) VMXDisable(void);
+#else
+DECLINLINE(void) VMXDisable(void)
+{
+# if VMX_USE_MSC_INTRINSICS
+    __vmx_off();
+
+# elif RT_INLINE_ASM_GNU_STYLE
+    __asm__ __volatile__ (
+       ".byte 0x0f, 0x01, 0xc4  # VMXOFF                        \n\t"
+       );
+
+# elif defined(RT_ARCH_X86)
+    __asm
+    {
+        _emit   0x0f
+        _emit   0x01
+        _emit   0xc4   /* VMXOFF */
+    }
+
+# else
+#  error "Shouldn't be here..."
+# endif
+}
+#endif
+
+
+#if 0
 #if ((RT_INLINE_ASM_EXTERNAL || !defined(RT_ARCH_X86)) && !VMX_USE_MSC_INTRINSICS)
 DECLASM(void) VMXDisable(void);
 #else
@@ -336,6 +452,7 @@ DECLINLINE(void) VMXDisable(void)
 # endif
 }
 #endif
+#endif
 
 
 /**
@@ -344,6 +461,79 @@ DECLINLINE(void) VMXDisable(void)
  * @returns VBox status code.
  * @param   HCPhysVmcs       Physical address of VM control structure.
  */
+#if RT_INLINE_ASM_EXTERNAL && !VMX_USE_MSC_INTRINSICS
+DECLASM(int) VMXClearVmcs(RTHCPHYS HCPhysVmcs);
+#else
+DECLINLINE(int) VMXClearVmcs(RTHCPHYS HCPhysVmcs)
+{
+# if VMX_USE_MSC_INTRINSICS
+    unsigned char rcMsc = __vmx_vmclear(&HCPhysVmcs);
+    if (RT_LIKELY(rcMsc == 0))
+        return VINF_SUCCESS;
+    return VERR_VMX_INVALID_VMCS_PTR;
+
+# elif RT_INLINE_ASM_GNU_STYLE
+#  ifdef RT_ARCH_AMD64
+    int rc;
+    __asm__ __volatile__ (
+       "pushq   %2                                              \n\t"
+       ".byte   0x66, 0x0f, 0xc7, 0x34, 0x24  # VMCLEAR [esp]   \n\t"
+       "jnc     1f                                              \n\t"
+       "movl    $" RT_XSTR(VERR_VMX_INVALID_VMCS_PTR)", %0      \n\t"
+       "1:                                                      \n\t"
+       "add     $8, %%rsp                                       \n\t"
+       :"=rm"(rc)
+       :"0"(VINF_SUCCESS),
+        "ir"(HCPhysVmcs)                    /* don't allow direct memory reference here, */
+                                            /* this would not work with -fomit-frame-pointer */
+       :"memory"
+       );
+    return rc;
+#  else
+    int rc;
+    __asm__ __volatile__ (
+       "push    %3                                              \n\t"
+       "push    %2                                              \n\t"
+       ".byte   0x66, 0x0f, 0xc7, 0x34, 0x24  # VMCLEAR [esp]   \n\t"
+       "jnc     1f                                              \n\t"
+       "movl    $" RT_XSTR(VERR_VMX_INVALID_VMCS_PTR)", %0      \n\t"
+       "1:                                                      \n\t"
+       "add     $8, %%esp                                       \n\t"
+       :"=rm"(rc)
+       :"0"(VINF_SUCCESS),
+        "ir"((uint32_t)HCPhysVmcs),         /* don't allow direct memory reference here, */
+        "ir"((uint32_t)(HCPhysVmcs >> 32))  /* this would not work with -fomit-frame-pointer */
+       :"memory"
+       );
+    return rc;
+#  endif
+
+# elif defined(RT_ARCH_X86)
+    int rc = VINF_SUCCESS;
+    __asm
+    {
+        push    dword ptr [HCPhysVmcs + 4]
+        push    dword ptr [HCPhysVmcs]
+        _emit   0x66
+        _emit   0x0f
+        _emit   0xc7
+        _emit   0x34
+        _emit   0x24     /* VMCLEAR [esp] */
+        jnc     success
+        mov     dword ptr [rc], VERR_VMX_INVALID_VMCS_PTR
+success:
+        add     esp, 8
+    }
+    return rc;
+
+# else
+#  error "Shouldn't be here..."
+# endif
+}
+#endif
+
+
+#if 0
 #if ((RT_INLINE_ASM_EXTERNAL || !defined(RT_ARCH_X86)) && !VMX_USE_MSC_INTRINSICS)
 DECLASM(int) VMXClearVmcs(RTHCPHYS HCPhysVmcs);
 #else
@@ -393,6 +583,7 @@ success:
 # endif
 }
 #endif
+#endif
 
 
 /**
@@ -401,6 +592,77 @@ success:
  * @returns VBox status code.
  * @param   HCPhysVmcs       Physical address of VMCS structure.
  */
+#if RT_INLINE_ASM_EXTERNAL && !VMX_USE_MSC_INTRINSICS
+DECLASM(int) VMXLoadVmcs(RTHCPHYS HCPhysVmcs);
+#else
+DECLINLINE(int) VMXLoadVmcs(RTHCPHYS HCPhysVmcs)
+{
+# if VMX_USE_MSC_INTRINSICS
+    unsigned char rcMsc = __vmx_vmptrld(&HCPhysVmcs);
+    if (RT_LIKELY(rcMsc == 0))
+        return VINF_SUCCESS;
+    return VERR_VMX_INVALID_VMCS_PTR;
+
+# elif RT_INLINE_ASM_GNU_STYLE
+#  ifdef RT_ARCH_AMD64
+    int rc;
+    __asm__ __volatile__ (
+       "pushq   %2                                              \n\t"
+       ".byte   0x0f, 0xc7, 0x34, 0x24  # VMPTRLD [esp]         \n\t"
+       "jnc     1f                                              \n\t"
+       "movl    $" RT_XSTR(VERR_VMX_INVALID_VMCS_PTR)", %0      \n\t"
+       "1:                                                      \n\t"
+       "add     $8, %%rsp                                       \n\t"
+       :"=rm"(rc)
+       :"0"(VINF_SUCCESS),
+        "ir"(HCPhysVmcs)                    /* don't allow direct memory reference here, */
+                                            /* this will not work with -fomit-frame-pointer */
+       :"memory"
+       );
+    return rc;
+#  else
+    int rc;
+    __asm__ __volatile__ (
+       "push    %3                                              \n\t"
+       "push    %2                                              \n\t"
+       ".byte   0x0f, 0xc7, 0x34, 0x24  # VMPTRLD [esp]         \n\t"
+       "jnc     1f                                              \n\t"
+       "movl    $" RT_XSTR(VERR_VMX_INVALID_VMCS_PTR)", %0      \n\t"
+       "1:                                                      \n\t"
+       "add     $8, %%esp                                       \n\t"
+       :"=rm"(rc)
+       :"0"(VINF_SUCCESS),
+        "ir"((uint32_t)HCPhysVmcs),         /* don't allow direct memory reference here, */
+        "ir"((uint32_t)(HCPhysVmcs >> 32))  /* this will not work with -fomit-frame-pointer */
+       :"memory"
+       );
+    return rc;
+#  endif
+
+# elif defined(RT_ARCH_X86)
+    int rc = VINF_SUCCESS;
+    __asm
+    {
+        push    dword ptr [HCPhysVmcs + 4]
+        push    dword ptr [HCPhysVmcs]
+        _emit   0x0f
+        _emit   0xc7
+        _emit   0x34
+        _emit   0x24     /* VMPTRLD [esp] */
+        jnc     success
+        mov     dword ptr [rc], VERR_VMX_INVALID_VMCS_PTR
+success:
+        add     esp, 8
+    }
+    return rc;
+
+# else
+#  error "Shouldn't be here..."
+# endif
+}
+#endif
+
+#if 0
 #if ((RT_INLINE_ASM_EXTERNAL || !defined(RT_ARCH_X86)) && !VMX_USE_MSC_INTRINSICS)
 DECLASM(int) VMXLoadVmcs(RTHCPHYS HCPhysVmcs);
 #else
@@ -449,6 +711,7 @@ success:
 # endif
 }
 #endif
+#endif
 
 
 /**
@@ -475,6 +738,64 @@ DECLASM(int) VMXGetCurrentVmcs(RTHCPHYS *pHCPhysVmcs);
  * @remarks The values of the two status codes can be OR'ed together, the result
  *          will be VERR_VMX_INVALID_VMCS_PTR.
  */
+#if RT_INLINE_ASM_EXTERNAL && !VMX_USE_MSC_INTRINSICS
+DECLASM(int) VMXWriteVmcs32(uint32_t uFieldEnc, uint32_t u32Val);
+#else
+DECLINLINE(int) VMXWriteVmcs32(uint32_t uFieldEnc, uint32_t u32Val)
+{
+# if VMX_USE_MSC_INTRINSICS
+     unsigned char rcMsc = __vmx_vmwrite(uFieldEnc, u32Val);
+     if (RT_LIKELY(rcMsc == 0))
+         return VINF_SUCCESS;
+     return rcMsc == 2 ? VERR_VMX_INVALID_VMCS_PTR : VERR_VMX_INVALID_VMCS_FIELD;
+
+# elif RT_INLINE_ASM_GNU_STYLE
+    int rc;
+    __asm__ __volatile__ (
+       ".byte  0x0f, 0x79, 0xc2        # VMWRITE eax, edx       \n\t"
+       "ja     2f                                               \n\t"
+       "je     1f                                               \n\t"
+       "movl   $" RT_XSTR(VERR_VMX_INVALID_VMCS_PTR)", %0       \n\t"
+       "jmp    2f                                               \n\t"
+       "1:                                                      \n\t"
+       "movl   $" RT_XSTR(VERR_VMX_INVALID_VMCS_FIELD)", %0     \n\t"
+       "2:                                                      \n\t"
+       :"=rm"(rc)
+       :"0"(VINF_SUCCESS),
+        "a"(uFieldEnc),
+        "d"(u32Val)
+       );
+    return rc;
+
+# elif defined(RT_ARCH_X86)
+    int rc = VINF_SUCCESS;
+    __asm
+    {
+        push   dword ptr [u32Val]
+        mov    eax, [uFieldEnc]
+        _emit  0x0f
+        _emit  0x79
+        _emit  0x04
+        _emit  0x24     /* VMWRITE eax, [esp] */
+        jnc    valid_vmcs
+        mov    dword ptr [rc], VERR_VMX_INVALID_VMCS_PTR
+        jmp    the_end
+valid_vmcs:
+        jnz    the_end
+        mov    dword ptr [rc], VERR_VMX_INVALID_VMCS_FIELD
+the_end:
+        add    esp, 4
+    }
+    return rc;
+
+# else
+#  error "Shouldn't be here..."
+# endif
+}
+#endif
+
+
+#if 0
 #if ((RT_INLINE_ASM_EXTERNAL || !defined(RT_ARCH_X86)) && !VMX_USE_MSC_INTRINSICS)
 DECLASM(int) VMXWriteVmcs32(uint32_t uFieldEnc, uint32_t u32Val);
 #else
@@ -528,6 +849,7 @@ the_end:
 # endif
 }
 #endif
+#endif
 
 
 /**
@@ -544,6 +866,43 @@ the_end:
  * @remarks The values of the two status codes can be OR'ed together, the result
  *          will be VERR_VMX_INVALID_VMCS_PTR.
  */
+#if defined(RT_ARCH_X86) || (RT_INLINE_ASM_EXTERNAL && !VMX_USE_MSC_INTRINSICS)
+DECLASM(int) VMXWriteVmcs64(uint32_t uFieldEnc, uint64_t u64Val);
+#else
+DECLINLINE(int) VMXWriteVmcs64(uint32_t uFieldEnc, uint64_t u64Val)
+{
+# if VMX_USE_MSC_INTRINSICS
+    unsigned char rcMsc = __vmx_vmwrite(uFieldEnc, u64Val);
+    if (RT_LIKELY(rcMsc == 0))
+        return VINF_SUCCESS;
+    return rcMsc == 2 ? VERR_VMX_INVALID_VMCS_PTR : VERR_VMX_INVALID_VMCS_FIELD;
+
+# elif RT_INLINE_ASM_GNU_STYLE
+    int rc;
+    __asm__ __volatile__ (
+       ".byte  0x0f, 0x79, 0xc2        # VMWRITE eax, edx        \n\t"
+       "ja     2f                                                \n\t"
+       "je     1f                                                \n\t"
+       "movl   $" RT_XSTR(VERR_VMX_INVALID_VMCS_PTR)", %0        \n\t"
+       "jmp    2f                                                \n\t"
+       "1:                                                       \n\t"
+       "movl   $" RT_XSTR(VERR_VMX_INVALID_VMCS_FIELD)", %0      \n\t"
+       "2:                                                       \n\t"
+       :"=rm"(rc)
+       :"0"(VINF_SUCCESS),
+        "a"(uFieldEnc),
+        "d"(u64Val)
+       );
+    return rc;
+
+# else
+#  error "Shouldn't be here..."
+# endif
+}
+#endif
+
+
+#if 0
 #if (defined(RT_ARCH_AMD64) && VMX_USE_MSC_INTRINSICS)
 DECLINLINE(int) VMXWriteVmcs64(uint32_t uFieldEnc, uint64_t u64Val)
 {
@@ -554,6 +913,7 @@ DECLINLINE(int) VMXWriteVmcs64(uint32_t uFieldEnc, uint64_t u64Val)
 }
 #else
 DECLASM(int) VMXWriteVmcs64(uint32_t uFieldEnc, uint64_t u64Val);
+#endif
 #endif
 
 
@@ -622,6 +982,69 @@ DECLASM(int) VMXR0InvVPID(VMXTLBFLUSHVPID enmFlush, uint64_t *pDescriptor);
  * @remarks The values of the two status codes can be OR'ed together, the result
  *          will be VERR_VMX_INVALID_VMCS_PTR.
  */
+#if RT_INLINE_ASM_EXTERNAL && !VMX_USE_MSC_INTRINSICS
+DECLASM(int) VMXReadVmcs32(uint32_t uFieldEnc, uint32_t *pData);
+#else
+DECLINLINE(int) VMXReadVmcs32(uint32_t uFieldEnc, uint32_t *pData)
+{
+# if VMX_USE_MSC_INTRINSICS
+    unsigned char rcMsc;
+    uint64_t u64Tmp;
+    rcMsc = __vmx_vmread(uFieldEnc, &u64Tmp);
+    *pData = (uint32_t)u64Tmp;
+    if (RT_LIKELY(rcMsc == 0))
+        return VINF_SUCCESS;
+    return rcMsc == 2 ? VERR_VMX_INVALID_VMCS_PTR : VERR_VMX_INVALID_VMCS_FIELD;
+
+# elif RT_INLINE_ASM_GNU_STYLE
+    int rc;
+    __asm__ __volatile__ (
+       "movl   $" RT_XSTR(VINF_SUCCESS)", %0                     \n\t"
+       ".byte  0x0f, 0x78, 0xc2        # VMREAD eax, edx         \n\t"
+       "ja     2f                                                \n\t"
+       "je     1f                                                \n\t"
+       "movl   $" RT_XSTR(VERR_VMX_INVALID_VMCS_PTR)", %0        \n\t"
+       "jmp    2f                                                \n\t"
+       "1:                                                       \n\t"
+       "movl   $" RT_XSTR(VERR_VMX_INVALID_VMCS_FIELD)", %0      \n\t"
+       "2:                                                       \n\t"
+       :"=&r"(rc),
+        "=d"(*pData)
+       :"a"(uFieldEnc),
+        "d"(0)
+       );
+    return rc;
+
+# elif defined(RT_ARCH_X86)
+    int rc = VINF_SUCCESS;
+    __asm
+    {
+        sub     esp, 4
+        mov     dword ptr [esp], 0
+        mov     eax, [uFieldEnc]
+        _emit   0x0f
+        _emit   0x78
+        _emit   0x04
+        _emit   0x24     /* VMREAD eax, [esp] */
+        mov     edx, pData
+        pop     dword ptr [edx]
+        jnc     valid_vmcs
+        mov     dword ptr [rc], VERR_VMX_INVALID_VMCS_PTR
+        jmp     the_end
+valid_vmcs:
+        jnz     the_end
+        mov     dword ptr [rc], VERR_VMX_INVALID_VMCS_FIELD
+the_end:
+    }
+    return rc;
+
+# else
+#  error "Shouldn't be here..."
+# endif
+}
+#endif
+
+#if 0
 #if ((RT_INLINE_ASM_EXTERNAL || !defined(RT_ARCH_X86)) && !VMX_USE_MSC_INTRINSICS)
 DECLASM(int) VMXReadVmcs32(uint32_t uFieldEnc, uint32_t *pData);
 #else
@@ -685,6 +1108,7 @@ the_end:
 # endif
 }
 #endif
+#endif
 
 
 /**
@@ -701,6 +1125,45 @@ the_end:
  * @remarks The values of the two status codes can be OR'ed together, the result
  *          will be VERR_VMX_INVALID_VMCS_PTR.
  */
+#if defined(RT_ARCH_X86) || (RT_INLINE_ASM_EXTERNAL && !VMX_USE_MSC_INTRINSICS)
+DECLASM(int) VMXReadVmcs64(uint32_t uFieldEnc, uint64_t *pData);
+#else
+DECLINLINE(int) VMXReadVmcs64(uint32_t uFieldEnc, uint64_t *pData)
+{
+# if VMX_USE_MSC_INTRINSICS
+    unsigned char rcMsc;
+    rcMsc = __vmx_vmread(uFieldEnc, pData);
+    if (RT_LIKELY(rcMsc == 0))
+        return VINF_SUCCESS;
+    return rcMsc == 2 ? VERR_VMX_INVALID_VMCS_PTR : VERR_VMX_INVALID_VMCS_FIELD;
+
+# elif RT_INLINE_ASM_GNU_STYLE
+    int rc;
+    __asm__ __volatile__ (
+       "movl   $" RT_XSTR(VINF_SUCCESS)", %0                     \n\t"
+       ".byte  0x0f, 0x78, 0xc2        # VMREAD eax, edx         \n\t"
+       "ja     2f                                                \n\t"
+       "je     1f                                                \n\t"
+       "movl   $" RT_XSTR(VERR_VMX_INVALID_VMCS_PTR)", %0        \n\t"
+       "jmp    2f                                                \n\t"
+       "1:                                                       \n\t"
+       "movl   $" RT_XSTR(VERR_VMX_INVALID_VMCS_FIELD)", %0      \n\t"
+       "2:                                                       \n\t"
+       :"=&r"(rc),
+        "=d"(*pData)
+       :"a"(uFieldEnc),
+        "d"(0)
+       );
+    return rc;
+
+# else
+#  error "Shouldn't be here..."
+# endif
+}
+#endif
+
+
+#if 0
 #if (!defined(RT_ARCH_X86) && !VMX_USE_MSC_INTRINSICS)
 DECLASM(int) VMXReadVmcs64(uint32_t uFieldEnc, uint64_t *pData);
 #else
@@ -734,6 +1197,7 @@ DECLINLINE(int) VMXReadVmcs64(uint32_t uFieldEnc, uint64_t *pData)
 #  error "Shouldn't be here..."
 # endif
 }
+#endif
 #endif
 
 
