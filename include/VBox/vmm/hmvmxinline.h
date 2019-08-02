@@ -738,7 +738,7 @@ DECLINLINE(int) VMXReadVmcs64(uint32_t uFieldEnc, uint64_t *pData)
 
 
 /**
- * Executes VMREAD for a 64-bit field.
+ * Executes VMREAD for a 16-bit field.
  *
  * @returns VBox status code.
  * @retval  VINF_SUCCESS.
