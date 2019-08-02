@@ -489,8 +489,7 @@ VMMR3DECL(int) PGMR3PoolGrow(PVM pVM)
        (below 4 GB) memory. */
     /** @todo change the pool to handle ROOT page allocations specially when
      *        required. */
-    bool fCanUseHighMemory = HMIsNestedPagingActive(pVM)
-                          && HMIsVmxActive(pVM);
+    bool fCanUseHighMemory = HMIsNestedPagingActive(pVM);
 
     pgmLock(pVM);
 
