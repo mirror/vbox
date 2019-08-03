@@ -317,7 +317,7 @@ typedef struct VMCPU
 
 
 #ifndef VBOX_FOR_DTRACE_LIB
-//AssertCompileSizeAlignment(VMCPU, 4096);
+AssertCompileSizeAlignment(VMCPU, 4096);
 
 /** @name Operations on VMCPU::enmState
  * @{ */
