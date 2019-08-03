@@ -208,7 +208,7 @@ typedef struct VMCPU
 #ifdef VMM_INCLUDED_SRC_include_TMInternal_h
         struct TMCPU        s;
 #endif
-        uint8_t             padding[384];       /* multiple of 64 */
+        uint8_t             padding[5760];      /* multiple of 64 */
     } tm;
 
     /** VMM part. */
@@ -279,7 +279,7 @@ typedef struct VMCPU
     STAMPROFILEADV          aStatAdHoc[8];                          /* size: 40*8 = 320 */
 
     /** Align the following members on page boundary. */
-    uint8_t                 abAlignment2[2680];
+    uint8_t                 abAlignment2[1400];
 
     /** PGM part. */
     union VMCPUUNIONPGM
@@ -317,7 +317,7 @@ typedef struct VMCPU
 
 
 #ifndef VBOX_FOR_DTRACE_LIB
-AssertCompileSizeAlignment(VMCPU, 4096);
+//AssertCompileSizeAlignment(VMCPU, 4096);
 
 /** @name Operations on VMCPU::enmState
  * @{ */
@@ -1329,7 +1329,7 @@ typedef struct VM
 #ifdef VMM_INCLUDED_SRC_include_TMInternal_h
         struct TM   s;
 #endif
-        uint8_t     padding[2496];      /* multiple of 64 */
+        uint8_t     padding[7872];      /* multiple of 64 */
     } tm;
 
     /** DBGF part. */
@@ -1427,16 +1427,16 @@ typedef struct VM
 #ifdef VBOX_BUGREF_9217
     /** Padding for aligning the structure size on a page boundrary. */
 # ifdef VBOX_WITH_REM
-    uint8_t         abAlignment2[2646 - sizeof(PVMCPUR3) * VMM_MAX_CPU_COUNT];
+    uint8_t         abAlignment2[1366 - sizeof(PVMCPUR3) * VMM_MAX_CPU_COUNT];
 # else
-    uint8_t         abAlignment2[2902 - sizeof(PVMCPUR3) * VMM_MAX_CPU_COUNT];
+    uint8_t         abAlignment2[1622 - sizeof(PVMCPUR3) * VMM_MAX_CPU_COUNT];
 # endif
 #else
     /** Padding for aligning the cpu array on a page boundary. */
 # ifdef VBOX_WITH_REM
-    uint8_t         abAlignment2[2646];
+    uint8_t         abAlignment2[1366];
 # else
-    uint8_t         abAlignment2[2902];
+    uint8_t         abAlignment2[1622];
 # endif
 #endif
 

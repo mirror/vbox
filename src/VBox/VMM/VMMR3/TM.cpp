@@ -3308,7 +3308,7 @@ VMMR3DECL(int) TMR3GetCpuLoadPercents(PUVM pUVM, VMCPUID idCpu, uint64_t *pcMsIn
  */
 DECLINLINE(void) tmR3CpuLoadTimerMakeUpdate(PTMCPULOADSTATE pState, uint64_t cNsTotal, uint64_t cNsExecuting, uint64_t cNsHalted)
 {
-    /* Calc deltas */
+    /* Calc & update deltas */
     uint64_t cNsTotalDelta      = cNsTotal     - pState->cNsPrevTotal;
     pState->cNsPrevTotal        = cNsTotal;
 
@@ -3319,24 +3319,42 @@ DECLINLINE(void) tmR3CpuLoadTimerMakeUpdate(PTMCPULOADSTATE pState, uint64_t cNs
     pState->cNsPrevHalted       = cNsHalted;
 
     /* Calc pcts. */
+    uint8_t cPctExecuting, cPctHalted, cPctOther;
     if (!cNsTotalDelta)
     {
-        pState->cPctExecuting   = 0;
-        pState->cPctHalted      = 100;
-        pState->cPctOther       = 0;
+        cPctExecuting = 0;
+        cPctHalted    = 100;
+        cPctOther     = 0;
     }
     else if (cNsTotalDelta < UINT64_MAX / 4)
     {
-        pState->cPctExecuting   = (uint8_t)(cNsExecutingDelta    * 100 / cNsTotalDelta);
-        pState->cPctHalted      = (uint8_t)(cNsHaltedDelta       * 100 / cNsTotalDelta);
-        pState->cPctOther       = (uint8_t)((cNsTotalDelta - cNsExecutingDelta - cNsHaltedDelta) * 100 / cNsTotalDelta);
+        cPctExecuting = (uint8_t)(cNsExecutingDelta * 100 / cNsTotalDelta);
+        cPctHalted    = (uint8_t)(cNsHaltedDelta    * 100 / cNsTotalDelta);
+        cPctOther     = (uint8_t)((cNsTotalDelta - cNsExecutingDelta - cNsHaltedDelta) * 100 / cNsTotalDelta);
     }
     else
     {
-        pState->cPctExecuting   = 0;
-        pState->cPctHalted      = 100;
-        pState->cPctOther       = 0;
+        cPctExecuting = 0;
+        cPctHalted    = 100;
+        cPctOther     = 0;
     }
+
+    /* Update percentages: */
+    size_t idxHistory = pState->idxHistory + 1;
+    if (idxHistory >= RT_ELEMENTS(pState->aHistory))
+        idxHistory = 0;
+
+    pState->cPctExecuting                      = cPctExecuting;
+    pState->cPctHalted                         = cPctHalted;
+    pState->cPctOther                          = cPctOther;
+
+    pState->aHistory[idxHistory].cPctExecuting = cPctExecuting;
+    pState->aHistory[idxHistory].cPctHalted    = cPctHalted;
+    pState->aHistory[idxHistory].cPctOther     = cPctOther;
+
+    pState->idxHistory = (uint16_t)idxHistory;
+    if (pState->cHistoryEntries < RT_ELEMENTS(pState->aHistory))
+        pState->cHistoryEntries++;
 }
 
 
@@ -3398,8 +3416,6 @@ static DECLCALLBACK(void) tmR3CpuLoadTimer(PVM pVM, PTMTIMER pTimer, void *pvUse
      * Update the value for all the CPUs.
      */
     tmR3CpuLoadTimerMakeUpdate(&pVM->tm.s.CpuLoad, cNsTotalAll, cNsExecutingAll, cNsHaltedAll);
-
-    /** @todo Try add 1, 5 and 15 min load stats. */
 
 }
 

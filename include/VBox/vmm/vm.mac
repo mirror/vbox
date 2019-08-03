@@ -63,7 +63,7 @@ struc VMCPU
     .hm                     resb 5888
     .nem                    resb 512
     .trpm                   resb 128
-    .tm                     resb 384
+    .tm                     resb 5760
     .vmm                    resb 896
     .pdm                    resb 256
     .iom                    resb 512
@@ -128,7 +128,7 @@ struc VM
     .iom                    resb 896
     .em                     resb 256
     .nem                    resb 128
-    .tm                     resb 2496
+    .tm                     resb 7872
     .dbgf                   resb 2432
     .ssm                    resb 128
 %ifdef VBOX_WITH_REM
