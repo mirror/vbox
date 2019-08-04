@@ -37,8 +37,10 @@
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
+#ifndef PGM_WITHOUT_MAPPINGS
 static DECLCALLBACK(bool) mmR3HyperRelocateCallback(PVM pVM, RTGCPTR GCPtrOld, RTGCPTR GCPtrNew, PGMRELOCATECALL enmMode,
                                                     void *pvUser);
+#endif
 static int mmR3HyperMap(PVM pVM, const size_t cb, const char *pszDesc, PRTGCPTR pGCPtr, PMMLOOKUPHYPER *ppLookup);
 static int mmR3HyperHeapCreate(PVM pVM, const size_t cb, PMMHYPERHEAP *ppHeap, PRTR0PTR pR0PtrHeap);
 static int mmR3HyperHeapMap(PVM pVM, PMMHYPERHEAP pHeap, PRTGCPTR ppHeapGC);
@@ -53,15 +55,18 @@ static DECLCALLBACK(void) mmR3HyperInfoHma(PVM pVM, PCDBGFINFOHLP pHlp, const ch
  */
 static uint32_t mmR3HyperComputeHeapSize(PVM pVM)
 {
+    /** @todo Redo after moving allocations off the hyper heap. */
+
     /*
      * Gather parameters.
      */
-    bool        fCanUseLargerHeap;
-    int rc = CFGMR3QueryBoolDef(CFGMR3GetChild(CFGMR3GetRoot(pVM), "MM"), "CanUseLargerHeap", &fCanUseLargerHeap, false);
-    AssertStmt(RT_SUCCESS(rc), fCanUseLargerHeap = false);
+    bool        fCanUseLargerHeap = true;
+    //bool        fCanUseLargerHeap;
+    //int rc = CFGMR3QueryBoolDef(CFGMR3GetChild(CFGMR3GetRoot(pVM), "MM"), "CanUseLargerHeap", &fCanUseLargerHeap, false);
+    //AssertStmt(RT_SUCCESS(rc), fCanUseLargerHeap = false);
 
     uint64_t    cbRam;
-    rc = CFGMR3QueryU64(CFGMR3GetRoot(pVM), "RamSize", &cbRam);
+    int rc = CFGMR3QueryU64(CFGMR3GetRoot(pVM), "RamSize", &cbRam);
     AssertStmt(RT_SUCCESS(rc), cbRam = _1G);
 
     /*
@@ -141,7 +146,7 @@ int mmR3HyperInit(PVM pVM)
         /*
          * Make a small head fence to fend of accidental sequential access.
          */
-        MMR3HyperReserve(pVM, PAGE_SIZE, "fence", NULL);
+        MMR3HyperReserveFence(pVM);
 
         /*
          * Map the VM structure into the hypervisor space.
@@ -157,7 +162,7 @@ int mmR3HyperInit(PVM pVM)
                 pVM->aCpus[i].pVMRC = pVM->pVMRC;
 
             /* Reserve a page for fencing. */
-            MMR3HyperReserve(pVM, PAGE_SIZE, "fence", NULL);
+            MMR3HyperReserveFence(pVM);
 
             /*
              * Map the heap into the hypervisor space.
@@ -217,6 +222,7 @@ VMMR3DECL(int) MMR3HyperInitFinalize(PVM pVM)
     int rc = PDMR3CritSectInit(pVM, &pVM->mm.s.pHyperHeapR3->Lock, RT_SRC_POS, "MM-HYPER");
     AssertRC(rc);
 
+#ifndef PGM_WITHOUT_MAPPINGS
     /*
      * Adjust and create the HMA mapping.
      */
@@ -226,8 +232,10 @@ VMMR3DECL(int) MMR3HyperInitFinalize(PVM pVM)
                     mmR3HyperRelocateCallback, NULL, "Hypervisor Memory Area");
     if (RT_FAILURE(rc))
         return rc;
+#endif
     pVM->mm.s.fPGMInitialized = true;
 
+#ifndef PGM_WITHOUT_MAPPINGS
     /*
      * Do all the delayed mappings.
      */
@@ -308,12 +316,14 @@ VMMR3DECL(int) MMR3HyperInitFinalize(PVM pVM)
             break;
         pLookup = (PMMLOOKUPHYPER)((uintptr_t)pLookup + pLookup->offNext);
     }
+#endif /* !PGM_WITHOUT_MAPPINGS */
 
     LogFlow(("MMR3HyperInitFinalize: returns VINF_SUCCESS\n"));
     return VINF_SUCCESS;
 }
 
 
+#ifndef PGM_WITHOUT_MAPPINGS
 /**
  * Callback function which will be called when PGM is trying to find a new
  * location for the mapping.
@@ -384,6 +394,8 @@ static DECLCALLBACK(bool) mmR3HyperRelocateCallback(PVM pVM, RTGCPTR GCPtrOld, R
 
     return false;
 }
+#endif /* !PGM_WITHOUT_MAPPINGS */
+
 
 /**
  * Service a VMMCALLRING3_MMHYPER_LOCK call.
@@ -399,6 +411,9 @@ VMMR3DECL(int) MMR3LockCall(PVM pVM)
     AssertRC(rc);
     return rc;
 }
+
+
+#ifndef PGM_WITHOUT_MAPPINGS
 
 /**
  * Maps contiguous HC physical memory into the hypervisor region in the GC.
@@ -606,6 +621,7 @@ VMMR3DECL(int) MMR3HyperMapMMIO2(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev, 
     return rc;
 }
 
+#endif /* !PGM_WITHOUT_MAPPINGS */
 
 /**
  * Maps locked R3 virtual memory into the hypervisor region in the GC.
@@ -661,6 +677,7 @@ VMMR3DECL(int) MMR3HyperMapPages(PVM pVM, void *pvR3, RTR0PTR pvR0, size_t cPage
                 paHCPhysPages[i] = paPages[i].Phys;
             }
 
+#ifndef PGM_WITHOUT_MAPPINGS
             if (pVM->mm.s.fPGMInitialized)
             {
                 for (size_t i = 0; i < cPages; i++)
@@ -669,6 +686,7 @@ VMMR3DECL(int) MMR3HyperMapPages(PVM pVM, void *pvR3, RTR0PTR pvR0, size_t cPage
                     AssertRCBreak(rc);
                 }
             }
+#endif
             if (RT_SUCCESS(rc))
             {
                 pLookup->enmType = MMLOOKUPHYPERTYPE_LOCKED;
@@ -688,6 +706,7 @@ VMMR3DECL(int) MMR3HyperMapPages(PVM pVM, void *pvR3, RTR0PTR pvR0, size_t cPage
 }
 
 
+#ifndef PGM_WITHOUT_MAPPINGS
 /**
  * Reserves a hypervisor memory area.
  * Most frequent usage is fence pages and dynamically mappings like the guest PD and PDPT.
@@ -728,6 +747,24 @@ VMMR3DECL(int) MMR3HyperReserve(PVM pVM, unsigned cb, const char *pszDesc, PRTGC
         return VINF_SUCCESS;
     }
     return rc;
+}
+#endif /* !PGM_WITHOUT_MAPPINGS */
+
+
+/**
+ * Reserves an electric fence page.
+ *
+ * @returns VBox status code.
+ * @param   pVM         The cross context VM structure.
+ */
+VMMR3DECL(int) MMR3HyperReserveFence(PVM pVM)
+{
+#ifndef PGM_WITHOUT_MAPPINGS
+    return MMR3HyperReserve(pVM, cb, "fence", NULL);
+#else
+    RT_NOREF(pVM);
+    return VINF_SUCCESS;
+#endif
 }
 
 
@@ -817,17 +854,11 @@ static int mmR3HyperHeapCreate(PVM pVM, const size_t cb, PMMHYPERHEAP *ppHeap, P
     int rc = SUPR3PageAllocEx(cPages,
                               0 /*fFlags*/,
                               &pv,
-#if defined(VBOX_WITH_2X_4GB_ADDR_SPACE) || defined(VBOX_WITH_MORE_RING0_MEM_MAPPINGS)
                               &pvR0,
-#else
-                              NULL,
-#endif
                               paPages);
     if (RT_SUCCESS(rc))
     {
-#if !defined(VBOX_WITH_2X_4GB_ADDR_SPACE) && !defined(VBOX_WITH_MORE_RING0_MEM_MAPPINGS)
-        pvR0 = (uintptr_t)pv;
-#endif
+        Assert(pvR0 != NIL_RTR0PTR && !(PAGE_OFFSET_MASK & pvR0));
         memset(pv, 0, cbAligned);
 
         /*
@@ -836,7 +867,7 @@ static int mmR3HyperHeapCreate(PVM pVM, const size_t cb, PMMHYPERHEAP *ppHeap, P
         PMMHYPERHEAP pHeap = (PMMHYPERHEAP)pv;
         pHeap->u32Magic             = MMHYPERHEAP_MAGIC;
         pHeap->pbHeapR3             = (uint8_t *)pHeap + MMYPERHEAP_HDR_SIZE;
-        pHeap->pbHeapR0             = pvR0 != NIL_RTR0PTR ? pvR0 + MMYPERHEAP_HDR_SIZE : NIL_RTR0PTR;
+        pHeap->pbHeapR0             = pvR0 + MMYPERHEAP_HDR_SIZE;
         //pHeap->pbHeapRC           = 0; // set by mmR3HyperHeapMap()
         pHeap->pVMR3                = pVM;
         pHeap->pVMR0                = pVM->pVMR0;
@@ -870,16 +901,18 @@ static int mmR3HyperHeapCreate(PVM pVM, const size_t cb, PMMHYPERHEAP *ppHeap, P
     return rc;
 }
 
+
 /**
  * Allocates a new heap.
  */
 static int mmR3HyperHeapMap(PVM pVM, PMMHYPERHEAP pHeap, PRTGCPTR ppHeapGC)
 {
     Assert(RT_ALIGN_Z(pHeap->cbHeap + MMYPERHEAP_HDR_SIZE, PAGE_SIZE) == pHeap->cbHeap + MMYPERHEAP_HDR_SIZE);
+    Assert(pHeap->pbHeapR0);
     Assert(pHeap->paPages);
     int rc = MMR3HyperMapPages(pVM,
                                pHeap,
-                               pHeap->pbHeapR0 != NIL_RTR0PTR ? pHeap->pbHeapR0 - MMYPERHEAP_HDR_SIZE : NIL_RTR0PTR,
+                               pHeap->pbHeapR0 - MMYPERHEAP_HDR_SIZE,
                                (pHeap->cbHeap + MMYPERHEAP_HDR_SIZE) >> PAGE_SHIFT,
                                pHeap->paPages,
                                "Heap", ppHeapGC);
@@ -888,7 +921,7 @@ static int mmR3HyperHeapMap(PVM pVM, PMMHYPERHEAP pHeap, PRTGCPTR ppHeapGC)
         pHeap->pVMRC    = pVM->pVMRC;
         pHeap->pbHeapRC = *ppHeapGC + MMYPERHEAP_HDR_SIZE;
         /* Reserve a page for fencing. */
-        MMR3HyperReserve(pVM, PAGE_SIZE, "fence", NULL);
+        MMR3HyperReserveFence(pVM);
 
         /* We won't need these any more. */
         MMR3HeapFree(pHeap->paPages);
@@ -1013,25 +1046,11 @@ VMMR3DECL(int) MMR3HyperAllocOnceNoRelEx(PVM pVM, size_t cb, unsigned uAlignment
     int rc = SUPR3PageAllocEx(cPages,
                               0 /*fFlags*/,
                               &pvPages,
-#ifdef VBOX_WITH_MORE_RING0_MEM_MAPPINGS
                               &pvR0,
-#else
-                              fFlags & MMHYPER_AONR_FLAGS_KERNEL_MAPPING ? &pvR0 : NULL,
-#endif
                               paPages);
     if (RT_SUCCESS(rc))
     {
-#ifdef VBOX_WITH_MORE_RING0_MEM_MAPPINGS
         Assert(pvR0 != NIL_RTR0PTR);
-#else
-        if (!(fFlags & MMHYPER_AONR_FLAGS_KERNEL_MAPPING))
-# ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
-            pvR0 = NIL_RTR0PTR;
-# else
-            pvR0 = (RTR0PTR)pvPages;
-# endif
-#endif
-
         memset(pvPages, 0, cbAligned);
 
         RTGCPTR GCPtr;
@@ -1049,7 +1068,7 @@ VMMR3DECL(int) MMR3HyperAllocOnceNoRelEx(PVM pVM, size_t cb, unsigned uAlignment
             *ppv = pvPages;
             Log2(("MMR3HyperAllocOnceNoRel: cbAligned=%#x uAlignment=%#x returns VINF_SUCCESS and *ppv=%p\n",
                   cbAligned, uAlignment, *ppv));
-            MMR3HyperReserve(pVM, PAGE_SIZE, "fence", NULL);
+            MMR3HyperReserveFence(pVM);
             return rc;
         }
         AssertMsgFailed(("Failed to allocate %zd bytes! %Rrc\n", cbAligned, rc));
@@ -1164,12 +1183,20 @@ VMMR3DECL(int) MMR3HyperSetGuard(PVM pVM, void *pvStart, size_t cb, bool fSet)
     int         rc;
     if (fSet)
     {
+#ifndef PGM_WITHOUT_MAPPINGS
         rc = PGMMapSetPage(pVM, MMHyperR3ToRC(pVM, pvStart), cb, 0);
+#else
+        rc = VINF_SUCCESS;
+#endif
         SUPR3PageProtect(pbR3, R0Ptr, off, (uint32_t)cb, RTMEM_PROT_NONE);
     }
     else
     {
+#ifndef PGM_WITHOUT_MAPPINGS
         rc = PGMMapSetPage(pVM, MMHyperR3ToRC(pVM, pvStart), cb, X86_PTE_P | X86_PTE_A | X86_PTE_D | X86_PTE_RW);
+#else
+        rc = VINF_SUCCESS;
+#endif
         SUPR3PageProtect(pbR3, R0Ptr, off, (uint32_t)cb, RTMEM_PROT_READ | RTMEM_PROT_WRITE);
     }
     return rc;
@@ -1227,6 +1254,7 @@ VMMR3DECL(RTHCPHYS) MMR3HyperHCVirt2HCPhys(PVM pVM, void *pvR3)
     return NIL_RTHCPHYS;
 }
 
+#ifndef PGM_WITHOUT_MAPPINGS
 
 /**
  * Implements the hcphys-not-found return case of MMR3HyperQueryInfoFromHCPhys.
@@ -1313,44 +1341,6 @@ VMMR3_INT_DECL(int) MMR3HyperQueryInfoFromHCPhys(PVM pVM, RTHCPHYS HCPhys, char 
 }
 
 
-#if 0 /* unused, not implemented */
-/**
- * Convert hypervisor HC physical address to HC virtual address.
- *
- * @returns HC virtual address.
- * @param   pVM         The cross context VM structure.
- * @param   HCPhys      Host context physical address.
- */
-VMMR3DECL(void *) MMR3HyperHCPhys2HCVirt(PVM pVM, RTHCPHYS HCPhys)
-{
-    void *pv;
-    int rc = MMR3HyperHCPhys2HCVirtEx(pVM, HCPhys, &pv);
-    if (RT_SUCCESS(rc))
-        return pv;
-    AssertMsgFailed(("Invalid address HCPhys=%x rc=%d\n", HCPhys, rc));
-    return NULL;
-}
-
-
-/**
- * Convert hypervisor HC physical address to HC virtual address.
- *
- * @returns VBox status code.
- * @param   pVM         The cross context VM structure.
- * @param   HCPhys      Host context physical address.
- * @param   ppv         Where to store the HC virtual address.
- */
-VMMR3DECL(int)   MMR3HyperHCPhys2HCVirtEx(PVM pVM, RTHCPHYS HCPhys, void **ppv)
-{
-    /*
-     * Linear search.
-     */
-    /** @todo implement when actually used. */
-    return VERR_INVALID_POINTER;
-}
-#endif /* unused, not implemented */
-
-
 /**
  * Read hypervisor memory from GC virtual address.
  *
@@ -1369,6 +1359,7 @@ VMMR3DECL(int) MMR3HyperReadGCVirt(PVM pVM, void *pvDst, RTGCPTR GCPtr, size_t c
     return PGMR3MapRead(pVM, pvDst, GCPtr, cb);
 }
 
+#endif /* !PGM_WITHOUT_MAPPINGS */
 
 /**
  * Info handler for 'hma', it dumps the list of lookup records for the hypervisor memory area.

@@ -78,18 +78,17 @@ typedef struct GIMMMIO2REGION
     bool                fRegistered;
     /** Whether this region is currently mapped. */
     bool                fMapped;
-    /** Alignment padding. */
-    uint8_t             au8Alignment0[3];
     /** Size of the region (must be page aligned). */
     uint32_t            cbRegion;
-    /** Alignment padding. */
-    uint32_t            u32Alignment0;
     /** The host ring-0 address of the first page in the region. */
     R0PTRTYPE(void *)   pvPageR0;
     /** The host ring-3 address of the first page in the region. */
     R3PTRTYPE(void *)   pvPageR3;
+# ifdef VBOX_WITH_RAW_MODE_KEEP
     /** The ring-context address of the first page in the region. */
     RCPTRTYPE(void *)   pvPageRC;
+    RTRCPTR             RCPtrAlignment0;
+# endif
     /** The guest-physical address of the first page in the region. */
     RTGCPHYS            GCPhysPage;
     /** The description of the region. */
@@ -99,8 +98,8 @@ typedef struct GIMMMIO2REGION
 typedef GIMMMIO2REGION *PGIMMMIO2REGION;
 /** Pointer to a const GIM MMIO2 region. */
 typedef GIMMMIO2REGION const *PCGIMMMIO2REGION;
-AssertCompileMemberAlignment(GIMMMIO2REGION, cbRegion, 8);
 AssertCompileMemberAlignment(GIMMMIO2REGION, pvPageR0, 8);
+AssertCompileMemberAlignment(GIMMMIO2REGION, GCPhysPage, 8);
 
 /**
  * Debug data buffer available callback over the GIM debug connection.

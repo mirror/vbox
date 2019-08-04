@@ -1695,6 +1695,7 @@ static void pgmR3PhysInitAndLinkRamRange(PVM pVM, PPGMRAMRANGE pNew, RTGCPHYS GC
 }
 
 
+#ifndef PGM_WITHOUT_MAPPINGS
 /**
  * @callback_method_impl{FNPGMRELOCATE, Relocate a floating RAM range.}
  * @sa pgmR3PhysMMIO2ExRangeRelocate
@@ -1732,6 +1733,7 @@ static DECLCALLBACK(bool) pgmR3PhysRamRangeRelocate(PVM pVM, RTGCPTR GCPtrOld, R
             AssertFailedReturn(false);
     }
 }
+#endif /* !PGM_WITHOUT_MAPPINGS */
 
 
 /**
@@ -1763,25 +1765,10 @@ static int pgmR3PhysRegisterHighRamChunk(PVM pVM, RTGCPHYS GCPhys, uint32_t cRam
     AssertReturn(paChunkPages, VERR_NO_TMP_MEMORY);
     RTR0PTR      R0PtrChunk   = NIL_RTR0PTR;
     void        *pvChunk      = NULL;
-    int rc = SUPR3PageAllocEx(cChunkPages, 0 /*fFlags*/, &pvChunk,
-#if defined(VBOX_WITH_MORE_RING0_MEM_MAPPINGS)
-                              &R0PtrChunk,
-#elif defined(VBOX_WITH_2X_4GB_ADDR_SPACE)
-                              VM_IS_HM_OR_NEM_ENABLED(pVM) ? &R0PtrChunk : NULL,
-#else
-                              NULL,
-#endif
-                              paChunkPages);
+    int rc = SUPR3PageAllocEx(cChunkPages, 0 /*fFlags*/, &pvChunk, &R0PtrChunk, paChunkPages);
     if (RT_SUCCESS(rc))
     {
-#if defined(VBOX_WITH_MORE_RING0_MEM_MAPPINGS)
         Assert(R0PtrChunk != NIL_RTR0PTR);
-#elif defined(VBOX_WITH_2X_4GB_ADDR_SPACE)
-        if (!VM_IS_HM_OR_NEM_ENABLED(pVM))
-            R0PtrChunk = NIL_RTR0PTR;
-#else
-        R0PtrChunk = (uintptr_t)pvChunk;
-#endif
         memset(pvChunk, 0, cChunkPages << PAGE_SHIFT);
 
         PPGMRAMRANGE pNew = (PPGMRAMRANGE)pvChunk;
@@ -1791,16 +1778,20 @@ static int pgmR3PhysRegisterHighRamChunk(PVM pVM, RTGCPHYS GCPhys, uint32_t cRam
          * We push these in below the HMA.
          */
         RTGCPTR GCPtrChunkMap = pVM->pgm.s.GCPtrPrevRamRangeMapping - cbChunk;
+#ifndef PGM_WITHOUT_MAPPINGS
         rc = PGMR3MapPT(pVM, GCPtrChunkMap, cbChunk, 0 /*fFlags*/, pgmR3PhysRamRangeRelocate, pNew, pszDescChunk);
         if (RT_SUCCESS(rc))
+#endif /* !PGM_WITHOUT_MAPPINGS */
         {
             pVM->pgm.s.GCPtrPrevRamRangeMapping = GCPtrChunkMap;
 
             RTGCPTR const   GCPtrChunk = GCPtrChunkMap + PAGE_SIZE;
+#ifndef PGM_WITHOUT_MAPPINGS
             RTGCPTR         GCPtrPage  = GCPtrChunk;
             for (uint32_t iPage = 0; iPage < cChunkPages && RT_SUCCESS(rc); iPage++, GCPtrPage += PAGE_SIZE)
                 rc = PGMMap(pVM, GCPtrPage, paChunkPages[iPage].Phys, PAGE_SIZE, 0);
             if (RT_SUCCESS(rc))
+#endif /* !PGM_WITHOUT_MAPPINGS */
             {
                 /*
                  * Ok, init and link the range.
@@ -2847,11 +2838,13 @@ static int pgmR3PhysMMIOExCreate(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev, 
             {
                 RTGCPTR         GCPtrChunkMap = pVM->pgm.s.GCPtrPrevRamRangeMapping - RT_ALIGN_Z(cbChunk, _4M);
                 RTGCPTR const   GCPtrChunk    = GCPtrChunkMap + PAGE_SIZE;
+#ifndef PGM_WITHOUT_MAPPINGS
                 rc = PGMR3MapPT(pVM, GCPtrChunkMap, (uint32_t)cbChunk, 0 /*fFlags*/, pgmR3PhysMMIOExRangeRelocate, pNew, pszDesc);
                 if (RT_SUCCESS(rc))
                 {
+#endif /* !PGM_WITHOUT_MAPPINGS */
                     pVM->pgm.s.GCPtrPrevRamRangeMapping = GCPtrChunkMap;
-
+#ifndef PGM_WITHOUT_MAPPINGS
                     RTGCPTR GCPtrPage  = GCPtrChunk;
                     for (uint32_t iPage = 0; iPage < cChunkPages && RT_SUCCESS(rc); iPage++, GCPtrPage += PAGE_SIZE)
                         rc = PGMMap(pVM, GCPtrPage, paChunkPages[iPage].Phys, PAGE_SIZE, 0);
@@ -2862,6 +2855,7 @@ static int pgmR3PhysMMIOExCreate(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev, 
                     RTMemTmpFree(paChunkPages);
                     break;
                 }
+#endif /* !PGM_WITHOUT_MAPPINGS */
                 pNew->RamRange.pSelfRC  = GCPtrChunk + RT_UOFFSETOF(PGMREGMMIORANGE, RamRange);
             }
             RTMemTmpFree(paChunkPages);

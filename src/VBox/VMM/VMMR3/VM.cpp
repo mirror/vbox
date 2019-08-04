@@ -626,8 +626,10 @@ static int vmR3CreateU(PUVM pUVM, uint32_t cCpus, PFNCFGMCONSTRUCTOR pfnCFGMCons
                 rc = vmR3InitRing3(pVM, pUVM);
                 if (RT_SUCCESS(rc))
                 {
+#ifndef PGM_WITHOUT_MAPPINGS
                     rc = PGMR3FinalizeMappings(pVM);
                     if (RT_SUCCESS(rc))
+#endif
                     {
 
                         LogFlow(("Ring-3 init succeeded\n"));

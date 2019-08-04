@@ -1126,6 +1126,7 @@ static int pgmR3DumpHierarchyShwMapPage(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHY
     else
     {
         pvPage = NULL;
+#ifndef PGM_WITHOUT_MAPPINGS
         for (PPGMMAPPING pMap = pState->pVM->pgm.s.pMappingsR3; pMap; pMap = pMap->pNextR3)
         {
             uint64_t off = pState->u64Address - pMap->GCPtr;
@@ -1142,6 +1143,7 @@ static int pgmR3DumpHierarchyShwMapPage(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHY
                 break;
             }
         }
+#endif /* !PGM_WITHOUT_MAPPINGS */
         if (!pvPage)
         {
             pState->pHlp->pfnPrintf(pState->pHlp, "%0*llx error! PT mapping %s at HCPhys=%RHp was not found in the page pool!\n",
@@ -1171,6 +1173,7 @@ static void pgmR3DumpHierarchyShwTablePageInfo(PPGMR3DUMPHIERARCHYSTATE pState, 
     {
         /* probably a mapping */
         strcpy(szPage, " not found");
+#ifndef PGM_WITHOUT_MAPPINGS
         for (PPGMMAPPING pMap = pState->pVM->pgm.s.pMappingsR3; pMap; pMap = pMap->pNextR3)
         {
             uint64_t off = pState->u64Address - pMap->GCPtr;
@@ -1188,6 +1191,7 @@ static void pgmR3DumpHierarchyShwTablePageInfo(PPGMR3DUMPHIERARCHYSTATE pState, 
                 break;
             }
         }
+#endif /* !PGM_WITHOUT_MAPPINGS */
     }
     pgmUnlock(pState->pVM);
     pState->pHlp->pfnPrintf(pState->pHlp, "%s", szPage);
@@ -1219,12 +1223,14 @@ static void pgmR3DumpHierarchyShwGuestPageInfo(PPGMR3DUMPHIERARCHYSTATE pState, 
     }
     else
     {
+#ifndef PGM_WITHOUT_MAPPINGS
         /* check the heap */
         uint32_t cbAlloc;
         rc = MMR3HyperQueryInfoFromHCPhys(pState->pVM, HCPhys, szPage, sizeof(szPage), &cbAlloc);
         if (RT_SUCCESS(rc))
             pState->pHlp->pfnPrintf(pState->pHlp, " %s %#x bytes", szPage, cbAlloc);
         else
+#endif
             pState->pHlp->pfnPrintf(pState->pHlp, " not found");
     }
     NOREF(cbPage);

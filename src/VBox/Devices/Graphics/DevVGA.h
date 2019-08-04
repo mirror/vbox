@@ -277,11 +277,13 @@ typedef struct VGAState {
     /** end-of-common-state-marker */
     uint32_t                    u32Marker;
 
+# ifdef VBOX_WITH_RAW_MODE_KEEP
     /** Pointer to the device instance - RC Ptr. */
     PPDMDEVINSRC                pDevInsRC;
     /** Pointer to the GC vram mapping. */
     RCPTRTYPE(uint8_t *)        vram_ptrRC;
     uint32_t                    Padding1;
+# endif
 
     /** Pointer to the device instance - R3 Ptr. */
     PPDMDEVINSR3                pDevInsR3;

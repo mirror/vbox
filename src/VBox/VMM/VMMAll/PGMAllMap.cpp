@@ -30,6 +30,8 @@
 #include <iprt/assert.h>
 
 
+#ifndef PGM_WITHOUT_MAPPINGS
+
 /**
  * Maps a range of physical pages at a given virtual address
  * in the guest context.
@@ -259,7 +261,6 @@ VMMDECL(int) PGMMapGetPage(PVM pVM, RTGCPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS 
     return VERR_NOT_FOUND;
 }
 
-#ifndef PGM_WITHOUT_MAPPINGS
 
 /**
  * Sets all PDEs involved with the mapping in the shadow page table.
@@ -543,8 +544,7 @@ void pgmMapClearShadowPDEs(PVM pVM, PPGMPOOLPAGE pShwPageCR3, PPGMMAPPING pMap, 
     PGM_DYNMAP_UNUSED_HINT_VM(pVM, pCurrentShwPdpt);
 }
 
-#endif /* PGM_WITHOUT_MAPPINGS */
-#if defined(VBOX_STRICT) && !defined(IN_RING0)
+# if defined(VBOX_STRICT) && !defined(IN_RING0)
 
 /**
  * Clears all PDEs involved with the mapping in the shadow page table.
@@ -655,8 +655,8 @@ VMMDECL(void) PGMMapCheck(PVM pVM)
     pgmUnlock(pVM);
 }
 
-#endif /* defined(VBOX_STRICT) && !defined(IN_RING0) */
-#ifndef PGM_WITHOUT_MAPPINGS
+
+# endif /* defined(VBOX_STRICT) && !defined(IN_RING0) */
 
 /**
  * Apply the hypervisor mappings to the active CR3.
@@ -681,10 +681,10 @@ int pgmMapActivateCR3(PVM pVM, PPGMPOOLPAGE pShwPageCR3)
              cannot flush the log at this point. */
     Log4(("pgmMapActivateCR3: fixed mappings=%RTbool idxShwPageCR3=%#x\n", pVM->pgm.s.fMappingsFixed, pShwPageCR3 ? pShwPageCR3->idx : NIL_PGMPOOL_IDX));
 
-#ifdef VBOX_STRICT
+# ifdef VBOX_STRICT
     PVMCPU pVCpu = VMMGetCpu0(pVM);
     Assert(pShwPageCR3 && pShwPageCR3 == pVCpu->pgm.s.CTX_SUFF(pShwPageCR3));
-#endif
+# endif
 
     /*
      * Iterate mappings.
@@ -902,19 +902,19 @@ int pgmMapResolveConflicts(PVM pVM)
                 if (Pde.n.u1Present)
                 {
                     STAM_COUNTER_INC(&pVM->pgm.s.CTX_SUFF(pStats)->StatR3DetectedConflicts);
-#ifdef IN_RING3
+# ifdef IN_RING3
                     Log(("PGMHasMappingConflicts: Conflict was detected at %RGv for mapping %s (PAE)\n"
                          "                        PDE=%016RX64.\n",
                          GCPtr, pCur->pszDesc, Pde.u));
                     int rc = pgmR3SyncPTResolveConflictPAE(pVM, pCur, pCur->GCPtr);
                     AssertRCReturn(rc, rc);
                     break;
-#else
+# else
                     Log(("PGMHasMappingConflicts: Conflict was detected at %RGv for mapping (PAE)\n"
                          "                        PDE=%016RX64.\n",
                          GCPtr, Pde.u));
                     return VINF_PGM_SYNC_CR3;
-#endif
+# endif
                 }
                 GCPtr += (1 << X86_PD_PAE_SHIFT);
             }
@@ -928,5 +928,5 @@ int pgmMapResolveConflicts(PVM pVM)
     return VINF_SUCCESS;
 }
 
-#endif /* PGM_WITHOUT_MAPPINGS */
+#endif /* !PGM_WITHOUT_MAPPINGS */
 

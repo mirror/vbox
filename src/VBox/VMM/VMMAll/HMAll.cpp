@@ -448,7 +448,6 @@ static void hmR0PokeCpu(PVMCPU pVCpu, RTCPUID idHostCpu)
 }
 
 #endif /* IN_RING0 */
-#ifndef IN_RC
 
 /**
  * Flushes the guest TLB.
@@ -694,7 +693,6 @@ VMM_INT_DECL(bool) HMIsVmxActive(PVM pVM)
     return pVM->hm.s.vmx.fSupported && HMIsEnabled(pVM);
 }
 
-#endif /* !IN_RC */
 
 /**
  * Checks if an interrupt event is currently pending.
@@ -743,7 +741,6 @@ VMM_INT_DECL(bool) HMSetSingleInstruction(PVM pVM, PVMCPU pVCpu, bool fEnable)
 }
 
 
-#ifndef IN_RC
 /**
  * Notification callback which is called whenever there is a chance that a CR3
  * value might have changed.
@@ -757,11 +754,11 @@ VMM_INT_DECL(bool) HMSetSingleInstruction(PVM pVM, PVMCPU pVCpu, bool fEnable)
  */
 VMM_INT_DECL(void) HMHCChangedPagingMode(PVM pVM, PVMCPU pVCpu, PGMMODE enmShadowMode, PGMMODE enmGuestMode)
 {
-# ifdef IN_RING3
+#ifdef IN_RING3
     /* Ignore page mode changes during state loading. */
     if (VMR3GetState(pVM) == VMSTATE_LOADING)
         return;
-# endif
+#endif
 
     pVCpu->hm.s.enmShadowMode = enmShadowMode;
 
@@ -775,7 +772,7 @@ VMM_INT_DECL(void) HMHCChangedPagingMode(PVM pVM, PVMCPU pVCpu, PGMMODE enmShado
         pVmcsInfo->fWasInRealMode = true;
     }
 
-# ifdef IN_RING0
+#ifdef IN_RING0
     /*
      * We need to tickle SVM and VT-x state updates.
      *
@@ -791,12 +788,11 @@ VMM_INT_DECL(void) HMHCChangedPagingMode(PVM pVM, PVMCPU pVCpu, PGMMODE enmShado
             fChanged |= HM_CHANGED_VMX_XCPT_INTERCEPTS | HM_CHANGED_VMX_ENTRY_EXIT_CTLS;
         ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, fChanged);
     }
-# endif
+#endif
 
     Log4(("HMHCChangedPagingMode: Guest paging mode '%s', shadow paging mode '%s'\n", PGMGetModeName(enmGuestMode),
           PGMGetModeName(enmShadowMode)));
 }
-#endif /* !IN_RC */
 
 
 /**

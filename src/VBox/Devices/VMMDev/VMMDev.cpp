@@ -4278,6 +4278,7 @@ static DECLCALLBACK(void) vmmdevReset(PPDMDEVINS pDevIns)
 }
 
 
+#ifdef VBOX_WITH_RAW_MODE_KEEP
 /**
  * @interface_method_impl{PDMDEVREG,pfnRelocate}
  */
@@ -4293,6 +4294,7 @@ static DECLCALLBACK(void) vmmdevRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta
         pThis->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
     }
 }
+#endif
 
 
 /**
@@ -4357,7 +4359,9 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     /* Save PDM device instance data for future reference. */
     pThis->pDevInsR3 = pDevIns;
     pThis->pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
+#ifdef VBOX_WITH_RAW_MODE_KEEP
     pThis->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
+#endif
 
     /* PCI vendor, just a free bogus value */
     PCIDevSetVendorId(&pThis->PciDev, 0x80ee);
@@ -4592,7 +4596,7 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
             return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
                                        N_("Failed to map first page of the VMMDev ram into kernel space: %Rrc"), rc);
 
-#ifdef VBOX_WITH_RAW_MODE
+#ifdef VBOX_WITH_RAW_MODE_KEEP
         rc = PDMDevHlpMMHyperMapMMIO2(pDevIns, &pThis->PciDev, 1 /*iRegion*/, 0 /*off*/, PAGE_SIZE, "VMMDev", &pThis->pVMMDevRAMRC);
         if (RT_FAILURE(rc))
             return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
@@ -4759,7 +4763,11 @@ extern "C" const PDMDEVREG g_DeviceVMMDev =
     /* pfnDestruct */
     vmmdevDestruct,
     /* pfnRelocate */
+# ifdef VBOX_WITH_RAW_MODE_KEEP
     vmmdevRelocate,
+# else
+    NULL,
+# endif
     /* pfnMemSetup */
     NULL,
     /* pfnPowerOn */

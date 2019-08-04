@@ -64,7 +64,7 @@ typedef struct PDMGETIMPORTARGS
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
-#ifdef VBOX_WITH_RAW_MODE
+#ifdef VBOX_WITH_RAW_MODE_KEEP
 static DECLCALLBACK(int) pdmR3GetImportRC(RTLDRMOD hLdrMod, const char *pszModule, const char *pszSymbol, unsigned uSymbol, RTUINTPTR *pValue, void *pvUser);
 static char    *pdmR3FileRC(const char *pszFile, const char *pszSearchPath);
 #endif
@@ -97,7 +97,7 @@ VMMR3_INT_DECL(int) PDMR3LdrLoadVMMR0U(PUVM pUVM)
  */
 int pdmR3LdrInitU(PUVM pUVM)
 {
-#if !defined(PDMLDR_FAKE_MODE) && defined(VBOX_WITH_RAW_MODE)
+#if !defined(PDMLDR_FAKE_MODE) && defined(VBOX_WITH_RAW_MODE_KEEP)
     /*
      * Load the mandatory RC module, the VMMR0.r0 is loaded before VM creation.
      */
@@ -154,7 +154,7 @@ void pdmR3LdrTermU(PUVM pUVM)
                 break;
             }
 
-#ifdef VBOX_WITH_RAW_MODE
+#ifdef VBOX_WITH_RAW_MODE_KEEP
             case PDMMOD_TYPE_RC:
 #endif
             case PDMMOD_TYPE_R3:
@@ -186,7 +186,7 @@ void pdmR3LdrTermU(PUVM pUVM)
  */
 VMMR3_INT_DECL(void) PDMR3LdrRelocateU(PUVM pUVM, RTGCINTPTR offDelta)
 {
-#ifdef VBOX_WITH_RAW_MODE
+#ifdef VBOX_WITH_RAW_MODE_KEEP
     LogFlow(("PDMR3LdrRelocate: offDelta=%RGv\n", offDelta));
     RT_NOREF1(offDelta);
 
@@ -327,7 +327,7 @@ int pdmR3LoadR3U(PUVM pUVM, const char *pszFilename, const char *pszName)
     return rc;
 }
 
-#ifdef VBOX_WITH_RAW_MODE
+#ifdef VBOX_WITH_RAW_MODE_KEEP
 
 /**
  * Resolve an external symbol during RTLdrGetBits() of a RC module.
@@ -551,7 +551,7 @@ VMMR3DECL(int) PDMR3LdrLoadRC(PVM pVM, const char *pszFilename, const char *pszN
                                            cPages, paPages, pModule->szName, &GCPtr);
                     if (RT_SUCCESS(rc))
                     {
-                        MMR3HyperReserve(pVM, PAGE_SIZE, "fence", NULL);
+                        MMR3HyperReserveFence(pVM);
 
                         /*
                          * Get relocated image bits.
@@ -638,7 +638,7 @@ VMMR3DECL(int) PDMR3LdrLoadRC(PVM pVM, const char *pszFilename, const char *pszN
     return rc;
 }
 
-#endif /* VBOX_WITH_RAW_MODE */
+#endif /* VBOX_WITH_RAW_MODE_KEEP */
 
 /**
  * Loads a module into the ring-0 context.
@@ -914,7 +914,7 @@ VMMR3DECL(int) PDMR3LdrGetSymbolR0Lazy(PVM pVM, const char *pszModule, const cha
  */
 VMMR3DECL(int) PDMR3LdrGetSymbolRC(PVM pVM, const char *pszModule, const char *pszSymbol, PRTRCPTR pRCPtrValue)
 {
-#if defined(PDMLDR_FAKE_MODE) || !defined(VBOX_WITH_RAW_MODE)
+#if defined(PDMLDR_FAKE_MODE) || !defined(VBOX_WITH_RAW_MODE_KEEP)
     RT_NOREF(pVM, pszModule, pszSymbol);
     Assert(VM_IS_RAW_MODE_ENABLED(pVM));
     *pRCPtrValue = NIL_RTRCPTR;
@@ -984,7 +984,7 @@ VMMR3DECL(int) PDMR3LdrGetSymbolRC(PVM pVM, const char *pszModule, const char *p
 VMMR3DECL(int) PDMR3LdrGetSymbolRCLazy(PVM pVM, const char *pszModule, const char *pszSearchPath, const char *pszSymbol,
                                        PRTRCPTR pRCPtrValue)
 {
-#if defined(PDMLDR_FAKE_MODE) || !defined(VBOX_WITH_RAW_MODE)
+#if defined(PDMLDR_FAKE_MODE) || !defined(VBOX_WITH_RAW_MODE_KEEP)
     RT_NOREF(pVM, pszModule, pszSearchPath, pszSymbol);
     Assert(VM_IS_RAW_MODE_ENABLED(pVM));
     *pRCPtrValue = NIL_RTRCPTR;
@@ -1526,7 +1526,7 @@ static PPDMMOD pdmR3LdrFindModule(PUVM pUVM, const char *pszModule, PDMMODTYPE e
     {
         switch (enmType)
         {
-#ifdef VBOX_WITH_RAW_MODE
+#ifdef VBOX_WITH_RAW_MODE_KEEP
             case PDMMOD_TYPE_RC:
             {
                 char *pszFilename = pdmR3FileRC(pszModule, pszSearchPath);

@@ -1033,9 +1033,11 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
                                    "Pass 'phys', 'virt', 'hyper' as argument if only one kind is wanted."
                                    "Add 'nost' if the statistics are unwanted, use together with 'all' or explicit selection.",
                                    pgmR3InfoHandlers);
+#ifndef PGM_WITHOUT_MAPPINGS
         DBGFR3InfoRegisterInternal(pVM, "mappings",
                                    "Dumps guest mappings.",
                                    pgmR3MapInfo);
+#endif
 
         pgmR3InitStats(pVM);
 
@@ -1089,6 +1091,7 @@ static int pgmR3InitPaging(PVM pVM)
 
     pVM->pgm.s.enmHostMode   = SUPPAGINGMODE_INVALID;
 
+#ifndef PGM_WITHOUT_MAPPINGS
     /*
      * Allocate static mapping space for whatever the cr3 register
      * points to and in the case of PAE mode to the 4 PDs.
@@ -1099,8 +1102,10 @@ static int pgmR3InitPaging(PVM pVM)
         AssertMsgFailed(("Failed to reserve two pages for cr mapping in HMA, rc=%Rrc\n", rc));
         return rc;
     }
-    MMR3HyperReserve(pVM, PAGE_SIZE, "fence", NULL);
+    MMR3HyperReserveFence(pVM);
+#endif
 
+#if 0
     /*
      * Allocate pages for the three possible intermediate contexts
      * (AMD64, PAE and plain 32-Bit). We maintain all three contexts
@@ -1159,6 +1164,7 @@ static int pgmR3InitPaging(PVM pVM)
     for (unsigned i = 0; i < RT_ELEMENTS(pVM->pgm.s.pInterPaePML4->a); i++)
         pVM->pgm.s.pInterPaePML4->a[i].u = X86_PML4E_P | X86_PML4E_RW | X86_PML4E_US | X86_PML4E_A | PGM_PLXFLAGS_PERMANENT
                                          | HCPhysInterPaePDPT64;
+#endif
 
     /*
      * Initialize paging workers and mode from current host mode
@@ -1192,7 +1198,7 @@ static int pgmR3InitPaging(PVM pVM)
     }
 
     LogFlow(("pgmR3InitPaging: returns successfully\n"));
-#if HC_ARCH_BITS == 64
+#if HC_ARCH_BITS == 64 && 0
     LogRel(("PGM: HCPhysInterPD=%RHp HCPhysInterPaePDPT=%RHp HCPhysInterPaePML4=%RHp\n",
             pVM->pgm.s.HCPhysInterPD, pVM->pgm.s.HCPhysInterPaePDPT, pVM->pgm.s.HCPhysInterPaePML4));
     LogRel(("PGM: apInterPTs={%RHp,%RHp} apInterPaePTs={%RHp,%RHp} apInterPaePDs={%RHp,%RHp,%RHp,%RHp} pInterPaePDPT64=%RHp\n",
@@ -1646,6 +1652,7 @@ static int pgmR3InitStats(PVM pVM)
  */
 VMMR3DECL(int) PGMR3InitDynMap(PVM pVM)
 {
+#ifndef PGM_WITHOUT_MAPPINGS
     RTGCPTR GCPtr;
     int     rc;
 
@@ -1666,9 +1673,13 @@ VMMR3DECL(int) PGMR3InitDynMap(PVM pVM)
     if (RT_SUCCESS(rc))
     {
         AssertRelease((pVM->pgm.s.pbDynPageMapBaseGC >> X86_PD_PAE_SHIFT) == ((pVM->pgm.s.pbDynPageMapBaseGC + MM_HYPER_DYNAMIC_SIZE - 1) >> X86_PD_PAE_SHIFT));
-        MMR3HyperReserve(pVM, PAGE_SIZE, "fence", NULL);
+        MMR3HyperReserveFence(pVM);
     }
     return rc;
+#else
+    RT_NOREF(pVM);
+    return VINF_SUCCESS;
+#endif
 }
 
 
@@ -1680,7 +1691,8 @@ VMMR3DECL(int) PGMR3InitDynMap(PVM pVM)
  */
 VMMR3DECL(int) PGMR3InitFinalize(PVM pVM)
 {
-    int rc = VERR_IPE_UNINITIALIZED_STATUS; /* (MSC incorrectly thinks it can be usused uninitialized) */
+#ifndef PGM_WITHOUT_MAPPINGS
+    int rc = VERR_IPE_UNINITIALIZED_STATUS; /* (MSC incorrectly thinks it can be used uninitialized) */
 
     /*
      * Reserve space for the dynamic mappings.
@@ -1702,6 +1714,7 @@ VMMR3DECL(int) PGMR3InitFinalize(PVM pVM)
         rc = PGMMap(pVM, pVM->pgm.s.pbDynPageMapBaseGC + offDynMap, HCPhysDummy, PAGE_SIZE, 0);
         AssertRCReturn(rc, rc);
     }
+#endif
 
     /*
      * Determine the max physical address width (MAXPHYADDR) and apply it to
@@ -1782,11 +1795,14 @@ VMMR3DECL(int) PGMR3InitFinalize(PVM pVM)
     /*
      * Allocate memory if we're supposed to do that.
      */
+#ifdef PGM_WITHOUT_MAPPINGS
+    int rc = VINF_SUCCESS;
+#endif
     if (pVM->pgm.s.fRamPreAlloc)
         rc = pgmR3PhysRamPreAllocate(pVM);
 
     //pgmLogState(pVM);
-    LogRel(("PGM: PGMR3InitFinalize: 4 MB PSE mask %RGp\n", pVM->pgm.s.GCPhys4MBPSEMask));
+    LogRel(("PGM: PGMR3InitFinalize: 4 MB PSE mask %RGp -> %Rrc\n", pVM->pgm.s.GCPhys4MBPSEMask, rc));
     return rc;
 }
 
@@ -1845,12 +1861,11 @@ VMMR3_INT_DECL(int) PGMR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
  */
 VMMR3DECL(void) PGMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
 {
-    LogFlow(("PGMR3Relocate %RGv to %RGv\n", pVM->pgm.s.GCPtrCR3Mapping, pVM->pgm.s.GCPtrCR3Mapping + offDelta));
+    LogFlow(("PGMR3Relocate: offDelta=%RGv\n", offDelta));
 
     /*
      * Paging stuff.
      */
-    pVM->pgm.s.GCPtrCR3Mapping += offDelta;
 
     /* Shadow, guest and both mode switch & relocation for each VCPU. */
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
@@ -1901,6 +1916,8 @@ VMMR3DECL(void) PGMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
         if (!(pCur->RamRange.fFlags & PGM_RAM_RANGE_FLAGS_FLOATING))
             pCur->RamRange.pSelfRC = MMHyperCCToRC(pVM, &pCur->RamRange);
 
+#ifndef PGM_WITHOUT_MAPPINGS
+
     /*
      * Update the two page directories with all page table mappings.
      * (One or more of them have changed, that's why we're here.)
@@ -1941,6 +1958,8 @@ VMMR3DECL(void) PGMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
             paPages[iPage].uPte.pPae    += offDelta;
         }
     }
+
+#endif /* PGM_WITHOUT_MAPPINGS */
 
     /*
      * The Zero page.

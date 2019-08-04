@@ -247,13 +247,14 @@ VMM_INT_DECL(int) TMR3Init(PVM pVM)
     rc = SUPR3GipGetPhys(&HCPhysGIP);
     AssertMsgRCReturn(rc, ("Failed to get GIP physical address!\n"), rc);
 
+#ifndef PGM_WITHOUT_MAPPINGS
     RTGCPTR GCPtr;
-#ifdef SUP_WITH_LOTS_OF_CPUS
+# ifdef SUP_WITH_LOTS_OF_CPUS
     rc = MMR3HyperMapHCPhys(pVM, pVM->tm.s.pvGIPR3, NIL_RTR0PTR, HCPhysGIP, (size_t)pGip->cPages * PAGE_SIZE,
                             "GIP", &GCPtr);
-#else
+# else
     rc = MMR3HyperMapHCPhys(pVM, pVM->tm.s.pvGIPR3, NIL_RTR0PTR, HCPhysGIP, PAGE_SIZE, "GIP", &GCPtr);
-#endif
+# endif
     if (RT_FAILURE(rc))
     {
         AssertMsgFailed(("Failed to map GIP into GC, rc=%Rrc!\n", rc));
@@ -261,7 +262,9 @@ VMM_INT_DECL(int) TMR3Init(PVM pVM)
     }
     pVM->tm.s.pvGIPRC = GCPtr;
     LogFlow(("TMR3Init: HCPhysGIP=%RHp at %RRv\n", HCPhysGIP, pVM->tm.s.pvGIPRC));
-    MMR3HyperReserve(pVM, PAGE_SIZE, "fence", NULL);
+    MMR3HyperReserveFence(pVM);
+#endif
+
 
     /* Check assumptions made in TMAllVirtual.cpp about the GIP update interval. */
     if (    pGip->u32Magic == SUPGLOBALINFOPAGE_MAGIC

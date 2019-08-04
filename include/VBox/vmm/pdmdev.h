@@ -4551,6 +4551,7 @@ DECLINLINE(int) PDMDevHlpMMIOExReduce(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, ui
     return pDevIns->pHlpR3->pfnMMIOExReduce(pDevIns, pPciDev, iRegion, cbRegion);
 }
 
+#ifdef VBOX_WITH_RAW_MODE_KEEP
 /**
  * @copydoc PDMDEVHLPR3::pfnMMHyperMapMMIO2
  */
@@ -4559,6 +4560,7 @@ DECLINLINE(int) PDMDevHlpMMHyperMapMMIO2(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev,
 {
     return pDevIns->pHlpR3->pfnMMHyperMapMMIO2(pDevIns, pPciDev, iRegion, off, cb, pszDesc, pRCPtr);
 }
+#endif
 
 /**
  * @copydoc PDMDEVHLPR3::pfnMMIO2MapKernel

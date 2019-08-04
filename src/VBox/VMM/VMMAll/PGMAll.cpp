@@ -1038,6 +1038,7 @@ VMMDECL(int) PGMPrefetchPage(PVMCPU pVCpu, RTGCPTR GCPtrPage)
 }
 
 
+#ifndef PGM_WITHOUT_MAPPINGS
 /**
  * Gets the mapping corresponding to the specified address (if any).
  *
@@ -1060,6 +1061,7 @@ PPGMMAPPING pgmGetMapping(PVM pVM, RTGCPTR GCPtr)
     }
     return NULL;
 }
+#endif
 
 
 /**
@@ -2337,11 +2339,6 @@ int pgmGstLazyMapPaePD(PVMCPU pVCpu, uint32_t iPdpt, PX86PDPAE *ppPd)
         rc = pgmPhysGCPhys2CCPtrInternalDepr(pVM, pPage, GCPhys, &HCPtr);
         AssertRC(rc);
 #endif
-        if (RT_SUCCESS(rc) && fChanged)
-        {
-            RCPtr = (RTRCPTR)(RTRCUINTPTR)(pVM->pgm.s.GCPtrCR3Mapping + (1 + iPdpt) * PAGE_SIZE);
-            rc = PGMMap(pVM, (RTRCUINTPTR)RCPtr, PGM_PAGE_GET_HCPHYS(pPage), PAGE_SIZE, 0);
-        }
         if (RT_SUCCESS(rc))
         {
             pVCpu->pgm.s.apGstPaePDsR3[iPdpt]          = (R3PTRTYPE(PX86PDPAE))HCPtr;
@@ -2478,121 +2475,8 @@ VMM_INT_DECL(void) PGMGstUpdatePaePdpes(PVMCPU pVCpu, PCX86PDPE paPdpes)
 VMMDECL(RTHCPHYS) PGMGetHyperCR3(PVMCPU pVCpu)
 {
     PPGMPOOLPAGE pPoolPage = pVCpu->pgm.s.CTX_SUFF(pShwPageCR3);
-    AssertPtrReturn(pPoolPage, 0);
+    AssertPtrReturn(pPoolPage, NIL_RTHCPHYS);
     return pPoolPage->Core.Key;
-}
-
-
-/**
- * Gets the current CR3 register value for the nested memory context.
- * @returns CR3 value.
- * @param   pVCpu           The cross context virtual CPU structure.
- * @param   enmShadowMode   The shadow paging mode.
- */
-VMMDECL(RTHCPHYS) PGMGetNestedCR3(PVMCPU pVCpu, PGMMODE enmShadowMode)
-{
-    NOREF(enmShadowMode);
-    Assert(pVCpu->pgm.s.CTX_SUFF(pShwPageCR3));
-    return pVCpu->pgm.s.CTX_SUFF(pShwPageCR3)->Core.Key;
-}
-
-
-/**
- * Gets the current CR3 register value for the HC intermediate memory context.
- * @returns CR3 value.
- * @param   pVM         The cross context VM structure.
- */
-VMMDECL(RTHCPHYS) PGMGetInterHCCR3(PVM pVM)
-{
-    switch (pVM->pgm.s.enmHostMode)
-    {
-        case SUPPAGINGMODE_32_BIT:
-        case SUPPAGINGMODE_32_BIT_GLOBAL:
-            return pVM->pgm.s.HCPhysInterPD;
-
-        case SUPPAGINGMODE_PAE:
-        case SUPPAGINGMODE_PAE_GLOBAL:
-        case SUPPAGINGMODE_PAE_NX:
-        case SUPPAGINGMODE_PAE_GLOBAL_NX:
-            return pVM->pgm.s.HCPhysInterPaePDPT;
-
-        case SUPPAGINGMODE_AMD64:
-        case SUPPAGINGMODE_AMD64_GLOBAL:
-        case SUPPAGINGMODE_AMD64_NX:
-        case SUPPAGINGMODE_AMD64_GLOBAL_NX:
-            return pVM->pgm.s.HCPhysInterPaePDPT;
-
-        default:
-            AssertMsgFailed(("enmHostMode=%d\n", pVM->pgm.s.enmHostMode));
-            return NIL_RTHCPHYS;
-    }
-}
-
-
-/**
- * Gets the current CR3 register value for the RC intermediate memory context.
- * @returns CR3 value.
- * @param   pVM         The cross context VM structure.
- * @param   pVCpu       The cross context virtual CPU structure.
- */
-VMMDECL(RTHCPHYS) PGMGetInterRCCR3(PVM pVM, PVMCPU pVCpu)
-{
-    switch (pVCpu->pgm.s.enmShadowMode)
-    {
-        case PGMMODE_32_BIT:
-            return pVM->pgm.s.HCPhysInterPD;
-
-        case PGMMODE_PAE:
-        case PGMMODE_PAE_NX:
-            return pVM->pgm.s.HCPhysInterPaePDPT;
-
-        case PGMMODE_AMD64:
-        case PGMMODE_AMD64_NX:
-            return pVM->pgm.s.HCPhysInterPaePML4;
-
-        case PGMMODE_NESTED_32BIT:
-        case PGMMODE_NESTED_PAE:
-        case PGMMODE_NESTED_AMD64:
-        case PGMMODE_EPT:
-            return 0; /* not relevant */
-
-        default:
-            AssertMsgFailed(("enmShadowMode=%d\n", pVCpu->pgm.s.enmShadowMode));
-            return NIL_RTHCPHYS;
-    }
-}
-
-
-/**
- * Gets the CR3 register value for the 32-Bit intermediate memory context.
- * @returns CR3 value.
- * @param   pVM         The cross context VM structure.
- */
-VMMDECL(RTHCPHYS) PGMGetInter32BitCR3(PVM pVM)
-{
-    return pVM->pgm.s.HCPhysInterPD;
-}
-
-
-/**
- * Gets the CR3 register value for the PAE intermediate memory context.
- * @returns CR3 value.
- * @param   pVM         The cross context VM structure.
- */
-VMMDECL(RTHCPHYS) PGMGetInterPaeCR3(PVM pVM)
-{
-    return pVM->pgm.s.HCPhysInterPaePDPT;
-}
-
-
-/**
- * Gets the CR3 register value for the AMD64 intermediate memory context.
- * @returns CR3 value.
- * @param   pVM         The cross context VM structure.
- */
-VMMDECL(RTHCPHYS) PGMGetInterAmd64CR3(PVM pVM)
-{
-    return pVM->pgm.s.HCPhysInterPaePML4;
 }
 
 
@@ -3241,8 +3125,7 @@ VMM_INT_DECL(int) PGMHCChangeMode(PVM pVM, PVMCPU pVCpu, PGMMODE enmGuestMode)
     /*
      * Calc the shadow mode and switcher.
      */
-    PGMMODE     enmShadowMode = PGMMODE_INVALID;
-    enmShadowMode = pgmCalcShadowMode(pVM, enmGuestMode, pVM->pgm.s.enmHostMode, pVCpu->pgm.s.enmShadowMode);
+    PGMMODE enmShadowMode = pgmCalcShadowMode(pVM, enmGuestMode, pVM->pgm.s.enmHostMode, pVCpu->pgm.s.enmShadowMode);
 
     /*
      * Exit old mode(s).
@@ -3864,6 +3747,7 @@ VMMDECL(void) PGMDeregisterStringFormatTypes(void)
 
 #ifdef VBOX_STRICT
 
+# ifndef PGM_WITHOUT_MAPPINGS
 /**
  * Asserts that there are no mapping conflicts.
  *
@@ -3886,9 +3770,7 @@ VMMDECL(unsigned) PGMAssertNoMappingConflicts(PVM pVM)
          pMapping = pMapping->CTX_SUFF(pNext))
     {
         /** @todo This is slow and should be optimized, but since it's just assertions I don't care now. */
-        for (RTGCPTR GCPtr = pMapping->GCPtr;
-              GCPtr <= pMapping->GCPtrLast;
-              GCPtr += PAGE_SIZE)
+        for (RTGCPTR GCPtr = pMapping->GCPtr; GCPtr <= pMapping->GCPtrLast; GCPtr += PAGE_SIZE)
         {
             int rc = PGMGstGetPage(pVCpu, (RTGCPTR)GCPtr, NULL, NULL);
             if (rc != VERR_PAGE_TABLE_NOT_PRESENT)
@@ -3902,6 +3784,7 @@ VMMDECL(unsigned) PGMAssertNoMappingConflicts(PVM pVM)
 
     return cErrors;
 }
+# endif
 
 
 /**

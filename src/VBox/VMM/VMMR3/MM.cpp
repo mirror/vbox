@@ -16,11 +16,12 @@
  */
 
 
-/** @page pg_mm     MM - The Memory Manager
+/* @page pg_mm     MM - The Memory Manager
  *
  * The memory manager is in charge of the following memory:
- *      - Hypervisor Memory Area (HMA) - Address space management.
+ *      - Hypervisor Memory Area (HMA) - Address space management (obsolete in 6.1).
  *      - Hypervisor Heap - A memory heap that lives in all contexts.
+ *      - User-Kernel Heap - A memory heap lives in both host context.
  *      - Tagged ring-3 heap.
  *      - Page pools - Primarily used by PGM for shadow page tables.
  *      - Locked process memory - Guest RAM and other. (reduce/obsolete this)
@@ -33,7 +34,7 @@
  * @see grp_mm
  *
  *
- * @section sec_mm_hma  Hypervisor Memory Area
+ * @section sec_mm_hma  Hypervisor Memory Area - Obsolete in 6.1
  *
  * The HMA is used when executing in raw-mode. We borrow, with the help of
  * PGMMap, some unused space (one or more page directory entries to be precise)

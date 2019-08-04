@@ -5985,6 +5985,7 @@ static DECLCALLBACK(void)  vgaR3Reset(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(void) vgaR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 {
+# ifdef VBOX_WITH_RAW_MODE_KEEP
     if (offDelta)
     {
         PVGASTATE pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
@@ -5993,6 +5994,9 @@ static DECLCALLBACK(void) vgaR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
         pThis->vram_ptrRC += offDelta;
         pThis->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
     }
+# else
+    RT_NOREF(pDevIns, offDelta);
+# endif
 }
 
 
@@ -6339,7 +6343,9 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
 
     pThis->pDevInsR3 = pDevIns;
     pThis->pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
+#ifdef VBOX_WITH_RAW_MODE_KEEP
     pThis->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
+#endif
 
     vgaR3Reset(pDevIns);
 
@@ -6488,6 +6494,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     AssertLogRelMsgRCReturn(rc, ("PDMDevHlpMMIO2Register(%#x,) -> %Rrc\n", pThis->vram_size, rc), rc);
     pThis->vram_ptrR0 = (RTR0PTR)pThis->vram_ptrR3; /** @todo @bugref{1865} Map parts into R0 or just use PGM access (Mac only). */
 
+#ifdef VBOX_WITH_RAW_MODE_KEEP
     if (pThis->fGCEnabled)
     {
         RTRCPTR pRCMapping = 0;
@@ -6495,10 +6502,11 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
                                       "VGA VRam", &pRCMapping);
         AssertLogRelMsgRCReturn(rc, ("PDMDevHlpMMHyperMapMMIO2(%#x,) -> %Rrc\n", VGA_MAPPING_SIZE, rc), rc);
         pThis->vram_ptrRC = pRCMapping;
-#ifdef VBOX_WITH_VMSVGA
+# ifdef VBOX_WITH_VMSVGA
         /* Don't need a mapping in RC */
-#endif
+# endif
     }
+#endif
 
 #if defined(VBOX_WITH_2X_4GB_ADDR_SPACE)
     if (pThis->fR0Enabled)

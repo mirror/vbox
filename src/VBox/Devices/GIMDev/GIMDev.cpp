@@ -189,6 +189,9 @@ static DECLCALLBACK(void) gimdevR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDel
 {
     NOREF(pDevIns);
     NOREF(offDelta);
+#ifdef VBOX_WITH_RAW_MODE_KEEP
+# error relocate pvPageRC
+#endif
 }
 
 
@@ -321,6 +324,7 @@ static DECLCALLBACK(int) gimdevR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
             pCur->pvPageR0 = (RTR0PTR)pCur->pvPageR3;
 #endif
 
+#ifdef VBOX_WITH_RAW_MODE_KEEP
             /*
              * Map into RC if required.
              */
@@ -334,6 +338,7 @@ static DECLCALLBACK(int) gimdevR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
             }
             else
                 pCur->pvPageRC = NIL_RTRCPTR;
+#endif
 
             LogRel(("GIMDev: Registered %s\n", pCur->szDescription));
         }

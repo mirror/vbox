@@ -69,6 +69,8 @@
  * executed from one), while in ring-0 there are none at all.  Neither context
  * manages the page tables for intermediate switcher context, that's all done in
  * ring-3.
+ *
+ * Update 6.1: It is always defined now, in pgm.h
  */
 #if defined(IN_RING0) \
   || (   !defined(VBOX_WITH_RAW_MODE) \
@@ -76,6 +78,7 @@
           || !defined(VBOX_WITH_64_BITS_GUESTS) \
          ) \
      )
+# undef  PGM_WITHOUT_MAPPINGS
 # define PGM_WITHOUT_MAPPINGS
 #endif
 
@@ -528,10 +531,11 @@ typedef PGMSHWPTPAE        *PPGMSHWPTPAE;
 typedef PGMSHWPTPAE const  *PCPGMSHWPTPAE;
 /** @} */
 
+#ifndef PGM_WITHOUT_MAPPINGS
 
 /** Size of the GCPtrConflict array in PGMMAPPING.
  * @remarks Must be a power of two. */
-#define PGMMAPPING_CONFLICT_MAX         8
+# define PGMMAPPING_CONFLICT_MAX         8
 
 /**
  * Structure for tracking GC Mappings.
@@ -595,6 +599,8 @@ typedef struct PGMMAPPING
 } PGMMAPPING;
 /** Pointer to structure for tracking GC Mappings. */
 typedef struct PGMMAPPING *PPGMMAPPING;
+
+#endif /* !PGM_WITHOUT_MAPPINGS */
 
 
 /**
@@ -3408,9 +3414,11 @@ typedef struct PGM
     R3PTRTYPE(PPGMPHYSHANDLER)      pLastPhysHandlerR3;
     /** Shadow Page Pool - R3 Ptr. */
     R3PTRTYPE(PPGMPOOL)             pPoolR3;
+#ifndef PGM_WITHOUT_MAPPINGS
     /** Linked list of GC mappings - for HC.
      * The list is sorted ascending on address. */
     R3PTRTYPE(PPGMMAPPING)          pMappingsR3;
+#endif
     /** Pointer to the list of ROM ranges - for R3.
      * This is sorted by physical address and contains no overlapping ranges. */
     R3PTRTYPE(PPGMROMRANGE)         pRomRangesR3;
@@ -3432,12 +3440,14 @@ typedef struct PGM
     R0PTRTYPE(PPGMPHYSHANDLER)      pLastPhysHandlerR0;
     /** Shadow Page Pool - R0 Ptr. */
     R0PTRTYPE(PPGMPOOL)             pPoolR0;
+#ifndef PGM_WITHOUT_MAPPINGS
     /** Linked list of GC mappings - for R0.
      * The list is sorted ascending on address. */
     R0PTRTYPE(PPGMMAPPING)          pMappingsR0;
+    RTR0PTR                         R0PtrAlignment0;
+#endif
     /** R0 pointer corresponding to PGM::pRomRangesR3. */
     R0PTRTYPE(PPGMROMRANGE)         pRomRangesR0;
-    RTR0PTR                         R0PtrAlignment0;
     /** MMIO2 lookup array for ring-0.  Indexed by idMmio2 minus 1. */
     R0PTRTYPE(PPGMREGMMIORANGE)     apMmio2RangesR0[PGM_MMIO2_MAX_RANGES];
 
@@ -3453,18 +3463,23 @@ typedef struct PGM
     RCPTRTYPE(PPGMPHYSHANDLER)      pLastPhysHandlerRC;
     /** Shadow Page Pool - RC Ptr. */
     RCPTRTYPE(PPGMPOOL)             pPoolRC;
+#ifndef PGM_WITHOUT_MAPPINGS
     /** Linked list of GC mappings - for RC.
      * The list is sorted ascending on address. */
     RCPTRTYPE(PPGMMAPPING)          pMappingsRC;
+    RTRCPTR                         RCPtrAlignment0;
+#endif
     /** RC pointer corresponding to PGM::pRomRangesR3. */
     RCPTRTYPE(PPGMROMRANGE)         pRomRangesRC;
-    RTRCPTR                         RCPtrAlignment0;
+#ifndef PGM_WITHOUT_MAPPINGS
     /** Pointer to the page table entries for the dynamic page mapping area - GCPtr. */
     RCPTRTYPE(PX86PTE)              paDynPageMap32BitPTEsGC;
     /** Pointer to the page table entries for the dynamic page mapping area - GCPtr. */
     RCPTRTYPE(PPGMSHWPTEPAE)        paDynPageMapPaePTEsGC;
+#endif
 
 
+#ifndef PGM_WITHOUT_MAPPINGS
     /** Pointer to the 5 page CR3 content mapping.
      * The first page is always the CR3 (in some form) while the 4 other pages
      * are used for the PDs in PAE mode. */
@@ -3495,7 +3510,9 @@ typedef struct PGM
     /** The Physical Address (HC) of the intermediate Page Map Level 4 table - AMD64. */
     RTHCPHYS                        HCPhysInterPaePML4;
     /** @} */
+#endif
 
+#ifndef PGM_WITHOUT_MAPPINGS
     /** Base address of the dynamic page mapping area.
      * The array is MM_HYPER_DYNAMIC_SIZE bytes big.
      *
@@ -3508,6 +3525,7 @@ typedef struct PGM
     RCPTRTYPE(PPGMRCDYNMAP)         pRCDynMap;
     /** The address of the ring-0 mapping cache if we're making use of it. */
     RTR0PTR                         pvR0DynMapUsed;
+#endif
 
     /** Hack: Number of deprecated page mapping locks taken by the current lock
      *  owner via pgmPhysGCPhys2CCPtrInternalDepr. */
@@ -3708,9 +3726,13 @@ typedef struct PGM
 #endif
 } PGM;
 #ifndef IN_TSTVMSTRUCTGC /* HACK */
+# ifndef PGM_WITHOUT_MAPPINGS
 AssertCompileMemberAlignment(PGM, paDynPageMap32BitPTEsGC, 8);
+# endif
 AssertCompileMemberAlignment(PGM, GCPtrMappingFixed, sizeof(RTGCPTR));
+# ifndef PGM_WITHOUT_MAPPINGS
 AssertCompileMemberAlignment(PGM, HCPhysInterPD, 8);
+# endif
 AssertCompileMemberAlignment(PGM, CritSectX, 8);
 AssertCompileMemberAlignment(PGM, ChunkR3Map, 8);
 AssertCompileMemberAlignment(PGM, PhysTlbHC, 8);
@@ -4178,9 +4200,9 @@ int             pgmR3MappingsFixInternal(PVM pVM, RTGCPTR GCPtrBase, uint32_t cb
 int             pgmR3SyncPTResolveConflict(PVM pVM, PPGMMAPPING pMapping, PX86PD pPDSrc, RTGCPTR GCPtrOldMapping);
 int             pgmR3SyncPTResolveConflictPAE(PVM pVM, PPGMMAPPING pMapping, RTGCPTR GCPtrOldMapping);
 int             pgmMapResolveConflicts(PVM pVM);
-#endif /* !PGM_WITHOUT_MAPPINGS */
 PPGMMAPPING     pgmGetMapping(PVM pVM, RTGCPTR GCPtr);
 DECLCALLBACK(void) pgmR3MapInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
+#endif /* !PGM_WITHOUT_MAPPINGS */
 
 int             pgmHandlerPhysicalExCreate(PVM pVM, PGMPHYSHANDLERTYPE hType, RTR3PTR pvUserR3, RTR0PTR pvUserR0,
                                            RTRCPTR pvUserRC, R3PTRTYPE(const char *) pszDesc, PPGMPHYSHANDLER *ppPhysHandler);
@@ -4296,10 +4318,12 @@ int             pgmR3ExitShadowModeBeforePoolFlush(PVMCPU pVCpu);
 int             pgmR3ReEnterShadowModeAfterPoolFlush(PVM pVM, PVMCPU pVCpu);
 void            pgmR3RefreshShadowModeAfterA20Change(PVMCPU pVCpu);
 
+#ifndef PGM_WITHOUT_MAPPINGS
 void            pgmMapSetShadowPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE);
 void            pgmMapClearShadowPDEs(PVM pVM, PPGMPOOLPAGE pShwPageCR3, PPGMMAPPING pMap, unsigned iOldPDE, bool fDeactivateCR3);
 int             pgmMapActivateCR3(PVM pVM, PPGMPOOLPAGE pShwPageCR3);
 int             pgmMapDeactivateCR3(PVM pVM, PPGMPOOLPAGE pShwPageCR3);
+#endif
 
 int             pgmShwMakePageSupervisorAndWritable(PVMCPU pVCpu, RTGCPTR GCPtr, bool fBigPage, uint32_t fOpFlags);
 int             pgmShwSyncPaePDPtr(PVMCPU pVCpu, RTGCPTR GCPtr, X86PGPAEUINT uGstPdpe, PX86PDPAE *ppPD);

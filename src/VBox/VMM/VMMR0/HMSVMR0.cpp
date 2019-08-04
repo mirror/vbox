@@ -1536,15 +1536,7 @@ static void hmR0SvmExportGuestCR3(PVMCPU pVCpu, PSVMVMCB pVmcb)
     PCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
     if (pVM->hm.s.fNestedPaging)
     {
-        PGMMODE enmShwPagingMode;
-#if HC_ARCH_BITS == 32
-        if (CPUMIsGuestInLongModeEx(pCtx))
-            enmShwPagingMode = PGMMODE_AMD64_NX;
-        else
-#endif
-            enmShwPagingMode = PGMGetHostMode(pVM);
-
-        pVmcb->ctrl.u64NestedPagingCR3 = PGMGetNestedCR3(pVCpu, enmShwPagingMode);
+        pVmcb->ctrl.u64NestedPagingCR3 = PGMGetHyperCR3(pVCpu);
         pVmcb->ctrl.u32VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_NP;
         pVmcb->guest.u64CR3 = pCtx->cr3;
         Assert(pVmcb->ctrl.u64NestedPagingCR3);

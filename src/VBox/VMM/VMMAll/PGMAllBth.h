@@ -4693,91 +4693,70 @@ PGM_BTH_DECL(int, MapCR3)(PVMCPU pVCpu, RTGCPHYS GCPhysCR3)
     pgmUnlock(pVM);
     if (RT_SUCCESS(rc))
     {
-        rc = PGMMap(pVM, (RTGCPTR)pVM->pgm.s.GCPtrCR3Mapping, HCPhysGuestCR3, PAGE_SIZE, 0);
-        if (RT_SUCCESS(rc))
-        {
-# ifdef IN_RC
-            PGM_INVL_PG(pVCpu, pVM->pgm.s.GCPtrCR3Mapping);
-# endif
 # if PGM_GST_TYPE == PGM_TYPE_32BIT
-            pVCpu->pgm.s.pGst32BitPdR3 = (R3PTRTYPE(PX86PD))HCPtrGuestCR3;
+        pVCpu->pgm.s.pGst32BitPdR3 = (R3PTRTYPE(PX86PD))HCPtrGuestCR3;
 #  ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
-            pVCpu->pgm.s.pGst32BitPdR0 = (R0PTRTYPE(PX86PD))HCPtrGuestCR3;
+        pVCpu->pgm.s.pGst32BitPdR0 = (R0PTRTYPE(PX86PD))HCPtrGuestCR3;
 #  endif
-            pVCpu->pgm.s.pGst32BitPdRC = (RCPTRTYPE(PX86PD))(RTRCUINTPTR)pVM->pgm.s.GCPtrCR3Mapping;
 
 # elif PGM_GST_TYPE == PGM_TYPE_PAE
-            unsigned off = GCPhysCR3 & GST_CR3_PAGE_MASK & PAGE_OFFSET_MASK;
-            pVCpu->pgm.s.pGstPaePdptR3 = (R3PTRTYPE(PX86PDPT))HCPtrGuestCR3;
+        pVCpu->pgm.s.pGstPaePdptR3 = (R3PTRTYPE(PX86PDPT))HCPtrGuestCR3;
 #  ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
-            pVCpu->pgm.s.pGstPaePdptR0 = (R0PTRTYPE(PX86PDPT))HCPtrGuestCR3;
+        pVCpu->pgm.s.pGstPaePdptR0 = (R0PTRTYPE(PX86PDPT))HCPtrGuestCR3;
 #  endif
-            pVCpu->pgm.s.pGstPaePdptRC = (RCPTRTYPE(PX86PDPT))((RTRCUINTPTR)pVM->pgm.s.GCPtrCR3Mapping + off);
-            LogFlow(("Cached mapping %RRv\n", pVCpu->pgm.s.pGstPaePdptRC));
 
-            /*
-             * Map the 4 PDs too.
-             */
-            PX86PDPT pGuestPDPT = pgmGstGetPaePDPTPtr(pVCpu);
-            RTGCPTR  GCPtr      = pVM->pgm.s.GCPtrCR3Mapping + PAGE_SIZE;
-            for (unsigned i = 0; i < X86_PG_PAE_PDPE_ENTRIES; i++, GCPtr += PAGE_SIZE)
+        /*
+         * Map the 4 PDs too.
+         */
+        PX86PDPT pGuestPDPT = pgmGstGetPaePDPTPtr(pVCpu);
+        for (unsigned i = 0; i < X86_PG_PAE_PDPE_ENTRIES; i++)
+        {
+            pVCpu->pgm.s.aGstPaePdpeRegs[i].u = pGuestPDPT->a[i].u;
+            if (pGuestPDPT->a[i].n.u1Present)
             {
-                pVCpu->pgm.s.aGstPaePdpeRegs[i].u = pGuestPDPT->a[i].u;
-                if (pGuestPDPT->a[i].n.u1Present)
-                {
-                    RTHCPTR     HCPtr;
-                    RTHCPHYS    HCPhys;
-                    RTGCPHYS    GCPhys = PGM_A20_APPLY(pVCpu, pGuestPDPT->a[i].u & X86_PDPE_PG_MASK);
-                    pgmLock(pVM);
-                    PPGMPAGE    pPage  = pgmPhysGetPage(pVM, GCPhys);
-                    AssertReturn(pPage, VERR_PGM_INVALID_PDPE_ADDR);
-                    HCPhys = PGM_PAGE_GET_HCPHYS(pPage);
+                RTHCPTR     HCPtr;
+                RTHCPHYS    HCPhys;
+                RTGCPHYS    GCPhys = PGM_A20_APPLY(pVCpu, pGuestPDPT->a[i].u & X86_PDPE_PG_MASK);
+                pgmLock(pVM);
+                PPGMPAGE    pPage  = pgmPhysGetPage(pVM, GCPhys);
+                AssertReturn(pPage, VERR_PGM_INVALID_PDPE_ADDR);
+                HCPhys = PGM_PAGE_GET_HCPHYS(pPage);
 #  if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
-                    HCPtr = NIL_RTHCPTR;
-                    int rc2 = VINF_SUCCESS;
+                HCPtr = NIL_RTHCPTR;
+                int rc2 = VINF_SUCCESS;
 #  else
-                    int rc2 = pgmPhysGCPhys2CCPtrInternalDepr(pVM, pPage, GCPhys, (void **)&HCPtr);
+                int rc2 = pgmPhysGCPhys2CCPtrInternalDepr(pVM, pPage, GCPhys, (void **)&HCPtr);
 #  endif
-                    pgmUnlock(pVM);
-                    if (RT_SUCCESS(rc2))
-                    {
-                        rc = PGMMap(pVM, GCPtr, HCPhys, PAGE_SIZE, 0);
-                        AssertRCReturn(rc, rc);
-
-                        pVCpu->pgm.s.apGstPaePDsR3[i]     = (R3PTRTYPE(PX86PDPAE))HCPtr;
+                pgmUnlock(pVM);
+                if (RT_SUCCESS(rc2))
+                {
+                    pVCpu->pgm.s.apGstPaePDsR3[i]     = (R3PTRTYPE(PX86PDPAE))HCPtr;
 #  ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
-                        pVCpu->pgm.s.apGstPaePDsR0[i]     = (R0PTRTYPE(PX86PDPAE))HCPtr;
+                    pVCpu->pgm.s.apGstPaePDsR0[i]     = (R0PTRTYPE(PX86PDPAE))HCPtr;
 #  endif
-                        pVCpu->pgm.s.apGstPaePDsRC[i]     = (RCPTRTYPE(PX86PDPAE))(RTRCUINTPTR)GCPtr;
-                        pVCpu->pgm.s.aGCPhysGstPaePDs[i]  = GCPhys;
-#  ifdef IN_RC
-                        PGM_INVL_PG(pVCpu, GCPtr);
-#  endif
-                        continue;
-                    }
-                    AssertMsgFailed(("pgmR3Gst32BitMapCR3: rc2=%d GCPhys=%RGp i=%d\n", rc2, GCPhys, i));
+                    pVCpu->pgm.s.aGCPhysGstPaePDs[i]  = GCPhys;
+                    continue;
                 }
-
-                pVCpu->pgm.s.apGstPaePDsR3[i]     = 0;
-#  ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
-                pVCpu->pgm.s.apGstPaePDsR0[i]     = 0;
-#  endif
-                pVCpu->pgm.s.apGstPaePDsRC[i]     = 0;
-                pVCpu->pgm.s.aGCPhysGstPaePDs[i]  = NIL_RTGCPHYS;
-#  ifdef IN_RC
-                PGM_INVL_PG(pVCpu, GCPtr); /** @todo this shouldn't be necessary? */
-#  endif
+                AssertMsgFailed(("pgmR3Gst32BitMapCR3: rc2=%d GCPhys=%RGp i=%d\n", rc2, GCPhys, i));
             }
 
-# elif PGM_GST_TYPE == PGM_TYPE_AMD64
-            pVCpu->pgm.s.pGstAmd64Pml4R3 = (R3PTRTYPE(PX86PML4))HCPtrGuestCR3;
+            pVCpu->pgm.s.apGstPaePDsR3[i]     = 0;
 #  ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
-            pVCpu->pgm.s.pGstAmd64Pml4R0 = (R0PTRTYPE(PX86PML4))HCPtrGuestCR3;
+            pVCpu->pgm.s.apGstPaePDsR0[i]     = 0;
+#  endif
+            pVCpu->pgm.s.apGstPaePDsRC[i]     = 0;
+            pVCpu->pgm.s.aGCPhysGstPaePDs[i]  = NIL_RTGCPHYS;
+#  ifdef IN_RC
+            PGM_INVL_PG(pVCpu, GCPtr); /** @todo this shouldn't be necessary? */
+#  endif
+        }
+
+# elif PGM_GST_TYPE == PGM_TYPE_AMD64
+        pVCpu->pgm.s.pGstAmd64Pml4R3 = (R3PTRTYPE(PX86PML4))HCPtrGuestCR3;
+#  ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
+        pVCpu->pgm.s.pGstAmd64Pml4R0 = (R0PTRTYPE(PX86PML4))HCPtrGuestCR3;
 #  endif
 # endif
-        }
-        else
-            AssertMsgFailed(("rc=%Rrc GCPhysGuestPD=%RGp\n", rc, GCPhysCR3));
     }
     else
         AssertMsgFailed(("rc=%Rrc GCPhysGuestPD=%RGp\n", rc, GCPhysCR3));
