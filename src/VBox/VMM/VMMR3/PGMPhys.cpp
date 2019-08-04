@@ -2652,6 +2652,7 @@ DECLINLINE(PPGMREGMMIORANGE) pgmR3PhysMMIOExFind(PVM pVM, PPDMDEVINS pDevIns, ui
 }
 
 
+#ifndef PGM_WITHOUT_MAPPINGS
 /**
  * @callback_method_impl{FNPGMRELOCATE, Relocate a floating MMIO/MMIO2 range.}
  * @sa pgmR3PhysRamRangeRelocate
@@ -2689,6 +2690,7 @@ static DECLCALLBACK(bool) pgmR3PhysMMIOExRangeRelocate(PVM pVM, RTGCPTR GCPtrOld
             AssertFailedReturn(false);
     }
 }
+#endif /* !PGM_WITHOUT_MAPPINGS */
 
 
 /**
