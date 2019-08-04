@@ -4678,11 +4678,9 @@ PGM_BTH_DECL(int, MapCR3)(PVMCPU pVCpu, RTGCPHYS GCPhysCR3)
      * Map the page CR3 points at.
      */
     RTHCPTR     HCPtrGuestCR3;
-    RTHCPHYS    HCPhysGuestCR3;
     pgmLock(pVM);
     PPGMPAGE    pPageCR3 = pgmPhysGetPage(pVM, GCPhysCR3);
     AssertReturn(pPageCR3, VERR_PGM_INVALID_CR3_ADDR);
-    HCPhysGuestCR3 = PGM_PAGE_GET_HCPHYS(pPageCR3);
     /** @todo this needs some reworking wrt. locking?  */
 # if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
     HCPtrGuestCR3 = NIL_RTHCPTR;
