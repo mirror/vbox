@@ -744,13 +744,27 @@ DECLASM(int) VMXWriteVmcs32(uint32_t uFieldEnc, uint32_t u32Val);
 DECLINLINE(int) VMXWriteVmcs32(uint32_t uFieldEnc, uint32_t u32Val)
 {
 # if VMX_USE_MSC_INTRINSICS
-     unsigned char rcMsc = __vmx_vmwrite(uFieldEnc, u32Val);
+#  ifdef VBOX_WITH_VMREAD_VMWRITE_NOCHECK
+    __vmx_vmwrite(uFieldEnc, u32Val);
+    return VINF_SUCCESS;
+#  else
+    unsigned char rcMsc = __vmx_vmwrite(uFieldEnc, u32Val);
      if (RT_LIKELY(rcMsc == 0))
          return VINF_SUCCESS;
      return rcMsc == 2 ? VERR_VMX_INVALID_VMCS_PTR : VERR_VMX_INVALID_VMCS_FIELD;
+#  endif
 
 # elif RT_INLINE_ASM_GNU_STYLE
-    int rc;
+#  ifdef VBOX_WITH_VMREAD_VMWRITE_NOCHECK
+    __asm__ __volatile__ (
+       ".byte  0x0f, 0x79, 0xc2        # VMWRITE eax, edx       \n\t"
+       :
+       :"a"(uFieldEnc),
+        "d"(u32Val)
+       );
+    return VINF_SUCCESS;
+#  else
+     int rc;
     __asm__ __volatile__ (
        ".byte  0x0f, 0x79, 0xc2        # VMWRITE eax, edx       \n\t"
        "ja     2f                                               \n\t"
@@ -766,6 +780,7 @@ DECLINLINE(int) VMXWriteVmcs32(uint32_t uFieldEnc, uint32_t u32Val)
         "d"(u32Val)
        );
     return rc;
+#  endif
 
 # elif defined(RT_ARCH_X86)
     int rc = VINF_SUCCESS;
@@ -872,12 +887,26 @@ DECLASM(int) VMXWriteVmcs64(uint32_t uFieldEnc, uint64_t u64Val);
 DECLINLINE(int) VMXWriteVmcs64(uint32_t uFieldEnc, uint64_t u64Val)
 {
 # if VMX_USE_MSC_INTRINSICS
+#  ifdef VBOX_WITH_VMREAD_VMWRITE_NOCHECK
+    __vmx_vmwrite(uFieldEnc, u64Val);
+    return VINF_SUCCESS;
+#  else
     unsigned char rcMsc = __vmx_vmwrite(uFieldEnc, u64Val);
     if (RT_LIKELY(rcMsc == 0))
         return VINF_SUCCESS;
     return rcMsc == 2 ? VERR_VMX_INVALID_VMCS_PTR : VERR_VMX_INVALID_VMCS_FIELD;
+#  endif
 
 # elif RT_INLINE_ASM_GNU_STYLE
+#  ifdef VBOX_WITH_VMREAD_VMWRITE_NOCHECK
+    __asm__ __volatile__ (
+       ".byte  0x0f, 0x79, 0xc2        # VMWRITE eax, edx        \n\t"
+       :
+       :"a"(uFieldEnc),
+        "d"(u64Val)
+       );
+    return VINF_SUCCESS;
+#  else
     int rc;
     __asm__ __volatile__ (
        ".byte  0x0f, 0x79, 0xc2        # VMWRITE eax, edx        \n\t"
@@ -894,6 +923,7 @@ DECLINLINE(int) VMXWriteVmcs64(uint32_t uFieldEnc, uint64_t u64Val)
         "d"(u64Val)
        );
     return rc;
+#  endif
 
 # else
 #  error "Shouldn't be here..."
@@ -988,6 +1018,12 @@ DECLASM(int) VMXReadVmcs32(uint32_t uFieldEnc, uint32_t *pData);
 DECLINLINE(int) VMXReadVmcs32(uint32_t uFieldEnc, uint32_t *pData)
 {
 # if VMX_USE_MSC_INTRINSICS
+#  ifdef VBOX_WITH_VMREAD_VMWRITE_NOCHECK
+    uint64_t u64Tmp = 0;
+    __vmx_vmread(uFieldEnc, &u64Tmp);
+    *pData = (uint32_t)u64Tmp;
+    return VINF_SUCCESS;
+#  else
     unsigned char rcMsc;
     uint64_t u64Tmp;
     rcMsc = __vmx_vmread(uFieldEnc, &u64Tmp);
@@ -995,8 +1031,18 @@ DECLINLINE(int) VMXReadVmcs32(uint32_t uFieldEnc, uint32_t *pData)
     if (RT_LIKELY(rcMsc == 0))
         return VINF_SUCCESS;
     return rcMsc == 2 ? VERR_VMX_INVALID_VMCS_PTR : VERR_VMX_INVALID_VMCS_FIELD;
+#  endif
 
 # elif RT_INLINE_ASM_GNU_STYLE
+#  ifdef VBOX_WITH_VMREAD_VMWRITE_NOCHECK
+    __asm__ __volatile__ (
+       ".byte  0x0f, 0x78, 0xc2        # VMREAD eax, edx         \n\t"
+       :"=d"(*pData)
+       :"a"(uFieldEnc),
+        "d"(0)
+       );
+    return VINF_SUCCESS;
+#  else
     int rc;
     __asm__ __volatile__ (
        "movl   $" RT_XSTR(VINF_SUCCESS)", %0                     \n\t"
@@ -1014,6 +1060,7 @@ DECLINLINE(int) VMXReadVmcs32(uint32_t uFieldEnc, uint32_t *pData)
         "d"(0)
        );
     return rc;
+#  endif
 
 # elif defined(RT_ARCH_X86)
     int rc = VINF_SUCCESS;
@@ -1131,13 +1178,27 @@ DECLASM(int) VMXReadVmcs64(uint32_t uFieldEnc, uint64_t *pData);
 DECLINLINE(int) VMXReadVmcs64(uint32_t uFieldEnc, uint64_t *pData)
 {
 # if VMX_USE_MSC_INTRINSICS
+#  ifdef VBOX_WITH_VMREAD_NOCHECK
+    __vmx_vmread(uFieldEnc, pData);
+    return VINF_SUCCESS;
+#  else
     unsigned char rcMsc;
     rcMsc = __vmx_vmread(uFieldEnc, pData);
     if (RT_LIKELY(rcMsc == 0))
         return VINF_SUCCESS;
     return rcMsc == 2 ? VERR_VMX_INVALID_VMCS_PTR : VERR_VMX_INVALID_VMCS_FIELD;
+#  endif
 
 # elif RT_INLINE_ASM_GNU_STYLE
+#  ifdef VBOX_WITH_VMREAD_NOCHECK
+    __asm__ __volatile__ (
+       ".byte  0x0f, 0x78, 0xc2        # VMREAD eax, edx         \n\t"
+       :"=d"(*pData)
+       :"a"(uFieldEnc),
+        "d"(0)
+       );
+    return VINF_SUCCESS;
+#  else
     int rc;
     __asm__ __volatile__ (
        "movl   $" RT_XSTR(VINF_SUCCESS)", %0                     \n\t"
@@ -1155,7 +1216,7 @@ DECLINLINE(int) VMXReadVmcs64(uint32_t uFieldEnc, uint64_t *pData)
         "d"(0)
        );
     return rc;
-
+#  endif
 # else
 #  error "Shouldn't be here..."
 # endif
