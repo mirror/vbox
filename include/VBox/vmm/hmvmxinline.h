@@ -1178,7 +1178,7 @@ DECLASM(int) VMXReadVmcs64(uint32_t uFieldEnc, uint64_t *pData);
 DECLINLINE(int) VMXReadVmcs64(uint32_t uFieldEnc, uint64_t *pData)
 {
 # if VMX_USE_MSC_INTRINSICS
-#  ifdef VBOX_WITH_VMREAD_NOCHECK
+#  ifdef VBOX_WITH_VMREAD_VMWRITE_NOCHECK
     __vmx_vmread(uFieldEnc, pData);
     return VINF_SUCCESS;
 #  else
@@ -1190,7 +1190,7 @@ DECLINLINE(int) VMXReadVmcs64(uint32_t uFieldEnc, uint64_t *pData)
 #  endif
 
 # elif RT_INLINE_ASM_GNU_STYLE
-#  ifdef VBOX_WITH_VMREAD_NOCHECK
+#  ifdef VBOX_WITH_VMREAD_VMWRITE_NOCHECK
     __asm__ __volatile__ (
        ".byte  0x0f, 0x78, 0xc2        # VMREAD eax, edx         \n\t"
        :"=d"(*pData)
