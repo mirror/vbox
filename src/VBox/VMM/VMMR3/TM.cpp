@@ -186,6 +186,7 @@ static DECLCALLBACK(void)   tmR3CpuLoadTimer(PVM pVM, PTMTIMER pTimer, void *pvU
 static DECLCALLBACK(void)   tmR3TimerInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 static DECLCALLBACK(void)   tmR3TimerInfoActive(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 static DECLCALLBACK(void)   tmR3InfoClocks(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
+static DECLCALLBACK(void)   tmR3InfoCpuLoad(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 static DECLCALLBACK(VBOXSTRICTRC) tmR3CpuTickParavirtDisable(PVM pVM, PVMCPU pVCpu, void *pvData);
 static const char *         tmR3GetTSCModeName(PVM pVM);
 static const char *         tmR3GetTSCModeNameEx(TMTSCMODE enmMode);
@@ -853,6 +854,7 @@ VMM_INT_DECL(int) TMR3Init(PVM pVM)
     DBGFR3InfoRegisterInternalEx(pVM, "timers",       "Dumps all timers. No arguments.",          tmR3TimerInfo,        DBGFINFO_FLAGS_RUN_ON_EMT);
     DBGFR3InfoRegisterInternalEx(pVM, "activetimers", "Dumps active all timers. No arguments.",   tmR3TimerInfoActive,  DBGFINFO_FLAGS_RUN_ON_EMT);
     DBGFR3InfoRegisterInternalEx(pVM, "clocks",       "Display the time of the various clocks.",  tmR3InfoClocks,       DBGFINFO_FLAGS_RUN_ON_EMT);
+    DBGFR3InfoRegisterInternalEx(pVM, "cpuload",      "Display the CPU load stats.",              tmR3InfoCpuLoad,      0);
 
     return VINF_SUCCESS;
 }
@@ -3753,6 +3755,54 @@ static DECLCALLBACK(void) tmR3InfoClocks(PVM pVM, PCDBGFINFOHLP pHlp, const char
     pHlp->pfnPrintf(pHlp,
                     "    Real: %18RU64 (%#016RX64) %RU64Hz\n",
                     u64Real, u64Real, TMRealGetFreq(pVM));
+}
+
+
+/**
+ * @callback_function_impl{}
+ */
+static DECLCALLBACK(void) tmR3InfoCpuLoad(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs)
+{
+    /*
+     * Parse arguments.
+     */
+    PTMCPULOADSTATE pState   = &pVM->tm.s.CpuLoad;
+    uint32_t        cPeriods = 60;
+    //uint32_t        cchWidth = 100;
+
+
+    RT_NOREF(pszArgs); /** @todo */
+
+    /*
+     * Try do the job.
+     */
+    uint32_t const cMaxPeriods = pState->cHistoryEntries;
+    if (cPeriods > cMaxPeriods)
+        cPeriods = cMaxPeriods;
+    if (cPeriods > 0)
+    {
+        size_t iHistory = (pState->idxHistory - cPeriods) % RT_ELEMENTS(pState->aHistory);
+        while (cPeriods-- > 0)
+        {
+            iHistory++;
+            if (iHistory >= RT_ELEMENTS(pState->aHistory))
+                iHistory = 0;
+            char   szTmp[1024];
+            size_t offTmp = 0;
+            size_t i      = pState->aHistory[iHistory].cPctExecuting;
+            while (i-- > 0)
+                szTmp[offTmp++] = '#';
+            i = pState->aHistory[iHistory].cPctOther;
+            while (i-- > 0)
+                szTmp[offTmp++] = 'O';
+            szTmp[offTmp] = '\0';
+            pHlp->pfnPrintf(pHlp, "%2ds: %s\n", cPeriods, szTmp);
+        }
+        pHlp->pfnPrintf(pHlp, "  (#=guest, 0=VMM overhead)\n");
+
+    }
+    else
+        pHlp->pfnPrintf(pHlp, "No load data.\n");
 }
 
 
