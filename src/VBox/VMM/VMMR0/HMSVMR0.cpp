@@ -292,9 +292,6 @@ typedef struct SVMTRANSIENT
 {
     /** The host's rflags/eflags. */
     RTCCUINTREG     fEFlags;
-#if HC_ARCH_BITS == 32
-    uint32_t        u32Alignment0;
-#endif
 
     /** The \#VMEXIT exit code (the EXITCODE field in the VMCB). */
     uint64_t        u64ExitCode;
@@ -1172,16 +1169,8 @@ VMMR0DECL(int) SVMR0InvalidatePage(PVMCPU pVCpu, RTGCPTR GCVirt)
         PSVMVMCB pVmcb = hmR0SvmGetCurrentVmcb(pVCpu);
         AssertMsgReturn(pVmcb, ("Invalid pVmcb!\n"), VERR_SVM_INVALID_PVMCB);
 
-#if HC_ARCH_BITS == 32
-        /* If we get a flush in 64-bit guest mode, then force a full TLB flush. INVLPGA takes only 32-bit addresses. */
-        if (CPUMIsGuestInLongMode(pVCpu))
-            VMCPU_FF_SET(pVCpu, VMCPU_FF_TLB_FLUSH);
-        else
-#endif
-        {
-            SVMR0InvlpgA(GCVirt, pVmcb->ctrl.TLBCtrl.n.u32ASID);
-            STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushTlbInvlpgVirt);
-        }
+        SVMR0InvlpgA(GCVirt, pVmcb->ctrl.TLBCtrl.n.u32ASID);
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushTlbInvlpgVirt);
     }
     return VINF_SUCCESS;
 }
@@ -1851,16 +1840,6 @@ static void hmR0SvmExportSharedDebugState(PVMCPU pVCpu, PSVMVMCB pVmcb)
          *
          * Note! DBGF expects a clean DR6 state before executing guest code.
          */
-#if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS)
-        if (   CPUMIsGuestInLongModeEx(pCtx)
-            && !CPUMIsHyperDebugStateActivePending(pVCpu))
-        {
-            CPUMR0LoadHyperDebugState(pVCpu, false /* include DR6 */);
-            Assert(!CPUMIsGuestDebugStateActivePending(pVCpu));
-            Assert(CPUMIsHyperDebugStateActivePending(pVCpu));
-        }
-        else
-#endif
         if (!CPUMIsHyperDebugStateActive(pVCpu))
         {
             CPUMR0LoadHyperDebugState(pVCpu, false /* include DR6 */);
@@ -1903,17 +1882,6 @@ static void hmR0SvmExportSharedDebugState(PVMCPU pVCpu, PSVMVMCB pVmcb)
          */
         if (pCtx->dr[7] & (X86_DR7_ENABLED_MASK | X86_DR7_GD)) /** @todo Why GD? */
         {
-#if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS)
-            if (   CPUMIsGuestInLongModeEx(pCtx)
-                && !CPUMIsGuestDebugStateActivePending(pVCpu))
-            {
-                CPUMR0LoadGuestDebugState(pVCpu, false /* include DR6 */);
-                STAM_COUNTER_INC(&pVCpu->hm.s.StatDRxArmed);
-                Assert(!CPUMIsHyperDebugStateActivePending(pVCpu));
-                Assert(CPUMIsGuestDebugStateActivePending(pVCpu));
-            }
-            else
-#endif
             if (!CPUMIsGuestDebugStateActive(pVCpu))
             {
                 CPUMR0LoadGuestDebugState(pVCpu, false /* include DR6 */);
@@ -1931,15 +1899,8 @@ static void hmR0SvmExportSharedDebugState(PVMCPU pVCpu, PSVMVMCB pVmcb)
          *       However, \#DB shouldn't be performance critical, so we'll play safe
          *       and keep the code similar to the VT-x code and always intercept it.
          */
-#if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS)
-        else if (   !CPUMIsGuestDebugStateActivePending(pVCpu)
-                 && !CPUMIsGuestDebugStateActive(pVCpu))
-#else
         else if (!CPUMIsGuestDebugStateActive(pVCpu))
-#endif
-        {
             fInterceptMovDRx = true;
-        }
     }
 
     Assert(pVmcb->ctrl.u32InterceptXcpt & RT_BIT_32(X86_XCPT_DB));
@@ -4490,18 +4451,8 @@ static void hmR0SvmPreRunGuestCommitted(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransien
         pVmcb->ctrl.u32VmcbCleanBits = 0;
 
     /* Store status of the shared guest-host state at the time of VMRUN. */
-#if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS)
-    if (CPUMIsGuestInLongModeEx(&pVCpu->cpum.GstCtx))
-    {
-        pSvmTransient->fWasGuestDebugStateActive = CPUMIsGuestDebugStateActivePending(pVCpu);
-        pSvmTransient->fWasHyperDebugStateActive = CPUMIsHyperDebugStateActivePending(pVCpu);
-    }
-    else
-#endif
-    {
-        pSvmTransient->fWasGuestDebugStateActive = CPUMIsGuestDebugStateActive(pVCpu);
-        pSvmTransient->fWasHyperDebugStateActive = CPUMIsHyperDebugStateActive(pVCpu);
-    }
+    pSvmTransient->fWasGuestDebugStateActive = CPUMIsGuestDebugStateActive(pVCpu);
+    pSvmTransient->fWasHyperDebugStateActive = CPUMIsHyperDebugStateActive(pVCpu);
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
     uint8_t *pbMsrBitmap;
@@ -6755,7 +6706,7 @@ HMSVM_EXIT_DECL hmR0SvmExitReadDRx(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
 
             /* Save the host & load the guest debug state, restart execution of the MOV DRx instruction. */
             CPUMR0LoadGuestDebugState(pVCpu, false /* include DR6 */);
-            Assert(CPUMIsGuestDebugStateActive(pVCpu) || HC_ARCH_BITS == 32);
+            Assert(CPUMIsGuestDebugStateActive(pVCpu));
 
             HM_RESTORE_PREEMPT();
             VMMRZCallRing3Enable(pVCpu);
@@ -7114,13 +7065,7 @@ HMSVM_EXIT_DECL hmR0SvmExitNestedPF(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
      * Determine the nested paging mode.
      */
 /** @todo r=bird: Gotta love this nested paging hacking we're still carrying with us... (Split PGM_TYPE_NESTED.) */
-    PGMMODE enmNestedPagingMode;
-#if HC_ARCH_BITS == 32
-    if (CPUMIsGuestInLongModeEx(pCtx))
-        enmNestedPagingMode = PGMMODE_AMD64_NX;
-    else
-#endif
-        enmNestedPagingMode = PGMGetHostMode(pVM);
+    PGMMODE const enmNestedPagingMode = PGMGetHostMode(pVM);
 
     /*
      * MMIO optimization using the reserved (RSVD) bit in the guest page tables for MMIO pages.
