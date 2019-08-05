@@ -258,7 +258,7 @@
                 <Directory Id="INSTALLDIR" Name="VirtualBox">
 <?if $(env.VBOX_WITH_MSM_INSTALL) = "yes" ?>
                 <Merge Id="msm_VBoxApp" Language="!(loc.LANG)" SourceFile="$(var.Property_VBoxMergeApp)" DiskId="1">
-                    <ConfigurationData Name="argRegesterExtensions" Value="[VBOX_REGISTERFILEEXTENSIONS]"/>
+                    <ConfigurationData Name="argRegisterExtensions" Value="[VBOX_REGISTERFILEEXTENSIONS]"/>
                 </Merge>
     <?if $(env.VBOX_WITH_32_ON_64_MAIN_API) = "yes" ?>
                 <Merge Id="msm_VBoxCOM32On64" Language="!(loc.LANG)" SourceFile="$(var.Property_VBoxMergeCOM32On64)" DiskId="1" />
