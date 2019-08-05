@@ -35,6 +35,7 @@
 #include "VBoxUtils.h"
 #include "UIInformationConfiguration.h"
 #include "UIInformationRuntime.h"
+#include "UIPerformanceMonitor.h"
 #include "UIGuestProcessControlWidget.h"
 #include "UIMachine.h"
 
@@ -111,6 +112,7 @@ void UIVMInformationDialog::retranslateUi()
     m_pTabWidget->setTabText(0, tr("Configuration &Details"));
     m_pTabWidget->setTabText(1, tr("&Runtime Information"));
     m_pTabWidget->setTabText(2, tr("Guest Control &Session Information"));
+    m_pTabWidget->setTabText(3, tr("Performance Monitor"));
 }
 
 bool UIVMInformationDialog::event(QEvent *pEvent)
@@ -257,6 +259,14 @@ void UIVMInformationDialog::prepareTabWidget()
         {
             m_tabs.insert(2, pGuestProcessControlWidget);
             m_pTabWidget->addTab(m_tabs.value(2), QString());
+        }
+
+        UIPerformanceMonitor *pPerformanceMonitor =
+            new UIPerformanceMonitor(this, m_pMachineWindow->machine(), m_pMachineWindow->console());
+        if (pPerformanceMonitor)
+        {
+            m_tabs.insert(3, pPerformanceMonitor);
+            m_pTabWidget->addTab(m_tabs.value(3), QString());
         }
 
         /* Set Runtime Information tab as default: */
