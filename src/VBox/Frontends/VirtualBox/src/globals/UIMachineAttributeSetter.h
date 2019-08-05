@@ -38,7 +38,12 @@ enum MachineAttribute
     MachineAttribute_GraphicsControllerType,
     MachineAttribute_AudioHostDriverType,
     MachineAttribute_AudioControllerType,
+    MachineAttribute_USBControllerType,
 };
+
+/** A set of USB controller types. */
+typedef QSet<KUSBControllerType> UIUSBControllerTypeSet;
+Q_DECLARE_METATYPE(UIUSBControllerTypeSet);
 
 /** Namespace used to assign CMachine attributes on more convenient basis. */
 namespace UIMachineAttributeSetter

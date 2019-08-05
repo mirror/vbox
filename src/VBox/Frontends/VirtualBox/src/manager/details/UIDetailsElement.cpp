@@ -61,6 +61,7 @@ enum AnchorRole
     AnchorRole_Storage,
     AnchorRole_AudioHostDriverType,
     AnchorRole_AudioControllerType,
+    AnchorRole_USBControllerType,
 #ifndef VBOX_WS_MAC
     AnchorRole_MenuBar,
 #endif
@@ -177,6 +178,7 @@ void UIDetailsElement::updateAppearance()
     m_pTextPane->setAnchorRoleRestricted("#attach", cal != ConfigurationAccessLevel_Full);
     m_pTextPane->setAnchorRoleRestricted("#audio_host_driver_type", cal != ConfigurationAccessLevel_Full);
     m_pTextPane->setAnchorRoleRestricted("#audio_controller_type", cal != ConfigurationAccessLevel_Full);
+    m_pTextPane->setAnchorRoleRestricted("#usb_controller_type", cal != ConfigurationAccessLevel_Full);
 #ifndef VBOX_WS_MAC
     m_pTextPane->setAnchorRoleRestricted("#menu_bar", cal == ConfigurationAccessLevel_Null);
 #endif
@@ -472,6 +474,7 @@ void UIDetailsElement::sltHandleAnchorClicked(const QString &strAnchor)
     roles["#attach"] = AnchorRole_Storage;
     roles["#audio_host_driver_type"] = AnchorRole_AudioHostDriverType;
     roles["#audio_controller_type"] = AnchorRole_AudioControllerType;
+    roles["#usb_controller_type"] = AnchorRole_USBControllerType;
 #ifndef VBOX_WS_MAC
     roles["#menu_bar"] = AnchorRole_MenuBar;
 #endif
@@ -754,6 +757,59 @@ void UIDetailsElement::sltHandleAnchorClicked(const QString &strAnchor)
 
                 /* Delete popup: */
                 delete pPopup;
+            }
+            break;
+        }
+        case AnchorRole_USBControllerType:
+        {
+            /* Parse controller type list: */
+            UIUSBControllerTypeSet controllerSet;
+            const QStringList controllerInternals = strData.section(',', 0, 0).split(';');
+            foreach (const QString &strControllerType, controllerInternals)
+            {
+                /* Parse each internal controller description: */
+                bool fParsed = false;
+                KUSBControllerType enmType = static_cast<KUSBControllerType>(strControllerType.toInt(&fParsed));
+                if (!fParsed)
+                    enmType = KUSBControllerType_Null;
+                controllerSet << enmType;
+            }
+
+            /* Prepare existing controller sets: */
+            QMap<int, UIUSBControllerTypeSet> controllerSets;
+            controllerSets[0] = UIUSBControllerTypeSet();
+            controllerSets[1] = UIUSBControllerTypeSet() << KUSBControllerType_OHCI;
+            controllerSets[2] = UIUSBControllerTypeSet() << KUSBControllerType_OHCI << KUSBControllerType_EHCI;
+            controllerSets[3] = UIUSBControllerTypeSet() << KUSBControllerType_XHCI;
+
+            /* Fill menu with actions: */
+            UIMenu menu;
+            QActionGroup group(&menu);
+            QMap<int, QAction*> actions;
+            actions[0] = menu.addAction(QApplication::translate("UIDetails", "Disabled", "details (usb)"));
+            group.addAction(actions.value(0));
+            actions.value(0)->setCheckable(true);
+            actions[1] = menu.addAction(QApplication::translate("UIDetails", "USB 1.1 (OHCI) Controller", "details (usb)"));
+            group.addAction(actions.value(1));
+            actions.value(1)->setCheckable(true);
+            actions[2] = menu.addAction(QApplication::translate("UIDetails", "USB 2.0 (OHCI + EHCI) Controller", "details (usb)"));
+            group.addAction(actions.value(2));
+            actions.value(2)->setCheckable(true);
+            actions[3] = menu.addAction(QApplication::translate("UIDetails", "USB 3.0 (xHCI) Controller", "details (usb)"));
+            group.addAction(actions.value(3));
+            actions.value(3)->setCheckable(true);
+
+            /* Mark current one: */
+            for (int i = 0; i <= 3; ++i)
+                actions.value(i)->setChecked(controllerSets.key(controllerSet) == i);
+
+            /* Execute menu, look for result: */
+            QAction *pTriggeredAction = menu.exec(QCursor::pos());
+            if (pTriggeredAction)
+            {
+                const int iTriggeredIndex = actions.key(pTriggeredAction);
+                if (controllerSets.key(controllerSet) != iTriggeredIndex)
+                    setMachineAttribute(machine(), MachineAttribute_USBControllerType, QVariant::fromValue(controllerSets.value(iTriggeredIndex)));
             }
             break;
         }

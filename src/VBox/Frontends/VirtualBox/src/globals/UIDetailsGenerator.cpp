@@ -725,17 +725,26 @@ UITextTable UIDetailsGenerator::generateMachineInformationUSB(CMachine &comMachi
     const CUSBDeviceFilters comFilterObject = comMachine.GetUSBDeviceFilters();
     if (!comFilterObject.isNull() && comMachine.GetUSBProxyAvailable())
     {
+        const QString strAnchorType = QString("usb_controller_type");
         const CUSBControllerVector controllers = comMachine.GetUSBControllers();
         if (!controllers.isEmpty())
         {
             /* USB controllers: */
             if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeUsb_Controller)
             {
+                QStringList controllerInternal;
                 QStringList controllersReadable;
                 foreach (const CUSBController &comController, controllers)
-                    controllersReadable << gpConverter->toString(comController.GetType());
+                {
+                    const KUSBControllerType enmType = comController.GetType();
+                    controllerInternal << QString::number((int)enmType);
+                    controllersReadable << gpConverter->toString(enmType);
+                }
                 table << UITextTableLine(QApplication::translate("UIDetails", "USB Controller", "details (usb)"),
-                                         controllersReadable.join(", "));
+                                         QString("<a href=#%1,%2>%3</a>")
+                                             .arg(strAnchorType)
+                                             .arg(controllerInternal.join(';'))
+                                             .arg(controllersReadable.join(", ")));
             }
 
             /* Device filters: */
@@ -751,7 +760,11 @@ UITextTable UIDetailsGenerator::generateMachineInformationUSB(CMachine &comMachi
             }
         }
         else
-            table << UITextTableLine(QApplication::translate("UIDetails", "Disabled", "details (usb)"), QString());
+            table << UITextTableLine(QString("<a href=#%1,%2>%3</a>")
+                                         .arg(strAnchorType)
+                                         .arg(QString::number((int)KUSBControllerType_Null))
+                                         .arg(QApplication::translate("UIDetails", "Disabled", "details (usb)")),
+                                     QString());
     }
     else
         table << UITextTableLine(QApplication::translate("UIDetails", "USB Controller Inaccessible", "details (usb)"), QString());

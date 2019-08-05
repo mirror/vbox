@@ -26,7 +26,48 @@
 
 /* COM includes: */
 #include "CAudioAdapter.h"
+#include "CUSBController.h"
 
+
+void removeUSBControllers(CMachine &comMachine, const UIUSBControllerTypeSet &controllerSet = UIUSBControllerTypeSet())
+{
+    /* Get controllers for further activities: */
+    const CUSBControllerVector &controllers = comMachine.GetUSBControllers();
+    if (!comMachine.isOk())
+        return;
+
+    /* For each controller: */
+    foreach (const CUSBController &comController, controllers)
+    {
+        /* Get controller type&name for further activities: */
+        const KUSBControllerType enmType = comController.GetType();
+        const QString strName = comController.GetName();
+
+        /* Pass only if requested types were not defined or contains the one we found: */
+        if (!controllerSet.isEmpty() && !controllerSet.contains(enmType))
+            continue;
+
+        /* Remove controller: */
+        comMachine.RemoveUSBController(strName);
+        if (!comMachine.isOk())
+            break;
+    }
+}
+
+void createUSBControllers(CMachine &comMachine, const UIUSBControllerTypeSet &controllerSet)
+{
+    /* For each requested USB controller type: */
+    foreach (const KUSBControllerType &enmType, controllerSet)
+    {
+        switch (enmType)
+        {
+            case KUSBControllerType_OHCI: comMachine.AddUSBController("OHCI", KUSBControllerType_OHCI); break;
+            case KUSBControllerType_EHCI: comMachine.AddUSBController("EHCI", KUSBControllerType_EHCI); break;
+            case KUSBControllerType_XHCI: comMachine.AddUSBController("xHCI", KUSBControllerType_XHCI); break;
+            default: break;
+        }
+    }
+}
 
 void UIMachineAttributeSetter::setMachineAttribute(const CMachine &comConstMachine,
                                                    const MachineAttribute &enmType,
@@ -170,6 +211,29 @@ void UIMachineAttributeSetter::setMachineAttribute(const CMachine &comConstMachi
                 {
                     msgCenter().cannotChangeAudioAdapterAttribute(comAdapter);
                     fErrorHappened = true;
+                }
+                break;
+            }
+            case MachineAttribute_USBControllerType:
+            {
+                /* Remove all existing controller first of all: */
+                removeUSBControllers(comMachine);
+                if (!comMachine.isOk())
+                {
+                    msgCenter().cannotChangeMachineAttribute(comMachine);
+                    fErrorHappened = true;
+                    break;
+                }
+                /* Add new controllers afterwards: */
+                const UIUSBControllerTypeSet controllerSet = guiAttribute.value<UIUSBControllerTypeSet>();
+                if (!controllerSet.contains(KUSBControllerType_Null))
+                {
+                    createUSBControllers(comMachine, controllerSet);
+                    if (!comMachine.isOk())
+                    {
+                        msgCenter().cannotChangeMachineAttribute(comMachine);
+                        fErrorHappened = true;
+                    }
                 }
                 break;
             }
