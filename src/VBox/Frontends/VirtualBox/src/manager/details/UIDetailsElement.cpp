@@ -16,6 +16,7 @@
  */
 
 /* Qt includes: */
+#include <QActionGroup>
 #include <QGraphicsSceneMouseEvent>
 #include <QGraphicsView>
 #include <QPropertyAnimation>
@@ -769,10 +770,13 @@ void UIDetailsElement::sltHandleAnchorClicked(const QString &strAnchor)
 
             /* Fill menu with actions, use menu-bar NLS for both cases for simplicity: */
             UIMenu menu;
+            QActionGroup group(&menu);
             QAction *pActionDisable = menu.addAction(QApplication::translate("UIDetails", "Disabled", "details (user interface/menu-bar)"));
+            group.addAction(pActionDisable);
             pActionDisable->setCheckable(true);
             pActionDisable->setChecked(!fEnabled);
             QAction *pActionEnable = menu.addAction(QApplication::translate("UIDetails", "Enabled", "details (user interface/menu-bar)"));
+            group.addAction(pActionEnable);
             pActionEnable->setCheckable(true);
             pActionEnable->setChecked(fEnabled);
 
@@ -804,13 +808,17 @@ void UIDetailsElement::sltHandleAnchorClicked(const QString &strAnchor)
 
             /* Fill menu with actions: */
             UIMenu menu;
+            QActionGroup group(&menu);
             QAction *pActionDisabled = menu.addAction(QApplication::translate("UIDetails", "Disabled", "details (user interface/mini-toolbar)"));
+            group.addAction(pActionDisabled);
             pActionDisabled->setCheckable(true);
             pActionDisabled->setChecked(enmAlignment == MiniToolbarAlignment_Disabled);
             QAction *pActionTop = menu.addAction(QApplication::translate("UIDetails", "Top", "details (user interface/mini-toolbar position)"));
+            group.addAction(pActionTop);
             pActionTop->setCheckable(true);
             pActionTop->setChecked(enmAlignment == MiniToolbarAlignment_Top);
             QAction *pActionBottom = menu.addAction(QApplication::translate("UIDetails", "Bottom", "details (user interface/mini-toolbar position)"));
+            group.addAction(pActionBottom);
             pActionBottom->setCheckable(true);
             pActionBottom->setChecked(enmAlignment == MiniToolbarAlignment_Bottom);
 
