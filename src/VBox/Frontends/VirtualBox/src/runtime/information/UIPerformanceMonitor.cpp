@@ -360,7 +360,7 @@ const QQueue<ULONG> &UISubMetric::data() const
 
 bool UISubMetric::isPercentage() const
 {
-    return m_strUnit == '%';
+    return m_strUnit == "%";
 }
 
 
