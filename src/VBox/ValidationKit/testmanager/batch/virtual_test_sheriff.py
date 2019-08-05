@@ -1014,8 +1014,6 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
         ( True,  ktReason_Unknown_File_Not_Found, # lump it in with file-not-found for now.
           'Error: failed to start machine. Error message: Not supported. (VERR_NOT_SUPPORTED)' ),
         ( False, ktReason_Unknown_VM_Crash,                         'txsDoConnectViaTcp: Machine state: Aborted' ),
-        ( False, ktReason_Unknown_VM_Crash,                         ') exited normally: -1073741819 (0xc0000005)' ),
-        ( False, ktReason_Unknown_VM_Crash,                         ') was signalled: 11 (0xb)' ),
         ( True,  ktReason_Host_Modprobe_Failed,                     'Kernel driver not installed' ),
         ( True,  ktReason_OSInstall_Sata_no_BM,                     'PCHS=14128/14134/8224' ),
         ( True,  ktReason_Host_DoubleFreeHeap,                      'double free or corruption' ),
@@ -1097,6 +1095,14 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
         ( True,  ktReason_BSOD_C0000225,                    '50fec50b5199923fa48b3f3e782687cc381e1c8a788ebda14e6a355fbe3bb1b3' ),
     ];
 
+    ## Things we search a VBoxSVC log for to figure out why something went bust.
+    katSimpleSvcLogReasons = [
+        # ( Whether to stop on hit, reason tuple, needle text. )
+        ( False, ktReason_Unknown_VM_Crash,                         ') exited normally: -1073741819 (0xc0000005)' ),
+        ( False, ktReason_Unknown_VM_Crash,                         ') was signalled: 11 (0xb)' ),
+    ];
+
+
     def investigateVMResult(self, oCaseFile, oFailedResult, sResultLog):
         """
         Investigates a failed VM run.
@@ -1106,13 +1112,14 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
             """
             Investigates the current set of VM related logs.
             """
-            self.dprint('investigateLogSet: log lengths: result %u, VM %u, kernel %u, vga text %u, info text %u, hard %u'
+            self.dprint('investigateLogSet: log lengths: result %u, VM %u, kernel %u, vga text %u, info text %u, hard %u, SVC %u'
                         % ( len(sResultLog if sResultLog else ''),
                             len(sVMLog     if sVMLog else ''),
                             len(sKrnlLog   if sKrnlLog else ''),
                             len(sVgaText   if sVgaText else ''),
                             len(sInfoText  if sInfoText else ''),
-                            len(sNtHardLog if sNtHardLog else ''), ));
+                            len(sNtHardLog if sNtHardLog else ''),
+                            len(sSvcLog    if sSvcLog else ''), ));
 
             #self.dprint(u'main.log<<<\n%s\n<<<\n' % (sResultLog,));
             #self.dprint(u'vbox.log<<<\n%s\n<<<\n' % (sVMLog,));
@@ -1192,6 +1199,15 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
                             return True;
                         fFoundSomething = True;
 
+            # Check VBoxSVC.log.
+            if sSvcLog is not None:
+                for fStopOnHit, tReason, sNeedle in self.katSimpleSvcLogReasons:
+                    if sSvcLog.find(sNeedle) > 0:
+                        oCaseFile.noteReasonForId(tReason, oFailedResult.idTestResult);
+                        if fStopOnHit:
+                            return True;
+                        fFoundSomething = True;
+
             #
             # Complicated stuff.
             #
@@ -1238,6 +1254,7 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
         sKrnlLog    = None;
         sVgaText    = None;
         sInfoText   = None;
+        sSvcLog     = None;
         for oFile in oFailedResult.aoFiles:
             if oFile.sKind == TestResultFileData.ksKind_LogReleaseVm:
                 if 'VBoxHardening.log' not in oFile.sFile:
@@ -1250,6 +1267,7 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
                     sKrnlLog    = None;
                     sScreenHash = None;
                     sNtHardLog  = None;
+                    sSvcLog     = None;
                     sVMLog      = oCaseFile.getLogFile(oFile);
                 else:
                     sNtHardLog  = oCaseFile.getLogFile(oFile);
@@ -1259,6 +1277,8 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
                 sVgaText  = '\n'.join([sLine.rstrip() for sLine in oCaseFile.getLogFile(oFile).split('\n')]);
             elif oFile.sKind == TestResultFileData.ksKind_InfoCollection:
                 sInfoText = oCaseFile.getLogFile(oFile);
+            elif oFile.sKind == TestResultFileData.ksKind_LogReleaseSvc:
+                sSvcLog   = oCaseFile.getLogFile(oFile);
             elif oFile.sKind == TestResultFileData.ksKind_ScreenshotFailure:
                 sScreenHash = oCaseFile.getScreenshotSha256(oFile);
                 if sScreenHash is not None:
