@@ -219,7 +219,7 @@ class TestResultDataEx(TestResultData):
         """
         Get a list of test results instances actually contributing to cErrors.
 
-        Returns a list of TestResultDataEx instance from this tree. (shared!)
+        Returns a list of TestResultDataEx instances from this tree. (shared!)
         """
         # Check each child (if any).
         aoRet = [];
@@ -232,6 +232,25 @@ class TestResultDataEx(TestResultData):
         # Did we contribute as well?
         if self.cErrors > cChildErrors:
             aoRet.append(self);
+
+        return aoRet;
+
+    def getListOfLogFilesByKind(self, asKinds):
+        """
+        Get a list of test results instances actually contributing to cErrors.
+
+        Returns a list of TestResultFileDataEx instances from this tree. (shared!)
+        """
+        aoRet = [];
+
+        # Check the children first.
+        for oChild in self.aoChildren:
+            aoRet.extend(oChild.getListOfLogFilesByKind(asKinds));
+
+        # Check our own files next.
+        for oFile in self.aoFiles:
+            if oFile.sKind in asKinds:
+                aoRet.append(oFile);
 
         return aoRet;
 
@@ -401,7 +420,7 @@ class TestResultFileData(ModelDataBase):
     ksKind_LogReleaseVm         = 'log/release/vm';
     ksKind_LogDebugVm           = 'log/debug/vm';
     ksKind_LogReleaseSvc        = 'log/release/svc';
-    ksKind_LogRebugSvc          = 'log/debug/svc';
+    ksKind_LogDebugSvc          = 'log/debug/svc';
     ksKind_LogReleaseClient     = 'log/release/client';
     ksKind_LogDebugClient       = 'log/debug/client';
     ksKind_LogInstaller         = 'log/installer';
@@ -426,7 +445,7 @@ class TestResultFileData(ModelDataBase):
         ksKind_LogReleaseVm,
         ksKind_LogDebugVm,
         ksKind_LogReleaseSvc,
-        ksKind_LogRebugSvc,
+        ksKind_LogDebugSvc,
         ksKind_LogReleaseClient,
         ksKind_LogDebugClient,
         ksKind_LogInstaller,

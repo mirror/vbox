@@ -39,14 +39,15 @@ __version__ = "$Revision$"
 
 
 # Standard python imports
-import sys;
-import os;
 import hashlib;
+import os;
+import re;
+import smtplib;
 import subprocess;
-import smtplib
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
-from email.utils import COMMASPACE
+import sys;
+from email.mime.multipart   import MIMEMultipart;
+from email.mime.text        import MIMEText;
+from email.utils            import COMMASPACE;
 
 if sys.version_info[0] >= 3:
     from io       import StringIO as StringIO;      # pylint: disable=import-error,no-name-in-module,useless-import-alias
@@ -60,6 +61,7 @@ g_ksTestManagerDir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abs
 sys.path.append(g_ksTestManagerDir);
 
 # Test Manager imports
+from common                                 import utils;
 from testmanager.core.db                    import TMDatabaseConnection;
 from testmanager.core.build                 import BuildDataEx;
 from testmanager.core.failurereason         import FailureReasonLogic;
@@ -97,6 +99,7 @@ class VirtualTestSheriffCaseFile(object):
         self.oTestGroup     = oTestGroup;   # TestGroupData
         self.oTestCase      = oTestCase;    # TestCaseDataEx
         self.sMainLog       = '';           # The main log file.  Empty string if not accessible.
+        self.sSvcLog        = '';           # The VBoxSVC log file.  Empty string if not accessible.
 
         # Generate a case file name.
         self.sName          = '#%u: %s' % (self.oTestSet.idTestSet, self.oTestCase.sName,)
@@ -237,6 +240,17 @@ class VirtualTestSheriffCaseFile(object):
         else:
             self.oSheriff.vprint(u'Error opening the "%s" log file: %s' % (oFile.sFile, oSizeOrError,));
         return sContent;
+
+    def getSvcLog(self):
+        """
+        Tries to read the VBoxSVC log file as it typically not associated with a failing test result.
+        Note! Returns the first VBoxSVC log file we find.
+        """
+        if not self.sSvcLog:
+            asSvcLogFiles = self.oTree.getListOfLogFilesByKind(TestResultFileData.ksKind_LogReleaseSvc);
+            if asSvcLogFiles:
+                self.sSvcLog = self.getLogFile(asSvcLogFiles[0]);
+        return self.sSvcLog;
 
     def getScreenshotSha256(self, oFile):
         """
@@ -1017,7 +1031,8 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
         ( True,  ktReason_Host_Modprobe_Failed,                     'Kernel driver not installed' ),
         ( True,  ktReason_OSInstall_Sata_no_BM,                     'PCHS=14128/14134/8224' ),
         ( True,  ktReason_Host_DoubleFreeHeap,                      'double free or corruption' ),
-        ( False, ktReason_Unknown_VM_Start_Error,                   'VMSetError: ' ),
+        #( False, ktReason_Unknown_VM_Start_Error,                   'VMSetError: ' ), - false positives for stuff like:
+        #           "VMSetError: VD: Backend 'VBoxIsoMaker' does not support async I/O"
         ( False, ktReason_Unknown_VM_Start_Error,                   'error: failed to open session for' ),
         ( False, ktReason_Unknown_VM_Runtime_Error,                 'Console: VM runtime error: fatal=true' ),
     ];
@@ -1095,12 +1110,32 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
         ( True,  ktReason_BSOD_C0000225,                    '50fec50b5199923fa48b3f3e782687cc381e1c8a788ebda14e6a355fbe3bb1b3' ),
     ];
 
-    ## Things we search a VBoxSVC log for to figure out why something went bust.
-    katSimpleSvcLogReasons = [
-        # ( Whether to stop on hit, reason tuple, needle text. )
-        ( False, ktReason_Unknown_VM_Crash,                         ') exited normally: -1073741819 (0xc0000005)' ),
-        ( False, ktReason_Unknown_VM_Crash,                         ') was signalled: 11 (0xb)' ),
-    ];
+
+    def scanLog(self, asLogs, atNeedles, oCaseFile, idTestResult):
+        """
+        Scans for atNeedles in sLog.
+
+        Returns True if a stop-on-hit neelde was found.
+        Returns None if a no-stop reason was found.
+        Returns False if no hit.
+        """
+        fRet = False;
+        for fStopOnHit, tReason, oNeedle in atNeedles:
+            fMatch = False;
+            if utils.isString(oNeedle):
+                for sLog in asLogs:
+                    if sLog:
+                        fMatch |= sLog.find(oNeedle) > 0;
+            else:
+                for sLog in asLogs:
+                    if sLog:
+                        fMatch |= oNeedle.search(sLog) is not None;
+            if fMatch:
+                oCaseFile.noteReasonForId(tReason, idTestResult);
+                if fStopOnHit:
+                    return True;
+                fRet = None;
+        return fRet;
 
 
     def investigateVMResult(self, oCaseFile, oFailedResult, sResultLog):
@@ -1112,14 +1147,13 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
             """
             Investigates the current set of VM related logs.
             """
-            self.dprint('investigateLogSet: log lengths: result %u, VM %u, kernel %u, vga text %u, info text %u, hard %u, SVC %u'
+            self.dprint('investigateLogSet: log lengths: result %u, VM %u, kernel %u, vga text %u, info text %u, hard %u'
                         % ( len(sResultLog if sResultLog else ''),
                             len(sVMLog     if sVMLog else ''),
                             len(sKrnlLog   if sKrnlLog else ''),
                             len(sVgaText   if sVgaText else ''),
                             len(sInfoText  if sInfoText else ''),
-                            len(sNtHardLog if sNtHardLog else ''),
-                            len(sSvcLog    if sSvcLog else ''), ));
+                            len(sNtHardLog if sNtHardLog else ''),));
 
             #self.dprint(u'main.log<<<\n%s\n<<<\n' % (sResultLog,));
             #self.dprint(u'vbox.log<<<\n%s\n<<<\n' % (sVMLog,));
@@ -1149,37 +1183,31 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
                     tReason = ( self.ksBsodCategory, self.ksBsodAddNew );
                 return oCaseFile.noteReasonForId(tReason, oFailedResult.idTestResult, sComment = sDetails.strip());
 
+            fFoundSomething = False;
+
             #
             # Look for linux panic.
             #
             if sKrnlLog is not None:
-                for fStopOnHit, tReason, sNeedle in self.katSimpleKernelLogReasons:
-                    if sKrnlLog.find(sNeedle) > 0:
-                        oCaseFile.noteReasonForId(tReason, oFailedResult.idTestResult);
-                        if fStopOnHit:
-                            return True;
-                        fFoundSomething = True;
+                fRet = self.scanLog([sKrnlLog,], self.katSimpleKernelLogReasons, oCaseFile, oFailedResult.idTestResult);
+                if fRet is True:
+                    return fRet;
+                fFoundSomething |= fRet is None;
 
             #
             # Loop thru the simple stuff.
             #
-            fFoundSomething = False;
-            for fStopOnHit, tReason, sNeedle in self.katSimpleMainAndVmLogReasons:
-                if sResultLog.find(sNeedle) > 0 or (sVMLog is not None and sVMLog.find(sNeedle) > 0):
-                    oCaseFile.noteReasonForId(tReason, oFailedResult.idTestResult);
-                    if fStopOnHit:
-                        return True;
-                    fFoundSomething = True;
+            fRet = self.scanLog([sResultLog, sVMLog], self.katSimpleMainAndVmLogReasons, oCaseFile, oFailedResult.idTestResult);
+            if fRet is True:
+                return fRet;
+            fFoundSomething |= fRet is None;
 
             # Continue with vga text.
             if sVgaText:
-                for fStopOnHit, tReason, sNeedle in self.katSimpleVgaTextReasons:
-                    if sVgaText.find(sNeedle) > 0:
-                        oCaseFile.noteReasonForId(tReason, oFailedResult.idTestResult);
-                        if fStopOnHit:
-                            return True;
-                        fFoundSomething = True;
-            _ = sInfoText;
+                fRet = self.scanLog([sVgaText,], self.katSimpleVgaTextReasons, oCaseFile, oFailedResult.idTestResult);
+                if fRet is True:
+                    return fRet;
+                fFoundSomething |= fRet is None;
 
             # Continue with screen hashes.
             if sScreenHash is not None:
@@ -1192,21 +1220,10 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
 
             # Check VBoxHardening.log.
             if sNtHardLog is not None:
-                for fStopOnHit, tReason, sNeedle in self.katSimpleVBoxHardeningLogReasons:
-                    if sNtHardLog.find(sNeedle) > 0:
-                        oCaseFile.noteReasonForId(tReason, oFailedResult.idTestResult);
-                        if fStopOnHit:
-                            return True;
-                        fFoundSomething = True;
-
-            # Check VBoxSVC.log.
-            if sSvcLog is not None:
-                for fStopOnHit, tReason, sNeedle in self.katSimpleSvcLogReasons:
-                    if sSvcLog.find(sNeedle) > 0:
-                        oCaseFile.noteReasonForId(tReason, oFailedResult.idTestResult);
-                        if fStopOnHit:
-                            return True;
-                        fFoundSomething = True;
+                fRet = self.scanLog([sNtHardLog,], self.katSimpleVBoxHardeningLogReasons, oCaseFile, oFailedResult.idTestResult);
+                if fRet is True:
+                    return fRet;
+                fFoundSomething |= fRet is None;
 
             #
             # Complicated stuff.
@@ -1254,7 +1271,6 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
         sKrnlLog    = None;
         sVgaText    = None;
         sInfoText   = None;
-        sSvcLog     = None;
         for oFile in oFailedResult.aoFiles:
             if oFile.sKind == TestResultFileData.ksKind_LogReleaseVm:
                 if 'VBoxHardening.log' not in oFile.sFile:
@@ -1267,7 +1283,6 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
                     sKrnlLog    = None;
                     sScreenHash = None;
                     sNtHardLog  = None;
-                    sSvcLog     = None;
                     sVMLog      = oCaseFile.getLogFile(oFile);
                 else:
                     sNtHardLog  = oCaseFile.getLogFile(oFile);
@@ -1277,8 +1292,6 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
                 sVgaText  = '\n'.join([sLine.rstrip() for sLine in oCaseFile.getLogFile(oFile).split('\n')]);
             elif oFile.sKind == TestResultFileData.ksKind_InfoCollection:
                 sInfoText = oCaseFile.getLogFile(oFile);
-            elif oFile.sKind == TestResultFileData.ksKind_LogReleaseSvc:
-                sSvcLog   = oCaseFile.getLogFile(oFile);
             elif oFile.sKind == TestResultFileData.ksKind_ScreenshotFailure:
                 sScreenHash = oCaseFile.getScreenshotSha256(oFile);
                 if sScreenHash is not None:
@@ -1292,6 +1305,23 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
             return True;
 
         return None;
+
+    ## Things we search a VBoxSVC log for to figure out why something went bust.
+    katSimpleSvcLogReasons = [
+        # ( Whether to stop on hit, reason tuple, needle text. )
+        ( False, ktReason_Unknown_VM_Crash, re.compile(r'Reaper.* exited normally: -1073741819 \(0xc0000005\)') ),
+        ( False, ktReason_Unknown_VM_Crash, re.compile(r'Reaper.* was signalled: 11 \(0xb\)') ),
+    ];
+
+    def investigateSvcLogForVMRun(self, oCaseFile, sSvcLog):
+        """
+        Check the VBoxSVC log for a single VM run.
+        """
+        if sSvcLog:
+            fRet = self.scanLog([sSvcLog,], self.katSimpleSvcLogReasons, oCaseFile, oCaseFile.oTree.idTestResult);
+            if fRet is True or fRet is None:
+                return True;
+        return False;
 
 
     def isResultFromVMRun(self, oFailedResult, sResultLog):
@@ -1400,6 +1430,15 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
             else:
                 self.vprint(u'TODO: Cannot place idTestResult=%u - %s' % (oFailedResult.idTestResult, oFailedResult.sName,));
                 self.dprint(u'%s + %s <<\n%s\n<<' % (oFailedResult.tsCreated, oFailedResult.tsElapsed, sResultLog,));
+
+        #
+        # Check VBoxSVC.log for VM crashes if inconclusive on single VM runs.
+        #
+        if fSingleVM and len(oCaseFile.dReasonForResultId) < len(aoFailedResults):
+            self.dprint(u'Got %u out of %u - checking VBoxSVC.log...'
+                        % (len(oCaseFile.dReasonForResultId), len(aoFailedResults)));
+            if self.investigateSvcLogForVMRun(oCaseFile, oCaseFile.getSvcLog()):
+                return self.caseClosed(oCaseFile);
 
         #
         # Report home and close the case if we got them all, otherwise log it.
