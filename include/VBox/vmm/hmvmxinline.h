@@ -51,6 +51,7 @@
 #else
 # define VMX_USE_MSC_INTRINSICS 0
 #endif
+#define VBOX_WITH_VMREAD_VMWRITE_NOCHECK
 
 
 /** @defgroup grp_hm_vmx_inline    VMX Inline Helpers
