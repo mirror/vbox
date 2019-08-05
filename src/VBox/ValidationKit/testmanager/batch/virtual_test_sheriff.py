@@ -1014,6 +1014,8 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
         ( True,  ktReason_Unknown_File_Not_Found, # lump it in with file-not-found for now.
           'Error: failed to start machine. Error message: Not supported. (VERR_NOT_SUPPORTED)' ),
         ( False, ktReason_Unknown_VM_Crash,                         'txsDoConnectViaTcp: Machine state: Aborted' ),
+        ( False, ktReason_Unknown_VM_Crash,                         ') exited normally: -1073741819 (0xc0000005)' ),
+        ( False, ktReason_Unknown_VM_Crash,                         ') was signalled: 11 (0xb)' ),
         ( True,  ktReason_Host_Modprobe_Failed,                     'Kernel driver not installed' ),
         ( True,  ktReason_OSInstall_Sata_no_BM,                     'PCHS=14128/14134/8224' ),
         ( True,  ktReason_Host_DoubleFreeHeap,                      'double free or corruption' ),
@@ -1028,6 +1030,7 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
         ( True,  ktReason_Host_DriverNotLoaded,                     'Error opening VBoxDrvStub:  STATUS_OBJECT_NAME_NOT_FOUND' ),
         ( True,  ktReason_Host_NotSignedWithBuildCert,              'Not signed with the build certificate' ),
         ( True,  ktReason_Host_TSTInfo_Accuracy_OOR,                'RTCRTSPTSTINFO::Accuracy::Millis: Out of range' ),
+        ( False, ktReason_Unknown_VM_Crash,                         'Quitting: ExitCode=0xc0000005 (rcNtWait=' ),
     ];
 
     ## Things we search a kernel.log file for to figure out why something went bust.
