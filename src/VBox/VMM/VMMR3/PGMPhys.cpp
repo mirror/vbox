@@ -4889,8 +4889,11 @@ static DECLCALLBACK(int) pgmR3PhysChunkUnmapCandidateCallback(PAVLU32NODECORE pN
     }
 #endif
 
-    for (unsigned i = 0; i < RT_ELEMENTS(pVM->pgm.s.PhysTlbHC.aEntries); i++)
-        if (pVM->pgm.s.PhysTlbHC.aEntries[i].pMap == pChunk)
+    for (unsigned i = 0; i < RT_ELEMENTS(pVM->pgm.s.PhysTlbR0.aEntries); i++)
+        if (pVM->pgm.s.PhysTlbR0.aEntries[i].pMap == pChunk)
+            return 0;
+    for (unsigned i = 0; i < RT_ELEMENTS(pVM->pgm.s.PhysTlbR3.aEntries); i++)
+        if (pVM->pgm.s.PhysTlbR3.aEntries[i].pMap == pChunk)
             return 0;
 
     pArg->pChunk = pChunk;

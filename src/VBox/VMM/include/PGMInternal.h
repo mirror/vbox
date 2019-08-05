@@ -3530,10 +3530,8 @@ typedef struct PGM
     /** Hack: Number of deprecated page mapping locks taken by the current lock
      *  owner via pgmPhysGCPhys2CCPtrInternalDepr. */
     uint32_t                        cDeprecatedPageLocks;
-#if HC_ARCH_BITS == 64
     /** Alignment padding. */
-    uint32_t                        u32Alignment2;
-#endif
+    uint32_t                        au32Alignment2[3];
 
 
     /** PGM critical section.
@@ -3547,6 +3545,8 @@ typedef struct PGM
      */
     struct
     {
+        /** The chunk mapping TLB. */
+        PGMCHUNKR3MAPTLB            Tlb;
         /** The chunk tree, ordered by chunk id. */
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
         R3PTRTYPE(PAVLU32NODECORE)  pTree;
@@ -3556,8 +3556,6 @@ typedef struct PGM
 #if HC_ARCH_BITS == 32
         uint32_t                    u32Alignment0;
 #endif
-        /** The chunk mapping TLB. */
-        PGMCHUNKR3MAPTLB            Tlb;
         /** The number of mapped chunks. */
         uint32_t                    c;
         /** @cfgm{/PGM/MaxRing3Chunks, uint32_t, host dependent}
@@ -3567,13 +3565,13 @@ typedef struct PGM
         /** The current time.  This is incremented whenever a chunk is inserted. */
         uint32_t                    iNow;
         /** Alignment padding. */
-        uint32_t                    u32Alignment1;
+        uint32_t                    au32Alignment1[3];
     } ChunkR3Map;
 
-    /**
-     * The page mapping TLB for ring-3 and (for the time being) ring-0.
-     */
-    PGMPAGER3MAPTLB                 PhysTlbHC;
+    /** The page mapping TLB for ring-3. */
+    PGMPAGER3MAPTLB                 PhysTlbR3;
+    /** The page mapping TLB for ring-0 (still using ring-3 mappings). */
+    PGMPAGER3MAPTLB                 PhysTlbR0;
 
     /** @name   The zero page.
      * @{ */
@@ -3734,8 +3732,9 @@ AssertCompileMemberAlignment(PGM, GCPtrMappingFixed, sizeof(RTGCPTR));
 AssertCompileMemberAlignment(PGM, HCPhysInterPD, 8);
 # endif
 AssertCompileMemberAlignment(PGM, CritSectX, 8);
-AssertCompileMemberAlignment(PGM, ChunkR3Map, 8);
-AssertCompileMemberAlignment(PGM, PhysTlbHC, 8);
+AssertCompileMemberAlignment(PGM, ChunkR3Map, 16);
+AssertCompileMemberAlignment(PGM, PhysTlbR3, 32); /** @todo 32 byte alignment! */
+AssertCompileMemberAlignment(PGM, PhysTlbR0, 32);
 AssertCompileMemberAlignment(PGM, HCPhysZeroPg, 8);
 AssertCompileMemberAlignment(PGM, aHandyPages, 8);
 AssertCompileMemberAlignment(PGM, cRelocations, 8);

@@ -119,7 +119,7 @@ struc VM
     alignb 64
     .cpum                   resb 1536
     .vmm                    resb 1600
-    .pgm                    resb (4096*2+6080)
+    .pgm                    resb 20800
     .hm                     resb 5440
     .trpm                   resb 5248
     .selm                   resb 768

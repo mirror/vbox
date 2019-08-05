@@ -592,16 +592,22 @@ void pgmPhysInvalidatePageMapTLB(PVM pVM)
     pgmLock(pVM);
     STAM_COUNTER_INC(&pVM->pgm.s.CTX_SUFF(pStats)->StatPageMapTlbFlushes);
 
-    /* Clear the shared R0/R3 TLB completely. */
-    for (unsigned i = 0; i < RT_ELEMENTS(pVM->pgm.s.PhysTlbHC.aEntries); i++)
+    /* Clear the R3 & R0 TLBs completely. */
+    for (unsigned i = 0; i < RT_ELEMENTS(pVM->pgm.s.PhysTlbR0.aEntries); i++)
     {
-        pVM->pgm.s.PhysTlbHC.aEntries[i].GCPhys = NIL_RTGCPHYS;
-        pVM->pgm.s.PhysTlbHC.aEntries[i].pPage = 0;
-        pVM->pgm.s.PhysTlbHC.aEntries[i].pMap = 0;
-        pVM->pgm.s.PhysTlbHC.aEntries[i].pv = 0;
+        pVM->pgm.s.PhysTlbR0.aEntries[i].GCPhys = NIL_RTGCPHYS;
+        pVM->pgm.s.PhysTlbR0.aEntries[i].pPage = 0;
+        pVM->pgm.s.PhysTlbR0.aEntries[i].pMap = 0;
+        pVM->pgm.s.PhysTlbR0.aEntries[i].pv = 0;
     }
 
-    /** @todo clear the RC TLB whenever we add it. */
+    for (unsigned i = 0; i < RT_ELEMENTS(pVM->pgm.s.PhysTlbR3.aEntries); i++)
+    {
+        pVM->pgm.s.PhysTlbR3.aEntries[i].GCPhys = NIL_RTGCPHYS;
+        pVM->pgm.s.PhysTlbR3.aEntries[i].pPage = 0;
+        pVM->pgm.s.PhysTlbR3.aEntries[i].pMap = 0;
+        pVM->pgm.s.PhysTlbR3.aEntries[i].pv = 0;
+    }
 
     pgmUnlock(pVM);
 }
@@ -619,22 +625,17 @@ void pgmPhysInvalidatePageMapTLBEntry(PVM pVM, RTGCPHYS GCPhys)
 
     STAM_COUNTER_INC(&pVM->pgm.s.CTX_SUFF(pStats)->StatPageMapTlbFlushEntry);
 
-#ifdef IN_RC
-    unsigned idx = PGM_PAGER3MAPTLB_IDX(GCPhys);
-    pVM->pgm.s.PhysTlbHC.aEntries[idx].GCPhys = NIL_RTGCPHYS;
-    pVM->pgm.s.PhysTlbHC.aEntries[idx].pPage = 0;
-    pVM->pgm.s.PhysTlbHC.aEntries[idx].pMap = 0;
-    pVM->pgm.s.PhysTlbHC.aEntries[idx].pv = 0;
-#else
-    /* Clear the shared R0/R3 TLB entry. */
-    PPGMPAGEMAPTLBE pTlbe = &pVM->pgm.s.CTXSUFF(PhysTlb).aEntries[PGM_PAGEMAPTLB_IDX(GCPhys)];
-    pTlbe->GCPhys = NIL_RTGCPHYS;
-    pTlbe->pPage  = 0;
-    pTlbe->pMap   = 0;
-    pTlbe->pv     = 0;
-#endif
+    unsigned const idx = PGM_PAGER3MAPTLB_IDX(GCPhys);
 
-    /** @todo clear the RC TLB whenever we add it. */
+    pVM->pgm.s.PhysTlbR0.aEntries[idx].GCPhys = NIL_RTGCPHYS;
+    pVM->pgm.s.PhysTlbR0.aEntries[idx].pPage = 0;
+    pVM->pgm.s.PhysTlbR0.aEntries[idx].pMap = 0;
+    pVM->pgm.s.PhysTlbR0.aEntries[idx].pv = 0;
+
+    pVM->pgm.s.PhysTlbR3.aEntries[idx].GCPhys = NIL_RTGCPHYS;
+    pVM->pgm.s.PhysTlbR3.aEntries[idx].pPage = 0;
+    pVM->pgm.s.PhysTlbR3.aEntries[idx].pMap = 0;
+    pVM->pgm.s.PhysTlbR3.aEntries[idx].pv = 0;
 }
 
 
@@ -1504,7 +1505,7 @@ int pgmPhysPageLoadIntoTlbWithPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
      * Map the page.
      * Make a special case for the zero page as it is kind of special.
      */
-    PPGMPAGEMAPTLBE pTlbe = &pVM->pgm.s.CTXSUFF(PhysTlb).aEntries[PGM_PAGEMAPTLB_IDX(GCPhys)];
+    PPGMPAGEMAPTLBE pTlbe = &pVM->pgm.s.CTX_SUFF(PhysTlb).aEntries[PGM_PAGEMAPTLB_IDX(GCPhys)];
     if (    !PGM_PAGE_IS_ZERO(pPage)
         &&  !PGM_PAGE_IS_BALLOONED(pPage))
     {
