@@ -247,9 +247,9 @@ class VirtualTestSheriffCaseFile(object):
         Note! Returns the first VBoxSVC log file we find.
         """
         if not self.sSvcLog:
-            asSvcLogFiles = self.oTree.getListOfLogFilesByKind(TestResultFileData.ksKind_LogReleaseSvc);
-            if asSvcLogFiles:
-                self.sSvcLog = self.getLogFile(asSvcLogFiles[0]);
+            aoSvcLogFiles = self.oTree.getListOfLogFilesByKind(TestResultFileData.ksKind_LogReleaseSvc);
+            if aoSvcLogFiles:
+                self.sSvcLog = self.getLogFile(aoSvcLogFiles[0]);
         return self.sSvcLog;
 
     def getScreenshotSha256(self, oFile):
@@ -587,6 +587,9 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
 
     ## @name Failure reasons we know.
     ## @{
+    ktReason_Add_CopyToGuest_Timeout                   = ( 'Additions',         'CopyToGuest Timeout' );
+    ktReason_Add_FlushViewOfFile                       = ( 'Additions',         'FlushViewOfFile' );
+    ktReason_Add_Mmap_Coherency                        = ( 'Additions',         'mmap coherency' );
     ktReason_BSOD_Recovery                             = ( 'BSOD',              'Recovery' );
     ktReason_BSOD_Automatic_Repair                     = ( 'BSOD',              'Automatic Repair' );
     ktReason_BSOD_0000007F                             = ( 'BSOD',              '0x0000007F' );
@@ -1003,7 +1006,9 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
         return (True, self.ktReason_Unknown_HalReturnToFirmware);
 
     ## Things we search a main or VM log for to figure out why something went bust.
-    katSimpleMainAndVmLogReasons = [
+    ## @note DO NOT ADD MORE STUFF HERE!
+    ##       Please use katSimpleMainLogReasons and katSimpleVmLogReasons instead!
+    katSimpleMainAndVmLogReasonsDeprecated = [
         # ( Whether to stop on hit, reason tuple, needle text. )
         ( False, ktReason_Guru_Generic,                             'GuruMeditation' ),
         ( False, ktReason_Guru_Generic,                             'Guru Meditation' ),
@@ -1035,6 +1040,16 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
         #           "VMSetError: VD: Backend 'VBoxIsoMaker' does not support async I/O"
         ( False, ktReason_Unknown_VM_Start_Error,                   'error: failed to open session for' ),
         ( False, ktReason_Unknown_VM_Runtime_Error,                 'Console: VM runtime error: fatal=true' ),
+    ];
+
+    ## This we search a main log for to figure out why something went bust.
+    katSimpleMainLogReasons = [
+        # ( Whether to stop on hit, reason tuple, needle text. )
+    ];
+
+    ## This we search a VM log  for to figure out why something went bust.
+    katSimpleVmLogReasons = [
+        # ( Whether to stop on hit, reason tuple, needle text. )
     ];
 
     ## Things we search a VBoxHardening.log file for to figure out why something went bust.
@@ -1138,6 +1153,38 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
         return fRet;
 
 
+    def investigateGATest(self, oCaseFile, oFailedResult, sResultLog):
+        """
+        Investigates a failed VM run.
+        """
+        enmReason = None;
+        if oFailedResult.sName == 'mmap':
+            if sResultLog.find('FsPerf: Flush issue at offset ') >= 0:
+                enmReason = self.ktReason_Add_Mmap_Coherency;
+            elif sResultLog.find('FlushViewOfFile') >= 0:
+                enmReason = self.ktReason_Add_FlushViewOfFile;
+        elif oFailedResult.sName == 'Copy to guest':
+            if sResultLog.find('*** abort action ***') >= 0:
+                enmReason = self.ktReason_Add_CopyToGuest_Timeout;
+
+        if enmReason is not None:
+            return oCaseFile.noteReasonForId(enmReason, oFailedResult.idTestResult);
+
+        self.vprint(u'TODO: Cannot place GA failure idTestResult=%u - %s' % (oFailedResult.idTestResult, oFailedResult.sName,));
+        self.dprint(u'%s + %s <<\n%s\n<<' % (oFailedResult.tsCreated, oFailedResult.tsElapsed, sResultLog,));
+        return False;
+
+    def isResultFromGATest(self, oFailedResult):
+        """
+        Checks if this result and corresponding log snippet looks like a GA test run.
+        """
+        while oFailedResult is not None:
+            if oFailedResult.sName in [ 'Guest Control', 'Shared Folders', 'FsPerf', ]:
+                return True;
+            oFailedResult = oFailedResult.oParent;
+        return False;
+
+
     def investigateVMResult(self, oCaseFile, oFailedResult, sResultLog):
         """
         Investigates a failed VM run.
@@ -1197,7 +1244,22 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
             #
             # Loop thru the simple stuff.
             #
-            fRet = self.scanLog([sResultLog, sVMLog], self.katSimpleMainAndVmLogReasons, oCaseFile, oFailedResult.idTestResult);
+
+            # Main log.
+            fRet = self.scanLog([sResultLog,], self.katSimpleMainLogReasons, oCaseFile, oFailedResult.idTestResult);
+            if fRet is True:
+                return fRet;
+            fFoundSomething |= fRet is None;
+
+            # VM log.
+            fRet = self.scanLog([sVMLog,], self.katSimpleVmLogReasons, oCaseFile, oFailedResult.idTestResult);
+            if fRet is True:
+                return fRet;
+            fFoundSomething |= fRet is None;
+
+            # Old main + vm log.
+            fRet = self.scanLog([sResultLog, sVMLog], self.katSimpleMainAndVmLogReasonsDeprecated,
+                                oCaseFile, oFailedResult.idTestResult);
             if fRet is True:
                 return fRet;
             fFoundSomething |= fRet is None;
@@ -1306,6 +1368,20 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
 
         return None;
 
+    def isResultFromVMRun(self, oFailedResult, sResultLog):
+        """
+        Checks if this result and corresponding log snippet looks like a VM run.
+        """
+
+        # Look for startVmEx/ startVmAndConnectToTxsViaTcp and similar output in the log.
+        if sResultLog.find(' startVm') > 0:
+            return True;
+
+        # Any other indicators? No?
+        _ = oFailedResult;
+        return False;
+
+
     ## Things we search a VBoxSVC log for to figure out why something went bust.
     katSimpleSvcLogReasons = [
         # ( Whether to stop on hit, reason tuple, needle text. )
@@ -1323,19 +1399,18 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
                 return True;
         return False;
 
-
-    def isResultFromVMRun(self, oFailedResult, sResultLog):
+    def investigateNtHardLogForVMRun(self, oCaseFile):
         """
-        Checks if this result and corresponding log snippet looks like a VM run.
+        Check if the hardening log for a single VM run contains VM crash indications.
         """
-
-        # Look for startVmEx/ startVmAndConnectToTxsViaTcp and similar output in the log.
-        if sResultLog.find(' startVm') > 0:
-            return True;
-
-        # Any other indicators? No?
-        _ = oFailedResult;
+        aoLogFiles = oCaseFile.oTree.getListOfLogFilesByKind(TestResultFileData.ksKind_LogReleaseVm);
+        for oLogFile in aoLogFiles:
+            if oLogFile.sFile.find('VBoxHardening.log') >= 0:
+                sLog = oCaseFile.getLogFile(oLogFile);
+                if sLog.find('Quitting: ExitCode=0xc0000005') >= 0:
+                    return oCaseFile.noteReasonForId(self.ktReason_Unknown_VM_Crash, oCaseFile.oTree.idTestResult);
         return False;
+
 
     def investigateVBoxVMTest(self, oCaseFile, fSingleVM):
         """
@@ -1414,6 +1489,9 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
             elif self.isResultFromVMRun(oFailedResult, sResultLog):
                 self.investigateVMResult(oCaseFile, oFailedResult, sResultLog);
 
+            elif self.isResultFromGATest(oFailedResult):
+                self.investigateGATest(oCaseFile, oFailedResult, sResultLog);
+
             elif sResultLog.find('most likely not unique') > 0:
                 oCaseFile.noteReasonForId(self.ktReason_Host_NetworkMisconfiguration, oFailedResult.idTestResult)
             elif sResultLog.find('Exception: 0x800706be (Call to remote object failed (NS_ERROR_CALL_FAILED))') > 0:
@@ -1432,12 +1510,14 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
                 self.dprint(u'%s + %s <<\n%s\n<<' % (oFailedResult.tsCreated, oFailedResult.tsElapsed, sResultLog,));
 
         #
-        # Check VBoxSVC.log for VM crashes if inconclusive on single VM runs.
+        # Check VBoxSVC.log and VBoxHardening.log for VM crashes if inconclusive on single VM runs.
         #
         if fSingleVM and len(oCaseFile.dReasonForResultId) < len(aoFailedResults):
             self.dprint(u'Got %u out of %u - checking VBoxSVC.log...'
                         % (len(oCaseFile.dReasonForResultId), len(aoFailedResults)));
             if self.investigateSvcLogForVMRun(oCaseFile, oCaseFile.getSvcLog()):
+                return self.caseClosed(oCaseFile);
+            if self.investigateNtHardLogForVMRun(oCaseFile):
                 return self.caseClosed(oCaseFile);
 
         #
