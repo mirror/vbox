@@ -3798,7 +3798,7 @@ static DECLCALLBACK(void) tmR3InfoCpuLoad(PVM pVM, PCDBGFINFOHLP pHlp, const cha
             szTmp[offTmp] = '\0';
             pHlp->pfnPrintf(pHlp, "%2ds: %s\n", cPeriods, szTmp);
         }
-        pHlp->pfnPrintf(pHlp, "  (#=guest, 0=VMM overhead)\n");
+        pHlp->pfnPrintf(pHlp, "  (#=guest, O=VMM overhead)\n");
 
     }
     else
