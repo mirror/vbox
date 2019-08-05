@@ -64,6 +64,9 @@ enum AnchorRole
     AnchorRole_MenuBar,
 #endif
     AnchorRole_StatusBar,
+#ifndef VBOX_WS_MAC
+    AnchorRole_MiniToolbar,
+#endif
 };
 
 
@@ -177,6 +180,9 @@ void UIDetailsElement::updateAppearance()
     m_pTextPane->setAnchorRoleRestricted("#menu_bar", cal == ConfigurationAccessLevel_Null);
 #endif
     m_pTextPane->setAnchorRoleRestricted("#status_bar", cal == ConfigurationAccessLevel_Null);
+#ifndef VBOX_WS_MAC
+    m_pTextPane->setAnchorRoleRestricted("#mini_toolbar", cal == ConfigurationAccessLevel_Null);
+#endif
 }
 
 int UIDetailsElement::minimumWidthHint() const
@@ -469,6 +475,9 @@ void UIDetailsElement::sltHandleAnchorClicked(const QString &strAnchor)
     roles["#menu_bar"] = AnchorRole_MenuBar;
 #endif
     roles["#status_bar"] = AnchorRole_StatusBar;
+#ifndef VBOX_WS_MAC
+    roles["#mini_toolbar"] = AnchorRole_MiniToolbar;
+#endif
 
     /* Current anchor role: */
     const QString strRole = strAnchor.section(',', 0, 0);
@@ -784,6 +793,48 @@ void UIDetailsElement::sltHandleAnchorClicked(const QString &strAnchor)
             }
             break;
         }
+#ifndef VBOX_WS_MAC
+        case AnchorRole_MiniToolbar:
+        {
+            /* Parse whether we have it enabled: */
+            bool fParsed = false;
+            MiniToolbarAlignment enmAlignment = static_cast<MiniToolbarAlignment>(strData.section(',', 0, 0).toInt(&fParsed));
+            if (!fParsed)
+                enmAlignment = MiniToolbarAlignment_Disabled;
+
+            /* Fill menu with actions: */
+            UIMenu menu;
+            QAction *pActionDisabled = menu.addAction(QApplication::translate("UIDetails", "Disabled", "details (user interface/mini-toolbar)"));
+            pActionDisabled->setCheckable(true);
+            pActionDisabled->setChecked(enmAlignment == MiniToolbarAlignment_Disabled);
+            QAction *pActionTop = menu.addAction(QApplication::translate("UIDetails", "Top", "details (user interface/mini-toolbar position)"));
+            pActionTop->setCheckable(true);
+            pActionTop->setChecked(enmAlignment == MiniToolbarAlignment_Top);
+            QAction *pActionBottom = menu.addAction(QApplication::translate("UIDetails", "Bottom", "details (user interface/mini-toolbar position)"));
+            pActionBottom->setCheckable(true);
+            pActionBottom->setChecked(enmAlignment == MiniToolbarAlignment_Bottom);
+
+            /* Execute menu, look for result: */
+            QAction *pTriggeredAction = menu.exec(QCursor::pos());
+            if (pTriggeredAction)
+            {
+                const QUuid uMachineId = machine().GetId();
+                if (pTriggeredAction == pActionDisabled)
+                    gEDataManager->setMiniToolbarEnabled(false, uMachineId);
+                else if (pTriggeredAction == pActionTop)
+                {
+                    gEDataManager->setMiniToolbarEnabled(true, uMachineId);
+                    gEDataManager->setMiniToolbarAlignment(Qt::AlignTop, uMachineId);
+                }
+                else if (pTriggeredAction == pActionBottom)
+                {
+                    gEDataManager->setMiniToolbarEnabled(true, uMachineId);
+                    gEDataManager->setMiniToolbarAlignment(Qt::AlignBottom, uMachineId);
+                }
+            }
+            break;
+        }
+#endif
         default:
             break;
     }

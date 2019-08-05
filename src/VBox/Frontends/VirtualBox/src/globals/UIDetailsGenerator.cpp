@@ -839,13 +839,12 @@ UITextTable UIDetailsGenerator::generateMachineInformationUI(CMachine &comMachin
     /* Mini-toolbar: */
     if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface_MiniToolbar)
     {
+        const QString strAnchorType = QString("mini_toolbar");
         const QString strMiniToolbarEnabled = comMachine.GetExtraData(UIExtraDataDefs::GUI_ShowMiniToolBar);
-        /* Try to convert loaded data to bool: */
         const bool fEnabled = !(   strMiniToolbarEnabled.compare("false", Qt::CaseInsensitive) == 0
                                 || strMiniToolbarEnabled.compare("no", Qt::CaseInsensitive) == 0
                                 || strMiniToolbarEnabled.compare("off", Qt::CaseInsensitive) == 0
                                 || strMiniToolbarEnabled == "0");
-        /* Append information: */
         if (fEnabled)
         {
             /* Get mini-toolbar position: */
@@ -854,23 +853,31 @@ UITextTable UIDetailsGenerator::generateMachineInformationUI(CMachine &comMachin
                 /* Try to convert loaded data to alignment: */
                 switch (gpConverter->fromInternalString<MiniToolbarAlignment>(strMiniToolbarPosition))
                 {
-                    /* Append information: */
                     case MiniToolbarAlignment_Top:
                         table << UITextTableLine(QApplication::translate("UIDetails", "Mini-toolbar Position", "details (user interface)"),
-                                                 QApplication::translate("UIDetails", "Top", "details (user interface/mini-toolbar position)"));
+                                                 QString("<a href=#%1,%2>%3</a>")
+                                                     .arg(strAnchorType)
+                                                     .arg((int)MiniToolbarAlignment_Top)
+                                                     .arg(QApplication::translate("UIDetails", "Top", "details (user interface/mini-toolbar position)")));
                         break;
-                        /* Append information: */
                     case MiniToolbarAlignment_Bottom:
                         table << UITextTableLine(QApplication::translate("UIDetails", "Mini-toolbar Position", "details (user interface)"),
-                                                 QApplication::translate("UIDetails", "Bottom", "details (user interface/mini-toolbar position)"));
+                                                 QString("<a href=#%1,%2>%3</a>")
+                                                     .arg(strAnchorType)
+                                                     .arg((int)MiniToolbarAlignment_Bottom)
+                                                     .arg(QApplication::translate("UIDetails", "Bottom", "details (user interface/mini-toolbar position)")));
+                        break;
+                    default:
                         break;
                 }
             }
         }
-        /* Append information: */
         else
             table << UITextTableLine(QApplication::translate("UIDetails", "Mini-toolbar", "details (user interface)"),
-                                     QApplication::translate("UIDetails", "Disabled", "details (user interface/mini-toolbar)"));
+                                     QString("<a href=#%1,%2>%3</a>")
+                                         .arg(strAnchorType)
+                                         .arg((int)MiniToolbarAlignment_Disabled)
+                                         .arg(QApplication::translate("UIDetails", "Disabled", "details (user interface/mini-toolbar)")));
     }
 #endif /* !VBOX_WS_MAC */
 

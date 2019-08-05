@@ -1007,6 +1007,7 @@ enum ScalingOptimizationType
 /** Runtime UI: Mini-toolbar alignment. */
 enum MiniToolbarAlignment
 {
+    MiniToolbarAlignment_Disabled,
     MiniToolbarAlignment_Bottom,
     MiniToolbarAlignment_Top
 };
