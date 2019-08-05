@@ -51,7 +51,11 @@
 #else
 # define VMX_USE_MSC_INTRINSICS 0
 #endif
-#define VBOX_WITH_VMREAD_VMWRITE_NOCHECK
+
+/* Skip checking VMREAD/VMWRITE failures on non-strict builds. */
+#ifndef VBOX_STRICT
+# define VBOX_WITH_VMREAD_VMWRITE_NOCHECK
+#endif
 
 
 /** @defgroup grp_hm_vmx_inline    VMX Inline Helpers
