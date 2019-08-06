@@ -4741,7 +4741,6 @@ static int hmR0VmxExportGuestEntryExitCtls(PVMCPU pVCpu, PVMXTRANSIENT pVmxTrans
 /**
  * Sets the TPR threshold in the VMCS.
  *
- * @param   pVCpu               The cross context virtual CPU structure.
  * @param   pVmcsInfo           The VMCS info. object.
  * @param   u32TprThreshold     The TPR threshold (task-priority class only).
  */
