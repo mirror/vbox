@@ -24,7 +24,6 @@
 
 /* GUI includes: */
 #include "UICommon.h"
-
 #include "UIPerformanceMonitor.h"
 #include "UIInformationDataItem.h"
 #include "UIInformationItem.h"
@@ -53,15 +52,23 @@ class UIChart : public QWidget
 public:
 
     UIChart(QWidget *pParent, const UISubMetric *pSubMetric);
+    void setFontSize(int iFontSize);
+    int  fontSize() const;
+    void setTextList(const QStringList &textList);
+    const QStringList &textList() const;
 
 protected:
 
     virtual void paintEvent(QPaintEvent *pEvent) /* override */ = 0;
     virtual QSize minimumSizeHint() const /* override */;
     virtual QSize sizeHint() const  /* override */;
+    virtual void computeFontSize();
+
     const UISubMetric *m_pSubMetric;
     QSize m_size;
+    QFont m_font;
     int m_iMargin;
+    QStringList m_textList;
 };
 
 /*********************************************************************************************************************************
@@ -102,7 +109,6 @@ private:
 
     int m_iPieChartSize;
     QRect m_pieChartRect;
-    QFont m_font;
 
 };
 
@@ -118,6 +124,27 @@ UIChart::UIChart(QWidget *pParent, const UISubMetric *pSubMetric)
     m_iMargin = qApp->QApplication::style()->pixelMetric(QStyle::PM_LayoutTopMargin);
 }
 
+void UIChart::setFontSize(int iFontSize)
+{
+    m_font.setPixelSize(iFontSize);
+}
+
+int UIChart::fontSize() const
+{
+    return m_font.pixelSize();
+}
+
+void UIChart::setTextList(const QStringList &textList)
+{
+    m_textList = textList;
+    computeFontSize();
+}
+
+const QStringList &UIChart::textList() const
+{
+    return m_textList;
+}
+
 QSize UIChart::minimumSizeHint() const
 {
     return m_size;
@@ -128,6 +155,25 @@ QSize UIChart::sizeHint() const
     return m_size;
 }
 
+void UIChart::computeFontSize()
+{
+    int iFontSize = 24;
+
+    //const QString &strText = m_pSubMetric->name();
+    foreach (const QString &strText, m_textList)
+    {
+        m_font.setPixelSize(iFontSize);
+
+        do{
+            int iWidth = QFontMetrics(m_font).width(strText);
+            if (iWidth + 2 * m_iMargin > m_size.width())
+                --iFontSize;
+            else
+                break;
+            m_font.setPixelSize(iFontSize);
+        }while(iFontSize > 1);
+    }
+}
 
 /*********************************************************************************************************************************
 *   UILineChart implementation.                                                                                     *
@@ -147,6 +193,22 @@ void UILineChart::paintEvent(QPaintEvent *pEvent)
     Q_UNUSED(pEvent);
 
     QPainter painter(this);
+
+    float fChartHeight = height() - 2 * m_iMargin;
+    float fChartWidth = width() - 2 * m_iMargin;
+    painter.setPen(QColor(120, 120, 120));
+    painter.drawRect(QRect(m_iMargin, m_iMargin, fChartWidth, fChartHeight));
+    painter.setPen(QColor(200, 200, 200));
+
+    int iYParts = 4;
+    for (int i = 1; i < iYParts; ++i)
+        painter.drawLine(m_iMargin, m_iMargin + i *fChartHeight / (float)iYParts, width() - m_iMargin, m_iMargin + i * fChartHeight / (float)iYParts);
+
+
+    int iXParts = 5;
+    for (int i = 1; i < iXParts; ++i)
+        painter.drawLine(m_iMargin + i * fChartWidth / (float)iXParts, m_iMargin, m_iMargin + i * fChartWidth / (float)iXParts, height() - m_iMargin);
+
     painter.setRenderHint(QPainter::Antialiasing);// | QPainter::TextAntialiasing);
     if (!m_pSubMetric)
         return;
@@ -154,23 +216,20 @@ void UILineChart::paintEvent(QPaintEvent *pEvent)
 
     if (data.isEmpty() || iMaximumQueueSize == 0)
         return;
-    float fBarWidth = width() / (float) iMaximumQueueSize;//data.size();
-
-    QRectF rectangle(0, 0, width(), height());
+    float fBarWidth = fChartWidth / (float) iMaximumQueueSize;
 
     float fMaximum = m_pSubMetric->maximum();
     if (m_pSubMetric->isPercentage())
         fMaximum = 100.f;
 
     float fH = 0;
-    float chartHeight = height() - 2 * m_iMargin;
     if (fMaximum != 0)
-        fH = chartHeight / fMaximum;
+        fH = fChartHeight / fMaximum;
 
-    QLinearGradient gradient(0, 0, 0, chartHeight);
+    QLinearGradient gradient(0, 0, 0, fChartHeight);
     gradient.setColorAt(1.0, Qt::green);
     gradient.setColorAt(0.0, Qt::red);
-    painter.setPen(QPen(gradient, 2));
+    painter.setPen(QPen(gradient, 2.5));
 
     for (int i = 0; i < data.size() - 1; ++i)
     {
@@ -183,7 +242,7 @@ void UILineChart::paintEvent(QPaintEvent *pEvent)
         float fX2 = width() - ((data.size() -j) * fBarWidth);
 
 
-        QLineF bar(fX, chartHeight - fHeight, fX2, chartHeight - fHeight2);
+        QLineF bar(fX, height() - (fHeight + m_iMargin), fX2, height() - (fHeight2 + m_iMargin));
         painter.drawLine(bar);
     }
 
@@ -192,7 +251,6 @@ void UILineChart::paintEvent(QPaintEvent *pEvent)
     QFont painterFont;
     painterFont.setPixelSize(18);
     painter.setFont(painterFont);
-    //QWidget::paintEvent(pEvent);
 }
 
 
@@ -203,31 +261,17 @@ void UILineChart::paintEvent(QPaintEvent *pEvent)
 UIPieChart::UIPieChart(QWidget *pParent, const UISubMetric *pSubMetric)
     :UIChart(pParent, pSubMetric)
 {
-    // QPalette pal = palette();
-    // pal.setColor(QPalette::Background, Qt::yellow);
-    // setAutoFillBackground(true);
-    // setPalette(pal);
+    QPalette pal = palette();
+    pal.setColor(QPalette::Background, Qt::yellow);
+    setAutoFillBackground(true);
+    setPalette(pal);
 
     m_iPieChartSize = 1.5f * qApp->style()->pixelMetric(QStyle::PM_LargeIconSize);
     m_pieChartRect = QRect(m_iMargin, m_iMargin, m_iPieChartSize, m_iPieChartSize);
 
-    m_size = QSize(1.5 * m_iPieChartSize + 2 * m_iMargin,
+    m_size = QSize(3 * m_iPieChartSize + 2 * m_iMargin,
                    m_iPieChartSize + 2 * m_iMargin + 4 * QApplication::fontMetrics().height());
 
-    int iFontSize = 24;
-    m_font.setPixelSize(iFontSize);
-
-    if (m_pSubMetric)
-    {
-        const QString &strName = m_pSubMetric->name();
-        do{
-            if (QFontMetrics(m_font).width(strName) + 2 * m_iMargin > m_size.width())
-                --iFontSize;
-            else
-                break;
-            m_font.setPixelSize(iFontSize);
-        }while(iFontSize > 1);
-    }
 }
 
 void UIPieChart::paintEvent(QPaintEvent *pEvent)
@@ -275,11 +319,9 @@ void UIPieChart::paintEvent(QPaintEvent *pEvent)
     painter.setPen(Qt::black);
     int iFontHeight = painter.fontMetrics().height();
     int iTextY = m_pieChartRect.bottomLeft().y()  + m_iMargin + iFontHeight;
-    QString strLastValue = QString("%1%2").arg(QString::number(data.back())).arg(m_pSubMetric->unit());
-    painter.drawText(m_iMargin, iTextY, m_pSubMetric->name());
-    painter.drawText(m_iMargin, iTextY + iFontHeight, strLastValue);
-
-    //QWidget::paintEvent(pEvent);
+    //QString strLastValue = QString("%1%2").arg(QString::number(data.back())).arg(m_pSubMetric->unit());
+    for (int i = 0; i < m_textList.size(); ++i)
+        painter.drawText(m_iMargin, iTextY + i * iFontHeight, m_textList[i]);
 }
 
 
@@ -468,8 +510,8 @@ void UIPerformanceMonitor::sltTimeout()
                                                                      aReturnSequenceNumbers,
                                                                      aReturnDataIndices,
                                                                      aReturnDataLengths);
-    LONG iTotalRAM = 0;
-    LONG iFreeRAM = 0;
+    quint64 iTotalRAM = 0;
+    quint64 iFreeRAM = 0;
 
     for (int i = 0; i < aReturnNames.size(); ++i)
     {
@@ -490,7 +532,7 @@ void UIPerformanceMonitor::sltTimeout()
                     continue;
                 else
                 {
-                    iTotalRAM = (LONG)fData;
+                    iTotalRAM = (quint64)fData;
                     continue;
                 }
             }
@@ -500,7 +542,7 @@ void UIPerformanceMonitor::sltTimeout()
                     continue;
                 else
                 {
-                    iFreeRAM = (LONG)fData;
+                    iFreeRAM = (quint64)fData;
                     continue;
                 }
 
@@ -522,9 +564,12 @@ void UIPerformanceMonitor::sltTimeout()
         m_machineDebugger.GetCPULoad(0x7fffffff, aPctExecuting, aPctHalted, aPctOther);
         CPUMetric.addData(aPctExecuting);
         QList<UIChart*> charts = m_charts.values(m_strCPUMetricName);
+        QStringList textList;
+        textList << "CPU Load"
+                 << QString("%1%2").arg(QString::number(aPctExecuting)).arg("%");
         foreach (UIChart* pChart, charts)
             if (pChart)
-                pChart->update();
+                pChart->setTextList(textList);
     }
 
     if (m_subMetrics.contains(m_strRAMMetricName))
@@ -532,48 +577,55 @@ void UIPerformanceMonitor::sltTimeout()
         UISubMetric &RAMMetric = m_subMetrics[m_strRAMMetricName];
         RAMMetric.setMaximum(iTotalRAM);
         RAMMetric.addData(iTotalRAM - iFreeRAM);
+
+        QStringList textList;
+        textList << "RAM Usage"
+                 << QString("%1: %2"). arg("Total:").arg(uiCommon().formatSize(_1K * iTotalRAM))
+                 << QString("%1: %2"). arg("Free:").arg(uiCommon().formatSize(_1K * (iFreeRAM)))
+                 << QString("%1: %2"). arg("Used:").arg(uiCommon().formatSize(_1K * (iTotalRAM - iFreeRAM)));
         QList<UIChart*> charts = m_charts.values(m_strRAMMetricName);
         foreach (UIChart* pChart, charts)
             if (pChart)
-                pChart->update();
+                pChart->setTextList(textList);
+    }
+
+    /* Try to compute a global font size so that all texts fit to widgets: */
+    int iMinimumFontSize = 24;
+    foreach (UIChart *pChart, m_charts)
+    {
+        if (!qobject_cast<UIPieChart*>(pChart))
+            continue;
+                iMinimumFontSize = qMin(pChart->fontSize(), iMinimumFontSize);
+    }
+
+    foreach (UIChart *pChart, m_charts)
+    {
+        if (!pChart)
+            continue;
+        pChart->setFontSize(iMinimumFontSize);
+        pChart->update();
     }
 
 
+    // int iMaxLineNumber = 0;
+    // int iMaxLineLength = 0;
+    // foreach (UIChart *pChart, m_charts)
+    // {
+    //     if (!pChart)
+    //         continue;
+    //     const QStringList &list = pChart->textList();
+    //     iMaxLineNumber = qMax(iMaxLineNumber, list.size());
+    //     foreach (const QString &strLine, list)
+    //         iMaxLineLength = qMax(iMaxLineLength, strLine.length());
+    // }
 
-      // QStringList strList = aReturnNames[i].split(':', QString::SkipEmptyParts);
+    // foreach (UIChart *pChart, m_charts)
+    // {
+    //     /* Currently we only care about the pie charts since they are the smallest of charts: */
+    //     if (qobject_cast<UIPieChart*>(pChart))
+    //         continue;
 
-        // if (strList.isEmpty() || strList.size() > 2)
-        //     continue;
-
-        // QString strMetricName = strList[0];
-        // QString strAttributeName = strList.size() == 2 ? strList[1] : QString();
-        // QMap<QString, UISubMetric>::iterator metricIterator = m_subMetrics.find(strMetricName);
-        // if (metricIterator == m_subMetrics.end())
-        //     continue;
-
-        // QMap<QString, UIChart*>::iterator chartIterator = m_charts.find(strMetricName);
-        // if (chartIterator == m_charts.end())
-        //     continue;
-
-        // for (unsigned j = 0; j < aReturnDataLengths[i]; j++)
-        // {
-        //     if (aReturnScales[i] == 1)
-        //         results << returnData[aReturnDataIndices[i] + j];
-        //     else
-        //         results <<  (returnData[aReturnDataIndices[i] + j]  / (float)aReturnScales[i]) ;
-        // }
-        // if (results.isEmpty())
-        //     continue;
-        // if (strAttributeName.isEmpty())
-        // {
-        //     foreach (float fData, results)
-        //         metricIterator.value().addData(fData);
-        // }
-
-        // UIChart *pChart = chartIterator.value();
-        // if (pChart)
-        //     pChart->update();
-
+    // }
 }
 
 void UIPerformanceMonitor::preparePerformaceCollector()
