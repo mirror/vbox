@@ -1487,7 +1487,7 @@ IEM_STATIC void iemVmxVmexitSaveGuestNonRegState(PVMCPU pVCpu, uint32_t uExitRea
     if (    uExitReason != VMX_EXIT_INIT_SIGNAL
         &&  uExitReason != VMX_EXIT_SMI
         &&  uExitReason != VMX_EXIT_ERR_MACHINE_CHECK
-        && !HMVmxIsVmexitTrapLike(uExitReason))
+        && !VMXIsVmexitTrapLike(uExitReason))
     {
         /** @todo NSTVMX: also must exclude VM-exits caused by debug exceptions when
          *        block-by-MovSS is in effect. */
@@ -6029,8 +6029,8 @@ IEM_STATIC int iemVmxVmentryCheckEntryCtls(PVMCPU pVCpu, const char *pszInstr)
         uint8_t const uVector = RT_BF_GET(uIntInfo, VMX_BF_ENTRY_INT_INFO_VECTOR);
         uint8_t const uRsvd   = RT_BF_GET(uIntInfo, VMX_BF_ENTRY_INT_INFO_RSVD_12_30);
         if (   !uRsvd
-            && HMVmxIsEntryIntInfoTypeValid(IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fVmxMonitorTrapFlag, uType)
-            && HMVmxIsEntryIntInfoVectorValid(uVector, uType))
+            && VMXIsEntryIntInfoTypeValid(IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fVmxMonitorTrapFlag, uType)
+            && VMXIsEntryIntInfoVectorValid(uVector, uType))
         { /* likely */ }
         else
             IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_EntryIntInfoTypeVecRsvd);
@@ -6760,7 +6760,7 @@ IEM_STATIC void iemVmxVmentryLoadGuestNonRegState(PVMCPU pVCpu)
      *
      * See Intel spec. 26.6.1 "Interruptibility State".
      */
-    bool const fEntryVectoring = HMVmxIsVmentryVectoring(pVmcs->u32EntryIntInfo, NULL /* puEntryIntInfoType */);
+    bool const fEntryVectoring = VMXIsVmentryVectoring(pVmcs->u32EntryIntInfo, NULL /* puEntryIntInfoType */);
     if (   !fEntryVectoring
         && (pVmcs->u32GuestIntrState & (VMX_VMCS_GUEST_INT_STATE_BLOCK_STI | VMX_VMCS_GUEST_INT_STATE_BLOCK_MOVSS)))
         EMSetInhibitInterruptsPC(pVCpu, pVmcs->u64GuestRip.u);
@@ -6849,7 +6849,7 @@ IEM_STATIC bool iemVmxVmentryIsPendingDebugXcpt(PVMCPU pVCpu, const char *pszIns
     if (fPendingDbgXcpt)
     {
         uint8_t uEntryIntInfoType;
-        bool const fEntryVectoring = HMVmxIsVmentryVectoring(pVmcs->u32EntryIntInfo, &uEntryIntInfoType);
+        bool const fEntryVectoring = VMXIsVmentryVectoring(pVmcs->u32EntryIntInfo, &uEntryIntInfoType);
         if (fEntryVectoring)
         {
             switch (uEntryIntInfoType)
@@ -7471,7 +7471,7 @@ IEM_STATIC void iemVmxVmreadNoCheck(PCVMXVVMCS pVmcs, uint64_t *pu64Dst, uint64_
      */
     uint8_t const *pbVmcs    = (uint8_t const *)pVmcs;
     uint8_t const *pbField   = pbVmcs + offField;
-    uint8_t const  uEffWidth = HMVmxGetVmcsFieldWidthEff(VmcsField.u);
+    uint8_t const  uEffWidth = VMXGetVmcsFieldWidthEff(VmcsField.u);
     switch (uEffWidth)
     {
         case VMX_VMCSFIELD_WIDTH_64BIT:
@@ -7700,7 +7700,7 @@ IEM_STATIC void iemVmxVmwriteNoCheck(PVMXVVMCS pVmcs, uint64_t u64Val, uint64_t 
      */
     uint8_t      *pbVmcs    = (uint8_t *)pVmcs;
     uint8_t      *pbField   = pbVmcs + offField;
-    uint8_t const uEffWidth = HMVmxGetVmcsFieldWidthEff(VmcsField.u);
+    uint8_t const uEffWidth = VMXGetVmcsFieldWidthEff(VmcsField.u);
     switch (uEffWidth)
     {
         case VMX_VMCSFIELD_WIDTH_64BIT:
@@ -7814,7 +7814,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmwrite(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
     }
 
     /* Read-only VMCS field. */
-    bool const fIsFieldReadOnly = HMVmxIsVmcsFieldReadOnly(u64VmcsField);
+    bool const fIsFieldReadOnly = VMXIsVmcsFieldReadOnly(u64VmcsField);
     if (   !fIsFieldReadOnly
         ||  IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fVmxVmwriteAll)
     { /* likely */ }
