@@ -695,9 +695,6 @@ typedef struct VMXVMCSINFO
      * @{ */
     /** Ring-0 pointer to the hardware-assisted VMX execution function. */
     PFNHMVMXSTARTVM             pfnStartVM;
-#if HC_ARCH_BITS == 32
-    uint32_t                    u32Alignment0;
-#endif
     /** @} */
 
     /** @name VMCS and related data structures.
@@ -968,9 +965,6 @@ typedef struct HMCPU
         {
             /** Ring 0 handlers for VT-x. */
             PFNHMSVMVMRUN               pfnVMRun;
-#if HC_ARCH_BITS == 32
-            uint32_t                    u32Alignment0;
-#endif
 
             /** Physical address of the host VMCB which holds additional host-state. */
             RTHCPHYS                    HCPhysVmcbHost;
