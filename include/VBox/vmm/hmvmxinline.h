@@ -72,7 +72,7 @@
  * @remarks Warning! This function does not verify the encoding is for a valid and
  *          supported VMCS field.
  */
-DECLINLINE(uint8_t) HMVmxGetVmcsFieldWidthEff(uint32_t uFieldEnc)
+DECLINLINE(uint8_t) VMXGetVmcsFieldWidthEff(uint32_t uFieldEnc)
 {
     /* Only the "HIGH" parts of all 64-bit fields have bit 0 set. */
     if (uFieldEnc & RT_BIT(0))
@@ -91,7 +91,7 @@ DECLINLINE(uint8_t) HMVmxGetVmcsFieldWidthEff(uint32_t uFieldEnc)
  * @remarks Warning! This function does not verify that the encoding is for a valid
  *          and/or supported VMCS field.
  */
-DECLINLINE(bool) HMVmxIsVmcsFieldReadOnly(uint32_t uFieldEnc)
+DECLINLINE(bool) VMXIsVmcsFieldReadOnly(uint32_t uFieldEnc)
 {
     /* See Intel spec. B.4.2 "Natural-Width Read-Only Data Fields". */
     return (RT_BF_GET(uFieldEnc, VMX_BF_VMCSFIELD_TYPE) == VMXVMCSFIELDTYPE_VMEXIT_INFO);
@@ -104,7 +104,7 @@ DECLINLINE(bool) HMVmxIsVmcsFieldReadOnly(uint32_t uFieldEnc)
  * @param   fSupportsMTF    Whether the Monitor-Trap Flag CPU feature is supported.
  * @param   uType           The VM-entry interruption-information type.
  */
-DECLINLINE(bool) HMVmxIsEntryIntInfoTypeValid(bool fSupportsMTF, uint8_t uType)
+DECLINLINE(bool) VMXIsEntryIntInfoTypeValid(bool fSupportsMTF, uint8_t uType)
 {
     /* See Intel spec. 26.2.1.3 "VM-Entry Control Fields". */
     switch (uType)
@@ -132,7 +132,7 @@ DECLINLINE(bool) HMVmxIsEntryIntInfoTypeValid(bool fSupportsMTF, uint8_t uType)
  * @remarks Warning! This function does not validate the type field individually.
  *          Use it after verifying type is valid using HMVmxIsEntryIntInfoTypeValid.
  */
-DECLINLINE(bool) HMVmxIsEntryIntInfoVectorValid(uint8_t uVector, uint8_t uType)
+DECLINLINE(bool) VMXIsEntryIntInfoVectorValid(uint8_t uVector, uint8_t uType)
 {
     /* See Intel spec. 26.2.1.3 "VM-Entry Control Fields". */
     if (   uType == VMX_ENTRY_INT_INFO_TYPE_NMI
@@ -147,7 +147,6 @@ DECLINLINE(bool) HMVmxIsEntryIntInfoVectorValid(uint8_t uVector, uint8_t uType)
     return true;
 }
 
-
 /**
  * Returns whether or not the VM-exit is trap-like or fault-like.
  *
@@ -156,7 +155,7 @@ DECLINLINE(bool) HMVmxIsEntryIntInfoVectorValid(uint8_t uVector, uint8_t uType)
  *
  * @remarks Warning! This does not validate the VM-exit reason.
  */
-DECLINLINE(bool) HMVmxIsVmexitTrapLike(uint32_t uExitReason)
+DECLINLINE(bool) VMXIsVmexitTrapLike(uint32_t uExitReason)
 {
     /*
      * Trap-like VM-exits - The instruction causing the VM-exit completes before the
@@ -184,7 +183,6 @@ DECLINLINE(bool) HMVmxIsVmexitTrapLike(uint32_t uExitReason)
     return false;
 }
 
-
 /**
  * Returns whether the VM-entry is vectoring or not given the VM-entry interruption
  * information field.
@@ -195,7 +193,7 @@ DECLINLINE(bool) HMVmxIsVmexitTrapLike(uint32_t uExitReason)
  *                              Optional, can be NULL. Only updated when this
  *                              function returns @c true.
  */
-DECLINLINE(bool) HMVmxIsVmentryVectoring(uint32_t uEntryIntInfo, uint8_t *pEntryIntInfoType)
+DECLINLINE(bool) VMXIsVmentryVectoring(uint32_t uEntryIntInfo, uint8_t *pEntryIntInfoType)
 {
     /*
      * The definition of what is a vectoring VM-entry is taken

@@ -3317,7 +3317,7 @@ static int hmR0VmxSetupShadowVmcsFieldsArrays(PVM pVM)
              * cause a VMWRITE instruction error while syncing the shadow VMCS .
              */
             if (   fGstVmwriteAll
-                || !HMVmxIsVmcsFieldReadOnly(VmcsField.u))
+                || !VMXIsVmcsFieldReadOnly(VmcsField.u))
                 pVM->hm.s.vmx.paShadowVmcsFields[cRwFields++] = VmcsField.u;
             else
                 pVM->hm.s.vmx.paShadowVmcsRoFields[cRoFields++] = VmcsField.u;
