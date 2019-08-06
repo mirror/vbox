@@ -6355,9 +6355,11 @@ static int hmR0VmxExportGuestMsrs(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
      * loaded (into the guest-CPU context) by the VMLAUNCH/VMRESUME instruction
      * emulation, nothing to do here.
      */
-    /** @todo sort out HM_CHANGED_VMX_GUEST_AUTO_MSRS.  */
     if (ASMAtomicUoReadU64(&pVCpu->hm.s.fCtxChanged) & HM_CHANGED_VMX_GUEST_AUTO_MSRS)
+    {
+        /* No auto-load/store MSRs currently. */
         ASMAtomicUoAndU64(&pVCpu->hm.s.fCtxChanged, ~HM_CHANGED_VMX_GUEST_AUTO_MSRS);
+    }
 
     /*
      * Guest Sysenter MSRs.
@@ -7273,7 +7275,8 @@ static int hmR0VmxImportGuestState(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo, uint64_
 
             if (fWhat & CPUMCTX_EXTRN_RSP)
             {
-                rc = VMXReadVmcsNw(VMX_VMCS_GUEST_RSP, &HCRegVal);  AssertRC(rc);
+                rc = VMXReadVmcsNw(VMX_VMCS_GUEST_RSP, &HCRegVal);
+                AssertRC(rc);
                 pCtx->rsp = HCRegVal;
             }
 
@@ -13065,6 +13068,7 @@ static VBOXSTRICTRC hmR0VmxCheckExitDueToVmxInstr(PVMCPU pVCpu, uint32_t uExitRe
     /* All other checks (including VM-exit intercepts) are handled by IEM instruction emulation. */
     return VINF_SUCCESS;
 }
+
 
 /**
  * Decodes the memory operand of an instruction that caused a VM-exit.
