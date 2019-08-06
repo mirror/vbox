@@ -1889,7 +1889,7 @@ typedef const PDMRTCHLP *PCPDMRTCHLP;
 /** @}   */
 
 /** Current PDMDEVHLPR3 version number. */
-#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE_PP(0xffe7, 22, 2)
+#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE_PP(0xffe7, 23, 0)
 
 /**
  * PDM Device API.
@@ -2592,7 +2592,7 @@ typedef struct PDMDEVHLPR3
                                             const char *pszFormat, va_list args) RT_IPRT_FORMAT_ATTR(5, 0));
 
     /**
-     * Register a info handler with DBGF,
+     * Register a info handler with DBGF.
      *
      * @returns VBox status code.
      * @param   pDevIns             The device instance.
@@ -2603,6 +2603,19 @@ typedef struct PDMDEVHLPR3
      *                              info.
      */
     DECLR3CALLBACKMEMBER(int, pfnDBGFInfoRegister,(PPDMDEVINS pDevIns, const char *pszName, const char *pszDesc, PFNDBGFHANDLERDEV pfnHandler));
+
+    /**
+     * Register a info handler with DBGF, argv style.
+     *
+     * @returns VBox status code.
+     * @param   pDevIns             The device instance.
+     * @param   pszName             The identifier of the info.
+     * @param   pszDesc             The description of the info and any arguments
+     *                              the handler may take.
+     * @param   pfnHandler          The handler function to be called to display the
+     *                              info.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnDBGFInfoRegisterArgv,(PPDMDEVINS pDevIns, const char *pszName, const char *pszDesc, PFNDBGFINFOARGVDEV pfnHandler));
 
     /**
      * Registers a set of registers for a device.
@@ -3405,10 +3418,10 @@ typedef struct PDMDEVHLPR3
     DECLR3CALLBACKMEMBER(void, pfnReserved4,(void));
     DECLR3CALLBACKMEMBER(void, pfnReserved5,(void));
     DECLR3CALLBACKMEMBER(void, pfnReserved6,(void));
-    /*DECLR3CALLBACKMEMBER(void, pfnReserved7,(void)); */
-    /*DECLR3CALLBACKMEMBER(void, pfnReserved8,(void)); */
-    /*DECLR3CALLBACKMEMBER(void, pfnReserved9,(void)); */
-    /*DECLR3CALLBACKMEMBER(void, pfnReserved10,(void));*/
+    DECLR3CALLBACKMEMBER(void, pfnReserved7,(void));
+    DECLR3CALLBACKMEMBER(void, pfnReserved8,(void));
+    DECLR3CALLBACKMEMBER(void, pfnReserved9,(void));
+    DECLR3CALLBACKMEMBER(void, pfnReserved10,(void));
     /** @} */
 
 
@@ -4871,6 +4884,14 @@ DECLINLINE(int) RT_IPRT_FORMAT_ATTR(5, 6) PDMDevHlpDBGFStop(PPDMDEVINS pDevIns, 
 DECLINLINE(int) PDMDevHlpDBGFInfoRegister(PPDMDEVINS pDevIns, const char *pszName, const char *pszDesc, PFNDBGFHANDLERDEV pfnHandler)
 {
     return pDevIns->pHlpR3->pfnDBGFInfoRegister(pDevIns, pszName, pszDesc, pfnHandler);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnDBGFInfoRegisterArgv
+ */
+DECLINLINE(int) PDMDevHlpDBGFInfoRegisterArgv(PPDMDEVINS pDevIns, const char *pszName, const char *pszDesc, PFNDBGFINFOARGVDEV pfnHandler)
+{
+    return pDevIns->pHlpR3->pfnDBGFInfoRegisterArgv(pDevIns, pszName, pszDesc, pfnHandler);
 }
 
 /**

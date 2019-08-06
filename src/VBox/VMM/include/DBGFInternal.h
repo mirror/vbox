@@ -88,7 +88,17 @@ typedef enum DBGFINFOTYPE
     /** Internal owner. */
     DBGFINFOTYPE_INT,
     /** External owner. */
-    DBGFINFOTYPE_EXT
+    DBGFINFOTYPE_EXT,
+    /** Device owner. */
+    DBGFINFOTYPE_DEV_ARGV,
+    /** Driver owner. */
+    DBGFINFOTYPE_DRV_ARGV,
+    /** USB device  owner. */
+    DBGFINFOTYPE_USB_ARGV,
+    /** Internal owner, argv. */
+    DBGFINFOTYPE_INT_ARGV,
+    /** External owner. */
+    DBGFINFOTYPE_EXT_ARGV
 } DBGFINFOTYPE;
 
 
@@ -141,6 +151,49 @@ typedef struct DBGFINFO
             /** The user argument. */
             void               *pvUser;
         } Ext;
+
+        /** DBGFINFOTYPE_DEV_ARGV */
+        struct
+        {
+            /** Device info handler function. */
+            PFNDBGFINFOARGVDEV  pfnHandler;
+            /** The device instance. */
+            PPDMDEVINS          pDevIns;
+        } DevArgv;
+
+        /** DBGFINFOTYPE_DRV_ARGV */
+        struct
+        {
+            /** Driver info handler function. */
+            PFNDBGFINFOARGVDRV  pfnHandler;
+            /** The driver instance. */
+            PPDMDRVINS          pDrvIns;
+        } DrvArgv;
+
+        /** DBGFINFOTYPE_USB_ARGV */
+        struct
+        {
+            /** Driver info handler function. */
+            PFNDBGFINFOARGVUSB  pfnHandler;
+            /** The driver instance. */
+            PPDMUSBINS          pUsbIns;
+        } UsbArgv;
+
+        /** DBGFINFOTYPE_INT_ARGV */
+        struct
+        {
+            /** Internal info handler function. */
+            PFNDBGFINFOARGVINT  pfnHandler;
+        } IntArgv;
+
+        /** DBGFINFOTYPE_EXT_ARGV */
+        struct
+        {
+            /** External info handler function. */
+            PFNDBGFINFOARGVEXT  pfnHandler;
+            /** The user argument. */
+            void               *pvUser;
+        } ExtArgv;
     } u;
 
     /** Pointer to the description. */

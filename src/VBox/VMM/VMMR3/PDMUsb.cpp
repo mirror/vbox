@@ -1704,9 +1704,9 @@ static DECLCALLBACK(int) pdmR3UsbHlp_DBGFStopV(PPDMUSBINS pUsbIns, const char *p
 }
 
 
-/** @interface_method_impl{PDMUSBHLP,pfnDBGFInfoRegister} */
-static DECLCALLBACK(int) pdmR3UsbHlp_DBGFInfoRegister(PPDMUSBINS pUsbIns, const char *pszName, const char *pszDesc,
-                                                      PFNDBGFHANDLERUSB pfnHandler)
+/** @interface_method_impl{PDMUSBHLP,pfnDBGFInfoRegisterArgv} */
+static DECLCALLBACK(int) pdmR3UsbHlp_DBGFInfoRegisterArgv(PPDMUSBINS pUsbIns, const char *pszName, const char *pszDesc,
+                                                          PFNDBGFINFOARGVUSB pfnHandler)
 {
     PDMUSB_ASSERT_USBINS(pUsbIns);
     LogFlow(("pdmR3UsbHlp_DBGFInfoRegister: caller='%s'/%d: pszName=%p:{%s} pszDesc=%p:{%s} pfnHandler=%p\n",
@@ -1714,8 +1714,7 @@ static DECLCALLBACK(int) pdmR3UsbHlp_DBGFInfoRegister(PPDMUSBINS pUsbIns, const 
 
     PVM pVM = pUsbIns->Internal.s.pVM;
     VM_ASSERT_EMT(pVM);
-    RT_NOREF4(pVM, pfnHandler, pszDesc, pszName); /** @todo int rc = DBGFR3InfoRegisterUsb(pVM, pszName, pszDesc, pfnHandler, pUsbIns); */
-    int rc = VERR_NOT_IMPLEMENTED; AssertFailed();
+    int rc = DBGFR3InfoRegisterUsbArgv(pVM, pszName, pszDesc, pfnHandler, pUsbIns);
 
     LogFlow(("pdmR3UsbHlp_DBGFInfoRegister: caller='%s'/%d: returns %Rrc\n", pUsbIns->pReg->szName, pUsbIns->iInstance, rc));
     return rc;
@@ -1974,7 +1973,7 @@ const PDMUSBHLP g_pdmR3UsbHlp =
     pdmR3UsbHlp_AssertEMT,
     pdmR3UsbHlp_AssertOther,
     pdmR3UsbHlp_DBGFStopV,
-    pdmR3UsbHlp_DBGFInfoRegister,
+    pdmR3UsbHlp_DBGFInfoRegisterArgv,
     pdmR3UsbHlp_MMHeapAlloc,
     pdmR3UsbHlp_MMHeapAllocZ,
     pdmR3UsbHlp_PDMQueueCreate,

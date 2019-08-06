@@ -510,7 +510,7 @@ typedef struct PDMUSBHLP
                                             const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(5, 0));
 
     /**
-     * Register a info handler with DBGF,
+     * Register a info handler with DBGF, argv style.
      *
      * @returns VBox status code.
      * @param   pUsbIns             The USB device instance.
@@ -518,7 +518,7 @@ typedef struct PDMUSBHLP
      * @param   pszDesc             The description of the info and any arguments the handler may take.
      * @param   pfnHandler          The handler function to be called to display the info.
      */
-    DECLR3CALLBACKMEMBER(int, pfnDBGFInfoRegister,(PPDMUSBINS pUsbIns, const char *pszName, const char *pszDesc, PFNDBGFHANDLERUSB pfnHandler));
+    DECLR3CALLBACKMEMBER(int, pfnDBGFInfoRegisterArgv,(PPDMUSBINS pUsbIns, const char *pszName, const char *pszDesc, PFNDBGFINFOARGVUSB pfnHandler));
 
     /**
      * Allocate memory which is associated with current VM instance
@@ -998,6 +998,14 @@ DECLINLINE(void) PDMUsbHlpMMHeapFree(PPDMUSBINS pUsbIns, void *pv)
 {
     NOREF(pUsbIns);
     MMR3HeapFree(pv);
+}
+
+/**
+ * @copydoc PDMUSBHLP::pfnDBGFInfoRegisterArgv
+ */
+DECLINLINE(int) PDMUsbHlpDBGFInfoRegisterArgv(PPDMUSBINS pUsbIns, const char *pszName, const char *pszDesc, PFNDBGFINFOARGVUSB pfnHandler)
+{
+    return pUsbIns->pHlpR3->pfnDBGFInfoRegisterArgv(pUsbIns, pszName, pszDesc, pfnHandler);
 }
 
 /**

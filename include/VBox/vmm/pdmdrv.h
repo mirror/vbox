@@ -1005,6 +1005,19 @@ typedef struct PDMDRVHLPR3
     DECLR3CALLBACKMEMBER(int, pfnDBGFInfoRegister,(PPDMDRVINS pDrvIns, const char *pszName, const char *pszDesc, PFNDBGFHANDLERDRV pfnHandler));
 
     /**
+     * Register an info handler with DBGF, argv style.
+     *
+     * @returns VBox status code.
+     * @param   pDrvIns         Driver instance.
+     * @param   pszName         Data unit name.
+     * @param   pszDesc         The description of the info and any arguments
+     *                          the handler may take.
+     * @param   pfnHandler      The handler function to be called to display the
+     *                          info.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnDBGFInfoRegisterArgv,(PPDMDRVINS pDrvIns, const char *pszName, const char *pszDesc, PFNDBGFINFOARGVDRV pfnHandler));
+
+    /**
      * Deregister an info handler from DBGF.
      *
      * @returns VBox status code.
@@ -1314,7 +1327,7 @@ typedef struct PDMDRVHLPR3
     uint32_t                        u32TheEnd;
 } PDMDRVHLPR3;
 /** Current DRVHLP version number. */
-#define PDM_DRVHLPR3_VERSION                    PDM_VERSION_MAKE(0xf0fb, 4, 0)
+#define PDM_DRVHLPR3_VERSION                    PDM_VERSION_MAKE(0xf0fb, 5, 0)
 
 #endif /* IN_RING3 */
 
@@ -1555,6 +1568,14 @@ DECLINLINE(int) PDMDrvHlpSSMRegisterLoadDone(PPDMDRVINS pDrvIns, PFNSSMDRVLOADDO
 DECLINLINE(int) PDMDrvHlpDBGFInfoRegister(PPDMDRVINS pDrvIns, const char *pszName, const char *pszDesc, PFNDBGFHANDLERDRV pfnHandler)
 {
     return pDrvIns->pHlpR3->pfnDBGFInfoRegister(pDrvIns, pszName, pszDesc, pfnHandler);
+}
+
+/**
+ * @copydoc PDMDRVHLPR3::pfnDBGFInfoRegisterArgv
+ */
+DECLINLINE(int) PDMDrvHlpDBGFInfoRegisterArgv(PPDMDRVINS pDrvIns, const char *pszName, const char *pszDesc, PFNDBGFINFOARGVDRV pfnHandler)
+{
+    return pDrvIns->pHlpR3->pfnDBGFInfoRegisterArgv(pDrvIns, pszName, pszDesc, pfnHandler);
 }
 
 /**

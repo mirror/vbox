@@ -945,17 +945,6 @@ typedef DECLCALLBACK(void) FNDBGFHANDLERDEV(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
 typedef FNDBGFHANDLERDEV  *PFNDBGFHANDLERDEV;
 
 /**
- * Info handler, USB device version.
- *
- * @param   pUsbIns     The USB device instance which registered the info.
- * @param   pHlp        Callback functions for doing output.
- * @param   pszArgs     Argument string. Optional and specific to the handler.
- */
-typedef DECLCALLBACK(void) FNDBGFHANDLERUSB(PPDMUSBINS pUsbIns, PCDBGFINFOHLP pHlp, const char *pszArgs);
-/** Pointer to a FNDBGFHANDLERUSB function. */
-typedef FNDBGFHANDLERUSB  *PFNDBGFHANDLERUSB;
-
-/**
  * Info handler, driver version.
  *
  * @param   pDrvIns     The driver instance which registered the info.
@@ -988,6 +977,66 @@ typedef DECLCALLBACK(void) FNDBGFHANDLEREXT(void *pvUser, PCDBGFINFOHLP pHlp, co
 /** Pointer to a FNDBGFHANDLEREXT function. */
 typedef FNDBGFHANDLEREXT  *PFNDBGFHANDLEREXT;
 
+/**
+ * Info handler, device version with argv.
+ *
+ * @param   pDevIns     The device instance which registered the info.
+ * @param   pHlp        Callback functions for doing output.
+ * @param   cArgs       Number of arguments.
+ * @param   papszArgs   Argument vector.
+ */
+typedef DECLCALLBACK(void) FNDBGFINFOARGVDEV(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, int cArgs, char **papszArgs);
+/** Pointer to a FNDBGFINFOARGVDEV function. */
+typedef FNDBGFINFOARGVDEV *PFNDBGFINFOARGVDEV;
+
+/**
+ * Info handler, USB device version with argv.
+ *
+ * @param   pUsbIns     The USB device instance which registered the info.
+ * @param   pHlp        Callback functions for doing output.
+ * @param   cArgs       Number of arguments.
+ * @param   papszArgs   Argument vector.
+ */
+typedef DECLCALLBACK(void) FNDBGFINFOARGVUSB(PPDMUSBINS pUsbIns, PCDBGFINFOHLP pHlp, int cArgs, char **papszArgs);
+/** Pointer to a FNDBGFINFOARGVUSB function. */
+typedef FNDBGFINFOARGVUSB *PFNDBGFINFOARGVUSB;
+
+/**
+ * Info handler, driver version with argv.
+ *
+ * @param   pDrvIns     The driver instance which registered the info.
+ * @param   pHlp        Callback functions for doing output.
+ * @param   cArgs       Number of arguments.
+ * @param   papszArgs   Argument vector.
+ */
+typedef DECLCALLBACK(void) FNDBGFINFOARGVDRV(PPDMDRVINS pDrvIns, PCDBGFINFOHLP pHlp, int cArgs, char **papszArgs);
+/** Pointer to a FNDBGFINFOARGVDRV function. */
+typedef FNDBGFINFOARGVDRV *PFNDBGFINFOARGVDRV;
+
+/**
+ * Info handler, internal version with argv.
+ *
+ * @param   pVM         The cross context VM structure.
+ * @param   pHlp        Callback functions for doing output.
+ * @param   cArgs       Number of arguments.
+ * @param   papszArgs   Argument vector.
+ */
+typedef DECLCALLBACK(void) FNDBGFINFOARGVINT(PVM pVM, PCDBGFINFOHLP pHlp, int cArgs, char **papszArgs);
+/** Pointer to a FNDBGFINFOARGVINT function. */
+typedef FNDBGFINFOARGVINT *PFNDBGFINFOARGVINT;
+
+/**
+ * Info handler, external version with argv.
+ *
+ * @param   pvUser      User argument.
+ * @param   pHlp        Callback functions for doing output.
+ * @param   cArgs       Number of arguments.
+ * @param   papszArgs   Argument vector.
+ */
+typedef DECLCALLBACK(void) FNDBGFINFOARGVEXT(void *pvUser, PCDBGFINFOHLP pHlp, int cArgs, char **papszArgs);
+/** Pointer to a FNDBGFINFOARGVEXT function. */
+typedef FNDBGFINFOARGVEXT *PFNDBGFINFOARGVEXT;
+
 
 /** @name Flags for the info registration functions.
  * @{ */
@@ -1002,10 +1051,19 @@ VMMR3_INT_DECL(int) DBGFR3InfoRegisterDriver(PVM pVM, const char *pszName, const
 VMMR3_INT_DECL(int) DBGFR3InfoRegisterInternal(PVM pVM, const char *pszName, const char *pszDesc, PFNDBGFHANDLERINT pfnHandler);
 VMMR3_INT_DECL(int) DBGFR3InfoRegisterInternalEx(PVM pVM, const char *pszName, const char *pszDesc, PFNDBGFHANDLERINT pfnHandler, uint32_t fFlags);
 VMMR3DECL(int)      DBGFR3InfoRegisterExternal(PUVM pUVM, const char *pszName, const char *pszDesc, PFNDBGFHANDLEREXT pfnHandler, void *pvUser);
+
+VMMR3_INT_DECL(int) DBGFR3InfoRegisterDeviceArgv(PVM pVM, const char *pszName, const char *pszDesc, PFNDBGFINFOARGVDEV pfnHandler, PPDMDEVINS pDevIns);
+VMMR3_INT_DECL(int) DBGFR3InfoRegisterDriverArgv(PVM pVM, const char *pszName, const char *pszDesc, PFNDBGFINFOARGVDRV pfnHandler, PPDMDRVINS pDrvIns);
+VMMR3_INT_DECL(int) DBGFR3InfoRegisterUsbArgv(PVM pVM, const char *pszName, const char *pszDesc, PFNDBGFINFOARGVUSB pfnHandler, PPDMUSBINS pUsbIns);
+VMMR3_INT_DECL(int) DBGFR3InfoRegisterInternalArgv(PVM pVM, const char *pszName, const char *pszDesc, PFNDBGFINFOARGVINT pfnHandler, uint32_t fFlags);
+VMMR3DECL(int)      DBGFR3InfoRegisterExternalArgv(PUVM pUVM, const char *pszName, const char *pszDesc, PFNDBGFINFOARGVEXT pfnHandler, void *pvUser);
+
 VMMR3_INT_DECL(int) DBGFR3InfoDeregisterDevice(PVM pVM, PPDMDEVINS pDevIns, const char *pszName);
 VMMR3_INT_DECL(int) DBGFR3InfoDeregisterDriver(PVM pVM, PPDMDRVINS pDrvIns, const char *pszName);
+VMMR3_INT_DECL(int) DBGFR3InfoDeregisterUsb(PVM pVM, PPDMUSBINS pDrvIns, const char *pszName);
 VMMR3_INT_DECL(int) DBGFR3InfoDeregisterInternal(PVM pVM, const char *pszName);
 VMMR3DECL(int)      DBGFR3InfoDeregisterExternal(PUVM pUVM, const char *pszName);
+
 VMMR3DECL(int)      DBGFR3Info(PUVM pUVM, const char *pszName, const char *pszArgs, PCDBGFINFOHLP pHlp);
 VMMR3DECL(int)      DBGFR3InfoEx(PUVM pUVM, VMCPUID idCpu, const char *pszName, const char *pszArgs, PCDBGFINFOHLP pHlp);
 VMMR3DECL(int)      DBGFR3InfoLogRel(PUVM pUVM, const char *pszName, const char *pszArgs);
