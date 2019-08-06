@@ -471,20 +471,6 @@ VMMDECL(int)        PGMHandlerPhysicalPageAliasHC(PVM pVM, RTGCPHYS GCPhys, RTGC
 VMMDECL(int)        PGMHandlerPhysicalReset(PVM pVM, RTGCPHYS GCPhys);
 VMMDECL(bool)       PGMHandlerPhysicalIsRegistered(PVM pVM, RTGCPHYS GCPhys);
 
-/** PGM virtual access handler type registration handle (heap offset, valid
- * cross contexts without needing fixing up).  Callbacks and handler type is
- * associated with this and it is shared by all handler registrations. */
-typedef uint32_t PGMVIRTHANDLERTYPE;
-/** Pointer to a PGM virtual handler type registration handle. */
-typedef PGMVIRTHANDLERTYPE *PPGMVIRTHANDLERTYPE;
-/** NIL value for PGM virtual access handler type handle. */
-#define NIL_PGMVIRTHANDLERTYPE  UINT32_MAX
-#ifdef VBOX_WITH_RAW_MODE
-VMM_INT_DECL(uint32_t) PGMHandlerVirtualTypeRelease(PVM pVM, PGMVIRTHANDLERTYPE hType);
-VMM_INT_DECL(uint32_t) PGMHandlerVirtualTypeRetain(PVM pVM, PGMVIRTHANDLERTYPE hType);
-VMM_INT_DECL(bool)     PGMHandlerVirtualIsRegistered(PVM pVM, RTGCPTR GCPtr);
-#endif
-
 
 /**
  * Page type.
@@ -877,23 +863,6 @@ VMMR3DECL(int)      PGMR3HandlerPhysicalTypeRegister(PVM pVM, PGMPHYSHANDLERKIND
                                                      const char *pszModRC, const char *pszHandlerRC, const char *pszPfHandlerRC,
                                                      const char *pszDesc,
                                                      PPGMPHYSHANDLERTYPE phType);
-#ifdef VBOX_WITH_RAW_MODE
-VMMR3_INT_DECL(int) PGMR3HandlerVirtualTypeRegisterEx(PVM pVM, PGMVIRTHANDLERKIND enmKind, bool fRelocUserRC,
-                                                      PFNPGMR3VIRTINVALIDATE pfnInvalidateR3,
-                                                      PFNPGMVIRTHANDLER pfnHandlerR3,
-                                                      RCPTRTYPE(FNPGMVIRTHANDLER) pfnHandlerRC,
-                                                      RCPTRTYPE(FNPGMRCVIRTPFHANDLER) pfnPfHandlerRC,
-                                                      const char *pszDesc, PPGMVIRTHANDLERTYPE phType);
-VMMR3_INT_DECL(int) PGMR3HandlerVirtualTypeRegister(PVM pVM, PGMVIRTHANDLERKIND enmKind, bool fRelocUserRC,
-                                                    PFNPGMR3VIRTINVALIDATE pfnInvalidateR3,
-                                                    PFNPGMVIRTHANDLER pfnHandlerR3,
-                                                    const char *pszHandlerRC, const char *pszPfHandlerRC, const char *pszDesc,
-                                                    PPGMVIRTHANDLERTYPE phType);
-VMMR3_INT_DECL(int) PGMR3HandlerVirtualRegister(PVM pVM, PVMCPU pVCpu, PGMVIRTHANDLERTYPE hType, RTGCPTR GCPtr,
-                                                RTGCPTR GCPtrLast, void *pvUserR3, RTRCPTR pvUserRC, const char *pszDesc);
-VMMR3_INT_DECL(int) PGMHandlerVirtualChangeType(PVM pVM, RTGCPTR GCPtr, PGMVIRTHANDLERTYPE hNewType);
-VMMR3_INT_DECL(int) PGMHandlerVirtualDeregister(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, bool fHypervisor);
-#endif
 VMMR3DECL(int)      PGMR3PoolGrow(PVM pVM);
 
 VMMR3DECL(int)      PGMR3PhysTlbGCPhys2Ptr(PVM pVM, RTGCPHYS GCPhys, bool fWritable, void **ppv);

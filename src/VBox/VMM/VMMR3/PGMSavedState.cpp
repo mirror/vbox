@@ -3173,7 +3173,6 @@ static DECLCALLBACK(int) pgmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, 
                 PVMCPU pVCpu = &pVM->aCpus[i];
                 VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL);
                 VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
-                pVCpu->pgm.s.fSyncFlags |= PGM_SYNC_UPDATE_PAGE_BIT_VIRTUAL;
                 /** @todo For guest PAE, we might get the wrong
                  *        aGCPhysGstPaePDs values now. We should used the
                  *        saved ones... Postponing this since it nothing new
@@ -3260,7 +3259,6 @@ static DECLCALLBACK(int) pgmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, 
                 /* Make sure to re-sync before executing code. */
                 VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL);
                 VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
-                pVCpu->pgm.s.fSyncFlags |= PGM_SYNC_UPDATE_PAGE_BIT_VIRTUAL;
             }
         }
     }

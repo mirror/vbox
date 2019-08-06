@@ -693,126 +693,6 @@ typedef PGMPHYSHANDLER *PPGMPHYSHANDLER;
 #define PGMPHYSHANDLER_GET_TYPE(a_pVM, a_pPhysHandler) PGMPHYSHANDLERTYPEINT_FROM_HANDLE(a_pVM, (a_pPhysHandler)->hType)
 
 
-#ifdef VBOX_WITH_RAW_MODE
-
-/**
- * Cache node for the physical addresses covered by a virtual handler.
- */
-typedef struct PGMPHYS2VIRTHANDLER
-{
-    /** Core node for the tree based on physical ranges. */
-    AVLROGCPHYSNODECORE                 Core;
-    /** Offset from this struct to the PGMVIRTHANDLER structure. */
-    int32_t                             offVirtHandler;
-    /** Offset of the next alias relative to this one.
-     * Bit 0 is used for indicating whether we're in the tree.
-     * Bit 1 is used for indicating that we're the head node.
-     */
-    int32_t                             offNextAlias;
-} PGMPHYS2VIRTHANDLER;
-/** Pointer to a phys to virtual handler structure. */
-typedef PGMPHYS2VIRTHANDLER *PPGMPHYS2VIRTHANDLER;
-
-/** The bit in PGMPHYS2VIRTHANDLER::offNextAlias used to indicate that the
- * node is in the tree. */
-# define PGMPHYS2VIRTHANDLER_IN_TREE     RT_BIT(0)
-/** The bit in PGMPHYS2VIRTHANDLER::offNextAlias used to indicate that the
- * node is in the head of an alias chain.
- * The PGMPHYS2VIRTHANDLER_IN_TREE is always set if this bit is set. */
-# define PGMPHYS2VIRTHANDLER_IS_HEAD     RT_BIT(1)
-/** The mask to apply to PGMPHYS2VIRTHANDLER::offNextAlias to get the offset. */
-# define PGMPHYS2VIRTHANDLER_OFF_MASK    (~(int32_t)3)
-
-
-/**
- * Virtual page access handler type registration.
- */
-typedef struct PGMVIRTANDLERTYPEINT
-{
-    /** Number of references.   */
-    uint32_t volatile                   cRefs;
-    /** Magic number (PGMVIRTHANDLERTYPEINT_MAGIC). */
-    uint32_t                            u32Magic;
-    /** Link of handler types anchored in PGMTREES::HeadVirtHandlerTypes. */
-    RTLISTOFF32NODE                     ListNode;
-    /** The kind of accesses we're handling. */
-    PGMVIRTHANDLERKIND                  enmKind;
-    /** The PGM_PAGE_HNDL_PHYS_STATE_XXX value corresponding to enmKind. */
-    uint32_t                            uState;
-    /** Whether the pvUserRC argument should be automatically relocated or not. */
-    bool                                fRelocUserRC;
-    bool                                afPadding[HC_ARCH_BITS == 64 ? 7 : 3];
-    /** Pointer to RC callback function. */
-    RCPTRTYPE(PFNPGMVIRTHANDLER)        pfnHandlerRC;
-    /** Pointer to RC callback function for \#PFs. */
-    RCPTRTYPE(PFNPGMRCVIRTPFHANDLER)    pfnPfHandlerRC;
-    /** Pointer to the R3 callback function for invalidation. */
-    R3PTRTYPE(PFNPGMR3VIRTINVALIDATE)   pfnInvalidateR3;
-    /** Pointer to R3 callback function. */
-    R3PTRTYPE(PFNPGMVIRTHANDLER)        pfnHandlerR3;
-    /** Description / Name. For easing debugging. */
-    R3PTRTYPE(const char *)             pszDesc;
-} PGMVIRTHANDLERTYPEINT;
-/** Pointer to a virtual access handler type registration. */
-typedef PGMVIRTHANDLERTYPEINT *PPGMVIRTHANDLERTYPEINT;
-/** Magic value for the virtual handler callbacks (Sir Arthur Charles Clarke). */
-# define PGMVIRTHANDLERTYPEINT_MAGIC       UINT32_C(0x19171216)
-/** Magic value for the virtual handler callbacks. */
-# define PGMVIRTHANDLERTYPEINT_MAGIC_DEAD  UINT32_C(0x20080319)
-
-/**
- * Converts a handle to a pointer.
- * @returns PPGMVIRTHANDLERTYPEINT
- * @param   a_pVM           The cross context VM structure.
- * @param   a_hType         Vitual access handler type handle.
- */
-# define PGMVIRTHANDLERTYPEINT_FROM_HANDLE(a_pVM, a_hType) ((PPGMVIRTHANDLERTYPEINT)MMHyperHeapOffsetToPtr(a_pVM, a_hType))
-
-
-/**
- * Virtual page access handler structure.
- *
- * This is used to keep track of virtual address ranges
- * which are being monitored in some kind of way.
- */
-typedef struct PGMVIRTHANDLER
-{
-    /** Core node for the tree based on virtual ranges. */
-    AVLROGCPTRNODECORE                  Core;
-    /** Size of the range (in bytes). */
-    uint32_t                            cb;
-    /** Number of cache pages. */
-    uint32_t                            cPages;
-    /** Registered handler type handle (heap offset). */
-    PGMVIRTHANDLERTYPE                  hType;
-    /** User argument for RC handlers. */
-    RCPTRTYPE(void *)                   pvUserRC;
-    /** User argument for R3 handlers. */
-    R3PTRTYPE(void *)                   pvUserR3;
-    /** Description / Name. For easing debugging. */
-    R3PTRTYPE(const char *)             pszDesc;
-# ifdef VBOX_WITH_STATISTICS
-    /** Profiling of this handler. */
-    STAMPROFILE                         Stat;
-# endif
-    /** Array of cached physical addresses for the monitored ranged. */
-    PGMPHYS2VIRTHANDLER                 aPhysToVirt[HC_ARCH_BITS == 32 ? 1 : 2];
-} PGMVIRTHANDLER;
-/** Pointer to a virtual page access handler structure. */
-typedef PGMVIRTHANDLER *PPGMVIRTHANDLER;
-
-/**
- * Gets the type record for a virtual handler (no reference added).
- * @returns PPGMVIRTHANDLERTYPEINT
- * @param   a_pVM           The cross context VM structure.
- * @param   a_pVirtHandler  Pointer to the virtual handler structure
- *                          (PGMVIRTHANDLER).
- */
-# define PGMVIRTANDLER_GET_TYPE(a_pVM, a_pVirtHandler) PGMVIRTHANDLERTYPEINT_FROM_HANDLE(a_pVM, (a_pVirtHandler)->hType)
-
-#endif /* VBOX_WITH_RAW_MODE */
-
-
 /**
  * A Physical Guest Page tracking structure.
  *
@@ -839,8 +719,8 @@ typedef union PGMPAGE
         uint64_t    fWrittenToY         : 1;
         /** 7:6   - Unused. */
         uint64_t    u2Unused0           : 2;
-        /** 9:8   - The physical handler state (PGM_PAGE_HNDL_VIRT_STATE_*). */
-        uint64_t    u2HandlerVirtStateY : 2;
+        /** 9:8   - Unused (was used by PGM_PAGE_HNDL_VIRT_STATE_*). */
+        uint64_t    u2Unused1           : 2;
         /** 11:10 - NEM state bits. */
         uint64_t    u2NemStateY         : 2;
         /** 12:48 - The host physical frame number (shift left to get the
@@ -1204,13 +1084,6 @@ typedef PPGMPAGE *PPPGMPAGE;
  */
 #define PGM_PAGE_GET_PDE_TYPE(a_pPage)          ( (a_pPage)->s.u2PDETypeY )
 
-/** Enabled optimized access handler tests.
- * These optimizations makes ASSUMPTIONS about the state values and the s1
- * layout.  When enabled, the compiler should normally generate more compact
- * code.
- */
-#define PGM_PAGE_WITH_OPTIMIZED_HANDLER_ACCESS  1
-
 /** @name Physical Access Handler State values (PGMPAGE::u2HandlerPhysStateY).
  *
  * @remarks The values are assigned in order of priority, so we can calculate
@@ -1288,14 +1161,6 @@ typedef PPGMPAGE *PPPGMPAGE;
     do { (a_pPage)->s.u2HandlerVirtStateY = (a_uState); } while (0)
 
 /**
- * Checks if the page has any virtual access handlers.
- * @returns true/false
- * @param   a_pPage     Pointer to the physical guest page tracking structure.
- */
-#define PGM_PAGE_HAS_ANY_VIRTUAL_HANDLERS(a_pPage) \
-    ( PGM_PAGE_GET_HNDL_VIRT_STATE(a_pPage) != PGM_PAGE_HNDL_VIRT_STATE_NONE )
-
-/**
  * Same as PGM_PAGE_HAS_ANY_VIRTUAL_HANDLERS - can't disable pages in
  * virtual handlers.
  * @returns true/false
@@ -1310,43 +1175,24 @@ typedef PPGMPAGE *PPPGMPAGE;
  * @returns true/false
  * @param   a_pPage     Pointer to the physical guest page tracking structure.
  */
-#ifdef PGM_PAGE_WITH_OPTIMIZED_HANDLER_ACCESS
-# define PGM_PAGE_HAS_ANY_HANDLERS(a_pPage) \
-    ( ((a_pPage)->au32[0] & UINT16_C(0x0303)) != 0 )
-#else
-# define PGM_PAGE_HAS_ANY_HANDLERS(a_pPage) \
-    (   PGM_PAGE_GET_HNDL_PHYS_STATE(a_pPage) != PGM_PAGE_HNDL_PHYS_STATE_NONE \
-     || PGM_PAGE_GET_HNDL_VIRT_STATE(a_pPage) != PGM_PAGE_HNDL_VIRT_STATE_NONE )
-#endif
+#define PGM_PAGE_HAS_ANY_HANDLERS(a_pPage) \
+    ( PGM_PAGE_GET_HNDL_PHYS_STATE(a_pPage) != PGM_PAGE_HNDL_PHYS_STATE_NONE )
 
 /**
  * Checks if the page has any active access handlers.
  * @returns true/false
  * @param   a_pPage     Pointer to the physical guest page tracking structure.
  */
-#ifdef PGM_PAGE_WITH_OPTIMIZED_HANDLER_ACCESS
-# define PGM_PAGE_HAS_ACTIVE_HANDLERS(a_pPage) \
-    ( ((a_pPage)->au32[0] & UINT16_C(0x0202)) != 0 )
-#else
-# define PGM_PAGE_HAS_ACTIVE_HANDLERS(a_pPage) \
-    (   PGM_PAGE_GET_HNDL_PHYS_STATE(a_pPage) >= PGM_PAGE_HNDL_PHYS_STATE_WRITE \
-     || PGM_PAGE_GET_HNDL_VIRT_STATE(a_pPage) >= PGM_PAGE_HNDL_VIRT_STATE_WRITE )
-#endif
+#define PGM_PAGE_HAS_ACTIVE_HANDLERS(a_pPage) \
+     (PGM_PAGE_GET_HNDL_PHYS_STATE(a_pPage) >= PGM_PAGE_HNDL_PHYS_STATE_WRITE )
 
 /**
  * Checks if the page has any active access handlers catching all accesses.
  * @returns true/false
  * @param   a_pPage     Pointer to the physical guest page tracking structure.
  */
-#ifdef PGM_PAGE_WITH_OPTIMIZED_HANDLER_ACCESS
-# define PGM_PAGE_HAS_ACTIVE_ALL_HANDLERS(a_pPage) \
-    (   ( ((a_pPage)->au8[0] | (a_pPage)->au8[1]) & UINT8_C(0x3) ) \
-     == PGM_PAGE_HNDL_PHYS_STATE_ALL )
-#else
-# define PGM_PAGE_HAS_ACTIVE_ALL_HANDLERS(a_pPage) \
-    (   PGM_PAGE_GET_HNDL_PHYS_STATE(a_pPage) == PGM_PAGE_HNDL_PHYS_STATE_ALL \
-     || PGM_PAGE_GET_HNDL_VIRT_STATE(a_pPage) == PGM_PAGE_HNDL_VIRT_STATE_ALL )
-#endif
+#define PGM_PAGE_HAS_ACTIVE_ALL_HANDLERS(a_pPage) \
+    ( PGM_PAGE_GET_HNDL_PHYS_STATE(a_pPage) == PGM_PAGE_HNDL_PHYS_STATE_ALL )
 
 
 /** @def PGM_PAGE_GET_TRACKING
@@ -3234,18 +3080,12 @@ typedef struct PGMSTATS
     STAMCOUNTER StatRZRamRangeTlbMisses;            /**< RC/R0: RAM range TLB misses. */
     STAMCOUNTER StatR3RamRangeTlbHits;              /**< R3: RAM range TLB hits. */
     STAMCOUNTER StatR3RamRangeTlbMisses;            /**< R3: RAM range TLB misses. */
-    STAMPROFILE StatRZSyncCR3HandlerVirtualReset;   /**< RC/R0: Profiling of the virtual handler resets. */
-    STAMPROFILE StatRZSyncCR3HandlerVirtualUpdate;  /**< RC/R0: Profiling of the virtual handler updates. */
-    STAMPROFILE StatR3SyncCR3HandlerVirtualReset;   /**< R3: Profiling of the virtual handler resets. */
-    STAMPROFILE StatR3SyncCR3HandlerVirtualUpdate;  /**< R3: Profiling of the virtual handler updates. */
     STAMCOUNTER StatR3PhysHandlerReset;             /**< R3: The number of times PGMHandlerPhysicalReset is called. */
     STAMCOUNTER StatRZPhysHandlerReset;             /**< RC/R0: The number of times PGMHandlerPhysicalReset is called. */
     STAMCOUNTER StatR3PhysHandlerLookupHits;        /**< R3: Number of cache hits when looking up physical handlers. */
     STAMCOUNTER StatR3PhysHandlerLookupMisses;      /**< R3: Number of cache misses when looking up physical handlers. */
     STAMCOUNTER StatRZPhysHandlerLookupHits;        /**< RC/R0: Number of cache hits when lookup up physical handlers. */
     STAMCOUNTER StatRZPhysHandlerLookupMisses;      /**< RC/R0: Number of cache misses when looking up physical handlers */
-    STAMPROFILE StatRZVirtHandlerSearchByPhys;      /**< RC/R0: Profiling of pgmHandlerVirtualFindByPhysAddr. */
-    STAMPROFILE StatR3VirtHandlerSearchByPhys;      /**< R3: Profiling of pgmHandlerVirtualFindByPhysAddr. */
     STAMCOUNTER StatRZPageReplaceShared;            /**< RC/R0: Times a shared page has been replaced by a private one. */
     STAMCOUNTER StatRZPageReplaceZero;              /**< RC/R0: Times the zero page has been replaced by a private one. */
 /// @todo    STAMCOUNTER StatRZPageHandyAllocs;              /**< RC/R0: The number of times we've executed GMMR3AllocateHandyPages. */
@@ -3761,7 +3601,6 @@ typedef struct PGMCPUSTATS
     STAMPROFILE StatRZTrap0eTime2DirtyAndAccessed;  /**< RC/R0: Profiling of the Trap0eHandler body when the cause is dirty and/or accessed bit emulation. */
     STAMPROFILE StatRZTrap0eTime2GuestTrap;         /**< RC/R0: Profiling of the Trap0eHandler body when the cause is a guest trap. */
     STAMPROFILE StatRZTrap0eTime2HndPhys;           /**< RC/R0: Profiling of the Trap0eHandler body when the cause is a physical handler. */
-    STAMPROFILE StatRZTrap0eTime2HndVirt;           /**< RC/R0: Profiling of the Trap0eHandler body when the cause is a virtual handler. */
     STAMPROFILE StatRZTrap0eTime2HndUnhandled;      /**< RC/R0: Profiling of the Trap0eHandler body when the cause is access outside the monitored areas of a monitored page. */
     STAMPROFILE StatRZTrap0eTime2InvalidPhys;       /**< RC/R0: Profiling of the Trap0eHandler body when the cause is access to an invalid physical guest address. */
     STAMPROFILE StatRZTrap0eTime2MakeWritable;      /**< RC/R0: Profiling of the Trap0eHandler body when the cause is a page that needed to be made writable. */
@@ -3769,7 +3608,6 @@ typedef struct PGMCPUSTATS
     STAMPROFILE StatRZTrap0eTime2Misc;              /**< RC/R0: Profiling of the Trap0eHandler body when the cause is not known. */
     STAMPROFILE StatRZTrap0eTime2OutOfSync;         /**< RC/R0: Profiling of the Trap0eHandler body when the cause is an out-of-sync page. */
     STAMPROFILE StatRZTrap0eTime2OutOfSyncHndPhys;  /**< RC/R0: Profiling of the Trap0eHandler body when the cause is an out-of-sync physical handler page. */
-    STAMPROFILE StatRZTrap0eTime2OutOfSyncHndVirt;  /**< RC/R0: Profiling of the Trap0eHandler body when the cause is an out-of-sync virtual handler page. */
     STAMPROFILE StatRZTrap0eTime2OutOfSyncHndObs;   /**< RC/R0: Profiling of the Trap0eHandler body when the cause is an obsolete handler page. */
     STAMPROFILE StatRZTrap0eTime2SyncPT;            /**< RC/R0: Profiling of the Trap0eHandler body when the cause is lazy syncing of a PT. */
     STAMPROFILE StatRZTrap0eTime2WPEmulation;       /**< RC/R0: Profiling of the Trap0eHandler body when the cause is CR0.WP emulation. */
@@ -3781,9 +3619,6 @@ typedef struct PGMCPUSTATS
     STAMCOUNTER StatRZTrap0eHandlersPhysAll;        /**< RC/R0: Number of traps due to physical all-access handlers. */
     STAMCOUNTER StatRZTrap0eHandlersPhysAllOpt;     /**< RC/R0: Number of the physical all-access handler traps using the optimization. */
     STAMCOUNTER StatRZTrap0eHandlersPhysWrite;      /**< RC/R0: Number of traps due to write-physical access handlers. */
-    STAMCOUNTER StatRZTrap0eHandlersVirtual;        /**< RC/R0: Number of traps due to virtual access handlers. */
-    STAMCOUNTER StatRZTrap0eHandlersVirtualByPhys;  /**< RC/R0: Number of traps due to virtual access handlers found by physical address. */
-    STAMCOUNTER StatRZTrap0eHandlersVirtualUnmarked;/**< RC/R0: Number of traps due to virtual access handlers found by virtual address (without proper physical flags). */
     STAMCOUNTER StatRZTrap0eHandlersUnhandled;      /**< RC/R0: Number of traps due to access outside range of monitored page(s). */
     STAMCOUNTER StatRZTrap0eHandlersInvalid;        /**< RC/R0: Number of traps due to access to invalid physical memory. */
     STAMCOUNTER StatRZTrap0eUSNotPresentRead;       /**< RC/R0: \#PF err kind */
@@ -4156,8 +3991,7 @@ typedef PGMCPU *PPGMCPU;
  * @note Was part of saved state a long time ago.
  * @{
  */
-/** Updates the virtual access handler state bit in PGMPAGE. */
-#define PGM_SYNC_UPDATE_PAGE_BIT_VIRTUAL        RT_BIT(0)
+/* 0 used to be PGM_SYNC_UPDATE_PAGE_BIT_VIRTUAL */
 /** Always sync CR3. */
 #define PGM_SYNC_ALWAYS                         RT_BIT(1)
 /** Check monitoring on next CR3 (re)load and invalidate page.

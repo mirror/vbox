@@ -160,7 +160,7 @@
  * Placeholder.
  *
  *
- * @subsection      sec_pgm_handlers_virt   Virtual Access Handlers
+ * @subsection      sec_pgm_handlers_virt   Virtual Access Handlers (obsolete)
  *
  * We currently implement three types of virtual access handlers:  ALL, WRITE
  * and HYPERVISOR (WRITE). See PGMVIRTHANDLERKIND for some more details.
@@ -1345,19 +1345,12 @@ static int pgmR3InitStats(PVM pVM)
     PGM_REG_COUNTER(&pStats->StatR3RamRangeTlbHits,             "/PGM/R3/RamRange/TlbHits",           "TLB hits.");
     PGM_REG_COUNTER(&pStats->StatR3RamRangeTlbMisses,           "/PGM/R3/RamRange/TlbMisses",         "TLB misses.");
 
-    PGM_REG_PROFILE(&pStats->StatRZSyncCR3HandlerVirtualUpdate, "/PGM/RZ/SyncCR3/Handlers/VirtualUpdate", "Profiling of the virtual handler updates.");
-    PGM_REG_PROFILE(&pStats->StatRZSyncCR3HandlerVirtualReset,  "/PGM/RZ/SyncCR3/Handlers/VirtualReset",  "Profiling of the virtual handler resets.");
-    PGM_REG_PROFILE(&pStats->StatR3SyncCR3HandlerVirtualUpdate, "/PGM/R3/SyncCR3/Handlers/VirtualUpdate", "Profiling of the virtual handler updates.");
-    PGM_REG_PROFILE(&pStats->StatR3SyncCR3HandlerVirtualReset,  "/PGM/R3/SyncCR3/Handlers/VirtualReset",  "Profiling of the virtual handler resets.");
-
     PGM_REG_COUNTER(&pStats->StatRZPhysHandlerReset,            "/PGM/RZ/PhysHandlerReset",           "The number of times PGMHandlerPhysicalReset is called.");
     PGM_REG_COUNTER(&pStats->StatR3PhysHandlerReset,            "/PGM/R3/PhysHandlerReset",           "The number of times PGMHandlerPhysicalReset is called.");
     PGM_REG_COUNTER(&pStats->StatRZPhysHandlerLookupHits,       "/PGM/RZ/PhysHandlerLookupHits",      "The number of cache hits when looking up physical handlers.");
     PGM_REG_COUNTER(&pStats->StatR3PhysHandlerLookupHits,       "/PGM/R3/PhysHandlerLookupHits",      "The number of cache hits when looking up physical handlers.");
     PGM_REG_COUNTER(&pStats->StatRZPhysHandlerLookupMisses,     "/PGM/RZ/PhysHandlerLookupMisses",    "The number of cache misses when looking up physical handlers.");
     PGM_REG_COUNTER(&pStats->StatR3PhysHandlerLookupMisses,     "/PGM/R3/PhysHandlerLookupMisses",    "The number of cache misses when looking up physical handlers.");
-    PGM_REG_PROFILE(&pStats->StatRZVirtHandlerSearchByPhys,     "/PGM/RZ/VirtHandlerSearchByPhys",    "Profiling of pgmHandlerVirtualFindByPhysAddr.");
-    PGM_REG_PROFILE(&pStats->StatR3VirtHandlerSearchByPhys,     "/PGM/R3/VirtHandlerSearchByPhys",    "Profiling of pgmHandlerVirtualFindByPhysAddr.");
 
     PGM_REG_COUNTER(&pStats->StatRZPageReplaceShared,           "/PGM/RZ/Page/ReplacedShared",        "Times a shared page was replaced.");
     PGM_REG_COUNTER(&pStats->StatRZPageReplaceZero,             "/PGM/RZ/Page/ReplacedZero",          "Times the zero page was replaced.");
@@ -1443,7 +1436,6 @@ static int pgmR3InitStats(PVM pVM)
         PGM_REG_PROFILE(&pCpuStats->StatRZTrap0eTime2DirtyAndAccessed, "/PGM/CPU%u/RZ/Trap0e/Time2/DirtyAndAccessedBits", "Profiling of the Trap0eHandler body when the cause is dirty and/or accessed bit emulation.");
         PGM_REG_PROFILE(&pCpuStats->StatRZTrap0eTime2GuestTrap,        "/PGM/CPU%u/RZ/Trap0e/Time2/GuestTrap",         "Profiling of the Trap0eHandler body when the cause is a guest trap.");
         PGM_REG_PROFILE(&pCpuStats->StatRZTrap0eTime2HndPhys,          "/PGM/CPU%u/RZ/Trap0e/Time2/HandlerPhysical",   "Profiling of the Trap0eHandler body when the cause is a physical handler.");
-        PGM_REG_PROFILE(&pCpuStats->StatRZTrap0eTime2HndVirt,          "/PGM/CPU%u/RZ/Trap0e/Time2/HandlerVirtual",    "Profiling of the Trap0eHandler body when the cause is a virtual handler.");
         PGM_REG_PROFILE(&pCpuStats->StatRZTrap0eTime2HndUnhandled,     "/PGM/CPU%u/RZ/Trap0e/Time2/HandlerUnhandled",  "Profiling of the Trap0eHandler body when the cause is access outside the monitored areas of a monitored page.");
         PGM_REG_PROFILE(&pCpuStats->StatRZTrap0eTime2InvalidPhys,      "/PGM/CPU%u/RZ/Trap0e/Time2/InvalidPhys",       "Profiling of the Trap0eHandler body when the cause is access to an invalid physical guest address.");
         PGM_REG_PROFILE(&pCpuStats->StatRZTrap0eTime2MakeWritable,     "/PGM/CPU%u/RZ/Trap0e/Time2/MakeWritable",      "Profiling of the Trap0eHandler body when the cause is that a page needed to be made writeable.");
@@ -1451,7 +1443,6 @@ static int pgmR3InitStats(PVM pVM)
         PGM_REG_PROFILE(&pCpuStats->StatRZTrap0eTime2Misc,             "/PGM/CPU%u/RZ/Trap0e/Time2/Misc",              "Profiling of the Trap0eHandler body when the cause is not known.");
         PGM_REG_PROFILE(&pCpuStats->StatRZTrap0eTime2OutOfSync,        "/PGM/CPU%u/RZ/Trap0e/Time2/OutOfSync",         "Profiling of the Trap0eHandler body when the cause is an out-of-sync page.");
         PGM_REG_PROFILE(&pCpuStats->StatRZTrap0eTime2OutOfSyncHndPhys, "/PGM/CPU%u/RZ/Trap0e/Time2/OutOfSyncHndPhys",  "Profiling of the Trap0eHandler body when the cause is an out-of-sync physical handler page.");
-        PGM_REG_PROFILE(&pCpuStats->StatRZTrap0eTime2OutOfSyncHndVirt, "/PGM/CPU%u/RZ/Trap0e/Time2/OutOfSyncHndVirt",  "Profiling of the Trap0eHandler body when the cause is an out-of-sync virtual handler page.");
         PGM_REG_PROFILE(&pCpuStats->StatRZTrap0eTime2OutOfSyncHndObs,  "/PGM/CPU%u/RZ/Trap0e/Time2/OutOfSyncObsHnd",   "Profiling of the Trap0eHandler body when the cause is an obsolete handler page.");
         PGM_REG_PROFILE(&pCpuStats->StatRZTrap0eTime2SyncPT,           "/PGM/CPU%u/RZ/Trap0e/Time2/SyncPT",            "Profiling of the Trap0eHandler body when the cause is lazy syncing of a PT.");
         PGM_REG_PROFILE(&pCpuStats->StatRZTrap0eTime2WPEmulation,      "/PGM/CPU%u/RZ/Trap0e/Time2/WPEmulation",       "Profiling of the Trap0eHandler body when the cause is CR0.WP emulation.");
@@ -1463,9 +1454,6 @@ static int pgmR3InitStats(PVM pVM)
         PGM_REG_COUNTER(&pCpuStats->StatRZTrap0eHandlersPhysAll,       "/PGM/CPU%u/RZ/Trap0e/Handlers/PhysAll",        "Number of traps due to physical all-access handlers.");
         PGM_REG_COUNTER(&pCpuStats->StatRZTrap0eHandlersPhysAllOpt,    "/PGM/CPU%u/RZ/Trap0e/Handlers/PhysAllOpt",     "Number of the physical all-access handler traps using the optimization.");
         PGM_REG_COUNTER(&pCpuStats->StatRZTrap0eHandlersPhysWrite,     "/PGM/CPU%u/RZ/Trap0e/Handlers/PhysWrite",      "Number of traps due to physical write-access handlers.");
-        PGM_REG_COUNTER(&pCpuStats->StatRZTrap0eHandlersVirtual,       "/PGM/CPU%u/RZ/Trap0e/Handlers/Virtual",        "Number of traps due to virtual access handlers.");
-        PGM_REG_COUNTER(&pCpuStats->StatRZTrap0eHandlersVirtualByPhys, "/PGM/CPU%u/RZ/Trap0e/Handlers/VirtualByPhys",  "Number of traps due to virtual access handlers by physical address.");
-        PGM_REG_COUNTER(&pCpuStats->StatRZTrap0eHandlersVirtualUnmarked,"/PGM/CPU%u/RZ/Trap0e/Handlers/VirtualUnmarked","Number of traps due to virtual access handlers by virtual address (without proper physical flags).");
         PGM_REG_COUNTER(&pCpuStats->StatRZTrap0eHandlersUnhandled,     "/PGM/CPU%u/RZ/Trap0e/Handlers/Unhandled",      "Number of traps due to access outside range of monitored page(s).");
         PGM_REG_COUNTER(&pCpuStats->StatRZTrap0eHandlersInvalid,       "/PGM/CPU%u/RZ/Trap0e/Handlers/Invalid",        "Number of traps due to access to invalid physical memory.");
         PGM_REG_COUNTER(&pCpuStats->StatRZTrap0eUSNotPresentRead,      "/PGM/CPU%u/RZ/Trap0e/Err/User/NPRead",         "Number of user mode not present read page faults.");
@@ -2196,7 +2184,6 @@ VMMR3_INT_DECL(void) PGMR3Reset(PVM pVM)
             pVCpu->pgm.s.fA20Enabled = true;
             pVCpu->pgm.s.GCPhysA20Mask = ~((RTGCPHYS)!pVCpu->pgm.s.fA20Enabled << 20);
 #ifdef PGM_WITH_A20
-            pVCpu->pgm.s.fSyncFlags |= PGM_SYNC_UPDATE_PAGE_BIT_VIRTUAL;
             VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
             pgmR3RefreshShadowModeAfterA20Change(pVCpu);
             HMFlushTlb(pVCpu);

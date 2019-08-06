@@ -2105,7 +2105,7 @@ VMMR3DECL(int) DBGFR3InjectNMI(PUVM pUVM, VMCPUID idCpu)
     /** @todo Implement generic NMI injection. */
     /** @todo NEM: NMI injection   */
     if (!HMIsEnabled(pVM))
-        return VERR_NOT_SUP_IN_RAW_MODE;
+        return VERR_NOT_SUP_BY_NEM;
 
     VMCPU_FF_SET(&pVM->aCpus[idCpu], VMCPU_FF_INTERRUPT_NMI);
     return VINF_SUCCESS;

@@ -368,127 +368,6 @@ static VBOXSTRICTRC PGM_BTH_NAME(Trap0eHandlerDoAccessHandlers)(PVMCPU pVCpu, RT
             return rcStrict;
         }
     }
-# if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE) && !defined(IN_RING0)
-    else
-    {
-#  ifdef PGM_SYNC_N_PAGES
-        /*
-         * If the region is write protected and we got a page not present fault, then sync
-         * the pages. If the fault was caused by a read, then restart the instruction.
-         * In case of write access continue to the GC write handler.
-         */
-        if (    PGM_PAGE_GET_HNDL_VIRT_STATE(pPage) < PGM_PAGE_HNDL_PHYS_STATE_ALL
-            && !(uErr & X86_TRAP_PF_P))
-        {
-            rcStrict = PGM_BTH_NAME(SyncPage)(pVCpu, pGstWalk->Pde, pvFault, PGM_SYNC_NR_PAGES, uErr);
-            if (    RT_FAILURE(rcStrict)
-                ||  rcStrict == VINF_PGM_SYNCPAGE_MODIFIED_PDE
-                ||  !(uErr & X86_TRAP_PF_RW))
-            {
-                AssertRC(rcStrict);
-                STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0eHandlersOutOfSync);
-                STAM_STATS({ pVCpu->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0eTime2OutOfSyncHndVirt; });
-                return rcStrict;
-            }
-        }
-#  endif
-        /*
-         * Ok, it's an virtual page access handler.
-         *
-         * Since it's faster to search by address, we'll do that first
-         * and then retry by GCPhys if that fails.
-         */
-        /** @todo r=bird: perhaps we should consider looking up by physical address directly now?
-         * r=svl: true, but lookup on virtual address should remain as a fallback as phys & virt trees might be
-         *        out of sync, because the page was changed without us noticing it (not-present -> present
-         *        without invlpg or mov cr3, xxx).
-         */
-        PPGMVIRTHANDLER pCur = (PPGMVIRTHANDLER)RTAvlroGCPtrRangeGet(&pVM->pgm.s.CTX_SUFF(pTrees)->VirtHandlers, pvFault);
-        if (pCur)
-        {
-            PPGMVIRTHANDLERTYPEINT pCurType = PGMVIRTANDLER_GET_TYPE(pVM, pCur);
-            AssertMsg(!(pvFault - pCur->Core.Key < pCur->cb)
-                      || (     pCurType->enmKind != PGMVIRTHANDLERKIND_WRITE
-                           || !(uErr & X86_TRAP_PF_P)
-                           || (pCurType->enmKind == PGMVIRTHANDLERKIND_WRITE && (uErr & X86_TRAP_PF_RW))),
-                      ("Unexpected trap for virtual handler: %RGv (phys=%RGp) pPage=%R[pgmpage] uErr=%X, enumKind=%d\n",
-                       pvFault, pGstWalk->Core.GCPhys, pPage, uErr, pCurType->enmKind));
-
-            if (    pvFault - pCur->Core.Key < pCur->cb
-                &&  (    uErr & X86_TRAP_PF_RW
-                     ||  pCurType->enmKind != PGMVIRTHANDLERKIND_WRITE ) )
-            {
-#   ifdef IN_RC
-                STAM_PROFILE_START(&pCur->Stat, h);
-                RTGCPTR GCPtrStart = pCur->Core.Key;
-                void *pvUser = pCur->CTX_SUFF(pvUser);
-                pgmUnlock(pVM);
-                *pfLockTaken = false;
-
-                rcStrict = pCurType->CTX_SUFF(pfnPfHandler)(pVM, pVCpu, uErr, pRegFrame, pvFault, GCPtrStart,
-                                                            pvFault - GCPtrStart, pvUser);
-
-#    ifdef VBOX_WITH_STATISTICS
-                pgmLock(pVM);
-                pCur = (PPGMVIRTHANDLER)RTAvlroGCPtrRangeGet(&pVM->pgm.s.CTX_SUFF(pTrees)->VirtHandlers, pvFault);
-                if (pCur)
-                    STAM_PROFILE_STOP(&pCur->Stat, h);
-                pgmUnlock(pVM);
-#    endif
-#   else
-                rcStrict = VINF_EM_RAW_EMULATE_INSTR; /** @todo for VMX */
-#   endif
-                STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0eHandlersVirtual);
-                STAM_STATS({ pVCpu->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0eTime2HndVirt; });
-                return rcStrict;
-            }
-            /* Unhandled part of a monitored page */
-            Log(("Unhandled part of monitored page %RGv\n", pvFault));
-        }
-        else
-        {
-           /* Check by physical address. */
-            unsigned iPage;
-            pCur = pgmHandlerVirtualFindByPhysAddr(pVM, pGstWalk->Core.GCPhys, &iPage);
-            if (pCur)
-            {
-                PPGMVIRTHANDLERTYPEINT pCurType = PGMVIRTANDLER_GET_TYPE(pVM, pCur);
-                if  (   uErr & X86_TRAP_PF_RW
-                     || pCurType->enmKind != PGMVIRTHANDLERKIND_WRITE )
-                {
-                    Assert(   (pCur->aPhysToVirt[iPage].Core.Key & X86_PTE_PAE_PG_MASK)
-                           == (pGstWalk->Core.GCPhys & X86_PTE_PAE_PG_MASK));
-#   ifdef IN_RC
-                    STAM_PROFILE_START(&pCur->Stat, h);
-                    RTGCPTR GCPtrStart = pCur->Core.Key;
-                    void *pvUser = pCur->CTX_SUFF(pvUser);
-                    pgmUnlock(pVM);
-                    *pfLockTaken = false;
-
-                    RTGCPTR off = (iPage << PAGE_SHIFT)
-                                + (pvFault    & PAGE_OFFSET_MASK)
-                                - (GCPtrStart & PAGE_OFFSET_MASK);
-                    Assert(off < pCur->cb);
-                    rcStrict = pCurType->CTX_SUFF(pfnPfHandler)(pVM, pVCpu, uErr, pRegFrame, pvFault, GCPtrStart, off, pvUser);
-
-#    ifdef VBOX_WITH_STATISTICS
-                    pgmLock(pVM);
-                    pCur = (PPGMVIRTHANDLER)RTAvlroGCPtrRangeGet(&pVM->pgm.s.CTX_SUFF(pTrees)->VirtHandlers, GCPtrStart);
-                    if (pCur)
-                        STAM_PROFILE_STOP(&pCur->Stat, h);
-                    pgmUnlock(pVM);
-#    endif
-#   else
-                    rcStrict = VINF_EM_RAW_EMULATE_INSTR; /** @todo for VMX */
-#   endif
-                    STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0eHandlersVirtualByPhys);
-                    STAM_STATS({ pVCpu->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0eTime2HndVirt; });
-                    return rcStrict;
-                }
-            }
-        }
-    }
-#  endif /* PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE) */
 
     /*
      * There is a handled area of the page, but this fault doesn't belong to it.
@@ -3814,28 +3693,13 @@ PGM_BTH_DECL(int, SyncCR3)(PVMCPU pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr
     LogFlow(("SyncCR3 FF=%d fGlobal=%d\n", !!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3), fGlobal));
 
 #if !PGM_TYPE_IS_NESTED_OR_EPT(PGM_SHW_TYPE) && PGM_SHW_TYPE != PGM_TYPE_NONE
-
-    pgmLock(pVM);
-
 # ifdef PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
+    pgmLock(pVM);
     PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
     if (pPool->cDirtyPages)
         pgmPoolResetDirtyPages(pVM);
-# endif
-
-    /*
-     * Update page access handlers.
-     * The virtual are always flushed, while the physical are only on demand.
-     * WARNING: We are incorrectly not doing global flushing on Virtual Handler updates. We'll
-     *          have to look into that later because it will have a bad influence on the performance.
-     * @note SvL: There's no need for that. Just invalidate the virtual range(s).
-     *      bird: Yes, but that won't work for aliases.
-     */
-    /** @todo this MUST go away. See @bugref{1557}. */
-    STAM_PROFILE_START(&pVCpu->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,SyncCR3Handlers), h);
-    PGM_GST_NAME(HandlerVirtualUpdate)(pVM, cr4);
-    STAM_PROFILE_STOP(&pVCpu->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,SyncCR3Handlers), h);
     pgmUnlock(pVM);
+# endif
 #endif /* !NESTED && !EPT */
 
 #if PGM_TYPE_IS_NESTED_OR_EPT(PGM_SHW_TYPE) || PGM_SHW_TYPE == PGM_TYPE_NONE

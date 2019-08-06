@@ -97,6 +97,8 @@
 #define VERR_INCONSISTENT_VM_HANDLE         (-1024)
 /** The VM has been restored. */
 #define VERR_VM_RESTORED                    (-1025)
+/** The requested feature is not supported by NEM. */
+#define VERR_NOT_SUP_BY_NEM                 (-1026)
 /** @} */
 
 

@@ -47,26 +47,6 @@
 
 
 /*********************************************************************************************************************************
-*   Structures and Typedefs                                                                                                      *
-*********************************************************************************************************************************/
-/**
- * Stated structure for PGM_GST_NAME(HandlerVirtualUpdate) that's
- * passed to PGM_GST_NAME(VirtHandlerUpdateOne) during enumeration.
- */
-typedef struct PGMHVUSTATE
-{
-    /** Pointer to the VM. */
-    PVM         pVM;
-    /** Pointer to the VMCPU. */
-    PVMCPU      pVCpu;
-    /** The todo flags. */
-    RTUINT      fTodo;
-    /** The CR4 register value. */
-    uint32_t    cr4;
-} PGMHVUSTATE,  *PPGMHVUSTATE;
-
-
-/*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
 DECLINLINE(int) pgmShwGetLongModePDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, PX86PML4E *ppPml4e, PX86PDPT *ppPdpt, PX86PDPAE *ppPD);
@@ -3617,7 +3597,6 @@ static DECLCALLBACK(size_t) pgmFormatTypeHandlerPage(PFNRTSTROUTPUT pfnOutput, v
         {
             static const char s_achHandlerStates[4] = { '-', 't', 'w', 'a' };
             szTmp[cch++] = s_achHandlerStates[PGM_PAGE_GET_HNDL_PHYS_STATE(pPage)];
-            szTmp[cch++] = s_achHandlerStates[PGM_PAGE_GET_HNDL_VIRT_STATE(pPage)];
         }
 
         /* The type. */
