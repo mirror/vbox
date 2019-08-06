@@ -43,6 +43,7 @@ class QTimer;
 class QGridLayout;
 class QLabel;
 class UIChart;
+class UISession;
 
 class UISubMetric
 {
@@ -69,6 +70,9 @@ public:
 
     bool isPercentage() const;
 
+    bool requiresGuestAdditions() const;
+    void setRequiresGuestAdditions(bool fRequiresGAs);
+
 private:
 
     QString m_strName;
@@ -78,6 +82,7 @@ private:
     float m_fAverage;
     QQueue<ULONG> m_data;
     int m_iMaximumQueueSize;
+    bool m_fRequiresGuestAdditions;
 };
 
 class UIPerformanceMonitor : public QWidget
@@ -89,18 +94,21 @@ public:
     /** Constructs information-tab passing @a pParent to the QWidget base-class constructor.
       * @param machine is machine reference.
       * @param console is machine console reference. */
-    UIPerformanceMonitor(QWidget *pParent, const CMachine &machine, const CConsole &console);
+    UIPerformanceMonitor(QWidget *pParent, const CMachine &machine, const CConsole &console, const UISession *pSession);
     ~UIPerformanceMonitor();
 
 private slots:
 
     void sltTimeout();
+    void sltGuestAdditionsStateChange();
 
 private:
 
     /** Prepares layout. */
     void prepareObjects();
     void preparePerformaceCollector();
+    bool guestAdditionsAvailable(int iMinimumMajorVersion);
+    void enableDisableGuestAdditionDependedWidgets(bool fEnable);
     bool m_fGuestAdditionsAvailable;
     /** Holds the machine instance. */
     CMachine m_machine;

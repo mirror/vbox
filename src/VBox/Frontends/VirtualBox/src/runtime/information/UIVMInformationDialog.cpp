@@ -262,7 +262,7 @@ void UIVMInformationDialog::prepareTabWidget()
         }
 
         UIPerformanceMonitor *pPerformanceMonitor =
-            new UIPerformanceMonitor(this, m_pMachineWindow->machine(), m_pMachineWindow->console());
+            new UIPerformanceMonitor(this, m_pMachineWindow->machine(), m_pMachineWindow->console(), m_pMachineWindow->uisession());
         if (pPerformanceMonitor)
         {
             m_tabs.insert(3, pPerformanceMonitor);

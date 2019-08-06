@@ -144,7 +144,6 @@ void UIChart::computeFontSize()
 void UIChart::paintEvent(QPaintEvent *pEvent)
 {
     Q_UNUSED(pEvent);
-
     QPainter painter(this);
 
     float fChartHeight = height() - 2 * m_iMargin;
@@ -162,43 +161,46 @@ void UIChart::paintEvent(QPaintEvent *pEvent)
     for (int i = 1; i < iXParts; ++i)
         painter.drawLine(m_iMargin + i * fChartWidth / (float)iXParts, m_iMargin, m_iMargin + i * fChartWidth / (float)iXParts, height() - m_iMargin);
 
-    painter.setRenderHint(QPainter::Antialiasing);// | QPainter::TextAntialiasing);
+    painter.setRenderHint(QPainter::Antialiasing);
     if (!m_pSubMetric)
         return;
     const QQueue<ULONG> &data = m_pSubMetric->data();
 
     if (data.isEmpty() || iMaximumQueueSize == 0)
         return;
-    float fBarWidth = fChartWidth / (float) iMaximumQueueSize;
 
     float fMaximum = m_pSubMetric->maximum();
     if (m_pSubMetric->isPercentage())
         fMaximum = 100.f;
+    if (fMaximum == 0)
+        return;
 
-    float fH = 0;
-    if (fMaximum != 0)
-        fH = fChartHeight / fMaximum;
-
-    QLinearGradient gradient(0, 0, 0, fChartHeight);
-    gradient.setColorAt(1.0, Qt::green);
-    gradient.setColorAt(0.0, Qt::red);
-    painter.setPen(QPen(gradient, 2.5));
-
-    for (int i = 0; i < data.size() - 1; ++i)
+    if (isEnabled())
     {
-        int j = i + 1;
+        float fBarWidth = fChartWidth / (float) iMaximumQueueSize;
 
-        float fHeight = fH * data[i];
-        float fX = width() - ((data.size() -i) * fBarWidth);
+        float fH = fChartHeight / fMaximum;
 
-        float fHeight2 = fH * data[j];
-        float fX2 = width() - ((data.size() -j) * fBarWidth);
+        QLinearGradient gradient(0, 0, 0, fChartHeight);
+        gradient.setColorAt(1.0, Qt::green);
+        gradient.setColorAt(0.0, Qt::red);
+        painter.setPen(QPen(gradient, 2.5));
+
+        for (int i = 0; i < data.size() - 1; ++i)
+        {
+            int j = i + 1;
+
+            float fHeight = fH * data[i];
+            float fX = width() - ((data.size() -i) * fBarWidth);
+
+            float fHeight2 = fH * data[j];
+            float fX2 = width() - ((data.size() -j) * fBarWidth);
 
 
-        QLineF bar(fX, height() - (fHeight + m_iMargin), fX2, height() - (fHeight2 + m_iMargin));
-        painter.drawLine(bar);
+            QLineF bar(fX, height() - (fHeight + m_iMargin), fX2, height() - (fHeight2 + m_iMargin));
+            painter.drawLine(bar);
+        }
     }
-
 
     /* Draw a whole non-filled circle: */
     painter.setPen(QPen(Qt::gray, 1));
@@ -206,12 +208,8 @@ void UIChart::paintEvent(QPaintEvent *pEvent)
 
     QPointF center(m_pieChartRect.center());
     QPainterPath fillPath;
-    QPainterPath dataPath;
-    dataPath.moveTo(center);
     fillPath.moveTo(center);
-    float fAngle = 360.f * data.back() / fMaximum;
-    dataPath.arcTo(m_pieChartRect, 90/*startAngle*/,
-                 -1 * fAngle /*sweepLength*/);
+
     fillPath.arcTo(m_pieChartRect, 90/*startAngle*/,
                  -1 * 360 /*sweepLength*/);
 
@@ -225,8 +223,23 @@ void UIChart::paintEvent(QPaintEvent *pEvent)
     painter.setPen(Qt::NoPen);
     painter.setBrush(Qt::white);
     painter.drawPath(fillPath);
-    painter.setBrush(pieGradient);
-    painter.drawPath(dataPath);
+
+    if (isEnabled())
+    {
+        QPainterPath dataPath;
+        dataPath.moveTo(center);
+        float fAngle = 360.f * data.back() / fMaximum;
+        dataPath.arcTo(m_pieChartRect, 90/*startAngle*/,
+                       -1 * fAngle /*sweepLength*/);
+        painter.setBrush(pieGradient);
+        painter.drawPath(dataPath);
+    }
+    else
+    {
+        painter.setPen(Qt::NoPen);
+        painter.setBrush(QColor(60, 60, 60, 50));
+        painter.drawRect(QRect(0, 0, width(), height()));
+    }
 }
 
 /*********************************************************************************************************************************
@@ -237,6 +250,7 @@ UISubMetric::UISubMetric(const QString &strName, const QString &strUnit, int iMa
     : m_strName(strName)
     , m_strUnit(strUnit)
     , m_iMaximumQueueSize(iMaximumQueueSize)
+    , m_fRequiresGuestAdditions(false)
 {
     if (isPercentage())
         m_fMaximum = 100.f;
@@ -309,12 +323,21 @@ bool UISubMetric::isPercentage() const
     return m_strUnit == "%";
 }
 
+bool UISubMetric::requiresGuestAdditions() const
+{
+    return m_fRequiresGuestAdditions;
+}
+
+void UISubMetric::setRequiresGuestAdditions(bool fRequiresGAs)
+{
+    m_fRequiresGuestAdditions = fRequiresGAs;
+}
 
 /*********************************************************************************************************************************
 *   UIPerformanceMonitor implementation.                                                                                     *
 *********************************************************************************************************************************/
 
-UIPerformanceMonitor::UIPerformanceMonitor(QWidget *pParent, const CMachine &machine, const CConsole &console)
+UIPerformanceMonitor::UIPerformanceMonitor(QWidget *pParent, const CMachine &machine, const CConsole &console, const UISession *pSession)
     : QWidget(pParent)
     , m_fGuestAdditionsAvailable(false)
     , m_machine(machine)
@@ -324,22 +347,14 @@ UIPerformanceMonitor::UIPerformanceMonitor(QWidget *pParent, const CMachine &mac
     , m_strCPUMetricName("CPU Load")
     , m_strRAMMetricName("RAM Usage")
 {
-    // bool fGuestAdditionsStatus = comGuest.GetAdditionsStatus(comGuest.GetAdditionsRunLevel());
-    // if (fGuestAdditionsStatus)
-    // {
-    //     QStringList versionStrings = comGuest.GetAdditionsVersion().split('.', QString::SkipEmptyParts);
-    //     if (!versionStrings.isEmpty())
-    //     {
-    //         bool fConvert = false;
-    //         int iMajorVersion = versionStrings[0].toInt(&fConvert);
-    //         if (fConvert && iMajorVersion >= 6)
-    //             m_fGuestAdditionsAvailable = true;
-    //     }
-    // }
-    // printf("m_fGuestAdditionsAvailable %d\n", m_fGuestAdditionsAvailable);
+    if (!m_console.isNull())
+        m_comGuest = m_console.GetGuest();
+    m_fGuestAdditionsAvailable = guestAdditionsAvailable(6 /* minimum major version */);
 
+    connect(pSession, &UISession::sigAdditionsStateChange, this, &UIPerformanceMonitor::sltGuestAdditionsStateChange);
     preparePerformaceCollector();
     prepareObjects();
+    enableDisableGuestAdditionDependedWidgets(m_fGuestAdditionsAvailable);
 }
 
 UIPerformanceMonitor::~UIPerformanceMonitor()
@@ -462,9 +477,20 @@ void UIPerformanceMonitor::sltTimeout()
         m_machineDebugger.GetCPULoad(0x7fffffff, aPctExecuting, aPctHalted, aPctOther);
         CPUMetric.addData(aPctExecuting);
         QList<UIChart*> charts = m_charts.values(m_strCPUMetricName);
-        QString strInfo = QString("%1\n%2%3").arg("CPU Load").arg(QString::number(aPctExecuting)).arg("%");
-        if (m_infoLabels.contains(m_strCPUMetricName))
-            m_infoLabels[m_strCPUMetricName]->setText(strInfo);
+
+        if (m_infoLabels.contains(m_strCPUMetricName) && m_infoLabels[m_strCPUMetricName])
+        {
+            if (m_infoLabels[m_strCPUMetricName]->isEnabled())
+            {
+                QString strInfo = QString("%1\n%2%3").arg("CPU Load").arg(QString::number(aPctExecuting)).arg("%");
+                m_infoLabels[m_strCPUMetricName]->setText(strInfo);
+            }
+            else
+            {
+                QString strInfo = QString("%1\n%2%3").arg("CPU Load").arg("--").arg("%");
+                m_infoLabels[m_strCPUMetricName]->setText(strInfo);
+            }
+        }
         if (m_charts.contains(m_strCPUMetricName))
             m_charts[m_strCPUMetricName]->update();
     }
@@ -474,53 +500,34 @@ void UIPerformanceMonitor::sltTimeout()
         UISubMetric &RAMMetric = m_subMetrics[m_strRAMMetricName];
         RAMMetric.setMaximum(iTotalRAM);
         RAMMetric.addData(iTotalRAM - iFreeRAM);
-        QString strInfo = QString("%1\n%2: %3\n%4: %5\n%6: %7").arg("RAM Usage").arg("Total").arg(uiCommon().formatSize(_1K * iTotalRAM)).arg("Free:").arg(uiCommon().formatSize(_1K * (iFreeRAM))).arg("Used:").arg(uiCommon().formatSize(_1K * (iTotalRAM - iFreeRAM)));
-        if (m_infoLabels.contains(m_strRAMMetricName))
-            m_infoLabels[m_strRAMMetricName]->setText(strInfo);
 
+        if (m_infoLabels.contains(m_strRAMMetricName)  && m_infoLabels[m_strRAMMetricName])
+        {
+            if (m_infoLabels[m_strRAMMetricName]->isEnabled())
+            {
+                QString strInfo = QString("%1\n%2: %3\n%4: %5\n%6: %7").arg("RAM Usage").arg("Total").arg(uiCommon().formatSize(_1K * iTotalRAM)).arg("Free:").arg(uiCommon().formatSize(_1K * (iFreeRAM))).arg("Used:").arg(uiCommon().formatSize(_1K * (iTotalRAM - iFreeRAM)));
+                m_infoLabels[m_strRAMMetricName]->setText(strInfo);
+            }
+            else
+            {
+                QString strInfo = QString("%1\n%2: %3\n%4: %5\n%6: %7").arg("RAM Usage").arg("Total").arg("---").arg("Free").arg("---").arg("Used").arg("---");
+                m_infoLabels[m_strRAMMetricName]->setText(strInfo);
+            }
+        }
         if (m_charts.contains(m_strRAMMetricName))
         {
             m_charts[m_strRAMMetricName]->update();
         }
     }
+}
 
-    /* Try to compute a global font size so that all texts fit to widgets: */
-    // int iMinimumFontSize = 24;
-    // foreach (UIChart *pChart, m_charts)
-    // {
-    //     if (!qobject_cast<UIPieChart*>(pChart))
-    //         continue;
-    //             iMinimumFontSize = qMin(pChart->fontSize(), iMinimumFontSize);
-    // }
-
-    // foreach (UIChart *pChart, m_charts)
-    // {
-    //     if (!pChart)
-    //         continue;
-    //     pChart->setFontSize(iMinimumFontSize);
-    //     pChart->update();
-    // }
-
-
-    // int iMaxLineNumber = 0;
-    // int iMaxLineLength = 0;
-    // foreach (UIChart *pChart, m_charts)
-    // {
-    //     if (!pChart)
-    //         continue;
-    //     const QStringList &list = pChart->textList();
-    //     iMaxLineNumber = qMax(iMaxLineNumber, list.size());
-    //     foreach (const QString &strLine, list)
-    //         iMaxLineLength = qMax(iMaxLineLength, strLine.length());
-    // }
-
-    // foreach (UIChart *pChart, m_charts)
-    // {
-    //     /* Currently we only care about the pie charts since they are the smallest of charts: */
-    //     if (qobject_cast<UIPieChart*>(pChart))
-    //         continue;
-
-    // }
+void UIPerformanceMonitor::sltGuestAdditionsStateChange()
+{
+    bool fGuestAdditionsAvailable = guestAdditionsAvailable(6 /* minimum major version */);
+    if (m_fGuestAdditionsAvailable == fGuestAdditionsAvailable)
+        return;
+    m_fGuestAdditionsAvailable = fGuestAdditionsAvailable;
+    enableDisableGuestAdditionDependedWidgets(m_fGuestAdditionsAvailable);
 }
 
 void UIPerformanceMonitor::preparePerformaceCollector()
@@ -548,7 +555,9 @@ void UIPerformanceMonitor::preparePerformaceCollector()
                 if (strName.contains("RAM", Qt::CaseInsensitive) && strName.contains("Free", Qt::CaseInsensitive))
                 {
                     QString strRAMMetricName(m_strRAMMetricName);
-                    m_subMetrics.insert(strRAMMetricName, UISubMetric(strRAMMetricName, metrics[i].GetUnit(), iMaximumQueueSize));
+                    UISubMetric newMetric(strRAMMetricName, metrics[i].GetUnit(), iMaximumQueueSize);
+                    newMetric.setRequiresGuestAdditions(true);
+                    m_subMetrics.insert(strRAMMetricName, newMetric);
                 }
             }
         }
@@ -556,4 +565,42 @@ void UIPerformanceMonitor::preparePerformaceCollector()
     m_subMetrics.insert(m_strCPUMetricName, UISubMetric(m_strCPUMetricName, "%", iMaximumQueueSize));
 }
 
+bool UIPerformanceMonitor::guestAdditionsAvailable(int iMinimumMajorVersion)
+{
+    if (m_comGuest.isNull())
+        return false;
+    bool fGuestAdditionsStatus = m_comGuest.GetAdditionsStatus(m_comGuest.GetAdditionsRunLevel());
+    if (fGuestAdditionsStatus)
+    {
+        QStringList versionStrings = m_comGuest.GetAdditionsVersion().split('.', QString::SkipEmptyParts);
+        if (!versionStrings.isEmpty())
+        {
+            bool fConvert = false;
+            int iMajorVersion = versionStrings[0].toInt(&fConvert);
+            if (fConvert && iMajorVersion >= iMinimumMajorVersion)
+                return true;
+        }
+    }
+    return false;
+}
+
+void UIPerformanceMonitor::enableDisableGuestAdditionDependedWidgets(bool fEnable)
+{
+    for (QMap<QString, UISubMetric>::const_iterator iterator =  m_subMetrics.begin();
+         iterator != m_subMetrics.end(); ++iterator)
+    {
+        if (!iterator.value().requiresGuestAdditions())
+            continue;
+        if (m_charts.contains(iterator.key()) && m_charts[iterator.key()])
+        {
+            m_charts[iterator.key()]->setEnabled(fEnable);
+            m_charts[iterator.key()]->update();
+        }
+        if (m_infoLabels.contains(iterator.key()) && m_infoLabels[iterator.key()])
+        {
+            m_infoLabels[iterator.key()]->setEnabled(fEnable);
+            m_infoLabels[iterator.key()]->update();
+        }
+    }
+}
 #include "UIPerformanceMonitor.moc"
