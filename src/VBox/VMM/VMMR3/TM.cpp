@@ -144,20 +144,21 @@
 #include <VBox/vmm/uvm.h>
 
 #include <VBox/vmm/pdmdev.h>
+#include <VBox/log.h>
 #include <VBox/param.h>
 #include <VBox/err.h>
 
-#include <VBox/log.h>
 #include <iprt/asm.h>
 #include <iprt/asm-math.h>
 #include <iprt/assert.h>
+#include <iprt/env.h>
 #include <iprt/file.h>
+#include <iprt/getopt.h>
+#include <iprt/semaphore.h>
+#include <iprt/string.h>
 #include <iprt/thread.h>
 #include <iprt/time.h>
 #include <iprt/timer.h>
-#include <iprt/semaphore.h>
-#include <iprt/string.h>
-#include <iprt/env.h>
 
 #include "TMInline.h"
 
@@ -186,7 +187,7 @@ static DECLCALLBACK(void)   tmR3CpuLoadTimer(PVM pVM, PTMTIMER pTimer, void *pvU
 static DECLCALLBACK(void)   tmR3TimerInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 static DECLCALLBACK(void)   tmR3TimerInfoActive(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 static DECLCALLBACK(void)   tmR3InfoClocks(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
-static DECLCALLBACK(void)   tmR3InfoCpuLoad(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
+static DECLCALLBACK(void)   tmR3InfoCpuLoad(PVM pVM, PCDBGFINFOHLP pHlp, int cArgs, char **papszArgs);
 static DECLCALLBACK(VBOXSTRICTRC) tmR3CpuTickParavirtDisable(PVM pVM, PVMCPU pVCpu, void *pvData);
 static const char *         tmR3GetTSCModeName(PVM pVM);
 static const char *         tmR3GetTSCModeNameEx(TMTSCMODE enmMode);
@@ -854,7 +855,7 @@ VMM_INT_DECL(int) TMR3Init(PVM pVM)
     DBGFR3InfoRegisterInternalEx(pVM, "timers",       "Dumps all timers. No arguments.",          tmR3TimerInfo,        DBGFINFO_FLAGS_RUN_ON_EMT);
     DBGFR3InfoRegisterInternalEx(pVM, "activetimers", "Dumps active all timers. No arguments.",   tmR3TimerInfoActive,  DBGFINFO_FLAGS_RUN_ON_EMT);
     DBGFR3InfoRegisterInternalEx(pVM, "clocks",       "Display the time of the various clocks.",  tmR3InfoClocks,       DBGFINFO_FLAGS_RUN_ON_EMT);
-    DBGFR3InfoRegisterInternalEx(pVM, "cpuload",      "Display the CPU load stats.",              tmR3InfoCpuLoad,      0);
+    DBGFR3InfoRegisterInternalArgv(pVM, "cpuload",    "Display the CPU load stats.",              tmR3InfoCpuLoad,      0);
 
     return VINF_SUCCESS;
 }
@@ -3759,19 +3760,85 @@ static DECLCALLBACK(void) tmR3InfoClocks(PVM pVM, PCDBGFINFOHLP pHlp, const char
 
 
 /**
- * @callback_function_impl{}
+ * Helper for tmR3InfoCpuLoad that adjust @a uPct to the given graph width.
  */
-static DECLCALLBACK(void) tmR3InfoCpuLoad(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs)
+DECLINLINE(size_t) tmR3InfoCpuLoadAdjustWidth(size_t uPct, size_t cchWidth)
 {
+    if (cchWidth != 100)
+        uPct = (uPct + 0.5) * (cchWidth / 100.0);
+    return uPct;
+}
+
+
+/**
+ * @callback_function_impl{FNDBGFINFOARGVINT}
+ */
+static DECLCALLBACK(void) tmR3InfoCpuLoad(PVM pVM, PCDBGFINFOHLP pHlp, int cArgs, char **papszArgs)
+{
+    char szTmp[1024];
+
     /*
      * Parse arguments.
      */
-    PTMCPULOADSTATE pState   = &pVM->tm.s.CpuLoad;
-    uint32_t        cPeriods = 60;
-    //uint32_t        cchWidth = 100;
+    PTMCPULOADSTATE pState      = &pVM->tm.s.CpuLoad;
+    VMCPUID         idCpu       = VMCPUID_ALL;
+    bool            fExpGraph   = true;
+    uint32_t        cchWidth    = 100;
+    uint32_t        cPeriods    = RT_ELEMENTS(pState->aHistory);
+    uint32_t        cRows       = 60;
 
+    static const RTGETOPTDEF s_aOptions[] =
+    {
+        { "cpu",            'c',    RTGETOPT_REQ_UINT32 },
+        { "periods",        'p',    RTGETOPT_REQ_UINT32 },
+        { "linear",         'l',    RTGETOPT_REQ_NOTHING },
+        { "rows",           'r',    RTGETOPT_REQ_UINT32 },
+        { "width",          'w',    RTGETOPT_REQ_UINT32 },
+        { "exp",            'x',    RTGETOPT_REQ_NOTHING },
+        { "exponential",    'x',    RTGETOPT_REQ_NOTHING },
+    };
 
-    RT_NOREF(pszArgs); /** @todo */
+    RTGETOPTSTATE State;
+    int rc = RTGetOptInit(&State, cArgs, papszArgs, s_aOptions, RT_ELEMENTS(s_aOptions), 0, RTGETOPTINIT_FLAGS_NO_STD_OPTS);
+    AssertRC(rc);
+
+    RTGETOPTUNION ValueUnion;
+    while ((rc = RTGetOpt(&State, &ValueUnion)) != 0)
+    {
+        switch (rc)
+        {
+            case 'c':
+                if (ValueUnion.u32 < pVM->cCpus)
+                {
+                    pState = &pVM->aCpus[ValueUnion.u32].tm.s.CpuLoad;
+                    idCpu  = ValueUnion.u32;
+                }
+                else
+                {
+                    pState = &pVM->tm.s.CpuLoad;
+                    idCpu  = VMCPUID_ALL;
+                }
+                break;
+            case 'p':
+                cPeriods = RT_MIN(RT_MAX(ValueUnion.u32, 1), RT_ELEMENTS(pState->aHistory));
+                break;
+            case 'w':
+                cchWidth = RT_MIN(RT_MAX(ValueUnion.u32, 10), sizeof(szTmp) - 32);
+                break;
+            case 'x':
+                fExpGraph = true;
+                break;
+            case 'l':
+                fExpGraph = false;
+                break;
+            case 'r':
+                cRows = RT_MIN(RT_MAX(ValueUnion.u32, 5), RT_ELEMENTS(pState->aHistory));
+                break;
+            default:
+                pHlp->pfnGetOptError(pHlp, rc, &ValueUnion, &State);
+                return;
+        }
+    }
 
     /*
      * Try do the job.
@@ -3781,22 +3848,84 @@ static DECLCALLBACK(void) tmR3InfoCpuLoad(PVM pVM, PCDBGFINFOHLP pHlp, const cha
         cPeriods = cMaxPeriods;
     if (cPeriods > 0)
     {
-        size_t iHistory = (pState->idxHistory - cPeriods) % RT_ELEMENTS(pState->aHistory);
+        /*
+         * Figure number of periods per chunk.  We can either do this in a linear
+         * fashion or a exponential fashion that compresses old history more.
+         */
+        size_t cPeriodsPerRow = 1;
+        if (cRows < cPeriods)
+        {
+            if (fExpGraph)
+            {
+                /* The last 30 seconds or half of the rows are 1:1, the other part
+                   is in increasing period counts.  Code is a little simple but seems
+                   to do the job most of the time, which is all I have time now. */
+                size_t cPeriodsOneToOne = RT_MIN(30, cRows / 2);
+                size_t cRestRows        = cRows    - cPeriodsOneToOne;
+                size_t cRestPeriods     = cPeriods - cPeriodsOneToOne;
+
+                size_t cPeriodsInWindow = 0;
+                for (cPeriodsPerRow = 0; cPeriodsPerRow <= cRestRows && cPeriodsInWindow < cRestPeriods; cPeriodsPerRow++)
+                    cPeriodsInWindow += cPeriodsPerRow + 1;
+
+                size_t iLower = 1;
+                while (cPeriodsInWindow < cRestPeriods)
+                {
+                    cPeriodsPerRow++;
+                    cPeriodsInWindow += cPeriodsPerRow;
+                    cPeriodsInWindow -= iLower;
+                    iLower++;
+                }
+            }
+            else
+            {
+                cPeriodsPerRow   = (cPeriods + cRows / 2) / cRows;
+            }
+        }
+
+        /*
+         * Do the work.
+         */
+        size_t cPctExecuting       = 0;
+        size_t cPctOther           = 0;
+        size_t cPeriodsAccumulated = 0;
+
+        size_t cRowsLeft = cRows;
+        size_t iHistory  = (pState->idxHistory - cPeriods) % RT_ELEMENTS(pState->aHistory);
         while (cPeriods-- > 0)
         {
             iHistory++;
             if (iHistory >= RT_ELEMENTS(pState->aHistory))
                 iHistory = 0;
-            char   szTmp[1024];
-            size_t offTmp = 0;
-            size_t i      = pState->aHistory[iHistory].cPctExecuting;
-            while (i-- > 0)
-                szTmp[offTmp++] = '#';
-            i = pState->aHistory[iHistory].cPctOther;
-            while (i-- > 0)
-                szTmp[offTmp++] = 'O';
-            szTmp[offTmp] = '\0';
-            pHlp->pfnPrintf(pHlp, "%2ds: %s\n", cPeriods, szTmp);
+
+            cPctExecuting        += pState->aHistory[iHistory].cPctExecuting;
+            cPctOther            += pState->aHistory[iHistory].cPctOther;
+            cPeriodsAccumulated  += 1;
+            if (   cPeriodsAccumulated >= cPeriodsPerRow
+                || cPeriods < cRowsLeft)
+            {
+                /*
+                 * Format and output the line.
+                 */
+                size_t offTmp = 0;
+                size_t i      = tmR3InfoCpuLoadAdjustWidth(cPctExecuting / cPeriodsAccumulated, cchWidth);
+                while (i-- > 0)
+                    szTmp[offTmp++] = '#';
+                i = tmR3InfoCpuLoadAdjustWidth(cPctOther / cPeriodsAccumulated, cchWidth);
+                while (i-- > 0)
+                    szTmp[offTmp++] = 'O';
+                szTmp[offTmp] = '\0';
+
+                cRowsLeft--;
+                pHlp->pfnPrintf(pHlp, "%3zus: %s\n", cPeriods + cPeriodsAccumulated / 2, szTmp);
+
+                /* Reset the state: */
+                cPctExecuting       = 0;
+                cPctOther           = 0;
+                cPeriodsAccumulated = 0;
+                if (cPeriodsPerRow > 1)
+                    cPeriodsPerRow--;
+            }
         }
         pHlp->pfnPrintf(pHlp, "  (#=guest, O=VMM overhead)\n");
 
