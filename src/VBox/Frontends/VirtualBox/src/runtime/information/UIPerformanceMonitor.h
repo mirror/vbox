@@ -41,6 +41,7 @@
 /* Forward declarations: */
 class QTimer;
 class QGridLayout;
+class QLabel;
 class UIChart;
 
 class UISubMetric
@@ -117,7 +118,9 @@ private:
     QVector<CUnknown> m_objectList;
 
     QMap<QString, UISubMetric> m_subMetrics;
-    QMultiMap<QString,UIChart*>  m_charts;
+    QMap<QString,UIChart*>  m_charts;
+    QMap<QString,QLabel*>  m_infoLabels;
+
     QString m_strCPUMetricName;
     QString m_strRAMMetricName;
 
