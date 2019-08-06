@@ -46,7 +46,7 @@
 #include <iprt/assert.h>
 #include <iprt/alloc.h>
 #include <iprt/asm.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/thread.h>
 #include <iprt/string.h>
 #include <VBox/param.h>
