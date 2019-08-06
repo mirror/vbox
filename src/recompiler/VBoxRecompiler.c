@@ -940,8 +940,7 @@ REMR3DECL(int) REMR3EmulateInstruction(PVM pVM, PVMCPU pVCpu)
     /* Make sure this flag is set; we might never execute remR3CanExecuteRaw in the AMD-V case.
      * CPU_RAW_HM makes sure we never execute interrupt handlers in the recompiler.
      */
-    if (!VM_IS_RAW_MODE_ENABLED(pVM))
-        pVM->rem.s.Env.state |= CPU_RAW_HM;
+    pVM->rem.s.Env.state |= CPU_RAW_HM;
 
     /* Skip the TB flush as that's rather expensive and not necessary for single instruction emulation. */
     fFlushTBs = pVM->rem.s.fFlushTBs;
@@ -1416,316 +1415,105 @@ bool remR3CanExecuteRaw(CPUX86State *env, RTGCPTR eip, unsigned fFlags, int *piE
     if (env->state & CPU_EMULATE_SINGLE_STEP)
         return false;
 
-    if (!VM_IS_RAW_MODE_ENABLED(env->pVM))
-    {
 #ifdef RT_OS_WINDOWS
-        PCPUMCTX pCtx = alloca(sizeof(*pCtx));
+    PCPUMCTX pCtx = alloca(sizeof(*pCtx));
 #else
-        CPUMCTX Ctx;
-        PCPUMCTX pCtx = &Ctx;
+    CPUMCTX Ctx;
+    PCPUMCTX pCtx = &Ctx;
 #endif
-        /** @todo NEM: scheduling.   */
+    /** @todo NEM: scheduling.   */
 
-        env->state |= CPU_RAW_HM;
-
-        /*
-         * Create partial context for HMCanExecuteGuest.
-         */
-        pCtx->cr0            = env->cr[0];
-        pCtx->cr3            = env->cr[3];
-        pCtx->cr4            = env->cr[4];
-
-        pCtx->tr.Sel         = env->tr.selector;
-        pCtx->tr.ValidSel    = env->tr.selector;
-        pCtx->tr.fFlags      = CPUMSELREG_FLAGS_VALID;
-        pCtx->tr.u64Base     = env->tr.base;
-        pCtx->tr.u32Limit    = env->tr.limit;
-        pCtx->tr.Attr.u      = (env->tr.flags >> SEL_FLAGS_SHIFT) & SEL_FLAGS_SMASK;
-
-        pCtx->ldtr.Sel       = env->ldt.selector;
-        pCtx->ldtr.ValidSel  = env->ldt.selector;
-        pCtx->ldtr.fFlags    = CPUMSELREG_FLAGS_VALID;
-        pCtx->ldtr.u64Base   = env->ldt.base;
-        pCtx->ldtr.u32Limit  = env->ldt.limit;
-        pCtx->ldtr.Attr.u    = (env->ldt.flags >> SEL_FLAGS_SHIFT) & SEL_FLAGS_SMASK;
-
-        pCtx->idtr.cbIdt     = env->idt.limit;
-        pCtx->idtr.pIdt      = env->idt.base;
-
-        pCtx->gdtr.cbGdt     = env->gdt.limit;
-        pCtx->gdtr.pGdt      = env->gdt.base;
-
-        pCtx->rsp            = env->regs[R_ESP];
-        pCtx->rip            = env->eip;
-
-        pCtx->eflags.u32     = env->eflags;
-
-        pCtx->cs.Sel         = env->segs[R_CS].selector;
-        pCtx->cs.ValidSel    = env->segs[R_CS].selector;
-        pCtx->cs.fFlags      = CPUMSELREG_FLAGS_VALID;
-        pCtx->cs.u64Base     = env->segs[R_CS].base;
-        pCtx->cs.u32Limit    = env->segs[R_CS].limit;
-        pCtx->cs.Attr.u      = (env->segs[R_CS].flags >> SEL_FLAGS_SHIFT) & SEL_FLAGS_SMASK;
-
-        pCtx->ds.Sel         = env->segs[R_DS].selector;
-        pCtx->ds.ValidSel    = env->segs[R_DS].selector;
-        pCtx->ds.fFlags      = CPUMSELREG_FLAGS_VALID;
-        pCtx->ds.u64Base     = env->segs[R_DS].base;
-        pCtx->ds.u32Limit    = env->segs[R_DS].limit;
-        pCtx->ds.Attr.u      = (env->segs[R_DS].flags >> SEL_FLAGS_SHIFT) & SEL_FLAGS_SMASK;
-
-        pCtx->es.Sel         = env->segs[R_ES].selector;
-        pCtx->es.ValidSel    = env->segs[R_ES].selector;
-        pCtx->es.fFlags      = CPUMSELREG_FLAGS_VALID;
-        pCtx->es.u64Base     = env->segs[R_ES].base;
-        pCtx->es.u32Limit    = env->segs[R_ES].limit;
-        pCtx->es.Attr.u      = (env->segs[R_ES].flags >> SEL_FLAGS_SHIFT) & SEL_FLAGS_SMASK;
-
-        pCtx->fs.Sel         = env->segs[R_FS].selector;
-        pCtx->fs.ValidSel    = env->segs[R_FS].selector;
-        pCtx->fs.fFlags      = CPUMSELREG_FLAGS_VALID;
-        pCtx->fs.u64Base     = env->segs[R_FS].base;
-        pCtx->fs.u32Limit    = env->segs[R_FS].limit;
-        pCtx->fs.Attr.u      = (env->segs[R_FS].flags >> SEL_FLAGS_SHIFT) & SEL_FLAGS_SMASK;
-
-        pCtx->gs.Sel         = env->segs[R_GS].selector;
-        pCtx->gs.ValidSel    = env->segs[R_GS].selector;
-        pCtx->gs.fFlags      = CPUMSELREG_FLAGS_VALID;
-        pCtx->gs.u64Base     = env->segs[R_GS].base;
-        pCtx->gs.u32Limit    = env->segs[R_GS].limit;
-        pCtx->gs.Attr.u      = (env->segs[R_GS].flags >> SEL_FLAGS_SHIFT) & SEL_FLAGS_SMASK;
-
-        pCtx->ss.Sel         = env->segs[R_SS].selector;
-        pCtx->ss.ValidSel    = env->segs[R_SS].selector;
-        pCtx->ss.fFlags      = CPUMSELREG_FLAGS_VALID;
-        pCtx->ss.u64Base     = env->segs[R_SS].base;
-        pCtx->ss.u32Limit    = env->segs[R_SS].limit;
-        pCtx->ss.Attr.u      = (env->segs[R_SS].flags >> SEL_FLAGS_SHIFT) & SEL_FLAGS_SMASK;
-
-        pCtx->msrEFER        = env->efer;
-        pCtx->hwvirt.enmHwvirt = CPUMHWVIRT_NONE;
-
-        /*
-         * Hardware accelerated mode:
-         * Typically only 32-bits protected mode, with paging enabled, code is allowed here.
-         */
-        PVMCPU pVCpu = &env->pVM->aCpus[0];
-        if (HMCanExecuteGuest(pVCpu, pCtx))
-        {
-            *piException = EXCP_EXECUTE_HM;
-            return true;
-        }
-        return false;
-    }
+    env->state |= CPU_RAW_HM;
 
     /*
-     * Here we only support 16 & 32 bits protected mode ring 3 code that has no IO privileges
-     * or 32 bits protected mode ring 0 code
-     *
-     * The tests are ordered by the likelihood of being true during normal execution.
+     * Create partial context for HMCanExecuteGuest.
      */
-    if (fFlags & (HF_TF_MASK | HF_INHIBIT_IRQ_MASK))
-    {
-        STAM_COUNTER_INC(&gStatRefuseTFInhibit);
-        Log2(("raw mode refused: fFlags=%#x\n", fFlags));
-        return false;
-    }
+    pCtx->cr0            = env->cr[0];
+    pCtx->cr3            = env->cr[3];
+    pCtx->cr4            = env->cr[4];
 
-#ifndef VBOX_RAW_V86
-    if (fFlags & VM_MASK) {
-        STAM_COUNTER_INC(&gStatRefuseVM86);
-        Log2(("raw mode refused: VM_MASK\n"));
-        return false;
-    }
-#endif
+    pCtx->tr.Sel         = env->tr.selector;
+    pCtx->tr.ValidSel    = env->tr.selector;
+    pCtx->tr.fFlags      = CPUMSELREG_FLAGS_VALID;
+    pCtx->tr.u64Base     = env->tr.base;
+    pCtx->tr.u32Limit    = env->tr.limit;
+    pCtx->tr.Attr.u      = (env->tr.flags >> SEL_FLAGS_SHIFT) & SEL_FLAGS_SMASK;
 
-    if (env->state & CPU_EMULATE_SINGLE_INSTR)
-    {
-#ifndef DEBUG_bird
-        Log2(("raw mode refused: CPU_EMULATE_SINGLE_INSTR\n"));
-#endif
-        return false;
-    }
+    pCtx->ldtr.Sel       = env->ldt.selector;
+    pCtx->ldtr.ValidSel  = env->ldt.selector;
+    pCtx->ldtr.fFlags    = CPUMSELREG_FLAGS_VALID;
+    pCtx->ldtr.u64Base   = env->ldt.base;
+    pCtx->ldtr.u32Limit  = env->ldt.limit;
+    pCtx->ldtr.Attr.u    = (env->ldt.flags >> SEL_FLAGS_SHIFT) & SEL_FLAGS_SMASK;
 
-    if (env->singlestep_enabled)
-    {
-        //Log2(("raw mode refused: Single step\n"));
-        return false;
-    }
+    pCtx->idtr.cbIdt     = env->idt.limit;
+    pCtx->idtr.pIdt      = env->idt.base;
 
-    if (!QTAILQ_EMPTY(&env->breakpoints))
-    {
-        //Log2(("raw mode refused: Breakpoints\n"));
-        return false;
-    }
+    pCtx->gdtr.cbGdt     = env->gdt.limit;
+    pCtx->gdtr.pGdt      = env->gdt.base;
 
-    if (!QTAILQ_EMPTY(&env->watchpoints))
-    {
-        //Log2(("raw mode refused: Watchpoints\n"));
-        return false;
-    }
+    pCtx->rsp            = env->regs[R_ESP];
+    pCtx->rip            = env->eip;
 
-    u32CR0 = env->cr[0];
-    if ((u32CR0 & (X86_CR0_PG | X86_CR0_PE)) != (X86_CR0_PG | X86_CR0_PE))
-    {
-        STAM_COUNTER_INC(&gStatRefusePaging);
-        //Log2(("raw mode refused: %s%s%s\n", (u32CR0 & X86_CR0_PG) ? "" : " !PG", (u32CR0 & X86_CR0_PE) ? "" : " !PE", (u32CR0 & X86_CR0_AM) ? "" : " !AM"));
-        return false;
-    }
+    pCtx->eflags.u32     = env->eflags;
 
-    if (env->cr[4] & CR4_PAE_MASK)
-    {
-        if (!(env->cpuid_features & X86_CPUID_FEATURE_EDX_PAE))
-        {
-            STAM_COUNTER_INC(&gStatRefusePAE);
-            return false;
-        }
-    }
+    pCtx->cs.Sel         = env->segs[R_CS].selector;
+    pCtx->cs.ValidSel    = env->segs[R_CS].selector;
+    pCtx->cs.fFlags      = CPUMSELREG_FLAGS_VALID;
+    pCtx->cs.u64Base     = env->segs[R_CS].base;
+    pCtx->cs.u32Limit    = env->segs[R_CS].limit;
+    pCtx->cs.Attr.u      = (env->segs[R_CS].flags >> SEL_FLAGS_SHIFT) & SEL_FLAGS_SMASK;
 
-    if (((fFlags >> HF_CPL_SHIFT) & 3) == 3)
-    {
-        if (!(env->eflags & IF_MASK))
-        {
-            STAM_COUNTER_INC(&gStatRefuseIF0);
-            Log2(("raw mode refused: IF (RawR3)\n"));
-            return false;
-        }
+    pCtx->ds.Sel         = env->segs[R_DS].selector;
+    pCtx->ds.ValidSel    = env->segs[R_DS].selector;
+    pCtx->ds.fFlags      = CPUMSELREG_FLAGS_VALID;
+    pCtx->ds.u64Base     = env->segs[R_DS].base;
+    pCtx->ds.u32Limit    = env->segs[R_DS].limit;
+    pCtx->ds.Attr.u      = (env->segs[R_DS].flags >> SEL_FLAGS_SHIFT) & SEL_FLAGS_SMASK;
 
-        if (!(u32CR0 & CR0_WP_MASK))
-        {
-            STAM_COUNTER_INC(&gStatRefuseWP0);
-            Log2(("raw mode refused: CR0.WP + RawR0\n"));
-            return false;
-        }
-    }
-    else
-    {
-        // Let's start with pure 32 bits ring 0 code first
-        if ((fFlags & (HF_SS32_MASK | HF_CS32_MASK)) != (HF_SS32_MASK | HF_CS32_MASK))
-        {
-            STAM_COUNTER_INC(&gStatRefuseCode16);
-            Log2(("raw r0 mode refused: HF_[S|C]S32_MASK fFlags=%#x\n", fFlags));
-            return false;
-        }
+    pCtx->es.Sel         = env->segs[R_ES].selector;
+    pCtx->es.ValidSel    = env->segs[R_ES].selector;
+    pCtx->es.fFlags      = CPUMSELREG_FLAGS_VALID;
+    pCtx->es.u64Base     = env->segs[R_ES].base;
+    pCtx->es.u32Limit    = env->segs[R_ES].limit;
+    pCtx->es.Attr.u      = (env->segs[R_ES].flags >> SEL_FLAGS_SHIFT) & SEL_FLAGS_SMASK;
 
-        /* Only R0. */
-        if (((fFlags >> HF_CPL_SHIFT) & 3) != 0)
-        {
-            STAM_COUNTER_INC(&gStatRefuseRing1or2);
-            Log2(("raw r0 mode refused: CPL %d\n", ((fFlags >> HF_CPL_SHIFT) & 3) ));
-            return false;
-        }
+    pCtx->fs.Sel         = env->segs[R_FS].selector;
+    pCtx->fs.ValidSel    = env->segs[R_FS].selector;
+    pCtx->fs.fFlags      = CPUMSELREG_FLAGS_VALID;
+    pCtx->fs.u64Base     = env->segs[R_FS].base;
+    pCtx->fs.u32Limit    = env->segs[R_FS].limit;
+    pCtx->fs.Attr.u      = (env->segs[R_FS].flags >> SEL_FLAGS_SHIFT) & SEL_FLAGS_SMASK;
 
-        if (!(u32CR0 & CR0_WP_MASK))
-        {
-            STAM_COUNTER_INC(&gStatRefuseWP0);
-            Log2(("raw r0 mode refused: CR0.WP=0!\n"));
-            return false;
-        }
+    pCtx->gs.Sel         = env->segs[R_GS].selector;
+    pCtx->gs.ValidSel    = env->segs[R_GS].selector;
+    pCtx->gs.fFlags      = CPUMSELREG_FLAGS_VALID;
+    pCtx->gs.u64Base     = env->segs[R_GS].base;
+    pCtx->gs.u32Limit    = env->segs[R_GS].limit;
+    pCtx->gs.Attr.u      = (env->segs[R_GS].flags >> SEL_FLAGS_SHIFT) & SEL_FLAGS_SMASK;
 
-#ifdef VBOX_WITH_RAW_MODE
-        if (PATMIsPatchGCAddr(env->pVM, eip))
-        {
-            Log2(("raw r0 mode forced: patch code\n"));
-            *piException = EXCP_EXECUTE_RAW;
-            return true;
-        }
-#endif
+    pCtx->ss.Sel         = env->segs[R_SS].selector;
+    pCtx->ss.ValidSel    = env->segs[R_SS].selector;
+    pCtx->ss.fFlags      = CPUMSELREG_FLAGS_VALID;
+    pCtx->ss.u64Base     = env->segs[R_SS].base;
+    pCtx->ss.u32Limit    = env->segs[R_SS].limit;
+    pCtx->ss.Attr.u      = (env->segs[R_SS].flags >> SEL_FLAGS_SHIFT) & SEL_FLAGS_SMASK;
 
-#if !defined(VBOX_ALLOW_IF0) && !defined(VBOX_RUN_INTERRUPT_GATE_HANDLERS)
-        if (!(env->eflags & IF_MASK))
-        {
-            STAM_COUNTER_INC(&gStatRefuseIF0);
-            ////Log2(("R0: IF=0 VIF=%d %08X\n", eip, *env->pVMeflags));
-            //Log2(("RR0: Interrupts turned off; fall back to emulation\n"));
-            return false;
-        }
-#endif
-
-#ifndef VBOX_WITH_RAW_RING1
-        if (((env->eflags >> IOPL_SHIFT) & 3) != 0)
-        {
-            Log2(("raw r0 mode refused: IOPL %d\n", ((env->eflags >> IOPL_SHIFT) & 3)));
-            return false;
-        }
-#endif
-        env->state |= CPU_RAW_RING0;
-    }
+    pCtx->msrEFER        = env->efer;
+    pCtx->hwvirt.enmHwvirt = CPUMHWVIRT_NONE;
 
     /*
-     * Don't reschedule the first time we're called, because there might be
-     * special reasons why we're here that is not covered by the above checks.
+     * Hardware accelerated mode:
+     * Typically only 32-bits protected mode, with paging enabled, code is allowed here.
      */
-    if (env->pVM->rem.s.cCanExecuteRaw == 1)
+    PVMCPU pVCpu = &env->pVM->aCpus[0];
+    if (HMCanExecuteGuest(pVCpu, pCtx))
     {
-        Log2(("raw mode refused: first scheduling\n"));
-        STAM_COUNTER_INC(&gStatRefuseCanExecute);
-        return false;
-    }
-
-    /*
-     * Stale hidden selectors means raw-mode is unsafe (being very careful).
-     */
-    if (env->segs[R_CS].fVBoxFlags & CPUMSELREG_FLAGS_STALE)
-    {
-        Log2(("raw mode refused: stale CS (%#x)\n", env->segs[R_CS].selector));
-        STAM_COUNTER_INC(&gaStatRefuseStale[R_CS]);
-        return false;
-    }
-    if (env->segs[R_SS].fVBoxFlags & CPUMSELREG_FLAGS_STALE)
-    {
-        Log2(("raw mode refused: stale SS (%#x)\n", env->segs[R_SS].selector));
-        STAM_COUNTER_INC(&gaStatRefuseStale[R_SS]);
-        return false;
-    }
-    if (env->segs[R_DS].fVBoxFlags & CPUMSELREG_FLAGS_STALE)
-    {
-        Log2(("raw mode refused: stale DS (%#x)\n", env->segs[R_DS].selector));
-        STAM_COUNTER_INC(&gaStatRefuseStale[R_DS]);
-        return false;
-    }
-    if (env->segs[R_ES].fVBoxFlags & CPUMSELREG_FLAGS_STALE)
-    {
-        Log2(("raw mode refused: stale ES (%#x)\n", env->segs[R_ES].selector));
-        STAM_COUNTER_INC(&gaStatRefuseStale[R_ES]);
-        return false;
-    }
-    if (env->segs[R_FS].fVBoxFlags & CPUMSELREG_FLAGS_STALE)
-    {
-        Log2(("raw mode refused: stale FS (%#x)\n", env->segs[R_FS].selector));
-        STAM_COUNTER_INC(&gaStatRefuseStale[R_FS]);
-        return false;
-    }
-    if (env->segs[R_GS].fVBoxFlags & CPUMSELREG_FLAGS_STALE)
-    {
-        Log2(("raw mode refused: stale GS (%#x)\n", env->segs[R_GS].selector));
-        STAM_COUNTER_INC(&gaStatRefuseStale[R_GS]);
-        return false;
-    }
-
-/*    Assert(env->pVCpu && PGMPhysIsA20Enabled(env->pVCpu));*/
-    *piException = EXCP_EXECUTE_RAW;
-    return true;
-}
-
-
-#ifdef VBOX_WITH_RAW_MODE
-/**
- * Fetches a code byte.
- *
- * @returns Success indicator (bool) for ease of use.
- * @param   env         The CPU environment structure.
- * @param   GCPtrInstr  Where to fetch code.
- * @param   pu8Byte     Where to store the byte on success
- */
-bool remR3GetOpcode(CPUX86State *env, RTGCPTR GCPtrInstr, uint8_t *pu8Byte)
-{
-    int rc = PATMR3QueryOpcode(env->pVM, GCPtrInstr, pu8Byte);
-    if (RT_SUCCESS(rc))
+        *piException = EXCP_EXECUTE_HM;
         return true;
+    }
     return false;
 }
-#endif /* VBOX_WITH_RAW_MODE */
 
 
 /**
@@ -1814,15 +1602,6 @@ void *remR3TlbGCPhys2Ptr(CPUX86State *env1, target_ulong physAddr, int fWritable
  */
 void remR3ProtectCode(CPUX86State *env, RTGCPTR GCPtr)
 {
-#ifdef VBOX_REM_PROTECT_PAGES_FROM_SMC
-    Assert(env->pVM->rem.s.fInREM);
-    if (     (env->cr[0] & X86_CR0_PG)                      /* paging must be enabled */
-        &&  !(env->state & CPU_EMULATE_SINGLE_INSTR)        /* ignore during single instruction execution */
-        &&   (((env->hflags >> HF_CPL_SHIFT) & 3) == 0)     /* supervisor mode only */
-        &&  !(env->eflags & VM_MASK)                        /* no V86 mode */
-        &&  VM_IS_RAW_MODE_ENABLED(env->pVM))
-        CSAMR3MonitorPage(env->pVM, GCPtr, CSAM_TAG_REM);
-#endif
 }
 
 
@@ -1835,14 +1614,6 @@ void remR3ProtectCode(CPUX86State *env, RTGCPTR GCPtr)
 void remR3UnprotectCode(CPUX86State *env, RTGCPTR GCPtr)
 {
     Assert(env->pVM->rem.s.fInREM);
-#ifdef VBOX_REM_PROTECT_PAGES_FROM_SMC
-    if (     (env->cr[0] & X86_CR0_PG)                      /* paging must be enabled */
-        &&  !(env->state & CPU_EMULATE_SINGLE_INSTR)        /* ignore during single instruction execution */
-        &&   (((env->hflags >> HF_CPL_SHIFT) & 3) == 0)     /* supervisor mode only */
-        &&  !(env->eflags & VM_MASK)                        /* no V86 mode */
-        &&  VM_IS_RAW_MODE_ENABLED(env->pVM))
-        CSAMR3UnmonitorPage(env->pVM, GCPtr, CSAM_TAG_REM);
-#endif
 }
 
 
@@ -2063,9 +1834,6 @@ void remR3TrapClear(PVM pVM)
  */
 void remR3RecordCall(CPUX86State *env)
 {
-#ifdef VBOX_WITH_RAW_MODE
-    CSAMR3RecordCallAddress(env->pVM, env->eip);
-#endif
 }
 
 

@@ -209,12 +209,12 @@ DECLINLINE(PMMLOOKUPHYPER) mmHyperLookupRC(PVM pVM, RTRCPTR RCPtr, uint32_t *pof
  */
 DECLINLINE(PMMLOOKUPHYPER) mmHyperLookupCC(PVM pVM, void *pv, uint32_t *poff)
 {
-#ifdef IN_RC
-    return mmHyperLookupRC(pVM, (RTRCPTR)pv, poff);
-#elif defined(IN_RING0)
+#ifdef IN_RING0
     return mmHyperLookupR0(pVM, pv, poff);
-#else
+#elif defined(IN_RING3)
     return mmHyperLookupR3(pVM, pv, poff);
+#else
+# error "Neither IN_RING0 nor IN_RING3!"
 #endif
 }
 
@@ -300,13 +300,13 @@ DECLINLINE(RTRCPTR) mmHyperLookupCalcRC(PVM pVM, PMMLOOKUPHYPER pLookup, uint32_
  */
 DECLINLINE(void *) mmHyperLookupCalcCC(PVM pVM, PMMLOOKUPHYPER pLookup, uint32_t off)
 {
-#ifdef IN_RC
-    return (void *)mmHyperLookupCalcRC(pVM, pLookup, off);
-#elif defined(IN_RING0)
+#ifdef IN_RING0
     return mmHyperLookupCalcR0(pVM, pLookup, off);
-#else
+#elif defined(IN_RING3)
     NOREF(pVM);
     return mmHyperLookupCalcR3(pLookup, off);
+#else
+# error "Neither IN_RING0 nor IN_RING3!"
 #endif
 }
 
@@ -468,7 +468,7 @@ VMMDECL(RTR0PTR) MMHyperRCToR0(PVM pVM, RTRCPTR RCPtr)
     return NIL_RTR0PTR;
 }
 
-#ifndef IN_RC
+
 /**
  * Converts a raw-mode context address in the Hypervisor memory region to a current context address.
  *
@@ -486,7 +486,7 @@ VMMDECL(void *) MMHyperRCToCC(PVM pVM, RTRCPTR RCPtr)
         return mmHyperLookupCalcCC(pVM, pLookup, off);
     return NULL;
 }
-#endif
+
 
 #ifndef IN_RING3
 /**
@@ -529,7 +529,6 @@ VMMDECL(RTR0PTR) MMHyperCCToR0(PVM pVM, void *pv)
 #endif
 
 
-#ifndef IN_RC
 /**
  * Converts a current context address in the Hypervisor memory region to a raw-mode context address.
  *
@@ -547,7 +546,6 @@ VMMDECL(RTRCPTR) MMHyperCCToRC(PVM pVM, void *pv)
         return mmHyperLookupCalcRC(pVM, pLookup, off);
     return NIL_RTRCPTR;
 }
-#endif
 
 
 /**

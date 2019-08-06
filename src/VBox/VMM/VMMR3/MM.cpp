@@ -16,7 +16,7 @@
  */
 
 
-/* @page pg_mm     MM - The Memory Manager
+/** @page pg_mm     MM - The Memory Manager
  *
  * The memory manager is in charge of the following memory:
  *      - Hypervisor Memory Area (HMA) - Address space management (obsolete in 6.1).

@@ -29,9 +29,7 @@
 
 #include <iprt/assert.h>
 #include <iprt/string.h>
-#ifndef IN_RC
-# include <iprt/thread.h>
-#endif
+#include <iprt/thread.h>
 
 
 /**

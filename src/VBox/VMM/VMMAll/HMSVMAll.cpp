@@ -30,7 +30,6 @@
 #include <VBox/err.h>
 
 
-#ifndef IN_RC
 
 /**
  * Emulates a simple MOV TPR (CR8) instruction.
@@ -119,7 +118,7 @@ VMM_INT_DECL(int) hmEmulateSvmMovTpr(PVMCPU pVCpu)
     return fPatchFound ? VINF_SUCCESS : VERR_NOT_FOUND;
 }
 
-# ifdef VBOX_WITH_NESTED_HWVIRT_SVM
+#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
 /**
  * Notification callback for when a \#VMEXIT happens outside SVM R0 code (e.g.
  * in IEM).
@@ -170,7 +169,7 @@ VMM_INT_DECL(void) HMNotifySvmNstGstVmexit(PVMCPU pVCpu, PCPUMCTX pCtx)
     CPUM_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_ALL);
     ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_ALL_GUEST);
 }
-# endif
+#endif
 
 /**
  * Checks if the Virtual GIF (Global Interrupt Flag) feature is supported and
@@ -267,7 +266,6 @@ VMM_INT_DECL(int) HMIsSubjectToSvmErratum170(uint32_t *pu32Family, uint32_t *pu3
     return fErratumApplies;
 }
 
-#endif /* !IN_RC */
 
 
 /**

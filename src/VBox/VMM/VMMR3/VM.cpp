@@ -4218,11 +4218,7 @@ VMMR3_INT_DECL(bool) VMR3IsLongModeAllowed(PVM pVM)
             return HMIsLongModeAllowed(pVM);
 
         case VM_EXEC_ENGINE_NATIVE_API:
-#ifndef IN_RC
             return NEMHCIsLongModeAllowed(pVM);
-#else
-            return false;
-#endif
 
         case VM_EXEC_ENGINE_NOT_SET:
             AssertFailed();

@@ -172,15 +172,7 @@ DECLINLINE(void *)  MMHyperR3ToCC(PVM pVM, RTR3PTR R3Ptr)
 #endif
 
 
-#ifndef IN_RC
 VMMDECL(void *)     MMHyperRCToCC(PVM pVM, RTRCPTR RCPtr);
-#else
-DECLINLINE(void *)  MMHyperRCToCC(PVM pVM, RTRCPTR RCPtr)
-{
-    NOREF(pVM);
-    return (void *)RCPtr;
-}
-#endif
 
 #ifndef IN_RING3
 VMMDECL(RTR3PTR)    MMHyperCCToR3(PVM pVM, void *pv);
@@ -202,15 +194,7 @@ DECLINLINE(RTR0PTR) MMHyperCCToR0(PVM pVM, void *pv)
 }
 #endif
 
-#ifndef IN_RC
 VMMDECL(RTRCPTR)    MMHyperCCToRC(PVM pVM, void *pv);
-#else
-DECLINLINE(RTRCPTR) MMHyperCCToRC(PVM pVM, void *pv)
-{
-    NOREF(pVM);
-    return (RTRCPTR)pv;
-}
-#endif
 
 
 VMMDECL(int)        MMHyperAlloc(PVM pVM, size_t cb, uint32_t uAlignment, MMTAG enmTag, void **ppv);
@@ -240,11 +224,7 @@ VMMDECL(int)        MMPagePhys2PageTry(PVM pVM, RTHCPHYS HCPhysPage, void **ppvP
  * This assertion only works while IN_RC, it's a NOP everywhere else.
  * @thread  The Emulation Thread.
  */
-#ifdef IN_RC
-# define MMHYPER_RC_ASSERT_RCPTR(pVM, RCPtr)   Assert(MMHyperIsInsideArea((pVM), (RTRCUINTPTR)(RCPtr)) || !(RCPtr))
-#else
-# define MMHYPER_RC_ASSERT_RCPTR(pVM, RCPtr)   do { } while (0)
-#endif
+#define MMHYPER_RC_ASSERT_RCPTR(pVM, RCPtr)   do { } while (0)
 
 /** @} */
 
@@ -355,25 +335,6 @@ VMMR3DECL(void)     MMR3UkHeapFree(PVM pVM, void *pv, MMTAG enmTag);
 /** @} */
 #endif /* IN_RING3 || DOXYGEN_RUNNING */
 
-
-
-#if defined(IN_RC) || defined(DOXYGEN_RUNNING)
-/** @defgroup grp_mm_rc    The MM Raw-mode Context API
- * @{
- */
-
-VMMRCDECL(void)     MMGCRamRegisterTrapHandler(PVM pVM);
-VMMRCDECL(void)     MMGCRamDeregisterTrapHandler(PVM pVM);
-VMMRCDECL(int)      MMGCRamReadNoTrapHandler(void *pDst, void *pSrc, size_t cb);
-/**
- * @deprecated Don't use this as it doesn't check the page state.
- */
-VMMRCDECL(int)      MMGCRamWriteNoTrapHandler(void *pDst, void *pSrc, size_t cb);
-VMMRCDECL(int)      MMGCRamRead(PVM pVM, void *pDst, void *pSrc, size_t cb);
-VMMRCDECL(int)      MMGCRamWrite(PVM pVM, void *pDst, void *pSrc, size_t cb);
-
-/** @} */
-#endif /* IN_RC || DOXYGEN_RUNNING */
 
 /** @} */
 RT_C_DECLS_END

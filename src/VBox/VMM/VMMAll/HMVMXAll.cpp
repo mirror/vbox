@@ -879,25 +879,24 @@ VMM_INT_DECL(bool) HMCanExecuteVmxGuest(PVMCPU pVCpu, PCCPUMCTX pCtx)
  */
 VMM_INT_DECL(void) HMDumpHwvirtVmxState(PVMCPU pVCpu)
 {
-#ifndef IN_RC
     /* The string width of -4 used in the macros below to cover 'LDTR', 'GDTR', 'IDTR. */
-# define HMVMX_DUMP_HOST_XDTR(a_pVmcs, a_Seg, a_SegName, a_pszPrefix) \
+#define HMVMX_DUMP_HOST_XDTR(a_pVmcs, a_Seg, a_SegName, a_pszPrefix) \
     do { \
         LogRel(("  %s%-4s                       = {base=%016RX64}\n", \
             (a_pszPrefix), (a_SegName), (a_pVmcs)->u64Host##a_Seg##Base.u)); \
     } while (0)
-# define HMVMX_DUMP_HOST_FS_GS_TR(a_pVmcs, a_Seg, a_SegName, a_pszPrefix) \
+#define HMVMX_DUMP_HOST_FS_GS_TR(a_pVmcs, a_Seg, a_SegName, a_pszPrefix) \
     do { \
         LogRel(("  %s%-4s                       = {%04x base=%016RX64}\n", \
                 (a_pszPrefix), (a_SegName), (a_pVmcs)->Host##a_Seg, (a_pVmcs)->u64Host##a_Seg##Base.u)); \
     } while (0)
-# define HMVMX_DUMP_GUEST_SEGREG(a_pVmcs, a_Seg, a_SegName, a_pszPrefix) \
+#define HMVMX_DUMP_GUEST_SEGREG(a_pVmcs, a_Seg, a_SegName, a_pszPrefix) \
     do { \
         LogRel(("  %s%-4s                       = {%04x base=%016RX64 limit=%08x flags=%04x}\n", \
                 (a_pszPrefix), (a_SegName), (a_pVmcs)->Guest##a_Seg, (a_pVmcs)->u64Guest##a_Seg##Base.u, \
                 (a_pVmcs)->u32Guest##a_Seg##Limit, (a_pVmcs)->u32Guest##a_Seg##Attr)); \
     } while (0)
-# define HMVMX_DUMP_GUEST_XDTR(a_pVmcs, a_Seg, a_SegName, a_pszPrefix) \
+#define HMVMX_DUMP_GUEST_XDTR(a_pVmcs, a_Seg, a_SegName, a_pszPrefix) \
     do { \
         LogRel(("  %s%-4s                       = {base=%016RX64 limit=%08x}\n", \
                 (a_pszPrefix), (a_SegName), (a_pVmcs)->u64Guest##a_Seg##Base.u, (a_pVmcs)->u32Guest##a_Seg##Limit)); \
@@ -1143,13 +1142,10 @@ VMM_INT_DECL(void) HMDumpHwvirtVmxState(PVMCPU pVCpu)
         LogRel(("  %sGuest-linear addr          = %#RX64\n",   pszPrefix, pVmcs->u64RoGuestLinearAddr.u));
     }
 
-# undef HMVMX_DUMP_HOST_XDTR
-# undef HMVMX_DUMP_HOST_FS_GS_TR
-# undef HMVMX_DUMP_GUEST_SEGREG
-# undef HMVMX_DUMP_GUEST_XDTR
-#else
-    NOREF(pVCpu);
-#endif /* !IN_RC */
+#undef HMVMX_DUMP_HOST_XDTR
+#undef HMVMX_DUMP_HOST_FS_GS_TR
+#undef HMVMX_DUMP_GUEST_SEGREG
+#undef HMVMX_DUMP_GUEST_XDTR
 }
 
 
@@ -1289,8 +1285,7 @@ VMM_INT_DECL(uint32_t) HMTrpmEventTypeToVmxEventType(uint8_t uVector, TRPMEVENT 
 }
 
 
-#ifndef IN_RC
-# ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
 /**
  * Notification callback for when a VM-exit happens outside VMX R0 code (e.g. in
  * IEM).
@@ -1363,6 +1358,5 @@ VMM_INT_DECL(void) HMNotifyVmxNstGstCurrentVmcsChanged(PVMCPU pVCpu)
     pVCpu->hm.s.vmx.fCopiedNstGstToShadowVmcs = false;
 }
 
-# endif /* VBOX_WITH_NESTED_HWVIRT_VMX */
-#endif /* IN_RC */
+#endif /* VBOX_WITH_NESTED_HWVIRT_VMX */
 

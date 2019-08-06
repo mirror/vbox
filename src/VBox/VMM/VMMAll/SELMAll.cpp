@@ -37,14 +37,6 @@
 #include <iprt/string.h>
 
 
-/*********************************************************************************************************************************
-*   Global Variables                                                                                                             *
-*********************************************************************************************************************************/
-#if defined(LOG_ENABLED) && defined(VBOX_WITH_RAW_MODE_NOT_R0)
-/** Segment register names. */
-static char const g_aszSRegNms[X86_SREG_COUNT][4] = { "ES", "CS", "SS", "DS", "FS", "GS" };
-#endif
-
 
 /**
  * Converts a GC selector based address to a flat address.
@@ -79,16 +71,8 @@ VMMDECL(RTGCPTR) SELMToFlat(PVM pVM, DISSELREG SelReg, PCPUMCTXCORE pCtxCore, RT
         return (RTGCPTR)uFlat;
     }
 
-#ifdef VBOX_WITH_RAW_MODE_NOT_R0
-    /** @todo when we're in 16 bits mode, we should cut off the address as well?? */
-    if (!CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, pSReg))
-        CPUMGuestLazyLoadHiddenSelectorReg(pVCpu, pSReg);
-    if (!CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pCtxCore->cs))
-        CPUMGuestLazyLoadHiddenSelectorReg(pVCpu, &pCtxCore->cs);
-#else
     Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, pSReg));
     Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pCtxCore->cs));
-#endif
 
     /* 64 bits mode: CS, DS, ES and SS are treated as if each segment base is 0
        (Intel® 64 and IA-32 Architectures Software Developer's Manual: 3.4.2.1). */
@@ -152,15 +136,8 @@ VMMDECL(int) SELMToFlatEx(PVMCPU pVCpu, DISSELREG SelReg, PCPUMCTXCORE pCtxCore,
         return VINF_SUCCESS;
     }
 
-#ifdef VBOX_WITH_RAW_MODE_NOT_R0
-    if (!CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, pSReg))
-        CPUMGuestLazyLoadHiddenSelectorReg(pVCpu, pSReg);
-    if (!CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pCtxCore->cs))
-        CPUMGuestLazyLoadHiddenSelectorReg(pVCpu, &pCtxCore->cs);
-#else
     Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, pSReg));
     Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pCtxCore->cs));
-#endif
 
     /* 64 bits mode: CS, DS, ES and SS are treated as if each segment base is 0
        (Intel® 64 and IA-32 Architectures Software Developer's Manual: 3.4.2.1). */

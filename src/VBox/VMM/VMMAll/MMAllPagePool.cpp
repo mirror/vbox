@@ -39,7 +39,7 @@
 #endif
 
 
-#if !defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0) && !defined(IN_RC)
+#ifndef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
 
 /**
  * Converts a pool physical address to a linear address.
@@ -53,11 +53,11 @@
  */
 void *mmPagePoolPhys2Ptr(PMMPAGEPOOL pPool, RTHCPHYS HCPhys)
 {
-#if 0 /** @todo have to fix the debugger, but until then this is going on my nerves. */
-#ifdef IN_RING3
+# if 0 /** @todo have to fix the debugger, but until then this is going on my nerves. */
+#  ifdef IN_RING3
     VM_ASSERT_EMT(pPool->pVM);
-#endif
-#endif
+#  endif
+# endif
 
     /*
      * Lookup the virtual address.

@@ -77,10 +77,6 @@ typedef struct
     bool            fLocked;
     /** 64 bits mode or not. */
     bool            f64Bits;
-    /** Read original unpatched bytes from the patch manager. */
-    bool            fUnpatchedBytes;
-    /** Set when fUnpatchedBytes is active and we encounter patched bytes. */
-    bool            fPatchedInstr;
 } DBGFDISASSTATE, *PDBGFDISASSTATE;
 
 
@@ -112,17 +108,11 @@ static int dbgfR3DisasInstrFirst(PVM pVM, PVMCPU pVCpu, PDBGFSELINFO pSelInfo, P
     pState->enmMode         = enmMode;
     pState->GCPtrPage       = 0;
     pState->pvPageR3        = NULL;
-    pState->hDbgAs          = VM_IS_RAW_MODE_ENABLED(pVM)
-                            ? DBGF_AS_RC_AND_GC_GLOBAL
-                            : DBGF_AS_GLOBAL;
+    pState->hDbgAs          = DBGF_AS_GLOBAL;
     pState->pVM             = pVM;
     pState->pVCpu           = pVCpu;
     pState->fLocked         = false;
     pState->f64Bits         = enmMode >= PGMMODE_AMD64 && pSelInfo->u.Raw.Gen.u1Long;
-#ifdef VBOX_WITH_RAW_MODE
-    pState->fUnpatchedBytes = RT_BOOL(fFlags & DBGF_DISAS_FLAGS_UNPATCHED_BYTES);
-    pState->fPatchedInstr   = false;
-#endif
 
     DISCPUMODE enmCpuMode;
     switch (fFlags & DBGF_DISAS_FLAGS_MODE_MASK)
@@ -231,26 +221,17 @@ static DECLCALLBACK(int) dbgfR3DisasInstrRead(PDISCPUSTATE pDis, uint8_t offInst
 
             /* translate the address */
             pState->GCPtrPage = GCPtr & PAGE_BASE_GC_MASK;
-            if (   VM_IS_RAW_MODE_ENABLED(pState->pVM)
-                && MMHyperIsInsideArea(pState->pVM, pState->GCPtrPage))
-            {
-                pState->pvPageR3 = MMHyperRCToR3(pState->pVM, (RTRCPTR)pState->GCPtrPage);
-                if (!pState->pvPageR3)
-                    rc = VERR_INVALID_POINTER;
-            }
+            if (pState->fLocked)
+                PGMPhysReleasePageMappingLock(pState->pVM, &pState->PageMapLock);
+            if (pState->enmMode <= PGMMODE_PROTECTED)
+                rc = PGMPhysGCPhys2CCPtrReadOnly(pState->pVM, pState->GCPtrPage, &pState->pvPageR3, &pState->PageMapLock);
+            else
+                rc = PGMPhysGCPtr2CCPtrReadOnly(pState->pVCpu, pState->GCPtrPage, &pState->pvPageR3, &pState->PageMapLock);
+            if (RT_SUCCESS(rc))
+                pState->fLocked = true;
             else
             {
-                if (pState->fLocked)
-                    PGMPhysReleasePageMappingLock(pState->pVM, &pState->PageMapLock);
-
-                if (pState->enmMode <= PGMMODE_PROTECTED)
-                    rc = PGMPhysGCPhys2CCPtrReadOnly(pState->pVM, pState->GCPtrPage, &pState->pvPageR3, &pState->PageMapLock);
-                else
-                    rc = PGMPhysGCPtr2CCPtrReadOnly(pState->pVCpu, pState->GCPtrPage, &pState->pvPageR3, &pState->PageMapLock);
-                pState->fLocked = RT_SUCCESS_NP(rc);
-            }
-            if (RT_FAILURE(rc))
-            {
+                pState->fLocked  = false;
                 pState->pvPageR3 = NULL;
                 return rc;
             }
@@ -274,34 +255,6 @@ static DECLCALLBACK(int) dbgfR3DisasInstrRead(PDISCPUSTATE pDis, uint8_t offInst
         }
         if (cb > cbMaxRead)
             cb = cbMaxRead;
-
-#ifdef VBOX_WITH_RAW_MODE
-        /*
-         * Read original bytes from PATM if asked to do so.
-         */
-        if (pState->fUnpatchedBytes)
-        {
-            size_t cbRead = cb;
-            int rc = PATMR3ReadOrgInstr(pState->pVM, GCPtr, &pDis->abInstr[offInstr], cbRead, &cbRead);
-            if (RT_SUCCESS(rc))
-            {
-                pState->fPatchedInstr = true;
-                if (cbRead >= cbMinRead)
-                {
-                    pDis->cbCachedInstr = offInstr + (uint8_t)cbRead;
-                    return rc;
-                }
-
-                cbMinRead -= (uint8_t)cbRead;
-                cbMaxRead -= (uint8_t)cbRead;
-                cb        -= (uint8_t)cbRead;
-                offInstr  += (uint8_t)cbRead;
-                GCPtr     += cbRead;
-                if (!cb)
-                    continue;
-            }
-        }
-#endif /* VBOX_WITH_RAW_MODE */
 
         /*
          * Read and advance,
@@ -351,11 +304,7 @@ static DECLCALLBACK(int) dbgfR3DisasGetSymbol(PCDISCPUSTATE pDis, uint32_t u32Se
     else if (   DIS_FMT_SEL_IS_REG(u32Sel)
              && DIS_FMT_SEL_GET_REG(u32Sel) == DISSELREG_SS
              && pSelInfo->GCPtrBase == 0
-             && pSelInfo->cbLimit   >= UINT32_MAX
-#ifdef VBOX_WITH_RAW_MODE
-             && PATMIsPatchGCAddr(pState->pVM, pState->Cpu.uInstrAddr)
-#endif
-             )
+             && pSelInfo->cbLimit   >= UINT32_MAX)
     {
         DBGFR3AddrFromFlat(pState->pVM->pUVM, &Addr, uAddress);
         rc = VINF_SUCCESS;
@@ -571,16 +520,6 @@ dbgfR3DisasInstrExOnVCpu(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PRTGCPTR pGCPtr, uint
                     fFlags & DBGF_DISAS_FLAGS_NO_SYMBOLS ? NULL : dbgfR3DisasGetSymbol,
                     &SelInfo);
 
-#ifdef VBOX_WITH_RAW_MODE
-    /*
-     * Patched instruction annotations.
-     */
-    char szPatchAnnotations[256];
-    szPatchAnnotations[0] = '\0';
-    if (fFlags & DBGF_DISAS_FLAGS_ANNOTATE_PATCHED)
-        PATMR3DbgAnnotatePatchedInstruction(pVM, GCPtr, State.Cpu.cbInstr, szPatchAnnotations, sizeof(szPatchAnnotations));
-#endif
-
     /*
      * Print it to the user specified buffer.
      */
@@ -646,11 +585,6 @@ dbgfR3DisasInstrExOnVCpu(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PRTGCPTR pGCPtr, uint
                                   szBuf);
         }
     }
-
-#ifdef VBOX_WITH_RAW_MODE
-    if (szPatchAnnotations[0] && cch + 1 < cbOutput)
-        RTStrPrintf(pszOutput + cch, cbOutput - cch, "  ; %s", szPatchAnnotations);
-#endif
 
     if (pcbInstr)
         *pcbInstr = State.Cpu.cbInstr;

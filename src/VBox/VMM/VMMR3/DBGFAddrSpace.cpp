@@ -639,9 +639,6 @@ static void dbgfR3AsLazyPopulate(PUVM pUVM, RTDBGAS hAlias)
         {
             LogRel(("DBGF: Lazy init of RC address space\n"));
             PDMR3LdrEnumModules(pUVM->pVM, dbgfR3AsLazyPopulateRCCallback, hDbgAs);
-#ifdef VBOX_WITH_RAW_MODE
-            PATMR3DbgPopulateAddrSpace(pUVM->pVM, hDbgAs);
-#endif
         }
         else if (hAlias == DBGF_AS_PHYS && pUVM->pVM)
         {

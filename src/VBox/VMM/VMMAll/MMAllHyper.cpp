@@ -166,7 +166,7 @@ static int mmHyperLock(PVM pVM)
     Assert(PDMCritSectIsInitialized(&pHeap->Lock));
 #endif
     int rc = PDMCritSectEnter(&pHeap->Lock, VERR_SEM_BUSY);
-#if defined(IN_RC) || defined(IN_RING0)
+#ifdef IN_RING0
     if (rc == VERR_SEM_BUSY)
         rc = VMMRZCallRing3NoCpu(pVM, VMMCALLRING3_MMHYPER_LOCK, 0);
 #endif

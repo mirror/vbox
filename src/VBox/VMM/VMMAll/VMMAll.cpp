@@ -162,7 +162,6 @@ int vmmInitFormatTypes(void)
 }
 
 
-#ifndef IN_RC
 /**
  * Counterpart to vmmInitFormatTypes, called by VMMR3Term and VMMR0Term.
  */
@@ -171,7 +170,6 @@ void vmmTermFormatTypes(void)
     if (ASMAtomicDecU32(&g_cFormatTypeUsers) == 0)
         RTStrFormatTypeDeregister("vmcpuset");
 }
-#endif
 
 
 /**

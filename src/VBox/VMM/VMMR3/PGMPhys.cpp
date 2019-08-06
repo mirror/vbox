@@ -2805,25 +2805,10 @@ static int pgmR3PhysMMIOExCreate(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev, 
             AssertBreakStmt(paChunkPages, rc = VERR_NO_TMP_MEMORY);
             RTR0PTR      R0PtrChunk   = NIL_RTR0PTR;
             void        *pvChunk      = NULL;
-            rc = SUPR3PageAllocEx(cChunkPages, 0 /*fFlags*/, &pvChunk,
-#if defined(VBOX_WITH_MORE_RING0_MEM_MAPPINGS)
-                                  &R0PtrChunk,
-#elif defined(VBOX_WITH_2X_4GB_ADDR_SPACE)
-                                  VM_IS_HM_OR_NEM_ENABLED(pVM) ? &R0PtrChunk : NULL,
-#else
-                                  NULL,
-#endif
-                                  paChunkPages);
+            rc = SUPR3PageAllocEx(cChunkPages, 0 /*fFlags*/, &pvChunk, &R0PtrChunk, paChunkPages);
             AssertLogRelMsgRCBreakStmt(rc, ("rc=%Rrc, cChunkPages=%#zx\n", rc, cChunkPages), RTMemTmpFree(paChunkPages));
 
-#if defined(VBOX_WITH_MORE_RING0_MEM_MAPPINGS)
             Assert(R0PtrChunk != NIL_RTR0PTR);
-#elif defined(VBOX_WITH_2X_4GB_ADDR_SPACE)
-            if (!VM_IS_HM_OR_NEM_ENABLED(pVM))
-                R0PtrChunk = NIL_RTR0PTR;
-#else
-            R0PtrChunk = (uintptr_t)pvChunk;
-#endif
             memset(pvChunk, 0, cChunkPages << PAGE_SHIFT);
 
             pNew = (PPGMREGMMIORANGE)pvChunk;

@@ -424,7 +424,6 @@ DECL_FORCE_INLINE(void) emHistoryExecSetContinueExitRecIdx(PVMCPU pVCpu, VBOXSTR
 #endif /* !IN_RING3 */
 }
 
-#ifndef IN_RC
 
 /**
  * Execute using history.
@@ -739,7 +738,6 @@ static PCEMEXITREC emHistoryAddOrUpdateRecord(PVMCPU pVCpu, uint64_t uFlagsAndTy
     }
 }
 
-#endif /* !IN_RC */
 
 /**
  * Adds an exit to the history for this CPU.
@@ -768,49 +766,21 @@ VMM_INT_DECL(PCEMEXITREC) EMHistoryAddExit(PVMCPU pVCpu, uint32_t uFlagsAndType,
     pHistEntry->uFlagsAndType = uFlagsAndType;
     pHistEntry->idxSlot       = UINT32_MAX;
 
-#ifndef IN_RC
     /*
      * If common exit type, we will insert/update the exit into the exit record hash table.
      */
     if (   (uFlagsAndType & (EMEXIT_F_KIND_MASK | EMEXIT_F_CS_EIP | EMEXIT_F_UNFLATTENED_PC)) == EMEXIT_F_KIND_EM
-# ifdef IN_RING0
+#ifdef IN_RING0
         && pVCpu->em.s.fExitOptimizationEnabledR0
         && ( !(uFlagsAndType & EMEXIT_F_HM) || pVCpu->em.s.fExitOptimizationEnabledR0PreemptDisabled)
-# else
+#else
         && pVCpu->em.s.fExitOptimizationEnabled
-# endif
+#endif
         && uFlatPC != UINT64_MAX
        )
         return emHistoryAddOrUpdateRecord(pVCpu, uFlagsAndType, uFlatPC, pHistEntry, uExitNo);
-#endif
     return NULL;
 }
-
-
-#ifdef IN_RC
-/**
- * Special raw-mode interface for adding an exit to the history.
- *
- * Currently this is only for recording, not optimizing, so no return value.  If
- * we start seriously caring about raw-mode again, we may extend it.
- *
- * @param   pVCpu           The cross context virtual CPU structure.
- * @param   uFlagsAndType   Combined flags and type (see EMEXIT_MAKE_FLAGS_AND_TYPE).
- * @param   uCs             The CS.
- * @param   uEip            The EIP.
- * @param   uTimestamp      The TSC value for the exit, 0 if not available.
- * @thread  EMT(0)
- */
-VMMRC_INT_DECL(void) EMRCHistoryAddExitCsEip(PVMCPU pVCpu, uint32_t uFlagsAndType, uint16_t uCs, uint32_t uEip, uint64_t uTimestamp)
-{
-    AssertCompile(RT_ELEMENTS(pVCpu->em.s.aExitHistory) == 256);
-    PEMEXITENTRY pHistEntry = &pVCpu->em.s.aExitHistory[(uintptr_t)(pVCpu->em.s.iNextExit++) & 0xff];
-    pHistEntry->uFlatPC       = ((uint64_t)uCs << 32) |  uEip;
-    pHistEntry->uTimestamp    = uTimestamp;
-    pHistEntry->uFlagsAndType = uFlagsAndType | EMEXIT_F_CS_EIP;
-    pHistEntry->idxSlot       = UINT32_MAX;
-}
-#endif
 
 
 #ifdef IN_RING0
@@ -857,21 +827,19 @@ VMM_INT_DECL(PCEMEXITREC) EMHistoryUpdateFlagsAndType(PVMCPU pVCpu, uint32_t uFl
     PEMEXITENTRY pHistEntry = &pVCpu->em.s.aExitHistory[(uintptr_t)uExitNo & 0xff];
     pHistEntry->uFlagsAndType = uFlagsAndType | (pHistEntry->uFlagsAndType & (EMEXIT_F_CS_EIP | EMEXIT_F_UNFLATTENED_PC));
 
-#ifndef IN_RC
     /*
      * If common exit type, we will insert/update the exit into the exit record hash table.
      */
     if (   (uFlagsAndType & (EMEXIT_F_KIND_MASK | EMEXIT_F_CS_EIP | EMEXIT_F_UNFLATTENED_PC)) == EMEXIT_F_KIND_EM
-# ifdef IN_RING0
+#ifdef IN_RING0
         && pVCpu->em.s.fExitOptimizationEnabledR0
         && ( !(uFlagsAndType & EMEXIT_F_HM) || pVCpu->em.s.fExitOptimizationEnabledR0PreemptDisabled)
-# else
+#else
         && pVCpu->em.s.fExitOptimizationEnabled
-# endif
+#endif
         && pHistEntry->uFlatPC != UINT64_MAX
        )
         return emHistoryAddOrUpdateRecord(pVCpu, uFlagsAndType, pHistEntry->uFlatPC, pHistEntry, uExitNo);
-#endif
     return NULL;
 }
 
@@ -902,20 +870,18 @@ VMM_INT_DECL(PCEMEXITREC) EMHistoryUpdateFlagsAndTypeAndPC(PVMCPU pVCpu, uint32_
     pHistEntry->uFlagsAndType = uFlagsAndType;
     pHistEntry->uFlatPC       = uFlatPC;
 
-#ifndef IN_RC
     /*
      * If common exit type, we will insert/update the exit into the exit record hash table.
      */
     if (   (uFlagsAndType & (EMEXIT_F_KIND_MASK | EMEXIT_F_CS_EIP | EMEXIT_F_UNFLATTENED_PC)) == EMEXIT_F_KIND_EM
-# ifdef IN_RING0
+#ifdef IN_RING0
         && pVCpu->em.s.fExitOptimizationEnabledR0
         && ( !(uFlagsAndType & EMEXIT_F_HM) || pVCpu->em.s.fExitOptimizationEnabledR0PreemptDisabled)
-# else
+#else
         && pVCpu->em.s.fExitOptimizationEnabled
-# endif
+#endif
        )
         return emHistoryAddOrUpdateRecord(pVCpu, uFlagsAndType, uFlatPC, pHistEntry, uExitNo);
-#endif
     return NULL;
 }
 
@@ -1026,7 +992,6 @@ static DECLCALLBACK(int) emReadBytes(PDISCPUSTATE pDis, uint8_t offInstr, uint8_
         }
         if (RT_FAILURE(rc))
         {
-#ifndef IN_RC
             /*
              * If we fail to find the page via the guest's page tables
              * we invalidate the page in the host TLB (pertaining to
@@ -1038,7 +1003,6 @@ static DECLCALLBACK(int) emReadBytes(PDISCPUSTATE pDis, uint8_t offInstr, uint8_
                 if (((uSrcAddr + cbToRead - 1) >> PAGE_SHIFT) !=  (uSrcAddr >> PAGE_SHIFT))
                     HMInvalidatePage(pVCpu, uSrcAddr + cbToRead - 1);
             }
-#endif
         }
     }
 
