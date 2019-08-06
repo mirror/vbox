@@ -6574,51 +6574,51 @@ static void hmR0VmxReportWorldSwitchError(PVMCPU pVCpu, int rcVMRun, PVMXTRANSIE
                     bool            fCheckSupport;
                 } const s_aVmcsFields[] =
                 {
-                    { "VMX_VMCS32_CTRL_PIN_EXEC",                 VMX_VMCS32_CTRL_PIN_EXEC,                   false,  },
-                    { "VMX_VMCS32_CTRL_PROC_EXEC",                VMX_VMCS32_CTRL_PROC_EXEC,                  false,  },
-                    { "VMX_VMCS32_CTRL_PROC_EXEC2",               VMX_VMCS32_CTRL_PROC_EXEC2,                 true,   },
-                    { "VMX_VMCS32_CTRL_ENTRY",                    VMX_VMCS32_CTRL_ENTRY,                      false,  },
-                    { "VMX_VMCS32_CTRL_EXIT",                     VMX_VMCS32_CTRL_EXIT,                       false,  },
-                    { "VMX_VMCS32_CTRL_CR3_TARGET_COUNT",         VMX_VMCS32_CTRL_CR3_TARGET_COUNT,           false,  },
-                    { "VMX_VMCS32_CTRL_ENTRY_INTERRUPTION_INFO",  VMX_VMCS32_CTRL_ENTRY_INTERRUPTION_INFO,    false,  },
-                    { "VMX_VMCS32_CTRL_ENTRY_EXCEPTION_ERRCODE",  VMX_VMCS32_CTRL_ENTRY_EXCEPTION_ERRCODE,    false,  },
-                    { "VMX_VMCS32_CTRL_ENTRY_INSTR_LENGTH",       VMX_VMCS32_CTRL_ENTRY_INSTR_LENGTH,         false,  },
-                    { "VMX_VMCS32_CTRL_TPR_THRESHOLD",            VMX_VMCS32_CTRL_TPR_THRESHOLD,              false,  },
-                    { "VMX_VMCS32_CTRL_EXIT_MSR_STORE_COUNT",     VMX_VMCS32_CTRL_EXIT_MSR_STORE_COUNT,       false,  },
-                    { "VMX_VMCS32_CTRL_EXIT_MSR_LOAD_COUNT",      VMX_VMCS32_CTRL_EXIT_MSR_LOAD_COUNT,        false,  },
-                    { "VMX_VMCS32_CTRL_ENTRY_MSR_LOAD_COUNT",     VMX_VMCS32_CTRL_ENTRY_MSR_LOAD_COUNT,       false,  },
-                    { "VMX_VMCS32_CTRL_EXCEPTION_BITMAP",         VMX_VMCS32_CTRL_EXCEPTION_BITMAP,           false,  },
-                    { "VMX_VMCS32_CTRL_PAGEFAULT_ERROR_MASK",     VMX_VMCS32_CTRL_PAGEFAULT_ERROR_MASK,       false,  },
-                    { "VMX_VMCS32_CTRL_PAGEFAULT_ERROR_MATCH",    VMX_VMCS32_CTRL_PAGEFAULT_ERROR_MATCH,      false,  },
-                    { "VMX_VMCS_CTRL_CR0_MASK",                   VMX_VMCS_CTRL_CR0_MASK,                     false,  },
-                    { "VMX_VMCS_CTRL_CR0_READ_SHADOW",            VMX_VMCS_CTRL_CR0_READ_SHADOW,              false,  },
-                    { "VMX_VMCS_CTRL_CR4_MASK",                   VMX_VMCS_CTRL_CR4_MASK,                     false,  },
-                    { "VMX_VMCS_CTRL_CR4_READ_SHADOW",            VMX_VMCS_CTRL_CR4_READ_SHADOW,              false,  },
-                    { "VMX_VMCS64_CTRL_EPTP_FULL",                VMX_VMCS64_CTRL_EPTP_FULL,                  true,   },
-                    { "VMX_VMCS_GUEST_RIP",                       VMX_VMCS_GUEST_RIP,                         false,  },
-                    { "VMX_VMCS_GUEST_RSP",                       VMX_VMCS_GUEST_RSP,                         false,  },
-                    { "VMX_VMCS_GUEST_RFLAGS",                    VMX_VMCS_GUEST_RFLAGS,                      false,  },
-                    { "VMX_VMCS16_VPID",                          VMX_VMCS16_VPID,                            true,   },
-                    { "VMX_VMCS_HOST_CR0",                        VMX_VMCS_HOST_CR0,                          false,  },
-                    { "VMX_VMCS_HOST_CR3",                        VMX_VMCS_HOST_CR3,                          false,  },
-                    { "VMX_VMCS_HOST_CR4",                        VMX_VMCS_HOST_CR4,                          false,  },
+                    { "VMX_VMCS32_CTRL_PIN_EXEC",                 VMX_VMCS32_CTRL_PIN_EXEC,                   false  },
+                    { "VMX_VMCS32_CTRL_PROC_EXEC",                VMX_VMCS32_CTRL_PROC_EXEC,                  false  },
+                    { "VMX_VMCS32_CTRL_PROC_EXEC2",               VMX_VMCS32_CTRL_PROC_EXEC2,                 true   },
+                    { "VMX_VMCS32_CTRL_ENTRY",                    VMX_VMCS32_CTRL_ENTRY,                      false  },
+                    { "VMX_VMCS32_CTRL_EXIT",                     VMX_VMCS32_CTRL_EXIT,                       false  },
+                    { "VMX_VMCS32_CTRL_CR3_TARGET_COUNT",         VMX_VMCS32_CTRL_CR3_TARGET_COUNT,           false  },
+                    { "VMX_VMCS32_CTRL_ENTRY_INTERRUPTION_INFO",  VMX_VMCS32_CTRL_ENTRY_INTERRUPTION_INFO,    false  },
+                    { "VMX_VMCS32_CTRL_ENTRY_EXCEPTION_ERRCODE",  VMX_VMCS32_CTRL_ENTRY_EXCEPTION_ERRCODE,    false  },
+                    { "VMX_VMCS32_CTRL_ENTRY_INSTR_LENGTH",       VMX_VMCS32_CTRL_ENTRY_INSTR_LENGTH,         false  },
+                    { "VMX_VMCS32_CTRL_TPR_THRESHOLD",            VMX_VMCS32_CTRL_TPR_THRESHOLD,              false  },
+                    { "VMX_VMCS32_CTRL_EXIT_MSR_STORE_COUNT",     VMX_VMCS32_CTRL_EXIT_MSR_STORE_COUNT,       false  },
+                    { "VMX_VMCS32_CTRL_EXIT_MSR_LOAD_COUNT",      VMX_VMCS32_CTRL_EXIT_MSR_LOAD_COUNT,        false  },
+                    { "VMX_VMCS32_CTRL_ENTRY_MSR_LOAD_COUNT",     VMX_VMCS32_CTRL_ENTRY_MSR_LOAD_COUNT,       false  },
+                    { "VMX_VMCS32_CTRL_EXCEPTION_BITMAP",         VMX_VMCS32_CTRL_EXCEPTION_BITMAP,           false  },
+                    { "VMX_VMCS32_CTRL_PAGEFAULT_ERROR_MASK",     VMX_VMCS32_CTRL_PAGEFAULT_ERROR_MASK,       false  },
+                    { "VMX_VMCS32_CTRL_PAGEFAULT_ERROR_MATCH",    VMX_VMCS32_CTRL_PAGEFAULT_ERROR_MATCH,      false  },
+                    { "VMX_VMCS_CTRL_CR0_MASK",                   VMX_VMCS_CTRL_CR0_MASK,                     false  },
+                    { "VMX_VMCS_CTRL_CR0_READ_SHADOW",            VMX_VMCS_CTRL_CR0_READ_SHADOW,              false  },
+                    { "VMX_VMCS_CTRL_CR4_MASK",                   VMX_VMCS_CTRL_CR4_MASK,                     false  },
+                    { "VMX_VMCS_CTRL_CR4_READ_SHADOW",            VMX_VMCS_CTRL_CR4_READ_SHADOW,              false  },
+                    { "VMX_VMCS64_CTRL_EPTP_FULL",                VMX_VMCS64_CTRL_EPTP_FULL,                  true   },
+                    { "VMX_VMCS_GUEST_RIP",                       VMX_VMCS_GUEST_RIP,                         false  },
+                    { "VMX_VMCS_GUEST_RSP",                       VMX_VMCS_GUEST_RSP,                         false  },
+                    { "VMX_VMCS_GUEST_RFLAGS",                    VMX_VMCS_GUEST_RFLAGS,                      false  },
+                    { "VMX_VMCS16_VPID",                          VMX_VMCS16_VPID,                            true,  },
+                    { "VMX_VMCS_HOST_CR0",                        VMX_VMCS_HOST_CR0,                          false  },
+                    { "VMX_VMCS_HOST_CR3",                        VMX_VMCS_HOST_CR3,                          false  },
+                    { "VMX_VMCS_HOST_CR4",                        VMX_VMCS_HOST_CR4,                          false  },
                     /* The order of selector fields below are fixed! */
-                    { "VMX_VMCS16_HOST_ES_SEL",                   VMX_VMCS16_HOST_ES_SEL,                     false,  },
-                    { "VMX_VMCS16_HOST_CS_SEL",                   VMX_VMCS16_HOST_CS_SEL,                     false,  },
-                    { "VMX_VMCS16_HOST_SS_SEL",                   VMX_VMCS16_HOST_SS_SEL,                     false,  },
-                    { "VMX_VMCS16_HOST_DS_SEL",                   VMX_VMCS16_HOST_DS_SEL,                     false,  },
-                    { "VMX_VMCS16_HOST_FS_SEL",                   VMX_VMCS16_HOST_FS_SEL,                     false,  },
-                    { "VMX_VMCS16_HOST_GS_SEL",                   VMX_VMCS16_HOST_GS_SEL,                     false,  },
-                    { "VMX_VMCS16_HOST_TR_SEL",                   VMX_VMCS16_HOST_TR_SEL,                     false,  },
+                    { "VMX_VMCS16_HOST_ES_SEL",                   VMX_VMCS16_HOST_ES_SEL,                     false  },
+                    { "VMX_VMCS16_HOST_CS_SEL",                   VMX_VMCS16_HOST_CS_SEL,                     false  },
+                    { "VMX_VMCS16_HOST_SS_SEL",                   VMX_VMCS16_HOST_SS_SEL,                     false  },
+                    { "VMX_VMCS16_HOST_DS_SEL",                   VMX_VMCS16_HOST_DS_SEL,                     false  },
+                    { "VMX_VMCS16_HOST_FS_SEL",                   VMX_VMCS16_HOST_FS_SEL,                     false  },
+                    { "VMX_VMCS16_HOST_GS_SEL",                   VMX_VMCS16_HOST_GS_SEL,                     false  },
+                    { "VMX_VMCS16_HOST_TR_SEL",                   VMX_VMCS16_HOST_TR_SEL,                     false  },
                     /* End of ordered selector fields. */
-                    { "VMX_VMCS_HOST_TR_BASE",                    VMX_VMCS_HOST_TR_BASE,                      false,  },
-                    { "VMX_VMCS_HOST_GDTR_BASE",                  VMX_VMCS_HOST_GDTR_BASE,                    false,  },
-                    { "VMX_VMCS_HOST_IDTR_BASE",                  VMX_VMCS_HOST_IDTR_BASE,                    false,  },
-                    { "VMX_VMCS32_HOST_SYSENTER_CS",              VMX_VMCS32_HOST_SYSENTER_CS,                false,  },
-                    { "VMX_VMCS_HOST_SYSENTER_EIP",               VMX_VMCS_HOST_SYSENTER_EIP,                 false,  },
-                    { "VMX_VMCS_HOST_SYSENTER_ESP",               VMX_VMCS_HOST_SYSENTER_ESP,                 false,  },
-                    { "VMX_VMCS_HOST_RSP",                        VMX_VMCS_HOST_RSP,                          false,  },
-                    { "VMX_VMCS_HOST_RIP",                        VMX_VMCS_HOST_RIP,                          false,  }
+                    { "VMX_VMCS_HOST_TR_BASE",                    VMX_VMCS_HOST_TR_BASE,                      false  },
+                    { "VMX_VMCS_HOST_GDTR_BASE",                  VMX_VMCS_HOST_GDTR_BASE,                    false  },
+                    { "VMX_VMCS_HOST_IDTR_BASE",                  VMX_VMCS_HOST_IDTR_BASE,                    false  },
+                    { "VMX_VMCS32_HOST_SYSENTER_CS",              VMX_VMCS32_HOST_SYSENTER_CS,                false  },
+                    { "VMX_VMCS_HOST_SYSENTER_EIP",               VMX_VMCS_HOST_SYSENTER_EIP,                 false  },
+                    { "VMX_VMCS_HOST_SYSENTER_ESP",               VMX_VMCS_HOST_SYSENTER_ESP,                 false  },
+                    { "VMX_VMCS_HOST_RSP",                        VMX_VMCS_HOST_RSP,                          false  },
+                    { "VMX_VMCS_HOST_RIP",                        VMX_VMCS_HOST_RIP,                          false  }
                 };
 
                 RTGDTR      HostGdtr;
@@ -14782,10 +14782,10 @@ HMVMX_EXIT_DECL hmR0VmxExitWrmsr(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
                 case MSR_K6_EFER:           /* Nothing to do, already handled above. */                                    break;
                 default:
                 {
-                    if (hmR0VmxIsAutoLoadGuestMsr(pVmcsInfo, idMsr))
-                        ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_VMX_GUEST_AUTO_MSRS);
-                    else if (hmR0VmxIsLazyGuestMsr(pVCpu, idMsr))
+                    if (hmR0VmxIsLazyGuestMsr(pVCpu, idMsr))
                         ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_VMX_GUEST_LAZY_MSRS);
+                    else if (hmR0VmxIsAutoLoadGuestMsr(pVmcsInfo, idMsr))
+                        ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_VMX_GUEST_AUTO_MSRS);
                     break;
                 }
             }
