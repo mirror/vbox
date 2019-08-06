@@ -932,20 +932,6 @@ static int hmR3InitFinalizeR3(PVM pVM)
 #endif /* VBOX_WITH_STATISTICS */
     }
 
-#ifdef VBOX_WITH_CRASHDUMP_MAGIC
-    /*
-     * Magic marker for searching in crash dumps.
-     */
-    for (VMCPUID i = 0; i < pVM->cCpus; i++)
-    {
-        PVMCPU pVCpu = &pVM->aCpus[i];
-
-        PVMXVMCSCACHE pVmcsCache = &pVCpu->hm.s.vmx.VmcsCache;
-        strcpy((char *)pVmcsCache->aMagic, "VMCSCACHE Magic");
-        pVmcsCache->uMagic = UINT64_C(0xdeadbeefdeadbeef);
-    }
-#endif
-
     return VINF_SUCCESS;
 }
 
@@ -1964,12 +1950,6 @@ static int hmR3TermCPU(PVM pVM)
         }
 # endif
 #endif
-
-#ifdef VBOX_WITH_CRASHDUMP_MAGIC
-        memset(pVCpu->hm.s.vmx.VmcsCache.aMagic, 0, sizeof(pVCpu->hm.s.vmx.VmcsCache.aMagic));
-        pVCpu->hm.s.vmx.VmcsCache.uMagic = 0;
-        pVCpu->hm.s.vmx.VmcsCache.uPos = 0xffffffff;
-#endif
     }
     return 0;
 }
@@ -1999,17 +1979,6 @@ VMMR3_INT_DECL(void) HMR3ResetCpu(PVMCPU pVCpu)
         pVCpu->hm.s.vmx.VmcsInfoNstGst.fSwitchedTo64on32Obsolete = false;
         pVCpu->hm.s.vmx.VmcsInfoNstGst.fWasInRealMode    = true;
     }
-#endif
-
-    /* Reset the contents of the read cache. */
-    PVMXVMCSCACHE pVmcsCache = &pVCpu->hm.s.vmx.VmcsCache;
-    for (unsigned j = 0; j < pVmcsCache->Read.cValidEntries; j++)
-        pVmcsCache->Read.aFieldVal[j] = 0;
-
-#ifdef VBOX_WITH_CRASHDUMP_MAGIC
-    /* Magic marker for searching in crash dumps. */
-    strcpy((char *)pVmcsCache->aMagic, "VMCSCACHE Magic");
-    pVmcsCache->uMagic = UINT64_C(0xdeadbeefdeadbeef);
 #endif
 }
 

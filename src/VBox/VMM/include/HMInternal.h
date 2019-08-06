@@ -664,82 +664,17 @@ typedef HM *PHM;
 
 AssertCompileMemberAlignment(HM, StatTprPatchSuccess, 8);
 
-/* Maximum number of cached entries. */
-#define VMX_VMCS_CACHE_MAX_ENTRY                    128
-
-/**
- * Cache of a VMCS for batch reads or writes.
- */
-typedef struct VMXVMCSCACHE
-{
-#ifdef VBOX_WITH_CRASHDUMP_MAGIC
-    /* Magic marker for searching in crash dumps. */
-    uint8_t         aMagic[16];
-    uint64_t        uMagic;
-    uint64_t        u64TimeEntry;
-    uint64_t        u64TimeSwitch;
-    uint64_t        cResume;
-    uint64_t        interPD;
-    uint64_t        pSwitcher;
-    uint32_t        uPos;
-    uint32_t        idCpu;
-#endif
-    /* CR2 is saved here for EPT syncing. */
-    uint64_t        cr2;
-    struct
-    {
-        uint32_t    cValidEntries;
-        uint32_t    uAlignment;
-        uint32_t    aField[VMX_VMCS_CACHE_MAX_ENTRY];
-        uint64_t    aFieldVal[VMX_VMCS_CACHE_MAX_ENTRY];
-    } Write;
-    struct
-    {
-        uint32_t    cValidEntries;
-        uint32_t    uAlignment;
-        uint32_t    aField[VMX_VMCS_CACHE_MAX_ENTRY];
-        uint64_t    aFieldVal[VMX_VMCS_CACHE_MAX_ENTRY];
-    } Read;
-#ifdef VBOX_STRICT
-    struct
-    {
-        RTHCPHYS    HCPhysCpuPage;
-        RTHCPHYS    HCPhysVmcs;
-        RTGCPTR     pCache;
-        RTGCPTR     pCtx;
-    } TestIn;
-    struct
-    {
-        RTHCPHYS    HCPhysVmcs;
-        RTGCPTR     pCache;
-        RTGCPTR     pCtx;
-        uint64_t    eflags;
-        uint64_t    cr8;
-    } TestOut;
-    struct
-    {
-        uint64_t    param1;
-        uint64_t    param2;
-        uint64_t    param3;
-        uint64_t    param4;
-    } ScratchPad;
-#endif
-} VMXVMCSCACHE;
-/** Pointer to VMXVMCSCACHE. */
-typedef VMXVMCSCACHE *PVMXVMCSCACHE;
-AssertCompileSizeAlignment(VMXVMCSCACHE, 8);
-
 /**
  * VMX StartVM function.
  *
  * @returns VBox status code (no informational stuff).
  * @param   fResume     Whether to use VMRESUME (true) or VMLAUNCH (false).
  * @param   pCtx        The CPU register context.
- * @param   pVmcsCache  The VMCS batch cache.
+ * @param   pvUnused    Unused argument.
  * @param   pVM         Pointer to the cross context VM structure.
  * @param   pVCpu       Pointer to the cross context per-CPU structure.
  */
-typedef DECLCALLBACK(int) FNHMVMXSTARTVM(RTHCUINT fResume, PCPUMCTX pCtx, PVMXVMCSCACHE pVmcsCache, PVM pVM, PVMCPU pVCpu);
+typedef DECLCALLBACK(int) FNHMVMXSTARTVM(RTHCUINT fResume, PCPUMCTX pCtx, void *pvUnused, PVM pVM, PVMCPU pVCpu);
 /** Pointer to a VMX StartVM function. */
 typedef R0PTRTYPE(FNHMVMXSTARTVM *) PFNHMVMXSTARTVM;
 
@@ -985,8 +920,6 @@ typedef struct HMCPU
             bool                        afAlignment0[3];
             /** Cached guest APIC-base MSR for identifying when to map the APIC-access page. */
             uint64_t                    u64GstMsrApicBase;
-            /** VMCS cache for batched vmread/vmwrites. */
-            VMXVMCSCACHE                VmcsCache;
             PGMPAGEMAPLOCK              PgMapLockVirtApic;
             /** @} */
 
@@ -1254,8 +1187,8 @@ VMMR0_INT_DECL(void)        hmR0DumpDescriptor(PCX86DESCHC pDesc, RTSEL Sel, con
 # endif
 
 # ifdef VBOX_WITH_KERNEL_USING_XMM
-DECLASM(int)                hmR0VMXStartVMWrapXMM(RTHCUINT fResume, PCPUMCTX pCtx, PVMXVMCSCACHE pVmcsCache, PVM pVM,
-                                                  PVMCPU pVCpu, PFNHMVMXSTARTVM pfnStartVM);
+DECLASM(int)                hmR0VMXStartVMWrapXMM(RTHCUINT fResume, PCPUMCTX pCtx, void *pvUnused, PVM pVM, PVMCPU pVCpu,
+                                                  PFNHMVMXSTARTVM pfnStartVM);
 DECLASM(int)                hmR0SVMRunWrapXMM(RTHCPHYS pVmcbHostPhys, RTHCPHYS pVmcbPhys, PCPUMCTX pCtx, PVM pVM, PVMCPU pVCpu,
                                               PFNHMSVMVMRUN pfnVMRun);
 # endif

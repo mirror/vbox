@@ -6510,9 +6510,9 @@ DECLINLINE(int) hmR0VmxRunGuest(PVMCPU pVCpu, PCVMXTRANSIENT pVmxTransient)
     bool const fResumeVM = RT_BOOL(pVmcsInfo->fVmcsState & VMX_V_VMCS_LAUNCH_STATE_LAUNCHED);
     PVM pVM = pVCpu->CTX_SUFF(pVM);
 #ifdef VBOX_WITH_KERNEL_USING_XMM
-    int rc = hmR0VMXStartVMWrapXMM(fResumeVM, pCtx, &pVCpu->hm.s.vmx.VmcsCache, pVM, pVCpu, pVmcsInfo->pfnStartVM);
+    int rc = hmR0VMXStartVMWrapXMM(fResumeVM, pCtx, NULL /*pvUnused*/, pVM, pVCpu, pVmcsInfo->pfnStartVM);
 #else
-    int rc = pVmcsInfo->pfnStartVM(fResumeVM, pCtx, &pVCpu->hm.s.vmx.VmcsCache, pVM, pVCpu);
+    int rc = pVmcsInfo->pfnStartVM(fResumeVM, pCtx, NULL /*pvUnused*/, pVM, pVCpu);
 #endif
     AssertMsg(rc <= VINF_SUCCESS, ("%Rrc\n", rc));
     return rc;

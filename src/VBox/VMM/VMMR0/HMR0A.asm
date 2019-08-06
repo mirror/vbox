@@ -877,14 +877,14 @@ ENDPROC SVMR0InvlpgA
 ; Wrapper around vmx.pfnStartVM that preserves host XMM registers and
 ; load the guest ones when necessary.
 ;
-; @cproto       DECLASM(int) HMR0VMXStartVMhmR0DumpDescriptorM(RTHCUINT fResume, PCPUMCTX pCtx, PVMXVMCSCACHE pCache,
-;                                                              PVM pVM, PVMCPU pVCpu, PFNHMVMXSTARTVM pfnStartVM);
+; @cproto       DECLASM(int) hmR0VMXStartVMWrapXMM(RTHCUINT fResume, PCPUMCTX pCtx, void *pvUnused, PVM pVM,
+;                                                  PVMCPU pVCpu, PFNHMVMXSTARTVM pfnStartVM);
 ;
 ; @returns      eax
 ;
 ; @param        fResumeVM       msc:rcx
 ; @param        pCtx            msc:rdx
-; @param        pVmcsCache      msc:r8
+; @param        pvUnused        msc:r8
 ; @param        pVM             msc:r9
 ; @param        pVCpu           msc:[rbp+30h]   The cross context virtual CPU structure of the calling EMT.
 ; @param        pfnStartVM      msc:[rbp+38h]
@@ -908,7 +908,7 @@ BEGINPROC hmR0VMXStartVMWrapXMM
         ; spill input parameters.
         mov     [xBP + 010h], rcx       ; fResumeVM
         mov     [xBP + 018h], rdx       ; pCtx
-        mov     [xBP + 020h], r8        ; pVmcsCache
+        mov     [xBP + 020h], r8        ; pvUnused
         mov     [xBP + 028h], r9        ; pVM
 
         ; Ask CPUM whether we've started using the FPU yet.
@@ -923,7 +923,7 @@ BEGINPROC hmR0VMXStartVMWrapXMM
         mov     [xSP + 020h], r10
         mov     rcx, [xBP + 010h]       ; fResumeVM
         mov     rdx, [xBP + 018h]       ; pCtx
-        mov     r8,  [xBP + 020h]       ; pVmcsCache
+        mov     r8,  [xBP + 020h]       ; pvUnused
         mov     r9,  [xBP + 028h]       ; pVM
         call    r11
 
@@ -964,7 +964,7 @@ ALIGNCODE(8)
         mov     [xSP + 020h], r10
         mov     rcx, [xBP + 010h]       ; fResumeVM
         mov     rdx, [xBP + 018h]       ; pCtx
-        mov     r8,  [xBP + 020h]       ; pVmcsCache
+        mov     r8,  [xBP + 020h]       ; pvUnused
         mov     r9,  [xBP + 028h]       ; pVM
         call    r11
 
@@ -1026,7 +1026,7 @@ ALIGNCODE(8)
         mov     [xSP + 020h], r10
         mov     rcx, [xBP + 010h]       ; fResumeVM
         mov     rdx, [xBP + 018h]       ; pCtx
-        mov     r8,  [xBP + 020h]       ; pVmcsCache
+        mov     r8,  [xBP + 020h]       ; pvUnused
         mov     r9,  [xBP + 028h]       ; pVM
         call    r11
 
@@ -1329,7 +1329,7 @@ ENDPROC   hmR0SVMRunWrapXMM
 ; @returns VBox status code
 ; @param    fResume    x86:[ebp+8], msc:rcx,gcc:rdi     Whether to use vmlauch/vmresume.
 ; @param    pCtx       x86:[ebp+c], msc:rdx,gcc:rsi     Pointer to the guest-CPU context.
-; @param    pVmcsCache x86:[ebp+10],msc:r8, gcc:rdx     Pointer to the VMCS cache.
+; @param    pvUnused   x86:[ebp+10],msc:r8, gcc:rdx     Unused argument.
 ; @param    pVM        x86:[ebp+14],msc:r9, gcc:rcx     The cross context VM structure.
 ; @param    pVCpu      x86:[ebp+18],msc:[ebp+30],gcc:r8 The cross context virtual CPU structure of the calling EMT.
 ;
@@ -1366,16 +1366,16 @@ BEGINPROC VMXR0StartVM32
  %ifdef ASM_CALL64_GCC
     ; fResume already in rdi
     ; pCtx    already in rsi
-    mov     rbx, rdx        ; pVmcsCache
+    mov     rbx, rdx        ; pvUnused
  %else
     mov     rdi, rcx        ; fResume
     mov     rsi, rdx        ; pCtx
-    mov     rbx, r8         ; pVmcsCache
+    mov     rbx, r8         ; pvUnused
  %endif
 %else
     mov     edi, [ebp + 8]  ; fResume
     mov     esi, [ebp + 12] ; pCtx
-    mov     ebx, [ebp + 16] ; pVmcsCache
+    mov     ebx, [ebp + 16] ; pvUnused
 %endif
 
     ;
@@ -1611,7 +1611,7 @@ ENDPROC VMXR0StartVM32
 ; @returns VBox status code
 ; @param    fResume    msc:rcx, gcc:rdi     Whether to use vmlauch/vmresume.
 ; @param    pCtx       msc:rdx, gcc:rsi     Pointer to the guest-CPU context.
-; @param    pVmcsCache msc:r8,  gcc:rdx     Pointer to the VMCS cache.
+; @param    pvUnused   msc:r8,  gcc:rdx     Unused argument.
 ; @param    pVM        msc:r9,  gcc:rcx     The cross context VM structure.
 ; @param    pVCpu      msc:[ebp+30], gcc:r8 The cross context virtual CPU structure of the calling EMT.
 ;
@@ -1638,11 +1638,11 @@ BEGINPROC VMXR0StartVM64
 %ifdef ASM_CALL64_GCC
     ; fResume already in rdi
     ; pCtx    already in rsi
-    mov     rbx, rdx        ; pVmcsCache
+    mov     rbx, rdx        ; pvUnused
 %else
     mov     rdi, rcx        ; fResume
     mov     rsi, rdx        ; pCtx
-    mov     rbx, r8         ; pVmcsCache
+    mov     rbx, r8         ; pvUnused
 %endif
 
     ;

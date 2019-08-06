@@ -44,8 +44,8 @@ VMMR0DECL(int)          VMXR0ExportHostState(PVMCPU pVCpu);
 VMMR0DECL(int)          VMXR0InvalidatePage(PVMCPU pVCpu, RTGCPTR GCVirt);
 VMMR0DECL(int)          VMXR0ImportStateOnDemand(PVMCPU pVCpu, uint64_t fWhat);
 VMMR0DECL(VBOXSTRICTRC) VMXR0RunGuestCode(PVMCPU pVCpu);
-DECLASM(int)            VMXR0StartVM32(RTHCUINT fResume, PCPUMCTX pCtx, PVMXVMCSCACHE pVmcsCache, PVM pVM, PVMCPU pVCpu);
-DECLASM(int)            VMXR0StartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVMXVMCSCACHE pVmcsCache, PVM pVM, PVMCPU pVCpu);
+DECLASM(int)            VMXR0StartVM32(RTHCUINT fResume, PCPUMCTX pCtx, void *pvUnused, PVM pVM, PVMCPU pVCpu);
+DECLASM(int)            VMXR0StartVM64(RTHCUINT fResume, PCPUMCTX pCtx, void *pvUnused, PVM pVM, PVMCPU pVCpu);
 #endif /* IN_RING0 */
 
 /** @} */

@@ -15,48 +15,6 @@
 ; hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 ;
 
-;Maximum number of cached entries.
-%define VMX_VMCS_CACHE_MAX_ENTRY                             128
-
-; Structure for storing read and write VMCS actions.
-struc VMXVMCSCACHE
-%ifdef VBOX_WITH_CRASHDUMP_MAGIC
-    .aMagic                   resb    16
-    .uMagic                   resq    1
-    .u64TimeEntry             resq    1
-    .u64TimeSwitch            resq    1
-    .cResume                  resq    1
-    .interPD                  resq    1
-    .pSwitcher                resq    1
-    .uPos                     resd    1
-    .idCpu                    resd    1
-%endif
-    .cr2                      resq    1
-    .Write.cValidEntries      resd    1
-    .Write.uAlignment         resd    1
-    .Write.aField             resd    VMX_VMCS_CACHE_MAX_ENTRY
-    .Write.aFieldVal          resq    VMX_VMCS_CACHE_MAX_ENTRY
-    .Read.cValidEntries       resd    1
-    .Read.uAlignment          resd    1
-    .Read.aField              resd    VMX_VMCS_CACHE_MAX_ENTRY
-    .Read.aFieldVal           resq    VMX_VMCS_CACHE_MAX_ENTRY
-%ifdef VBOX_STRICT
-    .TestIn.HCPhysCpuPage     resq    1
-    .TestIn.HCPhysVmcs        resq    1
-    .TestIn.pCache            resq    1
-    .TestIn.pCtx              resq    1
-    .TestOut.HCPhysVmcs       resq    1
-    .TestOut.pCache           resq    1
-    .TestOut.pCtx             resq    1
-    .TestOut.eflags           resq    1
-    .TestOut.cr8              resq    1
-    .ScratchPad.param1        resq    1
-    .ScratchPad.param2        resq    1
-    .ScratchPad.param3        resq    1
-    .ScratchPad.param4        resq    1
-%endif
-endstruc
-
 struc HMCPU
     .fCheckedTLBFlush       resb    1
     .fForceTLBFlush         resb    1
