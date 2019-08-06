@@ -82,6 +82,7 @@ DECLINLINE(uint8_t) VMXGetVmcsFieldWidthEff(uint32_t uFieldEnc)
     return (uFieldEnc >> 13) & 0x3;
 }
 
+
 /**
  * Returns whether the given VMCS field is a read-only VMCS field or not.
  *
@@ -96,6 +97,7 @@ DECLINLINE(bool) VMXIsVmcsFieldReadOnly(uint32_t uFieldEnc)
     /* See Intel spec. B.4.2 "Natural-Width Read-Only Data Fields". */
     return (RT_BF_GET(uFieldEnc, VMX_BF_VMCSFIELD_TYPE) == VMXVMCSFIELDTYPE_VMEXIT_INFO);
 }
+
 
 /**
  * Returns whether the given VM-entry interruption-information type is valid or not.
@@ -120,6 +122,7 @@ DECLINLINE(bool) VMXIsEntryIntInfoTypeValid(bool fSupportsMTF, uint8_t uType)
             return false;
     }
 }
+
 
 /**
  * Returns whether the given VM-entry interruption-information vector and type
@@ -146,6 +149,7 @@ DECLINLINE(bool) VMXIsEntryIntInfoVectorValid(uint8_t uVector, uint8_t uType)
         return false;
     return true;
 }
+
 
 /**
  * Returns whether or not the VM-exit is trap-like or fault-like.
@@ -182,6 +186,7 @@ DECLINLINE(bool) VMXIsVmexitTrapLike(uint32_t uExitReason)
     }
     return false;
 }
+
 
 /**
  * Returns whether the VM-entry is vectoring or not given the VM-entry interruption
