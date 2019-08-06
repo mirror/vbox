@@ -59,9 +59,6 @@
 static DECLCALLBACK(int) pgmR3HandlerPhysicalOneClear(PAVLROGCPHYSNODECORE pNode, void *pvUser);
 static DECLCALLBACK(int) pgmR3HandlerPhysicalOneSet(PAVLROGCPHYSNODECORE pNode, void *pvUser);
 static DECLCALLBACK(int) pgmR3InfoHandlersPhysicalOne(PAVLROGCPHYSNODECORE pNode, void *pvUser);
-#ifdef VBOX_WITH_RAW_MODE
-static DECLCALLBACK(int) pgmR3InfoHandlersVirtualOne(PAVLROGCPTRNODECORE pNode, void *pvUser);
-#endif
 
 
 
@@ -357,62 +354,23 @@ typedef struct PGMHANDLERINFOARG
 DECLCALLBACK(void) pgmR3InfoHandlers(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     /*
-     * Test input.
+     * Parse options.
      */
     PGMHANDLERINFOARG Args = { pHlp, pVM, /* .fStats = */ true };
-    bool fPhysical = !pszArgs  || !*pszArgs;
-    bool fVirtual = fPhysical;
-    bool fHyper = fPhysical;
-    if (!fPhysical)
-    {
-        bool fAll = strstr(pszArgs, "all") != NULL;
-        fPhysical   = fAll || strstr(pszArgs, "phys") != NULL;
-        fVirtual    = fAll || strstr(pszArgs, "virt") != NULL;
-        fHyper      = fAll || strstr(pszArgs, "hyper")!= NULL;
-        Args.fStats = strstr(pszArgs, "nost") == NULL;
-    }
+    Args.fStats = strstr(pszArgs, "nost") == NULL;
 
     /*
      * Dump the handlers.
      */
-    if (fPhysical)
-    {
-        pHlp->pfnPrintf(pHlp,
-            "Physical handlers: (PhysHandlers=%d (%#x))\n"
-            "%*s %*s %*s %*s HandlerGC UserGC    Type     Description\n",
-            pVM->pgm.s.pTreesR3->PhysHandlers, pVM->pgm.s.pTreesR3->PhysHandlers,
-            - (int)sizeof(RTGCPHYS) * 2,     "From",
-            - (int)sizeof(RTGCPHYS) * 2 - 3, "- To (incl)",
-            - (int)sizeof(RTHCPTR)  * 2 - 1, "HandlerHC",
-            - (int)sizeof(RTHCPTR)  * 2 - 1, "UserHC");
-        RTAvlroGCPhysDoWithAll(&pVM->pgm.s.pTreesR3->PhysHandlers, true, pgmR3InfoHandlersPhysicalOne, &Args);
-    }
-
-#ifdef VBOX_WITH_RAW_MODE
-    if (fVirtual)
-    {
-        pHlp->pfnPrintf(pHlp,
-            "Virtual handlers:\n"
-            "%*s %*s %*s %*s Type       Description\n",
-            - (int)sizeof(RTGCPTR) * 2,     "From",
-            - (int)sizeof(RTGCPTR) * 2 - 3, "- To (excl)",
-            - (int)sizeof(RTHCPTR) * 2 - 1, "HandlerHC",
-            - (int)sizeof(RTRCPTR) * 2 - 1, "HandlerGC");
-        RTAvlroGCPtrDoWithAll(&pVM->pgm.s.pTreesR3->VirtHandlers, true, pgmR3InfoHandlersVirtualOne, &Args);
-    }
-
-    if (fHyper)
-    {
-        pHlp->pfnPrintf(pHlp,
-            "Hypervisor Virtual handlers:\n"
-            "%*s %*s %*s %*s Type       Description\n",
-            - (int)sizeof(RTGCPTR) * 2,     "From",
-            - (int)sizeof(RTGCPTR) * 2 - 3, "- To (excl)",
-            - (int)sizeof(RTHCPTR) * 2 - 1, "HandlerHC",
-            - (int)sizeof(RTRCPTR) * 2 - 1, "HandlerGC");
-        RTAvlroGCPtrDoWithAll(&pVM->pgm.s.pTreesR3->HyperVirtHandlers, true, pgmR3InfoHandlersVirtualOne, &Args);
-    }
-#endif
+    pHlp->pfnPrintf(pHlp,
+                    "Physical handlers: (PhysHandlers=%d (%#x))\n"
+                    "%*s %*s %*s %*s HandlerGC UserGC    Type     Description\n",
+                    pVM->pgm.s.pTreesR3->PhysHandlers, pVM->pgm.s.pTreesR3->PhysHandlers,
+                    - (int)sizeof(RTGCPHYS) * 2,     "From",
+                    - (int)sizeof(RTGCPHYS) * 2 - 3, "- To (incl)",
+                    - (int)sizeof(RTHCPTR)  * 2 - 1, "HandlerHC",
+                    - (int)sizeof(RTHCPTR)  * 2 - 1, "UserHC");
+    RTAvlroGCPhysDoWithAll(&pVM->pgm.s.pTreesR3->PhysHandlers, true, pgmR3InfoHandlersPhysicalOne, &Args);
 }
 
 
@@ -449,39 +407,4 @@ static DECLCALLBACK(int) pgmR3InfoHandlersPhysicalOne(PAVLROGCPHYSNODECORE pNode
 #endif
     return 0;
 }
-
-
-#ifdef VBOX_WITH_RAW_MODE
-/**
- * Displays one virtual handler range.
- *
- * @returns 0
- * @param   pNode   Pointer to a PGMVIRTHANDLER.
- * @param   pvUser  Pointer to command helper functions.
- */
-static DECLCALLBACK(int) pgmR3InfoHandlersVirtualOne(PAVLROGCPTRNODECORE pNode, void *pvUser)
-{
-    PPGMVIRTHANDLER         pCur     = (PPGMVIRTHANDLER)pNode;
-    PPGMHANDLERINFOARG      pArgs    = (PPGMHANDLERINFOARG)pvUser;
-    PCDBGFINFOHLP           pHlp     = pArgs->pHlp;
-    PPGMVIRTHANDLERTYPEINT  pCurType = PGMVIRTANDLER_GET_TYPE(pArgs->pVM, pCur);
-    const char *pszType;
-    switch (pCurType->enmKind)
-    {
-        case PGMVIRTHANDLERKIND_WRITE:      pszType = "Write  "; break;
-        case PGMVIRTHANDLERKIND_ALL:        pszType = "All    "; break;
-        case PGMVIRTHANDLERKIND_HYPERVISOR: pszType = "WriteHyp "; break;
-        default:                            pszType = "????"; break;
-    }
-    pHlp->pfnPrintf(pHlp, "%RGv - %RGv  %RHv  %RRv  %s  %s\n",
-        pCur->Core.Key, pCur->Core.KeyLast, pCurType->pfnHandlerR3, pCurType->pfnPfHandlerRC, pszType, pCur->pszDesc);
-# ifdef VBOX_WITH_STATISTICS
-    if (pArgs->fStats)
-        pHlp->pfnPrintf(pHlp, "   cPeriods: %9RU64  cTicks: %11RU64  Min: %11RU64  Avg: %11RU64 Max: %11RU64\n",
-                        pCur->Stat.cPeriods, pCur->Stat.cTicks, pCur->Stat.cTicksMin,
-                        pCur->Stat.cPeriods ? pCur->Stat.cTicks / pCur->Stat.cPeriods : 0, pCur->Stat.cTicksMax);
-# endif
-    return 0;
-}
-#endif /* VBOX_WITH_RAW_MODE */
 
