@@ -908,6 +908,9 @@ VMMR3DECL(bool)             DBGFR3CpuIsInV86Code(PUVM pUVM, VMCPUID idCpu);
 
 #ifdef IN_RING3 /* The info callbacks API only works in ring-3. */
 
+struct RTGETOPTSTATE;
+union RTGETOPTUNION;
+
 /**
  * Info helper callback structure.
  */
@@ -930,6 +933,17 @@ typedef struct DBGFINFOHLP
      * @param   args        Argument list.
      */
     DECLCALLBACKMEMBER(void, pfnPrintfV)(PCDBGFINFOHLP pHlp, const char *pszFormat, va_list args) RT_IPRT_FORMAT_ATTR(2, 0);
+
+    /**
+     * Report getopt parsing trouble
+     *
+     * @param   pHlp        Pointer to this structure.
+     * @param   rc          The RTGetOpt return value.
+     * @param   pValueUnion The value union.
+     * @param   pState      The getopt state.
+     */
+    DECLCALLBACKMEMBER(void, pfnGetOptError)(PCDBGFINFOHLP pHlp, int rc, union RTGETOPTUNION *pValueUnion,
+                                             struct RTGETOPTSTATE *pState);
 } DBGFINFOHLP;
 
 
@@ -1130,6 +1144,8 @@ typedef FNDBGFINFOENUM *PFNDBGFINFOENUM;
 VMMR3DECL(int)              DBGFR3InfoEnum(PUVM pUVM, PFNDBGFINFOENUM pfnCallback, void *pvUser);
 VMMR3DECL(PCDBGFINFOHLP)    DBGFR3InfoLogHlp(void);
 VMMR3DECL(PCDBGFINFOHLP)    DBGFR3InfoLogRelHlp(void);
+VMMR3DECL(void)             DBGFR3InfoGenricGetOptError(PCDBGFINFOHLP pHlp, int rc, union RTGETOPTUNION *pValueUnion,
+                                                        struct RTGETOPTSTATE *pState);
 
 #endif /* IN_RING3 */
 

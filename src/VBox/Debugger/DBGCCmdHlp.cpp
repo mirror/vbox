@@ -1304,8 +1304,9 @@ static DECLCALLBACK(PCDBGFINFOHLP) dbgcHlpGetDbgfOutputHlp(PDBGCCMDHLP pCmdHlp)
     /* Lazy init */
     if (!pDbgc->DbgfOutputHlp.pfnPrintf)
     {
-        pDbgc->DbgfOutputHlp.pfnPrintf  = dbgcHlpGetDbgfOutputHlp_Printf;
-        pDbgc->DbgfOutputHlp.pfnPrintfV = dbgcHlpGetDbgfOutputHlp_PrintfV;
+        pDbgc->DbgfOutputHlp.pfnPrintf      = dbgcHlpGetDbgfOutputHlp_Printf;
+        pDbgc->DbgfOutputHlp.pfnPrintfV     = dbgcHlpGetDbgfOutputHlp_PrintfV;
+        pDbgc->DbgfOutputHlp.pfnGetOptError = DBGFR3InfoGenricGetOptError;
     }
 
     return &pDbgc->DbgfOutputHlp;

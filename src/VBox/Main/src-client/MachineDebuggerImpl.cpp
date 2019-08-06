@@ -888,12 +888,13 @@ static DECLCALLBACK(void) MachineDebuggerInfoPrintf(PCDBGFINFOHLP pHlp, const ch
  */
 static void MachineDebuggerInfoInit(PMACHINEDEBUGGERINOFHLP pHlp)
 {
-    pHlp->Core.pfnPrintf    = MachineDebuggerInfoPrintf;
-    pHlp->Core.pfnPrintfV   = MachineDebuggerInfoPrintfV;
-    pHlp->pszBuf            = NULL;
-    pHlp->cbBuf             = 0;
-    pHlp->offBuf            = 0;
-    pHlp->fOutOfMemory      = false;
+    pHlp->Core.pfnPrintf        = MachineDebuggerInfoPrintf;
+    pHlp->Core.pfnPrintfV       = MachineDebuggerInfoPrintfV;
+    pHlp->Core.pfnGetOptError   = DBGFR3InfoGenricGetOptError;
+    pHlp->pszBuf                = NULL;
+    pHlp->cbBuf                 = 0;
+    pHlp->offBuf                = 0;
+    pHlp->fOutOfMemory          = false;
 }
 
 /**

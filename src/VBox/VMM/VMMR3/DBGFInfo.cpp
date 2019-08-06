@@ -58,21 +58,24 @@ static DECLCALLBACK(void) dbgfR3InfoHelp(PVM pVM, PCDBGFINFOHLP pHlp, const char
 static const DBGFINFOHLP g_dbgfR3InfoLogHlp =
 {
     dbgfR3InfoLog_Printf,
-    dbgfR3InfoLog_PrintfV
+    dbgfR3InfoLog_PrintfV,
+    DBGFR3InfoGenricGetOptError,
 };
 
 /** Release logger output. */
 static const DBGFINFOHLP g_dbgfR3InfoLogRelHlp =
 {
     dbgfR3InfoLogRel_Printf,
-    dbgfR3InfoLogRel_PrintfV
+    dbgfR3InfoLogRel_PrintfV,
+    DBGFR3InfoGenricGetOptError
 };
 
 /** Standard error output. */
 static const DBGFINFOHLP g_dbgfR3InfoStdErrHlp =
 {
     dbgfR3InfoStdErr_Printf,
-    dbgfR3InfoStdErr_PrintfV
+    dbgfR3InfoStdErr_PrintfV,
+    DBGFR3InfoGenricGetOptError
 };
 
 
@@ -126,8 +129,21 @@ int dbgfR3InfoTerm(PUVM pUVM)
 }
 
 
-/** Logger output.
- * @copydoc DBGFINFOHLP::pfnPrintf */
+/**
+ * @interface_method_impl{DBGFINFOHLP,pfnGetOptError}
+ */
+VMMR3DECL(void) DBGFR3InfoGenricGetOptError(PCDBGFINFOHLP pHlp, int rc, PRTGETOPTUNION pValueUnion, PRTGETOPTSTATE pState)
+{
+    RT_NOREF(pState);
+    char szMsg[1024];
+    RTGetOptFormatError(szMsg, sizeof(szMsg), rc, pValueUnion);
+    pHlp->pfnPrintf(pHlp, "syntax error: %s\n", szMsg);
+}
+
+
+/**
+ * @interface_method_impl{DBGFINFOHLP,pfnPrintf, Logger output.}
+ */
 static DECLCALLBACK(void) dbgfR3InfoLog_Printf(PCDBGFINFOHLP pHlp, const char *pszFormat, ...)
 {
     NOREF(pHlp);
@@ -137,8 +153,10 @@ static DECLCALLBACK(void) dbgfR3InfoLog_Printf(PCDBGFINFOHLP pHlp, const char *p
     va_end(args);
 }
 
-/** Logger output.
- * @copydoc DBGFINFOHLP::pfnPrintfV */
+
+/**
+ * @interface_method_impl{DBGFINFOHLP,pfnPrintfV, Logger output.}
+ */
 static DECLCALLBACK(void) dbgfR3InfoLog_PrintfV(PCDBGFINFOHLP pHlp, const char *pszFormat, va_list args)
 {
     NOREF(pHlp);
@@ -158,8 +176,9 @@ VMMR3DECL(PCDBGFINFOHLP) DBGFR3InfoLogHlp(void)
 }
 
 
-/** Release logger output.
- * @copydoc DBGFINFOHLP::pfnPrintf */
+/**
+ * @interface_method_impl{DBGFINFOHLP,pfnPrintf, Release logger output.}
+ */
 static DECLCALLBACK(void) dbgfR3InfoLogRel_Printf(PCDBGFINFOHLP pHlp, const char *pszFormat, ...)
 {
     NOREF(pHlp);
@@ -169,8 +188,10 @@ static DECLCALLBACK(void) dbgfR3InfoLogRel_Printf(PCDBGFINFOHLP pHlp, const char
     va_end(args);
 }
 
-/** Release logger output.
- * @copydoc DBGFINFOHLP::pfnPrintfV */
+
+/**
+ * @interface_method_impl{DBGFINFOHLP,pfnPrintfV, Release logger output.}
+ */
 static DECLCALLBACK(void) dbgfR3InfoLogRel_PrintfV(PCDBGFINFOHLP pHlp, const char *pszFormat, va_list args)
 {
     NOREF(pHlp);
@@ -178,8 +199,9 @@ static DECLCALLBACK(void) dbgfR3InfoLogRel_PrintfV(PCDBGFINFOHLP pHlp, const cha
 }
 
 
-/** Standard error output.
- * @copydoc DBGFINFOHLP::pfnPrintf */
+/**
+ * @interface_method_impl{DBGFINFOHLP,pfnPrintf, Stdandard error output.}
+ */
 static DECLCALLBACK(void) dbgfR3InfoStdErr_Printf(PCDBGFINFOHLP pHlp, const char *pszFormat, ...)
 {
     NOREF(pHlp);
@@ -189,8 +211,10 @@ static DECLCALLBACK(void) dbgfR3InfoStdErr_Printf(PCDBGFINFOHLP pHlp, const char
     va_end(args);
 }
 
-/** Standard error output.
- * @copydoc DBGFINFOHLP::pfnPrintfV */
+
+/**
+ * @interface_method_impl{DBGFINFOHLP,pfnPrintfV, Stdandard error output.}
+ */
 static DECLCALLBACK(void) dbgfR3InfoStdErr_PrintfV(PCDBGFINFOHLP pHlp, const char *pszFormat, va_list args)
 {
     NOREF(pHlp);

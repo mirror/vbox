@@ -118,6 +118,9 @@ VMMR3DECL(int) DBGFR3InfoEx(PUVM pUVM, VMCPUID idCpu, const char *pszName, const
 {
     return VERR_INTERNAL_ERROR;
 }
+VMMR3DECL(void) DBGFR3InfoGenricGetOptError(PCDBGFINFOHLP pHlp, int rc, union RTGETOPTUNION *pValueUnion, struct RTGETOPTSTATE *pState)
+{
+}
 VMMR3DECL(bool) DBGFR3IsHalted(PUVM pUVM)
 {
     return true;
