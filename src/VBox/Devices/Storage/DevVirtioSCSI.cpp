@@ -824,7 +824,7 @@ static int virtioScsiR3ConfigAccess(PVIRTIOSCSI pThis, uint32_t uOffset,
  *
  * @param   pDevIns     The device instance.
  * @param   uOffset     Offset within device specific capabilities struct
- * @param   pvBuf       Buffer in which to save read data
+ * @param   pv       Buffer in which to save read data
  * @param   cb          Number of bytes to read
  */
 static DECLCALLBACK(int) virtioScsiR3DevCapRead(PPDMDEVINS pDevIns, uint32_t uOffset, const void *pv, size_t cb)
@@ -846,7 +846,7 @@ static DECLCALLBACK(int) virtioScsiR3DevCapRead(PPDMDEVINS pDevIns, uint32_t uOf
  *
  * @param   pDevIns     The device instance.
  * @param   uOffset     Offset within device specific capabilities struct
- * @param   pvBuf       Buffer in which to save read data
+ * @param   pv       Buffer in which to save read data
  * @param   cb          Number of bytes to write
  */
 static DECLCALLBACK(int) virtioScsiR3DevCapWrite(PPDMDEVINS pDevIns, uint32_t uOffset, const void *pv, size_t cb)
