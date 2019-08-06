@@ -140,10 +140,10 @@ typedef struct virtio_pci_common_cfg /* VirtIO 1.0 specification name of this st
      */
 
     /* Per device fields */
-    uint32_t  uDeviceFeatureSelect;   /** RW (driver selects device features)         */
-    uint32_t  uDeviceFeature;         /** RO (device reports features to driver)      */
-    uint32_t  uDriverFeatureSelect;   /** RW (driver selects driver features)         */
-    uint32_t  uDriverFeature;         /** RW (driver accepts device features)         */
+    uint32_t  uDeviceFeaturesSelect;   /** RW (driver selects device features)         */
+    uint32_t  uDeviceFeatures;         /** RO (device reports features to driver)      */
+    uint32_t  uDriverFeaturesSelect;   /** RW (driver selects driver features)         */
+    uint32_t  uDriverFeatures;         /** RW (driver accepts device features)         */
     uint16_t  uMsixConfig;            /** RW (driver sets MSI-X config vector)        */
     uint16_t  uNumQueues;             /** RO (device specifies max queues)            */
     uint8_t   uDeviceStatus;          /** RW (driver writes device status, 0 resets)  */
@@ -175,8 +175,6 @@ typedef struct virtio_pci_notify_cap
         struct virtio_pci_cap pciCap;
         uint32_t uNotifyOffMultiplier; /* notify_off_multiplier                        */
 } VIRTIO_PCI_NOTIFY_CAP_T, *PVIRTIO_PCI_NOTIFY_CAP_T;
-
-typedef uint8_t VIRTIO_PCI_ISR_CAP_T, *PVIRTIO_PCI_ISR_CAP_T;
 
 /*
  * If the client of this library has any device-specific capabilities, it must define
@@ -277,10 +275,28 @@ typedef VQUEUEELEM *PVQUEUEELEM;
  * Interface this library uses to let the client handle VirtioIO device-specific capabilities I/O
  */
 
-typedef DECLCALLBACK(int)   FNVIRTIODEVCAPWRITE(PPDMDEVINS pDevIns, RTGCPHYS GCPhysAddr, const void *pvBuf, size_t cbWrite);
+ /**
+ * VirtIO Device-specific capabilities read callback
+ * (other VirtIO capabilities and features are handled in VirtIO implementation)
+ *
+ * @param   pDevIns     The device instance.
+ * @param   offset      Offset within device specific capabilities struct
+ * @param   pvBuf       Buffer in which to save read data
+ * @param   cbWrite     Number of bytes to write
+ */
+typedef DECLCALLBACK(int)   FNVIRTIODEVCAPWRITE(PPDMDEVINS pDevIns, uint32_t uOffset, const void *pvBuf, size_t cbWrite);
 typedef FNVIRTIODEVCAPWRITE *PFNVIRTIODEVCAPWRITE;
 
-typedef DECLCALLBACK(int)   FNVIRTIODEVCAPREAD(PPDMDEVINS pDevIns, RTGCPHYS GCPhysAddr, const void *pvBuf, size_t cbRead);
+/**
+ * VirtIO Device-specific capabilities read callback
+ * (other VirtIO capabilities and features are handled in VirtIO implementation)
+ *
+ * @param   pDevIns     The device instance.
+ * @param   offset      Offset within device specific capabilities struct
+ * @param   pvBuf       Buffer in which to save read data
+ * @param   cbRead      Number of bytes to read
+ */
+typedef DECLCALLBACK(int)   FNVIRTIODEVCAPREAD(PPDMDEVINS pDevIns, uint32_t uOffset, const void *pvBuf, size_t cbRead);
 typedef FNVIRTIODEVCAPREAD *PFNVIRTIODEVCAPREAD;
 
 /** @name VirtIO port I/O callbacks.
@@ -288,9 +304,9 @@ typedef FNVIRTIODEVCAPREAD *PFNVIRTIODEVCAPREAD;
 typedef struct VIRTIOCALLBACKS
 {
      DECLCALLBACKMEMBER(int,      pfnVirtioDevCapRead)
-                                      (PPDMDEVINS pDevIns, RTGCPHYS GCPhysAddr, const void *pvBuf, size_t cbRead);
+                                      (PPDMDEVINS pDevIns, uint32_t uOffset, const void *pvBuf, size_t cbRead);
      DECLCALLBACKMEMBER(int,      pfnVirtioDevCapWrite)
-                                      (PPDMDEVINS pDevIns, RTGCPHYS GCPhysAddr, const void *pvBuf, size_t cbWrite);
+                                      (PPDMDEVINS pDevIns, uint32_t uOffset, const void *pvBuf, size_t cbWrite);
 } VIRTIOCALLBACKS, *PVIRTALCALLBACKS;
 /** @} */
 
@@ -306,7 +322,6 @@ typedef struct VIRTIOSTATE
     /* Read-only part, never changes after initialization. */
     char                         szInstance[8];          /**< Instance name, e.g. VNet#1. */
 
-    bool                         fHaveDevSpecificCap;
 #if HC_ARCH_BITS != 64
     uint32_t                     padding1;
 #endif
@@ -351,10 +366,10 @@ typedef struct VIRTIOSTATE
     uint32_t                     nQueues;                    /** Actual number of queues used. */
     VQUEUE                       Queues[VIRTIO_MAX_NQUEUES];
 
-    uint32_t                     uFeaturesOfferedSelect;     /** Select hi/lo 32-bit uFeaturesOffered to r/w */
-    uint64_t                     uFeaturesOffered;           /** Host features offered */
-    uint32_t                     uFeaturesAcceptedSelect;    /** Selects hi/lo 32-bit uFeaturesAccepted to r/w*/
-    uint64_t                     uFeaturesAccepted;          /** Host features accepted by guest */
+    uint32_t                     uDeviceFeaturesSelect;     /** Select hi/lo 32-bit uDeviceFeatures to r/w */
+    uint64_t                     uDeviceFeatures;           /** Host features offered */
+    uint32_t                     uDriverFeaturesSelect;     /** Selects hi/lo 32-bit uDriverFeatures to r/w*/
+    uint64_t                     uDriverFeatures;           /** Host features accepted by guest */
 
     uint32_t                     uMsixConfig;
     uint8_t                      uDeviceStatus;
@@ -370,8 +385,6 @@ typedef struct VIRTIOSTATE
     uint64_t                     uQueueAvail[MAX_QUEUES];
     uint64_t                     uQueueUsed[MAX_QUEUES];
 
-    /** Base address of PCI capabilities */
-    RTGCPHYS                     GCPhysPciCapBase;
 
     uint8_t                      uVirtioCapRegion;      /* Client assigned  Virtio dedicated capabilities region*/
 
@@ -379,20 +392,21 @@ typedef struct VIRTIOSTATE
     PFNPCICONFIGREAD             pfnPciConfigReadOld;
     PFNPCICONFIGWRITE            pfnPciConfigWriteOld;
 
-
-    uint32_t                     uNotifyCapOffset;
-    uint32_t                     uIsrCapOffset;
-    uint32_t                     uPciCfgCapOffset;
-    uint32_t                     uDeviceCapOffset;
-    uint32_t                     uCommonCfgOffset;
+    bool                         fHaveDevSpecificCap;
+    uint32_t                     cbDevSpecificCap;
 
     PVIRTIO_PCI_CFG_CAP_T        pPciCfgCap;            /** Pointer to struct in configuration area */
+    PVIRTIO_PCI_NOTIFY_CAP_T     pNotifyCap;            /** Pointer to struct in configuration area */
+    PVIRTIO_PCI_CAP_T            pCommonCfgCap;         /** Pointer to struct in configuration area */
+    PVIRTIO_PCI_CAP_T            pIsrCap;               /** Pointer to struct in configuration area */
+    PVIRTIO_PCI_CAP_T            pDeviceCap;            /** Pointer to struct in configuration area */
 
-    PVIRTIO_PCI_COMMON_CFG_T     pGcPhysCommonCfg;      /** Pointer to MMIO mapped struct */
-    PVIRTIO_PCI_NOTIFY_CAP_T     pGcPhysNotifyCap;      /** Pointer to MMIO mapped struct */
-    PVIRTIO_PCI_ISR_CAP_T        pGcPhysIsrCap;         /** Pointer to MMIO mapped struct */
-    PVIRTIO_PCI_CFG_CAP_T        pGcPhysPciCfgCap;      /** Pointer to MMIO mapped struct */
-    PVIRTIO_PCI_DEVICE_CAP_T     pGcPhysDeviceCap;      /** Pointer to MMIO mapped struct */
+    /** Base address of PCI capabilities */
+    RTGCPHYS                     GCPhysPciCapBase;
+    RTGCPHYS                     pGcPhysCommonCfg;      /** Pointer to MMIO mapped capability data */
+    RTGCPHYS                     pGcPhysNotifyCap;      /** Pointer to MMIO mapped capability data */
+    RTGCPHYS                     pGcPhysIsrCap;         /** Pointer to MMIO mapped capability data */
+    RTGCPHYS                     pGcPhysDeviceCap;      /** Pointer to MMIO mapped capability data */
 
     bool fDeviceConfigInterrupt;
     bool fQueueInterrupt;
@@ -415,7 +429,7 @@ void    virtioSetReadLed(PVIRTIOSTATE pVirtio, bool fOn);
 void    virtioSetWriteLed(PVIRTIOSTATE pVirtio, bool fOn);
 int     virtioRaiseInterrupt(PVIRTIOSTATE pVirtio, int rcBusy, uint8_t uint8_tIntCause);
 void    virtioNotify(PVIRTIOSTATE pVirtio);
-void    virtioSetHostFeatures(PVIRTIOSTATE pVirtio, uint64_t uFeaturesOffered);
+void    virtioSetHostFeatures(PVIRTIOSTATE pVirtio, uint64_t uDeviceFeatures);
 
 PVQUEUE virtioAddQueue(PVIRTIOSTATE pVirtio, unsigned uSize, PFNVIRTIOQUEUECALLBACK pfnCallback, const char *pcszName);
 bool    virtQueueSkip(PVIRTIOSTATE pVirtio, PVQUEUE pQueue);

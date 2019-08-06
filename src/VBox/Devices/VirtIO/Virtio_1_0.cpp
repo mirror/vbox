@@ -35,94 +35,95 @@
 # define QUEUENAME(s, q) (q->pcszName)
 #endif
 
-/* These ACCESSOR macros handle the most basic kinds of MMIO accesses to fields
- * virtio 1.0 spec's virtio_pci_common_cfg  avoiding a lot of visual bloat.
+
+/**
+* Returns true if physical address and access length are within the mapped capability struct.
+*
+* Actual Parameters:
+*     [IN]  pPhysCapStruct - Pointer to MMIO mapped capability struct
+*     [IN]  pCfgCap        - Pointer to capability in PCI configuration area
+*     [OUT] fMatched       - True if GCPhysAddr is within the physically mapped capability.
+*
+* Implied parameters:
+*     [IN]  GCPhysAddr     - Physical address accessed (via MMIO callback)
+*     [IN]  cb             - Number of bytes to access
+*     [OUT] result          - true or false
+*
+*/
+#define MATCH_VIRTIO_CAP_STRUCT(pGcPhysCapData, pCfgCap, fMatched) \
+        bool fMatched = false; \
+        if (pGcPhysCapData && pCfgCap && GCPhysAddr >= (RTGCPHYS)pGcPhysCapData \
+            && GCPhysAddr < ((RTGCPHYS)pGcPhysCapData + ((PVIRTIO_PCI_CAP_T)pCfgCap)->uLength) \
+            && cb <= ((PVIRTIO_PCI_CAP_T)pCfgCap)->uLength) \
+                fMatched = true;
+
+/**
+ * This macro resolves to boolean true if uoff is within the specified member offset and length.
+ *
+ * Actual Parameters:
+ *     [IN] member      - Member of VIRTIO_PCI_COMMON_CFG_T
+ *
+ * Implied Parameters:
+ *     [IN]  uoff        - Offset into VIRTIO_PCI_COMMON_CFG_T
+ *     [IN]  cb          - Number of bytes to access
+ *     [OUT] result      - true or false
  */
+#define COMMON_CFG(member) \
+           (uoff >= RT_OFFSETOF(VIRTIO_PCI_COMMON_CFG_T, member) \
+        &&  uoff < (uint32_t)(RT_OFFSETOF(VIRTIO_PCI_COMMON_CFG_T, member) \
+                             + RT_SIZEOFMEMB(VIRTIO_PCI_COMMON_CFG_T, member)) \
+        &&   cb <= RT_SIZEOFMEMB(VIRTIO_PCI_COMMON_CFG_T, member) \
+                  - (uoff - RT_OFFSETOF(VIRTIO_PCI_COMMON_CFG_T, member)))
 
- /**
-  * If the physical address and access length is within the mapped capability struct
-  * the ptrByType will be set to the mapped capability start. Otherwise ptrByType will be NULL.
-  *
-  * Implied parameters:
-  *     GPhysAddr   - Physical address accessed (via MMIO callback)
-  *     cb          - Number of bytes to access
-  *
-  * Actual Parameters:
-  *     [IN]  pCapStruct - Pointer to MMIO mapped capability struct
-  *     [IN]  type       - Capability struct type
-  *     [OUT] result     - A pointer of type capType that will be set to a mapped capability
-  *                       if phys. addr / access len is within it's span.
-  *     [OUT] offset     - The offset of the physical address into the capability if applicable.
-  */
+#define LOG_ACCESSOR(member) \
+        LogFunc(("Guest %s %s[%d:%d]: %.*Rhxs\n", \
+                  fWrite ? "wrote" : "read ", #member, foff, foff + cb, cb, pv));
 
-#define MATCH_VIRTIO_CAP_STRUCT(pCapStruct, type, result, offset) \
-        type *result = NULL; \
-        if (   GCPhysAddr >= (RTGCPHYS)pCapStruct \
-            && GCPhysAddr < ((RTGCPHYS)pCapStruct + sizeof(type)) \
-            && cb <= sizeof(type)) \
-        { \
-            offset = GCPhysAddr - (RTGCPHYS)pCapStruct; \
-            result = (type *)pCapStruct; \
-        }
+#define LOG_INDEXED_ACCESSOR(member, idx) \
+        LogFunc(("Guest %s %s[%d][%d:%d]: %.*Rhxs\n", \
+                  fWrite ? "wrote" : "read ", #member, idx, foff, foff + cb, cb, pv));
 
-#define LOG_ACCESSOR(member, type) \
-        LogFunc(("Guest %s 0x%x %s %s\n", fWrite ? "wrote" : "read ", \
-                 *(type *)pv, fWrite ? "  to" : "from", #member));
-
-#define LOG_INDEXED_ACCESSOR(member, type, idx) \
-        LogFunc(("Guest %s 0x%x %s %s[%d]\n", fWrite ? "wrote" : "read ", \
-                 *(type *)pv, fWrite ? "  to" : "from", #member, idx));
-
-#define ACCESSOR(member, type) \
+#define ACCESSOR(member) \
     { \
+        uint32_t foff = uoff - RT_OFFSETOF(VIRTIO_PCI_COMMON_CFG_T, member); \
         if (fWrite) \
-        { \
-            pVirtio->member = *(type *)pv; \
-        } \
+            memcpy(((char *)&pVirtio->member) + uoff, (const char *)pv, cb); \
         else \
-        { \
-            *(type *)pv = pVirtio->member; \
-        } \
-        LOG_ACCESSOR(member, type); \
-    }
-#define ACCESSOR_WITH_IDX(member, type, idx) \
-    { \
-        if (fWrite) \
-        { \
-            pVirtio->member[idx] = *(type *)pv; \
-        } \
-        else \
-        { \
-            *(type *)pv = pVirtio->member[idx]; \
-        } \
-        LOG_INDEXED_ACCESSOR(member, type, idx); \
+            memcpy((char *)pv, (const char *)(((char *)&pVirtio->member) + uoff), cb); \
+        LOG_ACCESSOR(member); \
     }
 
-#define ACCESSOR_READONLY(member, type) \
+#define ACCESSOR_WITH_IDX(member, idx) \
     { \
+        uint32_t foff = uoff - RT_OFFSETOF(VIRTIO_PCI_COMMON_CFG_T, member); \
         if (fWrite) \
-        { \
+            memcpy(((char *)(pVirtio->member + idx)) + uoff, (const char *)pv, cb); \
+        else \
+            memcpy((char *)pv, (const char *)(((char *)(pVirtio->member + idx)) + uoff), cb); \
+        LOG_INDEXED_ACCESSOR(member, idx); \
+    }
+
+#define ACCESSOR_READONLY(member) \
+    { \
+        uint32_t foff = uoff - RT_OFFSETOF(VIRTIO_PCI_COMMON_CFG_T, member); \
+        if (fWrite) \
             LogFunc(("Guest attempted to write readonly virtio_pci_common_cfg.%s\n", #member)); \
-            AssertMsgFailed(("bad access\n")); \
-        } \
         else \
         { \
-            *(type *)pv = pVirtio->member; \
-            LOG_ACCESSOR(member, type); \
+            memcpy((char *)pv, (const char *)(((char *)&pVirtio->member) + uoff), cb); \
+            LOG_ACCESSOR(member); \
         } \
     }
 
-#define ACCESSOR_READONLY_WITH_IDX(member, type, idx) \
+#define ACCESSOR_READONLY_WITH_IDX(member, idx) \
     { \
+        uint32_t foff = uoff - RT_OFFSETOF(VIRTIO_PCI_COMMON_CFG_T, member); \
         if (fWrite) \
-        { \
             LogFunc(("Guest attempted to write readonly virtio_pci_common_cfg.%s[%d]\n", #member, idx)); \
-            AssertMsgFailed(("bad access\n")); \
-        } \
         else \
         { \
-            *(type *)pv = pVirtio->member[idx]; \
-            LOG_INDEXED_ACCESSOR(member, type, idx); \
+            memcpy((char *)pv, ((char *)(pVirtio->member + idx)) + uoff, cb); \
+            LOG_INDEXED_ACCESSOR(member, idx); \
         } \
     }
 
@@ -624,77 +625,92 @@ static void virtioResetDevice(PVIRTIOSTATE pVirtio)
  * @param   pv          Pointer to location to write to or read from
  * @param   cb          Number of bytes to read or write
  */
-int virtioCommonCfgAccessed(PVIRTIOSTATE pVirtio, int fWrite, off_t uoff, void const *pv)
+
+
+int virtioCommonCfgAccessed(PVIRTIOSTATE pVirtio, int fWrite, off_t uoff, unsigned cb, void const *pv)
 {
     int rv = VINF_SUCCESS;
-    if (uoff == RT_OFFSETOF(VIRTIO_PCI_COMMON_CFG_T, uDeviceFeature))
+    uint64_t val;
+    if (COMMON_CFG(uDeviceFeatures))
     {
-        if (fWrite) /* Guest WRITE pCommonCfg->uDeviceFeature */
+        if (fWrite) /* Guest WRITE pCommonCfg>uDeviceFeatures */
+            Log(("Guest attempted to write readonly virtio_pci_common_cfg.device_feature\n"));
+        else /* Guest READ pCommonCfg->uDeviceFeatures */
         {
-            AssertMsgFailed(("Guest attempted to write readonly virtio_pci_common_cfg.device_feature\n"));
-        }
-        else /* Guest READ pCommonCfg->uDeviceFeature */
-        {
-            switch(pVirtio->uFeaturesOfferedSelect)
+            uint32_t foff = uoff - RT_OFFSETOF(VIRTIO_PCI_COMMON_CFG_T, uDeviceFeatures);
+            switch(pVirtio->uDeviceFeaturesSelect)
             {
                 case 0:
-                    *(uint32_t *)pv = pVirtio->uFeaturesOffered & 0xffffffff;
-                    LogFunc(("Guest read  0x%8x from LO DWORD of uFeaturesOffered\n", *(uint32_t *)pv));
+                    val = pVirtio->uDeviceFeatures & 0xffffffff;
+                    memcpy((void *)pv, (const void *)&val, cb);
+                    LogFunc(("Guest read  uDeviceFeatures(LO)[%d:%d]: %.*Rhxs\n",
+                              foff, foff + cb, cb, pv));
                     break;
                 case 1:
-                    *(uint32_t *)pv = (pVirtio->uFeaturesOffered >> 32) & 0xffffffff;
-                    LogFunc(("Guest read  0x%8x from HI DWORD of uFeaturesOffered\n", *(uint32_t *)pv));
+                    val = (pVirtio->uDeviceFeatures >> 32) & 0xffffffff;
+                    memcpy((void *)pv, (const void *)&val, cb);
+                    LogFunc(("Guest read  uDeviceFeatures(HI)[%d:%d]: %.*Rhxs\n",
+                              foff, foff + cb, cb, pv));
                     break;
                 default:
-                    Log(("Guest read uDeviceFeature with out of range selector (%d), returning 0\n",
-                        pVirtio->uFeaturesOfferedSelect));
+                    Log(("Guest read uDeviceFeatures with out of range selector (%d), returning 0\n",
+                          pVirtio->uDeviceFeaturesSelect));
             }
         }
     }
-    else if (uoff == RT_OFFSETOF(VIRTIO_PCI_COMMON_CFG_T, uDriverFeature))
+    else if (COMMON_CFG(uDriverFeatures))
     {
-        if (fWrite) /* Guest WRITE pCommonCfg->uDriverFeature */
+        if (fWrite) /* Guest WRITE pCommonCfg->udriverFeatures */
         {
-            switch(pVirtio->uFeaturesOfferedSelect)
+            uint32_t foff = uoff - RT_OFFSETOF(VIRTIO_PCI_COMMON_CFG_T, uDriverFeatures);
+            switch(pVirtio->uDriverFeaturesSelect)
             {
                 case 0:
-                    pVirtio->uFeaturesAccepted = *(uint32_t *)pv;
-                    LogFunc(("Guest wrote 0x%8x from LO DWORD of uFeaturesAccepted\n", *(uint32_t *)pv));
+                    memcpy(&pVirtio->uDriverFeatures, pv, cb);
+                    LogFunc(("Guest wrote uDriverFeatures(LO)[%d:%d]: %.*Rhxs\n",
+                              foff, foff + cb, cb, pv));
                     break;
                 case 1:
-                    pVirtio->uFeaturesAccepted = (uint64_t)(*(uint32_t *)pv) << 32;
-                    LogFunc(("Guest wrote 0x%8x from LO DWORD of uFeaturesAccepted\n", *(uint32_t *)pv));
+                    memcpy(((char *)&pVirtio->uDriverFeatures) + sizeof(uint32_t), pv, cb);
+                    LogFunc(("Guest wrote uDriverFeatures(HI)[%d:%d]: %.*Rhxs\n",
+                              foff, foff + cb, cb, pv));
                     break;
             }
         }
-        else /* Guest READ pCommonCfg->uDriverFeature */
+        else /* Guest READ pCommonCfg->udriverFeatures */
         {
-            switch(pVirtio->uFeaturesOfferedSelect)
+            uint32_t foff = uoff - RT_OFFSETOF(VIRTIO_PCI_COMMON_CFG_T, uDriverFeatures);
+            switch(pVirtio->uDriverFeaturesSelect)
             {
                 case 0:
-                    *(uint32_t *)pv = pVirtio->uFeaturesAccepted & 0xffffffff;
-                    LogFunc(("Guest read  0x%8x from LO DWORD of uFeaturesAccepted\n", *(uint32_t *)pv));
+                    val = pVirtio->uDriverFeatures & 0xffffffff;
+                    memcpy((void *)pv, (const void *)&val, cb);
+                    LogFunc(("Guest read  uDriverFeatures(LO)[%d:%d]: %.*Rhxs\n",
+                              foff, foff + cb, cb, pv));
                     break;
                 case 1:
-                    *(uint32_t *)pv = (pVirtio->uFeaturesAccepted >> 32) & 0xffffffff;
-                    LogFunc(("Guest read  0x%8x from HI DWORD of uFeaturesAccepted\n", *(uint32_t *)pv));
+                    val = (pVirtio->uDriverFeatures >> 32) & 0xffffffff;
+                    memcpy((void *)pv, (const void *)&val, cb);
+                    LogFunc(("Guest read  uDriverFeatures(HI)[%d:%d]: %.*Rhxs\n",
+                              foff, foff + cb, cb, pv));
                     break;
+                default:
+                    Log(("Guest read uDriverFeatures with out of range selector (%d), returning 0\n",
+                         pVirtio->uDriverFeaturesSelect));
             }
         }
     }
-    else if (uoff == RT_OFFSETOF(VIRTIO_PCI_COMMON_CFG_T, uNumQueues))
+    else if (COMMON_CFG(uNumQueues))
     {
         if (fWrite)
-        {
-            AssertMsgFailed(("Guest attempted to write readonly virtio_pci_common_cfg.num_queues\n"));
-        }
+            Log(("Guest attempted to write readonly virtio_pci_common_cfg.num_queues\n"));
         else
         {
             *(uint16_t *)pv = MAX_QUEUES;
             Log(("Guest read 0x%x from pVirtio->uNumQueues\n", MAX_QUEUES));
         }
     }
-    else if (uoff == RT_OFFSETOF(VIRTIO_PCI_COMMON_CFG_T, uDeviceStatus))
+    else if (COMMON_CFG(uDeviceStatus))
     {
         if (fWrite) /* Guest WRITE pCommonCfg->uDeviceStatus */
         {
@@ -711,58 +727,58 @@ int virtioCommonCfgAccessed(PVIRTIOSTATE pVirtio, int fWrite, off_t uoff, void c
             logDeviceStatus(pVirtio->uDeviceStatus);
         }
     }
-    else if (uoff == RT_OFFSETOF(VIRTIO_PCI_COMMON_CFG_T, uMsixConfig))
+    else if (COMMON_CFG(uMsixConfig))
     {
-        ACCESSOR(uMsixConfig, uint32_t);
+        ACCESSOR(uMsixConfig);
     }
-    else if (uoff == RT_OFFSETOF(VIRTIO_PCI_COMMON_CFG_T, uDeviceFeatureSelect))
+    else if (COMMON_CFG(uDeviceFeaturesSelect))
     {
-        ACCESSOR(uFeaturesOfferedSelect, uint32_t);
+        ACCESSOR(uDeviceFeaturesSelect);
     }
-    else if (uoff == RT_OFFSETOF(VIRTIO_PCI_COMMON_CFG_T, uDriverFeatureSelect))
+    else if (COMMON_CFG(uDriverFeaturesSelect))
     {
-        ACCESSOR(uFeaturesAcceptedSelect, uint32_t);
+        ACCESSOR(uDriverFeaturesSelect);
     }
-    else if (uoff == RT_OFFSETOF(VIRTIO_PCI_COMMON_CFG_T, uConfigGeneration))
+    else if (COMMON_CFG(uConfigGeneration))
     {
-        ACCESSOR_READONLY(uConfigGeneration, uint8_t);
+        ACCESSOR_READONLY(uConfigGeneration);
     }
-    else if (uoff == RT_OFFSETOF(VIRTIO_PCI_COMMON_CFG_T, uQueueSelect))
+    else if (COMMON_CFG(uQueueSelect))
     {
-        ACCESSOR(uQueueSelect, uint16_t);
+        ACCESSOR(uQueueSelect);
     }
-    else if (uoff == RT_OFFSETOF(VIRTIO_PCI_COMMON_CFG_T, uQueueSize))
+    else if (COMMON_CFG(uQueueSize))
     {
-        ACCESSOR_WITH_IDX(uQueueSize, uint16_t, pVirtio->uQueueSelect);
+        ACCESSOR_WITH_IDX(uQueueSize, pVirtio->uQueueSelect);
     }
-    else if (uoff == RT_OFFSETOF(VIRTIO_PCI_COMMON_CFG_T, uQueueMsixVector))
+    else if (COMMON_CFG(uQueueMsixVector))
     {
-        ACCESSOR_WITH_IDX(uQueueMsixVector, uint16_t, pVirtio->uQueueSelect);
+        ACCESSOR_WITH_IDX(uQueueMsixVector, pVirtio->uQueueSelect);
     }
-    else if (uoff == RT_OFFSETOF(VIRTIO_PCI_COMMON_CFG_T, uQueueEnable))
+    else if (COMMON_CFG(uQueueEnable))
     {
-        ACCESSOR_WITH_IDX(uQueueEnable, uint16_t, pVirtio->uQueueSelect);
+        ACCESSOR_WITH_IDX(uQueueEnable, pVirtio->uQueueSelect);
     }
-    else if (uoff == RT_OFFSETOF(VIRTIO_PCI_COMMON_CFG_T, uQueueNotifyOff))
+    else if (COMMON_CFG(uQueueNotifyOff))
     {
-        ACCESSOR_READONLY_WITH_IDX(uQueueNotifyOff, uint16_t, pVirtio->uQueueSelect);
+        ACCESSOR_READONLY_WITH_IDX(uQueueNotifyOff, pVirtio->uQueueSelect);
     }
-    else if (uoff == RT_OFFSETOF(VIRTIO_PCI_COMMON_CFG_T, uQueueDesc))
+    else if (COMMON_CFG(uQueueDesc))
     {
-        ACCESSOR_WITH_IDX(uQueueDesc, uint64_t, pVirtio->uQueueSelect);
+        ACCESSOR_WITH_IDX(uQueueDesc, pVirtio->uQueueSelect);
     }
-    else if (uoff == RT_OFFSETOF(VIRTIO_PCI_COMMON_CFG_T, uQueueAvail))
+    else if (COMMON_CFG(uQueueAvail))
     {
-        ACCESSOR_WITH_IDX(uQueueAvail, uint64_t, pVirtio->uQueueSelect);
+        ACCESSOR_WITH_IDX(uQueueAvail, pVirtio->uQueueSelect);
     }
-    else if (uoff == RT_OFFSETOF(VIRTIO_PCI_COMMON_CFG_T, uQueueUsed))
+    else if (COMMON_CFG(uQueueUsed))
     {
-        ACCESSOR_WITH_IDX(uQueueUsed, uint64_t, pVirtio->uQueueSelect);
+        ACCESSOR_WITH_IDX(uQueueUsed, pVirtio->uQueueSelect);
     }
     else
     {
-
-        AssertMsgFailed(("virtio: Bad common cfg offset   \n"));
+        LogFunc(("Bad access by guest to virtio_pci_common_cfg: uoff=%d, cb=%d\n", uoff, cb));
+        rv = VERR_ACCESS_DENIED;
     }
     return rv;
 }
@@ -785,34 +801,33 @@ PDMBOTHCBDECL(int) virtioR3MmioRead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS G
     int rc = VINF_SUCCESS;
 
 //#ifdef LOG_ENABLED
-//    LogFlowFunc(("pVirtio=%#p GCPhysAddr=%RGp pv=%#p{%.*Rhxs} cb=%u\n", pVirtio, GCPhysAddr, pv, cb, pv, cb));
+//    LogFunc(("pVirtio=%#p GCPhysAddr=%RGp pv=%#p{%.*Rhxs} cb=%u\n", pVirtio, GCPhysAddr, pv, cb, pv, cb));
 //#endif
 
-    /* Note: The notify capability is handled differently as per VirtIO 1.0 spec 4.1.4.4 */
+    MATCH_VIRTIO_CAP_STRUCT(pVirtio->pGcPhysDeviceCap, pVirtio->pDeviceCap,     fDevSpecific);
+    MATCH_VIRTIO_CAP_STRUCT(pVirtio->pGcPhysCommonCfg, pVirtio->pCommonCfgCap,  fCommonCfg);
+    MATCH_VIRTIO_CAP_STRUCT(pVirtio->pGcPhysIsrCap,    pVirtio->pIsrCap,        fIsrCap);
 
-    off_t uoff = 0;
-    MATCH_VIRTIO_CAP_STRUCT(pVirtio->pGcPhysCommonCfg, VIRTIO_PCI_COMMON_CFG_T, pCommonCfg,  uoff);
-    MATCH_VIRTIO_CAP_STRUCT(pVirtio->pGcPhysIsrCap,    VIRTIO_PCI_ISR_CAP_T,    pIsrCap,     uoff);
-
-    if (pVirtio->fHaveDevSpecificCap)
+    if (fDevSpecific)
     {
-        MATCH_VIRTIO_CAP_STRUCT(pVirtio->pGcPhysDeviceCap, VIRTIO_PCI_DEVICE_CAP_T, pDeviceCap,  uoff);
-        if (pDeviceCap)
-            rc = pVirtio->virtioCallbacks.pfnVirtioDevCapRead(pDevIns, GCPhysAddr, pv, cb);
-        return rc;
+        uint32_t uDevSpecificDataOffset = GCPhysAddr - pVirtio->pGcPhysDeviceCap;
+        rc = pVirtio->virtioCallbacks.pfnVirtioDevCapRead(pDevIns, uDevSpecificDataOffset, pv, cb);
     }
-    if (pCommonCfg)
-        virtioCommonCfgAccessed(pVirtio, 0 /* fWrite */, uoff, pv);
-    else if (pIsrCap)
+    else
+    if (fCommonCfg)
+    {
+        uint32_t uCommonCfgDataOffset = GCPhysAddr - pVirtio->pGcPhysCommonCfg;
+        virtioCommonCfgAccessed(pVirtio, 0 /* fWrite */, uCommonCfgDataOffset, cb, pv);
+    }
+    else
+    if (fIsrCap)
     {
         *(uint8_t *)pv = pVirtio->fQueueInterrupt | pVirtio->fDeviceConfigInterrupt << 1;
         LogFunc(("Read 0x%s from pIsrCap\n", *(uint8_t *)pv));
     }
     else {
 
-        AssertMsgFailed(("virtio: Write outside of capabilities region: GCPhysAddr=%RGp cb=%RGp\n", GCPhysAddr, cb));
-        Log(("pCommonCfg=%p, pIsrCap=%p, uoff=%d\n",
-                pCommonCfg, pIsrCap, uoff));
+        AssertMsgFailed(("virtio: Read outside of capabilities region: GCPhysAddr=%RGp cb=%RGp\n", GCPhysAddr, cb));
     }
     return rc;
 }
@@ -830,7 +845,6 @@ PDMBOTHCBDECL(int) virtioR3MmioRead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS G
  */
 PDMBOTHCBDECL(int) virtioR3MmioWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void const *pv, unsigned cb)
 {
-
     RT_NOREF(pvUser);
     PVIRTIOSTATE pVirtio = PDMINS_2_DATA(pDevIns, PVIRTIOSTATE);
     int rc = VINF_SUCCESS;
@@ -838,20 +852,24 @@ PDMBOTHCBDECL(int) virtioR3MmioWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS 
 //#ifdef LOG_ENABLED
 //    LogFunc(("pVirtio=%#p GCPhysAddr=%RGp pv=%#p{%.*Rhxs} cb=%u\n", pVirtio, GCPhysAddr, pv, cb, pv, cb));
 //#endif
-    off_t uoff = 0;
 
-    MATCH_VIRTIO_CAP_STRUCT(pVirtio->pGcPhysCommonCfg, VIRTIO_PCI_COMMON_CFG_T, pCommonCfg,  uoff);
-    MATCH_VIRTIO_CAP_STRUCT(pVirtio->pGcPhysIsrCap,    VIRTIO_PCI_ISR_CAP_T,    pIsrCap,     uoff);
-    if (pVirtio->fHaveDevSpecificCap)
+    MATCH_VIRTIO_CAP_STRUCT(pVirtio->pGcPhysDeviceCap, pVirtio->pDeviceCap,     fDevSpecific);
+    MATCH_VIRTIO_CAP_STRUCT(pVirtio->pGcPhysCommonCfg, pVirtio->pCommonCfgCap,  fCommonCfg);
+    MATCH_VIRTIO_CAP_STRUCT(pVirtio->pGcPhysIsrCap,    pVirtio->pIsrCap,        fIsrCap);
+
+    if (fDevSpecific)
     {
-        MATCH_VIRTIO_CAP_STRUCT(pVirtio->pGcPhysDeviceCap, VIRTIO_PCI_DEVICE_CAP_T, pDeviceCap,  uoff);
-        if (pDeviceCap)
-            rc = pVirtio->virtioCallbacks.pfnVirtioDevCapWrite(pDevIns, GCPhysAddr, pv, cb);
-        return rc;
+        uint32_t uDevSpecificDataOffset = GCPhysAddr - pVirtio->pGcPhysDeviceCap;
+        rc = pVirtio->virtioCallbacks.pfnVirtioDevCapWrite(pDevIns, uDevSpecificDataOffset, pv, cb);
     }
-    if (pCommonCfg)
-        virtioCommonCfgAccessed(pVirtio, 1 /* fWrite */, uoff, pv);
-    else if (pIsrCap)
+    else
+    if (fCommonCfg)
+    {
+        uint32_t uCommonCfgDataOffset = GCPhysAddr - pVirtio->pGcPhysCommonCfg;
+        virtioCommonCfgAccessed(pVirtio, 1 /* fWrite */, uCommonCfgDataOffset, cb, pv);
+    }
+    else
+    if (fIsrCap)
     {
         pVirtio->fQueueInterrupt = (*(uint8_t *)pv) & 1;
         pVirtio->fDeviceConfigInterrupt = !!(*((uint8_t *)pv) & 2);
@@ -860,11 +878,8 @@ PDMBOTHCBDECL(int) virtioR3MmioWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS 
     }
     else
     {
-        AssertMsgFailed(("virtio: Write outside of capabilities region: GCPhysAddr=%RGp cb=%RGp\n", GCPhysAddr, cb));
-        Log(("pCommonCfg=%p, pIsrCap=%p, uoff=%d\n",
-                pCommonCfg, pIsrCap, uoff));
+       LogFunc(("virtio: Write outside of capabilities region:\nGCPhysAddr=%RGp cb=%RGp,", GCPhysAddr, cb));
     }
-
     return rc;
 }
 
@@ -898,11 +913,11 @@ static DECLCALLBACK(int) virtioR3Map(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uin
         LogFunc(("virtio: PCI Capabilities mapped at GCPhysAddr=%RGp cb=%RGp, region=%d\n",
                 GCPhysAddress, cb, iRegion));
         pVirtio->GCPhysPciCapBase = GCPhysAddress;
-        pVirtio->pGcPhysCommonCfg = (PVIRTIO_PCI_COMMON_CFG_T)(GCPhysAddress + pVirtio->uCommonCfgOffset);
-        pVirtio->pGcPhysNotifyCap = (PVIRTIO_PCI_NOTIFY_CAP_T)(GCPhysAddress + pVirtio->uNotifyCapOffset);
-        pVirtio->pGcPhysIsrCap    = (PVIRTIO_PCI_ISR_CAP_T)(   GCPhysAddress + pVirtio->uIsrCapOffset);
-        pVirtio->pGcPhysPciCfgCap = (PVIRTIO_PCI_CFG_CAP_T)(   GCPhysAddress + pVirtio->uPciCfgCapOffset);
-        pVirtio->pGcPhysDeviceCap = (PVIRTIO_PCI_DEVICE_CAP_T)(GCPhysAddress + pVirtio->uDeviceCapOffset);
+        pVirtio->pGcPhysCommonCfg = GCPhysAddress + pVirtio->pCommonCfgCap->uOffset;
+        pVirtio->pGcPhysNotifyCap = GCPhysAddress + pVirtio->pNotifyCap->pciCap.uOffset;
+        pVirtio->pGcPhysIsrCap    = GCPhysAddress + pVirtio->pIsrCap->uOffset;
+        if (pVirtio->fHaveDevSpecificCap)
+            pVirtio->pGcPhysDeviceCap = GCPhysAddress + pVirtio->pDeviceCap->uOffset;
     }
     return rc;
 }
@@ -925,7 +940,7 @@ static DECLCALLBACK(uint32_t) virtioPciConfigRead(PPDMDEVINS pDevIns, PPDMPCIDEV
 {
     PVIRTIOSTATE pVirtio = PDMINS_2_DATA(pDevIns, PVIRTIOSTATE);
 
-    if (uAddress == pVirtio->uPciCfgDataOff)
+    if (uAddress == (uint64_t)&pVirtio->pPciCfgCap->uPciCfgData)
     {
         /* VirtIO 1.0 spec section 4.1.4.7 describes a required alternative access capability
          * whereby the guest driver can specify a bar, offset, and length via the PCI configuration space
@@ -1017,7 +1032,7 @@ void *virtioQueryInterface(PPDMIBASE pInterface, const char *pszIID)
 __attribute__((unused))
 static uint64_t virtioGetHostFeatures(PVIRTIOSTATE pVirtio)
 {
-    return pVirtio->uFeaturesAccepted;
+    return pVirtio->uDriverFeatures;
 }
 
 /**
@@ -1027,12 +1042,12 @@ static uint64_t virtioGetHostFeatures(PVIRTIOSTATE pVirtio)
  * @returns VBox status code
  *
  * @param   pState              Virtio state
- * @param   uFeaturesOffered    Feature bits (0-63) to set
+ * @param   uDeviceFeatures    Feature bits (0-63) to set
  */
 
-void virtioSetHostFeatures(PVIRTIOSTATE pVirtio, uint64_t uFeaturesOffered)
+void virtioSetHostFeatures(PVIRTIOSTATE pVirtio, uint64_t uDeviceFeatures)
 {
-    pVirtio->uFeaturesOffered = VIRTIO_F_VERSION_1 | uFeaturesOffered;
+    pVirtio->uDeviceFeatures = VIRTIO_F_VERSION_1 | uDeviceFeatures;
 }
 
 /**
@@ -1097,6 +1112,7 @@ int   virtioConstruct(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirtio, int iInstance, P
     pVirtio->pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
     pVirtio->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
     pVirtio->uDeviceStatus = 0;
+    pVirtio->cbDevSpecificCap = cbDevSpecificCap;
     pVirtio->uVirtioCapRegion = uVirtioCapRegion;
     pVirtio->fHaveDevSpecificCap = fHaveDevSpecificCap;
     pVirtio->virtioCallbacks.pfnVirtioDevCapRead = devCapReadCallback;
@@ -1136,10 +1152,7 @@ int   virtioConstruct(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirtio, int iInstance, P
     uint8_t fMsiSupport = false;
 #endif
 
-    uint8_t uCfgCapOffset = 0x40;
-    PVIRTIO_PCI_NOTIFY_CAP_T pNotifyCap;
-    PVIRTIO_PCI_CAP_T pCommonCfg, pIsrCap, pDeviceCap;
-    uint32_t cbVirtioCaps = 0;
+#define CFGADDR2IDX(addr) ((uint64_t)addr - (uint64_t)&pVirtio->dev.abConfig)
 
     /* The following capability mapped via VirtIO 1.0: struct virtio_pci_cfg_cap (VIRTIO_PCI_CFG_CAP_T)
      * as a mandatory but suboptimal alternative interface to host device capabilities, facilitating
@@ -1147,67 +1160,65 @@ int   virtioConstruct(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirtio, int iInstance, P
      * Unlike Common, Notify, ISR and Device capabilities, it is accessed directly via PCI Config region.
      * therefore does not contribute to the capabilities region (BAR) the other capabilities use.
      */
-    pVirtio->pPciCfgCap = (PVIRTIO_PCI_CFG_CAP_T)&pVirtio->dev.abConfig[uCfgCapOffset];
-    pVirtio->uPciCfgDataOff = uCfgCapOffset + RT_OFFSETOF(VIRTIO_PCI_CFG_CAP_T, uPciCfgData);
-    PVIRTIO_PCI_CAP_T pCfg = (PVIRTIO_PCI_CAP_T)pVirtio->pPciCfgCap;
-    pCfg->uCapVndr = VIRTIO_PCI_CAP_ID_VENDOR;
-    pCfg->uCapNext = uCfgCapOffset += sizeof(VIRTIO_PCI_CFG_CAP_T);
-    pCfg->uCapLen  = sizeof(VIRTIO_PCI_CFG_CAP_T);
-    pCfg->uCfgType = VIRTIO_PCI_CAP_PCI_CFG;
-    pCfg->uBar     = uVirtioCapRegion;
-    pCfg->uOffset  = 4;
-    pCfg->uLength  = 4;  /* Initially make non-zero 4-byte aligned so Linux Virtio impl's scan doesn't reject this cap */
-    cbVirtioCaps  += pCfg->uLength;
+    PVIRTIO_PCI_CAP_T pCfg;
 
-    /* Following capability mapped via VirtIO 1.0: struct virtio_pci_common_cfg (VIRTIO_PCI_COMMON_CFG_T)*/
-    pCfg = pCommonCfg = (PVIRTIO_PCI_CAP_T)&pVirtio->dev.abConfig[uCfgCapOffset];
-    pCfg->uCapVndr = VIRTIO_PCI_CAP_ID_VENDOR;
-    pCfg->uCapNext = uCfgCapOffset += sizeof(VIRTIO_PCI_CAP_T);
-    pCfg->uCapLen  = sizeof(VIRTIO_PCI_CAP_T);
+    /* Common capability (VirtIO 1.0 spec) */
+    pCfg = (PVIRTIO_PCI_CAP_T)&pVirtio->dev.abConfig[0x40];
     pCfg->uCfgType = VIRTIO_PCI_CAP_COMMON_CFG;
-    pCfg->uBar     = uVirtioCapRegion;
-    pCfg->uOffset  = pVirtio->uCommonCfgOffset = pVirtio->pPciCfgCap->pciCap.uOffset
-                                               + pVirtio->pPciCfgCap->pciCap.uLength;
-    pCfg->uLength  = sizeof(VIRTIO_PCI_COMMON_CFG_T);
-    cbVirtioCaps  += pCfg->uLength;
-
-    /* Following capability mapped via VirtIO 1.0: struct virtio_pci_notify_cap (VIRTIO_PCI_NOTIFY_CAP_T)*/
-    pNotifyCap = (PVIRTIO_PCI_NOTIFY_CAP_T)&pVirtio->dev.abConfig[uCfgCapOffset];
-    pCfg = (PVIRTIO_PCI_CAP_T)pNotifyCap;
     pCfg->uCapVndr = VIRTIO_PCI_CAP_ID_VENDOR;
-    pCfg->uCapNext = uCfgCapOffset += sizeof(VIRTIO_PCI_NOTIFY_CAP_T);
-    pCfg->uCapLen  = sizeof(VIRTIO_PCI_NOTIFY_CAP_T);
-    pCfg->uCfgType = VIRTIO_PCI_CAP_NOTIFY_CFG;
-    pCfg->uBar     = uVirtioCapRegion;
-    pCfg->uOffset  = pVirtio->uNotifyCapOffset = pCommonCfg->uOffset + sizeof(VIRTIO_PCI_COMMON_CFG_T);
-    pCfg->uLength  = sizeof(VIRTIO_PCI_NOTIFY_CAP_T);
-    pNotifyCap->uNotifyOffMultiplier = uNotifyOffMultiplier;
-    cbVirtioCaps  += pCfg->uLength;
-
-    /* Following capability mapped via VirtIO 1.0: uint8_t (VIRTIO_PCI_ISR_CAP_T)  */
-    pCfg = pIsrCap = (PVIRTIO_PCI_CAP_T)&pVirtio->dev.abConfig[uCfgCapOffset];
-    pCfg->uCapVndr = VIRTIO_PCI_CAP_ID_VENDOR;
-    pCfg->uCapNext = (uint8_t)(fMsiSupport || pVirtio->fHaveDevSpecificCap
-                               ? (uCfgCapOffset += sizeof(VIRTIO_PCI_ISR_CAP_T)) : 0);
     pCfg->uCapLen  = sizeof(VIRTIO_PCI_CAP_T);
-    pCfg->uCfgType = VIRTIO_PCI_CAP_ISR_CFG;
+    pCfg->uCapNext = CFGADDR2IDX(pCfg) + pCfg->uCapLen;
     pCfg->uBar     = uVirtioCapRegion;
-    pCfg->uOffset  = pVirtio->uIsrCapOffset = pNotifyCap->pciCap.uOffset + sizeof(VIRTIO_PCI_NOTIFY_CAP_T);
-    pCfg->uLength  = sizeof(VIRTIO_PCI_ISR_CAP_T);
-    cbVirtioCaps  += pCfg->uLength;
+    pCfg->uOffset  = 0;
+    pCfg->uLength  = sizeof(VIRTIO_PCI_COMMON_CFG_T);
+    pVirtio->pCommonCfgCap = pCfg;
+
+    /* Notify capability (VirtIO 1.0 spec) */
+    pCfg = (PVIRTIO_PCI_CAP_T)&pVirtio->dev.abConfig[pCfg->uCapNext];
+    pCfg->uCfgType = VIRTIO_PCI_CAP_NOTIFY_CFG;
+    pCfg->uCapVndr = VIRTIO_PCI_CAP_ID_VENDOR;
+    pCfg->uCapLen  = sizeof(VIRTIO_PCI_NOTIFY_CAP_T);
+    pCfg->uCapNext = CFGADDR2IDX(pCfg) + pCfg->uCapLen;
+    pCfg->uBar     = uVirtioCapRegion;
+    pCfg->uOffset  = pVirtio->pCommonCfgCap->uOffset + pVirtio->pCommonCfgCap->uLength;
+    pCfg->uLength  = 4; /* This needs to be calculated differently */
+    pVirtio->pNotifyCap = (PVIRTIO_PCI_NOTIFY_CAP_T)pCfg;
+    pVirtio->pNotifyCap->uNotifyOffMultiplier = uNotifyOffMultiplier;
+
+    /* ISR capability (VirtIO 1.0 spec) */
+    pCfg = (PVIRTIO_PCI_CAP_T)&pVirtio->dev.abConfig[pCfg->uCapNext];
+    pCfg->uCfgType = VIRTIO_PCI_CAP_ISR_CFG;
+    pCfg->uCapVndr = VIRTIO_PCI_CAP_ID_VENDOR;
+    pCfg->uCapLen  = sizeof(VIRTIO_PCI_CAP_T);
+    pCfg->uCapNext = CFGADDR2IDX(pCfg) + pCfg->uCapLen;
+    pCfg->uBar     = uVirtioCapRegion;
+    pCfg->uOffset  = pVirtio->pNotifyCap->pciCap.uOffset + pVirtio->pNotifyCap->pciCap.uLength;
+    pCfg->uLength  = sizeof(uint32_t);
+    pVirtio->pIsrCap = pCfg;
+
+    /* PCI Cfg capability (VirtIO 1.0 spec) */
+    pCfg = (PVIRTIO_PCI_CAP_T)&pVirtio->dev.abConfig[pCfg->uCapNext];
+    pCfg->uCfgType = VIRTIO_PCI_CAP_PCI_CFG;
+    pCfg->uCapVndr = VIRTIO_PCI_CAP_ID_VENDOR;
+    pCfg->uCapLen  = sizeof(VIRTIO_PCI_CFG_CAP_T);
+    pCfg->uCapNext = (fMsiSupport || pVirtio->fHaveDevSpecificCap) ? CFGADDR2IDX(pCfg) + pCfg->uCapLen : 0;
+    pCfg->uBar     = uVirtioCapRegion;
+    pCfg->uOffset  = pVirtio->pIsrCap->uOffset + pVirtio->pIsrCap->uLength;
+    pCfg->uLength  = 4;  /* Initialize a non-zero 4-byte aligned so Linux virtio_pci module recognizes this cap */
+    pVirtio->pPciCfgCap = (PVIRTIO_PCI_CFG_CAP_T)pCfg;
 
     if (pVirtio->fHaveDevSpecificCap)
     {
         /* Following capability mapped via VirtIO 1.0: struct virtio_pci_dev_cap (VIRTIODEVCAP)*/
-        pCfg = pDeviceCap = (PVIRTIO_PCI_CAP_T)&pVirtio->dev.abConfig[uCfgCapOffset];
-        pCfg->uCapVndr = VIRTIO_PCI_CAP_ID_VENDOR;
-        pCfg->uCapNext = (uint8_t)(fMsiSupport ? (uCfgCapOffset += sizeof(VIRTIO_PCI_CAP_T)) : 0);
-        pCfg->uCapLen  = sizeof(VIRTIO_PCI_CAP_T);
+        pCfg = (PVIRTIO_PCI_CAP_T)&pVirtio->dev.abConfig[pCfg->uCapNext];
         pCfg->uCfgType = VIRTIO_PCI_CAP_DEVICE_CFG;
+        pCfg->uCapVndr = VIRTIO_PCI_CAP_ID_VENDOR;
+        pCfg->uCapLen  = sizeof(VIRTIO_PCI_CAP_T);
+        pCfg->uCapNext = fMsiSupport ? CFGADDR2IDX(pCfg) + pCfg->uCapLen : 0;
         pCfg->uBar     = uVirtioCapRegion;
-        pCfg->uOffset  = pVirtio->uDeviceCapOffset = pIsrCap->uOffset + sizeof(VIRTIO_PCI_ISR_CAP_T);
+        pCfg->uOffset  = pVirtio->pIsrCap->uOffset + pVirtio->pIsrCap->uLength;
         pCfg->uLength  = cbDevSpecificCap;
-        cbVirtioCaps  += pCfg->uLength;
+        pVirtio->pDeviceCap = pCfg;
     }
 
     /* Set offset to first capability and enable PCI dev capabilities */
@@ -1218,7 +1229,7 @@ int   virtioConstruct(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirtio, int iInstance, P
     {
         PDMMSIREG aMsiReg;
         RT_ZERO(aMsiReg);
-        aMsiReg.iMsixCapOffset  = uCfgCapOffset;
+        aMsiReg.iMsixCapOffset  = pCfg->uCapNext;
         aMsiReg.iMsixNextOffset = 0;
         aMsiReg.iMsixBar        = 0;
         aMsiReg.cMsixVectors    = 1;
@@ -1228,7 +1239,7 @@ int   virtioConstruct(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirtio, int iInstance, P
             PCIDevSetCapabilityList(&pVirtio->dev, 0x40);
     }
 
-    rc = PDMDevHlpPCIIORegionRegister(pDevIns, uVirtioCapRegion, cbVirtioCaps,
+    rc = PDMDevHlpPCIIORegionRegister(pDevIns, uVirtioCapRegion, 4096,
                                       PCI_ADDRESS_SPACE_MEM, virtioR3Map);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
