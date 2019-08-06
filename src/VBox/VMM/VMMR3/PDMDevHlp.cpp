@@ -1296,6 +1296,22 @@ static DECLCALLBACK(int) pdmR3DevHlp_DBGFInfoRegister(PPDMDEVINS pDevIns, const 
 }
 
 
+/** @interface_method_impl{PDMDEVHLPR3,pfnDBGFInfoRegisterArgv} */
+static DECLCALLBACK(int) pdmR3DevHlp_DBGFInfoRegisterArgv(PPDMDEVINS pDevIns, const char *pszName, const char *pszDesc, PFNDBGFINFOARGVDEV pfnHandler)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    LogFlow(("pdmR3DevHlp_DBGFInfoRegisterArgv: caller='%s'/%d: pszName=%p:{%s} pszDesc=%p:{%s} pfnHandler=%p\n",
+             pDevIns->pReg->szName, pDevIns->iInstance, pszName, pszName, pszDesc, pszDesc, pfnHandler));
+
+    PVM pVM = pDevIns->Internal.s.pVMR3;
+    VM_ASSERT_EMT(pVM);
+    int rc = DBGFR3InfoRegisterDeviceArgv(pVM, pszName, pszDesc, pfnHandler, pDevIns);
+
+    LogFlow(("pdmR3DevHlp_DBGFInfoRegisterArgv: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
+    return rc;
+}
+
+
 /** @interface_method_impl{PDMDEVHLPR3,pfnDBGFRegRegister} */
 static DECLCALLBACK(int) pdmR3DevHlp_DBGFRegRegister(PPDMDEVINS pDevIns, PCDBGFREGDESC paRegisters)
 {
@@ -3791,6 +3807,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTrusted =
     pdmR3DevHlp_VMSetRuntimeErrorV,
     pdmR3DevHlp_DBGFStopV,
     pdmR3DevHlp_DBGFInfoRegister,
+    pdmR3DevHlp_DBGFInfoRegisterArgv,
     pdmR3DevHlp_DBGFRegRegister,
     pdmR3DevHlp_DBGFTraceBuf,
     pdmR3DevHlp_STAMRegister,
@@ -3845,6 +3862,10 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTrusted =
     pdmR3DevHlp_PhysBulkGCPhys2CCPtrReadOnly,
     pdmR3DevHlp_PhysBulkReleasePageMappingLocks,
     pdmR3DevHlp_MMIOExChangeRegionNo,
+    0,
+    0,
+    0,
+    0,
     0,
     0,
     0,
@@ -4061,6 +4082,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpUnTrusted =
     pdmR3DevHlp_VMSetRuntimeErrorV,
     pdmR3DevHlp_DBGFStopV,
     pdmR3DevHlp_DBGFInfoRegister,
+    pdmR3DevHlp_DBGFInfoRegisterArgv,
     pdmR3DevHlp_DBGFRegRegister,
     pdmR3DevHlp_DBGFTraceBuf,
     pdmR3DevHlp_STAMRegister,
@@ -4115,6 +4137,10 @@ const PDMDEVHLPR3 g_pdmR3DevHlpUnTrusted =
     pdmR3DevHlp_PhysBulkGCPhys2CCPtrReadOnly,
     pdmR3DevHlp_PhysBulkReleasePageMappingLocks,
     pdmR3DevHlp_MMIOExChangeRegionNo,
+    0,
+    0,
+    0,
+    0,
     0,
     0,
     0,
