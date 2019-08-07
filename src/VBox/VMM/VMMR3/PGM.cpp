@@ -673,10 +673,6 @@ static DECLCALLBACK(void) pgmR3PhysInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char 
 static DECLCALLBACK(void) pgmR3InfoMode(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 static DECLCALLBACK(void) pgmR3InfoCr3(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 static DECLCALLBACK(int)  pgmR3RelocatePhysHandler(PAVLROGCPHYSNODECORE pNode, void *pvUser);
-#ifdef VBOX_WITH_RAW_MODE
-static DECLCALLBACK(int)  pgmR3RelocateVirtHandler(PAVLROGCPTRNODECORE pNode, void *pvUser);
-static DECLCALLBACK(int)  pgmR3RelocateHyperVirtHandler(PAVLROGCPTRNODECORE pNode, void *pvUser);
-#endif /* VBOX_WITH_RAW_MODE */
 #ifdef VBOX_STRICT
 static FNVMATSTATE        pgmR3ResetNoMorePhysWritesFlag;
 #endif
@@ -1953,11 +1949,7 @@ VMMR3DECL(void) PGMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
      * The Zero page.
      */
     pVM->pgm.s.pvZeroPgR0 = MMHyperR3ToR0(pVM, pVM->pgm.s.pvZeroPgR3);
-#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
-    AssertRelease(pVM->pgm.s.pvZeroPgR0 != NIL_RTR0PTR || VM_IS_RAW_MODE_ENABLED(pVM));
-#else
     AssertRelease(pVM->pgm.s.pvZeroPgR0 != NIL_RTR0PTR);
-#endif
 
     /*
      * Physical and virtual handlers.
@@ -1974,20 +1966,6 @@ VMMR3DECL(void) PGMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
         if (pCurPhysType->pfnPfHandlerRC != NIL_RTRCPTR)
             pCurPhysType->pfnPfHandlerRC += offDelta;
     }
-
-#ifdef VBOX_WITH_RAW_MODE
-    RTAvlroGCPtrDoWithAll(&pVM->pgm.s.pTreesR3->VirtHandlers,      true, pgmR3RelocateVirtHandler,      &Args);
-    RTAvlroGCPtrDoWithAll(&pVM->pgm.s.pTreesR3->HyperVirtHandlers, true, pgmR3RelocateHyperVirtHandler, &Args);
-
-    PPGMVIRTHANDLERTYPEINT pCurVirtType;
-    RTListOff32ForEach(&pVM->pgm.s.pTreesR3->HeadVirtHandlerTypes, pCurVirtType, PGMVIRTHANDLERTYPEINT, ListNode)
-    {
-        if (pCurVirtType->pfnHandlerRC != NIL_RTRCPTR)
-            pCurVirtType->pfnHandlerRC += offDelta;
-        if (pCurVirtType->pfnPfHandlerRC != NIL_RTRCPTR)
-            pCurVirtType->pfnPfHandlerRC += offDelta;
-    }
-#endif
 
     /*
      * The page pool.
@@ -2021,48 +1999,6 @@ static DECLCALLBACK(int) pgmR3RelocatePhysHandler(PAVLROGCPHYSNODECORE pNode, vo
     return 0;
 }
 
-#ifdef VBOX_WITH_RAW_MODE
-
-/**
- * Callback function for relocating a virtual access handler.
- *
- * @returns 0 (continue enum)
- * @param   pNode       Pointer to a PGMVIRTHANDLER node.
- * @param   pvUser      Pointer to a PGMRELOCHANDLERARGS.
- */
-static DECLCALLBACK(int) pgmR3RelocateVirtHandler(PAVLROGCPTRNODECORE pNode, void *pvUser)
-{
-    PPGMVIRTHANDLER         pHandler = (PPGMVIRTHANDLER)pNode;
-    PCPGMRELOCHANDLERARGS   pArgs    = (PCPGMRELOCHANDLERARGS)pvUser;
-    Assert(PGMVIRTANDLER_GET_TYPE(pArgs->pVM, pHandler)->enmKind != PGMVIRTHANDLERKIND_HYPERVISOR);
-
-    if (   pHandler->pvUserRC != NIL_RTRCPTR
-        && PGMVIRTANDLER_GET_TYPE(pArgs->pVM, pHandler)->fRelocUserRC)
-        pHandler->pvUserRC += pArgs->offDelta;
-    return 0;
-}
-
-
-/**
- * Callback function for relocating a virtual access handler for the hypervisor mapping.
- *
- * @returns 0 (continue enum)
- * @param   pNode       Pointer to a PGMVIRTHANDLER node.
- * @param   pvUser      Pointer to a PGMRELOCHANDLERARGS.
- */
-static DECLCALLBACK(int) pgmR3RelocateHyperVirtHandler(PAVLROGCPTRNODECORE pNode, void *pvUser)
-{
-    PPGMVIRTHANDLER         pHandler = (PPGMVIRTHANDLER)pNode;
-    PCPGMRELOCHANDLERARGS   pArgs    = (PCPGMRELOCHANDLERARGS)pvUser;
-    Assert(PGMVIRTANDLER_GET_TYPE(pArgs->pVM, pHandler)->enmKind == PGMVIRTHANDLERKIND_HYPERVISOR);
-
-    if (   pHandler->pvUserRC != NIL_RTRCPTR
-        && PGMVIRTANDLER_GET_TYPE(pArgs->pVM, pHandler)->fRelocUserRC)
-        pHandler->pvUserRC += pArgs->offDelta;
-    return 0;
-}
-
-#endif /* VBOX_WITH_RAW_MODE */
 
 /**
  * Resets a virtual CPU when unplugged.
@@ -2845,12 +2781,6 @@ typedef struct PGMCHECKINTARGS
 {
     bool                    fLeftToRight;    /**< true: left-to-right; false: right-to-left. */
     PPGMPHYSHANDLER         pPrevPhys;
-#ifdef VBOX_WITH_RAW_MODE
-    PPGMVIRTHANDLER         pPrevVirt;
-    PPGMPHYS2VIRTHANDLER    pPrevPhys2Virt;
-#else
-    void                   *pvFiller1, *pvFiller2;
-#endif
     PVM                     pVM;
 } PGMCHECKINTARGS, *PPGMCHECKINTARGS;
 
@@ -2880,103 +2810,6 @@ static DECLCALLBACK(int) pgmR3CheckIntegrityPhysHandlerNode(PAVLROGCPHYSNODECORE
     return 0;
 }
 
-#ifdef VBOX_WITH_RAW_MODE
-
-/**
- * Validate a node in the virtual handler tree.
- *
- * @returns 0 on if ok, other wise 1.
- * @param   pNode       The handler node.
- * @param   pvUser      pVM.
- */
-static DECLCALLBACK(int) pgmR3CheckIntegrityVirtHandlerNode(PAVLROGCPTRNODECORE pNode, void *pvUser)
-{
-    PPGMCHECKINTARGS pArgs = (PPGMCHECKINTARGS)pvUser;
-    PPGMVIRTHANDLER pCur = (PPGMVIRTHANDLER)pNode;
-    AssertReleaseReturn(!((uintptr_t)pCur & 7), 1);
-    AssertReleaseMsg(pCur->Core.Key <= pCur->Core.KeyLast,("pCur=%p %RGv-%RGv %s\n", pCur, pCur->Core.Key, pCur->Core.KeyLast, pCur->pszDesc));
-    AssertReleaseMsg(   !pArgs->pPrevVirt
-                     || (pArgs->fLeftToRight ? pArgs->pPrevVirt->Core.KeyLast < pCur->Core.Key : pArgs->pPrevVirt->Core.KeyLast > pCur->Core.Key),
-                     ("pPrevVirt=%p %RGv-%RGv %s\n"
-                      "     pCur=%p %RGv-%RGv %s\n",
-                      pArgs->pPrevVirt, pArgs->pPrevVirt->Core.Key, pArgs->pPrevVirt->Core.KeyLast, pArgs->pPrevVirt->pszDesc,
-                      pCur, pCur->Core.Key, pCur->Core.KeyLast, pCur->pszDesc));
-    for (unsigned iPage = 0; iPage < pCur->cPages; iPage++)
-    {
-        AssertReleaseMsg(pCur->aPhysToVirt[iPage].offVirtHandler == -(intptr_t)RT_UOFFSETOF_DYN(PGMVIRTHANDLER, aPhysToVirt[iPage]),
-                         ("pCur=%p %RGv-%RGv %s\n"
-                          "iPage=%d offVirtHandle=%#x expected %#x\n",
-                          pCur, pCur->Core.Key, pCur->Core.KeyLast, pCur->pszDesc,
-                          iPage, pCur->aPhysToVirt[iPage].offVirtHandler, -(intptr_t)RT_UOFFSETOF_DYN(PGMVIRTHANDLER, aPhysToVirt[iPage])));
-    }
-    pArgs->pPrevVirt = pCur;
-    return 0;
-}
-
-
-/**
- * Validate a node in the virtual handler tree.
- *
- * @returns 0 on if ok, other wise 1.
- * @param   pNode       The handler node.
- * @param   pvUser      pVM.
- */
-static DECLCALLBACK(int) pgmR3CheckIntegrityPhysToVirtHandlerNode(PAVLROGCPHYSNODECORE pNode, void *pvUser)
-{
-    PPGMCHECKINTARGS pArgs = (PPGMCHECKINTARGS)pvUser;
-    PPGMPHYS2VIRTHANDLER pCur = (PPGMPHYS2VIRTHANDLER)pNode;
-    AssertReleaseMsgReturn(!((uintptr_t)pCur & 3),      ("\n"), 1);
-    AssertReleaseMsgReturn(!(pCur->offVirtHandler & 3), ("\n"), 1);
-    AssertReleaseMsg(pCur->Core.Key <= pCur->Core.KeyLast,("pCur=%p %RGp-%RGp\n", pCur, pCur->Core.Key, pCur->Core.KeyLast));
-    AssertReleaseMsg(   !pArgs->pPrevPhys2Virt
-                     || (pArgs->fLeftToRight ? pArgs->pPrevPhys2Virt->Core.KeyLast < pCur->Core.Key : pArgs->pPrevPhys2Virt->Core.KeyLast > pCur->Core.Key),
-                     ("pPrevPhys2Virt=%p %RGp-%RGp\n"
-                      "          pCur=%p %RGp-%RGp\n",
-                      pArgs->pPrevPhys2Virt, pArgs->pPrevPhys2Virt->Core.Key, pArgs->pPrevPhys2Virt->Core.KeyLast,
-                      pCur, pCur->Core.Key, pCur->Core.KeyLast));
-    AssertReleaseMsg(   !pArgs->pPrevPhys2Virt
-                     || (pArgs->fLeftToRight ? pArgs->pPrevPhys2Virt->Core.KeyLast < pCur->Core.Key : pArgs->pPrevPhys2Virt->Core.KeyLast > pCur->Core.Key),
-                     ("pPrevPhys2Virt=%p %RGp-%RGp\n"
-                      "          pCur=%p %RGp-%RGp\n",
-                      pArgs->pPrevPhys2Virt, pArgs->pPrevPhys2Virt->Core.Key, pArgs->pPrevPhys2Virt->Core.KeyLast,
-                      pCur, pCur->Core.Key, pCur->Core.KeyLast));
-    AssertReleaseMsg((pCur->offNextAlias & (PGMPHYS2VIRTHANDLER_IN_TREE | PGMPHYS2VIRTHANDLER_IS_HEAD)) == (PGMPHYS2VIRTHANDLER_IN_TREE | PGMPHYS2VIRTHANDLER_IS_HEAD),
-                     ("pCur=%p:{.Core.Key=%RGp, .Core.KeyLast=%RGp, .offVirtHandler=%#RX32, .offNextAlias=%#RX32}\n",
-                      pCur, pCur->Core.Key, pCur->Core.KeyLast, pCur->offVirtHandler, pCur->offNextAlias));
-    if (pCur->offNextAlias & PGMPHYS2VIRTHANDLER_OFF_MASK)
-    {
-        PPGMPHYS2VIRTHANDLER pCur2 = pCur;
-        for (;;)
-        {
-            pCur2 = (PPGMPHYS2VIRTHANDLER)((intptr_t)pCur + (pCur->offNextAlias & PGMPHYS2VIRTHANDLER_OFF_MASK));
-            AssertReleaseMsg(pCur2 != pCur,
-                             (" pCur=%p:{.Core.Key=%RGp, .Core.KeyLast=%RGp, .offVirtHandler=%#RX32, .offNextAlias=%#RX32}\n",
-                              pCur, pCur->Core.Key, pCur->Core.KeyLast, pCur->offVirtHandler, pCur->offNextAlias));
-            AssertReleaseMsg((pCur2->offNextAlias & (PGMPHYS2VIRTHANDLER_IN_TREE | PGMPHYS2VIRTHANDLER_IS_HEAD)) == PGMPHYS2VIRTHANDLER_IN_TREE,
-                             (" pCur=%p:{.Core.Key=%RGp, .Core.KeyLast=%RGp, .offVirtHandler=%#RX32, .offNextAlias=%#RX32}\n"
-                              "pCur2=%p:{.Core.Key=%RGp, .Core.KeyLast=%RGp, .offVirtHandler=%#RX32, .offNextAlias=%#RX32}\n",
-                              pCur, pCur->Core.Key, pCur->Core.KeyLast, pCur->offVirtHandler, pCur->offNextAlias,
-                              pCur2, pCur2->Core.Key, pCur2->Core.KeyLast, pCur2->offVirtHandler, pCur2->offNextAlias));
-            AssertReleaseMsg((pCur2->Core.Key ^ pCur->Core.Key) < PAGE_SIZE,
-                             (" pCur=%p:{.Core.Key=%RGp, .Core.KeyLast=%RGp, .offVirtHandler=%#RX32, .offNextAlias=%#RX32}\n"
-                              "pCur2=%p:{.Core.Key=%RGp, .Core.KeyLast=%RGp, .offVirtHandler=%#RX32, .offNextAlias=%#RX32}\n",
-                              pCur, pCur->Core.Key, pCur->Core.KeyLast, pCur->offVirtHandler, pCur->offNextAlias,
-                              pCur2, pCur2->Core.Key, pCur2->Core.KeyLast, pCur2->offVirtHandler, pCur2->offNextAlias));
-            AssertReleaseMsg((pCur2->Core.KeyLast ^ pCur->Core.KeyLast) < PAGE_SIZE,
-                             (" pCur=%p:{.Core.Key=%RGp, .Core.KeyLast=%RGp, .offVirtHandler=%#RX32, .offNextAlias=%#RX32}\n"
-                              "pCur2=%p:{.Core.Key=%RGp, .Core.KeyLast=%RGp, .offVirtHandler=%#RX32, .offNextAlias=%#RX32}\n",
-                              pCur, pCur->Core.Key, pCur->Core.KeyLast, pCur->offVirtHandler, pCur->offNextAlias,
-                              pCur2, pCur2->Core.Key, pCur2->Core.KeyLast, pCur2->offVirtHandler, pCur2->offNextAlias));
-            if (!(pCur2->offNextAlias & PGMPHYS2VIRTHANDLER_OFF_MASK))
-                break;
-        }
-    }
-
-    pArgs->pPrevPhys2Virt = pCur;
-    return 0;
-}
-
-#endif /* VBOX_WITH_RAW_MODE */
 
 /**
  * Perform an integrity check on the PGM component.
@@ -2993,26 +2826,12 @@ VMMR3DECL(int) PGMR3CheckIntegrity(PVM pVM)
      * Check the trees.
      */
     int cErrors = 0;
-    const PGMCHECKINTARGS LeftToRight = {  true, NULL, NULL, NULL, pVM };
-    const PGMCHECKINTARGS RightToLeft = { false, NULL, NULL, NULL, pVM };
+    const PGMCHECKINTARGS LeftToRight = {  true, NULL, pVM };
+    const PGMCHECKINTARGS RightToLeft = { false, NULL, pVM };
     PGMCHECKINTARGS Args = LeftToRight;
     cErrors += RTAvlroGCPhysDoWithAll(&pVM->pgm.s.pTreesR3->PhysHandlers,       true,  pgmR3CheckIntegrityPhysHandlerNode, &Args);
     Args = RightToLeft;
     cErrors += RTAvlroGCPhysDoWithAll(&pVM->pgm.s.pTreesR3->PhysHandlers,       false, pgmR3CheckIntegrityPhysHandlerNode, &Args);
-#ifdef VBOX_WITH_RAW_MODE
-    Args = LeftToRight;
-    cErrors += RTAvlroGCPtrDoWithAll( &pVM->pgm.s.pTreesR3->VirtHandlers,       true,  pgmR3CheckIntegrityVirtHandlerNode, &Args);
-    Args = RightToLeft;
-    cErrors += RTAvlroGCPtrDoWithAll( &pVM->pgm.s.pTreesR3->VirtHandlers,       false, pgmR3CheckIntegrityVirtHandlerNode, &Args);
-    Args = LeftToRight;
-    cErrors += RTAvlroGCPtrDoWithAll( &pVM->pgm.s.pTreesR3->HyperVirtHandlers,  true,  pgmR3CheckIntegrityVirtHandlerNode, &Args);
-    Args = RightToLeft;
-    cErrors += RTAvlroGCPtrDoWithAll( &pVM->pgm.s.pTreesR3->HyperVirtHandlers,  false, pgmR3CheckIntegrityVirtHandlerNode, &Args);
-    Args = LeftToRight;
-    cErrors += RTAvlroGCPhysDoWithAll(&pVM->pgm.s.pTreesR3->PhysToVirtHandlers, true,  pgmR3CheckIntegrityPhysToVirtHandlerNode, &Args);
-    Args = RightToLeft;
-    cErrors += RTAvlroGCPhysDoWithAll(&pVM->pgm.s.pTreesR3->PhysToVirtHandlers, false, pgmR3CheckIntegrityPhysToVirtHandlerNode, &Args);
-#endif /* VBOX_WITH_RAW_MODE */
 
     return !cErrors ? VINF_SUCCESS : VERR_INTERNAL_ERROR;
 }
