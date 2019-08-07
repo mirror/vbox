@@ -100,8 +100,10 @@ UIChart::UIChart(QWidget *pParent, const UISubMetric *pSubMetric)
     , m_size(QSize(50, 50))
     , m_fDrawPieChart(true)
     , m_fUseGradientLineColor(true)
-    , m_dataSeriesColor({Qt::red, Qt::blue})
 {
+    m_dataSeriesColor[0] = QColor(Qt::red);
+    m_dataSeriesColor[1] = QColor(Qt::blue);
+
     m_iMargin = qApp->QApplication::style()->pixelMetric(QStyle::PM_LayoutTopMargin);
     m_iPieChartSize = 1.5f * qApp->style()->pixelMetric(QStyle::PM_LargeIconSize);
     m_pieChartRect = QRect(1.5 * m_iMargin, 1.5 * m_iMargin, m_iPieChartSize, m_iPieChartSize);
