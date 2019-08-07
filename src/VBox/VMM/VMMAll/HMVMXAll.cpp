@@ -1326,11 +1326,14 @@ VMM_INT_DECL(void) HMNotifyVmxNstGstVmexit(PVMCPU pVCpu)
      */
     pVCpu->hm.s.vmx.fSwitchedNstGstFlushTlb = true;
 
+    /** @todo Handle releasing of the page-mapping lock later. */
+#if 0
     if (pVCpu->hm.s.vmx.fVirtApicPageLocked)
     {
         PGMPhysReleasePageMappingLock(pVCpu->CTX_SUFF(pVM), &pVCpu->hm.s.vmx.PgMapLockVirtApic);
         pVCpu->hm.s.vmx.fVirtApicPageLocked = false;
     }
+#endif
 }
 
 

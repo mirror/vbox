@@ -10012,24 +10012,20 @@ static int hmR0VmxMergeVmcsNested(PVMCPU pVCpu)
         RTGCPHYS const GCPhysApicAccess = pVmcsNstGst->u64AddrApicAccess.u;
 
         /** @todo NSTVMX: This is not really correct but currently is required to make
-         *        things work. We need to re-register the page handler when we fallback to
+         *        things work. We need to re-enable the page handler when we fallback to
          *        IEM execution of the nested-guest! */
-        PGMHandlerPhysicalDeregister(pVM, GCPhysApicAccess);
+        PGMHandlerPhysicalPageTempOff(pVM, GCPhysApicAccess, GCPhysApicAccess);
 
-        void *pvPage;
-        PGMPAGEMAPLOCK PgMapLockApicAccess;
-        int rc = PGMPhysGCPhys2CCPtr(pVM, GCPhysApicAccess, &pvPage, &PgMapLockApicAccess);
+        void          *pvPage;
+        PGMPAGEMAPLOCK PgLockApicAccess;
+        int rc = PGMPhysGCPhys2CCPtr(pVM, GCPhysApicAccess, &pvPage, &PgLockApicAccess);
         if (RT_SUCCESS(rc))
         {
             rc = PGMPhysGCPhys2HCPhys(pVM, GCPhysApicAccess, &HCPhysApicAccess);
             AssertMsgRCReturn(rc, ("Failed to get host-physical address for APIC-access page at %#RGp\n", GCPhysApicAccess), rc);
 
-            /*
-             * We can release the page lock here because the APIC-access page is never read or
-             * written to but merely serves as a placeholder in the shadow/nested page tables
-             * to cause VM-exits or re-direct the access to the virtual-APIC page.
-             */
-            PGMPhysReleasePageMappingLock(pVCpu->CTX_SUFF(pVM), &PgMapLockApicAccess);
+            /** @todo Handle proper releasing of page-mapping lock later. */
+            PGMPhysReleasePageMappingLock(pVCpu->CTX_SUFF(pVM), &PgLockApicAccess);
         }
         else
             return rc;
@@ -10046,15 +10042,21 @@ static int hmR0VmxMergeVmcsNested(PVMCPU pVCpu)
     if (u32ProcCtls & VMX_PROC_CTLS_USE_TPR_SHADOW)
     {
         Assert(pVM->hm.s.vmx.Msrs.ProcCtls.n.allowed1 & VMX_PROC_CTLS_USE_TPR_SHADOW);
-
-        void *pvPage;
         RTGCPHYS const GCPhysVirtApic = pVmcsNstGst->u64AddrVirtApic.u;
-        int rc = PGMPhysGCPhys2CCPtr(pVM, GCPhysVirtApic, &pvPage, &pVCpu->hm.s.vmx.PgMapLockVirtApic);
-        AssertMsgRCReturn(rc, ("Failed to get current-context pointer for virtual-APIC page at %#RGp\n", GCPhysVirtApic), rc);
 
-        rc = PGMPhysGCPhys2HCPhys(pVM, GCPhysVirtApic, &HCPhysVirtApic);
-        AssertMsgRCReturn(rc, ("Failed to get host-physical address for virtual-APIC page at %#RGp\n", GCPhysVirtApic), rc);
-        pVCpu->hm.s.vmx.fVirtApicPageLocked = true;
+        void          *pvPage;
+        PGMPAGEMAPLOCK PgLockVirtApic;
+        int rc = PGMPhysGCPhys2CCPtr(pVM, GCPhysVirtApic, &pvPage, &PgLockVirtApic);
+        if (RT_SUCCESS(rc))
+        {
+            rc = PGMPhysGCPhys2HCPhys(pVM, GCPhysVirtApic, &HCPhysVirtApic);
+            AssertMsgRCReturn(rc, ("Failed to get host-physical address for virtual-APIC page at %#RGp\n", GCPhysVirtApic), rc);
+
+            /** @todo Handle proper releasing of page-mapping lock later. */
+            PGMPhysReleasePageMappingLock(pVCpu->CTX_SUFF(pVM), &PgLockVirtApic);
+        }
+        else
+            return rc;
 
         u32TprThreshold = pVmcsNstGst->u32TprThreshold;
     }
@@ -16723,6 +16725,9 @@ HMVMX_EXIT_DECL hmR0VmxExitApicAccessNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTran
     hmR0VmxReadExitQualVmcs(pVmxTransient);
 
     Assert(CPUMIsGuestVmxProcCtls2Set(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS2_VIRT_APIC_ACCESS));
+
+    Log4Func(("at offset %#x type=%u\n", VMX_EXIT_QUAL_APIC_ACCESS_OFFSET(pVmxTransient->uExitQual),
+              VMX_EXIT_QUAL_APIC_ACCESS_TYPE(pVmxTransient->uExitQual)));
 
     VMXVEXITINFO ExitInfo;
     RT_ZERO(ExitInfo);
