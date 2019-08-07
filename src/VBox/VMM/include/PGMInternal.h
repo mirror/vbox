@@ -2603,18 +2603,6 @@ typedef struct PGMTREES
     RTLISTOFF32ANCHOR               HeadPhysHandlerTypes;
     /** Physical access handlers (AVL range+offsetptr tree). */
     AVLROGCPHYSTREE                 PhysHandlers;
-#ifdef VBOX_WITH_RAW_MODE
-    /** Virtual access handlers (AVL range + GC ptr tree). */
-    AVLROGCPTRTREE                  VirtHandlers;
-    /** Virtual access handlers (Phys range AVL range + offsetptr tree).
-     * @remarks Handler of the hypervisor kind are of course not present.  */
-    AVLROGCPHYSTREE                 PhysToVirtHandlers;
-    /** Virtual access handlers for the hypervisor (AVL range + GC ptr tree). */
-    AVLROGCPTRTREE                  HyperVirtHandlers;
-    /** List of virtual access handler types (offset pointers) of type
-     * PGMVIRTHANDLERTYPEINT.  This is needed for relocations. */
-    RTLISTOFF32ANCHOR               HeadVirtHandlerTypes;
-#endif
 } PGMTREES;
 /** Pointer to PGM trees. */
 typedef PGMTREES *PPGMTREES;

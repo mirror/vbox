@@ -41,9 +41,9 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage);
 static int PGM_BTH_NAME(SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage, unsigned cPages, unsigned uErr);
 static int PGM_BTH_NAME(CheckDirtyPageFault)(PVMCPU pVCpu, uint32_t uErr, PSHWPDE pPdeDst, GSTPDE const *pPdeSrc, RTGCPTR GCPtrPage);
 static int PGM_BTH_NAME(SyncPT)(PVMCPU pVCpu, unsigned iPD, PGSTPD pPDSrc, RTGCPTR GCPtrPage);
-# if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
+#if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
 static void PGM_BTH_NAME(SyncPageWorker)(PVMCPU pVCpu, PSHWPTE pPteDst, GSTPDE PdeSrc, GSTPTE PteSrc, PPGMPOOLPAGE pShwPage, unsigned iPTDst);
-# else
+#else
 static void PGM_BTH_NAME(SyncPageWorker)(PVMCPU pVCpu, PSHWPTE pPteDst, RTGCPHYS GCPhysPage, PPGMPOOLPAGE pShwPage, unsigned iPTDst);
 #endif
 PGM_BTH_DECL(int, VerifyAccessSyncPage)(PVMCPU pVCpu, RTGCPTR Addr, unsigned fPage, unsigned uErr);
@@ -685,34 +685,6 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
                 }
 
                 /*
-                 * Check if the fault address is in a virtual page access handler range.
-                 */
-                PPGMVIRTHANDLER pCur = (PPGMVIRTHANDLER)RTAvlroGCPtrRangeGet(&pVM->pgm.s.CTX_SUFF(pTrees)->HyperVirtHandlers,
-                                                                             pvFault);
-                if (    pCur
-                    &&  pvFault - pCur->Core.Key < pCur->cb
-                    &&  uErr & X86_TRAP_PF_RW)
-                {
-                    VBOXSTRICTRC rcStrict;
-#   ifdef IN_RC
-                    STAM_PROFILE_START(&pCur->Stat, h);
-                    PPGMVIRTHANDLERTYPEINT pCurType = PGMVIRTANDLER_GET_TYPE(pVM, pCur);
-                    void *pvUser = pCur->CTX_SUFF(pvUser);
-                    pgmUnlock(pVM);
-                    rcStrict = pCurType->CTX_SUFF(pfnPfHandler)(pVM, pVCpu, uErr, pRegFrame, pvFault, pCur->Core.Key,
-                                                                pvFault - pCur->Core.Key, pvUser);
-                    pgmLock(pVM);
-                    STAM_PROFILE_STOP(&pCur->Stat, h);
-#   else
-                    AssertFailed();
-                    rcStrict = VINF_EM_RAW_EMULATE_INSTR; /* can't happen with VMX */
-#   endif
-                    STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0eHandlersMapping);
-                    STAM_STATS({ pVCpu->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0eTime2Mapping; });
-                    return VBOXSTRICTRC_TODO(rcStrict);
-                }
-
-                /*
                  * Pretend we're not here and let the guest handle the trap.
                  */
                 TRPMSetErrorCode(pVCpu, uErr & ~X86_TRAP_PF_P);
@@ -764,50 +736,6 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
         return VBOXSTRICTRC_TODO(PGM_BTH_NAME(Trap0eHandlerDoAccessHandlers)(pVCpu, uErr, pRegFrame, pvFault, pPage, pfLockTaken));
 # endif
 
-#  if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE) && !defined(IN_RING0)
-    if (uErr & X86_TRAP_PF_P)
-    {
-        /*
-         * The page isn't marked, but it might still be monitored by a virtual page access handler.
-         * (ASSUMES no temporary disabling of virtual handlers.)
-         */
-        /** @todo r=bird: Since the purpose is to catch out of sync pages with virtual handler(s) here,
-         * we should correct both the shadow page table and physical memory flags, and not only check for
-         * accesses within the handler region but for access to pages with virtual handlers. */
-        PPGMVIRTHANDLER pCur = (PPGMVIRTHANDLER)RTAvlroGCPtrRangeGet(&pVM->pgm.s.CTX_SUFF(pTrees)->VirtHandlers, pvFault);
-        if (pCur)
-        {
-            PPGMVIRTHANDLERTYPEINT pCurType = PGMVIRTANDLER_GET_TYPE(pVM, pCur);
-            AssertMsg(   !(pvFault - pCur->Core.Key < pCur->cb)
-                      || (    pCurType->enmKind != PGMVIRTHANDLERKIND_WRITE
-                           || !(uErr & X86_TRAP_PF_P)
-                           || (pCurType->enmKind == PGMVIRTHANDLERKIND_WRITE && (uErr & X86_TRAP_PF_RW))),
-                      ("Unexpected trap for virtual handler: %08X (phys=%08x) %R[pgmpage] uErr=%X, enumKind=%d\n",
-                       pvFault, GCPhys, pPage, uErr, pCurType->enmKind));
-
-            if (    pvFault - pCur->Core.Key < pCur->cb
-                &&  (    uErr & X86_TRAP_PF_RW
-                     ||  pCurType->enmKind != PGMVIRTHANDLERKIND_WRITE ) )
-            {
-                VBOXSTRICTRC rcStrict;
-#   ifdef IN_RC
-                STAM_PROFILE_START(&pCur->Stat, h);
-                void *pvUser = pCur->CTX_SUFF(pvUser);
-                pgmUnlock(pVM);
-                rcStrict = pCurType->CTX_SUFF(pfnPfHandler)(pVM, pVCpu, uErr, pRegFrame, pvFault, pCur->Core.Key,
-                                                            pvFault - pCur->Core.Key, pvUser);
-                pgmLock(pVM);
-                STAM_PROFILE_STOP(&pCur->Stat, h);
-#   else
-                rcStrict = VINF_EM_RAW_EMULATE_INSTR; /** @todo for VMX */
-#   endif
-                STAM_STATS({ pVCpu->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0eTime2HndVirt; });
-                return VBOXSTRICTRC_TODO(rcStrict);
-            }
-        }
-    }
-#  endif /* PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE) */
-
     /*
      * We are here only if page is present in Guest page tables and
      * trap is not handled by our handlers.
@@ -836,7 +764,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
             return rc;
         }
 
-#   if defined(LOG_ENABLED) && !defined(IN_RING0)
+#   if defined(LOG_ENABLED) && 0
         RTGCPHYS   GCPhys2;
         uint64_t   fPageGst2;
         PGMGstGetPage(pVCpu, pvFault, &fPageGst2, &GCPhys2);
@@ -849,72 +777,6 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
 #    endif
 #   endif /* LOG_ENABLED */
 
-#   if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE) && !defined(IN_RING0)
-        if (   !GstWalk.Core.fEffectiveUS
-            && CSAMIsEnabled(pVM)
-            && CPUMGetGuestCPL(pVCpu) == 0)
-        {
-            /* Note: Can't check for X86_TRAP_ID bit, because that requires execute disable support on the CPU. */
-            if (    pvFault == (RTGCPTR)pRegFrame->eip
-                ||  pvFault - pRegFrame->eip < 8    /* instruction crossing a page boundary */
-#    ifdef CSAM_DETECT_NEW_CODE_PAGES
-                ||  (   !PATMIsPatchGCAddr(pVM, pRegFrame->eip)
-                     && CSAMDoesPageNeedScanning(pVM, pRegFrame->eip))   /* any new code we encounter here */
-#    endif /* CSAM_DETECT_NEW_CODE_PAGES */
-               )
-            {
-                LogFlow(("CSAMExecFault %RX32\n", pRegFrame->eip));
-                rc = CSAMExecFault(pVM, (RTRCPTR)pRegFrame->eip);
-                if (rc != VINF_SUCCESS)
-                {
-                    /*
-                     * CSAM needs to perform a job in ring 3.
-                     *
-                     * Sync the page before going to the host context; otherwise we'll end up in a loop if
-                     * CSAM fails (e.g. instruction crosses a page boundary and the next page is not present)
-                     */
-                    LogFlow(("CSAM ring 3 job\n"));
-                    int rc2 = PGM_BTH_NAME(SyncPage)(pVCpu, GstWalk.Pde, pvFault, 1, uErr);
-                    AssertRC(rc2);
-
-                    STAM_STATS({ pVCpu->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0eTime2CSAM; });
-                    return rc;
-                }
-            }
-#    ifdef CSAM_DETECT_NEW_CODE_PAGES
-            else if (    uErr == X86_TRAP_PF_RW
-                     &&  pRegFrame->ecx >= 0x100         /* early check for movswd count */
-                     &&  pRegFrame->ecx < 0x10000)
-            {
-                /* In case of a write to a non-present supervisor shadow page, we'll take special precautions
-                 * to detect loading of new code pages.
-                 */
-
-                /*
-                 * Decode the instruction.
-                 */
-                PDISCPUSTATE pDis = &pVCpu->pgm.s.DisState;
-                uint32_t     cbOp;
-                rc = EMInterpretDisasCurrent(pVM, pVCpu, pDis, &cbOp);
-
-                /* For now we'll restrict this to rep movsw/d instructions */
-                if (    rc == VINF_SUCCESS
-                    &&  pDis->pCurInstr->opcode == OP_MOVSWD
-                    &&  (pDis->prefix & DISPREFIX_REP))
-                {
-                    CSAMMarkPossibleCodePage(pVM, pvFault);
-                }
-            }
-#    endif  /* CSAM_DETECT_NEW_CODE_PAGES */
-
-            /*
-             * Mark this page as safe.
-             */
-            /** @todo not correct for pages that contain both code and data!! */
-            Log2(("CSAMMarkPage %RGv; scanned=%d\n", pvFault, true));
-            CSAMMarkPage(pVM, pvFault, true);
-        }
-#   endif /* PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE) && !defined(IN_RING0) */
 #   if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
         rc = PGM_BTH_NAME(SyncPage)(pVCpu, GstWalk.Pde, pvFault, PGM_SYNC_NR_PAGES, uErr);
 #   else
@@ -1158,6 +1020,7 @@ rc=0
     return VERR_PGM_NOT_USED_IN_MODE;
 # endif
 }
+
 #endif /* !IN_RING3 */
 
 
@@ -1183,7 +1046,7 @@ rc=0
  */
 PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
 {
-#if    PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)   \
+#if    PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE) \
     && !PGM_TYPE_IS_NESTED_OR_EPT(PGM_SHW_TYPE) \
     && PGM_SHW_TYPE != PGM_TYPE_NONE
     int rc;
@@ -2071,21 +1934,7 @@ static int PGM_BTH_NAME(SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage
                             {
                                 RTGCPTR GCPtrCurPage = (GCPtrPage & ~(RTGCPTR)(GST_PT_MASK << GST_PT_SHIFT)) | ((offPTSrc + iPTDst) << PAGE_SHIFT);
                                 NOREF(GCPtrCurPage);
-#   ifdef VBOX_WITH_RAW_MODE_NOT_R0
-                                /*
-                                 * Assuming kernel code will be marked as supervisor - and not as user level
-                                 * and executed using a conforming code selector - And marked as readonly.
-                                 * Also assume that if we're monitoring a page, it's of no interest to CSAM.
-                                 */
-                                PPGMPAGE pPage;
-                                if (    ((PdeSrc.u & pPteSrc->u) & (X86_PTE_RW | X86_PTE_US))
-                                    ||  iPTDst == ((GCPtrPage >> SHW_PT_SHIFT) & SHW_PT_MASK)   /* always sync GCPtrPage */
-                                    ||  !CSAMDoesPageNeedScanning(pVM, GCPtrCurPage)
-                                    ||  (   (pPage = pgmPhysGetPage(pVM, pPteSrc->u & GST_PTE_PG_MASK))
-                                         && PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage))
-                                   )
-#   endif /* else: CSAM not active */
-                                   PGM_BTH_NAME(SyncPageWorker)(pVCpu, &pPTDst->a[iPTDst], PdeSrc, *pPteSrc, pShwPage, iPTDst);
+                                PGM_BTH_NAME(SyncPageWorker)(pVCpu, &pPTDst->a[iPTDst], PdeSrc, *pPteSrc, pShwPage, iPTDst);
                                 Log2(("SyncPage: 4K+ %RGv PteSrc:{P=%d RW=%d U=%d raw=%08llx} PteDst=%08llx%s\n",
                                       GCPtrCurPage, pPteSrc->n.u1Present,
                                       pPteSrc->n.u1Write & PdeSrc.n.u1Write,
@@ -2248,8 +2097,7 @@ static int PGM_BTH_NAME(SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage
 
 # elif (PGM_GST_TYPE == PGM_TYPE_REAL || PGM_GST_TYPE == PGM_TYPE_PROT) \
     && !PGM_TYPE_IS_NESTED(PGM_SHW_TYPE) \
-    && (PGM_SHW_TYPE != PGM_TYPE_EPT || PGM_GST_TYPE == PGM_TYPE_PROT) \
-    && !defined(IN_RC)
+    && (PGM_SHW_TYPE != PGM_TYPE_EPT || PGM_GST_TYPE == PGM_TYPE_PROT)
     NOREF(PdeSrc);
 
 #  ifdef PGM_SYNC_N_PAGES
@@ -2527,17 +2375,6 @@ static int PGM_BTH_NAME(CheckDirtyPageFault)(PVMCPU pVCpu, uint32_t uErr, PSHWPD
         GSTPTE const  *pPteSrc = &pPTSrc->a[(GCPtrPage >> GST_PT_SHIFT) & GST_PT_MASK];
         const GSTPTE   PteSrc  = *pPteSrc;
 
-#ifdef VBOX_WITH_RAW_MODE_NOT_R0
-        /* Bail out here as pgmPoolGetPage will return NULL and we'll crash below.
-         * Our individual shadow handlers will provide more information and force a fatal exit.
-         */
-        if (   VM_IS_RAW_MODE_ENABLED(pVM)
-            && MMHyperIsInsideArea(pVM, (RTGCPTR)GCPtrPage))
-        {
-            LogRel(("CheckPageFault: write to hypervisor region %RGv\n", GCPtrPage));
-            return VINF_PGM_NO_DIRTY_BIT_TRACKING;
-        }
-#endif
         /*
          * Map shadow page table.
          */
@@ -3038,16 +2875,6 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RT
                             PGM_BTH_NAME(SyncHandlerPte)(pVM, pPage, SHW_PTE_GET_U(PteDstBase), &PteDst);
                         else if (PGM_PAGE_IS_BALLOONED(pPage))
                             SHW_PTE_SET(PteDst, 0); /* Handle ballooned pages at #PF time. */
-# ifdef VBOX_WITH_RAW_MODE_NOT_R0
-                        /*
-                         * Assuming kernel code will be marked as supervisor and not as user level and executed
-                         * using a conforming code selector. Don't check for readonly, as that implies the whole
-                         * 4MB can be code or readonly data. Linux enables write access for its large pages.
-                         */
-                        else if (    !PdeSrc.n.u1User
-                                 &&  CSAMDoesPageNeedScanning(pVM, GCPtr | (iPTDst << SHW_PT_SHIFT)))
-                            SHW_PTE_SET(PteDst, 0);
-# endif
                         else
                             SHW_PTE_SET(PteDst, PGM_PAGE_GET_HCPHYS(pPage) | SHW_PTE_GET_U(PteDstBase));
 
@@ -3116,8 +2943,7 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RT
 #elif (PGM_GST_TYPE == PGM_TYPE_REAL || PGM_GST_TYPE == PGM_TYPE_PROT) \
     && !PGM_TYPE_IS_NESTED(PGM_SHW_TYPE) \
     && (PGM_SHW_TYPE != PGM_TYPE_EPT || PGM_GST_TYPE == PGM_TYPE_PROT) \
-    && PGM_SHW_TYPE != PGM_TYPE_NONE \
-    && !defined(IN_RC)
+    && PGM_SHW_TYPE != PGM_TYPE_NONE
     NOREF(iPDSrc); NOREF(pPDSrc);
 
     STAM_PROFILE_START(&pVCpu->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,SyncPT), a);
@@ -3262,7 +3088,7 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RT
             }
         }
     }
-# endif /* HC_ARCH_BITS == 64 */
+# endif /* defined(PGM_WITH_LARGE_PAGES) && PGM_SHW_TYPE != PGM_TYPE_32BIT && PGM_SHW_TYPE != PGM_TYPE_PAE */
 
     /*
      * Allocate & map the page table.
@@ -3751,10 +3577,6 @@ PGM_BTH_DECL(int, SyncCR3)(PVMCPU pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr
 
 
 #ifdef VBOX_STRICT
-# ifdef IN_RC
-#  undef AssertMsgFailed
-#  define AssertMsgFailed Log
-# endif
 
 /**
  * Checks that the shadow page table is in sync with the guest one.
@@ -4546,7 +4368,7 @@ PGM_BTH_DECL(int, MapCR3)(PVMCPU pVCpu, RTGCPHYS GCPhysCR3)
     PPGMPAGE    pPageCR3 = pgmPhysGetPage(pVM, GCPhysCR3);
     AssertReturn(pPageCR3, VERR_PGM_INVALID_CR3_ADDR);
     /** @todo this needs some reworking wrt. locking?  */
-# if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
+# ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
     HCPtrGuestCR3 = NIL_RTHCPTR;
     int rc = VINF_SUCCESS;
 # else
@@ -4581,7 +4403,7 @@ PGM_BTH_DECL(int, MapCR3)(PVMCPU pVCpu, RTGCPHYS GCPhysCR3)
                 pgmLock(pVM);
                 PPGMPAGE    pPage  = pgmPhysGetPage(pVM, GCPhys);
                 AssertReturn(pPage, VERR_PGM_INVALID_PDPE_ADDR);
-#  if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
+#  ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
                 HCPtr = NIL_RTHCPTR;
                 int rc2 = VINF_SUCCESS;
 #  else
@@ -4606,9 +4428,6 @@ PGM_BTH_DECL(int, MapCR3)(PVMCPU pVCpu, RTGCPHYS GCPhysCR3)
 #  endif
             pVCpu->pgm.s.apGstPaePDsRC[i]     = 0;
             pVCpu->pgm.s.aGCPhysGstPaePDs[i]  = NIL_RTGCPHYS;
-#  ifdef IN_RC
-            PGM_INVL_PG(pVCpu, GCPtr); /** @todo this shouldn't be necessary? */
-#  endif
         }
 
 # elif PGM_GST_TYPE == PGM_TYPE_AMD64
@@ -4658,25 +4477,10 @@ PGM_BTH_DECL(int, MapCR3)(PVMCPU pVCpu, RTGCPHYS GCPhysCR3)
     AssertFatalRC(rc);
     rc = VINF_SUCCESS;
 
-#  ifdef IN_RC
-    /*
-     * WARNING! We can't deal with jumps to ring 3 in the code below as the
-     *          state will be inconsistent! Flush important things now while
-     *          we still can and then make sure there are no ring-3 calls.
-     */
-#   ifdef VBOX_WITH_REM
-    REMNotifyHandlerPhysicalFlushIfAlmostFull(pVM, pVCpu);
-#   endif
-    VMMRZCallRing3Disable(pVCpu);
-#  endif
-
     pVCpu->pgm.s.CTX_SUFF(pShwPageCR3) = pNewShwPageCR3;
 #  ifdef IN_RING0
     pVCpu->pgm.s.pShwPageCR3R3 = MMHyperCCToR3(pVM, pVCpu->pgm.s.CTX_SUFF(pShwPageCR3));
     pVCpu->pgm.s.pShwPageCR3RC = MMHyperCCToRC(pVM, pVCpu->pgm.s.CTX_SUFF(pShwPageCR3));
-#  elif defined(IN_RC)
-    pVCpu->pgm.s.pShwPageCR3R3 = MMHyperCCToR3(pVM, pVCpu->pgm.s.CTX_SUFF(pShwPageCR3));
-    pVCpu->pgm.s.pShwPageCR3R0 = MMHyperCCToR0(pVM, pVCpu->pgm.s.CTX_SUFF(pShwPageCR3));
 #  else
     pVCpu->pgm.s.pShwPageCR3R0 = MMHyperCCToR0(pVM, pVCpu->pgm.s.CTX_SUFF(pShwPageCR3));
     pVCpu->pgm.s.pShwPageCR3RC = MMHyperCCToRC(pVM, pVCpu->pgm.s.CTX_SUFF(pShwPageCR3));
@@ -4697,11 +4501,6 @@ PGM_BTH_DECL(int, MapCR3)(PVMCPU pVCpu, RTGCPHYS GCPhysCR3)
 
     /* Set the current hypervisor CR3. */
     CPUMSetHyperCR3(pVCpu, PGMGetHyperCR3(pVCpu));
-
-#  ifdef IN_RC
-    /* NOTE: The state is consistent again. */
-    VMMRZCallRing3Enable(pVCpu);
-#  endif
 
     /* Clean up the old CR3 root. */
     if (    pOldShwPageCR3
@@ -4774,18 +4573,15 @@ PGM_BTH_DECL(int, UnmapCR3)(PVMCPU pVCpu)
     /* nothing to do */
 #endif
 
-#if !defined(IN_RC) /* In RC we rely on MapCR3 to do the shadow part for us at a safe time */
     /*
      * Update shadow paging info.
      */
-# if  (   (   PGM_SHW_TYPE == PGM_TYPE_32BIT  \
-           || PGM_SHW_TYPE == PGM_TYPE_PAE    \
-           || PGM_SHW_TYPE == PGM_TYPE_AMD64))
-
-#  if PGM_GST_TYPE != PGM_TYPE_REAL
+#if  (   (   PGM_SHW_TYPE == PGM_TYPE_32BIT \
+          || PGM_SHW_TYPE == PGM_TYPE_PAE \
+          || PGM_SHW_TYPE == PGM_TYPE_AMD64))
+# if PGM_GST_TYPE != PGM_TYPE_REAL
     Assert(!pVM->pgm.s.fNestedPaging);
-#  endif
-
+# endif
     pgmLock(pVM);
 
 # ifndef PGM_WITHOUT_MAPPINGS
@@ -4811,9 +4607,9 @@ PGM_BTH_DECL(int, UnmapCR3)(PVMCPU pVCpu)
         pVCpu->pgm.s.pShwPageCR3R0 = 0;
         pVCpu->pgm.s.pShwPageCR3RC = 0;
     }
+
     pgmUnlock(pVM);
-# endif
-#endif /* !IN_RC*/
+#endif
 
     return rc;
 }
