@@ -3282,8 +3282,8 @@ typedef struct PGM
 
 
     /** PGM critical section.
-     * This protects the physical & virtual access handlers, ram ranges,
-     * and the page flag updating (some of it anyway).
+     * This protects the physical, ram ranges, and the page flag updating (some of
+     * it anyway).
      */
     PDMCRITSECT                     CritSectX;
 
