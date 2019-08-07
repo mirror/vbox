@@ -221,6 +221,7 @@ PGM_SHW_DECL(int, Enter)(PVMCPU pVCpu, bool fIs64BitsPagingMode)
     AssertLogRelRCReturnStmt(rc, pgmUnlock(pVM), rc);
 
     pVCpu->pgm.s.pShwPageCR3R3 = (R3PTRTYPE(PPGMPOOLPAGE))MMHyperCCToR3(pVM, pNewShwPageCR3);
+    pVCpu->pgm.s.pShwPageCR3RC = (RCPTRTYPE(PPGMPOOLPAGE))MMHyperCCToRC(pVM, pNewShwPageCR3);
     pVCpu->pgm.s.pShwPageCR3R0 = (R0PTRTYPE(PPGMPOOLPAGE))MMHyperCCToR0(pVM, pNewShwPageCR3);
 
     pgmUnlock(pVM);
@@ -259,6 +260,7 @@ PGM_SHW_DECL(int, Exit)(PVMCPU pVCpu)
         pgmPoolFreeByPage(pPool, pVCpu->pgm.s.CTX_SUFF(pShwPageCR3), NIL_PGMPOOL_IDX, UINT32_MAX);
         pVCpu->pgm.s.pShwPageCR3R3 = 0;
         pVCpu->pgm.s.pShwPageCR3R0 = 0;
+        pVCpu->pgm.s.pShwPageCR3RC = 0;
 
         pgmUnlock(pVM);
 
@@ -610,7 +612,11 @@ PGM_SHW_DECL(int, ModifyPage)(PVMCPU pVCpu, RTGCUINTPTR GCPtr, size_t cb, uint64
  */
 PGM_SHW_DECL(int, Relocate)(PVMCPU pVCpu, RTGCPTR offDelta)
 {
+# if PGM_SHW_TYPE != PGM_TYPE_NONE
+    pVCpu->pgm.s.pShwPageCR3RC += offDelta;
+# else
     RT_NOREF(pVCpu, offDelta);
+# endif
     return VINF_SUCCESS;
 }
 #endif

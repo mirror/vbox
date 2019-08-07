@@ -233,12 +233,14 @@ int pgmR3PoolInit(PVM pVM)
         return rc;
     pVM->pgm.s.pPoolR3 = pPool;
     pVM->pgm.s.pPoolR0 = MMHyperR3ToR0(pVM, pPool);
+    pVM->pgm.s.pPoolRC = MMHyperR3ToRC(pVM, pPool);
 
     /*
      * Initialize it.
      */
     pPool->pVMR3     = pVM;
     pPool->pVMR0     = pVM->pVMR0;
+    pPool->pVMRC     = pVM->pVMRC;
     pPool->cMaxPages = cMaxPages;
     pPool->cCurPages = PGMPOOL_IDX_FIRST;
     pPool->iUserFreeHead = 0;
@@ -246,6 +248,7 @@ int pgmR3PoolInit(PVM pVM)
     PPGMPOOLUSER paUsers = (PPGMPOOLUSER)&pPool->aPages[pPool->cMaxPages];
     pPool->paUsersR3 = paUsers;
     pPool->paUsersR0 = MMHyperR3ToR0(pVM, paUsers);
+    pPool->paUsersRC = MMHyperR3ToRC(pVM, paUsers);
     for (unsigned i = 0; i < cMaxUsers; i++)
     {
         paUsers[i].iNext = i + 1;
@@ -258,6 +261,7 @@ int pgmR3PoolInit(PVM pVM)
     PPGMPOOLPHYSEXT paPhysExts = (PPGMPOOLPHYSEXT)&paUsers[cMaxUsers];
     pPool->paPhysExtsR3 = paPhysExts;
     pPool->paPhysExtsR0 = MMHyperR3ToR0(pVM, paPhysExts);
+    pPool->paPhysExtsRC = MMHyperR3ToRC(pVM, paPhysExts);
     for (unsigned i = 0; i < cMaxPhysExts; i++)
     {
         paPhysExts[i].iNext = i + 1;
@@ -461,7 +465,10 @@ int pgmR3PoolInit(PVM pVM)
  */
 void pgmR3PoolRelocate(PVM pVM)
 {
-    RT_NOREF(pVM);
+    pVM->pgm.s.pPoolRC = MMHyperR3ToRC(pVM, pVM->pgm.s.pPoolR3);
+    pVM->pgm.s.pPoolR3->pVMRC = pVM->pVMRC;
+    pVM->pgm.s.pPoolR3->paUsersRC = MMHyperR3ToRC(pVM, pVM->pgm.s.pPoolR3->paUsersR3);
+    pVM->pgm.s.pPoolR3->paPhysExtsRC = MMHyperR3ToRC(pVM, pVM->pgm.s.pPoolR3->paPhysExtsR3);
 }
 
 

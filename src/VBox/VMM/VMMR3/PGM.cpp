@@ -803,12 +803,15 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
         pPGM->pGstPaePdptR0     = NIL_RTR0PTR;
         pPGM->pGstAmd64Pml4R0   = NIL_RTR0PTR;
 #endif
+        pPGM->pGst32BitPdRC     = NIL_RTRCPTR;
+        pPGM->pGstPaePdptRC     = NIL_RTRCPTR;
         for (unsigned i = 0; i < RT_ELEMENTS(pVCpu->pgm.s.apGstPaePDsR3); i++)
         {
             pPGM->apGstPaePDsR3[i]             = NULL;
 #ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
             pPGM->apGstPaePDsR0[i]             = NIL_RTR0PTR;
 #endif
+            pPGM->apGstPaePDsRC[i]             = NIL_RTRCPTR;
             pPGM->aGCPhysGstPaePDs[i]          = NIL_RTGCPHYS;
             pPGM->aGstPaePdpeRegs[i].u         = UINT64_MAX;
             pPGM->aGCPhysGstPaePDsMonitored[i] = NIL_RTGCPHYS;
@@ -889,12 +892,14 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
 
     pVM->pgm.s.pStatsR3 = (PGMSTATS *)pv;
     pVM->pgm.s.pStatsR0 = MMHyperCCToR0(pVM, pv);
+    pVM->pgm.s.pStatsRC = MMHyperCCToRC(pVM, pv);
     pv = (uint8_t *)pv + RT_ALIGN_Z(sizeof(PGMSTATS), 64);
 
     for (VMCPUID iCpu = 0; iCpu < pVM->cCpus; iCpu++)
     {
         pVM->aCpus[iCpu].pgm.s.pStatsR3 = (PGMCPUSTATS *)pv;
         pVM->aCpus[iCpu].pgm.s.pStatsR0 = MMHyperCCToR0(pVM, pv);
+        pVM->aCpus[iCpu].pgm.s.pStatsRC = MMHyperCCToRC(pVM, pv);
 
         pv = (uint8_t *)pv + RT_ALIGN_Z(sizeof(PGMCPUSTATS), 64);
     }
@@ -933,7 +938,10 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
      */
     rc = MMHyperAlloc(pVM, sizeof(PGMTREES), 0, MM_TAG_PGM, (void **)&pVM->pgm.s.pTreesR3);
     if (RT_SUCCESS(rc))
+    {
         pVM->pgm.s.pTreesR0 = MMHyperR3ToR0(pVM, pVM->pgm.s.pTreesR3);
+        pVM->pgm.s.pTreesRC = MMHyperR3ToRC(pVM, pVM->pgm.s.pTreesR3);
+    }
 
     /*
      * Allocate the zero page.
@@ -1864,6 +1872,11 @@ VMMR3DECL(void) PGMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
     }
 
     /*
+     * Trees.
+     */
+    pVM->pgm.s.pTreesRC = MMHyperR3ToRC(pVM, pVM->pgm.s.pTreesR3);
+
+    /*
      * Ram ranges.
      */
     if (pVM->pgm.s.pRamRangesXR3)
@@ -1873,6 +1886,10 @@ VMMR3DECL(void) PGMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
             if (!(pCur->fFlags & PGM_RAM_RANGE_FLAGS_FLOATING))
                 pCur->pSelfRC = MMHyperCCToRC(pVM, pCur);
         pgmR3PhysRelinkRamRanges(pVM);
+
+        /* Flush the RC TLB. */
+        for (unsigned i = 0; i < PGM_RAMRANGE_TLB_ENTRIES; i++)
+            pVM->pgm.s.apRamRangesTlbRC[i] = NIL_RTRCPTR;
     }
 
     /*
@@ -1939,6 +1956,7 @@ VMMR3DECL(void) PGMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
      */
     PGMRELOCHANDLERARGS Args = { offDelta, pVM };
     RTAvlroGCPhysDoWithAll(&pVM->pgm.s.pTreesR3->PhysHandlers,     true, pgmR3RelocatePhysHandler,      &Args);
+    pVM->pgm.s.pLastPhysHandlerRC = NIL_RTRCPTR;
 
     PPGMPHYSHANDLERTYPEINT pCurPhysType;
     RTListOff32ForEach(&pVM->pgm.s.pTreesR3->HeadPhysHandlerTypes, pCurPhysType, PGMPHYSHANDLERTYPEINT, ListNode)
@@ -1953,6 +1971,15 @@ VMMR3DECL(void) PGMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
      * The page pool.
      */
     pgmR3PoolRelocate(pVM);
+
+#ifdef VBOX_WITH_STATISTICS
+    /*
+     * Statistics.
+     */
+    pVM->pgm.s.pStatsRC = MMHyperCCToRC(pVM, pVM->pgm.s.pStatsR3);
+    for (VMCPUID iCpu = 0; iCpu < pVM->cCpus; iCpu++)
+        pVM->aCpus[iCpu].pgm.s.pStatsRC = MMHyperCCToRC(pVM, pVM->aCpus[iCpu].pgm.s.pStatsR3);
+#endif
 }
 
 

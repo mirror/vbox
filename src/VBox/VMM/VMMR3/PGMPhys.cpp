@@ -979,6 +979,7 @@ static void pgmR3PhysRebuildRamRangeSearchTrees(PVM pVM)
 
     pVM->pgm.s.pRamRangeTreeR3 = pRoot;
     pVM->pgm.s.pRamRangeTreeR0 = pRoot ? pRoot->pSelfR0 : NIL_RTR0PTR;
+    pVM->pgm.s.pRamRangeTreeRC = pRoot ? pRoot->pSelfRC : NIL_RTRCPTR;
 
 #ifdef VBOX_STRICT
     /*
@@ -1046,6 +1047,7 @@ void pgmR3PhysRelinkRamRanges(PVM pVM)
     if (pCur)
     {
         pVM->pgm.s.pRamRangesXR0 = pCur->pSelfR0;
+        pVM->pgm.s.pRamRangesXRC = pCur->pSelfRC;
 
         for (; pCur->pNextR3; pCur = pCur->pNextR3)
         {
@@ -1059,6 +1061,7 @@ void pgmR3PhysRelinkRamRanges(PVM pVM)
     else
     {
         Assert(pVM->pgm.s.pRamRangesXR0 == NIL_RTR0PTR);
+        Assert(pVM->pgm.s.pRamRangesXRC == NIL_RTRCPTR);
     }
     ASMAtomicIncU32(&pVM->pgm.s.idRamRangesGen);
 
@@ -1096,6 +1099,7 @@ static void pgmR3PhysLinkRamRange(PVM pVM, PPGMRAMRANGE pNew, PPGMRAMRANGE pPrev
     {
         pVM->pgm.s.pRamRangesXR3 = pNew;
         pVM->pgm.s.pRamRangesXR0 = pNew->pSelfR0;
+        pVM->pgm.s.pRamRangesXRC = pNew->pSelfRC;
     }
     ASMAtomicIncU32(&pVM->pgm.s.idRamRangesGen);
 
@@ -1131,6 +1135,7 @@ static void pgmR3PhysUnlinkRamRange2(PVM pVM, PPGMRAMRANGE pRam, PPGMRAMRANGE pP
         Assert(pVM->pgm.s.pRamRangesXR3 == pRam);
         pVM->pgm.s.pRamRangesXR3 = pNext;
         pVM->pgm.s.pRamRangesXR0 = pNext ? pNext->pSelfR0 : NIL_RTR0PTR;
+        pVM->pgm.s.pRamRangesXRC = pNext ? pNext->pSelfRC : NIL_RTRCPTR;
     }
     ASMAtomicIncU32(&pVM->pgm.s.idRamRangesGen);
 
@@ -4405,6 +4410,7 @@ static int pgmR3PhysRomRegisterLocked(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPh
                         {
                             pVM->pgm.s.pRomRangesR3 = pRomNew;
                             pVM->pgm.s.pRomRangesR0 = MMHyperCCToR0(pVM, pRomNew);
+                            pVM->pgm.s.pRomRangesRC = MMHyperCCToRC(pVM, pRomNew);
                         }
 
                         pgmPhysInvalidatePageMapTLB(pVM);

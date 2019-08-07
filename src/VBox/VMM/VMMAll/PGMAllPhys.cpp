@@ -322,8 +322,12 @@ pgmPhysRomWriteHandler(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, void *pvPhys, voi
 void pgmPhysInvalidRamRangeTlbs(PVM pVM)
 {
     pgmLock(pVM);
-    RT_ZERO(pVM->pgm.s.apRamRangesTlbR3);
-    RT_ZERO(pVM->pgm.s.apRamRangesTlbR0);
+    for (uint32_t i = 0; i < PGM_RAMRANGE_TLB_ENTRIES; i++)
+    {
+        pVM->pgm.s.apRamRangesTlbR3[i] = NIL_RTR3PTR;
+        pVM->pgm.s.apRamRangesTlbR0[i] = NIL_RTR0PTR;
+        pVM->pgm.s.apRamRangesTlbRC[i] = NIL_RTRCPTR;
+    }
     pgmUnlock(pVM);
 }
 

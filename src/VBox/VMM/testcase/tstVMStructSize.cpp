@@ -249,6 +249,9 @@ int main()
     PRINT_OFFSET(VMCPU, pgm);
     CHECK_PADDING_VMCPU(4096, pgm);
     CHECK_PADDING_VMCPU(4096, cpum);
+#ifdef VBOX_WITH_STATISTICS
+    PRINT_OFFSET(VMCPU, pgm.s.pStatTrap0eAttributionRC);
+#endif
 
     PVM pVM = NULL; NOREF(pVM);
     CHECK_MEMBER_ALIGNMENT(VM, aCpus[0], PAGE_SIZE);

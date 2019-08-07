@@ -458,6 +458,7 @@ int pgmHandlerPhysicalExDeregister(PVM pVM, PPGMPHYSHANDLER pPhysHandler, int fR
         pgmHandlerPhysicalDeregisterNotifyREMAndNEM(pVM, pPhysHandler, fRestoreAsRAM);
         pVM->pgm.s.pLastPhysHandlerR0 = 0;
         pVM->pgm.s.pLastPhysHandlerR3 = 0;
+        pVM->pgm.s.pLastPhysHandlerRC = 0;
 
         pPhysHandler->Core.Key     = NIL_RTGCPHYS;
         pPhysHandler->Core.KeyLast = NIL_RTGCPHYS;
@@ -536,6 +537,7 @@ VMMDECL(int)  PGMHandlerPhysicalDeregister(PVM pVM, RTGCPHYS GCPhys)
         pgmHandlerPhysicalDeregisterNotifyREMAndNEM(pVM, pRemoved, -1);
         pVM->pgm.s.pLastPhysHandlerR0 = 0;
         pVM->pgm.s.pLastPhysHandlerR3 = 0;
+        pVM->pgm.s.pLastPhysHandlerRC = 0;
 
         pgmUnlock(pVM);
 
@@ -935,6 +937,7 @@ VMMDECL(int) PGMHandlerPhysicalModify(PVM pVM, RTGCPHYS GCPhysCurrent, RTGCPHYS 
         pgmHandlerPhysicalDeregisterNotifyREMAndNEM(pVM, pCur, -1);
         pVM->pgm.s.pLastPhysHandlerR0 = 0;
         pVM->pgm.s.pLastPhysHandlerR3 = 0;
+        pVM->pgm.s.pLastPhysHandlerRC = 0;
         PGMHandlerPhysicalTypeRelease(pVM, pCur->hType);
         MMHyperFree(pVM, pCur);
     }
@@ -1092,6 +1095,7 @@ VMMDECL(int) PGMHandlerPhysicalJoin(PVM pVM, RTGCPHYS GCPhys1, RTGCPHYS GCPhys2)
                                  pCur1->Core.Key, pCur1->Core.KeyLast, pCur2->Core.Key, pCur2->Core.KeyLast));
                         pVM->pgm.s.pLastPhysHandlerR0 = 0;
                         pVM->pgm.s.pLastPhysHandlerR3 = 0;
+                        pVM->pgm.s.pLastPhysHandlerRC = 0;
                         PGMHandlerPhysicalTypeRelease(pVM, pCur2->hType);
                         MMHyperFree(pVM, pCur2);
                         pgmUnlock(pVM);

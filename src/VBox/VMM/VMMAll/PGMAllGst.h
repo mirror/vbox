@@ -515,7 +515,11 @@ PGM_GST_DECL(int, GetPDE)(PVMCPU pVCpu, RTGCPTR GCPtr, PX86PDEPAE pPDE)
  */
 PGM_GST_DECL(int, Relocate)(PVMCPU pVCpu, RTGCPTR offDelta)
 {
-    RT_NOREF(pVCpu, offDelta);
+    pVCpu->pgm.s.pGst32BitPdRC += offDelta;
+    for (unsigned i = 0; i < RT_ELEMENTS(pVCpu->pgm.s.apGstPaePDsRC); i++)
+        pVCpu->pgm.s.apGstPaePDsRC[i] += offDelta;
+    pVCpu->pgm.s.pGstPaePdptRC += offDelta;
+
     return VINF_SUCCESS;
 }
 #endif

@@ -2251,6 +2251,7 @@ int pgmGstLazyMapPaePD(PVMCPU pVCpu, uint32_t iPdpt, PX86PDPAE *ppPd)
     int rc = pgmPhysGetPageEx(pVM, GCPhys, &pPage);
     if (RT_SUCCESS(rc))
     {
+        RTRCPTR     RCPtr       = NIL_RTRCPTR;
         RTHCPTR     HCPtr       = NIL_RTHCPTR;
 # ifndef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
         rc = pgmPhysGCPhys2CCPtrInternalDepr(pVM, pPage, GCPhys, &HCPtr);
@@ -2263,7 +2264,10 @@ int pgmGstLazyMapPaePD(PVMCPU pVCpu, uint32_t iPdpt, PX86PDPAE *ppPd)
             pVCpu->pgm.s.apGstPaePDsR0[iPdpt]          = (R0PTRTYPE(PX86PDPAE))HCPtr;
 # endif
             if (fChanged)
+            {
                 pVCpu->pgm.s.aGCPhysGstPaePDs[iPdpt]   = GCPhys;
+                pVCpu->pgm.s.apGstPaePDsRC[iPdpt]      = (RCPTRTYPE(PX86PDPAE))RCPtr;
+            }
 
             *ppPd = pVCpu->pgm.s.CTX_SUFF(apGstPaePDs)[iPdpt];
             pgmUnlock(pVM);
@@ -2277,6 +2281,7 @@ int pgmGstLazyMapPaePD(PVMCPU pVCpu, uint32_t iPdpt, PX86PDPAE *ppPd)
 # ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
     pVCpu->pgm.s.apGstPaePDsR0[iPdpt]      = 0;
 # endif
+    pVCpu->pgm.s.apGstPaePDsRC[iPdpt]      = 0;
 
     pgmUnlock(pVM);
     return rc;
@@ -2371,6 +2376,7 @@ VMM_INT_DECL(void) PGMGstUpdatePaePdpes(PVMCPU pVCpu, PCX86PDPE paPdpes)
 #ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
             pVCpu->pgm.s.apGstPaePDsR0[i]     = 0;
 #endif
+            pVCpu->pgm.s.apGstPaePDsRC[i]     = 0;
             pVCpu->pgm.s.aGCPhysGstPaePDs[i]  = NIL_RTGCPHYS;
         }
     }
