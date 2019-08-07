@@ -398,7 +398,6 @@ static int pgmHandlerPhysicalSetRamFlagsAndFlushShadowPTs(PVM pVM, PPGMPHYSHANDL
             if (rc2 != VINF_SUCCESS && rc == VINF_SUCCESS)
                 rc = rc2;
 
-#ifndef IN_RC
             /* Tell NEM about the protection update. */
             if (VM_IS_NEM_ENABLED(pVM))
             {
@@ -408,7 +407,6 @@ static int pgmHandlerPhysicalSetRamFlagsAndFlushShadowPTs(PVM pVM, PPGMPHYSHANDL
                                                pgmPhysPageCalcNemProtection(pPage, enmType), enmType, &u2State);
                 PGM_PAGE_SET_NEM_STATE(pPage, u2State);
             }
-#endif
         }
 
         /* next */
@@ -626,13 +624,8 @@ static void pgmHandlerPhysicalDeregisterNotifyREMAndNEM(PVM pVM, PPGMPHYSHANDLER
 # endif
 #endif
     /** @todo do we need this notification? */
-#if defined(IN_RING3) || defined(IN_RING0)
     NEMHCNotifyHandlerPhysicalDeregister(pVM, pCurType->enmKind, GCPhysStart, GCPhysLast - GCPhysStart + 1,
                                          fRestoreAsRAM, fRestoreAsRAM2);
-#else
-    RT_NOREF_PV(fRestoreAsRAM); /** @todo this needs more work for REM! */
-    RT_NOREF_PV(fRestoreAsRAM2);
-#endif
 }
 
 
@@ -684,7 +677,6 @@ DECLINLINE(void) pgmHandlerPhysicalRecalcPageState(PVM pVM, RTGCPHYS GCPhys, boo
             else
                 AssertRC(rc);
 
-#ifndef IN_RC
             /* Tell NEM about the protection update. */
             if (VM_IS_NEM_ENABLED(pVM))
             {
@@ -694,7 +686,6 @@ DECLINLINE(void) pgmHandlerPhysicalRecalcPageState(PVM pVM, RTGCPHYS GCPhys, boo
                                                pgmPhysPageCalcNemProtection(pPage, enmType), enmType, &u2State);
                 PGM_PAGE_SET_NEM_STATE(pPage, u2State);
             }
-#endif
         }
         else
             AssertRC(rc);
@@ -717,9 +708,7 @@ void pgmHandlerPhysicalResetAliasedPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys
     Assert(   PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_MMIO2_ALIAS_MMIO
            || PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_SPECIAL_ALIAS_MMIO);
     Assert(PGM_PAGE_GET_HNDL_PHYS_STATE(pPage) == PGM_PAGE_HNDL_PHYS_STATE_DISABLED);
-#ifndef IN_RC
     RTHCPHYS const HCPhysPrev = PGM_PAGE_GET_HCPHYS(pPage);
-#endif
 
     /*
      * Flush any shadow page table references *first*.
@@ -727,12 +716,7 @@ void pgmHandlerPhysicalResetAliasedPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys
     bool fFlushTLBs = false;
     int rc = pgmPoolTrackUpdateGCPhys(pVM, GCPhysPage, pPage, true /*fFlushPTEs*/, &fFlushTLBs);
     AssertLogRelRCReturnVoid(rc);
-#ifdef IN_RC
-    if (fFlushTLBs && rc != VINF_PGM_SYNC_CR3)
-        PGM_INVL_VCPU_TLBS(VMMGetCpu0(pVM));
-#else
     HMFlushTlbOnAllVCpus(pVM);
-#endif
 
     /*
      * Make it an MMIO/Zero page.
@@ -761,7 +745,6 @@ void pgmHandlerPhysicalResetAliasedPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys
             AssertFailed();
     }
 
-#ifndef IN_RC
     /*
      * Tell NEM about the protection change.
      */
@@ -772,7 +755,6 @@ void pgmHandlerPhysicalResetAliasedPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys
                                    NEM_PAGE_PROT_NONE, PGMPAGETYPE_MMIO, &u2State);
         PGM_PAGE_SET_NEM_STATE(pPage, u2State);
     }
-#endif
 }
 
 
@@ -819,7 +801,6 @@ static void pgmHandlerPhysicalResetRamFlags(PVM pVM, PPGMPHYSHANDLER pCur)
 #endif
             PGM_PAGE_SET_HNDL_PHYS_STATE(pPage, PGM_PAGE_HNDL_PHYS_STATE_NONE);
 
-#ifndef IN_RC
             /* Tell NEM about the protection change. */
             if (VM_IS_NEM_ENABLED(pVM) && !fNemNotifiedAlready)
             {
@@ -829,9 +810,6 @@ static void pgmHandlerPhysicalResetRamFlags(PVM pVM, PPGMPHYSHANDLER pCur)
                                                pgmPhysPageCalcNemProtection(pPage, enmType), enmType, &u2State);
                 PGM_PAGE_SET_NEM_STATE(pPage, u2State);
             }
-#else
-            RT_NOREF_PV(fNemNotifiedAlready);
-#endif
         }
         else
             AssertRC(rc);
@@ -882,11 +860,9 @@ VMMDECL(int) PGMHandlerPhysicalModify(PVM pVM, RTGCPHYS GCPhysCurrent, RTGCPHYS 
          * Clear the ram flags. (We're gonna move or free it!)
          */
         pgmHandlerPhysicalResetRamFlags(pVM, pCur);
-#if defined(VBOX_WITH_REM) || defined(IN_RING3) || defined(IN_RING0)
         PPGMPHYSHANDLERTYPEINT const pCurType      = PGMPHYSHANDLER_GET_TYPE(pVM, pCur);
         bool const                   fRestoreAsRAM = pCurType->pfnHandlerR3 /** @todo this isn't entirely correct. */
                                                   && pCurType->enmKind != PGMPHYSHANDLERKIND_MMIO;
-#endif
 
         /*
          * Validate the new range, modify and reinsert.
@@ -908,10 +884,8 @@ VMMDECL(int) PGMHandlerPhysicalModify(PVM pVM, RTGCPHYS GCPhysCurrent, RTGCPHYS 
 
                 if (RTAvlroGCPhysInsert(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysHandlers, &pCur->Core))
                 {
-#if defined(VBOX_WITH_REM) || defined(IN_RING3) || defined(IN_RING0)
                     RTGCPHYS            const cb            = GCPhysLast - GCPhys + 1;
                     PGMPHYSHANDLERKIND  const enmKind       = pCurType->enmKind;
-#endif
 #ifdef VBOX_WITH_REM
                     bool                const fHasHCHandler = !!pCurType->pfnHandlerR3;
 #endif
@@ -922,9 +896,7 @@ VMMDECL(int) PGMHandlerPhysicalModify(PVM pVM, RTGCPHYS GCPhysCurrent, RTGCPHYS 
                     rc = pgmHandlerPhysicalSetRamFlagsAndFlushShadowPTs(pVM, pCur, pRam);
 
                     /** @todo NEM: not sure we need this notification... */
-#if defined(IN_RING3) || defined(IN_RING0)
                     NEMHCNotifyHandlerPhysicalModify(pVM, enmKind, GCPhysCurrent, GCPhys, cb, fRestoreAsRAM);
-#endif
 
                     pgmUnlock(pVM);
 
@@ -1322,7 +1294,7 @@ VMMDECL(int)  PGMHandlerPhysicalPageTempOff(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS G
             {
                 PGM_PAGE_SET_HNDL_PHYS_STATE(pPage, PGM_PAGE_HNDL_PHYS_STATE_DISABLED);
                 pCur->cTmpOffPages++;
-#ifndef IN_RC
+
                 /* Tell NEM about the protection change (VGA is using this to track dirty pages). */
                 if (VM_IS_NEM_ENABLED(pVM))
                 {
@@ -1332,7 +1304,6 @@ VMMDECL(int)  PGMHandlerPhysicalPageTempOff(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS G
                                                    pgmPhysPageCalcNemProtection(pPage, enmType), enmType, &u2State);
                     PGM_PAGE_SET_NEM_STATE(pPage, u2State);
                 }
-#endif
             }
             pgmUnlock(pVM);
             return VINF_SUCCESS;
@@ -1459,7 +1430,6 @@ VMMDECL(int)  PGMHandlerPhysicalPageAlias(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCP
             /* Flush its TLB entry. */
             pgmPhysInvalidatePageMapTLBEntry(pVM, GCPhysPage);
 
-# ifndef IN_RC
             /* Tell NEM about the backing and protection change. */
             if (VM_IS_NEM_ENABLED(pVM))
             {
@@ -1469,7 +1439,6 @@ VMMDECL(int)  PGMHandlerPhysicalPageAlias(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCP
                                            PGMPAGETYPE_MMIO2_ALIAS_MMIO, &u2State);
                 PGM_PAGE_SET_NEM_STATE(pPage, u2State);
             }
-# endif
             LogFlow(("PGMHandlerPhysicalPageAlias: => %R[pgmpage]\n", pPage));
             pgmUnlock(pVM);
             return VINF_SUCCESS;
@@ -1571,7 +1540,6 @@ VMMDECL(int)  PGMHandlerPhysicalPageAliasHC(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS G
             /* Flush its TLB entry. */
             pgmPhysInvalidatePageMapTLBEntry(pVM, GCPhysPage);
 
-# ifndef IN_RC
             /* Tell NEM about the backing and protection change. */
             if (VM_IS_NEM_ENABLED(pVM))
             {
@@ -1581,7 +1549,6 @@ VMMDECL(int)  PGMHandlerPhysicalPageAliasHC(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS G
                                            PGMPAGETYPE_SPECIAL_ALIAS_MMIO, &u2State);
                 PGM_PAGE_SET_NEM_STATE(pPage, u2State);
             }
-# endif
             LogFlow(("PGMHandlerPhysicalPageAliasHC: => %R[pgmpage]\n", pPage));
             pgmUnlock(pVM);
             return VINF_SUCCESS;

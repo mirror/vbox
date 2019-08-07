@@ -91,25 +91,19 @@
  * Optimization for PAE page tables that are modified often
  */
 //#if 0 /* disabled again while debugging */
-#ifndef IN_RC
-# define PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
-#endif
+#define PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
 //#endif
 
 /**
  * Large page support enabled only on 64 bits hosts; applies to nested paging only.
  */
-#if (HC_ARCH_BITS == 64) && !defined(IN_RC)
-# define PGM_WITH_LARGE_PAGES
-#endif
+#define PGM_WITH_LARGE_PAGES
 
 /**
  * Enables optimizations for MMIO handlers that exploits X86_TRAP_PF_RSVD and
  * VMX_EXIT_EPT_MISCONFIG.
  */
-#if 1 /* testing */
-# define PGM_WITH_MMIO_OPTIMIZATIONS
-#endif
+#define PGM_WITH_MMIO_OPTIMIZATIONS
 
 /**
  * Sync N pages instead of a whole page table
@@ -130,9 +124,9 @@
  * 32 again shows better results than 16; slightly more overhead in the \#PF handler,
  * but ~5% fewer faults.
  */
-# define PGM_SYNC_NR_PAGES               32
+# define PGM_SYNC_NR_PAGES              32
 #else
-# define PGM_SYNC_NR_PAGES               8
+# define PGM_SYNC_NR_PAGES              8
 #endif
 
 /**
@@ -275,7 +269,7 @@
  *          ring-0 on 32-bit darwin and in RC.
  * @remark  There is no need to assert on the result.
  */
-#if defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0) || defined(IN_RC)
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
 # define PGM_HCPHYS_2_PTR(pVM, pVCpu, HCPhys, ppv) \
      pgmRZDynMapHCPageInlined(pVCpu, HCPhys, (void **)(ppv) RTLOG_COMMA_SRC_POS)
 #else
@@ -296,7 +290,7 @@
  *          ring-0 on 32-bit darwin and in RC.
  * @remark  There is no need to assert on the result.
  */
-#if defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0) || defined(IN_RC)
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
 # define PGM_GCPHYS_2_PTR_V2(pVM, pVCpu, GCPhys, ppv) \
      pgmRZDynMapGCPageV2Inlined(pVM, pVCpu, GCPhys, (void **)(ppv) RTLOG_COMMA_SRC_POS)
 #else
@@ -344,7 +338,7 @@
  *          ring-0 on 32-bit darwin and in RC.
  * @remark  There is no need to assert on the result.
  */
-#if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
 # define PGM_GCPHYS_2_PTR_EX(pVM, GCPhys, ppv) \
      pgmRZDynMapGCPageOffInlined(VMMGetCpu(pVM), GCPhys, (void **)(ppv) RTLOG_COMMA_SRC_POS)
 #else
@@ -361,7 +355,7 @@
  * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
  * @param   pvPage  The pool page.
  */
-#if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
 # ifdef LOG_ENABLED
 #  define PGM_DYNMAP_UNUSED_HINT(pVCpu, pvPage)  pgmRZDynMapUnusedHint(pVCpu, pvPage, RT_SRC_POS)
 # else
@@ -389,12 +383,12 @@
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   GCVirt      The virtual address of the page to invalidate.
  */
-#ifdef IN_RC
-# define PGM_INVL_PG(pVCpu, GCVirt)             ASMInvalidatePage((uintptr_t)(GCVirt))
-#elif defined(IN_RING0)
+#ifdef IN_RING0
+# define PGM_INVL_PG(pVCpu, GCVirt)             HMInvalidatePage(pVCpu, (RTGCPTR)(GCVirt))
+#elif defined(IN_RING3)
 # define PGM_INVL_PG(pVCpu, GCVirt)             HMInvalidatePage(pVCpu, (RTGCPTR)(GCVirt))
 #else
-# define PGM_INVL_PG(pVCpu, GCVirt)             HMInvalidatePage(pVCpu, (RTGCPTR)(GCVirt))
+# error "Not IN_RING0 or IN_RING3!"
 #endif
 
 /** @def PGM_INVL_PG_ALL_VCPU
@@ -403,9 +397,7 @@
  * @param   pVM         The cross context VM structure.
  * @param   GCVirt      The virtual address of the page to invalidate.
  */
-#ifdef IN_RC
-# define PGM_INVL_PG_ALL_VCPU(pVM, GCVirt)      ASMInvalidatePage((uintptr_t)(GCVirt))
-#elif defined(IN_RING0)
+#ifdef IN_RING0
 # define PGM_INVL_PG_ALL_VCPU(pVM, GCVirt)      HMInvalidatePageOnAllVCpus(pVM, (RTGCPTR)(GCVirt))
 #else
 # define PGM_INVL_PG_ALL_VCPU(pVM, GCVirt)      HMInvalidatePageOnAllVCpus(pVM, (RTGCPTR)(GCVirt))
@@ -417,9 +409,7 @@
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   GCVirt      The virtual address within the page directory to invalidate.
  */
-#ifdef IN_RC
-# define PGM_INVL_BIG_PG(pVCpu, GCVirt)         ASMReloadCR3()
-#elif defined(IN_RING0)
+#ifdef IN_RING0
 # define PGM_INVL_BIG_PG(pVCpu, GCVirt)         HMFlushTlb(pVCpu)
 #else
 # define PGM_INVL_BIG_PG(pVCpu, GCVirt)         HMFlushTlb(pVCpu)
@@ -430,9 +420,7 @@
  *
  * @param   pVCpu       The cross context virtual CPU structure.
  */
-#ifdef IN_RC
-# define PGM_INVL_VCPU_TLBS(pVCpu)             ASMReloadCR3()
-#elif defined(IN_RING0)
+#ifdef IN_RING0
 # define PGM_INVL_VCPU_TLBS(pVCpu)             HMFlushTlb(pVCpu)
 #else
 # define PGM_INVL_VCPU_TLBS(pVCpu)             HMFlushTlb(pVCpu)
@@ -443,9 +431,7 @@
  *
  * @param   pVM         The cross context VM structure.
  */
-#ifdef IN_RC
-# define PGM_INVL_ALL_VCPU_TLBS(pVM)            ASMReloadCR3()
-#elif defined(IN_RING0)
+#ifdef IN_RING0
 # define PGM_INVL_ALL_VCPU_TLBS(pVM)            HMFlushTlbOnAllVCpus(pVM)
 #else
 # define PGM_INVL_ALL_VCPU_TLBS(pVM)            HMFlushTlbOnAllVCpus(pVM)
@@ -1868,14 +1854,7 @@ typedef PGMRCDYNMAP *PPGMRCDYNMAP;
 typedef struct PGMMAPSETENTRY
 {
     /** Pointer to the page. */
-#ifndef IN_RC
     RTR0PTR                     pvPage;
-#else
-    RTRCPTR                     pvPage;
-# if HC_ARCH_BITS == 64
-    uint32_t                    u32Alignment2;
-# endif
-#endif
     /** The mapping cache index. */
     uint16_t                    iPage;
     /** The number of references.
@@ -1961,15 +1940,7 @@ typedef PGMMAPSET *PPGMMAPSET;
  * Pointer to a page mapper unit for current context. */
 /** @typedef PPPGMPAGEMAP
  * Pointer to a page mapper unit pointer for current context. */
-#if defined(IN_RC) && !defined(DOXYGEN_RUNNING)
-// typedef PPGMPAGEGCMAPTLB               PPGMPAGEMAPTLB;
-// typedef PPGMPAGEGCMAPTLBE              PPGMPAGEMAPTLBE;
-// typedef PPGMPAGEGCMAPTLBE             *PPPGMPAGEMAPTLBE;
-# define PGM_PAGEMAPTLB_ENTRIES         PGM_PAGEGCMAPTLB_ENTRIES
-# define PGM_PAGEMAPTLB_IDX(GCPhys)     PGM_PAGEGCMAPTLB_IDX(GCPhys)
- typedef void *                         PPGMPAGEMAP;
- typedef void **                        PPPGMPAGEMAP;
-//#elif IN_RING0
+#if defined(IN_RING0) && 0
 // typedef PPGMPAGER0MAPTLB               PPGMPAGEMAPTLB;
 // typedef PPGMPAGER0MAPTLBE              PPGMPAGEMAPTLBE;
 // typedef PPGMPAGER0MAPTLBE             *PPPGMPAGEMAPTLBE;
@@ -2474,7 +2445,7 @@ AssertCompileMemberAlignment(PGMPOOL, aPages, 8);
  *          small page window employeed by that function. Be careful.
  * @remark  There is no need to assert on the result.
  */
-#if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
 # define PGMPOOL_PAGE_2_PTR(a_pVM, a_pPage)     pgmPoolMapPageInlined((a_pVM), (a_pPage) RTLOG_COMMA_SRC_POS)
 #elif defined(VBOX_STRICT) || 1 /* temporarily going strict here */
 # define PGMPOOL_PAGE_2_PTR(a_pVM, a_pPage)     pgmPoolMapPageStrict(a_pPage, __FUNCTION__)
@@ -2501,7 +2472,7 @@ DECLINLINE(void *) pgmPoolMapPageStrict(PPGMPOOLPAGE a_pPage, const char *pszCal
  *          small page window employeed by that function. Be careful.
  * @remark  There is no need to assert on the result.
  */
-#if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
 # define PGMPOOL_PAGE_2_PTR_V2(a_pVM, a_pVCpu, a_pPage)     pgmPoolMapPageV2Inlined((a_pVM), (a_pVCpu), (a_pPage) RTLOG_COMMA_SRC_POS)
 #else
 # define PGMPOOL_PAGE_2_PTR_V2(a_pVM, a_pVCpu, a_pPage)     PGMPOOL_PAGE_2_PTR((a_pVM), (a_pPage))
@@ -2793,20 +2764,16 @@ typedef PGMPTWALKGST const *PCPGMPTWALKGST;
 /** @name Paging mode macros
  * @{
  */
-#ifdef IN_RC
-# define PGM_CTX(a,b)                   a##RC##b
-# define PGM_CTX_STR(a,b)               a "GC" b
-# define PGM_CTX_DECL(type)             VMMRCDECL(type)
+#ifdef IN_RING3
+# define PGM_CTX(a,b)                   a##R3##b
+# define PGM_CTX_STR(a,b)               a "R3" b
+# define PGM_CTX_DECL(type)             DECLCALLBACK(type)
+#elif defined(IN_RING0)
+# define PGM_CTX(a,b)                   a##R0##b
+# define PGM_CTX_STR(a,b)               a "R0" b
+# define PGM_CTX_DECL(type)             VMMDECL(type)
 #else
-# ifdef IN_RING3
-#  define PGM_CTX(a,b)                   a##R3##b
-#  define PGM_CTX_STR(a,b)               a "R3" b
-#  define PGM_CTX_DECL(type)             DECLCALLBACK(type)
-# else
-#  define PGM_CTX(a,b)                   a##R0##b
-#  define PGM_CTX_STR(a,b)               a "R0" b
-#  define PGM_CTX_DECL(type)             VMMDECL(type)
-# endif
+# error "Not IN_RING3 or IN_RING0!"
 #endif
 
 #define PGM_GST_NAME_REAL(name)                         PGM_CTX(pgm,GstReal##name)
@@ -2969,7 +2936,7 @@ typedef struct PGMMODEDATAGST
 } PGMMODEDATAGST;
 
 /** The length of g_aPgmGuestModeData. */
-#if defined(VBOX_WITH_64_BITS_GUESTS) && !defined(IN_RC)
+#ifdef VBOX_WITH_64_BITS_GUESTS
 # define PGM_GUEST_MODE_DATA_ARRAY_SIZE     (PGM_TYPE_AMD64 + 1)
 #else
 # define PGM_GUEST_MODE_DATA_ARRAY_SIZE     (PGM_TYPE_PAE + 1)
@@ -2996,11 +2963,7 @@ typedef struct PGMMODEDATASHW
 } PGMMODEDATASHW;
 
 /** The length of g_aPgmShadowModeData. */
-#ifndef IN_RC
-# define PGM_SHADOW_MODE_DATA_ARRAY_SIZE    PGM_TYPE_END
-#else
-# define PGM_SHADOW_MODE_DATA_ARRAY_SIZE    (PGM_TYPE_PAE + 1)
-#endif
+#define PGM_SHADOW_MODE_DATA_ARRAY_SIZE     PGM_TYPE_END
 /** The shadow mode data array. */
 extern PGMMODEDATASHW const g_aPgmShadowModeData[PGM_SHADOW_MODE_DATA_ARRAY_SIZE];
 
@@ -3031,11 +2994,7 @@ typedef struct PGMMODEDATABTH
 } PGMMODEDATABTH;
 
 /** The length of g_aPgmBothModeData. */
-#ifndef IN_RC
-# define PGM_BOTH_MODE_DATA_ARRAY_SIZE      ((PGM_TYPE_END     - PGM_TYPE_FIRST_SHADOW) * PGM_TYPE_END)
-#else
-# define PGM_BOTH_MODE_DATA_ARRAY_SIZE      ((PGM_TYPE_PAE + 1 - PGM_TYPE_FIRST_SHADOW) * PGM_TYPE_END)
-#endif
+#define PGM_BOTH_MODE_DATA_ARRAY_SIZE       ((PGM_TYPE_END     - PGM_TYPE_FIRST_SHADOW) * PGM_TYPE_END)
 /** The guest+shadow mode data array. */
 extern PGMMODEDATABTH const g_aPgmBothModeData[PGM_BOTH_MODE_DATA_ARRAY_SIZE];
 
@@ -3787,7 +3746,7 @@ typedef struct PGMCPU
     int32_t                         offPGM;
     uint32_t                        uPadding0;      /**< structure size alignment. */
 
-#if defined(VBOX_WITH_2X_4GB_ADDR_SPACE) || defined(VBOX_WITH_RAW_MODE)
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
     /** Automatically tracked physical memory mapping set.
      * Ring-0 and strict raw-mode builds. */
     PGMMAPSET                       AutoSet;
@@ -4034,15 +3993,6 @@ int             pgmHandlerPhysicalExDestroy(PVM pVM, PPGMPHYSHANDLER pHandler);
 void            pgmR3HandlerPhysicalUpdateAll(PVM pVM);
 bool            pgmHandlerPhysicalIsAll(PVM pVM, RTGCPHYS GCPhys);
 void            pgmHandlerPhysicalResetAliasedPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhysPage, bool fDoAccounting);
-#ifdef VBOX_WITH_RAW_MODE
-PPGMVIRTHANDLER pgmHandlerVirtualFindByPhysAddr(PVM pVM, RTGCPHYS GCPhys, unsigned *piPage);
-DECLCALLBACK(int) pgmHandlerVirtualResetOne(PAVLROGCPTRNODECORE pNode, void *pvUser);
-# if defined(VBOX_STRICT) || defined(LOG_ENABLED)
-void            pgmHandlerVirtualDumpPhysPages(PVM pVM);
-# else
-#  define pgmHandlerVirtualDumpPhysPages(a) do { } while (0)
-# endif
-#endif /* VBOX_WITH_RAW_MODE */
 DECLCALLBACK(void) pgmR3InfoHandlers(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 int             pgmR3InitSavedState(PVM pVM, uint64_t cbRam);
 
@@ -4100,7 +4050,7 @@ DECLCALLBACK(VBOXSTRICTRC) pgmR3PoolClearAllRendezvous(PVM pVM, PVMCPU pVCpu, vo
 void            pgmR3PoolWriteProtectPages(PVM pVM);
 
 #endif /* IN_RING3 */
-#if defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0) || defined(IN_RC)
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
 int             pgmRZDynMapHCPageCommon(PPGMMAPSET pSet, RTHCPHYS HCPhys, void **ppv RTLOG_COMMA_SRC_POS_DECL);
 int             pgmRZDynMapGCPageCommon(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, void **ppv RTLOG_COMMA_SRC_POS_DECL);
 # ifdef LOG_ENABLED

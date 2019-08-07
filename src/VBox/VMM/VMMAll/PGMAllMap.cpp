@@ -440,9 +440,7 @@ void pgmMapClearShadowPDEs(PVM pVM, PPGMPOOLPAGE pShwPageCR3, PPGMMAPPING pMap, 
 
     /* This only applies to raw mode where we only support 1 VCPU. */
     PVMCPU pVCpu = VMMGetCpu0(pVM);
-# ifdef IN_RC
-    Assert(pShwPageCR3 != pVCpu->pgm.s.CTX_SUFF(pShwPageCR3));
-# endif
+# error fixme
 
     PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
 

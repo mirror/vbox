@@ -35,9 +35,7 @@
 #include <VBox/log.h>
 #include <VBox/vmm/gmm.h>
 #include <VBox/vmm/hm.h>
-#ifndef IN_RC
-# include <VBox/vmm/nem.h>
-#endif
+#include <VBox/vmm/nem.h>
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/avl.h>
@@ -220,7 +218,7 @@ DECLINLINE(int) pgmRamGCPhys2HCPhys(PVM pVM, RTGCPHYS GCPhys, PRTHCPHYS pHCPhys)
     return VINF_SUCCESS;
 }
 
-#if defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0) || defined(IN_RC)
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
 
 /**
  * Inlined version of the ring-0 version of the host page mapping code
@@ -401,8 +399,6 @@ DECLINLINE(int) pgmRZDynMapGCPageOffInlined(PVMCPU pVCpu, RTGCPHYS GCPhys, void 
     return VINF_SUCCESS;
 }
 
-#endif /* VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 */
-#if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
 
 /**
  * Maps the page into current context (RC and maybe R0).
@@ -447,8 +443,7 @@ DECLINLINE(void *) pgmPoolMapPageV2Inlined(PVM pVM, PVMCPU pVCpu, PPGMPOOLPAGE p
     AssertFatalMsgFailed(("pgmPoolMapPageV2Inlined invalid page index %x\n", pPage->idx));
 }
 
-#endif /*  VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 || IN_RC */
-#ifndef IN_RC
+#endif /*  VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 */
 
 /**
  * Queries the Physical TLB entry for a physical guest page,
@@ -500,18 +495,18 @@ DECLINLINE(int) pgmPhysPageQueryTlbeWithPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS G
     {
         STAM_COUNTER_INC(&pVM->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,PageMapTlbHits));
         rc = VINF_SUCCESS;
-# if 0 //def VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-#  ifdef IN_RING3
+#if 0 //def VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
+# ifdef IN_RING3
         if (pTlbe->pv == (void *)pVM->pgm.s.pvZeroPgR0)
-#  else
+# else
         if (pTlbe->pv == (void *)pVM->pgm.s.pvZeroPgR3)
-#  endif
+# endif
             pTlbe->pv = pVM->pgm.s.CTX_SUFF(pvZeroPg);
-# endif
+#endif
         AssertPtr(pTlbe->pv);
-# ifndef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
+#ifndef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
         Assert(!pTlbe->pMap || RT_VALID_PTR(pTlbe->pMap->pv));
-# endif
+#endif
     }
     else
         rc = pgmPhysPageLoadIntoTlbWithPage(pVM, pPage, GCPhys);
@@ -552,7 +547,6 @@ DECL_FORCE_INLINE(uint32_t) pgmPhysPageCalcNemProtection(PPGMPAGE pPage, PGMPAGE
     return NEM_PAGE_PROT_NONE;
 }
 
-#endif /* !IN_RC */
 
 /**
  * Enables write monitoring for an allocated page.
@@ -585,7 +579,6 @@ DECLINLINE(void) pgmPhysPageWriteMonitor(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhy
             Assert(PGM_PAGE_GET_PDE_TYPE(pFirstPage) == PGM_PAGE_PDE_TYPE_PDE_DISABLED);
     }
 
-#ifndef IN_RC
     /* Tell NEM. */
     if (VM_IS_NEM_ENABLED(pVM))
     {
@@ -595,7 +588,6 @@ DECLINLINE(void) pgmPhysPageWriteMonitor(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhy
                                        pgmPhysPageCalcNemProtection(pPage, enmType), enmType, &u2State);
         PGM_PAGE_SET_NEM_STATE(pPage, u2State);
     }
-#endif
 }
 
 
@@ -869,7 +861,6 @@ DECLINLINE(PX86PDPAE) pgmGstGetPaePDPtr(PVMCPU pVCpu, RTGCPTR GCPtr, unsigned *p
     return pGuestPD;
 }
 
-#ifndef IN_RC
 
 /**
  * Gets the page map level-4 pointer for the guest.
@@ -1035,7 +1026,6 @@ DECLINLINE(PX86PDPAE) pgmGstGetLongModePDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, PX86
     return pPD;
 }
 
-#endif /* !IN_RC */
 
 /**
  * Gets the shadow page directory, 32-bit.
@@ -1182,7 +1172,6 @@ DECLINLINE(PX86PDEPAE) pgmShwGetPaePDEPtr(PVMCPU pVCpu, RTGCPTR GCPtr)
     return &pPde->a[iPd];
 }
 
-#ifndef IN_RC
 
 /**
  * Gets the shadow page map level-4 pointer.
@@ -1232,7 +1221,6 @@ DECLINLINE(PX86PML4E) pgmShwGetLongModePML4EPtr(PVMCPU pVCpu, unsigned int iPml4
     return &pShwPml4->a[iPml4];
 }
 
-#endif /* !IN_RC */
 
 /**
  * Cached physical handler lookup.
@@ -1287,12 +1275,12 @@ DECLINLINE(void) pgmTrackDerefGCPhys(PPGMPOOL pPool, PPGMPOOLPAGE pPoolPage, PPG
     /*
      * Just deal with the simple case here.
      */
-# ifdef VBOX_STRICT
+#ifdef VBOX_STRICT
     PVM pVM = pPool->CTX_SUFF(pVM); NOREF(pVM);
-# endif
-# ifdef LOG_ENABLED
+#endif
+#ifdef LOG_ENABLED
     const unsigned uOrg = PGM_PAGE_GET_TRACKING(pPhysPage);
-# endif
+#endif
     const unsigned cRefs = PGM_PAGE_GET_TD_CREFS(pPhysPage);
     if (cRefs == 1)
     {

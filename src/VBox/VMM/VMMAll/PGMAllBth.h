@@ -764,19 +764,6 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
             return rc;
         }
 
-#   if defined(LOG_ENABLED) && 0
-        RTGCPHYS   GCPhys2;
-        uint64_t   fPageGst2;
-        PGMGstGetPage(pVCpu, pvFault, &fPageGst2, &GCPhys2);
-#    if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
-        Log(("Page out of sync: %RGv eip=%08x PdeSrc.US=%d fPageGst2=%08llx GCPhys2=%RGp scan=%d\n",
-             pvFault, pRegFrame->eip, GstWalk.Pde.n.u1User, fPageGst2, GCPhys2, CSAMDoesPageNeedScanning(pVM, pRegFrame->eip)));
-#    else
-        Log(("Page out of sync: %RGv eip=%08x fPageGst2=%08llx GCPhys2=%RGp scan=%d\n",
-             pvFault, pRegFrame->eip, fPageGst2, GCPhys2, CSAMDoesPageNeedScanning(pVM, pRegFrame->eip)));
-#    endif
-#   endif /* LOG_ENABLED */
-
 #   if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
         rc = PGM_BTH_NAME(SyncPage)(pVCpu, GstWalk.Pde, pvFault, PGM_SYNC_NR_PAGES, uErr);
 #   else
@@ -2748,20 +2735,7 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RT
 
                     if (PteSrc.n.u1Present)
                     {
-# ifdef VBOX_WITH_RAW_MODE_NOT_R0
-                        /*
-                         * Assuming kernel code will be marked as supervisor - and not as user level
-                         * and executed using a conforming code selector - And marked as readonly.
-                         * Also assume that if we're monitoring a page, it's of no interest to CSAM.
-                         */
-                        PPGMPAGE pPage;
-                        if (    ((PdeSrc.u & pPTSrc->a[iPTSrc].u) & (X86_PTE_RW | X86_PTE_US))
-                            ||  !CSAMDoesPageNeedScanning(pVM, GCPtrCur)
-                            ||  (   (pPage = pgmPhysGetPage(pVM, GST_GET_PTE_GCPHYS(PteSrc)))
-                                 &&  PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage))
-                           )
-# endif
-                            PGM_BTH_NAME(SyncPageWorker)(pVCpu, &pPTDst->a[iPTDst], PdeSrc, PteSrc, pShwPage, iPTDst);
+                        PGM_BTH_NAME(SyncPageWorker)(pVCpu, &pPTDst->a[iPTDst], PdeSrc, PteSrc, pShwPage, iPTDst);
                         Log2(("SyncPT:   4K+ %RGv PteSrc:{P=%d RW=%d U=%d raw=%08llx}%s dst.raw=%08llx iPTSrc=%x PdeSrc.u=%x physpte=%RGp\n",
                               GCPtrCur,
                               PteSrc.n.u1Present,
@@ -3332,18 +3306,6 @@ PGM_BTH_DECL(int, VerifyAccessSyncPage)(PVMCPU pVCpu, RTGCPTR GCPtrPage, unsigne
        || PGM_GST_TYPE == PGM_TYPE_AMD64 ) \
     && !PGM_TYPE_IS_NESTED_OR_EPT(PGM_SHW_TYPE) \
     && PGM_SHW_TYPE != PGM_TYPE_NONE
-
-# ifdef VBOX_WITH_RAW_MODE_NOT_R0
-    if (!(fPage & X86_PTE_US))
-    {
-        /*
-         * Mark this page as safe.
-         */
-        /** @todo not correct for pages that contain both code and data!! */
-        Log(("CSAMMarkPage %RGv; scanned=%d\n", GCPtrPage, true));
-        CSAMMarkPage(pVM, GCPtrPage, true);
-    }
-# endif
 
     /*
      * Get guest PD and index.
