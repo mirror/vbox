@@ -38,7 +38,7 @@
 
 const ULONG iPeriod = 1;
 const int iMaximumQueueSize = 100;
-const int iMetricSetupCount = 1;
+const int iMetricSetupCount = 10;
 
 /*********************************************************************************************************************************
 *   UIChart definition.                                                                                     *
@@ -57,6 +57,18 @@ public:
     void setTextList(const QStringList &textList);
     const QStringList &textList() const;
 
+    bool drawPieChart() const;
+    void setDrawPieChart(bool fDrawPieChart);
+
+    bool useGradientLineColor() const;
+    void setUseGradientLineColor(bool fUseGradintLineColor);
+
+    QColor dataSeriesColor(int iDataSeriesIndex);
+    void setDataSeriesColor(int iDataSeriesIndex, const QColor &color);
+
+    QString dataSeriesLabel(int iDataSeriesIndex);
+    void setDataSeriesLabel(int iDataSeriesIndex, const QString &strLabel);
+
 protected:
 
     virtual void paintEvent(QPaintEvent *pEvent) /* override */;
@@ -71,7 +83,10 @@ protected:
     QStringList m_textList;
     int m_iPieChartSize;
     QRect m_pieChartRect;
-
+    bool m_fDrawPieChart;
+    bool m_fUseGradientLineColor;
+    QColor m_dataSeriesColor[2];
+    QString m_dataSeriesLabel[2];
 };
 
 
@@ -83,6 +98,9 @@ UIChart::UIChart(QWidget *pParent, const UISubMetric *pSubMetric)
     :QWidget(pParent)
     , m_pSubMetric(pSubMetric)
     , m_size(QSize(50, 50))
+    , m_fDrawPieChart(true)
+    , m_fUseGradientLineColor(true)
+    , m_dataSeriesColor({Qt::red, Qt::blue})
 {
     m_iMargin = qApp->QApplication::style()->pixelMetric(QStyle::PM_LayoutTopMargin);
     m_iPieChartSize = 1.5f * qApp->style()->pixelMetric(QStyle::PM_LargeIconSize);
@@ -109,6 +127,67 @@ void UIChart::setTextList(const QStringList &textList)
 const QStringList &UIChart::textList() const
 {
     return m_textList;
+}
+
+bool UIChart::drawPieChart() const
+{
+    return m_fDrawPieChart;
+}
+
+void UIChart::setDrawPieChart(bool fDrawPieChart)
+{
+    if (m_fDrawPieChart == fDrawPieChart)
+        return;
+    m_fDrawPieChart = fDrawPieChart;
+    update();
+}
+
+bool UIChart::useGradientLineColor() const
+{
+    return m_fUseGradientLineColor;
+}
+
+void UIChart::setUseGradientLineColor(bool fUseGradintLineColor)
+{
+    if (m_fUseGradientLineColor == fUseGradintLineColor)
+        return;
+    m_fUseGradientLineColor = fUseGradintLineColor;
+    update();
+}
+
+
+QColor UIChart::dataSeriesColor(int iDataSeriesIndex)
+{
+    if (iDataSeriesIndex >= 2)
+        return QColor();
+    return m_dataSeriesColor[iDataSeriesIndex];
+}
+
+void UIChart::setDataSeriesColor(int iDataSeriesIndex, const QColor &color)
+{
+    if (iDataSeriesIndex >= 2)
+        return;
+    if (m_dataSeriesColor[iDataSeriesIndex] == color)
+        return;
+    m_dataSeriesColor[iDataSeriesIndex] = color;
+    update();
+}
+
+QString UIChart::dataSeriesLabel(int iDataSeriesIndex)
+{
+    if (iDataSeriesIndex >= 2)
+        return QString();
+    return m_dataSeriesLabel[iDataSeriesIndex];
+}
+
+void UIChart::setDataSeriesLabel(int iDataSeriesIndex, const QString &strLabel)
+{
+    if (iDataSeriesIndex >= 2)
+        return;
+    if (m_dataSeriesLabel[iDataSeriesIndex] == strLabel)
+        return;
+    m_dataSeriesLabel[iDataSeriesIndex] = strLabel;
+    update();
 }
 
 QSize UIChart::minimumSizeHint() const
@@ -145,101 +224,111 @@ void UIChart::paintEvent(QPaintEvent *pEvent)
 {
     Q_UNUSED(pEvent);
     QPainter painter(this);
+    painter.setRenderHint(QPainter::Antialiasing);
 
+    /* Draw a rectanglar grid over which we will draw the line graphs: */
     float fChartHeight = height() - 2 * m_iMargin;
     float fChartWidth = width() - 2 * m_iMargin;
     painter.setPen(QColor(120, 120, 120));
     painter.drawRect(QRect(m_iMargin, m_iMargin, fChartWidth, fChartHeight));
     painter.setPen(QColor(200, 200, 200));
-
     int iYParts = 4;
     for (int i = 1; i < iYParts; ++i)
         painter.drawLine(m_iMargin, m_iMargin + i *fChartHeight / (float)iYParts, width() - m_iMargin, m_iMargin + i * fChartHeight / (float)iYParts);
-
-
     int iXParts = 5;
     for (int i = 1; i < iXParts; ++i)
         painter.drawLine(m_iMargin + i * fChartWidth / (float)iXParts, m_iMargin, m_iMargin + i * fChartWidth / (float)iXParts, height() - m_iMargin);
 
-    painter.setRenderHint(QPainter::Antialiasing);
-    if (!m_pSubMetric)
-        return;
-    const QQueue<ULONG> &data = m_pSubMetric->data();
 
-    if (data.isEmpty() || iMaximumQueueSize == 0)
-        return;
-
-    float fMaximum = m_pSubMetric->maximum();
-    if (m_pSubMetric->isPercentage())
-        fMaximum = 100.f;
-    if (fMaximum == 0)
-        return;
-
-    if (isEnabled())
-    {
-        float fBarWidth = fChartWidth / (float) iMaximumQueueSize;
-
-        float fH = fChartHeight / fMaximum;
-
-        QLinearGradient gradient(0, 0, 0, fChartHeight);
-        gradient.setColorAt(1.0, Qt::green);
-        gradient.setColorAt(0.0, Qt::red);
-        painter.setPen(QPen(gradient, 2.5));
-
-        for (int i = 0; i < data.size() - 1; ++i)
-        {
-            int j = i + 1;
-
-            float fHeight = fH * data[i];
-            float fX = width() - ((data.size() -i) * fBarWidth);
-
-            float fHeight2 = fH * data[j];
-            float fX2 = width() - ((data.size() -j) * fBarWidth);
-
-
-            QLineF bar(fX, height() - (fHeight + m_iMargin), fX2, height() - (fHeight2 + m_iMargin));
-            painter.drawLine(bar);
-        }
-    }
-
-    /* Draw a whole non-filled circle: */
-    painter.setPen(QPen(Qt::gray, 1));
-    painter.drawArc(m_pieChartRect, 0, 3600 * 16);
-
-    QPointF center(m_pieChartRect.center());
-    QPainterPath fillPath;
-    fillPath.moveTo(center);
-
-    fillPath.arcTo(m_pieChartRect, 90/*startAngle*/,
-                 -1 * 360 /*sweepLength*/);
-
-    /* First draw a white filled circle and that the arc for data: */
-    QConicalGradient pieGradient;
-    pieGradient.setCenter(m_pieChartRect.center());
-    pieGradient.setAngle(90);
-    pieGradient.setColorAt(0, Qt::red);
-    pieGradient.setColorAt(1, Qt::green);
-
-    painter.setPen(Qt::NoPen);
-    painter.setBrush(Qt::white);
-    painter.drawPath(fillPath);
-
-    if (isEnabled())
-    {
-        QPainterPath dataPath;
-        dataPath.moveTo(center);
-        float fAngle = 360.f * data.back() / fMaximum;
-        dataPath.arcTo(m_pieChartRect, 90/*startAngle*/,
-                       -1 * fAngle /*sweepLength*/);
-        painter.setBrush(pieGradient);
-        painter.drawPath(dataPath);
-    }
-    else
+    /* Draw a half-transparent rectangle over the whole widget to indicate the it is disabled: */
+    if (!isEnabled())
     {
         painter.setPen(Qt::NoPen);
         painter.setBrush(QColor(60, 60, 60, 50));
         painter.drawRect(QRect(0, 0, width(), height()));
     }
+
+    if (!m_pSubMetric || iMaximumQueueSize <= 0)
+        return;
+
+    ULONG iMaximum = m_pSubMetric->maximum();
+    if (m_pSubMetric->isPercentage())
+        iMaximum = 100;
+    if (iMaximum == 0)
+        return;
+
+    if (isEnabled())
+    {
+        float fBarWidth = fChartWidth / (float) iMaximumQueueSize;
+        float fH = fChartHeight / (float)iMaximum;
+        if (m_fUseGradientLineColor)
+        {
+            QLinearGradient gradient(0, 0, 0, fChartHeight);
+            gradient.setColorAt(1.0, Qt::green);
+            gradient.setColorAt(0.0, Qt::red);
+            painter.setPen(QPen(gradient, 2.5));
+        }
+        for (int k = 0; k < 2; ++k)
+        {
+            const QQueue<ULONG> *data = m_pSubMetric->data(k);
+            if (!m_fUseGradientLineColor)
+                painter.setPen(QPen(m_dataSeriesColor[k], 2.5));
+
+            for (int i = 0; i < data->size() - 1; ++i)
+            {
+                int j = i + 1;
+                float fHeight = fH * data->at(i);
+                float fX = width() - ((data->size() -i) * fBarWidth);
+                float fHeight2 = fH * data->at(j);
+                float fX2 = width() - ((data->size() -j) * fBarWidth);
+                QLineF bar(fX, height() - (fHeight + m_iMargin), fX2, height() - (fHeight2 + m_iMargin));
+                painter.drawLine(bar);
+            }
+        }
+    }
+
+    if (m_fDrawPieChart)
+    {
+        /* Draw a whole non-filled circle: */
+        painter.setPen(QPen(Qt::gray, 1));
+        painter.drawArc(m_pieChartRect, 0, 3600 * 16);
+
+        QPointF center(m_pieChartRect.center());
+        QPainterPath fillPath;
+        fillPath.moveTo(center);
+
+        fillPath.arcTo(m_pieChartRect, 90/*startAngle*/,
+                       -1 * 360 /*sweepLength*/);
+
+        /* First draw a white filled circle and that the arc for data: */
+        QConicalGradient pieGradient;
+        pieGradient.setCenter(m_pieChartRect.center());
+        pieGradient.setAngle(90);
+        pieGradient.setColorAt(0, Qt::red);
+        pieGradient.setColorAt(1, Qt::green);
+
+        painter.setPen(Qt::NoPen);
+        painter.setBrush(Qt::white);
+        painter.drawPath(fillPath);
+
+        if (isEnabled())
+        {
+            /* Draw the pie chart for the 0th data series only: */
+            const QQueue<ULONG> *data = m_pSubMetric->data(0);
+            if (data && !data->isEmpty())
+            {
+                QPainterPath dataPath;
+                dataPath.moveTo(center);
+                float fAngle = 360.f * data->back() / (float)iMaximum;
+                dataPath.arcTo(m_pieChartRect, 90/*startAngle*/,
+                               -1 * fAngle /*sweepLength*/);
+                painter.setBrush(pieGradient);
+                painter.drawPath(dataPath);
+            }
+        }
+    }
+
+
 }
 
 /*********************************************************************************************************************************
@@ -249,11 +338,12 @@ void UIChart::paintEvent(QPaintEvent *pEvent)
 UISubMetric::UISubMetric(const QString &strName, const QString &strUnit, int iMaximumQueueSize)
     : m_strName(strName)
     , m_strUnit(strUnit)
+    , m_iMaximum(0)
     , m_iMaximumQueueSize(iMaximumQueueSize)
     , m_fRequiresGuestAdditions(false)
 {
     if (isPercentage())
-        m_fMaximum = 100.f;
+        m_iMaximum = 100;
 }
 
 UISubMetric::UISubMetric()
@@ -266,34 +356,14 @@ const QString &UISubMetric::name() const
     return m_strName;
 }
 
-void UISubMetric::setMaximum(float fMaximum)
+void UISubMetric::setMaximum(ULONG iMaximum)
 {
-    m_fMaximum = fMaximum;
+    m_iMaximum = iMaximum;
 }
 
-float UISubMetric::maximum() const
+ULONG UISubMetric::maximum() const
 {
-    return m_fMaximum;
-}
-
-void UISubMetric::setMinimum(float fMinimum)
-{
-    m_fMinimum = fMinimum;
-}
-
-float UISubMetric::minimum() const
-{
-    return m_fMinimum;
-}
-
-void UISubMetric::setAverage(float fAverage)
-{
-    m_fAverage = fAverage;
-}
-
-float UISubMetric::average() const
-{
-    return m_fAverage;
+    return m_iMaximum;
 }
 
 void UISubMetric::setUnit(QString strUnit)
@@ -306,16 +376,20 @@ const QString &UISubMetric::unit() const
     return m_strUnit;
 }
 
-void UISubMetric::addData(ULONG fData)
+void UISubMetric::addData(int iDataSeriesIndex, ULONG fData)
 {
-    m_data.enqueue(fData);
-    if (m_data.size() > iMaximumQueueSize)
-        m_data.dequeue();
+    if (iDataSeriesIndex >= 2)
+        return;
+    m_data[iDataSeriesIndex].enqueue(fData);
+    if (m_data[iDataSeriesIndex].size() > iMaximumQueueSize)
+        m_data[iDataSeriesIndex].dequeue();
 }
 
-const QQueue<ULONG> &UISubMetric::data() const
+const QQueue<ULONG> *UISubMetric::data(int iDataSeriesIndex) const
 {
-    return m_data;
+    if (iDataSeriesIndex >= 2)
+        return 0;
+    return &m_data[iDataSeriesIndex];
 }
 
 bool UISubMetric::isPercentage() const
@@ -346,6 +420,8 @@ UIPerformanceMonitor::UIPerformanceMonitor(QWidget *pParent, const CMachine &mac
     , m_pTimer(0)
     , m_strCPUMetricName("CPU Load")
     , m_strRAMMetricName("RAM Usage")
+    , m_strDiskMetricName("Disk Usage")
+    , m_strNetMetricName("Net")
 {
     if (!m_console.isNull())
         m_comGuest = m_console.GetGuest();
@@ -376,21 +452,31 @@ void UIPerformanceMonitor::prepareObjects()
         m_pTimer->start(1000 * iPeriod);
     }
 
+    QStringList chartOder;
+    chartOder << m_strCPUMetricName << m_strRAMMetricName << m_strDiskMetricName << m_strNetMetricName;
     int iRow = 0;
-    for (QMap<QString, UISubMetric>::const_iterator iterator =  m_subMetrics.begin();
-         iterator != m_subMetrics.end(); ++iterator)
+    foreach (const QString &strMetricName, chartOder)
     {
+        if (!m_subMetrics.contains(strMetricName))
+            continue;
         QLabel *pLabel = new QLabel;
+        pLabel->setAlignment(Qt::AlignLeft | Qt::AlignTop);
         m_pMainLayout->addWidget(pLabel, iRow, 0);
-        m_infoLabels.insert(iterator.key(), pLabel);
+        m_infoLabels.insert(strMetricName, pLabel);
 
-        UIChart *pChart = new UIChart(this, &(iterator.value()));
-        m_charts.insert(iterator.key(), pChart);
+        UIChart *pChart = new UIChart(this, &(m_subMetrics[strMetricName]));
+        m_charts.insert(strMetricName, pChart);
         pChart->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
         m_pMainLayout->addWidget(pChart, iRow, 1);
         ++iRow;
     }
 
+    /* Configure charts: */
+    if (m_charts.contains(m_strNetMetricName) && m_charts[m_strNetMetricName])
+    {
+        m_charts[m_strNetMetricName]->setDrawPieChart(false);
+        m_charts[m_strNetMetricName]->setUseGradientLineColor(false);
+    }
     QWidget *bottomSpacerWidget = new QWidget(this);
     bottomSpacerWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
     bottomSpacerWidget->setVisible(true);
@@ -429,96 +515,50 @@ void UIPerformanceMonitor::sltTimeout()
                                                                      aReturnDataLengths);
     quint64 iTotalRAM = 0;
     quint64 iFreeRAM = 0;
+    ULONG iReceiveRate = 0;
+    ULONG  iTransmitRate = 0;
 
     for (int i = 0; i < aReturnNames.size(); ++i)
     {
         if (aReturnDataLengths[i] == 0)
             continue;
-
-        float fData = 0;
-        if (aReturnScales[i] == 1)
-            fData = returnData[aReturnDataIndices[i] + aReturnDataLengths[i] - 1];
-        else
-            fData = returnData[aReturnDataIndices[i] + aReturnDataLengths[i] - 1] / (float)aReturnScales[i];
-
-        if (aReturnNames[i].contains("RAM", Qt::CaseInsensitive))
+        if (aReturnNames[i].contains("Disk"), Qt::CaseInsensitive)
+            printf("%f\n", 22.2);
+        /* Read the last of the return data disregarding the rest since we are caching the data in GUI side: */
+        float fData = returnData[aReturnDataIndices[i] + aReturnDataLengths[i] - 1] / (float)aReturnScales[i];
+        if (aReturnNames[i].contains("RAM", Qt::CaseInsensitive) && !aReturnNames[i].contains(":"))
         {
             if (aReturnNames[i].contains("Total", Qt::CaseInsensitive))
-            {
-                if (aReturnNames[i].contains(":"))
-                    continue;
-                else
-                {
-                    iTotalRAM = (quint64)fData;
-                    continue;
-                }
-            }
+                iTotalRAM = (quint64)fData;
             if (aReturnNames[i].contains("Free", Qt::CaseInsensitive))
-            {
-                if (aReturnNames[i].contains(":"))
-                    continue;
-                else
-                {
-                    iFreeRAM = (quint64)fData;
-                    continue;
-                }
-
-            }
+                iFreeRAM = (quint64)fData;
+        }
+        else if (aReturnNames[i].contains("Net/Rate", Qt::CaseInsensitive) && !aReturnNames[i].contains(":"))
+        {
+            if (aReturnNames[i].contains("Rx", Qt::CaseInsensitive))
+                iReceiveRate = fData;
+            if (aReturnNames[i].contains("Tx", Qt::CaseInsensitive))
+                iTransmitRate = fData;
         }
     }
 
+    (void)iReceiveRate;
+    (void)iTransmitRate;
     /* Update the CPU load chart with values we get from IMachineDebugger::getCPULoad(..): */
     if (m_subMetrics.contains(m_strCPUMetricName))
     {
-        UISubMetric &CPUMetric = m_subMetrics[m_strCPUMetricName];
         ULONG aPctExecuting;
         ULONG aPctHalted;
         ULONG aPctOther;
         m_machineDebugger.GetCPULoad(0x7fffffff, aPctExecuting, aPctHalted, aPctOther);
-        CPUMetric.addData(aPctExecuting);
-        QList<UIChart*> charts = m_charts.values(m_strCPUMetricName);
-
-        if (m_infoLabels.contains(m_strCPUMetricName) && m_infoLabels[m_strCPUMetricName])
-        {
-            if (m_infoLabels[m_strCPUMetricName]->isEnabled())
-            {
-                QString strInfo = QString("%1\n%2%3").arg("CPU Load").arg(QString::number(aPctExecuting)).arg("%");
-                m_infoLabels[m_strCPUMetricName]->setText(strInfo);
-            }
-            else
-            {
-                QString strInfo = QString("%1\n%2%3").arg("CPU Load").arg("--").arg("%");
-                m_infoLabels[m_strCPUMetricName]->setText(strInfo);
-            }
-        }
-        if (m_charts.contains(m_strCPUMetricName))
-            m_charts[m_strCPUMetricName]->update();
+        updateCPUGraphsAndMetric(aPctExecuting);
     }
 
     if (m_subMetrics.contains(m_strRAMMetricName))
-    {
-        UISubMetric &RAMMetric = m_subMetrics[m_strRAMMetricName];
-        RAMMetric.setMaximum(iTotalRAM);
-        RAMMetric.addData(iTotalRAM - iFreeRAM);
+        updateRAMGraphsAndMetric(iTotalRAM, iFreeRAM);
+    if (m_subMetrics.contains(m_strNetMetricName))
+        updateNewGraphsAndMetric(iReceiveRate, iTransmitRate);
 
-        if (m_infoLabels.contains(m_strRAMMetricName)  && m_infoLabels[m_strRAMMetricName])
-        {
-            if (m_infoLabels[m_strRAMMetricName]->isEnabled())
-            {
-                QString strInfo = QString("%1\n%2: %3\n%4: %5\n%6: %7").arg("RAM Usage").arg("Total").arg(uiCommon().formatSize(_1K * iTotalRAM)).arg("Free:").arg(uiCommon().formatSize(_1K * (iFreeRAM))).arg("Used:").arg(uiCommon().formatSize(_1K * (iTotalRAM - iFreeRAM)));
-                m_infoLabels[m_strRAMMetricName]->setText(strInfo);
-            }
-            else
-            {
-                QString strInfo = QString("%1\n%2: %3\n%4: %5\n%6: %7").arg("RAM Usage").arg("Total").arg("---").arg("Free").arg("---").arg("Used").arg("---");
-                m_infoLabels[m_strRAMMetricName]->setText(strInfo);
-            }
-        }
-        if (m_charts.contains(m_strRAMMetricName))
-        {
-            m_charts[m_strRAMMetricName]->update();
-        }
-    }
 }
 
 void UIPerformanceMonitor::sltGuestAdditionsStateChange()
@@ -540,10 +580,10 @@ void UIPerformanceMonitor::preparePerformaceCollector()
 
     // m_nameList << "Guest/RAM/Usage*";
     m_nameList << "Guest/RAM/Usage*";
-    // m_nameList << "Disk*";
+    m_nameList << "Net/Rate*";
 
-    m_nameList << "*";
-      m_objectList = QVector<CUnknown>(m_nameList.size(), CUnknown());
+
+    m_objectList = QVector<CUnknown>(m_nameList.size(), CUnknown());
     m_performanceMonitor.SetupMetrics(m_nameList, m_objectList, iPeriod, iMetricSetupCount);
     {
         QVector<CPerformanceMetric> metrics = m_performanceMonitor.GetMetrics(m_nameList, m_objectList);
@@ -554,10 +594,15 @@ void UIPerformanceMonitor::preparePerformaceCollector()
             {
                 if (strName.contains("RAM", Qt::CaseInsensitive) && strName.contains("Free", Qt::CaseInsensitive))
                 {
-                    QString strRAMMetricName(m_strRAMMetricName);
-                    UISubMetric newMetric(strRAMMetricName, metrics[i].GetUnit(), iMaximumQueueSize);
+                    UISubMetric newMetric(m_strRAMMetricName, metrics[i].GetUnit(), iMaximumQueueSize);
                     newMetric.setRequiresGuestAdditions(true);
-                    m_subMetrics.insert(strRAMMetricName, newMetric);
+                    m_subMetrics.insert(m_strRAMMetricName, newMetric);
+                }
+                else if (strName.contains("Net", Qt::CaseInsensitive))
+                {
+                    UISubMetric newMetric(m_strNetMetricName, metrics[i].GetUnit(), iMaximumQueueSize);
+                    newMetric.setRequiresGuestAdditions(true);
+                    m_subMetrics.insert(m_strNetMetricName, newMetric);
                 }
             }
         }
@@ -603,4 +648,68 @@ void UIPerformanceMonitor::enableDisableGuestAdditionDependedWidgets(bool fEnabl
         }
     }
 }
+
+void UIPerformanceMonitor::updateCPUGraphsAndMetric(ULONG iLoadPercentage)
+{
+    UISubMetric &CPUMetric = m_subMetrics[m_strCPUMetricName];
+    CPUMetric.addData(0, iLoadPercentage);
+    if (m_infoLabels.contains(m_strCPUMetricName) && m_infoLabels[m_strCPUMetricName])
+    {
+        QString strInfo;
+        if (m_infoLabels[m_strCPUMetricName]->isEnabled())
+            strInfo = QString("%1\n%2%3").arg("CPU Load").arg(QString::number(iLoadPercentage)).arg("%");
+        else
+            strInfo = QString("%1\n%2%3").arg("CPU Load").arg("--").arg("%");
+        m_infoLabels[m_strCPUMetricName]->setText(strInfo);
+    }
+    if (m_charts.contains(m_strCPUMetricName))
+        m_charts[m_strCPUMetricName]->update();
+}
+
+void UIPerformanceMonitor::updateRAMGraphsAndMetric(quint64 iTotalRAM, quint64 iFreeRAM)
+{
+    UISubMetric &RAMMetric = m_subMetrics[m_strRAMMetricName];
+    RAMMetric.setMaximum(iTotalRAM);
+    RAMMetric.addData(0, iTotalRAM - iFreeRAM);
+    if (m_infoLabels.contains(m_strRAMMetricName)  && m_infoLabels[m_strRAMMetricName])
+    {
+        QString strInfo;
+        if (m_infoLabels[m_strRAMMetricName]->isEnabled())
+            strInfo = QString("%1\n%2: %3\n%4: %5\n%6: %7").arg("RAM Usage").arg("Total").arg(uiCommon().formatSize(_1K * iTotalRAM))
+                .arg("Free:").arg(uiCommon().formatSize(_1K * (iFreeRAM)))
+                .arg("Used:").arg(uiCommon().formatSize(_1K * (iTotalRAM - iFreeRAM)));
+        else
+            strInfo = QString("%1\n%2: %3\n%4: %5\n%6: %7").arg("RAM Usage").arg("Total").arg("---").arg("Free").arg("---").arg("Used").arg("---");
+        m_infoLabels[m_strRAMMetricName]->setText(strInfo);
+    }
+    if (m_charts.contains(m_strRAMMetricName))
+        m_charts[m_strRAMMetricName]->update();
+}
+
+void UIPerformanceMonitor::updateNewGraphsAndMetric(ULONG iReceiveRate, ULONG iTransmitRate)
+{
+   UISubMetric &NetMetric = m_subMetrics[m_strNetMetricName];
+
+   NetMetric.addData(0, iReceiveRate);
+   NetMetric.addData(1, iTransmitRate);
+
+   ULONG iMaximum = qMax(NetMetric.maximum(), (ULONG)qMax(iReceiveRate, iTransmitRate));
+   NetMetric.setMaximum(iMaximum);
+
+    if (m_infoLabels.contains(m_strNetMetricName)  && m_infoLabels[m_strNetMetricName])
+    {
+        QString strInfo;
+        if (m_infoLabels[m_strNetMetricName]->isEnabled())
+            strInfo = QString("%1\n%2: %3\n%4: %5\n%6: %7").arg("Network").arg("Receive").arg(uiCommon().formatSize((quint64)iReceiveRate))
+                .arg("Transmit:").arg(uiCommon().formatSize((quint64)iTransmitRate))
+                .arg("Maximum:").arg(uiCommon().formatSize((quint64)iMaximum));
+        else
+            strInfo = QString("%1\n%2: %3\n%4: %5\n%6: %7").arg("Network").arg("Receieve").arg("---").arg("Transmit").arg("---");
+        m_infoLabels[m_strNetMetricName]->setText(strInfo);
+    }
+   if (m_charts.contains(m_strNetMetricName))
+       m_charts[m_strNetMetricName]->update();
+
+}
+
 #include "UIPerformanceMonitor.moc"

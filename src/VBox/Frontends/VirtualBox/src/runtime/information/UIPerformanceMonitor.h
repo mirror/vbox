@@ -53,20 +53,14 @@ public:
     UISubMetric();
     const QString &name() const;
 
-    void setMaximum(float fMaximum);
-    float maximum() const;
-
-    void setMinimum(float fMinimum);
-    float minimum() const;
-
-    void setAverage(float fAverage);
-    float average() const;
+    void setMaximum(ULONG iMaximum);
+    ULONG maximum() const;
 
     void setUnit(QString strUnit);
     const QString &unit() const;
 
-    void addData(ULONG fData);
-    const QQueue<ULONG> &data() const;
+    void addData(int iDataSeriesIndex, ULONG fData);
+    const QQueue<ULONG> *data(int iDataSeriesIndex) const;
 
     bool isPercentage() const;
 
@@ -77,10 +71,8 @@ private:
 
     QString m_strName;
     QString m_strUnit;
-    float m_fMaximum;
-    float m_fMinimum;
-    float m_fAverage;
-    QQueue<ULONG> m_data;
+    ULONG m_iMaximum;
+    QQueue<ULONG> m_data[2];
     int m_iMaximumQueueSize;
     bool m_fRequiresGuestAdditions;
 };
@@ -109,6 +101,10 @@ private:
     void preparePerformaceCollector();
     bool guestAdditionsAvailable(int iMinimumMajorVersion);
     void enableDisableGuestAdditionDependedWidgets(bool fEnable);
+    void updateCPUGraphsAndMetric(ULONG iLoadPercentage);
+    void updateRAMGraphsAndMetric(quint64 iTotalRAM, quint64 iFreeRAM);
+    void updateNewGraphsAndMetric(ULONG iReceiveRate, ULONG iTransmitRate);
+
     bool m_fGuestAdditionsAvailable;
     /** Holds the machine instance. */
     CMachine m_machine;
@@ -131,7 +127,8 @@ private:
 
     QString m_strCPUMetricName;
     QString m_strRAMMetricName;
-
+    QString m_strDiskMetricName;
+    QString m_strNetMetricName;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_runtime_information_UIPerformanceMonitor_h */
