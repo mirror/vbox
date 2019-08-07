@@ -79,10 +79,10 @@ typedef enum IOPERFTEST
     IOPERFTEST_FIRST_WRITE,
     IOPERFTEST_SEQ_READ,
     IOPERFTEST_SEQ_WRITE,
-    IOPERFTEST_RND_READ,
-    IOPERFTEST_RND_WRITE,
     IOPERFTEST_REV_READ,
     IOPERFTEST_REV_WRITE,
+    IOPERFTEST_RND_READ,
+    IOPERFTEST_RND_WRITE,
     IOPERFTEST_SEQ_READWRITE,
     IOPERFTEST_RND_READWRITE,
     /** Special shutdown test which lets the workers exit, must be LAST. */
@@ -173,6 +173,8 @@ typedef struct IOPERFJOB
     uint8_t                     *pbRandWrite;
     /** Size of the random write buffer in 512 byte blocks. */
     uint32_t                    cRandWriteBlocks512B;
+    /** Start timestamp. */
+    uint64_t                    tsStart;
     /** Test dependent data. */
     union
     {
@@ -278,7 +280,8 @@ static uint64_t     g_cbTestSet    = _2G;
 static size_t       g_cbIoBlock    = _4K;
 /** Maximum number of concurrent requests for each job. */
 static uint32_t     g_cReqsMax     = 16;
-
+/** Flag whether to open the file without caching enabled. */
+static bool         g_fNoCache     = true;
 
 /** @name Configured tests, this must match the IOPERFTEST order.
  * @{ */
@@ -289,10 +292,10 @@ static IOPERFTEST   g_aenmTests[] =
     IOPERFTEST_FIRST_WRITE,
     IOPERFTEST_SEQ_READ,
     IOPERFTEST_SEQ_WRITE,
-    IOPERFTEST_RND_READ,
-    IOPERFTEST_RND_WRITE,
     IOPERFTEST_REV_READ,
     IOPERFTEST_REV_WRITE,
+    IOPERFTEST_RND_READ,
+    IOPERFTEST_RND_WRITE,
     IOPERFTEST_SEQ_READWRITE,
     IOPERFTEST_RND_READWRITE,
     IOPERFTEST_SHUTDOWN
@@ -330,7 +333,7 @@ static IOPERFTEST ioPerfJobTestSelectNext()
 
     AssertReturn(g_idxTest < RT_ELEMENTS(g_aenmTests), IOPERFTEST_SHUTDOWN);
 
-    return g_aenmTests[g_idxTest];
+    return g_aenmTests[g_idxTest++];
 }
 
 
@@ -385,9 +388,14 @@ static uint64_t ioPerfJobTestGetOffsetNext(PIOPERFJOB pJob)
             offNext = pJob->Tst.offNextSeq;
             pJob->Tst.offNextSeq += pJob->cbIoBlock;
             break;
-
         case IOPERFTEST_REV_WRITE:
         case IOPERFTEST_REV_READ:
+            offNext = pJob->Tst.offNextSeq;
+            if (pJob->Tst.offNextSeq == 0)
+                pJob->Tst.offNextSeq = pJob->cbTestSet;
+            else
+                pJob->Tst.offNextSeq -= pJob->cbIoBlock;
+            break;
         case IOPERFTEST_RND_WRITE:
         case IOPERFTEST_RND_READ:
         case IOPERFTEST_SEQ_READWRITE:
@@ -447,6 +455,43 @@ static void ioPerfJobTestReqInit(PIOPERFJOB pJob, PIOPERFREQ pIoReq)
 
 
 /**
+ * Returns a stringified version of the test given.
+ *
+ * @returns Pointer to string representation of the test.
+ * @param   enmTest             The test to stringify.
+ */
+static const char *ioPerfJobTestStringify(IOPERFTEST enmTest)
+{
+    switch (enmTest)
+    {
+        case IOPERFTEST_FIRST_WRITE:
+            return "FirstWrite";
+        case IOPERFTEST_SEQ_WRITE:
+            return "SequentialWrite";
+        case IOPERFTEST_SEQ_READ:
+            return "SequentialRead";
+        case IOPERFTEST_REV_WRITE:
+            return "ReverseWrite";
+        case IOPERFTEST_REV_READ:
+            return "ReverseRead";
+        case IOPERFTEST_RND_WRITE:
+            return "RandomWrite";
+        case IOPERFTEST_RND_READ:
+            return "RandomRead";
+        case IOPERFTEST_SEQ_READWRITE:
+            return "SequentialReadWrite";
+        case IOPERFTEST_RND_READWRITE:
+            return "RandomReadWrite";
+        default:
+            AssertMsgFailed(("Invalid/unknown test selected: %d\n", enmTest));
+            break;
+    }
+
+    return "INVALID_TEST";
+}
+
+
+/**
  * Initializes the test state for the current test.
  *
  * @returns IPRT status code.
@@ -461,9 +506,10 @@ static int ioPerfJobTestInit(PIOPERFJOB pJob)
         case IOPERFTEST_SEQ_READ:
             pJob->Tst.offNextSeq = 0;
             break;
-
         case IOPERFTEST_REV_WRITE:
         case IOPERFTEST_REV_READ:
+            pJob->Tst.offNextSeq = pJob->cbTestSet - pJob->cbIoBlock;
+            break;
         case IOPERFTEST_RND_WRITE:
         case IOPERFTEST_RND_READ:
         case IOPERFTEST_SEQ_READWRITE:
@@ -475,6 +521,8 @@ static int ioPerfJobTestInit(PIOPERFJOB pJob)
             break;
     }
 
+    RTTestISub(ioPerfJobTestStringify(pJob->enmTest));
+    pJob->tsStart = RTTimeNanoTS();
     return VINF_SUCCESS;
 }
 
@@ -487,15 +535,18 @@ static int ioPerfJobTestInit(PIOPERFJOB pJob)
  */
 static void ioPerfJobTestFinish(PIOPERFJOB pJob)
 {
+    uint64_t nsRuntime = RTTimeNanoTS() - pJob->tsStart;
+    RTTestIValue("Runtime", nsRuntime, RTTESTUNIT_NS);
+
     switch (pJob->enmTest)
     {
         case IOPERFTEST_FIRST_WRITE:
         case IOPERFTEST_SEQ_WRITE:
         case IOPERFTEST_SEQ_READ:
-            break; /* Nothing to do. */
-
         case IOPERFTEST_REV_WRITE:
         case IOPERFTEST_REV_READ:
+            break; /* Nothing to do. */
+
         case IOPERFTEST_RND_WRITE:
         case IOPERFTEST_RND_READ:
         case IOPERFTEST_SEQ_READWRITE:
@@ -521,10 +572,9 @@ static bool ioPerfJobTestIsDone(PIOPERFJOB pJob)
         case IOPERFTEST_FIRST_WRITE:
         case IOPERFTEST_SEQ_WRITE:
         case IOPERFTEST_SEQ_READ:
-            return pJob->Tst.offNextSeq == pJob->cbTestSet;
-
         case IOPERFTEST_REV_WRITE:
         case IOPERFTEST_REV_READ:
+            return pJob->Tst.offNextSeq == pJob->cbTestSet;
         case IOPERFTEST_RND_WRITE:
         case IOPERFTEST_RND_READ:
         case IOPERFTEST_SEQ_READWRITE:
@@ -563,16 +613,18 @@ static int ioPerfJobTestIoLoop(PIOPERFJOB pJob)
             {
                 PIOPERFREQ pReq = &pJob->paIoReqs[cReqsQueued];
                 ioPerfJobTestReqInit(pJob, pReq);
-                rc = RTIoQueueRequestPrepare(pJob->hIoQueue, &pJob->Hnd, pReq->enmOp,
-                                             pReq->offXfer, pReq->pvXfer, pReq->cbXfer, 0 /*fReqFlags*/,
-                                             pReq);
+                RTTESTI_CHECK_RC(RTIoQueueRequestPrepare(pJob->hIoQueue, &pJob->Hnd, pReq->enmOp,
+                                                         pReq->offXfer, pReq->pvXfer, pReq->cbXfer, 0 /*fReqFlags*/,
+                                                         pReq), VINF_SUCCESS);
                 cReqsQueued++;
             }
 
             /* Commit the prepared requests. */
             if (   RT_SUCCESS(rc)
                 && cReqsQueued)
-                rc = RTIoQueueCommit(pJob->hIoQueue);
+            {
+                RTTESTI_CHECK_RC(RTIoQueueCommit(pJob->hIoQueue), VINF_SUCCESS);
+            }
 
             /* Enter wait loop and process completed requests. */
             while (   RT_SUCCESS(rc)
@@ -580,8 +632,8 @@ static int ioPerfJobTestIoLoop(PIOPERFJOB pJob)
             {
                 uint32_t cCEvtCompleted = 0;
 
-                rc = RTIoQueueEvtWait(pJob->hIoQueue, paIoQCEvt, pJob->cReqsMax, 1 /*cMinWait*/,
-                                      &cCEvtCompleted, 0 /*fFlags*/);
+                RTTESTI_CHECK_RC(RTIoQueueEvtWait(pJob->hIoQueue, paIoQCEvt, pJob->cReqsMax, 1 /*cMinWait*/,
+                                                  &cCEvtCompleted, 0 /*fFlags*/), VINF_SUCCESS);
                 if (RT_SUCCESS(rc))
                 {
                     uint32_t cReqsThisQueued = 0;
@@ -599,9 +651,9 @@ static int ioPerfJobTestIoLoop(PIOPERFJOB pJob)
                             if (!ioPerfJobTestIsDone(pJob))
                             {
                                 ioPerfJobTestReqInit(pJob, pReq);
-                                rc = RTIoQueueRequestPrepare(pJob->hIoQueue, &pJob->Hnd, pReq->enmOp,
-                                                             pReq->offXfer, pReq->pvXfer, pReq->cbXfer, 0 /*fReqFlags*/,
-                                                             pReq);
+                                RTTESTI_CHECK_RC(RTIoQueueRequestPrepare(pJob->hIoQueue, &pJob->Hnd, pReq->enmOp,
+                                                                         pReq->offXfer, pReq->pvXfer, pReq->cbXfer, 0 /*fReqFlags*/,
+                                                                         pReq), VINF_SUCCESS);
                                 cReqsThisQueued++;
                             }
                             else
@@ -611,7 +663,9 @@ static int ioPerfJobTestIoLoop(PIOPERFJOB pJob)
 
                     if (   cReqsThisQueued
                         && RT_SUCCESS(rc))
-                        rc = RTIoQueueCommit(pJob->hIoQueue);
+                    {
+                        RTTESTI_CHECK_RC(RTIoQueueCommit(pJob->hIoQueue), VINF_SUCCESS);
+                    }
                 }
             }
 
@@ -779,7 +833,10 @@ static int ioPerfJobInit(PIOPERFJOB pJob, PIOPERFMASTER pMaster, uint32_t idJob,
             pJob->pszFilename = RTStrAPrintf2("%sioperf-%u.file", pszTestDir, idJob);
             if (RT_LIKELY(pJob->pszFilename))
             {
-                rc = RTFileOpen(&pJob->Hnd.u.hFile, pJob->pszFilename, RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_NONE | RTFILE_O_READWRITE);
+                uint32_t fOpen = RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_NONE | RTFILE_O_READWRITE | RTFILE_O_ASYNC_IO;
+                if (g_fNoCache)
+                    fOpen |= RTFILE_O_NO_CACHE;
+                rc = RTFileOpen(&pJob->Hnd.u.hFile, pJob->pszFilename, fOpen);
                 if (RT_SUCCESS(rc))
                 {
                     switch (enmPrepMethod)
