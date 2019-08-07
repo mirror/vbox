@@ -59,12 +59,35 @@
 #define VIRTIOSCSI_REGION_PORT_IO                   1
 #define VIRTIOSCSI_REGION_PCI_CAP                   2
 
-#define MATCH_SCSI_CONFIG(member) \
-    ((int)uOffset >= RT_OFFSETOF(VIRTIO_SCSI_CONFIG_T, member) \
-        &&  uOffset < (uint32_t)(RT_OFFSETOF(VIRTIO_SCSI_CONFIG_T, member) \
-                               + RT_SIZEOFMEMB(VIRTIO_SCSI_CONFIG_T, member)) \
-        &&   cb <= RT_SIZEOFMEMB(VIRTIO_SCSI_CONFIG_T, member) \
-                  - (uOffset - RT_OFFSETOF(VIRTIO_SCSI_CONFIG_T, member)))
+
+
+/**
+ * This macro resolves to boolean true if uOffset matches a field offset and size exactly,
+ * (or if it is a 64-bit field, if it accesses either 32-bit part as a 32-bit access)
+ * ASSUMED this critereon is mandated by section 4.1.3.1 of the VirtIO 1.0 specification)
+ *
+ * @param   member   - Member of VIRTIO_PCI_COMMON_CFG_T
+ * @param   uOffset  - Implied parameter: Offset into VIRTIO_PCI_COMMON_CFG_T
+ * @param   cb       - Implied parameter: Number of bytes to access
+ * @result           - true or false
+ */
+#define VIRTIO_1_0__SECT_4_1_3_1__COMPLIANT
+#ifdef VIRTIO_1_0__SECT_4_1_3_1__COMPLIANT
+#   define MATCH_SCSI_CONFIG(member) \
+            (RT_SIZEOFMEMB(VIRTIO_SCSI_CONFIG_T, member) == 64 \
+             && (   uOffset == RT_OFFSETOF(VIRTIO_SCSI_CONFIG_T, member) \
+                 || uOffset == RT_OFFSETOF(VIRTIO_SCSI_CONFIG_T, member) + sizeof(uint32_t)) \
+             && cb == sizeof(uint32_t)) \
+         || (uOffset == RT_OFFSETOF(VIRTIO_SCSI_CONFIG_T, member) \
+               && cb == RT_SIZEOFMEMB(VIRTIO_SCSI_CONFIG_T, member))
+#else
+#   define MATCH_SCSI_CONFIG(member) \
+        ((int)uOffset >= RT_OFFSETOF(VIRTIO_SCSI_CONFIG_T, member) \
+            &&  uOffset < (uint32_t)(RT_OFFSETOF(VIRTIO_SCSI_CONFIG_T, member) \
+                                   + RT_SIZEOFMEMB(VIRTIO_SCSI_CONFIG_T, member)) \
+            &&   cb <= RT_SIZEOFMEMB(VIRTIO_SCSI_CONFIG_T, member) \
+                      - (uOffset - RT_OFFSETOF(VIRTIO_SCSI_CONFIG_T, member)))
+#endif
 
 #define LOG_ACCESSOR(member) \
         virtioLogMappedIoValue(__FUNCTION__, #member, pv, cb, uMemberOffset, fWrite, false, 0);
