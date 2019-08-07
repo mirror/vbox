@@ -1116,7 +1116,6 @@ typedef PPGMPAGE *PPPGMPAGE;
 #define PGM_PAGE_HAS_ACTIVE_PHYSICAL_HANDLERS(a_pPage) \
     ( PGM_PAGE_GET_HNDL_PHYS_STATE(a_pPage) >= PGM_PAGE_HNDL_PHYS_STATE_WRITE )
 
-
 /**
  * Checks if the page has any access handlers, including temporarily disabled ones.
  * @returns true/false
