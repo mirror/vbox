@@ -659,9 +659,9 @@ void UIPerformanceMonitor::updateCPUGraphsAndMetric(ULONG iLoadPercentage)
     {
         QString strInfo;
         if (m_infoLabels[m_strCPUMetricName]->isEnabled())
-            strInfo = QString("%1\n%2%3").arg("CPU Load").arg(QString::number(iLoadPercentage)).arg("%");
+            strInfo = QString("<b>%1</b><br/>%2%3").arg("CPU Load").arg(QString::number(iLoadPercentage)).arg("%");
         else
-            strInfo = QString("%1\n%2%3").arg("CPU Load").arg("--").arg("%");
+            strInfo = QString("<b>%1</b><br/>%2%3").arg("CPU Load").arg("--").arg("%");
         m_infoLabels[m_strCPUMetricName]->setText(strInfo);
     }
     if (m_charts.contains(m_strCPUMetricName))
@@ -677,11 +677,11 @@ void UIPerformanceMonitor::updateRAMGraphsAndMetric(quint64 iTotalRAM, quint64 i
     {
         QString strInfo;
         if (m_infoLabels[m_strRAMMetricName]->isEnabled())
-            strInfo = QString("%1\n%2: %3\n%4: %5\n%6: %7").arg("RAM Usage").arg("Total").arg(uiCommon().formatSize(_1K * iTotalRAM))
+            strInfo = QString("<b>%1</b><br/>%2: %3<br/>%4: %5<br/>%6: %7").arg("RAM Usage").arg("Total").arg(uiCommon().formatSize(_1K * iTotalRAM))
                 .arg("Free:").arg(uiCommon().formatSize(_1K * (iFreeRAM)))
                 .arg("Used:").arg(uiCommon().formatSize(_1K * (iTotalRAM - iFreeRAM)));
         else
-            strInfo = QString("%1\n%2: %3\n%4: %5\n%6: %7").arg("RAM Usage").arg("Total").arg("---").arg("Free").arg("---").arg("Used").arg("---");
+            strInfo = QString("<b>%1</b><br/>%2: %3<br/>%4: %5<br/>%6: %7").arg("RAM Usage").arg("Total").arg("---").arg("Free").arg("---").arg("Used").arg("---");
         m_infoLabels[m_strRAMMetricName]->setText(strInfo);
     }
     if (m_charts.contains(m_strRAMMetricName))
@@ -702,11 +702,12 @@ void UIPerformanceMonitor::updateNewGraphsAndMetric(ULONG iReceiveRate, ULONG iT
     {
         QString strInfo;
         if (m_infoLabels[m_strNetMetricName]->isEnabled())
-            strInfo = QString("%1\n%2: %3\n%4: %5\n%6: %7").arg("Network").arg("Receive").arg(uiCommon().formatSize((quint64)iReceiveRate))
+            strInfo = QString("<b>%1</b></b><br/><font color=\"#FF0000\">%2: %3</font><br/><font color=\"#0000FF\">%4: %5</font><br/>%6: %7").arg("Network")
+                .arg("Receive").arg(uiCommon().formatSize((quint64)iReceiveRate))
                 .arg("Transmit:").arg(uiCommon().formatSize((quint64)iTransmitRate))
                 .arg("Maximum:").arg(uiCommon().formatSize((quint64)iMaximum));
         else
-            strInfo = QString("%1\n%2: %3\n%4: %5\n%6: %7").arg("Network").arg("Receieve").arg("---").arg("Transmit").arg("---");
+            strInfo = QString("<b>%1</b><br/>%2: %3<br/>%4: %5<br/>%6: %7").arg("Network").arg("Receieve").arg("---").arg("Transmit").arg("---");
         m_infoLabels[m_strNetMetricName]->setText(strInfo);
     }
    if (m_charts.contains(m_strNetMetricName))
