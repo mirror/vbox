@@ -173,6 +173,8 @@ typedef struct IOPERFJOB
     uint8_t                     *pbRandWrite;
     /** Size of the random write buffer in 512 byte blocks. */
     uint32_t                    cRandWriteBlocks512B;
+    /** Chance in percent to get a write. */
+    unsigned                    uWriteChance;
     /** Start timestamp. */
     uint64_t                    tsStart;
     /** Test dependent data. */
@@ -180,6 +182,16 @@ typedef struct IOPERFJOB
     {
         /** Sequential read write. */
         uint64_t                offNextSeq;
+        /** Data for random acess. */
+        struct
+        {
+            /** Number of valid entries in the bitmap. */
+            uint32_t cBlocks;
+            /** Pointer to the bitmap marking accessed blocks. */
+            uint8_t *pbMapAccessed;
+            /** Number of unaccessed blocks. */
+            uint32_t cBlocksLeft;
+        } Rnd;
     } Tst;
 } IOPERFJOB;
 /** Pointer to an I/O Perf job. */
@@ -282,6 +294,8 @@ static size_t       g_cbIoBlock    = _4K;
 static uint32_t     g_cReqsMax     = 16;
 /** Flag whether to open the file without caching enabled. */
 static bool         g_fNoCache     = true;
+/** Write chance for mixed read/write tests. */
+static unsigned     g_uWriteChance = 50;
 
 /** @name Configured tests, this must match the IOPERFTEST order.
  * @{ */
@@ -357,10 +371,14 @@ static RTIOQUEUEOP ioPerfJobTestGetIoQOp(PIOPERFJOB pJob)
         case IOPERFTEST_RND_READ:
         case IOPERFTEST_REV_READ:
             return RTIOQUEUEOP_READ;
+
         case IOPERFTEST_SEQ_READWRITE:
         case IOPERFTEST_RND_READWRITE:
-            AssertMsgFailed(("Not implemented!\n"));
-            break;
+        {
+            uint32_t uRnd = RTRandAdvU32Ex(pJob->hRand, 0, 100);
+            return (uRnd < pJob->uWriteChance) ? RTIOQUEUEOP_WRITE : RTIOQUEUEOP_READ;
+        }
+
         default:
             AssertMsgFailed(("Invalid/unknown test selected: %d\n", pJob->enmTest));
             break;
@@ -385,6 +403,7 @@ static uint64_t ioPerfJobTestGetOffsetNext(PIOPERFJOB pJob)
         case IOPERFTEST_FIRST_WRITE:
         case IOPERFTEST_SEQ_WRITE:
         case IOPERFTEST_SEQ_READ:
+        case IOPERFTEST_SEQ_READWRITE:
             offNext = pJob->Tst.offNextSeq;
             pJob->Tst.offNextSeq += pJob->cbIoBlock;
             break;
@@ -398,10 +417,38 @@ static uint64_t ioPerfJobTestGetOffsetNext(PIOPERFJOB pJob)
             break;
         case IOPERFTEST_RND_WRITE:
         case IOPERFTEST_RND_READ:
-        case IOPERFTEST_SEQ_READWRITE:
         case IOPERFTEST_RND_READWRITE:
-            AssertMsgFailed(("Not implemented!\n"));
+        {
+            int idx = -1;
+
+            idx = ASMBitFirstClear(pJob->Tst.Rnd.pbMapAccessed, pJob->Tst.Rnd.cBlocks);
+
+            /* In case this is the last request we don't need to search further. */
+            if (pJob->Tst.Rnd.cBlocksLeft > 1)
+            {
+                int idxIo;
+                idxIo = RTRandAdvU32Ex(pJob->hRand, idx, pJob->Tst.Rnd.cBlocks - 1);
+
+                /*
+                 * If the bit is marked free use it, otherwise search for the next free bit
+                 * and if that doesn't work use the first free bit.
+                 */
+                if (ASMBitTest(pJob->Tst.Rnd.pbMapAccessed, idxIo))
+                {
+                    idxIo = ASMBitNextClear(pJob->Tst.Rnd.pbMapAccessed, pJob->Tst.Rnd.cBlocks, idxIo);
+                    if (idxIo != -1)
+                        idx = idxIo;
+                }
+                else
+                    idx = idxIo;
+            }
+
+            Assert(idx != -1);
+            offNext = (uint64_t)idx * pJob->cbIoBlock;
+            pJob->Tst.Rnd.cBlocksLeft--;
+            ASMBitSet(pJob->Tst.Rnd.pbMapAccessed, idx);
             break;
+        }
         default:
             AssertMsgFailed(("Invalid/unknown test selected: %d\n", pJob->enmTest));
             break;
@@ -499,11 +546,14 @@ static const char *ioPerfJobTestStringify(IOPERFTEST enmTest)
  */
 static int ioPerfJobTestInit(PIOPERFJOB pJob)
 {
+    int rc = VINF_SUCCESS;
+
     switch (pJob->enmTest)
     {
         case IOPERFTEST_FIRST_WRITE:
         case IOPERFTEST_SEQ_WRITE:
         case IOPERFTEST_SEQ_READ:
+        case IOPERFTEST_SEQ_READWRITE:
             pJob->Tst.offNextSeq = 0;
             break;
         case IOPERFTEST_REV_WRITE:
@@ -512,10 +562,19 @@ static int ioPerfJobTestInit(PIOPERFJOB pJob)
             break;
         case IOPERFTEST_RND_WRITE:
         case IOPERFTEST_RND_READ:
-        case IOPERFTEST_SEQ_READWRITE:
         case IOPERFTEST_RND_READWRITE:
-            AssertMsgFailed(("Not implemented!\n"));
+        {
+            pJob->Tst.Rnd.cBlocks = (uint32_t)(  pJob->cbTestSet / pJob->cbIoBlock
+                                               + (pJob->cbTestSet % pJob->cbIoBlock ? 1 : 0));
+            pJob->Tst.Rnd.cBlocksLeft = pJob->Tst.Rnd.cBlocks;
+            pJob->Tst.Rnd.pbMapAccessed = (uint8_t *)RTMemAllocZ(   pJob->Tst.Rnd.cBlocks / 8
+                                                                 +    ((pJob->Tst.Rnd.cBlocks % 8)
+                                                                    ? 1
+                                                                    : 0));
+            if (!pJob->Tst.Rnd.pbMapAccessed)
+                rc = VERR_NO_MEMORY;
             break;
+        }
         default:
             AssertMsgFailed(("Invalid/unknown test selected: %d\n", pJob->enmTest));
             break;
@@ -523,7 +582,7 @@ static int ioPerfJobTestInit(PIOPERFJOB pJob)
 
     RTTestISub(ioPerfJobTestStringify(pJob->enmTest));
     pJob->tsStart = RTTimeNanoTS();
-    return VINF_SUCCESS;
+    return rc;
 }
 
 
@@ -545,13 +604,13 @@ static void ioPerfJobTestFinish(PIOPERFJOB pJob)
         case IOPERFTEST_SEQ_READ:
         case IOPERFTEST_REV_WRITE:
         case IOPERFTEST_REV_READ:
+        case IOPERFTEST_SEQ_READWRITE:
             break; /* Nothing to do. */
 
         case IOPERFTEST_RND_WRITE:
         case IOPERFTEST_RND_READ:
-        case IOPERFTEST_SEQ_READWRITE:
         case IOPERFTEST_RND_READWRITE:
-            AssertMsgFailed(("Not implemented!\n"));
+            RTMemFree(pJob->Tst.Rnd.pbMapAccessed);
             break;
         default:
             AssertMsgFailed(("Invalid/unknown test selected: %d\n", pJob->enmTest));
@@ -574,12 +633,12 @@ static bool ioPerfJobTestIsDone(PIOPERFJOB pJob)
         case IOPERFTEST_SEQ_READ:
         case IOPERFTEST_REV_WRITE:
         case IOPERFTEST_REV_READ:
+        case IOPERFTEST_SEQ_READWRITE:
             return pJob->Tst.offNextSeq == pJob->cbTestSet;
         case IOPERFTEST_RND_WRITE:
         case IOPERFTEST_RND_READ:
-        case IOPERFTEST_SEQ_READWRITE:
         case IOPERFTEST_RND_READWRITE:
-            AssertMsgFailed(("Not implemented!\n"));
+            return pJob->Tst.Rnd.cBlocksLeft == 0;
             break;
         default:
             AssertMsgFailed(("Invalid/unknown test selected: %d\n", pJob->enmTest));
@@ -711,18 +770,21 @@ static int ioPerfJobSync(PIOPERFJOB pJob)
 static int ioPerfJobWorkLoop(PIOPERFJOB pJob)
 {
     int rc = VINF_SUCCESS;
-    bool fShutdown = false;
 
-    do
+    for (;;)
     {
         /* Synchronize with the other jobs and the master. */
         rc = ioPerfJobSync(pJob);
         if (RT_FAILURE(rc))
             break;
 
+        if (pJob->enmTest == IOPERFTEST_SHUTDOWN)
+            break;
+
         rc = ioPerfJobTestIoLoop(pJob);
-    } while (   RT_SUCCESS(rc)
-             && !fShutdown);
+        if (RT_FAILURE(rc))
+            break;
+    }
 
     return rc;
 }
@@ -775,6 +837,11 @@ static int ioPerfJobTestSetPrep(PIOPERFJOB pJob)
                         rc = RTFileWriteAt(pJob->Hnd.u.hFile, off, pvWrite, pJob->cbIoBlock, NULL);
                     }
                 }
+
+                if (RT_SUCCESS(rc))
+                    return rc;
+
+                RTMemPageFree(pJob->pbRandWrite, IOPERF_RAND_DATA_BUF_FACTOR * pJob->cbIoBlock);
             }
         }
         RTRandAdvDestroy(pJob->hRand);
@@ -797,11 +864,13 @@ static int ioPerfJobTestSetPrep(PIOPERFJOB pJob)
  * @param   cbTestSet           Size of the test set ofr this job.
  * @param   cbIoBlock           I/O block size for the given job.
  * @param   cReqsMax            Maximum number of concurrent requests for this job.
+ * @param   uWriteChance        The write chance for mixed read/write tests.
  */
 static int ioPerfJobInit(PIOPERFJOB pJob, PIOPERFMASTER pMaster, uint32_t idJob,
                          const char *pszIoEngine, const char *pszTestDir,
                          IOPERFTESTSETPREP enmPrepMethod,
-                         uint64_t cbTestSet, size_t cbIoBlock, uint32_t cReqsMax)
+                         uint64_t cbTestSet, size_t cbIoBlock, uint32_t cReqsMax,
+                         unsigned uWriteChance)
 {
     pJob->pMaster        = pMaster;
     pJob->idJob          = idJob;
@@ -812,6 +881,7 @@ static int ioPerfJobInit(PIOPERFJOB pJob, PIOPERFMASTER pMaster, uint32_t idJob,
     pJob->cbIoBlock      = cbIoBlock;
     pJob->cReqsMax       = cReqsMax;
     pJob->cbIoReqReadBuf = cReqsMax * cbIoBlock;
+    pJob->uWriteChance   = uWriteChance;
 
     int rc = VINF_SUCCESS;
     pJob->paIoReqs = (PIOPERFREQ)RTMemAllocZ(cReqsMax * sizeof(IOPERFREQ));
@@ -945,7 +1015,8 @@ static int ioPerfDoTestSingle(void)
 
     int rc = ioPerfJobInit(&Job, NULL, 0, g_pszIoEngine,
                            g_szDir, IOPERFTESTSETPREP_SET_SZ,
-                           g_cbTestSet, g_cbIoBlock, g_cReqsMax);
+                           g_cbTestSet, g_cbIoBlock, g_cReqsMax,
+                           g_uWriteChance);
     if (RT_SUCCESS(rc))
     {
         rc = ioPerfJobWorkLoop(&Job);
