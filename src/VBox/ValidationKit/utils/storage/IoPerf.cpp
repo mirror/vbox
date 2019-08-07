@@ -109,12 +109,25 @@ typedef enum IOPERFTESTSETPREP
 
 
 /**
+ * Statistics values for a single request kept around until the
+ * test completed for statistics collection.
+ */
+typedef struct IOPERFREQSTAT
+{
+    /** Start timestamp for the request. */
+    uint64_t                    tsStart;
+    /** Completion timestamp for the request. */
+    uint64_t                    tsComplete;
+} IOPERFREQSTAT;
+/** Pointer to a request statistics record. */
+typedef IOPERFREQSTAT *PIOPERFREQSTAT;
+
+
+/**
  * I/O perf request.
  */
 typedef struct IOPERFREQ
 {
-    /** Start timestamp. */
-    uint64_t                    tsStart;
     /** Request operation code. */
     RTIOQUEUEOP                 enmOp;
     /** Start offset. */
@@ -127,6 +140,8 @@ typedef struct IOPERFREQ
     void                        *pvXferRead;
     /** Size of the read buffer. */
     size_t                      cbXferRead;
+    /** Pointer to statistics record. */
+    PIOPERFREQSTAT              pStats;
 } IOPERFREQ;
 /** Pointer to an I/O perf request. */
 typedef IOPERFREQ *PIOPERFREQ;
@@ -177,6 +192,14 @@ typedef struct IOPERFJOB
     unsigned                    uWriteChance;
     /** Start timestamp. */
     uint64_t                    tsStart;
+    /** End timestamp. for the job. */
+    uint64_t                    tsFinish;
+    /** Number of request statistic records. */
+    uint32_t                    cReqStats;
+    /** Index of the next free statistics record to use. */
+    uint32_t                    idxReqStatNext;
+    /** Array of request statisc records for the whole test. */
+    PIOPERFREQSTAT              paReqStats;
     /** Test dependent data. */
     union
     {
@@ -497,7 +520,14 @@ static void ioPerfJobTestReqInit(PIOPERFJOB pJob, PIOPERFREQ pIoReq)
     else /* Flush */
         pIoReq->pvXfer = NULL;
 
-    pIoReq->tsStart = RTTimeNanoTS();
+    Assert(pJob->idxReqStatNext < pJob->cReqStats);
+    if (RT_LIKELY(pJob->idxReqStatNext < pJob->cReqStats))
+    {
+        pIoReq->pStats = &pJob->paReqStats[pJob->idxReqStatNext++];
+        pIoReq->pStats->tsStart = RTTimeNanoTS();
+    }
+    else
+        pIoReq->pStats = NULL;
 }
 
 
@@ -548,6 +578,8 @@ static int ioPerfJobTestInit(PIOPERFJOB pJob)
 {
     int rc = VINF_SUCCESS;
 
+    pJob->idxReqStatNext = 0;
+
     switch (pJob->enmTest)
     {
         case IOPERFTEST_FIRST_WRITE:
@@ -594,8 +626,7 @@ static int ioPerfJobTestInit(PIOPERFJOB pJob)
  */
 static void ioPerfJobTestFinish(PIOPERFJOB pJob)
 {
-    uint64_t nsRuntime = RTTimeNanoTS() - pJob->tsStart;
-    RTTestIValue("Runtime", nsRuntime, RTTESTUNIT_NS);
+    pJob->tsFinish = RTTimeNanoTS();
 
     switch (pJob->enmTest)
     {
@@ -706,7 +737,9 @@ static int ioPerfJobTestIoLoop(PIOPERFJOB pJob)
                         {
                             Assert(paIoQCEvt[i].cbXfered == pReq->cbXfer);
 
-                            /** @todo Statistics collection. */
+                            if (pReq->pStats)
+                                pReq->pStats->tsComplete = RTTimeNanoTS();
+
                             if (!ioPerfJobTestIsDone(pJob))
                             {
                                 ioPerfJobTestReqInit(pJob, pReq);
@@ -718,6 +751,8 @@ static int ioPerfJobTestIoLoop(PIOPERFJOB pJob)
                             else
                                 cReqsQueued--;
                         }
+                        else
+                            RTTestIErrorInc();
                     }
 
                     if (   cReqsThisQueued
@@ -735,6 +770,48 @@ static int ioPerfJobTestIoLoop(PIOPERFJOB pJob)
     }
 
     return rc;
+}
+
+
+/**
+ * Calculates the statistic values for the given job after a
+ * test finished.
+ *
+ * @returns nothing.
+ * @param   pJob                The job data.
+ */
+static void ioPerfJobStats(PIOPERFJOB pJob)
+{
+    uint64_t nsJobRuntime = pJob->tsFinish - pJob->tsStart;
+    RTTestIValueF(nsJobRuntime, RTTESTUNIT_NS, "Job/%RU32/Runtime", pJob->idJob);
+
+    uint64_t *paReqRuntimeNs = (uint64_t *)RTMemAllocZ(pJob->cReqStats * sizeof(uint64_t));
+    if (RT_LIKELY(paReqRuntimeNs))
+    {
+        /* Calculate runtimes for each request first. */
+        for (uint32_t i = 0; i < pJob->cReqStats; i++)
+        {
+            PIOPERFREQSTAT pStat = &pJob->paReqStats[i];
+            paReqRuntimeNs[i] = pStat->tsComplete - pStat->tsStart;
+        }
+
+        /* Get average bandwidth for the job. */
+        RTTestIValueF((uint64_t)(pJob->cbTestSet / ((double)nsJobRuntime / RT_NS_1SEC)),
+                       RTTESTUNIT_BYTES_PER_SEC, "Job/%RU32/AvgBandwidth", pJob->idJob);
+
+        RTTestIValueF((uint64_t)(pJob->cReqStats / ((double)nsJobRuntime / RT_NS_1SEC)),
+                       RTTESTUNIT_OCCURRENCES_PER_SEC, "Job/%RU32/AvgIops", pJob->idJob);
+
+        /* Calculate the average latency for the requests. */
+        uint64_t uLatency = 0;
+        for (uint32_t i = 0; i < pJob->cReqStats; i++)
+            uLatency += paReqRuntimeNs[i];
+        RTTestIValueF(uLatency / pJob->cReqStats, RTTESTUNIT_NS, "Job/%RU32/AvgLatency", pJob->idJob);
+
+        RTMemFree(paReqRuntimeNs);
+    }
+    else
+        RTTestIErrorInc();
 }
 
 
@@ -784,6 +861,14 @@ static int ioPerfJobWorkLoop(PIOPERFJOB pJob)
         rc = ioPerfJobTestIoLoop(pJob);
         if (RT_FAILURE(rc))
             break;
+
+        /*
+         * Do the statistics here for a single job run,
+         * the master will do this for each job and combined statistics
+         * otherwise.
+         */
+        if (!pJob->pMaster)
+            ioPerfJobStats(pJob);
     }
 
     return rc;
@@ -882,96 +967,110 @@ static int ioPerfJobInit(PIOPERFJOB pJob, PIOPERFMASTER pMaster, uint32_t idJob,
     pJob->cReqsMax       = cReqsMax;
     pJob->cbIoReqReadBuf = cReqsMax * cbIoBlock;
     pJob->uWriteChance   = uWriteChance;
+    pJob->cReqStats      = (uint32_t)(pJob->cbTestSet / pJob->cbIoBlock + ((pJob->cbTestSet % pJob->cbIoBlock) ? 1 : 0));
+    pJob->idxReqStatNext = 0;
 
     int rc = VINF_SUCCESS;
     pJob->paIoReqs = (PIOPERFREQ)RTMemAllocZ(cReqsMax * sizeof(IOPERFREQ));
     if (RT_LIKELY(pJob->paIoReqs))
     {
-        pJob->pvIoReqReadBuf = RTMemPageAlloc(pJob->cbIoReqReadBuf);
-        if (RT_LIKELY(pJob->pvIoReqReadBuf))
+        pJob->paReqStats = (PIOPERFREQSTAT)RTMemAllocZ(pJob->cReqStats * sizeof(IOPERFREQSTAT));
+        if (RT_LIKELY(pJob->paReqStats))
         {
-            uint8_t *pbReadBuf = (uint8_t *)pJob->pvIoReqReadBuf;
-
-            for (uint32_t i = 0; i < cReqsMax; i++)
+            pJob->pvIoReqReadBuf = RTMemPageAlloc(pJob->cbIoReqReadBuf);
+            if (RT_LIKELY(pJob->pvIoReqReadBuf))
             {
-                pJob->paIoReqs[i].pvXferRead = pbReadBuf;
-                pJob->paIoReqs[i].cbXferRead = cbIoBlock;
-                pbReadBuf += cbIoBlock;
-            }
+                uint8_t *pbReadBuf = (uint8_t *)pJob->pvIoReqReadBuf;
 
-            /* Create the file. */
-            pJob->pszFilename = RTStrAPrintf2("%sioperf-%u.file", pszTestDir, idJob);
-            if (RT_LIKELY(pJob->pszFilename))
-            {
-                uint32_t fOpen = RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_NONE | RTFILE_O_READWRITE | RTFILE_O_ASYNC_IO;
-                if (g_fNoCache)
-                    fOpen |= RTFILE_O_NO_CACHE;
-                rc = RTFileOpen(&pJob->Hnd.u.hFile, pJob->pszFilename, fOpen);
-                if (RT_SUCCESS(rc))
+                for (uint32_t i = 0; i < cReqsMax; i++)
                 {
-                    switch (enmPrepMethod)
-                    {
-                        case IOPERFTESTSETPREP_JUST_CREATE:
-                            break;
-                        case IOPERFTESTSETPREP_SET_SZ:
-                            rc = RTFileSetSize(pJob->Hnd.u.hFile, pJob->cbTestSet);
-                            break;
-                        case IOPERFTESTSETPREP_SET_ALLOC_SZ:
-                            rc = RTFileSetAllocationSize(pJob->Hnd.u.hFile, pJob->cbTestSet, RTFILE_ALLOC_SIZE_F_DEFAULT);
-                            break;
-                        default:
-                            AssertMsgFailed(("Invalid file preparation method: %d\n", enmPrepMethod));
-                    }
-
-                    if (RT_SUCCESS(rc))
-                    {
-                        rc = ioPerfJobTestSetPrep(pJob);
-                        if (RT_SUCCESS(rc))
-                        {
-                            /* Create I/O queue. */
-                            PCRTIOQUEUEPROVVTABLE pIoQProv = NULL;
-                            if (!pszIoEngine)
-                                pIoQProv = RTIoQueueProviderGetBestForHndType(RTHANDLETYPE_FILE);
-                            else
-                                pIoQProv = RTIoQueueProviderGetById(pszIoEngine);
-
-                            if (RT_LIKELY(pIoQProv))
-                            {
-                                rc = RTIoQueueCreate(&pJob->hIoQueue, pIoQProv, 0 /*fFlags*/, cReqsMax, cReqsMax);
-                                if (RT_SUCCESS(rc))
-                                {
-                                    rc = RTIoQueueHandleRegister(pJob->hIoQueue, &pJob->Hnd);
-                                    if (RT_SUCCESS(rc))
-                                    {
-                                        /* Spin up the worker thread. */
-                                        if (pMaster)
-                                            rc = RTThreadCreateF(&pJob->hThread, ioPerfJobThread, pJob, 0,
-                                                                 RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "ioperf-%u", idJob);
-
-                                        if (RT_SUCCESS(rc))
-                                            return VINF_SUCCESS;
-                                    }
-                                }
-                            }
-                            else
-                                rc = VERR_NOT_SUPPORTED;
-                        }
-
-                        RTRandAdvDestroy(pJob->hRand);
-                    }
-
-                    RTFileClose(pJob->Hnd.u.hFile);
-                    RTFileDelete(pJob->pszFilename);
+                    pJob->paIoReqs[i].pvXferRead = pbReadBuf;
+                    pJob->paIoReqs[i].cbXferRead = cbIoBlock;
+                    pbReadBuf += cbIoBlock;
                 }
 
-                RTStrFree(pJob->pszFilename);
-            }
+                /* Create the file. */
+                pJob->pszFilename = RTStrAPrintf2("%sioperf-%u.file", pszTestDir, idJob);
+                if (RT_LIKELY(pJob->pszFilename))
+                {
+                    uint32_t fOpen = RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_NONE | RTFILE_O_READWRITE | RTFILE_O_ASYNC_IO;
+                    if (g_fNoCache)
+                        fOpen |= RTFILE_O_NO_CACHE;
+                    rc = RTFileOpen(&pJob->Hnd.u.hFile, pJob->pszFilename, fOpen);
+                    if (RT_SUCCESS(rc))
+                    {
+                        switch (enmPrepMethod)
+                        {
+                            case IOPERFTESTSETPREP_JUST_CREATE:
+                                break;
+                            case IOPERFTESTSETPREP_SET_SZ:
+                                rc = RTFileSetSize(pJob->Hnd.u.hFile, pJob->cbTestSet);
+                                break;
+                            case IOPERFTESTSETPREP_SET_ALLOC_SZ:
+                                rc = RTFileSetAllocationSize(pJob->Hnd.u.hFile, pJob->cbTestSet, RTFILE_ALLOC_SIZE_F_DEFAULT);
+                                break;
+                            default:
+                                AssertMsgFailed(("Invalid file preparation method: %d\n", enmPrepMethod));
+                        }
 
-            RTMemPageFree(pJob->pvIoReqReadBuf, pJob->cbIoReqReadBuf);
+                        if (RT_SUCCESS(rc))
+                        {
+                            rc = ioPerfJobTestSetPrep(pJob);
+                            if (RT_SUCCESS(rc))
+                            {
+                                /* Create I/O queue. */
+                                PCRTIOQUEUEPROVVTABLE pIoQProv = NULL;
+                                if (!pszIoEngine)
+                                    pIoQProv = RTIoQueueProviderGetBestForHndType(RTHANDLETYPE_FILE);
+                                else
+                                    pIoQProv = RTIoQueueProviderGetById(pszIoEngine);
+
+                                if (RT_LIKELY(pIoQProv))
+                                {
+                                    rc = RTIoQueueCreate(&pJob->hIoQueue, pIoQProv, 0 /*fFlags*/, cReqsMax, cReqsMax);
+                                    if (RT_SUCCESS(rc))
+                                    {
+                                        rc = RTIoQueueHandleRegister(pJob->hIoQueue, &pJob->Hnd);
+                                        if (RT_SUCCESS(rc))
+                                        {
+                                            /* Spin up the worker thread. */
+                                            if (pMaster)
+                                                rc = RTThreadCreateF(&pJob->hThread, ioPerfJobThread, pJob, 0,
+                                                                     RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "ioperf-%u", idJob);
+
+                                            if (RT_SUCCESS(rc))
+                                                return VINF_SUCCESS;
+                                        }
+                                    }
+                                }
+                                else
+                                    rc = VERR_NOT_SUPPORTED;
+                            }
+
+                            RTRandAdvDestroy(pJob->hRand);
+                        }
+
+                        RTFileClose(pJob->Hnd.u.hFile);
+                        RTFileDelete(pJob->pszFilename);
+                    }
+
+                    RTStrFree(pJob->pszFilename);
+                }
+                else
+                    rc = VERR_NO_STR_MEMORY;
+
+                RTMemPageFree(pJob->pvIoReqReadBuf, pJob->cbIoReqReadBuf);
+            }
+            else
+                rc = VERR_NO_MEMORY;
+
+            RTMemFree(pJob->paReqStats);
         }
         else
-            rc = VERR_NO_STR_MEMORY;
+            rc = VERR_NO_MEMORY;
     }
+    else
+        rc = VERR_NO_MEMORY;
 
     return rc;
 }
@@ -1000,6 +1099,7 @@ static int ioPerfJobTeardown(PIOPERFJOB pJob)
     RTStrFree(pJob->pszFilename);
     RTMemPageFree(pJob->pvIoReqReadBuf, pJob->cbIoReqReadBuf);
     RTMemFree(pJob->paIoReqs);
+    RTMemFree(pJob->paReqStats);
     return VINF_SUCCESS;
 }
 
