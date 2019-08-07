@@ -1117,45 +1117,6 @@ typedef PPGMPAGE *PPPGMPAGE;
     ( PGM_PAGE_GET_HNDL_PHYS_STATE(a_pPage) >= PGM_PAGE_HNDL_PHYS_STATE_WRITE )
 
 
-/** @name Virtual Access Handler State values (PGMPAGE::u2HandlerVirtStateY).
- *
- * @remarks The values are assigned in order of priority, so we can calculate
- *          the correct state for a page with different handlers installed.
- * @{ */
-/** No handler installed. */
-#define PGM_PAGE_HNDL_VIRT_STATE_NONE           0
-/* 1 is reserved so the lineup is identical with the physical ones. */
-/** Write access is monitored. */
-#define PGM_PAGE_HNDL_VIRT_STATE_WRITE          2
-/** All access is monitored. */
-#define PGM_PAGE_HNDL_VIRT_STATE_ALL            3
-/** @} */
-
-/**
- * Gets the virtual access handler state of a page.
- * @returns PGM_PAGE_HNDL_VIRT_STATE_* value.
- * @param   a_pPage     Pointer to the physical guest page tracking structure.
- */
-#define PGM_PAGE_GET_HNDL_VIRT_STATE(a_pPage)   ( (a_pPage)->s.u2HandlerVirtStateY )
-
-/**
- * Sets the virtual access handler state of a page.
- * @param   a_pPage     Pointer to the physical guest page tracking structure.
- * @param   a_uState    The new state value.
- */
-#define PGM_PAGE_SET_HNDL_VIRT_STATE(a_pPage, a_uState) \
-    do { (a_pPage)->s.u2HandlerVirtStateY = (a_uState); } while (0)
-
-/**
- * Same as PGM_PAGE_HAS_ANY_VIRTUAL_HANDLERS - can't disable pages in
- * virtual handlers.
- * @returns true/false
- * @param   a_pPage     Pointer to the physical guest page tracking structure.
- */
-#define PGM_PAGE_HAS_ACTIVE_VIRTUAL_HANDLERS(a_pPage) \
-    PGM_PAGE_HAS_ANY_VIRTUAL_HANDLERS(a_pPage)
-
-
 /**
  * Checks if the page has any access handlers, including temporarily disabled ones.
  * @returns true/false

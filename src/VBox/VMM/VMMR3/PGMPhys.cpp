@@ -1888,20 +1888,9 @@ VMMR3DECL(int) PGMR3PhysRegisterRam(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, const
          *
          * Note! The sizes used here will influence the saved state.
          */
-        uint32_t cbChunk;
-        uint32_t cPagesPerChunk;
-        if (!VM_IS_RAW_MODE_ENABLED(pVM))
-        {
-            cbChunk = 16U*_1M;
-            cPagesPerChunk = 1048048; /* max ~1048059 */
-            AssertCompile(sizeof(PGMRAMRANGE) + sizeof(PGMPAGE) * 1048048 < 16U*_1M - PAGE_SIZE * 2);
-        }
-        else
-        {
-            cbChunk = 4U*_1M;
-            cPagesPerChunk = 261616; /* max ~261627 */
-            AssertCompile(sizeof(PGMRAMRANGE) + sizeof(PGMPAGE) * 261616  <  4U*_1M - PAGE_SIZE * 2);
-        }
+        uint32_t cbChunk = 16U*_1M;
+        uint32_t cPagesPerChunk = 1048048; /* max ~1048059 */
+        AssertCompile(sizeof(PGMRAMRANGE) + sizeof(PGMPAGE) * 1048048 < 16U*_1M - PAGE_SIZE * 2);
         AssertRelease(RT_UOFFSETOF_DYN(PGMRAMRANGE, aPages[cPagesPerChunk]) + PAGE_SIZE * 2 <= cbChunk);
 
         RTGCPHYS cPagesLeft  = cPages;
@@ -2714,20 +2703,9 @@ static uint16_t pgmR3PhysMMIOExCalcChunkCount(PVM pVM, RTGCPHYS cb, uint32_t *pc
      * Note! In additions, we've got a 24 bit sub-page range for MMIO2 ranges, leaving
      *       us with an absolute maximum of 16777215 pages per chunk (close to 64 GB).
      */
-    uint32_t cbChunk;
-    uint32_t cPagesPerChunk;
-    if (!VM_IS_RAW_MODE_ENABLED(pVM))
-    {
-        cbChunk = 16U*_1M;
-        cPagesPerChunk = 1048048; /* max ~1048059 */
-        AssertCompile(sizeof(PGMREGMMIORANGE) + sizeof(PGMPAGE) * 1048048 < 16U*_1M - PAGE_SIZE * 2);
-    }
-    else
-    {
-        cbChunk = 4U*_1M;
-        cPagesPerChunk = 261616; /* max ~261627 */
-        AssertCompile(sizeof(PGMREGMMIORANGE) + sizeof(PGMPAGE) * 261616  <  4U*_1M - PAGE_SIZE * 2);
-    }
+    uint32_t cbChunk = 16U*_1M;
+    uint32_t cPagesPerChunk = 1048048; /* max ~1048059 */
+    AssertCompile(sizeof(PGMREGMMIORANGE) + sizeof(PGMPAGE) * 1048048 < 16U*_1M - PAGE_SIZE * 2);
     AssertRelease(cPagesPerChunk <= PGM_MMIO2_MAX_PAGE_COUNT); /* See above note. */
     AssertRelease(RT_UOFFSETOF_DYN(PGMREGMMIORANGE, RamRange.aPages[cPagesPerChunk]) + PAGE_SIZE * 2 <= cbChunk);
     if (pcbChunk)
