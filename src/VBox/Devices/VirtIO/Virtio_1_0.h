@@ -72,10 +72,6 @@
 /* Vector value used to disable MSI for queue */
 #define VIRTIO_MSI_NO_VECTOR                0xffff
 
-typedef DECLCALLBACK(uint32_t) FNGETHOSTFEATURES(void *pvState);
-typedef FNGETHOSTFEATURES *PFNGETHOSTFEATURES;
-
-
 /** Most of the following definitions attempt to adhere to the names and
  *  and forms used by the VirtIO 1.0 specification to increase the maintainability
  *  and speed of ramp-up, in other words, to as unambiguously as possible
@@ -439,24 +435,6 @@ void    virtQueueNotify(PVIRTIOSTATE pVirtio, PVQUEUE pQueue);
 void    virtQueueSync(PVIRTIOSTATE pVirtio, PVQUEUE pQueue);
 void    vringSetNotification( PVIRTIOSTATE pVirtio, PVIRTQUEUE pVirtQueue, bool fEnabled);
 
-DECLINLINE(void) logDeviceStatus(uint8_t status)
-{
-    if (status & VIRTIO_STATUS_ACKNOWLEDGE)
-        Log(("                         ACKNOWLEDGE\n"));
-    if (status & VIRTIO_STATUS_DRIVER)
-        Log(("                         DRIVER\n"));
-    if (status & VIRTIO_STATUS_DRIVER_OK)
-        Log(("                         DRIVER_OK\n"));
-    if (status & VIRTIO_STATUS_FEATURES_OK)
-        Log(("                         FEATURES_OK\n"));
-    if (status & VIRTIO_STATUS_FAILED)
-        Log(("                         FAILED\n"));
-    if (status & VIRTIO_STATUS_DEVICE_NEEDS_RESET)
-        Log(("                         ACKNOWLEDGE\n"));
-    if (status == 0)
-        Log(("                         RESET\n"));
-    Log(("\n"));
-}
 
 /*  FROM Virtio 1.0 SPEC, NYI
       static inline int virtq_need_event(uint16_t event_idx, uint16_t new_idx, uint16_t old_idx)
@@ -475,6 +453,61 @@ DECLINLINE(void) logDeviceStatus(uint8_t status)
       }
 }
 */
+
+
+
+/**
+ * Formats the logging of a memory-mapped I/O input or output value
+ *
+ * @param   pszFunc     - To avoid displaying this function's name via __FUNCTION__ or LogFunc()
+ * @param   pszMember   - Name of struct member
+ * @param   pv          - pointer to value
+ * @param   cb          - size of value
+ * @param   uOffset     - offset into member where value starts
+ * @param   fWrite      - True if write I/O
+ * @param   fHasIndex   - True if the member is indexed
+ * @param   idx         - The index if fHasIndex
+ */
+DECLINLINE(void) virtioLogMappedIoValue(const char *pszFunc, const char *pszMember, const void *pv, uint32_t cb,
+                        uint32_t uOffset, bool fWrite, bool fHasIndex, uint32_t idx)
+{
+
+#define FMTHEX(fmtout, v, cNybs) \
+    fmtout[cNybs] = '\0'; \
+    for (uint8_t i = 0; i < cNybs; i++) \
+        fmtout[(cNybs - i) -1] = "0123456789abcdef"[(val >> (i * 4)) & 0xf];
+
+#define MAX_STRING   64
+    char pszIdx[MAX_STRING] = { 0 };
+    char pszDepiction[MAX_STRING] = { 0 };
+    char pszFormattedVal[MAX_STRING] = { 0 };
+    if (fHasIndex)
+        RTStrPrintf(pszIdx, sizeof(pszIdx), "[%d]", idx);
+    if (cb == 1 || cb == 2 || cb == 4 || cb == 8)
+    {
+        /* manually padding with 0's instead of \b due to different impl of %x precision than printf() */
+        uint64_t val = 0;
+        memcpy((char *)&val, pv, cb);
+        FMTHEX(pszFormattedVal, val, cb * 2);
+        RTStrPrintf(pszDepiction, sizeof(pszDepiction), "%s%s[%d:%d]", pszMember, pszIdx, uOffset, uOffset + cb);
+        RTStrPrintf(pszDepiction, sizeof(pszDepiction), "%-30s", pszDepiction);
+        int first = 0;
+        for (uint8_t i = 0; i < sizeof(pszDepiction); i++)
+            if (pszDepiction[i] == ' ' && first++ != 0)
+                pszDepiction[i] = '.';
+        Log(("%s: Guest %s %s 0x%s\n", \
+                  pszFunc, fWrite ? "wrote" : "read ", pszDepiction, pszFormattedVal));
+    }
+    else /* odd number or oversized access, ... log inline hex-dump style */
+    {
+        Log(("%s: Guest %s %s%s[%d:%d]: %.*Rhxs\n", \
+              pszFunc, fWrite ? "wrote" : "read ", pszMember,
+              pszIdx, uOffset, uOffset + cb, cb, pv));
+    }
+}
+
+typedef DECLCALLBACK(uint32_t) FNGETHOSTFEATURES(void *pvState);
+typedef FNGETHOSTFEATURES *PFNGETHOSTFEATURES;
 
 DECLINLINE(uint16_t) vringReadAvail(PVIRTIOSTATE pState, PVIRTQUEUE pVirtQueue)
 {

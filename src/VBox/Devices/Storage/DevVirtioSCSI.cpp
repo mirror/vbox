@@ -59,13 +59,6 @@
 #define VIRTIOSCSI_REGION_PORT_IO                   1
 #define VIRTIOSCSI_REGION_PCI_CAP                   2
 
-/**
- * Definitions that follow are based on the VirtIO 1.0 specification.
- * Struct names are the same. The field names have been adapted to VirtualBox
- * data type + camel case annotation, with the original field name from the
- * VirtIO specification in the field's comment.
- */
-
 #define MATCH_SCSI_CONFIG(member) \
     ((int)uOffset >= RT_OFFSETOF(VIRTIO_SCSI_CONFIG_T, member) \
         &&  uOffset < (uint32_t)(RT_OFFSETOF(VIRTIO_SCSI_CONFIG_T, member) \
@@ -74,31 +67,36 @@
                   - (uOffset - RT_OFFSETOF(VIRTIO_SCSI_CONFIG_T, member)))
 
 #define LOG_ACCESSOR(member) \
-        LogFunc(("Guest %s %s [%d:%d]: %.*Rhxs\n", \
-                  fWrite ? "wrote" : "read ", #member,  mOffset, mOffset + cb, cb, pv));
+        virtioLogMappedIoValue(__FUNCTION__, #member, pv, cb, uMemberOffset, fWrite, false, 0);
 
 #define SCSI_CONFIG_ACCESSOR(member) \
     { \
-        uint32_t mOffset = uOffset - RT_OFFSETOF(VIRTIO_SCSI_CONFIG_T, member); \
+        uint32_t uMemberOffset = uOffset - RT_OFFSETOF(VIRTIO_SCSI_CONFIG_T, member); \
         if (fWrite) \
-            memcpy(((char *)&pThis->virtioScsiConfig.member) + uOffset, (const char *)pv, cb); \
+            memcpy(((char *)&pThis->virtioScsiConfig.member) + uMemberOffset, (const char *)pv, cb); \
         else \
-            memcpy((char *)pv, (const char *)(((char *)&pThis->virtioScsiConfig.member) + uOffset), cb); \
+            memcpy((char *)pv, (const char *)(((char *)&pThis->virtioScsiConfig.member) + uMemberOffset), cb); \
         LOG_ACCESSOR(member); \
     }
 
 #define SCSI_CONFIG_ACCESSOR_READONLY(member) \
     { \
-        uint32_t mOffset = uOffset - RT_OFFSETOF(VIRTIO_SCSI_CONFIG_T, member); \
+        uint32_t uMemberOffset = uOffset - RT_OFFSETOF(VIRTIO_SCSI_CONFIG_T, member); \
         if (fWrite) \
             LogFunc(("Guest attempted to write readonly virtio_pci_common_cfg.%s\n", #member)); \
         else \
         { \
-            memcpy((char *)pv, (const char *)(((char *)&pThis->virtioScsiConfig.member) + uOffset), cb); \
+            memcpy((char *)pv, (const char *)(((char *)&pThis->virtioScsiConfig.member) + uMemberOffset), cb); \
             LOG_ACCESSOR(member); \
         } \
     }
 
+/**
+ * Definitions that follow are based on the VirtIO 1.0 specification.
+ * Struct names are the same. The field names have been adapted to VirtualBox
+ * data type + camel case annotation, with the original field name from the
+ * VirtIO specification in the field's comment.
+ */
 
 /** @name VirtIO 1.0 SCSI Host feature bits
  * @{  */
@@ -111,10 +109,8 @@
 /**
  * Features VirtIO 1.0 Host SCSI controller offers guest driver
  */
-#define VIRTIOSCSI_HOST_SCSI_FEATURES_OFFERED         VIRTIOSCSI_F_INOUT   \
-                                                    | VIRTIOSCSI_F_HOTPLUG \
-                                                    | VIRTIOSCSI_F_CHANGE  \
-                                                    | VIRTIOSCSI_F_T10_PI  \
+#define VIRTIOSCSI_HOST_SCSI_FEATURES_OFFERED \
+            (VIRTIOSCSI_F_INOUT | VIRTIOSCSI_F_HOTPLUG | VIRTIOSCSI_F_CHANGE | VIRTIOSCSI_F_T10_PI)
 
 typedef struct virtio_scsi_config
 {
@@ -166,7 +162,8 @@ typedef struct virtio_scsi_req_cmd
     uint8_t  uDataIn[];                                     /** detain;           */
 } VIRTIO_SCSI_REQ_CMD_T, *PVIRTIO_SCSI_REQ_CMD_T;
 
-/** Command-specific response values */
+/** @name VirtIO 1.0 SCSI req command-specific response values
+ * @{  */
 #define VIRTIOSCSI_S_OK                            0       /* control, command   */
 #define VIRTIOSCSI_S_OVERRUN                       1       /* control */
 #define VIRTIOSCSI_S_ABORTED                       2       /* control */
@@ -178,13 +175,16 @@ typedef struct virtio_scsi_req_cmd
 #define VIRTIOSCSI_S_NEXUS_FAILURE                 8       /* control, command */
 #define VIRTIOSCSI_S_FAILURE                       9       /* control, command */
 #define VIRTIOSCSI_S_INCORRECT_LUN                12       /* command */
+/** @} */
 
 
-/** task_attr */
+/** @name VirtIO 1.0 SCSI Command-specific task_attr values
+ * @{  */
 #define VIRTIOSCSI_S_SIMPLE                        0
 #define VIRTIOSCSI_S_ORDERED                       1
 #define VIRTIOSCSI_S_HEAD                          2
 #define VIRTIOSCSI_S_ACA                           3
+/** @} */
 
 #define VIRTIOSCSI_T_TMF                           0
 #define VIRTIOSCSI_T_TMF_ABORT_TASK                0
@@ -207,11 +207,12 @@ typedef struct virtio_scsi_ctrl_tmf
     uint8_t  uResponse;                                      /** response       */
 } VIRTIO_SCSI_CTRL_BUF_T, *PVIRTIO_SCSI_CTRL_BUF_T;
 
-/* command-specific response values */
-
+/** @name VirtIO 1.0 SCSI tmf control command-specific response values
+ * @{  */
 #define VIRTIOSCSI_S_FUNCTION_COMPLETE            0
 #define VIRTIOSCSI_S_FUNCTION_SUCCEEDED           10
 #define VIRTIOSCSI_S_FUNCTION_REJECTED            11
+/** @} */
 
 #define VIRTIOSCSI_T_AN_QUERY                     1         /** Asynchronous notification query */
 #define VIRTIOSCSI_T_AN_SUBSCRIBE                 2         /** Asynchronous notification subscription */
@@ -241,6 +242,7 @@ typedef struct virtio_scsi_ctrl
     uint32_t type;                                           /** type            */
     uint8_t  response;                                       /** response        */
 } VIRTIO_SCSI_CTRL_T, *PVIRTIO_SCSI_CTRL_T;
+
 
 #define VIRTIOSCSI_T_NO_EVENT                   0
 
@@ -757,7 +759,7 @@ static DECLCALLBACK(void *) virtioScsiR3TargetQueryInterface(PPDMIBASE pInterfac
      return NULL;
 }
 
-static int virtioScsiR3ConfigAccess(PVIRTIOSCSI pThis, uint32_t uOffset,
+static int virtioScsiR3CfgAccessed(PVIRTIOSCSI pThis, uint32_t uOffset,
                                     const void *pv, size_t cb, uint8_t fWrite)
 {
     int rc = VINF_SUCCESS;
@@ -824,7 +826,7 @@ static int virtioScsiR3ConfigAccess(PVIRTIOSCSI pThis, uint32_t uOffset,
  *
  * @param   pDevIns     The device instance.
  * @param   uOffset     Offset within device specific capabilities struct
- * @param   pv       Buffer in which to save read data
+ * @param   pv          Buffer in which to save read data
  * @param   cb          Number of bytes to read
  */
 static DECLCALLBACK(int) virtioScsiR3DevCapRead(PPDMDEVINS pDevIns, uint32_t uOffset, const void *pv, size_t cb)
@@ -835,7 +837,7 @@ static DECLCALLBACK(int) virtioScsiR3DevCapRead(PPDMDEVINS pDevIns, uint32_t uOf
 //    LogFunc(("Read from Device-Specific capabilities: uOffset: 0x%x, cb: 0x%x\n",
 //              uOffset, cb));
 
-    rc = virtioScsiR3ConfigAccess(pThis, uOffset, pv, cb, false);
+    rc = virtioScsiR3CfgAccessed(pThis, uOffset, pv, cb, false);
 
     return rc;
 }
@@ -846,7 +848,7 @@ static DECLCALLBACK(int) virtioScsiR3DevCapRead(PPDMDEVINS pDevIns, uint32_t uOf
  *
  * @param   pDevIns     The device instance.
  * @param   uOffset     Offset within device specific capabilities struct
- * @param   pv       Buffer in which to save read data
+ * @param   pv          Buffer in which to save read data
  * @param   cb          Number of bytes to write
  */
 static DECLCALLBACK(int) virtioScsiR3DevCapWrite(PPDMDEVINS pDevIns, uint32_t uOffset, const void *pv, size_t cb)
@@ -857,7 +859,7 @@ static DECLCALLBACK(int) virtioScsiR3DevCapWrite(PPDMDEVINS pDevIns, uint32_t uO
 //    LogFunc(("Write to Device-Specific capabilities: uOffset: 0x%x, cb: 0x%x\n",
 //              uOffset, cb));
 
-    rc = virtioScsiR3ConfigAccess(pThis, uOffset, pv, cb, true);
+    rc = virtioScsiR3CfgAccessed(pThis, uOffset, pv, cb, true);
 
     return rc;
 }
