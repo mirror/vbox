@@ -2186,8 +2186,6 @@ typedef struct PGMPOOL
     PVMR3                       pVMR3;
     /** The VM handle - R0 Ptr. */
     PVMR0                       pVMR0;
-    /** The VM handle - RC Ptr. */
-    PVMRC                       pVMRC;
     /** The max pool size. This includes the special IDs. */
     uint16_t                    cMaxPages;
     /** The current pool size. */
@@ -2202,8 +2200,6 @@ typedef struct PGMPOOL
     uint16_t                    cMaxUsers;
     /** The number of present page table entries in the entire pool. */
     uint32_t                    cPresent;
-    /** Pointer to the array of user nodes - RC pointer. */
-    RCPTRTYPE(PPGMPOOLUSER)     paUsersRC;
     /** Pointer to the array of user nodes - R3 pointer. */
     R3PTRTYPE(PPGMPOOLUSER)     paUsersR3;
     /** Pointer to the array of user nodes - R0 pointer. */
@@ -2212,8 +2208,7 @@ typedef struct PGMPOOL
     uint16_t                    iPhysExtFreeHead;
     /** The number of user nodes we've allocated. */
     uint16_t                    cMaxPhysExts;
-    /** Pointer to the array of physical xref extent - RC pointer. */
-    RCPTRTYPE(PPGMPOOLPHYSEXT)  paPhysExtsRC;
+    uint32_t                    u32Padding0b;
     /** Pointer to the array of physical xref extent nodes - R3 pointer. */
     R3PTRTYPE(PPGMPOOLPHYSEXT)  paPhysExtsR3;
     /** Pointer to the array of physical xref extent nodes - R0 pointer. */
@@ -3198,34 +3193,6 @@ typedef struct PGM
     /** MMIO2 lookup array for ring-0.  Indexed by idMmio2 minus 1. */
     R0PTRTYPE(PPGMREGMMIORANGE)     apMmio2RangesR0[PGM_MMIO2_MAX_RANGES];
 
-    /** RAM range TLB for RC. */
-    RCPTRTYPE(PPGMRAMRANGE)         apRamRangesTlbRC[PGM_RAMRANGE_TLB_ENTRIES];
-    /** RC pointer corresponding to PGM::pRamRangesXR3. */
-    RCPTRTYPE(PPGMRAMRANGE)         pRamRangesXRC;
-    /** Root of the RAM range search tree for raw-mode context. */
-    RCPTRTYPE(PPGMRAMRANGE)         pRamRangeTreeRC;
-    /** PGM offset based trees - RC Ptr. */
-    RCPTRTYPE(PPGMTREES)            pTreesRC;
-    /** Caching the last physical handler we looked up in RC. */
-    RCPTRTYPE(PPGMPHYSHANDLER)      pLastPhysHandlerRC;
-    /** Shadow Page Pool - RC Ptr. */
-    RCPTRTYPE(PPGMPOOL)             pPoolRC;
-#ifndef PGM_WITHOUT_MAPPINGS
-    /** Linked list of GC mappings - for RC.
-     * The list is sorted ascending on address. */
-    RCPTRTYPE(PPGMMAPPING)          pMappingsRC;
-    RTRCPTR                         RCPtrAlignment0;
-#endif
-    /** RC pointer corresponding to PGM::pRomRangesR3. */
-    RCPTRTYPE(PPGMROMRANGE)         pRomRangesRC;
-#ifndef PGM_WITHOUT_MAPPINGS
-    /** Pointer to the page table entries for the dynamic page mapping area - GCPtr. */
-    RCPTRTYPE(PX86PTE)              paDynPageMap32BitPTEsGC;
-    /** Pointer to the page table entries for the dynamic page mapping area - GCPtr. */
-    RCPTRTYPE(PPGMSHWPTEPAE)        paDynPageMapPaePTEsGC;
-#endif
-
-
 #ifndef PGM_WITHOUT_MAPPINGS
     /** Pointer to the 5 page CR3 content mapping.
      * The first page is always the CR3 (in some form) while the 4 other pages
@@ -3278,7 +3245,7 @@ typedef struct PGM
      *  owner via pgmPhysGCPhys2CCPtrInternalDepr. */
     uint32_t                        cDeprecatedPageLocks;
     /** Alignment padding. */
-    uint32_t                        au32Alignment2[3];
+    uint32_t                        au32Alignment2[1];
 
 
     /** PGM critical section.
@@ -3465,8 +3432,6 @@ typedef struct PGM
      * @{ */
     R3PTRTYPE(PGMSTATS *)           pStatsR3;
     R0PTRTYPE(PGMSTATS *)           pStatsR0;
-    RCPTRTYPE(PGMSTATS *)           pStatsRC;
-    RTRCPTR                         RCPtrAlignment;
     /** @} */
 #endif
 } PGM;
@@ -3753,8 +3718,6 @@ typedef struct PGMCPU
     /** The guest's page directory, R0 pointer. */
     R0PTRTYPE(PX86PD)               pGst32BitPdR0;
 #endif
-    /** The guest's page directory, static RC mapping. */
-    RCPTRTYPE(PX86PD)               pGst32BitPdRC;
     /** Mask containing the MBZ bits of a big page PDE. */
     uint32_t                        fGst32BitMbzBigPdeMask;
     /** Set if the page size extension (PSE) is enabled. */
@@ -3765,8 +3728,6 @@ typedef struct PGMCPU
 
     /** @name PAE Guest Paging.
      * @{ */
-    /** The guest's page directory pointer table, static RC mapping. */
-    RCPTRTYPE(PX86PDPT)             pGstPaePdptRC;
     /** The guest's page directory pointer table, R3 pointer. */
     R3PTRTYPE(PX86PDPT)             pGstPaePdptR3;
 #ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
@@ -3783,10 +3744,6 @@ typedef struct PGMCPU
 #ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
     R0PTRTYPE(PX86PDPAE)            apGstPaePDsR0[4];
 #endif
-    /** The guest's page directories, static GC mapping.
-     * Unlike the R3/R0 array the first entry can be accessed as a 2048 entry PD.
-     * These don't have to be up-to-date - use pgmGstGetPaePD() to access them. */
-    RCPTRTYPE(PX86PDPAE)            apGstPaePDsRC[4];
     /** The physical addresses of the guest page directories (PAE) pointed to by apGstPagePDsHC/GC.
      * @todo Remove this and use aGstPaePdpeRegs instead? */
     RTGCPHYS                        aGCPhysGstPaePDs[4];
@@ -3848,10 +3805,6 @@ typedef struct PGMCPU
     R3PTRTYPE(PPGMPOOLPAGE)         pShwPageCR3R3;
     /** Pointer to the page of the current active CR3 - R0 Ptr. */
     R0PTRTYPE(PPGMPOOLPAGE)         pShwPageCR3R0;
-    /** Pointer to the page of the current active CR3 - RC Ptr. */
-    RCPTRTYPE(PPGMPOOLPAGE)         pShwPageCR3RC;
-    /** Explicit alignment. */
-    RTRCPTR                         alignment6;
     /** @} */
 
     /** For saving stack space, the disassembler state is allocated here instead of
@@ -3875,10 +3828,6 @@ typedef struct PGMCPU
 #ifdef VBOX_WITH_STATISTICS /** @todo move this chunk to the heap. */
     /** @name Statistics
      * @{ */
-    /** RC: Pointer to the statistics. */
-    RCPTRTYPE(PGMCPUSTATS *)        pStatsRC;
-    /** RC: Which statistic this \#PF should be attributed to. */
-    RCPTRTYPE(PSTAMPROFILE)         pStatTrap0eAttributionRC;
     /** R0: Pointer to the statistics. */
     R0PTRTYPE(PGMCPUSTATS *)        pStatsR0;
     /** R0: Which statistic this \#PF should be attributed to. */
