@@ -10189,6 +10189,8 @@ static VBOXSTRICTRC hmR0VmxPreRunGuest(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient
 {
     Assert(VMMRZCallRing3IsEnabled(pVCpu));
 
+    Log4Func(("fIsNested=%RTbool fStepping=%RTbool\n", pVmxTransient->fIsNestedGuest, fStepping));
+
 #ifdef VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM
     if (pVmxTransient->fIsNestedGuest)
     {
@@ -16131,12 +16133,14 @@ HMVMX_EXIT_DECL hmR0VmxExitXcptOrNmiNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTrans
 
 #ifdef DEBUG_ramshankar
                 hmR0VmxImportGuestState(pVCpu, pVmxTransient->pVmcsInfo, CPUMCTX_EXTRN_CS | CPUMCTX_EXTRN_RIP);
-                Log4Func(("cs:rip=%#04x:%#RX64 %s err_code=%#x exit_qual=%#RX64\n", pCtx->cs.Sel, pCtx->rip,
-                          VMX_EXIT_INT_INFO_IS_XCPT_PF(pVmxTransient->uExitIntInfo) ? "#PF" : "Unk",
+                Log4Func(("cs:rip=%#04x:%#RX64\n", pCtx->cs.Sel, pCtx->rip));
+                Log4Func(("exit_int_info=%#x err_code=%#x exit_qual=%#RX64\n", pVmxTransient->uExitIntInfo,
                           pVmxTransient->uExitIntErrorCode, pVmxTransient->uExitQual));
-                Log4Func(("idt_info=%#RX64 (%s) idt_errcode=%#RX32\n", pVmxTransient->uIdtVectoringInfo,
-                          VMX_IDT_VECTORING_INFO_IS_VALID(pVmxTransient->uIdtVectoringInfo) ? "Valid" : "Invalid",
-                          pVmxTransient->uIdtVectoringErrorCode));
+                if (VMX_IDT_VECTORING_INFO_IS_VALID(pVmxTransient->uIdtVectoringInfo))
+                {
+                    Log4Func(("idt_info=%#RX32 idt_errcode=%#RX32\n", pVmxTransient->uIdtVectoringInfo,
+                              pVmxTransient->uIdtVectoringErrorCode));
+                }
 #endif
                 return IEMExecVmxVmexitXcpt(pVCpu, &ExitInfo, &ExitEventInfo);
             }
