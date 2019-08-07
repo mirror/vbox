@@ -534,10 +534,9 @@ typedef struct PGMMAPPING
     R3PTRTYPE(struct PGMMAPPING *)      pNextR3;
     /** Pointer to next entry. */
     R0PTRTYPE(struct PGMMAPPING *)      pNextR0;
-    /** Pointer to next entry. */
-    RCPTRTYPE(struct PGMMAPPING *)      pNextRC;
     /** Indicate whether this entry is finalized. */
     bool                                fFinalized;
+    bool                                afPadding[7];
     /** Start Virtual address. */
     RTGCPTR                             GCPtr;
     /** Last Virtual address (inclusive). */
@@ -573,10 +572,6 @@ typedef struct PGMMAPPING
         R3PTRTYPE(PX86PT)               pPTR3;
         /** The HC virtual address of the two PAE page table. (i.e 1024 entries instead of 512) */
         R3PTRTYPE(PPGMSHWPTPAE)         paPaePTsR3;
-        /** The RC virtual address of the 32-bit page table. */
-        RCPTRTYPE(PX86PT)               pPTRC;
-        /** The RC virtual address of the two PAE page table. */
-        RCPTRTYPE(PPGMSHWPTPAE)         paPaePTsRC;
         /** The R0 virtual address of the 32-bit page table. */
         R0PTRTYPE(PX86PT)               pPTR0;
         /** The R0 virtual address of the two PAE page table. */
@@ -604,10 +599,6 @@ typedef struct PGMPHYSHANDLERTYPEINT
     PGMPHYSHANDLERKIND                  enmKind;
     /** The PGM_PAGE_HNDL_PHYS_STATE_XXX value corresponding to enmKind. */
     uint32_t                            uState;
-    /** Pointer to RC callback function. */
-    RCPTRTYPE(PFNPGMPHYSHANDLER)        pfnHandlerRC;
-    /** Pointer to RC callback function for \#PFs. */
-    RCPTRTYPE(PFNPGMRZPHYSPFHANDLER)    pfnPfHandlerRC;
     /** Pointer to R3 callback function. */
     R3PTRTYPE(PFNPGMPHYSHANDLER)        pfnHandlerR3;
     /** Pointer to R0 callback function. */
@@ -650,11 +641,6 @@ typedef struct PGMPHYSHANDLER
     uint32_t                            cTmpOffPages;
     /** Registered handler type handle (heap offset). */
     PGMPHYSHANDLERTYPE                  hType;
-    /** User argument for RC handlers. */
-    RCPTRTYPE(void *)                   pvUserRC;
-#if HC_ARCH_BITS == 64
-    RTRCPTR                             Padding0; /**< Explicit alignment padding. */
-#endif
     /** User argument for R3 handlers. */
     R3PTRTYPE(void *)                   pvUserR3;
     /** User argument for R0 handlers. */
@@ -1297,10 +1283,9 @@ typedef struct PGMRAMRANGE
     R3PTRTYPE(struct PGMRAMRANGE *)     pNextR3;
     /** Pointer to the next RAM range - for R0. */
     R0PTRTYPE(struct PGMRAMRANGE *)     pNextR0;
-    /** Pointer to the next RAM range - for RC. */
-    RCPTRTYPE(struct PGMRAMRANGE *)     pNextRC;
     /** PGM_RAM_RANGE_FLAGS_* flags. */
     uint32_t                            fFlags;
+    uint32_t                            fPadding1;
     /** Last address in the range (inclusive). Page aligned (-1). */
     RTGCPHYS                            GCPhysLast;
     /** Start of the HC mapping of the range. This is only used for MMIO2. */
@@ -1311,11 +1296,7 @@ typedef struct PGMRAMRANGE
     R3PTRTYPE(const char *)             pszDesc;
     /** Pointer to self - R0 pointer. */
     R0PTRTYPE(struct PGMRAMRANGE *)     pSelfR0;
-    /** Pointer to self - RC pointer. */
-    RCPTRTYPE(struct PGMRAMRANGE *)     pSelfRC;
 
-    /** Alignment padding. */
-    RTRCPTR                             Alignment0;
     /** Pointer to the left search three node - ring-3 context. */
     R3PTRTYPE(struct PGMRAMRANGE *)     pLeftR3;
     /** Pointer to the right search three node - ring-3 context. */
@@ -1324,10 +1305,6 @@ typedef struct PGMRAMRANGE
     R0PTRTYPE(struct PGMRAMRANGE *)     pLeftR0;
     /** Pointer to the right search three node - ring-0 context. */
     R0PTRTYPE(struct PGMRAMRANGE *)     pRightR0;
-    /** Pointer to the left search three node - raw-mode context. */
-    RCPTRTYPE(struct PGMRAMRANGE *)     pLeftRC;
-    /** Pointer to the right search three node - raw-mode context. */
-    RCPTRTYPE(struct PGMRAMRANGE *)     pRightRC;
 
     /** Padding to make aPage aligned on sizeof(PGMPAGE). */
 #if HC_ARCH_BITS == 32
@@ -1423,10 +1400,6 @@ typedef struct PGMROMRANGE
     R3PTRTYPE(struct PGMROMRANGE *)     pNextR3;
     /** Pointer to the next range - R0. */
     R0PTRTYPE(struct PGMROMRANGE *)     pNextR0;
-    /** Pointer to the next range - RC. */
-    RCPTRTYPE(struct PGMROMRANGE *)     pNextRC;
-    /** Pointer alignment */
-    RTRCPTR                             RCPtrAlignment;
     /** Address of the range. */
     RTGCPHYS                            GCPhys;
     /** Address of the last byte in the range. */

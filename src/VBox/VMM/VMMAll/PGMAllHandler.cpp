@@ -178,7 +178,6 @@ int pgmHandlerPhysicalExCreate(PVM pVM, PGMPHYSHANDLERTYPE hType, RTR3PTR pvUser
         pNew->cTmpOffPages  = 0;
         pNew->pvUserR3      = pvUserR3;
         pNew->pvUserR0      = pvUserR0;
-        pNew->pvUserRC      = pvUserRC;
         pNew->hType         = hType;
         pNew->pszDesc       = pszDesc != NIL_RTR3PTR ? pszDesc : pType->pszDesc;
         pgmHandlerPhysicalTypeRetain(pVM, pType);
@@ -207,7 +206,7 @@ int pgmHandlerPhysicalExDup(PVM pVM, PPGMPHYSHANDLER pPhysHandlerSrc, PPGMPHYSHA
                                       pPhysHandlerSrc->hType,
                                       pPhysHandlerSrc->pvUserR3,
                                       pPhysHandlerSrc->pvUserR0,
-                                      pPhysHandlerSrc->pvUserRC,
+                                      NIL_RTR0PTR,
                                       pPhysHandlerSrc->pszDesc,
                                       ppPhysHandler);
 }
@@ -950,18 +949,15 @@ VMMDECL(int) PGMHandlerPhysicalModify(PVM pVM, RTGCPHYS GCPhysCurrent, RTGCPHYS 
 
 
 /**
- * Changes the user callback arguments associated with a physical access
- * handler.
+ * Changes the user callback arguments associated with a physical access handler.
  *
  * @returns VBox status code.
  * @param   pVM             The cross context VM structure.
  * @param   GCPhys          Start physical address of the handler.
  * @param   pvUserR3        User argument to the R3 handler.
  * @param   pvUserR0        User argument to the R0 handler.
- * @param   pvUserRC        User argument to the RC handler. Values larger or
- *                          equal to 0x10000 will be relocated automatically.
  */
-VMMDECL(int) PGMHandlerPhysicalChangeUserArgs(PVM pVM, RTGCPHYS GCPhys, RTR3PTR pvUserR3, RTR0PTR pvUserR0, RTRCPTR pvUserRC)
+VMMDECL(int) PGMHandlerPhysicalChangeUserArgs(PVM pVM, RTGCPHYS GCPhys, RTR3PTR pvUserR3, RTR0PTR pvUserR0)
 {
     /*
      * Find the handler.
@@ -976,7 +972,6 @@ VMMDECL(int) PGMHandlerPhysicalChangeUserArgs(PVM pVM, RTGCPHYS GCPhys, RTR3PTR 
          */
         pCur->pvUserR3 = pvUserR3;
         pCur->pvUserR0 = pvUserR0;
-        pCur->pvUserRC = pvUserRC;
     }
     else
     {

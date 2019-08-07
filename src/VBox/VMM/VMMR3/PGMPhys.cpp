@@ -883,21 +883,17 @@ VMMR3DECL(int) PGMR3PhysBulkGCPhys2CCPtrReadOnlyExternal(PVM pVM, uint32_t cPage
         (a_pNode)->pRightR3 = NIL_RTR3PTR; \
         (a_pNode)->pLeftR0  = NIL_RTR0PTR; \
         (a_pNode)->pRightR0 = NIL_RTR0PTR; \
-        (a_pNode)->pLeftRC  = NIL_RTRCPTR; \
-        (a_pNode)->pRightRC = NIL_RTRCPTR; \
     } while (0)
 
 #define INSERT_LEFT(a_pParent, a_pNode) \
     do { \
         (a_pParent)->pLeftR3 = (a_pNode); \
         (a_pParent)->pLeftR0 = (a_pNode)->pSelfR0; \
-        (a_pParent)->pLeftRC = (a_pNode)->pSelfRC; \
     } while (0)
 #define INSERT_RIGHT(a_pParent, a_pNode) \
     do { \
         (a_pParent)->pRightR3 = (a_pNode); \
         (a_pParent)->pRightR0 = (a_pNode)->pSelfR0; \
-        (a_pParent)->pRightRC = (a_pNode)->pSelfRC; \
     } while (0)
 
 
@@ -1031,7 +1027,6 @@ void pgmR3PhysRelinkRamRanges(PVM pVM)
     for (pCur = pVM->pgm.s.pRamRangesXR3; pCur; pCur = pCur->pNextR3)
     {
         Assert((pCur->fFlags & PGM_RAM_RANGE_FLAGS_FLOATING) || pCur->pSelfR0 == MMHyperCCToR0(pVM, pCur));
-        Assert((pCur->fFlags & PGM_RAM_RANGE_FLAGS_FLOATING) || pCur->pSelfRC == MMHyperCCToRC(pVM, pCur));
         Assert((pCur->GCPhys     & PAGE_OFFSET_MASK) == 0);
         Assert((pCur->GCPhysLast & PAGE_OFFSET_MASK) == PAGE_OFFSET_MASK);
         Assert((pCur->cb         & PAGE_OFFSET_MASK) == 0);
@@ -1048,13 +1043,9 @@ void pgmR3PhysRelinkRamRanges(PVM pVM)
         pVM->pgm.s.pRamRangesXR0 = pCur->pSelfR0;
 
         for (; pCur->pNextR3; pCur = pCur->pNextR3)
-        {
             pCur->pNextR0 = pCur->pNextR3->pSelfR0;
-            pCur->pNextRC = pCur->pNextR3->pSelfRC;
-        }
 
         Assert(pCur->pNextR0 == NIL_RTR0PTR);
-        Assert(pCur->pNextRC == NIL_RTRCPTR);
     }
     else
     {
@@ -1077,20 +1068,17 @@ static void pgmR3PhysLinkRamRange(PVM pVM, PPGMRAMRANGE pNew, PPGMRAMRANGE pPrev
 {
     AssertMsg(pNew->pszDesc, ("%RGp-%RGp\n", pNew->GCPhys, pNew->GCPhysLast));
     Assert((pNew->fFlags & PGM_RAM_RANGE_FLAGS_FLOATING) || pNew->pSelfR0 == MMHyperCCToR0(pVM, pNew));
-    Assert((pNew->fFlags & PGM_RAM_RANGE_FLAGS_FLOATING) || pNew->pSelfRC == MMHyperCCToRC(pVM, pNew));
 
     pgmLock(pVM);
 
     PPGMRAMRANGE pRam = pPrev ? pPrev->pNextR3 : pVM->pgm.s.pRamRangesXR3;
     pNew->pNextR3 = pRam;
     pNew->pNextR0 = pRam ? pRam->pSelfR0 : NIL_RTR0PTR;
-    pNew->pNextRC = pRam ? pRam->pSelfRC : NIL_RTRCPTR;
 
     if (pPrev)
     {
         pPrev->pNextR3 = pNew;
         pPrev->pNextR0 = pNew->pSelfR0;
-        pPrev->pNextRC = pNew->pSelfRC;
     }
     else
     {
@@ -1115,7 +1103,6 @@ static void pgmR3PhysUnlinkRamRange2(PVM pVM, PPGMRAMRANGE pRam, PPGMRAMRANGE pP
 {
     Assert(pPrev ? pPrev->pNextR3 == pRam : pVM->pgm.s.pRamRangesXR3 == pRam);
     Assert((pRam->fFlags & PGM_RAM_RANGE_FLAGS_FLOATING) || pRam->pSelfR0 == MMHyperCCToR0(pVM, pRam));
-    Assert((pRam->fFlags & PGM_RAM_RANGE_FLAGS_FLOATING) || pRam->pSelfRC == MMHyperCCToRC(pVM, pRam));
 
     pgmLock(pVM);
 
@@ -1124,7 +1111,6 @@ static void pgmR3PhysUnlinkRamRange2(PVM pVM, PPGMRAMRANGE pRam, PPGMRAMRANGE pP
     {
         pPrev->pNextR3 = pNext;
         pPrev->pNextR0 = pNext ? pNext->pSelfR0 : NIL_RTR0PTR;
-        pPrev->pNextRC = pNext ? pNext->pSelfRC : NIL_RTRCPTR;
     }
     else
     {
@@ -1665,7 +1651,6 @@ static void pgmR3PhysInitAndLinkRamRange(PVM pVM, PPGMRAMRANGE pNew, RTGCPHYS GC
      * Initialize the range.
      */
     pNew->pSelfR0       = R0PtrNew != NIL_RTR0PTR ? R0PtrNew : MMHyperCCToR0(pVM, pNew);
-    pNew->pSelfRC       = RCPtrNew != NIL_RTRCPTR ? RCPtrNew : MMHyperCCToRC(pVM, pNew);
     pNew->GCPhys        = GCPhys;
     pNew->GCPhysLast    = GCPhysLast;
     pNew->cb            = GCPhysLast - GCPhys + 1;
@@ -2445,7 +2430,6 @@ VMMR3DECL(int) PGMR3PhysMMIORegister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, PGMP
 
         /* Initialize the range. */
         pNew->pSelfR0       = MMHyperCCToR0(pVM, pNew);
-        pNew->pSelfRC       = MMHyperCCToRC(pVM, pNew);
         pNew->GCPhys        = GCPhys;
         pNew->GCPhysLast    = GCPhysLast;
         pNew->cb            = cb;
@@ -2788,36 +2772,6 @@ static int pgmR3PhysMMIOExCreate(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev, 
             pNew->RamRange.fFlags   = PGM_RAM_RANGE_FLAGS_FLOATING;
             pNew->RamRange.pSelfR0  = R0PtrChunk + RT_UOFFSETOF(PGMREGMMIORANGE, RamRange);
 
-            /*
-             * If we might end up in raw-mode, make a HMA mapping of the range,
-             * just like we do for memory above 4GB.
-             */
-            if (!VM_IS_RAW_MODE_ENABLED(pVM))
-                pNew->RamRange.pSelfRC  = NIL_RTRCPTR;
-            else
-            {
-                RTGCPTR         GCPtrChunkMap = pVM->pgm.s.GCPtrPrevRamRangeMapping - RT_ALIGN_Z(cbChunk, _4M);
-                RTGCPTR const   GCPtrChunk    = GCPtrChunkMap + PAGE_SIZE;
-#ifndef PGM_WITHOUT_MAPPINGS
-                rc = PGMR3MapPT(pVM, GCPtrChunkMap, (uint32_t)cbChunk, 0 /*fFlags*/, pgmR3PhysMMIOExRangeRelocate, pNew, pszDesc);
-                if (RT_SUCCESS(rc))
-                {
-#endif /* !PGM_WITHOUT_MAPPINGS */
-                    pVM->pgm.s.GCPtrPrevRamRangeMapping = GCPtrChunkMap;
-#ifndef PGM_WITHOUT_MAPPINGS
-                    RTGCPTR GCPtrPage  = GCPtrChunk;
-                    for (uint32_t iPage = 0; iPage < cChunkPages && RT_SUCCESS(rc); iPage++, GCPtrPage += PAGE_SIZE)
-                        rc = PGMMap(pVM, GCPtrPage, paChunkPages[iPage].Phys, PAGE_SIZE, 0);
-                }
-                if (RT_FAILURE(rc))
-                {
-                    SUPR3PageFreeEx(pvChunk, cChunkPages);
-                    RTMemTmpFree(paChunkPages);
-                    break;
-                }
-#endif /* !PGM_WITHOUT_MAPPINGS */
-                pNew->RamRange.pSelfRC  = GCPtrChunk + RT_UOFFSETOF(PGMREGMMIORANGE, RamRange);
-            }
             RTMemTmpFree(paChunkPages);
         }
         /*
@@ -2833,7 +2787,6 @@ static int pgmR3PhysMMIOExCreate(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev, 
              */
             //pNew->RamRange.fFlags = 0;
             pNew->RamRange.pSelfR0  = MMHyperCCToR0(pVM, &pNew->RamRange);
-            pNew->RamRange.pSelfRC  = MMHyperCCToRC(pVM, &pNew->RamRange);
         }
 
         /*
@@ -4241,7 +4194,6 @@ static int pgmR3PhysRomRegisterLocked(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPh
             if (!fRamExists)
             {
                 pRamNew->pSelfR0       = MMHyperCCToR0(pVM, pRamNew);
-                pRamNew->pSelfRC       = MMHyperCCToRC(pVM, pRamNew);
                 pRamNew->GCPhys        = GCPhys;
                 pRamNew->GCPhysLast    = GCPhysLast;
                 pRamNew->cb            = cb;
@@ -4393,13 +4345,11 @@ static int pgmR3PhysRomRegisterLocked(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPh
                          */
                         pRomNew->pNextR3 = pRom;
                         pRomNew->pNextR0 = pRom ? MMHyperCCToR0(pVM, pRom) : NIL_RTR0PTR;
-                        pRomNew->pNextRC = pRom ? MMHyperCCToRC(pVM, pRom) : NIL_RTRCPTR;
 
                         if (pRomPrev)
                         {
                             pRomPrev->pNextR3 = pRomNew;
                             pRomPrev->pNextR0 = MMHyperCCToR0(pVM, pRomNew);
-                            pRomPrev->pNextRC = MMHyperCCToRC(pVM, pRomNew);
                         }
                         else
                         {

@@ -672,7 +672,6 @@ static int                pgmR3InitStats(PVM pVM);
 static DECLCALLBACK(void) pgmR3PhysInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 static DECLCALLBACK(void) pgmR3InfoMode(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 static DECLCALLBACK(void) pgmR3InfoCr3(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
-static DECLCALLBACK(int)  pgmR3RelocatePhysHandler(PAVLROGCPHYSNODECORE pNode, void *pvUser);
 #ifdef VBOX_STRICT
 static FNVMATSTATE        pgmR3ResetNoMorePhysWritesFlag;
 #endif
@@ -1867,21 +1866,7 @@ VMMR3DECL(void) PGMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
      * Ram ranges.
      */
     if (pVM->pgm.s.pRamRangesXR3)
-    {
-        /* Update the pSelfRC pointers and relink them. */
-        for (PPGMRAMRANGE pCur = pVM->pgm.s.pRamRangesXR3; pCur; pCur = pCur->pNextR3)
-            if (!(pCur->fFlags & PGM_RAM_RANGE_FLAGS_FLOATING))
-                pCur->pSelfRC = MMHyperCCToRC(pVM, pCur);
         pgmR3PhysRelinkRamRanges(pVM);
-    }
-
-    /*
-     * Update the pSelfRC pointer of the MMIO2 ram ranges since they might not
-     * be mapped and thus not included in the above exercise.
-     */
-    for (PPGMREGMMIORANGE pCur = pVM->pgm.s.pRegMmioRangesR3; pCur; pCur = pCur->pNextR3)
-        if (!(pCur->RamRange.fFlags & PGM_RAM_RANGE_FLAGS_FLOATING))
-            pCur->RamRange.pSelfRC = MMHyperCCToRC(pVM, &pCur->RamRange);
 
 #ifndef PGM_WITHOUT_MAPPINGS
 
@@ -1935,41 +1920,9 @@ VMMR3DECL(void) PGMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
     AssertRelease(pVM->pgm.s.pvZeroPgR0 != NIL_RTR0PTR);
 
     /*
-     * Physical and virtual handlers.
-     */
-    PGMRELOCHANDLERARGS Args = { offDelta, pVM };
-    RTAvlroGCPhysDoWithAll(&pVM->pgm.s.pTreesR3->PhysHandlers,     true, pgmR3RelocatePhysHandler,      &Args);
-
-    PPGMPHYSHANDLERTYPEINT pCurPhysType;
-    RTListOff32ForEach(&pVM->pgm.s.pTreesR3->HeadPhysHandlerTypes, pCurPhysType, PGMPHYSHANDLERTYPEINT, ListNode)
-    {
-        if (pCurPhysType->pfnHandlerRC != NIL_RTRCPTR)
-            pCurPhysType->pfnHandlerRC += offDelta;
-        if (pCurPhysType->pfnPfHandlerRC != NIL_RTRCPTR)
-            pCurPhysType->pfnPfHandlerRC += offDelta;
-    }
-
-    /*
      * The page pool.
      */
     pgmR3PoolRelocate(pVM);
-}
-
-
-/**
- * Callback function for relocating a physical access handler.
- *
- * @returns 0 (continue enum)
- * @param   pNode       Pointer to a PGMPHYSHANDLER node.
- * @param   pvUser      Pointer to a PGMRELOCHANDLERARGS.
- */
-static DECLCALLBACK(int) pgmR3RelocatePhysHandler(PAVLROGCPHYSNODECORE pNode, void *pvUser)
-{
-    PPGMPHYSHANDLER         pHandler = (PPGMPHYSHANDLER)pNode;
-    PCPGMRELOCHANDLERARGS   pArgs    = (PCPGMRELOCHANDLERARGS)pvUser;
-    if (pHandler->pvUserRC >= 0x10000)
-        pHandler->pvUserRC += pArgs->offDelta;
-    return 0;
 }
 
 

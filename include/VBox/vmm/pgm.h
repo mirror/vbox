@@ -462,7 +462,7 @@ VMMDECL(int)        PGMHandlerPhysicalRegister(PVM pVM, RTGCPHYS GCPhys, RTGCPHY
                                                R3PTRTYPE(const char *) pszDesc);
 VMMDECL(int)        PGMHandlerPhysicalModify(PVM pVM, RTGCPHYS GCPhysCurrent, RTGCPHYS GCPhys, RTGCPHYS GCPhysLast);
 VMMDECL(int)        PGMHandlerPhysicalDeregister(PVM pVM, RTGCPHYS GCPhys);
-VMMDECL(int)        PGMHandlerPhysicalChangeUserArgs(PVM pVM, RTGCPHYS GCPhys, RTR3PTR pvUserR3, RTR0PTR pvUserR0, RTRCPTR pvUserRC);
+VMMDECL(int)        PGMHandlerPhysicalChangeUserArgs(PVM pVM, RTGCPHYS GCPhys, RTR3PTR pvUserR3, RTR0PTR pvUserR0);
 VMMDECL(int)        PGMHandlerPhysicalSplit(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysSplit);
 VMMDECL(int)        PGMHandlerPhysicalJoin(PVM pVM, RTGCPHYS GCPhys1, RTGCPHYS GCPhys2);
 VMMDECL(int)        PGMHandlerPhysicalPageTempOff(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysPage);
@@ -854,8 +854,6 @@ VMMR3_INT_DECL(int) PGMR3HandlerPhysicalTypeRegisterEx(PVM pVM, PGMPHYSHANDLERKI
                                                        PFNPGMPHYSHANDLER pfnHandlerR3,
                                                        R0PTRTYPE(PFNPGMPHYSHANDLER)     pfnHandlerR0,
                                                        R0PTRTYPE(PFNPGMRZPHYSPFHANDLER) pfnPfHandlerR0,
-                                                       RCPTRTYPE(PFNPGMPHYSHANDLER)     pfnHandlerRC,
-                                                       RCPTRTYPE(PFNPGMRZPHYSPFHANDLER) pfnPfHandlerRC,
                                                        const char *pszDesc, PPGMPHYSHANDLERTYPE phType);
 VMMR3DECL(int)      PGMR3HandlerPhysicalTypeRegister(PVM pVM, PGMPHYSHANDLERKIND enmKind,
                                                      R3PTRTYPE(PFNPGMPHYSHANDLER) pfnHandlerR3,

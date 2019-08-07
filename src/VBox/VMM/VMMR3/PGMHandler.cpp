@@ -83,15 +83,11 @@ VMMR3_INT_DECL(int) PGMR3HandlerPhysicalTypeRegisterEx(PVM pVM, PGMPHYSHANDLERKI
                                                        PFNPGMPHYSHANDLER pfnHandlerR3,
                                                        R0PTRTYPE(PFNPGMPHYSHANDLER) pfnHandlerR0,
                                                        R0PTRTYPE(PFNPGMRZPHYSPFHANDLER) pfnPfHandlerR0,
-                                                       RCPTRTYPE(PFNPGMPHYSHANDLER) pfnHandlerRC,
-                                                       RCPTRTYPE(PFNPGMRZPHYSPFHANDLER) pfnPfHandlerRC,
                                                        const char *pszDesc, PPGMPHYSHANDLERTYPE phType)
 {
     AssertPtrReturn(pfnHandlerR3, VERR_INVALID_POINTER);
     AssertReturn(pfnHandlerR0   != NIL_RTR0PTR, VERR_INVALID_POINTER);
     AssertReturn(pfnPfHandlerR0 != NIL_RTR0PTR, VERR_INVALID_POINTER);
-    AssertReturn(pfnHandlerRC   != NIL_RTRCPTR || !VM_IS_RAW_MODE_ENABLED(pVM), VERR_INVALID_POINTER);
-    AssertReturn(pfnPfHandlerRC != NIL_RTRCPTR || !VM_IS_RAW_MODE_ENABLED(pVM), VERR_INVALID_POINTER);
     AssertPtrReturn(pszDesc, VERR_INVALID_POINTER);
     AssertReturn(   enmKind == PGMPHYSHANDLERKIND_WRITE
                  || enmKind == PGMPHYSHANDLERKIND_ALL
@@ -110,8 +106,6 @@ VMMR3_INT_DECL(int) PGMR3HandlerPhysicalTypeRegisterEx(PVM pVM, PGMPHYSHANDLERKI
         pType->pfnHandlerR3     = pfnHandlerR3;
         pType->pfnHandlerR0     = pfnHandlerR0;
         pType->pfnPfHandlerR0   = pfnPfHandlerR0;
-        pType->pfnHandlerRC     = pfnHandlerRC;
-        pType->pfnPfHandlerRC   = pfnPfHandlerRC;
         pType->pszDesc          = pszDesc;
 
         pgmLock(pVM);
@@ -119,8 +113,8 @@ VMMR3_INT_DECL(int) PGMR3HandlerPhysicalTypeRegisterEx(PVM pVM, PGMPHYSHANDLERKI
         pgmUnlock(pVM);
 
         *phType = MMHyperHeapPtrToOffset(pVM, pType);
-        LogFlow(("PGMR3HandlerPhysicalTypeRegisterEx: %p/%#x: enmKind=%d pfnHandlerR3=%RHv pfnHandlerR0=%RHv pfnHandlerRC=%RRv pszDesc=%s\n",
-                 pType, *phType, enmKind, pfnHandlerR3, pfnPfHandlerR0, pfnPfHandlerRC, pszDesc));
+        LogFlow(("PGMR3HandlerPhysicalTypeRegisterEx: %p/%#x: enmKind=%d pfnHandlerR3=%RHv pfnHandlerR0=%RHv pszDesc=%s\n",
+                 pType, *phType, enmKind, pfnHandlerR3, pfnPfHandlerR0, pszDesc));
         return VINF_SUCCESS;
     }
     *phType = NIL_PGMPHYSHANDLERTYPE;
@@ -207,9 +201,7 @@ VMMR3DECL(int) PGMR3HandlerPhysicalTypeRegister(PVM pVM, PGMPHYSHANDLERKIND enmK
             }
             if (RT_SUCCESS(rc))
                 return PGMR3HandlerPhysicalTypeRegisterEx(pVM, enmKind, pfnHandlerR3,
-                                                          pfnHandlerR0, pfnPfHandlerR0,
-                                                          pfnHandlerRC, pfnPfHandlerRC,
-                                                          pszDesc, phType);
+                                                          pfnHandlerR0, pfnPfHandlerR0, pszDesc, phType);
         }
         else
             AssertMsgFailed(("Failed to resolve %s.%s, rc=%Rrc.\n", pszPfHandlerR0 ? pszModR0 : VMMR0_MAIN_MODULE_NAME,
@@ -396,9 +388,9 @@ static DECLCALLBACK(int) pgmR3InfoHandlersPhysicalOne(PAVLROGCPHYSNODECORE pNode
         default:                        pszType = "????"; break;
     }
     pHlp->pfnPrintf(pHlp,
-        "%RGp - %RGp  %RHv  %RHv  %RRv  %RRv  %s  %s\n",
-        pCur->Core.Key, pCur->Core.KeyLast, pCurType->pfnHandlerR3, pCur->pvUserR3, pCurType->pfnPfHandlerRC, pCur->pvUserRC,
-                    pszType, pCur->pszDesc);
+                    "%RGp - %RGp  %RHv  %RHv  %RHv  %RHv  %s  %s\n",
+                    pCur->Core.Key, pCur->Core.KeyLast, pCurType->pfnHandlerR3, pCur->pvUserR3,
+                    pCurType->pfnPfHandlerR0, pCur->pvUserR0, pszType, pCur->pszDesc);
 #ifdef VBOX_WITH_STATISTICS
     if (pArgs->fStats)
         pHlp->pfnPrintf(pHlp, "   cPeriods: %9RU64  cTicks: %11RU64  Min: %11RU64  Avg: %11RU64 Max: %11RU64\n",
