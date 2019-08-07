@@ -47,7 +47,6 @@
  * @retval VERR_SVM_UNEXPECTED_PATCH_TYPE if the found patch type is invalid.
  *
  * @param   pVCpu               The cross context virtual CPU structure.
- * @param   pCtx                Pointer to the guest-CPU context.
  */
 VMM_INT_DECL(int) hmEmulateSvmMovTpr(PVMCPU pVCpu)
 {
