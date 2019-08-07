@@ -7,7 +7,7 @@
  *  in platform-independent script-like manner.
  */
 
-    Copyright (C) 2006-2016 Oracle Corporation
+    Copyright (C) 2006-2019 Oracle Corporation
 
     This file is part of VirtualBox Open Source Edition (OSE), as
     available from http://www.virtualbox.org. This file is free software;
@@ -300,7 +300,9 @@
     <xsl:text>_h__&#x0A;&#x0A;</xsl:text>
     <xsl:if test="@name='IVirtualBox' or @name='IMachine'">
         <xsl:text>/* Qt includes: */&#x0A;</xsl:text>
-        <xsl:text>#include &lt;QRect&gt;&#x0A;&#x0A;</xsl:text>
+        <xsl:text>#include &lt;QList&gt;&#x0A;</xsl:text>
+        <xsl:text>#include &lt;QRect&gt;&#x0A;</xsl:text>
+        <xsl:text>#include &lt;QStringList&gt;&#x0A;&#x0A;</xsl:text>
     </xsl:if>
     <xsl:text>/* GUI includes: */&#x0A;</xsl:text>
     <xsl:text>#include "COMDefs.h"&#x0A;</xsl:text>
