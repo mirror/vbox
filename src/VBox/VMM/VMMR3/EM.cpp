@@ -35,6 +35,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define VBOX_BUGREF_9217_PART_I
 #define LOG_GROUP LOG_GROUP_EM
 #define VMCPU_INCL_CPUM_GST_CTX /* for CPUM_IMPORT_GUEST_STATE_RET */
 #include <VBox/vmm/em.h>
@@ -181,15 +182,15 @@ VMMR3_INT_DECL(int) EMR3Init(PVM pVM)
                            cHistoryProbeMinInstructions);
     AssertLogRelRCReturn(rc, rc);
 
-    for (VMCPUID i = 0; i < pVM->cCpus; i++)
+    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
-        pVM->aCpus[i].em.s.fExitOptimizationEnabled                  = fExitOptimizationEnabled;
-        pVM->aCpus[i].em.s.fExitOptimizationEnabledR0                = fExitOptimizationEnabledR0;
-        pVM->aCpus[i].em.s.fExitOptimizationEnabledR0PreemptDisabled = fExitOptimizationEnabledR0PreemptDisabled;
-
-        pVM->aCpus[i].em.s.cHistoryExecMaxInstructions               = cHistoryExecMaxInstructions;
-        pVM->aCpus[i].em.s.cHistoryProbeMinInstructions              = cHistoryProbeMinInstructions;
-        pVM->aCpus[i].em.s.cHistoryProbeMaxInstructionsWithoutExit   = cHistoryProbeMaxInstructionsWithoutExit;
+        PVMCPU pVCpu = pVM->apCpusR3[idCpu];
+        pVCpu->em.s.fExitOptimizationEnabled                  = fExitOptimizationEnabled;
+        pVCpu->em.s.fExitOptimizationEnabledR0                = fExitOptimizationEnabledR0;
+        pVCpu->em.s.fExitOptimizationEnabledR0PreemptDisabled = fExitOptimizationEnabledR0PreemptDisabled;
+        pVCpu->em.s.cHistoryExecMaxInstructions               = cHistoryExecMaxInstructions;
+        pVCpu->em.s.cHistoryProbeMinInstructions              = cHistoryProbeMinInstructions;
+        pVCpu->em.s.cHistoryProbeMaxInstructionsWithoutExit   = cHistoryProbeMaxInstructionsWithoutExit;
     }
 
 #ifdef VBOX_WITH_REM
@@ -211,29 +212,29 @@ VMMR3_INT_DECL(int) EMR3Init(PVM pVM)
     if (RT_FAILURE(rc))
         return rc;
 
-    for (VMCPUID i = 0; i < pVM->cCpus; i++)
+    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
-        PVMCPU pVCpu = &pVM->aCpus[i];
+        PVMCPU pVCpu = pVM->apCpusR3[idCpu];
 
-        pVCpu->em.s.enmState            = i == 0 ? EMSTATE_NONE : EMSTATE_WAIT_SIPI;
+        pVCpu->em.s.enmState            = idCpu == 0 ? EMSTATE_NONE : EMSTATE_WAIT_SIPI;
         pVCpu->em.s.enmPrevState        = EMSTATE_NONE;
         pVCpu->em.s.u64TimeSliceStart   = 0; /* paranoia */
         pVCpu->em.s.idxContinueExitRec  = UINT16_MAX;
 
 # define EM_REG_COUNTER(a, b, c) \
-        rc = STAMR3RegisterF(pVM, a, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, c, b, i); \
+        rc = STAMR3RegisterF(pVM, a, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, c, b, idCpu); \
         AssertRC(rc);
 
 # define EM_REG_COUNTER_USED(a, b, c) \
-        rc = STAMR3RegisterF(pVM, a, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES, c, b, i); \
+        rc = STAMR3RegisterF(pVM, a, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES, c, b, idCpu); \
         AssertRC(rc);
 
 # define EM_REG_PROFILE(a, b, c) \
-        rc = STAMR3RegisterF(pVM, a, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, c, b, i); \
+        rc = STAMR3RegisterF(pVM, a, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, c, b, idCpu); \
         AssertRC(rc);
 
 # define EM_REG_PROFILE_ADV(a, b, c) \
-        rc = STAMR3RegisterF(pVM, a, STAMTYPE_PROFILE_ADV, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, c, b, i); \
+        rc = STAMR3RegisterF(pVM, a, STAMTYPE_PROFILE_ADV, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, c, b, idCpu); \
         AssertRC(rc);
 
         /*
@@ -249,98 +250,98 @@ VMMR3_INT_DECL(int) EMR3Init(PVM pVM)
         pVCpu->em.s.pStatsR0 = MMHyperR3ToR0(pVM, pStats);
 
 # if 1 /* rawmode only? */
-        EM_REG_COUNTER_USED(&pStats->StatIoRestarted,            "/EM/CPU%d/R3/PrivInst/IoRestarted",        "I/O instructions restarted in ring-3.");
-        EM_REG_COUNTER_USED(&pStats->StatIoIem,                  "/EM/CPU%d/R3/PrivInst/IoIem",              "I/O instructions end to IEM in ring-3.");
-        EM_REG_COUNTER_USED(&pStats->StatCli,                    "/EM/CPU%d/R3/PrivInst/Cli",                "Number of cli instructions.");
-        EM_REG_COUNTER_USED(&pStats->StatSti,                    "/EM/CPU%d/R3/PrivInst/Sti",                "Number of sli instructions.");
-        EM_REG_COUNTER_USED(&pStats->StatHlt,                    "/EM/CPU%d/R3/PrivInst/Hlt",                "Number of hlt instructions not handled in GC because of PATM.");
-        EM_REG_COUNTER_USED(&pStats->StatInvlpg,                 "/EM/CPU%d/R3/PrivInst/Invlpg",             "Number of invlpg instructions.");
-        EM_REG_COUNTER_USED(&pStats->StatMisc,                   "/EM/CPU%d/R3/PrivInst/Misc",               "Number of misc. instructions.");
-        EM_REG_COUNTER_USED(&pStats->StatMovWriteCR[0],          "/EM/CPU%d/R3/PrivInst/Mov CR0, X",         "Number of mov CR0 write instructions.");
-        EM_REG_COUNTER_USED(&pStats->StatMovWriteCR[1],          "/EM/CPU%d/R3/PrivInst/Mov CR1, X",         "Number of mov CR1 write instructions.");
-        EM_REG_COUNTER_USED(&pStats->StatMovWriteCR[2],          "/EM/CPU%d/R3/PrivInst/Mov CR2, X",         "Number of mov CR2 write instructions.");
-        EM_REG_COUNTER_USED(&pStats->StatMovWriteCR[3],          "/EM/CPU%d/R3/PrivInst/Mov CR3, X",         "Number of mov CR3 write instructions.");
-        EM_REG_COUNTER_USED(&pStats->StatMovWriteCR[4],          "/EM/CPU%d/R3/PrivInst/Mov CR4, X",         "Number of mov CR4 write instructions.");
-        EM_REG_COUNTER_USED(&pStats->StatMovReadCR[0],           "/EM/CPU%d/R3/PrivInst/Mov X, CR0",         "Number of mov CR0 read instructions.");
-        EM_REG_COUNTER_USED(&pStats->StatMovReadCR[1],           "/EM/CPU%d/R3/PrivInst/Mov X, CR1",         "Number of mov CR1 read instructions.");
-        EM_REG_COUNTER_USED(&pStats->StatMovReadCR[2],           "/EM/CPU%d/R3/PrivInst/Mov X, CR2",         "Number of mov CR2 read instructions.");
-        EM_REG_COUNTER_USED(&pStats->StatMovReadCR[3],           "/EM/CPU%d/R3/PrivInst/Mov X, CR3",         "Number of mov CR3 read instructions.");
-        EM_REG_COUNTER_USED(&pStats->StatMovReadCR[4],           "/EM/CPU%d/R3/PrivInst/Mov X, CR4",         "Number of mov CR4 read instructions.");
-        EM_REG_COUNTER_USED(&pStats->StatMovDRx,                 "/EM/CPU%d/R3/PrivInst/MovDRx",             "Number of mov DRx instructions.");
-        EM_REG_COUNTER_USED(&pStats->StatIret,                   "/EM/CPU%d/R3/PrivInst/Iret",               "Number of iret instructions.");
-        EM_REG_COUNTER_USED(&pStats->StatMovLgdt,                "/EM/CPU%d/R3/PrivInst/Lgdt",               "Number of lgdt instructions.");
-        EM_REG_COUNTER_USED(&pStats->StatMovLidt,                "/EM/CPU%d/R3/PrivInst/Lidt",               "Number of lidt instructions.");
-        EM_REG_COUNTER_USED(&pStats->StatMovLldt,                "/EM/CPU%d/R3/PrivInst/Lldt",               "Number of lldt instructions.");
-        EM_REG_COUNTER_USED(&pStats->StatSysEnter,               "/EM/CPU%d/R3/PrivInst/Sysenter",           "Number of sysenter instructions.");
-        EM_REG_COUNTER_USED(&pStats->StatSysExit,                "/EM/CPU%d/R3/PrivInst/Sysexit",            "Number of sysexit instructions.");
-        EM_REG_COUNTER_USED(&pStats->StatSysCall,                "/EM/CPU%d/R3/PrivInst/Syscall",            "Number of syscall instructions.");
-        EM_REG_COUNTER_USED(&pStats->StatSysRet,                 "/EM/CPU%d/R3/PrivInst/Sysret",             "Number of sysret instructions.");
-        EM_REG_COUNTER(&pVCpu->em.s.StatTotalClis,               "/EM/CPU%d/Cli/Total",                      "Total number of cli instructions executed.");
+        EM_REG_COUNTER_USED(&pStats->StatIoRestarted,       "/EM/CPU%u/R3/PrivInst/IoRestarted",        "I/O instructions restarted in ring-3.");
+        EM_REG_COUNTER_USED(&pStats->StatIoIem,             "/EM/CPU%u/R3/PrivInst/IoIem",              "I/O instructions end to IEM in ring-3.");
+        EM_REG_COUNTER_USED(&pStats->StatCli,               "/EM/CPU%u/R3/PrivInst/Cli",                "Number of cli instructions.");
+        EM_REG_COUNTER_USED(&pStats->StatSti,               "/EM/CPU%u/R3/PrivInst/Sti",                "Number of sli instructions.");
+        EM_REG_COUNTER_USED(&pStats->StatHlt,               "/EM/CPU%u/R3/PrivInst/Hlt",                "Number of hlt instructions not handled in GC because of PATM.");
+        EM_REG_COUNTER_USED(&pStats->StatInvlpg,            "/EM/CPU%u/R3/PrivInst/Invlpg",             "Number of invlpg instructions.");
+        EM_REG_COUNTER_USED(&pStats->StatMisc,              "/EM/CPU%u/R3/PrivInst/Misc",               "Number of misc. instructions.");
+        EM_REG_COUNTER_USED(&pStats->StatMovWriteCR[0],     "/EM/CPU%u/R3/PrivInst/Mov CR0, X",         "Number of mov CR0 write instructions.");
+        EM_REG_COUNTER_USED(&pStats->StatMovWriteCR[1],     "/EM/CPU%u/R3/PrivInst/Mov CR1, X",         "Number of mov CR1 write instructions.");
+        EM_REG_COUNTER_USED(&pStats->StatMovWriteCR[2],     "/EM/CPU%u/R3/PrivInst/Mov CR2, X",         "Number of mov CR2 write instructions.");
+        EM_REG_COUNTER_USED(&pStats->StatMovWriteCR[3],     "/EM/CPU%u/R3/PrivInst/Mov CR3, X",         "Number of mov CR3 write instructions.");
+        EM_REG_COUNTER_USED(&pStats->StatMovWriteCR[4],     "/EM/CPU%u/R3/PrivInst/Mov CR4, X",         "Number of mov CR4 write instructions.");
+        EM_REG_COUNTER_USED(&pStats->StatMovReadCR[0],      "/EM/CPU%u/R3/PrivInst/Mov X, CR0",         "Number of mov CR0 read instructions.");
+        EM_REG_COUNTER_USED(&pStats->StatMovReadCR[1],      "/EM/CPU%u/R3/PrivInst/Mov X, CR1",         "Number of mov CR1 read instructions.");
+        EM_REG_COUNTER_USED(&pStats->StatMovReadCR[2],      "/EM/CPU%u/R3/PrivInst/Mov X, CR2",         "Number of mov CR2 read instructions.");
+        EM_REG_COUNTER_USED(&pStats->StatMovReadCR[3],      "/EM/CPU%u/R3/PrivInst/Mov X, CR3",         "Number of mov CR3 read instructions.");
+        EM_REG_COUNTER_USED(&pStats->StatMovReadCR[4],      "/EM/CPU%u/R3/PrivInst/Mov X, CR4",         "Number of mov CR4 read instructions.");
+        EM_REG_COUNTER_USED(&pStats->StatMovDRx,            "/EM/CPU%u/R3/PrivInst/MovDRx",             "Number of mov DRx instructions.");
+        EM_REG_COUNTER_USED(&pStats->StatIret,              "/EM/CPU%u/R3/PrivInst/Iret",               "Number of iret instructions.");
+        EM_REG_COUNTER_USED(&pStats->StatMovLgdt,           "/EM/CPU%u/R3/PrivInst/Lgdt",               "Number of lgdt instructions.");
+        EM_REG_COUNTER_USED(&pStats->StatMovLidt,           "/EM/CPU%u/R3/PrivInst/Lidt",               "Number of lidt instructions.");
+        EM_REG_COUNTER_USED(&pStats->StatMovLldt,           "/EM/CPU%u/R3/PrivInst/Lldt",               "Number of lldt instructions.");
+        EM_REG_COUNTER_USED(&pStats->StatSysEnter,          "/EM/CPU%u/R3/PrivInst/Sysenter",           "Number of sysenter instructions.");
+        EM_REG_COUNTER_USED(&pStats->StatSysExit,           "/EM/CPU%u/R3/PrivInst/Sysexit",            "Number of sysexit instructions.");
+        EM_REG_COUNTER_USED(&pStats->StatSysCall,           "/EM/CPU%u/R3/PrivInst/Syscall",            "Number of syscall instructions.");
+        EM_REG_COUNTER_USED(&pStats->StatSysRet,            "/EM/CPU%u/R3/PrivInst/Sysret",             "Number of sysret instructions.");
+        EM_REG_COUNTER(&pVCpu->em.s.StatTotalClis,          "/EM/CPU%u/Cli/Total",                      "Total number of cli instructions executed.");
 #endif
         pVCpu->em.s.pCliStatTree = 0;
 
         /* these should be considered for release statistics. */
-        EM_REG_COUNTER(&pVCpu->em.s.StatIOEmu,              "/PROF/CPU%d/EM/Emulation/IO",      "Profiling of emR3RawExecuteIOInstruction.");
-        EM_REG_COUNTER(&pVCpu->em.s.StatPrivEmu,            "/PROF/CPU%d/EM/Emulation/Priv",    "Profiling of emR3RawPrivileged.");
-        EM_REG_PROFILE(&pVCpu->em.s.StatHMEntry,            "/PROF/CPU%d/EM/HMEnter",           "Profiling Hardware Accelerated Mode entry overhead.");
-        EM_REG_PROFILE(&pVCpu->em.s.StatHMExec,             "/PROF/CPU%d/EM/HMExec",            "Profiling Hardware Accelerated Mode execution.");
-        EM_REG_COUNTER(&pVCpu->em.s.StatHMExecuteCalled,    "/PROF/CPU%d/EM/HMExecuteCalled",   "Number of times enmR3HMExecute is called.");
-        EM_REG_PROFILE(&pVCpu->em.s.StatIEMEmu,             "/PROF/CPU%d/EM/IEMEmuSingle",      "Profiling single instruction IEM execution.");
-        EM_REG_PROFILE(&pVCpu->em.s.StatIEMThenREM,         "/PROF/CPU%d/EM/IEMThenRem",        "Profiling IEM-then-REM instruction execution (by IEM).");
-        EM_REG_PROFILE(&pVCpu->em.s.StatNEMEntry,           "/PROF/CPU%d/EM/NEMEnter",          "Profiling NEM entry overhead.");
+        EM_REG_COUNTER(&pVCpu->em.s.StatIOEmu,              "/PROF/CPU%u/EM/Emulation/IO",      "Profiling of emR3RawExecuteIOInstruction.");
+        EM_REG_COUNTER(&pVCpu->em.s.StatPrivEmu,            "/PROF/CPU%u/EM/Emulation/Priv",    "Profiling of emR3RawPrivileged.");
+        EM_REG_PROFILE(&pVCpu->em.s.StatHMEntry,            "/PROF/CPU%u/EM/HMEnter",           "Profiling Hardware Accelerated Mode entry overhead.");
+        EM_REG_PROFILE(&pVCpu->em.s.StatHMExec,             "/PROF/CPU%u/EM/HMExec",            "Profiling Hardware Accelerated Mode execution.");
+        EM_REG_COUNTER(&pVCpu->em.s.StatHMExecuteCalled,    "/PROF/CPU%u/EM/HMExecuteCalled",   "Number of times enmR3HMExecute is called.");
+        EM_REG_PROFILE(&pVCpu->em.s.StatIEMEmu,             "/PROF/CPU%u/EM/IEMEmuSingle",      "Profiling single instruction IEM execution.");
+        EM_REG_PROFILE(&pVCpu->em.s.StatIEMThenREM,         "/PROF/CPU%u/EM/IEMThenRem",        "Profiling IEM-then-REM instruction execution (by IEM).");
+        EM_REG_PROFILE(&pVCpu->em.s.StatNEMEntry,           "/PROF/CPU%u/EM/NEMEnter",          "Profiling NEM entry overhead.");
 #endif /* VBOX_WITH_STATISTICS */
-        EM_REG_PROFILE(&pVCpu->em.s.StatNEMExec,            "/PROF/CPU%d/EM/NEMExec",           "Profiling NEM execution.");
-        EM_REG_COUNTER(&pVCpu->em.s.StatNEMExecuteCalled,   "/PROF/CPU%d/EM/NEMExecuteCalled",  "Number of times enmR3NEMExecute is called.");
+        EM_REG_PROFILE(&pVCpu->em.s.StatNEMExec,            "/PROF/CPU%u/EM/NEMExec",           "Profiling NEM execution.");
+        EM_REG_COUNTER(&pVCpu->em.s.StatNEMExecuteCalled,   "/PROF/CPU%u/EM/NEMExecuteCalled",  "Number of times enmR3NEMExecute is called.");
 #ifdef VBOX_WITH_STATISTICS
-        EM_REG_PROFILE(&pVCpu->em.s.StatREMEmu,             "/PROF/CPU%d/EM/REMEmuSingle",      "Profiling single instruction REM execution.");
-        EM_REG_PROFILE(&pVCpu->em.s.StatREMExec,            "/PROF/CPU%d/EM/REMExec",           "Profiling REM execution.");
-        EM_REG_PROFILE(&pVCpu->em.s.StatREMSync,            "/PROF/CPU%d/EM/REMSync",           "Profiling REM context syncing.");
-        EM_REG_PROFILE(&pVCpu->em.s.StatRAWEntry,           "/PROF/CPU%d/EM/RAWEnter",          "Profiling Raw Mode entry overhead.");
-        EM_REG_PROFILE(&pVCpu->em.s.StatRAWExec,            "/PROF/CPU%d/EM/RAWExec",           "Profiling Raw Mode execution.");
-        EM_REG_PROFILE(&pVCpu->em.s.StatRAWTail,            "/PROF/CPU%d/EM/RAWTail",           "Profiling Raw Mode tail overhead.");
+        EM_REG_PROFILE(&pVCpu->em.s.StatREMEmu,             "/PROF/CPU%u/EM/REMEmuSingle",      "Profiling single instruction REM execution.");
+        EM_REG_PROFILE(&pVCpu->em.s.StatREMExec,            "/PROF/CPU%u/EM/REMExec",           "Profiling REM execution.");
+        EM_REG_PROFILE(&pVCpu->em.s.StatREMSync,            "/PROF/CPU%u/EM/REMSync",           "Profiling REM context syncing.");
+        EM_REG_PROFILE(&pVCpu->em.s.StatRAWEntry,           "/PROF/CPU%u/EM/RAWEnter",          "Profiling Raw Mode entry overhead.");
+        EM_REG_PROFILE(&pVCpu->em.s.StatRAWExec,            "/PROF/CPU%u/EM/RAWExec",           "Profiling Raw Mode execution.");
+        EM_REG_PROFILE(&pVCpu->em.s.StatRAWTail,            "/PROF/CPU%u/EM/RAWTail",           "Profiling Raw Mode tail overhead.");
 #endif /* VBOX_WITH_STATISTICS */
 
-        EM_REG_COUNTER(&pVCpu->em.s.StatForcedActions,      "/PROF/CPU%d/EM/ForcedActions",     "Profiling forced action execution.");
-        EM_REG_COUNTER(&pVCpu->em.s.StatHalted,             "/PROF/CPU%d/EM/Halted",            "Profiling halted state (VMR3WaitHalted).");
-        EM_REG_PROFILE_ADV(&pVCpu->em.s.StatCapped,         "/PROF/CPU%d/EM/Capped",            "Profiling capped state (sleep).");
-        EM_REG_COUNTER(&pVCpu->em.s.StatREMTotal,           "/PROF/CPU%d/EM/REMTotal",          "Profiling emR3RemExecute (excluding FFs).");
-        EM_REG_COUNTER(&pVCpu->em.s.StatRAWTotal,           "/PROF/CPU%d/EM/RAWTotal",          "Profiling emR3RawExecute (excluding FFs).");
+        EM_REG_COUNTER(&pVCpu->em.s.StatForcedActions,      "/PROF/CPU%u/EM/ForcedActions",     "Profiling forced action execution.");
+        EM_REG_COUNTER(&pVCpu->em.s.StatHalted,             "/PROF/CPU%u/EM/Halted",            "Profiling halted state (VMR3WaitHalted).");
+        EM_REG_PROFILE_ADV(&pVCpu->em.s.StatCapped,         "/PROF/CPU%u/EM/Capped",            "Profiling capped state (sleep).");
+        EM_REG_COUNTER(&pVCpu->em.s.StatREMTotal,           "/PROF/CPU%u/EM/REMTotal",          "Profiling emR3RemExecute (excluding FFs).");
+        EM_REG_COUNTER(&pVCpu->em.s.StatRAWTotal,           "/PROF/CPU%u/EM/RAWTotal",          "Profiling emR3RawExecute (excluding FFs).");
 
-        EM_REG_PROFILE_ADV(&pVCpu->em.s.StatTotal,          "/PROF/CPU%d/EM/Total",             "Profiling EMR3ExecuteVM.");
+        EM_REG_PROFILE_ADV(&pVCpu->em.s.StatTotal,          "/PROF/CPU%u/EM/Total",             "Profiling EMR3ExecuteVM.");
 
         rc = STAMR3RegisterF(pVM, &pVCpu->em.s.iNextExit, STAMTYPE_U64, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,
-                             "Number of recorded exits.", "/PROF/CPU%u/EM/RecordedExits", i);
+                             "Number of recorded exits.", "/PROF/CPU%u/EM/RecordedExits", idCpu);
         AssertRC(rc);
 
         /* History record statistics */
         rc = STAMR3RegisterF(pVM, &pVCpu->em.s.cExitRecordUsed, STAMTYPE_U32, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,
-                             "Number of used hash table entries.", "/EM/CPU%u/ExitHashing/Used", i);
+                             "Number of used hash table entries.", "/EM/CPU%u/ExitHashing/Used", idCpu);
         AssertRC(rc);
 
         for (uint32_t iStep = 0; iStep < RT_ELEMENTS(pVCpu->em.s.aStatHistoryRecHits); iStep++)
         {
             rc = STAMR3RegisterF(pVM, &pVCpu->em.s.aStatHistoryRecHits[iStep], STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,
-                                 "Number of hits at this step.",             "/EM/CPU%u/ExitHashing/Step%02u-Hits", i, iStep);
+                                 "Number of hits at this step.",             "/EM/CPU%u/ExitHashing/Step%02u-Hits", idCpu, iStep);
             AssertRC(rc);
             rc = STAMR3RegisterF(pVM, &pVCpu->em.s.aStatHistoryRecTypeChanged[iStep], STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,
-                                 "Number of type changes at this step.",     "/EM/CPU%u/ExitHashing/Step%02u-TypeChanges", i, iStep);
+                                 "Number of type changes at this step.",     "/EM/CPU%u/ExitHashing/Step%02u-TypeChanges", idCpu, iStep);
             AssertRC(rc);
             rc = STAMR3RegisterF(pVM, &pVCpu->em.s.aStatHistoryRecTypeChanged[iStep], STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,
-                                 "Number of replacments at this step.",     "/EM/CPU%u/ExitHashing/Step%02u-Replacments", i, iStep);
+                                 "Number of replacments at this step.",     "/EM/CPU%u/ExitHashing/Step%02u-Replacments", idCpu, iStep);
             AssertRC(rc);
             rc = STAMR3RegisterF(pVM, &pVCpu->em.s.aStatHistoryRecNew[iStep], STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,
-                                 "Number of new inserts at this step.",     "/EM/CPU%u/ExitHashing/Step%02u-NewInserts", i, iStep);
+                                 "Number of new inserts at this step.",     "/EM/CPU%u/ExitHashing/Step%02u-NewInserts", idCpu, iStep);
             AssertRC(rc);
         }
 
-        EM_REG_PROFILE(&pVCpu->em.s.StatHistoryExec,              "/EM/CPU%d/ExitOpt/Exec",              "Profiling normal EMHistoryExec operation.");
-        EM_REG_COUNTER(&pVCpu->em.s.StatHistoryExecSavedExits,    "/EM/CPU%d/ExitOpt/ExecSavedExit",     "Net number of saved exits.");
-        EM_REG_COUNTER(&pVCpu->em.s.StatHistoryExecInstructions,  "/EM/CPU%d/ExitOpt/ExecInstructions",  "Number of instructions executed during normal operation.");
-        EM_REG_PROFILE(&pVCpu->em.s.StatHistoryProbe,             "/EM/CPU%d/ExitOpt/Probe",             "Profiling EMHistoryExec when probing.");
-        EM_REG_COUNTER(&pVCpu->em.s.StatHistoryProbeInstructions, "/EM/CPU%d/ExitOpt/ProbeInstructions", "Number of instructions executed during probing.");
-        EM_REG_COUNTER(&pVCpu->em.s.StatHistoryProbedNormal,      "/EM/CPU%d/ExitOpt/ProbedNormal",      "Number of EMEXITACTION_NORMAL_PROBED results.");
-        EM_REG_COUNTER(&pVCpu->em.s.StatHistoryProbedExecWithMax, "/EM/CPU%d/ExitOpt/ProbedExecWithMax", "Number of EMEXITACTION_EXEC_WITH_MAX results.");
-        EM_REG_COUNTER(&pVCpu->em.s.StatHistoryProbedToRing3,     "/EM/CPU%d/ExitOpt/ProbedToRing3",     "Number of ring-3 probe continuations.");
+        EM_REG_PROFILE(&pVCpu->em.s.StatHistoryExec,              "/EM/CPU%u/ExitOpt/Exec",              "Profiling normal EMHistoryExec operation.");
+        EM_REG_COUNTER(&pVCpu->em.s.StatHistoryExecSavedExits,    "/EM/CPU%u/ExitOpt/ExecSavedExit",     "Net number of saved exits.");
+        EM_REG_COUNTER(&pVCpu->em.s.StatHistoryExecInstructions,  "/EM/CPU%u/ExitOpt/ExecInstructions",  "Number of instructions executed during normal operation.");
+        EM_REG_PROFILE(&pVCpu->em.s.StatHistoryProbe,             "/EM/CPU%u/ExitOpt/Probe",             "Profiling EMHistoryExec when probing.");
+        EM_REG_COUNTER(&pVCpu->em.s.StatHistoryProbeInstructions, "/EM/CPU%u/ExitOpt/ProbeInstructions", "Number of instructions executed during probing.");
+        EM_REG_COUNTER(&pVCpu->em.s.StatHistoryProbedNormal,      "/EM/CPU%u/ExitOpt/ProbedNormal",      "Number of EMEXITACTION_NORMAL_PROBED results.");
+        EM_REG_COUNTER(&pVCpu->em.s.StatHistoryProbedExecWithMax, "/EM/CPU%u/ExitOpt/ProbedExecWithMax", "Number of EMEXITACTION_EXEC_WITH_MAX results.");
+        EM_REG_COUNTER(&pVCpu->em.s.StatHistoryProbedToRing3,     "/EM/CPU%u/ExitOpt/ProbedToRing3",     "Number of ring-3 probe continuations.");
     }
 
     emR3InitDbg(pVM);
@@ -359,8 +360,8 @@ VMMR3_INT_DECL(int) EMR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
 {
     if (enmWhat == VMINITCOMPLETED_RING0)
         LogRel(("EM: Exit history optimizations: enabled=%RTbool enabled-r0=%RTbool enabled-r0-no-preemption=%RTbool\n",
-                pVM->aCpus[0].em.s.fExitOptimizationEnabled, pVM->aCpus[0].em.s.fExitOptimizationEnabledR0,
-                pVM->aCpus[0].em.s.fExitOptimizationEnabledR0PreemptDisabled));
+                pVM->apCpusR3[0]->em.s.fExitOptimizationEnabled, pVM->apCpusR3[0]->em.s.fExitOptimizationEnabledR0,
+                pVM->apCpusR3[0]->em.s.fExitOptimizationEnabledR0PreemptDisabled));
     return VINF_SUCCESS;
 }
 
@@ -410,8 +411,8 @@ VMMR3_INT_DECL(void) EMR3ResetCpu(PVMCPU pVCpu)
 VMMR3_INT_DECL(void) EMR3Reset(PVM pVM)
 {
     Log(("EMR3Reset: \n"));
-    for (VMCPUID i = 0; i < pVM->cCpus; i++)
-        EMR3ResetCpu(&pVM->aCpus[i]);
+    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
+        EMR3ResetCpu(pVM->apCpusR3[idCpu]);
 }
 
 
@@ -444,9 +445,9 @@ VMMR3_INT_DECL(int) EMR3Term(PVM pVM)
  */
 static DECLCALLBACK(int) emR3Save(PVM pVM, PSSMHANDLE pSSM)
 {
-    for (VMCPUID i = 0; i < pVM->cCpus; i++)
+    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
-        PVMCPU pVCpu = &pVM->aCpus[i];
+        PVMCPU pVCpu = pVM->apCpusR3[idCpu];
 
         SSMR3PutBool(pSSM, false /*fForceRAW*/);
 
@@ -492,9 +493,9 @@ static DECLCALLBACK(int) emR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, u
     /*
      * Load the saved state.
      */
-    for (VMCPUID i = 0; i < pVM->cCpus; i++)
+    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
-        PVMCPU pVCpu = &pVM->aCpus[i];
+        PVMCPU pVCpu = pVM->apCpusR3[idCpu];
 
         bool fForceRAWIgnored;
         int rc = SSMR3GetBool(pSSM, &fForceRAWIgnored);

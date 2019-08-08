@@ -614,6 +614,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define VBOX_BUGREF_9217_PART_I
 #define LOG_GROUP LOG_GROUP_PGM
 #include <VBox/vmm/dbgf.h>
 #include <VBox/vmm/pgm.h>
@@ -752,7 +753,7 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
      * Assert alignment and sizes.
      */
     AssertCompile(sizeof(pVM->pgm.s) <= sizeof(pVM->pgm.padding));
-    AssertCompile(sizeof(pVM->aCpus[0].pgm.s) <= sizeof(pVM->aCpus[0].pgm.padding));
+    AssertCompile(sizeof(pVM->apCpusR3[0]->pgm.s) <= sizeof(pVM->apCpusR3[0]->pgm.padding));
     AssertCompileMemberAlignment(PGM, CritSectX, sizeof(uintptr_t));
 
     /*
@@ -779,7 +780,7 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
     /* Init the per-CPU part. */
     for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
-        PVMCPU pVCpu = &pVM->aCpus[idCpu];
+        PVMCPU pVCpu = pVM->apCpusR3[idCpu];
         PPGMCPU pPGM = &pVCpu->pgm.s;
 
         pPGM->offVM      = (uintptr_t)&pVCpu->pgm.s - (uintptr_t)pVM;
@@ -890,10 +891,11 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
     pVM->pgm.s.pStatsR0 = MMHyperCCToR0(pVM, pv);
     pv = (uint8_t *)pv + RT_ALIGN_Z(sizeof(PGMSTATS), 64);
 
-    for (VMCPUID iCpu = 0; iCpu < pVM->cCpus; iCpu++)
+    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
-        pVM->aCpus[iCpu].pgm.s.pStatsR3 = (PGMCPUSTATS *)pv;
-        pVM->aCpus[iCpu].pgm.s.pStatsR0 = MMHyperCCToR0(pVM, pv);
+        PVMCPU pVCpu = pVM->apCpusR3[idCpu];
+        pVCpu->pgm.s.pStatsR3 = (PGMCPUSTATS *)pv;
+        pVCpu->pgm.s.pStatsR0 = MMHyperCCToR0(pVM, pv);
 
         pv = (uint8_t *)pv + RT_ALIGN_Z(sizeof(PGMCPUSTATS), 64);
     }
@@ -992,7 +994,7 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
     {
         for (VMCPUID i = 0; i < pVM->cCpus; i++)
         {
-            PVMCPU pVCpu = &pVM->aCpus[i];
+            PVMCPU pVCpu = pVM->apCpusR3[i];
             rc = PGMHCChangeMode(pVM, pVCpu, PGMMODE_REAL);
             if (RT_FAILURE(rc))
                 break;
@@ -1067,7 +1069,7 @@ static int pgmR3InitPaging(PVM pVM)
      */
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
-        PVMCPU pVCpu = &pVM->aCpus[i];
+        PVMCPU pVCpu = pVM->apCpusR3[i];
 
         pVCpu->pgm.s.enmShadowMode     = PGMMODE_INVALID;
         pVCpu->pgm.s.enmGuestMode      = PGMMODE_INVALID;
@@ -1389,7 +1391,7 @@ static int pgmR3InitStats(PVM pVM)
      */
     for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
-        PPGMCPU pPgmCpu = &pVM->aCpus[idCpu].pgm.s;
+        PPGMCPU pPgmCpu = &pVM->apCpusR3[idCpu]->pgm.s;
 
 #define PGM_REG_COUNTER(a, b, c) \
     rc = STAMR3RegisterF(pVM, a, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, c, b, idCpu); \
@@ -1402,7 +1404,7 @@ static int pgmR3InitStats(PVM pVM)
         PGM_REG_COUNTER(&pPgmCpu->cA20Changes, "/PGM/CPU%u/cA20Changes",  "Number of A20 gate changes.");
 
 #ifdef VBOX_WITH_STATISTICS
-        PGMCPUSTATS *pCpuStats = pVM->aCpus[idCpu].pgm.s.pStatsR3;
+        PGMCPUSTATS *pCpuStats = pVM->apCpusR3[idCpu]->pgm.s.pStatsR3;
 
 # if 0 /* rarely useful; leave for debugging. */
         for (unsigned j = 0; j < RT_ELEMENTS(pPgmCpu->StatSyncPtPD); j++)
@@ -1724,9 +1726,9 @@ VMMR3DECL(int) PGMR3InitFinalize(PVM pVM)
      * Initialize the invalid paging entry masks, assuming NX is disabled.
      */
     uint64_t fMbzPageFrameMask = pVM->pgm.s.GCPhysInvAddrMask & UINT64_C(0x000ffffffffff000);
-    for (VMCPUID iCpu = 0; iCpu < pVM->cCpus; iCpu++)
+    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
-        PVMCPU pVCpu = &pVM->aCpus[iCpu];
+        PVMCPU pVCpu = pVM->apCpusR3[idCpu];
 
         /** @todo The manuals are not entirely clear whether the physical
          *        address width is relevant.  See table 5-9 in the intel
@@ -1845,7 +1847,7 @@ VMMR3DECL(void) PGMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
     /* Shadow, guest and both mode switch & relocation for each VCPU. */
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
-        PVMCPU  pVCpu = &pVM->aCpus[i];
+        PVMCPU  pVCpu = pVM->apCpusR3[i];
 
         uintptr_t idxShw = pVCpu->pgm.s.idxShadowModeData;
         if (   idxShw < RT_ELEMENTS(g_aPgmShadowModeData)
@@ -1993,7 +1995,7 @@ VMMR3_INT_DECL(void) PGMR3Reset(PVM pVM)
      */
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
-        PVMCPU          pVCpu  = &pVM->aCpus[i];
+        PVMCPU          pVCpu  = pVM->apCpusR3[i];
         uintptr_t const idxGst = pVCpu->pgm.s.idxGuestModeData;
         if (   idxGst < RT_ELEMENTS(g_aPgmGuestModeData)
             && g_aPgmGuestModeData[idxGst].pfnExit)
@@ -2014,7 +2016,7 @@ VMMR3_INT_DECL(void) PGMR3Reset(PVM pVM)
      */
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
-        PVMCPU  pVCpu = &pVM->aCpus[i];
+        PVMCPU  pVCpu = pVM->apCpusR3[i];
 
         int rc = PGMHCChangeMode(pVM, pVCpu, PGMMODE_REAL);
         AssertReleaseRC(rc);
@@ -2033,7 +2035,7 @@ VMMR3_INT_DECL(void) PGMR3Reset(PVM pVM)
      */
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
-        PVMCPU pVCpu = &pVM->aCpus[i];
+        PVMCPU pVCpu = pVM->apCpusR3[i];
 
         pVCpu->pgm.s.fGst32BitPageSizeExtension = false;
         PGMNotifyNxeChanged(pVCpu, false);
@@ -2151,7 +2153,7 @@ static DECLCALLBACK(void) pgmR3InfoMode(PVM pVM, PCDBGFINFOHLP pHlp, const char 
 
     PVMCPU pVCpu = VMMGetCpu(pVM);
     if (!pVCpu)
-        pVCpu = &pVM->aCpus[0];
+        pVCpu = pVM->apCpusR3[0];
 
 
     /* print info. */
@@ -2301,7 +2303,7 @@ static DECLCALLBACK(void) pgmR3PhysInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char 
 static DECLCALLBACK(void) pgmR3InfoCr3(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     /** @todo SMP support!! */
-    PVMCPU pVCpu = &pVM->aCpus[0];
+    PVMCPU pVCpu = pVM->apCpusR3[0];
 
 /** @todo fix this! Convert the PGMR3DumpHierarchyHC functions to do guest stuff. */
     /* Big pages supported? */

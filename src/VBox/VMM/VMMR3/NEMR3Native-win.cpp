@@ -25,6 +25,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define VBOX_BUGREF_9217_PART_I
 #define LOG_GROUP LOG_GROUP_NEM
 #define VMCPU_INCL_CPUM_GST_CTX
 #include <iprt/nt/nt-and-windows.h>
@@ -1191,9 +1192,9 @@ int nemR3NativeInit(PVM pVM, bool fFallback, bool fForced)
      */
     pVM->nem.s.fA20Enabled = true;
 #if 0
-    for (VMCPUID iCpu = 0; iCpu < pVM->cCpus; iCpu++)
+    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
-        PNEMCPU pNemCpu = &pVM->aCpus[iCpu].nem.s;
+        PNEMCPU pNemCpu = &pVM->apCpusR3[idCpu]->nem.s;
     }
 #endif
 
@@ -1244,37 +1245,37 @@ int nemR3NativeInit(PVM pVM, bool fFallback, bool fForced)
                         nemR3WinDisableX2Apic(pVM);
 
                         /* Register release statistics */
-                        for (VMCPUID iCpu = 0; iCpu < pVM->cCpus; iCpu++)
+                        for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
                         {
-                            PNEMCPU pNemCpu = &pVM->aCpus[iCpu].nem.s;
-                            STAMR3RegisterF(pVM, &pNemCpu->StatExitPortIo,          STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of port I/O exits",               "/NEM/CPU%u/ExitPortIo", iCpu);
-                            STAMR3RegisterF(pVM, &pNemCpu->StatExitMemUnmapped,     STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of unmapped memory exits",        "/NEM/CPU%u/ExitMemUnmapped", iCpu);
-                            STAMR3RegisterF(pVM, &pNemCpu->StatExitMemIntercept,    STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of intercepted memory exits",     "/NEM/CPU%u/ExitMemIntercept", iCpu);
-                            STAMR3RegisterF(pVM, &pNemCpu->StatExitHalt,            STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of HLT exits",                    "/NEM/CPU%u/ExitHalt", iCpu);
-                            STAMR3RegisterF(pVM, &pNemCpu->StatExitInterruptWindow, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of HLT exits",                    "/NEM/CPU%u/ExitInterruptWindow", iCpu);
-                            STAMR3RegisterF(pVM, &pNemCpu->StatExitCpuId,           STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of CPUID exits",                  "/NEM/CPU%u/ExitCpuId", iCpu);
-                            STAMR3RegisterF(pVM, &pNemCpu->StatExitMsr,             STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of MSR access exits",             "/NEM/CPU%u/ExitMsr", iCpu);
-                            STAMR3RegisterF(pVM, &pNemCpu->StatExitException,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of exception exits",              "/NEM/CPU%u/ExitException", iCpu);
-                            STAMR3RegisterF(pVM, &pNemCpu->StatExitExceptionBp,     STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of #BP exits",                    "/NEM/CPU%u/ExitExceptionBp", iCpu);
-                            STAMR3RegisterF(pVM, &pNemCpu->StatExitExceptionDb,     STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of #DB exits",                    "/NEM/CPU%u/ExitExceptionDb", iCpu);
-                            STAMR3RegisterF(pVM, &pNemCpu->StatExitExceptionUd,     STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of #UD exits",                    "/NEM/CPU%u/ExitExceptionUd", iCpu);
-                            STAMR3RegisterF(pVM, &pNemCpu->StatExitExceptionUdHandled, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of handled #UD exits",         "/NEM/CPU%u/ExitExceptionUdHandled", iCpu);
-                            STAMR3RegisterF(pVM, &pNemCpu->StatExitUnrecoverable,   STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of unrecoverable exits",          "/NEM/CPU%u/ExitUnrecoverable", iCpu);
-                            STAMR3RegisterF(pVM, &pNemCpu->StatGetMsgTimeout,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of get message timeouts/alerts",  "/NEM/CPU%u/GetMsgTimeout", iCpu);
-                            STAMR3RegisterF(pVM, &pNemCpu->StatStopCpuSuccess,      STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of successful CPU stops",         "/NEM/CPU%u/StopCpuSuccess", iCpu);
-                            STAMR3RegisterF(pVM, &pNemCpu->StatStopCpuPending,      STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of pending CPU stops",            "/NEM/CPU%u/StopCpuPending", iCpu);
-                            STAMR3RegisterF(pVM, &pNemCpu->StatStopCpuPendingAlerts,STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of pending CPU stop alerts",      "/NEM/CPU%u/StopCpuPendingAlerts", iCpu);
-                            STAMR3RegisterF(pVM, &pNemCpu->StatStopCpuPendingOdd,   STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of odd pending CPU stops (see code)", "/NEM/CPU%u/StopCpuPendingOdd", iCpu);
-                            STAMR3RegisterF(pVM, &pNemCpu->StatCancelChangedState,  STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of cancel changed state",         "/NEM/CPU%u/CancelChangedState", iCpu);
-                            STAMR3RegisterF(pVM, &pNemCpu->StatCancelAlertedThread, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of cancel alerted EMT",           "/NEM/CPU%u/CancelAlertedEMT", iCpu);
-                            STAMR3RegisterF(pVM, &pNemCpu->StatBreakOnFFPre,        STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of pre execution FF breaks",      "/NEM/CPU%u/BreakOnFFPre", iCpu);
-                            STAMR3RegisterF(pVM, &pNemCpu->StatBreakOnFFPost,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of post execution FF breaks",     "/NEM/CPU%u/BreakOnFFPost", iCpu);
-                            STAMR3RegisterF(pVM, &pNemCpu->StatBreakOnCancel,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of cancel execution breaks",      "/NEM/CPU%u/BreakOnCancel", iCpu);
-                            STAMR3RegisterF(pVM, &pNemCpu->StatBreakOnStatus,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of status code breaks",           "/NEM/CPU%u/BreakOnStatus", iCpu);
-                            STAMR3RegisterF(pVM, &pNemCpu->StatImportOnDemand,      STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of on-demand state imports",      "/NEM/CPU%u/ImportOnDemand", iCpu);
-                            STAMR3RegisterF(pVM, &pNemCpu->StatImportOnReturn,      STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of state imports on loop return", "/NEM/CPU%u/ImportOnReturn", iCpu);
-                            STAMR3RegisterF(pVM, &pNemCpu->StatImportOnReturnSkipped, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of skipped state imports on loop return", "/NEM/CPU%u/ImportOnReturnSkipped", iCpu);
-                            STAMR3RegisterF(pVM, &pNemCpu->StatQueryCpuTick,        STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of TSC queries",                  "/NEM/CPU%u/QueryCpuTick", iCpu);
+                            PNEMCPU pNemCpu = &pVM->apCpusR3[idCpu]->nem.s;
+                            STAMR3RegisterF(pVM, &pNemCpu->StatExitPortIo,          STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of port I/O exits",               "/NEM/CPU%u/ExitPortIo", idCpu);
+                            STAMR3RegisterF(pVM, &pNemCpu->StatExitMemUnmapped,     STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of unmapped memory exits",        "/NEM/CPU%u/ExitMemUnmapped", idCpu);
+                            STAMR3RegisterF(pVM, &pNemCpu->StatExitMemIntercept,    STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of intercepted memory exits",     "/NEM/CPU%u/ExitMemIntercept", idCpu);
+                            STAMR3RegisterF(pVM, &pNemCpu->StatExitHalt,            STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of HLT exits",                    "/NEM/CPU%u/ExitHalt", idCpu);
+                            STAMR3RegisterF(pVM, &pNemCpu->StatExitInterruptWindow, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of HLT exits",                    "/NEM/CPU%u/ExitInterruptWindow", idCpu);
+                            STAMR3RegisterF(pVM, &pNemCpu->StatExitCpuId,           STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of CPUID exits",                  "/NEM/CPU%u/ExitCpuId", idCpu);
+                            STAMR3RegisterF(pVM, &pNemCpu->StatExitMsr,             STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of MSR access exits",             "/NEM/CPU%u/ExitMsr", idCpu);
+                            STAMR3RegisterF(pVM, &pNemCpu->StatExitException,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of exception exits",              "/NEM/CPU%u/ExitException", idCpu);
+                            STAMR3RegisterF(pVM, &pNemCpu->StatExitExceptionBp,     STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of #BP exits",                    "/NEM/CPU%u/ExitExceptionBp", idCpu);
+                            STAMR3RegisterF(pVM, &pNemCpu->StatExitExceptionDb,     STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of #DB exits",                    "/NEM/CPU%u/ExitExceptionDb", idCpu);
+                            STAMR3RegisterF(pVM, &pNemCpu->StatExitExceptionUd,     STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of #UD exits",                    "/NEM/CPU%u/ExitExceptionUd", idCpu);
+                            STAMR3RegisterF(pVM, &pNemCpu->StatExitExceptionUdHandled, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of handled #UD exits",         "/NEM/CPU%u/ExitExceptionUdHandled", idCpu);
+                            STAMR3RegisterF(pVM, &pNemCpu->StatExitUnrecoverable,   STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of unrecoverable exits",          "/NEM/CPU%u/ExitUnrecoverable", idCpu);
+                            STAMR3RegisterF(pVM, &pNemCpu->StatGetMsgTimeout,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of get message timeouts/alerts",  "/NEM/CPU%u/GetMsgTimeout", idCpu);
+                            STAMR3RegisterF(pVM, &pNemCpu->StatStopCpuSuccess,      STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of successful CPU stops",         "/NEM/CPU%u/StopCpuSuccess", idCpu);
+                            STAMR3RegisterF(pVM, &pNemCpu->StatStopCpuPending,      STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of pending CPU stops",            "/NEM/CPU%u/StopCpuPending", idCpu);
+                            STAMR3RegisterF(pVM, &pNemCpu->StatStopCpuPendingAlerts,STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of pending CPU stop alerts",      "/NEM/CPU%u/StopCpuPendingAlerts", idCpu);
+                            STAMR3RegisterF(pVM, &pNemCpu->StatStopCpuPendingOdd,   STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of odd pending CPU stops (see code)", "/NEM/CPU%u/StopCpuPendingOdd", idCpu);
+                            STAMR3RegisterF(pVM, &pNemCpu->StatCancelChangedState,  STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of cancel changed state",         "/NEM/CPU%u/CancelChangedState", idCpu);
+                            STAMR3RegisterF(pVM, &pNemCpu->StatCancelAlertedThread, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of cancel alerted EMT",           "/NEM/CPU%u/CancelAlertedEMT", idCpu);
+                            STAMR3RegisterF(pVM, &pNemCpu->StatBreakOnFFPre,        STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of pre execution FF breaks",      "/NEM/CPU%u/BreakOnFFPre", idCpu);
+                            STAMR3RegisterF(pVM, &pNemCpu->StatBreakOnFFPost,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of post execution FF breaks",     "/NEM/CPU%u/BreakOnFFPost", idCpu);
+                            STAMR3RegisterF(pVM, &pNemCpu->StatBreakOnCancel,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of cancel execution breaks",      "/NEM/CPU%u/BreakOnCancel", idCpu);
+                            STAMR3RegisterF(pVM, &pNemCpu->StatBreakOnStatus,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of status code breaks",           "/NEM/CPU%u/BreakOnStatus", idCpu);
+                            STAMR3RegisterF(pVM, &pNemCpu->StatImportOnDemand,      STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of on-demand state imports",      "/NEM/CPU%u/ImportOnDemand", idCpu);
+                            STAMR3RegisterF(pVM, &pNemCpu->StatImportOnReturn,      STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of state imports on loop return", "/NEM/CPU%u/ImportOnReturn", idCpu);
+                            STAMR3RegisterF(pVM, &pNemCpu->StatImportOnReturnSkipped, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of skipped state imports on loop return", "/NEM/CPU%u/ImportOnReturnSkipped", idCpu);
+                            STAMR3RegisterF(pVM, &pNemCpu->StatQueryCpuTick,        STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of TSC queries",                  "/NEM/CPU%u/QueryCpuTick", idCpu);
                         }
 
                         PUVM pUVM = pVM->pUVM;
@@ -1414,10 +1415,9 @@ int nemR3NativeInitAfterCPUM(PVM pVM)
     /*
      * Setup the EMTs.
      */
-    VMCPUID iCpu;
-    for (iCpu = 0; iCpu < pVM->cCpus; iCpu++)
+    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
-        PVMCPU pVCpu = &pVM->aCpus[iCpu];
+        PVMCPU pVCpu = pVM->apCpusR3[idCpu];
 
         pVCpu->nem.s.hNativeThreadHandle = (RTR3PTR)RTThreadGetNativeHandle(VMR3GetThreadHandle(pVCpu->pUVCpu));
         Assert((HANDLE)pVCpu->nem.s.hNativeThreadHandle != INVALID_HANDLE_VALUE);
@@ -1427,16 +1427,16 @@ int nemR3NativeInitAfterCPUM(PVM pVM)
         if (!pVM->nem.s.fUseRing0Runloop)
 # endif
         {
-            hrc = WHvCreateVirtualProcessor(hPartition, iCpu, 0 /*fFlags*/);
+            hrc = WHvCreateVirtualProcessor(hPartition, idCpu, 0 /*fFlags*/);
             if (FAILED(hrc))
             {
                 NTSTATUS const rcNtLast  = RTNtLastStatusValue();
                 DWORD const    dwErrLast = RTNtLastErrorValue();
-                while (iCpu-- > 0)
+                while (idCpu-- > 0)
                 {
-                    HRESULT hrc2 = WHvDeleteVirtualProcessor(hPartition, iCpu);
+                    HRESULT hrc2 = WHvDeleteVirtualProcessor(hPartition, idCpu);
                     AssertLogRelMsg(SUCCEEDED(hrc2), ("WHvDeleteVirtualProcessor(%p, %u) -> %Rhrc (Last=%#x/%u)\n",
-                                                      hPartition, iCpu, hrc2, RTNtLastStatusValue(),
+                                                      hPartition, idCpu, hrc2, RTNtLastStatusValue(),
                                                       RTNtLastErrorValue()));
                 }
                 return VMSetError(pVM, VERR_NEM_VM_CREATE_FAILED, RT_SRC_POS,
@@ -1450,10 +1450,10 @@ int nemR3NativeInitAfterCPUM(PVM pVM)
 #if defined(NEM_WIN_WITH_RING0_RUNLOOP) || defined(NEM_WIN_USE_OUR_OWN_RUN_API)
         {
             VID_MAPPED_MESSAGE_SLOT MappedMsgSlot = { NULL, UINT32_MAX, UINT32_MAX };
-            if (g_pfnVidMessageSlotMap(hPartitionDevice, &MappedMsgSlot, iCpu))
+            if (g_pfnVidMessageSlotMap(hPartitionDevice, &MappedMsgSlot, idCpu))
             {
-                AssertLogRelMsg(MappedMsgSlot.iCpu == iCpu && MappedMsgSlot.uParentAdvisory == UINT32_MAX,
-                                ("%#x %#x (iCpu=%#x)\n", MappedMsgSlot.iCpu, MappedMsgSlot.uParentAdvisory, iCpu));
+                AssertLogRelMsg(MappedMsgSlot.iCpu == idCpu && MappedMsgSlot.uParentAdvisory == UINT32_MAX,
+                                ("%#x %#x (iCpu=%#x)\n", MappedMsgSlot.iCpu, MappedMsgSlot.uParentAdvisory, idCpu));
                 pVCpu->nem.s.pvMsgSlotMapping = MappedMsgSlot.pMsgBlock;
             }
             else
@@ -1471,13 +1471,13 @@ int nemR3NativeInitAfterCPUM(PVM pVM)
     /*
      * Do some more ring-0 initialization now that we've got the partition handle.
      */
-    int rc = VMMR3CallR0Emt(pVM, &pVM->aCpus[0], VMMR0_DO_NEM_INIT_VM_PART_2, 0, NULL);
+    int rc = VMMR3CallR0Emt(pVM, pVM->apCpusR3[0], VMMR0_DO_NEM_INIT_VM_PART_2, 0, NULL);
     if (RT_SUCCESS(rc))
     {
         LogRel(("NEM: Successfully set up partition (device handle %p, partition ID %#llx)\n", hPartitionDevice, idHvPartition));
 
 #if 1
-        VMMR3CallR0Emt(pVM, &pVM->aCpus[0], VMMR0_DO_NEM_UPDATE_STATISTICS, 0, NULL);
+        VMMR3CallR0Emt(pVM, pVM->apCpusR3[0], VMMR0_DO_NEM_UPDATE_STATISTICS, 0, NULL);
         LogRel(("NEM: Memory balance: %#RX64 out of %#RX64 pages in use\n",
                 pVM->nem.s.R0Stats.cPagesInUse, pVM->nem.s.R0Stats.cPagesAvailable));
 #endif
@@ -1496,7 +1496,7 @@ int nemR3NativeInitAfterCPUM(PVM pVM)
         /*
          * Poke and probe a little.
          */
-        PVMCPU              pVCpu = &pVM->aCpus[0];
+        PVMCPU              pVCpu = pVM->apCpusR3[0];
         uint32_t            aRegNames[1024];
         HV_REGISTER_VALUE   aRegValues[1024];
         uint32_t            aPropCodes[128];
@@ -1624,19 +1624,20 @@ int nemR3NativeTerm(PVM pVM)
     pVM->nem.s.hPartitionDevice = NULL;
     if (hPartition != NULL)
     {
-        VMCPUID iCpu = pVM->nem.s.fCreatedEmts ? pVM->cCpus : 0;
-        LogRel(("NEM: Destroying partition %p with its %u VCpus...\n", hPartition, iCpu));
-        while (iCpu-- > 0)
+        VMCPUID idCpu = pVM->nem.s.fCreatedEmts ? pVM->cCpus : 0;
+        LogRel(("NEM: Destroying partition %p with its %u VCpus...\n", hPartition, idCpu));
+        while (idCpu-- > 0)
         {
-            pVM->aCpus[iCpu].nem.s.pvMsgSlotMapping = NULL;
+            PVMCPU pVCpu = pVM->apCpusR3[idCpu];
+            pVCpu->nem.s.pvMsgSlotMapping = NULL;
 #ifndef NEM_WIN_USE_OUR_OWN_RUN_API
 # ifdef NEM_WIN_WITH_RING0_RUNLOOP
             if (!pVM->nem.s.fUseRing0Runloop)
 # endif
             {
-                HRESULT hrc = WHvDeleteVirtualProcessor(hPartition, iCpu);
+                HRESULT hrc = WHvDeleteVirtualProcessor(hPartition, idCpu);
                 AssertLogRelMsg(SUCCEEDED(hrc), ("WHvDeleteVirtualProcessor(%p, %u) -> %Rhrc (Last=%#x/%u)\n",
-                                                 hPartition, iCpu, hrc, RTNtLastStatusValue(),
+                                                 hPartition, idCpu, hrc, RTNtLastStatusValue(),
                                                  RTNtLastErrorValue()));
             }
 #endif

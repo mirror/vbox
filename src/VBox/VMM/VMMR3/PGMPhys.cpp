@@ -19,6 +19,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define VBOX_BUGREF_9217_PART_I
 #define LOG_GROUP LOG_GROUP_PGM_PHYS
 #include <VBox/vmm/pgm.h>
 #include <VBox/vmm/iem.h>
@@ -1307,7 +1308,7 @@ static DECLCALLBACK(VBOXSTRICTRC) pgmR3PhysChangeMemBalloonRendezvous(PVM pVM, P
 
     /* Flush the recompiler's TLB as well. */
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
-        CPUMSetChangedFlags(&pVM->aCpus[i], CPUM_CHANGED_GLOBAL_TLB_FLUSH);
+        CPUMSetChangedFlags(pVM->apCpusR3[i], CPUM_CHANGED_GLOBAL_TLB_FLUSH);
 
     AssertLogRelRC(rc);
     return rc;
@@ -1455,7 +1456,7 @@ static DECLCALLBACK(VBOXSTRICTRC) pgmR3PhysWriteProtectRAMRendezvous(PVM pVM, PV
     pgmR3PoolWriteProtectPages(pVM);
     PGM_INVL_ALL_VCPU_TLBS(pVM);
     for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
-        CPUMSetChangedFlags(&pVM->aCpus[idCpu], CPUM_CHANGED_GLOBAL_TLB_FLUSH);
+        CPUMSetChangedFlags(pVM->apCpusR3[idCpu], CPUM_CHANGED_GLOBAL_TLB_FLUSH);
 
     pgmUnlock(pVM);
     return rc;
@@ -4865,7 +4866,7 @@ static DECLCALLBACK(VBOXSTRICTRC) pgmR3PhysUnmapChunkRendezvous(PVM pVM, PVMCPU 
         /* Flush the pgm pool cache; call the internal rendezvous handler as we're already in a rendezvous handler here. */
         /** @todo also not really efficient to unmap a chunk that contains PD
          *  or PT pages. */
-        pgmR3PoolClearAllRendezvous(pVM, &pVM->aCpus[0], NULL /* no need to flush the REM TLB as we already did that above */);
+        pgmR3PoolClearAllRendezvous(pVM, pVM->apCpusR3[0], NULL /* no need to flush the REM TLB as we already did that above */);
 
         /*
          * Request the ring-0 part to unmap a chunk to make space in the mapping cache.
@@ -4906,7 +4907,7 @@ static DECLCALLBACK(VBOXSTRICTRC) pgmR3PhysUnmapChunkRendezvous(PVM pVM, PVMCPU 
                 /** @todo We should not flush chunks which include cr3 mappings. */
                 for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
                 {
-                    PPGMCPU pPGM = &pVM->aCpus[idCpu].pgm.s;
+                    PPGMCPU pPGM = &pVM->apCpusR3[idCpu]->pgm.s;
 
                     pPGM->pGst32BitPdR3    = NULL;
                     pPGM->pGstPaePdptR3    = NULL;
@@ -4925,7 +4926,7 @@ static DECLCALLBACK(VBOXSTRICTRC) pgmR3PhysUnmapChunkRendezvous(PVM pVM, PVMCPU 
                     }
 
                     /* Flush REM TLBs. */
-                    CPUMSetChangedFlags(&pVM->aCpus[idCpu], CPUM_CHANGED_GLOBAL_TLB_FLUSH);
+                    CPUMSetChangedFlags(pVM->apCpusR3[idCpu], CPUM_CHANGED_GLOBAL_TLB_FLUSH);
                 }
 #ifdef VBOX_WITH_REM
                 /* Flush REM translation blocks. */

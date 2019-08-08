@@ -95,6 +95,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define VBOX_BUGREF_9217_PART_I
 #define LOG_GROUP LOG_GROUP_PGM_POOL
 #include <VBox/vmm/pgm.h>
 #include <VBox/vmm/mm.h>
@@ -761,7 +762,7 @@ DECLCALLBACK(VBOXSTRICTRC) pgmR3PoolClearAllRendezvous(PVM pVM, PVMCPU pVCpu, vo
 
     /* Clear the PGM_SYNC_CLEAR_PGM_POOL flag on all VCPUs to prevent redundant flushes. */
     for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
-        pVM->aCpus[idCpu].pgm.s.fSyncFlags &= ~PGM_SYNC_CLEAR_PGM_POOL;
+        pVM->apCpusR3[idCpu]->pgm.s.fSyncFlags &= ~PGM_SYNC_CLEAR_PGM_POOL;
 
     /* Flush job finished. */
     VM_FF_CLEAR(pVM, VM_FF_PGM_POOL_FLUSH_PENDING);
@@ -772,7 +773,7 @@ DECLCALLBACK(VBOXSTRICTRC) pgmR3PoolClearAllRendezvous(PVM pVM, PVMCPU pVCpu, vo
 
     if (fpvFlushRemTlb)
         for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
-            CPUMSetChangedFlags(&pVM->aCpus[idCpu], CPUM_CHANGED_GLOBAL_TLB_FLUSH);
+            CPUMSetChangedFlags(pVM->apCpusR3[idCpu], CPUM_CHANGED_GLOBAL_TLB_FLUSH);
 
     STAM_PROFILE_STOP(&pPool->StatClearAll, c);
     return VINF_SUCCESS;

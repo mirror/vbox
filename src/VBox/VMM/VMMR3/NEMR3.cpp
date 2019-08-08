@@ -29,6 +29,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define VBOX_BUGREF_9217_PART_I
 #define LOG_GROUP LOG_GROUP_NEM
 #include <VBox/vmm/nem.h>
 #include <VBox/vmm/gim.h>
@@ -64,8 +65,11 @@ VMMR3_INT_DECL(int) NEMR3InitConfig(PVM pVM)
      * No returning prior to setting magics!
      */
     pVM->nem.s.u32Magic = NEM_MAGIC;
-    for (VMCPUID iCpu = 0; iCpu < pVM->cCpus; iCpu++)
-        pVM->aCpus[iCpu].nem.s.u32Magic = NEMCPU_MAGIC;
+    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
+    {
+        PVMCPU pVCpu = pVM->apCpusR3[idCpu];
+        pVCpu->nem.s.u32Magic = NEMCPU_MAGIC;
+    }
 
     /*
      * Read configuration.
@@ -232,8 +236,11 @@ VMMR3_INT_DECL(int) NEMR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
      * Check if GIM needs #UD, since that applies to everyone.
      */
     if (enmWhat == VMINITCOMPLETED_RING3)
-        for (VMCPUID iCpu = 0; iCpu < pVM->cCpus; iCpu++)
-            pVM->aCpus[iCpu].nem.s.fGIMTrapXcptUD = GIMShouldTrapXcptUD(&pVM->aCpus[iCpu]);
+        for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
+        {
+            PVMCPU pVCpu = pVM->apCpusR3[idCpu];
+            pVCpu->nem.s.fGIMTrapXcptUD = GIMShouldTrapXcptUD(pVCpu);
+        }
 
     /*
      * Call native code.
@@ -257,8 +264,8 @@ VMMR3_INT_DECL(int) NEMR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
 VMMR3_INT_DECL(int) NEMR3Term(PVM pVM)
 {
     AssertReturn(pVM->nem.s.u32Magic == NEM_MAGIC, VERR_WRONG_ORDER);
-    for (VMCPUID iCpu = 0; iCpu < pVM->cCpus; iCpu++)
-        AssertReturn(pVM->aCpus[iCpu].nem.s.u32Magic == NEMCPU_MAGIC, VERR_WRONG_ORDER);
+    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
+        AssertReturn(pVM->apCpusR3[idCpu]->nem.s.u32Magic == NEMCPU_MAGIC, VERR_WRONG_ORDER);
 
     /* Do native termination. */
     int rc = VINF_SUCCESS;
@@ -268,8 +275,11 @@ VMMR3_INT_DECL(int) NEMR3Term(PVM pVM)
 #endif
 
     /* Mark it as terminated. */
-    for (VMCPUID iCpu = 0; iCpu < pVM->cCpus; iCpu++)
-        pVM->aCpus[iCpu].nem.s.u32Magic = NEMCPU_MAGIC_DEAD;
+    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
+    {
+        PVMCPU pVCpu = pVM->apCpusR3[idCpu];
+        pVCpu->nem.s.u32Magic = NEMCPU_MAGIC_DEAD;
+    }
     pVM->nem.s.u32Magic = NEM_MAGIC_DEAD;
     return rc;
 }

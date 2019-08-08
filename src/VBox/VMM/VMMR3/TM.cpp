@@ -120,6 +120,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define VBOX_BUGREF_9217_PART_I
 #define LOG_GROUP LOG_GROUP_TM
 #ifdef DEBUG_bird
 # define DBGFTRACE_DISABLED /* annoying */
@@ -800,26 +801,27 @@ VMM_INT_DECL(int) TMR3Init(PVM pVM)
 
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
-        STAMR3RegisterF(pVM, &pVM->aCpus[i].tm.s.offTSCRawSrc,          STAMTYPE_U64, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS, "TSC offset relative the raw source",           "/TM/TSC/offCPU%u", i);
+        PVMCPU pVCpu = pVM->apCpusR3[i];
+        STAMR3RegisterF(pVM, &pVCpu->tm.s.offTSCRawSrc,          STAMTYPE_U64, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS, "TSC offset relative the raw source",           "/TM/TSC/offCPU%u", i);
 #ifndef VBOX_WITHOUT_NS_ACCOUNTING
 # if defined(VBOX_WITH_STATISTICS) || defined(VBOX_WITH_NS_ACCOUNTING_STATS)
-        STAMR3RegisterF(pVM, &pVM->aCpus[i].tm.s.StatNsTotal,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_NS,               "Resettable: Total CPU run time.",   "/TM/CPU/%02u", i);
-        STAMR3RegisterF(pVM, &pVM->aCpus[i].tm.s.StatNsExecuting,   STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_NS_PER_OCCURENCE, "Resettable: Time spent executing guest code.",    "/TM/CPU/%02u/PrfExecuting", i);
-        STAMR3RegisterF(pVM, &pVM->aCpus[i].tm.s.StatNsExecLong,    STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_NS_PER_OCCURENCE, "Resettable: Time spent executing guest code - long hauls.",    "/TM/CPU/%02u/PrfExecLong", i);
-        STAMR3RegisterF(pVM, &pVM->aCpus[i].tm.s.StatNsExecShort,   STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_NS_PER_OCCURENCE, "Resettable: Time spent executing guest code - short stretches.",    "/TM/CPU/%02u/PrfExecShort", i);
-        STAMR3RegisterF(pVM, &pVM->aCpus[i].tm.s.StatNsExecTiny,    STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_NS_PER_OCCURENCE, "Resettable: Time spent executing guest code - tiny bits.",    "/TM/CPU/%02u/PrfExecTiny", i);
-        STAMR3RegisterF(pVM, &pVM->aCpus[i].tm.s.StatNsHalted,      STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_NS_PER_OCCURENCE, "Resettable: Time spent halted.",                  "/TM/CPU/%02u/PrfHalted", i);
-        STAMR3RegisterF(pVM, &pVM->aCpus[i].tm.s.StatNsOther,       STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_NS_PER_OCCURENCE, "Resettable: Time spent in the VMM or preempted.", "/TM/CPU/%02u/PrfOther", i);
+        STAMR3RegisterF(pVM, &pVCpu->tm.s.StatNsTotal,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_NS,               "Resettable: Total CPU run time.",   "/TM/CPU/%02u", i);
+        STAMR3RegisterF(pVM, &pVCpu->tm.s.StatNsExecuting,   STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_NS_PER_OCCURENCE, "Resettable: Time spent executing guest code.",    "/TM/CPU/%02u/PrfExecuting", i);
+        STAMR3RegisterF(pVM, &pVCpu->tm.s.StatNsExecLong,    STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_NS_PER_OCCURENCE, "Resettable: Time spent executing guest code - long hauls.",    "/TM/CPU/%02u/PrfExecLong", i);
+        STAMR3RegisterF(pVM, &pVCpu->tm.s.StatNsExecShort,   STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_NS_PER_OCCURENCE, "Resettable: Time spent executing guest code - short stretches.",    "/TM/CPU/%02u/PrfExecShort", i);
+        STAMR3RegisterF(pVM, &pVCpu->tm.s.StatNsExecTiny,    STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_NS_PER_OCCURENCE, "Resettable: Time spent executing guest code - tiny bits.",    "/TM/CPU/%02u/PrfExecTiny", i);
+        STAMR3RegisterF(pVM, &pVCpu->tm.s.StatNsHalted,      STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_NS_PER_OCCURENCE, "Resettable: Time spent halted.",                  "/TM/CPU/%02u/PrfHalted", i);
+        STAMR3RegisterF(pVM, &pVCpu->tm.s.StatNsOther,       STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_NS_PER_OCCURENCE, "Resettable: Time spent in the VMM or preempted.", "/TM/CPU/%02u/PrfOther", i);
 # endif
-        STAMR3RegisterF(pVM, &pVM->aCpus[i].tm.s.cNsTotal,              STAMTYPE_U64, STAMVISIBILITY_ALWAYS, STAMUNIT_NS,    "Total CPU run time.",                          "/TM/CPU/%02u/cNsTotal", i);
-        STAMR3RegisterF(pVM, &pVM->aCpus[i].tm.s.cNsExecuting,          STAMTYPE_U64, STAMVISIBILITY_ALWAYS, STAMUNIT_NS,    "Time spent executing guest code.",             "/TM/CPU/%02u/cNsExecuting", i);
-        STAMR3RegisterF(pVM, &pVM->aCpus[i].tm.s.cNsHalted,             STAMTYPE_U64, STAMVISIBILITY_ALWAYS, STAMUNIT_NS,    "Time spent halted.",                           "/TM/CPU/%02u/cNsHalted", i);
-        STAMR3RegisterF(pVM, &pVM->aCpus[i].tm.s.cNsOther,              STAMTYPE_U64, STAMVISIBILITY_ALWAYS, STAMUNIT_NS,    "Time spent in the VMM or preempted.",          "/TM/CPU/%02u/cNsOther", i);
-        STAMR3RegisterF(pVM, &pVM->aCpus[i].tm.s.cPeriodsExecuting,     STAMTYPE_U64, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT, "Times executed guest code.",                   "/TM/CPU/%02u/cPeriodsExecuting", i);
-        STAMR3RegisterF(pVM, &pVM->aCpus[i].tm.s.cPeriodsHalted,        STAMTYPE_U64, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT, "Times halted.",                                "/TM/CPU/%02u/cPeriodsHalted", i);
-        STAMR3RegisterF(pVM, &pVM->aCpus[i].tm.s.CpuLoad.cPctExecuting, STAMTYPE_U8,  STAMVISIBILITY_ALWAYS, STAMUNIT_PCT,   "Time spent executing guest code recently.",    "/TM/CPU/%02u/pctExecuting", i);
-        STAMR3RegisterF(pVM, &pVM->aCpus[i].tm.s.CpuLoad.cPctHalted,    STAMTYPE_U8,  STAMVISIBILITY_ALWAYS, STAMUNIT_PCT,   "Time spent halted recently.",                  "/TM/CPU/%02u/pctHalted", i);
-        STAMR3RegisterF(pVM, &pVM->aCpus[i].tm.s.CpuLoad.cPctOther,     STAMTYPE_U8,  STAMVISIBILITY_ALWAYS, STAMUNIT_PCT,   "Time spent in the VMM or preempted recently.", "/TM/CPU/%02u/pctOther", i);
+        STAMR3RegisterF(pVM, &pVCpu->tm.s.cNsTotal,              STAMTYPE_U64, STAMVISIBILITY_ALWAYS, STAMUNIT_NS,    "Total CPU run time.",                          "/TM/CPU/%02u/cNsTotal", i);
+        STAMR3RegisterF(pVM, &pVCpu->tm.s.cNsExecuting,          STAMTYPE_U64, STAMVISIBILITY_ALWAYS, STAMUNIT_NS,    "Time spent executing guest code.",             "/TM/CPU/%02u/cNsExecuting", i);
+        STAMR3RegisterF(pVM, &pVCpu->tm.s.cNsHalted,             STAMTYPE_U64, STAMVISIBILITY_ALWAYS, STAMUNIT_NS,    "Time spent halted.",                           "/TM/CPU/%02u/cNsHalted", i);
+        STAMR3RegisterF(pVM, &pVCpu->tm.s.cNsOther,              STAMTYPE_U64, STAMVISIBILITY_ALWAYS, STAMUNIT_NS,    "Time spent in the VMM or preempted.",          "/TM/CPU/%02u/cNsOther", i);
+        STAMR3RegisterF(pVM, &pVCpu->tm.s.cPeriodsExecuting,     STAMTYPE_U64, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT, "Times executed guest code.",                   "/TM/CPU/%02u/cPeriodsExecuting", i);
+        STAMR3RegisterF(pVM, &pVCpu->tm.s.cPeriodsHalted,        STAMTYPE_U64, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT, "Times halted.",                                "/TM/CPU/%02u/cPeriodsHalted", i);
+        STAMR3RegisterF(pVM, &pVCpu->tm.s.CpuLoad.cPctExecuting, STAMTYPE_U8,  STAMVISIBILITY_ALWAYS, STAMUNIT_PCT,   "Time spent executing guest code recently.",    "/TM/CPU/%02u/pctExecuting", i);
+        STAMR3RegisterF(pVM, &pVCpu->tm.s.CpuLoad.cPctHalted,    STAMTYPE_U8,  STAMVISIBILITY_ALWAYS, STAMUNIT_PCT,   "Time spent halted recently.",                  "/TM/CPU/%02u/pctHalted", i);
+        STAMR3RegisterF(pVM, &pVCpu->tm.s.CpuLoad.cPctOther,     STAMTYPE_U8,  STAMVISIBILITY_ALWAYS, STAMUNIT_PCT,   "Time spent in the VMM or preempted recently.", "/TM/CPU/%02u/pctOther", i);
 #endif
     }
 #ifndef VBOX_WITHOUT_NS_ACCOUNTING
@@ -1222,7 +1224,7 @@ VMM_INT_DECL(void) TMR3Reset(PVM pVM)
     tmTimerQueuesSanityChecks(pVM, "TMR3Reset");
 #endif
 
-    PVMCPU pVCpuDst = &pVM->aCpus[pVM->tm.s.idTimerCpu];
+    PVMCPU pVCpuDst = pVM->apCpusR3[pVM->tm.s.idTimerCpu];
     VMCPU_FF_CLEAR(pVCpuDst, VMCPU_FF_TIMER); /** @todo FIXME: this isn't right. */
 
     /*
@@ -1233,7 +1235,7 @@ VMM_INT_DECL(void) TMR3Reset(PVM pVM)
         && pVM->tm.s.enmTSCMode != pVM->tm.s.enmOriginalTSCMode)
     {
         VM_ASSERT_EMT0(pVM);
-        tmR3CpuTickParavirtDisable(pVM, &pVM->aCpus[0], NULL /* pvData */);
+        tmR3CpuTickParavirtDisable(pVM, pVM->apCpusR3[0], NULL /* pvData */);
     }
     Assert(!GIMIsParavirtTscEnabled(pVM));
     pVM->tm.s.fParavirtTscEnabled = false;
@@ -1262,11 +1264,12 @@ VMM_INT_DECL(void) TMR3Reset(PVM pVM)
         default:
             AssertFailedBreakStmt(offTscRawSrc = 0);
     }
-    for (VMCPUID iCpu = 0; iCpu < pVM->cCpus; iCpu++)
+    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
-        pVM->aCpus[iCpu].tm.s.offTSCRawSrc   = offTscRawSrc;
-        pVM->aCpus[iCpu].tm.s.u64TSC         = 0;
-        pVM->aCpus[iCpu].tm.s.u64TSCLastSeen = 0;
+        PVMCPU pVCpu = pVM->apCpusR3[idCpu];
+        pVCpu->tm.s.offTSCRawSrc   = offTscRawSrc;
+        pVCpu->tm.s.u64TSC         = 0;
+        pVCpu->tm.s.u64TSCLastSeen = 0;
     }
 
     TM_UNLOCK_TIMERS(pVM);
@@ -1307,7 +1310,7 @@ static DECLCALLBACK(int) tmR3Save(PVM pVM, PSSMHANDLE pSSM)
 #ifdef VBOX_STRICT
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
-        PVMCPU pVCpu = &pVM->aCpus[i];
+        PVMCPU pVCpu = pVM->apCpusR3[i];
         Assert(!pVCpu->tm.s.fTSCTicking);
     }
     Assert(!pVM->tm.s.cVirtualTicking);
@@ -1335,7 +1338,7 @@ static DECLCALLBACK(int) tmR3Save(PVM pVM, PSSMHANDLE pSSM)
     /* the cpu tick clock. */
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
-        PVMCPU pVCpu = &pVM->aCpus[i];
+        PVMCPU pVCpu = pVM->apCpusR3[i];
         SSMR3PutU64(pSSM, TMCpuTickGet(pVCpu));
     }
     return SSMR3PutU64(pSSM, pVM->tm.s.cTSCTicksPerSecond);
@@ -1359,7 +1362,7 @@ static DECLCALLBACK(int) tmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, u
 #ifdef VBOX_STRICT
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
-        PVMCPU pVCpu = &pVM->aCpus[i];
+        PVMCPU pVCpu = pVM->apCpusR3[i];
         Assert(!pVCpu->tm.s.fTSCTicking);
     }
     Assert(!pVM->tm.s.cVirtualTicking);
@@ -1426,7 +1429,7 @@ static DECLCALLBACK(int) tmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, u
     pVM->tm.s.u64LastPausedTSC = 0;
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
-        PVMCPU pVCpu = &pVM->aCpus[i];
+        PVMCPU pVCpu = pVM->apCpusR3[i];
 
         pVCpu->tm.s.fTSCTicking = false;
         SSMR3GetU64(pSSM, &pVCpu->tm.s.u64TSC);
@@ -1480,7 +1483,7 @@ static DECLCALLBACK(int) tmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, u
     /*
      * Make sure timers get rescheduled immediately.
      */
-    PVMCPU pVCpuDst = &pVM->aCpus[pVM->tm.s.idTimerCpu];
+    PVMCPU pVCpuDst = pVM->apCpusR3[pVM->tm.s.idTimerCpu];
     VMCPU_FF_SET(pVCpuDst, VMCPU_FF_TIMER);
 
     return VINF_SUCCESS;
@@ -2013,7 +2016,7 @@ DECLINLINE(uint64_t) tmClock(PVM pVM, TMCLOCK enmClock)
         case TMCLOCK_VIRTUAL:       return TMVirtualGet(pVM);
         case TMCLOCK_VIRTUAL_SYNC:  return TMVirtualSyncGet(pVM);
         case TMCLOCK_REAL:          return TMRealGet(pVM);
-        case TMCLOCK_TSC:           return TMCpuTickGet(&pVM->aCpus[0] /* just take VCPU 0 */);
+        case TMCLOCK_TSC:           return TMCpuTickGet(pVM->apCpusR3[0] /* just take VCPU 0 */);
         default:
             AssertMsgFailed(("enmClock=%d\n", enmClock));
             return ~(uint64_t)0;
@@ -2083,7 +2086,7 @@ DECLINLINE(bool) tmR3AnyExpiredTimers(PVM pVM)
 static DECLCALLBACK(void) tmR3TimerCallback(PRTTIMER pTimer, void *pvUser, uint64_t /*iTick*/)
 {
     PVM     pVM      = (PVM)pvUser;
-    PVMCPU  pVCpuDst = &pVM->aCpus[pVM->tm.s.idTimerCpu];
+    PVMCPU  pVCpuDst = pVM->apCpusR3[pVM->tm.s.idTimerCpu];
     NOREF(pTimer);
 
     AssertCompile(TMCLOCK_MAX == 4);
@@ -2131,7 +2134,7 @@ VMMR3DECL(void) TMR3TimerQueuesDo(PVM pVM)
      * (fRunningQueues is only used as an indicator.)
      */
     Assert(pVM->tm.s.idTimerCpu < pVM->cCpus);
-    PVMCPU pVCpuDst = &pVM->aCpus[pVM->tm.s.idTimerCpu];
+    PVMCPU pVCpuDst = pVM->apCpusR3[pVM->tm.s.idTimerCpu];
     if (VMMGetCpu(pVM) != pVCpuDst)
     {
         Assert(pVM->cCpus > 1);
@@ -3209,7 +3212,7 @@ VMMR3DECL(int) TMR3GetCpuLoadTimes(PVM pVM, VMCPUID idCpu, uint64_t *pcNsTotal, 
      * Get a stable result set.
      * This should be way quicker than an EMT request.
      */
-    PVMCPU      pVCpu        = &pVM->aCpus[idCpu];
+    PVMCPU      pVCpu        = pVM->apCpusR3[idCpu];
     uint32_t    uTimesGen    = ASMAtomicReadU32(&pVCpu->tm.s.uTimesGen);
     uint64_t    cNsTotal     = pVCpu->tm.s.cNsTotal;
     uint64_t    cNsExecuting = pVCpu->tm.s.cNsExecuting;
@@ -3283,7 +3286,7 @@ VMMR3DECL(int) TMR3GetCpuLoadPercents(PUVM pUVM, VMCPUID idCpu, uint64_t *pcMsIn
     if (idCpu == VMCPUID_ALL)
         pState = &pVM->tm.s.CpuLoad;
     else
-        pState = &pVM->aCpus[idCpu].tm.s.CpuLoad;
+        pState = &pVM->apCpusR3[idCpu]->tm.s.CpuLoad;
 
     if (pcMsInterval)
         *pcMsInterval   = RT_MS_1SEC;
@@ -3389,7 +3392,7 @@ static DECLCALLBACK(void) tmR3CpuLoadTimer(PVM pVM, PTMTIMER pTimer, void *pvUse
     uint64_t cNsHaltedAll      = 0;
     for (VMCPUID iCpu = 0; iCpu < pVM->cCpus; iCpu++)
     {
-        PVMCPU      pVCpu = &pVM->aCpus[iCpu];
+        PVMCPU      pVCpu = pVM->apCpusR3[iCpu];
 
         /* Try get a stable data set. */
         uint32_t    cTries       = 3;
@@ -3459,7 +3462,7 @@ static DECLCALLBACK(VBOXSTRICTRC) tmR3CpuTickParavirtEnable(PVM pVM, PVMCPU pVCp
     uint32_t cCpus = pVM->cCpus;
     for (uint32_t i = 0; i < cCpus; i++)
     {
-        PVMCPU   pVCpu   = &pVM->aCpus[i];
+        PVMCPU   pVCpu   = pVM->apCpusR3[i];
         uint64_t uOldTsc = uRawOldTsc - pVCpu->tm.s.offTSCRawSrc;
         pVCpu->tm.s.offTSCRawSrc = uRawNewTsc - uOldTsc;
         Assert(uRawNewTsc - pVCpu->tm.s.offTSCRawSrc >= uOldTsc); /* paranoia^256 */
@@ -3515,7 +3518,7 @@ static DECLCALLBACK(VBOXSTRICTRC) tmR3CpuTickParavirtDisable(PVM pVM, PVMCPU pVC
     uint32_t cCpus = pVM->cCpus;
     for (uint32_t i = 0; i < cCpus; i++)
     {
-        PVMCPU   pVCpu   = &pVM->aCpus[i];
+        PVMCPU   pVCpu   = pVM->apCpusR3[i];
         uint64_t uOldTsc = uRawOldTsc - pVCpu->tm.s.offTSCRawSrc;
         pVCpu->tm.s.offTSCRawSrc = uRawNewTsc - uOldTsc;
         Assert(uRawNewTsc - pVCpu->tm.s.offTSCRawSrc >= uOldTsc); /* paranoia^256 */
@@ -3700,7 +3703,7 @@ static DECLCALLBACK(void) tmR3InfoClocks(PVM pVM, PCDBGFINFOHLP pHlp, const char
 
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
-        PVMCPU   pVCpu  = &pVM->aCpus[i];
+        PVMCPU   pVCpu  = pVM->apCpusR3[i];
         uint64_t u64TSC = TMCpuTickGet(pVCpu);
 
         /*
@@ -3811,14 +3814,14 @@ static DECLCALLBACK(void) tmR3InfoCpuLoad(PVM pVM, PCDBGFINFOHLP pHlp, int cArgs
         switch (rc)
         {
             case 'a':
-                pState   = &pVM->aCpus[0].tm.s.CpuLoad;
+                pState   = &pVM->apCpusR3[0]->tm.s.CpuLoad;
                 idCpu    = 0;
                 fAllCpus = true;
                 break;
             case 'c':
                 if (ValueUnion.u32 < pVM->cCpus)
                 {
-                    pState = &pVM->aCpus[ValueUnion.u32].tm.s.CpuLoad;
+                    pState = &pVM->apCpusR3[ValueUnion.u32]->tm.s.CpuLoad;
                     idCpu  = ValueUnion.u32;
                 }
                 else
@@ -3980,7 +3983,7 @@ static DECLCALLBACK(void) tmR3InfoCpuLoad(PVM pVM, PCDBGFINFOHLP pHlp, int cArgs
         idCpu++;
         if (idCpu >= pVM->cCpus)
             break;
-        pState   = &pVM->aCpus[idCpu].tm.s.CpuLoad;
+        pState   = &pVM->apCpusR3[idCpu]->tm.s.CpuLoad;
     }
 
 }

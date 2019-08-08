@@ -48,6 +48,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define VBOX_BUGREF_9217_PART_I
 #define LOG_GROUP LOG_GROUP_DBGF
 #include <iprt/param.h>
 #include <iprt/file.h>
@@ -516,16 +517,16 @@ static int dbgfR3CoreWriteWorker(PVM pVM, RTFILE hFile)
         return VERR_NO_MEMORY;
     }
 
-    for (uint32_t iCpu = 0; iCpu < pVM->cCpus; iCpu++)
+    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
-        PVMCPU pVCpu = &pVM->aCpus[iCpu];
+        PVMCPU pVCpu = pVM->apCpusR3[idCpu];
         RT_BZERO(pDbgfCoreCpu, sizeof(*pDbgfCoreCpu));
         dbgfR3GetCoreCpu(pVCpu, pDbgfCoreCpu);
 
         rc = Elf64WriteNoteHdr(hFile, NT_VBOXCPU, g_pcszCoreVBoxCpu, pDbgfCoreCpu, sizeof(*pDbgfCoreCpu));
         if (RT_FAILURE(rc))
         {
-            LogRel((DBGFLOG_NAME ": Elf64WriteNoteHdr failed for vCPU[%u] rc=%Rrc\n", iCpu, rc));
+            LogRel((DBGFLOG_NAME ": Elf64WriteNoteHdr failed for vCPU[%u] rc=%Rrc\n", idCpu, rc));
             RTMemFree(pDbgfCoreCpu);
             return rc;
         }

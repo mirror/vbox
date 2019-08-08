@@ -19,6 +19,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define VBOX_BUGREF_9217_PART_I
 #define LOG_GROUP LOG_GROUP_DBGF
 #include <VBox/vmm/dbgf.h>
 #include <VBox/vmm/pgm.h>
@@ -559,7 +560,7 @@ static DECLCALLBACK(int) dbgfR3PagingDumpEx(PUVM pUVM, VMCPUID idCpu, uint32_t f
     uint64_t cr3 = *pcr3;
     if (fFlags & (DBGFPGDMP_FLAGS_CURRENT_CR3 | DBGFPGDMP_FLAGS_CURRENT_MODE))
     {
-        PVMCPU pVCpu = &pVM->aCpus[idCpu];
+        PVMCPU pVCpu = pVM->apCpusR3[idCpu];
         if (fFlags & DBGFPGDMP_FLAGS_SHADOW)
         {
             if (PGMGetShadowMode(pVCpu) == PGMMODE_NONE)

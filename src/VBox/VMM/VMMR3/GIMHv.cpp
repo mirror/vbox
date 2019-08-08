@@ -19,6 +19,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define VBOX_BUGREF_9217_PART_I
 #define LOG_GROUP LOG_GROUP_GIM
 #include <VBox/vmm/apic.h>
 #include <VBox/vmm/gim.h>
@@ -464,9 +465,9 @@ VMMR3_INT_DECL(int) gimR3HvInit(PVM pVM, PCFGMNODE pGimCfg)
      */
     if (pHv->uMiscFeat & GIM_HV_MISC_FEAT_GUEST_CRASH_MSRS)
         pHv->uCrashCtlMsr = MSR_GIM_HV_CRASH_CTL_NOTIFY;
-    for (VMCPUID i = 0; i < pVM->cCpus; i++)
+    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
-        PGIMHVCPU pHvCpu = &pVM->aCpus[i].gim.s.u.HvCpu;
+        PGIMHVCPU pHvCpu = &pVM->apCpusR3[idCpu]->gim.s.u.HvCpu;
         for (uint8_t idxSintMsr = 0; idxSintMsr < RT_ELEMENTS(pHvCpu->auSintMsrs); idxSintMsr++)
             pHvCpu->auSintMsrs[idxSintMsr] = MSR_GIM_HV_SINT_MASKED;
     }
@@ -491,7 +492,7 @@ VMMR3_INT_DECL(int) gimR3HvInit(PVM pVM, PCFGMNODE pGimCfg)
     {
         for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
         {
-            PVMCPU       pVCpu     = &pVM->aCpus[idCpu];
+            PVMCPU       pVCpu     = pVM->apCpusR3[idCpu];
             PGIMHVCPU    pHvCpu    = &pVCpu->gim.s.u.HvCpu;
 
             for (uint8_t idxStimer = 0; idxStimer < RT_ELEMENTS(pHvCpu->aStimers); idxStimer++)
@@ -518,7 +519,7 @@ VMMR3_INT_DECL(int) gimR3HvInit(PVM pVM, PCFGMNODE pGimCfg)
      */
     for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
-        PVMCPU    pVCpu  = &pVM->aCpus[idCpu];
+        PVMCPU    pVCpu  = pVM->apCpusR3[idCpu];
         PGIMHVCPU pHvCpu = &pVCpu->gim.s.u.HvCpu;
 
         for (size_t idxStimer = 0; idxStimer < RT_ELEMENTS(pHvCpu->aStatStimerFired); idxStimer++)
@@ -597,7 +598,7 @@ VMMR3_INT_DECL(int) gimR3HvTerm(PVM pVM)
     {
         for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
         {
-            PGIMHVCPU pHvCpu = &pVM->aCpus[idCpu].gim.s.u.HvCpu;
+            PGIMHVCPU pHvCpu = &pVM->apCpusR3[idCpu]->gim.s.u.HvCpu;
             for (uint8_t idxStimer = 0; idxStimer < RT_ELEMENTS(pHvCpu->aStimers); idxStimer++)
             {
                 PGIMHVSTIMER pHvStimer = &pHvCpu->aStimers[idxStimer];
@@ -669,9 +670,9 @@ VMMR3_INT_DECL(void) gimR3HvReset(PVM pVM)
     pHv->uDbgPendingBufferMsr = 0;
     pHv->uDbgSendBufferMsr    = 0;
     pHv->uDbgRecvBufferMsr    = 0;
-    for (VMCPUID i = 0; i < pVM->cCpus; i++)
+    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
-        PGIMHVCPU pHvCpu = &pVM->aCpus[i].gim.s.u.HvCpu;
+        PGIMHVCPU pHvCpu = &pVM->apCpusR3[idCpu]->gim.s.u.HvCpu;
         pHvCpu->uSControlMsr = 0;
         pHvCpu->uSimpMsr  = 0;
         pHvCpu->uSiefpMsr = 0;
@@ -852,9 +853,9 @@ VMMR3_INT_DECL(int) gimR3HvSave(PVM pVM, PSSMHANDLE pSSM)
     SSMR3PutU16(pSSM, pHv->uUdpGuestDstPort);
     SSMR3PutU16(pSSM, pHv->uUdpGuestSrcPort);
 
-    for (VMCPUID i = 0; i < pVM->cCpus; i++)
+    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
-        PGIMHVCPU pHvCpu = &pVM->aCpus[i].gim.s.u.HvCpu;
+        PGIMHVCPU pHvCpu = &pVM->apCpusR3[idCpu]->gim.s.u.HvCpu;
         SSMR3PutU64(pSSM, pHvCpu->uSimpMsr);
         for (size_t idxSintMsr = 0; idxSintMsr < RT_ELEMENTS(pHvCpu->auSintMsrs); idxSintMsr++)
             SSMR3PutU64(pSSM, pHvCpu->auSintMsrs[idxSintMsr]);
@@ -989,9 +990,9 @@ VMMR3_INT_DECL(int) gimR3HvLoad(PVM pVM, PSSMHANDLE pSSM)
             rc = SSMR3GetU16(pSSM, &pHv->uUdpGuestSrcPort);     AssertRCReturn(rc, rc);
         }
 
-        for (VMCPUID i = 0; i < pVM->cCpus; i++)
+        for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
         {
-            PGIMHVCPU pHvCpu = &pVM->aCpus[i].gim.s.u.HvCpu;
+            PGIMHVCPU pHvCpu = &pVM->apCpusR3[idCpu]->gim.s.u.HvCpu;
             SSMR3GetU64(pSSM, &pHvCpu->uSimpMsr);
             if (uHvSavedStateVersion <= GIM_HV_SAVED_STATE_VERSION_PRE_SYNIC)
                 SSMR3GetU64(pSSM, &pHvCpu->auSintMsrs[GIM_HV_VMBUS_MSG_SINT]);
@@ -1027,11 +1028,11 @@ VMMR3_INT_DECL(int) gimR3HvLoadDone(PVM pVM, PSSMHANDLE pSSM)
          * Update EM on whether MSR_GIM_HV_GUEST_OS_ID allows hypercall instructions.
          */
         if (pVM->gim.s.u.Hv.u64GuestOsIdMsr)
-            for (VMCPUID i = 0; i < pVM->cCpus; i++)
-                EMSetHypercallInstructionsEnabled(&pVM->aCpus[i], true);
+            for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
+                EMSetHypercallInstructionsEnabled(pVM->apCpusR3[idCpu], true);
         else
-            for (VMCPUID i = 0; i < pVM->cCpus; i++)
-                EMSetHypercallInstructionsEnabled(&pVM->aCpus[i], false);
+            for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
+                EMSetHypercallInstructionsEnabled(pVM->apCpusR3[idCpu], false);
     }
     return VINF_SUCCESS;
 }
@@ -1109,7 +1110,7 @@ static DECLCALLBACK(void) gimR3HvTimerCallback(PVM pVM, PTMTIMER pTimer, void *p
     Assert(TMTimerIsLockOwner(pTimer)); RT_NOREF(pTimer);
     Assert(pHvStimer->idCpu < pVM->cCpus);
 
-    PVMCPU    pVCpu  = &pVM->aCpus[pHvStimer->idCpu];
+    PVMCPU    pVCpu  = pVM->apCpusR3[pHvStimer->idCpu];
     PGIMHVCPU pHvCpu = &pVCpu->gim.s.u.HvCpu;
     Assert(pHvStimer->idxStimer < RT_ELEMENTS(pHvCpu->aStatStimerFired));
 
@@ -1474,8 +1475,8 @@ VMMR3_INT_DECL(int) gimR3HvEnableHypercallPage(PVM pVM, RTGCPHYS GCPhysHypercall
             /*
              * Notify VMM that hypercalls are now enabled for all VCPUs.
              */
-            for (VMCPUID i = 0; i < pVM->cCpus; i++)
-                VMMHypercallsEnable(&pVM->aCpus[i]);
+            for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
+                VMMHypercallsEnable(pVM->apCpusR3[idCpu]);
 
             LogRel(("GIM: HyperV: Enabled hypercall page at %#RGp\n", GCPhysHypercallPage));
             return VINF_SUCCESS;

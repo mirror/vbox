@@ -59,6 +59,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define VBOX_BUGREF_9217_PART_I
 #define LOG_GROUP LOG_GROUP_SELM
 #include <VBox/vmm/selm.h>
 #include <VBox/vmm/cpum.h>
@@ -567,7 +568,7 @@ VMMR3DECL(void) SELMR3DumpDescriptor(X86DESC Desc, RTSEL Sel, const char *pszMsg
 static DECLCALLBACK(void) selmR3InfoGdtGuest(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     /** @todo SMP support! */
-    PVMCPU      pVCpu = &pVM->aCpus[0];
+    PVMCPU      pVCpu = pVM->apCpusR3[0];
 
     VBOXGDTR    GDTR;
     CPUMGetGuestGDTR(pVCpu, &GDTR);
@@ -610,7 +611,7 @@ static DECLCALLBACK(void) selmR3InfoGdtGuest(PVM pVM, PCDBGFINFOHLP pHlp, const 
 static DECLCALLBACK(void) selmR3InfoLdtGuest(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     /** @todo SMP support! */
-    PVMCPU   pVCpu = &pVM->aCpus[0];
+    PVMCPU   pVCpu = pVM->apCpusR3[0];
 
     uint64_t GCPtrLdt;
     uint32_t cbLdt;

@@ -79,7 +79,6 @@ endstruc
 
 struc CPUM
     ;...
-    .offCPUMCPU0                resd    1
     .fHostUseFlags              resd    1
 
     ; CR4 masks
@@ -264,21 +263,20 @@ struc CPUMCPU
     ;
     .fUseFlags            resd    1
     .fChanged             resd    1
-    .offCPUM              resd    1
     .u32RetCode           resd    1
 
 %ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
-    .pvApicBase           RTR0PTR_RES 1
     .fApicDisVectors      resd    1
+    .pvApicBase           RTR0PTR_RES 1
     .fX2Apic              resb    1
 %else
-    .abPadding3           resb    (RTR0PTR_CB + 4 + 1)
+    .abPadding3           resb    (4 + RTR0PTR_CB + 1)
 %endif
 
     .fRemEntered          resb    1
     .fCpuIdApicFeatureVisible resb 1
 
-    .abPadding2           resb    (64 - 16 - RTR0PTR_CB - 4 - 1 - 2)
+    .abPadding2           resb    (64 - 16 - RTR0PTR_CB - 4 - 1 - 2 + 4)
 
     ;
     ; Host context state
@@ -367,37 +365,6 @@ struc CPUMCPU
     .uMagic              resq    1
 %endif
 endstruc
-
-
-;;
-; Converts the CPUM pointer to CPUMCPU
-; @param   %1   register name
-%macro CPUMCPU_FROM_CPUM 1
-    add     %1, dword [%1 + CPUM.offCPUMCPU0]
-%endmacro
-
-;;
-; Converts the CPUM pointer to CPUMCPU
-; @param   %1   register name (CPUM)
-; @param   %2   register name (CPUMCPU offset)
-%macro CPUMCPU_FROM_CPUM_WITH_OFFSET 2
-    add     %1, %2
-%endmacro
-
-;;
-; Converts the CPUMCPU pointer to CPUM
-; @param   %1   register name
-%macro CPUM_FROM_CPUMCPU 1
-    sub     %1, dword [%1 + CPUMCPU.offCPUM]
-%endmacro
-
-;;
-; Converts the CPUMCPU pointer to CPUM
-; @param   %1   register name (CPUM)
-; @param   %2   register name (CPUMCPU offset)
-%macro CPUM_FROM_CPUMCPU_WITH_OFFSET 2
-    sub     %1, %2
-%endmacro
 
 
 

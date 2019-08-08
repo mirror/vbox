@@ -275,6 +275,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define VBOX_BUGREF_9217_PART_I
 #define LOG_GROUP LOG_GROUP_PDM
 #define PDMPCIDEV_INCLUDE_PRIVATE  /* Hack to get pdmpcidevint.h included at the right point. */
 #include "PDMInternal.h"
@@ -892,7 +893,7 @@ static DECLCALLBACK(int) pdmR3SaveExec(PVM pVM, PSSMHANDLE pSSM)
      */
     for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
-        PVMCPU pVCpu = &pVM->aCpus[idCpu];
+        PVMCPU pVCpu = pVM->apCpusR3[idCpu];
         SSMR3PutU32(pSSM, VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC));
         SSMR3PutU32(pSSM, VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_PIC));
         SSMR3PutU32(pSSM, VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_NMI));
@@ -922,7 +923,7 @@ static DECLCALLBACK(int) pdmR3LoadPrep(PVM pVM, PSSMHANDLE pSSM)
 #ifdef LOG_ENABLED
     for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
-        PVMCPU pVCpu = &pVM->aCpus[idCpu];
+        PVMCPU pVCpu = pVM->apCpusR3[idCpu];
         LogFlow(("pdmR3LoadPrep: VCPU %u %s%s\n", idCpu,
                 VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC) ? " VMCPU_FF_INTERRUPT_APIC" : "",
                 VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_PIC)  ? " VMCPU_FF_INTERRUPT_PIC" : ""));
@@ -940,7 +941,7 @@ static DECLCALLBACK(int) pdmR3LoadPrep(PVM pVM, PSSMHANDLE pSSM)
     /* Clear the FFs. */
     for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
-        PVMCPU pVCpu = &pVM->aCpus[idCpu];
+        PVMCPU pVCpu = pVM->apCpusR3[idCpu];
         VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_APIC);
         VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_PIC);
         VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_NMI);
@@ -991,7 +992,7 @@ static DECLCALLBACK(int) pdmR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersi
          */
         for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
         {
-            PVMCPU pVCpu = &pVM->aCpus[idCpu];
+            PVMCPU pVCpu = pVM->apCpusR3[idCpu];
 
             /* APIC interrupt */
             uint32_t fInterruptPending = 0;
@@ -1635,7 +1636,7 @@ VMMR3_INT_DECL(void) PDMR3Reset(PVM pVM)
      * Clear all pending interrupts and DMA operations.
      */
     for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
-        PDMR3ResetCpu(&pVM->aCpus[idCpu]);
+        PDMR3ResetCpu(pVM->apCpusR3[idCpu]);
     VM_FF_CLEAR(pVM, VM_FF_PDM_DMA);
 
     LogFlow(("PDMR3Reset: returns void\n"));
@@ -1701,10 +1702,10 @@ VMMR3_INT_DECL(bool) PDMR3GetResetInfo(PVM pVM, uint32_t fOverride, uint32_t *pf
      * like clearing memory).
      */
     bool     fOtherCpusActive = false;
-    VMCPUID  iCpu             = pVM->cCpus;
-    while (iCpu-- > 1)
+    VMCPUID  idCpu            = pVM->cCpus;
+    while (idCpu-- > 1)
     {
-        EMSTATE enmState = EMGetState(&pVM->aCpus[iCpu]);
+        EMSTATE enmState = EMGetState(pVM->apCpusR3[idCpu]);
         if (   enmState != EMSTATE_WAIT_SIPI
             && enmState != EMSTATE_NONE)
         {

@@ -105,6 +105,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define VBOX_BUGREF_9217_PART_I
 #define LOG_GROUP LOG_GROUP_CPUM
 #include <VBox/vmm/cpum.h>
 #include <VBox/vmm/cpumdis.h>
@@ -983,8 +984,11 @@ static void cpumR3CheckLeakyFpu(PVM pVM)
             uint32_t fExtFeaturesEDX = ASMCpuId_EDX(0x80000001);
             if (fExtFeaturesEDX & X86_CPUID_AMD_FEATURE_EDX_FFXSR)
             {
-                for (VMCPUID i = 0; i < pVM->cCpus; i++)
-                    pVM->aCpus[i].cpum.s.fUseFlags |= CPUM_USE_FFXSR_LEAKY;
+                for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
+                {
+                    PVMCPU pVCpu = pVM->apCpusR3[idCpu];
+                    pVCpu->cpum.s.fUseFlags |= CPUM_USE_FFXSR_LEAKY;
+                }
                 Log(("CPUM: Host CPU has leaky fxsave/fxrstor behaviour\n"));
             }
         }
@@ -1002,7 +1006,7 @@ static void cpumR3FreeSvmHwVirtState(PVM pVM)
     Assert(pVM->cpum.s.GuestFeatures.fSvm);
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
-        PVMCPU pVCpu = &pVM->aCpus[i];
+        PVMCPU pVCpu = pVM->apCpusR3[i];
         if (pVCpu->cpum.s.Guest.hwvirt.svm.pVmcbR3)
         {
             SUPR3PageFreeEx(pVCpu->cpum.s.Guest.hwvirt.svm.pVmcbR3, SVM_VMCB_PAGES);
@@ -1040,7 +1044,7 @@ static int cpumR3AllocSvmHwVirtState(PVM pVM)
             pVM->cCpus * (SVM_MSRPM_PAGES + SVM_IOPM_PAGES)));
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
-        PVMCPU pVCpu = &pVM->aCpus[i];
+        PVMCPU pVCpu = pVM->apCpusR3[i];
         pVCpu->cpum.s.Guest.hwvirt.enmHwvirt = CPUMHWVIRT_SVM;
 
         /*
@@ -1125,7 +1129,7 @@ static void cpumR3FreeVmxHwVirtState(PVM pVM)
     Assert(pVM->cpum.s.GuestFeatures.fVmx);
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
-        PVMCPU   pVCpu = &pVM->aCpus[i];
+        PVMCPU   pVCpu = pVM->apCpusR3[i];
         PCPUMCTX pCtx  = &pVCpu->cpum.s.Guest;
 
         if (pCtx->hwvirt.vmx.pVmcsR3)
@@ -1201,7 +1205,7 @@ static int cpumR3AllocVmxHwVirtState(PVM pVM)
     LogRel(("CPUM: Allocating %u pages for the nested-guest VMCS and related structures\n", pVM->cCpus * cPages));
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
-        PVMCPU   pVCpu = &pVM->aCpus[i];
+        PVMCPU   pVCpu = pVM->apCpusR3[i];
         PCPUMCTX pCtx  = &pVCpu->cpum.s.Guest;
         pCtx->hwvirt.enmHwvirt = CPUMHWVIRT_VMX;
 
@@ -2088,31 +2092,11 @@ VMMR3DECL(int) CPUMR3Init(PVM pVM)
     AssertCompileSizeAlignment(CPUMCTXMSRS, 64);
     AssertCompileSizeAlignment(CPUMHOSTCTX, 64);
     AssertCompileMemberAlignment(VM, cpum, 64);
-    AssertCompileMemberAlignment(VM, aCpus, 64);
     AssertCompileMemberAlignment(VMCPU, cpum.s, 64);
-    AssertCompileMemberSizeAlignment(VM, aCpus[0].cpum.s, 64);
 #ifdef VBOX_STRICT
     int rc2 = cpumR3MsrStrictInitChecks();
     AssertRCReturn(rc2, rc2);
 #endif
-
-    /*
-     * Initialize offsets.
-     */
-
-    /* Calculate the offset from CPUM to CPUMCPU for the first CPU. */
-    pVM->cpum.s.offCPUMCPU0 = RT_UOFFSETOF(VM, aCpus[0].cpum) - RT_UOFFSETOF(VM, cpum);
-    Assert((uintptr_t)&pVM->cpum + pVM->cpum.s.offCPUMCPU0 == (uintptr_t)&pVM->aCpus[0].cpum);
-
-
-    /* Calculate the offset from CPUMCPU to CPUM. */
-    for (VMCPUID i = 0; i < pVM->cCpus; i++)
-    {
-        PVMCPU pVCpu = &pVM->aCpus[i];
-
-        pVCpu->cpum.s.offCPUM = RT_UOFFSETOF_DYN(VM, aCpus[i].cpum) - RT_UOFFSETOF(VM, cpum);
-        Assert((uintptr_t)&pVCpu->cpum - pVCpu->cpum.s.offCPUM == (uintptr_t)&pVM->cpum);
-    }
 
     /*
      * Gather info about the host CPU.
@@ -2187,7 +2171,7 @@ VMMR3DECL(int) CPUMR3Init(PVM pVM)
 
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
-        PVMCPU pVCpu = &pVM->aCpus[i];
+        PVMCPU pVCpu = pVM->apCpusR3[i];
 
         pVCpu->cpum.s.Guest.pXStateR3 = (PX86XSAVEAREA)pbXStates;
         pVCpu->cpum.s.Guest.pXStateR0 = MMHyperR3ToR0(pVM, pbXStates);
@@ -2255,7 +2239,7 @@ VMMR3DECL(int) CPUMR3Init(PVM pVM)
     else if (pVM->cpum.s.GuestFeatures.fSvm)
         rc = cpumR3AllocSvmHwVirtState(pVM);
     else
-        Assert(pVM->aCpus[0].cpum.s.Guest.hwvirt.enmHwvirt == CPUMHWVIRT_NONE);
+        Assert(pVM->apCpusR3[0]->cpum.s.Guest.hwvirt.enmHwvirt == CPUMHWVIRT_NONE);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -2291,14 +2275,12 @@ VMMR3DECL(void) CPUMR3Relocate(PVM pVM)
 VMMR3DECL(int) CPUMR3Term(PVM pVM)
 {
 #ifdef VBOX_WITH_CRASHDUMP_MAGIC
-    for (VMCPUID i = 0; i < pVM->cCpus; i++)
+    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
-        PVMCPU   pVCpu = &pVM->aCpus[i];
-        PCPUMCTX pCtx  = CPUMQueryGuestCtxPtr(pVCpu);
-
+        PVMCPU pVCpu = pVM->apCpusR3[idCpu];
         memset(pVCpu->cpum.s.aMagic, 0, sizeof(pVCpu->cpum.s.aMagic));
-        pVCpu->cpum.s.uMagic     = 0;
-        pCtx->dr[5]              = 0;
+        pVCpu->cpum.s.uMagic      = 0;
+        pvCpu->cpum.s.Guest.dr[5] = 0;
     }
 #endif
 
@@ -2477,17 +2459,17 @@ VMMR3DECL(void) CPUMR3ResetCpu(PVM pVM, PVMCPU pVCpu)
  */
 VMMR3DECL(void) CPUMR3Reset(PVM pVM)
 {
-    for (VMCPUID i = 0; i < pVM->cCpus; i++)
+    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
-        CPUMR3ResetCpu(pVM, &pVM->aCpus[i]);
+        PVMCPU pVCpu = pVM->apCpusR3[idCpu];
+        CPUMR3ResetCpu(pVM, pVCpu);
 
 #ifdef VBOX_WITH_CRASHDUMP_MAGIC
-        PCPUMCTX pCtx = &pVM->aCpus[i].cpum.s.Guest;
 
         /* Magic marker for searching in crash dumps. */
-        strcpy((char *)pVM->aCpus[i].cpum.s.aMagic, "CPUMCPU Magic");
-        pVM->aCpus[i].cpum.s.uMagic     = UINT64_C(0xDEADBEEFDEADBEEF);
-        pCtx->dr[5]                     = UINT64_C(0xDEADBEEFDEADBEEF);
+        strcpy((char *)pVCpu->.cpum.s.aMagic, "CPUMCPU Magic");
+        pVCpu->cpum.s.uMagic       = UINT64_C(0xDEADBEEFDEADBEEF);
+        pVCpu->cpum.s.Guest->dr[5] = UINT64_C(0xDEADBEEFDEADBEEF);
 #endif
     }
 }
@@ -2524,12 +2506,12 @@ static DECLCALLBACK(int) cpumR3SaveExec(PVM pVM, PSSMHANDLE pSSM)
      * Save.
      */
     SSMR3PutU32(pSSM, pVM->cCpus);
-    SSMR3PutU32(pSSM, sizeof(pVM->aCpus[0].cpum.s.GuestMsrs.msr));
+    SSMR3PutU32(pSSM, sizeof(pVM->apCpusR3[0]->cpum.s.GuestMsrs.msr));
     CPUMCTX DummyHyperCtx;
     RT_ZERO(DummyHyperCtx);
-    for (VMCPUID iCpu = 0; iCpu < pVM->cCpus; iCpu++)
+    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
-        PVMCPU pVCpu = &pVM->aCpus[iCpu];
+        PVMCPU pVCpu = pVM->apCpusR3[idCpu];
 
         SSMR3PutStructEx(pSSM, &DummyHyperCtx,           sizeof(DummyHyperCtx),           0, g_aCpumCtxFields, NULL);
 
@@ -2709,7 +2691,7 @@ static DECLCALLBACK(int) cpumR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVers
         CPUMCTX HyperCtxIgnored;
         if (uVersion < CPUM_SAVED_STATE_VERSION_XSAVE)
         {
-            for (VMCPUID iCpu = 0; iCpu < pVM->cCpus; iCpu++)
+            for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
             {
                 X86FXSTATE Ign;
                 SSMR3GetStructEx(pSSM, &Ign, sizeof(Ign), fLoad | SSMSTRUCT_FLAGS_NO_TAIL_MARKER, paCpumCtx1Fields, NULL);
@@ -2743,9 +2725,9 @@ static DECLCALLBACK(int) cpumR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVers
         /*
          * Do the per-CPU restoring.
          */
-        for (VMCPUID iCpu = 0; iCpu < pVM->cCpus; iCpu++)
+        for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
         {
-            PVMCPU   pVCpu = &pVM->aCpus[iCpu];
+            PVMCPU   pVCpu   = pVM->apCpusR3[idCpu];
             PCPUMCTX pGstCtx = &pVCpu->cpum.s.Guest;
 
             if (uVersion >= CPUM_SAVED_STATE_VERSION_XSAVE)
@@ -2944,9 +2926,9 @@ static DECLCALLBACK(int) cpumR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVers
            and valid selector value.  Supply those. */
         if (uVersion <= CPUM_SAVED_STATE_VERSION_MEM)
         {
-            for (VMCPUID iCpu = 0; iCpu < pVM->cCpus; iCpu++)
+            for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
             {
-                PVMCPU      pVCpu  = &pVM->aCpus[iCpu];
+                PVMCPU      pVCpu  = pVM->apCpusR3[idCpu];
                 bool const  fValid = true /*!VM_IS_RAW_MODE_ENABLED(pVM)*/
                                   || (   uVersion > CPUM_SAVED_STATE_VERSION_VER3_2
                                       && !(pVCpu->cpum.s.fChanged & CPUM_CHANGED_HIDDEN_SEL_REGS_INVALID));
@@ -2984,15 +2966,18 @@ static DECLCALLBACK(int) cpumR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVers
         /* Clear CPUM_CHANGED_HIDDEN_SEL_REGS_INVALID. */
         if (   uVersion >  CPUM_SAVED_STATE_VERSION_VER3_2
             && uVersion <= CPUM_SAVED_STATE_VERSION_MEM)
-            for (VMCPUID iCpu = 0; iCpu < pVM->cCpus; iCpu++)
-                pVM->aCpus[iCpu].cpum.s.fChanged &= CPUM_CHANGED_HIDDEN_SEL_REGS_INVALID;
+            for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
+            {
+                PVMCPU pVCpu = pVM->apCpusR3[idCpu];
+                pVCpu->cpum.s.fChanged &= CPUM_CHANGED_HIDDEN_SEL_REGS_INVALID;
+            }
 
         /*
          * A quick sanity check.
          */
-        for (VMCPUID iCpu = 0; iCpu < pVM->cCpus; iCpu++)
+        for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
         {
-            PVMCPU pVCpu = &pVM->aCpus[iCpu];
+            PVMCPU pVCpu = pVM->apCpusR3[idCpu];
             AssertLogRelReturn(!(pVCpu->cpum.s.Guest.es.fFlags & ~CPUMSELREG_FLAGS_VALID_MASK), VERR_SSM_UNEXPECTED_DATA);
             AssertLogRelReturn(!(pVCpu->cpum.s.Guest.cs.fFlags & ~CPUMSELREG_FLAGS_VALID_MASK), VERR_SSM_UNEXPECTED_DATA);
             AssertLogRelReturn(!(pVCpu->cpum.s.Guest.ss.fFlags & ~CPUMSELREG_FLAGS_VALID_MASK), VERR_SSM_UNEXPECTED_DATA);
@@ -3024,7 +3009,7 @@ static DECLCALLBACK(int) cpumR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVers
             BaseFeatures = pVM->cpum.s.GuestFeatures;
 
             /* Use the VMX MSR features from the saved state while exploding guest features. */
-            GuestMsrs.hwvirt.vmx = pVM->aCpus[0].cpum.s.Guest.hwvirt.vmx.Msrs;
+            GuestMsrs.hwvirt.vmx = pVM->apCpusR3[0]->cpum.s.Guest.hwvirt.vmx.Msrs;
         }
 
         /* Load CPUID and explode guest features. */
@@ -3064,7 +3049,7 @@ static DECLCALLBACK(int) cpumR3LoadDone(PVM pVM, PSSMHANDLE pSSM)
     bool const fSupportsLongMode = VMR3IsLongModeAllowed(pVM);
     for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
-        PVMCPU pVCpu = &pVM->aCpus[idCpu];
+        PVMCPU pVCpu = pVM->apCpusR3[idCpu];
 
         /* Notify PGM of the NXE states in case they've changed. */
         PGMNotifyNxeChanged(pVCpu, RT_BOOL(pVCpu->cpum.s.Guest.msrEFER & MSR_K6_EFER_NXE));
@@ -3533,7 +3518,7 @@ static DECLCALLBACK(void) cpumR3InfoGuest(PVM pVM, PCDBGFINFOHLP pHlp, const cha
 
     PVMCPU pVCpu = VMMGetCpu(pVM);
     if (!pVCpu)
-        pVCpu = &pVM->aCpus[0];
+        pVCpu = pVM->apCpusR3[0];
 
     pHlp->pfnPrintf(pHlp, "Guest CPUM (VCPU %d) state: %s\n", pVCpu->idCpu, pszComment);
 
@@ -3975,7 +3960,7 @@ static DECLCALLBACK(void) cpumR3InfoGuestHwvirt(PVM pVM, PCDBGFINFOHLP pHlp, con
 
     PVMCPU pVCpu = VMMGetCpu(pVM);
     if (!pVCpu)
-        pVCpu = &pVM->aCpus[0];
+        pVCpu = pVM->apCpusR3[0];
 
     /*
      * Figure out what to dump.
@@ -4101,7 +4086,7 @@ static DECLCALLBACK(void) cpumR3InfoGuestInstr(PVM pVM, PCDBGFINFOHLP pHlp, cons
 
     PVMCPU pVCpu = VMMGetCpu(pVM);
     if (!pVCpu)
-        pVCpu = &pVM->aCpus[0];
+        pVCpu = pVM->apCpusR3[0];
 
     char szInstruction[256];
     szInstruction[0] = '\0';
@@ -4121,7 +4106,7 @@ static DECLCALLBACK(void) cpumR3InfoHyper(PVM pVM, PCDBGFINFOHLP pHlp, const cha
 {
     PVMCPU pVCpu = VMMGetCpu(pVM);
     if (!pVCpu)
-        pVCpu = &pVM->aCpus[0];
+        pVCpu = pVM->apCpusR3[0];
 
     CPUMDUMPTYPE enmType;
     const char *pszComment;
@@ -4153,7 +4138,7 @@ static DECLCALLBACK(void) cpumR3InfoHost(PVM pVM, PCDBGFINFOHLP pHlp, const char
 
     PVMCPU pVCpu = VMMGetCpu(pVM);
     if (!pVCpu)
-        pVCpu = &pVM->aCpus[0];
+        pVCpu = pVM->apCpusR3[0];
     PCPUMHOSTCTX pCtx = &pVCpu->cpum.s.Host;
 
     /*
@@ -4483,9 +4468,10 @@ VMMR3DECL(int) CPUMR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
              * Only applicable/used on 64-bit hosts, refer CPUMR0A.asm. See @bugref{7138}.
              */
             bool const fSupportsLongMode = VMR3IsLongModeAllowed(pVM);
-            for (VMCPUID i = 0; i < pVM->cCpus; i++)
+            for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
             {
-                PVMCPU pVCpu = &pVM->aCpus[i];
+                PVMCPU pVCpu = pVM->apCpusR3[idCpu];
+
                 /* While loading a saved-state we fix it up in, cpumR3LoadDone(). */
                 if (fSupportsLongMode)
                     pVCpu->cpum.s.fUseFlags |= CPUM_USE_SUPPORTS_LONGMODE;

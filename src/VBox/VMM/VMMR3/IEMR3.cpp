@@ -19,6 +19,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define VBOX_BUGREF_9217_PART_I
 #define LOG_GROUP LOG_GROUP_EM
 #include <VBox/vmm/iem.h>
 #include <VBox/vmm/cpum.h>
@@ -65,7 +66,7 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
 
     for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
-        PVMCPU pVCpu = &pVM->aCpus[idCpu];
+        PVMCPU pVCpu = pVM->apCpusR3[idCpu];
 
         pVCpu->iem.s.CodeTlb.uTlbRevision = pVCpu->iem.s.DataTlb.uTlbRevision = uInitialTlbRevision;
         pVCpu->iem.s.CodeTlb.uTlbPhysRev  = pVCpu->iem.s.DataTlb.uTlbPhysRev  = uInitialTlbPhysRev;
@@ -153,10 +154,10 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
         }
         else
         {
-            pVCpu->iem.s.enmCpuVendor             = pVM->aCpus[0].iem.s.enmCpuVendor;
-            pVCpu->iem.s.enmHostCpuVendor         = pVM->aCpus[0].iem.s.enmHostCpuVendor;
+            pVCpu->iem.s.enmCpuVendor             = pVM->apCpusR3[0]->iem.s.enmCpuVendor;
+            pVCpu->iem.s.enmHostCpuVendor         = pVM->apCpusR3[0]->iem.s.enmHostCpuVendor;
 #if IEM_CFG_TARGET_CPU == IEMTARGETCPU_DYNAMIC
-            pVCpu->iem.s.uTargetCpu               = pVM->aCpus[0].iem.s.uTargetCpu;
+            pVCpu->iem.s.uTargetCpu               = pVM->apCpusR3[0]->iem.s.uTargetCpu;
 #endif
         }
 
@@ -174,7 +175,7 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
      */
     if (pVM->cpum.ro.GuestFeatures.fVmx)
     {
-        PVMCPU pVCpu0 = &pVM->aCpus[0];
+        PVMCPU pVCpu0 = pVM->apCpusR3[0];
         int rc = PGMR3HandlerPhysicalTypeRegister(pVM, PGMPHYSHANDLERKIND_ALL, iemVmxApicAccessPageHandler,
                                                   NULL /* pszModR0 */,
                                                   "iemVmxApicAccessPageHandler", NULL /* pszPfHandlerR0 */,
@@ -195,7 +196,7 @@ VMMR3DECL(int)      IEMR3Term(PVM pVM)
 #if defined(VBOX_WITH_STATISTICS) && !defined(DOXYGEN_RUNNING)
     for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
-        PVMCPU pVCpu = &pVM->aCpus[idCpu];
+        PVMCPU pVCpu = pVM->apCpusR3[idCpu];
         MMR3HeapFree(pVCpu->iem.s.pStatsR3);
         pVCpu->iem.s.pStatsR3 = NULL;
     }

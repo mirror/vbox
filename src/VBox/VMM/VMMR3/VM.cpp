@@ -42,6 +42,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define VBOX_BUGREF_9217_PART_I
 #define LOG_GROUP LOG_GROUP_VM
 #include <VBox/vmm/cfgm.h>
 #include <VBox/vmm/vmm.h>
@@ -588,7 +589,6 @@ static int vmR3CreateU(PUVM pUVM, uint32_t cCpus, PFNCFGMCONSTRUCTOR pfnCFGMCons
         AssertRelease(pVM->uCpuExecutionCap == 100);
         AssertCompileMemberAlignment(VM, cpum, 64);
         AssertCompileMemberAlignment(VM, tm, 64);
-        AssertCompileMemberAlignment(VM, aCpus, PAGE_SIZE);
 
         Log(("VMR3Create: Created pUVM=%p pVM=%p pVMR0=%p hSelf=%#x cCpus=%RU32\n",
              pUVM, pVM, pVM->pVMR0, pVM->hSelf, pVM->cCpus));
@@ -600,13 +600,14 @@ static int vmR3CreateU(PUVM pUVM, uint32_t cCpus, PFNCFGMCONSTRUCTOR pfnCFGMCons
 
         for (VMCPUID i = 0; i < pVM->cCpus; i++)
         {
-            pVM->aCpus[i].pUVCpu            = &pUVM->aCpus[i];
-            pVM->aCpus[i].idCpu             = i;
-            pVM->aCpus[i].hNativeThread     = pUVM->aCpus[i].vm.s.NativeThreadEMT;
-            Assert(pVM->aCpus[i].hNativeThread != NIL_RTNATIVETHREAD);
+            PVMCPU pVCpu = pVM->apCpusR3[i];
+            pVCpu->pUVCpu            = &pUVM->aCpus[i];
+            pVCpu->idCpu             = i;
+            pVCpu->hNativeThread     = pUVM->aCpus[i].vm.s.NativeThreadEMT;
+            Assert(pVCpu->hNativeThread != NIL_RTNATIVETHREAD);
             /* hNativeThreadR0 is initialized on EMT registration. */
-            pUVM->aCpus[i].pVCpu            = &pVM->aCpus[i];
-            pUVM->aCpus[i].pVM              = pVM;
+            pUVM->aCpus[i].pVCpu     = pVCpu;
+            pUVM->aCpus[i].pVM       = pVM;
         }
 
 

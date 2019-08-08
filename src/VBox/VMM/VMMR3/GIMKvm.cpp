@@ -19,6 +19,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define VBOX_BUGREF_9217_PART_I
 #define LOG_GROUP LOG_GROUP_GIM
 #include <VBox/vmm/gim.h>
 #include <VBox/vmm/cpum.h>
@@ -159,8 +160,8 @@ VMMR3_INT_DECL(int) gimR3KvmInit(PVM pVM)
      * Setup hypercall and #UD handling.
      * Note! We always need to trap VMCALL/VMMCALL hypercall using #UDs for raw-mode VMs.
      */
-    for (VMCPUID i = 0; i < pVM->cCpus; i++)
-        EMSetHypercallInstructionsEnabled(&pVM->aCpus[i], true);
+    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
+        EMSetHypercallInstructionsEnabled(pVM->apCpusR3[idCpu], true);
 
     size_t cbHypercall = 0;
     rc = GIMQueryHypercallOpcodeBytes(pVM, pKvm->abOpcodeNative, sizeof(pKvm->abOpcodeNative), &cbHypercall, &pKvm->uOpcodeNative);
@@ -239,9 +240,9 @@ VMMR3_INT_DECL(void) gimR3KvmReset(PVM pVM)
      */
     PGIMKVM pKvm = &pVM->gim.s.u.Kvm;
     pKvm->u64WallClockMsr = 0;
-    for (VMCPUID iCpu = 0; iCpu < pVM->cCpus; iCpu++)
+    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
-        PGIMKVMCPU pKvmCpu = &pVM->aCpus[iCpu].gim.s.u.KvmCpu;
+        PGIMKVMCPU pKvmCpu = &pVM->apCpusR3[idCpu]->gim.s.u.KvmCpu;
         pKvmCpu->u64SystemTimeMsr = 0;
         pKvmCpu->u32SystemTimeVersion = 0;
         pKvmCpu->fSystemTimeFlags = 0;
@@ -271,9 +272,9 @@ VMMR3_INT_DECL(int) gimR3KvmSave(PVM pVM, PSSMHANDLE pSSM)
     /*
      * Save per-VCPU data.
      */
-    for (uint32_t i = 0; i < pVM->cCpus; i++)
+    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
-        PCGIMKVMCPU pKvmCpu = &pVM->aCpus[i].gim.s.u.KvmCpu;
+        PCGIMKVMCPU pKvmCpu = &pVM->apCpusR3[idCpu]->gim.s.u.KvmCpu;
         SSMR3PutU64(pSSM, pKvmCpu->u64SystemTimeMsr);
         SSMR3PutU64(pSSM, pKvmCpu->uTsc);
         SSMR3PutU64(pSSM, pKvmCpu->uVirtNanoTS);
@@ -319,9 +320,9 @@ VMMR3_INT_DECL(int) gimR3KvmLoad(PVM pVM, PSSMHANDLE pSSM)
     /*
      * Load per-VCPU data.
      */
-    for (uint32_t i = 0; i < pVM->cCpus; i++)
+    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
-        PVMCPU     pVCpu   = &pVM->aCpus[i];
+        PVMCPU     pVCpu   = pVM->apCpusR3[idCpu];
         PGIMKVMCPU pKvmCpu = &pVCpu->gim.s.u.KvmCpu;
 
         SSMR3GetU64(pSSM, &pKvmCpu->u64SystemTimeMsr);

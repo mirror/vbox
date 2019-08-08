@@ -97,6 +97,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define VBOX_BUGREF_9217_PART_I
 #define LOG_GROUP LOG_GROUP_VMM
 #include <VBox/vmm/vmm.h>
 #include <VBox/vmm/vmapi.h>
@@ -333,7 +334,7 @@ static int vmmR3InitStacks(PVM pVM)
 
     for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
-        PVMCPU pVCpu = &pVM->aCpus[idCpu];
+        PVMCPU pVCpu = pVM->apCpusR3[idCpu];
 
 #ifdef VBOX_STRICT_VMM_STACK
         rc = MMR3HyperAllocOnceNoRelEx(pVM, PAGE_SIZE + VMM_STACK_SIZE + PAGE_SIZE,
@@ -374,9 +375,9 @@ static int vmmR3InitLoggers(PVM pVM)
     if (pLogger)
     {
         size_t const cbLogger = RTLogCalcSizeForR0(pLogger->cGroups, 0);
-        for (VMCPUID i = 0; i < pVM->cCpus; i++)
+        for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
         {
-            PVMCPU pVCpu = &pVM->aCpus[i];
+            PVMCPU pVCpu = pVM->apCpusR3[idCpu];
             rc = MMR3HyperAllocOnceNoRelEx(pVM, cbLogger, PAGE_SIZE, MM_TAG_VMM, MMHYPER_AONR_FLAGS_KERNEL_MAPPING,
                                            (void **)&pVCpu->vmm.s.pR0LoggerR3);
             if (RT_FAILURE(rc))
@@ -408,9 +409,9 @@ static int vmmR3InitLoggers(PVM pVM)
 
         size_t const cbLogger = RTLogCalcSizeForR0(pRelLogger->cGroups, 0);
 
-        for (VMCPUID i = 0; i < pVM->cCpus; i++)
+        for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
         {
-            PVMCPU pVCpu = &pVM->aCpus[i];
+            PVMCPU pVCpu = pVM->apCpusR3[idCpu];
             rc = MMR3HyperAllocOnceNoRelEx(pVM, cbLogger, PAGE_SIZE, MM_TAG_VMM, MMHYPER_AONR_FLAGS_KERNEL_MAPPING,
                                            (void **)&pVCpu->vmm.s.pR0RelLoggerR3);
             if (RT_FAILURE(rc))
@@ -423,10 +424,10 @@ static int vmmR3InitLoggers(PVM pVM)
             pVmmLogger->fCreated            = false;
             pVmmLogger->fFlushingDisabled   = false;
             pVmmLogger->fRegistered         = false;
-            pVmmLogger->idCpu               = i;
+            pVmmLogger->idCpu               = idCpu;
 
             char szR0ThreadName[16];
-            RTStrPrintf(szR0ThreadName, sizeof(szR0ThreadName), "EMT-%u-R0", i);
+            RTStrPrintf(szR0ThreadName, sizeof(szR0ThreadName), "EMT-%u-R0", idCpu);
             rc = RTLogCreateForR0(&pVmmLogger->Logger, pVmmLogger->cbLogger, R0PtrVmmLogger + RT_UOFFSETOF(VMMR0LOGGER, Logger),
                                   pfnLoggerWrapper, pfnLoggerFlush,
                                   RTLOGFLAGS_BUFFERED, RTLOGDEST_DUMMY, szR0ThreadName);
@@ -525,23 +526,25 @@ static void vmmR3InitRegisterStats(PVM pVM)
 #ifdef VBOX_WITH_STATISTICS
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
-        STAMR3RegisterF(pVM, &pVM->aCpus[i].vmm.s.CallRing3JmpBufR0.cbUsedMax,  STAMTYPE_U32_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,      "Max amount of stack used.", "/VMM/Stack/CPU%u/Max", i);
-        STAMR3RegisterF(pVM, &pVM->aCpus[i].vmm.s.CallRing3JmpBufR0.cbUsedAvg,  STAMTYPE_U32,       STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,      "Average stack usage.",      "/VMM/Stack/CPU%u/Avg", i);
-        STAMR3RegisterF(pVM, &pVM->aCpus[i].vmm.s.CallRing3JmpBufR0.cUsedTotal, STAMTYPE_U64,       STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of stack usages.",   "/VMM/Stack/CPU%u/Uses", i);
+        PVMCPU pVCpu = pVM->apCpusR3[i];
+        STAMR3RegisterF(pVM, &pVCpu->vmm.s.CallRing3JmpBufR0.cbUsedMax,  STAMTYPE_U32_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,      "Max amount of stack used.", "/VMM/Stack/CPU%u/Max", i);
+        STAMR3RegisterF(pVM, &pVCpu->vmm.s.CallRing3JmpBufR0.cbUsedAvg,  STAMTYPE_U32,       STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,      "Average stack usage.",      "/VMM/Stack/CPU%u/Avg", i);
+        STAMR3RegisterF(pVM, &pVCpu->vmm.s.CallRing3JmpBufR0.cUsedTotal, STAMTYPE_U64,       STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of stack usages.",   "/VMM/Stack/CPU%u/Uses", i);
     }
 #endif
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
-        STAMR3RegisterF(pVM, &pVM->aCpus[i].vmm.s.StatR0HaltBlock,          STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_NS_PER_CALL, "", "/PROF/CPU%u/VM/Halt/R0HaltBlock", i);
-        STAMR3RegisterF(pVM, &pVM->aCpus[i].vmm.s.StatR0HaltBlockOnTime,    STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_NS_PER_CALL, "", "/PROF/CPU%u/VM/Halt/R0HaltBlockOnTime", i);
-        STAMR3RegisterF(pVM, &pVM->aCpus[i].vmm.s.StatR0HaltBlockOverslept, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_NS_PER_CALL, "", "/PROF/CPU%u/VM/Halt/R0HaltBlockOverslept", i);
-        STAMR3RegisterF(pVM, &pVM->aCpus[i].vmm.s.StatR0HaltBlockInsomnia,  STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_NS_PER_CALL, "", "/PROF/CPU%u/VM/Halt/R0HaltBlockInsomnia", i);
-        STAMR3RegisterF(pVM, &pVM->aCpus[i].vmm.s.StatR0HaltExec,           STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,  "", "/PROF/CPU%u/VM/Halt/R0HaltExec", i);
-        STAMR3RegisterF(pVM, &pVM->aCpus[i].vmm.s.StatR0HaltExecFromSpin,   STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,  "", "/PROF/CPU%u/VM/Halt/R0HaltExec/FromSpin", i);
-        STAMR3RegisterF(pVM, &pVM->aCpus[i].vmm.s.StatR0HaltExecFromBlock,  STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,  "", "/PROF/CPU%u/VM/Halt/R0HaltExec/FromBlock", i);
-        STAMR3RegisterF(pVM, &pVM->aCpus[i].vmm.s.cR0Halts,                 STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,  "", "/PROF/CPU%u/VM/Halt/R0HaltHistoryCounter", i);
-        STAMR3RegisterF(pVM, &pVM->aCpus[i].vmm.s.cR0HaltsSucceeded,        STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,  "", "/PROF/CPU%u/VM/Halt/R0HaltHistorySucceeded", i);
-        STAMR3RegisterF(pVM, &pVM->aCpus[i].vmm.s.cR0HaltsToRing3,          STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,  "", "/PROF/CPU%u/VM/Halt/R0HaltHistoryToRing3", i);
+        PVMCPU pVCpu = pVM->apCpusR3[i];
+        STAMR3RegisterF(pVM, &pVCpu->vmm.s.StatR0HaltBlock,          STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_NS_PER_CALL, "", "/PROF/CPU%u/VM/Halt/R0HaltBlock", i);
+        STAMR3RegisterF(pVM, &pVCpu->vmm.s.StatR0HaltBlockOnTime,    STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_NS_PER_CALL, "", "/PROF/CPU%u/VM/Halt/R0HaltBlockOnTime", i);
+        STAMR3RegisterF(pVM, &pVCpu->vmm.s.StatR0HaltBlockOverslept, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_NS_PER_CALL, "", "/PROF/CPU%u/VM/Halt/R0HaltBlockOverslept", i);
+        STAMR3RegisterF(pVM, &pVCpu->vmm.s.StatR0HaltBlockInsomnia,  STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_NS_PER_CALL, "", "/PROF/CPU%u/VM/Halt/R0HaltBlockInsomnia", i);
+        STAMR3RegisterF(pVM, &pVCpu->vmm.s.StatR0HaltExec,           STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,  "", "/PROF/CPU%u/VM/Halt/R0HaltExec", i);
+        STAMR3RegisterF(pVM, &pVCpu->vmm.s.StatR0HaltExecFromSpin,   STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,  "", "/PROF/CPU%u/VM/Halt/R0HaltExec/FromSpin", i);
+        STAMR3RegisterF(pVM, &pVCpu->vmm.s.StatR0HaltExecFromBlock,  STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,  "", "/PROF/CPU%u/VM/Halt/R0HaltExec/FromBlock", i);
+        STAMR3RegisterF(pVM, &pVCpu->vmm.s.cR0Halts,                 STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,  "", "/PROF/CPU%u/VM/Halt/R0HaltHistoryCounter", i);
+        STAMR3RegisterF(pVM, &pVCpu->vmm.s.cR0HaltsSucceeded,        STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,  "", "/PROF/CPU%u/VM/Halt/R0HaltHistorySucceeded", i);
+        STAMR3RegisterF(pVM, &pVCpu->vmm.s.cR0HaltsToRing3,          STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,  "", "/PROF/CPU%u/VM/Halt/R0HaltHistoryToRing3", i);
     }
 }
 
@@ -619,7 +622,7 @@ VMMR3_INT_DECL(int) VMMR3InitR0(PVM pVM)
     }
 
     /* Log whether thread-context hooks are used (on Linux this can depend on how the kernel is configured). */
-    if (pVM->aCpus[0].vmm.s.hCtxHook != NIL_RTTHREADCTXHOOK)
+    if (pVM->apCpusR3[0]->vmm.s.hCtxHook != NIL_RTTHREADCTXHOOK)
         LogRel(("VMM: Enabled thread-context hooks\n"));
     else
         LogRel(("VMM: Thread-context hooks unavailable\n"));
@@ -638,7 +641,7 @@ VMMR3_INT_DECL(int) VMMR3InitR0(PVM pVM)
      * Send all EMTs to ring-0 to get their logger initialized.
      */
     for (VMCPUID idCpu = 0; RT_SUCCESS(rc) && idCpu < pVM->cCpus; idCpu++)
-        rc = VMR3ReqCallWait(pVM, idCpu, (PFNRT)vmmR3InitR0Emt, 2, pVM, &pVM->aCpus[idCpu]);
+        rc = VMR3ReqCallWait(pVM, idCpu, (PFNRT)vmmR3InitR0Emt, 2, pVM, pVM->apCpusR3[idCpu]);
 
     return rc;
 }
@@ -814,7 +817,7 @@ VMMR3_INT_DECL(int) VMMR3UpdateLoggers(PVM pVM)
     PRTLOGGER const pDefault = RTLogDefaultInstance();
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
-        PVMCPU       pVCpu = &pVM->aCpus[i];
+        PVMCPU       pVCpu = pVM->apCpusR3[i];
         PVMMR0LOGGER pR0LoggerR3 = pVCpu->vmm.s.pR0LoggerR3;
         if (pR0LoggerR3)
         {
@@ -879,7 +882,7 @@ VMMR3DECL(PVMCPU) VMMR3GetCpuByIdU(PUVM pUVM, RTCPUID idCpu)
     UVM_ASSERT_VALID_EXT_RETURN(pUVM, NULL);
     AssertReturn(idCpu < pUVM->cCpus, NULL);
     VM_ASSERT_VALID_EXT_RETURN(pUVM->pVM, NULL);
-    return &pUVM->pVM->aCpus[idCpu];
+    return pUVM->pVM->apCpusR3[idCpu];
 }
 
 
@@ -911,7 +914,7 @@ static DECLCALLBACK(int) vmmR3Save(PVM pVM, PSSMHANDLE pSSM)
      * be running. This avoids breaking the saved state version. :-)
      */
     for (VMCPUID i = 1; i < pVM->cCpus; i++)
-        SSMR3PutBool(pSSM, VMCPUSTATE_IS_STARTED(VMCPU_GET_STATE(&pVM->aCpus[i])));
+        SSMR3PutBool(pSSM, VMCPUSTATE_IS_STARTED(VMCPU_GET_STATE(pVM->apCpusR3[i])));
 
     return SSMR3PutU32(pSSM, UINT32_MAX); /* terminator */
 }
@@ -965,14 +968,14 @@ static DECLCALLBACK(int) vmmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, 
     /*
      * Restore the VMCPU states. VCPU 0 is always started.
      */
-    VMCPU_SET_STATE(&pVM->aCpus[0], VMCPUSTATE_STARTED);
+    VMCPU_SET_STATE(pVM->apCpusR3[0], VMCPUSTATE_STARTED);
     for (VMCPUID i = 1; i < pVM->cCpus; i++)
     {
         bool fStarted;
         int rc = SSMR3GetBool(pSSM, &fStarted);
         if (RT_FAILURE(rc))
             return rc;
-        VMCPU_SET_STATE(&pVM->aCpus[i], fStarted ? VMCPUSTATE_STARTED : VMCPUSTATE_STOPPED);
+        VMCPU_SET_STATE(pVM->apCpusR3[i], fStarted ? VMCPUSTATE_STARTED : VMCPUSTATE_STOPPED);
     }
 
     /* terminator */
@@ -996,7 +999,7 @@ static DECLCALLBACK(int) vmmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, 
  */
 VMMR3_INT_DECL(void) VMMR3YieldSuspend(PVM pVM)
 {
-    VMCPU_ASSERT_EMT(&pVM->aCpus[0]);
+    VMCPU_ASSERT_EMT(pVM->apCpusR3[0]);
     if (!pVM->vmm.s.cYieldResumeMillies)
     {
         uint64_t u64Now = TMTimerGet(pVM->vmm.s.pYieldTimer);
@@ -2600,7 +2603,8 @@ static DECLCALLBACK(void) vmmR3InfoFF(PVM pVM, PCDBGFINFOHLP pHlp, const char *p
      */
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
-        const uint64_t fLocalForcedActions = pVM->aCpus[i].fLocalForcedActions;
+        PVMCPU         pVCpu               = pVM->apCpusR3[i];
+        const uint64_t fLocalForcedActions = pVCpu->fLocalForcedActions;
         pHlp->pfnPrintf(pHlp, "CPU %u FFs: %#RX64", i, fLocalForcedActions);
 
         /* show the flag mnemonics */
@@ -2632,7 +2636,7 @@ static DECLCALLBACK(void) vmmR3InfoFF(PVM pVM, PCDBGFINFOHLP pHlp, const char *p
             pHlp->pfnPrintf(pHlp, "\n");
 
         if (fLocalForcedActions & VMCPU_FF_INHIBIT_INTERRUPTS)
-            pHlp->pfnPrintf(pHlp, "    intr inhibit RIP: %RGp\n", EMGetInhibitInterruptsPC(&pVM->aCpus[i]));
+            pHlp->pfnPrintf(pHlp, "    intr inhibit RIP: %RGp\n", EMGetInhibitInterruptsPC(pVCpu));
 
         /* the groups */
         c = 0;

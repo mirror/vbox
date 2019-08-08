@@ -73,6 +73,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define VBOX_BUGREF_9217_PART_I
 #define LOG_GROUP LOG_GROUP_TRPM
 #include <VBox/vmm/trpm.h>
 #include <VBox/vmm/cpum.h>
@@ -139,7 +140,7 @@ VMMR3DECL(int) TRPMR3Init(PVM pVM)
      */
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
-        PVMCPU pVCpu = &pVM->aCpus[i];
+        PVMCPU pVCpu = pVM->apCpusR3[i];
         pVCpu->trpm.s.uActiveVector = ~0U;
     }
 
@@ -230,7 +231,7 @@ VMMR3DECL(void) TRPMR3Reset(PVM pVM)
      * Reinitialize other members calling the relocator to get things right.
      */
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
-        TRPMR3ResetCpu(&pVM->aCpus[i]);
+        TRPMR3ResetCpu(pVM->apCpusR3[i]);
     TRPMR3Relocate(pVM, 0);
 }
 
@@ -251,7 +252,7 @@ static DECLCALLBACK(int) trpmR3Save(PVM pVM, PSSMHANDLE pSSM)
      */
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
-        PTRPMCPU pTrpmCpu = &pVM->aCpus[i].trpm.s;
+        PTRPMCPU pTrpmCpu = &pVM->apCpusR3[i]->trpm.s;
         SSMR3PutUInt(pSSM,      pTrpmCpu->uActiveVector);
         SSMR3PutUInt(pSSM,      pTrpmCpu->enmActiveType);
         SSMR3PutGCUInt(pSSM,    pTrpmCpu->uActiveErrorCode);
@@ -309,7 +310,7 @@ static DECLCALLBACK(int) trpmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion,
     {
         for (VMCPUID i = 0; i < pVM->cCpus; i++)
         {
-            PTRPMCPU pTrpmCpu = &pVM->aCpus[i].trpm.s;
+            PTRPMCPU pTrpmCpu = &pVM->apCpusR3[i]->trpm.s;
             SSMR3GetUInt(pSSM,      &pTrpmCpu->uActiveVector);
             SSMR3GetUInt(pSSM,      (uint32_t *)&pTrpmCpu->enmActiveType);
             SSMR3GetGCUInt(pSSM,    &pTrpmCpu->uActiveErrorCode);
@@ -326,7 +327,7 @@ static DECLCALLBACK(int) trpmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion,
     }
     else
     {
-        PTRPMCPU pTrpmCpu = &pVM->aCpus[0].trpm.s;
+        PTRPMCPU pTrpmCpu = &pVM->apCpusR3[0]->trpm.s;
         SSMR3GetUInt(pSSM,      &pTrpmCpu->uActiveVector);
         SSMR3GetUInt(pSSM,      (uint32_t *)&pTrpmCpu->enmActiveType);
         SSMR3GetGCUInt(pSSM,    &pTrpmCpu->uActiveErrorCode);
@@ -450,7 +451,7 @@ static DECLCALLBACK(void) trpmR3InfoEvent(PVM pVM, PCDBGFINFOHLP pHlp, const cha
     NOREF(pszArgs);
     PVMCPU pVCpu = VMMGetCpu(pVM);
     if (!pVCpu)
-        pVCpu = &pVM->aCpus[0];
+        pVCpu = pVM->apCpusR3[0];
 
     uint8_t     uVector;
     uint8_t     cbInstr;

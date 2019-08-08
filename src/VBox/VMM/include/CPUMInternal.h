@@ -336,9 +336,6 @@ typedef CPUMHYPERCTX *PCPUMHYPERCTX;
  */
 typedef struct CPUM
 {
-    /** Offset from CPUM to CPUMCPU for the first CPU. */
-    uint32_t                offCPUMCPU0;
-
     /** Use flags.
      * These flags indicates which CPU features the host uses.
      */
@@ -356,7 +353,7 @@ typedef struct CPUM
     /** Indicates that a state restore is pending.
      * This is used to verify load order dependencies (PGM). */
     bool                    fPendingRestore;
-    uint8_t                 abPadding0[6];
+    uint8_t                 abPadding0[2];
 
     /** XSAVE/XRTOR components we can expose to the guest mask. */
     uint64_t                fXStateGuestMask;
@@ -366,7 +363,7 @@ typedef struct CPUM
 
     /** The host MXCSR mask (determined at init). */
     uint32_t                fHostMxCsrMask;
-    uint8_t                 abPadding1[20];
+    uint8_t                 abPadding1[20+8];
 
     /** Host CPU feature information.
      * Externaly visible via the VM structure, aligned on 64-byte boundrary. */
@@ -431,25 +428,22 @@ typedef struct CPUMCPU
      */
     uint32_t                fChanged;
 
-    /** Offset from CPUM to CPUMCPU. */
-    uint32_t                offCPUM;
-
     /** Temporary storage for the return code of the function called in the
      * 32-64 switcher. */
     uint32_t                u32RetCode;
 
 #ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
-    /** The address of the APIC mapping, NULL if no APIC.
-     * Call CPUMR0SetLApic to update this before doing a world switch. */
-    RTHCPTR                 pvApicBase;
     /** Used by the world switcher code to store which vectors needs restoring on
      * the way back. */
     uint32_t                fApicDisVectors;
+    /** The address of the APIC mapping, NULL if no APIC.
+     * Call CPUMR0SetLApic to update this before doing a world switch. */
+    RTHCPTR                 pvApicBase;
     /** Set if the CPU has the X2APIC mode enabled.
      * Call CPUMR0SetLApic to update this before doing a world switch. */
     bool                    fX2Apic;
 #else
-    uint8_t                 abPadding3[(HC_ARCH_BITS == 64 ? 8 : 4) + 4 + 1];
+    uint8_t                 abPadding3[4 + sizeof(RTHCPTR) + 1];
 #endif
 
     /** Have we entered the recompiler? */
@@ -460,7 +454,7 @@ typedef struct CPUMCPU
     bool                    fCpuIdApicFeatureVisible;
 
     /** Align the next member on a 64-byte boundrary. */
-    uint8_t                 abPadding2[64 - 16 - 8 - 4 - 1 - 2];
+    uint8_t                 abPadding2[64 - 16 - 8 - 4 - 1 - 2 + 4];
 
     /** Saved host context.  Only valid while inside RC or HM contexts.
      * Must be aligned on a 64-byte boundary. */

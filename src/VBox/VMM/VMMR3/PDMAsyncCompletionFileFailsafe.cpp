@@ -20,12 +20,15 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define VBOX_BUGREF_9217_PART_I
 #define LOG_GROUP LOG_GROUP_PDM_ASYNC_COMPLETION
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <VBox/log.h>
 
 #include "PDMAsyncCompletionFileInternal.h"
+
+
 
 /**
  * Put a list of tasks in the pending request list of an endpoint.

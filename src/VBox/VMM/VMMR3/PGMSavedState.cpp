@@ -19,6 +19,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define VBOX_BUGREF_9217_PART_I
 #define LOG_GROUP LOG_GROUP_PGM
 #include <VBox/vmm/pgm.h>
 #include <VBox/vmm/stam.h>
@@ -2048,7 +2049,7 @@ static DECLCALLBACK(int) pgmR3SaveExec(PVM pVM, PSSMHANDLE pSSM)
     pVM->pgm.s.fMappingsFixed  = fMappingsFixed;
 
     for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
-        rc = SSMR3PutStruct(pSSM, &pVM->aCpus[idCpu].pgm.s, &s_aPGMCpuFields[0]);
+        rc = SSMR3PutStruct(pSSM, &pVM->apCpusR3[idCpu]->pgm.s, &s_aPGMCpuFields[0]);
 
     /*
      * Save the (remainder of the) memory.
@@ -2973,9 +2974,9 @@ static int pgmR3LoadFinalLocked(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion)
         for (VMCPUID i = 0; i < pVM->cCpus; i++)
         {
             if (uVersion <= PGM_SAVED_STATE_VERSION_PRE_PAE)
-                rc = SSMR3GetStruct(pSSM, &pVM->aCpus[i].pgm.s, &s_aPGMCpuFieldsPrePae[0]);
+                rc = SSMR3GetStruct(pSSM, &pVM->apCpusR3[i]->pgm.s, &s_aPGMCpuFieldsPrePae[0]);
             else
-                rc = SSMR3GetStruct(pSSM, &pVM->aCpus[i].pgm.s, &s_aPGMCpuFields[0]);
+                rc = SSMR3GetStruct(pSSM, &pVM->apCpusR3[i]->pgm.s, &s_aPGMCpuFields[0]);
             AssertLogRelRCReturn(rc, rc);
         }
     }
@@ -2991,9 +2992,10 @@ static int pgmR3LoadFinalLocked(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion)
         pPGM->GCPtrMappingFixed = pgmOld.GCPtrMappingFixed;
         pPGM->cbMappingFixed    = pgmOld.cbMappingFixed;
 
-        pVM->aCpus[0].pgm.s.fA20Enabled   = pgmOld.fA20Enabled;
-        pVM->aCpus[0].pgm.s.GCPhysA20Mask = pgmOld.GCPhysA20Mask;
-        pVM->aCpus[0].pgm.s.enmGuestMode  = pgmOld.enmGuestMode;
+        PVMCPU pVCpu0 = pVM->apCpusR3[0];
+        pVCpu0->pgm.s.fA20Enabled   = pgmOld.fA20Enabled;
+        pVCpu0->pgm.s.GCPhysA20Mask = pgmOld.GCPhysA20Mask;
+        pVCpu0->pgm.s.enmGuestMode  = pgmOld.enmGuestMode;
     }
     else
     {
@@ -3007,15 +3009,16 @@ static int pgmR3LoadFinalLocked(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion)
         rc = SSMR3GetU32(pSSM,  &cbRamSizeIgnored);
         if (RT_FAILURE(rc))
             return rc;
-        SSMR3GetGCPhys(pSSM,    &pVM->aCpus[0].pgm.s.GCPhysA20Mask);
+        PVMCPU pVCpu0 = pVM->apCpusR3[0];
+        SSMR3GetGCPhys(pSSM,    &pVCpu0->pgm.s.GCPhysA20Mask);
 
         uint32_t u32 = 0;
         SSMR3GetUInt(pSSM,      &u32);
-        pVM->aCpus[0].pgm.s.fA20Enabled = !!u32;
-        SSMR3GetUInt(pSSM,      &pVM->aCpus[0].pgm.s.fSyncFlags);
+        pVCpu0->pgm.s.fA20Enabled = !!u32;
+        SSMR3GetUInt(pSSM,      &pVCpu0->pgm.s.fSyncFlags);
         RTUINT uGuestMode;
         SSMR3GetUInt(pSSM,      &uGuestMode);
-        pVM->aCpus[0].pgm.s.enmGuestMode = (PGMMODE)uGuestMode;
+        pVCpu0->pgm.s.enmGuestMode = (PGMMODE)uGuestMode;
 
         /* check separator. */
         SSMR3GetU32(pSSM, &u32Sep);
@@ -3033,7 +3036,7 @@ static int pgmR3LoadFinalLocked(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion)
      */
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
-        PVMCPU pVCpu = &pVM->aCpus[i];
+        PVMCPU pVCpu = pVM->apCpusR3[i];
         pVCpu->pgm.s.GCPhysA20Mask = ~((RTGCPHYS)!pVCpu->pgm.s.fA20Enabled << 20);
         pgmR3RefreshShadowModeAfterA20Change(pVCpu);
     }
@@ -3170,7 +3173,7 @@ static DECLCALLBACK(int) pgmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, 
              */
             for (VMCPUID i = 0; i < pVM->cCpus; i++)
             {
-                PVMCPU pVCpu = &pVM->aCpus[i];
+                PVMCPU pVCpu = pVM->apCpusR3[i];
                 VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL);
                 VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
                 /** @todo For guest PAE, we might get the wrong
@@ -3192,7 +3195,7 @@ static DECLCALLBACK(int) pgmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, 
 
             for (VMCPUID i = 0; i < pVM->cCpus; i++)
             {
-                PVMCPU pVCpu = &pVM->aCpus[i];
+                PVMCPU pVCpu = pVM->apCpusR3[i];
 
                 rc = PGMHCChangeMode(pVM, pVCpu, pVCpu->pgm.s.enmGuestMode);
                 AssertLogRelRCReturn(rc, rc);
@@ -3250,7 +3253,7 @@ static DECLCALLBACK(int) pgmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, 
              */
             if (pgmMapAreMappingsFloating(pVM))
             {
-                PVMCPU pVCpu = &pVM->aCpus[0];
+                PVMCPU pVCpu = pVM->apCpusR3[0];
                 rc = PGMSyncCR3(pVCpu, CPUMGetGuestCR0(pVCpu), CPUMGetGuestCR3(pVCpu),  CPUMGetGuestCR4(pVCpu), true);
                 if (RT_FAILURE(rc))
                     return SSMR3SetLoadError(pSSM, VERR_WRONG_ORDER, RT_SRC_POS,

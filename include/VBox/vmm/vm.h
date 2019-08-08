@@ -989,7 +989,11 @@ AssertCompileSizeAlignment(VMCPU, 4096);
 /** @def VM_ASSERT_EMT0
  * Asserts that the current thread IS emulation thread \#0 (EMT0).
  */
-#define VM_ASSERT_EMT0(pVM)                 VMCPU_ASSERT_EMT(&(pVM)->aCpus[0])
+#if defined(VBOX_BUGREF_9217_PART_I) && defined(IN_RING3)
+# define VM_ASSERT_EMT0(a_pVM)              VMCPU_ASSERT_EMT((a_pVM)->apCpusR3[0])
+#else
+# define VM_ASSERT_EMT0(a_pVM)              VMCPU_ASSERT_EMT(&(a_pVM)->aCpus[0])
+#endif
 
 /** @def VM_ASSERT_EMT0_RETURN
  * Asserts that the current thread IS emulation thread \#0 (EMT0) and returns if
@@ -1424,28 +1428,18 @@ typedef struct VM
         uint8_t     padding[8];         /* multiple of 8 */
     } cfgm;
 
-#ifdef VBOX_BUGREF_9217
     /** Padding for aligning the structure size on a page boundrary. */
-# ifdef VBOX_WITH_REM
-    uint8_t         abAlignment2[3030 - sizeof(PVMCPUR3) * VMM_MAX_CPU_COUNT];
-# else
-    uint8_t         abAlignment2[3286 - sizeof(PVMCPUR3) * VMM_MAX_CPU_COUNT];
-# endif
+#ifdef VBOX_WITH_REM
+    uint8_t         abAlignment2[2520];
 #else
-    /** Padding for aligning the cpu array on a page boundary. */
-# ifdef VBOX_WITH_REM
-    uint8_t         abAlignment2[3030];
-# else
-    uint8_t         abAlignment2[3286];
-# endif
+    uint8_t         abAlignment2[2520 + 256];
 #endif
 
     /* ---- end small stuff ---- */
 
-#ifdef VBOX_BUGREF_9217
     /** Array of VMCPU pointers. */
-    PVMCPUR3        apCpus[VMM_MAX_CPU_COUNT];
-#else
+    PVMCPUR3        apCpusR3[VMM_MAX_CPU_COUNT];
+#if !defined(VBOX_BUGREF_9217) && !defined(VBOX_BUGREF_9217_PART_I)
     /** VMCPU array for the configured number of virtual CPUs.
      * Must be aligned on a page boundary for TLB hit reasons as well as
      * alignment of VMCPU members. */

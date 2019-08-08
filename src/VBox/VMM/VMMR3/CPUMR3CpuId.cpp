@@ -19,6 +19,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define VBOX_BUGREF_9217_PART_I
 #define LOG_GROUP LOG_GROUP_CPUM
 #include <VBox/vmm/cpum.h>
 #include <VBox/vmm/dbgf.h>
@@ -2414,9 +2415,10 @@ static int cpumR3CpuIdInstallAndExplodeLeaves(PVM pVM, PCPUM pCpum, PCPUMCPUIDLE
     /*
      * Configure XSAVE offsets according to the CPUID info and set the feature flags.
      */
-    memset(&pVM->aCpus[0].cpum.s.Guest.aoffXState[0], 0xff, sizeof(pVM->aCpus[0].cpum.s.Guest.aoffXState));
-    pVM->aCpus[0].cpum.s.Guest.aoffXState[XSAVE_C_X87_BIT] = 0;
-    pVM->aCpus[0].cpum.s.Guest.aoffXState[XSAVE_C_SSE_BIT] = 0;
+    PVMCPU pVCpu0 = pVM->apCpusR3[0];
+    memset(&pVCpu0->cpum.s.Guest.aoffXState[0], 0xff, sizeof(pVCpu0->cpum.s.Guest.aoffXState));
+    pVCpu0->cpum.s.Guest.aoffXState[XSAVE_C_X87_BIT] = 0;
+    pVCpu0->cpum.s.Guest.aoffXState[XSAVE_C_SSE_BIT] = 0;
     for (uint32_t iComponent = XSAVE_C_SSE_BIT + 1; iComponent < 63; iComponent++)
         if (pCpum->fXStateGuestMask & RT_BIT_64(iComponent))
         {
@@ -2431,13 +2433,15 @@ static int cpumR3CpuIdInstallAndExplodeLeaves(PVM pVM, PCPUM pCpum, PCPUMCPUIDLE
                                   ("iComponent=%#x eax=%#x ebx=%#x cbMax=%#x\n", iComponent, pSubLeaf->uEax, pSubLeaf->uEbx,
                                    pCpum->GuestFeatures.cbMaxExtendedState),
                                   VERR_CPUM_IPE_1);
-            pVM->aCpus[0].cpum.s.Guest.aoffXState[iComponent] = pSubLeaf->uEbx;
+            pVCpu0->cpum.s.Guest.aoffXState[iComponent] = pSubLeaf->uEbx;
         }
 
     /* Copy the CPU #0  data to the other CPUs. */
-    for (VMCPUID iCpu = 1; iCpu < pVM->cCpus; iCpu++)
-        memcpy(&pVM->aCpus[iCpu].cpum.s.Guest.aoffXState[0], &pVM->aCpus[0].cpum.s.Guest.aoffXState[0],
-               sizeof(pVM->aCpus[iCpu].cpum.s.Guest.aoffXState));
+    for (VMCPUID idCpu = 1; idCpu < pVM->cCpus; idCpu++)
+    {
+        PVMCPU pVCpu = pVM->apCpusR3[idCpu];
+        memcpy(&pVCpu->cpum.s.Guest.aoffXState[0], &pVCpu0->cpum.s.Guest.aoffXState[0], sizeof(pVCpu0->cpum.s.Guest.aoffXState));
+    }
 
     return VINF_SUCCESS;
 }
@@ -4407,8 +4411,11 @@ int cpumR3InitCpuIdAndMsrs(PVM pVM, PCCPUMMSRS pHostMsrs)
      * Set the fCpuIdApicFeatureVisible flags so the APIC can assume visibility
      * on construction and manage everything from here on.
      */
-    for (VMCPUID iCpu = 0; iCpu < pVM->cCpus; iCpu++)
-        pVM->aCpus[iCpu].cpum.s.fCpuIdApicFeatureVisible = true;
+    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
+    {
+        PVMCPU pVCpu = pVM->apCpusR3[idCpu];
+        pVCpu->cpum.s.fCpuIdApicFeatureVisible = true;
+    }
 
     /*
      * Read the configuration.
@@ -4544,7 +4551,7 @@ int cpumR3InitCpuIdAndMsrs(PVM pVM, PCCPUMMSRS pHostMsrs)
             PCVMXMSRS pVmxMsrs = &GuestMsrs.hwvirt.vmx;
             for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
             {
-                PVMCPU pVCpu = &pVM->aCpus[idCpu];
+                PVMCPU pVCpu = pVM->apCpusR3[idCpu];
                 memcpy(&pVCpu->cpum.s.Guest.hwvirt.vmx.Msrs, pVmxMsrs, sizeof(*pVmxMsrs));
             }
         }
@@ -4940,9 +4947,9 @@ VMMR3_INT_DECL(void) CPUMR3SetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFea
     }
 
     /** @todo can probably kill this as this API is now init time only... */
-    for (VMCPUID i = 0; i < pVM->cCpus; i++)
+    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
-        PVMCPU pVCpu = &pVM->aCpus[i];
+        PVMCPU pVCpu = pVM->apCpusR3[idCpu];
         pVCpu->cpum.s.fChanged |= CPUM_CHANGED_CPUID;
     }
 }
@@ -5099,9 +5106,9 @@ VMMR3_INT_DECL(void) CPUMR3ClearGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmF
             break;
     }
 
-    for (VMCPUID i = 0; i < pVM->cCpus; i++)
+    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
-        PVMCPU pVCpu = &pVM->aCpus[i];
+        PVMCPU pVCpu = pVM->apCpusR3[idCpu];
         pVCpu->cpum.s.fChanged |= CPUM_CHANGED_CPUID;
     }
 }

@@ -19,6 +19,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define VBOX_BUGREF_9217_PART_I
 #define LOG_GROUP LOG_GROUP_PGM
 #include <VBox/vmm/pgm.h>
 #include <VBox/vmm/stam.h>
@@ -332,7 +333,7 @@ VMMR3_INT_DECL(int) PGMR3DbgReadGCPtr(PVM pVM, void *pvDst, RTGCPTR GCPtrSrc, si
     AssertReturn(pVM, VERR_INVALID_PARAMETER);
 
     /** @todo SMP support! */
-    PVMCPU pVCpu = &pVM->aCpus[0];
+    PVMCPU pVCpu = pVM->apCpusR3[0];
 
 /** @todo deal with HMA */
     /* try simple first. */
@@ -388,7 +389,7 @@ VMMR3_INT_DECL(int) PGMR3DbgWriteGCPtr(PVM pVM, RTGCPTR GCPtrDst, void const *pv
     AssertReturn(pVM, VERR_INVALID_PARAMETER);
 
     /** @todo SMP support! */
-    PVMCPU pVCpu = &pVM->aCpus[0];
+    PVMCPU pVCpu = pVM->apCpusR3[0];
 
 /** @todo deal with HMA */
     /* try simple first. */
@@ -1847,7 +1848,7 @@ VMMR3DECL(int) PGMR3DumpHierarchyHC(PVM pVM, uint64_t cr3, uint64_t cr4, bool fL
 
     PVMCPU pVCpu = VMMGetCpu(pVM);
     if (!pVCpu)
-        pVCpu = &pVM->aCpus[0];
+        pVCpu = pVM->apCpusR3[0];
 
     uint32_t fFlags = DBGFPGDMP_FLAGS_HEADER | DBGFPGDMP_FLAGS_PRINT_CR3 | DBGFPGDMP_FLAGS_PAGE_INFO | DBGFPGDMP_FLAGS_SHADOW;
     fFlags |= cr4 & (X86_CR4_PAE | X86_CR4_PSE);

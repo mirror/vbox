@@ -19,6 +19,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define VBOX_BUGREF_9217_PART_I
 #define LOG_GROUP LOG_GROUP_DBGF
 #include <VBox/vmm/dbgftrace.h>
 #include <VBox/vmm/cfgm.h>
@@ -303,10 +304,10 @@ VMMDECL(int) DBGFR3TraceConfig(PVM pVM, const char *pszConfig)
                     uint32_t iCpu = pVM->cCpus;
                     if (!fNo)
                         while (iCpu-- > 0)
-                            pVM->aCpus[iCpu].fTraceGroups = UINT32_MAX;
+                            pVM->apCpusR3[iCpu]->fTraceGroups = UINT32_MAX;
                     else
                         while (iCpu-- > 0)
-                            pVM->aCpus[iCpu].fTraceGroups = 0;
+                            pVM->apCpusR3[iCpu]->fTraceGroups = 0;
                     PDMR3TracingConfig(pVM, NULL, 0, !fNo, uPass > 0);
                 }
             }
@@ -325,10 +326,10 @@ VMMDECL(int) DBGFR3TraceConfig(PVM pVM, const char *pszConfig)
                             uint32_t iCpu = pVM->cCpus;
                             if (!fNo)
                                 while (iCpu-- > 0)
-                                    pVM->aCpus[iCpu].fTraceGroups |= g_aVmmTpGroups[i].fMask;
+                                    pVM->apCpusR3[iCpu]->fTraceGroups |= g_aVmmTpGroups[i].fMask;
                             else
                                 while (iCpu-- > 0)
-                                    pVM->aCpus[iCpu].fTraceGroups &= ~g_aVmmTpGroups[i].fMask;
+                                    pVM->apCpusR3[iCpu]->fTraceGroups &= ~g_aVmmTpGroups[i].fMask;
                         }
                         break;
                     }
@@ -373,7 +374,7 @@ VMMDECL(int) DBGFR3TraceQueryConfig(PVM pVM, char *pszConfig, size_t cbConfig)
         return VERR_DBGF_NO_TRACE_BUFFER;
 
     int             rc           = VINF_SUCCESS;
-    uint32_t const  fTraceGroups = pVM->aCpus[0].fTraceGroups;
+    uint32_t const  fTraceGroups = pVM->apCpusR3[0]->fTraceGroups;
     if (   fTraceGroups == UINT32_MAX
         && PDMR3TracingAreAll(pVM, true /*fEnabled*/))
         rc = RTStrCopy(pszConfig, cbConfig, "all");

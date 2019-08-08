@@ -19,6 +19,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define VBOX_BUGREF_9217_PART_I
 #define LOG_GROUP LOG_GROUP_MM_HYPER
 #include <VBox/vmm/pgm.h>
 #include <VBox/vmm/mm.h>
@@ -151,7 +152,11 @@ int mmR3HyperInit(PVM pVM)
         /*
          * Map the VM structure into the hypervisor space.
          */
-        AssertRelease(pVM->cbSelf == RT_UOFFSETOF_DYN(VM, aCpus[pVM->cCpus]));
+#ifdef VBOX_BUGREF_9217
+        AssertRelease(pVM->cbSelf >= sizeof(VMCPU) * pVM->cCpus + sizeof(*pVM));
+#else
+        AssertRelease(pVM->cbSelf >= sizeof(VMCPU));
+#endif
         RTGCPTR GCPtr;
         rc = MMR3HyperMapPages(pVM, pVM, pVM->pVMR0, RT_ALIGN_Z(pVM->cbSelf, PAGE_SIZE) >> PAGE_SHIFT, pVM->paVMPagesR3, "VM",
                                &GCPtr);
@@ -159,7 +164,7 @@ int mmR3HyperInit(PVM pVM)
         {
             pVM->pVMRC = (RTRCPTR)GCPtr;
             for (VMCPUID i = 0; i < pVM->cCpus; i++)
-                pVM->aCpus[i].pVMRC = pVM->pVMRC;
+                pVM->apCpusR3[i]->pVMRC = pVM->pVMRC;
 
             /* Reserve a page for fencing. */
             MMR3HyperReserveFence(pVM);

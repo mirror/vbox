@@ -19,6 +19,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define VBOX_BUGREF_9217_PART_I
 #define LOG_GROUP LOG_GROUP_DEV_APIC
 #include <VBox/log.h>
 #include "APICInternal.h"
@@ -330,7 +331,7 @@ static DECLCALLBACK(void) apicR3Info(PVM pVM, PCDBGFINFOHLP pHlp, const char *ps
     NOREF(pszArgs);
     PVMCPU pVCpu = VMMGetCpu(pVM);
     if (!pVCpu)
-        pVCpu = &pVM->aCpus[0];
+        pVCpu = pVM->apCpusR3[0];
 
     PCAPICCPU    pApicCpu    = VMCPU_TO_APICCPU(pVCpu);
     PCXAPICPAGE  pXApicPage  = VMCPU_TO_CXAPICPAGE(pVCpu);
@@ -446,7 +447,7 @@ static DECLCALLBACK(void) apicR3InfoLvt(PVM pVM, PCDBGFINFOHLP pHlp, const char 
     NOREF(pszArgs);
     PVMCPU pVCpu = VMMGetCpu(pVM);
     if (!pVCpu)
-        pVCpu = &pVM->aCpus[0];
+        pVCpu = pVM->apCpusR3[0];
 
     PCXAPICPAGE pXApicPage = VMCPU_TO_CXAPICPAGE(pVCpu);
 
@@ -645,7 +646,7 @@ static DECLCALLBACK(void) apicR3InfoTimer(PVM pVM, PCDBGFINFOHLP pHlp, const cha
     NOREF(pszArgs);
     PVMCPU pVCpu = VMMGetCpu(pVM);
     if (!pVCpu)
-        pVCpu = &pVM->aCpus[0];
+        pVCpu = pVM->apCpusR3[0];
 
     PCXAPICPAGE pXApicPage = VMCPU_TO_CXAPICPAGE(pVCpu);
     PCAPICCPU   pApicCpu   = VMCPU_TO_APICCPU(pVCpu);
@@ -954,7 +955,7 @@ static DECLCALLBACK(int) apicR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     /* Save per-VCPU data.*/
     for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
-        PVMCPU pVCpu = &pVM->aCpus[idCpu];
+        PVMCPU pVCpu = pVM->apCpusR3[idCpu];
         PCAPICCPU pApicCpu = VMCPU_TO_APICCPU(pVCpu);
 
         /* Update interrupts from the pending-interrupts bitmaps to the IRR. */
@@ -1034,7 +1035,7 @@ static DECLCALLBACK(int) apicR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
      */
     for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
-        PVMCPU   pVCpu    = &pVM->aCpus[idCpu];
+        PVMCPU   pVCpu    = pVM->apCpusR3[idCpu];
         PAPICCPU pApicCpu = VMCPU_TO_APICCPU(pVCpu);
 
         if (uVersion > APIC_SAVED_STATE_VERSION_VBOX_50)
@@ -1170,7 +1171,7 @@ static DECLCALLBACK(void) apicR3Reset(PPDMDEVINS pDevIns)
 
     for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
-        PVMCPU   pVCpuDest = &pVM->aCpus[idCpu];
+        PVMCPU   pVCpuDest = pVM->apCpusR3[idCpu];
         PAPICCPU pApicCpu  = VMCPU_TO_APICCPU(pVCpuDest);
 
         if (TMTimerIsActive(pApicCpu->pTimerR3))
@@ -1218,7 +1219,7 @@ static void apicR3TermState(PVM pVM)
     /* Unmap and free the virtual-APIC pages. */
     for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
-        PVMCPU   pVCpu    = &pVM->aCpus[idCpu];
+        PVMCPU   pVCpu    = pVM->apCpusR3[idCpu];
         PAPICCPU pApicCpu = VMCPU_TO_APICCPU(pVCpu);
 
         pApicCpu->pvApicPibR3 = NIL_RTR3PTR;
@@ -1288,7 +1289,7 @@ static int apicR3InitState(PVM pVM)
          */
         for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
         {
-            PVMCPU   pVCpu    = &pVM->aCpus[idCpu];
+            PVMCPU   pVCpu    = pVM->apCpusR3[idCpu];
             PAPICCPU pApicCpu = VMCPU_TO_APICCPU(pVCpu);
 
             SUPPAGE SupApicPage;
@@ -1479,7 +1480,7 @@ static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     /*
      * Register the MMIO range.
      */
-    PAPICCPU pApicCpu0 = VMCPU_TO_APICCPU(&pVM->aCpus[0]);
+    PAPICCPU pApicCpu0 = VMCPU_TO_APICCPU(pVM->apCpusR3[0]);
     RTGCPHYS GCPhysApicBase = MSR_IA32_APICBASE_GET_ADDR(pApicCpu0->uApicBaseMsr);
 
     rc = PDMDevHlpMMIORegister(pDevIns, GCPhysApicBase, sizeof(XAPICPAGE), NULL /* pvUser */,
@@ -1501,7 +1502,7 @@ static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
      */
     for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
-        PVMCPU   pVCpu    = &pVM->aCpus[idCpu];
+        PVMCPU   pVCpu    = pVM->apCpusR3[idCpu];
         PAPICCPU pApicCpu = VMCPU_TO_APICCPU(pVCpu);
         RTStrPrintf(&pApicCpu->szTimerDesc[0], sizeof(pApicCpu->szTimerDesc), "APIC Timer %u", pVCpu->idCpu);
         rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, apicR3TimerCallback, pVCpu, TMTIMER_FLAGS_NO_CRIT_SECT,
@@ -1549,7 +1550,7 @@ static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
 
     for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
-        PVMCPU   pVCpu     = &pVM->aCpus[idCpu];
+        PVMCPU   pVCpu     = pVM->apCpusR3[idCpu];
         PAPICCPU pApicCpu  = VMCPU_TO_APICCPU(pVCpu);
 
         APIC_REG_COUNTER(&pApicCpu->StatMmioReadRZ,  "Number of APIC MMIO reads in RZ.",  "/Devices/APIC/%u/RZ/MmioRead");

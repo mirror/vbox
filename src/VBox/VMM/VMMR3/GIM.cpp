@@ -49,6 +49,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define VBOX_BUGREF_9217_PART_I
 #define LOG_GROUP LOG_GROUP_GIM
 #include <VBox/vmm/gim.h>
 #include <VBox/vmm/hm.h>
@@ -91,7 +92,7 @@ VMMR3_INT_DECL(int) GIMR3Init(PVM pVM)
      * Assert alignment and sizes.
      */
     AssertCompile(sizeof(pVM->gim.s) <= sizeof(pVM->gim.padding));
-    AssertCompile(sizeof(pVM->aCpus[0].gim.s) <= sizeof(pVM->aCpus[0].gim.padding));
+    AssertCompile(sizeof(pVM->apCpusR3[0]->gim.s) <= sizeof(pVM->apCpusR3[0]->gim.padding));
 
     /*
      * Initialize members.
@@ -227,9 +228,10 @@ static DECLCALLBACK(int) gimR3Save(PVM pVM, PSSMHANDLE pSSM)
 #if 0
     /* Save per-CPU data. */
     SSMR3PutU32(pSSM, pVM->cCpus);
-    for (VMCPUID i = 0; i < pVM->cCpus; i++)
+    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
-        rc = SSMR3PutXYZ(pSSM, pVM->aCpus[i].gim.s.XYZ);
+        PVMCPU pVCpu = pVM->apCpusR3[idCpu];
+        rc = SSMR3PutXYZ(pSSM, pVCpu->gim.s.XYZ);
     }
 #endif
 
@@ -275,9 +277,10 @@ static DECLCALLBACK(int) gimR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, 
     int rc;
 #if 0
     /* Load per-CPU data. */
-    for (VMCPUID i = 0; i < pVM->cCpus; i++)
+    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
-        rc = SSMR3PutXYZ(pSSM, pVM->aCpus[i].gim.s.XYZ);
+        PVMCPU pVCpu = pVM->apCpusR3[idCpu];
+        rc = SSMR3PutXYZ(pSSM, pVCpu->gim.s.XYZ);
     }
 #endif
 

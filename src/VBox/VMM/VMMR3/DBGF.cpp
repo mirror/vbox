@@ -69,6 +69,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define VBOX_BUGREF_9217_PART_I
 #define LOG_GROUP LOG_GROUP_DBGF
 #include <VBox/vmm/dbgf.h>
 #include <VBox/vmm/selm.h>
@@ -506,7 +507,7 @@ static void dbgfR3EventSetStoppedInHyperFlag(PVM pVM, DBGFEVENTTYPE enmEvent)
 static DBGFEVENTCTX dbgfR3FigureEventCtx(PVM pVM)
 {
     /** @todo SMP support! */
-    PVMCPU pVCpu = &pVM->aCpus[0];
+    PVMCPU pVCpu = pVM->apCpusR3[0];
 
     switch (EMGetState(pVCpu))
     {
@@ -2107,7 +2108,7 @@ VMMR3DECL(int) DBGFR3InjectNMI(PUVM pUVM, VMCPUID idCpu)
     if (!HMIsEnabled(pVM))
         return VERR_NOT_SUP_BY_NEM;
 
-    VMCPU_FF_SET(&pVM->aCpus[idCpu], VMCPU_FF_INTERRUPT_NMI);
+    VMCPU_FF_SET(pVM->apCpusR3[idCpu], VMCPU_FF_INTERRUPT_NMI);
     return VINF_SUCCESS;
 }
 

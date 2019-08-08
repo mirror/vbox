@@ -19,6 +19,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define VBOX_BUGREF_9217_PART_I
 #define LOG_GROUP LOG_GROUP_PGM
 #include <VBox/vmm/dbgf.h>
 #include <VBox/vmm/pgm.h>
@@ -205,7 +206,7 @@ VMMR3DECL(int) PGMR3MapPT(PVM pVM, RTGCPTR GCPtr, uint32_t cb, uint32_t fFlags, 
 
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
-        PVMCPU pVCpu = &pVM->aCpus[i];
+        PVMCPU pVCpu = pVM->apCpusR3[i];
         VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
     }
     return VINF_SUCCESS;
@@ -264,7 +265,7 @@ VMMR3DECL(int)  PGMR3UnmapPT(PVM pVM, RTGCPTR GCPtr)
 
             for (VMCPUID i = 0; i < pVM->cCpus; i++)
             {
-                PVMCPU pVCpu = &pVM->aCpus[i];
+                PVMCPU pVCpu = pVM->apCpusR3[i];
                 VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
             }
             return VINF_SUCCESS;
@@ -524,7 +525,7 @@ VMMR3DECL(int) PGMR3MappingsFix(PVM pVM, RTGCPTR GCPtrBase, uint32_t cb)
          * Only applies to VCPU 0 as we don't support SMP guests with raw mode.
          */
         Assert(pVM->cCpus == 1);
-        PVMCPU pVCpu = &pVM->aCpus[0];
+        PVMCPU pVCpu = pVM->apCpusR3[0];
 
         /*
          * Before we do anything we'll do a forced PD sync to try make sure any
@@ -596,7 +597,7 @@ int pgmR3MappingsFixInternal(PVM pVM, RTGCPTR GCPtrBase, uint32_t cb)
     /*
      * In PAE / PAE mode, make sure we don't cross page directories.
      */
-    PVMCPU pVCpu = &pVM->aCpus[0];
+    PVMCPU pVCpu = pVM->apCpusR3[0];
     if (    (   pVCpu->pgm.s.enmGuestMode  == PGMMODE_PAE
              || pVCpu->pgm.s.enmGuestMode  == PGMMODE_PAE_NX)
         &&  (   pVCpu->pgm.s.enmShadowMode == PGMMODE_PAE
@@ -680,7 +681,7 @@ int pgmR3MappingsFixInternal(PVM pVM, RTGCPTR GCPtrBase, uint32_t cb)
     for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
         pVM->aCpus[idCpu].pgm.s.fSyncFlags &= ~PGM_SYNC_MONITOR_CR3;
-        VMCPU_FF_SET(&pVM->aCpus[idCpu], VMCPU_FF_PGM_SYNC_CR3);
+        VMCPU_FF_SET(pVM->apCpusR3[idCpu], VMCPU_FF_PGM_SYNC_CR3);
     }
     return VINF_SUCCESS;
 }
@@ -714,7 +715,7 @@ VMMR3DECL(int) PGMR3MappingsUnfix(PVM pVM)
 
         if (fResyncCR3)
             for (VMCPUID i = 0; i < pVM->cCpus; i++)
-                VMCPU_FF_SET(&pVM->aCpus[i], VMCPU_FF_PGM_SYNC_CR3);
+                VMCPU_FF_SET(pVM->apCpusR3[i], VMCPU_FF_PGM_SYNC_CR3);
     }
     return VINF_SUCCESS;
 }

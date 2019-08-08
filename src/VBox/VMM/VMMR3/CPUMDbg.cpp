@@ -19,6 +19,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define VBOX_BUGREF_9217_PART_I
 #define LOG_GROUP LOG_GROUP_DBGF
 #include <VBox/vmm/cpum.h>
 #include <VBox/vmm/dbgf.h>
@@ -1249,9 +1250,9 @@ static DBGFREGDESC const g_aCpumRegGstDescs[] =
  */
 int cpumR3DbgInit(PVM pVM)
 {
-    for (VMCPUID iCpu = 0; iCpu < pVM->cCpus; iCpu++)
+    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
-        int rc = DBGFR3RegRegisterCpu(pVM, &pVM->aCpus[iCpu], g_aCpumRegGstDescs, true /*fGuestRegs*/);
+        int rc = DBGFR3RegRegisterCpu(pVM, pVM->apCpusR3[idCpu], g_aCpumRegGstDescs, true /*fGuestRegs*/);
         AssertLogRelRCReturn(rc, rc);
     }
 

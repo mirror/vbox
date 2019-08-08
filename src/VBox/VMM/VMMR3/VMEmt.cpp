@@ -19,6 +19,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define VBOX_BUGREF_9217_PART_I
 #define LOG_GROUP LOG_GROUP_VM
 #include <VBox/vmm/tm.h>
 #include <VBox/vmm/dbgf.h>
@@ -166,7 +167,7 @@ int vmR3EmulationThreadWithId(RTTHREAD hThreadSelf, PUVMCPU pUVCpu, VMCPUID idCp
 
             if (VM_FF_IS_SET(pVM, VM_FF_EMT_RENDEZVOUS))
             {
-                rc = VMMR3EmtRendezvousFF(pVM, &pVM->aCpus[idCpu]);
+                rc = VMMR3EmtRendezvousFF(pVM, pVM->apCpusR3[idCpu]);
                 Log(("vmR3EmulationThread: Rendezvous rc=%Rrc, VM state %s -> %s\n", rc, VMR3GetStateName(enmBefore), VMR3GetStateName(pVM->enmVMState)));
             }
             else if (pUVM->vm.s.pNormalReqs || pUVM->vm.s.pPriorityReqs)
@@ -234,7 +235,7 @@ int vmR3EmulationThreadWithId(RTTHREAD hThreadSelf, PUVMCPU pUVCpu, VMCPUID idCp
             pVM = pUVM->pVM;
             if (pVM)
             {
-                pVCpu = &pVM->aCpus[idCpu];
+                pVCpu = pVM->apCpusR3[idCpu];
                 if (   pVM->enmVMState == VMSTATE_RUNNING
                     && VMCPUSTATE_IS_STARTED(VMCPU_GET_STATE(pVCpu)))
                 {
@@ -1389,7 +1390,7 @@ VMMR3DECL(int) VMR3WaitForDeviceReady(PVM pVM, VMCPUID idCpu)
      */
     VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
     AssertReturn(idCpu < pVM->cCpus, VERR_INVALID_CPU_ID);
-    PVMCPU pVCpu = &pVM->aCpus[idCpu];
+    PVMCPU pVCpu = pVM->apCpusR3[idCpu];
     VMCPU_ASSERT_EMT_RETURN(pVCpu, VERR_VM_THREAD_NOT_EMT);
 
     /*
@@ -1416,7 +1417,7 @@ VMMR3DECL(int) VMR3NotifyCpuDeviceReady(PVM pVM, VMCPUID idCpu)
      */
     VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
     AssertReturn(idCpu < pVM->cCpus, VERR_INVALID_CPU_ID);
-    PVMCPU pVCpu = &pVM->aCpus[idCpu];
+    PVMCPU pVCpu = pVM->apCpusR3[idCpu];
 
     /*
      * Pretend it was an FF that got set since we've got logic for that already.

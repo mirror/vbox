@@ -19,6 +19,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define VBOX_BUGREF_9217_PART_I
 #define LOG_GROUP LOG_GROUP_PDM_DEVICE
 #include "PDMInternal.h"
 #include <VBox/vmm/pdm.h>
@@ -52,7 +53,7 @@ static DECLCALLBACK(void) pdmR3PicHlp_SetInterruptFF(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     PVM    pVM = pDevIns->Internal.s.pVMR3;
-    PVMCPU pVCpu = &pVM->aCpus[0];  /* for PIC we always deliver to CPU 0, MP use APIC */
+    PVMCPU pVCpu = pVM->apCpusR3[0];  /* for PIC we always deliver to CPU 0, MP use APIC */
 
     /* IRQ state should be loaded as-is by "LoadExec". Changes can be made from LoadDone. */
     Assert(pVM->enmVMState != VMSTATE_LOADING || pVM->pdm.s.fStateLoaded);
@@ -66,7 +67,7 @@ static DECLCALLBACK(void) pdmR3PicHlp_ClearInterruptFF(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     PVM pVM = pDevIns->Internal.s.pVMR3;
-    PVMCPU pVCpu = &pVM->aCpus[0];  /* for PIC we always deliver to CPU 0, MP use APIC */
+    PVMCPU pVCpu = pVM->apCpusR3[0];  /* for PIC we always deliver to CPU 0, MP use APIC */
 
     /* IRQ state should be loaded as-is by "LoadExec". Changes can be made from LoadDone. */
     Assert(pVM->enmVMState != VMSTATE_LOADING || pVM->pdm.s.fStateLoaded);

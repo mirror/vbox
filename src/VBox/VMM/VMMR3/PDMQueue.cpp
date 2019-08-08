@@ -19,6 +19,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define VBOX_BUGREF_9217_PART_I
 #define LOG_GROUP LOG_GROUP_PDM_QUEUE
 #include "PDMInternal.h"
 #include <VBox/vmm/pdm.h>
@@ -213,7 +214,7 @@ VMMR3_INT_DECL(int) PDMR3QueueCreateDevice(PVM pVM, PPDMDEVINS pDevIns, size_t c
     /*
      * Validate input.
      */
-    VMCPU_ASSERT_EMT(&pVM->aCpus[0]);
+    VM_ASSERT_EMT0(pVM);
     if (!pfnCallback)
     {
         AssertMsgFailed(("No consumer callback!\n"));
@@ -263,7 +264,7 @@ VMMR3_INT_DECL(int) PDMR3QueueCreateDriver(PVM pVM, PPDMDRVINS pDrvIns, size_t c
     /*
      * Validate input.
      */
-    VMCPU_ASSERT_EMT(&pVM->aCpus[0]);
+    VM_ASSERT_EMT0(pVM);
     AssertPtrReturn(pfnCallback, VERR_INVALID_POINTER);
 
     /*
@@ -309,7 +310,7 @@ VMMR3_INT_DECL(int) PDMR3QueueCreateInternal(PVM pVM, size_t cbItem, uint32_t cI
     /*
      * Validate input.
      */
-    VMCPU_ASSERT_EMT(&pVM->aCpus[0]);
+    VM_ASSERT_EMT0(pVM);
     AssertPtrReturn(pfnCallback, VERR_INVALID_POINTER);
 
     /*
@@ -353,7 +354,7 @@ VMMR3_INT_DECL(int) PDMR3QueueCreateExternal(PVM pVM, size_t cbItem, uint32_t cI
     /*
      * Validate input.
      */
-    VMCPU_ASSERT_EMT(&pVM->aCpus[0]);
+    VM_ASSERT_EMT0(pVM);
     AssertPtrReturn(pfnCallback, VERR_INVALID_POINTER);
 
     /*
