@@ -59,35 +59,24 @@
 #define VIRTIOSCSI_REGION_PORT_IO                   1
 #define VIRTIOSCSI_REGION_PCI_CAP                   2
 
-
-
 /**
  * This macro resolves to boolean true if uOffset matches a field offset and size exactly,
  * (or if it is a 64-bit field, if it accesses either 32-bit part as a 32-bit access)
  * ASSUMED this critereon is mandated by section 4.1.3.1 of the VirtIO 1.0 specification)
+ * This MACRO can be re-written to allow unaligned access to a field (within bounds).
  *
  * @param   member   - Member of VIRTIO_PCI_COMMON_CFG_T
  * @param   uOffset  - Implied parameter: Offset into VIRTIO_PCI_COMMON_CFG_T
  * @param   cb       - Implied parameter: Number of bytes to access
  * @result           - true or false
  */
-#define VIRTIO_1_0__SECT_4_1_3_1__COMPLIANT
-#ifdef VIRTIO_1_0__SECT_4_1_3_1__COMPLIANT
-#   define MATCH_SCSI_CONFIG(member) \
+#define MATCH_SCSI_CONFIG(member) \
             (RT_SIZEOFMEMB(VIRTIO_SCSI_CONFIG_T, member) == 64 \
              && (   uOffset == RT_OFFSETOF(VIRTIO_SCSI_CONFIG_T, member) \
                  || uOffset == RT_OFFSETOF(VIRTIO_SCSI_CONFIG_T, member) + sizeof(uint32_t)) \
              && cb == sizeof(uint32_t)) \
          || (uOffset == RT_OFFSETOF(VIRTIO_SCSI_CONFIG_T, member) \
                && cb == RT_SIZEOFMEMB(VIRTIO_SCSI_CONFIG_T, member))
-#else
-#   define MATCH_SCSI_CONFIG(member) \
-        ((int)uOffset >= RT_OFFSETOF(VIRTIO_SCSI_CONFIG_T, member) \
-            &&  uOffset < (uint32_t)(RT_OFFSETOF(VIRTIO_SCSI_CONFIG_T, member) \
-                                   + RT_SIZEOFMEMB(VIRTIO_SCSI_CONFIG_T, member)) \
-            &&   cb <= RT_SIZEOFMEMB(VIRTIO_SCSI_CONFIG_T, member) \
-                      - (uOffset - RT_OFFSETOF(VIRTIO_SCSI_CONFIG_T, member)))
-#endif
 
 #define LOG_ACCESSOR(member) \
         virtioLogMappedIoValue(__FUNCTION__, #member, pv, cb, uMemberOffset, fWrite, false, 0);
@@ -96,9 +85,9 @@
     { \
         uint32_t uMemberOffset = uOffset - RT_OFFSETOF(VIRTIO_SCSI_CONFIG_T, member); \
         if (fWrite) \
-            memcpy(((char *)&pThis->virtioScsiConfig.member) + uMemberOffset, (const char *)pv, cb); \
+            memcpy(((char *)&pVirtioScsi->virtioScsiConfig.member) + uMemberOffset, (const char *)pv, cb); \
         else \
-            memcpy((char *)pv, (const char *)(((char *)&pThis->virtioScsiConfig.member) + uMemberOffset), cb); \
+            memcpy((char *)pv, (const char *)(((char *)&pVirtioScsi->virtioScsiConfig.member) + uMemberOffset), cb); \
         LOG_ACCESSOR(member); \
     }
 
@@ -109,7 +98,7 @@
             LogFunc(("Guest attempted to write readonly virtio_pci_common_cfg.%s\n", #member)); \
         else \
         { \
-            memcpy((char *)pv, (const char *)(((char *)&pThis->virtioScsiConfig.member) + uMemberOffset), cb); \
+            memcpy((char *)pv, (const char *)(((char *)&pVirtioScsi->virtioScsiConfig.member) + uMemberOffset), cb); \
             LOG_ACCESSOR(member); \
         } \
     }
@@ -345,8 +334,8 @@ typedef struct VIRTIOSCSITARGET
  */
 typedef struct VIRTIOSCSI
 {
-    /* virtioState must be first member */
-    VIRTIOSTATE                     virtioState;
+    /* Opaque handle to Virtio common framework */
+    VIRTIOHANDLE                    hVirtio;
 
     /* SCSI target instances data */
     VIRTIOSCSITARGET                aTargetInstances[VIRTIOSCSI_MAX_TARGETS];
@@ -782,7 +771,7 @@ static DECLCALLBACK(void *) virtioScsiR3TargetQueryInterface(PPDMIBASE pInterfac
      return NULL;
 }
 
-static int virtioScsiR3CfgAccessed(PVIRTIOSCSI pThis, uint32_t uOffset,
+static int virtioScsiR3CfgAccessed(PVIRTIOSCSI pVirtioScsi, uint32_t uOffset,
                                     const void *pv, size_t cb, uint8_t fWrite)
 {
     int rc = VINF_SUCCESS;
@@ -855,12 +844,12 @@ static int virtioScsiR3CfgAccessed(PVIRTIOSCSI pThis, uint32_t uOffset,
 static DECLCALLBACK(int) virtioScsiR3DevCapRead(PPDMDEVINS pDevIns, uint32_t uOffset, const void *pv, size_t cb)
 {
     int rc = VINF_SUCCESS;
-    PVIRTIOSCSI  pThis = PDMINS_2_DATA(pDevIns, PVIRTIOSCSI);
+    PVIRTIOSCSI  pVirtioScsi = PDMINS_2_DATA(pDevIns, PVIRTIOSCSI);
 
 //    LogFunc(("Read from Device-Specific capabilities: uOffset: 0x%x, cb: 0x%x\n",
 //              uOffset, cb));
 
-    rc = virtioScsiR3CfgAccessed(pThis, uOffset, pv, cb, false);
+    rc = virtioScsiR3CfgAccessed(pVirtioScsi, uOffset, pv, cb, false);
 
     return rc;
 }
@@ -877,12 +866,12 @@ static DECLCALLBACK(int) virtioScsiR3DevCapRead(PPDMDEVINS pDevIns, uint32_t uOf
 static DECLCALLBACK(int) virtioScsiR3DevCapWrite(PPDMDEVINS pDevIns, uint32_t uOffset, const void *pv, size_t cb)
 {
     int rc = VINF_SUCCESS;
-    PVIRTIOSCSI  pThis = PDMINS_2_DATA(pDevIns, PVIRTIOSCSI);
+    PVIRTIOSCSI  pVirtioScsi = PDMINS_2_DATA(pDevIns, PVIRTIOSCSI);
 
 //    LogFunc(("Write to Device-Specific capabilities: uOffset: 0x%x, cb: 0x%x\n",
 //              uOffset, cb));
 
-    rc = virtioScsiR3CfgAccessed(pThis, uOffset, pv, cb, true);
+    rc = virtioScsiR3CfgAccessed(pVirtioScsi, uOffset, pv, cb, true);
 
     return rc;
 }
@@ -1101,10 +1090,6 @@ static DECLCALLBACK(int) virtioScsiConstruct(PPDMDEVINS pDevIns, int iInstance, 
     pVirtioPciParams->uInterruptLine = 0x00;
     pVirtioPciParams->uInterruptPin  = 0x01;
 
-    PVIRTIOSTATE pVirtio = &(pThis->virtioState);
-
-    virtioSetHostFeatures(pVirtio, VIRTIOSCSI_HOST_SCSI_FEATURES_OFFERED);
-
     pThis->IBase.pfnQueryInterface = virtioScsiR3DeviceQueryInterface;
 
     /* Configure virtio_scsi_config that transacts via VirtIO implementation's Dev. Specific Cap callbacks */
@@ -1119,11 +1104,12 @@ static DECLCALLBACK(int) virtioScsiConstruct(PPDMDEVINS pDevIns, int iInstance, 
     pThis->virtioScsiConfig.uMaxTarget      = pThis->cTargets;
     pThis->virtioScsiConfig.uMaxLun         = 16383; /* from VirtIO 1.0 spec */
 
-    rc = virtioConstruct(pDevIns, pVirtio, iInstance, pVirtioPciParams,
+    rc = virtioConstruct(pDevIns, &pThis->hVirtio, iInstance, pVirtioPciParams,
                          VIRTIOSCSI_NAME_FMT, VIRTIOSCSI_N_QUEUES, VIRTIOSCSI_REGION_PCI_CAP,
+                         VIRTIOSCSI_HOST_SCSI_FEATURES_OFFERED,
                          virtioScsiR3DevCapRead, virtioScsiR3DevCapWrite,
                          sizeof(VIRTIO_SCSI_CONFIG_T) /* cbDevSpecificCap */,
-                         true /* fHaveDevSpecificCap */,
+                         (void *)&pThis->virtioScsiConfig /* pDevSpecificCap */,
                          0 /* uNotifyOffMultiplier */);
 
     if (RT_FAILURE(rc))
