@@ -38,7 +38,7 @@
 
 const ULONG iPeriod = 1;
 const int iMaximumQueueSize = 100;
-const int iMetricSetupCount = 10;
+const int iMetricSetupCount = 1;
 
 /*********************************************************************************************************************************
 *   UIChart definition.                                                                                     *
@@ -250,7 +250,7 @@ void UIChart::paintEvent(QPaintEvent *pEvent)
         painter.drawRect(QRect(0, 0, width(), height()));
     }
 
-    if (!m_pSubMetric || iMaximumQueueSize <= 0)
+    if (!m_pSubMetric || iMaximumQueueSize <= 1)
         return;
 
     ULONG iMaximum = m_pSubMetric->maximum();
@@ -261,7 +261,7 @@ void UIChart::paintEvent(QPaintEvent *pEvent)
 
     if (isEnabled())
     {
-        float fBarWidth = fChartWidth / (float) iMaximumQueueSize;
+        float fBarWidth = fChartWidth / (float) (iMaximumQueueSize - 1);
         float fH = fChartHeight / (float)iMaximum;
         if (m_fUseGradientLineColor)
         {
@@ -275,14 +275,13 @@ void UIChart::paintEvent(QPaintEvent *pEvent)
             const QQueue<ULONG> *data = m_pSubMetric->data(k);
             if (!m_fUseGradientLineColor)
                 painter.setPen(QPen(m_dataSeriesColor[k], 2.5));
-
             for (int i = 0; i < data->size() - 1; ++i)
             {
                 int j = i + 1;
                 float fHeight = fH * data->at(i);
-                float fX = width() - ((data->size() -i) * fBarWidth);
+                float fX = (width() - m_iMargin) - ((data->size() -i - 1) * fBarWidth);
                 float fHeight2 = fH * data->at(j);
-                float fX2 = width() - ((data->size() -j) * fBarWidth);
+                float fX2 = (width() - m_iMargin) - ((data->size() -j - 1) * fBarWidth);
                 QLineF bar(fX, height() - (fHeight + m_iMargin), fX2, height() - (fHeight2 + m_iMargin));
                 painter.drawLine(bar);
             }
