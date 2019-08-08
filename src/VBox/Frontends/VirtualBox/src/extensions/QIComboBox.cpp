@@ -208,6 +208,20 @@ int QIComboBox::currentIndex() const
     return m_pComboBox->currentIndex();
 }
 
+QString QIComboBox::currentText() const
+{
+    /* Redirect to combo-box: */
+    AssertPtrReturn(m_pComboBox, -1);
+    return m_pComboBox->currentText();
+}
+
+void QIComboBox::addItems(const QStringList &items) const
+{
+    /* Redirect to combo-box: */
+    AssertPtrReturnVoid(m_pComboBox);
+    return m_pComboBox->addItems(items);
+}
+
 void QIComboBox::addItem(const QString &strText, const QVariant &userData /* = QVariant() */) const
 {
     /* Redirect to combo-box: */
@@ -257,6 +271,14 @@ int QIComboBox::findData(const QVariant &data,
     /* Redirect to combo-box: */
     AssertPtrReturn(m_pComboBox, -1);
     return m_pComboBox->findData(data, iRole, flags);
+}
+
+int QIComboBox::findText(const QString &strText,
+                         Qt::MatchFlags flags /* = static_cast<Qt::MatchFlags>(Qt::MatchExactly | Qt::MatchCaseSensitive) */) const
+{
+    /* Redirect to combo-box: */
+    AssertPtrReturn(m_pComboBox, -1);
+    return m_pComboBox->findData(strText, flags);
 }
 
 void QIComboBox::clear()

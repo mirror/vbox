@@ -85,7 +85,11 @@ public:
     int count() const;
     /** Returns the index of the current item in the combo-box. */
     int currentIndex() const;
+    /** Returns the text of the current item in the combo-box. */
+    QString currentText() const;
 
+    /** Adds the @a items into the combo-box. */
+    void addItems(const QStringList &items) const;
     /** Adds the @a strText and userData (stored in the Qt::UserRole) into the combo-box. */
     void addItem(const QString &strText, const QVariant &userData = QVariant()) const;
     /** Inserts the @a strText and userData (stored in the Qt::UserRole) into the combo-box at the given @a iIndex. */
@@ -104,6 +108,9 @@ public:
       * @param  flags  Specifies how the items in the combobox are searched. */
     int findData(const QVariant &data, int iRole = Qt::UserRole,
                  Qt::MatchFlags flags = static_cast<Qt::MatchFlags>(Qt::MatchExactly | Qt::MatchCaseSensitive)) const;
+    /** Returns the index of the item containing the given @a strText; otherwise returns -1.
+      * @param  flags  Specifies how the items in the combobox are searched. */
+    int findText(const QString &strText, Qt::MatchFlags flags = static_cast<Qt::MatchFlags>(Qt::MatchExactly | Qt::MatchCaseSensitive)) const;
 
 public slots:
 
