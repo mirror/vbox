@@ -87,6 +87,8 @@ public:
     int currentIndex() const;
     /** Returns the text of the current item in the combo-box. */
     QString currentText() const;
+    /** Returns the data of the current item in the combo-box. */
+    QVariant currentData(int iRole = Qt::UserRole) const;
 
     /** Adds the @a items into the combo-box. */
     void addItems(const QStringList &items) const;

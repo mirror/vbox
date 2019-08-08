@@ -215,6 +215,13 @@ QString QIComboBox::currentText() const
     return m_pComboBox->currentText();
 }
 
+QVariant QIComboBox::currentData(int iRole /* = Qt::UserRole */) const
+{
+    /* Redirect to combo-box: */
+    AssertPtrReturn(m_pComboBox, QVariant());
+    return m_pComboBox->currentData(iRole);
+}
+
 void QIComboBox::addItems(const QStringList &items) const
 {
     /* Redirect to combo-box: */
@@ -278,7 +285,7 @@ int QIComboBox::findText(const QString &strText,
 {
     /* Redirect to combo-box: */
     AssertPtrReturn(m_pComboBox, -1);
-    return m_pComboBox->findData(strText, flags);
+    return m_pComboBox->findText(strText, flags);
 }
 
 void QIComboBox::clear()
