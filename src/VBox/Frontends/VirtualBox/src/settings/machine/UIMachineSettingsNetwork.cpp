@@ -41,9 +41,6 @@
 #endif
 
 
-/* Empty item extra-code: */
-const char *pEmptyItemCode = "#empty#";
-
 QString wipedOutString(const QString &strInputString)
 {
     return strInputString.isEmpty() ? QString() : strInputString;
@@ -164,9 +161,9 @@ public:
     /* Other public stuff: */
     QString tabTitle() const;
     KNetworkAttachmentType attachmentType() const;
-    QString alternativeName(int iType = -1) const;
+    QString alternativeName(KNetworkAttachmentType enmType = KNetworkAttachmentType_Null) const;
     void polishTab();
-    void reloadAlternative();
+    void reloadAlternatives();
 
     /** Defines whether the advanced button is @a fExpanded. */
     void setAdvancedButtonState(bool fExpanded);
@@ -201,8 +198,6 @@ private:
 
     /* Helping stuff: */
     void populateComboboxes();
-    void updateAlternativeList();
-    void updateAlternativeName();
 
     /** Handles advanced button state change. */
     void handleAdvancedButtonStateChange();
@@ -216,11 +211,6 @@ private:
 
     /* Other variables: */
     int m_iSlot;
-    QString m_strBridgedAdapterName;
-    QString m_strInternalNetworkName;
-    QString m_strHostInterfaceName;
-    QString m_strGenericDriverName;
-    QString m_strNATNetworkName;
     UIPortForwardingDataList m_portForwardingRules;
     /** Holds the list of restricted network attachment types. */
     UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork m_enmRestrictedNetworkAttachmentTypes;
@@ -245,7 +235,8 @@ UIMachineSettingsNetwork::UIMachineSettingsNetwork(UIMachineSettingsNetworkPage 
     const int iIconMetric = (int)(pStyle->pixelMetric(QStyle::PM_SmallIconSize) * .625);
 
     /* Setup widgets: */
-    m_pAdapterNameCombo->setInsertPolicy(QComboBox::NoInsert);
+    m_pAttachmentTypeLabel->setBuddy(m_pAttachmentTypeEditor->focusProxy1());
+    m_pAdapterNameLabel->setBuddy(m_pAttachmentTypeEditor->focusProxy2());
     m_pMACEditor->setValidator(new QRegExpValidator(QRegExp("[0-9A-Fa-f]{12}"), this));
     m_pMACEditor->setMinimumWidthByText(QString().fill('0', 12));
     m_pMACButton->setIcon(UIIconPool::iconSet(":/refresh_16px.png"));
@@ -255,9 +246,10 @@ UIMachineSettingsNetwork::UIMachineSettingsNetwork(UIMachineSettingsNetworkPage 
 
     /* Setup connections: */
     connect(m_pEnableAdapterCheckBox, SIGNAL(toggled(bool)), this, SLOT(sltHandleAdapterActivityChange()));
-    connect(m_pAttachmentTypeComboBox, SIGNAL(activated(int)), this, SLOT(sltHandleAttachmentTypeChange()));
-    connect(m_pAdapterNameCombo, SIGNAL(activated(int)), this, SLOT(sltHandleAlternativeNameChange()));
-    connect(m_pAdapterNameCombo, SIGNAL(editTextChanged(const QString&)), this, SLOT(sltHandleAlternativeNameChange()));
+    connect(m_pAttachmentTypeEditor, &UINetworkAttachmentEditor::sigValueTypeChanged,
+            this, &UIMachineSettingsNetwork::sltHandleAttachmentTypeChange);
+    connect(m_pAttachmentTypeEditor, &UINetworkAttachmentEditor::sigValueNameChanged,
+            this, &UIMachineSettingsNetwork::sltHandleAlternativeNameChange);
     connect(m_pAdvancedArrow, SIGNAL(sigClicked()), this, SLOT(sltHandleAdvancedButtonStateChange()));
     connect(m_pMACButton, SIGNAL(clicked()), this, SLOT(sltGenerateMac()));
     connect(m_pPortForwardingButton, SIGNAL(clicked()), this, SLOT(sltOpenPortForwardingDlg()));
@@ -284,13 +276,13 @@ void UIMachineSettingsNetwork::getAdapterDataFromCache(const UISettingsCacheMach
     sltHandleAdapterActivityChange();
 
     /* Load attachment type: */
-    m_pAttachmentTypeComboBox->setCurrentIndex(position(m_pAttachmentTypeComboBox, oldAdapterData.m_attachmentType));
-    /* Load alternative name: */
-    m_strBridgedAdapterName = wipedOutString(oldAdapterData.m_strBridgedAdapterName);
-    m_strInternalNetworkName = wipedOutString(oldAdapterData.m_strInternalNetworkName);
-    m_strHostInterfaceName = wipedOutString(oldAdapterData.m_strHostInterfaceName);
-    m_strGenericDriverName = wipedOutString(oldAdapterData.m_strGenericDriverName);
-    m_strNATNetworkName = wipedOutString(oldAdapterData.m_strNATNetworkName);
+    m_pAttachmentTypeEditor->setValueType(oldAdapterData.m_attachmentType);
+    /* Load alternative names: */
+    m_pAttachmentTypeEditor->setValueName(KNetworkAttachmentType_Bridged, wipedOutString(oldAdapterData.m_strBridgedAdapterName));
+    m_pAttachmentTypeEditor->setValueName(KNetworkAttachmentType_Internal, wipedOutString(oldAdapterData.m_strInternalNetworkName));
+    m_pAttachmentTypeEditor->setValueName(KNetworkAttachmentType_HostOnly, wipedOutString(oldAdapterData.m_strHostInterfaceName));
+    m_pAttachmentTypeEditor->setValueName(KNetworkAttachmentType_Generic, wipedOutString(oldAdapterData.m_strGenericDriverName));
+    m_pAttachmentTypeEditor->setValueName(KNetworkAttachmentType_NATNetwork, wipedOutString(oldAdapterData.m_strNATNetworkName));
     /* Handle attachment type change: */
     sltHandleAttachmentTypeChange();
 
@@ -338,17 +330,17 @@ void UIMachineSettingsNetwork::putAdapterDataToCache(UISettingsCacheMachineNetwo
             newAdapterData.m_strBridgedAdapterName = alternativeName();
             break;
         case KNetworkAttachmentType_Internal:
-            newAdapterData.m_strInternalNetworkName = alternativeName();
+            newAdapterData.m_strInternalNetworkName = m_pAttachmentTypeEditor->valueName(KNetworkAttachmentType_Internal);
             break;
         case KNetworkAttachmentType_HostOnly:
-            newAdapterData.m_strHostInterfaceName = alternativeName();
+            newAdapterData.m_strHostInterfaceName = m_pAttachmentTypeEditor->valueName(KNetworkAttachmentType_HostOnly);
             break;
         case KNetworkAttachmentType_Generic:
-            newAdapterData.m_strGenericDriverName = alternativeName();
+            newAdapterData.m_strGenericDriverName = m_pAttachmentTypeEditor->valueName(KNetworkAttachmentType_Generic);
             newAdapterData.m_strGenericProperties = m_pGenericPropertiesTextEdit->toPlainText();
             break;
         case KNetworkAttachmentType_NATNetwork:
-            newAdapterData.m_strNATNetworkName = alternativeName();
+            newAdapterData.m_strNATNetworkName = m_pAttachmentTypeEditor->valueName(KNetworkAttachmentType_NATNetwork);
             break;
         default:
             break;
@@ -466,9 +458,8 @@ bool UIMachineSettingsNetwork::validate(QList<UIValidationMessage> &messages)
 QWidget *UIMachineSettingsNetwork::setOrderAfter(QWidget *pAfter)
 {
     setTabOrder(pAfter, m_pEnableAdapterCheckBox);
-    setTabOrder(m_pEnableAdapterCheckBox, m_pAttachmentTypeComboBox);
-    setTabOrder(m_pAttachmentTypeComboBox, m_pAdapterNameCombo);
-    setTabOrder(m_pAdapterNameCombo, m_pAdvancedArrow);
+    setTabOrder(m_pEnableAdapterCheckBox, m_pAttachmentTypeEditor);
+    setTabOrder(m_pAttachmentTypeEditor, m_pAdvancedArrow);
     setTabOrder(m_pAdvancedArrow, m_pAdapterTypeCombo);
     setTabOrder(m_pAdapterTypeCombo, m_pPromiscuousModeCombo);
     setTabOrder(m_pPromiscuousModeCombo, m_pMACEditor);
@@ -486,36 +477,14 @@ QString UIMachineSettingsNetwork::tabTitle() const
 
 KNetworkAttachmentType UIMachineSettingsNetwork::attachmentType() const
 {
-    return (KNetworkAttachmentType)m_pAttachmentTypeComboBox->itemData(m_pAttachmentTypeComboBox->currentIndex()).toInt();
+    return m_pAttachmentTypeEditor->valueType();
 }
 
-QString UIMachineSettingsNetwork::alternativeName(int iType) const
+QString UIMachineSettingsNetwork::alternativeName(KNetworkAttachmentType enmType /* = KNetworkAttachmentType_Null */) const
 {
-    if (iType == -1)
-        iType = attachmentType();
-    QString strResult;
-    switch (iType)
-    {
-        case KNetworkAttachmentType_Bridged:
-            strResult = m_strBridgedAdapterName;
-            break;
-        case KNetworkAttachmentType_Internal:
-            strResult = m_strInternalNetworkName;
-            break;
-        case KNetworkAttachmentType_HostOnly:
-            strResult = m_strHostInterfaceName;
-            break;
-        case KNetworkAttachmentType_Generic:
-            strResult = m_strGenericDriverName;
-            break;
-        case KNetworkAttachmentType_NATNetwork:
-            strResult = m_strNATNetworkName;
-            break;
-        default:
-            break;
-    }
-    Assert(strResult.isNull() || !strResult.isEmpty());
-    return strResult;
+    if (enmType == KNetworkAttachmentType_Null)
+        enmType = attachmentType();
+    return m_pAttachmentTypeEditor->valueName(enmType);
 }
 
 void UIMachineSettingsNetwork::polishTab()
@@ -523,11 +492,8 @@ void UIMachineSettingsNetwork::polishTab()
     /* Basic attributes: */
     m_pEnableAdapterCheckBox->setEnabled(m_pParent->isMachineOffline());
     m_pAttachmentTypeLabel->setEnabled(m_pParent->isMachineInValidMode());
-    m_pAttachmentTypeComboBox->setEnabled(m_pParent->isMachineInValidMode());
+    m_pAttachmentTypeEditor->setEnabled(m_pParent->isMachineInValidMode());
     m_pAdapterNameLabel->setEnabled(m_pParent->isMachineInValidMode() &&
-                                    attachmentType() != KNetworkAttachmentType_Null &&
-                                    attachmentType() != KNetworkAttachmentType_NAT);
-    m_pAdapterNameCombo->setEnabled(m_pParent->isMachineInValidMode() &&
                                     attachmentType() != KNetworkAttachmentType_Null &&
                                     attachmentType() != KNetworkAttachmentType_NAT);
     m_pAdvancedArrow->setEnabled(m_pParent->isMachineInValidMode());
@@ -556,12 +522,13 @@ void UIMachineSettingsNetwork::polishTab()
     handleAdvancedButtonStateChange();
 }
 
-void UIMachineSettingsNetwork::reloadAlternative()
+void UIMachineSettingsNetwork::reloadAlternatives()
 {
-    /* Repopulate alternative-name combo-box content: */
-    updateAlternativeList();
-    /* Select previous or default alternative-name combo-box item: */
-    updateAlternativeName();
+    m_pAttachmentTypeEditor->setValueNames(KNetworkAttachmentType_Bridged, m_pParent->bridgedAdapterList());
+    m_pAttachmentTypeEditor->setValueNames(KNetworkAttachmentType_Internal, m_pParent->internalNetworkList());
+    m_pAttachmentTypeEditor->setValueNames(KNetworkAttachmentType_HostOnly, m_pParent->hostInterfaceList());
+    m_pAttachmentTypeEditor->setValueNames(KNetworkAttachmentType_Generic, m_pParent->genericDriverList());
+    m_pAttachmentTypeEditor->setValueNames(KNetworkAttachmentType_NATNetwork, m_pParent->natNetworkList());
 }
 
 void UIMachineSettingsNetwork::setAdvancedButtonState(bool fExpanded)
@@ -606,8 +573,6 @@ void UIMachineSettingsNetwork::sltHandleAttachmentTypeChange()
     /* Update alternative-name combo-box availability: */
     m_pAdapterNameLabel->setEnabled(attachmentType() != KNetworkAttachmentType_Null &&
                                     attachmentType() != KNetworkAttachmentType_NAT);
-    m_pAdapterNameCombo->setEnabled(attachmentType() != KNetworkAttachmentType_Null &&
-                                    attachmentType() != KNetworkAttachmentType_NAT);
     /* Update promiscuous-mode combo-box availability: */
     m_pPromiscuousModeLabel->setEnabled(attachmentType() != KNetworkAttachmentType_Null &&
                                         attachmentType() != KNetworkAttachmentType_Generic &&
@@ -622,61 +587,9 @@ void UIMachineSettingsNetwork::sltHandleAttachmentTypeChange()
                                              m_pAdvancedArrow->isExpanded());
     /* Update forwarding rules button availability: */
     m_pPortForwardingButton->setEnabled(attachmentType() == KNetworkAttachmentType_NAT);
-    /* Update alternative-name combo-box whats-this and editable state: */
-    switch (attachmentType())
-    {
-        case KNetworkAttachmentType_Bridged:
-        {
-            m_pAdapterNameCombo->setWhatsThis(tr("Selects the network adapter on the host system that traffic "
-                                                 "to and from this network card will go through."));
-            m_pAdapterNameCombo->setEditable(false);
-            break;
-        }
-        case KNetworkAttachmentType_Internal:
-        {
-            m_pAdapterNameCombo->setWhatsThis(tr("Holds the name of the internal network that this network card "
-                                                 "will be connected to. You can create a new internal network by "
-                                                 "choosing a name which is not used by any other network cards "
-                                                 "in this virtual machine or others."));
-            m_pAdapterNameCombo->setEditable(true);
-            break;
-        }
-        case KNetworkAttachmentType_HostOnly:
-        {
-            m_pAdapterNameCombo->setWhatsThis(tr("Selects the virtual network adapter on the host system that traffic "
-                                                 "to and from this network card will go through. "
-                                                 "You can create and remove adapters using the global network "
-                                                 "settings in the virtual machine manager window."));
-            m_pAdapterNameCombo->setEditable(false);
-            break;
-        }
-        case KNetworkAttachmentType_Generic:
-        {
-            m_pAdapterNameCombo->setWhatsThis(tr("Selects the driver to be used with this network card."));
-            m_pAdapterNameCombo->setEditable(true);
-            break;
-        }
-        case KNetworkAttachmentType_NATNetwork:
-        {
-            m_pAdapterNameCombo->setWhatsThis(tr("Holds the name of the NAT network that this network card "
-                                                 "will be connected to. You can create and remove networks "
-                                                 "using the global network settings in the virtual machine "
-                                                 "manager window."));
-            m_pAdapterNameCombo->setEditable(false);
-            break;
-        }
-        default:
-        {
-            m_pAdapterNameCombo->setWhatsThis(QString());
-            break;
-        }
-    }
 
-    /* Update alternative combo: */
-    reloadAlternative();
-
-    /* Handle alternative-name cange: */
-    sltHandleAlternativeNameChange();
+    /* Revalidate: */
+    m_pParent->revalidate();
 }
 
 void UIMachineSettingsNetwork::sltHandleAlternativeNameChange()
@@ -685,54 +598,16 @@ void UIMachineSettingsNetwork::sltHandleAlternativeNameChange()
      * Call for other pages update, if necessary: */
     switch (attachmentType())
     {
-        case KNetworkAttachmentType_Bridged:
-        {
-            QString newName(m_pAdapterNameCombo->itemData(m_pAdapterNameCombo->currentIndex()).toString() == QString(pEmptyItemCode) ||
-                            m_pAdapterNameCombo->currentText().isEmpty() ? QString() : m_pAdapterNameCombo->currentText());
-            if (m_strBridgedAdapterName != newName)
-                m_strBridgedAdapterName = newName;
-            break;
-        }
         case KNetworkAttachmentType_Internal:
         {
-            QString newName((m_pAdapterNameCombo->itemData(m_pAdapterNameCombo->currentIndex()).toString() == QString(pEmptyItemCode) &&
-                             m_pAdapterNameCombo->currentText() == m_pAdapterNameCombo->itemText(m_pAdapterNameCombo->currentIndex())) ||
-                             m_pAdapterNameCombo->currentText().isEmpty() ? QString() : m_pAdapterNameCombo->currentText());
-            if (m_strInternalNetworkName != newName)
-            {
-                m_strInternalNetworkName = newName;
-                if (!m_strInternalNetworkName.isNull())
-                    emit sigTabUpdated();
-            }
-            break;
-        }
-        case KNetworkAttachmentType_HostOnly:
-        {
-            QString newName(m_pAdapterNameCombo->itemData(m_pAdapterNameCombo->currentIndex()).toString() == QString(pEmptyItemCode) ||
-                            m_pAdapterNameCombo->currentText().isEmpty() ? QString() : m_pAdapterNameCombo->currentText());
-            if (m_strHostInterfaceName != newName)
-                m_strHostInterfaceName = newName;
+            if (!m_pAttachmentTypeEditor->valueName(KNetworkAttachmentType_Internal).isNull())
+                emit sigTabUpdated();
             break;
         }
         case KNetworkAttachmentType_Generic:
         {
-            QString newName((m_pAdapterNameCombo->itemData(m_pAdapterNameCombo->currentIndex()).toString() == QString(pEmptyItemCode) &&
-                             m_pAdapterNameCombo->currentText() == m_pAdapterNameCombo->itemText(m_pAdapterNameCombo->currentIndex())) ||
-                             m_pAdapterNameCombo->currentText().isEmpty() ? QString() : m_pAdapterNameCombo->currentText());
-            if (m_strGenericDriverName != newName)
-            {
-                m_strGenericDriverName = newName;
-                if (!m_strGenericDriverName.isNull())
-                    emit sigTabUpdated();
-            }
-            break;
-        }
-        case KNetworkAttachmentType_NATNetwork:
-        {
-            QString newName(m_pAdapterNameCombo->itemData(m_pAdapterNameCombo->currentIndex()).toString() == QString(pEmptyItemCode) ||
-                            m_pAdapterNameCombo->currentText().isEmpty() ? QString() : m_pAdapterNameCombo->currentText());
-            if (m_strNATNetworkName != newName)
-                m_strNATNetworkName = newName;
+            if (!m_pAttachmentTypeEditor->valueName(KNetworkAttachmentType_Generic).isNull())
+                emit sigTabUpdated();
             break;
         }
         default:
@@ -770,50 +645,11 @@ void UIMachineSettingsNetwork::prepareValidation()
     connect(m_pMACEditor, SIGNAL(textChanged(const QString &)), m_pParent, SLOT(revalidate()));
 }
 
-UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork toInternalNetworkAdapterEnum(KNetworkAttachmentType comEnum)
-{
-    switch (comEnum)
-    {
-        case KNetworkAttachmentType_NAT:        return UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_NAT;
-        case KNetworkAttachmentType_Bridged:    return UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_BridgetAdapter;
-        case KNetworkAttachmentType_Internal:   return UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_InternalNetwork;
-        case KNetworkAttachmentType_HostOnly:   return UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_HostOnlyAdapter;
-        case KNetworkAttachmentType_Generic:    return UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_GenericDriver;
-        case KNetworkAttachmentType_NATNetwork: return UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_NATNetwork;
-        default:                                return UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_Invalid;
-    }
-}
-
 void UIMachineSettingsNetwork::populateComboboxes()
 {
-    /* Attachment type: */
+    /* Adapter names: */
     {
-        /* Remember the currently selected attachment type: */
-        int iCurrentAttachment = m_pAttachmentTypeComboBox->currentIndex();
-
-        /* Clear the attachments combo-box: */
-        m_pAttachmentTypeComboBox->clear();
-
-        /* Populate attachments: */
-        int iAttachmentTypeIndex = 0;
-        /* We want some hardcoded order, so prepare a list of enum values: */
-        QList<KNetworkAttachmentType> attachmentTypes  = QList<KNetworkAttachmentType>() << KNetworkAttachmentType_Null
-                                                      << KNetworkAttachmentType_NAT << KNetworkAttachmentType_NATNetwork
-                                                      << KNetworkAttachmentType_Bridged << KNetworkAttachmentType_Internal
-                                                      << KNetworkAttachmentType_HostOnly << KNetworkAttachmentType_Generic;
-        for (int i = 0; i < attachmentTypes.size(); ++i)
-        {
-            const KNetworkAttachmentType enmType = attachmentTypes.at(i);
-            if (m_enmRestrictedNetworkAttachmentTypes & toInternalNetworkAdapterEnum(enmType))
-                continue;
-            m_pAttachmentTypeComboBox->insertItem(iAttachmentTypeIndex, gpConverter->toString(enmType));
-            m_pAttachmentTypeComboBox->setItemData(iAttachmentTypeIndex, enmType);
-            m_pAttachmentTypeComboBox->setItemData(iAttachmentTypeIndex, m_pAttachmentTypeComboBox->itemText(iAttachmentTypeIndex), Qt::ToolTipRole);
-            ++iAttachmentTypeIndex;
-        }
-
-        /* Restore the previously selected attachment type: */
-        m_pAttachmentTypeComboBox->setCurrentIndex(iCurrentAttachment == -1 ? 0 : iCurrentAttachment);
+        reloadAlternatives();
     }
 
     /* Adapter type: */
@@ -885,91 +721,6 @@ void UIMachineSettingsNetwork::populateComboboxes()
         /* Restore the previously selected promiscuous mode type: */
         m_pPromiscuousModeCombo->setCurrentIndex(iCurrentPromiscuousMode == -1 ? 0 : iCurrentPromiscuousMode);
     }
-}
-
-void UIMachineSettingsNetwork::updateAlternativeList()
-{
-    /* Block signals initially: */
-    m_pAdapterNameCombo->blockSignals(true);
-
-    /* Repopulate alternative-name combo: */
-    m_pAdapterNameCombo->clear();
-    switch (attachmentType())
-    {
-        case KNetworkAttachmentType_Bridged:
-            m_pAdapterNameCombo->insertItems(0, m_pParent->bridgedAdapterList());
-            break;
-        case KNetworkAttachmentType_Internal:
-            m_pAdapterNameCombo->insertItems(0, m_pParent->internalNetworkList());
-            break;
-        case KNetworkAttachmentType_HostOnly:
-            m_pAdapterNameCombo->insertItems(0, m_pParent->hostInterfaceList());
-            break;
-        case KNetworkAttachmentType_Generic:
-            m_pAdapterNameCombo->insertItems(0, m_pParent->genericDriverList());
-            break;
-        case KNetworkAttachmentType_NATNetwork:
-            m_pAdapterNameCombo->insertItems(0, m_pParent->natNetworkList());
-            break;
-        default:
-            break;
-    }
-
-    /* Prepend 'empty' or 'default' item to alternative-name combo: */
-    if (m_pAdapterNameCombo->count() == 0)
-    {
-        switch (attachmentType())
-        {
-            case KNetworkAttachmentType_Bridged:
-            case KNetworkAttachmentType_HostOnly:
-            case KNetworkAttachmentType_NATNetwork:
-            {
-                /* If adapter list is empty => add 'Not selected' item: */
-                int pos = m_pAdapterNameCombo->findData(pEmptyItemCode);
-                if (pos == -1)
-                    m_pAdapterNameCombo->insertItem(0, tr("Not selected", "network adapter name"), pEmptyItemCode);
-                else
-                    m_pAdapterNameCombo->setItemText(pos, tr("Not selected", "network adapter name"));
-                break;
-            }
-            case KNetworkAttachmentType_Internal:
-            {
-                /* Internal network list should have a default item: */
-                if (m_pAdapterNameCombo->findText("intnet") == -1)
-                    m_pAdapterNameCombo->insertItem(0, "intnet");
-                break;
-            }
-            default:
-                break;
-        }
-    }
-
-    /* Unblock signals finally: */
-    m_pAdapterNameCombo->blockSignals(false);
-}
-
-void UIMachineSettingsNetwork::updateAlternativeName()
-{
-    /* Block signals initially: */
-    m_pAdapterNameCombo->blockSignals(true);
-
-    switch (attachmentType())
-    {
-        case KNetworkAttachmentType_Bridged:
-        case KNetworkAttachmentType_Internal:
-        case KNetworkAttachmentType_HostOnly:
-        case KNetworkAttachmentType_Generic:
-        case KNetworkAttachmentType_NATNetwork:
-        {
-            m_pAdapterNameCombo->setCurrentIndex(position(m_pAdapterNameCombo, alternativeName()));
-            break;
-        }
-        default:
-            break;
-    }
-
-    /* Unblock signals finally: */
-    m_pAdapterNameCombo->blockSignals(false);
 }
 
 void UIMachineSettingsNetwork::handleAdvancedButtonStateChange()
@@ -1238,9 +989,9 @@ void UIMachineSettingsNetworkPage::sltHandleTabUpdate()
         UIMachineSettingsNetwork *pTab = qobject_cast<UIMachineSettingsNetwork*>(m_pTabWidget->widget(iSlot));
         AssertMsg(pTab, ("All the tabs of m_pTabWidget should be of the UIMachineSettingsNetwork type!\n"));
 
-        /* Update all the tabs (except sender) with the same attachment type as sender have: */
-        if (pTab != pSender && pTab->attachmentType() == enmSenderAttachmentType)
-            pTab->reloadAlternative();
+        /* Update all the tabs (except sender): */
+        if (pTab != pSender)
+            pTab->reloadAlternatives();
     }
 }
 

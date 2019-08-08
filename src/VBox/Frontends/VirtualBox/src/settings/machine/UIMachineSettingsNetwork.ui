@@ -63,19 +63,10 @@
         <property name="alignment">
          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
-        <property name="buddy">
-         <cstring>m_pAttachmentTypeComboBox</cstring>
-        </property>
        </widget>
       </item>
-      <item row="0" column="1">
-       <widget class="QComboBox" name="m_pAttachmentTypeComboBox">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
+      <item row="0" column="1" rowspan="2" colspan="3">
+       <widget class="UINetworkAttachmentEditor" name="m_pAttachmentTypeEditor">
         <property name="whatsThis">
          <string>Selects how this virtual adapter is attached to the real network of the Host OS.</string>
         </property>
@@ -88,19 +79,6 @@
         </property>
         <property name="alignment">
          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-        </property>
-        <property name="buddy">
-         <cstring>m_pAdapterNameCombo</cstring>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="1" colspan="3">
-       <widget class="QComboBox" name="m_pAdapterNameCombo">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
-          <horstretch>1</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
         </property>
        </widget>
       </item>
@@ -290,6 +268,11 @@
    <class>QIToolButton</class>
    <extends>QToolButton</extends>
    <header>QIToolButton.h</header>
+  </customwidget>
+  <customwidget>
+   <class>UINetworkAttachmentEditor</class>
+   <extends>QWidget</extends>
+   <header>UINetworkAttachmentEditor.h</header>
   </customwidget>
  </customwidgets>
  <resources>

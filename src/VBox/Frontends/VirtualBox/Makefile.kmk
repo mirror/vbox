@@ -903,6 +903,7 @@ UICommon_QT_MOCHDRS = \
 	src/widgets/UIMenuBar.h \
 	src/widgets/UIMenuBarEditorWindow.h \
 	src/widgets/UINameAndSystemEditor.h \
+	src/widgets/UINetworkAttachmentEditor.h \
 	src/widgets/UIPopupBox.h \
 	src/widgets/UIPopupPane.h \
 	src/widgets/UIPopupPaneButtonPane.h \
@@ -1401,6 +1402,7 @@ UICommon_SOURCES = \
 	src/widgets/UIMenuBar.cpp \
 	src/widgets/UIMenuBarEditorWindow.cpp \
 	src/widgets/UINameAndSystemEditor.cpp \
+	src/widgets/UINetworkAttachmentEditor.cpp \
 	src/widgets/UIPopupBox.cpp \
 	src/widgets/UIPopupPane.cpp \
 	src/widgets/UIPopupPaneButtonPane.cpp \
