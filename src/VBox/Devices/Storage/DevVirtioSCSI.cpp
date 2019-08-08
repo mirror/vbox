@@ -66,12 +66,10 @@
  * This MACRO can be re-written to allow unaligned access to a field (within bounds).
  *
  * @param   member   - Member of VIRTIO_PCI_COMMON_CFG_T
- * @param   uOffset  - Implied parameter: Offset into VIRTIO_PCI_COMMON_CFG_T
- * @param   cb       - Implied parameter: Number of bytes to access
  * @result           - true or false
  */
 #define MATCH_SCSI_CONFIG(member) \
-            (RT_SIZEOFMEMB(VIRTIO_SCSI_CONFIG_T, member) == 64 \
+            (RT_SIZEOFMEMB(VIRTIO_SCSI_CONFIG_T, member) == 8 \
              && (   uOffset == RT_OFFSETOF(VIRTIO_SCSI_CONFIG_T, member) \
                  || uOffset == RT_OFFSETOF(VIRTIO_SCSI_CONFIG_T, member) + sizeof(uint32_t)) \
              && cb == sizeof(uint32_t)) \

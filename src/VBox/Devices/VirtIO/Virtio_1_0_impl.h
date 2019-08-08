@@ -268,7 +268,7 @@ DECLINLINE(bool) virtQueueIsEmpty(PVIRTIOSTATE pVirtio, PVQUEUE pQueue)
  * @result           - true or false
  */
 #define COMMON_CFG(member) \
-        (RT_SIZEOFMEMB(VIRTIO_PCI_COMMON_CFG_T, member) == 64 \
+        (RT_SIZEOFMEMB(VIRTIO_PCI_COMMON_CFG_T, member) == 8 \
          && (   uOffset == RT_OFFSETOF(VIRTIO_PCI_COMMON_CFG_T, member) \
              || uOffset == RT_OFFSETOF(VIRTIO_PCI_COMMON_CFG_T, member) + sizeof(uint32_t)) \
          && cb == sizeof(uint32_t)) \
@@ -285,9 +285,9 @@ DECLINLINE(bool) virtQueueIsEmpty(PVIRTIOSTATE pVirtio, PVQUEUE pQueue)
     { \
         uint32_t uIntraOff = uOffset - RT_OFFSETOF(VIRTIO_PCI_COMMON_CFG_T, member); \
         if (fWrite) \
-            memcpy(((char *)&pVirtio->member) + uOffset, (const char *)pv, cb); \
+            memcpy(((char *)&pVirtio->member) + uIntraOff, (const char *)pv, cb); \
         else \
-            memcpy((char *)pv, (const char *)(((char *)&pVirtio->member) + uOffset), cb); \
+            memcpy((char *)pv, (const char *)(((char *)&pVirtio->member) + uIntraOff), cb); \
         LOG_ACCESSOR(member); \
     }
 
@@ -295,9 +295,9 @@ DECLINLINE(bool) virtQueueIsEmpty(PVIRTIOSTATE pVirtio, PVQUEUE pQueue)
     { \
         uint32_t uIntraOff = uOffset - RT_OFFSETOF(VIRTIO_PCI_COMMON_CFG_T, member); \
         if (fWrite) \
-            memcpy(((char *)(pVirtio->member + idx)) + uOffset, (const char *)pv, cb); \
+            memcpy(((char *)(pVirtio->member + idx)) + uIntraOff, (const char *)pv, cb); \
         else \
-            memcpy((char *)pv, (const char *)(((char *)(pVirtio->member + idx)) + uOffset), cb); \
+            memcpy((char *)pv, (const char *)(((char *)(pVirtio->member + idx)) + uIntraOff), cb); \
         LOG_INDEXED_ACCESSOR(member, idx); \
     }
 
@@ -308,7 +308,7 @@ DECLINLINE(bool) virtQueueIsEmpty(PVIRTIOSTATE pVirtio, PVQUEUE pQueue)
             LogFunc(("Guest attempted to write readonly virtio_pci_common_cfg.%s\n", #member)); \
         else \
         { \
-            memcpy((char *)pv, (const char *)(((char *)&pVirtio->member) + uOffset), cb); \
+            memcpy((char *)pv, (const char *)(((char *)&pVirtio->member) + uIntraOff), cb); \
             LOG_ACCESSOR(member); \
         } \
     }
@@ -350,10 +350,10 @@ DECLINLINE(void) virtioLogDeviceStatus( uint8_t status)
             Log(("ACKNOWLEDGE",   primed++));
         if (status & VIRTIO_STATUS_DRIVER)
             Log(("%sDRIVER",      primed++ ? " | " : ""));
-        if (status & VIRTIO_STATUS_DRIVER_OK)
-            Log(("%sDRIVER_OK",   primed++ ? " | " : ""));
         if (status & VIRTIO_STATUS_FEATURES_OK)
             Log(("%sFEATURES_OK", primed++ ? " | " : ""));
+        if (status & VIRTIO_STATUS_DRIVER_OK)
+            Log(("%sDRIVER_OK",   primed++ ? " | " : ""));
         if (status & VIRTIO_STATUS_FAILED)
             Log(("%sFAILED",      primed++ ? " | " : ""));
         if (status & VIRTIO_STATUS_DEVICE_NEEDS_RESET)

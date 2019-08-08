@@ -770,7 +770,8 @@ int virtioCommonCfgAccessed(PVIRTIOSTATE pVirtio, int fWrite, off_t uOffset, uns
     }
     else
     {
-        LogFunc(("Bad access by guest to virtio_pci_common_cfg: uOffset=%d, cb=%d\n", uOffset, cb));
+        LogFunc(("Bad guest %s access to virtio_pci_common_cfg: uOffset=%d, cb=%d\n",
+            fWrite ? "write" : "read ", uOffset, cb));
         rc = VERR_ACCESS_DENIED;
     }
     return rc;
@@ -1208,8 +1209,9 @@ int   virtioConstruct(PPDMDEVINS pDevIns, PVIRTIOHANDLE phVirtio, int iInstance,
 #define CFGADDR2IDX(addr) ((uint64_t)addr - (uint64_t)&pVirtio->dev.abConfig)
 
     PVIRTIO_PCI_CAP_T pCfg;
+    uint32_t cbRegion = 0;
 
-    /* Common capability (VirtIO 1.0 spec) */
+    /* Common capability (VirtIO 1.0 spec, section 4.1.4.3) */
     pCfg = (PVIRTIO_PCI_CAP_T)&pVirtio->dev.abConfig[0x40];
     pCfg->uCfgType = VIRTIO_PCI_CAP_COMMON_CFG;
     pCfg->uCapVndr = VIRTIO_PCI_CAP_ID_VENDOR;
@@ -1218,9 +1220,12 @@ int   virtioConstruct(PPDMDEVINS pDevIns, PVIRTIOHANDLE phVirtio, int iInstance,
     pCfg->uBar     = uVirtioCapBar;
     pCfg->uOffset  = 0;
     pCfg->uLength  = sizeof(VIRTIO_PCI_COMMON_CFG_T);
+    cbRegion += pCfg->uLength;
     pVirtio->pCommonCfgCap = pCfg;
 
-    /* Notify capability (VirtIO 1.0 spec) */
+    /* Notify capability (VirtIO 1.0 spec, section 4.1.4.4). Note: uLength is based on assumption
+     * that each queue's uQueueNotifyOff is set equal to uQueueSelect's ordinal
+     * value of the queue */
     pCfg = (PVIRTIO_PCI_CAP_T)&pVirtio->dev.abConfig[pCfg->uCapNext];
     pCfg->uCfgType = VIRTIO_PCI_CAP_NOTIFY_CFG;
     pCfg->uCapVndr = VIRTIO_PCI_CAP_ID_VENDOR;
@@ -1228,11 +1233,12 @@ int   virtioConstruct(PPDMDEVINS pDevIns, PVIRTIOHANDLE phVirtio, int iInstance,
     pCfg->uCapNext = CFGADDR2IDX(pCfg) + pCfg->uCapLen;
     pCfg->uBar     = uVirtioCapBar;
     pCfg->uOffset  = pVirtio->pCommonCfgCap->uOffset + pVirtio->pCommonCfgCap->uLength;
-    pCfg->uLength  = 4; /* This needs to be calculated differently */
+    pCfg->uLength  = VIRTIO_MAX_QUEUES * uNotifyOffMultiplier + 2;  /* will change in VirtIO 1.1 */
+    cbRegion += pCfg->uLength;
     pVirtio->pNotifyCap = (PVIRTIO_PCI_NOTIFY_CAP_T)pCfg;
     pVirtio->pNotifyCap->uNotifyOffMultiplier = uNotifyOffMultiplier;
 
-    /* ISR capability (VirtIO 1.0 spec) */
+    /* ISR capability (VirtIO 1.0 spec, section 4.1.4.5) */
     pCfg = (PVIRTIO_PCI_CAP_T)&pVirtio->dev.abConfig[pCfg->uCapNext];
     pCfg->uCfgType = VIRTIO_PCI_CAP_ISR_CFG;
     pCfg->uCapVndr = VIRTIO_PCI_CAP_ID_VENDOR;
@@ -1241,9 +1247,10 @@ int   virtioConstruct(PPDMDEVINS pDevIns, PVIRTIOHANDLE phVirtio, int iInstance,
     pCfg->uBar     = uVirtioCapBar;
     pCfg->uOffset  = pVirtio->pNotifyCap->pciCap.uOffset + pVirtio->pNotifyCap->pciCap.uLength;
     pCfg->uLength  = sizeof(uint32_t);
+    cbRegion += pCfg->uLength;
     pVirtio->pIsrCap = pCfg;
 
-    /* PCI Cfg capability (VirtIO 1.0 spec) */
+    /* PCI Cfg capability (VirtIO 1.0 spec, section 4.1.4.7) */
     pCfg = (PVIRTIO_PCI_CAP_T)&pVirtio->dev.abConfig[pCfg->uCapNext];
     pCfg->uCfgType = VIRTIO_PCI_CAP_PCI_CFG;
     pCfg->uCapVndr = VIRTIO_PCI_CAP_ID_VENDOR;
@@ -1252,11 +1259,13 @@ int   virtioConstruct(PPDMDEVINS pDevIns, PVIRTIOHANDLE phVirtio, int iInstance,
     pCfg->uBar     = uVirtioCapBar;
     pCfg->uOffset  = pVirtio->pIsrCap->uOffset + pVirtio->pIsrCap->uLength;
     pCfg->uLength  = 4;  /* Initialize a non-zero 4-byte aligned so Linux virtio_pci module recognizes this cap */
+    cbRegion += pCfg->uLength;
     pVirtio->pPciCfgCap = (PVIRTIO_PCI_CFG_CAP_T)pCfg;
 
     if (pVirtio->pDevSpecificCap)
     {
-        /* Following capability mapped via VirtIO 1.0: struct virtio_pci_dev_cap (VIRTIODEVCAP)*/
+        /* Following capability (via VirtIO 1.0, section 4.1.4.6). Client defines the
+         * device specific configuration struct and passes its params to this constructor */
         pCfg = (PVIRTIO_PCI_CAP_T)&pVirtio->dev.abConfig[pCfg->uCapNext];
         pCfg->uCfgType = VIRTIO_PCI_CAP_DEVICE_CFG;
         pCfg->uCapVndr = VIRTIO_PCI_CAP_ID_VENDOR;
@@ -1265,6 +1274,7 @@ int   virtioConstruct(PPDMDEVINS pDevIns, PVIRTIOHANDLE phVirtio, int iInstance,
         pCfg->uBar     = uVirtioCapBar;
         pCfg->uOffset  = pVirtio->pIsrCap->uOffset + pVirtio->pIsrCap->uLength;
         pCfg->uLength  = cbDevSpecificCap;
+        cbRegion += pCfg->uLength;
         pVirtio->pDeviceCap = pCfg;
     }
 
@@ -1286,7 +1296,8 @@ int   virtioConstruct(PPDMDEVINS pDevIns, PVIRTIOHANDLE phVirtio, int iInstance,
             PCIDevSetCapabilityList(&pVirtio->dev, 0x40);
     }
 
-    rc = PDMDevHlpPCIIORegionRegister(pDevIns, uVirtioCapBar, 4096,
+    Log(("cbRegion = %d (0x%x)\n", cbRegion, cbRegion));
+    rc = PDMDevHlpPCIIORegionRegister(pDevIns, uVirtioCapBar, cbRegion,
                                       PCI_ADDRESS_SPACE_MEM, virtioR3Map);
     if (RT_FAILURE(rc))
     {
