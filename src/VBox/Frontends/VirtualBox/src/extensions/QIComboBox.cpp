@@ -211,7 +211,7 @@ int QIComboBox::currentIndex() const
 QString QIComboBox::currentText() const
 {
     /* Redirect to combo-box: */
-    AssertPtrReturn(m_pComboBox, -1);
+    AssertPtrReturn(m_pComboBox, QString());
     return m_pComboBox->currentText();
 }
 
