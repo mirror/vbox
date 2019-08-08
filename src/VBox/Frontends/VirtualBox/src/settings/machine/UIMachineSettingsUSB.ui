@@ -95,10 +95,10 @@
          <item>
           <widget class="QRadioButton" name="mRbUSB2">
            <property name="whatsThis">
-            <string>When chosen, enables the virtual USB EHCI controller of this machine. The USB EHCI controller provides USB 2.0 support.</string>
+            <string>When chosen, enables the virtual USB OHCI and EHCI controllers of this machine. Together they provide USB 2.0 support.</string>
            </property>
            <property name="text">
-            <string>USB &amp;2.0 (EHCI) Controller</string>
+            <string>USB &amp;2.0 (OHCI + EHCI) Controller</string>
            </property>
           </widget>
          </item>
