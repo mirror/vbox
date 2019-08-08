@@ -4999,11 +4999,10 @@ static int hmR0VmxExportGuestRflags(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
         {
             /** @todo r=ramshankar: Warning!! We ASSUME EFLAGS.TF will not cleared on
              *        premature trips to ring-3 esp since IEM does not yet handle it. */
-            rc = VMXWriteVmcs32(VMX_VMCS_GUEST_PENDING_DEBUG_XCPTS, VMX_VMCS_GUEST_PENDING_DEBUG_XCPT_BS);
+            rc = VMXWriteVmcsNw(VMX_VMCS_GUEST_PENDING_DEBUG_XCPTS, VMX_VMCS_GUEST_PENDING_DEBUG_XCPT_BS);
             AssertRC(rc);
         }
-        /** @todo NSTVMX: Handling copying of VMX_VMCS_GUEST_PENDING_DEBUG_XCPTS from
-         *        nested-guest VMCS. */
+        /* else: for nested-guest currently handling while merging controls. */
 
         ASMAtomicUoAndU64(&pVCpu->hm.s.fCtxChanged, ~HM_CHANGED_GUEST_RFLAGS);
         Log4Func(("eflags=%#RX32\n", fEFlags.u32));
@@ -5453,7 +5452,6 @@ static VBOXSTRICTRC hmR0VmxExportGuestCR3AndCR4(PVMCPU pVCpu, PVMXTRANSIENT pVmx
     {
         HMVMX_CPUMCTX_ASSERT(pVCpu, CPUMCTX_EXTRN_CR3);
 
-        RTGCPHYS GCPhysGuestCr3 = NIL_RTGCPHYS;
         if (pVM->hm.s.fNestedPaging)
         {
             PVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
@@ -5479,7 +5477,8 @@ static VBOXSTRICTRC hmR0VmxExportGuestCR3AndCR4(PVMCPU pVCpu, PVMXTRANSIENT pVmx
             rc = VMXWriteVmcs64(VMX_VMCS64_CTRL_EPTP_FULL, pVmcsInfo->HCPhysEPTP);
             AssertRC(rc);
 
-            PCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
+            uint64_t  u64GuestCr3;
+            PCCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
             if (   pVM->hm.s.vmx.fUnrestrictedGuest
                 || CPUMIsGuestPagingEnabledEx(pCtx))
             {
@@ -5499,7 +5498,7 @@ static VBOXSTRICTRC hmR0VmxExportGuestCR3AndCR4(PVMCPU pVCpu, PVMXTRANSIENT pVmx
                  * guest is using paging or we have unrestricted guest execution to handle
                  * the guest when it's not using paging.
                  */
-                GCPhysGuestCr3 = pCtx->cr3;
+                u64GuestCr3 = pCtx->cr3;
             }
             else
             {
@@ -5524,11 +5523,11 @@ static VBOXSTRICTRC hmR0VmxExportGuestCR3AndCR4(PVMCPU pVCpu, PVMXTRANSIENT pVmx
                 else
                     AssertMsgFailedReturn(("%Rrc\n",  rc), rc);
 
-                GCPhysGuestCr3 = GCPhys;
+                u64GuestCr3 = GCPhys;
             }
 
-            Log4Func(("u32GuestCr3=%#RGp (GstN)\n", GCPhysGuestCr3));
-            rc = VMXWriteVmcsNw(VMX_VMCS_GUEST_CR3, GCPhysGuestCr3);
+            Log4Func(("guest_cr3=%#RX64 (GstN)\n", u64GuestCr3));
+            rc = VMXWriteVmcsNw(VMX_VMCS_GUEST_CR3, u64GuestCr3);
             AssertRC(rc);
         }
         else
@@ -5536,7 +5535,7 @@ static VBOXSTRICTRC hmR0VmxExportGuestCR3AndCR4(PVMCPU pVCpu, PVMXTRANSIENT pVmx
             /* Non-nested paging case, just use the hypervisor's CR3. */
             RTHCPHYS const HCPhysGuestCr3 = PGMGetHyperCR3(pVCpu);
 
-            Log4Func(("u32GuestCr3=%#RHv (HstN)\n", HCPhysGuestCr3));
+            Log4Func(("guest_cr3=%#RX64 (HstN)\n", HCPhysGuestCr3));
             rc = VMXWriteVmcsNw(VMX_VMCS_GUEST_CR3, HCPhysGuestCr3);
             AssertRC(rc);
         }
@@ -9622,7 +9621,7 @@ static uint32_t hmR0VmxCheckGuestState(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo)
         }
 
         /* Pending debug exceptions. */
-        rc = VMXReadVmcs64(VMX_VMCS_GUEST_PENDING_DEBUG_XCPTS, &u64Val);
+        rc = VMXReadVmcsNw(VMX_VMCS_GUEST_PENDING_DEBUG_XCPTS, &u64Val);
         AssertRC(rc);
         /* Bits 63:15, Bit 13, Bits 11:4 MBZ. */
         HMVMX_CHECK_BREAK(!(u64Val & UINT64_C(0xffffffffffffaff0)), VMX_IGS_LONGMODE_PENDING_DEBUG_RESERVED);
@@ -9980,6 +9979,12 @@ static int hmR0VmxMergeVmcsNested(PVMCPU pVCpu)
     uint32_t const cPleWindowTicks = RT_MIN(pVM->hm.s.vmx.cPleWindowTicks, pVmcsNstGst->u32PleWindow);
 
     /*
+     * Pending debug exceptions.
+     * Currently just copy whatever the nested-guest provides us.
+     */
+    uint64_t const uPendingDbgXcpt = pVmcsNstGst->u64GuestPendingDbgXcpt.u;
+
+    /*
      * I/O Bitmap.
      *
      * We do not use the I/O bitmap that may be provided by the guest hypervisor as we always
@@ -10111,6 +10116,7 @@ static int hmR0VmxMergeVmcsNested(PVMCPU pVCpu)
     }
     if (u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_APIC_ACCESS)
         rc |= VMXWriteVmcs64(VMX_VMCS64_CTRL_APIC_ACCESSADDR_FULL, HCPhysApicAccess);
+    rc |= VMXWriteVmcsNw(VMX_VMCS_GUEST_PENDING_DEBUG_XCPTS, uPendingDbgXcpt);
     AssertRC(rc);
 
     /*
