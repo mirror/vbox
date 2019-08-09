@@ -37,7 +37,7 @@
 #include "CPerformanceMetric.h"
 
 const ULONG iPeriod = 1;
-const int iMaximumQueueSize = 100;
+const int iMaximumQueueSize = 120;
 const int iMetricSetupCount = 1;
 
 /*********************************************************************************************************************************
@@ -79,7 +79,10 @@ protected:
     const UISubMetric *m_pSubMetric;
     QSize m_size;
     QFont m_font;
-    int m_iMargin;
+    int m_iMarginLeft;
+    int m_iMarginRight;
+    int m_iMarginTop;
+    int m_iMarginBottom;
     QStringList m_textList;
     int m_iPieChartSize;
     QRect m_pieChartRect;
@@ -104,10 +107,13 @@ UIChart::UIChart(QWidget *pParent, const UISubMetric *pSubMetric)
     m_dataSeriesColor[0] = QColor(Qt::red);
     m_dataSeriesColor[1] = QColor(Qt::blue);
 
-    m_iMargin = qApp->QApplication::style()->pixelMetric(QStyle::PM_LayoutTopMargin);
+    m_iMarginLeft = 1 * qApp->QApplication::style()->pixelMetric(QStyle::PM_LayoutTopMargin);
+    m_iMarginRight = 4 * qApp->QApplication::style()->pixelMetric(QStyle::PM_LayoutTopMargin);
+    m_iMarginTop = 0.3 * qApp->QApplication::style()->pixelMetric(QStyle::PM_LayoutTopMargin);
+    m_iMarginBottom = 2 * qApp->QApplication::style()->pixelMetric(QStyle::PM_LayoutTopMargin);
     m_iPieChartSize = 1.5f * qApp->style()->pixelMetric(QStyle::PM_LargeIconSize);
-    m_pieChartRect = QRect(1.5 * m_iMargin, 1.5 * m_iMargin, m_iPieChartSize, m_iPieChartSize);
-    m_size = QSize(6 * m_iPieChartSize, 1.8 * m_iPieChartSize);
+    m_pieChartRect = QRect(1.5 * m_iMarginLeft, 1.5 * m_iMarginTop, m_iPieChartSize, m_iPieChartSize);
+    m_size = QSize(6 * m_iPieChartSize, 2 * m_iPieChartSize);
 }
 
 void UIChart::setFontSize(int iFontSize)
@@ -213,7 +219,7 @@ void UIChart::computeFontSize()
 
         do{
             int iWidth = QFontMetrics(m_font).width(strText);
-            if (iWidth + 2 * m_iMargin > m_size.width())
+            if (iWidth + m_iMarginLeft + m_iMarginRight > m_size.width())
                 --iFontSize;
             else
                 break;
@@ -229,18 +235,45 @@ void UIChart::paintEvent(QPaintEvent *pEvent)
     painter.setRenderHint(QPainter::Antialiasing);
 
     /* Draw a rectanglar grid over which we will draw the line graphs: */
-    float fChartHeight = height() - 2 * m_iMargin;
-    float fChartWidth = width() - 2 * m_iMargin;
-    painter.setPen(QColor(120, 120, 120));
-    painter.drawRect(QRect(m_iMargin, m_iMargin, fChartWidth, fChartHeight));
+    int iChartHeight = height() - (m_iMarginTop + m_iMarginBottom);
+    int iChartWidth = width() - (m_iMarginLeft + m_iMarginRight);
+    QColor mainAxisColor(120, 120, 120);
+    painter.setPen(mainAxisColor);
+    painter.drawRect(QRect(m_iMarginLeft, m_iMarginTop, iChartWidth, iChartHeight));
     painter.setPen(QColor(200, 200, 200));
-    int iYParts = 4;
-    for (int i = 1; i < iYParts; ++i)
-        painter.drawLine(m_iMargin, m_iMargin + i *fChartHeight / (float)iYParts, width() - m_iMargin, m_iMargin + i * fChartHeight / (float)iYParts);
-    int iXParts = 5;
-    for (int i = 1; i < iXParts; ++i)
-        painter.drawLine(m_iMargin + i * fChartWidth / (float)iXParts, m_iMargin, m_iMargin + i * fChartWidth / (float)iXParts, height() - m_iMargin);
-
+    /* Y subaxes: */
+    int iYSubAxisCount = 3;
+    for (int i = 0; i < iYSubAxisCount; ++i)
+    {
+        float fSubAxisY = m_iMarginTop + (i + 1) * iChartHeight / (float) (iYSubAxisCount + 1);
+        painter.drawLine(m_iMarginLeft, fSubAxisY,
+                         width() - m_iMarginRight, fSubAxisY);
+    }
+    /* X subaxes: */
+    int iXSubAxisCount = 5;
+    for (int i = 0; i < iXSubAxisCount; ++i)
+    {
+        float fSubAxisX = m_iMarginLeft + (i + 1) * iChartWidth / (float) (iXSubAxisCount + 1);
+        painter.drawLine(fSubAxisX, m_iMarginTop, fSubAxisX, height() - m_iMarginBottom);
+    }
+    /* Draw XAxis tick labels: */
+    painter.setPen(mainAxisColor);
+    int iTotalSeconds = iPeriod * iMaximumQueueSize;
+    QFontMetrics fontMetrics(painter.font());
+    int iFontHeight = fontMetrics.height();
+    for (int i = 0; i < iXSubAxisCount + 2; ++i)
+    {
+        int iTextX = m_iMarginLeft + i * iChartWidth / (float) (iXSubAxisCount + 1);
+        QString strCurentSec = QString::number(iTotalSeconds - i * iTotalSeconds / (float)(iXSubAxisCount + 1));
+        int iTextWidth = fontMetrics.width(strCurentSec);
+        if (i == 0)
+        {
+            strCurentSec += " seconds";
+            painter.drawText(iTextX, height() - m_iMarginBottom + iFontHeight, strCurentSec);
+        }
+        else
+            painter.drawText(iTextX - 0.5 * iTextWidth, height() - m_iMarginBottom + iFontHeight, strCurentSec);
+    }
 
     /* Draw a half-transparent rectangle over the whole widget to indicate the it is disabled: */
     if (!isEnabled())
@@ -254,18 +287,16 @@ void UIChart::paintEvent(QPaintEvent *pEvent)
         return;
 
     ULONG iMaximum = m_pSubMetric->maximum();
-    if (m_pSubMetric->isPercentage())
-        iMaximum = 100;
     if (iMaximum == 0)
         return;
-
+    /* Draw the data lines: */
     if (isEnabled())
     {
-        float fBarWidth = fChartWidth / (float) (iMaximumQueueSize - 1);
-        float fH = fChartHeight / (float)iMaximum;
+        float fBarWidth = iChartWidth / (float) (iMaximumQueueSize - 1);
+        float fH = iChartHeight / (float)iMaximum;
         if (m_fUseGradientLineColor)
         {
-            QLinearGradient gradient(0, 0, 0, fChartHeight);
+            QLinearGradient gradient(0, 0, 0, iChartHeight);
             gradient.setColorAt(1.0, Qt::green);
             gradient.setColorAt(0.0, Qt::red);
             painter.setPen(QPen(gradient, 2.5));
@@ -279,13 +310,41 @@ void UIChart::paintEvent(QPaintEvent *pEvent)
             {
                 int j = i + 1;
                 float fHeight = fH * data->at(i);
-                float fX = (width() - m_iMargin) - ((data->size() -i - 1) * fBarWidth);
+                float fX = (width() - m_iMarginRight) - ((data->size() -i - 1) * fBarWidth);
                 float fHeight2 = fH * data->at(j);
-                float fX2 = (width() - m_iMargin) - ((data->size() -j - 1) * fBarWidth);
-                QLineF bar(fX, height() - (fHeight + m_iMargin), fX2, height() - (fHeight2 + m_iMargin));
+                float fX2 = (width() - m_iMarginRight) - ((data->size() -j - 1) * fBarWidth);
+                QLineF bar(fX, height() - (fHeight + m_iMarginBottom), fX2, height() - (fHeight2 + m_iMarginBottom));
                 painter.drawLine(bar);
             }
         }
+    }
+
+    /* Draw YAxis tick labels: */
+    painter.setPen(mainAxisColor);
+    for (int i = 1; i < iYSubAxisCount + 2; ++i)
+    {
+
+        int iTextY = m_iMarginTop + i * iChartHeight / (float) (iYSubAxisCount + 1);
+        QString strValue;
+        ULONG iValue = iMaximum - (i +1) * iMaximum / (float) (iYSubAxisCount + 2);
+        if (m_pSubMetric->unit().compare("%", Qt::CaseInsensitive) == 0)
+            strValue = QString::number(iValue);
+        else if (m_pSubMetric->unit().compare("kb", Qt::CaseInsensitive) == 0)
+            strValue = uiCommon().formatSize(_1K * (quint64)iValue);
+        else if (m_pSubMetric->unit().compare("b", Qt::CaseInsensitive) == 0 ||
+                 m_pSubMetric->unit().compare("b/s", Qt::CaseInsensitive) == 0)
+            strValue = uiCommon().formatSize(iValue);
+
+        // QString strCurentSec = QString::number(iTotalSeconds - i * iTotalSeconds / (float)(iXSubAxisCount + 1));
+        // int iTextWidth = fontMetrics.width(strCurentSec);
+        // if (i == 0)
+        // {
+        //     strCurentSec += " seconds";
+        //     painter.drawText(iTextX, height() - m_iMarginBottom + iFontHeight, strCurentSec);
+        // }
+        // else
+        //     painter.drawText(iTextX - 0.5 * iTextWidth, height() - m_iMarginBottom + iFontHeight, strCurentSec);
+        painter.drawText(width() - 0.9 * m_iMarginRight, iTextY, strValue);
     }
 
     if (m_fDrawPieChart)
@@ -343,8 +402,6 @@ UISubMetric::UISubMetric(const QString &strName, const QString &strUnit, int iMa
     , m_iMaximumQueueSize(iMaximumQueueSize)
     , m_fRequiresGuestAdditions(false)
 {
-    if (isPercentage())
-        m_iMaximum = 100;
 }
 
 UISubMetric::UISubMetric()
@@ -391,11 +448,6 @@ const QQueue<ULONG> *UISubMetric::data(int iDataSeriesIndex) const
     if (iDataSeriesIndex >= 2)
         return 0;
     return &m_data[iDataSeriesIndex];
-}
-
-bool UISubMetric::isPercentage() const
-{
-    return m_strUnit == "%";
 }
 
 bool UISubMetric::requiresGuestAdditions() const
@@ -654,6 +706,7 @@ void UIPerformanceMonitor::updateCPUGraphsAndMetric(ULONG iLoadPercentage)
 {
     UISubMetric &CPUMetric = m_subMetrics[m_strCPUMetricName];
     CPUMetric.addData(0, iLoadPercentage);
+    CPUMetric.setMaximum(100);
     if (m_infoLabels.contains(m_strCPUMetricName) && m_infoLabels[m_strCPUMetricName])
     {
         QString strInfo;

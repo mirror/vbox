@@ -62,8 +62,6 @@ public:
     void addData(int iDataSeriesIndex, ULONG fData);
     const QQueue<ULONG> *data(int iDataSeriesIndex) const;
 
-    bool isPercentage() const;
-
     bool requiresGuestAdditions() const;
     void setRequiresGuestAdditions(bool fRequiresGAs);
 
