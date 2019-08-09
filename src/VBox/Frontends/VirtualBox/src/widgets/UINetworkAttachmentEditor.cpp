@@ -251,7 +251,10 @@ void UINetworkAttachmentEditor::prepare()
 
         /* Create type label: */
         if (m_fWithLabels)
+        {
             m_pLabelType = new QLabel(this);
+            m_pLabelType->setAlignment(Qt::AlignVCenter | Qt::AlignRight);
+        }
         if (m_pLabelType)
             pMainLayout->addWidget(m_pLabelType, 0, iColumn++);
 
@@ -282,7 +285,10 @@ void UINetworkAttachmentEditor::prepare()
 
         /* Create name label: */
         if (m_fWithLabels)
+        {
             m_pLabelName = new QLabel(this);
+            m_pLabelName->setAlignment(Qt::AlignVCenter | Qt::AlignRight);
+        }
         if (m_pLabelName)
             pMainLayout->addWidget(m_pLabelName, 1, iColumn++);
 
@@ -446,8 +452,21 @@ void UINetworkAttachmentEditor::retranslateNameDescription()
 
 void UINetworkAttachmentEditor::revalidate()
 {
-    /// @todo Implement validation!
-    emit sigValidChanged(true);
+    bool fSuccess = false;
+    switch (valueType())
+    {
+        case KNetworkAttachmentType_Bridged:
+        case KNetworkAttachmentType_Internal:
+        case KNetworkAttachmentType_HostOnly:
+        case KNetworkAttachmentType_Generic:
+        case KNetworkAttachmentType_NATNetwork:
+            fSuccess = !valueName(valueType()).isEmpty();
+            break;
+        default:
+            fSuccess = true;
+            break;
+    }
+    emit sigValidChanged(fSuccess);
 }
 
 /* static */
