@@ -978,6 +978,7 @@ public:
     /** Constructor, passes @a pSession to the UISessionStateStatusBarIndicator constructor. */
     UIIndicatorFeatures(UISession *pSession)
         : UISessionStateStatusBarIndicator(IndicatorType_Features, pSession)
+        , m_iCPULoadPercentage(0)
     {
         /* Assign state-icons: */
         setStateIcon(KVMExecutionEngine_NotSet, UIIconPool::iconSet(":/vtx_amdv_disabled_16px.png"));
@@ -985,8 +986,66 @@ public:
         setStateIcon(KVMExecutionEngine_HwVirt, UIIconPool::iconSet(":/vtx_amdv_16px.png"));
         /** @todo New indicator icon, vm_execution_engine_native_api_16px.png, V inside a turtle / tortoise.  @bugref{9044} */
         setStateIcon(KVMExecutionEngine_NativeApi, UIIconPool::iconSet(":/vm_execution_engine_native_api_16px.png"));
+
+        /* Configure machine state-change listener: */
+        connect(m_pSession, SIGNAL(sigMachineStateChange()),
+                this, SLOT(sltHandleMachineStateChange()));
+        m_pTimerAutoUpdate = new QTimer(this);
+        if (m_pTimerAutoUpdate)
+        {
+            connect(m_pTimerAutoUpdate, &QTimer::timeout, this, &UIIndicatorFeatures::sltTimeout);
+            /* Start the timer immediately if the machine is running: */
+            sltHandleMachineStateChange();
+        }
         /* Translate finally: */
         retranslateUi();
+    }
+
+protected:
+
+    virtual void paintEvent(QPaintEvent *pEvent) /* override */
+    {
+        UISessionStateStatusBarIndicator::paintEvent(pEvent);
+        QPainter painter(this);
+
+        /* Draw a thin bar on th right hand side of the icon indication CPU load: */
+        QLinearGradient gradient(0, 0, 0, height());
+        gradient.setColorAt(1.0, Qt::green);
+        gradient.setColorAt(0.0, Qt::red);
+        painter.setPen(Qt::NoPen);
+        painter.setBrush(gradient);
+        /* Use 20% of the icon width to draw the indicator bar: */
+        painter.drawRect(0.8 * width(), (100 - m_iCPULoadPercentage) / 100.f * height(), width(),  height());
+    }
+
+private slots:
+
+    /** Updates auto-update timer depending on machine state. */
+    void sltHandleMachineStateChange()
+    {
+        if (m_pSession->machineState() == KMachineState_Running)
+        {
+            /* Start auto-update timer otherwise: */
+            m_pTimerAutoUpdate->start(1000);
+            return;
+        }
+        /* Stop auto-update timer otherwise: */
+        m_pTimerAutoUpdate->stop();
+    }
+
+    void sltTimeout()
+    {
+        if (!m_pSession)
+            return;
+        CMachineDebugger comMachineDebugger = m_pSession->debugger();
+        if (comMachineDebugger.isNull())
+            return;
+        ULONG aPctExecuting;
+        ULONG aPctHalted;
+        ULONG aPctOther;
+        comMachineDebugger.GetCPULoad(0x7fffffff, aPctExecuting, aPctHalted, aPctOther);
+        m_iCPULoadPercentage = aPctExecuting;
+        update();
     }
 
 private:
@@ -1053,6 +1112,9 @@ private:
         /* Update indicator state: */
         setState(enmEngine);
     }
+
+    QTimer *m_pTimerAutoUpdate;
+    ULONG m_iCPULoadPercentage;
 };
 
 
