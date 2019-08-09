@@ -1012,10 +1012,19 @@ protected:
         QLinearGradient gradient(0, 0, 0, height());
         gradient.setColorAt(1.0, Qt::green);
         gradient.setColorAt(0.0, Qt::red);
+
         painter.setPen(Qt::NoPen);
         painter.setBrush(gradient);
         /* Use 20% of the icon width to draw the indicator bar: */
-        painter.drawRect(0.8 * width(), (100 - m_iCPULoadPercentage) / 100.f * height(), width(),  height());
+        painter.drawRect(QRect(QPoint(0.8 * width(), (100 - m_iCPULoadPercentage) / 100.f * height()),
+                               QPoint(width(),  height())));
+        /* Use an empty rect. around the CPU load bar: */
+        int iBorderThickness = 1;
+        QRect outRect(QPoint(0.8 * width(), 0),
+                      QPoint(width() - 2 * iBorderThickness,  height() - 2 * iBorderThickness));
+        painter.setPen(QPen(Qt::black, 1));
+        painter.setBrush(Qt::NoBrush);
+        painter.drawRect(outRect);
     }
 
 private slots:
