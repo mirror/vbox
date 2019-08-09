@@ -1018,7 +1018,7 @@ protected:
         /* Use 20% of the icon width to draw the indicator bar: */
         painter.drawRect(QRect(QPoint(0.8 * width(), (100 - m_iCPULoadPercentage) / 100.f * height()),
                                QPoint(width(),  height())));
-        /* Use an empty rect. around the CPU load bar: */
+        /* Draw an empty rect. around the CPU load bar: */
         int iBorderThickness = 1;
         QRect outRect(QPoint(0.8 * width(), 0),
                       QPoint(width() - 2 * iBorderThickness,  height() - 2 * iBorderThickness));
