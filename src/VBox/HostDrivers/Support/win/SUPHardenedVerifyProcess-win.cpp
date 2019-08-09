@@ -872,7 +872,7 @@ static int supHardNtVpVerifyImageMemoryCompare(PSUPHNTVPSTATE pThis, PSUPHNTVPIM
      * Figure out areas we should skip during comparison.
      */
     uint32_t         cSkipAreas = 0;
-    SUPHNTVPSKIPAREA aSkipAreas[5];
+    SUPHNTVPSKIPAREA aSkipAreas[6];
     if (pImage->fNtCreateSectionPatch)
     {
         RTLDRADDR uValue;
@@ -897,6 +897,13 @@ static int supHardNtVpVerifyImageMemoryCompare(PSUPHNTVPSTATE pThis, PSUPHNTVPIM
         rc = RTLdrGetSymbolEx(pImage->pCacheEntry->hLdrMod, pbBits, 0, UINT32_MAX, "LdrInitializeThunk", &uValue);
         if (RT_FAILURE(rc))
             return supHardNtVpSetInfo2(pThis, rc, "%s: Failed to find 'LdrInitializeThunk': %Rrc", pImage->pszName, rc);
+        aSkipAreas[cSkipAreas].uRva = (uint32_t)uValue;
+        aSkipAreas[cSkipAreas++].cb = 14;
+
+        /* Ignore our patched KiUserApcDispatcher hack. */
+        rc = RTLdrGetSymbolEx(pImage->pCacheEntry->hLdrMod, pbBits, 0, UINT32_MAX, "KiUserApcDispatcher", &uValue);
+        if (RT_FAILURE(rc))
+            return supHardNtVpSetInfo2(pThis, rc, "%s: Failed to find 'KiUserApcDispatcher': %Rrc", pImage->pszName, rc);
         aSkipAreas[cSkipAreas].uRva = (uint32_t)uValue;
         aSkipAreas[cSkipAreas++].cb = 14;
 
@@ -1518,12 +1525,12 @@ static bool supHardNtVpFreeOrReplacePrivateExecMemory(PSUPHNTVPSTATE pThis, HAND
 
     /*
      * In the BSOD workaround mode, we need to make a copy of the memory before
-     * freeing it.
+     * freeing it.  Bird abuses this code for logging purposes too.
      */
     uintptr_t   uCopySrc  = (uintptr_t)pvFree;
     size_t      cbCopy    = 0;
     void       *pvCopy    = NULL;
-    if (pThis->fFlags & SUPHARDNTVP_F_EXEC_ALLOC_REPLACE_WITH_RW)
+    //if (pThis->fFlags & SUPHARDNTVP_F_EXEC_ALLOC_REPLACE_WITH_RW)
     {
         cbCopy = cbFree;
         pvCopy = RTMemAllocZ(cbCopy);
@@ -1537,7 +1544,15 @@ static bool supHardNtVpFreeOrReplacePrivateExecMemory(PSUPHNTVPSTATE pThis, HAND
         if (!NT_SUCCESS(rcNt))
             supHardNtVpSetInfo2(pThis, VERR_SUP_VP_REPLACE_VIRTUAL_MEMORY_FAILED,
                                 "Error reading data from original alloc: %#x (%p LB %#zx)", rcNt, uCopySrc, cbCopy, rcNt);
-        supR3HardenedLogFlush();
+        for (size_t off = 0; off < cbCopy; off += 256)
+        {
+            size_t const cbChunk = RT_MIN(256, cbCopy - off);
+            void const  *pvChunk = (uint8_t const *)pvCopy + off;
+            if (!ASMMemIsZero(pvChunk, cbChunk))
+                SUP_DPRINTF(("%.*RhxD\n", cbChunk, pvChunk));
+        }
+        if (pThis->fFlags & SUPHARDNTVP_F_EXEC_ALLOC_REPLACE_WITH_RW)
+            supR3HardenedLogFlush();
     }
 
     /*
