@@ -225,8 +225,10 @@
               Source="$(env.PATH_OUT)\bin\VBoxBalloonCtrl.exe"/>
         <File Id="file_VBoxBugReport.exe" Name="VBoxBugReport.exe"
               Source="$(env.PATH_OUT)\bin\VBoxBugReport.exe"/>
+<?if $(env.VBOX_WITH_VBOX_IMG) = "yes" ?>
         <File Id="file_vbox_img.exe" Name="vbox-img.exe"
               Source="$(env.PATH_OUT)\bin\vbox-img.exe"/>
+<?endif ?>
 
         <!-- Misc tools -->
         <File Id="file_VBoxNetDHCP.exe" Name="VBoxNetDHCP.exe"
