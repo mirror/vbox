@@ -21,7 +21,6 @@
 #include <iprt/asm.h>
 #include <iprt/mem.h>
 #include <iprt/file.h>
-#include <iprt/aiomgr.h>
 #include <iprt/string.h>
 
 #include "VDIoBackend.h"
@@ -32,8 +31,6 @@ typedef struct VDIOBACKEND
 {
     /** Memory I/O backend handle. */
     PVDIOBACKENDMEM   pIoMem;
-    /** Async I/O manager. */
-    RTAIOMGR          hAioMgr;
     /** Users of the memory backend. */
     volatile uint32_t cRefsIoMem;
     /** Users of the file backend. */
@@ -53,21 +50,11 @@ typedef struct VDIOSTORAGE
     {
         /** Memory disk handle. */
         PVDMEMDISK    pMemDisk;
-        struct
-        {
-            /** file handle. */
-            RTFILE        hFile;
-            /** I/O manager file handle. */
-            RTAIOMGRFILE  hAioMgrFile;
-        } File;
+        /** file handle. */
+        RTFILE        hFile;
     } u;
 } VDIOSTORAGE;
 
-static DECLCALLBACK(void) vdIoBackendFileIoComplete(RTAIOMGRFILE hAioMgrFile, int rcReq, void *pvUser)
-{
-    PVDIOSTORAGE pIoStorage = (PVDIOSTORAGE)RTAioMgrFileGetUser(hAioMgrFile);
-    pIoStorage->pfnComplete(pvUser, rcReq);
-}
 
 int VDIoBackendCreate(PPVDIOBACKEND ppIoBackend)
 {
@@ -76,10 +63,7 @@ int VDIoBackendCreate(PPVDIOBACKEND ppIoBackend)
 
     pIoBackend = (PVDIOBACKEND)RTMemAllocZ(sizeof(VDIOBACKEND));
     if (pIoBackend)
-    {
-        pIoBackend->hAioMgr = NIL_RTAIOMGR;
         *ppIoBackend = pIoBackend;
-    }
     else
         rc = VERR_NO_MEMORY;
 
@@ -90,8 +74,6 @@ void VDIoBackendDestroy(PVDIOBACKEND pIoBackend)
 {
     if (pIoBackend->pIoMem)
         VDIoBackendMemDestroy(pIoBackend->pIoMem);
-    if (pIoBackend->hAioMgr)
-        RTAioMgrRelease(pIoBackend->hAioMgr);
     RTMemFree(pIoBackend);
 }
 
@@ -124,27 +106,9 @@ int VDIoBackendStorageCreate(PVDIOBACKEND pIoBackend, const char *pszBackend,
         }
         else if (!strcmp(pszBackend, "file"))
         {
-            pIoStorage->fMemory = false;
-            uint32_t cRefs = ASMAtomicIncU32(&pIoBackend->cRefsFile);
-            if (   cRefs == 1
-                && pIoBackend->hAioMgr == NIL_RTAIOMGR)
-                rc = RTAioMgrCreate(&pIoBackend->hAioMgr, 1024);
-
-            if (RT_SUCCESS(rc))
-            {
-                /* Create file. */
-                rc = RTFileOpen(&pIoStorage->u.File.hFile, pszName,
-                                RTFILE_O_READWRITE | RTFILE_O_CREATE | RTFILE_O_ASYNC_IO | RTFILE_O_NO_CACHE | RTFILE_O_DENY_NONE);
-                if (RT_SUCCESS(rc))
-                {
-                    /* Create file handle for I/O manager. */
-                    rc = RTAioMgrFileCreate(pIoBackend->hAioMgr, pIoStorage->u.File.hFile,
-                                            vdIoBackendFileIoComplete, pIoStorage,
-                                            &pIoStorage->u.File.hAioMgrFile);
-                    if (RT_FAILURE(rc))
-                        RTFileClose(pIoStorage->u.File.hFile);
-                }
-            }
+            /* Create file. */
+            rc = RTFileOpen(&pIoStorage->u.hFile, pszName,
+                            RTFILE_O_READWRITE | RTFILE_O_CREATE | RTFILE_O_ASYNC_IO | RTFILE_O_NO_CACHE | RTFILE_O_DENY_NONE);
 
             if (RT_FAILURE(rc))
                 ASMAtomicDecU32(&pIoBackend->cRefsFile);
@@ -172,8 +136,7 @@ void VDIoBackendStorageDestroy(PVDIOSTORAGE pIoStorage)
     }
     else
     {
-        RTAioMgrFileRelease(pIoStorage->u.File.hAioMgrFile);
-        RTFileClose(pIoStorage->u.File.hFile);
+        RTFileClose(pIoStorage->u.hFile);
         ASMAtomicDecU32(&pIoStorage->pIoBackend->cRefsFile);
     }
     RTMemFree(pIoStorage);
@@ -212,36 +175,19 @@ int VDIoBackendTransfer(PVDIOSTORAGE pIoStorage, VDIOTXDIR enmTxDir, uint64_t of
     else
     {
         if (!fSync)
-        {
-            switch (enmTxDir)
-            {
-                case VDIOTXDIR_READ:
-                    rc = RTAioMgrFileRead(pIoStorage->u.File.hAioMgrFile, off, pSgBuf, cbTransfer, pvUser);
-                    break;
-                case VDIOTXDIR_WRITE:
-                    rc = RTAioMgrFileWrite(pIoStorage->u.File.hAioMgrFile, off, pSgBuf, cbTransfer, pvUser);
-                    break;
-                case VDIOTXDIR_FLUSH:
-                    rc = RTAioMgrFileFlush(pIoStorage->u.File.hAioMgrFile, pvUser);
-                    break;
-                default:
-                    AssertMsgFailed(("Invalid transfer type %d\n", enmTxDir));
-            }
-            if (rc == VERR_FILE_AIO_IN_PROGRESS)
-                rc = VINF_SUCCESS;
-        }
+            rc = VERR_NOT_IMPLEMENTED;
         else
         {
             switch (enmTxDir)
             {
                 case VDIOTXDIR_READ:
-                    rc = RTFileSgReadAt(pIoStorage->u.File.hFile, off, pSgBuf, cbTransfer, NULL);
+                    rc = RTFileSgReadAt(pIoStorage->u.hFile, off, pSgBuf, cbTransfer, NULL);
                     break;
                 case VDIOTXDIR_WRITE:
-                    rc = RTFileSgWriteAt(pIoStorage->u.File.hFile, off, pSgBuf, cbTransfer, NULL);
+                    rc = RTFileSgWriteAt(pIoStorage->u.hFile, off, pSgBuf, cbTransfer, NULL);
                     break;
                 case VDIOTXDIR_FLUSH:
-                    rc = RTFileFlush(pIoStorage->u.File.hFile);
+                    rc = RTFileFlush(pIoStorage->u.hFile);
                     break;
                 default:
                     AssertMsgFailed(("Invalid transfer type %d\n", enmTxDir));
@@ -261,7 +207,7 @@ int VDIoBackendStorageSetSize(PVDIOSTORAGE pIoStorage, uint64_t cbSize)
         rc = VDMemDiskSetSize(pIoStorage->u.pMemDisk, cbSize);
     }
     else
-        rc = RTFileSetSize(pIoStorage->u.File.hFile, cbSize);
+        rc = RTFileSetSize(pIoStorage->u.hFile, cbSize);
 
     return rc;
 }
@@ -275,7 +221,7 @@ int VDIoBackendStorageGetSize(PVDIOSTORAGE pIoStorage, uint64_t *pcbSize)
         rc = VDMemDiskGetSize(pIoStorage->u.pMemDisk, pcbSize);
     }
     else
-        rc = RTFileGetSize(pIoStorage->u.File.hFile, pcbSize);
+        rc = RTFileGetSize(pIoStorage->u.hFile, pcbSize);
 
     return rc;
 }
