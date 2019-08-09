@@ -38,8 +38,28 @@ enum MachineAttribute
     MachineAttribute_GraphicsControllerType,
     MachineAttribute_AudioHostDriverType,
     MachineAttribute_AudioControllerType,
+    MachineAttribute_NetworkAttachmentType,
     MachineAttribute_USBControllerType,
 };
+
+/** Contains short network adapter description. */
+struct UINetworkAdapterDescriptor
+{
+    /** Composes network adapter descriptor for certain @a iSlot, @a enmType and @a strName. */
+    UINetworkAdapterDescriptor(int iSlot = -1,
+                               KNetworkAttachmentType enmType = KNetworkAttachmentType_Null,
+                               const QString &strName = QString())
+        : m_iSlot(iSlot), m_enmType(enmType), m_strName(strName)
+    {}
+
+    /** Holds the slot of described network adapter. */
+    int                     m_iSlot;
+    /** Holds the attachment type of described network adapter. */
+    KNetworkAttachmentType  m_enmType;
+    /** Holds the adapter name of described network adapter. */
+    QString                 m_strName;
+};
+Q_DECLARE_METATYPE(UINetworkAdapterDescriptor);
 
 /** A set of USB controller types. */
 typedef QSet<KUSBControllerType> UIUSBControllerTypeSet;

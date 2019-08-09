@@ -62,6 +62,7 @@
 #include "CDHCPServer.h"
 #include "CNATEngine.h"
 #include "CNATNetwork.h"
+#include "CNetworkAdapter.h"
 #include "CRangedIntegerFormValue.h"
 #include "CSerialPort.h"
 #include "CSharedFolder.h"
@@ -1246,6 +1247,13 @@ void UIMessageCenter::cannotChangeAudioAdapterAttribute(const CAudioAdapter &com
 {
     error(pParent, MessageType_Error,
           tr("Failed to change audio adapter attribute."),
+          UIErrorString::formatErrorInfo(comAdapter));
+}
+
+void UIMessageCenter::cannotChangeNetworkAdapterAttribute(const CNetworkAdapter &comAdapter, QWidget *pParent /* = 0 */) const
+{
+    error(pParent, MessageType_Error,
+          tr("Failed to change network adapter attribute."),
           UIErrorString::formatErrorInfo(comAdapter));
 }
 

@@ -26,6 +26,7 @@
 
 /* COM includes: */
 #include "CAudioAdapter.h"
+#include "CNetworkAdapter.h"
 #include "CUSBController.h"
 
 
@@ -210,6 +211,43 @@ void UIMachineAttributeSetter::setMachineAttribute(const CMachine &comConstMachi
                 if (!comAdapter.isOk())
                 {
                     msgCenter().cannotChangeAudioAdapterAttribute(comAdapter);
+                    fErrorHappened = true;
+                }
+                break;
+            }
+            case MachineAttribute_NetworkAttachmentType:
+            {
+                /* Acquire value itself: */
+                const UINetworkAdapterDescriptor nad = guiAttribute.value<UINetworkAdapterDescriptor>();
+                /* Acquire network adapter: */
+                CNetworkAdapter comAdapter = comMachine.GetNetworkAdapter(nad.m_iSlot);
+                if (!comMachine.isOk())
+                {
+                    msgCenter().cannotAcquireMachineParameter(comMachine);
+                    fErrorHappened = true;
+                    break;
+                }
+                /* Change network adapter attachment type: */
+                comAdapter.SetAttachmentType(nad.m_enmType);
+                if (!comAdapter.isOk())
+                {
+                    msgCenter().cannotChangeNetworkAdapterAttribute(comAdapter);
+                    fErrorHappened = true;
+                    break;
+                }
+                /* Change network adapter name: */
+                switch (nad.m_enmType)
+                {
+                    case KNetworkAttachmentType_Bridged: comAdapter.SetBridgedInterface(nad.m_strName); break;
+                    case KNetworkAttachmentType_Internal: comAdapter.SetInternalNetwork(nad.m_strName); break;
+                    case KNetworkAttachmentType_HostOnly: comAdapter.SetHostOnlyInterface(nad.m_strName); break;
+                    case KNetworkAttachmentType_Generic: comAdapter.SetGenericDriver(nad.m_strName); break;
+                    case KNetworkAttachmentType_NATNetwork: comAdapter.SetNATNetwork(nad.m_strName); break;
+                    default: break;
+                }
+                if (!comAdapter.isOk())
+                {
+                    msgCenter().cannotChangeNetworkAdapterAttribute(comAdapter);
                     fErrorHappened = true;
                 }
                 break;

@@ -43,6 +43,7 @@
 #include "UIIconPool.h"
 #include "UIMachineAttributeSetter.h"
 #include "UINameAndSystemEditor.h"
+#include "UINetworkAttachmentEditor.h"
 #include "UIVideoMemoryEditor.h"
 #include "UIVirtualBoxManager.h"
 
@@ -61,6 +62,7 @@ enum AnchorRole
     AnchorRole_Storage,
     AnchorRole_AudioHostDriverType,
     AnchorRole_AudioControllerType,
+    AnchorRole_NetworkAttachmentType,
     AnchorRole_USBControllerType,
 #ifndef VBOX_WS_MAC
     AnchorRole_MenuBar,
@@ -178,6 +180,7 @@ void UIDetailsElement::updateAppearance()
     m_pTextPane->setAnchorRoleRestricted("#attach", cal != ConfigurationAccessLevel_Full);
     m_pTextPane->setAnchorRoleRestricted("#audio_host_driver_type", cal != ConfigurationAccessLevel_Full);
     m_pTextPane->setAnchorRoleRestricted("#audio_controller_type", cal != ConfigurationAccessLevel_Full);
+    m_pTextPane->setAnchorRoleRestricted("#network_attachment_type", cal != ConfigurationAccessLevel_Full);
     m_pTextPane->setAnchorRoleRestricted("#usb_controller_type", cal != ConfigurationAccessLevel_Full);
 #ifndef VBOX_WS_MAC
     m_pTextPane->setAnchorRoleRestricted("#menu_bar", cal == ConfigurationAccessLevel_Null);
@@ -474,6 +477,7 @@ void UIDetailsElement::sltHandleAnchorClicked(const QString &strAnchor)
     roles["#attach"] = AnchorRole_Storage;
     roles["#audio_host_driver_type"] = AnchorRole_AudioHostDriverType;
     roles["#audio_controller_type"] = AnchorRole_AudioControllerType;
+    roles["#network_attachment_type"] = AnchorRole_NetworkAttachmentType;
     roles["#usb_controller_type"] = AnchorRole_USBControllerType;
 #ifndef VBOX_WS_MAC
     roles["#menu_bar"] = AnchorRole_MenuBar;
@@ -754,6 +758,50 @@ void UIDetailsElement::sltHandleAnchorClicked(const QString &strAnchor)
                 /* Execute popup, change machine name if confirmed: */
                 if (pPopup->exec() == QDialog::Accepted)
                     setMachineAttribute(machine(), MachineAttribute_AudioControllerType, QVariant::fromValue(pEditor->value()));
+
+                /* Delete popup: */
+                delete pPopup;
+            }
+            break;
+        }
+        case AnchorRole_NetworkAttachmentType:
+        {
+            /* Prepare popup: */
+            QPointer<QIDialogContainer> pPopup = new QIDialogContainer(0, Qt::Tool);
+            if (pPopup)
+            {
+                /* Prepare editor: */
+                UINetworkAttachmentEditor *pEditor = new UINetworkAttachmentEditor(pPopup, true /* with label */);
+                if (pEditor)
+                {
+                    pEditor->setValueNames(KNetworkAttachmentType_Bridged, UINetworkAttachmentEditor::bridgedAdapters());
+                    pEditor->setValueNames(KNetworkAttachmentType_Internal, UINetworkAttachmentEditor::internalNetworks());
+                    pEditor->setValueNames(KNetworkAttachmentType_HostOnly, UINetworkAttachmentEditor::hostInterfaces());
+                    pEditor->setValueNames(KNetworkAttachmentType_Generic, UINetworkAttachmentEditor::genericDrivers());
+                    pEditor->setValueNames(KNetworkAttachmentType_NATNetwork, UINetworkAttachmentEditor::natNetworks());
+                    pEditor->setValueType(static_cast<KNetworkAttachmentType>(strData.section(',', 0, 0).section(';', 1, 1).toInt()));
+                    pEditor->setValueName(pEditor->valueType(), strData.section(',', 0, 0).section(';', 2, 2));
+                    connect(pEditor, &UINetworkAttachmentEditor::sigValidChanged,
+                            pPopup.data(), &QIDialogContainer::setOkButtonEnabled);
+                    pPopup->setWidget(pEditor);
+                }
+
+                /* Adjust popup geometry: */
+                pPopup->move(QCursor::pos());
+                pPopup->adjustSize();
+
+                // WORKAROUND:
+                // On Windows, Tool dialogs aren't activated by default by some reason.
+                // So we have created sltActivateWindow wrapping actual activateWindow
+                // to fix that annoying issue.
+                QMetaObject::invokeMethod(pPopup, "sltActivateWindow", Qt::QueuedConnection);
+                /* Execute popup, change machine name if confirmed: */
+                if (pPopup->exec() == QDialog::Accepted)
+                {
+                    UINetworkAdapterDescriptor nad(strData.section(',', 0, 0).section(';', 0, 0).toInt(),
+                                                   pEditor->valueType(), pEditor->valueName(pEditor->valueType()));
+                    setMachineAttribute(machine(), MachineAttribute_NetworkAttachmentType, QVariant::fromValue(nad));
+                }
 
                 /* Delete popup: */
                 delete pPopup;

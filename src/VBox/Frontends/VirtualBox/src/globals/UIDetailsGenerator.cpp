@@ -562,6 +562,7 @@ UITextTable UIDetailsGenerator::generateMachineInformationNetwork(CMachine &comM
     const ulong uCount = uiCommon().virtualBox().GetSystemProperties().GetMaxNetworkAdapters(comMachine.GetChipsetType());
     for (ulong uSlot = 0; uSlot < uCount; ++uSlot)
     {
+        const QString strAnchorType = QString("network_attachment_type");
         const CNetworkAdapter comAdapter = comMachine.GetNetworkAdapter(uSlot);
 
         /* Skip disabled adapters: */
@@ -569,62 +570,115 @@ UITextTable UIDetailsGenerator::generateMachineInformationNetwork(CMachine &comM
             continue;
 
         /* Gather adapter information: */
-        const KNetworkAttachmentType enmType = comAdapter.GetAttachmentType();
-        const QString strAttachmentTemplate = gpConverter->toString(comAdapter.GetAdapterType()).replace(QRegExp("\\s\\(.+\\)"), " (%1)");
+        const KNetworkAttachmentType enmAttachmentType = comAdapter.GetAttachmentType();
+        const QString strAttachmentTemplate = gpConverter->toString(comAdapter.GetAdapterType()).replace(QRegExp("\\s\\(.+\\)"), " (<a href=#%1,%2;%3;%4>%5</a>)");
         QString strAttachmentType;
-        switch (enmType)
+        switch (enmAttachmentType)
         {
             case KNetworkAttachmentType_NAT:
             {
                 if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_NAT)
-                    strAttachmentType = strAttachmentTemplate.arg(gpConverter->toString(enmType));
+                    strAttachmentType = strAttachmentTemplate
+                                            .arg(strAnchorType)
+                                            .arg(uSlot)
+                                            .arg((int)KNetworkAttachmentType_NAT)
+                                            .arg(QString())
+                                            .arg(gpConverter->toString(KNetworkAttachmentType_NAT));
                 break;
             }
             case KNetworkAttachmentType_Bridged:
             {
                 if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_BridgetAdapter)
-                    strAttachmentType = strAttachmentTemplate.arg(QApplication::translate("UIDetails", "Bridged Adapter, %1", "details (network)")
-                                                                  .arg(comAdapter.GetBridgedInterface()));
+                {
+                    const QString strName = comAdapter.GetBridgedInterface();
+                    strAttachmentType = strAttachmentTemplate
+                                            .arg(strAnchorType)
+                                            .arg(uSlot)
+                                            .arg((int)KNetworkAttachmentType_Bridged)
+                                            .arg(strName)
+                                            .arg(QApplication::translate("UIDetails", "Bridged Adapter, %1", "details (network)")
+                                                 .arg(strName));
+                }
                 break;
             }
             case KNetworkAttachmentType_Internal:
             {
                 if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_InternalNetwork)
-                    strAttachmentType = strAttachmentTemplate.arg(QApplication::translate("UIDetails", "Internal Network, '%1'", "details (network)")
-                                                                  .arg(comAdapter.GetInternalNetwork()));
+                {
+                    const QString strName = comAdapter.GetInternalNetwork();
+                    strAttachmentType = strAttachmentTemplate
+                                            .arg(strAnchorType)
+                                            .arg(uSlot)
+                                            .arg((int)KNetworkAttachmentType_Internal)
+                                            .arg(strName)
+                                            .arg(QApplication::translate("UIDetails", "Internal Network, '%1'", "details (network)")
+                                                 .arg(strName));
+                }
                 break;
             }
             case KNetworkAttachmentType_HostOnly:
             {
                 if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_HostOnlyAdapter)
-                    strAttachmentType = strAttachmentTemplate.arg(QApplication::translate("UIDetails", "Host-only Adapter, '%1'", "details (network)")
-                                                                  .arg(comAdapter.GetHostOnlyInterface()));
+                {
+                    const QString strName = comAdapter.GetHostOnlyInterface();
+                    strAttachmentType = strAttachmentTemplate
+                                            .arg(strAnchorType)
+                                            .arg(uSlot)
+                                            .arg((int)KNetworkAttachmentType_HostOnly)
+                                            .arg(strName)
+                                            .arg(QApplication::translate("UIDetails", "Host-only Adapter, '%1'", "details (network)")
+                                                 .arg(strName));
+                }
                 break;
             }
             case KNetworkAttachmentType_Generic:
             {
                 if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_GenericDriver)
                 {
+                    const QString strName = comAdapter.GetGenericDriver();
                     const QString strGenericDriverProperties(summarizeGenericProperties(comAdapter));
-                    strAttachmentType = strGenericDriverProperties.isNull() ?
-                        strAttachmentTemplate.arg(QApplication::translate("UIDetails", "Generic Driver, '%1'", "details (network)")
-                                                  .arg(comAdapter.GetGenericDriver())) :
-                        strAttachmentTemplate.arg(QApplication::translate("UIDetails", "Generic Driver, '%1' { %2 }", "details (network)")
-                                                  .arg(comAdapter.GetGenericDriver(), strGenericDriverProperties));
+                    strAttachmentType = strGenericDriverProperties.isNull()
+                                      ? strAttachmentTemplate
+                                            .arg(strAnchorType)
+                                            .arg(uSlot)
+                                            .arg((int)KNetworkAttachmentType_Generic)
+                                            .arg(strName)
+                                            .arg(QApplication::translate("UIDetails", "Generic Driver, '%1'", "details (network)")
+                                                 .arg(strName))
+                                      : strAttachmentTemplate
+                                            .arg(strAnchorType)
+                                            .arg(uSlot)
+                                            .arg((int)KNetworkAttachmentType_Generic)
+                                            .arg(strName)
+                                            .arg(QApplication::translate("UIDetails", "Generic Driver, '%1' { %2 }", "details (network)")
+                                                 .arg(strName, strGenericDriverProperties));
                 }
                 break;
             }
             case KNetworkAttachmentType_NATNetwork:
             {
                 if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_NATNetwork)
-                    strAttachmentType = strAttachmentTemplate.arg(QApplication::translate("UIDetails", "NAT Network, '%1'", "details (network)")
-                                                                  .arg(comAdapter.GetNATNetwork()));
+                {
+                    const QString strName = comAdapter.GetNATNetwork();
+                    strAttachmentType = strAttachmentTemplate
+                                            .arg(strAnchorType)
+                                            .arg(uSlot)
+                                            .arg((int)KNetworkAttachmentType_NATNetwork)
+                                            .arg(strName)
+                                            .arg(QApplication::translate("UIDetails", "NAT Network, '%1'", "details (network)")
+                                                 .arg(strName));
+                }
                 break;
             }
             default:
             {
                 if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_NotAttached)
-                    strAttachmentType = strAttachmentTemplate.arg(gpConverter->toString(enmType));
+                    strAttachmentType = strAttachmentTemplate
+                                            .arg(strAnchorType)
+                                            .arg(uSlot)
+                                            .arg((int)enmAttachmentType)
+                                            .arg(QString())
+                                            .arg(gpConverter->toString(enmAttachmentType));
                 break;
             }
         }
