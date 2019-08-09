@@ -139,6 +139,14 @@ VOID VBoxUsbMonMemFree(PVOID pvMem)
 #define VBOXUSBDBG_STRCASE_UNKNOWN(_v) \
         default: LOG((__FUNCTION__": Unknown Value (0n%d), (0x%x)", _v, _v)); return "Unknown"
 
+/* These minor code are semi-undocumented. */
+#ifndef IRP_MN_QUERY_LEGACY_BUS_INFORMATION
+#define IRP_MN_QUERY_LEGACY_BUS_INFORMATION 0x18
+#endif
+#ifndef IRP_MN_DEVICE_ENUMERATED
+#define IRP_MN_DEVICE_ENUMERATED 0x19
+#endif
+
 static const char* vboxUsbDbgStrPnPMn(UCHAR uMn)
 {
     switch (uMn)
@@ -166,6 +174,8 @@ static const char* vboxUsbDbgStrPnPMn(UCHAR uMn)
         VBOXUSBDBG_STRCASE(IRP_MN_QUERY_BUS_INFORMATION);
         VBOXUSBDBG_STRCASE(IRP_MN_DEVICE_USAGE_NOTIFICATION);
         VBOXUSBDBG_STRCASE(IRP_MN_SURPRISE_REMOVAL);
+        VBOXUSBDBG_STRCASE(IRP_MN_QUERY_LEGACY_BUS_INFORMATION);
+        VBOXUSBDBG_STRCASE(IRP_MN_DEVICE_ENUMERATED);
         VBOXUSBDBG_STRCASE_UNKNOWN(uMn);
     }
 }
