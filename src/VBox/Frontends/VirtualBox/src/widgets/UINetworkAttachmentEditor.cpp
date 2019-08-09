@@ -22,9 +22,14 @@
 
 /* GUI includes: */
 #include "QIComboBox.h"
+#include "UICommon.h"
 #include "UIConverter.h"
 #include "UIExtraDataManager.h"
 #include "UINetworkAttachmentEditor.h"
+
+/* COM includes: */
+#include "CHostNetworkInterface.h"
+#include "CNATNetwork.h"
 
 
 /* static */
@@ -105,6 +110,53 @@ void UINetworkAttachmentEditor::setValueName(KNetworkAttachmentType enmType, con
 QString UINetworkAttachmentEditor::valueName(KNetworkAttachmentType enmType) const
 {
     return m_name.value(enmType);
+}
+
+/* static */
+QStringList UINetworkAttachmentEditor::bridgedAdapters()
+{
+    QStringList bridgedAdapterList;
+    foreach (const CHostNetworkInterface &comInterface, uiCommon().host().GetNetworkInterfaces())
+    {
+        if (   comInterface.GetInterfaceType() == KHostNetworkInterfaceType_Bridged
+            && !bridgedAdapterList.contains(comInterface.GetName()))
+            bridgedAdapterList << comInterface.GetName();
+    }
+    return bridgedAdapterList;
+}
+
+/* static */
+QStringList UINetworkAttachmentEditor::internalNetworks()
+{
+    return QList<QString>::fromVector(uiCommon().virtualBox().GetInternalNetworks());
+}
+
+/* static */
+QStringList UINetworkAttachmentEditor::hostInterfaces()
+{
+    QStringList hostInterfaceList;
+    foreach (const CHostNetworkInterface &comInterface, uiCommon().host().GetNetworkInterfaces())
+    {
+        if (   comInterface.GetInterfaceType() == KHostNetworkInterfaceType_HostOnly
+            && !hostInterfaceList.contains(comInterface.GetName()))
+            hostInterfaceList << comInterface.GetName();
+    }
+    return hostInterfaceList;
+}
+
+/* static */
+QStringList UINetworkAttachmentEditor::genericDrivers()
+{
+    return QList<QString>::fromVector(uiCommon().virtualBox().GetGenericNetworkDrivers());
+}
+
+/* static */
+QStringList UINetworkAttachmentEditor::natNetworks()
+{
+    QStringList natNetworkList;
+    foreach (const CNATNetwork &comNetwork, uiCommon().virtualBox().GetNATNetworks())
+        natNetworkList << comNetwork.GetNetworkName();
+    return natNetworkList;
 }
 
 void UINetworkAttachmentEditor::retranslateUi()

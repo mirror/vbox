@@ -74,6 +74,17 @@ public:
     /** Returns current name for specified @a enmType. */
     QString valueName(KNetworkAttachmentType enmType) const;
 
+    /** Returns bridged adapter list. */
+    static QStringList bridgedAdapters();
+    /** Returns internal network list. */
+    static QStringList internalNetworks();
+    /** Returns host-only interface list. */
+    static QStringList hostInterfaces();
+    /** Returns generic driver list. */
+    static QStringList genericDrivers();
+    /** Returns NAT network list. */
+    static QStringList natNetworks();
+
 protected:
 
     /** Handles translation event. */

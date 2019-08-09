@@ -27,12 +27,8 @@
 #include "UICommon.h"
 
 /* COM includes: */
-#include "CNetworkAdapter.h"
-#include "CHostNetworkInterface.h"
-#include "CNATNetwork.h"
-
-/* COM includes: */
 #include "CNATEngine.h"
+#include "CNetworkAdapter.h"
 
 /* Other VBox includes: */
 #ifdef VBOX_WITH_VDE
@@ -1057,15 +1053,8 @@ void UIMachineSettingsNetworkPage::cleanup()
 
 void UIMachineSettingsNetworkPage::refreshBridgedAdapterList()
 {
-    /* Reload bridged interface list: */
-    m_bridgedAdapterList.clear();
-    const CHostNetworkInterfaceVector &ifaces = uiCommon().host().GetNetworkInterfaces();
-    for (int i = 0; i < ifaces.size(); ++i)
-    {
-        const CHostNetworkInterface &iface = ifaces[i];
-        if (iface.GetInterfaceType() == KHostNetworkInterfaceType_Bridged && !m_bridgedAdapterList.contains(iface.GetName()))
-            m_bridgedAdapterList << iface.GetName();
-    }
+    /* Reload bridged adapters: */
+    m_bridgedAdapterList = UINetworkAttachmentEditor::bridgedAdapters();
 }
 
 void UIMachineSettingsNetworkPage::refreshInternalNetworkList(bool fFullRefresh /* = false */)
@@ -1074,7 +1063,7 @@ void UIMachineSettingsNetworkPage::refreshInternalNetworkList(bool fFullRefresh 
     m_internalNetworkList.clear();
     /* Get internal network names from other VMs: */
     if (fFullRefresh)
-        m_internalNetworkList << otherInternalNetworkList();
+        m_internalNetworkList << UINetworkAttachmentEditor::internalNetworks();
     /* Append internal network list with names from all the tabs: */
     for (int iTab = 0; iTab < m_pTabWidget->count(); ++iTab)
     {
@@ -1090,15 +1079,8 @@ void UIMachineSettingsNetworkPage::refreshInternalNetworkList(bool fFullRefresh 
 
 void UIMachineSettingsNetworkPage::refreshHostInterfaceList()
 {
-    /* Reload host-only interface list: */
-    m_hostInterfaceList.clear();
-    const CHostNetworkInterfaceVector &ifaces = uiCommon().host().GetNetworkInterfaces();
-    for (int i = 0; i < ifaces.size(); ++i)
-    {
-        const CHostNetworkInterface &iface = ifaces[i];
-        if (iface.GetInterfaceType() == KHostNetworkInterfaceType_HostOnly && !m_hostInterfaceList.contains(iface.GetName()))
-            m_hostInterfaceList << iface.GetName();
-    }
+    /* Reload host interfaces: */
+    m_bridgedAdapterList = UINetworkAttachmentEditor::hostInterfaces();
 }
 
 void UIMachineSettingsNetworkPage::refreshGenericDriverList(bool fFullRefresh /* = false */)
@@ -1107,7 +1089,7 @@ void UIMachineSettingsNetworkPage::refreshGenericDriverList(bool fFullRefresh /*
     m_genericDriverList.clear();
     /* Get generic driver names from other VMs: */
     if (fFullRefresh)
-        m_genericDriverList << otherGenericDriverList();
+        m_genericDriverList << UINetworkAttachmentEditor::genericDrivers();
     /* Append generic driver list with names from all the tabs: */
     for (int iTab = 0; iTab < m_pTabWidget->count(); ++iTab)
     {
@@ -1123,32 +1105,8 @@ void UIMachineSettingsNetworkPage::refreshGenericDriverList(bool fFullRefresh /*
 
 void UIMachineSettingsNetworkPage::refreshNATNetworkList()
 {
-    /* Reload NAT network list: */
-    m_natNetworkList.clear();
-    const CNATNetworkVector &nws = uiCommon().virtualBox().GetNATNetworks();
-    for (int i = 0; i < nws.size(); ++i)
-    {
-        const CNATNetwork &nw = nws[i];
-        m_natNetworkList << nw.GetNetworkName();
-    }
-}
-
-/* static */
-QStringList UIMachineSettingsNetworkPage::otherInternalNetworkList()
-{
-    /* Load total internal network list of all VMs: */
-    const CVirtualBox vbox = uiCommon().virtualBox();
-    const QStringList otherInternalNetworks(QList<QString>::fromVector(vbox.GetInternalNetworks()));
-    return otherInternalNetworks;
-}
-
-/* static */
-QStringList UIMachineSettingsNetworkPage::otherGenericDriverList()
-{
-    /* Load total generic driver list of all VMs: */
-    const CVirtualBox vbox = uiCommon().virtualBox();
-    const QStringList otherGenericDrivers(QList<QString>::fromVector(vbox.GetGenericNetworkDrivers()));
-    return otherGenericDrivers;
+    /* Reload nat networks: */
+    m_natNetworkList = UINetworkAttachmentEditor::natNetworks();
 }
 
 /* static */

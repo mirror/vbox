@@ -111,10 +111,6 @@ private:
     /** Repopulates NAT network list. */
     void refreshNATNetworkList();
 
-    /** Populates a list of known internal networks. */
-    static QStringList otherInternalNetworkList();
-    /** Populates a list of known generic drivers. */
-    static QStringList otherGenericDriverList();
     /** Loads generic properties from passed @a adapter. */
     static QString loadGenericProperties(const CNetworkAdapter &adapter);
     /** Saves generic @a strProperties to passed @a adapter. */
