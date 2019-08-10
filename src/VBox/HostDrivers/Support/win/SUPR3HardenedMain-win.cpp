@@ -5157,6 +5157,20 @@ DECLHIDDEN(void) supR3HardenedWinInit(uint32_t fFlags, bool fAvastKludge)
          */
         supR3HardenedWinInstallHooks();
     }
+    else if (fFlags & SUPSECMAIN_FLAGS_FIRST_PROCESS)
+    {
+        /*
+         * Try shake anyone (e.g. easyhook) patching process creation code in
+         * kernelbase, kernel32 or ntdll so they won't so easily cause the child 
+         * to crash when we respawn and purify it.
+         */
+        SUP_DPRINTF(("supR3HardenedWinInit: doing limited purification...\n"));
+        uint32_t cFixes = 0;
+        rc = supHardenedWinVerifyProcess(NtCurrentProcess(), NtCurrentThread(), SUPHARDNTVPKIND_SELF_PURIFICATION_LIMITED,
+                                         0 /*fFlags*/, &cFixes, NULL /*pErrInfo*/);
+        SUP_DPRINTF(("supR3HardenedWinInit: SUPHARDNTVPKIND_SELF_PURIFICATION_LIMITED -> %Rrc, cFixes=%d\n", rc, cFixes));
+        RT_NOREF(rc); /* ignored on purpose */
+    }
 
 #ifndef VBOX_WITH_VISTA_NO_SP
     /*

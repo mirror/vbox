@@ -491,7 +491,8 @@ static int supHardNtVpFileMemCompareSection(PSUPHNTVPSTATE pThis, PSUPHNTVPIMAGE
 
 #ifdef IN_RING3
             if (   pThis->enmKind == SUPHARDNTVPKIND_CHILD_PURIFICATION
-                || pThis->enmKind == SUPHARDNTVPKIND_SELF_PURIFICATION)
+                || pThis->enmKind == SUPHARDNTVPKIND_SELF_PURIFICATION
+                || pThis->enmKind == SUPHARDNTVPKIND_SELF_PURIFICATION_LIMITED)
             {
                 PVOID pvRestoreAddr = (uint8_t *)pImage->uImageBase + uRva;
                 rcNt = supHardNtVpFileMemRestore(pThis, pvRestoreAddr, pbFile, cbThis, fCorrectProtection);
@@ -531,7 +532,8 @@ static int supHardNtVpCheckSectionProtection(PSUPHNTVPSTATE pThis, PSUPHNTVPIMAG
     if (!cb)
         return VINF_SUCCESS;
     if (   pThis->enmKind == SUPHARDNTVPKIND_CHILD_PURIFICATION
-        || pThis->enmKind == SUPHARDNTVPKIND_SELF_PURIFICATION)
+        || pThis->enmKind == SUPHARDNTVPKIND_SELF_PURIFICATION
+        || pThis->enmKind == SUPHARDNTVPKIND_SELF_PURIFICATION_LIMITED)
         return VINF_SUCCESS;
 
     for (uint32_t i = 0; i < pImage->cRegions; i++)
@@ -1357,6 +1359,12 @@ static int supHardNtVpNewImage(PSUPHNTVPSTATE pThis, PSUPHNTVPIMAGE pImage, PMEM
             pThis->cFixes++;
             SUP_DPRINTF(("supHardNtVpScanVirtualMemory: NtUnmapViewOfSection(,%p) failed: %#x\n", pMemInfo->AllocationBase, rcNt));
         }
+        else if (pThis->enmKind == SUPHARDNTVPKIND_SELF_PURIFICATION_LIMITED)
+        {
+            SUP_DPRINTF(("supHardNtVpScanVirtualMemory: Ignoring unknown mem at %p LB %#zx (base %p) - '%ls'\n",
+                         pMemInfo->BaseAddress, pMemInfo->RegionSize, pMemInfo->AllocationBase, pwszFilename));
+            return VINF_OBJECT_DESTROYED;
+        }
 #endif
         /*
          * Special error message if we can.
@@ -1876,7 +1884,7 @@ static int supHardNtVpScanVirtualMemory(PSUPHNTVPSTATE pThis, HANDLE hProcess)
                                         MemInfo.Type, MemInfo.AllocationBase, MemInfo.BaseAddress, MemInfo.RegionSize);
                 pThis->cFixes++;
             }
-            else
+            else if (pThis->enmKind != SUPHARDNTVPKIND_SELF_PURIFICATION_LIMITED)
 # endif /* IN_RING3 */
                 supHardNtVpSetInfo2(pThis, VERR_SUP_VP_FOUND_EXEC_MEMORY,
                                     "Found executable memory at %p (%p LB %#zx): type=%#x prot=%#x state=%#x aprot=%#x abase=%p",
@@ -2435,7 +2443,8 @@ static int supHardNtVpCheckDlls(PSUPHNTVPSTATE pThis)
     if (iNtDll == UINT32_MAX)
         return supHardNtVpSetInfo2(pThis, VERR_SUP_VP_NO_NTDLL_MAPPING,
                                    "The process has no NTDLL.DLL.");
-    if (iKernel32 == UINT32_MAX && pThis->enmKind == SUPHARDNTVPKIND_SELF_PURIFICATION)
+    if (iKernel32 == UINT32_MAX && (   pThis->enmKind == SUPHARDNTVPKIND_SELF_PURIFICATION
+                                    || pThis->enmKind == SUPHARDNTVPKIND_SELF_PURIFICATION_LIMITED))
         return supHardNtVpSetInfo2(pThis, VERR_SUP_VP_NO_KERNEL32_MAPPING,
                                    "The process has no KERNEL32.DLL.");
     else if (iKernel32 != UINT32_MAX && pThis->enmKind == SUPHARDNTVPKIND_CHILD_PURIFICATION)
@@ -2491,7 +2500,8 @@ DECLHIDDEN(int) supHardenedWinVerifyProcess(HANDLE hProcess, HANDLE hThread, SUP
      * allocate any state memory for these.
      */
     int rc = VINF_SUCCESS;
-    if (enmKind != SUPHARDNTVPKIND_CHILD_PURIFICATION)
+    if (   enmKind != SUPHARDNTVPKIND_CHILD_PURIFICATION
+        && enmKind != SUPHARDNTVPKIND_SELF_PURIFICATION_LIMITED)
        rc = supHardNtVpThread(hProcess, hThread, pErrInfo);
     if (RT_SUCCESS(rc))
         rc = supHardNtVpDebugger(hProcess, pErrInfo);

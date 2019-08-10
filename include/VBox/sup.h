@@ -1178,6 +1178,8 @@ DECLHIDDEN(int) SUPR3HardenedMain(const char *pszProgName, uint32_t fFlags, int 
 /** The binary is located in the testcase directory instead of the
  * default application binary directory. */
 #define SUPSECMAIN_FLAGS_LOC_TESTCASE       UINT32_C(0x00000010)
+/** The first process. */
+#define SUPSECMAIN_FLAGS_FIRST_PROCESS      UINT32_C(0x00000020)
 /** @} */
 
 /**
