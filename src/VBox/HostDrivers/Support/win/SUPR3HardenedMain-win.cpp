@@ -2975,6 +2975,9 @@ static void supR3HardenedWinInstallHooks(void)
      *
      * This differs from the first function in that is no a system call and
      * we're at the mercy of the handwritten assembly.
+     *
+     * Note! We depend on all waits up past the patching to be non-altertable,
+     *       otherwise an APC might slip by us.
      */
     uint8_t * const pbKiUserApcDispatcher = (uint8_t *)(uintptr_t)pfnKiUserApcDispatcher;
     g_pbKiUserApcDispatcher = pbKiUserApcDispatcher;
@@ -5161,10 +5164,10 @@ DECLHIDDEN(void) supR3HardenedWinInit(uint32_t fFlags, bool fAvastKludge)
     {
         /*
          * Try shake anyone (e.g. easyhook) patching process creation code in
-         * kernelbase, kernel32 or ntdll so they won't so easily cause the child 
+         * kernelbase, kernel32 or ntdll so they won't so easily cause the child
          * to crash when we respawn and purify it.
          */
-        SUP_DPRINTF(("supR3HardenedWinInit: doing limited purification...\n"));
+        SUP_DPRINTF(("supR3HardenedWinInit: Performing a limited self purification...\n"));
         uint32_t cFixes = 0;
         rc = supHardenedWinVerifyProcess(NtCurrentProcess(), NtCurrentThread(), SUPHARDNTVPKIND_SELF_PURIFICATION_LIMITED,
                                          0 /*fFlags*/, &cFixes, NULL /*pErrInfo*/);
