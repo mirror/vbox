@@ -407,6 +407,7 @@ static void     supR3HardenedWinRegisterDllNotificationCallback(void);
 static void     supR3HardenedWinReInstallHooks(bool fFirst);
 DECLASM(void)   supR3HardenedEarlyProcessInitThunk(void);
 DECLASM(void)   supR3HardenedMonitor_KiUserApcDispatcher(void);
+extern "C" void __stdcall suplibHardenedWindowsMain(void);
 
 
 #if 0 /* unused */
@@ -4107,6 +4108,125 @@ static void supR3HardNtChildSetUpChildInit(PSUPR3HARDNTCHILD pThis)
         supR3HardenedWinKillChild(pThis, "supR3HardenedWinSetupChildInit", rcNt,
                                   "NtProtectVirtualMemory/LdrInitializeThunk[restore] failed: %#x", rcNt);
 
+    /*
+     * Check the sanity of the thread context.
+     */
+    CONTEXT Ctx;
+    RT_ZERO(Ctx);
+    Ctx.ContextFlags = CONTEXT_FULL | CONTEXT_DEBUG_REGISTERS;
+    rcNt = NtGetContextThread(pThis->hThread, &Ctx);
+    if (NT_SUCCESS(rcNt))
+    {
+#ifdef RT_ARCH_AMD64
+        SUP_DPRINTF(("supR3HardenedWinSetupChildInit: Initial context:\n"
+                     "  RAX=%016RX64 RBX=%016RX64 RCX=%016RX64 RDX=%016RX64\n"
+                     "  RSI=%016RX64 RDI=%016RX64  R8=%016RX64  R9=%016RX64\n"
+                     "  R10=%016RX64 R11=%016RX64 R12=%016RX64 R13=%016RX64\n"
+                     "  R14=%016RX64 R15=%016RX64\n"
+                     "  RIP=%016RX64 RSP=%016RX64 RBP=%016RX64 RFLAGS=%08RX32\n"
+                     "   P1=%016RX64  P2=%016RX64  P3=%016RX64 P4=%016RX64\n"
+                     "   P5=%016RX64  P6=%016RX64\n"
+                     "  CS=%04RX16 DS=%04RX16 ES=%04RX16 FS=%04RX16 GS=%04RX16 SS=%04RX16\n"
+                     "  DR0=%016RX64 DR1=%016RX64 DR2=%016RX64 DR3=%016RX64\n"
+                     "  DR6=%016RX64 DR7=%016RX64\n",
+                     Ctx.Rax, Ctx.Rbx, Ctx.Rcx, Ctx.Rdx,
+                     Ctx.Rsi, Ctx.Rdi, Ctx.R8, Ctx.R9,
+                     Ctx.R10, Ctx.R11, Ctx.R12, Ctx.R13,
+                     Ctx.R14, Ctx.R15,
+                     Ctx.Rip, Ctx.Rsp, Ctx.Rbp, Ctx.EFlags,
+                     Ctx.P1Home, Ctx.P2Home, Ctx.P3Home,
+                     Ctx.P4Home, Ctx.P5Home, Ctx.P6Home,
+                     Ctx.SegCs, Ctx.SegDs, Ctx.SegEs, Ctx.SegFs, Ctx.SegGs, Ctx.SegSs,
+                     Ctx.Dr0, Ctx.Dr1, Ctx.Dr2, Ctx.Dr3,
+                     Ctx.Dr6, Ctx.Dr7));
+        DWORD64 *pPC = &Ctx.Rip;
+#elif defined(RT_ARCH_X86)
+        SUP_DPRINTF(("supR3HardenedWinSetupChildInit: Initial context:\n"
+                     "  EAX=%08RX32 EBX=%08RX32 ECX=%08RX32 EDX=%08RX32 ESI=%08RX64 EDI=%08RX32\n"
+                     "  EIP=%08RX32 ESP=%08RX32 EBP=%08RX32 EFLAGS=%08RX32\n"
+                     "  CS=%04RX16 DS=%04RX16 ES=%04RX16 FS=%04RX16 GS=%04RX16\n"
+                     "  DR0=%08RX32 DR1=%08RX32 DR2=%08RX32 DR3=%08RX32 DR6=%08RX32 DR7=%08RX32\n",
+                     Ctx.Eax, Ctx.Ebx, Ctx.Ecx, Ctx.Edx, Ctx.Esi, Ctx.Edi,
+                     Ctx.Eip, Ctx.Esp, Ctx.Ebp, Ctx.EFlags,
+                     Ctx.SegCs, Ctx.SegDs, Ctx.SegEs, Ctx.SegFs, Ctx.SegGs,
+                     Ctx.Dr0, Ctx.Dr1, Ctx.Dr2, Ctx.Dr3, Ctx.Dr6, Ctx.Dr7));
+        DWORD   *pPC = &Ctx.Eip;
+#else
+# error "Unsupported arch."
+#endif
+        size_t    const cbNtDll    = RTLdrSize(pLdrEntry->hLdrMod);
+        uintptr_t const uChildMain = uChildExeAddr + (  (uintptr_t)&suplibHardenedWindowsMain
+                                                      - (uintptr_t)NtCurrentPeb()->ImageBaseAddress);
+        RTLDRADDR uLdrRtlUserThreadStart;
+        rc = RTLdrGetSymbolEx(pLdrEntry->hLdrMod, pbChildNtDllBits, pThis->uNtDllAddr, UINT32_MAX,
+                              "RtlUserThreadStart", &uLdrRtlUserThreadStart);
+        if (RT_FAILURE(rc))
+            uLdrRtlUserThreadStart = 0;
+
+        bool fUpdateContext = false;
+
+        /* Check if the RIP looks half sane, correct it if it isn't.
+           It should point to RtlUserThreadStart (Vista and later it seem), though only
+           tested on win10.  The first parameter is the executable entrypoint, the 2nd
+           is probably the PEB. */
+        if (   (  uLdrRtlUserThreadStart
+                ? *pPC == uLdrRtlUserThreadStart
+                : *pPC - pThis->uNtDllAddr <= cbNtDll)
+            || *pPC == uChildMain)
+        { }
+        else
+        {
+            SUP_DPRINTF(("Warning! Bogus RIP: %016RX64\n", *pPC));
+            if (uLdrRtlUserThreadStart)
+            {
+                SUP_DPRINTF(("Correcting RIP from to %016RX64 hoping that it might work...\n", (uintptr_t)uLdrRtlUserThreadStart));
+                *pPC = uLdrRtlUserThreadStart;
+                fUpdateContext = true;
+            }
+        }
+#ifdef RT_ARCH_AMD64
+        if (Ctx.SegDs != 0)
+            SUP_DPRINTF(("Warning! Bogus DS: %04x, expected zero\n", Ctx.SegDs));
+        if (Ctx.SegEs != 0)
+            SUP_DPRINTF(("Warning! Bogus ES: %04x, expected zero\n", Ctx.SegEs));
+        if (Ctx.SegFs != 0)
+            SUP_DPRINTF(("Warning! Bogus FS: %04x, expected zero\n", Ctx.SegFs));
+        if (Ctx.SegGs != 0)
+            SUP_DPRINTF(("Warning! Bogus GS: %04x, expected zero\n", Ctx.SegGs));
+        if (Ctx.Rcx != uChildMain)
+            SUP_DPRINTF(("Warning! Bogus RCX: %016RX64, expected %016RX64\n", Ctx.Rcx, uChildMain));
+        if ((Ctx.Rsp & 15) != 8)
+            SUP_DPRINTF(("Warning! Misaligned RSP: %016RX64\n", Ctx.Rsp));
+#endif
+        if (Ctx.SegCs != ASMGetCS())
+            SUP_DPRINTF(("Warning! Bogus CS: %04x, expected %04x\n", Ctx.SegCs, ASMGetCS()));
+        if (Ctx.SegSs != ASMGetSS())
+            SUP_DPRINTF(("Warning! Bogus SS: %04x, expected %04x\n", Ctx.SegSs, ASMGetSS()));
+        if (Ctx.Dr0 != 0)
+            SUP_DPRINTF(("Warning! Bogus DR0: %016RX64, expected zero\n", Ctx.Dr0));
+        if (Ctx.Dr1 != 0)
+            SUP_DPRINTF(("Warning! Bogus DR1: %016RX64, expected zero\n", Ctx.Dr1));
+        if (Ctx.Dr2 != 0)
+            SUP_DPRINTF(("Warning! Bogus DR2: %016RX64, expected zero\n", Ctx.Dr2));
+        if (Ctx.Dr3 != 0)
+            SUP_DPRINTF(("Warning! Bogus DR3: %016RX64, expected zero\n", Ctx.Dr3));
+        if (Ctx.Dr6 != 0)
+            SUP_DPRINTF(("Warning! Bogus DR6: %016RX64, expected zero\n", Ctx.Dr6));
+        if (Ctx.Dr7 != 0)
+        {
+            SUP_DPRINTF(("Warning! Bogus DR7: %016RX64, expected zero\n", Ctx.Dr7));
+            Ctx.Dr7 = 0;
+            fUpdateContext = true;
+        }
+
+        if (fUpdateContext)
+        {
+            rcNt = NtSetContextThread(pThis->hThread, &Ctx);
+            if (!NT_SUCCESS(rcNt))
+                SUP_DPRINTF(("Error! NtSetContextThread failed: %#x\n", rcNt));
+        }
+    }
+
     /* Caller starts child execution. */
     SUP_DPRINTF(("supR3HardenedWinSetupChildInit: Start child.\n"));
 }
@@ -6560,7 +6680,8 @@ DECLASM(uintptr_t) supR3HardenedEarlyProcessInit(void)
     int    cArgs;
     char **papszArgs = suplibCommandLineToArgvWStub(CmdLineStr.Buffer, CmdLineStr.Length / sizeof(WCHAR), &cArgs);
     supR3HardenedOpenLog(&cArgs, papszArgs);
-    SUP_DPRINTF(("supR3HardenedVmProcessInit: uNtDllAddr=%p g_uNtVerCombined=%#x\n", uNtDllAddr, g_uNtVerCombined));
+    SUP_DPRINTF(("supR3HardenedVmProcessInit: uNtDllAddr=%p g_uNtVerCombined=%#x (stack ~%p)\n",
+                 uNtDllAddr, g_uNtVerCombined, &Timeout));
 
     /*
      * Set up the direct system calls so we can more easily hook NtCreateSection.
