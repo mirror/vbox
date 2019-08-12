@@ -278,6 +278,7 @@ static const RTGETOPTDEF g_aCmdOptions[] =
     { "--block-size",               'b',                            RTGETOPT_REQ_UINT32  },
     { "--maximum-requests",         'm',                            RTGETOPT_REQ_UINT32  },
     { "--verify-reads",             'y',                            RTGETOPT_REQ_BOOL    },
+    { "--use-cache",                'c',                            RTGETOPT_REQ_BOOL    },
 
     { "--first-write",              kCmdOpt_FirstWrite,             RTGETOPT_REQ_NOTHING },
     { "--no-first-write",           kCmdOpt_NoFirstWrite,           RTGETOPT_REQ_NOTHING },
@@ -1182,6 +1183,7 @@ static void Usage(PRTSTREAM pStrm)
             case 'd':                           pszHelp = "The directory to use for testing.            default: CWD/fstestdir"; break;
             case 'r':                           pszHelp = "Don't abspath test dir (good for deep dirs). default: disabled"; break;
             case 'y':                           pszHelp = "Flag whether to verify read data.            default: enabled"; break;
+            case 'c':                           pszHelp = "Flag whether to use the filesystem cache.    default: disabled"; break;
             case 'v':                           pszHelp = "More verbose execution."; break;
             case 'q':                           pszHelp = "Quiet execution."; break;
             case 'h':                           pszHelp = "Displays this help and exit"; break;
@@ -1260,6 +1262,10 @@ int main(int argc, char *argv[])
 
             case 'y':
                 g_fVerifyReads = ValueUnion.f;
+                break;
+
+            case 'c':
+                g_fNoCache = !ValueUnion.f;
                 break;
 
             case kCmdOpt_FirstWrite:
