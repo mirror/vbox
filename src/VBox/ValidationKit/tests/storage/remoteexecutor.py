@@ -295,7 +295,7 @@ class RemoteExecutor(object):
             fRc = self.oTxsSession.syncIsFile(sPath, cMsTimeout);
         else:
             try:
-                os.path.isFile(sPath);
+                self.isFile(sPath);
             except:
                 fRc = False;
 
