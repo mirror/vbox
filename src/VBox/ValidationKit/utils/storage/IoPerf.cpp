@@ -190,6 +190,8 @@ typedef struct IOPERFJOB
     uint32_t                    cRandWriteBlocks512B;
     /** Chance in percent to get a write. */
     unsigned                    uWriteChance;
+    /** Flag whether to verify read data. */
+    bool                        fVerifyReads;
     /** Start timestamp. */
     uint64_t                    tsStart;
     /** End timestamp. for the job. */
@@ -198,7 +200,7 @@ typedef struct IOPERFJOB
     uint32_t                    cReqStats;
     /** Index of the next free statistics record to use. */
     uint32_t                    idxReqStatNext;
-    /** Array of request statisc records for the whole test. */
+    /** Array of request statistic records for the whole test. */
     PIOPERFREQSTAT              paReqStats;
     /** Test dependent data. */
     union
@@ -275,6 +277,7 @@ static const RTGETOPTDEF g_aCmdOptions[] =
     { "--test-set-size",            's',                            RTGETOPT_REQ_UINT64  },
     { "--block-size",               'b',                            RTGETOPT_REQ_UINT32  },
     { "--maximum-requests",         'm',                            RTGETOPT_REQ_UINT32  },
+    { "--verify-reads",             'y',                            RTGETOPT_REQ_BOOL    },
 
     { "--first-write",              kCmdOpt_FirstWrite,             RTGETOPT_REQ_NOTHING },
     { "--no-first-write",           kCmdOpt_NoFirstWrite,           RTGETOPT_REQ_NOTHING },
@@ -319,6 +322,8 @@ static uint32_t     g_cReqsMax     = 16;
 static bool         g_fNoCache     = true;
 /** Write chance for mixed read/write tests. */
 static unsigned     g_uWriteChance = 50;
+/** Flag whether to verify read data. */
+static bool         g_fVerifyReads = true;
 
 /** @name Configured tests, this must match the IOPERFTEST order.
  * @{ */
@@ -740,6 +745,19 @@ static int ioPerfJobTestIoLoop(PIOPERFJOB pJob)
                             if (pReq->pStats)
                                 pReq->pStats->tsComplete = RTTimeNanoTS();
 
+                            if (   pJob->fVerifyReads
+                                && pReq->enmOp == RTIOQUEUEOP_READ)
+                            {
+                                const void *pvBuf = ioPerfJobTestGetWriteBufForOffset(pJob, pReq->offXfer);
+                                if (memcmp(pReq->pvXferRead, pvBuf, pReq->cbXfer))
+                                {
+                                    if (g_uVerbosity > 1)
+                                        RTTestIFailed("IoPerf: Corrupted data detected by read at offset %#llu (sz: %zu)", pReq->offXfer, pReq->cbXfer);
+                                    else
+                                        RTTestIErrorInc();
+                                }
+                            }
+
                             if (!ioPerfJobTestIsDone(pJob))
                             {
                                 ioPerfJobTestReqInit(pJob, pReq);
@@ -950,12 +968,13 @@ static int ioPerfJobTestSetPrep(PIOPERFJOB pJob)
  * @param   cbIoBlock           I/O block size for the given job.
  * @param   cReqsMax            Maximum number of concurrent requests for this job.
  * @param   uWriteChance        The write chance for mixed read/write tests.
+ * @param   fVerifyReads        Flag whether to verify read data.
  */
 static int ioPerfJobInit(PIOPERFJOB pJob, PIOPERFMASTER pMaster, uint32_t idJob,
                          const char *pszIoEngine, const char *pszTestDir,
                          IOPERFTESTSETPREP enmPrepMethod,
                          uint64_t cbTestSet, size_t cbIoBlock, uint32_t cReqsMax,
-                         unsigned uWriteChance)
+                         unsigned uWriteChance, bool fVerifyReads)
 {
     pJob->pMaster        = pMaster;
     pJob->idJob          = idJob;
@@ -967,6 +986,7 @@ static int ioPerfJobInit(PIOPERFJOB pJob, PIOPERFMASTER pMaster, uint32_t idJob,
     pJob->cReqsMax       = cReqsMax;
     pJob->cbIoReqReadBuf = cReqsMax * cbIoBlock;
     pJob->uWriteChance   = uWriteChance;
+    pJob->fVerifyReads   = fVerifyReads;
     pJob->cReqStats      = (uint32_t)(pJob->cbTestSet / pJob->cbIoBlock + ((pJob->cbTestSet % pJob->cbIoBlock) ? 1 : 0));
     pJob->idxReqStatNext = 0;
 
@@ -1116,7 +1136,7 @@ static int ioPerfDoTestSingle(void)
     int rc = ioPerfJobInit(&Job, NULL, 0, g_pszIoEngine,
                            g_szDir, IOPERFTESTSETPREP_SET_SZ,
                            g_cbTestSet, g_cbIoBlock, g_cReqsMax,
-                           g_uWriteChance);
+                           g_uWriteChance, g_fVerifyReads);
     if (RT_SUCCESS(rc))
     {
         rc = ioPerfJobWorkLoop(&Job);
@@ -1161,6 +1181,7 @@ static void Usage(PRTSTREAM pStrm)
         {
             case 'd':                           pszHelp = "The directory to use for testing.            default: CWD/fstestdir"; break;
             case 'r':                           pszHelp = "Don't abspath test dir (good for deep dirs). default: disabled"; break;
+            case 'y':                           pszHelp = "Flag whether to verify read data.            default: enabled"; break;
             case 'v':                           pszHelp = "More verbose execution."; break;
             case 'q':                           pszHelp = "Quiet execution."; break;
             case 'h':                           pszHelp = "Displays this help and exit"; break;
@@ -1235,6 +1256,65 @@ int main(int argc, char *argv[])
 
             case 'm':
                 g_cReqsMax = ValueUnion.u32;
+                break;
+
+            case 'y':
+                g_fVerifyReads = ValueUnion.f;
+                break;
+
+            case kCmdOpt_FirstWrite:
+                g_aenmTests[IOPERFTEST_FIRST_WRITE] = IOPERFTEST_FIRST_WRITE;
+                break;
+            case kCmdOpt_NoFirstWrite:
+                g_aenmTests[IOPERFTEST_FIRST_WRITE] = IOPERFTEST_DISABLED;
+                break;
+            case kCmdOpt_SeqRead:
+                g_aenmTests[IOPERFTEST_SEQ_READ] = IOPERFTEST_SEQ_READ;
+                break;
+            case kCmdOpt_NoSeqRead:
+                g_aenmTests[IOPERFTEST_SEQ_READ] = IOPERFTEST_DISABLED;
+                break;
+            case kCmdOpt_SeqWrite:
+                g_aenmTests[IOPERFTEST_SEQ_WRITE] = IOPERFTEST_SEQ_WRITE;
+                break;
+            case kCmdOpt_NoSeqWrite:
+                g_aenmTests[IOPERFTEST_SEQ_WRITE] = IOPERFTEST_DISABLED;
+                break;
+            case kCmdOpt_RndRead:
+                g_aenmTests[IOPERFTEST_RND_READ] = IOPERFTEST_RND_READ;
+                break;
+            case kCmdOpt_NoRndRead:
+                g_aenmTests[IOPERFTEST_RND_READ] = IOPERFTEST_DISABLED;
+                break;
+            case kCmdOpt_RndWrite:
+                g_aenmTests[IOPERFTEST_RND_WRITE] = IOPERFTEST_RND_WRITE;
+                break;
+            case kCmdOpt_NoRndWrite:
+                g_aenmTests[IOPERFTEST_RND_WRITE] = IOPERFTEST_DISABLED;
+                break;
+            case kCmdOpt_RevRead:
+                g_aenmTests[IOPERFTEST_REV_READ] = IOPERFTEST_REV_READ;
+                break;
+            case kCmdOpt_NoRevRead:
+                g_aenmTests[IOPERFTEST_REV_READ] = IOPERFTEST_DISABLED;
+                break;
+            case kCmdOpt_RevWrite:
+                g_aenmTests[IOPERFTEST_REV_WRITE] = IOPERFTEST_REV_WRITE;
+                break;
+            case kCmdOpt_NoRevWrite:
+                g_aenmTests[IOPERFTEST_REV_WRITE] = IOPERFTEST_DISABLED;
+                break;
+            case kCmdOpt_SeqReadWrite:
+                g_aenmTests[IOPERFTEST_SEQ_READWRITE] = IOPERFTEST_SEQ_READWRITE;
+                break;
+            case kCmdOpt_NoSeqReadWrite:
+                g_aenmTests[IOPERFTEST_SEQ_READWRITE] = IOPERFTEST_DISABLED;
+                break;
+            case kCmdOpt_RndReadWrite:
+                g_aenmTests[IOPERFTEST_RND_READWRITE] = IOPERFTEST_RND_READWRITE;
+                break;
+            case kCmdOpt_NoRndReadWrite:
+                g_aenmTests[IOPERFTEST_RND_READWRITE] = IOPERFTEST_DISABLED;
                 break;
 
             case 'q':
