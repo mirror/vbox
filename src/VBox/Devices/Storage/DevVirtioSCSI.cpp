@@ -52,7 +52,6 @@
 #define PCI_CLASS_BASE_MASS_STORAGE                 0x01
 #define PCI_CLASS_SUB_SCSI_STORAGE_CONTROLLER       0x00
 #define PCI_CLASS_PROG_UNSPECIFIED                  0x00
-#define VIRTIOSCSI_NAME_FMT                         "VIRTIOSCSI%d" /* "VSCSI" *might* be ambiguous with VBoxSCSI? */
 #define VIRTIOSCSI_PCI_CLASS                        0x01     /* Base class Mass Storage? */
 #define VIRTIOSCSI_N_QUEUES                         3        /* Control, Event, Request */
 #define VIRTIOSCSI_REGION_MEM_IO                    0
@@ -60,46 +59,11 @@
 #define VIRTIOSCSI_REGION_PCI_CAP                   2
 
 /**
- * This macro resolves to boolean true if uOffset matches a field offset and size exactly,
- * (or if it is a 64-bit field, if it accesses either 32-bit part as a 32-bit access)
- * ASSUMED this critereon is mandated by section 4.1.3.1 of the VirtIO 1.0 specification)
- * This MACRO can be re-written to allow unaligned access to a field (within bounds).
- *
- * @param   member   - Member of VIRTIO_PCI_COMMON_CFG_T
- * @result           - true or false
+ * Device-specific (SCSI Host Device) queue indicies
  */
-#define MATCH_SCSI_CONFIG(member) \
-            (RT_SIZEOFMEMB(VIRTIO_SCSI_CONFIG_T, member) == 8 \
-             && (   uOffset == RT_OFFSETOF(VIRTIO_SCSI_CONFIG_T, member) \
-                 || uOffset == RT_OFFSETOF(VIRTIO_SCSI_CONFIG_T, member) + sizeof(uint32_t)) \
-             && cb == sizeof(uint32_t)) \
-         || (uOffset == RT_OFFSETOF(VIRTIO_SCSI_CONFIG_T, member) \
-               && cb == RT_SIZEOFMEMB(VIRTIO_SCSI_CONFIG_T, member))
-
-#define LOG_ACCESSOR(member) \
-        virtioLogMappedIoValue(__FUNCTION__, #member, pv, cb, uMemberOffset, fWrite, false, 0);
-
-#define SCSI_CONFIG_ACCESSOR(member) \
-    { \
-        uint32_t uMemberOffset = uOffset - RT_OFFSETOF(VIRTIO_SCSI_CONFIG_T, member); \
-        if (fWrite) \
-            memcpy(((char *)&pVirtioScsi->virtioScsiConfig.member) + uMemberOffset, (const char *)pv, cb); \
-        else \
-            memcpy((char *)pv, (const char *)(((char *)&pVirtioScsi->virtioScsiConfig.member) + uMemberOffset), cb); \
-        LOG_ACCESSOR(member); \
-    }
-
-#define SCSI_CONFIG_ACCESSOR_READONLY(member) \
-    { \
-        uint32_t uMemberOffset = uOffset - RT_OFFSETOF(VIRTIO_SCSI_CONFIG_T, member); \
-        if (fWrite) \
-            LogFunc(("Guest attempted to write readonly virtio_pci_common_cfg.%s\n", #member)); \
-        else \
-        { \
-            memcpy((char *)pv, (const char *)(((char *)&pVirtioScsi->virtioScsiConfig.member) + uMemberOffset), cb); \
-            LOG_ACCESSOR(member); \
-        } \
-    }
+#define VIRTIOSCSI_VIRTQ_CONTROLQ                   0       /* Index of control queue */
+#define VIRTIOSCSI_VIRTQ_EVENTQ                     1       /* Index of event queue */
+#define VIRTIOSCSI_VIRTQ_REQ_BASE                   2       /* Base index of req queues */
 
 /**
  * Definitions that follow are based on the VirtIO 1.0 specification.
@@ -297,18 +261,17 @@ typedef struct VIRTIOSCSITARGET
     /** Flag whether device is present. */
     bool                            fPresent;
 
-
     /** Media port interface. */
     PDMIMEDIAPORT                   IMediaPort;
+
     /** Pointer to the attached driver's media interface. */
     R3PTRTYPE(PPDMIMEDIA)           pDrvMedia;
 
-
     /** Extended media port interface. */
     PDMIMEDIAEXPORT                 IMediaExPort;
+
      /** Pointer to the attached driver's extended media interface. */
     R3PTRTYPE(PPDMIMEDIAEX)         pDrvMediaEx;
-
 
     /** Status LED interface */
     PDMILEDPORTS                    ILed;
@@ -317,10 +280,6 @@ typedef struct VIRTIOSCSITARGET
 
     /** Number of outstanding tasks on the port. */
     volatile uint32_t               cOutstandingRequests;
-
-    R3PTRTYPE(PVQUEUE)              pCtlQueue; // ? TBD
-    R3PTRTYPE(PVQUEUE)              pEvtQueue; // ? TBD
-    R3PTRTYPE(PVQUEUE)              pReqQueue; // ? TBD
 
 } VIRTIOSCSITARGET, *PVIRTIOSCSITARGET;
 
@@ -332,14 +291,18 @@ typedef struct VIRTIOSCSITARGET
  */
 typedef struct VIRTIOSCSI
 {
-    /* Opaque handle to Virtio common framework */
+    /* Opaque handle to VirtIO common framework (must be first item
+     * in this struct so PDMINS_2_DATA macro's casting works) */
     VIRTIOHANDLE                    hVirtio;
 
     /* SCSI target instances data */
     VIRTIOSCSITARGET                aTargetInstances[VIRTIOSCSI_MAX_TARGETS];
 
+    const char                      szInstance[16];
+
     /** Device base interface. */
     PDMIBASE                        IBase;
+
 
     /** Pointer to the device instance. - R3 ptr. */
     PPDMDEVINSR3                    pDevInsR3;
@@ -380,8 +343,51 @@ typedef struct VIRTIOSCSI
 
     VIRTIO_SCSI_CONFIG_T            virtioScsiConfig;
 
+
 } VIRTIOSCSI, *PVIRTIOSCSI;
 
+/**
+ * This macro resolves to boolean true if uOffset matches a field offset and size exactly,
+ * (or if it is a 64-bit field, if it accesses either 32-bit part as a 32-bit access)
+ * ASSUMED this critereon is mandated by section 4.1.3.1 of the VirtIO 1.0 specification)
+ * This MACRO can be re-written to allow unaligned access to a field (within bounds).
+ *
+ * @param   member   - Member of VIRTIO_PCI_COMMON_CFG_T
+ * @result           - true or false
+ */
+#define MATCH_SCSI_CONFIG(member) \
+            (RT_SIZEOFMEMB(VIRTIO_SCSI_CONFIG_T, member) == 8 \
+             && (   uOffset == RT_UOFFSETOF(VIRTIO_SCSI_CONFIG_T, member) \
+                 || uOffset == RT_UOFFSETOF(VIRTIO_SCSI_CONFIG_T, member) + sizeof(uint32_t)) \
+             && cb == sizeof(uint32_t)) \
+         || (uOffset == RT_UOFFSETOF(VIRTIO_SCSI_CONFIG_T, member) \
+               && cb == RT_SIZEOFMEMB(VIRTIO_SCSI_CONFIG_T, member))
+
+#define LOG_ACCESSOR(member) \
+        virtioLogMappedIoValue(__FUNCTION__, #member, RT_SIZEOFMEMB(VIRTIO_SCSI_CONFIG_T, member), \
+            pv, cb, uMemberOffset, fWrite, false, 0);
+
+#define SCSI_CONFIG_ACCESSOR(member) \
+    { \
+        uint32_t uMemberOffset = uOffset - RT_UOFFSETOF(VIRTIO_SCSI_CONFIG_T, member); \
+        if (fWrite) \
+            memcpy(((char *)&pVirtioScsi->virtioScsiConfig.member) + uMemberOffset, (const char *)pv, cb); \
+        else \
+            memcpy((char *)pv, (const char *)(((char *)&pVirtioScsi->virtioScsiConfig.member) + uMemberOffset), cb); \
+        LOG_ACCESSOR(member); \
+    }
+
+#define SCSI_CONFIG_ACCESSOR_READONLY(member) \
+    { \
+        uint32_t uMemberOffset = uOffset - RT_UOFFSETOF(VIRTIO_SCSI_CONFIG_T, member); \
+        if (fWrite) \
+            LogFunc(("Guest attempted to write readonly virtio_pci_common_cfg.%s\n", #member)); \
+        else \
+        { \
+            memcpy((char *)pv, (const char *)(((char *)&pVirtioScsi->virtioScsiConfig.member) + uMemberOffset), cb); \
+            LOG_ACCESSOR(member); \
+        } \
+    }
 
 
 //pk: Needed for virtioIO (e.g. to talk to devSCSI? TBD ??
@@ -543,6 +549,22 @@ static DECLCALLBACK(void) virtioScsiR3Reset(PPDMDEVINS pDevIns)
 //   }
 }
 
+/**
+ * Device relocation callback.
+ *
+ * When this callback is called the device instance data, and if the
+ * device have a GC component, is being relocated, or/and the selectors
+ * have been changed. The device must use the chance to perform the
+ * necessary pointer relocations and data updates.
+ *
+ * Before the GC code is executed the first time, this function will be
+ * called with a 0 delta so GC pointer calculations can be one in one place.
+ *
+ * @param   pDevIns     Pointer to the device instance.
+ * @param   offDelta    The relocation delta relative to the old location.
+ *
+ * @remark  A relocation CANNOT fail.
+ */
 static DECLCALLBACK(void) virtioScsiR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 {
     LogFunc(("Relocating virtio-scsi"));
@@ -556,6 +578,11 @@ static DECLCALLBACK(void) virtioScsiR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR of
         PVIRTIOSCSITARGET pTarget = &pThis->aTargetInstances[i];
         pTarget->pVirtioScsiR3 = pThis;;
     }
+
+    /**
+     * Important: Forward to virtio framework!
+     */
+    virtioRelocate(pDevIns, offDelta);
 
 }
 
@@ -830,6 +857,40 @@ static int virtioScsiR3CfgAccessed(PVIRTIOSCSI pVirtioScsi, uint32_t uOffset,
     return rc;
 }
 
+
+/**
+ * Get this callback from the virtio framework when the driver is ready so we know
+ * the request for the number of queues is valid (for now presuming the driver(s) aren't
+ * dynamically adding req queues but create them all while initializing
+ * based on config information on host).
+ */
+static DECLCALLBACK(void) virtioScsiStatusChanged(VIRTIOHANDLE hVirtio, bool fDriverOK)
+{
+#define MAX_QUEUENAME_SIZE 20
+    Log2Func(("\n"));
+    char pszQueueName[MAX_QUEUENAME_SIZE];
+    if (fDriverOK)
+    {
+        Log2Func(("VirtIO reports ready... Initializing queues\n"));
+        virtioQueueInit(hVirtio, VIRTIOSCSI_VIRTQ_CONTROLQ, "controlq");
+        virtioQueueInit(hVirtio, VIRTIOSCSI_VIRTQ_EVENTQ,   "eventq");
+        for (uint16_t qIdx = VIRTIOSCSI_VIRTQ_REQ_BASE; qIdx < virtioGetNumQueues(hVirtio); qIdx++)
+        {
+            RTStrPrintf(pszQueueName, sizeof(pszQueueName), "requestq_%d", qIdx - 2);
+            bool fEnabled = virtioQueueInit(hVirtio, qIdx,  (const char *)pszQueueName);
+            if (!fEnabled)
+                break;
+        }
+    } else {
+        Log2Func(("VirtIO reports not ready\n"));
+    }
+}
+
+static DECLCALLBACK(void) virtioScsiQueueNotified(VIRTIOHANDLE hVirtio, uint16_t qIdx)
+{
+    Log2Func(("virtio callback: %s has avail data[s]\n", virtioQueueGetName(hVirtio, qIdx)));
+}
+
 /**
  * virtio-scsi VirtIO Device-specific capabilities read callback
  * (other VirtIO capabilities and features are handled in VirtIO implementation)
@@ -957,7 +1018,6 @@ static DECLCALLBACK(void *) virtioScsiR3DeviceQueryInterface(PPDMIBASE pInterfac
     return NULL;
 }
 
-
 /**
  * Detach notification.
  *
@@ -1055,6 +1115,7 @@ static DECLCALLBACK(int) virtioScsiConstruct(PPDMDEVINS pDevIns, int iInstance, 
     pThis->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
 
     LogFunc(("PDM device instance: %d\n", iInstance));
+    RTStrPrintf((char *)pThis->szInstance, sizeof(pThis->szInstance), "VIRTIOSCSI%d", iInstance);
 
     /*
      * Validate and read configuration.
@@ -1102,16 +1163,23 @@ static DECLCALLBACK(int) virtioScsiConstruct(PPDMDEVINS pDevIns, int iInstance, 
     pThis->virtioScsiConfig.uMaxTarget      = pThis->cTargets;
     pThis->virtioScsiConfig.uMaxLun         = 16383; /* from VirtIO 1.0 spec */
 
-    rc = virtioConstruct(pDevIns, &pThis->hVirtio, iInstance, pVirtioPciParams,
-                         VIRTIOSCSI_NAME_FMT, VIRTIOSCSI_N_QUEUES, VIRTIOSCSI_REGION_PCI_CAP,
+    rc = virtioConstruct(pDevIns, &pThis->hVirtio, pVirtioPciParams, pThis->szInstance,
+                         VIRTIOSCSI_N_QUEUES, VIRTIOSCSI_REGION_PCI_CAP,
                          VIRTIOSCSI_HOST_SCSI_FEATURES_OFFERED,
-                         virtioScsiR3DevCapRead, virtioScsiR3DevCapWrite,
+                         virtioScsiR3DevCapRead,
+                         virtioScsiR3DevCapWrite,
+                         virtioScsiStatusChanged,
+                         virtioScsiQueueNotified,
+                         virtioScsiR3LiveExec,
+                         virtioScsiR3SaveExec,
+                         virtioScsiR3LoadExec,
+                         virtioScsiR3LoadDone,
                          sizeof(VIRTIO_SCSI_CONFIG_T) /* cbDevSpecificCap */,
-                         (void *)&pThis->virtioScsiConfig /* pDevSpecificCap */,
-                         0 /* uNotifyOffMultiplier */);
+                         (void *)&pThis->virtioScsiConfig /* pDevSpecificCap */);
 
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("virtio-scsi: failed to initialize VirtIO"));
+
 
     rc = PDMDevHlpPCIIORegionRegister(pDevIns, VIRTIOSCSI_REGION_MEM_IO, 32,
                                       PCI_ADDRESS_SPACE_MEM, virtioScsiR3Map);
@@ -1142,7 +1210,7 @@ static DECLCALLBACK(int) virtioScsiConstruct(PPDMDEVINS pDevIns, int iInstance, 
     {
         PVIRTIOSCSITARGET pTarget = &pThis->aTargetInstances[iLUN];
 
-        if (RTStrAPrintf(&pTarget->pszLunName, "VSCSI%u", iLUN) < 0)
+        if (RTStrAPrintf(&pTarget->pszLunName, "VSCSILUN%u", iLUN) < 0)
             AssertLogRelFailedReturn(VERR_NO_MEMORY);
 
         /* Initialize static parts of the device. */
@@ -1205,12 +1273,13 @@ static DECLCALLBACK(int) virtioScsiConstruct(PPDMDEVINS pDevIns, int iInstance, 
         }
     }
 
-    rc = PDMDevHlpSSMRegisterEx(pDevIns, VIRTIOSCSI_SAVED_STATE_MINOR_VERSION, sizeof(*pThis), NULL,
+/*    rc = PDMDevHlpSSMRegisterEx(pDevIns, VIRTIOSCSI_SAVED_STATE_MINOR_VERSION, sizeof(*pThis), NULL,
                                 NULL, virtioScsiR3LiveExec, NULL,
                                 NULL, virtioScsiR3SaveExec, NULL,
                                 NULL, virtioScsiR3LoadExec, virtioScsiR3LoadDone);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("virtio-scsi cannot register save state handlers"));
+*/
 
     /* Status driver */
     PPDMIBASE pUpBase;
