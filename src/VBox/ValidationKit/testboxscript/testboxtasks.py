@@ -475,11 +475,13 @@ class TestBoxTestDriverTask(TestBoxBaseTask):
                 if oChild is self._oChild:
                     self._oChild = None;
 
+                if iRc == constants.rtexitcode.SUCCESS:
+                    return (True, constants.result.PASSED);
                 if iRc == constants.rtexitcode.SKIPPED:
                     return (True, constants.result.SKIPPED);
-                if iRc != constants.rtexitcode.SUCCESS:
-                    return (False, constants.result.FAILED);
-                return (True, constants.result.PASSED);
+                if iRc == constants.rtexitcode.BAD_TESTBOX:
+                    return (False, constants.result.BAD_TESTBOX);
+                return (False, constants.result.FAILED);
 
             # Check for abort first, since that has less of a stigma.
             if self._shouldTerminate() is True:

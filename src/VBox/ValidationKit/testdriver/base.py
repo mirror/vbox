@@ -854,6 +854,9 @@ class TestDriverBase(object): # pylint: disable=too-many-instance-attributes
         self.sHost              = utils.getHostOs();
         self.sHostArch          = utils.getHostArch();
 
+        # Skipped status modifier (see end of innerMain()).
+        self.fBadTestbox        = False;
+
         #
         # Get our bearings and adjust the environment.
         #
@@ -1753,6 +1756,11 @@ class TestDriverBase(object): # pylint: disable=too-many-instance-attributes
 
         # Done
         if fRc is None:
+            if self.fBadTestbox:
+                reporter.log('****************************************************************');
+                reporter.log('*** The test driver SKIPPED the test because of BAD_TESTBOX. ***');
+                reporter.log('****************************************************************');
+                return rtexitcode.RTEXITCODE_BAD_TESTBOX;
             reporter.log('*****************************************');
             reporter.log('*** The test driver SKIPPED the test. ***');
             reporter.log('*****************************************');

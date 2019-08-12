@@ -155,8 +155,11 @@ class VBoxInstallerTestDriver(TestDriverBase):
         Install VBox and pass on the configure request to the sub testdriver.
         """
         fRc = self._installVBox();
-        if fRc is None: self._persistentVarSet(self.ksVar_Skipped, 'true');
-        else:           self._persistentVarUnset(self.ksVar_Skipped);
+        if fRc is None:
+            self._persistentVarSet(self.ksVar_Skipped, 'true');
+            self.fBadTestbox = True;
+        else:
+            self._persistentVarUnset(self.ksVar_Skipped);
 
         ## @todo vbox.py still has bugs preventing us from invoking it seperately with each action.
         if fRc is True and 'execute' not in self.asActions and 'all' not in self.asActions:
