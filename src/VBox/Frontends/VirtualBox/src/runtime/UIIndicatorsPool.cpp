@@ -1011,6 +1011,7 @@ protected:
         /* Draw a thin bar on th right hand side of the icon indication CPU load: */
         QLinearGradient gradient(0, 0, 0, height());
         gradient.setColorAt(1.0, Qt::green);
+        gradient.setColorAt(0.5, Qt::yellow);
         gradient.setColorAt(0.0, Qt::red);
 
         painter.setPen(Qt::NoPen);
