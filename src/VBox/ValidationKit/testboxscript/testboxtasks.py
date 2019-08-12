@@ -912,11 +912,14 @@ class TestBoxExecTask(TestBoxTestDriverTask):
                 (fRc, sResult) = self._monitorChild(self._cSecTimeout);
                 testboxcommons.log2('_threadProc: _monitorChild -> %s' % (fRc,));
 
-                # If the run failed, do explicit cleanup.
+                # If the run failed, do explicit cleanup unless its a BAD_TESTBOX, since BAD_TESTBOX is
+                # intended for pre-cleanup problems caused by previous test failures.  Do a cleanup on
+                # a BAD_TESTBOX could easily trigger an uninstallation error and change status to FAILED.
                 if fRc is not True:
-                    testboxcommons.log2('_threadProc: explicit cleanups...');
-                    self._terminateChild();
-                    self._cleanupAfter();
+                    if sResult != constants.result.BAD_TESTBOX:
+                        testboxcommons.log2('_threadProc: explicit cleanups...');
+                        self._terminateChild();
+                        self._cleanupAfter();
                     fNeedCleanUp = False;
             assert self._oChild is None;
 
