@@ -102,14 +102,6 @@ class RemoteExecutor(object):
         if self.asPaths is None:
             self.asPaths = [ ];
 
-    def _isFile(self, sFile):
-        """
-        Checks whether a file exists.
-        """
-        if self.oTxsSession is not None:
-            return self.oTxsSession.syncIsFile(sFile);
-        return os.path.isfile(sFile);
-
     def _getBinaryPath(self, sBinary):
         """
         Returns the complete path of the given binary if found
@@ -117,9 +109,9 @@ class RemoteExecutor(object):
         """
         for sPath in self.asPaths:
             sFile = sPath + '/' + sBinary;
-            if self._isFile(sFile):
+            if self.isFile(sFile):
                 return sFile;
-        return None;
+        return sBinary;
 
     def _sudoExecuteSync(self, asArgs, sInput):
         """
@@ -159,6 +151,7 @@ class RemoteExecutor(object):
             reporter.flushall();
             oStdOut = StdInOutBuffer();
             oStdErr = StdInOutBuffer();
+            oTestPipe = reporter.FileWrapperTestPipe();
             oStdIn = None;
             if sInput is not None:
                 oStdIn = StdInOutBuffer(sInput);
@@ -166,7 +159,8 @@ class RemoteExecutor(object):
                 oStdIn = '/dev/null'; # pylint: disable=redefined-variable-type
             fRc = self.oTxsSession.syncExecEx(sExec, (sExec,) + asArgs,
                                               oStdIn = oStdIn, oStdOut = oStdOut,
-                                              oStdErr = oStdErr, cMsTimeout = cMsTimeout);
+                                              oStdErr = oStdErr, oTestPipe = oTestPipe,
+                                              cMsTimeout = cMsTimeout);
             sOutput = oStdOut.getOutput();
             sError = oStdErr.getOutput();
             if fRc is False:
@@ -287,6 +281,21 @@ class RemoteExecutor(object):
         else:
             try:
                 shutil.rmtree(sDir, ignore_errors=True);
+            except:
+                fRc = False;
+
+        return fRc;
+
+    def isFile(self, sPath, cMsTimeout = 30000):
+        """
+        Checks that the given file  exists.
+        """
+        fRc = True;
+        if self.oTxsSession is not None:
+            fRc = self.oTxsSession.syncIsFile(sPath, cMsTimeout);
+        else:
+            try:
+                os.path.isFile(sPath);
             except:
                 fRc = False;
 

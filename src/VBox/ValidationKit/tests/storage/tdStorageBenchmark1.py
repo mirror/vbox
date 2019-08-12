@@ -85,10 +85,10 @@ class FioTest(object):
 
         cfgBuf = StringIO();
         cfgBuf.write('[global]\n');
-        cfgBuf.write('bs=' + self.dCfg.get('RecordSize', '4k') + '\n');
+        cfgBuf.write('bs='       + str(self.dCfg.get('RecordSize', 4096)) + '\n');
         cfgBuf.write('ioengine=' + sIoEngine + '\n');
-        cfgBuf.write('iodepth=' + self.dCfg.get('QueueDepth', '32') + '\n');
-        cfgBuf.write('size=' + self.dCfg.get('TestsetSize', '2g') + '\n');
+        cfgBuf.write('iodepth='  + str(self.dCfg.get('QueueDepth', 32)) + '\n');
+        cfgBuf.write('size='     + str(self.dCfg.get('TestsetSize', 2147483648)) + '\n');
         if fDirectIo:
             cfgBuf.write('direct=1\n');
         else:
@@ -165,9 +165,9 @@ class IozoneTest(object):
                           ('fwriters',        'FWrite'),
                           ('freaders',        'FRead'),
                           ('readers',         'FirstRead')];
-        self.sRecordSize  = dCfg.get('RecordSize',  '4k');
-        self.sTestsetSize = dCfg.get('TestsetSize', '2g');
-        self.sQueueDepth  = dCfg.get('QueueDepth',  '32');
+        self.sRecordSize  = str(int(dCfg.get('RecordSize',  4096) / 1024));
+        self.sTestsetSize = str(int(dCfg.get('TestsetSize', 2147483648) / 1024));
+        self.sQueueDepth  = str(int(dCfg.get('QueueDepth',  32)));
         self.sFilePath    = dCfg.get('FilePath',    '/mnt/iozone');
         self.fDirectIo    = True;
 
@@ -242,6 +242,81 @@ class IozoneTest(object):
             fRc = False;
 
         return fRc;
+
+    def getErrorReport(self):
+        """
+        Returns the error report in case the testcase failed.
+        """
+        return self.sError;
+
+class IoPerfTest(object):
+    """
+    IoPerf testcase.
+    """
+    def __init__(self, oExecutor, dCfg = None):
+        self.oExecutor = oExecutor;
+        self.sResult = None;
+        self.sError = None;
+        self.sRecordSize  = str(dCfg.get('RecordSize',  4094));
+        self.sTestsetSize = str(dCfg.get('TestsetSize', 2147483648));
+        self.sQueueDepth  = str(dCfg.get('QueueDepth',  32));
+        self.sFilePath    = dCfg.get('FilePath',    '/mnt');
+        self.fDirectIo    = True;
+        self.asGstIoPerfPaths   = [
+            '${CDROM}/vboxvalidationkit/${OS/ARCH}/IoPerf${EXESUFF}',
+            '${CDROM}/${OS/ARCH}/IoPerf${EXESUFF}',
+        ];
+
+        sTargetOs = dCfg.get('TargetOs');
+        if sTargetOs == 'solaris':
+            self.fDirectIo = False;
+
+    def _locateGstIoPerf(self):
+        """
+        Returns guest side path to FsPerf.
+        """
+        for sIoPerfPath in self.asGstIoPerfPaths:
+            if self.oExecutor.isFile(sIoPerfPath):
+                return sIoPerfPath;
+        reporter.log('Unable to find guest FsPerf in any of these places: %s' % ('\n    '.join(self.asGstIoPerfPaths),));
+        return self.asGstIoPerfPaths[0];
+
+    def prepare(self, cMsTimeout = 30000):
+        """ Prepares the testcase """
+        _ = cMsTimeout;
+        return True; # Nothing to do.
+
+    def run(self, cMsTimeout = 30000):
+        """ Runs the testcase """
+        tupArgs = ('--block-size', self.sRecordSize, '--test-set-size', self.sTestsetSize, \
+                   '--maximum-requests', self.sQueueDepth, '--dir', self.sFilePath + '/ioperfdir-1');
+        if self.fDirectIo:
+            tupArgs += ('--use-cache', 'off');
+        fRc, sOutput, sError = self.oExecutor.execBinary(self._locateGstIoPerf(), tupArgs, cMsTimeout = cMsTimeout);
+        if fRc:
+            self.sResult = sOutput;
+        else:
+            if sError is None:
+                sError = '';
+            if sOutput is None:
+                sOutput = '';
+            self.sError = ('Binary: IoPerf\n' +
+                           '\nOutput:\n\n' +
+                           sOutput +
+                           '\nError:\n\n' +
+                           sError);
+        return fRc;
+
+    def cleanup(self):
+        """ Cleans up any leftovers from the testcase. """
+        return True;
+
+    def reportResult(self):
+        """
+        Reports the test results to the test manager.
+        """
+        # Should be done using the test pipe already.
+        return True;
 
     def getErrorReport(self):
         """
@@ -394,47 +469,48 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
 
     # Global storage configs for the testbox
     kdStorageCfgs = {
-        # Testbox configs
-        'testboxstor1.de.oracle.com': storagecfg.DiskCfg('solaris', storagecfg.g_ksDiskCfgRegExp, r'c[3-9]t\dd0\Z'),
+        # Testbox configs (Flag whether to test raw mode on the testbox, disk configuration)
+        'testboxstor1.de.oracle.com': (True, storagecfg.DiskCfg('solaris', storagecfg.g_ksDiskCfgRegExp, r'c[3-9]t\dd0\Z')),
         # Windows testbox doesn't return testboxstor2.de.oracle.com from socket.getfqdn()
-        'testboxstor2':               storagecfg.DiskCfg('win',     storagecfg.g_ksDiskCfgStatic, 'D:\\StorageTest'),
+        'testboxstor2':               (False, storagecfg.DiskCfg('win',     storagecfg.g_ksDiskCfgStatic, 'D:\\StorageTest')),
 
         # Local test configs for the testcase developer
-        'adaris':                     storagecfg.DiskCfg('linux',   storagecfg.g_ksDiskCfgList,   [ '/dev/sda' ]),
-        'daedalus':                   storagecfg.DiskCfg('darwin',  storagecfg.g_ksDiskCfgStatic, \
-                                                         '/Volumes/VirtualBox/Testsuite/StorageScratch'),
-        'windows10':                  storagecfg.DiskCfg('win',  storagecfg.g_ksDiskCfgStatic, \
-                                                         'L:\\Testsuite\\StorageTest'),
+        'adaris':                     (True, storagecfg.DiskCfg('linux',   storagecfg.g_ksDiskCfgStatic, \
+                                                                '/home/alexander/StorageScratch')),
+        'daedalus':                   (True, storagecfg.DiskCfg('darwin',  storagecfg.g_ksDiskCfgStatic, \
+                                                               '/Volumes/VirtualBox/Testsuite/StorageScratch')),
+        'windows10':                  (True, storagecfg.DiskCfg('win',  storagecfg.g_ksDiskCfgStatic, \
+                                                                'L:\\Testsuite\\StorageTest')),
     };
 
     # Available test sets.
     kdTestSets = {
         # Mostly for developing and debugging the testcase.
         'Fast': {
-            'RecordSize':  '64k',
-            'TestsetSize': '100m',
-            'QueueDepth':  '32',
+            'RecordSize':  65536,
+            'TestsetSize': 104857600, # 100 MiB
+            'QueueDepth':  32,
             'DiskSizeGb':  2
         },
         # For quick functionality tests where benchmark results are not required.
         'Functionality': {
-            'RecordSize':  '64k',
-            'TestsetSize': '2g',
-            'QueueDepth':  '32',
+            'RecordSize':  65536,
+            'TestsetSize': 2147483648, # 2 GiB
+            'QueueDepth':  32,
             'DiskSizeGb':  10
         },
         # For benchmarking the I/O stack.
         'Benchmark': {
-            'RecordSize':  '64k',
-            'TestsetSize': '20g',
-            'QueueDepth':  '32',
+            'RecordSize':  65536,
+            'TestsetSize': 21474836480, # 20 Gib
+            'QueueDepth':  32,
             'DiskSizeGb':  30
         },
         # For stress testing which takes a lot of time.
         'Stress': {
-            'RecordSize':  '64k',
-            'TestsetSize': '2t',
-            'QueueDepth':  '32',
+            'RecordSize':  65536,
+            'TestsetSize': 2199023255552, # 2 TiB
+            'QueueDepth':  32,
             'DiskSizeGb':  10000
         },
     };
@@ -485,7 +561,7 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
         self.asDiskFormats           = self.asDiskFormatsDef;
         self.asDiskVariantsDef       = ['Dynamic', 'Fixed', 'DynamicSplit2G', 'FixedSplit2G', 'Network'];
         self.asDiskVariants          = self.asDiskVariantsDef;
-        self.asTestsDef              = ['iozone', 'fio'];
+        self.asTestsDef              = ['iozone', 'fio', 'ioperf'];
         self.asTests                 = self.asTestsDef;
         self.asTestSetsDef           = ['Fast', 'Functionality', 'Benchmark', 'Stress'];
         self.asTestSets              = self.asTestSetsDef;
@@ -497,6 +573,7 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
         self.fUseScratch             = False;
         self.fRecreateStorCfg        = True;
         self.fReportBenchmarkResults = True;
+        self.fTestRawMode            = False;
         self.oStorCfg                = None;
         self.sIoLogPathDef           = self.sScratchPath;
         self.sIoLogPath              = self.sIoLogPathDef;
@@ -708,14 +785,16 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
         if 'tst-storage' in self.asTestVMs:
             oVM = self.createTestVM('tst-storage', 1, '5.0/storage/tst-storage.vdi', sKind = 'ArchLinux_64', fIoApic = True, \
                                     eNic0AttachType = vboxcon.NetworkAttachmentType_NAT, \
-                                    eNic0Type = vboxcon.NetworkAdapterType_Am79C973);
+                                    eNic0Type = vboxcon.NetworkAdapterType_Am79C973, \
+                                    sDvdImage = self.sVBoxValidationKitIso);
             if oVM is None:
                 return False;
 
         if 'tst-storage32' in self.asTestVMs:
             oVM = self.createTestVM('tst-storage32', 1, '5.0/storage/tst-storage32.vdi', sKind = 'ArchLinux', fIoApic = True, \
                                     eNic0AttachType = vboxcon.NetworkAttachmentType_NAT, \
-                                    eNic0Type = vboxcon.NetworkAdapterType_Am79C973);
+                                    eNic0Type = vboxcon.NetworkAdapterType_Am79C973, \
+                                    sDvdImage = self.sVBoxValidationKitIso);
             if oVM is None:
                 return False;
 
@@ -778,6 +857,19 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
 
         _ = oSession;
         return lstDisks;
+
+    def mountValidationKitIso(self, oVmExec):
+        """
+        Hack to get the vlaidation kit ISO mounted in the guest as it was left out
+        originally and I don't feel like respinning the disk image.
+        """
+        fRc = oVmExec.mkDir('/media');
+        if fRc:
+            fRc = oVmExec.mkDir('/media/cdrom');
+            if fRc:
+                fRc = oVmExec.execBinaryNoStdOut('mount', ('/dev/sr0', '/media/cdrom'));
+
+        return fRc;
 
     def getDiskFormatVariantsForTesting(self, sDiskFmt, asVariants):
         """
@@ -891,7 +983,9 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
 
         # Check for virt mode, CPU count and selected VM.
         if     asTestCfg[self.kiVirtMode] == 'raw' \
-           and (asTestCfg[self.kiCpuCount] > 1 or asTestCfg[self.kiVmName] == 'tst-storage'):
+           and (   asTestCfg[self.kiCpuCount] > 1 \
+                or asTestCfg[self.kiVmName] == 'tst-storage' \
+                or not self.fTestRawMode):
             return False;
 
         # IDE does not support the no host I/O cache setting
@@ -937,6 +1031,8 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
             oTst = IozoneTest(oExecutor, dTestSet);
         elif sBenchmark == 'fio':
             oTst = FioTest(oExecutor, dTestSet); # pylint: disable=redefined-variable-type
+        elif sBenchmark == 'ioperf':
+            oTst = IoPerfTest(oExecutor, dTestSet); # pylint: disable=redefined-variable-type
 
         if oTst is not None:
             fRc = oTst.prepare();
@@ -1170,37 +1266,41 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
                     # Prepare the storage on the guest
                     lstBinaryPaths = ['/bin', '/sbin', '/usr/bin', '/usr/sbin' ];
                     oExecVm = remoteexecutor.RemoteExecutor(oTxsSession, lstBinaryPaths, '${SCRATCH}');
-                    oGstDiskCfg = storagecfg.DiskCfg('linux', storagecfg.g_ksDiskCfgList, \
-                                                     self.getGuestDisk(oSession, oTxsSession, eStorageController));
-                    oStorCfgVm = storagecfg.StorageCfg(oExecVm, oGstDiskCfg);
+                    fRc = self.mountValidationKitIso(oExecVm);
+                    if fRc:
+                        oGstDiskCfg = storagecfg.DiskCfg('linux', storagecfg.g_ksDiskCfgList, \
+                                                         self.getGuestDisk(oSession, oTxsSession, eStorageController));
+                        oStorCfgVm = storagecfg.StorageCfg(oExecVm, oGstDiskCfg);
 
-                    iTry = 0;
-                    while iTry < 3:
-                        sMountPoint = self.prepareStorage(oStorCfgVm);
+                        iTry = 0;
+                        while iTry < 3:
+                            sMountPoint = self.prepareStorage(oStorCfgVm);
+                            if sMountPoint is not None:
+                                reporter.log('Prepared storage on %s try' % (iTry + 1,));
+                                break;
+                            else:
+                                iTry = iTry + 1;
+                                self.sleep(5);
+
                         if sMountPoint is not None:
-                            reporter.log('Prepared storage on %s try' % (iTry + 1,));
-                            break;
+                            self.testBenchmark('linux', sIoTest, sMountPoint, oExecVm, dTestSet, \
+                                               cMsTimeout = 3 * 3600 * 1000); # 3 hours max (Benchmark and QED takes a lot of time)
+                            self.cleanupStorage(oStorCfgVm);
                         else:
-                            iTry = iTry + 1;
-                            self.sleep(5);
+                            reporter.testFailure('Failed to prepare storage for the guest benchmark');
 
-                    if sMountPoint is not None:
-                        self.testBenchmark('linux', sIoTest, sMountPoint, oExecVm, dTestSet, \
-                                           cMsTimeout = 3 * 3600 * 1000); # 3 hours max (Benchmark and QED takes a lot of time)
-                        self.cleanupStorage(oStorCfgVm);
+                        # cleanup.
+                        self.removeTask(oTxsSession);
+                        self.terminateVmBySession(oSession);
+
+                        # Add the I/O log if it exists and the test failed
+                        if reporter.testErrorCount() > 0 \
+                           and sIoLogFile is not None \
+                           and os.path.exists(sIoLogFile):
+                            reporter.addLogFile(sIoLogFile, 'misc/other', 'I/O log');
+                            os.remove(sIoLogFile);
                     else:
-                        reporter.testFailure('Failed to prepare storage for the guest benchmark');
-
-                    # cleanup.
-                    self.removeTask(oTxsSession);
-                    self.terminateVmBySession(oSession);
-
-                    # Add the I/O log if it exists and the test failed
-                    if reporter.testErrorCount() > 0 \
-                       and sIoLogFile is not None \
-                       and os.path.exists(sIoLogFile):
-                        reporter.addLogFile(sIoLogFile, 'misc/other', 'I/O log');
-                        os.remove(sIoLogFile);
+                        reporter.testFailure('Failed to mount validation kit ISO');
 
                 else:
                     fRc = False;
@@ -1275,12 +1375,14 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
         """
 
         fRc = True;
-        oDiskCfg = self.kdStorageCfgs.get(socket.getfqdn().lower());
-        if oDiskCfg is None:
-            oDiskCfg = self.kdStorageCfgs.get(socket.gethostname().lower());
+        tupTstCfg = self.kdStorageCfgs.get(socket.getfqdn().lower());
+        if tupTstCfg is None:
+            tupTstCfg = self.kdStorageCfgs.get(socket.gethostname().lower());
 
         # Test the host first if requested
-        if oDiskCfg is not None or self.fUseScratch:
+        if tupTstCfg is not None or self.fUseScratch:
+            self.fTestRawMode = tupTstCfg[0];
+            oDiskCfg = tupTstCfg[1];
             lstBinaryPaths = ['/bin', '/sbin', '/usr/bin', '/usr/sbin', \
                               '/opt/csw/bin', '/usr/ccs/bin', '/usr/sfw/bin'];
             oExecutor = remoteexecutor.RemoteExecutor(None, lstBinaryPaths, self.sScratchPath);
