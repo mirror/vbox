@@ -305,9 +305,9 @@ class VBoxInstallerTestDriver(TestDriverBase):
                 if sBase is None:
                     continue;
                 sBase = sBase.lower();
-                if sBase in [ 'vboxsvc', 'virtualbox', 'virtualboxvm', 'vboxheadless', 'vboxmanage', 'vboxsdl', 'vboxwebsrv',
-                              'vboxautostart', 'vboxballoonctrl', 'vboxbfe', 'vboxextpackhelperapp', 'vboxnetdhcp',
-                              'vboxnetadpctl', 'vboxtestogl', 'vboxtunctl', 'vboxvmmpreload', 'vboxxpcomipcd', 'vmCreator', ]:
+                if sBase in [ 'vboxsvc', 'vboxsds', 'virtualbox', 'virtualboxvm', 'vboxheadless', 'vboxmanage', 'vboxsdl',
+                              'vboxwebsrv', 'vboxautostart', 'vboxballoonctrl', 'vboxbfe', 'vboxextpackhelperapp', 'vboxnetdhcp',
+                              'vboxnetnat', 'vboxnetadpctl', 'vboxtestogl', 'vboxtunctl', 'vboxvmmpreload', 'vboxxpcomipcd', ]:
                     aoTodo.append(oProcess);
                 if sBase.startswith('virtualbox-') and sBase.endswith('-multiarch.exe'):
                     aoTodo.append(oProcess);
@@ -470,7 +470,7 @@ class VBoxInstallerTestDriver(TestDriverBase):
         if   sHost == 'darwin':     fRc = self._uninstallVBoxOnDarwin();
         elif sHost == 'linux':      fRc = self._uninstallVBoxOnLinux();
         elif sHost == 'solaris':    fRc = self._uninstallVBoxOnSolaris(True);
-        elif sHost == 'win':        fRc = self._uninstallVBoxOnWindows(True);
+        elif sHost == 'win':        fRc = self._uninstallVBoxOnWindows(False);
         else:
             reporter.error('Unsupported host "%s".' % (sHost,));
         if fRc is False and not fIgnoreError:
@@ -764,7 +764,7 @@ class VBoxInstallerTestDriver(TestDriverBase):
         # TEMPORARY HACK - END
 
         # Uninstall any previous vbox version first.
-        fRc = self._uninstallVBoxOnWindows(True);
+        fRc = self._uninstallVBoxOnWindows(False);
         if fRc is not True:
             return None; # There shouldn't be anything to uninstall, and if there is, it's not our fault.
 
@@ -774,16 +774,17 @@ class VBoxInstallerTestDriver(TestDriverBase):
         sVBoxInstallPath = os.environ.get('VBOX_INSTALL_PATH', None);
         if sVBoxInstallPath is not None:
             asArgs.extend(['INSTALLDIR="%s"' % (sVBoxInstallPath,)]);
+
         fRc2, iRc = self._sudoExecuteSync(asArgs);
         if fRc2 is False:
             if iRc == 3010: # ERROR_SUCCESS_REBOOT_REQUIRED
-                reporter.log('Note: Installer required a reboot to complete installation');
-                # Optional, don't fail.
+                reporter.error('Installer required a reboot to complete installation (ERROR_SUCCESS_REBOOT_REQUIRED)');
             else:
-                fRc = False;
+                reporter.error('Installer failed, exit code: %s' % (iRc,));
+            fRc = False;
+
         sLogFile = os.path.join(tempfile.gettempdir(), 'VirtualBox', 'VBoxInstallLog.txt');
-        if      sLogFile is not None \
-            and os.path.isfile(sLogFile):
+        if os.path.isfile(sLogFile):
             reporter.addLogFile(sLogFile, 'log/installer', "Verbose MSI installation log file");
         self._waitForTestManagerConnectivity(30);
         return fRc;
@@ -909,12 +910,12 @@ class VBoxInstallerTestDriver(TestDriverBase):
                                                '/L*v', '%s' % (sLogFile), ]);
             if fRc2 is False:
                 if iRc == 3010: # ERROR_SUCCESS_REBOOT_REQUIRED
-                    reporter.log('Note: Uninstaller required a reboot to complete uninstallation');
-                    reporter.addLogFile(sLogFile, 'log/uninstaller_reboot', \
+                    reporter.error('Uninstaller required a reboot to complete uninstallation');
+                    reporter.addLogFile(sLogFile, 'log/uninstaller_reboot',
                                         "Verbose MSI uninstallation log file (reboot required)");
-                    # Optional, don't fail.
                 else:
-                    fRc = False;
+                    reporter.error('Uninstaller failed, exit code: %s' % (iRc,));
+                fRc = False;
 
         self._waitForTestManagerConnectivity(30);
         if fRc is False and os.path.isfile(sLogFile):
