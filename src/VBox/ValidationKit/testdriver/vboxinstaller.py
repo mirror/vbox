@@ -925,9 +925,10 @@ class VBoxInstallerTestDriver(TestDriverBase):
         asLeftovers = [];
         for sService in self.kasWindowsServices:
             fRc2, _ = self._sudoExecuteSync(['sc.exe', 'query', sService]);
-            if fIgnoreServices is False and fRc2 is True:
-                asLeftovers.append(sService,)
-                fRc = False
+            if fRc2 is True:
+                asLeftovers.append(sService,);
+                if fIgnoreServices is False:
+                    fRc = False;
         if asLeftovers:
             reporter.log('Warning! Leftover VBox drivers: %s' % (', '.join(asLeftovers),));
 
