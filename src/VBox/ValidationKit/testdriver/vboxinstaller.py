@@ -926,6 +926,15 @@ class VBoxInstallerTestDriver(TestDriverBase):
         for sService in self.kasWindowsServices:
             fRc2, _ = self._sudoExecuteSync(['sc.exe', 'query', sService]);
             if fRc2 is True:
+                if sService in ['vboxnetadp',]: # Temp hack! ## @todo fix uninstallation of vboxnetadp!
+                    try:
+                        sOutput = utils.sudoProcessOutputChecked(['sc.exe', 'query', sService]);
+                    except:
+                        reporter.logXcpt();
+                    else:
+                        if re.search(r'STATE\s+:\s*1\s*STOPPED', sOutput) is not None:
+                            reporter.log('Ignoring "%s" as it seems to be stopped!' % (sService,));
+                            continue;
                 asLeftovers.append(sService,);
                 if fIgnoreServices is False:
                     fRc = False;
