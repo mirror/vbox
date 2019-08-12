@@ -43,200 +43,224 @@
 #include "VBoxSCSI.h"
 #include "VBoxDD.h"
 
-#define VIRTIOSCSI_MAX_TARGETS                      1
-#define VIRTIOSCSI_SAVED_STATE_MINOR_VERSION        0x01
-#define REQ_ALLOC_SIZE                              1024    /* TBD */
-
-#define PCI_VENDOR_ID_VIRTIO                        0x1AF4
-#define PCI_DEVICE_ID_VIRTIOSCSI_HOST               0x1048
-#define PCI_CLASS_BASE_MASS_STORAGE                 0x01
-#define PCI_CLASS_SUB_SCSI_STORAGE_CONTROLLER       0x00
-#define PCI_CLASS_PROG_UNSPECIFIED                  0x00
-#define VIRTIOSCSI_PCI_CLASS                        0x01     /* Base class Mass Storage? */
-#define VIRTIOSCSI_N_QUEUES                         3        /* Control, Event, Request */
-#define VIRTIOSCSI_REGION_MEM_IO                    0
-#define VIRTIOSCSI_REGION_PORT_IO                   1
-#define VIRTIOSCSI_REGION_PCI_CAP                   2
+#define VIRTIOSCSI_MAX_TARGETS                      1            /**< Can probably determined from higher layers     */
 
 /**
- * Device-specific (SCSI Host Device) queue indicies
- */
-#define VIRTIOSCSI_VIRTQ_CONTROLQ                   0       /* Index of control queue */
-#define VIRTIOSCSI_VIRTQ_EVENTQ                     1       /* Index of event queue */
-#define VIRTIOSCSI_VIRTQ_REQ_BASE                   2       /* Base index of req queues */
-
-/**
- * Definitions that follow are based on the VirtIO 1.0 specification.
- * Struct names are the same. The field names have been adapted to VirtualBox
- * data type + camel case annotation, with the original field name from the
- * VirtIO specification in the field's comment.
- */
-
-/** @name VirtIO 1.0 SCSI Host feature bits
+ * @name VirtIO 1.0 SCSI Host feature bits (See VirtIO 1.0 specification, Section 5.6.3)
  * @{  */
-#define VIRTIOSCSI_F_INOUT                          RT_BIT_64(0)  /** Request is device readable AND writeable */
-#define VIRTIOSCSI_F_HOTPLUG                        RT_BIT_64(1)  /** Host SHOULD allow hotplugging SCSI LUNs & targets */
-#define VIRTIOSCSI_F_CHANGE                         RT_BIT_64(2)  /** Host reports LUN changes via VIRTIOSCSI_T_PARAM_CHANGE event */
-#define VIRTIOSCSI_F_T10_PI                         RT_BIT_64(3)  /** Ext. flds for T10 prot info (DIF/DIX) in SCSI req hdr */
+#define VIRTIOSCSI_F_INOUT                RT_BIT_64(0)           /** Request is device readable AND writeable         */
+#define VIRTIOSCSI_F_HOTPLUG              RT_BIT_64(1)           /** Host allows hotplugging SCSI LUNs & targets      */
+#define VIRTIOSCSI_F_CHANGE               RT_BIT_64(2)           /** Host LUNs chgs via VIRTIOSCSI_T_PARAM_CHANGE evt */
+#define VIRTIOSCSI_F_T10_PI               RT_BIT_64(3)           /** Add T10 port info (DIF/DIX) in SCSI req hdr      */
 /** @} */
 
-/**
- * Features VirtIO 1.0 Host SCSI controller offers guest driver
- */
 #define VIRTIOSCSI_HOST_SCSI_FEATURES_OFFERED \
             (VIRTIOSCSI_F_INOUT | VIRTIOSCSI_F_HOTPLUG | VIRTIOSCSI_F_CHANGE | VIRTIOSCSI_F_T10_PI)
 
+/**
+ * TEMPORARY NOTE: following parameter is set to 1 for early development. Will be increased later
+ */
+#define VIRTIOSCSI_REQ_QUEUE_CNT                    1            /**< Number of req queues exposed by dev.            */
+#define VIRTIOSCSI_SAVED_STATE_MINOR_VERSION        0x01         /**< SSM version #                                   */
+#define PCI_DEVICE_ID_VIRTIOSCSI_HOST               0x1048       /**< Informs guest driver of type of VirtIO device   */
+#define PCI_CLASS_BASE_MASS_STORAGE                 0x01         /**< PCI Mass Storage device class                   */
+#define PCI_CLASS_SUB_SCSI_STORAGE_CONTROLLER       0x00         /**< PCI SCSI Controller subclass                    */
+#define PCI_CLASS_PROG_UNSPECIFIED                  0x00         /**< Programming interface. N/A.                     */
+#define VIRTIOSCSI_PCI_CLASS                        0x01         /**< Base class Mass Storage?                        */
+#define REQ_ALLOC_SIZE                              1024         /**< Allocation size. Need to investigate optimal    */
+
+/**
+ * VirtIO SCSI Host Device device-specific queue indicies
+ *
+ * Virtqs (and their indices) are specified for a SCSI Host Device as described in the VirtIO 1.0 specification
+ * section 5.6. Thus there is no need to explicitly indicate the number of queues needed by this device. The number
+ * of req queues is variable and determined by virtio_scsi_config.num_queues. See VirtIO 1.0 spec section 5.6.4
+ */
+#define VIRTIOSCSI_VIRTQ_CONTROLQ                   0            /* Index of control queue                            */
+#define VIRTIOSCSI_VIRTQ_EVENTQ                     1            /* Index of event queue                              */
+#define VIRTIOSCSI_VIRTQ_REQ_BASE                   2            /* Base index of req queues                          */
+
+/**
+ * The following struct is the VirtIO SCSI Host Device device-specific configuration described in section 5.6.4
+ * of the VirtIO 1.0 specification. This layout maps an MMIO area shared VirtIO guest driver. The VBox VirtIO
+ * this virtual controller device implementation is a client of. The frame work calls back whenever the guest driver
+ * accesses any part of field in this struct
+ */
 typedef struct virtio_scsi_config
 {
-    uint32_t uNumQueues;                                    /** num_queues */
-    uint32_t uSegMax;                                       /** seg_max */
-    uint32_t uMaxSectors;                                   /** max_sectors */
-    uint32_t uCmdPerLun;                                    /** cmd_per_lun */
-    uint32_t uEventInfoSize;                                /** event_info_size */
-    uint32_t uSenseSize;                                    /** sense_size */
-    uint32_t uCdbSize;                                      /** cdb_size */
-    uint16_t uMaxChannel;                                   /** max_channel */
-    uint16_t uMaxTarget;                                    /** max_target */
-    uint32_t uMaxLun;                                       /** max_lun */
+    uint32_t uNumQueues;                                         /**< num_queues       # of req q's exposed by dev    */
+    uint32_t uSegMax;                                            /**< seg_max          Max # of segs allowed in cmd   */
+    uint32_t uMaxSectors;                                        /**< max_sectors      Hint to guest max xfer to use  */
+    uint32_t uCmdPerLun;                                         /**< cmd_per_lun      Max # of link cmd sent per lun */
+    uint32_t uEventInfoSize;                                     /**< event_info_size  Fill max, evtq bufs            */
+    uint32_t uSenseSize;                                         /**< sense_size       Max sense data size dev writes */
+    uint32_t uCdbSize;                                           /**< cdb_size         Max CDB size driver writes     */
+    uint16_t uMaxChannel;                                        /**< max_channel      Hint to guest driver           */
+    uint16_t uMaxTarget;                                         /**< max_target       Hint to guest driver           */
+    uint32_t uMaxLun;                                            /**< max_lun          Hint to guest driver           */
 } VIRTIO_SCSI_CONFIG_T, PVIRTIO_SCSI_CONFIG_T;
 
-#define CDB_SIZE                                    1      /* logic tbd */
-#define SENSE_SIZE                                  1      /* logic tbd */
-#define PI_BYTES_OUT                                1      /* logic tbd */
-#define PI_BYTES_IN                                 1      /* logic tbd */
-#define DATA_OUT                                    1      /* logic tbd */
+/**
+ * Device operation: controlq
+ */
+typedef struct virtio_scsi_ctrl
+{
+    uint32_t type;                                              /**< type                                             */
+    uint8_t  response;                                          /**< response                                         */
+} VIRTIO_SCSI_CTRL_T, *PVIRTIO_SCSI_CTRL_T;
+
+/**
+ * @name VirtIO 1.0 SCSI Host Device device specific control types
+ * @{  */
+#define VIRTIOSCSI_T_NO_EVENT                   0
+#define VIRTIOSCSI_T_TRANSPORT_RESET            1
+#define VIRTIOSCSI_T_ASYNC_NOTIFY               2              /**< Asynchronous notification                         */
+#define VIRTIOSCSI_T_PARAM_CHANGE               3
+/** @} */
+
+/**
+ * Device operation: eventq
+ */
+#define VIRTIOSCSI_T_EVENTS_MISSED             0x80000000
+typedef struct virtio_scsi_event {
+    // Device-writable part
+    uint32_t uEvent;                                           /**< event:                                           */
+    uint8_t  uLUN[8];                                          /**< lun                                              */
+    uint32_t uReason;                                          /**< reason                                           */
+} VIRTIO_SCSI_EVENT_T, *PVIRTIO_SCSI_EVENT_T;
+
+/**
+ * @name VirtIO 1.0 SCSI Host Device device specific event types
+ * @{  */
+#define VIRTIOSCSI_EVT_RESET_HARD               0              /**<                                                  */
+#define VIRTIOSCSI_EVT_RESET_RESCAN             1              /**<                                                  */
+#define VIRTIOSCSI_EVT_RESET_REMOVED            2              /**<                                                  */
+/** @} */
+
+/**
+ * Device operation: reqestq
+ *
+ * The following struct is described in VirtIO 1.0 Specification, section 5.6.6.1
+ */
+#define CDB_SIZE                                 32             /**< Mandated by VirtIO 1.0 spec section 5.6.6.1     */
+#define SENSE_SIZE                               96             /**< See section VirtIO 1.0, section 5.6.4           */
+#define PI_BYTES_IN                              1              /**< Value TBD (see section 5.6.6.1)                 */
+#define PI_BYTES_OUT                             1              /**< Value TBD (see section 5.6.6.1)                 */
+#define DATA_OUT                                512             /**< Value TBD (see section 5.6.6.1)                 */
+
 typedef struct virtio_scsi_req_cmd
 {
     /* Device-readable part */
-    uint8_t  uLUN[8];                                       /** lun               */
-    uint64_t uId;                                           /** id                */
-    uint8_t  uTaskAttr;                                     /** task_attr         */
-    uint8_t  uPrio;                                         /** prio              */
-    uint8_t  uCrn;                                          /** crn               */
-    uint8_t  uCdb[CDB_SIZE];                                /** cdb               */
+    uint8_t  uLUN[8];                                           /**< lun                                             */
+    uint64_t uId;                                               /**< id                                              */
+    uint8_t  uTaskAttr;                                         /**< task_attr                                       */
+    uint8_t  uPrio;                                             /**< prio                                            */
+    uint8_t  uCrn;                                              /**< crn                                             */
+    uint8_t  uCdb[CDB_SIZE];                                    /**< cdb              VirtIO 1.0 mandates 32-bytes   */
 
     /** Following three fields only present if VIRTIOSCSI_F_T10_PI negotiated */
 
-    uint32_t uPiBytesOut;                                   /** pi_bytesout       */
-    uint32_t uPiBytesIn;                                    /** pi_bytesin        */
-    uint8_t  uPiOut[PI_BYTES_OUT];                          /** pi_out[]          */
+    uint32_t uPiBytesOut;                                       /**< pi_bytesout                                     */
+    uint32_t uPiBytesIn;                                        /**< pi_bytesin                                      */
+    uint8_t  uPiOut[PI_BYTES_OUT];                              /**< pi_out[]        TBD                             */
 
-    uint8_t  uDataOut[DATA_OUT];                            /** dataout           */
+    uint8_t  uDataOut[DATA_OUT];                                /**< dataout                                         */
 
     /* Device-writable part */
-    uint32_t uSenseLen;                                     /** sense_len         */
-    uint32_t uResidual;                                     /** residual          */
-    uint16_t uStatusQualifier;                              /** status_qualifier  */
-    uint8_t  uStatus;                                       /** status            */
-    uint8_t  uResponse;                                     /** response          */
-    uint8_t  uSense[SENSE_SIZE];                            /** sense             */
+    uint32_t uSenseLen;                                         /**< sense_len                                       */
+    uint32_t uResidual;                                         /**< residual                                        */
+    uint16_t uStatusQualifier;                                  /**< status_qualifier                                */
+    uint8_t  uStatus;                                           /**< status                                          */
+    uint8_t  uResponse;                                         /**< response                                        */
+    uint8_t  uSense[SENSE_SIZE];                                /**< sense                                           */
 
     /** Following two fields only present if VIRTIOSCSI_F_T10_PI negotiated */
-    uint8_t  uPiIn[PI_BYTES_IN];                            /** pi_in[]           */
-    uint8_t  uDataIn[];                                     /** detain;           */
+    uint8_t  uPiIn[PI_BYTES_IN];                                /**< pi_in[]                                         */
+    uint8_t  uDataIn[];                                         /**< detain;                                         */
 } VIRTIO_SCSI_REQ_CMD_T, *PVIRTIO_SCSI_REQ_CMD_T;
 
-/** @name VirtIO 1.0 SCSI req command-specific response values
+/**
+ * @name VirtIO 1.0 SCSI Host Device Req command-specific response values
  * @{  */
-#define VIRTIOSCSI_S_OK                            0       /* control, command   */
-#define VIRTIOSCSI_S_OVERRUN                       1       /* control */
-#define VIRTIOSCSI_S_ABORTED                       2       /* control */
-#define VIRTIOSCSI_S_BAD_TARGET                    3       /* control, command */
-#define VIRTIOSCSI_S_RESET                         4       /* control */
-#define VIRTIOSCSI_S_BUSY                          5       /* control, command */
-#define VIRTIOSCSI_S_TRANSPORT_FAILURE             6       /* control, command */
-#define VIRTIOSCSI_S_TARGET_FAILURE                7       /* control, command */
-#define VIRTIOSCSI_S_NEXUS_FAILURE                 8       /* control, command */
-#define VIRTIOSCSI_S_FAILURE                       9       /* control, command */
-#define VIRTIOSCSI_S_INCORRECT_LUN                12       /* command */
+#define VIRTIOSCSI_S_OK                            0           /**< control, command                                 */
+#define VIRTIOSCSI_S_OVERRUN                       1           /**< control                                          */
+#define VIRTIOSCSI_S_ABORTED                       2           /**< control                                          */
+#define VIRTIOSCSI_S_BAD_TARGET                    3           /**< control, command                                 */
+#define VIRTIOSCSI_S_RESET                         4           /**< control                                          */
+#define VIRTIOSCSI_S_BUSY                          5           /**< control, command                                 */
+#define VIRTIOSCSI_S_TRANSPORT_FAILURE             6           /**< control, command                                 */
+#define VIRTIOSCSI_S_TARGET_FAILURE                7           /**< control, command                                 */
+#define VIRTIOSCSI_S_NEXUS_FAILURE                 8           /**< control, command                                 */
+#define VIRTIOSCSI_S_FAILURE                       9           /**< control, command                                 */
+#define VIRTIOSCSI_S_INCORRECT_LUN                12           /**< command                                          */
 /** @} */
 
-
-/** @name VirtIO 1.0 SCSI Command-specific task_attr values
+/**
+ * @name VirtIO 1.0 SCSI Host Device command-specific task_attr values
  * @{  */
-#define VIRTIOSCSI_S_SIMPLE                        0
-#define VIRTIOSCSI_S_ORDERED                       1
-#define VIRTIOSCSI_S_HEAD                          2
-#define VIRTIOSCSI_S_ACA                           3
+#define VIRTIOSCSI_S_SIMPLE                        0           /**<                                                  */
+#define VIRTIOSCSI_S_ORDERED                       1           /**<                                                  */
+#define VIRTIOSCSI_S_HEAD                          2           /**<                                                  */
+#define VIRTIOSCSI_S_ACA                           3           /**<                                                  */
 /** @} */
 
-#define VIRTIOSCSI_T_TMF                           0
-#define VIRTIOSCSI_T_TMF_ABORT_TASK                0
-#define VIRTIOSCSI_T_TMF_ABORT_TASK_SET            1
-#define VIRTIOSCSI_T_TMF_CLEAR_ACA                 2
-#define VIRTIOSCSI_T_TMF_CLEAR_TASK_SET            3
-#define VIRTIOSCSI_T_TMF_I_T_NEXUS_RESET           4
-#define VIRTIOSCSI_T_TMF_LOGICAL_UNIT_RESET        5
-#define VIRTIOSCSI_T_TMF_QUERY_TASK                6
-#define VIRTIOSCSI_T_TMF_QUERY_TASK_SET            7
+/**
+ * @name VirtIO 1.0 SCSI Host Device command-specific TMF values
+ * @{  */
+#define VIRTIOSCSI_T_TMF                           0           /**<                                                  */
+#define VIRTIOSCSI_T_TMF_ABORT_TASK                0           /**<                                                  */
+#define VIRTIOSCSI_T_TMF_ABORT_TASK_SET            1           /**<                                                  */
+#define VIRTIOSCSI_T_TMF_CLEAR_ACA                 2           /**<                                                  */
+#define VIRTIOSCSI_T_TMF_CLEAR_TASK_SET            3           /**<                                                  */
+#define VIRTIOSCSI_T_TMF_I_T_NEXUS_RESET           4           /**<                                                  */
+#define VIRTIOSCSI_T_TMF_LOGICAL_UNIT_RESET        5           /**<                                                  */
+#define VIRTIOSCSI_T_TMF_QUERY_TASK                6           /**<                                                  */
+#define VIRTIOSCSI_T_TMF_QUERY_TASK_SET            7           /**<                                                  */
+/*** @} */
 
 typedef struct virtio_scsi_ctrl_tmf
 {
      // Device-readable part
-    uint32_t uType;                                          /** type           */
-    uint32_t uSubtype;                                       /** subtype        */
-    uint8_t  uLUN[8];                                        /** lun            */
-    uint64_t uId;                                            /** id             */
+    uint32_t uType;                                            /** type                                              */
+    uint32_t uSubtype;                                         /** subtype                                           */
+    uint8_t  uLUN[8];                                          /** lun                                               */
+    uint64_t uId;                                              /** id                                                */
     // Device-writable part
-    uint8_t  uResponse;                                      /** response       */
+    uint8_t  uResponse;                                        /** response                                          */
 } VIRTIO_SCSI_CTRL_BUF_T, *PVIRTIO_SCSI_CTRL_BUF_T;
 
-/** @name VirtIO 1.0 SCSI tmf control command-specific response values
+/**
+ * @name VirtIO 1.0 SCSI Host Device device specific tmf control response values
  * @{  */
-#define VIRTIOSCSI_S_FUNCTION_COMPLETE            0
-#define VIRTIOSCSI_S_FUNCTION_SUCCEEDED           10
-#define VIRTIOSCSI_S_FUNCTION_REJECTED            11
+#define VIRTIOSCSI_S_FUNCTION_COMPLETE            0           /**<                                                   */
+#define VIRTIOSCSI_S_FUNCTION_SUCCEEDED           10          /**<                                                   */
+#define VIRTIOSCSI_S_FUNCTION_REJECTED            11          /**<                                                   */
 /** @} */
 
-#define VIRTIOSCSI_T_AN_QUERY                     1         /** Asynchronous notification query */
-#define VIRTIOSCSI_T_AN_SUBSCRIBE                 2         /** Asynchronous notification subscription */
+#define VIRTIOSCSI_T_AN_QUERY                     1           /** Asynchronous notification query                    */
+#define VIRTIOSCSI_T_AN_SUBSCRIBE                 2           /** Asynchronous notification subscription             */
 
 typedef struct virtio_scsi_ctrl_an
 {
     // Device-readable part
-    uint32_t  uType;                                         /** type            */
-    uint8_t   uLUN[8];                                       /** lun             */
-    uint32_t  uEventRequested;                               /** event_requested */
+    uint32_t  uType;                                          /** type                                               */
+    uint8_t   uLUN[8];                                        /** lun                                                */
+    uint32_t  uEventRequested;                                /** event_requested                                    */
     // Device-writable part
-    uint32_t  uEventActual;                                  /** event_actual    */
-    uint8_t   uResponse;                                     /** response        */
+    uint32_t  uEventActual;                                   /** event_actual                                       */
+    uint8_t   uResponse;                                      /** response                                           */
 }  VIRTIO_SCSI_CTRL_AN, *PVIRTIO_SCSI_CTRL_AN_T;
 
-#define VIRTIOSCSI_EVT_ASYNC_OPERATIONAL_CHANGE  2
-#define VIRTIOSCSI_EVT_ASYNC_POWER_MGMT          4
-#define VIRTIOSCSI_EVT_ASYNC_EXTERNAL_REQUEST    8
-#define VIRTIOSCSI_EVT_ASYNC_MEDIA_CHANGE        16
-#define VIRTIOSCSI_EVT_ASYNC_MULTI_HOST          32
-#define VIRTIOSCSI_EVT_ASYNC_DEVICE_BUSY         64
-
-/** Device operation: controlq */
-
-typedef struct virtio_scsi_ctrl
-{
-    uint32_t type;                                           /** type            */
-    uint8_t  response;                                       /** response        */
-} VIRTIO_SCSI_CTRL_T, *PVIRTIO_SCSI_CTRL_T;
-
-
-#define VIRTIOSCSI_T_NO_EVENT                   0
-
-#define VIRTIOSCSI_T_TRANSPORT_RESET            1
-#define VIRTIOSCSI_T_ASYNC_NOTIFY               2           /** Asynchronous notification */
-#define VIRTIOSCSI_T_PARAM_CHANGE               3
-
-#define VIRTIOSCSI_EVT_RESET_HARD               0
-#define VIRTIOSCSI_EVT_RESET_RESCAN             1
-#define VIRTIOSCSI_EVT_RESET_REMOVED            2
-
-/** Device operation: eventq */
-
-#define VIRTIOSCSI_T_EVENTS_MISSED             0x80000000
-typedef struct virtio_scsi_event {
-    // Device-writable part
-    uint32_t uEvent;                                         /** event:          */
-    uint8_t  uLUN[8];                                        /** lun             */
-    uint32_t uReason;                                        /** reason          */
-} VIRTIO_SCSI_EVENT_T, *PVIRTIO_SCSI_EVENT_T;
+/**
+ * @name VirtIO 1.0 SCSI Host Device device specific tmf control response values
+ * @{  */
+#define VIRTIOSCSI_EVT_ASYNC_OPERATIONAL_CHANGE  2           /**<                                                   */
+#define VIRTIOSCSI_EVT_ASYNC_POWER_MGMT          4           /**<                                                   */
+#define VIRTIOSCSI_EVT_ASYNC_EXTERNAL_REQUEST    8           /**<                                                   */
+#define VIRTIOSCSI_EVT_ASYNC_MEDIA_CHANGE        16          /**<                                                   */
+#define VIRTIOSCSI_EVT_ASYNC_MULTI_HOST          32          /**<                                                   */
+#define VIRTIOSCSI_EVT_ASYNC_DEVICE_BUSY         64          /**<                                                   */
+/** @} */
 
 /**
  * State of a target attached to the VirtIO SCSI Host
@@ -346,6 +370,28 @@ typedef struct VIRTIOSCSI
 
 } VIRTIOSCSI, *PVIRTIOSCSI;
 
+
+/**
+ * Task state for a CCB request.
+ */
+typedef struct VIRTIOSCSIREQ
+{
+    /** Device this task is assigned to. */
+    PVIRTIOSCSITARGET              pTargetDevice;
+    /** The command control block from the guest. */
+//    CCBU                           CCBGuest;
+    /** Guest physical address of th CCB. */
+    RTGCPHYS                       GCPhysAddrCCB;
+    /** Pointer to the R3 sense buffer. */
+    uint8_t                        *pbSenseBuffer;
+    /** Flag whether this is a request from the BIOS. */
+    bool                           fBIOS;
+    /** 24-bit request flag (default is 32-bit). */
+    bool                           fIs24Bit;
+    /** SCSI status code. */
+    uint8_t                        u8ScsiSts;
+} VIRTIOSCSIREQ;
+
 /**
  * This macro resolves to boolean true if uOffset matches a field offset and size exactly,
  * (or if it is a 64-bit field, if it accesses either 32-bit part as a 32-bit access)
@@ -389,30 +435,7 @@ typedef struct VIRTIOSCSI
         } \
     }
 
-
-//pk: Needed for virtioIO (e.g. to talk to devSCSI? TBD ??
-/**
- * Task state for a CCB request.
- */
-typedef struct VIRTIOSCSIREQ
-{
-    /** Device this task is assigned to. */
-    PVIRTIOSCSITARGET              pTargetDevice;
-    /** The command control block from the guest. */
-//    CCBU                           CCBGuest;
-    /** Guest physical address of th CCB. */
-    RTGCPHYS                       GCPhysAddrCCB;
-    /** Pointer to the R3 sense buffer. */
-    uint8_t                        *pbSenseBuffer;
-    /** Flag whether this is a request from the BIOS. */
-    bool                           fBIOS;
-    /** 24-bit request flag (default is 32-bit). */
-    bool                           fIs24Bit;
-    /** SCSI status code. */
-    uint8_t                        u8ScsiSts;
-} VIRTIOSCSIREQ;
 typedef struct VIRTIOSCSIREQ *PVIRTIOSCSIREQ;
-/*********************************************************************************************************************************/
 
 #ifdef BOOTABLE_SUPPORT_TBD
 /** @callback_method_impl{FNIOMIOPORTIN} */
@@ -864,12 +887,12 @@ static int virtioScsiR3CfgAccessed(PVIRTIOSCSI pVirtioScsi, uint32_t uOffset,
  * dynamically adding req queues but create them all while initializing
  * based on config information on host).
  */
-static DECLCALLBACK(void) virtioScsiStatusChanged(VIRTIOHANDLE hVirtio, bool fDriverOK)
+static DECLCALLBACK(void) virtioScsiStatusChanged(VIRTIOHANDLE hVirtio, bool fVirtioReady)
 {
 #define MAX_QUEUENAME_SIZE 20
     Log2Func(("\n"));
     char pszQueueName[MAX_QUEUENAME_SIZE];
-    if (fDriverOK)
+    if (fVirtioReady)
     {
         Log2Func(("VirtIO reports ready... Initializing queues\n"));
         virtioQueueInit(hVirtio, VIRTIOSCSI_VIRTQ_CONTROLQ, "controlq");
@@ -877,18 +900,17 @@ static DECLCALLBACK(void) virtioScsiStatusChanged(VIRTIOHANDLE hVirtio, bool fDr
         for (uint16_t qIdx = VIRTIOSCSI_VIRTQ_REQ_BASE; qIdx < virtioGetNumQueues(hVirtio); qIdx++)
         {
             RTStrPrintf(pszQueueName, sizeof(pszQueueName), "requestq_%d", qIdx - 2);
-            bool fEnabled = virtioQueueInit(hVirtio, qIdx,  (const char *)pszQueueName);
+            bool fEnabled = virtioQueueInit(hVirtio, qIdx, (const char *)pszQueueName);
             if (!fEnabled)
                 break;
         }
-    } else {
-        Log2Func(("VirtIO reports not ready\n"));
-    }
+    } else
+        Log2Func(("VirtIO not ready\n"));
 }
 
 static DECLCALLBACK(void) virtioScsiQueueNotified(VIRTIOHANDLE hVirtio, uint16_t qIdx)
 {
-    Log2Func(("virtio callback: %s has avail data[s]\n", virtioQueueGetName(hVirtio, qIdx)));
+    Log2Func(("virtio callback: %s has avail data\n", virtioQueueGetName(hVirtio, qIdx)));
 }
 
 /**
@@ -1152,7 +1174,7 @@ static DECLCALLBACK(int) virtioScsiConstruct(PPDMDEVINS pDevIns, int iInstance, 
     pThis->IBase.pfnQueryInterface = virtioScsiR3DeviceQueryInterface;
 
     /* Configure virtio_scsi_config that transacts via VirtIO implementation's Dev. Specific Cap callbacks */
-    pThis->virtioScsiConfig.uNumQueues      = 3;    /* controlq, eventq, + n request queues*/
+    pThis->virtioScsiConfig.uNumQueues      = VIRTIOSCSI_REQ_QUEUE_CNT;
     pThis->virtioScsiConfig.uSegMax         = 1024; /* initial guess */
     pThis->virtioScsiConfig.uMaxSectors     = 0x10000;
     pThis->virtioScsiConfig.uCmdPerLun      = 64;   /* initial guess */
@@ -1164,7 +1186,6 @@ static DECLCALLBACK(int) virtioScsiConstruct(PPDMDEVINS pDevIns, int iInstance, 
     pThis->virtioScsiConfig.uMaxLun         = 16383; /* from VirtIO 1.0 spec */
 
     rc = virtioConstruct(pDevIns, &pThis->hVirtio, pVirtioPciParams, pThis->szInstance,
-                         VIRTIOSCSI_N_QUEUES, VIRTIOSCSI_REGION_PCI_CAP,
                          VIRTIOSCSI_HOST_SCSI_FEATURES_OFFERED,
                          virtioScsiR3DevCapRead,
                          virtioScsiR3DevCapWrite,

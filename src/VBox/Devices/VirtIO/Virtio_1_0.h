@@ -30,11 +30,16 @@ typedef void * VIRTIOHANDLE;                                     /**< Opaque han
 /**
  * Important sizing and bounds params for this impl. of VirtIO 1.0 PCI device
  */
- /**** Temporary values for debugging */
-#define VIRTQ_MAX_SIZE                      16                  /**< Max size (# desc elements) of a virtq    */
-#define VIRTQ_MAX_CNT                       24                  /**< Max queues we allow guest to create      */
+ /**
+  * TEMPORARY NOTE: Some of these values are experimental during development and will likely change.
+  */
+#define VIRTQ_MAX_SIZE                      32768                /**< Max size (# desc elements) of a virtq    */
+#define VIRTQ_MAX_CNT                       24                   /**< Max queues we allow guest to create      */
 #define VIRTIO_NOTIFY_OFFSET_MULTIPLIER     2                    /**< VirtIO Notify Cap. MMIO config param     */
 #define VIRTQ_DESC_MAX_SIZE                 (2 * 1024 * 1024)
+#define VIRTIOSCSI_REGION_MEM_IO            0                    /**< BAR for MMIO (implementation specific)   */
+#define VIRTIOSCSI_REGION_PORT_IO           1                    /**< BAR for PORT I/O (impl specific)         */
+#define VIRTIOSCSI_REGION_PCI_CAP           2                    /**< BAR for VirtIO Cap. MMIO (impl specific) */
 
 typedef struct VIRTQ_SEG                                         /**< Describes one segment of a buffer vector */
 {
@@ -138,6 +143,9 @@ typedef struct VIRTIOCALLBACKS
 } VIRTIOCALLBACKS, *PVIRTIOCALLBACKS;
 /** @} */
 
+/**
+ * API to for VirtIO client below this point.
+ */
 int           virtioReset        (VIRTIOHANDLE hVirtio);
 bool          virtioQueueInit    (VIRTIOHANDLE hVirtio, uint16_t qIdx, const char *pcszName);
 const char *  virtioQueueGetName (VIRTIOHANDLE hVirtio, uint16_t qIdx);
@@ -149,33 +157,16 @@ bool          virtioQueueIsEmpty (VIRTIOHANDLE hVirtio, uint16_t qIdx);
 int           virtioGetNumQueues (VIRTIOHANDLE hVirtio);
 
 /** CLIENT MUST CALL ON RELOCATE CALLBACK! */
-void    virtioRelocate(         PPDMDEVINS pDevIns, RTGCINTPTR offDelta);
+void          virtioRelocate     (PPDMDEVINS pDevIns, RTGCINTPTR offDelta);
 
 /**
- * Log memory-mapped I/O input or output value
- *
- * @param   pszFunc     - To avoid displaying this function's name via __FUNCTION__ or LogFunc()
- * @param   pszMember   - Name of struct member
- * @param   pv          - pointer to value
- * @param   cb          - size of value
- * @param   uOffset     - offset into member where value starts
- * @param   fWrite      - True if write I/O
- * @param   fHasIndex   - True if the member is indexed
- * @param   idx         - The index if fHasIndex
- */
-void virtioLogMappedIoValue(const char *pszFunc, const char *pszMember, size_t uMemberSize,
-                            const void *pv, uint32_t cb, uint32_t uOffset,
-                            bool fWrite, bool fHasIndex, uint32_t idx);
-
-/**
- * Setup PCI device controller and Virtio state
+ * Constructor sets up the PCI device controller and VirtIO state
  *
  * @param   pDevIns                  Device instance data
  * @param   pVirtio                  Device State
  * @param   pPciParams               Values to populate industry standard PCI Configuration Space data structure
  * @param   pcszInstance             Device instance name
  * @param   uNumQueues               Number of Virtio Queues created by consumer (driver)
- * @param   uVirtioCapBar            Region number to map for PCi Capabilities structs
  * @param   uDevSpecificFeatures     VirtIO device-specific features offered by client
  * @param   devCapReadCallback       Client handler to call upon guest read to device specific capabilities.
  * @param   devCapWriteCallback      Client handler to call upon guest write to device specific capabilities.
@@ -191,8 +182,6 @@ int  virtioConstruct(PPDMDEVINS             pDevIns,
                      VIRTIOHANDLE          *phVirtio,
                      PVIRTIOPCIPARAMS       pPciParams,
                      const char            *pcszInstance,
-                     uint32_t               nQueues,
-                     uint32_t               uVirtioCapBar,
                      uint64_t               uDevSpecificFeatures,
                      PFNVIRTIODEVCAPREAD    devCapReadCallback,
                      PFNVIRTIODEVCAPWRITE   devCapWriteCallback,
@@ -204,5 +193,27 @@ int  virtioConstruct(PPDMDEVINS             pDevIns,
                      PFNSSMDEVLOADDONE      ssmLoadDoneCallback,
                      uint16_t               cbDevSpecificCap,
                      void                  *pDevSpecificCap);
+
+/**
+ * Log memory-mapped I/O input or output value.
+ * This is designed to be invoked by macros that can make contextual assumptions
+ * (e.g. implicitly derive some of the parameters). It is exposed for the VirtIO
+ * client doing the device-specific implementation in order to log in a similar fashion
+ * accesses to the device-specific MMIO configuration structure. Macros that leverage
+ * this function are in Virtio_1_0_impl.h and can be used as an example of how to use
+ * this effectively for the device-specific code.
+ *
+ * @param   pszFunc     - To avoid displaying this function's name via __FUNCTION__ or LogFunc()
+ * @param   pszMember   - Name of struct member
+ * @param   pv          - pointer to value
+ * @param   cb          - size of value
+ * @param   uOffset     - offset into member where value starts
+ * @param   fWrite      - True if write I/O
+ * @param   fHasIndex   - True if the member is indexed
+ * @param   idx         - The index if fHasIndex
+ */
+void virtioLogMappedIoValue(const char *pszFunc, const char *pszMember, size_t uMemberSize,
+                            const void *pv, uint32_t cb, uint32_t uOffset,
+                            bool fWrite, bool fHasIndex, uint32_t idx);
 
 #endif /* !VBOX_INCLUDED_SRC_VirtIO_Virtio_1_0_h */

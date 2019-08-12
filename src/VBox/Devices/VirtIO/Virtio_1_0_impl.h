@@ -32,9 +32,9 @@
 #define VIRTIO_SAVEDSTATE_VERSION                       1
 /** @} */
 
-#define VIRTIO_ISR_VIRTQ_INTERRUPT           RT_BIT_32(0)
-#define VIRTIO_ISR_DEVICE_CONFIG             RT_BIT_32(1)
-#define DEVICE_PCI_VENDOR_ID_VIRTIO                0x1AF4        /**< Required: VirtIO driver uses to find dev  */
+#define VIRTIO_ISR_VIRTQ_INTERRUPT           RT_BIT_32(0)        /**< Virtq interrupt bit of ISR register       */
+#define VIRTIO_ISR_DEVICE_CONFIG             RT_BIT_32(1)        /**< Device configuration changed bit of ISR   */
+#define DEVICE_PCI_VENDOR_ID_VIRTIO                0x1AF4        /**< Guest driver locates dev via (mandatory)  */
 #define DEVICE_PCI_REVISION_ID_VIRTIO                   1        /**< VirtIO 1.0 non-transitional drivers >= 1  */
 
 /** Reserved (*negotiated*) Feature Bits (e.g. device independent features, VirtIO 1.0 spec,section 6) */
@@ -169,6 +169,7 @@ typedef struct VIRTIOSTATE
     uint32_t                  uMsixConfig;                       /**< (MMIO) MSI-X vector                 GUEST */
     uint32_t                  uNumQueues;                        /**< (MMIO) Actual number of queues      GUEST */
     uint8_t                   uDeviceStatus;                     /**< (MMIO) Device Status                GUEST */
+    uint8_t                   uPrevDeviceStatus;                 /**< (MMIO) Prev Device Status           GUEST */
     uint8_t                   uConfigGeneration;                 /**< (MMIO) Device config sequencer       HOST */
 
     VIRTQ_CONTEXT_T           queueContext[VIRTQ_MAX_CNT];       /**< Local impl-specific queue context         */
@@ -188,7 +189,6 @@ typedef struct VIRTIOSTATE
     void                     *pPrevDevSpecificCap;               /**< Previous read dev-specific cfg of client  */
     bool                      fGenUpdatePending;                 /**< If set, update cfg gen after driver reads */
     uint8_t                   uPciCfgDataOff;
-    uint8_t                   uVirtioCapBar;                     /**< Capabilities BAR/region (client-assigned) */
     uint8_t                   uISR;                              /**< Interrupt Status Register.                */
 
 } VIRTIOSTATE, *PVIRTIOSTATE;
