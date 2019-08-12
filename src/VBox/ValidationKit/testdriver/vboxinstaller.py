@@ -922,10 +922,14 @@ class VBoxInstallerTestDriver(TestDriverBase):
             reporter.addLogFile(sLogFile, 'log/uninstaller', "Verbose MSI uninstallation log file");
 
         # Log driver service states (should ls \Driver\VBox* and \Device\VBox*).
+        asLeftovers = [];
         for sService in self.kasWindowsServices:
             fRc2, _ = self._sudoExecuteSync(['sc.exe', 'query', sService]);
             if fIgnoreServices is False and fRc2 is True:
+                asLeftovers.append(sService,)
                 fRc = False
+        if asLeftovers:
+            reporter.log('Warning! Leftover VBox drivers: %s' % (', '.join(asLeftovers),));
 
         return fRc;
 
