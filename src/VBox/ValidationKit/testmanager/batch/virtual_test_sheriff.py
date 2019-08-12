@@ -812,6 +812,8 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
         # ( Whether to stop on hit, reason tuple, needle text. )
         ( False, ktReason_Host_LeftoverService,
           'SERVICE_NAME: vbox' ),
+        ( False, ktReason_Host_LeftoverService,
+          'Seems installation was skipped. Old version lurking behind? Not the fault of this build/test run!'),
     ];
 
     kdatSimpleInstallUninstallMainLogReasonsPerOs = {
