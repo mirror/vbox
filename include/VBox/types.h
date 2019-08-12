@@ -79,6 +79,8 @@ typedef SUPSEMEVENTMULTI                           *PSUPSEMEVENTMULTI;
 
 /** Pointer to a VM. */
 typedef struct VM                  *PVM;
+/** Pointer to a const VM. */
+typedef const struct VM            *PCVM;
 /** Pointer to a VM - Ring-0 Ptr. */
 typedef R0PTRTYPE(struct VM *)      PVMR0;
 /** Pointer to a VM - Ring-3 Ptr. */
@@ -99,14 +101,47 @@ typedef RCPTRTYPE(struct VMCPU *)   PVMCPURC;
 
 /** Pointer to a ring-0 (global) VM structure. */
 typedef R0PTRTYPE(struct GVM *)     PGVM;
-/** Pointer to the GVMCPU data. */
+/** Pointer to a const ring-0 (global) VM structure. */
+typedef R0PTRTYPE(const struct GVM *) PCGVM;
+/** Pointer to a GVMCPU structure. */
 typedef R0PTRTYPE(struct GVMCPU *)  PGVMCPU;
+/** Pointer to a const GVMCPU structure. */
+typedef R0PTRTYPE(struct GVMCPU const *) PCGVMCPU;
 
 /** Pointer to a ring-3 (user mode) VM structure. */
 typedef R3PTRTYPE(struct UVM *)     PUVM;
 
 /** Pointer to a ring-3 (user mode) VMCPU structure. */
 typedef R3PTRTYPE(struct UVMCPU *)  PUVMCPU;
+
+/** Pointer to a context specific VM derived structure.
+ * This is PGVM in ring-0 and plain PVM in ring-3. */
+#if defined(IN_RING0) && defined(VBOX_BUGREF_9217_PART_I)
+typedef PGVM                        PVMCC;
+#else
+typedef PVM                         PVMCC;
+#endif
+/** Pointer to a const context specific VM derived structure.
+ * This is PCGVM in ring-0 and plain PCVM in ring-3. */
+#if defined(IN_RING0) && defined(VBOX_BUGREF_9217_PART_I)
+typedef PCGVM                       PCVMCC;
+#else
+typedef PCVM                        PCVMCC;
+#endif
+/** Pointer to a context specific VMCPUM derived structure.
+ * This is PGVMCPU in ring-0 and plain PVMCPU in ring-3. */
+#if defined(IN_RING0) && defined(VBOX_BUGREF_9217_PART_I)
+typedef PGVMCPU                     PVMCPUCC;
+#else
+typedef PVMCPU                      PVMCPUCC;
+#endif
+/** Pointer to a const context specific VMCPU derived structure.
+ * This is PCGVMCPU in ring-0 and plain PCVMCPU in ring-3. */
+#if defined(IN_RING0) && defined(VBOX_BUGREF_9217_PART_I)
+typedef PCGVMCPU                    PCVMCPUCC;
+#else
+typedef PCVMCPU                     PCVMCPUCC;
+#endif
 
 /** Virtual CPU ID. */
 typedef uint32_t                    VMCPUID;

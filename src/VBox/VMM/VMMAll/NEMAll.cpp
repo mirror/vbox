@@ -22,7 +22,7 @@
 #define LOG_GROUP LOG_GROUP_NEM
 #include <VBox/vmm/nem.h>
 #include "NEMInternal.h"
-#include <VBox/vmm/vm.h>
+#include <VBox/vmm/vmcc.h>
 #include <VBox/err.h>
 
 
@@ -35,7 +35,7 @@
  * @param   pVM         The cross context VM structure.
  * @sa      VMR3IsLongModeAllowed, HMIsLongModeAllowed
  */
-VMM_INT_DECL(bool) NEMHCIsLongModeAllowed(PVM pVM)
+VMM_INT_DECL(bool) NEMHCIsLongModeAllowed(PVMCC pVM)
 {
     return pVM->nem.s.fAllow64BitGuests && VM_IS_NEM_ENABLED(pVM);
 }
@@ -51,7 +51,7 @@ VMM_INT_DECL(bool) NEMHCIsLongModeAllowed(PVM pVM)
  *
  * @note    Called while holding down the PGM lock.
  */
-VMM_INT_DECL(void) NEMHCNotifyHandlerPhysicalRegister(PVM pVM, PGMPHYSHANDLERKIND enmKind, RTGCPHYS GCPhys, RTGCPHYS cb)
+VMM_INT_DECL(void) NEMHCNotifyHandlerPhysicalRegister(PVMCC pVM, PGMPHYSHANDLERKIND enmKind, RTGCPHYS GCPhys, RTGCPHYS cb)
 {
 #ifdef VBOX_WITH_NATIVE_NEM
     if (VM_IS_NEM_ENABLED(pVM))
@@ -62,7 +62,7 @@ VMM_INT_DECL(void) NEMHCNotifyHandlerPhysicalRegister(PVM pVM, PGMPHYSHANDLERKIN
 }
 
 
-VMM_INT_DECL(void) NEMHCNotifyHandlerPhysicalDeregister(PVM pVM, PGMPHYSHANDLERKIND enmKind, RTGCPHYS GCPhys, RTGCPHYS cb,
+VMM_INT_DECL(void) NEMHCNotifyHandlerPhysicalDeregister(PVMCC pVM, PGMPHYSHANDLERKIND enmKind, RTGCPHYS GCPhys, RTGCPHYS cb,
                                                         int fRestoreAsRAM, bool fRestoreAsRAM2)
 {
 #ifdef VBOX_WITH_NATIVE_NEM
@@ -74,7 +74,7 @@ VMM_INT_DECL(void) NEMHCNotifyHandlerPhysicalDeregister(PVM pVM, PGMPHYSHANDLERK
 }
 
 
-VMM_INT_DECL(void) NEMHCNotifyHandlerPhysicalModify(PVM pVM, PGMPHYSHANDLERKIND enmKind, RTGCPHYS GCPhysOld,
+VMM_INT_DECL(void) NEMHCNotifyHandlerPhysicalModify(PVMCC pVM, PGMPHYSHANDLERKIND enmKind, RTGCPHYS GCPhysOld,
                                                     RTGCPHYS GCPhysNew, RTGCPHYS cb, bool fRestoreAsRAM)
 {
 #ifdef VBOX_WITH_NATIVE_NEM
@@ -86,7 +86,7 @@ VMM_INT_DECL(void) NEMHCNotifyHandlerPhysicalModify(PVM pVM, PGMPHYSHANDLERKIND 
 }
 
 
-VMM_INT_DECL(int)  NEMHCNotifyPhysPageAllocated(PVM pVM, RTGCPHYS GCPhys, RTHCPHYS HCPhys, uint32_t fPageProt,
+VMM_INT_DECL(int)  NEMHCNotifyPhysPageAllocated(PVMCC pVM, RTGCPHYS GCPhys, RTHCPHYS HCPhys, uint32_t fPageProt,
                                                 PGMPAGETYPE enmType, uint8_t *pu2State)
 {
     Assert(VM_IS_NEM_ENABLED(pVM));
@@ -99,7 +99,7 @@ VMM_INT_DECL(int)  NEMHCNotifyPhysPageAllocated(PVM pVM, RTGCPHYS GCPhys, RTHCPH
 }
 
 
-VMM_INT_DECL(void) NEMHCNotifyPhysPageProtChanged(PVM pVM, RTGCPHYS GCPhys, RTHCPHYS HCPhys, uint32_t fPageProt,
+VMM_INT_DECL(void) NEMHCNotifyPhysPageProtChanged(PVMCC pVM, RTGCPHYS GCPhys, RTHCPHYS HCPhys, uint32_t fPageProt,
                                                   PGMPAGETYPE enmType, uint8_t *pu2State)
 {
     Assert(VM_IS_NEM_ENABLED(pVM));
@@ -111,7 +111,7 @@ VMM_INT_DECL(void) NEMHCNotifyPhysPageProtChanged(PVM pVM, RTGCPHYS GCPhys, RTHC
 }
 
 
-VMM_INT_DECL(void) NEMHCNotifyPhysPageChanged(PVM pVM, RTGCPHYS GCPhys, RTHCPHYS HCPhysPrev, RTHCPHYS HCPhysNew,
+VMM_INT_DECL(void) NEMHCNotifyPhysPageChanged(PVMCC pVM, RTGCPHYS GCPhys, RTHCPHYS HCPhysPrev, RTHCPHYS HCPhysNew,
                                               uint32_t fPageProt, PGMPAGETYPE enmType, uint8_t *pu2State)
 {
     Assert(VM_IS_NEM_ENABLED(pVM));
@@ -124,7 +124,7 @@ VMM_INT_DECL(void) NEMHCNotifyPhysPageChanged(PVM pVM, RTGCPHYS GCPhys, RTHCPHYS
 
 
 #ifndef VBOX_WITH_NATIVE_NEM
-VMM_INT_DECL(int) NEMImportStateOnDemand(PVMCPU pVCpu, uint64_t fWhat)
+VMM_INT_DECL(int) NEMImportStateOnDemand(PVMCPUCC pVCpu, uint64_t fWhat)
 {
     RT_NOREF(pVCpu, fWhat);
     return VERR_NEM_IPE_9;
@@ -133,7 +133,7 @@ VMM_INT_DECL(int) NEMImportStateOnDemand(PVMCPU pVCpu, uint64_t fWhat)
 
 
 #ifndef VBOX_WITH_NATIVE_NEM
-VMM_INT_DECL(int) NEMHCQueryCpuTick(PVMCPU pVCpu, uint64_t *pcTicks, uint32_t *puAux)
+VMM_INT_DECL(int) NEMHCQueryCpuTick(PVMCPUCC pVCpu, uint64_t *pcTicks, uint32_t *puAux)
 {
     RT_NOREF(pVCpu, pcTicks, puAux);
     AssertFailed();
@@ -143,7 +143,7 @@ VMM_INT_DECL(int) NEMHCQueryCpuTick(PVMCPU pVCpu, uint64_t *pcTicks, uint32_t *p
 
 
 #ifndef VBOX_WITH_NATIVE_NEM
-VMM_INT_DECL(int) NEMHCResumeCpuTickOnAll(PVM pVM, PVMCPU pVCpu, uint64_t uPausedTscValue)
+VMM_INT_DECL(int) NEMHCResumeCpuTickOnAll(PVM pVM, PVMCPUCC pVCpu, uint64_t uPausedTscValue)
 {
     RT_NOREF(pVM, pVCpu, uPausedTscValue);
     AssertFailed();
