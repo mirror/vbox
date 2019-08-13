@@ -78,11 +78,12 @@ typedef struct GVMCPU
     PGVM            pVMR0;
 #endif
 
-    /** Padding so gvmm starts on a 64 byte boundrary. */
+    /** Padding so gvmm starts on a 64 byte boundrary.
+     * @note Keeping this working for 32-bit header syntax checking.  */
 #ifdef VBOX_BUGREF_9217
-    uint8_t         abPadding[32];
+    uint8_t         abPadding[HC_ARCH_BITS == 32 ? 44 : 32];
 #else
-    uint8_t         abPadding[24];
+    uint8_t         abPadding[HC_ARCH_BITS == 32 ? 40 : 24];
 #endif
 
     /** The GVMM per vcpu data. */
