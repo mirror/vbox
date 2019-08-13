@@ -822,11 +822,13 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
     virtualBox->GetGuestOSType(osTypeId.raw(), pGuestOSType.asOutParam());
 
     BOOL fOsXGuest = FALSE;
+    BOOL fWinGuest = FALSE;
     if (!pGuestOSType.isNull())
     {
         Bstr guestTypeFamilyId;
         hrc = pGuestOSType->COMGETTER(FamilyId)(guestTypeFamilyId.asOutParam());            H();
         fOsXGuest = guestTypeFamilyId == Bstr("MacOS");
+        fWinGuest = guestTypeFamilyId == Bstr("Windows");
     }
 
     ULONG maxNetworkAdapters;
@@ -3164,6 +3166,21 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                                "VM cannot be started. To fix this problem, either "
                                "fix the host 3D support (update the host graphics driver?) "
                                "or disable 3D acceleration in the VM settings"));
+
+                if (fWinGuest)
+                    i_atVMRuntimeErrorCallbackF(0, "3DCrDeprecated",
+                                                N_("This VM is configured to use 3D acceleration using the VBoxVGA "
+                                                   "graphics controller. Support for this will be removed with version "
+                                                   "6.1.0. ALL saved states and snapshots will cease to work when using this "
+                                                   "configuration. Either switch to the VBoxSVGA (or VMSVGA) graphics controller "
+                                                   "and update guest additions, or disable 3D acceleration"));
+                else
+                    i_atVMRuntimeErrorCallbackF(0, "3DCrDeprecated",
+                                                N_("This VM is configured to use 3D acceleration using the VBoxVGA "
+                                                   "graphics controller. Support for this will be removed with version "
+                                                   "6.1.0. ALL saved states and snapshots will cease to work when using this "
+                                                   "configuration. Either switch to the VMSVGA graphics controller "
+                                                   "and update guest additions, or disable 3D acceleration"));
 
                 /* Load the service. */
                 rc = pVMMDev->hgcmLoadService("VBoxSharedCrOpenGL", "VBoxSharedCrOpenGL");
