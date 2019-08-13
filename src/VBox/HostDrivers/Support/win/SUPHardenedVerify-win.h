@@ -168,7 +168,7 @@ typedef struct SUPHNTLDRCACHEENTRY
     uint8_t            *pbBits;
     /** Set if verified. */
     bool                fVerified;
-    /** Whether we've got valid cacheable image bit.s */
+    /** Whether we've got valid cacheable image bits. */
     bool                fValidBits;
     /** The image base address. */
     uintptr_t           uImageBase;

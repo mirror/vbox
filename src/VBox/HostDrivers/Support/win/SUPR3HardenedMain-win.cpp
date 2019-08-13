@@ -4154,47 +4154,77 @@ static void supR3HardNtChildSetUpChildInit(PSUPR3HARDNTCHILD pThis)
 #else
 # error "Unsupported arch."
 #endif
-        size_t    const cbNtDll    = RTLdrSize(pLdrEntry->hLdrMod);
+        /* Entrypoint for the executable: */
         uintptr_t const uChildMain = uChildExeAddr + (  (uintptr_t)&suplibHardenedWindowsMain
                                                       - (uintptr_t)NtCurrentPeb()->ImageBaseAddress);
-        RTLDRADDR uLdrRtlUserThreadStart;
+
+        /* NtDll size and the more recent default thread start entrypoint (Vista+?): */
+        RTLDRADDR uSystemThreadStart;
         rc = RTLdrGetSymbolEx(pLdrEntry->hLdrMod, pbChildNtDllBits, pThis->uNtDllAddr, UINT32_MAX,
-                              "RtlUserThreadStart", &uLdrRtlUserThreadStart);
+                              "RtlUserThreadStart", &uSystemThreadStart);
         if (RT_FAILURE(rc))
-            uLdrRtlUserThreadStart = 0;
+            uSystemThreadStart = 0;
+
+        /* Kernel32 for thread start of older windows version, only XP64/W2K3-64 has an actual
+           export for it.  Unfortunately, it is not yet loaded into the child, so we have to
+           assume same location as in the parent (safe): */
+        PSUPHNTLDRCACHEENTRY pLdrEntryKernel32;
+        int rc = supHardNtLdrCacheOpen("kernel32.dll", &pLdrEntryKernel32, NULL /*pErrInfo*/);
+        if (RT_FAILURE(rc))
+            supR3HardenedWinKillChild(pThis, "supR3HardenedWinSetupChildInit", rc,
+                                      "supHardNtLdrCacheOpen failed on KERNEL32: %Rrc\n", rc);
+        size_t const cbKernel32 = RTLdrSize(pLdrEntryKernel32->hLdrMod);
+
+#ifdef RT_ARCH_AMD64
+        if (!uSystemThreadStart)
+        {
+            rc = RTLdrGetSymbolEx(pLdrEntry->hLdrMod, pbChildNtDllBits, pLdrEntryKernel32->uImageBase, UINT32_MAX,
+                                  "BaseProcessStart", &uSystemThreadStart);
+            if (RT_FAILURE(rc))
+                uSystemThreadStart = 0;
+        }
+#endif
 
         bool fUpdateContext = false;
 
-        /* Check if the RIP looks half sane, correct it if it isn't.
+        /* Check if the RIP looks half sane, try correct it if it isn't.
            It should point to RtlUserThreadStart (Vista and later it seem), though only
            tested on win10.  The first parameter is the executable entrypoint, the 2nd
-           is probably the PEB. */
-        if (   (  uLdrRtlUserThreadStart
-                ? *pPC == uLdrRtlUserThreadStart
-                : *pPC - pThis->uNtDllAddr <= cbNtDll)
+           is probably the PEB.  Before Vista it should point to Kernel32!BaseProcessStart,
+           though the symbol is only exported in 5.2/AMD64. */
+        if (   (  uSystemThreadStart
+                ? *pPC == uSystemThreadStart
+                : *pPC - (  pLdrEntryKernel32->uImageBase != ~(uintptr_t)0 ? pLdrEntryKernel32->uImageBase
+                          : (uintptr_t)GetModuleHandleW(L"kernel32.dll")) <= cbKernel32)
             || *pPC == uChildMain)
         { }
         else
         {
-            SUP_DPRINTF(("Warning! Bogus RIP: %016RX64\n", *pPC));
-            if (uLdrRtlUserThreadStart)
+            SUP_DPRINTF(("Warning! Bogus RIP: %p (uSystemThreadStart=%p; kernel32 %p LB %p; uChildMain=%p)\n",
+                         *pPC, uSystemThreadStart, pLdrEntryKernel32->uImageBase, cbKernel32, uChildMain));
+            if (uSystemThreadStart)
             {
-                SUP_DPRINTF(("Correcting RIP from to %016RX64 hoping that it might work...\n", (uintptr_t)uLdrRtlUserThreadStart));
-                *pPC = uLdrRtlUserThreadStart;
+                SUP_DPRINTF(("Correcting RIP from to %p hoping that it might work...\n", (uintptr_t)uSystemThreadStart));
+                *pPC = uSystemThreadStart;
                 fUpdateContext = true;
             }
         }
 #ifdef RT_ARCH_AMD64
-        if (Ctx.SegDs != 0)
-            SUP_DPRINTF(("Warning! Bogus DS: %04x, expected zero\n", Ctx.SegDs));
-        if (Ctx.SegEs != 0)
-            SUP_DPRINTF(("Warning! Bogus ES: %04x, expected zero\n", Ctx.SegEs));
-        if (Ctx.SegFs != 0)
-            SUP_DPRINTF(("Warning! Bogus FS: %04x, expected zero\n", Ctx.SegFs));
-        if (Ctx.SegGs != 0)
-            SUP_DPRINTF(("Warning! Bogus GS: %04x, expected zero\n", Ctx.SegGs));
+        if (g_uNtVerCombined >= SUP_MAKE_NT_VER_SIMPLE(10, 0)) /* W2K3: CS=33 SS=DS=ES=GS=2b FS=53 */
+        {
+            if (Ctx.SegDs != 0)
+                SUP_DPRINTF(("Warning! Bogus DS: %04x, expected zero\n", Ctx.SegDs));
+            if (Ctx.SegEs != 0)
+                SUP_DPRINTF(("Warning! Bogus ES: %04x, expected zero\n", Ctx.SegEs));
+            if (Ctx.SegFs != 0)
+                SUP_DPRINTF(("Warning! Bogus FS: %04x, expected zero\n", Ctx.SegFs));
+            if (Ctx.SegGs != 0)
+                SUP_DPRINTF(("Warning! Bogus GS: %04x, expected zero\n", Ctx.SegGs));
+        }
         if (Ctx.Rcx != uChildMain)
             SUP_DPRINTF(("Warning! Bogus RCX: %016RX64, expected %016RX64\n", Ctx.Rcx, uChildMain));
+        if (Ctx.Rdx & PAGE_OFFSET_MASK)
+            SUP_DPRINTF(("Warning! Bogus RDX: %016RX64, expected page aligned\n", Ctx.Rdx)); /* PEB */
         if ((Ctx.Rsp & 15) != 8)
             SUP_DPRINTF(("Warning! Misaligned RSP: %016RX64\n", Ctx.Rsp));
 #endif
