@@ -36,6 +36,7 @@
 #include "CPerformanceCollector.h"
 
 /* GUI includes: */
+#include "QIWithRetranslateUI.h"
 #include "UIMainEventListener.h"
 
 /* Forward declarations: */
@@ -75,7 +76,10 @@ private:
     bool m_fRequiresGuestAdditions;
 };
 
-class UIPerformanceMonitor : public QWidget
+/** UIPerformanceMonitor class displays some high level performance metric of the guest system.
+  * The values are read in certain periods and cached in the GUI side. Currently we draw some line charts
+  * and pie charts (where applicable) alongside with some text. */
+class UIPerformanceMonitor : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
 
@@ -86,6 +90,9 @@ public:
       * @param console is machine console reference. */
     UIPerformanceMonitor(QWidget *pParent, const CMachine &machine, const CConsole &console, const UISession *pSession);
     ~UIPerformanceMonitor();
+
+protected:
+    void retranslateUi();
 
 private slots:
 
@@ -99,7 +106,7 @@ private:
     void preparePerformaceCollector();
     bool guestAdditionsAvailable(int iMinimumMajorVersion);
     void enableDisableGuestAdditionDependedWidgets(bool fEnable);
-    void updateCPUGraphsAndMetric(ULONG iLoadPercentage);
+    void updateCPUGraphsAndMetric(ULONG iLoadPercentage, ULONG iOtherPercentage);
     void updateRAMGraphsAndMetric(quint64 iTotalRAM, quint64 iFreeRAM);
     void updateNewGraphsAndMetric(ULONG iReceiveRate, ULONG iTransmitRate);
 
@@ -123,10 +130,31 @@ private:
     QMap<QString,UIChart*>  m_charts;
     QMap<QString,QLabel*>  m_infoLabels;
 
-    QString m_strCPUMetricName;
-    QString m_strRAMMetricName;
-    QString m_strDiskMetricName;
-    QString m_strNetMetricName;
+    /** @name These metric names are used for map keys to identify metrics.
+      * @{ */
+        QString m_strCPUMetricName;
+        QString m_strRAMMetricName;
+        QString m_strDiskMetricName;
+        QString m_strNetMetricName;
+    /** @} */
+
+    /** @name These metric names are used for map keys to identify metrics.
+      * @{ */
+        /** CPU info label strings. */
+        QString m_strCPUInfoLabelTitle;
+        /** RAM usage info label strings. */
+        QString m_strRAMInfoLabelTitle;
+        QString m_strRAMInfoLabelTotal;
+        QString m_strRAMInfoLabelFree;
+        QString m_strRAMInfoLabelUsed;
+        /** Net traffic info label strings. */
+        QString m_strNetInfoLabelTitle;
+        QString m_strNetInfoLabelReceived;
+        QString m_strNetInfoLabelTransmitted;
+        QString m_strNetInfoLabelMaximum;
+    /** @} */
+
+
 };
 
 #endif /* !FEQT_INCLUDED_SRC_runtime_information_UIPerformanceMonitor_h */

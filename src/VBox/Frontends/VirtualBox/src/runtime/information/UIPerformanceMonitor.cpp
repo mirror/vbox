@@ -298,6 +298,7 @@ void UIChart::paintEvent(QPaintEvent *pEvent)
         {
             QLinearGradient gradient(0, 0, 0, iChartHeight);
             gradient.setColorAt(1.0, Qt::green);
+            gradient.setColorAt(0.5, Qt::yellow);
             gradient.setColorAt(0.0, Qt::red);
             painter.setPen(QPen(gradient, 2.5));
         }
@@ -334,16 +335,6 @@ void UIChart::paintEvent(QPaintEvent *pEvent)
         else if (m_pSubMetric->unit().compare("b", Qt::CaseInsensitive) == 0 ||
                  m_pSubMetric->unit().compare("b/s", Qt::CaseInsensitive) == 0)
             strValue = uiCommon().formatSize(iValue);
-
-        // QString strCurentSec = QString::number(iTotalSeconds - i * iTotalSeconds / (float)(iXSubAxisCount + 1));
-        // int iTextWidth = fontMetrics.width(strCurentSec);
-        // if (i == 0)
-        // {
-        //     strCurentSec += " seconds";
-        //     painter.drawText(iTextX, height() - m_iMarginBottom + iFontHeight, strCurentSec);
-        // }
-        // else
-        //     painter.drawText(iTextX - 0.5 * iTextWidth, height() - m_iMarginBottom + iFontHeight, strCurentSec);
         painter.drawText(width() - 0.9 * m_iMarginRight, iTextY, strValue);
     }
 
@@ -356,20 +347,21 @@ void UIChart::paintEvent(QPaintEvent *pEvent)
         QPointF center(m_pieChartRect.center());
         QPainterPath fillPath;
         fillPath.moveTo(center);
-
         fillPath.arcTo(m_pieChartRect, 90/*startAngle*/,
                        -1 * 360 /*sweepLength*/);
 
         /* First draw a white filled circle and that the arc for data: */
+        painter.setPen(Qt::NoPen);
+        painter.setBrush(QColor(255, 255, 255, 175));
+        painter.drawPath(fillPath);
+
+        /* Prepare the gradient for the pie chart: */
         QConicalGradient pieGradient;
         pieGradient.setCenter(m_pieChartRect.center());
         pieGradient.setAngle(90);
         pieGradient.setColorAt(0, Qt::red);
+        pieGradient.setColorAt(0.5, Qt::yellow);
         pieGradient.setColorAt(1, Qt::green);
-
-        painter.setPen(Qt::NoPen);
-        painter.setBrush(Qt::white);
-        painter.drawPath(fillPath);
 
         if (isEnabled())
         {
@@ -465,7 +457,7 @@ void UISubMetric::setRequiresGuestAdditions(bool fRequiresGAs)
 *********************************************************************************************************************************/
 
 UIPerformanceMonitor::UIPerformanceMonitor(QWidget *pParent, const CMachine &machine, const CConsole &console, const UISession *pSession)
-    : QWidget(pParent)
+    : QIWithRetranslateUI<QWidget>(pParent)
     , m_fGuestAdditionsAvailable(false)
     , m_machine(machine)
     , m_console(console)
@@ -484,10 +476,24 @@ UIPerformanceMonitor::UIPerformanceMonitor(QWidget *pParent, const CMachine &mac
     preparePerformaceCollector();
     prepareObjects();
     enableDisableGuestAdditionDependedWidgets(m_fGuestAdditionsAvailable);
+    retranslateUi();
 }
 
 UIPerformanceMonitor::~UIPerformanceMonitor()
 {
+}
+
+void UIPerformanceMonitor::retranslateUi()
+{
+    m_strCPUInfoLabelTitle = QApplication::translate("UIVMInformationDialog", "CPU Load");
+    m_strRAMInfoLabelTitle = QApplication::translate("UIVMInformationDialog", "RAM Usage");
+    m_strRAMInfoLabelTotal = QApplication::translate("UIVMInformationDialog", "Total");
+    m_strRAMInfoLabelFree = QApplication::translate("UIVMInformationDialog", "Free");
+    m_strRAMInfoLabelUsed = QApplication::translate("UIVMInformationDialog", "Used");
+    m_strNetInfoLabelTitle = QApplication::translate("UIVMInformationDialog", "Network");
+    m_strNetInfoLabelReceived = QApplication::translate("UIVMInformationDialog", "Received");
+    m_strNetInfoLabelTransmitted = QApplication::translate("UIVMInformationDialog", "Trasmitted");
+    m_strNetInfoLabelMaximum = QApplication::translate("UIVMInformationDialog", "Maximum");
 }
 
 void UIPerformanceMonitor::prepareObjects()
@@ -530,6 +536,9 @@ void UIPerformanceMonitor::prepareObjects()
         m_charts[m_strNetMetricName]->setDrawPieChart(false);
         m_charts[m_strNetMetricName]->setUseGradientLineColor(false);
     }
+    // if (m_charts.contains(m_strCPUMetricName) && m_charts[m_strCPUMetricName])
+    //     m_charts[m_strCPUMetricName]->setUseGradientLineColor(false);
+
     QWidget *bottomSpacerWidget = new QWidget(this);
     bottomSpacerWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
     bottomSpacerWidget->setVisible(true);
@@ -604,7 +613,7 @@ void UIPerformanceMonitor::sltTimeout()
         ULONG aPctHalted;
         ULONG aPctOther;
         m_machineDebugger.GetCPULoad(0x7fffffff, aPctExecuting, aPctHalted, aPctOther);
-        updateCPUGraphsAndMetric(aPctExecuting);
+        updateCPUGraphsAndMetric(aPctExecuting, aPctOther);
     }
 
     if (m_subMetrics.contains(m_strRAMMetricName))
@@ -702,18 +711,20 @@ void UIPerformanceMonitor::enableDisableGuestAdditionDependedWidgets(bool fEnabl
     }
 }
 
-void UIPerformanceMonitor::updateCPUGraphsAndMetric(ULONG iLoadPercentage)
+void UIPerformanceMonitor::updateCPUGraphsAndMetric(ULONG iExecutingPercentage, ULONG iOtherPercentage)
 {
+    Q_UNUSED(iOtherPercentage);
     UISubMetric &CPUMetric = m_subMetrics[m_strCPUMetricName];
-    CPUMetric.addData(0, iLoadPercentage);
+    CPUMetric.addData(0, iExecutingPercentage);
+    //CPUMetric.addData(1, iOtherPercentage);
     CPUMetric.setMaximum(100);
     if (m_infoLabels.contains(m_strCPUMetricName) && m_infoLabels[m_strCPUMetricName])
     {
         QString strInfo;
         if (m_infoLabels[m_strCPUMetricName]->isEnabled())
-            strInfo = QString("<b>%1</b><br/>%2%3").arg("CPU Load").arg(QString::number(iLoadPercentage)).arg("%");
+            strInfo = QString("<b>%1</b><br/>%2%3").arg(m_strCPUInfoLabelTitle).arg(QString::number(iExecutingPercentage)).arg("%");
         else
-            strInfo = QString("<b>%1</b><br/>%2%3").arg("CPU Load").arg("--").arg("%");
+            strInfo = QString("<b>%1</b><br/>%2%3").arg(m_strCPUInfoLabelTitle).arg("--").arg("%");
         m_infoLabels[m_strCPUMetricName]->setText(strInfo);
     }
     if (m_charts.contains(m_strCPUMetricName))
@@ -729,11 +740,11 @@ void UIPerformanceMonitor::updateRAMGraphsAndMetric(quint64 iTotalRAM, quint64 i
     {
         QString strInfo;
         if (m_infoLabels[m_strRAMMetricName]->isEnabled())
-            strInfo = QString("<b>%1</b><br/>%2: %3<br/>%4: %5<br/>%6: %7").arg("RAM Usage").arg("Total").arg(uiCommon().formatSize(_1K * iTotalRAM))
-                .arg("Free:").arg(uiCommon().formatSize(_1K * (iFreeRAM)))
-                .arg("Used:").arg(uiCommon().formatSize(_1K * (iTotalRAM - iFreeRAM)));
+            strInfo = QString("<b>%1</b><br/>%2: %3<br/>%4: %5<br/>%6: %7").arg(m_strRAMInfoLabelTitle).arg(m_strRAMInfoLabelTotal).arg(uiCommon().formatSize(_1K * iTotalRAM))
+                .arg(m_strRAMInfoLabelFree).arg(uiCommon().formatSize(_1K * (iFreeRAM)))
+                .arg(m_strRAMInfoLabelUsed).arg(uiCommon().formatSize(_1K * (iTotalRAM - iFreeRAM)));
         else
-            strInfo = QString("<b>%1</b><br/>%2: %3<br/>%4: %5<br/>%6: %7").arg("RAM Usage").arg("Total").arg("---").arg("Free").arg("---").arg("Used").arg("---");
+            strInfo = QString("<b>%1</b><br/>%2: %3<br/>%4: %5<br/>%6: %7").arg(m_strRAMInfoLabelTitle).arg(m_strRAMInfoLabelTotal).arg("---").arg(m_strRAMInfoLabelFree).arg("---").arg(m_strRAMInfoLabelUsed).arg("---");
         m_infoLabels[m_strRAMMetricName]->setText(strInfo);
     }
     if (m_charts.contains(m_strRAMMetricName))
@@ -754,12 +765,12 @@ void UIPerformanceMonitor::updateNewGraphsAndMetric(ULONG iReceiveRate, ULONG iT
     {
         QString strInfo;
         if (m_infoLabels[m_strNetMetricName]->isEnabled())
-            strInfo = QString("<b>%1</b></b><br/><font color=\"#FF0000\">%2: %3</font><br/><font color=\"#0000FF\">%4: %5</font><br/>%6: %7").arg("Network")
-                .arg("Receive").arg(uiCommon().formatSize((quint64)iReceiveRate))
-                .arg("Transmit:").arg(uiCommon().formatSize((quint64)iTransmitRate))
-                .arg("Maximum:").arg(uiCommon().formatSize((quint64)iMaximum));
+            strInfo = QString("<b>%1</b></b><br/><font color=\"#FF0000\">%2: %3</font><br/><font color=\"#0000FF\">%4: %5</font><br/>%6: %7").arg(m_strNetInfoLabelTitle)
+                .arg(m_strNetInfoLabelReceived).arg(uiCommon().formatSize((quint64)iReceiveRate))
+                .arg(m_strNetInfoLabelTransmitted).arg(uiCommon().formatSize((quint64)iTransmitRate))
+                .arg(m_strNetInfoLabelMaximum).arg(uiCommon().formatSize((quint64)iMaximum));
         else
-            strInfo = QString("<b>%1</b><br/>%2: %3<br/>%4: %5<br/>%6: %7").arg("Network").arg("Receieve").arg("---").arg("Transmit").arg("---");
+            strInfo = QString("<b>%1</b><br/>%2: %3<br/>%4: %5<br/>%6: %7").arg(m_strNetInfoLabelTitle).arg(m_strNetInfoLabelReceived).arg("---").arg(m_strNetInfoLabelTransmitted).arg("---");
         m_infoLabels[m_strNetMetricName]->setText(strInfo);
     }
    if (m_charts.contains(m_strNetMetricName))
