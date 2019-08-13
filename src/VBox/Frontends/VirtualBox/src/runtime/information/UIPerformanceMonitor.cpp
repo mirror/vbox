@@ -39,7 +39,7 @@
 const ULONG iPeriod = 1;
 const int iMaximumQueueSize = 120;
 const int iMetricSetupCount = 1;
-
+const int iDecimalCount = 2;
 /*********************************************************************************************************************************
 *   UIChart definition.                                                                                     *
 *********************************************************************************************************************************/
@@ -66,8 +66,8 @@ public:
     QColor dataSeriesColor(int iDataSeriesIndex);
     void setDataSeriesColor(int iDataSeriesIndex, const QColor &color);
 
-    QString dataSeriesLabel(int iDataSeriesIndex);
-    void setDataSeriesLabel(int iDataSeriesIndex, const QString &strLabel);
+    QString XAxisLabel();
+    void setXAxisLabel(const QString &strLabel);
 
 protected:
 
@@ -89,7 +89,7 @@ protected:
     bool m_fDrawPieChart;
     bool m_fUseGradientLineColor;
     QColor m_dataSeriesColor[2];
-    QString m_dataSeriesLabel[2];
+    QString m_strXAxisLabel;
 };
 
 
@@ -108,7 +108,7 @@ UIChart::UIChart(QWidget *pParent, const UISubMetric *pSubMetric)
     m_dataSeriesColor[1] = QColor(Qt::blue);
 
     m_iMarginLeft = 1 * qApp->QApplication::style()->pixelMetric(QStyle::PM_LayoutTopMargin);
-    m_iMarginRight = 4 * qApp->QApplication::style()->pixelMetric(QStyle::PM_LayoutTopMargin);
+    m_iMarginRight = 6 * qApp->QApplication::style()->pixelMetric(QStyle::PM_LayoutTopMargin);
     m_iMarginTop = 0.3 * qApp->QApplication::style()->pixelMetric(QStyle::PM_LayoutTopMargin);
     m_iMarginBottom = 2 * qApp->QApplication::style()->pixelMetric(QStyle::PM_LayoutTopMargin);
     m_iPieChartSize = 1.5f * qApp->style()->pixelMetric(QStyle::PM_LargeIconSize);
@@ -181,21 +181,14 @@ void UIChart::setDataSeriesColor(int iDataSeriesIndex, const QColor &color)
     update();
 }
 
-QString UIChart::dataSeriesLabel(int iDataSeriesIndex)
+QString UIChart::XAxisLabel()
 {
-    if (iDataSeriesIndex >= 2)
-        return QString();
-    return m_dataSeriesLabel[iDataSeriesIndex];
+    return m_strXAxisLabel;
 }
 
-void UIChart::setDataSeriesLabel(int iDataSeriesIndex, const QString &strLabel)
+void UIChart::setXAxisLabel(const QString &strLabel)
 {
-    if (iDataSeriesIndex >= 2)
-        return;
-    if (m_dataSeriesLabel[iDataSeriesIndex] == strLabel)
-        return;
-    m_dataSeriesLabel[iDataSeriesIndex] = strLabel;
-    update();
+    m_strXAxisLabel = strLabel;
 }
 
 QSize UIChart::minimumSizeHint() const
@@ -268,7 +261,7 @@ void UIChart::paintEvent(QPaintEvent *pEvent)
         int iTextWidth = fontMetrics.width(strCurentSec);
         if (i == 0)
         {
-            strCurentSec += " seconds";
+            strCurentSec += " " + m_strXAxisLabel;
             painter.drawText(iTextX, height() - m_iMarginBottom + iFontHeight, strCurentSec);
         }
         else
@@ -322,19 +315,20 @@ void UIChart::paintEvent(QPaintEvent *pEvent)
 
     /* Draw YAxis tick labels: */
     painter.setPen(mainAxisColor);
-    for (int i = 1; i < iYSubAxisCount + 2; ++i)
+    for (int i = 0; i < iYSubAxisCount + 2; ++i)
     {
 
-        int iTextY = m_iMarginTop + i * iChartHeight / (float) (iYSubAxisCount + 1);
+        int iTextY = 0.5 * iFontHeight + m_iMarginTop + i * iChartHeight / (float) (iYSubAxisCount + 1);
         QString strValue;
-        ULONG iValue = iMaximum - (i +1) * iMaximum / (float) (iYSubAxisCount + 2);
+        ULONG iValue = (iYSubAxisCount + 1 - i) * (iMaximum / (float) (iYSubAxisCount + 1));
+        //printf("%d %u\n", i, iValue);
         if (m_pSubMetric->unit().compare("%", Qt::CaseInsensitive) == 0)
             strValue = QString::number(iValue);
         else if (m_pSubMetric->unit().compare("kb", Qt::CaseInsensitive) == 0)
-            strValue = uiCommon().formatSize(_1K * (quint64)iValue);
+            strValue = uiCommon().formatSize(_1K * (quint64)iValue, iDecimalCount);
         else if (m_pSubMetric->unit().compare("b", Qt::CaseInsensitive) == 0 ||
                  m_pSubMetric->unit().compare("b/s", Qt::CaseInsensitive) == 0)
-            strValue = uiCommon().formatSize(iValue);
+            strValue = uiCommon().formatSize(iValue, iDecimalCount);
         painter.drawText(width() - 0.9 * m_iMarginRight, iTextY, strValue);
     }
 
@@ -485,15 +479,45 @@ UIPerformanceMonitor::~UIPerformanceMonitor()
 
 void UIPerformanceMonitor::retranslateUi()
 {
+    foreach (UIChart *pChart, m_charts)
+        pChart->setXAxisLabel(QApplication::translate("UIVMInformationDialog", "Seconds"));
+    int iMaximum = 0;
     m_strCPUInfoLabelTitle = QApplication::translate("UIVMInformationDialog", "CPU Load");
+    iMaximum = qMax(iMaximum, m_strCPUInfoLabelTitle.length());
+
     m_strRAMInfoLabelTitle = QApplication::translate("UIVMInformationDialog", "RAM Usage");
+    iMaximum = qMax(iMaximum, m_strRAMInfoLabelTitle.length());
     m_strRAMInfoLabelTotal = QApplication::translate("UIVMInformationDialog", "Total");
+    iMaximum = qMax(iMaximum, m_strRAMInfoLabelTotal.length());
     m_strRAMInfoLabelFree = QApplication::translate("UIVMInformationDialog", "Free");
+    iMaximum = qMax(iMaximum, m_strRAMInfoLabelFree.length());
     m_strRAMInfoLabelUsed = QApplication::translate("UIVMInformationDialog", "Used");
+    iMaximum = qMax(iMaximum, m_strRAMInfoLabelUsed.length());
     m_strNetInfoLabelTitle = QApplication::translate("UIVMInformationDialog", "Network");
+    iMaximum = qMax(iMaximum, m_strNetInfoLabelTitle.length());
     m_strNetInfoLabelReceived = QApplication::translate("UIVMInformationDialog", "Received");
+    iMaximum = qMax(iMaximum, m_strNetInfoLabelReceived.length());
     m_strNetInfoLabelTransmitted = QApplication::translate("UIVMInformationDialog", "Trasmitted");
+    iMaximum = qMax(iMaximum, m_strNetInfoLabelTransmitted.length());
     m_strNetInfoLabelMaximum = QApplication::translate("UIVMInformationDialog", "Maximum");
+    iMaximum = qMax(iMaximum, m_strNetInfoLabelMaximum.length());
+
+    /* Compute the maximum label string length and set it as a fixed width to labels to prevent always changing widths: */
+    /* Add m_iDecimalCount plus 3 characters for the number and 2 for unit string: */
+    iMaximum += (iDecimalCount + 5);
+    if (!m_infoLabels.isEmpty())
+    {
+        QLabel *pLabel = m_infoLabels.begin().value();
+
+        if (pLabel)
+        {
+            QFontMetrics labelFontMetric(pLabel->font());
+            int iWidth = iMaximum * labelFontMetric.width('X');
+            foreach (QLabel *pInfoLabel, m_infoLabels)
+                pInfoLabel->setFixedWidth(iWidth);
+        }
+    }
+
 }
 
 void UIPerformanceMonitor::prepareObjects()
@@ -536,8 +560,8 @@ void UIPerformanceMonitor::prepareObjects()
         m_charts[m_strNetMetricName]->setDrawPieChart(false);
         m_charts[m_strNetMetricName]->setUseGradientLineColor(false);
     }
-    // if (m_charts.contains(m_strCPUMetricName) && m_charts[m_strCPUMetricName])
-    //     m_charts[m_strCPUMetricName]->setUseGradientLineColor(false);
+    if (m_charts.contains(m_strCPUMetricName) && m_charts[m_strCPUMetricName])
+        m_charts[m_strCPUMetricName]->setUseGradientLineColor(false);
 
     QWidget *bottomSpacerWidget = new QWidget(this);
     bottomSpacerWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
@@ -713,10 +737,9 @@ void UIPerformanceMonitor::enableDisableGuestAdditionDependedWidgets(bool fEnabl
 
 void UIPerformanceMonitor::updateCPUGraphsAndMetric(ULONG iExecutingPercentage, ULONG iOtherPercentage)
 {
-    Q_UNUSED(iOtherPercentage);
     UISubMetric &CPUMetric = m_subMetrics[m_strCPUMetricName];
     CPUMetric.addData(0, iExecutingPercentage);
-    //CPUMetric.addData(1, iOtherPercentage);
+    CPUMetric.addData(1, iOtherPercentage);
     CPUMetric.setMaximum(100);
     if (m_infoLabels.contains(m_strCPUMetricName) && m_infoLabels[m_strCPUMetricName])
     {
@@ -740,9 +763,9 @@ void UIPerformanceMonitor::updateRAMGraphsAndMetric(quint64 iTotalRAM, quint64 i
     {
         QString strInfo;
         if (m_infoLabels[m_strRAMMetricName]->isEnabled())
-            strInfo = QString("<b>%1</b><br/>%2: %3<br/>%4: %5<br/>%6: %7").arg(m_strRAMInfoLabelTitle).arg(m_strRAMInfoLabelTotal).arg(uiCommon().formatSize(_1K * iTotalRAM))
-                .arg(m_strRAMInfoLabelFree).arg(uiCommon().formatSize(_1K * (iFreeRAM)))
-                .arg(m_strRAMInfoLabelUsed).arg(uiCommon().formatSize(_1K * (iTotalRAM - iFreeRAM)));
+            strInfo = QString("<b>%1</b><br/>%2: %3<br/>%4: %5<br/>%6: %7").arg(m_strRAMInfoLabelTitle).arg(m_strRAMInfoLabelTotal).arg(uiCommon().formatSize(_1K * iTotalRAM, iDecimalCount))
+                .arg(m_strRAMInfoLabelFree).arg(uiCommon().formatSize(_1K * (iFreeRAM), iDecimalCount))
+                .arg(m_strRAMInfoLabelUsed).arg(uiCommon().formatSize(_1K * (iTotalRAM - iFreeRAM), iDecimalCount));
         else
             strInfo = QString("<b>%1</b><br/>%2: %3<br/>%4: %5<br/>%6: %7").arg(m_strRAMInfoLabelTitle).arg(m_strRAMInfoLabelTotal).arg("---").arg(m_strRAMInfoLabelFree).arg("---").arg(m_strRAMInfoLabelUsed).arg("---");
         m_infoLabels[m_strRAMMetricName]->setText(strInfo);
@@ -766,9 +789,9 @@ void UIPerformanceMonitor::updateNewGraphsAndMetric(ULONG iReceiveRate, ULONG iT
         QString strInfo;
         if (m_infoLabels[m_strNetMetricName]->isEnabled())
             strInfo = QString("<b>%1</b></b><br/><font color=\"#FF0000\">%2: %3</font><br/><font color=\"#0000FF\">%4: %5</font><br/>%6: %7").arg(m_strNetInfoLabelTitle)
-                .arg(m_strNetInfoLabelReceived).arg(uiCommon().formatSize((quint64)iReceiveRate))
-                .arg(m_strNetInfoLabelTransmitted).arg(uiCommon().formatSize((quint64)iTransmitRate))
-                .arg(m_strNetInfoLabelMaximum).arg(uiCommon().formatSize((quint64)iMaximum));
+                .arg(m_strNetInfoLabelReceived).arg(uiCommon().formatSize((quint64)iReceiveRate, iDecimalCount))
+                .arg(m_strNetInfoLabelTransmitted).arg(uiCommon().formatSize((quint64)iTransmitRate, iDecimalCount))
+                .arg(m_strNetInfoLabelMaximum).arg(uiCommon().formatSize((quint64)iMaximum, iDecimalCount));
         else
             strInfo = QString("<b>%1</b><br/>%2: %3<br/>%4: %5<br/>%6: %7").arg(m_strNetInfoLabelTitle).arg(m_strNetInfoLabelReceived).arg("---").arg(m_strNetInfoLabelTransmitted).arg("---");
         m_infoLabels[m_strNetMetricName]->setText(strInfo);
