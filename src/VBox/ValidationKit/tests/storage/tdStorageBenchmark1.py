@@ -77,6 +77,7 @@ class FioTest(object):
 
     def prepare(self, cMsTimeout = 30000):
         """ Prepares the testcase """
+        reporter.testStart('Fio');
 
         sTargetOs = self.dCfg.get('TargetOs', 'linux');
         sIoEngine, fDirectIo = self.kdHostIoEngine.get(sTargetOs);
@@ -117,7 +118,6 @@ class FioTest(object):
 
     def run(self, cMsTimeout = 30000):
         """ Runs the testcase """
-        _ = cMsTimeout
         fRc, sOutput, sError = self.oExecutor.execBinary('fio', (self.sCfgFileId,), cMsTimeout = cMsTimeout);
         if fRc:
             self.sResult = sOutput;
@@ -131,6 +131,8 @@ class FioTest(object):
 
     def cleanup(self):
         """ Cleans up any leftovers from the testcase. """
+        reporter.testDone();
+        return True;
 
     def reportResult(self):
         """
@@ -177,7 +179,7 @@ class IozoneTest(object):
 
     def prepare(self, cMsTimeout = 30000):
         """ Prepares the testcase """
-        _ = cMsTimeout;
+        reporter.testStart('IoZone');
         return True; # Nothing to do.
 
     def run(self, cMsTimeout = 30000):
@@ -195,12 +197,11 @@ class IozoneTest(object):
                            sOutput +
                            '\nError:\n\n' +
                            sError);
-
-        _ = cMsTimeout;
         return fRc;
 
     def cleanup(self):
         """ Cleans up any leftovers from the testcase. """
+        reporter.testDone();
         return True;
 
     def reportResult(self):
@@ -331,17 +332,17 @@ class StorTestCfgMgr(object):
 
     def __init__(self, aasTestLvls, aasTestsBlacklist, fnIsCfgSupported = None):
         self.aasTestsBlacklist = aasTestsBlacklist;
-        self.at3TestLvls       = [];
+        self.at4TestLvls       = [];
         self.iTestLvl          = 0;
         self.fnIsCfgSupported  = fnIsCfgSupported;
         for asTestLvl in aasTestLvls:
             if isinstance(asTestLvl, tuple):
-                asTestLvl, fnTestFmt = asTestLvl;
-                self.at3TestLvls.append((0, fnTestFmt, asTestLvl));
+                asTestLvl, fSubTestStartAuto, fnTestFmt = asTestLvl;
+                self.at4TestLvls.append((0, fSubTestStartAuto, fnTestFmt, asTestLvl));
             else:
-                self.at3TestLvls.append((0, None, asTestLvl));
+                self.at4TestLvls.append((0, True, None, asTestLvl));
 
-        self.at3TestLvls.reverse();
+        self.at4TestLvls.reverse();
 
         # Get the first non blacklisted test.
         asTestCfg = self.getCurrentTestCfg();
@@ -350,12 +351,14 @@ class StorTestCfgMgr(object):
 
         iLvl = 0;
         for sCfg in asTestCfg:
-            reporter.testStart('%s' % (self.getTestIdString(sCfg, iLvl)));
+            sSubTest = self.getTestIdString(sCfg, iLvl);
+            if sSubTest is not None:
+                reporter.testStart('%s' % (sSubTest,));
             iLvl += 1;
 
     def __del__(self):
         # Make sure the tests are marked as done.
-        while self.iTestLvl < len(self.at3TestLvls):
+        while self.iTestLvl < len(self.at4TestLvls):
             reporter.testDone();
             self.iTestLvl += 1;
 
@@ -366,7 +369,9 @@ class StorTestCfgMgr(object):
 
         # The order of the test levels is reversed so get the level starting
         # from the end.
-        _, fnTestFmt, _ = self.at3TestLvls[len(self.at3TestLvls) - 1 - iLvl];
+        _, fSubTestStartAuto, fnTestFmt, _ = self.at4TestLvls[len(self.at4TestLvls) - 1 - iLvl];
+        if not fSubTestStartAuto:
+            return None;
         if fnTestFmt is not None:
             return fnTestFmt(oCfg);
         return oCfg;
@@ -397,16 +402,16 @@ class StorTestCfgMgr(object):
         Advances to the next test config and returns it as an
         array of strings or an empty config if there is no test left anymore.
         """
-        iTestCfg, fnTestFmt, asTestCfg = self.at3TestLvls[self.iTestLvl];
+        iTestCfg, fSubTestStartAuto, fnTestFmt, asTestCfg = self.at4TestLvls[self.iTestLvl];
         iTestCfg += 1;
-        self.at3TestLvls[self.iTestLvl] = (iTestCfg, fnTestFmt, asTestCfg);
-        while iTestCfg == len(asTestCfg) and self.iTestLvl < len(self.at3TestLvls):
-            self.at3TestLvls[self.iTestLvl] = (0, fnTestFmt, asTestCfg);
+        self.at4TestLvls[self.iTestLvl] = (iTestCfg, fSubTestStartAuto, fnTestFmt, asTestCfg);
+        while iTestCfg == len(asTestCfg) and self.iTestLvl < len(self.at4TestLvls):
+            self.at4TestLvls[self.iTestLvl] = (0, fSubTestStartAuto, fnTestFmt, asTestCfg);
             self.iTestLvl += 1;
-            if self.iTestLvl < len(self.at3TestLvls):
-                iTestCfg, fnTestFmt, asTestCfg = self.at3TestLvls[self.iTestLvl];
+            if self.iTestLvl < len(self.at4TestLvls):
+                iTestCfg, fSubTestStartAuto, fnTestFmt, asTestCfg = self.at4TestLvls[self.iTestLvl];
                 iTestCfg += 1;
-                self.at3TestLvls[self.iTestLvl] = (iTestCfg, fnTestFmt, asTestCfg);
+                self.at4TestLvls[self.iTestLvl] = (iTestCfg, fSubTestStartAuto, fnTestFmt, asTestCfg);
                 if iTestCfg < len(asTestCfg):
                     self.iTestLvl = 0;
                     break;
@@ -421,9 +426,9 @@ class StorTestCfgMgr(object):
         """
         asTestCfg = [];
 
-        if self.iTestLvl < len(self.at3TestLvls):
-            for t3TestLvl in self.at3TestLvls:
-                iTestCfg, _, asTestLvl = t3TestLvl;
+        if self.iTestLvl < len(self.at4TestLvls):
+            for t4TestLvl in self.at4TestLvls:
+                iTestCfg, _, _, asTestLvl = t4TestLvl;
                 asTestCfg.append(asTestLvl[iTestCfg]);
 
             asTestCfg.reverse()
@@ -443,7 +448,7 @@ class StorTestCfgMgr(object):
 
         # Compare the current and next config and close the approriate test
         # categories.
-        reporter.testDone(fSkippedLast);
+        #reporter.testDone(fSkippedLast);
         if asTestCfg:
             idxSame = 0;
             while asTestCfgCur[idxSame] == asTestCfg[idxSame]:
@@ -453,7 +458,9 @@ class StorTestCfgMgr(object):
                 reporter.testDone();
 
             for i in range(idxSame, len(asTestCfg)):
-                reporter.testStart('%s' % (self.getTestIdString(asTestCfg[i], i)));
+                sSubTest = self.getTestIdString(asTestCfg[i], i);
+                if sSubTest is not None:
+                    reporter.testStart('%s' % (sSubTest,));
 
         else:
             # No more tests, mark all tests as done
@@ -540,8 +547,8 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
     kiDiskVar     = 4;
     kiCpuCount    = 5;
     kiVirtMode    = 6;
-    kiIoTest      = 7;
-    kiTestSet     = 8;
+    kiTestSet     = 7;
+    kiIoTest      = 8;
 
     def __init__(self):
         vbox.TestDriver.__init__(self);
@@ -1345,13 +1352,13 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
         aasTestCfgs = [];
         aasTestCfgs.insert(self.kiVmName,      self.asTestVMs);
         aasTestCfgs.insert(self.kiStorageCtrl, self.asStorageCtrls);
-        aasTestCfgs.insert(self.kiHostIoCache, (self.asHostIoCache, self.fnFormatHostIoCache));
+        aasTestCfgs.insert(self.kiHostIoCache, (self.asHostIoCache, True, self.fnFormatHostIoCache));
         aasTestCfgs.insert(self.kiDiskFmt,     self.asDiskFormats);
         aasTestCfgs.insert(self.kiDiskVar,     self.asDiskVariants);
-        aasTestCfgs.insert(self.kiCpuCount,    (self.acCpus, self.fnFormatCpuString));
-        aasTestCfgs.insert(self.kiVirtMode,    (self.asVirtModes, self.fnFormatVirtMode));
-        aasTestCfgs.insert(self.kiIoTest,      self.asTests);
+        aasTestCfgs.insert(self.kiCpuCount,    (self.acCpus, True, self.fnFormatCpuString));
+        aasTestCfgs.insert(self.kiVirtMode,    (self.asVirtModes, True, self.fnFormatVirtMode));
         aasTestCfgs.insert(self.kiTestSet,     self.asTestSets);
+        aasTestCfgs.insert(self.kiIoTest,      (self.asTests, False, None));
 
         aasTestsBlacklist = [];
         aasTestsBlacklist.append(['tst-storage', 'BusLogic']); # 64bit Linux is broken with BusLogic
@@ -1403,13 +1410,11 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
                     sMountPoint = self.prepareStorage(self.oStorCfg);
                 if sMountPoint is not None:
                     for sIoTest in self.asTests:
-                        reporter.testStart(sIoTest);
                         for sTestSet in self.asTestSets:
                             reporter.testStart(sTestSet);
                             dTestSet = self.kdTestSets.get(sTestSet);
                             self.testBenchmark(utils.getHostOs(), sIoTest, sMountPoint, oExecutor, dTestSet);
                             reporter.testDone();
-                        reporter.testDone();
                     self.cleanupStorage(self.oStorCfg);
                 else:
                     reporter.testFailure('Failed to prepare host storage');
