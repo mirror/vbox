@@ -473,7 +473,7 @@ class VBoxInstallerTestDriver(TestDriverBase):
         if   sHost == 'darwin':     fRc = self._uninstallVBoxOnDarwin();
         elif sHost == 'linux':      fRc = self._uninstallVBoxOnLinux();
         elif sHost == 'solaris':    fRc = self._uninstallVBoxOnSolaris(True);
-        elif sHost == 'win':        fRc = self._uninstallVBoxOnWindows(False);
+        elif sHost == 'win':        fRc = self._uninstallVBoxOnWindows('uninstall');
         else:
             reporter.error('Unsupported host "%s".' % (sHost,));
         if fRc is False and not fIgnoreError:
@@ -767,7 +767,7 @@ class VBoxInstallerTestDriver(TestDriverBase):
         # TEMPORARY HACK - END
 
         # Uninstall any previous vbox version first.
-        fRc = self._uninstallVBoxOnWindows(False);
+        fRc = self._uninstallVBoxOnWindows('install');
         if fRc is not True:
             return None; # There shouldn't be anything to uninstall, and if there is, it's not our fault.
 
@@ -835,10 +835,11 @@ class VBoxInstallerTestDriver(TestDriverBase):
                 cKilled += 1;
         return cKilled;
 
-    def _uninstallVBoxOnWindows(self, fIgnoreServices = False):
+    def _uninstallVBoxOnWindows(self, sMode):
         """
         Uninstalls VBox on Windows, all installations we find to be on the safe side...
         """
+        assert sMode in ['install', 'uninstall',];
 
         import win32com.client; # pylint: disable=import-error
         win32com.client.gencache.EnsureModule('{000C1092-0000-0000-C000-000000000046}', 1033, 1, 0);
@@ -914,35 +915,53 @@ class VBoxInstallerTestDriver(TestDriverBase):
             if fRc2 is False:
                 if iRc == 3010: # ERROR_SUCCESS_REBOOT_REQUIRED
                     reporter.error('Uninstaller required a reboot to complete uninstallation');
-                    reporter.addLogFile(sLogFile, 'log/uninstaller_reboot',
-                                        "Verbose MSI uninstallation log file (reboot required)");
                 else:
                     reporter.error('Uninstaller failed, exit code: %s' % (iRc,));
                 fRc = False;
 
         self._waitForTestManagerConnectivity(30);
+
         if fRc is False and os.path.isfile(sLogFile):
             reporter.addLogFile(sLogFile, 'log/uninstaller', "Verbose MSI uninstallation log file");
 
         # Log driver service states (should ls \Driver\VBox* and \Device\VBox*).
+        fHadLeftovers = False;
         asLeftovers = [];
-        for sService in self.kasWindowsServices:
-            fRc2, _ = self._sudoExecuteSync(['sc.exe', 'query', sService]);
-            if fRc2 is True:
-                if sService in ['vboxnetadp',]: # Temp hack! ## @todo fix uninstallation of vboxnetadp!
-                    try:
-                        sOutput = utils.sudoProcessOutputChecked(['sc.exe', 'query', sService]);
-                    except:
-                        reporter.logXcpt();
-                    else:
-                        if re.search(r'STATE\s+:\s*1\s*STOPPED', sOutput) is not None:
-                            reporter.log('Ignoring "%s" as it seems to be stopped!' % (sService,));
-                            continue;
-                asLeftovers.append(sService,);
-                if fIgnoreServices is False:
-                    fRc = False;
+        for sService in reversed(self.kasWindowsServices):
+            cTries = 0;
+            while True:
+                fRc2, _ = self._sudoExecuteSync(['sc.exe', 'query', sService]);
+                if not fRc2:
+                    break;
+                fHadLeftovers = True;
+
+                cTries += 1;
+                if cTries > 3:
+                    asLeftovers.append(sService,);
+                    break;
+
+                # Get the status output.
+                try:
+                    sOutput = utils.sudoProcessOutputChecked(['sc.exe', 'query', sService]);
+                except:
+                    reporter.logXcpt();
+                else:
+                    if re.search(r'STATE\s+:\s*1\s*STOPPED', sOutput) is None:
+                        reporter.log('Trying to stop %s...' % (sService,));
+                        fRc2, _ = self._sudoExecuteSync(['sc.exe', 'stop', sService]);
+                        time.sleep(1); # fudge
+
+                    reporter.log('Trying to delete %s...' % (sService,));
+                    self._sudoExecuteSync(['sc.exe', 'delete', sService]);
+
+                time.sleep(1); # fudge
+
         if asLeftovers:
             reporter.log('Warning! Leftover VBox drivers: %s' % (', '.join(asLeftovers),));
+            fRc = False;
+
+        if fHadLeftovers:
+            self._waitForTestManagerConnectivity(30);
 
         return fRc;
 
