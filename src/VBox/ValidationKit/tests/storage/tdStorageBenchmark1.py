@@ -180,6 +180,7 @@ class IozoneTest(object):
     def prepare(self, cMsTimeout = 30000):
         """ Prepares the testcase """
         reporter.testStart('IoZone');
+        _ = cMsTimeout;
         return True; # Nothing to do.
 
     def run(self, cMsTimeout = 30000):
@@ -435,7 +436,7 @@ class StorTestCfgMgr(object):
 
         return asTestCfg;
 
-    def getNextTestCfg(self, fSkippedLast = False):
+    def getNextTestCfg(self):
         """
         Returns the next not blacklisted test config or an empty list if
         there is no test left.
