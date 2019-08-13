@@ -53,7 +53,11 @@ struc VMCPU
 
     alignb 64
     .pVMR3                  RTR3PTR_RES 1
+%ifndef VBOX_BUGREF_9217
     .pVMR0                  RTR0PTR_RES 1
+%else
+    .R0PtrUnused0           RTR0PTR_RES 1
+%endif
     .pVMRC                  resq 1
     .pUVCpu                 RTR3PTR_RES 1
     .hNativeThread          RTR0PTR_RES 1
@@ -95,7 +99,11 @@ struc VM
     .pSession               RTR0PTR_RES 1
     .pUVM                   RTR3PTR_RES 1
     .pVMR3                  RTR3PTR_RES 1
+%ifndef VBOX_BUGREF_9217
     .pVMR0                  RTR0PTR_RES 1
+%else
+    .R0PtrUnused0           RTR0PTR_RES 1
+%endif
     .pVMRC                  resq 1
     .hSelf                  resd 1
     .cCpus                  resd 1
@@ -105,8 +113,8 @@ struc VM
     .cbVCpu                 resd 1
     .uStructVersion         resd 1
 %else
-    .uUnused0               resd 1
     .uUnused1               resd 1
+    .uUnused2               resd 1
 %endif
     .bMainExecutionEngine   resb 1
     .fHMEnabled             resb 1
@@ -142,7 +150,7 @@ struc VM
 
 %ifdef VBOX_WITH_REM
     .abAlignment2           resb 2520       - RTR0PTR_CB * VMM_MAX_CPU_COUNT
-%else                       
+%else
     .abAlignment2           resb 2520 + 256 - RTR0PTR_CB * VMM_MAX_CPU_COUNT
 %endif
 
@@ -153,7 +161,7 @@ struc VM
     .apPaddingR0            RTR0PTR_RES VMM_MAX_CPU_COUNT
 %endif
     .apCpusR3               RTR3PTR_RES VMM_MAX_CPU_COUNT
-%ifndef VBOX_BUGREF_9217 
+%ifndef VBOX_BUGREF_9217
  %ifndef VBOX_BUGREF_9217_PART_I
     alignb 4096
     .aCpus                  resb VMCPU_size

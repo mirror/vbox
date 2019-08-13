@@ -152,7 +152,7 @@ typedef struct VMCPU
     /** Ring-0 Host Context VM Pointer. */
     PVMR0                   pVMR0;
 #else
-    RTR0PTR                 R0PtrUnused1;
+    RTR0PTR                 R0PtrUnused0;
 #endif
     /** Raw-mode Context VM Pointer. */
     uint32_t                pVMRC;
@@ -1160,8 +1160,12 @@ typedef struct VM
     PUVM                        pUVM;
     /** Ring-3 Host Context VM Pointer. */
     R3PTRTYPE(struct VM *)      pVMR3;
+#ifndef VBOX_BUGREF_9217
     /** Ring-0 Host Context VM Pointer. */
     R0PTRTYPE(struct VM *)      pVMR0;
+#else
+    RTR0PTR                     R0PtrUnused0;
+#endif
     /** Raw-mode Context VM Pointer. */
     uint32_t                    pVMRC;
     /** Padding for new raw-mode (long mode).   */
@@ -1184,8 +1188,8 @@ typedef struct VM
 #else
     /** Size of the VM structure including the VMCPU array. */
     uint32_t                    cbSelf;
-    uint32_t                    uUnused0;
     uint32_t                    uUnused1;
+    uint32_t                    uUnused2;
 #endif
 
     /** @name Various items that are frequently accessed.
