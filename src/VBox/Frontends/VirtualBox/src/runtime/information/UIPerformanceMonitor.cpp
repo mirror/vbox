@@ -74,7 +74,12 @@ protected:
     virtual void paintEvent(QPaintEvent *pEvent) /* override */;
     virtual QSize minimumSizeHint() const /* override */;
     virtual QSize sizeHint() const  /* override */;
+
+private:
+
     virtual void computeFontSize();
+    void drawXAxisLabels(QPainter &painter, int iXSubAxisCount);
+    void drawPieCharts(QPainter &painter, ULONG iMaximum);
 
     const UISubMetric *m_pSubMetric;
     QSize m_size;
@@ -231,10 +236,13 @@ void UIChart::paintEvent(QPaintEvent *pEvent)
     int iChartHeight = height() - (m_iMarginTop + m_iMarginBottom);
     int iChartWidth = width() - (m_iMarginLeft + m_iMarginRight);
     QColor mainAxisColor(120, 120, 120);
+    QColor subAxisColor(200, 200, 200);
+    /* Draw the main axes: */
     painter.setPen(mainAxisColor);
     painter.drawRect(QRect(m_iMarginLeft, m_iMarginTop, iChartWidth, iChartHeight));
-    painter.setPen(QColor(200, 200, 200));
-    /* Y subaxes: */
+
+    /* draw Y subaxes: */
+    painter.setPen(subAxisColor);
     int iYSubAxisCount = 3;
     for (int i = 0; i < iYSubAxisCount; ++i)
     {
@@ -242,18 +250,92 @@ void UIChart::paintEvent(QPaintEvent *pEvent)
         painter.drawLine(m_iMarginLeft, fSubAxisY,
                          width() - m_iMarginRight, fSubAxisY);
     }
-    /* X subaxes: */
+
+    /* draw X subaxes: */
     int iXSubAxisCount = 5;
     for (int i = 0; i < iXSubAxisCount; ++i)
     {
         float fSubAxisX = m_iMarginLeft + (i + 1) * iChartWidth / (float) (iXSubAxisCount + 1);
         painter.drawLine(fSubAxisX, m_iMarginTop, fSubAxisX, height() - m_iMarginBottom);
     }
-    /* Draw XAxis tick labels: */
-    painter.setPen(mainAxisColor);
-    int iTotalSeconds = iPeriod * iMaximumQueueSize;
+
     QFontMetrics fontMetrics(painter.font());
     int iFontHeight = fontMetrics.height();
+
+    /* Draw XAxis tick labels: */
+    painter.setPen(mainAxisColor);
+    drawXAxisLabels(painter, iXSubAxisCount);
+
+    /* Draw a half-transparent rectangle over the whole widget to indicate the it is disabled: */
+    if (!isEnabled())
+    {
+        painter.setPen(Qt::NoPen);
+        painter.setBrush(QColor(60, 60, 60, 50));
+        painter.drawRect(QRect(0, 0, width(), height()));
+        return;
+    }
+
+    if (!m_pSubMetric || iMaximumQueueSize <= 1)
+        return;
+
+    ULONG iMaximum = m_pSubMetric->maximum();
+    if (iMaximum == 0)
+        return;
+    /* Draw the data lines: */
+    float fBarWidth = iChartWidth / (float) (iMaximumQueueSize - 1);
+    float fH = iChartHeight / (float)iMaximum;
+    if (m_fUseGradientLineColor)
+    {
+        QLinearGradient gradient(0, 0, 0, iChartHeight);
+        gradient.setColorAt(1.0, Qt::green);
+        gradient.setColorAt(0.5, Qt::yellow);
+        gradient.setColorAt(0.0, Qt::red);
+        painter.setPen(QPen(gradient, 2.5));
+    }
+    for (int k = 0; k < 2; ++k)
+    {
+        const QQueue<ULONG> *data = m_pSubMetric->data(k);
+        if (!m_fUseGradientLineColor)
+            painter.setPen(QPen(m_dataSeriesColor[k], 2.5));
+        for (int i = 0; i < data->size() - 1; ++i)
+        {
+            int j = i + 1;
+            float fHeight = fH * data->at(i);
+            float fX = (width() - m_iMarginRight) - ((data->size() -i - 1) * fBarWidth);
+            float fHeight2 = fH * data->at(j);
+            float fX2 = (width() - m_iMarginRight) - ((data->size() -j - 1) * fBarWidth);
+            QLineF bar(fX, height() - (fHeight + m_iMarginBottom), fX2, height() - (fHeight2 + m_iMarginBottom));
+            painter.drawLine(bar);
+        }
+    }
+
+    /* Draw YAxis tick labels: */
+    painter.setPen(mainAxisColor);
+    for (int i = 0; i < iYSubAxisCount + 2; ++i)
+    {
+        int iTextY = 0.5 * iFontHeight + m_iMarginTop + i * iChartHeight / (float) (iYSubAxisCount + 1);
+        QString strValue;
+        ULONG iValue = (iYSubAxisCount + 1 - i) * (iMaximum / (float) (iYSubAxisCount + 1));
+        if (m_pSubMetric->unit().compare("%", Qt::CaseInsensitive) == 0)
+            strValue = QString::number(iValue);
+        else if (m_pSubMetric->unit().compare("kb", Qt::CaseInsensitive) == 0)
+            strValue = uiCommon().formatSize(_1K * (quint64)iValue, iDecimalCount);
+        else if (m_pSubMetric->unit().compare("b", Qt::CaseInsensitive) == 0 ||
+                 m_pSubMetric->unit().compare("b/s", Qt::CaseInsensitive) == 0)
+            strValue = uiCommon().formatSize(iValue, iDecimalCount);
+        painter.drawText(width() - 0.9 * m_iMarginRight, iTextY, strValue);
+    }
+
+    if (m_fDrawPieChart)
+        drawPieCharts(painter, iMaximum);
+}
+
+void UIChart::drawXAxisLabels(QPainter &painter, int iXSubAxisCount)
+{
+    QFontMetrics fontMetrics(painter.font());
+    int iFontHeight = fontMetrics.height();
+    int iChartWidth = width() - (m_iMarginLeft + m_iMarginRight);
+    int iTotalSeconds = iPeriod * iMaximumQueueSize;
     for (int i = 0; i < iXSubAxisCount + 2; ++i)
     {
         int iTextX = m_iMarginLeft + i * iChartWidth / (float) (iXSubAxisCount + 1);
@@ -267,114 +349,45 @@ void UIChart::paintEvent(QPaintEvent *pEvent)
         else
             painter.drawText(iTextX - 0.5 * iTextWidth, height() - m_iMarginBottom + iFontHeight, strCurentSec);
     }
+}
 
-    /* Draw a half-transparent rectangle over the whole widget to indicate the it is disabled: */
-    if (!isEnabled())
+void UIChart::drawPieCharts(QPainter &painter, ULONG iMaximum)
+{
+    /* Draw a whole non-filled circle: */
+    painter.setPen(QPen(Qt::gray, 1));
+    painter.drawArc(m_pieChartRect, 0, 3600 * 16);
+
+    QPointF center(m_pieChartRect.center());
+    QPainterPath fillPath;
+    fillPath.moveTo(center);
+    fillPath.arcTo(m_pieChartRect, 90/*startAngle*/,
+                   -1 * 360 /*sweepLength*/);
+
+    /* First draw a white filled circle and that the arc for data: */
+    painter.setPen(Qt::NoPen);
+    painter.setBrush(QColor(255, 255, 255, 175));
+    painter.drawPath(fillPath);
+
+    /* Prepare the gradient for the pie chart: */
+    QConicalGradient pieGradient;
+    pieGradient.setCenter(m_pieChartRect.center());
+    pieGradient.setAngle(90);
+    pieGradient.setColorAt(0, Qt::red);
+    pieGradient.setColorAt(0.5, Qt::yellow);
+    pieGradient.setColorAt(1, Qt::green);
+
+    /* Draw the pie chart for the 0th data series only: */
+    const QQueue<ULONG> *data = m_pSubMetric->data(0);
+    if (data && !data->isEmpty())
     {
-        painter.setPen(Qt::NoPen);
-        painter.setBrush(QColor(60, 60, 60, 50));
-        painter.drawRect(QRect(0, 0, width(), height()));
+        QPainterPath dataPath;
+        dataPath.moveTo(center);
+        float fAngle = 360.f * data->back() / (float)iMaximum;
+        dataPath.arcTo(m_pieChartRect, 90/*startAngle*/,
+                       -1 * fAngle /*sweepLength*/);
+        painter.setBrush(pieGradient);
+        painter.drawPath(dataPath);
     }
-
-    if (!m_pSubMetric || iMaximumQueueSize <= 1)
-        return;
-
-    ULONG iMaximum = m_pSubMetric->maximum();
-    if (iMaximum == 0)
-        return;
-    /* Draw the data lines: */
-    if (isEnabled())
-    {
-        float fBarWidth = iChartWidth / (float) (iMaximumQueueSize - 1);
-        float fH = iChartHeight / (float)iMaximum;
-        if (m_fUseGradientLineColor)
-        {
-            QLinearGradient gradient(0, 0, 0, iChartHeight);
-            gradient.setColorAt(1.0, Qt::green);
-            gradient.setColorAt(0.5, Qt::yellow);
-            gradient.setColorAt(0.0, Qt::red);
-            painter.setPen(QPen(gradient, 2.5));
-        }
-        for (int k = 0; k < 2; ++k)
-        {
-            const QQueue<ULONG> *data = m_pSubMetric->data(k);
-            if (!m_fUseGradientLineColor)
-                painter.setPen(QPen(m_dataSeriesColor[k], 2.5));
-            for (int i = 0; i < data->size() - 1; ++i)
-            {
-                int j = i + 1;
-                float fHeight = fH * data->at(i);
-                float fX = (width() - m_iMarginRight) - ((data->size() -i - 1) * fBarWidth);
-                float fHeight2 = fH * data->at(j);
-                float fX2 = (width() - m_iMarginRight) - ((data->size() -j - 1) * fBarWidth);
-                QLineF bar(fX, height() - (fHeight + m_iMarginBottom), fX2, height() - (fHeight2 + m_iMarginBottom));
-                painter.drawLine(bar);
-            }
-        }
-    }
-
-    /* Draw YAxis tick labels: */
-    painter.setPen(mainAxisColor);
-    for (int i = 0; i < iYSubAxisCount + 2; ++i)
-    {
-
-        int iTextY = 0.5 * iFontHeight + m_iMarginTop + i * iChartHeight / (float) (iYSubAxisCount + 1);
-        QString strValue;
-        ULONG iValue = (iYSubAxisCount + 1 - i) * (iMaximum / (float) (iYSubAxisCount + 1));
-        //printf("%d %u\n", i, iValue);
-        if (m_pSubMetric->unit().compare("%", Qt::CaseInsensitive) == 0)
-            strValue = QString::number(iValue);
-        else if (m_pSubMetric->unit().compare("kb", Qt::CaseInsensitive) == 0)
-            strValue = uiCommon().formatSize(_1K * (quint64)iValue, iDecimalCount);
-        else if (m_pSubMetric->unit().compare("b", Qt::CaseInsensitive) == 0 ||
-                 m_pSubMetric->unit().compare("b/s", Qt::CaseInsensitive) == 0)
-            strValue = uiCommon().formatSize(iValue, iDecimalCount);
-        painter.drawText(width() - 0.9 * m_iMarginRight, iTextY, strValue);
-    }
-
-    if (m_fDrawPieChart)
-    {
-        /* Draw a whole non-filled circle: */
-        painter.setPen(QPen(Qt::gray, 1));
-        painter.drawArc(m_pieChartRect, 0, 3600 * 16);
-
-        QPointF center(m_pieChartRect.center());
-        QPainterPath fillPath;
-        fillPath.moveTo(center);
-        fillPath.arcTo(m_pieChartRect, 90/*startAngle*/,
-                       -1 * 360 /*sweepLength*/);
-
-        /* First draw a white filled circle and that the arc for data: */
-        painter.setPen(Qt::NoPen);
-        painter.setBrush(QColor(255, 255, 255, 175));
-        painter.drawPath(fillPath);
-
-        /* Prepare the gradient for the pie chart: */
-        QConicalGradient pieGradient;
-        pieGradient.setCenter(m_pieChartRect.center());
-        pieGradient.setAngle(90);
-        pieGradient.setColorAt(0, Qt::red);
-        pieGradient.setColorAt(0.5, Qt::yellow);
-        pieGradient.setColorAt(1, Qt::green);
-
-        if (isEnabled())
-        {
-            /* Draw the pie chart for the 0th data series only: */
-            const QQueue<ULONG> *data = m_pSubMetric->data(0);
-            if (data && !data->isEmpty())
-            {
-                QPainterPath dataPath;
-                dataPath.moveTo(center);
-                float fAngle = 360.f * data->back() / (float)iMaximum;
-                dataPath.arcTo(m_pieChartRect, 90/*startAngle*/,
-                               -1 * fAngle /*sweepLength*/);
-                painter.setBrush(pieGradient);
-                painter.drawPath(dataPath);
-            }
-        }
-    }
-
-
 }
 
 /*********************************************************************************************************************************
@@ -508,11 +521,11 @@ void UIPerformanceMonitor::retranslateUi()
     if (!m_infoLabels.isEmpty())
     {
         QLabel *pLabel = m_infoLabels.begin().value();
-
         if (pLabel)
         {
             QFontMetrics labelFontMetric(pLabel->font());
-            int iWidth = iMaximum * labelFontMetric.width('X');
+            int iWidth = iMaximum * labelFontMetric.width('x');
+            printf("%d %d\n", labelFontMetric.width('x'), labelFontMetric.width('X'));
             foreach (QLabel *pInfoLabel, m_infoLabels)
                 pInfoLabel->setFixedWidth(iWidth);
         }
