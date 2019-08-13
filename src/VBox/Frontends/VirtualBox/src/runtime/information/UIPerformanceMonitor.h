@@ -109,6 +109,7 @@ private:
     void updateCPUGraphsAndMetric(ULONG iLoadPercentage, ULONG iOtherPercentage);
     void updateRAMGraphsAndMetric(quint64 iTotalRAM, quint64 iFreeRAM);
     void updateNewGraphsAndMetric(ULONG iReceiveRate, ULONG iTransmitRate);
+    QString dataColorString(const QString &strChartName, int iDataIndex);
 
     bool m_fGuestAdditionsAvailable;
     /** Holds the machine instance. */

@@ -800,9 +800,13 @@ void UIPerformanceMonitor::updateNewGraphsAndMetric(ULONG iReceiveRate, ULONG iT
     if (m_infoLabels.contains(m_strNetMetricName)  && m_infoLabels[m_strNetMetricName])
     {
         QString strInfo;
+        QString strReceiveColor;
         if (m_infoLabels[m_strNetMetricName]->isEnabled())
-            strInfo = QString("<b>%1</b></b><br/><font color=\"#FF0000\">%2: %3</font><br/><font color=\"#0000FF\">%4: %5</font><br/>%6: %7").arg(m_strNetInfoLabelTitle)
+            strInfo = QString("<b>%1</b></b><br/><font color=\"%2\">%3: %4</font><br/><font color=\"%5\">%6: %7</font><br/>%8: %9")
+                .arg(m_strNetInfoLabelTitle)
+                .arg(dataColorString(m_strNetMetricName, 0))
                 .arg(m_strNetInfoLabelReceived).arg(uiCommon().formatSize((quint64)iReceiveRate, iDecimalCount))
+                .arg(dataColorString(m_strNetMetricName, 1))
                 .arg(m_strNetInfoLabelTransmitted).arg(uiCommon().formatSize((quint64)iTransmitRate, iDecimalCount))
                 .arg(m_strNetInfoLabelMaximum).arg(uiCommon().formatSize((quint64)iMaximum, iDecimalCount));
         else
@@ -814,4 +818,13 @@ void UIPerformanceMonitor::updateNewGraphsAndMetric(ULONG iReceiveRate, ULONG iT
 
 }
 
+QString UIPerformanceMonitor::dataColorString(const QString &strChartName, int iDataIndex)
+{
+    if (!m_charts.contains(strChartName))
+        return QColor(Qt::red).name(QColor::HexRgb);
+    UIChart *pChart = m_charts[strChartName];
+    if (!pChart)
+        return QColor(Qt::red).name(QColor::HexRgb);
+    return pChart->dataSeriesColor(iDataIndex).name(QColor::HexRgb);
+}
 #include "UIPerformanceMonitor.moc"
