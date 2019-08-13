@@ -167,38 +167,38 @@ VMMR3_INT_DECL(void)        APICR3HvEnable(PVM pVM);
 #endif /* IN_RING3 */
 
 /* These functions are exported as they are called from external modules (recompiler). */
-VMMDECL(void)               APICUpdatePendingInterrupts(PVMCPU pVCpu);
-VMMDECL(int)                APICGetTpr(PCVMCPU pVCpu, uint8_t *pu8Tpr, bool *pfPending, uint8_t *pu8PendingIntr);
-VMMDECL(int)                APICSetTpr(PVMCPU pVCpu, uint8_t u8Tpr);
+VMMDECL(void)               APICUpdatePendingInterrupts(PVMCPUCC pVCpu);
+VMMDECL(int)                APICGetTpr(PCVMCPUCC pVCpu, uint8_t *pu8Tpr, bool *pfPending, uint8_t *pu8PendingIntr);
+VMMDECL(int)                APICSetTpr(PVMCPUCC pVCpu, uint8_t u8Tpr);
 
 /* These functions are VMM internal. */
-VMM_INT_DECL(bool)          APICIsEnabled(PCVMCPU pVCpu);
-VMM_INT_DECL(bool)          APICGetHighestPendingInterrupt(PVMCPU pVCpu, uint8_t *pu8PendingIntr);
-VMM_INT_DECL(bool)          APICQueueInterruptToService(PVMCPU pVCpu, uint8_t u8PendingIntr);
-VMM_INT_DECL(void)          APICDequeueInterruptFromService(PVMCPU pVCpu, uint8_t u8PendingIntr);
-VMM_INT_DECL(VBOXSTRICTRC)  APICReadMsr(PVMCPU pVCpu, uint32_t u32Reg, uint64_t *pu64Value);
-VMM_INT_DECL(VBOXSTRICTRC)  APICWriteMsr(PVMCPU pVCpu, uint32_t u32Reg, uint64_t u64Value);
-VMM_INT_DECL(int)           APICGetTimerFreq(PVM pVM, uint64_t *pu64Value);
-VMM_INT_DECL(VBOXSTRICTRC)  APICLocalInterrupt(PVMCPU pVCpu, uint8_t u8Pin, uint8_t u8Level, int rcRZ);
-VMM_INT_DECL(uint64_t)      APICGetBaseMsrNoCheck(PCVMCPU pVCpu);
-VMM_INT_DECL(VBOXSTRICTRC)  APICGetBaseMsr(PVMCPU pVCpu, uint64_t *pu64Value);
-VMM_INT_DECL(int)           APICSetBaseMsr(PVMCPU pVCpu, uint64_t u64BaseMsr);
-VMM_INT_DECL(int)           APICGetInterrupt(PVMCPU pVCpu, uint8_t *pu8Vector, uint32_t *pu32TagSrc);
+VMM_INT_DECL(bool)          APICIsEnabled(PCVMCPUCC pVCpu);
+VMM_INT_DECL(bool)          APICGetHighestPendingInterrupt(PVMCPUCC pVCpu, uint8_t *pu8PendingIntr);
+VMM_INT_DECL(bool)          APICQueueInterruptToService(PVMCPUCC pVCpu, uint8_t u8PendingIntr);
+VMM_INT_DECL(void)          APICDequeueInterruptFromService(PVMCPUCC pVCpu, uint8_t u8PendingIntr);
+VMM_INT_DECL(VBOXSTRICTRC)  APICReadMsr(PVMCPUCC pVCpu, uint32_t u32Reg, uint64_t *pu64Value);
+VMM_INT_DECL(VBOXSTRICTRC)  APICWriteMsr(PVMCPUCC pVCpu, uint32_t u32Reg, uint64_t u64Value);
+VMM_INT_DECL(int)           APICGetTimerFreq(PVMCC pVM, uint64_t *pu64Value);
+VMM_INT_DECL(VBOXSTRICTRC)  APICLocalInterrupt(PVMCPUCC pVCpu, uint8_t u8Pin, uint8_t u8Level, int rcRZ);
+VMM_INT_DECL(uint64_t)      APICGetBaseMsrNoCheck(PCVMCPUCC pVCpu);
+VMM_INT_DECL(VBOXSTRICTRC)  APICGetBaseMsr(PVMCPUCC pVCpu, uint64_t *pu64Value);
+VMM_INT_DECL(int)           APICSetBaseMsr(PVMCPUCC pVCpu, uint64_t u64BaseMsr);
+VMM_INT_DECL(int)           APICGetInterrupt(PVMCPUCC pVCpu, uint8_t *pu8Vector, uint32_t *pu32TagSrc);
 VMM_INT_DECL(int)           APICBusDeliver(PVM pVM, uint8_t uDest, uint8_t uDestMode, uint8_t uDeliveryMode, uint8_t uVector,
                                            uint8_t uPolarity, uint8_t uTriggerMode, uint32_t uTagSrc);
-VMM_INT_DECL(int)           APICGetApicPageForCpu(PCVMCPU pVCpu, PRTHCPHYS pHCPhys, PRTR0PTR pR0Ptr, PRTR3PTR pR3Ptr);
+VMM_INT_DECL(int)           APICGetApicPageForCpu(PCVMCPUCC pVCpu, PRTHCPHYS pHCPhys, PRTR0PTR pR0Ptr, PRTR3PTR pR3Ptr);
 
 /** @name Hyper-V interface (Ring-3 and all-context API).
  * @{ */
 #ifdef IN_RING3
 VMMR3_INT_DECL(void)        APICR3HvSetCompatMode(PVM pVM, bool fHyperVCompatMode);
 #endif
-VMM_INT_DECL(void)          APICHvSendInterrupt(PVMCPU pVCpu, uint8_t uVector, bool fAutoEoi, XAPICTRIGGERMODE enmTriggerMode);
-VMM_INT_DECL(VBOXSTRICTRC)  APICHvSetTpr(PVMCPU pVCpu, uint8_t uTpr);
-VMM_INT_DECL(uint8_t)       APICHvGetTpr(PVMCPU pVCpu);
-VMM_INT_DECL(VBOXSTRICTRC)  APICHvSetIcr(PVMCPU pVCpu, uint64_t uIcr);
-VMM_INT_DECL(uint64_t)      APICHvGetIcr(PVMCPU pVCpu);
-VMM_INT_DECL(VBOXSTRICTRC)  APICHvSetEoi(PVMCPU pVCpu, uint32_t uEoi);
+VMM_INT_DECL(void)          APICHvSendInterrupt(PVMCPUCC pVCpu, uint8_t uVector, bool fAutoEoi, XAPICTRIGGERMODE enmTriggerMode);
+VMM_INT_DECL(VBOXSTRICTRC)  APICHvSetTpr(PVMCPUCC pVCpu, uint8_t uTpr);
+VMM_INT_DECL(uint8_t)       APICHvGetTpr(PVMCPUCC pVCpu);
+VMM_INT_DECL(VBOXSTRICTRC)  APICHvSetIcr(PVMCPUCC pVCpu, uint64_t uIcr);
+VMM_INT_DECL(uint64_t)      APICHvGetIcr(PVMCPUCC pVCpu);
+VMM_INT_DECL(VBOXSTRICTRC)  APICHvSetEoi(PVMCPUCC pVCpu, uint32_t uEoi);
 /** @} */
 
 RT_C_DECLS_END

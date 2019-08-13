@@ -34,6 +34,7 @@
 #ifdef VBOX_BUGREF_9217
 # include <VBox/vmm/vm.h>
 #endif
+#include <VBox/param.h>
 #include <iprt/thread.h>
 #include <iprt/assertcompile.h>
 
@@ -72,13 +73,16 @@ typedef struct GVMCPU
     PVMCPU          pVCpu;
     /** Pointer to the corresponding cross context VM structure. */
     PVM             pVM;
+#else
+    /** Pointer to the GVM structure, for CTX_SUFF use in VMMAll code.  */
+    PGVM            pVMR0;
 #endif
 
     /** Padding so gvmm starts on a 64 byte boundrary. */
 #ifdef VBOX_BUGREF_9217
-    uint8_t         abPadding[HC_ARCH_BITS == 32 ? 48 : 40];
+    uint8_t         abPadding[32];
 #else
-    uint8_t         abPadding[HC_ARCH_BITS == 32 ? 4*4 + 24 : 24];
+    uint8_t         abPadding[24];
 #endif
 
     /** The GVMM per vcpu data. */
@@ -224,11 +228,13 @@ typedef struct GVM
 #ifdef VBOX_BUGREF_9217
     /** Padding so aCpus starts on a page boundrary.  */
 # ifdef VBOX_WITH_NEM_R0
-    uint8_t         abPadding2[4096 - 64 - 256 - 512 - 256 - 64];
+    uint8_t         abPadding2[4096 - 64 - 256 - 512 - 256 - 64 - sizeof(PGVMCPU) * VMM_MAX_CPU_COUNT];
 # else
-    uint8_t         abPadding2[4096 - 64 - 256 - 512 - 64];
+    uint8_t         abPadding2[4096 - 64 - 256 - 512       - 64 - sizeof(PGVMCPU) * VMM_MAX_CPU_COUNT];
 # endif
 #endif
+    /** For simplifying CPU enumeration in VMMAll code. */
+    PGVMCPU         apCpusR0[VMM_MAX_CPU_COUNT];
 
     /** GVMCPU array for the configured number of virtual CPUs. */
     GVMCPU          aCpus[1];
@@ -248,10 +254,10 @@ AssertCompileMemberOffset(GVM, gmm,         64 + 256);
 # ifdef VBOX_WITH_NEM_R0
 AssertCompileMemberOffset(GVM, nem,         64 + 256 + 512);
 AssertCompileMemberOffset(GVM, rawpci,      64 + 256 + 512 + 256);
-AssertCompileMemberOffset(GVM, aCpus,       64 + 256 + 512 + 256 + 64);
+AssertCompileMemberOffset(GVM, aCpus,       64 + 256 + 512 + 256 + 64 + sizeof(PGVMCPU) * VMM_MAX_CPU_COUNT);
 # else
 AssertCompileMemberOffset(GVM, rawpci,      64 + 256 + 512);
-AssertCompileMemberOffset(GVM, aCpus,       64 + 256 + 512 + 64);
+AssertCompileMemberOffset(GVM, aCpus,       64 + 256 + 512 + 64 + sizeof(PGVMCPU) * VMM_MAX_CPU_COUNT);
 # endif
 #endif
 

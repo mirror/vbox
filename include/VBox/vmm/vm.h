@@ -148,8 +148,12 @@ typedef struct VMCPU
      * @{ */
     /** Ring-3 Host Context VM Pointer. */
     PVMR3                   pVMR3;
+#ifndef VBOX_BUGREF_9217
     /** Ring-0 Host Context VM Pointer. */
     PVMR0                   pVMR0;
+#else
+    RTR0PTR                 R0PtrUnused1;
+#endif
     /** Raw-mode Context VM Pointer. */
     uint32_t                pVMRC;
     /** Padding for new raw-mode (long mode).   */
@@ -1430,14 +1434,21 @@ typedef struct VM
 
     /** Padding for aligning the structure size on a page boundrary. */
 #ifdef VBOX_WITH_REM
-    uint8_t         abAlignment2[2520];
+    uint8_t         abAlignment2[2520       - sizeof(PVMCPUR0) * VMM_MAX_CPU_COUNT];
 #else
-    uint8_t         abAlignment2[2520 + 256];
+    uint8_t         abAlignment2[2520 + 256 - sizeof(PVMCPUR0) * VMM_MAX_CPU_COUNT];
 #endif
 
     /* ---- end small stuff ---- */
+#if !defined(VBOX_BUGREF_9217)
+    /** Array of VMCPU ring-0 pointers.  This is temporary as these will
+     * live in GVM. */
+    PVMCPUR0        apCpusR0[VMM_MAX_CPU_COUNT];
+#else
+    PVMCPUR0        apPaddingR0[VMM_MAX_CPU_COUNT];
+#endif
 
-    /** Array of VMCPU pointers. */
+    /** Array of VMCPU ring-3 pointers. */
     PVMCPUR3        apCpusR3[VMM_MAX_CPU_COUNT];
 #if !defined(VBOX_BUGREF_9217) && !defined(VBOX_BUGREF_9217_PART_I)
     /** VMCPU array for the configured number of virtual CPUs.

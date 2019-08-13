@@ -19,6 +19,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define VBOX_BUGREF_9217_PART_I
 #define LOG_GROUP LOG_GROUP_CPUM
 #include <VBox/vmm/cpum.h>
 #include <VBox/vmm/dbgf.h>
@@ -29,7 +30,7 @@
 #include <VBox/vmm/nem.h>
 #include <VBox/vmm/hm.h>
 #include "CPUMInternal.h"
-#include <VBox/vmm/vm.h>
+#include <VBox/vmm/vmcc.h>
 #include <VBox/err.h>
 #include <VBox/dis.h>
 #include <VBox/log.h>
@@ -263,7 +264,7 @@ VMMDECL(int) CPUMSetGuestLDTR(PVMCPU pVCpu, uint16_t ldtr)
  * @param   pVCpu   The cross context virtual CPU structure.
  * @param   cr0     The new CR0 value.
  */
-VMMDECL(int) CPUMSetGuestCR0(PVMCPU pVCpu, uint64_t cr0)
+VMMDECL(int) CPUMSetGuestCR0(PVMCPUCC pVCpu, uint64_t cr0)
 {
     /*
      * Check for changes causing TLB flushes (for REM).
@@ -569,7 +570,7 @@ VMMDECL(uint64_t) CPUMGetGuestCR4(PCVMCPU pVCpu)
 }
 
 
-VMMDECL(uint64_t) CPUMGetGuestCR8(PCVMCPU pVCpu)
+VMMDECL(uint64_t) CPUMGetGuestCR8(PCVMCPUCC pVCpu)
 {
     uint64_t u64;
     int rc = CPUMGetGuestCRx(pVCpu, DISCREG_CR8, &u64);
@@ -663,7 +664,7 @@ VMMDECL(uint32_t) CPUMGetGuestEFlags(PCVMCPU pVCpu)
 }
 
 
-VMMDECL(int) CPUMGetGuestCRx(PCVMCPU pVCpu, unsigned iReg, uint64_t *pValue)
+VMMDECL(int) CPUMGetGuestCRx(PCVMCPUCC pVCpu, unsigned iReg, uint64_t *pValue)
 {
     switch (iReg)
     {
@@ -900,7 +901,7 @@ PCPUMCPUIDLEAF cpumCpuIdGetLeafEx(PVM pVM, uint32_t uLeaf, uint32_t uSubLeaf, bo
  * @param   pEcx        Where to store the ECX value.
  * @param   pEdx        Where to store the EDX value.
  */
-VMMDECL(void) CPUMGetGuestCpuId(PVMCPU pVCpu, uint32_t uLeaf, uint32_t uSubLeaf,
+VMMDECL(void) CPUMGetGuestCpuId(PVMCPUCC pVCpu, uint32_t uLeaf, uint32_t uSubLeaf,
                                 uint32_t *pEax, uint32_t *pEbx, uint32_t *pEcx, uint32_t *pEdx)
 {
     bool            fExactSubLeafHit;
@@ -1052,28 +1053,28 @@ VMMDECL(CPUMCPUVENDOR) CPUMGetGuestCpuVendor(PVM pVM)
 }
 
 
-VMMDECL(int) CPUMSetGuestDR0(PVMCPU pVCpu, uint64_t uDr0)
+VMMDECL(int) CPUMSetGuestDR0(PVMCPUCC pVCpu, uint64_t uDr0)
 {
     pVCpu->cpum.s.Guest.dr[0] = uDr0;
     return CPUMRecalcHyperDRx(pVCpu, 0, false);
 }
 
 
-VMMDECL(int) CPUMSetGuestDR1(PVMCPU pVCpu, uint64_t uDr1)
+VMMDECL(int) CPUMSetGuestDR1(PVMCPUCC pVCpu, uint64_t uDr1)
 {
     pVCpu->cpum.s.Guest.dr[1] = uDr1;
     return CPUMRecalcHyperDRx(pVCpu, 1, false);
 }
 
 
-VMMDECL(int) CPUMSetGuestDR2(PVMCPU pVCpu, uint64_t uDr2)
+VMMDECL(int) CPUMSetGuestDR2(PVMCPUCC pVCpu, uint64_t uDr2)
 {
     pVCpu->cpum.s.Guest.dr[2] = uDr2;
     return CPUMRecalcHyperDRx(pVCpu, 2, false);
 }
 
 
-VMMDECL(int) CPUMSetGuestDR3(PVMCPU pVCpu, uint64_t uDr3)
+VMMDECL(int) CPUMSetGuestDR3(PVMCPUCC pVCpu, uint64_t uDr3)
 {
     pVCpu->cpum.s.Guest.dr[3] = uDr3;
     return CPUMRecalcHyperDRx(pVCpu, 3, false);
@@ -1088,7 +1089,7 @@ VMMDECL(int) CPUMSetGuestDR6(PVMCPU pVCpu, uint64_t uDr6)
 }
 
 
-VMMDECL(int) CPUMSetGuestDR7(PVMCPU pVCpu, uint64_t uDr7)
+VMMDECL(int) CPUMSetGuestDR7(PVMCPUCC pVCpu, uint64_t uDr7)
 {
     pVCpu->cpum.s.Guest.dr[7] = uDr7;
     pVCpu->cpum.s.Guest.fExtrn &= ~CPUMCTX_EXTRN_DR7;
@@ -1096,7 +1097,7 @@ VMMDECL(int) CPUMSetGuestDR7(PVMCPU pVCpu, uint64_t uDr7)
 }
 
 
-VMMDECL(int) CPUMSetGuestDRx(PVMCPU pVCpu, uint32_t iReg, uint64_t Value)
+VMMDECL(int) CPUMSetGuestDRx(PVMCPUCC pVCpu, uint32_t iReg, uint64_t Value)
 {
     AssertReturn(iReg <= DISDREG_DR7, VERR_INVALID_PARAMETER);
     /* DR4 is an alias for DR6, and DR5 is an alias for DR7. */
@@ -1137,7 +1138,7 @@ VMMDECL(int) CPUMSetGuestDRx(PVMCPU pVCpu, uint32_t iReg, uint64_t Value)
  * @param   fForceHyper Used in HM to force hyper registers because of single
  *                      stepping.
  */
-VMMDECL(int) CPUMRecalcHyperDRx(PVMCPU pVCpu, uint8_t iGstReg, bool fForceHyper)
+VMMDECL(int) CPUMRecalcHyperDRx(PVMCPUCC pVCpu, uint8_t iGstReg, bool fForceHyper)
 {
     PVM pVM = pVCpu->CTX_SUFF(pVM);
 #ifndef IN_RING0
@@ -1326,7 +1327,7 @@ VMMDECL(int) CPUMRecalcHyperDRx(PVMCPU pVCpu, uint8_t iGstReg, bool fForceHyper)
  * @param   uNewValue   The new value.
  * @thread  EMT(pVCpu)
  */
-VMM_INT_DECL(int)   CPUMSetGuestXcr0(PVMCPU pVCpu, uint64_t uNewValue)
+VMM_INT_DECL(int)   CPUMSetGuestXcr0(PVMCPUCC pVCpu, uint64_t uNewValue)
 {
     CPUM_INT_ASSERT_NOT_EXTRN(pVCpu, CPUMCTX_EXTRN_XCRx);
     if (   (uNewValue & ~pVCpu->CTX_SUFF(pVM)->cpum.s.fXStateGuestMask) == 0
@@ -2112,7 +2113,7 @@ VMM_INT_DECL(uint8_t) CPUMGetGuestSvmVirtIntrVector(PCCPUMCTX pCtx)
  * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @param   pCtx        The guest-CPU context.
  */
-VMM_INT_DECL(void) CPUMSvmVmExitRestoreHostState(PVMCPU pVCpu, PCPUMCTX pCtx)
+VMM_INT_DECL(void) CPUMSvmVmExitRestoreHostState(PVMCPUCC pVCpu, PCPUMCTX pCtx)
 {
     /*
      * Reload the guest's "host state".
@@ -2257,7 +2258,7 @@ VMM_INT_DECL(uint64_t) CPUMRemoveNestedGuestTscOffset(PCVMCPU pVCpu, uint64_t uT
  * @param   fExtrnImport    The fields to import.
  * @thread  EMT(pVCpu)
  */
-VMM_INT_DECL(int) CPUMImportGuestStateOnDemand(PVMCPU pVCpu, uint64_t fExtrnImport)
+VMM_INT_DECL(int) CPUMImportGuestStateOnDemand(PVMCPUCC pVCpu, uint64_t fExtrnImport)
 {
     VMCPU_ASSERT_EMT(pVCpu);
     if (pVCpu->cpum.s.Guest.fExtrn & fExtrnImport)
@@ -2435,7 +2436,7 @@ VMM_INT_DECL(bool) CPUMGetVmxIoBitmapPermission(void const *pvIoBitmapA, void co
  *
  * @remarks This takes into account the CPU features exposed to the guest.
  */
-VMM_INT_DECL(bool) CPUMIsGuestVmxVmcsFieldValid(PVM pVM, uint64_t u64VmcsField)
+VMM_INT_DECL(bool) CPUMIsGuestVmxVmcsFieldValid(PVMCC pVM, uint64_t u64VmcsField)
 {
     uint32_t const uFieldEncHi = RT_HI_U32(u64VmcsField);
     uint32_t const uFieldEncLo = RT_LO_U32(u64VmcsField);
@@ -2519,7 +2520,7 @@ VMM_INT_DECL(bool) CPUMIsGuestVmxVmcsFieldValid(PVM pVM, uint64_t u64VmcsField)
         case VMX_VMCS64_CTRL_EPTP_LIST_FULL:
         case VMX_VMCS64_CTRL_EPTP_LIST_HIGH:
         {
-            PCVMCPU pVCpu = &pVM->aCpus[0];
+            PCVMCPU pVCpu = pVM->CTX_SUFF(apCpus)[0];
             uint64_t const uVmFuncMsr = pVCpu->cpum.s.Guest.hwvirt.vmx.Msrs.u64VmFunc;
             return RT_BOOL(RT_BF_GET(uVmFuncMsr, VMX_BF_VMFUNC_EPTP_SWITCHING));
         }

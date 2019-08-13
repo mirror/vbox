@@ -1375,8 +1375,8 @@ VMMDECL(uint64_t)       CPUMGetGuestCR0(PCVMCPU pVCpu);
 VMMDECL(uint64_t)       CPUMGetGuestCR2(PCVMCPU pVCpu);
 VMMDECL(uint64_t)       CPUMGetGuestCR3(PCVMCPU pVCpu);
 VMMDECL(uint64_t)       CPUMGetGuestCR4(PCVMCPU pVCpu);
-VMMDECL(uint64_t)       CPUMGetGuestCR8(PCVMCPU pVCpu);
-VMMDECL(int)            CPUMGetGuestCRx(PCVMCPU pVCpu, unsigned iReg, uint64_t *pValue);
+VMMDECL(uint64_t)       CPUMGetGuestCR8(PCVMCPUCC pVCpu);
+VMMDECL(int)            CPUMGetGuestCRx(PCVMCPUCC pVCpu, unsigned iReg, uint64_t *pValue);
 VMMDECL(uint32_t)       CPUMGetGuestEFlags(PCVMCPU pVCpu);
 VMMDECL(uint32_t)       CPUMGetGuestEIP(PCVMCPU pVCpu);
 VMMDECL(uint64_t)       CPUMGetGuestRIP(PCVMCPU pVCpu);
@@ -1403,7 +1403,7 @@ VMMDECL(uint64_t)       CPUMGetGuestDR3(PCVMCPU pVCpu);
 VMMDECL(uint64_t)       CPUMGetGuestDR6(PCVMCPU pVCpu);
 VMMDECL(uint64_t)       CPUMGetGuestDR7(PCVMCPU pVCpu);
 VMMDECL(int)            CPUMGetGuestDRx(PCVMCPU pVCpu, uint32_t iReg, uint64_t *pValue);
-VMMDECL(void)           CPUMGetGuestCpuId(PVMCPU pVCpu, uint32_t iLeaf, uint32_t iSubLeaf,
+VMMDECL(void)           CPUMGetGuestCpuId(PVMCPUCC pVCpu, uint32_t iLeaf, uint32_t iSubLeaf,
                                           uint32_t *pEax, uint32_t *pEbx, uint32_t *pEcx, uint32_t *pEdx);
 VMMDECL(uint64_t)       CPUMGetGuestEFER(PCVMCPU pVCpu);
 VMM_INT_DECL(uint64_t)  CPUMGetGuestIa32MtrrCap(PCVMCPU pVCpu);
@@ -1420,18 +1420,18 @@ VMMDECL(int)           CPUMSetGuestGDTR(PVMCPU pVCpu, uint64_t GCPtrBase, uint16
 VMMDECL(int)           CPUMSetGuestIDTR(PVMCPU pVCpu, uint64_t GCPtrBase, uint16_t cbLimit);
 VMMDECL(int)           CPUMSetGuestTR(PVMCPU pVCpu, uint16_t tr);
 VMMDECL(int)           CPUMSetGuestLDTR(PVMCPU pVCpu, uint16_t ldtr);
-VMMDECL(int)           CPUMSetGuestCR0(PVMCPU pVCpu, uint64_t cr0);
+VMMDECL(int)           CPUMSetGuestCR0(PVMCPUCC pVCpu, uint64_t cr0);
 VMMDECL(int)           CPUMSetGuestCR2(PVMCPU pVCpu, uint64_t cr2);
 VMMDECL(int)           CPUMSetGuestCR3(PVMCPU pVCpu, uint64_t cr3);
 VMMDECL(int)           CPUMSetGuestCR4(PVMCPU pVCpu, uint64_t cr4);
-VMMDECL(int)           CPUMSetGuestDR0(PVMCPU pVCpu, uint64_t uDr0);
-VMMDECL(int)           CPUMSetGuestDR1(PVMCPU pVCpu, uint64_t uDr1);
-VMMDECL(int)           CPUMSetGuestDR2(PVMCPU pVCpu, uint64_t uDr2);
-VMMDECL(int)           CPUMSetGuestDR3(PVMCPU pVCpu, uint64_t uDr3);
+VMMDECL(int)           CPUMSetGuestDR0(PVMCPUCC pVCpu, uint64_t uDr0);
+VMMDECL(int)           CPUMSetGuestDR1(PVMCPUCC pVCpu, uint64_t uDr1);
+VMMDECL(int)           CPUMSetGuestDR2(PVMCPUCC pVCpu, uint64_t uDr2);
+VMMDECL(int)           CPUMSetGuestDR3(PVMCPUCC pVCpu, uint64_t uDr3);
 VMMDECL(int)           CPUMSetGuestDR6(PVMCPU pVCpu, uint64_t uDr6);
-VMMDECL(int)           CPUMSetGuestDR7(PVMCPU pVCpu, uint64_t uDr7);
-VMMDECL(int)           CPUMSetGuestDRx(PVMCPU pVCpu, uint32_t iReg, uint64_t Value);
-VMM_INT_DECL(int)      CPUMSetGuestXcr0(PVMCPU pVCpu, uint64_t uNewValue);
+VMMDECL(int)           CPUMSetGuestDR7(PVMCPUCC pVCpu, uint64_t uDr7);
+VMMDECL(int)           CPUMSetGuestDRx(PVMCPUCC pVCpu, uint32_t iReg, uint64_t Value);
+VMM_INT_DECL(int)      CPUMSetGuestXcr0(PVMCPUCC pVCpu, uint64_t uNewValue);
 VMMDECL(int)           CPUMSetGuestEFlags(PVMCPU pVCpu, uint32_t eflags);
 VMMDECL(int)           CPUMSetGuestEIP(PVMCPU pVCpu, uint32_t eip);
 VMMDECL(int)           CPUMSetGuestEAX(PVMCPU pVCpu, uint32_t eax);
@@ -1488,7 +1488,7 @@ VMM_INT_DECL(uint64_t)  CPUMRemoveNestedGuestTscOffset(PCVMCPU pVCpu, uint64_t u
 VMM_INT_DECL(bool)      CPUMIsGuestSvmPhysIntrEnabled(PCVMCPU pVCpu, PCCPUMCTX pCtx);
 VMM_INT_DECL(bool)      CPUMIsGuestSvmVirtIntrEnabled(PCVMCPU pVCpu, PCCPUMCTX pCtx);
 VMM_INT_DECL(uint8_t)   CPUMGetGuestSvmVirtIntrVector(PCCPUMCTX pCtx);
-VMM_INT_DECL(void)      CPUMSvmVmExitRestoreHostState(PVMCPU pVCpu, PCPUMCTX pCtx);
+VMM_INT_DECL(void)      CPUMSvmVmExitRestoreHostState(PVMCPUCC pVCpu, PCPUMCTX pCtx);
 VMM_INT_DECL(void)      CPUMSvmVmRunSaveHostState(PCPUMCTX pCtx, uint8_t cbInstr);
 VMM_INT_DECL(bool)      CPUMIsSvmIoInterceptSet(void *pvIoBitmap, uint16_t u16Port, SVMIOIOTYPE enmIoType, uint8_t cbReg,
                                                 uint8_t cAddrSizeBits, uint8_t iEffSeg, bool fRep, bool fStrIo,
@@ -1496,7 +1496,7 @@ VMM_INT_DECL(bool)      CPUMIsSvmIoInterceptSet(void *pvIoBitmap, uint16_t u16Po
 VMM_INT_DECL(int)       CPUMGetSvmMsrpmOffsetAndBit(uint32_t idMsr, uint16_t *pbOffMsrpm, uint8_t *puMsrpmBit);
 
 /* VMX helpers. */
-VMM_INT_DECL(bool)      CPUMIsGuestVmxVmcsFieldValid(PVM pVM, uint64_t u64VmcsField);
+VMM_INT_DECL(bool)      CPUMIsGuestVmxVmcsFieldValid(PVMCC pVM, uint64_t u64VmcsField);
 VMM_INT_DECL(bool)      CPUMIsGuestVmxIoInterceptSet(PCVMCPU pVCpu, uint16_t u16Port, uint8_t cbAccess);
 VMM_INT_DECL(bool)      CPUMIsGuestVmxMovToCr3InterceptSet(PVMCPU pVCpu, uint64_t uNewCr3);
 VMM_INT_DECL(bool)      CPUMIsGuestVmxVmreadVmwriteInterceptSet(PCVMCPU pVCpu, uint32_t uExitReason, uint64_t u64FieldEnc);
@@ -1566,7 +1566,7 @@ VMM_INT_DECL(bool)      CPUMGetVmxIoBitmapPermission(void const *pvIoBitmapA, vo
         } \
     } while (0)
 
-VMM_INT_DECL(int) CPUMImportGuestStateOnDemand(PVMCPU pVCpu, uint64_t fExtrnImport);
+VMM_INT_DECL(int) CPUMImportGuestStateOnDemand(PVMCPUCC pVCpu, uint64_t fExtrnImport);
 /** @} */
 
 #if !defined(IPRT_WITHOUT_NAMED_UNIONS_AND_STRUCTS) && defined(RT_ARCH_AMD64)
@@ -2513,7 +2513,7 @@ VMMDECL(void)           CPUMSetHyperDR2(PVMCPU pVCpu, RTGCUINTREG uDr2);
 VMMDECL(void)           CPUMSetHyperDR3(PVMCPU pVCpu, RTGCUINTREG uDr3);
 VMMDECL(void)           CPUMSetHyperDR6(PVMCPU pVCpu, RTGCUINTREG uDr6);
 VMMDECL(void)           CPUMSetHyperDR7(PVMCPU pVCpu, RTGCUINTREG uDr7);
-VMMDECL(int)            CPUMRecalcHyperDRx(PVMCPU pVCpu, uint8_t iGstReg, bool fForceHyper);
+VMMDECL(int)            CPUMRecalcHyperDRx(PVMCPUCC pVCpu, uint8_t iGstReg, bool fForceHyper);
 /** @} */
 
 VMMDECL(PCPUMCTX)       CPUMQueryGuestCtxPtr(PVMCPU pVCpu);

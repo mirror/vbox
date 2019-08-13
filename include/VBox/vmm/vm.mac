@@ -27,6 +27,7 @@
 %define ___VBox_vmm_vm_mac
 
 %include "VBox/vmm/stam.mac"
+%include "VBox/param.mac"
 
 ;/** This action forces the VM to service check and pending interrups on the APIC. */
 %define VMCPU_FF_INTERRUPT_APIC            (1 << 0)
@@ -138,8 +139,27 @@ struc VM
     .apic                   resb 128
     .vm                     resb 32
     .cfgm                   resb 8
+
+%ifdef VBOX_WITH_REM
+    .abAlignment2           resb 2520       - RTR0PTR_CB * VMM_MAX_CPU_COUNT
+%else                       
+    .abAlignment2           resb 2520 + 256 - RTR0PTR_CB * VMM_MAX_CPU_COUNT
+%endif
+
+    alignb RTR0PTR_CB * VMM_MAX_CPU_COUNT ; ASSUMES VMM_MAX_CPU_COUNT is a power of two.
+%ifndef VBOX_BUGREF_9217
+    .apCpusR0               RTR0PTR_RES VMM_MAX_CPU_COUNT
+%else
+    .apPaddingR0            RTR0PTR_RES VMM_MAX_CPU_COUNT
+%endif
+    .apCpusR3               RTR3PTR_RES VMM_MAX_CPU_COUNT
+%ifndef VBOX_BUGREF_9217 
+ %ifndef VBOX_BUGREF_9217_PART_I
     alignb 4096
     .aCpus                  resb VMCPU_size
+ %endif
+%endif
+
 endstruc
 
 

@@ -958,6 +958,7 @@ GVMMR0DECL(int) GVMMR0CreateVM(PSUPDRVSESSION pSession, uint32_t cCpus, PVM *ppV
                                     pGVM->aCpus[i].pVMR0 = pGVM;
                                     pGVM->aCpus[i].pVMR3 = pVMR3;
                                     pGVM->apCpusR3[i] = RTR0MemObjAddressR3(pGVM->aCpus[i].gvmm.s.VMCpuMapObj);
+                                    pGVM->apCpusR0[i] = &pGVM->aCpus[i];
                                     AssertPtr((void *)pGVM->apCpusR3[i]);
                                 }
 
@@ -1094,6 +1095,7 @@ GVMMR0DECL(int) GVMMR0CreateVM(PSUPDRVSESSION pSession, uint32_t cCpus, PVM *ppV
                                         pVM->aCpus[i].idHostCpu       = NIL_RTCPUID;
                                         pVM->aCpus[i].hNativeThreadR0 = NIL_RTNATIVETHREAD;
                                         pVM->apCpusR3[i] = pVMR3 + RT_UOFFSETOF_DYN(VM, aCpus[i]);
+                                        pVM->apCpusR0[i] = &pVM->aCpus[i];
                                     }
 
                                     rc = RTR0MemObjMapUser(&pGVM->gvmm.s.VMPagesMapObj, pGVM->gvmm.s.VMPagesMemObj, (RTR3PTR)-1,

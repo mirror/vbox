@@ -3447,7 +3447,7 @@ typedef struct PDMDEVHLPR3
      * @returns VM Handle.
      * @param   pDevIns             The device instance.
      */
-    DECLR3CALLBACKMEMBER(PVM, pfnGetVM,(PPDMDEVINS pDevIns));
+    DECLR3CALLBACKMEMBER(PVMCC, pfnGetVM,(PPDMDEVINS pDevIns));
 
     /**
      * Gets the VMCPU handle. Restricted API.
@@ -3814,7 +3814,7 @@ typedef struct PDMDEVHLPRC
      * @returns VM Handle.
      * @param   pDevIns         Device instance.
      */
-    DECLRCCALLBACKMEMBER(PVM, pfnGetVM,(PPDMDEVINS pDevIns));
+    DECLRCCALLBACKMEMBER(PVMCC, pfnGetVM,(PPDMDEVINS pDevIns));
 
     /**
      * Gets the VMCPU handle. Restricted API.
@@ -3822,7 +3822,7 @@ typedef struct PDMDEVHLPRC
      * @returns VMCPU Handle.
      * @param   pDevIns             The device instance.
      */
-    DECLRCCALLBACKMEMBER(PVMCPU, pfnGetVMCPU,(PPDMDEVINS pDevIns));
+    DECLRCCALLBACKMEMBER(PVMCPUCC, pfnGetVMCPU,(PPDMDEVINS pDevIns));
 
     /**
      * The the VM CPU ID of the current thread (restricted API).
@@ -4075,7 +4075,7 @@ typedef struct PDMDEVHLPR0
      * @returns VM Handle.
      * @param   pDevIns         Device instance.
      */
-    DECLR0CALLBACKMEMBER(PVM, pfnGetVM,(PPDMDEVINS pDevIns));
+    DECLR0CALLBACKMEMBER(PVMCC, pfnGetVM,(PPDMDEVINS pDevIns));
 
     /**
      * Gets the VMCPU handle. Restricted API.
@@ -4083,7 +4083,7 @@ typedef struct PDMDEVHLPR0
      * @returns VMCPU Handle.
      * @param   pDevIns             The device instance.
      */
-    DECLR0CALLBACKMEMBER(PVMCPU, pfnGetVMCPU,(PPDMDEVINS pDevIns));
+    DECLR0CALLBACKMEMBER(PVMCPUCC, pfnGetVMCPU,(PPDMDEVINS pDevIns));
 
     /**
      * The the VM CPU ID of the current thread (restricted API).
@@ -5404,7 +5404,7 @@ DECLINLINE(PUVM) PDMDevHlpGetUVM(PPDMDEVINS pDevIns)
 /**
  * @copydoc PDMDEVHLPR3::pfnGetVM
  */
-DECLINLINE(PVM) PDMDevHlpGetVM(PPDMDEVINS pDevIns)
+DECLINLINE(PVMCC) PDMDevHlpGetVM(PPDMDEVINS pDevIns)
 {
     return pDevIns->CTX_SUFF(pHlp)->pfnGetVM(pDevIns);
 }
@@ -5412,7 +5412,7 @@ DECLINLINE(PVM) PDMDevHlpGetVM(PPDMDEVINS pDevIns)
 /**
  * @copydoc PDMDEVHLPR3::pfnGetVMCPU
  */
-DECLINLINE(PVMCPU) PDMDevHlpGetVMCPU(PPDMDEVINS pDevIns)
+DECLINLINE(PVMCPUCC) PDMDevHlpGetVMCPU(PPDMDEVINS pDevIns)
 {
     return pDevIns->CTX_SUFF(pHlp)->pfnGetVMCPU(pDevIns);
 }

@@ -51,5 +51,24 @@ typedef VM      VMCC;
 typedef VMCPU   VMCPUCC;
 #endif
 
+/** @def VMCC_FOR_EACH_VMCPU
+ * For enumerating VCpus in ascending order, avoiding unnecessary apCpusR0
+ * access in ring-0.
+ * @note Close loop with VMCC_FOR_EACH_VMCPU_END. */
+#ifdef IN_RING0
+# define VMCC_FOR_EACH_VMCPU(a_pVM) \
+            for (VMCPUID idCpu = 0; idCpu < (a_pVM)->cCpus; idCpu++) \
+            { \
+                PVMCPU pVCpu = &(a_pVM)->aCpus[idCpu];
+#else
+# define VMCC_FOR_EACH_VMCPU(a_pVM) \
+            for (VMCPUID idCpu = 0; idCpu < (a_pVM)->cCpus; idCpu++) \
+            { \
+                PVMCPU pVCpu = (a_pVM)->apCpusR3[idCpu];
+#endif
+/** Ends a VMCC_FOR_EACH_VMCPU loop. */
+#define VMCC_FOR_EACH_VMCPU_END() } do { } while (0)
+
+
 #endif /* !VBOX_INCLUDED_vmm_vmcc_h */
 
