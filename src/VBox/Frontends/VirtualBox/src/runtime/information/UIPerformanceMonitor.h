@@ -143,6 +143,8 @@ private:
       * @{ */
         /** CPU info label strings. */
         QString m_strCPUInfoLabelTitle;
+        QString m_strCPUInfoLabelGuest;
+        QString  m_strCPUInfoLabelVMM;
         /** RAM usage info label strings. */
         QString m_strRAMInfoLabelTitle;
         QString m_strRAMInfoLabelTotal;

@@ -36,10 +36,12 @@
 #include "CPerformanceCollector.h"
 #include "CPerformanceMetric.h"
 
+#define DATA_SERIES_SIZE 2
 const ULONG iPeriod = 1;
 const int iMaximumQueueSize = 120;
 const int iMetricSetupCount = 1;
 const int iDecimalCount = 2;
+
 /*********************************************************************************************************************************
 *   UIChart definition.                                                                                     *
 *********************************************************************************************************************************/
@@ -90,10 +92,10 @@ private:
     int m_iMarginBottom;
     QStringList m_textList;
     int m_iPieChartSize;
-    QRect m_pieChartRect;
+    QRect m_pieChartRect[DATA_SERIES_SIZE];
     bool m_fDrawPieChart;
     bool m_fUseGradientLineColor;
-    QColor m_dataSeriesColor[2];
+    QColor m_dataSeriesColor[DATA_SERIES_SIZE];
     QString m_strXAxisLabel;
 };
 
@@ -117,7 +119,8 @@ UIChart::UIChart(QWidget *pParent, const UISubMetric *pSubMetric)
     m_iMarginTop = 0.3 * qApp->QApplication::style()->pixelMetric(QStyle::PM_LayoutTopMargin);
     m_iMarginBottom = 2 * qApp->QApplication::style()->pixelMetric(QStyle::PM_LayoutTopMargin);
     m_iPieChartSize = 1.5f * qApp->style()->pixelMetric(QStyle::PM_LargeIconSize);
-    m_pieChartRect = QRect(1.5 * m_iMarginLeft, 1.5 * m_iMarginTop, m_iPieChartSize, m_iPieChartSize);
+    m_pieChartRect[0] = QRect(1.5 * m_iMarginLeft, 1.5 * m_iMarginTop, m_iPieChartSize, m_iPieChartSize);
+    m_pieChartRect[1] = QRect(m_pieChartRect[0].x() + m_iPieChartSize + 0.5 * m_iMarginLeft, 1.5 * m_iMarginTop, m_iPieChartSize, m_iPieChartSize);
     m_size = QSize(6 * m_iPieChartSize, 2 * m_iPieChartSize);
 }
 
@@ -171,14 +174,14 @@ void UIChart::setUseGradientLineColor(bool fUseGradintLineColor)
 
 QColor UIChart::dataSeriesColor(int iDataSeriesIndex)
 {
-    if (iDataSeriesIndex >= 2)
+    if (iDataSeriesIndex >= DATA_SERIES_SIZE)
         return QColor();
     return m_dataSeriesColor[iDataSeriesIndex];
 }
 
 void UIChart::setDataSeriesColor(int iDataSeriesIndex, const QColor &color)
 {
-    if (iDataSeriesIndex >= 2)
+    if (iDataSeriesIndex >= DATA_SERIES_SIZE)
         return;
     if (m_dataSeriesColor[iDataSeriesIndex] == color)
         return;
@@ -284,16 +287,16 @@ void UIChart::paintEvent(QPaintEvent *pEvent)
     /* Draw the data lines: */
     float fBarWidth = iChartWidth / (float) (iMaximumQueueSize - 1);
     float fH = iChartHeight / (float)iMaximum;
-    if (m_fUseGradientLineColor)
+    for (int k = 0; k < DATA_SERIES_SIZE; ++k)
     {
-        QLinearGradient gradient(0, 0, 0, iChartHeight);
-        gradient.setColorAt(1.0, Qt::green);
-        gradient.setColorAt(0.5, Qt::yellow);
-        gradient.setColorAt(0.0, Qt::red);
-        painter.setPen(QPen(gradient, 2.5));
-    }
-    for (int k = 0; k < 2; ++k)
-    {
+        if (m_fUseGradientLineColor)
+        {
+            QLinearGradient gradient(0, 0, 0, iChartHeight);
+            gradient.setColorAt(0, Qt::black);
+            gradient.setColorAt(1, m_dataSeriesColor[k]);
+            painter.setPen(QPen(gradient, 2.5));
+        }
+
         const QQueue<ULONG> *data = m_pSubMetric->data(k);
         if (!m_fUseGradientLineColor)
             painter.setPen(QPen(m_dataSeriesColor[k], 2.5));
@@ -353,40 +356,43 @@ void UIChart::drawXAxisLabels(QPainter &painter, int iXSubAxisCount)
 
 void UIChart::drawPieCharts(QPainter &painter, ULONG iMaximum)
 {
-    /* Draw a whole non-filled circle: */
-    painter.setPen(QPen(Qt::gray, 1));
-    painter.drawArc(m_pieChartRect, 0, 3600 * 16);
-
-    QPointF center(m_pieChartRect.center());
-    QPainterPath fillPath;
-    fillPath.moveTo(center);
-    fillPath.arcTo(m_pieChartRect, 90/*startAngle*/,
-                   -1 * 360 /*sweepLength*/);
-
-    /* First draw a white filled circle and that the arc for data: */
-    painter.setPen(Qt::NoPen);
-    painter.setBrush(QColor(255, 255, 255, 175));
-    painter.drawPath(fillPath);
-
-    /* Prepare the gradient for the pie chart: */
-    QConicalGradient pieGradient;
-    pieGradient.setCenter(m_pieChartRect.center());
-    pieGradient.setAngle(90);
-    pieGradient.setColorAt(0, Qt::red);
-    pieGradient.setColorAt(0.5, Qt::yellow);
-    pieGradient.setColorAt(1, Qt::green);
-
-    /* Draw the pie chart for the 0th data series only: */
-    const QQueue<ULONG> *data = m_pSubMetric->data(0);
-    if (data && !data->isEmpty())
+    for (int i = 0; i < DATA_SERIES_SIZE; ++i)
     {
+        /* Draw the pie chart for the 0th data series only: */
+        const QQueue<ULONG> *data = m_pSubMetric->data(i);
+        if (!data || data->isEmpty())
+            continue;
+
+        /* Draw a whole non-filled circle: */
+        painter.setPen(QPen(Qt::gray, 1));
+        painter.drawArc(m_pieChartRect[i], 0, 3600 * 16);
+
+        QPointF center(m_pieChartRect[i].center());
+        QPainterPath fillPath;
+        fillPath.moveTo(center);
+        fillPath.arcTo(m_pieChartRect[i], 90/*startAngle*/,
+                       -1 * 360 /*sweepLength*/);
+
+        /* First draw a white filled circle and that the arc for data: */
+        painter.setPen(Qt::NoPen);
+        painter.setBrush(QColor(255, 255, 255, 175));
+        painter.drawPath(fillPath);
+
+        /* Prepare the gradient for the pie chart: */
+        QConicalGradient pieGradient;
+        pieGradient.setCenter(m_pieChartRect[i].center());
+        pieGradient.setAngle(90);
+        pieGradient.setColorAt(0, Qt::black);
+        pieGradient.setColorAt(1, m_dataSeriesColor[i]);
+
         QPainterPath dataPath;
         dataPath.moveTo(center);
         float fAngle = 360.f * data->back() / (float)iMaximum;
-        dataPath.arcTo(m_pieChartRect, 90/*startAngle*/,
+        dataPath.arcTo(m_pieChartRect[i], 90/*startAngle*/,
                        -1 * fAngle /*sweepLength*/);
         painter.setBrush(pieGradient);
         painter.drawPath(dataPath);
+
     }
 }
 
@@ -435,7 +441,7 @@ const QString &UISubMetric::unit() const
 
 void UISubMetric::addData(int iDataSeriesIndex, ULONG fData)
 {
-    if (iDataSeriesIndex >= 2)
+    if (iDataSeriesIndex >= DATA_SERIES_SIZE)
         return;
     m_data[iDataSeriesIndex].enqueue(fData);
     if (m_data[iDataSeriesIndex].size() > iMaximumQueueSize)
@@ -444,7 +450,7 @@ void UISubMetric::addData(int iDataSeriesIndex, ULONG fData)
 
 const QQueue<ULONG> *UISubMetric::data(int iDataSeriesIndex) const
 {
-    if (iDataSeriesIndex >= 2)
+    if (iDataSeriesIndex >= DATA_SERIES_SIZE)
         return 0;
     return &m_data[iDataSeriesIndex];
 }
@@ -498,6 +504,11 @@ void UIPerformanceMonitor::retranslateUi()
     m_strCPUInfoLabelTitle = QApplication::translate("UIVMInformationDialog", "CPU Load");
     iMaximum = qMax(iMaximum, m_strCPUInfoLabelTitle.length());
 
+    m_strCPUInfoLabelGuest = QApplication::translate("UIVMInformationDialog", "Guest Load");
+    iMaximum = qMax(iMaximum, m_strCPUInfoLabelGuest.length());
+    m_strCPUInfoLabelVMM = QApplication::translate("UIVMInformationDialog", "VMM Load");
+    iMaximum = qMax(iMaximum, m_strCPUInfoLabelVMM.length());
+
     m_strRAMInfoLabelTitle = QApplication::translate("UIVMInformationDialog", "RAM Usage");
     iMaximum = qMax(iMaximum, m_strRAMInfoLabelTitle.length());
     m_strRAMInfoLabelTotal = QApplication::translate("UIVMInformationDialog", "Total");
@@ -525,7 +536,6 @@ void UIPerformanceMonitor::retranslateUi()
         {
             QFontMetrics labelFontMetric(pLabel->font());
             int iWidth = iMaximum * labelFontMetric.width('x');
-            printf("%d %d\n", labelFontMetric.width('x'), labelFontMetric.width('X'));
             foreach (QLabel *pInfoLabel, m_infoLabels)
                 pInfoLabel->setFixedWidth(iWidth);
         }
@@ -575,6 +585,8 @@ void UIPerformanceMonitor::prepareObjects()
     }
     if (m_charts.contains(m_strCPUMetricName) && m_charts[m_strCPUMetricName])
         m_charts[m_strCPUMetricName]->setUseGradientLineColor(false);
+    if (m_charts.contains(m_strRAMMetricName) && m_charts[m_strRAMMetricName])
+        m_charts[m_strRAMMetricName]->setUseGradientLineColor(false);
 
     QWidget *bottomSpacerWidget = new QWidget(this);
     bottomSpacerWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
@@ -621,8 +633,6 @@ void UIPerformanceMonitor::sltTimeout()
     {
         if (aReturnDataLengths[i] == 0)
             continue;
-        if (aReturnNames[i].contains("Disk"), Qt::CaseInsensitive)
-            printf("%f\n", 22.2);
         /* Read the last of the return data disregarding the rest since we are caching the data in GUI side: */
         float fData = returnData[aReturnDataIndices[i] + aReturnDataLengths[i] - 1] / (float)aReturnScales[i];
         if (aReturnNames[i].contains("RAM", Qt::CaseInsensitive) && !aReturnNames[i].contains(":"))
@@ -754,15 +764,22 @@ void UIPerformanceMonitor::updateCPUGraphsAndMetric(ULONG iExecutingPercentage, 
     CPUMetric.addData(0, iExecutingPercentage);
     CPUMetric.addData(1, iOtherPercentage);
     CPUMetric.setMaximum(100);
-    if (m_infoLabels.contains(m_strCPUMetricName) && m_infoLabels[m_strCPUMetricName])
+    if (m_infoLabels.contains(m_strCPUMetricName)  && m_infoLabels[m_strCPUMetricName])
     {
         QString strInfo;
+        QString strReceiveColor;
         if (m_infoLabels[m_strCPUMetricName]->isEnabled())
-            strInfo = QString("<b>%1</b><br/>%2%3").arg(m_strCPUInfoLabelTitle).arg(QString::number(iExecutingPercentage)).arg("%");
+            strInfo = QString("<b>%1</b></b><br/><font color=\"%2\">%3: %4\%</font><br/><font color=\"%5\">%6: %7\%</font>")
+                .arg(m_strCPUInfoLabelTitle)
+                .arg(dataColorString(m_strCPUMetricName, 0))
+                .arg(m_strCPUInfoLabelGuest).arg(QString::number(iExecutingPercentage))
+                .arg(dataColorString(m_strCPUMetricName, 1))
+                .arg(m_strCPUInfoLabelVMM).arg(QString::number(iOtherPercentage));
         else
             strInfo = QString("<b>%1</b><br/>%2%3").arg(m_strCPUInfoLabelTitle).arg("--").arg("%");
         m_infoLabels[m_strCPUMetricName]->setText(strInfo);
     }
+
     if (m_charts.contains(m_strCPUMetricName))
         m_charts[m_strCPUMetricName]->update();
 }
