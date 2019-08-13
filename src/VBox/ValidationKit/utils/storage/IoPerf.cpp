@@ -618,7 +618,6 @@ static int ioPerfJobTestInit(PIOPERFJOB pJob)
             break;
     }
 
-    RTTestISub(ioPerfJobTestStringify(pJob->enmTest));
     pJob->tsStart = RTTimeNanoTS();
     return rc;
 }
@@ -801,8 +800,9 @@ static int ioPerfJobTestIoLoop(PIOPERFJOB pJob)
  */
 static void ioPerfJobStats(PIOPERFJOB pJob)
 {
+    const char *pszTest = ioPerfJobTestStringify(pJob->enmTest);
     uint64_t nsJobRuntime = pJob->tsFinish - pJob->tsStart;
-    RTTestIValueF(nsJobRuntime, RTTESTUNIT_NS, "Job/%RU32/Runtime", pJob->idJob);
+    RTTestIValueF(nsJobRuntime, RTTESTUNIT_NS, "%s/Job/%RU32/Runtime", pszTest, pJob->idJob);
 
     uint64_t *paReqRuntimeNs = (uint64_t *)RTMemAllocZ(pJob->cReqStats * sizeof(uint64_t));
     if (RT_LIKELY(paReqRuntimeNs))
@@ -816,16 +816,16 @@ static void ioPerfJobStats(PIOPERFJOB pJob)
 
         /* Get average bandwidth for the job. */
         RTTestIValueF((uint64_t)(pJob->cbTestSet / ((double)nsJobRuntime / RT_NS_1SEC)),
-                       RTTESTUNIT_BYTES_PER_SEC, "Job/%RU32/AvgBandwidth", pJob->idJob);
+                       RTTESTUNIT_BYTES_PER_SEC, "%s/Job/%RU32/AvgBandwidth", pszTest, pJob->idJob);
 
         RTTestIValueF((uint64_t)(pJob->cReqStats / ((double)nsJobRuntime / RT_NS_1SEC)),
-                       RTTESTUNIT_OCCURRENCES_PER_SEC, "Job/%RU32/AvgIops", pJob->idJob);
+                       RTTESTUNIT_OCCURRENCES_PER_SEC, "%s/Job/%RU32/AvgIops", pszTest, pJob->idJob);
 
         /* Calculate the average latency for the requests. */
         uint64_t uLatency = 0;
         for (uint32_t i = 0; i < pJob->cReqStats; i++)
             uLatency += paReqRuntimeNs[i];
-        RTTestIValueF(uLatency / pJob->cReqStats, RTTESTUNIT_NS, "Job/%RU32/AvgLatency", pJob->idJob);
+        RTTestIValueF(uLatency / pJob->cReqStats, RTTESTUNIT_NS, "%s/Job/%RU32/AvgLatency", pszTest, pJob->idJob);
 
         RTMemFree(paReqRuntimeNs);
     }
