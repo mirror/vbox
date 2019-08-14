@@ -348,7 +348,8 @@ DECLCALLBACK(void) pgmR3InfoHandlers(PVM pVM, PCDBGFINFOHLP pHlp, const char *ps
      * Parse options.
      */
     PGMHANDLERINFOARG Args = { pHlp, pVM, /* .fStats = */ true };
-    Args.fStats = strstr(pszArgs, "nost") == NULL;
+    if (pszArgs)
+        Args.fStats = strstr(pszArgs, "nost") == NULL;
 
     /*
      * Dump the handlers.
