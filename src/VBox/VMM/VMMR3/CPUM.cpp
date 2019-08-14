@@ -1873,7 +1873,7 @@ void cpumR3InitVmxGuestFeaturesAndMsrs(PVM pVM, PCVMXMSRS pHostVmxMsrs, PVMXMSRS
     EmuFeat.fVmxCr3StoreExit          = 1;
     EmuFeat.fVmxCr8LoadExit           = 1;
     EmuFeat.fVmxCr8StoreExit          = 1;
-    EmuFeat.fVmxUseTprShadow          = 0;
+    EmuFeat.fVmxUseTprShadow          = 1;
     EmuFeat.fVmxNmiWindowExit         = 0;
     EmuFeat.fVmxMovDRxExit            = 1;
     EmuFeat.fVmxUncondIoExit          = 1;
@@ -1883,7 +1883,7 @@ void cpumR3InitVmxGuestFeaturesAndMsrs(PVM pVM, PCVMXMSRS pHostVmxMsrs, PVMXMSRS
     EmuFeat.fVmxMonitorExit           = 1;
     EmuFeat.fVmxPauseExit             = 1;
     EmuFeat.fVmxSecondaryExecCtls     = 1;
-    EmuFeat.fVmxVirtApicAccess        = 0;
+    EmuFeat.fVmxVirtApicAccess        = 1;
     EmuFeat.fVmxEpt                   = 0;  /* Cannot be disabled if unrestricted guest is enabled. */
     EmuFeat.fVmxDescTableExit         = 1;
     EmuFeat.fVmxRdtscp                = 1;
@@ -1918,7 +1918,7 @@ void cpumR3InitVmxGuestFeaturesAndMsrs(PVM pVM, PCVMXMSRS pHostVmxMsrs, PVMXMSRS
     EmuFeat.fVmxExitSaveEferLma       = 1;  /* Cannot be disabled if unrestricted guest is enabled. */
     EmuFeat.fVmxIntelPt               = 0;
     EmuFeat.fVmxVmwriteAll            = 0;  /** @todo NSTVMX: enable this when nested VMCS shadowing is enabled. */
-    EmuFeat.fVmxEntryInjectSoftInt    = 0;
+    EmuFeat.fVmxEntryInjectSoftInt    = 1;
 
     /*
      * Merge guest features.
@@ -3690,11 +3690,12 @@ static void cpumR3InfoSvmVmcbStateSave(PCDBGFINFOHLP pHlp, PCSVMVMCBSTATESAVE pV
 /**
  * Displays a virtual-VMCS.
  *
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pHlp        The info helper functions.
  * @param   pVmcs       Pointer to a virtual VMCS.
  * @param   pszPrefix   Caller specified string prefix.
  */
-static void  cpumR3InfoVmxVmcs(PCDBGFINFOHLP pHlp, PCVMXVVMCS pVmcs, const char *pszPrefix)
+static void cpumR3InfoVmxVmcs(PVMCPU pVCpu, PCDBGFINFOHLP pHlp, PCVMXVVMCS pVmcs, const char *pszPrefix)
 {
     AssertReturnVoid(pHlp);
     AssertReturnVoid(pVmcs);
@@ -3940,6 +3941,25 @@ static void  cpumR3InfoVmxVmcs(PCDBGFINFOHLP pHlp, PCVMXVVMCS pVmcs, const char 
         pHlp->pfnPrintf(pHlp, "  %sGuest-linear addr          = %#RX64\n",   pszPrefix, pVmcs->u64RoGuestLinearAddr.u);
     }
 
+#ifdef DEBUG_ramshankar
+    if (pVmcs->u32ProcCtls & VMX_PROC_CTLS_USE_TPR_SHADOW)
+    {
+        void *pvPage = RTMemTmpAllocZ(VMX_V_VIRT_APIC_SIZE);
+        Assert(pvPage);
+        RTGCPHYS const GCPhysVirtApic = pVmcs->u64AddrVirtApic.u;
+        int rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), pvPage, GCPhysVirtApic, VMX_V_VIRT_APIC_SIZE);
+        if (RT_SUCCESS(rc))
+        {
+            pHlp->pfnPrintf(pHlp, "  %sVirtual-APIC page\n", pszPrefix);
+            pHlp->pfnPrintf(pHlp, "%.*Rhxs\n", VMX_V_VIRT_APIC_SIZE, pvPage);
+            pHlp->pfnPrintf(pHlp, "\n");
+        }
+        RTMemTmpFree(pvPage);
+    }
+#else
+    NOREF(pVCpu);
+#endif
+
 #undef CPUMVMX_DUMP_HOST_XDTR
 #undef CPUMVMX_DUMP_HOST_FS_GS_TR
 #undef CPUMVMX_DUMP_GUEST_SEGREG
@@ -4062,7 +4082,7 @@ static DECLCALLBACK(void) cpumR3InfoGuestHwvirt(PVM pVM, PCDBGFINFOHLP pHlp, con
         pHlp->pfnPrintf(pHlp, "  offVirtApicWrite           = %#RX16\n",    pCtx->hwvirt.vmx.offVirtApicWrite);
         pHlp->pfnPrintf(pHlp, "  fVirtNmiBlocking           = %RTbool\n",   pCtx->hwvirt.vmx.fVirtNmiBlocking);
         pHlp->pfnPrintf(pHlp, "  VMCS cache:\n");
-        cpumR3InfoVmxVmcs(pHlp, pCtx->hwvirt.vmx.pVmcsR3, "  " /* pszPrefix */);
+        cpumR3InfoVmxVmcs(pVCpu, pHlp, pCtx->hwvirt.vmx.pVmcsR3, "  " /* pszPrefix */);
     }
 
 #undef CPUMHWVIRTDUMP_NONE
