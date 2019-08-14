@@ -83,7 +83,7 @@ IEM_STATIC uint8_t iemGetSvmEventType(uint32_t uVector, uint32_t fIemXcptFlags)
  * @returns Strict VBox status code.
  * @param   pVCpu       The cross context virtual CPU structure.
  */
-DECLINLINE(VBOXSTRICTRC) iemSvmWorldSwitch(PVMCPU pVCpu)
+DECLINLINE(VBOXSTRICTRC) iemSvmWorldSwitch(PVMCPUCC pVCpu)
 {
     /*
      * Inform PGM about paging mode changes.
@@ -128,7 +128,7 @@ DECLINLINE(VBOXSTRICTRC) iemSvmWorldSwitch(PVMCPU pVCpu)
  * @param   uExitInfo1  The exit info. 1 field.
  * @param   uExitInfo2  The exit info. 2 field.
  */
-IEM_STATIC VBOXSTRICTRC iemSvmVmexit(PVMCPU pVCpu, uint64_t uExitCode, uint64_t uExitInfo1, uint64_t uExitInfo2)
+IEM_STATIC VBOXSTRICTRC iemSvmVmexit(PVMCPUCC pVCpu, uint64_t uExitCode, uint64_t uExitInfo1, uint64_t uExitInfo2)
 {
     VBOXSTRICTRC rcStrict;
     if (   CPUMIsGuestInSvmNestedHwVirtMode(IEM_GET_CTX(pVCpu))
@@ -361,7 +361,7 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmexit(PVMCPU pVCpu, uint64_t uExitCode, uint64_t 
  * @param   cbInstr             The length of the VMRUN instruction.
  * @param   GCPhysVmcb          Guest physical address of the VMCB to run.
  */
-IEM_STATIC VBOXSTRICTRC iemSvmVmrun(PVMCPU pVCpu, uint8_t cbInstr, RTGCPHYS GCPhysVmcb)
+IEM_STATIC VBOXSTRICTRC iemSvmVmrun(PVMCPUCC pVCpu, uint8_t cbInstr, RTGCPHYS GCPhysVmcb)
 {
     LogFlow(("iemSvmVmrun\n"));
 
@@ -873,7 +873,7 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmrun(PVMCPU pVCpu, uint8_t cbInstr, RTGCPHYS GCPh
  * @param   uErr        The error-code associated with the exception.
  * @param   uCr2        The CR2 value in case of a \#PF exception.
  */
-IEM_STATIC VBOXSTRICTRC iemHandleSvmEventIntercept(PVMCPU pVCpu, uint8_t u8Vector, uint32_t fFlags, uint32_t uErr, uint64_t uCr2)
+IEM_STATIC VBOXSTRICTRC iemHandleSvmEventIntercept(PVMCPUCC pVCpu, uint8_t u8Vector, uint32_t fFlags, uint32_t uErr, uint64_t uCr2)
 {
     Assert(CPUMIsGuestInSvmNestedHwVirtMode(IEM_GET_CTX(pVCpu)));
 
@@ -978,7 +978,7 @@ IEM_STATIC VBOXSTRICTRC iemHandleSvmEventIntercept(PVMCPU pVCpu, uint8_t u8Vecto
  * @param   fStrIo          Whether this is a string IO instruction.
  * @param   cbInstr         The length of the IO instruction in bytes.
  */
-IEM_STATIC VBOXSTRICTRC iemSvmHandleIOIntercept(PVMCPU pVCpu, uint16_t u16Port, SVMIOIOTYPE enmIoType, uint8_t cbReg,
+IEM_STATIC VBOXSTRICTRC iemSvmHandleIOIntercept(PVMCPUCC pVCpu, uint16_t u16Port, SVMIOIOTYPE enmIoType, uint8_t cbReg,
                                                 uint8_t cAddrSizeBits, uint8_t iEffSeg, bool fRep, bool fStrIo, uint8_t cbInstr)
 {
     Assert(IEM_SVM_IS_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_IOIO_PROT));
@@ -1023,7 +1023,7 @@ IEM_STATIC VBOXSTRICTRC iemSvmHandleIOIntercept(PVMCPU pVCpu, uint16_t u16Port, 
  *                      MSR read.
  * @param   cbInstr     The length of the MSR read/write instruction in bytes.
  */
-IEM_STATIC VBOXSTRICTRC iemSvmHandleMsrIntercept(PVMCPU pVCpu, uint32_t idMsr, bool fWrite)
+IEM_STATIC VBOXSTRICTRC iemSvmHandleMsrIntercept(PVMCPUCC pVCpu, uint32_t idMsr, bool fWrite)
 {
     /*
      * Check if any MSRs are being intercepted.
@@ -1413,9 +1413,10 @@ IEM_CIMPL_DEF_0(iemCImpl_vmmcall)
 
     /* This is a little bit more complicated than the VT-x version because HM/SVM may
        patch MOV CR8 instructions to speed up APIC.TPR access for 32-bit windows guests. */
-    if (VM_IS_HM_ENABLED(pVCpu->CTX_SUFF(pVM)))
+    PVMCC pVM = pVCpu->CTX_SUFF(pVM);
+    if (VM_IS_HM_ENABLED(pVM))
     {
-        int rc = HMHCMaybeMovTprSvmHypercall(pVCpu);
+        int rc = HMHCMaybeMovTprSvmHypercall(pVM, pVCpu);
         if (RT_SUCCESS(rc))
         {
             Log(("vmmcall: MovTrp\n"));

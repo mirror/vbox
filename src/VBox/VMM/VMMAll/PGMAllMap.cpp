@@ -19,11 +19,12 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define VBOX_BUGREF_9217_PART_I
 #define LOG_GROUP LOG_GROUP_PGM
 #include <VBox/vmm/pgm.h>
 #include <VBox/vmm/em.h>
 #include "PGMInternal.h"
-#include <VBox/vmm/vm.h>
+#include <VBox/vmm/vmcc.h>
 #include "PGMInline.h"
 #include <VBox/err.h>
 #include <iprt/asm-amd64-x86.h>
@@ -745,7 +746,7 @@ VMMDECL(bool) PGMMapHasConflicts(PVM pVM)
     AssertReturn(pgmMapAreMappingsEnabled(pVM), false);
 
     /* This only applies to raw mode where we only support 1 VCPU. */
-    PVMCPU pVCpu = &pVM->aCpus[0];
+    PVMCPU pVCpu = &VMCC_GET_CPU_0(pVM);
 
     PGMMODE const enmGuestMode = PGMGetGuestMode(pVCpu);
     Assert(enmGuestMode <= PGMMODE_PAE_NX);
@@ -836,7 +837,7 @@ int pgmMapResolveConflicts(PVM pVM)
 
     /* This only applies to raw mode where we only support 1 VCPU. */
     Assert(pVM->cCpus == 1);
-    PVMCPU          pVCpu        = &pVM->aCpus[0];
+    PVMCPU          pVCpu        = &VMCC_GET_CPU_0(pVM);
     PGMMODE const   enmGuestMode = PGMGetGuestMode(pVCpu);
     Assert(enmGuestMode <= PGMMODE_PAE_NX);
 

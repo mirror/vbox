@@ -4477,7 +4477,7 @@ static void hmR0SvmPreRunGuestCommitted(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransien
 
     STAM_PROFILE_ADV_STOP_START(&pVCpu->hm.s.StatEntry, &pVCpu->hm.s.StatInGC, x);
 
-    TMNotifyStartOfExecution(pVCpu);                            /* Finally, notify TM to resume its clocks as we're about
+    TMNotifyStartOfExecution(pVM, pVCpu);                       /* Finally, notify TM to resume its clocks as we're about
                                                                    to start executing. */
 
     /*
@@ -4592,7 +4592,8 @@ static void hmR0SvmPostRunGuest(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient, int r
     }
 
     STAM_PROFILE_ADV_STOP_START(&pVCpu->hm.s.StatInGC, &pVCpu->hm.s.StatPreExit, x);
-    TMNotifyEndOfExecution(pVCpu);                              /* Notify TM that the guest is no longer running. */
+    PVMCC pVM = pVCpu->CTX_SUFF(pVM);
+    TMNotifyEndOfExecution(pVM, pVCpu);                         /* Notify TM that the guest is no longer running. */
     VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_HM);
 
     Assert(!(ASMGetFlags() & X86_EFL_IF));
@@ -4643,7 +4644,7 @@ static void hmR0SvmPostRunGuest(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient, int r
     {
         Assert(!pSvmTransient->fIsNestedGuest);
         /* TPR patching (for 32-bit guests) uses LSTAR MSR for holding the TPR value, otherwise uses the VTPR. */
-        if (   pVCpu->CTX_SUFF(pVM)->hm.s.fTPRPatchingActive
+        if (   pVM->hm.s.fTPRPatchingActive
             && (pVmcb->guest.u64LSTAR & 0xff) != pSvmTransient->u8GuestTpr)
         {
             int rc = APICSetTpr(pVCpu, pVmcb->guest.u64LSTAR & 0xff);
@@ -7224,9 +7225,10 @@ HMSVM_EXIT_DECL hmR0SvmExitVmmCall(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pSvmTransient);
     HMSVM_CPUMCTX_IMPORT_STATE(pVCpu, HMSVM_CPUMCTX_EXTRN_ALL);
 
-    if (pVCpu->CTX_SUFF(pVM)->hm.s.fTprPatchingAllowed)
+    PVM pVM = pVCpu->CTX_SUFF(pVM);
+    if (pVM->hm.s.fTprPatchingAllowed)
     {
-        int rc = hmEmulateSvmMovTpr(pVCpu);
+        int rc = hmEmulateSvmMovTpr(pVM, pVCpu);
         if (rc != VERR_NOT_FOUND)
         {
             Log4Func(("hmEmulateSvmMovTpr returns %Rrc\n", rc));

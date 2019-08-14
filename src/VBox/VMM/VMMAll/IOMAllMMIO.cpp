@@ -19,6 +19,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define VBOX_BUGREF_9217_PART_I
 #define LOG_GROUP LOG_GROUP_IOM
 #include <VBox/vmm/iom.h>
 #include <VBox/vmm/cpum.h>
@@ -30,7 +31,7 @@
 #include <VBox/vmm/trpm.h>
 #include <VBox/vmm/iem.h>
 #include "IOMInternal.h"
-#include <VBox/vmm/vm.h>
+#include <VBox/vmm/vmcc.h>
 #include <VBox/vmm/vmm.h>
 #include <VBox/vmm/hm.h>
 #include "IOMInline.h"
@@ -583,7 +584,7 @@ DECLINLINE(VBOXSTRICTRC) iomMMIODoRead(PVM pVM, PVMCPU pVCpu, PIOMMMIORANGE pRan
  * @param   GCPhysFault The GC physical address corresponding to pvFault.
  * @param   pvUser      Pointer to the MMIO ring-3 range entry.
  */
-static VBOXSTRICTRC iomMmioCommonPfHandler(PVM pVM, PVMCPU pVCpu, uint32_t uErrorCode, PCPUMCTXCORE pCtxCore,
+static VBOXSTRICTRC iomMmioCommonPfHandler(PVM pVM, PVMCPUCC pVCpu, uint32_t uErrorCode, PCPUMCTXCORE pCtxCore,
                                            RTGCPHYS GCPhysFault, void *pvUser)
 {
     RT_NOREF_PV(uErrorCode);
@@ -688,7 +689,7 @@ static VBOXSTRICTRC iomMmioCommonPfHandler(PVM pVM, PVMCPU pVCpu, uint32_t uErro
  *
  * @remarks The @a pvUser argument points to the IOMMMIORANGE.
  */
-DECLEXPORT(VBOXSTRICTRC) iomMmioPfHandler(PVM pVM, PVMCPU pVCpu, RTGCUINT uErrorCode, PCPUMCTXCORE pCtxCore, RTGCPTR pvFault,
+DECLEXPORT(VBOXSTRICTRC) iomMmioPfHandler(PVMCC pVM, PVMCPUCC pVCpu, RTGCUINT uErrorCode, PCPUMCTXCORE pCtxCore, RTGCPTR pvFault,
                                           RTGCPHYS GCPhysFault, void *pvUser)
 {
     LogFlow(("iomMmioPfHandler: GCPhys=%RGp uErr=%#x pvFault=%RGv rip=%RGv\n",
@@ -707,7 +708,7 @@ DECLEXPORT(VBOXSTRICTRC) iomMmioPfHandler(PVM pVM, PVMCPU pVCpu, RTGCUINT uError
  * @param   pCtxCore    Trap register frame.
  * @param   GCPhysFault The GC physical address.
  */
-VMMDECL(VBOXSTRICTRC) IOMMMIOPhysHandler(PVM pVM, PVMCPU pVCpu, RTGCUINT uErrorCode, PCPUMCTXCORE pCtxCore, RTGCPHYS GCPhysFault)
+VMMDECL(VBOXSTRICTRC) IOMMMIOPhysHandler(PVMCC pVM, PVMCPUCC pVCpu, RTGCUINT uErrorCode, PCPUMCTXCORE pCtxCore, RTGCPHYS GCPhysFault)
 {
     /*
      * We don't have a range here, so look it up before calling the common function.
@@ -738,7 +739,7 @@ VMMDECL(VBOXSTRICTRC) IOMMMIOPhysHandler(PVM pVM, PVMCPU pVCpu, RTGCUINT uErrorC
  *
  * @remarks The @a pvUser argument points to the MMIO range entry.
  */
-PGM_ALL_CB2_DECL(VBOXSTRICTRC) iomMmioHandler(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhysFault, void *pvPhys, void *pvBuf,
+PGM_ALL_CB2_DECL(VBOXSTRICTRC) iomMmioHandler(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhysFault, void *pvPhys, void *pvBuf,
                                               size_t cbBuf, PGMACCESSTYPE enmAccessType, PGMACCESSORIGIN enmOrigin, void *pvUser)
 {
     PIOMMMIORANGE pRange = (PIOMMMIORANGE)pvUser;

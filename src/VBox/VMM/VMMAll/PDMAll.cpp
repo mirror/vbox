@@ -19,11 +19,12 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define VBOX_BUGREF_9217_PART_I
 #define LOG_GROUP LOG_GROUP_PDM
 #include "PDMInternal.h"
 #include <VBox/vmm/pdm.h>
 #include <VBox/vmm/mm.h>
-#include <VBox/vmm/vm.h>
+#include <VBox/vmm/vmcc.h>
 #include <VBox/err.h>
 #include <VBox/vmm/apic.h>
 
@@ -50,10 +51,8 @@
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   pu8Interrupt    Where to store the interrupt.
  */
-VMMDECL(int) PDMGetInterrupt(PVMCPU pVCpu, uint8_t *pu8Interrupt)
+VMMDECL(int) PDMGetInterrupt(PVMCPUCC pVCpu, uint8_t *pu8Interrupt)
 {
-    PVM pVM = pVCpu->CTX_SUFF(pVM);
-
     /*
      * The local APIC has a higher priority than the PIC.
      */
@@ -73,6 +72,7 @@ VMMDECL(int) PDMGetInterrupt(PVMCPU pVCpu, uint8_t *pu8Interrupt)
            interrupts shouldn't prevent ExtINT from being delivered. */
     }
 
+    PVM pVM = pVCpu->CTX_SUFF(pVM);
     pdmLock(pVM);
 
     /*

@@ -19,6 +19,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define VBOX_BUGREF_9217_PART_I
 #define LOG_GROUP LOG_GROUP_TM
 #ifdef DEBUG_bird
 # define DBGFTRACE_DISABLED /* annoying */
@@ -32,7 +33,7 @@
 # endif
 #endif
 #include "TMInternal.h"
-#include <VBox/vmm/vm.h>
+#include <VBox/vmm/vmcc.h>
 
 #include <VBox/param.h>
 #include <VBox/err.h>
@@ -118,12 +119,11 @@
  * The function may, depending on the configuration, resume the TSC and future
  * clocks that only ticks when we're executing guest code.
  *
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       The cross context virtual CPU structure.
  */
-VMMDECL(void) TMNotifyStartOfExecution(PVMCPU pVCpu)
+VMMDECL(void) TMNotifyStartOfExecution(PVMCC pVM, PVMCPUCC pVCpu)
 {
-    PVM pVM = pVCpu->CTX_SUFF(pVM);
-
 #ifndef VBOX_WITHOUT_NS_ACCOUNTING
     pVCpu->tm.s.u64NsTsStartExecuting = RTTimeNanoTS();
 #endif
@@ -140,12 +140,11 @@ VMMDECL(void) TMNotifyStartOfExecution(PVMCPU pVCpu)
  * The function may, depending on the configuration, suspend the TSC and future
  * clocks that only ticks when we're executing guest code.
  *
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       The cross context virtual CPU structure.
  */
-VMMDECL(void) TMNotifyEndOfExecution(PVMCPU pVCpu)
+VMMDECL(void) TMNotifyEndOfExecution(PVMCC pVM, PVMCPUCC pVCpu)
 {
-    PVM pVM = pVCpu->CTX_SUFF(pVM);
-
     if (pVM->tm.s.fTSCTiedToExecution)
         tmCpuTickPause(pVCpu);
 
@@ -190,7 +189,7 @@ VMMDECL(void) TMNotifyEndOfExecution(PVMCPU pVCpu)
  *
  * @param   pVCpu       The cross context virtual CPU structure.
  */
-VMM_INT_DECL(void) TMNotifyStartOfHalt(PVMCPU pVCpu)
+VMM_INT_DECL(void) TMNotifyStartOfHalt(PVMCPUCC pVCpu)
 {
     PVM pVM = pVCpu->CTX_SUFF(pVM);
 
@@ -214,7 +213,7 @@ VMM_INT_DECL(void) TMNotifyStartOfHalt(PVMCPU pVCpu)
  *
  * @param   pVCpu       The cross context virtual CPU structure.
  */
-VMM_INT_DECL(void) TMNotifyEndOfHalt(PVMCPU pVCpu)
+VMM_INT_DECL(void) TMNotifyEndOfHalt(PVMCPUCC pVCpu)
 {
     PVM pVM = pVCpu->CTX_SUFF(pVM);
 
@@ -252,9 +251,9 @@ VMM_INT_DECL(void) TMNotifyEndOfHalt(PVMCPU pVCpu)
  *
  * @param   pVM         The cross context VM structure.
  */
-DECLINLINE(void) tmScheduleNotify(PVM pVM)
+DECLINLINE(void) tmScheduleNotify(PVMCC pVM)
 {
-    PVMCPU pVCpuDst = &pVM->aCpus[pVM->tm.s.idTimerCpu];
+    PVMCPUCC pVCpuDst = VMCC_GET_CPU(pVM, pVM->tm.s.idTimerCpu);
     if (!VMCPU_FF_IS_SET(pVCpuDst, VMCPU_FF_TIMER))
     {
         Log5(("TMAll(%u): FF: 0 -> 1\n", __LINE__));
@@ -275,7 +274,7 @@ DECLINLINE(void) tmScheduleNotify(PVM pVM)
  */
 DECLINLINE(void) tmSchedule(PTMTIMER pTimer)
 {
-    PVM pVM = pTimer->CTX_SUFF(pVM);
+    PVMCC pVM = pTimer->CTX_SUFF(pVM);
     if (    VM_IS_EMT(pVM)
         &&  RT_SUCCESS(TM_TRY_LOCK_TIMERS(pVM)))
     {
@@ -770,9 +769,9 @@ DECL_FORCE_INLINE(uint64_t) tmTimerPollReturnHit(PVM pVM, PVMCPU pVCpu, PVMCPU p
  *
  * @remarks GIP uses ns ticks.
  */
-DECL_FORCE_INLINE(uint64_t) tmTimerPollInternal(PVM pVM, PVMCPU pVCpu, uint64_t *pu64Delta)
+DECL_FORCE_INLINE(uint64_t) tmTimerPollInternal(PVMCC pVM, PVMCPUCC pVCpu, uint64_t *pu64Delta)
 {
-    PVMCPU                  pVCpuDst      = &pVM->aCpus[pVM->tm.s.idTimerCpu];
+    PVMCPU                  pVCpuDst      = VMCC_GET_CPU(pVM, pVM->tm.s.idTimerCpu);
     const uint64_t          u64Now        = TMVirtualGetNoCheck(pVM);
     STAM_COUNTER_INC(&pVM->tm.s.StatPoll);
 
@@ -981,7 +980,7 @@ DECL_FORCE_INLINE(uint64_t) tmTimerPollInternal(PVM pVM, PVMCPU pVCpu, uint64_t 
  * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @thread  The emulation thread.
  */
-VMMDECL(bool) TMTimerPollBool(PVM pVM, PVMCPU pVCpu)
+VMMDECL(bool) TMTimerPollBool(PVMCC pVM, PVMCPUCC pVCpu)
 {
     AssertCompile(TMCLOCK_FREQ_VIRTUAL == 1000000000);
     uint64_t off = 0;
@@ -999,7 +998,7 @@ VMMDECL(bool) TMTimerPollBool(PVM pVM, PVMCPU pVCpu)
  * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @thread  The emulation thread.
  */
-VMM_INT_DECL(void) TMTimerPollVoid(PVM pVM, PVMCPU pVCpu)
+VMM_INT_DECL(void) TMTimerPollVoid(PVMCC pVM, PVMCPUCC pVCpu)
 {
     uint64_t off;
     tmTimerPollInternal(pVM, pVCpu, &off);
@@ -1018,7 +1017,7 @@ VMM_INT_DECL(void) TMTimerPollVoid(PVM pVM, PVMCPU pVCpu)
  * @param   pu64Delta   Where to store the delta.
  * @thread  The emulation thread.
  */
-VMM_INT_DECL(uint64_t) TMTimerPollGIP(PVM pVM, PVMCPU pVCpu, uint64_t *pu64Delta)
+VMM_INT_DECL(uint64_t) TMTimerPollGIP(PVMCC pVM, PVMCPUCC pVCpu, uint64_t *pu64Delta)
 {
     return tmTimerPollInternal(pVM, pVCpu, pu64Delta);
 }

@@ -19,11 +19,12 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define VBOX_BUGREF_9217_PART_I
 #define LOG_GROUP LOG_GROUP_MM_HYPER_HEAP
 #include <VBox/vmm/mm.h>
 #include <VBox/vmm/stam.h>
 #include "MMInternal.h"
-#include <VBox/vmm/vm.h>
+#include <VBox/vmm/vmcc.h>
 
 #include <VBox/err.h>
 #include <VBox/param.h>

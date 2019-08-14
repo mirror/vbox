@@ -109,11 +109,11 @@ RT_C_DECLS_BEGIN
 /** @name All-context HM API.
  * @{ */
 VMMDECL(bool)                   HMIsEnabledNotMacro(PVM pVM);
-VMMDECL(bool)                   HMCanExecuteGuest(PVMCPU pVCpu, PCCPUMCTX pCtx);
+VMMDECL(bool)                   HMCanExecuteGuest(PVMCPUCC pVCpu, PCCPUMCTX pCtx);
 VMM_INT_DECL(int)               HMInvalidatePage(PVMCPU pVCpu, RTGCPTR GCVirt);
 VMM_INT_DECL(bool)              HMHasPendingIrq(PVM pVM);
 VMM_INT_DECL(PX86PDPE)          HMGetPaePdpes(PVMCPU pVCpu);
-VMM_INT_DECL(bool)              HMSetSingleInstruction(PVM pVM, PVMCPU pVCpu, bool fEnable);
+VMM_INT_DECL(bool)              HMSetSingleInstruction(PVMCC pVM, PVMCPUCC pVCpu, bool fEnable);
 VMM_INT_DECL(bool)              HMIsSvmActive(PVM pVM);
 VMM_INT_DECL(bool)              HMIsVmxActive(PVM pVM);
 VMM_INT_DECL(const char *)      HMGetVmxDiagDesc(VMXVDIAG enmDiag);
@@ -136,7 +136,7 @@ VMM_INT_DECL(void)              HMGetSvmMsrsFromHwvirtMsrs(PCSUPHWVIRTMSRS pMsrs
  * based purely on the Intel VT-x specification (used by IEM/REM and HM) can be
  * found in CPUM.
  * @{ */
-VMM_INT_DECL(bool)              HMCanExecuteVmxGuest(PVMCPU pVCpu, PCCPUMCTX pCtx);
+VMM_INT_DECL(bool)              HMCanExecuteVmxGuest(PVM pVM, PVMCPU pVCpu, PCCPUMCTX pCtx);
 VMM_INT_DECL(TRPMEVENT)         HMVmxEventTypeToTrpmEventType(uint32_t uIntInfo);
 VMM_INT_DECL(uint32_t)          HMTrpmEventTypeToVmxEventType(uint8_t uVector, TRPMEVENT enmTrpmEvent);
 /** @} */
@@ -155,9 +155,9 @@ VMM_INT_DECL(TRPMEVENT)         HMSvmEventToTrpmEventType(PCSVMEVENT pSvmEvent, 
 /** @name R0, R3 HM (VMX/SVM agnostic) handlers.
  * @{ */
 VMM_INT_DECL(int)               HMFlushTlb(PVMCPU pVCpu);
-VMM_INT_DECL(int)               HMFlushTlbOnAllVCpus(PVM pVM);
+VMM_INT_DECL(int)               HMFlushTlbOnAllVCpus(PVMCC pVM);
 VMM_INT_DECL(int)               HMInvalidatePageOnAllVCpus(PVM pVM, RTGCPTR GCVirt);
-VMM_INT_DECL(int)               HMInvalidatePhysPage(PVM pVM, RTGCPHYS GCPhys);
+VMM_INT_DECL(int)               HMInvalidatePhysPage(PVMCC pVM, RTGCPHYS GCPhys);
 VMM_INT_DECL(bool)              HMAreNestedPagingAndFullGuestExecEnabled(PVM pVM);
 VMM_INT_DECL(bool)              HMIsLongModeAllowed(PVM pVM);
 VMM_INT_DECL(bool)              HMIsNestedPagingActive(PVM pVM);
@@ -175,7 +175,7 @@ VMM_INT_DECL(bool)              HMIsSvmVGifActive(PVM pVM);
 VMM_INT_DECL(void)              HMNotifySvmNstGstVmexit(PVMCPU pVCpu, PCPUMCTX pCtx);
 # endif
 VMM_INT_DECL(int)               HMIsSubjectToSvmErratum170(uint32_t *pu32Family, uint32_t *pu32Model, uint32_t *pu32Stepping);
-VMM_INT_DECL(int)               HMHCMaybeMovTprSvmHypercall(PVMCPU pVCpu);
+VMM_INT_DECL(int)               HMHCMaybeMovTprSvmHypercall(PVMCC pVM, PVMCPUCC pVCpu);
 /** @} */
 
 #else /* Nops in RC: */
@@ -197,7 +197,7 @@ VMM_INT_DECL(int)               HMHCMaybeMovTprSvmHypercall(PVMCPU pVCpu);
 # define HMIsSvmVGifActive(pVM)                                       false
 # define HMNotifySvmNstGstVmexit(pVCpu, pCtx)                         do { } while (0)
 # define HMIsSubjectToSvmErratum170(puFamily, puModel, puStepping)    false
-# define HMHCMaybeMovTprSvmHypercall(pVCpu)                           do { } while (0)
+# define HMHCMaybeMovTprSvmHypercall(pVM, pVCpu)                      do { } while (0)
 /** @} */
 
 #endif

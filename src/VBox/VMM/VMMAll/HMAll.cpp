@@ -19,12 +19,13 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define VBOX_BUGREF_9217_PART_I
 #define LOG_GROUP LOG_GROUP_HM
 #define VMCPU_INCL_CPUM_GST_CTX
 #include <VBox/vmm/hm.h>
 #include <VBox/vmm/pgm.h>
 #include "HMInternal.h"
-#include <VBox/vmm/vm.h>
+#include <VBox/vmm/vmcc.h>
 #include <VBox/vmm/hm_vmx.h>
 #include <VBox/vmm/hm_svm.h>
 #include <iprt/errcore.h>
@@ -327,7 +328,7 @@ VMMDECL(bool) HMIsEnabledNotMacro(PVM pVM)
  * @remarks @a pCtx can be a partial context created and not necessarily the same as
  *          pVCpu->cpum.GstCtx.
  */
-VMMDECL(bool) HMCanExecuteGuest(PVMCPU pVCpu, PCCPUMCTX pCtx)
+VMMDECL(bool) HMCanExecuteGuest(PVMCPUCC pVCpu, PCCPUMCTX pCtx)
 {
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     Assert(HMIsEnabled(pVM));
@@ -348,7 +349,7 @@ VMMDECL(bool) HMCanExecuteGuest(PVMCPU pVCpu, PCCPUMCTX pCtx)
         return true;
     }
 
-    bool rc = HMCanExecuteVmxGuest(pVCpu, pCtx);
+    bool rc = HMCanExecuteVmxGuest(pVM, pVCpu, pCtx);
     LogFlowFunc(("returning %RTbool\n", rc));
     return rc;
 }
@@ -498,7 +499,7 @@ static void hmPokeCpuForTlbFlush(PVMCPU pVCpu, bool fAccountFlushStat)
  * @param   pVM         The cross context VM structure.
  * @param   GCVirt      Page to invalidate.
  */
-VMM_INT_DECL(int) HMInvalidatePageOnAllVCpus(PVM pVM, RTGCPTR GCVirt)
+VMM_INT_DECL(int) HMInvalidatePageOnAllVCpus(PVMCC pVM, RTGCPTR GCVirt)
 {
     /*
      * The VT-x/AMD-V code will be flushing TLB each time a VCPU migrates to a different
@@ -507,12 +508,12 @@ VMM_INT_DECL(int) HMInvalidatePageOnAllVCpus(PVM pVM, RTGCPTR GCVirt)
      * This is the reason why we do not care about thread preemption here and just
      * execute HMInvalidatePage() assuming it might be the 'right' CPU.
      */
-    VMCPUID idCurCpu = VMMGetCpuId(pVM);
-    STAM_COUNTER_INC(&pVM->aCpus[idCurCpu].hm.s.StatFlushPage);
+    VMCPUID const idCurCpu = VMMGetCpuId(pVM);
+    STAM_COUNTER_INC(&VMCC_GET_CPU(pVM, idCurCpu)->hm.s.StatFlushPage);
 
     for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
-        PVMCPU pVCpu = &pVM->aCpus[idCpu];
+        PVMCPU pVCpu = VMCC_GET_CPU(pVM, idCpu);
 
         /* Nothing to do if a TLB flush is already pending; the VCPU should
            have already been poked if it were active. */
@@ -538,18 +539,18 @@ VMM_INT_DECL(int) HMInvalidatePageOnAllVCpus(PVM pVM, RTGCPTR GCVirt)
  * @returns VBox status code.
  * @param   pVM       The cross context VM structure.
  */
-VMM_INT_DECL(int) HMFlushTlbOnAllVCpus(PVM pVM)
+VMM_INT_DECL(int) HMFlushTlbOnAllVCpus(PVMCC pVM)
 {
     if (pVM->cCpus == 1)
-        return HMFlushTlb(&pVM->aCpus[0]);
+        return HMFlushTlb(VMCC_GET_CPU_0(pVM));
 
-    VMCPUID idThisCpu = VMMGetCpuId(pVM);
+    VMCPUID const idThisCpu = VMMGetCpuId(pVM);
 
-    STAM_COUNTER_INC(&pVM->aCpus[idThisCpu].hm.s.StatFlushTlb);
+    STAM_COUNTER_INC(&VMCC_GET_CPU(pVM, idThisCpu)->hm.s.StatFlushTlb);
 
     for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
-        PVMCPU pVCpu = &pVM->aCpus[idCpu];
+        PVMCPU pVCpu = VMCC_GET_CPU(pVM, idCpu);
 
         /* Nothing to do if a TLB flush is already pending; the VCPU should
            have already been poked if it were active. */
@@ -575,7 +576,7 @@ VMM_INT_DECL(int) HMFlushTlbOnAllVCpus(PVM pVM)
  * @remarks Assumes the current instruction references this physical page
  *          though a virtual address!
  */
-VMM_INT_DECL(int) HMInvalidatePhysPage(PVM pVM, RTGCPHYS GCPhys)
+VMM_INT_DECL(int) HMInvalidatePhysPage(PVMCC pVM, RTGCPHYS GCPhys)
 {
     if (!HMIsNestedPagingActive(pVM))
         return VINF_SUCCESS;
@@ -731,7 +732,7 @@ VMM_INT_DECL(PX86PDPE) HMGetPaePdpes(PVMCPU pVCpu)
  * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
  * @param   fEnable The new flag state.
  */
-VMM_INT_DECL(bool) HMSetSingleInstruction(PVM pVM, PVMCPU pVCpu, bool fEnable)
+VMM_INT_DECL(bool) HMSetSingleInstruction(PVMCC pVM, PVMCPUCC pVCpu, bool fEnable)
 {
     VMCPU_ASSERT_EMT(pVCpu);
     bool fOld = pVCpu->hm.s.fSingleInstruction;

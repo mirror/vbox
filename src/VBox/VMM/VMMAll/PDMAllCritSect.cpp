@@ -19,12 +19,13 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-#define LOG_GROUP LOG_GROUP_PDM//_CRITSECT
+#define VBOX_BUGREF_9217_PART_I
+#define LOG_GROUP LOG_GROUP_PDM_CRITSECT
 #include "PDMInternal.h"
 #include <VBox/vmm/pdmcritsect.h>
 #include <VBox/vmm/mm.h>
 #include <VBox/vmm/vmm.h>
-#include <VBox/vmm/vm.h>
+#include <VBox/vmm/vmcc.h>
 #include <VBox/err.h>
 #include <VBox/vmm/hm.h>
 
@@ -774,13 +775,13 @@ VMMDECL(bool) PDMCritSectIsOwner(PCPDMCRITSECT pCritSect)
  * @param   pCritSect   The critical section.
  * @param   pVCpu       The cross context virtual CPU structure.
  */
-VMMDECL(bool) PDMCritSectIsOwnerEx(PCPDMCRITSECT pCritSect, PVMCPU pVCpu)
+VMMDECL(bool) PDMCritSectIsOwnerEx(PCPDMCRITSECT pCritSect, PVMCPUCC pVCpu)
 {
 #ifdef IN_RING3
     NOREF(pVCpu);
     return RTCritSectIsOwner(&pCritSect->s.Core);
 #else
-    Assert(&pVCpu->CTX_SUFF(pVM)->aCpus[pVCpu->idCpu] == pVCpu);
+    Assert(VMCC_GET_CPU(pVCpu->CTX_SUFF(pVM), pVCpu->idCpu) == pVCpu);
     if (pCritSect->s.Core.NativeThreadOwner != pVCpu->hNativeThread)
         return false;
     return (pCritSect->s.Core.fFlags & PDMCRITSECT_FLAGS_PENDING_UNLOCK) == 0

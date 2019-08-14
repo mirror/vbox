@@ -178,12 +178,12 @@
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
 RT_C_DECLS_BEGIN
-PGM_SHW_DECL(int, GetPage)(PVMCPU pVCpu, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys);
-PGM_SHW_DECL(int, ModifyPage)(PVMCPU pVCpu, RTGCUINTPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask, uint32_t fOpFlags);
-PGM_SHW_DECL(int, Enter)(PVMCPU pVCpu, bool fIs64BitsPagingMode);
-PGM_SHW_DECL(int, Exit)(PVMCPU pVCpu);
+PGM_SHW_DECL(int, GetPage)(PVMCPUCC pVCpu, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys);
+PGM_SHW_DECL(int, ModifyPage)(PVMCPUCC pVCpu, RTGCUINTPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask, uint32_t fOpFlags);
+PGM_SHW_DECL(int, Enter)(PVMCPUCC pVCpu, bool fIs64BitsPagingMode);
+PGM_SHW_DECL(int, Exit)(PVMCPUCC pVCpu);
 #ifdef IN_RING3
-PGM_SHW_DECL(int, Relocate)(PVMCPU pVCpu, RTGCPTR offDelta);
+PGM_SHW_DECL(int, Relocate)(PVMCPUCC pVCpu, RTGCPTR offDelta);
 #endif
 RT_C_DECLS_END
 
@@ -195,7 +195,7 @@ RT_C_DECLS_END
  * @param   pVCpu                   The cross context virtual CPU structure.
  * @param   fIs64BitsPagingMode     New shadow paging mode is for 64 bits? (only relevant for 64 bits guests on a 32 bits AMD-V nested paging host)
  */
-PGM_SHW_DECL(int, Enter)(PVMCPU pVCpu, bool fIs64BitsPagingMode)
+PGM_SHW_DECL(int, Enter)(PVMCPUCC pVCpu, bool fIs64BitsPagingMode)
 {
 #if PGM_TYPE_IS_NESTED_OR_EPT(PGM_SHW_TYPE)
 
@@ -239,7 +239,7 @@ PGM_SHW_DECL(int, Enter)(PVMCPU pVCpu, bool fIs64BitsPagingMode)
  * @returns VBox status code.
  * @param   pVCpu       The cross context virtual CPU structure.
  */
-PGM_SHW_DECL(int, Exit)(PVMCPU pVCpu)
+PGM_SHW_DECL(int, Exit)(PVMCPUCC pVCpu)
 {
 #if PGM_TYPE_IS_NESTED_OR_EPT(PGM_SHW_TYPE)
     PVM pVM = pVCpu->CTX_SUFF(pVM);
@@ -282,7 +282,7 @@ PGM_SHW_DECL(int, Exit)(PVMCPU pVCpu)
  *                      This is page aligned.
  * @remark  You should use PGMMapGetPage() for pages in a mapping.
  */
-PGM_SHW_DECL(int, GetPage)(PVMCPU pVCpu, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys)
+PGM_SHW_DECL(int, GetPage)(PVMCPUCC pVCpu, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys)
 {
 #if PGM_SHW_TYPE == PGM_TYPE_NONE
     RT_NOREF(pVCpu, GCPtr);
@@ -461,7 +461,7 @@ PGM_SHW_DECL(int, GetPage)(PVMCPU pVCpu, RTGCUINTPTR GCPtr, uint64_t *pfFlags, P
  * @param   fOpFlags    A combination of the PGM_MK_PK_XXX flags.
  * @remark  You must use PGMMapModifyPage() for pages in a mapping.
  */
-PGM_SHW_DECL(int, ModifyPage)(PVMCPU pVCpu, RTGCUINTPTR GCPtr, size_t cb, uint64_t fFlags, uint64_t fMask, uint32_t fOpFlags)
+PGM_SHW_DECL(int, ModifyPage)(PVMCPUCC pVCpu, RTGCUINTPTR GCPtr, size_t cb, uint64_t fFlags, uint64_t fMask, uint32_t fOpFlags)
 {
 #if PGM_SHW_TYPE == PGM_TYPE_NONE
     RT_NOREF(pVCpu, GCPtr, cb, fFlags, fMask, fOpFlags);
@@ -469,7 +469,7 @@ PGM_SHW_DECL(int, ModifyPage)(PVMCPU pVCpu, RTGCUINTPTR GCPtr, size_t cb, uint64
     return VERR_PGM_SHW_NONE_IPE;
 
 #else  /* PGM_SHW_TYPE != PGM_TYPE_NONE */
-    PVM pVM = pVCpu->CTX_SUFF(pVM);
+    PVMCC pVM = pVCpu->CTX_SUFF(pVM);
     PGM_LOCK_ASSERT_OWNER(pVM);
 
     /*
@@ -608,7 +608,7 @@ PGM_SHW_DECL(int, ModifyPage)(PVMCPU pVCpu, RTGCUINTPTR GCPtr, size_t cb, uint64
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   offDelta    The relocation offset.
  */
-PGM_SHW_DECL(int, Relocate)(PVMCPU pVCpu, RTGCPTR offDelta)
+PGM_SHW_DECL(int, Relocate)(PVMCPUCC pVCpu, RTGCPTR offDelta)
 {
     RT_NOREF(pVCpu, offDelta);
     return VINF_SUCCESS;

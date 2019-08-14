@@ -23,16 +23,16 @@ RT_C_DECLS_BEGIN
 #if PGM_GST_TYPE == PGM_TYPE_32BIT \
  || PGM_GST_TYPE == PGM_TYPE_PAE \
  || PGM_GST_TYPE == PGM_TYPE_AMD64
-static int PGM_GST_NAME(Walk)(PVMCPU pVCpu, RTGCPTR GCPtr, PGSTPTWALK pWalk);
+static int PGM_GST_NAME(Walk)(PVMCPUCC pVCpu, RTGCPTR GCPtr, PGSTPTWALK pWalk);
 #endif
-PGM_GST_DECL(int,  GetPage)(PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys);
-PGM_GST_DECL(int,  ModifyPage)(PVMCPU pVCpu, RTGCPTR GCPtr, size_t cb, uint64_t fFlags, uint64_t fMask);
-PGM_GST_DECL(int,  GetPDE)(PVMCPU pVCpu, RTGCPTR GCPtr, PX86PDEPAE pPDE);
+PGM_GST_DECL(int,  GetPage)(PVMCPUCC pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys);
+PGM_GST_DECL(int,  ModifyPage)(PVMCPUCC pVCpu, RTGCPTR GCPtr, size_t cb, uint64_t fFlags, uint64_t fMask);
+PGM_GST_DECL(int,  GetPDE)(PVMCPUCC pVCpu, RTGCPTR GCPtr, PX86PDEPAE pPDE);
 
 #ifdef IN_RING3 /* r3 only for now.  */
-PGM_GST_DECL(int, Enter)(PVMCPU pVCpu, RTGCPHYS GCPhysCR3);
-PGM_GST_DECL(int, Relocate)(PVMCPU pVCpu, RTGCPTR offDelta);
-PGM_GST_DECL(int, Exit)(PVMCPU pVCpu);
+PGM_GST_DECL(int, Enter)(PVMCPUCC pVCpu, RTGCPHYS GCPhysCR3);
+PGM_GST_DECL(int, Relocate)(PVMCPUCC pVCpu, RTGCPTR offDelta);
+PGM_GST_DECL(int, Exit)(PVMCPUCC pVCpu);
 #endif
 RT_C_DECLS_END
 
@@ -44,7 +44,7 @@ RT_C_DECLS_END
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   GCPhysCR3   The physical address from the CR3 register.
  */
-PGM_GST_DECL(int, Enter)(PVMCPU pVCpu, RTGCPHYS GCPhysCR3)
+PGM_GST_DECL(int, Enter)(PVMCPUCC pVCpu, RTGCPHYS GCPhysCR3)
 {
     /*
      * Map and monitor CR3
@@ -62,7 +62,7 @@ PGM_GST_DECL(int, Enter)(PVMCPU pVCpu, RTGCPHYS GCPhysCR3)
  * @returns VBox status code.
  * @param   pVCpu       The cross context virtual CPU structure.
  */
-PGM_GST_DECL(int, Exit)(PVMCPU pVCpu)
+PGM_GST_DECL(int, Exit)(PVMCPUCC pVCpu)
 {
     uintptr_t idxBth = pVCpu->pgm.s.idxBothModeData;
     AssertReturn(idxBth < RT_ELEMENTS(g_aPgmBothModeData), VERR_PGM_MODE_IPE);
@@ -76,7 +76,7 @@ PGM_GST_DECL(int, Exit)(PVMCPU pVCpu)
  || PGM_GST_TYPE == PGM_TYPE_AMD64
 
 
-DECLINLINE(int) PGM_GST_NAME(WalkReturnNotPresent)(PVMCPU pVCpu, PGSTPTWALK pWalk, int iLevel)
+DECLINLINE(int) PGM_GST_NAME(WalkReturnNotPresent)(PVMCPUCC pVCpu, PGSTPTWALK pWalk, int iLevel)
 {
     NOREF(iLevel); NOREF(pVCpu);
     pWalk->Core.fNotPresent     = true;
@@ -84,7 +84,7 @@ DECLINLINE(int) PGM_GST_NAME(WalkReturnNotPresent)(PVMCPU pVCpu, PGSTPTWALK pWal
     return VERR_PAGE_TABLE_NOT_PRESENT;
 }
 
-DECLINLINE(int) PGM_GST_NAME(WalkReturnBadPhysAddr)(PVMCPU pVCpu, PGSTPTWALK pWalk, int iLevel, int rc)
+DECLINLINE(int) PGM_GST_NAME(WalkReturnBadPhysAddr)(PVMCPUCC pVCpu, PGSTPTWALK pWalk, int iLevel, int rc)
 {
     AssertMsg(rc == VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS, ("%Rrc\n", rc)); NOREF(rc); NOREF(pVCpu);
     pWalk->Core.fBadPhysAddr    = true;
@@ -92,7 +92,7 @@ DECLINLINE(int) PGM_GST_NAME(WalkReturnBadPhysAddr)(PVMCPU pVCpu, PGSTPTWALK pWa
     return VERR_PAGE_TABLE_NOT_PRESENT;
 }
 
-DECLINLINE(int) PGM_GST_NAME(WalkReturnRsvdError)(PVMCPU pVCpu, PGSTPTWALK pWalk, int iLevel)
+DECLINLINE(int) PGM_GST_NAME(WalkReturnRsvdError)(PVMCPUCC pVCpu, PGSTPTWALK pWalk, int iLevel)
 {
     NOREF(pVCpu);
     pWalk->Core.fRsvdError      = true;
@@ -112,7 +112,7 @@ DECLINLINE(int) PGM_GST_NAME(WalkReturnRsvdError)(PVMCPU pVCpu, PGSTPTWALK pWalk
  * @param   GCPtr       The guest virtual address to walk by.
  * @param   pWalk       Where to return the walk result. This is always set.
  */
-DECLINLINE(int) PGM_GST_NAME(Walk)(PVMCPU pVCpu, RTGCPTR GCPtr, PGSTPTWALK pWalk)
+DECLINLINE(int) PGM_GST_NAME(Walk)(PVMCPUCC pVCpu, RTGCPTR GCPtr, PGSTPTWALK pWalk)
 {
     int rc;
 
@@ -315,7 +315,7 @@ DECLINLINE(int) PGM_GST_NAME(Walk)(PVMCPU pVCpu, RTGCPTR GCPtr, PGSTPTWALK pWalk
  * @param   pGCPhys     Where to store the GC physical address of the page.
  *                      This is page aligned!
  */
-PGM_GST_DECL(int, GetPage)(PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys)
+PGM_GST_DECL(int, GetPage)(PVMCPUCC pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys)
 {
 #if PGM_GST_TYPE == PGM_TYPE_REAL \
  || PGM_GST_TYPE == PGM_TYPE_PROT
@@ -386,7 +386,7 @@ PGM_GST_DECL(int, GetPage)(PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGC
  * @param   fFlags      The OR  mask - page flags X86_PTE_*, excluding the page mask of course.
  * @param   fMask       The AND mask - page flags X86_PTE_*.
  */
-PGM_GST_DECL(int, ModifyPage)(PVMCPU pVCpu, RTGCPTR GCPtr, size_t cb, uint64_t fFlags, uint64_t fMask)
+PGM_GST_DECL(int, ModifyPage)(PVMCPUCC pVCpu, RTGCPTR GCPtr, size_t cb, uint64_t fFlags, uint64_t fMask)
 {
     Assert((cb & PAGE_OFFSET_MASK) == 0); RT_NOREF_PV(cb);
 
@@ -463,7 +463,7 @@ PGM_GST_DECL(int, ModifyPage)(PVMCPU pVCpu, RTGCPTR GCPtr, size_t cb, uint64_t f
  * @param   GCPtr       Guest context pointer.
  * @param   pPDE        Pointer to guest PDE structure.
  */
-PGM_GST_DECL(int, GetPDE)(PVMCPU pVCpu, RTGCPTR GCPtr, PX86PDEPAE pPDE)
+PGM_GST_DECL(int, GetPDE)(PVMCPUCC pVCpu, RTGCPTR GCPtr, PX86PDEPAE pPDE)
 {
 #if PGM_GST_TYPE == PGM_TYPE_32BIT \
  || PGM_GST_TYPE == PGM_TYPE_PAE   \
@@ -513,7 +513,7 @@ PGM_GST_DECL(int, GetPDE)(PVMCPU pVCpu, RTGCPTR GCPtr, PX86PDEPAE pPDE)
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   offDelta    The relocation offset.
  */
-PGM_GST_DECL(int, Relocate)(PVMCPU pVCpu, RTGCPTR offDelta)
+PGM_GST_DECL(int, Relocate)(PVMCPUCC pVCpu, RTGCPTR offDelta)
 {
     RT_NOREF(pVCpu, offDelta);
     return VINF_SUCCESS;

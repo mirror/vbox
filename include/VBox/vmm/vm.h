@@ -993,7 +993,7 @@ AssertCompileSizeAlignment(VMCPU, 4096);
 /** @def VM_ASSERT_EMT0
  * Asserts that the current thread IS emulation thread \#0 (EMT0).
  */
-#if defined(VBOX_BUGREF_9217_PART_I) && defined(IN_RING3)
+#if (defined(VBOX_BUGREF_9217_PART_I) || defined(VBOX_BUGREF_9217)) && defined(IN_RING3)
 # define VM_ASSERT_EMT0(a_pVM)              VMCPU_ASSERT_EMT((a_pVM)->apCpusR3[0])
 #else
 # define VM_ASSERT_EMT0(a_pVM)              VMCPU_ASSERT_EMT(&(a_pVM)->aCpus[0])
@@ -1174,7 +1174,11 @@ typedef struct VM
     /** The GVM VM handle. Only the GVM should modify this field. */
     uint32_t                    hSelf;
     /** Number of virtual CPUs. */
+#if defined(VBOX_BUGREF_9217) && defined(IN_RING0)
+    uint32_t                    cCpusUnsafe;
+#else
     uint32_t                    cCpus;
+#endif
     /** CPU excution cap (1-100) */
     uint32_t                    uCpuExecutionCap;
 

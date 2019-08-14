@@ -19,6 +19,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define VBOX_BUGREF_9217_PART_I
 #define LOG_GROUP LOG_GROUP_TRPM
 #include <VBox/vmm/trpm.h>
 #include <VBox/vmm/pgm.h>
@@ -28,7 +29,7 @@
 #include <VBox/vmm/stam.h>
 #include <VBox/vmm/dbgf.h>
 #include "TRPMInternal.h"
-#include <VBox/vmm/vm.h>
+#include <VBox/vmm/vmcc.h>
 #include <VBox/err.h>
 #include <VBox/vmm/em.h>
 #include <VBox/log.h>

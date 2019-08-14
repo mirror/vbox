@@ -19,6 +19,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define VBOX_BUGREF_9217_PART_I
 #define LOG_GROUP LOG_GROUP_PGM
 #include <VBox/vmm/pgm.h>
 #include <VBox/vmm/cpum.h>
@@ -36,7 +37,7 @@
 #include <VBox/vmm/hm.h>
 #include <VBox/vmm/hm_vmx.h>
 #include "PGMInternal.h"
-#include <VBox/vmm/vm.h>
+#include <VBox/vmm/vmcc.h>
 #include "PGMInline.h"
 #include <iprt/assert.h>
 #include <iprt/asm-amd64-x86.h>
@@ -49,10 +50,10 @@
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
-DECLINLINE(int) pgmShwGetLongModePDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, PX86PML4E *ppPml4e, PX86PDPT *ppPdpt, PX86PDPAE *ppPD);
-DECLINLINE(int) pgmShwGetPaePoolPagePD(PVMCPU pVCpu, RTGCPTR GCPtr, PPGMPOOLPAGE *ppShwPde);
-static int pgmShwSyncLongModePDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, X86PGPAEUINT uGstPml4e, X86PGPAEUINT uGstPdpe, PX86PDPAE *ppPD);
-static int pgmShwGetEPTPDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, PEPTPDPT *ppPdpt, PEPTPD *ppPD);
+DECLINLINE(int) pgmShwGetLongModePDPtr(PVMCPUCC pVCpu, RTGCPTR64 GCPtr, PX86PML4E *ppPml4e, PX86PDPT *ppPdpt, PX86PDPAE *ppPD);
+DECLINLINE(int) pgmShwGetPaePoolPagePD(PVMCPUCC pVCpu, RTGCPTR GCPtr, PPGMPOOLPAGE *ppShwPde);
+static int pgmShwSyncLongModePDPtr(PVMCPUCC pVCpu, RTGCPTR64 GCPtr, X86PGPAEUINT uGstPml4e, X86PGPAEUINT uGstPdpe, PX86PDPAE *ppPD);
+static int pgmShwGetEPTPDPtr(PVMCPUCC pVCpu, RTGCPTR64 GCPtr, PEPTPDPT *ppPdpt, PEPTPD *ppPD);
 
 
 /*
@@ -888,7 +889,7 @@ PGMMODEDATABTH const g_aPgmBothModeData[PGM_BOTH_MODE_DATA_ARRAY_SIZE] =
  * @param   pRegFrame   Trap register frame.
  * @param   pvFault     The fault address.
  */
-VMMDECL(int) PGMTrap0eHandler(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault)
+VMMDECL(int) PGMTrap0eHandler(PVMCPUCC pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault)
 {
     PVM pVM = pVCpu->CTX_SUFF(pVM);
 
@@ -993,7 +994,7 @@ VMMDECL(int) PGMTrap0eHandler(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegFram
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   GCPtrPage   Page to invalidate.
  */
-VMMDECL(int) PGMPrefetchPage(PVMCPU pVCpu, RTGCPTR GCPtrPage)
+VMMDECL(int) PGMPrefetchPage(PVMCPUCC pVCpu, RTGCPTR GCPtrPage)
 {
     STAM_PROFILE_START(&pVCpu->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,Prefetch), a);
 
@@ -1046,7 +1047,7 @@ PPGMMAPPING pgmGetMapping(PVM pVM, RTGCPTR GCPtr)
  * @param   fAccess     Access type (r/w, user/supervisor (X86_PTE_*))
  * @remarks Current not in use.
  */
-VMMDECL(int) PGMIsValidAccess(PVMCPU pVCpu, RTGCPTR Addr, uint32_t cbSize, uint32_t fAccess)
+VMMDECL(int) PGMIsValidAccess(PVMCPUCC pVCpu, RTGCPTR Addr, uint32_t cbSize, uint32_t fAccess)
 {
     /*
      * Validate input.
@@ -1098,7 +1099,7 @@ VMMDECL(int) PGMIsValidAccess(PVMCPU pVCpu, RTGCPTR Addr, uint32_t cbSize, uint3
  * @param   cbSize      Access size
  * @param   fAccess     Access type (r/w, user/supervisor (X86_PTE_*))
  */
-VMMDECL(int) PGMVerifyAccess(PVMCPU pVCpu, RTGCPTR Addr, uint32_t cbSize, uint32_t fAccess)
+VMMDECL(int) PGMVerifyAccess(PVMCPUCC pVCpu, RTGCPTR Addr, uint32_t cbSize, uint32_t fAccess)
 {
     PVM pVM = pVCpu->CTX_SUFF(pVM);
 
@@ -1214,7 +1215,7 @@ VMMDECL(int) PGMVerifyAccess(PVMCPU pVCpu, RTGCPTR Addr, uint32_t cbSize, uint32
  * @todo    Flush page or page directory only if necessary!
  * @todo    VBOXSTRICTRC
  */
-VMMDECL(int) PGMInvalidatePage(PVMCPU pVCpu, RTGCPTR GCPtrPage)
+VMMDECL(int) PGMInvalidatePage(PVMCPUCC pVCpu, RTGCPTR GCPtrPage)
 {
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     int rc;
@@ -1274,7 +1275,7 @@ VMMDECL(int) PGMInvalidatePage(PVMCPU pVCpu, RTGCPTR GCPtrPage)
  * @param   pRegFrame   Register frame.
  * @param   pvFault     Fault address.
  */
-VMMDECL(VBOXSTRICTRC) PGMInterpretInstruction(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault)
+VMMDECL(VBOXSTRICTRC) PGMInterpretInstruction(PVMCC pVM, PVMCPUCC pVCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault)
 {
     NOREF(pVM);
     VBOXSTRICTRC rc = EMInterpretInstruction(pVCpu, pRegFrame, pvFault);
@@ -1297,7 +1298,7 @@ VMMDECL(VBOXSTRICTRC) PGMInterpretInstruction(PVM pVM, PVMCPU pVCpu, PCPUMCTXCOR
  *                      This is page aligned.
  * @remark  You should use PGMMapGetPage() for pages in a mapping.
  */
-VMMDECL(int) PGMShwGetPage(PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys)
+VMMDECL(int) PGMShwGetPage(PVMCPUCC pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys)
 {
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     pgmLock(pVM);
@@ -1326,14 +1327,14 @@ VMMDECL(int) PGMShwGetPage(PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTHC
  * @param   fOpFlags    A combination of the PGM_MK_PK_XXX flags.
  * @remark  You must use PGMMapModifyPage() for pages in a mapping.
  */
-DECLINLINE(int) pdmShwModifyPage(PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t fFlags, uint64_t fMask, uint32_t fOpFlags)
+DECLINLINE(int) pdmShwModifyPage(PVMCPUCC pVCpu, RTGCPTR GCPtr, uint64_t fFlags, uint64_t fMask, uint32_t fOpFlags)
 {
     AssertMsg(!(fFlags & X86_PTE_PAE_PG_MASK), ("fFlags=%#llx\n", fFlags));
     Assert(!(fOpFlags & ~(PGM_MK_PG_IS_MMIO2 | PGM_MK_PG_IS_WRITE_FAULT)));
 
     GCPtr &= PAGE_BASE_GC_MASK; /** @todo this ain't necessary, right... */
 
-    PVM pVM = pVCpu->CTX_SUFF(pVM);
+    PVMCC pVM = pVCpu->CTX_SUFF(pVM);
     pgmLock(pVM);
 
     uintptr_t idxShw = pVCpu->pgm.s.idxShadowModeData;
@@ -1355,7 +1356,7 @@ DECLINLINE(int) pdmShwModifyPage(PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t fFlags, u
  * @param   GCPtr       Virtual address of the first page in the range.
  * @param   fOpFlags    A combination of the PGM_MK_PK_XXX flags.
  */
-VMMDECL(int) PGMShwMakePageReadonly(PVMCPU pVCpu, RTGCPTR GCPtr, uint32_t fOpFlags)
+VMMDECL(int) PGMShwMakePageReadonly(PVMCPUCC pVCpu, RTGCPTR GCPtr, uint32_t fOpFlags)
 {
     return pdmShwModifyPage(pVCpu, GCPtr, 0, ~(uint64_t)X86_PTE_RW, fOpFlags);
 }
@@ -1374,7 +1375,7 @@ VMMDECL(int) PGMShwMakePageReadonly(PVMCPU pVCpu, RTGCPTR GCPtr, uint32_t fOpFla
  * @param   GCPtr       Virtual address of the first page in the range.
  * @param   fOpFlags    A combination of the PGM_MK_PK_XXX flags.
  */
-VMMDECL(int) PGMShwMakePageWritable(PVMCPU pVCpu, RTGCPTR GCPtr, uint32_t fOpFlags)
+VMMDECL(int) PGMShwMakePageWritable(PVMCPUCC pVCpu, RTGCPTR GCPtr, uint32_t fOpFlags)
 {
     if (pVCpu->pgm.s.enmShadowMode != PGMMODE_NONE) /* avoid assertions */
         return pdmShwModifyPage(pVCpu, GCPtr, X86_PTE_RW, ~(uint64_t)0, fOpFlags);
@@ -1391,7 +1392,7 @@ VMMDECL(int) PGMShwMakePageWritable(PVMCPU pVCpu, RTGCPTR GCPtr, uint32_t fOpFla
  * @param   GCPtr       Virtual address of the first page in the range.
  * @param   fOpFlags    A combination of the PGM_MK_PG_XXX flags.
  */
-VMMDECL(int) PGMShwMakePageNotPresent(PVMCPU pVCpu, RTGCPTR GCPtr, uint32_t fOpFlags)
+VMMDECL(int) PGMShwMakePageNotPresent(PVMCPUCC pVCpu, RTGCPTR GCPtr, uint32_t fOpFlags)
 {
     return pdmShwModifyPage(pVCpu, GCPtr, 0, 0, fOpFlags);
 }
@@ -1412,7 +1413,7 @@ VMMDECL(int) PGMShwMakePageNotPresent(PVMCPU pVCpu, RTGCPTR GCPtr, uint32_t fOpF
  *                      We ASSUME 4KB pages backing the big page here!
  * @param   fOpFlags    A combination of the PGM_MK_PG_XXX flags.
  */
-int pgmShwMakePageSupervisorAndWritable(PVMCPU pVCpu, RTGCPTR GCPtr, bool fBigPage, uint32_t fOpFlags)
+int pgmShwMakePageSupervisorAndWritable(PVMCPUCC pVCpu, RTGCPTR GCPtr, bool fBigPage, uint32_t fOpFlags)
 {
     int rc = pdmShwModifyPage(pVCpu, GCPtr, X86_PTE_RW, ~(uint64_t)X86_PTE_US, fOpFlags);
     if (rc == VINF_SUCCESS && fBigPage)
@@ -1456,7 +1457,7 @@ int pgmShwMakePageSupervisorAndWritable(PVMCPU pVCpu, RTGCPTR GCPtr, bool fBigPa
  * @param   uGstPdpe    Guest PDPT entry. Valid.
  * @param   ppPD        Receives address of page directory
  */
-int pgmShwSyncPaePDPtr(PVMCPU pVCpu, RTGCPTR GCPtr, X86PGPAEUINT uGstPdpe, PX86PDPAE *ppPD)
+int pgmShwSyncPaePDPtr(PVMCPUCC pVCpu, RTGCPTR GCPtr, X86PGPAEUINT uGstPdpe, PX86PDPAE *ppPD)
 {
     const unsigned iPdPt    = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_PAE;
     PX86PDPT       pPdpt    = pgmShwGetPaePDPTPtr(pVCpu);
@@ -1540,7 +1541,7 @@ int pgmShwSyncPaePDPtr(PVMCPU pVCpu, RTGCPTR GCPtr, X86PGPAEUINT uGstPdpe, PX86P
  * @param   GCPtr       The address.
  * @param   ppShwPde    Receives the address of the pgm pool page for the shadow page directory
  */
-DECLINLINE(int) pgmShwGetPaePoolPagePD(PVMCPU pVCpu, RTGCPTR GCPtr, PPGMPOOLPAGE *ppShwPde)
+DECLINLINE(int) pgmShwGetPaePoolPagePD(PVMCPUCC pVCpu, RTGCPTR GCPtr, PPGMPOOLPAGE *ppShwPde)
 {
     const unsigned  iPdPt = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_PAE;
     PX86PDPT        pPdpt = pgmShwGetPaePDPTPtr(pVCpu);
@@ -1580,7 +1581,7 @@ DECLINLINE(int) pgmShwGetPaePoolPagePD(PVMCPU pVCpu, RTGCPTR GCPtr, PPGMPOOLPAGE
  * @param   uGstPdpe    Guest PDPT entry (valid).
  * @param   ppPD        Receives address of page directory
  */
-static int pgmShwSyncLongModePDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, X86PGPAEUINT uGstPml4e, X86PGPAEUINT uGstPdpe, PX86PDPAE *ppPD)
+static int pgmShwSyncLongModePDPtr(PVMCPUCC pVCpu, RTGCPTR64 GCPtr, X86PGPAEUINT uGstPml4e, X86PGPAEUINT uGstPdpe, PX86PDPAE *ppPD)
 {
     PVM            pVM           = pVCpu->CTX_SUFF(pVM);
     PPGMPOOL       pPool         = pVM->pgm.s.CTX_SUFF(pPool);
@@ -1683,7 +1684,7 @@ static int pgmShwSyncLongModePDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, X86PGPAEUINT u
  * @param   ppPdpt      Receives the address of the page directory pointer table.
  * @param   ppPD        Receives the address of the page directory.
  */
-DECLINLINE(int) pgmShwGetLongModePDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, PX86PML4E *ppPml4e, PX86PDPT *ppPdpt, PX86PDPAE *ppPD)
+DECLINLINE(int) pgmShwGetLongModePDPtr(PVMCPUCC pVCpu, RTGCPTR64 GCPtr, PX86PML4E *ppPml4e, PX86PDPT *ppPdpt, PX86PDPAE *ppPD)
 {
     const unsigned  iPml4 = (GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
     PCX86PML4E      pPml4e = pgmShwGetLongModePML4EPtr(pVCpu, iPml4);
@@ -1728,7 +1729,7 @@ DECLINLINE(int) pgmShwGetLongModePDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, PX86PML4E 
  * @param   ppPdpt      Receives address of pdpt
  * @param   ppPD        Receives address of page directory
  */
-static int pgmShwGetEPTPDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, PEPTPDPT *ppPdpt, PEPTPD *ppPD)
+static int pgmShwGetEPTPDPtr(PVMCPUCC pVCpu, RTGCPTR64 GCPtr, PEPTPDPT *ppPdpt, PEPTPD *ppPD)
 {
     PVM            pVM   = pVCpu->CTX_SUFF(pVM);
     const unsigned iPml4 = (GCPtr >> EPT_PML4_SHIFT) & EPT_PML4_MASK;
@@ -1817,7 +1818,7 @@ static int pgmShwGetEPTPDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, PEPTPDPT *ppPdpt, PE
  * @param   enmShwPagingMode    The shadow paging mode (PGMMODE_EPT for VT-x,
  *                              host paging mode for AMD-V).
  */
-int pgmShwSyncNestedPageLocked(PVMCPU pVCpu, RTGCPHYS GCPhys, uint32_t cPages, PGMMODE enmShwPagingMode)
+int pgmShwSyncNestedPageLocked(PVMCPUCC pVCpu, RTGCPHYS GCPhys, uint32_t cPages, PGMMODE enmShwPagingMode)
 {
     PGM_LOCK_ASSERT_OWNER(pVCpu->CTX_SUFF(pVM));
 
@@ -1878,7 +1879,7 @@ int pgmShwSyncNestedPageLocked(PVMCPU pVCpu, RTGCPHYS GCPhys, uint32_t cPages, P
  * @param   pGCPhys     Where to store the GC physical address of the page.
  *                      This is page aligned. The fact that the
  */
-VMMDECL(int) PGMGstGetPage(PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys)
+VMMDECL(int) PGMGstGetPage(PVMCPUCC pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys)
 {
     VMCPU_ASSERT_EMT(pVCpu);
     uintptr_t idx = pVCpu->pgm.s.idxGuestModeData;
@@ -1905,7 +1906,7 @@ VMMDECL(int) PGMGstGetPage(PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGC
  * @param   pWalk       Where to return the walk result. This is valid for some
  *                      error codes as well.
  */
-int pgmGstPtWalk(PVMCPU pVCpu, RTGCPTR GCPtr, PPGMPTWALKGST pWalk)
+int pgmGstPtWalk(PVMCPUCC pVCpu, RTGCPTR GCPtr, PPGMPTWALKGST pWalk)
 {
     VMCPU_ASSERT_EMT(pVCpu);
     switch (pVCpu->pgm.s.enmGuestMode)
@@ -1960,7 +1961,7 @@ int pgmGstPtWalk(PVMCPU pVCpu, RTGCPTR GCPtr, PPGMPTWALKGST pWalk)
  *                      the result of this walk.  This is valid for some error
  *                      codes as well.
  */
-int pgmGstPtWalkNext(PVMCPU pVCpu, RTGCPTR GCPtr, PPGMPTWALKGST pWalk)
+int pgmGstPtWalkNext(PVMCPUCC pVCpu, RTGCPTR GCPtr, PPGMPTWALKGST pWalk)
 {
     /*
      * We can only handle successfully walks.
@@ -2070,7 +2071,7 @@ int pgmGstPtWalkNext(PVMCPU pVCpu, RTGCPTR GCPtr, PPGMPTWALKGST pWalk)
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   GCPtr       Address within the page.
  */
-VMMDECL(bool) PGMGstIsPagePresent(PVMCPU pVCpu, RTGCPTR GCPtr)
+VMMDECL(bool) PGMGstIsPagePresent(PVMCPUCC pVCpu, RTGCPTR GCPtr)
 {
     VMCPU_ASSERT_EMT(pVCpu);
     int rc = PGMGstGetPage(pVCpu, GCPtr, NULL, NULL);
@@ -2087,7 +2088,7 @@ VMMDECL(bool) PGMGstIsPagePresent(PVMCPU pVCpu, RTGCPTR GCPtr)
  * @param   cb          The size of the range in bytes.
  * @param   fFlags      Page flags X86_PTE_*, excluding the page mask of course.
  */
-VMMDECL(int)  PGMGstSetPage(PVMCPU pVCpu, RTGCPTR GCPtr, size_t cb, uint64_t fFlags)
+VMMDECL(int)  PGMGstSetPage(PVMCPUCC pVCpu, RTGCPTR GCPtr, size_t cb, uint64_t fFlags)
 {
     VMCPU_ASSERT_EMT(pVCpu);
     return PGMGstModifyPage(pVCpu, GCPtr, cb, fFlags, 0);
@@ -2107,7 +2108,7 @@ VMMDECL(int)  PGMGstSetPage(PVMCPU pVCpu, RTGCPTR GCPtr, size_t cb, uint64_t fFl
  * @param   fMask       The AND mask - page flags X86_PTE_*, excluding the page mask of course.
  *                      Be very CAREFUL when ~'ing constants which could be 32-bit!
  */
-VMMDECL(int)  PGMGstModifyPage(PVMCPU pVCpu, RTGCPTR GCPtr, size_t cb, uint64_t fFlags, uint64_t fMask)
+VMMDECL(int)  PGMGstModifyPage(PVMCPUCC pVCpu, RTGCPTR GCPtr, size_t cb, uint64_t fFlags, uint64_t fMask)
 {
     STAM_PROFILE_START(&pVCpu->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,GstModifyPage), a);
     VMCPU_ASSERT_EMT(pVCpu);
@@ -2150,9 +2151,9 @@ VMMDECL(int)  PGMGstModifyPage(PVMCPU pVCpu, RTGCPTR GCPtr, size_t cb, uint64_t 
  * @param   ppPd        Where to return the pointer to the mapping.  This is
  *                      always set.
  */
-int pgmGstLazyMap32BitPD(PVMCPU pVCpu, PX86PD *ppPd)
+int pgmGstLazyMap32BitPD(PVMCPUCC pVCpu, PX86PD *ppPd)
 {
-    PVM         pVM       = pVCpu->CTX_SUFF(pVM);
+    PVMCC       pVM = pVCpu->CTX_SUFF(pVM);
     pgmLock(pVM);
 
     Assert(!pVCpu->pgm.s.CTX_SUFF(pGst32BitPd));
@@ -2193,10 +2194,10 @@ int pgmGstLazyMap32BitPD(PVMCPU pVCpu, PX86PD *ppPd)
  * @param   ppPdpt      Where to return the pointer to the mapping.  This is
  *                      always set.
  */
-int pgmGstLazyMapPaePDPT(PVMCPU pVCpu, PX86PDPT *ppPdpt)
+int pgmGstLazyMapPaePDPT(PVMCPUCC pVCpu, PX86PDPT *ppPdpt)
 {
     Assert(!pVCpu->pgm.s.CTX_SUFF(pGstPaePdpt));
-    PVM     pVM = pVCpu->CTX_SUFF(pVM);
+    PVMCC       pVM = pVCpu->CTX_SUFF(pVM);
     pgmLock(pVM);
 
     RTGCPHYS    GCPhysCR3 = pVCpu->pgm.s.GCPhysCR3 & X86_CR3_PAE_PAGE_MASK;
@@ -2237,9 +2238,9 @@ int pgmGstLazyMapPaePDPT(PVMCPU pVCpu, PX86PDPT *ppPdpt)
  * @param   ppPd        Where to return the pointer to the mapping.  This is
  *                      always set.
  */
-int pgmGstLazyMapPaePD(PVMCPU pVCpu, uint32_t iPdpt, PX86PDPAE *ppPd)
+int pgmGstLazyMapPaePD(PVMCPUCC pVCpu, uint32_t iPdpt, PX86PDPAE *ppPd)
 {
-    PVM             pVM         = pVCpu->CTX_SUFF(pVM);
+    PVMCC           pVM         = pVCpu->CTX_SUFF(pVM);
     pgmLock(pVM);
 
     PX86PDPT        pGuestPDPT  = pVCpu->pgm.s.CTX_SUFF(pGstPaePdpt);
@@ -2292,10 +2293,10 @@ int pgmGstLazyMapPaePD(PVMCPU pVCpu, uint32_t iPdpt, PX86PDPAE *ppPd)
  * @param   ppPml4      Where to return the pointer to the mapping.  This will
  *                      always be set.
  */
-int pgmGstLazyMapPml4(PVMCPU pVCpu, PX86PML4 *ppPml4)
+int pgmGstLazyMapPml4(PVMCPUCC pVCpu, PX86PML4 *ppPml4)
 {
     Assert(!pVCpu->pgm.s.CTX_SUFF(pGstAmd64Pml4));
-    PVM         pVM = pVCpu->CTX_SUFF(pVM);
+    PVMCC       pVM = pVCpu->CTX_SUFF(pVM);
     pgmLock(pVM);
 
     RTGCPHYS    GCPhysCR3 = pVCpu->pgm.s.GCPhysCR3 & X86_CR3_AMD64_PAGE_MASK;
@@ -2405,10 +2406,10 @@ VMMDECL(RTHCPHYS) PGMGetHyperCR3(PVMCPU pVCpu)
  * @param   cr3         The new cr3.
  * @param   fGlobal     Indicates whether this is a global flush or not.
  */
-VMMDECL(int) PGMFlushTLB(PVMCPU pVCpu, uint64_t cr3, bool fGlobal)
+VMMDECL(int) PGMFlushTLB(PVMCPUCC pVCpu, uint64_t cr3, bool fGlobal)
 {
     STAM_PROFILE_START(&pVCpu->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,FlushTLB), a);
-    PVM pVM = pVCpu->CTX_SUFF(pVM);
+    PVMCC pVM = pVCpu->CTX_SUFF(pVM);
 
     VMCPU_ASSERT_EMT(pVCpu);
 
@@ -2519,7 +2520,7 @@ VMMDECL(int) PGMFlushTLB(PVMCPU pVCpu, uint64_t cr3, bool fGlobal)
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   cr3         The new cr3.
  */
-VMMDECL(int) PGMUpdateCR3(PVMCPU pVCpu, uint64_t cr3)
+VMMDECL(int) PGMUpdateCR3(PVMCPUCC pVCpu, uint64_t cr3)
 {
     VMCPU_ASSERT_EMT(pVCpu);
     LogFlow(("PGMUpdateCR3: cr3=%RX64 OldCr3=%RX64\n", cr3, pVCpu->pgm.s.GCPhysCR3));
@@ -2583,7 +2584,7 @@ VMMDECL(int) PGMUpdateCR3(PVMCPU pVCpu, uint64_t cr3)
  * @param   cr4         Guest context CR4 register
  * @param   fGlobal     Including global page directories or not
  */
-VMMDECL(int) PGMSyncCR3(PVMCPU pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr4, bool fGlobal)
+VMMDECL(int) PGMSyncCR3(PVMCPUCC pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr4, bool fGlobal)
 {
     int rc;
 
@@ -2733,7 +2734,7 @@ VMMDECL(int) PGMSyncCR3(PVMCPU pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr4, 
  * @param   cr4         The new cr4.
  * @param   efer        The new extended feature enable register.
  */
-VMMDECL(int) PGMChangeMode(PVMCPU pVCpu, uint64_t cr0, uint64_t cr4, uint64_t efer)
+VMMDECL(int) PGMChangeMode(PVMCPUCC pVCpu, uint64_t cr0, uint64_t cr4, uint64_t efer)
 {
     VMCPU_ASSERT_EMT(pVCpu);
 
@@ -3022,7 +3023,7 @@ static PGMMODE pgmCalcShadowMode(PVM pVM, PGMMODE enmGuestMode, SUPPAGINGMODE en
  * @param   enmGuestMode    The new guest mode. This is assumed to be different from
  *                          the current mode.
  */
-VMM_INT_DECL(int) PGMHCChangeMode(PVM pVM, PVMCPU pVCpu, PGMMODE enmGuestMode)
+VMM_INT_DECL(int) PGMHCChangeMode(PVMCC pVM, PVMCPUCC pVCpu, PGMMODE enmGuestMode)
 {
     Log(("PGMHCChangeMode: Guest mode: %s -> %s\n", PGMGetModeName(pVCpu->pgm.s.enmGuestMode), PGMGetModeName(enmGuestMode)));
     STAM_REL_COUNTER_INC(&pVCpu->pgm.s.cGuestModeChanges);
@@ -3182,7 +3183,7 @@ VMM_INT_DECL(int) PGMHCChangeMode(PVM pVM, PVMCPU pVCpu, PGMMODE enmGuestMode)
  * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @thread  EMT
  */
-VMMDECL(void) PGMCr0WpEnabled(PVMCPU pVCpu)
+VMMDECL(void) PGMCr0WpEnabled(PVMCPUCC pVCpu)
 {
     /*
      * Netware WP0+RO+US hack cleanup when WP0 -> WP1.
@@ -3663,7 +3664,7 @@ VMMDECL(unsigned) PGMAssertNoMappingConflicts(PVM pVM)
 
     /* Only applies to raw mode -> 1 VPCU */
     Assert(pVM->cCpus == 1);
-    PVMCPU pVCpu = &pVM->aCpus[0];
+    PVMCPU pVCpu = &VMCC_GET_CPU_0(pVM);
 
     /*
      * Check for mapping conflicts.
@@ -3703,7 +3704,7 @@ VMMDECL(unsigned) PGMAssertNoMappingConflicts(PVM pVM)
  * @param   cr3     The current guest CR3 register value.
  * @param   cr4     The current guest CR4 register value.
  */
-VMMDECL(unsigned) PGMAssertCR3(PVM pVM, PVMCPU pVCpu, uint64_t cr3, uint64_t cr4)
+VMMDECL(unsigned) PGMAssertCR3(PVMCC pVM, PVMCPUCC pVCpu, uint64_t cr3, uint64_t cr4)
 {
     STAM_PROFILE_START(&pVCpu->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,SyncCR3), a);
 

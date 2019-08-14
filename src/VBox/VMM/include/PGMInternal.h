@@ -2158,7 +2158,7 @@ typedef struct PGMPOOL
     /** The VM handle - R3 Ptr. */
     PVMR3                       pVMR3;
     /** The VM handle - R0 Ptr. */
-    PVMR0                       pVMR0;
+    R0PTRTYPE(PVMCC)            pVMR0;
     /** The max pool size. This includes the special IDs. */
     uint16_t                    cMaxPages;
     /** The current pool size. */
@@ -2853,13 +2853,13 @@ typedef struct PGMMODEDATAGST
 {
     /** The guest mode type. */
     uint32_t                        uType;
-    DECLCALLBACKMEMBER(int,         pfnGetPage)(PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys);
-    DECLCALLBACKMEMBER(int,         pfnModifyPage)(PVMCPU pVCpu, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask);
-    DECLCALLBACKMEMBER(int,         pfnGetPDE)(PVMCPU pVCpu, RTGCPTR GCPtr, PX86PDEPAE pPde);
-    DECLCALLBACKMEMBER(int,         pfnEnter)(PVMCPU pVCpu, RTGCPHYS GCPhysCR3);
-    DECLCALLBACKMEMBER(int,         pfnExit)(PVMCPU pVCpu);
+    DECLCALLBACKMEMBER(int,         pfnGetPage)(PVMCPUCC pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys);
+    DECLCALLBACKMEMBER(int,         pfnModifyPage)(PVMCPUCC pVCpu, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask);
+    DECLCALLBACKMEMBER(int,         pfnGetPDE)(PVMCPUCC pVCpu, RTGCPTR GCPtr, PX86PDEPAE pPde);
+    DECLCALLBACKMEMBER(int,         pfnEnter)(PVMCPUCC pVCpu, RTGCPHYS GCPhysCR3);
+    DECLCALLBACKMEMBER(int,         pfnExit)(PVMCPUCC pVCpu);
 #ifdef IN_RING3
-    DECLCALLBACKMEMBER(int,         pfnRelocate)(PVMCPU pVCpu, RTGCPTR offDelta); /**< Only in ring-3. */
+    DECLCALLBACKMEMBER(int,         pfnRelocate)(PVMCPUCC pVCpu, RTGCPTR offDelta); /**< Only in ring-3. */
 #endif
 } PGMMODEDATAGST;
 
@@ -2880,13 +2880,13 @@ typedef struct PGMMODEDATASHW
 {
     /** The shadow mode type. */
     uint32_t                        uType;
-    DECLCALLBACKMEMBER(int,         pfnGetPage)(PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys);
-    DECLCALLBACKMEMBER(int,         pfnModifyPage)(PVMCPU pVCpu, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags,
+    DECLCALLBACKMEMBER(int,         pfnGetPage)(PVMCPUCC pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys);
+    DECLCALLBACKMEMBER(int,         pfnModifyPage)(PVMCPUCC pVCpu, RTGCPTR GCPtr, size_t cbPages, uint64_t fFlags,
                                                    uint64_t fMask, uint32_t fOpFlags);
-    DECLCALLBACKMEMBER(int,         pfnEnter)(PVMCPU pVCpu, bool fIs64BitsPagingMode);
-    DECLCALLBACKMEMBER(int,         pfnExit)(PVMCPU pVCpu);
+    DECLCALLBACKMEMBER(int,         pfnEnter)(PVMCPUCC pVCpu, bool fIs64BitsPagingMode);
+    DECLCALLBACKMEMBER(int,         pfnExit)(PVMCPUCC pVCpu);
 #ifdef IN_RING3
-    DECLCALLBACKMEMBER(int,         pfnRelocate)(PVMCPU pVCpu, RTGCPTR offDelta); /**< Only in ring-3. */
+    DECLCALLBACKMEMBER(int,         pfnRelocate)(PVMCPUCC pVCpu, RTGCPTR offDelta); /**< Only in ring-3. */
 #endif
 } PGMMODEDATASHW;
 
@@ -2906,18 +2906,18 @@ typedef struct PGMMODEDATABTH
     /** The guest mode type. */
     uint32_t                        uGstType;
 
-    DECLCALLBACKMEMBER(int,         pfnInvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage);
-    DECLCALLBACKMEMBER(int,         pfnSyncCR3)(PVMCPU pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr4, bool fGlobal);
-    DECLCALLBACKMEMBER(int,         pfnPrefetchPage)(PVMCPU pVCpu, RTGCPTR GCPtrPage);
-    DECLCALLBACKMEMBER(int,         pfnVerifyAccessSyncPage)(PVMCPU pVCpu, RTGCPTR GCPtrPage, unsigned fFlags, unsigned uError);
-    DECLCALLBACKMEMBER(int,         pfnMapCR3)(PVMCPU pVCpu, RTGCPHYS GCPhysCR3);
-    DECLCALLBACKMEMBER(int,         pfnUnmapCR3)(PVMCPU pVCpu);
-    DECLCALLBACKMEMBER(int,         pfnEnter)(PVMCPU pVCpu, RTGCPHYS GCPhysCR3);
+    DECLCALLBACKMEMBER(int,         pfnInvalidatePage)(PVMCPUCC pVCpu, RTGCPTR GCPtrPage);
+    DECLCALLBACKMEMBER(int,         pfnSyncCR3)(PVMCPUCC pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr4, bool fGlobal);
+    DECLCALLBACKMEMBER(int,         pfnPrefetchPage)(PVMCPUCC pVCpu, RTGCPTR GCPtrPage);
+    DECLCALLBACKMEMBER(int,         pfnVerifyAccessSyncPage)(PVMCPUCC pVCpu, RTGCPTR GCPtrPage, unsigned fFlags, unsigned uError);
+    DECLCALLBACKMEMBER(int,         pfnMapCR3)(PVMCPUCC pVCpu, RTGCPHYS GCPhysCR3);
+    DECLCALLBACKMEMBER(int,         pfnUnmapCR3)(PVMCPUCC pVCpu);
+    DECLCALLBACKMEMBER(int,         pfnEnter)(PVMCPUCC pVCpu, RTGCPHYS GCPhysCR3);
 #ifndef IN_RING3
-    DECLCALLBACKMEMBER(int,         pfnTrap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, bool *pfLockTaken);
+    DECLCALLBACKMEMBER(int,         pfnTrap0eHandler)(PVMCPUCC pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, bool *pfLockTaken);
 #endif
 #ifdef VBOX_STRICT
-    DECLCALLBACKMEMBER(unsigned,    pfnAssertCR3)(PVMCPU pVCpu, uint64_t cr3, uint64_t cr4, RTGCPTR GCPtr, RTGCPTR cb);
+    DECLCALLBACKMEMBER(unsigned,    pfnAssertCR3)(PVMCPUCC pVCpu, uint64_t cr3, uint64_t cr4, RTGCPTR GCPtr, RTGCPTR cb);
 #endif
 } PGMMODEDATABTH;
 
@@ -3869,32 +3869,32 @@ DECLCALLBACK(void) pgmR3MapInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs
 int             pgmHandlerPhysicalExCreate(PVM pVM, PGMPHYSHANDLERTYPE hType, RTR3PTR pvUserR3, RTR0PTR pvUserR0,
                                            RTRCPTR pvUserRC, R3PTRTYPE(const char *) pszDesc, PPGMPHYSHANDLER *ppPhysHandler);
 int             pgmHandlerPhysicalExDup(PVM pVM, PPGMPHYSHANDLER pPhysHandlerSrc, PPGMPHYSHANDLER *ppPhysHandler);
-int             pgmHandlerPhysicalExRegister(PVM pVM, PPGMPHYSHANDLER pPhysHandler, RTGCPHYS GCPhys, RTGCPHYS GCPhysLast);
-int             pgmHandlerPhysicalExDeregister(PVM pVM, PPGMPHYSHANDLER pPhysHandler, int fRestoreAsRAM);
+int             pgmHandlerPhysicalExRegister(PVMCC pVM, PPGMPHYSHANDLER pPhysHandler, RTGCPHYS GCPhys, RTGCPHYS GCPhysLast);
+int             pgmHandlerPhysicalExDeregister(PVMCC pVM, PPGMPHYSHANDLER pPhysHandler, int fRestoreAsRAM);
 int             pgmHandlerPhysicalExDestroy(PVM pVM, PPGMPHYSHANDLER pHandler);
 void            pgmR3HandlerPhysicalUpdateAll(PVM pVM);
-bool            pgmHandlerPhysicalIsAll(PVM pVM, RTGCPHYS GCPhys);
-void            pgmHandlerPhysicalResetAliasedPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhysPage, bool fDoAccounting);
+bool            pgmHandlerPhysicalIsAll(PVMCC pVM, RTGCPHYS GCPhys);
+void            pgmHandlerPhysicalResetAliasedPage(PVMCC pVM, PPGMPAGE pPage, RTGCPHYS GCPhysPage, bool fDoAccounting);
 DECLCALLBACK(void) pgmR3InfoHandlers(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 int             pgmR3InitSavedState(PVM pVM, uint64_t cbRam);
 
-int             pgmPhysAllocPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys);
-int             pgmPhysAllocLargePage(PVM pVM, RTGCPHYS GCPhys);
-int             pgmPhysRecheckLargePage(PVM pVM, RTGCPHYS GCPhys, PPGMPAGE pLargePage);
-int             pgmPhysPageLoadIntoTlb(PVM pVM, RTGCPHYS GCPhys);
-int             pgmPhysPageLoadIntoTlbWithPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys);
-void            pgmPhysPageMakeWriteMonitoredWritable(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys);
-int             pgmPhysPageMakeWritable(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys);
-int             pgmPhysPageMakeWritableAndMap(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void **ppv);
-int             pgmPhysPageMap(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void **ppv);
-int             pgmPhysPageMapReadOnly(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void const **ppv);
-int             pgmPhysPageMapByPageID(PVM pVM, uint32_t idPage, RTHCPHYS HCPhys, void **ppv);
-int             pgmPhysGCPhys2R3Ptr(PVM pVM, RTGCPHYS GCPhys, PRTR3PTR pR3Ptr);
+int             pgmPhysAllocPage(PVMCC pVM, PPGMPAGE pPage, RTGCPHYS GCPhys);
+int             pgmPhysAllocLargePage(PVMCC pVM, RTGCPHYS GCPhys);
+int             pgmPhysRecheckLargePage(PVMCC pVM, RTGCPHYS GCPhys, PPGMPAGE pLargePage);
+int             pgmPhysPageLoadIntoTlb(PVMCC pVM, RTGCPHYS GCPhys);
+int             pgmPhysPageLoadIntoTlbWithPage(PVMCC pVM, PPGMPAGE pPage, RTGCPHYS GCPhys);
+void            pgmPhysPageMakeWriteMonitoredWritable(PVMCC pVM, PPGMPAGE pPage, RTGCPHYS GCPhys);
+int             pgmPhysPageMakeWritable(PVMCC pVM, PPGMPAGE pPage, RTGCPHYS GCPhys);
+int             pgmPhysPageMakeWritableAndMap(PVMCC pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void **ppv);
+int             pgmPhysPageMap(PVMCC pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void **ppv);
+int             pgmPhysPageMapReadOnly(PVMCC pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void const **ppv);
+int             pgmPhysPageMapByPageID(PVMCC pVM, uint32_t idPage, RTHCPHYS HCPhys, void **ppv);
+int             pgmPhysGCPhys2R3Ptr(PVMCC pVM, RTGCPHYS GCPhys, PRTR3PTR pR3Ptr);
 int             pgmPhysCr3ToHCPtr(PVM pVM, RTGCPHYS GCPhys, PRTR3PTR pR3Ptr);
-int             pgmPhysGCPhys2CCPtrInternalDepr(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void **ppv);
-int             pgmPhysGCPhys2CCPtrInternal(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void **ppv, PPGMPAGEMAPLOCK pLock);
-int             pgmPhysGCPhys2CCPtrInternalReadOnly(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, const void **ppv, PPGMPAGEMAPLOCK pLock);
-void            pgmPhysReleaseInternalPageMappingLock(PVM pVM, PPGMPAGEMAPLOCK pLock);
+int             pgmPhysGCPhys2CCPtrInternalDepr(PVMCC pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void **ppv);
+int             pgmPhysGCPhys2CCPtrInternal(PVMCC pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void **ppv, PPGMPAGEMAPLOCK pLock);
+int             pgmPhysGCPhys2CCPtrInternalReadOnly(PVMCC pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, const void **ppv, PPGMPAGEMAPLOCK pLock);
+void            pgmPhysReleaseInternalPageMappingLock(PVMCC pVM, PPGMPAGEMAPLOCK pLock);
 PGM_ALL_CB2_PROTO(FNPGMPHYSHANDLER) pgmPhysRomWriteHandler;
 #ifndef IN_RING3
 DECLEXPORT(FNPGMPHYSHANDLER)        pgmPhysHandlerRedirectToHC;
@@ -3949,10 +3949,10 @@ int             pgmPoolFlushPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage, bool fFlush
 void            pgmPoolFlushPageByGCPhys(PVM pVM, RTGCPHYS GCPhys);
 PPGMPOOLPAGE    pgmPoolGetPage(PPGMPOOL pPool, RTHCPHYS HCPhys);
 PPGMPOOLPAGE    pgmPoolQueryPageForDbg(PPGMPOOL pPool, RTHCPHYS HCPhys);
-int             pgmPoolSyncCR3(PVMCPU pVCpu);
+int             pgmPoolSyncCR3(PVMCPUCC pVCpu);
 bool            pgmPoolIsDirtyPageSlow(PVM pVM, RTGCPHYS GCPhys);
-void            pgmPoolInvalidateDirtyPage(PVM pVM, RTGCPHYS GCPhysPT);
-int             pgmPoolTrackUpdateGCPhys(PVM pVM, RTGCPHYS GCPhysPage, PPGMPAGE pPhysPage, bool fFlushPTEs, bool *pfFlushTLBs);
+void            pgmPoolInvalidateDirtyPage(PVMCC pVM, RTGCPHYS GCPhysPT);
+int             pgmPoolTrackUpdateGCPhys(PVMCC pVM, RTGCPHYS GCPhysPage, PPGMPAGE pPhysPage, bool fFlushPTEs, bool *pfFlushTLBs);
 void            pgmPoolTracDerefGCPhysHint(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTHCPHYS HCPhys, RTGCPHYS GCPhysHint, uint16_t iPte);
 uint16_t        pgmPoolTrackPhysExtAddref(PVM pVM, PPGMPAGE pPhysPage, uint16_t u16, uint16_t iShwPT, uint16_t iPte);
 void            pgmPoolTrackPhysExtDerefGCPhys(PPGMPOOL pPool, PPGMPOOLPAGE pPoolPage, PPGMPAGE pPhysPage, uint16_t iPte);
@@ -3963,8 +3963,8 @@ PGM_ALL_CB2_PROTO(FNPGMPHYSHANDLER) pgmPoolAccessHandler;
 DECLEXPORT(FNPGMRZPHYSPFHANDLER)    pgmRZPoolAccessPfHandler;
 #endif
 
-void            pgmPoolAddDirtyPage(PVM pVM, PPGMPOOL pPool, PPGMPOOLPAGE pPage);
-void            pgmPoolResetDirtyPages(PVM pVM);
+void            pgmPoolAddDirtyPage(PVMCC pVM, PPGMPOOL pPool, PPGMPOOLPAGE pPage);
+void            pgmPoolResetDirtyPages(PVMCC pVM);
 void            pgmPoolResetDirtyPage(PVM pVM, RTGCPTR GCPtrPage);
 
 int             pgmR3ExitShadowModeBeforePoolFlush(PVMCPU pVCpu);
@@ -3978,16 +3978,16 @@ int             pgmMapActivateCR3(PVM pVM, PPGMPOOLPAGE pShwPageCR3);
 int             pgmMapDeactivateCR3(PVM pVM, PPGMPOOLPAGE pShwPageCR3);
 #endif
 
-int             pgmShwMakePageSupervisorAndWritable(PVMCPU pVCpu, RTGCPTR GCPtr, bool fBigPage, uint32_t fOpFlags);
-int             pgmShwSyncPaePDPtr(PVMCPU pVCpu, RTGCPTR GCPtr, X86PGPAEUINT uGstPdpe, PX86PDPAE *ppPD);
-int             pgmShwSyncNestedPageLocked(PVMCPU pVCpu, RTGCPHYS GCPhysFault, uint32_t cPages, PGMMODE enmShwPagingMode);
+int             pgmShwMakePageSupervisorAndWritable(PVMCPUCC pVCpu, RTGCPTR GCPtr, bool fBigPage, uint32_t fOpFlags);
+int             pgmShwSyncPaePDPtr(PVMCPUCC pVCpu, RTGCPTR GCPtr, X86PGPAEUINT uGstPdpe, PX86PDPAE *ppPD);
+int             pgmShwSyncNestedPageLocked(PVMCPUCC pVCpu, RTGCPHYS GCPhysFault, uint32_t cPages, PGMMODE enmShwPagingMode);
 
-int             pgmGstLazyMap32BitPD(PVMCPU pVCpu, PX86PD *ppPd);
-int             pgmGstLazyMapPaePDPT(PVMCPU pVCpu, PX86PDPT *ppPdpt);
-int             pgmGstLazyMapPaePD(PVMCPU pVCpu, uint32_t iPdpt, PX86PDPAE *ppPd);
-int             pgmGstLazyMapPml4(PVMCPU pVCpu, PX86PML4 *ppPml4);
-int             pgmGstPtWalk(PVMCPU pVCpu, RTGCPTR GCPtr, PPGMPTWALKGST pWalk);
-int             pgmGstPtWalkNext(PVMCPU pVCpu, RTGCPTR GCPtr, PPGMPTWALKGST pWalk);
+int             pgmGstLazyMap32BitPD(PVMCPUCC pVCpu, PX86PD *ppPd);
+int             pgmGstLazyMapPaePDPT(PVMCPUCC pVCpu, PX86PDPT *ppPdpt);
+int             pgmGstLazyMapPaePD(PVMCPUCC pVCpu, uint32_t iPdpt, PX86PDPAE *ppPd);
+int             pgmGstLazyMapPml4(PVMCPUCC pVCpu, PX86PML4 *ppPml4);
+int             pgmGstPtWalk(PVMCPUCC pVCpu, RTGCPTR GCPtr, PPGMPTWALKGST pWalk);
+int             pgmGstPtWalkNext(PVMCPUCC pVCpu, RTGCPTR GCPtr, PPGMPTWALKGST pWalk);
 
 # if defined(VBOX_STRICT) && HC_ARCH_BITS == 64 && defined(IN_RING3)
 FNDBGCCMD       pgmR3CmdCheckDuplicatePages;

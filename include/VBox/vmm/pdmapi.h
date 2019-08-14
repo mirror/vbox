@@ -47,7 +47,7 @@ RT_C_DECLS_BEGIN
  * @{
  */
 
-VMMDECL(int)            PDMGetInterrupt(PVMCPU pVCpu, uint8_t *pu8Interrupt);
+VMMDECL(int)            PDMGetInterrupt(PVMCPUCC pVCpu, uint8_t *pu8Interrupt);
 VMMDECL(int)            PDMIsaSetIrq(PVM pVM, uint8_t u8Irq, uint8_t u8Level, uint32_t uTagSrc);
 VMM_INT_DECL(bool)      PDMHasIoApic(PVM pVM);
 VMM_INT_DECL(bool)      PDMHasApic(PVM pVM);

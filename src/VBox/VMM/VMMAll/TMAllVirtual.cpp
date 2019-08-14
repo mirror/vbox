@@ -19,6 +19,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define VBOX_BUGREF_9217_PART_I
 #define LOG_GROUP LOG_GROUP_TM
 #include <VBox/vmm/tm.h>
 #include <VBox/vmm/dbgftrace.h>
@@ -29,7 +30,7 @@
 # include <iprt/thread.h>
 #endif
 #include "TMInternal.h"
-#include <VBox/vmm/vm.h>
+#include <VBox/vmm/vmcc.h>
 #include <VBox/vmm/vmm.h>
 #include <VBox/err.h>
 #include <VBox/log.h>
@@ -213,7 +214,7 @@ DECLINLINE(uint64_t) tmVirtualGetRaw(PVM pVM)
 /**
  * Inlined version of tmVirtualGetEx.
  */
-DECLINLINE(uint64_t) tmVirtualGet(PVM pVM, bool fCheckTimers)
+DECLINLINE(uint64_t) tmVirtualGet(PVMCC pVM, bool fCheckTimers)
 {
     uint64_t u64;
     if (RT_LIKELY(pVM->tm.s.cVirtualTicking))
@@ -226,7 +227,7 @@ DECLINLINE(uint64_t) tmVirtualGet(PVM pVM, bool fCheckTimers)
          */
         if (fCheckTimers)
         {
-            PVMCPU pVCpuDst = &pVM->aCpus[pVM->tm.s.idTimerCpu];
+            PVMCPUCC pVCpuDst = VMCC_GET_CPU(pVM, pVM->tm.s.idTimerCpu);
             if (    !VMCPU_FF_IS_SET(pVCpuDst, VMCPU_FF_TIMER)
                 &&  !pVM->tm.s.fRunningQueues
                 &&  (   pVM->tm.s.CTX_SUFF(paTimerQueues)[TMCLOCK_VIRTUAL].u64Expire <= u64
@@ -266,7 +267,7 @@ DECLINLINE(uint64_t) tmVirtualGet(PVM pVM, bool fCheckTimers)
  *          influenced by power saving (SpeedStep, PowerNow!), while the former
  *          makes use of TSC and kernel timers.
  */
-VMM_INT_DECL(uint64_t) TMVirtualGet(PVM pVM)
+VMM_INT_DECL(uint64_t) TMVirtualGet(PVMCC pVM)
 {
     return tmVirtualGet(pVM, true /*fCheckTimers*/);
 }
@@ -283,7 +284,7 @@ VMM_INT_DECL(uint64_t) TMVirtualGet(PVM pVM)
  *
  * @remarks See TMVirtualGet.
  */
-VMM_INT_DECL(uint64_t) TMVirtualGetNoCheck(PVM pVM)
+VMM_INT_DECL(uint64_t) TMVirtualGetNoCheck(PVMCC pVM)
 {
     return tmVirtualGet(pVM, false /*fCheckTimers*/);
 }
@@ -315,7 +316,7 @@ DECLINLINE(uint64_t) tmVirtualVirtToNsDeadline(PVM pVM, uint64_t cVirtTicksToDea
  *                              the next virtual sync timer deadline. Can be
  *                              NULL.
  */
-DECLINLINE(uint64_t) tmVirtualSyncGetHandleCatchUpLocked(PVM pVM, uint64_t u64, uint64_t off, uint64_t *pcNsToDeadline)
+DECLINLINE(uint64_t) tmVirtualSyncGetHandleCatchUpLocked(PVMCC pVM, uint64_t u64, uint64_t off, uint64_t *pcNsToDeadline)
 {
     STAM_COUNTER_INC(&pVM->tm.s.StatVirtualSyncGetLocked);
 
@@ -393,7 +394,7 @@ DECLINLINE(uint64_t) tmVirtualSyncGetHandleCatchUpLocked(PVM pVM, uint64_t u64, 
         ASMAtomicWriteBool(&pVM->tm.s.fVirtualSyncTicking, false);
 
         VM_FF_SET(pVM, VM_FF_TM_VIRTUAL_SYNC);
-        PVMCPU pVCpuDst = &pVM->aCpus[pVM->tm.s.idTimerCpu];
+        PVMCPUCC pVCpuDst = VMCC_GET_CPU(pVM, pVM->tm.s.idTimerCpu);
         VMCPU_FF_SET(pVCpuDst, VMCPU_FF_TIMER);
         Log5(("TMAllVirtual(%u): FF: %d -> 1\n", __LINE__, VMCPU_FF_IS_SET(pVCpuDst, VMCPU_FF_TIMER)));
         Log4(("TM: %'RU64/-%'8RU64: exp tmr=>ff [vsghcul]\n", u64, pVM->tm.s.offVirtualSync - pVM->tm.s.offVirtualSyncGivenUp));
@@ -428,7 +429,7 @@ DECLINLINE(uint64_t) tmVirtualSyncGetHandleCatchUpLocked(PVM pVM, uint64_t u64, 
  *                              the next virtual sync timer deadline.  Can be
  *                              NULL.
  */
-DECLINLINE(uint64_t) tmVirtualSyncGetLocked(PVM pVM, uint64_t u64, uint64_t *pcNsToDeadline)
+DECLINLINE(uint64_t) tmVirtualSyncGetLocked(PVMCC pVM, uint64_t u64, uint64_t *pcNsToDeadline)
 {
     /*
      * Not ticking?
@@ -481,7 +482,7 @@ DECLINLINE(uint64_t) tmVirtualSyncGetLocked(PVM pVM, uint64_t u64, uint64_t *pcN
         ASMAtomicWriteBool(&pVM->tm.s.fVirtualSyncTicking, false);
 
         VM_FF_SET(pVM, VM_FF_TM_VIRTUAL_SYNC);
-        PVMCPU pVCpuDst = &pVM->aCpus[pVM->tm.s.idTimerCpu];
+        PVMCPUCC pVCpuDst = VMCC_GET_CPU(pVM, pVM->tm.s.idTimerCpu);
         VMCPU_FF_SET(pVCpuDst, VMCPU_FF_TIMER);
         Log5(("TMAllVirtual(%u): FF: %d -> 1\n", __LINE__, VMCPU_FF_IS_SET(pVCpuDst, VMCPU_FF_TIMER)));
         Log4(("TM: %'RU64/-%'8RU64: exp tmr=>ff [vsgl]\n", u64, pVM->tm.s.offVirtualSync - pVM->tm.s.offVirtualSyncGivenUp));
@@ -516,7 +517,7 @@ DECLINLINE(uint64_t) tmVirtualSyncGetLocked(PVM pVM, uint64_t u64, uint64_t *pcN
  *                              NULL.
  * @thread  EMT.
  */
-DECLINLINE(uint64_t) tmVirtualSyncGetEx(PVM pVM, bool fCheckTimers, uint64_t *pcNsToDeadline)
+DECLINLINE(uint64_t) tmVirtualSyncGetEx(PVMCC pVM, bool fCheckTimers, uint64_t *pcNsToDeadline)
 {
     STAM_COUNTER_INC(&pVM->tm.s.StatVirtualSyncGet);
 
@@ -537,7 +538,7 @@ DECLINLINE(uint64_t) tmVirtualSyncGetEx(PVM pVM, bool fCheckTimers, uint64_t *pc
     u64 = tmVirtualGetRaw(pVM);
     if (fCheckTimers)
     {
-        PVMCPU pVCpuDst = &pVM->aCpus[pVM->tm.s.idTimerCpu];
+        PVMCPUCC pVCpuDst = VMCC_GET_CPU(pVM, pVM->tm.s.idTimerCpu);
         if (    !VMCPU_FF_IS_SET(pVCpuDst, VMCPU_FF_TIMER)
             &&  pVM->tm.s.CTX_SUFF(paTimerQueues)[TMCLOCK_VIRTUAL].u64Expire <= u64)
         {
@@ -707,7 +708,7 @@ DECLINLINE(uint64_t) tmVirtualSyncGetEx(PVM pVM, bool fCheckTimers, uint64_t *pc
     uint64_t u64Expire = ASMAtomicReadU64(&pVM->tm.s.CTX_SUFF(paTimerQueues)[TMCLOCK_VIRTUAL_SYNC].u64Expire);
     if (u64 >= u64Expire)
     {
-        PVMCPU pVCpuDst = &pVM->aCpus[pVM->tm.s.idTimerCpu];
+        PVMCPUCC pVCpuDst = VMCC_GET_CPU(pVM, pVM->tm.s.idTimerCpu);
         if (!VMCPU_FF_IS_SET(pVCpuDst, VMCPU_FF_TIMER))
         {
             Log5(("TMAllVirtual(%u): FF: %d -> 1 (NoLock)\n", __LINE__, VMCPU_FF_IS_SET(pVCpuDst, VMCPU_FF_TIMER)));
@@ -751,7 +752,7 @@ DECLINLINE(uint64_t) tmVirtualSyncGetEx(PVM pVM, bool fCheckTimers, uint64_t *pc
  * @thread  EMT.
  * @remarks May set the timer and virtual sync FFs.
  */
-VMM_INT_DECL(uint64_t) TMVirtualSyncGet(PVM pVM)
+VMM_INT_DECL(uint64_t) TMVirtualSyncGet(PVMCC pVM)
 {
     return tmVirtualSyncGetEx(pVM, true /*fCheckTimers*/, NULL /*pcNsToDeadline*/);
 }
@@ -766,7 +767,7 @@ VMM_INT_DECL(uint64_t) TMVirtualSyncGet(PVM pVM)
  * @thread  EMT.
  * @remarks May set the timer and virtual sync FFs.
  */
-VMM_INT_DECL(uint64_t) TMVirtualSyncGetNoCheck(PVM pVM)
+VMM_INT_DECL(uint64_t) TMVirtualSyncGetNoCheck(PVMCC pVM)
 {
     return tmVirtualSyncGetEx(pVM, false /*fCheckTimers*/, NULL /*pcNsToDeadline*/);
 }
@@ -781,7 +782,7 @@ VMM_INT_DECL(uint64_t) TMVirtualSyncGetNoCheck(PVM pVM)
  * @thread  EMT.
  * @remarks May set the timer and virtual sync FFs.
  */
-VMM_INT_DECL(uint64_t) TMVirtualSyncGetEx(PVM pVM, bool fCheckTimers)
+VMM_INT_DECL(uint64_t) TMVirtualSyncGetEx(PVMCC pVM, bool fCheckTimers)
 {
     return tmVirtualSyncGetEx(pVM, fCheckTimers, NULL /*pcNsToDeadline*/);
 }
@@ -798,7 +799,7 @@ VMM_INT_DECL(uint64_t) TMVirtualSyncGetEx(PVM pVM, bool fCheckTimers)
  * @thread  EMT.
  * @remarks May set the timer and virtual sync FFs.
  */
-VMM_INT_DECL(uint64_t) TMVirtualSyncGetWithDeadlineNoCheck(PVM pVM, uint64_t *pcNsToDeadline)
+VMM_INT_DECL(uint64_t) TMVirtualSyncGetWithDeadlineNoCheck(PVMCC pVM, uint64_t *pcNsToDeadline)
 {
     uint64_t cNsToDeadlineTmp;       /* try convince the compiler to skip the if tests. */
     uint64_t u64Now = tmVirtualSyncGetEx(pVM, false /*fCheckTimers*/, &cNsToDeadlineTmp);
@@ -815,7 +816,7 @@ VMM_INT_DECL(uint64_t) TMVirtualSyncGetWithDeadlineNoCheck(PVM pVM, uint64_t *pc
  * @thread  EMT.
  * @remarks May set the timer and virtual sync FFs.
  */
-VMMDECL(uint64_t) TMVirtualSyncGetNsToDeadline(PVM pVM)
+VMMDECL(uint64_t) TMVirtualSyncGetNsToDeadline(PVMCC pVM)
 {
     uint64_t cNsToDeadline;
     tmVirtualSyncGetEx(pVM, false /*fCheckTimers*/, &cNsToDeadline);
@@ -829,7 +830,7 @@ VMMDECL(uint64_t) TMVirtualSyncGetNsToDeadline(PVM pVM)
  * @return  The current lag.
  * @param   pVM     The cross context VM structure.
  */
-VMM_INT_DECL(uint64_t) TMVirtualSyncGetLag(PVM pVM)
+VMM_INT_DECL(uint64_t) TMVirtualSyncGetLag(PVMCC pVM)
 {
     return pVM->tm.s.offVirtualSync - pVM->tm.s.offVirtualSyncGivenUp;
 }
@@ -841,7 +842,7 @@ VMM_INT_DECL(uint64_t) TMVirtualSyncGetLag(PVM pVM)
  * @return  The current catch0up percent. 0 means running at the same speed as the virtual clock.
  * @param   pVM     The cross context VM structure.
  */
-VMM_INT_DECL(uint32_t) TMVirtualSyncGetCatchUpPct(PVM pVM)
+VMM_INT_DECL(uint32_t) TMVirtualSyncGetCatchUpPct(PVMCC pVM)
 {
     if (pVM->tm.s.fVirtualSyncCatchUp)
         return pVM->tm.s.u32VirtualSyncCatchUpPercentage;

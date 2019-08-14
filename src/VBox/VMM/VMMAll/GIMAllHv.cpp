@@ -19,6 +19,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define VBOX_BUGREF_9217_PART_I
 #define LOG_GROUP LOG_GROUP_GIM
 #include <VBox/vmm/gim.h>
 #include <VBox/vmm/em.h>
@@ -32,7 +33,7 @@
 #include <VBox/vmm/em.h>
 #include "GIMHvInternal.h"
 #include "GIMInternal.h"
-#include <VBox/vmm/vm.h>
+#include <VBox/vmm/vmcc.h>
 
 #include <VBox/err.h>
 
@@ -146,7 +147,7 @@ static int gimHvReadSlowHypercallParamsInOut(PVM pVM, PCPUMCTX pCtx, bool fIs64B
  *
  * @thread  EMT(pVCpu).
  */
-VMM_INT_DECL(VBOXSTRICTRC) gimHvHypercall(PVMCPU pVCpu, PCPUMCTX pCtx)
+VMM_INT_DECL(VBOXSTRICTRC) gimHvHypercall(PVMCPUCC pVCpu, PCPUMCTX pCtx)
 {
     VMCPU_ASSERT_EMT(pVCpu);
 
@@ -161,7 +162,7 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvHypercall(PVMCPU pVCpu, PCPUMCTX pCtx)
     /*
      * Verify that hypercalls are enabled by the guest.
      */
-    if (!gimHvAreHypercallsEnabled(pVCpu))
+    if (!gimHvAreHypercallsEnabled(pVM))
         return VERR_GIM_HYPERCALLS_NOT_ENABLED;
 
     /*
@@ -409,11 +410,11 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvHypercall(PVMCPU pVCpu, PCPUMCTX pCtx)
  * hypercall interface.
  *
  * @returns true if hypercalls are enabled, false otherwise.
- * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pVM     The cross context VM structure.
  */
-VMM_INT_DECL(bool) gimHvAreHypercallsEnabled(PVMCPU pVCpu)
+VMM_INT_DECL(bool) gimHvAreHypercallsEnabled(PCVM pVM)
 {
-    return RT_BOOL(pVCpu->CTX_SUFF(pVM)->gim.s.u.Hv.u64GuestOsIdMsr != 0);
+    return RT_BOOL(pVM->gim.s.u.Hv.u64GuestOsIdMsr != 0);
 }
 
 
@@ -466,7 +467,7 @@ static const char *gimHvGetGuestOsIdVariantName(uint64_t uGuestOsIdMsr)
  * @returns The time reference count.
  * @param   pVCpu       The cross context virtual CPU structure.
  */
-DECLINLINE(uint64_t) gimHvGetTimeRefCount(PVMCPU pVCpu)
+DECLINLINE(uint64_t) gimHvGetTimeRefCount(PVMCPUCC pVCpu)
 {
     /* Hyper-V reports the time in 100 ns units (10 MHz). */
     VMCPU_ASSERT_EMT_OR_NOT_RUNNING(pVCpu);
@@ -488,7 +489,7 @@ DECLINLINE(uint64_t) gimHvGetTimeRefCount(PVMCPU pVCpu)
  * @remarks Caller needs to hold the timer critical section.
  * @thread  Any.
  */
-VMM_INT_DECL(void) gimHvStartStimer(PVMCPU pVCpu, PCGIMHVSTIMER pHvStimer)
+VMM_INT_DECL(void) gimHvStartStimer(PVMCPUCC pVCpu, PCGIMHVSTIMER pHvStimer)
 {
     PTMTIMER pTimer = pHvStimer->CTX_SUFF(pTimer);
     Assert(TMTimerIsLockOwner(pTimer));
@@ -532,7 +533,7 @@ VMM_INT_DECL(void) gimHvStartStimer(PVMCPU pVCpu, PCGIMHVSTIMER pHvStimer)
  * @remarks Caller needs to the hold the timer critical section.
  * @thread  EMT(pVCpu).
  */
-static void gimHvStopStimer(PVMCPU pVCpu, PGIMHVSTIMER pHvStimer)
+static void gimHvStopStimer(PVMCPUCC pVCpu, PGIMHVSTIMER pHvStimer)
 {
     VMCPU_ASSERT_EMT_OR_NOT_RUNNING(pVCpu);
     RT_NOREF(pVCpu);
@@ -560,10 +561,10 @@ static void gimHvStopStimer(PVMCPU pVCpu, PGIMHVSTIMER pHvStimer)
  *
  * @thread  EMT.
  */
-VMM_INT_DECL(VBOXSTRICTRC) gimHvReadMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
+VMM_INT_DECL(VBOXSTRICTRC) gimHvReadMsr(PVMCPUCC pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
     NOREF(pRange);
-    PVM     pVM = pVCpu->CTX_SUFF(pVM);
+    PVMCC   pVM = pVCpu->CTX_SUFF(pVM);
     PCGIMHV pHv = &pVM->gim.s.u.Hv;
 
     switch (idMsr)
@@ -735,7 +736,7 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvReadMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRR
  *
  * @thread  EMT.
  */
-VMM_INT_DECL(VBOXSTRICTRC) gimHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uRawValue)
+VMM_INT_DECL(VBOXSTRICTRC) gimHvWriteMsr(PVMCPUCC pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uRawValue)
 {
     NOREF(pRange);
     PVM    pVM = pVCpu->CTX_SUFF(pVM);
@@ -796,11 +797,11 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSR
              * Update EM on hypercall instruction enabled state.
              */
             if (uRawValue)
-                for (VMCPUID i = 0; i < pVM->cCpus; i++)
-                    EMSetHypercallInstructionsEnabled(&pVM->aCpus[i], true);
+                for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
+                    EMSetHypercallInstructionsEnabled(pVM->CTX_SUFF(apCpus)[idCpu], true);
             else
-                for (VMCPUID i = 0; i < pVM->cCpus; i++)
-                    EMSetHypercallInstructionsEnabled(&pVM->aCpus[i], false);
+                for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
+                    EMSetHypercallInstructionsEnabled(pVM->CTX_SUFF(apCpus)[idCpu], false);
 
             return VINF_SUCCESS;
 #endif /* IN_RING3 */
@@ -819,7 +820,7 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSR
             /* Hypercall page can only be enabled when the guest has enabled hypercalls. */
             bool fEnable = MSR_GIM_HV_HYPERCALL_PAGE_IS_ENABLED(uRawValue);
             if (   fEnable
-                && !gimHvAreHypercallsEnabled(pVCpu))
+                && !gimHvAreHypercallsEnabled(pVM))
             {
                 return VINF_SUCCESS;
             }
@@ -1390,7 +1391,7 @@ VMM_INT_DECL(bool) gimHvShouldTrapXcptUD(PVMCPU pVCpu)
  *
  * @thread  EMT(pVCpu).
  */
-VMM_INT_DECL(VBOXSTRICTRC) gimHvHypercallEx(PVMCPU pVCpu, PCPUMCTX pCtx, unsigned uDisOpcode, uint8_t cbInstr)
+VMM_INT_DECL(VBOXSTRICTRC) gimHvHypercallEx(PVMCPUCC pVCpu, PCPUMCTX pCtx, unsigned uDisOpcode, uint8_t cbInstr)
 {
     Assert(pVCpu);
     Assert(pCtx);
@@ -1433,7 +1434,7 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvHypercallEx(PVMCPU pVCpu, PCPUMCTX pCtx, unsigne
  *
  * @thread  EMT(pVCpu).
  */
-VMM_INT_DECL(VBOXSTRICTRC) gimHvXcptUD(PVMCPU pVCpu, PCPUMCTX pCtx, PDISCPUSTATE pDis, uint8_t *pcbInstr)
+VMM_INT_DECL(VBOXSTRICTRC) gimHvXcptUD(PVMCPUCC pVCpu, PCPUMCTX pCtx, PDISCPUSTATE pDis, uint8_t *pcbInstr)
 {
     VMCPU_ASSERT_EMT(pVCpu);
 

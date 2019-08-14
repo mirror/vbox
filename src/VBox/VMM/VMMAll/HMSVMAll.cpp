@@ -19,13 +19,14 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define VBOX_BUGREF_9217_PART_I
 #define LOG_GROUP LOG_GROUP_HM
 #define VMCPU_INCL_CPUM_GST_CTX
 #include "HMInternal.h"
 #include <VBox/vmm/apic.h>
 #include <VBox/vmm/gim.h>
 #include <VBox/vmm/iem.h>
-#include <VBox/vmm/vm.h>
+#include <VBox/vmm/vmcc.h>
 
 #include <VBox/err.h>
 
@@ -46,9 +47,10 @@
  * @retval VERR_NOT_FOUND if no patch record for this RIP could be found.
  * @retval VERR_SVM_UNEXPECTED_PATCH_TYPE if the found patch type is invalid.
  *
+ * @param   pVM                 The cross context VM structure.
  * @param   pVCpu               The cross context virtual CPU structure.
  */
-VMM_INT_DECL(int) hmEmulateSvmMovTpr(PVMCPU pVCpu)
+VMM_INT_DECL(int) hmEmulateSvmMovTpr(PVMCC pVM, PVMCPUCC pVCpu)
 {
     PCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
     Log4(("Emulated VMMCall TPR access replacement at RIP=%RGv\n", pCtx->rip));
@@ -58,7 +60,6 @@ VMM_INT_DECL(int) hmEmulateSvmMovTpr(PVMCPU pVCpu)
      * and the new RIP may be a patched instruction which needs emulation as well.
      */
     bool fPatchFound = false;
-    PVM  pVM = pVCpu->CTX_SUFF(pVM);
     for (;;)
     {
         PHMTPRPATCH pPatch = (PHMTPRPATCH)RTAvloU32Get(&pVM->hm.s.PatchTree, (AVLOU32KEY)pCtx->eip);
@@ -127,7 +128,7 @@ VMM_INT_DECL(int) hmEmulateSvmMovTpr(PVMCPU pVCpu)
  *
  * @sa      hmR0SvmVmRunCacheVmcb.
  */
-VMM_INT_DECL(void) HMNotifySvmNstGstVmexit(PVMCPU pVCpu, PCPUMCTX pCtx)
+VMM_INT_DECL(void) HMNotifySvmNstGstVmexit(PVMCPUCC pVCpu, PCPUMCTX pCtx)
 {
     PSVMNESTEDVMCBCACHE pVmcbNstGstCache = &pVCpu->hm.s.svm.NstGstVmcbCache;
     if (pVmcbNstGstCache->fCacheValid)
@@ -196,14 +197,14 @@ VMM_INT_DECL(bool) HMIsSvmVGifActive(PVM pVM)
  * @retval  VERR_NOT_FOUND if hypercall was _not_ handled.
  * @retval  VERR_SVM_UNEXPECTED_PATCH_TYPE on IPE.
  *
+ * @param   pVM                 The cross context VM structure.
  * @param   pVCpu               The cross context virtual CPU structure.
  */
-VMM_INT_DECL(int) HMHCMaybeMovTprSvmHypercall(PVMCPU pVCpu)
+VMM_INT_DECL(int) HMHCMaybeMovTprSvmHypercall(PVMCC pVM, PVMCPUCC pVCpu)
 {
-    PVM pVM = pVCpu->CTX_SUFF(pVM);
     if (pVM->hm.s.fTprPatchingAllowed)
     {
-        int rc = hmEmulateSvmMovTpr(pVCpu);
+        int rc = hmEmulateSvmMovTpr(pVM, pVCpu);
         if (RT_SUCCESS(rc))
             return VINF_SUCCESS;
         return rc;

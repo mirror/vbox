@@ -19,10 +19,11 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define VBOX_BUGREF_9217_PART_I
 #define LOG_GROUP LOG_GROUP_HM
 #define VMCPU_INCL_CPUM_GST_CTX
 #include "HMInternal.h"
-#include <VBox/vmm/vm.h>
+#include <VBox/vmm/vmcc.h>
 #include <VBox/vmm/pdmapi.h>
 #include <iprt/errcore.h>
 
@@ -656,6 +657,7 @@ static bool hmVmxIsStackSelectorOk(PCCPUMSELREG pSel)
  * Checks if the guest is in a suitable state for hardware-assisted VMX execution.
  *
  * @returns @c true if it is suitable, @c false otherwise.
+ * @param   pVM     The cross context VM structure.
  * @param   pVCpu   The cross context virtual CPU structure.
  * @param   pCtx    Pointer to the guest CPU context.
  *
@@ -664,9 +666,8 @@ static bool hmVmxIsStackSelectorOk(PCCPUMSELREG pSel)
  *          Secondly, if additional checks are added that require more of the CPU
  *          state, make sure REM (which supplies a partial state) is updated.
  */
-VMM_INT_DECL(bool) HMCanExecuteVmxGuest(PVMCPU pVCpu, PCCPUMCTX pCtx)
+VMM_INT_DECL(bool) HMCanExecuteVmxGuest(PVMCC pVM, PVMCPU pVCpu, PCCPUMCTX pCtx)
 {
-    PVM pVM = pVCpu->CTX_SUFF(pVM);
     Assert(HMIsEnabled(pVM));
     Assert(   ( pVM->hm.s.vmx.fUnrestrictedGuest && !pVM->hm.s.vmx.pRealModeTSS)
            || (!pVM->hm.s.vmx.fUnrestrictedGuest && pVM->hm.s.vmx.pRealModeTSS));

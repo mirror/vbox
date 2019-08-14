@@ -33,7 +33,7 @@
  * @param   u16Port             The port number.
  * @param   cbOperand           The operand size.
  */
-static VBOXSTRICTRC iemHlpCheckPortIOPermissionBitmap(PVMCPU pVCpu, uint16_t u16Port, uint8_t cbOperand)
+static VBOXSTRICTRC iemHlpCheckPortIOPermissionBitmap(PVMCPUCC pVCpu, uint16_t u16Port, uint8_t cbOperand)
 {
     /* The TSS bits we're interested in are the same on 386 and AMD64. */
     AssertCompile(AMD64_SEL_TYPE_SYS_TSS_BUSY  == X86_SEL_TYPE_SYS_386_TSS_BUSY);
@@ -123,7 +123,7 @@ static VBOXSTRICTRC iemHlpCheckPortIOPermissionBitmap(PVMCPU pVCpu, uint16_t u16
  * @param   u16Port             The port number.
  * @param   cbOperand           The operand size.
  */
-DECLINLINE(VBOXSTRICTRC) iemHlpCheckPortIOPermission(PVMCPU pVCpu, uint16_t u16Port, uint8_t cbOperand)
+DECLINLINE(VBOXSTRICTRC) iemHlpCheckPortIOPermission(PVMCPUCC pVCpu, uint16_t u16Port, uint8_t cbOperand)
 {
     X86EFLAGS Efl;
     Efl.u = IEMMISC_GET_EFL(pVCpu);
@@ -177,7 +177,7 @@ static bool iemHlpCalcParityFlag(uint8_t u8Result)
  * @param   fToUpdate           The flags to update.
  * @param   fUndefined          The flags that are specified as undefined.
  */
-static void iemHlpUpdateArithEFlagsU8(PVMCPU pVCpu, uint8_t u8Result, uint32_t fToUpdate, uint32_t fUndefined)
+static void iemHlpUpdateArithEFlagsU8(PVMCPUCC pVCpu, uint8_t u8Result, uint32_t fToUpdate, uint32_t fUndefined)
 {
     uint32_t fEFlags = pVCpu->cpum.GstCtx.eflags.u;
     iemAImpl_test_u8(&u8Result, u8Result, &fEFlags);
@@ -194,7 +194,7 @@ static void iemHlpUpdateArithEFlagsU8(PVMCPU pVCpu, uint8_t u8Result, uint32_t f
  * @param   fToUpdate           The flags to update.
  * @param   fUndefined          The flags that are specified as undefined.
  */
-static void iemHlpUpdateArithEFlagsU16(PVMCPU pVCpu, uint16_t u16Result, uint32_t fToUpdate, uint32_t fUndefined)
+static void iemHlpUpdateArithEFlagsU16(PVMCPUCC pVCpu, uint16_t u16Result, uint32_t fToUpdate, uint32_t fUndefined)
 {
     uint32_t fEFlags = pVCpu->cpum.GstCtx.eflags.u;
     iemAImpl_test_u16(&u16Result, u16Result, &fEFlags);
@@ -210,7 +210,7 @@ static void iemHlpUpdateArithEFlagsU16(PVMCPU pVCpu, uint16_t u16Result, uint32_
  * @param   uCpl                The new CPL.
  * @param   pSReg               Pointer to the segment register.
  */
-static void iemHlpAdjustSelectorForNewCpl(PVMCPU pVCpu, uint8_t uCpl, PCPUMSELREG pSReg)
+static void iemHlpAdjustSelectorForNewCpl(PVMCPUCC pVCpu, uint8_t uCpl, PCPUMSELREG pSReg)
 {
     Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, pSReg));
     IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_SREG_MASK);
@@ -228,7 +228,7 @@ static void iemHlpAdjustSelectorForNewCpl(PVMCPU pVCpu, uint8_t uCpl, PCPUMSELRE
  *
  * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  */
-DECLINLINE(void) iemHlpUsedFpu(PVMCPU pVCpu)
+DECLINLINE(void) iemHlpUsedFpu(PVMCPUCC pVCpu)
 {
     CPUMSetChangedFlags(pVCpu, CPUM_CHANGED_FPU_REM);
 }
@@ -3853,7 +3853,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret, IEMMODE, enmEffOpSize)
 }
 
 
-static void iemLoadallSetSelector(PVMCPU pVCpu, uint8_t iSegReg, uint16_t uSel)
+static void iemLoadallSetSelector(PVMCPUCC pVCpu, uint8_t iSegReg, uint16_t uSel)
 {
     PCPUMSELREGHID  pHid = iemSRegGetHid(pVCpu, iSegReg);
 
@@ -3863,7 +3863,7 @@ static void iemLoadallSetSelector(PVMCPU pVCpu, uint8_t iSegReg, uint16_t uSel)
 }
 
 
-static void iemLoadall286SetDescCache(PVMCPU pVCpu, uint8_t iSegReg, uint8_t const *pbMem)
+static void iemLoadall286SetDescCache(PVMCPUCC pVCpu, uint8_t iSegReg, uint8_t const *pbMem)
 {
     PCPUMSELREGHID  pHid = iemSRegGetHid(pVCpu, iSegReg);
 
@@ -4538,7 +4538,7 @@ IEM_CIMPL_DEF_5(iemCImpl_load_SReg_Greg,
  * @param   fAllowSysDesc       Whether system descriptors are OK or not.
  * @param   pDesc               Where to return the descriptor on success.
  */
-static VBOXSTRICTRC iemCImpl_LoadDescHelper(PVMCPU pVCpu, uint16_t uSel, bool fAllowSysDesc, PIEMSELDESC pDesc)
+static VBOXSTRICTRC iemCImpl_LoadDescHelper(PVMCPUCC pVCpu, uint16_t uSel, bool fAllowSysDesc, PIEMSELDESC pDesc)
 {
     pDesc->Long.au64[0] = 0;
     pDesc->Long.au64[1] = 0;
@@ -7765,7 +7765,7 @@ struct IEMCIMPLCX16ARGS
  * @callback_method_impl{FNVMMEMTRENDEZVOUS,
  *                       Worker for iemCImpl_cmpxchg16b_fallback_rendezvous}
  */
-static DECLCALLBACK(VBOXSTRICTRC) iemCImpl_cmpxchg16b_fallback_rendezvous_callback(PVM pVM, PVMCPU pVCpu, void *pvUser)
+static DECLCALLBACK(VBOXSTRICTRC) iemCImpl_cmpxchg16b_fallback_rendezvous_callback(PVM pVM, PVMCPUCC pVCpu, void *pvUser)
 {
     RT_NOREF(pVM, pVCpu);
     struct IEMCIMPLCX16ARGS *pArgs = (struct IEMCIMPLCX16ARGS *)pvUser;
@@ -8624,7 +8624,7 @@ IEM_CIMPL_DEF_2(iemCImpl_ldmxcsr, uint8_t, iEffSeg, RTGCPTR, GCPtrEff)
  * @param   enmEffOpSize    The effective operand size.
  * @param   uPtr            Where to store the state.
  */
-static void iemCImplCommonFpuStoreEnv(PVMCPU pVCpu, IEMMODE enmEffOpSize, RTPTRUNION uPtr)
+static void iemCImplCommonFpuStoreEnv(PVMCPUCC pVCpu, IEMMODE enmEffOpSize, RTPTRUNION uPtr)
 {
     IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_CR0 | CPUMCTX_EXTRN_X87);
     PCX86FXSTATE pSrcX87 = &pVCpu->cpum.GstCtx.CTX_SUFF(pXState)->x87;
@@ -8689,7 +8689,7 @@ static void iemCImplCommonFpuStoreEnv(PVMCPU pVCpu, IEMMODE enmEffOpSize, RTPTRU
  * @param   enmEffOpSize    The effective operand size.
  * @param   uPtr                Where to store the state.
  */
-static void iemCImplCommonFpuRestoreEnv(PVMCPU pVCpu, IEMMODE enmEffOpSize, RTCPTRUNION uPtr)
+static void iemCImplCommonFpuRestoreEnv(PVMCPUCC pVCpu, IEMMODE enmEffOpSize, RTCPTRUNION uPtr)
 {
     IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_CR0 | CPUMCTX_EXTRN_X87);
     PX86FXSTATE pDstX87 = &pVCpu->cpum.GstCtx.CTX_SUFF(pXState)->x87;

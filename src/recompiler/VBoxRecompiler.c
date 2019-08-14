@@ -966,10 +966,10 @@ REMR3DECL(int) REMR3EmulateInstruction(PVM pVM, PVMCPU pVCpu)
         /*
          * Now we set the execute single instruction flag and enter the cpu_exec loop.
          */
-        TMNotifyStartOfExecution(pVCpu);
+        TMNotifyStartOfExecution(pVM, pVCpu);
         pVM->rem.s.Env.interrupt_request = CPU_INTERRUPT_SINGLE_INSTR;
         rc = cpu_exec(&pVM->rem.s.Env);
-        TMNotifyEndOfExecution(pVCpu);
+        TMNotifyEndOfExecution(pVM, pVCpu);
         switch (rc)
         {
             /*
@@ -1123,7 +1123,7 @@ static int remR3RunLoggingStep(PVM pVM, PVMCPU pVCpu)
         /*
          * Execute the instruction.
          */
-        TMNotifyStartOfExecution(pVCpu);
+        TMNotifyStartOfExecution(pVM, pVCpu);
 
         if (   pVM->rem.s.Env.exception_index < 0
             || pVM->rem.s.Env.exception_index > 256)
@@ -1150,7 +1150,7 @@ static int remR3RunLoggingStep(PVM pVM, PVMCPU pVCpu)
                     pVM->rem.s.Env.exception_index
                     );
 
-        TMNotifyEndOfExecution(pVCpu);
+        TMNotifyEndOfExecution(pVM, pVCpu);
 
         switch (rc)
         {
@@ -1297,9 +1297,9 @@ REMR3DECL(int) REMR3Run(PVM pVM, PVMCPU pVCpu)
     Assert(pVM->rem.s.fInREM);
     Log2(("REMR3Run: (cs:eip=%04x:%RGv)\n", pVM->rem.s.Env.segs[R_CS].selector, (RTGCPTR)pVM->rem.s.Env.eip));
 
-    TMNotifyStartOfExecution(pVCpu);
+    TMNotifyStartOfExecution(pVM, pVCpu);
     rc = cpu_exec(&pVM->rem.s.Env);
-    TMNotifyEndOfExecution(pVCpu);
+    TMNotifyEndOfExecution(pVM, pVCpu);
     switch (rc)
     {
         /*

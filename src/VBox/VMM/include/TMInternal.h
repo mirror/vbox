@@ -185,7 +185,7 @@ typedef struct TMTIMER
     /** Pointer to the VM the timer belongs to - R3 Ptr. */
     PVMR3                   pVMR3;
     /** Pointer to the VM the timer belongs to - R0 Ptr. */
-    PVMR0                   pVMR0;
+    R0PTRTYPE(PVMCC)        pVMR0;
     /** Pointer to the VM the timer belongs to - RC Ptr. */
     PVMRC                   pVMRC;
     /** The timer frequency hint.  This is 0 if not hint was given. */
@@ -783,10 +783,10 @@ void                    tmTimerQueuesSanityChecks(PVM pVM, const char *pszWhere)
 #endif
 
 uint64_t                tmR3CpuTickGetRawVirtualNoCheck(PVM pVM);
-int                     tmCpuTickPause(PVMCPU pVCpu);
-int                     tmCpuTickPauseLocked(PVM pVM, PVMCPU pVCpu);
-int                     tmCpuTickResume(PVM pVM, PVMCPU pVCpu);
-int                     tmCpuTickResumeLocked(PVM pVM, PVMCPU pVCpu);
+int                     tmCpuTickPause(PVMCPUCC pVCpu);
+int                     tmCpuTickPauseLocked(PVMCC pVM, PVMCPUCC pVCpu);
+int                     tmCpuTickResume(PVMCC pVM, PVMCPUCC pVCpu);
+int                     tmCpuTickResumeLocked(PVMCC pVM, PVMCPUCC pVCpu);
 
 int                     tmVirtualPauseLocked(PVM pVM);
 int                     tmVirtualResumeLocked(PVM pVM);

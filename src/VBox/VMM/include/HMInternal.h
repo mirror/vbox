@@ -1191,7 +1191,7 @@ DECLASM(int)                hmR0SVMRunWrapXMM(RTHCPHYS pVmcbHostPhys, RTHCPHYS p
 DECLASM(void)               hmR0MdsClear(void);
 #endif /* IN_RING0 */
 
-VMM_INT_DECL(int)           hmEmulateSvmMovTpr(PVMCPU pVCpu);
+VMM_INT_DECL(int)           hmEmulateSvmMovTpr(PVMCC pVM, PVMCPUCC pVCpu);
 
 VMM_INT_DECL(PVMXVMCSINFO)  hmGetVmxActiveVmcsInfo(PVMCPU pVCpu);
 

@@ -103,7 +103,7 @@ typedef struct GVMCPU
         struct NEMR0PERVCPU s;
 # endif
         uint8_t             padding[64];
-    } nem;
+    } nemr0;
 #endif
 
 #ifdef VBOX_BUGREF_9217
@@ -125,7 +125,7 @@ AssertCompileSizeAlignment(GVMCPU,           4096);
 #else
 AssertCompileMemberOffset(GVMCPU, gvmm,      64);
 # ifdef VBOX_WITH_NEM_R0
-AssertCompileMemberOffset(GVMCPU, nem,       64 + 64);
+AssertCompileMemberOffset(GVMCPU, nemr0,     64 + 64);
 AssertCompileSize(        GVMCPU,            64 + 64 + 64);
 # else
 AssertCompileSize(        GVMCPU,            64 + 64);
@@ -176,11 +176,7 @@ typedef struct GVM
 #endif
     /** Number of Virtual CPUs, i.e. how many entries there are in aCpus.
      * Same same as VM::cCpus. */
-#ifdef VBOX_BUGREF_9217
-    uint32_t        cCpusSafe;
-#else
     uint32_t        cCpus;
-#endif
     /** Padding so gvmm starts on a 64 byte boundrary.   */
 #ifdef VBOX_BUGREF_9217
     uint8_t         abPadding[HC_ARCH_BITS == 32 ? 12 + 28 + 4 : 28 + 8];
@@ -214,7 +210,7 @@ typedef struct GVM
         struct NEMR0PERVM   s;
 # endif
         uint8_t             padding[256];
-    } nem;
+    } nemr0;
 #endif
 
     /** The RAWPCIVM per vm data. */
@@ -253,7 +249,7 @@ AssertCompileSizeAlignment(GVM,             4096);
 AssertCompileMemberOffset(GVM, gvmm,        64);
 AssertCompileMemberOffset(GVM, gmm,         64 + 256);
 # ifdef VBOX_WITH_NEM_R0
-AssertCompileMemberOffset(GVM, nem,         64 + 256 + 512);
+AssertCompileMemberOffset(GVM, nemr0,       64 + 256 + 512);
 AssertCompileMemberOffset(GVM, rawpci,      64 + 256 + 512 + 256);
 AssertCompileMemberOffset(GVM, aCpus,       64 + 256 + 512 + 256 + 64 + sizeof(PGVMCPU) * VMM_MAX_CPU_COUNT);
 # else

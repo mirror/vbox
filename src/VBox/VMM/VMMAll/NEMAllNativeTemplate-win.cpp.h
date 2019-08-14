@@ -1311,7 +1311,7 @@ NEM_TMPL_STATIC int nemHCWinGetRegister(PVMCPU pVCpu, PGVMCPU pGVCpu, uint32_t e
     AssertPtrReturn(pInput, VERR_INTERNAL_ERROR_3);
     AssertReturn(g_pfnHvlInvokeHypercall, VERR_NEM_MISSING_KERNEL_API);
 
-    pInput->PartitionId = pGVCpu->pGVM->nem.s.idHvPartition;
+    pInput->PartitionId = pGVCpu->pGVM->nemr0.s.idHvPartition;
     pInput->VpIndex     = pGVCpu->idCpu;
     pInput->fFlags      = 0;
     pInput->Names[0]    = (HV_REGISTER_NAME)enmReg;
@@ -3743,9 +3743,9 @@ static NTSTATUS nemR0NtPerformIoCtlMessageSlotHandleAndGetNext(PGVM pGVM, PGVMCP
     pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext.iCpu     = pGVCpu->idCpu;
     pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext.fFlags   = fFlags;
     pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext.cMillies = cMillies;
-    NTSTATUS rcNt = nemR0NtPerformIoControl(pGVM, pGVM->nem.s.IoCtlMessageSlotHandleAndGetNext.uFunction,
+    NTSTATUS rcNt = nemR0NtPerformIoControl(pGVM, pGVM->nemr0.s.IoCtlMessageSlotHandleAndGetNext.uFunction,
                                             &pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext,
-                                            pGVM->nem.s.IoCtlMessageSlotHandleAndGetNext.cbInput,
+                                            pGVM->nemr0.s.IoCtlMessageSlotHandleAndGetNext.cbInput,
                                             NULL, 0);
     if (rcNt == STATUS_SUCCESS)
     { /* likely */ }
@@ -3767,9 +3767,9 @@ static NTSTATUS nemR0NtPerformIoCtlMessageSlotHandleAndGetNext(PGVM pGVM, PGVMCP
         pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext.iCpu     = pVCpu->idCpu;
         pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext.fFlags   = fFlags & ~VID_MSHAGN_F_HANDLE_MESSAGE;
         pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext.cMillies = cMillies;
-        rcNt = nemR0NtPerformIoControl(pGVM, pGVM->nem.s.IoCtlMessageSlotHandleAndGetNext.uFunction,
+        rcNt = nemR0NtPerformIoControl(pGVM, pGVM->nemr0.s.IoCtlMessageSlotHandleAndGetNext.uFunction,
                                        &pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext,
-                                       pGVM->nem.s.IoCtlMessageSlotHandleAndGetNext.cbInput,
+                                       pGVM->nemr0.s.IoCtlMessageSlotHandleAndGetNext.cbInput,
                                        NULL, 0);
         DBGFTRACE_CUSTOM(pVCpu->CTX_SUFF(pVM), "IoCtlMessageSlotHandleAndGetNextRestart/2 %#x", rcNt);
     }
@@ -3812,7 +3812,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinStopCpu(PVM pVM, PVMCPU pVCpu, VBOXSTRICTRC
     DBGFTRACE_CUSTOM(pVM, "nemStop#0");
 # ifdef IN_RING0
     pVCpu->nem.s.uIoCtlBuf.idCpu = pGVCpu->idCpu;
-    NTSTATUS rcNt = nemR0NtPerformIoControl(pGVM, pGVM->nem.s.IoCtlStopVirtualProcessor.uFunction,
+    NTSTATUS rcNt = nemR0NtPerformIoControl(pGVM, pGVM->nemr0.s.IoCtlStopVirtualProcessor.uFunction,
                                             &pVCpu->nem.s.uIoCtlBuf.idCpu, sizeof(pVCpu->nem.s.uIoCtlBuf.idCpu),
                                             NULL, 0);
     if (NT_SUCCESS(rcNt))
@@ -4197,7 +4197,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinRunGC(PVM pVM, PVMCPU pVCpu, PGVM pGVM, PGV
             {
 #  ifdef IN_RING0
                 pVCpu->nem.s.uIoCtlBuf.idCpu = pGVCpu->idCpu;
-                NTSTATUS rcNt = nemR0NtPerformIoControl(pGVM, pGVM->nem.s.IoCtlStartVirtualProcessor.uFunction,
+                NTSTATUS rcNt = nemR0NtPerformIoControl(pGVM, pGVM->nemr0.s.IoCtlStartVirtualProcessor.uFunction,
                                                         &pVCpu->nem.s.uIoCtlBuf.idCpu, sizeof(pVCpu->nem.s.uIoCtlBuf.idCpu),
                                                         NULL, 0);
                 LogFlow(("NEM/%u: IoCtlStartVirtualProcessor -> %#x\n", pVCpu->idCpu, rcNt));
@@ -4234,9 +4234,9 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinRunGC(PVM pVM, PVMCPU pVCpu, PGVM pGVM, PGV
                 pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext.iCpu     = pGVCpu->idCpu;
                 pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext.fFlags   = pVCpu->nem.s.fHandleAndGetFlags;
                 pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext.cMillies = cMsWait;
-                NTSTATUS rcNt = nemR0NtPerformIoControl(pGVM, pGVM->nem.s.IoCtlMessageSlotHandleAndGetNext.uFunction,
+                NTSTATUS rcNt = nemR0NtPerformIoControl(pGVM, pGVM->nemr0.s.IoCtlMessageSlotHandleAndGetNext.uFunction,
                                                         &pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext,
-                                                        pGVM->nem.s.IoCtlMessageSlotHandleAndGetNext.cbInput,
+                                                        pGVM->nemr0.s.IoCtlMessageSlotHandleAndGetNext.cbInput,
                                                         NULL, 0);
                 VMCPU_CMPXCHG_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC_NEM, VMCPUSTATE_STARTED_EXEC_NEM_WAIT);
                 if (rcNt == STATUS_SUCCESS)

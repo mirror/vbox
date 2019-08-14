@@ -241,13 +241,13 @@ typedef struct VMM2USERMETHODS
 #endif
 
 
-VMMDECL(VMCPUID)            VMMGetCpuId(PVM pVM);
-VMMDECL(PVMCPU)             VMMGetCpu(PVM pVM);
-VMMDECL(PVMCPU)             VMMGetCpu0(PVM pVM);
-VMMDECL(PVMCPU)             VMMGetCpuById(PVM pVM, VMCPUID idCpu);
-VMMR3DECL(PVMCPU)           VMMR3GetCpuByIdU(PUVM pVM, VMCPUID idCpu);
+VMMDECL(VMCPUID)            VMMGetCpuId(PVMCC pVM);
+VMMDECL(PVMCPUCC)           VMMGetCpu(PVMCC pVM);
+VMMDECL(PVMCPUCC)           VMMGetCpu0(PVMCC pVM);
+VMMDECL(PVMCPUCC)           VMMGetCpuById(PVMCC pVM, VMCPUID idCpu);
+VMMR3DECL(PVMCPUCC)         VMMR3GetCpuByIdU(PUVM pVM, VMCPUID idCpu);
 VMM_INT_DECL(uint32_t)      VMMGetSvnRev(void);
-VMM_INT_DECL(bool)          VMMIsInRing3Call(PVMCPU pVCpu);
+VMM_INT_DECL(bool)          VMMIsInRing3Call(PVMCPUCC pVCpu);
 VMM_INT_DECL(void)          VMMTrashVolatileXMMRegs(void);
 
 

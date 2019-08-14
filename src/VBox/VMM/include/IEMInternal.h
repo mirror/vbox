@@ -1654,7 +1654,7 @@ typedef IEMOPMEDIAF1H1 const *PCIEMOPMEDIAF1H1;
  * @param   a_Name              The name of the type.
  */
 # define IEM_CIMPL_DECL_TYPE_0(a_Name) \
-    IEM_DECL_IMPL_TYPE(VBOXSTRICTRC, a_Name, (PVMCPU pVCpu, uint8_t cbInstr))
+    IEM_DECL_IMPL_TYPE(VBOXSTRICTRC, a_Name, (PVMCPUCC pVCpu, uint8_t cbInstr))
 /**
  * For defining a C instruction implementation function taking no extra
  * arguments.
@@ -1662,7 +1662,7 @@ typedef IEMOPMEDIAF1H1 const *PCIEMOPMEDIAF1H1;
  * @param   a_Name              The name of the function
  */
 # define IEM_CIMPL_DEF_0(a_Name) \
-    IEM_DECL_IMPL_DEF(VBOXSTRICTRC, a_Name, (PVMCPU pVCpu, uint8_t cbInstr))
+    IEM_DECL_IMPL_DEF(VBOXSTRICTRC, a_Name, (PVMCPUCC pVCpu, uint8_t cbInstr))
 /**
  * For calling a C instruction implementation function taking no extra
  * arguments.
@@ -1683,7 +1683,7 @@ typedef IEMOPMEDIAF1H1 const *PCIEMOPMEDIAF1H1;
  * @param   a_Arg0              The argument name.
  */
 # define IEM_CIMPL_DECL_TYPE_1(a_Name, a_Type0, a_Arg0) \
-    IEM_DECL_IMPL_TYPE(VBOXSTRICTRC, a_Name, (PVMCPU pVCpu, uint8_t cbInstr, a_Type0 a_Arg0))
+    IEM_DECL_IMPL_TYPE(VBOXSTRICTRC, a_Name, (PVMCPUCC pVCpu, uint8_t cbInstr, a_Type0 a_Arg0))
 /**
  * For defining a C instruction implementation function taking one extra
  * argument.
@@ -1693,7 +1693,7 @@ typedef IEMOPMEDIAF1H1 const *PCIEMOPMEDIAF1H1;
  * @param   a_Arg0              The argument name.
  */
 # define IEM_CIMPL_DEF_1(a_Name, a_Type0, a_Arg0) \
-    IEM_DECL_IMPL_DEF(VBOXSTRICTRC, a_Name, (PVMCPU pVCpu, uint8_t cbInstr, a_Type0 a_Arg0))
+    IEM_DECL_IMPL_DEF(VBOXSTRICTRC, a_Name, (PVMCPUCC pVCpu, uint8_t cbInstr, a_Type0 a_Arg0))
 /**
  * For calling a C instruction implementation function taking one extra
  * argument.
@@ -1717,7 +1717,7 @@ typedef IEMOPMEDIAF1H1 const *PCIEMOPMEDIAF1H1;
  * @param   a_Arg1              The name of the 2nd argument.
  */
 # define IEM_CIMPL_DECL_TYPE_2(a_Name, a_Type0, a_Arg0, a_Type1, a_Arg1) \
-    IEM_DECL_IMPL_TYPE(VBOXSTRICTRC, a_Name, (PVMCPU pVCpu, uint8_t cbInstr, a_Type0 a_Arg0, a_Type1 a_Arg1))
+    IEM_DECL_IMPL_TYPE(VBOXSTRICTRC, a_Name, (PVMCPUCC pVCpu, uint8_t cbInstr, a_Type0 a_Arg0, a_Type1 a_Arg1))
 /**
  * For defining a C instruction implementation function taking two extra
  * arguments.
@@ -1729,7 +1729,7 @@ typedef IEMOPMEDIAF1H1 const *PCIEMOPMEDIAF1H1;
  * @param   a_Arg1              The name of the 2nd argument.
  */
 # define IEM_CIMPL_DEF_2(a_Name, a_Type0, a_Arg0, a_Type1, a_Arg1) \
-    IEM_DECL_IMPL_DEF(VBOXSTRICTRC, a_Name, (PVMCPU pVCpu, uint8_t cbInstr, a_Type0 a_Arg0, a_Type1 a_Arg1))
+    IEM_DECL_IMPL_DEF(VBOXSTRICTRC, a_Name, (PVMCPUCC pVCpu, uint8_t cbInstr, a_Type0 a_Arg0, a_Type1 a_Arg1))
 /**
  * For calling a C instruction implementation function taking two extra
  * arguments.
@@ -1756,7 +1756,7 @@ typedef IEMOPMEDIAF1H1 const *PCIEMOPMEDIAF1H1;
  * @param   a_Arg2              The name of the 3rd argument.
  */
 # define IEM_CIMPL_DECL_TYPE_3(a_Name, a_Type0, a_Arg0, a_Type1, a_Arg1, a_Type2, a_Arg2) \
-    IEM_DECL_IMPL_TYPE(VBOXSTRICTRC, a_Name, (PVMCPU pVCpu, uint8_t cbInstr, a_Type0 a_Arg0, a_Type1 a_Arg1, a_Type2 a_Arg2))
+    IEM_DECL_IMPL_TYPE(VBOXSTRICTRC, a_Name, (PVMCPUCC pVCpu, uint8_t cbInstr, a_Type0 a_Arg0, a_Type1 a_Arg1, a_Type2 a_Arg2))
 /**
  * For defining a C instruction implementation function taking three extra
  * arguments.
@@ -1770,7 +1770,7 @@ typedef IEMOPMEDIAF1H1 const *PCIEMOPMEDIAF1H1;
  * @param   a_Arg2              The name of the 3rd argument.
  */
 # define IEM_CIMPL_DEF_3(a_Name, a_Type0, a_Arg0, a_Type1, a_Arg1, a_Type2, a_Arg2) \
-    IEM_DECL_IMPL_DEF(VBOXSTRICTRC, a_Name, (PVMCPU pVCpu, uint8_t cbInstr, a_Type0 a_Arg0, a_Type1 a_Arg1, a_Type2 a_Arg2))
+    IEM_DECL_IMPL_DEF(VBOXSTRICTRC, a_Name, (PVMCPUCC pVCpu, uint8_t cbInstr, a_Type0 a_Arg0, a_Type1 a_Arg1, a_Type2 a_Arg2))
 /**
  * For calling a C instruction implementation function taking three extra
  * arguments.
@@ -1801,7 +1801,7 @@ typedef IEMOPMEDIAF1H1 const *PCIEMOPMEDIAF1H1;
  * @param   a_Arg3              The name of the 4th argument.
  */
 # define IEM_CIMPL_DECL_TYPE_4(a_Name, a_Type0, a_Arg0, a_Type1, a_Arg1, a_Type2, a_Arg2, a_Type3, a_Arg3) \
-    IEM_DECL_IMPL_TYPE(VBOXSTRICTRC, a_Name, (PVMCPU pVCpu, uint8_t cbInstr, a_Type0 a_Arg0, a_Type1 a_Arg1, a_Type2 a_Arg2, a_Type3 a_Arg3))
+    IEM_DECL_IMPL_TYPE(VBOXSTRICTRC, a_Name, (PVMCPUCC pVCpu, uint8_t cbInstr, a_Type0 a_Arg0, a_Type1 a_Arg1, a_Type2 a_Arg2, a_Type3 a_Arg3))
 /**
  * For defining a C instruction implementation function taking four extra
  * arguments.
@@ -1817,7 +1817,7 @@ typedef IEMOPMEDIAF1H1 const *PCIEMOPMEDIAF1H1;
  * @param   a_Arg3              The name of the 4th argument.
  */
 # define IEM_CIMPL_DEF_4(a_Name, a_Type0, a_Arg0, a_Type1, a_Arg1, a_Type2, a_Arg2, a_Type3, a_Arg3) \
-    IEM_DECL_IMPL_DEF(VBOXSTRICTRC, a_Name, (PVMCPU pVCpu, uint8_t cbInstr, a_Type0 a_Arg0, a_Type1 a_Arg1, \
+    IEM_DECL_IMPL_DEF(VBOXSTRICTRC, a_Name, (PVMCPUCC pVCpu, uint8_t cbInstr, a_Type0 a_Arg0, a_Type1 a_Arg1, \
                                              a_Type2 a_Arg2, a_Type3 a_Arg3))
 /**
  * For calling a C instruction implementation function taking four extra
@@ -1852,7 +1852,7 @@ typedef IEMOPMEDIAF1H1 const *PCIEMOPMEDIAF1H1;
  * @param   a_Arg4              The name of the 5th argument.
  */
 # define IEM_CIMPL_DECL_TYPE_5(a_Name, a_Type0, a_Arg0, a_Type1, a_Arg1, a_Type2, a_Arg2, a_Type3, a_Arg3, a_Type4, a_Arg4) \
-    IEM_DECL_IMPL_TYPE(VBOXSTRICTRC, a_Name, (PVMCPU pVCpu, uint8_t cbInstr, \
+    IEM_DECL_IMPL_TYPE(VBOXSTRICTRC, a_Name, (PVMCPUCC pVCpu, uint8_t cbInstr, \
                                                a_Type0 a_Arg0, a_Type1 a_Arg1, a_Type2 a_Arg2, \
                                                a_Type3 a_Arg3, a_Type4 a_Arg4))
 /**
@@ -1872,7 +1872,7 @@ typedef IEMOPMEDIAF1H1 const *PCIEMOPMEDIAF1H1;
  * @param   a_Arg4              The name of the 5th argument.
  */
 # define IEM_CIMPL_DEF_5(a_Name, a_Type0, a_Arg0, a_Type1, a_Arg1, a_Type2, a_Arg2, a_Type3, a_Arg3, a_Type4, a_Arg4) \
-    IEM_DECL_IMPL_DEF(VBOXSTRICTRC, a_Name, (PVMCPU pVCpu, uint8_t cbInstr, \
+    IEM_DECL_IMPL_DEF(VBOXSTRICTRC, a_Name, (PVMCPUCC pVCpu, uint8_t cbInstr, \
                                              a_Type0 a_Arg0, a_Type1 a_Arg1, a_Type2 a_Arg2, \
                                              a_Type3 a_Arg3, a_Type4 a_Arg4))
 /**

@@ -84,10 +84,10 @@ typedef enum TMCLOCK
 /** @} */
 
 
-VMMDECL(void)           TMNotifyStartOfExecution(PVMCPU pVCpu);
-VMMDECL(void)           TMNotifyEndOfExecution(PVMCPU pVCpu);
-VMM_INT_DECL(void)      TMNotifyStartOfHalt(PVMCPU pVCpu);
-VMM_INT_DECL(void)      TMNotifyEndOfHalt(PVMCPU pVCpu);
+VMMDECL(void)           TMNotifyStartOfExecution(PVMCC pVM, PVMCPUCC pVCpu);
+VMMDECL(void)           TMNotifyEndOfExecution(PVMCC pVM, PVMCPUCC pVCpu);
+VMM_INT_DECL(void)      TMNotifyStartOfHalt(PVMCPUCC pVCpu);
+VMM_INT_DECL(void)      TMNotifyEndOfHalt(PVMCPUCC pVCpu);
 #ifdef IN_RING3
 VMMR3DECL(int)          TMR3NotifySuspend(PVM pVM, PVMCPU pVCpu);
 VMMR3DECL(int)          TMR3NotifyResume(PVM pVM, PVMCPU pVCpu);
@@ -114,16 +114,16 @@ VMM_INT_DECL(uint64_t)  TMRealGetFreq(PVM pVM);
 /** @name Virtual Clock Methods
  * @{
  */
-VMM_INT_DECL(uint64_t)  TMVirtualGet(PVM pVM);
-VMM_INT_DECL(uint64_t)  TMVirtualGetNoCheck(PVM pVM);
-VMM_INT_DECL(uint64_t)  TMVirtualSyncGetLag(PVM pVM);
-VMM_INT_DECL(uint32_t)  TMVirtualSyncGetCatchUpPct(PVM pVM);
+VMM_INT_DECL(uint64_t)  TMVirtualGet(PVMCC pVM);
+VMM_INT_DECL(uint64_t)  TMVirtualGetNoCheck(PVMCC pVM);
+VMM_INT_DECL(uint64_t)  TMVirtualSyncGetLag(PVMCC pVM);
+VMM_INT_DECL(uint32_t)  TMVirtualSyncGetCatchUpPct(PVMCC pVM);
 VMM_INT_DECL(uint64_t)  TMVirtualGetFreq(PVM pVM);
-VMM_INT_DECL(uint64_t)  TMVirtualSyncGet(PVM pVM);
-VMM_INT_DECL(uint64_t)  TMVirtualSyncGetNoCheck(PVM pVM);
-VMM_INT_DECL(uint64_t)  TMVirtualSyncGetEx(PVM pVM, bool fCheckTimers);
-VMM_INT_DECL(uint64_t)  TMVirtualSyncGetWithDeadlineNoCheck(PVM pVM, uint64_t *pcNsToDeadline);
-VMMDECL(uint64_t)       TMVirtualSyncGetNsToDeadline(PVM pVM);
+VMM_INT_DECL(uint64_t)  TMVirtualSyncGet(PVMCC pVM);
+VMM_INT_DECL(uint64_t)  TMVirtualSyncGetNoCheck(PVMCC pVM);
+VMM_INT_DECL(uint64_t)  TMVirtualSyncGetEx(PVMCC pVM, bool fCheckTimers);
+VMM_INT_DECL(uint64_t)  TMVirtualSyncGetWithDeadlineNoCheck(PVMCC pVM, uint64_t *pcNsToDeadline);
+VMMDECL(uint64_t)       TMVirtualSyncGetNsToDeadline(PVMCC pVM);
 VMM_INT_DECL(uint64_t)  TMVirtualToNano(PVM pVM, uint64_t u64VirtualTicks);
 VMM_INT_DECL(uint64_t)  TMVirtualToMicro(PVM pVM, uint64_t u64VirtualTicks);
 VMM_INT_DECL(uint64_t)  TMVirtualToMilli(PVM pVM, uint64_t u64VirtualTicks);
@@ -142,15 +142,15 @@ VMMR3DECL(uint64_t)     TMR3TimeVirtGetNano(PUVM pUVM);
 /** @name CPU Clock Methods
  * @{
  */
-VMMDECL(uint64_t)       TMCpuTickGet(PVMCPU pVCpu);
-VMM_INT_DECL(uint64_t)  TMCpuTickGetNoCheck(PVMCPU pVCpu);
-VMM_INT_DECL(bool)      TMCpuTickCanUseRealTSC(PVM pVM, PVMCPU pVCpu, uint64_t *poffRealTSC, bool *pfParavirtTsc);
-VMM_INT_DECL(uint64_t)  TMCpuTickGetDeadlineAndTscOffset(PVM pVM, PVMCPU pVCpu, uint64_t *poffRealTSC, bool *pfOffsettedTsc, bool *pfParavirtTsc);
-VMM_INT_DECL(int)       TMCpuTickSet(PVM pVM, PVMCPU pVCpu, uint64_t u64Tick);
-VMM_INT_DECL(int)       TMCpuTickSetLastSeen(PVMCPU pVCpu, uint64_t u64LastSeenTick);
-VMM_INT_DECL(uint64_t)  TMCpuTickGetLastSeen(PVMCPU pVCpu);
-VMMDECL(uint64_t)       TMCpuTicksPerSecond(PVM pVM);
-VMM_INT_DECL(bool)      TMCpuTickIsTicking(PVMCPU pVCpu);
+VMMDECL(uint64_t)       TMCpuTickGet(PVMCPUCC pVCpu);
+VMM_INT_DECL(uint64_t)  TMCpuTickGetNoCheck(PVMCPUCC pVCpu);
+VMM_INT_DECL(bool)      TMCpuTickCanUseRealTSC(PVMCC pVM, PVMCPUCC pVCpu, uint64_t *poffRealTSC, bool *pfParavirtTsc);
+VMM_INT_DECL(uint64_t)  TMCpuTickGetDeadlineAndTscOffset(PVMCC pVM, PVMCPUCC pVCpu, uint64_t *poffRealTSC, bool *pfOffsettedTsc, bool *pfParavirtTsc);
+VMM_INT_DECL(int)       TMCpuTickSet(PVMCC pVM, PVMCPUCC pVCpu, uint64_t u64Tick);
+VMM_INT_DECL(int)       TMCpuTickSetLastSeen(PVMCPUCC pVCpu, uint64_t u64LastSeenTick);
+VMM_INT_DECL(uint64_t)  TMCpuTickGetLastSeen(PVMCPUCC pVCpu);
+VMMDECL(uint64_t)       TMCpuTicksPerSecond(PVMCC pVM);
+VMM_INT_DECL(bool)      TMCpuTickIsTicking(PVMCPUCC pVCpu);
 /** @} */
 
 
@@ -249,9 +249,9 @@ VMMDECL(uint64_t)       TMTimerFromNano(PTMTIMER pTimer, uint64_t cNanoSecs);
 VMMDECL(uint64_t)       TMTimerFromMicro(PTMTIMER pTimer, uint64_t cMicroSecs);
 VMMDECL(uint64_t)       TMTimerFromMilli(PTMTIMER pTimer, uint64_t cMilliSecs);
 
-VMMDECL(bool)           TMTimerPollBool(PVM pVM, PVMCPU pVCpu);
-VMM_INT_DECL(void)      TMTimerPollVoid(PVM pVM, PVMCPU pVCpu);
-VMM_INT_DECL(uint64_t)  TMTimerPollGIP(PVM pVM, PVMCPU pVCpu, uint64_t *pu64Delta);
+VMMDECL(bool)           TMTimerPollBool(PVMCC pVM, PVMCPUCC pVCpu);
+VMM_INT_DECL(void)      TMTimerPollVoid(PVMCC pVM, PVMCPUCC pVCpu);
+VMM_INT_DECL(uint64_t)  TMTimerPollGIP(PVMCC pVM, PVMCPUCC pVCpu, uint64_t *pu64Delta);
 /** @} */
 
 

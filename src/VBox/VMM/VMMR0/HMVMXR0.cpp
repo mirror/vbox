@@ -10533,7 +10533,7 @@ static void hmR0VmxPreRunGuestCommitted(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransien
 
     STAM_PROFILE_ADV_STOP_START(&pVCpu->hm.s.StatEntry, &pVCpu->hm.s.StatInGC, x);
 
-    TMNotifyStartOfExecution(pVCpu);                            /* Notify TM to resume its clocks when TSC is tied to execution,
+    TMNotifyStartOfExecution(pVM, pVCpu);                       /* Notify TM to resume its clocks when TSC is tied to execution,
                                                                    as we're about to start executing the guest . */
 
     /*
@@ -10613,7 +10613,7 @@ static void hmR0VmxPostRunGuest(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient, int r
     }
 
     STAM_PROFILE_ADV_STOP_START(&pVCpu->hm.s.StatInGC, &pVCpu->hm.s.StatPreExit, x);
-    TMNotifyEndOfExecution(pVCpu);                                      /* Notify TM that the guest is no longer running. */
+    TMNotifyEndOfExecution(pVCpu->CTX_SUFF(pVM), pVCpu);                /* Notify TM that the guest is no longer running. */
     VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_HM);
 
     pVCpu->hm.s.vmx.fRestoreHostFlags |= VMX_RESTORE_HOST_REQUIRED;     /* Some host state messed up by VMX needs restoring. */
@@ -13800,7 +13800,7 @@ static VBOXSTRICTRC hmR0VmxExitXcptGP(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
              * guest using hardware-assisted VMX. Otherwise, fall back to emulation.
              */
             pVmcsInfo->RealMode.fRealOnV86Active = false;
-            if (HMCanExecuteVmxGuest(pVCpu, pCtx))
+            if (HMCanExecuteVmxGuest(pVCpu->pVMR0, pVCpu, pCtx))
             {
                 Log4Func(("Mode changed but guest still suitable for executing using hardware-assisted VMX\n"));
                 ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_ALL_GUEST);

@@ -54,7 +54,7 @@
 #include "../include/REMInternal.h"
 #include "../VMMR0/GMMR0Internal.h"
 #include "../VMMR0/GVMMR0Internal.h"
-#include <VBox/vmm/vm.h>
+#include <VBox/vmm/vmcc.h>
 #ifdef IN_RING3
 # include <VBox/vmm/uvm.h>
 #endif

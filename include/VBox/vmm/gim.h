@@ -188,14 +188,14 @@ VMMR3DECL(PGIMMMIO2REGION)  GIMR3GetMmio2Regions(PVM pVM, uint32_t *pcRegions);
 VMMDECL(bool)               GIMIsEnabled(PVM pVM);
 VMMDECL(GIMPROVIDERID)      GIMGetProvider(PVM pVM);
 VMM_INT_DECL(bool)          GIMIsParavirtTscEnabled(PVM pVM);
-VMM_INT_DECL(bool)          GIMAreHypercallsEnabled(PVMCPU pVCpu);
-VMM_INT_DECL(VBOXSTRICTRC)  GIMHypercall(PVMCPU pVCpu, PCPUMCTX pCtx);
-VMM_INT_DECL(VBOXSTRICTRC)  GIMHypercallEx(PVMCPU pVCpu, PCPUMCTX pCtx, unsigned uDisOpcode, uint8_t cbInstr);
-VMM_INT_DECL(VBOXSTRICTRC)  GIMExecHypercallInstr(PVMCPU pVCpu, PCPUMCTX pCtx, uint8_t *pcbInstr);
-VMM_INT_DECL(VBOXSTRICTRC)  GIMXcptUD(PVMCPU pVCpu, PCPUMCTX pCtx, PDISCPUSTATE pDis, uint8_t *pcbInstr);
-VMM_INT_DECL(bool)          GIMShouldTrapXcptUD(PVMCPU pVCpu);
-VMM_INT_DECL(VBOXSTRICTRC)  GIMReadMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue);
-VMM_INT_DECL(VBOXSTRICTRC)  GIMWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue);
+VMM_INT_DECL(bool)          GIMAreHypercallsEnabled(PVMCPUCC pVCpu);
+VMM_INT_DECL(VBOXSTRICTRC)  GIMHypercall(PVMCPUCC pVCpu, PCPUMCTX pCtx);
+VMM_INT_DECL(VBOXSTRICTRC)  GIMHypercallEx(PVMCPUCC pVCpu, PCPUMCTX pCtx, unsigned uDisOpcode, uint8_t cbInstr);
+VMM_INT_DECL(VBOXSTRICTRC)  GIMExecHypercallInstr(PVMCPUCC pVCpu, PCPUMCTX pCtx, uint8_t *pcbInstr);
+VMM_INT_DECL(VBOXSTRICTRC)  GIMXcptUD(PVMCPUCC pVCpu, PCPUMCTX pCtx, PDISCPUSTATE pDis, uint8_t *pcbInstr);
+VMM_INT_DECL(bool)          GIMShouldTrapXcptUD(PVMCPUCC pVCpu);
+VMM_INT_DECL(VBOXSTRICTRC)  GIMReadMsr(PVMCPUCC pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue);
+VMM_INT_DECL(VBOXSTRICTRC)  GIMWriteMsr(PVMCPUCC pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue);
 VMM_INT_DECL(int)           GIMQueryHypercallOpcodeBytes(PVM pVM, void *pvBuf, size_t cbBuf,
                                                          size_t *pcbWritten, uint16_t *puDisOpcode);
 /** @} */
