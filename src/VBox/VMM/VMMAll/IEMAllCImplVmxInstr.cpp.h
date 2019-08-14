@@ -5418,8 +5418,7 @@ IEM_STATIC int iemVmxVmentryCheckGuestRipRFlags(PVMCPU pVCpu, const char *pszIns
             IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_GuestRFlagsVm);
     }
 
-    if (   VMX_ENTRY_INT_INFO_IS_VALID(pVmcs->u32EntryIntInfo)
-        && VMX_ENTRY_INT_INFO_TYPE(pVmcs->u32EntryIntInfo) == VMX_ENTRY_INT_INFO_TYPE_EXT_INT)
+    if (VMX_ENTRY_INT_INFO_IS_EXT_INT(pVmcs->u32EntryIntInfo))
     {
         if (uGuestRFlags & X86_EFL_IF)
         { /* likely */ }
@@ -5476,20 +5475,20 @@ IEM_STATIC int iemVmxVmentryCheckGuestNonRegState(PVMCPU pVCpu,  const char *psz
 
     if (VMX_ENTRY_INT_INFO_IS_VALID(pVmcs->u32EntryIntInfo))
     {
-        uint8_t const uIntType = VMX_ENTRY_INT_INFO_TYPE(pVmcs->u32EntryIntInfo);
-        uint8_t const uVector  = VMX_ENTRY_INT_INFO_VECTOR(pVmcs->u32EntryIntInfo);
+        uint8_t const uType   = VMX_ENTRY_INT_INFO_TYPE(pVmcs->u32EntryIntInfo);
+        uint8_t const uVector = VMX_ENTRY_INT_INFO_VECTOR(pVmcs->u32EntryIntInfo);
         AssertCompile(VMX_V_GUEST_ACTIVITY_STATE_MASK == (VMX_VMCS_GUEST_ACTIVITY_HLT | VMX_VMCS_GUEST_ACTIVITY_SHUTDOWN));
         switch (pVmcs->u32GuestActivityState)
         {
             case VMX_VMCS_GUEST_ACTIVITY_HLT:
             {
-                if (   uIntType == VMX_ENTRY_INT_INFO_TYPE_EXT_INT
-                    || uIntType == VMX_ENTRY_INT_INFO_TYPE_NMI
-                    || (   uIntType == VMX_ENTRY_INT_INFO_TYPE_HW_XCPT
+                if (   uType == VMX_ENTRY_INT_INFO_TYPE_EXT_INT
+                    || uType == VMX_ENTRY_INT_INFO_TYPE_NMI
+                    || (   uType == VMX_ENTRY_INT_INFO_TYPE_HW_XCPT
                         && (   uVector == X86_XCPT_DB
                             || uVector == X86_XCPT_MC))
-                    || (   uIntType == VMX_ENTRY_INT_INFO_TYPE_OTHER_EVENT
-                        && uVector  == VMX_ENTRY_INT_INFO_VECTOR_MTF))
+                    || (   uType   == VMX_ENTRY_INT_INFO_TYPE_OTHER_EVENT
+                        && uVector == VMX_ENTRY_INT_INFO_VECTOR_MTF))
                 { /* likely */ }
                 else
                     IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_GuestActStateHlt);
@@ -5498,8 +5497,8 @@ IEM_STATIC int iemVmxVmentryCheckGuestNonRegState(PVMCPU pVCpu,  const char *psz
 
             case VMX_VMCS_GUEST_ACTIVITY_SHUTDOWN:
             {
-                if (   uIntType == VMX_ENTRY_INT_INFO_TYPE_NMI
-                    || (   uIntType == VMX_ENTRY_INT_INFO_TYPE_HW_XCPT
+                if (   uType == VMX_ENTRY_INT_INFO_TYPE_NMI
+                    || (   uType   == VMX_ENTRY_INT_INFO_TYPE_HW_XCPT
                         && uVector == X86_XCPT_MC))
                 { /* likely */ }
                 else
@@ -5535,15 +5534,15 @@ IEM_STATIC int iemVmxVmentryCheckGuestNonRegState(PVMCPU pVCpu,  const char *psz
 
     if (VMX_ENTRY_INT_INFO_IS_VALID(pVmcs->u32EntryIntInfo))
     {
-        uint8_t const uIntType = VMX_ENTRY_INT_INFO_TYPE(pVmcs->u32EntryIntInfo);
-        if (uIntType == VMX_ENTRY_INT_INFO_TYPE_EXT_INT)
+        uint8_t const uType = VMX_ENTRY_INT_INFO_TYPE(pVmcs->u32EntryIntInfo);
+        if (uType == VMX_ENTRY_INT_INFO_TYPE_EXT_INT)
         {
             if (!(pVmcs->u32GuestIntrState & (VMX_VMCS_GUEST_INT_STATE_BLOCK_MOVSS | VMX_VMCS_GUEST_INT_STATE_BLOCK_STI)))
             { /* likely */ }
             else
                 IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_GuestIntStateExtInt);
         }
-        else if (uIntType == VMX_ENTRY_INT_INFO_TYPE_NMI)
+        else if (uType == VMX_ENTRY_INT_INFO_TYPE_NMI)
         {
             if (!(pVmcs->u32GuestIntrState & (VMX_VMCS_GUEST_INT_STATE_BLOCK_MOVSS | VMX_VMCS_GUEST_INT_STATE_BLOCK_STI)))
             { /* likely */ }
@@ -6996,7 +6995,6 @@ IEM_STATIC void iemVmxVmentrySetupPreemptTimer(PVMCPU pVCpu, const char *pszInst
  * Injects an event using TRPM given a VM-entry interruption info. and related
  * fields.
  *
- * @returns VBox status code.
  * @param   pVCpu               The cross context virtual CPU structure.
  * @param   uEntryIntInfo       The VM-entry interruption info.
  * @param   uErrCode            The error code associated with the event if any.
@@ -7005,7 +7003,7 @@ IEM_STATIC void iemVmxVmentrySetupPreemptTimer(PVMCPU pVCpu, const char *pszInst
  *                              otherwise.
  * @param   GCPtrFaultAddress   The guest CR2 if this is a \#PF event.
  */
-IEM_STATIC int iemVmxVmentryInjectTrpmEvent(PVMCPU pVCpu, uint32_t uEntryIntInfo, uint32_t uErrCode, uint32_t cbInstr,
+IEM_STATIC void iemVmxVmentryInjectTrpmEvent(PVMCPU pVCpu, uint32_t uEntryIntInfo, uint32_t uErrCode, uint32_t cbInstr,
                                             RTGCUINTPTR GCPtrFaultAddress)
 {
     Assert(VMX_ENTRY_INT_INFO_IS_VALID(uEntryIntInfo));
@@ -7015,18 +7013,21 @@ IEM_STATIC int iemVmxVmentryInjectTrpmEvent(PVMCPU pVCpu, uint32_t uEntryIntInfo
     TRPMEVENT const enmTrpmEvent = HMVmxEventTypeToTrpmEventType(uEntryIntInfo);
 
     int rc = TRPMAssertTrap(pVCpu, uVector, enmTrpmEvent);
-    if (RT_SUCCESS(rc))
-    {
-        if (VMX_ENTRY_INT_INFO_IS_ERROR_CODE_VALID(uEntryIntInfo))
-            TRPMSetErrorCode(pVCpu, uErrCode);
+    AssertRC(rc);
 
-        if (VMX_ENTRY_INT_INFO_IS_XCPT_PF(uEntryIntInfo))
-            TRPMSetFaultAddress(pVCpu, GCPtrFaultAddress);
-        else if (VMX_ENTRY_INT_INFO_TYPE(uEntryIntInfo) == VMX_ENTRY_INT_INFO_TYPE_SW_INT)
+    if (VMX_ENTRY_INT_INFO_IS_ERROR_CODE_VALID(uEntryIntInfo))
+        TRPMSetErrorCode(pVCpu, uErrCode);
+
+    if (VMX_ENTRY_INT_INFO_IS_XCPT_PF(uEntryIntInfo))
+        TRPMSetFaultAddress(pVCpu, GCPtrFaultAddress);
+    else
+    {
+        uint8_t const uType = VMX_ENTRY_INT_INFO_TYPE(uEntryIntInfo);
+        if (   uType == VMX_ENTRY_INT_INFO_TYPE_SW_INT
+            || uType == VMX_ENTRY_INT_INFO_TYPE_SW_XCPT
+            || uType == VMX_ENTRY_INT_INFO_TYPE_PRIV_SW_XCPT)
             TRPMSetInstrLength(pVCpu, cbInstr);
     }
-
-    return rc;
 }
 
 
@@ -7036,7 +7037,7 @@ IEM_STATIC int iemVmxVmentryInjectTrpmEvent(PVMCPU pVCpu, uint32_t uEntryIntInfo
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pszInstr    The VMX instruction name (for logging purposes).
  */
-IEM_STATIC int iemVmxVmentryInjectEvent(PVMCPU pVCpu, const char *pszInstr)
+IEM_STATIC void iemVmxVmentryInjectEvent(PVMCPU pVCpu, const char *pszInstr)
 {
     PVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
 
@@ -7055,19 +7056,14 @@ IEM_STATIC int iemVmxVmentryInjectEvent(PVMCPU pVCpu, const char *pszInstr)
     pVCpu->cpum.GstCtx.hwvirt.vmx.fInterceptEvents = !fEntryIntInfoValid;
     if (fEntryIntInfoValid)
     {
-        int rc;
-        uint8_t const uType = VMX_ENTRY_INT_INFO_TYPE(uEntryIntInfo);
-        if (uType == VMX_ENTRY_INT_INFO_TYPE_OTHER_EVENT)
+        if (VMX_ENTRY_INT_INFO_TYPE(uEntryIntInfo) == VMX_ENTRY_INT_INFO_TYPE_OTHER_EVENT)
         {
             Assert(VMX_ENTRY_INT_INFO_VECTOR(uEntryIntInfo) == VMX_ENTRY_INT_INFO_VECTOR_MTF);
             VMCPU_FF_SET(pVCpu, VMCPU_FF_VMX_MTF);
-            rc = VINF_SUCCESS;
         }
         else
-        {
-            rc = iemVmxVmentryInjectTrpmEvent(pVCpu, uEntryIntInfo, pVmcs->u32EntryXcptErrCode, pVmcs->u32EntryInstrLen,
-                                              pVCpu->cpum.GstCtx.cr2);
-        }
+            iemVmxVmentryInjectTrpmEvent(pVCpu, uEntryIntInfo, pVmcs->u32EntryXcptErrCode, pVmcs->u32EntryInstrLen,
+                                         pVCpu->cpum.GstCtx.cr2);
 
         /*
          * We need to clear the VM-entry interruption information field's valid bit on VM-exit.
@@ -7079,26 +7075,26 @@ IEM_STATIC int iemVmxVmentryInjectEvent(PVMCPU pVCpu, const char *pszInstr)
          * See Intel spec. 24.8.3 "VM-Entry Controls for Event Injection".
          */
         pVmcs->u32EntryIntInfo &= ~VMX_ENTRY_INT_INFO_VALID;
-        return rc;
     }
-
-    /*
-     * Inject any pending guest debug exception.
-     * Unlike injecting events, this #DB injection on VM-entry is subject to #DB VMX intercept.
-     * See Intel spec. 26.6.3 "Delivery of Pending Debug Exceptions after VM Entry".
-     */
-    bool const fPendingDbgXcpt = iemVmxVmentryIsPendingDebugXcpt(pVCpu, pszInstr);
-    if (fPendingDbgXcpt)
+    else
     {
-        uint32_t const uDbgXcptInfo = RT_BF_MAKE(VMX_BF_ENTRY_INT_INFO_VECTOR, X86_XCPT_DB)
-                                    | RT_BF_MAKE(VMX_BF_ENTRY_INT_INFO_TYPE,   VMX_ENTRY_INT_INFO_TYPE_HW_XCPT)
-                                    | RT_BF_MAKE(VMX_BF_ENTRY_INT_INFO_VALID,  1);
-        return iemVmxVmentryInjectTrpmEvent(pVCpu, uDbgXcptInfo, 0 /* uErrCode */, pVmcs->u32EntryInstrLen,
-                                            0 /* GCPtrFaultAddress */);
+        /*
+         * Inject any pending guest debug exception.
+         * Unlike injecting events, this #DB injection on VM-entry is subject to #DB VMX intercept.
+         * See Intel spec. 26.6.3 "Delivery of Pending Debug Exceptions after VM Entry".
+         */
+        bool const fPendingDbgXcpt = iemVmxVmentryIsPendingDebugXcpt(pVCpu, pszInstr);
+        if (fPendingDbgXcpt)
+        {
+            uint32_t const uDbgXcptInfo = RT_BF_MAKE(VMX_BF_ENTRY_INT_INFO_VECTOR, X86_XCPT_DB)
+                                        | RT_BF_MAKE(VMX_BF_ENTRY_INT_INFO_TYPE,   VMX_ENTRY_INT_INFO_TYPE_HW_XCPT)
+                                        | RT_BF_MAKE(VMX_BF_ENTRY_INT_INFO_VALID,  1);
+            iemVmxVmentryInjectTrpmEvent(pVCpu, uDbgXcptInfo, 0 /* uErrCode */, pVmcs->u32EntryInstrLen,
+                                         0 /* GCPtrFaultAddress */);
+        }
     }
 
     NOREF(pszInstr);
-    return VINF_SUCCESS;
 }
 
 
@@ -7327,6 +7323,9 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPU pVCpu, uint8_t cbInstr, VM
                                     return rcStrict;
                                 }
 
+                                /* Paranoia. */
+                                Assert(rcStrict == VINF_SUCCESS);
+
                                 /* We've now entered nested-guest execution. */
                                 pVCpu->cpum.GstCtx.hwvirt.vmx.fInVmxNonRootMode = true;
 
@@ -7350,7 +7349,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPU pVCpu, uint8_t cbInstr, VM
                                  * 14. Process next instruction (fetch, decode, execute).
                                  */
 
-                                /* Setup the VMX-preemption timer. */
+                                /* Setup VMX-preemption timer. */
                                 iemVmxVmentrySetupPreemptTimer(pVCpu, pszInstr);
 
                                 /* Setup monitor-trap flag. */
@@ -7362,22 +7361,24 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPU pVCpu, uint8_t cbInstr, VM
                                 /* Setup interrupt-window exiting. */
                                 iemVmxVmentrySetupIntWindow(pVCpu, pszInstr);
 
-                                /* Now that we've switched page tables, we can go ahead and inject any event. */
-                                rcStrict = iemVmxVmentryInjectEvent(pVCpu, pszInstr);
-                                if (RT_SUCCESS(rcStrict))
-                                {
-                                    /* Reschedule to IEM-only execution of the nested-guest or return VINF_SUCCESS. */
-# if defined(VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM) && defined(IN_RING3)
-                                    Log(("%s: Enabling IEM-only EM execution policy!\n", pszInstr));
-                                    int rcSched = EMR3SetExecutionPolicy(pVCpu->CTX_SUFF(pVM)->pUVM, EMEXECPOLICY_IEM_ALL, true);
-                                    if (rcSched != VINF_SUCCESS)
-                                        iemSetPassUpStatus(pVCpu, rcSched);
-# endif
-                                    return VINF_SUCCESS;
-                                }
+                                /*
+                                 * Inject any event that the guest hypervisor wants to inject.
+                                 * Note! We cannot immediately perform the event injection here as we may have
+                                 *       pending PGM operations to perform due to switching page tables and/or
+                                 *       mode.
+                                 */
+                                iemVmxVmentryInjectEvent(pVCpu, pszInstr);
 
-                                Log(("%s: VM-entry event injection failed. rc=%Rrc\n", pszInstr, VBOXSTRICTRC_VAL(rcStrict)));
-                                return rcStrict;
+# if defined(VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM) && defined(IN_RING3)
+                                /* Reschedule to IEM-only execution of the nested-guest. */
+                                Log(("%s: Enabling IEM-only EM execution policy!\n", pszInstr));
+                                int rcSched = EMR3SetExecutionPolicy(pVCpu->CTX_SUFF(pVM)->pUVM, EMEXECPOLICY_IEM_ALL, true);
+                                if (rcSched != VINF_SUCCESS)
+                                    iemSetPassUpStatus(pVCpu, rcSched);
+# endif
+
+                                /* Finally, done. */
+                                return VINF_SUCCESS;
                             }
                             return iemVmxVmexit(pVCpu, VMX_EXIT_ERR_MSR_LOAD | VMX_EXIT_REASON_ENTRY_FAILED,
                                                 pVmcs->u64RoExitQual.u);
