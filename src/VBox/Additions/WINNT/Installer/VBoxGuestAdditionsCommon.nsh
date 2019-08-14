@@ -61,29 +61,6 @@ Function ExtractFiles
 !endif
   FILE "$%PATH_OUT%\bin\additions\VBoxDisp.dll"
 
-!if $%VBOX_WITH_CROGL% == "1"
-  ; crOpenGL
-  FILE "$%PATH_OUT%\bin\additions\VBoxOGL.dll"
-
-  SetOutPath "$0\VBoxVideo\OpenGL"
-  FILE "$%PATH_OUT%\bin\additions\d3d8.dll"
-  FILE "$%PATH_OUT%\bin\additions\d3d9.dll"
-  FILE "$%PATH_OUT%\bin\additions\VBoxD3D8.dll"
-  FILE "$%PATH_OUT%\bin\additions\VBoxD3D9.dll"
-  FILE "$%PATH_OUT%\bin\additions\wined3d.dll"
-
-  !if $%BUILD_TARGET_ARCH% == "amd64"
-    ; Only 64-bit installer: Also copy 32-bit DLLs on 64-bit target
-    SetOutPath "$0\VBoxVideo\OpenGL\SysWow64"
-    FILE "$%VBOX_PATH_ADDITIONS_WIN_X86%\d3d8.dll"
-    FILE "$%VBOX_PATH_ADDITIONS_WIN_X86%\d3d9.dll"
-    FILE "$%VBOX_PATH_ADDITIONS_WIN_X86%\VBoxOGL.dll"
-    FILE "$%VBOX_PATH_ADDITIONS_WIN_X86%\VBoxD3D8.dll"
-    FILE "$%VBOX_PATH_ADDITIONS_WIN_X86%\VBoxD3D9.dll"
-    FILE "$%VBOX_PATH_ADDITIONS_WIN_X86%\wined3d.dll"
-  !endif
-!endif
-
 !if $%VBOX_WITH_WDDM% == "1"
   ; WDDM Video driver
   SetOutPath "$0\VBoxWddm"
@@ -101,13 +78,6 @@ Function ExtractFiles
     FILE "$%PATH_OUT%\bin\additions\VBoxGL.dll"
   !endif
 
-  !if $%VBOX_WITH_CROGL% == "1"
-    FILE "$%PATH_OUT%\bin\additions\VBoxOGL.dll"
-
-    FILE "$%PATH_OUT%\bin\additions\VBoxD3D9wddm.dll"
-    FILE "$%PATH_OUT%\bin\additions\wined3dwddm.dll"
-  !endif ; $%VBOX_WITH_CROGL% == "1"
-
   !if $%BUILD_TARGET_ARCH% == "amd64"
     FILE "$%PATH_OUT%\bin\additions\VBoxDispD3D-x86.dll"
     !if $%VBOX_WITH_MESA3D% == "1"
@@ -117,12 +87,6 @@ Function ExtractFiles
       FILE "$%PATH_OUT%\bin\additions\VBoxGL-x86.dll"
     !endif
 
-    !if $%VBOX_WITH_CROGL% == "1"
-      FILE "$%PATH_OUT%\bin\additions\VBoxOGL-x86.dll"
-
-      FILE "$%PATH_OUT%\bin\additions\VBoxD3D9wddm-x86.dll"
-      FILE "$%PATH_OUT%\bin\additions\wined3dwddm-x86.dll"
-    !endif ; $%VBOX_WITH_CROGL% == "1"
   !endif ; $%BUILD_TARGET_ARCH% == "amd64"
 !endif ; $%VBOX_WITH_WDDM% == "1"
 

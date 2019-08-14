@@ -64,10 +64,6 @@ fi
 echo "Restoring X.Org..."
 /opt/VirtualBoxAdditions/x11restore.pl
 
-# Revert set-up of our OpenGL library.
-rm -f /lib/opengl/ogl_select/vbox_vendor_select
-/lib/svc/method/ogl-select start
-
 
 echo "Done."
 

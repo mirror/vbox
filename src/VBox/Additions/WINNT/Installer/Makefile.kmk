@@ -99,22 +99,6 @@ DRIVER_FILES += \
 	$(PATH_STAGE_BIN)/additions/VBoxVideo.cat \
 	$(PATH_STAGE_BIN)/additions/VBoxGuest.cat
 endif
-ifdef VBOX_WITH_CROGL
-DRIVER_FILES += \
-	$(PATH_STAGE_BIN)/additions/VBoxOGL.dll \
-	$(PATH_STAGE_BIN)/additions/wined3d.dll \
-	$(PATH_STAGE_BIN)/additions/VBoxD3D9.dll \
-	$(PATH_STAGE_BIN)/additions/VBoxD3D8.dll
- ifeq ($(KBUILD_TARGET_ARCH),amd64)
-	# Also include 32-bit DLLs on 64-bit guests to enable
-	# running 32-bit OpenGL apps on that.
-	DRIVER_FILES += \
-		$(VBOX_PATH_ADDITIONS.win.x86)/VBoxOGL.dll \
-		$(VBOX_PATH_ADDITIONS.win.x86)/wined3d.dll \
-		$(VBOX_PATH_ADDITIONS.win.x86)/VBoxD3D9.dll \
-		$(VBOX_PATH_ADDITIONS.win.x86)/VBoxD3D8.dll
- endif
-endif
 ifdef VBOX_WITH_WDDM
 DRIVER_FILES += \
 	$(PATH_STAGE_BIN)/additions/VBoxWddm.sys \
@@ -126,11 +110,6 @@ DRIVER_FILES += \
 	$(PATH_STAGE_BIN)/additions/VBoxSVGA.dll \
 	$(PATH_STAGE_BIN)/additions/VBoxICD.dll \
 	$(PATH_STAGE_BIN)/additions/VBoxGL.dll
- endif
- ifdef VBOX_WITH_CROGL
-DRIVER_FILES += \
-	$(PATH_STAGE_BIN)/additions/wined3dwddm.dll \
-	$(PATH_STAGE_BIN)/additions/VBoxD3D9wddm.dll
  endif
  ifdef VBOX_SIGN_ADDITIONS
 DRIVER_FILES += \
@@ -145,12 +124,6 @@ DRIVER_FILES += \
 	$(PATH_STAGE_BIN)/additions/VBoxSVGA-x86.dll \
 	$(PATH_STAGE_BIN)/additions/VBoxICD-x86.dll \
 	$(PATH_STAGE_BIN)/additions/VBoxGL-x86.dll
-  endif
-  ifdef VBOX_WITH_CROGL
-DRIVER_FILES += \
-	$(PATH_STAGE_BIN)/additions/wined3dwddm-x86.dll \
-	$(PATH_STAGE_BIN)/additions/VBoxD3D9wddm-x86.dll \
-	$(PATH_STAGE_BIN)/additions/VBoxOGL-x86.dll
   endif
  endif
 endif
@@ -172,7 +145,6 @@ VB_WIN_ADD_NSIS_ENV := \
 	-E 'VBOX_SVN_REV=$(VBOX_SVN_REV)' \
 	-E 'VBOX_WINDOWS_ADDITIONS_ICON_FILE=$(subst /,\,$(VBOX_WINDOWS_ADDITIONS_ICON_FILE))' \
 	-E 'VBOX_NSIS_ICON_FILE=$(subst /,\,$(VBOX_NSIS_ICON_FILE))' \
-	-E 'VBOX_WITH_CROGL=$(if $(VBOX_WITH_CROGL),1,0)' \
 	-E 'VBOX_WITH_GUEST_INSTALL_HELPER=$(if $(VBOX_WITH_GUEST_INSTALL_HELPER),1,0)' \
 	-E 'VBOX_WITH_GUEST_INSTALLER_UNICODE=$(if $(VBOX_WITH_GUEST_INSTALLER_UNICODE),1,0)' \
 	-E 'VBOX_WITH_LICENSE_INSTALL_RTF=$(if $(VBOX_BRAND_LICENSE_RTF),1,0)' \

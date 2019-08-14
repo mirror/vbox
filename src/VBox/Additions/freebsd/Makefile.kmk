@@ -66,8 +66,7 @@ VBOX_FBSD_ADD_STRIP_BIN = \
 	vboxvideo_drv_14.so \
 	vboxvideo_drv_15.so \
 	vboxvideo_drv_16.so \
-	vboxvideo_drv_17.so \
-	VBoxOGL.so
+	vboxvideo_drv_17.so
 
 VBOX_FBSD_ADD_MODULES = \
 	vboxguest \

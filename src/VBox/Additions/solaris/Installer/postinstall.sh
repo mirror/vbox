@@ -388,10 +388,6 @@ if test "$currentzone" = "global"; then
     fi
 fi
 
-# Set up our OpenGL pass-through library.
-ln -sf $vboxadditions_path/vbox_vendor_select /lib/opengl/ogl_select
-test "$currentzone" = "global" && /lib/svc/method/ogl-select start
-
 echo "Done."
 if test $retval -eq 0; then
     if test ! -z "$xorgbin"; then

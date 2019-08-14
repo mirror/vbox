@@ -31,18 +31,6 @@ DEFAULT_FILE_NAMES=" \
     /usr/sbin/vboxadd-service \
     /usr/sbin/VBoxService \
     /sbin/mount.vboxsf \
-    /usr/lib/VBoxOGLcrutil.so \
-    /usr/lib64/VBoxOGLcrutil.so \
-    /usr/lib/VBoxOGLerrorspu.so \
-    /usr/lib64/VBoxOGLerrorspu.so \
-    /usr/lib/VBoxOGLfeedbackspu.so \
-    /usr/lib64/VBoxOGLfeedbackspu.so \
-    /usr/lib/VBoxOGLpackspu.so \
-    /usr/lib64/VBoxOGLpackspu.so \
-    /usr/lib/VBoxOGLpassthroughspu.so \
-    /usr/lib64/VBoxOGLpassthroughspu.so \
-    /usr/lib/VBoxOGL.so \
-    /usr/lib64/VBoxOGL.so \
     /usr/share/xgreeters/vbox-greeter.desktop \
     /etc/X11/Xsession.d/98vboxadd-xclient \
     /etc/X11/xinit.d/98vboxadd-xclient \

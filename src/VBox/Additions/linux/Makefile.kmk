@@ -52,7 +52,6 @@ VBOX_LNX_ADD_ARCH_INST_DIRS       := \
 	$(VBOX_LNX_ADD_INST_OUT_DIR) \
 	$(VBOX_LNX_ADD_INST_BIN_DIR) \
 	$(VBOX_LNX_ADD_INST_SBIN_DIR) \
-	$(if $(VBOX_WITH_CROGL),$(VBOX_LNX_ADD_INST_LIB_DIR),) \
 	$(VBOX_LNX_ADD_INST_INIT_DIR)
 
 # Installation paths for debug symbols
@@ -64,7 +63,6 @@ VBOX_LNX_ADD_DBG_OTHER_DIR        := $(VBOX_LNX_ADD_INST_DBG_DIR)other/
 VBOX_LNX_ADD_DBG_DIRS             := \
 	$(VBOX_LNX_ADD_DBG_BIN_DIR) \
 	$(VBOX_LNX_ADD_DBG_SBIN_DIR) \
-	$(if $(VBOX_WITH_CROGL),$(VBOX_LNX_ADD_DBG_LIB_DIR),) \
 	$(VBOX_LNX_ADD_DBG_OTHER_DIR)
 
 # Script source directories
@@ -121,12 +119,6 @@ VBOX_LNX_ADD_STRIP_BIN += \
 VBOX_LNX_ADD_STRIP_SBIN += \
 	VBoxService \
 	$(if $(VBOX_WITH_LIGHTDM_GREETER),vbox-greeter)
-
-ifdef VBOX_WITH_CROGL
-VBOX_LNX_ADD_STRIP_LIB += \
-	VBoxOGL.so \
-	VBoxEGL.so
-endif
 
 VBOX_LNX_ADD_STRIP_MOD = \
 	vboxmouse_drv_70.so \
