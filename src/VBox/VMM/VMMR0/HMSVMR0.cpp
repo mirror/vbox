@@ -3936,7 +3936,7 @@ static void hmR0SvmReportWorldSwitchError(PVMCPU pVCpu, int rcVMRun)
     if (rcVMRun == VERR_SVM_INVALID_GUEST_STATE)
     {
 #ifdef VBOX_STRICT
-        hmR0DumpRegs(pVCpu);
+        hmR0DumpRegs(pVCpu, HM_DUMP_REG_FLAGS_ALL);
         PCSVMVMCB pVmcb = hmR0SvmGetCurrentVmcb(pVCpu);
         Log4(("ctrl.u32VmcbCleanBits                 %#RX32\n",   pVmcb->ctrl.u32VmcbCleanBits));
         Log4(("ctrl.u16InterceptRdCRx                %#x\n",      pVmcb->ctrl.u16InterceptRdCRx));

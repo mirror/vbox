@@ -1173,7 +1173,12 @@ VMMR0_INT_DECL(PHMPHYSCPU)  hmR0GetCurrentCpu(void);
 VMMR0_INT_DECL(int)         hmR0EnterCpu(PVMCPU pVCpu);
 
 # ifdef VBOX_STRICT
-VMMR0_INT_DECL(void)        hmR0DumpRegs(PVMCPU pVCpu);
+#  define HM_DUMP_REG_FLAGS_GPRS      RT_BIT(0)
+#  define HM_DUMP_REG_FLAGS_FPU       RT_BIT(1)
+#  define HM_DUMP_REG_FLAGS_MSRS      RT_BIT(2)
+#  define HM_DUMP_REG_FLAGS_ALL       (HM_DUMP_REG_FLAGS_GPRS | HM_DUMP_REG_FLAGS_FPU | HM_DUMP_REG_FLAGS_MSRS)
+
+VMMR0_INT_DECL(void)        hmR0DumpRegs(PVMCPU pVCpu, uint32_t fFlags);
 VMMR0_INT_DECL(void)        hmR0DumpDescriptor(PCX86DESCHC pDesc, RTSEL Sel, const char *pszMsg);
 # endif
 

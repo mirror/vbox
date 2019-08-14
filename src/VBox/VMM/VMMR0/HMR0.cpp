@@ -1726,16 +1726,19 @@ VMMR0_INT_DECL(void) hmR0DumpDescriptor(PCX86DESCHC pDesc, RTSEL Sel, const char
 /**
  * Formats a full register dump.
  *
- * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pVCpu   The cross context virtual CPU structure.
+ * @param   fFlags  The dumping flags (HM_DUMP_REG_FLAGS_XXX).
  */
-VMMR0_INT_DECL(void) hmR0DumpRegs(PVMCPU pVCpu)
+VMMR0_INT_DECL(void) hmR0DumpRegs(PVMCPU pVCpu, uint32_t fFlags)
 {
     /*
      * Format the flags.
      */
     static struct
     {
-        const char *pszSet; const char *pszClear; uint32_t fFlag;
+        const char *pszSet;
+        const char *pszClear;
+        uint32_t    fFlag;
     } const s_aFlags[] =
     {
         { "vip", NULL, X86_EFL_VIP },
@@ -1770,103 +1773,111 @@ VMMR0_INT_DECL(void) hmR0DumpRegs(PVMCPU pVCpu)
     }
     psz[-1] = '\0';
 
-    /*
-     * Format the registers.
-     */
-    if (CPUMIsGuestIn64BitCode(pVCpu))
+    if (fFlags & HM_DUMP_REG_FLAGS_GPRS)
     {
-        Log(("rax=%016RX64 rbx=%016RX64 rcx=%016RX64 rdx=%016RX64\n"
-             "rsi=%016RX64 rdi=%016RX64 r8 =%016RX64 r9 =%016RX64\n"
-             "r10=%016RX64 r11=%016RX64 r12=%016RX64 r13=%016RX64\n"
-             "r14=%016RX64 r15=%016RX64\n"
-             "rip=%016RX64 rsp=%016RX64 rbp=%016RX64 iopl=%d %*s\n"
-             "cs={%04x base=%016RX64 limit=%08x flags=%08x}\n"
-             "ds={%04x base=%016RX64 limit=%08x flags=%08x}\n"
-             "es={%04x base=%016RX64 limit=%08x flags=%08x}\n"
-             "fs={%04x base=%016RX64 limit=%08x flags=%08x}\n"
-             "gs={%04x base=%016RX64 limit=%08x flags=%08x}\n"
-             "ss={%04x base=%016RX64 limit=%08x flags=%08x}\n"
-             "cr0=%016RX64 cr2=%016RX64 cr3=%016RX64 cr4=%016RX64\n"
-             "dr0=%016RX64 dr1=%016RX64 dr2=%016RX64 dr3=%016RX64\n"
-             "dr4=%016RX64 dr5=%016RX64 dr6=%016RX64 dr7=%016RX64\n"
-             "gdtr=%016RX64:%04x  idtr=%016RX64:%04x  eflags=%08x\n"
-             "ldtr={%04x base=%08RX64 limit=%08x flags=%08x}\n"
-             "tr  ={%04x base=%08RX64 limit=%08x flags=%08x}\n"
-             "SysEnter={cs=%04llx eip=%08llx esp=%08llx}\n"
-             ,
-             pCtx->rax, pCtx->rbx, pCtx->rcx, pCtx->rdx, pCtx->rsi, pCtx->rdi,
-             pCtx->r8, pCtx->r9, pCtx->r10, pCtx->r11, pCtx->r12, pCtx->r13,
-             pCtx->r14, pCtx->r15,
-             pCtx->rip, pCtx->rsp, pCtx->rbp, X86_EFL_GET_IOPL(uEFlags), 31, szEFlags,
-             pCtx->cs.Sel, pCtx->cs.u64Base, pCtx->cs.u32Limit, pCtx->cs.Attr.u,
-             pCtx->ds.Sel, pCtx->ds.u64Base, pCtx->ds.u32Limit, pCtx->ds.Attr.u,
-             pCtx->es.Sel, pCtx->es.u64Base, pCtx->es.u32Limit, pCtx->es.Attr.u,
-             pCtx->fs.Sel, pCtx->fs.u64Base, pCtx->fs.u32Limit, pCtx->fs.Attr.u,
-             pCtx->gs.Sel, pCtx->gs.u64Base, pCtx->gs.u32Limit, pCtx->gs.Attr.u,
-             pCtx->ss.Sel, pCtx->ss.u64Base, pCtx->ss.u32Limit, pCtx->ss.Attr.u,
-             pCtx->cr0,  pCtx->cr2, pCtx->cr3,  pCtx->cr4,
-             pCtx->dr[0],  pCtx->dr[1], pCtx->dr[2],  pCtx->dr[3],
-             pCtx->dr[4],  pCtx->dr[5], pCtx->dr[6],  pCtx->dr[7],
-             pCtx->gdtr.pGdt, pCtx->gdtr.cbGdt, pCtx->idtr.pIdt, pCtx->idtr.cbIdt, uEFlags,
-             pCtx->ldtr.Sel, pCtx->ldtr.u64Base, pCtx->ldtr.u32Limit, pCtx->ldtr.Attr.u,
-             pCtx->tr.Sel, pCtx->tr.u64Base, pCtx->tr.u32Limit, pCtx->tr.Attr.u,
-             pCtx->SysEnter.cs, pCtx->SysEnter.eip, pCtx->SysEnter.esp));
+        /*
+         * Format the registers.
+         */
+        if (CPUMIsGuestIn64BitCode(pVCpu))
+        {
+            Log(("rax=%016RX64 rbx=%016RX64 rcx=%016RX64 rdx=%016RX64\n"
+                 "rsi=%016RX64 rdi=%016RX64 r8 =%016RX64 r9 =%016RX64\n"
+                 "r10=%016RX64 r11=%016RX64 r12=%016RX64 r13=%016RX64\n"
+                 "r14=%016RX64 r15=%016RX64\n"
+                 "rip=%016RX64 rsp=%016RX64 rbp=%016RX64 iopl=%d %*s\n"
+                 "cs={%04x base=%016RX64 limit=%08x flags=%08x}\n"
+                 "ds={%04x base=%016RX64 limit=%08x flags=%08x}\n"
+                 "es={%04x base=%016RX64 limit=%08x flags=%08x}\n"
+                 "fs={%04x base=%016RX64 limit=%08x flags=%08x}\n"
+                 "gs={%04x base=%016RX64 limit=%08x flags=%08x}\n"
+                 "ss={%04x base=%016RX64 limit=%08x flags=%08x}\n"
+                 "cr0=%016RX64 cr2=%016RX64 cr3=%016RX64 cr4=%016RX64\n"
+                 "dr0=%016RX64 dr1=%016RX64 dr2=%016RX64 dr3=%016RX64\n"
+                 "dr4=%016RX64 dr5=%016RX64 dr6=%016RX64 dr7=%016RX64\n"
+                 "gdtr=%016RX64:%04x  idtr=%016RX64:%04x  eflags=%08x\n"
+                 "ldtr={%04x base=%08RX64 limit=%08x flags=%08x}\n"
+                 "tr  ={%04x base=%08RX64 limit=%08x flags=%08x}\n"
+                 "SysEnter={cs=%04llx eip=%08llx esp=%08llx}\n"
+                 ,
+                 pCtx->rax, pCtx->rbx, pCtx->rcx, pCtx->rdx, pCtx->rsi, pCtx->rdi,
+                 pCtx->r8, pCtx->r9, pCtx->r10, pCtx->r11, pCtx->r12, pCtx->r13,
+                 pCtx->r14, pCtx->r15,
+                 pCtx->rip, pCtx->rsp, pCtx->rbp, X86_EFL_GET_IOPL(uEFlags), 31, szEFlags,
+                 pCtx->cs.Sel, pCtx->cs.u64Base, pCtx->cs.u32Limit, pCtx->cs.Attr.u,
+                 pCtx->ds.Sel, pCtx->ds.u64Base, pCtx->ds.u32Limit, pCtx->ds.Attr.u,
+                 pCtx->es.Sel, pCtx->es.u64Base, pCtx->es.u32Limit, pCtx->es.Attr.u,
+                 pCtx->fs.Sel, pCtx->fs.u64Base, pCtx->fs.u32Limit, pCtx->fs.Attr.u,
+                 pCtx->gs.Sel, pCtx->gs.u64Base, pCtx->gs.u32Limit, pCtx->gs.Attr.u,
+                 pCtx->ss.Sel, pCtx->ss.u64Base, pCtx->ss.u32Limit, pCtx->ss.Attr.u,
+                 pCtx->cr0,  pCtx->cr2, pCtx->cr3,  pCtx->cr4,
+                 pCtx->dr[0],  pCtx->dr[1], pCtx->dr[2],  pCtx->dr[3],
+                 pCtx->dr[4],  pCtx->dr[5], pCtx->dr[6],  pCtx->dr[7],
+                 pCtx->gdtr.pGdt, pCtx->gdtr.cbGdt, pCtx->idtr.pIdt, pCtx->idtr.cbIdt, uEFlags,
+                 pCtx->ldtr.Sel, pCtx->ldtr.u64Base, pCtx->ldtr.u32Limit, pCtx->ldtr.Attr.u,
+                 pCtx->tr.Sel, pCtx->tr.u64Base, pCtx->tr.u32Limit, pCtx->tr.Attr.u,
+                 pCtx->SysEnter.cs, pCtx->SysEnter.eip, pCtx->SysEnter.esp));
+        }
+        else
+            Log(("eax=%08x ebx=%08x ecx=%08x edx=%08x esi=%08x edi=%08x\n"
+                 "eip=%08x esp=%08x ebp=%08x iopl=%d %*s\n"
+                 "cs={%04x base=%016RX64 limit=%08x flags=%08x} dr0=%08RX64 dr1=%08RX64\n"
+                 "ds={%04x base=%016RX64 limit=%08x flags=%08x} dr2=%08RX64 dr3=%08RX64\n"
+                 "es={%04x base=%016RX64 limit=%08x flags=%08x} dr4=%08RX64 dr5=%08RX64\n"
+                 "fs={%04x base=%016RX64 limit=%08x flags=%08x} dr6=%08RX64 dr7=%08RX64\n"
+                 "gs={%04x base=%016RX64 limit=%08x flags=%08x} cr0=%08RX64 cr2=%08RX64\n"
+                 "ss={%04x base=%016RX64 limit=%08x flags=%08x} cr3=%08RX64 cr4=%08RX64\n"
+                 "gdtr=%016RX64:%04x  idtr=%016RX64:%04x  eflags=%08x\n"
+                 "ldtr={%04x base=%08RX64 limit=%08x flags=%08x}\n"
+                 "tr  ={%04x base=%08RX64 limit=%08x flags=%08x}\n"
+                 "SysEnter={cs=%04llx eip=%08llx esp=%08llx}\n"
+                 ,
+                 pCtx->eax, pCtx->ebx, pCtx->ecx, pCtx->edx, pCtx->esi, pCtx->edi,
+                 pCtx->eip, pCtx->esp, pCtx->ebp, X86_EFL_GET_IOPL(uEFlags), 31, szEFlags,
+                 pCtx->cs.Sel, pCtx->cs.u64Base, pCtx->cs.u32Limit, pCtx->cs.Attr.u, pCtx->dr[0],  pCtx->dr[1],
+                 pCtx->ds.Sel, pCtx->ds.u64Base, pCtx->ds.u32Limit, pCtx->ds.Attr.u, pCtx->dr[2],  pCtx->dr[3],
+                 pCtx->es.Sel, pCtx->es.u64Base, pCtx->es.u32Limit, pCtx->es.Attr.u, pCtx->dr[4],  pCtx->dr[5],
+                 pCtx->fs.Sel, pCtx->fs.u64Base, pCtx->fs.u32Limit, pCtx->fs.Attr.u, pCtx->dr[6],  pCtx->dr[7],
+                 pCtx->gs.Sel, pCtx->gs.u64Base, pCtx->gs.u32Limit, pCtx->gs.Attr.u, pCtx->cr0,  pCtx->cr2,
+                 pCtx->ss.Sel, pCtx->ss.u64Base, pCtx->ss.u32Limit, pCtx->ss.Attr.u, pCtx->cr3,  pCtx->cr4,
+                 pCtx->gdtr.pGdt, pCtx->gdtr.cbGdt, pCtx->idtr.pIdt, pCtx->idtr.cbIdt, uEFlags,
+                 pCtx->ldtr.Sel, pCtx->ldtr.u64Base, pCtx->ldtr.u32Limit, pCtx->ldtr.Attr.u,
+                 pCtx->tr.Sel, pCtx->tr.u64Base, pCtx->tr.u32Limit, pCtx->tr.Attr.u,
+                 pCtx->SysEnter.cs, pCtx->SysEnter.eip, pCtx->SysEnter.esp));
     }
-    else
-        Log(("eax=%08x ebx=%08x ecx=%08x edx=%08x esi=%08x edi=%08x\n"
-             "eip=%08x esp=%08x ebp=%08x iopl=%d %*s\n"
-             "cs={%04x base=%016RX64 limit=%08x flags=%08x} dr0=%08RX64 dr1=%08RX64\n"
-             "ds={%04x base=%016RX64 limit=%08x flags=%08x} dr2=%08RX64 dr3=%08RX64\n"
-             "es={%04x base=%016RX64 limit=%08x flags=%08x} dr4=%08RX64 dr5=%08RX64\n"
-             "fs={%04x base=%016RX64 limit=%08x flags=%08x} dr6=%08RX64 dr7=%08RX64\n"
-             "gs={%04x base=%016RX64 limit=%08x flags=%08x} cr0=%08RX64 cr2=%08RX64\n"
-             "ss={%04x base=%016RX64 limit=%08x flags=%08x} cr3=%08RX64 cr4=%08RX64\n"
-             "gdtr=%016RX64:%04x  idtr=%016RX64:%04x  eflags=%08x\n"
-             "ldtr={%04x base=%08RX64 limit=%08x flags=%08x}\n"
-             "tr  ={%04x base=%08RX64 limit=%08x flags=%08x}\n"
-             "SysEnter={cs=%04llx eip=%08llx esp=%08llx}\n"
-             ,
-             pCtx->eax, pCtx->ebx, pCtx->ecx, pCtx->edx, pCtx->esi, pCtx->edi,
-             pCtx->eip, pCtx->esp, pCtx->ebp, X86_EFL_GET_IOPL(uEFlags), 31, szEFlags,
-             pCtx->cs.Sel, pCtx->cs.u64Base, pCtx->cs.u32Limit, pCtx->cs.Attr.u, pCtx->dr[0],  pCtx->dr[1],
-             pCtx->ds.Sel, pCtx->ds.u64Base, pCtx->ds.u32Limit, pCtx->ds.Attr.u, pCtx->dr[2],  pCtx->dr[3],
-             pCtx->es.Sel, pCtx->es.u64Base, pCtx->es.u32Limit, pCtx->es.Attr.u, pCtx->dr[4],  pCtx->dr[5],
-             pCtx->fs.Sel, pCtx->fs.u64Base, pCtx->fs.u32Limit, pCtx->fs.Attr.u, pCtx->dr[6],  pCtx->dr[7],
-             pCtx->gs.Sel, pCtx->gs.u64Base, pCtx->gs.u32Limit, pCtx->gs.Attr.u, pCtx->cr0,  pCtx->cr2,
-             pCtx->ss.Sel, pCtx->ss.u64Base, pCtx->ss.u32Limit, pCtx->ss.Attr.u, pCtx->cr3,  pCtx->cr4,
-             pCtx->gdtr.pGdt, pCtx->gdtr.cbGdt, pCtx->idtr.pIdt, pCtx->idtr.cbIdt, uEFlags,
-             pCtx->ldtr.Sel, pCtx->ldtr.u64Base, pCtx->ldtr.u32Limit, pCtx->ldtr.Attr.u,
-             pCtx->tr.Sel, pCtx->tr.u64Base, pCtx->tr.u32Limit, pCtx->tr.Attr.u,
-             pCtx->SysEnter.cs, pCtx->SysEnter.eip, pCtx->SysEnter.esp));
 
-    PX86FXSTATE pFpuCtx = &pCtx->CTX_SUFF(pXState)->x87;
-    Log(("FPU:\n"
-        "FCW=%04x FSW=%04x FTW=%02x\n"
-        "FOP=%04x FPUIP=%08x CS=%04x Rsrvd1=%04x\n"
-        "FPUDP=%04x DS=%04x Rsvrd2=%04x MXCSR=%08x MXCSR_MASK=%08x\n"
-        ,
-        pFpuCtx->FCW,   pFpuCtx->FSW,   pFpuCtx->FTW,
-        pFpuCtx->FOP,   pFpuCtx->FPUIP, pFpuCtx->CS, pFpuCtx->Rsrvd1,
-        pFpuCtx->FPUDP, pFpuCtx->DS,    pFpuCtx->Rsrvd2,
-        pFpuCtx->MXCSR, pFpuCtx->MXCSR_MASK));
+    if (fFlags & HM_DUMP_REG_FLAGS_FPU)
+    {
+        PCX86FXSTATE pFpuCtx = &pCtx->CTX_SUFF(pXState)->x87;
+        Log(("FPU:\n"
+            "FCW=%04x FSW=%04x FTW=%02x\n"
+            "FOP=%04x FPUIP=%08x CS=%04x Rsrvd1=%04x\n"
+            "FPUDP=%04x DS=%04x Rsvrd2=%04x MXCSR=%08x MXCSR_MASK=%08x\n"
+            ,
+            pFpuCtx->FCW,   pFpuCtx->FSW,   pFpuCtx->FTW,
+            pFpuCtx->FOP,   pFpuCtx->FPUIP, pFpuCtx->CS, pFpuCtx->Rsrvd1,
+            pFpuCtx->FPUDP, pFpuCtx->DS,    pFpuCtx->Rsrvd2,
+            pFpuCtx->MXCSR, pFpuCtx->MXCSR_MASK));
+        NOREF(pFpuCtx);
+    }
 
-    Log(("MSR:\n"
-        "EFER         =%016RX64\n"
-        "PAT          =%016RX64\n"
-        "STAR         =%016RX64\n"
-        "CSTAR        =%016RX64\n"
-        "LSTAR        =%016RX64\n"
-        "SFMASK       =%016RX64\n"
-        "KERNELGSBASE =%016RX64\n",
-        pCtx->msrEFER,
-        pCtx->msrPAT,
-        pCtx->msrSTAR,
-        pCtx->msrCSTAR,
-        pCtx->msrLSTAR,
-        pCtx->msrSFMASK,
-        pCtx->msrKERNELGSBASE));
-
-    NOREF(pFpuCtx);
+    if (fFlags & HM_DUMP_REG_FLAGS_MSRS)
+    {
+        Log(("MSR:\n"
+            "EFER         =%016RX64\n"
+            "PAT          =%016RX64\n"
+            "STAR         =%016RX64\n"
+            "CSTAR        =%016RX64\n"
+            "LSTAR        =%016RX64\n"
+            "SFMASK       =%016RX64\n"
+            "KERNELGSBASE =%016RX64\n",
+            pCtx->msrEFER,
+            pCtx->msrPAT,
+            pCtx->msrSTAR,
+            pCtx->msrCSTAR,
+            pCtx->msrLSTAR,
+            pCtx->msrSFMASK,
+            pCtx->msrKERNELGSBASE));
+    }
 }
 
 #endif /* VBOX_STRICT */
