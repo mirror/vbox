@@ -343,7 +343,7 @@ void UINetworkAttachmentEditor::populateTypeCombo()
         if (m_enmRestrictedNetworkAttachmentTypes & toUiNetworkAdapterEnum(enmType))
             continue;
         m_pComboType->insertItem(iAttachmentTypeIndex, gpConverter->toString(enmType));
-        m_pComboType->setItemData(iAttachmentTypeIndex, enmType);
+        m_pComboType->setItemData(iAttachmentTypeIndex, QVariant::fromValue(enmType));
         m_pComboType->setItemData(iAttachmentTypeIndex, m_pComboType->itemText(iAttachmentTypeIndex), Qt::ToolTipRole);
         ++iAttachmentTypeIndex;
     }
