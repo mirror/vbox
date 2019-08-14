@@ -1068,7 +1068,7 @@ void UIMachineSettingsNetworkPage::refreshInternalNetworkList(bool fFullRefresh 
 void UIMachineSettingsNetworkPage::refreshHostInterfaceList()
 {
     /* Reload host interfaces: */
-    m_bridgedAdapterList = UINetworkAttachmentEditor::hostInterfaces();
+    m_hostInterfaceList = UINetworkAttachmentEditor::hostInterfaces();
 }
 
 void UIMachineSettingsNetworkPage::refreshGenericDriverList(bool fFullRefresh /* = false */)
