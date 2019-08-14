@@ -299,8 +299,8 @@ VMMDECL(void) TRPMSetFaultAddress(PVMCPU pVCpu, RTGCUINTPTR uCR2)
  * Sets the instruction-length of the current trap (relevant for software
  * interrupts and software exceptions like \#BP, \#OF).
  *
- * The caller is responsible for making sure there is an active trap 0e
- * when making this request.
+ * The caller is responsible for making sure there is an active trap when making
+ * this request.
  *
  * @param   pVCpu               The cross context virtual CPU structure.
  * @param   cbInstr             The instruction length.
@@ -309,6 +309,9 @@ VMMDECL(void) TRPMSetInstrLength(PVMCPU pVCpu, uint8_t cbInstr)
 {
     Log2(("TRPMSetInstrLength: cbInstr=%u\n", cbInstr));
     AssertMsg(pVCpu->trpm.s.uActiveVector != ~0U, ("No active trap!\n"));
+    /** @todo We should be able to set the instruction length for a \#DB raised by
+     *        INT1/ICEBP as well. However, TRPM currently has no way to distinguish
+     *        INT1/ICEBP from regular \#DB. */
     AssertMsg(   pVCpu->trpm.s.enmActiveType == TRPM_SOFTWARE_INT
               || (   pVCpu->trpm.s.enmActiveType == TRPM_TRAP
                   && (   pVCpu->trpm.s.uActiveVector == X86_XCPT_BP
