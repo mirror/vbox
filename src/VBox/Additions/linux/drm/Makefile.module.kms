@@ -47,7 +47,9 @@ VBOXMOD_OBJS = \
 	vbox_prime.o \
 	vbox_hgsmi.o
 VBOXMOD_INCL = \
-	$(VBOXDRM_DIR)
+	$(VBOXDRM_DIR) \
+	include/drm
+## @todo r=bird: -Iinclude/drm is ambigious.
 
 include $(obj)/Makefile-footer.gmk
 
