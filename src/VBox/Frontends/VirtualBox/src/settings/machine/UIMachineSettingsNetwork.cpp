@@ -61,7 +61,6 @@ struct UIDataSettingsMachineNetworkAdapter
         , m_strNATNetworkName(QString())
         , m_strMACAddress(QString())
         , m_fCableConnected(false)
-        , m_enmRestrictedNetworkAttachmentTypes(UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_Invalid)
     {}
 
     /** Returns whether the @a other passed data is equal to this one. */
@@ -115,8 +114,6 @@ struct UIDataSettingsMachineNetworkAdapter
     QString                           m_strMACAddress;
     /** Holds whether the network adapter is connected. */
     bool                              m_fCableConnected;
-    /** Holds the list of restricted network attachment types. */
-    UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork m_enmRestrictedNetworkAttachmentTypes;
 };
 
 
@@ -208,8 +205,6 @@ private:
     /* Other variables: */
     int m_iSlot;
     UIPortForwardingDataList m_portForwardingRules;
-    /** Holds the list of restricted network attachment types. */
-    UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork m_enmRestrictedNetworkAttachmentTypes;
 };
 
 
@@ -221,7 +216,6 @@ UIMachineSettingsNetwork::UIMachineSettingsNetwork(UIMachineSettingsNetworkPage 
     : QIWithRetranslateUI<QWidget>(0)
     , m_pParent(pParent)
     , m_iSlot(-1)
-    , m_enmRestrictedNetworkAttachmentTypes(UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_Invalid)
 {
     /* Apply UI decorations: */
     Ui::UIMachineSettingsNetwork::setupUi(this);
@@ -297,8 +291,6 @@ void UIMachineSettingsNetwork::getAdapterDataFromCache(const UISettingsCacheMach
     m_portForwardingRules.clear();
     for (int i = 0; i < adapterCache.childCount(); ++i)
         m_portForwardingRules << adapterCache.child(i).base();
-    /* Cache the restricted metwork attachment types to avoid re-reading them from the extra data: */
-    m_enmRestrictedNetworkAttachmentTypes = oldAdapterData.m_enmRestrictedNetworkAttachmentTypes;
 
     /* Repopulate combo-boxes content: */
     populateComboboxes();
@@ -793,9 +785,6 @@ void UIMachineSettingsNetworkPage::loadToCacheFrom(QVariant &data)
     /* Prepare old network data: */
     UIDataSettingsMachineNetwork oldNetworkData;
 
-    const UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork enmRestrictedNetworkAttachmentTypes =
-        gEDataManager->restrictedNetworkAttachmentTypes();
-
     /* For each network adapter: */
     for (int iSlot = 0; iSlot < m_pTabWidget->count(); ++iSlot)
     {
@@ -820,7 +809,6 @@ void UIMachineSettingsNetworkPage::loadToCacheFrom(QVariant &data)
             oldAdapterData.m_strMACAddress = comAdapter.GetMACAddress();
             oldAdapterData.m_strGenericProperties = loadGenericProperties(comAdapter);
             oldAdapterData.m_fCableConnected = comAdapter.GetCableConnected();
-            oldAdapterData.m_enmRestrictedNetworkAttachmentTypes = enmRestrictedNetworkAttachmentTypes;
             foreach (const QString &strRedirect, comAdapter.GetNATEngine().GetRedirects())
             {
                 /* Gather old forwarding data & cache key: */
