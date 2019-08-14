@@ -5411,7 +5411,7 @@ static int hmR0VmxExportGuestCR0(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
             int rc = VMXWriteVmcsNw(VMX_VMCS_GUEST_CR0, u64GuestCr0);               AssertRC(rc);
             rc     = VMXWriteVmcsNw(VMX_VMCS_CTRL_CR0_READ_SHADOW, u64ShadowCr0);   AssertRC(rc);
 
-            Log4Func(("cr0=%#RX64 shadow=%#RX64 set=%#RX64 zap=%#RX64\n", u64GuestCr0, u64ShadowCr0, fSetCr0, fZapCr0));
+            Log4Func(("cr0=%#RX64 shadow=%#RX64 (set=%#RX64 zap=%#RX64)\n", u64GuestCr0, u64ShadowCr0, fSetCr0, fZapCr0));
         }
 
         ASMAtomicUoAndU64(&pVCpu->hm.s.fCtxChanged, ~HM_CHANGED_GUEST_CR0);
@@ -5654,7 +5654,7 @@ static VBOXSTRICTRC hmR0VmxExportGuestCR3AndCR4(PVMCPU pVCpu, PVMXTRANSIENT pVmx
 
         ASMAtomicUoAndU64(&pVCpu->hm.s.fCtxChanged, ~HM_CHANGED_GUEST_CR4);
 
-        Log4Func(("cr4=%#RX64 shadow=%#RX64 set=%#RX64 zap=%#RX64)\n", u64GuestCr4, u64ShadowCr4, fSetCr4, fZapCr4));
+        Log4Func(("cr4=%#RX64 shadow=%#RX64 (set=%#RX64 zap=%#RX64)\n", u64GuestCr4, u64ShadowCr4, fSetCr4, fZapCr4));
     }
     return rc;
 }
@@ -6749,7 +6749,7 @@ static void hmR0VmxUpdateTscOffsettingAndPreemptTimer(PVMCPU pVCpu, PVMXTRANSIEN
         /** @todo r=ramshankar: We need to find a way to integrate nested-guest
          *        preemption timers here. We probably need to clamp the preemption timer,
          *        after converting the timer value to the host. */
-        uint32_t cPreemptionTickCount = (uint32_t)RT_MIN(cTicksToDeadline, UINT32_MAX - 16);
+        uint32_t const cPreemptionTickCount = (uint32_t)RT_MIN(cTicksToDeadline, UINT32_MAX - 16);
         int rc = VMXWriteVmcs32(VMX_VMCS32_PREEMPT_TIMER_VALUE, cPreemptionTickCount);
         AssertRC(rc);
     }
@@ -8199,7 +8199,7 @@ static DECLCALLBACK(int) hmR0VmxCallRing3Callback(PVMCPU pVCpu, VMMCALLRING3 enm
     VMMRZCallRing3Disable(pVCpu);
     Assert(VMMR0IsLogFlushDisabled(pVCpu));
 
-    Log4Func((" -> hmR0VmxLongJmpToRing3 enmOperation=%d\n", enmOperation));
+    Log4Func(("-> hmR0VmxLongJmpToRing3 enmOperation=%d\n", enmOperation));
 
     int rc = hmR0VmxLongJmpToRing3(pVCpu);
     AssertRCReturn(rc, rc);
@@ -9991,6 +9991,7 @@ static int hmR0VmxMergeVmcsNested(PVMCPU pVCpu)
      * intercept all I/O port accesses.
      */
     Assert(u32ProcCtls & VMX_PROC_CTLS_UNCOND_IO_EXIT);
+    Assert(!(u32ProcCtls & VMX_PROC_CTLS_USE_IO_BITMAPS));
 
     /*
      * VMCS shadowing.
@@ -16127,14 +16128,14 @@ HMVMX_EXIT_DECL hmR0VmxExitXcptOrNmiNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTrans
                 ExitEventInfo.uIdtVectoringErrCode = pVmxTransient->uIdtVectoringErrorCode;
 
 #ifdef DEBUG_ramshankar
-                hmR0VmxImportGuestState(pVCpu, pVmxTransient->pVmcsInfo, CPUMCTX_EXTRN_CS | CPUMCTX_EXTRN_RIP);
-                Log4Func(("cs:rip=%#04x:%#RX64\n", pCtx->cs.Sel, pCtx->rip));
+                hmR0VmxImportGuestState(pVCpu, pVmxTransient->pVmcsInfo, CPUMCTX_EXTRN_CS | CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_CR3);
+                Log4Func(("cs:rip=%#04x:%#RX64 cr3=%#RX32\n", pCtx->cs.Sel, pCtx->rip, pCtx->cr3));
                 Log4Func(("exit_int_info=%#x err_code=%#x exit_qual=%#RX64\n", pVmxTransient->uExitIntInfo,
                           pVmxTransient->uExitIntErrorCode, pVmxTransient->uExitQual));
                 if (VMX_IDT_VECTORING_INFO_IS_VALID(pVmxTransient->uIdtVectoringInfo))
                 {
-                    Log4Func(("idt_info=%#RX32 idt_errcode=%#RX32\n", pVmxTransient->uIdtVectoringInfo,
-                              pVmxTransient->uIdtVectoringErrorCode));
+                    Log4Func(("idt_info=%#RX32 idt_errcode=%#RX32 cr2=%#RX64\n", pVmxTransient->uIdtVectoringInfo,
+                              pVmxTransient->uIdtVectoringErrorCode, pCtx->cr2));
                 }
 #endif
                 return IEMExecVmxVmexitXcpt(pVCpu, &ExitInfo, &ExitEventInfo);
