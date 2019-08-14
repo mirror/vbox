@@ -1191,12 +1191,10 @@ VMMR0_INT_DECL(int) HMR0InitVM(PVM pVM)
 
         /* Use the VMCS controls for swapping the EFER MSR if supported. */
         Assert(!pVM->hm.s.vmx.fSupportsVmcsEfer);
-#if HC_ARCH_BITS == 64
         if (   (pVM->hm.s.vmx.Msrs.EntryCtls.n.allowed1 & VMX_ENTRY_CTLS_LOAD_EFER_MSR)
             && (pVM->hm.s.vmx.Msrs.ExitCtls.n.allowed1  & VMX_EXIT_CTLS_LOAD_EFER_MSR)
             && (pVM->hm.s.vmx.Msrs.ExitCtls.n.allowed1  & VMX_EXIT_CTLS_SAVE_EFER_MSR))
             pVM->hm.s.vmx.fSupportsVmcsEfer = true;
-#endif
 
 #if 0
         /* Enable APIC register virtualization and virtual-interrupt delivery if supported. */
