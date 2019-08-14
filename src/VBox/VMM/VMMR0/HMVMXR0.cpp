@@ -4941,6 +4941,7 @@ static int hmR0VmxExportGuestRsp(PVMCPU pVCpu)
         AssertRC(rc);
 
         ASMAtomicUoAndU64(&pVCpu->hm.s.fCtxChanged, ~HM_CHANGED_GUEST_RSP);
+        Log4Func(("rsp=%#RX64\n", pVCpu->cpum.GstCtx.rsp));
     }
     return VINF_SUCCESS;
 }
@@ -12519,6 +12520,12 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExit(PVMCPU pVCpu, PVMXTRANSIENT pVmxTrans
  */
 DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExitNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
+    /** @todo NSTVMX: Remove after debugging regression.  */
+#if 1 //def DEBUG_ramshankar Remove later
+    hmR0VmxImportGuestState(pVCpu, pVmxTransient->pVmcsInfo, CPUMCTX_EXTRN_CS | CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_RSP);
+    Log4Func(("cs:rip=%#04x:%#RX64 rsp=%#RX64\n", pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, pVCpu->cpum.GstCtx.rsp));
+#endif
+
     uint32_t const uExitReason = pVmxTransient->uExitReason;
     switch (uExitReason)
     {
@@ -14545,7 +14552,7 @@ HMVMX_EXIT_NSRC_DECL hmR0VmxExitErrInvalidGuestState(PVMCPU pVCpu, PVMXTRANSIENT
         rc = VMXReadVmcs64(VMX_VMCS64_CTRL_EPTP_FULL, &u64Val);             AssertRC(rc);
         Log4(("VMX_VMCS64_CTRL_EPTP_FULL                  %#RX64\n", u64Val));
     }
-    hmR0DumpRegs(pVCpu);
+    hmR0DumpRegs(pVCpu, HM_DUMP_REG_FLAGS_ALL);
 #endif
 
     return VERR_VMX_INVALID_GUEST_STATE;
@@ -16128,8 +16135,7 @@ HMVMX_EXIT_DECL hmR0VmxExitXcptOrNmiNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTrans
                 ExitEventInfo.uIdtVectoringErrCode = pVmxTransient->uIdtVectoringErrorCode;
 
 #ifdef DEBUG_ramshankar
-                hmR0VmxImportGuestState(pVCpu, pVmxTransient->pVmcsInfo, CPUMCTX_EXTRN_CS | CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_CR3);
-                Log4Func(("cs:rip=%#04x:%#RX64 cr3=%#RX32\n", pCtx->cs.Sel, pCtx->rip, pCtx->cr3));
+                hmR0VmxImportGuestState(pVCpu, pVmxTransient->pVmcsInfo, HMVMX_CPUMCTX_EXTRN_ALL);
                 Log4Func(("exit_int_info=%#x err_code=%#x exit_qual=%#RX64\n", pVmxTransient->uExitIntInfo,
                           pVmxTransient->uExitIntErrorCode, pVmxTransient->uExitQual));
                 if (VMX_IDT_VECTORING_INFO_IS_VALID(pVmxTransient->uIdtVectoringInfo))
@@ -16137,6 +16143,13 @@ HMVMX_EXIT_DECL hmR0VmxExitXcptOrNmiNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTrans
                     Log4Func(("idt_info=%#RX32 idt_errcode=%#RX32 cr2=%#RX64\n", pVmxTransient->uIdtVectoringInfo,
                               pVmxTransient->uIdtVectoringErrorCode, pCtx->cr2));
                 }
+
+                /* DOS VM debugging (IRET). */
+                hmR0DumpRegs(pVCpu, HM_DUMP_REG_FLAGS_GPRS);
+                uint8_t abStack[64];
+                int rc = PGMPhysSimpleReadGCPtr(pVCpu, &abStack[0], pCtx->esp, sizeof(abStack));
+                if (RT_SUCCESS(rc))
+                    Log(("StackMem: %.*Rhxs\n", sizeof(abStack), abStack));
 #endif
                 return IEMExecVmxVmexitXcpt(pVCpu, &ExitInfo, &ExitEventInfo);
             }
