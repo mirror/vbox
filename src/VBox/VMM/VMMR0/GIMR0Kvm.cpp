@@ -19,12 +19,13 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define VBOX_BUGREF_9217_PART_I
 #define LOG_GROUP LOG_GROUP_GIM
 #include <VBox/vmm/gim.h>
 #include <VBox/vmm/tm.h>
 #include "GIMInternal.h"
 #include "GIMKvmInternal.h"
-#include <VBox/vmm/vm.h>
+#include <VBox/vmm/vmcc.h>
 
 #include <VBox/err.h>
 
@@ -40,7 +41,7 @@
  * @thread  EMT.
  * @remarks Can be called with preemption disabled!
  */
-VMM_INT_DECL(int) gimR0KvmUpdateSystemTime(PVM pVM, PVMCPU pVCpu)
+VMM_INT_DECL(int) gimR0KvmUpdateSystemTime(PVMCC pVM, PVMCPUCC pVCpu)
 {
     /*
      * Validate.
@@ -64,9 +65,9 @@ VMM_INT_DECL(int) gimR0KvmUpdateSystemTime(PVM pVM, PVMCPU pVCpu)
      * will be applied to the remaining.
      */
     RTSpinlockAcquire(pKvm->hSpinlockR0);
-    for (uint32_t i = 0; i < pVM->cCpus; i++)
+    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
-        PGIMKVMCPU pKvmCpu = &pVM->aCpus[i].gim.s.u.KvmCpu;
+        PGIMKVMCPU pKvmCpu = &VMCC_GET_CPU(pVM, idCpu)->gim.s.u.KvmCpu;
         if (   !pKvmCpu->uTsc
             && !pKvmCpu->uVirtNanoTS)
         {
@@ -86,7 +87,7 @@ VMM_INT_DECL(int) gimR0KvmUpdateSystemTime(PVM pVM, PVMCPU pVCpu)
  * @returns VBox status code.
  * @param   pVM     The cross context VM structure.
  */
-VMMR0_INT_DECL(int) gimR0KvmInitVM(PVM pVM)
+VMMR0_INT_DECL(int) gimR0KvmInitVM(PVMCC pVM)
 {
     AssertPtr(pVM);
     Assert(GIMIsEnabled(pVM));
@@ -105,7 +106,7 @@ VMMR0_INT_DECL(int) gimR0KvmInitVM(PVM pVM)
  * @returns VBox status code.
  * @param   pVM     The cross context VM structure.
  */
-VMMR0_INT_DECL(int) gimR0KvmTermVM(PVM pVM)
+VMMR0_INT_DECL(int) gimR0KvmTermVM(PVMCC pVM)
 {
     AssertPtr(pVM);
     Assert(GIMIsEnabled(pVM));

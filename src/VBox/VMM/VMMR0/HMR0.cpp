@@ -19,12 +19,13 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define VBOX_BUGREF_9217_PART_I
 #define LOG_GROUP LOG_GROUP_HM
 #define VMCPU_INCL_CPUM_GST_CTX
 #include <VBox/vmm/hm.h>
 #include <VBox/vmm/pgm.h>
 #include "HMInternal.h"
-#include <VBox/vmm/vm.h>
+#include <VBox/vmm/vmcc.h>
 #include <VBox/vmm/hm_svm.h>
 #include <VBox/vmm/hmvmxinline.h>
 #include <VBox/err.h>
@@ -86,16 +87,16 @@ static struct
 
     /** @name Ring-0 method table for AMD-V and VT-x specific operations.
      * @{ */
-    DECLR0CALLBACKMEMBER(int,  pfnEnterSession, (PVMCPU pVCpu));
-    DECLR0CALLBACKMEMBER(void, pfnThreadCtxCallback, (RTTHREADCTXEVENT enmEvent, PVMCPU pVCpu, bool fGlobalInit));
-    DECLR0CALLBACKMEMBER(int,  pfnExportHostState, (PVMCPU pVCpu));
-    DECLR0CALLBACKMEMBER(VBOXSTRICTRC, pfnRunGuestCode, (PVMCPU pVCpu));
-    DECLR0CALLBACKMEMBER(int,  pfnEnableCpu, (PHMPHYSCPU pHostCpu, PVM pVM, void *pvCpuPage, RTHCPHYS HCPhysCpuPage,
+    DECLR0CALLBACKMEMBER(int,  pfnEnterSession, (PVMCPUCC pVCpu));
+    DECLR0CALLBACKMEMBER(void, pfnThreadCtxCallback, (RTTHREADCTXEVENT enmEvent, PVMCPUCC pVCpu, bool fGlobalInit));
+    DECLR0CALLBACKMEMBER(int,  pfnExportHostState, (PVMCPUCC pVCpu));
+    DECLR0CALLBACKMEMBER(VBOXSTRICTRC, pfnRunGuestCode, (PVMCPUCC pVCpu));
+    DECLR0CALLBACKMEMBER(int,  pfnEnableCpu, (PHMPHYSCPU pHostCpu, PVMCC pVM, void *pvCpuPage, RTHCPHYS HCPhysCpuPage,
                                               bool fEnabledByHost, PCSUPHWVIRTMSRS pHwvirtMsrs));
     DECLR0CALLBACKMEMBER(int,  pfnDisableCpu, (void *pvCpuPage, RTHCPHYS HCPhysCpuPage));
-    DECLR0CALLBACKMEMBER(int,  pfnInitVM, (PVM pVM));
-    DECLR0CALLBACKMEMBER(int,  pfnTermVM, (PVM pVM));
-    DECLR0CALLBACKMEMBER(int,  pfnSetupVM, (PVM pVM));
+    DECLR0CALLBACKMEMBER(int,  pfnInitVM, (PVMCC pVM));
+    DECLR0CALLBACKMEMBER(int,  pfnTermVM, (PVMCC pVM));
+    DECLR0CALLBACKMEMBER(int,  pfnSetupVM, (PVMCC pVM));
     /** @} */
 
     /** Hardware-virtualization data. */
@@ -226,18 +227,18 @@ static RTCPUID hmR0FirstRcGetCpuId(PHMR0FIRSTRC pFirstRc)
 /** @name Dummy callback handlers.
  * @{ */
 
-static DECLCALLBACK(int) hmR0DummyEnter(PVMCPU pVCpu)
+static DECLCALLBACK(int) hmR0DummyEnter(PVMCPUCC pVCpu)
 {
     RT_NOREF1(pVCpu);
     return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(void) hmR0DummyThreadCtxCallback(RTTHREADCTXEVENT enmEvent, PVMCPU pVCpu, bool fGlobalInit)
+static DECLCALLBACK(void) hmR0DummyThreadCtxCallback(RTTHREADCTXEVENT enmEvent, PVMCPUCC pVCpu, bool fGlobalInit)
 {
     RT_NOREF3(enmEvent, pVCpu, fGlobalInit);
 }
 
-static DECLCALLBACK(int) hmR0DummyEnableCpu(PHMPHYSCPU pHostCpu, PVM pVM, void *pvCpuPage, RTHCPHYS HCPhysCpuPage,
+static DECLCALLBACK(int) hmR0DummyEnableCpu(PHMPHYSCPU pHostCpu, PVMCC pVM, void *pvCpuPage, RTHCPHYS HCPhysCpuPage,
                                             bool fEnabledBySystem, PCSUPHWVIRTMSRS pHwvirtMsrs)
 {
     RT_NOREF6(pHostCpu, pVM, pvCpuPage, HCPhysCpuPage, fEnabledBySystem, pHwvirtMsrs);
@@ -250,31 +251,31 @@ static DECLCALLBACK(int) hmR0DummyDisableCpu(void *pvCpuPage, RTHCPHYS HCPhysCpu
     return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(int) hmR0DummyInitVM(PVM pVM)
+static DECLCALLBACK(int) hmR0DummyInitVM(PVMCC pVM)
 {
     RT_NOREF1(pVM);
     return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(int) hmR0DummyTermVM(PVM pVM)
+static DECLCALLBACK(int) hmR0DummyTermVM(PVMCC pVM)
 {
     RT_NOREF1(pVM);
     return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(int) hmR0DummySetupVM(PVM pVM)
+static DECLCALLBACK(int) hmR0DummySetupVM(PVMCC pVM)
 {
     RT_NOREF1(pVM);
     return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(VBOXSTRICTRC) hmR0DummyRunGuestCode(PVMCPU pVCpu)
+static DECLCALLBACK(VBOXSTRICTRC) hmR0DummyRunGuestCode(PVMCPUCC pVCpu)
 {
     RT_NOREF(pVCpu);
     return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(int) hmR0DummyExportHostState(PVMCPU pVCpu)
+static DECLCALLBACK(int) hmR0DummyExportHostState(PVMCPUCC pVCpu)
 {
     RT_NOREF1(pVCpu);
     return VINF_SUCCESS;
@@ -787,7 +788,7 @@ static DECLCALLBACK(void) hmR0InitAmdCpu(RTCPUID idCpu, void *pvUser1, void *pvU
  *
  * @remarks Maybe called with interrupts disabled!
  */
-static int hmR0EnableCpu(PVM pVM, RTCPUID idCpu)
+static int hmR0EnableCpu(PVMCC pVM, RTCPUID idCpu)
 {
     PHMPHYSCPU pHostCpu = &g_HmR0.aCpuInfo[idCpu];
 
@@ -823,7 +824,7 @@ static int hmR0EnableCpu(PVM pVM, RTCPUID idCpu)
  */
 static DECLCALLBACK(void) hmR0EnableCpuCallback(RTCPUID idCpu, void *pvUser1, void *pvUser2)
 {
-    PVM             pVM      = (PVM)pvUser1;     /* can be NULL! */
+    PVMCC             pVM      = (PVMCC)pvUser1;     /* can be NULL! */
     PHMR0FIRSTRC    pFirstRc = (PHMR0FIRSTRC)pvUser2;
     AssertReturnVoid(g_HmR0.fGlobalInit);
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
@@ -839,7 +840,7 @@ static DECLCALLBACK(void) hmR0EnableCpuCallback(RTCPUID idCpu, void *pvUser1, vo
  */
 static DECLCALLBACK(int32_t) hmR0EnableAllCpuOnce(void *pvUser)
 {
-    PVM pVM = (PVM)pvUser;
+    PVMCC pVM = (PVMCC)pvUser;
 
     /*
      * Indicate that we've initialized.
@@ -955,7 +956,7 @@ static DECLCALLBACK(int32_t) hmR0EnableAllCpuOnce(void *pvUser)
  * @returns VBox status code.
  * @param   pVM                 The cross context VM structure.
  */
-VMMR0_INT_DECL(int) HMR0EnableAllCpus(PVM pVM)
+VMMR0_INT_DECL(int) HMR0EnableAllCpus(PVMCC pVM)
 {
     /* Make sure we don't touch HM after we've disabled HM in preparation of a suspend. */
     if (ASMAtomicReadBool(&g_HmR0.fSuspended))
@@ -1041,7 +1042,7 @@ static DECLCALLBACK(void) hmR0DisableCpuOnSpecificCallback(RTCPUID idCpu, void *
  *
  * @param   enmEvent            The Mp event.
  * @param   idCpu               The identifier for the CPU the function is called on.
- * @param   pvData              Opaque data (PVM pointer).
+ * @param   pvData              Opaque data (PVMCC pointer).
  */
 static DECLCALLBACK(void) hmR0MpEventCallback(RTMPEVENT enmEvent, RTCPUID idCpu, void *pvData)
 {
@@ -1157,7 +1158,7 @@ static DECLCALLBACK(void) hmR0PowerCallback(RTPOWEREVENT enmEvent, void *pvUser)
  * @remarks This is called after HMR3Init(), see vmR3CreateU() and
  *          vmR3InitRing3().
  */
-VMMR0_INT_DECL(int) HMR0InitVM(PVM pVM)
+VMMR0_INT_DECL(int) HMR0InitVM(PVMCC pVM)
 {
     AssertReturn(pVM, VERR_INVALID_PARAMETER);
 
@@ -1234,9 +1235,9 @@ VMMR0_INT_DECL(int) HMR0InitVM(PVM pVM)
     /*
      * Initialize some per-VCPU fields.
      */
-    for (VMCPUID i = 0; i < pVM->cCpus; i++)
+    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
-        PVMCPU pVCpu = &pVM->aCpus[i];
+        PVMCPUCC pVCpu = VMCC_GET_CPU(pVM, idCpu);
         pVCpu->hm.s.idEnteredCpu   = NIL_RTCPUID;
         pVCpu->hm.s.idLastCpu      = NIL_RTCPUID;
 
@@ -1266,7 +1267,7 @@ VMMR0_INT_DECL(int) HMR0InitVM(PVM pVM)
  * @returns VBox status code.
  * @param   pVM         The cross context VM structure.
  */
-VMMR0_INT_DECL(int) HMR0TermVM(PVM pVM)
+VMMR0_INT_DECL(int) HMR0TermVM(PVMCC pVM)
 {
     Log(("HMR0TermVM: %p\n", pVM));
     AssertReturn(pVM, VERR_INVALID_PARAMETER);
@@ -1289,7 +1290,7 @@ VMMR0_INT_DECL(int) HMR0TermVM(PVM pVM)
  * @returns VBox status code.
  * @param   pVM         The cross context VM structure.
  */
-VMMR0_INT_DECL(int) HMR0SetupVM(PVM pVM)
+VMMR0_INT_DECL(int) HMR0SetupVM(PVMCC pVM)
 {
     Log(("HMR0SetupVM: %p\n", pVM));
     AssertReturn(pVM, VERR_INVALID_PARAMETER);
@@ -1298,11 +1299,7 @@ VMMR0_INT_DECL(int) HMR0SetupVM(PVM pVM)
     AssertReturn(!ASMAtomicReadBool(&g_HmR0.fSuspended), VERR_HM_SUSPEND_PENDING);
 
     /* On first entry we'll sync everything. */
-    for (VMCPUID i = 0; i < pVM->cCpus; i++)
-    {
-        PVMCPU pVCpu = &pVM->aCpus[i];
-        pVCpu->hm.s.fCtxChanged |= HM_CHANGED_HOST_CONTEXT | HM_CHANGED_ALL_GUEST;
-    }
+    VMCC_FOR_EACH_VMCPU_STMT(pVM, pVCpu->hm.s.fCtxChanged |= HM_CHANGED_HOST_CONTEXT | HM_CHANGED_ALL_GUEST);
 
     /*
      * Call the hardware specific setup VM method. This requires the CPU to be
@@ -1350,7 +1347,7 @@ VMMR0_INT_DECL(int) HMR0SetupVM(PVM pVM)
  *
  * @remarks No-long-jump zone!!!
  */
-VMMR0_INT_DECL(int) hmR0EnterCpu(PVMCPU pVCpu)
+VMMR0_INT_DECL(int) hmR0EnterCpu(PVMCPUCC pVCpu)
 {
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 
@@ -1383,7 +1380,7 @@ VMMR0_INT_DECL(int) hmR0EnterCpu(PVMCPU pVCpu)
  *
  * @remarks This is called with preemption disabled.
  */
-VMMR0_INT_DECL(int) HMR0Enter(PVMCPU pVCpu)
+VMMR0_INT_DECL(int) HMR0Enter(PVMCPUCC pVCpu)
 {
     /* Make sure we can't enter a session after we've disabled HM in preparation of a suspend. */
     AssertReturn(!ASMAtomicReadBool(&g_HmR0.fSuspended), VERR_HM_SUSPEND_PENDING);
@@ -1436,7 +1433,7 @@ VMMR0_INT_DECL(int) HMR0Enter(PVMCPU pVCpu)
  *
  * @remarks No-long-jump zone!!!
  */
-VMMR0_INT_DECL(int) HMR0LeaveCpu(PVMCPU pVCpu)
+VMMR0_INT_DECL(int) HMR0LeaveCpu(PVMCPUCC pVCpu)
 {
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
     VMCPU_ASSERT_EMT_RETURN(pVCpu, VERR_HM_WRONG_CPU);
@@ -1471,7 +1468,7 @@ VMMR0_INT_DECL(int) HMR0LeaveCpu(PVMCPU pVCpu)
  */
 VMMR0_INT_DECL(void) HMR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, void *pvUser)
 {
-    PVMCPU pVCpu = (PVMCPU)pvUser;
+    PVMCPUCC pVCpu = (PVMCPUCC)pvUser;
     Assert(pVCpu);
     Assert(g_HmR0.pfnThreadCtxCallback);
 
@@ -1490,7 +1487,7 @@ VMMR0_INT_DECL(void) HMR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, void *pvUs
  * @remarks Can be called with preemption enabled if thread-context hooks are
  *          used!!!
  */
-VMMR0_INT_DECL(int) HMR0RunGuestCode(PVM pVM, PVMCPU pVCpu)
+VMMR0_INT_DECL(int) HMR0RunGuestCode(PVMCC pVM, PVMCPUCC pVCpu)
 {
     RT_NOREF(pVM);
 
@@ -1526,7 +1523,7 @@ VMMR0_INT_DECL(int) HMR0RunGuestCode(PVM pVM, PVMCPU pVCpu)
  *
  * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
  */
-VMMR0_INT_DECL(void) HMR0NotifyCpumUnloadedGuestFpuState(PVMCPU pVCpu)
+VMMR0_INT_DECL(void) HMR0NotifyCpumUnloadedGuestFpuState(PVMCPUCC pVCpu)
 {
     ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_CR0);
 }
@@ -1537,7 +1534,7 @@ VMMR0_INT_DECL(void) HMR0NotifyCpumUnloadedGuestFpuState(PVMCPU pVCpu)
  *
  * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
  */
-VMMR0_INT_DECL(void) HMR0NotifyCpumModifiedHostCr0(PVMCPU pVCpu)
+VMMR0_INT_DECL(void) HMR0NotifyCpumModifiedHostCr0(PVMCPUCC pVCpu)
 {
     ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_HOST_CONTEXT);
 }
@@ -1560,9 +1557,9 @@ VMMR0_INT_DECL(bool) HMR0SuspendPending(void)
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   GCVirt      Page to invalidate.
  */
-VMMR0_INT_DECL(int) HMR0InvalidatePage(PVMCPU pVCpu, RTGCPTR GCVirt)
+VMMR0_INT_DECL(int) HMR0InvalidatePage(PVMCPUCC pVCpu, RTGCPTR GCVirt)
 {
-    PVM pVM = pVCpu->CTX_SUFF(pVM);
+    PVMCC pVM = pVCpu->CTX_SUFF(pVM);
     if (pVM->hm.s.vmx.fSupported)
         return VMXR0InvalidatePage(pVCpu, GCVirt);
     return SVMR0InvalidatePage(pVCpu, GCVirt);
@@ -1591,7 +1588,7 @@ VMMR0_INT_DECL(PHMPHYSCPU) hmR0GetCurrentCpu(void)
  * @param   pVCpu       The cross context CPU structure.
  * @param   fWhat       What to import, CPUMCTX_EXTRN_XXX.
  */
-VMMR0_INT_DECL(int) HMR0ImportStateOnDemand(PVMCPU pVCpu, uint64_t fWhat)
+VMMR0_INT_DECL(int) HMR0ImportStateOnDemand(PVMCPUCC pVCpu, uint64_t fWhat)
 {
     if (pVCpu->CTX_SUFF(pVM)->hm.s.vmx.fSupported)
         return VMXR0ImportStateOnDemand(pVCpu, fWhat);
@@ -1729,7 +1726,7 @@ VMMR0_INT_DECL(void) hmR0DumpDescriptor(PCX86DESCHC pDesc, RTSEL Sel, const char
  * @param   pVCpu   The cross context virtual CPU structure.
  * @param   fFlags  The dumping flags (HM_DUMP_REG_FLAGS_XXX).
  */
-VMMR0_INT_DECL(void) hmR0DumpRegs(PVMCPU pVCpu, uint32_t fFlags)
+VMMR0_INT_DECL(void) hmR0DumpRegs(PVMCPUCC pVCpu, uint32_t fFlags)
 {
     /*
      * Format the flags.

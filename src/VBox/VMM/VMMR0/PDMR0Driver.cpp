@@ -19,10 +19,11 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define VBOX_BUGREF_9217_PART_I
 #define LOG_GROUP LOG_GROUP_PDM_DRIVER
 #include "PDMInternal.h"
 #include <VBox/vmm/pdm.h>
-#include <VBox/vmm/vm.h>
+#include <VBox/vmm/vmcc.h>
 #include <VBox/vmm/gvmm.h>
 
 #include <VBox/log.h>
@@ -39,7 +40,7 @@
  * @param   pVM     The cross context VM structure. (For validation.)
  * @param   pReq    Pointer to the request buffer.
  */
-VMMR0_INT_DECL(int) PDMR0DriverCallReqHandler(PGVM pGVM, PVM pVM, PPDMDRIVERCALLREQHANDLERREQ pReq)
+VMMR0_INT_DECL(int) PDMR0DriverCallReqHandler(PGVM pGVM, PVMCC pVM, PPDMDRIVERCALLREQHANDLERREQ pReq)
 {
     /*
      * Validate input and make the call.

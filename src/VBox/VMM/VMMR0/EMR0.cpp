@@ -19,10 +19,11 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define VBOX_BUGREF_9217_PART_I
 #define LOG_GROUP LOG_GROUP_EM
 #include <VBox/vmm/em.h>
 #include "EMInternal.h"
-#include <VBox/vmm/vm.h>
+#include <VBox/vmm/vmcc.h>
 #include <VBox/vmm/gvm.h>
 #include <iprt/errcore.h>
 #include <VBox/log.h>
@@ -40,28 +41,34 @@
  */
 #ifdef VBOX_BUGREF_9217
 VMMR0_INT_DECL(int) EMR0InitVM(PGVM pGVM)
-# define pVM pGVM /* temp hack */
 #else
-VMMR0_INT_DECL(int) EMR0InitVM(PGVM pGVM, PVM pVM)
+VMMR0_INT_DECL(int) EMR0InitVM(PGVM pGVM, PVMCC pVM)
 #endif
 {
     /*
      * Override ring-0 exit optimizations settings.
      */
-    bool fEnabledR0                = pVM->aCpus[0].em.s.fExitOptimizationEnabled
-                                  && pVM->aCpus[0].em.s.fExitOptimizationEnabledR0
+#ifdef VBOX_BUGREF_9217
+    PVMCPUCC pVCpu0 = &pGVM->aCpus[0];
+#else
+    PVMCPUCC pVCpu0 = VMCC_GET_CPU_0(pVM);
+#endif
+
+    bool fEnabledR0                = pVCpu0->em.s.fExitOptimizationEnabled
+                                  && pVCpu0->em.s.fExitOptimizationEnabledR0
                                   && (RTThreadPreemptIsPossible() || RTThreadPreemptIsPendingTrusty());
     bool fEnabledR0PreemptDisabled = fEnabledR0
-                                  && pVM->aCpus[0].em.s.fExitOptimizationEnabledR0PreemptDisabled
+                                  && pVCpu0->em.s.fExitOptimizationEnabledR0PreemptDisabled
                                   && RTThreadPreemptIsPendingTrusty();
-#ifdef VBOX_BUGREF_9217
-    for (VMCPUID i = 0; i < pGVM->cCpusSafe; i++)
-#else
-    for (VMCPUID i = 0; i < pGVM->cCpus; i++)
-#endif
+    for (VMCPUID idCpu = 0; idCpu < pGVM->cCpus; idCpu++)
     {
-        pVM->aCpus[i].em.s.fExitOptimizationEnabledR0                = fEnabledR0;
-        pVM->aCpus[i].em.s.fExitOptimizationEnabledR0PreemptDisabled = fEnabledR0PreemptDisabled;
+#ifdef VBOX_BUGREF_9217
+        PVMCPUCC pVCpu = &pGVM->aCpus[idCpu];
+#else
+        PVMCPUCC pVCpu = VMCC_GET_CPU(pVM, idCpu);
+#endif
+        pVCpu->em.s.fExitOptimizationEnabledR0                = fEnabledR0;
+        pVCpu->em.s.fExitOptimizationEnabledR0PreemptDisabled = fEnabledR0PreemptDisabled;
     }
 
     return VINF_SUCCESS;

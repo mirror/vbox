@@ -75,23 +75,41 @@ typedef VMCPU   VMCPUCC;
 /** @def VMCC_FOR_EACH_VMCPU
  * For enumerating VCpus in ascending order, avoiding unnecessary apCpusR0
  * access in ring-0, caching the CPU count and not checking for CPU \#0.
- * @note Close loop with VMCC_FOR_EACH_VMCPU_END. */
-/** @def VMCC_FOR_EACH_VMCPU_END
- * Ends a VMCC_FOR_EACH_VMCPU loop. */
+ *
+ * Defines local variables @c idCpu, @c pVCpu and @c cCpus.
+ *
+ * @param   a_pVM   The VM handle.
+ *
+ * @note    Close loop with VMCC_FOR_EACH_VMCPU_END.
+ */
 #define VMCC_FOR_EACH_VMCPU(a_pVM) \
-    { \
+    do { \
         VMCPUID         idCpu = 0; \
         VMCPUID const   cCpus = (a_pVM)->cCpus; \
         PVMCPUCC        pVCpu = VMCC_GET_CPU_0(a_pVM); \
         for (;;) \
         {
+
+/** @def VMCC_FOR_EACH_VMCPU_END
+ * Ends a VMCC_FOR_EACH_VMCPU loop.
+ * @param   a_pVM   The VM handle.
+ */
 #define VMCC_FOR_EACH_VMCPU_END(a_pVM) \
             /* advance */ \
             if (++idCpu >= cCpus) \
                 break; \
             pVCpu = VMCC_GET_CPU(pVM, idCpu); \
         } \
-    } do { } while(0)
+    } while (0)
+
+/**
+ * Execute the given statement for each virtual CPU in an environment with
+ * @c pVCpu and @c idCpu variables.
+ *
+ * @param   a_pVM   The VM handle.
+ * @param   a_Stmt  The statement to execute.
+ */
+#define VMCC_FOR_EACH_VMCPU_STMT(a_pVM, a_Stmt) VMCC_FOR_EACH_VMCPU(pVM) { a_Stmt; } VMCC_FOR_EACH_VMCPU_END(pVM)
 
 #endif /* !VBOX_INCLUDED_vmm_vmcc_h */
 

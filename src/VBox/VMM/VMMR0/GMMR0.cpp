@@ -149,12 +149,12 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define VBOX_BUGREF_9217_PART_I
 #define LOG_GROUP LOG_GROUP_GMM
 #include <VBox/rawpci.h>
-#include <VBox/vmm/vm.h>
 #include <VBox/vmm/gmm.h>
 #include "GMMR0Internal.h"
-#include <VBox/vmm/gvm.h>
+#include <VBox/vmm/vmcc.h>
 #include <VBox/vmm/pgm.h>
 #include <VBox/log.h>
 #include <VBox/param.h>
@@ -1225,7 +1225,11 @@ static uint16_t gmmR0GetCurrentNumaNodeId(void)
  */
 GMMR0DECL(void) GMMR0CleanupVM(PGVM pGVM)
 {
+#ifdef VBOX_BUGREF_9217
+    LogFlow(("GMMR0CleanupVM: pGVM=%p:{.hSelf=%#x}\n", pGVM, pGVM->hSelf));
+#else
     LogFlow(("GMMR0CleanupVM: pGVM=%p:{.pVM=%p, .hSelf=%#x}\n", pGVM, pGVM->pVM, pGVM->hSelf));
+#endif
 
     PGMM pGMM;
     GMM_GET_VALID_INSTANCE_VOID(pGMM);
@@ -1553,7 +1557,7 @@ static bool gmmR0CleanupVMScanChunk(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk)
  *
  * @thread  The creator thread / EMT(0).
  */
-GMMR0DECL(int) GMMR0InitialReservation(PGVM pGVM, PVM pVM, VMCPUID idCpu, uint64_t cBasePages, uint32_t cShadowPages,
+GMMR0DECL(int) GMMR0InitialReservation(PGVM pGVM, PVMCC pVM, VMCPUID idCpu, uint64_t cBasePages, uint32_t cShadowPages,
                                        uint32_t cFixedPages, GMMOCPOLICY enmPolicy, GMMPRIORITY enmPriority)
 {
     LogFlow(("GMMR0InitialReservation: pGVM=%p pVM=%p cBasePages=%#llx cShadowPages=%#x cFixedPages=%#x enmPolicy=%d enmPriority=%d\n",
@@ -1623,7 +1627,7 @@ GMMR0DECL(int) GMMR0InitialReservation(PGVM pGVM, PVM pVM, VMCPUID idCpu, uint64
  * @param   idCpu           The VCPU id.
  * @param   pReq            Pointer to the request packet.
  */
-GMMR0DECL(int) GMMR0InitialReservationReq(PGVM pGVM, PVM pVM, VMCPUID idCpu, PGMMINITIALRESERVATIONREQ pReq)
+GMMR0DECL(int) GMMR0InitialReservationReq(PGVM pGVM, PVMCC pVM, VMCPUID idCpu, PGMMINITIALRESERVATIONREQ pReq)
 {
     /*
      * Validate input and pass it on.
@@ -1654,7 +1658,7 @@ GMMR0DECL(int) GMMR0InitialReservationReq(PGVM pGVM, PVM pVM, VMCPUID idCpu, PGM
  *
  * @thread  EMT(idCpu)
  */
-GMMR0DECL(int) GMMR0UpdateReservation(PGVM pGVM, PVM pVM, VMCPUID idCpu, uint64_t cBasePages,
+GMMR0DECL(int) GMMR0UpdateReservation(PGVM pGVM, PVMCC pVM, VMCPUID idCpu, uint64_t cBasePages,
                                       uint32_t cShadowPages, uint32_t cFixedPages)
 {
     LogFlow(("GMMR0UpdateReservation: pGVM=%p pVM=%p cBasePages=%#llx cShadowPages=%#x cFixedPages=%#x\n",
@@ -1720,7 +1724,7 @@ GMMR0DECL(int) GMMR0UpdateReservation(PGVM pGVM, PVM pVM, VMCPUID idCpu, uint64_
  * @param   idCpu           The VCPU id.
  * @param   pReq            Pointer to the request packet.
  */
-GMMR0DECL(int) GMMR0UpdateReservationReq(PGVM pGVM, PVM pVM, VMCPUID idCpu, PGMMUPDATERESERVATIONREQ pReq)
+GMMR0DECL(int) GMMR0UpdateReservationReq(PGVM pGVM, PVMCC pVM, VMCPUID idCpu, PGMMUPDATERESERVATIONREQ pReq)
 {
     /*
      * Validate input and pass it on.
@@ -2737,7 +2741,7 @@ static int gmmR0AllocatePagesNew(PGMM pGMM, PGVM pGVM, uint32_t cPages, PGMMPAGE
  *                              See GMMPAGEDESC for details on what is expected on input.
  * @thread  EMT(idCpu)
  */
-GMMR0DECL(int) GMMR0AllocateHandyPages(PGVM pGVM, PVM pVM, VMCPUID idCpu, uint32_t cPagesToUpdate,
+GMMR0DECL(int) GMMR0AllocateHandyPages(PGVM pGVM, PVMCC pVM, VMCPUID idCpu, uint32_t cPagesToUpdate,
                                        uint32_t cPagesToAlloc, PGMMPAGEDESC paPages)
 {
     LogFlow(("GMMR0AllocateHandyPages: pGVM=%p pVM=%p cPagesToUpdate=%#x cPagesToAlloc=%#x paPages=%p\n",
@@ -2935,7 +2939,7 @@ GMMR0DECL(int) GMMR0AllocateHandyPages(PGVM pGVM, PVM pVM, VMCPUID idCpu, uint32
  *
  * @thread  EMT.
  */
-GMMR0DECL(int) GMMR0AllocatePages(PGVM pGVM, PVM pVM, VMCPUID idCpu, uint32_t cPages, PGMMPAGEDESC paPages, GMMACCOUNT enmAccount)
+GMMR0DECL(int) GMMR0AllocatePages(PGVM pGVM, PVMCC pVM, VMCPUID idCpu, uint32_t cPages, PGMMPAGEDESC paPages, GMMACCOUNT enmAccount)
 {
     LogFlow(("GMMR0AllocatePages: pGVM=%p pVM=%p cPages=%#x paPages=%p enmAccount=%d\n", pGVM, pVM, cPages, paPages, enmAccount));
 
@@ -2995,7 +2999,7 @@ GMMR0DECL(int) GMMR0AllocatePages(PGVM pGVM, PVM pVM, VMCPUID idCpu, uint32_t cP
  * @param   idCpu       The VCPU id.
  * @param   pReq        Pointer to the request packet.
  */
-GMMR0DECL(int) GMMR0AllocatePagesReq(PGVM pGVM, PVM pVM, VMCPUID idCpu, PGMMALLOCATEPAGESREQ pReq)
+GMMR0DECL(int) GMMR0AllocatePagesReq(PGVM pGVM, PVMCC pVM, VMCPUID idCpu, PGMMALLOCATEPAGESREQ pReq)
 {
     /*
      * Validate input and pass it on.
@@ -3033,7 +3037,7 @@ GMMR0DECL(int) GMMR0AllocatePagesReq(PGVM pGVM, PVM pVM, VMCPUID idCpu, PGMMALLO
  * @param   pIdPage     Where to return the GMM page ID of the page.
  * @param   pHCPhys     Where to return the host physical address of the page.
  */
-GMMR0DECL(int)  GMMR0AllocateLargePage(PGVM pGVM, PVM pVM, VMCPUID idCpu, uint32_t cbPage, uint32_t *pIdPage, RTHCPHYS *pHCPhys)
+GMMR0DECL(int)  GMMR0AllocateLargePage(PGVM pGVM, PVMCC pVM, VMCPUID idCpu, uint32_t cbPage, uint32_t *pIdPage, RTHCPHYS *pHCPhys)
 {
     LogFlow(("GMMR0AllocateLargePage: pGVM=%p pVM=%p cbPage=%x\n", pGVM, pVM, cbPage));
 
@@ -3138,7 +3142,7 @@ GMMR0DECL(int)  GMMR0AllocateLargePage(PGVM pGVM, PVM pVM, VMCPUID idCpu, uint32
  * @param   idCpu       The VCPU id.
  * @param   idPage      The large page id.
  */
-GMMR0DECL(int)  GMMR0FreeLargePage(PGVM pGVM, PVM pVM, VMCPUID idCpu, uint32_t idPage)
+GMMR0DECL(int)  GMMR0FreeLargePage(PGVM pGVM, PVMCC pVM, VMCPUID idCpu, uint32_t idPage)
 {
     LogFlow(("GMMR0FreeLargePage: pGVM=%p pVM=%p idPage=%x\n", pGVM, pVM, idPage));
 
@@ -3205,7 +3209,7 @@ GMMR0DECL(int)  GMMR0FreeLargePage(PGVM pGVM, PVM pVM, VMCPUID idCpu, uint32_t i
  * @param   idCpu       The VCPU id.
  * @param   pReq        Pointer to the request packet.
  */
-GMMR0DECL(int) GMMR0FreeLargePageReq(PGVM pGVM, PVM pVM, VMCPUID idCpu, PGMMFREELARGEPAGEREQ pReq)
+GMMR0DECL(int) GMMR0FreeLargePageReq(PGVM pGVM, PVMCC pVM, VMCPUID idCpu, PGMMFREELARGEPAGEREQ pReq)
 {
     /*
      * Validate input and pass it on.
@@ -3570,7 +3574,7 @@ static int gmmR0FreePages(PGMM pGMM, PGVM pGVM, uint32_t cPages, PGMMFREEPAGEDES
  * @param   enmAccount  The account this relates to.
  * @thread  EMT.
  */
-GMMR0DECL(int) GMMR0FreePages(PGVM pGVM, PVM pVM, VMCPUID idCpu, uint32_t cPages, PGMMFREEPAGEDESC paPages, GMMACCOUNT enmAccount)
+GMMR0DECL(int) GMMR0FreePages(PGVM pGVM, PVMCC pVM, VMCPUID idCpu, uint32_t cPages, PGMMFREEPAGEDESC paPages, GMMACCOUNT enmAccount)
 {
     LogFlow(("GMMR0FreePages: pGVM=%p pVM=%p cPages=%#x paPages=%p enmAccount=%d\n", pGVM, pVM, cPages, paPages, enmAccount));
 
@@ -3618,7 +3622,7 @@ GMMR0DECL(int) GMMR0FreePages(PGVM pGVM, PVM pVM, VMCPUID idCpu, uint32_t cPages
  * @param   idCpu       The VCPU id.
  * @param   pReq        Pointer to the request packet.
  */
-GMMR0DECL(int) GMMR0FreePagesReq(PGVM pGVM, PVM pVM, VMCPUID idCpu, PGMMFREEPAGESREQ pReq)
+GMMR0DECL(int) GMMR0FreePagesReq(PGVM pGVM, PVMCC pVM, VMCPUID idCpu, PGMMFREEPAGESREQ pReq)
 {
     /*
      * Validate input and pass it on.
@@ -3659,7 +3663,7 @@ GMMR0DECL(int) GMMR0FreePagesReq(PGVM pGVM, PVM pVM, VMCPUID idCpu, PGMMFREEPAGE
  *
  * @thread  EMT(idCpu)
  */
-GMMR0DECL(int) GMMR0BalloonedPages(PGVM pGVM, PVM pVM, VMCPUID idCpu, GMMBALLOONACTION enmAction, uint32_t cBalloonedPages)
+GMMR0DECL(int) GMMR0BalloonedPages(PGVM pGVM, PVMCC pVM, VMCPUID idCpu, GMMBALLOONACTION enmAction, uint32_t cBalloonedPages)
 {
     LogFlow(("GMMR0BalloonedPages: pGVM=%p pVM=%p enmAction=%d cBalloonedPages=%#x\n",
              pGVM, pVM, enmAction, cBalloonedPages));
@@ -3788,7 +3792,7 @@ GMMR0DECL(int) GMMR0BalloonedPages(PGVM pGVM, PVM pVM, VMCPUID idCpu, GMMBALLOON
  * @param   idCpu       The VCPU id.
  * @param   pReq        Pointer to the request packet.
  */
-GMMR0DECL(int) GMMR0BalloonedPagesReq(PGVM pGVM, PVM pVM, VMCPUID idCpu, PGMMBALLOONEDPAGESREQ pReq)
+GMMR0DECL(int) GMMR0BalloonedPagesReq(PGVM pGVM, PVMCC pVM, VMCPUID idCpu, PGMMBALLOONEDPAGESREQ pReq)
 {
     /*
      * Validate input and pass it on.
@@ -3845,7 +3849,7 @@ GMMR0DECL(int) GMMR0QueryHypervisorMemoryStatsReq(PGMMMEMSTATSREQ pReq)
  *
  * @thread  EMT(idCpu)
  */
-GMMR0DECL(int) GMMR0QueryMemoryStatsReq(PGVM pGVM, PVM pVM, VMCPUID idCpu, PGMMMEMSTATSREQ pReq)
+GMMR0DECL(int) GMMR0QueryMemoryStatsReq(PGVM pGVM, PVMCC pVM, VMCPUID idCpu, PGMMMEMSTATSREQ pReq)
 {
     /*
      * Validate input and pass it on.
@@ -4137,7 +4141,7 @@ static bool gmmR0IsChunkMapped(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk, PRTR3PTR 
  * @param   ppvR3           Where to store the address of the mapped chunk. NULL is ok if nothing to map.
  * @thread  EMT ???
  */
-GMMR0DECL(int) GMMR0MapUnmapChunk(PGVM pGVM, PVM pVM, uint32_t idChunkMap, uint32_t idChunkUnmap, PRTR3PTR ppvR3)
+GMMR0DECL(int) GMMR0MapUnmapChunk(PGVM pGVM, PVMCC pVM, uint32_t idChunkMap, uint32_t idChunkUnmap, PRTR3PTR ppvR3)
 {
     LogFlow(("GMMR0MapUnmapChunk: pGVM=%p pVM=%p idChunkMap=%#x idChunkUnmap=%#x ppvR3=%p\n",
              pGVM, pVM, idChunkMap, idChunkUnmap, ppvR3));
@@ -4226,7 +4230,7 @@ GMMR0DECL(int) GMMR0MapUnmapChunk(PGVM pGVM, PVM pVM, uint32_t idChunkMap, uint3
  * @param   pVM         The cross context VM structure.
  * @param   pReq        Pointer to the request packet.
  */
-GMMR0DECL(int)  GMMR0MapUnmapChunkReq(PGVM pGVM, PVM pVM, PGMMMAPUNMAPCHUNKREQ pReq)
+GMMR0DECL(int)  GMMR0MapUnmapChunkReq(PGVM pGVM, PVMCC pVM, PGMMMAPUNMAPCHUNKREQ pReq)
 {
     /*
      * Validate input and pass it on.
@@ -4250,7 +4254,7 @@ GMMR0DECL(int)  GMMR0MapUnmapChunkReq(PGVM pGVM, PVM pVM, PGMMMAPUNMAPCHUNKREQ p
  * @param   idCpu       The VCPU id.
  * @param   pvR3        Pointer to the chunk size memory block to lock down.
  */
-GMMR0DECL(int) GMMR0SeedChunk(PGVM pGVM, PVM pVM, VMCPUID idCpu, RTR3PTR pvR3)
+GMMR0DECL(int) GMMR0SeedChunk(PGVM pGVM, PVMCC pVM, VMCPUID idCpu, RTR3PTR pvR3)
 {
     /*
      * Validate input and get the basics.
@@ -4541,7 +4545,7 @@ static void gmmR0ShModDeletePerVM(PGMM pGMM, PGVM pGVM, PGMMSHAREDMODULEPERVM pR
  * @param   paRegions       Pointer to an array of shared region(s).
  * @thread  EMT(idCpu)
  */
-GMMR0DECL(int) GMMR0RegisterSharedModule(PGVM pGVM, PVM pVM, VMCPUID idCpu, VBOXOSFAMILY enmGuestOS, char *pszModuleName,
+GMMR0DECL(int) GMMR0RegisterSharedModule(PGVM pGVM, PVMCC pVM, VMCPUID idCpu, VBOXOSFAMILY enmGuestOS, char *pszModuleName,
                                          char *pszVersion, RTGCPTR GCPtrModBase, uint32_t cbModule,
                                          uint32_t cRegions, struct VMMDEVSHAREDREGIONDESC const *paRegions)
 {
@@ -4682,7 +4686,7 @@ GMMR0DECL(int) GMMR0RegisterSharedModule(PGVM pGVM, PVM pVM, VMCPUID idCpu, VBOX
  * @param   idCpu       The VCPU id.
  * @param   pReq        Pointer to the request packet.
  */
-GMMR0DECL(int) GMMR0RegisterSharedModuleReq(PGVM pGVM, PVM pVM, VMCPUID idCpu, PGMMREGISTERSHAREDMODULEREQ pReq)
+GMMR0DECL(int) GMMR0RegisterSharedModuleReq(PGVM pGVM, PVMCC pVM, VMCPUID idCpu, PGMMREGISTERSHAREDMODULEREQ pReq)
 {
     /*
      * Validate input and pass it on.
@@ -4711,7 +4715,7 @@ GMMR0DECL(int) GMMR0RegisterSharedModuleReq(PGVM pGVM, PVM pVM, VMCPUID idCpu, P
  * @param   GCPtrModBase    The module base address.
  * @param   cbModule        The module size.
  */
-GMMR0DECL(int) GMMR0UnregisterSharedModule(PGVM pGVM, PVM pVM, VMCPUID idCpu, char *pszModuleName, char *pszVersion,
+GMMR0DECL(int) GMMR0UnregisterSharedModule(PGVM pGVM, PVMCC pVM, VMCPUID idCpu, char *pszModuleName, char *pszVersion,
                                            RTGCPTR GCPtrModBase, uint32_t cbModule)
 {
 #ifdef VBOX_WITH_PAGE_SHARING
@@ -4778,7 +4782,7 @@ GMMR0DECL(int) GMMR0UnregisterSharedModule(PGVM pGVM, PVM pVM, VMCPUID idCpu, ch
  * @param   idCpu       The VCPU id.
  * @param   pReq        Pointer to the request packet.
  */
-GMMR0DECL(int)  GMMR0UnregisterSharedModuleReq(PGVM pGVM, PVM pVM, VMCPUID idCpu, PGMMUNREGISTERSHAREDMODULEREQ pReq)
+GMMR0DECL(int)  GMMR0UnregisterSharedModuleReq(PGVM pGVM, PVMCC pVM, VMCPUID idCpu, PGMMUNREGISTERSHAREDMODULEREQ pReq)
 {
     /*
      * Validate input and pass it on.
@@ -5084,7 +5088,7 @@ static void gmmR0SharedModuleCleanup(PGMM pGMM, PGVM pGVM)
  * @param   pVM         The cross context VM structure.
  * @param   idCpu       The VCPU id.
  */
-GMMR0DECL(int) GMMR0ResetSharedModules(PGVM pGVM, PVM pVM, VMCPUID idCpu)
+GMMR0DECL(int) GMMR0ResetSharedModules(PGVM pGVM, PVMCC pVM, VMCPUID idCpu)
 {
 #ifdef VBOX_WITH_PAGE_SHARING
     /*
@@ -5137,7 +5141,11 @@ static DECLCALLBACK(int) gmmR0CheckSharedModule(PAVLGCPTRNODECORE pNode, void *p
     Log(("gmmR0CheckSharedModule: check %s %s base=%RGv size=%x\n",
          pGblMod->szName, pGblMod->szVersion, pGblMod->Core.Key, pGblMod->cbModule));
 
+# ifdef VBOX_BUGREF_9217
+    int rc = PGMR0SharedModuleCheck(pArgs->pGVM, pArgs->pGVM, pArgs->idCpu, pGblMod, pRecVM->aRegionsGCPtrs);
+#else
     int rc = PGMR0SharedModuleCheck(pArgs->pGVM->pVM, pArgs->pGVM, pArgs->idCpu, pGblMod, pRecVM->aRegionsGCPtrs);
+# endif
     if (RT_FAILURE(rc))
         return rc;
     return VINF_SUCCESS;
@@ -5154,7 +5162,7 @@ static DECLCALLBACK(int) gmmR0CheckSharedModule(PAVLGCPTRNODECORE pNode, void *p
  * @param   idCpu       The calling EMT number.
  * @thread  EMT(idCpu)
  */
-GMMR0DECL(int) GMMR0CheckSharedModules(PGVM pGVM, PVM pVM, VMCPUID idCpu)
+GMMR0DECL(int) GMMR0CheckSharedModules(PGVM pGVM, PVMCC pVM, VMCPUID idCpu)
 {
 #ifdef VBOX_WITH_PAGE_SHARING
     /*
@@ -5255,7 +5263,7 @@ static DECLCALLBACK(int) gmmR0FindDupPageInChunk(PAVLU32NODECORE pNode, void *pv
  * @param   pVM         The cross context VM structure.
  * @param   pReq        Pointer to the request packet.
  */
-GMMR0DECL(int) GMMR0FindDuplicatePageReq(PGVM pGVM, PVM pVM, PGMMFINDDUPLICATEPAGEREQ pReq)
+GMMR0DECL(int) GMMR0FindDuplicatePageReq(PGVM pGVM, PVMCC pVM, PGMMFINDDUPLICATEPAGEREQ pReq)
 {
     /*
      * Validate input and pass it on.
@@ -5327,7 +5335,7 @@ GMMR0DECL(int) GMMR0FindDuplicatePageReq(PGVM pGVM, PVM pVM, PGMMFINDDUPLICATEPA
  * @param   pGVM        The GVM to obtain statistics for. Optional.
  * @param   pVM         The VM structure corresponding to @a pGVM.
  */
-GMMR0DECL(int) GMMR0QueryStatistics(PGMMSTATS pStats, PSUPDRVSESSION pSession, PGVM pGVM, PVM pVM)
+GMMR0DECL(int) GMMR0QueryStatistics(PGMMSTATS pStats, PSUPDRVSESSION pSession, PGVM pGVM, PVMCC pVM)
 {
     LogFlow(("GVMMR0QueryStatistics: pStats=%p pSession=%p pGVM=%p pVM=%p\n", pStats, pSession, pGVM, pVM));
 
@@ -5393,7 +5401,7 @@ GMMR0DECL(int) GMMR0QueryStatistics(PGMMSTATS pStats, PSUPDRVSESSION pSession, P
  * @param   pVM         The cross context VM structure. Optional.
  * @param   pReq        Pointer to the request packet.
  */
-GMMR0DECL(int) GMMR0QueryStatisticsReq(PGVM pGVM, PVM pVM, PGMMQUERYSTATISTICSSREQ pReq)
+GMMR0DECL(int) GMMR0QueryStatisticsReq(PGVM pGVM, PVMCC pVM, PGMMQUERYSTATISTICSSREQ pReq)
 {
     /*
      * Validate input and pass it on.
@@ -5416,7 +5424,7 @@ GMMR0DECL(int) GMMR0QueryStatisticsReq(PGVM pGVM, PVM pVM, PGMMQUERYSTATISTICSSR
  * @param   pGVM        The GVM to reset statistics for. Optional.
  * @param   pVM         The VM structure corresponding to @a pGVM.
  */
-GMMR0DECL(int) GMMR0ResetStatistics(PCGMMSTATS pStats, PSUPDRVSESSION pSession, PGVM pGVM, PVM pVM)
+GMMR0DECL(int) GMMR0ResetStatistics(PCGMMSTATS pStats, PSUPDRVSESSION pSession, PGVM pGVM, PVMCC pVM)
 {
     NOREF(pStats); NOREF(pSession); NOREF(pVM); NOREF(pGVM);
     /* Currently nothing we can reset at the moment. */
@@ -5432,7 +5440,7 @@ GMMR0DECL(int) GMMR0ResetStatistics(PCGMMSTATS pStats, PSUPDRVSESSION pSession, 
  * @param   pVM         The cross context VM structure. Optional.
  * @param   pReq        Pointer to the request packet.
  */
-GMMR0DECL(int) GMMR0ResetStatisticsReq(PGVM pGVM, PVM pVM, PGMMRESETSTATISTICSSREQ pReq)
+GMMR0DECL(int) GMMR0ResetStatisticsReq(PGVM pGVM, PVMCC pVM, PGMMRESETSTATISTICSSREQ pReq)
 {
     /*
      * Validate input and pass it on.

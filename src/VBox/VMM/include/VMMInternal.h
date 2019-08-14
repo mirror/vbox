@@ -74,7 +74,7 @@
 typedef struct VMMR0LOGGER
 {
     /** Pointer to Pointer to the VM. */
-    R0PTRTYPE(PVM)              pVM;
+    R0PTRTYPE(PVMCC)            pVM;
     /** Size of the allocated logger instance (Logger). */
     uint32_t                    cbLogger;
     /** Flag indicating whether we've create the logger Ring-0 instance yet. */

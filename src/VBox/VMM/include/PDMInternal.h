@@ -147,7 +147,7 @@ typedef struct PDMDEVINSINT
     R3PTRTYPE(PPDMPCIDEV)           pHeadPciDevR3;
 
     /** R0 pointer to the VM this instance was created for. */
-    PVMR0                           pVMR0;
+    R0PTRTYPE(PVMCC)                pVMR0;
     /** Associated PCI device list head (first is default). (R0 ptr) */
     R0PTRTYPE(PPDMPCIDEV)           pHeadPciDevR0;
 
@@ -243,7 +243,7 @@ typedef struct PDMDRVINSINT
     /** Pointer to the VM this instance was created for, ring-3 context. */
     PVMR3                           pVMR3;
     /** Pointer to the VM this instance was created for, ring-0 context. */
-    PVMR0                           pVMR0;
+    R0PTRTYPE(PVMCC)                pVMR0;
     /** Pointer to the VM this instance was created for, raw-mode context. */
     PVMRC                           pVMRC;
     /** Flag indicating that the driver is being detached and destroyed.

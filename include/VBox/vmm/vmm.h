@@ -99,7 +99,7 @@ typedef enum VMMCALLRING3
  * @param   enmOperation    The operation causing the ring-3 jump.
  * @param   pvUser          The user argument.
  */
-typedef DECLCALLBACK(int) FNVMMR0CALLRING3NOTIFICATION(PVMCPU pVCpu, VMMCALLRING3 enmOperation, void *pvUser);
+typedef DECLCALLBACK(int) FNVMMR0CALLRING3NOTIFICATION(PVMCPUCC pVCpu, VMMCALLRING3 enmOperation, void *pvUser);
 /** Pointer to a FNRTMPNOTIFICATION(). */
 typedef FNVMMR0CALLRING3NOTIFICATION *PFNVMMR0CALLRING3NOTIFICATION;
 
@@ -529,14 +529,14 @@ VMMR3_INT_DECL(void)    VMMR3InitR0StackUnwindState(PUVM pUVM, VMCPUID idCpu, PR
 /** @defgroup grp_vmm_api_rz    The VMM Raw-Mode and Ring-0 Context API
  * @{
  */
-VMMRZDECL(int)      VMMRZCallRing3(PVM pVM, PVMCPU pVCpu, VMMCALLRING3 enmOperation, uint64_t uArg);
-VMMRZDECL(int)      VMMRZCallRing3NoCpu(PVM pVM, VMMCALLRING3 enmOperation, uint64_t uArg);
-VMMRZDECL(void)     VMMRZCallRing3Disable(PVMCPU pVCpu);
-VMMRZDECL(void)     VMMRZCallRing3Enable(PVMCPU pVCpu);
-VMMRZDECL(bool)     VMMRZCallRing3IsEnabled(PVMCPU pVCpu);
-VMMRZDECL(int)      VMMRZCallRing3SetNotification(PVMCPU pVCpu, R0PTRTYPE(PFNVMMR0CALLRING3NOTIFICATION) pfnCallback, RTR0PTR pvUser);
-VMMRZDECL(void)     VMMRZCallRing3RemoveNotification(PVMCPU pVCpu);
-VMMRZDECL(bool)     VMMRZCallRing3IsNotificationSet(PVMCPU pVCpu);
+VMMRZDECL(int)      VMMRZCallRing3(PVMCC pVMCC, PVMCPU pVCpu, VMMCALLRING3 enmOperation, uint64_t uArg);
+VMMRZDECL(int)      VMMRZCallRing3NoCpu(PVMCC pVM, VMMCALLRING3 enmOperation, uint64_t uArg);
+VMMRZDECL(void)     VMMRZCallRing3Disable(PVMCPUCC pVCpu);
+VMMRZDECL(void)     VMMRZCallRing3Enable(PVMCPUCC pVCpu);
+VMMRZDECL(bool)     VMMRZCallRing3IsEnabled(PVMCPUCC pVCpu);
+VMMRZDECL(int)      VMMRZCallRing3SetNotification(PVMCPUCC pVCpu, R0PTRTYPE(PFNVMMR0CALLRING3NOTIFICATION) pfnCallback, RTR0PTR pvUser);
+VMMRZDECL(void)     VMMRZCallRing3RemoveNotification(PVMCPUCC pVCpu);
+VMMRZDECL(bool)     VMMRZCallRing3IsNotificationSet(PVMCPUCC pVCpu);
 /** @} */
 #endif
 

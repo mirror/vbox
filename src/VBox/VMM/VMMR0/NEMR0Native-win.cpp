@@ -34,7 +34,7 @@
 #include <VBox/vmm/dbgftrace.h>
 #include "NEMInternal.h"
 #include <VBox/vmm/gvm.h>
-#include <VBox/vmm/vm.h>
+#include <VBox/vmm/vmcc.h>
 #include <VBox/vmm/gvmm.h>
 #include <VBox/param.h>
 
@@ -79,7 +79,7 @@ static NTSTATUS (*g_pfnWinHvDepositMemory)(uintptr_t idPartition, size_t cPages,
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
-NEM_TMPL_STATIC int  nemR0WinMapPages(PGVM pGVM, PVM pVM, PGVMCPU pGVCpu, RTGCPHYS GCPhysSrc, RTGCPHYS GCPhysDst,
+NEM_TMPL_STATIC int  nemR0WinMapPages(PGVM pGVM, PVMCC pVM, PGVMCPU pGVCpu, RTGCPHYS GCPhysSrc, RTGCPHYS GCPhysDst,
                                       uint32_t cPages, uint32_t fFlags);
 NEM_TMPL_STATIC int  nemR0WinUnmapPages(PGVM pGVM, PGVMCPU pGVCpu, RTGCPHYS GCPhys, uint32_t cPages);
 #if defined(NEM_WIN_WITH_RING0_RUNLOOP) || defined(NEM_WIN_USE_HYPERCALLS_FOR_REGISTERS)
@@ -88,7 +88,7 @@ NEM_TMPL_STATIC int  nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCt
 NEM_TMPL_STATIC int  nemR0WinQueryCpuTick(PGVM pGVM, PGVMCPU pGVCpu, uint64_t *pcTicks, uint32_t *pcAux);
 NEM_TMPL_STATIC int  nemR0WinResumeCpuTickOnAll(PGVM pGVM, PGVMCPU pGVCpu, uint64_t uPausedTscValue);
 #endif
-DECLINLINE(NTSTATUS) nemR0NtPerformIoControl(PGVM pGVM, uint32_t uFunction, void *pvInput, uint32_t cbInput,
+DECLINLINE(NTSTATUS) nemR0NtPerformIoControl(PGVM pGVM, PVMCPUCC pVCpu, uint32_t uFunction, void *pvInput, uint32_t cbInput,
                                              void *pvOutput, uint32_t cbOutput);
 
 
@@ -158,7 +158,7 @@ static void nemR0DeleteHypercallData(PNEMR0HYPERCALLDATA pHypercallData)
  * @param   pVM             The cross context VM handle.
  * @thread  EMT(0)
  */
-VMMR0_INT_DECL(int) NEMR0InitVM(PGVM pGVM, PVM pVM)
+VMMR0_INT_DECL(int) NEMR0InitVM(PGVM pGVM, PVMCC pVM)
 {
     AssertCompile(sizeof(pGVM->nemr0.s) <= sizeof(pGVM->nemr0.padding));
     AssertCompile(sizeof(pGVM->aCpus[0].nemr0.s) <= sizeof(pGVM->aCpus[0].nemr0.padding));
@@ -237,6 +237,7 @@ VMMR0_INT_DECL(int) NEMR0InitVM(PGVM pGVM, PVM pVM)
  *
  * @returns NT status code.
  * @param   pGVM            The ring-0 VM structure.
+ * @param   pVCpu           The cross context CPU structure of the calling EMT.
  * @param   uFunction       The function to perform.
  * @param   pvInput         The input buffer.  This must point within the VM
  *                          structure so we can easily convert to a ring-3
@@ -247,33 +248,53 @@ VMMR0_INT_DECL(int) NEMR0InitVM(PGVM pGVM, PVM pVM)
  *                          VM structure for ring-3 pointer magic.
  * @param   cbOutput        The size of the output.  @a pvOutput must be NULL
  *                          when zero.
+ * @thread  EMT(pVCpu)
  */
-DECLINLINE(NTSTATUS) nemR0NtPerformIoControl(PGVM pGVM, uint32_t uFunction, void *pvInput, uint32_t cbInput,
+DECLINLINE(NTSTATUS) nemR0NtPerformIoControl(PGVM pGVM, PVMCPUCC pVCpu, uint32_t uFunction, void *pvInput, uint32_t cbInput,
                                              void *pvOutput, uint32_t cbOutput)
 {
 #ifdef RT_STRICT
     /*
      * Input and output parameters are part of the VM CPU structure.
      */
-    PVM          pVM  = pGVM->pVM;
+    VMCPU_ASSERT_EMT(pVCpu);
+# ifdef VBOX_BUGREF_9217
+    if (pvInput)
+        AssertReturn(((uintptr_t)pvInput + cbInput) - (uintptr_t)pVCpu <= sizeof(*pVCpu), VERR_INVALID_PARAMETER);
+    if (pvOutput)
+        AssertReturn(((uintptr_t)pvOutput + cbOutput) - (uintptr_t)pVCpu <= sizeof(*pVCpu), VERR_INVALID_PARAMETER);
+# else
+    PVMCC        pVM  = pGVM->pVM;
     size_t const cbVM = RT_UOFFSETOF_DYN(VM, aCpus[pGVM->cCpus]);
     if (pvInput)
         AssertReturn(((uintptr_t)pvInput + cbInput) - (uintptr_t)pVM <= cbVM, VERR_INVALID_PARAMETER);
     if (pvOutput)
         AssertReturn(((uintptr_t)pvOutput + cbOutput) - (uintptr_t)pVM <= cbVM, VERR_INVALID_PARAMETER);
+# endif
 #endif
 
     int32_t rcNt = STATUS_UNSUCCESSFUL;
     int rc = SUPR0IoCtlPerform(pGVM->nemr0.s.pIoCtlCtx, uFunction,
                                pvInput,
+#ifdef VBOX_BUGREF_9217
+                               pvInput  ? (uintptr_t)pvInput  + pVCpu->nemr0.s.offRing3ConversionDelta : NIL_RTR3PTR,
+#else
                                pvInput  ? (uintptr_t)pvInput  + pGVM->nemr0.s.offRing3ConversionDelta : NIL_RTR3PTR,
+#endif
                                cbInput,
                                pvOutput,
+#ifdef VBOX_BUGREF_9217
+                               pvOutput ? (uintptr_t)pvOutput + pVCpu->nemr0.s.offRing3ConversionDelta : NIL_RTR3PTR,
+#else
                                pvOutput ? (uintptr_t)pvOutput + pGVM->nemr0.s.offRing3ConversionDelta : NIL_RTR3PTR,
+#endif
                                cbOutput,
                                &rcNt);
     if (RT_SUCCESS(rc) || !NT_SUCCESS((NTSTATUS)rcNt))
         return (NTSTATUS)rcNt;
+#ifndef VBOX_BUGREF_9217
+    RT_NOREF(pVCpu);
+#endif
     return STATUS_UNSUCCESSFUL;
 }
 
@@ -286,7 +307,7 @@ DECLINLINE(NTSTATUS) nemR0NtPerformIoControl(PGVM pGVM, uint32_t uFunction, void
  * @param   pVM             The cross context VM handle.
  * @thread  EMT(0)
  */
-VMMR0_INT_DECL(int) NEMR0InitVMPart2(PGVM pGVM, PVM pVM)
+VMMR0_INT_DECL(int) NEMR0InitVMPart2(PGVM pGVM, PVMCC pVM)
 {
     int rc = GVMMR0ValidateGVMandVMandEMT(pGVM, pVM, 0);
     AssertRCReturn(rc, rc);
@@ -341,16 +362,28 @@ VMMR0_INT_DECL(int) NEMR0InitVMPart2(PGVM pGVM, PVM pVM)
          */
         rc = SUPR0IoCtlSetupForHandle(pGVM->pSession, pVM->nem.s.hPartitionDevice, 0, &pGVM->nemr0.s.pIoCtlCtx);
         AssertLogRelRCReturn(rc, rc);
+#ifdef VBOX_BUGREF_9217
+        for (VMCPUID idCpu = 0; idCpu < pGVM->cCpus; idCpu++)
+        {
+            PGVMCPU pGVCpu = &pGVM->aCpus[idCpu];
+            pGVCpu->nemr0.s.offRing3ConversionDelta = (uintptr_t)pGVM->aCpus[idCpu].pVCpuR3 - (uintptr_t)pGVCpu;
+        }
+#else
         pGVM->nemr0.s.offRing3ConversionDelta = (uintptr_t)pVM->pVMR3 - (uintptr_t)pGVM->pVM;
+#endif
 
         /*
          * Get the partition ID.
          */
-        PVMCPU pVCpu = &pGVM->pVM->aCpus[0];
-        NTSTATUS rcNt = nemR0NtPerformIoControl(pGVM, pGVM->nemr0.s.IoCtlGetHvPartitionId.uFunction, NULL, 0,
-                                                &pVCpu->nem.s.uIoCtlBuf.idPartition, sizeof(pVCpu->nem.s.uIoCtlBuf.idPartition));
+#ifdef VBOX_BUGREF_9217
+        PVMCPUCC pVCpu0 = &pGVM->aCpus[0];
+#else
+        PVMCPUCC pVCpu0 = &pGVM->pVM->aCpus[0];
+#endif
+        NTSTATUS rcNt = nemR0NtPerformIoControl(pGVM, pVCpu0, pGVM->nemr0.s.IoCtlGetHvPartitionId.uFunction, NULL, 0,
+                                                &pVCpu0->nem.s.uIoCtlBuf.idPartition, sizeof(pVCpu0->nem.s.uIoCtlBuf.idPartition));
         AssertLogRelMsgReturn(NT_SUCCESS(rcNt), ("IoCtlGetHvPartitionId failed: %#x\n", rcNt), VERR_NEM_INIT_FAILED);
-        pGVM->nemr0.s.idHvPartition = pVCpu->nem.s.uIoCtlBuf.idPartition;
+        pGVM->nemr0.s.idHvPartition = pVCpu0->nem.s.uIoCtlBuf.idPartition;
         AssertLogRelMsgReturn(pGVM->nemr0.s.idHvPartition == pVM->nem.s.idHvPartition,
                               ("idHvPartition mismatch: r0=%#RX64, r3=%#RX64\n", pGVM->nemr0.s.idHvPartition, pVM->nem.s.idHvPartition),
                               VERR_NEM_INIT_FAILED);
@@ -418,7 +451,7 @@ static int nemR3WinDummyReadGpa(PGVM pGVM, PGVMCPU pGVCpu, RTGCPHYS GCPhys)
 /**
  * Worker for NEMR0MapPages and others.
  */
-NEM_TMPL_STATIC int nemR0WinMapPages(PGVM pGVM, PVM pVM, PGVMCPU pGVCpu, RTGCPHYS GCPhysSrc, RTGCPHYS GCPhysDst,
+NEM_TMPL_STATIC int nemR0WinMapPages(PGVM pGVM, PVMCC pVM, PGVMCPU pGVCpu, RTGCPHYS GCPhysSrc, RTGCPHYS GCPhysDst,
                                      uint32_t cPages, uint32_t fFlags)
 {
     /*
@@ -500,7 +533,7 @@ NEM_TMPL_STATIC int nemR0WinMapPages(PGVM pGVM, PVM pVM, PGVMCPU pGVCpu, RTGCPHY
  *                          hypercall page and arguments.
  * @thread  EMT(idCpu)
  */
-VMMR0_INT_DECL(int) NEMR0MapPages(PGVM pGVM, PVM pVM, VMCPUID idCpu)
+VMMR0_INT_DECL(int) NEMR0MapPages(PGVM pGVM, PVMCC pVM, VMCPUID idCpu)
 {
     /*
      * Unpack the call.
@@ -508,7 +541,7 @@ VMMR0_INT_DECL(int) NEMR0MapPages(PGVM pGVM, PVM pVM, VMCPUID idCpu)
     int rc = GVMMR0ValidateGVMandVMandEMT(pGVM, pVM, idCpu);
     if (RT_SUCCESS(rc))
     {
-        PVMCPU  pVCpu  = &pVM->aCpus[idCpu];
+        PVMCPUCC  pVCpu  = VMCC_GET_CPU(pVM, idCpu);
         PGVMCPU pGVCpu = &pGVM->aCpus[idCpu];
 
         RTGCPHYS const          GCPhysSrc = pVCpu->nem.s.Hypercall.MapPages.GCPhysSrc;
@@ -580,7 +613,7 @@ NEM_TMPL_STATIC int nemR0WinUnmapPages(PGVM pGVM, PGVMCPU pGVCpu, RTGCPHYS GCPhy
  *                          hypercall page and arguments.
  * @thread  EMT(idCpu)
  */
-VMMR0_INT_DECL(int) NEMR0UnmapPages(PGVM pGVM, PVM pVM, VMCPUID idCpu)
+VMMR0_INT_DECL(int) NEMR0UnmapPages(PGVM pGVM, PVMCC pVM, VMCPUID idCpu)
 {
     /*
      * Unpack the call.
@@ -588,7 +621,7 @@ VMMR0_INT_DECL(int) NEMR0UnmapPages(PGVM pGVM, PVM pVM, VMCPUID idCpu)
     int rc = GVMMR0ValidateGVMandVMandEMT(pGVM, pVM, idCpu);
     if (RT_SUCCESS(rc))
     {
-        PVMCPU  pVCpu  = &pVM->aCpus[idCpu];
+        PVMCPUCC  pVCpu  = VMCC_GET_CPU(pVM, idCpu);
         PGVMCPU pGVCpu = &pGVM->aCpus[idCpu];
 
         RTGCPHYS const GCPhys = pVCpu->nem.s.Hypercall.UnmapPages.GCPhys;
@@ -616,7 +649,11 @@ VMMR0_INT_DECL(int) NEMR0UnmapPages(PGVM pGVM, PVM pVM, VMCPUID idCpu)
  */
 NEM_TMPL_STATIC int nemR0WinExportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx)
 {
-    PVMCPU                     pVCpu  = &pGVM->pVM->aCpus[pGVCpu->idCpu];
+#ifdef VBOX_BUGREF_9217
+    PVMCPUCC                   pVCpu  = pGVCpu;
+#else
+    PVMCPUCC                   pVCpu  = &pGVM->pVM->aCpus[pGVCpu->idCpu];
+#endif
     HV_INPUT_SET_VP_REGISTERS *pInput = (HV_INPUT_SET_VP_REGISTERS *)pGVCpu->nemr0.s.HypercallData.pbPage;
     AssertPtrReturn(pInput, VERR_INTERNAL_ERROR_3);
     AssertReturn(g_pfnHvlInvokeHypercall, VERR_NEM_MISSING_KERNEL_API);
@@ -1294,7 +1331,7 @@ NEM_TMPL_STATIC int nemR0WinExportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
  * @param   idCpu       The calling EMT.  Necessary for getting the
  *                      hypercall page and arguments.
  */
-VMMR0_INT_DECL(int)  NEMR0ExportState(PGVM pGVM, PVM pVM, VMCPUID idCpu)
+VMMR0_INT_DECL(int)  NEMR0ExportState(PGVM pGVM, PVMCC pVM, VMCPUID idCpu)
 {
 #if defined(NEM_WIN_WITH_RING0_RUNLOOP) || defined(NEM_WIN_USE_HYPERCALLS_FOR_REGISTERS)
     /*
@@ -1303,7 +1340,7 @@ VMMR0_INT_DECL(int)  NEMR0ExportState(PGVM pGVM, PVM pVM, VMCPUID idCpu)
     int rc = GVMMR0ValidateGVMandVMandEMT(pGVM, pVM, idCpu);
     if (RT_SUCCESS(rc))
     {
-        PVMCPU  pVCpu  = &pVM->aCpus[idCpu];
+        PVMCPUCC  pVCpu  = VMCC_GET_CPU(pVM, idCpu);
         PGVMCPU pGVCpu = &pGVM->aCpus[idCpu];
         AssertReturn(g_pfnHvlInvokeHypercall, VERR_NEM_MISSING_KERNEL_API);
 
@@ -1338,7 +1375,11 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
     HV_INPUT_GET_VP_REGISTERS *pInput = (HV_INPUT_GET_VP_REGISTERS *)pGVCpu->nemr0.s.HypercallData.pbPage;
     AssertPtrReturn(pInput, VERR_INTERNAL_ERROR_3);
     AssertReturn(g_pfnHvlInvokeHypercall, VERR_NEM_MISSING_KERNEL_API);
+#ifdef VBOX_BUGREF_9217
+    Assert(pCtx == &pGVCpu->cpum.GstCtx);
+#else
     Assert(pCtx == &pGVCpu->pVCpu->cpum.GstCtx);
+#endif
 
     fWhat &= pCtx->fExtrn;
 
@@ -1506,7 +1547,11 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
     }
 
 # ifdef LOG_ENABLED
+#  ifdef VBOX_BUGREF_9217
+    const CPUMCPUVENDOR enmCpuVendor = CPUMGetHostCpuVendor(pGVM);
+#  else
     const CPUMCPUVENDOR enmCpuVendor = CPUMGetHostCpuVendor(pGVM->pVM);
+#  endif
 # endif
     if (fWhat & CPUMCTX_EXTRN_OTHER_MSRS)
     {
@@ -1570,7 +1615,11 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
     /*
      * Copy information to the CPUM context.
      */
-    PVMCPU pVCpu = &pGVM->pVM->aCpus[pGVCpu->idCpu];
+# ifdef VBOX_BUGREF_9217
+    PVMCPUCC pVCpu = pGVCpu;
+# else
+    PVMCPUCC pVCpu = &pGVM->pVM->aCpus[pGVCpu->idCpu];
+# endif
     iReg = 0;
 
     /* GPRs */
@@ -2214,7 +2263,7 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
  * @param   fWhat       What to import, CPUMCTX_EXTRN_XXX. Set
  *                      CPUMCTX_EXTERN_ALL for everything.
  */
-VMMR0_INT_DECL(int) NEMR0ImportState(PGVM pGVM, PVM pVM, VMCPUID idCpu, uint64_t fWhat)
+VMMR0_INT_DECL(int) NEMR0ImportState(PGVM pGVM, PVMCC pVM, VMCPUID idCpu, uint64_t fWhat)
 {
 #if defined(NEM_WIN_WITH_RING0_RUNLOOP) || defined(NEM_WIN_USE_HYPERCALLS_FOR_REGISTERS)
     /*
@@ -2223,7 +2272,7 @@ VMMR0_INT_DECL(int) NEMR0ImportState(PGVM pGVM, PVM pVM, VMCPUID idCpu, uint64_t
     int rc = GVMMR0ValidateGVMandVMandEMT(pGVM, pVM, idCpu);
     if (RT_SUCCESS(rc))
     {
-        PVMCPU  pVCpu  = &pVM->aCpus[idCpu];
+        PVMCPUCC  pVCpu  = VMCC_GET_CPU(pVM, idCpu);
         PGVMCPU pGVCpu = &pGVM->aCpus[idCpu];
         AssertReturn(g_pfnHvlInvokeHypercall, VERR_NEM_MISSING_KERNEL_API);
 
@@ -2298,7 +2347,7 @@ NEM_TMPL_STATIC int nemR0WinQueryCpuTick(PGVM pGVM, PGVMCPU pGVCpu, uint64_t *pc
  * @param   idCpu       The calling EMT.  Necessary for getting the
  *                      hypercall page and arguments.
  */
-VMMR0_INT_DECL(int) NEMR0QueryCpuTick(PGVM pGVM, PVM pVM, VMCPUID idCpu)
+VMMR0_INT_DECL(int) NEMR0QueryCpuTick(PGVM pGVM, PVMCC pVM, VMCPUID idCpu)
 {
 #if defined(NEM_WIN_WITH_RING0_RUNLOOP) || defined(NEM_WIN_USE_HYPERCALLS_FOR_REGISTERS)
     /*
@@ -2307,7 +2356,7 @@ VMMR0_INT_DECL(int) NEMR0QueryCpuTick(PGVM pGVM, PVM pVM, VMCPUID idCpu)
     int rc = GVMMR0ValidateGVMandVMandEMT(pGVM, pVM, idCpu);
     if (RT_SUCCESS(rc))
     {
-        PVMCPU  pVCpu  = &pVM->aCpus[idCpu];
+        PVMCPUCC  pVCpu  = VMCC_GET_CPU(pVM, idCpu);
         PGVMCPU pGVCpu = &pGVM->aCpus[idCpu];
         AssertReturn(g_pfnHvlInvokeHypercall, VERR_NEM_MISSING_KERNEL_API);
 
@@ -2408,7 +2457,7 @@ NEM_TMPL_STATIC int nemR0WinResumeCpuTickOnAll(PGVM pGVM, PGVMCPU pGVCpu, uint64
  *                          hypercall page and arguments.
  * @param   uPausedTscValue The TSC value at the time of pausing.
  */
-VMMR0_INT_DECL(int) NEMR0ResumeCpuTickOnAll(PGVM pGVM, PVM pVM, VMCPUID idCpu, uint64_t uPausedTscValue)
+VMMR0_INT_DECL(int) NEMR0ResumeCpuTickOnAll(PGVM pGVM, PVMCC pVM, VMCPUID idCpu, uint64_t uPausedTscValue)
 {
 #if defined(NEM_WIN_WITH_RING0_RUNLOOP) || defined(NEM_WIN_USE_HYPERCALLS_FOR_REGISTERS)
     /*
@@ -2417,7 +2466,7 @@ VMMR0_INT_DECL(int) NEMR0ResumeCpuTickOnAll(PGVM pGVM, PVM pVM, VMCPUID idCpu, u
     int rc = GVMMR0ValidateGVMandVMandEMT(pGVM, pVM, idCpu);
     if (RT_SUCCESS(rc))
     {
-        PVMCPU  pVCpu  = &pVM->aCpus[idCpu];
+        PVMCPUCC  pVCpu  = VMCC_GET_CPU(pVM, idCpu);
         PGVMCPU pGVCpu = &pGVM->aCpus[idCpu];
         AssertReturn(g_pfnHvlInvokeHypercall, VERR_NEM_MISSING_KERNEL_API);
 
@@ -2440,10 +2489,14 @@ VMMR0_INT_DECL(VBOXSTRICTRC) NEMR0RunGuestCode(PGVM pGVM, VMCPUID idCpu)
 {
 #ifdef NEM_WIN_WITH_RING0_RUNLOOP
     if (pGVM->nemr0.s.fMayUseRing0Runloop)
+# ifdef VBOX_BUGREF_9217
+        return nemHCWinRunGC(pGVM, &pGVM->aCpus[idCpu], pGVM, &pGVM->aCpus[idCpu]);
+# else
     {
-        PVM pVM = pGVM->pVM;
+        PVMCC pVM = pGVM->pVM;
         return nemHCWinRunGC(pVM, &pVM->aCpus[idCpu], pGVM, &pGVM->aCpus[idCpu]);
     }
+# endif
     return VERR_NEM_RING3_ONLY;
 #else
     RT_NOREF(pGVM, idCpu);
@@ -2461,7 +2514,7 @@ VMMR0_INT_DECL(VBOXSTRICTRC) NEMR0RunGuestCode(PGVM pGVM, VMCPUID idCpu)
  * @param   idCpu       The calling EMT, or NIL.  Necessary for getting the hypercall
  *                      page and arguments.
  */
-VMMR0_INT_DECL(int)  NEMR0UpdateStatistics(PGVM pGVM, PVM pVM, VMCPUID idCpu)
+VMMR0_INT_DECL(int)  NEMR0UpdateStatistics(PGVM pGVM, PVMCC pVM, VMCPUID idCpu)
 {
     /*
      * Validate the call.
@@ -2534,7 +2587,7 @@ VMMR0_INT_DECL(int)  NEMR0UpdateStatistics(PGVM pGVM, PVM pVM, VMCPUID idCpu)
  * @param   idCpu       The calling EMT.
  * @param   u64Arg      What to query.  0 == registers.
  */
-VMMR0_INT_DECL(int) NEMR0DoExperiment(PGVM pGVM, PVM pVM, VMCPUID idCpu, uint64_t u64Arg)
+VMMR0_INT_DECL(int) NEMR0DoExperiment(PGVM pGVM, PVMCC pVM, VMCPUID idCpu, uint64_t u64Arg)
 {
     /*
      * Resolve CPU structures.
@@ -2545,7 +2598,7 @@ VMMR0_INT_DECL(int) NEMR0DoExperiment(PGVM pGVM, PVM pVM, VMCPUID idCpu, uint64_
         AssertReturn(g_pfnHvlInvokeHypercall, VERR_NEM_MISSING_KERNEL_API);
 
         PGVMCPU pGVCpu = &pGVM->aCpus[idCpu];
-        PVMCPU  pVCpu  = &pVM->aCpus[idCpu];
+        PVMCPUCC  pVCpu  = VMCC_GET_CPU(pVM, idCpu);
         if (u64Arg == 0)
         {
             /*

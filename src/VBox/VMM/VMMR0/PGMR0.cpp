@@ -19,12 +19,13 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define VBOX_BUGREF_9217_PART_I
 #define LOG_GROUP LOG_GROUP_PGM
 #include <VBox/rawpci.h>
 #include <VBox/vmm/pgm.h>
 #include <VBox/vmm/gmm.h>
 #include "PGMInternal.h"
-#include <VBox/vmm/vm.h>
+#include <VBox/vmm/vmcc.h>
 #include <VBox/vmm/gvm.h>
 #include "PGMInline.h"
 #include <VBox/log.h>
@@ -70,7 +71,7 @@
  * @remarks Must be called from within the PGM critical section. The caller
  *          must clear the new pages.
  */
-VMMR0_INT_DECL(int) PGMR0PhysAllocateHandyPages(PGVM pGVM, PVM pVM, VMCPUID idCpu)
+VMMR0_INT_DECL(int) PGMR0PhysAllocateHandyPages(PGVM pGVM, PVMCC pVM, VMCPUID idCpu)
 {
     /*
      * Validate inputs.
@@ -80,7 +81,7 @@ VMMR0_INT_DECL(int) PGMR0PhysAllocateHandyPages(PGVM pGVM, PVM pVM, VMCPUID idCp
 #ifdef VBOX_BUGREF_9217
     PGM_LOCK_ASSERT_OWNER_EX(pVM, &pGVM->aCpus[idCpu]);
 #else
-    PGM_LOCK_ASSERT_OWNER_EX(pVM, &pVM->aCpus[idCpu]);
+    PGM_LOCK_ASSERT_OWNER_EX(pVM, VMCC_GET_CPU(pVM, idCpu));
 #endif
 
     /*
@@ -197,7 +198,7 @@ VMMR0_INT_DECL(int) PGMR0PhysAllocateHandyPages(PGVM pGVM, PVM pVM, VMCPUID idCp
  *
  * @remarks Must be called from within the PGM critical section.
  */
-VMMR0_INT_DECL(int) PGMR0PhysFlushHandyPages(PGVM pGVM, PVM pVM, VMCPUID idCpu)
+VMMR0_INT_DECL(int) PGMR0PhysFlushHandyPages(PGVM pGVM, PVMCC pVM, VMCPUID idCpu)
 {
     /*
      * Validate inputs.
@@ -207,7 +208,7 @@ VMMR0_INT_DECL(int) PGMR0PhysFlushHandyPages(PGVM pGVM, PVM pVM, VMCPUID idCpu)
 #ifdef VBOX_BUGREF_9217
     PGM_LOCK_ASSERT_OWNER_EX(pVM, &pGVM->aCpus[idCpu]);
 #else
-    PGM_LOCK_ASSERT_OWNER_EX(pVM, &pVM->aCpus[idCpu]);
+    PGM_LOCK_ASSERT_OWNER_EX(pVM, VMCC_GET_CPU(pVM, idCpu));
 #endif
 
     /*
@@ -241,7 +242,7 @@ VMMR0_INT_DECL(int) PGMR0PhysFlushHandyPages(PGVM pGVM, PVM pVM, VMCPUID idCpu)
  * @remarks Must be called from within the PGM critical section. The caller
  *          must clear the new pages.
  */
-VMMR0_INT_DECL(int) PGMR0PhysAllocateLargeHandyPage(PGVM pGVM, PVM pVM, VMCPUID idCpu)
+VMMR0_INT_DECL(int) PGMR0PhysAllocateLargeHandyPage(PGVM pGVM, PVMCC pVM, VMCPUID idCpu)
 {
     /*
      * Validate inputs.
@@ -251,7 +252,7 @@ VMMR0_INT_DECL(int) PGMR0PhysAllocateLargeHandyPage(PGVM pGVM, PVM pVM, VMCPUID 
 #ifdef VBOX_BUGREF_9217
     PGM_LOCK_ASSERT_OWNER_EX(pVM, &pGVM->aCpus[idCpu]);
 #else
-    PGM_LOCK_ASSERT_OWNER_EX(pVM, &pVM->aCpus[idCpu]);
+    PGM_LOCK_ASSERT_OWNER_EX(pVM, VMCC_GET_CPU(pVM, idCpu));
 #endif
     Assert(!pVM->pgm.s.cLargeHandyPages);
 
@@ -396,7 +397,7 @@ VMMR0_INT_DECL(int) GPciRawR0GuestPageUpdate(PGVM pGVM, RTGCPHYS GCPhys, RTHCPHY
  * @param   pGVM                The global (ring-0) VM structure.
  * @param   pVM                 The cross context VM structure.
  */
-VMMR0_INT_DECL(int) PGMR0PhysSetupIoMmu(PGVM pGVM, PVM pVM)
+VMMR0_INT_DECL(int) PGMR0PhysSetupIoMmu(PGVM pGVM, PVMCC pVM)
 {
     int rc = GVMMR0ValidateGVMandVM(pGVM, pVM);
     if (RT_FAILURE(rc))
@@ -458,7 +459,7 @@ VMMR0_INT_DECL(int) PGMR0PhysSetupIoMmu(PGVM pGVM, PVM pVM)
  * @param   pRegFrame           Trap register frame.
  * @param   GCPhysFault         The fault address.
  */
-VMMR0DECL(int) PGMR0Trap0eHandlerNestedPaging(PVM pVM, PVMCPU pVCpu, PGMMODE enmShwPagingMode, RTGCUINT uErr,
+VMMR0DECL(int) PGMR0Trap0eHandlerNestedPaging(PVMCC pVM, PVMCPUCC pVCpu, PGMMODE enmShwPagingMode, RTGCUINT uErr,
                                               PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFault)
 {
     int rc;
@@ -587,7 +588,7 @@ VMMR0DECL(int) PGMR0Trap0eHandlerNestedPaging(PVM pVM, PVMCPU pVCpu, PGMMODE enm
  * @param   uErr                The error code, UINT32_MAX if not available
  *                              (VT-x).
  */
-VMMR0DECL(VBOXSTRICTRC) PGMR0Trap0eHandlerNPMisconfig(PVM pVM, PVMCPU pVCpu, PGMMODE enmShwPagingMode,
+VMMR0DECL(VBOXSTRICTRC) PGMR0Trap0eHandlerNPMisconfig(PVMCC pVM, PVMCPUCC pVCpu, PGMMODE enmShwPagingMode,
                                                       PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFault, uint32_t uErr)
 {
 #ifdef PGM_WITH_MMIO_OPTIMIZATIONS

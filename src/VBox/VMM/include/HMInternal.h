@@ -674,12 +674,12 @@ AssertCompileMemberAlignment(HM, StatTprPatchSuccess, 8);
  * @param   pVM         Pointer to the cross context VM structure.
  * @param   pVCpu       Pointer to the cross context per-CPU structure.
  */
-typedef DECLCALLBACK(int) FNHMVMXSTARTVM(RTHCUINT fResume, PCPUMCTX pCtx, void *pvUnused, PVM pVM, PVMCPU pVCpu);
+typedef DECLCALLBACK(int) FNHMVMXSTARTVM(RTHCUINT fResume, PCPUMCTX pCtx, void *pvUnused, PVMCC pVM, PVMCPUCC pVCpu);
 /** Pointer to a VMX StartVM function. */
 typedef R0PTRTYPE(FNHMVMXSTARTVM *) PFNHMVMXSTARTVM;
 
 /** SVM VMRun function. */
-typedef DECLCALLBACK(int) FNHMSVMVMRUN(RTHCPHYS pVmcbHostPhys, RTHCPHYS pVmcbPhys, PCPUMCTX pCtx, PVM pVM, PVMCPU pVCpu);
+typedef DECLCALLBACK(int) FNHMSVMVMRUN(RTHCPHYS pVmcbHostPhys, RTHCPHYS pVmcbPhys, PCPUMCTX pCtx, PVMCC pVM, PVMCPUCC pVCpu);
 /** Pointer to a SVM VMRun function. */
 typedef R0PTRTYPE(FNHMSVMVMRUN *) PFNHMSVMVMRUN;
 

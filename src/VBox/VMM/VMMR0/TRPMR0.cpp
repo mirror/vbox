@@ -19,10 +19,11 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define VBOX_BUGREF_9217_PART_I
 #define LOG_GROUP LOG_GROUP_TRPM
 #include <VBox/vmm/trpm.h>
 #include "TRPMInternal.h"
-#include <VBox/vmm/vm.h>
+#include <VBox/vmm/vmcc.h>
 #include <VBox/vmm/vmm.h>
 #include <iprt/errcore.h>
 #include <VBox/log.h>
@@ -41,12 +42,12 @@
  * @param   pVM     The cross context VM structure.
  * @remark  Must be called with interrupts disabled.
  */
-VMMR0DECL(void) TRPMR0DispatchHostInterrupt(PVM pVM)
+VMMR0DECL(void) TRPMR0DispatchHostInterrupt(PVMCC pVM)
 {
     /*
      * Get the active interrupt vector number.
      */
-    PVMCPU pVCpu = VMMGetCpu0(pVM);
+    PVMCPUCC pVCpu = VMMGetCpu0(pVM);
     RTUINT uActiveVector = pVCpu->trpm.s.uActiveVector;
     pVCpu->trpm.s.uActiveVector = UINT32_MAX;
     AssertMsgReturnVoid(uActiveVector < 256, ("uActiveVector=%#x is invalid! (More assertions to come, please enjoy!)\n", uActiveVector));

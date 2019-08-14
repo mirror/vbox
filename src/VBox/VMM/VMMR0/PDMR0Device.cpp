@@ -19,13 +19,14 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define VBOX_BUGREF_9217_PART_I
 #define LOG_GROUP LOG_GROUP_PDM_DEVICE
 #define PDMPCIDEV_INCLUDE_PRIVATE  /* Hack to get pdmpcidevint.h included at the right point. */
 #include "PDMInternal.h"
 #include <VBox/vmm/pdm.h>
 #include <VBox/vmm/pgm.h>
 #include <VBox/vmm/mm.h>
-#include <VBox/vmm/vm.h>
+#include <VBox/vmm/vmcc.h>
 #include <VBox/vmm/gvm.h>
 #include <VBox/vmm/vmm.h>
 #include <VBox/vmm/hm.h>
@@ -59,7 +60,7 @@ RT_C_DECLS_END
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
-static bool pdmR0IsaSetIrq(PVM pVM, int iIrq, int iLevel, uint32_t uTagSrc);
+static bool pdmR0IsaSetIrq(PVMCC pVM, int iIrq, int iLevel, uint32_t uTagSrc);
 
 
 
@@ -131,7 +132,7 @@ static DECLCALLBACK(void) pdmR0DevHlp_PCISetIrq(PPDMDEVINS pDevIns, PPDMPCIDEV p
     AssertReturnVoid(pPciDev);
     LogFlow(("pdmR0DevHlp_PCISetIrq: caller=%p/%d: pPciDev=%p:{%#x} iIrq=%d iLevel=%d\n",
              pDevIns, pDevIns->iInstance, pPciDev, pPciDev->uDevFn, iIrq, iLevel));
-    PVM          pVM     = pDevIns->Internal.s.pVMR0;
+    PVMCC        pVM     = pDevIns->Internal.s.pVMR0;
     PPDMPCIBUS   pPciBus = pPciDev->Int.s.pPdmBusR0;
 
     pdmLock(pVM);
@@ -184,7 +185,7 @@ static DECLCALLBACK(void) pdmR0DevHlp_ISASetIrq(PPDMDEVINS pDevIns, int iIrq, in
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     LogFlow(("pdmR0DevHlp_ISASetIrq: caller=%p/%d: iIrq=%d iLevel=%d\n", pDevIns, pDevIns->iInstance, iIrq, iLevel));
-    PVM pVM = pDevIns->Internal.s.pVMR0;
+    PVMCC pVM = pDevIns->Internal.s.pVMR0;
 
     pdmLock(pVM);
     uint32_t uTagSrc;
@@ -213,7 +214,7 @@ static DECLCALLBACK(void) pdmR0DevHlp_IoApicSendMsi(PPDMDEVINS pDevIns, RTGCPHYS
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     LogFlow(("pdmR0DevHlp_IoApicSendMsi: caller=%p/%d: GCPhys=%RGp uValue=%#x\n", pDevIns, pDevIns->iInstance, GCPhys, uValue));
-    PVM pVM = pDevIns->Internal.s.pVMR0;
+    PVMCC pVM = pDevIns->Internal.s.pVMR0;
 
     uint32_t uTagSrc;
     pDevIns->Internal.s.uLastIrqTag = uTagSrc = pdmCalcIrqTag(pVM, pDevIns->idTracing);
@@ -340,7 +341,7 @@ static DECLCALLBACK(int) pdmR0DevHlp_PATMSetMMIOPatchInfo(PPDMDEVINS pDevIns, RT
 
 
 /** @interface_method_impl{PDMDEVHLPR0,pfnGetVM} */
-static DECLCALLBACK(PVM)  pdmR0DevHlp_GetVM(PPDMDEVINS pDevIns)
+static DECLCALLBACK(PVMCC)  pdmR0DevHlp_GetVM(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     LogFlow(("pdmR0DevHlp_GetVM: caller='%p'/%d\n", pDevIns, pDevIns->iInstance));
@@ -349,7 +350,7 @@ static DECLCALLBACK(PVM)  pdmR0DevHlp_GetVM(PPDMDEVINS pDevIns)
 
 
 /** @interface_method_impl{PDMDEVHLPR0,pfnGetVMCPU} */
-static DECLCALLBACK(PVMCPU) pdmR0DevHlp_GetVMCPU(PPDMDEVINS pDevIns)
+static DECLCALLBACK(PVMCPUCC) pdmR0DevHlp_GetVMCPU(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     LogFlow(("pdmR0DevHlp_GetVMCPU: caller='%p'/%d\n", pDevIns, pDevIns->iInstance));
@@ -459,10 +460,10 @@ static DECLCALLBACK(void) pdmR0PicHlp_SetInterruptFF(PPDMDEVINS pDevIns)
     PDMDEV_ASSERT_DEVINS(pDevIns);
 #ifdef VBOX_BUGREF_9217
     PGVM   pGVM  = (PGVM)pDevIns->Internal.s.pVMR0;
-    PVMCPU pVCpu = &pGVM->aCpus[0];     /* for PIC we always deliver to CPU 0, MP use APIC */
+    PVMCPUCC pVCpu = &pGVM->aCpus[0];     /* for PIC we always deliver to CPU 0, MP use APIC */
 #else
-    PVM    pVM   = pDevIns->Internal.s.pVMR0;
-    PVMCPU pVCpu = &pVM->aCpus[0];      /* for PIC we always deliver to CPU 0, MP use APIC */
+    PVMCC    pVM   = pDevIns->Internal.s.pVMR0;
+    PVMCPUCC pVCpu = VMCC_GET_CPU_0(pVM); /* for PIC we always deliver to CPU 0, MP use APIC */
 #endif
     /** @todo r=ramshankar: Propagating rcRZ and make all callers handle it? */
     APICLocalInterrupt(pVCpu, 0 /* u8Pin */, 1 /* u8Level */, VINF_SUCCESS /* rcRZ */);
@@ -475,10 +476,10 @@ static DECLCALLBACK(void) pdmR0PicHlp_ClearInterruptFF(PPDMDEVINS pDevIns)
     PDMDEV_ASSERT_DEVINS(pDevIns);
 #ifdef VBOX_BUGREF_9217
     PGVM   pGVM  = (PGVM)pDevIns->Internal.s.pVMR0;
-    PVMCPU pVCpu = &pGVM->aCpus[0];     /* for PIC we always deliver to CPU 0, MP use APIC */
+    PVMCPUCC pVCpu = &pGVM->aCpus[0];     /* for PIC we always deliver to CPU 0, MP use APIC */
 #else
-    PVM    pVM   = pDevIns->Internal.s.pVMR0;
-    PVMCPU pVCpu = &pVM->aCpus[0];      /* for PIC we always deliver to CPU 0, MP use APIC */
+    PVMCC    pVM   = pDevIns->Internal.s.pVMR0;
+    PVMCPUCC pVCpu = VMCC_GET_CPU_0(pVM); /* for PIC we always deliver to CPU 0, MP use APIC */
 #endif
     /** @todo r=ramshankar: Propagating rcRZ and make all callers handle it? */
     APICLocalInterrupt(pVCpu, 0 /* u8Pin */, 0 /* u8Level */, VINF_SUCCESS /* rcRZ */);
@@ -527,7 +528,7 @@ static DECLCALLBACK(int) pdmR0IoApicHlp_ApicBusDeliver(PPDMDEVINS pDevIns, uint8
                                                        uint8_t u8TriggerMode, uint32_t uTagSrc)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
-    PVM pVM = pDevIns->Internal.s.pVMR0;
+    PVMCC pVM = pDevIns->Internal.s.pVMR0;
     LogFlow(("pdmR0IoApicHlp_ApicBusDeliver: caller=%p/%d: u8Dest=%RX8 u8DestMode=%RX8 u8DeliveryMode=%RX8 uVector=%RX8 u8Polarity=%RX8 u8TriggerMode=%RX8 uTagSrc=%#x\n",
              pDevIns, pDevIns->iInstance, u8Dest, u8DestMode, u8DeliveryMode, uVector, u8Polarity, u8TriggerMode, uTagSrc));
     return APICBusDeliver(pVM, u8Dest, u8DestMode, u8DeliveryMode, uVector, u8Polarity, u8TriggerMode, uTagSrc);
@@ -576,7 +577,7 @@ static DECLCALLBACK(void) pdmR0PciHlp_IsaSetIrq(PPDMDEVINS pDevIns, int iIrq, in
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     Log4(("pdmR0PciHlp_IsaSetIrq: iIrq=%d iLevel=%d uTagSrc=%#x\n", iIrq, iLevel, uTagSrc));
-    PVM pVM = pDevIns->Internal.s.pVMR0;
+    PVMCC pVM = pDevIns->Internal.s.pVMR0;
 
     pdmLock(pVM);
     pdmR0IsaSetIrq(pVM, iIrq, iLevel, uTagSrc);
@@ -589,7 +590,7 @@ static DECLCALLBACK(void) pdmR0PciHlp_IoApicSetIrq(PPDMDEVINS pDevIns, int iIrq,
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     Log4(("pdmR0PciHlp_IoApicSetIrq: iIrq=%d iLevel=%d uTagSrc=%#x\n", iIrq, iLevel, uTagSrc));
-    PVM pVM = pDevIns->Internal.s.pVMR0;
+    PVMCC pVM = pDevIns->Internal.s.pVMR0;
 
     if (pVM->pdm.s.IoApic.pDevInsR0)
         pVM->pdm.s.IoApic.pfnSetIrqR0(pVM->pdm.s.IoApic.pDevInsR0, iIrq, iLevel, uTagSrc);
@@ -618,7 +619,7 @@ static DECLCALLBACK(void) pdmR0PciHlp_IoApicSendMsi(PPDMDEVINS pDevIns, RTGCPHYS
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     Log4(("pdmR0PciHlp_IoApicSendMsi: GCPhys=%p uValue=%d uTagSrc=%#x\n", GCPhys, uValue, uTagSrc));
-    PVM pVM = pDevIns->Internal.s.pVMR0;
+    PVMCC pVM = pDevIns->Internal.s.pVMR0;
     if (pVM->pdm.s.IoApic.pDevInsR0)
         pVM->pdm.s.IoApic.pfnSendMsiR0(pVM->pdm.s.IoApic.pDevInsR0, GCPhys, uValue, uTagSrc);
     else
@@ -800,7 +801,7 @@ extern DECLEXPORT(const PDMDRVHLPR0) g_pdmR0DrvHlp =
  *
  * @remarks The caller holds the PDM lock.
  */
-static bool pdmR0IsaSetIrq(PVM pVM, int iIrq, int iLevel, uint32_t uTagSrc)
+static bool pdmR0IsaSetIrq(PVMCC pVM, int iIrq, int iLevel, uint32_t uTagSrc)
 {
     if (RT_LIKELY(    (   pVM->pdm.s.IoApic.pDevInsR0
                        || !pVM->pdm.s.IoApic.pDevInsR3)
@@ -837,7 +838,7 @@ static bool pdmR0IsaSetIrq(PVM pVM, int iIrq, int iLevel, uint32_t uTagSrc)
  * @param   pVM     The cross context VM structure. (For validation.)
  * @param   pReq    Pointer to the request buffer.
  */
-VMMR0_INT_DECL(int) PDMR0DeviceCallReqHandler(PGVM pGVM, PVM pVM, PPDMDEVICECALLREQHANDLERREQ pReq)
+VMMR0_INT_DECL(int) PDMR0DeviceCallReqHandler(PGVM pGVM, PVMCC pVM, PPDMDEVICECALLREQHANDLERREQ pReq)
 {
     /*
      * Validate input and make the call.

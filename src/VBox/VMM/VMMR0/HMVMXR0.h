@@ -30,22 +30,22 @@ RT_C_DECLS_BEGIN
  */
 
 #ifdef IN_RING0
-VMMR0DECL(int)          VMXR0Enter(PVMCPU pVCpu);
-VMMR0DECL(void)         VMXR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, PVMCPU pVCpu, bool fGlobalInit);
-VMMR0DECL(int)          VMXR0EnableCpu(PHMPHYSCPU pHostCpu, PVM pVM, void *pvPageCpu, RTHCPHYS pPageCpuPhys,
+VMMR0DECL(int)          VMXR0Enter(PVMCPUCC pVCpu);
+VMMR0DECL(void)         VMXR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, PVMCPUCC pVCpu, bool fGlobalInit);
+VMMR0DECL(int)          VMXR0EnableCpu(PHMPHYSCPU pHostCpu, PVMCC pVM, void *pvPageCpu, RTHCPHYS pPageCpuPhys,
                                        bool fEnabledBySystem, PCSUPHWVIRTMSRS pHwvirtMsrs);
 VMMR0DECL(int)          VMXR0DisableCpu(void *pvPageCpu, RTHCPHYS pPageCpuPhys);
 VMMR0DECL(int)          VMXR0GlobalInit(void);
 VMMR0DECL(void)         VMXR0GlobalTerm(void);
-VMMR0DECL(int)          VMXR0InitVM(PVM pVM);
-VMMR0DECL(int)          VMXR0TermVM(PVM pVM);
-VMMR0DECL(int)          VMXR0SetupVM(PVM pVM);
-VMMR0DECL(int)          VMXR0ExportHostState(PVMCPU pVCpu);
-VMMR0DECL(int)          VMXR0InvalidatePage(PVMCPU pVCpu, RTGCPTR GCVirt);
-VMMR0DECL(int)          VMXR0ImportStateOnDemand(PVMCPU pVCpu, uint64_t fWhat);
-VMMR0DECL(VBOXSTRICTRC) VMXR0RunGuestCode(PVMCPU pVCpu);
-DECLASM(int)            VMXR0StartVM32(RTHCUINT fResume, PCPUMCTX pCtx, void *pvUnused, PVM pVM, PVMCPU pVCpu);
-DECLASM(int)            VMXR0StartVM64(RTHCUINT fResume, PCPUMCTX pCtx, void *pvUnused, PVM pVM, PVMCPU pVCpu);
+VMMR0DECL(int)          VMXR0InitVM(PVMCC pVM);
+VMMR0DECL(int)          VMXR0TermVM(PVMCC pVM);
+VMMR0DECL(int)          VMXR0SetupVM(PVMCC pVM);
+VMMR0DECL(int)          VMXR0ExportHostState(PVMCPUCC pVCpu);
+VMMR0DECL(int)          VMXR0InvalidatePage(PVMCPUCC pVCpu, RTGCPTR GCVirt);
+VMMR0DECL(int)          VMXR0ImportStateOnDemand(PVMCPUCC pVCpu, uint64_t fWhat);
+VMMR0DECL(VBOXSTRICTRC) VMXR0RunGuestCode(PVMCPUCC pVCpu);
+DECLASM(int)            VMXR0StartVM32(RTHCUINT fResume, PCPUMCTX pCtx, void *pvUnused, PVMCC pVM, PVMCPUCC pVCpu);
+DECLASM(int)            VMXR0StartVM64(RTHCUINT fResume, PCPUMCTX pCtx, void *pvUnused, PVMCC pVM, PVMCPUCC pVCpu);
 #endif /* IN_RING0 */
 
 /** @} */

@@ -19,6 +19,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define VBOX_BUGREF_9217_PART_I
 #define LOG_GROUP LOG_GROUP_VMM
 #include <VBox/vmm/vmm.h>
 #include <VBox/sup.h>
@@ -33,7 +34,7 @@
 #include <VBox/vmm/stam.h>
 #include <VBox/vmm/tm.h>
 #include "VMMInternal.h"
-#include <VBox/vmm/vm.h>
+#include <VBox/vmm/vmcc.h>
 #include <VBox/vmm/gvm.h>
 #ifdef VBOX_WITH_PCI_PASSTHROUGH
 # include <VBox/vmm/pdmpci.h>
@@ -365,7 +366,7 @@ DECLEXPORT(void) ModuleTerm(void *hMod)
  * @param   uBuildType  Build type indicator.
  * @thread  EMT(0)
  */
-static int vmmR0InitVM(PGVM pGVM, PVM pVM, uint32_t uSvnRev, uint32_t uBuildType)
+static int vmmR0InitVM(PGVM pGVM, PVMCC pVM, uint32_t uSvnRev, uint32_t uBuildType)
 {
     VMM_CHECK_SMAP_SETUP();
     VMM_CHECK_SMAP_CHECK(return VERR_VMM_SMAP_BUT_AC_CLEAR);
@@ -395,9 +396,9 @@ static int vmmR0InitVM(PGVM pGVM, PVM pVM, uint32_t uSvnRev, uint32_t uBuildType
      * Register the EMT R0 logger instance for VCPU 0.
      */
 #ifdef VBOX_BUGREF_9217
-    PVMCPU pVCpu = &pGVM->aCpus[0];
+    PVMCPUCC pVCpu = &pGVM->aCpus[0];
 #else
-    PVMCPU pVCpu = &pVM->aCpus[0];
+    PVMCPUCC pVCpu = VMCC_GET_CPU_0(pVM);
 #endif
 
     PVMMR0LOGGER pR0Logger = pVCpu->vmm.s.pR0LoggerR0;
@@ -533,7 +534,7 @@ static int vmmR0InitVM(PGVM pGVM, PVM pVM, uint32_t uSvnRev, uint32_t uBuildType
  * @param   pVM         The cross context VM structure.
  * @param   idCpu       The EMT that's calling.
  */
-static int vmmR0InitVMEmt(PGVM pGVM, PVM pVM, VMCPUID idCpu)
+static int vmmR0InitVMEmt(PGVM pGVM, PVMCC pVM, VMCPUID idCpu)
 {
     /* Paranoia (caller checked these already). */
     AssertReturn(idCpu < pGVM->cCpus, VERR_INVALID_CPU_ID);
@@ -544,9 +545,9 @@ static int vmmR0InitVMEmt(PGVM pGVM, PVM pVM, VMCPUID idCpu)
      * Registration of ring 0 loggers.
      */
 #ifdef VBOX_BUGREF_9217
-    PVMCPU       pVCpu     = &pGVM->aCpus[idCpu];
+    PVMCPUCC       pVCpu     = &pGVM->aCpus[idCpu];
 #else
-    PVMCPU       pVCpu     = &pVM->aCpus[idCpu];
+    PVMCPUCC       pVCpu     = VMCC_GET_CPU(pVM, idCpu);
 #endif
     PVMMR0LOGGER pR0Logger = pVCpu->vmm.s.pR0LoggerR0;
     if (   pR0Logger
@@ -578,7 +579,7 @@ static int vmmR0InitVMEmt(PGVM pGVM, PVM pVM, VMCPUID idCpu)
  *                      thread.
  * @thread  EMT(0) or session clean up thread.
  */
-VMMR0_INT_DECL(int) VMMR0TermVM(PGVM pGVM, PVM pVM, VMCPUID idCpu)
+VMMR0_INT_DECL(int) VMMR0TermVM(PGVM pGVM, PVMCC pVM, VMCPUID idCpu)
 {
     /*
      * Check EMT(0) claim if we're called from userland.
@@ -626,7 +627,7 @@ VMMR0_INT_DECL(int) VMMR0TermVM(PGVM pGVM, PVM pVM, VMCPUID idCpu)
  * @param   uMWait                  Result from EMMonitorWaitIsActive().
  * @param   enmInterruptibility     Guest CPU interruptbility level.
  */
-static int vmmR0DoHaltInterrupt(PVMCPU pVCpu, unsigned uMWait, CPUMINTERRUPTIBILITY enmInterruptibility)
+static int vmmR0DoHaltInterrupt(PVMCPUCC pVCpu, unsigned uMWait, CPUMINTERRUPTIBILITY enmInterruptibility)
 {
     Assert(!TRPMHasTrap(pVCpu));
     Assert(   enmInterruptibility > CPUMINTERRUPTIBILITY_INVALID
@@ -726,7 +727,7 @@ static int vmmR0DoHaltInterrupt(PVMCPU pVCpu, unsigned uMWait, CPUMINTERRUPTIBIL
  *       the VM module, probably to VMM.  Then this would be more weird wrt
  *       parameters and statistics.
  */
-static int vmmR0DoHalt(PGVM pGVM, PVM pVM, PGVMCPU pGVCpu, PVMCPU pVCpu)
+static int vmmR0DoHalt(PGVM pGVM, PVMCC pVM, PGVMCPU pGVCpu, PVMCPUCC pVCpu)
 {
 #ifdef VBOX_BUGREF_9217
     Assert(pVCpu == pGVCpu);
@@ -907,7 +908,7 @@ static int vmmR0DoHalt(PGVM pGVM, PVM pVM, PGVMCPU pGVCpu, PVMCPU pVCpu)
  */
 static DECLCALLBACK(void) vmmR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, void *pvUser)
 {
-    PVMCPU pVCpu = (PVMCPU)pvUser;
+    PVMCPUCC pVCpu = (PVMCPUCC)pvUser;
 
     switch (enmEvent)
     {
@@ -979,7 +980,7 @@ static DECLCALLBACK(void) vmmR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, void
  * @param   pVCpu       The cross context virtual CPU structure.
  * @thread  EMT(pVCpu)
  */
-VMMR0_INT_DECL(int) VMMR0ThreadCtxHookCreateForEmt(PVMCPU pVCpu)
+VMMR0_INT_DECL(int) VMMR0ThreadCtxHookCreateForEmt(PVMCPUCC pVCpu)
 {
     VMCPU_ASSERT_EMT(pVCpu);
     Assert(pVCpu->vmm.s.hCtxHook == NIL_RTTHREADCTXHOOK);
@@ -1008,7 +1009,7 @@ VMMR0_INT_DECL(int) VMMR0ThreadCtxHookCreateForEmt(PVMCPU pVCpu)
  * @param   pVCpu       The cross context virtual CPU structure.
  * @remarks Can be called from any thread.
  */
-VMMR0_INT_DECL(void) VMMR0ThreadCtxHookDestroyForEmt(PVMCPU pVCpu)
+VMMR0_INT_DECL(void) VMMR0ThreadCtxHookDestroyForEmt(PVMCPUCC pVCpu)
 {
     int rc = RTThreadCtxHookDestroy(pVCpu->vmm.s.hCtxHook);
     AssertRC(rc);
@@ -1025,7 +1026,7 @@ VMMR0_INT_DECL(void) VMMR0ThreadCtxHookDestroyForEmt(PVMCPU pVCpu)
  * @remarks This also clears VMCPU::idHostCpu, so the mapping is invalid after
  *          this call.  This means you have to be careful with what you do!
  */
-VMMR0_INT_DECL(void) VMMR0ThreadCtxHookDisable(PVMCPU pVCpu)
+VMMR0_INT_DECL(void) VMMR0ThreadCtxHookDisable(PVMCPUCC pVCpu)
 {
     /*
      * Clear the VCPU <-> host CPU mapping as we've left HM context.
@@ -1062,7 +1063,7 @@ VMMR0_INT_DECL(void) VMMR0ThreadCtxHookDisable(PVMCPU pVCpu)
  * @returns true if registered, false otherwise.
  * @param   pVCpu       The cross context virtual CPU structure.
  */
-DECLINLINE(bool) vmmR0ThreadCtxHookIsEnabled(PVMCPU pVCpu)
+DECLINLINE(bool) vmmR0ThreadCtxHookIsEnabled(PVMCPUCC pVCpu)
 {
     return RTThreadCtxHookIsEnabled(pVCpu->vmm.s.hCtxHook);
 }
@@ -1074,7 +1075,7 @@ DECLINLINE(bool) vmmR0ThreadCtxHookIsEnabled(PVMCPU pVCpu)
  * @returns true if registered, false otherwise.
  * @param   pVCpu       The cross context virtual CPU structure.
  */
-VMMR0_INT_DECL(bool) VMMR0ThreadCtxHookIsEnabled(PVMCPU pVCpu)
+VMMR0_INT_DECL(bool) VMMR0ThreadCtxHookIsEnabled(PVMCPUCC pVCpu)
 {
     return vmmR0ThreadCtxHookIsEnabled(pVCpu);
 }
@@ -1087,7 +1088,7 @@ VMMR0_INT_DECL(bool) VMMR0ThreadCtxHookIsEnabled(PVMCPU pVCpu)
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   rc          The status code.
  */
-static void vmmR0RecordRC(PVM pVM, PVMCPU pVCpu, int rc)
+static void vmmR0RecordRC(PVMCC pVM, PVMCPUCC pVCpu, int rc)
 {
     /*
      * Collect statistics.
@@ -1294,7 +1295,7 @@ static void vmmR0RecordRC(PVM pVM, PVMCPU pVCpu, int rc)
  * @param   enmOperation    Which operation to execute.
  * @remarks Assume called with interrupts _enabled_.
  */
-VMMR0DECL(void) VMMR0EntryFast(PGVM pGVM, PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperation)
+VMMR0DECL(void) VMMR0EntryFast(PGVM pGVM, PVMCC pVM, VMCPUID idCpu, VMMR0OPERATION enmOperation)
 {
     /*
      * Validation.
@@ -1310,9 +1311,9 @@ VMMR0DECL(void) VMMR0EntryFast(PGVM pGVM, PVM pVM, VMCPUID idCpu, VMMR0OPERATION
 
     PGVMCPU pGVCpu = &pGVM->aCpus[idCpu];
 #ifdef VBOX_BUGREF_9217
-    PVMCPU  pVCpu  = pGVCpu;
+    PVMCPUCC  pVCpu  = pGVCpu;
 #else
-    PVMCPU  pVCpu  = &pVM->aCpus[idCpu];
+    PVMCPUCC  pVCpu  = VMCC_GET_CPU(pVM, idCpu);
 #endif
     RTNATIVETHREAD const hNativeThread = RTThreadNativeSelf();
     if (RT_LIKELY(   pGVCpu->hEMT           == hNativeThread
@@ -1580,7 +1581,7 @@ VMMR0DECL(void) VMMR0EntryFast(PGVM pGVM, PVM pVM, VMCPUID idCpu, VMMR0OPERATION
  * @param   pClaimedSession The session claim to validate.
  * @param   pSession        The session argument.
  */
-DECLINLINE(bool) vmmR0IsValidSession(PVM pVM, PSUPDRVSESSION pClaimedSession, PSUPDRVSESSION pSession)
+DECLINLINE(bool) vmmR0IsValidSession(PVMCC pVM, PSUPDRVSESSION pClaimedSession, PSUPDRVSESSION pSession)
 {
     /* This must be set! */
     if (!pSession)
@@ -1612,7 +1613,7 @@ DECLINLINE(bool) vmmR0IsValidSession(PVM pVM, PSUPDRVSESSION pClaimedSession, PS
  *
  * @remarks Assume called with interrupts _enabled_.
  */
-static int vmmR0EntryExWorker(PGVM pGVM, PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperation,
+static int vmmR0EntryExWorker(PGVM pGVM, PVMCC pVM, VMCPUID idCpu, VMMR0OPERATION enmOperation,
                               PSUPVMMR0REQHDR pReqHdr, uint64_t u64Arg, PSUPDRVSESSION pSession)
 {
     /*
@@ -1655,16 +1656,29 @@ static int vmmR0EntryExWorker(PGVM pGVM, PVM pVM, VMCPUID idCpu, VMMR0OPERATION 
             return VERR_INVALID_PARAMETER;
         }
 
+#ifdef VBOX_BUGREF_9217
+        if (RT_LIKELY(   pVM->enmVMState >= VMSTATE_CREATING
+                      && pVM->enmVMState <= VMSTATE_TERMINATED
+                      && pVM->cCpus      == pGVM->cCpus
+                      && pVM->pSession   == pSession
+                      && pVM->pSelf      == pVM))
+#else
         if (RT_LIKELY(   pVM->enmVMState >= VMSTATE_CREATING
                       && pVM->enmVMState <= VMSTATE_TERMINATED
                       && pVM->cCpus      == pGVM->cCpus
                       && pVM->pSession   == pSession
                       && pVM->pVMR0      == pVM))
+#endif
         { /* likely */ }
         else
         {
+#ifdef VBOX_BUGREF_9217
+            SUPR0Printf("vmmR0EntryExWorker: Invalid pVM=%p:{.enmVMState=%d, .cCpus=%#x(==%#x), .pSession=%p(==%p), .pSelf=%p(==%p)}! (op=%d)\n",
+                        pVM, pVM->enmVMState, pVM->cCpus, pGVM->cCpus, pVM->pSession, pSession, pVM->pSelf, pVM, enmOperation);
+#else
             SUPR0Printf("vmmR0EntryExWorker: Invalid pVM=%p:{.enmVMState=%d, .cCpus=%#x(==%#x), .pSession=%p(==%p), .pVMR0=%p(==%p)}! (op=%d)\n",
                         pVM, pVM->enmVMState, pVM->cCpus, pGVM->cCpus, pVM->pSession, pSession, pVM->pVMR0, pVM, enmOperation);
+#endif
             return VERR_INVALID_POINTER;
         }
     }
@@ -2227,7 +2241,7 @@ static int vmmR0EntryExWorker(PGVM pGVM, PVM pVM, VMCPUID idCpu, VMMR0OPERATION 
 typedef struct VMMR0ENTRYEXARGS
 {
     PGVM                pGVM;
-    PVM                 pVM;
+    PVMCC               pVM;
     VMCPUID             idCpu;
     VMMR0OPERATION      enmOperation;
     PSUPVMMR0REQHDR     pReq;
@@ -2269,7 +2283,7 @@ static DECLCALLBACK(int) vmmR0EntryExWrapper(void *pvArgs)
  * @param   pSession        The session of the caller.
  * @remarks Assume called with interrupts _enabled_.
  */
-VMMR0DECL(int) VMMR0EntryEx(PGVM pGVM, PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperation,
+VMMR0DECL(int) VMMR0EntryEx(PGVM pGVM, PVMCC pVM, VMCPUID idCpu, VMMR0OPERATION enmOperation,
                             PSUPVMMR0REQHDR pReq, uint64_t u64Arg, PSUPDRVSESSION pSession)
 {
     /*
@@ -2279,7 +2293,13 @@ VMMR0DECL(int) VMMR0EntryEx(PGVM pGVM, PVM pVM, VMCPUID idCpu, VMMR0OPERATION en
     if (   pVM  != NULL
         && pGVM != NULL
         && idCpu < pGVM->cCpus
-        && pVM->pVMR0 != NULL)
+        && pVM->pSession == pSession
+#ifdef VBOX_BUGREF_9217
+        && pVM->pSelf != NULL
+#else
+        && pVM->pVMR0 != NULL
+#endif
+       )
     {
         switch (enmOperation)
         {
@@ -2295,9 +2315,9 @@ VMMR0DECL(int) VMMR0EntryEx(PGVM pGVM, PVM pVM, VMCPUID idCpu, VMMR0OPERATION en
             {
                 PGVMCPU pGVCpu = &pGVM->aCpus[idCpu];
 #ifdef VBOX_BUGREF_9217
-                PVMCPU  pVCpu  = pGVCpu;
+                PVMCPUCC  pVCpu  = pGVCpu;
 #else
-                PVMCPU  pVCpu  = &pVM->aCpus[idCpu];
+                PVMCPUCC  pVCpu  = VMCC_GET_CPU(pVM, idCpu);
 #endif
                 RTNATIVETHREAD hNativeThread = RTThreadNativeSelf();
                 if (RT_LIKELY(   pGVCpu->hEMT           == hNativeThread
@@ -2336,7 +2356,7 @@ VMMR0DECL(int) VMMR0EntryEx(PGVM pGVM, PVM pVM, VMCPUID idCpu, VMMR0OPERATION en
  * @thread  EMT
  * @sa      VMMIsLongJumpArmed
  */
-VMMR0_INT_DECL(bool) VMMR0IsLongJumpArmed(PVMCPU pVCpu)
+VMMR0_INT_DECL(bool) VMMR0IsLongJumpArmed(PVMCPUCC pVCpu)
 {
 #ifdef RT_ARCH_X86
     return pVCpu->vmm.s.CallRing3JmpBufR0.eip
@@ -2355,7 +2375,7 @@ VMMR0_INT_DECL(bool) VMMR0IsLongJumpArmed(PVMCPU pVCpu)
  * @param   pVCpu       The cross context virtual CPU structure.
  * @thread  EMT
  */
-VMMR0_INT_DECL(bool) VMMR0IsInRing3LongJump(PVMCPU pVCpu)
+VMMR0_INT_DECL(bool) VMMR0IsInRing3LongJump(PVMCPUCC pVCpu)
 {
     return pVCpu->vmm.s.CallRing3JmpBufR0.fInRing3Call;
 }
@@ -2387,17 +2407,26 @@ VMMR0DECL(void) vmmR0LoggerFlush(PRTLOGGER pLogger)
     if (pR0Logger->fFlushingDisabled)
         return; /* quietly */
 
-    PVM pVM = pR0Logger->pVM;
+    PVMCC pVM = pR0Logger->pVM;
     if (    !VALID_PTR(pVM)
-        ||  pVM->pVMR0 != pVM)
+# ifdef VBOX_BUGREF_9217
+        ||  pVM->pSelf != pVM
+# else
+        ||  pVM->pVMR0 != pVM
+# endif
+       )
     {
 # ifdef DEBUG
+#  ifdef VBOX_BUGREF_9217
+        SUPR0Printf("vmmR0LoggerFlush: pVM=%p! pSelf=%p! pLogger=%p\n", pVM, pVM->pSelf, pLogger);
+#  else
         SUPR0Printf("vmmR0LoggerFlush: pVM=%p! pVMR0=%p! pLogger=%p\n", pVM, pVM->pVMR0, pLogger);
+#  endif
 # endif
         return;
     }
 
-    PVMCPU pVCpu = VMMGetCpu(pVM);
+    PVMCPUCC pVCpu = VMMGetCpu(pVM);
     if (pVCpu)
     {
         /*
@@ -2434,7 +2463,7 @@ VMMR0DECL(void) vmmR0LoggerFlush(PRTLOGGER pLogger)
  *
  * @param   pVCpu       The cross context virtual CPU structure.
  */
-VMMR0_INT_DECL(void) VMMR0LogFlushDisable(PVMCPU pVCpu)
+VMMR0_INT_DECL(void) VMMR0LogFlushDisable(PVMCPUCC pVCpu)
 {
     if (pVCpu->vmm.s.pR0LoggerR0)
         pVCpu->vmm.s.pR0LoggerR0->fFlushingDisabled = true;
@@ -2448,7 +2477,7 @@ VMMR0_INT_DECL(void) VMMR0LogFlushDisable(PVMCPU pVCpu)
  *
  * @param   pVCpu       The cross context virtual CPU structure.
  */
-VMMR0_INT_DECL(void) VMMR0LogFlushEnable(PVMCPU pVCpu)
+VMMR0_INT_DECL(void) VMMR0LogFlushEnable(PVMCPUCC pVCpu)
 {
     if (pVCpu->vmm.s.pR0LoggerR0)
         pVCpu->vmm.s.pR0LoggerR0->fFlushingDisabled = false;
@@ -2462,7 +2491,7 @@ VMMR0_INT_DECL(void) VMMR0LogFlushEnable(PVMCPU pVCpu)
  *
  * @param   pVCpu       The cross context virtual CPU structure.
  */
-VMMR0_INT_DECL(bool) VMMR0IsLogFlushDisabled(PVMCPU pVCpu)
+VMMR0_INT_DECL(bool) VMMR0IsLogFlushDisabled(PVMCPUCC pVCpu)
 {
     if (pVCpu->vmm.s.pR0LoggerR0)
         return pVCpu->vmm.s.pR0LoggerR0->fFlushingDisabled;
@@ -2482,9 +2511,9 @@ DECLEXPORT(PRTLOGGER) RTLogRelGetDefaultInstanceEx(uint32_t fFlagsAndGroup)
     if (pGVCpu)
     {
 #ifdef VBOX_BUGREF_9217
-        PVMCPU pVCpu = pGVCpu;
+        PVMCPUCC pVCpu = pGVCpu;
 #else
-        PVMCPU pVCpu = pGVCpu->pVCpu;
+        PVMCPUCC pVCpu = pGVCpu->pVCpu;
 #endif
         if (RT_VALID_PTR(pVCpu))
         {
@@ -2527,10 +2556,10 @@ DECLEXPORT(bool) RTCALL RTAssertShouldPanic(void)
 #if 0
     return true;
 #else
-    PVM pVM = GVMMR0GetVMByEMT(NIL_RTNATIVETHREAD);
+    PVMCC pVM = GVMMR0GetVMByEMT(NIL_RTNATIVETHREAD);
     if (pVM)
     {
-        PVMCPU pVCpu = VMMGetCpu(pVM);
+        PVMCPUCC pVCpu = VMMGetCpu(pVM);
 
         if (pVCpu)
         {
@@ -2577,7 +2606,7 @@ DECLEXPORT(void) RTCALL RTAssertMsg1Weak(const char *pszExpr, unsigned uLine, co
     /*
      * To the global VMM buffer.
      */
-    PVM pVM = GVMMR0GetVMByEMT(NIL_RTNATIVETHREAD);
+    PVMCC pVM = GVMMR0GetVMByEMT(NIL_RTNATIVETHREAD);
     if (pVM)
         RTStrPrintf(pVM->vmm.s.szRing0AssertMsg1, sizeof(pVM->vmm.s.szRing0AssertMsg1),
                     "\n!!R0-Assertion Failed!!\n"
@@ -2640,7 +2669,7 @@ DECLEXPORT(void) RTCALL RTAssertMsg2WeakV(const char *pszFormat, va_list va)
     /*
      * Push it to the global VMM buffer.
      */
-    PVM pVM = GVMMR0GetVMByEMT(NIL_RTNATIVETHREAD);
+    PVMCC pVM = GVMMR0GetVMByEMT(NIL_RTNATIVETHREAD);
     if (pVM)
     {
         va_copy(vaCopy, va);

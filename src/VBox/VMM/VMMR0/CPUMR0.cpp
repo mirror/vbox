@@ -19,10 +19,11 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define VBOX_BUGREF_9217_PART_I
 #define LOG_GROUP LOG_GROUP_CPUM
 #include <VBox/vmm/cpum.h>
 #include "CPUMInternal.h"
-#include <VBox/vmm/vm.h>
+#include <VBox/vmm/vmcc.h>
 #include <VBox/vmm/gvm.h>
 #include <VBox/err.h>
 #include <VBox/log.h>
@@ -101,7 +102,7 @@ const g_aCpuidUnifyBits[] =
 static int  cpumR0MapLocalApics(void);
 static void cpumR0UnmapLocalApics(void);
 #endif
-static int  cpumR0SaveHostDebugState(PVMCPU pVCpu);
+static int  cpumR0SaveHostDebugState(PVMCPUCC pVCpu);
 
 
 /**
@@ -144,7 +145,7 @@ VMMR0_INT_DECL(int) CPUMR0ModuleTerm(void)
  */
 static DECLCALLBACK(void) cpumR0CheckCpuid(RTCPUID idCpu, void *pvUser1, void *pvUser2)
 {
-    PVM     pVM   = (PVM)pvUser1;
+    PVMCC     pVM   = (PVMCC)pvUser1;
 
     NOREF(idCpu); NOREF(pvUser2);
     for (uint32_t i = 0; i < RT_ELEMENTS(g_aCpuidUnifyBits); i++)
@@ -182,7 +183,7 @@ static DECLCALLBACK(void) cpumR0CheckCpuid(RTCPUID idCpu, void *pvUser1, void *p
  * @returns VBox status code.
  * @param   pVM         The cross context VM structure.
  */
-VMMR0_INT_DECL(int) CPUMR0InitVM(PVM pVM)
+VMMR0_INT_DECL(int) CPUMR0InitVM(PVMCC pVM)
 {
     LogFlow(("CPUMR0Init: %p\n", pVM));
 
@@ -296,8 +297,7 @@ VMMR0_INT_DECL(int) CPUMR0InitVM(PVM pVM)
                     = pVM->cpum.s.HostFeatures.fArchMdsNo              = RT_BOOL(fArchVal & MSR_IA32_ARCH_CAP_F_MDS_NO);
 
                 if (pVM->cpum.s.GuestFeatures.fArchCap)
-                    for (VMCPUID i = 0; i < pVM->cCpus; i++)
-                        pVM->aCpus[i].cpum.s.GuestMsrs.msr.ArchCaps = fArchVal;
+                    VMCC_FOR_EACH_VMCPU_STMT(pVM, pVCpu->cpum.s.GuestMsrs.msr.ArchCaps = fArchVal);
             }
             else
                 pVM->cpum.s.HostFeatures.fArchCap = 0;
@@ -346,14 +346,7 @@ VMMR0_INT_DECL(int) CPUMR0InitVM(PVM pVM)
     uint32_t u32DR7 = ASMGetDR7();
     if (u32DR7 & X86_DR7_ENABLED_MASK)
     {
-#ifdef VBOX_BUGREF_9217
-        PGVM pGVM = (PGVM)pVM;
-        for (VMCPUID i = 0; i < pGVM->cCpusSafe; i++)
-            pGVM->aCpus[i].cpum.s.fUseFlags |= CPUM_USE_DEBUG_REGS_HOST;
-#else
-        for (VMCPUID i = 0; i < pVM->cCpus; i++)
-            pVM->aCpus[i].cpum.s.fUseFlags |= CPUM_USE_DEBUG_REGS_HOST;
-#endif
+        VMCC_FOR_EACH_VMCPU_STMT(pVM, pVCpu->cpum.s.fUseFlags |= CPUM_USE_DEBUG_REGS_HOST);
         Log(("CPUMR0Init: host uses debug registers (dr7=%x)\n", u32DR7));
     }
 
@@ -373,7 +366,7 @@ VMMR0_INT_DECL(int) CPUMR0InitVM(PVM pVM)
  * @param   pVM         The cross context VM structure.
  * @param   pVCpu       The cross context virtual CPU structure.
  */
-VMMR0_INT_DECL(int) CPUMR0Trap07Handler(PVM pVM, PVMCPU pVCpu)
+VMMR0_INT_DECL(int) CPUMR0Trap07Handler(PVMCC pVM, PVMCPUCC pVCpu)
 {
     Assert(pVM->cpum.s.HostFeatures.fFxSaveRstor);
     Assert(ASMGetCR4() & X86_CR4_OSFXSR);
@@ -435,7 +428,7 @@ VMMR0_INT_DECL(int) CPUMR0Trap07Handler(PVM pVM, PVMCPU pVCpu)
  * @param   pVM     The cross context VM structure.
  * @param   pVCpu   The cross context virtual CPU structure.
  */
-VMMR0_INT_DECL(int) CPUMR0LoadGuestFPU(PVM pVM, PVMCPU pVCpu)
+VMMR0_INT_DECL(int) CPUMR0LoadGuestFPU(PVMCC pVM, PVMCPUCC pVCpu)
 {
     int rc;
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
@@ -479,7 +472,7 @@ VMMR0_INT_DECL(int) CPUMR0LoadGuestFPU(PVM pVM, PVMCPU pVCpu)
  * @returns true if we saved the guest state.
  * @param   pVCpu       The cross context virtual CPU structure.
  */
-VMMR0_INT_DECL(bool) CPUMR0FpuStateMaybeSaveGuestAndRestoreHost(PVMCPU pVCpu)
+VMMR0_INT_DECL(bool) CPUMR0FpuStateMaybeSaveGuestAndRestoreHost(PVMCPUCC pVCpu)
 {
     bool fSavedGuest;
     Assert(pVCpu->CTX_SUFF(pVM)->cpum.s.HostFeatures.fFxSaveRstor);
@@ -522,7 +515,7 @@ VMMR0_INT_DECL(bool) CPUMR0FpuStateMaybeSaveGuestAndRestoreHost(PVMCPU pVCpu)
  * @returns VBox status code.
  * @param   pVCpu       The cross context virtual CPU structure.
  */
-static int cpumR0SaveHostDebugState(PVMCPU pVCpu)
+static int cpumR0SaveHostDebugState(PVMCPUCC pVCpu)
 {
     /*
      * Save the host state.
@@ -563,7 +556,7 @@ static int cpumR0SaveHostDebugState(PVMCPU pVCpu)
  * @param   fDr6        Whether to include DR6 or not.
  * @thread  EMT(pVCpu)
  */
-VMMR0_INT_DECL(bool) CPUMR0DebugStateMaybeSaveGuestAndRestoreHost(PVMCPU pVCpu, bool fDr6)
+VMMR0_INT_DECL(bool) CPUMR0DebugStateMaybeSaveGuestAndRestoreHost(PVMCPUCC pVCpu, bool fDr6)
 {
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
     bool const fDrXLoaded = RT_BOOL(pVCpu->cpum.s.fUseFlags & (CPUM_USED_DEBUG_REGS_GUEST | CPUM_USED_DEBUG_REGS_HYPER));
@@ -622,7 +615,7 @@ VMMR0_INT_DECL(bool) CPUMR0DebugStateMaybeSaveGuestAndRestoreHost(PVMCPU pVCpu, 
  * @param   fDr6        Whether to include DR6 or not.
  * @thread  EMT(pVCpu)
  */
-VMMR0_INT_DECL(bool) CPUMR0DebugStateMaybeSaveGuest(PVMCPU pVCpu, bool fDr6)
+VMMR0_INT_DECL(bool) CPUMR0DebugStateMaybeSaveGuest(PVMCPUCC pVCpu, bool fDr6)
 {
     /*
      * Do we need to save the guest DRx registered loaded into host registers?
@@ -649,7 +642,7 @@ VMMR0_INT_DECL(bool) CPUMR0DebugStateMaybeSaveGuest(PVMCPU pVCpu, bool fDr6)
  * @param   fDr6        Whether to include DR6 or not.
  * @thread  EMT(pVCpu)
  */
-VMMR0_INT_DECL(void) CPUMR0LoadGuestDebugState(PVMCPU pVCpu, bool fDr6)
+VMMR0_INT_DECL(void) CPUMR0LoadGuestDebugState(PVMCPUCC pVCpu, bool fDr6)
 {
     /*
      * Save the host state and disarm all host BPs.
@@ -680,7 +673,7 @@ VMMR0_INT_DECL(void) CPUMR0LoadGuestDebugState(PVMCPU pVCpu, bool fDr6)
  * @param   fDr6        Whether to include DR6 or not.
  * @thread  EMT(pVCpu)
  */
-VMMR0_INT_DECL(void) CPUMR0LoadHyperDebugState(PVMCPU pVCpu, bool fDr6)
+VMMR0_INT_DECL(void) CPUMR0LoadHyperDebugState(PVMCPUCC pVCpu, bool fDr6)
 {
     /*
      * Save the host state and disarm all host BPs.
@@ -943,7 +936,7 @@ static void cpumR0UnmapLocalApics(void)
  * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @param   iHostCpuSet The CPU set index of the current host CPU.
  */
-VMMR0_INT_DECL(void) CPUMR0SetLApic(PVMCPU pVCpu, uint32_t iHostCpuSet)
+VMMR0_INT_DECL(void) CPUMR0SetLApic(PVMCPUCC pVCpu, uint32_t iHostCpuSet)
 {
     Assert(iHostCpuSet <= RT_ELEMENTS(g_aLApics));
     pVCpu->cpum.s.pvApicBase = g_aLApics[iHostCpuSet].pv;

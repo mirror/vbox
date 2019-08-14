@@ -55,11 +55,7 @@ typedef struct GVMCPU
 #endif
 
     /** VCPU id (0 - (pVM->cCpus - 1). */
-#ifdef VBOX_BUGREF_9217
-    VMCPUID         idCpuSafe;
-#else
     VMCPUID         idCpu;
-#endif
     /** Padding. */
     uint32_t        uPadding;
 
@@ -76,15 +72,13 @@ typedef struct GVMCPU
 #else
     /** Pointer to the GVM structure, for CTX_SUFF use in VMMAll code.  */
     PGVM            pVMR0;
+    /** The ring-3 address of this structure (only VMCPU part). */
+    PVMCPUR3        pVCpuR3;
 #endif
 
     /** Padding so gvmm starts on a 64 byte boundrary.
      * @note Keeping this working for 32-bit header syntax checking.  */
-#ifdef VBOX_BUGREF_9217
-    uint8_t         abPadding[HC_ARCH_BITS == 32 ? 44 : 32];
-#else
     uint8_t         abPadding[HC_ARCH_BITS == 32 ? 40 : 24];
-#endif
 
     /** The GVMM per vcpu data. */
     union
@@ -157,32 +151,23 @@ typedef struct GVM
     /** Magic / eye-catcher (GVM_MAGIC). */
     uint32_t        u32Magic;
     /** The global VM handle for this VM. */
-#ifdef VBOX_BUGREF_9217
-    uint32_t        hSelfSafe;
-#else
     uint32_t        hSelf;
-#endif
-#ifndef VBOX_BUGREF_9217
+#ifdef VBOX_BUGREF_9217
+    /** Pointer to this structure (for validation purposes). */
+    PGVM            pSelf;
+#else
     /** The ring-0 mapping of the VM structure. */
     PVM             pVM;
 #endif
     /** The ring-3 mapping of the VM structure. */
     PVMR3           pVMR3;
     /** The support driver session the VM is associated with. */
-#ifdef VBOX_BUGREF_9217
-    PSUPDRVSESSION  pSessionSafe;
-#else
     PSUPDRVSESSION  pSession;
-#endif
     /** Number of Virtual CPUs, i.e. how many entries there are in aCpus.
      * Same same as VM::cCpus. */
     uint32_t        cCpus;
     /** Padding so gvmm starts on a 64 byte boundrary.   */
-#ifdef VBOX_BUGREF_9217
-    uint8_t         abPadding[HC_ARCH_BITS == 32 ? 12 + 28 + 4 : 28 + 8];
-#else
     uint8_t         abPadding[HC_ARCH_BITS == 32 ? 12 + 28 : 28];
-#endif
 
     /** The GVMM per vm data. */
     union

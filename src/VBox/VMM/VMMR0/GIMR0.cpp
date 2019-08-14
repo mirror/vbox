@@ -19,11 +19,12 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define VBOX_BUGREF_9217_PART_I
 #define LOG_GROUP LOG_GROUP_GIM
 #include <VBox/vmm/gim.h>
 #include "GIMInternal.h"
 #include "GIMHvInternal.h"
-#include <VBox/vmm/vm.h>
+#include <VBox/vmm/vmcc.h>
 
 #include <VBox/err.h>
 
@@ -34,7 +35,7 @@
  * @returns VBox status code.
  * @param   pVM     The cross context VM structure.
  */
-VMMR0_INT_DECL(int) GIMR0InitVM(PVM pVM)
+VMMR0_INT_DECL(int) GIMR0InitVM(PVMCC pVM)
 {
     if (!GIMIsEnabled(pVM))
         return VINF_SUCCESS;
@@ -60,7 +61,7 @@ VMMR0_INT_DECL(int) GIMR0InitVM(PVM pVM)
  * @returns VBox status code.
  * @param   pVM     The cross context VM structure.
  */
-VMMR0_INT_DECL(int) GIMR0TermVM(PVM pVM)
+VMMR0_INT_DECL(int) GIMR0TermVM(PVMCC pVM)
 {
     if (!GIMIsEnabled(pVM))
         return VINF_SUCCESS;
@@ -96,7 +97,7 @@ VMMR0_INT_DECL(int) GIMR0TermVM(PVM pVM)
  *
  * @thread EMT(pVCpu)
  */
-VMMR0_INT_DECL(int) GIMR0UpdateParavirtTsc(PVM pVM, uint64_t u64Offset)
+VMMR0_INT_DECL(int) GIMR0UpdateParavirtTsc(PVMCC pVM, uint64_t u64Offset)
 {
     switch (pVM->gim.s.enmProviderId)
     {
