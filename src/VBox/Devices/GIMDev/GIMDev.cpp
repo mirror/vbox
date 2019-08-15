@@ -22,7 +22,6 @@
 #define LOG_GROUP LOG_GROUP_DEV_GIM
 #include <VBox/vmm/pdmdev.h>
 #include <VBox/vmm/gim.h>
-#include <VBox/vmm/vm.h>
 
 #include "VBoxDD.h"
 #include <iprt/alloc.h>
