@@ -30,6 +30,9 @@
 #endif
 
 #ifndef VBOX_FOR_DTRACE_LIB
+# ifndef USING_VMM_COMMON_DEFS
+#  error "Compile job does not include VMM_COMMON_DEFS from src/VBox/Config.kmk - make sure you really need to include this file!"
+# endif
 # include <iprt/param.h>
 # include <VBox/param.h>
 # include <VBox/types.h>

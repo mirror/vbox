@@ -28,6 +28,7 @@ endif
 
 ## DEFS variable that is picked up by all three VMM targets (R0, R3, RC).
 # Can be prepended to by setting it in LocalConfig.kmk
+VMM_COMMON_DEFS := USING_VMM_COMMON_DEFS
 ifdef VBOX_WITH_3RD_IEM_STEP
  VMM_COMMON_DEFS += VBOX_WITH_3RD_IEM_STEP
 endif
@@ -81,9 +82,6 @@ ifdef VBOX_WITH_NATIVE_NEM
  if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), win.amd64)
   VMM_COMMON_DEFS += VBOX_WITH_NATIVE_NEM VBOX_WITH_NEM_R0
  endif
-endif
-ifdef VBOX_BUGREF_9217
- VMM_COMMON_DEFS += VBOX_BUGREF_9217
 endif
 
 # VMM_COMMON_DEFS += VBOX_WITH_NS_ACCOUNTING_STATS
