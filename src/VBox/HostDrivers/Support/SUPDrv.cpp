@@ -369,6 +369,7 @@ static SUPFUNC g_aFunctions[] =
     { "RTR0MemObjMapKernelExTag",               (void *)(uintptr_t)RTR0MemObjMapKernelExTag },
     { "RTR0MemObjMapKernelTag",                 (void *)(uintptr_t)RTR0MemObjMapKernelTag },
     { "RTR0MemObjMapUserTag",                   (void *)(uintptr_t)RTR0MemObjMapUserTag },
+    { "RTR0MemObjMapUserExTag",                 (void *)(uintptr_t)RTR0MemObjMapUserExTag },
     { "RTR0MemObjProtect",                      (void *)(uintptr_t)RTR0MemObjProtect },
     { "RTR0MemObjSize",                         (void *)(uintptr_t)RTR0MemObjSize },
     { "RTR0MemUserCopyFrom",                    (void *)(uintptr_t)RTR0MemUserCopyFrom },

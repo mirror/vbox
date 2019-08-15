@@ -103,7 +103,7 @@ VMM_INT_DECL(VBOXSTRICTRC) gimKvmHypercall(PVMCPUCC pVCpu, PCPUMCTX pCtx)
         {
             if (uHyperArg1 < pVM->cCpus)
             {
-                PVMCPU pVCpuDst = pVM->CTX_SUFF(apCpus)[uHyperArg1];   /* ASSUMES pVCpu index == ApicId of the VCPU. */
+                PVMCPUCC pVCpuDst = VMCC_GET_CPU(pVM, uHyperArg1); /* ASSUMES pVCpu index == ApicId of the VCPU. */
                 EMUnhaltAndWakeUp(pVM, pVCpuDst);
                 uHyperRet = KVM_HYPERCALL_RET_SUCCESS;
             }
@@ -230,7 +230,7 @@ VMM_INT_DECL(VBOXSTRICTRC) gimKvmReadMsr(PVMCPUCC pVCpu, uint32_t idMsr, PCCPUMM
 VMM_INT_DECL(VBOXSTRICTRC) gimKvmWriteMsr(PVMCPUCC pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uRawValue)
 {
     NOREF(pRange);
-    PVM        pVM  = pVCpu->CTX_SUFF(pVM);
+    PVMCC      pVM  = pVCpu->CTX_SUFF(pVM);
     PGIMKVMCPU pKvmCpu = &pVCpu->gim.s.u.KvmCpu;
 
     switch (idMsr)
@@ -438,7 +438,7 @@ VMM_INT_DECL(VBOXSTRICTRC) gimKvmHypercallEx(PVMCPUCC pVCpu, PCPUMCTX pCtx, unsi
  *
  * @thread  EMT(pVCpu).
  */
-VMM_INT_DECL(VBOXSTRICTRC) gimKvmXcptUD(PVM pVM, PVMCPUCC pVCpu, PCPUMCTX pCtx, PDISCPUSTATE pDis, uint8_t *pcbInstr)
+VMM_INT_DECL(VBOXSTRICTRC) gimKvmXcptUD(PVMCC pVM, PVMCPUCC pVCpu, PCPUMCTX pCtx, PDISCPUSTATE pDis, uint8_t *pcbInstr)
 {
     VMCPU_ASSERT_EMT(pVCpu);
 

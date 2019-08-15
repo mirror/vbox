@@ -130,7 +130,7 @@ DECLINLINE(PIOMMMIORANGE) iomMmioGetRangeWithRef(PVM pVM, PVMCPU pVCpu, RTGCPHYS
  * @param   pVM     The cross context VM structure.
  * @param   pRange  The range to release.
  */
-DECLINLINE(void) iomMmioReleaseRange(PVM pVM, PIOMMMIORANGE pRange)
+DECLINLINE(void) iomMmioReleaseRange(PVMCC pVM, PIOMMMIORANGE pRange)
 {
     uint32_t cRefs = ASMAtomicDecU32(&pRange->cRefs);
     if (!cRefs)

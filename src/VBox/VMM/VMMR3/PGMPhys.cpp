@@ -32,9 +32,10 @@
 #endif
 #include <VBox/vmm/pdmdev.h>
 #include "PGMInternal.h"
-#include <VBox/vmm/vm.h>
-#include <VBox/vmm/uvm.h>
+#include <VBox/vmm/vmcc.h>
+
 #include "PGMInline.h"
+
 #include <VBox/sup.h>
 #include <VBox/param.h>
 #include <VBox/err.h>
@@ -5005,7 +5006,7 @@ int pgmR3PhysChunkMap(PVM pVM, uint32_t idChunk, PPPGMCHUNKR3MAP ppChunk)
 
     /* Must be callable from any thread, so can't use VMMR3CallR0. */
     STAM_PROFILE_START(&pVM->pgm.s.CTX_SUFF(pStats)->StatChunkMap, a);
-    rc = SUPR3CallVMMR0Ex(pVM->pVMR0, NIL_VMCPUID, VMMR0_DO_GMM_MAP_UNMAP_CHUNK, 0, &Req.Hdr);
+    rc = SUPR3CallVMMR0Ex(VMCC_GET_VMR0_FOR_CALL(pVM), NIL_VMCPUID, VMMR0_DO_GMM_MAP_UNMAP_CHUNK, 0, &Req.Hdr);
     STAM_PROFILE_STOP(&pVM->pgm.s.CTX_SUFF(pStats)->StatChunkMap, a);
     if (RT_SUCCESS(rc))
     {

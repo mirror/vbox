@@ -70,8 +70,7 @@
 #include <VBox/vmm/hm.h>
 #include <VBox/vmm/gim.h>
 #include "VMInternal.h"
-#include <VBox/vmm/vm.h>
-#include <VBox/vmm/uvm.h>
+#include <VBox/vmm/vmcc.h>
 
 #include <VBox/sup.h>
 #if defined(VBOX_WITH_DTRACE_R3) && !defined(VBOX_WITH_NATIVE_DTRACE)
@@ -583,7 +582,11 @@ static int vmR3CreateU(PUVM pUVM, uint32_t cCpus, PFNCFGMCONSTRUCTOR pfnCFGMCons
     {
         PVM pVM = pUVM->pVM = CreateVMReq.pVMR3;
         AssertRelease(VALID_PTR(pVM));
+#ifdef VBOX_BUGREF_9217
+        AssertRelease(pVM->pVMR0ForCall == CreateVMReq.pVMR0);
+#else
         AssertRelease(pVM->pVMR0 == CreateVMReq.pVMR0);
+#endif
         AssertRelease(pVM->pSession == pUVM->vm.s.pSession);
         AssertRelease(pVM->cCpus == cCpus);
         AssertRelease(pVM->uCpuExecutionCap == 100);
@@ -591,7 +594,7 @@ static int vmR3CreateU(PUVM pUVM, uint32_t cCpus, PFNCFGMCONSTRUCTOR pfnCFGMCons
         AssertCompileMemberAlignment(VM, tm, 64);
 
         Log(("VMR3Create: Created pUVM=%p pVM=%p pVMR0=%p hSelf=%#x cCpus=%RU32\n",
-             pUVM, pVM, pVM->pVMR0, pVM->hSelf, pVM->cCpus));
+             pUVM, pVM, CreateVMReq.pVMR0, pVM->hSelf, pVM->cCpus));
 
         /*
          * Initialize the VM structure and our internal data (VMINT).
@@ -788,7 +791,7 @@ static int vmR3ReadBaseConfig(PVM pVM, PUVM pUVM, uint32_t cCpus)
 static DECLCALLBACK(int) vmR3RegisterEMT(PVM pVM, VMCPUID idCpu)
 {
     Assert(VMMGetCpuId(pVM) == idCpu);
-    int rc = SUPR3CallVMMR0Ex(pVM->pVMR0, idCpu, VMMR0_DO_GVMM_REGISTER_VMCPU, 0, NULL);
+    int rc = SUPR3CallVMMR0Ex(VMCC_GET_VMR0_FOR_CALL(pVM), idCpu, VMMR0_DO_GVMM_REGISTER_VMCPU, 0, NULL);
     if (RT_FAILURE(rc))
         LogRel(("idCpu=%u rc=%Rrc\n", idCpu, rc));
     return rc;

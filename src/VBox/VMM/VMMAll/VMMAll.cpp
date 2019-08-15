@@ -204,7 +204,7 @@ VMMDECL(VMCPUID) VMMGetCpuId(PVMCC pVM)
         /** @todo optimize for large number of VCPUs when that becomes more common. */
         for (VMCPUID idCpu = 0; idCpu < cCpus; idCpu++)
         {
-            PVMCPU pVCpu = VMCC_GET_CPU(pVM, idCpu);
+            PVMCPUCC pVCpu = VMCC_GET_CPU(pVM, idCpu);
             if (pVCpu->idHostCpu == idHostCpu)
                 return pVCpu->idCpu;
         }
@@ -216,7 +216,7 @@ VMMDECL(VMCPUID) VMMGetCpuId(PVMCC pVM)
     /** @todo optimize for large number of VCPUs when that becomes more common. */
     for (VMCPUID idCpu = 0; idCpu < cCpus; idCpu++)
     {
-        PVMCPU pVCpu = VMCC_GET_CPU(pVM, idCpu);
+        PVMCPUCC pVCpu = VMCC_GET_CPU(pVM, idCpu);
         if (pVCpu->hNativeThreadR0 == hThread)
             return pVCpu->idCpu;
     }

@@ -322,15 +322,15 @@ VMMDECL(bool) HMIsEnabledNotMacro(PVM pVM)
  * Checks if the guest is in a suitable state for hardware-assisted execution.
  *
  * @returns @c true if it is suitable, @c false otherwise.
+ * @param   pVM     The cross context VM structure.
  * @param   pVCpu   The cross context virtual CPU structure.
  * @param   pCtx    Pointer to the guest CPU context.
  *
  * @remarks @a pCtx can be a partial context created and not necessarily the same as
  *          pVCpu->cpum.GstCtx.
  */
-VMMDECL(bool) HMCanExecuteGuest(PVMCPUCC pVCpu, PCCPUMCTX pCtx)
+VMMDECL(bool) HMCanExecuteGuest(PVMCC pVM, PVMCPUCC pVCpu, PCCPUMCTX pCtx)
 {
-    PVM pVM = pVCpu->CTX_SUFF(pVM);
     Assert(HMIsEnabled(pVM));
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM
@@ -379,7 +379,7 @@ static void hmQueueInvlPage(PVMCPU pVCpu, RTGCPTR GCVirt)
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   GCVirt      Page to invalidate.
  */
-VMM_INT_DECL(int) HMInvalidatePage(PVMCPU pVCpu, RTGCPTR GCVirt)
+VMM_INT_DECL(int) HMInvalidatePage(PVMCPUCC pVCpu, RTGCPTR GCVirt)
 {
     STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushPageManual);
 #ifdef IN_RING0
@@ -513,7 +513,7 @@ VMM_INT_DECL(int) HMInvalidatePageOnAllVCpus(PVMCC pVM, RTGCPTR GCVirt)
 
     for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
-        PVMCPU pVCpu = VMCC_GET_CPU(pVM, idCpu);
+        PVMCPUCC pVCpu = VMCC_GET_CPU(pVM, idCpu);
 
         /* Nothing to do if a TLB flush is already pending; the VCPU should
            have already been poked if it were active. */
@@ -550,7 +550,7 @@ VMM_INT_DECL(int) HMFlushTlbOnAllVCpus(PVMCC pVM)
 
     for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
-        PVMCPU pVCpu = VMCC_GET_CPU(pVM, idCpu);
+        PVMCPUCC pVCpu = VMCC_GET_CPU(pVM, idCpu);
 
         /* Nothing to do if a TLB flush is already pending; the VCPU should
            have already been poked if it were active. */
@@ -701,9 +701,9 @@ VMM_INT_DECL(bool) HMIsVmxActive(PVM pVM)
  * @returns Interrupt event pending state.
  * @param   pVM         The cross context VM structure.
  */
-VMM_INT_DECL(bool) HMHasPendingIrq(PVM pVM)
+VMM_INT_DECL(bool) HMHasPendingIrq(PVMCC pVM)
 {
-    PVMCPU pVCpu = VMMGetCpu(pVM);
+    PVMCPUCC pVCpu = VMMGetCpu(pVM);
     return !!pVCpu->hm.s.Event.fPending;
 }
 

@@ -1408,8 +1408,8 @@ VMMDECL(void)           CPUMGetGuestCpuId(PVMCPUCC pVCpu, uint32_t iLeaf, uint32
 VMMDECL(uint64_t)       CPUMGetGuestEFER(PCVMCPU pVCpu);
 VMM_INT_DECL(uint64_t)  CPUMGetGuestIa32MtrrCap(PCVMCPU pVCpu);
 VMM_INT_DECL(uint64_t)  CPUMGetGuestIa32SmmMonitorCtl(PCVMCPU pVCpu);
-VMMDECL(VBOXSTRICTRC)   CPUMQueryGuestMsr(PVMCPU pVCpu, uint32_t idMsr, uint64_t *puValue);
-VMMDECL(VBOXSTRICTRC)   CPUMSetGuestMsr(PVMCPU pVCpu, uint32_t idMsr, uint64_t uValue);
+VMMDECL(VBOXSTRICTRC)   CPUMQueryGuestMsr(PVMCPUCC pVCpu, uint32_t idMsr, uint64_t *puValue);
+VMMDECL(VBOXSTRICTRC)   CPUMSetGuestMsr(PVMCPUCC pVCpu, uint32_t idMsr, uint64_t uValue);
 VMMDECL(CPUMCPUVENDOR)  CPUMGetGuestCpuVendor(PVM pVM);
 VMMDECL(CPUMCPUVENDOR)  CPUMGetHostCpuVendor(PVM pVM);
 /** @} */
@@ -1454,10 +1454,10 @@ VMMR3_INT_DECL(void)   CPUMR3ClearGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE en
 VMMR3_INT_DECL(bool)   CPUMR3GetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature);
 VMMDECL(bool)          CPUMSetGuestCpuIdPerCpuApicFeature(PVMCPU pVCpu, bool fVisible);
 VMMDECL(void)          CPUMSetGuestCtx(PVMCPU pVCpu, const PCPUMCTX pCtx);
-VMM_INT_DECL(void)     CPUMSetGuestTscAux(PVMCPU pVCpu, uint64_t uValue);
-VMM_INT_DECL(uint64_t) CPUMGetGuestTscAux(PVMCPU pVCpu);
-VMM_INT_DECL(void)     CPUMSetGuestSpecCtrl(PVMCPU pVCpu, uint64_t uValue);
-VMM_INT_DECL(uint64_t) CPUMGetGuestSpecCtrl(PVMCPU pVCpu);
+VMM_INT_DECL(void)     CPUMSetGuestTscAux(PVMCPUCC pVCpu, uint64_t uValue);
+VMM_INT_DECL(uint64_t) CPUMGetGuestTscAux(PVMCPUCC pVCpu);
+VMM_INT_DECL(void)     CPUMSetGuestSpecCtrl(PVMCPUCC pVCpu, uint64_t uValue);
+VMM_INT_DECL(uint64_t) CPUMGetGuestSpecCtrl(PVMCPUCC pVCpu);
 VMM_INT_DECL(uint64_t) CPUMGetGuestCR4ValidMask(PVM pVM);
 /** @} */
 
@@ -2577,7 +2577,7 @@ VMMDECL(uint64_t)       CPUMGetGuestScalableBusFrequency(PVM pVM);
 VMMDECL(uint64_t)       CPUMGetGuestEferMsrValidMask(PVM pVM);
 VMMDECL(int)            CPUMIsGuestEferMsrWriteValid(PVM pVM, uint64_t uCr0, uint64_t uOldEfer, uint64_t uNewEfer,
                                                      uint64_t *puValidEfer);
-VMMDECL(void)           CPUMSetGuestEferMsrNoChecks(PVMCPU pVCpu, uint64_t uOldEfer, uint64_t uValidEfer);
+VMMDECL(void)           CPUMSetGuestEferMsrNoChecks(PVMCPUCC pVCpu, uint64_t uOldEfer, uint64_t uValidEfer);
 VMMDECL(bool)           CPUMIsPatMsrValid(uint64_t uValue);
 
 /** Guest CPU interruptibility level, see CPUMGetGuestInterruptibility(). */
@@ -2651,20 +2651,20 @@ VMMR3DECL(int)              CPUMR3MsrRangesInsert(PVM pVM, PCCPUMMSRRANGE pNewRa
  */
 VMMR0_INT_DECL(int)     CPUMR0ModuleInit(void);
 VMMR0_INT_DECL(int)     CPUMR0ModuleTerm(void);
-VMMR0_INT_DECL(int)     CPUMR0InitVM(PVM pVM);
-DECLASM(void)           CPUMR0RegisterVCpuThread(PVMCPU pVCpu);
+VMMR0_INT_DECL(int)     CPUMR0InitVM(PVMCC pVM);
+DECLASM(void)           CPUMR0RegisterVCpuThread(PVMCPUCC pVCpu);
 DECLASM(void)           CPUMR0TouchHostFpu(void);
-VMMR0_INT_DECL(int)     CPUMR0Trap07Handler(PVM pVM, PVMCPU pVCpu);
-VMMR0_INT_DECL(int)     CPUMR0LoadGuestFPU(PVM pVM, PVMCPU pVCpu);
-VMMR0_INT_DECL(bool)    CPUMR0FpuStateMaybeSaveGuestAndRestoreHost(PVMCPU pVCpu);
-VMMR0_INT_DECL(int)     CPUMR0SaveHostDebugState(PVM pVM, PVMCPU pVCpu);
-VMMR0_INT_DECL(bool)    CPUMR0DebugStateMaybeSaveGuestAndRestoreHost(PVMCPU pVCpu, bool fDr6);
-VMMR0_INT_DECL(bool)    CPUMR0DebugStateMaybeSaveGuest(PVMCPU pVCpu, bool fDr6);
+VMMR0_INT_DECL(int)     CPUMR0Trap07Handler(PVMCC pVM, PVMCPUCC pVCpu);
+VMMR0_INT_DECL(int)     CPUMR0LoadGuestFPU(PVMCC pVM, PVMCPUCC pVCpu);
+VMMR0_INT_DECL(bool)    CPUMR0FpuStateMaybeSaveGuestAndRestoreHost(PVMCPUCC pVCpu);
+VMMR0_INT_DECL(int)     CPUMR0SaveHostDebugState(PVMCC pVM, PVMCPUCC pVCpu);
+VMMR0_INT_DECL(bool)    CPUMR0DebugStateMaybeSaveGuestAndRestoreHost(PVMCPUCC pVCpu, bool fDr6);
+VMMR0_INT_DECL(bool)    CPUMR0DebugStateMaybeSaveGuest(PVMCPUCC pVCpu, bool fDr6);
 
-VMMR0_INT_DECL(void)    CPUMR0LoadGuestDebugState(PVMCPU pVCpu, bool fDr6);
-VMMR0_INT_DECL(void)    CPUMR0LoadHyperDebugState(PVMCPU pVCpu, bool fDr6);
+VMMR0_INT_DECL(void)    CPUMR0LoadGuestDebugState(PVMCPUCC pVCpu, bool fDr6);
+VMMR0_INT_DECL(void)    CPUMR0LoadHyperDebugState(PVMCPUCC pVCpu, bool fDr6);
 #ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
-VMMR0_INT_DECL(void)    CPUMR0SetLApic(PVMCPU pVCpu, uint32_t iHostCpuSet);
+VMMR0_INT_DECL(void)    CPUMR0SetLApic(PVMCPUCC pVCpu, uint32_t iHostCpuSet);
 #endif
 
 /** @} */
@@ -2673,11 +2673,11 @@ VMMR0_INT_DECL(void)    CPUMR0SetLApic(PVMCPU pVCpu, uint32_t iHostCpuSet);
 /** @defgroup grp_cpum_rz    The CPUM raw-mode and ring-0 context API
  * @{
  */
-VMMRZ_INT_DECL(void)    CPUMRZFpuStatePrepareHostCpuForUse(PVMCPU pVCpu);
-VMMRZ_INT_DECL(void)    CPUMRZFpuStateActualizeForRead(PVMCPU pVCpu);
-VMMRZ_INT_DECL(void)    CPUMRZFpuStateActualizeForChange(PVMCPU pVCpu);
-VMMRZ_INT_DECL(void)    CPUMRZFpuStateActualizeSseForRead(PVMCPU pVCpu);
-VMMRZ_INT_DECL(void)    CPUMRZFpuStateActualizeAvxForRead(PVMCPU pVCpu);
+VMMRZ_INT_DECL(void)    CPUMRZFpuStatePrepareHostCpuForUse(PVMCPUCC pVCpu);
+VMMRZ_INT_DECL(void)    CPUMRZFpuStateActualizeForRead(PVMCPUCC pVCpu);
+VMMRZ_INT_DECL(void)    CPUMRZFpuStateActualizeForChange(PVMCPUCC pVCpu);
+VMMRZ_INT_DECL(void)    CPUMRZFpuStateActualizeSseForRead(PVMCPUCC pVCpu);
+VMMRZ_INT_DECL(void)    CPUMRZFpuStateActualizeAvxForRead(PVMCPUCC pVCpu);
 /** @} */
 
 

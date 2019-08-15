@@ -109,9 +109,9 @@ RT_C_DECLS_BEGIN
 /** @name All-context HM API.
  * @{ */
 VMMDECL(bool)                   HMIsEnabledNotMacro(PVM pVM);
-VMMDECL(bool)                   HMCanExecuteGuest(PVMCPUCC pVCpu, PCCPUMCTX pCtx);
-VMM_INT_DECL(int)               HMInvalidatePage(PVMCPU pVCpu, RTGCPTR GCVirt);
-VMM_INT_DECL(bool)              HMHasPendingIrq(PVM pVM);
+VMMDECL(bool)                   HMCanExecuteGuest(PVMCC pVM, PVMCPUCC pVCpu, PCCPUMCTX pCtx);
+VMM_INT_DECL(int)               HMInvalidatePage(PVMCPUCC pVCpu, RTGCPTR GCVirt);
+VMM_INT_DECL(bool)              HMHasPendingIrq(PVMCC pVM);
 VMM_INT_DECL(PX86PDPE)          HMGetPaePdpes(PVMCPU pVCpu);
 VMM_INT_DECL(bool)              HMSetSingleInstruction(PVMCC pVM, PVMCPUCC pVCpu, bool fEnable);
 VMM_INT_DECL(bool)              HMIsSvmActive(PVM pVM);
@@ -136,7 +136,7 @@ VMM_INT_DECL(void)              HMGetSvmMsrsFromHwvirtMsrs(PCSUPHWVIRTMSRS pMsrs
  * based purely on the Intel VT-x specification (used by IEM/REM and HM) can be
  * found in CPUM.
  * @{ */
-VMM_INT_DECL(bool)              HMCanExecuteVmxGuest(PVM pVM, PVMCPU pVCpu, PCCPUMCTX pCtx);
+VMM_INT_DECL(bool)              HMCanExecuteVmxGuest(PVMCC pVM, PVMCPUCC pVCpu, PCCPUMCTX pCtx);
 VMM_INT_DECL(TRPMEVENT)         HMVmxEventTypeToTrpmEventType(uint32_t uIntInfo);
 VMM_INT_DECL(uint32_t)          HMTrpmEventTypeToVmxEventType(uint8_t uVector, TRPMEVENT enmTrpmEvent);
 /** @} */
@@ -156,7 +156,7 @@ VMM_INT_DECL(TRPMEVENT)         HMSvmEventToTrpmEventType(PCSVMEVENT pSvmEvent, 
  * @{ */
 VMM_INT_DECL(int)               HMFlushTlb(PVMCPU pVCpu);
 VMM_INT_DECL(int)               HMFlushTlbOnAllVCpus(PVMCC pVM);
-VMM_INT_DECL(int)               HMInvalidatePageOnAllVCpus(PVM pVM, RTGCPTR GCVirt);
+VMM_INT_DECL(int)               HMInvalidatePageOnAllVCpus(PVMCC pVM, RTGCPTR GCVirt);
 VMM_INT_DECL(int)               HMInvalidatePhysPage(PVMCC pVM, RTGCPHYS GCPhys);
 VMM_INT_DECL(bool)              HMAreNestedPagingAndFullGuestExecEnabled(PVM pVM);
 VMM_INT_DECL(bool)              HMIsLongModeAllowed(PVM pVM);
@@ -172,7 +172,7 @@ VMM_INT_DECL(void)              HMNotifyVmxNstGstCurrentVmcsChanged(PVMCPU pVCpu
  * @{ */
 VMM_INT_DECL(bool)              HMIsSvmVGifActive(PVM pVM);
 # ifdef VBOX_WITH_NESTED_HWVIRT_SVM
-VMM_INT_DECL(void)              HMNotifySvmNstGstVmexit(PVMCPU pVCpu, PCPUMCTX pCtx);
+VMM_INT_DECL(void)              HMNotifySvmNstGstVmexit(PVMCPUCC pVCpu, PCPUMCTX pCtx);
 # endif
 VMM_INT_DECL(int)               HMIsSubjectToSvmErratum170(uint32_t *pu32Family, uint32_t *pu32Model, uint32_t *pu32Stepping);
 VMM_INT_DECL(int)               HMHCMaybeMovTprSvmHypercall(PVMCC pVM, PVMCPUCC pVCpu);
@@ -208,24 +208,24 @@ VMM_INT_DECL(int)               HMHCMaybeMovTprSvmHypercall(PVMCC pVM, PVMCPUCC 
  */
 VMMR0_INT_DECL(int)             HMR0Init(void);
 VMMR0_INT_DECL(int)             HMR0Term(void);
-VMMR0_INT_DECL(int)             HMR0InitVM(PVM pVM);
-VMMR0_INT_DECL(int)             HMR0TermVM(PVM pVM);
-VMMR0_INT_DECL(int)             HMR0EnableAllCpus(PVM pVM);
+VMMR0_INT_DECL(int)             HMR0InitVM(PVMCC pVM);
+VMMR0_INT_DECL(int)             HMR0TermVM(PVMCC pVM);
+VMMR0_INT_DECL(int)             HMR0EnableAllCpus(PVMCC pVM);
 # ifdef VBOX_WITH_RAW_MODE
-VMMR0_INT_DECL(int)             HMR0EnterSwitcher(PVM pVM, VMMSWITCHER enmSwitcher, bool *pfVTxDisabled);
-VMMR0_INT_DECL(void)            HMR0LeaveSwitcher(PVM pVM, bool fVTxDisabled);
+VMMR0_INT_DECL(int)             HMR0EnterSwitcher(PVMCC pVM, VMMSWITCHER enmSwitcher, bool *pfVTxDisabled);
+VMMR0_INT_DECL(void)            HMR0LeaveSwitcher(PVMCC pVM, bool fVTxDisabled);
 # endif
 
-VMMR0_INT_DECL(int)             HMR0SetupVM(PVM pVM);
-VMMR0_INT_DECL(int)             HMR0RunGuestCode(PVM pVM, PVMCPU pVCpu);
-VMMR0_INT_DECL(int)             HMR0Enter(PVMCPU pVCpu);
-VMMR0_INT_DECL(int)             HMR0LeaveCpu(PVMCPU pVCpu);
+VMMR0_INT_DECL(int)             HMR0SetupVM(PVMCC pVM);
+VMMR0_INT_DECL(int)             HMR0RunGuestCode(PVMCC pVM, PVMCPUCC pVCpu);
+VMMR0_INT_DECL(int)             HMR0Enter(PVMCPUCC pVCpu);
+VMMR0_INT_DECL(int)             HMR0LeaveCpu(PVMCPUCC pVCpu);
 VMMR0_INT_DECL(void)            HMR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, void *pvUser);
-VMMR0_INT_DECL(void)            HMR0NotifyCpumUnloadedGuestFpuState(PVMCPU VCpu);
-VMMR0_INT_DECL(void)            HMR0NotifyCpumModifiedHostCr0(PVMCPU VCpu);
+VMMR0_INT_DECL(void)            HMR0NotifyCpumUnloadedGuestFpuState(PVMCPUCC VCpu);
+VMMR0_INT_DECL(void)            HMR0NotifyCpumModifiedHostCr0(PVMCPUCC VCpu);
 VMMR0_INT_DECL(bool)            HMR0SuspendPending(void);
-VMMR0_INT_DECL(int)             HMR0InvalidatePage(PVMCPU pVCpu, RTGCPTR GCVirt);
-VMMR0_INT_DECL(int)             HMR0ImportStateOnDemand(PVMCPU pVCpu, uint64_t fWhat);
+VMMR0_INT_DECL(int)             HMR0InvalidatePage(PVMCPUCC pVCpu, RTGCPTR GCVirt);
+VMMR0_INT_DECL(int)             HMR0ImportStateOnDemand(PVMCPUCC pVCpu, uint64_t fWhat);
 
 /** @} */
 #endif /* IN_RING0 */

@@ -1150,7 +1150,11 @@ VMM_INT_DECL(void) TMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
     for (PTMTIMER pTimer = pVM->tm.s.pCreated; pTimer; pTimer = pTimer->pBigNext)
     {
         pTimer->pVMRC = pVM->pVMRC;
+#ifdef VBOX_BUGREF_9217
+        pTimer->pVMR0 = pVM->pVMR0ForCall; /** @todo fix properly */
+#else
         pTimer->pVMR0 = pVM->pVMR0;
+#endif
     }
 }
 
@@ -1528,7 +1532,11 @@ static int tmr3TimerCreate(PVM pVM, TMCLOCK enmClock, const char *pszDesc, PPTMT
     pTimer->u64Expire       = 0;
     pTimer->enmClock        = enmClock;
     pTimer->pVMR3           = pVM;
+#ifdef VBOX_BUGREF_9217
+    pTimer->pVMR0           = pVM->pVMR0ForCall; /** @todo fix properly */
+#else
     pTimer->pVMR0           = pVM->pVMR0;
+#endif
     pTimer->pVMRC           = pVM->pVMRC;
     pTimer->enmState        = TMTIMERSTATE_STOPPED;
     pTimer->offScheduleNext = 0;

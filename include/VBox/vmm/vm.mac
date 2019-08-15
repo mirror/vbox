@@ -99,14 +99,24 @@ struc VM
     .pSession               RTR0PTR_RES 1
     .pUVM                   RTR3PTR_RES 1
     .pVMR3                  RTR3PTR_RES 1
-%ifndef VBOX_BUGREF_9217
-    .pVMR0                  RTR0PTR_RES 1
+%ifdef VBOX_BUGREF_9217
+    .pVMR0ForCall           RTR0PTR_RES 1
 %else
-    .R0PtrUnused0           RTR0PTR_RES 1
+    .pVMR0                  RTR0PTR_RES 1
 %endif
     .pVMRC                  resq 1
+%ifdef VBOX_BUGREF_9217
+ %ifdef IN_RING0
+    .hSelfUnsafe            resd 1
+    .cCpusUnsafe            resd 1
+ %else
     .hSelf                  resd 1
     .cCpus                  resd 1
+ %endif
+%else
+    .hSelf                  resd 1
+    .cCpus                  resd 1
+%endif
     .uCpuExecutionCap       resd 1
     .cbSelf                 resd 1
 %ifdef VBOX_BUGREF_9217

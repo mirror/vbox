@@ -197,10 +197,10 @@ DECLINLINE(RTR0PTR) MMHyperCCToR0(PVM pVM, void *pv)
 VMMDECL(RTRCPTR)    MMHyperCCToRC(PVM pVM, void *pv);
 
 
-VMMDECL(int)        MMHyperAlloc(PVM pVM, size_t cb, uint32_t uAlignment, MMTAG enmTag, void **ppv);
-VMMDECL(int)        MMHyperDupMem(PVM pVM, const void *pvSrc, size_t cb, unsigned uAlignment, MMTAG enmTag, void **ppv);
-VMMDECL(int)        MMHyperFree(PVM pVM, void *pv);
-VMMDECL(void)       MMHyperHeapCheck(PVM pVM);
+VMMDECL(int)        MMHyperAlloc(PVMCC pVM, size_t cb, uint32_t uAlignment, MMTAG enmTag, void **ppv);
+VMMDECL(int)        MMHyperDupMem(PVMCC pVM, const void *pvSrc, size_t cb, unsigned uAlignment, MMTAG enmTag, void **ppv);
+VMMDECL(int)        MMHyperFree(PVMCC pVM, void *pv);
+VMMDECL(void)       MMHyperHeapCheck(PVMCC pVM);
 VMMDECL(int)        MMR3LockCall(PVM pVM);
 #ifdef DEBUG
 VMMDECL(void)       MMHyperHeapDump(PVM pVM);

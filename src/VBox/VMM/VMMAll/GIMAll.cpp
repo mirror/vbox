@@ -240,7 +240,7 @@ VMM_INT_DECL(VBOXSTRICTRC) GIMExecHypercallInstr(PVMCPUCC pVCpu, PCPUMCTX pCtx, 
  * @returns true if enabled and usable, false otherwise.
  * @param   pVM         The cross context VM structure.
  */
-VMM_INT_DECL(bool) GIMIsParavirtTscEnabled(PVM pVM)
+VMM_INT_DECL(bool) GIMIsParavirtTscEnabled(PVMCC pVM)
 {
     switch (pVM->gim.s.enmProviderId)
     {

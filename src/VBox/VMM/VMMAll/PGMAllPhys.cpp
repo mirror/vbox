@@ -320,7 +320,7 @@ pgmPhysRomWriteHandler(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhys, void *pvPhys,
  *
  * @param   pVM                 The cross context VM structure.
  */
-void pgmPhysInvalidRamRangeTlbs(PVM pVM)
+void pgmPhysInvalidRamRangeTlbs(PVMCC pVM)
 {
     pgmLock(pVM);
     RT_ZERO(pVM->pgm.s.apRamRangesTlbR3);
@@ -566,7 +566,7 @@ VMM_INT_DECL(int) PGMPhysGCPhys2HCPhys(PVMCC pVM, RTGCPHYS GCPhys, PRTHCPHYS pHC
  *
  * @param   pVM     The cross context VM structure.
  */
-void pgmPhysInvalidatePageMapTLB(PVM pVM)
+void pgmPhysInvalidatePageMapTLB(PVMCC pVM)
 {
     pgmLock(pVM);
     STAM_COUNTER_INC(&pVM->pgm.s.CTX_SUFF(pStats)->StatPageMapTlbFlushes);
@@ -632,7 +632,7 @@ void pgmPhysInvalidatePageMapTLBEntry(PVM pVM, RTGCPHYS GCPhys)
  * @remarks Must be called from within the PGM critical section. It may
  *          nip back to ring-3/0 in some cases.
  */
-static int pgmPhysEnsureHandyPage(PVM pVM)
+static int pgmPhysEnsureHandyPage(PVMCC pVM)
 {
     AssertMsg(pVM->pgm.s.cHandyPages <= RT_ELEMENTS(pVM->pgm.s.aHandyPages), ("%d\n", pVM->pgm.s.cHandyPages));
 
@@ -1224,7 +1224,7 @@ int pgmPhysPageMapByPageID(PVMCC pVM, uint32_t idPage, RTHCPHYS HCPhys, void **p
  *
  * @remarks Called from within the PGM critical section.
  */
-static int pgmPhysPageMapCommon(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, PPPGMPAGEMAP ppMap, void **ppv)
+static int pgmPhysPageMapCommon(PVMCC pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, PPPGMPAGEMAP ppMap, void **ppv)
 {
     PGM_LOCK_ASSERT_OWNER(pVM);
     NOREF(GCPhys);
@@ -4630,7 +4630,7 @@ VMM_INT_DECL(int) PGMPhysNemPageInfoChecker(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS 
  * @param   pfnCallback     The callback function.
  * @param   pvUser          User argument for the callback.
  */
-VMM_INT_DECL(int) PGMPhysNemEnumPagesByState(PVM pVM, PVMCPU pVCpu, uint8_t uMinState,
+VMM_INT_DECL(int) PGMPhysNemEnumPagesByState(PVMCC pVM, PVMCPUCC pVCpu, uint8_t uMinState,
                                              PFNPGMPHYSNEMENUMCALLBACK pfnCallback, void *pvUser)
 {
     /*

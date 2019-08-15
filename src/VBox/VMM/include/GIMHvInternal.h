@@ -1320,9 +1320,9 @@ typedef GIMHVCPU const *PCGIMHVCPU;
 RT_C_DECLS_BEGIN
 
 #ifdef IN_RING0
-VMMR0_INT_DECL(int)             gimR0HvInitVM(PVM pVM);
-VMMR0_INT_DECL(int)             gimR0HvTermVM(PVM pVM);
-VMMR0_INT_DECL(int)             gimR0HvUpdateParavirtTsc(PVM pVM, uint64_t u64Offset);
+VMMR0_INT_DECL(int)             gimR0HvInitVM(PVMCC pVM);
+VMMR0_INT_DECL(int)             gimR0HvTermVM(PVMCC pVM);
+VMMR0_INT_DECL(int)             gimR0HvUpdateParavirtTsc(PVMCC pVM, uint64_t u64Offset);
 #endif /* IN_RING0 */
 
 #ifdef IN_RING3

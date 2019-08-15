@@ -43,7 +43,7 @@
  * @param   pVM         The cross context VM structure.
  * @param   GCPtrPage   The
  */
-VMMDECL(void) REMNotifyInvalidatePage(PVM pVM, RTGCPTR GCPtrPage)
+VMMDECL(void) REMNotifyInvalidatePage(PVMCC pVM, RTGCPTR GCPtrPage)
 {
     /*
      * Try take the REM lock and push the address onto the array.
@@ -83,7 +83,7 @@ VMMDECL(void) REMNotifyInvalidatePage(PVM pVM, RTGCPTR GCPtrPage)
  * @param   pVM             The cross context VM structure.
  * @param   pRec            Notification record to insert
  */
-static void remNotifyHandlerInsert(PVM pVM, PREMHANDLERNOTIFICATION pRec)
+static void remNotifyHandlerInsert(PVMCC pVM, PREMHANDLERNOTIFICATION pRec)
 {
     /*
      * Fetch a free record.
@@ -138,7 +138,7 @@ static void remNotifyHandlerInsert(PVM pVM, PREMHANDLERNOTIFICATION pRec)
  * @param   cb              Size of the handler range.
  * @param   fHasHCHandler   Set if the handler have a HC callback function.
  */
-VMMDECL(void) REMNotifyHandlerPhysicalRegister(PVM pVM, PGMPHYSHANDLERKIND enmKind, RTGCPHYS GCPhys, RTGCPHYS cb, bool fHasHCHandler)
+VMMDECL(void) REMNotifyHandlerPhysicalRegister(PVMCC pVM, PGMPHYSHANDLERKIND enmKind, RTGCPHYS GCPhys, RTGCPHYS cb, bool fHasHCHandler)
 {
     REMHANDLERNOTIFICATION Rec;
     Rec.enmKind = REMHANDLERNOTIFICATIONKIND_PHYSICAL_REGISTER;
@@ -160,7 +160,7 @@ VMMDECL(void) REMNotifyHandlerPhysicalRegister(PVM pVM, PGMPHYSHANDLERKIND enmKi
  * @param   fHasHCHandler   Set if the handler have a HC callback function.
  * @param   fRestoreAsRAM   Whether the to restore it as normal RAM or as unassigned memory.
  */
-VMMDECL(void) REMNotifyHandlerPhysicalDeregister(PVM pVM, PGMPHYSHANDLERKIND enmKind, RTGCPHYS GCPhys, RTGCPHYS cb, bool fHasHCHandler, bool fRestoreAsRAM)
+VMMDECL(void) REMNotifyHandlerPhysicalDeregister(PVMCC pVM, PGMPHYSHANDLERKIND enmKind, RTGCPHYS GCPhys, RTGCPHYS cb, bool fHasHCHandler, bool fRestoreAsRAM)
 {
     REMHANDLERNOTIFICATION Rec;
     Rec.enmKind = REMHANDLERNOTIFICATIONKIND_PHYSICAL_DEREGISTER;
@@ -184,7 +184,7 @@ VMMDECL(void) REMNotifyHandlerPhysicalDeregister(PVM pVM, PGMPHYSHANDLERKIND enm
  * @param   fHasHCHandler   Set if the handler have a HC callback function.
  * @param   fRestoreAsRAM   Whether the to restore it as normal RAM or as unassigned memory.
  */
-VMMDECL(void) REMNotifyHandlerPhysicalModify(PVM pVM, PGMPHYSHANDLERKIND enmKind, RTGCPHYS GCPhysOld, RTGCPHYS GCPhysNew, RTGCPHYS cb, bool fHasHCHandler, bool fRestoreAsRAM)
+VMMDECL(void) REMNotifyHandlerPhysicalModify(PVMCC pVM, PGMPHYSHANDLERKIND enmKind, RTGCPHYS GCPhysOld, RTGCPHYS GCPhysNew, RTGCPHYS cb, bool fHasHCHandler, bool fRestoreAsRAM)
 {
     REMHANDLERNOTIFICATION Rec;
     Rec.enmKind = REMHANDLERNOTIFICATIONKIND_PHYSICAL_MODIFY;

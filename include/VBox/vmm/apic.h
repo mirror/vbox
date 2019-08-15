@@ -184,7 +184,7 @@ VMM_INT_DECL(uint64_t)      APICGetBaseMsrNoCheck(PCVMCPUCC pVCpu);
 VMM_INT_DECL(VBOXSTRICTRC)  APICGetBaseMsr(PVMCPUCC pVCpu, uint64_t *pu64Value);
 VMM_INT_DECL(int)           APICSetBaseMsr(PVMCPUCC pVCpu, uint64_t u64BaseMsr);
 VMM_INT_DECL(int)           APICGetInterrupt(PVMCPUCC pVCpu, uint8_t *pu8Vector, uint32_t *pu32TagSrc);
-VMM_INT_DECL(int)           APICBusDeliver(PVM pVM, uint8_t uDest, uint8_t uDestMode, uint8_t uDeliveryMode, uint8_t uVector,
+VMM_INT_DECL(int)           APICBusDeliver(PVMCC pVM, uint8_t uDest, uint8_t uDestMode, uint8_t uDeliveryMode, uint8_t uVector,
                                            uint8_t uPolarity, uint8_t uTriggerMode, uint32_t uTagSrc);
 VMM_INT_DECL(int)           APICGetApicPageForCpu(PCVMCPUCC pVCpu, PRTHCPHYS pHCPhys, PRTR0PTR pR0Ptr, PRTR3PTR pR3Ptr);
 

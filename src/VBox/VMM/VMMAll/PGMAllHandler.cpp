@@ -60,7 +60,7 @@ static void pgmHandlerPhysicalResetRamFlags(PVMCC pVM, PPGMPHYSHANDLER pCur);
  * @param   pVM         The cross context VM structure.
  * @param   pType       Pointer to the type registration.
  */
-DECLINLINE(uint32_t) pgmHandlerPhysicalTypeRelease(PVM pVM, PPGMPHYSHANDLERTYPEINT pType)
+DECLINLINE(uint32_t) pgmHandlerPhysicalTypeRelease(PVMCC pVM, PPGMPHYSHANDLERTYPEINT pType)
 {
     AssertMsgReturn(pType->u32Magic == PGMPHYSHANDLERTYPEINT_MAGIC, ("%#x\n", pType->u32Magic), UINT32_MAX);
     uint32_t cRefs = ASMAtomicDecU32(&pType->cRefs);
@@ -100,7 +100,7 @@ DECLINLINE(uint32_t) pgmHandlerPhysicalTypeRetain(PVM pVM, PPGMPHYSHANDLERTYPEIN
  * @param   pVM         The cross context VM structure.
  * @param   hType       The type regiration handle.
  */
-VMMDECL(uint32_t) PGMHandlerPhysicalTypeRelease(PVM pVM, PGMPHYSHANDLERTYPE hType)
+VMMDECL(uint32_t) PGMHandlerPhysicalTypeRelease(PVMCC pVM, PGMPHYSHANDLERTYPE hType)
 {
     if (hType != NIL_PGMPHYSHANDLERTYPE)
         return pgmHandlerPhysicalTypeRelease(pVM, PGMPHYSHANDLERTYPEINT_FROM_HANDLE(pVM, hType));
@@ -144,7 +144,7 @@ VMMDECL(uint32_t) PGMHandlerPhysicalTypeRetain(PVM pVM, PGMPHYSHANDLERTYPE hType
  * @param   ppPhysHandler   Where to return the access handler structure on
  *                          success.
  */
-int pgmHandlerPhysicalExCreate(PVM pVM, PGMPHYSHANDLERTYPE hType, RTR3PTR pvUserR3, RTR0PTR pvUserR0, RTRCPTR pvUserRC,
+int pgmHandlerPhysicalExCreate(PVMCC pVM, PGMPHYSHANDLERTYPE hType, RTR3PTR pvUserR3, RTR0PTR pvUserR0, RTRCPTR pvUserRC,
                                R3PTRTYPE(const char *) pszDesc, PPGMPHYSHANDLER *ppPhysHandler)
 {
     PPGMPHYSHANDLERTYPEINT pType = PGMPHYSHANDLERTYPEINT_FROM_HANDLE(pVM, hType);
@@ -201,7 +201,7 @@ int pgmHandlerPhysicalExCreate(PVM pVM, PGMPHYSHANDLERTYPE hType, RTR3PTR pvUser
  * @param   ppPhysHandler   Where to return the access handler structure on
  *                          success.
  */
-int pgmHandlerPhysicalExDup(PVM pVM, PPGMPHYSHANDLER pPhysHandlerSrc, PPGMPHYSHANDLER *ppPhysHandler)
+int pgmHandlerPhysicalExDup(PVMCC pVM, PPGMPHYSHANDLER pPhysHandlerSrc, PPGMPHYSHANDLER *ppPhysHandler)
 {
     return pgmHandlerPhysicalExCreate(pVM,
                                       pPhysHandlerSrc->hType,
@@ -496,7 +496,7 @@ int pgmHandlerPhysicalExDeregister(PVMCC pVM, PPGMPHYSHANDLER pPhysHandler, int 
  * @param   pVM         The cross context VM structure.
  * @param   pHandler    The handler to free.  NULL if ignored.
  */
-int pgmHandlerPhysicalExDestroy(PVM pVM, PPGMPHYSHANDLER pHandler)
+int pgmHandlerPhysicalExDestroy(PVMCC pVM, PPGMPHYSHANDLER pHandler)
 {
     if (pHandler)
     {

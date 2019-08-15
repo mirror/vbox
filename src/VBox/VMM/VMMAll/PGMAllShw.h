@@ -207,7 +207,7 @@ PGM_SHW_DECL(int, Enter)(PVMCPUCC pVCpu, bool fIs64BitsPagingMode)
     RTGCPHYS     GCPhysCR3 = RT_BIT_64(63); NOREF(fIs64BitsPagingMode);
 # endif
     PPGMPOOLPAGE pNewShwPageCR3;
-    PVM          pVM       = pVCpu->CTX_SUFF(pVM);
+    PVMCC        pVM       = pVCpu->CTX_SUFF(pVM);
 
     Assert((HMIsNestedPagingActive(pVM) || VM_IS_NEM_ENABLED(pVM)) == pVM->pgm.s.fNestedPaging);
     Assert(pVM->pgm.s.fNestedPaging);
@@ -242,7 +242,7 @@ PGM_SHW_DECL(int, Enter)(PVMCPUCC pVCpu, bool fIs64BitsPagingMode)
 PGM_SHW_DECL(int, Exit)(PVMCPUCC pVCpu)
 {
 #if PGM_TYPE_IS_NESTED_OR_EPT(PGM_SHW_TYPE)
-    PVM pVM = pVCpu->CTX_SUFF(pVM);
+    PVMCC pVM = pVCpu->CTX_SUFF(pVM);
     if (pVCpu->pgm.s.CTX_SUFF(pShwPageCR3))
     {
         PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);

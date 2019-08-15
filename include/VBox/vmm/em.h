@@ -139,7 +139,7 @@ VMM_INT_DECL(void)              EMMonitorWaitClear(PVMCPU pVCpu);
 VMM_INT_DECL(bool)              EMMonitorIsArmed(PVMCPU pVCpu);
 VMM_INT_DECL(unsigned)          EMMonitorWaitIsActive(PVMCPU pVCpu);
 VMM_INT_DECL(int)               EMMonitorWaitPerform(PVMCPU pVCpu, uint64_t rax, uint64_t rcx);
-VMM_INT_DECL(int)               EMUnhaltAndWakeUp(PVM pVM, PVMCPU pVCpuDst);
+VMM_INT_DECL(int)               EMUnhaltAndWakeUp(PVMCC pVM, PVMCPUCC pVCpuDst);
 VMMRZ_INT_DECL(VBOXSTRICTRC)    EMRZSetPendingIoPortWrite(PVMCPU pVCpu, RTIOPORT uPort, uint8_t cbInstr, uint8_t cbValue, uint32_t uValue);
 VMMRZ_INT_DECL(VBOXSTRICTRC)    EMRZSetPendingIoPortRead(PVMCPU pVCpu, RTIOPORT uPort, uint8_t cbInstr, uint8_t cbValue);
 
@@ -260,12 +260,12 @@ VMM_INT_DECL(VBOXSTRICTRC)      EMHistoryExec(PVMCPUCC pVCpu, PCEMEXITREC pExitR
 
 /** @name Deprecated interpretation related APIs (use IEM).
  * @{ */
-VMM_INT_DECL(int)               EMInterpretDisasCurrent(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pCpu, unsigned *pcbInstr);
-VMM_INT_DECL(int)               EMInterpretDisasOneEx(PVM pVM, PVMCPU pVCpu, RTGCUINTPTR GCPtrInstr, PCCPUMCTXCORE pCtxCore,
+VMM_INT_DECL(int)               EMInterpretDisasCurrent(PVMCC pVM, PVMCPUCC pVCpu, PDISCPUSTATE pCpu, unsigned *pcbInstr);
+VMM_INT_DECL(int)               EMInterpretDisasOneEx(PVMCC pVM, PVMCPUCC pVCpu, RTGCUINTPTR GCPtrInstr, PCCPUMCTXCORE pCtxCore,
                                                       PDISCPUSTATE pDISState, unsigned *pcbInstr);
-VMM_INT_DECL(VBOXSTRICTRC)      EMInterpretInstruction(PVMCPU pVCpu, PCPUMCTXCORE pCoreCtx, RTGCPTR pvFault);
-VMM_INT_DECL(VBOXSTRICTRC)      EMInterpretInstructionEx(PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbWritten);
-VMM_INT_DECL(VBOXSTRICTRC)      EMInterpretInstructionDisasState(PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE pCoreCtx,
+VMM_INT_DECL(VBOXSTRICTRC)      EMInterpretInstruction(PVMCPUCC pVCpu, PCPUMCTXCORE pCoreCtx, RTGCPTR pvFault);
+VMM_INT_DECL(VBOXSTRICTRC)      EMInterpretInstructionEx(PVMCPUCC pVCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbWritten);
+VMM_INT_DECL(VBOXSTRICTRC)      EMInterpretInstructionDisasState(PVMCPUCC pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE pCoreCtx,
                                                                  RTGCPTR pvFault, EMCODETYPE enmCodeType);
 VMM_INT_DECL(int)               EMInterpretRdpmc(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame);
 VMM_INT_DECL(int)               EMInterpretDRxWrite(PVMCC pVM, PVMCPUCC pVCpu, PCPUMCTXCORE pRegFrame, uint32_t DestRegDrx, uint32_t SrcRegGen);

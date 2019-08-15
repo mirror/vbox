@@ -48,7 +48,7 @@ RT_C_DECLS_BEGIN
  */
 
 VMMDECL(int)            PDMGetInterrupt(PVMCPUCC pVCpu, uint8_t *pu8Interrupt);
-VMMDECL(int)            PDMIsaSetIrq(PVM pVM, uint8_t u8Irq, uint8_t u8Level, uint32_t uTagSrc);
+VMMDECL(int)            PDMIsaSetIrq(PVMCC pVM, uint8_t u8Irq, uint8_t u8Level, uint32_t uTagSrc);
 VMM_INT_DECL(bool)      PDMHasIoApic(PVM pVM);
 VMM_INT_DECL(bool)      PDMHasApic(PVM pVM);
 VMM_INT_DECL(int)       PDMIoApicSetIrq(PVM pVM, uint8_t u8Irq, uint8_t u8Level, uint32_t uTagSrc);
@@ -211,7 +211,7 @@ typedef struct PDMDRIVERCALLREQHANDLERREQ
  * request buffer. */
 typedef PDMDRIVERCALLREQHANDLERREQ *PPDMDRIVERCALLREQHANDLERREQ;
 
-VMMR0_INT_DECL(int) PDMR0DriverCallReqHandler(PGVM pGVM, PVM pVM, PPDMDRIVERCALLREQHANDLERREQ pReq);
+VMMR0_INT_DECL(int) PDMR0DriverCallReqHandler(PGVM pGVM, PVMCC pVM, PPDMDRIVERCALLREQHANDLERREQ pReq);
 
 /**
  * Request buffer for PDMR0DeviceCallReqHandler / VMMR0_DO_PDM_DEVICE_CALL_REQ_HANDLER.
@@ -236,7 +236,7 @@ typedef struct PDMDEVICECALLREQHANDLERREQ
  * VMMR0_DO_PDM_DEVICE_CALL_REQ_HANDLER request buffer. */
 typedef PDMDEVICECALLREQHANDLERREQ *PPDMDEVICECALLREQHANDLERREQ;
 
-VMMR0_INT_DECL(int) PDMR0DeviceCallReqHandler(PGVM pGVM, PVM pVM, PPDMDEVICECALLREQHANDLERREQ pReq);
+VMMR0_INT_DECL(int) PDMR0DeviceCallReqHandler(PGVM pGVM, PVMCC pVM, PPDMDEVICECALLREQHANDLERREQ pReq);
 
 /** @} */
 

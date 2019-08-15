@@ -52,8 +52,8 @@
 #define LOG_GROUP LOG_GROUP_STAM
 #include <VBox/vmm/stam.h>
 #include "STAMInternal.h"
-#include <VBox/vmm/vm.h>
-#include <VBox/vmm/uvm.h>
+#include <VBox/vmm/vmcc.h>
+
 #include <VBox/err.h>
 #include <VBox/dbg.h>
 #include <VBox/log.h>
@@ -1739,7 +1739,7 @@ VMMR3DECL(int)  STAMR3Reset(PUVM pUVM, const char *pszPat)
         GVMMReq.Hdr.cbReq    = sizeof(GVMMReq);
         GVMMReq.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
         GVMMReq.pSession     = pVM->pSession;
-        rc = SUPR3CallVMMR0Ex(pVM->pVMR0, NIL_VMCPUID, VMMR0_DO_GVMM_RESET_STATISTICS, 0, &GVMMReq.Hdr);
+        rc = SUPR3CallVMMR0Ex(VMCC_GET_VMR0_FOR_CALL(pVM), NIL_VMCPUID, VMMR0_DO_GVMM_RESET_STATISTICS, 0, &GVMMReq.Hdr);
     }
 
     if (fGMMMatched)
@@ -1748,7 +1748,7 @@ VMMR3DECL(int)  STAMR3Reset(PUVM pUVM, const char *pszPat)
         GMMReq.Hdr.cbReq    = sizeof(GMMReq);
         GMMReq.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
         GMMReq.pSession     = pVM->pSession;
-        rc = SUPR3CallVMMR0Ex(pVM->pVMR0, NIL_VMCPUID, VMMR0_DO_GMM_RESET_STATISTICS, 0, &GMMReq.Hdr);
+        rc = SUPR3CallVMMR0Ex(VMCC_GET_VMR0_FOR_CALL(pVM), NIL_VMCPUID, VMMR0_DO_GMM_RESET_STATISTICS, 0, &GMMReq.Hdr);
     }
 
     /* and the reset */
@@ -2456,7 +2456,7 @@ static void stamR3RefreshGroup(PUVM pUVM, uint8_t iRefreshGroup, uint64_t *pbmRe
                 Req.Hdr.cbReq    = sizeof(Req);
                 Req.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
                 Req.pSession     = pVM->pSession;
-                int rc = SUPR3CallVMMR0Ex(pVM->pVMR0, NIL_VMCPUID, VMMR0_DO_GVMM_QUERY_STATISTICS, 0, &Req.Hdr);
+                int rc = SUPR3CallVMMR0Ex(VMCC_GET_VMR0_FOR_CALL(pVM), NIL_VMCPUID, VMMR0_DO_GVMM_QUERY_STATISTICS, 0, &Req.Hdr);
                 if (RT_SUCCESS(rc))
                 {
                     pUVM->stam.s.GVMMStats = Req.Stats;
@@ -2518,7 +2518,7 @@ static void stamR3RefreshGroup(PUVM pUVM, uint8_t iRefreshGroup, uint64_t *pbmRe
                 Req.Hdr.cbReq    = sizeof(Req);
                 Req.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
                 Req.pSession     = pVM->pSession;
-                int rc = SUPR3CallVMMR0Ex(pVM->pVMR0, NIL_VMCPUID, VMMR0_DO_GMM_QUERY_STATISTICS, 0, &Req.Hdr);
+                int rc = SUPR3CallVMMR0Ex(VMCC_GET_VMR0_FOR_CALL(pVM), NIL_VMCPUID, VMMR0_DO_GMM_QUERY_STATISTICS, 0, &Req.Hdr);
                 if (RT_SUCCESS(rc))
                     pUVM->stam.s.GMMStats = Req.Stats;
                 break;
@@ -2528,7 +2528,7 @@ static void stamR3RefreshGroup(PUVM pUVM, uint8_t iRefreshGroup, uint64_t *pbmRe
              * NEM.
              */
             case STAM_REFRESH_GRP_NEM:
-                SUPR3CallVMMR0(pVM->pVMR0, NIL_VMCPUID, VMMR0_DO_NEM_UPDATE_STATISTICS, NULL);
+                SUPR3CallVMMR0(VMCC_GET_VMR0_FOR_CALL(pVM), NIL_VMCPUID, VMMR0_DO_NEM_UPDATE_STATISTICS, NULL);
                 break;
 
             default:

@@ -43,7 +43,7 @@
 /** @typedef VMCPUCC
  * Context specific VMCPU derived structure.
  * This is plain VM in ring-3 and GVMCPU (inherits from VMCPU) in ring-0.  */
-#ifdef IN_RING0
+#if defined(IN_RING0) && defined(VBOX_BUGREF_9217)
 typedef GVM     VMCC;
 typedef GVMCPU  VMCPUCC;
 #else
@@ -110,6 +110,16 @@ typedef VMCPU   VMCPUCC;
  * @param   a_Stmt  The statement to execute.
  */
 #define VMCC_FOR_EACH_VMCPU_STMT(a_pVM, a_Stmt) VMCC_FOR_EACH_VMCPU(pVM) { a_Stmt; } VMCC_FOR_EACH_VMCPU_END(pVM)
+
+/** @def VMCC_GET_VMR0_FOR_CALL(pVM)   */
+#if defined(IN_RING3) && defined(VBOX_BUGREF_9217)
+# define VMCC_GET_VMR0_FOR_CALL(a_pVM)  ((a_pVM)->pVMR0ForCall)
+#elif defined(IN_RING3)
+# define VMCC_GET_VMR0_FOR_CALL(a_pVM)  ((a_pVM)->pVMR0)
+#else
+# define VMCC_GET_VMR0_FOR_CALL(a_pVM)  ((a_pVM)->ring3_only_macro)
+#endif
+
 
 #endif /* !VBOX_INCLUDED_vmm_vmcc_h */
 

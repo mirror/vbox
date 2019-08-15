@@ -163,9 +163,9 @@ typedef struct GIMDEBUG const *PCGIMDEBUG;
 /** @defgroup grp_gim_r0  The GIM Host Context Ring-0 API
  * @{
  */
-VMMR0_INT_DECL(int)         GIMR0InitVM(PVM pVM);
-VMMR0_INT_DECL(int)         GIMR0TermVM(PVM pVM);
-VMMR0_INT_DECL(int)         GIMR0UpdateParavirtTsc(PVM pVM, uint64_t u64Offset);
+VMMR0_INT_DECL(int)         GIMR0InitVM(PVMCC pVM);
+VMMR0_INT_DECL(int)         GIMR0TermVM(PVMCC pVM);
+VMMR0_INT_DECL(int)         GIMR0UpdateParavirtTsc(PVMCC pVM, uint64_t u64Offset);
 /** @} */
 #endif /* IN_RING0 */
 
@@ -187,7 +187,7 @@ VMMR3DECL(PGIMMMIO2REGION)  GIMR3GetMmio2Regions(PVM pVM, uint32_t *pcRegions);
 
 VMMDECL(bool)               GIMIsEnabled(PVM pVM);
 VMMDECL(GIMPROVIDERID)      GIMGetProvider(PVM pVM);
-VMM_INT_DECL(bool)          GIMIsParavirtTscEnabled(PVM pVM);
+VMM_INT_DECL(bool)          GIMIsParavirtTscEnabled(PVMCC pVM);
 VMM_INT_DECL(bool)          GIMAreHypercallsEnabled(PVMCPUCC pVCpu);
 VMM_INT_DECL(VBOXSTRICTRC)  GIMHypercall(PVMCPUCC pVCpu, PCPUMCTX pCtx);
 VMM_INT_DECL(VBOXSTRICTRC)  GIMHypercallEx(PVMCPUCC pVCpu, PCPUMCTX pCtx, unsigned uDisOpcode, uint8_t cbInstr);

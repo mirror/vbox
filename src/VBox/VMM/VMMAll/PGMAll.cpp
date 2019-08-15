@@ -1217,7 +1217,7 @@ VMMDECL(int) PGMVerifyAccess(PVMCPUCC pVCpu, RTGCPTR Addr, uint32_t cbSize, uint
  */
 VMMDECL(int) PGMInvalidatePage(PVMCPUCC pVCpu, RTGCPTR GCPtrPage)
 {
-    PVM pVM = pVCpu->CTX_SUFF(pVM);
+    PVMCC pVM = pVCpu->CTX_SUFF(pVM);
     int rc;
     Log3(("PGMInvalidatePage: GCPtrPage=%RGv\n", GCPtrPage));
 
@@ -1300,7 +1300,7 @@ VMMDECL(VBOXSTRICTRC) PGMInterpretInstruction(PVMCC pVM, PVMCPUCC pVCpu, PCPUMCT
  */
 VMMDECL(int) PGMShwGetPage(PVMCPUCC pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys)
 {
-    PVM pVM = pVCpu->CTX_SUFF(pVM);
+    PVMCC pVM = pVCpu->CTX_SUFF(pVM);
     pgmLock(pVM);
 
     uintptr_t idxShw = pVCpu->pgm.s.idxShadowModeData;
@@ -1462,7 +1462,7 @@ int pgmShwSyncPaePDPtr(PVMCPUCC pVCpu, RTGCPTR GCPtr, X86PGPAEUINT uGstPdpe, PX8
     const unsigned iPdPt    = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_PAE;
     PX86PDPT       pPdpt    = pgmShwGetPaePDPTPtr(pVCpu);
     PX86PDPE       pPdpe    = &pPdpt->a[iPdPt];
-    PVM            pVM      = pVCpu->CTX_SUFF(pVM);
+    PVMCC          pVM      = pVCpu->CTX_SUFF(pVM);
     PPGMPOOL       pPool    = pVM->pgm.s.CTX_SUFF(pPool);
     PPGMPOOLPAGE   pShwPage;
     int            rc;
@@ -1583,7 +1583,7 @@ DECLINLINE(int) pgmShwGetPaePoolPagePD(PVMCPUCC pVCpu, RTGCPTR GCPtr, PPGMPOOLPA
  */
 static int pgmShwSyncLongModePDPtr(PVMCPUCC pVCpu, RTGCPTR64 GCPtr, X86PGPAEUINT uGstPml4e, X86PGPAEUINT uGstPdpe, PX86PDPAE *ppPD)
 {
-    PVM            pVM           = pVCpu->CTX_SUFF(pVM);
+    PVMCC          pVM           = pVCpu->CTX_SUFF(pVM);
     PPGMPOOL       pPool         = pVM->pgm.s.CTX_SUFF(pPool);
     const unsigned iPml4         = (GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
     PX86PML4E      pPml4e        = pgmShwGetLongModePML4EPtr(pVCpu, iPml4);
@@ -1731,7 +1731,7 @@ DECLINLINE(int) pgmShwGetLongModePDPtr(PVMCPUCC pVCpu, RTGCPTR64 GCPtr, PX86PML4
  */
 static int pgmShwGetEPTPDPtr(PVMCPUCC pVCpu, RTGCPTR64 GCPtr, PEPTPDPT *ppPdpt, PEPTPD *ppPD)
 {
-    PVM            pVM   = pVCpu->CTX_SUFF(pVM);
+    PVMCC          pVM   = pVCpu->CTX_SUFF(pVM);
     const unsigned iPml4 = (GCPtr >> EPT_PML4_SHIFT) & EPT_PML4_MASK;
     PPGMPOOL       pPool = pVM->pgm.s.CTX_SUFF(pPool);
     PEPTPML4       pPml4;
@@ -2335,7 +2335,7 @@ int pgmGstLazyMapPml4(PVMCPUCC pVCpu, PX86PML4 *ppPml4)
  * @param   paPdpes             Where to return the four PDPEs. The array
  *                              pointed to must have 4 entries.
  */
-VMM_INT_DECL(int) PGMGstGetPaePdpes(PVMCPU pVCpu, PX86PDPE paPdpes)
+VMM_INT_DECL(int) PGMGstGetPaePdpes(PVMCPUCC pVCpu, PX86PDPE paPdpes)
 {
     Assert(pVCpu->pgm.s.enmShadowMode == PGMMODE_EPT);
 
@@ -2358,7 +2358,7 @@ VMM_INT_DECL(int) PGMGstGetPaePdpes(PVMCPU pVCpu, PX86PDPE paPdpes)
  *
  * @remarks No-long-jump zone!!!
  */
-VMM_INT_DECL(void) PGMGstUpdatePaePdpes(PVMCPU pVCpu, PCX86PDPE paPdpes)
+VMM_INT_DECL(void) PGMGstUpdatePaePdpes(PVMCPUCC pVCpu, PCX86PDPE paPdpes)
 {
     Assert(pVCpu->pgm.s.enmShadowMode == PGMMODE_EPT);
 
@@ -3399,7 +3399,7 @@ VMMDECL(bool) PGMIsLockOwner(PVM pVM)
  * @param   pVM             The cross context VM structure.
  * @param   fUseLargePages  Use/not use large pages
  */
-VMMDECL(int) PGMSetLargePageUsage(PVM pVM, bool fUseLargePages)
+VMMDECL(int) PGMSetLargePageUsage(PVMCC pVM, bool fUseLargePages)
 {
     VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
 
@@ -3416,9 +3416,9 @@ VMMDECL(int) PGMSetLargePageUsage(PVM pVM, bool fUseLargePages)
  * @param   SRC_POS     The source position of the caller (RT_SRC_POS).
  */
 #if (defined(VBOX_STRICT) && defined(IN_RING3)) || defined(DOXYGEN_RUNNING)
-int pgmLockDebug(PVM pVM, RT_SRC_POS_DECL)
+int pgmLockDebug(PVMCC pVM, RT_SRC_POS_DECL)
 #else
-int pgmLock(PVM pVM)
+int pgmLock(PVMCC pVM)
 #endif
 {
 #if defined(VBOX_STRICT) && defined(IN_RING3)

@@ -307,7 +307,7 @@ VMM_INT_DECL(bool) EMShouldContinueAfterHalt(PVMCPU pVCpu, PCPUMCTX pCtx)
  *                          same as the caller.
  * @thread  EMT
  */
-VMM_INT_DECL(int) EMUnhaltAndWakeUp(PVM pVM, PVMCPU pVCpuDst)
+VMM_INT_DECL(int) EMUnhaltAndWakeUp(PVMCC pVM, PVMCPUCC pVCpuDst)
 {
     /*
      * Flag the current(/next) HLT to unhalt immediately.
@@ -326,7 +326,7 @@ VMM_INT_DECL(int) EMUnhaltAndWakeUp(PVM pVM, PVMCPU pVCpuDst)
     AssertRC(rc);
 
 #elif defined(IN_RING3)
-    int rc = SUPR3CallVMMR0(pVM->pVMR0, pVCpuDst->idCpu, VMMR0_DO_GVMM_SCHED_WAKE_UP, NULL /* pvArg */);
+    int rc = SUPR3CallVMMR0(VMCC_GET_VMR0_FOR_CALL(pVM), pVCpuDst->idCpu, VMMR0_DO_GVMM_SCHED_WAKE_UP, NULL /* pvArg */);
     AssertRC(rc);
 
 #else
@@ -971,7 +971,7 @@ VMM_INT_DECL(int) EMRemTryLock(PVM pVM)
  */
 static DECLCALLBACK(int) emReadBytes(PDISCPUSTATE pDis, uint8_t offInstr, uint8_t cbMinRead, uint8_t cbMaxRead)
 {
-    PVMCPU      pVCpu    = (PVMCPU)pDis->pvUser;
+    PVMCPUCC    pVCpu    = (PVMCPUCC)pDis->pvUser;
     RTUINTPTR   uSrcAddr = pDis->uInstrAddr + offInstr;
 
     /*
@@ -1024,7 +1024,7 @@ static DECLCALLBACK(int) emReadBytes(PDISCPUSTATE pDis, uint8_t offInstr, uint8_
  * @param   pDis            Where to return the parsed instruction info.
  * @param   pcbInstr        Where to return the instruction size. (optional)
  */
-VMM_INT_DECL(int) EMInterpretDisasCurrent(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, unsigned *pcbInstr)
+VMM_INT_DECL(int) EMInterpretDisasCurrent(PVMCC pVM, PVMCPUCC pVCpu, PDISCPUSTATE pDis, unsigned *pcbInstr)
 {
     PCPUMCTXCORE pCtxCore = CPUMCTX2CORE(CPUMQueryGuestCtxPtr(pVCpu));
     RTGCPTR GCPtrInstr;
@@ -1059,7 +1059,7 @@ VMM_INT_DECL(int) EMInterpretDisasCurrent(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pD
  * @param   pDis            Where to return the parsed instruction info.
  * @param   pcbInstr        Where to return the instruction size. (optional)
  */
-VMM_INT_DECL(int) EMInterpretDisasOneEx(PVM pVM, PVMCPU pVCpu, RTGCUINTPTR GCPtrInstr, PCCPUMCTXCORE pCtxCore,
+VMM_INT_DECL(int) EMInterpretDisasOneEx(PVMCC pVM, PVMCPUCC pVCpu, RTGCUINTPTR GCPtrInstr, PCCPUMCTXCORE pCtxCore,
                                         PDISCPUSTATE pDis, unsigned *pcbInstr)
 {
     NOREF(pVM);
@@ -1092,7 +1092,7 @@ VMM_INT_DECL(int) EMInterpretDisasOneEx(PVM pVM, PVMCPU pVCpu, RTGCUINTPTR GCPtr
  *          Architecture System Developers Manual, Vol 3, 5.5) so we don't need
  *          to worry about e.g. invalid modrm combinations (!)
  */
-VMM_INT_DECL(VBOXSTRICTRC) EMInterpretInstruction(PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault)
+VMM_INT_DECL(VBOXSTRICTRC) EMInterpretInstruction(PVMCPUCC pVCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault)
 {
     Assert(pRegFrame == CPUMGetGuestCtxCore(pVCpu));
     LogFlow(("EMInterpretInstruction %RGv fault %RGv\n", (RTGCPTR)pRegFrame->rip, pvFault));
@@ -1127,7 +1127,7 @@ VMM_INT_DECL(VBOXSTRICTRC) EMInterpretInstruction(PVMCPU pVCpu, PCPUMCTXCORE pRe
  *          Architecture System Developers Manual, Vol 3, 5.5) so we don't need
  *          to worry about e.g. invalid modrm combinations (!)
  */
-VMM_INT_DECL(VBOXSTRICTRC) EMInterpretInstructionEx(PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbWritten)
+VMM_INT_DECL(VBOXSTRICTRC) EMInterpretInstructionEx(PVMCPUCC pVCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbWritten)
 {
     LogFlow(("EMInterpretInstructionEx %RGv fault %RGv\n", (RTGCPTR)pRegFrame->rip, pvFault));
     Assert(pRegFrame == CPUMGetGuestCtxCore(pVCpu));
@@ -1170,7 +1170,7 @@ VMM_INT_DECL(VBOXSTRICTRC) EMInterpretInstructionEx(PVMCPU pVCpu, PCPUMCTXCORE p
  * @todo    At this time we do NOT check if the instruction overwrites vital information.
  *          Make sure this can't happen!! (will add some assertions/checks later)
  */
-VMM_INT_DECL(VBOXSTRICTRC) EMInterpretInstructionDisasState(PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE pRegFrame,
+VMM_INT_DECL(VBOXSTRICTRC) EMInterpretInstructionDisasState(PVMCPUCC pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE pRegFrame,
                                                             RTGCPTR pvFault, EMCODETYPE enmCodeType)
 {
     LogFlow(("EMInterpretInstructionDisasState %RGv fault %RGv\n", (RTGCPTR)pRegFrame->rip, pvFault));

@@ -584,7 +584,7 @@ DECLINLINE(VBOXSTRICTRC) iomMMIODoRead(PVM pVM, PVMCPU pVCpu, PIOMMMIORANGE pRan
  * @param   GCPhysFault The GC physical address corresponding to pvFault.
  * @param   pvUser      Pointer to the MMIO ring-3 range entry.
  */
-static VBOXSTRICTRC iomMmioCommonPfHandler(PVM pVM, PVMCPUCC pVCpu, uint32_t uErrorCode, PCPUMCTXCORE pCtxCore,
+static VBOXSTRICTRC iomMmioCommonPfHandler(PVMCC pVM, PVMCPUCC pVCpu, uint32_t uErrorCode, PCPUMCTXCORE pCtxCore,
                                            RTGCPHYS GCPhysFault, void *pvUser)
 {
     RT_NOREF_PV(uErrorCode);
@@ -1102,12 +1102,12 @@ VMMDECL(VBOXSTRICTRC) IOMMMIOWrite(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, uint3
  * @param   fPageFlags      Page flags to set. Must be (X86_PTE_RW | X86_PTE_P)
  *                          for the time being.
  */
-VMMDECL(int) IOMMMIOMapMMIO2Page(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysRemapped, uint64_t fPageFlags)
+VMMDECL(int) IOMMMIOMapMMIO2Page(PVMCC pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysRemapped, uint64_t fPageFlags)
 {
     /* Currently only called from the VGA device during MMIO. */
     Log(("IOMMMIOMapMMIO2Page %RGp -> %RGp flags=%RX64\n", GCPhys, GCPhysRemapped, fPageFlags));
     AssertReturn(fPageFlags == (X86_PTE_RW | X86_PTE_P), VERR_INVALID_PARAMETER);
-    PVMCPU pVCpu = VMMGetCpu(pVM);
+    PVMCPUCC pVCpu = VMMGetCpu(pVM);
 
     /* This currently only works in real mode, protected mode without paging or with nested paging. */
     /** @todo NEM: MMIO page aliasing. */
@@ -1175,7 +1175,7 @@ VMMDECL(int) IOMMMIOMapMMIO2Page(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysRemapp
  * @param   fPageFlags      Page flags to set. Must be (X86_PTE_RW | X86_PTE_P)
  *                          for the time being.
  */
-VMMDECL(int) IOMMMIOMapMMIOHCPage(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, RTHCPHYS HCPhys, uint64_t fPageFlags)
+VMMDECL(int) IOMMMIOMapMMIOHCPage(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhys, RTHCPHYS HCPhys, uint64_t fPageFlags)
 {
     /* Currently only called from VT-x code during a page fault. */
     Log(("IOMMMIOMapMMIOHCPage %RGp -> %RGp flags=%RX64\n", GCPhys, HCPhys, fPageFlags));
@@ -1225,11 +1225,11 @@ VMMDECL(int) IOMMMIOMapMMIOHCPage(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, RTHCPH
  * @param   pVM             The cross context VM structure.
  * @param   GCPhys          Physical address that's part of the MMIO region to be reset.
  */
-VMMDECL(int) IOMMMIOResetRegion(PVM pVM, RTGCPHYS GCPhys)
+VMMDECL(int) IOMMMIOResetRegion(PVMCC pVM, RTGCPHYS GCPhys)
 {
     Log(("IOMMMIOResetRegion %RGp\n", GCPhys));
 
-    PVMCPU pVCpu = VMMGetCpu(pVM);
+    PVMCPUCC pVCpu = VMMGetCpu(pVM);
 
     /* This currently only works in real mode, protected mode without paging or with nested paging. */
     /** @todo NEM: MMIO page aliasing. */

@@ -82,8 +82,8 @@ DECL_FORCE_INLINE(RTNATIVETHREAD) pdmCritSectRwGetNativeSelf(PCPDMCRITSECTRW pTh
 #else
     AssertMsgReturn(pThis->s.Core.u32Magic == RTCRITSECTRW_MAGIC, ("%RX32\n", pThis->s.Core.u32Magic),
                     NIL_RTNATIVETHREAD);
-    PVM             pVM         = pThis->s.CTX_SUFF(pVM);   AssertPtr(pVM);
-    PVMCPU          pVCpu       = VMMGetCpu(pVM);           AssertPtr(pVCpu);
+    PVMCC           pVM         = pThis->s.CTX_SUFF(pVM);   AssertPtr(pVM);
+    PVMCPUCC        pVCpu       = VMMGetCpu(pVM);           AssertPtr(pVCpu);
     RTNATIVETHREAD  hNativeSelf = pVCpu->hNativeThread;     Assert(hNativeSelf != NIL_RTNATIVETHREAD);
 #endif
     return hNativeSelf;
@@ -131,8 +131,8 @@ VMMDECL(uint32_t) PDMR3CritSectRwSetSubClass(PPDMCRITSECTRW pThis, uint32_t uSub
  */
 static void pdmR0CritSectRwYieldToRing3(PPDMCRITSECTRW pThis)
 {
-    PVM     pVM   = pThis->s.CTX_SUFF(pVM);     AssertPtr(pVM);
-    PVMCPU  pVCpu = VMMGetCpu(pVM);             AssertPtr(pVCpu);
+    PVMCC     pVM   = pThis->s.CTX_SUFF(pVM);     AssertPtr(pVM);
+    PVMCPUCC  pVCpu = VMMGetCpu(pVM);             AssertPtr(pVCpu);
     int rc = VMMRZCallRing3(pVM, pVCpu, VMMCALLRING3_VM_R0_PREEMPT, NULL);
     AssertRC(rc);
 }
@@ -379,8 +379,8 @@ static int pdmCritSectRwEnterShared(PPDMCRITSECTRW pThis, int rcBusy, bool fTryO
                 STAM_REL_COUNTER_INC(&pThis->s.CTX_MID_Z(StatContention,EnterShared));
                 if (rcBusy == VINF_SUCCESS)
                 {
-                    PVM     pVM   = pThis->s.CTX_SUFF(pVM);     AssertPtr(pVM);
-                    PVMCPU  pVCpu = VMMGetCpu(pVM);             AssertPtr(pVCpu);
+                    PVMCC     pVM   = pThis->s.CTX_SUFF(pVM);     AssertPtr(pVM);
+                    PVMCPUCC  pVCpu = VMMGetCpu(pVM);             AssertPtr(pVCpu);
                     /** @todo Should actually do this in via VMMR0.cpp instead of going all the way
                      *        back to ring-3. Goes for both kind of crit sects. */
                     return VMMRZCallRing3(pVM, pVCpu, VMMCALLRING3_PDM_CRIT_SECT_RW_ENTER_SHARED, MMHyperCCToR3(pVM, pThis));
@@ -621,8 +621,8 @@ static int pdmCritSectRwLeaveSharedWorker(PPDMCRITSECTRW pThis, bool fNoVal)
 # endif
                 {
                     /* Queue the exit request (ring-3). */
-                    PVM         pVM   = pThis->s.CTX_SUFF(pVM);         AssertPtr(pVM);
-                    PVMCPU      pVCpu = VMMGetCpu(pVM);                 AssertPtr(pVCpu);
+                    PVMCC       pVM   = pThis->s.CTX_SUFF(pVM);         AssertPtr(pVM);
+                    PVMCPUCC    pVCpu = VMMGetCpu(pVM);                 AssertPtr(pVCpu);
                     uint32_t    i     = pVCpu->pdm.s.cQueuedCritSectRwShrdLeaves++;
                     LogFlow(("PDMCritSectRwLeaveShared: [%d]=%p => R3 c=%d (%#llx)\n", i, pThis, c, u64State));
                     AssertFatal(i < RT_ELEMENTS(pVCpu->pdm.s.apQueuedCritSectRwShrdLeaves));
@@ -922,8 +922,8 @@ static int pdmCritSectRwEnterExcl(PPDMCRITSECTRW pThis, int rcBusy, bool fTryOnl
             if (rcBusy == VINF_SUCCESS)
             {
                 Assert(!fTryOnly);
-                PVM     pVM   = pThis->s.CTX_SUFF(pVM);     AssertPtr(pVM);
-                PVMCPU  pVCpu = VMMGetCpu(pVM);             AssertPtr(pVCpu);
+                PVMCC     pVM   = pThis->s.CTX_SUFF(pVM);     AssertPtr(pVM);
+                PVMCPUCC  pVCpu = VMMGetCpu(pVM);             AssertPtr(pVCpu);
                 /** @todo Should actually do this in via VMMR0.cpp instead of going all the way
                  *        back to ring-3. Goes for both kind of crit sects. */
                 return VMMRZCallRing3(pVM, pVCpu, VMMCALLRING3_PDM_CRIT_SECT_RW_ENTER_EXCL, MMHyperCCToR3(pVM, pThis));
@@ -1197,8 +1197,8 @@ static int pdmCritSectRwLeaveExclWorker(PPDMCRITSECTRW pThis, bool fNoVal)
              * We cannot call neither SUPSemEventSignal nor SUPSemEventMultiSignal,
              * so queue the exit request (ring-3).
              */
-            PVM         pVM   = pThis->s.CTX_SUFF(pVM);         AssertPtr(pVM);
-            PVMCPU      pVCpu = VMMGetCpu(pVM);                 AssertPtr(pVCpu);
+            PVMCC       pVM   = pThis->s.CTX_SUFF(pVM);         AssertPtr(pVM);
+            PVMCPUCC    pVCpu = VMMGetCpu(pVM);                 AssertPtr(pVCpu);
             uint32_t    i     = pVCpu->pdm.s.cQueuedCritSectRwExclLeaves++;
             LogFlow(("PDMCritSectRwLeaveShared: [%d]=%p => R3\n", i, pThis));
             AssertFatal(i < RT_ELEMENTS(pVCpu->pdm.s.apQueuedCritSectLeaves));

@@ -27,7 +27,7 @@
 #include <VBox/vmm/pdm.h>
 #include <VBox/vmm/gvm.h>
 #include <VBox/vmm/gvmm.h>
-#include <VBox/vmm/vm.h>
+#include <VBox/vmm/vmcc.h>
 
 #include <iprt/asm.h>
 #include <iprt/assert.h>
@@ -169,7 +169,7 @@ PCIRAWR0DECL(void) PciRawR0Term(void)
 /**
  * Per-VM R0 module init.
  */
-PCIRAWR0DECL(int)  PciRawR0InitVM(PGVM pGVM, PVM pVM)
+PCIRAWR0DECL(int)  PciRawR0InitVM(PGVM pGVM, PVMCC pVM)
 {
     PRAWPCIFACTORY pFactory = NULL;
     int rc = SUPR0ComponentQueryFactory(pGVM->pSession, "VBoxRawPci", RAWPCIFACTORY_UUID_STR, (void **)&pFactory);
@@ -187,7 +187,7 @@ PCIRAWR0DECL(int)  PciRawR0InitVM(PGVM pGVM, PVM pVM)
 /**
  * Per-VM R0 module termination routine.
  */
-PCIRAWR0DECL(void)  PciRawR0TermVM(PGVM pGVM, PVM pVM)
+PCIRAWR0DECL(void)  PciRawR0TermVM(PGVM pGVM, PVMCC pVM)
 {
     PRAWPCIFACTORY pFactory = NULL;
     int rc = SUPR0ComponentQueryFactory(pGVM->pSession, "VBoxRawPci", RAWPCIFACTORY_UUID_STR, (void **)&pFactory);
@@ -505,7 +505,7 @@ static DECLCALLBACK(void) pcirawr0DevObjDestructor(void *pvObj, void *pvIns, voi
 }
 
 
-static int pcirawr0OpenDevice(PGVM pGVM, PVM pVM, PSUPDRVSESSION pSession,
+static int pcirawr0OpenDevice(PGVM pGVM, PVMCC pVM, PSUPDRVSESSION pSession,
                               uint32_t         HostDevice,
                               uint32_t         fFlags,
                               PCIRAWDEVHANDLE *pHandle,
@@ -915,7 +915,7 @@ static int pcirawr0PowerStateChange(PSUPDRVSESSION    pSession,
  *
  * @returns VBox status code.
  */
-PCIRAWR0DECL(int) PciRawR0ProcessReq(PGVM pGVM, PVM pVM, PSUPDRVSESSION pSession, PPCIRAWSENDREQ pReq)
+PCIRAWR0DECL(int) PciRawR0ProcessReq(PGVM pGVM, PVMCC pVM, PSUPDRVSESSION pSession, PPCIRAWSENDREQ pReq)
 {
     LogFlow(("PciRawR0ProcessReq: %d for %x\n", pReq->iRequest, pReq->TargetDevice));
     int rc = VINF_SUCCESS;

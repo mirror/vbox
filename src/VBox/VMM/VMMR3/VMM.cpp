@@ -127,8 +127,7 @@
 #include <VBox/vmm/ssm.h>
 #include <VBox/vmm/tm.h>
 #include "VMMInternal.h"
-#include <VBox/vmm/vm.h>
-#include <VBox/vmm/uvm.h>
+#include <VBox/vmm/vmcc.h>
 
 #include <VBox/err.h>
 #include <VBox/param.h>
@@ -272,7 +271,7 @@ VMMR3_INT_DECL(int) VMMR3Init(PVM pVM)
     /*
      * Register the Ring-0 VM handle with the session for fast ioctl calls.
      */
-    rc = SUPR3SetVMForFastIOCtl(pVM->pVMR0);
+    rc = SUPR3SetVMForFastIOCtl(VMCC_GET_VMR0_FOR_CALL(pVM));
     if (RT_FAILURE(rc))
         return rc;
 
@@ -382,7 +381,7 @@ static int vmmR3InitLoggers(PVM pVM)
                                            (void **)&pVCpu->vmm.s.pR0LoggerR3);
             if (RT_FAILURE(rc))
                 return rc;
-            pVCpu->vmm.s.pR0LoggerR3->pVM        = pVM->pVMR0;
+            pVCpu->vmm.s.pR0LoggerR3->pVM        = VMCC_GET_VMR0_FOR_CALL(pVM);
             //pVCpu->vmm.s.pR0LoggerR3->fCreated = false;
             pVCpu->vmm.s.pR0LoggerR3->cbLogger   = (uint32_t)cbLogger;
             pVCpu->vmm.s.pR0LoggerR0 = MMHyperR3ToR0(pVM, pVCpu->vmm.s.pR0LoggerR3);
@@ -419,7 +418,7 @@ static int vmmR3InitLoggers(PVM pVM)
             PVMMR0LOGGER pVmmLogger = pVCpu->vmm.s.pR0RelLoggerR3;
             RTR0PTR      R0PtrVmmLogger = MMHyperR3ToR0(pVM, pVmmLogger);
             pVCpu->vmm.s.pR0RelLoggerR0     = R0PtrVmmLogger;
-            pVmmLogger->pVM                 = pVM->pVMR0;
+            pVmmLogger->pVM                 = VMCC_GET_VMR0_FOR_CALL(pVM);
             pVmmLogger->cbLogger            = (uint32_t)cbLogger;
             pVmmLogger->fCreated            = false;
             pVmmLogger->fFlushingDisabled   = false;
@@ -597,7 +596,7 @@ VMMR3_INT_DECL(int) VMMR3InitR0(PVM pVM)
         //rc = VERR_GENERAL_FAILURE;
         rc = VINF_SUCCESS;
 #else
-        rc = SUPR3CallVMMR0Ex(pVM->pVMR0, 0 /*idCpu*/, VMMR0_DO_VMMR0_INIT, RT_MAKE_U64(VMMGetSvnRev(), vmmGetBuildType()), NULL);
+        rc = SUPR3CallVMMR0Ex(VMCC_GET_VMR0_FOR_CALL(pVM), 0 /*idCpu*/, VMMR0_DO_VMMR0_INIT, RT_MAKE_U64(VMMGetSvnRev(), vmmGetBuildType()), NULL);
 #endif
         /*
          * Flush the logs.
@@ -727,7 +726,7 @@ VMMR3_INT_DECL(int) VMMR3Term(PVM pVM)
         //rc = VERR_GENERAL_FAILURE;
         rc = VINF_SUCCESS;
 #else
-        rc = SUPR3CallVMMR0Ex(pVM->pVMR0, 0 /*idCpu*/, VMMR0_DO_VMMR0_TERM, 0, NULL);
+        rc = SUPR3CallVMMR0Ex(VMCC_GET_VMR0_FOR_CALL(pVM), 0 /*idCpu*/, VMMR0_DO_VMMR0_TERM, 0, NULL);
 #endif
         /*
          * Flush the logs.
@@ -1103,7 +1102,7 @@ VMMR3_INT_DECL(int) VMMR3HmRunGC(PVM pVM, PVMCPU pVCpu)
 #ifdef NO_SUPCALLR0VMM
             rc = VERR_GENERAL_FAILURE;
 #else
-            rc = SUPR3CallVMMR0Fast(pVM->pVMR0, VMMR0_DO_HM_RUN, pVCpu->idCpu);
+            rc = SUPR3CallVMMR0Fast(VMCC_GET_VMR0_FOR_CALL(pVM), VMMR0_DO_HM_RUN, pVCpu->idCpu);
             if (RT_LIKELY(rc == VINF_SUCCESS))
                 rc = pVCpu->vmm.s.iLastGZRc;
 #endif
@@ -1151,7 +1150,7 @@ VMMR3_INT_DECL(VBOXSTRICTRC) VMMR3CallR0EmtFast(PVM pVM, PVMCPU pVCpu, VMMR0OPER
 #ifdef NO_SUPCALLR0VMM
             rcStrict = VERR_GENERAL_FAILURE;
 #else
-            rcStrict = SUPR3CallVMMR0Fast(pVM->pVMR0, enmOperation, pVCpu->idCpu);
+            rcStrict = SUPR3CallVMMR0Fast(VMCC_GET_VMR0_FOR_CALL(pVM), enmOperation, pVCpu->idCpu);
             if (RT_LIKELY(rcStrict == VINF_SUCCESS))
                 rcStrict = pVCpu->vmm.s.iLastGZRc;
 #endif
@@ -2311,7 +2310,7 @@ VMMR3_INT_DECL(int) VMMR3CallR0Emt(PVM pVM, PVMCPU pVCpu, VMMR0OPERATION enmOper
 #ifdef NO_SUPCALLR0VMM
         rc = VERR_GENERAL_FAILURE;
 #else
-        rc = SUPR3CallVMMR0Ex(pVM->pVMR0, pVCpu->idCpu, enmOperation, u64Arg, pReqHdr);
+        rc = SUPR3CallVMMR0Ex(VMCC_GET_VMR0_FOR_CALL(pVM), pVCpu->idCpu, enmOperation, u64Arg, pReqHdr);
 #endif
         /*
          * Flush the logs.

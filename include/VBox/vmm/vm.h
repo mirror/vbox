@@ -166,7 +166,7 @@ typedef struct VMCPU
     RTNATIVETHREAD          hNativeThreadR0;
     /** The CPU ID.
      * This is the index into the VM::aCpu array. */
-#ifdef VBOX_BUGREF_9217
+#if defined(VBOX_BUGREF_9217) && defined(IN_RING0)
     VMCPUID                 idCpuUnsafe;
 #else
     VMCPUID                 idCpu;
@@ -1159,7 +1159,7 @@ typedef struct VM
     /** Pointer to the array of page descriptors for the VM structure allocation. */
     R3PTRTYPE(PSUPPAGE)         paVMPagesR3;
     /** Session handle. For use when calling SUPR0 APIs. */
-#ifdef VBOX_BUGREF_9217
+#if defined(VBOX_BUGREF_9217) && defined(IN_RING0)
     PSUPDRVSESSION              pSessionUnsafe;
 #else
     PSUPDRVSESSION              pSession;
@@ -1167,12 +1167,17 @@ typedef struct VM
     /** Pointer to the ring-3 VM structure. */
     PUVM                        pUVM;
     /** Ring-3 Host Context VM Pointer. */
+#if defined(VBOX_BUGREF_9217) && defined(IN_RING0)
+    R3PTRTYPE(struct VM *)      pVMR3Unsafe;
+#else
     R3PTRTYPE(struct VM *)      pVMR3;
+#endif
 #ifndef VBOX_BUGREF_9217
     /** Ring-0 Host Context VM Pointer. */
     R0PTRTYPE(struct VM *)      pVMR0;
 #else
-    RTR0PTR                     R0PtrUnused0;
+    /** Ring-0 Host Context VM pointer for making ring-0 calls. */
+    R0PTRTYPE(struct VM *)      pVMR0ForCall;
 #endif
     /** Raw-mode Context VM Pointer. */
     uint32_t                    pVMRC;
@@ -1180,7 +1185,7 @@ typedef struct VM
     uint32_t                    pVMRCPadding;
 
     /** The GVM VM handle. Only the GVM should modify this field. */
-#ifdef VBOX_BUGREF_9217
+#if defined(VBOX_BUGREF_9217) && defined(IN_RING0)
     uint32_t                    hSelfUnsafe;
 #else
     uint32_t                    hSelf;

@@ -72,7 +72,7 @@ VMMDECL(int) PDMGetInterrupt(PVMCPUCC pVCpu, uint8_t *pu8Interrupt)
            interrupts shouldn't prevent ExtINT from being delivered. */
     }
 
-    PVM pVM = pVCpu->CTX_SUFF(pVM);
+    PVMCC pVM = pVCpu->CTX_SUFF(pVM);
     pdmLock(pVM);
 
     /*
@@ -117,7 +117,7 @@ VMMDECL(int) PDMGetInterrupt(PVMCPUCC pVCpu, uint8_t *pu8Interrupt)
  * @param   u8Level         The new level.
  * @param   uTagSrc         The IRQ tag and source tracer ID.
  */
-VMMDECL(int) PDMIsaSetIrq(PVM pVM, uint8_t u8Irq, uint8_t u8Level, uint32_t uTagSrc)
+VMMDECL(int) PDMIsaSetIrq(PVMCC pVM, uint8_t u8Irq, uint8_t u8Level, uint32_t uTagSrc)
 {
     pdmLock(pVM);
 
@@ -263,7 +263,7 @@ VMM_INT_DECL(bool) PDMHasApic(PVM pVM)
  *
  * @param   pVM     The cross context VM structure.
  */
-void pdmLock(PVM pVM)
+void pdmLock(PVMCC pVM)
 {
 #ifdef IN_RING3
     int rc = PDMCritSectEnter(&pVM->pdm.s.CritSect, VERR_IGNORED);
@@ -284,7 +284,7 @@ void pdmLock(PVM pVM)
  * @param   pVM     The cross context VM structure.
  * @param   rc      The RC to return in GC or R0 when we can't get the lock.
  */
-int pdmLockEx(PVM pVM, int rc)
+int pdmLockEx(PVMCC pVM, int rc)
 {
     return PDMCritSectEnter(&pVM->pdm.s.CritSect, rc);
 }
@@ -295,7 +295,7 @@ int pdmLockEx(PVM pVM, int rc)
  *
  * @param   pVM     The cross context VM structure.
  */
-void pdmUnlock(PVM pVM)
+void pdmUnlock(PVMCC pVM)
 {
     PDMCritSectLeave(&pVM->pdm.s.CritSect);
 }

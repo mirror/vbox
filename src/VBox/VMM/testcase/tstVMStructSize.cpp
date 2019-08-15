@@ -253,6 +253,7 @@ int main()
     CHECK_PADDING_VMCPU(4096, cpum);
 
     PVM pVM = NULL; NOREF(pVM);
+#ifndef VBOX_BUGREF_9217
     CHECK_MEMBER_ALIGNMENT(VM, aCpus[0], PAGE_SIZE);
     CHECK_MEMBER_ALIGNMENT(VM, aCpus[1], PAGE_SIZE);
     CHECK_MEMBER_ALIGNMENT(VM, aCpus[0].cpum.s.Host, 64);
@@ -261,12 +262,13 @@ int main()
     CHECK_MEMBER_ALIGNMENT(VM, aCpus[1].cpum.s.Guest, 64);
     CHECK_MEMBER_ALIGNMENT(VM, aCpus[0].cpum.s.Hyper, 64);
     CHECK_MEMBER_ALIGNMENT(VM, aCpus[1].cpum.s.Hyper, 64);
-#ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
+# ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
     CHECK_MEMBER_ALIGNMENT(VM, aCpus[0].cpum.s.pvApicBase, 8);
-#endif
+# endif
 
     CHECK_MEMBER_ALIGNMENT(VM, aCpus[0].iem.s.DataTlb, 64);
     CHECK_MEMBER_ALIGNMENT(VM, aCpus[0].iem.s.CodeTlb, 64);
+#endif
 
     CHECK_MEMBER_ALIGNMENT(VMCPU, vmm.s.u64CallRing3Arg, 8);
 #if defined(RT_OS_WINDOWS) && defined(RT_ARCH_AMD64)
@@ -281,7 +283,9 @@ int main()
 #endif
 
     /* the VMCPUs are page aligned TLB hit reasons. */
+#ifndef VBOX_BUGREF_9217
     CHECK_MEMBER_ALIGNMENT(VM, aCpus, 4096);
+#endif
     CHECK_SIZE_ALIGNMENT(VMCPU, 4096);
 
     /* cpumctx */

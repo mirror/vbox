@@ -689,6 +689,7 @@ static const REMPARMDESC g_aArgsEMSetInhibitInterruptsPC[] =
 };
 static const REMPARMDESC g_aArgsHMCanExecuteGuest[] =
 {
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVM),                NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(PVMCPU),             NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(PCPUMCTX),           NULL },
 };

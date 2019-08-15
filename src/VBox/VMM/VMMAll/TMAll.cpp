@@ -191,7 +191,7 @@ VMMDECL(void) TMNotifyEndOfExecution(PVMCC pVM, PVMCPUCC pVCpu)
  */
 VMM_INT_DECL(void) TMNotifyStartOfHalt(PVMCPUCC pVCpu)
 {
-    PVM pVM = pVCpu->CTX_SUFF(pVM);
+    PVMCC pVM = pVCpu->CTX_SUFF(pVM);
 
 #ifndef VBOX_WITHOUT_NS_ACCOUNTING
     pVCpu->tm.s.u64NsTsStartHalting = RTTimeNanoTS();
@@ -1160,7 +1160,7 @@ static int tmTimerSetOptimizedStart(PVM pVM, PTMTIMER pTimer, uint64_t u64Expire
  * @param   pTimer              The timer handle.
  * @param   u64Expire           The expiration time.
  */
-static int tmTimerVirtualSyncSet(PVM pVM, PTMTIMER pTimer, uint64_t u64Expire)
+static int tmTimerVirtualSyncSet(PVMCC pVM, PTMTIMER pTimer, uint64_t u64Expire)
 {
     STAM_PROFILE_START(&pVM->tm.s.CTX_SUFF_Z(StatTimerSetVs), a);
     VM_ASSERT_EMT(pVM);
@@ -1229,7 +1229,7 @@ static int tmTimerVirtualSyncSet(PVM pVM, PTMTIMER pTimer, uint64_t u64Expire)
  */
 VMMDECL(int) TMTimerSet(PTMTIMER pTimer, uint64_t u64Expire)
 {
-    PVM pVM = pTimer->CTX_SUFF(pVM);
+    PVMCC pVM = pTimer->CTX_SUFF(pVM);
 
     /* Treat virtual sync timers specially. */
     if (pTimer->enmClock == TMCLOCK_VIRTUAL_SYNC)
@@ -1386,7 +1386,7 @@ VMMDECL(int) TMTimerSet(PTMTIMER pTimer, uint64_t u64Expire)
  * @param   enmClock        The clock to query.
  * @param   pu64Now         Optional pointer where to store the return time
  */
-DECL_FORCE_INLINE(uint64_t) tmTimerSetRelativeNowWorker(PVM pVM, TMCLOCK enmClock, uint64_t *pu64Now)
+DECL_FORCE_INLINE(uint64_t) tmTimerSetRelativeNowWorker(PVMCC pVM, TMCLOCK enmClock, uint64_t *pu64Now)
 {
     uint64_t u64Now;
     switch (enmClock)
@@ -1421,7 +1421,7 @@ DECL_FORCE_INLINE(uint64_t) tmTimerSetRelativeNowWorker(PVM pVM, TMCLOCK enmCloc
  * @param   pu64Now         Where to return the current time stamp used.
  *                          Optional.
  */
-static int tmTimerSetRelativeOptimizedStart(PVM pVM, PTMTIMER pTimer, uint64_t cTicksToNext, uint64_t *pu64Now)
+static int tmTimerSetRelativeOptimizedStart(PVMCC pVM, PTMTIMER pTimer, uint64_t cTicksToNext, uint64_t *pu64Now)
 {
     Assert(!pTimer->offPrev);
     Assert(!pTimer->offNext);
@@ -1460,7 +1460,7 @@ static int tmTimerSetRelativeOptimizedStart(PVM pVM, PTMTIMER pTimer, uint64_t c
  * @param   pu64Now             Where to return the current time stamp used.
  *                              Optional.
  */
-static int tmTimerVirtualSyncSetRelative(PVM pVM, PTMTIMER pTimer, uint64_t cTicksToNext, uint64_t *pu64Now)
+static int tmTimerVirtualSyncSetRelative(PVMCC pVM, PTMTIMER pTimer, uint64_t cTicksToNext, uint64_t *pu64Now)
 {
     STAM_PROFILE_START(pVM->tm.s.CTX_SUFF_Z(StatTimerSetRelativeVs), a);
     VM_ASSERT_EMT(pVM);
@@ -1535,7 +1535,7 @@ static int tmTimerVirtualSyncSetRelative(PVM pVM, PTMTIMER pTimer, uint64_t cTic
  */
 VMMDECL(int) TMTimerSetRelative(PTMTIMER pTimer, uint64_t cTicksToNext, uint64_t *pu64Now)
 {
-    PVM pVM = pTimer->CTX_SUFF(pVM);
+    PVMCC pVM = pTimer->CTX_SUFF(pVM);
 
     /* Treat virtual sync timers specially. */
     if (pTimer->enmClock == TMCLOCK_VIRTUAL_SYNC)
@@ -1787,7 +1787,7 @@ VMMDECL(int) TMTimerSetFrequencyHint(PTMTIMER pTimer, uint32_t uHzHint)
  * @param   pVM                 The cross context VM structure.
  * @param   pTimer              The timer handle.
  */
-static int tmTimerVirtualSyncStop(PVM pVM, PTMTIMER pTimer)
+static int tmTimerVirtualSyncStop(PVMCC pVM, PTMTIMER pTimer)
 {
     STAM_PROFILE_START(&pVM->tm.s.CTX_SUFF_Z(StatTimerStopVs), a);
     VM_ASSERT_EMT(pVM);
@@ -1857,7 +1857,7 @@ static int tmTimerVirtualSyncStop(PVM pVM, PTMTIMER pTimer)
  */
 VMMDECL(int) TMTimerStop(PTMTIMER pTimer)
 {
-    PVM pVM = pTimer->CTX_SUFF(pVM);
+    PVMCC pVM = pTimer->CTX_SUFF(pVM);
 
     /* Treat virtual sync timers specially. */
     if (pTimer->enmClock == TMCLOCK_VIRTUAL_SYNC)
@@ -1964,7 +1964,7 @@ VMMDECL(int) TMTimerStop(PTMTIMER pTimer)
  */
 VMMDECL(uint64_t) TMTimerGet(PTMTIMER pTimer)
 {
-    PVM pVM = pTimer->CTX_SUFF(pVM);
+    PVMCC pVM = pTimer->CTX_SUFF(pVM);
 
     uint64_t u64;
     switch (pTimer->enmClock)
@@ -2531,7 +2531,7 @@ static uint32_t tmGetFrequencyHint(PVM pVM)
  * @param   pVM         The cross context VM structure.
  * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  */
-VMM_INT_DECL(uint32_t) TMCalcHostTimerFrequency(PVM pVM, PVMCPU pVCpu)
+VMM_INT_DECL(uint32_t) TMCalcHostTimerFrequency(PVMCC pVM, PVMCPUCC pVCpu)
 {
     uint32_t uHz = tmGetFrequencyHint(pVM);
 

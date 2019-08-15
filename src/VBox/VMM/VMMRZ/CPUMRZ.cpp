@@ -23,7 +23,8 @@
 #define LOG_GROUP LOG_GROUP_CPUM
 #include <VBox/vmm/cpum.h>
 #include "CPUMInternal.h"
-#include <VBox/vmm/vm.h>
+#include <VBox/vmm/vmcc.h>
+
 #include <VBox/err.h>
 #include <VBox/log.h>
 #include <VBox/vmm/hm.h>
@@ -43,7 +44,7 @@
  *
  * @param   pVCpu       The cross context virtual CPU structure.
  */
-VMMRZ_INT_DECL(void)    CPUMRZFpuStatePrepareHostCpuForUse(PVMCPU pVCpu)
+VMMRZ_INT_DECL(void)    CPUMRZFpuStatePrepareHostCpuForUse(PVMCPUCC pVCpu)
 {
     pVCpu->cpum.s.fChanged |= CPUM_CHANGED_FPU_REM;
     switch (pVCpu->cpum.s.fUseFlags & (CPUM_USED_FPU_GUEST | CPUM_USED_FPU_HOST))
@@ -81,7 +82,7 @@ VMMRZ_INT_DECL(void)    CPUMRZFpuStatePrepareHostCpuForUse(PVMCPU pVCpu)
  *
  * @param   pVCpu       The cross context virtual CPU structure.
  */
-VMMRZ_INT_DECL(void)    CPUMRZFpuStateActualizeForChange(PVMCPU pVCpu)
+VMMRZ_INT_DECL(void)    CPUMRZFpuStateActualizeForChange(PVMCPUCC pVCpu)
 {
     CPUMRZFpuStatePrepareHostCpuForUse(pVCpu);
 }
@@ -94,7 +95,7 @@ VMMRZ_INT_DECL(void)    CPUMRZFpuStateActualizeForChange(PVMCPU pVCpu)
  *
  * @param   pVCpu       The cross context virtual CPU structure.
  */
-VMMRZ_INT_DECL(void)    CPUMRZFpuStateActualizeForRead(PVMCPU pVCpu)
+VMMRZ_INT_DECL(void)    CPUMRZFpuStateActualizeForRead(PVMCPUCC pVCpu)
 {
     if (pVCpu->cpum.s.fUseFlags & CPUM_USED_FPU_GUEST)
     {
@@ -112,7 +113,7 @@ VMMRZ_INT_DECL(void)    CPUMRZFpuStateActualizeForRead(PVMCPU pVCpu)
  *
  * @param   pVCpu       The cross context virtual CPU structure.
  */
-VMMRZ_INT_DECL(void)    CPUMRZFpuStateActualizeSseForRead(PVMCPU pVCpu)
+VMMRZ_INT_DECL(void)    CPUMRZFpuStateActualizeSseForRead(PVMCPUCC pVCpu)
 {
 #if defined(VBOX_WITH_KERNEL_USING_XMM) && HC_ARCH_BITS == 64
     NOREF(pVCpu);
@@ -133,7 +134,7 @@ VMMRZ_INT_DECL(void)    CPUMRZFpuStateActualizeSseForRead(PVMCPU pVCpu)
  *
  * @param   pVCpu       The cross context virtual CPU structure.
  */
-VMMRZ_INT_DECL(void)    CPUMRZFpuStateActualizeAvxForRead(PVMCPU pVCpu)
+VMMRZ_INT_DECL(void)    CPUMRZFpuStateActualizeAvxForRead(PVMCPUCC pVCpu)
 {
     if (pVCpu->cpum.s.fUseFlags & CPUM_USED_FPU_GUEST)
     {

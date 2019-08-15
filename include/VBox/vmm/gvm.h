@@ -103,14 +103,14 @@ typedef struct GVMCPU
 #ifdef VBOX_BUGREF_9217
     /** Padding the structure size to page boundrary. */
 # ifdef VBOX_WITH_NEM_R0
-    uint8_t                 abPadding2[3904];
+    uint8_t                 abPadding2[4096 - 64 - 64 - 64];
 # else
-    uint8_t                 abPadding2[3840];
+    uint8_t                 abPadding2[4096 - 64 - 64];
 # endif
 #endif
-
 } GVMCPU;
 #ifdef VBOX_BUGREF_9217
+AssertCompileMemberAlignment(GVMCPU, idCpu,  4096);
 AssertCompileMemberAlignment(GVMCPU, gvmm,   64);
 # ifdef VBOX_WITH_NEM_R0
 AssertCompileMemberAlignment(GVMCPU, nem,    64);

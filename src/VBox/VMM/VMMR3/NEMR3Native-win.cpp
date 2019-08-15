@@ -52,7 +52,7 @@
 #include <VBox/vmm/pdm.h>
 #include <VBox/vmm/dbgftrace.h>
 #include "NEMInternal.h"
-#include <VBox/vmm/vm.h>
+#include <VBox/vmm/vmcc.h>
 
 #include <iprt/ldr.h>
 #include <iprt/path.h>
@@ -1231,7 +1231,7 @@ int nemR3NativeInit(PVM pVM, bool fFallback, bool fForced)
                 /*
                  * Check out our ring-0 capabilities.
                  */
-                rc = SUPR3CallVMMR0Ex(pVM->pVMR0, 0 /*idCpu*/, VMMR0_DO_NEM_INIT_VM, 0, NULL);
+                rc = SUPR3CallVMMR0Ex(VMCC_GET_VMR0_FOR_CALL(pVM), 0 /*idCpu*/, VMMR0_DO_NEM_INIT_VM, 0, NULL);
                 if (RT_SUCCESS(rc))
                 {
                     /*

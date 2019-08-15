@@ -179,7 +179,11 @@ static int pdmR3CritSectInitOne(PVM pVM, PPDMCRITSECTINT pCritSect, void *pvKey,
                 pCritSect->Core.cLockers             = -1;
                 pCritSect->Core.NativeThreadOwner    = NIL_RTNATIVETHREAD;
                 pCritSect->pVMR3                     = pVM;
+#ifdef VBOX_BUGREF_9217
+                pCritSect->pVMR0                     = pVM->pVMR0ForCall;
+#else
                 pCritSect->pVMR0                     = pVM->pVMR0;
+#endif
                 pCritSect->pVMRC                     = pVM->pVMRC;
                 pCritSect->pvKey                     = pvKey;
                 pCritSect->fAutomaticDefaultCritsect = false;
@@ -276,7 +280,11 @@ static int pdmR3CritSectRwInitOne(PVM pVM, PPDMCRITSECTRWINT pCritSect, void *pv
                     pCritSect->Core.HCPtrPadding         = NIL_RTHCPTR;
 #endif
                     pCritSect->pVMR3                     = pVM;
+#ifdef VBOX_BUGREF_9217
+                    pCritSect->pVMR0                     = pVM->pVMR0ForCall;
+#else
                     pCritSect->pVMR0                     = pVM->pVMR0;
+#endif
                     pCritSect->pVMRC                     = pVM->pVMRC;
                     pCritSect->pvKey                     = pvKey;
                     pCritSect->pszName                   = pszName;

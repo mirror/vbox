@@ -43,7 +43,7 @@
  * @param   pVM             The cross context VM structure.
  * @param   fCheckTimers    Whether to check timers.
  */
-DECLINLINE(uint64_t) tmCpuTickGetRawVirtual(PVM pVM, bool fCheckTimers)
+DECLINLINE(uint64_t) tmCpuTickGetRawVirtual(PVMCC pVM, bool fCheckTimers)
 {
     uint64_t u64;
     if (fCheckTimers)

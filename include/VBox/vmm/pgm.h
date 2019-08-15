@@ -372,7 +372,7 @@ typedef uint32_t PGMPHYSHANDLERTYPE;
 typedef PGMPHYSHANDLERTYPE *PPGMPHYSHANDLERTYPE;
 /** NIL value for PGM physical access handler type handle. */
 #define NIL_PGMPHYSHANDLERTYPE  UINT32_MAX
-VMMDECL(uint32_t)   PGMHandlerPhysicalTypeRelease(PVM pVM, PGMPHYSHANDLERTYPE hType);
+VMMDECL(uint32_t)   PGMHandlerPhysicalTypeRelease(PVMCC pVM, PGMPHYSHANDLERTYPE hType);
 VMMDECL(uint32_t)   PGMHandlerPhysicalTypeRetain(PVM pVM, PGMPHYSHANDLERTYPE hType);
 
 VMMDECL(int)        PGMHandlerPhysicalRegister(PVMCC pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysLast, PGMPHYSHANDLERTYPE hType,
@@ -381,13 +381,13 @@ VMMDECL(int)        PGMHandlerPhysicalRegister(PVMCC pVM, RTGCPHYS GCPhys, RTGCP
 VMMDECL(int)        PGMHandlerPhysicalModify(PVMCC pVM, RTGCPHYS GCPhysCurrent, RTGCPHYS GCPhys, RTGCPHYS GCPhysLast);
 VMMDECL(int)        PGMHandlerPhysicalDeregister(PVMCC pVM, RTGCPHYS GCPhys);
 VMMDECL(int)        PGMHandlerPhysicalChangeUserArgs(PVMCC pVM, RTGCPHYS GCPhys, RTR3PTR pvUserR3, RTR0PTR pvUserR0);
-VMMDECL(int)        PGMHandlerPhysicalSplit(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysSplit);
-VMMDECL(int)        PGMHandlerPhysicalJoin(PVM pVM, RTGCPHYS GCPhys1, RTGCPHYS GCPhys2);
+VMMDECL(int)        PGMHandlerPhysicalSplit(PVMCC pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysSplit);
+VMMDECL(int)        PGMHandlerPhysicalJoin(PVMCC pVM, RTGCPHYS GCPhys1, RTGCPHYS GCPhys2);
 VMMDECL(int)        PGMHandlerPhysicalPageTempOff(PVMCC pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysPage);
-VMMDECL(int)        PGMHandlerPhysicalPageAlias(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysPage, RTGCPHYS GCPhysPageRemap);
-VMMDECL(int)        PGMHandlerPhysicalPageAliasHC(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysPage, RTHCPHYS HCPhysPageRemap);
-VMMDECL(int)        PGMHandlerPhysicalReset(PVM pVM, RTGCPHYS GCPhys);
-VMMDECL(bool)       PGMHandlerPhysicalIsRegistered(PVM pVM, RTGCPHYS GCPhys);
+VMMDECL(int)        PGMHandlerPhysicalPageAlias(PVMCC pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysPage, RTGCPHYS GCPhysPageRemap);
+VMMDECL(int)        PGMHandlerPhysicalPageAliasHC(PVMCC pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysPage, RTHCPHYS HCPhysPageRemap);
+VMMDECL(int)        PGMHandlerPhysicalReset(PVMCC pVM, RTGCPHYS GCPhys);
+VMMDECL(bool)       PGMHandlerPhysicalIsRegistered(PVMCC pVM, RTGCPHYS GCPhys);
 
 
 /**
@@ -628,10 +628,10 @@ VMM_INT_DECL(int)   PGMPhysNemPageInfoChecker(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHY
  *                      update.
  * @param   pvUser      The user argument.
  */
-typedef DECLCALLBACK(int) FNPGMPHYSNEMENUMCALLBACK(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, uint8_t *pu2NemState, void *pvUser);
+typedef DECLCALLBACK(int) FNPGMPHYSNEMENUMCALLBACK(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhys, uint8_t *pu2NemState, void *pvUser);
 /** Pointer to a FNPGMPHYSNEMENUMCALLBACK function. */
 typedef FNPGMPHYSNEMENUMCALLBACK *PFNPGMPHYSNEMENUMCALLBACK;
-VMM_INT_DECL(int) PGMPhysNemEnumPagesByState(PVM pVM, PVMCPU VCpu, uint8_t uMinState,
+VMM_INT_DECL(int) PGMPhysNemEnumPagesByState(PVMCC pVM, PVMCPUCC VCpu, uint8_t uMinState,
                                              PFNPGMPHYSNEMENUMCALLBACK pfnCallback, void *pvUser);
 
 
@@ -649,7 +649,7 @@ VMMDECL(uint32_t)   PGMRZDynMapPushAutoSubset(PVMCPU pVCpu);
 VMMDECL(void)       PGMRZDynMapPopAutoSubset(PVMCPU pVCpu, uint32_t iPrevSubset);
 #endif
 
-VMMDECL(int)        PGMSetLargePageUsage(PVM pVM, bool fUseLargePages);
+VMMDECL(int)        PGMSetLargePageUsage(PVMCC pVM, bool fUseLargePages);
 
 /**
  * Query large page usage state
@@ -673,21 +673,21 @@ VMMRCDECL(int)      PGMRCDynMapInit(PVM pVM);
 /** @defgroup grp_pgm_r0  The PGM Host Context Ring-0 API
  * @{
  */
-VMMR0_INT_DECL(int) PGMR0PhysAllocateHandyPages(PGVM pGVM, PVM pVM, VMCPUID idCpu);
-VMMR0_INT_DECL(int) PGMR0PhysFlushHandyPages(PGVM pGVM, PVM pVM, VMCPUID idCpu);
-VMMR0_INT_DECL(int) PGMR0PhysAllocateLargeHandyPage(PGVM pGVM, PVM pVM, VMCPUID idCpu);
-VMMR0_INT_DECL(int) PGMR0PhysSetupIoMmu(PGVM pGVM, PVM pVM);
-VMMR0DECL(int)      PGMR0SharedModuleCheck(PVM pVM, PGVM pGVM, VMCPUID idCpu, PGMMSHAREDMODULE pModule, PCRTGCPTR64 paRegionsGCPtrs);
-VMMR0DECL(int)      PGMR0Trap0eHandlerNestedPaging(PVM pVM, PVMCPU pVCpu, PGMMODE enmShwPagingMode, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPHYS pvFault);
-VMMR0DECL(VBOXSTRICTRC) PGMR0Trap0eHandlerNPMisconfig(PVM pVM, PVMCPU pVCpu, PGMMODE enmShwPagingMode, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFault, uint32_t uErr);
+VMMR0_INT_DECL(int) PGMR0PhysAllocateHandyPages(PGVM pGVM, PVMCC pVM, VMCPUID idCpu);
+VMMR0_INT_DECL(int) PGMR0PhysFlushHandyPages(PGVM pGVM, PVMCC pVM, VMCPUID idCpu);
+VMMR0_INT_DECL(int) PGMR0PhysAllocateLargeHandyPage(PGVM pGVM, PVMCC pVM, VMCPUID idCpu);
+VMMR0_INT_DECL(int) PGMR0PhysSetupIoMmu(PGVM pGVM, PVMCC pVM);
+VMMR0DECL(int)      PGMR0SharedModuleCheck(PVMCC pVM, PGVM pGVM, VMCPUID idCpu, PGMMSHAREDMODULE pModule, PCRTGCPTR64 paRegionsGCPtrs);
+VMMR0DECL(int)      PGMR0Trap0eHandlerNestedPaging(PVMCC pVM, PVMCPUCC pVCpu, PGMMODE enmShwPagingMode, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPHYS pvFault);
+VMMR0DECL(VBOXSTRICTRC) PGMR0Trap0eHandlerNPMisconfig(PVMCC pVM, PVMCPUCC pVCpu, PGMMODE enmShwPagingMode, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFault, uint32_t uErr);
 # ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
 VMMR0DECL(int)      PGMR0DynMapInit(void);
 VMMR0DECL(void)     PGMR0DynMapTerm(void);
-VMMR0DECL(int)      PGMR0DynMapInitVM(PVM pVM);
-VMMR0DECL(void)     PGMR0DynMapTermVM(PVM pVM);
+VMMR0DECL(int)      PGMR0DynMapInitVM(PVMCC pVM);
+VMMR0DECL(void)     PGMR0DynMapTermVM(PVMCC pVM);
 VMMR0DECL(int)      PGMR0DynMapAssertIntegrity(void);
-VMMR0DECL(bool)     PGMR0DynMapStartOrMigrateAutoSet(PVMCPU pVCpu);
-VMMR0DECL(void)     PGMR0DynMapMigrateAutoSet(PVMCPU pVCpu);
+VMMR0DECL(bool)     PGMR0DynMapStartOrMigrateAutoSet(PVMCPUCC pVCpu);
+VMMR0DECL(void)     PGMR0DynMapMigrateAutoSet(PVMCPUCC pVCpu);
 # endif
 /** @} */
 #endif /* IN_RING0 */

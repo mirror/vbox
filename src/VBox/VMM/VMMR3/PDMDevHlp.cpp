@@ -33,9 +33,8 @@
 #endif
 #include <VBox/vmm/dbgf.h>
 #include <VBox/vmm/vmapi.h>
-#include <VBox/vmm/vm.h>
-#include <VBox/vmm/uvm.h>
 #include <VBox/vmm/vmm.h>
+#include <VBox/vmm/vmcc.h>
 
 #include <VBox/version.h>
 #include <VBox/log.h>
@@ -2710,7 +2709,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_CallR0(PPDMDEVINS pDevIns, uint32_t uOperat
             Req.uOperation      = uOperation;
             Req.u32Alignment    = 0;
             Req.u64Arg          = u64Arg;
-            rc = SUPR3CallVMMR0Ex(pVM->pVMR0, NIL_VMCPUID, VMMR0_DO_PDM_DEVICE_CALL_REQ_HANDLER, 0, &Req.Hdr);
+            rc = SUPR3CallVMMR0Ex(VMCC_GET_VMR0_FOR_CALL(pVM), NIL_VMCPUID, VMMR0_DO_PDM_DEVICE_CALL_REQ_HANDLER, 0, &Req.Hdr);
         }
         else
             pfnReqHandlerR0 = NIL_RTR0PTR;

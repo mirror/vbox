@@ -666,7 +666,7 @@ static bool hmVmxIsStackSelectorOk(PCCPUMSELREG pSel)
  *          Secondly, if additional checks are added that require more of the CPU
  *          state, make sure REM (which supplies a partial state) is updated.
  */
-VMM_INT_DECL(bool) HMCanExecuteVmxGuest(PVMCC pVM, PVMCPU pVCpu, PCCPUMCTX pCtx)
+VMM_INT_DECL(bool) HMCanExecuteVmxGuest(PVMCC pVM, PVMCPUCC pVCpu, PCCPUMCTX pCtx)
 {
     Assert(HMIsEnabled(pVM));
     Assert(   ( pVM->hm.s.vmx.fUnrestrictedGuest && !pVM->hm.s.vmx.pRealModeTSS)

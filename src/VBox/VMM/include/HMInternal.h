@@ -1170,7 +1170,7 @@ AssertCompileMemberAlignment(HMCPU, Event, 8);
 
 #ifdef IN_RING0
 VMMR0_INT_DECL(PHMPHYSCPU)  hmR0GetCurrentCpu(void);
-VMMR0_INT_DECL(int)         hmR0EnterCpu(PVMCPU pVCpu);
+VMMR0_INT_DECL(int)         hmR0EnterCpu(PVMCPUCC pVCpu);
 
 # ifdef VBOX_STRICT
 #  define HM_DUMP_REG_FLAGS_GPRS      RT_BIT(0)
@@ -1178,14 +1178,14 @@ VMMR0_INT_DECL(int)         hmR0EnterCpu(PVMCPU pVCpu);
 #  define HM_DUMP_REG_FLAGS_MSRS      RT_BIT(2)
 #  define HM_DUMP_REG_FLAGS_ALL       (HM_DUMP_REG_FLAGS_GPRS | HM_DUMP_REG_FLAGS_FPU | HM_DUMP_REG_FLAGS_MSRS)
 
-VMMR0_INT_DECL(void)        hmR0DumpRegs(PVMCPU pVCpu, uint32_t fFlags);
+VMMR0_INT_DECL(void)        hmR0DumpRegs(PVMCPUCC pVCpu, uint32_t fFlags);
 VMMR0_INT_DECL(void)        hmR0DumpDescriptor(PCX86DESCHC pDesc, RTSEL Sel, const char *pszMsg);
 # endif
 
 # ifdef VBOX_WITH_KERNEL_USING_XMM
-DECLASM(int)                hmR0VMXStartVMWrapXMM(RTHCUINT fResume, PCPUMCTX pCtx, void *pvUnused, PVM pVM, PVMCPU pVCpu,
+DECLASM(int)                hmR0VMXStartVMWrapXMM(RTHCUINT fResume, PCPUMCTX pCtx, void *pvUnused, PVMCC pVM, PVMCPUCC pVCpu,
                                                   PFNHMVMXSTARTVM pfnStartVM);
-DECLASM(int)                hmR0SVMRunWrapXMM(RTHCPHYS pVmcbHostPhys, RTHCPHYS pVmcbPhys, PCPUMCTX pCtx, PVM pVM, PVMCPU pVCpu,
+DECLASM(int)                hmR0SVMRunWrapXMM(RTHCPHYS pVmcbHostPhys, RTHCPHYS pVmcbPhys, PCPUMCTX pCtx, PVMCC pVM, PVMCPUCC pVCpu,
                                               PFNHMSVMVMRUN pfnVMRun);
 # endif
 DECLASM(void)               hmR0MdsClear(void);

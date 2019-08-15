@@ -284,7 +284,7 @@ typedef struct PDMCRITSECTINT
     /** Pointer to the VM - R3Ptr. */
     PVMR3                           pVMR3;
     /** Pointer to the VM - R0Ptr. */
-    PVMR0                           pVMR0;
+    R0PTRTYPE(PVMCC)                pVMR0;
     /** Pointer to the VM - GCPtr. */
     PVMRC                           pVMRC;
     /** Set if this critical section is the automatically created default
@@ -337,7 +337,7 @@ typedef struct PDMCRITSECTRWINT
     /** Pointer to the VM - R3Ptr. */
     PVMR3                               pVMR3;
     /** Pointer to the VM - R0Ptr. */
-    PVMR0                               pVMR0;
+    R0PTRTYPE(PVMCC)                    pVMR0;
     /** Pointer to the VM - GCPtr. */
     PVMRC                               pVMRC;
 #if HC_ARCH_BITS == 64
@@ -1306,9 +1306,9 @@ int         pdmR3BlkCacheResume(PVM pVM);
 
 #endif /* IN_RING3 */
 
-void        pdmLock(PVM pVM);
-int         pdmLockEx(PVM pVM, int rc);
-void        pdmUnlock(PVM pVM);
+void        pdmLock(PVMCC pVM);
+int         pdmLockEx(PVMCC pVM, int rc);
+void        pdmUnlock(PVMCC pVM);
 
 #if defined(IN_RING3) || defined(IN_RING0)
 void        pdmCritSectRwLeaveSharedQueued(PPDMCRITSECTRW pThis);

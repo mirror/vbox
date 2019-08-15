@@ -154,7 +154,7 @@ DECLEXPORT(uint64_t) tmVirtualNanoTSBadCpuIndex(PRTTIMENANOTSDATA pData, uint16_
 /**
  * Wrapper around the IPRT GIP time methods.
  */
-DECLINLINE(uint64_t) tmVirtualGetRawNanoTS(PVM pVM)
+DECLINLINE(uint64_t) tmVirtualGetRawNanoTS(PVMCC pVM)
 {
 # ifdef IN_RING3
     uint64_t u64 = CTXALLSUFF(pVM->tm.s.pfnVirtualGetRaw)(&CTXALLSUFF(pVM->tm.s.VirtualGetRawData));
@@ -175,7 +175,7 @@ DECLINLINE(uint64_t) tmVirtualGetRawNanoTS(PVM pVM)
  * @returns The timestamp.
  * @param   pVM     The cross context VM structure.
  */
-static uint64_t tmVirtualGetRawNonNormal(PVM pVM)
+static uint64_t tmVirtualGetRawNonNormal(PVMCC pVM)
 {
     /*
      * Recalculate the RTTimeNanoTS() value for the period where
@@ -203,7 +203,7 @@ static uint64_t tmVirtualGetRawNonNormal(PVM pVM)
  * @returns The current time stamp.
  * @param   pVM     The cross context VM structure.
  */
-DECLINLINE(uint64_t) tmVirtualGetRaw(PVM pVM)
+DECLINLINE(uint64_t) tmVirtualGetRaw(PVMCC pVM)
 {
     if (RT_LIKELY(!pVM->tm.s.fVirtualWarpDrive))
         return tmVirtualGetRawNanoTS(pVM) - pVM->tm.s.u64VirtualOffset;
@@ -869,7 +869,7 @@ VMM_INT_DECL(uint64_t) TMVirtualGetFreq(PVM pVM)
  * @returns VINF_SUCCESS or VERR_TM_VIRTUAL_TICKING_IPE (asserted).
  * @param   pVM     The cross context VM structure.
  */
-int tmVirtualPauseLocked(PVM pVM)
+int tmVirtualPauseLocked(PVMCC pVM)
 {
     uint32_t c = ASMAtomicDecU32(&pVM->tm.s.cVirtualTicking);
     AssertMsgReturn(c < pVM->cCpus, ("%u vs %u\n", c, pVM->cCpus), VERR_TM_VIRTUAL_TICKING_IPE);
@@ -889,7 +889,7 @@ int tmVirtualPauseLocked(PVM pVM)
  * @returns VINF_SUCCESS or VERR_TM_VIRTUAL_TICKING_IPE (asserted).
  * @param   pVM     The cross context VM structure.
  */
-int tmVirtualResumeLocked(PVM pVM)
+int tmVirtualResumeLocked(PVMCC pVM)
 {
     uint32_t c = ASMAtomicIncU32(&pVM->tm.s.cVirtualTicking);
     AssertMsgReturn(c <= pVM->cCpus, ("%u vs %u\n", c, pVM->cCpus), VERR_TM_VIRTUAL_TICKING_IPE);

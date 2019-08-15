@@ -788,8 +788,8 @@ int                     tmCpuTickPauseLocked(PVMCC pVM, PVMCPUCC pVCpu);
 int                     tmCpuTickResume(PVMCC pVM, PVMCPUCC pVCpu);
 int                     tmCpuTickResumeLocked(PVMCC pVM, PVMCPUCC pVCpu);
 
-int                     tmVirtualPauseLocked(PVM pVM);
-int                     tmVirtualResumeLocked(PVM pVM);
+int                     tmVirtualPauseLocked(PVMCC pVM);
+int                     tmVirtualResumeLocked(PVMCC pVM);
 DECLCALLBACK(DECLEXPORT(void))      tmVirtualNanoTSBad(PRTTIMENANOTSDATA pData, uint64_t u64NanoTS,
                                                        uint64_t u64DeltaPrev, uint64_t u64PrevNanoTS);
 DECLCALLBACK(DECLEXPORT(uint64_t))  tmVirtualNanoTSRediscover(PRTTIMENANOTSDATA pData);

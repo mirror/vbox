@@ -976,6 +976,7 @@ GVMMR0DECL(int) GVMMR0CreateVM(PSUPDRVSESSION pSession, uint32_t cCpus, PVMCC *p
                                 pHandle->hEMT0                  = hEMT0;
                                 pHandle->ProcId                 = ProcId;
                                 pGVM->pVMR3                     = pVMR3;
+                                pGVM->pVMR3Unsafe               = pVMR3;
                                 pGVM->aCpus[0].hEMT             = hEMT0;
                                 pGVM->aCpus[0].hNativeThreadR0  = hEMT0;
                                 pGVMM->cEMTs += cCpus;
@@ -1083,8 +1084,8 @@ GVMMR0DECL(int) GVMMR0CreateVM(PSUPDRVSESSION pSession, uint32_t cCpus, PVMCC *p
                                 if (RT_SUCCESS(rc))
                                 {
                                     PVMR3 pVMR3 = RTR0MemObjAddressR3(pGVM->gvmm.s.VMMapObj);
-                                    pVM->pVMR3 = pVMR3;
                                     AssertPtr((void *)pVMR3);
+                                    pVM->pVMR3       = pVMR3;
 
                                     /* Initialize all the VM pointers. */
                                     for (VMCPUID i = 0; i < cCpus; i++)
@@ -1221,11 +1222,13 @@ static void gvmmR0InitPerVMData(PGVM pGVM)
     pGVM->hSelf            = hSelf;
     pGVM->cCpus            = cCpus;
     pGVM->pSession         = pSession;
+    pGVM->pSelf            = pGVM;
 
     /* VM: */
     pGVM->enmVMState       = VMSTATE_CREATING;
-    pGVM->pSessionUnsafe   = pSession;
     pGVM->hSelfUnsafe      = hSelf;
+    pGVM->pSessionUnsafe   = pSession;
+    pGVM->pVMR0ForCall     = pGVM;
     pGVM->cCpusUnsafe      = cCpus;
     pGVM->uCpuExecutionCap = 100; /* default is no cap. */
     pGVM->uStructVersion   = 1;

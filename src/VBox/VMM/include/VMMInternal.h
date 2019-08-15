@@ -472,7 +472,7 @@ DECLASM(int)    vmmR0WorldSwitch(PVM pVM, unsigned uArg);
  * @returns VBox status code.
  * @param   pVM         The cross context VM structure.
  */
-typedef DECLCALLBACK(int) FNVMMR0SETJMP(PVM pVM, PVMCPU pVCpu);
+typedef DECLCALLBACK(int) FNVMMR0SETJMP(PVMCC pVM, PVMCPUCC pVCpu);
 /** Pointer to FNVMMR0SETJMP(). */
 typedef FNVMMR0SETJMP *PFNVMMR0SETJMP;
 

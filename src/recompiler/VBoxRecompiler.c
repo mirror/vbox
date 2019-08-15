@@ -54,7 +54,7 @@
 #include <VBox/vmm/apic.h>
 #include <VBox/vmm/hm.h>
 #include "REMInternal.h"
-#include <VBox/vmm/vm.h>
+#include <VBox/vmm/vmcc.h>
 #include <VBox/vmm/uvm.h>
 #include <VBox/param.h>
 #include <VBox/err.h>
@@ -764,7 +764,7 @@ static DECLCALLBACK(int) remR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, 
      */
     for (i = 0; i < pVM->cCpus; i++)
     {
-        PVMCPU pVCpu = &pVM->aCpus[i];
+        PVMCPU pVCpu = pVM->apCpusR3[i];
         CPUMSetChangedFlags(pVCpu, CPUM_CHANGED_ALL);
     }
     return VINF_SUCCESS;
@@ -779,7 +779,7 @@ static DECLCALLBACK(int) remR3LoadDone(PVM pVM, PSSMHANDLE pSSM)
 {
     if (pVM->rem.s.uStateLoadPendingInterrupt != REM_NO_PENDING_IRQ)
     {
-        int rc = TRPMAssertTrap(&pVM->aCpus[0], pVM->rem.s.uStateLoadPendingInterrupt, TRPM_HARDWARE_INT);
+        int rc = TRPMAssertTrap(pVM->apCpusR3[0], pVM->rem.s.uStateLoadPendingInterrupt, TRPM_HARDWARE_INT);
         AssertLogRelMsgReturn(rc, ("uStateLoadPendingInterrupt=%#x rc=%Rrc\n", pVM->rem.s.uStateLoadPendingInterrupt, rc), rc);
         pVM->rem.s.uStateLoadPendingInterrupt = REM_NO_PENDING_IRQ;
     }
@@ -1406,7 +1406,6 @@ bool remR3CanExecuteRaw(CPUX86State *env, RTGCPTR eip, unsigned fFlags, int *piE
     /* !!! THIS MUST BE IN SYNC WITH emR3Reschedule !!! */
     /* !!! THIS MUST BE IN SYNC WITH emR3Reschedule !!! */
     /* !!! THIS MUST BE IN SYNC WITH emR3Reschedule !!! */
-    uint32_t u32CR0;
 
     /* Update counter. */
     env->pVM->rem.s.cCanExecuteRaw++;
@@ -1506,8 +1505,9 @@ bool remR3CanExecuteRaw(CPUX86State *env, RTGCPTR eip, unsigned fFlags, int *piE
      * Hardware accelerated mode:
      * Typically only 32-bits protected mode, with paging enabled, code is allowed here.
      */
-    PVMCPU pVCpu = &env->pVM->aCpus[0];
-    if (HMCanExecuteGuest(pVCpu, pCtx))
+    PVM    pVM   = env->pVM;
+    PVMCPU pVCpu = pVM->apCpusR3[0];
+    if (HMCanExecuteGuest(pVM, pVCpu, pCtx))
     {
         *piException = EXCP_EXECUTE_HM;
         return true;

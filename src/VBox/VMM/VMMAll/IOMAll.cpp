@@ -788,7 +788,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IOMIOPortWriteString(PVM pVM, PVMCPU pVCpu, RTIOPORT 
  * @param   pVM                 The cross context VM structure.
  * @param   pRange              The range to free.
  */
-void iomMmioFreeRange(PVM pVM, PIOMMMIORANGE pRange)
+void iomMmioFreeRange(PVMCC pVM, PIOMMMIORANGE pRange)
 {
     MMHyperFree(pVM, pRange);
 }

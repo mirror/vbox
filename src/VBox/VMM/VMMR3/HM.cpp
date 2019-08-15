@@ -59,8 +59,7 @@
 #include <VBox/vmm/hm_vmx.h>
 #include <VBox/vmm/hm_svm.h>
 #include "HMInternal.h"
-#include <VBox/vmm/vm.h>
-#include <VBox/vmm/uvm.h>
+#include <VBox/vmm/vmcc.h>
 #include <VBox/err.h>
 #include <VBox/param.h>
 
@@ -992,7 +991,7 @@ static int hmR3InitFinalizeR0(PVM pVM)
     /*
      * Enable VT-x or AMD-V on all host CPUs.
      */
-    rc = SUPR3CallVMMR0Ex(pVM->pVMR0, 0 /*idCpu*/, VMMR0_DO_HM_ENABLE, 0, NULL);
+    rc = SUPR3CallVMMR0Ex(VMCC_GET_VMR0_FOR_CALL(pVM), 0 /*idCpu*/, VMMR0_DO_HM_ENABLE, 0, NULL);
     if (RT_FAILURE(rc))
     {
         LogRel(("HM: Failed to enable, error %Rrc\n", rc));
@@ -1583,7 +1582,7 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
     /*
      * Call ring-0 to set up the VM.
      */
-    rc = SUPR3CallVMMR0Ex(pVM->pVMR0, 0 /* idCpu */, VMMR0_DO_HM_SETUP_VM, 0 /* u64Arg */, NULL /* pReqHdr */);
+    rc = SUPR3CallVMMR0Ex(VMCC_GET_VMR0_FOR_CALL(pVM), 0 /* idCpu */, VMMR0_DO_HM_SETUP_VM, 0 /* u64Arg */, NULL /* pReqHdr */);
     if (rc != VINF_SUCCESS)
     {
         LogRel(("HM: VMX setup failed with rc=%Rrc!\n", rc));
@@ -1766,7 +1765,7 @@ static int hmR3InitFinalizeR0Amd(PVM pVM)
     /*
      * Call ring-0 to set up the VM.
      */
-    int rc = SUPR3CallVMMR0Ex(pVM->pVMR0, 0 /*idCpu*/, VMMR0_DO_HM_SETUP_VM, 0, NULL);
+    int rc = SUPR3CallVMMR0Ex(VMCC_GET_VMR0_FOR_CALL(pVM), 0 /*idCpu*/, VMMR0_DO_HM_SETUP_VM, 0, NULL);
     if (rc != VINF_SUCCESS)
     {
         AssertMsgFailed(("%Rrc\n", rc));

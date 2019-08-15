@@ -1386,7 +1386,7 @@ EMSTATE emR3Reschedule(PVM pVM, PVMCPU pVCpu)
     {
         if (VM_IS_HM_ENABLED(pVM))
         {
-            if (HMCanExecuteGuest(pVCpu, &pVCpu->cpum.GstCtx))
+            if (HMCanExecuteGuest(pVM, pVCpu, &pVCpu->cpum.GstCtx))
                 return EMSTATE_HM;
         }
         else if (NEMR3CanExecuteGuest(pVM, pVCpu))

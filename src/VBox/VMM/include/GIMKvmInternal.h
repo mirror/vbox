@@ -246,9 +246,9 @@ typedef GIMKVMCPU const *PCGIMKVMCPU;
 RT_C_DECLS_BEGIN
 
 #ifdef IN_RING0
-VMMR0_INT_DECL(int)             gimR0KvmInitVM(PVM pVM);
-VMMR0_INT_DECL(int)             gimR0KvmTermVM(PVM pVM);
-VMMR0_INT_DECL(int)             gimR0KvmUpdateSystemTime(PVM pVM, PVMCPU pVCpu);
+VMMR0_INT_DECL(int)             gimR0KvmInitVM(PVMCC pVM);
+VMMR0_INT_DECL(int)             gimR0KvmTermVM(PVMCC pVM);
+VMMR0_INT_DECL(int)             gimR0KvmUpdateSystemTime(PVMCC pVM, PVMCPUCC pVCpu);
 #endif /* IN_RING0 */
 
 #ifdef IN_RING3
@@ -271,7 +271,7 @@ VMM_INT_DECL(VBOXSTRICTRC)      gimKvmHypercall(PVMCPUCC pVCpu, PCPUMCTX pCtx);
 VMM_INT_DECL(VBOXSTRICTRC)      gimKvmReadMsr(PVMCPUCC pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue);
 VMM_INT_DECL(VBOXSTRICTRC)      gimKvmWriteMsr(PVMCPUCC pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uRawValue);
 VMM_INT_DECL(bool)              gimKvmShouldTrapXcptUD(PVM pVM);
-VMM_INT_DECL(VBOXSTRICTRC)      gimKvmXcptUD(PVM pVM, PVMCPUCC pVCpu, PCPUMCTX pCtx, PDISCPUSTATE pDis, uint8_t *pcbInstr);
+VMM_INT_DECL(VBOXSTRICTRC)      gimKvmXcptUD(PVMCC pVM, PVMCPUCC pVCpu, PCPUMCTX pCtx, PDISCPUSTATE pDis, uint8_t *pcbInstr);
 VMM_INT_DECL(VBOXSTRICTRC)      gimKvmHypercallEx(PVMCPUCC pVCpu, PCPUMCTX pCtx, unsigned uDisOpcode, uint8_t cbInstr);
 
 

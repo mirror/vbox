@@ -437,21 +437,21 @@ typedef struct GCFGMVALUEREQ
 typedef GCFGMVALUEREQ *PGCFGMVALUEREQ;
 
 #if defined(IN_RING0) || defined(DOXYGEN_RUNNING)
-VMMR0DECL(void)      VMMR0EntryFast(PGVM pGVM, PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperation);
-VMMR0DECL(int)       VMMR0EntryEx(PGVM pGVM, PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperation,
+VMMR0DECL(void)      VMMR0EntryFast(PGVM pGVM, PVMCC pVM, VMCPUID idCpu, VMMR0OPERATION enmOperation);
+VMMR0DECL(int)       VMMR0EntryEx(PGVM pGVM, PVMCC pVM, VMCPUID idCpu, VMMR0OPERATION enmOperation,
                                   PSUPVMMR0REQHDR pReq, uint64_t u64Arg, PSUPDRVSESSION);
-VMMR0_INT_DECL(int)  VMMR0TermVM(PGVM pGVM, PVM pVM, VMCPUID idCpu);
-VMMR0_INT_DECL(bool) VMMR0IsLongJumpArmed(PVMCPU pVCpu);
-VMMR0_INT_DECL(bool) VMMR0IsInRing3LongJump(PVMCPU pVCpu);
-VMMR0_INT_DECL(int)  VMMR0ThreadCtxHookCreateForEmt(PVMCPU pVCpu);
-VMMR0_INT_DECL(void) VMMR0ThreadCtxHookDestroyForEmt(PVMCPU pVCpu);
-VMMR0_INT_DECL(void) VMMR0ThreadCtxHookDisable(PVMCPU pVCpu);
-VMMR0_INT_DECL(bool) VMMR0ThreadCtxHookIsEnabled(PVMCPU pVCpu);
+VMMR0_INT_DECL(int)  VMMR0TermVM(PGVM pGVM, PVMCC pVM, VMCPUID idCpu);
+VMMR0_INT_DECL(bool) VMMR0IsLongJumpArmed(PVMCPUCC pVCpu);
+VMMR0_INT_DECL(bool) VMMR0IsInRing3LongJump(PVMCPUCC pVCpu);
+VMMR0_INT_DECL(int)  VMMR0ThreadCtxHookCreateForEmt(PVMCPUCC pVCpu);
+VMMR0_INT_DECL(void) VMMR0ThreadCtxHookDestroyForEmt(PVMCPUCC pVCpu);
+VMMR0_INT_DECL(void) VMMR0ThreadCtxHookDisable(PVMCPUCC pVCpu);
+VMMR0_INT_DECL(bool) VMMR0ThreadCtxHookIsEnabled(PVMCPUCC pVCpu);
 
 # ifdef LOG_ENABLED
-VMMR0_INT_DECL(void) VMMR0LogFlushDisable(PVMCPU pVCpu);
-VMMR0_INT_DECL(void) VMMR0LogFlushEnable(PVMCPU pVCpu);
-VMMR0_INT_DECL(bool) VMMR0IsLogFlushDisabled(PVMCPU pVCpu);
+VMMR0_INT_DECL(void) VMMR0LogFlushDisable(PVMCPUCC pVCpu);
+VMMR0_INT_DECL(void) VMMR0LogFlushEnable(PVMCPUCC pVCpu);
+VMMR0_INT_DECL(bool) VMMR0IsLogFlushDisabled(PVMCPUCC pVCpu);
 # else
 #  define            VMMR0LogFlushDisable(pVCpu)     do { } while(0)
 #  define            VMMR0LogFlushEnable(pVCpu)      do { } while(0)
@@ -529,7 +529,7 @@ VMMR3_INT_DECL(void)    VMMR3InitR0StackUnwindState(PUVM pUVM, VMCPUID idCpu, PR
 /** @defgroup grp_vmm_api_rz    The VMM Raw-Mode and Ring-0 Context API
  * @{
  */
-VMMRZDECL(int)      VMMRZCallRing3(PVMCC pVMCC, PVMCPU pVCpu, VMMCALLRING3 enmOperation, uint64_t uArg);
+VMMRZDECL(int)      VMMRZCallRing3(PVMCC pVMCC, PVMCPUCC pVCpu, VMMCALLRING3 enmOperation, uint64_t uArg);
 VMMRZDECL(int)      VMMRZCallRing3NoCpu(PVMCC pVM, VMMCALLRING3 enmOperation, uint64_t uArg);
 VMMRZDECL(void)     VMMRZCallRing3Disable(PVMCPUCC pVCpu);
 VMMRZDECL(void)     VMMRZCallRing3Enable(PVMCPUCC pVCpu);

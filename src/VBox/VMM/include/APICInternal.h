@@ -1427,11 +1427,11 @@ APICBOTHCBDECL(VBOXSTRICTRC)  apicLocalInterrupt(PPDMDEVINS pDevIns, PVMCPU pVCp
 APICBOTHCBDECL(int)           apicBusDeliver(PPDMDEVINS pDevIns, uint8_t uDest, uint8_t uDestMode, uint8_t uDeliveryMode,
                                              uint8_t uVector, uint8_t uPolarity, uint8_t uTriggerMode, uint32_t uSrcTag);
 
-VMM_INT_DECL(bool)            apicPostInterrupt(PVMCPU pVCpu, uint8_t uVector, XAPICTRIGGERMODE enmTriggerMode, uint32_t uSrcTag);
-VMM_INT_DECL(void)            apicStartTimer(PVMCPU pVCpu, uint32_t uInitialCount);
-VMM_INT_DECL(void)            apicClearInterruptFF(PVMCPU pVCpu, PDMAPICIRQ enmType);
-void                          apicInitIpi(PVMCPU pVCpu);
-void                          apicResetCpu(PVMCPU pVCpu, bool fResetApicBaseMsr);
+VMM_INT_DECL(bool)            apicPostInterrupt(PVMCPUCC pVCpu, uint8_t uVector, XAPICTRIGGERMODE enmTriggerMode, uint32_t uSrcTag);
+VMM_INT_DECL(void)            apicStartTimer(PVMCPUCC pVCpu, uint32_t uInitialCount);
+VMM_INT_DECL(void)            apicClearInterruptFF(PVMCPUCC pVCpu, PDMAPICIRQ enmType);
+void                          apicInitIpi(PVMCPUCC pVCpu);
+void                          apicResetCpu(PVMCPUCC pVCpu, bool fResetApicBaseMsr);
 
 RT_C_DECLS_END
 

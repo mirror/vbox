@@ -51,10 +51,10 @@
  * @param   pCtxCore    CPU context
  * @param   Addr        Address part.
  */
-VMMDECL(RTGCPTR) SELMToFlat(PVM pVM, DISSELREG SelReg, PCPUMCTXCORE pCtxCore, RTGCPTR Addr)
+VMMDECL(RTGCPTR) SELMToFlat(PVMCC pVM, DISSELREG SelReg, PCPUMCTXCORE pCtxCore, RTGCPTR Addr)
 {
     PCPUMSELREG    pSReg;
-    PVMCPU         pVCpu = VMMGetCpu(pVM);
+    PVMCPUCC       pVCpu = VMMGetCpu(pVM);
 
     int rc = DISFetchRegSegEx(pCtxCore, SelReg, &pSReg); AssertRC(rc);
 

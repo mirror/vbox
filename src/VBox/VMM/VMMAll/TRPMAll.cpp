@@ -189,7 +189,7 @@ VMMDECL(int) TRPMResetTrap(PVMCPU pVCpu)
  * @param   u8TrapNo            The trap vector to assert.
  * @param   enmType             Trap type.
  */
-VMMDECL(int) TRPMAssertTrap(PVMCPU pVCpu, uint8_t u8TrapNo, TRPMEVENT enmType)
+VMMDECL(int) TRPMAssertTrap(PVMCPUCC pVCpu, uint8_t u8TrapNo, TRPMEVENT enmType)
 {
     Log2(("TRPMAssertTrap: u8TrapNo=%02x type=%d\n", u8TrapNo, enmType));
 
@@ -222,7 +222,7 @@ VMMDECL(int) TRPMAssertTrap(PVMCPU pVCpu, uint8_t u8TrapNo, TRPMEVENT enmType)
  * @param   uCR2                The new fault address.
  * @param   uErrorCode          The error code for the page-fault.
  */
-VMMDECL(int) TRPMAssertXcptPF(PVMCPU pVCpu, RTGCUINTPTR uCR2, RTGCUINT uErrorCode)
+VMMDECL(int) TRPMAssertXcptPF(PVMCPUCC pVCpu, RTGCUINTPTR uCR2, RTGCUINT uErrorCode)
 {
     Log2(("TRPMAssertXcptPF: uCR2=%RGv uErrorCode=%RGv\n", uCR2, uErrorCode)); /** @todo RTGCUINT to be fixed. */
 

@@ -846,7 +846,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32PerfStatus(PVMCPUCC pVCpu, uint3
     /* Always provide the max bus ratio for now.  XNU expects it. */
     uValue &= ~((UINT64_C(0x1f) << 40) | RT_BIT_64(46));
 
-    PVM      pVM            = pVCpu->CTX_SUFF(pVM);
+    PVMCC    pVM            = pVCpu->CTX_SUFF(pVM);
     uint64_t uScalableBusHz = CPUMGetGuestScalableBusFrequency(pVM);
     uint64_t uTscHz         = TMCpuTicksPerSecond(pVM);
     uint8_t  uTscRatio      = (uint8_t)((uTscHz + uScalableBusHz / 2) / uScalableBusHz);
@@ -1799,7 +1799,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelP4EbcFrequencyId(PVMCPUCC pVCpu
     RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
 
     uint64_t uValue;
-    PVM      pVM            = pVCpu->CTX_SUFF(pVM);
+    PVMCC    pVM            = pVCpu->CTX_SUFF(pVM);
     uint64_t uScalableBusHz = CPUMGetGuestScalableBusFrequency(pVM);
     if (pVM->cpum.s.GuestFeatures.uModel >= 2)
     {
@@ -1896,7 +1896,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelPlatformInfo(PVMCPUCC pVCpu, ui
     RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
 
     /* Just indicate a fixed TSC, no turbo boost, no programmable anything. */
-    PVM      pVM            = pVCpu->CTX_SUFF(pVM);
+    PVMCC    pVM            = pVCpu->CTX_SUFF(pVM);
     uint64_t uScalableBusHz = CPUMGetGuestScalableBusFrequency(pVM);
     uint64_t uTscHz         = TMCpuTicksPerSecond(pVM);
     uint8_t  uTscRatio      = (uint8_t)((uTscHz + uScalableBusHz / 2) / uScalableBusHz);
@@ -1919,7 +1919,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_IntelFlexRatio(PVMCPUCC pVCpu, uint3
 
     uint64_t uValue = pRange->uValue & ~UINT64_C(0x1ff00);
 
-    PVM      pVM            = pVCpu->CTX_SUFF(pVM);
+    PVMCC    pVM            = pVCpu->CTX_SUFF(pVM);
     uint64_t uScalableBusHz = CPUMGetGuestScalableBusFrequency(pVM);
     uint64_t uTscHz         = TMCpuTicksPerSecond(pVM);
     uint8_t  uTscRatio      = (uint8_t)((uTscHz + uScalableBusHz / 2) / uScalableBusHz);
