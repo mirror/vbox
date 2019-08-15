@@ -32,6 +32,15 @@
 #define VIRTIO_SAVEDSTATE_VERSION                       1
 /** @} */
 
+#define VIRTIO_F_VERSION_1                  RT_BIT_64(32)        /**< Required feature bit for 1.0 devices      */
+
+#define VIRTIO_F_INDIRECT_DESC              RT_BIT_64(28)        /**< Allow descs to point to list of descs     */
+#define VIRTIO_F_EVENT_IDX                  RT_BIT_64(29)        /**< Allow notification disable for n elems    */
+#define VIRTIO_F_RING_INDIRECT_DESC         RT_BIT_64(28)        /**< Doc bug: Goes under two names in spec     */
+#define VIRTIO_F_RING_EVENT_IDX             RT_BIT_64(29)        /**< Doc bug: Goes under two names in spec     */
+
+#define VIRTIO_DEV_INDEPENDENT_FEATURES_OFFERED ( VIRTIO_F_EVENT_IDX ) /**< TBD: Add VIRTIO_F_INDIRECT_DESC     */
+
 #define VIRTIO_ISR_VIRTQ_INTERRUPT           RT_BIT_32(0)        /**< Virtq interrupt bit of ISR register       */
 #define VIRTIO_ISR_DEVICE_CONFIG             RT_BIT_32(1)        /**< Device configuration changed bit of ISR   */
 #define DEVICE_PCI_VENDOR_ID_VIRTIO                0x1AF4        /**< Guest driver locates dev via (mandatory)  */
@@ -39,30 +48,24 @@
 
 /** Reserved (*negotiated*) Feature Bits (e.g. device independent features, VirtIO 1.0 spec,section 6) */
 
-#define VIRTIO_F_RING_INDIRECT_DESC         RT_BIT_64(28)        /**< Allow descs to point to list of descs     */
-#define VIRTIO_F_INDIRECT_DESC              RT_BIT_64(28)        /**< Doc bug: Bit has 2 names in VirtIO 1.0-04 */
-#define VIRTIO_F_RING_EVENT_IDX             RT_BIT_64(29)        /**< Allow notification disable for n elems    */
-#define VIRTIO_F_EVENT_IDX                  RT_BIT_64(29)        /**< Doc bug: Bit has 2 names in VirtIO 1.0-04 */
-#define VIRTIO_F_VERSION_1                  RT_BIT_64(32)
-
 #define VIRTIO_MSI_NO_VECTOR                       0xffff        /**< Vector value to disable MSI for queue     */
 
 /** Device Status field constants (from Virtio 1.0 spec) */
-#define VIRTIO_STATUS_ACKNOWLEDGE                   0x01         /**< Guest driver: Located this VirtIO device  */
-#define VIRTIO_STATUS_DRIVER                        0x02         /**< Guest driver: Can drive this VirtIO dev.  */
-#define VIRTIO_STATUS_DRIVER_OK                     0x04         /**< Guest driver: Driver set-up and ready     */
-#define VIRTIO_STATUS_FEATURES_OK                   0x08         /**< Guest driver: Feature negotiation done    */
-#define VIRTIO_STATUS_FAILED                        0x80         /**< Guest driver: Fatal error, gave up        */
-#define VIRTIO_STATUS_DEVICE_NEEDS_RESET            0x40         /**< Device experienced unrecoverable error    */
+#define VIRTIO_STATUS_ACKNOWLEDGE                    0x01        /**< Guest driver: Located this VirtIO device  */
+#define VIRTIO_STATUS_DRIVER                         0x02        /**< Guest driver: Can drive this VirtIO dev.  */
+#define VIRTIO_STATUS_DRIVER_OK                      0x04        /**< Guest driver: Driver set-up and ready     */
+#define VIRTIO_STATUS_FEATURES_OK                    0x08        /**< Guest driver: Feature negotiation done    */
+#define VIRTIO_STATUS_FAILED                         0x80        /**< Guest driver: Fatal error, gave up        */
+#define VIRTIO_STATUS_DEVICE_NEEDS_RESET             0x40        /**< Device experienced unrecoverable error    */
 
 /* @def Virtio Device PCI Capabilities type codes */
-#define VIRTIO_PCI_CAP_COMMON_CFG                     1          /**< Common configuration PCI capability ID    */
-#define VIRTIO_PCI_CAP_NOTIFY_CFG                     2          /**< Notification area PCI capability ID       */
-#define VIRTIO_PCI_CAP_ISR_CFG                        3          /**< ISR PCI capability id                     */
-#define VIRTIO_PCI_CAP_DEVICE_CFG                     4          /**< Device-specific PCI cfg capability ID     */
-#define VIRTIO_PCI_CAP_PCI_CFG                        5          /**< PCI CFG capability ID                     */
+#define VIRTIO_PCI_CAP_COMMON_CFG                       1        /**< Common configuration PCI capability ID    */
+#define VIRTIO_PCI_CAP_NOTIFY_CFG                       2        /**< Notification area PCI capability ID       */
+#define VIRTIO_PCI_CAP_ISR_CFG                          3        /**< ISR PCI capability id                     */
+#define VIRTIO_PCI_CAP_DEVICE_CFG                       4        /**< Device-specific PCI cfg capability ID     */
+#define VIRTIO_PCI_CAP_PCI_CFG                          5        /**< PCI CFG capability ID                     */
 
-#define VIRTIO_PCI_CAP_ID_VENDOR                   0x09          /**< Vendor-specific PCI CFG Device Cap. ID    */
+#define VIRTIO_PCI_CAP_ID_VENDOR                     0x09        /**< Vendor-specific PCI CFG Device Cap. ID    */
 
 /**
  * The following is the PCI capability struct common to all VirtIO capability types
@@ -81,14 +84,15 @@ typedef struct virtio_pci_cap
 }  VIRTIO_PCI_CAP_T, *PVIRTIO_PCI_CAP_T;
 
 /**
- * Local implementation's per-queue usage (e.g. not part of VirtIO specification)
+ * Local implementation's usage context of a queue (e.g. not part of VirtIO specification)
  */
-typedef struct VIRTQ_CONTEXT
+typedef struct VIRTQ_SHADOW
 {
     const char *pcszName[32];                                   /**< Dev-specific name of queue                */
-    uint16_t    uNextAvailIdx;                                  /**< Consumer's position in avail ring         */
-    uint16_t    uNextUsedIdx;                                   /**< Consumer's position in used ring          */
-} VIRTQ_CONTEXT_T, *PVIRTQ_CONTEXT_T;
+    uint16_t    uAvailIdx;                                      /**< Consumer's position in avail ring         */
+    uint16_t    uUsedIdx;                                       /**< Consumer's position in used ring          */
+    bool        fEventThresholdReached;                         /**< Don't lose track while queueing ahead     */
+} VIRTQ_SHADOW_T, *PVIRTQ_SHADOW_T;
 
 /**
  * VirtIO 1.0 Capabilities' related MMIO-mapped structs:
@@ -172,7 +176,7 @@ typedef struct VIRTIOSTATE
     uint8_t                   uPrevDeviceStatus;                 /**< (MMIO) Prev Device Status           GUEST */
     uint8_t                   uConfigGeneration;                 /**< (MMIO) Device config sequencer       HOST */
 
-    VIRTQ_CONTEXT_T           queueContext[VIRTQ_MAX_CNT];       /**< Local impl-specific queue context         */
+    VIRTQ_SHADOW_T            queueShadow[VIRTQ_MAX_CNT];       /**< Local impl-specific queue context         */
     VIRTIOCALLBACKS           virtioCallbacks;                   /**< Callback vectors to client                */
 
     PFNPCICONFIGREAD          pfnPciConfigReadOld;               /**< Prev rd. cb. intercepting PCI Cfg I/O     */
@@ -241,7 +245,7 @@ typedef struct virt_used
 * Actual Parameters:
 *     @oaram    pPhysCapStruct - [input]  Pointer to MMIO mapped capability struct
 *     @param    pCfgCap        - [input]  Pointer to capability in PCI configuration area
-*     @param fMatched       - [output] True if GCPhysAddr is within the physically mapped capability.
+*     @param    fMatched       - [output] True if GCPhysAddr is within the physically mapped capability.
 *
 * Implied parameters:
 *     @param    GCPhysAddr     - [input, implied] Physical address accessed (via MMIO callback)
@@ -351,7 +355,7 @@ DECLINLINE(int) vqIsEventNeeded(uint16_t uEventIdx, uint16_t uDescIdxNew, uint16
 
 DECLINLINE(bool) vqIsEmpty(PVIRTIOSTATE pVirtio, uint16_t qIdx)
 {
-    return vqReadAvailDescIdx(pVirtio, qIdx) == pVirtio->queueContext->uNextAvailIdx;
+    return vqReadAvailDescIdx(pVirtio, qIdx) == pVirtio->queueShadow->uAvailIdx;
 }
 
 /**
@@ -360,6 +364,7 @@ DECLINLINE(bool) vqIsEmpty(PVIRTIOSTATE pVirtio, uint16_t qIdx)
 DECLINLINE(void) vqReadDesc(PVIRTIOSTATE pVirtio, uint16_t qIdx, uint32_t uDescIdx, PVIRTQ_DESC_T pDesc)
 {
     //Log(("%s virtioQueueReadDesc: ring=%p idx=%u\n", INSTANCE(pState), pVirtQ, idx));
+    AssertMsg(pVirtio->uDeviceStatus & VIRTIO_STATUS_DRIVER_OK, ("Called with guest driver not ready\n"));
     PDMDevHlpPhysRead(pVirtio->CTX_SUFF(pDevIns),
                       pVirtio->pGcPhysQueueDesc[qIdx]
                          + sizeof(VIRTQ_DESC_T) * (uDescIdx % pVirtio->uQueueSize[qIdx]),
@@ -372,6 +377,7 @@ DECLINLINE(void) vqReadDesc(PVIRTIOSTATE pVirtio, uint16_t qIdx, uint32_t uDescI
 DECLINLINE(uint16_t) vqReadAvailRingDescIdx(PVIRTIOSTATE pVirtio, uint16_t qIdx, uint32_t availIdx)
 {
     uint16_t uDescIdx;
+    AssertMsg(pVirtio->uDeviceStatus & VIRTIO_STATUS_DRIVER_OK, ("Called with guest driver not ready\n"));
     PDMDevHlpPhysRead(pVirtio->CTX_SUFF(pDevIns),
                       pVirtio->pGcPhysQueueAvail[qIdx]
                          + RT_UOFFSETOF_DYN(VIRTQ_AVAIL_T, auRing[availIdx % pVirtio->uQueueSize[qIdx]]),
@@ -382,6 +388,7 @@ DECLINLINE(uint16_t) vqReadAvailRingDescIdx(PVIRTIOSTATE pVirtio, uint16_t qIdx,
 DECLINLINE(uint16_t) vqReadAvailDescIdx(PVIRTIOSTATE pVirtio, uint16_t qIdx)
 {
     uint16_t uDescIdx;
+    AssertMsg(pVirtio->uDeviceStatus & VIRTIO_STATUS_DRIVER_OK, ("Called with guest driver not ready\n"));
     PDMDevHlpPhysRead(pVirtio->CTX_SUFF(pDevIns),
                       pVirtio->pGcPhysQueueAvail[qIdx] + RT_UOFFSETOF(VIRTQ_AVAIL_T, uDescIdx),
                       &uDescIdx, sizeof(uDescIdx));
@@ -391,6 +398,7 @@ DECLINLINE(uint16_t) vqReadAvailDescIdx(PVIRTIOSTATE pVirtio, uint16_t qIdx)
 DECLINLINE(uint16_t) vqReadAvailFlags(PVIRTIOSTATE pVirtio, uint16_t qIdx)
 {
     uint16_t fFlags;
+    AssertMsg(pVirtio->uDeviceStatus & VIRTIO_STATUS_DRIVER_OK, ("Called with guest driver not ready\n"));
     PDMDevHlpPhysRead(pVirtio->CTX_SUFF(pDevIns),
                       pVirtio->pGcPhysQueueAvail[qIdx] + RT_UOFFSETOF(VIRTQ_AVAIL_T, fFlags),
                       &fFlags, sizeof(fFlags));
@@ -401,6 +409,7 @@ DECLINLINE(uint16_t) vqReadAvailUsedEvent(PVIRTIOSTATE pVirtio, uint16_t qIdx)
 {
     uint16_t uUsedEventIdx;
     /** VirtIO 1.0 uUsedEventIdx (used_event) immediately follows ring */
+    AssertMsg(pVirtio->uDeviceStatus & VIRTIO_STATUS_DRIVER_OK, ("Called with guest driver not ready\n"));
     PDMDevHlpPhysRead(pVirtio->CTX_SUFF(pDevIns),
                       + RT_UOFFSETOF_DYN(VIRTQ_AVAIL_T, auRing[pVirtio->uQueueSize[qIdx]]),
                       &uUsedEventIdx, sizeof(uUsedEventIdx));
@@ -413,6 +422,7 @@ DECLINLINE(uint16_t) vqReadAvailUsedEvent(PVIRTIOSTATE pVirtio, uint16_t qIdx)
 DECLINLINE(void) vqWriteUsedElem(PVIRTIOSTATE pVirtio, uint16_t qIdx, uint32_t usedIdx, uint32_t uDescIdx, uint32_t uLen)
 {
     VIRTQ_USED_ELEM_T elem = { uDescIdx,  uLen };
+    AssertMsg(pVirtio->uDeviceStatus & VIRTIO_STATUS_DRIVER_OK, ("Called with guest driver not ready\n"));
     PDMDevHlpPCIPhysWrite(pVirtio->CTX_SUFF(pDevIns),
                           pVirtio->pGcPhysQueueUsed[qIdx]
                             + RT_UOFFSETOF_DYN(VIRTQ_USED_T, auRing[usedIdx % pVirtio->uQueueSize[qIdx]]),
@@ -421,6 +431,7 @@ DECLINLINE(void) vqWriteUsedElem(PVIRTIOSTATE pVirtio, uint16_t qIdx, uint32_t u
 
 DECLINLINE(void) vqWriteUsedRingDescIdx(PVIRTIOSTATE pVirtio, uint16_t qIdx, uint16_t uDescIdx)
 {
+    AssertMsg(pVirtio->uDeviceStatus & VIRTIO_STATUS_DRIVER_OK, ("Called with guest driver not ready\n"));
     PDMDevHlpPCIPhysWrite(pVirtio->CTX_SUFF(pDevIns),
                           pVirtio->pGcPhysQueueUsed[qIdx] + RT_UOFFSETOF(VIRTQ_USED_T, uDescIdx),
                           &uDescIdx, sizeof(uDescIdx));
@@ -429,6 +440,7 @@ DECLINLINE(void) vqWriteUsedRingDescIdx(PVIRTIOSTATE pVirtio, uint16_t qIdx, uin
 DECLINLINE(uint16_t)vqReadUsedDescIdx(PVIRTIOSTATE pVirtio, uint16_t qIdx)
 {
     uint16_t uDescIdx;
+    AssertMsg(pVirtio->uDeviceStatus & VIRTIO_STATUS_DRIVER_OK, ("Called with guest driver not ready\n"));
     PDMDevHlpPhysRead(pVirtio->CTX_SUFF(pDevIns),
                       pVirtio->pGcPhysQueueUsed[qIdx] + RT_UOFFSETOF(VIRTQ_USED_T, uDescIdx),
                       &uDescIdx, sizeof(uDescIdx));
@@ -438,6 +450,7 @@ DECLINLINE(uint16_t)vqReadUsedDescIdx(PVIRTIOSTATE pVirtio, uint16_t qIdx)
 DECLINLINE(uint16_t) vqReadUsedFlags(PVIRTIOSTATE pVirtio, uint16_t qIdx)
 {
     uint16_t fFlags;
+    AssertMsg(pVirtio->uDeviceStatus & VIRTIO_STATUS_DRIVER_OK, ("Called with guest driver not ready\n"));
     PDMDevHlpPhysRead(pVirtio->CTX_SUFF(pDevIns),
                       pVirtio->pGcPhysQueueUsed[qIdx] + RT_UOFFSETOF(VIRTQ_USED_T, fFlags),
                       &fFlags, sizeof(fFlags));
@@ -446,6 +459,7 @@ DECLINLINE(uint16_t) vqReadUsedFlags(PVIRTIOSTATE pVirtio, uint16_t qIdx)
 
 DECLINLINE(void) vqWriteUsedFlags(PVIRTIOSTATE pVirtio, uint16_t qIdx, uint32_t fFlags)
 {
+    AssertMsg(pVirtio->uDeviceStatus & VIRTIO_STATUS_DRIVER_OK, ("Called with guest driver not ready\n"));
     PDMDevHlpPCIPhysWrite(pVirtio->CTX_SUFF(pDevIns),
                           pVirtio->pGcPhysQueueUsed[qIdx] + RT_UOFFSETOF(VIRTQ_USED_T, fFlags),
                           &fFlags, sizeof(fFlags));
@@ -455,6 +469,7 @@ DECLINLINE(uint16_t) vqReadUsedAvailEvent(PVIRTIOSTATE pVirtio, uint16_t qIdx)
 {
     uint16_t uAvailEventIdx;
     /** VirtIO 1.0 uAvailEventIdx (avail_event) immediately follows ring */
+    AssertMsg(pVirtio->uDeviceStatus & VIRTIO_STATUS_DRIVER_OK, ("Called with guest driver not ready\n"));
     PDMDevHlpPhysRead(pVirtio->CTX_SUFF(pDevIns),
                     + RT_UOFFSETOF_DYN(VIRTQ_USED_T, auRing[pVirtio->uQueueSize[qIdx]]),
                       &uAvailEventIdx, sizeof(uAvailEventIdx));
@@ -463,7 +478,8 @@ DECLINLINE(uint16_t) vqReadUsedAvailEvent(PVIRTIOSTATE pVirtio, uint16_t qIdx)
 
 DECLINLINE(void) vqWriteUsedAvailEvent(PVIRTIOSTATE pVirtio, uint16_t qIdx, uint32_t uAvailEventIdx)
 {
-    /** VirtIO 1.0 uAvailEventIdx (avail event) immediately follows ring */
+    /** VirtIO 1.0 uAvailEventIdx (avail_event) immediately follows ring */
+    AssertMsg(pVirtio->uDeviceStatus & VIRTIO_STATUS_DRIVER_OK, ("Called with guest driver not ready\n"));
     PDMDevHlpPCIPhysWrite(pVirtio->CTX_SUFF(pDevIns),
                           pVirtio->pGcPhysQueueUsed[qIdx]
                             + RT_UOFFSETOF_DYN(VIRTQ_USED_T, auRing[pVirtio->uQueueSize[qIdx]]),
@@ -494,12 +510,13 @@ DECLINLINE(void) virtioLogDeviceStatus( uint8_t status)
     }
 }
 
-void   vqNotified(PVIRTIOSTATE pVirtio, uint32_t qidx, uint16_t uDescIdx);
-static int virtioRaiseInterrupt(PVIRTIOSTATE pVirtio, uint8_t uCause);
-
-//void    virtioNotifyDriver(     VIRTIOHANDLE hVirtio);
-//void    virtQueueNotify(        VIRTIOHANDLE hVirtio, PVQUEUE pQueue);
-//void    vringSetNotification(   VIRTIOHANDLE hVirtio, PVIRTQ pVirtQ, bool fEnabled);
+       void vqNotified              (PVIRTIOSTATE pVirtio, uint32_t qidx, uint16_t uDescIdx);
+static void vqNotify                (PVIRTIOSTATE pVirtio, uint16_t qIdx);
+static void vqReset                 (PVIRTIOSTATE pVirtio, uint16_t qIdx);
+static int  virtioRaiseInterrupt    (PVIRTIOSTATE pVirtio, uint8_t uCause);
+static void virtioLowerInterrupt    (PVIRTIOSTATE pVirtio);
+static int  virtioCommonCfgAccessed (PVIRTIOSTATE pVirtio, int fWrite, off_t uOffset, unsigned cb, void const *pv);
+static void virtioGuestResetted     (PVIRTIOSTATE pVirtio);
 
 static DECLCALLBACK(int) virtioR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM);
 static DECLCALLBACK(int) virtioR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass);
