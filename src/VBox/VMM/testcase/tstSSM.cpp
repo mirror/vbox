@@ -668,13 +668,12 @@ static int createFakeVM(PVM *ppVM)
 
 #ifdef VBOX_BUGREF_9217
                     PVMCPU pVCpu = (PVMCPU)(pVM + 1);
-                    pVM->apCpusR3[0]= pVCpu;
+#else
+                    PVMCPU pVCpu = &pVM->aCpus[0];
+#endif
                     pVCpu->pVMR3 = pVM;
                     pVCpu->hNativeThread = RTThreadNativeSelf();
-#else
-                    pVM->aCpus[0].pVMR3 = pVM;
-                    pVM->aCpus[0].hNativeThread = RTThreadNativeSelf();
-#endif
+                    pVM->apCpusR3[0] = pVCpu;
 
                     pUVM->pVM = pVM;
                     *ppVM = pVM;
@@ -714,19 +713,13 @@ static void destroyFakeVM(PVM pVM)
 /**
  *  Entry point.
  */
-extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
+int main(int argc, char **argv)
 {
-    RT_NOREF1(envp);
-
     /*
      * Init runtime and static data.
      */
-#ifdef VBOX_BUGREF_9217
     int rc = RTR3InitExe(argc, &argv, 0);
     AssertRCReturn(rc, RTEXITCODE_INIT);
-#else
-    RTR3InitExe(argc, &argv, RTR3INIT_FLAGS_SUPLIB);
-#endif
     RTPrintf("tstSSM: TESTING...\n");
     initBigMem();
     const char *pszFilename = "SSMTestSave#1";
@@ -734,14 +727,6 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     /*
      * Create an fake VM structure and init SSM.
      */
-#ifndef VBOX_BUGREF_9217
-    int rc = SUPR3Init(NULL);
-    if (RT_FAILURE(rc))
-    {
-        RTPrintf("Fatal error: SUP Failure! rc=%Rrc\n", rc);
-        return 1;
-    }
-#endif
     PVM pVM;
     if (createFakeVM(&pVM))
         return 1;
@@ -957,15 +942,4 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     RTPrintf("tstSSM: SUCCESS\n");
     return 0;
 }
-
-
-#if !defined(VBOX_WITH_HARDENING) || !defined(RT_OS_WINDOWS)
-/**
- * Main entry point.
- */
-int main(int argc, char **argv, char **envp)
-{
-    return TrustedMain(argc, argv, envp);
-}
-#endif
 

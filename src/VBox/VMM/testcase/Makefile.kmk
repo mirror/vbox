@@ -60,14 +60,15 @@ PROGRAMS += tstVMMFork
  endif
  ifdef VBOX_WITH_TESTCASES
   if defined(VBOX_WITH_HARDENING) && "$(KBUILD_TARGET)" == "win"
-PROGRAMS += tstCFGMHardened tstSSMHardened tstVMREQHardened tstMMHyperHeapHardened tstAnimateHardened
-DLLS     += tstCFGM tstSSM tstVMREQ tstMMHyperHeap tstAnimate
+PROGRAMS += tstCFGMHardened tstVMREQHardened tstMMHyperHeapHardened tstAnimateHardened
+DLLS     += tstCFGM tstVMREQ tstMMHyperHeap tstAnimate
   else
-PROGRAMS += tstCFGM tstSSM tstVMREQ tstMMHyperHeap tstAnimate
+PROGRAMS += tstCFGM tstVMREQ tstMMHyperHeap tstAnimate
   endif
 PROGRAMS += \
 	tstCompressionBenchmark \
 	tstIEMCheckMc \
+	tstSSM \
 	tstVMMR0CallHost-1 \
 	tstVMMR0CallHost-2 \
 	tstX86-FpuSaveRestore
@@ -250,15 +251,7 @@ tstMMHyperHeap_LIBS     = $(LIB_VMM) $(LIB_REM) $(LIB_RUNTIME)
 #
 # Saved state manager testcase.
 #
-if defined(VBOX_WITH_HARDENING) && "$(KBUILD_TARGET)" == "win"
-tstSSMHardened_TEMPLATE = VBoxR3HardenedTstExe
-tstSSMHardened_NAME     = tstSSM
-tstSSMHardened_DEFS     = PROGRAM_NAME_STR=\"tstSSM\"
-tstSSMHardened_SOURCES  = ../../HostDrivers/Support/SUPR3HardenedMainTemplateTestcase.cpp
-tstSSM_TEMPLATE         = VBoxR3HardenedTstDll
-else
 tstSSM_TEMPLATE         = VBOXR3TSTEXE
-endif
 tstSSM_INCS             = $(VBOX_PATH_VMM_SRC)/include
 tstSSM_SOURCES          = tstSSM.cpp
 tstSSM_LIBS             = $(LIB_VMM) $(LIB_REM) $(LIB_RUNTIME)
