@@ -21,7 +21,7 @@
 *********************************************************************************************************************************/
 #include <qapplication.h>
 #include <VBox/dbggui.h>
-#include <VBox/vmm/vm.h>
+#include <VBox/vmm/vmapi.h>
 #include <iprt/errcore.h>
 #include <iprt/initterm.h>
 #include <VBox/log.h>

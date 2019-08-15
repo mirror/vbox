@@ -16,7 +16,7 @@
  */
 
 #include <VBox/err.h>
-#include <VBox/vmm/vm.h>
+#include <VBox/vmm/vmapi.h>
 #include <iprt/string.h>
 
 

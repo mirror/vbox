@@ -27,7 +27,6 @@
 # include <VirtualBox_XPCOM.h>
 #endif /* !RT_OS_WINDOWS */
 #include <VBox/dbggui.h>
-#include <VBox/vmm/vm.h>
 #include <iprt/errcore.h>
 #include <iprt/assert.h>
 #include <iprt/alloc.h>
