@@ -58,6 +58,7 @@
  *
  */
 
+#define LOG_GROUP LOG_GROUP_HGSMI
 #include <iprt/alloc.h>
 #include <iprt/critsect.h>
 #include <iprt/heap.h>
@@ -67,9 +68,9 @@
 
 #include <VBox/AssertGuest.h>
 #include <iprt/errcore.h>
-#define LOG_GROUP LOG_GROUP_HGSMI
 #include <VBox/log.h>
 #include <VBox/vmm/ssm.h>
+#include <VBox/vmm/vmm.h>
 
 #include "HGSMIHost.h"
 #include <HGSMIChannels.h>
@@ -325,7 +326,7 @@ HGSMIOFFSET HGSMIGuestRead(PHGSMIINSTANCE pIns)
 
     AssertPtr(pIns);
 
-    VM_ASSERT_EMT(pIns->pVM);
+    Assert(VMMGetCpu(pIns->pVM) != NULL);
 
 #ifndef VBOX_WITH_WDDM
     /* Currently there is no functionality here. */
@@ -342,7 +343,7 @@ HGSMIOFFSET HGSMIGuestRead(PHGSMIINSTANCE pIns)
 
 static bool hgsmiProcessHostCmdCompletion(HGSMIINSTANCE *pIns, HGSMIOFFSET offBuffer, bool fCompleteFirst)
 {
-    VM_ASSERT_EMT(pIns->pVM);
+    Assert(VMMGetCpu(pIns->pVM) != NULL);
 
     int rc = hgsmiFIFOLock(pIns);
     if (RT_SUCCESS(rc))
@@ -412,7 +413,7 @@ HGSMIOFFSET HGSMIHostRead(HGSMIINSTANCE *pIns)
 {
     LogFlowFunc(("pIns %p\n", pIns));
 
-    VM_ASSERT_EMT(pIns->pVM);
+    Assert(VMMGetCpu(pIns->pVM) != NULL);
 
     AssertPtrReturn(pIns->pHGFlags, HGSMIOFFSET_VOID);
     int rc = hgsmiFIFOLock(pIns);

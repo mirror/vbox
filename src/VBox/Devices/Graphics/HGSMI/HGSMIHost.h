@@ -21,8 +21,7 @@
 # pragma once
 #endif
 
-#include <VBox/vmm/vm.h>
-
+#include <VBox/types.h>
 #include <HGSMI.h>
 #include <HGSMIChSetup.h>
 
