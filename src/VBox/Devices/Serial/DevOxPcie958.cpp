@@ -28,7 +28,6 @@
 #include <VBox/msi.h>
 #include <VBox/vmm/pdm.h>
 #include <VBox/vmm/pdmpci.h>
-#include <VBox/vmm/vm.h>
 #include <VBox/err.h>
 #include <VBox/log.h>
 #include <iprt/assert.h>
@@ -135,15 +134,6 @@ typedef DEVOX958 *PDEVOX958;
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
 
-
-/*********************************************************************************************************************************
-*   Global Variables                                                                                                             *
-*********************************************************************************************************************************/
-
-
-/*********************************************************************************************************************************
-*   Internal Functions                                                                                                           *
-*********************************************************************************************************************************/
 
 
 /**
@@ -598,10 +588,12 @@ static DECLCALLBACK(int) ox958R3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     if (RT_FAILURE(rc))
         return rc;
 
+    /** @todo This dynamic symbol resolving will be reworked later! */
     PVM pVM = PDMDevHlpGetVM(pDevIns);
     RTR0PTR pfnSerialIrqReqR0 = NIL_RTR0PTR;
     RTRCPTR pfnSerialIrqReqRC = NIL_RTRCPTR;
 
+#ifdef VBOX_WITH_RAW_MODE_KEEP
     if (   fRCEnabled
         && VM_IS_RAW_MODE_ENABLED(pVM))
     {
@@ -609,6 +601,7 @@ static DECLCALLBACK(int) ox958R3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
         if (RT_FAILURE(rc))
             return rc;
     }
+#endif
 
     if (fR0Enabled)
     {

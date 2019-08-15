@@ -24,7 +24,6 @@
 #define LOG_GROUP LOG_GROUP_DEV_SERIAL
 #include <VBox/vmm/pdmdev.h>
 #include <VBox/vmm/pdmserialifs.h>
-#include <VBox/vmm/vm.h>
 #include <iprt/assert.h>
 #include <iprt/uuid.h>
 #include <iprt/string.h>
@@ -33,11 +32,6 @@
 
 #include "VBoxDD.h"
 #include "UartCore.h"
-
-
-/*********************************************************************************************************************************
-*   Defined Constants And Macros                                                                                                 *
-*********************************************************************************************************************************/
 
 
 /*********************************************************************************************************************************
@@ -76,15 +70,6 @@ typedef DEVSERIAL *PDEVSERIAL;
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
 
-
-/*********************************************************************************************************************************
-*   Global Variables                                                                                                             *
-*********************************************************************************************************************************/
-
-
-/*********************************************************************************************************************************
-*   Internal Functions                                                                                                           *
-*********************************************************************************************************************************/
 
 
 PDMBOTHCBDECL(void) serialIrqReq(PPDMDEVINS pDevIns, PUARTCORE pUart, unsigned iLUN, int iLvl)
@@ -434,25 +419,23 @@ static DECLCALLBACK(int) serialR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
     RTR0PTR pfnSerialIrqReqR0 = NIL_RTR0PTR;
     RTRCPTR pfnSerialIrqReqRC = NIL_RTRCPTR;
 
+#ifdef VBOX_WITH_RAW_MODE_KEEP
     if (pThis->fRCEnabled)
     {
-        rc = PDMDevHlpIOPortRegisterRC(pDevIns, uIoBase, 8, 0, "serialIoPortWrite",
-                                      "serialIoPortRead", NULL, NULL, "SERIAL");
+        rc = PDMDevHlpIOPortRegisterRC(pDevIns, uIoBase, 8, 0, "serialIoPortWrite", "serialIoPortRead", NULL, NULL, "SERIAL");
         if (   RT_SUCCESS(rc)
-            && VM_IS_RAW_MODE_ENABLED(pVM))
+            && VM_IS_RAW_MODE_ENABLED(pVM)) /** @todo this dynamic symbol resolving will be reworked later! */
             rc = PDMR3LdrGetSymbolRC(pVM, pDevIns->pReg->szRCMod, "serialIrqReq", &pfnSerialIrqReqRC);
-
         if (RT_FAILURE(rc))
             return rc;
     }
+#endif
 
     if (pThis->fR0Enabled)
     {
-        rc = PDMDevHlpIOPortRegisterR0(pDevIns, uIoBase, 8, 0, "serialIoPortWrite",
-                                      "serialIoPortRead", NULL, NULL, "SERIAL");
-        if (RT_SUCCESS(rc))
+        rc = PDMDevHlpIOPortRegisterR0(pDevIns, uIoBase, 8, 0, "serialIoPortWrite", "serialIoPortRead", NULL, NULL, "SERIAL");
+        if (RT_SUCCESS(rc)) /** @todo this dynamic symbol resolving will be reworked later! */
             rc = PDMR3LdrGetSymbolR0(pVM, pDevIns->pReg->szR0Mod, "serialIrqReq", &pfnSerialIrqReqR0);
-
         if (RT_FAILURE(rc))
             return rc;
     }
