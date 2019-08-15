@@ -113,12 +113,21 @@ typedef struct GVMCPU
 #endif
 } GVMCPU;
 #ifdef VBOX_BUGREF_9217
+# if RT_GNUC_PREREQ(4, 6) && defined(__cplusplus)
+#  pragma GCC diagnostic push
+# endif
+# if RT_GNUC_PREREQ(4, 3) && defined(__cplusplus)
+#  pragma GCC diagnostic ignored "-Winvalid-offsetof"
+# endif
 AssertCompileMemberAlignment(GVMCPU, idCpu,  4096);
 AssertCompileMemberAlignment(GVMCPU, gvmm,   64);
 # ifdef VBOX_WITH_NEM_R0
 AssertCompileMemberAlignment(GVMCPU, nem,    64);
 # endif
 AssertCompileSizeAlignment(GVMCPU,           4096);
+# if RT_GNUC_PREREQ(4, 6) && defined(__cplusplus)
+#  pragma GCC diagnostic pop
+# endif
 #else
 AssertCompileMemberOffset(GVMCPU, gvmm,      64);
 # ifdef VBOX_WITH_NEM_R0
@@ -228,6 +237,12 @@ typedef struct GVM
     GVMCPU          aCpus[1];
 } GVM;
 #ifdef VBOX_BUGREF_9217
+# if RT_GNUC_PREREQ(4, 6) && defined(__cplusplus)
+#  pragma GCC diagnostic push
+# endif
+# if RT_GNUC_PREREQ(4, 3) && defined(__cplusplus)
+#  pragma GCC diagnostic ignored "-Winvalid-offsetof"
+# endif
 AssertCompileMemberAlignment(GVM, gvmm,     64);
 AssertCompileMemberAlignment(GVM, gmm,      64);
 # ifdef VBOX_WITH_NEM_R0
@@ -236,6 +251,9 @@ AssertCompileMemberAlignment(GVM, nem,      64);
 AssertCompileMemberAlignment(GVM, rawpci,   64);
 AssertCompileMemberAlignment(GVM, aCpus,    4096);
 AssertCompileSizeAlignment(GVM,             4096);
+# if RT_GNUC_PREREQ(4, 6) && defined(__cplusplus)
+#  pragma GCC diagnostic pop
+# endif
 #else
 AssertCompileMemberOffset(GVM, gvmm,        64);
 AssertCompileMemberOffset(GVM, gmm,         64 + 256);
