@@ -243,6 +243,7 @@ typedef struct GVM
 # if RT_GNUC_PREREQ(4, 3) && defined(__cplusplus)
 #  pragma GCC diagnostic ignored "-Winvalid-offsetof"
 # endif
+AssertCompileMemberAlignment(GVM, u32Magic, 64);
 AssertCompileMemberAlignment(GVM, gvmm,     64);
 AssertCompileMemberAlignment(GVM, gmm,      64);
 # ifdef VBOX_WITH_NEM_R0

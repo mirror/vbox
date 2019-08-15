@@ -1246,7 +1246,7 @@ typedef struct VM
     /** @} */
 
     /** Padding - the unions must be aligned on a 64 bytes boundary. */
-    uint8_t                     abAlignment3[24];
+    uint8_t                     abAlignment3[HC_ARCH_BITS == 64 ? 24 : 52];
 
     /** CPUM part. */
     union
@@ -1462,9 +1462,9 @@ typedef struct VM
 
     /** Padding for aligning the structure size on a page boundrary. */
 #ifdef VBOX_WITH_REM
-    uint8_t         abAlignment2[2520       - sizeof(PVMCPUR0) * VMM_MAX_CPU_COUNT];
+    uint8_t         abAlignment2[3032       - (sizeof(PVMCPUR3) + sizeof(PVMCPUR0)) * VMM_MAX_CPU_COUNT];
 #else
-    uint8_t         abAlignment2[2520 + 256 - sizeof(PVMCPUR0) * VMM_MAX_CPU_COUNT];
+    uint8_t         abAlignment2[3032 + 256 - (sizeof(PVMCPUR3) + sizeof(PVMCPUR0)) * VMM_MAX_CPU_COUNT];
 #endif
 
     /* ---- end small stuff ---- */
