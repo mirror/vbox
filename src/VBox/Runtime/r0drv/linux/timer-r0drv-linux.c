@@ -1660,7 +1660,16 @@ RTDECL(uint32_t) RTTimerGetSystemGranularity(void)
         return Ts.tv_nsec;
     }
 #endif
+    /* */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 9, 0) || LINUX_VERSION_CODE >= KERNEL_VERSION(4, 13, 0)
+    /* On 4.9, 4.10 and 4.12 we've observed tstRTR0Timer failures of the omni timer tests
+       where we get about half of the ticks we want.  The failing test is using this value
+       as interval.  So, this is a very very crude hack to try make omni timers work
+       correctly without actually knowing what's going wrong... */
+    return RT_NS_1SEC * 2 / HZ; /* ns */
+#else
     return RT_NS_1SEC / HZ; /* ns */
+#endif
 }
 RT_EXPORT_SYMBOL(RTTimerGetSystemGranularity);
 
