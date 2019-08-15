@@ -186,10 +186,18 @@ STDMETHODIMP VBoxClipboardWinStreamImpl::Read(void *pvBuffer, ULONG nBytesToRead
         if (   m_hObj == SHAREDCLIPBOARDOBJHANDLE_INVALID
             && m_pURITransfer->ProviderIface.pfnObjOpen)
         {
-            VBOXCLIPBOARDCREATEPARMS createParms;
+            VBOXCLIPBOARDOBJOPENCREATEPARMS createParms;
             RT_ZERO(createParms);
 
-            rc = m_pURITransfer->ProviderIface.pfnObjOpen(&m_pURITransfer->ProviderCtx, m_strPath.c_str(), &createParms, &m_hObj);
+            createParms.pszPath = RTStrDup(m_strPath.c_str());
+            if (createParms.pszPath)
+            {
+                rc = m_pURITransfer->ProviderIface.pfnObjOpen(&m_pURITransfer->ProviderCtx, &createParms, &m_hObj);
+
+                RTStrFree(createParms.pszPath);
+            }
+            else
+                rc = VERR_NO_MEMORY;
         }
         else
             rc = VINF_SUCCESS;

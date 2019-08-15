@@ -244,33 +244,37 @@ DECLCALLBACK(int) VBoxClipboardWinDataObject::readThread(RTTHREAD ThreadSelf, vo
     AssertPtr(pTransfer);
 
     pTransfer->Thread.fStarted = true;
+    pTransfer->Thread.fStop    = false;
 
     RTThreadUserSignal(RTThreadSelf());
 
-    LogRel2(("Shared Clipboard: Calculating transfer ....\n"));
+    LogRel2(("Shared Clipboard: Calculating transfer ...\n"));
 
     int rc = SharedClipboardURITransferOpen(pTransfer);
     if (RT_SUCCESS(rc))
     {
-        uint32_t cRoots;
-        char    *pszRoots;
-        rc = SharedClipboardURILTransferGetRoots(pTransfer, &pszRoots, &cRoots);
+        PVBOXCLIPBOARDROOTLIST pRootList;
+        rc = SharedClipboardURILTransferRootsAsList(pTransfer, &pRootList);
         if (RT_SUCCESS(rc))
         {
-            SharedClipboardURIListRootEntries lstRoots = RTCString(pszRoots, strlen(pszRoots)).split("\r\n");
-            Assert(lstRoots.size() == cRoots);
-
-            LogFlowFunc(("cRoots=%zu\n", lstRoots.size()));
-
-            for (uint32_t i = 0; i < lstRoots.size(); i++)
+            for (uint32_t i = 0; i < pRootList->Hdr.cRoots; i++)
             {
-                VBOXCLIPBOARDLISTOPENPARMS openParmsList;
-                rc = SharedClipboardURIListOpenParmsInit(&openParmsList);
-                if (RT_SUCCESS(rc))
-                {
-                    LogFlowFunc(("pszRoot=%s\n", lstRoots[i].c_str()));
+                PVBOXCLIPBOARDLISTENTRY pRootEntry = &pRootList->paEntries[i];
+                AssertPtr(pRootEntry);
 
-                    rc = RTStrCopy(openParmsList.pszPath, openParmsList.cbPath, lstRoots[i].c_str());
+                Assert(pRootEntry->cbInfo == sizeof(SHAREDCLIPBOARDFSOBJINFO));
+                PSHAREDCLIPBOARDFSOBJINFO pFsObjInfo = (PSHAREDCLIPBOARDFSOBJINFO)pRootEntry->pvInfo;
+
+                LogFlowFunc(("pszRoot=%s, fMode=0x%x\n", pRootEntry->pszName, pFsObjInfo->Attr.fMode));
+
+                if (RTFS_IS_DIRECTORY(pFsObjInfo->Attr.fMode))
+                {
+                    VBOXCLIPBOARDLISTOPENPARMS openParmsList;
+                    rc = SharedClipboardURIListOpenParmsInit(&openParmsList);
+                    if (RT_FAILURE(rc))
+                        break;
+
+                    rc = RTStrCopy(openParmsList.pszPath, openParmsList.cbPath, pRootEntry->pszName);
                     if (RT_FAILURE(rc))
                         break;
 
@@ -287,7 +291,7 @@ DECLCALLBACK(int) VBoxClipboardWinDataObject::readThread(RTTHREAD ThreadSelf, vo
                             LogFlowFunc(("cTotalObjects=%RU64, cbTotalSize=%RU64\n\n",
                                          hdrList.cTotalObjects, hdrList.cbTotalSize));
 
-                            for (uint64_t i = 0; i < hdrList.cTotalObjects; i++)
+                            do
                             {
                                 VBOXCLIPBOARDLISTENTRY entryList;
                                 rc = SharedClipboardURITransferListRead(pTransfer, hList, &entryList);
@@ -302,11 +306,16 @@ DECLCALLBACK(int) VBoxClipboardWinDataObject::readThread(RTTHREAD ThreadSelf, vo
                                     pThis->m_lstRootEntries.push_back(objEntry); /** @todo Can this throw? */
                                 }
                                 else
+                                {
+                                    if (rc == VERR_NO_MORE_FILES) /* End of list has been reached. */
+                                        rc = VINF_SUCCESS;
                                     break;
+                                }
 
                                 if (pTransfer->Thread.fStop)
                                     break;
-                            }
+
+                            } while (RT_SUCCESS(rc));
                         }
 
                         SharedClipboardURITransferListClose(pTransfer, hList);
@@ -314,10 +323,19 @@ DECLCALLBACK(int) VBoxClipboardWinDataObject::readThread(RTTHREAD ThreadSelf, vo
 
                     SharedClipboardURIListOpenParmsDestroy(&openParmsList);
                 }
+                else if (RTFS_IS_FILE(pFsObjInfo->Attr.fMode))
+                {
+                    FSOBJENTRY objEntry = { pRootEntry->pszName, *pFsObjInfo };
+
+                    pThis->m_lstRootEntries.push_back(objEntry); /** @todo Can this throw? */
+                }
 
                 if (RT_FAILURE(rc))
                     break;
             }
+
+            SharedClipboardURIRootListFree(pRootList);
+            pRootList = NULL;
 
             if (RT_SUCCESS(rc))
             {
@@ -336,8 +354,6 @@ DECLCALLBACK(int) VBoxClipboardWinDataObject::readThread(RTTHREAD ThreadSelf, vo
                 rc2 = RTSemEventWait(pThis->m_EventTransferComplete, RT_INDEFINITE_WAIT);
                 AssertRC(rc2);
             }
-
-            RTStrFree(pszRoots);
         }
 
         SharedClipboardURITransferClose(pTransfer);
@@ -552,16 +568,16 @@ STDMETHODIMP VBoxClipboardWinDataObject::GetData(LPFORMATETC pFormatEtc, LPSTGME
 
     if (pFormatEtc->cfFormat == m_cfFileContents)
     {
-        if (   pFormatEtc->lindex >= 0
-            && pFormatEtc->lindex < m_lstRootEntries.size())
+        if (          pFormatEtc->lindex >= 0
+            && (ULONG)pFormatEtc->lindex <  m_lstRootEntries.size())
         {
             m_uObjIdx = pFormatEtc->lindex; /* lIndex of FormatEtc contains the actual index to the object being handled. */
 
-            LogFlowFunc(("FormatIndex_FileContents: m_uObjIdx=%u\n", m_uObjIdx));
-
             FSOBJENTRY &fsObjEntry = m_lstRootEntries.at(m_uObjIdx);
 
-            LogRel2(("Shared Clipboard: Receiving file '%s' ...\n", fsObjEntry.strPath.c_str()));
+            LogFlowFunc(("FormatIndex_FileContents: m_uObjIdx=%u (entry '%s')\n", m_uObjIdx, fsObjEntry.strPath.c_str()));
+
+            LogRel2(("Shared Clipboard: Receiving object '%s' ...\n", fsObjEntry.strPath.c_str()));
 
             /* Hand-in the provider so that our IStream implementation can continue working with it. */
             hr = VBoxClipboardWinStreamImpl::Create(this /* pParent */, m_pTransfer,

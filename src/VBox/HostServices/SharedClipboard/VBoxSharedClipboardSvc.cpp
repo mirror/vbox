@@ -176,6 +176,7 @@
 #include <VBox/log.h>
 
 #include <VBox/AssertGuest.h>
+#include <VBox/GuestHost/clipboard-helper.h>
 #include <VBox/HostServices/Service.h>
 #include <VBox/HostServices/VBoxClipboardSvc.h>
 #include <VBox/HostServices/VBoxClipboardExt.h>
@@ -470,7 +471,7 @@ int vboxSvcClipboardMsgPeek(PVBOXCLIPBOARDCLIENT pClient, VBOXHGCMCALLHANDLE hCa
         {
             vboxSvcClipboardMsgSetPeekReturn(pFirstMsg, paParms, cParms);
             LogFlowFunc(("[Client %RU32] VBOX_SHARED_CLIPBOARD_GUEST_FN_MSG_PEEK_XXX -> VINF_SUCCESS (idMsg=%u (%s), cParms=%u)\n",
-                         pClient->uClientID, pFirstMsg->m_uMsg, VBoxSvcClipboardHostMsgToStr(pFirstMsg->m_uMsg),
+                         pClient->uClientID, pFirstMsg->m_uMsg, VBoxClipboardHostMsgToStr(pFirstMsg->m_uMsg),
                          pFirstMsg->m_cParms));
             return VINF_SUCCESS;
         }
@@ -534,24 +535,24 @@ int vboxSvcClipboardMsgGet(PVBOXCLIPBOARDCLIENT pClient, VBOXHGCMCALLHANDLE hCal
         if (pFirstMsg)
         {
             LogFlowFunc(("First message is: %RU32 %s (%RU32 parms)\n",
-                         pFirstMsg->m_uMsg, VBoxSvcClipboardHostMsgToStr(pFirstMsg->m_uMsg), pFirstMsg->m_cParms));
+                         pFirstMsg->m_uMsg, VBoxClipboardHostMsgToStr(pFirstMsg->m_uMsg), pFirstMsg->m_cParms));
 
             ASSERT_GUEST_MSG_RETURN(pFirstMsg->m_uMsg == idMsgExpected || idMsgExpected == UINT32_MAX,
                                     ("idMsg=%u (%s) cParms=%u, caller expected %u (%s) and %u\n",
-                                     pFirstMsg->m_uMsg, VBoxSvcClipboardHostMsgToStr(pFirstMsg->m_uMsg), pFirstMsg->m_cParms,
-                                     idMsgExpected, VBoxSvcClipboardHostMsgToStr(idMsgExpected), cParms),
+                                     pFirstMsg->m_uMsg, VBoxClipboardHostMsgToStr(pFirstMsg->m_uMsg), pFirstMsg->m_cParms,
+                                     idMsgExpected, VBoxClipboardHostMsgToStr(idMsgExpected), cParms),
                                     VERR_MISMATCH);
             ASSERT_GUEST_MSG_RETURN(pFirstMsg->m_cParms == cParms,
                                     ("idMsg=%u (%s) cParms=%u, caller expected %u (%s) and %u\n",
-                                     pFirstMsg->m_uMsg, VBoxSvcClipboardHostMsgToStr(pFirstMsg->m_uMsg), pFirstMsg->m_cParms,
-                                     idMsgExpected, VBoxSvcClipboardHostMsgToStr(idMsgExpected), cParms),
+                                     pFirstMsg->m_uMsg, VBoxClipboardHostMsgToStr(pFirstMsg->m_uMsg), pFirstMsg->m_cParms,
+                                     idMsgExpected, VBoxClipboardHostMsgToStr(idMsgExpected), cParms),
                                     VERR_WRONG_PARAMETER_COUNT);
 
             /* Check the parameter types. */
             for (uint32_t i = 0; i < cParms; i++)
                 ASSERT_GUEST_MSG_RETURN(pFirstMsg->m_paParms[i].type == paParms[i].type,
                                         ("param #%u: type %u, caller expected %u (idMsg=%u %s)\n", i, pFirstMsg->m_paParms[i].type,
-                                         paParms[i].type, pFirstMsg->m_uMsg, VBoxSvcClipboardHostMsgToStr(pFirstMsg->m_uMsg)),
+                                         paParms[i].type, pFirstMsg->m_uMsg, VBoxClipboardHostMsgToStr(pFirstMsg->m_uMsg)),
                                         VERR_WRONG_PARAMETER_TYPE);
             /*
              * Copy out the parameters.

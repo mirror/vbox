@@ -35,58 +35,90 @@ static int sharedClipboardURITransferWriteThread(RTTHREAD hThread, void *pvUser)
 static PSHAREDCLIPBOARDURITRANSFER sharedClipboardURICtxGetTransferInternal(PSHAREDCLIPBOARDURICTX pURI, uint32_t uIdx);
 #endif
 
+/** @todo Split this file up in different modules. */
 
-int SharedClipboardURIRootsInit(PVBOXCLIPBOARDROOTS pRoots)
+/**
+ * Allocates a new URI root list.
+ *
+ * @returns Allocated URI root list on success, or NULL on failure.
+ */
+PVBOXCLIPBOARDROOTLIST SharedClipboardURIRootListAlloc(void)
 {
-    AssertPtrReturn(pRoots, VERR_INVALID_POINTER);
+    PVBOXCLIPBOARDROOTLIST pRootList = (PVBOXCLIPBOARDROOTLIST)RTMemAllocZ(sizeof(VBOXCLIPBOARDROOTLIST));
 
-    RT_BZERO(pRoots, sizeof(VBOXCLIPBOARDROOTS));
+    return pRootList;
+}
 
-    const uint32_t cbRoots = _64K;
+/**
+ * Frees an URI root list.
+ *
+ * @param   pRootList           URI root list to free. The pointer will be
+ *                              invalid after returning from this function.
+ */
+void SharedClipboardURIRootListFree(PVBOXCLIPBOARDROOTLIST pRootList)
+{
+    if (!pRootList)
+        return;
 
-    pRoots->pszRoots = RTStrAlloc(cbRoots);
-    if (!pRoots->pszRoots)
-        return VERR_NO_MEMORY;
+    for (uint32_t i = 0; i < pRootList->Hdr.cRoots; i++)
+        SharedClipboardURIListEntryDestroy(&pRootList->paEntries[i]);
 
-    pRoots->cbRoots = cbRoots;
+    RTMemFree(pRootList);
+    pRootList = NULL;
+}
+
+/**
+ * Initializes an URI root list header.
+ *
+ * @returns VBox status code.
+ * @param   pRootLstHdr         Root list header to initialize.
+ */
+int SharedClipboardURIRootListHdrInit(PVBOXCLIPBOARDROOTLISTHDR pRootLstHdr)
+{
+    AssertPtrReturn(pRootLstHdr, VERR_INVALID_POINTER);
+
+    RT_BZERO(pRootLstHdr, sizeof(VBOXCLIPBOARDROOTLISTHDR));
 
     return VINF_SUCCESS;
 }
 
-void SharedClipboardURIRootsDestroy(PVBOXCLIPBOARDROOTS pRoots)
+/**
+ * Destroys an URI root list header.
+ *
+ * @param   pRootLstHdr         Root list header to destroy.
+ */
+void SharedClipboardURIRootListHdrDestroy(PVBOXCLIPBOARDROOTLISTHDR pRootLstHdr)
 {
-    if (!pRoots)
+    if (!pRootLstHdr)
         return;
 
-    if (pRoots->pszRoots)
-        RTStrFree(pRoots->pszRoots);
+    pRootLstHdr->fRoots = 0;
+    pRootLstHdr->cRoots = 0;
 }
 
-PVBOXCLIPBOARDROOTS SharedClipboardURIRootsDup(PVBOXCLIPBOARDROOTS pRoots)
+/**
+ * Duplicates an URI list header.
+ *
+ * @returns Duplicated URI list header on success, or NULL on failure.
+ * @param   pRootLstHdr         Root list header to duplicate.
+ */
+PVBOXCLIPBOARDROOTLISTHDR SharedClipboardURIRootListHdrDup(PVBOXCLIPBOARDROOTLISTHDR pRootLstHdr)
 {
-    AssertPtrReturn(pRoots, NULL);
+    AssertPtrReturn(pRootLstHdr, NULL);
 
     int rc = VINF_SUCCESS;
 
-    PVBOXCLIPBOARDROOTS pRootsDup = (PVBOXCLIPBOARDROOTS)RTMemAlloc(sizeof(VBOXCLIPBOARDROOTS));
+    PVBOXCLIPBOARDROOTLISTHDR pRootsDup = (PVBOXCLIPBOARDROOTLISTHDR)RTMemAllocZ(sizeof(VBOXCLIPBOARDROOTLISTHDR));
     if (pRootsDup)
     {
-        *pRootsDup = *pRoots;
-
-        if (pRoots->pszRoots)
-        {
-            pRootsDup->pszRoots = RTStrDup(pRoots->pszRoots);
-            if (!pRootsDup->pszRoots)
-                rc = VERR_NO_MEMORY;
-        }
+        *pRootsDup = *pRootLstHdr;
     }
+    else
+        rc = VERR_NO_MEMORY;
 
     if (RT_FAILURE(rc))
     {
-        if (pRootsDup->pszRoots)
-            RTStrFree(pRootsDup->pszRoots);
-
-        RTMemFree(pRootsDup);
+        SharedClipboardURIRootListHdrDestroy(pRootsDup);
         pRootsDup = NULL;
     }
 
@@ -94,10 +126,42 @@ PVBOXCLIPBOARDROOTS SharedClipboardURIRootsDup(PVBOXCLIPBOARDROOTS pRoots)
 }
 
 /**
- * Allocates a VBOXCLIPBOARDListHdr structure.
+ * (Deep) Copies a clipboard root list entry structure.
  *
  * @returns VBox status code.
- * @param   ppListEntry         Where to store the allocated VBOXCLIPBOARDListHdr structure on success.
+ * @param   pListEntry          Clipboard root list entry to copy.
+ */
+int SharedClipboardURIRootListEntryCopy(PVBOXCLIPBOARDROOTLISTENTRY pDst, PVBOXCLIPBOARDROOTLISTENTRY pSrc)
+{
+    return SharedClipboardURIListEntryCopy(pDst, pSrc);
+}
+
+/**
+ * Duplicates (allocates) a clipboard root list entry structure.
+ *
+ * @returns Duplicated clipboard root list entry structure on success.
+ * @param   pListEntry          Clipboard root list entry to duplicate.
+ */
+PVBOXCLIPBOARDROOTLISTENTRY SharedClipboardURIRootListEntryDup(PVBOXCLIPBOARDROOTLISTENTRY pRootListEntry)
+{
+    return SharedClipboardURIListEntryDup(pRootListEntry);
+}
+
+/**
+ * Destroys a clipboard root list entry structure.
+ *
+ * @param   pListEntry          Clipboard root list entry structure to destroy.
+ */
+void SharedClipboardURIRootListEntryDestroy(PVBOXCLIPBOARDROOTLISTENTRY pRootListEntry)
+{
+    return SharedClipboardURIListEntryDestroy(pRootListEntry);
+}
+
+/**
+ * Allocates a URI list header structure.
+ *
+ * @returns VBox status code.
+ * @param   ppListHdr           Where to store the allocated URI list header structure on success.
  */
 int SharedClipboardURIListHdrAlloc(PVBOXCLIPBOARDLISTHDR *ppListHdr)
 {
@@ -117,9 +181,9 @@ int SharedClipboardURIListHdrAlloc(PVBOXCLIPBOARDLISTHDR *ppListHdr)
 }
 
 /**
- * Frees a VBOXCLIPBOARDListHdr structure.
+ * Frees an URI list header structure.
  *
- * @param   pListEntry          VBOXCLIPBOARDListHdr structure to free.
+ * @param   pListEntry          URI list header structure to free.
  */
 void SharedClipboardURIListHdrFree(PVBOXCLIPBOARDLISTHDR pListHdr)
 {
@@ -135,10 +199,10 @@ void SharedClipboardURIListHdrFree(PVBOXCLIPBOARDLISTHDR pListHdr)
 }
 
 /**
- * Duplicates (allocates) a VBOXCLIPBOARDListHdr structure.
+ * Duplicates (allocates) an URI list header structure.
  *
- * @returns Duplicated VBOXCLIPBOARDListHdr structure on success.
- * @param   pListHdr            VBOXCLIPBOARDListHdr to duplicate.
+ * @returns Duplicated URI list header structure on success.
+ * @param   pListHdr            URI list header to duplicate.
  */
 PVBOXCLIPBOARDLISTHDR SharedClipboardURIListHdrDup(PVBOXCLIPBOARDLISTHDR pListHdr)
 {
@@ -242,6 +306,12 @@ int SharedClipboardURIListOpenParmsCopy(PVBOXCLIPBOARDLISTOPENPARMS pDst, PVBOXC
     return rc;
 }
 
+/**
+ * Duplicates an URI list open parameters structure.
+ *
+ * @returns Duplicated URI list open parameters structure on success, or NULL on failure.
+ * @param   pParms              URI list open parameters structure to duplicate.
+ */
 PVBOXCLIPBOARDLISTOPENPARMS SharedClipboardURIListOpenParmsDup(PVBOXCLIPBOARDLISTOPENPARMS pParms)
 {
     AssertPtrReturn(pParms, NULL);
@@ -262,13 +332,19 @@ PVBOXCLIPBOARDLISTOPENPARMS SharedClipboardURIListOpenParmsDup(PVBOXCLIPBOARDLIS
     return pParmsDup;
 }
 
+/**
+ * Initializes an URI list open parameters structure.
+ *
+ * @returns VBox status code.
+ * @param   pParms              URI list open parameters structure to initialize.
+ */
 int SharedClipboardURIListOpenParmsInit(PVBOXCLIPBOARDLISTOPENPARMS pParms)
 {
     AssertPtrReturn(pParms, VERR_INVALID_POINTER);
 
     RT_BZERO(pParms, sizeof(VBOXCLIPBOARDLISTOPENPARMS));
 
-    pParms->cbFilter  = 64;
+    pParms->cbFilter  = 64; /** @todo Make this dynamic. */
     pParms->pszFilter = RTStrAlloc(pParms->cbFilter);
 
     pParms->cbPath    = RTPATH_MAX;
@@ -278,6 +354,11 @@ int SharedClipboardURIListOpenParmsInit(PVBOXCLIPBOARDLISTOPENPARMS pParms)
     return VINF_SUCCESS;
 }
 
+/**
+ * Destroys an URI list open parameters structure.
+ *
+ * @param   pParms              URI list open parameters structure to destroy.
+ */
 void SharedClipboardURIListOpenParmsDestroy(PVBOXCLIPBOARDLISTOPENPARMS pParms)
 {
     if (!pParms)
@@ -417,12 +498,15 @@ int SharedClipboardURIListEntryInit(PVBOXCLIPBOARDLISTENTRY pListEntry)
         return VERR_NO_MEMORY;
 
     pListEntry->cbName = VBOXCLIPBOARDLISTENTRY_MAX_NAME;
+    pListEntry->pvInfo = NULL;
+    pListEntry->cbInfo = 0;
+    pListEntry->fInfo  = 0;
 
     return VINF_SUCCESS;
 }
 
 /**
- * Initializes a clipboard list entry structure.
+ * Destroys a clipboard list entry structure.
  *
  * @param   pListEntry          Clipboard list entry structure to destroy.
  */
@@ -503,6 +587,38 @@ bool SharedClipboardURIObjCtxIsValid(PSHAREDCLIPBOARDCLIENTURIOBJCTX pObjCtx)
             && pObjCtx->uHandle != SHAREDCLIPBOARDOBJHANDLE_INVALID);
 }
 
+int SharedClipboardURIObjectOpen(PSHAREDCLIPBOARDURITRANSFER pTransfer, PVBOXCLIPBOARDOBJOPENCREATEPARMS pOpenCreateParms,
+                                 PSHAREDCLIPBOARDOBJHANDLE phObj)
+{
+    RT_NOREF(pTransfer, pOpenCreateParms, phObj);
+    return 0;
+}
+
+int SharedClipboardURIObjectClose(SHAREDCLIPBOARDOBJHANDLE hObj)
+{
+    RT_NOREF(hObj);
+    return 0;
+}
+
+int SharedClipboardURIObjectRead(SHAREDCLIPBOARDOBJHANDLE hObj, void *pvBuf, uint32_t cbBuf, uint32_t *pcbRead, uint32_t fFlags)
+{
+    RT_NOREF(hObj, pvBuf, cbBuf, pcbRead, fFlags);
+    return 0;
+}
+
+int SharedClipboardURIObjectWrite(SHAREDCLIPBOARDOBJHANDLE hObj, void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten,
+                                  uint32_t fFlags)
+{
+    RT_NOREF(hObj, pvBuf, cbBuf, pcbWritten, fFlags);
+    return 0;
+}
+
+int SharedClipboardURIObjectQueryInfo(SHAREDCLIPBOARDOBJHANDLE hObj, PSHAREDCLIPBOARDFSOBJINFO pObjInfo)
+{
+    RT_NOREF(hObj, pObjInfo);
+    return 0;
+}
+
 /**
  * Initializes an URI clipboard transfer struct.
  *
@@ -525,6 +641,7 @@ int SharedClipboardURITransferCreate(SHAREDCLIPBOARDURITRANSFERDIR enmDir, SHARE
 
     int rc = VINF_SUCCESS;
 
+    pTransfer->State.uID       = 0;
     pTransfer->State.enmStatus = SHAREDCLIPBOARDURITRANSFERSTATUS_NONE;
     pTransfer->State.enmDir    = enmDir;
     pTransfer->State.enmSource = enmSource;
@@ -537,6 +654,13 @@ int SharedClipboardURITransferCreate(SHAREDCLIPBOARDURITRANSFERDIR enmDir, SHARE
     pTransfer->Thread.fCancelled = false;
     pTransfer->Thread.fStarted   = false;
     pTransfer->Thread.fStop      = false;
+
+    pTransfer->uListHandleNext   = 1;
+    pTransfer->uObjHandleNext    = 1;
+    pTransfer->uEventIDNext      = 1;
+
+    pTransfer->uTimeoutMs     = 30 * 1000; /* 30s timeout by default. */
+    pTransfer->cbMaxChunkSize = _64K; /** @todo Make this configurable. */
 
     pTransfer->pvUser = NULL;
     pTransfer->cbUser = 0;
@@ -627,9 +751,7 @@ int SharedClipboardURITransferClose(PSHAREDCLIPBOARDURITRANSFER pTransfer)
  */
 static SHAREDCLIPBOARDLISTHANDLE sharedClipboardURITransferListHandleNew(PSHAREDCLIPBOARDURITRANSFER pTransfer)
 {
-    RT_NOREF(pTransfer);
-
-    return 42; /** @todo FIX !!!!! */
+    return pTransfer->uListHandleNext++; /** @todo Good enough for now. Improve this later. */
 }
 
 /**
@@ -657,7 +779,7 @@ int SharedClipboardURITransferListOpen(PSHAREDCLIPBOARDURITRANSFER pTransfer, PV
             = (PSHAREDCLIPBOARDURILISTHANDLEINFO)RTMemAlloc(sizeof(SHAREDCLIPBOARDURILISTHANDLEINFO));
         if (pInfo)
         {
-            LogFlowFunc(("pszPath=%RU32\n", pOpenParms->pszPath));
+            LogFlowFunc(("pszPath=%s\n", pOpenParms->pszPath));
 
             RTFSOBJINFO objInfo;
             rc = RTPathQueryInfo(pOpenParms->pszPath, &objInfo, RTFSOBJATTRADD_NOTHING);
@@ -850,6 +972,7 @@ static int sharedClipboardURITransferListHdrFromDir(PVBOXCLIPBOARDLISTHDR pHdr,
 
                         switch (pDirEntry->Info.Attr.fMode & RTFS_TYPE_MASK)
                         {
+                    #if 0 /* No recursion here (yet). */
                             case RTFS_TYPE_DIRECTORY:
                             {
                                 /* Skip "." and ".." entries. */
@@ -875,7 +998,7 @@ static int sharedClipboardURITransferListHdrFromDir(PVBOXCLIPBOARDLISTHDR pHdr,
                                     rc = VERR_NO_MEMORY;
                                 break;
                             }
-
+                    #endif
                             case RTFS_TYPE_FILE:
                             {
                                 char *pszSrc = RTPathJoinA(pcszSrcPath, pDirEntry->szName);
@@ -962,9 +1085,11 @@ int SharedClipboardURITransferListGetHeader(PSHAREDCLIPBOARDURITRANSFER pTransfe
                             {
                                 Assert(pszFileName >= pszSrcPath);
                                 size_t cchDstBase = pszFileName - pszSrcPath;
+#ifdef VBOX_STRICT
                                 char *pszDstPath  = &pszSrcPath[cchDstBase];
-
-                                LogFlowFunc(("pszSrcPath=%s, pszFileName=%s, pszDstPath=%s\n", pszSrcPath, pszFileName, pszDstPath));
+                                LogFlowFunc(("pszSrcPath=%s, pszFileName=%s, pszDstPath=%s\n",
+                                             pszSrcPath, pszFileName, pszDstPath));
+#endif
                                 rc = sharedClipboardURITransferListHdrFromDir(pHdr,
                                                                               pszSrcPath, pszSrcPath, pszSrcPath, cchDstBase);
                             }
@@ -1038,7 +1163,7 @@ PSHAREDCLIPBOARDURITRANSFEROBJ SharedClipboardURITransferListGetObj(PSHAREDCLIPB
 /**
  * Reads a single Shared Clipboard list entry.
  *
- * @returns VBox status code.
+ * @returns VBox status code or VERR_NO_MORE_FILES if the end of the list has been reached.
  * @param   pTransfer           URI clipboard transfer to handle.
  * @param   hList               List handle of list to read from.
  * @param   pEntry              Where to store the read information.
@@ -1078,44 +1203,50 @@ int SharedClipboardURITransferListRead(PSHAREDCLIPBOARDURITRANSFER pTransfer, SH
                         {
                             case RTFS_TYPE_DIRECTORY:
                             {
-                                LogFlowFunc(("Directory: %s\n", pDirEntry->szName));
-
                                 /* Skip "." and ".." entries. */
                                 if (RTDirEntryExIsStdDotLink(pDirEntry))
+                                {
                                     fSkipEntry = true;
+                                    break;
+                                }
 
-                                RT_FALL_THROUGH();
+                                LogFlowFunc(("Directory: %s\n", pDirEntry->szName));
+                                break;
                             }
 
                             case RTFS_TYPE_FILE:
                             {
                                 LogFlowFunc(("File: %s\n", pDirEntry->szName));
-
-                                pEntry->pvInfo = (PSHAREDCLIPBOARDFSOBJINFO)RTMemAlloc(sizeof(SHAREDCLIPBOARDFSOBJINFO));
-                                if (pEntry->pvInfo)
-                                {
-                                    rc = RTStrCopy(pEntry->pszName, pEntry->cbName, pDirEntry->szName);
-                                    if (RT_SUCCESS(rc))
-                                    {
-                                        SharedClipboardFsObjFromIPRT(PSHAREDCLIPBOARDFSOBJINFO(pEntry->pvInfo), &pDirEntry->Info);
-
-                                        pEntry->cbInfo = sizeof(SHAREDCLIPBOARDFSOBJINFO);
-                                        pEntry->fInfo  = VBOX_SHAREDCLIPBOARD_INFO_FLAG_FSOBJINFO;
-                                    }
-                                }
-                                else
-                                    rc = VERR_NO_MEMORY;
                                 break;
                             }
 
                             case RTFS_TYPE_SYMLINK:
                             {
-                                /** @todo Not implemented yet. */
+                                rc = VERR_NOT_IMPLEMENTED; /** @todo Not implemented yet. */
                                 break;
                             }
 
                             default:
                                 break;
+                        }
+
+                        if (   RT_SUCCESS(rc)
+                            && !fSkipEntry)
+                        {
+                            pEntry->pvInfo = (PSHAREDCLIPBOARDFSOBJINFO)RTMemAlloc(sizeof(SHAREDCLIPBOARDFSOBJINFO));
+                            if (pEntry->pvInfo)
+                            {
+                                rc = RTStrCopy(pEntry->pszName, pEntry->cbName, pDirEntry->szName);
+                                if (RT_SUCCESS(rc))
+                                {
+                                    SharedClipboardFsObjFromIPRT(PSHAREDCLIPBOARDFSOBJINFO(pEntry->pvInfo), &pDirEntry->Info);
+
+                                    pEntry->cbInfo = sizeof(SHAREDCLIPBOARDFSOBJINFO);
+                                    pEntry->fInfo  = VBOX_SHAREDCLIPBOARD_INFO_FLAG_FSOBJINFO;
+                                }
+                            }
+                            else
+                                rc = VERR_NO_MEMORY;
                         }
 
                         RTDirReadExAFree(&pDirEntry, &cbDirEntry);
@@ -1276,6 +1407,26 @@ int SharedClipboardURITransferSetInterface(PSHAREDCLIPBOARDURITRANSFER pTransfer
     return rc;
 }
 
+/**
+ * Clears (resets) the root list of an URI transfer.
+ *
+ * @param   pTransfer           Transfer to clear URI root list for.
+ */
+static void sharedClipboardURIListTransferRootsClear(PSHAREDCLIPBOARDURITRANSFER pTransfer)
+{
+    AssertPtrReturnVoid(pTransfer);
+
+    pTransfer->lstRootEntries.clear();
+}
+
+/**
+ * Sets URI root list entries for a given transfer.
+ *
+ * @returns VBox status code.
+ * @param   pTransfer           Transfer to set URI list entries for.
+ * @param   pszRoots            String list (separated by CRLF) of root entries to set.
+ * @param   cbRoots             Size (in bytes) of string list.
+ */
 int SharedClipboardURILTransferSetRoots(PSHAREDCLIPBOARDURITRANSFER pTransfer, const char *pszRoots, size_t cbRoots)
 {
     AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
@@ -1287,9 +1438,17 @@ int SharedClipboardURILTransferSetRoots(PSHAREDCLIPBOARDURITRANSFER pTransfer, c
 
     int rc = VINF_SUCCESS;
 
-    pTransfer->lstRootEntries.clear();
+    sharedClipboardURIListTransferRootsClear(pTransfer);
 
-    pTransfer->lstRootEntries = RTCString(pszRoots, cbRoots - 1).split("\r\n");
+    RTCList<RTCString> lstRootEntries = RTCString(pszRoots, cbRoots - 1).split("\r\n");
+    for (size_t i = 0; i < lstRootEntries.size(); ++i)
+    {
+        SHAREDCLIPBOARDURILISTROOT listRoot;
+
+        listRoot.strPathAbs = lstRootEntries.at(i);
+
+        pTransfer->lstRootEntries.append(listRoot);
+    }
 
     LogFlowFunc(("cRoots=%RU32\n", pTransfer->lstRootEntries.size()));
 
@@ -1308,7 +1467,7 @@ void SharedClipboardURITransferReset(PSHAREDCLIPBOARDURITRANSFER pTransfer)
 
     LogFlowFuncEnter();
 
-    /** @todo Anything else to do here? */
+    sharedClipboardURIListTransferRootsClear(pTransfer);
 }
 
 /**
@@ -1324,47 +1483,142 @@ SharedClipboardArea *SharedClipboardURITransferGetArea(PSHAREDCLIPBOARDURITRANSF
     return pTransfer->pArea;
 }
 
-int SharedClipboardURILTransferGetRoots(PSHAREDCLIPBOARDURITRANSFER pTransfer, char **ppszRoots, uint32_t *pcRoots)
+/**
+ * Returns the number of URI root list entries.
+ *
+ * @returns Root list entry count.
+ * @param   pTransfer           URI clipboard transfer to return root entry count for.
+ */
+uint32_t SharedClipboardURILTransferRootsCount(PSHAREDCLIPBOARDURITRANSFER pTransfer)
+{
+    AssertPtrReturn(pTransfer, 0);
+
+    return (uint32_t)pTransfer->lstRootEntries.size();
+}
+
+/**
+ * Get a specific root list entry.
+ *
+ * @returns VBox status code.
+ * @param   pTransfer           URI clipboard transfer to get root list entry of.
+ * @param   uIndex              Index (zero-based) of entry to get.
+ * @param   pEntry              Where to store the returned entry on success.
+ */
+int SharedClipboardURILTransferRootsEntry(PSHAREDCLIPBOARDURITRANSFER pTransfer,
+                                          uint32_t uIndex, PVBOXCLIPBOARDROOTLISTENTRY pEntry)
 {
     AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
-    AssertPtrReturn(ppszRoots, VERR_INVALID_POINTER);
+    AssertPtrReturn(pEntry,    VERR_INVALID_POINTER);
+
+    if (uIndex >= pTransfer->lstRootEntries.size())
+        return VERR_INVALID_PARAMETER;
+
+    int rc;
+
+    PSHAREDCLIPBOARDURILISTROOT pRoot = &pTransfer->lstRootEntries.at(uIndex);
+    AssertPtrReturn(pRoot, VERR_INVALID_POINTER);
+
+    /* Make sure that we only advertise relative source paths, not absolute ones. */
+    const char *pcszSrcPath = pRoot->strPathAbs.c_str();
+
+    char *pszFileName = RTPathFilename(pcszSrcPath);
+    if (pszFileName)
+    {
+        Assert(pszFileName >= pcszSrcPath);
+        size_t cchDstBase = pszFileName - pcszSrcPath;
+        const char *pszDstPath = &pcszSrcPath[cchDstBase];
+
+        LogFlowFunc(("pcszSrcPath=%s, pszDstPath=%s\n", pcszSrcPath, pszDstPath));
+
+        rc = SharedClipboardURIListEntryInit(pEntry);
+        if (RT_SUCCESS(rc))
+        {
+            rc = RTStrCopy(pEntry->pszName, pEntry->cbName, pszDstPath);
+            if (RT_SUCCESS(rc))
+            {
+                pEntry->cbInfo = sizeof(SHAREDCLIPBOARDFSOBJINFO);
+                pEntry->pvInfo = (PSHAREDCLIPBOARDFSOBJINFO)RTMemAlloc(pEntry->cbInfo);
+                if (pEntry->pvInfo)
+                {
+                    RTFSOBJINFO fsObjInfo;
+                    rc = RTPathQueryInfo(pcszSrcPath, & fsObjInfo, RTFSOBJATTRADD_NOTHING);
+                    if (RT_SUCCESS(rc))
+                    {
+                        SharedClipboardFsObjFromIPRT(PSHAREDCLIPBOARDFSOBJINFO(pEntry->pvInfo), &fsObjInfo);
+
+                        pEntry->fInfo  = VBOX_SHAREDCLIPBOARD_INFO_FLAG_FSOBJINFO;
+                    }
+                }
+                else
+                    rc = VERR_NO_MEMORY;
+            }
+        }
+    }
+    else
+        rc = VERR_INVALID_POINTER;
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+/**
+ * Returns the root entries of an URI transfer.
+ *
+ * @returns VBox status code.
+ * @param   pTransfer           URI clipboard transfer to return root entries for.
+ * @param   ppRootList          Where to store the root list on success.
+ */
+int SharedClipboardURILTransferRootsAsList(PSHAREDCLIPBOARDURITRANSFER pTransfer, PVBOXCLIPBOARDROOTLIST *ppRootList)
+{
+    AssertPtrReturn(pTransfer,  VERR_INVALID_POINTER);
+    AssertPtrReturn(ppRootList, VERR_INVALID_POINTER);
 
     int rc = VINF_SUCCESS;
 
     if (pTransfer->State.enmSource == SHAREDCLIPBOARDSOURCE_LOCAL)
     {
-        char *pszRoots = NULL;
+        PVBOXCLIPBOARDROOTLIST pRootList = SharedClipboardURIRootListAlloc();
+        if (!pRootList)
+            return VERR_NO_MEMORY;
 
-        for (size_t i = 0; i < pTransfer->lstRootEntries.size(); ++i)
+        const uint32_t cRoots = (uint32_t)pTransfer->lstRootEntries.size();
+
+        LogFlowFunc(("cRoots=%RU32\n", cRoots));
+
+        if (cRoots)
         {
-            rc = RTStrAAppend(&pszRoots, pTransfer->lstRootEntries.at(i).c_str());
+            PVBOXCLIPBOARDROOTLISTENTRY paRootListEntries
+                = (PVBOXCLIPBOARDROOTLISTENTRY)RTMemAllocZ(cRoots * sizeof(VBOXCLIPBOARDROOTLISTENTRY));
+            if (paRootListEntries)
+            {
+                for (uint32_t i = 0; i < cRoots; ++i)
+                {
+                    rc = SharedClipboardURILTransferRootsEntry(pTransfer, i, &paRootListEntries[i]);
+                    if (RT_FAILURE(rc))
+                        break;
+                }
 
-            /* Add separation between paths.
-             * Note: Also do this for the last element of the list. */
-            if (RT_SUCCESS(rc))
-                rc = RTStrAAppendExN(&pszRoots, 1 /* cPairs */, "\r\n", 2 /* Bytes */);
-
-            if (RT_FAILURE(rc))
-                break;
+                if (RT_SUCCESS(rc))
+                    pRootList->paEntries = paRootListEntries;
+            }
+            else
+                rc = VERR_NO_MEMORY;
         }
+        else
+            rc = VERR_NOT_FOUND;
 
         if (RT_SUCCESS(rc))
         {
-            LogFlowFunc(("Roots (%RU32):\n%s\n", pTransfer->lstRootEntries.size(), pszRoots));
+            pRootList->Hdr.cRoots = cRoots;
+            pRootList->Hdr.fRoots = 0; /** @todo Implement this. */
 
-            *ppszRoots = pszRoots;
-            *pcRoots   = (uint32_t)pTransfer->lstRootEntries.size();
-        }
-        else
-        {
-            if (pszRoots)
-                RTStrFree(pszRoots);
+            *ppRootList = pRootList;
         }
     }
     else if (pTransfer->State.enmSource == SHAREDCLIPBOARDSOURCE_REMOTE)
     {
         if (pTransfer->ProviderIface.pfnGetRoots)
-            rc = pTransfer->ProviderIface.pfnGetRoots(&pTransfer->ProviderCtx, ppszRoots, pcRoots);
+            rc = pTransfer->ProviderIface.pfnGetRoots(&pTransfer->ProviderCtx, ppRootList);
         else
             rc = VERR_NOT_SUPPORTED;
     }
@@ -1373,6 +1627,12 @@ int SharedClipboardURILTransferGetRoots(PSHAREDCLIPBOARDURITRANSFER pTransfer, c
     return rc;
 }
 
+/**
+ * Returns the transfer's source.
+ *
+ * @returns The transfer's source.
+ * @param   pTransfer           URI clipboard transfer to return source for.
+ */
 SHAREDCLIPBOARDSOURCE SharedClipboardURITransferGetSource(PSHAREDCLIPBOARDURITRANSFER pTransfer)
 {
     AssertPtrReturn(pTransfer, SHAREDCLIPBOARDSOURCE_INVALID);
@@ -1446,6 +1706,15 @@ void SharedClipboardURITransferSetCallbacks(PSHAREDCLIPBOARDURITRANSFER pTransfe
     pTransfer->Callbacks.pvUser = pCallbacks->pvUser;
 }
 
+/**
+ * Allocates a new event payload.
+ *
+ * @returns VBox status code.
+ * @param   uID                 Event ID to associate payload to.
+ * @param   pvData              Data block to associate to this payload.
+ * @param   cbData              Size (in bytes) of data block to associate.
+ * @param   ppPayload           Where to store the allocated event payload on success.
+ */
 int SharedClipboardURITransferPayloadAlloc(uint32_t uID, const void *pvData, uint32_t cbData,
                                            PSHAREDCLIPBOARDURITRANSFERPAYLOAD *ppPayload)
 {
@@ -1471,6 +1740,12 @@ int SharedClipboardURITransferPayloadAlloc(uint32_t uID, const void *pvData, uin
     return VERR_NO_MEMORY;
 }
 
+/**
+ * Frees an event payload.
+ *
+ * @returns VBox status code.
+ * @param   pPayload            URI clipboard transfer event payload to free.
+ */
 void SharedClipboardURITransferPayloadFree(PSHAREDCLIPBOARDURITRANSFERPAYLOAD pPayload)
 {
     if (!pPayload)
@@ -1489,7 +1764,26 @@ void SharedClipboardURITransferPayloadFree(PSHAREDCLIPBOARDURITRANSFERPAYLOAD pP
     pPayload = NULL;
 }
 
-int SharedClipboardURITransferEventRegister(PSHAREDCLIPBOARDURITRANSFER pTransfer, uint32_t uID)
+/**
+ * Generates a new event ID for a specific URI transfer.
+ *
+ * @returns New event ID generated, or 0 on error.
+ * @param   pTransfer           URI clipboard transfer to generate event for.
+ */
+uint16_t SharedClipboardURITransferEventIDGenerate(PSHAREDCLIPBOARDURITRANSFER pTransfer)
+{
+    LogFlowFunc(("New event %RU16\n", pTransfer->uEventIDNext));
+    return pTransfer->uEventIDNext++; /** @todo Improve this. */
+}
+
+/**
+ * Registers an URI transfer event.
+ *
+ * @returns VBox status code.
+ * @param   pTransfer           URI clipboard transfer to register event for.
+ * @param   uID                 Event ID to register.
+ */
+int SharedClipboardURITransferEventRegister(PSHAREDCLIPBOARDURITRANSFER pTransfer, uint16_t uID)
 {
     int rc;
 
@@ -1503,20 +1797,33 @@ int SharedClipboardURITransferEventRegister(PSHAREDCLIPBOARDURITRANSFER pTransfe
             rc = RTSemEventCreate(&pEvent->hEventSem);
             if (RT_SUCCESS(rc))
             {
-                pTransfer->pMapEvents->insert(std::pair<uint32_t, PSHAREDCLIPBOARDURITRANSFEREVENT>(uID, pEvent)); /** @todo Can this throw? */
+                pTransfer->pMapEvents->insert(std::pair<uint16_t, PSHAREDCLIPBOARDURITRANSFEREVENT>(uID, pEvent)); /** @todo Can this throw? */
+
+                LogFlowFunc(("Event %RU16\n", uID));
             }
         }
         else
             rc = VERR_NO_MEMORY;
     }
     else
-        rc = VINF_SUCCESS;
+        rc = VERR_ALREADY_EXISTS;
+
+#ifdef DEBUG_andy
+    AssertRC(rc);
+#endif
 
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
-int SharedClipboardURITransferEventUnregister(PSHAREDCLIPBOARDURITRANSFER pTransfer, uint32_t uID)
+/**
+ * Unregisters an URI transfer event.
+ *
+ * @returns VBox status code.
+ * @param   pTransfer           URI clipboard transfer to unregister event for.
+ * @param   uID                 Event ID to unregister.
+ */
+int SharedClipboardURITransferEventUnregister(PSHAREDCLIPBOARDURITRANSFER pTransfer, uint16_t uID)
 {
     int rc;
 
@@ -1531,16 +1838,30 @@ int SharedClipboardURITransferEventUnregister(PSHAREDCLIPBOARDURITRANSFER pTrans
 
         pTransfer->pMapEvents->erase(itEvent);
 
+        LogFlowFunc(("Event %RU16\n", uID));
+
         rc = VINF_SUCCESS;
     }
     else
         rc = VERR_NOT_FOUND;
 
+    AssertRC(rc);
+
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
-int SharedClipboardURITransferEventWait(PSHAREDCLIPBOARDURITRANSFER pTransfer, uint32_t uID, RTMSINTERVAL uTimeoutMs,
+/**
+ * Waits for an URI transfer event to get signalled.
+ *
+ * @returns VBox status code.
+ * @param   pTransfer           URI clipboard transfer that contains the event to wait for.
+ * @param   uID                 Event ID to wait for.
+ * @param   uTimeoutMs          Timeout (in ms) to wait.
+ * @param   ppPayload           Where to store the (allocated) event payload on success. Needs to be free'd with
+ *                              SharedClipboardURITransferPayloadFree().
+ */
+int SharedClipboardURITransferEventWait(PSHAREDCLIPBOARDURITRANSFER pTransfer, uint16_t uID, RTMSINTERVAL uTimeoutMs,
                                         PSHAREDCLIPBOARDURITRANSFERPAYLOAD *ppPayload)
 {
     LogFlowFuncEnter();
@@ -1565,7 +1886,15 @@ int SharedClipboardURITransferEventWait(PSHAREDCLIPBOARDURITRANSFER pTransfer, u
     return rc;
 }
 
-int SharedClipboardURITransferEventSignal(PSHAREDCLIPBOARDURITRANSFER pTransfer, uint32_t uID,
+/**
+ * Signals an URI transfer event.
+ *
+ * @returns VBox status code.
+ * @param   pTransfer           URI clipboard transfer of event to signal.
+ * @param   uID                 Event ID to signal.
+ * @param   pPayload            Event payload to associate. Takes ownership. Optional.
+ */
+int SharedClipboardURITransferEventSignal(PSHAREDCLIPBOARDURITRANSFER pTransfer, uint16_t uID,
                                           PSHAREDCLIPBOARDURITRANSFERPAYLOAD pPayload)
 {
     int rc;
@@ -1581,6 +1910,10 @@ int SharedClipboardURITransferEventSignal(PSHAREDCLIPBOARDURITRANSFER pTransfer,
     }
     else
         rc = VERR_NOT_FOUND;
+
+#ifdef DEBUG_andy
+    AssertRC(rc);
+#endif
 
     LogFlowFuncLeaveRC(rc);
     return rc;
