@@ -54,7 +54,7 @@ endif
 #
 PROGRAMS += VBoxCpuReport
 VBoxCpuReport_TEMPLATE := VBoxR3Static
-VBoxCpuReport_DEFS      = IN_VMM_R3 IN_VBOX_CPU_REPORT
+VBoxCpuReport_DEFS      = VBOX_IN_VMM IN_VMM_R3 IN_VBOX_CPU_REPORT $(VMM_COMMON_DEFS)
 VBoxCpuReport_INCS      = ../include
 VBoxCpuReport_SOURCES   = \
 	VBoxCpuReport.cpp \

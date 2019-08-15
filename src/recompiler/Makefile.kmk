@@ -19,6 +19,11 @@
 SUB_DEPTH = ../..
 include $(KBUILD_PATH)/subheader.kmk
 
+# We need the VMM/Config.kmk one for the VMM_COMMON_DEFS variable.
+ifndef VBOX_VMM_CONFIG_KMK_INCLUDED
+ include $(PATH_ROOT)/src/VBox/VMM/Config.kmk
+endif
+
 #
 # Globals
 #
@@ -63,7 +68,7 @@ else
  # Missing fpclassify. Is there a better define or flag for this?
  VBoxRemPrimary_DEFS.solaris  += __C99FEATURES__
 endif # win
-VBoxRemPrimary_DEFS           += IN_REM_R3 REM_INCLUDE_CPU_H NEED_CPU_H
+VBoxRemPrimary_DEFS           += IN_REM_R3 REM_INCLUDE_CPU_H NEED_CPU_H $(VMM_COMMON_DEFS)
 #VBoxRemPrimary_DEFS           += REM_PHYS_ADDR_IN_TLB
 #VBoxRemPrimary_DEFS           += DEBUG_ALL_LOGGING DEBUG_DISAS DEBUG_PCALL CONFIG_DEBUG_EXEC DEBUG_FLUSH DEBUG_IOPORT DEBUG_SIGNAL DEBUG_TLB_CHECK DEBUG_TB_INVALIDATE DEBUG_TLB  # Enables huge amounts of debug logging.
 #VBoxRemPrimary_DEFS           += DEBUG_DISAS DEBUG_PCALL CONFIG_DEBUG_EXEC DEBUG_FLUSH DEBUG_IOPORT DEBUG_SIGNAL DEBUG_TLB_CHECK DEBUG_TB_INVALIDATE DEBUG_TLB  # Enables huge amounts of debug logging.

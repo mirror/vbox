@@ -138,7 +138,7 @@ VBOX_PATH_VMM_SRC = $(PATH_ROOT)/src/VBox/VMM
 #
 ifdef VBOX_WITH_RAW_MODE
 tstVMStructRC_TEMPLATE  = VBoxRcExe
-tstVMStructRC_DEFS      = IN_VMM_RC IN_DIS IN_RT_RC VBOX_WITH_RAW_MODE $(VMM_COMMON_DEFS)
+tstVMStructRC_DEFS      = VBOX_IN_VMM IN_VMM_RC IN_DIS IN_RT_RC VBOX_WITH_RAW_MODE $(VMM_COMMON_DEFS)
  ifdef VBOX_WITH_R0_LOGGING
 tstVMStructRC_DEFS     += VBOX_WITH_R0_LOGGING
  endif
@@ -152,7 +152,7 @@ tstVMStructRC_INCS      = \
 endif
 
 tstVMStructSize_TEMPLATE= VBOXR3AUTOTST
-tstVMStructSize_DEFS    = IN_VMM_R3 IN_DIS $(VMM_COMMON_DEFS)
+tstVMStructSize_DEFS    = VBOX_IN_VMM IN_VMM_R3 IN_DIS $(VMM_COMMON_DEFS)
 ifdef VBOX_WITH_RAW_MODE
 tstVMStructSize_DEFS   += VBOX_WITH_RAW_MODE
 endif
@@ -172,7 +172,7 @@ tstVMStructSize_DEFS   += VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
 endif
 
 tstAsmStructs_TEMPLATE  = VBOXR3AUTOTST
-tstAsmStructs_DEFS      = IN_VMM_R3 IN_DIS $(VMM_COMMON_DEFS)
+tstAsmStructs_DEFS      = VBOX_IN_VMM IN_VMM_R3 IN_DIS $(VMM_COMMON_DEFS)
 ifdef VBOX_WITH_RAW_MODE
 tstAsmStructs_DEFS     += VBOX_WITH_RAW_MODE
 endif
@@ -190,7 +190,7 @@ tstAsmStructs.cpp_DEPS  = $(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructsHC.h
 
 ifdef VBOX_WITH_RAW_MODE
 tstAsmStructsRC_TEMPLATE= VBoxRcExe
-tstAsmStructsRC_DEFS    = IN_VMM_RC IN_DIS IN_RT_RC VBOX_WITH_RAW_MODE $(VMM_COMMON_DEFS)
+tstAsmStructsRC_DEFS    = VBOX_IN_VMM IN_VMM_RC IN_DIS IN_RT_RC VBOX_WITH_RAW_MODE $(VMM_COMMON_DEFS)
  ifdef VBOX_WITH_R0_LOGGING
 tstAsmStructsRC_DEFS   += VBOX_WITH_R0_LOGGING
  endif
@@ -245,6 +245,7 @@ tstMMHyperHeap_TEMPLATE = VBoxR3HardenedTstDll
 else
 tstMMHyperHeap_TEMPLATE = VBOXR3TSTEXE
 endif
+tstMMHyperHeap_DEFS     = $(VMM_COMMON_DEFS)
 tstMMHyperHeap_SOURCES  = tstMMHyperHeap.cpp
 tstMMHyperHeap_LIBS     = $(LIB_VMM) $(LIB_REM) $(LIB_RUNTIME)
 
@@ -253,6 +254,7 @@ tstMMHyperHeap_LIBS     = $(LIB_VMM) $(LIB_REM) $(LIB_RUNTIME)
 #
 tstSSM_TEMPLATE         = VBOXR3TSTEXE
 tstSSM_INCS             = $(VBOX_PATH_VMM_SRC)/include
+tstSSM_DEFS             = $(VMM_COMMON_DEFS)
 tstSSM_SOURCES          = tstSSM.cpp
 tstSSM_LIBS             = $(LIB_VMM) $(LIB_REM) $(LIB_RUNTIME)
 
@@ -268,6 +270,7 @@ tstCFGM_TEMPLATE         = VBoxR3HardenedTstDll
 else
 tstCFGM_TEMPLATE         = VBOXR3TSTEXE
 endif
+tstCFGM_DEFS             = $(VMM_COMMON_DEFS)
 tstCFGM_SOURCES          = tstCFGM.cpp
 tstCFGM_LIBS             = $(LIB_VMM) $(LIB_REM) $(LIB_RUNTIME)
 
@@ -305,6 +308,7 @@ tstVMREQ_TEMPLATE         = VBOXR3
 else
 tstVMREQ_TEMPLATE         = VBOXR3EXE
 endif
+tstVMREQ_DEFS             = $(VMM_COMMON_DEFS)
 tstVMREQ_SOURCES          = tstVMREQ.cpp
 tstVMREQ_LIBS             = $(LIB_VMM) $(LIB_REM) $(LIB_RUNTIME)
 
@@ -320,6 +324,7 @@ tstAnimate_TEMPLATE         = VBOXR3
 else
 tstAnimate_TEMPLATE         = VBOXR3EXE
 endif
+tstAnimate_DEFS             = $(VMM_COMMON_DEFS)
 tstAnimate_SOURCES          = tstAnimate.cpp
 tstAnimate_LIBS             = $(LIB_VMM) $(LIB_REM) $(LIB_RUNTIME)
 
@@ -438,6 +443,7 @@ tstPDMAsyncCompletion_TEMPLATE         = VBOXR3
  else
 tstPDMAsyncCompletion_TEMPLATE         = VBOXR3EXE
  endif
+tstPDMAsyncCompletion_DEFS             = $(VMM_COMMON_DEFS)
 tstPDMAsyncCompletion_INCS             = $(VBOX_PATH_VMM_SRC)/include
 tstPDMAsyncCompletion_SOURCES          = tstPDMAsyncCompletion.cpp
 tstPDMAsyncCompletion_LIBS             = $(LIB_VMM) $(LIB_REM) $(LIB_RUNTIME)
@@ -454,6 +460,7 @@ tstPDMAsyncCompletionStress_TEMPLATE   = VBOXR3
  else
 tstPDMAsyncCompletionStress_TEMPLATE   = VBOXR3EXE
  endif
+tstPDMAsyncCompletionStress_DEFS       = $(VMM_COMMON_DEFS)
 tstPDMAsyncCompletionStress_INCS       = $(VBOX_PATH_VMM_SRC)/include
 tstPDMAsyncCompletionStress_SOURCES    = tstPDMAsyncCompletionStress.cpp
 tstPDMAsyncCompletionStress_LIBS       = $(LIB_VMM) $(LIB_REM) $(LIB_RUNTIME)
@@ -475,7 +482,7 @@ if !defined(VBOX_ONLY_EXTPACKS) \
      || defined(VBOX_WITH_DTRACE_R0) \
      || defined(VBOX_WITH_DTRACE_RC))
 tstVMStructDTrace_TEMPLATE = VBOXR3AUTOTST
-tstVMStructDTrace_DEFS     = IN_VMM_R3 IN_DIS $(VMM_COMMON_DEFS)
+tstVMStructDTrace_DEFS     = VBOX_IN_VMM IN_VMM_R3 IN_DIS $(VMM_COMMON_DEFS)
  ifdef VBOX_WITH_RAW_MODE
 tstVMStructDTrace_DEFS    += VBOX_WITH_RAW_MODE
  endif
