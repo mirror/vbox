@@ -48,7 +48,8 @@ VBOX_DEVICES_TESTS_FEATURES = \
 	$(if $(VBOX_WITH_VMSVGA),VBOX_WITH_VMSVGA,) \
 	$(if $(VBOX_WITH_WDDM),VBOX_WITH_WDDM,) \
 	$(if $(VBOX_WITH_XHCI_IMPL),VBOX_WITH_XHCI_IMPL,) \
-       $(VBOX_AUDIO_DEFS)
+       $(VBOX_AUDIO_DEFS) \
+       $(VMM_COMMON_DEFS)
 
 #
 # We setup one 'other' target for executing the structure & alignment
