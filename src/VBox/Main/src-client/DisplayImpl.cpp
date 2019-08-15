@@ -38,9 +38,6 @@
 #include <iprt/alloca.h>
 
 #include <VBox/vmm/pdmdrv.h>
-#if defined(DEBUG) || defined(VBOX_STRICT) /* for VM_ASSERT_EMT(). */
-# include <VBox/vmm/vm.h>
-#endif
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
 # include <VBoxVideo.h>
