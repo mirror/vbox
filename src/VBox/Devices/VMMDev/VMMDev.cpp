@@ -93,7 +93,6 @@
 #include <iprt/file.h>
 #include <VBox/vmm/pgm.h>
 #include <VBox/err.h>
-#include <VBox/vmm/vm.h> /* for VM_IS_EMT */
 #include <VBox/dbg.h>
 #include <VBox/version.h>
 
