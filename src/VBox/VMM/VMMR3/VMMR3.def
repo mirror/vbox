@@ -95,6 +95,9 @@ EXPORTS
     CFGMR3GetParent
     CFGMR3GetRootU
 
+    CPUMGetHostMicroarch
+    CPUMGetGuestMicroarch
+
     DBGCCreate
 
     DBGFR3CoreWrite

@@ -1411,7 +1411,9 @@ VMM_INT_DECL(uint64_t)  CPUMGetGuestIa32SmmMonitorCtl(PCVMCPU pVCpu);
 VMMDECL(VBOXSTRICTRC)   CPUMQueryGuestMsr(PVMCPUCC pVCpu, uint32_t idMsr, uint64_t *puValue);
 VMMDECL(VBOXSTRICTRC)   CPUMSetGuestMsr(PVMCPUCC pVCpu, uint32_t idMsr, uint64_t uValue);
 VMMDECL(CPUMCPUVENDOR)  CPUMGetGuestCpuVendor(PVM pVM);
+VMMDECL(CPUMMICROARCH)  CPUMGetGuestMicroarch(PCVM pVM);
 VMMDECL(CPUMCPUVENDOR)  CPUMGetHostCpuVendor(PVM pVM);
+VMMDECL(CPUMMICROARCH)  CPUMGetHostMicroarch(PCVM pVM);
 /** @} */
 
 /** @name Guest Register Setters.
@@ -2579,6 +2581,7 @@ VMMDECL(int)            CPUMIsGuestEferMsrWriteValid(PVM pVM, uint64_t uCr0, uin
                                                      uint64_t *puValidEfer);
 VMMDECL(void)           CPUMSetGuestEferMsrNoChecks(PVMCPUCC pVCpu, uint64_t uOldEfer, uint64_t uValidEfer);
 VMMDECL(bool)           CPUMIsPatMsrValid(uint64_t uValue);
+
 
 /** Guest CPU interruptibility level, see CPUMGetGuestInterruptibility(). */
 typedef enum CPUMINTERRUPTIBILITY

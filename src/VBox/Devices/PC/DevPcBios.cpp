@@ -25,7 +25,6 @@
 #include <VBox/vmm/mm.h>
 #include <VBox/vmm/pgm.h>
 #include <VBox/vmm/cpum.h>
-#include <VBox/vmm/vm.h>
 
 #include <VBox/log.h>
 #include <iprt/asm.h>
@@ -1470,7 +1469,7 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
      * Get the CPU arch so we can load the appropriate ROMs.
      */
     PVM pVM = PDMDevHlpGetVM(pDevIns);
-    CPUMMICROARCH const enmMicroarch = pVM ? pVM->cpum.ro.GuestFeatures.enmMicroarch : kCpumMicroarch_Intel_P6;
+    CPUMMICROARCH const enmMicroarch = pVM ? CPUMGetGuestMicroarch(pVM) : kCpumMicroarch_Intel_P6;
 
     if (pThis->pszPcBiosFile)
     {
