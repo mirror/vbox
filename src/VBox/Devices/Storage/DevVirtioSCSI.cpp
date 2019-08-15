@@ -82,10 +82,12 @@
  * section 5.6. Thus there is no need to explicitly indicate the number of queues needed by this device. The number
  * of req queues is variable and determined by virtio_scsi_config.num_queues. See VirtIO 1.0 spec section 5.6.4
  */
-#define VIRTIOSCSI_VIRTQ_CONTROLQ                   0            /* Index of control queue                            */
-#define VIRTIOSCSI_VIRTQ_EVENTQ                     1            /* Index of event queue                              */
+#define VIRTIOSCSI_CONTROLQ_IDX                     0            /* Index of control queue                            */
+#define VIRTIOSCSI_EVENTQ_IDX                       1            /* Index of event queue                              */
 #define VIRTIOSCSI_VIRTQ_REQ_BASE                   2            /* Base index of req queues                          */
 
+#define REQ_NBR_TO_QIDX(uReqQueueNum) (VIRTIOSCSI_VIRTQ_REQ_BASE + uReqQueueNum)
+#define REQ_QIDX_TO_NBR(qIdx)         (qIdx - VIRTIOSCSI_VIRTQ_REQ_BASE)
 /**
  * The following struct is the VirtIO SCSI Host Device device-specific configuration described in section 5.6.4
  * of the VirtIO 1.0 specification. This layout maps an MMIO area shared VirtIO guest driver. The VBox VirtIO
@@ -538,12 +540,6 @@ static int virtioScsiR3CfgAccessed(PVIRTIOSCSI pVirtioScsi, uint32_t uOffset,
 }
 
 
-/**
- * Get this callback from the virtio framework when the driver is ready so we know
- * the request for the number of queues is valid (for now presuming the driver(s) aren't
- * dynamically adding req queues but create them all while initializing
- * based on config information on host).
- */
 static DECLCALLBACK(void) virtioScsiStatusChanged(VIRTIOHANDLE hVirtio, bool fVirtioReady)
 {
 #define MAX_QUEUENAME_SIZE 20
@@ -552,8 +548,8 @@ static DECLCALLBACK(void) virtioScsiStatusChanged(VIRTIOHANDLE hVirtio, bool fVi
     if (fVirtioReady)
     {
         Log2Func(("VirtIO reports ready... Initializing queues\n"));
-        virtioQueueAttach(hVirtio, VIRTIOSCSI_VIRTQ_CONTROLQ, "controlq");
-        virtioQueueAttach(hVirtio, VIRTIOSCSI_VIRTQ_EVENTQ,   "eventq");
+        virtioQueueAttach(hVirtio, VIRTIOSCSI_CONTROLQ_IDX, "controlq");
+        virtioQueueAttach(hVirtio, VIRTIOSCSI_EVENTQ_IDX,   "eventq");
         for (uint16_t qIdx = VIRTIOSCSI_VIRTQ_REQ_BASE;
                       qIdx < VIRTIOSCSI_VIRTQ_REQ_BASE + VIRTIOSCSI_REQ_QUEUE_CNT;
                       qIdx++)

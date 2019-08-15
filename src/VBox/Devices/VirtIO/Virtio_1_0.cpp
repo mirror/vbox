@@ -104,7 +104,7 @@ void virtioLogMappedIoValue(const char *pszFunc, const char *pszMember, size_t u
 bool virtioQueueAttach(VIRTIOHANDLE hVirtio, uint16_t qIdx, const char *pcszName)
 {
     PVIRTIOSTATE pVirtio = (PVIRTIOSTATE)hVirtio;
-    PVIRTQ_SHADOW_T pVirtqShadow = &(pVirtio->queueShadow[qIdx]);
+    PVIRTQ_SHADOW_T pVirtqShadow = &(pVirtio->virtqShadow[qIdx]);
     if (pVirtio->uQueueEnable[qIdx])
     {
         Log2Func(("Queue name: %-16s\n", pcszName));
@@ -119,14 +119,14 @@ bool virtioQueueAttach(VIRTIOHANDLE hVirtio, uint16_t qIdx, const char *pcszName
 
 const char *virtioQueueGetName(VIRTIOHANDLE hVirtio, uint16_t qIdx)
 {
-    return (const char *)((PVIRTIOSTATE)hVirtio)->queueShadow[qIdx].pcszName;
+    return (const char *)((PVIRTIOSTATE)hVirtio)->virtqShadow[qIdx].pcszName;
 }
 
 
 bool virtioQueueSkip(VIRTIOHANDLE hVirtio, uint16_t qIdx)
 {
     PVIRTIOSTATE pVirtio = (PVIRTIOSTATE)hVirtio;
-    PVIRTQ_SHADOW_T pVirtqShadow = &pVirtio->queueShadow[qIdx];
+    PVIRTQ_SHADOW_T pVirtqShadow = &pVirtio->virtqShadow[qIdx];
 
     if (virtioQueueIsEmpty(pVirtio, qIdx))
         return false;
@@ -140,7 +140,7 @@ bool virtioQueueSkip(VIRTIOHANDLE hVirtio, uint16_t qIdx)
 bool virtioQueueIsEmpty(VIRTIOHANDLE hVirtio, uint16_t qIdx)
 {
     PVIRTIOSTATE pVirtio = (PVIRTIOSTATE)hVirtio;
-    return vqReadAvailDescIdx(pVirtio, qIdx) == pVirtio->queueShadow->uAvailIdx;
+    return vqReadAvailDescIdx(pVirtio, qIdx) == pVirtio->virtqShadow->uAvailIdx;
 }
 
 bool virtioQueuePeek(VIRTIOHANDLE hVirtio, uint16_t qIdx, PVIRTQ_BUF_VECTOR_T pBufVec)
@@ -156,7 +156,7 @@ bool virtioQueueGet(VIRTIOHANDLE hVirtio, uint16_t qIdx, PVIRTQ_BUF_VECTOR_T pBu
 {
 
     PVIRTIOSTATE pVirtio = (PVIRTIOSTATE)hVirtio;
-    PVIRTQ_SHADOW_T pVirtqShadow = &pVirtio->queueShadow[qIdx];
+    PVIRTQ_SHADOW_T pVirtqShadow = &pVirtio->virtqShadow[qIdx];
 
     if (!(pVirtio->uDeviceStatus & VIRTIO_STATUS_DRIVER_OK))
     {
@@ -242,7 +242,7 @@ bool virtioQueueGet(VIRTIOHANDLE hVirtio, uint16_t qIdx, PVIRTQ_BUF_VECTOR_T pBu
 void virtioQueuePut(VIRTIOHANDLE hVirtio, uint16_t qIdx, PVIRTQ_BUF_VECTOR_T pBufVec, uint32_t cb)
 {
     PVIRTIOSTATE pVirtio = (PVIRTIOSTATE)hVirtio;
-    PVIRTQ_SHADOW_T pVirtqShadow = &pVirtio->queueShadow[qIdx];
+    PVIRTQ_SHADOW_T pVirtqShadow = &pVirtio->virtqShadow[qIdx];
 
     Log2Func(("%s: %s desc_idx=%u acb=%u\n",
              INSTANCE(pVirtio), pVirtqShadow->pcszName, pBufVec->uDescIdx, cb));
@@ -288,23 +288,23 @@ void virtioQueuePut(VIRTIOHANDLE hVirtio, uint16_t qIdx, PVIRTQ_BUF_VECTOR_T pBu
 void virtioQueueSync(VIRTIOHANDLE hVirtio, uint16_t qIdx)
 {
     PVIRTIOSTATE pVirtio = (PVIRTIOSTATE)hVirtio;
-    PVIRTQ_SHADOW_T pVirtqShadow = &pVirtio->queueShadow[qIdx];
+    PVIRTQ_SHADOW_T pVirtqShadow = &pVirtio->virtqShadow[qIdx];
 
     uint16_t uDescIdx = vqReadUsedDescIdx(pVirtio, qIdx);
     Log2Func(("%s: %s old_used_idx=%u new_used_idx=%u\n",
               INSTANCE(pVirtio), uDescIdx, pVirtqShadow->uUsedIdx));
 
     vqWriteUsedRingDescIdx(pVirtio, qIdx, pVirtqShadow->uUsedIdx);
-    vqNotify(pVirtio, qIdx);
+    vqNotifyDriver(pVirtio, qIdx);
 }
 
 /**
  * This is called when MMIO handler detects guest write to a virtq's notification address
  */
-static void vqNotified(PVIRTIOSTATE pVirtio, uint16_t qIdx, uint16_t uNotifyIdx)
+static void vqDeviceNotified(PVIRTIOSTATE pVirtio, uint16_t qIdx, uint16_t uNotifyIdx)
 {
     Assert(uNotifyIdx == qIdx);
-    PVIRTQ_SHADOW_T pVirtqShadow = &pVirtio->queueShadow[qIdx];
+    PVIRTQ_SHADOW_T pVirtqShadow = &pVirtio->virtqShadow[qIdx];
     Log2Func(("%s: %s notified\n", INSTANCE(pVirtio), pVirtqShadow->pcszName));
 
     /** Inform client */
@@ -317,9 +317,9 @@ static void vqNotified(PVIRTIOSTATE pVirtio, uint16_t qIdx, uint16_t uNotifyIdx)
  * and depending on negotiated and realtime constraints flagged by the guest driver.
  * See VirtIO 1.0 specification (see section 2.4.7).
  */
-static void vqNotify(PVIRTIOSTATE pVirtio, uint16_t qIdx)
+static void vqNotifyDriver(PVIRTIOSTATE pVirtio, uint16_t qIdx)
 {
-    PVIRTQ_SHADOW_T pVirtqShadow = &pVirtio->queueShadow[qIdx];
+    PVIRTQ_SHADOW_T pVirtqShadow = &pVirtio->virtqShadow[qIdx];
 
     if (!(pVirtio->uDeviceStatus & VIRTIO_STATUS_DRIVER_OK))
     {
@@ -416,7 +416,7 @@ static void virtioLowerInterrupt(PVIRTIOSTATE pVirtio)
 
 static void vqReset(PVIRTIOSTATE pVirtio, uint16_t qIdx)
 {
-    PVIRTQ_SHADOW_T pVirtQ = &pVirtio->queueShadow[qIdx];
+    PVIRTQ_SHADOW_T pVirtQ = &pVirtio->virtqShadow[qIdx];
     pVirtQ->uAvailIdx = 0;
     pVirtQ->uUsedIdx  = 0;
     pVirtio->uQueueSize[qIdx] = VIRTQ_MAX_SIZE;
@@ -781,7 +781,7 @@ PDMBOTHCBDECL(int) virtioR3MmioWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS 
         uint32_t uNotifyBaseOffset = GCPhysAddr - pVirtio->pGcPhysNotifyCap;
         uint16_t qIdx = uNotifyBaseOffset / VIRTIO_NOTIFY_OFFSET_MULTIPLIER;
         uint16_t uNotifiedIdx = *(uint16_t *)pv;
-        vqNotified(pVirtio, qIdx, uNotifiedIdx);
+        vqDeviceNotified(pVirtio, qIdx, uNotifiedIdx);
     }
     else
     {
@@ -1258,8 +1258,8 @@ int   virtioConstruct(PPDMDEVINS             pDevIns,
             for (uint16_t i = 0; i < pVirtio->uNumQueues; i++)
             {
                 Log2Func(("%s queue:\n",
-                          "  queueShadow[%u].uAvailIdx   = %u\n"
-                          "  queueShadow[%u].uUsedIdx    = %u\n"
+                          "  virtqShadow[%u].uAvailIdx   = %u\n"
+                          "  virtqShadow[%u].uUsedIdx    = %u\n"
                           "  uQueueSize[%u]              = %u\n"
                           "  uQueueNotifyOff[%u]         = %04x\n"
                           "  uQueueMsixVector[%u]        = %04x\n"
@@ -1267,9 +1267,9 @@ int   virtioConstruct(PPDMDEVINS             pDevIns,
                           "  pGcPhysQueueDesc[%u]        = %RGp\n"
                           "  pGcPhysQueueAvail[%u]       = %RGp\n"
                           "  pGcPhysQueueUsed[%u]        = %RGp\n",
-                                i, pVirtio->queueShadow[i].pcszName,
-                                i, pVirtio->queueShadow[i].uAvailIdx,
-                                i, pVirtio->queueShadow[i].uUsedIdx,
+                                i, pVirtio->virtqShadow[i].pcszName,
+                                i, pVirtio->virtqShadow[i].uAvailIdx,
+                                i, pVirtio->virtqShadow[i].uUsedIdx,
                                 i, pVirtio->uQueueSize[i],
                                 i, pVirtio->uQueueNotifyOff[i],
                                 i, pVirtio->uQueueMsixVector[i],
@@ -1331,9 +1331,9 @@ static DECLCALLBACK(int) virtioR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
         rc = SSMR3PutU16(pSSM,      pVirtio->uQueueMsixVector[i]);
         rc = SSMR3PutU16(pSSM,      pVirtio->uQueueEnable[i]);
         rc = SSMR3PutU16(pSSM,      pVirtio->uQueueSize[i]);
-        rc = SSMR3PutU16(pSSM,      pVirtio->queueShadow[i].uAvailIdx);
-        rc = SSMR3PutU16(pSSM,      pVirtio->queueShadow[i].uUsedIdx);
-        rc = SSMR3PutMem(pSSM,      pVirtio->queueShadow[i].pcszName, 32);
+        rc = SSMR3PutU16(pSSM,      pVirtio->virtqShadow[i].uAvailIdx);
+        rc = SSMR3PutU16(pSSM,      pVirtio->virtqShadow[i].uUsedIdx);
+        rc = SSMR3PutMem(pSSM,      pVirtio->virtqShadow[i].pcszName, 32);
     }
 
     rc = pVirtio->virtioCallbacks.pfnSSMDevSaveExec(pDevIns, pSSM);
@@ -1390,9 +1390,9 @@ static DECLCALLBACK(int) virtioR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, u
             rc = SSMR3GetU16(pSSM,      &pVirtio->uQueueMsixVector[i]);
             rc = SSMR3GetU16(pSSM,      &pVirtio->uQueueEnable[i]);
             rc = SSMR3GetU16(pSSM,      &pVirtio->uQueueSize[i]);
-            rc = SSMR3GetU16(pSSM,      &pVirtio->queueShadow[i].uAvailIdx);
-            rc = SSMR3GetU16(pSSM,      &pVirtio->queueShadow[i].uUsedIdx);
-            rc = SSMR3GetMem(pSSM,      pVirtio->queueShadow[i].pcszName, 32);
+            rc = SSMR3GetU16(pSSM,      &pVirtio->virtqShadow[i].uAvailIdx);
+            rc = SSMR3GetU16(pSSM,      &pVirtio->virtqShadow[i].uUsedIdx);
+            rc = SSMR3GetMem(pSSM,      pVirtio->virtqShadow[i].pcszName, 32);
         }
     }
 

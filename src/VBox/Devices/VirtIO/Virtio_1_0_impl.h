@@ -176,7 +176,7 @@ typedef struct VIRTIOSTATE
     uint8_t                   uPrevDeviceStatus;                 /**< (MMIO) Prev Device Status           GUEST */
     uint8_t                   uConfigGeneration;                 /**< (MMIO) Device config sequencer       HOST */
 
-    VIRTQ_SHADOW_T            queueShadow[VIRTQ_MAX_CNT];       /**< Local impl-specific queue context         */
+    VIRTQ_SHADOW_T            virtqShadow[VIRTQ_MAX_CNT];        /**< Local impl-specific queue context         */
     VIRTIOCALLBACKS           virtioCallbacks;                   /**< Callback vectors to client                */
 
     PFNPCICONFIGREAD          pfnPciConfigReadOld;               /**< Prev rd. cb. intercepting PCI Cfg I/O     */
@@ -355,7 +355,7 @@ DECLINLINE(int) vqIsEventNeeded(uint16_t uEventIdx, uint16_t uDescIdxNew, uint16
 
 DECLINLINE(bool) vqIsEmpty(PVIRTIOSTATE pVirtio, uint16_t qIdx)
 {
-    return vqReadAvailDescIdx(pVirtio, qIdx) == pVirtio->queueShadow->uAvailIdx;
+    return vqReadAvailDescIdx(pVirtio, qIdx) == pVirtio->virtqShadow->uAvailIdx;
 }
 
 /**
@@ -510,9 +510,9 @@ DECLINLINE(void) virtioLogDeviceStatus( uint8_t status)
     }
 }
 
-       void vqNotified              (PVIRTIOSTATE pVirtio, uint32_t qidx, uint16_t uDescIdx);
-static void vqNotify                (PVIRTIOSTATE pVirtio, uint16_t qIdx);
 static void vqReset                 (PVIRTIOSTATE pVirtio, uint16_t qIdx);
+static void vqDeviceNotified        (PVIRTIOSTATE pVirtio, uint16_t qidx, uint16_t uDescIdx);
+static void vqNotifyDriver          (PVIRTIOSTATE pVirtio, uint16_t qIdx);
 static int  virtioRaiseInterrupt    (PVIRTIOSTATE pVirtio, uint8_t uCause);
 static void virtioLowerInterrupt    (PVIRTIOSTATE pVirtio);
 static int  virtioCommonCfgAccessed (PVIRTIOSTATE pVirtio, int fWrite, off_t uOffset, unsigned cb, void const *pv);
