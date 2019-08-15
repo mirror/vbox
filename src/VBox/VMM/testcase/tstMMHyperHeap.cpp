@@ -23,6 +23,7 @@
 #include <VBox/vmm/stam.h>
 #include <VBox/vmm/vm.h>
 #include <VBox/vmm/uvm.h>
+#include <VBox/vmm/gvm.h>
 #include <VBox/sup.h>
 #include <VBox/param.h>
 #include <iprt/errcore.h>
@@ -34,7 +35,6 @@
 #include <iprt/stream.h>
 #include <iprt/string.h>
 
-/* does not work for more CPUs as SUPR3LowAlloc() would refuse to allocate more pages */
 #define NUM_CPUS  16
 
 
@@ -48,27 +48,39 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     /*
      * Init runtime.
      */
-    RTR3InitExe(argc, &argv, 0);
+    int rc = RTR3InitExe(argc, &argv, 0);
+    AssertRCReturn(rc, RTEXITCODE_INIT);
 
     /*
      * Create empty VM structure and call MMR3Init().
      */
     void       *pvVM = NULL;
     RTR0PTR     pvR0 = NIL_RTR0PTR;
-    SUPPAGE     aPages[RT_ALIGN_Z(sizeof(VM) + NUM_CPUS * sizeof(VMCPU), PAGE_SIZE) >> PAGE_SHIFT];
-    int rc = SUPR3Init(NULL);
-    if (RT_SUCCESS(rc))
-        //rc = SUPR3LowAlloc(RT_ELEMENTS(aPages), (void **)&pVM, &pvR0, &aPages[0]);
-        rc = SUPR3PageAllocEx(RT_ELEMENTS(aPages), 0, &pvVM, &pvR0, &aPages[0]);
+#ifdef VBOX_BUGREF_9217
+    SUPPAGE     aPages[(sizeof(GVM) + NUM_CPUS * sizeof(GVMCPU)) >> PAGE_SHIFT];
+#else
+    SUPPAGE     aPages[(sizeof(VM) + NUM_CPUS * sizeof(VMCPU)) >> PAGE_SHIFT];
+#endif
+    rc = SUPR3Init(NULL);
     if (RT_FAILURE(rc))
     {
-        RTPrintf("Fatal error: SUP Failure! rc=%Rrc\n", rc);
+        RTPrintf("Fatal error: SUP failure! rc=%Rrc\n", rc);
+        return RTEXITCODE_FAILURE;
+    }
+    rc = SUPR3PageAllocEx(RT_ELEMENTS(aPages), 0, &pvVM, &pvR0, &aPages[0]);
+    if (RT_FAILURE(rc))
+    {
+        RTPrintf("Fatal error: Allocation failure! rc=%Rrc\n", rc);
         return RTEXITCODE_FAILURE;
     }
     RT_BZERO(pvVM, RT_ELEMENTS(aPages) * PAGE_SIZE); /* SUPR3PageAllocEx doesn't necessarily zero the memory. */
     PVM  pVM = (PVM)pvVM;
     pVM->paVMPagesR3 = aPages;
+#ifdef VBOX_BUGREF_9217
+    pVM->pVMR0ForCall = pvR0;
+#else
     pVM->pVMR0 = pvR0;
+#endif
 
     PUVM pUVM = (PUVM)RTMemPageAllocZ(RT_ALIGN_Z(sizeof(*pUVM), PAGE_SIZE));
     if (!pUVM)
@@ -81,7 +93,20 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     pVM->pUVM = pUVM;
 
     pVM->cCpus = NUM_CPUS;
+#ifdef VBOX_BUGREF_9217
+    pVM->cbSelf = sizeof(VM);
+    pVM->cbVCpu = sizeof(VMCPU);
+    PVMCPU pVCpu = (PVMCPU)((uintptr_t)pVM + sizeof(GVM));
+    for (VMCPUID idCpu = 0; idCpu < NUM_CPUS; idCpu++)
+    {
+        pVM->apCpusR3[idCpu] = pVCpu;
+        pVCpu = (PVMCPU)((uintptr_t)pVCpu + sizeof(GVMCPU));
+    }
+#else
     pVM->cbSelf = RT_UOFFSETOF_DYN(VM, aCpus[pVM->cCpus]);
+    for (VMCPUID idCpu = 0; idCpu < NUM_CPUS; idCpu++)
+        pVM->apCpusR3[idCpu] = &pVM->aCpus[idCpu];
+#endif
 
     rc = STAMR3InitUVM(pUVM);
     if (RT_FAILURE(rc))
