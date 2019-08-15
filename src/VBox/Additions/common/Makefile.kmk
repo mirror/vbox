@@ -23,9 +23,6 @@ ifndef VBOX_ONLY_VALIDATIONKIT
  include $(PATH_SUB_CURRENT)/VBoxControl/Makefile.kmk
  include $(PATH_SUB_CURRENT)/VBoxGuest/Makefile.kmk
  include $(PATH_SUB_CURRENT)/VBoxService/Makefile.kmk
- ifdef VBOX_WITH_CROGL
-   include $(PATH_SUB_CURRENT)/crOpenGL/Makefile.kmk
- endif
  ifdef VBOX_WITH_PAM
   include $(PATH_SUB_CURRENT)/pam/Makefile.kmk
  endif
