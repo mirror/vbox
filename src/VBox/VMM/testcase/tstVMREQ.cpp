@@ -22,7 +22,7 @@
 #include <VBox/vmm/vm.h>
 #include <VBox/vmm/vmm.h>
 #include <VBox/vmm/cpum.h>
-#include <iprt/errcore.h>
+#include <VBox/err.h>
 #include <VBox/log.h>
 #include <iprt/assert.h>
 #include <iprt/initterm.h>
@@ -309,6 +309,8 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         }
         VMR3ReleaseUVM(pUVM);
     }
+    else if (rc == VERR_SVM_NO_SVM || rc == VERR_VMX_NO_VMX)
+        RTPrintf(TESTCASE ": Skipped: %Rrc\n", rc);
     else
     {
         RTPrintf(TESTCASE ": fatal error: failed to create vm! rc=%Rrc\n", rc);
