@@ -143,7 +143,8 @@ ifeq ($(KERNELRELEASE),)
   # not be passed to the recursive make invocations (of the Linux makefile
   # for building kernel modules), since they should derive KERN_DIR from the
   # respective command line variables to come up with the value they expect.
-  unexport KERN_VER KERN_DIR MAKEFLAGS
+  unexport KERN_VER KERN_DIR
+  MAKEOVERRIDES := $(filter-out KERN_VER=% KERN_DIR=%,$(MAKEOVERRIDES))
  endif
 
 else # neq($(KERNELRELEASE),)
