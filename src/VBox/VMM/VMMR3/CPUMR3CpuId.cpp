@@ -2030,8 +2030,7 @@ int cpumR3CpuIdExplodeFeatures(PCCPUMCPUIDLEAF paLeaves, uint32_t cLeaves, PCCPU
  * This ignores the fSubLeafMask.
  *
  * @returns Pointer to the matching leaf, or NULL if not found.
- * @param   paLeaves            The CPUID leaves to search.  This is sorted.
- * @param   cLeaves             The number of leaves in the array.
+ * @param   pCpum               The CPUM instance data.
  * @param   uLeaf               The leaf to locate.
  * @param   uSubLeaf            The subleaf to locate.
  */

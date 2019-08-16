@@ -429,6 +429,7 @@ VMM_INT_DECL(VBOXSTRICTRC) gimKvmHypercallEx(PVMCPUCC pVCpu, PCPUMCTX pCtx, unsi
  * @retval  VERR_GIM_INVALID_HYPERCALL_INSTR instruction at RIP is not a valid
  *          hypercall instruction.
  *
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pCtx        Pointer to the guest-CPU context.
  * @param   pDis        Pointer to the disassembled instruction state at RIP.
