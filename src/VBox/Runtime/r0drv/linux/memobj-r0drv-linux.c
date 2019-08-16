@@ -1549,7 +1549,6 @@ DECLHIDDEN(int) rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ p
         return VERR_NOT_SUPPORTED;
     if (uAlignment > PAGE_SIZE)
         return VERR_NOT_SUPPORTED;
-    AssertMsgReturn(!offSub && !cbSub, ("%#zx %#zx\n", offSub, cbSub), VERR_NOT_SUPPORTED); /** @todo implement sub maps */
 
 #ifdef VBOX_USE_PAE_HACK
     /*
@@ -1568,23 +1567,25 @@ DECLHIDDEN(int) rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ p
     /*
      * Create the IPRT memory object.
      */
-    pMemLnx = (PRTR0MEMOBJLNX)rtR0MemObjNew(sizeof(*pMemLnx), RTR0MEMOBJTYPE_MAPPING, NULL, pMemLnxToMap->Core.cb);
+    if (cbSub == 0)
+        cbSub = pMemLnxToMap->Core.cb;
+    pMemLnx = (PRTR0MEMOBJLNX)rtR0MemObjNew(sizeof(*pMemLnx), RTR0MEMOBJTYPE_MAPPING, NULL, cbSub);
     if (pMemLnx)
     {
         /*
          * Allocate user space mapping.
          */
         void *pv;
-        pv = rtR0MemObjLinuxDoMmap(R3PtrFixed, pMemLnxToMap->Core.cb, uAlignment, pTask, fProt);
+        pv = rtR0MemObjLinuxDoMmap(R3PtrFixed, cbSub, uAlignment, pTask, fProt);
         if (pv != (void *)-1)
         {
             /*
              * Map page by page into the mmap area.
              * This is generic, paranoid and not very efficient.
              */
-            pgprot_t        fPg = rtR0MemObjLinuxConvertProt(fProt, false /* user */);
+            pgprot_t        fPg       = rtR0MemObjLinuxConvertProt(fProt, false /* user */);
             unsigned long   ulAddrCur = (unsigned long)pv;
-            const size_t    cPages = pMemLnxToMap->Core.cb >> PAGE_SHIFT;
+            const size_t    cPages    = (offSub + cbSub) >> PAGE_SHIFT;
             size_t          iPage;
 
             down_write(&pTask->mm->mmap_sem);
@@ -1592,7 +1593,7 @@ DECLHIDDEN(int) rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ p
             rc = VINF_SUCCESS;
             if (pMemLnxToMap->cPages)
             {
-                for (iPage = 0; iPage < cPages; iPage++, ulAddrCur += PAGE_SIZE)
+                for (iPage = offSub >> PAGE_SHIFT; iPage < cPages; iPage++, ulAddrCur += PAGE_SIZE)
                 {
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 11)
                     RTHCPHYS Phys = page_to_phys(pMemLnxToMap->apPages[iPage]);
@@ -1647,7 +1648,7 @@ DECLHIDDEN(int) rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ p
                 }
                 if (Phys != NIL_RTHCPHYS)
                 {
-                    for (iPage = 0; iPage < cPages; iPage++, ulAddrCur += PAGE_SIZE, Phys += PAGE_SIZE)
+                    for (iPage = offSub >> PAGE_SHIFT; iPage < cPages; iPage++, ulAddrCur += PAGE_SIZE, Phys += PAGE_SIZE)
                     {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0) || defined(HAVE_26_STYLE_REMAP_PAGE_RANGE)
                         struct vm_area_struct *vma = find_vma(pTask->mm, ulAddrCur); /* this is probably the same for all the pages... */
@@ -1721,7 +1722,7 @@ DECLHIDDEN(int) rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ p
             /*
              * Bail out.
              */
-            rtR0MemObjLinuxDoMunmap(pv, pMemLnxToMap->Core.cb, pTask);
+            rtR0MemObjLinuxDoMunmap(pv, cbSub, pTask);
         }
         rtR0MemObjDelete(&pMemLnx->Core);
     }
