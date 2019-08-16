@@ -569,7 +569,7 @@ static void rtR0MemObjSolUnlock(void *pv, size_t cb, int fPageAccess)
 static int rtR0MemObjSolUserMap(caddr_t *pVirtAddr, unsigned fPageAccess, uint64_t *paPhysAddrs, size_t cb, size_t cbPageSize)
 {
     struct as *pAddrSpace = ((proc_t *)RTR0ProcHandleSelf())->p_as;
-    int rc = VERR_INTERNAL_ERROR;
+    int rc;
     SEGVBOX_CRARGS Args;
 
     Args.paPhysAddrs = paPhysAddrs;
@@ -1020,76 +1020,78 @@ DECLHIDDEN(int) rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, PRTR0MEMOBJI
     AssertMsgReturn(R0Process == RTR0ProcHandleSelf(), ("%p != %p\n", R0Process, RTR0ProcHandleSelf()), VERR_NOT_SUPPORTED);
     if (uAlignment != PAGE_SIZE)
         return VERR_NOT_SUPPORTED;
-    AssertMsgReturn(!offSub && !cbSub, ("%#zx %#zx\n", offSub, cbSub), VERR_NOT_SUPPORTED); /** @todo implement sub maps */
 
     /*
-     * Get parameters from the source object.
+     * Get parameters from the source object and offSub/cbSub.
      */
-    PRTR0MEMOBJSOL  pMemToMapSolaris     = (PRTR0MEMOBJSOL)pMemToMap;
-    void           *pv                   = pMemToMapSolaris->Core.pv;
-    size_t          cb                   = pMemToMapSolaris->Core.cb;
-    size_t          cPages               = (cb + PAGE_SIZE - 1) >> PAGE_SHIFT;
+    PRTR0MEMOBJSOL  pMemToMapSolaris    = (PRTR0MEMOBJSOL)pMemToMap;
+    uint8_t        *pb                  = pMemToMapSolaris->Core.pv ? (uint8_t *)pMemToMapSolaris->Core.pv + offSub : NULL;
+    size_t const    cb                  = cbSub ? cbSub : pMemToMapSolaris->Core.cb;
+    size_t const    cPages              = cb >> PAGE_SHIFT;
+    Assert(!offSub || cbSub);
+    Assert(!(cb & PAGE_OFFSET_MASK));
 
     /*
      * Create the mapping object
      */
     PRTR0MEMOBJSOL pMemSolaris;
-    pMemSolaris = (PRTR0MEMOBJSOL)rtR0MemObjNew(sizeof(*pMemSolaris), RTR0MEMOBJTYPE_MAPPING, pv, cb);
+    pMemSolaris = (PRTR0MEMOBJSOL)rtR0MemObjNew(sizeof(*pMemSolaris), RTR0MEMOBJTYPE_MAPPING, pb, cb);
     if (RT_UNLIKELY(!pMemSolaris))
         return VERR_NO_MEMORY;
 
+    /*
+     * Gather the physical page address of the pages to be mapped.
+     */
     int rc = VINF_SUCCESS;
     uint64_t *paPhysAddrs = kmem_zalloc(sizeof(uint64_t) * cPages, KM_SLEEP);
     if (RT_LIKELY(paPhysAddrs))
     {
-        /*
-         * Prepare the pages for mapping according to type.
-         */
         if (   pMemToMapSolaris->Core.enmType == RTR0MEMOBJTYPE_PHYS_NC
             && pMemToMapSolaris->fIndivPages)
         {
-            page_t **ppPages = pMemToMapSolaris->pvHandle;
-            AssertPtr(ppPages);
+            /* Translate individual page_t to physical addresses. */
+            page_t **papPages = pMemToMapSolaris->pvHandle;
+            AssertPtr(papPages);
+            papPages += offSub >> PAGE_SIZE;
             for (size_t iPage = 0; iPage < cPages; iPage++)
-                paPhysAddrs[iPage] = rtR0MemObjSolPagePhys(ppPages[iPage]);
+                paPhysAddrs[iPage] = rtR0MemObjSolPagePhys(papPages[iPage]);
         }
         else if (   pMemToMapSolaris->Core.enmType == RTR0MEMOBJTYPE_PHYS
                  && pMemToMapSolaris->fLargePage)
         {
+            /* Split up the large page into page-sized chunks. */
             RTHCPHYS Phys = pMemToMapSolaris->Core.u.Phys.PhysBase;
+            Phys += offSub;
             for (size_t iPage = 0; iPage < cPages; iPage++, Phys += PAGE_SIZE)
                 paPhysAddrs[iPage] = Phys;
         }
         else
         {
-            /*
-             * Have kernel mapping, just translate virtual to physical.
-             */
-            AssertPtr(pv);
-            rc = VINF_SUCCESS;
+            /* Have kernel mapping, just translate virtual to physical. */
+            AssertPtr(pb);
             for (size_t iPage = 0; iPage < cPages; iPage++)
             {
-                paPhysAddrs[iPage] = rtR0MemObjSolVirtToPhys(pv);
+                paPhysAddrs[iPage] = rtR0MemObjSolVirtToPhys(pb);
                 if (RT_UNLIKELY(paPhysAddrs[iPage] == -(uint64_t)1))
                 {
                     LogRel(("rtR0MemObjNativeMapUser: no page to map.\n"));
                     rc = VERR_MAP_FAILED;
                     break;
                 }
-                pv = (void *)((uintptr_t)pv + PAGE_SIZE);
+                pb += PAGE_SIZE;
             }
         }
         if (RT_SUCCESS(rc))
         {
+            /*
+             * Perform the actual mapping.
+             */
             unsigned fPageAccess = PROT_READ;
             if (fProt & RTMEM_PROT_WRITE)
                 fPageAccess |= PROT_WRITE;
             if (fProt & RTMEM_PROT_EXEC)
                 fPageAccess |= PROT_EXEC;
 
-            /*
-             * Perform the actual mapping.
-             */
             caddr_t UserAddr = NULL;
             rc = rtR0MemObjSolUserMap(&UserAddr, fPageAccess, paPhysAddrs, cb, PAGE_SIZE);
             if (RT_SUCCESS(rc))
