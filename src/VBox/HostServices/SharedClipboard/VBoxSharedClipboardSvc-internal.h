@@ -45,6 +45,15 @@ struct VBOXCLIPBOARDCLIENTSTATE;
 #endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
 
 /**
+ * Structure for keeping a Shared Clipboard HGCM message context.
+ */
+typedef struct _VBOXSHCLMSGCTX
+{
+    /** Context ID. */
+    uint32_t uContextID;
+} VBOXSHCLMSGCTX, *PVBOXSHCLMSGCTX;
+
+/**
  * Structure for keeping a single HGCM message.
  */
 typedef struct _VBOXCLIPBOARDCLIENTMSG

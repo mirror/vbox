@@ -197,15 +197,6 @@
 #define VBOX_SHARED_CLIPBOARD_CONTEXTID_GET_EVENT(uContextID) \
     RT_LO_U16(uContextID)
 
-/**
- * Structure for keeping a Shared Clipboard HGCM message context.
- */
-typedef struct _VBOXSHCLMSGCTX
-{
-    /** Context ID. */
-    uint32_t uContextID;
-} VBOXSHCLMSGCTX, *PVBOXSHCLMSGCTX;
-
 /*
  * HGCM parameter structures.
  */
