@@ -89,6 +89,7 @@ RT_C_DECLS_BEGIN
 #endif
 
 
+#if 0
 /** @def VM_R0_ADDR
  * Converts a current context address of data within the VM structure to the equivalent
  * ring-0 host address.
@@ -104,7 +105,7 @@ RT_C_DECLS_BEGIN
 #else
 # define VM_R0_ADDR(pVM, pvInVM)       ( (RTR0PTR)(pvInVM) )
 #endif
-
+#endif
 
 
 /**

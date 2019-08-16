@@ -164,7 +164,7 @@ int mmR3HyperInit(PVM pVM)
         AssertRelease(pVM->cbVCpu == sizeof(VMCPU));
         RTGCPTR GCPtr;
         rc = MMR3HyperMapPages(pVM, pVM, pVM->pVMR0ForCall, sizeof(VM) >> PAGE_SHIFT, pVM->paVMPagesR3, "VM", &GCPtr);
-        uint32_t offPages = RT_UOFFSETOF(GVM, aCpus) >> PAGE_SHIFT;
+        uint32_t offPages = RT_UOFFSETOF_DYN(GVM, aCpus) >> PAGE_SHIFT; /* (Using the _DYN variant avoids -Winvalid-offset) */
         for (uint32_t idCpu = 0; idCpu < pVM->cCpus && RT_SUCCESS(rc); idCpu++, offPages += sizeof(GVMCPU) >> PAGE_SHIFT)
         {
             PVMCPU pVCpu = pVM->apCpusR3[idCpu];

@@ -56,7 +56,7 @@ struc VMCPU
 %ifndef VBOX_BUGREF_9217
     .pVMR0                  RTR0PTR_RES 1
 %else
-    .R0PtrUnused0           RTR0PTR_RES 1
+    .pVCpuR0ForVtg          RTR0PTR_RES 1
 %endif
     .pVMRC                  resq 1
     .pUVCpu                 RTR3PTR_RES 1

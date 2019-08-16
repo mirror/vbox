@@ -947,7 +947,7 @@ GVMMR0DECL(int) GVMMR0CreateVM(PSUPDRVSESSION pSession, uint32_t cCpus, PVMCC *p
                             if (RT_SUCCESS(rc))
                             {
                                 /*
-                                 * Initialize all the VM pointer.
+                                 * Initialize all the VM pointers.
                                  */
                                 PVMR3 pVMR3 = RTR0MemObjAddressR3(pGVM->gvmm.s.VMMapObj);
                                 AssertPtr((void *)pVMR3);
@@ -1269,6 +1269,7 @@ static void gvmmR0InitPerVMData(PGVM pGVM)
         pGVM->aCpus[i].hNativeThread         = NIL_RTNATIVETHREAD;
         pGVM->aCpus[i].hNativeThreadR0       = NIL_RTNATIVETHREAD;
         pGVM->aCpus[i].enmState              = VMCPUSTATE_STOPPED;
+        pGVM->aCpus[i].pVCpuR0ForVtg         = &pGVM->aCpus[i];
 #endif
     }
 }

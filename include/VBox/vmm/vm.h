@@ -155,7 +155,8 @@ typedef struct VMCPU
     /** Ring-0 Host Context VM Pointer. */
     PVMR0                   pVMR0;
 #else
-    RTR0PTR                 R0PtrUnused0;
+    /** Ring-0 Host Context VM Pointer, currently used by VTG/dtrace. */
+    RTR0PTR                 pVCpuR0ForVtg;
 #endif
     /** Raw-mode Context VM Pointer. */
     uint32_t                pVMRC;

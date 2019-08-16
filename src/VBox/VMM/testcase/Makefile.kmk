@@ -152,6 +152,9 @@ tstVMStructRC_INCS      = \
 endif
 
 tstVMStructSize_TEMPLATE= VBOXR3AUTOTST
+ifneq ($(KBUILD_TARGET),win)
+tstVMStructSize_CXXFLAGS += $(VBOX_GCC_Wno-invalid-offsetof)
+endif
 tstVMStructSize_DEFS    = VBOX_IN_VMM IN_VMM_R3 IN_DIS $(VMM_COMMON_DEFS)
 ifdef VBOX_WITH_RAW_MODE
 tstVMStructSize_DEFS   += VBOX_WITH_RAW_MODE
@@ -172,6 +175,9 @@ tstVMStructSize_DEFS   += VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
 endif
 
 tstAsmStructs_TEMPLATE  = VBOXR3AUTOTST
+ifneq ($(KBUILD_TARGET),win)
+tstAsmStructSize_CXXFLAGS += $(VBOX_GCC_Wno-invalid-offsetof)
+endif
 tstAsmStructs_DEFS      = VBOX_IN_VMM IN_VMM_R3 IN_DIS $(VMM_COMMON_DEFS)
 ifdef VBOX_WITH_RAW_MODE
 tstAsmStructs_DEFS     += VBOX_WITH_RAW_MODE

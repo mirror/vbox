@@ -144,7 +144,7 @@ VMM_INT_DECL(int) NEMHCQueryCpuTick(PVMCPUCC pVCpu, uint64_t *pcTicks, uint32_t 
 
 
 #ifndef VBOX_WITH_NATIVE_NEM
-VMM_INT_DECL(int) NEMHCResumeCpuTickOnAll(PVM pVM, PVMCPUCC pVCpu, uint64_t uPausedTscValue)
+VMM_INT_DECL(int) NEMHCResumeCpuTickOnAll(PVMCC pVM, PVMCPUCC pVCpu, uint64_t uPausedTscValue)
 {
     RT_NOREF(pVM, pVCpu, uPausedTscValue);
     AssertFailed();
