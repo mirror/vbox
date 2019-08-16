@@ -13565,6 +13565,7 @@ static VBOXSTRICTRC hmR0VmxExitXcptBP(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransien
         rc = DBGFRZTrap03Handler(pVCpu->CTX_SUFF(pVM), pVCpu, CPUMCTX2CORE(&pVCpu->cpum.GstCtx));
     else
         rc = VINF_EM_RAW_GUEST_TRAP;
+
     if (rc == VINF_EM_RAW_GUEST_TRAP)
     {
         hmR0VmxSetPendingEvent(pVCpu, VMX_ENTRY_INT_INFO_FROM_EXIT_INT_INFO(pVmxTransient->uExitIntInfo), pVmxTransient->cbInstr,
@@ -13572,7 +13573,7 @@ static VBOXSTRICTRC hmR0VmxExitXcptBP(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransien
         rc = VINF_SUCCESS;
     }
 
-    Assert(rc == VINF_SUCCESS || rc == VINF_EM_RAW_GUEST_TRAP || rc == VINF_EM_DBG_BREAKPOINT);
+    Assert(rc == VINF_SUCCESS || rc == VINF_EM_DBG_BREAKPOINT);
     return rc;
 }
 
