@@ -1567,6 +1567,7 @@ DECLHIDDEN(int) rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ p
     /*
      * Create the IPRT memory object.
      */
+    Assert(!offSub || cbSub);
     if (cbSub == 0)
         cbSub = pMemLnxToMap->Core.cb;
     pMemLnx = (PRTR0MEMOBJLNX)rtR0MemObjNew(sizeof(*pMemLnx), RTR0MEMOBJTYPE_MAPPING, NULL, cbSub);
