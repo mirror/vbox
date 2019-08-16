@@ -34,9 +34,7 @@
 # error "Compile job does not include VMM_COMMON_DEFS from src/VBox/Config.kmk - make sure you really need to include this file!"
 #endif
 #include <VBox/types.h>
-#ifdef VBOX_BUGREF_9217
-# include <VBox/vmm/vm.h>
-#endif
+#include <VBox/vmm/vm.h>
 #include <VBox/param.h>
 #include <iprt/thread.h>
 #include <iprt/assertcompile.h>
@@ -47,13 +45,13 @@
  * @{
  */
 
-#if defined(VBOX_BUGREF_9217) && defined(__cplusplus)
+#ifdef __cplusplus
 typedef struct GVMCPU : public VMCPU
 #else
 typedef struct GVMCPU
 #endif
 {
-#if defined(VBOX_BUGREF_9217) && !defined(__cplusplus)
+#ifndef __cplusplus
     VMCPU           s;
 #endif
 
@@ -67,17 +65,10 @@ typedef struct GVMCPU
 
     /** Pointer to the global (ring-0) VM structure this CPU belongs to. */
     R0PTRTYPE(PGVM) pGVM;
-#ifndef VBOX_BUGREF_9217
-    /** Pointer to the corresponding cross context CPU structure. */
-    PVMCPU          pVCpu;
-    /** Pointer to the corresponding cross context VM structure. */
-    PVM             pVM;
-#else
     /** Pointer to the GVM structure, for CTX_SUFF use in VMMAll code.  */
     PGVM            pVMR0;
     /** The ring-3 address of this structure (only VMCPU part). */
     PVMCPUR3        pVCpuR3;
-#endif
 
     /** Padding so gvmm starts on a 64 byte boundrary.
      * @note Keeping this working for 32-bit header syntax checking.  */
@@ -103,39 +94,27 @@ typedef struct GVMCPU
     } nemr0;
 #endif
 
-#ifdef VBOX_BUGREF_9217
     /** Padding the structure size to page boundrary. */
-# ifdef VBOX_WITH_NEM_R0
+#ifdef VBOX_WITH_NEM_R0
     uint8_t                 abPadding2[4096 - 64 - 64 - 64];
-# else
+#else
     uint8_t                 abPadding2[4096 - 64 - 64];
-# endif
 #endif
 } GVMCPU;
-#ifdef VBOX_BUGREF_9217
-# if RT_GNUC_PREREQ(4, 6) && defined(__cplusplus)
-#  pragma GCC diagnostic push
-# endif
-# if RT_GNUC_PREREQ(4, 3) && defined(__cplusplus)
-#  pragma GCC diagnostic ignored "-Winvalid-offsetof"
-# endif
+#if RT_GNUC_PREREQ(4, 6) && defined(__cplusplus)
+# pragma GCC diagnostic push
+#endif
+#if RT_GNUC_PREREQ(4, 3) && defined(__cplusplus)
+# pragma GCC diagnostic ignored "-Winvalid-offsetof"
+#endif
 AssertCompileMemberAlignment(GVMCPU, idCpu,  4096);
 AssertCompileMemberAlignment(GVMCPU, gvmm,   64);
-# ifdef VBOX_WITH_NEM_R0
+#ifdef VBOX_WITH_NEM_R0
 AssertCompileMemberAlignment(GVMCPU, nem,    64);
-# endif
+#endif
 AssertCompileSizeAlignment(GVMCPU,           4096);
-# if RT_GNUC_PREREQ(4, 6) && defined(__cplusplus)
-#  pragma GCC diagnostic pop
-# endif
-#else
-AssertCompileMemberOffset(GVMCPU, gvmm,      64);
-# ifdef VBOX_WITH_NEM_R0
-AssertCompileMemberOffset(GVMCPU, nemr0,     64 + 64);
-AssertCompileSize(        GVMCPU,            64 + 64 + 64);
-# else
-AssertCompileSize(        GVMCPU,            64 + 64);
-# endif
+#if RT_GNUC_PREREQ(4, 6) && defined(__cplusplus)
+# pragma GCC diagnostic pop
 #endif
 
 /** @} */
@@ -154,26 +133,21 @@ AssertCompileSize(        GVMCPU,            64 + 64);
  * Unlike VM, there are no special alignment restrictions here. The
  * paddings are checked by compile time assertions.
  */
-#if defined(VBOX_BUGREF_9217) && defined(__cplusplus)
+#ifdef __cplusplus
 typedef struct GVM : public VM
 #else
 typedef struct GVM
 #endif
 {
-#if defined(VBOX_BUGREF_9217) && !defined(__cplusplus)
+#ifndef __cplusplus
     VM              s;
 #endif
     /** Magic / eye-catcher (GVM_MAGIC). */
     uint32_t        u32Magic;
     /** The global VM handle for this VM. */
     uint32_t        hSelf;
-#ifdef VBOX_BUGREF_9217
     /** Pointer to this structure (for validation purposes). */
     PGVM            pSelf;
-#else
-    /** The ring-0 mapping of the VM structure. */
-    PVM             pVM;
-#endif
     /** The ring-3 mapping of the VM structure. */
     PVMR3           pVMR3;
     /** The support driver session the VM is associated with. */
@@ -222,50 +196,36 @@ typedef struct GVM
         uint8_t             padding[64];
     } rawpci;
 
-#ifdef VBOX_BUGREF_9217
     /** Padding so aCpus starts on a page boundrary.  */
-# ifdef VBOX_WITH_NEM_R0
+#ifdef VBOX_WITH_NEM_R0
     uint8_t         abPadding2[4096 - 64 - 256 - 512 - 256 - 64 - sizeof(PGVMCPU) * VMM_MAX_CPU_COUNT];
-# else
+#else
     uint8_t         abPadding2[4096 - 64 - 256 - 512       - 64 - sizeof(PGVMCPU) * VMM_MAX_CPU_COUNT];
-# endif
 #endif
+
     /** For simplifying CPU enumeration in VMMAll code. */
     PGVMCPU         apCpusR0[VMM_MAX_CPU_COUNT];
 
     /** GVMCPU array for the configured number of virtual CPUs. */
     GVMCPU          aCpus[1];
 } GVM;
-#ifdef VBOX_BUGREF_9217
-# if RT_GNUC_PREREQ(4, 6) && defined(__cplusplus)
-#  pragma GCC diagnostic push
-# endif
-# if RT_GNUC_PREREQ(4, 3) && defined(__cplusplus)
-#  pragma GCC diagnostic ignored "-Winvalid-offsetof"
-# endif
+#if RT_GNUC_PREREQ(4, 6) && defined(__cplusplus)
+# pragma GCC diagnostic push
+#endif
+#if RT_GNUC_PREREQ(4, 3) && defined(__cplusplus)
+# pragma GCC diagnostic ignored "-Winvalid-offsetof"
+#endif
 AssertCompileMemberAlignment(GVM, u32Magic, 64);
 AssertCompileMemberAlignment(GVM, gvmm,     64);
 AssertCompileMemberAlignment(GVM, gmm,      64);
-# ifdef VBOX_WITH_NEM_R0
+#ifdef VBOX_WITH_NEM_R0
 AssertCompileMemberAlignment(GVM, nem,      64);
-# endif
+#endif
 AssertCompileMemberAlignment(GVM, rawpci,   64);
 AssertCompileMemberAlignment(GVM, aCpus,    4096);
 AssertCompileSizeAlignment(GVM,             4096);
-# if RT_GNUC_PREREQ(4, 6) && defined(__cplusplus)
-#  pragma GCC diagnostic pop
-# endif
-#else
-AssertCompileMemberOffset(GVM, gvmm,        64);
-AssertCompileMemberOffset(GVM, gmm,         64 + 256);
-# ifdef VBOX_WITH_NEM_R0
-AssertCompileMemberOffset(GVM, nemr0,       64 + 256 + 512);
-AssertCompileMemberOffset(GVM, rawpci,      64 + 256 + 512 + 256);
-AssertCompileMemberOffset(GVM, aCpus,       64 + 256 + 512 + 256 + 64 + sizeof(PGVMCPU) * VMM_MAX_CPU_COUNT);
-# else
-AssertCompileMemberOffset(GVM, rawpci,      64 + 256 + 512);
-AssertCompileMemberOffset(GVM, aCpus,       64 + 256 + 512 + 64 + sizeof(PGVMCPU) * VMM_MAX_CPU_COUNT);
-# endif
+#if RT_GNUC_PREREQ(4, 6) && defined(__cplusplus)
+# pragma GCC diagnostic pop
 #endif
 
 /** The GVM::u32Magic value (Wayne Shorter). */

@@ -53,11 +53,7 @@ struc VMCPU
 
     alignb 64
     .pVMR3                  RTR3PTR_RES 1
-%ifndef VBOX_BUGREF_9217
-    .pVMR0                  RTR0PTR_RES 1
-%else
     .pVCpuR0ForVtg          RTR0PTR_RES 1
-%endif
     .pVMRC                  resq 1
     .pUVCpu                 RTR3PTR_RES 1
     .hNativeThread          RTR0PTR_RES 1
@@ -99,33 +95,19 @@ struc VM
     .pSession               RTR0PTR_RES 1
     .pUVM                   RTR3PTR_RES 1
     .pVMR3                  RTR3PTR_RES 1
-%ifdef VBOX_BUGREF_9217
     .pVMR0ForCall           RTR0PTR_RES 1
-%else
-    .pVMR0                  RTR0PTR_RES 1
-%endif
     .pVMRC                  resq 1
-%ifdef VBOX_BUGREF_9217
- %ifdef IN_RING0
+%ifdef IN_RING0
     .hSelfUnsafe            resd 1
     .cCpusUnsafe            resd 1
- %else
-    .hSelf                  resd 1
-    .cCpus                  resd 1
- %endif
 %else
     .hSelf                  resd 1
     .cCpus                  resd 1
 %endif
     .uCpuExecutionCap       resd 1
     .cbSelf                 resd 1
-%ifdef VBOX_BUGREF_9217
     .cbVCpu                 resd 1
     .uStructVersion         resd 1
-%else
-    .uUnused1               resd 1
-    .uUnused2               resd 1
-%endif
     .bMainExecutionEngine   resb 1
     .fHMEnabled             resb 1
     .fUseLargePages         resb 1
@@ -159,24 +141,14 @@ struc VM
     .cfgm                   resb 8
 
 %ifdef VBOX_WITH_REM
-    .abAlignment2           resb 2520       - RTR0PTR_CB * VMM_MAX_CPU_COUNT
+    .abAlignment2           resb 3032       - RTR0PTR_CB * VMM_MAX_CPU_COUNT
 %else
-    .abAlignment2           resb 2520 + 256 - RTR0PTR_CB * VMM_MAX_CPU_COUNT
+    .abAlignment2           resb 3032 + 256 - RTR0PTR_CB * VMM_MAX_CPU_COUNT
 %endif
 
     alignb RTR0PTR_CB * VMM_MAX_CPU_COUNT ; ASSUMES VMM_MAX_CPU_COUNT is a power of two.
-%ifndef VBOX_BUGREF_9217
-    .apCpusR0               RTR0PTR_RES VMM_MAX_CPU_COUNT
-%else
-    .apPaddingR0            RTR0PTR_RES VMM_MAX_CPU_COUNT
-%endif
     .apCpusR3               RTR3PTR_RES VMM_MAX_CPU_COUNT
-%ifndef VBOX_BUGREF_9217
- %ifndef VBOX_BUGREF_9217_PART_I
     alignb 4096
-    .aCpus                  resb VMCPU_size
- %endif
-%endif
 
 endstruc
 

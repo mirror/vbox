@@ -295,11 +295,7 @@ VMM_INT_DECL(int)               EMRemTryLock(PVM pVM);
 #ifdef IN_RING0
 /** @defgroup grp_em_r0     The EM Host Context Ring-0 API
  * @{ */
-# ifdef VBOX_BUGREF_9217
 VMMR0_INT_DECL(int)             EMR0InitVM(PGVM pGVM);
-# else
-VMMR0_INT_DECL(int)             EMR0InitVM(PGVM pGVM, PVM pVM);
-# endif
 /** @} */
 #endif
 

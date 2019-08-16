@@ -151,13 +151,8 @@ typedef struct VMCPU
      * @{ */
     /** Ring-3 Host Context VM Pointer. */
     PVMR3                   pVMR3;
-#ifndef VBOX_BUGREF_9217
-    /** Ring-0 Host Context VM Pointer. */
-    PVMR0                   pVMR0;
-#else
     /** Ring-0 Host Context VM Pointer, currently used by VTG/dtrace. */
     RTR0PTR                 pVCpuR0ForVtg;
-#endif
     /** Raw-mode Context VM Pointer. */
     uint32_t                pVMRC;
     /** Padding for new raw-mode (long mode).   */
@@ -170,7 +165,7 @@ typedef struct VMCPU
     RTNATIVETHREAD          hNativeThreadR0;
     /** The CPU ID.
      * This is the index into the VM::aCpu array. */
-#if defined(VBOX_BUGREF_9217) && defined(IN_RING0)
+#ifdef IN_RING0
     VMCPUID                 idCpuUnsafe;
 #else
     VMCPUID                 idCpu;
@@ -1001,7 +996,7 @@ AssertCompileSizeAlignment(VMCPU, 4096);
 /** @def VM_ASSERT_EMT0
  * Asserts that the current thread IS emulation thread \#0 (EMT0).
  */
-#if (defined(VBOX_BUGREF_9217_PART_I) || defined(VBOX_BUGREF_9217)) && defined(IN_RING3)
+#ifdef IN_RING3
 # define VM_ASSERT_EMT0(a_pVM)              VMCPU_ASSERT_EMT((a_pVM)->apCpusR3[0])
 #else
 # define VM_ASSERT_EMT0(a_pVM)              VMCPU_ASSERT_EMT(&(a_pVM)->aCpus[0])
@@ -1163,7 +1158,7 @@ typedef struct VM
     /** Pointer to the array of page descriptors for the VM structure allocation. */
     R3PTRTYPE(PSUPPAGE)         paVMPagesR3;
     /** Session handle. For use when calling SUPR0 APIs. */
-#if defined(VBOX_BUGREF_9217) && defined(IN_RING0)
+#ifdef IN_RING0
     PSUPDRVSESSION              pSessionUnsafe;
 #else
     PSUPDRVSESSION              pSession;
@@ -1171,31 +1166,26 @@ typedef struct VM
     /** Pointer to the ring-3 VM structure. */
     PUVM                        pUVM;
     /** Ring-3 Host Context VM Pointer. */
-#if defined(VBOX_BUGREF_9217) && defined(IN_RING0)
+#ifdef IN_RING0
     R3PTRTYPE(struct VM *)      pVMR3Unsafe;
 #else
     R3PTRTYPE(struct VM *)      pVMR3;
 #endif
-#ifndef VBOX_BUGREF_9217
-    /** Ring-0 Host Context VM Pointer. */
-    R0PTRTYPE(struct VM *)      pVMR0;
-#else
     /** Ring-0 Host Context VM pointer for making ring-0 calls. */
     R0PTRTYPE(struct VM *)      pVMR0ForCall;
-#endif
     /** Raw-mode Context VM Pointer. */
     uint32_t                    pVMRC;
     /** Padding for new raw-mode (long mode).   */
     uint32_t                    pVMRCPadding;
 
     /** The GVM VM handle. Only the GVM should modify this field. */
-#if defined(VBOX_BUGREF_9217) && defined(IN_RING0)
+#ifdef IN_RING0
     uint32_t                    hSelfUnsafe;
 #else
     uint32_t                    hSelf;
 #endif
     /** Number of virtual CPUs. */
-#if defined(VBOX_BUGREF_9217) && defined(IN_RING0)
+#ifdef IN_RING0
     uint32_t                    cCpusUnsafe;
 #else
     uint32_t                    cCpus;
@@ -1203,19 +1193,12 @@ typedef struct VM
     /** CPU excution cap (1-100) */
     uint32_t                    uCpuExecutionCap;
 
-#ifdef VBOX_BUGREF_9217
     /** Size of the VM structure. */
     uint32_t                    cbSelf;
     /** Size of the VMCPU structure. */
     uint32_t                    cbVCpu;
     /** Structure version number (TBD). */
     uint32_t                    uStructVersion;
-#else
-    /** Size of the VM structure including the VMCPU array. */
-    uint32_t                    cbSelf;
-    uint32_t                    uUnused1;
-    uint32_t                    uUnused2;
-#endif
 
     /** @name Various items that are frequently accessed.
      * @{ */
@@ -1463,28 +1446,15 @@ typedef struct VM
 
     /** Padding for aligning the structure size on a page boundrary. */
 #ifdef VBOX_WITH_REM
-    uint8_t         abAlignment2[3032       - (sizeof(PVMCPUR3) + sizeof(PVMCPUR0)) * VMM_MAX_CPU_COUNT];
+    uint8_t         abAlignment2[3032       - sizeof(PVMCPUR3) * VMM_MAX_CPU_COUNT];
 #else
-    uint8_t         abAlignment2[3032 + 256 - (sizeof(PVMCPUR3) + sizeof(PVMCPUR0)) * VMM_MAX_CPU_COUNT];
+    uint8_t         abAlignment2[3032 + 256 - sizeof(PVMCPUR3) * VMM_MAX_CPU_COUNT];
 #endif
 
     /* ---- end small stuff ---- */
-#if !defined(VBOX_BUGREF_9217)
-    /** Array of VMCPU ring-0 pointers.  This is temporary as these will
-     * live in GVM. */
-    PVMCPUR0        apCpusR0[VMM_MAX_CPU_COUNT];
-#else
-    PVMCPUR0        apPaddingR0[VMM_MAX_CPU_COUNT];
-#endif
 
     /** Array of VMCPU ring-3 pointers. */
     PVMCPUR3        apCpusR3[VMM_MAX_CPU_COUNT];
-#if !defined(VBOX_BUGREF_9217) && !defined(VBOX_BUGREF_9217_PART_I)
-    /** VMCPU array for the configured number of virtual CPUs.
-     * Must be aligned on a page boundary for TLB hit reasons as well as
-     * alignment of VMCPU members. */
-    VMCPU           aCpus[1];
-#endif
 } VM;
 
 

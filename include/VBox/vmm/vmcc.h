@@ -43,7 +43,7 @@
 /** @typedef VMCPUCC
  * Context specific VMCPU derived structure.
  * This is plain VM in ring-3 and GVMCPU (inherits from VMCPU) in ring-0.  */
-#if defined(IN_RING0) && defined(VBOX_BUGREF_9217)
+#ifdef IN_RING0
 typedef GVM     VMCC;
 typedef GVMCPU  VMCPUCC;
 #else
@@ -55,7 +55,7 @@ typedef VMCPU   VMCPUCC;
  * Gets the context specfic pointer to virtual CPU \#0.
  * @param   a_pVM   The context specfic VM structure.
  */
-#if defined(IN_RING0) && defined(VBOX_BUGREF_9217)
+#ifdef IN_RING0
 # define VMCC_GET_CPU_0(a_pVM)          (&(a_pVM)->aCpus[0])
 #else
 # define VMCC_GET_CPU_0(a_pVM)          ((a_pVM)->CTX_SUFF(apCpus)[0])
@@ -66,7 +66,7 @@ typedef VMCPU   VMCPUCC;
  * @param   a_pVM   The context specfic VM structure.
  * @param   a_idCpu The CPU number to get (caller ensures validity).
  */
-#if defined(IN_RING0) && defined(VBOX_BUGREF_9217)
+#ifdef IN_RING0
 # define VMCC_GET_CPU(a_pVM, a_idCpu)   (&(a_pVM)->aCpus[(a_idCpu)])
 #else
 # define VMCC_GET_CPU(a_pVM, a_idCpu)   ((a_pVM)->CTX_SUFF(apCpus)[(a_idCpu)])
@@ -112,7 +112,7 @@ typedef VMCPU   VMCPUCC;
 #define VMCC_FOR_EACH_VMCPU_STMT(a_pVM, a_Stmt) VMCC_FOR_EACH_VMCPU(pVM) { a_Stmt; } VMCC_FOR_EACH_VMCPU_END(pVM)
 
 /** @def VMCC_GET_VMR0_FOR_CALL(pVM)   */
-#if defined(IN_RING3) && defined(VBOX_BUGREF_9217)
+#if   defined(IN_RING3)
 # define VMCC_GET_VMR0_FOR_CALL(a_pVM)  ((a_pVM)->pVMR0ForCall)
 #elif defined(IN_RING3)
 # define VMCC_GET_VMR0_FOR_CALL(a_pVM)  ((a_pVM)->pVMR0)

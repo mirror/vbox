@@ -116,28 +116,28 @@ typedef R3PTRTYPE(struct UVMCPU *)  PUVMCPU;
 
 /** Pointer to a context specific VM derived structure.
  * This is PGVM in ring-0 and plain PVM in ring-3. */
-#if defined(IN_RING0) && defined(VBOX_BUGREF_9217)
+#ifdef IN_RING0
 typedef PGVM                        PVMCC;
 #else
 typedef PVM                         PVMCC;
 #endif
 /** Pointer to a const context specific VM derived structure.
  * This is PCGVM in ring-0 and plain PCVM in ring-3. */
-#if defined(IN_RING0) && defined(VBOX_BUGREF_9217)
+#ifdef IN_RING0
 typedef PCGVM                       PCVMCC;
 #else
 typedef PCVM                        PCVMCC;
 #endif
 /** Pointer to a context specific VMCPUM derived structure.
  * This is PGVMCPU in ring-0 and plain PVMCPU in ring-3. */
-#if defined(IN_RING0) && defined(VBOX_BUGREF_9217)
+#ifdef IN_RING0
 typedef PGVMCPU                     PVMCPUCC;
 #else
 typedef PVMCPU                      PVMCPUCC;
 #endif
 /** Pointer to a const context specific VMCPU derived structure.
  * This is PCGVMCPU in ring-0 and plain PCVMCPU in ring-3. */
-#if defined(IN_RING0) && defined(VBOX_BUGREF_9217)
+#ifdef IN_RING0
 typedef PCGVMCPU                    PCVMCPUCC;
 #else
 typedef PCVMCPU                     PCVMCPUCC;
