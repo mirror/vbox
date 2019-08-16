@@ -431,7 +431,7 @@ if1of ($(KBUILD_TARGET), win)
  VBOX_WITH_NATIVE_NEM = 1
 endif
 # Enables new VM/GVM allocation style (see VBox/types.h too).
-if1of ($(KBUILD_TARGET), linux win)
+if1of ($(KBUILD_TARGET), darwin linux win)
  VBOX_BUGREF_9217 := 1
 endif
 ## @}
