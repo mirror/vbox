@@ -217,6 +217,8 @@ protected:
 
     static int Thread(RTTHREAD hThread, void *pvUser);
 
+    int readDir(PSHAREDCLIPBOARDURITRANSFER pTransfer, const Utf8Str &strPath);
+
     int copyToHGlobal(const void *pvData, size_t cbData, UINT fFlags, HGLOBAL *phGlobal);
     int createFileGroupDescriptorFromTransfer(PSHAREDCLIPBOARDURITRANSFER pTransfer,
                                               bool fUnicode, HGLOBAL *phGlobal);
@@ -248,8 +250,8 @@ protected:
     PSHAREDCLIPBOARDURITRANSFER m_pTransfer;
     IStream                    *m_pStream;
     ULONG                       m_uObjIdx;
-    /** List of (cached) file system root objects. */
-    FsObjEntryList              m_lstRootEntries;
+    /** List of (cached) file system objects. */
+    FsObjEntryList              m_lstEntries;
     /** Event being triggered when reading the transfer list been completed. */
     RTSEMEVENT                  m_EventListComplete;
     /** Event being triggered when the transfer has been completed. */

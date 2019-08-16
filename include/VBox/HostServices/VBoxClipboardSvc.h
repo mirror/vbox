@@ -197,6 +197,15 @@
 #define VBOX_SHARED_CLIPBOARD_CONTEXTID_GET_EVENT(uContextID) \
     RT_LO_U16(uContextID)
 
+/**
+ * Structure for keeping a Shared Clipboard HGCM message context.
+ */
+typedef struct _VBOXSHCLMSGCTX
+{
+    /** Context ID. */
+    uint32_t uContextID;
+} VBOXSHCLMSGCTX, *PVBOXSHCLMSGCTX;
+
 /*
  * HGCM parameter structures.
  */
@@ -260,7 +269,7 @@ typedef struct _VBoxClipboardTransferReport
 {
     VBGLIOCHGCMCALL hdr;
 
-    /** uint32_t, out: Context ID. Unused at the moment. */
+    /** uint32_t, out: Context ID. */
     HGCMFunctionParameter uContext;
     /** uint32_t, out: Status to report. */
     HGCMFunctionParameter uStatus;
@@ -309,7 +318,7 @@ typedef struct _VBoxClipboardStatusMsg
 {
     VBGLIOCHGCMCALL hdr;
 
-    /** uint32_t, in: Context ID. Unused at the moment. */
+    /** uint32_t, in: Context ID. */
     HGCMFunctionParameter uContext;
     /** uint32_t, in: Transfer status of type SHAREDCLIPBOARDURITRANSFERSTATUS. */
     HGCMFunctionParameter uStatus;
@@ -334,7 +343,7 @@ typedef struct _VBoxClipboardReplyMsg
 {
     VBGLIOCHGCMCALL hdr;
 
-    /** uint32_t, out: Context ID. Unused at the moment. */
+    /** uint32_t, out: Context ID. */
     HGCMFunctionParameter uContext;
     /** uint32_t, out: Message type of type VBOX_SHAREDCLIPBOARD_REPLYMSGTYPE_XXX. */
     HGCMFunctionParameter enmType;
@@ -451,7 +460,7 @@ typedef struct _VBoxClipboardListOpenMsg
 {
     VBGLIOCHGCMCALL hdr;
 
-    /** uint32_t, in: Context ID. Unused at the moment. */
+    /** uint32_t, in: Context ID. */
     HGCMFunctionParameter uContext;
     /** uint32_t, in: Listing flags (see VBOX_SHAREDCLIPBOARD_LIST_FLAG_XXX). */
     HGCMFunctionParameter fList;
@@ -476,7 +485,7 @@ typedef struct _VBoxClipboardListCloseMsg
 {
     VBGLIOCHGCMCALL hdr;
 
-    /** uint32_t, in/out: Context ID. Unused at the moment. */
+    /** uint32_t, in/out: Context ID. */
     HGCMFunctionParameter uContext;
     /** uint64_t, in: List handle. */
     HGCMFunctionParameter uHandle;
@@ -486,7 +495,7 @@ typedef struct _VBoxClipboardListCloseMsg
 
 typedef struct _VBoxClipboardListHdrReqParms
 {
-    /** uint32_t, in: Context ID. Unused at the moment. */
+    /** uint32_t, in: Context ID. */
     HGCMFunctionParameter uContext;
     /** uint64_t, in: List handle. */
     HGCMFunctionParameter uHandle;
@@ -530,7 +539,7 @@ typedef struct _VBoxClipboardListHdrMsg
 
 typedef struct _VBoxClipboardListEntryReqParms
 {
-    /** uint32_t, in: Context ID. Unused at the moment. */
+    /** uint32_t, in: Context ID. */
     HGCMFunctionParameter uContext;
     /** uint64_t, in: List handle. */
     HGCMFunctionParameter uHandle;
@@ -574,7 +583,7 @@ typedef struct _VBoxClipboardObjOpenMsg
 {
     VBGLIOCHGCMCALL hdr;
 
-    /** uint32_t, in/out: Context ID. Unused at the moment. */
+    /** uint32_t, in/out: Context ID. */
     HGCMFunctionParameter uContext;
     /** uint64_t, in/out: Object handle. */
     HGCMFunctionParameter uHandle;
@@ -594,7 +603,7 @@ typedef struct _VBoxClipboardObjCloseMsg
 {
     VBGLIOCHGCMCALL hdr;
 
-    /** uint32_t, in/out: Context ID. Unused at the moment. */
+    /** uint32_t, in/out: Context ID. */
     HGCMFunctionParameter uContext;
     /** uint64_t, in: SHAREDCLIPBOARDOBJHANDLE of object to close. */
     HGCMFunctionParameter uHandle;
@@ -604,7 +613,7 @@ typedef struct _VBoxClipboardObjCloseMsg
 
 typedef struct _VBoxClipboardObjReadReqParms
 {
-    /** uint32_t, in: Context ID. Unused at the moment. */
+    /** uint32_t, in: Context ID. */
     HGCMFunctionParameter uContext;
     /** uint64_t, in: SHAREDCLIPBOARDOBJHANDLE of object to write to. */
     HGCMFunctionParameter uHandle;
@@ -634,7 +643,7 @@ typedef struct _VBoxClipboardObjReadWriteMsg
 {
     VBGLIOCHGCMCALL hdr;
 
-    /** uint32_t, in/out: Context ID. Unused at the moment. */
+    /** uint32_t, in/out: Context ID. */
     HGCMFunctionParameter uContext;
     /** uint64_t, in/out: SHAREDCLIPBOARDOBJHANDLE of object to write to. */
     HGCMFunctionParameter uHandle;
@@ -662,7 +671,7 @@ typedef struct _VBoxClipboardErrorMsg
 {
     VBGLIOCHGCMCALL hdr;
 
-    /** uint32_t, in: Context ID. Unused at the moment. */
+    /** uint32_t, in: Context ID. */
     HGCMFunctionParameter uContext;
     /** uint32_t, in: The error code (IPRT-style). */
     HGCMFunctionParameter rc;

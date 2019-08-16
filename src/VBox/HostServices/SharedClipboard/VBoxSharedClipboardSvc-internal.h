@@ -44,6 +44,9 @@ using namespace HGCM;
 struct VBOXCLIPBOARDCLIENTSTATE;
 #endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
 
+/**
+ * Structure for keeping a single HGCM message.
+ */
 typedef struct _VBOXCLIPBOARDCLIENTMSG
 {
     /** Stored message type. */
@@ -52,6 +55,8 @@ typedef struct _VBOXCLIPBOARDCLIENTMSG
     uint32_t         m_cParms;
     /** Stored HGCM parameters. */
     PVBOXHGCMSVCPARM m_paParms;
+    /** Message context. */
+    VBOXSHCLMSGCTX   m_Ctx;
 } VBOXCLIPBOARDCLIENTMSG, *PVBOXCLIPBOARDCLIENTMSG;
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST

@@ -221,7 +221,86 @@ int VBoxClipboardWinDataObject::copyToHGlobal(const void *pvData, size_t cbData,
     return VERR_ACCESS_DENIED;
 }
 
-/* static */
+/**
+ * Reads (handles) a specific directory reursively and inserts its entry into the
+ * objects's entry list.
+ *
+ * @returns VBox status code.
+ * @param   pTransfer           URI transfer object to handle.
+ * @param   strDir              Directory path to handle.
+ */
+int VBoxClipboardWinDataObject::readDir(PSHAREDCLIPBOARDURITRANSFER pTransfer, const Utf8Str &strDir)
+{
+    LogFlowFunc(("strDir=%s\n", strDir.c_str()));
+
+    VBOXCLIPBOARDLISTOPENPARMS openParmsList;
+    int rc = SharedClipboardURIListOpenParmsInit(&openParmsList);
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTStrCopy(openParmsList.pszPath, openParmsList.cbPath, strDir.c_str());
+        if (RT_SUCCESS(rc))
+        {
+            SHAREDCLIPBOARDLISTHANDLE hList;
+            rc = SharedClipboardURITransferListOpen(pTransfer, &openParmsList, &hList);
+            if (RT_SUCCESS(rc))
+            {
+                LogFlowFunc(("strDir=%s -> hList=%RU64\n", strDir.c_str(), hList));
+
+                VBOXCLIPBOARDLISTHDR hdrList;
+                rc = SharedClipboardURITransferListGetHeader(pTransfer, hList, &hdrList);
+                if (RT_SUCCESS(rc))
+                {
+                    LogFlowFunc(("cTotalObjects=%RU64, cbTotalSize=%RU64\n\n",
+                                 hdrList.cTotalObjects, hdrList.cbTotalSize));
+
+                    for (uint64_t o = 0; o < hdrList.cTotalObjects; o++)
+                    {
+                        VBOXCLIPBOARDLISTENTRY entryList;
+                        rc = SharedClipboardURITransferListRead(pTransfer, hList, &entryList);
+                        if (RT_SUCCESS(rc))
+                        {
+                            PSHAREDCLIPBOARDFSOBJINFO pFsObjInfo = (PSHAREDCLIPBOARDFSOBJINFO)entryList.pvInfo;
+                            Assert(entryList.cbInfo == sizeof(SHAREDCLIPBOARDFSOBJINFO));
+
+                            Utf8Str strPath = strDir + Utf8Str("\\") + Utf8Str(entryList.pszName);
+
+                            LogFlowFunc(("\t%s (%RU64 bytes) -> %s\n",
+                                         entryList.pszName, pFsObjInfo->cbObject, strPath.c_str()));
+
+                            if (RTFS_IS_DIRECTORY(pFsObjInfo->Attr.fMode))
+                            {
+                                FSOBJENTRY objEntry = { strPath.c_str(), *pFsObjInfo };
+
+                                m_lstEntries.push_back(objEntry); /** @todo Can this throw? */
+
+                                rc = readDir(pTransfer, strPath.c_str());
+                            }
+                            else if (RTFS_IS_FILE(pFsObjInfo->Attr.fMode))
+                            {
+                                FSOBJENTRY objEntry = { strPath.c_str(), *pFsObjInfo };
+
+                                m_lstEntries.push_back(objEntry); /** @todo Can this throw? */
+                            }
+
+                            /** @todo Handle symlinks. */
+                        }
+
+                        if (   RT_FAILURE(rc)
+                            && pTransfer->Thread.fStop)
+                            break;
+                    }
+                }
+
+                SharedClipboardURITransferListClose(pTransfer, hList);
+            }
+        }
+
+        SharedClipboardURIListOpenParmsDestroy(&openParmsList);
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
 
 /**
  * Thread for reading URI data.
@@ -232,6 +311,7 @@ int VBoxClipboardWinDataObject::copyToHGlobal(const void *pvData, size_t cbData,
  * @param   ThreadSelf          Thread handle. Unused at the moment.
  * @param   pvUser              Pointer to user-provided data. Of type VBoxClipboardWinDataObject.
  */
+/* static */
 DECLCALLBACK(int) VBoxClipboardWinDataObject::readThread(RTTHREAD ThreadSelf, void *pvUser)
 {
     RT_NOREF(ThreadSelf);
@@ -257,6 +337,8 @@ DECLCALLBACK(int) VBoxClipboardWinDataObject::readThread(RTTHREAD ThreadSelf, vo
         rc = SharedClipboardURILTransferRootsAsList(pTransfer, &pRootList);
         if (RT_SUCCESS(rc))
         {
+            LogFlowFunc(("cRoots=%RU32\n\n", pRootList->Hdr.cRoots));
+
             for (uint32_t i = 0; i < pRootList->Hdr.cRoots; i++)
             {
                 PVBOXCLIPBOARDLISTENTRY pRootEntry = &pRootList->paEntries[i];
@@ -269,65 +351,17 @@ DECLCALLBACK(int) VBoxClipboardWinDataObject::readThread(RTTHREAD ThreadSelf, vo
 
                 if (RTFS_IS_DIRECTORY(pFsObjInfo->Attr.fMode))
                 {
-                    VBOXCLIPBOARDLISTOPENPARMS openParmsList;
-                    rc = SharedClipboardURIListOpenParmsInit(&openParmsList);
-                    if (RT_FAILURE(rc))
-                        break;
+                    FSOBJENTRY objEntry = { pRootEntry->pszName, *pFsObjInfo };
 
-                    rc = RTStrCopy(openParmsList.pszPath, openParmsList.cbPath, pRootEntry->pszName);
-                    if (RT_FAILURE(rc))
-                        break;
+                    pThis->m_lstEntries.push_back(objEntry); /** @todo Can this throw? */
 
-                    SHAREDCLIPBOARDLISTHANDLE hList;
-                    rc = SharedClipboardURITransferListOpen(pTransfer, &openParmsList, &hList);
-                    if (RT_SUCCESS(rc))
-                    {
-                        LogFlowFunc(("hList=%RU64\n", hList));
-
-                        VBOXCLIPBOARDLISTHDR hdrList;
-                        rc = SharedClipboardURITransferListGetHeader(pTransfer, hList, &hdrList);
-                        if (RT_SUCCESS(rc))
-                        {
-                            LogFlowFunc(("cTotalObjects=%RU64, cbTotalSize=%RU64\n\n",
-                                         hdrList.cTotalObjects, hdrList.cbTotalSize));
-
-                            do
-                            {
-                                VBOXCLIPBOARDLISTENTRY entryList;
-                                rc = SharedClipboardURITransferListRead(pTransfer, hList, &entryList);
-                                if (RT_SUCCESS(rc))
-                                {
-                                    PSHAREDCLIPBOARDFSOBJINFO pObjInfo = (PSHAREDCLIPBOARDFSOBJINFO)entryList.pvInfo;
-                                    Assert(entryList.cbInfo == sizeof(SHAREDCLIPBOARDFSOBJINFO));
-
-                                    LogFlowFunc(("\t%s (%RU64 bytes)\n", entryList.pszName, pObjInfo->cbObject));
-
-                                    FSOBJENTRY objEntry = { entryList.pszName, *pObjInfo };
-                                    pThis->m_lstRootEntries.push_back(objEntry); /** @todo Can this throw? */
-                                }
-                                else
-                                {
-                                    if (rc == VERR_NO_MORE_FILES) /* End of list has been reached. */
-                                        rc = VINF_SUCCESS;
-                                    break;
-                                }
-
-                                if (pTransfer->Thread.fStop)
-                                    break;
-
-                            } while (RT_SUCCESS(rc));
-                        }
-
-                        SharedClipboardURITransferListClose(pTransfer, hList);
-                    }
-
-                    SharedClipboardURIListOpenParmsDestroy(&openParmsList);
+                    rc = pThis->readDir(pTransfer, pRootEntry->pszName);
                 }
                 else if (RTFS_IS_FILE(pFsObjInfo->Attr.fMode))
                 {
                     FSOBJENTRY objEntry = { pRootEntry->pszName, *pFsObjInfo };
 
-                    pThis->m_lstRootEntries.push_back(objEntry); /** @todo Can this throw? */
+                    pThis->m_lstEntries.push_back(objEntry); /** @todo Can this throw? */
                 }
 
                 if (RT_FAILURE(rc))
@@ -382,7 +416,7 @@ int VBoxClipboardWinDataObject::createFileGroupDescriptorFromTransfer(PSHAREDCLI
     const size_t cbFileGroupDescriptor = fUnicode ? sizeof(FILEGROUPDESCRIPTORW) : sizeof(FILEGROUPDESCRIPTORA);
     const size_t cbFileDescriptor = fUnicode ? sizeof(FILEDESCRIPTORW) : sizeof(FILEDESCRIPTORA);
 
-    const UINT   cItems = (UINT)m_lstRootEntries.size(); /** UINT vs. size_t. */
+    const UINT   cItems = (UINT)m_lstEntries.size(); /** UINT vs. size_t. */
     if (!cItems)
         return VERR_NOT_FOUND;
           UINT   curIdx = 0; /* Current index of the handled file group descriptor (FGD). */
@@ -402,8 +436,8 @@ int VBoxClipboardWinDataObject::createFileGroupDescriptorFromTransfer(PSHAREDCLI
 
     char *pszFileSpec = NULL;
 
-    FsObjEntryList::const_iterator itRoot = m_lstRootEntries.begin();
-    while (itRoot != m_lstRootEntries.end())
+    FsObjEntryList::const_iterator itRoot = m_lstEntries.begin();
+    while (itRoot != m_lstEntries.end())
     {
         FILEDESCRIPTOR *pFD = &pFGD->fgd[curIdx];
         RT_BZERO(pFD, cbFileDescriptor);
@@ -569,11 +603,11 @@ STDMETHODIMP VBoxClipboardWinDataObject::GetData(LPFORMATETC pFormatEtc, LPSTGME
     if (pFormatEtc->cfFormat == m_cfFileContents)
     {
         if (          pFormatEtc->lindex >= 0
-            && (ULONG)pFormatEtc->lindex <  m_lstRootEntries.size())
+            && (ULONG)pFormatEtc->lindex <  m_lstEntries.size())
         {
             m_uObjIdx = pFormatEtc->lindex; /* lIndex of FormatEtc contains the actual index to the object being handled. */
 
-            FSOBJENTRY &fsObjEntry = m_lstRootEntries.at(m_uObjIdx);
+            FSOBJENTRY &fsObjEntry = m_lstEntries.at(m_uObjIdx);
 
             LogFlowFunc(("FormatIndex_FileContents: m_uObjIdx=%u (entry '%s')\n", m_uObjIdx, fsObjEntry.strPath.c_str()));
 
@@ -736,9 +770,9 @@ void VBoxClipboardWinDataObject::OnTransferComplete(int rc /* = VINF_SUCESS */)
 {
     RT_NOREF(rc);
 
-    LogFlowFunc(("m_uObjIdx=%RU32 (total: %zu)\n", m_uObjIdx, m_lstRootEntries.size()));
+    LogFlowFunc(("m_uObjIdx=%RU32 (total: %zu)\n", m_uObjIdx, m_lstEntries.size()));
 
-    const bool fComplete = m_uObjIdx == m_lstRootEntries.size() - 1 /* Object index is zero-based */;
+    const bool fComplete = m_uObjIdx == m_lstEntries.size() - 1 /* Object index is zero-based */;
     if (fComplete)
     {
         int rc2 = RTSemEventSignal(m_EventTransferComplete);

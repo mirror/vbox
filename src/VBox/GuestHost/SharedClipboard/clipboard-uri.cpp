@@ -951,82 +951,79 @@ static int sharedClipboardURITransferListHdrFromDir(PVBOXCLIPBOARDLISTHDR pHdr,
     {
         if (RTFS_IS_DIRECTORY(objInfo.Attr.fMode))
         {
-            pHdr->cTotalObjects++; /* Add directory itself. */
+            pHdr->cTotalObjects++;
 
+            RTDIR hDir;
+            rc = RTDirOpen(&hDir, pcszSrcPath);
             if (RT_SUCCESS(rc))
             {
-                RTDIR hDir;
-                rc = RTDirOpen(&hDir, pcszSrcPath);
-                if (RT_SUCCESS(rc))
+                size_t        cbDirEntry = 0;
+                PRTDIRENTRYEX pDirEntry  = NULL;
+                do
                 {
-                    size_t        cbDirEntry = 0;
-                    PRTDIRENTRYEX pDirEntry  = NULL;
-                    do
+                    /* Retrieve the next directory entry. */
+                    rc = RTDirReadExA(hDir, &pDirEntry, &cbDirEntry, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK);
+                    if (RT_FAILURE(rc))
                     {
-                        /* Retrieve the next directory entry. */
-                        rc = RTDirReadExA(hDir, &pDirEntry, &cbDirEntry, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK);
-                        if (RT_FAILURE(rc))
+                        if (rc == VERR_NO_MORE_FILES)
+                            rc = VINF_SUCCESS;
+                        break;
+                    }
+
+                    switch (pDirEntry->Info.Attr.fMode & RTFS_TYPE_MASK)
+                    {
+                #if 0 /* No recursion here (yet). */
+                        case RTFS_TYPE_DIRECTORY:
                         {
-                            if (rc == VERR_NO_MORE_FILES)
-                                rc = VINF_SUCCESS;
+                            /* Skip "." and ".." entries. */
+                            if (RTDirEntryExIsStdDotLink(pDirEntry))
+                                break;
+
+                            char *pszSrc = RTPathJoinA(pcszSrcPath, pDirEntry->szName);
+                            if (pszSrc)
+                            {
+                                char *pszDst = RTPathJoinA(pcszDstPath, pDirEntry->szName);
+                                if (pszDst)
+                                {
+                                    rc = sharedClipboardURITransferListHdrFromDir(pHdr, pszSrc, pszDst,
+                                                                                  pcszDstBase, cchDstBase);
+                                    RTStrFree(pszDst);
+                                }
+                                else
+                                    rc = VERR_NO_MEMORY;
+
+                                RTStrFree(pszSrc);
+                            }
+                            else
+                                rc = VERR_NO_MEMORY;
                             break;
                         }
-
-                        switch (pDirEntry->Info.Attr.fMode & RTFS_TYPE_MASK)
+                #endif
+                        case RTFS_TYPE_FILE:
                         {
-                    #if 0 /* No recursion here (yet). */
-                            case RTFS_TYPE_DIRECTORY:
+                            char *pszSrc = RTPathJoinA(pcszSrcPath, pDirEntry->szName);
+                            if (pszSrc)
                             {
-                                /* Skip "." and ".." entries. */
-                                if (RTDirEntryExIsStdDotLink(pDirEntry))
-                                    break;
-
-                                char *pszSrc = RTPathJoinA(pcszSrcPath, pDirEntry->szName);
-                                if (pszSrc)
-                                {
-                                    char *pszDst = RTPathJoinA(pcszDstPath, pDirEntry->szName);
-                                    if (pszDst)
-                                    {
-                                        rc = sharedClipboardURITransferListHdrFromDir(pHdr, pszSrc, pszDst,
-                                                                                      pcszDstBase, cchDstBase);
-                                        RTStrFree(pszDst);
-                                    }
-                                    else
-                                        rc = VERR_NO_MEMORY;
-
-                                    RTStrFree(pszSrc);
-                                }
-                                else
-                                    rc = VERR_NO_MEMORY;
-                                break;
+                                rc = sharedClipboardURITransferListHdrAddFile(pHdr, pszSrc);
+                                RTStrFree(pszSrc);
                             }
-                    #endif
-                            case RTFS_TYPE_FILE:
-                            {
-                                char *pszSrc = RTPathJoinA(pcszSrcPath, pDirEntry->szName);
-                                if (pszSrc)
-                                {
-                                    rc = sharedClipboardURITransferListHdrAddFile(pHdr, pszSrc);
-                                    RTStrFree(pszSrc);
-                                }
-                                else
-                                    rc = VERR_NO_MEMORY;
-                                break;
-                            }
-                            case RTFS_TYPE_SYMLINK:
-                            {
-                                /** @todo Not implemented yet. */
-                            }
-
-                            default:
-                                break;
+                            else
+                                rc = VERR_NO_MEMORY;
+                            break;
+                        }
+                        case RTFS_TYPE_SYMLINK:
+                        {
+                            /** @todo Not implemented yet. */
                         }
 
-                    } while (RT_SUCCESS(rc));
+                        default:
+                            break;
+                    }
 
-                    RTDirReadExAFree(&pDirEntry, &cbDirEntry);
-                    RTDirClose(hDir);
-                }
+                } while (RT_SUCCESS(rc));
+
+                RTDirReadExAFree(&pDirEntry, &cbDirEntry);
+                RTDirClose(hDir);
             }
         }
         else if (RTFS_IS_FILE(objInfo.Attr.fMode))
@@ -1124,6 +1121,8 @@ int SharedClipboardURITransferListGetHeader(PSHAREDCLIPBOARDURITRANSFER pTransfe
                 else
                     AssertFailedStmt(rc = VERR_NOT_SUPPORTED);
             }
+
+            LogFlowFunc(("cTotalObj=%RU64, cbTotalSize=%RU64\n", pHdr->cTotalObjects, pHdr->cbTotalSize));
         }
         else
             rc = VERR_NOT_FOUND;
