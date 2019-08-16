@@ -56,40 +56,7 @@ RT_C_DECLS_BEGIN
 /** @} */
 
 
-/** @def VM_RC_ADDR
- * Converts a current context address of data within the VM structure to the equivalent
- * raw-mode address.
- *
- * @returns raw-mode virtual address.
- * @param   pVM     The cross context VM structure.
- * @param   pvInVM  CC Pointer within the VM.
- */
-#ifdef IN_RING3
-# define VM_RC_ADDR(pVM, pvInVM)        ( (RTRCPTR)((RTRCUINTPTR)pVM->pVMRC + (uint32_t)((uintptr_t)(pvInVM) - (uintptr_t)pVM->pVMR3)) )
-#elif defined(IN_RING0)
-# define VM_RC_ADDR(pVM, pvInVM)        ( (RTRCPTR)((RTRCUINTPTR)pVM->pVMRC + (uint32_t)((uintptr_t)(pvInVM) - (uintptr_t)pVM->pVMR0)) )
-#else
-# define VM_RC_ADDR(pVM, pvInVM)        ( (RTRCPTR)(pvInVM) )
-#endif
-
-/** @def VM_R3_ADDR
- * Converts a current context address of data within the VM structure to the equivalent
- * ring-3 host address.
- *
- * @returns host virtual address.
- * @param   pVM     The cross context VM structure.
- * @param   pvInVM  CC pointer within the VM.
- */
-#ifdef IN_RC
-# define VM_R3_ADDR(pVM, pvInVM)       ( (RTR3PTR)((RTR3UINTPTR)pVM->pVMR3 + (uint32_t)((uintptr_t)(pvInVM) - (uintptr_t)pVM->pVMRC)) )
-#elif defined(IN_RING0)
-# define VM_R3_ADDR(pVM, pvInVM)       ( (RTR3PTR)((RTR3UINTPTR)pVM->pVMR3 + (uint32_t)((uintptr_t)(pvInVM) - (uintptr_t)pVM->pVMR0)) )
-#else
-# define VM_R3_ADDR(pVM, pvInVM)       ( (RTR3PTR)(pvInVM) )
-#endif
-
-
-#if 0
+#ifndef VBOX_BUGREF_9217
 /** @def VM_R0_ADDR
  * Converts a current context address of data within the VM structure to the equivalent
  * ring-0 host address.
