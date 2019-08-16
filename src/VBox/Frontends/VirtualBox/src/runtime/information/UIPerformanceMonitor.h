@@ -37,7 +37,6 @@
 
 /* GUI includes: */
 #include "QIWithRetranslateUI.h"
-#include "UIMainEventListener.h"
 
 /* Forward declarations: */
 class QTimer;

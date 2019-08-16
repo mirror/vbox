@@ -20,16 +20,13 @@
 #include <QLabel>
 #include <QPainter>
 #include <QGridLayout>
+#include <QStyle>
 #include <QTimer>
 
 /* GUI includes: */
 #include "UICommon.h"
-#include "UIPerformanceMonitor.h"
-#include "UIInformationDataItem.h"
-#include "UIInformationItem.h"
-#include "UIInformationView.h"
 #include "UIExtraDataManager.h"
-#include "UIInformationModel.h"
+#include "UIPerformanceMonitor.h"
 #include "UISession.h"
 
 #include "CGuest.h"
