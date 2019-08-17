@@ -394,11 +394,7 @@ static int vmmR0InitVM(PGVM pGVM, PVMCC pVM, uint32_t uSvnRev, uint32_t uBuildTy
     /*
      * Register the EMT R0 logger instance for VCPU 0.
      */
-#ifdef VBOX_BUGREF_9217
-    PVMCPUCC pVCpu = &pGVM->aCpus[0];
-#else
     PVMCPUCC pVCpu = VMCC_GET_CPU_0(pVM);
-#endif
 
     PVMMR0LOGGER pR0Logger = pVCpu->vmm.s.pR0LoggerR0;
     if (pR0Logger)
@@ -474,11 +470,7 @@ static int vmmR0InitVM(PGVM pGVM, PVMCC pVM, uint32_t uSvnRev, uint32_t uBuildTy
                 if (RT_SUCCESS(rc))
                 {
                     VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
-#ifdef VBOX_BUGREF_9217
                     rc = EMR0InitVM(pGVM);
-#else
-                    rc = EMR0InitVM(pGVM, pVM);
-#endif
                     if (RT_SUCCESS(rc))
                     {
                         VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
@@ -543,11 +535,7 @@ static int vmmR0InitVMEmt(PGVM pGVM, PVMCC pVM, VMCPUID idCpu)
     /*
      * Registration of ring 0 loggers.
      */
-#ifdef VBOX_BUGREF_9217
     PVMCPUCC       pVCpu     = &pGVM->aCpus[idCpu];
-#else
-    PVMCPUCC       pVCpu     = VMCC_GET_CPU(pVM, idCpu);
-#endif
     PVMMR0LOGGER pR0Logger = pVCpu->vmm.s.pR0LoggerR0;
     if (   pR0Logger
         && !pR0Logger->fRegistered)
@@ -728,11 +716,7 @@ static int vmmR0DoHaltInterrupt(PVMCPUCC pVCpu, unsigned uMWait, CPUMINTERRUPTIB
  */
 static int vmmR0DoHalt(PGVM pGVM, PVMCC pVM, PGVMCPU pGVCpu, PVMCPUCC pVCpu)
 {
-#ifdef VBOX_BUGREF_9217
     Assert(pVCpu == pGVCpu);
-#else
-    Assert(pVCpu == pGVCpu->pVCpu);
-#endif
 
     /*
      * Do spin stat historization.
@@ -1308,12 +1292,8 @@ VMMR0DECL(void) VMMR0EntryFast(PGVM pGVM, PVMCC pVM, VMCPUID idCpu, VMMR0OPERATI
         return;
     }
 
-    PGVMCPU pGVCpu = &pGVM->aCpus[idCpu];
-#ifdef VBOX_BUGREF_9217
+    PGVMCPU   pGVCpu = &pGVM->aCpus[idCpu];
     PVMCPUCC  pVCpu  = pGVCpu;
-#else
-    PVMCPUCC  pVCpu  = VMCC_GET_CPU(pVM, idCpu);
-#endif
     RTNATIVETHREAD const hNativeThread = RTThreadNativeSelf();
     if (RT_LIKELY(   pGVCpu->hEMT           == hNativeThread
                   && pVCpu->hNativeThreadR0 == hNativeThread))
@@ -1631,19 +1611,11 @@ static int vmmR0EntryExWorker(PGVM pGVM, PVMCC pVM, VMCPUID idCpu, VMMR0OPERATIO
             return VERR_INVALID_POINTER;
         }
 
-#ifdef VBOX_BUGREF_9217
         if (RT_LIKELY(pGVM == pVM))
-#else
-        if (RT_LIKELY(pGVM->pVM == pVM))
-#endif
         { /* likely */ }
         else
         {
-#ifdef VBOX_BUGREF_9217
             SUPR0Printf("vmmR0EntryExWorker: pVM mismatch: got %p, pGVM/pVM=%p\n", pVM, pGVM);
-#else
-            SUPR0Printf("vmmR0EntryExWorker: pVM mismatch: got %p, pGVM->pVM=%p\n", pVM, pGVM->pVM);
-#endif
             return VERR_INVALID_PARAMETER;
         }
 
@@ -1655,29 +1627,16 @@ static int vmmR0EntryExWorker(PGVM pGVM, PVMCC pVM, VMCPUID idCpu, VMMR0OPERATIO
             return VERR_INVALID_PARAMETER;
         }
 
-#ifdef VBOX_BUGREF_9217
         if (RT_LIKELY(   pVM->enmVMState >= VMSTATE_CREATING
                       && pVM->enmVMState <= VMSTATE_TERMINATED
                       && pVM->cCpus      == pGVM->cCpus
                       && pVM->pSession   == pSession
                       && pVM->pSelf      == pVM))
-#else
-        if (RT_LIKELY(   pVM->enmVMState >= VMSTATE_CREATING
-                      && pVM->enmVMState <= VMSTATE_TERMINATED
-                      && pVM->cCpus      == pGVM->cCpus
-                      && pVM->pSession   == pSession
-                      && pVM->pVMR0      == pVM))
-#endif
         { /* likely */ }
         else
         {
-#ifdef VBOX_BUGREF_9217
             SUPR0Printf("vmmR0EntryExWorker: Invalid pVM=%p:{.enmVMState=%d, .cCpus=%#x(==%#x), .pSession=%p(==%p), .pSelf=%p(==%p)}! (op=%d)\n",
                         pVM, pVM->enmVMState, pVM->cCpus, pGVM->cCpus, pVM->pSession, pSession, pVM->pSelf, pVM, enmOperation);
-#else
-            SUPR0Printf("vmmR0EntryExWorker: Invalid pVM=%p:{.enmVMState=%d, .cCpus=%#x(==%#x), .pSession=%p(==%p), .pVMR0=%p(==%p)}! (op=%d)\n",
-                        pVM, pVM->enmVMState, pVM->cCpus, pGVM->cCpus, pVM->pSession, pSession, pVM->pVMR0, pVM, enmOperation);
-#endif
             return VERR_INVALID_POINTER;
         }
     }
@@ -2293,12 +2252,7 @@ VMMR0DECL(int) VMMR0EntryEx(PGVM pGVM, PVMCC pVM, VMCPUID idCpu, VMMR0OPERATION 
         && pGVM != NULL
         && idCpu < pGVM->cCpus
         && pVM->pSession == pSession
-#ifdef VBOX_BUGREF_9217
-        && pVM->pSelf != NULL
-#else
-        && pVM->pVMR0 != NULL
-#endif
-       )
+        && pVM->pSelf != NULL)
     {
         switch (enmOperation)
         {
@@ -2312,12 +2266,8 @@ VMMR0DECL(int) VMMR0EntryEx(PGVM pGVM, PVMCC pVM, VMCPUID idCpu, VMMR0OPERATION 
             case VMMR0_DO_VMMR0_INIT:
             case VMMR0_DO_VMMR0_TERM:
             {
-                PGVMCPU pGVCpu = &pGVM->aCpus[idCpu];
-#ifdef VBOX_BUGREF_9217
+                PGVMCPU   pGVCpu = &pGVM->aCpus[idCpu];
                 PVMCPUCC  pVCpu  = pGVCpu;
-#else
-                PVMCPUCC  pVCpu  = VMCC_GET_CPU(pVM, idCpu);
-#endif
                 RTNATIVETHREAD hNativeThread = RTThreadNativeSelf();
                 if (RT_LIKELY(   pGVCpu->hEMT           == hNativeThread
                               && pVCpu->hNativeThreadR0 == hNativeThread))
@@ -2407,20 +2357,11 @@ VMMR0DECL(void) vmmR0LoggerFlush(PRTLOGGER pLogger)
         return; /* quietly */
 
     PVMCC pVM = pR0Logger->pVM;
-    if (    !VALID_PTR(pVM)
-# ifdef VBOX_BUGREF_9217
-        ||  pVM->pSelf != pVM
-# else
-        ||  pVM->pVMR0 != pVM
-# endif
-       )
+    if (   !VALID_PTR(pVM)
+        || pVM->pSelf != pVM)
     {
 # ifdef DEBUG
-#  ifdef VBOX_BUGREF_9217
         SUPR0Printf("vmmR0LoggerFlush: pVM=%p! pSelf=%p! pLogger=%p\n", pVM, pVM->pSelf, pLogger);
-#  else
-        SUPR0Printf("vmmR0LoggerFlush: pVM=%p! pVMR0=%p! pLogger=%p\n", pVM, pVM->pVMR0, pLogger);
-#  endif
 # endif
         return;
     }
@@ -2509,23 +2450,14 @@ DECLEXPORT(PRTLOGGER) RTLogRelGetDefaultInstanceEx(uint32_t fFlagsAndGroup)
     PGVMCPU pGVCpu = GVMMR0GetGVCpuByEMT(NIL_RTNATIVETHREAD);
     if (pGVCpu)
     {
-#ifdef VBOX_BUGREF_9217
         PVMCPUCC pVCpu = pGVCpu;
-#else
-        PVMCPUCC pVCpu = pGVCpu->pVCpu;
-#endif
         if (RT_VALID_PTR(pVCpu))
         {
             PVMMR0LOGGER pVmmLogger = pVCpu->vmm.s.pR0RelLoggerR0;
             if (RT_VALID_PTR(pVmmLogger))
             {
                 if (   pVmmLogger->fCreated
-#ifdef VBOX_BUGREF_9217
-                    && pVmmLogger->pVM == pGVCpu->pGVM
-#else
-                    && pVmmLogger->pVM == pGVCpu->pVM
-#endif
-                   )
+                    && pVmmLogger->pVM == pGVCpu->pGVM)
                 {
                     if (pVmmLogger->Logger.fFlags & RTLOGFLAGS_DISABLED)
                         return NULL;

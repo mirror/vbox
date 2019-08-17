@@ -258,43 +258,23 @@ DECLINLINE(NTSTATUS) nemR0NtPerformIoControl(PGVM pGVM, PVMCPUCC pVCpu, uint32_t
      * Input and output parameters are part of the VM CPU structure.
      */
     VMCPU_ASSERT_EMT(pVCpu);
-# ifdef VBOX_BUGREF_9217
     if (pvInput)
         AssertReturn(((uintptr_t)pvInput + cbInput) - (uintptr_t)pVCpu <= sizeof(*pVCpu), VERR_INVALID_PARAMETER);
     if (pvOutput)
         AssertReturn(((uintptr_t)pvOutput + cbOutput) - (uintptr_t)pVCpu <= sizeof(*pVCpu), VERR_INVALID_PARAMETER);
-# else
-    PVMCC        pVM  = pGVM->pVM;
-    size_t const cbVM = RT_UOFFSETOF_DYN(VM, aCpus[pGVM->cCpus]);
-    if (pvInput)
-        AssertReturn(((uintptr_t)pvInput + cbInput) - (uintptr_t)pVM <= cbVM, VERR_INVALID_PARAMETER);
-    if (pvOutput)
-        AssertReturn(((uintptr_t)pvOutput + cbOutput) - (uintptr_t)pVM <= cbVM, VERR_INVALID_PARAMETER);
-# endif
 #endif
 
     int32_t rcNt = STATUS_UNSUCCESSFUL;
     int rc = SUPR0IoCtlPerform(pGVM->nemr0.s.pIoCtlCtx, uFunction,
                                pvInput,
-#ifdef VBOX_BUGREF_9217
                                pvInput  ? (uintptr_t)pvInput  + pVCpu->nemr0.s.offRing3ConversionDelta : NIL_RTR3PTR,
-#else
-                               pvInput  ? (uintptr_t)pvInput  + pGVM->nemr0.s.offRing3ConversionDelta : NIL_RTR3PTR,
-#endif
                                cbInput,
                                pvOutput,
-#ifdef VBOX_BUGREF_9217
                                pvOutput ? (uintptr_t)pvOutput + pVCpu->nemr0.s.offRing3ConversionDelta : NIL_RTR3PTR,
-#else
-                               pvOutput ? (uintptr_t)pvOutput + pGVM->nemr0.s.offRing3ConversionDelta : NIL_RTR3PTR,
-#endif
                                cbOutput,
                                &rcNt);
     if (RT_SUCCESS(rc) || !NT_SUCCESS((NTSTATUS)rcNt))
         return (NTSTATUS)rcNt;
-#ifndef VBOX_BUGREF_9217
-    RT_NOREF(pVCpu);
-#endif
     return STATUS_UNSUCCESSFUL;
 }
 
@@ -362,24 +342,16 @@ VMMR0_INT_DECL(int) NEMR0InitVMPart2(PGVM pGVM, PVMCC pVM)
          */
         rc = SUPR0IoCtlSetupForHandle(pGVM->pSession, pVM->nem.s.hPartitionDevice, 0, &pGVM->nemr0.s.pIoCtlCtx);
         AssertLogRelRCReturn(rc, rc);
-#ifdef VBOX_BUGREF_9217
         for (VMCPUID idCpu = 0; idCpu < pGVM->cCpus; idCpu++)
         {
             PGVMCPU pGVCpu = &pGVM->aCpus[idCpu];
             pGVCpu->nemr0.s.offRing3ConversionDelta = (uintptr_t)pGVM->aCpus[idCpu].pVCpuR3 - (uintptr_t)pGVCpu;
         }
-#else
-        pGVM->nemr0.s.offRing3ConversionDelta = (uintptr_t)pVM->pVMR3 - (uintptr_t)pGVM->pVM;
-#endif
 
         /*
          * Get the partition ID.
          */
-#ifdef VBOX_BUGREF_9217
         PVMCPUCC pVCpu0 = &pGVM->aCpus[0];
-#else
-        PVMCPUCC pVCpu0 = &pGVM->pVM->aCpus[0];
-#endif
         NTSTATUS rcNt = nemR0NtPerformIoControl(pGVM, pVCpu0, pGVM->nemr0.s.IoCtlGetHvPartitionId.uFunction, NULL, 0,
                                                 &pVCpu0->nem.s.uIoCtlBuf.idPartition, sizeof(pVCpu0->nem.s.uIoCtlBuf.idPartition));
         AssertLogRelMsgReturn(NT_SUCCESS(rcNt), ("IoCtlGetHvPartitionId failed: %#x\n", rcNt), VERR_NEM_INIT_FAILED);
@@ -649,11 +621,7 @@ VMMR0_INT_DECL(int) NEMR0UnmapPages(PGVM pGVM, PVMCC pVM, VMCPUID idCpu)
  */
 NEM_TMPL_STATIC int nemR0WinExportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx)
 {
-#ifdef VBOX_BUGREF_9217
     PVMCPUCC                   pVCpu  = pGVCpu;
-#else
-    PVMCPUCC                   pVCpu  = &pGVM->pVM->aCpus[pGVCpu->idCpu];
-#endif
     HV_INPUT_SET_VP_REGISTERS *pInput = (HV_INPUT_SET_VP_REGISTERS *)pGVCpu->nemr0.s.HypercallData.pbPage;
     AssertPtrReturn(pInput, VERR_INTERNAL_ERROR_3);
     AssertReturn(g_pfnHvlInvokeHypercall, VERR_NEM_MISSING_KERNEL_API);
@@ -1375,11 +1343,7 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
     HV_INPUT_GET_VP_REGISTERS *pInput = (HV_INPUT_GET_VP_REGISTERS *)pGVCpu->nemr0.s.HypercallData.pbPage;
     AssertPtrReturn(pInput, VERR_INTERNAL_ERROR_3);
     AssertReturn(g_pfnHvlInvokeHypercall, VERR_NEM_MISSING_KERNEL_API);
-#ifdef VBOX_BUGREF_9217
     Assert(pCtx == &pGVCpu->cpum.GstCtx);
-#else
-    Assert(pCtx == &pGVCpu->pVCpu->cpum.GstCtx);
-#endif
 
     fWhat &= pCtx->fExtrn;
 
@@ -1547,11 +1511,7 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
     }
 
 # ifdef LOG_ENABLED
-#  ifdef VBOX_BUGREF_9217
     const CPUMCPUVENDOR enmCpuVendor = CPUMGetHostCpuVendor(pGVM);
-#  else
-    const CPUMCPUVENDOR enmCpuVendor = CPUMGetHostCpuVendor(pGVM->pVM);
-#  endif
 # endif
     if (fWhat & CPUMCTX_EXTRN_OTHER_MSRS)
     {
@@ -1615,11 +1575,7 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
     /*
      * Copy information to the CPUM context.
      */
-# ifdef VBOX_BUGREF_9217
     PVMCPUCC pVCpu = pGVCpu;
-# else
-    PVMCPUCC pVCpu = &pGVM->pVM->aCpus[pGVCpu->idCpu];
-# endif
     iReg = 0;
 
     /* GPRs */
@@ -2489,14 +2445,7 @@ VMMR0_INT_DECL(VBOXSTRICTRC) NEMR0RunGuestCode(PGVM pGVM, VMCPUID idCpu)
 {
 #ifdef NEM_WIN_WITH_RING0_RUNLOOP
     if (pGVM->nemr0.s.fMayUseRing0Runloop)
-# ifdef VBOX_BUGREF_9217
         return nemHCWinRunGC(pGVM, &pGVM->aCpus[idCpu], pGVM, &pGVM->aCpus[idCpu]);
-# else
-    {
-        PVMCC pVM = pGVM->pVM;
-        return nemHCWinRunGC(pVM, &pVM->aCpus[idCpu], pGVM, &pGVM->aCpus[idCpu]);
-    }
-# endif
     return VERR_NEM_RING3_ONLY;
 #else
     RT_NOREF(pGVM, idCpu);

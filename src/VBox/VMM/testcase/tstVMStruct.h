@@ -1418,13 +1418,9 @@
     GEN_CHECK_OFF(VM, pSession);
     GEN_CHECK_OFF(VM, pUVM);
     GEN_CHECK_OFF(VM, pVMR3);
-#ifdef VBOX_BUGREF_9217
     GEN_CHECK_OFF(VM, pVMR0ForCall);
-#else
-    GEN_CHECK_OFF(VM, pVMR0);
-#endif
     GEN_CHECK_OFF(VM, pVMRC);
-#if defined(VBOX_BUGREF_9217) && defined(IN_RING0)
+#ifdef IN_RING0
     GEN_CHECK_OFF(VM, hSelfUnsafe);
     GEN_CHECK_OFF(VM, cCpusUnsafe);
 #else
@@ -1462,9 +1458,6 @@
     GEN_CHECK_OFF(VM, vm);
     GEN_CHECK_OFF(VM, cfgm);
     GEN_CHECK_OFF(VM, apic);
-#ifndef VBOX_BUGREF_9217
-    GEN_CHECK_OFF(VM, aCpus);
-#endif
 
 
     GEN_CHECK_SIZE(VMCPU);
@@ -1472,9 +1465,7 @@
     GEN_CHECK_OFF(VMCPU, enmState);
     GEN_CHECK_OFF(VMCPU, pUVCpu);
     GEN_CHECK_OFF(VMCPU, pVMR3);
-#ifndef VBOX_BUGREF_9217
-    GEN_CHECK_OFF(VMCPU, pVMR0);
-#endif
+    GEN_CHECK_OFF(VMCPU, pVCpuR0ForVtg);
     GEN_CHECK_OFF(VMCPU, pVMRC);
     GEN_CHECK_OFF(VMCPU, idCpu);
     GEN_CHECK_OFF(VMCPU, hNativeThread);

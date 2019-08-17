@@ -87,11 +87,7 @@ static int pdmR3QueueCreate(PVM pVM, size_t cbItem, uint32_t cItems, uint32_t cM
      * Initialize the data fields.
      */
     pQueue->pVMR3 = pVM;
-#ifdef VBOX_BUGREF_9217
     pQueue->pVMR0 = fRZEnabled ? pVM->pVMR0ForCall : NIL_RTR0PTR;
-#else
-    pQueue->pVMR0 = fRZEnabled ? pVM->pVMR0 : NIL_RTR0PTR;
-#endif
     pQueue->pVMRC = fRZEnabled ? pVM->pVMRC : NIL_RTRCPTR;
     pQueue->pszName = pszName;
     pQueue->cMilliesInterval = cMilliesInterval;

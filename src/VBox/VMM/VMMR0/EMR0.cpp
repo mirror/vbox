@@ -38,21 +38,12 @@
  * @param   pGVM            The ring-0 VM structure.
  * @param   pVM             The cross context VM structure.
  */
-#ifdef VBOX_BUGREF_9217
 VMMR0_INT_DECL(int) EMR0InitVM(PGVM pGVM)
-#else
-VMMR0_INT_DECL(int) EMR0InitVM(PGVM pGVM, PVMCC pVM)
-#endif
 {
     /*
      * Override ring-0 exit optimizations settings.
      */
-#ifdef VBOX_BUGREF_9217
     PVMCPUCC pVCpu0 = &pGVM->aCpus[0];
-#else
-    PVMCPUCC pVCpu0 = VMCC_GET_CPU_0(pVM);
-#endif
-
     bool fEnabledR0                = pVCpu0->em.s.fExitOptimizationEnabled
                                   && pVCpu0->em.s.fExitOptimizationEnabledR0
                                   && (RTThreadPreemptIsPossible() || RTThreadPreemptIsPendingTrusty());
@@ -61,11 +52,7 @@ VMMR0_INT_DECL(int) EMR0InitVM(PGVM pGVM, PVMCC pVM)
                                   && RTThreadPreemptIsPendingTrusty();
     for (VMCPUID idCpu = 0; idCpu < pGVM->cCpus; idCpu++)
     {
-#ifdef VBOX_BUGREF_9217
         PVMCPUCC pVCpu = &pGVM->aCpus[idCpu];
-#else
-        PVMCPUCC pVCpu = VMCC_GET_CPU(pVM, idCpu);
-#endif
         pVCpu->em.s.fExitOptimizationEnabledR0                = fEnabledR0;
         pVCpu->em.s.fExitOptimizationEnabledR0PreemptDisabled = fEnabledR0PreemptDisabled;
     }

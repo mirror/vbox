@@ -1130,18 +1130,7 @@ VMM_INT_DECL(int) NEMImportStateOnDemand(PVMCPUCC pVCpu, uint64_t fWhat)
 
 #ifdef IN_RING0
 # ifdef NEM_WIN_WITH_RING0_RUNLOOP
-    /** @todo improve and secure this translation */
-#  ifdef VBOX_BUGREF_9217
     return nemR0WinImportState(pVCpu->pGVM, pVCpu, &pVCpu->cpum.GstCtx, fWhat, true /*fCanUpdateCr3*/);
-#  else
-    PGVM pGVM = GVMMR0ByHandle(pVCpu->pVMR0->hSelf);
-    AssertReturn(pGVM, VERR_INVALID_VMCPU_HANDLE);
-    VMCPUID idCpu = pVCpu->idCpu;
-    ASMCompilerBarrier();
-    AssertReturn(idCpu < pGVM->cCpus, VERR_INVALID_VMCPU_HANDLE);
-
-    return nemR0WinImportState(pGVM, &pGVM->aCpus[idCpu], &pVCpu->cpum.GstCtx, fWhat, true /*fCanUpdateCr3*/);
-#  endif
 # else
     RT_NOREF(pVCpu, fWhat);
     return VERR_NOT_IMPLEMENTED;
@@ -1201,17 +1190,7 @@ VMM_INT_DECL(int) NEMHCQueryCpuTick(PVMCPUCC pVCpu, uint64_t *pcTicks, uint32_t 
 # endif /* !NEM_WIN_USE_HYPERCALLS_FOR_REGISTERS */
 #else  /* IN_RING0 */
 # ifdef NEM_WIN_WITH_RING0_RUNLOOP
-#  ifdef VBOX_BUGREF_9217
     int rc = nemR0WinQueryCpuTick(pVCpu->pGVM, pVCpu, pcTicks, puAux);
-#  else
-    /** @todo improve and secure this translation */
-    PGVM pGVM = GVMMR0ByHandle(pVCpu->pVMR0->hSelf);
-    AssertReturn(pGVM, VERR_INVALID_VMCPU_HANDLE);
-    VMCPUID idCpu = pVCpu->idCpu;
-    ASMCompilerBarrier();
-    AssertReturn(idCpu < pGVM->cCpus, VERR_INVALID_VMCPU_HANDLE);
-    int rc = nemR0WinQueryCpuTick(pGVM, &pGVM->aCpus[idCpu], pcTicks, puAux);
-#  endif
     if (RT_SUCCESS(rc) && puAux && !(pVCpu->cpum.GstCtx.fExtrn & CPUMCTX_EXTRN_TSC_AUX))
         *puAux = CPUMGetGuestTscAux(pVCpu);
     return rc;
@@ -1237,18 +1216,7 @@ VMM_INT_DECL(int) NEMHCResumeCpuTickOnAll(PVMCC pVM, PVMCPUCC pVCpu, uint64_t uP
 {
 #ifdef IN_RING0
 # ifdef NEM_WIN_WITH_RING0_RUNLOOP
-#  ifdef VBOX_BUGREF_9217
     return nemR0WinResumeCpuTickOnAll(pVM, pVCpu, uPausedTscValue);
-#  else
-    /** @todo improve and secure this translation */
-    PGVM pGVM = GVMMR0ByHandle(pVM->hSelf);
-    AssertReturn(pGVM, VERR_INVALID_VMCPU_HANDLE);
-    VMCPUID idCpu = pVCpu->idCpu;
-    ASMCompilerBarrier();
-    AssertReturn(idCpu < pGVM->cCpus, VERR_INVALID_VMCPU_HANDLE);
-
-    return nemR0WinResumeCpuTickOnAll(pGVM, &pGVM->aCpus[idCpu], uPausedTscValue);
-#  endif
 # else
     RT_NOREF(pVM, pVCpu, uPausedTscValue);
     return VERR_NOT_IMPLEMENTED;

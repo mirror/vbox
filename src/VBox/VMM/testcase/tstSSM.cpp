@@ -651,14 +651,8 @@ static int createFakeVM(PVM *ppVM)
                 /*
                  * Allocate and init the VM structure.
                  */
-#ifdef VBOX_BUGREF_9217
                 PVM pVM = (PVM)RTMemPageAllocZ(sizeof(VM) + sizeof(VMCPU));
                 rc = pVM ? VINF_SUCCESS : VERR_NO_PAGE_MEMORY;
-#else
-                PVM    pVM;
-                size_t cbVM = RT_ALIGN_Z(sizeof(*pVM), PAGE_SIZE);
-                rc = SUPR3PageAlloc(cbVM >> PAGE_SHIFT, (void **)&pVM);
-#endif
                 if (RT_SUCCESS(rc))
                 {
                     pVM->enmVMState = VMSTATE_CREATED;
@@ -666,11 +660,7 @@ static int createFakeVM(PVM *ppVM)
                     pVM->pUVM = pUVM;
                     pVM->cCpus = 1;
 
-#ifdef VBOX_BUGREF_9217
                     PVMCPU pVCpu = (PVMCPU)(pVM + 1);
-#else
-                    PVMCPU pVCpu = &pVM->aCpus[0];
-#endif
                     pVCpu->pVMR3 = pVM;
                     pVCpu->hNativeThread = RTThreadNativeSelf();
                     pVM->apCpusR3[0] = pVCpu;

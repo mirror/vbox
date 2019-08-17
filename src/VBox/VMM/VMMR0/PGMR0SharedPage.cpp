@@ -50,11 +50,7 @@
  */
 VMMR0DECL(int) PGMR0SharedModuleCheck(PVMCC pVM, PGVM pGVM, VMCPUID idCpu, PGMMSHAREDMODULE pModule, PCRTGCPTR64 paRegionsGCPtrs)
 {
-#ifdef VBOX_BUGREF_9217
-    PVMCPUCC              pVCpu         = &pGVM->aCpus[idCpu];
-#else
-    PVMCPUCC              pVCpu         = VMCC_GET_CPU(pVM, idCpu);
-#endif
+    PVMCPUCC            pVCpu         = &pGVM->aCpus[idCpu];
     int                 rc            = VINF_SUCCESS;
     bool                fFlushTLBs    = false;
     bool                fFlushRemTLBs = false;
@@ -166,13 +162,8 @@ VMMR0DECL(int) PGMR0SharedModuleCheck(PVMCC pVM, PGVM pGVM, VMCPUID idCpu, PGMMS
         PGM_INVL_ALL_VCPU_TLBS(pVM);
 
     if (fFlushRemTLBs)
-#ifdef VBOX_BUGREF_9217
         for (VMCPUID idCurCpu = 0; idCurCpu < pGVM->cCpus; idCurCpu++)
             CPUMSetChangedFlags(&pGVM->aCpus[idCurCpu], CPUM_CHANGED_GLOBAL_TLB_FLUSH);
-#else
-        for (VMCPUID idCurCpu = 0; idCurCpu < pVM->cCpus; idCurCpu++)
-            CPUMSetChangedFlags(VMCC_GET_CPU(pVM, idCurCpu), CPUM_CHANGED_GLOBAL_TLB_FLUSH);
-#endif
 
     return rc;
 }

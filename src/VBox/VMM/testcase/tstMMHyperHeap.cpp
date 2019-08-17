@@ -56,11 +56,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
      */
     void       *pvVM = NULL;
     RTR0PTR     pvR0 = NIL_RTR0PTR;
-#ifdef VBOX_BUGREF_9217
     SUPPAGE     aPages[(sizeof(GVM) + NUM_CPUS * sizeof(GVMCPU)) >> PAGE_SHIFT];
-#else
-    SUPPAGE     aPages[(sizeof(VM) + NUM_CPUS * sizeof(VMCPU)) >> PAGE_SHIFT];
-#endif
     rc = SUPR3Init(NULL);
     if (RT_FAILURE(rc))
     {
@@ -76,11 +72,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     RT_BZERO(pvVM, RT_ELEMENTS(aPages) * PAGE_SIZE); /* SUPR3PageAllocEx doesn't necessarily zero the memory. */
     PVM  pVM = (PVM)pvVM;
     pVM->paVMPagesR3 = aPages;
-#ifdef VBOX_BUGREF_9217
     pVM->pVMR0ForCall = pvR0;
-#else
-    pVM->pVMR0 = pvR0;
-#endif
 
     PUVM pUVM = (PUVM)RTMemPageAllocZ(RT_ALIGN_Z(sizeof(*pUVM), PAGE_SIZE));
     if (!pUVM)
@@ -93,7 +85,6 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     pVM->pUVM = pUVM;
 
     pVM->cCpus = NUM_CPUS;
-#ifdef VBOX_BUGREF_9217
     pVM->cbSelf = sizeof(VM);
     pVM->cbVCpu = sizeof(VMCPU);
     PVMCPU pVCpu = (PVMCPU)((uintptr_t)pVM + sizeof(GVM));
@@ -102,11 +93,6 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         pVM->apCpusR3[idCpu] = pVCpu;
         pVCpu = (PVMCPU)((uintptr_t)pVCpu + sizeof(GVMCPU));
     }
-#else
-    pVM->cbSelf = RT_UOFFSETOF_DYN(VM, aCpus[pVM->cCpus]);
-    for (VMCPUID idCpu = 0; idCpu < NUM_CPUS; idCpu++)
-        pVM->apCpusR3[idCpu] = &pVM->aCpus[idCpu];
-#endif
 
     rc = STAMR3InitUVM(pUVM);
     if (RT_FAILURE(rc))

@@ -156,11 +156,11 @@ int mmR3HyperInit(PVM pVM)
          */
         AssertCompileSizeAlignment(VM, PAGE_SIZE);
         AssertCompileSizeAlignment(VMCPU, PAGE_SIZE);
-#ifdef VBOX_BUGREF_9217
         AssertCompileSizeAlignment(GVM, PAGE_SIZE);
         AssertCompileSizeAlignment(GVMCPU, PAGE_SIZE);
         AssertRelease(pVM->cbSelf == sizeof(VM));
         AssertRelease(pVM->cbVCpu == sizeof(VMCPU));
+/** @todo get rid of this   */
         RTGCPTR GCPtr;
         rc = MMR3HyperMapPages(pVM, pVM, pVM->pVMR0ForCall, sizeof(VM) >> PAGE_SHIFT, pVM->paVMPagesR3, "VM", &GCPtr);
         uint32_t offPages = RT_UOFFSETOF_DYN(GVM, aCpus) >> PAGE_SHIFT; /* (Using the _DYN variant avoids -Winvalid-offset) */
@@ -171,13 +171,6 @@ int mmR3HyperInit(PVM pVM)
             rc = MMR3HyperMapPages(pVM, pVCpu, pVM->pVMR0ForCall + offPages * PAGE_SIZE,
                                    sizeof(VMCPU) >> PAGE_SHIFT, &pVM->paVMPagesR3[offPages], "VMCPU", &GCPtrIgn);
         }
-#else
-        AssertRelease(pVM->cbSelf >= sizeof(VMCPU));
-        RTGCPTR GCPtr;
-        rc = MMR3HyperMapPages(pVM, pVM, pVM->pVMR0,
-                               RT_ALIGN_Z(pVM->cbSelf, PAGE_SIZE) >> PAGE_SHIFT, pVM->paVMPagesR3, "VM",
-                               &GCPtr);
-#endif
         if (RT_SUCCESS(rc))
         {
             pVM->pVMRC = (RTRCPTR)GCPtr;
@@ -893,11 +886,7 @@ static int mmR3HyperHeapCreate(PVM pVM, const size_t cb, PMMHYPERHEAP *ppHeap, P
         pHeap->pbHeapR0             = pvR0 + MMYPERHEAP_HDR_SIZE;
         //pHeap->pbHeapRC           = 0; // set by mmR3HyperHeapMap()
         pHeap->pVMR3                = pVM;
-#ifdef VBOX_BUGREF_9217
         pHeap->pVMR0                = pVM->pVMR0ForCall;
-#else
-        pHeap->pVMR0                = pVM->pVMR0;
-#endif
         pHeap->pVMRC                = pVM->pVMRC;
         pHeap->cbHeap               = cbAligned - MMYPERHEAP_HDR_SIZE;
         pHeap->cbFree               = pHeap->cbHeap - sizeof(MMHYPERCHUNK);

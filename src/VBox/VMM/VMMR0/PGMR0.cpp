@@ -77,11 +77,7 @@ VMMR0_INT_DECL(int) PGMR0PhysAllocateHandyPages(PGVM pGVM, PVMCC pVM, VMCPUID id
      */
     AssertReturn(idCpu < pGVM->cCpus, VERR_INVALID_CPU_ID); /* caller already checked this, but just to be sure. */
     AssertReturn(pGVM->aCpus[idCpu].hEMT == RTThreadNativeSelf(), VERR_NOT_OWNER);
-#ifdef VBOX_BUGREF_9217
     PGM_LOCK_ASSERT_OWNER_EX(pVM, &pGVM->aCpus[idCpu]);
-#else
-    PGM_LOCK_ASSERT_OWNER_EX(pVM, VMCC_GET_CPU(pVM, idCpu));
-#endif
 
     /*
      * Check for error injection.
@@ -204,11 +200,7 @@ VMMR0_INT_DECL(int) PGMR0PhysFlushHandyPages(PGVM pGVM, PVMCC pVM, VMCPUID idCpu
      */
     AssertReturn(idCpu < pGVM->cCpus, VERR_INVALID_CPU_ID); /* caller already checked this, but just to be sure. */
     AssertReturn(pGVM->aCpus[idCpu].hEMT == RTThreadNativeSelf(), VERR_NOT_OWNER);
-#ifdef VBOX_BUGREF_9217
     PGM_LOCK_ASSERT_OWNER_EX(pVM, &pGVM->aCpus[idCpu]);
-#else
-    PGM_LOCK_ASSERT_OWNER_EX(pVM, VMCC_GET_CPU(pVM, idCpu));
-#endif
 
     /*
      * Try allocate a full set of handy pages.
@@ -248,11 +240,7 @@ VMMR0_INT_DECL(int) PGMR0PhysAllocateLargeHandyPage(PGVM pGVM, PVMCC pVM, VMCPUI
      */
     AssertReturn(idCpu < pGVM->cCpus, VERR_INVALID_CPU_ID); /* caller already checked this, but just to be sure. */
     AssertReturn(pGVM->aCpus[idCpu].hEMT == RTThreadNativeSelf(), VERR_NOT_OWNER);
-#ifdef VBOX_BUGREF_9217
     PGM_LOCK_ASSERT_OWNER_EX(pVM, &pGVM->aCpus[idCpu]);
-#else
-    PGM_LOCK_ASSERT_OWNER_EX(pVM, VMCC_GET_CPU(pVM, idCpu));
-#endif
     Assert(!pVM->pgm.s.cLargeHandyPages);
 
     /*

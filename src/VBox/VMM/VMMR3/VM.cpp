@@ -581,11 +581,7 @@ static int vmR3CreateU(PUVM pUVM, uint32_t cCpus, PFNCFGMCONSTRUCTOR pfnCFGMCons
     {
         PVM pVM = pUVM->pVM = CreateVMReq.pVMR3;
         AssertRelease(VALID_PTR(pVM));
-#ifdef VBOX_BUGREF_9217
         AssertRelease(pVM->pVMR0ForCall == CreateVMReq.pVMR0);
-#else
-        AssertRelease(pVM->pVMR0 == CreateVMReq.pVMR0);
-#endif
         AssertRelease(pVM->pSession == pUVM->vm.s.pSession);
         AssertRelease(pVM->cCpus == cCpus);
         AssertRelease(pVM->uCpuExecutionCap == 100);

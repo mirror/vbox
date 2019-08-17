@@ -329,11 +329,7 @@ int pdmR3DevInit(PVM pVM)
         //pDevIns->Internal.s.pPerDeviceNextR3    = NULL;
         pDevIns->Internal.s.pDevR3              = paDevs[i].pDev;
         pDevIns->Internal.s.pVMR3               = pVM;
-#ifdef VBOX_BUGREF_9217
         pDevIns->Internal.s.pVMR0               = pVM->pVMR0ForCall;
-#else
-        pDevIns->Internal.s.pVMR0               = pVM->pVMR0;
-#endif
         pDevIns->Internal.s.pVMRC               = pVM->pVMRC;
         //pDevIns->Internal.s.pLunsR3             = NULL;
         pDevIns->Internal.s.pCfgHandle          = paDevs[i].pNode;
