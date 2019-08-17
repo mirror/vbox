@@ -56,25 +56,6 @@ RT_C_DECLS_BEGIN
 /** @} */
 
 
-#ifndef VBOX_BUGREF_9217
-/** @def VM_R0_ADDR
- * Converts a current context address of data within the VM structure to the equivalent
- * ring-0 host address.
- *
- * @returns host virtual address.
- * @param   pVM     The cross context VM structure.
- * @param   pvInVM  CC pointer within the VM.
- */
-#ifdef IN_RC
-# define VM_R0_ADDR(pVM, pvInVM)       ( (RTR0PTR)((RTR0UINTPTR)pVM->pVMR0 + (uint32_t)((uintptr_t)(pvInVM) - (uintptr_t)pVM->pVMRC)) )
-#elif defined(IN_RING3)
-# define VM_R0_ADDR(pVM, pvInVM)       ( (RTR0PTR)((RTR0UINTPTR)pVM->pVMR0 + (uint32_t)((uintptr_t)(pvInVM) - (uintptr_t)pVM->pVMR3)) )
-#else
-# define VM_R0_ADDR(pVM, pvInVM)       ( (RTR0PTR)(pvInVM) )
-#endif
-#endif
-
-
 /**
  * VM error callback function.
  *
