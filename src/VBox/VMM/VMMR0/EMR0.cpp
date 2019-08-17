@@ -36,7 +36,6 @@
  *
  * @returns VBox status code.
  * @param   pGVM            The ring-0 VM structure.
- * @param   pVM             The cross context VM structure.
  */
 VMMR0_INT_DECL(int) EMR0InitVM(PGVM pGVM)
 {

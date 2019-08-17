@@ -1057,6 +1057,9 @@ GVMMR0DECL(int) GVMMR0CreateVM(PSUPDRVSESSION pSession, uint32_t cCpus, PVMCC *p
  * Initializes the per VM data belonging to GVMM.
  *
  * @param   pGVM        Pointer to the global VM structure.
+ * @param   hSelf       The handle.
+ * @param   cCpus       The CPU count.
+ * @param   pSession    The session this VM is associated with.
  */
 static void gvmmR0InitPerVMData(PGVM pGVM, int16_t hSelf, VMCPUID cCpus, PSUPDRVSESSION pSession)
 {
