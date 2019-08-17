@@ -430,8 +430,6 @@ endif
 if1of ($(KBUILD_TARGET), win)
  VBOX_WITH_NATIVE_NEM = 1
 endif
-# Enables new VM/GVM allocation style (see VBox/types.h too).
-VBOX_BUGREF_9217 := 1
 ## @}
 
 
@@ -1683,9 +1681,6 @@ ifdef VBOX_WITH_REM
 endif
 ifdef VBOX_WITH_RAW_MODE
  DEFS += VBOX_WITH_RAW_MODE
-endif
-ifdef VBOX_BUGREF_9217 ## @todo remove later.
- DEFS += VBOX_BUGREF_9217
 endif
 
 # Don't flood CDEFS, old MASMs doesn't like too many defines.
