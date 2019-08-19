@@ -46,6 +46,8 @@ public:
     QTableWidgetItem *addItem(unsigned iColumn, const QIcon &icon, const QString &strText);
     QTableWidgetItem *addItem(unsigned iColumn, const QString &strText);
 
+    UIInformationConfiguration::TableRow row() const;
+
 private:
 
     QList<QTableWidgetItem*> m_items;
@@ -53,7 +55,7 @@ private:
 };
 
 UIInformationTableRow::UIInformationTableRow(UIInformationConfiguration::TableRow enmRow)
-    : m_enmRow(enmRow)
+: m_enmRow(enmRow)
 {
     m_items.reserve(iColumCount);
 }
@@ -65,6 +67,10 @@ UIInformationTableRow::~UIInformationTableRow()
     m_items.clear();
 }
 
+UIInformationConfiguration::TableRow UIInformationTableRow::row() const
+{
+    return m_enmRow;
+}
 
 QTableWidgetItem *UIInformationTableRow::addItem(unsigned iColumn, const QIcon &icon, const QString &strText)
 {
