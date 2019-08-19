@@ -1062,7 +1062,7 @@ VMMR0_INT_DECL(bool) VMMR0ThreadCtxHookIsEnabled(PVMCPUCC pVCpu)
 #ifdef VBOX_WITH_STATISTICS
 /**
  * Record return code statistics
- * @param   pGVM        The cross context VM structure.
+ * @param   pVM         The cross context VM structure.
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   rc          The status code.
  */
