@@ -33,14 +33,14 @@ typedef void * VIRTIOHANDLE;                                     /**< Opaque han
  /**
   * TEMPORARY NOTE: Some of these values are experimental during development and will likely change.
   */
-#define VIRTQ_MAX_SIZE                      32768                /**< Max size (# desc elements) of a virtq    */
+#define VIRTIO_MAX_QUEUE_NAME_SIZE          32                   /**< Maximum length of a queue name           */
+#define VIRTQ_MAX_SIZE                      1024                 /**< Max size (# desc elements) of a virtq    */
 #define VIRTQ_MAX_CNT                       24                   /**< Max queues we allow guest to create      */
-#define VIRTIO_NOTIFY_OFFSET_MULTIPLIER     2                    /**< VirtIO Notify Cap. MMIO config param     */
 #define VIRTQ_DESC_MAX_SIZE                 (2 * 1024 * 1024)
+#define VIRTIO_NOTIFY_OFFSET_MULTIPLIER     2                    /**< VirtIO Notify Cap. MMIO config param     */
 #define VIRTIOSCSI_REGION_MEM_IO            0                    /**< BAR for MMIO (implementation specific)   */
 #define VIRTIOSCSI_REGION_PORT_IO           1                    /**< BAR for PORT I/O (impl specific)         */
 #define VIRTIOSCSI_REGION_PCI_CAP           2                    /**< BAR for VirtIO Cap. MMIO (impl specific) */
-
 typedef struct VIRTQ_SEG                                         /**< Describes one segment of a buffer vector */
 {
     RTGCPHYS addr;                                               /**< Physical addr. of this segment's buffer  */
@@ -48,7 +48,7 @@ typedef struct VIRTQ_SEG                                         /**< Describes 
     uint32_t cb;                                                 /**< Number of bytes to write or read         */
 } VIRTQ_SEG_T;
 
-typedef struct VIRTQ_BUF_VECTOR                                  /**< Scatter/gather buffer vector             */
+    typedef struct VIRTQ_BUF_VECTOR                                  /**< Scatter/gather buffer vector             */
 {
     uint32_t    uDescIdx;                                        /**< Desc at head of this vector list         */
     uint32_t    cSegsIn;                                         /**< Count of segments in aSegsIn[]           */
@@ -80,8 +80,9 @@ typedef struct VIRTIOPCIPARAMS
  *
  * @param hVirtio       Handle to VirtIO framework
  * @param fDriverOk     True if guest driver is okay (thus queues, etc... are valid)
+ * @param pClient       Pointer to opaque client data (state)
  */
-typedef DECLCALLBACK(void)   FNVIRTIOSTATUSCHANGED(VIRTIOHANDLE hVirtio, bool fDriverOk);
+typedef DECLCALLBACK(void)   FNVIRTIOSTATUSCHANGED(VIRTIOHANDLE hVirtio, void *pClient, bool fDriverOk);
 typedef FNVIRTIOSTATUSCHANGED *PFNVIRTIOSTATUSCHANGED;
 
 /**
@@ -90,8 +91,9 @@ typedef FNVIRTIOSTATUSCHANGED *PFNVIRTIOSTATUSCHANGED;
  *
  * @param   hVirtio     Handle to the VirtIO framework
  * @param   qIdx        Index of the notified queue
+ * @param   pClient     Pointer to opaque client data (state)
  */
-typedef DECLCALLBACK(void)   FNVIRTIOQUEUENOTIFIED(VIRTIOHANDLE hVirtio, uint16_t qIdx);
+typedef DECLCALLBACK(void)   FNVIRTIOQUEUENOTIFIED(VIRTIOHANDLE hVirtio, void *pClient, uint16_t qIdx);
 typedef FNVIRTIOQUEUENOTIFIED *PFNVIRTIOQUEUENOTIFIED;
 
  /**
@@ -124,9 +126,9 @@ typedef FNVIRTIODEVCAPREAD *PFNVIRTIODEVCAPREAD;
 typedef struct VIRTIOCALLBACKS
 {
      DECLCALLBACKMEMBER(void, pfnVirtioStatusChanged)
-                                  (VIRTIOHANDLE hVirtio, bool fDriverOk);
+                                  (VIRTIOHANDLE hVirtio, void *pClient, bool fDriverOk);
      DECLCALLBACKMEMBER(void, pfnVirtioQueueNotified)
-                                  (VIRTIOHANDLE hVirtio, uint16_t qIdx);
+                                  (VIRTIOHANDLE hVirtio, void *pClient, uint16_t qIdx);
      DECLCALLBACKMEMBER(int,  pfnVirtioDevCapRead)
                                   (PPDMDEVINS pDevIns, uint32_t uOffset, const void *pvBuf, size_t cbRead);
      DECLCALLBACKMEMBER(int,  pfnVirtioDevCapWrite)
@@ -143,25 +145,132 @@ typedef struct VIRTIOCALLBACKS
 } VIRTIOCALLBACKS, *PVIRTIOCALLBACKS;
 /** @} */
 
+/** API for VirtIO client */
+
 /**
- * API to for VirtIO client below this point.
+ * Allocate client context for client to work with VirtIO-provided with queue
+ * As a side effect creates a buffer vector a client can get a pointer to
+ * with a call to virtioQueueBufVec()
+ *
+ * @param  hVirtio   - Handle to VirtIO framework
+ * @param  qIdx      - Queue number
+ * @param  pcszName  - Name to give queue
+ *
+ * @returns status     VINF_SUCCESS         - Success
+ *                     VERR_INVALID_STATE   - VirtIO not in ready state
+ *                     VERR_NO_MEMORY       - Out of memory
+ *
+ * @returns status. If false, the call failed and the client should call virtioResetAll()
  */
-bool          virtioQueueAttach  (VIRTIOHANDLE hVirtio, uint16_t qIdx, const char *pcszName);
-const char *  virtioQueueGetName (VIRTIOHANDLE hVirtio, uint16_t qIdx);
-bool          virtioQueuePeek    (VIRTIOHANDLE hVirtio, uint16_t qIdx, PVIRTQ_BUF_VECTOR_T pBufVec);
-bool          virtioQueueGet     (VIRTIOHANDLE hVirtio, uint16_t qIdx, PVIRTQ_BUF_VECTOR_T pBufVec, bool fRemove);
-void          virtioQueuePut     (VIRTIOHANDLE hVirtio, uint16_t qIdx, PVIRTQ_BUF_VECTOR_T pBufVec, uint32_t cb);
-void          virtioQueueSync    (VIRTIOHANDLE hVirtio, uint16_t qIdx);
-bool          virtioQueueIsEmpty (VIRTIOHANDLE hVirtio, uint16_t qIdx);
-void          virtioResetAll     (VIRTIOHANDLE hVirtio);
+int virtioQueueAttach(VIRTIOHANDLE hVirtio, uint16_t qIdx, const char *pcszName);
+/**
+ * Detaches from queue and release resources
+ *
+ * @param hVirtio   - Handle for VirtIO framework
+ * @param qIdx      - Queue number
+ *
+ */
+int virtioQueueDetach(VIRTIOHANDLE hVirtio, uint16_t qIdx);
+
+/**
+ * Return pointer to buffer vector object associated with queue
+ *
+ * @param hVirtio   - Handle for VirtIO framework
+ * @param qIdx      - Queue number
+ *
+ * @returns           Pointer pBufVec if success, else NULL
+ */
+PVIRTQ_BUF_VECTOR_T virtioQueueGetBuffer(VIRTIOHANDLE hVirtio, uint16_t qIdx);
+
+/**
+ * Get name of queue, by qIdx, assigned at virtioQueueAttach()
+ *
+ * @param hVirtio   - Handle for VirtIO framework
+ * @param qIdx      - Queue number
+ *
+ * @returns          Success: Returns pointer to queue name
+ *                   Failure: Returns "<null>" (never returns NULL pointer).
+ */
+const char *virtioQueueGetName(VIRTIOHANDLE hVirtio, uint16_t qIdx);
+
+/**
+ * Removes descriptor [chain] from queue and converts it to scatter/gather data
+ * in the vector whose pointer was returned from VirtioQueueAttach.
+ *
+ * @param hVirtio   - Handle for VirtIO framework
+ * @param qIdx      - Queue number
+ *
+ * @returns status    VINF_SUCCESS         - Success
+ *                    VERR_INVALID_STATE   - VirtIO not in ready state
+ */
+int virtioQueueGet(VIRTIOHANDLE hVirtio, uint16_t qIdx, bool fRemove);
+
+/**
+ * Same as virtioQueueGet() but leaves the item on the avail ring of the queue.
+ *
+ * @param hVirtio   - Handle for VirtIO framework
+ * @param qIdx      - Queue number
+ *
+ * @returns           VINF_SUCCESS         - Success
+ *                    VERR_INVALID_STATE   - VirtIO not in ready state
+ *                    VERR_NOT_AVAILABLE   - Queue is empty
+ */
+int virtioQueuePeek(VIRTIOHANDLE hVirtio, uint16_t qIdx);
+
+/**
+ * Writes scatter/gather segment contained in queue's bufVec.aSegsIn[] array to
+ * physical memory assigned by the guest driver. The data won't be seen by the
+ * driver until the next virtioQueueSync() call.
+ *
+ * @param hVirtio   - Handle for VirtIO framework
+ * @param qIdx      - Queue number
+ *
+ * @returns           VINF_SUCCESS         - Success
+ *                    VERR_INVALID_STATE   - VirtIO not in ready state
+ *                    VERR_NOT_AVAILABLE   - Queue is empty
+ */
+int virtioQueuePut(VIRTIOHANDLE hVirtio, uint16_t qIdx, uint32_t cb);
+
+/**
+ * Updates virtq's "used ring" descriptor index to match the current bufVec's
+ * index, thus exposing the data added to the used ring by all virtioQueuePut()
+ * calls since the last sync. This should be called after one or more virtQueuePut()
+ * calls to inform the guest driver there is data in the queue. Explicit
+ * notifications will be sent to the guest depending on VirtIO features negotiated
+ * and conditions.
+ *
+ * @param hVirtio   - Handle for VirtIO framework
+ * @param qIdx      - Queue number
+ *
+ * @returns           VINF_SUCCESS         - Success
+ *                    VERR_INVALID_STATE   - VirtIO not in ready state
+ */
+int virtioQueueSync(VIRTIOHANDLE hVirtio, uint16_t qIdx);
+
+/**
+ * Check if the associated queue is empty
+ *
+ * @param hVirtio   - Handle for VirtIO framework
+ * @param qIdx      - Queue number
+ *
+ * @returns           true     - Queue is empty or unavailable.
+ *                    false    - Queue is available and has entries
+ */
+bool virtioQueueIsEmpty (VIRTIOHANDLE hVirtio, uint16_t qIdx);
+
+/**
+ * Request orderly teardown of VirtIO on host and guest
+ */
+void virtioResetAll(VIRTIOHANDLE hVirtio);
 
 /** CLIENT MUST CALL ON RELOCATE CALLBACK! */
-void          virtioRelocate     (PPDMDEVINS pDevIns, RTGCINTPTR offDelta);
+void virtioRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta);
 
 /**
  * Constructor sets up the PCI device controller and VirtIO state
  *
  * @param   pDevIns                  Device instance data
+ * @param   pClientContext           Opaque client context (such as state struct)
  * @param   pVirtio                  Device State
  * @param   pPciParams               Values to populate industry standard PCI Configuration Space data structure
  * @param   pcszInstance             Device instance name
@@ -174,9 +283,11 @@ void          virtioRelocate     (PPDMDEVINS pDevIns, RTGCINTPTR offDelta);
  * @param   ssmSaveExecCallback      Client handler for SSM save exec
  * @param   ssmLoadExecCallback      Client handler for SSM load exec
  * @param   ssmLoadDoneCallback      Client handler for SSM load done
- * @param   cbDevSpecificCap         Size of virtio_pci_device_cap device-specific struct
+ * @param   cbDevSpecificCfg         Size of virtio_pci_device_cap device-specific configuration struct
+ * @param   pDevSpecificCfg          Address of client's VirtIO dev-specific configuration struct
  */
 int  virtioConstruct(PPDMDEVINS             pDevIns,
+                     void                  *pClientContext,
                      VIRTIOHANDLE          *phVirtio,
                      PVIRTIOPCIPARAMS       pPciParams,
                      const char            *pcszInstance,
@@ -189,8 +300,8 @@ int  virtioConstruct(PPDMDEVINS             pDevIns,
                      PFNSSMDEVSAVEEXEC      ssmSaveExecCallback,
                      PFNSSMDEVLOADEXEC      ssmLoadExecCallback,
                      PFNSSMDEVLOADDONE      ssmLoadDoneCallback,
-                     uint16_t               cbDevSpecificCap,
-                     void                  *pDevSpecificCap);
+                     uint16_t               cbDevSpecificCfg,
+                     void                  *pDevSpecificCfg);
 
 /**
  * Log memory-mapped I/O input or output value.

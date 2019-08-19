@@ -86,13 +86,14 @@ typedef struct virtio_pci_cap
 /**
  * Local implementation's usage context of a queue (e.g. not part of VirtIO specification)
  */
-typedef struct VIRTQ_SHADOW
+typedef struct VIRTQ_PROXY
 {
-    const char *pcszName[32];                                   /**< Dev-specific name of queue                */
-    uint16_t    uAvailIdx;                                      /**< Consumer's position in avail ring         */
-    uint16_t    uUsedIdx;                                       /**< Consumer's position in used ring          */
-    bool        fEventThresholdReached;                         /**< Don't lose track while queueing ahead     */
-} VIRTQ_SHADOW_T, *PVIRTQ_SHADOW_T;
+    const char          szName[32];                              /**< Dev-specific name of queue                */
+    PVIRTQ_BUF_VECTOR_T pBufVec;                                 /**< Per-queue s/g data. Serialize access!     */
+    uint16_t            uAvailIdx;                               /**< Consumer's position in avail ring         */
+    uint16_t            uUsedIdx;                                /**< Consumer's position in used ring          */
+    bool                fEventThresholdReached;                  /**< Don't lose track while queueing ahead     */
+} VIRTQ_PROXY_T, *PVIRTQ_PROXY_T;
 
 /**
  * VirtIO 1.0 Capabilities' related MMIO-mapped structs:
@@ -134,8 +135,6 @@ typedef struct virtio_pci_cfg_cap
     uint8_t uPciCfgData[4];                                      /**< I/O buf for above cap.                    */
 } VIRTIO_PCI_CFG_CAP_T,   *PVIRTIO_PCI_CFG_CAP_T;
 
-/** For ISR, spec says min. 1 byte. Diagram shows 32-bits, mostly reserved */
-typedef uint32_t VIRTIO_PCI_ISR_CAP_T, *PVIRTIO_PCI_ISR_CAP_T;
 
 /**
  * The core (/common) state of the VirtIO PCI device
@@ -146,6 +145,7 @@ typedef struct VIRTIOSTATE
 {
     PDMPCIDEV                 dev;                               /**< PCI device                                */
     char                      szInstance[16];                    /**< Instance name, e.g. "VIRTIOSCSI0"         */
+    void *                    pClientContext;                     /**< Client callback returned on callbacks     */
 
     PPDMDEVINSR3              pDevInsR3;                         /**< Device instance - R3                      */
     PPDMDEVINSR0              pDevInsR0;                         /**< Device instance - R0                      */
@@ -176,7 +176,7 @@ typedef struct VIRTIOSTATE
     uint8_t                   uPrevDeviceStatus;                 /**< (MMIO) Prev Device Status           GUEST */
     uint8_t                   uConfigGeneration;                 /**< (MMIO) Device config sequencer       HOST */
 
-    VIRTQ_SHADOW_T            virtqShadow[VIRTQ_MAX_CNT];        /**< Local impl-specific queue context         */
+    VIRTQ_PROXY_T             virtqProxy[VIRTQ_MAX_CNT];        /**< Local impl-specific queue context         */
     VIRTIOCALLBACKS           virtioCallbacks;                   /**< Callback vectors to client                */
 
     PFNPCICONFIGREAD          pfnPciConfigReadOld;               /**< Prev rd. cb. intercepting PCI Cfg I/O     */
@@ -188,9 +188,9 @@ typedef struct VIRTIOSTATE
     PVIRTIO_PCI_CAP_T         pIsrCap;                           /**< Pointer to struct in configuration area   */
     PVIRTIO_PCI_CAP_T         pDeviceCap;                        /**< Pointer to struct in configuration area   */
 
-    uint32_t                  cbDevSpecificCap;                  /**< Size of client's dev-specific config data */
-    void                     *pDevSpecificCap;                   /**< Pointer to client's struct                */
-    void                     *pPrevDevSpecificCap;               /**< Previous read dev-specific cfg of client  */
+    uint32_t                  cbDevSpecificCfg;                  /**< Size of client's dev-specific config data */
+    void                     *pDevSpecificCfg;                   /**< Pointer to client's struct                */
+    void                     *pPrevDevSpecificCfg;               /**< Previous read dev-specific cfg of client  */
     bool                      fGenUpdatePending;                 /**< If set, update cfg gen after driver reads */
     uint8_t                   uPciCfgDataOff;
     uint8_t                   uISR;                              /**< Interrupt Status Register.                */
@@ -328,13 +328,14 @@ typedef struct virt_used
         } \
     }
 
+#define DRIVER_OK(pVirtio) (pVirtio->uDeviceStatus & VIRTIO_STATUS_DRIVER_OK)
+
 /**
  * Internal queue operations
  */
 
 static int         vqIsEventNeeded(uint16_t uEventIdx, uint16_t uDescIdxNew, uint16_t uDescIdxOld);
 static bool        vqIsEmpty              (PVIRTIOSTATE pVirtio, uint16_t qIdx);
-static void        vqReset                (PVIRTIOSTATE pVirtio, uint16_t qIdx);
 static void        vqReadDesc             (PVIRTIOSTATE pVirtio, uint16_t qIdx, uint32_t uDescIdx, PVIRTQ_DESC_T pDesc);
 static uint16_t    vqReadAvailRingDescIdx (PVIRTIOSTATE pVirtio, uint16_t qIdx, uint32_t availIdx);
 static uint16_t    vqReadAvailDescIdx     (PVIRTIOSTATE pVirtio, uint16_t qIdx);
@@ -355,7 +356,7 @@ DECLINLINE(int) vqIsEventNeeded(uint16_t uEventIdx, uint16_t uDescIdxNew, uint16
 
 DECLINLINE(bool) vqIsEmpty(PVIRTIOSTATE pVirtio, uint16_t qIdx)
 {
-    return vqReadAvailDescIdx(pVirtio, qIdx) == pVirtio->virtqShadow->uAvailIdx;
+    return vqReadAvailDescIdx(pVirtio, qIdx) == pVirtio->virtqProxy->uAvailIdx;
 }
 
 /**
@@ -510,11 +511,11 @@ DECLINLINE(void) virtioLogDeviceStatus( uint8_t status)
     }
 }
 
-static void vqReset                 (PVIRTIOSTATE pVirtio, uint16_t qIdx);
-static void vqDeviceNotified        (PVIRTIOSTATE pVirtio, uint16_t qidx, uint16_t uDescIdx);
+static void virtioResetQueue        (PVIRTIOSTATE pVirtio, uint16_t qIdx);
 static void vqNotifyDriver          (PVIRTIOSTATE pVirtio, uint16_t qIdx);
 static int  virtioRaiseInterrupt    (PVIRTIOSTATE pVirtio, uint8_t uCause);
 static void virtioLowerInterrupt    (PVIRTIOSTATE pVirtio);
+static void virtioQueueNotified     (PVIRTIOSTATE pVirtio, uint16_t qidx, uint16_t uDescIdx);
 static int  virtioCommonCfgAccessed (PVIRTIOSTATE pVirtio, int fWrite, off_t uOffset, unsigned cb, void const *pv);
 static void virtioGuestResetted     (PVIRTIOSTATE pVirtio);
 

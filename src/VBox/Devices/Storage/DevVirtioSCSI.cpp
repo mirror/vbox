@@ -53,14 +53,17 @@
 #define VIRTIOSCSI_F_T10_PI               RT_BIT_64(3)           /** Add T10 port info (DIF/DIX) in SCSI req hdr      */
 /** @} */
 
-#define VIRTIOSCSI_HOST_SCSI_FEATURES_OFFERED \
+#define VIRTIOSCSI_HOST_SCSI_ALL_FEATURES \
             (VIRTIOSCSI_F_INOUT | VIRTIOSCSI_F_HOTPLUG | VIRTIOSCSI_F_CHANGE | VIRTIOSCSI_F_T10_PI)
+
+#define VIRTIOSCSI_HOST_SCSI_FEATURES_OFFERED       0            /**< TBD, support at least hotplug & in/out          */
 
 /**
  * TEMPORARY NOTE: following parameter is set to 1 for early development. Will be increased later
  */
 #define VIRTIOSCSI_REQ_QUEUE_CNT                    1            /**< Number of req queues exposed by dev.            */
-#define VIRTIOSCSI_MAX_TARGETS                      1           /**< Can probably determined from higher layers      */
+#define VIRTIOSCSI_QUEUE_CNT                        VIRTIOSCSI_REQ_QUEUE_CNT + 2
+#define VIRTIOSCSI_MAX_TARGETS                      1            /**< Can probably determined from higher layers       */
 #define VIRTIOSCSI_MAX_LUN                          16383        /* < VirtIO specification, section 5.6.4             */
 #define VIRTIOSCSI_MAX_COMMANDS_PER_LUN             64           /* < T.B.D. What is a good value for this?           */
 #define VIRTIOSCSI_MAX_SEG_COUNT                    1024         /* < T.B.D. What is a good value for this?           */
@@ -82,12 +85,13 @@
  * section 5.6. Thus there is no need to explicitly indicate the number of queues needed by this device. The number
  * of req queues is variable and determined by virtio_scsi_config.num_queues. See VirtIO 1.0 spec section 5.6.4
  */
-#define VIRTIOSCSI_CONTROLQ_IDX                     0            /* Index of control queue                            */
-#define VIRTIOSCSI_EVENTQ_IDX                       1            /* Index of event queue                              */
-#define VIRTIOSCSI_VIRTQ_REQ_BASE                   2            /* Base index of req queues                          */
+#define CONTROLQ_IDX                                0            /**< Spec-defined Index of control queue             */
+#define EVENTQ_IDX                                  1            /**< Spec-defined Index of event queue               */
+#define VIRTQ_REQ_BASE                              2            /**< Spec-defined base index of request queues       */
+#define QUEUENAME(qIdx) (pVirtioScsi->szQueueNames[qIdx])        /**< Macro to get queue name from its index          */
 
-#define REQ_NBR_TO_QIDX(uReqQueueNum) (VIRTIOSCSI_VIRTQ_REQ_BASE + uReqQueueNum)
-#define REQ_QIDX_TO_NBR(qIdx)         (qIdx - VIRTIOSCSI_VIRTQ_REQ_BASE)
+#define IS_REQ_QUEUE(qIdx) (   qIdx >= VIRTQ_REQ_BASE \
+                            && qIdx < VIRTIOSCSI_QUEUE_CNT)
 /**
  * The following struct is the VirtIO SCSI Host Device device-specific configuration described in section 5.6.4
  * of the VirtIO 1.0 specification. This layout maps an MMIO area shared VirtIO guest driver. The VBox VirtIO
@@ -330,11 +334,17 @@ typedef struct VIRTIOSCSI
     /* SCSI target instances data */
     VIRTIOSCSITARGET                aTargetInstances[VIRTIOSCSI_MAX_TARGETS];
 
+    /** Instance name */
     const char                      szInstance[16];
+
+    /** Device-specific spec-based VirtIO queuenames */
+    const char                      szQueueNames[VIRTIOSCSI_QUEUE_CNT][VIRTIO_MAX_QUEUE_NAME_SIZE];
+
+    /** Track which VirtIO queues we've attached to */
+    bool                            fQueueAttached[VIRTIOSCSI_QUEUE_CNT];
 
     /** Device base interface. */
     PDMIBASE                        IBase;
-
 
     /** Pointer to the device instance. - R3 ptr. */
     PPDMDEVINSR3                    pDevInsR3;
@@ -374,6 +384,7 @@ typedef struct VIRTIOSCSI
     bool volatile                   fSignalIdle;
 
     VIRTIO_SCSI_CONFIG_T            virtioScsiConfig;
+
 
 
 } VIRTIOSCSI, *PVIRTIOSCSI;
@@ -419,26 +430,26 @@ typedef struct VIRTIOSCSIREQ
 
 #define LOG_ACCESSOR(member) \
         virtioLogMappedIoValue(__FUNCTION__, #member, RT_SIZEOFMEMB(VIRTIO_SCSI_CONFIG_T, member), \
-            pv, cb, uMemberOffset, fWrite, false, 0);
+            pv, cb, uIntraOffset, fWrite, false, 0);
 
 #define SCSI_CONFIG_ACCESSOR(member) \
     { \
-        uint32_t uMemberOffset = uOffset - RT_UOFFSETOF(VIRTIO_SCSI_CONFIG_T, member); \
+        uint32_t uIntraOffset = uOffset - RT_UOFFSETOF(VIRTIO_SCSI_CONFIG_T, member); \
         if (fWrite) \
-            memcpy(((char *)&pVirtioScsi->virtioScsiConfig.member) + uMemberOffset, (const char *)pv, cb); \
+            memcpy(((char *)&pVirtioScsi->virtioScsiConfig.member) + uIntraOffset, (const char *)pv, cb); \
         else \
-            memcpy((char *)pv, (const char *)(((char *)&pVirtioScsi->virtioScsiConfig.member) + uMemberOffset), cb); \
+            memcpy((char *)pv, (const char *)(((char *)&pVirtioScsi->virtioScsiConfig.member) + uIntraOffset), cb); \
         LOG_ACCESSOR(member); \
     }
 
 #define SCSI_CONFIG_ACCESSOR_READONLY(member) \
     { \
-        uint32_t uMemberOffset = uOffset - RT_UOFFSETOF(VIRTIO_SCSI_CONFIG_T, member); \
+        uint32_t uIntraOffset = uOffset - RT_UOFFSETOF(VIRTIO_SCSI_CONFIG_T, member); \
         if (fWrite) \
             LogFunc(("Guest attempted to write readonly virtio_pci_common_cfg.%s\n", #member)); \
         else \
         { \
-            memcpy((char *)pv, (const char *)(((char *)&pVirtioScsi->virtioScsiConfig.member) + uMemberOffset), cb); \
+            memcpy((char *)pv, (const char *)(((char *)&pVirtioScsi->virtioScsiConfig.member) + uIntraOffset), cb); \
             LOG_ACCESSOR(member); \
         } \
     }
@@ -467,6 +478,120 @@ static DECLCALLBACK(int) virtioScsiR3BiosIoPortReadStr(PPDMDEVINS pDevIns, void 
 }
 #endif
 
+
+
+static void virtioScsiHandleRequestq(VIRTIOHANDLE hVirtio, uint16_t qIdx, const char *pszQueueName)
+{
+    LogFunc(("\n"));
+
+    PVIRTQ_BUF_VECTOR_T pBufVec = virtioQueueGetBuffer(hVirtio, qIdx);
+    if (pBufVec == NULL)
+    {
+        Log(("\"%s\" not initialized\n", pszQueueName));
+        return;
+    }
+
+    int rc = virtioQueueGet(hVirtio, qIdx, true);
+    if (rc == VERR_NOT_AVAILABLE)
+    {
+        Log2Func(("Request queue %s is empty\n", pszQueueName));
+        return;
+    }
+
+    AssertReturnVoid(rc == VINF_SUCCESS);
+
+    Log2Func(("Read request queue, %d segs in, %d segs out\n",
+        pBufVec->cSegsIn, pBufVec->cSegsOut));
+}
+
+static void virtioScsiHandleControlq(VIRTIOHANDLE hVirtio, uint16_t qIdx, const char *pszQueueName)
+{
+
+    LogFunc(    ("\n"));
+
+    PVIRTQ_BUF_VECTOR_T pBufVec = virtioQueueGetBuffer(hVirtio, qIdx);
+    if (pBufVec == NULL)
+    {
+        Log(("\"%s\" not initialized\n", pszQueueName));
+        return;
+    }
+
+    int rc = virtioQueueGet(hVirtio, qIdx, true);
+    if (rc == VERR_NOT_AVAILABLE)
+    {
+        Log2Func(("Control queue %s is empty\n", pszQueueName));
+        return;
+    }
+
+    AssertReturnVoid(rc == VINF_SUCCESS);
+
+    Log2Func(("Read control queue, %d segs in, %d segs out\n",
+        pBufVec->cSegsIn, pBufVec->cSegsOut));
+}
+
+static void virtioScsiHandleEventq(VIRTIOHANDLE hVirtio, uint16_t qIdx, const char *pszQueueName)
+{
+    LogFunc(("\n"));
+
+    PVIRTQ_BUF_VECTOR_T pBufVec = virtioQueueGetBuffer(hVirtio, qIdx);
+    if (pBufVec == NULL)
+    {
+        Log(("\"%s\" not initialized\n", pszQueueName));
+        return;
+    }
+
+    int rc = virtioQueueGet(hVirtio, qIdx, true);
+    if (rc == VERR_NOT_AVAILABLE)
+    {
+        Log2Func(("Event queue %s is empty\n", pszQueueName));
+        return;
+    }
+
+    AssertReturnVoid(rc == VINF_SUCCESS);
+
+    Log2Func(("Read event queue, %d segs in, %d segs out\n",
+        pBufVec->cSegsIn, pBufVec->cSegsOut));
+}
+
+static DECLCALLBACK(void) virtioScsiQueueNotified(VIRTIOHANDLE hVirtio, void *pClient, uint16_t qIdx)
+{
+    AssertReturnVoid(qIdx < VIRTIOSCSI_QUEUE_CNT);
+    PVIRTIOSCSI pVirtioScsi = (PVIRTIOSCSI)pClient;
+
+    if (!pVirtioScsi->fQueueAttached[qIdx])
+    {
+        int rc = virtioQueueAttach(hVirtio, qIdx, QUEUENAME(qIdx));
+        pVirtioScsi->fQueueAttached[qIdx] = (rc == VINF_SUCCESS);
+        AssertReturnVoid(pVirtioScsi->fQueueAttached);
+    }
+
+    Log2Func(("%s has available data\n", QUEUENAME(qIdx)));
+
+    if (qIdx == CONTROLQ_IDX)
+        virtioScsiHandleControlq(hVirtio, qIdx, QUEUENAME(qIdx));
+    else
+    if (qIdx == EVENTQ_IDX)
+        virtioScsiHandleEventq(hVirtio, qIdx, QUEUENAME(qIdx));
+    else
+    if (IS_REQ_QUEUE(qIdx))
+        virtioScsiHandleRequestq(hVirtio, qIdx, QUEUENAME(qIdx));
+}
+
+static DECLCALLBACK(void) virtioScsiStatusChanged(VIRTIOHANDLE hVirtio, void *pClient,  bool fVirtioReady)
+{
+    Log2Func(("\n"));
+    RT_NOREF(hVirtio);
+    PVIRTIOSCSI pVirtioScsi = (PVIRTIOSCSI)pClient;
+    if (fVirtioReady)
+        Log2Func(("VirtIO ready\n"));
+    else
+    {
+        Log2Func(("VirtIO is resetting\n"));
+        for (int i = 0; i < VIRTIOSCSI_QUEUE_CNT; i++)
+            pVirtioScsi->fQueueAttached[i] = false;
+    }
+}
+
 /**
  * Implementation invokes this to reset the VirtIO device
  */
@@ -475,7 +600,6 @@ static void virtioScsiDeviceReset(PVIRTIOSCSI pVirtioScsi)
     pVirtioScsi->virtioScsiConfig.uSenseSize = VIRTIOSCSI_SENSE_SIZE_DEFAULT;
     pVirtioScsi->virtioScsiConfig.uCdbSize = VIRTIOSCSI_CDB_SIZE_DEFAULT;
     virtioResetAll(pVirtioScsi->hVirtio);
-
 }
 
 static int virtioScsiR3CfgAccessed(PVIRTIOSCSI pVirtioScsi, uint32_t uOffset,
@@ -539,29 +663,50 @@ static int virtioScsiR3CfgAccessed(PVIRTIOSCSI pVirtioScsi, uint32_t uOffset,
     return rc;
 }
 
-
-static DECLCALLBACK(void) virtioScsiStatusChanged(VIRTIOHANDLE hVirtio, bool fVirtioReady)
+/**
+ * virtio-scsi VirtIO Device-specific capabilities read callback
+ * (other VirtIO capabilities and features are handled in VirtIO implementation)
+ *
+ * @param   pDevIns     The device instance.
+ * @param   uOffset     Offset within device specific capabilities struct
+ * @param   pv          Buffer in which to save read data
+ * @param   cb          Number of bytes to read
+ */
+static DECLCALLBACK(int) virtioScsiR3DevCapRead(PPDMDEVINS pDevIns, uint32_t uOffset, const void *pv, size_t cb)
 {
-#define MAX_QUEUENAME_SIZE 20
-    Log2Func(("\n"));
-    char pszQueueName[MAX_QUEUENAME_SIZE];
-    if (fVirtioReady)
-    {
-        Log2Func(("VirtIO reports ready... Initializing queues\n"));
-        virtioQueueAttach(hVirtio, VIRTIOSCSI_CONTROLQ_IDX, "controlq");
-        virtioQueueAttach(hVirtio, VIRTIOSCSI_EVENTQ_IDX,   "eventq");
-        for (uint16_t qIdx = VIRTIOSCSI_VIRTQ_REQ_BASE;
-                      qIdx < VIRTIOSCSI_VIRTQ_REQ_BASE + VIRTIOSCSI_REQ_QUEUE_CNT;
-                      qIdx++)
-        {
-            RTStrPrintf(pszQueueName, sizeof(pszQueueName), "requestq_%d", qIdx - 2);
-            bool fEnabled = virtioQueueAttach(hVirtio, qIdx, (const char *)pszQueueName);
-            if (!fEnabled)
-                break;
-        }
-    } else
-        Log2Func(("VirtIO is resetting\n"));
+    int rc = VINF_SUCCESS;
+    PVIRTIOSCSI  pVirtioScsi = PDMINS_2_DATA(pDevIns, PVIRTIOSCSI);
+
+//    LogFunc(("Read from Device-Specific capabilities: uOffset: 0x%x, cb: 0x%x\n",
+//              uOffset, cb));
+
+    rc = virtioScsiR3CfgAccessed(pVirtioScsi, uOffset, pv, cb, false);
+
+    return rc;
 }
+
+/**
+ * virtio-scsi VirtIO Device-specific capabilities read callback
+ * (other VirtIO capabilities and features are handled in VirtIO implementation)
+ *
+ * @param   pDevIns     The device instance.
+ * @param   uOffset     Offset within device specific capabilities struct
+ * @param   pv          Buffer in which to save read data
+ * @param   cb          Number of bytes to write
+ */
+static DECLCALLBACK(int) virtioScsiR3DevCapWrite(PPDMDEVINS pDevIns, uint32_t uOffset, const void *pv, size_t cb)
+{
+    int rc = VINF_SUCCESS;
+    PVIRTIOSCSI  pVirtioScsi = PDMINS_2_DATA(pDevIns, PVIRTIOSCSI);
+
+//    LogFunc(("Write to Device-Specific capabilities: uOffset: 0x%x, cb: 0x%x\n",
+//              uOffset, cb));
+
+    rc = virtioScsiR3CfgAccessed(pVirtioScsi, uOffset, pv, cb, true);
+
+    return rc;
+}
+
 
 /**
  * Turns on/off the write status LED.
@@ -912,56 +1057,6 @@ static DECLCALLBACK(int) virtioScsiR3DeviceQueryStatusLed(PPDMILEDPORTS pInterfa
 }
 
 
-static DECLCALLBACK(void) virtioScsiQueueNotified(VIRTIOHANDLE hVirtio, uint16_t qIdx)
-{
-    Log2Func(("virtio callback: %s has avail data\n", virtioQueueGetName(hVirtio, qIdx)));
-}
-
-/**
- * virtio-scsi VirtIO Device-specific capabilities read callback
- * (other VirtIO capabilities and features are handled in VirtIO implementation)
- *
- * @param   pDevIns     The device instance.
- * @param   uOffset     Offset within device specific capabilities struct
- * @param   pv          Buffer in which to save read data
- * @param   cb          Number of bytes to read
- */
-static DECLCALLBACK(int) virtioScsiR3DevCapRead(PPDMDEVINS pDevIns, uint32_t uOffset, const void *pv, size_t cb)
-{
-    int rc = VINF_SUCCESS;
-    PVIRTIOSCSI  pVirtioScsi = PDMINS_2_DATA(pDevIns, PVIRTIOSCSI);
-
-//    LogFunc(("Read from Device-Specific capabilities: uOffset: 0x%x, cb: 0x%x\n",
-//              uOffset, cb));
-
-    rc = virtioScsiR3CfgAccessed(pVirtioScsi, uOffset, pv, cb, false);
-
-    return rc;
-}
-
-/**
- * virtio-scsi VirtIO Device-specific capabilities read callback
- * (other VirtIO capabilities and features are handled in VirtIO implementation)
- *
- * @param   pDevIns     The device instance.
- * @param   uOffset     Offset within device specific capabilities struct
- * @param   pv          Buffer in which to save read data
- * @param   cb          Number of bytes to write
- */
-static DECLCALLBACK(int) virtioScsiR3DevCapWrite(PPDMDEVINS pDevIns, uint32_t uOffset, const void *pv, size_t cb)
-{
-    int rc = VINF_SUCCESS;
-    PVIRTIOSCSI  pVirtioScsi = PDMINS_2_DATA(pDevIns, PVIRTIOSCSI);
-
-//    LogFunc(("Write to Device-Specific capabilities: uOffset: 0x%x, cb: 0x%x\n",
-//              uOffset, cb));
-
-    rc = virtioScsiR3CfgAccessed(pVirtioScsi, uOffset, pv, cb, true);
-
-    return rc;
-}
-
-
 /**
  * Memory mapped I/O Handler for read operations.
  *
@@ -1202,7 +1297,7 @@ static DECLCALLBACK(int) virtioScsiConstruct(PPDMDEVINS pDevIns, int iInstance, 
     pThis->virtioScsiConfig.uMaxTarget      = pThis->cTargets;
     pThis->virtioScsiConfig.uMaxLun         = VIRTIOSCSI_MAX_LUN;
 
-    rc = virtioConstruct(pDevIns, &pThis->hVirtio, pVirtioPciParams, pThis->szInstance,
+    rc = virtioConstruct(pDevIns, pThis, &pThis->hVirtio, pVirtioPciParams, pThis->szInstance,
                          VIRTIOSCSI_HOST_SCSI_FEATURES_OFFERED,
                          virtioScsiR3DevCapRead,
                          virtioScsiR3DevCapWrite,
@@ -1218,6 +1313,10 @@ static DECLCALLBACK(int) virtioScsiConstruct(PPDMDEVINS pDevIns, int iInstance, 
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("virtio-scsi: failed to initialize VirtIO"));
 
+    RTStrCopy((char *)pThis->szQueueNames[CONTROLQ_IDX], VIRTIO_MAX_QUEUE_NAME_SIZE, "controlq");
+    RTStrCopy((char *)pThis->szQueueNames[EVENTQ_IDX],   VIRTIO_MAX_QUEUE_NAME_SIZE, "eventq");
+    for (uint32_t qIdx = VIRTQ_REQ_BASE; qIdx < VIRTQ_REQ_BASE + VIRTIOSCSI_REQ_QUEUE_CNT; qIdx++)
+        RTStrPrintf((char *)pThis->szQueueNames[qIdx], VIRTIO_MAX_QUEUE_NAME_SIZE, "requestq_%d", qIdx);
 
     rc = PDMDevHlpPCIIORegionRegister(pDevIns, VIRTIOSCSI_REGION_MEM_IO, 32,
                                       PCI_ADDRESS_SPACE_MEM, virtioScsiR3Map);
@@ -1273,13 +1372,15 @@ static DECLCALLBACK(int) virtioScsiConstruct(PPDMDEVINS pDevIns, int iInstance, 
 
         LogFunc(("Attaching LUN: %s\n", pTarget->pszLunName));
 
-        /* Attach this SCSI driver (upstream driver pre-determined statically outside this module) */
         AssertReturn(iLUN < RT_ELEMENTS(pThis->aTargetInstances), VERR_PDM_NO_SUCH_LUN);
         rc = PDMDevHlpDriverAttach(pDevIns, iLUN, &pTarget->IBase, &pTarget->pDrvBase, (const char *)&pTarget->pszLunName);
         if (RT_SUCCESS(rc))
         {
             pTarget->fPresent = true;
 
+            /* DrvSCSI.cpp currently implements the IMedia and IMediaEx interfaces, so those
+             * are the interfaces that will be used to pass SCSI requests down to the
+             * DrvSCSI driver to eventually make it down to the VD layer */
             pTarget->pDrvMedia = PDMIBASE_QUERY_INTERFACE(pTarget->pDrvBase, PDMIMEDIA);
             AssertMsgReturn(VALID_PTR(pTarget->pDrvMedia),
                          ("virtio-scsi configuration error: LUN#%d missing basic media interface!\n", pTarget->iLUN),
@@ -1393,4 +1494,3 @@ const PDMDEVREG g_DeviceVirtioSCSI =
     /* u32VersionEnd */
     PDM_DEVREG_VERSION
 };
-
