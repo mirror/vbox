@@ -194,6 +194,7 @@ void UIInformationConfiguration::prepareObjects()
         m_pTableWidget->horizontalHeader()->hide();
         //m_pTableWidget->setShowGrid(false);
         m_pMainLayout->addWidget(m_pTableWidget);
+        m_pTableWidget->hide();
     }
 }
 
@@ -206,24 +207,30 @@ void UIInformationConfiguration::createTableItems()
     if (!m_pTableWidget)
         return;
     QFontMetrics fontMetrics(m_pTableWidget->font());
+    QTextDocument textDocument;
 
     int iMaxColumn1Length = 0;
+    int iTableRow = 0;
 
-
-
-    insertTitleRow(0, m_strGeneralTitle, UIIconPool::iconSet(":/machine_16px.png"));
-
+    insertTitleRow(iTableRow++, m_strGeneralTitle, UIIconPool::iconSet(":/machine_16px.png"));
     UITextTable generalTextTable = UIDetailsGenerator::generateMachineInformationGeneral(m_machine,
                                                                                          UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral_Default);
-
-    int iTableRow = 1;
-    QTextDocument textDocument;
     foreach (const UITextTableLine &line, generalTextTable)
     {
         textDocument.setHtml(line.string2());
-        insertInfoRow(iTableRow, line.string1(), textDocument.toRawText(), fontMetrics, iMaxColumn1Length);
-        ++iTableRow;
+        insertInfoRow(iTableRow++, line.string1(), textDocument.toPlainText(), fontMetrics, iMaxColumn1Length);
     }
+
+    insertTitleRow(iTableRow++, m_strSystemTitle, UIIconPool::iconSet(":/chipset_16px.png"));
+    UITextTable systemTextTable = UIDetailsGenerator::generateMachineInformationSystem(m_machine,
+                                                                                       UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_Default);
+    foreach (const UITextTableLine &line, systemTextTable)
+    {
+        textDocument.setHtml(line.string2());
+        insertInfoRow(iTableRow++, line.string1(), textDocument.toPlainText(), fontMetrics, iMaxColumn1Length);
+    }
+
+
 
     m_pTableWidget->resizeColumnToContents(0);
     m_pTableWidget->setColumnWidth(1, 1.5 * iMaxColumn1Length);
