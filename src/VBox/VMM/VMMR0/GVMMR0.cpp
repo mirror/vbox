@@ -158,9 +158,6 @@ typedef struct GVMHANDLE
     RTPROCESS           ProcId;
     /** The pointer to the ring-0 only (aka global) VM structure. */
     PGVM                pGVM;
-    /** The ring-0 mapping of the shared VM instance data.
-     * @todo remove this  */
-    PVMCC               pVMRemoveMe;
     /** The virtual machine object. */
     void               *pvObj;
     /** The session this VM is associated with. */
@@ -857,8 +854,7 @@ GVMMR0DECL(int) GVMMR0CreateVM(PSUPDRVSESSION pSession, uint32_t cCpus, PGVM *pp
         PGVMHANDLE pHandle = &pGVMM->aHandles[iHandle];
 
         /* consistency checks, a bit paranoid as always. */
-        if (    !pHandle->pVMRemoveMe
-            &&  !pHandle->pGVM
+        if (    !pHandle->pGVM
             &&  !pHandle->pvObj
             &&  pHandle->iSelf == iHandle)
         {
@@ -876,7 +872,6 @@ GVMMR0DECL(int) GVMMR0CreateVM(PSUPDRVSESSION pSession, uint32_t cCpus, PGVM *pp
                 pGVMM->iUsedHead = iHandle;
                 pGVMM->cVMs++;
 
-                pHandle->pVMRemoveMe = NULL;
                 pHandle->pGVM     = NULL;
                 pHandle->pSession = pSession;
                 pHandle->hEMT0    = NIL_RTNATIVETHREAD;
@@ -967,7 +962,6 @@ GVMMR0DECL(int) GVMMR0CreateVM(PSUPDRVSESSION pSession, uint32_t cCpus, PGVM *pp
                                 rc = GVMMR0_USED_EXCLUSIVE_LOCK(pGVMM);
                                 AssertRC(rc);
 
-                                pHandle->pVMRemoveMe            = pGVM;
                                 pHandle->pGVM                   = pGVM;
                                 pHandle->hEMT0                  = hEMT0;
                                 pHandle->ProcId                 = ProcId;
@@ -1462,7 +1456,6 @@ static DECLCALLBACK(void) gvmmR0HandleObjDestructor(void *pvObj, void *pvUser1, 
     pHandle->iNext = pGVMM->iFreeHead;
     pGVMM->iFreeHead = iHandle;
     ASMAtomicWriteNullPtr(&pHandle->pGVM);
-    ASMAtomicWriteNullPtr(&pHandle->pVMRemoveMe);
     ASMAtomicWriteNullPtr(&pHandle->pvObj);
     ASMAtomicWriteNullPtr(&pHandle->pSession);
     ASMAtomicWriteHandle(&pHandle->hEMT0,        NIL_RTNATIVETHREAD);
@@ -1601,7 +1594,6 @@ GVMMR0DECL(PGVM) GVMMR0ByHandle(uint32_t hGVM)
      * Look it up.
      */
     PGVMHANDLE pHandle = &pGVMM->aHandles[hGVM];
-    AssertPtrReturn(pHandle->pVMRemoveMe, NULL);
     AssertPtrReturn(pHandle->pvObj, NULL);
     PGVM pGVM = pHandle->pGVM;
     AssertPtrReturn(pGVM, NULL);
