@@ -21,9 +21,11 @@
 #include <QApplication>
 #include <QHeaderView>
 #include <QTableWidget>
+#include <QTextDocument>
 #include <QVBoxLayout>
 
 /* GUI includes: */
+#include "UIDetailsGenerator.h"
 #include "UICommon.h"
 #include "UIExtraDataManager.h"
 #include "UIIconPool.h"
@@ -35,66 +37,6 @@
 
 
 const unsigned iColumCount = 3;
-
-class UIInformationTableRow
-{
-public:
-
-    UIInformationTableRow(UIInformationConfiguration::TableRow row);
-    ~UIInformationTableRow();
-
-    QTableWidgetItem *addItem(unsigned iColumn, const QIcon &icon, const QString &strText);
-    QTableWidgetItem *addItem(unsigned iColumn, const QString &strText);
-
-    UIInformationConfiguration::TableRow row() const;
-
-private:
-
-    QList<QTableWidgetItem*> m_items;
-    UIInformationConfiguration::TableRow m_enmRow;
-};
-
-UIInformationTableRow::UIInformationTableRow(UIInformationConfiguration::TableRow enmRow)
-: m_enmRow(enmRow)
-{
-    m_items.reserve(iColumCount);
-}
-
-UIInformationTableRow::~UIInformationTableRow()
-{
-    for (int i = 0; i < m_items.size(); ++i)
-        delete m_items[i];
-    m_items.clear();
-}
-
-UIInformationConfiguration::TableRow UIInformationTableRow::row() const
-{
-    return m_enmRow;
-}
-
-QTableWidgetItem *UIInformationTableRow::addItem(unsigned iColumn, const QIcon &icon, const QString &strText)
-{
-    if (iColumn >= iColumCount)
-        return 0;
-    /* Deallocate first if we have something on the column already: */
-    if (m_items.size() > (int)iColumn && m_items[iColumn])
-        delete m_items[iColumn];
-    QTableWidgetItem *pItem = new QTableWidgetItem(icon, strText);
-    m_items.insert(iColumn, pItem);
-    return pItem;
-}
-
-QTableWidgetItem *UIInformationTableRow::addItem(unsigned iColumn, const QString &strText)
-{
-    if (iColumn >= iColumCount)
-        return 0;
-    /* Deallocate first if we have something on the column already: */
-    if (m_items.size() > (int)iColumn && m_items[iColumn])
-        delete m_items[iColumn];
-    QTableWidgetItem *pItem = new QTableWidgetItem(strText);
-    m_items.insert(iColumn, pItem);
-    return pItem;
-}
 
 UIInformationConfiguration::UIInformationConfiguration(QWidget *pParent, const CMachine &machine, const CConsole &console)
     : QIWithRetranslateUI<QWidget>(pParent)
@@ -116,8 +58,8 @@ UIInformationConfiguration::UIInformationConfiguration(QWidget *pParent, const C
 
 UIInformationConfiguration::~UIInformationConfiguration()
 {
-    qDeleteAll(m_rows);
-    m_rows.clear();
+    qDeleteAll(m_tableItems);
+    m_tableItems.clear();
 }
 
 void UIInformationConfiguration::retranslateUi()
@@ -246,13 +188,12 @@ void UIInformationConfiguration::prepareObjects()
     if (m_pTableWidget)
     {
         /* Configure the table by hiding the headers etc.: */
-        m_pTableWidget->setRowCount(TableRow_Max);
+        m_pTableWidget->setRowCount(20);
         m_pTableWidget->setColumnCount(3);
         m_pTableWidget->verticalHeader()->hide();
         m_pTableWidget->horizontalHeader()->hide();
         //m_pTableWidget->setShowGrid(false);
         m_pMainLayout->addWidget(m_pTableWidget);
-        m_pTableWidget->hide();
     }
 }
 
@@ -268,48 +209,49 @@ void UIInformationConfiguration::createTableItems()
 
     int iMaxColumn1Length = 0;
 
-    /* General Section: */
-    insertTitleRow(TableRow_General_Title, m_strGeneralTitle, UIIconPool::iconSet(":/machine_16px.png"));
-    QString strMachineName = m_machine.isNull() ? m_strError : m_machine.GetName();
-    insertInfoRow(TableRow_General_Name, m_strGeneralName, strMachineName, fontMetrics, iMaxColumn1Length);
-    QString strOSTypeName;
-    if (!m_console.isNull())
-    {
-        CGuest comGuest = m_console.GetGuest();
-        if (!comGuest.isNull())
-            strOSTypeName = uiCommon().vmGuestOSTypeDescription(comGuest.GetOSTypeId());
-    }
-    if (strOSTypeName.isEmpty())
-        strOSTypeName = m_strError;
-    insertInfoRow(TableRow_General_OSType, m_strGeneralOSType, strOSTypeName, fontMetrics, iMaxColumn1Length);
-    insertTitleRow(TableRow_System_Title, m_strSystemTitle, UIIconPool::iconSet(":/chipset_16px.png"));
 
+
+    insertTitleRow(0, m_strGeneralTitle, UIIconPool::iconSet(":/machine_16px.png"));
+
+    UITextTable generalTextTable = UIDetailsGenerator::generateMachineInformationGeneral(m_machine,
+                                                                                         UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral_Default);
+
+    int iTableRow = 1;
+    QTextDocument textDocument;
+    foreach (const UITextTableLine &line, generalTextTable)
+    {
+        textDocument.setHtml(line.string2());
+        insertInfoRow(iTableRow, line.string1(), textDocument.toRawText(), fontMetrics, iMaxColumn1Length);
+        ++iTableRow;
+    }
 
     m_pTableWidget->resizeColumnToContents(0);
-    //m_pTableWidget->resizeColumnToContents(1);
     m_pTableWidget->setColumnWidth(1, 1.5 * iMaxColumn1Length);
     m_pTableWidget->resizeColumnToContents(2);
 
 }
 
-void UIInformationConfiguration::insertTitleRow(TableRow enmRow, const QString &strTitle, const QIcon &icon)
+void UIInformationConfiguration::insertTitleRow(int iRow, const QString &strTitle, const QIcon &icon)
 {
-    UIInformationTableRow *pRow = new UIInformationTableRow(enmRow);
-    m_rows.insert(enmRow, pRow);
-    m_pTableWidget->setItem(enmRow, 0, pRow->addItem(0, icon, ""));
-    QTableWidgetItem *pItem = pRow->addItem(1, strTitle);
-    QFont font = pItem->font();
+    QTableWidgetItem *pIconItem = new QTableWidgetItem(icon, "");
+    m_pTableWidget->setItem(iRow, 0, pIconItem);
+    QTableWidgetItem *pTitleItem = new QTableWidgetItem(strTitle);
+    QFont font = pTitleItem->font();
     font.setBold(true);
-    pItem->setFont(font);
-    m_pTableWidget->setItem(enmRow, 1, pItem);
+    pTitleItem->setFont(font);
+    m_pTableWidget->setItem(iRow, 1, pTitleItem);
+    m_tableItems << pIconItem;
+    m_tableItems << pTitleItem;
 }
 
-void UIInformationConfiguration::insertInfoRow(TableRow enmRow, const QString &strColumn1, const QString &strColumn2,
+void UIInformationConfiguration::insertInfoRow(int iRow, const QString strText1, const QString &strText2,
                                                QFontMetrics &fontMetrics, int &iMaxColumn1Length)
 {
-    UIInformationTableRow *pRow = new UIInformationTableRow(enmRow);
-    m_rows.insert(enmRow, pRow);
-    m_pTableWidget->setItem(enmRow, 1, pRow->addItem(1, strColumn1));
-    m_pTableWidget->setItem(enmRow, 2, pRow->addItem(1, strColumn2));
-    iMaxColumn1Length = qMax(iMaxColumn1Length, fontMetrics.width(strColumn1));
+    iMaxColumn1Length = qMax(iMaxColumn1Length, fontMetrics.width(strText1));
+    QTableWidgetItem *pCol1 = new QTableWidgetItem(strText1);
+    QTableWidgetItem *pCol2 = new QTableWidgetItem(strText2);
+    m_tableItems << pCol1;
+    m_tableItems << pCol2;
+    m_pTableWidget->setItem(iRow, 1, pCol1);
+    m_pTableWidget->setItem(iRow, 2, pCol2);
 }

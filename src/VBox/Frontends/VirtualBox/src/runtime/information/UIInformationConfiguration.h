@@ -40,7 +40,7 @@ class UIInformationView;
 class UIInformationModel;
 class QTableWidget;
 class QTableWidgetItem;
-class UIInformationTableRow;
+class UITextTableLine;
 
 /** QWidget extension
   * providing GUI with configuration-information tab in session-information window. */
@@ -49,15 +49,6 @@ class UIInformationConfiguration : public QIWithRetranslateUI<QWidget>
     Q_OBJECT;
 
 public:
-
-    enum TableRow
-    {
-        TableRow_General_Title = 0,
-        TableRow_General_Name,
-        TableRow_General_OSType,
-        TableRow_System_Title,
-        TableRow_Max
-    };
 
     /** Constructs information-tab passing @a pParent to the QWidget base-class constructor.
       * @param machine is machine reference.
@@ -76,8 +67,8 @@ private:
     void createTableItems();
 
     void updateTable();
-    void insertTitleRow(TableRow enmRow, const QString &strTitle, const QIcon &icon);
-    void insertInfoRow(TableRow enmRow, const QString &strColumn1, const QString &strColumn2,
+    void insertTitleRow(int iRow, const QString &strTitle, const QIcon &icon);
+    void insertInfoRow(int iRow, const QString strText1, const QString &strText2,
                        QFontMetrics &fontMetrics, int &iMaxColumn1Length);
 
     /** Holds the machine instance. */
@@ -91,8 +82,8 @@ private:
     /** Holds the instance of view we create. */
     UIInformationView *m_pView;
     QTableWidget *m_pTableWidget;
-    QMap<TableRow, UIInformationTableRow*> m_rows;
-
+    //QMap<TableRow, UIInformationTableRow*> m_rows;
+    QList<QTableWidgetItem*> m_tableItems;
    /** @name Cached translated string.
       * @{ */
         QString m_strError;
