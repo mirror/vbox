@@ -59,7 +59,7 @@ RT_C_DECLS_END
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
-static bool pdmR0IsaSetIrq(PVMCC pVM, int iIrq, int iLevel, uint32_t uTagSrc);
+static bool pdmR0IsaSetIrq(PGVM pGVM, int iIrq, int iLevel, uint32_t uTagSrc);
 
 
 
@@ -131,18 +131,18 @@ static DECLCALLBACK(void) pdmR0DevHlp_PCISetIrq(PPDMDEVINS pDevIns, PPDMPCIDEV p
     AssertReturnVoid(pPciDev);
     LogFlow(("pdmR0DevHlp_PCISetIrq: caller=%p/%d: pPciDev=%p:{%#x} iIrq=%d iLevel=%d\n",
              pDevIns, pDevIns->iInstance, pPciDev, pPciDev->uDevFn, iIrq, iLevel));
-    PVMCC        pVM     = pDevIns->Internal.s.pVMR0;
+    PGVM         pGVM    = pDevIns->Internal.s.pVMR0;
     PPDMPCIBUS   pPciBus = pPciDev->Int.s.pPdmBusR0;
 
-    pdmLock(pVM);
+    pdmLock(pGVM);
     uint32_t uTagSrc;
     if (iLevel & PDM_IRQ_LEVEL_HIGH)
     {
-        pDevIns->Internal.s.uLastIrqTag = uTagSrc = pdmCalcIrqTag(pVM, pDevIns->idTracing);
+        pDevIns->Internal.s.uLastIrqTag = uTagSrc = pdmCalcIrqTag(pGVM, pDevIns->idTracing);
         if (iLevel == PDM_IRQ_LEVEL_HIGH)
-            VBOXVMM_PDM_IRQ_HIGH(VMMGetCpu(pVM), RT_LOWORD(uTagSrc), RT_HIWORD(uTagSrc));
+            VBOXVMM_PDM_IRQ_HIGH(VMMGetCpu(pGVM), RT_LOWORD(uTagSrc), RT_HIWORD(uTagSrc));
         else
-            VBOXVMM_PDM_IRQ_HILO(VMMGetCpu(pVM), RT_LOWORD(uTagSrc), RT_HIWORD(uTagSrc));
+            VBOXVMM_PDM_IRQ_HILO(VMMGetCpu(pGVM), RT_LOWORD(uTagSrc), RT_HIWORD(uTagSrc));
     }
     else
         uTagSrc = pDevIns->Internal.s.uLastIrqTag;
@@ -152,17 +152,17 @@ static DECLCALLBACK(void) pdmR0DevHlp_PCISetIrq(PPDMDEVINS pDevIns, PPDMPCIDEV p
     {
         pPciBus->pfnSetIrqR0(pPciBus->pDevInsR0, pPciDev, iIrq, iLevel, uTagSrc);
 
-        pdmUnlock(pVM);
+        pdmUnlock(pGVM);
 
         if (iLevel == PDM_IRQ_LEVEL_LOW)
-            VBOXVMM_PDM_IRQ_LOW(VMMGetCpu(pVM), RT_LOWORD(uTagSrc), RT_HIWORD(uTagSrc));
+            VBOXVMM_PDM_IRQ_LOW(VMMGetCpu(pGVM), RT_LOWORD(uTagSrc), RT_HIWORD(uTagSrc));
     }
     else
     {
-        pdmUnlock(pVM);
+        pdmUnlock(pGVM);
 
         /* queue for ring-3 execution. */
-        PPDMDEVHLPTASK pTask = (PPDMDEVHLPTASK)PDMQueueAlloc(pVM->pdm.s.pDevHlpQueueR0);
+        PPDMDEVHLPTASK pTask = (PPDMDEVHLPTASK)PDMQueueAlloc(pGVM->pdm.s.pDevHlpQueueR0);
         AssertReturnVoid(pTask);
 
         pTask->enmOp = PDMDEVHLPTASKOP_PCI_SET_IRQ;
@@ -170,9 +170,9 @@ static DECLCALLBACK(void) pdmR0DevHlp_PCISetIrq(PPDMDEVINS pDevIns, PPDMPCIDEV p
         pTask->u.PciSetIRQ.iIrq = iIrq;
         pTask->u.PciSetIRQ.iLevel = iLevel;
         pTask->u.PciSetIRQ.uTagSrc = uTagSrc;
-        pTask->u.PciSetIRQ.pPciDevR3 = MMHyperR0ToR3(pVM, pPciDev);
+        pTask->u.PciSetIRQ.pPciDevR3 = MMHyperR0ToR3(pGVM, pPciDev);
 
-        PDMQueueInsertEx(pVM->pdm.s.pDevHlpQueueR0, &pTask->Core, 0);
+        PDMQueueInsertEx(pGVM->pdm.s.pDevHlpQueueR0, &pTask->Core, 0);
     }
 
     LogFlow(("pdmR0DevHlp_PCISetIrq: caller=%p/%d: returns void; uTagSrc=%#x\n", pDevIns, pDevIns->iInstance, uTagSrc));
@@ -184,26 +184,26 @@ static DECLCALLBACK(void) pdmR0DevHlp_ISASetIrq(PPDMDEVINS pDevIns, int iIrq, in
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     LogFlow(("pdmR0DevHlp_ISASetIrq: caller=%p/%d: iIrq=%d iLevel=%d\n", pDevIns, pDevIns->iInstance, iIrq, iLevel));
-    PVMCC pVM = pDevIns->Internal.s.pVMR0;
+    PGVM pGVM = pDevIns->Internal.s.pVMR0;
 
-    pdmLock(pVM);
+    pdmLock(pGVM);
     uint32_t uTagSrc;
     if (iLevel & PDM_IRQ_LEVEL_HIGH)
     {
-        pDevIns->Internal.s.uLastIrqTag = uTagSrc = pdmCalcIrqTag(pVM, pDevIns->idTracing);
+        pDevIns->Internal.s.uLastIrqTag = uTagSrc = pdmCalcIrqTag(pGVM, pDevIns->idTracing);
         if (iLevel == PDM_IRQ_LEVEL_HIGH)
-            VBOXVMM_PDM_IRQ_HIGH(VMMGetCpu(pVM), RT_LOWORD(uTagSrc), RT_HIWORD(uTagSrc));
+            VBOXVMM_PDM_IRQ_HIGH(VMMGetCpu(pGVM), RT_LOWORD(uTagSrc), RT_HIWORD(uTagSrc));
         else
-            VBOXVMM_PDM_IRQ_HILO(VMMGetCpu(pVM), RT_LOWORD(uTagSrc), RT_HIWORD(uTagSrc));
+            VBOXVMM_PDM_IRQ_HILO(VMMGetCpu(pGVM), RT_LOWORD(uTagSrc), RT_HIWORD(uTagSrc));
     }
     else
         uTagSrc = pDevIns->Internal.s.uLastIrqTag;
 
-    bool fRc = pdmR0IsaSetIrq(pVM, iIrq, iLevel, uTagSrc);
+    bool fRc = pdmR0IsaSetIrq(pGVM, iIrq, iLevel, uTagSrc);
 
     if (iLevel == PDM_IRQ_LEVEL_LOW && fRc)
-        VBOXVMM_PDM_IRQ_LOW(VMMGetCpu(pVM), RT_LOWORD(uTagSrc), RT_HIWORD(uTagSrc));
-    pdmUnlock(pVM);
+        VBOXVMM_PDM_IRQ_LOW(VMMGetCpu(pGVM), RT_LOWORD(uTagSrc), RT_HIWORD(uTagSrc));
+    pdmUnlock(pGVM);
     LogFlow(("pdmR0DevHlp_ISASetIrq: caller=%p/%d: returns void; uTagSrc=%#x\n", pDevIns, pDevIns->iInstance, uTagSrc));
 }
 
@@ -213,14 +213,14 @@ static DECLCALLBACK(void) pdmR0DevHlp_IoApicSendMsi(PPDMDEVINS pDevIns, RTGCPHYS
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     LogFlow(("pdmR0DevHlp_IoApicSendMsi: caller=%p/%d: GCPhys=%RGp uValue=%#x\n", pDevIns, pDevIns->iInstance, GCPhys, uValue));
-    PVMCC pVM = pDevIns->Internal.s.pVMR0;
+    PGVM pGVM = pDevIns->Internal.s.pVMR0;
 
     uint32_t uTagSrc;
-    pDevIns->Internal.s.uLastIrqTag = uTagSrc = pdmCalcIrqTag(pVM, pDevIns->idTracing);
-    VBOXVMM_PDM_IRQ_HILO(VMMGetCpu(pVM), RT_LOWORD(uTagSrc), RT_HIWORD(uTagSrc));
+    pDevIns->Internal.s.uLastIrqTag = uTagSrc = pdmCalcIrqTag(pGVM, pDevIns->idTracing);
+    VBOXVMM_PDM_IRQ_HILO(VMMGetCpu(pGVM), RT_LOWORD(uTagSrc), RT_HIWORD(uTagSrc));
 
-    if (pVM->pdm.s.IoApic.pDevInsR0)
-        pVM->pdm.s.IoApic.pfnSendMsiR0(pVM->pdm.s.IoApic.pDevInsR0, GCPhys, uValue, uTagSrc);
+    if (pGVM->pdm.s.IoApic.pDevInsR0)
+        pGVM->pdm.s.IoApic.pfnSendMsiR0(pGVM->pdm.s.IoApic.pDevInsR0, GCPhys, uValue, uTagSrc);
     else
         AssertFatalMsgFailed(("Lazy bastards!"));
 
@@ -517,10 +517,10 @@ static DECLCALLBACK(int) pdmR0IoApicHlp_ApicBusDeliver(PPDMDEVINS pDevIns, uint8
                                                        uint8_t u8TriggerMode, uint32_t uTagSrc)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
-    PVMCC pVM = pDevIns->Internal.s.pVMR0;
+    PGVM pGVM = pDevIns->Internal.s.pVMR0;
     LogFlow(("pdmR0IoApicHlp_ApicBusDeliver: caller=%p/%d: u8Dest=%RX8 u8DestMode=%RX8 u8DeliveryMode=%RX8 uVector=%RX8 u8Polarity=%RX8 u8TriggerMode=%RX8 uTagSrc=%#x\n",
              pDevIns, pDevIns->iInstance, u8Dest, u8DestMode, u8DeliveryMode, uVector, u8Polarity, u8TriggerMode, uTagSrc));
-    return APICBusDeliver(pVM, u8Dest, u8DestMode, u8DeliveryMode, uVector, u8Polarity, u8TriggerMode, uTagSrc);
+    return APICBusDeliver(pGVM, u8Dest, u8DestMode, u8DeliveryMode, uVector, u8Polarity, u8TriggerMode, uTagSrc);
 }
 
 
@@ -566,11 +566,11 @@ static DECLCALLBACK(void) pdmR0PciHlp_IsaSetIrq(PPDMDEVINS pDevIns, int iIrq, in
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     Log4(("pdmR0PciHlp_IsaSetIrq: iIrq=%d iLevel=%d uTagSrc=%#x\n", iIrq, iLevel, uTagSrc));
-    PVMCC pVM = pDevIns->Internal.s.pVMR0;
+    PGVM pGVM = pDevIns->Internal.s.pVMR0;
 
-    pdmLock(pVM);
-    pdmR0IsaSetIrq(pVM, iIrq, iLevel, uTagSrc);
-    pdmUnlock(pVM);
+    pdmLock(pGVM);
+    pdmR0IsaSetIrq(pGVM, iIrq, iLevel, uTagSrc);
+    pdmUnlock(pGVM);
 }
 
 
@@ -579,14 +579,14 @@ static DECLCALLBACK(void) pdmR0PciHlp_IoApicSetIrq(PPDMDEVINS pDevIns, int iIrq,
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     Log4(("pdmR0PciHlp_IoApicSetIrq: iIrq=%d iLevel=%d uTagSrc=%#x\n", iIrq, iLevel, uTagSrc));
-    PVMCC pVM = pDevIns->Internal.s.pVMR0;
+    PGVM pGVM = pDevIns->Internal.s.pVMR0;
 
-    if (pVM->pdm.s.IoApic.pDevInsR0)
-        pVM->pdm.s.IoApic.pfnSetIrqR0(pVM->pdm.s.IoApic.pDevInsR0, iIrq, iLevel, uTagSrc);
-    else if (pVM->pdm.s.IoApic.pDevInsR3)
+    if (pGVM->pdm.s.IoApic.pDevInsR0)
+        pGVM->pdm.s.IoApic.pfnSetIrqR0(pGVM->pdm.s.IoApic.pDevInsR0, iIrq, iLevel, uTagSrc);
+    else if (pGVM->pdm.s.IoApic.pDevInsR3)
     {
         /* queue for ring-3 execution. */
-        PPDMDEVHLPTASK pTask = (PPDMDEVHLPTASK)PDMQueueAlloc(pVM->pdm.s.pDevHlpQueueR0);
+        PPDMDEVHLPTASK pTask = (PPDMDEVHLPTASK)PDMQueueAlloc(pGVM->pdm.s.pDevHlpQueueR0);
         if (pTask)
         {
             pTask->enmOp = PDMDEVHLPTASKOP_IOAPIC_SET_IRQ;
@@ -595,7 +595,7 @@ static DECLCALLBACK(void) pdmR0PciHlp_IoApicSetIrq(PPDMDEVINS pDevIns, int iIrq,
             pTask->u.IoApicSetIRQ.iLevel = iLevel;
             pTask->u.IoApicSetIRQ.uTagSrc = uTagSrc;
 
-            PDMQueueInsertEx(pVM->pdm.s.pDevHlpQueueR0, &pTask->Core, 0);
+            PDMQueueInsertEx(pGVM->pdm.s.pDevHlpQueueR0, &pTask->Core, 0);
         }
         else
             AssertMsgFailed(("We're out of devhlp queue items!!!\n"));
@@ -608,9 +608,9 @@ static DECLCALLBACK(void) pdmR0PciHlp_IoApicSendMsi(PPDMDEVINS pDevIns, RTGCPHYS
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     Log4(("pdmR0PciHlp_IoApicSendMsi: GCPhys=%p uValue=%d uTagSrc=%#x\n", GCPhys, uValue, uTagSrc));
-    PVMCC pVM = pDevIns->Internal.s.pVMR0;
-    if (pVM->pdm.s.IoApic.pDevInsR0)
-        pVM->pdm.s.IoApic.pfnSendMsiR0(pVM->pdm.s.IoApic.pDevInsR0, GCPhys, uValue, uTagSrc);
+    PGVM pGVM = pDevIns->Internal.s.pVMR0;
+    if (pGVM->pdm.s.IoApic.pDevInsR0)
+        pGVM->pdm.s.IoApic.pfnSendMsiR0(pGVM->pdm.s.IoApic.pDevInsR0, GCPhys, uValue, uTagSrc);
     else
         AssertFatalMsgFailed(("Lazy bastards!"));
 }
@@ -783,29 +783,29 @@ extern DECLEXPORT(const PDMDRVHLPR0) g_pdmR0DrvHlp =
  * Sets an irq on the PIC and I/O APIC.
  *
  * @returns true if delivered, false if postponed.
- * @param   pVM         The cross context VM structure.
+ * @param   pGVM        The global (ring-0) VM structure.
  * @param   iIrq        The irq.
  * @param   iLevel      The new level.
  * @param   uTagSrc     The IRQ tag and source.
  *
  * @remarks The caller holds the PDM lock.
  */
-static bool pdmR0IsaSetIrq(PVMCC pVM, int iIrq, int iLevel, uint32_t uTagSrc)
+static bool pdmR0IsaSetIrq(PGVM pGVM, int iIrq, int iLevel, uint32_t uTagSrc)
 {
-    if (RT_LIKELY(    (   pVM->pdm.s.IoApic.pDevInsR0
-                       || !pVM->pdm.s.IoApic.pDevInsR3)
-                  &&  (   pVM->pdm.s.Pic.pDevInsR0
-                       || !pVM->pdm.s.Pic.pDevInsR3)))
+    if (RT_LIKELY(    (   pGVM->pdm.s.IoApic.pDevInsR0
+                       || !pGVM->pdm.s.IoApic.pDevInsR3)
+                  &&  (   pGVM->pdm.s.Pic.pDevInsR0
+                       || !pGVM->pdm.s.Pic.pDevInsR3)))
     {
-        if (pVM->pdm.s.Pic.pDevInsR0)
-            pVM->pdm.s.Pic.pfnSetIrqR0(pVM->pdm.s.Pic.pDevInsR0, iIrq, iLevel, uTagSrc);
-        if (pVM->pdm.s.IoApic.pDevInsR0)
-            pVM->pdm.s.IoApic.pfnSetIrqR0(pVM->pdm.s.IoApic.pDevInsR0, iIrq, iLevel, uTagSrc);
+        if (pGVM->pdm.s.Pic.pDevInsR0)
+            pGVM->pdm.s.Pic.pfnSetIrqR0(pGVM->pdm.s.Pic.pDevInsR0, iIrq, iLevel, uTagSrc);
+        if (pGVM->pdm.s.IoApic.pDevInsR0)
+            pGVM->pdm.s.IoApic.pfnSetIrqR0(pGVM->pdm.s.IoApic.pDevInsR0, iIrq, iLevel, uTagSrc);
         return true;
     }
 
     /* queue for ring-3 execution. */
-    PPDMDEVHLPTASK pTask = (PPDMDEVHLPTASK)PDMQueueAlloc(pVM->pdm.s.pDevHlpQueueR0);
+    PPDMDEVHLPTASK pTask = (PPDMDEVHLPTASK)PDMQueueAlloc(pGVM->pdm.s.pDevHlpQueueR0);
     AssertReturn(pTask, false);
 
     pTask->enmOp = PDMDEVHLPTASKOP_ISA_SET_IRQ;
@@ -814,7 +814,7 @@ static bool pdmR0IsaSetIrq(PVMCC pVM, int iIrq, int iLevel, uint32_t uTagSrc)
     pTask->u.IsaSetIRQ.iLevel = iLevel;
     pTask->u.IsaSetIRQ.uTagSrc = uTagSrc;
 
-    PDMQueueInsertEx(pVM->pdm.s.pDevHlpQueueR0, &pTask->Core, 0);
+    PDMQueueInsertEx(pGVM->pdm.s.pDevHlpQueueR0, &pTask->Core, 0);
     return false;
 }
 
@@ -824,15 +824,14 @@ static bool pdmR0IsaSetIrq(PVMCC pVM, int iIrq, int iLevel, uint32_t uTagSrc)
  *
  * @returns See PFNPDMDEVREQHANDLERR0.
  * @param   pGVM    The global (ring-0) VM structure. (For validation.)
- * @param   pVM     The cross context VM structure. (For validation.)
  * @param   pReq    Pointer to the request buffer.
  */
-VMMR0_INT_DECL(int) PDMR0DeviceCallReqHandler(PGVM pGVM, PVMCC pVM, PPDMDEVICECALLREQHANDLERREQ pReq)
+VMMR0_INT_DECL(int) PDMR0DeviceCallReqHandler(PGVM pGVM, PPDMDEVICECALLREQHANDLERREQ pReq)
 {
     /*
      * Validate input and make the call.
      */
-    int rc = GVMMR0ValidateGVMandVM(pGVM, pVM);
+    int rc = GVMMR0ValidateGVM(pGVM);
     if (RT_SUCCESS(rc))
     {
         AssertPtrReturn(pReq, VERR_INVALID_POINTER);
@@ -840,7 +839,7 @@ VMMR0_INT_DECL(int) PDMR0DeviceCallReqHandler(PGVM pGVM, PVMCC pVM, PPDMDEVICECA
 
         PPDMDEVINS pDevIns = pReq->pDevInsR0;
         AssertPtrReturn(pDevIns, VERR_INVALID_POINTER);
-        AssertReturn(pDevIns->Internal.s.pVMR0 == pVM, VERR_INVALID_PARAMETER);
+        AssertReturn(pDevIns->Internal.s.pVMR0 == pGVM, VERR_INVALID_PARAMETER);
 
         PFNPDMDEVREQHANDLERR0 pfnReqHandlerR0 = pReq->pfnReqHandlerR0;
         AssertPtrReturn(pfnReqHandlerR0, VERR_INVALID_POINTER);

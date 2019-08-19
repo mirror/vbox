@@ -79,7 +79,7 @@ static NTSTATUS (*g_pfnWinHvDepositMemory)(uintptr_t idPartition, size_t cPages,
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
-NEM_TMPL_STATIC int  nemR0WinMapPages(PGVM pGVM, PVMCC pVM, PGVMCPU pGVCpu, RTGCPHYS GCPhysSrc, RTGCPHYS GCPhysDst,
+NEM_TMPL_STATIC int  nemR0WinMapPages(PGVM pGVM, PGVMCPU pGVCpu, RTGCPHYS GCPhysSrc, RTGCPHYS GCPhysDst,
                                       uint32_t cPages, uint32_t fFlags);
 NEM_TMPL_STATIC int  nemR0WinUnmapPages(PGVM pGVM, PGVMCPU pGVCpu, RTGCPHYS GCPhys, uint32_t cPages);
 #if defined(NEM_WIN_WITH_RING0_RUNLOOP) || defined(NEM_WIN_USE_HYPERCALLS_FOR_REGISTERS)
@@ -88,7 +88,7 @@ NEM_TMPL_STATIC int  nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCt
 NEM_TMPL_STATIC int  nemR0WinQueryCpuTick(PGVM pGVM, PGVMCPU pGVCpu, uint64_t *pcTicks, uint32_t *pcAux);
 NEM_TMPL_STATIC int  nemR0WinResumeCpuTickOnAll(PGVM pGVM, PGVMCPU pGVCpu, uint64_t uPausedTscValue);
 #endif
-DECLINLINE(NTSTATUS) nemR0NtPerformIoControl(PGVM pGVM, PVMCPUCC pVCpu, uint32_t uFunction, void *pvInput, uint32_t cbInput,
+DECLINLINE(NTSTATUS) nemR0NtPerformIoControl(PGVM pGVM, PGVMCPU pGVCpu, uint32_t uFunction, void *pvInput, uint32_t cbInput,
                                              void *pvOutput, uint32_t cbOutput);
 
 
@@ -155,15 +155,14 @@ static void nemR0DeleteHypercallData(PNEMR0HYPERCALLDATA pHypercallData)
  *
  * @returns VBox status code.
  * @param   pGVM            The ring-0 VM handle.
- * @param   pVM             The cross context VM handle.
  * @thread  EMT(0)
  */
-VMMR0_INT_DECL(int) NEMR0InitVM(PGVM pGVM, PVMCC pVM)
+VMMR0_INT_DECL(int) NEMR0InitVM(PGVM pGVM)
 {
     AssertCompile(sizeof(pGVM->nemr0.s) <= sizeof(pGVM->nemr0.padding));
     AssertCompile(sizeof(pGVM->aCpus[0].nemr0.s) <= sizeof(pGVM->aCpus[0].nemr0.padding));
 
-    int rc = GVMMR0ValidateGVMandVMandEMT(pGVM, pVM, 0);
+    int rc = GVMMR0ValidateGVMandEMT(pGVM, 0);
     AssertRCReturn(rc, rc);
 
     /*
@@ -227,7 +226,6 @@ VMMR0_INT_DECL(int) NEMR0InitVM(PGVM pGVM, PVMCC pVM)
             rc = VERR_NEM_MISSING_KERNEL_API;
     }
 
-    RT_NOREF(pVM);
     return rc;
 }
 
@@ -237,7 +235,7 @@ VMMR0_INT_DECL(int) NEMR0InitVM(PGVM pGVM, PVMCC pVM)
  *
  * @returns NT status code.
  * @param   pGVM            The ring-0 VM structure.
- * @param   pVCpu           The cross context CPU structure of the calling EMT.
+ * @param   pGVCpu          The global (ring-0) CPU structure of the calling EMT.
  * @param   uFunction       The function to perform.
  * @param   pvInput         The input buffer.  This must point within the VM
  *                          structure so we can easily convert to a ring-3
@@ -248,29 +246,29 @@ VMMR0_INT_DECL(int) NEMR0InitVM(PGVM pGVM, PVMCC pVM)
  *                          VM structure for ring-3 pointer magic.
  * @param   cbOutput        The size of the output.  @a pvOutput must be NULL
  *                          when zero.
- * @thread  EMT(pVCpu)
+ * @thread  EMT(pGVCpu)
  */
-DECLINLINE(NTSTATUS) nemR0NtPerformIoControl(PGVM pGVM, PVMCPUCC pVCpu, uint32_t uFunction, void *pvInput, uint32_t cbInput,
+DECLINLINE(NTSTATUS) nemR0NtPerformIoControl(PGVM pGVM, PGVMCPU pGVCpu, uint32_t uFunction, void *pvInput, uint32_t cbInput,
                                              void *pvOutput, uint32_t cbOutput)
 {
 #ifdef RT_STRICT
     /*
      * Input and output parameters are part of the VM CPU structure.
      */
-    VMCPU_ASSERT_EMT(pVCpu);
+    VMCPU_ASSERT_EMT(pGVCpu);
     if (pvInput)
-        AssertReturn(((uintptr_t)pvInput + cbInput) - (uintptr_t)pVCpu <= sizeof(*pVCpu), VERR_INVALID_PARAMETER);
+        AssertReturn(((uintptr_t)pvInput + cbInput) - (uintptr_t)pGVCpu <= sizeof(*pGVCpu), VERR_INVALID_PARAMETER);
     if (pvOutput)
-        AssertReturn(((uintptr_t)pvOutput + cbOutput) - (uintptr_t)pVCpu <= sizeof(*pVCpu), VERR_INVALID_PARAMETER);
+        AssertReturn(((uintptr_t)pvOutput + cbOutput) - (uintptr_t)pGVCpu <= sizeof(*pGVCpu), VERR_INVALID_PARAMETER);
 #endif
 
     int32_t rcNt = STATUS_UNSUCCESSFUL;
     int rc = SUPR0IoCtlPerform(pGVM->nemr0.s.pIoCtlCtx, uFunction,
                                pvInput,
-                               pvInput  ? (uintptr_t)pvInput  + pVCpu->nemr0.s.offRing3ConversionDelta : NIL_RTR3PTR,
+                               pvInput  ? (uintptr_t)pvInput  + pGVCpu->nemr0.s.offRing3ConversionDelta : NIL_RTR3PTR,
                                cbInput,
                                pvOutput,
-                               pvOutput ? (uintptr_t)pvOutput + pVCpu->nemr0.s.offRing3ConversionDelta : NIL_RTR3PTR,
+                               pvOutput ? (uintptr_t)pvOutput + pGVCpu->nemr0.s.offRing3ConversionDelta : NIL_RTR3PTR,
                                cbOutput,
                                &rcNt);
     if (RT_SUCCESS(rc) || !NT_SUCCESS((NTSTATUS)rcNt))
@@ -284,12 +282,11 @@ DECLINLINE(NTSTATUS) nemR0NtPerformIoControl(PGVM pGVM, PVMCPUCC pVCpu, uint32_t
  *
  * @returns VBox status code.
  * @param   pGVM            The ring-0 VM handle.
- * @param   pVM             The cross context VM handle.
  * @thread  EMT(0)
  */
-VMMR0_INT_DECL(int) NEMR0InitVMPart2(PGVM pGVM, PVMCC pVM)
+VMMR0_INT_DECL(int) NEMR0InitVMPart2(PGVM pGVM)
 {
-    int rc = GVMMR0ValidateGVMandVMandEMT(pGVM, pVM, 0);
+    int rc = GVMMR0ValidateGVMandEMT(pGVM, 0);
     AssertRCReturn(rc, rc);
     SUPR0Printf("NEMR0InitVMPart2\n"); LogRel(("2: NEMR0InitVMPart2\n"));
     Assert(pGVM->nemr0.s.fMayUseRing0Runloop == false);
@@ -297,15 +294,15 @@ VMMR0_INT_DECL(int) NEMR0InitVMPart2(PGVM pGVM, PVMCC pVM)
     /*
      * Copy and validate the I/O control information from ring-3.
      */
-    NEMWINIOCTL Copy = pVM->nem.s.IoCtlGetHvPartitionId;
+    NEMWINIOCTL Copy = pGVM->nem.s.IoCtlGetHvPartitionId;
     AssertLogRelReturn(Copy.uFunction != 0, VERR_NEM_INIT_FAILED);
     AssertLogRelReturn(Copy.cbInput == 0, VERR_NEM_INIT_FAILED);
     AssertLogRelReturn(Copy.cbOutput == sizeof(HV_PARTITION_ID), VERR_NEM_INIT_FAILED);
     pGVM->nemr0.s.IoCtlGetHvPartitionId = Copy;
 
-    pGVM->nemr0.s.fMayUseRing0Runloop = pVM->nem.s.fUseRing0Runloop;
+    pGVM->nemr0.s.fMayUseRing0Runloop = pGVM->nem.s.fUseRing0Runloop;
 
-    Copy = pVM->nem.s.IoCtlStartVirtualProcessor;
+    Copy = pGVM->nem.s.IoCtlStartVirtualProcessor;
     AssertLogRelStmt(Copy.uFunction != 0, rc = VERR_NEM_INIT_FAILED);
     AssertLogRelStmt(Copy.cbInput == sizeof(HV_VP_INDEX), rc = VERR_NEM_INIT_FAILED);
     AssertLogRelStmt(Copy.cbOutput == 0, rc = VERR_NEM_INIT_FAILED);
@@ -313,7 +310,7 @@ VMMR0_INT_DECL(int) NEMR0InitVMPart2(PGVM pGVM, PVMCC pVM)
     if (RT_SUCCESS(rc))
         pGVM->nemr0.s.IoCtlStartVirtualProcessor = Copy;
 
-    Copy = pVM->nem.s.IoCtlStopVirtualProcessor;
+    Copy = pGVM->nem.s.IoCtlStopVirtualProcessor;
     AssertLogRelStmt(Copy.uFunction != 0, rc = VERR_NEM_INIT_FAILED);
     AssertLogRelStmt(Copy.cbInput == sizeof(HV_VP_INDEX), rc = VERR_NEM_INIT_FAILED);
     AssertLogRelStmt(Copy.cbOutput == 0, rc = VERR_NEM_INIT_FAILED);
@@ -322,7 +319,7 @@ VMMR0_INT_DECL(int) NEMR0InitVMPart2(PGVM pGVM, PVMCC pVM)
     if (RT_SUCCESS(rc))
         pGVM->nemr0.s.IoCtlStopVirtualProcessor = Copy;
 
-    Copy = pVM->nem.s.IoCtlMessageSlotHandleAndGetNext;
+    Copy = pGVM->nem.s.IoCtlMessageSlotHandleAndGetNext;
     AssertLogRelStmt(Copy.uFunction != 0, rc = VERR_NEM_INIT_FAILED);
     AssertLogRelStmt(   Copy.cbInput == sizeof(VID_IOCTL_INPUT_MESSAGE_SLOT_HANDLE_AND_GET_NEXT)
                      || Copy.cbInput == RT_OFFSETOF(VID_IOCTL_INPUT_MESSAGE_SLOT_HANDLE_AND_GET_NEXT, cMillies),
@@ -335,12 +332,12 @@ VMMR0_INT_DECL(int) NEMR0InitVMPart2(PGVM pGVM, PVMCC pVM)
         pGVM->nemr0.s.IoCtlMessageSlotHandleAndGetNext = Copy;
 
     if (   RT_SUCCESS(rc)
-        || !pVM->nem.s.fUseRing0Runloop)
+        || !pGVM->nem.s.fUseRing0Runloop)
     {
         /*
          * Setup of an I/O control context for the partition handle for later use.
          */
-        rc = SUPR0IoCtlSetupForHandle(pGVM->pSession, pVM->nem.s.hPartitionDevice, 0, &pGVM->nemr0.s.pIoCtlCtx);
+        rc = SUPR0IoCtlSetupForHandle(pGVM->pSession, pGVM->nem.s.hPartitionDevice, 0, &pGVM->nemr0.s.pIoCtlCtx);
         AssertLogRelRCReturn(rc, rc);
         for (VMCPUID idCpu = 0; idCpu < pGVM->cCpus; idCpu++)
         {
@@ -356,8 +353,8 @@ VMMR0_INT_DECL(int) NEMR0InitVMPart2(PGVM pGVM, PVMCC pVM)
                                                 &pVCpu0->nem.s.uIoCtlBuf.idPartition, sizeof(pVCpu0->nem.s.uIoCtlBuf.idPartition));
         AssertLogRelMsgReturn(NT_SUCCESS(rcNt), ("IoCtlGetHvPartitionId failed: %#x\n", rcNt), VERR_NEM_INIT_FAILED);
         pGVM->nemr0.s.idHvPartition = pVCpu0->nem.s.uIoCtlBuf.idPartition;
-        AssertLogRelMsgReturn(pGVM->nemr0.s.idHvPartition == pVM->nem.s.idHvPartition,
-                              ("idHvPartition mismatch: r0=%#RX64, r3=%#RX64\n", pGVM->nemr0.s.idHvPartition, pVM->nem.s.idHvPartition),
+        AssertLogRelMsgReturn(pGVM->nemr0.s.idHvPartition == pGVM->nem.s.idHvPartition,
+                              ("idHvPartition mismatch: r0=%#RX64, r3=%#RX64\n", pGVM->nemr0.s.idHvPartition, pGVM->nem.s.idHvPartition),
                               VERR_NEM_INIT_FAILED);
     }
 
@@ -423,7 +420,7 @@ static int nemR3WinDummyReadGpa(PGVM pGVM, PGVMCPU pGVCpu, RTGCPHYS GCPhys)
 /**
  * Worker for NEMR0MapPages and others.
  */
-NEM_TMPL_STATIC int nemR0WinMapPages(PGVM pGVM, PVMCC pVM, PGVMCPU pGVCpu, RTGCPHYS GCPhysSrc, RTGCPHYS GCPhysDst,
+NEM_TMPL_STATIC int nemR0WinMapPages(PGVM pGVM, PGVMCPU pGVCpu, RTGCPHYS GCPhysSrc, RTGCPHYS GCPhysDst,
                                      uint32_t cPages, uint32_t fFlags)
 {
     /*
@@ -457,7 +454,7 @@ NEM_TMPL_STATIC int nemR0WinMapPages(PGVM pGVM, PVMCC pVM, PGVMCPU pGVCpu, RTGCP
         for (uint32_t iPage = 0; iPage < cPages; iPage++, GCPhysSrc += X86_PAGE_SIZE)
         {
             RTHCPHYS HCPhys = NIL_RTGCPHYS;
-            int rc = PGMPhysGCPhys2HCPhys(pVM, GCPhysSrc, &HCPhys);
+            int rc = PGMPhysGCPhys2HCPhys(pGVM, GCPhysSrc, &HCPhys);
             AssertRCReturn(rc, rc);
             pMapPages->PageList[iPage] = HCPhys >> X86_PAGE_SHIFT;
         }
@@ -500,31 +497,29 @@ NEM_TMPL_STATIC int nemR0WinMapPages(PGVM pGVM, PVMCC pVM, PGVMCPU pGVCpu, RTGCP
  *
  * @returns VBox status code.
  * @param   pGVM            The ring-0 VM handle.
- * @param   pVM             The cross context VM handle.
  * @param   idCpu           The calling EMT.  Necessary for getting the
  *                          hypercall page and arguments.
  * @thread  EMT(idCpu)
  */
-VMMR0_INT_DECL(int) NEMR0MapPages(PGVM pGVM, PVMCC pVM, VMCPUID idCpu)
+VMMR0_INT_DECL(int) NEMR0MapPages(PGVM pGVM, VMCPUID idCpu)
 {
     /*
      * Unpack the call.
      */
-    int rc = GVMMR0ValidateGVMandVMandEMT(pGVM, pVM, idCpu);
+    int rc = GVMMR0ValidateGVMandEMT(pGVM, idCpu);
     if (RT_SUCCESS(rc))
     {
-        PVMCPUCC  pVCpu  = VMCC_GET_CPU(pVM, idCpu);
         PGVMCPU pGVCpu = &pGVM->aCpus[idCpu];
 
-        RTGCPHYS const          GCPhysSrc = pVCpu->nem.s.Hypercall.MapPages.GCPhysSrc;
-        RTGCPHYS const          GCPhysDst = pVCpu->nem.s.Hypercall.MapPages.GCPhysDst;
-        uint32_t const          cPages    = pVCpu->nem.s.Hypercall.MapPages.cPages;
-        HV_MAP_GPA_FLAGS const  fFlags    = pVCpu->nem.s.Hypercall.MapPages.fFlags;
+        RTGCPHYS const          GCPhysSrc = pGVCpu->nem.s.Hypercall.MapPages.GCPhysSrc;
+        RTGCPHYS const          GCPhysDst = pGVCpu->nem.s.Hypercall.MapPages.GCPhysDst;
+        uint32_t const          cPages    = pGVCpu->nem.s.Hypercall.MapPages.cPages;
+        HV_MAP_GPA_FLAGS const  fFlags    = pGVCpu->nem.s.Hypercall.MapPages.fFlags;
 
         /*
          * Do the work.
          */
-        rc = nemR0WinMapPages(pGVM, pVM, pGVCpu, GCPhysSrc, GCPhysDst, cPages, fFlags);
+        rc = nemR0WinMapPages(pGVM, pGVCpu, GCPhysSrc, GCPhysDst, cPages, fFlags);
     }
     return rc;
 }
@@ -580,24 +575,22 @@ NEM_TMPL_STATIC int nemR0WinUnmapPages(PGVM pGVM, PGVMCPU pGVCpu, RTGCPHYS GCPhy
  *
  * @returns VBox status code.
  * @param   pGVM            The ring-0 VM handle.
- * @param   pVM             The cross context VM handle.
  * @param   idCpu           The calling EMT.  Necessary for getting the
  *                          hypercall page and arguments.
  * @thread  EMT(idCpu)
  */
-VMMR0_INT_DECL(int) NEMR0UnmapPages(PGVM pGVM, PVMCC pVM, VMCPUID idCpu)
+VMMR0_INT_DECL(int) NEMR0UnmapPages(PGVM pGVM, VMCPUID idCpu)
 {
     /*
      * Unpack the call.
      */
-    int rc = GVMMR0ValidateGVMandVMandEMT(pGVM, pVM, idCpu);
+    int rc = GVMMR0ValidateGVMandEMT(pGVM, idCpu);
     if (RT_SUCCESS(rc))
     {
-        PVMCPUCC  pVCpu  = VMCC_GET_CPU(pVM, idCpu);
         PGVMCPU pGVCpu = &pGVM->aCpus[idCpu];
 
-        RTGCPHYS const GCPhys = pVCpu->nem.s.Hypercall.UnmapPages.GCPhys;
-        uint32_t const cPages = pVCpu->nem.s.Hypercall.UnmapPages.cPages;
+        RTGCPHYS const GCPhys = pGVCpu->nem.s.Hypercall.UnmapPages.GCPhys;
+        uint32_t const cPages = pGVCpu->nem.s.Hypercall.UnmapPages.cPages;
 
         /*
          * Do the work.
@@ -621,7 +614,6 @@ VMMR0_INT_DECL(int) NEMR0UnmapPages(PGVM pGVM, PVMCC pVM, VMCPUID idCpu)
  */
 NEM_TMPL_STATIC int nemR0WinExportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx)
 {
-    PVMCPUCC                   pVCpu  = pGVCpu;
     HV_INPUT_SET_VP_REGISTERS *pInput = (HV_INPUT_SET_VP_REGISTERS *)pGVCpu->nemr0.s.HypercallData.pbPage;
     AssertPtrReturn(pInput, VERR_INTERNAL_ERROR_3);
     AssertReturn(g_pfnHvlInvokeHypercall, VERR_NEM_MISSING_KERNEL_API);
@@ -632,7 +624,7 @@ NEM_TMPL_STATIC int nemR0WinExportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
 
     uint64_t const fWhat = ~pCtx->fExtrn & (CPUMCTX_EXTRN_ALL | CPUMCTX_EXTRN_NEM_WIN_MASK);
     if (   !fWhat
-        && pVCpu->nem.s.fCurrentInterruptWindows == pVCpu->nem.s.fDesiredInterruptWindows)
+        && pGVCpu->nem.s.fCurrentInterruptWindows == pGVCpu->nem.s.fDesiredInterruptWindows)
         return VINF_SUCCESS;
     uintptr_t iReg = 0;
 
@@ -866,7 +858,7 @@ NEM_TMPL_STATIC int nemR0WinExportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
     {
         HV_REGISTER_ASSOC_ZERO_PADDING_AND_HI64(&pInput->Elements[iReg]);
         pInput->Elements[iReg].Name                 = HvX64RegisterCr8;
-        pInput->Elements[iReg].Value.Reg64          = CPUMGetGuestCR8(pVCpu);
+        pInput->Elements[iReg].Value.Reg64          = CPUMGetGuestCR8(pGVCpu);
         iReg++;
     }
 
@@ -878,22 +870,22 @@ NEM_TMPL_STATIC int nemR0WinExportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
     {
         HV_REGISTER_ASSOC_ZERO_PADDING_AND_HI64(&pInput->Elements[iReg]);
         pInput->Elements[iReg].Name                 = HvX64RegisterDr0;
-        //pInput->Elements[iReg].Value.Reg64        = CPUMGetHyperDR0(pVCpu);
+        //pInput->Elements[iReg].Value.Reg64        = CPUMGetHyperDR0(pGVCpu);
         pInput->Elements[iReg].Value.Reg64          = pCtx->dr[0];
         iReg++;
         HV_REGISTER_ASSOC_ZERO_PADDING_AND_HI64(&pInput->Elements[iReg]);
         pInput->Elements[iReg].Name                 = HvX64RegisterDr1;
-        //pInput->Elements[iReg].Value.Reg64        = CPUMGetHyperDR1(pVCpu);
+        //pInput->Elements[iReg].Value.Reg64        = CPUMGetHyperDR1(pGVCpu);
         pInput->Elements[iReg].Value.Reg64          = pCtx->dr[1];
         iReg++;
         HV_REGISTER_ASSOC_ZERO_PADDING_AND_HI64(&pInput->Elements[iReg]);
         pInput->Elements[iReg].Name                 = HvX64RegisterDr2;
-        //pInput->Elements[iReg].Value.Reg64        = CPUMGetHyperDR2(pVCpu);
+        //pInput->Elements[iReg].Value.Reg64        = CPUMGetHyperDR2(pGVCpu);
         pInput->Elements[iReg].Value.Reg64          = pCtx->dr[2];
         iReg++;
         HV_REGISTER_ASSOC_ZERO_PADDING_AND_HI64(&pInput->Elements[iReg]);
         pInput->Elements[iReg].Name                 = HvX64RegisterDr3;
-        //pInput->Elements[iReg].Value.Reg64        = CPUMGetHyperDR3(pVCpu);
+        //pInput->Elements[iReg].Value.Reg64        = CPUMGetHyperDR3(pGVCpu);
         pInput->Elements[iReg].Value.Reg64          = pCtx->dr[3];
         iReg++;
     }
@@ -901,7 +893,7 @@ NEM_TMPL_STATIC int nemR0WinExportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
     {
         HV_REGISTER_ASSOC_ZERO_PADDING_AND_HI64(&pInput->Elements[iReg]);
         pInput->Elements[iReg].Name                 = HvX64RegisterDr6;
-        //pInput->Elements[iReg].Value.Reg64        = CPUMGetHyperDR6(pVCpu);
+        //pInput->Elements[iReg].Value.Reg64        = CPUMGetHyperDR6(pGVCpu);
         pInput->Elements[iReg].Value.Reg64          = pCtx->dr[6];
         iReg++;
     }
@@ -909,7 +901,7 @@ NEM_TMPL_STATIC int nemR0WinExportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
     {
         HV_REGISTER_ASSOC_ZERO_PADDING_AND_HI64(&pInput->Elements[iReg]);
         pInput->Elements[iReg].Name                 = HvX64RegisterDr7;
-        //pInput->Elements[iReg].Value.Reg64        = CPUMGetHyperDR7(pVCpu);
+        //pInput->Elements[iReg].Value.Reg64        = CPUMGetHyperDR7(pGVCpu);
         pInput->Elements[iReg].Value.Reg64          = pCtx->dr[7];
         iReg++;
     }
@@ -1119,7 +1111,7 @@ NEM_TMPL_STATIC int nemR0WinExportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
     {
         HV_REGISTER_ASSOC_ZERO_PADDING_AND_HI64(&pInput->Elements[iReg]);
         pInput->Elements[iReg].Name                 = HvX64RegisterApicBase;
-        pInput->Elements[iReg].Value.Reg64          = APICGetBaseMsrNoCheck(pVCpu);
+        pInput->Elements[iReg].Value.Reg64          = APICGetBaseMsrNoCheck(pGVCpu);
         iReg++;
         HV_REGISTER_ASSOC_ZERO_PADDING_AND_HI64(&pInput->Elements[iReg]);
         pInput->Elements[iReg].Name                 = HvX64RegisterPat;
@@ -1128,11 +1120,11 @@ NEM_TMPL_STATIC int nemR0WinExportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
 # if 0 /** @todo HvX64RegisterMtrrCap is read only?  Seems it's not even readable. */
         HV_REGISTER_ASSOC_ZERO_PADDING_AND_HI64(&pInput->Elements[iReg]);
         pInput->Elements[iReg].Name                 = HvX64RegisterMtrrCap;
-        pInput->Elements[iReg].Value.Reg64          = CPUMGetGuestIa32MtrrCap(pVCpu);
+        pInput->Elements[iReg].Value.Reg64          = CPUMGetGuestIa32MtrrCap(pGVCpu);
         iReg++;
 # endif
 
-        PCPUMCTXMSRS pCtxMsrs = CPUMQueryGuestCtxMsrsPtr(pVCpu);
+        PCPUMCTXMSRS pCtxMsrs = CPUMQueryGuestCtxMsrsPtr(pGVCpu);
 
         HV_REGISTER_ASSOC_ZERO_PADDING_AND_HI64(&pInput->Elements[iReg]);
         pInput->Elements[iReg].Name                 = HvX64RegisterMtrrDefType;
@@ -1191,7 +1183,7 @@ NEM_TMPL_STATIC int nemR0WinExportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
         iReg++;
 
 # if 0 /** @todo Why can't we write these on Intel systems? Not that we really care... */
-        const CPUMCPUVENDOR enmCpuVendor = CPUMGetHostCpuVendor(pGVM->pVM);
+        const CPUMCPUVENDOR enmCpuVendor = CPUMGetHostCpuVendor(pGVM);
         if (enmCpuVendor != CPUMCPUVENDOR_AMD)
         {
             HV_REGISTER_ASSOC_ZERO_PADDING_AND_HI64(&pInput->Elements[iReg]);
@@ -1200,7 +1192,7 @@ NEM_TMPL_STATIC int nemR0WinExportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
             iReg++;
             HV_REGISTER_ASSOC_ZERO_PADDING_AND_HI64(&pInput->Elements[iReg]);
             pInput->Elements[iReg].Name                 = HvX64RegisterIa32FeatureControl;
-            pInput->Elements[iReg].Value.Reg64          = CPUMGetGuestIa32FeatureControl(pVCpu);
+            pInput->Elements[iReg].Value.Reg64          = CPUMGetGuestIa32FeatureControl(pGVCpu);
             iReg++;
         }
 # endif
@@ -1223,27 +1215,27 @@ NEM_TMPL_STATIC int nemR0WinExportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
         HV_REGISTER_ASSOC_ZERO_PADDING_AND_HI64(&pInput->Elements[iReg]);
         pInput->Elements[iReg].Name                 = HvRegisterInterruptState;
         pInput->Elements[iReg].Value.Reg64          = 0;
-        if (   VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
-            && EMGetInhibitInterruptsPC(pVCpu) == pCtx->rip)
+        if (   VMCPU_FF_IS_SET(pGVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
+            && EMGetInhibitInterruptsPC(pGVCpu) == pCtx->rip)
             pInput->Elements[iReg].Value.InterruptState.InterruptShadow = 1;
-        if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_BLOCK_NMIS))
+        if (VMCPU_FF_IS_SET(pGVCpu, VMCPU_FF_BLOCK_NMIS))
             pInput->Elements[iReg].Value.InterruptState.NmiMasked = 1;
         iReg++;
     }
     else if (fWhat & CPUMCTX_EXTRN_NEM_WIN_INHIBIT_INT)
     {
-        if (   pVCpu->nem.s.fLastInterruptShadow
-            || (   VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
-                && EMGetInhibitInterruptsPC(pVCpu) == pCtx->rip))
+        if (   pGVCpu->nem.s.fLastInterruptShadow
+            || (   VMCPU_FF_IS_SET(pGVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
+                && EMGetInhibitInterruptsPC(pGVCpu) == pCtx->rip))
         {
             HV_REGISTER_ASSOC_ZERO_PADDING_AND_HI64(&pInput->Elements[iReg]);
             pInput->Elements[iReg].Name                 = HvRegisterInterruptState;
             pInput->Elements[iReg].Value.Reg64          = 0;
-            if (   VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
-                && EMGetInhibitInterruptsPC(pVCpu) == pCtx->rip)
+            if (   VMCPU_FF_IS_SET(pGVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
+                && EMGetInhibitInterruptsPC(pGVCpu) == pCtx->rip)
                 pInput->Elements[iReg].Value.InterruptState.InterruptShadow = 1;
             /** @todo Retrieve NMI state, currently assuming it's zero. (yes this may happen on I/O) */
-            //if (VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_BLOCK_NMIS))
+            //if (VMCPU_FF_IS_ANY_SET(pGVCpu, VMCPU_FF_BLOCK_NMIS))
             //    pInput->Elements[iReg].Value.InterruptState.NmiMasked = 1;
             iReg++;
         }
@@ -1252,11 +1244,11 @@ NEM_TMPL_STATIC int nemR0WinExportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
         Assert(!(fWhat & CPUMCTX_EXTRN_NEM_WIN_INHIBIT_NMI));
 
     /* Interrupt windows. Always set if active as Hyper-V seems to be forgetful. */
-    uint8_t const fDesiredIntWin = pVCpu->nem.s.fDesiredInterruptWindows;
+    uint8_t const fDesiredIntWin = pGVCpu->nem.s.fDesiredInterruptWindows;
     if (   fDesiredIntWin
-        || pVCpu->nem.s.fCurrentInterruptWindows != fDesiredIntWin)
+        || pGVCpu->nem.s.fCurrentInterruptWindows != fDesiredIntWin)
     {
-        pVCpu->nem.s.fCurrentInterruptWindows = pVCpu->nem.s.fDesiredInterruptWindows;
+        pGVCpu->nem.s.fCurrentInterruptWindows = pGVCpu->nem.s.fDesiredInterruptWindows;
         HV_REGISTER_ASSOC_ZERO_PADDING_AND_HI64(&pInput->Elements[iReg]);
         pInput->Elements[iReg].Name                                         = HvX64RegisterDeliverabilityNotifications;
         pInput->Elements[iReg].Value.DeliverabilityNotifications.AsUINT64   = fDesiredIntWin;
@@ -1295,31 +1287,29 @@ NEM_TMPL_STATIC int nemR0WinExportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
  *
  * @returns VBox status code
  * @param   pGVM        The ring-0 VM handle.
- * @param   pVM         The cross context VM handle.
  * @param   idCpu       The calling EMT.  Necessary for getting the
  *                      hypercall page and arguments.
  */
-VMMR0_INT_DECL(int)  NEMR0ExportState(PGVM pGVM, PVMCC pVM, VMCPUID idCpu)
+VMMR0_INT_DECL(int)  NEMR0ExportState(PGVM pGVM, VMCPUID idCpu)
 {
 #if defined(NEM_WIN_WITH_RING0_RUNLOOP) || defined(NEM_WIN_USE_HYPERCALLS_FOR_REGISTERS)
     /*
      * Validate the call.
      */
-    int rc = GVMMR0ValidateGVMandVMandEMT(pGVM, pVM, idCpu);
+    int rc = GVMMR0ValidateGVMandEMT(pGVM, idCpu);
     if (RT_SUCCESS(rc))
     {
-        PVMCPUCC  pVCpu  = VMCC_GET_CPU(pVM, idCpu);
         PGVMCPU pGVCpu = &pGVM->aCpus[idCpu];
         AssertReturn(g_pfnHvlInvokeHypercall, VERR_NEM_MISSING_KERNEL_API);
 
         /*
          * Call worker.
          */
-        rc = nemR0WinExportState(pGVM, pGVCpu, &pVCpu->cpum.GstCtx);
+        rc = nemR0WinExportState(pGVM, pGVCpu, &pGVCpu->cpum.GstCtx);
     }
     return rc;
 #else
-    RT_NOREF(pGVM, pVM, idCpu);
+    RT_NOREF(pGVM, idCpu);
     return VERR_NOT_IMPLEMENTED;
 #endif
 }
@@ -1575,7 +1565,6 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
     /*
      * Copy information to the CPUM context.
      */
-    PVMCPUCC pVCpu = pGVCpu;
     iReg = 0;
 
     /* GPRs */
@@ -1744,7 +1733,7 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
             Assert(pInput->Names[iReg] == HvX64RegisterCr0);
             if (pCtx->cr0 != paValues[iReg].Reg64)
             {
-                CPUMSetGuestCR0(pVCpu, paValues[iReg].Reg64);
+                CPUMSetGuestCR0(pGVCpu, paValues[iReg].Reg64);
                 fMaybeChangedMode = true;
             }
             iReg++;
@@ -1760,7 +1749,7 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
             Assert(pInput->Names[iReg] == HvX64RegisterCr3);
             if (pCtx->cr3 != paValues[iReg].Reg64)
             {
-                CPUMSetGuestCR3(pVCpu, paValues[iReg].Reg64);
+                CPUMSetGuestCR3(pGVCpu, paValues[iReg].Reg64);
                 fUpdateCr3 = true;
             }
             iReg++;
@@ -1770,7 +1759,7 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
             Assert(pInput->Names[iReg] == HvX64RegisterCr4);
             if (pCtx->cr4 != paValues[iReg].Reg64)
             {
-                CPUMSetGuestCR4(pVCpu, paValues[iReg].Reg64);
+                CPUMSetGuestCR4(pGVCpu, paValues[iReg].Reg64);
                 fMaybeChangedMode = true;
             }
             iReg++;
@@ -1779,7 +1768,7 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
     if (fWhat & CPUMCTX_EXTRN_APIC_TPR)
     {
         Assert(pInput->Names[iReg] == HvX64RegisterCr8);
-        APICSetTpr(pVCpu, (uint8_t)paValues[iReg].Reg64 << 4);
+        APICSetTpr(pGVCpu, (uint8_t)paValues[iReg].Reg64 << 4);
         iReg++;
     }
 
@@ -1788,7 +1777,7 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
     {
         Assert(pInput->Names[iReg] == HvX64RegisterDr7);
         if (pCtx->dr[7] != paValues[iReg].Reg64)
-            CPUMSetGuestDR7(pVCpu, paValues[iReg].Reg64);
+            CPUMSetGuestDR7(pGVCpu, paValues[iReg].Reg64);
         pCtx->fExtrn &= ~CPUMCTX_EXTRN_DR7; /* Hack alert! Avoids asserting when processing CPUMCTX_EXTRN_DR0_DR3. */
         iReg++;
     }
@@ -1797,23 +1786,23 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
         Assert(pInput->Names[iReg] == HvX64RegisterDr0);
         Assert(pInput->Names[iReg+3] == HvX64RegisterDr3);
         if (pCtx->dr[0] != paValues[iReg].Reg64)
-            CPUMSetGuestDR0(pVCpu, paValues[iReg].Reg64);
+            CPUMSetGuestDR0(pGVCpu, paValues[iReg].Reg64);
         iReg++;
         if (pCtx->dr[1] != paValues[iReg].Reg64)
-            CPUMSetGuestDR1(pVCpu, paValues[iReg].Reg64);
+            CPUMSetGuestDR1(pGVCpu, paValues[iReg].Reg64);
         iReg++;
         if (pCtx->dr[2] != paValues[iReg].Reg64)
-            CPUMSetGuestDR2(pVCpu, paValues[iReg].Reg64);
+            CPUMSetGuestDR2(pGVCpu, paValues[iReg].Reg64);
         iReg++;
         if (pCtx->dr[3] != paValues[iReg].Reg64)
-            CPUMSetGuestDR3(pVCpu, paValues[iReg].Reg64);
+            CPUMSetGuestDR3(pGVCpu, paValues[iReg].Reg64);
         iReg++;
     }
     if (fWhat & CPUMCTX_EXTRN_DR6)
     {
         Assert(pInput->Names[iReg] == HvX64RegisterDr6);
         if (pCtx->dr[6] != paValues[iReg].Reg64)
-            CPUMSetGuestDR6(pVCpu, paValues[iReg].Reg64);
+            CPUMSetGuestDR6(pGVCpu, paValues[iReg].Reg64);
         iReg++;
     }
 
@@ -1936,9 +1925,9 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
         Assert(pInput->Names[iReg] == HvX64RegisterEfer);
         if (paValues[iReg].Reg64 != pCtx->msrEFER)
         {
-            Log7(("NEM/%u: MSR EFER changed %RX64 -> %RX64\n", pVCpu->idCpu, pCtx->msrEFER, paValues[iReg].Reg64));
+            Log7(("NEM/%u: MSR EFER changed %RX64 -> %RX64\n", pGVCpu->idCpu, pCtx->msrEFER, paValues[iReg].Reg64));
             if ((paValues[iReg].Reg64 ^ pCtx->msrEFER) & MSR_K6_EFER_NXE)
-                PGMNotifyNxeChanged(pVCpu, RT_BOOL(paValues[iReg].Reg64 & MSR_K6_EFER_NXE));
+                PGMNotifyNxeChanged(pGVCpu, RT_BOOL(paValues[iReg].Reg64 & MSR_K6_EFER_NXE));
             pCtx->msrEFER = paValues[iReg].Reg64;
             fMaybeChangedMode = true;
         }
@@ -1948,7 +1937,7 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
     {
         Assert(pInput->Names[iReg] == HvX64RegisterKernelGsBase);
         if (pCtx->msrKERNELGSBASE != paValues[iReg].Reg64)
-            Log7(("NEM/%u: MSR KERNELGSBASE changed %RX64 -> %RX64\n", pVCpu->idCpu, pCtx->msrKERNELGSBASE, paValues[iReg].Reg64));
+            Log7(("NEM/%u: MSR KERNELGSBASE changed %RX64 -> %RX64\n", pGVCpu->idCpu, pCtx->msrKERNELGSBASE, paValues[iReg].Reg64));
         pCtx->msrKERNELGSBASE = paValues[iReg].Reg64;
         iReg++;
     }
@@ -1956,19 +1945,19 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
     {
         Assert(pInput->Names[iReg] == HvX64RegisterSysenterCs);
         if (pCtx->SysEnter.cs != paValues[iReg].Reg64)
-            Log7(("NEM/%u: MSR SYSENTER.CS changed %RX64 -> %RX64\n", pVCpu->idCpu, pCtx->SysEnter.cs, paValues[iReg].Reg64));
+            Log7(("NEM/%u: MSR SYSENTER.CS changed %RX64 -> %RX64\n", pGVCpu->idCpu, pCtx->SysEnter.cs, paValues[iReg].Reg64));
         pCtx->SysEnter.cs = paValues[iReg].Reg64;
         iReg++;
 
         Assert(pInput->Names[iReg] == HvX64RegisterSysenterEip);
         if (pCtx->SysEnter.eip != paValues[iReg].Reg64)
-            Log7(("NEM/%u: MSR SYSENTER.EIP changed %RX64 -> %RX64\n", pVCpu->idCpu, pCtx->SysEnter.eip, paValues[iReg].Reg64));
+            Log7(("NEM/%u: MSR SYSENTER.EIP changed %RX64 -> %RX64\n", pGVCpu->idCpu, pCtx->SysEnter.eip, paValues[iReg].Reg64));
         pCtx->SysEnter.eip = paValues[iReg].Reg64;
         iReg++;
 
         Assert(pInput->Names[iReg] == HvX64RegisterSysenterEsp);
         if (pCtx->SysEnter.esp != paValues[iReg].Reg64)
-            Log7(("NEM/%u: MSR SYSENTER.ESP changed %RX64 -> %RX64\n", pVCpu->idCpu, pCtx->SysEnter.esp, paValues[iReg].Reg64));
+            Log7(("NEM/%u: MSR SYSENTER.ESP changed %RX64 -> %RX64\n", pGVCpu->idCpu, pCtx->SysEnter.esp, paValues[iReg].Reg64));
         pCtx->SysEnter.esp = paValues[iReg].Reg64;
         iReg++;
     }
@@ -1976,58 +1965,58 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
     {
         Assert(pInput->Names[iReg] == HvX64RegisterStar);
         if (pCtx->msrSTAR != paValues[iReg].Reg64)
-            Log7(("NEM/%u: MSR STAR changed %RX64 -> %RX64\n", pVCpu->idCpu, pCtx->msrSTAR, paValues[iReg].Reg64));
+            Log7(("NEM/%u: MSR STAR changed %RX64 -> %RX64\n", pGVCpu->idCpu, pCtx->msrSTAR, paValues[iReg].Reg64));
         pCtx->msrSTAR   = paValues[iReg].Reg64;
         iReg++;
 
         Assert(pInput->Names[iReg] == HvX64RegisterLstar);
         if (pCtx->msrLSTAR != paValues[iReg].Reg64)
-            Log7(("NEM/%u: MSR LSTAR changed %RX64 -> %RX64\n", pVCpu->idCpu, pCtx->msrLSTAR, paValues[iReg].Reg64));
+            Log7(("NEM/%u: MSR LSTAR changed %RX64 -> %RX64\n", pGVCpu->idCpu, pCtx->msrLSTAR, paValues[iReg].Reg64));
         pCtx->msrLSTAR  = paValues[iReg].Reg64;
         iReg++;
 
         Assert(pInput->Names[iReg] == HvX64RegisterCstar);
         if (pCtx->msrCSTAR != paValues[iReg].Reg64)
-            Log7(("NEM/%u: MSR CSTAR changed %RX64 -> %RX64\n", pVCpu->idCpu, pCtx->msrCSTAR, paValues[iReg].Reg64));
+            Log7(("NEM/%u: MSR CSTAR changed %RX64 -> %RX64\n", pGVCpu->idCpu, pCtx->msrCSTAR, paValues[iReg].Reg64));
         pCtx->msrCSTAR  = paValues[iReg].Reg64;
         iReg++;
 
         Assert(pInput->Names[iReg] == HvX64RegisterSfmask);
         if (pCtx->msrSFMASK != paValues[iReg].Reg64)
-            Log7(("NEM/%u: MSR SFMASK changed %RX64 -> %RX64\n", pVCpu->idCpu, pCtx->msrSFMASK, paValues[iReg].Reg64));
+            Log7(("NEM/%u: MSR SFMASK changed %RX64 -> %RX64\n", pGVCpu->idCpu, pCtx->msrSFMASK, paValues[iReg].Reg64));
         pCtx->msrSFMASK = paValues[iReg].Reg64;
         iReg++;
     }
     if (fWhat & CPUMCTX_EXTRN_OTHER_MSRS)
     {
         Assert(pInput->Names[iReg] == HvX64RegisterApicBase);
-        const uint64_t uOldBase = APICGetBaseMsrNoCheck(pVCpu);
+        const uint64_t uOldBase = APICGetBaseMsrNoCheck(pGVCpu);
         if (paValues[iReg].Reg64 != uOldBase)
         {
             Log7(("NEM/%u: MSR APICBase changed %RX64 -> %RX64 (%RX64)\n",
-                  pVCpu->idCpu, uOldBase, paValues[iReg].Reg64, paValues[iReg].Reg64 ^ uOldBase));
-            int rc2 = APICSetBaseMsr(pVCpu, paValues[iReg].Reg64);
+                  pGVCpu->idCpu, uOldBase, paValues[iReg].Reg64, paValues[iReg].Reg64 ^ uOldBase));
+            int rc2 = APICSetBaseMsr(pGVCpu, paValues[iReg].Reg64);
             AssertLogRelMsg(rc2 == VINF_SUCCESS, ("rc2=%Rrc [%#RX64]\n", rc2, paValues[iReg].Reg64));
         }
         iReg++;
 
         Assert(pInput->Names[iReg] == HvX64RegisterPat);
         if (pCtx->msrPAT != paValues[iReg].Reg64)
-            Log7(("NEM/%u: MSR PAT changed %RX64 -> %RX64\n", pVCpu->idCpu, pCtx->msrPAT, paValues[iReg].Reg64));
+            Log7(("NEM/%u: MSR PAT changed %RX64 -> %RX64\n", pGVCpu->idCpu, pCtx->msrPAT, paValues[iReg].Reg64));
         pCtx->msrPAT    = paValues[iReg].Reg64;
         iReg++;
 
 # if 0 /*def LOG_ENABLED*/ /** @todo something's wrong with HvX64RegisterMtrrCap? (AMD) */
         Assert(pInput->Names[iReg] == HvX64RegisterMtrrCap);
-        if (paValues[iReg].Reg64 != CPUMGetGuestIa32MtrrCap(pVCpu))
-            Log7(("NEM/%u: MSR MTRR_CAP changed %RX64 -> %RX64 (!!)\n", pVCpu->idCpu, CPUMGetGuestIa32MtrrCap(pVCpu), paValues[iReg].Reg64));
+        if (paValues[iReg].Reg64 != CPUMGetGuestIa32MtrrCap(pGVCpu))
+            Log7(("NEM/%u: MSR MTRR_CAP changed %RX64 -> %RX64 (!!)\n", pGVCpu->idCpu, CPUMGetGuestIa32MtrrCap(pGVCpu), paValues[iReg].Reg64));
         iReg++;
 # endif
 
-        PCPUMCTXMSRS pCtxMsrs = CPUMQueryGuestCtxMsrsPtr(pVCpu);
+        PCPUMCTXMSRS pCtxMsrs = CPUMQueryGuestCtxMsrsPtr(pGVCpu);
         Assert(pInput->Names[iReg] == HvX64RegisterMtrrDefType);
         if (paValues[iReg].Reg64 != pCtxMsrs->msr.MtrrDefType )
-            Log7(("NEM/%u: MSR MTRR_DEF_TYPE changed %RX64 -> %RX64\n", pVCpu->idCpu, pCtxMsrs->msr.MtrrDefType, paValues[iReg].Reg64));
+            Log7(("NEM/%u: MSR MTRR_DEF_TYPE changed %RX64 -> %RX64\n", pGVCpu->idCpu, pCtxMsrs->msr.MtrrDefType, paValues[iReg].Reg64));
         pCtxMsrs->msr.MtrrDefType = paValues[iReg].Reg64;
         iReg++;
 
@@ -2035,73 +2024,73 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
 
         Assert(pInput->Names[iReg] == HvX64RegisterMtrrFix64k00000);
         if (paValues[iReg].Reg64 != pCtxMsrs->msr.MtrrFix64K_00000 )
-            Log7(("NEM/%u: MSR MTRR_FIX16K_00000 changed %RX64 -> %RX64\n", pVCpu->idCpu, pCtxMsrs->msr.MtrrFix64K_00000, paValues[iReg].Reg64));
+            Log7(("NEM/%u: MSR MTRR_FIX16K_00000 changed %RX64 -> %RX64\n", pGVCpu->idCpu, pCtxMsrs->msr.MtrrFix64K_00000, paValues[iReg].Reg64));
         pCtxMsrs->msr.MtrrFix64K_00000 = paValues[iReg].Reg64;
         iReg++;
 
         Assert(pInput->Names[iReg] == HvX64RegisterMtrrFix16k80000);
         if (paValues[iReg].Reg64 != pCtxMsrs->msr.MtrrFix16K_80000 )
-            Log7(("NEM/%u: MSR MTRR_FIX16K_80000 changed %RX64 -> %RX64\n", pVCpu->idCpu, pCtxMsrs->msr.MtrrFix16K_80000, paValues[iReg].Reg64));
+            Log7(("NEM/%u: MSR MTRR_FIX16K_80000 changed %RX64 -> %RX64\n", pGVCpu->idCpu, pCtxMsrs->msr.MtrrFix16K_80000, paValues[iReg].Reg64));
         pCtxMsrs->msr.MtrrFix16K_80000 = paValues[iReg].Reg64;
         iReg++;
 
         Assert(pInput->Names[iReg] == HvX64RegisterMtrrFix16kA0000);
         if (paValues[iReg].Reg64 != pCtxMsrs->msr.MtrrFix16K_A0000 )
-            Log7(("NEM/%u: MSR MTRR_FIX16K_A0000 changed %RX64 -> %RX64\n", pVCpu->idCpu, pCtxMsrs->msr.MtrrFix16K_A0000, paValues[iReg].Reg64));
+            Log7(("NEM/%u: MSR MTRR_FIX16K_A0000 changed %RX64 -> %RX64\n", pGVCpu->idCpu, pCtxMsrs->msr.MtrrFix16K_A0000, paValues[iReg].Reg64));
         pCtxMsrs->msr.MtrrFix16K_A0000 = paValues[iReg].Reg64;
         iReg++;
 
         Assert(pInput->Names[iReg] == HvX64RegisterMtrrFix4kC0000);
         if (paValues[iReg].Reg64 != pCtxMsrs->msr.MtrrFix4K_C0000 )
-            Log7(("NEM/%u: MSR MTRR_FIX16K_C0000 changed %RX64 -> %RX64\n", pVCpu->idCpu, pCtxMsrs->msr.MtrrFix4K_C0000, paValues[iReg].Reg64));
+            Log7(("NEM/%u: MSR MTRR_FIX16K_C0000 changed %RX64 -> %RX64\n", pGVCpu->idCpu, pCtxMsrs->msr.MtrrFix4K_C0000, paValues[iReg].Reg64));
         pCtxMsrs->msr.MtrrFix4K_C0000 = paValues[iReg].Reg64;
         iReg++;
 
         Assert(pInput->Names[iReg] == HvX64RegisterMtrrFix4kC8000);
         if (paValues[iReg].Reg64 != pCtxMsrs->msr.MtrrFix4K_C8000 )
-            Log7(("NEM/%u: MSR MTRR_FIX16K_C8000 changed %RX64 -> %RX64\n", pVCpu->idCpu, pCtxMsrs->msr.MtrrFix4K_C8000, paValues[iReg].Reg64));
+            Log7(("NEM/%u: MSR MTRR_FIX16K_C8000 changed %RX64 -> %RX64\n", pGVCpu->idCpu, pCtxMsrs->msr.MtrrFix4K_C8000, paValues[iReg].Reg64));
         pCtxMsrs->msr.MtrrFix4K_C8000 = paValues[iReg].Reg64;
         iReg++;
 
         Assert(pInput->Names[iReg] == HvX64RegisterMtrrFix4kD0000);
         if (paValues[iReg].Reg64 != pCtxMsrs->msr.MtrrFix4K_D0000 )
-            Log7(("NEM/%u: MSR MTRR_FIX16K_D0000 changed %RX64 -> %RX64\n", pVCpu->idCpu, pCtxMsrs->msr.MtrrFix4K_D0000, paValues[iReg].Reg64));
+            Log7(("NEM/%u: MSR MTRR_FIX16K_D0000 changed %RX64 -> %RX64\n", pGVCpu->idCpu, pCtxMsrs->msr.MtrrFix4K_D0000, paValues[iReg].Reg64));
         pCtxMsrs->msr.MtrrFix4K_D0000 = paValues[iReg].Reg64;
         iReg++;
 
         Assert(pInput->Names[iReg] == HvX64RegisterMtrrFix4kD8000);
         if (paValues[iReg].Reg64 != pCtxMsrs->msr.MtrrFix4K_D8000 )
-            Log7(("NEM/%u: MSR MTRR_FIX16K_D8000 changed %RX64 -> %RX64\n", pVCpu->idCpu, pCtxMsrs->msr.MtrrFix4K_D8000, paValues[iReg].Reg64));
+            Log7(("NEM/%u: MSR MTRR_FIX16K_D8000 changed %RX64 -> %RX64\n", pGVCpu->idCpu, pCtxMsrs->msr.MtrrFix4K_D8000, paValues[iReg].Reg64));
         pCtxMsrs->msr.MtrrFix4K_D8000 = paValues[iReg].Reg64;
         iReg++;
 
         Assert(pInput->Names[iReg] == HvX64RegisterMtrrFix4kE0000);
         if (paValues[iReg].Reg64 != pCtxMsrs->msr.MtrrFix4K_E0000 )
-            Log7(("NEM/%u: MSR MTRR_FIX16K_E0000 changed %RX64 -> %RX64\n", pVCpu->idCpu, pCtxMsrs->msr.MtrrFix4K_E0000, paValues[iReg].Reg64));
+            Log7(("NEM/%u: MSR MTRR_FIX16K_E0000 changed %RX64 -> %RX64\n", pGVCpu->idCpu, pCtxMsrs->msr.MtrrFix4K_E0000, paValues[iReg].Reg64));
         pCtxMsrs->msr.MtrrFix4K_E0000 = paValues[iReg].Reg64;
         iReg++;
 
         Assert(pInput->Names[iReg] == HvX64RegisterMtrrFix4kE8000);
         if (paValues[iReg].Reg64 != pCtxMsrs->msr.MtrrFix4K_E8000 )
-            Log7(("NEM/%u: MSR MTRR_FIX16K_E8000 changed %RX64 -> %RX64\n", pVCpu->idCpu, pCtxMsrs->msr.MtrrFix4K_E8000, paValues[iReg].Reg64));
+            Log7(("NEM/%u: MSR MTRR_FIX16K_E8000 changed %RX64 -> %RX64\n", pGVCpu->idCpu, pCtxMsrs->msr.MtrrFix4K_E8000, paValues[iReg].Reg64));
         pCtxMsrs->msr.MtrrFix4K_E8000 = paValues[iReg].Reg64;
         iReg++;
 
         Assert(pInput->Names[iReg] == HvX64RegisterMtrrFix4kF0000);
         if (paValues[iReg].Reg64 != pCtxMsrs->msr.MtrrFix4K_F0000 )
-            Log7(("NEM/%u: MSR MTRR_FIX16K_F0000 changed %RX64 -> %RX64\n", pVCpu->idCpu, pCtxMsrs->msr.MtrrFix4K_F0000, paValues[iReg].Reg64));
+            Log7(("NEM/%u: MSR MTRR_FIX16K_F0000 changed %RX64 -> %RX64\n", pGVCpu->idCpu, pCtxMsrs->msr.MtrrFix4K_F0000, paValues[iReg].Reg64));
         pCtxMsrs->msr.MtrrFix4K_F0000 = paValues[iReg].Reg64;
         iReg++;
 
         Assert(pInput->Names[iReg] == HvX64RegisterMtrrFix4kF8000);
         if (paValues[iReg].Reg64 != pCtxMsrs->msr.MtrrFix4K_F8000 )
-            Log7(("NEM/%u: MSR MTRR_FIX16K_F8000 changed %RX64 -> %RX64\n", pVCpu->idCpu, pCtxMsrs->msr.MtrrFix4K_F8000, paValues[iReg].Reg64));
+            Log7(("NEM/%u: MSR MTRR_FIX16K_F8000 changed %RX64 -> %RX64\n", pGVCpu->idCpu, pCtxMsrs->msr.MtrrFix4K_F8000, paValues[iReg].Reg64));
         pCtxMsrs->msr.MtrrFix4K_F8000 = paValues[iReg].Reg64;
         iReg++;
 
         Assert(pInput->Names[iReg] == HvX64RegisterTscAux);
         if (paValues[iReg].Reg64 != pCtxMsrs->msr.TscAux )
-            Log7(("NEM/%u: MSR TSC_AUX changed %RX64 -> %RX64\n", pVCpu->idCpu, pCtxMsrs->msr.TscAux, paValues[iReg].Reg64));
+            Log7(("NEM/%u: MSR TSC_AUX changed %RX64 -> %RX64\n", pGVCpu->idCpu, pCtxMsrs->msr.TscAux, paValues[iReg].Reg64));
         pCtxMsrs->msr.TscAux = paValues[iReg].Reg64;
         iReg++;
 
@@ -2110,7 +2099,7 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
         {
             Assert(pInput->Names[iReg] == HvX64RegisterIa32MiscEnable);
             if (paValues[iReg].Reg64 != pCtxMsrs->msr.MiscEnable)
-                Log7(("NEM/%u: MSR MISC_ENABLE changed %RX64 -> %RX64\n", pVCpu->idCpu, pCtxMsrs->msr.MiscEnable, paValues[iReg].Reg64));
+                Log7(("NEM/%u: MSR MISC_ENABLE changed %RX64 -> %RX64\n", pGVCpu->idCpu, pCtxMsrs->msr.MiscEnable, paValues[iReg].Reg64));
             pCtxMsrs->msr.MiscEnable = paValues[iReg].Reg64;
             iReg++;
         }
@@ -2120,7 +2109,7 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
         {
             Assert(pInput->Names[iReg] == HvX64RegisterIa32FeatureControl);
             if (paValues[iReg].Reg64 != pCtx->hwvirt.vmx.Msrs.u64FeatCtrl)
-                Log7(("NEM/%u: MSR FEATURE_CONTROL changed %RX64 -> %RX64 (!!)\n", pVCpu->idCpu, pCtx->hwvirt.vmx.Msrs.u64FeatCtrl, paValues[iReg].Reg64));
+                Log7(("NEM/%u: MSR FEATURE_CONTROL changed %RX64 -> %RX64 (!!)\n", pGVCpu->idCpu, pCtx->hwvirt.vmx.Msrs.u64FeatCtrl, paValues[iReg].Reg64));
             iReg++;
         }
 # endif
@@ -2134,19 +2123,19 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
 
         if (!(pCtx->fExtrn & CPUMCTX_EXTRN_NEM_WIN_INHIBIT_INT))
         {
-            pVCpu->nem.s.fLastInterruptShadow = paValues[iReg].InterruptState.InterruptShadow;
+            pGVCpu->nem.s.fLastInterruptShadow = paValues[iReg].InterruptState.InterruptShadow;
             if (paValues[iReg].InterruptState.InterruptShadow)
-                EMSetInhibitInterruptsPC(pVCpu, paValues[iReg + 1].Reg64);
+                EMSetInhibitInterruptsPC(pGVCpu, paValues[iReg + 1].Reg64);
             else
-                VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
+                VMCPU_FF_CLEAR(pGVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
         }
 
         if (!(pCtx->fExtrn & CPUMCTX_EXTRN_NEM_WIN_INHIBIT_NMI))
         {
             if (paValues[iReg].InterruptState.NmiMasked)
-                VMCPU_FF_SET(pVCpu, VMCPU_FF_BLOCK_NMIS);
+                VMCPU_FF_SET(pGVCpu, VMCPU_FF_BLOCK_NMIS);
             else
-                VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_BLOCK_NMIS);
+                VMCPU_FF_CLEAR(pGVCpu, VMCPU_FF_BLOCK_NMIS);
         }
 
         fWhat |= CPUMCTX_EXTRN_NEM_WIN_INHIBIT_INT | CPUMCTX_EXTRN_NEM_WIN_INHIBIT_NMI;
@@ -2184,7 +2173,7 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
     int rc = VINF_SUCCESS;
     if (fMaybeChangedMode)
     {
-        rc = PGMChangeMode(pVCpu, pCtx->cr0, pCtx->cr4, pCtx->msrEFER);
+        rc = PGMChangeMode(pGVCpu, pCtx->cr0, pCtx->cr4, pCtx->msrEFER);
         AssertMsgReturn(rc == VINF_SUCCESS, ("rc=%Rrc\n", rc), RT_FAILURE_NP(rc) ? rc : VERR_NEM_IPE_1);
     }
 
@@ -2193,7 +2182,7 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
         if (fCanUpdateCr3)
         {
             LogFlow(("nemR0WinImportState: -> PGMUpdateCR3!\n"));
-            rc = PGMUpdateCR3(pVCpu, pCtx->cr3);
+            rc = PGMUpdateCR3(pGVCpu, pCtx->cr3);
             AssertMsgReturn(rc == VINF_SUCCESS, ("rc=%Rrc\n", rc), RT_FAILURE_NP(rc) ? rc : VERR_NEM_IPE_2);
         }
         else
@@ -2213,33 +2202,31 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
  *
  * @returns VBox status code
  * @param   pGVM        The ring-0 VM handle.
- * @param   pVM         The cross context VM handle.
  * @param   idCpu       The calling EMT.  Necessary for getting the
  *                      hypercall page and arguments.
  * @param   fWhat       What to import, CPUMCTX_EXTRN_XXX. Set
  *                      CPUMCTX_EXTERN_ALL for everything.
  */
-VMMR0_INT_DECL(int) NEMR0ImportState(PGVM pGVM, PVMCC pVM, VMCPUID idCpu, uint64_t fWhat)
+VMMR0_INT_DECL(int) NEMR0ImportState(PGVM pGVM, VMCPUID idCpu, uint64_t fWhat)
 {
 #if defined(NEM_WIN_WITH_RING0_RUNLOOP) || defined(NEM_WIN_USE_HYPERCALLS_FOR_REGISTERS)
     /*
      * Validate the call.
      */
-    int rc = GVMMR0ValidateGVMandVMandEMT(pGVM, pVM, idCpu);
+    int rc = GVMMR0ValidateGVMandEMT(pGVM, idCpu);
     if (RT_SUCCESS(rc))
     {
-        PVMCPUCC  pVCpu  = VMCC_GET_CPU(pVM, idCpu);
         PGVMCPU pGVCpu = &pGVM->aCpus[idCpu];
         AssertReturn(g_pfnHvlInvokeHypercall, VERR_NEM_MISSING_KERNEL_API);
 
         /*
          * Call worker.
          */
-        rc = nemR0WinImportState(pGVM, pGVCpu, &pVCpu->cpum.GstCtx, fWhat, false /*fCanUpdateCr3*/);
+        rc = nemR0WinImportState(pGVM, pGVCpu, &pGVCpu->cpum.GstCtx, fWhat, false /*fCanUpdateCr3*/);
     }
     return rc;
 #else
-    RT_NOREF(pGVM, pVM, idCpu, fWhat);
+    RT_NOREF(pGVM, idCpu, fWhat);
     return VERR_NOT_IMPLEMENTED;
 #endif
 }
@@ -2299,34 +2286,32 @@ NEM_TMPL_STATIC int nemR0WinQueryCpuTick(PGVM pGVM, PGVMCPU pGVCpu, uint64_t *pc
  *
  * @returns VBox status code
  * @param   pGVM        The ring-0 VM handle.
- * @param   pVM         The cross context VM handle.
  * @param   idCpu       The calling EMT.  Necessary for getting the
  *                      hypercall page and arguments.
  */
-VMMR0_INT_DECL(int) NEMR0QueryCpuTick(PGVM pGVM, PVMCC pVM, VMCPUID idCpu)
+VMMR0_INT_DECL(int) NEMR0QueryCpuTick(PGVM pGVM, VMCPUID idCpu)
 {
 #if defined(NEM_WIN_WITH_RING0_RUNLOOP) || defined(NEM_WIN_USE_HYPERCALLS_FOR_REGISTERS)
     /*
      * Validate the call.
      */
-    int rc = GVMMR0ValidateGVMandVMandEMT(pGVM, pVM, idCpu);
+    int rc = GVMMR0ValidateGVMandEMT(pGVM, idCpu);
     if (RT_SUCCESS(rc))
     {
-        PVMCPUCC  pVCpu  = VMCC_GET_CPU(pVM, idCpu);
         PGVMCPU pGVCpu = &pGVM->aCpus[idCpu];
         AssertReturn(g_pfnHvlInvokeHypercall, VERR_NEM_MISSING_KERNEL_API);
 
         /*
          * Call worker.
          */
-        pVCpu->nem.s.Hypercall.QueryCpuTick.cTicks = 0;
-        pVCpu->nem.s.Hypercall.QueryCpuTick.uAux   = 0;
-        rc = nemR0WinQueryCpuTick(pGVM, pGVCpu, &pVCpu->nem.s.Hypercall.QueryCpuTick.cTicks,
-                                  &pVCpu->nem.s.Hypercall.QueryCpuTick.uAux);
+        pGVCpu->nem.s.Hypercall.QueryCpuTick.cTicks = 0;
+        pGVCpu->nem.s.Hypercall.QueryCpuTick.uAux   = 0;
+        rc = nemR0WinQueryCpuTick(pGVM, pGVCpu, &pGVCpu->nem.s.Hypercall.QueryCpuTick.cTicks,
+                                  &pGVCpu->nem.s.Hypercall.QueryCpuTick.uAux);
     }
     return rc;
 #else
-    RT_NOREF(pGVM, pVM, idCpu);
+    RT_NOREF(pGVM, idCpu);
     return VERR_NOT_IMPLEMENTED;
 #endif
 }
@@ -2408,34 +2393,32 @@ NEM_TMPL_STATIC int nemR0WinResumeCpuTickOnAll(PGVM pGVM, PGVMCPU pGVCpu, uint64
  *
  * @returns VBox status code
  * @param   pGVM            The ring-0 VM handle.
- * @param   pVM             The cross context VM handle.
  * @param   idCpu           The calling EMT.  Necessary for getting the
  *                          hypercall page and arguments.
  * @param   uPausedTscValue The TSC value at the time of pausing.
  */
-VMMR0_INT_DECL(int) NEMR0ResumeCpuTickOnAll(PGVM pGVM, PVMCC pVM, VMCPUID idCpu, uint64_t uPausedTscValue)
+VMMR0_INT_DECL(int) NEMR0ResumeCpuTickOnAll(PGVM pGVM, VMCPUID idCpu, uint64_t uPausedTscValue)
 {
 #if defined(NEM_WIN_WITH_RING0_RUNLOOP) || defined(NEM_WIN_USE_HYPERCALLS_FOR_REGISTERS)
     /*
      * Validate the call.
      */
-    int rc = GVMMR0ValidateGVMandVMandEMT(pGVM, pVM, idCpu);
+    int rc = GVMMR0ValidateGVMandEMT(pGVM, idCpu);
     if (RT_SUCCESS(rc))
     {
-        PVMCPUCC  pVCpu  = VMCC_GET_CPU(pVM, idCpu);
         PGVMCPU pGVCpu = &pGVM->aCpus[idCpu];
         AssertReturn(g_pfnHvlInvokeHypercall, VERR_NEM_MISSING_KERNEL_API);
 
         /*
          * Call worker.
          */
-        pVCpu->nem.s.Hypercall.QueryCpuTick.cTicks = 0;
-        pVCpu->nem.s.Hypercall.QueryCpuTick.uAux   = 0;
+        pGVCpu->nem.s.Hypercall.QueryCpuTick.cTicks = 0;
+        pGVCpu->nem.s.Hypercall.QueryCpuTick.uAux   = 0;
         rc = nemR0WinResumeCpuTickOnAll(pGVM, pGVCpu, uPausedTscValue);
     }
     return rc;
 #else
-    RT_NOREF(pGVM, pVM, idCpu, uPausedTscValue);
+    RT_NOREF(pGVM, idCpu, uPausedTscValue);
     return VERR_NOT_IMPLEMENTED;
 #endif
 }
@@ -2445,7 +2428,7 @@ VMMR0_INT_DECL(VBOXSTRICTRC) NEMR0RunGuestCode(PGVM pGVM, VMCPUID idCpu)
 {
 #ifdef NEM_WIN_WITH_RING0_RUNLOOP
     if (pGVM->nemr0.s.fMayUseRing0Runloop)
-        return nemHCWinRunGC(pGVM, &pGVM->aCpus[idCpu], pGVM, &pGVM->aCpus[idCpu]);
+        return nemHCWinRunGC(pGVM, &pGVM->aCpus[idCpu]);
     return VERR_NEM_RING3_ONLY;
 #else
     RT_NOREF(pGVM, idCpu);
@@ -2459,20 +2442,19 @@ VMMR0_INT_DECL(VBOXSTRICTRC) NEMR0RunGuestCode(PGVM pGVM, VMCPUID idCpu)
  *
  * @returns VBox status code.
  * @param   pGVM        The ring-0 VM handle.
- * @param   pVM         The cross context VM handle.
  * @param   idCpu       The calling EMT, or NIL.  Necessary for getting the hypercall
  *                      page and arguments.
  */
-VMMR0_INT_DECL(int)  NEMR0UpdateStatistics(PGVM pGVM, PVMCC pVM, VMCPUID idCpu)
+VMMR0_INT_DECL(int)  NEMR0UpdateStatistics(PGVM pGVM, VMCPUID idCpu)
 {
     /*
      * Validate the call.
      */
     int rc;
     if (idCpu == NIL_VMCPUID)
-        rc = GVMMR0ValidateGVMandVM(pGVM, pVM);
+        rc = GVMMR0ValidateGVM(pGVM);
     else
-        rc = GVMMR0ValidateGVMandVMandEMT(pGVM, pVM, idCpu);
+        rc = GVMMR0ValidateGVMandEMT(pGVM, idCpu);
     if (RT_SUCCESS(rc))
     {
         AssertReturn(g_pfnHvlInvokeHypercall, VERR_NEM_MISSING_KERNEL_API);
@@ -2505,8 +2487,8 @@ VMMR0_INT_DECL(int)  NEMR0UpdateStatistics(PGVM pGVM, PVMCC pVM, VMCPUID idCpu)
                                                            pHypercallData->HCPhysPage + sizeof(*pInput));
                 if (uResult == HV_STATUS_SUCCESS)
                 {
-                    pVM->nem.s.R0Stats.cPagesAvailable = pOutput->PagesAvailable;
-                    pVM->nem.s.R0Stats.cPagesInUse     = pOutput->PagesInUse;
+                    pGVM->nem.s.R0Stats.cPagesAvailable = pOutput->PagesAvailable;
+                    pGVM->nem.s.R0Stats.cPagesInUse     = pOutput->PagesInUse;
                     rc = VINF_SUCCESS;
                 }
                 else
@@ -2532,22 +2514,20 @@ VMMR0_INT_DECL(int)  NEMR0UpdateStatistics(PGVM pGVM, PVMCC pVM, VMCPUID idCpu)
  * Debug only interface for poking around and exploring Hyper-V stuff.
  *
  * @param   pGVM        The ring-0 VM handle.
- * @param   pVM         The cross context VM handle.
  * @param   idCpu       The calling EMT.
  * @param   u64Arg      What to query.  0 == registers.
  */
-VMMR0_INT_DECL(int) NEMR0DoExperiment(PGVM pGVM, PVMCC pVM, VMCPUID idCpu, uint64_t u64Arg)
+VMMR0_INT_DECL(int) NEMR0DoExperiment(PGVM pGVM, VMCPUID idCpu, uint64_t u64Arg)
 {
     /*
      * Resolve CPU structures.
      */
-    int rc = GVMMR0ValidateGVMandVMandEMT(pGVM, pVM, idCpu);
+    int rc = GVMMR0ValidateGVMandEMT(pGVM, idCpu);
     if (RT_SUCCESS(rc))
     {
         AssertReturn(g_pfnHvlInvokeHypercall, VERR_NEM_MISSING_KERNEL_API);
 
         PGVMCPU pGVCpu = &pGVM->aCpus[idCpu];
-        PVMCPUCC  pVCpu  = VMCC_GET_CPU(pVM, idCpu);
         if (u64Arg == 0)
         {
             /*
@@ -2563,15 +2543,15 @@ VMMR0_INT_DECL(int) NEMR0DoExperiment(PGVM pGVM, PVMCC pVM, VMCPUID idCpu, uint6
             pInput->PartitionId = pGVM->nemr0.s.idHvPartition;
             pInput->VpIndex     = pGVCpu->idCpu;
             pInput->fFlags      = 0;
-            pInput->Names[0]    = (HV_REGISTER_NAME)pVCpu->nem.s.Hypercall.Experiment.uItem;
+            pInput->Names[0]    = (HV_REGISTER_NAME)pGVCpu->nem.s.Hypercall.Experiment.uItem;
 
             uint64_t uResult = g_pfnHvlInvokeHypercall(HV_MAKE_CALL_INFO(HvCallGetVpRegisters, 1),
                                                        pGVCpu->nemr0.s.HypercallData.HCPhysPage,
                                                        pGVCpu->nemr0.s.HypercallData.HCPhysPage + cbInput);
-            pVCpu->nem.s.Hypercall.Experiment.fSuccess = uResult == HV_MAKE_CALL_REP_RET(1);
-            pVCpu->nem.s.Hypercall.Experiment.uStatus  = uResult;
-            pVCpu->nem.s.Hypercall.Experiment.uLoValue = paValues[0].Reg128.Low64;
-            pVCpu->nem.s.Hypercall.Experiment.uHiValue = paValues[0].Reg128.High64;
+            pGVCpu->nem.s.Hypercall.Experiment.fSuccess = uResult == HV_MAKE_CALL_REP_RET(1);
+            pGVCpu->nem.s.Hypercall.Experiment.uStatus  = uResult;
+            pGVCpu->nem.s.Hypercall.Experiment.uLoValue = paValues[0].Reg128.Low64;
+            pGVCpu->nem.s.Hypercall.Experiment.uHiValue = paValues[0].Reg128.High64;
             rc = VINF_SUCCESS;
         }
         else if (u64Arg == 1)
@@ -2587,16 +2567,16 @@ VMMR0_INT_DECL(int) NEMR0DoExperiment(PGVM pGVM, PVMCC pVM, VMCPUID idCpu, uint6
             pOutput->PropertyValue = 0;
 
             pInput->PartitionId  = pGVM->nemr0.s.idHvPartition;
-            pInput->PropertyCode = (HV_PARTITION_PROPERTY_CODE)pVCpu->nem.s.Hypercall.Experiment.uItem;
+            pInput->PropertyCode = (HV_PARTITION_PROPERTY_CODE)pGVCpu->nem.s.Hypercall.Experiment.uItem;
             pInput->uPadding     = 0;
 
             uint64_t uResult = g_pfnHvlInvokeHypercall(HvCallGetPartitionProperty,
                                                        pGVCpu->nemr0.s.HypercallData.HCPhysPage,
                                                        pGVCpu->nemr0.s.HypercallData.HCPhysPage + cbInput);
-            pVCpu->nem.s.Hypercall.Experiment.fSuccess = uResult == HV_STATUS_SUCCESS;
-            pVCpu->nem.s.Hypercall.Experiment.uStatus  = uResult;
-            pVCpu->nem.s.Hypercall.Experiment.uLoValue = pOutput->PropertyValue;
-            pVCpu->nem.s.Hypercall.Experiment.uHiValue = 0;
+            pGVCpu->nem.s.Hypercall.Experiment.fSuccess = uResult == HV_STATUS_SUCCESS;
+            pGVCpu->nem.s.Hypercall.Experiment.uStatus  = uResult;
+            pGVCpu->nem.s.Hypercall.Experiment.uLoValue = pOutput->PropertyValue;
+            pGVCpu->nem.s.Hypercall.Experiment.uHiValue = 0;
             rc = VINF_SUCCESS;
         }
         else if (u64Arg == 2)
@@ -2611,14 +2591,14 @@ VMMR0_INT_DECL(int) NEMR0DoExperiment(PGVM pGVM, PVMCC pVM, VMCPUID idCpu, uint6
             pInput->PartitionId = pGVM->nemr0.s.idHvPartition;
             pInput->VpIndex     = pGVCpu->idCpu;
             pInput->RsvdZ      = 0;
-            pInput->Elements[0].Name = (HV_REGISTER_NAME)pVCpu->nem.s.Hypercall.Experiment.uItem;
-            pInput->Elements[0].Value.Reg128.High64 = pVCpu->nem.s.Hypercall.Experiment.uHiValue;
-            pInput->Elements[0].Value.Reg128.Low64  = pVCpu->nem.s.Hypercall.Experiment.uLoValue;
+            pInput->Elements[0].Name = (HV_REGISTER_NAME)pGVCpu->nem.s.Hypercall.Experiment.uItem;
+            pInput->Elements[0].Value.Reg128.High64 = pGVCpu->nem.s.Hypercall.Experiment.uHiValue;
+            pInput->Elements[0].Value.Reg128.Low64  = pGVCpu->nem.s.Hypercall.Experiment.uLoValue;
 
             uint64_t uResult = g_pfnHvlInvokeHypercall(HV_MAKE_CALL_INFO(HvCallSetVpRegisters, 1),
                                                        pGVCpu->nemr0.s.HypercallData.HCPhysPage, 0);
-            pVCpu->nem.s.Hypercall.Experiment.fSuccess = uResult == HV_MAKE_CALL_REP_RET(1);
-            pVCpu->nem.s.Hypercall.Experiment.uStatus  = uResult;
+            pGVCpu->nem.s.Hypercall.Experiment.fSuccess = uResult == HV_MAKE_CALL_REP_RET(1);
+            pGVCpu->nem.s.Hypercall.Experiment.uStatus  = uResult;
             rc = VINF_SUCCESS;
         }
         else

@@ -673,13 +673,13 @@ VMMRCDECL(int)      PGMRCDynMapInit(PVM pVM);
 /** @defgroup grp_pgm_r0  The PGM Host Context Ring-0 API
  * @{
  */
-VMMR0_INT_DECL(int) PGMR0PhysAllocateHandyPages(PGVM pGVM, PVMCC pVM, VMCPUID idCpu);
-VMMR0_INT_DECL(int) PGMR0PhysFlushHandyPages(PGVM pGVM, PVMCC pVM, VMCPUID idCpu);
-VMMR0_INT_DECL(int) PGMR0PhysAllocateLargeHandyPage(PGVM pGVM, PVMCC pVM, VMCPUID idCpu);
-VMMR0_INT_DECL(int) PGMR0PhysSetupIoMmu(PGVM pGVM, PVMCC pVM);
+VMMR0_INT_DECL(int) PGMR0PhysAllocateHandyPages(PGVM pGVM, VMCPUID idCpu);
+VMMR0_INT_DECL(int) PGMR0PhysFlushHandyPages(PGVM pGVM, VMCPUID idCpu);
+VMMR0_INT_DECL(int) PGMR0PhysAllocateLargeHandyPage(PGVM pGVM, VMCPUID idCpu);
+VMMR0_INT_DECL(int) PGMR0PhysSetupIoMmu(PGVM pGVM);
 VMMR0DECL(int)      PGMR0SharedModuleCheck(PVMCC pVM, PGVM pGVM, VMCPUID idCpu, PGMMSHAREDMODULE pModule, PCRTGCPTR64 paRegionsGCPtrs);
-VMMR0DECL(int)      PGMR0Trap0eHandlerNestedPaging(PVMCC pVM, PVMCPUCC pVCpu, PGMMODE enmShwPagingMode, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPHYS pvFault);
-VMMR0DECL(VBOXSTRICTRC) PGMR0Trap0eHandlerNPMisconfig(PVMCC pVM, PVMCPUCC pVCpu, PGMMODE enmShwPagingMode, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFault, uint32_t uErr);
+VMMR0DECL(int)      PGMR0Trap0eHandlerNestedPaging(PGVM pGVM, PGVMCPU pGVCpu, PGMMODE enmShwPagingMode, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPHYS pvFault);
+VMMR0DECL(VBOXSTRICTRC) PGMR0Trap0eHandlerNPMisconfig(PGVM pGVM, PGVMCPU pGVCpu, PGMMODE enmShwPagingMode, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFault, uint32_t uErr);
 # ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
 VMMR0DECL(int)      PGMR0DynMapInit(void);
 VMMR0DECL(void)     PGMR0DynMapTerm(void);

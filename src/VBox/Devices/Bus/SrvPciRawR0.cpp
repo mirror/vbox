@@ -169,7 +169,7 @@ PCIRAWR0DECL(void) PciRawR0Term(void)
 /**
  * Per-VM R0 module init.
  */
-PCIRAWR0DECL(int)  PciRawR0InitVM(PGVM pGVM, PVMCC pVM)
+PCIRAWR0DECL(int)  PciRawR0InitVM(PGVM pGVM)
 {
     PRAWPCIFACTORY pFactory = NULL;
     int rc = SUPR0ComponentQueryFactory(pGVM->pSession, "VBoxRawPci", RAWPCIFACTORY_UUID_STR, (void **)&pFactory);
@@ -177,7 +177,7 @@ PCIRAWR0DECL(int)  PciRawR0InitVM(PGVM pGVM, PVMCC pVM)
     {
         if (pFactory)
         {
-            rc = pFactory->pfnInitVm(pFactory, pVM, &pGVM->rawpci.s);
+            rc = pFactory->pfnInitVm(pFactory, pGVM, &pGVM->rawpci.s);
             pFactory->pfnRelease(pFactory);
         }
     }
@@ -187,7 +187,7 @@ PCIRAWR0DECL(int)  PciRawR0InitVM(PGVM pGVM, PVMCC pVM)
 /**
  * Per-VM R0 module termination routine.
  */
-PCIRAWR0DECL(void)  PciRawR0TermVM(PGVM pGVM, PVMCC pVM)
+PCIRAWR0DECL(void)  PciRawR0TermVM(PGVM pGVM)
 {
     PRAWPCIFACTORY pFactory = NULL;
     int rc = SUPR0ComponentQueryFactory(pGVM->pSession, "VBoxRawPci", RAWPCIFACTORY_UUID_STR, (void **)&pFactory);
@@ -195,7 +195,7 @@ PCIRAWR0DECL(void)  PciRawR0TermVM(PGVM pGVM, PVMCC pVM)
     {
         if (pFactory)
         {
-            pFactory->pfnDeinitVm(pFactory, pVM, &pGVM->rawpci.s);
+            pFactory->pfnDeinitVm(pFactory, pGVM, &pGVM->rawpci.s);
             pFactory->pfnRelease(pFactory);
         }
     }
@@ -505,14 +505,14 @@ static DECLCALLBACK(void) pcirawr0DevObjDestructor(void *pvObj, void *pvIns, voi
 }
 
 
-static int pcirawr0OpenDevice(PGVM pGVM, PVMCC pVM, PSUPDRVSESSION pSession,
+static int pcirawr0OpenDevice(PGVM pGVM, PSUPDRVSESSION pSession,
                               uint32_t         HostDevice,
                               uint32_t         fFlags,
                               PCIRAWDEVHANDLE *pHandle,
                               uint32_t        *pfDevFlags)
 {
 
-    int rc = GVMMR0ValidateGVMandVMandEMT(pGVM, pVM, 0 /*idCpu*/);
+    int rc = GVMMR0ValidateGVMandEMT(pGVM, 0 /*idCpu*/);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -915,7 +915,7 @@ static int pcirawr0PowerStateChange(PSUPDRVSESSION    pSession,
  *
  * @returns VBox status code.
  */
-PCIRAWR0DECL(int) PciRawR0ProcessReq(PGVM pGVM, PVMCC pVM, PSUPDRVSESSION pSession, PPCIRAWSENDREQ pReq)
+PCIRAWR0DECL(int) PciRawR0ProcessReq(PGVM pGVM, PSUPDRVSESSION pSession, PPCIRAWSENDREQ pReq)
 {
     LogFlow(("PciRawR0ProcessReq: %d for %x\n", pReq->iRequest, pReq->TargetDevice));
     int rc = VINF_SUCCESS;
@@ -924,7 +924,7 @@ PCIRAWR0DECL(int) PciRawR0ProcessReq(PGVM pGVM, PVMCC pVM, PSUPDRVSESSION pSessi
     switch (pReq->iRequest)
     {
         case PCIRAWR0_DO_OPEN_DEVICE:
-            rc = pcirawr0OpenDevice(pGVM, pVM, pSession,
+            rc = pcirawr0OpenDevice(pGVM, pSession,
                                     pReq->u.aOpenDevice.PciAddress,
                                     pReq->u.aOpenDevice.fFlags,
                                     &pReq->u.aOpenDevice.Device,

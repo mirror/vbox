@@ -1723,7 +1723,7 @@ VBOXSTRICTRC nemR3NativeRunGC(PVM pVM, PVMCPU pVCpu)
         }
     }
 #endif
-    return nemHCWinRunGC(pVM, pVCpu, NULL /*pGVM*/, NULL /*pGVCpu*/);
+    return nemHCWinRunGC(pVM, pVCpu);
 }
 
 

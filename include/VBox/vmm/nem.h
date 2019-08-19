@@ -88,18 +88,18 @@ VMMR3_INT_DECL(void) NEMR3NotifySetA20(PVMCPU pVCpu, bool fEnabled);
 
 /** @defgroup grp_nem_r0    The NEM ring-0 Context API
  * @{  */
-VMMR0_INT_DECL(int)  NEMR0InitVM(PGVM pGVM, PVMCC pVM);
-VMMR0_INT_DECL(int)  NEMR0InitVMPart2(PGVM pGVM, PVMCC pVM);
+VMMR0_INT_DECL(int)  NEMR0InitVM(PGVM pGVM);
+VMMR0_INT_DECL(int)  NEMR0InitVMPart2(PGVM pGVM);
 VMMR0_INT_DECL(void) NEMR0CleanupVM(PGVM pGVM);
-VMMR0_INT_DECL(int)  NEMR0MapPages(PGVM pGVM, PVMCC pVM, VMCPUID idCpu);
-VMMR0_INT_DECL(int)  NEMR0UnmapPages(PGVM pGVM, PVMCC pVM, VMCPUID idCpu);
-VMMR0_INT_DECL(int)  NEMR0ExportState(PGVM pGVM, PVMCC pVM, VMCPUID idCpu);
-VMMR0_INT_DECL(int)  NEMR0ImportState(PGVM pGVM, PVMCC pVM, VMCPUID idCpu, uint64_t fWhat);
-VMMR0_INT_DECL(int)  NEMR0QueryCpuTick(PGVM pGVM, PVMCC pVM, VMCPUID idCpu);
-VMMR0_INT_DECL(int)  NEMR0ResumeCpuTickOnAll(PGVM pGVM, PVMCC pVM, VMCPUID idCpu, uint64_t uPausedTscValue);
+VMMR0_INT_DECL(int)  NEMR0MapPages(PGVM pGVM, VMCPUID idCpu);
+VMMR0_INT_DECL(int)  NEMR0UnmapPages(PGVM pGVM, VMCPUID idCpu);
+VMMR0_INT_DECL(int)  NEMR0ExportState(PGVM pGVM, VMCPUID idCpu);
+VMMR0_INT_DECL(int)  NEMR0ImportState(PGVM pGVM, VMCPUID idCpu, uint64_t fWhat);
+VMMR0_INT_DECL(int)  NEMR0QueryCpuTick(PGVM pGVM, VMCPUID idCpu);
+VMMR0_INT_DECL(int)  NEMR0ResumeCpuTickOnAll(PGVM pGVM, VMCPUID idCpu, uint64_t uPausedTscValue);
 VMMR0_INT_DECL(VBOXSTRICTRC) NEMR0RunGuestCode(PGVM pGVM, VMCPUID idCpu);
-VMMR0_INT_DECL(int)  NEMR0UpdateStatistics(PGVM pGVM, PVMCC pVM, VMCPUID idCpu);
-VMMR0_INT_DECL(int)  NEMR0DoExperiment(PGVM pGVM, PVMCC pVM, VMCPUID idCpu, uint64_t u64Arg);
+VMMR0_INT_DECL(int)  NEMR0UpdateStatistics(PGVM pGVM, VMCPUID idCpu);
+VMMR0_INT_DECL(int)  NEMR0DoExperiment(PGVM pGVM, VMCPUID idCpu, uint64_t u64Arg);
 /** @} */
 
 

@@ -35,14 +35,14 @@
 #if 0
 # define NEMWIN_NEED_GET_REGISTER
 # if defined(IN_RING0) || defined(NEM_WIN_USE_HYPERCALLS_FOR_REGISTERS)
-#  define NEMWIN_ASSERT_MSG_REG_VAL(a_pVCpu, a_pGVCpu, a_enmReg, a_Expr, a_Msg) \
+#  define NEMWIN_ASSERT_MSG_REG_VAL(a_pVCpu, a_enmReg, a_Expr, a_Msg) \
     do { \
         HV_REGISTER_VALUE TmpVal; \
-        nemHCWinGetRegister(a_pVCpu, a_pGVCpu, a_enmReg, &TmpVal); \
+        nemHCWinGetRegister(a_pVCpu, a_enmReg, &TmpVal); \
         AssertMsg(a_Expr, a_Msg); \
     } while (0)
 # else
-#  define NEMWIN_ASSERT_MSG_REG_VAL(a_pVCpu, a_pGVCpu, a_enmReg, a_Expr, a_Msg) \
+#  define NEMWIN_ASSERT_MSG_REG_VAL(a_pVCpu, a_enmReg, a_Expr, a_Msg) \
     do { \
         WHV_REGISTER_VALUE TmpVal; \
         nemR3WinGetRegister(a_pVCpu, a_enmReg, &TmpVal); \
@@ -50,20 +50,20 @@
     } while (0)
 # endif
 #else
-# define NEMWIN_ASSERT_MSG_REG_VAL(a_pVCpu, a_pGVCpu, a_enmReg, a_Expr, a_Msg) do { } while (0)
+# define NEMWIN_ASSERT_MSG_REG_VAL(a_pVCpu, a_enmReg, a_Expr, a_Msg) do { } while (0)
 #endif
 
 /** @def NEMWIN_ASSERT_MSG_REG_VAL
  * Asserts the correctness of a 64-bit register value in a message/context.
  */
-#define NEMWIN_ASSERT_MSG_REG_VAL64(a_pVCpu, a_pGVCpu, a_enmReg, a_u64Val) \
-    NEMWIN_ASSERT_MSG_REG_VAL(a_pVCpu, a_pGVCpu, a_enmReg, (a_u64Val) == TmpVal.Reg64, \
+#define NEMWIN_ASSERT_MSG_REG_VAL64(a_pVCpu, a_enmReg, a_u64Val) \
+    NEMWIN_ASSERT_MSG_REG_VAL(a_pVCpu, a_enmReg, (a_u64Val) == TmpVal.Reg64, \
                               (#a_u64Val "=%#RX64, expected %#RX64\n", (a_u64Val), TmpVal.Reg64))
 /** @def NEMWIN_ASSERT_MSG_REG_VAL
  * Asserts the correctness of a segment register value in a message/context.
  */
-#define NEMWIN_ASSERT_MSG_REG_SEG(a_pVCpu, a_pGVCpu, a_enmReg, a_SReg) \
-    NEMWIN_ASSERT_MSG_REG_VAL(a_pVCpu, a_pGVCpu, a_enmReg, \
+#define NEMWIN_ASSERT_MSG_REG_SEG(a_pVCpu, a_enmReg, a_SReg) \
+    NEMWIN_ASSERT_MSG_REG_VAL(a_pVCpu, a_enmReg, \
                                  (a_SReg).Base       == TmpVal.Segment.Base \
                               && (a_SReg).Limit      == TmpVal.Segment.Limit \
                               && (a_SReg).Selector   == TmpVal.Segment.Selector \
@@ -108,9 +108,7 @@ DECLINLINE(int) nemHCWinHypercallMapPage(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCP
 {
 #ifdef IN_RING0
     /** @todo optimize further, caller generally has the physical address. */
-    PGVM pGVM = GVMMR0FastGetGVMByVM(pVM);
-    AssertReturn(pGVM, VERR_INVALID_VM_HANDLE);
-    return nemR0WinMapPages(pGVM, pVM, &pGVM->aCpus[pVCpu->idCpu],
+    return nemR0WinMapPages(pVM, pVCpu,
                             GCPhysSrc & ~(RTGCPHYS)X86_PAGE_OFFSET_MASK,
                             GCPhysDst & ~(RTGCPHYS)X86_PAGE_OFFSET_MASK,
                             1, fFlags);
@@ -135,9 +133,7 @@ DECLINLINE(int) nemHCWinHypercallMapPage(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCP
 DECLINLINE(int) nemHCWinHypercallUnmapPage(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhys)
 {
 # ifdef IN_RING0
-    PGVM pGVM = GVMMR0FastGetGVMByVM(pVM);
-    AssertReturn(pGVM, VERR_INVALID_VM_HANDLE);
-    return nemR0WinUnmapPages(pGVM, &pGVM->aCpus[pVCpu->idCpu], GCPhys & ~(RTGCPHYS)X86_PAGE_OFFSET_MASK, 1);
+    return nemR0WinUnmapPages(pVM, pVCpu, GCPhys & ~(RTGCPHYS)X86_PAGE_OFFSET_MASK, 1);
 # else
     pVCpu->nem.s.Hypercall.UnmapPages.GCPhys    = GCPhys & ~(RTGCPHYS)X86_PAGE_OFFSET_MASK;
     pVCpu->nem.s.Hypercall.UnmapPages.cPages    = 1;
@@ -397,7 +393,7 @@ NEM_TMPL_STATIC int nemHCWinCopyStateToHyperV(PVMCC pVM, PVMCPUCC pVCpu)
         ADD_REG64(WHvX64RegisterMsrMtrrFix4kF8000,  pCtxMsrs->msr.MtrrFix4K_F8000);
         ADD_REG64(WHvX64RegisterTscAux, pCtxMsrs->msr.TscAux);
 #if 0 /** @todo these registers aren't available? Might explain something.. .*/
-        const CPUMCPUVENDOR enmCpuVendor = CPUMGetHostCpuVendor(pGVM->pVM);
+        const CPUMCPUVENDOR enmCpuVendor = CPUMGetHostCpuVendor(pVM);
         if (enmCpuVendor != CPUMCPUVENDOR_AMD)
         {
             ADD_REG64(HvX64RegisterIa32MiscEnable, pCtxMsrs->msr.MiscEnable);
@@ -664,7 +660,7 @@ NEM_TMPL_STATIC int nemHCWinCopyStateFromHyperV(PVMCC pVM, PVMCPUCC pVCpu, uint6
     }
 
 //#ifdef LOG_ENABLED
-//    const CPUMCPUVENDOR enmCpuVendor = CPUMGetHostCpuVendor(pGVM->pVM);
+//    const CPUMCPUVENDOR enmCpuVendor = CPUMGetHostCpuVendor(pVM);
 //#endif
     if (fWhat & CPUMCTX_EXTRN_OTHER_MSRS)
     {
@@ -1290,8 +1286,8 @@ NEM_TMPL_STATIC int nemHCWinGetRegister(PVMCPUCC pVCpu, PGVMCPU pGVCpu, uint32_t
     AssertPtrReturn(pInput, VERR_INTERNAL_ERROR_3);
     AssertReturn(g_pfnHvlInvokeHypercall, VERR_NEM_MISSING_KERNEL_API);
 
-    pInput->PartitionId = pGVCpu->pGVM->nemr0.s.idHvPartition;
-    pInput->VpIndex     = pGVCpu->idCpu;
+    pInput->PartitionId = pVCpu->pGVM->nemr0.s.idHvPartition;
+    pInput->VpIndex     = pVCpu->idCpu;
     pInput->fFlags      = 0;
     pInput->Names[0]    = (HV_REGISTER_NAME)enmReg;
 
@@ -1822,13 +1818,12 @@ nemHCWinHandleMemoryAccessPageCheckerCallback(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHY
  * @returns VBox strict status code.
  * @param   pGVM            The global (ring-0) VM structure.
  * @param   pGVCpu          The global (ring-0) per CPU structure.
- * @param   pVCpu           The cross context per CPU structure.
  * @param   fWhat           What to import.
  * @param   pszCaller       Who is doing the importing.
  */
-DECLINLINE(VBOXSTRICTRC) nemR0WinImportStateStrict(PGVM pGVM, PGVMCPU pGVCpu, PVMCPUCC pVCpu, uint64_t fWhat, const char *pszCaller)
+DECLINLINE(VBOXSTRICTRC) nemR0WinImportStateStrict(PGVM pGVM, PGVMCPU pGVCpu, uint64_t fWhat, const char *pszCaller)
 {
-    int rc = nemR0WinImportState(pGVM, pGVCpu, &pVCpu->cpum.GstCtx, fWhat, true /*fCanUpdateCr3*/);
+    int rc = nemR0WinImportState(pGVM, pGVCpu, &pGVCpu->cpum.GstCtx, fWhat, true /*fCanUpdateCr3*/);
     if (RT_SUCCESS(rc))
     {
         Assert(rc == VINF_SUCCESS);
@@ -1852,19 +1847,18 @@ DECLINLINE(VBOXSTRICTRC) nemR0WinImportStateStrict(PGVM pGVM, PGVMCPU pGVCpu, PV
  * Unlike the wrapped APIs, this checks whether it's necessary.
  *
  * @returns VBox strict status code.
- * @param   pGVM            The global (ring-0) VM structure.
- * @param   pGVCpu          The global (ring-0) per CPU structure.
+ * @param   pVCpu           The cross context per CPU structure.
  * @param   fWhat           What to import.
  * @param   pszCaller       Who is doing the importing.
  */
-DECLINLINE(VBOXSTRICTRC) nemHCWinImportStateIfNeededStrict(PVMCPUCC pVCpu, PGVMCPU pGVCpu, uint64_t fWhat, const char *pszCaller)
+DECLINLINE(VBOXSTRICTRC) nemHCWinImportStateIfNeededStrict(PVMCPUCC pVCpu, uint64_t fWhat, const char *pszCaller)
 {
     if (pVCpu->cpum.GstCtx.fExtrn & fWhat)
     {
 # ifdef IN_RING0
-        return nemR0WinImportStateStrict(pGVCpu->pGVM, pGVCpu, pVCpu, fWhat, pszCaller);
+        return nemR0WinImportStateStrict(pVCpu->pGVM, pVCpu, fWhat, pszCaller);
 # else
-        RT_NOREF(pGVCpu, pszCaller);
+        RT_NOREF(pszCaller);
         int rc = nemHCWinCopyStateFromHyperV(pVCpu->pVMR3, pVCpu, fWhat);
         AssertRCReturn(rc, rc);
 # endif
@@ -1946,11 +1940,10 @@ DECLINLINE(void) nemR3WinCopyStateFromX64Header(PVMCPUCC pVCpu, WHV_VP_EXIT_CONT
  * @param   pVM             The cross context VM structure.
  * @param   pVCpu           The cross context per CPU structure.
  * @param   pMsg            The message.
- * @param   pGVCpu          The global (ring-0) per CPU structure (NULL in r3).
  * @sa      nemR3WinHandleExitMemory
  */
 NEM_TMPL_STATIC VBOXSTRICTRC
-nemHCWinHandleMessageMemory(PVMCC pVM, PVMCPUCC pVCpu, HV_X64_MEMORY_INTERCEPT_MESSAGE const *pMsg, PGVMCPU pGVCpu)
+nemHCWinHandleMessageMemory(PVMCC pVM, PVMCPUCC pVCpu, HV_X64_MEMORY_INTERCEPT_MESSAGE const *pMsg)
 {
     uint64_t const uHostTsc = ASMReadTSC();
     Assert(   pMsg->Header.InterceptAccessType == HV_INTERCEPT_ACCESS_READ
@@ -2029,14 +2022,13 @@ nemHCWinHandleMessageMemory(PVMCC pVM, PVMCPUCC pVCpu, HV_X64_MEMORY_INTERCEPT_M
     nemHCWinCopyStateFromX64Header(pVCpu, &pMsg->Header);
     VBOXSTRICTRC rcStrict;
 # ifdef IN_RING0
-    rcStrict = nemR0WinImportStateStrict(pGVCpu->pGVM, pGVCpu, pVCpu,
+    rcStrict = nemR0WinImportStateStrict(pVM, pVCpu,
                                          NEM_WIN_CPUMCTX_EXTRN_MASK_FOR_IEM | CPUMCTX_EXTRN_DS | CPUMCTX_EXTRN_ES, "MemExit");
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
 # else
     rc = nemHCWinCopyStateFromHyperV(pVM, pVCpu, NEM_WIN_CPUMCTX_EXTRN_MASK_FOR_IEM | CPUMCTX_EXTRN_DS | CPUMCTX_EXTRN_ES);
     AssertRCReturn(rc, rc);
-    NOREF(pGVCpu);
 # endif
 
     if (pMsg->Reserved1)
@@ -2171,10 +2163,9 @@ nemR3WinHandleExitMemory(PVMCC pVM, PVMCPUCC pVCpu, WHV_RUN_VP_EXIT_CONTEXT cons
  * @param   pVM             The cross context VM structure.
  * @param   pVCpu           The cross context per CPU structure.
  * @param   pMsg            The message.
- * @param   pGVCpu          The global (ring-0) per CPU structure (NULL in r3).
  */
 NEM_TMPL_STATIC VBOXSTRICTRC
-nemHCWinHandleMessageIoPort(PVMCC pVM, PVMCPUCC pVCpu, HV_X64_IO_PORT_INTERCEPT_MESSAGE const *pMsg, PGVMCPU pGVCpu)
+nemHCWinHandleMessageIoPort(PVMCC pVM, PVMCPUCC pVCpu, HV_X64_IO_PORT_INTERCEPT_MESSAGE const *pMsg)
 {
     /*
      * Assert message sanity.
@@ -2184,18 +2175,18 @@ nemHCWinHandleMessageIoPort(PVMCC pVM, PVMCPUCC pVCpu, HV_X64_IO_PORT_INTERCEPT_
            || pMsg->AccessInfo.AccessSize == 4);
     Assert(   pMsg->Header.InterceptAccessType == HV_INTERCEPT_ACCESS_READ
            || pMsg->Header.InterceptAccessType == HV_INTERCEPT_ACCESS_WRITE);
-    NEMWIN_ASSERT_MSG_REG_SEG(  pVCpu, pGVCpu, HvX64RegisterCs, pMsg->Header.CsSegment);
-    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, pGVCpu, HvX64RegisterRip, pMsg->Header.Rip);
-    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, pGVCpu, HvX64RegisterRflags, pMsg->Header.Rflags);
-    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, pGVCpu, HvX64RegisterCr8, (uint64_t)pMsg->Header.Cr8);
-    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, pGVCpu, HvX64RegisterRax, pMsg->Rax);
+    NEMWIN_ASSERT_MSG_REG_SEG(  pVCpu, HvX64RegisterCs, pMsg->Header.CsSegment);
+    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, HvX64RegisterRip, pMsg->Header.Rip);
+    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, HvX64RegisterRflags, pMsg->Header.Rflags);
+    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, HvX64RegisterCr8, (uint64_t)pMsg->Header.Cr8);
+    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, HvX64RegisterRax, pMsg->Rax);
     if (pMsg->AccessInfo.StringOp)
     {
-        NEMWIN_ASSERT_MSG_REG_SEG(  pVCpu, pGVCpu, HvX64RegisterDs,  pMsg->DsSegment);
-        NEMWIN_ASSERT_MSG_REG_SEG(  pVCpu, pGVCpu, HvX64RegisterEs,  pMsg->EsSegment);
-        NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, pGVCpu, HvX64RegisterRcx, pMsg->Rcx);
-        NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, pGVCpu, HvX64RegisterRsi, pMsg->Rsi);
-        NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, pGVCpu, HvX64RegisterRdi, pMsg->Rdi);
+        NEMWIN_ASSERT_MSG_REG_SEG(  pVCpu, HvX64RegisterDs,  pMsg->DsSegment);
+        NEMWIN_ASSERT_MSG_REG_SEG(  pVCpu, HvX64RegisterEs,  pMsg->EsSegment);
+        NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, HvX64RegisterRcx, pMsg->Rcx);
+        NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, HvX64RegisterRsi, pMsg->Rsi);
+        NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, HvX64RegisterRdi, pMsg->Rdi);
     }
 
     /*
@@ -2307,13 +2298,12 @@ nemHCWinHandleMessageIoPort(PVMCC pVM, PVMCPUCC pVCpu, HV_X64_IO_PORT_INTERCEPT_
             pVCpu->cpum.GstCtx.rdi = pMsg->Rdi;
             pVCpu->cpum.GstCtx.rsi = pMsg->Rsi;
 # ifdef IN_RING0
-            rcStrict = nemR0WinImportStateStrict(pGVCpu->pGVM, pGVCpu, pVCpu, NEM_WIN_CPUMCTX_EXTRN_MASK_FOR_IEM, "IOExit");
+            rcStrict = nemR0WinImportStateStrict(pVM, pVCpu, NEM_WIN_CPUMCTX_EXTRN_MASK_FOR_IEM, "IOExit");
             if (rcStrict != VINF_SUCCESS)
                 return rcStrict;
 # else
             int rc = nemHCWinCopyStateFromHyperV(pVM, pVCpu, NEM_WIN_CPUMCTX_EXTRN_MASK_FOR_IEM);
             AssertRCReturn(rc, rc);
-            RT_NOREF(pGVCpu);
 # endif
 
             Log4(("IOExit/%u: %04x:%08RX64/%s: %s%s %#x LB %u (emulating)\n",
@@ -2358,13 +2348,12 @@ nemHCWinHandleMessageIoPort(PVMCC pVM, PVMCPUCC pVCpu, HV_X64_IO_PORT_INTERCEPT_
     pVCpu->cpum.GstCtx.rax = pMsg->Rax;
 
 # ifdef IN_RING0
-    rcStrict = nemR0WinImportStateStrict(pGVCpu->pGVM, pGVCpu, pVCpu, NEM_WIN_CPUMCTX_EXTRN_MASK_FOR_IEM, "IOExit");
+    rcStrict = nemR0WinImportStateStrict(pVM, pVCpu, NEM_WIN_CPUMCTX_EXTRN_MASK_FOR_IEM, "IOExit");
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
 # else
     int rc = nemHCWinCopyStateFromHyperV(pVM, pVCpu, NEM_WIN_CPUMCTX_EXTRN_MASK_FOR_IEM);
     AssertRCReturn(rc, rc);
-    RT_NOREF(pGVCpu);
 # endif
 
     Log4(("IOExit/%u: %04x:%08RX64/%s: %s%s%s %#x LB %u -> EMHistoryExec\n",
@@ -2553,11 +2542,10 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemR3WinHandleExitIoPort(PVMCC pVM, PVMCPUCC pVCpu,
  * @param   pVM             The cross context VM structure.
  * @param   pVCpu           The cross context per CPU structure.
  * @param   pMsg            The message.
- * @param   pGVCpu          The global (ring-0) per CPU structure (NULL in r3).
  * @sa      nemR3WinHandleExitInterruptWindow
  */
 NEM_TMPL_STATIC VBOXSTRICTRC
-nemHCWinHandleMessageInterruptWindow(PVMCC pVM, PVMCPUCC pVCpu, HV_X64_INTERRUPT_WINDOW_MESSAGE const *pMsg, PGVMCPU pGVCpu)
+nemHCWinHandleMessageInterruptWindow(PVMCC pVM, PVMCPUCC pVCpu, HV_X64_INTERRUPT_WINDOW_MESSAGE const *pMsg)
 {
     /*
      * Assert message sanity.
@@ -2579,7 +2567,7 @@ nemHCWinHandleMessageInterruptWindow(PVMCC pVM, PVMCPUCC pVCpu, HV_X64_INTERRUPT
           pMsg->Type, RT_BOOL(pMsg->Header.Rflags & X86_EFL_IF), pMsg->Header.ExecutionState.InterruptShadow));
 
     /** @todo call nemHCWinHandleInterruptFF   */
-    RT_NOREF(pVM, pGVCpu);
+    RT_NOREF(pVM);
     return VINF_SUCCESS;
 }
 #elif defined(IN_RING3)
@@ -2628,21 +2616,19 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemR3WinHandleExitInterruptWindow(PVMCC pVM, PVMCPU
  * @param   pVM             The cross context VM structure.
  * @param   pVCpu           The cross context per CPU structure.
  * @param   pMsg            The message.
- * @param   pGVCpu          The global (ring-0) per CPU structure (NULL in r3).
  * @sa      nemR3WinHandleExitCpuId
  */
-NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinHandleMessageCpuId(PVMCC pVM, PVMCPUCC pVCpu, HV_X64_CPUID_INTERCEPT_MESSAGE const *pMsg,
-                                                        PGVMCPU pGVCpu)
+NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinHandleMessageCpuId(PVMCC pVM, PVMCPUCC pVCpu, HV_X64_CPUID_INTERCEPT_MESSAGE const *pMsg)
 {
     /* Check message register value sanity. */
-    NEMWIN_ASSERT_MSG_REG_SEG(  pVCpu, pGVCpu, HvX64RegisterCs, pMsg->Header.CsSegment);
-    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, pGVCpu, HvX64RegisterRip, pMsg->Header.Rip);
-    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, pGVCpu, HvX64RegisterRflags, pMsg->Header.Rflags);
-    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, pGVCpu, HvX64RegisterCr8, (uint64_t)pMsg->Header.Cr8);
-    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, pGVCpu, HvX64RegisterRax, pMsg->Rax);
-    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, pGVCpu, HvX64RegisterRcx, pMsg->Rcx);
-    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, pGVCpu, HvX64RegisterRdx, pMsg->Rdx);
-    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, pGVCpu, HvX64RegisterRbx, pMsg->Rbx);
+    NEMWIN_ASSERT_MSG_REG_SEG(  pVCpu, HvX64RegisterCs, pMsg->Header.CsSegment);
+    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, HvX64RegisterRip, pMsg->Header.Rip);
+    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, HvX64RegisterRflags, pMsg->Header.Rflags);
+    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, HvX64RegisterCr8, (uint64_t)pMsg->Header.Cr8);
+    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, HvX64RegisterRax, pMsg->Rax);
+    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, HvX64RegisterRcx, pMsg->Rcx);
+    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, HvX64RegisterRdx, pMsg->Rdx);
+    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, HvX64RegisterRbx, pMsg->Rbx);
 
     /* Do exit history. */
     PCEMEXITREC pExitRec = EMHistoryAddExit(pVCpu, EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM, EMEXITTYPE_CPUID),
@@ -2697,14 +2683,13 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinHandleMessageCpuId(PVMCC pVM, PVMCPUCC pVCp
           pMsg->Rax,                           pMsg->Rcx,              pMsg->Rdx,              pMsg->Rbx,
           pMsg->DefaultResultRax, pMsg->DefaultResultRcx, pMsg->DefaultResultRdx, pMsg->DefaultResultRbx));
 # ifdef IN_RING0
-    VBOXSTRICTRC rcStrict = nemR0WinImportStateStrict(pGVCpu->pGVM, pGVCpu, pVCpu, NEM_WIN_CPUMCTX_EXTRN_MASK_FOR_IEM, "CpuIdExit");
+    VBOXSTRICTRC rcStrict = nemR0WinImportStateStrict(pVM, pVCpu, NEM_WIN_CPUMCTX_EXTRN_MASK_FOR_IEM, "CpuIdExit");
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
     RT_NOREF(pVM);
 # else
     int rc = nemHCWinCopyStateFromHyperV(pVM, pVCpu, NEM_WIN_CPUMCTX_EXTRN_MASK_FOR_IEM);
     AssertRCReturn(rc, rc);
-    RT_NOREF(pGVCpu);
 # endif
     VBOXSTRICTRC rcStrictExec = EMHistoryExec(pVCpu, pExitRec, 0);
     Log4(("CpuIdExit/%u: %04x:%08RX64/%s: EMHistoryExec -> %Rrc + %04x:%08RX64\n",
@@ -2795,22 +2780,21 @@ nemR3WinHandleExitCpuId(PVMCC pVM, PVMCPUCC pVCpu, WHV_RUN_VP_EXIT_CONTEXT const
  * @returns Strict VBox status code.
  * @param   pVCpu           The cross context per CPU structure.
  * @param   pMsg            The message.
- * @param   pGVCpu          The global (ring-0) per CPU structure (NULL in r3).
  * @sa      nemR3WinHandleExitMsr
  */
-NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinHandleMessageMsr(PVMCPUCC pVCpu, HV_X64_MSR_INTERCEPT_MESSAGE const *pMsg, PGVMCPU pGVCpu)
+NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinHandleMessageMsr(PVMCPUCC pVCpu, HV_X64_MSR_INTERCEPT_MESSAGE const *pMsg)
 {
     /*
      * A wee bit of sanity first.
      */
     Assert(   pMsg->Header.InterceptAccessType == HV_INTERCEPT_ACCESS_READ
            || pMsg->Header.InterceptAccessType == HV_INTERCEPT_ACCESS_WRITE);
-    NEMWIN_ASSERT_MSG_REG_SEG(  pVCpu, pGVCpu, HvX64RegisterCs, pMsg->Header.CsSegment);
-    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, pGVCpu, HvX64RegisterRip, pMsg->Header.Rip);
-    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, pGVCpu, HvX64RegisterRflags, pMsg->Header.Rflags);
-    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, pGVCpu, HvX64RegisterCr8, (uint64_t)pMsg->Header.Cr8);
-    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, pGVCpu, HvX64RegisterRax, pMsg->Rax);
-    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, pGVCpu, HvX64RegisterRdx, pMsg->Rdx);
+    NEMWIN_ASSERT_MSG_REG_SEG(  pVCpu, HvX64RegisterCs, pMsg->Header.CsSegment);
+    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, HvX64RegisterRip, pMsg->Header.Rip);
+    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, HvX64RegisterRflags, pMsg->Header.Rflags);
+    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, HvX64RegisterCr8, (uint64_t)pMsg->Header.Cr8);
+    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, HvX64RegisterRax, pMsg->Rax);
+    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, HvX64RegisterRdx, pMsg->Rdx);
 
     /*
      * Check CPL as that's common to both RDMSR and WRMSR.
@@ -2829,7 +2813,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinHandleMessageMsr(PVMCPUCC pVCpu, HV_X64_MSR
                                                 pMsg->Header.Rip + pMsg->Header.CsSegment.Base, ASMReadTSC());
 
         nemHCWinCopyStateFromX64Header(pVCpu, &pMsg->Header);
-        rcStrict = nemHCWinImportStateIfNeededStrict(pVCpu, pGVCpu,
+        rcStrict = nemHCWinImportStateIfNeededStrict(pVCpu,
                                                      (!pExitRec ? 0 : IEM_CPUMCTX_EXTRN_MUST_MASK)
                                                      | CPUMCTX_EXTRN_ALL_MSRS | CPUMCTX_EXTRN_CR0
                                                      | CPUMCTX_EXTRN_CR3 | CPUMCTX_EXTRN_CR4,
@@ -2929,7 +2913,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinHandleMessageMsr(PVMCPUCC pVCpu, HV_X64_MSR
     /*
      * If we get down here, we're supposed to #GP(0).
      */
-    rcStrict = nemHCWinImportStateIfNeededStrict(pVCpu, pGVCpu, NEM_WIN_CPUMCTX_EXTRN_MASK_FOR_IEM | CPUMCTX_EXTRN_ALL_MSRS, "MSR");
+    rcStrict = nemHCWinImportStateIfNeededStrict(pVCpu, NEM_WIN_CPUMCTX_EXTRN_MASK_FOR_IEM | CPUMCTX_EXTRN_ALL_MSRS, "MSR");
     if (rcStrict == VINF_SUCCESS)
     {
         rcStrict = IEMInjectTrap(pVCpu, X86_XCPT_GP, TRPM_TRAP, 0, 0, 0);
@@ -2968,7 +2952,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemR3WinHandleExitMsr(PVMCC pVM, PVMCPUCC pVCpu, WH
                                                 : EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM, EMEXITTYPE_MSR_READ),
                                                 pExit->VpContext.Rip + pExit->VpContext.Cs.Base, ASMReadTSC());
         nemR3WinCopyStateFromX64Header(pVCpu, &pExit->VpContext);
-        rcStrict = nemHCWinImportStateIfNeededStrict(pVCpu, NULL,
+        rcStrict = nemHCWinImportStateIfNeededStrict(pVCpu,
                                                      (!pExitRec ? 0 : IEM_CPUMCTX_EXTRN_MUST_MASK)
                                                      | CPUMCTX_EXTRN_ALL_MSRS | CPUMCTX_EXTRN_CR0
                                                      | CPUMCTX_EXTRN_CR3 | CPUMCTX_EXTRN_CR4,
@@ -3055,8 +3039,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemR3WinHandleExitMsr(PVMCC pVM, PVMCPUCC pVCpu, WH
     /*
      * If we get down here, we're supposed to #GP(0).
      */
-    rcStrict = nemHCWinImportStateIfNeededStrict(pVCpu, NULL,
-                                                 NEM_WIN_CPUMCTX_EXTRN_MASK_FOR_IEM | CPUMCTX_EXTRN_ALL_MSRS, "MSR");
+    rcStrict = nemHCWinImportStateIfNeededStrict(pVCpu, NEM_WIN_CPUMCTX_EXTRN_MASK_FOR_IEM | CPUMCTX_EXTRN_ALL_MSRS, "MSR");
     if (rcStrict == VINF_SUCCESS)
     {
         rcStrict = IEMInjectTrap(pVCpu, X86_XCPT_GP, TRPM_TRAP, 0, 0, 0);
@@ -3194,11 +3177,10 @@ DECLINLINE(void) nemR3WinCopyStateFromExceptionMessage(PVMCPUCC pVCpu, WHV_RUN_V
  * @returns Strict VBox status code.
  * @param   pVCpu           The cross context per CPU structure.
  * @param   pMsg            The message.
- * @param   pGVCpu          The global (ring-0) per CPU structure (NULL in r3).
  * @sa      nemR3WinHandleExitMsr
  */
 NEM_TMPL_STATIC VBOXSTRICTRC
-nemHCWinHandleMessageException(PVMCPUCC pVCpu, HV_X64_EXCEPTION_INTERCEPT_MESSAGE const *pMsg, PGVMCPU pGVCpu)
+nemHCWinHandleMessageException(PVMCPUCC pVCpu, HV_X64_EXCEPTION_INTERCEPT_MESSAGE const *pMsg)
 {
     /*
      * Assert sanity.
@@ -3206,28 +3188,28 @@ nemHCWinHandleMessageException(PVMCPUCC pVCpu, HV_X64_EXCEPTION_INTERCEPT_MESSAG
     Assert(   pMsg->Header.InterceptAccessType == HV_INTERCEPT_ACCESS_READ
            || pMsg->Header.InterceptAccessType == HV_INTERCEPT_ACCESS_WRITE
            || pMsg->Header.InterceptAccessType == HV_INTERCEPT_ACCESS_EXECUTE);
-    NEMWIN_ASSERT_MSG_REG_SEG(  pVCpu, pGVCpu, HvX64RegisterCs, pMsg->Header.CsSegment);
-    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, pGVCpu, HvX64RegisterRip, pMsg->Header.Rip);
-    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, pGVCpu, HvX64RegisterRflags, pMsg->Header.Rflags);
-    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, pGVCpu, HvX64RegisterCr8, (uint64_t)pMsg->Header.Cr8);
-    NEMWIN_ASSERT_MSG_REG_SEG(  pVCpu, pGVCpu, HvX64RegisterDs,  pMsg->DsSegment);
-    NEMWIN_ASSERT_MSG_REG_SEG(  pVCpu, pGVCpu, HvX64RegisterSs,  pMsg->SsSegment);
-    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, pGVCpu, HvX64RegisterRax, pMsg->Rax);
-    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, pGVCpu, HvX64RegisterRcx, pMsg->Rcx);
-    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, pGVCpu, HvX64RegisterRdx, pMsg->Rdx);
-    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, pGVCpu, HvX64RegisterRbx, pMsg->Rbx);
-    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, pGVCpu, HvX64RegisterRsp, pMsg->Rsp);
-    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, pGVCpu, HvX64RegisterRbp, pMsg->Rbp);
-    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, pGVCpu, HvX64RegisterRsi, pMsg->Rsi);
-    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, pGVCpu, HvX64RegisterRdi, pMsg->Rdi);
-    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, pGVCpu, HvX64RegisterR8,  pMsg->R8);
-    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, pGVCpu, HvX64RegisterR9,  pMsg->R9);
-    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, pGVCpu, HvX64RegisterR10, pMsg->R10);
-    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, pGVCpu, HvX64RegisterR11, pMsg->R11);
-    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, pGVCpu, HvX64RegisterR12, pMsg->R12);
-    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, pGVCpu, HvX64RegisterR13, pMsg->R13);
-    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, pGVCpu, HvX64RegisterR14, pMsg->R14);
-    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, pGVCpu, HvX64RegisterR15, pMsg->R15);
+    NEMWIN_ASSERT_MSG_REG_SEG(  pVCpu, HvX64RegisterCs, pMsg->Header.CsSegment);
+    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, HvX64RegisterRip, pMsg->Header.Rip);
+    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, HvX64RegisterRflags, pMsg->Header.Rflags);
+    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, HvX64RegisterCr8, (uint64_t)pMsg->Header.Cr8);
+    NEMWIN_ASSERT_MSG_REG_SEG(  pVCpu, HvX64RegisterDs,  pMsg->DsSegment);
+    NEMWIN_ASSERT_MSG_REG_SEG(  pVCpu, HvX64RegisterSs,  pMsg->SsSegment);
+    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, HvX64RegisterRax, pMsg->Rax);
+    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, HvX64RegisterRcx, pMsg->Rcx);
+    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, HvX64RegisterRdx, pMsg->Rdx);
+    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, HvX64RegisterRbx, pMsg->Rbx);
+    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, HvX64RegisterRsp, pMsg->Rsp);
+    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, HvX64RegisterRbp, pMsg->Rbp);
+    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, HvX64RegisterRsi, pMsg->Rsi);
+    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, HvX64RegisterRdi, pMsg->Rdi);
+    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, HvX64RegisterR8,  pMsg->R8);
+    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, HvX64RegisterR9,  pMsg->R9);
+    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, HvX64RegisterR10, pMsg->R10);
+    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, HvX64RegisterR11, pMsg->R11);
+    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, HvX64RegisterR12, pMsg->R12);
+    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, HvX64RegisterR13, pMsg->R13);
+    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, HvX64RegisterR14, pMsg->R14);
+    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, HvX64RegisterR15, pMsg->R15);
 
     /*
      * Get most of the register state since we'll end up making IEM inject the
@@ -3242,7 +3224,7 @@ nemHCWinHandleMessageException(PVMCPUCC pVCpu, HV_X64_EXCEPTION_INTERCEPT_MESSAG
     uint64_t fWhat = NEM_WIN_CPUMCTX_EXTRN_MASK_FOR_IEM;
     if (pMsg->ExceptionVector == X86_XCPT_DB)
         fWhat |= CPUMCTX_EXTRN_DR0_DR3 | CPUMCTX_EXTRN_DR7 | CPUMCTX_EXTRN_DR6;
-    VBOXSTRICTRC rcStrict = nemHCWinImportStateIfNeededStrict(pVCpu, pGVCpu, fWhat, "Xcpt");
+    VBOXSTRICTRC rcStrict = nemHCWinImportStateIfNeededStrict(pVCpu, fWhat, "Xcpt");
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
 
@@ -3340,7 +3322,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemR3WinHandleExitException(PVMCC pVM, PVMCPUCC pVC
     uint64_t fWhat = NEM_WIN_CPUMCTX_EXTRN_MASK_FOR_IEM;
     if (pExit->VpException.ExceptionType == X86_XCPT_DB)
         fWhat |= CPUMCTX_EXTRN_DR0_DR3 | CPUMCTX_EXTRN_DR7 | CPUMCTX_EXTRN_DR6;
-    VBOXSTRICTRC rcStrict = nemHCWinImportStateIfNeededStrict(pVCpu, NULL, fWhat, "Xcpt");
+    VBOXSTRICTRC rcStrict = nemHCWinImportStateIfNeededStrict(pVCpu, fWhat, "Xcpt");
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
 
@@ -3430,17 +3412,16 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemR3WinHandleExitException(PVMCC pVM, PVMCPUCC pVC
  * @returns Strict VBox status code.
  * @param   pVCpu           The cross context per CPU structure.
  * @param   pMsgHdr         The message header.
- * @param   pGVCpu          The global (ring-0) per CPU structure (NULL in r3).
  * @sa      nemR3WinHandleExitUnrecoverableException
  */
 NEM_TMPL_STATIC VBOXSTRICTRC
-nemHCWinHandleMessageUnrecoverableException(PVMCPUCC pVCpu, HV_X64_INTERCEPT_MESSAGE_HEADER const *pMsgHdr, PGVMCPU pGVCpu)
+nemHCWinHandleMessageUnrecoverableException(PVMCPUCC pVCpu, HV_X64_INTERCEPT_MESSAGE_HEADER const *pMsgHdr)
 {
     /* Check message register value sanity. */
-    NEMWIN_ASSERT_MSG_REG_SEG(  pVCpu, pGVCpu, HvX64RegisterCs, pMsgHdr->CsSegment);
-    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, pGVCpu, HvX64RegisterRip, pMsgHdr->Rip);
-    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, pGVCpu, HvX64RegisterRflags, pMsgHdr->Rflags);
-    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, pGVCpu, HvX64RegisterCr8, (uint64_t)pMsgHdr->Cr8);
+    NEMWIN_ASSERT_MSG_REG_SEG(  pVCpu, HvX64RegisterCs, pMsgHdr->CsSegment);
+    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, HvX64RegisterRip, pMsgHdr->Rip);
+    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, HvX64RegisterRflags, pMsgHdr->Rflags);
+    NEMWIN_ASSERT_MSG_REG_VAL64(pVCpu, HvX64RegisterCr8, (uint64_t)pMsgHdr->Cr8);
 
 # if 0
     /*
@@ -3457,8 +3438,7 @@ nemHCWinHandleMessageUnrecoverableException(PVMCPUCC pVCpu, HV_X64_INTERCEPT_MES
     EMHistoryAddExit(pVCpu, EMEXIT_MAKE_FT(EMEXIT_F_KIND_NEM, NEMEXITTYPE_UNRECOVERABLE_EXCEPTION),
                      pMsgHdr->Rip + pMsgHdr->CsSegment.Base, ASMReadTSC());
     nemHCWinCopyStateFromX64Header(pVCpu, pMsgHdr);
-    VBOXSTRICTRC rcStrict = nemHCWinImportStateIfNeededStrict(pVCpu, pGVCpu,
-                                                              NEM_WIN_CPUMCTX_EXTRN_MASK_FOR_IEM | CPUMCTX_EXTRN_ALL, "TripleExit");
+    VBOXSTRICTRC rcStrict = nemHCWinImportStateIfNeededStrict(pVCpu, NEM_WIN_CPUMCTX_EXTRN_MASK_FOR_IEM | CPUMCTX_EXTRN_ALL, "TripleExit");
     if (rcStrict == VINF_SUCCESS)
     {
         rcStrict = IEMExecOne(pVCpu);
@@ -3510,8 +3490,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemR3WinHandleExitUnrecoverableException(PVMCC pVM,
     EMHistoryAddExit(pVCpu, EMEXIT_MAKE_FT(EMEXIT_F_KIND_NEM, NEMEXITTYPE_UNRECOVERABLE_EXCEPTION),
                      pExit->VpContext.Rip + pExit->VpContext.Cs.Base, ASMReadTSC());
     nemR3WinCopyStateFromX64Header(pVCpu, &pExit->VpContext);
-    VBOXSTRICTRC rcStrict = nemHCWinImportStateIfNeededStrict(pVCpu, NULL,
-                                                              NEM_WIN_CPUMCTX_EXTRN_MASK_FOR_IEM | CPUMCTX_EXTRN_ALL, "TripleExit");
+    VBOXSTRICTRC rcStrict = nemHCWinImportStateIfNeededStrict(pVCpu, NEM_WIN_CPUMCTX_EXTRN_MASK_FOR_IEM | CPUMCTX_EXTRN_ALL, "TripleExit");
     if (rcStrict == VINF_SUCCESS)
     {
         rcStrict = IEMExecOne(pVCpu);
@@ -3548,11 +3527,10 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemR3WinHandleExitUnrecoverableException(PVMCC pVM,
  * @param   pVM             The cross context VM structure.
  * @param   pVCpu           The cross context per CPU structure.
  * @param   pMappingHeader  The message slot mapping.
- * @param   pGVCpu          The global (ring-0) per CPU structure (NULL in r3).
  * @sa      nemR3WinHandleExit
  */
 NEM_TMPL_STATIC VBOXSTRICTRC
-nemHCWinHandleMessage(PVMCC pVM, PVMCPUCC pVCpu, VID_MESSAGE_MAPPING_HEADER volatile *pMappingHeader, PGVMCPU pGVCpu)
+nemHCWinHandleMessage(PVMCC pVM, PVMCPUCC pVCpu, VID_MESSAGE_MAPPING_HEADER volatile *pMappingHeader)
 {
     if (pMappingHeader->enmVidMsgType == VidMessageHypervisorMessage)
     {
@@ -3563,17 +3541,17 @@ nemHCWinHandleMessage(PVMCC pVM, PVMCPUCC pVCpu, VID_MESSAGE_MAPPING_HEADER vola
             case HvMessageTypeUnmappedGpa:
                 Assert(pMsg->Header.PayloadSize == RT_UOFFSETOF(HV_X64_MEMORY_INTERCEPT_MESSAGE, DsSegment));
                 STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitMemUnmapped);
-                return nemHCWinHandleMessageMemory(pVM, pVCpu, &pMsg->X64MemoryIntercept, pGVCpu);
+                return nemHCWinHandleMessageMemory(pVM, pVCpu, &pMsg->X64MemoryIntercept);
 
             case HvMessageTypeGpaIntercept:
                 Assert(pMsg->Header.PayloadSize == RT_UOFFSETOF(HV_X64_MEMORY_INTERCEPT_MESSAGE, DsSegment));
                 STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitMemIntercept);
-                return nemHCWinHandleMessageMemory(pVM, pVCpu, &pMsg->X64MemoryIntercept, pGVCpu);
+                return nemHCWinHandleMessageMemory(pVM, pVCpu, &pMsg->X64MemoryIntercept);
 
             case HvMessageTypeX64IoPortIntercept:
                 Assert(pMsg->Header.PayloadSize == sizeof(pMsg->X64IoPortIntercept));
                 STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitPortIo);
-                return nemHCWinHandleMessageIoPort(pVM, pVCpu, &pMsg->X64IoPortIntercept, pGVCpu);
+                return nemHCWinHandleMessageIoPort(pVM, pVCpu, &pMsg->X64IoPortIntercept);
 
             case HvMessageTypeX64Halt:
                 STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitHalt);
@@ -3585,27 +3563,27 @@ nemHCWinHandleMessage(PVMCC pVM, PVMCPUCC pVCpu, VID_MESSAGE_MAPPING_HEADER vola
             case HvMessageTypeX64InterruptWindow:
                 Assert(pMsg->Header.PayloadSize == sizeof(pMsg->X64InterruptWindow));
                 STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitInterruptWindow);
-                return nemHCWinHandleMessageInterruptWindow(pVM, pVCpu, &pMsg->X64InterruptWindow, pGVCpu);
+                return nemHCWinHandleMessageInterruptWindow(pVM, pVCpu, &pMsg->X64InterruptWindow);
 
             case HvMessageTypeX64CpuidIntercept:
                 Assert(pMsg->Header.PayloadSize == sizeof(pMsg->X64CpuIdIntercept));
                 STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitCpuId);
-                return nemHCWinHandleMessageCpuId(pVM, pVCpu, &pMsg->X64CpuIdIntercept, pGVCpu);
+                return nemHCWinHandleMessageCpuId(pVM, pVCpu, &pMsg->X64CpuIdIntercept);
 
             case HvMessageTypeX64MsrIntercept:
                 Assert(pMsg->Header.PayloadSize == sizeof(pMsg->X64MsrIntercept));
                 STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitMsr);
-                return nemHCWinHandleMessageMsr(pVCpu, &pMsg->X64MsrIntercept, pGVCpu);
+                return nemHCWinHandleMessageMsr(pVCpu, &pMsg->X64MsrIntercept);
 
             case HvMessageTypeX64ExceptionIntercept:
                 Assert(pMsg->Header.PayloadSize == sizeof(pMsg->X64ExceptionIntercept));
                 STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitException);
-                return nemHCWinHandleMessageException(pVCpu, &pMsg->X64ExceptionIntercept, pGVCpu);
+                return nemHCWinHandleMessageException(pVCpu, &pMsg->X64ExceptionIntercept);
 
             case HvMessageTypeUnrecoverableException:
                 Assert(pMsg->Header.PayloadSize == sizeof(pMsg->X64InterceptHeader));
                 STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitUnrecoverable);
-                return nemHCWinHandleMessageUnrecoverableException(pVCpu, &pMsg->X64InterceptHeader, pGVCpu);
+                return nemHCWinHandleMessageUnrecoverableException(pVCpu, &pMsg->X64InterceptHeader);
 
             case HvMessageTypeInvalidVpRegisterValue:
             case HvMessageTypeUnsupportedFeature:
@@ -3711,19 +3689,17 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemR3WinHandleExit(PVMCC pVM, PVMCPUCC pVCpu, WHV_R
  *
  * @returns NT status code.
  * @param   pGVM            The ring-0 VM structure.
- * @param   pGVCpu          The ring-0 CPU structure.
- * @param   pVCpu           The calling cross context CPU structure.
+ * @param   pGVCpu          The global (ring-0) per CPU structure.
  * @param   fFlags          The wait flags.
  * @param   cMillies        The timeout in milliseconds
  */
-static NTSTATUS nemR0NtPerformIoCtlMessageSlotHandleAndGetNext(PGVM pGVM, PGVMCPU pGVCpu, PVMCPUCC pVCpu,
-                                                               uint32_t fFlags, uint32_t cMillies)
+static NTSTATUS nemR0NtPerformIoCtlMessageSlotHandleAndGetNext(PGVM pGVM, PGVMCPU pGVCpu, uint32_t fFlags, uint32_t cMillies)
 {
-    pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext.iCpu     = pGVCpu->idCpu;
-    pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext.fFlags   = fFlags;
-    pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext.cMillies = cMillies;
-    NTSTATUS rcNt = nemR0NtPerformIoControl(pGVM, pVCpu, pGVM->nemr0.s.IoCtlMessageSlotHandleAndGetNext.uFunction,
-                                            &pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext,
+    pGVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext.iCpu     = pGVCpu->idCpu;
+    pGVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext.fFlags   = fFlags;
+    pGVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext.cMillies = cMillies;
+    NTSTATUS rcNt = nemR0NtPerformIoControl(pGVM, pGVCpu, pGVM->nemr0.s.IoCtlMessageSlotHandleAndGetNext.uFunction,
+                                            &pGVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext,
                                             pGVM->nemr0.s.IoCtlMessageSlotHandleAndGetNext.cbInput,
                                             NULL, 0);
     if (rcNt == STATUS_SUCCESS)
@@ -3739,22 +3715,21 @@ static NTSTATUS nemR0NtPerformIoCtlMessageSlotHandleAndGetNext(PGVM pGVM, PGVMCP
              || rcNt == STATUS_KERNEL_APC /* just in case */
              || rcNt == STATUS_USER_APC   /* just in case */)
     {
-        DBGFTRACE_CUSTOM(pVCpu->CTX_SUFF(pVM), "IoCtlMessageSlotHandleAndGetNextRestart/1 %#x (f=%#x)", rcNt, fFlags);
-        STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatStopCpuPendingAlerts);
+        DBGFTRACE_CUSTOM(pGVCpu->CTX_SUFF(pVM), "IoCtlMessageSlotHandleAndGetNextRestart/1 %#x (f=%#x)", rcNt, fFlags);
+        STAM_REL_COUNTER_INC(&pGVCpu->nem.s.StatStopCpuPendingAlerts);
         Assert(fFlags & VID_MSHAGN_F_GET_NEXT_MESSAGE);
 
-        pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext.iCpu     = pVCpu->idCpu;
-        pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext.fFlags   = fFlags & ~VID_MSHAGN_F_HANDLE_MESSAGE;
-        pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext.cMillies = cMillies;
-        rcNt = nemR0NtPerformIoControl(pGVM, pVCpu, pGVM->nemr0.s.IoCtlMessageSlotHandleAndGetNext.uFunction,
-                                       &pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext,
+        pGVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext.iCpu     = pGVCpu->idCpu;
+        pGVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext.fFlags   = fFlags & ~VID_MSHAGN_F_HANDLE_MESSAGE;
+        pGVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext.cMillies = cMillies;
+        rcNt = nemR0NtPerformIoControl(pGVM, pGVCpu, pGVM->nemr0.s.IoCtlMessageSlotHandleAndGetNext.uFunction,
+                                       &pGVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext,
                                        pGVM->nemr0.s.IoCtlMessageSlotHandleAndGetNext.cbInput,
                                        NULL, 0);
-        DBGFTRACE_CUSTOM(pVCpu->CTX_SUFF(pVM), "IoCtlMessageSlotHandleAndGetNextRestart/2 %#x", rcNt);
+        DBGFTRACE_CUSTOM(pGVM, "IoCtlMessageSlotHandleAndGetNextRestart/2 %#x", rcNt);
     }
     return rcNt;
 }
-
 #endif /* IN_RING0 */
 
 
@@ -3773,12 +3748,9 @@ static NTSTATUS nemR0NtPerformIoCtlMessageSlotHandleAndGetNext(PGVM pGVM, PGVMCP
  *                          since we won't need to stop the CPU if we took an
  *                          exit.
  * @param   pMappingHeader  The message slot mapping.
- * @param   pGVM            The global (ring-0) VM structure (NULL in r3).
- * @param   pGVCpu          The global (ring-0) per CPU structure (NULL in r3).
  */
 NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinStopCpu(PVMCC pVM, PVMCPUCC pVCpu, VBOXSTRICTRC rcStrict,
-                                             VID_MESSAGE_MAPPING_HEADER volatile *pMappingHeader,
-                                             PGVM pGVM, PGVMCPU pGVCpu)
+                                             VID_MESSAGE_MAPPING_HEADER volatile *pMappingHeader)
 {
 # ifdef DBGFTRACE_ENABLED
     HV_MESSAGE const volatile *pMsgForTrace = (HV_MESSAGE const volatile *)(pMappingHeader + 1);
@@ -3790,8 +3762,8 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinStopCpu(PVMCC pVM, PVMCPUCC pVCpu, VBOXSTRI
      */
     DBGFTRACE_CUSTOM(pVM, "nemStop#0");
 # ifdef IN_RING0
-    pVCpu->nem.s.uIoCtlBuf.idCpu = pGVCpu->idCpu;
-    NTSTATUS rcNt = nemR0NtPerformIoControl(pGVM, pVCpu, pGVM->nemr0.s.IoCtlStopVirtualProcessor.uFunction,
+    pVCpu->nem.s.uIoCtlBuf.idCpu = pVCpu->idCpu;
+    NTSTATUS rcNt = nemR0NtPerformIoControl(pVM, pVCpu, pVM->nemr0.s.IoCtlStopVirtualProcessor.uFunction,
                                             &pVCpu->nem.s.uIoCtlBuf.idCpu, sizeof(pVCpu->nem.s.uIoCtlBuf.idCpu),
                                             NULL, 0);
     if (NT_SUCCESS(rcNt))
@@ -3810,7 +3782,6 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinStopCpu(PVMCC pVM, PVMCPUCC pVCpu, VBOXSTRI
         STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatStopCpuSuccess);
         return rcStrict;
     }
-    RT_NOREF(pGVM, pGVCpu);
 # endif
 
     /*
@@ -3834,7 +3805,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinStopCpu(PVMCC pVM, PVMCPUCC pVCpu, VBOXSTRI
      * Note! We can safely ASSUME that rcStrict isn't an important information one.
      */
 # ifdef IN_RING0
-    rcNt = nemR0NtPerformIoCtlMessageSlotHandleAndGetNext(pGVM, pGVCpu, pVCpu, VID_MSHAGN_F_GET_NEXT_MESSAGE, 30000 /*ms*/);
+    rcNt = nemR0NtPerformIoCtlMessageSlotHandleAndGetNext(pVM, pVCpu, VID_MSHAGN_F_GET_NEXT_MESSAGE, 30000 /*ms*/);
     DBGFTRACE_CUSTOM(pVM, "nemStop#1: %#x / %#x %#x %#x", rcNt, pMappingHeader->enmVidMsgType, pMappingHeader->cbMessage,
                      pMsgForTrace->Header.MessageType);
     AssertLogRelMsgReturn(rcNt == STATUS_SUCCESS,
@@ -3852,7 +3823,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinStopCpu(PVMCC pVM, PVMCPUCC pVCpu, VBOXSTRI
     VID_MESSAGE_TYPE enmVidMsgType = pMappingHeader->enmVidMsgType;
     if (enmVidMsgType != VidMessageStopRequestComplete)
     {
-        VBOXSTRICTRC rcStrict2 = nemHCWinHandleMessage(pVM, pVCpu, pMappingHeader, pGVCpu);
+        VBOXSTRICTRC rcStrict2 = nemHCWinHandleMessage(pVM, pVCpu, pMappingHeader);
         if (rcStrict2 != VINF_SUCCESS && RT_SUCCESS(rcStrict))
             rcStrict = rcStrict2;
         DBGFTRACE_CUSTOM(pVM, "nemStop#1: handled %#x -> %d", pMsgForTrace->Header.MessageType, VBOXSTRICTRC_VAL(rcStrict));
@@ -3862,7 +3833,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinStopCpu(PVMCC pVM, PVMCPUCC pVCpu, VBOXSTRI
          * that as handled too.  CPU is back into fully stopped stated then.
          */
 # ifdef IN_RING0
-        rcNt = nemR0NtPerformIoCtlMessageSlotHandleAndGetNext(pGVM, pGVCpu, pVCpu,
+        rcNt = nemR0NtPerformIoCtlMessageSlotHandleAndGetNext(pVM, pVCpu,
                                                               VID_MSHAGN_F_HANDLE_MESSAGE | VID_MSHAGN_F_GET_NEXT_MESSAGE,
                                                               30000 /*ms*/);
         DBGFTRACE_CUSTOM(pVM, "nemStop#2: %#x / %#x %#x %#x", rcNt, pMappingHeader->enmVidMsgType, pMappingHeader->cbMessage,
@@ -3890,7 +3861,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinStopCpu(PVMCC pVM, PVMCPUCC pVCpu, VBOXSTRI
          * Mark the VidMessageStopRequestComplete message as handled.
          */
 # ifdef IN_RING0
-        rcNt = nemR0NtPerformIoCtlMessageSlotHandleAndGetNext(pGVM, pGVCpu, pVCpu, VID_MSHAGN_F_HANDLE_MESSAGE, 30000 /*ms*/);
+        rcNt = nemR0NtPerformIoCtlMessageSlotHandleAndGetNext(pVM, pVCpu, VID_MSHAGN_F_HANDLE_MESSAGE, 30000 /*ms*/);
         DBGFTRACE_CUSTOM(pVM, "nemStop#3: %#x / %#x %#x %#x", rcNt, pMappingHeader->enmVidMsgType,
                          pMsgForTrace->Header.MessageType, pMappingHeader->cbMessage, pMsgForTrace->Header.MessageType);
         AssertLogRelMsgReturn(rcNt == STATUS_SUCCESS,
@@ -3926,10 +3897,9 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinStopCpu(PVMCC pVM, PVMCPUCC pVCpu, VBOXSTRI
  * @returns VBox strict status code.
  * @param   pVM                 The cross context VM structure.
  * @param   pVCpu               The cross context per CPU structure.
- * @param   pGVCpu              The global (ring-0) per CPU structure.
  * @param   pfInterruptWindows  Where to return interrupt window flags.
  */
-NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinHandleInterruptFF(PVMCC pVM, PVMCPUCC pVCpu, PGVMCPU pGVCpu, uint8_t *pfInterruptWindows)
+NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinHandleInterruptFF(PVMCC pVM, PVMCPUCC pVCpu, uint8_t *pfInterruptWindows)
 {
     Assert(!TRPMHasTrap(pVCpu));
     RT_NOREF_PV(pVM);
@@ -3960,8 +3930,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinHandleInterruptFF(PVMCC pVM, PVMCPUCC pVCpu
                            | (fPendingNmi ? CPUMCTX_EXTRN_NEM_WIN_INHIBIT_NMI : 0);
     if (pVCpu->cpum.GstCtx.fExtrn & fNeedExtrn)
     {
-        VBOXSTRICTRC rcStrict = nemHCWinImportStateIfNeededStrict(pVCpu, pGVCpu,
-                                                                  NEM_WIN_CPUMCTX_EXTRN_MASK_FOR_IEM_XCPT, "IntFF");
+        VBOXSTRICTRC rcStrict = nemHCWinImportStateIfNeededStrict(pVCpu, NEM_WIN_CPUMCTX_EXTRN_MASK_FOR_IEM_XCPT, "IntFF");
         if (rcStrict != VINF_SUCCESS)
             return rcStrict;
     }
@@ -3976,8 +3945,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinHandleInterruptFF(PVMCC pVM, PVMCPUCC pVCpu
         if (   !fInhibitInterrupts
             && !VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_BLOCK_NMIS))
         {
-            VBOXSTRICTRC rcStrict = nemHCWinImportStateIfNeededStrict(pVCpu, pGVCpu,
-                                                                      NEM_WIN_CPUMCTX_EXTRN_MASK_FOR_IEM_XCPT, "NMI");
+            VBOXSTRICTRC rcStrict = nemHCWinImportStateIfNeededStrict(pVCpu, NEM_WIN_CPUMCTX_EXTRN_MASK_FOR_IEM_XCPT, "NMI");
             if (rcStrict == VINF_SUCCESS)
             {
                 VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_NMI);
@@ -3999,8 +3967,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinHandleInterruptFF(PVMCC pVM, PVMCPUCC pVCpu
             && pVCpu->cpum.GstCtx.rflags.Bits.u1IF)
         {
             AssertCompile(NEM_WIN_CPUMCTX_EXTRN_MASK_FOR_IEM_XCPT & CPUMCTX_EXTRN_APIC_TPR);
-            VBOXSTRICTRC rcStrict = nemHCWinImportStateIfNeededStrict(pVCpu, pGVCpu,
-                                                                      NEM_WIN_CPUMCTX_EXTRN_MASK_FOR_IEM_XCPT, "NMI");
+            VBOXSTRICTRC rcStrict = nemHCWinImportStateIfNeededStrict(pVCpu, NEM_WIN_CPUMCTX_EXTRN_MASK_FOR_IEM_XCPT, "NMI");
             if (rcStrict == VINF_SUCCESS)
             {
                 uint8_t bInterrupt;
@@ -4034,18 +4001,13 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinHandleInterruptFF(PVMCC pVM, PVMCPUCC pVCpu
  * @returns Strict VBox status code.
  * @param   pVM             The cross context VM structure.
  * @param   pVCpu           The cross context per CPU structure.
- * @param   pGVM            The ring-0 VM structure (NULL in ring-3).
- * @param   pGVCpu          The ring-0 per CPU structure (NULL in ring-3).
  */
-NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinRunGC(PVMCC pVM, PVMCPUCC pVCpu, PGVM pGVM, PGVMCPU pGVCpu)
+NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinRunGC(PVMCC pVM, PVMCPUCC pVCpu)
 {
     LogFlow(("NEM/%u: %04x:%08RX64 efl=%#08RX64 <=\n", pVCpu->idCpu, pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, pVCpu->cpum.GstCtx.rflags));
 # ifdef LOG_ENABLED
     if (LogIs3Enabled())
         nemHCWinLogState(pVM, pVCpu);
-# endif
-# ifdef IN_RING0
-    Assert(pVCpu->idCpu == pGVCpu->idCpu);
 # endif
 
     /*
@@ -4101,7 +4063,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinRunGC(PVMCC pVM, PVMCPUCC pVCpu, PGVM pGVM,
             if (pVCpu->nem.s.fHandleAndGetFlags == VID_MSHAGN_F_GET_NEXT_MESSAGE)
             {
                 pVCpu->nem.s.fHandleAndGetFlags = 0;
-                rcStrict = nemHCWinStopCpu(pVM, pVCpu, rcStrict, pMappingHeader, pGVM, pGVCpu);
+                rcStrict = nemHCWinStopCpu(pVM, pVCpu, rcStrict, pMappingHeader);
                 if (rcStrict == VINF_SUCCESS)
                 { /* likely */ }
                 else
@@ -4114,7 +4076,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinRunGC(PVMCC pVM, PVMCPUCC pVCpu, PGVM pGVM,
 # endif
 
             /* Try inject interrupt. */
-            rcStrict = nemHCWinHandleInterruptFF(pVM, pVCpu, pGVCpu, &pVCpu->nem.s.fDesiredInterruptWindows);
+            rcStrict = nemHCWinHandleInterruptFF(pVM, pVCpu, &pVCpu->nem.s.fDesiredInterruptWindows);
             if (rcStrict == VINF_SUCCESS)
             { /* likely */ }
             else
@@ -4147,10 +4109,9 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinRunGC(PVMCC pVM, PVMCPUCC pVCpu, PGVM pGVM,
                        pVCpu->nem.s.fDesiredInterruptWindows, pVCpu->nem.s.fCurrentInterruptWindows, pVCpu->nem.s.fDesiredInterruptWindows));
 # endif
 # ifdef IN_RING0
-            int rc2 = nemR0WinExportState(pGVM, pGVCpu, &pVCpu->cpum.GstCtx);
+            int rc2 = nemR0WinExportState(pVM, pVCpu, &pVCpu->cpum.GstCtx);
 # else
             int rc2 = nemHCWinCopyStateToHyperV(pVM, pVCpu);
-            RT_NOREF(pGVM, pGVCpu);
 # endif
             AssertRCReturn(rc2, rc2);
         }
@@ -4175,12 +4136,12 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinRunGC(PVMCC pVM, PVMCPUCC pVCpu, PGVM pGVM,
             else
             {
 #  ifdef IN_RING0
-                pVCpu->nem.s.uIoCtlBuf.idCpu = pGVCpu->idCpu;
-                NTSTATUS rcNt = nemR0NtPerformIoControl(pGVM, pVCpu, pGVM->nemr0.s.IoCtlStartVirtualProcessor.uFunction,
+                pVCpu->nem.s.uIoCtlBuf.idCpu = pVCpu->idCpu;
+                NTSTATUS rcNt = nemR0NtPerformIoControl(pVM, pVCpu, pVM->nemr0.s.IoCtlStartVirtualProcessor.uFunction,
                                                         &pVCpu->nem.s.uIoCtlBuf.idCpu, sizeof(pVCpu->nem.s.uIoCtlBuf.idCpu),
                                                         NULL, 0);
                 LogFlow(("NEM/%u: IoCtlStartVirtualProcessor -> %#x\n", pVCpu->idCpu, rcNt));
-                AssertLogRelMsgReturn(NT_SUCCESS(rcNt), ("VidStartVirtualProcessor failed for CPU #%u: %#x\n", pGVCpu->idCpu, rcNt),
+                AssertLogRelMsgReturn(NT_SUCCESS(rcNt), ("VidStartVirtualProcessor failed for CPU #%u: %#x\n", pVCpu->idCpu, rcNt),
                                       VERR_NEM_IPE_5);
 #  else
                 AssertLogRelMsgReturn(g_pfnVidStartVirtualProcessor(pVM->nem.s.hPartitionDevice, pVCpu->idCpu),
@@ -4210,12 +4171,12 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinRunGC(PVMCC pVM, PVMCPUCC pVCpu, PGVM pGVM,
                 else
                     cMsWait = RT_MS_1SEC;
 #  ifdef IN_RING0
-                pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext.iCpu     = pGVCpu->idCpu;
+                pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext.iCpu     = pVCpu->idCpu;
                 pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext.fFlags   = pVCpu->nem.s.fHandleAndGetFlags;
                 pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext.cMillies = cMsWait;
-                NTSTATUS rcNt = nemR0NtPerformIoControl(pGVM, pVCpu, pGVM->nemr0.s.IoCtlMessageSlotHandleAndGetNext.uFunction,
+                NTSTATUS rcNt = nemR0NtPerformIoControl(pVM, pVCpu, pVM->nemr0.s.IoCtlMessageSlotHandleAndGetNext.uFunction,
                                                         &pVCpu->nem.s.uIoCtlBuf.MsgSlotHandleAndGetNext,
-                                                        pGVM->nemr0.s.IoCtlMessageSlotHandleAndGetNext.cbInput,
+                                                        pVM->nemr0.s.IoCtlMessageSlotHandleAndGetNext.cbInput,
                                                         NULL, 0);
                 VMCPU_CMPXCHG_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC_NEM, VMCPUSTATE_STARTED_EXEC_NEM_WAIT);
                 if (rcNt == STATUS_SUCCESS)
@@ -4237,7 +4198,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinRunGC(PVMCC pVM, PVMCPUCC pVCpu, PGVM pGVM,
                      * Deal with the message.
                      */
 # ifdef NEM_WIN_TEMPLATE_MODE_OWN_RUN_API
-                    rcStrict = nemHCWinHandleMessage(pVM, pVCpu, pMappingHeader, pGVCpu);
+                    rcStrict = nemHCWinHandleMessage(pVM, pVCpu, pMappingHeader);
                     pVCpu->nem.s.fHandleAndGetFlags |= VID_MSHAGN_F_HANDLE_MESSAGE;
 # else
                     rcStrict = nemR3WinHandleExit(pVM, pVCpu, &ExitReason);
@@ -4314,7 +4275,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinRunGC(PVMCC pVM, PVMCPUCC pVCpu, PGVM pGVM,
     if (pVCpu->nem.s.fHandleAndGetFlags == VID_MSHAGN_F_GET_NEXT_MESSAGE)
     {
         pVCpu->nem.s.fHandleAndGetFlags = 0;
-        rcStrict = nemHCWinStopCpu(pVM, pVCpu, rcStrict, pMappingHeader, pGVM, pGVCpu);
+        rcStrict = nemHCWinStopCpu(pVM, pVCpu, rcStrict, pMappingHeader);
     }
 # endif
 
@@ -4342,7 +4303,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinRunGC(PVMCC pVM, PVMCPUCC pVCpu, PGVM pGVM,
         if (pVCpu->cpum.GstCtx.fExtrn & fImport)
         {
 # ifdef IN_RING0
-            int rc2 = nemR0WinImportState(pGVM, pGVCpu, &pVCpu->cpum.GstCtx, fImport | CPUMCTX_EXTRN_NEM_WIN_EVENT_INJECT,
+            int rc2 = nemR0WinImportState(pVM, pVCpu, &pVCpu->cpum.GstCtx, fImport | CPUMCTX_EXTRN_NEM_WIN_EVENT_INJECT,
                                           true /*fCanUpdateCr3*/);
             if (RT_SUCCESS(rc2))
                 pVCpu->cpum.GstCtx.fExtrn &= ~fImport;
