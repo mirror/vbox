@@ -86,15 +86,9 @@ private:
     QList<QTableWidgetItem*> m_tableItems;
    /** @name Cached translated string.
       * @{ */
-        QString m_strError;
-
-        /** General section. */
         QString m_strGeneralTitle;
-        QString m_strGeneralName;
-        QString m_strGeneralOSType;
-        /** System section. */
         QString m_strSystemTitle;
-
+        QString m_strDisplayTitle;
     /** @} */
 
 };

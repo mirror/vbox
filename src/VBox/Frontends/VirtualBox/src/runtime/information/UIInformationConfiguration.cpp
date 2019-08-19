@@ -65,10 +65,8 @@ UIInformationConfiguration::~UIInformationConfiguration()
 void UIInformationConfiguration::retranslateUi()
 {
     m_strGeneralTitle = QApplication::translate("UIVMInformationDialog", "General");
-    m_strGeneralName = QApplication::translate("UIVMInformationDialog", "Name");
-    m_strGeneralOSType = QApplication::translate("UIVMInformationDialog", "Operating System");
     m_strSystemTitle = QApplication::translate("UIVMInformationDialog", "System");
-    m_strError = QApplication::translate("UIVMInformationDialog", "Not Detected");
+    m_strDisplayTitle = QApplication::translate("UIVMInformationDialog", "Display");
 }
 
 void UIInformationConfiguration::prepareModel()
@@ -189,7 +187,7 @@ void UIInformationConfiguration::prepareObjects()
     {
         /* Configure the table by hiding the headers etc.: */
         m_pTableWidget->setRowCount(20);
-        m_pTableWidget->setColumnCount(3);
+        m_pTableWidget->setColumnCount(iColumCount);
         m_pTableWidget->verticalHeader()->hide();
         m_pTableWidget->horizontalHeader()->hide();
         //m_pTableWidget->setShowGrid(false);
@@ -230,6 +228,7 @@ void UIInformationConfiguration::createTableItems()
         insertInfoRow(iTableRow++, line.string1(), textDocument.toPlainText(), fontMetrics, iMaxColumn1Length);
     }
 
+    // insertTitleRow(iTableRow++, m_strSystemTitle, UIIconPool::iconSet(":/vrdp_16px.png"));
 
 
     m_pTableWidget->resizeColumnToContents(0);
