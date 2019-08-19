@@ -26,38 +26,59 @@
 
 /* COM includes: */
 #include "COMEnums.h"
+#include "CGuest.h"
+
 #include "CMachine.h"
 #include "CConsole.h"
+
+/* GUI includes: */
+#include "QIWithRetranslateUI.h"
 
 /* Forward declarations: */
 class QVBoxLayout;
 class UIInformationView;
 class UIInformationModel;
-
+class QTableWidget;
+class QTableWidgetItem;
+class UIInformationTableRow;
 
 /** QWidget extension
   * providing GUI with configuration-information tab in session-information window. */
-class UIInformationConfiguration : public QWidget
+class UIInformationConfiguration : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
 
 public:
 
+    enum TableRow
+    {
+        TableRow_General_Title = 0,
+        TableRow_General_Name,
+        TableRow_General_OSType,
+        TableRow_System_Title,
+        TableRow_Max
+    };
+
     /** Constructs information-tab passing @a pParent to the QWidget base-class constructor.
       * @param machine is machine reference.
       * @param console is machine console reference. */
     UIInformationConfiguration(QWidget *pParent, const CMachine &machine, const CConsole &console);
+    ~UIInformationConfiguration();
+
+protected:
+
+    void retranslateUi() /* override */;
 
 private:
-
-    /** Prepares layout. */
-    void prepareLayout();
-
     /** Prepares model. */
     void prepareModel();
+    void prepareObjects();
+    void createTableItems();
 
-    /** Prepares view. */
-    void prepareView();
+    void updateTable();
+    void insertTitleRow(TableRow enmRow, const QString &strTitle, const QIcon &icon);
+    void insertInfoRow(TableRow enmRow, const QString &strColumn1, const QString &strColumn2,
+                       QFontMetrics &fontMetrics, int &iMaxColumn1Length);
 
     /** Holds the machine instance. */
     CMachine m_machine;
@@ -69,7 +90,22 @@ private:
     UIInformationModel *m_pModel;
     /** Holds the instance of view we create. */
     UIInformationView *m_pView;
+    QTableWidget *m_pTableWidget;
+    QMap<TableRow, UIInformationTableRow*> m_rows;
+
+   /** @name Cached translated string.
+      * @{ */
+        QString m_strError;
+
+        /** General section. */
+        QString m_strGeneralTitle;
+        QString m_strGeneralName;
+        QString m_strGeneralOSType;
+        /** System section. */
+        QString m_strSystemTitle;
+
+    /** @} */
+
 };
 
 #endif /* !FEQT_INCLUDED_SRC_runtime_information_UIInformationConfiguration_h */
-

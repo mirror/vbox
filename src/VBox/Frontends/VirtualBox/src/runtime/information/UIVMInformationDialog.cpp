@@ -270,7 +270,7 @@ void UIVMInformationDialog::prepareTabWidget()
         }
 
         /* Set Runtime Information tab as default: */
-        m_pTabWidget->setCurrentIndex(1);
+        m_pTabWidget->setCurrentIndex(0);
 
         /* Assign tab-widget page change handler: */
         connect(m_pTabWidget, &QITabWidget::currentChanged, this, &UIVMInformationDialog::sltHandlePageChanged);

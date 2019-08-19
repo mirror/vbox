@@ -138,7 +138,7 @@ private:
         QString m_strNetMetricName;
     /** @} */
 
-    /** @name These metric names are used for map keys to identify metrics.
+    /** @name Cached translated string.
       * @{ */
         /** CPU info label strings. */
         QString m_strCPUInfoLabelTitle;
