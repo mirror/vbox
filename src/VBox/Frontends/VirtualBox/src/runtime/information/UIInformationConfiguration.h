@@ -65,7 +65,6 @@ private:
     void prepareObjects();
     void createTableItems();
 
-    void updateTable();
     void insertTitleRow(const QString &strTitle, const QIcon &icon, const QFontMetrics &fontMetrics);
     void insertInfoRows(const UITextTable &table, const QFontMetrics &fontMetrics,
                         QTextDocument &textDocument, int &iMaxColumn1Length);
