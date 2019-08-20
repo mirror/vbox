@@ -89,10 +89,6 @@ void UIInformationConfiguration::prepareObjects()
     }
 }
 
-void UIInformationConfiguration::updateTable()
-{
-}
-
 void UIInformationConfiguration::createTableItems()
 {
     if (!m_pTableWidget)
