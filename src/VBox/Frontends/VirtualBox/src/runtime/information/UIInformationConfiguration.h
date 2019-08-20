@@ -33,6 +33,7 @@
 
 /* GUI includes: */
 #include "QIWithRetranslateUI.h"
+#include "UITextTable.h"
 
 /* Forward declarations: */
 class QVBoxLayout;
@@ -40,7 +41,8 @@ class UIInformationView;
 class UIInformationModel;
 class QTableWidget;
 class QTableWidgetItem;
-class UITextTableLine;
+class QTextDocument;
+
 
 /** QWidget extension
   * providing GUI with configuration-information tab in session-information window. */
@@ -67,9 +69,11 @@ private:
     void createTableItems();
 
     void updateTable();
-    void insertTitleRow(int iRow, const QString &strTitle, const QIcon &icon);
+    void insertTitleRow(int iRow, const QString &strTitle, const QIcon &icon, const QFontMetrics &fontMetrics);
+    void insertInfoRows(const UITextTable &table, const QFontMetrics &fontMetrics,
+                        QTextDocument &textDocument, int &iRow, int &iMaxColumn1Length);
     void insertInfoRow(int iRow, const QString strText1, const QString &strText2,
-                       QFontMetrics &fontMetrics, int &iMaxColumn1Length);
+                       const QFontMetrics &fontMetrics, int &iMaxColumn1Length);
 
     /** Holds the machine instance. */
     CMachine m_machine;
@@ -89,8 +93,18 @@ private:
         QString m_strGeneralTitle;
         QString m_strSystemTitle;
         QString m_strDisplayTitle;
+        QString m_strStorageTitle;
+        QString m_strAudioTitle;
+        QString m_strNetworkTitle;
+        QString m_strSerialPortsTitle;
+        QString m_strUSBTitle;
+        QString m_strSharedFoldersTitle;
     /** @} */
-
+    const int m_iColumCount;
+    const int m_iRowLeftMargin;
+    const int m_iRowTopMargin;
+    const int m_iRowRightMargin;
+    const int m_iRowBottomMargin;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_runtime_information_UIInformationConfiguration_h */

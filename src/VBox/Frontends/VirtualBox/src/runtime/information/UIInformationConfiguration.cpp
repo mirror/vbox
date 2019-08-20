@@ -36,8 +36,6 @@
 #include "UIInformationModel.h"
 
 
-const unsigned iColumCount = 3;
-
 UIInformationConfiguration::UIInformationConfiguration(QWidget *pParent, const CMachine &machine, const CConsole &console)
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_machine(machine)
@@ -46,6 +44,11 @@ UIInformationConfiguration::UIInformationConfiguration(QWidget *pParent, const C
     , m_pModel(0)
     , m_pView(0)
     , m_pTableWidget(0)
+    , m_iColumCount(3)
+    , m_iRowLeftMargin(0.2 * qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin))
+    , m_iRowTopMargin(0.2 * qApp->style()->pixelMetric(QStyle::PM_LayoutTopMargin))
+    , m_iRowRightMargin(0.2 * qApp->style()->pixelMetric(QStyle::PM_LayoutRightMargin))
+    , m_iRowBottomMargin(0.2 * qApp->style()->pixelMetric(QStyle::PM_LayoutBottomMargin))
 {
     /* Prepare model: */
     prepareModel();
@@ -67,6 +70,12 @@ void UIInformationConfiguration::retranslateUi()
     m_strGeneralTitle = QApplication::translate("UIVMInformationDialog", "General");
     m_strSystemTitle = QApplication::translate("UIVMInformationDialog", "System");
     m_strDisplayTitle = QApplication::translate("UIVMInformationDialog", "Display");
+    m_strStorageTitle = QApplication::translate("UIVMInformationDialog", "Storage");
+    m_strAudioTitle = QApplication::translate("UIVMInformationDialog", "Audio");
+    m_strNetworkTitle = QApplication::translate("UIVMInformationDialog", "Network");
+    m_strSerialPortsTitle = QApplication::translate("UIVMInformationDialog", "Serial Ports");
+    m_strUSBTitle = QApplication::translate("UIVMInformationDialog", "USB");
+    m_strSharedFoldersTitle = QApplication::translate("UIVMInformationDialog", "Shared Folders");
 }
 
 void UIInformationConfiguration::prepareModel()
@@ -186,11 +195,10 @@ void UIInformationConfiguration::prepareObjects()
     if (m_pTableWidget)
     {
         /* Configure the table by hiding the headers etc.: */
-        m_pTableWidget->setRowCount(20);
-        m_pTableWidget->setColumnCount(iColumCount);
+        m_pTableWidget->setColumnCount(m_iColumCount);
         m_pTableWidget->verticalHeader()->hide();
         m_pTableWidget->horizontalHeader()->hide();
-        //m_pTableWidget->setShowGrid(false);
+        m_pTableWidget->setShowGrid(false);
         m_pMainLayout->addWidget(m_pTableWidget);
         m_pTableWidget->hide();
     }
@@ -210,35 +218,82 @@ void UIInformationConfiguration::createTableItems()
     int iMaxColumn1Length = 0;
     int iTableRow = 0;
 
-    insertTitleRow(iTableRow++, m_strGeneralTitle, UIIconPool::iconSet(":/machine_16px.png"));
-    UITextTable generalTextTable = UIDetailsGenerator::generateMachineInformationGeneral(m_machine,
-                                                                                         UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral_Default);
-    foreach (const UITextTableLine &line, generalTextTable)
-    {
-        textDocument.setHtml(line.string2());
-        insertInfoRow(iTableRow++, line.string1(), textDocument.toPlainText(), fontMetrics, iMaxColumn1Length);
-    }
+    /* General section: */
+    insertTitleRow(iTableRow++, m_strGeneralTitle, UIIconPool::iconSet(":/machine_16px.png"), fontMetrics);
+    insertInfoRows(UIDetailsGenerator::generateMachineInformationGeneral(m_machine,
+                                                                         UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral_Default),
+                   fontMetrics, textDocument, iTableRow, iMaxColumn1Length);
 
-    insertTitleRow(iTableRow++, m_strSystemTitle, UIIconPool::iconSet(":/chipset_16px.png"));
-    UITextTable systemTextTable = UIDetailsGenerator::generateMachineInformationSystem(m_machine,
-                                                                                       UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_Default);
-    foreach (const UITextTableLine &line, systemTextTable)
-    {
-        textDocument.setHtml(line.string2());
-        insertInfoRow(iTableRow++, line.string1(), textDocument.toPlainText(), fontMetrics, iMaxColumn1Length);
-    }
+    /* System section: */
+    insertTitleRow(iTableRow++, m_strSystemTitle, UIIconPool::iconSet(":/chipset_16px.png"), fontMetrics);
+    insertInfoRows(UIDetailsGenerator::generateMachineInformationSystem(m_machine,
+                                                                         UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_Default),
+                   fontMetrics, textDocument, iTableRow, iMaxColumn1Length);
 
-    // insertTitleRow(iTableRow++, m_strSystemTitle, UIIconPool::iconSet(":/vrdp_16px.png"));
+    /* Display section: */
+    insertTitleRow(iTableRow++, m_strDisplayTitle, UIIconPool::iconSet(":/vrdp_16px.png"), fontMetrics);
+    insertInfoRows(UIDetailsGenerator::generateMachineInformationDisplay(m_machine,
+                                                                         UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_Default),
+                   fontMetrics, textDocument, iTableRow, iMaxColumn1Length);
 
+    /* Storage section: */
+    insertTitleRow(iTableRow++, m_strStorageTitle, UIIconPool::iconSet(":/hd_16px.png"), fontMetrics);
+    insertInfoRows(UIDetailsGenerator::generateMachineInformationStorage(m_machine,
+                                                                         UIExtraDataMetaDefs::DetailsElementOptionTypeStorage_Default),
+                   fontMetrics, textDocument, iTableRow, iMaxColumn1Length);
+
+    /* Audio section: */
+    insertTitleRow(iTableRow++, m_strAudioTitle, UIIconPool::iconSet(":/sound_16px.png"), fontMetrics);
+    insertInfoRows(UIDetailsGenerator::generateMachineInformationAudio(m_machine,
+                                                                         UIExtraDataMetaDefs::DetailsElementOptionTypeAudio_Default),
+                   fontMetrics, textDocument, iTableRow, iMaxColumn1Length);
+
+    /* Network section: */
+    insertTitleRow(iTableRow++, m_strNetworkTitle, UIIconPool::iconSet(":/nw_16px.png"), fontMetrics);
+    insertInfoRows(UIDetailsGenerator::generateMachineInformationNetwork(m_machine,
+                                                                         UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_Default),
+                   fontMetrics, textDocument, iTableRow, iMaxColumn1Length);
+
+    /* Serial port section: */
+    insertTitleRow(iTableRow++, m_strSerialPortsTitle, UIIconPool::iconSet(":/serial_port_16px.png"), fontMetrics);
+    insertInfoRows(UIDetailsGenerator::generateMachineInformationSerial(m_machine,
+                                                                        UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_Default),
+                   fontMetrics, textDocument, iTableRow, iMaxColumn1Length);
+
+    /* USB section: */
+    insertTitleRow(iTableRow++, m_strUSBTitle, UIIconPool::iconSet(":/usb_16px.png"), fontMetrics);
+    insertInfoRows(UIDetailsGenerator::generateMachineInformationUSB(m_machine,
+                                                                        UIExtraDataMetaDefs::DetailsElementOptionTypeUsb_Default),
+                   fontMetrics, textDocument, iTableRow, iMaxColumn1Length);
+
+    /* Share folders section: */
+    insertTitleRow(iTableRow++, m_strSharedFoldersTitle, UIIconPool::iconSet(":/sf_16px.png"), fontMetrics);
+    insertInfoRows(UIDetailsGenerator::generateMachineInformationSharedFolders(m_machine,
+                                                                               UIExtraDataMetaDefs::DetailsElementOptionTypeSharedFolders_Default),
+                   fontMetrics, textDocument, iTableRow, iMaxColumn1Length);
 
     m_pTableWidget->resizeColumnToContents(0);
     m_pTableWidget->setColumnWidth(1, 1.5 * iMaxColumn1Length);
     m_pTableWidget->resizeColumnToContents(2);
-
 }
 
-void UIInformationConfiguration::insertTitleRow(int iRow, const QString &strTitle, const QIcon &icon)
+void UIInformationConfiguration::insertInfoRows(const UITextTable &table, const QFontMetrics &fontMetrics,
+                                                QTextDocument &textDocument, int &iRow, int &iMaxColumn1Length)
 {
+    foreach (const UITextTableLine &line, table)
+    {
+        textDocument.setHtml(line.string2());
+        insertInfoRow(iRow++, line.string1(), textDocument.toPlainText(), fontMetrics, iMaxColumn1Length);
+    }
+}
+
+void UIInformationConfiguration::insertTitleRow(int iRow, const QString &strTitle, const QIcon &icon, const QFontMetrics &fontMetrics)
+{
+    m_pTableWidget->insertRow(m_pTableWidget->rowCount());
+    QSize iconSize;
+    icon.actualSize(iconSize);
+    m_pTableWidget->setRowHeight(m_pTableWidget->rowCount() -1,
+                                 qMax(fontMetrics.height() + m_iRowTopMargin + m_iRowBottomMargin, iconSize.height()));
     QTableWidgetItem *pIconItem = new QTableWidgetItem(icon, "");
     m_pTableWidget->setItem(iRow, 0, pIconItem);
     QTableWidgetItem *pTitleItem = new QTableWidgetItem(strTitle);
@@ -251,8 +306,10 @@ void UIInformationConfiguration::insertTitleRow(int iRow, const QString &strTitl
 }
 
 void UIInformationConfiguration::insertInfoRow(int iRow, const QString strText1, const QString &strText2,
-                                               QFontMetrics &fontMetrics, int &iMaxColumn1Length)
+                                               const QFontMetrics &fontMetrics, int &iMaxColumn1Length)
 {
+    m_pTableWidget->insertRow(m_pTableWidget->rowCount());
+    m_pTableWidget->setRowHeight(m_pTableWidget->rowCount() -1, fontMetrics.height() + m_iRowTopMargin + m_iRowBottomMargin);
     iMaxColumn1Length = qMax(iMaxColumn1Length, fontMetrics.width(strText1));
     QTableWidgetItem *pCol1 = new QTableWidgetItem(strText1);
     QTableWidgetItem *pCol2 = new QTableWidgetItem(strText2);
