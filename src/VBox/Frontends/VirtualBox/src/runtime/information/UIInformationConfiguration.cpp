@@ -30,10 +30,6 @@
 #include "UIExtraDataManager.h"
 #include "UIIconPool.h"
 #include "UIInformationConfiguration.h"
-#include "UIInformationDataItem.h"
-#include "UIInformationItem.h"
-#include "UIInformationView.h"
-#include "UIInformationModel.h"
 
 
 UIInformationConfiguration::UIInformationConfiguration(QWidget *pParent, const CMachine &machine, const CConsole &console)
@@ -41,8 +37,6 @@ UIInformationConfiguration::UIInformationConfiguration(QWidget *pParent, const C
     , m_machine(machine)
     , m_console(console)
     , m_pMainLayout(0)
-    , m_pModel(0)
-    , m_pView(0)
     , m_pTableWidget(0)
     , m_iColumCount(3)
     , m_iRowLeftMargin(0.2 * qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin))
@@ -50,9 +44,6 @@ UIInformationConfiguration::UIInformationConfiguration(QWidget *pParent, const C
     , m_iRowRightMargin(0.2 * qApp->style()->pixelMetric(QStyle::PM_LayoutRightMargin))
     , m_iRowBottomMargin(0.2 * qApp->style()->pixelMetric(QStyle::PM_LayoutBottomMargin))
 {
-    /* Prepare model: */
-    prepareModel();
-
     /* Prepare view: */
     prepareObjects();
     retranslateUi();
@@ -78,86 +69,6 @@ void UIInformationConfiguration::retranslateUi()
     m_strSharedFoldersTitle = QApplication::translate("UIVMInformationDialog", "Shared Folders");
 }
 
-void UIInformationConfiguration::prepareModel()
-{
-    /* Create information-model: */
-    m_pModel = new UIInformationModel(this, m_machine, m_console);
-    AssertPtrReturnVoid(m_pModel);
-    {
-        /* Create general data-item: */
-        UIInformationDataItem *pGeneral = new UIInformationDataGeneral(m_machine, m_console, m_pModel);
-        AssertPtrReturnVoid(pGeneral);
-        {
-            /* Add general data-item to model: */
-            m_pModel->addItem(pGeneral);
-        }
-
-        /* Create system data-item: */
-        UIInformationDataItem *pSystem = new UIInformationDataSystem(m_machine, m_console, m_pModel);
-        AssertPtrReturnVoid(pSystem);
-        {
-            /* Add system data-item to model: */
-            m_pModel->addItem(pSystem);
-        }
-
-        /* Create display data-item: */
-        UIInformationDataItem *pDisplay = new UIInformationDataDisplay(m_machine, m_console, m_pModel);
-        AssertPtrReturnVoid(pDisplay);
-        {
-            /* Add display data-item to model: */
-            m_pModel->addItem(pDisplay);
-        }
-
-        /* Create storage data-item: */
-        UIInformationDataItem *pStorage = new UIInformationDataStorage(m_machine, m_console, m_pModel);
-        AssertPtrReturnVoid(pStorage);
-        {
-            /* Add storage data-item to model: */
-            m_pModel->addItem(pStorage);
-        }
-
-        /* Create audio data-item: */
-        UIInformationDataItem *pAudio = new UIInformationDataAudio(m_machine, m_console, m_pModel);
-        AssertPtrReturnVoid(pAudio);
-        {
-            /* Add audio data-item to model: */
-            m_pModel->addItem(pAudio);
-        }
-
-        /* Create network data-item: */
-        UIInformationDataItem *pNetwork = new UIInformationDataNetwork(m_machine, m_console, m_pModel);
-        AssertPtrReturnVoid(pNetwork);
-        {
-            /* Add network data-item to model: */
-            m_pModel->addItem(pNetwork);
-        }
-
-        /* Create serial-ports data-item: */
-        UIInformationDataItem *pSerialPorts = new UIInformationDataSerialPorts(m_machine, m_console, m_pModel);
-        AssertPtrReturnVoid(pSerialPorts);
-        {
-            /* Add serial-ports data-item to model: */
-            m_pModel->addItem(pSerialPorts);
-        }
-
-        /* Create usb data-item: */
-        UIInformationDataItem *pUSB = new UIInformationDataUSB(m_machine, m_console, m_pModel);
-        AssertPtrReturnVoid(pUSB);
-        {
-            /* Add usb data-item to model: */
-            m_pModel->addItem(pUSB);
-        }
-
-        /* Create shared-folders data-item: */
-        UIInformationDataItem *pSharedFolders = new UIInformationDataSharedFolders(m_machine, m_console, m_pModel);
-        AssertPtrReturnVoid(pSharedFolders);
-        {
-            /* Add shared-folders data-item to model: */
-            m_pModel->addItem(pSharedFolders);
-        }
-    }
-}
-
 void UIInformationConfiguration::prepareObjects()
 {
     /* Create layout: */
@@ -166,32 +77,7 @@ void UIInformationConfiguration::prepareObjects()
         return;
     m_pMainLayout->setSpacing(0);
 
-
-    /* Create information-view: */
-    m_pView = new UIInformationView;
-    AssertPtrReturnVoid(m_pView);
-    {
-        /* Configure information-view: */
-        m_pView->setResizeMode(QListView::Adjust);
-
-        /* Create information-delegate item: */
-        UIInformationItem *pItem = new UIInformationItem(m_pView);
-        AssertPtrReturnVoid(pItem);
-        {
-            /* Set item-delegate for information-view: */
-            m_pView->setItemDelegate(pItem);
-        }
-        /* Connect data changed signal: */
-        connect(m_pModel, &UIInformationModel::dataChanged, m_pView, &UIInformationView::updateData);
-
-        /* Set model for view: */
-        m_pView->setModel(m_pModel);
-        /* Add information-view to the layout: */
-        m_pMainLayout->addWidget(m_pView);
-    }
-
     m_pTableWidget = new QTableWidget;
-
     if (m_pTableWidget)
     {
         /* Configure the table by hiding the headers etc.: */
@@ -200,7 +86,6 @@ void UIInformationConfiguration::prepareObjects()
         m_pTableWidget->horizontalHeader()->hide();
         m_pTableWidget->setShowGrid(false);
         m_pMainLayout->addWidget(m_pTableWidget);
-        m_pTableWidget->hide();
     }
 }
 
