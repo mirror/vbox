@@ -73,4 +73,3 @@ private:
 };
 
 #endif /* !FEQT_INCLUDED_SRC_runtime_information_UIInformationRuntime_h */
-
