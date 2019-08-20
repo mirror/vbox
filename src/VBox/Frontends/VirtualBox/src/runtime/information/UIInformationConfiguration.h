@@ -66,10 +66,10 @@ private:
     void createTableItems();
 
     void updateTable();
-    void insertTitleRow(int iRow, const QString &strTitle, const QIcon &icon, const QFontMetrics &fontMetrics);
+    void insertTitleRow(const QString &strTitle, const QIcon &icon, const QFontMetrics &fontMetrics);
     void insertInfoRows(const UITextTable &table, const QFontMetrics &fontMetrics,
-                        QTextDocument &textDocument, int &iRow, int &iMaxColumn1Length);
-    void insertInfoRow(int iRow, const QString strText1, const QString &strText2,
+                        QTextDocument &textDocument, int &iMaxColumn1Length);
+    void insertInfoRow(const QString strText1, const QString &strText2,
                        const QFontMetrics &fontMetrics, int &iMaxColumn1Length);
 
     /** Holds the machine instance. */

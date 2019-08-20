@@ -101,83 +101,84 @@ void UIInformationConfiguration::createTableItems()
     QTextDocument textDocument;
 
     int iMaxColumn1Length = 0;
-    int iTableRow = 0;
 
     /* General section: */
-    insertTitleRow(iTableRow++, m_strGeneralTitle, UIIconPool::iconSet(":/machine_16px.png"), fontMetrics);
+    insertTitleRow(m_strGeneralTitle, UIIconPool::iconSet(":/machine_16px.png"), fontMetrics);
     insertInfoRows(UIDetailsGenerator::generateMachineInformationGeneral(m_machine,
                                                                          UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral_Default),
-                   fontMetrics, textDocument, iTableRow, iMaxColumn1Length);
+                   fontMetrics, textDocument, iMaxColumn1Length);
 
     /* System section: */
-    insertTitleRow(iTableRow++, m_strSystemTitle, UIIconPool::iconSet(":/chipset_16px.png"), fontMetrics);
+    insertTitleRow(m_strSystemTitle, UIIconPool::iconSet(":/chipset_16px.png"), fontMetrics);
     insertInfoRows(UIDetailsGenerator::generateMachineInformationSystem(m_machine,
                                                                          UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_Default),
-                   fontMetrics, textDocument, iTableRow, iMaxColumn1Length);
+                   fontMetrics, textDocument, iMaxColumn1Length);
 
     /* Display section: */
-    insertTitleRow(iTableRow++, m_strDisplayTitle, UIIconPool::iconSet(":/vrdp_16px.png"), fontMetrics);
+    insertTitleRow(m_strDisplayTitle, UIIconPool::iconSet(":/vrdp_16px.png"), fontMetrics);
     insertInfoRows(UIDetailsGenerator::generateMachineInformationDisplay(m_machine,
                                                                          UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_Default),
-                   fontMetrics, textDocument, iTableRow, iMaxColumn1Length);
+                   fontMetrics, textDocument, iMaxColumn1Length);
 
     /* Storage section: */
-    insertTitleRow(iTableRow++, m_strStorageTitle, UIIconPool::iconSet(":/hd_16px.png"), fontMetrics);
+    insertTitleRow(m_strStorageTitle, UIIconPool::iconSet(":/hd_16px.png"), fontMetrics);
     insertInfoRows(UIDetailsGenerator::generateMachineInformationStorage(m_machine,
                                                                          UIExtraDataMetaDefs::DetailsElementOptionTypeStorage_Default),
-                   fontMetrics, textDocument, iTableRow, iMaxColumn1Length);
+                   fontMetrics, textDocument, iMaxColumn1Length);
 
     /* Audio section: */
-    insertTitleRow(iTableRow++, m_strAudioTitle, UIIconPool::iconSet(":/sound_16px.png"), fontMetrics);
+    insertTitleRow(m_strAudioTitle, UIIconPool::iconSet(":/sound_16px.png"), fontMetrics);
     insertInfoRows(UIDetailsGenerator::generateMachineInformationAudio(m_machine,
                                                                          UIExtraDataMetaDefs::DetailsElementOptionTypeAudio_Default),
-                   fontMetrics, textDocument, iTableRow, iMaxColumn1Length);
+                   fontMetrics, textDocument, iMaxColumn1Length);
 
     /* Network section: */
-    insertTitleRow(iTableRow++, m_strNetworkTitle, UIIconPool::iconSet(":/nw_16px.png"), fontMetrics);
+    insertTitleRow(m_strNetworkTitle, UIIconPool::iconSet(":/nw_16px.png"), fontMetrics);
     insertInfoRows(UIDetailsGenerator::generateMachineInformationNetwork(m_machine,
                                                                          UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_Default),
-                   fontMetrics, textDocument, iTableRow, iMaxColumn1Length);
+                   fontMetrics, textDocument, iMaxColumn1Length);
 
     /* Serial port section: */
-    insertTitleRow(iTableRow++, m_strSerialPortsTitle, UIIconPool::iconSet(":/serial_port_16px.png"), fontMetrics);
+    insertTitleRow(m_strSerialPortsTitle, UIIconPool::iconSet(":/serial_port_16px.png"), fontMetrics);
     insertInfoRows(UIDetailsGenerator::generateMachineInformationSerial(m_machine,
                                                                         UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_Default),
-                   fontMetrics, textDocument, iTableRow, iMaxColumn1Length);
+                   fontMetrics, textDocument, iMaxColumn1Length);
 
     /* USB section: */
-    insertTitleRow(iTableRow++, m_strUSBTitle, UIIconPool::iconSet(":/usb_16px.png"), fontMetrics);
+    insertTitleRow(m_strUSBTitle, UIIconPool::iconSet(":/usb_16px.png"), fontMetrics);
     insertInfoRows(UIDetailsGenerator::generateMachineInformationUSB(m_machine,
                                                                         UIExtraDataMetaDefs::DetailsElementOptionTypeUsb_Default),
-                   fontMetrics, textDocument, iTableRow, iMaxColumn1Length);
+                   fontMetrics, textDocument, iMaxColumn1Length);
 
     /* Share folders section: */
-    insertTitleRow(iTableRow++, m_strSharedFoldersTitle, UIIconPool::iconSet(":/sf_16px.png"), fontMetrics);
+    insertTitleRow(m_strSharedFoldersTitle, UIIconPool::iconSet(":/sf_16px.png"), fontMetrics);
     insertInfoRows(UIDetailsGenerator::generateMachineInformationSharedFolders(m_machine,
                                                                                UIExtraDataMetaDefs::DetailsElementOptionTypeSharedFolders_Default),
-                   fontMetrics, textDocument, iTableRow, iMaxColumn1Length);
+                   fontMetrics, textDocument, iMaxColumn1Length);
 
     m_pTableWidget->resizeColumnToContents(0);
+    /* Resize the column 1 a bit larger than the max string if contains: */
     m_pTableWidget->setColumnWidth(1, 1.5 * iMaxColumn1Length);
     m_pTableWidget->resizeColumnToContents(2);
 }
 
 void UIInformationConfiguration::insertInfoRows(const UITextTable &table, const QFontMetrics &fontMetrics,
-                                                QTextDocument &textDocument, int &iRow, int &iMaxColumn1Length)
+                                                QTextDocument &textDocument, int &iMaxColumn1Length)
 {
     foreach (const UITextTableLine &line, table)
     {
         textDocument.setHtml(line.string2());
-        insertInfoRow(iRow++, line.string1(), textDocument.toPlainText(), fontMetrics, iMaxColumn1Length);
+        insertInfoRow(line.string1(), textDocument.toPlainText(), fontMetrics, iMaxColumn1Length);
     }
 }
 
-void UIInformationConfiguration::insertTitleRow(int iRow, const QString &strTitle, const QIcon &icon, const QFontMetrics &fontMetrics)
+void UIInformationConfiguration::insertTitleRow(const QString &strTitle, const QIcon &icon, const QFontMetrics &fontMetrics)
 {
-    m_pTableWidget->insertRow(m_pTableWidget->rowCount());
+    int iRow = m_pTableWidget->rowCount();
+    m_pTableWidget->insertRow(iRow);
     QSize iconSize;
     icon.actualSize(iconSize);
-    m_pTableWidget->setRowHeight(m_pTableWidget->rowCount() -1,
+    m_pTableWidget->setRowHeight(iRow,
                                  qMax(fontMetrics.height() + m_iRowTopMargin + m_iRowBottomMargin, iconSize.height()));
     QTableWidgetItem *pIconItem = new QTableWidgetItem(icon, "");
     m_pTableWidget->setItem(iRow, 0, pIconItem);
@@ -185,16 +186,18 @@ void UIInformationConfiguration::insertTitleRow(int iRow, const QString &strTitl
     QFont font = pTitleItem->font();
     font.setBold(true);
     pTitleItem->setFont(font);
+
     m_pTableWidget->setItem(iRow, 1, pTitleItem);
     m_tableItems << pIconItem;
     m_tableItems << pTitleItem;
 }
 
-void UIInformationConfiguration::insertInfoRow(int iRow, const QString strText1, const QString &strText2,
+void UIInformationConfiguration::insertInfoRow(const QString strText1, const QString &strText2,
                                                const QFontMetrics &fontMetrics, int &iMaxColumn1Length)
 {
-    m_pTableWidget->insertRow(m_pTableWidget->rowCount());
-    m_pTableWidget->setRowHeight(m_pTableWidget->rowCount() -1, fontMetrics.height() + m_iRowTopMargin + m_iRowBottomMargin);
+    int iRow = m_pTableWidget->rowCount();
+    m_pTableWidget->insertRow(iRow);
+    m_pTableWidget->setRowHeight(iRow, fontMetrics.height() + m_iRowTopMargin + m_iRowBottomMargin);
     iMaxColumn1Length = qMax(iMaxColumn1Length, fontMetrics.width(strText1));
     QTableWidgetItem *pCol1 = new QTableWidgetItem(strText1);
     QTableWidgetItem *pCol2 = new QTableWidgetItem(strText2);
