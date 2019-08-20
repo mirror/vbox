@@ -60,6 +60,10 @@ protected:
 
     void retranslateUi() /* override */;
 
+private slots:
+
+    void sltMachineDataChanged();
+
 private:
 
     void prepareObjects();
@@ -71,6 +75,7 @@ private:
     void insertInfoRow(const QString strText1, const QString &strText2,
                        const QFontMetrics &fontMetrics, int &iMaxColumn1Length);
 
+    void resetTable();
     /** Holds the machine instance. */
     CMachine m_machine;
     /** Holds the console instance. */

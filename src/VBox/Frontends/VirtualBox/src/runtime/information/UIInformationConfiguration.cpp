@@ -30,7 +30,7 @@
 #include "UIExtraDataManager.h"
 #include "UIIconPool.h"
 #include "UIInformationConfiguration.h"
-
+#include "UIVirtualBoxEventHandler.h"
 
 UIInformationConfiguration::UIInformationConfiguration(QWidget *pParent, const CMachine &machine, const CConsole &console)
     : QIWithRetranslateUI<QWidget>(pParent)
@@ -48,12 +48,19 @@ UIInformationConfiguration::UIInformationConfiguration(QWidget *pParent, const C
     prepareObjects();
     retranslateUi();
     createTableItems();
+
+    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigMachineDataChange,
+            this, &UIInformationConfiguration::sltMachineDataChanged);
+}
+
+void UIInformationConfiguration::sltMachineDataChanged()
+{
+    resetTable();
+    createTableItems();
 }
 
 UIInformationConfiguration::~UIInformationConfiguration()
 {
-    qDeleteAll(m_tableItems);
-    m_tableItems.clear();
 }
 
 void UIInformationConfiguration::retranslateUi()
@@ -201,4 +208,14 @@ void UIInformationConfiguration::insertInfoRow(const QString strText1, const QSt
     m_tableItems << pCol2;
     m_pTableWidget->setItem(iRow, 1, pCol1);
     m_pTableWidget->setItem(iRow, 2, pCol2);
+}
+
+void UIInformationConfiguration::resetTable()
+{
+    if (m_pTableWidget)
+    {
+        m_pTableWidget->clear();
+        m_pTableWidget->setRowCount(0);
+        m_pTableWidget->setColumnCount(m_iColumCount);
+    }
 }
