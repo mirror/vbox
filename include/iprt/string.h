@@ -2444,7 +2444,7 @@ RTDECL(int) RTStrNICmpAscii(const char *psz1, const char *psz2, size_t cchMax);
  * @param   pszString   The string to check.
  * @param   pszStart    The start string to check for.
  */
-RTDECL(int) RTStrStartsWith(const char *pszString, const char *pszStart);
+RTDECL(bool) RTStrStartsWith(const char *pszString, const char *pszStart);
 
 /**
  * Checks whether @a pszString starts with @a pszStart, case insensitive.
@@ -2453,7 +2453,7 @@ RTDECL(int) RTStrStartsWith(const char *pszString, const char *pszStart);
  * @param   pszString   The string to check.
  * @param   pszStart    The start string to check for.
  */
-RTDECL(int) RTStrIStartsWith(const char *pszString, const char *pszStart);
+RTDECL(bool) RTStrIStartsWith(const char *pszString, const char *pszStart);
 
 /**
  * Locates a case sensitive substring.

@@ -33,7 +33,7 @@
 #include "internal/iprt.h"
 
 
-RTDECL(int) RTStrIStartsWith(const char *pszString, const char *pszStart)
+RTDECL(bool) RTStrIStartsWith(const char *pszString, const char *pszStart)
 {
     if (pszString)
     {
