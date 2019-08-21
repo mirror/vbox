@@ -36,10 +36,6 @@ ifdef VBOX_WITH_CROGL_ADDITIONS
  LIBRARIES += VBoxOGLcrpacker VBoxOGLspuload VBoxOGLcrstate VBoxOGLcrutil VBoxOGLerrorspu
 endif
 
-ifndef VBOX_ONLY_ADDITIONS
- LIBRARIES += VBoxOGLhostcrpacker VBoxOGLhostspuload VBoxOGLhostcrstate VBoxOGLhostcrutil VBoxOGLhosterrorspu
-endif
-
 #
 # VBoxOGLcrutil
 #
@@ -100,7 +96,6 @@ endif
 
 # vc7 hangs during compilation of this file when optimizations are enabled.
 #VBoxOGLcrutil_pixel.c_CFLAGS.win.x86     += -Od
-#VBoxOGLhostcrutil_pixel.c_CFLAGS.win.x86 += -Od
 
 if defined(VBOX_WITH_WDDM) && defined(VBOX_WITH_CROGL_ADDITIONS)
 #
@@ -133,30 +128,7 @@ endif
 endif
 
 #
-# VBoxOGLhostcrutil
-#
-VBoxOGLhostcrutil_EXTENDS  = VBoxOGLcrutil
-VBoxOGLhostcrutil_TEMPLATE = VBOXCROGLR3HOSTLIB
-if defined(VBOX_SIGNING_MODE) && defined(VBOX_WITH_WDDM)
- VBoxOGLhostcrutil_INSTTYPE.win = both
-endif
-if1of ($(KBUILD_TARGET), linux)
-VBoxOGLhostcrutil_LDFLAGS = $(NO_SUCH_VARIABLE)
-endif
-VBoxOGLhostcrutil_LIBS.win =  \
-    $(PATH_SDK_$(VBOX_WINDDK)_LIB)/ddraw.lib \
-    $(PATH_SDK_$(VBOX_WINDDK)_LIB)/dxguid.lib
-VBoxOGLhostcrutil_LIBS     = $(LIB_RUNTIME)
-ifdef VBOX_WITH_CRHGSMI
-VBoxOGLhostcrutil_DEFS    += VBOX_WITH_CRHGSMI
-endif
-ifdef VBOX_WITH_WDDM
-VBoxOGLhostcrutil_INCS.win = $(NO_SUCH_VARIABLE)
-VBoxOGLhostcrutil_DEFS.win = $(NO_SUCH_VARIABLE)
-endif
-
-#
-# Generate files for VBoxOGLcrutil and VBoxOGLhostcrutil.
+# Generate files for VBoxOGLcrutil.
 #
 ifdef VBOX_WITH_CRDUMPER
 $(VBOX_PATH_CROGL_GENFILES)/dump_gen.cpp: $(PATH_SUB_CURRENT)/state_tracker/dump_gen.py $(PATH_ROOT)/src/VBox/HostServices/SharedOpenGL/crserverlib/get_sizes.py $(addprefix $(PATH_SUB_CURRENT)/state_tracker/, state_isenabled.txt state_extensions_isenabled.txt) $(VBOX_CROGL_API_FILES) | $$(dir $$@)
@@ -241,13 +213,7 @@ VBoxOGLcrpacker-x86_DEFS = $(VBoxOGLcrpacker_DEFS) VBOX_WDDM_WOW64
 endif
 
 #
-# VBoxOGLhostcrpacker
-#
-VBoxOGLhostcrpacker_EXTENDS  = VBoxOGLcrpacker
-VBoxOGLhostcrpacker_TEMPLATE = VBOXCROGLR3HOSTLIB
-
-#
-# Generate files for VBoxOGLcrpacker and VBoxOGLhostcrpacker.
+# Generate files for VBoxOGLcrpacker.
 #
 $(VBOX_PATH_CROGL_GENFILES)/packer.def: $(PATH_SUB_CURRENT)/packer/packer_defs.py $(VBOX_CROGL_API_FILES) | $$(dir $$@)
 	$(call MSG_GENERATE,python,$@,$<)
@@ -323,13 +289,7 @@ endif
 
 
 #
-# VBoxOGLhostspuload
-#
-VBoxOGLhostspuload_EXTENDS  = VBoxOGLspuload
-VBoxOGLhostspuload_TEMPLATE = VBOXCROGLR3HOSTLIB
-
-#
-# Generate files for VBoxOGLspuload and VBoxOGLhostspuload.
+# Generate files for VBoxOGLspuload.
 #
 $(VBOX_PATH_CROGL_GENFILES)/dispatch.c: $(PATH_SUB_CURRENT)/spu_loader/dispatch.py $(VBOX_CROGL_API_FILES) | $$(dir $$@)
 	$(call MSG_GENERATE,python,$@,$<)
@@ -469,16 +429,7 @@ endif
 
 
 #
-# VBoxOGLhostcrstate
-#
-VBoxOGLhostcrstate_EXTENDS  = VBoxOGLcrstate
-VBoxOGLhostcrstate_TEMPLATE = VBOXCROGLR3HOSTLIB
-VBoxOGLhostcrstate_SOURCES  = \
-	$(VBoxOGLcrstate_SOURCES) \
-	state_tracker/state_snapshot.c
-
-#
-# Generate files for VBoxOGLcrstate and VBoxOGLhostcrstate.
+# Generate files for VBoxOGLcrstate.
 #
 
 
@@ -582,16 +533,7 @@ VBoxOGLerrorspu-x86_DEFS = $(VBoxOGLerrorspu_DEFS) VBOX_WDDM_WOW64
 endif
 
 #
-# VBoxOGLhosterrorspu
-#
-VBoxOGLhosterrorspu_EXTENDS  = VBoxOGLerrorspu
-VBoxOGLhosterrorspu_TEMPLATE = VBOXCROGLR3HOSTLIB
-if defined(VBOX_SIGNING_MODE) && defined(VBOX_WITH_WDDM)
- VBoxOGLhosterrorspu_INSTTYPE.win = both
-endif
-
-#
-# Generate files for VBoxOGLerrorspu and VBoxOGLhosterrorspu.
+# Generate files for VBoxOGLerrorspu.
 #
 $(VBOX_PATH_CROGL_GENFILES)/errorspu.c: $(PATH_SUB_CURRENT)/error/error.py $(VBOX_CROGL_API_FILES)
 	$(call MSG_GENERATE,python,$@,$<)
