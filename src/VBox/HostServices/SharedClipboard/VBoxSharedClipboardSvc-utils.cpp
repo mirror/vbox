@@ -101,6 +101,8 @@ int vboxSvcClipboardURIReportMsg(PVBOXCLIPBOARDCLIENTDATA pClientData, uint32_t 
     {
         case VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_TRANSFER_START:
         {
+            Assert(pClientData->State.URI.fTransferStart == false);
+
             LogFlowFunc(("VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_TRANSFER_START\n"));
 
             if (   vboxSvcClipboardGetMode() != VBOX_SHARED_CLIPBOARD_MODE_HOST_TO_GUEST

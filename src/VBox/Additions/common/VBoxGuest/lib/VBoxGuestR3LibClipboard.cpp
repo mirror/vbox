@@ -319,6 +319,121 @@ VBGLR3DECL(int) VbglR3ClipboardTransferSendStatus(PVBGLR3SHCLCMDCTX pCtx, SHARED
     return rc;
 }
 
+static int vbglR3ClipboardRootListHdrRead(PVBGLR3SHCLCMDCTX pCtx, PVBOXCLIPBOARDROOTLISTHDR pRootListHdr)
+{
+    AssertPtrReturn(pCtx,         VERR_INVALID_POINTER);
+    AssertPtrReturn(pRootListHdr, VERR_INVALID_POINTER);
+
+    VBoxClipboardRootListHdrMsg Msg;
+    RT_ZERO(Msg);
+
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID,
+                       VBOX_SHARED_CLIPBOARD_GUEST_FN_ROOT_LIST_HDR_READ, VBOX_SHARED_CLIPBOARD_CPARMS_ROOT_LIST_HDR_READ);
+
+    Msg.ReqParms.uContext.SetUInt32(pCtx->uContextID);
+    Msg.ReqParms.fRoots.SetUInt32(pRootListHdr->fRoots);
+
+    Msg.cRoots.SetUInt32(0);
+    Msg.enmCompression.SetUInt32(0);  /** @todo Not implemented yet. */
+    Msg.enmChecksumType.SetUInt32(0); /** @todo Not implemented yet. */
+
+    int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
+    if (RT_SUCCESS(rc))
+    {
+        rc = Msg.ReqParms.fRoots.GetUInt32(&pRootListHdr->fRoots); AssertRC(rc);
+        if (RT_SUCCESS(rc))
+            rc = Msg.cRoots.GetUInt32(&pRootListHdr->cRoots); AssertRC(rc);
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+static int vbglR3ClipboardRootListEntryRead(PVBGLR3SHCLCMDCTX pCtx, uint32_t uIndex, PVBOXCLIPBOARDROOTLISTENTRY pRootListEntry)
+{
+    AssertPtrReturn(pCtx,           VERR_INVALID_POINTER);
+    AssertPtrReturn(pRootListEntry, VERR_INVALID_POINTER);
+
+    VBoxClipboardRootListEntryMsg Msg;
+    RT_ZERO(Msg);
+
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID,
+                       VBOX_SHARED_CLIPBOARD_GUEST_FN_ROOT_LIST_ENTRY_READ, VBOX_SHARED_CLIPBOARD_CPARMS_ROOT_LIST_ENTRY);
+
+    Msg.Parms.uContext.SetUInt32(pCtx->uContextID);
+    Msg.Parms.fInfo.SetUInt32(pRootListEntry->fInfo);
+    Msg.Parms.uIndex.SetUInt32(uIndex);
+
+    Msg.szName.SetPtr(pRootListEntry->pszName, pRootListEntry->cbName);
+    Msg.cbInfo.SetUInt32(pRootListEntry->cbInfo);
+    Msg.pvInfo.SetPtr(pRootListEntry->pvInfo, pRootListEntry->cbInfo);
+
+    int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
+    if (RT_SUCCESS(rc))
+    {
+        rc = Msg.Parms.fInfo.GetUInt32(&pRootListEntry->fInfo); AssertRC(rc);
+        if (RT_SUCCESS(rc))
+        {
+            uint32_t cbInfo;
+            rc = Msg.cbInfo.GetUInt32(&cbInfo); AssertRC(rc);
+            if (pRootListEntry->cbInfo != cbInfo)
+                rc = VERR_INVALID_PARAMETER;
+        }
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+VBGLR3DECL(int) VbglR3ClipboardRootListRead(PVBGLR3SHCLCMDCTX pCtx, PVBOXCLIPBOARDROOTLIST *ppRootList)
+{
+    AssertPtrReturn(pCtx,       VERR_INVALID_POINTER);
+    AssertPtrReturn(ppRootList, VERR_INVALID_POINTER);
+
+    int rc;
+
+    PVBOXCLIPBOARDROOTLIST pRootList = SharedClipboardURIRootListAlloc();
+    if (pRootList)
+    {
+        VBOXCLIPBOARDROOTLISTHDR srcRootListHdr;
+        rc = vbglR3ClipboardRootListHdrRead(pCtx, &srcRootListHdr);
+        if (RT_SUCCESS(rc))
+        {
+            pRootList->Hdr.cRoots = srcRootListHdr.cRoots;
+            pRootList->Hdr.fRoots = 0; /** @todo Implement this. */
+
+            if (srcRootListHdr.cRoots)
+            {
+                pRootList->paEntries =
+                    (PVBOXCLIPBOARDROOTLISTENTRY)RTMemAllocZ(srcRootListHdr.cRoots * sizeof(VBOXCLIPBOARDROOTLISTENTRY));
+                if (pRootList->paEntries)
+                {
+                    for (uint32_t i = 0; i < srcRootListHdr.cRoots; i++)
+                    {
+                        rc = vbglR3ClipboardRootListEntryRead(pCtx, i, &pRootList->paEntries[i]);
+                        if (RT_FAILURE(rc))
+                            break;
+                    }
+                }
+                else
+                    rc = VERR_NO_MEMORY;
+            }
+        }
+
+        if (RT_SUCCESS(rc))
+        {
+            *ppRootList = pRootList;
+        }
+        else
+            SharedClipboardURIRootListFree(pRootList);
+    }
+    else
+        rc = VERR_NO_MEMORY;
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
 VBGLR3DECL(int) VbglR3ClipboardRootListHdrReadReq(PVBGLR3SHCLCMDCTX pCtx, uint32_t *pfRoots)
 {
     AssertPtrReturn(pCtx,    VERR_INVALID_POINTER);

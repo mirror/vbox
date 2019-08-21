@@ -1095,7 +1095,11 @@ int SharedClipboardURITransferCreate(SHAREDCLIPBOARDURITRANSFERDIR enmDir, SHARE
 
     if (RT_FAILURE(rc))
     {
-        RTMemFree(pTransfer);
+        if (pTransfer)
+        {
+            SharedClipboardURITransferDestroy(pTransfer);
+            RTMemFree(pTransfer);
+        }
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -1887,6 +1891,19 @@ int SharedClipboardURITransferSetInterface(PSHAREDCLIPBOARDURITRANSFER pTransfer
 
     pTransfer->ProviderIface         = pCreationCtx->Interface;
 
+#ifdef DEBUG
+# define LOG_IFACE_PTR(a_Name) \
+    LogFlowFunc(( #a_Name "=%p\n", pTransfer->ProviderIface.a_Name));
+
+    LOG_IFACE_PTR(pfnTransferOpen);
+    LOG_IFACE_PTR(pfnTransferClose);
+    LOG_IFACE_PTR(pfnGetRoots);
+    LOG_IFACE_PTR(pfnListOpen);
+    LOG_IFACE_PTR(pfnListClose);
+
+# undef LOG_IFACE_PTR
+#endif
+
     pTransfer->ProviderCtx.pTransfer = pTransfer;
     pTransfer->ProviderCtx.pvUser    = pCreationCtx->pvUser;
 
@@ -2095,6 +2112,8 @@ int SharedClipboardURILTransferRootsAsList(PSHAREDCLIPBOARDURITRANSFER pTransfer
 {
     AssertPtrReturn(pTransfer,  VERR_INVALID_POINTER);
     AssertPtrReturn(ppRootList, VERR_INVALID_POINTER);
+
+    LogFlowFuncEnter();
 
     int rc = VINF_SUCCESS;
 

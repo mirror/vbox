@@ -60,9 +60,9 @@ using namespace com;
 /** Default timeout (in ms) for passing down messages down the clipboard chain. */
 #define VBOX_CLIPBOARD_CBCHAIN_TIMEOUT_MS   5000
 
-/** Sets announced clipboard formats from the host. */
-#define VBOX_CLIPBOARD_WM_SET_FORMATS       WM_USER
-/** Reads data from the clipboard and sends it to the host. */
+/** Reports clipboard formats. */
+#define VBOX_CLIPBOARD_WM_REPORT_FORMATS    WM_USER
+/** Reads data from the clipboard and sends it to the destination. */
 #define VBOX_CLIPBOARD_WM_READ_DATA         WM_USER + 1
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
 /** Starts a reading transfer from the guest. */

@@ -219,10 +219,10 @@ static int vboxClipboardURITransferClose(PSHAREDCLIPBOARDPROVIDERCTX pCtx)
     return VINF_SUCCESS;
 }
 
-static int vboxClipboardURIListOpen(PSHAREDCLIPBOARDPROVIDERCTX pCtx, PVBOXCLIPBOARDLISTHDR pListHdr,
+static int vboxClipboardURIListOpen(PSHAREDCLIPBOARDPROVIDERCTX pCtx, PVBOXCLIPBOARDLISTOPENPARMS pOpenParms,
                                     PSHAREDCLIPBOARDLISTHANDLE phList)
 {
-    RT_NOREF(pCtx, pListHdr, phList);
+    RT_NOREF(pCtx, pOpenParms, phList);
 
     LogFlowFuncEnter();
 
@@ -232,6 +232,36 @@ static int vboxClipboardURIListOpen(PSHAREDCLIPBOARDPROVIDERCTX pCtx, PVBOXCLIPB
     RT_NOREF(pThisCtx);
 
     int rc = 0; // VbglR3ClipboardRecvListOpen(pThisCtx->u32ClientID, pListHdr, phList);
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+static int vboxClipboardURIListClose(PSHAREDCLIPBOARDPROVIDERCTX pCtx, SHAREDCLIPBOARDLISTHANDLE hList)
+{
+    RT_NOREF(pCtx, hList);
+
+    LogFlowFuncEnter();
+
+    PVBOXCLIPBOARDCONTEXT pThisCtx = (PVBOXCLIPBOARDCONTEXT)pCtx->pvUser;
+    AssertPtr(pThisCtx);
+
+    RT_NOREF(pThisCtx);
+
+    int rc = 0; // VbglR3ClipboardRecvListOpen(pThisCtx->u32ClientID, pListHdr, phList);
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+static int vboxClipboardURIGetRoots(PSHAREDCLIPBOARDPROVIDERCTX pCtx, PVBOXCLIPBOARDROOTLIST *ppRootList)
+{
+    LogFlowFuncEnter();
+
+    PVBOXCLIPBOARDCONTEXT pThisCtx = (PVBOXCLIPBOARDCONTEXT)pCtx->pvUser;
+    AssertPtr(pThisCtx);
+
+    int rc = VbglR3ClipboardRootListRead(&pThisCtx->CmdCtx, ppRootList);
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -402,15 +432,16 @@ static LRESULT vboxClipboardWinProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd,
                    rc = VbglR3ClipboardReportFormats(pCtx->CmdCtx.uClientID, fFormats);
                }
            }
-       }
+
            break;
+       }
 
        case WM_CHANGECBCHAIN:
        {
            LogFunc(("WM_CHANGECBCHAIN\n"));
            lresultRc = VBoxClipboardWinHandleWMChangeCBChain(pWinCtx, hwnd, msg, wParam, lParam);
-       }
            break;
+       }
 
        case WM_DRAWCLIPBOARD:
        {
@@ -427,21 +458,22 @@ static LRESULT vboxClipboardWinProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd,
            }
 
            lresultRc = VBoxClipboardWinChainPassToNext(pWinCtx, msg, wParam, lParam);
-       }
            break;
+       }
 
        case WM_TIMER:
        {
            int rc = VBoxClipboardWinHandleWMTimer(pWinCtx);
            AssertRC(rc);
-       }
+
            break;
+       }
 
        case WM_CLOSE:
        {
            /* Do nothing. Ignore the message. */
-       }
            break;
+       }
 
        case WM_RENDERFORMAT:
        {
@@ -589,8 +621,9 @@ static LRESULT vboxClipboardWinProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd,
                        GlobalFree(hMem);
                }
            }
-       }
+
            break;
+       }
 
        case WM_RENDERALLFORMATS:
        {
@@ -598,12 +631,13 @@ static LRESULT vboxClipboardWinProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd,
 
            int rc = VBoxClipboardWinHandleWMRenderAllFormats(pWinCtx, hwnd);
            AssertRC(rc);
-       }
-           break;
 
-       case VBOX_CLIPBOARD_WM_SET_FORMATS:
+           break;
+       }
+
+       case VBOX_CLIPBOARD_WM_REPORT_FORMATS:
        {
-           LogFunc(("VBOX_CLIPBOARD_WM_SET_FORMATS\n"));
+           LogFunc(("VBOX_CLIPBOARD_WM_REPORT_FORMATS\n"));
 
            /* Announce available formats. Do not insert data -- will be inserted in WM_RENDERFORMAT. */
            VBOXCLIPBOARDFORMATS fFormats = (uint32_t)lParam;
@@ -614,68 +648,40 @@ static LRESULT vboxClipboardWinProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd,
                {
                    VBoxClipboardWinClear();
 
-#if 0
-                   if (fFormats & VBOX_SHARED_CLIPBOARD_FMT_URI_LIST)
-                   {
-                       LogFunc(("VBOX_SHARED_CLIPBOARD_FMT_URI_LIST\n"));
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+                    if (fFormats & VBOX_SHARED_CLIPBOARD_FMT_URI_LIST)
+                    {
+                        LogFunc(("VBOX_SHARED_CLIPBOARD_FMT_URI_LIST\n"));
 
-                       PSHAREDCLIPBOARDURITRANSFER pTransfer;
-                       rc = SharedClipboardURITransferCreate(SHAREDCLIPBOARDURITRANSFERDIR_READ,
-                                                             SHAREDCLIPBOARDSOURCE_REMOTE,
-                                                             &pTransfer);
-                       if (RT_SUCCESS(rc))
-                       {
-                           SHAREDCLIPBOARDURITRANSFERCALLBACKS TransferCallbacks;
-                           RT_ZERO(TransferCallbacks);
+                        PSHAREDCLIPBOARDURITRANSFER pTransfer = SharedClipboardURICtxGetTransfer(&pCtx->URI,
+                                                                                                 0 /* uIdx */);
+                        if (pTransfer)
+                        {
+                            rc = VBoxClipboardWinURITransferCreate(pWinCtx, pTransfer);
 
-                           TransferCallbacks.pvUser              = &pCtx->URI;
-                           TransferCallbacks.pfnTransferComplete = vboxClipboardURITransferCompleteCallback;
-                           TransferCallbacks.pfnTransferError    = vboxClipboardURITransferErrorCallback;
+                            /* Note: The actual requesting + retrieving of data will be done in the IDataObject implementation
+                                     (ClipboardDataObjectImpl::GetData()). */
+                        }
+                        else
+                            AssertFailedStmt(rc = VERR_NOT_FOUND);
 
-                           SharedClipboardURITransferSetCallbacks(pTransfer, &TransferCallbacks);
-
-                           SHAREDCLIPBOARDPROVIDERCREATIONCTX creationCtx;
-                           RT_ZERO(creationCtx);
-                           creationCtx.enmSource = SHAREDCLIPBOARDSOURCE_REMOTE;
-
-                           RT_ZERO(creationCtx.Interface);
-                           creationCtx.Interface.pfnTransferOpen  = vboxClipboardURITransferOpen;
-                           creationCtx.Interface.pfnTransferClose = vboxClipboardURITransferClose;
-                           creationCtx.Interface.pfnListHdrRead   = vboxClipboardURIListHdrRead;
-                           creationCtx.Interface.pfnListEntryRead = vboxClipboardURIListEntryRead;
-                           creationCtx.Interface.pfnObjOpen       = vboxClipboardURIObjOpen;
-                           creationCtx.Interface.pfnObjClose      = vboxClipboardURIObjClose;
-                           creationCtx.Interface.pfnObjRead       = vboxClipboardURIObjRead;
-
-                           creationCtx.pvUser = pCtx;
-
-                           rc = SharedClipboardURITransferSetInterface(pTransfer, &creationCtx);
-                           if (RT_SUCCESS(rc))
-                           {
-                               rc = SharedClipboardURICtxTransferAdd(&pCtx->URI, pTransfer);
-                               if (RT_SUCCESS(rc))
-                                   rc = VBoxClipboardWinURITransferCreate(pWinCtx, pTransfer);
-                           }
-
-                           /* Note: VBoxClipboardWinURITransferCreate() takes care of closing the clipboard. */
-
-                           LogFunc(("VBOX_SHARED_CLIPBOARD_FMT_URI_LIST: rc=%Rrc\n", rc));
-                       }
-                   }
-                   else
-                   {
+                        /* Note: VBoxClipboardWinURITransferCreate() takes care of closing the clipboard. */
+                    }
+                    else
+                    {
 #endif
-                       rc = VBoxClipboardWinAnnounceFormats(pWinCtx, fFormats);
+                        rc = VBoxClipboardWinAnnounceFormats(pWinCtx, fFormats);
 
-                       VBoxClipboardWinClose();
-#if 0
-                   }
+                        VBoxClipboardWinClose();
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+                    }
 #endif
                }
            }
+
            LogFunc(("VBOX_CLIPBOARD_WM_SET_FORMATS: fFormats=0x%x, lastErr=%ld\n", fFormats, GetLastError()));
-       }
            break;
+       }
 
        case VBOX_CLIPBOARD_WM_READ_DATA:
        {
@@ -842,6 +848,7 @@ static LRESULT vboxClipboardWinProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd,
            break;
        }
 
+#if 1
        /* The host wants to write URI data. */
        case VBOX_CLIPBOARD_WM_URI_START_WRITE:
        {
@@ -865,9 +872,12 @@ static LRESULT vboxClipboardWinProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd,
 
                SHAREDCLIPBOARDPROVIDERCREATIONCTX creationCtx;
                RT_ZERO(creationCtx);
+
                creationCtx.enmSource = SHAREDCLIPBOARDSOURCE_REMOTE;
 
-               RT_ZERO(creationCtx.Interface);
+               creationCtx.Interface.pfnGetRoots      = vboxClipboardURIGetRoots;
+               creationCtx.Interface.pfnListOpen      = vboxClipboardURIListOpen;
+               creationCtx.Interface.pfnListClose     = vboxClipboardURIListClose;
                creationCtx.Interface.pfnListHdrRead   = vboxClipboardURIListHdrRead;
                creationCtx.Interface.pfnListEntryRead = vboxClipboardURIListEntryRead;
                creationCtx.Interface.pfnObjOpen       = vboxClipboardURIObjOpen;
@@ -882,13 +892,10 @@ static LRESULT vboxClipboardWinProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd,
                    rc = SharedClipboardURICtxTransferAdd(&pCtx->URI, pTransfer);
                    if (RT_SUCCESS(rc))
                    {
+                       rc = SharedClipboardURITransferPrepare(pTransfer);
                        if (RT_SUCCESS(rc))
                        {
-                           rc = SharedClipboardURITransferPrepare(pTransfer);
-                           if (RT_SUCCESS(rc))
-                           {
-                               rc = VBoxClipboardWinURITransferCreate(pWinCtx, pTransfer);
-                           }
+                           rc = VBoxClipboardWinURITransferCreate(pWinCtx, pTransfer);
                        }
                    }
                }
@@ -896,6 +903,7 @@ static LRESULT vboxClipboardWinProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd,
 
            break;
        }
+#endif
 #endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
 
        case WM_DESTROY:
@@ -909,15 +917,16 @@ static LRESULT vboxClipboardWinProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd,
             * Don't need to call PostQuitMessage cause
             * the VBoxTray already finished a message loop.
             */
-       }
+
            break;
+       }
 
        default:
        {
            LogFunc(("WM_ %p\n", msg));
            lresultRc = DefWindowProc(hwnd, msg, wParam, lParam);
-       }
            break;
+       }
     }
 
     LogFunc(("WM_ rc %d\n", lresultRc));
@@ -1122,7 +1131,7 @@ DECLCALLBACK(int) VBoxClipboardWorker(void *pInstance, bool volatile *pfShutdown
                    /* The host has announced available clipboard formats.
                     * Forward the information to the window, so it can later
                     * respond to WM_RENDERFORMAT message. */
-                   ::PostMessage(pWinCtx->hWnd, VBOX_CLIPBOARD_WM_SET_FORMATS, 0, u32Formats);
+                   ::PostMessage(pWinCtx->hWnd, VBOX_CLIPBOARD_WM_REPORT_FORMATS, 0, u32Formats);
                    break;
                }
 

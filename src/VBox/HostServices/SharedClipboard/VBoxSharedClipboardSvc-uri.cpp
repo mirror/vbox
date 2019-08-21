@@ -1325,7 +1325,7 @@ int vboxSvcClipboardURIHandler(PVBOXCLIPBOARDCLIENT pClient,
             {
                 SharedClipboardURICtxTransfersCleanup(&pClientData->URI);
 
-                SHAREDCLIPBOARDURITRANSFERDIR enmDir = SHAREDCLIPBOARDURITRANSFERDIR_READ;
+                const SHAREDCLIPBOARDURITRANSFERDIR enmDir = SHAREDCLIPBOARDURITRANSFERDIR_READ;
 
                 PSHAREDCLIPBOARDURITRANSFER pTransfer;
                 rc = SharedClipboardURITransferCreate(enmDir,
@@ -1340,7 +1340,6 @@ int vboxSvcClipboardURIHandler(PVBOXCLIPBOARDCLIENT pClient,
 
                         creationCtx.enmSource = pClientData->State.enmSource;
 
-                        RT_ZERO(creationCtx.Interface);
                         creationCtx.Interface.pfnTransferOpen  = vboxSvcClipboardURITransferOpen;
                         creationCtx.Interface.pfnTransferClose = vboxSvcClipboardURITransferClose;
                         creationCtx.Interface.pfnListOpen      = vboxSvcClipboardURIListOpen;

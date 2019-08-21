@@ -1182,7 +1182,8 @@ static DECLCALLBACK(void) svcCall(void *,
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
                             if (u32Formats & VBOX_SHARED_CLIPBOARD_FMT_URI_LIST)
                             {
-                                /* Tell the guest that we want to start a (reading) transfer. */
+                                /* Tell the guest that we want to start a reading transfer
+                                 * (from guest to the host). */
                                 rc = vboxSvcClipboardReportMsg(pClientData, VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_TRANSFER_START,
                                                                0 /* u32Formats == 0 means reading data */);
 
@@ -1292,7 +1293,7 @@ static DECLCALLBACK(void) svcCall(void *,
                     }
                     else
                     {
-#endif
+#endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
                         void    *pv;
                         uint32_t cb;
                         rc = VBoxHGCMParmPtrGet(&paParms[1], &pv, &cb);

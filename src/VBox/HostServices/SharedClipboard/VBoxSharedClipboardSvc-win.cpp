@@ -165,9 +165,8 @@ static LRESULT CALLBACK vboxClipboardSvcWinWndProcMain(PVBOXCLIPBOARDCONTEXT pCt
 
                 /* Clipboard was updated by another application, retrieve formats and report back. */
                 int rc = vboxClipboardSvcWinSyncInternal(pCtx);
-                AssertRC(rc);
-
-                vboxSvcClipboardSetSource(pCtx->pClientData, SHAREDCLIPBOARDSOURCE_LOCAL);
+                if (RT_SUCCESS(rc))
+                    vboxSvcClipboardSetSource(pCtx->pClientData, SHAREDCLIPBOARDSOURCE_LOCAL);
             }
         } break;
 
@@ -294,9 +293,9 @@ static LRESULT CALLBACK vboxClipboardSvcWinWndProcMain(PVBOXCLIPBOARDCONTEXT pCt
             AssertRC(rc);
         } break;
 
-        case VBOX_CLIPBOARD_WM_SET_FORMATS:
+        case VBOX_CLIPBOARD_WM_REPORT_FORMATS:
         {
-            LogFunc(("VBOX_CLIPBOARD_WM_SET_FORMATS\n"));
+            LogFunc(("VBOX_CLIPBOARD_WM_REPORT_FORMATS\n"));
 
             if (   pCtx->pClientData == NULL
                 || pCtx->pClientData->State.fHostMsgFormats)
@@ -304,7 +303,7 @@ static LRESULT CALLBACK vboxClipboardSvcWinWndProcMain(PVBOXCLIPBOARDCONTEXT pCt
                 /* Host has pending formats message. Ignore the guest announcement,
                  * because host clipboard has more priority.
                  */
-                LogFunc(("VBOX_CLIPBOARD_WM_SET_FORMATS ignored; pClientData=%p\n", pCtx->pClientData));
+                LogFunc(("VBOX_CLIPBOARD_WM_REPORT_FORMATS ignored; pClientData=%p\n", pCtx->pClientData));
                 break;
             }
 
@@ -350,7 +349,7 @@ static LRESULT CALLBACK vboxClipboardSvcWinWndProcMain(PVBOXCLIPBOARDCONTEXT pCt
                 if (RT_FAILURE(rc))
                     LogFunc(("Failed with rc=%Rrc\n", rc));
             }
-            LogFunc(("VBOX_CLIPBOARD_WM_SET_FORMATS: fFormats=0x%x, lastErr=%ld\n", fFormats, GetLastError()));
+            LogFunc(("VBOX_CLIPBOARD_WM_REPORT_FORMATS: fFormats=0x%x, lastErr=%ld\n", fFormats, GetLastError()));
         } break;
 
         case WM_DESTROY:
@@ -688,7 +687,7 @@ int VBoxClipboardSvcImplFormatAnnounce(PVBOXCLIPBOARDCLIENTDATA pClientData, uin
     /*
      * The guest announced formats. Forward to the window thread.
      */
-    PostMessage(pCtx->Win.hWnd, VBOX_CLIPBOARD_WM_SET_FORMATS,
+    PostMessage(pCtx->Win.hWnd, VBOX_CLIPBOARD_WM_REPORT_FORMATS,
                 0 /* wParam */, u32Formats /* lParam */);
 
     return VINF_SUCCESS;
