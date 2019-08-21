@@ -20,6 +20,7 @@
 #include <iprt/errcore.h>
 #include <iprt/getopt.h>
 #include <iprt/initterm.h>
+#include <iprt/ldr.h>
 #include <iprt/stream.h>
 #ifdef RT_OS_WINDOWS
 # include <iprt/win/windows.h>
@@ -54,24 +55,187 @@
 #include <VBox/VBoxGL2D.h>
 #endif
 
-#ifdef VBOX_WITH_CROGL
-#include <cr_spu.h>
+/**
+ * The OpenGL methods to look for when checking 3D presence.
+ */
+static const char * const g_apszOglMethods[] =
+{
+#ifdef RT_OS_WINDOWS
+    "wglCreateContext",
+    "wglDeleteContext",
+    "wglMakeCurrent",
+    "wglShareLists",
+#elif defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD) || defined(RT_OS_SOLARIS)
+    "glXQueryVersion",
+    "glXChooseVisual",
+    "glXCreateContext",
+    "glXMakeCurrent",
+    "glXDestroyContext",
+#endif
+    "glAlphaFunc",
+    "glBindTexture",
+    "glBlendFunc",
+    "glClear",
+    "glClearColor",
+    "glClearDepth",
+    "glClearStencil",
+    "glClipPlane",
+    "glColorMask",
+    "glColorPointer",
+    "glCullFace",
+    "glDeleteTextures",
+    "glDepthFunc",
+    "glDepthMask",
+    "glDepthRange",
+    "glDisable",
+    "glDisableClientState",
+    "glDrawArrays",
+    "glDrawElements",
+    "glEnable",
+    "glEnableClientState",
+    "glFogf",
+    "glFogfv",
+    "glFogi",
+    "glFrontFace",
+    "glGenTextures",
+    "glGetBooleanv",
+    "glGetError",
+    "glGetFloatv",
+    "glGetIntegerv",
+    "glGetString",
+    "glGetTexImage",
+    "glLightModelfv",
+    "glLightf",
+    "glLightfv",
+    "glLineWidth",
+    "glLoadIdentity",
+    "glLoadMatrixf",
+    "glMaterialfv",
+    "glMatrixMode",
+    "glMultMatrixf",
+    "glNormalPointer",
+    "glPixelStorei",
+    "glPointSize",
+    "glPolygonMode",
+    "glPolygonOffset",
+    "glPopAttrib",
+    "glPopMatrix",
+    "glPushAttrib",
+    "glPushMatrix",
+    "glScissor",
+    "glShadeModel",
+    "glStencilFunc",
+    "glStencilMask",
+    "glStencilOp",
+    "glTexCoordPointer",
+    "glTexImage2D",
+    "glTexParameterf",
+    "glTexParameterfv",
+    "glTexParameteri",
+    "glTexSubImage2D",
+    "glVertexPointer",
+    "glViewport"
+};
+
+
+/**
+ * Tries to resolve the given OpenGL symbol.
+ *
+ * @returns Pointer to the symbol or nULL on error.
+ * @param   pszSymbol           The symbol to resolve.
+ */
+DECLINLINE(PFNRT) vboxTestOglGetProc(const char *pszSymbol)
+{
+    int rc;
+
+#ifdef RT_OS_WINDOWS
+    static RTLDRMOD s_hOpenGL32 = NULL;
+    if (s_hOpenGL32 == NULL)
+    {
+        rc = RTLdrLoadSystem("opengl32", /* fNoUnload = */ true, &s_hOpenGL32);
+        if (RT_FAILURE(rc))
+           s_hOpenGL32 = NULL;
+    }
+
+    typedef PROC (WINAPI *PFNWGLGETPROCADDRESS)(LPCSTR);
+    static PFNWGLGETPROCADDRESS s_wglGetProcAddress = NULL;
+    if (s_wglGetProcAddress == NULL)
+    {
+        if (s_hOpenGL32 != NULL)
+        {
+            rc = RTLdrGetSymbol(s_hOpenGL32, "wglGetProcAddress", (void **)&s_wglGetProcAddress);
+            if (RT_FAILURE(rc))
+               s_wglGetProcAddress = NULL;
+        }
+    }
+
+    if (s_wglGetProcAddress)
+    {
+        /* Khronos: [on failure] "some implementations will return other values. 1, 2, and 3 are used, as well as -1". */
+        PFNRT p = (PFNRT)s_wglGetProcAddress(pszSymbol);
+        if (RT_VALID_PTR(p))
+            return p;
+
+        /* Might be an exported symbol. */
+        rc = RTLdrGetSymbol(s_hOpenGL32, pszSymbol, (void **)&p);
+        if (RT_SUCCESS(rc))
+            return p;
+    }
+#else /* The X11 gang */
+    static RTLDRMOD s_hGL = NULL;
+    if (s_hGL == NULL)
+    {
+        static const char s_szLibGL[] = "libGL.so.1";
+        rc = RTLdrLoadEx(s_szLibGL, &s_hGL, RTLDRLOAD_FLAGS_GLOBAL | RTLDRLOAD_FLAGS_NO_UNLOAD, NULL);
+        if (RT_FAILURE(rc))
+        {
+            s_hGL = NULL;
+            return NULL;
+        }
+    }
+
+    typedef PFNRT (* PFNGLXGETPROCADDRESS)(const GLubyte * procName);
+    static PFNGLXGETPROCADDRESS s_glXGetProcAddress = NULL;
+    if (s_glXGetProcAddress == NULL)
+    {
+        rc = RTLdrGetSymbol(s_hGL, "glXGetProcAddress", (void **)&s_glXGetProcAddress);
+        if (RT_FAILURE(rc))
+        {
+            s_glXGetProcAddress = NULL;
+            return NULL;
+        }
+    }
+
+    PFNRT p = s_glXGetProcAddress((const GLubyte *)pszSymbol);
+    if (RT_VALID_PTR(p))
+        return p;
+
+    /* Might be an exported symbol. */
+    rc = RTLdrGetSymbol(s_hGL, pszSymbol, (void **)&p);
+    if (RT_SUCCESS(rc))
+        return p;
+#endif
+
+    return NULL;
+}
 
 static int vboxCheck3DAccelerationSupported()
 {
     LogRel(("Testing 3D Support:\n"));
-    PCSPUREG aSpuRegs[] = { &g_RenderSpuReg, &g_ErrorSpuReg, NULL};
-    SPU *spu = crSPUInitFromReg(NULL, 0, "render", NULL, &aSpuRegs[0]);
-    if (spu)
+
+    for (uint32_t i = 0; i < RT_ELEMENTS(g_apszOglMethods); i++)
     {
-        crSPUUnloadChain(spu);
-        LogRel(("Testing 3D Succeeded!\n"));
-        return 0;
+        PFNRT pfn = vboxTestOglGetProc(g_apszOglMethods[i]);
+        if (!pfn)
+        {
+            LogRel(("Testing 3D Failed\n"));
+            return 1;
+        }
     }
-    LogRel(("Testing 3D Failed\n"));
-    return 1;
+
+    LogRel(("Testing 3D Succeeded!\n"));
+    return 0;
 }
-#endif
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
 static int vboxCheck2DVideoAccelerationSupported()
@@ -210,10 +374,8 @@ int main(int argc, char **argv)
 
     if(argc < 2)
     {
-#ifdef VBOX_WITH_CROGL
         /* backwards compatibility: check 3D */
         rc = vboxCheck3DAccelerationSupported();
-#endif
     }
     else
     {
@@ -233,9 +395,7 @@ int main(int argc, char **argv)
 #ifdef VBOX_WITH_VIDEOHWACCEL
         bool bTest2D = false;
 #endif
-#ifdef VBOX_WITH_CROGL
         bool bTest3D = false;
-#endif
 #ifdef VBOXGLTEST_WITH_LOGGING
         bool bLog = false;
         bool bLogSuffix = false;
@@ -251,14 +411,12 @@ int main(int argc, char **argv)
             switch (rc)
             {
                 case 't':
-#ifdef VBOX_WITH_CROGL
                     if (!strcmp(Val.psz, "3D") || !strcmp(Val.psz, "3d"))
                     {
                         bTest3D = true;
                         rc = 0;
                         break;
                     }
-#endif
 #ifdef VBOX_WITH_VIDEOHWACCEL
                     if (!strcmp(Val.psz, "2D") || !strcmp(Val.psz, "2d"))
                     {
@@ -285,9 +443,7 @@ int main(int argc, char **argv)
 #ifdef VBOX_WITH_VIDEOHWACCEL
                              "  --test 2D             test for 2D (video) OpenGL capabilities\n"
 #endif
-#ifdef VBOX_WITH_CROGL
                              "  --test 3D             test for 3D OpenGL capabilities\n"
-#endif
 #ifdef VBOXGLTEST_WITH_LOGGING
                              "  --log <log_file_name> log the GL test result to the given file\n"
                              "\n"
@@ -332,10 +488,8 @@ int main(int argc, char **argv)
 #endif
                 rc = vboxInitQuietMode();
 
-#ifdef VBOX_WITH_CROGL
             if(!rc && bTest3D)
                 rc = vboxCheck3DAccelerationSupported();
-#endif
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
             if(!rc && bTest2D)

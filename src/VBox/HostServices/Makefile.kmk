@@ -24,11 +24,6 @@ ifdef VBOX_WITH_SHARED_FOLDERS
  include $(PATH_SUB_CURRENT)/SharedFolders/Makefile.kmk
 endif
 if1of ($(KBUILD_TARGET), win linux solaris darwin freebsd)
- ifdef VBOX_WITH_CROGL
-  include $(PATH_SUB_CURRENT)/SharedOpenGL/Makefile.kmk
- endif
-endif
-if1of ($(KBUILD_TARGET), win linux solaris darwin freebsd)
  ifdef VBOX_WITH_SHARED_CLIPBOARD
   include $(PATH_SUB_CURRENT)/SharedClipboard/Makefile.kmk
  endif

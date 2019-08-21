@@ -1,6 +1,6 @@
 # $Id$
 ## @file
-# Sub-Makefile for the Shared OpenGL Host Service.
+# Sub-Makefile for the OpenGLTest helper app.
 #
 
 #
@@ -22,68 +22,19 @@ include $(KBUILD_PATH)/subheader.kmk
 #
 # Target lists.
 #
-ifdef VBOX_WITH_MAIN
-LIBRARIES += VBoxOGLrenderspu
-BLDDIRS   += \
-	$(VBOX_PATH_CROGL_GENFILES)/
-endif
-
-ifeq ($(KBUILD_TARGET),darwin)
- #
- # We have to symlink the system headers of OpenGl cause they have some
- # different directory hierarchy on Mac OS X (no /GL sub directory).
- #
- # See Config.kmk for the global variables.
- #
- INSTALLS += DarwinOpenGLHdrs
- DarwinOpenGLHdrs_INST     = $(VBOX_DARWIN_OPENGL_INST)
- DarwinOpenGLHdrs_SYMLINKS = \
- 	$(foreach hdr, $(VBOX_DARWIN_OPENGL_HEADERS),\
- 		$(hdr)=>$(VBOX_PATH_MACOSX_SDK)/System/Library/Frameworks/OpenGL.framework/Versions/Current/Headers/$(hdr))
-endif # darwin
-
-#
-# VBoxOGLrenderspu
-#
-VBoxOGLrenderspu_TEMPLATE = VBOXCROGLR3HOSTLIB
-VBoxOGLrenderspu_INTERMEDIATES = \
-	$(VBOX_PATH_CROGL_GENFILES)/state/cr_currentpointers.h \
-	$(VBOX_PATH_CROGL_GENFILES)/state/cr_statefuncs.h
-VBoxOGLrenderspu_INCS = $(VBOX_GRAPHICS_INCS)
-VBoxOGLrenderspu_SOURCES = \
-	render/renderspu.c \
-	render/renderspu_config.c \
-	render/renderspu_init.c
-VBoxOGLrenderspu_SOURCES.win     = \
-	render/renderspu_wgl.c
-VBoxOGLrenderspu_SOURCES.linux   = render/renderspu_glx.c
-VBoxOGLrenderspu_SOURCES.solaris = render/renderspu_glx.c
-VBoxOGLrenderspu_SOURCES.freebsd = render/renderspu_glx.c
-VBoxOGLrenderspu_OBJCFLAGS.darwin = -Wno-shadow
-VBoxOGLrenderspu_SOURCES.darwin  = \
-	OpenGLTest/OpenGLTestDarwin.cpp \
-	render/renderspu_cocoa.c \
-	render/renderspu_cocoa_helper.m
-ifdef VBOX_WITH_CRHGSMI
-VBoxOGLrenderspu_DEFS += VBOX_WITH_CRHGSMI
-endif
-ifdef VBOX_WITH_VDMA
-VBoxOGLrenderspu_DEFS += VBOX_WITH_VDMA
-endif
-
 LIBRARIES += VBoxOGLTest
 VBoxOGLTest_TEMPLATE = VBOXR3NP
 ifneq ($(KBUILD_TARGET),darwin)
-  VBoxOGLTest_SOURCES = OpenGLTest/OpenGLTest.cpp
+  VBoxOGLTest_SOURCES = OpenGLTest.cpp
 endif
-VBoxOGLTest_SOURCES.darwin = OpenGLTest/OpenGLTestDarwin.cpp
+VBoxOGLTest_SOURCES.darwin = OpenGLTestDarwin.cpp
 
 #
 # VBoxTestOGL - OpenGL support test app.
 # Note! Doesn't link with VBOX_WITH_DEBUG_VCC_CRT defined because it uses Qt.
 #
 if (   defined(VBOX_WITH_QTGUI) \
-    && (defined(VBOX_WITH_CROGL) || defined(VBOX_WITH_VIDEOHWACCEL)) \
+    && defined(VBOX_WITH_VIDEOHWACCEL) \
     && !defined(VBOX_WITH_DEBUG_VCC_CRT))
  ifneq ($(KBUILD_TARGET),darwin)
   ifdef VBOX_WITH_VIDEOHWACCEL
@@ -91,25 +42,18 @@ if (   defined(VBOX_WITH_QTGUI) \
   endif
   PROGRAMS += VBoxTestOGL
   VBoxTestOGL_TEMPLATE = $(if $(VBOX_WITH_VIDEOHWACCEL),$(if $(VBOX_WITH_HARDENING),VBOXQTGUI,VBOXQTGUIEXE),VBOXMAINEXE)
-  VBoxTestOGL_INCS     += $(VBOX_PATH_CROGL_INCLUDE) $(VBOX_PATH_CROGL_GENFILES)
   VBoxTestOGL_DEFS.win         = _WIN32_WINNT=0x0500 WINDOWS=1
   VBoxTestOGL_DEFS.linux       = Linux=1 _GNU_SOURCE
   VBoxTestOGL_DEFS.solaris     = SunOS=1 _GNU_SOURCE #GLEXT_64_TYPES_DEFINED
   VBoxTestOGL_DEFS.darwin      = DARWIN=1 GL_GLEXT_LEGACY _GNU_SOURCE
   VBoxTestOGL_DEFS.freebsd     = FreeBSD=1 _GNU_SOURCE
-  VBoxTestOGL_SOURCES = OpenGLTest/OpenGLTestApp.cpp
-  VBoxTestOGL_SOURCES.win = OpenGLTest/VBoxTestOGL.rc
+  VBoxTestOGL_SOURCES = OpenGLTestApp.cpp
+  VBoxTestOGL_SOURCES.win = VBoxTestOGL.rc
   VBoxTestOGL_LIBS = \
-  	$(if $(VBOX_WITH_CROGL), \
-  	    $(PATH_STAGE_LIB)/VBoxOGLhosterrorspu$(VBOX_SUFF_LIB) \
-	    $(PATH_STAGE_LIB)/VBoxOGLrenderspu$(VBOX_SUFF_LIB) \
-  	    $(PATH_STAGE_LIB)/VBoxOGLhostspuload$(VBOX_SUFF_LIB) \
-  	    $(PATH_STAGE_LIB)/VBoxOGLhostcrutil$(VBOX_SUFF_LIB),) \
   	$(if $(VBOX_WITH_VIDEOHWACCEL), $(PATH_STAGE_LIB)/VBoxOGL2D$(VBOX_SUFF_LIB),) \
   	$(LIB_RUNTIME)
   VBoxTestOGL_DEFS += \
     VBOX_BUILD_TARGET=\"$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)\" \
-    $(if $(VBOX_WITH_CROGL), VBOX_WITH_CROGL,) \
     $(if $(VBOX_WITH_VIDEOHWACCEL), VBOX_WITH_VIDEOHWACCEL,)
   ifdef VBOX_WITH_VIDEOHWACCEL
    VBoxTestOGL_QT_MODULES   += Core Gui OpenGL Widgets
