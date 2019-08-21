@@ -595,6 +595,8 @@ typedef struct VBGLR3SHCLCMDCTX
     uint32_t uContextID;
     /** IN: Protocol version to use. */
     uint32_t uProtocol;
+    /** IN: Maximum chunk size (in bytes). */
+    uint32_t cbChunkSize;
     /** OUT: Number of parameters retrieved. */
     uint32_t uNumParms;
 } VBGLR3SHCLCMDCTX, *PVBGLR3SHCLCMDCTX;
@@ -643,6 +645,8 @@ VBGLR3DECL(int)     VbglR3ClipboardReportFormats(HGCMCLIENTID idClient, uint32_t
 VBGLR3DECL(int)     VbglR3ClipboardWriteData(HGCMCLIENTID idClient, uint32_t fFormat, void *pv, uint32_t cb);
 
 #  ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+VBGLR3DECL(int)     VbglR3ClipboardConnectEx(PVBGLR3SHCLCMDCTX pCtx);
+VBGLR3DECL(int)     VbglR3ClipboardDisconnectEx(PVBGLR3SHCLCMDCTX pCtx);
 VBGLR3DECL(int)     VbglR3ClipboardEventGetNext(PVBGLR3SHCLCMDCTX pCtx, PSHAREDCLIPBOARDURITRANSFER pTransfer,
                                                 PVBGLR3CLIPBOARDEVENT *ppEvent);
 VBGLR3DECL(void)    VbglR3ClipboardEventFree(PVBGLR3CLIPBOARDEVENT pEvent);
@@ -674,10 +678,10 @@ VBGLR3DECL(int)     VbglR3ClipboardObjCloseSend(PVBGLR3SHCLCMDCTX pCtx, SHAREDCL
 
 VBGLR3DECL(int)     VbglR3ClipboardObjReadRecv(PVBGLR3SHCLCMDCTX pCtx, PSHAREDCLIPBOARDOBJHANDLE phObj, uint32_t pcbToRead,
                                                uint32_t *pfFlags);
-VBGLR3DECL(int)     VbglR3ClipboardObjReadSend(PVBGLR3SHCLCMDCTX pCtx, SHAREDCLIPBOARDOBJHANDLE hObj, void *pvBuf, uint32_t cbBuf,
+VBGLR3DECL(int)     VbglR3ClipboardObjRead(PVBGLR3SHCLCMDCTX pCtx, SHAREDCLIPBOARDOBJHANDLE hObj, void *pvBuf, uint32_t cbBuf,
                                                uint32_t *pcbRead);
-VBGLR3DECL(int)     VbglR3ClipboardObjWriteSend(PVBGLR3SHCLCMDCTX pCtx, SHAREDCLIPBOARDOBJHANDLE hObj, void *pvBuf, uint32_t cbBuf,
-                                                uint32_t *pcbWritten);
+VBGLR3DECL(int)     VbglR3ClipboardObjWrite(PVBGLR3SHCLCMDCTX pCtx, SHAREDCLIPBOARDOBJHANDLE hObj, void *pvBuf, uint32_t cbBuf,
+                                            uint32_t *pcbWritten);
 
 VBGLR3DECL(int)     VbglR3ClipboardWriteError(HGCMCLIENTID idClient, int rcErr);
 #  endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */

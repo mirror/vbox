@@ -53,7 +53,7 @@
 
 
 /**
- * Connects to the clipboard service.
+ * Connects to the Shared Clipboard service.
  *
  * @returns VBox status code
  * @param   pidClient       Where to put the client id on success. The client id
@@ -71,7 +71,27 @@ VBGLR3DECL(int) VbglR3ClipboardConnect(HGCMCLIENTID *pidClient)
 
 
 /**
- * Disconnect from the clipboard service.
+ * Connects to the Shared Clipboard service, extended version.
+ *
+ * @returns VBox status code.
+ * @param   pCtx                Shared Clipboard command context to use for the connection.
+ */
+VBGLR3DECL(int) VbglR3ClipboardConnectEx(PVBGLR3SHCLCMDCTX pCtx)
+{
+    int rc = VbglR3ClipboardConnect(&pCtx->uClientID);
+    if (RT_SUCCESS(rc))
+    {
+        pCtx->uProtocol   = 0;    /** @todo Makke this dynamic. */
+        pCtx->cbChunkSize = _64K; /** @todo Makke this dynamic. */
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+
+/**
+ * Disconnects from the Shared Clipboard service.
  *
  * @returns VBox status code.
  * @param   idClient        The client id returned by VbglR3ClipboardConnect().
@@ -79,6 +99,25 @@ VBGLR3DECL(int) VbglR3ClipboardConnect(HGCMCLIENTID *pidClient)
 VBGLR3DECL(int) VbglR3ClipboardDisconnect(HGCMCLIENTID idClient)
 {
     return VbglR3HGCMDisconnect(idClient);
+}
+
+
+/**
+ * Disconnects from the Shared Clipboard service, extended version.
+ *
+ * @returns VBox status code.
+ * @param   pCtx                Shared Clipboard command context to use for the connection.
+ */
+VBGLR3DECL(int) VbglR3ClipboardDisconnectEx(PVBGLR3SHCLCMDCTX pCtx)
+{
+    int rc = VbglR3ClipboardDisconnect(pCtx->uClientID);
+    if (RT_SUCCESS(rc))
+    {
+        pCtx->uClientID = 0;
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
 }
 
 
@@ -198,7 +237,7 @@ static int vbglR3ClipboardPeekMsg(HGCMCLIENTID idClient, uint32_t *puMsg, uint32
  *          caller just have to repeat this call.
  * @retval  VERR_VM_RESTORED if the VM has been restored (idRestoreCheck).
  *
- * @param   idClient        The client ID returned by VbglR3GuestCtrlConnect().
+ * @param   pCtx            Shared Clipboard command context to use for the connection.
  * @param   pidMsg          Where to store the message id.
  * @param   pcParameters    Where to store the number  of parameters which will
  *                          be received in a second call to the host.
@@ -742,10 +781,10 @@ VBGLR3DECL(int) VbglR3ClipboardObjOpenRecv(PVBGLR3SHCLCMDCTX pCtx, PVBOXCLIPBOAR
                        VBOX_SHARED_CLIPBOARD_GUEST_FN_MSG_GET, VBOX_SHARED_CLIPBOARD_CPARMS_OBJ_OPEN);
 
     Msg.uContext.SetUInt32(VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_OBJ_OPEN);
-    Msg.cbPath.SetUInt64(pCreateParms->cbPath);
+    Msg.uHandle.SetUInt64(0);
+    Msg.cbPath.SetUInt32(pCreateParms->cbPath);
     Msg.szPath.SetPtr(pCreateParms->pszPath, pCreateParms->cbPath);
     Msg.fCreate.SetUInt32(0);
-    Msg.objInfo.SetPtr(&pCreateParms->ObjInfo, sizeof(pCreateParms->ObjInfo));
 
     int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
     if (RT_SUCCESS(rc))
@@ -803,7 +842,6 @@ VBGLR3DECL(int) VbglR3ClipboardObjOpenSend(PVBGLR3SHCLCMDCTX pCtx, PVBOXCLIPBOAR
     Msg.cbPath.SetUInt32(pCreateParms->cbPath);
     Msg.szPath.SetPtr((void *)pCreateParms->pszPath, pCreateParms->cbPath + 1 /* Include terminating zero */);
     Msg.fCreate.SetUInt32(pCreateParms->fCreate);
-    Msg.objInfo.SetPtr((void *)&pCreateParms->ObjInfo, sizeof(pCreateParms->ObjInfo));
 
     int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
     if (RT_SUCCESS(rc))
@@ -826,7 +864,7 @@ VBGLR3DECL(int) VbglR3ClipboardObjCloseRecv(PVBGLR3SHCLCMDCTX pCtx, PSHAREDCLIPB
     VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID,
                        VBOX_SHARED_CLIPBOARD_GUEST_FN_MSG_GET, VBOX_SHARED_CLIPBOARD_CPARMS_OBJ_CLOSE);
 
-    Msg.uContext.SetUInt32(VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_OBJ_OPEN);
+    Msg.uContext.SetUInt32(VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_OBJ_CLOSE);
     Msg.uHandle.SetUInt64(0);
 
     int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
@@ -919,8 +957,8 @@ VBGLR3DECL(int) VbglR3ClipboardObjReadRecv(PVBGLR3SHCLCMDCTX pCtx, PSHAREDCLIPBO
     return rc;
 }
 
-VBGLR3DECL(int) VbglR3ClipboardObjReadSend(PVBGLR3SHCLCMDCTX pCtx, SHAREDCLIPBOARDOBJHANDLE hObj,
-                                           void *pvData, uint32_t cbData, uint32_t *pcbRead)
+VBGLR3DECL(int) VbglR3ClipboardObjRead(PVBGLR3SHCLCMDCTX pCtx, SHAREDCLIPBOARDOBJHANDLE hObj,
+                                       void *pvData, uint32_t cbData, uint32_t *pcbRead)
 {
     AssertPtrReturn(pCtx,   VERR_INVALID_POINTER);
     AssertPtrReturn(pvData, VERR_INVALID_POINTER);
@@ -930,19 +968,19 @@ VBGLR3DECL(int) VbglR3ClipboardObjReadSend(PVBGLR3SHCLCMDCTX pCtx, SHAREDCLIPBOA
     VBoxClipboardObjReadWriteMsg Msg;
     RT_ZERO(Msg);
 
-    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, VBOX_SHARED_CLIPBOARD_GUEST_FN_OBJ_READ, VBOX_SHARED_CLIPBOARD_CPARMS_OBJ_READ);
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID,
+                       VBOX_SHARED_CLIPBOARD_GUEST_FN_OBJ_READ, VBOX_SHARED_CLIPBOARD_CPARMS_OBJ_READ);
 
     Msg.uContext.SetUInt32(pCtx->uContextID);
     Msg.uHandle.SetUInt64(hObj);
     Msg.pvData.SetPtr(pvData, cbData);
-    Msg.cbData.SetUInt32(0);
+    Msg.cbData.SetUInt32(cbData);
     Msg.pvChecksum.SetPtr(NULL, 0);
     Msg.cbChecksum.SetUInt32(0);
 
     int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
     if (RT_SUCCESS(rc))
     {
-        /** @todo Context ID not used yet. */
         /** @todo Add checksum support. */
 
         if (pcbRead)
@@ -956,32 +994,34 @@ VBGLR3DECL(int) VbglR3ClipboardObjReadSend(PVBGLR3SHCLCMDCTX pCtx, SHAREDCLIPBOA
     return rc;
 }
 
-VBGLR3DECL(int) VbglR3ClipboardObjWriteSend(PVBGLR3SHCLCMDCTX pCtx,
-                                            SHAREDCLIPBOARDOBJHANDLE hObj,
-                                            void *pvData, uint32_t cbData, uint32_t *pcbWritten)
+VBGLR3DECL(int) VbglR3ClipboardObjWrite(PVBGLR3SHCLCMDCTX pCtx, SHAREDCLIPBOARDOBJHANDLE hObj,
+                                        void *pvData, uint32_t cbData, uint32_t *pcbWritten)
 {
     AssertPtrReturn(pCtx,   VERR_INVALID_POINTER);
     AssertPtrReturn(pvData, VERR_INVALID_POINTER);
-    AssertReturn(cbData,    VERR_INVALID_PARAMETER);
+    /* cbData can be 0. */
     /* pcbWritten is optional. */
 
     VBoxClipboardObjReadWriteMsg Msg;
     RT_ZERO(Msg);
 
-    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, VBOX_SHARED_CLIPBOARD_GUEST_FN_OBJ_WRITE, VBOX_SHARED_CLIPBOARD_CPARMS_OBJ_WRITE);
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID,
+                       VBOX_SHARED_CLIPBOARD_GUEST_FN_OBJ_WRITE, VBOX_SHARED_CLIPBOARD_CPARMS_OBJ_WRITE);
 
     Msg.uContext.SetUInt32(pCtx->uContextID);
     Msg.uHandle.SetUInt64(hObj);
     Msg.pvData.SetPtr(pvData, cbData);
     Msg.cbData.SetUInt32(cbData);
-    Msg.pvChecksum.SetPtr(NULL, 0); /** @todo Implement this. */
-    Msg.cbChecksum.SetUInt32(0); /** @todo Implement this. */
+    Msg.pvChecksum.SetPtr(NULL, 0);
+    Msg.cbChecksum.SetUInt32(0);
 
     int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
     if (RT_SUCCESS(rc))
     {
+        /** @todo Add checksum support. */
+
         if (pcbWritten)
-            *pcbWritten = cbData;
+            *pcbWritten = cbData; /** @todo For now return all as being written. */
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -1048,8 +1088,6 @@ VBGLR3DECL(int) VbglR3ClipboardEventGetNext(PVBGLR3SHCLCMDCTX pCtx, PSHAREDCLIPB
 
             case VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_LIST_OPEN:
             {
-                LogFlowFunc(("VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_LIST_OPEN\n"));
-
                 VBOXCLIPBOARDLISTOPENPARMS openParmsList;
                 rc = SharedClipboardURIListOpenParmsInit(&openParmsList);
                 if (RT_SUCCESS(rc))
@@ -1075,8 +1113,6 @@ VBGLR3DECL(int) VbglR3ClipboardEventGetNext(PVBGLR3SHCLCMDCTX pCtx, PSHAREDCLIPB
 
             case VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_LIST_CLOSE:
             {
-                LogFlowFunc(("VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_LIST_CLOSE\n"));
-
                 SHAREDCLIPBOARDLISTHANDLE hList;
                 rc = VbglR3ClipboardListCloseRecv(pCtx, &hList);
                 if (RT_SUCCESS(rc))
@@ -1093,8 +1129,6 @@ VBGLR3DECL(int) VbglR3ClipboardEventGetNext(PVBGLR3SHCLCMDCTX pCtx, PSHAREDCLIPB
 
             case VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_LIST_HDR_READ:
             {
-                LogFlowFunc(("VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_LIST_HDR_READ\n"));
-
                 /** @todo Handle filter + list features. */
 
                 SHAREDCLIPBOARDLISTHANDLE hList  = SHAREDCLIPBOARDLISTHANDLE_INVALID;
@@ -1174,19 +1208,22 @@ VBGLR3DECL(int) VbglR3ClipboardEventGetNext(PVBGLR3SHCLCMDCTX pCtx, PSHAREDCLIPB
 
             case VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_OBJ_OPEN:
             {
-                LogFlowFunc(("VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_OBJ_OPEN\n"));
-
-                VBOXCLIPBOARDOBJOPENCREATEPARMS createParms;
-                rc = VbglR3ClipboardObjOpenRecv(pCtx, &createParms);
+                VBOXCLIPBOARDOBJOPENCREATEPARMS openParms;
+                rc = SharedClipboardURIObjectOpenParmsInit(&openParms);
                 if (RT_SUCCESS(rc))
                 {
-                    SHAREDCLIPBOARDOBJHANDLE hObj;
-                    rc = SharedClipboardURIObjectOpen(pTransfer, &createParms, &hObj);
+                    rc = VbglR3ClipboardObjOpenRecv(pCtx, &openParms);
                     if (RT_SUCCESS(rc))
                     {
+                        SHAREDCLIPBOARDOBJHANDLE hObj;
+                        rc = SharedClipboardURIObjectOpen(pTransfer, &openParms, &hObj);
+
+                        /* Reply in any case. */
                         int rc2 = VbglR3ClipboardObjOpenReply(pCtx, rc, hObj);
                         AssertRC(rc2);
                     }
+
+                    SharedClipboardURIObjectOpenParmsDestroy(&openParms);
                 }
 
                 break;
@@ -1194,13 +1231,11 @@ VBGLR3DECL(int) VbglR3ClipboardEventGetNext(PVBGLR3SHCLCMDCTX pCtx, PSHAREDCLIPB
 
             case VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_OBJ_CLOSE:
             {
-                LogFlowFunc(("VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_OBJ_CLOSE\n"));
-
                 SHAREDCLIPBOARDOBJHANDLE hObj;
                 rc = VbglR3ClipboardObjCloseRecv(pCtx, &hObj);
                 if (RT_SUCCESS(rc))
                 {
-                    rc = SharedClipboardURIObjectClose(hObj);
+                    rc = SharedClipboardURIObjectClose(pTransfer, hObj);
 
                     /* Reply in any case. */
                     int rc2 = VbglR3ClipboardObjCloseReply(pCtx, rc, hObj);
@@ -1211,21 +1246,26 @@ VBGLR3DECL(int) VbglR3ClipboardEventGetNext(PVBGLR3SHCLCMDCTX pCtx, PSHAREDCLIPB
 
             case VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_OBJ_READ:
             {
-                LogFlowFunc(("VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_OBJ_READ\n"));
-
                 SHAREDCLIPBOARDOBJHANDLE hObj;
                 uint32_t cbBuf;
                 uint32_t fFlags;
                 rc = VbglR3ClipboardObjReadRecv(pCtx, &hObj, &cbBuf, &fFlags);
                 if (RT_SUCCESS(rc))
                 {
-                    void *pvBuf = RTMemAlloc(RT_MIN(cbBuf, _64K)); /** @todo Make this more flexible. */
+                    AssertBreakStmt(pCtx->cbChunkSize, rc = VERR_INVALID_PARAMETER);
+
+                    const uint32_t cbToRead = RT_MIN(cbBuf, pCtx->cbChunkSize);
+
+                    LogFlowFunc(("hObj=%RU64, cbBuf=%RU32, fFlags=0x%x -> cbChunkSize=%RU32, cbToRead=%RU32\n",
+                                 hObj, cbBuf, fFlags, pCtx->cbChunkSize, cbToRead));
+
+                    void *pvBuf = RTMemAlloc(cbToRead);
                     if (pvBuf)
                     {
                         uint32_t cbRead;
-                        rc = SharedClipboardURIObjectRead(hObj, pvBuf, cbBuf, &cbRead, fFlags);
+                        rc = SharedClipboardURIObjectRead(pTransfer, hObj, pvBuf, cbToRead, &cbRead, fFlags);
                         if (RT_SUCCESS(rc))
-                            rc = VbglR3ClipboardObjReadSend(pCtx, hObj, pvBuf, cbRead, NULL /* pcbWritten */);
+                            rc = VbglR3ClipboardObjWrite(pCtx, hObj, pvBuf, cbRead, NULL /* pcbWritten */);
 
                         RTMemFree(pvBuf);
                     }

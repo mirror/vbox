@@ -186,18 +186,23 @@ STDMETHODIMP VBoxClipboardWinStreamImpl::Read(void *pvBuffer, ULONG nBytesToRead
         if (   m_hObj == SHAREDCLIPBOARDOBJHANDLE_INVALID
             && m_pURITransfer->ProviderIface.pfnObjOpen)
         {
-            VBOXCLIPBOARDOBJOPENCREATEPARMS createParms;
-            RT_ZERO(createParms);
-
-            createParms.pszPath = RTStrDup(m_strPath.c_str());
-            if (createParms.pszPath)
+            VBOXCLIPBOARDOBJOPENCREATEPARMS openParms;
+            rc = SharedClipboardURIObjectOpenParmsInit(&openParms);
+            if (RT_SUCCESS(rc))
             {
-                rc = m_pURITransfer->ProviderIface.pfnObjOpen(&m_pURITransfer->ProviderCtx, &createParms, &m_hObj);
+                openParms.fCreate = SHAREDCLIPBOARD_OBJ_CF_ACT_OPEN_IF_EXISTS
+                                  | SHAREDCLIPBOARD_OBJ_CF_ACT_FAIL_IF_NEW
+                                  | SHAREDCLIPBOARD_OBJ_CF_ACCESS_READ
+                                  | SHAREDCLIPBOARD_OBJ_CF_ACCESS_DENYWRITE;
 
-                RTStrFree(createParms.pszPath);
+                rc = RTStrCopy(openParms.pszPath, openParms.cbPath, m_strPath.c_str());
+                if (RT_SUCCESS(rc))
+                {
+                    rc = m_pURITransfer->ProviderIface.pfnObjOpen(&m_pURITransfer->ProviderCtx, &openParms, &m_hObj);
+                }
+
+                SharedClipboardURIObjectOpenParmsDestroy(&openParms);
             }
-            else
-                rc = VERR_NO_MEMORY;
         }
         else
             rc = VINF_SUCCESS;

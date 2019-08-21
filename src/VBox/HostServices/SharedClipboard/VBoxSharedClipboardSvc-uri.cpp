@@ -417,16 +417,58 @@ DECLCALLBACK(int) vboxSvcClipboardURIListEntryWrite(PSHAREDCLIPBOARDPROVIDERCTX 
 int vboxSvcClipboardURIObjOpen(PSHAREDCLIPBOARDPROVIDERCTX pCtx, PVBOXCLIPBOARDOBJOPENCREATEPARMS pCreateParms,
                                PSHAREDCLIPBOARDOBJHANDLE phObj)
 {
-    RT_NOREF(pCtx, pCreateParms, phObj);
-
     LogFlowFuncEnter();
 
-    int rc = VINF_SUCCESS;
+    PVBOXCLIPBOARDCLIENT pClient = (PVBOXCLIPBOARDCLIENT)pCtx->pvUser;
+    AssertPtr(pClient);
 
-    PVBOXCLIPBOARDCONTEXT pThisCtx = (PVBOXCLIPBOARDCONTEXT)pCtx->pvUser;
-    AssertPtr(pThisCtx);
+    int rc;
 
-    RT_NOREF(pThisCtx);
+    PVBOXCLIPBOARDCLIENTMSG pMsg = vboxSvcClipboardMsgAlloc(VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_OBJ_OPEN,
+                                                            VBOX_SHARED_CLIPBOARD_CPARMS_OBJ_OPEN);
+    if (pMsg)
+    {
+        const uint16_t uEvent = SharedClipboardURITransferEventIDGenerate(pCtx->pTransfer);
+
+        LogFlowFunc(("pszPath=%s, fCreate=0x%x\n", pCreateParms->pszPath, pCreateParms->fCreate));
+
+        const uint32_t cbPath = (uint32_t)strlen(pCreateParms->pszPath) + 1; /* Include terminating zero */
+
+        HGCMSvcSetU32(&pMsg->m_paParms[0], VBOX_SHARED_CLIPBOARD_CONTEXTID_MAKE(pCtx->pTransfer->State.uID, uEvent));
+        HGCMSvcSetU64(&pMsg->m_paParms[1], 0); /* uHandle */
+        HGCMSvcSetU32(&pMsg->m_paParms[2], cbPath);
+        HGCMSvcSetPv (&pMsg->m_paParms[3], pCreateParms->pszPath, cbPath);
+        HGCMSvcSetU32(&pMsg->m_paParms[4], pCreateParms->fCreate);
+
+        rc = vboxSvcClipboardMsgAdd(pClient->pData, pMsg, true /* fAppend */);
+        if (RT_SUCCESS(rc))
+        {
+            int rc2 = SharedClipboardURITransferEventRegister(pCtx->pTransfer, uEvent);
+            AssertRC(rc2);
+
+            rc = vboxSvcClipboardClientWakeup(pClient);
+            if (RT_SUCCESS(rc))
+            {
+                PSHAREDCLIPBOARDURITRANSFERPAYLOAD pPayload;
+                rc = SharedClipboardURITransferEventWait(pCtx->pTransfer, uEvent, pCtx->pTransfer->uTimeoutMs, &pPayload);
+                if (RT_SUCCESS(rc))
+                {
+                    Assert(pPayload->cbData == sizeof(VBOXCLIPBOARDREPLY));
+
+                    PVBOXCLIPBOARDREPLY pReply = (PVBOXCLIPBOARDREPLY)pPayload->pvData;
+                    AssertPtr(pReply);
+
+                    Assert(pReply->uType == VBOX_SHAREDCLIPBOARD_REPLYMSGTYPE_OBJ_OPEN);
+
+                    *phObj = pReply->u.ObjOpen.uHandle;
+
+                    SharedClipboardURITransferPayloadFree(pPayload);
+                }
+            }
+        }
+    }
+    else
+        rc = VERR_NO_MEMORY;
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -434,16 +476,49 @@ int vboxSvcClipboardURIObjOpen(PSHAREDCLIPBOARDPROVIDERCTX pCtx, PVBOXCLIPBOARDO
 
 int vboxSvcClipboardURIObjClose(PSHAREDCLIPBOARDPROVIDERCTX pCtx, SHAREDCLIPBOARDOBJHANDLE hObj)
 {
-    RT_NOREF(pCtx, hObj);
-
     LogFlowFuncEnter();
 
-    int rc = VINF_SUCCESS;
+    PVBOXCLIPBOARDCLIENT pClient = (PVBOXCLIPBOARDCLIENT)pCtx->pvUser;
+    AssertPtr(pClient);
 
-    PVBOXCLIPBOARDCONTEXT pThisCtx = (PVBOXCLIPBOARDCONTEXT)pCtx->pvUser;
-    AssertPtr(pThisCtx);
+    int rc;
 
-    RT_NOREF(pThisCtx);
+    PVBOXCLIPBOARDCLIENTMSG pMsg = vboxSvcClipboardMsgAlloc(VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_OBJ_CLOSE,
+                                                            VBOX_SHARED_CLIPBOARD_CPARMS_OBJ_CLOSE);
+    if (pMsg)
+    {
+        const uint16_t uEvent = SharedClipboardURITransferEventIDGenerate(pCtx->pTransfer);
+
+        HGCMSvcSetU32(&pMsg->m_paParms[0], VBOX_SHARED_CLIPBOARD_CONTEXTID_MAKE(pCtx->pTransfer->State.uID, uEvent));
+        HGCMSvcSetU64(&pMsg->m_paParms[1], hObj);
+
+        rc = vboxSvcClipboardMsgAdd(pClient->pData, pMsg, true /* fAppend */);
+        if (RT_SUCCESS(rc))
+        {
+            int rc2 = SharedClipboardURITransferEventRegister(pCtx->pTransfer, uEvent);
+            AssertRC(rc2);
+
+            rc = vboxSvcClipboardClientWakeup(pClient);
+            if (RT_SUCCESS(rc))
+            {
+                PSHAREDCLIPBOARDURITRANSFERPAYLOAD pPayload;
+                rc = SharedClipboardURITransferEventWait(pCtx->pTransfer, uEvent, pCtx->pTransfer->uTimeoutMs, &pPayload);
+                if (RT_SUCCESS(rc))
+                {
+                    Assert(pPayload->cbData == sizeof(VBOXCLIPBOARDREPLY));
+
+                    PVBOXCLIPBOARDREPLY pReply = (PVBOXCLIPBOARDREPLY)pPayload->pvData;
+                    AssertPtr(pReply);
+
+                    Assert(pReply->uType == VBOX_SHAREDCLIPBOARD_REPLYMSGTYPE_OBJ_CLOSE);
+
+                    SharedClipboardURITransferPayloadFree(pPayload);
+                }
+            }
+        }
+    }
+    else
+        rc = VERR_NO_MEMORY;
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -452,13 +527,56 @@ int vboxSvcClipboardURIObjClose(PSHAREDCLIPBOARDPROVIDERCTX pCtx, SHAREDCLIPBOAR
 int vboxSvcClipboardURIObjRead(PSHAREDCLIPBOARDPROVIDERCTX pCtx, SHAREDCLIPBOARDOBJHANDLE hObj,
                                void *pvData, uint32_t cbData, uint32_t fFlags, uint32_t *pcbRead)
 {
-    RT_NOREF(pCtx, hObj, pvData, cbData, fFlags, pcbRead);
-
     LogFlowFuncEnter();
 
-    int rc = VINF_SUCCESS;
+    PVBOXCLIPBOARDCLIENT pClient = (PVBOXCLIPBOARDCLIENT)pCtx->pvUser;
+    AssertPtr(pClient);
 
-    *pcbRead = cbData;
+    int rc;
+
+    PVBOXCLIPBOARDCLIENTMSG pMsg = vboxSvcClipboardMsgAlloc(VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_OBJ_READ,
+                                                            VBOX_SHARED_CLIPBOARD_CPARMS_OBJ_READ_REQ);
+    if (pMsg)
+    {
+        const uint16_t uEvent = SharedClipboardURITransferEventIDGenerate(pCtx->pTransfer);
+
+        HGCMSvcSetU32(&pMsg->m_paParms[0], VBOX_SHARED_CLIPBOARD_CONTEXTID_MAKE(pCtx->pTransfer->State.uID, uEvent));
+        HGCMSvcSetU64(&pMsg->m_paParms[1], hObj);
+        HGCMSvcSetU32(&pMsg->m_paParms[2], cbData);
+        HGCMSvcSetU32(&pMsg->m_paParms[3], fFlags);
+
+        rc = vboxSvcClipboardMsgAdd(pClient->pData, pMsg, true /* fAppend */);
+        if (RT_SUCCESS(rc))
+        {
+            int rc2 = SharedClipboardURITransferEventRegister(pCtx->pTransfer, uEvent);
+            AssertRC(rc2);
+
+            rc = vboxSvcClipboardClientWakeup(pClient);
+            if (RT_SUCCESS(rc))
+            {
+                PSHAREDCLIPBOARDURITRANSFERPAYLOAD pPayload;
+                rc = SharedClipboardURITransferEventWait(pCtx->pTransfer, uEvent, pCtx->pTransfer->uTimeoutMs, &pPayload);
+                if (RT_SUCCESS(rc))
+                {
+                    Assert(pPayload->cbData == sizeof(VBOXCLIPBOARDOBJDATACHUNK));
+
+                    PVBOXCLIPBOARDOBJDATACHUNK pDataChunk = (PVBOXCLIPBOARDOBJDATACHUNK)pPayload->pvData;
+                    AssertPtr(pDataChunk);
+
+                    const uint32_t cbRead = RT_MIN(cbData, pDataChunk->cbData);
+
+                    memcpy(pvData, pDataChunk->pvData, cbRead);
+
+                    if (pcbRead)
+                        *pcbRead = cbRead;
+
+                    SharedClipboardURITransferPayloadFree(pPayload);
+                }
+            }
+        }
+    }
+    else
+        rc = VERR_NO_MEMORY;
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -467,13 +585,55 @@ int vboxSvcClipboardURIObjRead(PSHAREDCLIPBOARDPROVIDERCTX pCtx, SHAREDCLIPBOARD
 int vboxSvcClipboardURIObjWrite(PSHAREDCLIPBOARDPROVIDERCTX pCtx, SHAREDCLIPBOARDOBJHANDLE hObj,
                                 void *pvData, uint32_t cbData, uint32_t fFlags, uint32_t *pcbWritten)
 {
-    RT_NOREF(pCtx, pCtx, hObj, pvData, cbData, fFlags, pcbWritten);
-
     LogFlowFuncEnter();
 
-    return VERR_NOT_IMPLEMENTED;
-}
+    PVBOXCLIPBOARDCLIENT pClient = (PVBOXCLIPBOARDCLIENT)pCtx->pvUser;
+    AssertPtr(pClient);
 
+    int rc;
+
+    PVBOXCLIPBOARDCLIENTMSG pMsg = vboxSvcClipboardMsgAlloc(VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_OBJ_WRITE,
+                                                            VBOX_SHARED_CLIPBOARD_CPARMS_OBJ_WRITE);
+    if (pMsg)
+    {
+        const uint16_t uEvent = SharedClipboardURITransferEventIDGenerate(pCtx->pTransfer);
+
+        HGCMSvcSetU32(&pMsg->m_paParms[0], VBOX_SHARED_CLIPBOARD_CONTEXTID_MAKE(pCtx->pTransfer->State.uID, uEvent));
+        HGCMSvcSetU64(&pMsg->m_paParms[1], hObj);
+        HGCMSvcSetU64(&pMsg->m_paParms[2], cbData);
+        HGCMSvcSetU64(&pMsg->m_paParms[3], fFlags);
+
+        rc = vboxSvcClipboardMsgAdd(pClient->pData, pMsg, true /* fAppend */);
+        if (RT_SUCCESS(rc))
+        {
+            int rc2 = SharedClipboardURITransferEventRegister(pCtx->pTransfer, uEvent);
+            AssertRC(rc2);
+
+            rc = vboxSvcClipboardClientWakeup(pClient);
+            if (RT_SUCCESS(rc))
+            {
+                PSHAREDCLIPBOARDURITRANSFERPAYLOAD pPayload;
+                rc = SharedClipboardURITransferEventWait(pCtx->pTransfer, uEvent, pCtx->pTransfer->uTimeoutMs, &pPayload);
+                if (RT_SUCCESS(rc))
+                {
+                    const uint32_t cbRead = RT_MIN(cbData, pPayload->cbData);
+
+                    memcpy(pvData, pPayload->pvData, cbRead);
+
+                    if (pcbWritten)
+                        *pcbWritten = cbRead;
+
+                    SharedClipboardURITransferPayloadFree(pPayload);
+                }
+            }
+        }
+    }
+    else
+        rc = VERR_NO_MEMORY;
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
 
 /*********************************************************************************************************************************
 *   URI callbacks                                                                                                                *
@@ -548,31 +708,33 @@ static int vboxSvcClipboardURIGetReply(uint32_t cParms, VBOXHGCMSVCPARM paParms[
 
         if (RT_SUCCESS(rc))
         {
+            rc = VERR_INVALID_PARAMETER; /* Play safe. */
+
             switch (pReply->uType)
             {
                 case VBOX_SHAREDCLIPBOARD_REPLYMSGTYPE_LIST_OPEN:
                 {
                     if (cParms >= 6)
-                    {
                         rc = HGCMSvcGetU64(&paParms[5], &pReply->u.ListOpen.uHandle);
-                    }
-                    else
-                        rc = VERR_INVALID_PARAMETER;
                     break;
                 }
 
                 case VBOX_SHAREDCLIPBOARD_REPLYMSGTYPE_OBJ_OPEN:
                 {
                     if (cParms >= 6)
-                    {
                         rc = HGCMSvcGetU64(&paParms[5], &pReply->u.ObjOpen.uHandle);
-                    }
-                    else
-                        rc = VERR_INVALID_PARAMETER;
+                    break;
+                }
+
+                case VBOX_SHAREDCLIPBOARD_REPLYMSGTYPE_OBJ_CLOSE:
+                {
+                    if (cParms >= 6)
+                        rc = HGCMSvcGetU64(&paParms[5], &pReply->u.ObjClose.uHandle);
                     break;
                 }
 
                 default:
+                    rc = VERR_NOT_SUPPORTED;
                     break;
             }
         }
@@ -902,6 +1064,44 @@ static int vboxSvcClipboardURISetListEntry(uint32_t cParms, VBOXHGCMSVCPARM paPa
         HGCMSvcSetPv (&paParms[3], pListEntry->pvInfo, pListEntry->cbInfo);
 
         rc = VINF_SUCCESS;
+    }
+    else
+        rc = VERR_INVALID_PARAMETER;
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+/**
+ * Gets an URI object data chunk from HGCM service parameters.
+ *
+ * @returns VBox status code.
+ * @param   cParms              Number of HGCM parameters supplied in \a paParms.
+ * @param   paParms             Array of HGCM parameters.
+ * @param   pDataChunk          Where to store the object data chunk data.
+ */
+static int vboxSvcClipboardURIGetObjDataChunk(uint32_t cParms, VBOXHGCMSVCPARM paParms[], PVBOXCLIPBOARDOBJDATACHUNK pDataChunk)
+{
+    AssertPtrReturn(paParms,    VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pDataChunk, VERR_INVALID_PARAMETER);
+
+    int rc;
+
+    if (cParms == VBOX_SHARED_CLIPBOARD_CPARMS_OBJ_WRITE)
+    {
+        rc = HGCMSvcGetU64(&paParms[1], &pDataChunk->uHandle);
+        if (RT_SUCCESS(rc))
+        {
+            uint32_t cbData;
+            rc = HGCMSvcGetU32(&paParms[2], &cbData);
+            if (RT_SUCCESS(rc))
+            {
+                rc = HGCMSvcGetPv(&paParms[3], &pDataChunk->pvData, &pDataChunk->cbData);
+                AssertReturn(cbData == pDataChunk->cbData, VERR_INVALID_PARAMETER);
+
+                /** @todo Implement checksum handling. */
+            }
+        }
     }
     else
         rc = VERR_INVALID_PARAMETER;
@@ -1251,7 +1451,11 @@ int vboxSvcClipboardURIHandler(PVBOXCLIPBOARDCLIENT pClient,
                     PSHAREDCLIPBOARDURITRANSFERPAYLOAD pPayload;
                     rc = SharedClipboardURITransferPayloadAlloc(uEvent, pvData, cbData, &pPayload);
                     if (RT_SUCCESS(rc))
+                    {
                         rc = SharedClipboardURITransferEventSignal(pTransfer, uEvent, pPayload);
+                        if (RT_FAILURE(rc))
+                            SharedClipboardURITransferPayloadFree(pPayload);
+                    }
                 }
             }
             break;
@@ -1296,7 +1500,11 @@ int vboxSvcClipboardURIHandler(PVBOXCLIPBOARDCLIENT pClient,
                     PSHAREDCLIPBOARDURITRANSFERPAYLOAD pPayload;
                     rc = SharedClipboardURITransferPayloadAlloc(uEvent, pvData, cbData, &pPayload);
                     if (RT_SUCCESS(rc))
+                    {
                         rc = SharedClipboardURITransferEventSignal(pTransfer, uEvent, pPayload);
+                        if (RT_FAILURE(rc))
+                            SharedClipboardURITransferPayloadFree(pPayload);
+                    }
                 }
             }
             break;
@@ -1372,7 +1580,11 @@ int vboxSvcClipboardURIHandler(PVBOXCLIPBOARDCLIENT pClient,
                         PSHAREDCLIPBOARDURITRANSFERPAYLOAD pPayload;
                         rc = SharedClipboardURITransferPayloadAlloc(uEvent, pvData, cbData, &pPayload);
                         if (RT_SUCCESS(rc))
+                        {
                             rc = SharedClipboardURITransferEventSignal(pTransfer, uEvent, pPayload);
+                            if (RT_FAILURE(rc))
+                                SharedClipboardURITransferPayloadFree(pPayload);
+                        }
                     }
                 }
             }
@@ -1416,10 +1628,60 @@ int vboxSvcClipboardURIHandler(PVBOXCLIPBOARDCLIENT pClient,
                         PSHAREDCLIPBOARDURITRANSFERPAYLOAD pPayload;
                         rc = SharedClipboardURITransferPayloadAlloc(uEvent, pvData, cbData, &pPayload);
                         if (RT_SUCCESS(rc))
+                        {
                             rc = SharedClipboardURITransferEventSignal(pTransfer, uEvent, pPayload);
+                            if (RT_FAILURE(rc))
+                                SharedClipboardURITransferPayloadFree(pPayload);
+                        }
                     }
                 }
             }
+            break;
+        }
+
+    #if 0
+        case VBOX_SHARED_CLIPBOARD_GUEST_FN_OBJ_OPEN:
+        {
+            break;
+        }
+
+        case VBOX_SHARED_CLIPBOARD_GUEST_FN_OBJ_CLOSE:
+        {
+            break;
+        }
+
+        case VBOX_SHARED_CLIPBOARD_GUEST_FN_OBJ_READ:
+        {
+            break;
+        }
+    #endif
+
+        case VBOX_SHARED_CLIPBOARD_GUEST_FN_OBJ_WRITE:
+        {
+            VBOXCLIPBOARDOBJDATACHUNK dataChunk;
+            rc = vboxSvcClipboardURIGetObjDataChunk(cParms, paParms, &dataChunk);
+            if (RT_SUCCESS(rc))
+            {
+                void    *pvData = SharedClipboardURIObjectDataChunkDup(&dataChunk);
+                uint32_t cbData = sizeof(VBOXCLIPBOARDOBJDATACHUNK);
+
+                uint32_t uCID;
+                rc = HGCMSvcGetU32(&paParms[0], &uCID);
+                if (RT_SUCCESS(rc))
+                {
+                    const uint16_t uEvent = VBOX_SHARED_CLIPBOARD_CONTEXTID_GET_EVENT(uCID);
+
+                    PSHAREDCLIPBOARDURITRANSFERPAYLOAD pPayload;
+                    rc = SharedClipboardURITransferPayloadAlloc(uEvent, pvData, cbData, &pPayload);
+                    if (RT_SUCCESS(rc))
+                    {
+                        rc = SharedClipboardURITransferEventSignal(pTransfer, uEvent, pPayload);
+                        if (RT_FAILURE(rc))
+                            SharedClipboardURITransferPayloadFree(pPayload);
+                    }
+                }
+            }
+
             break;
         }
 

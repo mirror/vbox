@@ -23,12 +23,6 @@
 #include <VBox/GuestHost/SharedClipboard-win.h>
 #include <VBox/GuestHost/SharedClipboard-uri.h>
 
-/** !!! HACK ALERT !!! Dynamically resolve functions! */
-#ifdef _WIN32_IE
-#undef _WIN32_IE
-#define _WIN32_IE 0x0501
-#endif
-
 #include <iprt/win/windows.h>
 #include <iprt/win/shlobj.h>
 #include <iprt/win/shlwapi.h>
@@ -54,6 +48,8 @@ VBoxClipboardWinDataObject::VBoxClipboardWinDataObject(PSHAREDCLIPBOARDURITRANSF
     , m_pTransfer(pTransfer)
     , m_pStream(NULL)
     , m_uObjIdx(0)
+    , m_EventListComplete(NIL_RTSEMEVENT)
+    , m_EventTransferComplete(NIL_RTSEMEVENT)
 {
     AssertPtr(m_pTransfer);
 
@@ -135,7 +131,10 @@ VBoxClipboardWinDataObject::VBoxClipboardWinDataObject(PSHAREDCLIPBOARDURITRANSF
 VBoxClipboardWinDataObject::~VBoxClipboardWinDataObject(void)
 {
     RTSemEventDestroy(m_EventListComplete);
+    m_EventListComplete = NIL_RTSEMEVENT;
+
     RTSemEventDestroy(m_EventTransferComplete);
+    m_EventTransferComplete = NIL_RTSEMEVENT;
 
     if (m_pStream)
         m_pStream->Release();
@@ -775,8 +774,11 @@ void VBoxClipboardWinDataObject::OnTransferComplete(int rc /* = VINF_SUCESS */)
     const bool fComplete = m_uObjIdx == m_lstEntries.size() - 1 /* Object index is zero-based */;
     if (fComplete)
     {
-        int rc2 = RTSemEventSignal(m_EventTransferComplete);
-        AssertRC(rc2);
+        if (m_EventTransferComplete != NIL_RTSEMEVENT)
+        {
+            int rc2 = RTSemEventSignal(m_EventTransferComplete);
+            AssertRC(rc2);
+        }
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -786,8 +788,11 @@ void VBoxClipboardWinDataObject::OnTransferCanceled(void)
 {
     LogFlowFuncEnter();
 
-    int rc2 = RTSemEventSignal(m_EventTransferComplete);
-    AssertRC(rc2);
+    if (m_EventTransferComplete != NIL_RTSEMEVENT)
+    {
+        int rc2 = RTSemEventSignal(m_EventTransferComplete);
+        AssertRC(rc2);
+    }
 
     LogFlowFuncLeave();
 }

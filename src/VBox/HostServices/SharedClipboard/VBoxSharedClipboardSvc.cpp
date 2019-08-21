@@ -639,8 +639,9 @@ int vboxSvcClipboardClientWakeup(PVBOXCLIPBOARDCLIENT pClient)
             PVBOXCLIPBOARDCLIENTMSG pFirstMsg = pClient->pData->queueMsg.first();
             if (pFirstMsg)
             {
-                LogFlowFunc(("[Client %RU32] Current host message is %RU32 (cParms=%RU32)\n",
-                             pClient->uClientID, pFirstMsg->m_uMsg, pFirstMsg->m_cParms));
+                LogFlowFunc(("[Client %RU32] Current host message is %RU32 (%s), cParms=%RU32\n",
+                             pClient->uClientID, pFirstMsg->m_uMsg, VBoxClipboardHostMsgToStr(pFirstMsg->m_uMsg),
+                             pFirstMsg->m_cParms));
 
                 if (pClient->Pending.uType == VBOX_SHARED_CLIPBOARD_GUEST_FN_MSG_PEEK_WAIT)
                 {

@@ -52,7 +52,7 @@ typedef uint64_t SHAREDCLIPBOARDLISTHANDLE;
 typedef SHAREDCLIPBOARDLISTHANDLE *PSHAREDCLIPBOARDLISTHANDLE;
 
 /** Specifies an invalid Shared Clipboard list handle. */
-#define SHAREDCLIPBOARDLISTHANDLE_INVALID        0
+#define SHAREDCLIPBOARDLISTHANDLE_INVALID        ((SHAREDCLIPBOARDLISTHANDLE)~0LL)
 
 /** A Shared Clipboard object handle. */
 typedef uint64_t SHAREDCLIPBOARDOBJHANDLE;
@@ -60,7 +60,7 @@ typedef uint64_t SHAREDCLIPBOARDOBJHANDLE;
 typedef SHAREDCLIPBOARDOBJHANDLE *PSHAREDCLIPBOARDOBJHANDLE;
 
 /** Specifies an invalid Shared Clipboard object handle. */
-#define SHAREDCLIPBOARDOBJHANDLE_INVALID         0
+#define SHAREDCLIPBOARDOBJHANDLE_INVALID         ((SHAREDCLIPBOARDOBJHANDLE)~0LL)
 
 /** @} */
 
@@ -331,12 +331,14 @@ typedef const SHAREDCLIPBOARDFSOBJINFO *PCSHAREDCLIPBOARDFSOBJINFO;
  */
 typedef struct _VBOXCLIPBOARDOBJOPENCREATEPARMS
 {
+    /** Path to object to open / create. */
     char                       *pszPath;
+    /** Size (in bytes) of path to to object. */
     uint32_t                    cbPath;
     /** SHAREDCLIPBOARD_OBJ_CF_* */
     uint32_t                    fCreate;
     /**
-     * Attributes of object to create and
+     * Attributes of object to open/create and
      * returned actual attributes of opened/created object.
      */
     SHAREDCLIPBOARDFSOBJINFO    ObjInfo;
@@ -362,6 +364,10 @@ typedef struct _VBOXCLIPBOARDREPLY
         {
             SHAREDCLIPBOARDOBJHANDLE uHandle;
         } ObjOpen;
+        struct
+        {
+            SHAREDCLIPBOARDOBJHANDLE uHandle;
+        } ObjClose;
     } u;
     /** Pointer to optional payload. */
     void    *pvPayload;
@@ -464,14 +470,12 @@ typedef struct _VBOXCLIPBOARDLIST
     VBOXCLIPBOARDROOTLISTENTRY *paEntries;
 } VBOXCLIPBOARDLIST, *PVBOXCLIPBOARDLIST;
 
-/**
- * Structure for a Shared Clipboard object header.
- */
-typedef struct _VBOXCLIPBOARDOBJHDR
+typedef struct _VBOXCLIPBOARDOBJDATACHUNK
 {
-    /** Header type. Currently not being used. */
-    uint32_t enmType;
-} VBOXCLIPBOARDOBJHDR, *PVBOXCLIPBOARDOBJHDR;
+    uint64_t  uHandle;
+    void     *pvData;
+    uint32_t  cbData;
+} VBOXCLIPBOARDOBJDATACHUNK, *PVBOXCLIPBOARDOBJDATACHUNK;
 
 /**
  * Enumeration for specifying a clipboard area object type.
@@ -722,41 +726,78 @@ typedef struct _SHAREDCLIPBOARDURITRANSFEREVENT
  *  The key specifies the event type of SHAREDCLIPBOARDURITRANSFEREVENTTYPE. */
 typedef std::map<uint16_t, SHAREDCLIPBOARDURITRANSFEREVENT *> SharedClipboardURITransferEventMap;
 
+/**
+ * Enumeration for specifying a Shared Clipboard object type.
+ */
+typedef enum _SHAREDCLIPBOARDURIOBJTYPE
+{
+    /** Invalid object type. */
+    SHAREDCLIPBOARDURIOBJTYPE_INVALID = 0,
+    /** Object is a directory. */
+    SHAREDCLIPBOARDURIOBJTYPE_DIRECTORY,
+    /** Object is a file. */
+    SHAREDCLIPBOARDURIOBJTYPE_FILE,
+    /** Object is a symbolic link. */
+    SHAREDCLIPBOARDURIOBJTYPE_SYMLINK,
+    /** The usual 32-bit hack. */
+    SHAREDCLIPBOARDURIOBJTYPE_32BIT_SIZE_HACK = 0x7fffffff
+} SHAREDCLIPBOARDURIOBJTYPE;
+
+/**
+ * Structure for keeping URI list handle information.
+ * This is using to map own (local) handles to the underlying file system.
+ */
 typedef struct _SHAREDCLIPBOARDURILISTHANDLEINFO
 {
-    VBOXCLIPBOARDLISTOPENPARMS OpenParms;
-    RTFMODE                    fMode;
+    /** Type of list handle. */
+    SHAREDCLIPBOARDURIOBJTYPE enmType;
+    /** Absolute local path of the list object. */
+    char                     *pszPathLocalAbs;
     union
     {
+        /** Local data, based on enmType. */
         struct
         {
             union
             {
-                RTDIR  hDirRoot;
+                RTDIR  hDir;
                 RTFILE hFile;
             };
         } Local;
     } u;
 } SHAREDCLIPBOARDURILISTHANDLEINFO, *PSHAREDCLIPBOARDURILISTHANDLEINFO;
 
-typedef struct _SHAREDCLIPBOARDOBJHANDLEINFO
-{
-    union
-    {
-        struct
-        {
-            RTDIR hDirRoot;
-        } Local;
-    } u;
-} SHAREDCLIPBOARDURIOBJHANDLEINFO, *PSHAREDCLIPBOARDURIOBJHANDLEINFO;
-
 /** Map of URI list handles.
  *  The key specifies the list handle. */
 typedef std::map<SHAREDCLIPBOARDLISTHANDLE, SHAREDCLIPBOARDURILISTHANDLEINFO *> SharedClipboardURIListMap;
 
+/**
+ * Structure for keeping URI object handle information.
+ * This is using to map own (local) handles to the underlying file system.
+ */
+typedef struct _SHAREDCLIPBOARDURIOBJHANDLEINFO
+{
+    /** Type of object handle. */
+    SHAREDCLIPBOARDURIOBJTYPE enmType;
+    /** Absolute local path of the object. */
+    char                     *pszPathLocalAbs;
+    union
+    {
+        /** Local data, based on enmType. */
+        struct
+        {
+            union
+            {
+                RTDIR  hDir;
+                RTFILE hFile;
+            };
+        } Local;
+    } u;
+} SHAREDCLIPBOARDURIOBJHANDLEINFO, *PSHAREDCLIPBOARDURIOBJHANDLEINFO;
+
 /** Map of URI object handles.
  *  The key specifies the object handle. */
-typedef std::map<SHAREDCLIPBOARDOBJHANDLE, SHAREDCLIPBOARDURILISTHANDLEINFO *> SharedClipboardURIObjMap;
+typedef std::map<SHAREDCLIPBOARDOBJHANDLE, SHAREDCLIPBOARDURIOBJHANDLEINFO *> SharedClipboardURIObjMap;
 
 /**
  * Structure for keeping a single root list entry.
@@ -795,7 +836,7 @@ typedef struct _SHAREDCLIPBOARDURITRANSFER *PSHAREDCLIPBOARDURITRANSFER;
  * Structure maintaining URI clipboard provider context data.
  * This is handed in to the provider implementation callbacks.
  */
-typedef struct _SHAREDCLIPBOARDPROVIDERCTX
+    typedef struct _SHAREDCLIPBOARDPROVIDERCTX
 {
     /** Pointer to the related URI transfer. */
     PSHAREDCLIPBOARDURITRANSFER pTransfer;
@@ -957,18 +998,20 @@ typedef struct _SHAREDCLIPBOARDURITRANSFER
     SHAREDCLIPBOARDURITRANSFERSTATE     State;
     /** Timeout (in ms) for waiting of events. Default is 30s. */
     RTMSINTERVAL                        uTimeoutMs;
+    /** Absolute path to root entries. */
+    char                               *pszPathRootAbs;
     /** Maximum data chunk size (in bytes) to transfer. Default is 64K. */
     uint32_t                            cbMaxChunkSize;
     /** Events related to this transfer. */
     SharedClipboardURITransferEventMap *pMapEvents;
     /** Next upcoming list handle. */
-    uint64_t                            uListHandleNext;
+    SHAREDCLIPBOARDLISTHANDLE           uListHandleNext;
     /** Map of all lists related to this transfer. */
     SharedClipboardURIListMap          *pMapLists;
     /** List of root entries of this transfer. */
     SharedClipboardURIListRootEntries   lstRootEntries;
     /** Next upcoming object handle. */
-    uint64_t                            uObjHandleNext;
+    SHAREDCLIPBOARDOBJHANDLE            uObjHandleNext;
     /** Next upcoming event ID.
      *  0 is reserved for invalid event IDs. */
     uint16_t                            uEventIDNext;
@@ -1014,12 +1057,19 @@ int SharedClipboardURIObjCtxInit(PSHAREDCLIPBOARDCLIENTURIOBJCTX pObjCtx);
 void SharedClipboardURIObjCtxDestroy(PSHAREDCLIPBOARDCLIENTURIOBJCTX pObjCtx);
 bool SharedClipboardURIObjCtxIsValid(PSHAREDCLIPBOARDCLIENTURIOBJCTX pObjCtx);
 
+int SharedClipboardURIObjectOpenParmsInit(PVBOXCLIPBOARDOBJOPENCREATEPARMS pParms);
+int SharedClipboardURIObjectOpenParmsCopy(PVBOXCLIPBOARDOBJOPENCREATEPARMS pParmsDst, PVBOXCLIPBOARDOBJOPENCREATEPARMS pParmsSrc);
+void SharedClipboardURIObjectOpenParmsDestroy(PVBOXCLIPBOARDOBJOPENCREATEPARMS pParms);
+
 int SharedClipboardURIObjectOpen(PSHAREDCLIPBOARDURITRANSFER pTransfer, PVBOXCLIPBOARDOBJOPENCREATEPARMS pOpenCreateParms,
                                  PSHAREDCLIPBOARDOBJHANDLE phObj);
-int SharedClipboardURIObjectClose(SHAREDCLIPBOARDOBJHANDLE hObj);
-int SharedClipboardURIObjectRead(SHAREDCLIPBOARDOBJHANDLE hObj, void *pvBuf, uint32_t cbBuf, uint32_t *pcbRead, uint32_t fFlags);
-int SharedClipboardURIObjectWrite(SHAREDCLIPBOARDOBJHANDLE hObj, void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten, uint32_t fFlags);
-int SharedClipboardURIObjectQueryInfo(SHAREDCLIPBOARDOBJHANDLE hObj, PSHAREDCLIPBOARDFSOBJINFO pObjInfo);
+int SharedClipboardURIObjectClose(PSHAREDCLIPBOARDURITRANSFER pTransfer, SHAREDCLIPBOARDOBJHANDLE hObj);
+int SharedClipboardURIObjectRead(PSHAREDCLIPBOARDURITRANSFER pTransfer, SHAREDCLIPBOARDOBJHANDLE hObj, void *pvBuf, uint32_t cbBuf, uint32_t *pcbRead, uint32_t fFlags);
+int SharedClipboardURIObjectWrite(PSHAREDCLIPBOARDURITRANSFER pTransfer, SHAREDCLIPBOARDOBJHANDLE hObj, void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten, uint32_t fFlags);
+
+PVBOXCLIPBOARDOBJDATACHUNK SharedClipboardURIObjectDataChunkDup(PVBOXCLIPBOARDOBJDATACHUNK pDataChunk);
+void SharedClipboardURIObjectDataChunkDestroy(PVBOXCLIPBOARDOBJDATACHUNK pDataChunk);
+void SharedClipboardURIObjectDataChunkFree(PVBOXCLIPBOARDOBJDATACHUNK pDataChunk);
 
 int SharedClipboardURITransferCreate(SHAREDCLIPBOARDURITRANSFERDIR enmDir, SHAREDCLIPBOARDSOURCE enmSource,
                                      PSHAREDCLIPBOARDURITRANSFER *ppTransfer);
@@ -1045,7 +1095,7 @@ int SharedClipboardURITransferPrepare(PSHAREDCLIPBOARDURITRANSFER pTransfer);
 int SharedClipboardURITransferSetData(PSHAREDCLIPBOARDURITRANSFER pTransfer, SharedClipboardURIListRootEntries *pEntries);
 int SharedClipboardURITransferSetInterface(PSHAREDCLIPBOARDURITRANSFER pTransfer,
                                            PSHAREDCLIPBOARDPROVIDERCREATIONCTX pCreationCtx);
-int SharedClipboardURILTransferSetRoots(PSHAREDCLIPBOARDURITRANSFER pTransfer, const char *papszRoots, size_t cbRoots);
+int SharedClipboardURILTransferSetRoots(PSHAREDCLIPBOARDURITRANSFER pTransfer, const char *pszRoots, size_t cbRoots);
 void SharedClipboardURITransferReset(PSHAREDCLIPBOARDURITRANSFER pTransfer);
 SharedClipboardArea *SharedClipboardURITransferGetArea(PSHAREDCLIPBOARDURITRANSFER pTransfer);
 

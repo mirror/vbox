@@ -28,12 +28,12 @@
 #include <VBox/GuestHost/SharedClipboard-uri.h>
 
 
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
 static int sharedClipboardURITransferThreadCreate(PSHAREDCLIPBOARDURITRANSFER pTransfer, PFNRTTHREAD pfnThreadFunc, void *pvUser);
 static int sharedClipboardURITransferThreadDestroy(PSHAREDCLIPBOARDURITRANSFER pTransfer, RTMSINTERVAL uTimeoutMs);
 static int sharedClipboardURITransferWriteThread(RTTHREAD hThread, void *pvUser);
 static PSHAREDCLIPBOARDURITRANSFER sharedClipboardURICtxGetTransferInternal(PSHAREDCLIPBOARDURICTX pURI, uint32_t uIdx);
-#endif
+static int sharedClipboardConvertFileCreateFlags(bool fWritable, unsigned fShClFlags, RTFMODE fMode,
+                                                 SHAREDCLIPBOARDOBJHANDLE handleInitial, uint64_t *pfOpen);
 
 /** @todo Split this file up in different modules. */
 
@@ -155,6 +155,23 @@ PVBOXCLIPBOARDROOTLISTENTRY SharedClipboardURIRootListEntryDup(PVBOXCLIPBOARDROO
 void SharedClipboardURIRootListEntryDestroy(PVBOXCLIPBOARDROOTLISTENTRY pRootListEntry)
 {
     return SharedClipboardURIListEntryDestroy(pRootListEntry);
+}
+
+/**
+ * Destroys a list handle info structure.
+ *
+ * @param   pInfo               List handle info structure to destroy.
+ */
+void SharedClipboardURIListHandleInfoDestroy(PSHAREDCLIPBOARDURILISTHANDLEINFO pInfo)
+{
+    if (!pInfo)
+        return;
+
+    if (pInfo->pszPathLocalAbs)
+    {
+        RTStrFree(pInfo->pszPathLocalAbs);
+        pInfo->pszPathLocalAbs = NULL;
+    }
 }
 
 /**
@@ -587,36 +604,429 @@ bool SharedClipboardURIObjCtxIsValid(PSHAREDCLIPBOARDCLIENTURIOBJCTX pObjCtx)
             && pObjCtx->uHandle != SHAREDCLIPBOARDOBJHANDLE_INVALID);
 }
 
+/**
+ * Destroys an object handle info structure.
+ *
+ * @param   pInfo               Object handle info structure to destroy.
+ */
+void SharedClipboardURIObjectHandleInfoDestroy(PSHAREDCLIPBOARDURIOBJHANDLEINFO pInfo)
+{
+    if (!pInfo)
+        return;
+
+    if (pInfo->pszPathLocalAbs)
+    {
+        RTStrFree(pInfo->pszPathLocalAbs);
+        pInfo->pszPathLocalAbs = NULL;
+    }
+}
+
+/**
+ * Initializes an URI object open parameters structure.
+ *
+ * @returns VBox status code.
+ * @param   pParms              URI object open parameters structure to initialize.
+ */
+int SharedClipboardURIObjectOpenParmsInit(PVBOXCLIPBOARDOBJOPENCREATEPARMS pParms)
+{
+    AssertPtrReturn(pParms, VERR_INVALID_POINTER);
+
+    int rc;
+
+    RT_BZERO(pParms, sizeof(VBOXCLIPBOARDOBJOPENCREATEPARMS));
+
+    pParms->cbPath    = RTPATH_MAX; /** @todo Make this dynamic. */
+    pParms->pszPath   = RTStrAlloc(pParms->cbPath);
+    if (pParms->pszPath)
+    {
+        rc = VINF_SUCCESS;
+    }
+    else
+        rc = VERR_NO_MEMORY;
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+/**
+ * Copies an URI object open parameters structure from source to destination.
+ *
+ * @returns VBox status code.
+ * @param   pParmsDst           Where to copy the source URI object open parameters to.
+ * @param   pParmsSrc           Which source URI object open parameters to copy.
+ */
+int SharedClipboardURIObjectOpenParmsCopy(PVBOXCLIPBOARDOBJOPENCREATEPARMS pParmsDst, PVBOXCLIPBOARDOBJOPENCREATEPARMS pParmsSrc)
+{
+    int rc;
+
+    *pParmsDst = *pParmsSrc;
+
+    if (pParmsSrc->pszPath)
+    {
+        Assert(pParmsSrc->cbPath);
+        pParmsDst->pszPath = RTStrDup(pParmsSrc->pszPath);
+        if (pParmsDst->pszPath)
+        {
+            rc = VINF_SUCCESS;
+        }
+        else
+            rc = VERR_NO_MEMORY;
+    }
+    else
+        rc = VINF_SUCCESS;
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+/**
+ * Destroys an URI object open parameters structure.
+ *
+ * @param   pParms              URI object open parameters structure to destroy.
+ */
+void SharedClipboardURIObjectOpenParmsDestroy(PVBOXCLIPBOARDOBJOPENCREATEPARMS pParms)
+{
+    if (!pParms)
+        return;
+
+    if (pParms->pszPath)
+    {
+        RTStrFree(pParms->pszPath);
+        pParms->pszPath = NULL;
+    }
+}
+
+/**
+ * Opens an URI object.
+ *
+ * @returns VBox status code.
+ * @param   pTransfer           URI clipboard transfer to open the object for.
+ * @param   pOpenCreateParms    Open / create parameters of URI object to open / create.
+ * @param   phObj               Where to store the handle of URI object opened on success.
+ */
 int SharedClipboardURIObjectOpen(PSHAREDCLIPBOARDURITRANSFER pTransfer, PVBOXCLIPBOARDOBJOPENCREATEPARMS pOpenCreateParms,
                                  PSHAREDCLIPBOARDOBJHANDLE phObj)
 {
-    RT_NOREF(pTransfer, pOpenCreateParms, phObj);
-    return 0;
+    AssertPtrReturn(pTransfer,        VERR_INVALID_POINTER);
+    AssertPtrReturn(pOpenCreateParms, VERR_INVALID_POINTER);
+    AssertPtrReturn(phObj,            VERR_INVALID_POINTER);
+
+    int rc = VINF_SUCCESS;
+
+    LogFlowFunc(("pszPath=%s, fCreate=0x%x\n", pOpenCreateParms->pszPath, pOpenCreateParms->fCreate));
+
+    if (pTransfer->State.enmSource == SHAREDCLIPBOARDSOURCE_LOCAL)
+    {
+        PSHAREDCLIPBOARDURIOBJHANDLEINFO pInfo
+            = (PSHAREDCLIPBOARDURIOBJHANDLEINFO)RTMemAlloc(sizeof(SHAREDCLIPBOARDURIOBJHANDLEINFO));
+        if (pInfo)
+        {
+            const bool fWritable = true; /** @todo Fix this. */
+
+            uint64_t fOpen;
+            rc = sharedClipboardConvertFileCreateFlags(fWritable,
+                                                       pOpenCreateParms->fCreate, pOpenCreateParms->ObjInfo.Attr.fMode,
+                                                       SHAREDCLIPBOARDOBJHANDLE_INVALID, &fOpen);
+            if (RT_SUCCESS(rc))
+            {
+                char *pszPathAbs = RTStrAPrintf2("%s/%s", pTransfer->pszPathRootAbs, pOpenCreateParms->pszPath);
+                if (pszPathAbs)
+                {
+                    LogFlowFunc(("%s\n", pszPathAbs));
+
+                    rc = RTFileOpen(&pInfo->u.Local.hFile, pszPathAbs, fOpen);
+                    RTStrFree(pszPathAbs);
+                }
+                else
+                    rc = VERR_NO_MEMORY;
+            }
+
+            if (RT_SUCCESS(rc))
+            {
+                const SHAREDCLIPBOARDOBJHANDLE hObj = pTransfer->uObjHandleNext++;
+
+                pInfo->enmType = SHAREDCLIPBOARDURIOBJTYPE_FILE;
+
+                pTransfer->pMapObj->insert(
+                    std::pair<SHAREDCLIPBOARDOBJHANDLE, PSHAREDCLIPBOARDURIOBJHANDLEINFO>(hObj, pInfo));
+
+                *phObj = hObj;
+            }
+
+            if (RT_FAILURE(rc))
+                RTMemFree(pInfo);
+        }
+        else
+            rc = VERR_NO_MEMORY;
+    }
+    else if (pTransfer->State.enmSource == SHAREDCLIPBOARDSOURCE_REMOTE)
+    {
+        if (pTransfer->ProviderIface.pfnObjOpen)
+        {
+            rc = pTransfer->ProviderIface.pfnObjOpen(&pTransfer->ProviderCtx, pOpenCreateParms, phObj);
+        }
+        else
+            rc = VERR_NOT_SUPPORTED;
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
 }
 
-int SharedClipboardURIObjectClose(SHAREDCLIPBOARDOBJHANDLE hObj)
+/**
+ * Closes an URI object.
+ *
+ * @returns VBox status code.
+ * @param   pTransfer           URI clipboard transfer that contains the object to close.
+ * @param   hObj                Handle of URI object to close.
+ */
+int SharedClipboardURIObjectClose(PSHAREDCLIPBOARDURITRANSFER pTransfer, SHAREDCLIPBOARDOBJHANDLE hObj)
 {
-    RT_NOREF(hObj);
-    return 0;
+    AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
+
+    int rc = VINF_SUCCESS;
+
+    if (pTransfer->State.enmSource == SHAREDCLIPBOARDSOURCE_LOCAL)
+    {
+        SharedClipboardURIObjMap::iterator itObj = pTransfer->pMapObj->find(hObj);
+        if (itObj != pTransfer->pMapObj->end())
+        {
+            PSHAREDCLIPBOARDURIOBJHANDLEINFO pInfo = itObj->second;
+            AssertPtr(pInfo);
+
+            switch (pInfo->enmType)
+            {
+                case SHAREDCLIPBOARDURIOBJTYPE_DIRECTORY:
+                {
+                    rc = RTDirClose(pInfo->u.Local.hDir);
+                    if (RT_SUCCESS(rc))
+                        pInfo->u.Local.hDir = NIL_RTDIR;
+                    break;
+                }
+
+                case SHAREDCLIPBOARDURIOBJTYPE_FILE:
+                {
+                    rc = RTFileClose(pInfo->u.Local.hFile);
+                    if (RT_SUCCESS(rc))
+                        pInfo->u.Local.hFile = NIL_RTFILE;
+                    break;
+                }
+
+                default:
+                    rc = VERR_NOT_IMPLEMENTED;
+                    break;
+            }
+
+            RTMemFree(pInfo);
+
+            pTransfer->pMapObj->erase(itObj);
+        }
+        else
+            rc = VERR_NOT_FOUND;
+    }
+    else if (pTransfer->State.enmSource == SHAREDCLIPBOARDSOURCE_REMOTE)
+    {
+        if (pTransfer->ProviderIface.pfnObjClose)
+        {
+            rc = pTransfer->ProviderIface.pfnObjClose(&pTransfer->ProviderCtx, hObj);
+        }
+        else
+            rc = VERR_NOT_SUPPORTED;
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
 }
 
-int SharedClipboardURIObjectRead(SHAREDCLIPBOARDOBJHANDLE hObj, void *pvBuf, uint32_t cbBuf, uint32_t *pcbRead, uint32_t fFlags)
+/**
+ * Reads from an URI object.
+ *
+ * @returns VBox status code.
+ * @param   pTransfer           URI clipboard transfer that contains the object to read from.
+ * @param   hObj                Handle of URI object to read from.
+ * @param   pvBuf               Buffer for where to store the read data.
+ * @param   cbBuf               Size (in bytes) of buffer.
+ * @param   pcbRead             How much bytes were read on success. Optional.
+ */
+int SharedClipboardURIObjectRead(PSHAREDCLIPBOARDURITRANSFER pTransfer,
+                                 SHAREDCLIPBOARDOBJHANDLE hObj, void *pvBuf, uint32_t cbBuf, uint32_t *pcbRead, uint32_t fFlags)
 {
-    RT_NOREF(hObj, pvBuf, cbBuf, pcbRead, fFlags);
-    return 0;
+    AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
+    AssertPtrReturn(pvBuf,     VERR_INVALID_POINTER);
+    AssertReturn   (cbBuf,     VERR_INVALID_PARAMETER);
+    /* pcbRead is optional. */
+    /** @todo Validate fFlags. */
+
+    int rc = VINF_SUCCESS;
+
+    if (pTransfer->State.enmSource == SHAREDCLIPBOARDSOURCE_LOCAL)
+    {
+        SharedClipboardURIObjMap::iterator itObj = pTransfer->pMapObj->find(hObj);
+        if (itObj != pTransfer->pMapObj->end())
+        {
+            PSHAREDCLIPBOARDURIOBJHANDLEINFO pInfo = itObj->second;
+            AssertPtr(pInfo);
+
+            switch (pInfo->enmType)
+            {
+                case SHAREDCLIPBOARDURIOBJTYPE_FILE:
+                {
+                    size_t cbRead;
+                    rc = RTFileRead(pInfo->u.Local.hFile, pvBuf, cbBuf, &cbRead);
+                    if (RT_SUCCESS(rc))
+                    {
+                        if (pcbRead)
+                            *pcbRead = (uint32_t)cbRead;
+                    }
+                    break;
+                }
+
+                default:
+                    rc = VERR_NOT_SUPPORTED;
+                    break;
+            }
+        }
+        else
+            rc = VERR_NOT_FOUND;
+    }
+    else if (pTransfer->State.enmSource == SHAREDCLIPBOARDSOURCE_REMOTE)
+    {
+        if (pTransfer->ProviderIface.pfnObjRead)
+        {
+            rc = pTransfer->ProviderIface.pfnObjRead(&pTransfer->ProviderCtx, hObj, pvBuf, cbBuf, fFlags, pcbRead);
+        }
+        else
+            rc = VERR_NOT_SUPPORTED;
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
 }
 
-int SharedClipboardURIObjectWrite(SHAREDCLIPBOARDOBJHANDLE hObj, void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten,
+/**
+ * Writes to an URI object.
+ *
+ * @returns VBox status code.
+ * @param   pTransfer           URI clipboard transfer that contains the object to write to.
+ * @param   hObj                Handle of URI object to write to.
+ * @param   pvBuf               Buffer of data to write.
+ * @param   cbBuf               Size (in bytes) of buffer to write.
+ * @param   pcbWritten          How much bytes were writtenon success. Optional.
+ */
+int SharedClipboardURIObjectWrite(PSHAREDCLIPBOARDURITRANSFER pTransfer,
+                                  SHAREDCLIPBOARDOBJHANDLE hObj, void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten,
                                   uint32_t fFlags)
 {
-    RT_NOREF(hObj, pvBuf, cbBuf, pcbWritten, fFlags);
-    return 0;
+    AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
+    AssertPtrReturn(pvBuf,     VERR_INVALID_POINTER);
+    AssertReturn   (cbBuf,     VERR_INVALID_PARAMETER);
+    /* pcbWritten is optional. */
+
+    int rc = VINF_SUCCESS;
+
+    if (pTransfer->State.enmSource == SHAREDCLIPBOARDSOURCE_LOCAL)
+    {
+        SharedClipboardURIObjMap::iterator itObj = pTransfer->pMapObj->find(hObj);
+        if (itObj != pTransfer->pMapObj->end())
+        {
+            PSHAREDCLIPBOARDURIOBJHANDLEINFO pInfo = itObj->second;
+            AssertPtr(pInfo);
+
+            switch (pInfo->enmType)
+            {
+                case SHAREDCLIPBOARDURIOBJTYPE_FILE:
+                {
+                    rc = RTFileWrite(pInfo->u.Local.hFile, pvBuf, cbBuf, (size_t *)pcbWritten);
+                    break;
+                }
+
+                default:
+                    rc = VERR_NOT_SUPPORTED;
+                    break;
+            }
+        }
+        else
+            rc = VERR_NOT_FOUND;
+    }
+    else if (pTransfer->State.enmSource == SHAREDCLIPBOARDSOURCE_REMOTE)
+    {
+        if (pTransfer->ProviderIface.pfnObjWrite)
+        {
+            rc = pTransfer->ProviderIface.pfnObjWrite(&pTransfer->ProviderCtx, hObj, pvBuf, cbBuf, fFlags, pcbWritten);
+        }
+        else
+            rc = VERR_NOT_SUPPORTED;
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
 }
 
-int SharedClipboardURIObjectQueryInfo(SHAREDCLIPBOARDOBJHANDLE hObj, PSHAREDCLIPBOARDFSOBJINFO pObjInfo)
+/**
+ * Duplicaates an URI object data chunk.
+ *
+ * @returns Duplicated object data chunk on success, or NULL on failure.
+ * @param   pDataChunk          URI object data chunk to duplicate.
+ */
+PVBOXCLIPBOARDOBJDATACHUNK SharedClipboardURIObjectDataChunkDup(PVBOXCLIPBOARDOBJDATACHUNK pDataChunk)
 {
-    RT_NOREF(hObj, pObjInfo);
-    return 0;
+    if (!pDataChunk)
+        return NULL;
+
+    PVBOXCLIPBOARDOBJDATACHUNK pDataChunkDup = (PVBOXCLIPBOARDOBJDATACHUNK)RTMemAllocZ(sizeof(VBOXCLIPBOARDOBJDATACHUNK));
+    if (!pDataChunkDup)
+        return NULL;
+
+    if (pDataChunk->pvData)
+    {
+        Assert(pDataChunk->cbData);
+
+        pDataChunkDup->uHandle = pDataChunk->uHandle;
+        pDataChunkDup->pvData  = RTMemDup(pDataChunk->pvData, pDataChunk->cbData);
+        pDataChunkDup->cbData  = pDataChunk->cbData;
+    }
+
+    return pDataChunkDup;
+}
+
+/**
+ * Destroys an URI object data chunk.
+ *
+ * @param   pDataChunk          URI object data chunk to destroy.
+ */
+void SharedClipboardURIObjectDataChunkDestroy(PVBOXCLIPBOARDOBJDATACHUNK pDataChunk)
+{
+    if (!pDataChunk)
+        return;
+
+    if (pDataChunk->pvData)
+    {
+        Assert(pDataChunk->cbData);
+
+        RTMemFree(pDataChunk->pvData);
+
+        pDataChunk->pvData = NULL;
+        pDataChunk->cbData = 0;
+    }
+
+    pDataChunk->uHandle = 0;
+}
+
+/**
+ * Frees an URI object data chunk.
+ *
+ * @param   pDataChunk          URI object data chunk to free. The handed-in pointer will
+ *                              be invalid after calling this function.
+ */
+void SharedClipboardURIObjectDataChunkFree(PVBOXCLIPBOARDOBJDATACHUNK pDataChunk)
+{
+    if (!pDataChunk)
+        return;
+
+    SharedClipboardURIObjectDataChunkDestroy(pDataChunk);
+
+    RTMemFree(pDataChunk);
+    pDataChunk = NULL;
 }
 
 /**
@@ -655,6 +1065,8 @@ int SharedClipboardURITransferCreate(SHAREDCLIPBOARDURITRANSFERDIR enmDir, SHARE
     pTransfer->Thread.fStarted   = false;
     pTransfer->Thread.fStop      = false;
 
+    pTransfer->pszPathRootAbs    = NULL;
+
     pTransfer->uListHandleNext   = 1;
     pTransfer->uObjHandleNext    = 1;
     pTransfer->uEventIDNext      = 1;
@@ -673,7 +1085,9 @@ int SharedClipboardURITransferCreate(SHAREDCLIPBOARDURITRANSFERDIR enmDir, SHARE
         pTransfer->pMapLists = new SharedClipboardURIListMap();
         if (pTransfer->pMapLists)
         {
-            *ppTransfer = pTransfer;
+            pTransfer->pMapObj = new SharedClipboardURIObjMap();
+            if (pTransfer->pMapObj)
+                *ppTransfer = pTransfer;
         }
     }
     else
@@ -705,16 +1119,51 @@ int SharedClipboardURITransferDestroy(PSHAREDCLIPBOARDURITRANSFER pTransfer)
     if (RT_FAILURE(rc))
         return rc;
 
+    RTStrFree(pTransfer->pszPathRootAbs);
+
     if (pTransfer->pMapEvents)
     {
+        SharedClipboardURITransferEventMap::iterator itEvent = pTransfer->pMapEvents->begin();
+        while (itEvent != pTransfer->pMapEvents->end())
+        {
+
+            itEvent = pTransfer->pMapEvents->begin();
+        }
+
         delete pTransfer->pMapEvents;
         pTransfer->pMapEvents = NULL;
     }
 
     if (pTransfer->pMapLists)
     {
+        SharedClipboardURIListMap::iterator itList = pTransfer->pMapLists->begin();
+        while (itList != pTransfer->pMapLists->end())
+        {
+            SharedClipboardURIListHandleInfoDestroy(itList->second);
+            pTransfer->pMapLists->erase(itList);
+            itList = pTransfer->pMapLists->begin();
+        }
+
+        Assert(pTransfer->pMapLists->size() == 0);
+
         delete pTransfer->pMapLists;
         pTransfer->pMapLists = NULL;
+    }
+
+    if (pTransfer->pMapObj)
+    {
+        SharedClipboardURIObjMap::iterator itObj = pTransfer->pMapObj->begin();
+        while (itObj != pTransfer->pMapObj->end())
+        {
+            SharedClipboardURIObjectHandleInfoDestroy(itObj->second);
+            pTransfer->pMapObj->erase(itObj);
+            itObj = pTransfer->pMapObj->begin();
+        }
+
+        Assert(pTransfer->pMapObj->size() == 0);
+
+        delete pTransfer->pMapObj;
+        pTransfer->pMapObj = NULL;
     }
 
     LogFlowFuncLeave();
@@ -785,40 +1234,38 @@ int SharedClipboardURITransferListOpen(PSHAREDCLIPBOARDURITRANSFER pTransfer, PV
             rc = RTPathQueryInfo(pOpenParms->pszPath, &objInfo, RTFSOBJATTRADD_NOTHING);
             if (RT_SUCCESS(rc))
             {
-                if (RTFS_IS_DIRECTORY(objInfo.Attr.fMode))
+                switch (pInfo->enmType)
                 {
-                    rc = RTDirOpen(&pInfo->u.Local.hDirRoot, pOpenParms->pszPath);
+                    case SHAREDCLIPBOARDURIOBJTYPE_DIRECTORY:
+                    {
+                        rc = RTDirOpen(&pInfo->u.Local.hDir, pOpenParms->pszPath);
+                    }
+
+                    case SHAREDCLIPBOARDURIOBJTYPE_FILE:
+                    {
+                        rc = RTFileOpen(&pInfo->u.Local.hFile, pOpenParms->pszPath,
+                                        RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE);
+                        break;
+                    }
+
+                    default:
+                        rc = VERR_NOT_SUPPORTED;
+                        break;
                 }
-                else if (RTFS_IS_FILE(objInfo.Attr.fMode))
-                {
-                    rc = RTFileOpen(&pInfo->u.Local.hFile, pOpenParms->pszPath,
-                                    RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE);
-                }
-                else if (RTFS_IS_SYMLINK(objInfo.Attr.fMode))
-                {
-                    rc = VERR_NOT_IMPLEMENTED; /** @todo */
-                }
-                else
-                    AssertFailedStmt(rc = VERR_NOT_SUPPORTED);
 
                 if (RT_SUCCESS(rc))
-                    rc = SharedClipboardURIListOpenParmsCopy(&pInfo->OpenParms, pOpenParms);
-
-                if (RT_SUCCESS(rc))
                 {
-                    pInfo->fMode = objInfo.Attr.fMode;
-
                     hList = sharedClipboardURITransferListHandleNew(pTransfer);
 
                     pTransfer->pMapLists->insert(
-                        std::pair<SHAREDCLIPBOARDLISTHANDLE, PSHAREDCLIPBOARDURILISTHANDLEINFO>(hList, pInfo));
+                        std::pair<SHAREDCLIPBOARDLISTHANDLE, PSHAREDCLIPBOARDURILISTHANDLEINFO>(hList, pInfo)); /** @todo Can this throw? */
                 }
                 else
                 {
                     if (RTFS_IS_DIRECTORY(objInfo.Attr.fMode))
                     {
-                        if (RTDirIsValid(pInfo->u.Local.hDirRoot))
-                            RTDirClose(pInfo->u.Local.hDirRoot);
+                        if (RTDirIsValid(pInfo->u.Local.hDir))
+                            RTDirClose(pInfo->u.Local.hDir);
                     }
                     else if (RTFS_IS_FILE(objInfo.Attr.fMode))
                     {
@@ -877,8 +1324,19 @@ int SharedClipboardURITransferListClose(PSHAREDCLIPBOARDURITRANSFER pTransfer, S
             PSHAREDCLIPBOARDURILISTHANDLEINFO pInfo = itList->second;
             AssertPtr(pInfo);
 
-            if (RTDirIsValid(pInfo->u.Local.hDirRoot))
-                RTDirClose(pInfo->u.Local.hDirRoot);
+            switch (pInfo->enmType)
+            {
+                case SHAREDCLIPBOARDURIOBJTYPE_DIRECTORY:
+                {
+                    if (RTDirIsValid(pInfo->u.Local.hDir))
+                        RTDirClose(pInfo->u.Local.hDir);
+                    break;
+                }
+
+                default:
+                    rc = VERR_NOT_SUPPORTED;
+                    break;
+            }
 
             RTMemFree(pInfo);
 
@@ -934,16 +1392,14 @@ static int sharedClipboardURITransferListHdrAddFile(PVBOXCLIPBOARDLISTHDR pHdr, 
  */
 static int sharedClipboardURITransferListHdrFromDir(PVBOXCLIPBOARDLISTHDR pHdr,
                                                     const char *pcszSrcPath, const char *pcszDstPath,
-                                                    const char *pcszDstBase, size_t cchDstBase)
+                                                    const char *pcszDstBase)
 {
     AssertPtrReturn(pcszSrcPath, VERR_INVALID_POINTER);
     AssertPtrReturn(pcszDstBase, VERR_INVALID_POINTER);
     AssertPtrReturn(pcszDstPath, VERR_INVALID_POINTER);
 
-    RT_NOREF(cchDstBase);
-
-    LogFlowFunc(("pcszSrcPath=%s, pcszDstPath=%s, pcszDstBase=%s, cchDstBase=%zu\n",
-                 pcszSrcPath, pcszDstPath, pcszDstBase, cchDstBase));
+    LogFlowFunc(("pcszSrcPath=%s, pcszDstPath=%s, pcszDstBase=%s\n",
+                 pcszSrcPath, pcszDstPath, pcszDstBase));
 
     RTFSOBJINFO objInfo;
     int rc = RTPathQueryInfo(pcszSrcPath, &objInfo, RTFSOBJATTRADD_NOTHING);
@@ -1043,6 +1499,42 @@ static int sharedClipboardURITransferListHdrFromDir(PVBOXCLIPBOARDLISTHDR pHdr,
 }
 
 /**
+ * Translates an absolute path to a relative one.
+ *
+ * @returns Translated, allocated path on success, or NULL on failure.
+ *          Must be free'd with RTStrFree().
+ * @param   pszPath             Absolute path to translate.
+ */
+static char *sharedClipboardPathTranslate(const char *pszPath)
+{
+    char *pszPathTranslated = NULL;
+
+    char *pszSrcPath = RTStrDup(pszPath);
+    if (pszSrcPath)
+    {
+        size_t cbSrcPathLen = RTPathStripTrailingSlash(pszSrcPath);
+        if (cbSrcPathLen)
+        {
+            char *pszFileName = RTPathFilename(pszSrcPath);
+            if (pszFileName)
+            {
+                Assert(pszFileName >= pszSrcPath);
+                size_t cchDstBase = pszFileName - pszSrcPath;
+
+                pszPathTranslated = RTStrDup(&pszSrcPath[cchDstBase]);
+
+                LogFlowFunc(("pszSrcPath=%s, pszFileName=%s -> pszPathTranslated=%s\n",
+                             pszSrcPath, pszFileName, pszPathTranslated));
+            }
+        }
+
+        RTStrFree(pszSrcPath);
+    }
+
+    return pszPathTranslated;
+}
+
+/**
  * Retrieves the header of a Shared Clipboard list.
  *
  * @returns VBox status code.
@@ -1071,55 +1563,39 @@ int SharedClipboardURITransferListGetHeader(PSHAREDCLIPBOARDURITRANSFER pTransfe
                 PSHAREDCLIPBOARDURILISTHANDLEINFO pInfo = itList->second;
                 AssertPtr(pInfo);
 
-                if (RTFS_IS_DIRECTORY(pInfo->fMode))
+                switch (pInfo->enmType)
                 {
-                    char *pszSrcPath = RTStrDup(pInfo->OpenParms.pszPath);
-                    if (pszSrcPath)
+                    case SHAREDCLIPBOARDURIOBJTYPE_DIRECTORY:
                     {
-                        size_t cbSrcPathLen = RTPathStripTrailingSlash(pszSrcPath);
-                        if (cbSrcPathLen)
+                        char *pszPathRel = sharedClipboardPathTranslate(pInfo->pszPathLocalAbs);
+                        if (pszPathRel)
                         {
-                            char *pszFileName = RTPathFilename(pszSrcPath);
-                            if (pszFileName)
-                            {
-                                Assert(pszFileName >= pszSrcPath);
-                                size_t cchDstBase = pszFileName - pszSrcPath;
-#ifdef VBOX_STRICT
-                                char *pszDstPath  = &pszSrcPath[cchDstBase];
-                                LogFlowFunc(("pszSrcPath=%s, pszFileName=%s, pszDstPath=%s\n",
-                                             pszSrcPath, pszFileName, pszDstPath));
-#endif
-                                rc = sharedClipboardURITransferListHdrFromDir(pHdr,
-                                                                              pszSrcPath, pszSrcPath, pszSrcPath, cchDstBase);
-                            }
-                            else
-                                rc = VERR_PATH_NOT_FOUND;
+                            rc = sharedClipboardURITransferListHdrFromDir(pHdr,
+                                                                          pszPathRel, pszPathRel, pszPathRel);
+                            RTStrFree(pszPathRel);
                         }
                         else
-                            rc = VERR_INVALID_PARAMETER;
-
-                        RTStrFree(pszSrcPath);
+                            rc = VERR_NO_MEMORY;
+                        break;
                     }
-                    else
-                        rc = VERR_NO_MEMORY;
-                }
-                else if (RTFS_IS_FILE(pInfo->fMode))
-                {
-                    pHdr->cTotalObjects = 1;
 
-                    RTFSOBJINFO objInfo;
-                    rc = RTFileQueryInfo(pInfo->u.Local.hFile, &objInfo, RTFSOBJATTRADD_NOTHING);
-                    if (RT_SUCCESS(rc))
+                    case SHAREDCLIPBOARDURIOBJTYPE_FILE:
                     {
-                        pHdr->cbTotalSize = objInfo.cbObject;
+                        pHdr->cTotalObjects = 1;
+
+                        RTFSOBJINFO objInfo;
+                        rc = RTFileQueryInfo(pInfo->u.Local.hFile, &objInfo, RTFSOBJATTRADD_NOTHING);
+                        if (RT_SUCCESS(rc))
+                        {
+                            pHdr->cbTotalSize = objInfo.cbObject;
+                        }
+                        break;
                     }
+
+                    default:
+                        rc = VERR_NOT_SUPPORTED;
+                        break;
                 }
-                else if (RTFS_IS_SYMLINK(pInfo->fMode))
-                {
-                    rc = VERR_NOT_IMPLEMENTED; /** @todo */
-                }
-                else
-                    AssertFailedStmt(rc = VERR_NOT_SUPPORTED);
             }
 
             LogFlowFunc(("cTotalObj=%RU64, cbTotalSize=%RU64\n", pHdr->cTotalObjects, pHdr->cbTotalSize));
@@ -1146,8 +1622,12 @@ int SharedClipboardURITransferListGetHeader(PSHAREDCLIPBOARDURITRANSFER pTransfe
 /**
  * Returns the current URI object for a clipboard URI transfer list.
  *
- * @returns Pointer to URI object.
+ * Currently not implemented and wil return NULL.
+ *
+ * @returns Pointer to URI object, or NULL if not found / invalid.
  * @param   pTransfer           URI clipboard transfer to return URI object for.
+ * @param   hList               Handle of URI transfer list to get object for.
+ * @param   uIdx                Index of object to get.
  */
 PSHAREDCLIPBOARDURITRANSFEROBJ SharedClipboardURITransferListGetObj(PSHAREDCLIPBOARDURITRANSFER pTransfer,
                                                                     SHAREDCLIPBOARDLISTHANDLE hList, uint64_t uIdx)
@@ -1187,109 +1667,115 @@ int SharedClipboardURITransferListRead(PSHAREDCLIPBOARDURITRANSFER pTransfer, SH
             PSHAREDCLIPBOARDURILISTHANDLEINFO pInfo = itList->second;
             AssertPtr(pInfo);
 
-            LogFlowFunc(("\tfMode=%RU32, pszPath=%s\n", pInfo->fMode, pInfo->OpenParms.pszPath));
-
-            if (RTFS_IS_DIRECTORY(pInfo->fMode))
+            switch (pInfo->enmType)
             {
-                for (;;)
+                case SHAREDCLIPBOARDURIOBJTYPE_DIRECTORY:
                 {
-                    bool fSkipEntry = false; /* Whether to skip an entry in the enumeration. */
+                    LogFlowFunc(("\tDirectory: %s\n", pInfo->pszPathLocalAbs));
 
-                    size_t        cbDirEntry = 0;
-                    PRTDIRENTRYEX pDirEntry  = NULL;
-                    rc = RTDirReadExA(pInfo->u.Local.hDirRoot, &pDirEntry, &cbDirEntry, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK);
-                    if (RT_SUCCESS(rc))
+                    for (;;)
                     {
-                        switch (pDirEntry->Info.Attr.fMode & RTFS_TYPE_MASK)
+                        bool fSkipEntry = false; /* Whether to skip an entry in the enumeration. */
+
+                        size_t        cbDirEntry = 0;
+                        PRTDIRENTRYEX pDirEntry  = NULL;
+                        rc = RTDirReadExA(pInfo->u.Local.hDir, &pDirEntry, &cbDirEntry, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK);
+                        if (RT_SUCCESS(rc))
                         {
-                            case RTFS_TYPE_DIRECTORY:
+                            switch (pDirEntry->Info.Attr.fMode & RTFS_TYPE_MASK)
                             {
-                                /* Skip "." and ".." entries. */
-                                if (RTDirEntryExIsStdDotLink(pDirEntry))
+                                case RTFS_TYPE_DIRECTORY:
                                 {
-                                    fSkipEntry = true;
+                                    /* Skip "." and ".." entries. */
+                                    if (RTDirEntryExIsStdDotLink(pDirEntry))
+                                    {
+                                        fSkipEntry = true;
+                                        break;
+                                    }
+
+                                    LogFlowFunc(("Directory: %s\n", pDirEntry->szName));
                                     break;
                                 }
 
-                                LogFlowFunc(("Directory: %s\n", pDirEntry->szName));
-                                break;
-                            }
-
-                            case RTFS_TYPE_FILE:
-                            {
-                                LogFlowFunc(("File: %s\n", pDirEntry->szName));
-                                break;
-                            }
-
-                            case RTFS_TYPE_SYMLINK:
-                            {
-                                rc = VERR_NOT_IMPLEMENTED; /** @todo Not implemented yet. */
-                                break;
-                            }
-
-                            default:
-                                break;
-                        }
-
-                        if (   RT_SUCCESS(rc)
-                            && !fSkipEntry)
-                        {
-                            pEntry->pvInfo = (PSHAREDCLIPBOARDFSOBJINFO)RTMemAlloc(sizeof(SHAREDCLIPBOARDFSOBJINFO));
-                            if (pEntry->pvInfo)
-                            {
-                                rc = RTStrCopy(pEntry->pszName, pEntry->cbName, pDirEntry->szName);
-                                if (RT_SUCCESS(rc))
+                                case RTFS_TYPE_FILE:
                                 {
-                                    SharedClipboardFsObjFromIPRT(PSHAREDCLIPBOARDFSOBJINFO(pEntry->pvInfo), &pDirEntry->Info);
-
-                                    pEntry->cbInfo = sizeof(SHAREDCLIPBOARDFSOBJINFO);
-                                    pEntry->fInfo  = VBOX_SHAREDCLIPBOARD_INFO_FLAG_FSOBJINFO;
+                                    LogFlowFunc(("File: %s\n", pDirEntry->szName));
+                                    break;
                                 }
+
+                                case RTFS_TYPE_SYMLINK:
+                                {
+                                    rc = VERR_NOT_IMPLEMENTED; /** @todo Not implemented yet. */
+                                    break;
+                                }
+
+                                default:
+                                    break;
                             }
-                            else
-                                rc = VERR_NO_MEMORY;
+
+                            if (   RT_SUCCESS(rc)
+                                && !fSkipEntry)
+                            {
+                                pEntry->pvInfo = (PSHAREDCLIPBOARDFSOBJINFO)RTMemAlloc(sizeof(SHAREDCLIPBOARDFSOBJINFO));
+                                if (pEntry->pvInfo)
+                                {
+                                    rc = RTStrCopy(pEntry->pszName, pEntry->cbName, pDirEntry->szName);
+                                    if (RT_SUCCESS(rc))
+                                    {
+                                        SharedClipboardFsObjFromIPRT(PSHAREDCLIPBOARDFSOBJINFO(pEntry->pvInfo), &pDirEntry->Info);
+
+                                        pEntry->cbInfo = sizeof(SHAREDCLIPBOARDFSOBJINFO);
+                                        pEntry->fInfo  = VBOX_SHAREDCLIPBOARD_INFO_FLAG_FSOBJINFO;
+                                    }
+                                }
+                                else
+                                    rc = VERR_NO_MEMORY;
+                            }
+
+                            RTDirReadExAFree(&pDirEntry, &cbDirEntry);
                         }
 
-                        RTDirReadExAFree(&pDirEntry, &cbDirEntry);
-                    }
-
-                    if (   !fSkipEntry /* Do we have a valid entry? Bail out. */
-                        || RT_FAILURE(rc))
-                    {
-                        break;
-                    }
-                }
-            }
-            else if (RTFS_IS_FILE(pInfo->fMode))
-            {
-                LogFlowFunc(("\tSingle file: %s\n", pInfo->OpenParms.pszPath));
-
-                RTFSOBJINFO objInfo;
-                rc = RTFileQueryInfo(pInfo->u.Local.hFile, &objInfo, RTFSOBJATTRADD_NOTHING);
-                if (RT_SUCCESS(rc))
-                {
-                    pEntry->pvInfo = (PSHAREDCLIPBOARDFSOBJINFO)RTMemAlloc(sizeof(SHAREDCLIPBOARDFSOBJINFO));
-                    if (pEntry->pvInfo)
-                    {
-                        rc = RTStrCopy(pEntry->pszName, pEntry->cbName, pInfo->OpenParms.pszPath);
-                        if (RT_SUCCESS(rc))
+                        if (   !fSkipEntry /* Do we have a valid entry? Bail out. */
+                            || RT_FAILURE(rc))
                         {
-                            SharedClipboardFsObjFromIPRT(PSHAREDCLIPBOARDFSOBJINFO(pEntry->pvInfo), &objInfo);
-
-                            pEntry->cbInfo = sizeof(SHAREDCLIPBOARDFSOBJINFO);
-                            pEntry->fInfo  = VBOX_SHAREDCLIPBOARD_INFO_FLAG_FSOBJINFO;
+                            break;
                         }
                     }
-                    else
-                        rc = VERR_NO_MEMORY;
+
+                    break;
                 }
+
+                case SHAREDCLIPBOARDURIOBJTYPE_FILE:
+                {
+                    LogFlowFunc(("\tSingle file: %s\n", pInfo->pszPathLocalAbs));
+
+                    RTFSOBJINFO objInfo;
+                    rc = RTFileQueryInfo(pInfo->u.Local.hFile, &objInfo, RTFSOBJATTRADD_NOTHING);
+                    if (RT_SUCCESS(rc))
+                    {
+                        pEntry->pvInfo = (PSHAREDCLIPBOARDFSOBJINFO)RTMemAlloc(sizeof(SHAREDCLIPBOARDFSOBJINFO));
+                        if (pEntry->pvInfo)
+                        {
+                            rc = RTStrCopy(pEntry->pszName, pEntry->cbName, pInfo->pszPathLocalAbs);
+                            if (RT_SUCCESS(rc))
+                            {
+                                SharedClipboardFsObjFromIPRT(PSHAREDCLIPBOARDFSOBJINFO(pEntry->pvInfo), &objInfo);
+
+                                pEntry->cbInfo = sizeof(SHAREDCLIPBOARDFSOBJINFO);
+                                pEntry->fInfo  = VBOX_SHAREDCLIPBOARD_INFO_FLAG_FSOBJINFO;
+                            }
+                        }
+                        else
+                            rc = VERR_NO_MEMORY;
+                    }
+
+                    break;
+                }
+
+                default:
+                    rc = VERR_NOT_SUPPORTED;
+                    break;
             }
-            else if (RTFS_IS_SYMLINK(pInfo->fMode))
-            {
-                rc = VERR_NOT_IMPLEMENTED;
-            }
-            else
-                AssertFailedStmt(rc = VERR_NOT_SUPPORTED);
         }
         else
             rc = VERR_NOT_FOUND;
@@ -1417,6 +1903,12 @@ static void sharedClipboardURIListTransferRootsClear(PSHAREDCLIPBOARDURITRANSFER
 {
     AssertPtrReturnVoid(pTransfer);
 
+    if (pTransfer->pszPathRootAbs)
+    {
+        RTStrFree(pTransfer->pszPathRootAbs);
+        pTransfer->pszPathRootAbs = NULL;
+    }
+
     pTransfer->lstRootEntries.clear();
 }
 
@@ -1426,13 +1918,14 @@ static void sharedClipboardURIListTransferRootsClear(PSHAREDCLIPBOARDURITRANSFER
  * @returns VBox status code.
  * @param   pTransfer           Transfer to set URI list entries for.
  * @param   pszRoots            String list (separated by CRLF) of root entries to set.
+ *                              All entries must have the same root path.
  * @param   cbRoots             Size (in bytes) of string list.
  */
 int SharedClipboardURILTransferSetRoots(PSHAREDCLIPBOARDURITRANSFER pTransfer, const char *pszRoots, size_t cbRoots)
 {
-    AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
-    AssertPtrReturn(pszRoots,  VERR_INVALID_POINTER);
-    AssertReturn(cbRoots,      VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pTransfer,      VERR_INVALID_POINTER);
+    AssertPtrReturn(pszRoots,       VERR_INVALID_POINTER);
+    AssertReturn(cbRoots,           VERR_INVALID_PARAMETER);
 
     if (!RTStrIsValidEncoding(pszRoots))
         return VERR_INVALID_PARAMETER;
@@ -1441,17 +1934,46 @@ int SharedClipboardURILTransferSetRoots(PSHAREDCLIPBOARDURITRANSFER pTransfer, c
 
     sharedClipboardURIListTransferRootsClear(pTransfer);
 
+    char *pszPathRootAbs = NULL;
+
     RTCList<RTCString> lstRootEntries = RTCString(pszRoots, cbRoots - 1).split("\r\n");
     for (size_t i = 0; i < lstRootEntries.size(); ++i)
     {
         SHAREDCLIPBOARDURILISTROOT listRoot;
-
         listRoot.strPathAbs = lstRootEntries.at(i);
+
+        if (!pszPathRootAbs)
+        {
+            pszPathRootAbs = RTStrDup(listRoot.strPathAbs.c_str());
+            if (pszPathRootAbs)
+            {
+                RTPathStripFilename(pszPathRootAbs);
+                LogFlowFunc(("pszPathRootAbs=%s\n", pszPathRootAbs));
+            }
+            else
+                rc = VERR_NO_MEMORY;
+        }
+
+        if (RT_FAILURE(rc))
+            break;
+
+        /* Make sure all entries have the same root path. */
+        if (!RTStrStartsWith(listRoot.strPathAbs.c_str(), pszPathRootAbs))
+        {
+            rc = VERR_INVALID_PARAMETER;
+            break;
+        }
 
         pTransfer->lstRootEntries.append(listRoot);
     }
 
-    LogFlowFunc(("cRoots=%RU32\n", pTransfer->lstRootEntries.size()));
+    /** @todo Entry rollback on failure? */
+
+    if (RT_SUCCESS(rc))
+    {
+        pTransfer->pszPathRootAbs = pszPathRootAbs;
+        LogFlowFunc(("pszPathRootAbs=%s, cRoots=%zu\n", pTransfer->pszPathRootAbs, pTransfer->lstRootEntries.size()));
+    }
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -2246,5 +2768,247 @@ void SharedClipboardFsObjFromIPRT(PSHAREDCLIPBOARDFSOBJINFO pDst, PCRTFSOBJINFO 
             pDst->Attr.u.EASize.cb          = pSrc->Attr.u.EASize.cb;
             break;
     }
+}
+
+/**
+ * Converts Shared Clipboard create flags (see SharedClipboard-uri.) into IPRT create flags.
+ *
+ * @returns IPRT status code.
+ * @param  fWritable            Whether the shared folder is writable
+ * @param  fShClFlags           Shared clipboard create flags.
+ * @param  fMode                File attributes.
+ * @param  handleInitial        Initial handle.
+ * @retval pfOpen               Where to store the IPRT creation / open flags.
+ *
+ * @sa Initially taken from vbsfConvertFileOpenFlags().
+ */
+static int sharedClipboardConvertFileCreateFlags(bool fWritable, unsigned fShClFlags, RTFMODE fMode,
+                                                 SHAREDCLIPBOARDOBJHANDLE handleInitial, uint64_t *pfOpen)
+{
+    uint64_t fOpen = 0;
+    int rc = VINF_SUCCESS;
+
+    if (   (fMode & RTFS_DOS_MASK) != 0
+        && (fMode & RTFS_UNIX_MASK) == 0)
+    {
+        /* A DOS/Windows guest, make RTFS_UNIX_* from RTFS_DOS_*.
+         * @todo this is based on rtFsModeNormalize/rtFsModeFromDos.
+         *       May be better to use RTFsModeNormalize here.
+         */
+        fMode |= RTFS_UNIX_IRUSR | RTFS_UNIX_IRGRP | RTFS_UNIX_IROTH;
+        /* x for directories. */
+        if (fMode & RTFS_DOS_DIRECTORY)
+            fMode |= RTFS_TYPE_DIRECTORY | RTFS_UNIX_IXUSR | RTFS_UNIX_IXGRP | RTFS_UNIX_IXOTH;
+        /* writable? */
+        if (!(fMode & RTFS_DOS_READONLY))
+            fMode |= RTFS_UNIX_IWUSR | RTFS_UNIX_IWGRP | RTFS_UNIX_IWOTH;
+
+        /* Set the requested mode using only allowed bits. */
+        fOpen |= ((fMode & RTFS_UNIX_MASK) << RTFILE_O_CREATE_MODE_SHIFT) & RTFILE_O_CREATE_MODE_MASK;
+    }
+    else
+    {
+        /* Old linux and solaris additions did not initialize the Info.Attr.fMode field
+         * and it contained random bits from stack. Detect this using the handle field value
+         * passed from the guest: old additions set it (incorrectly) to 0, new additions
+         * set it to SHAREDCLIPBOARDOBJHANDLE_INVALID(~0).
+         */
+        if (handleInitial == 0)
+        {
+            /* Old additions. Do nothing, use default mode. */
+        }
+        else
+        {
+            /* New additions or Windows additions. Set the requested mode using only allowed bits.
+             * Note: Windows guest set RTFS_UNIX_MASK bits to 0, which means a default mode
+             *       will be set in fOpen.
+             */
+            fOpen |= ((fMode & RTFS_UNIX_MASK) << RTFILE_O_CREATE_MODE_SHIFT) & RTFILE_O_CREATE_MODE_MASK;
+        }
+    }
+
+    switch ((fShClFlags & SHAREDCLIPBOARD_OBJ_CF_ACCESS_MASK_RW))
+    {
+        default:
+        case SHAREDCLIPBOARD_OBJ_CF_ACCESS_NONE:
+        {
+#ifdef RT_OS_WINDOWS
+            if ((fShClFlags & SHAREDCLIPBOARD_OBJ_CF_ACCESS_MASK_ATTR) != SHAREDCLIPBOARD_OBJ_CF_ACCESS_ATTR_NONE)
+                fOpen |= RTFILE_O_ATTR_ONLY;
+            else
+#endif
+                fOpen |= RTFILE_O_READ;
+            LogFlowFunc(("SHAREDCLIPBOARD_OBJ_CF_ACCESS_NONE\n"));
+            break;
+        }
+
+        case SHAREDCLIPBOARD_OBJ_CF_ACCESS_READ:
+        {
+            fOpen |= RTFILE_O_READ;
+            LogFlowFunc(("SHAREDCLIPBOARD_OBJ_CF_ACCESS_READ\n"));
+            break;
+        }
+
+        case SHAREDCLIPBOARD_OBJ_CF_ACCESS_WRITE:
+        {
+            fOpen |= RTFILE_O_WRITE;
+            LogFlowFunc(("SHAREDCLIPBOARD_OBJ_CF_ACCESS_WRITE\n"));
+            break;
+        }
+
+        case SHAREDCLIPBOARD_OBJ_CF_ACCESS_READWRITE:
+        {
+            fOpen |= RTFILE_O_READWRITE;
+            LogFlowFunc(("SHAREDCLIPBOARD_OBJ_CF_ACCESS_READWRITE\n"));
+            break;
+        }
+    }
+
+    if (fShClFlags & SHAREDCLIPBOARD_OBJ_CF_ACCESS_APPEND)
+    {
+        fOpen |= RTFILE_O_APPEND;
+    }
+
+    switch ((fShClFlags & SHAREDCLIPBOARD_OBJ_CF_ACCESS_MASK_ATTR))
+    {
+        default:
+        case SHAREDCLIPBOARD_OBJ_CF_ACCESS_ATTR_NONE:
+        {
+            fOpen |= RTFILE_O_ACCESS_ATTR_DEFAULT;
+            LogFlowFunc(("SHAREDCLIPBOARD_OBJ_CF_ACCESS_ATTR_NONE\n"));
+            break;
+        }
+
+        case SHAREDCLIPBOARD_OBJ_CF_ACCESS_ATTR_READ:
+        {
+            fOpen |= RTFILE_O_ACCESS_ATTR_READ;
+            LogFlowFunc(("SHAREDCLIPBOARD_OBJ_CF_ACCESS_ATTR_READ\n"));
+            break;
+        }
+
+        case SHAREDCLIPBOARD_OBJ_CF_ACCESS_ATTR_WRITE:
+        {
+            fOpen |= RTFILE_O_ACCESS_ATTR_WRITE;
+            LogFlowFunc(("SHAREDCLIPBOARD_OBJ_CF_ACCESS_ATTR_WRITE\n"));
+            break;
+        }
+
+        case SHAREDCLIPBOARD_OBJ_CF_ACCESS_ATTR_READWRITE:
+        {
+            fOpen |= RTFILE_O_ACCESS_ATTR_READWRITE;
+            LogFlowFunc(("SHAREDCLIPBOARD_OBJ_CF_ACCESS_ATTR_READWRITE\n"));
+            break;
+        }
+    }
+
+    /* Sharing mask */
+    switch ((fShClFlags & SHAREDCLIPBOARD_OBJ_CF_ACCESS_MASK_DENY))
+    {
+        default:
+        case SHAREDCLIPBOARD_OBJ_CF_ACCESS_DENYNONE:
+            fOpen |= RTFILE_O_DENY_NONE;
+            LogFlowFunc(("SHAREDCLIPBOARD_OBJ_CF_ACCESS_DENYNONE\n"));
+            break;
+
+        case SHAREDCLIPBOARD_OBJ_CF_ACCESS_DENYREAD:
+            fOpen |= RTFILE_O_DENY_READ;
+            LogFlowFunc(("SHAREDCLIPBOARD_OBJ_CF_ACCESS_DENYREAD\n"));
+            break;
+
+        case SHAREDCLIPBOARD_OBJ_CF_ACCESS_DENYWRITE:
+            fOpen |= RTFILE_O_DENY_WRITE;
+            LogFlowFunc(("SHAREDCLIPBOARD_OBJ_CF_ACCESS_DENYWRITE\n"));
+            break;
+
+        case SHAREDCLIPBOARD_OBJ_CF_ACCESS_DENYALL:
+            fOpen |= RTFILE_O_DENY_ALL;
+            LogFlowFunc(("SHAREDCLIPBOARD_OBJ_CF_ACCESS_DENYALL\n"));
+            break;
+    }
+
+    /* Open/Create action mask */
+    switch ((fShClFlags & SHAREDCLIPBOARD_OBJ_CF_ACT_MASK_IF_EXISTS))
+    {
+        case SHAREDCLIPBOARD_OBJ_CF_ACT_OPEN_IF_EXISTS:
+            if (SHAREDCLIPBOARD_OBJ_CF_ACT_CREATE_IF_NEW == (fShClFlags & SHAREDCLIPBOARD_OBJ_CF_ACT_MASK_IF_NEW))
+            {
+                fOpen |= RTFILE_O_OPEN_CREATE;
+                LogFlowFunc(("SHAREDCLIPBOARD_OBJ_CF_ACT_OPEN_IF_EXISTS and SHAREDCLIPBOARD_OBJ_CF_ACT_CREATE_IF_NEW\n"));
+            }
+            else if (SHAREDCLIPBOARD_OBJ_CF_ACT_FAIL_IF_NEW == (fShClFlags & SHAREDCLIPBOARD_OBJ_CF_ACT_MASK_IF_NEW))
+            {
+                fOpen |= RTFILE_O_OPEN;
+                LogFlowFunc(("SHAREDCLIPBOARD_OBJ_CF_ACT_OPEN_IF_EXISTS and SHAREDCLIPBOARD_OBJ_CF_ACT_FAIL_IF_NEW\n"));
+            }
+            else
+            {
+                LogFlowFunc(("invalid open/create action combination\n"));
+                rc = VERR_INVALID_PARAMETER;
+            }
+            break;
+        case SHAREDCLIPBOARD_OBJ_CF_ACT_FAIL_IF_EXISTS:
+            if (SHAREDCLIPBOARD_OBJ_CF_ACT_CREATE_IF_NEW == (fShClFlags & SHAREDCLIPBOARD_OBJ_CF_ACT_MASK_IF_NEW))
+            {
+                fOpen |= RTFILE_O_CREATE;
+                LogFlowFunc(("SHAREDCLIPBOARD_OBJ_CF_ACT_FAIL_IF_EXISTS and SHAREDCLIPBOARD_OBJ_CF_ACT_CREATE_IF_NEW\n"));
+            }
+            else
+            {
+                LogFlowFunc(("invalid open/create action combination\n"));
+                rc = VERR_INVALID_PARAMETER;
+            }
+            break;
+        case SHAREDCLIPBOARD_OBJ_CF_ACT_REPLACE_IF_EXISTS:
+            if (SHAREDCLIPBOARD_OBJ_CF_ACT_CREATE_IF_NEW == (fShClFlags & SHAREDCLIPBOARD_OBJ_CF_ACT_MASK_IF_NEW))
+            {
+                fOpen |= RTFILE_O_CREATE_REPLACE;
+                LogFlowFunc(("SHAREDCLIPBOARD_OBJ_CF_ACT_REPLACE_IF_EXISTS and SHAREDCLIPBOARD_OBJ_CF_ACT_CREATE_IF_NEW\n"));
+            }
+            else if (SHAREDCLIPBOARD_OBJ_CF_ACT_FAIL_IF_NEW == (fShClFlags & SHAREDCLIPBOARD_OBJ_CF_ACT_MASK_IF_NEW))
+            {
+                fOpen |= RTFILE_O_OPEN | RTFILE_O_TRUNCATE;
+                LogFlowFunc(("SHAREDCLIPBOARD_OBJ_CF_ACT_REPLACE_IF_EXISTS and SHAREDCLIPBOARD_OBJ_CF_ACT_FAIL_IF_NEW\n"));
+            }
+            else
+            {
+                LogFlowFunc(("invalid open/create action combination\n"));
+                rc = VERR_INVALID_PARAMETER;
+            }
+            break;
+        case SHAREDCLIPBOARD_OBJ_CF_ACT_OVERWRITE_IF_EXISTS:
+            if (SHAREDCLIPBOARD_OBJ_CF_ACT_CREATE_IF_NEW == (fShClFlags & SHAREDCLIPBOARD_OBJ_CF_ACT_MASK_IF_NEW))
+            {
+                fOpen |= RTFILE_O_CREATE_REPLACE;
+                LogFlowFunc(("SHAREDCLIPBOARD_OBJ_CF_ACT_OVERWRITE_IF_EXISTS and SHAREDCLIPBOARD_OBJ_CF_ACT_CREATE_IF_NEW\n"));
+            }
+            else if (SHAREDCLIPBOARD_OBJ_CF_ACT_FAIL_IF_NEW == (fShClFlags & SHAREDCLIPBOARD_OBJ_CF_ACT_MASK_IF_NEW))
+            {
+                fOpen |= RTFILE_O_OPEN | RTFILE_O_TRUNCATE;
+                LogFlowFunc(("SHAREDCLIPBOARD_OBJ_CF_ACT_OVERWRITE_IF_EXISTS and SHAREDCLIPBOARD_OBJ_CF_ACT_FAIL_IF_NEW\n"));
+            }
+            else
+            {
+                LogFlowFunc(("invalid open/create action combination\n"));
+                rc = VERR_INVALID_PARAMETER;
+            }
+            break;
+        default:
+        {
+            rc = VERR_INVALID_PARAMETER;
+            LogFlowFunc(("SHAREDCLIPBOARD_OBJ_CF_ACT_MASK_IF_EXISTS - invalid parameter\n"));
+            break;
+        }
+    }
+
+    if (RT_SUCCESS(rc))
+    {
+        if (!fWritable)
+            fOpen &= ~RTFILE_O_WRITE;
+
+        *pfOpen = fOpen;
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
 }
 

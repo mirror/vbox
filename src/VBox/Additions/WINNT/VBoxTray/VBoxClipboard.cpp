@@ -114,9 +114,7 @@ static DECLCALLBACK(int) vboxClipboardURIWriteThread(RTTHREAD ThreadSelf, void *
     RTThreadUserSignal(RTThreadSelf());
 
     VBGLR3SHCLCMDCTX cmdCtx;
-    RT_ZERO(cmdCtx);
-
-    int rc = VbglR3ClipboardConnect(&cmdCtx.uClientID);
+    int rc = VbglR3ClipboardConnectEx(&cmdCtx);
     if (RT_SUCCESS(rc))
     {
         rc = VbglR3ClipboardTransferSendStatus(&cmdCtx, SHAREDCLIPBOARDURITRANSFERSTATUS_RUNNING);
@@ -148,7 +146,7 @@ static DECLCALLBACK(int) vboxClipboardURIWriteThread(RTTHREAD ThreadSelf, void *
             }
         }
 
-        VbglR3ClipboardDisconnect(cmdCtx.uClientID);
+        VbglR3ClipboardDisconnectEx(&cmdCtx);
     }
 
     RTMemFree(pCtx);
@@ -353,7 +351,7 @@ static int vboxClipboardURIObjRead(PSHAREDCLIPBOARDPROVIDERCTX pCtx, SHAREDCLIPB
     PVBOXCLIPBOARDCONTEXT pThisCtx = (PVBOXCLIPBOARDCONTEXT)pCtx->pvUser;
     AssertPtr(pThisCtx);
 
-    int rc = VbglR3ClipboardObjReadSend(&pThisCtx->CmdCtx, hObj, pvData, cbData, pcbRead);
+    int rc = VbglR3ClipboardObjRead(&pThisCtx->CmdCtx, hObj, pvData, cbData, pcbRead);
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -369,7 +367,7 @@ static int vboxClipboardURIObjWrite(PSHAREDCLIPBOARDPROVIDERCTX pCtx, SHAREDCLIP
     PVBOXCLIPBOARDCONTEXT pThisCtx = (PVBOXCLIPBOARDCONTEXT)pCtx->pvUser;
     AssertPtr(pThisCtx);
 
-    int rc = VbglR3ClipboardObjWriteSend(&pThisCtx->CmdCtx, hObj, pvData, cbData, pcbWritten);
+    int rc = VbglR3ClipboardObjWrite(&pThisCtx->CmdCtx, hObj, pvData, cbData, pcbWritten);
 
     LogFlowFuncLeaveRC(rc);
     return rc;

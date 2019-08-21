@@ -584,11 +584,9 @@ typedef struct _VBoxClipboardObjOpenMsg
     HGCMFunctionParameter szPath;
     /** uint32_t in/out: Open / Create flags of type SHAREDCLIPBOARD_OBJ_CF_. */
     HGCMFunctionParameter fCreate;
-    /** pointer, in/out: SHAREDCLIPBOARDFSOBJINFO. */
-    HGCMFunctionParameter objInfo;
 } VBoxClipboardObjOpenMsg;
 
-#define VBOX_SHARED_CLIPBOARD_CPARMS_OBJ_OPEN 4
+#define VBOX_SHARED_CLIPBOARD_CPARMS_OBJ_OPEN 5
 
 typedef struct _VBoxClipboardObjCloseMsg
 {
@@ -610,7 +608,7 @@ typedef struct _VBoxClipboardObjReadReqParms
     HGCMFunctionParameter uHandle;
     /** uint32_t, in: How many bytes to read. */
     HGCMFunctionParameter cbToRead;
-    /** uint32_t, in: Read flags. Currently unused. */
+    /** uint32_t, in: Read flags. Currently unused and must be 0. */
     HGCMFunctionParameter fRead;
 } VBoxClipboardObjReadReqParms;
 
@@ -621,7 +619,7 @@ typedef struct _VBoxClipboardObjReadReqMsg
     VBoxClipboardObjReadReqParms ReqParms;
 } VBoxClipboardObjReadReqMsg;
 
-#define VBOX_SHARED_CLIPBOARD_CPARMS_OBJ_READ_REQ 3
+#define VBOX_SHARED_CLIPBOARD_CPARMS_OBJ_READ_REQ 4
 
 /**
  * Reads / writes data of / to an object.
