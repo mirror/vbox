@@ -34,11 +34,14 @@
 
 /* COM includes: */
 #include "CDisplay.h"
+#include "CGuest.h"
 #include "CMachineDebugger.h"
 #include "CVRDEServerInfo.h"
 
 UIInformationRuntime::UIInformationRuntime(QWidget *pParent, const CMachine &machine, const CConsole &console)
-    : UIInformationWidget(pParent,machine, console)
+    : QIWithRetranslateUI<QWidget>(pParent)
+    , m_machine(machine)
+    , m_console(console)
 {
     retranslateUi();
     createTableItems();
@@ -51,24 +54,24 @@ void UIInformationRuntime::retranslateUi()
 
 void UIInformationRuntime::createTableItems()
 {
-    if (!m_pTableWidget)
-        return;
-    QFontMetrics fontMetrics(m_pTableWidget->font());
-    QTextDocument textDocument;
-    int iMaxColumn1Length = 0;
+    // if (!m_pTableWidget)
+    //     return;
+    // QFontMetrics fontMetrics(m_pTableWidget->font());
+    // QTextDocument textDocument;
+    // int iMaxColumn1Length = 0;
 
-    insertTitleRow(m_strRuntimeTitle, UIIconPool::iconSet(":/state_running_16px.png"), fontMetrics);
-
-
-    insertInfoRows(runTimeAttributes(),
-                   fontMetrics, textDocument, iMaxColumn1Length);
+    // insertTitleRow(m_strRuntimeTitle, UIIconPool::iconSet(":/state_running_16px.png"), fontMetrics);
 
 
+    // insertInfoRows(runTimeAttributes(),
+    //                fontMetrics, textDocument, iMaxColumn1Length);
 
-    m_pTableWidget->resizeColumnToContents(0);
-    /* Resize the column 1 a bit larger than the max string if contains: */
-    m_pTableWidget->setColumnWidth(1, 1.5 * iMaxColumn1Length);
-    m_pTableWidget->resizeColumnToContents(2);
+
+
+    // m_pTableWidget->resizeColumnToContents(0);
+    // /* Resize the column 1 a bit larger than the max string if contains: */
+    // m_pTableWidget->setColumnWidth(1, 1.5 * iMaxColumn1Length);
+    // m_pTableWidget->resizeColumnToContents(2);
 }
 
 UITextTable UIInformationRuntime::runTimeAttributes()

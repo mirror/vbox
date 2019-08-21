@@ -30,7 +30,8 @@
 #include "CConsole.h"
 
 /* GUI includes: */
-#include "UIInformationWidget.h"
+#include "QIWithRetranslateUI.h"
+#include "UITextTable.h"
 
 /* Forward declarations: */
 class QVBoxLayout;
@@ -39,7 +40,7 @@ class UIInformationModel;
 class UIVMItem;
 
 
-class UIInformationRuntime : public UIInformationWidget
+class UIInformationRuntime : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
 
@@ -54,6 +55,9 @@ protected:
 
 private:
     UITextTable runTimeAttributes();
+
+    CMachine m_machine;
+    CConsole m_console;
 
     /** @name Cached translated string.
      * @{ */

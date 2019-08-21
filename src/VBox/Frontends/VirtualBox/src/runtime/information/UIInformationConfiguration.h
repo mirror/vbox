@@ -31,14 +31,17 @@
 #include "CConsole.h"
 
 /* GUI includes: */
-#include "UIInformationWidget.h"
+#include "QIWithRetranslateUI.h"
+#include "UITextTable.h"
+
 
 /* Forward declarations: */
+class QTableWidget;
 class QTableWidgetItem;
 class QTextDocument;
+class QVBoxLayout;
 
-
-class UIInformationConfiguration : public UIInformationWidget
+class UIInformationConfiguration : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
 
@@ -60,6 +63,24 @@ private slots:
 private:
 
     void createTableItems();
+    void prepareObjects();
+    void insertTitleRow(const QString &strTitle, const QIcon &icon, const QFontMetrics &fontMetrics);
+    void insertInfoRows(const UITextTable &table, const QFontMetrics &fontMetrics,
+                        QTextDocument &textDocument, int &iMaxColumn1Length);
+    void insertInfoRow(const QString strText1, const QString &strText2,
+                       const QFontMetrics &fontMetrics, int &iMaxColumn1Length);
+    void resetTable();
+
+    CMachine m_machine;
+    CConsole m_console;
+    QVBoxLayout *m_pMainLayout;
+    QTableWidget *m_pTableWidget;
+    const int m_iColumCount;
+    const int m_iRowLeftMargin;
+    const int m_iRowTopMargin;
+    const int m_iRowRightMargin;
+    const int m_iRowBottomMargin;
+
 
    /** @name Cached translated string.
       * @{ */
