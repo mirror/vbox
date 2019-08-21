@@ -48,7 +48,6 @@
 #include <VBox/err.h>
 #include <VBox/RemoteDesktop/VRDEOrders.h>
 #include <VBox/com/listeners.h>
-#include <VBox/HostServices/VBoxCrOpenGLSvc.h>
 
 
 class VRDPConsoleListener
@@ -1795,6 +1794,7 @@ void ConsoleVRDPServer::fetchCurrentState(void)
     }
 }
 
+#if 0 /** @todo Chromium got removed (see @bugref{9529}) and this is not available for VMSVGA yet. */
 typedef struct H3DORInstance
 {
     ConsoleVRDPServer *pThis;
@@ -2095,6 +2095,7 @@ typedef struct H3DORInstance
     H3DORLOG(("H3DORContextProperty: %Rrc\n", rc));
     return rc;
 }
+#endif
 
 void ConsoleVRDPServer::remote3DRedirect(bool fEnable)
 {
@@ -2119,6 +2120,7 @@ void ConsoleVRDPServer::remote3DRedirect(bool fEnable)
         return;
     }
 
+#if 0 /** @todo Implement again for VMSVGA. */
     /* Tell the host 3D service to redirect output using the ConsoleVRDPServer callbacks. */
     H3DOUTPUTREDIRECT outputRedirect =
     {
@@ -2136,27 +2138,6 @@ void ConsoleVRDPServer::remote3DRedirect(bool fEnable)
         /* This will tell the service to disable rediection. */
         RT_ZERO(outputRedirect);
     }
-
-#if defined(VBOX_WITH_HGCM) && defined(VBOX_WITH_CROGL)
-    VBOXCRCMDCTL_HGCM data;
-    data.Hdr.enmType = VBOXCRCMDCTL_TYPE_HGCM;
-    data.Hdr.u32Function = SHCRGL_HOST_FN_SET_OUTPUT_REDIRECT;
-
-    data.aParms[0].type = VBOX_HGCM_SVC_PARM_PTR;
-    data.aParms[0].u.pointer.addr = &outputRedirect;
-    data.aParms[0].u.pointer.size = sizeof(outputRedirect);
-
-    int rc = mConsole->i_getDisplay()->i_crCtlSubmitSync(&data.Hdr, sizeof (data));
-    if (!RT_SUCCESS(rc))
-    {
-        Log(("SHCRGL_HOST_FN_SET_CONSOLE failed with %Rrc\n", rc));
-        return;
-    }
-
-    LogRel(("VRDE: %s 3D redirect.\n", fEnable? "Enabled": "Disabled"));
-# ifdef DEBUG_misha
-    AssertFailed();
-# endif
 #endif
 
     return;
@@ -2170,10 +2151,12 @@ void ConsoleVRDPServer::remote3DRedirect(bool fEnable)
                                                                      uint32_t cbData)
 {
     RT_NOREF(hVideo);
-    H3DORLOG(("H3DOR: VRDEImageCbNotify: pvContext %p, pvUser %p, hVideo %p, u32Id %u, pvData %p, cbData %d\n",
+    Log(("H3DOR: VRDEImageCbNotify: pvContext %p, pvUser %p, hVideo %p, u32Id %u, pvData %p, cbData %d\n",
               pvContext, pvUser, hVideo, u32Id, pvData, cbData));
 
     ConsoleVRDPServer *pServer = static_cast<ConsoleVRDPServer*>(pvContext); NOREF(pServer);
+
+#if 0 /** @todo Implement again for VMSVGA. */
     H3DORInstance *p = (H3DORInstance *)pvUser;
     Assert(p);
     Assert(p->pThis);
@@ -2188,7 +2171,7 @@ void ConsoleVRDPServer::remote3DRedirect(bool fEnable)
         }
 
         uint32_t u32StreamId = *(uint32_t *)pvData;
-        H3DORLOG(("H3DOR: VRDE_IMAGE_NOTIFY_HANDLE_CREATE u32StreamId %d\n",
+        Log(("H3DOR: VRDE_IMAGE_NOTIFY_HANDLE_CREATE u32StreamId %d\n",
                   u32StreamId));
 
         if (u32StreamId != 0)
@@ -2200,6 +2183,7 @@ void ConsoleVRDPServer::remote3DRedirect(bool fEnable)
            /* The stream has not been created. */
         }
     }
+#endif
 
     return VINF_SUCCESS;
 }
