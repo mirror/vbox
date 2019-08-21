@@ -29,6 +29,9 @@
 #include "CMachine.h"
 #include "CConsole.h"
 
+/* GUI includes: */
+#include "UIInformationWidget.h"
+
 /* Forward declarations: */
 class QVBoxLayout;
 class UIInformationView;
@@ -36,40 +39,27 @@ class UIInformationModel;
 class UIVMItem;
 
 
-/** QWidget extension
-  * providing GUI with configuration-information tab in session-information window. */
-class UIInformationRuntime : public QWidget
+class UIInformationRuntime : public UIInformationWidget
 {
     Q_OBJECT;
 
 public:
 
-    /** Constructs information-tab passing @a pParent to the QWidget base-class constructor.
-      * @param machine is machine reference.
-      * @param console is machine console reference. */
     UIInformationRuntime(QWidget *pParent, const CMachine &machine, const CConsole &console);
 
+protected:
+
+    void retranslateUi() /* override */;
+    void createTableItems() /* override */;
+
 private:
+    UITextTable runTimeAttributes();
 
-    /** Prepares layout. */
-    void prepareLayout();
+    /** @name Cached translated string.
+     * @{ */
+       QString m_strRuntimeTitle;
+    /** @} */
 
-    /** Prepares model. */
-    void prepareModel();
-
-    /** Prepares view. */
-    void prepareView();
-
-    /** Holds the machine instance. */
-    CMachine m_machine;
-    /** Holds the console instance. */
-    CConsole m_console;
-    /** Holds the instance of layout we create. */
-    QVBoxLayout *m_pMainLayout;
-    /** Holds the instance of model we create. */
-    UIInformationModel *m_pModel;
-    /** Holds the instance of view we create. */
-    UIInformationView *m_pView;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_runtime_information_UIInformationRuntime_h */

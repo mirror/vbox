@@ -31,7 +31,6 @@
 #include "CConsole.h"
 
 /* GUI includes: */
-#include "UITextTable.h"
 #include "UIInformationWidget.h"
 
 /* Forward declarations: */
@@ -39,8 +38,6 @@ class QTableWidgetItem;
 class QTextDocument;
 
 
-/** QWidget extension
-  * providing GUI with configuration-information tab in session-information window. */
 class UIInformationConfiguration : public UIInformationWidget
 {
     Q_OBJECT;
