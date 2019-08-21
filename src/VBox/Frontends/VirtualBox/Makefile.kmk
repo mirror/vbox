@@ -734,7 +734,6 @@ VirtualBoxVM_QT_MOCHDRS = \
 	src/runtime/information/UIInformationItem.h \
 	src/runtime/information/UIInformationModel.h \
 	src/runtime/information/UIInformationRuntime.h \
-	src/runtime/information/UIInformationView.h \
 	src/runtime/information/UIVMInformationDialog.h \
 	src/guestctrl/UIFileManager.h \
 	src/guestctrl/UIFileManagerDialog.h \
@@ -1200,7 +1199,6 @@ VirtualBoxVM_SOURCES = \
 	src/runtime/information/UIInformationItem.cpp \
 	src/runtime/information/UIInformationModel.cpp \
 	src/runtime/information/UIInformationRuntime.cpp \
-	src/runtime/information/UIInformationView.cpp \
 	src/runtime/information/UIVMInformationDialog.cpp \
 	src/guestctrl/UIFileManager.cpp \
 	src/guestctrl/UIFileManagerDialog.cpp \
