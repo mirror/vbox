@@ -301,7 +301,7 @@ SOLARIS_STRIP_EXES = \
 	VBoxNetNAT \
 	$(if $(VBOX_WITH_EXTPACK),VBoxExtPackHelperApp,) \
 	VBoxSVC \
-	VBoxTestOGL \
+	$(if $(VBOX_WITH_VMSVGA3D), VBoxTestOGL,) \
 	VBoxXPCOMIPCD \
 	$(if $(VBOX_WITH_KCHMVIEWER),kchmviewer,) \
 	$(if $(VBOX_WITH_DTRACE),VBoxDTrace,)
