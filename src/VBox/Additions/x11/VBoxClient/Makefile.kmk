@@ -37,8 +37,7 @@ VBoxClient_SOURCES = \
 	seamless.cpp \
 	seamless-x11.cpp \
 	display.cpp \
-	hostversion.cpp \
-	check3d.cpp
+	hostversion.cpp
 
 VBoxClient_SOURCES.linux = \
 	chk_stubs.c
