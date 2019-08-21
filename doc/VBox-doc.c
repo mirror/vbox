@@ -112,8 +112,6 @@
  *  - Host Services.
  *      - @ref pg_hostclip Shared Clipboard.
  *      - Shared Folders.
- *      - Shared OpenGL. See PDF. (TODO: translate PDF to doxygen)
- *          - @ref pg_opengl_cocoa
  *      - @ref pg_svc_guest_properties
  *      - @ref pg_svc_guest_control
  *  - Guest Additions.
