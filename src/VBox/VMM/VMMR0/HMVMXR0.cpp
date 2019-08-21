@@ -5533,6 +5533,7 @@ static VBOXSTRICTRC hmR0VmxExportGuestCR3AndCR4(PVMCPUCC pVCpu, PVMXTRANSIENT pV
         }
         else
         {
+            Assert(!pVmxTransient->fIsNestedGuest);
             /* Non-nested paging case, just use the hypervisor's CR3. */
             RTHCPHYS const HCPhysGuestCr3 = PGMGetHyperCR3(pVCpu);
 
@@ -12520,12 +12521,6 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExit(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTra
  */
 DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExitNested(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
 {
-    /** @todo NSTVMX: Remove after debugging regression.  */
-#if 1 //def DEBUG_ramshankar Remove later
-    hmR0VmxImportGuestState(pVCpu, pVmxTransient->pVmcsInfo, CPUMCTX_EXTRN_CS | CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_RSP);
-    Log4Func(("cs:rip=%#04x:%#RX64 rsp=%#RX64\n", pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, pVCpu->cpum.GstCtx.rsp));
-#endif
-
     uint32_t const uExitReason = pVmxTransient->uExitReason;
     switch (uExitReason)
     {
@@ -16145,13 +16140,6 @@ HMVMX_EXIT_DECL hmR0VmxExitXcptOrNmiNested(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTra
                     Log4Func(("idt_info=%#RX32 idt_errcode=%#RX32 cr2=%#RX64\n", pVmxTransient->uIdtVectoringInfo,
                               pVmxTransient->uIdtVectoringErrorCode, pCtx->cr2));
                 }
-
-                /* DOS VM debugging (IRET). */
-                hmR0DumpRegs(pVCpu, HM_DUMP_REG_FLAGS_GPRS);
-                uint8_t abStack[64];
-                int rc = PGMPhysSimpleReadGCPtr(pVCpu, &abStack[0], pCtx->esp, sizeof(abStack));
-                if (RT_SUCCESS(rc))
-                    Log(("StackMem: %.*Rhxs\n", sizeof(abStack), abStack));
 #endif
                 return IEMExecVmxVmexitXcpt(pVCpu, &ExitInfo, &ExitEventInfo);
             }

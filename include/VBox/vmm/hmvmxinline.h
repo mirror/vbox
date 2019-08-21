@@ -227,6 +227,119 @@ DECLINLINE(bool) VMXIsVmentryVectoring(uint32_t uEntryIntInfo, uint8_t *pEntryIn
     }
     return false;
 }
+
+
+/**
+ * Gets the description for a VMX abort reason.
+ *
+ * @returns The descriptive string.
+ * @param   enmAbort    The VMX abort reason.
+ */
+DECLINLINE(const char *) VMXGetAbortDesc(VMXABORT enmAbort)
+{
+    switch (enmAbort)
+    {
+        case VMXABORT_NONE:                     return "VMXABORT_NONE";
+        case VMXABORT_SAVE_GUEST_MSRS:          return "VMXABORT_SAVE_GUEST_MSRS";
+        case VMXBOART_HOST_PDPTE:               return "VMXBOART_HOST_PDPTE";
+        case VMXABORT_CURRENT_VMCS_CORRUPT:     return "VMXABORT_CURRENT_VMCS_CORRUPT";
+        case VMXABORT_LOAD_HOST_MSR:            return "VMXABORT_LOAD_HOST_MSR";
+        case VMXABORT_MACHINE_CHECK_XCPT:       return "VMXABORT_MACHINE_CHECK_XCPT";
+        case VMXABORT_HOST_NOT_IN_LONG_MODE:    return "VMXABORT_HOST_NOT_IN_LONG_MODE";
+        default:
+            break;
+    }
+    return "Unknown/invalid";
+}
+
+
+/**
+ * Gets the description for a virtual VMCS state.
+ *
+ * @returns The descriptive string.
+ * @param   fVmcsState      The virtual-VMCS state.
+ */
+DECLINLINE(const char *) VMXGetVmcsStateDesc(uint8_t fVmcsState)
+{
+    switch (fVmcsState)
+    {
+        case VMX_V_VMCS_LAUNCH_STATE_CLEAR:     return "Clear";
+        case VMX_V_VMCS_LAUNCH_STATE_LAUNCHED:  return "Launched";
+        default:                                return "Unknown";
+    }
+}
+
+
+/**
+ * Gets the description for a VM-entry interruption information event type.
+ *
+ * @returns The descriptive string.
+ * @param   uType    The event type.
+ */
+DECLINLINE(const char *) VMXGetEntryIntInfoTypeDesc(uint8_t uType)
+{
+    switch (uType)
+    {
+        case VMX_ENTRY_INT_INFO_TYPE_EXT_INT:       return "External Interrupt";
+        case VMX_ENTRY_INT_INFO_TYPE_NMI:           return "NMI";
+        case VMX_ENTRY_INT_INFO_TYPE_HW_XCPT:       return "Hardware Exception";
+        case VMX_ENTRY_INT_INFO_TYPE_SW_INT:        return "Software Interrupt";
+        case VMX_ENTRY_INT_INFO_TYPE_PRIV_SW_XCPT:  return "Priv. Software Exception";
+        case VMX_ENTRY_INT_INFO_TYPE_SW_XCPT:       return "Software Exception";
+        case VMX_ENTRY_INT_INFO_TYPE_OTHER_EVENT:   return "Other Event";
+        default:
+            break;
+    }
+    return "Unknown/invalid";
+}
+
+
+/**
+ * Gets the description for a VM-exit interruption information event type.
+ *
+ * @returns The descriptive string.
+ * @param   uType    The event type.
+ */
+DECLINLINE(const char *) VMXGetExitIntInfoTypeDesc(uint8_t uType)
+{
+    switch (uType)
+    {
+        case VMX_EXIT_INT_INFO_TYPE_EXT_INT:       return "External Interrupt";
+        case VMX_EXIT_INT_INFO_TYPE_NMI:           return "NMI";
+        case VMX_EXIT_INT_INFO_TYPE_HW_XCPT:       return "Hardware Exception";
+        case VMX_EXIT_INT_INFO_TYPE_SW_INT:        return "Software Interrupt";
+        case VMX_EXIT_INT_INFO_TYPE_PRIV_SW_XCPT:  return "Priv. Software Exception";
+        case VMX_EXIT_INT_INFO_TYPE_SW_XCPT:       return "Software Exception";
+        default:
+            break;
+    }
+    return "Unknown/invalid";
+}
+
+
+/**
+ * Gets the description for an IDT-vectoring information event type.
+ *
+ * @returns The descriptive string.
+ * @param   uType    The event type.
+ */
+DECLINLINE(const char *) VMXGetIdtVectoringInfoTypeDesc(uint8_t uType)
+{
+    switch (uType)
+    {
+        case VMX_IDT_VECTORING_INFO_TYPE_EXT_INT:       return "External Interrupt";
+        case VMX_IDT_VECTORING_INFO_TYPE_NMI:           return "NMI";
+        case VMX_IDT_VECTORING_INFO_TYPE_HW_XCPT:       return "Hardware Exception";
+        case VMX_IDT_VECTORING_INFO_TYPE_SW_INT:        return "Software Interrupt";
+        case VMX_IDT_VECTORING_INFO_TYPE_PRIV_SW_XCPT:  return "Priv. Software Exception";
+        case VMX_IDT_VECTORING_INFO_TYPE_SW_XCPT:       return "Software Exception";
+        default:
+            break;
+    }
+    return "Unknown/invalid";
+}
+
+
 /** @} */
 
 

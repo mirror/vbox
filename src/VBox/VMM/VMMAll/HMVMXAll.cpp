@@ -22,6 +22,7 @@
 #define LOG_GROUP LOG_GROUP_HM
 #define VMCPU_INCL_CPUM_GST_CTX
 #include "HMInternal.h"
+#include <VBox/vmm/hmvmxinline.h>
 #include <VBox/vmm/vmcc.h>
 #include <VBox/vmm/pdmapi.h>
 #include <iprt/errcore.h>
@@ -387,117 +388,6 @@ VMM_INT_DECL(const char *) HMGetVmxDiagDesc(VMXVDIAG enmDiag)
 {
     if (RT_LIKELY((unsigned)enmDiag < RT_ELEMENTS(g_apszVmxVDiagDesc)))
         return g_apszVmxVDiagDesc[enmDiag];
-    return "Unknown/invalid";
-}
-
-
-/**
- * Gets the description for a VMX abort reason.
- *
- * @returns The descriptive string.
- * @param   enmAbort    The VMX abort reason.
- */
-VMM_INT_DECL(const char *) HMGetVmxAbortDesc(VMXABORT enmAbort)
-{
-    switch (enmAbort)
-    {
-        case VMXABORT_NONE:                     return "VMXABORT_NONE";
-        case VMXABORT_SAVE_GUEST_MSRS:          return "VMXABORT_SAVE_GUEST_MSRS";
-        case VMXBOART_HOST_PDPTE:               return "VMXBOART_HOST_PDPTE";
-        case VMXABORT_CURRENT_VMCS_CORRUPT:     return "VMXABORT_CURRENT_VMCS_CORRUPT";
-        case VMXABORT_LOAD_HOST_MSR:            return "VMXABORT_LOAD_HOST_MSR";
-        case VMXABORT_MACHINE_CHECK_XCPT:       return "VMXABORT_MACHINE_CHECK_XCPT";
-        case VMXABORT_HOST_NOT_IN_LONG_MODE:    return "VMXABORT_HOST_NOT_IN_LONG_MODE";
-        default:
-            break;
-    }
-    return "Unknown/invalid";
-}
-
-
-/**
- * Gets the description for a virtual VMCS state.
- *
- * @returns The descriptive string.
- * @param   fVmcsState      The virtual-VMCS state.
- */
-VMM_INT_DECL(const char *) HMGetVmxVmcsStateDesc(uint8_t fVmcsState)
-{
-    switch (fVmcsState)
-    {
-        case VMX_V_VMCS_LAUNCH_STATE_CLEAR:     return "Clear";
-        case VMX_V_VMCS_LAUNCH_STATE_LAUNCHED:  return "Launched";
-        default:                                return "Unknown";
-    }
-}
-
-
-/**
- * Gets the description for a VM-entry interruption information event type.
- *
- * @returns The descriptive string.
- * @param   uType    The event type.
- */
-VMM_INT_DECL(const char *) HMGetVmxEntryIntInfoTypeDesc(uint8_t uType)
-{
-    switch (uType)
-    {
-        case VMX_ENTRY_INT_INFO_TYPE_EXT_INT:       return "External Interrupt";
-        case VMX_ENTRY_INT_INFO_TYPE_NMI:           return "NMI";
-        case VMX_ENTRY_INT_INFO_TYPE_HW_XCPT:       return "Hardware Exception";
-        case VMX_ENTRY_INT_INFO_TYPE_SW_INT:        return "Software Interrupt";
-        case VMX_ENTRY_INT_INFO_TYPE_PRIV_SW_XCPT:  return "Priv. Software Exception";
-        case VMX_ENTRY_INT_INFO_TYPE_SW_XCPT:       return "Software Exception";
-        case VMX_ENTRY_INT_INFO_TYPE_OTHER_EVENT:   return "Other Event";
-        default:
-            break;
-    }
-    return "Unknown/invalid";
-}
-
-
-/**
- * Gets the description for a VM-exit interruption information event type.
- *
- * @returns The descriptive string.
- * @param   uType    The event type.
- */
-VMM_INT_DECL(const char *) HMGetVmxExitIntInfoTypeDesc(uint8_t uType)
-{
-    switch (uType)
-    {
-        case VMX_EXIT_INT_INFO_TYPE_EXT_INT:       return "External Interrupt";
-        case VMX_EXIT_INT_INFO_TYPE_NMI:           return "NMI";
-        case VMX_EXIT_INT_INFO_TYPE_HW_XCPT:       return "Hardware Exception";
-        case VMX_EXIT_INT_INFO_TYPE_SW_INT:        return "Software Interrupt";
-        case VMX_EXIT_INT_INFO_TYPE_PRIV_SW_XCPT:  return "Priv. Software Exception";
-        case VMX_EXIT_INT_INFO_TYPE_SW_XCPT:       return "Software Exception";
-        default:
-            break;
-    }
-    return "Unknown/invalid";
-}
-
-
-/**
- * Gets the description for an IDT-vectoring information event type.
- *
- * @returns The descriptive string.
- * @param   uType    The event type.
- */
-VMM_INT_DECL(const char *) HMGetVmxIdtVectoringInfoTypeDesc(uint8_t uType)
-{
-    switch (uType)
-    {
-        case VMX_IDT_VECTORING_INFO_TYPE_EXT_INT:       return "External Interrupt";
-        case VMX_IDT_VECTORING_INFO_TYPE_NMI:           return "NMI";
-        case VMX_IDT_VECTORING_INFO_TYPE_HW_XCPT:       return "Hardware Exception";
-        case VMX_IDT_VECTORING_INFO_TYPE_SW_INT:        return "Software Interrupt";
-        case VMX_IDT_VECTORING_INFO_TYPE_PRIV_SW_XCPT:  return "Priv. Software Exception";
-        case VMX_IDT_VECTORING_INFO_TYPE_SW_XCPT:       return "Software Exception";
-        default:
-            break;
-    }
     return "Unknown/invalid";
 }
 
@@ -914,7 +804,7 @@ VMM_INT_DECL(void) HMDumpHwvirtVmxState(PVMCPU pVCpu)
     LogRel(("GCPhysShadowVmcs           = %#RGp\n",     pCtx->hwvirt.vmx.GCPhysShadowVmcs));
     LogRel(("enmDiag                    = %u (%s)\n",   pCtx->hwvirt.vmx.enmDiag, HMGetVmxDiagDesc(pCtx->hwvirt.vmx.enmDiag)));
     LogRel(("uDiagAux                   = %#RX64\n",    pCtx->hwvirt.vmx.uDiagAux));
-    LogRel(("enmAbort                   = %u (%s)\n",   pCtx->hwvirt.vmx.enmAbort, HMGetVmxAbortDesc(pCtx->hwvirt.vmx.enmAbort)));
+    LogRel(("enmAbort                   = %u (%s)\n",   pCtx->hwvirt.vmx.enmAbort, VMXGetAbortDesc(pCtx->hwvirt.vmx.enmAbort)));
     LogRel(("uAbortAux                  = %u (%#x)\n",  pCtx->hwvirt.vmx.uAbortAux, pCtx->hwvirt.vmx.uAbortAux));
     LogRel(("fInVmxRootMode             = %RTbool\n",   pCtx->hwvirt.vmx.fInVmxRootMode));
     LogRel(("fInVmxNonRootMode          = %RTbool\n",   pCtx->hwvirt.vmx.fInVmxNonRootMode));
@@ -932,8 +822,8 @@ VMM_INT_DECL(void) HMDumpHwvirtVmxState(PVMCPU pVCpu)
     {
         LogRel(("%sHeader:\n", pszPrefix));
         LogRel(("  %sVMCS revision id           = %#RX32\n",      pszPrefix, pVmcs->u32VmcsRevId));
-        LogRel(("  %sVMX-abort id               = %#RX32 (%s)\n", pszPrefix, pVmcs->enmVmxAbort, HMGetVmxAbortDesc(pVmcs->enmVmxAbort)));
-        LogRel(("  %sVMCS state                 = %#x (%s)\n",    pszPrefix, pVmcs->fVmcsState, HMGetVmxVmcsStateDesc(pVmcs->fVmcsState)));
+        LogRel(("  %sVMX-abort id               = %#RX32 (%s)\n", pszPrefix, pVmcs->enmVmxAbort, VMXGetAbortDesc(pVmcs->enmVmxAbort)));
+        LogRel(("  %sVMCS state                 = %#x (%s)\n",    pszPrefix, pVmcs->fVmcsState, VMXGetVmcsStateDesc(pVmcs->fVmcsState)));
     }
 
     /* Control fields. */
@@ -962,7 +852,7 @@ VMM_INT_DECL(void) HMDumpHwvirtVmxState(PVMCPU pVCpu)
             uint32_t const fInfo = pVmcs->u32EntryIntInfo;
             uint8_t  const uType = VMX_ENTRY_INT_INFO_TYPE(fInfo);
             LogRel(("    %sValid                      = %RTbool\n",  pszPrefix, VMX_ENTRY_INT_INFO_IS_VALID(fInfo)));
-            LogRel(("    %sType                       = %#x (%s)\n", pszPrefix, uType, HMGetVmxEntryIntInfoTypeDesc(uType)));
+            LogRel(("    %sType                       = %#x (%s)\n", pszPrefix, uType, VMXGetEntryIntInfoTypeDesc(uType)));
             LogRel(("    %sVector                     = %#x\n",      pszPrefix, VMX_ENTRY_INT_INFO_VECTOR(fInfo)));
             LogRel(("    %sNMI-unblocking-IRET        = %RTbool\n",  pszPrefix, VMX_ENTRY_INT_INFO_IS_NMI_UNBLOCK_IRET(fInfo)));
             LogRel(("    %sError-code valid           = %RTbool\n",  pszPrefix, VMX_ENTRY_INT_INFO_IS_ERROR_CODE_VALID(fInfo)));
@@ -1112,7 +1002,7 @@ VMM_INT_DECL(void) HMDumpHwvirtVmxState(PVMCPU pVCpu)
             uint32_t const fInfo = pVmcs->u32RoExitIntInfo;
             uint8_t  const uType = VMX_EXIT_INT_INFO_TYPE(fInfo);
             LogRel(("    %sValid                      = %RTbool\n",  pszPrefix, VMX_EXIT_INT_INFO_IS_VALID(fInfo)));
-            LogRel(("    %sType                       = %#x (%s)\n", pszPrefix, uType, HMGetVmxExitIntInfoTypeDesc(uType)));
+            LogRel(("    %sType                       = %#x (%s)\n", pszPrefix, uType, VMXGetExitIntInfoTypeDesc(uType)));
             LogRel(("    %sVector                     = %#x\n",      pszPrefix, VMX_EXIT_INT_INFO_VECTOR(fInfo)));
             LogRel(("    %sNMI-unblocking-IRET        = %RTbool\n",  pszPrefix, VMX_EXIT_INT_INFO_IS_NMI_UNBLOCK_IRET(fInfo)));
             LogRel(("    %sError-code valid           = %RTbool\n",  pszPrefix, VMX_EXIT_INT_INFO_IS_ERROR_CODE_VALID(fInfo)));
@@ -1123,7 +1013,7 @@ VMM_INT_DECL(void) HMDumpHwvirtVmxState(PVMCPU pVCpu)
             uint32_t const fInfo = pVmcs->u32RoIdtVectoringInfo;
             uint8_t  const uType = VMX_IDT_VECTORING_INFO_TYPE(fInfo);
             LogRel(("    %sValid                      = %RTbool\n",  pszPrefix, VMX_IDT_VECTORING_INFO_IS_VALID(fInfo)));
-            LogRel(("    %sType                       = %#x (%s)\n", pszPrefix, uType, HMGetVmxIdtVectoringInfoTypeDesc(uType)));
+            LogRel(("    %sType                       = %#x (%s)\n", pszPrefix, uType, VMXGetIdtVectoringInfoTypeDesc(uType)));
             LogRel(("    %sVector                     = %#x\n",      pszPrefix, VMX_IDT_VECTORING_INFO_VECTOR(fInfo)));
             LogRel(("    %sError-code valid           = %RTbool\n",  pszPrefix, VMX_IDT_VECTORING_INFO_IS_ERROR_CODE_VALID(fInfo)));
         }

@@ -117,11 +117,6 @@ VMM_INT_DECL(bool)              HMSetSingleInstruction(PVMCC pVM, PVMCPUCC pVCpu
 VMM_INT_DECL(bool)              HMIsSvmActive(PVM pVM);
 VMM_INT_DECL(bool)              HMIsVmxActive(PVM pVM);
 VMM_INT_DECL(const char *)      HMGetVmxDiagDesc(VMXVDIAG enmDiag);
-VMM_INT_DECL(const char *)      HMGetVmxAbortDesc(VMXABORT enmAbort);
-VMM_INT_DECL(const char *)      HMGetVmxVmcsStateDesc(uint8_t fVmcsState);
-VMM_INT_DECL(const char *)      HMGetVmxIdtVectoringInfoTypeDesc(uint8_t uType);
-VMM_INT_DECL(const char *)      HMGetVmxExitIntInfoTypeDesc(uint8_t uType);
-VMM_INT_DECL(const char *)      HMGetVmxEntryIntInfoTypeDesc(uint8_t uType);
 VMM_INT_DECL(const char *)      HMGetVmxExitName(uint32_t uExit);
 VMM_INT_DECL(const char *)      HMGetSvmExitName(uint32_t uExit);
 VMM_INT_DECL(void)              HMDumpHwvirtVmxState(PVMCPU pVCpu);

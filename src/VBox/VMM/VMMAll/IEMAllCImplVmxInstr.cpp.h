@@ -1677,7 +1677,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxAbort(PVMCPUCC pVCpu, VMXABORT enmAbort)
      * Perform the VMX abort.
      * See Intel spec. 27.7 "VMX Aborts".
      */
-    LogFunc(("enmAbort=%u (%s) -> RESET\n", enmAbort, HMGetVmxAbortDesc(enmAbort)));
+    LogFunc(("enmAbort=%u (%s) -> RESET\n", enmAbort, VMXGetAbortDesc(enmAbort)));
 
     /* We don't support SMX yet. */
     pVCpu->cpum.GstCtx.hwvirt.vmx.enmAbort = enmAbort;
@@ -6998,6 +6998,7 @@ IEM_STATIC void iemVmxVmentrySetupPreemptTimer(PVMCPUCC pVCpu, const char *pszIn
  * fields.
  *
  * @param   pVCpu               The cross context virtual CPU structure.
+ * @param   pszInstr            The VMX instruction name (for logging purposes).
  * @param   uEntryIntInfo       The VM-entry interruption info.
  * @param   uErrCode            The error code associated with the event if any.
  * @param   cbInstr             The VM-entry instruction length (for software
@@ -7005,31 +7006,44 @@ IEM_STATIC void iemVmxVmentrySetupPreemptTimer(PVMCPUCC pVCpu, const char *pszIn
  *                              otherwise.
  * @param   GCPtrFaultAddress   The guest CR2 if this is a \#PF event.
  */
-IEM_STATIC void iemVmxVmentryInjectTrpmEvent(PVMCPUCC pVCpu, uint32_t uEntryIntInfo, uint32_t uErrCode, uint32_t cbInstr,
-                                            RTGCUINTPTR GCPtrFaultAddress)
+IEM_STATIC void iemVmxVmentryInjectTrpmEvent(PVMCPUCC pVCpu, const char *pszInstr, uint32_t uEntryIntInfo, uint32_t uErrCode,
+                                             uint32_t cbInstr, RTGCUINTPTR GCPtrFaultAddress)
 {
     Assert(VMX_ENTRY_INT_INFO_IS_VALID(uEntryIntInfo));
-    Assert(VMX_ENTRY_INT_INFO_TYPE(uEntryIntInfo) != VMX_ENTRY_INT_INFO_TYPE_OTHER_EVENT);
 
+    uint8_t const   uType        = VMX_ENTRY_INT_INFO_TYPE(uEntryIntInfo);
     uint8_t const   uVector      = VMX_ENTRY_INT_INFO_VECTOR(uEntryIntInfo);
     TRPMEVENT const enmTrpmEvent = HMVmxEventTypeToTrpmEventType(uEntryIntInfo);
 
+    Assert(uType != VMX_ENTRY_INT_INFO_TYPE_OTHER_EVENT);
+
     int rc = TRPMAssertTrap(pVCpu, uVector, enmTrpmEvent);
     AssertRC(rc);
+    Log(("%s: Injecting: vector=%#x type=%#x (%s)\n", pszInstr, uVector, uType, VMXGetEntryIntInfoTypeDesc(uType)));
 
     if (VMX_ENTRY_INT_INFO_IS_ERROR_CODE_VALID(uEntryIntInfo))
+    {
         TRPMSetErrorCode(pVCpu, uErrCode);
+        Log(("%s: Injecting: err_code=%#x\n", pszInstr, uErrCode));
+    }
 
     if (VMX_ENTRY_INT_INFO_IS_XCPT_PF(uEntryIntInfo))
+    {
         TRPMSetFaultAddress(pVCpu, GCPtrFaultAddress);
+        Log(("%s: Injecting: fault_addr=%RGp\n", pszInstr, GCPtrFaultAddress));
+    }
     else
     {
-        uint8_t const uType = VMX_ENTRY_INT_INFO_TYPE(uEntryIntInfo);
         if (   uType == VMX_ENTRY_INT_INFO_TYPE_SW_INT
             || uType == VMX_ENTRY_INT_INFO_TYPE_SW_XCPT
             || uType == VMX_ENTRY_INT_INFO_TYPE_PRIV_SW_XCPT)
+        {
             TRPMSetInstrLength(pVCpu, cbInstr);
+            Log(("%s: Injecting: instr_len=%u\n", pszInstr, cbInstr));
+        }
     }
+
+    NOREF(pszInstr);
 }
 
 
@@ -7064,7 +7078,7 @@ IEM_STATIC void iemVmxVmentryInjectEvent(PVMCPUCC pVCpu, const char *pszInstr)
             VMCPU_FF_SET(pVCpu, VMCPU_FF_VMX_MTF);
         }
         else
-            iemVmxVmentryInjectTrpmEvent(pVCpu, uEntryIntInfo, pVmcs->u32EntryXcptErrCode, pVmcs->u32EntryInstrLen,
+            iemVmxVmentryInjectTrpmEvent(pVCpu, pszInstr, uEntryIntInfo, pVmcs->u32EntryXcptErrCode, pVmcs->u32EntryInstrLen,
                                          pVCpu->cpum.GstCtx.cr2);
 
         /*
@@ -7091,7 +7105,7 @@ IEM_STATIC void iemVmxVmentryInjectEvent(PVMCPUCC pVCpu, const char *pszInstr)
             uint32_t const uDbgXcptInfo = RT_BF_MAKE(VMX_BF_ENTRY_INT_INFO_VECTOR, X86_XCPT_DB)
                                         | RT_BF_MAKE(VMX_BF_ENTRY_INT_INFO_TYPE,   VMX_ENTRY_INT_INFO_TYPE_HW_XCPT)
                                         | RT_BF_MAKE(VMX_BF_ENTRY_INT_INFO_VALID,  1);
-            iemVmxVmentryInjectTrpmEvent(pVCpu, uDbgXcptInfo, 0 /* uErrCode */, pVmcs->u32EntryInstrLen,
+            iemVmxVmentryInjectTrpmEvent(pVCpu, pszInstr, uDbgXcptInfo, 0 /* uErrCode */, pVmcs->u32EntryInstrLen,
                                          0 /* GCPtrFaultAddress */);
         }
     }
@@ -7380,7 +7394,8 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPUCC pVCpu, uint8_t cbInstr, 
 # endif
 
                                 /* Finally, done. */
-                                Log(("%s: cs:rip=%#04x:%#RX64\n", pszInstr, pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip));
+                                Log(("%s: cs:rip=%#04x:%#RX64 cr3=%#RX64\n", pszInstr, pVCpu->cpum.GstCtx.cs.Sel,
+                                     pVCpu->cpum.GstCtx.rip, pVCpu->cpum.GstCtx.cr3));
                                 return VINF_SUCCESS;
                             }
                             return iemVmxVmexit(pVCpu, VMX_EXIT_ERR_MSR_LOAD | VMX_EXIT_REASON_ENTRY_FAILED,
