@@ -2183,6 +2183,8 @@ void ConsoleVRDPServer::remote3DRedirect(bool fEnable)
            /* The stream has not been created. */
         }
     }
+#else
+    RT_NOREF(pvUser, u32Id, pvData, cbData);
 #endif
 
     return VINF_SUCCESS;
