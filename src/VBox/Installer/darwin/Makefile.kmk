@@ -388,10 +388,6 @@ if defined(VBOX_WITH_VRDP) && !defined(VBOX_WITH_EXTPACK_PUEL)
  VBOX_DI_VBAPP_DYLIBS += \
 	MacOS/VBoxVRDP.dylib
 endif
-ifdef VBOX_WITH_CROGL
- VBOX_DI_VBAPP_DYLIBS += \
- 	MacOS/VBoxSharedCrOpenGL.dylib
-endif
 ifdef VBOX_WITH_DEBUGGER_GUI
  VBOX_DI_VBAPP_DYLIBS += \
  	MacOS/VBoxDbg.dylib \

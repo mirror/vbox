@@ -445,9 +445,6 @@
         <ComponentRef Id="cp_VBoxPyMod" />
     <?endif ?>
 
-    <?if $(env.VBOX_WITH_CROGL) = "yes" ?>
-        <ComponentRef Id="cp_VBoxCROpenGL" />
-    <?endif ?>
     <ComponentRef Id="cp_VBoxSDLBinaries" />
     <?if $(env.VBOX_WITH_WEBSERVICES) = "yes" ?>
         <ComponentRef Id="cp_VBoxWebService" />

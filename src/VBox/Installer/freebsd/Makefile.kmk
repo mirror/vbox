@@ -103,9 +103,7 @@ VBOX_FBSD_STRIP_BIN = \
 		components/VBoxXPCOMIPCC.so \
 		components/VBoxSVCM.so \
 		components/VBoxC.so,) \
-	$(if $(VBOX_WITH_CROGL),\
 		VBoxTestOGL \
-		VBoxSharedCrOpenGL.so,) \
 	$(if $(VBOX_WITH_PYTHON),VBoxPython.so,) \
 	$(if $(VBOX_WITH_DTRACE),VBoxDTrace,)
 

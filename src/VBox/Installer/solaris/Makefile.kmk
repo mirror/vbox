@@ -301,7 +301,7 @@ SOLARIS_STRIP_EXES = \
 	VBoxNetNAT \
 	$(if $(VBOX_WITH_EXTPACK),VBoxExtPackHelperApp,) \
 	VBoxSVC \
-	$(if $(VBOX_WITH_CROGL),VBoxTestOGL,) \
+	VBoxTestOGL \
 	VBoxXPCOMIPCD \
 	$(if $(VBOX_WITH_KCHMVIEWER),kchmviewer,) \
 	$(if $(VBOX_WITH_DTRACE),VBoxDTrace,)
@@ -334,8 +334,6 @@ SOLARIS_STRIP_BINS = \
 	$(if $(VBOX_WITH_QTGUI),\
 	  VBoxKeyboard.so) \
 	$(if $(VBOX_WITH_DEBUGGER_GUI),VBoxDbg.so DbgPlugInDiggers.so,) \
-	$(if $(VBOX_WITH_CROGL),\
-	  VBoxSharedCrOpenGL.so) \
 	components/VBoxC.so \
 	components/VBoxSVCM.so \
 	components/VBoxXPCOMIPCC.so

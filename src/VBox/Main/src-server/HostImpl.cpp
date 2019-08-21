@@ -133,10 +133,6 @@ typedef SOLARISDVD *PSOLARISDVD;
 # include "darwin/iokit.h"
 #endif
 
-#ifdef VBOX_WITH_CROGL
-#include <VBox/VBoxOGL.h>
-#endif /* VBOX_WITH_CROGL */
-
 #include <iprt/asm-amd64-x86.h>
 #include <iprt/string.h>
 #include <iprt/mp.h>

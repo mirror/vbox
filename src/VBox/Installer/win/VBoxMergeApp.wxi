@@ -316,10 +316,6 @@
         <File Id="file_VBoxDDR0.r0" Name="VBoxDDR0.r0"
               Source="$(env.PATH_OUT)\bin\VBoxDDR0.r0" />
 
-<?if $(env.VBOX_WITH_CROGL) = "yes" ?>
-        <File Id="file_VBoxTestOGL.exe" Name="VBoxTestOGL.exe"
-              Source="$(env.PATH_OUT)\bin\VBoxTestOGL.exe" />
-<?endif ?>
 <?if $(env.VBOX_WITH_QTGUI) = "yes" ?>
         <!-- Qt frontend -->
         <File Id="file_VirtualBox.exe" Name="VirtualBox.exe"
@@ -346,6 +342,9 @@
               Source="$(env.PATH_OUT)\bin\Qt5PrintSupport$(var.VBOX_QT_INFIX).dll" />
         <File Id="file_Qt5WinExtras$(var.VBOX_QT_INFIX).dll" Name="Qt5WinExtras$(var.VBOX_QT_INFIX).dll"
               Source="$(env.PATH_OUT)\bin\Qt5WinExtras$(var.VBOX_QT_INFIX).dll" />
+
+        <File Id="file_VBoxTestOGL.exe" Name="VBoxTestOGL.exe"
+            Source="$(env.PATH_OUT)\bin\VBoxTestOGL.exe" />
 <?endif ?>
 <?if $(env.VBOX_WITH_DEBUGGER_GUI) = "yes" ?>
         <File Id="file_VBoxDbg.dll" Name="VBoxDbg.dll"
@@ -410,12 +409,6 @@
         </Directory>
 <?endif ?>
 
-<?if $(env.VBOX_WITH_CROGL) = "yes" ?>
-    <Component Id="cp_VBoxCROpenGL" Guid="874A1297-835A-491D-8A9D-7E723BC29EE7" Win64="$(var.Property_Win64)">
-        <File Id="file_VBoxSharedCrOpenGL.dll" Name="VBoxSharedCrOpenGL.dll"
-              Source="$(env.PATH_OUT)\bin\VBoxSharedCrOpenGL.dll" />
-    </Component>
-<?endif?>
     <!-- SDL plugins -->
     <Component Id="cp_VBoxSDLBinaries" Guid="F09D5FD9-E176-42B0-90A9-481BB18B0CB4"
                Win64="$(var.Property_Win64)">

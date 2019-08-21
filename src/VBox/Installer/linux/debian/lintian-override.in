@@ -21,14 +21,10 @@
 %VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/components/VBoxSVCM.so
 %VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/components/VBoxC.so
 %VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VBoxHeadless.so
-%VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VBoxOGLhostcrutil.so
-%VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VBoxOGLhosterrorspu.so
-%VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VBoxOGLrenderspu.so
 %VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VBoxPython.so
 %VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VBoxREM32.so
 %VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VBoxREM64.so
 %VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VBoxSDL.so
-%VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VBoxSharedCrOpenGL.so
 %VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VirtualBox.so
 %VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VBoxDbg.so
 %VERPKG%: binary-without-manpage usr/bin/VBox
@@ -84,9 +80,6 @@
 %VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxHeadless.so /usr/lib/virtualbox
 %VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxKeyboard.so /usr/lib/virtualbox
 %VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxManage /usr/lib/virtualbox
-%VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxOGLhostcrutil.so /usr/lib/virtualbox
-%VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxOGLhosterrorspu.so /usr/lib/virtualbox
-%VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxOGLrenderspu.so /usr/lib/virtualbox
 %VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxPython.so /usr/lib/virtualbox
 %VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxREM.so /usr/lib/virtualbox
 %VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxREM32.so /usr/lib/virtualbox
@@ -97,7 +90,6 @@
 %VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxSVC /usr/lib/virtualbox
 %VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxSettings.so /usr/lib/virtualbox
 %VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxSharedClipboard.so /usr/lib/virtualbox
-%VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxSharedCrOpenGL.so /usr/lib/virtualbox
 %VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxSharedFolders.so /usr/lib/virtualbox
 %VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxDragAndDropSvc.so /usr/lib/virtualbox
 %VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxTestOGL /usr/lib/virtualbox

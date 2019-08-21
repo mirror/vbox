@@ -166,9 +166,7 @@ VBOX_LNX_STRIP_BIN = \
 		components/VBoxXPCOMIPCC.so \
 		components/VBoxSVCM.so \
 		components/VBoxC.so,) \
-	$(if $(VBOX_WITH_CROGL),\
-		$(if $(VBOX_WITH_QTGUI),VBoxTestOGL,) \
-		VBoxSharedCrOpenGL.so,) \
+	$(if $(VBOX_WITH_QTGUI),VBoxTestOGL,) \
 	$(if $(VBOX_WITH_VMSVGA3D),VBoxSVGA3D.so,) \
 	$(if $(VBOX_WITH_PYTHON),$(notdir $(wildcard $(PATH_STAGE_BIN)/VBoxPython*.so)),) \
 	$(if $(VBOX_WITH_JXPCOM),libvboxjxpcom.so,) \

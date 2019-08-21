@@ -77,10 +77,6 @@
 # include <VBox/HostServices/VBoxClipboardSvc.h>
 # include "SharedClipboardPrivate.h"
 #endif
-#ifdef VBOX_WITH_CROGL
-# include <VBox/HostServices/VBoxCrOpenGLSvc.h>
-# include <VBox/VBoxOGL.h>
-#endif
 #ifdef VBOX_WITH_GUEST_PROPS
 # include <VBox/HostServices/GuestPropertySvc.h>
 # include <VBox/com/defs.h>
@@ -3143,79 +3139,6 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             }
         }
 #endif /* VBOX_WITH_DRAG_AND_DROP */
-
-#ifdef VBOX_WITH_CROGL
-        /*
-         * crOpenGL.
-         */
-        {
-            BOOL fEnabled3D = false;
-            hrc = pMachine->COMGETTER(Accelerate3DEnabled)(&fEnabled3D);                    H();
-
-            if (   fEnabled3D
-# ifdef VBOX_WITH_VMSVGA3D
-                && enmGraphicsController == GraphicsControllerType_VBoxVGA
-# endif
-                )
-            {
-                BOOL fSupports3D = VBoxOglIs3DAccelerationSupported();
-                if (!fSupports3D)
-                    return VMR3SetError(pUVM, VERR_NOT_AVAILABLE, RT_SRC_POS,
-                            N_("This VM was configured to use 3D acceleration. However, the "
-                               "3D support of the host is not working properly and the "
-                               "VM cannot be started. To fix this problem, either "
-                               "fix the host 3D support (update the host graphics driver?) "
-                               "or disable 3D acceleration in the VM settings"));
-
-                if (fWinGuest)
-                    i_atVMRuntimeErrorCallbackF(0, "3DCrDeprecated",
-                                                N_("This VM is configured to use 3D acceleration using the VBoxVGA "
-                                                   "graphics controller. Support for this will be removed with version "
-                                                   "6.1.0. ALL saved states and snapshots will cease to work when using this "
-                                                   "configuration. Either switch to the VBoxSVGA (or VMSVGA) graphics controller "
-                                                   "and update guest additions, or disable 3D acceleration"));
-                else
-                    i_atVMRuntimeErrorCallbackF(0, "3DCrDeprecated",
-                                                N_("This VM is configured to use 3D acceleration using the VBoxVGA "
-                                                   "graphics controller. Support for this will be removed with version "
-                                                   "6.1.0. ALL saved states and snapshots will cease to work when using this "
-                                                   "configuration. Either switch to the VMSVGA graphics controller "
-                                                   "and update guest additions, or disable 3D acceleration"));
-
-                /* Load the service. */
-                rc = pVMMDev->hgcmLoadService("VBoxSharedCrOpenGL", "VBoxSharedCrOpenGL");
-                if (RT_FAILURE(rc))
-                {
-                    LogRel(("Failed to load Shared OpenGL service, rc=%Rrc\n", rc));
-                    /* That is not a fatal failure. */
-                    rc = VINF_SUCCESS;
-                }
-                else
-                {
-                    LogRel(("Shared OpenGL service loaded -- 3D enabled\n"));
-
-                    /* Setup the service. */
-                    VBOXHGCMSVCPARM parm;
-                    parm.type = VBOX_HGCM_SVC_PARM_PTR;
-
-                    parm.u.pointer.addr = (IConsole *)(Console *)this;
-                    parm.u.pointer.size = sizeof(IConsole *);
-
-                    rc = pVMMDev->hgcmHostCall("VBoxSharedCrOpenGL", SHCRGL_HOST_FN_SET_CONSOLE,
-                                               SHCRGL_CPARMS_SET_CONSOLE, &parm);
-                    if (!RT_SUCCESS(rc))
-                        AssertMsgFailed(("SHCRGL_HOST_FN_SET_CONSOLE failed with %Rrc\n", rc));
-
-                    parm.u.pointer.addr = pVM;
-                    parm.u.pointer.size = sizeof(pVM);
-                    rc = pVMMDev->hgcmHostCall("VBoxSharedCrOpenGL",
-                                               SHCRGL_HOST_FN_SET_VM, SHCRGL_CPARMS_SET_VM, &parm);
-                    if (!RT_SUCCESS(rc))
-                        AssertMsgFailed(("SHCRGL_HOST_FN_SET_VM failed with %Rrc\n", rc));
-                }
-            }
-        }
-#endif
 
         /*
          * ACPI
