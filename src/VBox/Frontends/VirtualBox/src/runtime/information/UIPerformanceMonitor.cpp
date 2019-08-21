@@ -25,6 +25,7 @@
 
 /* GUI includes: */
 #include "UICommon.h"
+#include "UIConverter.h"
 #include "UIExtraDataManager.h"
 #include "UIPerformanceMonitor.h"
 #include "UISession.h"
@@ -32,6 +33,7 @@
 #include "CGuest.h"
 #include "CPerformanceCollector.h"
 #include "CPerformanceMetric.h"
+#include "CVRDEServerInfo.h"
 
 #define DATA_SERIES_SIZE 2
 const ULONG iPeriod = 1;
@@ -841,4 +843,145 @@ QString UIPerformanceMonitor::dataColorString(const QString &strChartName, int i
         return QColor(Qt::red).name(QColor::HexRgb);
     return pChart->dataSeriesColor(iDataIndex).name(QColor::HexRgb);
 }
+
+UITextTable UIPerformanceMonitor::runTimeAttributes()
+{
+    UITextTable textTable;
+
+    ULONG cGuestScreens = m_machine.GetMonitorCount();
+    QVector<QString> aResolutions(cGuestScreens);
+    for (ULONG iScreen = 0; iScreen < cGuestScreens; ++iScreen)
+    {
+        /* Determine resolution: */
+        ULONG uWidth = 0;
+        ULONG uHeight = 0;
+        ULONG uBpp = 0;
+        LONG xOrigin = 0;
+        LONG yOrigin = 0;
+        KGuestMonitorStatus monitorStatus = KGuestMonitorStatus_Enabled;
+        m_console.GetDisplay().GetScreenResolution(iScreen, uWidth, uHeight, uBpp, xOrigin, yOrigin, monitorStatus);
+        QString strResolution = QString("%1x%2").arg(uWidth).arg(uHeight);
+        if (uBpp)
+            strResolution += QString("x%1").arg(uBpp);
+        strResolution += QString(" @%1,%2").arg(xOrigin).arg(yOrigin);
+        if (monitorStatus == KGuestMonitorStatus_Disabled)
+        {
+            strResolution += QString(" ");
+            strResolution += QString(QApplication::translate("UIVMInformationDialog", "turned off"));
+        }
+        aResolutions[iScreen] = strResolution;
+    }
+
+    /* Determine uptime: */
+    CMachineDebugger debugger = m_console.GetDebugger();
+    uint32_t uUpSecs = (debugger.GetUptime() / 5000) * 5;
+    char szUptime[32];
+    uint32_t uUpDays = uUpSecs / (60 * 60 * 24);
+    uUpSecs -= uUpDays * 60 * 60 * 24;
+    uint32_t uUpHours = uUpSecs / (60 * 60);
+    uUpSecs -= uUpHours * 60 * 60;
+    uint32_t uUpMins  = uUpSecs / 60;
+    uUpSecs -= uUpMins * 60;
+    RTStrPrintf(szUptime, sizeof(szUptime), "%dd %02d:%02d:%02d",
+                uUpDays, uUpHours, uUpMins, uUpSecs);
+    QString strUptime = QString(szUptime);
+
+    /* Determine clipboard mode: */
+    QString strClipboardMode = gpConverter->toString(m_machine.GetClipboardMode());
+    /* Determine Drag&Drop mode: */
+    QString strDnDMode = gpConverter->toString(m_machine.GetDnDMode());
+
+    /* Determine virtualization attributes: */
+    QString strVirtualization = debugger.GetHWVirtExEnabled() ?
+        QApplication::translate("UIVMInformationDialog", "Active") :
+        QApplication::translate("UIVMInformationDialog", "Inactive");
+
+    QString strExecutionEngine;
+    switch (debugger.GetExecutionEngine())
+    {
+        case KVMExecutionEngine_HwVirt:
+            strExecutionEngine = "VT-x/AMD-V";  /* no translation */
+            break;
+        case KVMExecutionEngine_RawMode:
+            strExecutionEngine = "raw-mode";    /* no translation */
+            break;
+        case KVMExecutionEngine_NativeApi:
+            strExecutionEngine = "native API";  /* no translation */
+            break;
+        default:
+            AssertFailed();
+            RT_FALL_THRU();
+        case KVMExecutionEngine_NotSet:
+            strExecutionEngine = QApplication::translate("UIVMInformationDialog", "not set");
+            break;
+    }
+    QString strNestedPaging = debugger.GetHWVirtExNestedPagingEnabled() ?
+        QApplication::translate("UIVMInformationDialog", "Active"):
+        QApplication::translate("UIVMInformationDialog", "Inactive");
+
+    QString strUnrestrictedExecution = debugger.GetHWVirtExUXEnabled() ?
+        QApplication::translate("UIVMInformationDialog", "Active"):
+        QApplication::translate("UIVMInformationDialog", "Inactive");
+
+        QString strParavirtProvider = gpConverter->toString(m_machine.GetEffectiveParavirtProvider());
+
+    /* Guest information: */
+    CGuest guest = m_console.GetGuest();
+    QString strGAVersion = guest.GetAdditionsVersion();
+    if (strGAVersion.isEmpty())
+        strGAVersion = tr("Not Detected", "guest additions");
+    else
+    {
+        ULONG uRevision = guest.GetAdditionsRevision();
+        if (uRevision != 0)
+            strGAVersion += QString(" r%1").arg(uRevision);
+    }
+    QString strOSType = guest.GetOSTypeId();
+    if (strOSType.isEmpty())
+        strOSType = tr("Not Detected", "guest os type");
+    else
+        strOSType = uiCommon().vmGuestOSTypeDescription(strOSType);
+
+    /* VRDE information: */
+    int iVRDEPort = m_console.GetVRDEServerInfo().GetPort();
+    QString strVRDEInfo = (iVRDEPort == 0 || iVRDEPort == -1)?
+        tr("Not Available", "details report (VRDE server port)") :
+        QString("%1").arg(iVRDEPort);
+
+    /* Searching for longest string: */
+    QStringList values;
+    for (ULONG iScreen = 0; iScreen < cGuestScreens; ++iScreen)
+        values << aResolutions[iScreen];
+    values << strUptime
+           << strExecutionEngine << strNestedPaging << strUnrestrictedExecution
+           << strGAVersion << strOSType << strVRDEInfo;
+    int iMaxLength = 0;
+    foreach (const QString &strValue, values)
+        iMaxLength = iMaxLength < QApplication::fontMetrics().width(strValue)
+                                  ? QApplication::fontMetrics().width(strValue) : iMaxLength;
+
+    /* Summary: */
+    for (ULONG iScreen = 0; iScreen < cGuestScreens; ++iScreen)
+    {
+        QString strLabel(tr("Screen Resolution"));
+        /* The screen number makes sense only if there are multiple monitors in the guest: */
+        if (cGuestScreens > 1)
+            strLabel += QString(" %1").arg(iScreen + 1);
+        textTable << UITextTableLine(strLabel, aResolutions[iScreen]);
+    }
+
+    textTable << UITextTableLine(tr("VM Uptime"), strUptime);
+    textTable << UITextTableLine(tr("Clipboard Mode"), strClipboardMode);
+    textTable << UITextTableLine(tr("Drag and Drop Mode"), strDnDMode);
+    textTable << UITextTableLine(tr("VM Execution Engine", "details report"), strExecutionEngine);
+    textTable << UITextTableLine(tr("Nested Paging", "details report"), strNestedPaging);
+    textTable << UITextTableLine(tr("Unrestricted Execution", "details report"), strUnrestrictedExecution);
+    textTable << UITextTableLine(tr("Paravirtualization Interface", "details report"), strParavirtProvider);
+    textTable << UITextTableLine(tr("Guest Additions"), strGAVersion);
+    textTable << UITextTableLine(tr("Guest OS Type", "details report"), strOSType);
+    textTable << UITextTableLine(tr("Remote Desktop Server Port", "details report (VRDE Server)"), strVRDEInfo);
+
+    return textTable;
+}
+
 #include "UIPerformanceMonitor.moc"
