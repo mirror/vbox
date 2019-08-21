@@ -28,17 +28,8 @@
 
 #include <iprt/cdefs.h>
 
-#if 0
-/* enable this in case we include this in a dll*/
-# ifdef IN_VBOXCRHGSMI
-#  define VBOXDISPMPLOGGER_DECL(a_Type) DECLEXPORT(a_Type) RTCALL
-# else
-#  define VBOXDISPMPLOGGER_DECL(a_Type) DECLIMPORT(a_Type) RTCALL
-# endif
-#else
 /*enable this in case we include this in a static lib*/
 # define VBOXDISPMPLOGGER_DECL(a_Type) a_Type RTCALL
-#endif
 
 RT_C_DECLS_BEGIN
 

@@ -106,15 +106,6 @@ endif
 ifdef VBOX_WITH_VIDEOHWACCEL
  VBoxDispD3D_DEFS   += VBOX_WITH_VIDEOHWACCEL
 endif
-ifdef VBOX_WDDMDISP_WITH_PROFILE
- VBoxDispD3D_DEFS   += VBOX_WDDMDISP_WITH_PROFILE
-endif
-ifdef VBOXWDDM_TEST_UHGSMI
- VBoxDispD3D_DEFS   += VBOXWDDM_TEST_UHGSMI
-endif
-ifdef VBOX_WITH_CROGL
- VBoxDispD3D_DEFS   += VBOX_WITH_CROGL
-endif
 VBoxDispD3D_INCS     = \
 	../../../include \
 	.. \
@@ -124,21 +115,16 @@ VBoxDispD3D_INCS     = \
 VBoxDispD3D_SOURCES  = \
 	wddm/VBoxDispD3D.cpp \
 	wddm/VBoxDispD3DIf.cpp \
-	wddm/VBoxDispCm.cpp \
 	wddm/VBoxDispDbg.cpp \
 	wddm/VBoxD3DIf.cpp \
 	wddm/VBoxDispD3D.rc \
 	wddm/VBoxDispD3D.def
-ifdef VBOX_WITH_CRHGSMI
-VBoxDispD3D_DEFS   += VBOX_WITH_CRHGSMI
-endif
 VBoxDispD3D_LIBS     = \
 	$(VBOX_LIB_IPRT_GUEST_R3) \
 	$(VBOX_LIB_VBGL_R3) \
 	Psapi.lib \
 	$(VBOX_PATH_ADDITIONS_LIB)/VBoxDispMpLogger$(VBOX_SUFF_LIB) \
-	$(VBOX_PATH_ADDITIONS_LIB)/VBoxWddmUmKmt$(VBOX_SUFF_LIB) \
-	$(VBOX_PATH_ADDITIONS_LIB)/VBoxCrHgsmi$(VBOX_SUFF_LIB)
+	$(VBOX_PATH_ADDITIONS_LIB)/VBoxWddmUmKmt$(VBOX_SUFF_LIB)
 
 ifdef VBOX_WITH_MESA3D
 VBoxDispD3D_DEFS     += VBOX_WITH_MESA3D
@@ -178,44 +164,8 @@ VBoxDispD3D-x86_LIBS = \
 	$(VBOX_LIB_VBGL_R3_X86) \
 	Psapi.lib \
 	$(VBOX_PATH_ADDITIONS_LIB)/VBoxDispMpLogger-x86$(VBOX_SUFF_LIB) \
-	$(VBOX_PATH_ADDITIONS_LIB)/VBoxWddmUmKmt-x86$(VBOX_SUFF_LIB) \
-	$(VBOX_PATH_ADDITIONS_LIB)/VBoxCrHgsmi-x86$(VBOX_SUFF_LIB)
+	$(VBOX_PATH_ADDITIONS_LIB)/VBoxWddmUmKmt-x86$(VBOX_SUFF_LIB)
 VBoxDispD3D-x86_DEFS = $(VBoxDispD3D_DEFS) VBOX_WDDM_WOW64
-
-ifdef VBOX_WITH_CRHGSMI
-#
-# VBoxCrHgsmi - Chromium HGSMI API library
-#
-LIBRARIES += VBoxCrHgsmi
-VBoxCrHgsmi_TEMPLATE    = VBoxGuestR3Lib
-VBoxCrHgsmi_SDKS        = ReorderCompilerIncs $(VBOX_WINDDK_GST_WLH)
-#use same defines as VBoxDispD3D to ensure structure definitions match
-VBoxCrHgsmi_DEFS        = $(subst VBOXWDDMDISP,IN_VBOXCRHGSMI,$(VBoxDispD3D_DEFS))
-VBoxCrHgsmi_INCS        = \
-	../../../include \
-	.. \
-	$(VBOX_PATH_CROGL_INCLUDE) \
-	$(PATH_ROOT)/src/VBox/Additions/WINNT/Graphics/Video/disp/wddm/shared \
-	$(VBOX_GRAPHICS_INCS)
-ifdef VBOX_WITH_MESA3D
-VBoxCrHgsmi_INCS     += $(VBOX_PATH_3D)/win/include
-endif
-VBoxCrHgsmi_SOURCES     = \
-	wddm/VBoxCrHgsmi.cpp \
-	wddm/VBoxDispDbg.cpp \
-	wddm/VBoxUhgsmiKmt.cpp \
-	wddm/VBoxUhgsmiBase.cpp \
-	wddm/VBoxUhgsmiDisp.cpp
-
-#
-# 64-bit systems needs a 32-bit version of VBoxCrHgsmi.
-#
-LIBRARIES.amd64 += VBoxCrHgsmi-x86
-VBoxCrHgsmi-x86_TEMPLATE    = VBoxGuestR3Lib
-VBoxCrHgsmi-x86_EXTENDS = VBoxCrHgsmi
-VBoxCrHgsmi-x86_BLD_TRG_ARCH = x86
-VBoxCrHgsmi-x86_DEFS = $(VBoxCrHgsmi_DEFS) VBOX_WDDM_WOW64
-endif #VBOX_WITH_CRHGSMI
 
 include $(PATH_SUB_CURRENT)/wddm/shared/Makefile.kmk
 

@@ -23,16 +23,6 @@
 
 #include "VBoxDispD3DIf.h"
 #include "../../common/wddm/VBoxMPIf.h"
-#ifdef VBOX_WITH_CRHGSMI
-#include "VBoxUhgsmiDisp.h"
-#endif
-
-#ifdef VBOX_WDDMDISP_WITH_PROFILE
-#include <iprt/asm.h>
-extern volatile uint32_t g_u32VBoxDispProfileFunctionLoggerIndex;
-# define VBOXDISPPROFILE_FUNCTION_LOGGER_INDEX_GEN() ASMAtomicIncU32(&g_u32VBoxDispProfileFunctionLoggerIndex);
-# include "VBoxDispProfile.h"
-#endif
 
 #include <iprt/cdefs.h>
 #include <iprt/list.h>
@@ -89,10 +79,6 @@ typedef struct VBOXWDDMDISP_ADAPTER
 
     VBOXWDDM_QAI AdapterInfo;
 
-#ifdef VBOX_WDDMDISP_WITH_PROFILE
-    VBoxDispProfileFpsCounter ProfileDdiFps;
-    VBoxDispProfileSet ProfileDdiFunc;
-#endif
 #ifdef VBOX_WITH_VIDEOHWACCEL
     uint32_t cHeads;
     VBOXWDDMDISP_HEAD aHeads[1];
@@ -190,6 +176,7 @@ typedef struct VBOXWDDMDISP_SWAPCHAIN
     VBOXWDDMDISP_RENDERTGT aRTs[VBOXWDDMDISP_MAX_SWAPCHAIN_SIZE];
 } VBOXWDDMDISP_SWAPCHAIN, *PVBOXWDDMDISP_SWAPCHAIN;
 
+typedef struct VBOXWDDMDISP_DEVICE *PVBOXWDDMDISP_DEVICE;
 typedef HRESULT FNVBOXWDDMCREATEDIRECT3DDEVICE(PVBOXWDDMDISP_DEVICE pDevice);
 typedef FNVBOXWDDMCREATEDIRECT3DDEVICE *PFNVBOXWDDMCREATEDIRECT3DDEVICE;
 
@@ -221,9 +208,6 @@ typedef struct VBOXWDDMDISP_DEVICE
      * is split into two calls : SetViewport & SetZRange */
     D3DVIEWPORT9 ViewPort;
     VBOXWDDMDISP_CONTEXT DefaultContext;
-#ifdef VBOX_WITH_CRHGSMI
-    VBOXUHGSMI_PRIVATE_D3D Uhgsmi;
-#endif
 
     /* no lock is needed for this since we're guaranteed the per-device calls are not reentrant */
     RTLISTANCHOR DirtyAllocList;
@@ -234,17 +218,6 @@ typedef struct VBOXWDDMDISP_DEVICE
     struct VBOXWDDMDISP_RESOURCE *pDepthStencilRc;
 
     HMODULE hHgsmiTransportModule;
-
-#ifdef VBOX_WDDMDISP_WITH_PROFILE
-    VBoxDispProfileFpsCounter ProfileDdiFps;
-    VBoxDispProfileSet ProfileDdiFunc;
-
-    VBoxDispProfileSet ProfileDdiPresentCb;
-#endif
-
-#ifdef VBOXWDDMDISP_DEBUG_TIMER
-    HANDLE hTimerQueue;
-#endif
 
     UINT cRTs;
     struct VBOXWDDMDISP_ALLOCATION * apRTs[1];
@@ -371,12 +344,5 @@ DECLINLINE(PVBOXWDDMDISP_RENDERTGT) vboxWddmSwapchainGetFb(PVBOXWDDMDISP_SWAPCHA
 }
 
 void vboxWddmResourceInit(PVBOXWDDMDISP_RESOURCE pRc, UINT cAllocs);
-
-#ifndef IN_VBOXCRHGSMI
-PVBOXWDDMDISP_SWAPCHAIN vboxWddmSwapchainFindCreate(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMDISP_ALLOCATION pBbAlloc, BOOL *pbNeedPresent);
-HRESULT vboxWddmSwapchainChkCreateIf(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMDISP_SWAPCHAIN pSwapchain);
-VOID vboxWddmSwapchainDestroy(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMDISP_SWAPCHAIN pSwapchain);
-
-#endif
 
 #endif /* !GA_INCLUDED_SRC_WINNT_Graphics_Video_disp_wddm_VBoxDispD3D_h */

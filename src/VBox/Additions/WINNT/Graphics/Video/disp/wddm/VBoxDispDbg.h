@@ -51,7 +51,6 @@
 //#  define VBOXWDDMDISP_DEBUG_PRINT_SHARED_CREATE
 //#  define VBOXWDDMDISP_DEBUG_TIMER
 
-# ifndef IN_VBOXCRHGSMI
 /* debug config vars */
 extern DWORD g_VBoxVDbgFDumpSetTexture;
 extern DWORD g_VBoxVDbgFDumpDrawPrim;
@@ -84,10 +83,9 @@ extern struct VBOXWDDMDISP_RESOURCE *g_VBoxVDbgInternalRc;
 
 extern DWORD g_VBoxVDbgCfgCreateSwapchainOnDdiOnce;
 
-# endif /* #ifndef IN_VBOXCRHGSMI */
 #endif
 
-#if defined(VBOXWDDMDISP_DEBUG) || defined(VBOX_WDDMDISP_WITH_PROFILE)
+#if defined(VBOXWDDMDISP_DEBUG)
 /* log enable flags */
 extern DWORD g_VBoxVDbgFLogRel;
 extern DWORD g_VBoxVDbgFLog;
@@ -119,7 +117,7 @@ void vboxVDbgVEHandlerUnregister();
 # define DbgPrintUsrFlow(_m) do { } while (0)
 #endif
 
-#if defined(VBOXWDDMDISP_DEBUG) || defined(VBOX_WDDMDISP_WITH_PROFILE)
+#if defined(VBOXWDDMDISP_DEBUG)
 #define vboxVDbgInternalLog(_p) if (g_VBoxVDbgFLog) { _p }
 #define vboxVDbgInternalLogFlow(_p) if (g_VBoxVDbgFLogFlow) { _p }
 #define vboxVDbgInternalLogRel(_p) if (g_VBoxVDbgFLogRel) { _p }
@@ -158,7 +156,7 @@ void vboxVDbgVEHandlerUnregister();
         ); \
     } while (0)
 
-#if defined(VBOXWDDMDISP_DEBUG) || defined(VBOX_WDDMDISP_WITH_PROFILE)
+#if defined(VBOXWDDMDISP_DEBUG)
 extern DWORD g_VBoxVDbgPid;
 extern LONG g_VBoxVDbgFIsDwm;
 #define VBOXVDBG_CHECK_EXE(_pszName) (vboxVDbgDoCheckExe(_pszName))
@@ -202,7 +200,6 @@ void vboxDispLogDrvF(char * szString, ...);
 
 void vboxDispLogDbgPrintF(char * szString, ...);
 
-# ifndef IN_VBOXCRHGSMI
 typedef struct VBOXWDDMDISP_ALLOCATION *PVBOXWDDMDISP_ALLOCATION;
 typedef struct VBOXWDDMDISP_RESOURCE *PVBOXWDDMDISP_RESOURCE;
 
@@ -631,7 +628,6 @@ HRESULT vboxVDbgTimerStop(HANDLE hTimerQueue, HANDLE hTimer);
             } \
         } while (0)
 
-# endif /* # ifndef IN_VBOXCRHGSMI */
 #else
 #define VBOXVDBG_DUMP_DRAWPRIM_ENTER(_pDevice) do { } while (0)
 #define VBOXVDBG_DUMP_DRAWPRIM_LEAVE(_pDevice) do { } while (0)

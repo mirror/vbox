@@ -60,7 +60,7 @@ static void vboxDispLogDbgFormatStringV(char * szBuffer, uint32_t cbBuffer, cons
     _vsnprintf(szBuffer + cbWritten, cbBuffer - cbWritten, szString, pArgList);
 }
 
-#if defined(VBOXWDDMDISP_DEBUG) || defined(VBOX_WDDMDISP_WITH_PROFILE)
+#if defined(VBOXWDDMDISP_DEBUG)
 LONG g_VBoxVDbgFIsDwm = -1;
 
 DWORD g_VBoxVDbgPid = 0;
@@ -77,7 +77,6 @@ DWORD g_VBoxVDbgFLogFlow = 0;
 
 #ifdef VBOXWDDMDISP_DEBUG
 
-# ifndef IN_VBOXCRHGSMI
 #define VBOXWDDMDISP_DEBUG_DUMP_DEFAULT 0
 DWORD g_VBoxVDbgFDumpSetTexture = VBOXWDDMDISP_DEBUG_DUMP_DEFAULT;
 DWORD g_VBoxVDbgFDumpDrawPrim = VBOXWDDMDISP_DEBUG_DUMP_DEFAULT;
@@ -626,8 +625,6 @@ void vboxVDbgDoPrintRect(const char * pPrefix, const RECT *pRect, const char * p
     vboxVDbgPrint(("%s left(%d), top(%d), right(%d), bottom(%d) %s", pPrefix, pRect->left, pRect->top, pRect->right, pRect->bottom, pSuffix));
 }
 
-# endif
-
 static VOID CALLBACK vboxVDbgTimerCb(__in PVOID lpParameter, __in BOOLEAN TimerOrWaitFired)
 {
     RT_NOREF(lpParameter, TimerOrWaitFired);
@@ -661,7 +658,7 @@ HRESULT vboxVDbgTimerStop(HANDLE hTimerQueue, HANDLE hTimer)
 }
 #endif
 
-#if defined(VBOXWDDMDISP_DEBUG) || defined(VBOX_WDDMDISP_WITH_PROFILE)
+#if defined(VBOXWDDMDISP_DEBUG)
 BOOL vboxVDbgDoCheckExe(const char * pszName)
 {
     char *pszModule = vboxVDbgDoGetModuleName();
