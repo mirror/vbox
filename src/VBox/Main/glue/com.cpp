@@ -57,13 +57,7 @@ namespace com
 /* static */
 const Guid Guid::Empty; /* default ctor is OK */
 
-#if defined (VBOX_WITH_XPCOM)
-
-/* static */
-const nsID *SafeGUIDArray::nsIDRef::Empty = (const nsID *)Guid::Empty.raw();
-
-#endif /* (VBOX_WITH_XPCOM) */
-
+const char Zeroes[16] = {0, };
 
 
 void GetInterfaceNameByIID(const GUID &aIID, BSTR *aName)
