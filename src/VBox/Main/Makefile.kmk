@@ -35,7 +35,9 @@ ifndef VBOX_ONLY_EXTPACKS
  include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
  include $(PATH_SUB_CURRENT)/cbinding/Makefile.kmk
  include $(PATH_SUB_CURRENT)/UnattendedTemplates/Makefile.kmk
- include $(PATH_SUB_CURRENT)/src-helper-apps/OpenGLTest/Makefile.kmk
+ ifndef VBOX_ONLY_SDK
+  include $(PATH_SUB_CURRENT)/src-helper-apps/OpenGLTest/Makefile.kmk
+ endif
 endif
 
 
