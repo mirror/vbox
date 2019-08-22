@@ -3429,6 +3429,8 @@ typedef struct
     uint64_t                u64GuestLinearAddr;
     /** The Guest-physical address field. */
     uint64_t                u64GuestPhysAddr;
+    /** The guest pending-debug exceptions. */
+    uint64_t                u64GuestPendingDbgXcpts;
     /** The effective guest-linear address if @a InstrInfo indicates a memory-based
      *  instruction VM-exit. */
     RTGCPTR                 GCPtrEffAddr;
