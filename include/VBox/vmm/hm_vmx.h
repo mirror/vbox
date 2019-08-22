@@ -3878,8 +3878,8 @@ typedef struct
     RTUINT64U       u64GuestRip;
     /** 0x740 - Guest RFLAGS. */
     RTUINT64U       u64GuestRFlags;
-    /** 0x748 - Guest pending debug exception. */
-    RTUINT64U       u64GuestPendingDbgXcpt;
+    /** 0x748 - Guest pending debug exceptions. */
+    RTUINT64U       u64GuestPendingDbgXcpts;
     /** 0x750 - Guest SYSENTER ESP. */
     RTUINT64U       u64GuestSysenterEsp;
     /** 0x758 - Guest SYSENTER EIP. */

@@ -503,7 +503,7 @@ static const SSMFIELD g_aVmxHwvirtVmcs[] =
     SSMFIELD_ENTRY(       VMXVVMCS, u64GuestRsp),
     SSMFIELD_ENTRY(       VMXVVMCS, u64GuestRip),
     SSMFIELD_ENTRY(       VMXVVMCS, u64GuestRFlags),
-    SSMFIELD_ENTRY(       VMXVVMCS, u64GuestPendingDbgXcpt),
+    SSMFIELD_ENTRY(       VMXVVMCS, u64GuestPendingDbgXcpts),
     SSMFIELD_ENTRY(       VMXVVMCS, u64GuestSysenterEsp),
     SSMFIELD_ENTRY(       VMXVVMCS, u64GuestSysenterEip),
     SSMFIELD_ENTRY_IGNORE(VMXVVMCS, au64Reserved6),
@@ -3858,7 +3858,7 @@ static void cpumR3InfoVmxVmcs(PVMCPU pVCpu, PCDBGFINFOHLP pHlp, PCVMXVVMCS pVmcs
         pHlp->pfnPrintf(pHlp, "  %srsp                        = %#RX64\n",   pszPrefix, pVmcs->u64GuestRsp.u);
         pHlp->pfnPrintf(pHlp, "  %srip                        = %#RX64\n",   pszPrefix, pVmcs->u64GuestRip.u);
         pHlp->pfnPrintf(pHlp, "  %srflags                     = %#RX64 %31s\n",pszPrefix, pVmcs->u64GuestRFlags.u, szEFlags);
-        pHlp->pfnPrintf(pHlp, "  %sPending debug xcpts        = %#RX64\n",   pszPrefix, pVmcs->u64GuestPendingDbgXcpt.u);
+        pHlp->pfnPrintf(pHlp, "  %sPending debug xcpts        = %#RX64\n",   pszPrefix, pVmcs->u64GuestPendingDbgXcpts.u);
         pHlp->pfnPrintf(pHlp, "  %sSysEnter ESP               = %#RX64\n",   pszPrefix, pVmcs->u64GuestSysenterEsp.u);
         pHlp->pfnPrintf(pHlp, "  %sSysEnter EIP               = %#RX64\n",   pszPrefix, pVmcs->u64GuestSysenterEip.u);
     }

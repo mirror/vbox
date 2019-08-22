@@ -415,7 +415,7 @@ uint16_t const g_aoffVmcsMap[16][VMX_V_VMCS_MAX_INDEX + 1] =
         /*    14 */ RT_UOFFSETOF(VMXVVMCS, u64GuestRsp),
         /*    15 */ RT_UOFFSETOF(VMXVVMCS, u64GuestRip),
         /*    16 */ RT_UOFFSETOF(VMXVVMCS, u64GuestRFlags),
-        /*    17 */ RT_UOFFSETOF(VMXVVMCS, u64GuestPendingDbgXcpt),
+        /*    17 */ RT_UOFFSETOF(VMXVVMCS, u64GuestPendingDbgXcpts),
         /*    18 */ RT_UOFFSETOF(VMXVVMCS, u64GuestSysenterEsp),
         /*    19 */ RT_UOFFSETOF(VMXVVMCS, u64GuestSysenterEip),
         /* 20-25 */ UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX
@@ -790,7 +790,7 @@ DECL_FORCE_INLINE(void) iemVmxVmcsSetGuestPendingDbgXcpts(PVMCPUCC pVCpu, uint64
 {
     PVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
     Assert(!(uGuestPendingDbgXcpts & VMX_VMCS_GUEST_PENDING_DEBUG_VALID_MASK));
-    pVmcs->u64GuestPendingDbgXcpt.u = uGuestPendingDbgXcpts;
+    pVmcs->u64GuestPendingDbgXcpts.u = uGuestPendingDbgXcpts;
 }
 
 
@@ -1508,7 +1508,7 @@ IEM_STATIC void iemVmxVmexitSaveGuestNonRegState(PVMCPUCC pVCpu, uint32_t uExitR
     {
         /** @todo NSTVMX: also must exclude VM-exits caused by debug exceptions when
          *        block-by-MovSS is in effect. */
-        pVmcs->u64GuestPendingDbgXcpt.u = 0;
+        pVmcs->u64GuestPendingDbgXcpts.u = 0;
     }
 
     /*
@@ -5596,10 +5596,10 @@ IEM_STATIC int iemVmxVmentryCheckGuestNonRegState(PVMCPUCC pVCpu,  const char *p
     /*
      * Pending debug exceptions.
      */
-    uint64_t const uPendingDbgXcpt = IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fLongMode
-                                   ? pVmcs->u64GuestPendingDbgXcpt.u
-                                   : pVmcs->u64GuestPendingDbgXcpt.s.Lo;
-    if (!(uPendingDbgXcpt & ~VMX_VMCS_GUEST_PENDING_DEBUG_VALID_MASK))
+    uint64_t const uPendingDbgXcpts = IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fLongMode
+                                    ? pVmcs->u64GuestPendingDbgXcpts.u
+                                    : pVmcs->u64GuestPendingDbgXcpts.s.Lo;
+    if (!(uPendingDbgXcpts & ~VMX_VMCS_GUEST_PENDING_DEBUG_VALID_MASK))
     { /* likely */ }
     else
         IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_GuestPndDbgXcptRsvd);
@@ -5609,17 +5609,17 @@ IEM_STATIC int iemVmxVmentryCheckGuestNonRegState(PVMCPUCC pVCpu,  const char *p
     {
         if (   (pVmcs->u64GuestRFlags.u & X86_EFL_TF)
             && !(pVmcs->u64GuestDebugCtlMsr.u & MSR_IA32_DEBUGCTL_BTF)
-            && !(uPendingDbgXcpt & VMX_VMCS_GUEST_PENDING_DEBUG_XCPT_BS))
+            && !(uPendingDbgXcpts & VMX_VMCS_GUEST_PENDING_DEBUG_XCPT_BS))
             IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_GuestPndDbgXcptBsTf);
 
         if (   (   !(pVmcs->u64GuestRFlags.u & X86_EFL_TF)
                 ||  (pVmcs->u64GuestDebugCtlMsr.u & MSR_IA32_DEBUGCTL_BTF))
-            && (uPendingDbgXcpt & VMX_VMCS_GUEST_PENDING_DEBUG_XCPT_BS))
+            && (uPendingDbgXcpts & VMX_VMCS_GUEST_PENDING_DEBUG_XCPT_BS))
             IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_GuestPndDbgXcptBsNoTf);
     }
 
     /* We don't support RTM (Real-time Transactional Memory) yet. */
-    if (!(uPendingDbgXcpt & VMX_VMCS_GUEST_PENDING_DEBUG_RTM))
+    if (!(uPendingDbgXcpts & VMX_VMCS_GUEST_PENDING_DEBUG_RTM))
     { /* likely */ }
     else
         IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_GuestPndDbgXcptRtm);
@@ -6859,8 +6859,8 @@ IEM_STATIC bool iemVmxVmentryIsPendingDebugXcpt(PVMCPUCC pVCpu, const char *pszI
     PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
     Assert(pVmcs);
 
-    bool fPendingDbgXcpt = RT_BOOL(pVmcs->u64GuestPendingDbgXcpt.u & (  VMX_VMCS_GUEST_PENDING_DEBUG_XCPT_BS
-                                                                      | VMX_VMCS_GUEST_PENDING_DEBUG_XCPT_EN_BP));
+    bool fPendingDbgXcpt = RT_BOOL(pVmcs->u64GuestPendingDbgXcpts.u & (  VMX_VMCS_GUEST_PENDING_DEBUG_XCPT_BS
+                                                                       | VMX_VMCS_GUEST_PENDING_DEBUG_XCPT_EN_BP));
     if (fPendingDbgXcpt)
     {
         uint8_t uEntryIntInfoType;

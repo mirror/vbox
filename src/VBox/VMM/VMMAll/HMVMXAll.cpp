@@ -948,7 +948,7 @@ VMM_INT_DECL(void) HMDumpHwvirtVmxState(PVMCPU pVCpu)
         LogRel(("  %srsp                        = %#RX64\n",   pszPrefix, pVmcs->u64GuestRsp.u));
         LogRel(("  %srip                        = %#RX64\n",   pszPrefix, pVmcs->u64GuestRip.u));
         LogRel(("  %srflags                     = %#RX64\n",   pszPrefix, pVmcs->u64GuestRFlags.u));
-        LogRel(("  %sPending debug xcpts        = %#RX64\n",   pszPrefix, pVmcs->u64GuestPendingDbgXcpt.u));
+        LogRel(("  %sPending debug xcpts        = %#RX64\n",   pszPrefix, pVmcs->u64GuestPendingDbgXcpts.u));
         LogRel(("  %sSysEnter ESP               = %#RX64\n",   pszPrefix, pVmcs->u64GuestSysenterEsp.u));
         LogRel(("  %sSysEnter EIP               = %#RX64\n",   pszPrefix, pVmcs->u64GuestSysenterEip.u));
     }
