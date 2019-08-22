@@ -45,6 +45,7 @@ class QGridLayout;
 class QLabel;
 class UIChart;
 class UISession;
+class UIRuntimeInfoWidget;
 
 class UISubMetric
 {
@@ -113,9 +114,7 @@ private:
     UITextTable runTimeAttributes();
 
     bool m_fGuestAdditionsAvailable;
-    /** Holds the machine instance. */
     CMachine m_machine;
-    /** Holds the console instance. */
     CConsole m_console;
     CGuest m_comGuest;
 
@@ -123,6 +122,7 @@ private:
     CMachineDebugger      m_machineDebugger;
     /** Holds the instance of layout we create. */
     QGridLayout *m_pMainLayout;
+    UIRuntimeInfoWidget *m_pRuntimeInfoWidget;
     QTimer *m_pTimer;
 
     QVector<QString> m_nameList;
@@ -140,7 +140,7 @@ private:
         QString m_strNetMetricName;
     /** @} */
 
-    /** @name Cached translated string.
+    /** @name Cached translated strings.
       * @{ */
         /** CPU info label strings. */
         QString m_strCPUInfoLabelTitle;

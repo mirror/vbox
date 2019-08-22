@@ -17,10 +17,12 @@
 
 /* Qt includes: */
 #include <QApplication>
+#include <QHeaderView>
 #include <QLabel>
 #include <QPainter>
 #include <QGridLayout>
 #include <QStyle>
+#include <QTableWidget>
 #include <QTimer>
 
 /* GUI includes: */
@@ -40,6 +42,65 @@ const ULONG iPeriod = 1;
 const int iMaximumQueueSize = 120;
 const int iMetricSetupCount = 1;
 const int iDecimalCount = 2;
+
+enum InfoLine
+{
+    InfoLine_Resolution,
+    InfoLine_Uptime,
+    InfoLine_ClipboardMode,
+    InfoLine_DnDMode,
+    InfoLine_ExecutionEngine,
+    InfoLine_NestedPaging,
+    InfoLine_UnrestrictedExecution,
+    InfoLine_Paravirtualization,
+    InfoLine_GuestAdditions,
+    InfoLine_GuestOSType,
+    InfoLine_RemoteDesktop,
+    InfoLine_Max
+};
+
+/*********************************************************************************************************************************
+*   UIRuntimeInfoWidget definition.                                                                                     *
+******************************************************************1***************************************************************/
+class UIRuntimeInfoWidget : public QIWithRetranslateUI<QTableWidget>
+{
+
+    Q_OBJECT;
+
+public:
+
+    UIRuntimeInfoWidget(QWidget *pParent, const CMachine &machine, const CConsole &console);
+
+protected:
+
+    void retranslateUi() /* override */;
+
+private:
+
+    UITextTable runTimeAttributes();
+    void insertInfoLine(InfoLine enmInfoLine, const QString& strLabel, const QString &strInfo);
+
+    CMachine m_machine;
+    CConsole m_console;
+
+    /** @name Cached translated strings.
+      * @{ */
+        QString m_strTableTitle;
+        QString m_strScreenResolutionLabel;
+        QString m_strUptimeLabel;
+        QString m_strClipboardModeLabel;
+        QString m_strDragAndDropLabel;
+        QString m_strExcutionEngineLabel;
+        QString m_strNestedPagingLabel;
+        QString m_strUnrestrictedExecutionLabel;
+        QString m_strParavirtualizationLabel;
+        QString m_strGuestAdditionsLabel;
+        QString m_strGuestOSTypeLabel;
+        QString m_strRemoteDesktopLabel;
+    /** @} */
+
+    int m_iFontHeight;
+};
 
 /*********************************************************************************************************************************
 *   UIChart definition.                                                                                     *
@@ -81,6 +142,7 @@ private:
     virtual void computeFontSize();
     void drawXAxisLabels(QPainter &painter, int iXSubAxisCount);
     void drawPieCharts(QPainter &painter, ULONG iMaximum);
+    void insertInfoLine(InfoLine enmInfoLine, const QString& strLabel, const QString &strInfo);
 
     const UISubMetric *m_pSubMetric;
     QSize m_size;
@@ -98,6 +160,210 @@ private:
     QString m_strXAxisLabel;
 };
 
+/*********************************************************************************************************************************
+*   UIRuntimeInfoWidget implementation.                                                                                     *
+*********************************************************************************************************************************/
+
+UIRuntimeInfoWidget::UIRuntimeInfoWidget(QWidget *pParent, const CMachine &machine, const CConsole &console)
+    : QIWithRetranslateUI<QTableWidget>(pParent)
+    , m_machine(machine)
+    , m_console(console)
+
+{
+    // QPalette pal = palette();
+    // pal.setColor(QPalette::Background, Qt::yellow);
+    // setAutoFillBackground(true);
+    // setPalette(pal);
+
+    m_iFontHeight = QFontMetrics(font()).height();
+
+    setColumnCount(2);
+    verticalHeader()->hide();
+    horizontalHeader()->hide();
+    setShowGrid(false);
+    setEditTriggers(QAbstractItemView::NoEditTriggers);
+    setFocusPolicy(Qt::NoFocus);
+    setSelectionMode(QAbstractItemView::NoSelection);
+
+    retranslateUi();
+
+    QTableWidgetItem *pTitleItem = new QTableWidgetItem(m_strTableTitle);
+    QFont titleFont(font());
+    titleFont.setBold(true);
+    pTitleItem->setFont(titleFont);
+    insertRow(0);
+    setItem(0, 0, pTitleItem);
+
+    runTimeAttributes();
+}
+
+void UIRuntimeInfoWidget::retranslateUi()
+{
+    m_strTableTitle = QApplication::translate("UIVMInformationDialog", "Runtime Attributes");
+    m_strScreenResolutionLabel = QApplication::translate("UIVMInformationDialog", "Screen Resolution");
+    m_strUptimeLabel = QApplication::translate("UIVMInformationDialog", "VM Uptime");
+    m_strClipboardModeLabel = QApplication::translate("UIVMInformationDialog", "Clipboard Mode");
+    m_strDragAndDropLabel = QApplication::translate("UIVMInformationDialog", "Drag and Drop Mode");
+    m_strExcutionEngineLabel = QApplication::translate("UIVMInformationDialog", "VM Execution Engine");
+    m_strNestedPagingLabel = QApplication::translate("UIVMInformationDialog", "Nested Paging");
+    m_strUnrestrictedExecutionLabel = QApplication::translate("UIVMInformationDialog", "Unrestricted Execution");
+    m_strParavirtualizationLabel = QApplication::translate("UIVMInformationDialog", "Paravirtualization Interface");
+    m_strGuestAdditionsLabel = QApplication::translate("UIVMInformationDialog", "Guest Additions");
+    m_strGuestOSTypeLabel = QApplication::translate("UIVMInformationDialog", "Guest OS Type");
+    m_strRemoteDesktopLabel = QApplication::translate("UIVMInformationDialog", "Remote Desktop Server Port");
+}
+
+void UIRuntimeInfoWidget::insertInfoLine(InfoLine enmInfoLine, const QString& strLabel, const QString &strInfo)
+{
+    int iMargin = 0.2 * qApp->style()->pixelMetric(QStyle::PM_LayoutTopMargin);
+    int iRow = rowCount();
+    insertRow(iRow);
+    setItem(iRow, 0, new QTableWidgetItem(strLabel, enmInfoLine));
+    setItem(iRow, 1, new QTableWidgetItem(strInfo, enmInfoLine));
+    setRowHeight(iRow, 2 * iMargin + m_iFontHeight);
+}
+
+UITextTable UIRuntimeInfoWidget::runTimeAttributes()
+{
+    UITextTable textTable;
+
+    ULONG cGuestScreens = m_machine.GetMonitorCount();
+    QVector<QString> aResolutions(cGuestScreens);
+    for (ULONG iScreen = 0; iScreen < cGuestScreens; ++iScreen)
+    {
+        /* Determine resolution: */
+        ULONG uWidth = 0;
+        ULONG uHeight = 0;
+        ULONG uBpp = 0;
+        LONG xOrigin = 0;
+        LONG yOrigin = 0;
+        KGuestMonitorStatus monitorStatus = KGuestMonitorStatus_Enabled;
+        m_console.GetDisplay().GetScreenResolution(iScreen, uWidth, uHeight, uBpp, xOrigin, yOrigin, monitorStatus);
+        QString strResolution = QString("%1x%2").arg(uWidth).arg(uHeight);
+        if (uBpp)
+            strResolution += QString("x%1").arg(uBpp);
+        strResolution += QString(" @%1,%2").arg(xOrigin).arg(yOrigin);
+        if (monitorStatus == KGuestMonitorStatus_Disabled)
+        {
+            strResolution += QString(" ");
+            strResolution += QString(QApplication::translate("UIVMInformationDialog", "turned off"));
+        }
+        aResolutions[iScreen] = strResolution;
+    }
+
+    /* Determine uptime: */
+    CMachineDebugger debugger = m_console.GetDebugger();
+    uint32_t uUpSecs = (debugger.GetUptime() / 5000) * 5;
+    char szUptime[32];
+    uint32_t uUpDays = uUpSecs / (60 * 60 * 24);
+    uUpSecs -= uUpDays * 60 * 60 * 24;
+    uint32_t uUpHours = uUpSecs / (60 * 60);
+    uUpSecs -= uUpHours * 60 * 60;
+    uint32_t uUpMins  = uUpSecs / 60;
+    uUpSecs -= uUpMins * 60;
+    RTStrPrintf(szUptime, sizeof(szUptime), "%dd %02d:%02d:%02d",
+                uUpDays, uUpHours, uUpMins, uUpSecs);
+    QString strUptime = QString(szUptime);
+
+    /* Determine clipboard mode: */
+    QString strClipboardMode = gpConverter->toString(m_machine.GetClipboardMode());
+    /* Determine Drag&Drop mode: */
+    QString strDnDMode = gpConverter->toString(m_machine.GetDnDMode());
+
+    /* Determine virtualization attributes: */
+    QString strVirtualization = debugger.GetHWVirtExEnabled() ?
+        QApplication::translate("UIVMInformationDialog", "Active") :
+        QApplication::translate("UIVMInformationDialog", "Inactive");
+
+    QString strExecutionEngine;
+    switch (debugger.GetExecutionEngine())
+    {
+        case KVMExecutionEngine_HwVirt:
+            strExecutionEngine = "VT-x/AMD-V";  /* no translation */
+            break;
+        case KVMExecutionEngine_RawMode:
+            strExecutionEngine = "raw-mode";    /* no translation */
+            break;
+        case KVMExecutionEngine_NativeApi:
+            strExecutionEngine = "native API";  /* no translation */
+            break;
+        default:
+            AssertFailed();
+            RT_FALL_THRU();
+        case KVMExecutionEngine_NotSet:
+            strExecutionEngine = QApplication::translate("UIVMInformationDialog", "not set");
+            break;
+    }
+    QString strNestedPaging = debugger.GetHWVirtExNestedPagingEnabled() ?
+        QApplication::translate("UIVMInformationDialog", "Active"):
+        QApplication::translate("UIVMInformationDialog", "Inactive");
+
+    QString strUnrestrictedExecution = debugger.GetHWVirtExUXEnabled() ?
+        QApplication::translate("UIVMInformationDialog", "Active"):
+        QApplication::translate("UIVMInformationDialog", "Inactive");
+
+        QString strParavirtProvider = gpConverter->toString(m_machine.GetEffectiveParavirtProvider());
+
+    /* Guest information: */
+    CGuest guest = m_console.GetGuest();
+    QString strGAVersion = guest.GetAdditionsVersion();
+    if (strGAVersion.isEmpty())
+        strGAVersion = tr("Not Detected", "guest additions");
+    else
+    {
+        ULONG uRevision = guest.GetAdditionsRevision();
+        if (uRevision != 0)
+            strGAVersion += QString(" r%1").arg(uRevision);
+    }
+    QString strOSType = guest.GetOSTypeId();
+    if (strOSType.isEmpty())
+        strOSType = tr("Not Detected", "guest os type");
+    else
+        strOSType = uiCommon().vmGuestOSTypeDescription(strOSType);
+
+    /* VRDE information: */
+    int iVRDEPort = m_console.GetVRDEServerInfo().GetPort();
+    QString strVRDEInfo = (iVRDEPort == 0 || iVRDEPort == -1)?
+        tr("Not Available", "details report (VRDE server port)") :
+        QString("%1").arg(iVRDEPort);
+
+    /* Searching for longest string: */
+    QStringList values;
+    for (ULONG iScreen = 0; iScreen < cGuestScreens; ++iScreen)
+        values << aResolutions[iScreen];
+    values << strUptime
+           << strExecutionEngine << strNestedPaging << strUnrestrictedExecution
+           << strGAVersion << strOSType << strVRDEInfo;
+    int iMaxLength = 0;
+    foreach (const QString &strValue, values)
+        iMaxLength = iMaxLength < QApplication::fontMetrics().width(strValue)
+                                  ? QApplication::fontMetrics().width(strValue) : iMaxLength;
+
+    /* Summary: */
+    for (ULONG iScreen = 0; iScreen < cGuestScreens; ++iScreen)
+    {
+        QString strLabel = cGuestScreens > 1 ?
+            QString("%1 %2:").arg(m_strScreenResolutionLabel).arg(QString::number(iScreen)) :
+            QString("%1:").arg(m_strScreenResolutionLabel);
+        insertInfoLine(InfoLine_Resolution, strLabel, aResolutions[iScreen]);
+    }
+
+    insertInfoLine(InfoLine_Uptime, QString("%1:").arg(m_strUptimeLabel), strUptime);
+    insertInfoLine(InfoLine_ClipboardMode, QString("%1:").arg(m_strClipboardModeLabel), strClipboardMode);
+    insertInfoLine(InfoLine_DnDMode, QString("%1:").arg(m_strDragAndDropLabel), strDnDMode);
+    insertInfoLine(InfoLine_ExecutionEngine, QString("%1:").arg(m_strExcutionEngineLabel), strExecutionEngine);
+    insertInfoLine(InfoLine_NestedPaging, QString("%1:").arg(m_strNestedPagingLabel), strNestedPaging);
+    insertInfoLine(InfoLine_UnrestrictedExecution, QString("%1:").arg(m_strUnrestrictedExecutionLabel), strUnrestrictedExecution);
+    insertInfoLine(InfoLine_Paravirtualization, QString("%1:").arg(m_strParavirtualizationLabel), strParavirtProvider);
+    insertInfoLine(InfoLine_GuestAdditions, QString("%1:").arg(m_strGuestAdditionsLabel), strGAVersion);
+    insertInfoLine(InfoLine_GuestOSType, QString("%1:").arg(m_strGuestOSTypeLabel), strOSType);
+    insertInfoLine(InfoLine_RemoteDesktop, QString("%1:").arg(m_strRemoteDesktopLabel), strVRDEInfo);
+
+    resizeColumnToContents(0);
+    resizeColumnToContents(1);
+
+    return textTable;
+}
 
 /*********************************************************************************************************************************
 *   UIChart implementation.                                                                                     *
@@ -474,6 +740,7 @@ UIInformationRuntime::UIInformationRuntime(QWidget *pParent, const CMachine &mac
     , m_machine(machine)
     , m_console(console)
     , m_pMainLayout(0)
+    , m_pRuntimeInfoWidget(0)
     , m_pTimer(0)
     , m_strCPUMetricName("CPU Load")
     , m_strRAMMetricName("RAM Usage")
@@ -557,6 +824,10 @@ void UIInformationRuntime::prepareObjects()
         m_pTimer->start(1000 * iPeriod);
     }
 
+    UIRuntimeInfoWidget *m_pRuntimeInfoWidget = new UIRuntimeInfoWidget(0, m_machine, m_console);
+    m_pMainLayout->addWidget(m_pRuntimeInfoWidget, 0, 0, 4, 1);
+    m_pRuntimeInfoWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
+
     QStringList chartOder;
     chartOder << m_strCPUMetricName << m_strRAMMetricName << m_strDiskMetricName << m_strNetMetricName;
     int iRow = 0;
@@ -566,13 +837,13 @@ void UIInformationRuntime::prepareObjects()
             continue;
         QLabel *pLabel = new QLabel;
         pLabel->setAlignment(Qt::AlignLeft | Qt::AlignTop);
-        m_pMainLayout->addWidget(pLabel, iRow, 0);
+        m_pMainLayout->addWidget(pLabel, iRow, 1);
         m_infoLabels.insert(strMetricName, pLabel);
 
         UIChart *pChart = new UIChart(this, &(m_subMetrics[strMetricName]));
         m_charts.insert(strMetricName, pChart);
         pChart->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-        m_pMainLayout->addWidget(pChart, iRow, 1);
+        m_pMainLayout->addWidget(pChart, iRow, 2);
         ++iRow;
     }
 
@@ -590,12 +861,12 @@ void UIInformationRuntime::prepareObjects()
     QWidget *bottomSpacerWidget = new QWidget(this);
     bottomSpacerWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
     bottomSpacerWidget->setVisible(true);
-    // QPalette pal = bottomSpacerWidget->palette();
-    // pal.setColor(QPalette::Background, Qt::green);
-    // bottomSpacerWidget->setAutoFillBackground(true);
-    // bottomSpacerWidget->setPalette(pal);
+    QPalette pal = bottomSpacerWidget->palette();
+    pal.setColor(QPalette::Background, Qt::green);
+    bottomSpacerWidget->setAutoFillBackground(true);
+    bottomSpacerWidget->setPalette(pal);
 
-    m_pMainLayout->addWidget(bottomSpacerWidget, iRow, 0, 1, 2);
+    m_pMainLayout->addWidget(bottomSpacerWidget, iRow, 1, 1, 2);
 }
 
 void UIInformationRuntime::sltTimeout()
@@ -842,146 +1113,6 @@ QString UIInformationRuntime::dataColorString(const QString &strChartName, int i
     if (!pChart)
         return QColor(Qt::red).name(QColor::HexRgb);
     return pChart->dataSeriesColor(iDataIndex).name(QColor::HexRgb);
-}
-
-UITextTable UIInformationRuntime::runTimeAttributes()
-{
-    UITextTable textTable;
-
-    ULONG cGuestScreens = m_machine.GetMonitorCount();
-    QVector<QString> aResolutions(cGuestScreens);
-    for (ULONG iScreen = 0; iScreen < cGuestScreens; ++iScreen)
-    {
-        /* Determine resolution: */
-        ULONG uWidth = 0;
-        ULONG uHeight = 0;
-        ULONG uBpp = 0;
-        LONG xOrigin = 0;
-        LONG yOrigin = 0;
-        KGuestMonitorStatus monitorStatus = KGuestMonitorStatus_Enabled;
-        m_console.GetDisplay().GetScreenResolution(iScreen, uWidth, uHeight, uBpp, xOrigin, yOrigin, monitorStatus);
-        QString strResolution = QString("%1x%2").arg(uWidth).arg(uHeight);
-        if (uBpp)
-            strResolution += QString("x%1").arg(uBpp);
-        strResolution += QString(" @%1,%2").arg(xOrigin).arg(yOrigin);
-        if (monitorStatus == KGuestMonitorStatus_Disabled)
-        {
-            strResolution += QString(" ");
-            strResolution += QString(QApplication::translate("UIVMInformationDialog", "turned off"));
-        }
-        aResolutions[iScreen] = strResolution;
-    }
-
-    /* Determine uptime: */
-    CMachineDebugger debugger = m_console.GetDebugger();
-    uint32_t uUpSecs = (debugger.GetUptime() / 5000) * 5;
-    char szUptime[32];
-    uint32_t uUpDays = uUpSecs / (60 * 60 * 24);
-    uUpSecs -= uUpDays * 60 * 60 * 24;
-    uint32_t uUpHours = uUpSecs / (60 * 60);
-    uUpSecs -= uUpHours * 60 * 60;
-    uint32_t uUpMins  = uUpSecs / 60;
-    uUpSecs -= uUpMins * 60;
-    RTStrPrintf(szUptime, sizeof(szUptime), "%dd %02d:%02d:%02d",
-                uUpDays, uUpHours, uUpMins, uUpSecs);
-    QString strUptime = QString(szUptime);
-
-    /* Determine clipboard mode: */
-    QString strClipboardMode = gpConverter->toString(m_machine.GetClipboardMode());
-    /* Determine Drag&Drop mode: */
-    QString strDnDMode = gpConverter->toString(m_machine.GetDnDMode());
-
-    /* Determine virtualization attributes: */
-    QString strVirtualization = debugger.GetHWVirtExEnabled() ?
-        QApplication::translate("UIVMInformationDialog", "Active") :
-        QApplication::translate("UIVMInformationDialog", "Inactive");
-
-    QString strExecutionEngine;
-    switch (debugger.GetExecutionEngine())
-    {
-        case KVMExecutionEngine_HwVirt:
-            strExecutionEngine = "VT-x/AMD-V";  /* no translation */
-            break;
-        case KVMExecutionEngine_RawMode:
-            strExecutionEngine = "raw-mode";    /* no translation */
-            break;
-        case KVMExecutionEngine_NativeApi:
-            strExecutionEngine = "native API";  /* no translation */
-            break;
-        default:
-            AssertFailed();
-            RT_FALL_THRU();
-        case KVMExecutionEngine_NotSet:
-            strExecutionEngine = QApplication::translate("UIVMInformationDialog", "not set");
-            break;
-    }
-    QString strNestedPaging = debugger.GetHWVirtExNestedPagingEnabled() ?
-        QApplication::translate("UIVMInformationDialog", "Active"):
-        QApplication::translate("UIVMInformationDialog", "Inactive");
-
-    QString strUnrestrictedExecution = debugger.GetHWVirtExUXEnabled() ?
-        QApplication::translate("UIVMInformationDialog", "Active"):
-        QApplication::translate("UIVMInformationDialog", "Inactive");
-
-        QString strParavirtProvider = gpConverter->toString(m_machine.GetEffectiveParavirtProvider());
-
-    /* Guest information: */
-    CGuest guest = m_console.GetGuest();
-    QString strGAVersion = guest.GetAdditionsVersion();
-    if (strGAVersion.isEmpty())
-        strGAVersion = tr("Not Detected", "guest additions");
-    else
-    {
-        ULONG uRevision = guest.GetAdditionsRevision();
-        if (uRevision != 0)
-            strGAVersion += QString(" r%1").arg(uRevision);
-    }
-    QString strOSType = guest.GetOSTypeId();
-    if (strOSType.isEmpty())
-        strOSType = tr("Not Detected", "guest os type");
-    else
-        strOSType = uiCommon().vmGuestOSTypeDescription(strOSType);
-
-    /* VRDE information: */
-    int iVRDEPort = m_console.GetVRDEServerInfo().GetPort();
-    QString strVRDEInfo = (iVRDEPort == 0 || iVRDEPort == -1)?
-        tr("Not Available", "details report (VRDE server port)") :
-        QString("%1").arg(iVRDEPort);
-
-    /* Searching for longest string: */
-    QStringList values;
-    for (ULONG iScreen = 0; iScreen < cGuestScreens; ++iScreen)
-        values << aResolutions[iScreen];
-    values << strUptime
-           << strExecutionEngine << strNestedPaging << strUnrestrictedExecution
-           << strGAVersion << strOSType << strVRDEInfo;
-    int iMaxLength = 0;
-    foreach (const QString &strValue, values)
-        iMaxLength = iMaxLength < QApplication::fontMetrics().width(strValue)
-                                  ? QApplication::fontMetrics().width(strValue) : iMaxLength;
-
-    /* Summary: */
-    for (ULONG iScreen = 0; iScreen < cGuestScreens; ++iScreen)
-    {
-        QString strLabel(tr("Screen Resolution"));
-        /* The screen number makes sense only if there are multiple monitors in the guest: */
-        if (cGuestScreens > 1)
-            strLabel += QString(" %1").arg(iScreen + 1);
-        textTable << UITextTableLine(strLabel, aResolutions[iScreen]);
-    }
-
-    textTable << UITextTableLine(tr("VM Uptime"), strUptime);
-    textTable << UITextTableLine(tr("Clipboard Mode"), strClipboardMode);
-    textTable << UITextTableLine(tr("Drag and Drop Mode"), strDnDMode);
-    textTable << UITextTableLine(tr("VM Execution Engine", "details report"), strExecutionEngine);
-    textTable << UITextTableLine(tr("Nested Paging", "details report"), strNestedPaging);
-    textTable << UITextTableLine(tr("Unrestricted Execution", "details report"), strUnrestrictedExecution);
-    textTable << UITextTableLine(tr("Paravirtualization Interface", "details report"), strParavirtProvider);
-    textTable << UITextTableLine(tr("Guest Additions"), strGAVersion);
-    textTable << UITextTableLine(tr("Guest OS Type", "details report"), strOSType);
-    textTable << UITextTableLine(tr("Remote Desktop Server Port", "details report (VRDE Server)"), strVRDEInfo);
-
-    return textTable;
 }
 
 #include "UIInformationRuntime.moc"
