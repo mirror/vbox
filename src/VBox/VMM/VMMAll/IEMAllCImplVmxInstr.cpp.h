@@ -781,6 +781,20 @@ DECL_FORCE_INLINE(void) iemVmxVmcsSetExitInstrInfo(PVMCPUCC pVCpu, uint32_t uExi
 
 
 /**
+ * Sets the guest pending-debug exceptions field.
+ *
+ * @param   pVCpu                   The cross context virtual CPU structure.
+ * @param   uGuestPendingDbgXcpts   The guest pending-debug exceptions.
+ */
+DECL_FORCE_INLINE(void) iemVmxVmcsSetGuestPendingDbgXcpts(PVMCPUCC pVCpu, uint64_t uGuestPendingDbgXcpts)
+{
+    PVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    Assert(!(uGuestPendingDbgXcpts & VMX_VMCS_GUEST_PENDING_DEBUG_VALID_MASK));
+    pVmcs->u64GuestPendingDbgXcpt.u = uGuestPendingDbgXcpts;
+}
+
+
+/**
  * Implements VMSucceed for VMX instruction success.
  *
  * @param   pVCpu   The cross context virtual CPU structure.
@@ -1483,6 +1497,9 @@ IEM_STATIC void iemVmxVmexitSaveGuestNonRegState(PVMCPUCC pVCpu, uint32_t uExitR
 
     /*
      * Pending debug exceptions.
+     *
+     * For VM-exits where it is not applicable, we can safely zero out the field.
+     * For VM-exits where it is applicable, it's expected to be updated by the caller already.
      */
     if (    uExitReason != VMX_EXIT_INIT_SIGNAL
         &&  uExitReason != VMX_EXIT_SMI
@@ -1492,25 +1509,6 @@ IEM_STATIC void iemVmxVmexitSaveGuestNonRegState(PVMCPUCC pVCpu, uint32_t uExitR
         /** @todo NSTVMX: also must exclude VM-exits caused by debug exceptions when
          *        block-by-MovSS is in effect. */
         pVmcs->u64GuestPendingDbgXcpt.u = 0;
-    }
-    else
-    {
-        /*
-         * Pending debug exception field is identical to DR6 except the RTM bit (16) which needs to be flipped.
-         * The "enabled breakpoint" bit (12) is not present in DR6, so we need to update it here.
-         *
-         * See Intel spec. 24.4.2 "Guest Non-Register State".
-         */
-        /** @todo r=ramshankar: NSTVMX: I'm not quite sure if we can simply derive this from
-         *        DR6. */
-        IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_DR6);
-        uint64_t       fPendingDbgMask = pVCpu->cpum.GstCtx.dr[6];
-        uint64_t const fBpHitMask = VMX_VMCS_GUEST_PENDING_DEBUG_XCPT_BP0 | VMX_VMCS_GUEST_PENDING_DEBUG_XCPT_BP1
-                                  | VMX_VMCS_GUEST_PENDING_DEBUG_XCPT_BP2 | VMX_VMCS_GUEST_PENDING_DEBUG_XCPT_BP3;
-        if (fPendingDbgMask & fBpHitMask)
-            fPendingDbgMask |= VMX_VMCS_GUEST_PENDING_DEBUG_XCPT_EN_BP;
-        fPendingDbgMask ^= VMX_VMCS_GUEST_PENDING_DEBUG_RTM;
-        pVmcs->u64GuestPendingDbgXcpt.u = fPendingDbgMask;
     }
 
     /*
@@ -3411,6 +3409,22 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitTaskSwitch(PVMCPUCC pVCpu, IEMTASKSWITCH enm
                                | RT_BF_MAKE(VMX_BF_EXIT_QUAL_TASK_SWITCH_SOURCE,  uType);
     iemVmxVmcsSetExitInstrLen(pVCpu, cbInstr);
     return iemVmxVmexit(pVCpu, VMX_EXIT_TASK_SWITCH, u64ExitQual);
+}
+
+
+/**
+ * VMX VM-exit handler for trap-like VM-exits.
+ *
+ * @returns VBox strict status code.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   pExitInfo       Pointer to the VM-exit information.
+ * @param   pExitEventInfo  Pointer to the VM-exit event information.
+ */
+IEM_STATIC VBOXSTRICTRC iemVmxVmexitTrapLikeWithInfo(PVMCPUCC pVCpu, PCVMXVEXITINFO pExitInfo)
+{
+    Assert(VMXIsVmexitTrapLike(pExitInfo->uReason));
+    iemVmxVmcsSetGuestPendingDbgXcpts(pVCpu, pExitInfo->u64GuestPendingDbgXcpts);
+    return iemVmxVmexit(pVCpu, pExitInfo->uReason, pExitInfo->u64Qual);
 }
 
 

@@ -15873,6 +15873,24 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVmexitInstr(PVMCPUCC pVCpu, uint32_t uExitR
 
 
 /**
+ * Interface for HM and EM to emulate a trap-like VM-exit (MTF, APIC-write,
+ * Virtualized-EOI, TPR-below threshold).
+ *
+ * @returns Strict VBox status code.
+ * @param   pVCpu           The cross context virtual CPU structure of the calling EMT.
+ * @param   pExitInfo       Pointer to the VM-exit information.
+ * @thread  EMT(pVCpu)
+ */
+VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVmexitTrapLike(PVMCPUCC pVCpu, PCVMXVEXITINFO pExitInfo)
+{
+    Assert(pExitInfo);
+    VBOXSTRICTRC rcStrict = iemVmxVmexitTrapLikeWithInfo(pVCpu, pExitInfo);
+    Assert(!pVCpu->iem.s.cActiveMappings);
+    return iemExecStatusCodeFiddling(pVCpu, rcStrict);
+}
+
+
+/**
  * Interface for HM and EM to emulate a VM-exit due to a task switch.
  *
  * @returns Strict VBox status code.
