@@ -58,7 +58,7 @@
 #define VIRTIO_STATUS_FAILED                         0x80        /**< Guest driver: Fatal error, gave up        */
 #define VIRTIO_STATUS_DEVICE_NEEDS_RESET             0x40        /**< Device experienced unrecoverable error    */
 
-/* @def Virtio Device PCI Capabilities type codes */
+/** @def Virtio Device PCI Capabilities type codes */
 #define VIRTIO_PCI_CAP_COMMON_CFG                       1        /**< Common configuration PCI capability ID    */
 #define VIRTIO_PCI_CAP_NOTIFY_CFG                       2        /**< Notification area PCI capability ID       */
 #define VIRTIO_PCI_CAP_ISR_CFG                          3        /**< ISR PCI capability id                     */
@@ -84,15 +84,30 @@ typedef struct virtio_pci_cap
 }  VIRTIO_PCI_CAP_T, *PVIRTIO_PCI_CAP_T;
 
 /**
+ * Translation of the descriptor chain associated with one element of virtq avail ring into its
+ * IN and OUT components and represented as respective arrays of SG segments.
+ */
+typedef struct VIRTQ_DESC_CHAIN                                  /**< Describes a single queue element          */
+{
+    RTSGSEG     aSegsIn[VIRTQ_MAX_SIZE];                         /**< List of segments to write to guest        */
+    RTSGSEG     aSegsOut[VIRTQ_MAX_SIZE];                        /**< List of segments read from guest          */
+    uint32_t    uHeadIdx;                                        /**< Index at head desc (source of seg arrays) */
+    uint32_t    cSegsIn;                                         /**< Count of segments in aSegsIn[]            */
+    uint32_t    cSegsOut;                                        /**< Count of segments in aSegsOut[]           */
+} VIRTQ_DESC_CHAIN_T, *PVIRTQ_DESC_CHAIN_T;
+
+/**
  * Local implementation's usage context of a queue (e.g. not part of VirtIO specification)
  */
 typedef struct VIRTQ_PROXY
 {
-    const char          szName[32];                              /**< Dev-specific name of queue                */
-    PVIRTQ_BUF_VECTOR_T pBufVec;                                 /**< Per-queue s/g data. Serialize access!     */
-    uint16_t            uAvailIdx;                               /**< Consumer's position in avail ring         */
-    uint16_t            uUsedIdx;                                /**< Consumer's position in used ring          */
-    bool                fEventThresholdReached;                  /**< Don't lose track while queueing ahead     */
+    RTSGBUF     inSgBuf;                                         /**< host-to-guest buffers                     */
+    RTSGBUF     outSgBuf;                                        /**< guest-to-host buffers                     */
+    const char  szVirtqName[32];                                 /**< Dev-specific name of queue                */
+    uint16_t    uAvailIdx;                                       /**< Consumer's position in avail ring         */
+    uint16_t    uUsedIdx;                                        /**< Consumer's position in used ring          */
+    bool        fEventThresholdReached;                          /**< Don't lose track while queueing ahead     */
+    PVIRTQ_DESC_CHAIN_T pDescChain;                              /**< Per-queue s/g data.                       */
 } VIRTQ_PROXY_T, *PVIRTQ_PROXY_T;
 
 /**
@@ -106,10 +121,10 @@ typedef struct virtio_pci_common_cfg
     uint32_t  uDeviceFeaturesSelect;                             /**< RW (driver selects device features)       */
     uint32_t  uDeviceFeatures;                                   /**< RO (device reports features to driver)    */
     uint32_t  uDriverFeaturesSelect;                             /**< RW (driver selects driver features)       */
-    uint32_t  uDriverFeatures;                                   /**< RW (driver accepts device features)       */
+    uint32_t  uDriverFeatures;                                   /**< RW (driver-accepted device features)      */
     uint16_t  uMsixConfig;                                       /**< RW (driver sets MSI-X config vector)      */
     uint16_t  uNumQueues;                                        /**< RO (device specifies max queues)          */
-    uint8_t   uDeviceStatus;                                     /**< RW (driver writes device status, 0 resets)*/
+    uint8_t   uDeviceStatus;                                     /**< RW (driver writes device status, 0=reset) */
     uint8_t   uConfigGeneration;                                 /**< RO (device changes when changing configs) */
 
     /* Per virtqueue fields (as determined by uQueueSelect) */
@@ -135,7 +150,6 @@ typedef struct virtio_pci_cfg_cap
     uint8_t uPciCfgData[4];                                      /**< I/O buf for above cap.                    */
 } VIRTIO_PCI_CFG_CAP_T,   *PVIRTIO_PCI_CFG_CAP_T;
 
-
 /**
  * The core (/common) state of the VirtIO PCI device
  *
@@ -145,7 +159,7 @@ typedef struct VIRTIOSTATE
 {
     PDMPCIDEV                 dev;                               /**< PCI device                                */
     char                      szInstance[16];                    /**< Instance name, e.g. "VIRTIOSCSI0"         */
-    void *                    pClientContext;                     /**< Client callback returned on callbacks     */
+    void *                    pClientContext;                    /**< Client callback returned on callbacks     */
 
     PPDMDEVINSR3              pDevInsR3;                         /**< Device instance - R3                      */
     PPDMDEVINSR0              pDevInsR0;                         /**< Device instance - R0                      */
@@ -176,7 +190,7 @@ typedef struct VIRTIOSTATE
     uint8_t                   uPrevDeviceStatus;                 /**< (MMIO) Prev Device Status           GUEST */
     uint8_t                   uConfigGeneration;                 /**< (MMIO) Device config sequencer       HOST */
 
-    VIRTQ_PROXY_T             virtqProxy[VIRTQ_MAX_CNT];        /**< Local impl-specific queue context         */
+    VIRTQ_PROXY_T             virtqProxy[VIRTQ_MAX_CNT];         /**< Local impl-specific queue context         */
     VIRTIOCALLBACKS           virtioCallbacks;                   /**< Callback vectors to client                */
 
     PFNPCICONFIGREAD          pfnPciConfigReadOld;               /**< Prev rd. cb. intercepting PCI Cfg I/O     */
@@ -222,7 +236,7 @@ typedef struct virtq_avail
     uint16_t  fFlags;                                            /**< flags      avail ring drv to dev flags    */
     uint16_t  uDescIdx;                                          /**< idx        Index of next free ring slot   */
     uint16_t  auRing[1];                                         /**< ring       Ring: avail drv to dev bufs    */
-    uint16_t  uUsedEventIdx;                                     /**< used_event (if VIRTQ_USED_F_NO_NOTIFY)    */
+    uint16_t  uUsedEventIdx;                                     /**< used_event (if VIRTQ_USED_F_EVENT_IDX)    */
 } VIRTQ_AVAIL_T, *PVIRTQ_AVAIL_T;
 
 typedef struct virtq_used_elem
@@ -236,7 +250,7 @@ typedef struct virt_used
     uint16_t  fFlags;                                            /**< flags       used ring host-to-guest flags */
     uint16_t  uDescIdx;                                          /**< idx         Index of next ring slot       */
     VIRTQ_USED_ELEM_T auRing[1];                                 /**< ring        Ring: used dev to drv bufs    */
-    uint16_t  uAvailEventIdx;                                    /**< avail_event if (VIRTQ_USED_F_NO_NOTIFY)   */
+    uint16_t  uAvailEventIdx;                                    /**< avail_event if (VIRTQ_USED_F_EVENT_IDX)   */
 } VIRTQ_USED_T, *PVIRTQ_USED_T;
 
 /**
@@ -334,7 +348,7 @@ typedef struct virt_used
  * Internal queue operations
  */
 
-static int         vqIsEventNeeded(uint16_t uEventIdx, uint16_t uDescIdxNew, uint16_t uDescIdxOld);
+static int         vqIsEventNeeded        (uint16_t uEventIdx, uint16_t uDescIdxNew, uint16_t uDescIdxOld);
 static bool        vqIsEmpty              (PVIRTIOSTATE pVirtio, uint16_t qIdx);
 static void        vqReadDesc             (PVIRTIOSTATE pVirtio, uint16_t qIdx, uint32_t uDescIdx, PVIRTQ_DESC_T pDesc);
 static uint16_t    vqReadAvailRingDescIdx (PVIRTIOSTATE pVirtio, uint16_t qIdx, uint32_t availIdx);
@@ -360,7 +374,7 @@ DECLINLINE(bool) vqIsEmpty(PVIRTIOSTATE pVirtio, uint16_t qIdx)
 }
 
 /**
- * Accessor for virtq descspVirtio
+ * Accessor for virtq descriptor
  */
 DECLINLINE(void) vqReadDesc(PVIRTIOSTATE pVirtio, uint16_t qIdx, uint32_t uDescIdx, PVIRTQ_DESC_T pDesc)
 {

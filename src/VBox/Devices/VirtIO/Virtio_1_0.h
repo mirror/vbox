@@ -22,10 +22,10 @@
 #endif
 
 #include <iprt/ctype.h>
+#include <iprt/sg.h>
 
 typedef void * VIRTIOHANDLE;                                     /**< Opaque handle to the VirtIO framework */
 
-#define DISABLE_GUEST_DRIVER 0
 
 /**
  * Important sizing and bounds params for this impl. of VirtIO 1.0 PCI device
@@ -36,26 +36,11 @@ typedef void * VIRTIOHANDLE;                                     /**< Opaque han
 #define VIRTIO_MAX_QUEUE_NAME_SIZE          32                   /**< Maximum length of a queue name           */
 #define VIRTQ_MAX_SIZE                      1024                 /**< Max size (# desc elements) of a virtq    */
 #define VIRTQ_MAX_CNT                       24                   /**< Max queues we allow guest to create      */
-#define VIRTQ_DESC_MAX_SIZE                 (2 * 1024 * 1024)
+
 #define VIRTIO_NOTIFY_OFFSET_MULTIPLIER     2                    /**< VirtIO Notify Cap. MMIO config param     */
 #define VIRTIOSCSI_REGION_MEM_IO            0                    /**< BAR for MMIO (implementation specific)   */
 #define VIRTIOSCSI_REGION_PORT_IO           1                    /**< BAR for PORT I/O (impl specific)         */
 #define VIRTIOSCSI_REGION_PCI_CAP           2                    /**< BAR for VirtIO Cap. MMIO (impl specific) */
-typedef struct VIRTQ_SEG                                         /**< Describes one segment of a buffer vector */
-{
-    RTGCPHYS addr;                                               /**< Physical addr. of this segment's buffer  */
-    void    *pv;                                                 /**< Buf to hold value to write or read       */
-    uint32_t cb;                                                 /**< Number of bytes to write or read         */
-} VIRTQ_SEG_T;
-
-    typedef struct VIRTQ_BUF_VECTOR                                  /**< Scatter/gather buffer vector             */
-{
-    uint32_t    uDescIdx;                                        /**< Desc at head of this vector list         */
-    uint32_t    cSegsIn;                                         /**< Count of segments in aSegsIn[]           */
-    uint32_t    cSegsOut;                                        /**< Count of segments in aSegsOut[]          */
-    VIRTQ_SEG_T aSegsIn[VIRTQ_MAX_SIZE];                         /**< List of segments to write to guest       */
-    VIRTQ_SEG_T aSegsOut[VIRTQ_MAX_SIZE];                        /**< List of segments read from guest         */
-} VIRTQ_BUF_VECTOR_T, *PVIRTQ_BUF_VECTOR_T;
 
 /**
  * The following structure is used to pass the PCI parameters from the consumer
@@ -71,7 +56,7 @@ typedef struct VIRTIOPCIPARAMS
     uint16_t  uSubsystemVendorId;                                /**< PCI Cfg Chipset Manufacturer Vendor ID   */
     uint16_t  uRevisionId;                                       /**< PCI Cfg Revision ID                      */
     uint16_t  uInterruptLine;                                    /**< PCI Cfg Interrupt line                   */
-    uint16_t  uInterruptPin;                                     /**< PCI Cfg InterruptPin                     */
+    uint16_t  uInterruptPin;                                     /**< PCI Cfg Interrupt pin                    */
 } VIRTIOPCIPARAMS, *PVIRTIOPCIPARAMS;
 
 /**
@@ -150,7 +135,7 @@ typedef struct VIRTIOCALLBACKS
 /**
  * Allocate client context for client to work with VirtIO-provided with queue
  * As a side effect creates a buffer vector a client can get a pointer to
- * with a call to virtioQueueBufVec()
+ * with a call to virtioQueueDescChain()
  *
  * @param  hVirtio   - Handle to VirtIO framework
  * @param  qIdx      - Queue number
@@ -163,6 +148,16 @@ typedef struct VIRTIOCALLBACKS
  * @returns status. If false, the call failed and the client should call virtioResetAll()
  */
 int virtioQueueAttach(VIRTIOHANDLE hVirtio, uint16_t qIdx, const char *pcszName);
+
+
+/**
+ * Get the features VirtIO is running withnow.
+ *
+ * @returns Features the guest driver has accepted, finalizing the operational features
+ *
+ */
+uint64_t virtioGetNegotiatedFeatures(VIRTIOHANDLE hVirtio);
+
 /**
  * Detaches from queue and release resources
  *
@@ -171,16 +166,6 @@ int virtioQueueAttach(VIRTIOHANDLE hVirtio, uint16_t qIdx, const char *pcszName)
  *
  */
 int virtioQueueDetach(VIRTIOHANDLE hVirtio, uint16_t qIdx);
-
-/**
- * Return pointer to buffer vector object associated with queue
- *
- * @param hVirtio   - Handle for VirtIO framework
- * @param qIdx      - Queue number
- *
- * @returns           Pointer pBufVec if success, else NULL
- */
-PVIRTQ_BUF_VECTOR_T virtioQueueGetBuffer(VIRTIOHANDLE hVirtio, uint16_t qIdx);
 
 /**
  * Get name of queue, by qIdx, assigned at virtioQueueAttach()
@@ -199,23 +184,27 @@ const char *virtioQueueGetName(VIRTIOHANDLE hVirtio, uint16_t qIdx);
  *
  * @param hVirtio   - Handle for VirtIO framework
  * @param qIdx      - Queue number
+ * @param ppInSegs  - Address to store pointer to host-to-guest data retrieved from virtq as RTSGBUF
+ * @param ppOutSegs - Address to store pointer to host-to-guest data retrieved from virtq as RTSGBUF
  *
  * @returns status    VINF_SUCCESS         - Success
  *                    VERR_INVALID_STATE   - VirtIO not in ready state
  */
-int virtioQueueGet(VIRTIOHANDLE hVirtio, uint16_t qIdx, bool fRemove);
+int virtioQueueGet(VIRTIOHANDLE hVirtio, uint16_t qIdx, bool fRemove, PPRTSGBUF ppInSegs, PPRTSGBUF ppOutSegs);
 
 /**
  * Same as virtioQueueGet() but leaves the item on the avail ring of the queue.
  *
  * @param hVirtio   - Handle for VirtIO framework
  * @param qIdx      - Queue number
+ * @param ppInSegs  - Address to store pointer to host-to-guest data retrieved from virtq as RTSGBUF
+ * @param ppOutSegs - Address to store pointer to host-to-guest data retrieved from virtq as RTSGBUF
  *
  * @returns           VINF_SUCCESS         - Success
  *                    VERR_INVALID_STATE   - VirtIO not in ready state
  *                    VERR_NOT_AVAILABLE   - Queue is empty
  */
-int virtioQueuePeek(VIRTIOHANDLE hVirtio, uint16_t qIdx);
+int virtioQueuePeek(VIRTIOHANDLE hVirtio, uint16_t qIdx, PPRTSGBUF ppInSegs, PPRTSGBUF ppOutSegs);
 
 /**
  * Writes scatter/gather segment contained in queue's bufVec.aSegsIn[] array to
