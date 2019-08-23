@@ -804,8 +804,7 @@ static int vbsf_create_worker(struct inode *parent, struct dentry *dentry, umode
     int                     rc;
 
     if (pfCreated)
-       *pfCreated = false;
-
+        *pfCreated = false;
     AssertReturn(sf_parent_i, -EINVAL);
     AssertReturn(pSuperInfo, -EINVAL);
 
