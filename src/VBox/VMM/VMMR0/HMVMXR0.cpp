@@ -1488,7 +1488,7 @@ DECLINLINE(void) hmR0VmxReadGuestPendingDbgXctps(PVMXTRANSIENT pVmxTransient)
 {
     if (!(pVmxTransient->fVmcsFieldsRead & HMVMX_READ_GUEST_PENDING_DBG_XCPTS))
     {
-        int rc = VMXReadVmcs64(VMX_VMCS_GUEST_PENDING_DEBUG_XCPTS, &pVmxTransient->uGuestPendingDbgXcpts);
+        int rc = VMXReadVmcsNw(VMX_VMCS_GUEST_PENDING_DEBUG_XCPTS, &pVmxTransient->uGuestPendingDbgXcpts);
         AssertRC(rc);
         pVmxTransient->fVmcsFieldsRead |= HMVMX_READ_GUEST_PENDING_DBG_XCPTS;
     }
