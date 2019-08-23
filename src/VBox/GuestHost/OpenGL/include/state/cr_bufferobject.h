@@ -9,7 +9,12 @@
 
 #include "cr_hash.h"
 #include "state/cr_statetypes.h"
-#include "state/cr_statefuncs.h"
+
+#if defined(WINDOWS)
+#define STATE_APIENTRY __stdcall
+#else
+#define STATE_APIENTRY
+#endif
 
 #ifdef __cplusplus
 extern "C" {
