@@ -83,6 +83,7 @@
 #define HMVMX_READ_EXIT_INSTR_INFO                  RT_BIT_32(6)
 #define HMVMX_READ_GUEST_LINEAR_ADDR                RT_BIT_32(7)
 #define HMVMX_READ_GUEST_PHYSICAL_ADDR              RT_BIT_32(8)
+#define HMVMX_READ_GUEST_PENDING_DBG_XCPTS          RT_BIT_32(9)
 
 /** All the VMCS fields required for processing of exception/NMI VM-exits. */
 #define HMVMX_READ_XCPT_INFO         (  HMVMX_READ_EXIT_INTERRUPTION_INFO        \
@@ -214,6 +215,8 @@ typedef struct VMXTRANSIENT
     uint64_t            uGuestLinearAddr;
     /** The Guest-physical address. */
     uint64_t            uGuestPhysicalAddr;
+    /** The Guest pending-debug exceptions. */
+    uint64_t            uGuestPendingDbgXcpts;
 
     /** The VM-exit interruption-information field. */
     uint32_t            uExitIntInfo;
@@ -1471,6 +1474,23 @@ DECLINLINE(void) hmR0VmxReadGuestPhysicalAddrVmcs(PVMXTRANSIENT pVmxTransient)
         int rc = VMXReadVmcs64(VMX_VMCS64_RO_GUEST_PHYS_ADDR_FULL, &pVmxTransient->uGuestPhysicalAddr);
         AssertRC(rc);
         pVmxTransient->fVmcsFieldsRead |= HMVMX_READ_GUEST_PHYSICAL_ADDR;
+    }
+}
+
+
+/**
+ * Reads the Guest pending-debug exceptions from the VMCS into the VMX transient
+ * structure.
+ *
+ * @param   pVmxTransient   The VMX-transient structure.
+ */
+DECLINLINE(void) hmR0VmxReadGuestPendingDbgXctps(PVMXTRANSIENT pVmxTransient)
+{
+    if (!(pVmxTransient->fVmcsFieldsRead & HMVMX_READ_GUEST_PENDING_DBG_XCPTS))
+    {
+        int rc = VMXReadVmcs64(VMX_VMCS_GUEST_PENDING_DEBUG_XCPTS, &pVmxTransient->uGuestPendingDbgXcpts);
+        AssertRC(rc);
+        pVmxTransient->fVmcsFieldsRead |= HMVMX_READ_GUEST_PENDING_DBG_XCPTS;
     }
 }
 
@@ -12521,6 +12541,13 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExit(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTra
  */
 DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExitNested(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
 {
+    /** @todo NSTVMX: Remove after debugging page-fault issue. */
+#ifdef DEBUG_ramshankar
+    hmR0VmxImportGuestState(pVCpu, pVmxTransient->pVmcsInfo, HMVMX_CPUMCTX_EXTRN_ALL);
+    Log4Func(("cs:rip=%#04x:%#RX64 rsp=%#RX64 eflags=%#RX32 cr3=%#RX64\n", pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip,
+              pVCpu->cpum.GstCtx.rsp, pVCpu->cpum.GstCtx.eflags.u32, pVCpu->cpum.GstCtx.cr3));
+#endif
+
     uint32_t const uExitReason = pVmxTransient->uExitReason;
     switch (uExitReason)
     {
@@ -16658,7 +16685,12 @@ HMVMX_EXIT_DECL hmR0VmxExitMtfNested(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient
     HMVMX_VALIDATE_NESTED_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
 
     /** @todo NSTVMX: Should consider debugging nested-guests using VM debugger. */
-    return IEMExecVmxVmexit(pVCpu, pVmxTransient->uExitReason, 0 /* uExitQual */);
+    hmR0VmxReadGuestPendingDbgXctps(pVmxTransient);
+    VMXVEXITINFO ExitInfo;
+    RT_ZERO(ExitInfo);
+    ExitInfo.uReason                 = pVmxTransient->uExitReason;
+    ExitInfo.u64GuestPendingDbgXcpts = pVmxTransient->uGuestPendingDbgXcpts;
+    return IEMExecVmxVmexitTrapLike(pVCpu, &ExitInfo);
 }
 
 
@@ -16709,7 +16741,14 @@ HMVMX_EXIT_NSRC_DECL hmR0VmxExitTprBelowThresholdNested(PVMCPUCC pVCpu, PVMXTRAN
     HMVMX_VALIDATE_NESTED_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
 
     if (CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS_USE_TPR_SHADOW))
-        return IEMExecVmxVmexit(pVCpu, pVmxTransient->uExitReason, 0 /* uExitQual */);
+    {
+        hmR0VmxReadGuestPendingDbgXctps(pVmxTransient);
+        VMXVEXITINFO ExitInfo;
+        RT_ZERO(ExitInfo);
+        ExitInfo.uReason                 = pVmxTransient->uExitReason;
+        ExitInfo.u64GuestPendingDbgXcpts = pVmxTransient->uGuestPendingDbgXcpts;
+        return IEMExecVmxVmexitTrapLike(pVCpu, &ExitInfo);
+    }
     return hmR0VmxExitTprBelowThreshold(pVCpu, pVmxTransient);
 }
 
