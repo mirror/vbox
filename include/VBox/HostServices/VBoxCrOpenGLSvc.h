@@ -41,10 +41,6 @@
 #define SHCRGL_HOST_FN_SET_VISIBLE_REGION (5)
 #define SHCRGL_HOST_FN_SET_VM (7)
 #define SHCRGL_HOST_FN_SCREEN_CHANGED (8)
-#ifdef VBOX_WITH_CRHGSMI
-#define SHCRGL_HOST_FN_CRHGSMI_CMD (10)
-#define SHCRGL_HOST_FN_CRHGSMI_CTL (11)
-#endif
 #define SHCRGL_HOST_FN_VIEWPORT_CHANGED (15)
 #define SHCRGL_HOST_FN_SET_OUTPUT_REDIRECT (20)
 #define SHCRGL_HOST_FN_DEV_RESIZE          (22)
@@ -123,100 +119,6 @@ typedef struct {
 
 /* @todo Move to H3DOR.h end */
 
-#ifdef VBOX_WITH_CRHGSMI
-#pragma pack(1)
-typedef struct
-{
-    int32_t result;           /**< OUT Host HGSMI return code.*/
-    uint32_t u32ClientID;     /**< IN  The id of the caller. */
-    uint32_t u32Function;     /**< IN  Function number. */
-    uint32_t u32Reserved;
-} CRVBOXHGSMIHDR;
-AssertCompileSize(CRVBOXHGSMIHDR, 16);
-
-/** GUEST_FN_WRITE Parameters structure. */
-typedef struct
-{
-    CRVBOXHGSMIHDR hdr;
-    /** buffer index, in
-     *  Data buffer
-     */
-    uint32_t iBuffer;
-} CRVBOXHGSMIWRITE;
-
-/** GUEST_FN_READ Parameters structure. */
-typedef struct
-{
-    CRVBOXHGSMIHDR hdr;
-
-    /** buffer index, in/out
-     *  Data buffer
-     */
-    uint32_t iBuffer;
-    uint32_t cbBuffer;
-} CRVBOXHGSMIREAD;
-
-/** GUEST_FN_WRITE_READ Parameters structure. */
-typedef struct
-{
-    CRVBOXHGSMIHDR hdr;
-
-    /** buffer index, in
-     *  Data buffer
-     */
-    uint32_t iBuffer;
-
-    /** buffer index, out
-     *  Writeback buffer
-     */
-    uint32_t iWriteback;
-    uint32_t cbWriteback;
-} CRVBOXHGSMIWRITEREAD;
-
-/** GUEST_FN_SET_VERSION Parameters structure. */
-typedef struct
-{
-    CRVBOXHGSMIHDR hdr;
-
-    /** 32bit, in
-     *  Major version
-     */
-    uint32_t vMajor;
-
-    /** 32bit, in
-     *  Minor version
-     */
-    uint32_t vMinor;
-} CRVBOXHGSMISETVERSION;
-
-/** GUEST_FN_INJECT Parameters structure. */
-typedef struct
-{
-    CRVBOXHGSMIHDR hdr;
-
-    /** 32bit, in
-     *  ClientID to inject commands buffer for
-     */
-    uint32_t u32ClientID;
-    /** buffer index, in
-     *  Data buffer
-     */
-    uint32_t iBuffer;
-} CRVBOXHGSMIINJECT;
-
-/** GUEST_FN_SET_PID Parameters structure. */
-typedef struct
-{
-    CRVBOXHGSMIHDR hdr;
-
-    /** 64bit, in
-     *  PID
-     */
-    uint64_t   u64PID;
-} CRVBOXHGSMISETPID;
-
-#pragma pack()
-#endif
 /**
  * SHCRGL_GUEST_FN_WRITE
  */

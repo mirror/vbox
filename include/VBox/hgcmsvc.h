@@ -454,13 +454,6 @@ DECLINLINE(void) HGCMSvcSetRTCStr(VBOXHGCMSVCPARM *pParm, const RTCString &rStri
 
 typedef VBOXHGCMSVCPARM *PVBOXHGCMSVCPARM;
 
-#ifdef VBOX_WITH_CRHGSMI
-typedef void * HGCMCVSHANDLE;
-
-typedef DECLCALLBACK(void) HGCMHOSTFASTCALLCB (int32_t result, uint32_t u32Function, PVBOXHGCMSVCPARM pParam, void *pvContext);
-typedef HGCMHOSTFASTCALLCB *PHGCMHOSTFASTCALLCB;
-#endif
-
 
 /** Service specific extension callback.
  *  This callback is called by the service to perform service specific operation.
