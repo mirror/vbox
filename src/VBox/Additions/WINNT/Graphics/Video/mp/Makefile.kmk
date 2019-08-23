@@ -111,6 +111,11 @@ ifdef VBOX_WITH_WDDM
  VBoxWddm_LDFLAGS.x86     += /Entry:DriverEntry@8
  VBoxWddm_LDFLAGS.amd64   += /Entry:DriverEntry
 
+ VBoxWddm_INTERMEDIATES = \
+ 	$(VBOX_PATH_CROGL_GENFILES)/cr_packfunctions.h \
+ 	$(VBOX_PATH_CROGL_GENFILES)/cr_opcodes.h \
+ 	$(VBOX_PATH_CROGL_GENFILES)/state/cr_currentpointers.h \
+ 	$(VBOX_PATH_CROGL_GENFILES)/cr_packfunctions.h
  VBoxWddm_SOURCES          = \
  	wddm/VBoxMPWddm.cpp \
 	wddm/VBoxMPVidPn.cpp \
