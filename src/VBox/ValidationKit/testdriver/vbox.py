@@ -1995,7 +1995,7 @@ class TestDriver(base.TestDriver):                                              
             self.processEvents(cMsTimeout - cMsElapsed);
         return None;
 
-    def _logVmInfoUnsafe(self, oVM):                                            # pylint: disable=too-many-statements,too-many-branches,not-callable
+    def _logVmInfoUnsafe(self, oVM):                                            # pylint: disable=too-many-statements,too-many-branches
         """
         Internal worker for logVmInfo that is wrapped in try/except.
         """
