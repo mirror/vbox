@@ -586,7 +586,7 @@ void UIChart::paintEvent(QPaintEvent *pEvent)
         if (m_pSubMetric->unit().compare("%", Qt::CaseInsensitive) == 0)
             strValue = QString::number(iValue);
         else if (m_pSubMetric->unit().compare("kb", Qt::CaseInsensitive) == 0)
-            strValue = uiCommon().formatSize(_1K * (quint64)iValue, iDecimalCount);
+            strValue = uiCommon().formatSize(_1K * (qulonglong)iValue, iDecimalCount);
         else if (m_pSubMetric->unit().compare("b", Qt::CaseInsensitive) == 0 ||
                  m_pSubMetric->unit().compare("b/s", Qt::CaseInsensitive) == 0)
             strValue = uiCommon().formatSize(iValue, iDecimalCount);
@@ -803,9 +803,8 @@ UIInformationRuntime::UIInformationRuntime(QWidget *pParent, const CMachine &mac
     , m_strCPUMetricName("CPU Load")
     , m_strRAMMetricName("RAM Usage")
     , m_strDiskMetricName("Disk Usage")
-    , m_strNetMetricName("Net")
-    , m_strNetDebuggerMetricName("NetDebugger")
-
+    , m_strNetworkMetricName("NetDebugger")
+    , m_iTimeStep(0)
 {
     if (!m_console.isNull())
         m_comGuest = m_console.GetGuest();
@@ -843,25 +842,28 @@ void UIInformationRuntime::retranslateUi()
     iMaximum = qMax(iMaximum, m_strRAMInfoLabelFree.length());
     m_strRAMInfoLabelUsed = QApplication::translate("UIVMInformationDialog", "Used");
     iMaximum = qMax(iMaximum, m_strRAMInfoLabelUsed.length());
-    m_strNetInfoLabelTitle = QApplication::translate("UIVMInformationDialog", "Network");
-    iMaximum = qMax(iMaximum, m_strNetInfoLabelTitle.length());
-    m_strNetInfoLabelReceived = QApplication::translate("UIVMInformationDialog", "Receive Rate");
-    iMaximum = qMax(iMaximum, m_strNetInfoLabelReceived.length());
-    m_strNetInfoLabelTransmitted = QApplication::translate("UIVMInformationDialog", "Transmit Rate");
-    iMaximum = qMax(iMaximum, m_strNetInfoLabelTransmitted.length());
-    m_strNetInfoLabelMaximum = QApplication::translate("UIVMInformationDialog", "Maximum");
-    iMaximum = qMax(iMaximum, m_strNetInfoLabelMaximum.length());
+    m_strNetworkInfoLabelTitle = QApplication::translate("UIVMInformationDialog", "Network");
+    iMaximum = qMax(iMaximum, m_strNetworkInfoLabelTitle.length());
+    m_strNetworkInfoLabelReceived = QApplication::translate("UIVMInformationDialog", "Receive Rate");
+    iMaximum = qMax(iMaximum, m_strNetworkInfoLabelReceived.length());
+    m_strNetworkInfoLabelTransmitted = QApplication::translate("UIVMInformationDialog", "Transmit Rate");
+    iMaximum = qMax(iMaximum, m_strNetworkInfoLabelTransmitted.length());
+    m_strNetworkInfoLabelReceivedTotal = QApplication::translate("UIVMInformationDialog", "Total Received");
+    iMaximum = qMax(iMaximum, m_strNetworkInfoLabelReceivedTotal.length());
+    m_strNetworkInfoLabelTransmittedTotal = QApplication::translate("UIVMInformationDialog", "Total Transmitted");
+    iMaximum = qMax(iMaximum, m_strNetworkInfoLabelReceivedTotal.length());
+
 
     /* Compute the maximum label string length and set it as a fixed width to labels to prevent always changing widths: */
-    /* Add m_iDecimalCount plus 3 characters for the number and 2 for unit string: */
-    iMaximum += (iDecimalCount + 5);
+    /* Add m_iDecimalCount plus 3 characters for the number and 3 for unit string: */
+    iMaximum += (iDecimalCount + 7);
     if (!m_infoLabels.isEmpty())
     {
         QLabel *pLabel = m_infoLabels.begin().value();
         if (pLabel)
         {
             QFontMetrics labelFontMetric(pLabel->font());
-            int iWidth = iMaximum * labelFontMetric.width('x');
+            int iWidth = iMaximum * labelFontMetric.width('X');
             foreach (QLabel *pInfoLabel, m_infoLabels)
                 pInfoLabel->setFixedWidth(iWidth);
         }
@@ -889,7 +891,7 @@ void UIInformationRuntime::prepareObjects()
     m_pRuntimeInfoWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
 
     QStringList chartOder;
-    chartOder << m_strCPUMetricName << m_strRAMMetricName << m_strDiskMetricName << m_strNetMetricName << m_strNetDebuggerMetricName;
+    chartOder << m_strCPUMetricName << m_strRAMMetricName << m_strDiskMetricName << m_strNetworkMetricName;
     int iRow = 0;
     foreach (const QString &strMetricName, chartOder)
     {
@@ -908,15 +910,10 @@ void UIInformationRuntime::prepareObjects()
     }
 
     /* Configure charts: */
-    if (m_charts.contains(m_strNetMetricName) && m_charts[m_strNetMetricName])
+    if (m_charts.contains(m_strNetworkMetricName) && m_charts[m_strNetworkMetricName])
     {
-        m_charts[m_strNetMetricName]->setDrawPieChart(false);
-        m_charts[m_strNetMetricName]->setUseGradientLineColor(false);
-    }
-    if (m_charts.contains(m_strNetDebuggerMetricName) && m_charts[m_strNetDebuggerMetricName])
-    {
-        m_charts[m_strNetDebuggerMetricName]->setDrawPieChart(false);
-        m_charts[m_strNetDebuggerMetricName]->setUseGradientLineColor(false);
+        m_charts[m_strNetworkMetricName]->setDrawPieChart(false);
+        m_charts[m_strNetworkMetricName]->setUseGradientLineColor(false);
     }
 
     if (m_charts.contains(m_strCPUMetricName) && m_charts[m_strCPUMetricName])
@@ -940,6 +937,7 @@ void UIInformationRuntime::sltTimeout()
 
     if (m_performanceMonitor.isNull())
         return;
+    ++m_iTimeStep;
     QVector<QString> allNames;// = new ArrayList<IUnknown>();
     QVector<CUnknown> allObjects;// = new ArrayList<IUnknown>();
 
@@ -960,10 +958,8 @@ void UIInformationRuntime::sltTimeout()
                                                                      aReturnSequenceNumbers,
                                                                      aReturnDataIndices,
                                                                      aReturnDataLengths);
-    quint64 iTotalRAM = 0;
-    quint64 iFreeRAM = 0;
-    ULONG iReceiveRate = 0;
-    ULONG  iTransmitRate = 0;
+    qulonglong iTotalRAM = 0;
+    qulonglong iFreeRAM = 0;
 
     for (int i = 0; i < aReturnNames.size(); ++i)
     {
@@ -978,18 +974,9 @@ void UIInformationRuntime::sltTimeout()
             if (aReturnNames[i].contains("Free", Qt::CaseInsensitive))
                 iFreeRAM = (quint64)fData;
         }
-        else if (aReturnNames[i].contains("Net/Rate", Qt::CaseInsensitive) && !aReturnNames[i].contains(":"))
-        {
-            if (aReturnNames[i].contains("Rx", Qt::CaseInsensitive))
-                iReceiveRate = fData;
-            if (aReturnNames[i].contains("Tx", Qt::CaseInsensitive))
-                iTransmitRate = fData;
-        }
     }
     if (m_subMetrics.contains(m_strRAMMetricName))
         updateRAMGraphsAndMetric(iTotalRAM, iFreeRAM);
-    if (m_subMetrics.contains(m_strNetMetricName))
-        updateNetworkGraphsAndMetric(iReceiveRate, iTransmitRate);
 
     /* Update the CPU load chart with values we get from IMachineDebugger::getCPULoad(..): */
     if (m_subMetrics.contains(m_strCPUMetricName))
@@ -1016,7 +1003,7 @@ void UIInformationRuntime::sltTimeout()
             {
                 if (data.m_strName.contains(strDeviceType, Qt::CaseInsensitive))
                 {
-                    if (metric.name() == m_strNetDebuggerMetricName)
+                    if (metric.name() == m_strNetworkMetricName)
                     {
                         if (data.m_strName.contains("receive", Qt::CaseInsensitive))
                             uNetworkTotalReceive += data.m_counter;
@@ -1049,11 +1036,7 @@ void UIInformationRuntime::prepareMetrics()
     if (m_performanceMonitor.isNull())
         return;
 
-    // m_nameList << "Guest/RAM/Usage*";
     m_nameList << "Guest/RAM/Usage*";
-    m_nameList << "Net/Rate*";
-
-
     m_objectList = QVector<CUnknown>(m_nameList.size(), CUnknown());
     m_performanceMonitor.SetupMetrics(m_nameList, m_objectList, iPeriod, iMetricSetupCount);
     {
@@ -1069,26 +1052,20 @@ void UIInformationRuntime::prepareMetrics()
                     newMetric.setRequiresGuestAdditions(true);
                     m_subMetrics.insert(m_strRAMMetricName, newMetric);
                 }
-                else if (strName.contains("Net", Qt::CaseInsensitive))
-                {
-                    UISubMetric newMetric(m_strNetMetricName, metrics[i].GetUnit(), iMaximumQueueSize);
-                    newMetric.setRequiresGuestAdditions(true);
-                    m_subMetrics.insert(m_strNetMetricName, newMetric);
-                }
             }
         }
     }
 
     m_subMetrics.insert(m_strCPUMetricName, UISubMetric(m_strCPUMetricName, "%", iMaximumQueueSize));
 
-    UISubMetric networkMetric(m_strNetDebuggerMetricName, "B", iMaximumQueueSize);
+    UISubMetric networkMetric(m_strNetworkMetricName, "B", iMaximumQueueSize);
     QStringList networkDeviceList;
     networkDeviceList << "E1k" <<"VNet" << "PCNet";
     networkMetric.setDeviceTypeList(networkDeviceList);
     QStringList networkMetricDataSubStringList;
     networkMetricDataSubStringList << "ReceiveBytes" << "TransmitBytes";
     networkMetric.setMetricDataSubString(networkMetricDataSubStringList);
-    m_subMetrics.insert(m_strNetDebuggerMetricName, networkMetric);
+    m_subMetrics.insert(m_strNetworkMetricName, networkMetric);
 
     for (QMap<QString, UISubMetric>::const_iterator iterator =  m_subMetrics.begin();
          iterator != m_subMetrics.end(); ++iterator)
@@ -1184,39 +1161,9 @@ void UIInformationRuntime::updateRAMGraphsAndMetric(quint64 iTotalRAM, quint64 i
         m_charts[m_strRAMMetricName]->update();
 }
 
-void UIInformationRuntime::updateNetworkGraphsAndMetric(qulonglong iReceiveRate, qulonglong iTransmitRate)
-{
-    UISubMetric &NetMetric = m_subMetrics[m_strNetMetricName];
-
-    NetMetric.addData(0, iReceiveRate);
-    NetMetric.addData(1, iTransmitRate);
-
-    qulonglong iMaximum = qMax(NetMetric.maximum(), qMax(iReceiveRate, iTransmitRate));
-    NetMetric.setMaximum(iMaximum);
-
-    if (m_infoLabels.contains(m_strNetMetricName)  && m_infoLabels[m_strNetMetricName])
-    {
-        QString strInfo;
-        QString strReceiveColor;
-        if (m_infoLabels[m_strNetMetricName]->isEnabled())
-            strInfo = QString("<b>%1</b></b><br/><font color=\"%2\">%3: %4</font><br/><font color=\"%5\">%6: %7</font><br/>%8: %9")
-                .arg(m_strNetInfoLabelTitle)
-                .arg(dataColorString(m_strNetMetricName, 0))
-                .arg(m_strNetInfoLabelReceived).arg(uiCommon().formatSize((quint64)iReceiveRate, iDecimalCount))
-                .arg(dataColorString(m_strNetMetricName, 1))
-                .arg(m_strNetInfoLabelTransmitted).arg(uiCommon().formatSize((quint64)iTransmitRate, iDecimalCount))
-                .arg(m_strNetInfoLabelMaximum).arg(uiCommon().formatSize((quint64)iMaximum, iDecimalCount));
-        else
-            strInfo = QString("<b>%1</b><br/>%2: %3<br/>%4: %5<br/>%6: %7").arg(m_strNetInfoLabelTitle).arg(m_strNetInfoLabelReceived).arg("---").arg(m_strNetInfoLabelTransmitted).arg("---");
-        m_infoLabels[m_strNetMetricName]->setText(strInfo);
-    }
-    if (m_charts.contains(m_strNetMetricName))
-        m_charts[m_strNetMetricName]->update();
-}
-
 void UIInformationRuntime::updateNetworkDebuggerGraphsAndMetric(qulonglong iReceiveTotal, qulonglong iTransmitTotal)
 {
-    UISubMetric &NetMetric = m_subMetrics[m_strNetDebuggerMetricName];
+    UISubMetric &NetMetric = m_subMetrics[m_strNetworkMetricName];
 
     qulonglong iReceiveRate = iReceiveTotal - NetMetric.total(0);
     qulonglong iTransmitRate = iTransmitTotal - NetMetric.total(1);
@@ -1224,10 +1171,35 @@ void UIInformationRuntime::updateNetworkDebuggerGraphsAndMetric(qulonglong iRece
     NetMetric.setTotal(0, iReceiveTotal);
     NetMetric.setTotal(1, iTransmitTotal);
 
+    /* Do not set data and maximum if the timer has just started since we need to initialize totals "(t-1)" first: */
+    if (m_iTimeStep <= 1)
+        return;
     NetMetric.addData(0, iReceiveRate);
     NetMetric.addData(1, iTransmitRate);
     qulonglong iMaximum = qMax(NetMetric.maximum(), qMax(iReceiveRate, iTransmitRate));
     NetMetric.setMaximum(iMaximum);
+
+    if (m_infoLabels.contains(m_strNetworkMetricName)  && m_infoLabels[m_strNetworkMetricName])
+    {
+        QString strInfo;
+        QString strReceiveColor;
+        if (m_infoLabels[m_strNetworkMetricName]->isEnabled())
+            strInfo = QString("<b>%1</b></b><br/><font color=\"%2\">%3: %4<br/>%5 %6</font><br/><font color=\"%7\">%8: %9<br/>%10 %11</font>")
+                .arg(m_strNetworkInfoLabelTitle)
+                .arg(dataColorString(m_strNetworkMetricName, 0)).arg(m_strNetworkInfoLabelReceived).arg(uiCommon().formatSize((quint64)iReceiveRate, iDecimalCount))
+                .arg(m_strNetworkInfoLabelReceivedTotal).arg(uiCommon().formatSize((quint64)iReceiveTotal, iDecimalCount))
+                .arg(dataColorString(m_strNetworkMetricName, 1)).arg(m_strNetworkInfoLabelTransmitted).arg(uiCommon().formatSize((quint64)iTransmitRate, iDecimalCount))
+                .arg(m_strNetworkInfoLabelTransmittedTotal).arg(uiCommon().formatSize((quint64)iTransmitTotal, iDecimalCount));
+
+        else
+            strInfo = QString("<b>%1</b><br/>%2: %3<br/>%4: %5").
+                arg(m_strNetworkInfoLabelTitle)
+                .arg(m_strNetworkInfoLabelReceived).arg("---")
+                .arg(m_strNetworkInfoLabelTransmitted).arg("---");
+        m_infoLabels[m_strNetworkMetricName]->setText(strInfo);
+    }
+    if (m_charts.contains(m_strNetworkMetricName))
+        m_charts[m_strNetworkMetricName]->update();
 
 }
 
