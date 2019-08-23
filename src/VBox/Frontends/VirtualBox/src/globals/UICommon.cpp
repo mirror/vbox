@@ -3698,7 +3698,7 @@ bool UICommon::is3DAvailableWorker() const
      * Keep in mind that if we ever end up checking this concurrently on multiple threads,
      * use a RTONCE construct to serialize the efforts. */
 
-#ifdef VBOX_WITH_CROGL
+#ifdef VBOX_WITH_3D_ACCELERATION
     bool fSupported = VBoxOglIs3DAccelerationSupported();
 #else
     bool fSupported = false;
@@ -3714,7 +3714,7 @@ bool UICommon::is3DAvailable() const
     return m_i3DAvailable != 0;
 }
 
-#ifdef VBOX_WITH_CRHGSMI
+#ifdef VBOX_WITH_3D_ACCELERATION
 /* static */
 bool UICommon::isWddmCompatibleOsType(const QString &strGuestOSTypeId)
 {
@@ -3726,7 +3726,7 @@ bool UICommon::isWddmCompatibleOsType(const QString &strGuestOSTypeId)
            || strGuestOSTypeId.startsWith("Windows2008")
            || strGuestOSTypeId.startsWith("Windows2012");
 }
-#endif /* VBOX_WITH_CRHGSMI */
+#endif /* VBOX_WITH_3D_ACCELERATION */
 
 /* static */
 quint64 UICommon::requiredVideoMemory(const QString &strGuestOSTypeId, int cMonitors /* = 1 */)
@@ -3770,14 +3770,14 @@ quint64 UICommon::requiredVideoMemory(const QString &strGuestOSTypeId, int cMoni
     if (strGuestOSTypeId.startsWith("Windows"))
     {
         /* Windows guests need offscreen VRAM too for graphics acceleration features: */
-#ifdef VBOX_WITH_CRHGSMI
+#ifdef VBOX_WITH_3D_ACCELERATION
         if (isWddmCompatibleOsType(strGuestOSTypeId))
         {
             /* WDDM mode, there are two surfaces for each screen: shadow & primary: */
             uNeedMBytes *= 3;
         }
         else
-#endif /* VBOX_WITH_CRHGSMI */
+#endif /* VBOX_WITH_3D_ACCELERATION */
         {
             uNeedMBytes *= 2;
         }

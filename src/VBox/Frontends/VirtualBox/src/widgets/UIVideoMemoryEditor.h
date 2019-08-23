@@ -67,7 +67,7 @@ public:
     /** Defines @a enmGraphicsControllerType. */
     void setGraphicsControllerType(const KGraphicsControllerType &enmGraphicsControllerType);
 
-#ifdef VBOX_WITH_CRHGSMI
+#ifdef VBOX_WITH_3D_ACCELERATION
     /** Defines whether 3D acceleration is @a fSupported. */
     void set3DAccelerationSupported(bool fSupported);
     /** Defines whether 3D acceleration is @a fEnabled. */
@@ -116,7 +116,7 @@ private:
     int                      m_cGuestScreenCount;
     /** Holds the graphics controller type. */
     KGraphicsControllerType  m_enmGraphicsControllerType;
-#ifdef VBOX_WITH_CRHGSMI
+#ifdef VBOX_WITH_3D_ACCELERATION
     /** Holds whether 3D acceleration is supported. */
     bool                     m_f3DAccelerationSupported;
     /** Holds whether 3D acceleration is enabled. */

@@ -45,7 +45,7 @@ struct UIDataSettingsMachineDisplay
         : m_iCurrentVRAM(0)
         , m_cGuestScreenCount(0)
         , m_graphicsControllerType(KGraphicsControllerType_Null)
-#ifdef VBOX_WITH_CRHGSMI
+#ifdef VBOX_WITH_3D_ACCELERATION
         , m_f3dAccelerationEnabled(false)
 #endif
 #ifdef VBOX_WITH_VIDEOHWACCEL
@@ -75,7 +75,7 @@ struct UIDataSettingsMachineDisplay
                && (m_cGuestScreenCount == other.m_cGuestScreenCount)
                && (m_scaleFactors == other.m_scaleFactors)
                && (m_graphicsControllerType == other.m_graphicsControllerType)
-#ifdef VBOX_WITH_CRHGSMI
+#ifdef VBOX_WITH_3D_ACCELERATION
                && (m_f3dAccelerationEnabled == other.m_f3dAccelerationEnabled)
 #endif
 #ifdef VBOX_WITH_VIDEOHWACCEL
@@ -242,7 +242,7 @@ struct UIDataSettingsMachineDisplay
     QList<double>            m_scaleFactors;
     /** Holds the graphics controller type. */
     KGraphicsControllerType  m_graphicsControllerType;
-#ifdef VBOX_WITH_CRHGSMI
+#ifdef VBOX_WITH_3D_ACCELERATION
     /** Holds whether the 3D acceleration is enabled. */
     bool                     m_f3dAccelerationEnabled;
 #endif
@@ -286,7 +286,7 @@ struct UIDataSettingsMachineDisplay
 
 UIMachineSettingsDisplay::UIMachineSettingsDisplay()
     : m_comGuestOSType(CGuestOSType())
-#ifdef VBOX_WITH_CRHGSMI
+#ifdef VBOX_WITH_3D_ACCELERATION
     , m_fWddmModeSupported(false)
 #endif
 #ifdef VBOX_WITH_VIDEOHWACCEL
@@ -314,7 +314,7 @@ void UIMachineSettingsDisplay::setGuestOSType(CGuestOSType comGuestOSType)
     m_comGuestOSType = comGuestOSType;
     m_pVideoMemoryEditor->setGuestOSType(m_comGuestOSType);
 
-#ifdef VBOX_WITH_CRHGSMI
+#ifdef VBOX_WITH_3D_ACCELERATION
     /* Check if WDDM mode supported by the guest OS type: */
     const QString strGuestOSTypeId = m_comGuestOSType.isNotNull() ? m_comGuestOSType.GetId() : QString();
     m_fWddmModeSupported = UICommon::isWddmCompatibleOsType(strGuestOSTypeId);
@@ -359,7 +359,7 @@ void UIMachineSettingsDisplay::loadToCacheFrom(QVariant &data)
     oldDisplayData.m_cGuestScreenCount = m_machine.GetMonitorCount();
     oldDisplayData.m_scaleFactors = gEDataManager->scaleFactors(m_machine.GetId());
     oldDisplayData.m_graphicsControllerType = m_machine.GetGraphicsControllerType();
-#ifdef VBOX_WITH_CRHGSMI
+#ifdef VBOX_WITH_3D_ACCELERATION
     oldDisplayData.m_f3dAccelerationEnabled = m_machine.GetAccelerate3DEnabled();
 #endif
 #ifdef VBOX_WITH_VIDEOHWACCEL
@@ -422,7 +422,7 @@ void UIMachineSettingsDisplay::getFromCache()
     m_pScaleFactorEditor->setScaleFactors(oldDisplayData.m_scaleFactors);
     m_pScaleFactorEditor->setMonitorCount(oldDisplayData.m_cGuestScreenCount);
     m_pGraphicsControllerEditor->setValue(oldDisplayData.m_graphicsControllerType);
-#ifdef VBOX_WITH_CRHGSMI
+#ifdef VBOX_WITH_3D_ACCELERATION
     m_pCheckbox3D->setChecked(oldDisplayData.m_f3dAccelerationEnabled);
 #endif
 #ifdef VBOX_WITH_VIDEOHWACCEL
@@ -431,7 +431,7 @@ void UIMachineSettingsDisplay::getFromCache()
     /* Push required value to m_pVideoMemoryEditor: */
     sltHandleGuestScreenCountEditorChange();
     sltHandleGraphicsControllerComboChange();
-#ifdef VBOX_WITH_CRHGSMI
+#ifdef VBOX_WITH_3D_ACCELERATION
     sltHandle3DAccelerationCheckboxChange();
 #endif
 #ifdef VBOX_WITH_VIDEOHWACCEL
@@ -492,7 +492,7 @@ void UIMachineSettingsDisplay::putToCache()
     newDisplayData.m_cGuestScreenCount = m_pEditorVideoScreenCount->value();
     newDisplayData.m_scaleFactors = m_pScaleFactorEditor->scaleFactors();
     newDisplayData.m_graphicsControllerType = m_pGraphicsControllerEditor->value();
-#ifdef VBOX_WITH_CRHGSMI
+#ifdef VBOX_WITH_3D_ACCELERATION
     newDisplayData.m_f3dAccelerationEnabled = m_pCheckbox3D->isChecked();
 #endif
 #ifdef VBOX_WITH_VIDEOHWACCEL
@@ -588,7 +588,7 @@ bool UIMachineSettingsDisplay::validate(QList<UIValidationMessage> &messages)
                                      "which is the minimum amount required to switch to full-screen or seamless mode.")
                                      .arg(uiCommon().formatSize(uNeedBytes, 0, FormatSize_RoundUp));
             }
-#ifdef VBOX_WITH_CRHGSMI
+#ifdef VBOX_WITH_3D_ACCELERATION
             /* 3D acceleration video RAM amount test: */
             else if (m_pCheckbox3D->isChecked() && m_fWddmModeSupported)
             {
@@ -601,7 +601,7 @@ bool UIMachineSettingsDisplay::validate(QList<UIValidationMessage> &messages)
                                          .arg(uiCommon().formatSize(uNeedBytes, 0, FormatSize_RoundUp));
                 }
             }
-#endif /* VBOX_WITH_CRHGSMI */
+#endif /* VBOX_WITH_3D_ACCELERATION */
 #ifdef VBOX_WITH_VIDEOHWACCEL
             /* 2D acceleration video RAM amount test: */
             else if (m_pCheckbox2DVideo->isChecked() && m_f2DVideoAccelerationSupported)
@@ -617,7 +617,7 @@ bool UIMachineSettingsDisplay::validate(QList<UIValidationMessage> &messages)
 #endif /* VBOX_WITH_VIDEOHWACCEL */
         }
 
-#ifdef VBOX_WITH_CRHGSMI
+#ifdef VBOX_WITH_3D_ACCELERATION
         /* 3D acceleration test: */
         if (m_pCheckbox3D->isChecked() && !uiCommon().is3DAvailable())
         {
@@ -625,7 +625,7 @@ bool UIMachineSettingsDisplay::validate(QList<UIValidationMessage> &messages)
                                  "However the host system does not currently provide this, "
                                  "so you will not be able to start the machine.");
         }
-#endif /* VBOX_WITH_CRHGSMI */
+#endif /* VBOX_WITH_3D_ACCELERATION */
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
         /* 2D video acceleration is available for Windows guests only: */
@@ -763,7 +763,7 @@ void UIMachineSettingsDisplay::polishPage()
     m_pGraphicsControllerLabel->setEnabled(isMachineOffline());
     m_pGraphicsControllerEditor->setEnabled(isMachineOffline());
     m_pLabelVideoOptions->setEnabled(isMachineOffline());
-#ifdef VBOX_WITH_CRHGSMI
+#ifdef VBOX_WITH_3D_ACCELERATION
     m_pCheckbox3D->setEnabled(isMachineOffline());
 #else
     m_pCheckbox3D->hide();
@@ -829,7 +829,7 @@ void UIMachineSettingsDisplay::sltHandleGraphicsControllerComboChange()
     revalidate();
 }
 
-#ifdef VBOX_WITH_CRHGSMI
+#ifdef VBOX_WITH_3D_ACCELERATION
 void UIMachineSettingsDisplay::sltHandle3DAccelerationCheckboxChange()
 {
     /* Update Video RAM requirements: */
@@ -838,7 +838,7 @@ void UIMachineSettingsDisplay::sltHandle3DAccelerationCheckboxChange()
     /* Revalidate: */
     revalidate();
 }
-#endif /* VBOX_WITH_CRHGSMI */
+#endif /* VBOX_WITH_3D_ACCELERATION */
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
 void UIMachineSettingsDisplay::sltHandle2DVideoAccelerationCheckboxChange()
@@ -1193,7 +1193,7 @@ void UIMachineSettingsDisplay::prepareConnections()
     connect(m_pEditorVideoScreenCount, SIGNAL(valueChanged(int)), this, SLOT(sltHandleGuestScreenCountEditorChange()));
     connect(m_pGraphicsControllerEditor, &UIGraphicsControllerEditor::sigValueChanged,
             this, &UIMachineSettingsDisplay::sltHandleGraphicsControllerComboChange);
-#ifdef VBOX_WITH_CRHGSMI
+#ifdef VBOX_WITH_3D_ACCELERATION
     connect(m_pCheckbox3D, &QCheckBox::stateChanged,
             this, &UIMachineSettingsDisplay::sltHandle3DAccelerationCheckboxChange);
 #endif
@@ -1348,7 +1348,7 @@ bool UIMachineSettingsDisplay::saveScreenData()
             m_machine.SetGraphicsControllerType(newDisplayData.m_graphicsControllerType);
             fSuccess = m_machine.isOk();
         }
-#ifdef VBOX_WITH_CRHGSMI
+#ifdef VBOX_WITH_3D_ACCELERATION
         /* Save whether 3D acceleration is enabled: */
         if (fSuccess && isMachineOffline() && newDisplayData.m_f3dAccelerationEnabled != oldDisplayData.m_f3dAccelerationEnabled)
         {

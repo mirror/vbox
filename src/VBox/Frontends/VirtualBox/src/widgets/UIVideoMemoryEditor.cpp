@@ -38,7 +38,7 @@ UIVideoMemoryEditor::UIVideoMemoryEditor(QWidget *pParent /* = 0 */, bool fWithL
     , m_comGuestOSType(CGuestOSType())
     , m_cGuestScreenCount(1)
     , m_enmGraphicsControllerType(KGraphicsControllerType_Null)
-#ifdef VBOX_WITH_CRHGSMI
+#ifdef VBOX_WITH_3D_ACCELERATION
     , m_f3DAccelerationSupported(false)
     , m_f3DAccelerationEnabled(false)
 #endif
@@ -112,7 +112,7 @@ void UIVideoMemoryEditor::setGraphicsControllerType(const KGraphicsControllerTyp
     updateRequirements();
 }
 
-#ifdef VBOX_WITH_CRHGSMI
+#ifdef VBOX_WITH_3D_ACCELERATION
 void UIVideoMemoryEditor::set3DAccelerationSupported(bool fSupported)
 {
     /* Check if 3D acceleration really changed: */
@@ -138,7 +138,7 @@ void UIVideoMemoryEditor::set3DAccelerationEnabled(bool fEnabled)
     /* Update requirements: */
     updateRequirements();
 }
-#endif /* VBOX_WITH_CRHGSMI */
+#endif /* VBOX_WITH_3D_ACCELERATION */
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
 void UIVideoMemoryEditor::set2DVideoAccelerationSupported(bool fSupported)
@@ -322,7 +322,7 @@ void UIVideoMemoryEditor::updateRequirements()
     if (m_iMaxVRAMVisible < m_iInitialVRAM)
         m_iMaxVRAMVisible = m_iInitialVRAM;
 
-#ifdef VBOX_WITH_CRHGSMI
+#ifdef VBOX_WITH_3D_ACCELERATION
     if (m_f3DAccelerationEnabled && m_f3DAccelerationSupported)
     {
         uNeedMBytes = qMax(uNeedMBytes, (quint64)128);
