@@ -1477,7 +1477,7 @@ DECLINLINE(void) hmR0VmxReadGuestPhysicalAddrVmcs(PVMXTRANSIENT pVmxTransient)
     }
 }
 
-
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
 /**
  * Reads the Guest pending-debug exceptions from the VMCS into the VMX transient
  * structure.
@@ -1493,7 +1493,7 @@ DECLINLINE(void) hmR0VmxReadGuestPendingDbgXctps(PVMXTRANSIENT pVmxTransient)
         pVmxTransient->fVmcsFieldsRead |= HMVMX_READ_GUEST_PENDING_DBG_XCPTS;
     }
 }
-
+#endif
 
 /**
  * Reads the IDT-vectoring information field from the VMCS into the VMX
