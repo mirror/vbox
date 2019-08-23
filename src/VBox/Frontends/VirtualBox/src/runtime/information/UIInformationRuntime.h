@@ -47,6 +47,19 @@ class UIChart;
 class UISession;
 class UIRuntimeInfoWidget;
 
+#define DATA_SERIES_SIZE 2
+
+struct DebuggerMetricData
+{
+    DebuggerMetricData()
+        : m_counter(0){}
+    DebuggerMetricData(const QString & strName, qulonglong counter)
+        :m_strName(strName)
+        , m_counter(counter){}
+    QString m_strName;
+    qulonglong m_counter;
+};
+
 class UISubMetric
 {
 public:
@@ -55,26 +68,54 @@ public:
     UISubMetric();
     const QString &name() const;
 
-    void setMaximum(ULONG iMaximum);
-    ULONG maximum() const;
+    void setMaximum(qulonglong iMaximum);
+    qulonglong maximum() const;
 
     void setUnit(QString strUnit);
     const QString &unit() const;
 
-    void addData(int iDataSeriesIndex, ULONG fData);
-    const QQueue<ULONG> *data(int iDataSeriesIndex) const;
+    void addData(int iDataSeriesIndex, qulonglong fData);
+    const QQueue<qulonglong> *data(int iDataSeriesIndex) const;
+
+    void setTotal(int iDataSeriesIndex, qulonglong iTotal);
+    qulonglong total(int iDataSeriesIndex) const;
+
+
 
     bool requiresGuestAdditions() const;
     void setRequiresGuestAdditions(bool fRequiresGAs);
 
+    const QStringList &deviceTypeList() const;
+    void setDeviceTypeList(const QStringList &list);
+
+    const QStringList &metricDataSubString() const;
+    void setMetricDataSubString(const QStringList &list);
+
+    const QString &queryString() const;
+
 private:
+
+    void composeQueryString();
+
+    /** This list is used to differentiate xml data we get from the IMachineDebugger. */
+    QStringList m_deviceTypeList;
+    /** This is used to select data series of the metric. For example, for network metric
+      * it is ReceiveBytes/TransmitBytes */
+    QStringList m_metricDataSubString;
 
     QString m_strName;
     QString m_strUnit;
-    ULONG m_iMaximum;
-    QQueue<ULONG> m_data[2];
+    /** This string is used while calling IMachineDebugger::getStats(..). It is composed of
+      * m_deviceTypeList and m_metricDataSubString. */
+    QString m_strQueryString;
+    qulonglong m_iMaximum;
+    QQueue<qulonglong> m_data[DATA_SERIES_SIZE];
+    /** The total data (the counter value we get from IMachineDebugger API). For the metrics
+      * we get from IMachineDebugger m_data values are computed as deltas of total values t - (t-1) */
+    qulonglong m_iTotal[DATA_SERIES_SIZE];
     int m_iMaximumQueueSize;
     bool m_fRequiresGuestAdditions;
+
 };
 
 /** UIInformationRuntime class displays some high level performance metric of the guest system.
@@ -104,14 +145,18 @@ private:
 
     /** Prepares layout. */
     void prepareObjects();
-    void preparePerformaceCollector();
+    void prepareMetrics();
     bool guestAdditionsAvailable(int iMinimumMajorVersion);
     void enableDisableGuestAdditionDependedWidgets(bool fEnable);
     void updateCPUGraphsAndMetric(ULONG iLoadPercentage, ULONG iOtherPercentage);
     void updateRAMGraphsAndMetric(quint64 iTotalRAM, quint64 iFreeRAM);
-    void updateNewGraphsAndMetric(ULONG iReceiveRate, ULONG iTransmitRate);
+    void updateNetworkGraphsAndMetric(qulonglong iReceiveRate, qulonglong iTransmitRate);
+    void updateNetworkDebuggerGraphsAndMetric(qulonglong iReceiveTotal, qulonglong iTransmitTotal);
+
     QString dataColorString(const QString &strChartName, int iDataIndex);
-    UITextTable runTimeAttributes();
+    void runTimeAttributes();
+
+    QVector<DebuggerMetricData> getTotalCounterFromDegugger(const QString &strQuery);
 
     bool m_fGuestAdditionsAvailable;
     CMachine m_machine;
@@ -138,6 +183,7 @@ private:
         QString m_strRAMMetricName;
         QString m_strDiskMetricName;
         QString m_strNetMetricName;
+        QString m_strNetDebuggerMetricName;
     /** @} */
 
     /** @name Cached translated strings.
@@ -157,8 +203,8 @@ private:
         QString m_strNetInfoLabelTransmitted;
         QString m_strNetInfoLabelMaximum;
     /** @} */
-
-
+    /** The following string is used while querrying CMachineDebugger. */
+    QString m_strQueryString;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_runtime_information_UIInformationRuntime_h */
