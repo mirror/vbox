@@ -32,9 +32,6 @@
 #ifdef VBOX_WITH_HGCM
 # include "HGCM.h"
 # include "HGCMObjects.h"
-# if defined(RT_OS_DARWIN) && defined(VBOX_WITH_CROGL)
-#  include <VBox/HostServices/VBoxCrOpenGLSvc.h>
-# endif
 #endif
 
 //

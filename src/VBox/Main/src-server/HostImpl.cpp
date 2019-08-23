@@ -416,7 +416,7 @@ HRESULT Host::init(VirtualBox *aParent)
         m->fRecheckVTSupported = false;
     }
 
-#ifdef VBOX_WITH_CROGL
+#ifdef VBOX_WITH_3D_ACCELERATION
     /* Test for 3D hardware acceleration support later when (if ever) need. */
     m->f3DAccelerationSupported = -1;
 #else
@@ -1429,7 +1429,7 @@ HRESULT Host::getAcceleration3DAvailable(BOOL *aSupported)
     {
         alock.release();
 
-#ifdef VBOX_WITH_CROGL
+#ifdef VBOX_WITH_3D_ACCELERATION
         bool fSupported = VBoxOglIs3DAccelerationSupported();
 #else
         bool fSupported = false; /* shoudn't get here, but just in case. */
