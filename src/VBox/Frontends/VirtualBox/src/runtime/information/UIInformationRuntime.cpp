@@ -1191,7 +1191,7 @@ void UIInformationRuntime::updateNetworkGraphsAndMetric(qulonglong iReceiveRate,
     NetMetric.addData(0, iReceiveRate);
     NetMetric.addData(1, iTransmitRate);
 
-    ULONG iMaximum = qMax(NetMetric.maximum(), qMax(iReceiveRate, iTransmitRate));
+    qulonglong iMaximum = qMax(NetMetric.maximum(), qMax(iReceiveRate, iTransmitRate));
     NetMetric.setMaximum(iMaximum);
 
     if (m_infoLabels.contains(m_strNetMetricName)  && m_infoLabels[m_strNetMetricName])
@@ -1226,7 +1226,7 @@ void UIInformationRuntime::updateNetworkDebuggerGraphsAndMetric(qulonglong iRece
 
     NetMetric.addData(0, iReceiveRate);
     NetMetric.addData(1, iTransmitRate);
-    ULONG iMaximum = qMax(NetMetric.maximum(), qMax(iReceiveRate, iTransmitRate));
+    qulonglong iMaximum = qMax(NetMetric.maximum(), qMax(iReceiveRate, iTransmitRate));
     NetMetric.setMaximum(iMaximum);
 
 }
