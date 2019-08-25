@@ -30,6 +30,7 @@
 #include "UICommon.h"
 #include "UIConverter.h"
 #include "UIExtraDataManager.h"
+#include "UIIconPool.h"
 #include "UIInformationRuntime.h"
 #include "UISession.h"
 
@@ -200,7 +201,10 @@ UIRuntimeInfoWidget::UIRuntimeInfoWidget(QWidget *pParent, const CMachine &machi
 
     retranslateUi();
 
-    QTableWidgetItem *pTitleItem = new QTableWidgetItem(m_strTableTitle);
+    //QString(":/state_running_16px.png");
+    //setItem(0, 0, new QTableWidgetItem(, ""));
+
+    QTableWidgetItem *pTitleItem = new QTableWidgetItem(UIIconPool::iconSet(":/state_running_16px.png"), m_strTableTitle);
     QFont titleFont(font());
     titleFont.setBold(true);
     pTitleItem->setFont(titleFont);
@@ -578,7 +582,7 @@ void UIChart::paintEvent(QPaintEvent *pEvent)
         painter.setPen(QColor(20, 20, 20, 180));
         QFont font = painter.font();
         font.setBold(true);
-        /** @todo: make this size dynamic. aka. autoscale the font. */
+        /** @todo make this size dynamic. aka. autoscale the font. */
         font.setPixelSize(16);
         painter.setFont(font);
         painter.drawText(2 * m_iMarginLeft, 15 * m_iMarginTop, m_strGAWarning);
