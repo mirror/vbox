@@ -859,7 +859,7 @@ void UIInformationRuntime::retranslateUi()
     iMaximum = qMax(iMaximum, m_strDiskIOInfoLabelWritten.length());
     m_strDiskIOInfoLabelRead = QApplication::translate("UIVMInformationDialog", "Read Rate");
     iMaximum = qMax(iMaximum, m_strDiskIOInfoLabelRead.length());
-    m_strDiskIOInfoLabelWrittenTotal = QApplication::translate("UIVMInformationDialog", "Total Writen");
+    m_strDiskIOInfoLabelWrittenTotal = QApplication::translate("UIVMInformationDialog", "Total Written");
     iMaximum = qMax(iMaximum, m_strDiskIOInfoLabelWrittenTotal.length());
     m_strDiskIOInfoLabelReadTotal = QApplication::translate("UIVMInformationDialog", "Total Read");
     iMaximum = qMax(iMaximum, m_strDiskIOInfoLabelReadTotal.length());
