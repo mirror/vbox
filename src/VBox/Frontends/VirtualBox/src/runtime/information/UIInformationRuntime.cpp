@@ -109,7 +109,7 @@ private:
 *   UIChart definition.                                                                                     *
 *********************************************************************************************************************************/
 
-class UIChart : public QWidget
+class UIChart : public QIWithRetranslateUI<QWidget>
 {
 
     Q_OBJECT;
@@ -139,6 +139,7 @@ protected:
     virtual void paintEvent(QPaintEvent *pEvent) /* override */;
     virtual QSize minimumSizeHint() const /* override */;
     virtual QSize sizeHint() const  /* override */;
+    virtual void retranslateUi()  /* override */;
 
 private:
 
@@ -161,6 +162,7 @@ private:
     bool m_fUseGradientLineColor;
     QColor m_dataSeriesColor[DATA_SERIES_SIZE];
     QString m_strXAxisLabel;
+    QString m_strGAWarning;
 };
 
 /*********************************************************************************************************************************
@@ -369,7 +371,7 @@ void UIRuntimeInfoWidget::runTimeAttributes()
 *********************************************************************************************************************************/
 
 UIChart::UIChart(QWidget *pParent, const UISubMetric *pSubMetric)
-    :QWidget(pParent)
+    :QIWithRetranslateUI<QWidget>(pParent)
     , m_pSubMetric(pSubMetric)
     , m_size(QSize(50, 50))
     , m_fDrawPieChart(true)
@@ -386,6 +388,7 @@ UIChart::UIChart(QWidget *pParent, const UISubMetric *pSubMetric)
     m_pieChartRect[0] = QRect(1.5 * m_iMarginLeft, 1.5 * m_iMarginTop, m_iPieChartSize, m_iPieChartSize);
     m_pieChartRect[1] = QRect(m_pieChartRect[0].x() + m_iPieChartSize + 0.5 * m_iMarginLeft, 1.5 * m_iMarginTop, m_iPieChartSize, m_iPieChartSize);
     m_size = QSize(6 * m_iPieChartSize, 2 * m_iPieChartSize);
+    retranslateUi();
 }
 
 void UIChart::setFontSize(int iFontSize)
@@ -473,6 +476,11 @@ QSize UIChart::sizeHint() const
     return m_size;
 }
 
+void UIChart::retranslateUi()
+{
+    m_strGAWarning = QApplication::translate("UIVMInformationDialog", "No guest additions! This metric requires guest additions to work properly.");
+}
+
 void UIChart::computeFontSize()
 {
     int iFontSize = 24;
@@ -537,8 +545,15 @@ void UIChart::paintEvent(QPaintEvent *pEvent)
     if (!isEnabled())
     {
         painter.setPen(Qt::NoPen);
-        painter.setBrush(QColor(60, 60, 60, 50));
+        painter.setBrush(QColor(60, 60, 60, 80));
         painter.drawRect(QRect(0, 0, width(), height()));
+        painter.setPen(QColor(20, 20, 20, 180));
+        QFont font = painter.font();
+        font.setBold(true);
+        font.setPixelSize(16);
+        painter.setFont(font);
+        painter.drawText(2 * m_iMarginLeft, 15 * m_iMarginTop, m_strGAWarning);
+
         return;
     }
 
@@ -898,7 +913,7 @@ void UIInformationRuntime::prepareObjects()
     }
 
     UIRuntimeInfoWidget *m_pRuntimeInfoWidget = new UIRuntimeInfoWidget(0, m_machine, m_console);
-    m_pMainLayout->addWidget(m_pRuntimeInfoWidget, 0, 0, 4, 1);
+    m_pMainLayout->addWidget(m_pRuntimeInfoWidget, 0, 0, 6, 1);
     m_pRuntimeInfoWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
 
     QStringList chartOder;
