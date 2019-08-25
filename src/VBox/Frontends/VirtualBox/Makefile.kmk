@@ -727,9 +727,6 @@ VirtualBoxVM_QT_MOCHDRS = \
 	src/runtime/fullscreen/UIMachineViewFullscreen.h \
 	src/runtime/fullscreen/UIMachineWindowFullscreen.h \
 	src/runtime/information/UIInformationConfiguration.h \
-	src/runtime/information/UIInformationDataItem.h \
-	src/runtime/information/UIInformationItem.h \
-	src/runtime/information/UIInformationModel.h \
 	src/runtime/information/UIInformationRuntime.h \
 	src/runtime/information/UIVMInformationDialog.h \
 	src/guestctrl/UIFileManager.h \
@@ -1192,9 +1189,6 @@ VirtualBoxVM_SOURCES = \
 	src/runtime/fullscreen/UIMachineViewFullscreen.cpp \
 	src/runtime/fullscreen/UIMachineWindowFullscreen.cpp \
 	src/runtime/information/UIInformationConfiguration.cpp \
-	src/runtime/information/UIInformationDataItem.cpp \
-	src/runtime/information/UIInformationItem.cpp \
-	src/runtime/information/UIInformationModel.cpp \
 	src/runtime/information/UIInformationRuntime.cpp \
 	src/runtime/information/UIVMInformationDialog.cpp \
 	src/guestctrl/UIFileManager.cpp \
