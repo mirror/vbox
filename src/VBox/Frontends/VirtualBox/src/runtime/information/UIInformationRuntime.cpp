@@ -61,7 +61,6 @@ enum InfoLine
 };
 
 
-
 /*********************************************************************************************************************************
 *   UIRuntimeInfoWidget definition.                                                                                     *
 ******************************************************************1***************************************************************/
@@ -76,12 +75,16 @@ public:
 
 protected:
 
-    void retranslateUi() /* override */;
+    virtual void retranslateUi() /* override */;
+    virtual QSize sizeHint() const;
+    virtual QSize minimumSizeHint() const /* override */;
+
 
 private:
 
     void runTimeAttributes();
     void insertInfoLine(InfoLine enmInfoLine, const QString& strLabel, const QString &strInfo);
+    void computeMinimumWidth();
 
     CMachine m_machine;
     CConsole m_console;
@@ -103,6 +106,8 @@ private:
     /** @} */
 
     int m_iFontHeight;
+    /** Computed by computing the maximum length line. Used to avoid having horizontal scroll bars. */
+    int m_iMinimumWidth;
 };
 
 /*********************************************************************************************************************************
@@ -173,12 +178,15 @@ UIRuntimeInfoWidget::UIRuntimeInfoWidget(QWidget *pParent, const CMachine &machi
     : QIWithRetranslateUI<QTableWidget>(pParent)
     , m_machine(machine)
     , m_console(console)
+    , m_iMinimumWidth(0)
 
 {
     // QPalette pal = palette();
     // pal.setColor(QPalette::Background, Qt::yellow);
     // setAutoFillBackground(true);
     // setPalette(pal);
+
+    setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
     m_iFontHeight = QFontMetrics(font()).height();
 
@@ -200,6 +208,7 @@ UIRuntimeInfoWidget::UIRuntimeInfoWidget(QWidget *pParent, const CMachine &machi
     setItem(0, 0, pTitleItem);
 
     runTimeAttributes();
+    computeMinimumWidth();
 }
 
 void UIRuntimeInfoWidget::retranslateUi()
@@ -216,6 +225,17 @@ void UIRuntimeInfoWidget::retranslateUi()
     m_strGuestAdditionsLabel = QApplication::translate("UIVMInformationDialog", "Guest Additions");
     m_strGuestOSTypeLabel = QApplication::translate("UIVMInformationDialog", "Guest OS Type");
     m_strRemoteDesktopLabel = QApplication::translate("UIVMInformationDialog", "Remote Desktop Server Port");
+}
+
+QSize UIRuntimeInfoWidget::sizeHint() const
+{
+    return QSize(m_iMinimumWidth, m_iMinimumWidth);
+}
+
+QSize UIRuntimeInfoWidget::minimumSizeHint() const
+{
+    printf("mini %d\n", m_iMinimumWidth);
+    return QSize(m_iMinimumWidth, m_iMinimumWidth);
 }
 
 void UIRuntimeInfoWidget::insertInfoLine(InfoLine enmInfoLine, const QString& strLabel, const QString &strInfo)
@@ -365,6 +385,14 @@ void UIRuntimeInfoWidget::runTimeAttributes()
     resizeColumnToContents(0);
     resizeColumnToContents(1);
 }
+
+void UIRuntimeInfoWidget::computeMinimumWidth()
+{
+    m_iMinimumWidth = 0;
+    for (int j = 0; j < columnCount(); ++j)
+        m_iMinimumWidth += columnWidth(j);
+}
+
 
 /*********************************************************************************************************************************
 *   UIChart implementation.                                                                                     *
@@ -550,6 +578,7 @@ void UIChart::paintEvent(QPaintEvent *pEvent)
         painter.setPen(QColor(20, 20, 20, 180));
         QFont font = painter.font();
         font.setBold(true);
+        /** @todo: make this size dynamic. aka. autoscale the font. */
         font.setPixelSize(16);
         painter.setFont(font);
         painter.drawText(2 * m_iMarginLeft, 15 * m_iMarginTop, m_strGAWarning);
