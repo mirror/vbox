@@ -150,7 +150,8 @@ private:
     void enableDisableGuestAdditionDependedWidgets(bool fEnable);
     void updateCPUGraphsAndMetric(ULONG iLoadPercentage, ULONG iOtherPercentage);
     void updateRAMGraphsAndMetric(quint64 iTotalRAM, quint64 iFreeRAM);
-    void updateNetworkDebuggerGraphsAndMetric(qulonglong iReceiveTotal, qulonglong iTransmitTotal);
+    void updateNetworkGraphsAndMetric(qulonglong iReceiveTotal, qulonglong iTransmitTotal);
+    void updateDiskIOGraphsAndMetric(qulonglong uDiskIOTotalWritten, qulonglong uDiskIOTotalRead);
 
     QString dataColorString(const QString &strChartName, int iDataIndex);
     void runTimeAttributes();
@@ -182,6 +183,7 @@ private:
         QString m_strRAMMetricName;
         QString m_strDiskMetricName;
         QString m_strNetworkMetricName;
+        QString m_strDiskIOMetricName;
     /** @} */
 
     /** @name Cached translated strings.
@@ -201,6 +203,12 @@ private:
         QString m_strNetworkInfoLabelTransmitted;
         QString m_strNetworkInfoLabelReceivedTotal;
         QString m_strNetworkInfoLabelTransmittedTotal;
+        /** Disk IO info label strings. */
+        QString m_strDiskIOInfoLabelTitle;
+        QString m_strDiskIOInfoLabelWritten;
+        QString m_strDiskIOInfoLabelRead;
+        QString m_strDiskIOInfoLabelWrittenTotal;
+        QString m_strDiskIOInfoLabelReadTotal;
     /** @} */
     /** The following string is used while querrying CMachineDebugger. */
     QString m_strQueryString;

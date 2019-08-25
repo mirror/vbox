@@ -803,7 +803,8 @@ UIInformationRuntime::UIInformationRuntime(QWidget *pParent, const CMachine &mac
     , m_strCPUMetricName("CPU Load")
     , m_strRAMMetricName("RAM Usage")
     , m_strDiskMetricName("Disk Usage")
-    , m_strNetworkMetricName("NetDebugger")
+    , m_strNetworkMetricName("Network")
+    , m_strDiskIOMetricName("DiskIO")
     , m_iTimeStep(0)
 {
     if (!m_console.isNull())
@@ -825,15 +826,15 @@ void UIInformationRuntime::retranslateUi()
 {
     foreach (UIChart *pChart, m_charts)
         pChart->setXAxisLabel(QApplication::translate("UIVMInformationDialog", "Seconds"));
+
+    /* Translate the chart info labels: */
     int iMaximum = 0;
     m_strCPUInfoLabelTitle = QApplication::translate("UIVMInformationDialog", "CPU Load");
     iMaximum = qMax(iMaximum, m_strCPUInfoLabelTitle.length());
-
     m_strCPUInfoLabelGuest = QApplication::translate("UIVMInformationDialog", "Guest Load");
     iMaximum = qMax(iMaximum, m_strCPUInfoLabelGuest.length());
     m_strCPUInfoLabelVMM = QApplication::translate("UIVMInformationDialog", "VMM Load");
     iMaximum = qMax(iMaximum, m_strCPUInfoLabelVMM.length());
-
     m_strRAMInfoLabelTitle = QApplication::translate("UIVMInformationDialog", "RAM Usage");
     iMaximum = qMax(iMaximum, m_strRAMInfoLabelTitle.length());
     m_strRAMInfoLabelTotal = QApplication::translate("UIVMInformationDialog", "Total");
@@ -842,7 +843,7 @@ void UIInformationRuntime::retranslateUi()
     iMaximum = qMax(iMaximum, m_strRAMInfoLabelFree.length());
     m_strRAMInfoLabelUsed = QApplication::translate("UIVMInformationDialog", "Used");
     iMaximum = qMax(iMaximum, m_strRAMInfoLabelUsed.length());
-    m_strNetworkInfoLabelTitle = QApplication::translate("UIVMInformationDialog", "Network");
+    m_strNetworkInfoLabelTitle = QApplication::translate("UIVMInformationDialog", "Network Rate");
     iMaximum = qMax(iMaximum, m_strNetworkInfoLabelTitle.length());
     m_strNetworkInfoLabelReceived = QApplication::translate("UIVMInformationDialog", "Receive Rate");
     iMaximum = qMax(iMaximum, m_strNetworkInfoLabelReceived.length());
@@ -852,6 +853,16 @@ void UIInformationRuntime::retranslateUi()
     iMaximum = qMax(iMaximum, m_strNetworkInfoLabelReceivedTotal.length());
     m_strNetworkInfoLabelTransmittedTotal = QApplication::translate("UIVMInformationDialog", "Total Transmitted");
     iMaximum = qMax(iMaximum, m_strNetworkInfoLabelReceivedTotal.length());
+    m_strDiskIOInfoLabelTitle = QApplication::translate("UIVMInformationDialog", "Disk IO Rate");
+    iMaximum = qMax(iMaximum, m_strDiskIOInfoLabelTitle.length());
+    m_strDiskIOInfoLabelWritten = QApplication::translate("UIVMInformationDialog", "Write Rate");
+    iMaximum = qMax(iMaximum, m_strDiskIOInfoLabelWritten.length());
+    m_strDiskIOInfoLabelRead = QApplication::translate("UIVMInformationDialog", "Read Rate");
+    iMaximum = qMax(iMaximum, m_strDiskIOInfoLabelRead.length());
+    m_strDiskIOInfoLabelWrittenTotal = QApplication::translate("UIVMInformationDialog", "Total Writen");
+    iMaximum = qMax(iMaximum, m_strDiskIOInfoLabelWrittenTotal.length());
+    m_strDiskIOInfoLabelReadTotal = QApplication::translate("UIVMInformationDialog", "Total Read");
+    iMaximum = qMax(iMaximum, m_strDiskIOInfoLabelReadTotal.length());
 
 
     /* Compute the maximum label string length and set it as a fixed width to labels to prevent always changing widths: */
@@ -891,7 +902,8 @@ void UIInformationRuntime::prepareObjects()
     m_pRuntimeInfoWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
 
     QStringList chartOder;
-    chartOder << m_strCPUMetricName << m_strRAMMetricName << m_strDiskMetricName << m_strNetworkMetricName;
+    chartOder << m_strCPUMetricName << m_strRAMMetricName <<
+        m_strDiskMetricName << m_strNetworkMetricName << m_strDiskIOMetricName;
     int iRow = 0;
     foreach (const QString &strMetricName, chartOder)
     {
@@ -915,7 +927,11 @@ void UIInformationRuntime::prepareObjects()
         m_charts[m_strNetworkMetricName]->setDrawPieChart(false);
         m_charts[m_strNetworkMetricName]->setUseGradientLineColor(false);
     }
-
+    if (m_charts.contains(m_strDiskIOMetricName) && m_charts[m_strDiskIOMetricName])
+    {
+        m_charts[m_strDiskIOMetricName]->setDrawPieChart(false);
+        m_charts[m_strDiskIOMetricName]->setUseGradientLineColor(false);
+    }
     if (m_charts.contains(m_strCPUMetricName) && m_charts[m_strCPUMetricName])
         m_charts[m_strCPUMetricName]->setUseGradientLineColor(false);
     if (m_charts.contains(m_strRAMMetricName) && m_charts[m_strRAMMetricName])
@@ -991,6 +1007,10 @@ void UIInformationRuntime::sltTimeout()
     /* Collect the data from IMachineDebugger::getStats(..): */
     qulonglong uNetworkTotalReceive = 0;
     qulonglong uNetworkTotalTransmit = 0;
+
+    qulonglong uDiskIOTotalWritten = 0;
+    qulonglong uDiskIOTotalRead = 0;
+
     QVector<DebuggerMetricData> xmlData = getTotalCounterFromDegugger(m_strQueryString);
     for (QMap<QString, UISubMetric>::iterator iterator =  m_subMetrics.begin();
          iterator != m_subMetrics.end(); ++iterator)
@@ -1010,13 +1030,19 @@ void UIInformationRuntime::sltTimeout()
                         else if (data.m_strName.contains("transmit", Qt::CaseInsensitive))
                             uNetworkTotalTransmit += data.m_counter;
                     }
-
+                    else if (metric.name() == m_strDiskIOMetricName)
+                    {
+                        if (data.m_strName.contains("written", Qt::CaseInsensitive))
+                            uDiskIOTotalWritten += data.m_counter;
+                        else if (data.m_strName.contains("read", Qt::CaseInsensitive))
+                            uDiskIOTotalRead += data.m_counter;
+                    }
                 }
             }
-
         }
     }
-    updateNetworkDebuggerGraphsAndMetric(uNetworkTotalReceive, uNetworkTotalTransmit);
+    updateNetworkGraphsAndMetric(uNetworkTotalReceive, uNetworkTotalTransmit);
+    updateDiskIOGraphsAndMetric(uDiskIOTotalWritten, uDiskIOTotalRead);
 }
 
 void UIInformationRuntime::sltGuestAdditionsStateChange()
@@ -1057,16 +1083,31 @@ void UIInformationRuntime::prepareMetrics()
     }
 
     m_subMetrics.insert(m_strCPUMetricName, UISubMetric(m_strCPUMetricName, "%", iMaximumQueueSize));
+    {
 
-    UISubMetric networkMetric(m_strNetworkMetricName, "B", iMaximumQueueSize);
-    QStringList networkDeviceList;
-    networkDeviceList << "E1k" <<"VNet" << "PCNet";
-    networkMetric.setDeviceTypeList(networkDeviceList);
-    QStringList networkMetricDataSubStringList;
-    networkMetricDataSubStringList << "ReceiveBytes" << "TransmitBytes";
-    networkMetric.setMetricDataSubString(networkMetricDataSubStringList);
-    m_subMetrics.insert(m_strNetworkMetricName, networkMetric);
+        /* Network metric: */
+        UISubMetric networkMetric(m_strNetworkMetricName, "B", iMaximumQueueSize);
+        QStringList networkDeviceList;
+        networkDeviceList << "E1k" <<"VNet" << "PCNet";
+        networkMetric.setDeviceTypeList(networkDeviceList);
+        QStringList networkMetricDataSubStringList;
+        networkMetricDataSubStringList << "ReceiveBytes" << "TransmitBytes";
+        networkMetric.setMetricDataSubString(networkMetricDataSubStringList);
+        m_subMetrics.insert(m_strNetworkMetricName, networkMetric);
+    }
 
+    /* Disk IO metric */
+    {
+        UISubMetric diskIOMetric(m_strDiskIOMetricName, "B", iMaximumQueueSize);
+        QStringList diskTypeList;
+        diskTypeList << "LSILOGICSCSI" << "BUSLOGIC"
+                     << "AHCI" <<  "PIIX3IDE" << "I82078" << "LSILOGICSAS" << "MSD" << "NVME";
+        diskIOMetric.setDeviceTypeList(diskTypeList);
+        QStringList diskIODataSubStringList;
+        diskIODataSubStringList << "WrittenBytes" << "ReadBytes";
+        diskIOMetric.setMetricDataSubString(diskIODataSubStringList);
+        m_subMetrics.insert(m_strDiskIOMetricName, diskIOMetric);
+    }
     for (QMap<QString, UISubMetric>::const_iterator iterator =  m_subMetrics.begin();
          iterator != m_subMetrics.end(); ++iterator)
     {
@@ -1161,7 +1202,7 @@ void UIInformationRuntime::updateRAMGraphsAndMetric(quint64 iTotalRAM, quint64 i
         m_charts[m_strRAMMetricName]->update();
 }
 
-void UIInformationRuntime::updateNetworkDebuggerGraphsAndMetric(qulonglong iReceiveTotal, qulonglong iTransmitTotal)
+void UIInformationRuntime::updateNetworkGraphsAndMetric(qulonglong iReceiveTotal, qulonglong iTransmitTotal)
 {
     UISubMetric &NetMetric = m_subMetrics[m_strNetworkMetricName];
 
@@ -1182,7 +1223,6 @@ void UIInformationRuntime::updateNetworkDebuggerGraphsAndMetric(qulonglong iRece
     if (m_infoLabels.contains(m_strNetworkMetricName)  && m_infoLabels[m_strNetworkMetricName])
     {
         QString strInfo;
-        QString strReceiveColor;
         if (m_infoLabels[m_strNetworkMetricName]->isEnabled())
             strInfo = QString("<b>%1</b></b><br/><font color=\"%2\">%3: %4<br/>%5 %6</font><br/><font color=\"%7\">%8: %9<br/>%10 %11</font>")
                 .arg(m_strNetworkInfoLabelTitle)
@@ -1200,9 +1240,48 @@ void UIInformationRuntime::updateNetworkDebuggerGraphsAndMetric(qulonglong iRece
     }
     if (m_charts.contains(m_strNetworkMetricName))
         m_charts[m_strNetworkMetricName]->update();
-
 }
 
+void UIInformationRuntime::updateDiskIOGraphsAndMetric(qulonglong uDiskIOTotalWritten, qulonglong uDiskIOTotalRead)
+{
+    UISubMetric &NetMetric = m_subMetrics[m_strDiskIOMetricName];
+
+    qulonglong iWriteRate = uDiskIOTotalWritten - NetMetric.total(0);
+    qulonglong iReadRate = uDiskIOTotalRead - NetMetric.total(1);
+
+    NetMetric.setTotal(0, uDiskIOTotalWritten);
+    NetMetric.setTotal(1, uDiskIOTotalRead);
+
+    /* Do not set data and maximum if the timer has just started since we need to initialize totals "(t-1)" first: */
+    if (m_iTimeStep <= 1)
+        return;
+    NetMetric.addData(0, iWriteRate);
+    NetMetric.addData(1, iReadRate);
+    qulonglong iMaximum = qMax(NetMetric.maximum(), qMax(iWriteRate, iReadRate));
+    NetMetric.setMaximum(iMaximum);
+
+    if (m_infoLabels.contains(m_strDiskIOMetricName)  && m_infoLabels[m_strDiskIOMetricName])
+    {
+        QString strInfo;
+        if (m_infoLabels[m_strDiskIOMetricName]->isEnabled())
+            strInfo = QString("<b>%1</b></b><br/><font color=\"%2\">%3: %4<br/>%5 %6</font><br/><font color=\"%7\">%8: %9<br/>%10 %11</font>")
+                .arg(m_strDiskIOInfoLabelTitle)
+                .arg(dataColorString(m_strDiskIOMetricName, 0)).arg(m_strDiskIOInfoLabelWritten).arg(uiCommon().formatSize((quint64)iWriteRate, iDecimalCount))
+                .arg(m_strDiskIOInfoLabelWrittenTotal).arg(uiCommon().formatSize((quint64)uDiskIOTotalWritten, iDecimalCount))
+                .arg(dataColorString(m_strDiskIOMetricName, 1)).arg(m_strDiskIOInfoLabelRead).arg(uiCommon().formatSize((quint64)iReadRate, iDecimalCount))
+                .arg(m_strDiskIOInfoLabelReadTotal).arg(uiCommon().formatSize((quint64)uDiskIOTotalRead, iDecimalCount));
+
+        else
+            strInfo = QString("<b>%1</b><br/>%2: %3<br/>%4: %5").
+                arg(m_strDiskIOInfoLabelTitle)
+                .arg(m_strDiskIOInfoLabelWritten).arg("---")
+                .arg(m_strDiskIOInfoLabelRead).arg("---");
+        m_infoLabels[m_strDiskIOMetricName]->setText(strInfo);
+    }
+    if (m_charts.contains(m_strDiskIOMetricName))
+        m_charts[m_strDiskIOMetricName]->update();
+
+}
 
 QString UIInformationRuntime::dataColorString(const QString &strChartName, int iDataIndex)
 {
