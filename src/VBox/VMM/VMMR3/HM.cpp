@@ -1186,7 +1186,7 @@ static void hmR3VmxReportBasicMsr(uint64_t uBasicMsr)
     LogRel(("HM:   VMCS memory type                  = %s\n",       hmR3VmxGetMemTypeDesc(uBasicMsr)));
     LogRel(("HM:   Dual-monitor treatment support    = %RTbool\n",  RT_BF_GET(uBasicMsr, VMX_BF_BASIC_DUAL_MON)));
     LogRel(("HM:   OUTS & INS instruction-info       = %RTbool\n",  RT_BF_GET(uBasicMsr, VMX_BF_BASIC_VMCS_INS_OUTS)));
-    LogRel(("HM:   Supports true capability MSRs     = %RTbool\n",  RT_BF_GET(uBasicMsr, VMX_BF_BASIC_TRUE_CTLS)));
+    LogRel(("HM:   Supports true-capability MSRs     = %RTbool\n",  RT_BF_GET(uBasicMsr, VMX_BF_BASIC_TRUE_CTLS)));
 }
 
 
@@ -1340,6 +1340,7 @@ static void hmR3VmxReportEptVpidCapsMsr(uint64_t fCaps)
     LogRel(("HM: MSR_IA32_VMX_EPT_VPID_CAP         = %#RX64\n", fCaps));
     HMVMX_REPORT_MSR_CAP(fCaps, "RWX_X_ONLY",                            MSR_IA32_VMX_EPT_VPID_CAP_RWX_X_ONLY);
     HMVMX_REPORT_MSR_CAP(fCaps, "PAGE_WALK_LENGTH_4",                    MSR_IA32_VMX_EPT_VPID_CAP_PAGE_WALK_LENGTH_4);
+    HMVMX_REPORT_MSR_CAP(fCaps, "PAGE_WALK_LENGTH_5",                    MSR_IA32_VMX_EPT_VPID_CAP_PAGE_WALK_LENGTH_5);
     HMVMX_REPORT_MSR_CAP(fCaps, "EMT_UC",                                MSR_IA32_VMX_EPT_VPID_CAP_EMT_UC);
     HMVMX_REPORT_MSR_CAP(fCaps, "EMT_WB",                                MSR_IA32_VMX_EPT_VPID_CAP_EMT_WB);
     HMVMX_REPORT_MSR_CAP(fCaps, "PDE_2M",                                MSR_IA32_VMX_EPT_VPID_CAP_PDE_2M);
