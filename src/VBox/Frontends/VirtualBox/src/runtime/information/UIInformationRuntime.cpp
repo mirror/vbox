@@ -19,6 +19,7 @@
 #include <QApplication>
 #include <QHeaderView>
 #include <QLabel>
+#include <QMenu>
 #include <QPainter>
 #include <QGridLayout>
 #include <QStyle>
@@ -80,7 +81,6 @@ protected:
     virtual QSize sizeHint() const;
     virtual QSize minimumSizeHint() const /* override */;
 
-
 private:
 
     void runTimeAttributes();
@@ -120,9 +120,13 @@ class UIChart : public QIWithRetranslateUI<QWidget>
 
     Q_OBJECT;
 
+signals:
+
+
+
 public:
 
-    UIChart(QWidget *pParent, const UISubMetric *pSubMetric);
+    UIChart(QWidget *pParent, UIMetric *pMetric);
     void setFontSize(int iFontSize);
     int  fontSize() const;
     void setTextList(const QStringList &textList);
@@ -147,6 +151,11 @@ protected:
     virtual QSize sizeHint() const  /* override */;
     virtual void retranslateUi()  /* override */;
 
+private slots:
+
+    void sltCreateContextMenu(const QPoint &point);
+    void sltResetMetric();
+
 private:
 
     virtual void computeFontSize();
@@ -154,7 +163,7 @@ private:
     void drawPieCharts(QPainter &painter, qulonglong iMaximum);
     void insertInfoLine(InfoLine enmInfoLine, const QString& strLabel, const QString &strInfo);
 
-    const UISubMetric *m_pSubMetric;
+    UIMetric *m_pMetric;
     QSize m_size;
     QFont m_font;
     int m_iMarginLeft;
@@ -169,6 +178,7 @@ private:
     QColor m_dataSeriesColor[DATA_SERIES_SIZE];
     QString m_strXAxisLabel;
     QString m_strGAWarning;
+    QString m_strResetActionLabel;
 };
 
 /*********************************************************************************************************************************
@@ -182,11 +192,6 @@ UIRuntimeInfoWidget::UIRuntimeInfoWidget(QWidget *pParent, const CMachine &machi
     , m_iMinimumWidth(0)
 
 {
-    // QPalette pal = palette();
-    // pal.setColor(QPalette::Background, Qt::yellow);
-    // setAutoFillBackground(true);
-    // setPalette(pal);
-
     setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
     m_iFontHeight = QFontMetrics(font()).height();
@@ -200,10 +205,7 @@ UIRuntimeInfoWidget::UIRuntimeInfoWidget(QWidget *pParent, const CMachine &machi
     setSelectionMode(QAbstractItemView::NoSelection);
 
     retranslateUi();
-
-    //QString(":/state_running_16px.png");
-    //setItem(0, 0, new QTableWidgetItem(, ""));
-
+    /* Add the title row: */
     QTableWidgetItem *pTitleItem = new QTableWidgetItem(UIIconPool::iconSet(":/state_running_16px.png"), m_strTableTitle);
     QFont titleFont(font());
     titleFont.setBold(true);
@@ -211,6 +213,7 @@ UIRuntimeInfoWidget::UIRuntimeInfoWidget(QWidget *pParent, const CMachine &machi
     insertRow(0);
     setItem(0, 0, pTitleItem);
 
+    /* Make the API calls and populate the table: */
     runTimeAttributes();
     computeMinimumWidth();
 }
@@ -238,7 +241,6 @@ QSize UIRuntimeInfoWidget::sizeHint() const
 
 QSize UIRuntimeInfoWidget::minimumSizeHint() const
 {
-    printf("mini %d\n", m_iMinimumWidth);
     return QSize(m_iMinimumWidth, m_iMinimumWidth);
 }
 
@@ -402,13 +404,18 @@ void UIRuntimeInfoWidget::computeMinimumWidth()
 *   UIChart implementation.                                                                                     *
 *********************************************************************************************************************************/
 
-UIChart::UIChart(QWidget *pParent, const UISubMetric *pSubMetric)
+UIChart::UIChart(QWidget *pParent, UIMetric *pMetric)
     :QIWithRetranslateUI<QWidget>(pParent)
-    , m_pSubMetric(pSubMetric)
+    , m_pMetric(pMetric)
     , m_size(QSize(50, 50))
-    , m_fDrawPieChart(true)
-    , m_fUseGradientLineColor(true)
+    , m_fDrawPieChart(false)
+    , m_fUseGradientLineColor(false)
 {
+    setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(this, &UIChart::customContextMenuRequested,
+            this, &UIChart::sltCreateContextMenu);
+
+
     m_dataSeriesColor[0] = QColor(Qt::red);
     m_dataSeriesColor[1] = QColor(Qt::blue);
 
@@ -511,13 +518,14 @@ QSize UIChart::sizeHint() const
 void UIChart::retranslateUi()
 {
     m_strGAWarning = QApplication::translate("UIVMInformationDialog", "No guest additions! This metric requires guest additions to work properly.");
+    m_strResetActionLabel = QApplication::translate("UIVMInformationDialog", "Reset");
 }
 
 void UIChart::computeFontSize()
 {
     int iFontSize = 24;
 
-    //const QString &strText = m_pSubMetric->name();
+    //const QString &strText = m_pMetric->name();
     foreach (const QString &strText, m_textList)
     {
         m_font.setPixelSize(iFontSize);
@@ -590,10 +598,10 @@ void UIChart::paintEvent(QPaintEvent *pEvent)
         return;
     }
 
-    if (!m_pSubMetric || iMaximumQueueSize <= 1)
+    if (!m_pMetric || iMaximumQueueSize <= 1)
         return;
 
-    qulonglong iMaximum = m_pSubMetric->maximum();
+    qulonglong iMaximum = m_pMetric->maximum();
     if (iMaximum == 0)
         return;
     /* Draw the data lines: */
@@ -609,7 +617,7 @@ void UIChart::paintEvent(QPaintEvent *pEvent)
             painter.setPen(QPen(gradient, 2.5));
         }
 
-        const QQueue<qulonglong> *data = m_pSubMetric->data(k);
+        const QQueue<qulonglong> *data = m_pMetric->data(k);
         if (!m_fUseGradientLineColor)
             painter.setPen(QPen(m_dataSeriesColor[k], 2.5));
         for (int i = 0; i < data->size() - 1; ++i)
@@ -631,13 +639,16 @@ void UIChart::paintEvent(QPaintEvent *pEvent)
         int iTextY = 0.5 * iFontHeight + m_iMarginTop + i * iChartHeight / (float) (iYSubAxisCount + 1);
         QString strValue;
         qulonglong iValue = (iYSubAxisCount + 1 - i) * (iMaximum / (float) (iYSubAxisCount + 1));
-        if (m_pSubMetric->unit().compare("%", Qt::CaseInsensitive) == 0)
+        if (m_pMetric->unit().compare("%", Qt::CaseInsensitive) == 0)
             strValue = QString::number(iValue);
-        else if (m_pSubMetric->unit().compare("kb", Qt::CaseInsensitive) == 0)
+        else if (m_pMetric->unit().compare("kb", Qt::CaseInsensitive) == 0)
             strValue = uiCommon().formatSize(_1K * (qulonglong)iValue, iDecimalCount);
-        else if (m_pSubMetric->unit().compare("b", Qt::CaseInsensitive) == 0 ||
-                 m_pSubMetric->unit().compare("b/s", Qt::CaseInsensitive) == 0)
+        else if (m_pMetric->unit().compare("b", Qt::CaseInsensitive) == 0 ||
+                 m_pMetric->unit().compare("b/s", Qt::CaseInsensitive) == 0)
             strValue = uiCommon().formatSize(iValue, iDecimalCount);
+        else if (m_pMetric->unit().compare("times", Qt::CaseInsensitive) == 0)
+            strValue = QString::number(iValue);
+
         painter.drawText(width() - 0.9 * m_iMarginRight, iTextY, strValue);
     }
 
@@ -671,7 +682,7 @@ void UIChart::drawPieCharts(QPainter &painter, qulonglong iMaximum)
     for (int i = 0; i < DATA_SERIES_SIZE; ++i)
     {
         /* Draw the pie chart for the 0th data series only: */
-        const QQueue<qulonglong> *data = m_pSubMetric->data(i);
+        const QQueue<qulonglong> *data = m_pMetric->data(i);
         if (!data || data->isEmpty())
             continue;
 
@@ -708,52 +719,67 @@ void UIChart::drawPieCharts(QPainter &painter, qulonglong iMaximum)
     }
 }
 
+void UIChart::sltCreateContextMenu(const QPoint &point)
+{
+    QMenu menu;
+    QAction *pResetAction = menu.addAction(m_strResetActionLabel);
+    connect(pResetAction, &QAction::triggered, this, &UIChart::sltResetMetric);
+    menu.exec(mapToGlobal(point));
+}
+
+void UIChart::sltResetMetric()
+{
+    if (m_pMetric)
+        m_pMetric->reset();
+}
+
 /*********************************************************************************************************************************
-*   UISubMetric implementation.                                                                                     *
+*   UIMetric implementation.                                                                                     *
 *********************************************************************************************************************************/
 
-UISubMetric::UISubMetric(const QString &strName, const QString &strUnit, int iMaximumQueueSize)
+UIMetric::UIMetric(const QString &strName, const QString &strUnit, int iMaximumQueueSize)
     : m_strName(strName)
     , m_strUnit(strUnit)
     , m_iMaximum(0)
     , m_iMaximumQueueSize(iMaximumQueueSize)
     , m_fRequiresGuestAdditions(false)
+    , m_fIsInitialized(false)
 {
     m_iTotal[0] = 0;
     m_iTotal[1] = 0;
 }
 
-UISubMetric::UISubMetric()
+UIMetric::UIMetric()
     : m_iMaximumQueueSize(0)
 {
 }
 
-const QString &UISubMetric::name() const
+const QString &UIMetric::name() const
 {
     return m_strName;
 }
 
-void UISubMetric::setMaximum(qulonglong iMaximum)
+void UIMetric::setMaximum(qulonglong iMaximum)
 {
     m_iMaximum = iMaximum;
 }
 
-qulonglong UISubMetric::maximum() const
+qulonglong UIMetric::maximum() const
 {
     return m_iMaximum;
 }
 
-void UISubMetric::setUnit(QString strUnit)
+void UIMetric::setUnit(QString strUnit)
 {
     m_strUnit = strUnit;
 
 }
-const QString &UISubMetric::unit() const
+const QString &UIMetric::unit() const
 {
     return m_strUnit;
 }
 
-void UISubMetric::addData(int iDataSeriesIndex, qulonglong fData)
+void UIMetric::addData(int iDataSeriesIndex, qulonglong fData)
 {
     if (iDataSeriesIndex >= DATA_SERIES_SIZE)
         return;
@@ -762,65 +788,93 @@ void UISubMetric::addData(int iDataSeriesIndex, qulonglong fData)
         m_data[iDataSeriesIndex].dequeue();
 }
 
-const QQueue<qulonglong> *UISubMetric::data(int iDataSeriesIndex) const
+const QQueue<qulonglong> *UIMetric::data(int iDataSeriesIndex) const
 {
     if (iDataSeriesIndex >= DATA_SERIES_SIZE)
         return 0;
     return &m_data[iDataSeriesIndex];
 }
 
-void UISubMetric::setTotal(int iDataSeriesIndex, qulonglong iTotal)
+void UIMetric::setTotal(int iDataSeriesIndex, qulonglong iTotal)
 {
     if (iDataSeriesIndex >= DATA_SERIES_SIZE)
         return;
     m_iTotal[iDataSeriesIndex] = iTotal;
 }
 
-qulonglong UISubMetric::total(int iDataSeriesIndex) const
+qulonglong UIMetric::total(int iDataSeriesIndex) const
 {
     if (iDataSeriesIndex >= DATA_SERIES_SIZE)
         return 0;
     return m_iTotal[iDataSeriesIndex];
 }
 
-bool UISubMetric::requiresGuestAdditions() const
+bool UIMetric::requiresGuestAdditions() const
 {
     return m_fRequiresGuestAdditions;
 }
 
-void UISubMetric::setRequiresGuestAdditions(bool fRequiresGAs)
+void UIMetric::setRequiresGuestAdditions(bool fRequiresGAs)
 {
     m_fRequiresGuestAdditions = fRequiresGAs;
 }
 
-const QStringList &UISubMetric::deviceTypeList() const
+const QStringList &UIMetric::deviceTypeList() const
 {
     return m_deviceTypeList;
 }
 
-void UISubMetric::setDeviceTypeList(const QStringList &list)
+void UIMetric::setDeviceTypeList(const QStringList &list)
 {
     m_deviceTypeList = list;
     composeQueryString();
 }
 
-const QStringList &UISubMetric::metricDataSubString() const
+const QStringList &UIMetric::metricDataSubString() const
 {
     return m_metricDataSubString;
 }
 
-void UISubMetric::setMetricDataSubString(const QStringList &list)
+void UIMetric::setQueryPrefix(const QString &strPrefix)
+{
+    m_strQueryPrefix = strPrefix;
+    composeQueryString();
+
+}
+
+void UIMetric::setMetricDataSubString(const QStringList &list)
 {
     m_metricDataSubString = list;
     composeQueryString();
 }
 
-const QString &UISubMetric::queryString() const
+const QString &UIMetric::queryString() const
 {
     return m_strQueryString;
 }
 
-void UISubMetric::composeQueryString()
+bool UIMetric::isInitialized() const
+{
+    return m_fIsInitialized;
+}
+
+void UIMetric::setIsInitialized(bool fIsInitialized)
+{
+    m_fIsInitialized = fIsInitialized;
+}
+
+void UIMetric::reset()
+{
+    m_fIsInitialized = false;
+    for (int i = 0; i < DATA_SERIES_SIZE; ++i)
+    {
+        m_iTotal[i] = 0;
+        m_data[i].clear();
+    }
+    m_iMaximum = 0;
+}
+
+void UIMetric::composeQueryString()
 {
     /* Compose of if both m_metricDataSubString and m_deviceTypeList are not empty: */
     if (m_deviceTypeList.isEmpty() || m_metricDataSubString.isEmpty())
@@ -830,7 +884,7 @@ void UISubMetric::composeQueryString()
     {
         foreach (const QString &strSubString, m_metricDataSubString)
         {
-            m_strQueryString += QString("*Devices*%1*%2*|").arg(strDeviceName).arg(strSubString);
+            m_strQueryString += QString("*%1*%2*%3*|").arg(m_strQueryPrefix).arg(strDeviceName).arg(strSubString);
         }
     }
 }
@@ -853,6 +907,7 @@ UIInformationRuntime::UIInformationRuntime(QWidget *pParent, const CMachine &mac
     , m_strDiskMetricName("Disk Usage")
     , m_strNetworkMetricName("Network")
     , m_strDiskIOMetricName("DiskIO")
+    , m_strVMExitMetricName("VMExits")
     , m_iTimeStep(0)
 {
     if (!m_console.isNull())
@@ -949,11 +1004,11 @@ void UIInformationRuntime::prepareObjects()
     m_pMainLayout->addWidget(m_pRuntimeInfoWidget, 0, 0, 6, 1);
     m_pRuntimeInfoWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
 
-    QStringList chartOder;
-    chartOder << m_strCPUMetricName << m_strRAMMetricName <<
-        m_strDiskMetricName << m_strNetworkMetricName << m_strDiskIOMetricName;
+    QStringList chartOrder;
+    chartOrder << m_strCPUMetricName << m_strRAMMetricName <<
+        m_strDiskMetricName << m_strNetworkMetricName << m_strDiskIOMetricName << m_strVMExitMetricName;
     int iRow = 0;
-    foreach (const QString &strMetricName, chartOder)
+    foreach (const QString &strMetricName, chartOrder)
     {
         if (!m_subMetrics.contains(strMetricName))
             continue;
@@ -970,20 +1025,10 @@ void UIInformationRuntime::prepareObjects()
     }
 
     /* Configure charts: */
-    if (m_charts.contains(m_strNetworkMetricName) && m_charts[m_strNetworkMetricName])
-    {
-        m_charts[m_strNetworkMetricName]->setDrawPieChart(false);
-        m_charts[m_strNetworkMetricName]->setUseGradientLineColor(false);
-    }
-    if (m_charts.contains(m_strDiskIOMetricName) && m_charts[m_strDiskIOMetricName])
-    {
-        m_charts[m_strDiskIOMetricName]->setDrawPieChart(false);
-        m_charts[m_strDiskIOMetricName]->setUseGradientLineColor(false);
-    }
     if (m_charts.contains(m_strCPUMetricName) && m_charts[m_strCPUMetricName])
-        m_charts[m_strCPUMetricName]->setUseGradientLineColor(false);
+        m_charts[m_strCPUMetricName]->setDrawPieChart(true);
     if (m_charts.contains(m_strRAMMetricName) && m_charts[m_strRAMMetricName])
-        m_charts[m_strRAMMetricName]->setUseGradientLineColor(false);
+        m_charts[m_strRAMMetricName]->setDrawPieChart(false);
 
     QWidget *bottomSpacerWidget = new QWidget(this);
     bottomSpacerWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
@@ -1059,11 +1104,13 @@ void UIInformationRuntime::sltTimeout()
     qulonglong uDiskIOTotalWritten = 0;
     qulonglong uDiskIOTotalRead = 0;
 
+   qulonglong uTotalVMExits = 0;
+
     QVector<DebuggerMetricData> xmlData = getTotalCounterFromDegugger(m_strQueryString);
-    for (QMap<QString, UISubMetric>::iterator iterator =  m_subMetrics.begin();
+    for (QMap<QString, UIMetric>::iterator iterator =  m_subMetrics.begin();
          iterator != m_subMetrics.end(); ++iterator)
     {
-        UISubMetric &metric = iterator.value();
+        UIMetric &metric = iterator.value();
         const QStringList &deviceTypeList = metric.deviceTypeList();
         foreach (const QString &strDeviceType, deviceTypeList)
         {
@@ -1085,12 +1132,18 @@ void UIInformationRuntime::sltTimeout()
                         else if (data.m_strName.contains("read", Qt::CaseInsensitive))
                             uDiskIOTotalRead += data.m_counter;
                     }
+                    else if (metric.name() == m_strVMExitMetricName)
+                    {
+                        if (data.m_strName.contains("all", Qt::CaseInsensitive))
+                            uTotalVMExits += data.m_counter;
+                    }
                 }
             }
         }
     }
     updateNetworkGraphsAndMetric(uNetworkTotalReceive, uNetworkTotalTransmit);
     updateDiskIOGraphsAndMetric(uDiskIOTotalWritten, uDiskIOTotalRead);
+    updateVMExitMetric(uTotalVMExits);
 }
 
 void UIInformationRuntime::sltGuestAdditionsStateChange()
@@ -1122,7 +1175,7 @@ void UIInformationRuntime::prepareMetrics()
             {
                 if (strName.contains("RAM", Qt::CaseInsensitive) && strName.contains("Free", Qt::CaseInsensitive))
                 {
-                    UISubMetric newMetric(m_strRAMMetricName, metrics[i].GetUnit(), iMaximumQueueSize);
+                    UIMetric newMetric(m_strRAMMetricName, metrics[i].GetUnit(), iMaximumQueueSize);
                     newMetric.setRequiresGuestAdditions(true);
                     m_subMetrics.insert(m_strRAMMetricName, newMetric);
                 }
@@ -1130,11 +1183,12 @@ void UIInformationRuntime::prepareMetrics()
         }
     }
 
-    m_subMetrics.insert(m_strCPUMetricName, UISubMetric(m_strCPUMetricName, "%", iMaximumQueueSize));
+    m_subMetrics.insert(m_strCPUMetricName, UIMetric(m_strCPUMetricName, "%", iMaximumQueueSize));
     {
 
         /* Network metric: */
-        UISubMetric networkMetric(m_strNetworkMetricName, "B", iMaximumQueueSize);
+        UIMetric networkMetric(m_strNetworkMetricName, "B", iMaximumQueueSize);
+        networkMetric.setQueryPrefix("Devices");
         QStringList networkDeviceList;
         networkDeviceList << "E1k" <<"VNet" << "PCNet";
         networkMetric.setDeviceTypeList(networkDeviceList);
@@ -1146,7 +1200,8 @@ void UIInformationRuntime::prepareMetrics()
 
     /* Disk IO metric */
     {
-        UISubMetric diskIOMetric(m_strDiskIOMetricName, "B", iMaximumQueueSize);
+        UIMetric diskIOMetric(m_strDiskIOMetricName, "B", iMaximumQueueSize);
+        diskIOMetric.setQueryPrefix("Devices");
         QStringList diskTypeList;
         diskTypeList << "LSILOGICSCSI" << "BUSLOGIC"
                      << "AHCI" <<  "PIIX3IDE" << "I82078" << "LSILOGICSAS" << "MSD" << "NVME";
@@ -1156,14 +1211,30 @@ void UIInformationRuntime::prepareMetrics()
         diskIOMetric.setMetricDataSubString(diskIODataSubStringList);
         m_subMetrics.insert(m_strDiskIOMetricName, diskIOMetric);
     }
-    for (QMap<QString, UISubMetric>::const_iterator iterator =  m_subMetrics.begin();
+
+    /* VM exits metric */
+    {
+        UIMetric VMExitsMetric(m_strVMExitMetricName, "times", iMaximumQueueSize);
+        VMExitsMetric.setQueryPrefix("HM");
+        QStringList typeList;
+        typeList << "CPU";
+        VMExitsMetric.setDeviceTypeList(typeList);
+        QStringList subStringList;
+        subStringList << "All";
+        VMExitsMetric.setMetricDataSubString(subStringList);
+        m_subMetrics.insert(m_strVMExitMetricName, VMExitsMetric);
+    }
+
+    for (QMap<QString, UIMetric>::const_iterator iterator =  m_subMetrics.begin();
          iterator != m_subMetrics.end(); ++iterator)
     {
         if (iterator.value().queryString().isEmpty())
             continue;
         m_strQueryString += iterator.value().queryString();
     }
+
 }
+
 
 bool UIInformationRuntime::guestAdditionsAvailable(int iMinimumMajorVersion)
 {
@@ -1186,7 +1257,7 @@ bool UIInformationRuntime::guestAdditionsAvailable(int iMinimumMajorVersion)
 
 void UIInformationRuntime::enableDisableGuestAdditionDependedWidgets(bool fEnable)
 {
-    for (QMap<QString, UISubMetric>::const_iterator iterator =  m_subMetrics.begin();
+    for (QMap<QString, UIMetric>::const_iterator iterator =  m_subMetrics.begin();
          iterator != m_subMetrics.end(); ++iterator)
     {
         if (!iterator.value().requiresGuestAdditions())
@@ -1206,7 +1277,7 @@ void UIInformationRuntime::enableDisableGuestAdditionDependedWidgets(bool fEnabl
 
 void UIInformationRuntime::updateCPUGraphsAndMetric(ULONG iExecutingPercentage, ULONG iOtherPercentage)
 {
-    UISubMetric &CPUMetric = m_subMetrics[m_strCPUMetricName];
+    UIMetric &CPUMetric = m_subMetrics[m_strCPUMetricName];
     CPUMetric.addData(0, iExecutingPercentage);
     CPUMetric.addData(1, iOtherPercentage);
     CPUMetric.setMaximum(100);
@@ -1232,7 +1303,7 @@ void UIInformationRuntime::updateCPUGraphsAndMetric(ULONG iExecutingPercentage, 
 
 void UIInformationRuntime::updateRAMGraphsAndMetric(quint64 iTotalRAM, quint64 iFreeRAM)
 {
-    UISubMetric &RAMMetric = m_subMetrics[m_strRAMMetricName];
+    UIMetric &RAMMetric = m_subMetrics[m_strRAMMetricName];
     RAMMetric.setMaximum(iTotalRAM);
     RAMMetric.addData(0, iTotalRAM - iFreeRAM);
     if (m_infoLabels.contains(m_strRAMMetricName)  && m_infoLabels[m_strRAMMetricName])
@@ -1252,7 +1323,7 @@ void UIInformationRuntime::updateRAMGraphsAndMetric(quint64 iTotalRAM, quint64 i
 
 void UIInformationRuntime::updateNetworkGraphsAndMetric(qulonglong iReceiveTotal, qulonglong iTransmitTotal)
 {
-    UISubMetric &NetMetric = m_subMetrics[m_strNetworkMetricName];
+    UIMetric &NetMetric = m_subMetrics[m_strNetworkMetricName];
 
     qulonglong iReceiveRate = iReceiveTotal - NetMetric.total(0);
     qulonglong iTransmitRate = iTransmitTotal - NetMetric.total(1);
@@ -1260,9 +1331,13 @@ void UIInformationRuntime::updateNetworkGraphsAndMetric(qulonglong iReceiveTotal
     NetMetric.setTotal(0, iReceiveTotal);
     NetMetric.setTotal(1, iTransmitTotal);
 
-    /* Do not set data and maximum if the timer has just started since we need to initialize totals "(t-1)" first: */
-    if (m_iTimeStep <= 1)
+    /* Do not set data and maximum if the metric has not been initialized  since we need to initialize totals "(t-1)" first: */
+    if (!NetMetric.isInitialized())
+    {
+        NetMetric.setIsInitialized(true);
         return;
+    }
+
     NetMetric.addData(0, iReceiveRate);
     NetMetric.addData(1, iTransmitRate);
     qulonglong iMaximum = qMax(NetMetric.maximum(), qMax(iReceiveRate, iTransmitRate));
@@ -1292,21 +1367,24 @@ void UIInformationRuntime::updateNetworkGraphsAndMetric(qulonglong iReceiveTotal
 
 void UIInformationRuntime::updateDiskIOGraphsAndMetric(qulonglong uDiskIOTotalWritten, qulonglong uDiskIOTotalRead)
 {
-    UISubMetric &NetMetric = m_subMetrics[m_strDiskIOMetricName];
+    UIMetric &diskMetric = m_subMetrics[m_strDiskIOMetricName];
 
-    qulonglong iWriteRate = uDiskIOTotalWritten - NetMetric.total(0);
-    qulonglong iReadRate = uDiskIOTotalRead - NetMetric.total(1);
+    qulonglong iWriteRate = uDiskIOTotalWritten - diskMetric.total(0);
+    qulonglong iReadRate = uDiskIOTotalRead - diskMetric.total(1);
 
-    NetMetric.setTotal(0, uDiskIOTotalWritten);
-    NetMetric.setTotal(1, uDiskIOTotalRead);
+    diskMetric.setTotal(0, uDiskIOTotalWritten);
+    diskMetric.setTotal(1, uDiskIOTotalRead);
 
-    /* Do not set data and maximum if the timer has just started since we need to initialize totals "(t-1)" first: */
-    if (m_iTimeStep <= 1)
+    /* Do not set data and maximum if the metric has not been initialized  since we need to initialize totals "(t-1)" first: */
+    if (!diskMetric.isInitialized())
+    {
+        diskMetric.setIsInitialized(true);
         return;
-    NetMetric.addData(0, iWriteRate);
-    NetMetric.addData(1, iReadRate);
-    qulonglong iMaximum = qMax(NetMetric.maximum(), qMax(iWriteRate, iReadRate));
-    NetMetric.setMaximum(iMaximum);
+    }
+    diskMetric.addData(0, iWriteRate);
+    diskMetric.addData(1, iReadRate);
+    qulonglong iMaximum = qMax(diskMetric.maximum(), qMax(iWriteRate, iReadRate));
+    diskMetric.setMaximum(iMaximum);
 
     if (m_infoLabels.contains(m_strDiskIOMetricName)  && m_infoLabels[m_strDiskIOMetricName])
     {
@@ -1331,6 +1409,26 @@ void UIInformationRuntime::updateDiskIOGraphsAndMetric(qulonglong uDiskIOTotalWr
 
 }
 
+void UIInformationRuntime::updateVMExitMetric(qulonglong uTotalVMExits)
+{
+    UIMetric &VMExitMetric = m_subMetrics[m_strVMExitMetricName];
+
+    qulonglong iRate = uTotalVMExits - VMExitMetric.total(0);
+
+    VMExitMetric.setTotal(0, uTotalVMExits);
+
+    /* Do not set data and maximum if the metric has not been initialized  since we need to initialize totals "(t-1)" first: */
+    if (!VMExitMetric.isInitialized())
+    {
+        VMExitMetric.setIsInitialized(true);
+        return;
+    }
+
+    VMExitMetric.addData(0, iRate);
+    qulonglong iMaximum = qMax(VMExitMetric.maximum(), iRate);
+    VMExitMetric.setMaximum(iMaximum);
+}
+
 QString UIInformationRuntime::dataColorString(const QString &strChartName, int iDataIndex)
 {
     if (!m_charts.contains(strChartName))
@@ -1349,6 +1447,7 @@ QVector<DebuggerMetricData> UIInformationRuntime::getTotalCounterFromDegugger(co
     CMachineDebugger debugger = m_console.GetDebugger();
 
     QString strStats = debugger.GetStats(strQuery, false);
+
     QXmlStreamReader xmlReader;
     xmlReader.addData(strStats);
     qulonglong iTotal = 0;

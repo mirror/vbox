@@ -60,12 +60,12 @@ struct DebuggerMetricData
     qulonglong m_counter;
 };
 
-class UISubMetric
+class UIMetric
 {
 public:
 
-    UISubMetric(const QString &strName, const QString &strUnit, int iMaximumQueueSize);
-    UISubMetric();
+    UIMetric(const QString &strName, const QString &strUnit, int iMaximumQueueSize);
+    UIMetric();
     const QString &name() const;
 
     void setMaximum(qulonglong iMaximum);
@@ -80,18 +80,23 @@ public:
     void setTotal(int iDataSeriesIndex, qulonglong iTotal);
     qulonglong total(int iDataSeriesIndex) const;
 
-
-
     bool requiresGuestAdditions() const;
     void setRequiresGuestAdditions(bool fRequiresGAs);
 
     const QStringList &deviceTypeList() const;
     void setDeviceTypeList(const QStringList &list);
 
+    void setQueryPrefix(const QString &strPrefix);
+
     const QStringList &metricDataSubString() const;
     void setMetricDataSubString(const QStringList &list);
 
     const QString &queryString() const;
+
+    void setIsInitialized(bool fIsInitialized);
+    bool isInitialized() const;
+
+    void reset();
 
 private:
 
@@ -102,11 +107,12 @@ private:
     /** This is used to select data series of the metric. For example, for network metric
       * it is ReceiveBytes/TransmitBytes */
     QStringList m_metricDataSubString;
+    QString m_strQueryPrefix;
 
     QString m_strName;
     QString m_strUnit;
     /** This string is used while calling IMachineDebugger::getStats(..). It is composed of
-      * m_deviceTypeList and m_metricDataSubString. */
+      * m_strQueryPrefix, m_deviceTypeList, and  m_metricDataSubString. */
     QString m_strQueryString;
     qulonglong m_iMaximum;
     QQueue<qulonglong> m_data[DATA_SERIES_SIZE];
@@ -115,12 +121,15 @@ private:
     qulonglong m_iTotal[DATA_SERIES_SIZE];
     int m_iMaximumQueueSize;
     bool m_fRequiresGuestAdditions;
-
+    /** Used for metrices whose data is computed as total deltas. That is we receieve only total value and
+      * compute time step data from total deltas. m_isInitialised is true if the total has been set first time. */
+    bool m_fIsInitialized;
 };
 
 /** UIInformationRuntime class displays some high level performance metric of the guest system.
   * The values are read in certain periods and cached in the GUI side. Currently we draw some line charts
-  * and pie charts (where applicable) alongside with some text. */
+  * and pie charts (where applicable) alongside with some text. Additionally it displays a table including some
+  * run time attributes. */
 class UIInformationRuntime : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
@@ -152,6 +161,7 @@ private:
     void updateRAMGraphsAndMetric(quint64 iTotalRAM, quint64 iFreeRAM);
     void updateNetworkGraphsAndMetric(qulonglong iReceiveTotal, qulonglong iTransmitTotal);
     void updateDiskIOGraphsAndMetric(qulonglong uDiskIOTotalWritten, qulonglong uDiskIOTotalRead);
+    void updateVMExitMetric(qulonglong uTotalVMExits);
 
     QString dataColorString(const QString &strChartName, int iDataIndex);
     void runTimeAttributes();
@@ -173,7 +183,7 @@ private:
     QVector<QString> m_nameList;
     QVector<CUnknown> m_objectList;
 
-    QMap<QString, UISubMetric> m_subMetrics;
+    QMap<QString, UIMetric> m_subMetrics;
     QMap<QString,UIChart*>  m_charts;
     QMap<QString,QLabel*>  m_infoLabels;
 
@@ -184,6 +194,7 @@ private:
         QString m_strDiskMetricName;
         QString m_strNetworkMetricName;
         QString m_strDiskIOMetricName;
+        QString m_strVMExitMetricName;
     /** @} */
 
     /** @name Cached translated strings.
