@@ -370,14 +370,13 @@ HRESULT vboxDispKmtDestroyDevice(PVBOXDISPKMT_DEVICE pDevice)
 /// @todo Used for resize and seamless. Drop crVersion* params.
 HRESULT vboxDispKmtCreateContext(PVBOXDISPKMT_DEVICE pDevice, PVBOXDISPKMT_CONTEXT pContext,
                                     VBOXWDDM_CONTEXT_TYPE enmType,
-                                    uint32_t crVersionMajor, uint32_t crVersionMinor,
                                     HANDLE hEvent, uint64_t u64UmInfo)
 {
     VBOXWDDM_CREATECONTEXT_INFO Info = {0};
     Info.u32IfVersion = 9;
     Info.enmType = enmType;
-    Info.u.vbox.crVersionMajor = crVersionMajor;
-    Info.u.vbox.crVersionMinor = crVersionMinor;
+    Info.u.vbox.crVersionMajor = 0; /* Not used */
+    Info.u.vbox.crVersionMinor = 0; /* Not used */
     Info.u.vbox.hUmEvent = (uintptr_t)hEvent;
     Info.u.vbox.u64UmInfo = u64UmInfo;
     D3DKMT_CREATECONTEXT ContextData = {0};

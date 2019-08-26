@@ -570,7 +570,7 @@ static DWORD vboxDispIfOpBegin(PCVBOXDISPIF pIf, VBOXDISPIF_OP *pOp)
         if (SUCCEEDED(hr))
         {
             hr = vboxDispKmtCreateContext(&pOp->Device, &pOp->Context, VBOXWDDM_CONTEXT_TYPE_CUSTOM_DISPIF_RESIZE,
-                    0, 0, NULL, 0ULL);
+                    NULL, 0ULL);
             if (SUCCEEDED(hr))
                 return ERROR_SUCCESS;
             else
@@ -2655,7 +2655,7 @@ static DWORD vboxDispIfSeamlessCreateWDDM(PCVBOXDISPIF const pIf, VBOXDISPIF_SEA
         if (SUCCEEDED(hr))
         {
             hr = vboxDispKmtCreateContext(&pSeamless->modeData.wddm.Device, &pSeamless->modeData.wddm.Context, VBOXWDDM_CONTEXT_TYPE_CUSTOM_DISPIF_SEAMLESS,
-                    0, 0, hEvent, 0ULL);
+                    hEvent, 0ULL);
             if (SUCCEEDED(hr))
                 return ERROR_SUCCESS;
             WARN(("VBoxTray: vboxDispKmtCreateContext failed hr 0x%x", hr));
