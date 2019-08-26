@@ -2077,26 +2077,6 @@ function CheckForPython(strPathPython)
 end function
 
 
-'
-'
-function CheckForMkisofs(strFnameMkisofs)
-
-   PrintHdr "mkisofs"
-
-   CheckForMkisofs = False
-   LogPrint "trying: strFnameMkisofs=" & strFnameMkisofs
-
-   if FileExists(strFnameMkisofs) = false then
-      LogPrint "Testing '" & strFnameMkisofs & " not found"
-   else
-      CfgPrint "VBOX_MKISOFS          := " & strFnameMkisofs
-      CheckForMkisofs = True
-   end if
-
-   PrintResult "mkisofs ", strFnameMkisofs
-end function
-
-
 ''
 ' Show usage.
 sub usage
@@ -2131,7 +2111,6 @@ sub usage
    Print "  --with-libcurl=PATH   "
    Print "  --with-libcurl32=PATH (only for 64-bit targets)"
    Print "  --with-python=PATH    "
-   Print "  --with-mkisofs=PATH   "
 end sub
 
 
@@ -2169,7 +2148,6 @@ Sub Main
    strOptCurl = ""
    strOptCurl32 = ""
    strOptPython = ""
-   strOptMkisofs = ""
    blnOptDisableCOM = False
    blnOptDisableUDPTunnel = False
    blnOptDisableSDL = False
@@ -2225,8 +2203,6 @@ Sub Main
             strOptCurl32 = strPath
          case "--with-python"
             strOptPython = strPath
-         case "--with-mkisofs"
-            strOptMkisofs = strPath
          case "--disable-com"
             blnOptDisableCOM = True
          case "--enable-com"
@@ -2315,9 +2291,6 @@ Sub Main
    CheckForQt strOptQt5
    if (strOptPython <> "") then
      CheckForPython strOptPython
-   end if
-   if (strOptMkisofs <> "") then
-     CheckForMkisofs strOptMkisofs
    end if
    if g_blnInternalMode then
       EnvPrint "call " & g_strPathDev & "/env.cmd %1 %2 %3 %4 %5 %6 %7 %8 %9"
