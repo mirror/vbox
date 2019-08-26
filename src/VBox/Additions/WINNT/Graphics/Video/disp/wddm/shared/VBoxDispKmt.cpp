@@ -367,6 +367,7 @@ HRESULT vboxDispKmtDestroyDevice(PVBOXDISPKMT_DEVICE pDevice)
     return E_FAIL;
 }
 
+/// @todo Used for resize and seamless. Drop crVersion* params.
 HRESULT vboxDispKmtCreateContext(PVBOXDISPKMT_DEVICE pDevice, PVBOXDISPKMT_CONTEXT pContext,
                                     VBOXWDDM_CONTEXT_TYPE enmType,
                                     uint32_t crVersionMajor, uint32_t crVersionMinor,
@@ -385,7 +386,7 @@ HRESULT vboxDispKmtCreateContext(PVBOXDISPKMT_DEVICE pDevice, PVBOXDISPKMT_CONTE
     ContextData.EngineAffinity = VBOXWDDM_ENGINE_ID_3D_KMT;
     ContextData.pPrivateDriverData = &Info;
     ContextData.PrivateDriverDataSize = sizeof (Info);
-    ContextData.ClientHint = enmType == VBOXWDDM_CONTEXT_TYPE_CUSTOM_UHGSMI_GL ? D3DKMT_CLIENTHINT_OPENGL : D3DKMT_CLIENTHINT_DX9;
+    ContextData.ClientHint = D3DKMT_CLIENTHINT_DX9;
     NTSTATUS Status = pDevice->pAdapter->pCallbacks->pfnD3DKMTCreateContext(&ContextData);
     Assert(!Status);
     if (!Status)

@@ -91,9 +91,6 @@ ifdef VBOX_WITH_WDDM
  ifdef VBOX_WITH_VDMA
   VBoxWddm_DEFS           += VBOX_WITH_VDMA
  endif
- ifdef VBOX_WITH_CRHGSMI
-  VBoxWddm_DEFS           += VBOX_WITH_CRHGSMI
- endif
  VBoxWddm_DEFS            += LOG_TO_BACKDOOR
  VBoxWddm_DEFS            += VBOX_SVN_REV=$(VBOX_SVN_REV)
  ifdef VBOX_VDMA_WITH_WATCHDOG
@@ -103,26 +100,17 @@ ifdef VBOX_WITH_WDDM
  	../../../include \
  	.. \
  	. \
- 	$(VBOX_PATH_CROGL_INCLUDE) \
- 	$(VBOX_PATH_CROGL_GENFILES) \
- 	$(PATH_ROOT)/src/VBox/GuestHost/OpenGL/packer \
  	$(VBOX_GRAPHICS_INCS)
 
  VBoxWddm_LDFLAGS.x86     += /Entry:DriverEntry@8
  VBoxWddm_LDFLAGS.amd64   += /Entry:DriverEntry
 
- VBoxWddm_INTERMEDIATES = \
- 	$(VBOX_PATH_CROGL_GENFILES)/cr_packfunctions.h \
- 	$(VBOX_PATH_CROGL_GENFILES)/cr_opcodes.h \
- 	$(VBOX_PATH_CROGL_GENFILES)/state/cr_currentpointers.h \
- 	$(VBOX_PATH_CROGL_GENFILES)/cr_packfunctions.h
  VBoxWddm_SOURCES          = \
  	wddm/VBoxMPWddm.cpp \
 	wddm/VBoxMPVidPn.cpp \
 	wddm/VBoxMPVdma.cpp \
 	wddm/VBoxMPShgsmi.cpp \
  	wddm/VBoxMPCm.cpp \
- 	wddm/VBoxMPCr.cpp \
  	wddm/VBoxMPSa.cpp \
  	wddm/VBoxMPMisc.cpp \
  	wddm/VBoxWddm.rc \
@@ -138,14 +126,6 @@ ifdef VBOX_WITH_WDDM
  	$(PATH_ROOT)/src/VBox/Additions/common/VBoxVideo/Modesetting.cpp
 
  if defined(VBOX_WITH_CROGL)
-   VBoxWddm_SOURCES       += \
-	$(PATH_ROOT)/src/VBox/GuestHost/OpenGL/util/vreg.cpp \
- 	$(PATH_ROOT)/src/VBox/GuestHost/OpenGL/packer/pack_buffer.c \
- 	$(PATH_ROOT)/src/VBox/GuestHost/OpenGL/packer/pack_bounds.c \
- 	$(PATH_ROOT)/src/VBox/GuestHost/OpenGL/packer/pack_visibleregion.c \
- 	$(PATH_ROOT)/src/VBox/GuestHost/OpenGL/packer/pack_misc.c \
- 	$(VBOX_PATH_CROGL_GENFILES)/packer.c \
- 	wddm/VBoxMPCrUtil.cpp
    VBoxWddm_DEFS          += VBOX_WITH_CROGL
  endif
  ifdef VBOXWDDM_WITH_VBVA

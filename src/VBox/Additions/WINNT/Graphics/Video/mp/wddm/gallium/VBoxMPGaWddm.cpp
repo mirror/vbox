@@ -658,6 +658,16 @@ NTSTATUS APIENTRY GaDxgkDdiPresent(const HANDLE hContext,
     DXGK_ALLOCATIONLIST *pSrc =  &pPresent->pAllocationList[DXGK_PRESENT_SOURCE_INDEX];
     DXGK_ALLOCATIONLIST *pDst =  &pPresent->pAllocationList[DXGK_PRESENT_DESTINATION_INDEX];
 
+#ifdef VBOX_WDDM_DUMP_REGIONS_ON_PRESENT
+    LogRel(("%s: [%ld, %ld, %ld, %ld] -> [%ld, %ld, %ld, %ld] (SubRectCnt=%u)\n",
+        pPresent->Flags.Blt ? "Blt" : (pPresent->Flags.Flip ? "Flip" : (pPresent->Flags.ColorFill ? "ColorFill" : "Unknown OP")),
+        pPresent->SrcRect.left, pPresent->SrcRect.top, pPresent->SrcRect.right, pPresent->SrcRect.bottom,
+        pPresent->DstRect.left, pPresent->DstRect.top, pPresent->DstRect.right, pPresent->DstRect.bottom,
+        pPresent->SubRectCnt));
+    for (unsigned int i = 0; i < pPresent->SubRectCnt; i++)
+        LogRel(("\tsub#%u = [%ld, %ld, %ld, %ld]\n", i, pPresent->pDstSubRects[i].left, pPresent->pDstSubRects[i].top, pPresent->pDstSubRects[i].right, pPresent->pDstSubRects[i].bottom));
+#endif
+
     if (pPresent->Flags.Blt)
     {
         PVBOXWDDM_ALLOCATION pSrcAlloc = vboxWddmGetAllocationFromAllocList(pSrc);
@@ -1409,6 +1419,8 @@ BOOLEAN GaDxgkDdiInterruptRoutine(const PVOID MiniportDeviceContext,
         gaReportFence(pDevExt);
     }
 
+    pDevExt->u.primary.DxgkInterface.DxgkCbQueueDpc(pDevExt->u.primary.DxgkInterface.DeviceHandle);
+
     GALOG(("leave\n"));
     /* "Return TRUE as quickly as possible". */
     return TRUE;
@@ -1424,7 +1436,7 @@ VOID GaDxgkDdiDpcRoutine(const PVOID MiniportDeviceContext)
         return;
     }
 
-    // pDevExt->u.primary.DxgkInterface.DxgkCbNotifyDpc(pDevExt->u.primary.DxgkInterface.DeviceHandle);
+    pDevExt->u.primary.DxgkInterface.DxgkCbNotifyDpc(pDevExt->u.primary.DxgkInterface.DeviceHandle);
 
     /* Scan fence objects and mark all with u32FenceId < u32LastCompletedFenceId as SIGNALED */
     const uint32_t u32LastCompletedFenceId = ASMAtomicReadU32(&pGaDevExt->u32LastCompletedFenceId);

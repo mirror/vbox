@@ -65,7 +65,7 @@
 # define VBOX_VIDEO_LOG_SUFFIX_PARMS
 #endif
 
-#ifdef DEBUG_misha
+#ifdef DEBUG_sunlover
 # define BP_WARN() AssertFailed()
 #else
 # define BP_WARN() do {} while(0)

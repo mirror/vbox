@@ -34,13 +34,8 @@ typedef struct VBOXWDDM_ALLOCATION *PVBOXWDDM_ALLOCATION;
 #include "VBoxMPVdma.h"
 #include "VBoxMPShgsmi.h"
 #include "VBoxMPVbva.h"
-#include "VBoxMPCr.h"
 #include "VBoxMPSa.h"
 #include "VBoxMPVModes.h"
-
-#ifdef VBOX_WITH_CROGL
-#include <cr_vreg.h>
-#endif
 
 #if 0
 #include <iprt/avl.h>
@@ -135,11 +130,6 @@ typedef struct VBOXWDDM_SOURCE
     BOOLEAN fTargetsReported;
     BOOLEAN bVisible;
     BOOLEAN bBlankedByPowerOff;
-#ifdef VBOX_WITH_CROGL
-    /* specifies whether the source has 3D overlay data visible */
-    BOOLEAN fHas3DVrs;
-    VBOXVR_LIST VrList;
-#endif
     VBOXVBVAINFO Vbva;
 #ifdef VBOX_WITH_VIDEOHWACCEL
     /* @todo: in our case this seems more like a target property,
@@ -249,25 +239,6 @@ typedef enum
 
 #define VBOXWDDM_INVALID_COORD ((LONG)((~0UL) >> 1))
 
-#ifdef VBOX_WITH_CROGL
-typedef struct VBOXWDDM_SWAPCHAIN
-{
-    LIST_ENTRY DevExtListEntry;
-    LIST_ENTRY AllocList;
-    struct VBOXWDDM_CONTEXT *pContext;
-    VBOXWDDM_OBJSTATE_TYPE enmState;
-    volatile uint32_t cRefs;
-    VBOXDISP_UMHANDLE hSwapchainUm;
-    VBOXDISP_KMHANDLE hSwapchainKm;
-    int32_t winHostID;
-    BOOLEAN fExposed;
-    POINT Pos;
-    UINT width;
-    UINT height;
-    VBOXVR_LIST VisibleRegions;
-}VBOXWDDM_SWAPCHAIN, *PVBOXWDDM_SWAPCHAIN;
-#endif
-
 typedef struct VBOXWDDM_CONTEXT
 {
     struct VBOXWDDM_DEVICE * pDevice;
@@ -276,12 +247,6 @@ typedef struct VBOXWDDM_CONTEXT
     UINT  NodeOrdinal;
     UINT  EngineAffinity;
     BOOLEAN fRenderFromShadowDisabled;
-#ifdef VBOX_WITH_CROGL
-    int32_t hostID;
-    uint32_t u32CrConClientID;
-    VBOXMP_CRPACKER CrPacker;
-    VBOXWDDM_HTABLE Swapchains;
-#endif
     VBOXVIDEOCM_CTX CmContext;
     VBOXVIDEOCM_ALLOC_CONTEXT AllocContext;
 #ifdef VBOX_WITH_MESA3D
@@ -328,12 +293,6 @@ typedef struct VBOXWDDM_UHGSMI_BUFFER_SUBMIT_INFO
     uint32_t cbData;
     uint32_t bDoNotSignalCompletion;
 } VBOXWDDM_UHGSMI_BUFFER_SUBMIT_INFO, *PVBOXWDDM_UHGSMI_BUFFER_SUBMIT_INFO;
-
-typedef struct VBOXWDDM_DMA_PRIVATEDATA_CHROMIUM_CMD
-{
-    VBOXWDDM_DMA_PRIVATEDATA_BASEHDR Base;
-    VBOXWDDM_UHGSMI_BUFFER_SUBMIT_INFO aBufInfos[1];
-} VBOXWDDM_DMA_PRIVATEDATA_CHROMIUM_CMD, *PVBOXWDDM_DMA_PRIVATEDATA_CHROMIUM_CMD;
 
 typedef struct VBOXWDDM_DMA_PRIVATEDATA_ALLOCINFO_ON_SUBMIT
 {

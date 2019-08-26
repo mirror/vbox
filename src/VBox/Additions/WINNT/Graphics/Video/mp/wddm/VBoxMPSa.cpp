@@ -16,7 +16,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#include <cr_error.h>
+#include "common/VBoxMPUtils.h"
 #include <iprt/err.h>
 #include <iprt/mem.h>
 

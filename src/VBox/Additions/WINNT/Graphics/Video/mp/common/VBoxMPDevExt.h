@@ -145,19 +145,13 @@ typedef struct _VBOXMP_DEVEXT
    volatile uint32_t fCompletingCommands;
 
    DWORD dwDrvCfgFlags;
-#ifdef VBOX_WITH_CROGL
+
    BOOLEAN f3DEnabled;
-   BOOLEAN fTexPresentEnabled;
    BOOLEAN fCmdVbvaEnabled;
    BOOLEAN fComplexTopologiesEnabled;
 
-   uint32_t u32CrConDefaultClientID;
-
    VBOXCMDVBVA CmdVbva;
 
-   VBOXMP_CRCTLCON CrCtlCon;
-   VBOXMP_CRSHGSMITRANSPORT CrHgsmiTransport;
-#endif
    VBOXWDDM_GLOBAL_POINTER_INFO PointerInfo;
 
    VBOXVTLIST CtlList;

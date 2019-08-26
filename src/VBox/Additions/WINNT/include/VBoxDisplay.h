@@ -30,21 +30,21 @@
 # define VBOXESC_GETVBOXVIDEOCMCMD          0xABCD9004
 # define VBOXESC_DBGPRINT                   0xABCD9005
 # define VBOXESC_SCREENLAYOUT               0xABCD9006
-# define VBOXESC_SWAPCHAININFO              0xABCD9007
-# define VBOXESC_UHGSMI_ALLOCATE            0xABCD9008
-# define VBOXESC_UHGSMI_DEALLOCATE          0xABCD9009
-# define VBOXESC_UHGSMI_SUBMIT              0xABCD900A
+// obsolete                                 0xABCD9007
+// obsolete                                 0xABCD9008
+// obsolete                                 0xABCD9009
+// obsolete                                 0xABCD900A
 # define VBOXESC_SHRC_ADDREF                0xABCD900B
 # define VBOXESC_SHRC_RELEASE               0xABCD900C
 # define VBOXESC_DBGDUMPBUF                 0xABCD900D
-# define VBOXESC_CRHGSMICTLCON_CALL         0xABCD900E
-# define VBOXESC_CRHGSMICTLCON_GETCLIENTID  0xABCD900F
+// obsolete                                 0xABCD900E
+// obsolete                                 0xABCD900F
 # define VBOXESC_REINITVIDEOMODESBYMASK     0xABCD9010
 # define VBOXESC_ADJUSTVIDEOMODES           0xABCD9011
-# define VBOXESC_SETCTXHOSTID               0xABCD9012
+// obsolete                                 0xABCD9012
 # define VBOXESC_CONFIGURETARGETS           0xABCD9013
 # define VBOXESC_SETALLOCHOSTID             0xABCD9014
-# define VBOXESC_CRHGSMICTLCON_GETHOSTCAPS  0xABCD9015
+// obsolete                                 0xABCD9015
 # define VBOXESC_UPDATEMODES                0xABCD9016
 # define VBOXESC_GUEST_DISPLAYCHANGED       0xABCD9017
 # define VBOXESC_TARGET_CONNECTIVITY        0xABCD9018
