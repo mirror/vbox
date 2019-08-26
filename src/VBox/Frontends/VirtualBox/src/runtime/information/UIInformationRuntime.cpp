@@ -665,15 +665,15 @@ void UIChart::drawXAxisLabels(QPainter &painter, int iXSubAxisCount)
     for (int i = 0; i < iXSubAxisCount + 2; ++i)
     {
         int iTextX = m_iMarginLeft + i * iChartWidth / (float) (iXSubAxisCount + 1);
-        QString strCurentSec = QString::number(iTotalSeconds - i * iTotalSeconds / (float)(iXSubAxisCount + 1));
-        int iTextWidth = fontMetrics.width(strCurentSec);
+        QString strCurrentSec = QString::number(iTotalSeconds - i * iTotalSeconds / (float)(iXSubAxisCount + 1));
+        int iTextWidth = fontMetrics.width(strCurrentSec);
         if (i == 0)
         {
-            strCurentSec += " " + m_strXAxisLabel;
-            painter.drawText(iTextX, height() - m_iMarginBottom + iFontHeight, strCurentSec);
+            strCurrentSec += " " + m_strXAxisLabel;
+            painter.drawText(iTextX, height() - m_iMarginBottom + iFontHeight, strCurrentSec);
         }
         else
-            painter.drawText(iTextX - 0.5 * iTextWidth, height() - m_iMarginBottom + iFontHeight, strCurentSec);
+            painter.drawText(iTextX - 0.5 * iTextWidth, height() - m_iMarginBottom + iFontHeight, strCurrentSec);
     }
 }
 
@@ -966,6 +966,12 @@ void UIInformationRuntime::retranslateUi()
     iMaximum = qMax(iMaximum, m_strDiskIOInfoLabelWrittenTotal.length());
     m_strDiskIOInfoLabelReadTotal = QApplication::translate("UIVMInformationDialog", "Total Read");
     iMaximum = qMax(iMaximum, m_strDiskIOInfoLabelReadTotal.length());
+    m_strVMExitInfoLabelTitle = QApplication::translate("UIVMInformationDialog", "VM Exits");
+    iMaximum = qMax(iMaximum, m_strVMExitInfoLabelTitle.length());
+    m_strVMExitLabelCurrent = QApplication::translate("UIVMInformationDialog", "Current");
+    iMaximum = qMax(iMaximum, m_strVMExitLabelCurrent.length());
+    m_strVMExitLabelTotal = QApplication::translate("UIVMInformationDialog", "Total");
+    iMaximum = qMax(iMaximum, m_strVMExitLabelTotal.length());
 
 
     /* Compute the maximum label string length and set it as a fixed width to labels to prevent always changing widths: */
@@ -1284,7 +1290,6 @@ void UIInformationRuntime::updateCPUGraphsAndMetric(ULONG iExecutingPercentage, 
     if (m_infoLabels.contains(m_strCPUMetricName)  && m_infoLabels[m_strCPUMetricName])
     {
         QString strInfo;
-        QString strReceiveColor;
         if (m_infoLabels[m_strCPUMetricName]->isEnabled())
             strInfo = QString("<b>%1</b></b><br/><font color=\"%2\">%3: %4%5</font><br/><font color=\"%6\">%7: %8%9</font>")
                 .arg(m_strCPUInfoLabelTitle)
@@ -1427,6 +1432,21 @@ void UIInformationRuntime::updateVMExitMetric(qulonglong uTotalVMExits)
     VMExitMetric.addData(0, iRate);
     qulonglong iMaximum = qMax(VMExitMetric.maximum(), iRate);
     VMExitMetric.setMaximum(iMaximum);
+
+    if (m_infoLabels.contains(m_strVMExitMetricName)  && m_infoLabels[m_strVMExitMetricName])
+    {
+        QString strInfo;
+        if (m_infoLabels[m_strVMExitMetricName]->isEnabled())
+            strInfo = QString("<b>%1</b></b><br/>%2: %3 %4<br/>%5: %6 %7")
+                .arg(m_strVMExitInfoLabelTitle)
+                .arg(m_strVMExitLabelCurrent).arg(QString::number(iRate)).arg(VMExitMetric.unit())
+                .arg(m_strVMExitLabelTotal).arg(QString::number(uTotalVMExits)).arg(VMExitMetric.unit());
+        else
+            strInfo = QString("<b>%1</b><br/>%2%3").arg(m_strVMExitInfoLabelTitle).arg("--").arg("%");
+        m_infoLabels[m_strVMExitMetricName]->setText(strInfo);
+    }
+    if (m_charts.contains(m_strVMExitMetricName))
+        m_charts[m_strVMExitMetricName]->update();
 }
 
 QString UIInformationRuntime::dataColorString(const QString &strChartName, int iDataIndex)

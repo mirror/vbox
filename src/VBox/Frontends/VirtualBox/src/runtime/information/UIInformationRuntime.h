@@ -220,6 +220,10 @@ private:
         QString m_strDiskIOInfoLabelRead;
         QString m_strDiskIOInfoLabelWrittenTotal;
         QString m_strDiskIOInfoLabelReadTotal;
+        /** VM Exit info label strings. */
+        QString m_strVMExitInfoLabelTitle;
+        QString m_strVMExitLabelCurrent;
+        QString m_strVMExitLabelTotal;
     /** @} */
     /** The following string is used while querrying CMachineDebugger. */
     QString m_strQueryString;
