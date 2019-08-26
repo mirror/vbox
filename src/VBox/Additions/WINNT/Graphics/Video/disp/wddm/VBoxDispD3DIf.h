@@ -29,50 +29,8 @@
 #include <iprt/critsect.h>
 #include <iprt/semaphore.h>
 #include <iprt/win/d3d9.h>
-#include "../../../Wine_new/vbox/VBoxWineEx.h"
 #include <d3dumddi.h>
 #include "../../common/wddm/VBoxMPIf.h"
-
-/* D3D functionality the VBOXDISPD3D provides */
-typedef HRESULT WINAPI FNVBOXDISPD3DCREATE9EX(UINT SDKVersion, IDirect3D9Ex **ppD3D);
-typedef FNVBOXDISPD3DCREATE9EX *PFNVBOXDISPD3DCREATE9EX;
-
-typedef struct VBOXDISPD3D
-{
-    /* D3D functionality the VBOXDISPD3D provides */
-    PFNVBOXDISPD3DCREATE9EX pfnDirect3DCreate9Ex;
-
-    PFNVBOXWINEEXD3DDEV9_CREATETEXTURE pfnVBoxWineExD3DDev9CreateTexture;
-
-    PFNVBOXWINEEXD3DDEV9_CREATECUBETEXTURE pfnVBoxWineExD3DDev9CreateCubeTexture;
-
-    PFNVBOXWINEEXD3DDEV9_CREATEVOLUMETEXTURE pfnVBoxWineExD3DDev9CreateVolumeTexture;
-
-    PFNVBOXWINEEXD3DDEV9_FLUSH pfnVBoxWineExD3DDev9Flush;
-
-    PFNVBOXWINEEXD3DDEV9_VOLBLT pfnVBoxWineExD3DDev9VolBlt;
-
-    PFNVBOXWINEEXD3DDEV9_VOLTEXBLT pfnVBoxWineExD3DDev9VolTexBlt;
-
-    PFNVBOXWINEEXD3DDEV9_TERM pfnVBoxWineExD3DDev9Term;
-
-    PFNVBOXWINEEXD3DSWAPCHAIN9_PRESENT pfnVBoxWineExD3DSwapchain9Present;
-
-    PFNVBOXWINEEXD3DDEV9_FLUSHTOHOST pfnVBoxWineExD3DDev9FlushToHost;
-
-    PFNVBOXWINEEXD3DDEV9_FINISH pfnVBoxWineExD3DDev9Finish;
-
-    PFNVBOXWINEEXD3DSURF9_GETHOSTID pfnVBoxWineExD3DSurf9GetHostId;
-
-    PFNVBOXWINEEXD3DSURF9_SYNCTOHOST pfnVBoxWineExD3DSurf9SyncToHost;
-
-    PFNVBOXWINEEXD3DSWAPCHAIN9_GETHOSTWINID pfnVBoxWineExD3DSwapchain9GetHostWinID;
-
-    PFNVBOXWINEEXD3DDEV9_GETHOSTID pfnVBoxWineExD3DDev9GetHostId;
-
-    /* module handle */
-    HMODULE hD3DLib;
-} VBOXDISPD3D;
 
 typedef struct VBOXWDDMDISP_FORMATS
 {
@@ -93,10 +51,6 @@ typedef struct VBOXWDDMDISP_D3D
     D3DCAPS9 Caps;
     UINT cMaxSimRTs;
 
-    /* Wine backend. */
-    IDirect3D9Ex *pD3D9If;
-    VBOXDISPD3D D3D;
-
 #ifdef VBOX_WITH_MESA3D
     /* Gallium backend. */
     IGalliumStack *pGalliumStack;
@@ -107,9 +61,6 @@ void VBoxDispD3DGlobalInit(void);
 void VBoxDispD3DGlobalTerm(void);
 HRESULT VBoxDispD3DGlobalOpen(PVBOXWDDMDISP_D3D pD3D, PVBOXWDDMDISP_FORMATS pFormats, VBOXWDDM_QAI const *pAdapterInfo);
 void VBoxDispD3DGlobalClose(PVBOXWDDMDISP_D3D pD3D, PVBOXWDDMDISP_FORMATS pFormats);
-
-HRESULT VBoxDispD3DOpen(VBOXDISPD3D *pD3D);
-void VBoxDispD3DClose(VBOXDISPD3D *pD3D);
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
 HRESULT VBoxDispD3DGlobal2DFormatsInit(struct VBOXWDDMDISP_ADAPTER *pAdapter);
