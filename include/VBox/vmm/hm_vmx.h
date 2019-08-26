@@ -1597,6 +1597,8 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_VMFUNC_, UINT64_C(0), UINT64_MAX,
 #define MSR_IA32_VMX_EPT_VPID_CAP_RWX_X_ONLY                    RT_BIT_64(0)
 /** Supports page-walk length of 4. */
 #define MSR_IA32_VMX_EPT_VPID_CAP_PAGE_WALK_LENGTH_4            RT_BIT_64(6)
+/** Supports page-walk length of 5. */
+#define MSR_IA32_VMX_EPT_VPID_CAP_PAGE_WALK_LENGTH_5            RT_BIT_64(7)
 /** Supports EPT paging-structure memory type to be uncacheable. */
 #define MSR_IA32_VMX_EPT_VPID_CAP_EMT_UC                        RT_BIT_64(8)
 /** Supports EPT paging structure memory type to be write-back. */
