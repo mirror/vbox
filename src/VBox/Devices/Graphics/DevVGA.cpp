@@ -4611,7 +4611,7 @@ static DECLCALLBACK(void *) vgaPortQueryInterface(PPDMIBASE pInterface, const ch
     PVGASTATE pThis = RT_FROM_MEMBER(pInterface, VGASTATE, IBase);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pThis->IBase);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIDISPLAYPORT, &pThis->IPort);
-#if defined(VBOX_WITH_HGSMI) && (defined(VBOX_WITH_VIDEOHWACCEL))
+#if defined(VBOX_WITH_HGSMI) && (defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_WITH_CRHGSMI))
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIDISPLAYVBVACALLBACKS, &pThis->IVBVACallbacks);
 #endif
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMILEDPORTS, &pThis->ILeds);
@@ -5442,6 +5442,8 @@ static DECLCALLBACK(void) vgaTimerRefresh(PPDMDEVINS pDevIns, PTMTIMER pTimer, v
 #ifdef VBOX_WITH_VIDEOHWACCEL
     vbvaTimerCb(pThis);
 #endif
+
+    vboxCmdVBVATimerRefresh(pThis);
 
 #ifdef VBOX_WITH_VMSVGA
     /*

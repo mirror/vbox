@@ -2060,6 +2060,8 @@ int vboxVBVALoadStateDone(PPDMDEVINS pDevIns)
             VBVAVIEW *pView = &pCtx->aViews[iView];
             if (pView->vbva.guest.pVBVA)
             {
+                Assert(!vboxCmdVBVAIsEnabled(pVGAState));
+
                 int rc = vbvaEnable(iView, pVGAState, pCtx, pView->vbva.guest.pVBVA, pView->vbva.u32VBVAOffset, true /* fRestored */);
                 if (RT_SUCCESS(rc))
                     vbvaResize(pVGAState, pView, &pView->screen, false);
@@ -2422,6 +2424,25 @@ static DECLCALLBACK(int) vbvaChannelHandler(void *pvHandler, uint16_t u16Channel
 
     switch (u16ChannelInfo)
     {
+        case VBVA_CMDVBVA_SUBMIT:
+            rc = vboxCmdVBVACmdSubmit(pVGAState);
+            break;
+
+        case VBVA_CMDVBVA_FLUSH:
+            rc = vboxCmdVBVACmdFlush(pVGAState);
+            break;
+
+        case VBVA_CMDVBVA_CTL:
+            if (cbBuffer >= VBoxSHGSMIBufferHeaderSize() + sizeof(VBOXCMDVBVA_CTL))
+            {
+                VBOXCMDVBVA_CTL RT_UNTRUSTED_VOLATILE_GUEST *pCtl
+                    = (VBOXCMDVBVA_CTL RT_UNTRUSTED_VOLATILE_GUEST *)VBoxSHGSMIBufferData((VBOXSHGSMIHEADER RT_UNTRUSTED_VOLATILE_GUEST *)pvBuffer);
+                rc = vboxCmdVBVACmdCtl(pVGAState, pCtl, cbBuffer - VBoxSHGSMIBufferHeaderSize());
+            }
+            else
+                rc = VERR_INVALID_PARAMETER;
+            break;
+
 #ifdef VBOX_WITH_VDMA
         case VBVA_VDMA_CMD:
             if (cbBuffer >= VBoxSHGSMIBufferHeaderSize() + sizeof(VBOXVDMACBUF_DR))
@@ -2466,6 +2487,8 @@ static DECLCALLBACK(int) vbvaChannelHandler(void *pvHandler, uint16_t u16Channel
             rc = VERR_INVALID_PARAMETER;
             if (cbBuffer >= sizeof(VBVAINFOVIEW))
             {
+                AssertMsgBreak(!vboxCmdVBVAIsEnabled(pVGAState), ("VBVA_INFO_VIEW is not acceptible for CmdVbva\n"));
+
                 /* Guest submits an array of VBVAINFOVIEW structures. */
                 const VBVAINFOVIEW RT_UNTRUSTED_VOLATILE_GUEST *pView = (VBVAINFOVIEW RT_UNTRUSTED_VOLATILE_GUEST *)pvBuffer;
                 for (;
@@ -2495,12 +2518,16 @@ static DECLCALLBACK(int) vbvaChannelHandler(void *pvHandler, uint16_t u16Channel
 
         case VBVA_INFO_SCREEN:
             rc = VERR_INVALID_PARAMETER;
+            AssertMsgBreak(!vboxCmdVBVAIsEnabled(pVGAState), ("VBVA_INFO_SCREEN is not acceptible for CmdVbva\n"));
+
             if (cbBuffer >= sizeof(VBVAINFOSCREEN))
                 rc = VBVAInfoScreen(pVGAState, (VBVAINFOSCREEN RT_UNTRUSTED_VOLATILE_GUEST *)pvBuffer);
             break;
 
         case VBVA_ENABLE:
             rc = VERR_INVALID_PARAMETER;
+            AssertMsgBreak(!vboxCmdVBVAIsEnabled(pVGAState), ("VBVA_ENABLE is not acceptible for CmdVbva\n"));
+
             if (cbBuffer >= sizeof(VBVAENABLE))
             {
                 VBVAENABLE RT_UNTRUSTED_VOLATILE_GUEST *pVbvaEnable = (VBVAENABLE RT_UNTRUSTED_VOLATILE_GUEST *)pvBuffer;
