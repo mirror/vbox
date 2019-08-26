@@ -19,10 +19,6 @@ SUB_DEPTH = ../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 # Include sub-makefile(s).
-ifdef VBOX_WITH_CROGL
- include $(PATH_SUB_CURRENT)/OpenGL/Makefile.kmk
-endif
-
 ifdef VBOX_WITH_HGSMI
  include $(PATH_SUB_CURRENT)/HGSMI/Makefile.kmk
 endif
