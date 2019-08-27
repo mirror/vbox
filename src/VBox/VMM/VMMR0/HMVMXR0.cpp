@@ -1276,7 +1276,7 @@ static int hmR0VmxSwitchToGstOrNstGstVmcs(PVMCPUCC pVCpu, bool fSwitchToNstGstVm
          * RTMpCpuId when called with preemption enabled, we'll do this while preemption is
          * disabled.
          */
-        if (pVmcsInfoTo->idHostCpu == RTMpCpuId())
+        if (pVmcsInfoTo->idHostCpuState == RTMpCpuId())
         { /* likely */ }
         else
             ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_HOST_CONTEXT | HM_CHANGED_VMX_HOST_GUEST_SHARED_STATE);
@@ -1707,7 +1707,8 @@ static void hmR0VmxInitVmcsInfo(PVMXVMCSINFO pVmcsInfo)
     pVmcsInfo->HCPhysVirtApic      = NIL_RTHCPHYS;
     pVmcsInfo->HCPhysEPTP          = NIL_RTHCPHYS;
     pVmcsInfo->u64VmcsLinkPtr      = NIL_RTHCPHYS;
-    pVmcsInfo->idHostCpu           = NIL_RTCPUID;
+    pVmcsInfo->idHostCpuState      = NIL_RTCPUID;
+    pVmcsInfo->idHostCpuExec       = NIL_RTCPUID;
 }
 
 
@@ -7962,10 +7963,10 @@ static int hmR0VmxLeave(PVMCPUCC pVCpu, bool fImportState)
     }
 
     /*
-     * Flag that we need to re-import the host state if we switch to this VMCS before
+     * Flag that we need to re-export the host state if we switch to this VMCS before
      * executing guest or nested-guest code.
      */
-    pVmcsInfo->idHostCpu = NIL_RTCPUID;
+    pVmcsInfo->idHostCpuState = NIL_RTCPUID;
 #endif
 
     Log4Func(("Cleared Vmcs. HostCpuId=%u\n", idCpu));
@@ -9782,7 +9783,8 @@ static DECLCALLBACK(void) hmR0DispatchHostNmi(RTCPUID idCpu, void *pvUser1, void
  */
 static int hmR0VmxExitHostNmi(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo)
 {
-    RTCPUID const idCpu = pVmcsInfo->idHostCpu;
+    RTCPUID const idCpu = pVmcsInfo->idHostCpuExec;
+    Assert(idCpu != NIL_RTCPUID);
 
     /*
      * We don't want to delay dispatching the NMI any more than we have to. However,
@@ -10550,7 +10552,8 @@ static void hmR0VmxPreRunGuestCommitted(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransi
     hmR0VmxFlushTaggedTlb(pHostCpu, pVCpu, pVmcsInfo);          /* Invalidate the appropriate guest entries from the TLB. */
     Assert(idCurrentCpu == pVCpu->hm.s.idLastCpu);
     pVCpu->hm.s.vmx.LastError.idCurrentCpu = idCurrentCpu;      /* Update the error reporting info. with the current host CPU. */
-    pVmcsInfo->idHostCpu = idCurrentCpu;                        /* Update the CPU for which we updated host-state in this VMCS. */
+    pVmcsInfo->idHostCpuState = idCurrentCpu;                   /* Record the CPU for which the host-state has been exported. */
+    pVmcsInfo->idHostCpuExec  = idCurrentCpu;                   /* Record the CPU on which we shall execute. */
 
     STAM_PROFILE_ADV_STOP_START(&pVCpu->hm.s.StatEntry, &pVCpu->hm.s.StatInGC, x);
 

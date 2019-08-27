@@ -772,10 +772,10 @@ typedef struct VMXVMCSINFO
     bool                        fSwitchedTo64on32Obsolete;
     /** Padding. */
     bool                        afPadding0[6];
-    /** The host CPU for which we have currently exported the host state. */
-    RTCPUID                     idHostCpu;
-    /** Padding. */
-    uint32_t                    u32Padding1;
+    /** The host CPU for which its state has been exported to this VMCS. */
+    RTCPUID                     idHostCpuState;
+    /** The host CPU on which we last executed this VMCS. */
+    RTCPUID                     idHostCpuExec;
     /** @} */
 
     /** @name Cache of execution related VMCS fields.
