@@ -391,6 +391,28 @@ static uint16_t vboxUsbParseHexNumU16(WCHAR **ppStr)
     return num;
 }
 
+static uint8_t vboxUsbParseHexNumU8(WCHAR **ppStr)
+{
+    WCHAR       *pStr = *ppStr;
+    WCHAR       wc;
+    uint16_t    num = 0;
+    unsigned    u;
+
+    for (int i = 0; i < 2; ++i)
+    {
+        if (!*pStr)     /* Just in case the string is too short. */
+            break;
+
+        wc = *pStr;
+        u = wc >= 'A' ? wc - 'A' + 10 : wc - '0';   /* Hex digit to number. */
+        num |= u << (4 - 4 * i);
+        pStr++;
+    }
+    *ppStr = pStr;
+
+    return num;
+}
+
 static bool vboxUsbParseHardwareID(WCHAR *pchIdStr, uint16_t *pVid, uint16_t *pPid, uint16_t *pRev)
 {
 #define VID_PREFIX  L"USB\\VID_"
@@ -432,6 +454,46 @@ static bool vboxUsbParseHardwareID(WCHAR *pchIdStr, uint16_t *pVid, uint16_t *pP
 #undef REV_PREFIX
 }
 
+static bool vboxUsbParseCompatibleIDs(WCHAR *pchIdStr, uint8_t *pClass, uint8_t *pSubClass, uint8_t *pProt)
+{
+#define CLS_PREFIX  L"USB\\Class_"
+#define SUB_PREFIX  L"&SubClass_"
+#define PRO_PREFIX  L"&Prot_"
+
+    *pClass = *pSubClass = *pProt = 0xFF;
+
+    /* The Compatible IDs string is in the format USB\Class_xx&SubClass_xx&Prot_xx,
+     * with 'xx' being 8-bit hexadecimal numbers. Since this string is provided by the
+     * PnP manager and USB devices always report these as part of the basic USB device
+     * descriptor, we assume all three must be present.
+     */
+
+    if (wcsncmp(pchIdStr, CLS_PREFIX, wcslen(CLS_PREFIX)))
+        return false;
+    /* Point to the start of the device class and parse it. */
+    pchIdStr += wcslen(CLS_PREFIX);
+    *pClass = vboxUsbParseHexNumU8(&pchIdStr);
+
+    if (wcsncmp(pchIdStr, SUB_PREFIX, wcslen(SUB_PREFIX)))
+        return false;
+
+    /* Point to the start of the subclass and parse it. */
+    pchIdStr += wcslen(SUB_PREFIX);
+    *pSubClass = vboxUsbParseHexNumU8(&pchIdStr);
+
+    if (wcsncmp(pchIdStr, PRO_PREFIX, wcslen(PRO_PREFIX)))
+        return false;
+
+    /* Point to the start of the protocol and parse it. */
+    pchIdStr += wcslen(PRO_PREFIX);
+    *pProt = vboxUsbParseHexNumU8(&pchIdStr);
+
+    return true;
+#undef CLS_PREFIX
+#undef SUB_PREFIX
+#undef PRO_PREFIX
+}
+
 #define VBOXUSBMON_POPULATE_REQUEST_TIMEOUT_MS 10000
 
 static NTSTATUS vboxUsbFltDevPopulate(PVBOXUSBFLT_DEVICE pDevice, PDEVICE_OBJECT pDo /*, BOOLEAN bPopulateNonFilterProps*/)
@@ -459,6 +521,7 @@ static NTSTATUS vboxUsbFltDevPopulate(PVBOXUSBFLT_DEVICE pDevice, PDEVICE_OBJECT
             ULONG       ulResultLen;
             bool        rc;
             uint16_t    vid, pid, rev;
+            uint8_t     cls, sub, prt;
 
             WARN(("getting device descriptor failed, Status (0x%x); falling back to IoGetDeviceProperty", Status));
 
@@ -467,7 +530,7 @@ static NTSTATUS vboxUsbFltDevPopulate(PVBOXUSBFLT_DEVICE pDevice, PDEVICE_OBJECT
             if (!NT_SUCCESS(Status))
             {
                 /* This just isn't our day. We have no idea what the device is. */
-                WARN(("IoGetDeviceProperty failed, Status (0x%x)", Status));
+                WARN(("IoGetDeviceProperty failed for DevicePropertyHardwareID, Status (0x%x)", Status));
                 break;
             }
             rc = vboxUsbParseHardwareID(wchPropBuf, &vid, &pid, &rev);
@@ -478,19 +541,33 @@ static NTSTATUS vboxUsbFltDevPopulate(PVBOXUSBFLT_DEVICE pDevice, PDEVICE_OBJECT
                 break;
             }
 
-            LOG(("Parsed HardwareID: vid=%04X, pid=%04X, rev=%04X", vid, pid, rev));
+            /* Now grab the Compatible IDs to get the class/subclass/protocol. */
+            Status = IoGetDeviceProperty(pDo, DevicePropertyCompatibleIDs, sizeof(wchPropBuf), wchPropBuf, &ulResultLen);
+            if (!NT_SUCCESS(Status))
+            {
+                /* We really kind of need these. */
+                WARN(("IoGetDeviceProperty failed for DevicePropertyCompatibleIDs, Status (0x%x)", Status));
+                break;
+            }
+            rc = vboxUsbParseCompatibleIDs(wchPropBuf, &cls, &sub, &prt);
+            if (!rc)
+            {
+                /* This *really* should not happen. */
+                WARN(("Failed to parse Hardware ID"));
+                break;
+            }
+
+            LOG(("Parsed HardwareID: vid=%04X, pid=%04X, rev=%04X, class=%02X, subcls=%02X, prot=%02X", vid, pid, rev, cls, sub, prt));
             if (vid == 0xFFFF || pid == 0xFFFF)
                 break;
 
             LOG(("Successfully fell back to IoGetDeviceProperty result"));
-            /* The vendor/product ID is what matters. */
             pDevDr->idVendor  = vid;
             pDevDr->idProduct = pid;
             pDevDr->bcdDevice = rev;
-            /* The rest we don't really know. */
-            pDevDr->bDeviceClass    = 0;
-            pDevDr->bDeviceSubClass = 0;
-            pDevDr->bDeviceProtocol = 0;
+            pDevDr->bDeviceClass    = cls;
+            pDevDr->bDeviceSubClass = sub;
+            pDevDr->bDeviceProtocol = prt;
         }
 
         if (vboxUsbFltBlDevMatchLocked(pDevDr->idVendor, pDevDr->idProduct, pDevDr->bcdDevice))
