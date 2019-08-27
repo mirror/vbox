@@ -579,6 +579,9 @@ void UIChooserModel::sltHandleViewResized()
 {
     /* Relayout: */
     updateLayout();
+
+    /* Make current item visible asynchronously: */
+    QMetaObject::invokeMethod(this, "sltMakeSureCurrentItemVisible", Qt::QueuedConnection);
 }
 
 bool UIChooserModel::eventFilter(QObject *pWatched, QEvent *pEvent)
@@ -697,6 +700,11 @@ void UIChooserModel::sltReloadMachine(const QUuid &uId)
 
     /* Notify listeners about selection change: */
     emit sigSelectionChanged();
+}
+
+void UIChooserModel::sltMakeSureCurrentItemVisible()
+{
+    root()->toGroupItem()->makeSureItemIsVisible(currentItem());
 }
 
 void UIChooserModel::sltCurrentItemDestroyed()

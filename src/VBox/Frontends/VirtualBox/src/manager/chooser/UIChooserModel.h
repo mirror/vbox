@@ -252,6 +252,9 @@ private slots:
 
     /** @name Selection stuff.
       * @{ */
+        /** Makes sure current item is visible. */
+        void sltMakeSureCurrentItemVisible();
+
         /** Handles current-item destruction. */
         void sltCurrentItemDestroyed();
     /** @} */
