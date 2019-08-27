@@ -323,7 +323,7 @@ typedef struct _VBoxClipboardWriteDataMsg
             /** ptr, out: Actual data. */
             HGCMFunctionParameter pvData;
         } v1;
-    };
+    } u;
 } VBoxClipboardWriteDataMsg;
 
 #define VBOX_SHARED_CLIPBOARD_CPARMS_WRITE_DATA 4

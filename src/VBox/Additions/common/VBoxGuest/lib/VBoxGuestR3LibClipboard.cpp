@@ -1705,8 +1705,8 @@ VBGLR3DECL(int) VbglR3ClipboardWriteData(HGCMCLIENTID idClient, uint32_t fFormat
     VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient,
                        VBOX_SHARED_CLIPBOARD_GUEST_FN_DATA_WRITE, 2);
 
-    VbglHGCMParmUInt32Set(&Msg.v0.format, fFormat);
-    VbglHGCMParmPtrSet(&Msg.v0.ptr, pv, cb);
+    VbglHGCMParmUInt32Set(&Msg.u.v0.format, fFormat);
+    VbglHGCMParmPtrSet(&Msg.u.v0.ptr, pv, cb);
 
     int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
 
@@ -1742,10 +1742,10 @@ VBGLR3DECL(int) VbglR3ClipboardWriteDataEx(PVBGLR3SHCLCMDCTX pCtx, PSHAREDCLIPBO
 
         LogFlowFunc(("CID=%RU32\n", pCtx->uContextID));
 
-        Msg.v1.uContext.SetUInt32(pCtx->uContextID);
-        Msg.v1.uFormat.SetUInt32(pData->uFormat);
-        Msg.v1.cbData.SetUInt32(pData->cbData);
-        Msg.v1.pvData.SetPtr(pData->pvData, pData->cbData);
+        Msg.u.v1.uContext.SetUInt32(pCtx->uContextID);
+        Msg.u.v1.uFormat.SetUInt32(pData->uFormat);
+        Msg.u.v1.cbData.SetUInt32(pData->cbData);
+        Msg.u.v1.pvData.SetPtr(pData->pvData, pData->cbData);
 
         rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
     }
