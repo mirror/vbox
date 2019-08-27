@@ -48,7 +48,7 @@ void UIMediaComboBox::refresh()
     if (count() > 1 && m_enmMediaType == UIMediumDeviceType_HardDisk)
     {
         removeItem(0);
-        //m_media.erase(m_media.begin());
+        m_media.erase(m_media.begin());
     }
 
     /* Notify listeners about active item changed. */
@@ -164,7 +164,7 @@ void UIMediaComboBox::sltHandleMediumDeleted(const QUuid &uMediumId)
 
     /* Replace medium from combo-box: */
     removeItem(iIndex);
-    //m_media.erase(m_media.begin() + iIndex);
+    m_media.erase(m_media.begin() + iIndex);
 
     /* If no real medium left, add the NULL medium: */
     if (count() == 0)
