@@ -1041,7 +1041,7 @@ static NTSTATUS _stdcall VBoxUsbMonClose(PDEVICE_OBJECT pDevObj, PIRP pIrp)
     NTSTATUS Status = vboxUsbMonContextClose(pCtx);
     if (Status != STATUS_SUCCESS)
     {
-        WARN(("vboxUsbMonContextClose failed, Status (0x%x), prefent unload", Status));
+        WARN(("vboxUsbMonContextClose failed, Status (0x%x), prevent unload", Status));
         if (!InterlockedExchange(&g_VBoxUsbMonGlobals.ulPreventUnloadOn, 1))
         {
             LOGREL(("ulPreventUnloadOn not set, preventing unload"));

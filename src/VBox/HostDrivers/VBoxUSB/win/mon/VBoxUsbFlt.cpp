@@ -1064,7 +1064,7 @@ int VBoxUsbFltAdd(PVBOXUSBFLTCTX pContext, PUSBFILTER pFilter, uintptr_t *pId)
     VBOXUSBFLT_LOCK_RELEASE();
     if (RT_SUCCESS(rc))
     {
-        LOG(("ADDED filer id 0x%p", uId));
+        LOG(("ADDED filter id 0x%p", uId));
         ASSERT_WARN(uId, ("uid is NULL"));
 #ifdef VBOX_USBMON_WITH_FILTER_AUTOAPPLY
         VBoxUsbFltFilterCheck();
@@ -1388,7 +1388,7 @@ HVBOXUSBFLTDEV VBoxUsbFltProxyStarted(PDEVICE_OBJECT pPdo)
     {
         WARN(("failed to get device for PDO(0x%p)", pPdo));
     }
-    else if (pDevice->enmState = VBOXUSBFLT_DEVSTATE_CAPTURING)
+    else if (pDevice->enmState == VBOXUSBFLT_DEVSTATE_CAPTURING)
     {
         pDevice->enmState = VBOXUSBFLT_DEVSTATE_CAPTURED;
         LOG(("The proxy notified proxy start for the captured device 0x%x", pDevice));
