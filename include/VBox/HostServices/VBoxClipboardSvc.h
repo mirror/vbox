@@ -23,6 +23,27 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
+/**
+ * Protocol handling and notes:
+ *     All client/server components should be backwards compatible.
+ *
+ ******************************************************************************
+ *
+ * Protocol changelog:
+ *
+ *     Protocol v0 (VBox < 6.1, deprecated):
+ *         | First, initial implementation since feature was developed.
+ *           Has no protocol handshake / versioning support, the client's
+ *           waiting message also acted as retrieving the parameters from
+ *           the host (always and only *exactly* two parameters). Does
+ *           not have the ability to control / handle parallel transfers.
+ *
+ *     Protocol v1 (VBox >= 6.1):
+ *         + Introduces protocol versioning and context IDs for parallel,
+ *           asynchronous transfers.
+ *         | Keeps backwards-compatbility with protocol v0 clients.
+ */
+
 #ifndef VBOX_INCLUDED_HostServices_VBoxClipboardSvc_h
 #define VBOX_INCLUDED_HostServices_VBoxClipboardSvc_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
