@@ -225,12 +225,15 @@ int VBoxClipboardSvcImplFormatAnnounce(PVBOXCLIPBOARDCLIENT pClient, PVBOXCLIPBO
  * Called by the HGCM clipboard subsystem when the guest wants to read the host clipboard.
  *
  * @param pClient               Context information about the guest VM.
+ * @param pCmdCtx               Command context to use for reading the data. Currently unused.
  * @param pData                 Data block to put read data into.
  * @param pcbActual             Where to write the actual size of the written data.
  */
-int VBoxClipboardSvcImplReadData(PVBOXCLIPBOARDCLIENT pClient,
+int VBoxClipboardSvcImplReadData(PVBOXCLIPBOARDCLIENT pClient, PVBOXCLIPBOARDCLIENTCMDCTX pCmdCtx,
                                  PSHAREDCLIPBOARDDATABLOCK pData, uint32_t *pcbActual)
 {
+    RT_NOREF(pCmdCtx);
+
     VBoxSvcClipboardLock();
 
     /* Default to no data available. */
@@ -247,11 +250,15 @@ int VBoxClipboardSvcImplReadData(PVBOXCLIPBOARDCLIENT pClient,
 /**
  * Called by the HGCM clipboard subsystem when we have requested data and that data arrives.
  *
- * @param pClient       Context information about the guest VM
- * @param pData         Data block to write to clipboard.
+ *
+ * @param pClient               Context information about the guest VM.
+ * @param pCmdCtx               Command context to use for writing the data. Currently unused.
+ * @param pData                 Data block to write to clipboard.
  */
-int VBoxClipboardSvcImplWriteData(PVBOXCLIPBOARDCLIENT pClient, PSHAREDCLIPBOARDDATABLOCK pData)
+int VBoxClipboardSvcImplWriteData(PVBOXCLIPBOARDCLIENT pClient, PVBOXCLIPBOARDCLIENTCMDCTX pCmdCtx, PSHAREDCLIPBOARDDATABLOCK pData)
 {
+    RT_NOREF(pCmdCtx);
+
     VBoxSvcClipboardLock();
 
     writeToPasteboard(pClient->State.pCtx->pasteboard, pData->pvData, pData->cbData, pData->uFormat);
