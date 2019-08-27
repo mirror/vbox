@@ -1428,6 +1428,7 @@ EXPORTS
     RTNetIPv6PseudoChecksum
     RTNetIPv6PseudoChecksumBits
     RTNetIPv6PseudoChecksumEx
+    RTNetIsIPv4AddrStr
     RTNetTCPChecksum
     RTNetUDPChecksum
     RTOnceReset
