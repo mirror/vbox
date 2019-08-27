@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  * Drag and Drop service - Common header for host service and guest clients.
  */
