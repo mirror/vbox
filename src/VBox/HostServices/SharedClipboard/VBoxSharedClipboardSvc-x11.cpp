@@ -547,7 +547,14 @@ int vboxSvcClipboardOldReportMsg(PVBOXCLIPBOARDCLIENT pClient, uint32_t uMsg, ui
     if (   (uMsg == VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA)
         && !pBackend->writeData.timeout)
     {
-        rc = VBoxClipboardSvcImplWriteData(pClient, pBackend->writeData.pv, pBackend->writeData.cb, pBackend->writeData.format);
+        SHAREDCLIPBOARDDATABLOCK dataBlock;
+        RT_ZERO(dataBlock);
+
+        dataBlock.pvData  = pBackend->writeData.pv;
+        dataBlock.cbData  = pBackend->writeData.cb;
+        dataBlock.uFormat = pBackend->writeData.format;
+
+        rc = VBoxClipboardSvcImplWriteData(pClient, NULL /* pCmdCtx */, &dataBlock);
     }
     else
         rc = VERR_NOT_SUPPORTED;
@@ -603,7 +610,7 @@ extern int ClipRequestDataFromX11(CLIPBACKEND *pBackend, VBOXCLIPBOARDFORMAT vbo
 
 int main()
 {
-    VBOXCLIPBOARDCLIENTDATA client;
+    VBOXCLIPBOARDCLIENT client;
     unsigned cErrors = 0;
     int rc = RTR3InitExeNoArguments(0);
     RTPrintf(TEST_NAME ": TESTING\n");
@@ -611,19 +618,32 @@ int main()
     rc = VBoxClipboardSvcImplConnect(&client, false);
     CLIPBACKEND *pBackend = client.State.pCtx->pBackend;
     AssertRCReturn(rc, 1);
-    VBoxClipboardSvcImplFormatAnnounce(&client,
-                                VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT);
+
+    SHAREDCLIPBOARDFORMATDATA formatData;
+    RT_ZERO(formatData);
+    formatData.uFormats = VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT;
+
+    VBoxClipboardSvcImplFormatAnnounce(&client, NULL /* pCmdCtx */, &formatData);
+
     if (pBackend->formats != VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT)
     {
         RTPrintf(TEST_NAME ": vboxClipboardFormatAnnounce failed with VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT\n");
         ++cErrors;
     }
     pBackend->readData.rc = VINF_SUCCESS;
-    client.State.asyncRead.callHandle = (VBOXHGCMCALLHANDLE)pBackend;
-    client.State.asyncRead.paParms = (VBOXHGCMSVCPARM *)&client;
+
+    client.State.Old.asyncRead.callHandle = (VBOXHGCMCALLHANDLE)pBackend;
+    client.State.Old.asyncRead.paParms = (VBOXHGCMSVCPARM *)&client;
+
     uint32_t u32Dummy;
-    rc = VBoxClipboardSvcImplReadData(&client, VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT,
-                               &u32Dummy, 42, &u32Dummy);
+
+    SHAREDCLIPBOARDDATABLOCK dataBlock;
+    RT_ZERO(dataBlock);
+    dataBlock.pvData  = &u32Dummy;
+    dataBlock.cbData  = 42;
+    dataBlock.uFormat = VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT;
+
+    rc = VBoxClipboardSvcImplReadData(&client, &dataBlock, &u32Dummy);
     if (rc != VINF_HGCM_ASYNC_EXECUTE)
     {
         RTPrintf(TEST_NAME ": vboxClipboardReadData returned %Rrc\n", rc);
@@ -690,10 +710,20 @@ int main()
     }
     /* Data arriving after a timeout should *not* cause any segfaults or
      * memory leaks.  Check with Valgrind! */
-    VBoxClipboardSvcImplWriteData(&client, (void *)"tested", sizeof("tested"), 999);
+    RT_ZERO(dataBlock);
+
+    const char *pszString = "tested";
+
+    dataBlock.pvData  = (void *)pszString;
+    dataBlock.cbData  = (uint32_t)(strlen(pszString) + 1);
+    dataBlock.uFormat = 999;
+
+    VBoxClipboardSvcImplWriteData(&client, NULL /* pCmdCtx */, &dataBlock);
+
     VBoxClipboardSvcImplDisconnect(&client);
-    if (cErrors > 0)
-        RTPrintf(TEST_NAME ": errors: %u\n", cErrors);
+
+    RTPrintf(TEST_NAME ": errors: %u\n", cErrors);
+
     return cErrors > 0 ? 1 : 0;
 }
 #endif  /* TESTCASE */
