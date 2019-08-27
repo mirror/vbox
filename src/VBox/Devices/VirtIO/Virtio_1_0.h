@@ -36,7 +36,6 @@ typedef void * VIRTIOHANDLE;                                     /**< Opaque han
 #define VIRTIO_MAX_QUEUE_NAME_SIZE          32                   /**< Maximum length of a queue name           */
 #define VIRTQ_MAX_SIZE                      1024                 /**< Max size (# desc elements) of a virtq    */
 #define VIRTQ_MAX_CNT                       24                   /**< Max queues we allow guest to create      */
-
 #define VIRTIO_NOTIFY_OFFSET_MULTIPLIER     2                    /**< VirtIO Notify Cap. MMIO config param     */
 #define VIRTIOSCSI_REGION_MEM_IO            0                    /**< BAR for MMIO (implementation specific)   */
 #define VIRTIOSCSI_REGION_PORT_IO           1                    /**< BAR for PORT I/O (impl specific)         */
@@ -213,12 +212,18 @@ int virtioQueuePeek(VIRTIOHANDLE hVirtio, uint16_t qIdx, PPRTSGBUF ppInSegs, PPR
  *
  * @param hVirtio   - Handle for VirtIO framework
  * @param qIdx      - Queue number
+ * @param pSgBuf    - Caller's sgbuf of one or more virtual memory segments
+ *                    to write to the queue. This is useful because some kinds
+ *                    of transactions involve variable length sub-components
+ *                    whose size can only be known near the time of writing.
+ * @parame fFence   - If set put up copy fence (memory barrier) after
+ *                    copying to guest phys. mem.
  *
  * @returns           VINF_SUCCESS         - Success
  *                    VERR_INVALID_STATE   - VirtIO not in ready state
  *                    VERR_NOT_AVAILABLE   - Queue is empty
  */
-int virtioQueuePut(VIRTIOHANDLE hVirtio, uint16_t qIdx, uint32_t cb);
+int virtioQueuePut(VIRTIOHANDLE hVirtio, uint16_t qIdx, PRTSGBUF pSgBuf, bool fFence);
 
 /**
  * Updates virtq's "used ring" descriptor index to match the current bufVec's

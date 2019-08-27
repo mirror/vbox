@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Virtio_1_0 - Virtio Common Functions (VirtQ, VQueue, Virtio PCI)
+ * Virtio_1_0 - Virtio Common Functions (VirtQ, virtqueue, Virtio PCI)
  */
 
 /*
@@ -33,12 +33,10 @@
 #include "Virtio_1_0.h"
 
 #define INSTANCE(pVirtio) pVirtio->szInstance
-
-#ifdef LOG_ENABLED
-# define QUEUENAME(s, q) (q->szVirtqName)
-#endif
-
+#define QUEUENAME(qIdx) (pVirtio->virtqProxy[qIdx].szVirtqName)
+#define CBQUEUENAME(qIdx) RTStrNLen(QUEUENAME(qIdx), sizeof(QUEUENAME(qIdx)))
 /**
+
  * Formats the logging of a memory-mapped I/O input or output value
  *
  * @param   pszFunc     - To avoid displaying this function's name via __FUNCTION__ or Log2Func()
@@ -82,12 +80,12 @@ void virtioLogMappedIoValue(const char *pszFunc, const char *pszMember, size_t u
         for (uint8_t i = 0; i < sizeof(pszDepiction); i++)
             if (pszDepiction[i] == ' ' && first++)
                 pszDepiction[i] = '.';
-        Log(("%s: Guest %s %s 0x%s\n", \
+        Log(("%s: Guest %s %s 0x%s\n",
                   pszFunc, fWrite ? "wrote" : "read ", pszDepiction, pszFormattedVal));
     }
     else /* odd number or oversized access, ... log inline hex-dump style */
     {
-        Log(("%s: Guest %s %s%s[%d:%d]: %.*Rhxs\n", \
+        Log(("%s: Guest %s %s%s[%d:%d]: %.*Rhxs\n",
               pszFunc, fWrite ? "wrote" : "read ", pszMember,
               pszIdx, uOffset, uOffset + cb, cb, pv));
     }
@@ -166,7 +164,9 @@ uint64_t virtioGetNegotiatedFeatures(VIRTIOHANDLE hVirtio)
 bool virtioQueueIsEmpty(VIRTIOHANDLE hVirtio, uint16_t qIdx)
 {
     PVIRTIOSTATE pVirtio = (PVIRTIOSTATE)hVirtio;
-    return vqReadAvailDescIdx(pVirtio, qIdx) == pVirtio->virtqProxy->uAvailIdx;
+    if (!(pVirtio->uDeviceStatus & VIRTIO_STATUS_DRIVER_OK))
+        return true;
+    return virtqIsEmpty(pVirtio, qIdx);
 }
 
 /**
@@ -190,13 +190,13 @@ int virtioQueueGet(VIRTIOHANDLE hVirtio, uint16_t qIdx, bool fRemove,
     AssertMsgReturn(DRIVER_OK(pVirtio) && pVirtio->uQueueEnable[qIdx],
                     ("Guest driver not in ready state.\n"), VERR_INVALID_STATE);
 
-    if (vqIsEmpty(pVirtio, qIdx))
+    if (virtqIsEmpty(pVirtio, qIdx))
         return VERR_NOT_AVAILABLE;
 
     pDescChain->cSegsIn = pDescChain->cSegsOut = 0;
 
 
-    pDescChain->uHeadIdx = vqReadAvailRingDescIdx(pVirtio, qIdx, pVirtqProxy->uAvailIdx);
+    pDescChain->uHeadIdx = virtioReadAvailDescIdx(pVirtio, qIdx, pVirtqProxy->uAvailIdx);
     uint16_t uDescIdx = pDescChain->uHeadIdx;
 
     Log2Func(("%s DESC CHAIN: (head) desc_idx=%u [avail_idx=%u]\n",
@@ -222,7 +222,7 @@ int virtioQueueGet(VIRTIOHANDLE hVirtio, uint16_t qIdx, bool fRemove,
             static volatile uint32_t s_cThreshold = 1;
             if (ASMAtomicIncU32(&s_cMessages) == ASMAtomicReadU32(&s_cThreshold))
             {
-                LogRel(("too many linked descriptors; "
+                LogRel(("Too many linked descriptors; "
                         "check if the guest arranges descriptors in a loop.\n"));
                 if (ASMAtomicReadU32(&s_cMessages) != 1)
                     LogRel(("(the above error has occured %u times so far)\n",
@@ -233,21 +233,19 @@ int virtioQueueGet(VIRTIOHANDLE hVirtio, uint16_t qIdx, bool fRemove,
         }
         RT_UNTRUSTED_VALIDATED_FENCE();
 
-        vqReadDesc(pVirtio, qIdx, uDescIdx, &desc);
+        virtioReadDesc(pVirtio, qIdx, uDescIdx, &desc);
 
         if (desc.fFlags & VIRTQ_DESC_F_WRITE)
         {
-            Log2Func(("%*s IN  desc_idx=%u seg=%u addr=%RGp cb=%u\n",
-                RTStrNLen(pVirtqProxy->szVirtqName, sizeof(pVirtqProxy->szVirtqName)), "",
-                uDescIdx, pDescChain->cSegsIn, desc.pGcPhysBuf, desc.cb));
+            Log2Func(("%s IN  desc_idx=%u seg=%u addr=%RGp cb=%u\n",
+                QUEUENAME(qIdx), uDescIdx, pDescChain->cSegsIn, desc.pGcPhysBuf, desc.cb));
 
             pSeg = &(pDescChain->aSegsIn[pDescChain->cSegsIn++]);
         }
         else
         {
-            Log2Func(("%*s OUT desc_idx=%u seg=%u addr=%RGp cb=%u\n",
-                RTStrNLen(pVirtqProxy->szVirtqName, sizeof(pVirtqProxy->szVirtqName)), "",
-                uDescIdx, pDescChain->cSegsOut, desc.pGcPhysBuf, desc.cb));
+            Log2Func(("%s OUT desc_idx=%u seg=%u addr=%RGp cb=%u\n",
+                QUEUENAME(qIdx), uDescIdx, pDescChain->cSegsOut, desc.pGcPhysBuf, desc.cb));
             pSeg = &(pDescChain->aSegsOut[pDescChain->cSegsOut++]);
         }
 
@@ -263,16 +261,16 @@ int virtioQueueGet(VIRTIOHANDLE hVirtio, uint16_t qIdx, bool fRemove,
     *ppInSegs  = &pVirtqProxy->inSgBuf;
     *ppOutSegs = &pVirtqProxy->outSgBuf;
 
-    Log2Func(("%*s -- segs out: %u,  segs in: %u --\n",
-              RTStrNLen(pVirtqProxy->szVirtqName, sizeof(pVirtqProxy->szVirtqName)), "",
-              pDescChain->cSegsOut, pDescChain->cSegsIn));
+    Log2Func(("%s -- segs out: %u,  segs in: %u --\n",
+              pVirtqProxy->szVirtqName, pDescChain->cSegsOut, pDescChain->cSegsIn));
 
     return VINF_SUCCESS;
 }
 
  /** See API comments in header file prototype for description */
-int virtioQueuePut(VIRTIOHANDLE hVirtio, uint16_t qIdx)
+int virtioQueuePut(VIRTIOHANDLE hVirtio, uint16_t qIdx, PRTSGBUF pSgBuf, bool fFence)
 {
+
     Assert(qIdx < sizeof(VIRTQ_PROXY_T));
 
     PVIRTIOSTATE pVirtio = (PVIRTIOSTATE)hVirtio;
@@ -281,41 +279,52 @@ int virtioQueuePut(VIRTIOHANDLE hVirtio, uint16_t qIdx)
 
     AssertMsgReturn(DRIVER_OK(pVirtio) && pVirtio->uQueueEnable[qIdx],
                     ("Guest driver not in ready state.\n"), VERR_INVALID_STATE);
+    /**
+     * Copy caller's virtual memory sg buffer to physical memory
+     */
+    PRTSGBUF pBufSrc = pSgBuf;
+    PRTSGBUF pBufDst = &pVirtqProxy->inSgBuf;
 
-    Log2Func(("%s desc_idx=%u acb=%u\n",
-             pVirtqProxy->szVirtqName, pDescChain->uHeadIdx, pDescChain->cSegsIn));
+    size_t cbRemain = RTSgBufCalcTotalLength(pBufSrc);
+    uint16_t uUsedIdx  = virtioReadUsedRingIdx(pVirtio, qIdx);
+    Log2Func(("Copying client data to %s, desc chain (head desc_idx %d)\n",
+               QUEUENAME(qIdx), uUsedIdx));
 
-    uint32_t cbRemaining = pDescChain->cSegsIn;
-
-    for (uint32_t iSeg = 0; iSeg < pDescChain->cSegsIn && cbRemaining > 0; ++iSeg)
+    while (cbRemain )
     {
-        uint32_t cbSegLen = pDescChain->aSegsIn[iSeg].cbSeg;
-        if (cbSegLen > cbRemaining)   // last segment only partially used?
-            cbSegLen = cbRemaining;
-
-//        if (pDescChain->aSegsIn[iSeg].pv != NULL)
-//        {
-//            Log2Func(("%s used_idx=%u seg=%u addr=%p cb=%u acb=%u\n",
-//                     pVirtqProxy->szVirtqName,
-//                     pVirtqProxy->uUsedIdx, iSeg,
-//                     (void *)pDescChain->aSegsIn[iSeg].addr,
-//                     pDescChain->aSegsIn[iSeg].cbSeg, cbSegLen));
-//
-//            PDMDevHlpPCIPhysWrite(pVirtio->CTX_SUFF(pDevIns),
-//                 pDescChain->aSegsIn[iSeg].pvSeg, pDescChain->aSegsIn[iSeg].pv, cbSegLen);
-//        }
-        cbRemaining -= cbSegLen;
+        uint64_t dstSgStart = (uint64_t)pBufDst->paSegs[pBufDst->idxSeg].pvSeg;
+        uint64_t dstSgLen   = (uint64_t)pBufDst->paSegs[pBufDst->idxSeg].cbSeg;
+        uint64_t dstSgCur   = (uint64_t)pBufDst->pvSegCur;
+        size_t cbCopy = RT_MIN(pBufSrc->cbSegLeft, dstSgLen - (dstSgCur - dstSgStart));
+        PDMDevHlpPhysWrite(pVirtio->CTX_SUFF(pDevIns),
+                          (RTGCPHYS)pBufDst->pvSegCur, pBufSrc->pvSegCur, cbCopy);
+        RTSgBufAdvance(pBufSrc, cbCopy);
+        RTSgBufAdvance(pBufDst, cbCopy);
+        cbRemain -= cbCopy;
     }
 
-    uint16_t uDescIdx = vqReadUsedDescIdx(pVirtio, qIdx);
-    Log2Func(("%s used_idx=%u guest_used_idx=%u id=%u len=%u\n",
-          pVirtqProxy->szVirtqName,
-          pVirtqProxy->uUsedIdx, uDescIdx, pDescChain->uHeadIdx, pDescChain->cSegsIn));
+    if (fFence)
+        RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
 
-    if (pVirtqProxy->uUsedIdx == vqReadAvailUsedEvent(pVirtio, qIdx))
-        pVirtqProxy->fEventThresholdReached = true;
-    vqWriteUsedElem(pVirtio, qIdx, pVirtqProxy->uUsedIdx++, pDescChain->uHeadIdx,  pDescChain->cSegsIn);
+    /** TBD to avoid wasting cycles how do we wrap this in test for Log2* enabled? */
+    size_t   cbInSgBuf = RTSgBufCalcTotalLength(pBufDst);
+    size_t   cbWritten = cbInSgBuf  - RTSgBufCalcLengthLeft(pBufDst);
 
+
+    /** If this write-ahead crosses threshold where the driver wants to get an event flag it */
+    if (pVirtio->uDriverFeatures & VIRTIO_F_EVENT_IDX)
+        if (pVirtqProxy->uUsedIdx == virtioReadAvailUsedEvent(pVirtio, qIdx))
+            pVirtqProxy->fEventThresholdReached = true;
+
+    /**
+     * Place used buffer's descriptor in used ring but don't update used ring's slot index.
+     * That will be done with a subsequent client call to virtioQueueSync() */
+    virtioWriteUsedElem(pVirtio, qIdx,
+                        pVirtqProxy->uUsedIdx++,
+                        pDescChain->uHeadIdx,
+                        pDescChain->cSegsIn);
+    Log2Func(("Copied %u bytes to %u byte buffer\n                Write ahead used_idx=%d, %s used_idx=%d\n",
+             cbWritten, cbInSgBuf, pVirtqProxy->uUsedIdx,  QUEUENAME(qIdx), uUsedIdx));
     return VINF_SUCCESS;
 }
 
@@ -332,12 +341,12 @@ int virtioQueueSync(VIRTIOHANDLE hVirtio, uint16_t qIdx)
     AssertMsgReturn(DRIVER_OK(pVirtio) && pVirtio->uQueueEnable[qIdx],
                     ("Guest driver not in ready state.\n"), VERR_INVALID_STATE);
 
-    uint16_t uDescIdx = vqReadUsedDescIdx(pVirtio, qIdx);
-    Log2Func(("%s old_used_idx=%u new_used_idx=%u\n",
-              uDescIdx, pVirtqProxy->uUsedIdx));
+    uint16_t uIdx = virtioReadUsedRingIdx(pVirtio, qIdx);
+    Log2Func(("Updating %s used_idx from %u to %u\n",
+              QUEUENAME(qIdx), uIdx, pVirtqProxy->uUsedIdx));
 
-    vqWriteUsedRingDescIdx(pVirtio, qIdx, pVirtqProxy->uUsedIdx);
-    vqNotifyDriver(pVirtio, qIdx);
+    virtioWriteUsedRingIdx(pVirtio, qIdx, pVirtqProxy->uUsedIdx);
+    virtioNotifyGuestDriver(pVirtio, qIdx);
 
     return VINF_SUCCESS;
 }
@@ -362,30 +371,35 @@ static void virtioQueueNotified(PVIRTIOSTATE pVirtio, uint16_t qIdx, uint16_t uN
  * and depending on negotiated and realtime constraints flagged by the guest driver.
  * See VirtIO 1.0 specification (section 2.4.7).
  */
-static void vqNotifyDriver(PVIRTIOSTATE pVirtio, uint16_t qIdx)
+static void virtioNotifyGuestDriver(PVIRTIOSTATE pVirtio, uint16_t qIdx)
 {
     PVIRTQ_PROXY_T pVirtqProxy = &pVirtio->virtqProxy[qIdx];
 
     AssertMsgReturnVoid(DRIVER_OK(pVirtio) && pVirtio->uQueueEnable[qIdx],
                     ("Guest driver not in ready state.\n"));
 
-    LogFlowFunc(("%s availFlags=%x guestFeatures=%x virtioQueue is %sempty\n",
-        pVirtqProxy->szVirtqName, vqReadAvailFlags(pVirtio, qIdx),
-            pVirtio->uDriverFeatures, vqIsEmpty(pVirtio, qIdx) ? "" : "not "));
-
     if (pVirtio->uQueueMsixVector[qIdx] == VIRTIO_MSI_NO_VECTOR)
     {
-        if (   pVirtio->uDriverFeatures & VIRTIO_F_EVENT_IDX
-            && pVirtqProxy->fEventThresholdReached)
+        if (pVirtio->uDriverFeatures & VIRTIO_F_EVENT_IDX)
         {
+            if (pVirtqProxy->fEventThresholdReached)
+            {
                 virtioRaiseInterrupt(pVirtio, VIRTIO_ISR_VIRTQ_INTERRUPT);
                 pVirtqProxy->fEventThresholdReached = false;
+                return;
+            }
+            Log2Func(("...skipping interrupt: VIRTIO_F_EVENT_IDX set but threshold not reached\n"));
         }
         else
         {
             /** If guest driver hasn't suppressed interrupts, do so */
-            if (!(vqReadUsedFlags(pVirtio, qIdx) & VIRTQ_AVAIL_F_NO_INTERRUPT))
+            if (!(virtioReadUsedFlags(pVirtio, qIdx) & VIRTQ_AVAIL_F_NO_INTERRUPT))
+            {
                 virtioRaiseInterrupt(pVirtio, VIRTIO_ISR_VIRTQ_INTERRUPT);
+                return;
+            }
+            Log2Func(("...skipping interrupt. Guest flagged VIRTQ_AVAIL_F_NO_INTERRUPT for queue\n"));
+
         }
     }
     else
@@ -432,10 +446,10 @@ void virtioRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 static int virtioRaiseInterrupt(PVIRTIOSTATE pVirtio, uint8_t uCause)
 {
    if (uCause == VIRTIO_ISR_VIRTQ_INTERRUPT)
-       LogFlowFunc(("Cause: queue interrupt\n"));
+       LogFlowFunc(("reason: buffer added to 'used' ring.\n"));
    else
    if (uCause == VIRTIO_ISR_DEVICE_CONFIG)
-       LogFlowFunc(("Cause: device config\n"));
+       LogFlowFunc(("reason: device config change\n"));
 
     pVirtio->uISR |= uCause;
     PDMDevHlpPCISetIrq(pVirtio->CTX_SUFF(pDevIns), 0, 1);
@@ -449,7 +463,6 @@ static int virtioRaiseInterrupt(PVIRTIOSTATE pVirtio, uint8_t uCause)
  */
 static void virtioLowerInterrupt(PVIRTIOSTATE pVirtio)
 {
-    LogFlowFunc(("\n"));
     PDMDevHlpPCISetIrq(pVirtio->CTX_SUFF(pDevIns), 0, 0);
 }
 
