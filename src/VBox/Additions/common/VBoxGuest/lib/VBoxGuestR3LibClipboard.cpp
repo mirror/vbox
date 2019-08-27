@@ -1495,7 +1495,7 @@ VBGLR3DECL(int) VbglR3ClipboardEventGetNext(PVBGLR3SHCLCMDCTX pCtx, PVBGLR3CLIPB
             default:
             {
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
-                rc = VbglR3ClipboardTransferEvent(&pEvent->cmdCtx, uMsg, cParms, NULL /* pTransfer */ ); /**** @todo FIX !!! */
+                rc = VbglR3ClipboardTransferEvent(&pEvent->cmdCtx, uMsg, cParms, NULL /* pTransfer */ ); /** @todo FIX !!! */
 #endif
                 rc = VERR_NOT_SUPPORTED;
                 break;
