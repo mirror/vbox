@@ -10466,7 +10466,7 @@ static void hmR0VmxPreRunGuestCommitted(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransi
     VMCPU_ASSERT_STATE(pVCpu, VMCPUSTATE_STARTED_HM);
     VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC);
 
-    PVMCC          pVM           = pVCpu->CTX_SUFF(pVM);
+    PVMCC        pVM           = pVCpu->CTX_SUFF(pVM);
     PVMXVMCSINFO pVmcsInfo     = pVmxTransient->pVmcsInfo;
     PHMPHYSCPU   pHostCpu      = hmR0GetCurrentCpu();
     RTCPUID const idCurrentCpu = pHostCpu->idCpu;
